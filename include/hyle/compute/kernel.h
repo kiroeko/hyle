@@ -141,12 +141,12 @@ class Kernel {
 // scalar blob becomes push constants (compute-06). `config.grid` is the grid / workgroup
 // count (same ceil(n/block) math both sides); `config.block` is the CUDA block dim
 // (Vulkan's local_size lives in the shader). The KernelArgs' arrays are caller-owned
-// (zero heap). ⚠️ LIFETIME: the kernel runs ASYNCHRONOUSLY -- the KernelArgs arrays AND the
-// backing device Buffers must stay alive until the launch COMPLETES (co_await
-// StreamComplete / stream.sync()), NOT merely until launch() returns. On Vulkan the GPU
-// reads the Buffers after launch() has returned; destroying a Buffer right after launch is
-// a use-after-free. ASYNC: launch returns after submit; observe completion with
-// `co_await StreamComplete{&stream}` (compute-03). A
+// (zero heap) and must outlive this call. ⚠️ LIFETIME: the kernel runs ASYNCHRONOUSLY --
+// the Kernel object and every backing device Buffer must stay alive until the launch
+// COMPLETES (co_await StreamComplete / stream.sync()), NOT merely until launch() returns.
+// On Vulkan the GPU reads these objects after launch() has returned; destroying a Kernel or
+// Buffer right after launch is a use-after-free. ASYNC: launch returns after submit; observe
+// completion with `co_await StreamComplete{&stream}` (compute-03). A
 // launch/config error surfaces as Status (CUDA: cudaGetLastError; Vulkan: submit result).
 // On the host backend, calls the registered HostFn synchronously.
 //
@@ -179,8 +179,9 @@ HYLE_COMPUTE_API Status launch(Stream& stream, const Kernel& kernel,
 // 1.07x+ lever that grows with more/smaller ops, compute-05 finding 4). On CUDA/host it
 // loops (their stream already orders sequential submits at no per-submit cost). Each item
 // carries a Kernel + its LaunchConfig + pre-built KernelArgs; the args' arrays are caller-
-// owned and must outlive the call. ASYNC on Vulkan (co_await stream to await); errors
-// return the first item's failure.
+// owned and must outlive the call. The referenced Kernels and Buffers must remain alive until
+// the batch completes. ASYNC on Vulkan (co_await stream to await); errors return the first
+// item's failure.
 struct BatchItem {
   const Kernel* kernel;
   LaunchConfig config;
@@ -209,8 +210,9 @@ HYLE_COMPUTE_API Status launch_batch(Stream& stream, const BatchItem* items,
 //   - The Kernel and the Buffers referenced by `args` must outlive the RecordedLaunch (their
 //     handles are frozen into the recording). To feed new data, write into those SAME Buffers
 //     between replays; to change a push-constant value or SWAP a buffer, make a NEW recording.
-//   - Each replay is ASYNC (like launch): await completion via `co_await StreamComplete` or
-//     stream.sync() before reading results / before the next replay if it depends on them.
+//   - Each replay is ASYNC (like launch). Vulkan permits multiple outstanding replays of the
+//     same recording; queue order and recorded barriers preserve their ordering. Await via
+//     `co_await StreamComplete` or stream.sync() before host access or lifetime teardown.
 class RecordedLaunch {
  public:
   RecordedLaunch() noexcept = default;
@@ -244,7 +246,7 @@ class RecordedLaunch {
 // The ergonomic launch: pass kernel arguments DIRECTLY, mixed, like calling the kernel --
 // `launch(s, k, cfg, a, b, c, n, alpha)` where a/b/c are Buffers and n/alpha are scalars.
 // A variadic fold classifies each arg at COMPILE TIME (conventions §7 typed shell over a
-// type-erased C-ABI core, same as CArray): a `Buffer` -> its device_ptr() appended to an
+// type-erased C-ABI core, same as CArray): a `Buffer` -> its native_handle() appended to an
 // ordered buffer list (position = binding index); anything trivially-copyable -> memcpy'd
 // into a std430-packed scalar blob (with a {offset,size} descriptor so CUDA can rebuild
 // per-scalar void** entries while Vulkan pushes the whole blob). All storage is STACK
@@ -274,7 +276,7 @@ template <class... Args>
 Status launch(Stream& stream, const Kernel& kernel, const LaunchConfig& config,
               Args&&... args) noexcept {
   constexpr std::size_t kN = sizeof...(Args);
-  void* buffers[kN == 0 ? 1 : kN];             // ordered buffer device_ptrs (stack)
+  void* buffers[kN == 0 ? 1 : kN];             // ordered native handles (stack)
   alignas(16) std::byte blob[detail::kMaxScalarBlob];  // packed scalar bytes (stack)
   ScalarField fields[kN == 0 ? 1 : kN];        // per-scalar {offset,size} (stack)
   unsigned nb = 0, nf = 0, blob_off = 0;
@@ -284,7 +286,7 @@ Status launch(Stream& stream, const Kernel& kernel, const LaunchConfig& config,
   auto pack_one = [&](auto&& a) noexcept {
     using A = std::remove_cvref_t<decltype(a)>;
     if constexpr (std::is_same_v<A, Buffer>) {
-      buffers[nb++] = a.device_ptr();          // Buffer -> ordered buffer list
+      buffers[nb++] = a.native_handle();          // Buffer -> ordered buffer list
     } else {
       static_assert(detail::is_kernel_scalar_v<A>,
                     "launch arg must be a Buffer or a trivially-copyable scalar");

@@ -93,8 +93,8 @@ Status host_event_elapsed_ns(void*, void*, std::uint64_t* out_ns) noexcept {
 // ---- buffer (compute-02) ----------------------------------------------------
 // On the host backend both BufferKinds are just plain RAM (there is no separate
 // device, and no page-locking benefit without a GPU DMA engine). is_host()=true for
-// both -- the memory is directly host-dereferenceable. set/get/copy/clear are plain
-// memcpy/memset (the "device" pointer IS a host pointer here).
+// both -- native handle and CPU mapping are the same plain-RAM pointer.
+// set/get/copy/clear are memcpy/memset; flush/invalidate are no-ops.
 
 std::size_t host_buffer_alignment(BufferKind) noexcept {
   return alignof(std::max_align_t);
@@ -109,14 +109,17 @@ bool host_buffer_is_host(BufferKind) noexcept {
 }
 
 Status host_buffer_alloc(int, BufferKind, std::size_t bytes,
-                         void** out_ptr) noexcept {
+                         void** out_native, void** out_host) noexcept {
   void* p = std::malloc(bytes == 0 ? 1 : bytes);
   if (p == nullptr) return Status::ResourceExhausted("host: buffer_alloc");
-  *out_ptr = p;
+  *out_native = p;
+  *out_host = p;
   return Status();
 }
 
 void host_buffer_free(int, BufferKind, void* ptr) noexcept { std::free(ptr); }
+Status host_buffer_flush(void*, std::size_t, std::size_t) noexcept { return Status(); }
+Status host_buffer_invalidate(void*, std::size_t, std::size_t) noexcept { return Status(); }
 
 Status host_buffer_set(void* dst_base, std::size_t offset, const void* src,
                        std::size_t size) noexcept {
@@ -291,6 +294,8 @@ constexpr ComputeBackend kHostBackend = {
     /*buffer_is_host=*/host_buffer_is_host,
     /*buffer_alloc=*/host_buffer_alloc,
     /*buffer_free=*/host_buffer_free,
+    /*buffer_flush_host=*/host_buffer_flush,
+    /*buffer_invalidate_host=*/host_buffer_invalidate,
     /*buffer_set=*/host_buffer_set,
     /*buffer_get=*/host_buffer_get,
     /*buffer_copy=*/host_buffer_copy,

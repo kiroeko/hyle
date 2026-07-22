@@ -40,9 +40,9 @@
 // This is the DEVICE-side analogue of compute-02b's pinned host pool -- but device VRAM
 // does NOT go through mem/ (mem/ is host RAM only; VRAM ownership is compute's).
 //
-// The backend picks VMM vs leg per device at pool creation (VMM if supported). The
-// pool handle is opaque; DevicePool holds {vt, handle} inline (no pimpl), same as
-// Buffer/Stream.
+// CUDA picks VMM vs leg per device at pool creation (VMM if supported); Vulkan uses
+// best-fit reuse of complete VkBuffer+VkDeviceMemory blocks. The pool handle is opaque;
+// DevicePool holds {vt, handle} inline (no pimpl), same as Buffer/Stream.
 
 namespace hyle::compute {
 
@@ -63,9 +63,9 @@ class DevicePool {
   HYLE_COMPUTE_API DevicePool& operator=(DevicePool&& o) noexcept;
   HYLE_COMPUTE_API ~DevicePool();
 
-  // Create a pool on `device`. Picks the VMM backend if the device supports CUDA
-  // virtual memory management, else the legacy cached-block backend (both ported from
-  // ggml). External-boundary failure returns Result.
+  // Create a pool on `device`. CUDA picks VMM when supported, otherwise its legacy
+  // cached-block backend; Vulkan uses cached native blocks. External-boundary failure
+  // returns Result.
   HYLE_COMPUTE_API static Result<DevicePool> create(const Device& device) noexcept;
 
   bool valid() const noexcept { return vt_ != nullptr; }

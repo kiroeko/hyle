@@ -1,12 +1,12 @@
 #pragma once
 
 #include <cstddef>
-#include <cstdint>
-#include <cstring>  // std::memcpy for as_allocator()'s realloc
+#include <cstring> // std::memcpy for as_allocator()'s realloc
 
 #include "hyle/macros.h"
 #include "hyle/mem/alignment.h"
 #include "hyle/mem/allocator.h"
+#include "hyle/mem/region.h"
 
 namespace hyle::mem {
 
@@ -22,95 +22,88 @@ namespace hyle::mem {
 //
 // Single-threaded by design (stack/scratch lifetime is thread-local).
 class StackAllocator {
- public:
-  using Marker = std::byte*;  // a saved cursor position within the slab
+public:
+  using Marker = std::byte *; // a saved cursor position within the slab
 
   StackAllocator(Allocator alloc, std::size_t size)
       : alloc_(alloc), size_(size) {
     HYLE_FATAL_ASSERT(alloc_.valid());
     HYLE_FATAL_ASSERT(size_ >= 1);
-    base_ = static_cast<std::byte*>(
+    base_ = static_cast<std::byte *>(
         alloc_.allocate(size_, alignof(std::max_align_t)));
-    // slab-OOM -> invalid (base_==nullptr); the caller checks valid(). Not abort,
-    // per mem-audit-followup #2 arch B. allocate() naturally returns nullptr while
-    // invalid (end_==nullptr, so nothing fits).
-    cur_ = base_;
-    end_ = base_ != nullptr ? base_ + size_ : nullptr;
+    // slab-OOM -> invalid (base_==nullptr); the caller checks valid(). Not
+    // abort, per mem-audit-followup #2 arch B. allocate() naturally returns
+    // nullptr while invalid (the shared bump cursor has no storage, so nothing
+    // fits).
+    cursor_.reset_storage(base_, base_ != nullptr ? size_ : 0);
   }
 
-  // False iff the ctor's slab allocation hit OOM. An invalid StackAllocator hands
-  // out nothing (allocate -> nullptr); the C ABI checks this and returns NULL.
+  // False iff the ctor's slab allocation hit OOM. An invalid StackAllocator
+  // hands out nothing (allocate -> nullptr); the C ABI checks this and returns
+  // NULL.
   bool valid() const noexcept { return base_ != nullptr; }
 
   ~StackAllocator() {
-    if (base_ != nullptr) alloc_.deallocate(base_, size_, alignof(std::max_align_t));
+    if (base_ != nullptr)
+      alloc_.deallocate(base_, size_, alignof(std::max_align_t));
   }
 
   HYLE_DISABLE_COPY_AND_MOVE(StackAllocator);
 
   // Bump `bytes` aligned to `alignment` (power of two). nullptr if it won't fit
   // (no heap fallback -- give a bigger slab instead).
-  void* allocate(std::size_t bytes,
+  void *allocate(std::size_t bytes,
                  std::size_t alignment = alignof(std::max_align_t)) noexcept {
-    HYLE_FATAL_ASSERT(is_pow2(alignment));  // rejects 0 too (a&(a-1) alone lets 0 slip through)
-    // Pointer-style bump: align cur_ directly (the live address), no +base/-base
-    // round-trip through an offset. base_ is max_align_t-aligned so aligning the
-    // real cursor is what guarantees the returned pointer's alignment.
-    auto cur = reinterpret_cast<std::uintptr_t>(cur_);
-    std::uintptr_t aligned = (cur + alignment - 1) & ~(alignment - 1);
-    auto e = reinterpret_cast<std::uintptr_t>(end_);
-    if (aligned > e || bytes > e - aligned) return nullptr;  // overflow-safe
-    cur_ = reinterpret_cast<std::byte*>(aligned + bytes);
-    return reinterpret_cast<void*>(aligned);
+    HYLE_FATAL_ASSERT(is_pow2(
+        alignment)); // rejects 0 too (a&(a-1) alone lets 0 slip through)
+    return cursor_.allocate(bytes, alignment);
   }
 
   // Save the current cursor; rewind() returns the slab to exactly this point.
-  Marker mark() const noexcept { return cur_; }
+  Marker mark() const noexcept { return cursor_.mark(); }
 
-  // Release everything allocated since `m` (LIFO). Must be within [base_, cur_].
+  // Release everything allocated since `m` (LIFO). Must be within [base_,
+  // cur_].
   void rewind(Marker m) noexcept {
-    const auto addr = reinterpret_cast<std::uintptr_t>(m);
-    const auto begin = reinterpret_cast<std::uintptr_t>(base_);
-    const auto current = reinterpret_cast<std::uintptr_t>(cur_);
-    HYLE_FATAL_ASSERT(valid() && addr >= begin && addr <= current);
-    cur_ = m;
+    HYLE_FATAL_ASSERT(valid());
+    cursor_.rewind(m);
   }
 
   // Release everything.
-  void reset() noexcept { cur_ = base_; }
+  void reset() noexcept { cursor_.clear(); }
 
-  std::size_t used() const noexcept {
-    return valid() ? static_cast<std::size_t>(cur_ - base_) : 0;
-  }
+  std::size_t used() const noexcept { return cursor_.used(); }
   std::size_t capacity() const noexcept { return size_; }
-  // Bytes still available from the current cursor (a max-aligned request of this
-  // size or less is guaranteed to fit; a stronger alignment may consume padding).
-  std::size_t remaining() const noexcept {
-    return valid() ? static_cast<std::size_t>(end_ - cur_) : 0;
-  }
+  // Bytes still available from the current cursor (a max-aligned request of
+  // this size or less is guaranteed to fit; a stronger alignment may consume
+  // padding).
+  std::size_t remaining() const noexcept { return cursor_.remaining(); }
 
-  // Adapt to the Allocator vtable so a StackAllocator can be injected downstream
-  // (like Arena/SharedPool): allocate -> bump, deallocate -> no-op (LIFO frees in
-  // bulk via reset()/rewind()), realloc -> bump a fresh slice + copy (can't grow in
-  // place). One StackAllocator is single-owner, so the vtable is single-threaded too.
+  // Adapt to the Allocator vtable so a StackAllocator can be injected
+  // downstream (like Arena/SharedPool): allocate -> bump, deallocate -> no-op
+  // (LIFO frees in bulk via reset()/rewind()), realloc -> bump a fresh slice +
+  // copy (can't grow in place). One StackAllocator is single-owner, so the
+  // vtable is single-threaded too.
   Allocator as_allocator() noexcept {
     return Allocator(&stack_alloc, &stack_free, &stack_realloc, this);
   }
 
- private:
-  static void* stack_alloc(void* state, std::size_t size,
+private:
+  static void *stack_alloc(void *state, std::size_t size,
                            std::size_t alignment) noexcept {
-    return static_cast<StackAllocator*>(state)->allocate(size, alignment);
+    return static_cast<StackAllocator *>(state)->allocate(size, alignment);
   }
-  static void stack_free(void* /*state*/, void* /*ptr*/, std::size_t /*size*/,
+  static void stack_free(void * /*state*/, void * /*ptr*/, std::size_t /*size*/,
                          std::size_t /*alignment*/) noexcept {
     // no-op: a stack allocator frees in bulk via reset()/rewind().
   }
-  static void* stack_realloc(void* state, void* ptr, std::size_t old_size,
-                             std::size_t new_size, std::size_t alignment) noexcept {
-    auto* self = static_cast<StackAllocator*>(state);
-    if (new_size == 0) return nullptr;
-    void* p = self->allocate(new_size, alignment);
+  static void *stack_realloc(void *state, void *ptr, std::size_t old_size,
+                             std::size_t new_size,
+                             std::size_t alignment) noexcept {
+    auto *self = static_cast<StackAllocator *>(state);
+    if (new_size == 0)
+      return nullptr;
+    void *p = self->allocate(new_size, alignment);
     if (ptr != nullptr && p != nullptr && old_size != 0) {
       std::memcpy(p, ptr, old_size < new_size ? old_size : new_size);
     }
@@ -118,10 +111,9 @@ class StackAllocator {
   }
 
   Allocator alloc_;
-  std::byte* base_ = nullptr;
+  std::byte *base_ = nullptr;
   std::size_t size_;
-  std::byte* cur_ = nullptr;  // bump cursor (pointer-style: points at next free byte)
-  std::byte* end_ = nullptr;  // one past the slab end (base_ + size_)
+  detail::BumpCursor cursor_;
 };
 
-}  // namespace hyle::mem
+} // namespace hyle::mem

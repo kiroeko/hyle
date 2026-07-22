@@ -62,11 +62,9 @@ struct ComputeBackend {
   void (*event_sync)(void* event_native) noexcept;          // cudaEventSynchronize
 
   // ---- buffer (compute-02) --------------------------------------------------
-  // A Buffer owns one block of memory of a given BufferKind on `ordinal`. The
-  // public Buffer stores {vt, ptr, size, ordinal, kind, is_host}; these fn-ptrs do
-  // the backend work. kDevice = cudaMalloc (VRAM, not host-deref); kHostPinned =
-  // cudaMallocHost (page-locked host RAM; callers may compose mem::SharedPool for a
-  // fixed-size ring). The host backend uses plain RAM for both kinds.
+  // A Buffer owns one allocation of a given BufferKind on `ordinal`. The backend
+  // returns an opaque native handle plus a separate CPU mapping when host-visible.
+  // CUDA may use the same pointer for both; Vulkan returns VkMem* + VkMem::mapped.
   //
   // buffer_type trait queries (per kind, cheap constants): alignment / max single-
   // allocation size / whether the memory is host-dereferenceable. Mirror ggml
@@ -75,11 +73,17 @@ struct ComputeBackend {
   std::size_t (*buffer_max_size)(int ordinal, BufferKind kind) noexcept;
   bool (*buffer_is_host)(BufferKind kind) noexcept;
 
-  // Allocate `bytes` of `kind` memory on `ordinal`; returns the base pointer in
-  // *out_ptr (non-null on success) or the failure Status. free returns it.
+  // Allocate `bytes` of `kind` memory on `ordinal`. `out_native` is always non-null
+  // on success; `out_host` is the CPU mapping or null. free consumes out_native.
   Status (*buffer_alloc)(int ordinal, BufferKind kind, std::size_t bytes,
-                         void** out_ptr) noexcept;
-  void (*buffer_free)(int ordinal, BufferKind kind, void* ptr) noexcept;
+                         void** out_native, void** out_host) noexcept;
+  void (*buffer_free)(int ordinal, BufferKind kind, void* native) noexcept;
+  // Explicit non-coherent host-memory visibility for [offset, offset+size). No-op for
+  // coherent CUDA/host memory; Vulkan expands to nonCoherentAtomSize as required.
+  Status (*buffer_flush_host)(void* native, std::size_t offset,
+                              std::size_t size) noexcept;
+  Status (*buffer_invalidate_host)(void* native, std::size_t offset,
+                                   std::size_t size) noexcept;
 
   // SYNCHRONOUS host<->device copy into/out of a buffer at a byte `offset` (the
   // compute-02 core: partial writes, KV-cache-style). The backend infers direction
@@ -180,7 +184,7 @@ struct ComputeBackend {
   // A timing event has its OWN full lifecycle (create/destroy/record/query/sync) SEPARATE
   // from the plain completion event. Why separate rather than reusing the plain slots: a
   // backend's timing event may have a DIFFERENT native layout than its plain event (Vulkan:
-  // plain = bare VkFence, timing = a {VkFence, VkQueryPool} struct), so the plain
+  // plain owns a fence + record state, timing additionally owns a query pool), so the plain
   // destroy/query/sync would mis-cast a timing native. The public Event routes ALL of these
   // by its `timing_` flag, so a timing event always stays on the timing slots. On CUDA the
   // timing event is just a cudaEvent_t (timing-enabled), so its timing slots forward to the
@@ -205,8 +209,10 @@ struct ComputeBackend {
   // contents into the SAME buffers between replays (the GPU reads their current contents).
   //
   // recorded_create: record the cb, returning an opaque handle in *out_recorded. On Vulkan
-  // the handle owns a non-ONE_TIME_SUBMIT cb + its descriptor pool/set (they must outlive
-  // every replay). recorded_replay: submit the recorded cb once (async, like launch -- the
+  // the handle owns a reusable command buffer + its descriptor pool/set (they must outlive
+  // every replay). Vulkan records it with SIMULTANEOUS_USE because replay is async and a
+  // later replay may be submitted while an earlier one is pending. recorded_replay submits
+  // the recorded cb once (async, like launch -- the
   // caller awaits via the stream). recorded_destroy: drain outstanding replays + free the cb.
   // NULL slots (host: recording gives no benefit -- inline execution) -> the public layer
   // falls back to a plain launch per replay (same semantics, no CPU saving). Must be recorded

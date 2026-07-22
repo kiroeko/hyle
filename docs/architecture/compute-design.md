@@ -167,7 +167,7 @@ compute/
 
 1. **kernel 表示的统一**——device/stream/kernel 接口怎么同时容纳"原生 CUDA kernel"(`cuLaunchKernel` + PTX/cubin)和"SPIR-V compute shader"两种 kernel 表示(compute-04/06;compute-01 只做 stream/completion 脊,先不碰 launch 抽象)。
 2. ~~**GPU completion 接 sched**~~ **✅ 决策已定**（见上"compute-03 GPU completion 接 sched"节：方案 A 零改 sched 复用 Waker/IoOperation/net_timeout；方案 B seastar veto 协议为后续）+ compute-01 已把 event-poll 原语落地。
-3. **buffer 与 mem/ 的边界**——host/device 传输、pinned、unified memory;§2 已定"device 内存归 compute/ 走显式 copy、不进 mem/ allocator",compute-02 落具体 buffer_type 实例形状。**注**：compute-01 的 `Stream::device_alloc`/`memcpy_async` 是脊验证的**最小**辅助（host 用 `std::malloc`、CUDA 用 `cudaMalloc`），compute-02 的 buffer 抽象取代它——pinned **host staging**（`cudaMallocHost` 分配的是 host RAM）已包成 `mem::Allocator`（`pinned_allocator`）+ 单块 bump `PinnedStaging`；多块 pinned 池（`mem::SharedPool` over `cudaMallocHost`）是可用组合但**暂无消费者**（等 pooled staging ring 落地）；显存 `cudaMalloc` 仍 compute 自有、**不**走 mem。
+3. **buffer 与 mem/ 的边界**——device VRAM、pinned/unified/mapped host memory 的所有权与同步均归 compute，普通 host RAM 分配归 mem。Buffer 现分别持有 opaque `native_handle()` 与可选 `host_data()`：CUDA/host 两值可相同，Vulkan 分别是 `VkMem*` 与 `VkMem::mapped`；非-coherent host memory 用按 `nonCoherentAtomSize` 扩边的范围 `flush_host()` / `invalidate_host()`。`copy_from()` 自动维护 mapped-cache visibility，但不等待 producer Stream；所有同步 copy/直接 host 访问前必须先完成相关 GPU 使用，异步 launch 引用的 Kernel/Buffer 必须存活至 completion。非 ReBAR Vulkan buffer 的同步 `set/get` 只在首次传输时创建 staging，容量按“历史最大单次传输”增长，不再为每个 device buffer 预留等大的 host allocation。它不是 async staging API；未来真实异步上传路径出现时，只用 HostBuffer + Device identity + Event 组成 `StagingRing`（free→filling→in-flight→event→free + backpressure），不提供裸 `SharedPool(cudaMallocHost)` 组合。显存仍 compute 自有、**不**走 mem。
 4. **Vulkan compute 自定义 kernel 的工程链**——GLSL/`.comp` → SPIR-V 编译、运行时加载、与 CUDA kernel 的统一启动 API(compute-06)。**参考库 = kompute**(`C:\public\project-hyle\kompute`,见下"compute-06 kompute 映射"节已定该抄什么)。
 
 ## compute-05 借 ggml 算力：调研发现汇总（2026-07-06 深调研 ggml/llama.cpp/iron/CCCL 定案）
@@ -182,7 +182,7 @@ iron（clay 宿主）**不直接用 ggml**，而是 `add_subdirectory(stable-dif
 
 **正确边界：借 ggml 算子 = host 内存归 HYLE（mem 喂入/取出），device 显存归 ggml（gallocr 自管），就像 llama.cpp。**
 - **device 侧归 ggml（CUDA 上必须）**：ggml 算子计算用的 tensor buffer（输入/中间/结果）由 `ggml_gallocr` 分配管理。CUDA 无公开 API 注册外部显存（`buffer_from_host_ptr=false`）；且 CUDA matmul 内核依赖 buffer 的 `context->device`/`buft` 元数据、图内复用、padding 一整套，是算子正确性的一部分。**不注入外部 `->data`、不造假 dummy buffer**（那在多算子 varied 形状必崩）。
-- **host 侧全程归 HYLE**：数据进出 ggml 显存的入口 `ggml_backend_tensor_set/get` 对 host 源指针**零约束**——`tensor_set` 就是裸 `cudaMemcpyHostToDevice`（`ggml-cuda.cu:688`），host 源任意指针都行，**完全可以是 HYLE mem（`mem::Allocator`/`PinnedStaging`）分配的内存**。性能接口点：host 源用 pinned（compute-02b `PinnedStaging`）则 H2D 走 DMA 更快、可 async 重叠。
+- **host 侧全程归 HYLE**：数据进出 ggml 显存的入口 `ggml_backend_tensor_set/get` 对 host 源指针**零约束**——当前使用普通 HYLE `mem::Allocator` 数据。compute HostBuffer 已有分离的 mapped pointer 与 flush/invalidate，但 ggml bridge 没有 async slot 生命周期，故不宣称 pinned overlap；StagingRing 待真实 async overlap 消费者。
 - **落地形态**：`ggml_init({.no_alloc=true})` 建 tensor → `ggml_set_input`(输入)/`ggml_set_output`(结果) → `ggml_mul_mat` → `ggml_gallocr_alloc_graph`（device buffer 全归 ggml）→ `ggml_backend_tensor_set`(HYLE host 输入拷入) → `graph_compute` → `ggml_backend_tensor_get`(结果拷回 HYLE host)。合批同理（一图多算子、gallocr 一次分配）。
 - **权重常驻**：反复用同一批权重（推理）时，权重拷进 ggml 显存**一次**、常驻复用（llama.cpp 模式），非每次推理都拷。初始化成本，非热路径。
 - **HYLE 显存自管没名存实亡——只是划清了范围**：它在 **compute-04/06 自造 kernel**（真零拷贝跑在 HYLE Buffer 上，已三平台验证——服务一切非 AI 的通用 GPU 计算：普通 CUDA 数值 kernel + ② CAD/CAE 专用核）和其 **数据**（普通 compute buffer + KV-cache/网格/BVH/刚度矩阵）上完整成立；只在"借 ggml 算 AI"这条路上，device 侧让位给 ggml。这是**借 vs 造**的本质分工（呼应发现 5/7/9）。
@@ -299,7 +299,7 @@ ggml_status llama_context::graph_compute(ggml_cgraph* gf, bool batched) {
 **该抄的三块不可省样板**（映射到 HYLE compute 抽象）：
 1. **Vulkan 初始化链 → HYLE `Device`（Vulkan 后端的 vtable 创建路径）**：instance → 物理设备枚举 → 找 compute queue family（遍历 `eCompute`）→ logical device + queue → 能力/扩展查询。`Manager.cpp:174-496`。**保留 Apple/MoltenVK portability 分支**（`Manager.cpp:197-204`——跨厂商一等公民的前提，一份 SPIR-V 全平台跑）。
 2. **SPIR-V → pipeline 全套 → HYLE `Kernel`（compute-04 的 Vulkan 实现）**：shader module 加载 SPIR-V → descriptor pool/layout/set 三件套 + `updateDescriptorSets` → pipeline layout（含 push constant range）+ compute pipeline + pipeline cache → 录制期 `bindPipeline`/`bindDescriptorSets`/`pushConstants`/`dispatch(x,y,z)`。`Algorithm.cpp:128-380`。
-3. **device buffer + memory-type 选择 + staging 双缓冲 + barrier 编排 → HYLE `Buffer`（compute-02 的 Vulkan 实现）**：device-local primary buffer + host-visible staging buffer 双缓冲；手动扫 `memoryTypeBits` 找 memory type（`Tensor.cpp:396-438`，必抄样板）；传输不是独立 API 而是**录进 command buffer 的 op**（copy staging↔device 前后夹 `pipelineBarrier` buffer memory barrier，`Tensor.cpp:139-251`）；host 访问 `mapMemory` + coherent 内存免 flush。
+3. **device buffer + memory-type 选择 + barrier 编排 → HYLE `Buffer`（compute-02 的 Vulkan 实现）**：device-local primary buffer；ReBAR 直接持久映射，非 ReBAR 的同步 `set/get` 懒建并复用 transfer-sized host-visible staging slice；手动扫 `memoryTypeBits` 找 memory type（`Tensor.cpp:396-438`）；copy staging↔device 前后夹 `pipelineBarrier`，host coherent 内存免 flush。异步 overlap 不复用这条同步 convenience，必须另建 Event-owned backpressure ring。
 
 **completion 机制——抄构造、换等待（接 fiber 的关键）**：
 - kompute submit：`evalAsync`（`Sequence.cpp:112-141`）`resetFences` → `queue.submit(submitInfo, mFence)` 立即返回 = HYLE `Stream` submit 产生 completion。**照抄。**

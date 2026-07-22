@@ -4,10 +4,10 @@
 # the CUDAToolkit was found (HYLE_COMPUTE_CUDA set by the root CMakeLists) -- then
 # cuda_backend.cu is compiled by nvcc as a CUDA-language TU and CUDA::cudart is linked.
 #
-# compute depends on error (Status/Result) + mem (pinned Allocator) PUBLICLY. As of
-# compute-03 it also depends on sched (gpu_await.h's co_await uses sched Waker/suspend)
-# -- but ONLY where fcontext (hence sched) exists, exactly as io_context.cc did. The
-# host/device/buffer/pool layer (compute-01/02/02b/02c) needs no sched and builds
+# compute depends on error (Status/Result) + mem (public kernel helpers use mem alignment)
+# PUBLICLY. As of compute-03 it also depends on sched (gpu_await.h's co_await uses sched
+# Waker/suspend) -- but ONLY where fcontext (hence sched) exists, exactly as io_context.cc
+# did. The host/device/buffer/pool layer (compute-01/02/02c) needs no sched and builds
 # anywhere; gpu_poller.cc (compute-03) is added only under HYLE_HAS_FCONTEXT.
 # compute-07: host_ops.cc = the CPU operator backend (simd-backed Kernel::HostFn library).
 # Always built (any platform, no GPU); links hyle_simd PRIVATE (simd cores are called inside

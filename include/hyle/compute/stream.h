@@ -62,19 +62,16 @@ struct ComputeBackend;
 // backend handle). Create with Event::create(device), record() it on a stream
 // after enqueuing work, then query()/sync() for completion.
 //
-// NO PIMPL / NO HEAP (perf): the whole state is {vtable, native handle, ordinal} =
-// 3 words, held INLINE. An Event is a long-lived object (one per await episode /
-// reused per fiber), not a hot-path temporary, but inlining still removes a heap
-// alloc on create AND an extra indirection on the query() hot path (compute-03's
-// worker polls query() every loop). query() is then ONE vtable indirect (the
-// irreducible cost of backend polymorphism), no impl_ deref. The native handle is
-// an opaque void* (a cudaEvent_t IS a pointer; the host backend stores a small
-// tag) -- the public header stays free of backend types via the forward decl above.
+// NO PUBLIC PIMPL: the cross-backend wrapper is held inline as {vtable, native handle,
+// ordinal}. query() is one vtable dispatch from public code. A backend may still need a
+// small native control record (Vulkan stores fence ownership + record state so reset and
+// destruction remain legal); that cost belongs to Event creation, not the polling loop.
+// The opaque void* keeps backend types out of this public header.
 //
-// LIFETIME CONTRACT: an Event must outlive the stream work it was recorded on
-// being polled -- i.e. don't destroy it while a worker may still query() it. In
-// compute-01 the test owns it on the stack across the poll loop; compute-03's
-// awaitable will park it on the fiber stack (like io's IoOperation slot).
+// LIFETIME CONTRACT: an Event must outlive any worker that may poll it. Backends make
+// destruction safe with respect to already-submitted device work, but destroying an Event
+// while another thread still calls query() is a host data race. compute-03's awaitable parks
+// it on the suspended fiber stack until the poller reports completion.
 class Event {
  public:
   Event() noexcept = default;

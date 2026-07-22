@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "hyle/mem/allocator.h"
+#include "hyle/mem/quota_allocator.h"
 #include "hyle/mem/shared_pool.h"
 #include "hyle/platform/thread.h"
 
@@ -576,6 +577,72 @@ TEST(SharedPool, LargeSlabHonorsInjectedBacking) {
   EXPECT_EQ(box.live_allocs.load(std::memory_order_relaxed), 0);
 }
 
+TEST(SharedPool, AllocatorReallocateObeysCompleteContract) {
+  SharedPool pool(system_allocator(), 128, 1, 64);
+  auto alloc = pool.as_allocator();
+
+  EXPECT_EQ(alloc.reallocate(nullptr, 0, 0, 16), nullptr);
+  auto *p = static_cast<unsigned char *>(
+      alloc.reallocate(nullptr, 0, 32, 16));
+  ASSERT_NE(p, nullptr);
+  p[0] = 0x5A;
+
+  EXPECT_EQ(alloc.reallocate(p, 32, 64, 16), p);
+  EXPECT_EQ(p[0], 0x5A);
+  EXPECT_EQ(alloc.reallocate(p, 64, 256, 16), nullptr);
+  EXPECT_EQ(p[0], 0x5A) << "failed grow must preserve the original block";
+
+  EXPECT_EQ(alloc.reallocate(p, 64, 0, 16), nullptr);
+  void *reused = alloc.allocate(128, 64);
+  ASSERT_NE(reused, nullptr) << "realloc-to-zero must restore pool capacity";
+  alloc.deallocate(reused, 128, 64);
+}
+
+TEST(SharedPoolCached, AllocatorReallocateObeysCompleteContract) {
+  SharedPoolCached pool(system_allocator(), 128, 1, 64);
+  auto alloc = pool.as_allocator();
+
+  auto *p = static_cast<unsigned char *>(
+      alloc.reallocate(nullptr, 0, 32, 16));
+  ASSERT_NE(p, nullptr);
+  p[0] = 0xA5;
+  EXPECT_EQ(alloc.reallocate(p, 32, 96, 16), p);
+  EXPECT_EQ(p[0], 0xA5);
+  EXPECT_EQ(alloc.reallocate(p, 96, 256, 16), nullptr);
+  EXPECT_EQ(p[0], 0xA5);
+  EXPECT_EQ(alloc.reallocate(p, 96, 0, 16), nullptr);
+
+  void *reused = alloc.allocate(16, 16);
+  ASSERT_NE(reused, nullptr);
+  alloc.deallocate(reused, 16, 16);
+  pool.publish_thread_cache();
+}
+
+TEST(SharedPool, QuotaCompositionKeepsAccountingAndCapacityTogether) {
+  SharedPool pool(system_allocator(), 128, 1, 64);
+  hyle::mem::QuotaAllocator quota(pool.as_allocator(), 128);
+  auto alloc = quota.get();
+
+  auto *p = static_cast<unsigned char *>(alloc.allocate(32, 16));
+  ASSERT_NE(p, nullptr);
+  p[0] = 7;
+  EXPECT_EQ(quota.used(), 32u);
+  EXPECT_EQ(alloc.reallocate(p, 32, 96, 16), p);
+  EXPECT_EQ(p[0], 7);
+  EXPECT_EQ(quota.used(), 96u);
+
+  EXPECT_EQ(alloc.reallocate(p, 96, 129, 16), nullptr);
+  EXPECT_EQ(quota.used(), 96u);
+  EXPECT_EQ(p[0], 7);
+
+  EXPECT_EQ(alloc.reallocate(p, 96, 0, 16), nullptr);
+  EXPECT_EQ(quota.used(), 0u);
+  void *reused = alloc.allocate(64, 16);
+  ASSERT_NE(reused, nullptr) << "balanced quota must not hide a leaked pool slot";
+  alloc.deallocate(reused, 64, 16);
+  EXPECT_EQ(quota.used(), 0u);
+}
+
 // Regression (审计缺陷 1): a SharedPoolCached uses an INJECTED backing whose state
 // is freed at pool destruction. A worker builds a TLS node bound to the pool; the
 // pool and backing die while the worker remains alive, then thread exit runs the
@@ -628,6 +695,23 @@ TEST(Arena, BumpAlignmentAndFull) {
   EXPECT_LT(p, q);  // bumps upward
   EXPECT_EQ(reinterpret_cast<std::uintptr_t>(p) % 16, 0u);
   EXPECT_EQ(a.allocate(1000, 1), nullptr);  // won't fit the 256 block
+}
+
+TEST(Arena, UnrepresentableAlignmentReturnsNull) {
+  SharedPool pool(system_allocator(), 256, 1);
+  Arena arena(&pool);
+  constexpr std::size_t kHugeAlignment =
+      std::size_t{1} << (sizeof(std::size_t) * 8 - 1);
+  EXPECT_EQ(arena.allocate(1, kHugeAlignment), nullptr);
+  EXPECT_EQ(arena.used(), 0u);
+}
+
+TEST(Arena, ZeroSizeReturnsNullWithoutAdvancing) {
+  SharedPool pool(system_allocator(), 256, 1);
+  Arena arena(&pool);
+  ASSERT_TRUE(arena.valid());
+  EXPECT_EQ(arena.allocate(0), nullptr);
+  EXPECT_EQ(arena.used(), 0u);
 }
 
 TEST(Arena, ResetReuses) {

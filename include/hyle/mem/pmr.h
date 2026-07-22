@@ -25,7 +25,9 @@ namespace hyle::mem {
 
 class PmrResource : public std::pmr::memory_resource {
  public:
-  explicit PmrResource(Allocator alloc) noexcept : alloc_(alloc) {}
+  explicit PmrResource(Allocator alloc) noexcept : alloc_(alloc) {
+    HYLE_FATAL_ASSERT(alloc_.valid());
+  }
 
   Allocator allocator() const noexcept { return alloc_; }
 
@@ -40,12 +42,16 @@ class PmrResource : public std::pmr::memory_resource {
     alloc_.deallocate(p, bytes, align);
   }
 
-  // Two resources are interchangeable iff they wrap the same backing {fn,state}
-  // -- then memory allocated by one can be freed by the other.
+  // Conservative identity for the complete exposed Allocator backing
+  // {alloc,free,realloc,state}. PMR itself only exercises alloc/free, so ignoring realloc
+  // could be deallocation-safe, but false is permitted and safer than declaring two
+  // observably different allocator() values to be the same resource.
   bool do_is_equal(
       const std::pmr::memory_resource& other) const noexcept override {
     const auto* o = dynamic_cast<const PmrResource*>(&other);
     return o != nullptr && o->alloc_.alloc_fn() == alloc_.alloc_fn() &&
+           o->alloc_.free_fn() == alloc_.free_fn() &&
+           o->alloc_.realloc_fn() == alloc_.realloc_fn() &&
            o->alloc_.state() == alloc_.state();
   }
 

@@ -90,7 +90,7 @@ gdb：  src1->buffer      = 0x555555c3b810   （dummy，非 null）
 ```cpp
 cudaMemcpyAsync((char*)tensor->data + offset, data, size, cudaMemcpyHostToDevice, ...);
 ```
-那个 `data` 任意 host 指针都行——**可以是 HYLE mem / PinnedStaging**。所以正确形态（= 阶段 1 那个被冷落的 copy 路径，现在扶正为唯一路径）：
+那个 `data` 任意 host 指针都行——当前直接使用普通 HYLE host mem；施工期错误的单块 staging 实验已删除，也不是这条结论的必要条件。所以正确形态（= 阶段 1 那个被冷落的 copy 路径，现在扶正为唯一路径）：
 
 ```cpp
 ggml_set_input(gA); ggml_set_input(gB);      // gallocr 给输入分配真 buffer（合法 context）

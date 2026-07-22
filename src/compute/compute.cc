@@ -7,7 +7,6 @@
 #include "hyle/compute/buffer.h"
 #include "hyle/compute/device_pool.h"
 #include "hyle/compute/kernel.h"
-#include "hyle/compute/pinned_pool.h"
 #include "hyle/compute/stream.h"
 #include "hyle/error/result.h"
 #include "hyle/macros.h"
@@ -326,36 +325,38 @@ bool BufferType::is_host() const noexcept {
 }
 
 // ---- Buffer -----------------------------------------------------------------
-// Inline state {vt_, ptr_, size_, ordinal_, kind_, is_host_} -- no pimpl/heap.
+// Inline state {vt_, native_, host_, size_, ordinal_, kind_} -- no pimpl/heap.
 
 Buffer::Buffer(Buffer&& o) noexcept
     : vt_(o.vt_),
-      ptr_(o.ptr_),
+      native_(o.native_),
+      host_(o.host_),
       size_(o.size_),
       ordinal_(o.ordinal_),
-      kind_(o.kind_),
-      is_host_(o.is_host_) {
+      kind_(o.kind_) {
   o.vt_ = nullptr;
-  o.ptr_ = nullptr;
+  o.native_ = nullptr;
+  o.host_ = nullptr;
 }
 
 Buffer& Buffer::operator=(Buffer&& o) noexcept {
   if (this != &o) {
-    if (vt_ != nullptr) vt_->buffer_free(ordinal_, kind_, ptr_);
+    if (vt_ != nullptr) vt_->buffer_free(ordinal_, kind_, native_);
     vt_ = o.vt_;
-    ptr_ = o.ptr_;
+    native_ = o.native_;
+    host_ = o.host_;
     size_ = o.size_;
     ordinal_ = o.ordinal_;
     kind_ = o.kind_;
-    is_host_ = o.is_host_;
     o.vt_ = nullptr;
-    o.ptr_ = nullptr;
+    o.native_ = nullptr;
+    o.host_ = nullptr;
   }
   return *this;
 }
 
 Buffer::~Buffer() {
-  if (vt_ != nullptr) vt_->buffer_free(ordinal_, kind_, ptr_);
+  if (vt_ != nullptr) vt_->buffer_free(ordinal_, kind_, native_);
 }
 
 Result<Buffer> Buffer::create(const BufferType& type, std::size_t bytes) noexcept {
@@ -363,17 +364,35 @@ Result<Buffer> Buffer::create(const BufferType& type, std::size_t bytes) noexcep
   // Caller contract: a single Buffer must fit the backend's max single-allocation
   // size; a larger logical buffer is the caller's split into multiple Buffers.
   HYLE_FATAL_ASSERT(bytes <= type.vt_->buffer_max_size(type.ordinal_, type.kind_));
-  void* ptr = nullptr;
-  Status st = type.vt_->buffer_alloc(type.ordinal_, type.kind_, bytes, &ptr);
+  void* native = nullptr;
+  void* host = nullptr;
+  Status st = type.vt_->buffer_alloc(type.ordinal_, type.kind_, bytes,
+                                     &native, &host);
   if (!st.ok()) return std::unexpected(std::move(st));
+  HYLE_FATAL_ASSERT(native != nullptr);
+  HYLE_FATAL_ASSERT((host != nullptr) == type.vt_->buffer_is_host(type.kind_));
   Buffer b;
   b.vt_ = type.vt_;
-  b.ptr_ = ptr;
+  b.native_ = native;
+  b.host_ = host;
   b.size_ = bytes;
   b.ordinal_ = type.ordinal_;
   b.kind_ = type.kind_;
-  b.is_host_ = type.vt_->buffer_is_host(type.kind_);
   return b;
+}
+
+Status Buffer::flush_host(std::size_t offset, std::size_t size) noexcept {
+  HYLE_FATAL_ASSERT(vt_ != nullptr && host_ != nullptr);
+  HYLE_FATAL_ASSERT(offset <= size_ && size <= size_ - offset);
+  if (size == 0) return Status();
+  return vt_->buffer_flush_host(native_, offset, size);
+}
+
+Status Buffer::invalidate_host(std::size_t offset, std::size_t size) noexcept {
+  HYLE_FATAL_ASSERT(vt_ != nullptr && host_ != nullptr);
+  HYLE_FATAL_ASSERT(offset <= size_ && size <= size_ - offset);
+  if (size == 0) return Status();
+  return vt_->buffer_invalidate_host(native_, offset, size);
 }
 
 Status Buffer::set(std::size_t offset, const void* src, std::size_t size) noexcept {
@@ -383,13 +402,15 @@ Status Buffer::set(std::size_t offset, const void* src, std::size_t size) noexce
   // write pass the check, then overrun in the backend memcpy. size_ - offset can't wrap
   // once offset <= size_ holds.
   HYLE_FATAL_ASSERT(offset <= size_ && size <= size_ - offset);
-  return vt_->buffer_set(ptr_, offset, src, size);
+  if (size == 0) return Status();
+  return vt_->buffer_set(native_, offset, src, size);
 }
 
 Status Buffer::get(std::size_t offset, void* dst, std::size_t size) const noexcept {
   HYLE_FATAL_ASSERT(vt_ != nullptr);
   HYLE_FATAL_ASSERT(offset <= size_ && size <= size_ - offset);  // wrap-safe (see set())
-  return vt_->buffer_get(ptr_, offset, dst, size);
+  if (size == 0) return Status();
+  return vt_->buffer_get(native_, offset, dst, size);
 }
 
 Status Buffer::copy_from(const Buffer& src, std::size_t dst_offset,
@@ -400,113 +421,24 @@ Status Buffer::copy_from(const Buffer& src, std::size_t dst_offset,
   HYLE_FATAL_ASSERT(vt_ == src.vt_);
   HYLE_FATAL_ASSERT(dst_offset <= size_ && size <= size_ - dst_offset &&      // wrap-safe
                     src_offset <= src.size_ && size <= src.size_ - src_offset);
-  return vt_->buffer_copy(ptr_, dst_offset, src.ptr_, src_offset, size);
+  if (size == 0) return Status();
+  if (src.host_ != nullptr) {
+    Status visibility =
+        src.vt_->buffer_flush_host(src.native_, src_offset, size);
+    if (!visibility.ok()) return visibility;
+  }
+  Status copied =
+      vt_->buffer_copy(native_, dst_offset, src.native_, src_offset, size);
+  if (!copied.ok() || host_ == nullptr) return copied;
+  return vt_->buffer_invalidate_host(native_, dst_offset, size);
 }
 
 Status Buffer::clear(std::size_t offset, std::uint8_t value,
                      std::size_t size) noexcept {
   HYLE_FATAL_ASSERT(vt_ != nullptr);
   HYLE_FATAL_ASSERT(offset <= size_ && size <= size_ - offset);  // wrap-safe (see set())
-  return vt_->buffer_clear(ptr_, offset, value, size);
-}
-
-// ---- pinned staging (compute-02b): REUSE mem/, don't reinvent ----------------
-// pinned_allocator wraps the backend's pinned (cudaMallocHost) alloc/free as a
-// mem::Allocator. The shipped staging path is single-block (PinnedStaging bumps one
-// pinned block); a multi-block pinned pool via mem::SharedPool is an available
-// composition with no consumer yet (see pinned_pool.h). state = the
-// backend vtable (pinned host RAM is NOT device-bound -- cudaMallocHost is process-
-// wide host memory usable by any GPU -- so no ordinal is needed; ordinal 0 is passed
-// to the kind-tagged buffer_alloc). alignment is ignored: cudaMallocHost returns
-// page-aligned memory (>=512B), far exceeding any scalar alignment; the host
-// fallback's malloc is max_align. The Device/backend must outlive the allocator.
-
-namespace {
-void* pinned_alloc_fn(void* state, std::size_t size, std::size_t /*alignment*/) noexcept {
-  auto* vt = static_cast<const ComputeBackend*>(state);
-  void* p = nullptr;
-  Status st = vt->buffer_alloc(0, BufferKind::kHostPinned, size == 0 ? 1 : size, &p);
-  return st.ok() ? p : nullptr;  // mem::Allocator contract: nullptr on failure
-}
-void pinned_free_fn(void* state, void* ptr, std::size_t /*size*/,
-                    std::size_t /*alignment*/) noexcept {
-  if (ptr == nullptr) return;
-  auto* vt = static_cast<const ComputeBackend*>(state);
-  vt->buffer_free(0, BufferKind::kHostPinned, ptr);
-}
-void* pinned_realloc_fn(void* /*state*/, void* /*ptr*/, std::size_t /*old*/,
-                        std::size_t /*new_size*/, std::size_t /*align*/) noexcept {
-  // Pinned staging is bump/pool use (mem::Arena/SharedPool never realloc a backing
-  // slab); a realloc on pinned memory is not a supported path -- return nullptr.
-  return nullptr;
-}
-}  // namespace
-
-mem::Allocator pinned_allocator(const Device& device) noexcept {
-  DeviceEntry e = resolve(device);
-  // state is the const vtable pointer; cast away const for the void* state slot
-  // (the fns cast it back to const -- they never mutate the vtable).
-  return mem::Allocator(&pinned_alloc_fn, &pinned_free_fn, &pinned_realloc_fn,
-                        const_cast<ComputeBackend*>(e.vt));
-}
-
-// ---- PinnedStaging -----------------------------------------------------------
-
-PinnedStaging::PinnedStaging(PinnedStaging&& o) noexcept
-    : vt_(o.vt_), ordinal_(o.ordinal_), base_(o.base_), cap_(o.cap_), used_(o.used_) {
-  o.vt_ = nullptr;
-  o.base_ = nullptr;
-}
-
-PinnedStaging& PinnedStaging::operator=(PinnedStaging&& o) noexcept {
-  if (this != &o) {
-    if (base_ != nullptr) vt_->buffer_free(ordinal_, BufferKind::kHostPinned, base_);
-    vt_ = o.vt_;
-    ordinal_ = o.ordinal_;
-    base_ = o.base_;
-    cap_ = o.cap_;
-    used_ = o.used_;
-    o.vt_ = nullptr;
-    o.base_ = nullptr;
-  }
-  return *this;
-}
-
-PinnedStaging::~PinnedStaging() {
-  if (base_ != nullptr) vt_->buffer_free(ordinal_, BufferKind::kHostPinned, base_);
-}
-
-Result<PinnedStaging> PinnedStaging::create(const Device& device,
-                                            std::size_t bytes) noexcept {
-  DeviceEntry e = resolve(device);
-  void* p = nullptr;
-  Status st = e.vt->buffer_alloc(e.local, BufferKind::kHostPinned,
-                                 bytes == 0 ? 1 : bytes, &p);
-  if (!st.ok()) return std::unexpected(std::move(st));
-  PinnedStaging s;
-  s.vt_ = e.vt;
-  s.ordinal_ = e.local;
-  s.base_ = p;
-  s.cap_ = bytes == 0 ? 1 : bytes;
-  s.used_ = 0;
-  return s;
-}
-
-void* PinnedStaging::allocate(std::size_t bytes, std::size_t alignment) noexcept {
-  HYLE_FATAL_ASSERT(base_ != nullptr);
-  // Bump, aligned, from the pinned block (contiguous -> lets commit_to batch).
-  std::uintptr_t cur = reinterpret_cast<std::uintptr_t>(base_) + used_;
-  std::uintptr_t aligned = (cur + alignment - 1) & ~(alignment - 1);
-  std::size_t new_used = (aligned - reinterpret_cast<std::uintptr_t>(base_)) + bytes;
-  if (new_used > cap_) return nullptr;  // full
-  used_ = new_used;
-  return reinterpret_cast<void*>(aligned);
-}
-
-Status PinnedStaging::commit_to(Buffer& dst, std::size_t dst_offset) noexcept {
-  HYLE_FATAL_ASSERT(base_ != nullptr);
-  // One H2D copy of the whole contiguous prepared run = the batched submit.
-  return dst.set(dst_offset, base_, used_);
+  if (size == 0) return Status();
+  return vt_->buffer_clear(native_, offset, value, size);
 }
 
 // ---- DevicePool (compute-02c): VRAM sub-allocator dispatch -------------------

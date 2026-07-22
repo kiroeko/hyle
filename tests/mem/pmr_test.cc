@@ -12,6 +12,37 @@ using hyle::mem::Allocator;
 using hyle::mem::PmrResource;
 using hyle::mem::system_allocator;
 
+namespace {
+struct EqualityState {
+  int frees_a = 0;
+  int frees_b = 0;
+  int reallocs_b = 0;
+};
+
+void* equality_alloc(void*, std::size_t size, std::size_t align) noexcept {
+  return system_allocator().allocate(size, align);
+}
+void equality_free_a(void* state, void* ptr, std::size_t size,
+                     std::size_t align) noexcept {
+  ++static_cast<EqualityState*>(state)->frees_a;
+  system_allocator().deallocate(ptr, size, align);
+}
+void equality_free_b(void* state, void* ptr, std::size_t size,
+                     std::size_t align) noexcept {
+  ++static_cast<EqualityState*>(state)->frees_b;
+  system_allocator().deallocate(ptr, size, align);
+}
+void* equality_realloc(void*, void* ptr, std::size_t old_size,
+                       std::size_t new_size, std::size_t align) noexcept {
+  return system_allocator().reallocate(ptr, old_size, new_size, align);
+}
+void* equality_realloc_b(void* state, void* ptr, std::size_t old_size,
+                         std::size_t new_size, std::size_t align) noexcept {
+  ++static_cast<EqualityState*>(state)->reallocs_b;
+  return system_allocator().reallocate(ptr, old_size, new_size, align);
+}
+}  // namespace
+
 // A pmr container built on a HYLE-backed resource allocates through HYLE.
 TEST(PmrResource, ServesPmrVector) {
   PmrResource res(system_allocator());
@@ -45,6 +76,33 @@ TEST(PmrResource, EqualityFollowsBacking) {
   Allocator other(sys.alloc_fn(), sys.free_fn(), sys.realloc_fn(), &dummy);
   PmrResource c(other);
   EXPECT_FALSE(a.is_equal(c));
+}
+
+TEST(PmrResource, DifferentFreeFunctionIsNotEqual) {
+  EqualityState state;
+  Allocator a(&equality_alloc, &equality_free_a, &equality_realloc, &state);
+  Allocator b(&equality_alloc, &equality_free_b, &equality_realloc, &state);
+  PmrResource ra(a);
+  PmrResource rb(b);
+  EXPECT_FALSE(ra.is_equal(rb));
+}
+
+TEST(PmrResource, DifferentReallocateFunctionIsConservativelyNotEqual) {
+  EqualityState state;
+  Allocator a(&equality_alloc, &equality_free_a, &equality_realloc, &state);
+  Allocator b(&equality_alloc, &equality_free_a, &equality_realloc_b, &state);
+  PmrResource ra(a);
+  PmrResource rb(b);
+  EXPECT_FALSE(ra.is_equal(rb));
+}
+
+TEST(PmrResourceDeathTest, InvalidAllocatorTrapsAtConstruction) {
+  EXPECT_DEATH(
+      {
+        PmrResource resource(Allocator{});
+        (void)resource;
+      },
+      ".*");
 }
 
 TEST(PmrResource, ExposesAllocator) {

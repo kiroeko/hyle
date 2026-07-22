@@ -23,22 +23,18 @@
 // ONLY device-memory + host<->device copy API; compute-01's spine-proof Stream::
 // device_alloc/memcpy_async minimum has been removed in favor of it.
 //
-// WHAT A Buffer IS (and is NOT): a Buffer is "a base pointer + size" you can copy
-// into/out of at an offset. It is NOT a tensor -- no shape, no dtype, no sub-views.
-// Offset slicing is the CALLER's job (kernel launch just needs device_ptr(); the
-// caller computes base+offset itself -- exactly as ggml folds base+offset into
-// tensor->data at alloc time, so the buffer isn't touched at launch). This keeps
-// the buffer an L0 primitive; tensors are L1 (the inference engine's job).
+// WHAT A Buffer IS (and is NOT): a Buffer owns one backend allocation plus its size.
+// `native_handle()` is opaque and only the owning backend may interpret it (CUDA: device
+// address; Vulkan: VkMem* record). `host_data()` is the separate CPU mapping for a
+// host-visible allocation. It is NOT a tensor -- no shape, dtype, or sub-views.
 //
 // THE OFFSET WRITE IS THE POINT (verified against llama.cpp): the KV-cache is one
 // persistent large buffer written repeatedly at per-token row offsets
 // (llama-kv-cache.cpp:1343). set(offset,size)/get(offset,size) are that primitive.
 //
-// L0/L1 BOUNDARY: "stream a buffer bigger than RAM into VRAM in tiles + batch the
-// submits" is an L1 STRATEGY, not this milestone. compute-02 only provides the
-// PRIMITIVES it needs (offset writes + pinned staging + async copy + max_size);
-// ggml/llama.cpp likewise build tiled streaming by looping set_tensor over a pinned
-// ring in the model loader, NOT inside the buffer layer.
+// L0/L1 BOUNDARY: Buffer provides owned allocation, explicit host mapping/coherence,
+// offset copy, and max-size traits. Async staging requires Stream + Event + backpressure;
+// it is not represented by a raw allocator or a commented-out signature.
 
 namespace hyle::compute {
 
@@ -63,8 +59,8 @@ class BufferType {
   // decision to split a >max_size logical buffer into multiple Buffers (ggml
   // multi-buffer). CUDA device is effectively unbounded; some backends cap it.
   HYLE_COMPUTE_API std::size_t max_size() const noexcept;
-  // Is this memory host-dereferenceable (can you read *device_ptr() on the CPU)?
-  // kHostPinned => true; kDevice on a GPU => false. Decides copy dispatch.
+  // Does this kind provide a CPU mapping through Buffer::host_data()?
+  // kHostPinned => true; kDevice on a GPU => false.
   HYLE_COMPUTE_API bool is_host() const noexcept;
 
  private:
@@ -82,18 +78,17 @@ class BufferType {
 // Get a Device's memory factories (free functions, not Device members, so device.h
 // need not depend on buffer.h -- the dispatch layer resolves the Device's backend).
 //   device_buffer_type: device-local memory (VRAM on a GPU; kDevice).
-//   host_buffer_type  : pinned host staging (kHostPinned; cudaMallocHost, pooled).
-// Both are always returned (a GPU-less backend's host_buffer_type is plain RAM).
+//   host_buffer_type  : host-visible backend memory (CUDA page-locked; Vulkan mapped).
+// Both are always returned (a GPU-less backend uses plain RAM for both kinds).
 HYLE_COMPUTE_API BufferType device_buffer_type(const Device& device) noexcept;
 HYLE_COMPUTE_API BufferType host_buffer_type(const Device& device) noexcept;
 
-// One owned block of device (or pinned-host) memory. Move-only (single owner;
-// destructor frees). NO pimpl / NO heap for the handle itself -- the state is
-// {vt, ptr, size, ordinal, kind, is_host} inline, so device_ptr()/set()/get() are
-// one vtable indirect with no extra dereference (same perf discipline as
-// Stream/Event). The base pointer is opaque void* -- for kDevice on a GPU it is a
-// device pointer you must NOT dereference on the host (use set/get); for kHostPinned
-// it is real host RAM.
+// One owned backend allocation. Move-only; destructor frees through the same backend.
+// NO pimpl / heap for the handle itself: native handle and optional CPU mapping are stored
+// separately inline. Never dereference native_handle(); use host_data() only when is_host().
+// IN-FLIGHT CONTRACT: an allocation referenced by launch/launch_batch/replay must remain owned
+// and unchanged until that Stream/Event completes. Destroying or move-assigning over its owning
+// Buffer while GPU work is pending frees storage still referenced by the backend.
 class Buffer {
  public:
   Buffer() noexcept = default;
@@ -109,25 +104,50 @@ class Buffer {
                                                 std::size_t bytes) noexcept;
 
   bool valid() const noexcept { return vt_ != nullptr; }
-  // The base pointer -- what a kernel launch (compute-04) needs. The caller adds its
-  // own offset. For kDevice on a GPU this is NOT host-dereferenceable.
-  void* device_ptr() const noexcept { return ptr_; }
+
+  // Opaque backend-native allocation handle. KernelArgs passes this value back to the
+  // same backend; callers must never dereference or perform pointer arithmetic on it.
+  void* native_handle() const noexcept { return native_; }
+
   std::size_t size() const noexcept { return size_; }
-  bool is_host() const noexcept { return is_host_; }
+  bool is_host() const noexcept { return host_ != nullptr; }
+
+  // Direct CPU mapping for a host-visible buffer. Caller contract: is_host()==true.
+  // After CPU writes call flush_host() before device use; before CPU reads data written
+  // by the device call invalidate_host() after completion. Both are no-ops on coherent
+  // CUDA/host memory but are required for non-coherent Vulkan memory.
+  void* host_data() noexcept {
+    HYLE_FATAL_ASSERT(vt_ != nullptr && host_ != nullptr);
+    return host_;
+  }
+  const void* host_data() const noexcept {
+    HYLE_FATAL_ASSERT(vt_ != nullptr && host_ != nullptr);
+    return host_;
+  }
+  HYLE_COMPUTE_API Status flush_host(std::size_t offset, std::size_t size) noexcept;
+  HYLE_COMPUTE_API Status invalidate_host(std::size_t offset,
+                                          std::size_t size) noexcept;
 
   // ---- synchronous host<->device copy at a byte offset (compute-02 core) -------
   // These return only after the data is in place (the CUDA backend issues an async
   // memcpy on an internal stream then synchronizes -- same "sync semantics" as ggml
   // buffer set_tensor/get_tensor). CONTRACT: offset+size <= size() (caller bug ->
-  // fatal assert). `src`/`dst` are host buffers the caller owns.
+  // fatal assert). `src`/`dst` are host buffers the caller owns. A zero-size operation
+  // is a backend-independent no-op and may use null src/dst.
+  //
+  // These operations do NOT establish ordering with an unrelated async launch Stream.
+  // Before set/get/copy/clear or direct host access, the affected Buffer must have no
+  // incomplete GPU use (await its Event/Stream first). flush/invalidate maintain mapped
+  // cache visibility only; they are not completion primitives.
   HYLE_COMPUTE_API Status set(std::size_t offset, const void* src,
                               std::size_t size) noexcept;  // H2D partial write
   HYLE_COMPUTE_API Status get(std::size_t offset, void* dst,
                               std::size_t size) const noexcept;  // D2H partial read
 
   // Copy `size` bytes from `src` (at src_offset) into this buffer (at dst_offset).
-  // Handles D2D / D2H / H2D (backend picks the cudaMemcpy kind). Both buffers must
-  // belong to the same backend. CONTRACT: offsets+size within both buffers' sizes.
+  // Handles D2D / D2H / H2D and performs the required mapped-cache flush/invalidate
+  // around the synchronous copy. This does not wait for a producer kernel: both buffers
+  // must have no incomplete GPU use. Both buffers must share a backend; ranges must fit.
   HYLE_COMPUTE_API Status copy_from(const Buffer& src, std::size_t dst_offset,
                                     std::size_t src_offset,
                                     std::size_t size) noexcept;
@@ -137,23 +157,13 @@ class Buffer {
   HYLE_COMPUTE_API Status clear(std::size_t offset, std::uint8_t value,
                                 std::size_t size) noexcept;
 
-  // ---- async, stream-bound copy (compute-03; SIGNATURES RESERVED) -------------
-  // The async variants issue the copy on `stream` WITHOUT synchronizing; completion
-  // is observed via an Event (co_await-able once compute-03 wires GPU completion to
-  // the fiber scheduler). Declared here so the interface is fixed ONCE (compute-02
-  // will implement them synchronously = enqueue + sync, and compute-03 makes them
-  // truly async without changing this surface). Commented out until compute-03 to
-  // avoid shipping a half-wired API.
-  //   Status set_async(std::size_t offset, const void* src, std::size_t size, Stream& s);
-  //   Status get_async(std::size_t offset, void* dst, std::size_t size, Stream& s) const;
-
  private:
-  const ComputeBackend* vt_ = nullptr;  // backend that owns ptr_ (null = invalid)
-  void* ptr_ = nullptr;                 // base pointer (device or pinned-host)
+  const ComputeBackend* vt_ = nullptr;  // backend that owns native_ (null = invalid)
+  void* native_ = nullptr;              // opaque backend allocation handle
+  void* host_ = nullptr;                // CPU mapping; null for non-host-visible kind
   std::size_t size_ = 0;
   int ordinal_ = 0;                     // backend-local device (for free)
   BufferKind kind_ = BufferKind::kDevice;
-  bool is_host_ = false;
 };
 
 }  // namespace hyle::compute

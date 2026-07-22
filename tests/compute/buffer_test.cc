@@ -69,7 +69,7 @@ TEST(ComputeBuffer, AllocSetGetRoundTrip) {
   auto buf = Buffer::create(bt, kN * sizeof(std::uint32_t));
   ASSERT_TRUE(buf.has_value()) << buf.error().message();
   EXPECT_TRUE(buf->valid());
-  EXPECT_NE(buf->device_ptr(), nullptr);
+  EXPECT_NE(buf->native_handle(), nullptr);
   EXPECT_EQ(buf->size(), kN * sizeof(std::uint32_t));
 
   std::vector<std::uint32_t> in(kN), out(kN, 0);
@@ -94,6 +94,33 @@ TEST(ComputeBuffer, PinnedHostRoundTrip) {
   EXPECT_EQ(in, out);
 }
 
+TEST(ComputeBuffer, HostMappingIsSeparateAndCoherentByExplicitOperations) {
+  Device d = default_device();
+  constexpr std::size_t kBytes = 8192;
+  auto host = Buffer::create(host_buffer_type(d), kBytes);
+  auto device = Buffer::create(device_buffer_type(d), kBytes);
+  ASSERT_TRUE(host.has_value() && device.has_value());
+  ASSERT_TRUE(host->is_host());
+  ASSERT_NE(host->native_handle(), nullptr);
+
+  auto* mapped = static_cast<std::uint8_t*>(host->host_data());
+  ASSERT_NE(mapped, nullptr);
+  for (std::size_t i = 0; i < kBytes; ++i)
+    mapped[i] = static_cast<std::uint8_t>((i * 17) & 0xFF);
+  ASSERT_TRUE(host->flush_host(0, kBytes).ok());
+  ASSERT_TRUE(device->copy_from(*host, 0, 0, kBytes).ok());
+
+  std::vector<std::uint8_t> out(kBytes, 0);
+  ASSERT_TRUE(device->get(0, out.data(), kBytes).ok());
+  for (std::size_t i = 0; i < kBytes; ++i) EXPECT_EQ(out[i], mapped[i]);
+
+  std::vector<std::uint8_t> replacement(kBytes, 0xA7);
+  ASSERT_TRUE(device->set(0, replacement.data(), kBytes).ok());
+  ASSERT_TRUE(host->copy_from(*device, 0, 0, kBytes).ok());
+  ASSERT_TRUE(host->invalidate_host(0, kBytes).ok());
+  for (std::size_t i = 0; i < kBytes; ++i) EXPECT_EQ(mapped[i], 0xA7);
+}
+
 // ---- clear ------------------------------------------------------------------
 // size=0 allocation: Buffer::create with bytes==0 exercises the bytes==0?1:bytes special
 // case (host_backend.cc:115 -- malloc(0) is impl-defined, so the backend gives 1). The
@@ -104,7 +131,7 @@ TEST(ComputeBuffer, ZeroSizeAlloc) {
   auto buf = Buffer::create(device_buffer_type(d), 0);
   ASSERT_TRUE(buf.has_value()) << buf.error().message();
   EXPECT_TRUE(buf->valid());
-  EXPECT_NE(buf->device_ptr(), nullptr);  // backend rounded 0 -> 1 byte
+  EXPECT_NE(buf->native_handle(), nullptr);  // backend rounded 0 -> 1 byte
   EXPECT_EQ(buf->size(), 0u);             // logical size is still 0
   // A zero-length set/get is in-bounds (offset 0 + size 0 <= size 0) and a no-op.
   EXPECT_TRUE(buf->set(0, nullptr, 0).ok());
@@ -171,10 +198,10 @@ TEST(ComputeBuffer, MoveSemantics) {
   Device d = default_device();
   auto b1 = Buffer::create(device_buffer_type(d), 256);
   ASSERT_TRUE(b1.has_value());
-  void* ptr = b1->device_ptr();
+  void* ptr = b1->native_handle();
   Buffer moved = std::move(*b1);
   EXPECT_TRUE(moved.valid());
-  EXPECT_EQ(moved.device_ptr(), ptr);
+  EXPECT_EQ(moved.native_handle(), ptr);
   EXPECT_FALSE(b1->valid());  // moved-from invalid (won't double-free)
 }
 
@@ -187,10 +214,10 @@ TEST(ComputeBuffer, MoveAssignment) {
   auto b1 = Buffer::create(bt, 256);
   auto b2 = Buffer::create(bt, 128);
   ASSERT_TRUE(b1.has_value() && b2.has_value());
-  void* src_ptr = b1->device_ptr();
+  void* src_ptr = b1->native_handle();
   *b2 = std::move(*b1);        // b2's original 128B block freed, b1's 256B moved in
   EXPECT_TRUE(b2->valid());
-  EXPECT_EQ(b2->device_ptr(), src_ptr);
+  EXPECT_EQ(b2->native_handle(), src_ptr);
   EXPECT_EQ(b2->size(), 256u);  // size transferred too
   EXPECT_FALSE(b1->valid());
   // The moved-in buffer is fully usable (set/get round-trip).
@@ -204,11 +231,11 @@ TEST(ComputeBuffer, SelfMoveAssignment) {
   Device d = default_device();
   auto b = Buffer::create(device_buffer_type(d), 256);
   ASSERT_TRUE(b.has_value());
-  void* ptr = b->device_ptr();
+  void* ptr = b->native_handle();
   Buffer& ref = *b;
   *b = std::move(ref);         // guarded no-op (compute.cc:284) -- block NOT freed
   EXPECT_TRUE(b->valid());
-  EXPECT_EQ(b->device_ptr(), ptr);
+  EXPECT_EQ(b->native_handle(), ptr);
   std::vector<std::uint8_t> in(256, 0x5A), out(256, 0);
   ASSERT_TRUE(b->set(0, in.data(), 256).ok());  // still usable
   ASSERT_TRUE(b->get(0, out.data(), 256).ok());
@@ -254,9 +281,9 @@ TEST(ComputeBuffer, KvCachePattern) {
   }
 }
 
-// ---- staging pattern: pinned host -> device (the H2D upload path) ------------
+// ---- host-visible buffer -> device copy --------------------------------------
 
-TEST(ComputeBuffer, PinnedStagingToDevice) {
+TEST(ComputeBuffer, HostBufferToDevice) {
   bool is_gpu = false;
   Device d = gpu_or_host(&is_gpu);
   constexpr std::size_t kBytes = 64 * 1024;

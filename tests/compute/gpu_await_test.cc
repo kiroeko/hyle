@@ -123,7 +123,7 @@ Task<int> gpu_await_coro(mem::Allocator, int* out_result) {
     if (!launch(*s, *k, cfg, *out, n, iters).ok()) { *out_result = -4; co_return -4; }
   } else {
     // Host kernel reads buffers[0] + scalar n via a raw KernelArgs (matches host_spin).
-    void* bufs[] = {out->device_ptr()};
+    void* bufs[] = {out->native_handle()};
     ScalarField fields[] = {{0, sizeof(int)}};
     KernelArgs ka{bufs, 1, &n, sizeof(int), fields, 1};
     if (!launch(*s, *k, cfg, ka).ok()) { *out_result = -4; co_return -4; }

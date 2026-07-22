@@ -16,7 +16,7 @@
 //   Device   -> VkPhysicalDevice + a single VkDevice (created once, shared)
 //   Stream   -> a VkQueue + its VkCommandPool (submission channel). ONE compute queue
 //               (measured: multi-queue is 0.85x on same-shape compute -- batching wins).
-//   Event    -> a VkFence (its native handle). event_query = vkGetFenceStatus (measured
+//   Event    -> owned VkFence + record state. event_query = vkGetFenceStatus (measured
 //               non-blocking, == cudaEventQuery semantics -> feeds the same GpuPoller).
 //   Buffer   -> VkBuffer + VkDeviceMemory. memory-type picked per kind (ReBAR-aware).
 //   Kernel   -> VkShaderModule + VkPipeline + VkPipelineLayout + VkDescriptorSetLayout.
@@ -152,7 +152,9 @@ struct VkContext {
   uint32_t max_wg_count[3] = {0, 0, 0};   // maxComputeWorkGroupCount x/y/z (#20 clamp guard)
   std::size_t buf_alignment = 16;         // minStorageBufferOffsetAlignment (>=16); device const
   std::size_t buf_max_size = 0;           // maxStorageBufferRange; device const
+  VkDeviceSize non_coherent_atom_size = 1;  // mapped flush/invalidate range granularity
   float timestamp_period = 0.0f;          // ns per timestamp tick (0 = timestamps unsupported)
+  uint32_t timestamp_valid_bits = 0;       // queue-family timestamp counter width
   char dev_name[256] = "vulkan";
 
   VkContext() noexcept { init(); }
@@ -267,9 +269,18 @@ struct VkContext {
     std::size_t a = props.limits.minStorageBufferOffsetAlignment;
     buf_alignment = a < 16 ? 16 : a;
     buf_max_size = props.limits.maxStorageBufferRange;
-    // GPU timing (compute-06b #25): ns per timestamp tick. 0 (or timestampComputeAndGraphics
-    // false) => timestamps unsupported -> event_create_timing returns Unimplemented.
-    if (props.limits.timestampComputeAndGraphics)
+    non_coherent_atom_size = props.limits.nonCoherentAtomSize;
+    // Timestamp support is a QUEUE-FAMILY property. timestampComputeAndGraphics only says
+    // whether compute/graphics pipeline stages may be named; TOP/BOTTOM timestamps remain
+    // usable when the selected queue family exposes timestampValidBits > 0. HYLE records at
+    // BOTTOM_OF_PIPE, so key capability off the queue family rather than rejecting those
+    // devices incorrectly.
+    uint32_t nqf = 0;
+    vkGetPhysicalDeviceQueueFamilyProperties(phys, &nqf, nullptr);
+    std::vector<VkQueueFamilyProperties> qfs(nqf);
+    if (nqf) vkGetPhysicalDeviceQueueFamilyProperties(phys, &nqf, qfs.data());
+    if (compute_qfi < nqf) timestamp_valid_bits = qfs[compute_qfi].timestampValidBits;
+    if (timestamp_valid_bits != 0)
       timestamp_period = props.limits.timestampPeriod;
     ok = true;
   }
@@ -385,35 +396,77 @@ Status vk_stream_create(int, void** out_native) noexcept {
   *out_native = s;
   return Status();
 }
+
+// Fence a precise queue position. A zero-command-buffer submit is sufficient: its fence is
+// signalled only after all submissions queued before it complete. Unlike vkQueueWaitIdle this
+// does not wait for work other threads enqueue after the marker while we are blocked.
+Status wait_queue_position() noexcept {
+  VkDevice dev = ctx().device;
+  VkFenceCreateInfo fci{VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
+  VkFence fence = VK_NULL_HANDLE;
+  VkResult r = vkCreateFence(dev, &fci, nullptr, &fence);
+  if (r != VK_SUCCESS) return from_vk(r, "vkCreateFence(stream sync)");
+  VkSubmitInfo si{VK_STRUCTURE_TYPE_SUBMIT_INFO};
+  {
+    std::lock_guard<std::mutex> lk(ctx().submit_mtx);
+    r = vkQueueSubmit(ctx().queue, 1, &si, fence);
+  }
+  if (r == VK_SUCCESS)
+    r = vkWaitForFences(dev, 1, &fence, VK_TRUE, UINT64_MAX);
+  vkDestroyFence(dev, fence, nullptr);
+  return from_vk(r, "vk stream sync marker");
+}
+
 void vk_stream_destroy(void* native) noexcept {
   auto* s = static_cast<VkStream*>(native);
   if (s == nullptr) return;
   retire(s, /*force=*/true);  // wait out + free all stream-owned in-flight submissions
-  // Also drain any untracked marker submits (event_record cbs) still executing, so
-  // vkDestroyCommandPool doesn't free a command buffer that's still in use by the GPU.
-  { std::lock_guard<std::mutex> lk(ctx().submit_mtx); vkQueueWaitIdle(ctx().queue); }
+  // Also drain untracked Event marker command buffers before destroying their pool.
+  if (!wait_queue_position().ok()) {
+    // Destructors cannot report allocation/device errors. Fall back to the broader wait so
+    // the command pool is never destroyed while a marker command buffer may still execute.
+    std::lock_guard<std::mutex> lk(ctx().submit_mtx);
+    (void)vkQueueWaitIdle(ctx().queue);
+  }
   if (s->pool != VK_NULL_HANDLE) vkDestroyCommandPool(ctx().device, s->pool, nullptr);
   delete s;
 }
 Status vk_stream_sync(void* native) noexcept {
-  // Block until ALL this stream's submitted work has completed, then reclaim resources.
+  // Retiring launch fences alone is insufficient: a timing/completion marker can be queued
+  // after the last tracked launch. Fence the current queue position so sync really covers all
+  // work submitted before the call, including those marker submits.
   auto* s = static_cast<VkStream*>(native);
   retire(s, /*force=*/true);
-  return Status();
+  return wait_queue_position();
 }
 
-// ---- Event = VkFence (native handle) -----------------------------------------
+// ---- Event = owned VkFence + record state ------------------------------------
 // event_query = vkGetFenceStatus (measured non-blocking, == cudaEventQuery -> GpuPoller).
+struct VkEvent {
+  VkFence fence = VK_NULL_HANDLE;
+  bool recorded = false;
+};
 Status vk_event_create(int, void** out_native) noexcept {
+  auto* event = new (std::nothrow) VkEvent{};
+  if (event == nullptr) return Status::ResourceExhausted("vk event alloc");
   VkFenceCreateInfo ci{VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
-  VkFence f = VK_NULL_HANDLE;
-  VkResult r = vkCreateFence(ctx().device, &ci, nullptr, &f);
-  if (r != VK_SUCCESS) return from_vk(r, "vkCreateFence");
-  *out_native = f;
+  VkResult r = vkCreateFence(ctx().device, &ci, nullptr, &event->fence);
+  if (r != VK_SUCCESS) {
+    delete event;
+    return from_vk(r, "vkCreateFence");
+  }
+  *out_native = event;
   return Status();
 }
 void vk_event_destroy(void* native) noexcept {
-  if (native != VK_NULL_HANDLE) vkDestroyFence(ctx().device, static_cast<VkFence>(native), nullptr);
+  auto* event = static_cast<VkEvent*>(native);
+  if (event == nullptr) return;
+  // RAII destruction must not destroy a fence still referenced by a queue submission.
+  if (event->recorded)
+    vkWaitForFences(ctx().device, 1, &event->fence, VK_TRUE, UINT64_MAX);
+  if (event->fence != VK_NULL_HANDLE)
+    vkDestroyFence(ctx().device, event->fence, nullptr);
+  delete event;
 }
 // Record `event` on `stream`: the Vulkan analog of cudaEventRecord ("mark THIS point in
 // the stream"). Submits an EMPTY command buffer signalling the event's fence. Because all
@@ -432,10 +485,14 @@ void vk_event_destroy(void* native) noexcept {
 // for correctness.
 void vk_event_record(void* stream_native, void* event_native) noexcept {
   auto* s = static_cast<VkStream*>(stream_native);
-  VkFence ev = static_cast<VkFence>(event_native);
+  auto* event = static_cast<VkEvent*>(event_native);
   VkDevice dev = ctx().device;
-  vkResetFences(dev, 1, &ev);
-  // Build the marker command buffer. If ANY step fails we must STILL signal `ev` (we
+  // Re-recording a pending Vulkan fence is illegal. Match reusable Event semantics by
+  // completing the previous record before resetting the native fence.
+  if (event->recorded)
+    vkWaitForFences(dev, 1, &event->fence, VK_TRUE, UINT64_MAX);
+  vkResetFences(dev, 1, &event->fence);
+  // Build the marker command buffer. If ANY step fails we must STILL signal the fence (we
   // already reset it above) -- otherwise the GpuPoller polls it forever and the awaiting
   // fiber hangs (gpu_await.h contract: a recorded event ALWAYS completes). So on failure
   // we fall through to a 0-command-buffer submit that just signals the fence: the fiber
@@ -447,40 +504,51 @@ void vk_event_record(void* stream_native, void* event_native) noexcept {
   if (have_cb) {
     VkCommandBufferBeginInfo bg{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
     bg.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-    vkBeginCommandBuffer(cb, &bg);
-    vkEndCommandBuffer(cb);  // empty: just a fence marker after prior stream work
+    have_cb = vkBeginCommandBuffer(cb, &bg) == VK_SUCCESS &&
+              vkEndCommandBuffer(cb) == VK_SUCCESS;
+    if (!have_cb) {
+      vkFreeCommandBuffers(dev, s->pool, 1, &cb);
+      cb = VK_NULL_HANDLE;
+    }
   }
   VkSubmitInfo si{VK_STRUCTURE_TYPE_SUBMIT_INFO};
   si.commandBufferCount = have_cb ? 1u : 0u;
   si.pCommandBuffers = have_cb ? &cb : nullptr;
   std::lock_guard<std::mutex> lk(ctx().submit_mtx);
-  // Even the empty (have_cb==false) submit correctly signals `ev` AFTER all prior stream
+  // Even the empty (have_cb==false) submit correctly signals the fence AFTER prior stream
   // launches: those were separate submits already queued, and this marker executes after
   // them in VkQueue order -- so readback still sees completed data. A submit failure here
   // is device-lost class (fence can't signal); nothing short of that leaves ev unsignalled.
-  vkQueueSubmit(ctx().queue, 1, &si, ev);
+  event->recorded =
+      vkQueueSubmit(ctx().queue, 1, &si, event->fence) == VK_SUCCESS;
   // cb NOT tracked in inflight (see LIFETIME note) -- the command pool reclaims it.
 }
 EventStatus vk_event_query(void* event_native) noexcept {
-  VkResult r = vkGetFenceStatus(ctx().device, static_cast<VkFence>(event_native));
+  auto* event = static_cast<VkEvent*>(event_native);
+  HYLE_FATAL_ASSERT(event->recorded);
+  VkResult r = vkGetFenceStatus(ctx().device, event->fence);
   return r == VK_SUCCESS ? EventStatus::kReady : EventStatus::kNotReady;
 }
 void vk_event_sync(void* event_native) noexcept {
-  VkFence f = static_cast<VkFence>(event_native);
-  vkWaitForFences(ctx().device, 1, &f, VK_TRUE, UINT64_MAX);
+  auto* event = static_cast<VkEvent*>(event_native);
+  HYLE_FATAL_ASSERT(event->recorded);
+  vkWaitForFences(ctx().device, 1, &event->fence, VK_TRUE, UINT64_MAX);
 }
 
 // ---- GPU timing (compute-06b #25): timestamp query + fence ---------------------
 // A timing event = a VkFence (completion, like a plain event) + a 1-slot timestamp query
 // pool. record_timing submits a marker cb that resets the pool + writes a timestamp at the
-// top of pipe (after all prior stream work, by VkQueue submission order = cudaEventRecord
-// semantics), signalling the fence. elapsed_ns reads two completed timing events' ticks and
+// bottom of pipe. BOTTOM is essential: a later submit's TOP stage may overlap earlier compute,
+// so TOP does not represent "all work before this event completed". elapsed_ns reads two
+// completed timing events' ticks and
 // scales the difference by the device timestampPeriod. The native_ handle is a heap
-// VkTimingEvent* (NOT a bare VkFence like the plain event -- these never mix: the public
-// layer routes them by Event::timing_).
+// VkTimingEvent* (distinct from the plain VkEvent layout; the public layer routes them by
+// Event::timing_).
 struct VkTimingEvent {
   VkFence fence = VK_NULL_HANDLE;
   VkQueryPool pool = VK_NULL_HANDLE;
+  bool recorded = false;
+  bool timestamp_written = false;
 };
 Status vk_event_create_timing(int, void** out_native) noexcept {
   if (ctx().timestamp_period == 0.0f)
@@ -502,6 +570,8 @@ Status vk_event_create_timing(int, void** out_native) noexcept {
 void vk_event_destroy_timing(void* native) noexcept {
   auto* t = static_cast<VkTimingEvent*>(native);
   if (t == nullptr) return;
+  if (t->recorded)
+    vkWaitForFences(ctx().device, 1, &t->fence, VK_TRUE, UINT64_MAX);
   if (t->pool != VK_NULL_HANDLE) vkDestroyQueryPool(ctx().device, t->pool, nullptr);
   if (t->fence != VK_NULL_HANDLE) vkDestroyFence(ctx().device, t->fence, nullptr);
   delete t;
@@ -510,6 +580,8 @@ void vk_event_record_timing(void* stream_native, void* event_native) noexcept {
   auto* s = static_cast<VkStream*>(stream_native);
   auto* t = static_cast<VkTimingEvent*>(event_native);
   VkDevice dev = ctx().device;
+  if (t->recorded)
+    vkWaitForFences(dev, 1, &t->fence, VK_TRUE, UINT64_MAX);
   vkResetFences(dev, 1, &t->fence);
   VkCommandBufferAllocateInfo cbai{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
   cbai.commandPool = s->pool; cbai.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY; cbai.commandBufferCount = 1;
@@ -518,30 +590,42 @@ void vk_event_record_timing(void* stream_native, void* event_native) noexcept {
   if (have_cb) {
     VkCommandBufferBeginInfo bg{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
     bg.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-    vkBeginCommandBuffer(cb, &bg);
-    vkCmdResetQueryPool(cb, t->pool, 0, 1);  // must reset before write
-    vkCmdWriteTimestamp(cb, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, t->pool, 0);
-    vkEndCommandBuffer(cb);
+    have_cb = vkBeginCommandBuffer(cb, &bg) == VK_SUCCESS;
+    if (have_cb) {
+      vkCmdResetQueryPool(cb, t->pool, 0, 1);  // must reset before write
+      vkCmdWriteTimestamp(cb, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, t->pool, 0);
+      have_cb = vkEndCommandBuffer(cb) == VK_SUCCESS;
+    }
+    if (!have_cb) {
+      vkFreeCommandBuffers(dev, s->pool, 1, &cb);
+      cb = VK_NULL_HANDLE;
+    }
   }
   VkSubmitInfo si{VK_STRUCTURE_TYPE_SUBMIT_INFO};
   si.commandBufferCount = have_cb ? 1u : 0u;
   si.pCommandBuffers = have_cb ? &cb : nullptr;
   std::lock_guard<std::mutex> lk(ctx().submit_mtx);
-  vkQueueSubmit(ctx().queue, 1, &si, t->fence);  // marker cb reclaimed by command pool (see plain event LIFETIME)
+  t->timestamp_written = have_cb;
+  t->recorded = vkQueueSubmit(ctx().queue, 1, &si, t->fence) == VK_SUCCESS;
+  // marker cb reclaimed by command pool (see plain event LIFETIME)
 }
 EventStatus vk_event_query_timing(void* event_native) noexcept {
   auto* t = static_cast<VkTimingEvent*>(event_native);
+  HYLE_FATAL_ASSERT(t->recorded);
   VkResult r = vkGetFenceStatus(ctx().device, t->fence);
   return r == VK_SUCCESS ? EventStatus::kReady : EventStatus::kNotReady;
 }
 void vk_event_sync_timing(void* event_native) noexcept {
   auto* t = static_cast<VkTimingEvent*>(event_native);
+  HYLE_FATAL_ASSERT(t->recorded);
   vkWaitForFences(ctx().device, 1, &t->fence, VK_TRUE, UINT64_MAX);
 }
 Status vk_event_elapsed_ns(void* start_native, void* stop_native,
                            std::uint64_t* out_ns) noexcept {
   auto* a = static_cast<VkTimingEvent*>(start_native);
   auto* b = static_cast<VkTimingEvent*>(stop_native);
+  if (!a->timestamp_written || !b->timestamp_written)
+    return Status::ResourceExhausted("vk timing marker command buffer unavailable");
   VkDevice dev = ctx().device;
   std::uint64_t t0 = 0, t1 = 0;
   VkResult r = vkGetQueryPoolResults(dev, a->pool, 0, 1, sizeof(t0), &t0, sizeof(t0),
@@ -550,7 +634,12 @@ Status vk_event_elapsed_ns(void* start_native, void* stop_native,
   r = vkGetQueryPoolResults(dev, b->pool, 0, 1, sizeof(t1), &t1, sizeof(t1),
                             VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
   if (r != VK_SUCCESS) return from_vk(r, "vkGetQueryPoolResults(stop)");
-  std::uint64_t ticks = t1 >= t0 ? t1 - t0 : 0;  // clamp (guards against wrap / reversed)
+  // Vulkan exposes only timestampValidBits low bits. Modular subtraction handles a single
+  // counter wrap; the API contract requires ordered events on one stream, so a reversed pair
+  // is caller misuse rather than something to silently clamp to zero.
+  const uint32_t bits = ctx().timestamp_valid_bits;
+  const std::uint64_t mask = bits >= 64 ? UINT64_MAX : ((std::uint64_t{1} << bits) - 1);
+  const std::uint64_t ticks = (t1 - t0) & mask;
   *out_ns = static_cast<std::uint64_t>(static_cast<double>(ticks) * ctx().timestamp_period);
   return Status();
 }
@@ -563,14 +652,16 @@ struct VkMem {
   VkBuffer buf = VK_NULL_HANDLE;
   VkDeviceMemory mem = VK_NULL_HANDLE;
   void* mapped = nullptr;      // persistent map if PRIMARY is host-visible (ReBAR, #9), else null
-  std::size_t size = 0;
-  // Staging double-buffer (kompute #8/#13): built ONLY for a device-local buffer that is
-  // NOT host-mappable (no ReBAR). host<->device then goes host-memcpy<->staging + a GPU
-  // copyBuffer staging<->primary. `mapped != nullptr` (ReBAR) means NO staging is needed
-  // (direct map). On the host-visible path both are null and `mapped` is the primary map.
+  std::size_t size = 0;         // logical Buffer size
+  VkDeviceSize allocation_size = 0;  // VkDeviceMemory size (may exceed logical size)
+  // Lazy synchronous-transfer staging for a device-local buffer that is NOT host-mappable
+  // (no ReBAR). It is created on first host transfer and grows to the largest transfer, not
+  // eagerly to the full device-buffer size. A future asynchronous upload path is a distinct
+  // Event-owned StagingRing; this buffer never pretends to provide async overlap.
   VkBuffer staging_buf = VK_NULL_HANDLE;
   VkDeviceMemory staging_mem = VK_NULL_HANDLE;
   void* staging_mapped = nullptr;  // persistent map of the staging buffer (host-visible+coherent)
+  VkDeviceSize staging_capacity = 0;
   // #6 HOST_CACHED: the mapped PRIMARY (kHostPinned) may be HOST_CACHED for fast CPU readback.
   // HOST_CACHED memory is not guaranteed HOST_COHERENT, so a non-coherent map needs an explicit
   // flush after a host write (#10) and invalidate before a host read. false only for that case;
@@ -608,18 +699,27 @@ Status make_mem(std::size_t bytes, bool host_visible, VkMem** out) noexcept {
     mt = find_mem_type(mr.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
                        VK_MEMORY_PROPERTY_HOST_CACHED_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 #if defined(HYLE_TESTING)
-    // TEST-ONLY: force the non-coherent HOST_CACHED path (CACHED without COHERENT) so the
-    // flush/invalidate code (#10) is covered on a box whose HOST_CACHED type also happens to be
-    // COHERENT (RTX 4070). Absent from the shipped lib (HYLE_TESTING only).
+    // TEST-ONLY: scan every compatible type instead of asking find_mem_type() for the first
+    // match (which may be coherent while a later non-coherent type exists). Prefer cached,
+    // then accept any non-coherent host-visible type so the visibility path is exercised
+    // whenever the physical device can provide it. Absent from the shipped library.
     if (std::getenv("HYLE_VK_FORCE_NONCOHERENT")) {
-      uint32_t nc = find_mem_type(mr.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                                  VK_MEMORY_PROPERTY_HOST_CACHED_BIT);
-      // Only override if that type is genuinely non-coherent (else the force is a no-op).
-      if (nc != UINT32_MAX) {
-        VkPhysicalDeviceMemoryProperties mp;
-        vkGetPhysicalDeviceMemoryProperties(ctx().phys, &mp);
-        if (!(mp.memoryTypes[nc].propertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) mt = nc;
-      }
+      VkPhysicalDeviceMemoryProperties mp;
+      vkGetPhysicalDeviceMemoryProperties(ctx().phys, &mp);
+      auto find_noncoherent = [&](VkMemoryPropertyFlags want) {
+        for (uint32_t i = 0; i < mp.memoryTypeCount; ++i) {
+          const VkMemoryPropertyFlags flags = mp.memoryTypes[i].propertyFlags;
+          if ((mr.memoryTypeBits & (1u << i)) && (flags & want) == want &&
+              !(flags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT))
+            return i;
+        }
+        return UINT32_MAX;
+      };
+      uint32_t nc = find_noncoherent(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                                     VK_MEMORY_PROPERTY_HOST_CACHED_BIT);
+      if (nc == UINT32_MAX)
+        nc = find_noncoherent(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+      if (nc != UINT32_MAX) mt = nc;
     }
 #endif
     if (mt == UINT32_MAX)  // no cached type: try cached-non-coherent, then plain coherent
@@ -661,6 +761,7 @@ Status make_mem(std::size_t bytes, bool host_visible, VkMem** out) noexcept {
   VkMemoryAllocateInfo ai{VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
   ai.allocationSize = mr.size;
   ai.memoryTypeIndex = mt;
+  m->allocation_size = ai.allocationSize;
   r = vkAllocateMemory(ctx().device, &ai, nullptr, &m->mem);
   if (r != VK_SUCCESS) { vkDestroyBuffer(ctx().device, m->buf, nullptr); delete m;
                          return from_vk(r, "vkAllocateMemory"); }
@@ -674,32 +775,6 @@ Status make_mem(std::size_t bytes, bool host_visible, VkMem** out) noexcept {
     if (r != VK_SUCCESS) { free_mem(m); return from_vk(r, "vkMapMemory"); }
   }
 
-  // Staging double-buffer (kompute #8): a DEVICE-LOCAL buffer with NO ReBAR (primary not
-  // host-mappable) needs a host-visible+coherent staging buffer so host<->device can go
-  // memcpy<->staging + a GPU copyBuffer. Only for the non-mapped device case: host_visible
-  // buffers and ReBAR device buffers map directly (mapped != null) and skip this.
-  if (!will_map) {
-    VkBufferCreateInfo sbi{VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
-    sbi.size = bi.size;
-    sbi.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    sbi.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    r = vkCreateBuffer(ctx().device, &sbi, nullptr, &m->staging_buf);
-    if (r != VK_SUCCESS) { free_mem(m); return from_vk(r, "vkCreateBuffer(staging)"); }
-    VkMemoryRequirements smr;
-    vkGetBufferMemoryRequirements(ctx().device, m->staging_buf, &smr);
-    uint32_t smt = find_mem_type(smr.memoryTypeBits,
-                                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-    if (smt == UINT32_MAX) { free_mem(m); return Status::ResourceExhausted("vk: no host-visible staging memory type"); }
-    VkMemoryAllocateInfo sai{VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
-    sai.allocationSize = smr.size;
-    sai.memoryTypeIndex = smt;
-    r = vkAllocateMemory(ctx().device, &sai, nullptr, &m->staging_mem);
-    if (r != VK_SUCCESS) { free_mem(m); return from_vk(r, "vkAllocateMemory(staging)"); }
-    r = vkBindBufferMemory(ctx().device, m->staging_buf, m->staging_mem, 0);
-    if (r != VK_SUCCESS) { free_mem(m); return from_vk(r, "vkBindBufferMemory(staging)"); }
-    r = vkMapMemory(ctx().device, m->staging_mem, 0, VK_WHOLE_SIZE, 0, &m->staging_mapped);  // persistent (#9)
-    if (r != VK_SUCCESS) { free_mem(m); return from_vk(r, "vkMapMemory(staging)"); }
-  }
   *out = m;
   return Status();
 }
@@ -713,6 +788,56 @@ void free_mem(VkMem* m) noexcept {
   if (m->buf != VK_NULL_HANDLE) vkDestroyBuffer(ctx().device, m->buf, nullptr);
   if (m->mem != VK_NULL_HANDLE) vkFreeMemory(ctx().device, m->mem, nullptr);
   delete m;
+}
+
+// Ensure a coherent, persistently-mapped staging slice for one synchronous transfer.
+// Build the replacement completely before dropping the old slice so OOM leaves the Buffer
+// usable with its previous capacity. All callers wait for their copy before returning, hence
+// replacement cannot race an in-flight transfer under Buffer's single-owner contract.
+Status ensure_staging(VkMem* m, VkDeviceSize bytes) noexcept {
+  if (bytes == 0 || m->staging_capacity >= bytes) return Status();
+  VkDevice dev = ctx().device;
+  VkBuffer buffer = VK_NULL_HANDLE;
+  VkDeviceMemory memory = VK_NULL_HANDLE;
+  void* mapped = nullptr;
+
+  VkBufferCreateInfo bi{VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
+  bi.size = bytes;
+  bi.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+  bi.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+  VkResult r = vkCreateBuffer(dev, &bi, nullptr, &buffer);
+  if (r != VK_SUCCESS) return from_vk(r, "vkCreateBuffer(staging)");
+
+  VkMemoryRequirements mr;
+  vkGetBufferMemoryRequirements(dev, buffer, &mr);
+  const uint32_t mt = find_mem_type(
+      mr.memoryTypeBits,
+      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+  if (mt == UINT32_MAX) {
+    vkDestroyBuffer(dev, buffer, nullptr);
+    return Status::ResourceExhausted("vk: no host-visible staging memory type");
+  }
+  VkMemoryAllocateInfo ai{VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
+  ai.allocationSize = mr.size;
+  ai.memoryTypeIndex = mt;
+  r = vkAllocateMemory(dev, &ai, nullptr, &memory);
+  if (r == VK_SUCCESS) r = vkBindBufferMemory(dev, buffer, memory, 0);
+  if (r == VK_SUCCESS) r = vkMapMemory(dev, memory, 0, VK_WHOLE_SIZE, 0, &mapped);
+  if (r != VK_SUCCESS) {
+    if (mapped != nullptr) vkUnmapMemory(dev, memory);
+    if (memory != VK_NULL_HANDLE) vkFreeMemory(dev, memory, nullptr);
+    vkDestroyBuffer(dev, buffer, nullptr);
+    return from_vk(r, "vk staging allocation");
+  }
+
+  if (m->staging_mapped != nullptr) vkUnmapMemory(dev, m->staging_mem);
+  if (m->staging_buf != VK_NULL_HANDLE) vkDestroyBuffer(dev, m->staging_buf, nullptr);
+  if (m->staging_mem != VK_NULL_HANDLE) vkFreeMemory(dev, m->staging_mem, nullptr);
+  m->staging_buf = buffer;
+  m->staging_mem = memory;
+  m->staging_mapped = mapped;
+  m->staging_capacity = bytes;
+  return Status();
 }
 
 // One-shot SYNCHRONOUS transfer: allocate a transient command buffer, let `rec` record
@@ -761,18 +886,21 @@ Status staged_submit(Rec&& rec) noexcept {
 // shaderWrite->transferRead before, transferWrite->hostRead after. For H2D the pre-barrier
 // isn't needed (host write visibility comes from queue submit) but a transferWrite->
 // shaderRead after makes the primary readable by a later kernel.
-void record_copy(VkCommandBuffer cb, VkBuffer from, VkBuffer to, std::size_t bytes,
-                 bool d2h) noexcept {
+void record_copy(VkCommandBuffer cb, VkBuffer from, VkBuffer to,
+                 std::size_t from_offset, std::size_t to_offset,
+                 std::size_t bytes, bool d2h) noexcept {
   auto barrier = [&](VkAccessFlags src, VkAccessFlags dst, VkPipelineStageFlags ss,
                      VkPipelineStageFlags ds) {
     VkMemoryBarrier mb{VK_STRUCTURE_TYPE_MEMORY_BARRIER};
     mb.srcAccessMask = src; mb.dstAccessMask = dst;
     vkCmdPipelineBarrier(cb, ss, ds, 0, 1, &mb, 0, nullptr, 0, nullptr);
   };
-  if (d2h)  // primary written by a prior compute shader -> make it transfer-readable
-    barrier(VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_TRANSFER_READ_BIT,
-            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
-  VkBufferCopy region{0, 0, bytes};
+  if (d2h)  // prior shader/transfer write -> make the primary transfer-readable
+    barrier(VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT,
+            VK_ACCESS_TRANSFER_READ_BIT,
+            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_TRANSFER_BIT,
+            VK_PIPELINE_STAGE_TRANSFER_BIT);
+  VkBufferCopy region{from_offset, to_offset, bytes};
   vkCmdCopyBuffer(cb, from, to, 1, &region);
   if (d2h)  // staging written by the copy -> make it host-readable
     barrier(VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_HOST_READ_BIT,
@@ -784,20 +912,43 @@ void record_copy(VkCommandBuffer cb, VkBuffer from, VkBuffer to, std::size_t byt
 
 // #6/#10 non-coherent HOST_CACHED: flush after a host WRITE (make it visible to the GPU) /
 // invalidate before a host READ (pull the GPU's writes into the CPU cache). No-ops when the
-// memory is coherent (the common case: ReBAR, staging, and CACHED|COHERENT types). Flushing
-// the WHOLE range (offset 0, VK_WHOLE_SIZE) lets the driver handle nonCoherentAtomSize
-// alignment -- simpler + correct vs hand-aligning a sub-range.
-void flush_if_needed(const VkMem* m) noexcept {
-  if (m->coherent) return;
-  VkMappedMemoryRange r{VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE};
-  r.memory = m->mem; r.offset = 0; r.size = VK_WHOLE_SIZE;
-  vkFlushMappedMemoryRanges(ctx().device, 1, &r);
+// memory is coherent (the common case: ReBAR, staging, and CACHED|COHERENT types). Vulkan
+// requires offset alignment to nonCoherentAtomSize and either an atom-multiple size or a range
+// ending at the allocation boundary, so expand only the requested logical sub-range.
+VkMappedMemoryRange mapped_range(const VkMem* m, std::size_t offset,
+                                 std::size_t size) noexcept {
+  const VkDeviceSize atom = ctx().non_coherent_atom_size;
+  const VkDeviceSize begin = static_cast<VkDeviceSize>(offset) & ~(atom - 1);
+  const VkDeviceSize end = static_cast<VkDeviceSize>(offset) + size;
+  VkDeviceSize aligned_end = end;
+  const VkDeviceSize remainder = end & (atom - 1);
+  if (remainder != 0) {
+    const VkDeviceSize padding = atom - remainder;
+    aligned_end = padding > m->allocation_size - end
+                      ? m->allocation_size
+                      : end + padding;
+  }
+  if (aligned_end > m->allocation_size) aligned_end = m->allocation_size;
+  VkMappedMemoryRange range{VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE};
+  range.memory = m->mem;
+  range.offset = begin;
+  range.size = aligned_end - begin;
+  return range;
 }
-void invalidate_if_needed(const VkMem* m) noexcept {
-  if (m->coherent) return;
-  VkMappedMemoryRange r{VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE};
-  r.memory = m->mem; r.offset = 0; r.size = VK_WHOLE_SIZE;
-  vkInvalidateMappedMemoryRanges(ctx().device, 1, &r);
+
+Status flush_if_needed(const VkMem* m, std::size_t offset,
+                       std::size_t size) noexcept {
+  if (m->coherent || size == 0) return Status();
+  VkMappedMemoryRange range = mapped_range(m, offset, size);
+  return from_vk(vkFlushMappedMemoryRanges(ctx().device, 1, &range),
+                 "vkFlushMappedMemoryRanges");
+}
+Status invalidate_if_needed(const VkMem* m, std::size_t offset,
+                            std::size_t size) noexcept {
+  if (m->coherent || size == 0) return Status();
+  VkMappedMemoryRange range = mapped_range(m, offset, size);
+  return from_vk(vkInvalidateMappedMemoryRanges(ctx().device, 1, &range),
+                 "vkInvalidateMappedMemoryRanges");
 }
 
 // ---- buffer traits + alloc (compute-02) --------------------------------------
@@ -805,20 +956,36 @@ std::size_t vk_buffer_alignment(BufferKind) noexcept { return ctx().buf_alignmen
 std::size_t vk_buffer_max_size(int, BufferKind) noexcept { return ctx().buf_max_size; }
 bool vk_buffer_is_host(BufferKind kind) noexcept { return kind == BufferKind::kHostPinned; }
 
-Status vk_buffer_alloc(int, BufferKind kind, std::size_t bytes, void** out_ptr) noexcept {
+Status vk_buffer_alloc(int, BufferKind kind, std::size_t bytes,
+                       void** out_native, void** out_host) noexcept {
   VkMem* m = nullptr;
   Status s = make_mem(bytes, /*host_visible=*/kind == BufferKind::kHostPinned, &m);
   if (!s.ok()) return s;
-  *out_ptr = m;
+  *out_native = m;
+  *out_host = kind == BufferKind::kHostPinned ? m->mapped : nullptr;
+  HYLE_FATAL_ASSERT(kind != BufferKind::kHostPinned || *out_host != nullptr);
   return Status();
 }
 void vk_buffer_free(int, BufferKind, void* ptr) noexcept { free_mem(static_cast<VkMem*>(ptr)); }
+Status vk_buffer_flush_host(void* native, std::size_t offset,
+                            std::size_t size) noexcept {
+  auto* m = static_cast<VkMem*>(native);
+  HYLE_FATAL_ASSERT(m != nullptr && m->mapped != nullptr);
+  return flush_if_needed(m, offset, size);
+}
+Status vk_buffer_invalidate_host(void* native, std::size_t offset,
+                                 std::size_t size) noexcept {
+  auto* m = static_cast<VkMem*>(native);
+  HYLE_FATAL_ASSERT(m != nullptr && m->mapped != nullptr);
+  return invalidate_if_needed(m, offset, size);
+}
 
 // set/get/copy/clear: SYNCHRONOUS host<->device at a byte offset (compute-02 contract:
 // data in place on return). TWO paths per the memory class:
 //   - MAPPED primary (host-pinned, or ReBAR device): direct memcpy into the persistent
 //     map (checklist #9). Zero GPU work -- the fast path on ReBAR hardware (RTX 4070).
-//   - NON-MAPPED device (plain DEVICE_LOCAL, no ReBAR): go through the staging buffer
+//   - NON-MAPPED device (plain DEVICE_LOCAL, no ReBAR): lazily grow a transfer-sized staging
+//     slice and reuse it; do not reserve one full host allocation per device buffer.
 //     (kompute #8/#13): memcpy host<->staging map, then a GPU copyBuffer staging<->primary
 //     via staged_submit (one-shot cb + wait). This is what makes the Vulkan backend work
 //     on ordinary discrete GPUs / iGPUs, not just ReBAR cards.
@@ -827,13 +994,14 @@ Status vk_buffer_set(void* dst_base, std::size_t offset, const void* src,
   auto* m = static_cast<VkMem*>(dst_base);
   if (m->mapped != nullptr) {  // ReBAR / host-visible: direct write
     std::memcpy(static_cast<std::byte*>(m->mapped) + offset, src, size);
-    flush_if_needed(m);  // #6/#10: non-coherent HOST_CACHED -> make the write GPU-visible
-    return Status();
+    return flush_if_needed(m, offset, size);  // non-coherent HOST_CACHED -> publish the write
   }
   // Staging H2D: host -> staging map, then GPU copy staging -> primary (at `offset`).
-  std::memcpy(static_cast<std::byte*>(m->staging_mapped) + offset, src, size);
+  Status ready = ensure_staging(m, size);
+  if (!ready.ok()) return ready;
+  std::memcpy(m->staging_mapped, src, size);
   return staged_submit([&](VkCommandBuffer cb) {
-    VkBufferCopy region{offset, offset, size};  // staging[offset] -> primary[offset]
+    VkBufferCopy region{0, offset, size};  // staging[0] -> primary[offset]
     vkCmdCopyBuffer(cb, m->staging_buf, m->buf, 1, &region);
     VkMemoryBarrier mb{VK_STRUCTURE_TYPE_MEMORY_BARRIER};
     mb.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;   // primary now readable by a kernel
@@ -846,17 +1014,21 @@ Status vk_buffer_get(const void* src_base, std::size_t offset, void* dst,
                      std::size_t size) noexcept {
   auto* m = static_cast<VkMem*>(const_cast<void*>(src_base));
   if (m->mapped != nullptr) {  // ReBAR / host-visible: direct read
-    invalidate_if_needed(m);  // #6/#10: non-coherent HOST_CACHED -> pull GPU writes into cache
+    Status visibility = invalidate_if_needed(m, offset, size);
+    if (!visibility.ok()) return visibility;
     std::memcpy(dst, static_cast<std::byte*>(m->mapped) + offset, size);
     return Status();
   }
   // Staging D2H (kompute OpSyncLocal barrier chain): GPU copy primary -> staging with
   // shaderWrite->transferRead before + transferWrite->hostRead after, then host reads map.
+  Status ready = ensure_staging(m, size);
+  if (!ready.ok()) return ready;
   Status s = staged_submit([&](VkCommandBuffer cb) {
-    record_copy(cb, m->buf, m->staging_buf, m->size, /*d2h=*/true);
+    record_copy(cb, m->buf, m->staging_buf, offset, 0, size,
+                /*d2h=*/true);
   });
   if (!s.ok()) return s;
-  std::memcpy(dst, static_cast<std::byte*>(m->staging_mapped) + offset, size);
+  std::memcpy(dst, m->staging_mapped, size);
   return Status();
 }
 Status vk_buffer_copy(void* dst_base, std::size_t dst_off, const void* src_base,
@@ -864,15 +1036,25 @@ Status vk_buffer_copy(void* dst_base, std::size_t dst_off, const void* src_base,
   auto* d = static_cast<VkMem*>(dst_base);
   auto* s = static_cast<VkMem*>(const_cast<void*>(src_base));
   if (d->mapped != nullptr && s->mapped != nullptr) {  // both host-mapped: CPU memcpy
-    invalidate_if_needed(s);  // #6/#10: pull src's GPU writes into cache before reading
+    Status visibility = invalidate_if_needed(s, src_off, size);
+    if (!visibility.ok()) return visibility;
     std::memcpy(static_cast<std::byte*>(d->mapped) + dst_off,
                 static_cast<std::byte*>(s->mapped) + src_off, size);
-    flush_if_needed(d);       // and publish dst's write if it's non-coherent
-    return Status();
+    return flush_if_needed(d, dst_off, size);
   }
   // At least one is device-local: GPU copyBuffer src.primary -> dst.primary (D2D stays on
-  // device -- no host round-trip). Barrier after so a later kernel / readback sees it.
+  // device -- no host round-trip). Order prior shader/host writes before the transfer, then
+  // make the transfer write visible to a later kernel / readback.
   return staged_submit([&](VkCommandBuffer cb) {
+    VkMemoryBarrier before{VK_STRUCTURE_TYPE_MEMORY_BARRIER};
+    before.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_HOST_WRITE_BIT |
+                           VK_ACCESS_TRANSFER_WRITE_BIT;
+    before.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
+    vkCmdPipelineBarrier(cb,
+                         VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_HOST_BIT |
+                             VK_PIPELINE_STAGE_TRANSFER_BIT,
+                         VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &before,
+                         0, nullptr, 0, nullptr);
     VkBufferCopy region{src_off, dst_off, size};
     vkCmdCopyBuffer(cb, s->buf, d->buf, 1, &region);
     VkMemoryBarrier mb{VK_STRUCTURE_TYPE_MEMORY_BARRIER};
@@ -888,8 +1070,7 @@ Status vk_buffer_clear(void* base, std::size_t offset, std::uint8_t value,
   auto* m = static_cast<VkMem*>(base);
   if (m->mapped != nullptr) {  // host-mapped: direct memset
     std::memset(static_cast<std::byte*>(m->mapped) + offset, value, size);
-    flush_if_needed(m);  // #6/#10: non-coherent HOST_CACHED -> make the memset GPU-visible
-    return Status();
+    return flush_if_needed(m, offset, size);
   }
   // Device-local: vkCmdFillBuffer writes a 32-bit pattern. buffer_clear fills whole bytes
   // with `value`, so replicate the byte across the 4-byte word. offset/size are byte-exact
@@ -908,21 +1089,72 @@ Status vk_buffer_clear(void* base, std::size_t offset, std::uint8_t value,
   });
 }
 
-// ---- device pool (compute-02c): trivial pass-through on Vulkan ---------------
-// The VMM/leg pool is a CUDA-driver-specific optimization; on Vulkan the plain allocator
-// suffices for now (a sub-allocator is a later optimization, not needed for first kernels).
-Status vk_pool_create(int, void** out_handle) noexcept { *out_handle = &ctx(); return Status(); }
-void vk_pool_destroy(void*) noexcept {}
+// ---- device pool (compute-02c): cached VkBuffer blocks -----------------------
+// Vulkan has no CUDA-VMM-equivalent path here, so use the honest analogue of the legacy
+// pool: retain freed VkBuffer+VkDeviceMemory objects and best-fit reuse them. This preserves
+// DevicePool's core promise (scratch churn avoids driver allocation) instead of presenting a
+// pool-shaped API that called vkAllocateMemory/vkFreeMemory on every operation.
+struct VkPool {
+  static constexpr std::size_t kMaxBuffers = 256;
+  struct Block {
+    VkMem* mem = nullptr;
+    std::size_t capacity = 0;
+  };
+  Block free_blocks[kMaxBuffers] = {};
+
+  ~VkPool() {
+    for (const Block& b : free_blocks) free_mem(b.mem);
+  }
+};
+
+Status vk_pool_create(int, void** out_handle) noexcept {
+  auto* pool = new (std::nothrow) VkPool{};
+  if (pool == nullptr) return Status::ResourceExhausted("vk pool alloc");
+  *out_handle = pool;
+  return Status();
+}
+void vk_pool_destroy(void* handle) noexcept { delete static_cast<VkPool*>(handle); }
 bool vk_pool_is_vmm(void*) noexcept { return false; }
-Status vk_pool_alloc(void*, std::size_t size, void** out_ptr, std::size_t* out_actual) noexcept {
+Status vk_pool_alloc(void* handle, std::size_t size, void** out_ptr,
+                     std::size_t* out_actual) noexcept {
+  auto* pool = static_cast<VkPool*>(handle);
+  const std::size_t needed = size == 0 ? 1 : size;
+  std::size_t best = SIZE_MAX;
+  std::size_t best_capacity = SIZE_MAX;
+  for (std::size_t i = 0; i < VkPool::kMaxBuffers; ++i) {
+    const std::size_t capacity = pool->free_blocks[i].capacity;
+    if (capacity >= needed && capacity < best_capacity) {
+      best = i;
+      best_capacity = capacity;
+      if (capacity == needed) break;
+    }
+  }
+  if (best != SIZE_MAX) {
+    VkPool::Block block = pool->free_blocks[best];
+    pool->free_blocks[best] = {};
+    *out_ptr = block.mem;
+    if (out_actual != nullptr) *out_actual = block.capacity;
+    return Status();
+  }
   VkMem* m = nullptr;
   Status s = make_mem(size, /*host_visible=*/false, &m);
   if (!s.ok()) return s;
   *out_ptr = m;
-  if (out_actual != nullptr) *out_actual = size;
+  if (out_actual != nullptr) *out_actual = needed;
   return Status();
 }
-void vk_pool_free(void*, void* ptr, std::size_t) noexcept { free_mem(static_cast<VkMem*>(ptr)); }
+void vk_pool_free(void* handle, void* ptr, std::size_t) noexcept {
+  if (ptr == nullptr) return;
+  auto* pool = static_cast<VkPool*>(handle);
+  auto* mem = static_cast<VkMem*>(ptr);
+  for (VkPool::Block& block : pool->free_blocks) {
+    if (block.mem == nullptr) {
+      block = {mem, mem->size == 0 ? 1 : mem->size};
+      return;
+    }
+  }
+  free_mem(mem); // cache full: return the block to Vulkan
+}
 
 // ---- Kernel = SPIR-V module + pipeline + descriptor/pipeline layout ----------
 // A HYLE Kernel's {module, func} handles hold: module = a heap VkKernel (all the pipeline
@@ -1398,9 +1630,11 @@ Status vk_recorded_create(void* stream_native, void* module, void* /*func*/,
   VkResult r = vkAllocateCommandBuffers(dev, &cbai, &rec->cb);
   if (r != VK_SUCCESS) { if (rec->dpool) vkDestroyDescriptorPool(dev, rec->dpool, nullptr);
                          delete rec; return from_vk(r, "vkAllocateCommandBuffers(recorded)"); }
-  // NO ONE_TIME_SUBMIT: the cb is replayed repeatedly (checklist #14/#16 -- the pool has
-  // RESET_COMMAND_BUFFER_BIT but we never reset; the recording is immutable + reused as-is).
+  // Replays are asynchronous, so callers may submit the same recording again before an
+  // earlier replay completes. Vulkan requires SIMULTANEOUS_USE for that state transition;
+  // merely omitting ONE_TIME_SUBMIT does not make a pending command buffer re-submittable.
   VkCommandBufferBeginInfo bg{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
+  bg.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
   vkBeginCommandBuffer(rec->cb, &bg);
   vkCmdBindPipeline(rec->cb, VK_PIPELINE_BIND_POINT_COMPUTE, k->pipeline);
   if (args->buffer_count)
@@ -1479,6 +1713,8 @@ constexpr ComputeBackend kVulkanBackend = {
     /*buffer_is_host=*/vk_buffer_is_host,
     /*buffer_alloc=*/vk_buffer_alloc,
     /*buffer_free=*/vk_buffer_free,
+    /*buffer_flush_host=*/vk_buffer_flush_host,
+    /*buffer_invalidate_host=*/vk_buffer_invalidate_host,
     /*buffer_set=*/vk_buffer_set,
     /*buffer_get=*/vk_buffer_get,
     /*buffer_copy=*/vk_buffer_copy,
@@ -1512,6 +1748,36 @@ const ComputeBackend* vulkan_vtable() noexcept {
 }
 
 #if defined(HYLE_TESTING)
+// TEST-ONLY: expose the exact mapped-range normalization for synthetic boundary tests.
+// This verifies nonCoherentAtomSize arithmetic even on devices that expose only coherent
+// host memory (where the driver call itself must remain an honest hardware skip).
+HYLE_EXPORT std::size_t vk_noncoherent_atom_size_for_test() noexcept {
+  return static_cast<std::size_t>(ctx().non_coherent_atom_size);
+}
+HYLE_EXPORT void vk_mapped_range_for_test(void* native, std::size_t offset,
+                                          std::size_t size,
+                                          std::size_t* out_offset,
+                                          std::size_t* out_size) noexcept {
+  HYLE_FATAL_ASSERT(native != nullptr && out_offset != nullptr && out_size != nullptr);
+  const VkMappedMemoryRange range =
+      mapped_range(static_cast<const VkMem*>(native), offset, size);
+  *out_offset = static_cast<std::size_t>(range.offset);
+  *out_size = static_cast<std::size_t>(range.size);
+}
+
+// TEST-ONLY: report whether a host Buffer actually selected a non-coherent memory type.
+// HYLE_VK_FORCE_NONCOHERENT scans every compatible memory type; false means the physical
+// device truly exposes none and the driver-path test must skip honestly.
+HYLE_EXPORT bool vk_buffer_is_noncoherent_for_test(void* native) noexcept {
+  const auto* m = static_cast<const VkMem*>(native);
+  return m != nullptr && m->mapped != nullptr && !m->coherent;
+}
+
+HYLE_EXPORT std::size_t vk_staging_capacity_for_test(void* native) noexcept {
+  const auto* m = static_cast<const VkMem*>(native);
+  return m == nullptr ? 0 : static_cast<std::size_t>(m->staging_capacity);
+}
+
 // TEST-ONLY (#1 pipeline cache 落盘): the persist path normally runs only in ~VkContext at
 // process exit, which a single-process test can't observe. This hook flushes the current
 // cache to HYLE_VK_PIPELINE_CACHE on demand and returns the payload byte count (0 if no env
@@ -1538,4 +1804,3 @@ HYLE_EXPORT std::size_t vk_pipeline_cache_flush_for_test() noexcept {
 #endif
 
 }  // namespace hyle::compute
-

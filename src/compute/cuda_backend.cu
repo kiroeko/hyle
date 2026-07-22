@@ -227,18 +227,10 @@ Status cuda_event_elapsed_ns(void* start_native, void* stop_native,
 }
 
 // ---- buffer (compute-02) ----------------------------------------------------
-// kDevice = cudaMalloc (VRAM, not host-dereferenceable, alignment 128 matching
-// ggml's cuda buffer_type). kHostPinned = cudaMallocHost (page-locked host RAM for
-// fast DMA + async-copy overlap). set/get/copy/clear are SYNCHRONOUS: issue an async
-// memcpy on the per-thread default stream then synchronize, so data is in place on
-// return (same "sync semantics" as ggml buffer set_tensor, ggml-cuda.cu:684-690).
-// The stream-bound async variants are compute-03.
-//
-// pinned is NOT pooled here: buffer_alloc is a general arbitrary-size allocation,
-// while a fixed-block pool (mem::SharedPool) fits a FIXED-size staging ring -- which
-// is an L1 strategy (llama.cpp's 4x64MB ring lives in its model loader, not in the
-// ggml buffer layer). compute-02 gives the raw pinned alloc primitive; a pooled
-// staging ring is the caller's to build on top.
+// kDevice = cudaMalloc (VRAM, native handle only). kHostPinned = cudaMallocHost
+// (page-locked host RAM; native handle and CPU mapping happen to be the same pointer).
+// set/get/copy/clear are synchronous. flush/invalidate are no-ops because CUDA pinned
+// host memory is coherent; async staging still requires a separate Event-owned ring.
 
 std::size_t cuda_buffer_alignment(BufferKind kind) noexcept {
   // Device: 128 (matches ggml cuda buffer_type, coalesced access + tensor-core
@@ -255,7 +247,7 @@ bool cuda_buffer_is_host(BufferKind kind) noexcept {
 }
 
 Status cuda_buffer_alloc(int ordinal, BufferKind kind, std::size_t bytes,
-                         void** out_ptr) noexcept {
+                         void** out_native, void** out_host) noexcept {
   cudaError_t e = set_device(ordinal);
   if (e != cudaSuccess) return from_cuda(e, "cudaSetDevice");
   std::size_t n = bytes == 0 ? 1 : bytes;
@@ -269,7 +261,8 @@ Status cuda_buffer_alloc(int ordinal, BufferKind kind, std::size_t bytes,
     e = cudaMallocHost(&p, n);
     if (e != cudaSuccess) return from_cuda(e, "cudaMallocHost");
   }
-  *out_ptr = p;
+  *out_native = p;
+  *out_host = kind == BufferKind::kHostPinned ? p : nullptr;
   return Status();
 }
 
@@ -281,6 +274,8 @@ void cuda_buffer_free(int, BufferKind kind, void* ptr) noexcept {
     cudaFreeHost(ptr);
   }
 }
+Status cuda_buffer_flush(void*, std::size_t, std::size_t) noexcept { return Status(); }
+Status cuda_buffer_invalidate(void*, std::size_t, std::size_t) noexcept { return Status(); }
 
 Status cuda_buffer_set(void* dst_base, std::size_t offset, const void* src,
                        std::size_t size) noexcept {
@@ -823,6 +818,8 @@ constexpr ComputeBackend kCudaBackend = {
     /*buffer_is_host=*/cuda_buffer_is_host,
     /*buffer_alloc=*/cuda_buffer_alloc,
     /*buffer_free=*/cuda_buffer_free,
+    /*buffer_flush_host=*/cuda_buffer_flush,
+    /*buffer_invalidate_host=*/cuda_buffer_invalidate,
     /*buffer_set=*/cuda_buffer_set,
     /*buffer_get=*/cuda_buffer_get,
     /*buffer_copy=*/cuda_buffer_copy,

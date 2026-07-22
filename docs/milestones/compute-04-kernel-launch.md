@@ -55,10 +55,10 @@ struct LaunchConfig {
   unsigned shared_mem = 0; // 动态 shared memory 字节
 };
 
-// 提交 kernel 到 stream (cuLaunchKernel). ASYNC: 提交即返回, completion 经 compute-03
-// 的 co_await StreamComplete{&stream} 观察. args = 指向各参数的指针数组 (void** ABI:
-// buffer.device_ptr() 们 + 标量地址). launch 后强制 cudaGetLastError fail-fast.
-Status launch(Stream&, const Kernel&, const LaunchConfig&, void** args) noexcept;
+// 提交 kernel 到 stream。KernelArgs 保存 ordered Buffer native handles + scalar blob；
+// CUDA 降为 driver void**，Vulkan 降为 descriptor + push constants。ASYNC 提交即返回，
+// completion 经 compute-03 co_await StreamComplete 观察。
+Status launch(Stream&, const Kernel&, const LaunchConfig&, const KernelArgs&) noexcept;
 
 // grid/block helper (ggml 到处手写 (n+bs-1)/bs, HYLE 提一次).
 constexpr unsigned blocks_for(std::size_t n, unsigned block_size) noexcept
@@ -76,7 +76,7 @@ ggml 的 kernel 是编译期 `<<<>>>`，但它的**启动工程**是 SOTA，全�
 - **超大 n 兜底**：grid 维度有上限（`MAX_GRIDDIM_*`），超限时 kernel 内 grid-stride loop 兜住（im2col.cu:22/56）——HYLE launch 抽象文档化此约束，helper 可选 clamp 到上限。
 - **`__launch_bounds__`**：写 `__global__ void __launch_bounds__(BS) k(...)`（concat.cu:7）——这是 kernel 源码侧的事（HYLE 不写 kernel，但文档提示写 kernel 的消费者用）；运行时无源码时用 `cuOccupancyMaxPotentialBlockSize` 动态求 block（compute-04 可选提供）。
 - **launch 后强制 `cudaGetLastError`**（common.cuh:1638 `ggml_cuda_kernel_launch` 封装）→ HYLE launch 后必查，fail-fast（`HYLE_FATAL_ASSERT`/Status），别像 ggml clamp/fill 漏查。
-- **参数平铺**：ggml kernel 收裸指针 + 标量，不 struct 打包（clamp.cu:8）；host 侧从 `tensor->data` 取 `void*` cast——对应 HYLE 的 `buffer.device_ptr()`。HYLE 的 `void** args` 就是这些裸指针/标量地址的数组（driver ABI）。
+- **参数平铺**：ggml kernel 收裸 device address + 标量，不 struct 打包（clamp.cu:8）。HYLE typed `KernelArgs` 平铺 `Buffer::native_handle()` + 标量 blob：CUDA backend 解读为 driver ABI device address，Vulkan backend 解读为 `VkMem*` 并提取 descriptor；CPU mapped pointer 另由 `host_data()` 暴露，不进入 kernel ABI。
 - **DevicePool 消费者到位**（compute-02c）：kernel 的中间/临时 device buffer（scratch）用 `DevicePool` 借还（ggml `ggml_cuda_pool_alloc` 同款）——**compute-02c 的真正消费者就是 compute-04 的 kernel scratch**。
 
 ## 明确不做（防蔓延，登记后续；B 档已含 nvrtc 运行时编译）
@@ -114,6 +114,7 @@ ggml 的 kernel 是编译期 `<<<>>>`，但它的**启动工程**是 SOTA，全�
 - **编译缓存用 FNV-1a + std::unordered_map**（非 XXH3/SwissTable）：避免 SIMD 头进 nvcc TU；内部冷路径（仅 compile 时查），非热路径生产容器，可接受 std。
 - **name mangling**：`nvrtcAddNameExpression`+`GetLoweredName`（照 CCCL）解 C++ kernel；extern "C" 走 verbatim 名。
 - **launch 走 driver `cuLaunchKernel`（真"任意"）**：`void** args` 容纳任意签名，非编译期 `<<<>>>`；与 compute-06 SPIR-V dispatch 同构。launch 后 `cudaGetLastError` fail-fast（ggml 契约）。
+- **异步生命周期**：`KernelArgs` 数组只需活过 submit 调用；Kernel 与所有 Buffer allocation 必须活到 Stream/Event completion。同步 Buffer copy/host access 不是 completion primitive，不能与未完成 producer kernel 竞态。
 - **DevicePool 消费者到位**：kernel scratch 用 compute-02c 的 PoolAlloc（LIFO），02c 的真实消费者兑现。
 - **NVRTC 编译端到端**（三平台 GPU）：CUDA C 源码字符串（`extern "C" __global__ void vecadd(float* a, float* b, float* c, int n)`）→ `Kernel::compile` NVRTC 编 PTX → 加载 → compute-02 buffer 喂输入 → `launch` → `co_await StreamComplete`（compute-03）→ 读回校验。**device/buffer/pool/completion/kernel + 运行时编译全链路真跑**（compute 01~04 合体）。
 - **给定 PTX 路径**：`load_ptx` 加载一段手写/预编 PTX → launch → 校验（不走 NVRTC 的入口）。

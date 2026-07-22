@@ -113,6 +113,18 @@ void buffer_clear_oob() {
   (void)buf->clear(224, 0, 64);  // compute.cc:345
 }
 
+void buffer_flush_host_oob() {
+  Device d = default_device();
+  auto buf = Buffer::create(host_buffer_type(d), 256);
+  (void)buf->flush_host(224, 64);
+}
+
+void buffer_invalidate_host_oob() {
+  Device d = default_device();
+  auto buf = Buffer::create(host_buffer_type(d), 256);
+  (void)buf->invalidate_host(224, 64);
+}
+
 // Integer-wraparound OOB: offset + size overflows size_t back to a SMALL value. The old
 // `offset + size <= size_` check passed (SIZE_MAX-3 + 10 wraps to 6 <= 256), letting an
 // out-of-range write through to the backend memcpy. The wrap-safe check (offset <= size_
@@ -199,6 +211,16 @@ TEST(ComputeContractDeathTest, BufferCopyFromSrcOutOfBounds) {
 TEST(ComputeContractDeathTest, BufferClearOutOfBounds) {
   HYLE_THREADSAFE_DEATH();
   EXPECT_DEATH(buffer_clear_oob(), "HYLE fatal");
+}
+
+TEST(ComputeContractDeathTest, BufferFlushHostOutOfBounds) {
+  HYLE_THREADSAFE_DEATH();
+  EXPECT_DEATH(buffer_flush_host_oob(), "HYLE fatal");
+}
+
+TEST(ComputeContractDeathTest, BufferInvalidateHostOutOfBounds) {
+  HYLE_THREADSAFE_DEATH();
+  EXPECT_DEATH(buffer_invalidate_host_oob(), "HYLE fatal");
 }
 
 TEST(ComputeContractDeathTest, BufferSetWraparound) {

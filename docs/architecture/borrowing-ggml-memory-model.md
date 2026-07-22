@@ -8,7 +8,7 @@
 
 | 数据 | 归谁管 | 怎么做 |
 |---|---|---|
-| **喂给 ggml 算子的 host 输入**（权重加载源、激活输入） | **HYLE host RAM** | `mem::Allocator` 分配，或 `PinnedStaging` 在其直接拥有的 pinned host block 中 bump → `ggml_backend_tensor_set(tensor, hyle_host_ptr, …)` 拷入 |
+| **喂给 ggml 算子的 host 输入**（权重加载源、激活输入） | **HYLE host RAM** | 当前由 `mem::Allocator` 等普通 host storage 提供，再经 `ggml_backend_tensor_set(tensor, hyle_host_ptr, …)` 拷入；未来异步上传由 compute `HostBuffer` / `StagingRing` 持有 pinned slot 与 Event |
 | **ggml 算子计算用的 device 显存**（输入/中间/结果 tensor 的 buffer） | **ggml**（`ggml_gallocr` / backend buffer） | ggml 自己 cudaMalloc + 图内复用；HYLE 不碰 |
 | **ggml 算子的 host 输出** | **HYLE mem** | `ggml_backend_tensor_get(tensor, hyle_host_ptr, …)` 拷出 |
 | **HYLE 自造 kernel（compute-04 NVRTC / 06 SPIR-V）的显存** | **HYLE**（compute-02 Buffer / DevicePool / VMM） | HYLE cudaMalloc，kernel 直接在 HYLE 显存上算——**真零拷贝**（已三平台验证） |
@@ -45,7 +45,7 @@ static void ggml_backend_cuda_buffer_set_tensor(..., const void * data, ...) {
     cudaMemcpyAsync((char*)tensor->data + offset, data, size, cudaMemcpyHostToDevice, ...);
 }
 ```
-那个 `data`（host 源）**不要求 pinned、不要求 ggml 分配、不要求任何特殊来源**——任意 host 指针都行。所以它可以来自 HYLE `mem::Allocator`，也可以来自 `PinnedStaging` 直接拥有并 bump 的 pinned host block。`tensor_get`（取出）同理。
+那个 `data`（host 源）**不要求 pinned、不要求 ggml 分配、不要求任何特殊来源**——任意 host 指针都行，所以当前直接来自 HYLE `mem::Allocator` 即可。compute HostBuffer 已将 backend native handle 与 CPU mapped pointer 分开，并显式提供 flush/invalidate；它属于 compute，不伪装成通用 mem allocator。`tensor_get`（取出）同理。
 
 **数据流（每段谁管，清清楚楚）**：
 ```
@@ -62,7 +62,7 @@ ggml 结果显存
 HYLE mem 管的 host 结果                     ← 回到 HYLE mem 抽象
 ```
 
-**性能接口点**：`tensor_set` 的 host 源若是 **pinned host RAM**，H2D 可走更适合 DMA/异步重叠的路径。当前 `PinnedStaging` 直接拥有一个 pinned host block 并在其中 bump，不经过 mem 池；它可把连续准备区交给 `tensor_set`。`pinned_allocator` 也可选择与 `SharedPool` 组合，但目前没有生产消费者，不能写成现役数据路径。
+**性能接口点**：pinned host RAM 只有在 copy 真异步、slot 保持到 Event completion、并有至少两个在途 slot 时才能形成 overlap。HostBuffer 的 native/mapped/coherence 合同已闭合，但当前 bridge 没有 staging ring；event-driven `StagingRing` 等真实 overlap 消费者出现后再接入，不用裸 host allocator 或 `SharedPool(cudaMallocHost)` 代替 completion ownership。
 
 ## 3. 边界不模糊——两种 kernel 来路对应两种显存归属
 
@@ -77,7 +77,7 @@ HYLE mem 管的 host 结果                     ← 回到 HYLE mem 抽象
 
 ## 4. 对 compute-05 及后续的落地约束
 
-- **compute-05 ggml_bridge**：matmul（及后续算子）走 `ggml_gallocr` 分配 device buffer + `tensor_set`(host in) / `tensor_get`(host out)。host 数据是 HYLE mem（优先 pinned）。合批同理（一图多算子，gallocr 一次分配、一次提交）。**不注入外部显存**。
+- **compute-05 ggml_bridge**：matmul（及后续算子）走 `ggml_gallocr` 分配 device buffer + `tensor_set`(host in) / `tensor_get`(host out)。当前 host 数据来自普通 HYLE mem；若未来实测需要异步 pinned overlap，由 compute staging ring 接入。合批同理（一图多算子，gallocr 一次分配、一次提交）。**不注入外部显存**。
 - **compute-07 CPU 算子后端**：CPU 后端 ggml 支持 `buffer_from_ptr`，host 侧可真零拷贝（HYLE mem 直接当 tensor buffer）——CPU 路径比 CUDA 宽松，届时可用。
 - **compute-08 HIP/Metal**：HIP 大概率同 CUDA（不支持外部指针）；Metal 待查。默认按"device 归 ggml"设计。
 - **权重常驻**：若某消费者要反复用同一批权重（推理），权重拷进 ggml 显存**一次**、常驻复用（llama.cpp 模式），不是每次推理都拷。这是初始化成本，非热路径成本。

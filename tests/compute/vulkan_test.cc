@@ -11,6 +11,7 @@
 
 #include "hyle/compute/buffer.h"
 #include "hyle/compute/device.h"
+#include "hyle/compute/device_pool.h"
 #include "hyle/compute/stream.h"
 // SPIR-V embedded as `inline constexpr SpirvBlob` by tools/hyle_shader.py (via
 // hyle_embed_shader in tests/CMakeLists). Namespace hyle_test_shaders keeps the symbols from
@@ -70,12 +71,156 @@ struct SaxpyParams { std::uint32_t n; float alpha; float beta; float bias; };
 
 }  // namespace
 
+TEST(VulkanCompute, HostBufferSeparatesNativeHandleFromMappedData) {
+  Device d;
+  if (!find_vulkan(d)) GTEST_SKIP() << "no Vulkan compute device";
+
+  constexpr std::size_t kBytes = 4096;
+  auto host = Buffer::create(host_buffer_type(d), kBytes);
+  ASSERT_TRUE(host.has_value()) << host.error().message();
+  ASSERT_TRUE(host->is_host());
+  ASSERT_NE(host->native_handle(), nullptr);
+  ASSERT_NE(host->host_data(), nullptr);
+  EXPECT_NE(host->native_handle(), host->host_data());  // VkMem* versus VkMem::mapped
+
+  auto* mapped = static_cast<std::uint8_t*>(host->host_data());
+  for (std::size_t i = 0; i < kBytes; ++i)
+    mapped[i] = static_cast<std::uint8_t>(i & 0xFF);
+  ASSERT_TRUE(host->flush_host(0, kBytes).ok());
+
+  std::vector<std::uint8_t> out(kBytes, 0);
+  ASSERT_TRUE(host->get(0, out.data(), kBytes).ok());
+  for (std::size_t i = 0; i < kBytes; ++i) EXPECT_EQ(out[i], mapped[i]);
+}
+
+TEST(VulkanCompute, ZeroSizeBufferOperationsAreNoops) {
+  Device d;
+  if (!find_vulkan(d)) GTEST_SKIP() << "no Vulkan compute device";
+
+  auto a = Buffer::create(device_buffer_type(d), 0);
+  auto b = Buffer::create(device_buffer_type(d), 0);
+  ASSERT_TRUE(a.has_value() && b.has_value());
+  EXPECT_TRUE(a->set(0, nullptr, 0).ok());
+  EXPECT_TRUE(a->get(0, nullptr, 0).ok());
+  EXPECT_TRUE(b->copy_from(*a, 0, 0, 0).ok());
+  EXPECT_TRUE(a->clear(0, 0xA5, 0).ok());
+}
+
+TEST(VulkanCompute, EventRerecordAndPendingDestructionAreSafe) {
+  Device vk;
+  if (!find_vulkan(vk)) GTEST_SKIP() << "no Vulkan compute device";
+  auto stream = Stream::create(vk);
+  ASSERT_TRUE(stream.has_value()) << stream.error().message();
+  {
+    auto event = Event::create(vk);
+    ASSERT_TRUE(event.has_value()) << event.error().message();
+    stream->record(*event);
+    // Vulkan fences cannot be reset while pending. The backend completes the prior record
+    // before reusing the public Event, then makes destruction wait out the second record.
+    stream->record(*event);
+  }
+  EXPECT_TRUE(stream->sync().ok());
+}
+
 // #1 pipeline cache 落盘: test-only flush hook (vulkan_backend.cc, HYLE_TESTING). Returns the
 // bytes written to HYLE_VK_PIPELINE_CACHE (0 if unset/no device/empty). Declared here so the
 // test can drive persistence on demand rather than waiting for process-exit (~VkContext).
 // HYLE_IMPORT: the symbol lives in the hyle_compute DLL (exported under HYLE_TESTING).
 namespace hyle::compute {
+HYLE_IMPORT std::size_t vk_noncoherent_atom_size_for_test() noexcept;
+HYLE_IMPORT void vk_mapped_range_for_test(void* native, std::size_t offset,
+                                          std::size_t size,
+                                          std::size_t* out_offset,
+                                          std::size_t* out_size) noexcept;
+HYLE_IMPORT bool vk_buffer_is_noncoherent_for_test(void* native) noexcept;
+HYLE_IMPORT std::size_t vk_staging_capacity_for_test(void* native) noexcept;
 HYLE_IMPORT std::size_t vk_pipeline_cache_flush_for_test() noexcept;
+}
+
+TEST(VulkanCompute, ForcedStagingIsLazyAndTransferSized) {
+  if (std::getenv("HYLE_VK_FORCE_STAGING") == nullptr)
+    GTEST_SKIP() << "dedicated forced-staging CTest owns this contract";
+  Device vk;
+  if (!find_vulkan(vk)) GTEST_SKIP() << "no Vulkan compute device";
+
+  constexpr std::size_t kBufferBytes = 1u << 20;
+  constexpr std::size_t kTransferBytes = 64u << 10;
+  constexpr std::size_t kOffset = 512u << 10;
+  auto buffer = Buffer::create(device_buffer_type(vk), kBufferBytes);
+  ASSERT_TRUE(buffer.has_value()) << buffer.error().message();
+  EXPECT_EQ(vk_staging_capacity_for_test(buffer->native_handle()), 0u);
+
+  std::vector<std::uint8_t> input(kTransferBytes, 0xA5);
+  ASSERT_TRUE(buffer->set(kOffset, input.data(), input.size()).ok());
+  const std::size_t capacity =
+      vk_staging_capacity_for_test(buffer->native_handle());
+  EXPECT_GE(capacity, kTransferBytes);
+  EXPECT_LT(capacity, kBufferBytes);
+
+  std::vector<std::uint8_t> output(kTransferBytes, 0);
+  ASSERT_TRUE(buffer->get(kOffset, output.data(), output.size()).ok());
+  EXPECT_EQ(output, input);
+  EXPECT_EQ(vk_staging_capacity_for_test(buffer->native_handle()), capacity);
+}
+
+TEST(VulkanCompute, DevicePoolReusesFreedVkBuffer) {
+  Device vk;
+  if (!find_vulkan(vk)) GTEST_SKIP() << "no Vulkan compute device";
+  auto pool = DevicePool::create(vk);
+  ASSERT_TRUE(pool.has_value()) << pool.error().message();
+  auto first = pool->alloc(4096);
+  ASSERT_TRUE(first.has_value()) << first.error().message();
+  void* native = *first;
+  pool->free(*first, 4096);
+  auto reused = pool->alloc(4096);
+  ASSERT_TRUE(reused.has_value()) << reused.error().message();
+  EXPECT_EQ(*reused, native);
+  pool->free(*reused, 4096);
+}
+
+TEST(VulkanCompute, TransferChainSetCopyGet) {
+  Device vk;
+  if (!find_vulkan(vk)) GTEST_SKIP() << "no Vulkan compute device";
+
+  constexpr std::size_t kBytes = 4096;
+  auto src = Buffer::create(device_buffer_type(vk), kBytes);
+  auto dst = Buffer::create(device_buffer_type(vk), kBytes);
+  ASSERT_TRUE(src.has_value() && dst.has_value());
+  std::vector<std::uint8_t> input(kBytes);
+  for (std::size_t i = 0; i < kBytes; ++i)
+    input[i] = static_cast<std::uint8_t>((i * 29) & 0xFF);
+  ASSERT_TRUE(src->set(0, input.data(), kBytes).ok());
+  ASSERT_TRUE(dst->copy_from(*src, 0, 0, kBytes).ok());
+  std::vector<std::uint8_t> output(kBytes, 0);
+  ASSERT_TRUE(dst->get(0, output.data(), kBytes).ok());
+  EXPECT_EQ(output, input);
+
+  ASSERT_TRUE(src->clear(0, 0x5A, kBytes).ok());
+  ASSERT_TRUE(dst->copy_from(*src, 0, 0, kBytes).ok());
+  ASSERT_TRUE(dst->get(0, output.data(), kBytes).ok());
+  for (std::uint8_t byte : output) EXPECT_EQ(byte, 0x5A);
+}
+
+TEST(VulkanCompute, MappedRangeAlignsToNonCoherentAtom) {
+  Device vk;
+  if (!find_vulkan(vk)) GTEST_SKIP() << "no Vulkan compute device";
+
+  const std::size_t atom = vk_noncoherent_atom_size_for_test();
+  ASSERT_GT(atom, 0u);
+  ASSERT_EQ(atom & (atom - 1), 0u);
+  ASSERT_LE(atom, SIZE_MAX / 4);
+  auto host = Buffer::create(host_buffer_type(vk), atom * 4);
+  ASSERT_TRUE(host.has_value()) << host.error().message();
+
+  std::size_t offset = 0;
+  std::size_t size = 0;
+  vk_mapped_range_for_test(host->native_handle(), atom + 1, 1, &offset, &size);
+  EXPECT_EQ(offset, atom);
+  EXPECT_EQ(size, atom);
+
+  vk_mapped_range_for_test(host->native_handle(), atom * 2 - 1, 2, &offset, &size);
+  EXPECT_EQ(offset, atom);
+  EXPECT_EQ(size, atom * 2);
 }
 
 // End-to-end: SPIR-V kernel + buffers + scalars through the unified launch shell.
@@ -128,6 +273,45 @@ Result<Kernel> load_saxpy(const Device& dev) {
 }
 }  // namespace
 
+TEST(VulkanCompute, NonCoherentHostBufferRoundTrip) {
+  Device vk;
+  if (!find_vulkan(vk)) GTEST_SKIP() << "no Vulkan compute device";
+
+  constexpr std::uint32_t kN = 256;
+  constexpr std::size_t kBytes = kN * sizeof(float);
+  BufferType host_type = host_buffer_type(vk);
+  auto bx = Buffer::create(host_type, kBytes);
+  auto by = Buffer::create(host_type, kBytes);
+  auto bo = Buffer::create(host_type, kBytes);
+  ASSERT_TRUE(bx.has_value() && by.has_value() && bo.has_value());
+  if (!vk_buffer_is_noncoherent_for_test(bx->native_handle()))
+    GTEST_SKIP() << "device exposes no non-coherent host-visible memory type";
+
+  auto* x = static_cast<float*>(bx->host_data());
+  auto* y = static_cast<float*>(by->host_data());
+  auto* out = static_cast<float*>(bo->host_data());
+  for (std::uint32_t i = 0; i < kN; ++i) {
+    x[i] = static_cast<float>(i);
+    y[i] = static_cast<float>(2 * i + 1);
+    out[i] = -1.0f;
+  }
+  ASSERT_TRUE(bx->flush_host(0, kBytes).ok());
+  ASSERT_TRUE(by->flush_host(0, kBytes).ok());
+
+  auto s = Stream::create(vk);
+  auto k = load_saxpy(vk);
+  ASSERT_TRUE(s.has_value() && k.has_value());
+  SaxpyParams p{kN, 2.0f, 3.0f, 0.5f};
+  LaunchConfig cfg;
+  cfg.grid = {blocks_for(kN, 256), 1, 1};
+  ASSERT_TRUE(launch(*s, *k, cfg, *bx, *by, *bo, p).ok());
+  ASSERT_TRUE(s->sync().ok());
+  ASSERT_TRUE(bo->invalidate_host(0, kBytes).ok());
+
+  for (std::uint32_t i = 0; i < kN; ++i)
+    ASSERT_NEAR(out[i], 2.0f * x[i] + 3.0f * y[i] + 0.5f, 1e-2f) << "at " << i;
+}
+
 // #15 batching: N saxpy dispatches (different buffer sets) in ONE launch_batch = ONE
 // Vulkan command buffer + ONE submit. Each result golden-checked. Proves the batched path
 // (the measured perf lever) is correct + the async in-flight tracking frees per-item pools.
@@ -163,7 +347,7 @@ TEST(VulkanCompute, BatchedSaxpy) {
     ASSERT_TRUE(bx[j].set(0, hx[j].data(), bytes).ok());
     ASSERT_TRUE(by[j].set(0, hy[j].data(), bytes).ok());
     params[j] = SaxpyParams{kN, 1.0f + j, 2.0f + j, float(j)};  // distinct scalars per job
-    bufptrs[j][0] = bx[j].device_ptr(); bufptrs[j][1] = by[j].device_ptr(); bufptrs[j][2] = bo[j].device_ptr();
+    bufptrs[j][0] = bx[j].native_handle(); bufptrs[j][1] = by[j].native_handle(); bufptrs[j][2] = bo[j].native_handle();
     fields[j] = ScalarField{0, sizeof(SaxpyParams)};
     items[j].kernel = &*k;
     items[j].config = LaunchConfig{};
@@ -221,6 +405,8 @@ TEST(VulkanCompute, TimingMeasuresElapsed) {
   ASSERT_TRUE(launch(*s, *k, cfg, *bx, *by, *bo, p).ok());
   s->record(*stop);
   ASSERT_TRUE(s->sync().ok());
+  EXPECT_EQ(stop->query(), EventStatus::kReady)
+      << "Stream::sync must include the timing marker queued after the launch";
 
   auto ns = elapsed_ns(*start, *stop);
   ASSERT_TRUE(ns.has_value()) << ns.error().message();
@@ -345,7 +531,7 @@ TEST(VulkanCompute, RecordReplayReflectsBufferChanges) {
   cfg.grid = {blocks_for(kN, 256), 1, 1};
 
   // Record once (bindings to bx/by/bo + push p + dispatch frozen). Buffers must outlive `rl`.
-  void* bufs[3] = {bx->device_ptr(), by->device_ptr(), bo->device_ptr()};
+  void* bufs[3] = {bx->native_handle(), by->native_handle(), bo->native_handle()};
   ScalarField field{0, sizeof(p)};
   KernelArgs ka{bufs, 3, &p, sizeof(p), &field, 1};
   auto rl = RecordedLaunch::record(*s, *k, cfg, ka);
@@ -360,6 +546,9 @@ TEST(VulkanCompute, RecordReplayReflectsBufferChanges) {
     ASSERT_TRUE(by->set(0, hy.data(), bytes).ok());
 
     ASSERT_TRUE(rl->replay(*s).ok()) << "iter " << iter;
+    // replay() is async. Submit the immutable command buffer again while the first replay
+    // may still be pending; Vulkan requires SIMULTANEOUS_USE for this legal API shape.
+    if (iter == 1) ASSERT_TRUE(rl->replay(*s).ok());
     ASSERT_TRUE(s->sync().ok());
 
     std::vector<float> ho(kN, -1.0f);
@@ -408,9 +597,9 @@ TEST(VulkanCompute, BatchedDependentChain) {
   BatchItem items[kJobs];
   for (int j = 0; j < kJobs; ++j) {
     params[j] = SaxpyParams{kN, 1.0f, 0.0f, float(j + 1)};  // b[j+1] = b[j] + (j+1)
-    bufptrs[j][0] = bufs[j].device_ptr();       // x = b[j]  (shared read)
-    bufptrs[j][1] = bufs[j].device_ptr();       // y = b[j]  (beta=0 so value irrelevant)
-    bufptrs[j][2] = bufs[j + 1].device_ptr();   // o = b[j+1] (this job's write, next job's read)
+    bufptrs[j][0] = bufs[j].native_handle();       // x = b[j]  (shared read)
+    bufptrs[j][1] = bufs[j].native_handle();       // y = b[j]  (beta=0 so value irrelevant)
+    bufptrs[j][2] = bufs[j + 1].native_handle();   // o = b[j+1] (this job's write, next job's read)
     fields[j] = ScalarField{0, sizeof(SaxpyParams)};
     items[j].kernel = &*k;
     items[j].config = LaunchConfig{};
@@ -461,15 +650,15 @@ void vk_shape_freeze_buffer_count() {
   (void)launch(*s, *k, cfg, *bx, *by, *bo, p);  // first launch freezes {3 buffers, 16B push}
   (void)s->sync();
   // Relaunch with only 2 buffers (same push) -> buffer_count mismatch -> fatal (:665).
-  void* two[2] = {bx->device_ptr(), by->device_ptr()};
+  void* two[2] = {bx->native_handle(), by->native_handle()};
   ScalarField f{0, sizeof(SaxpyParams)};
   KernelArgs bad{two, 2, &p, sizeof(SaxpyParams), &f, 1};
   (void)launch(*s, *k, cfg, bad);
 }
 
-// push_size > maxPushConstantsSize aborts in build_pipeline (vulkan_backend.cc:561) on the
-// FIRST launch. The typed shell caps scalars at 256B, so we bypass it with a raw KernelArgs
-// declaring scalar_bytes = 512 (> any real device's max_push, RTX 4070 = 256).
+// push_size > maxPushConstantsSize aborts in build_pipeline on the FIRST launch. The typed
+// shell caps scalars at 256B, so bypass it with a raw KernelArgs whose unsigned maximum is
+// above every Vulkan implementation limit (unlike the old device-specific 512-byte guess).
 void vk_push_size_over_limit() {
   Device vk;
   if (!find_vulkan(vk)) std::abort();
@@ -480,10 +669,10 @@ void vk_push_size_over_limit() {
   BufferType bt = device_buffer_type(vk);
   auto bx = Buffer::create(bt, bytes); auto by = Buffer::create(bt, bytes);
   auto bo = Buffer::create(bt, bytes);
-  alignas(16) unsigned char big_scalars[512] = {};
-  void* three[3] = {bx->device_ptr(), by->device_ptr(), bo->device_ptr()};
-  ScalarField f{0, 512};
-  KernelArgs bad{three, 3, big_scalars, 512, &f, 1};  // 512 > max_push -> fatal (:561)
+  alignas(16) unsigned char scalar = 0;
+  void* three[3] = {bx->native_handle(), by->native_handle(), bo->native_handle()};
+  ScalarField f{0, UINT32_MAX};
+  KernelArgs bad{three, 3, &scalar, UINT32_MAX, &f, 1};
   LaunchConfig cfg; cfg.grid = {blocks_for(kN, 256), 1, 1};
   (void)launch(*s, *k, cfg, bad);
 }

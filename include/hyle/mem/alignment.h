@@ -43,6 +43,21 @@ HYLE_FORCE_INLINE constexpr bool is_aligned(std::size_t n,
   return (n & (a - 1)) == 0;
 }
 
+namespace detail {
+// Overflow-aware address alignment for bump allocators. A synthetic integer input keeps the
+// otherwise unreachable UINTPTR_MAX edge directly testable without fabricating an invalid
+// pointer. `out` is written only on success.
+HYLE_FORCE_INLINE constexpr bool try_align_up_address(
+    std::uintptr_t n, std::size_t a, std::uintptr_t* out) noexcept {
+  HYLE_FATAL_ASSERT(is_pow2(a));
+  HYLE_FATAL_ASSERT(out != nullptr);
+  const auto padding = static_cast<std::uintptr_t>(a - 1);
+  if (n > UINTPTR_MAX - padding) return false;
+  *out = (n + padding) & ~padding;
+  return true;
+}
+}  // namespace detail
+
 // ---- pointer variants -------------------------------------------------------
 // Distinct names (not overloads): an integer literal like 0 is a null-pointer
 // constant, so overloading size vs pointer is ambiguous (is_aligned(0u,16) could

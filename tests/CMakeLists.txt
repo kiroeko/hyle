@@ -62,7 +62,7 @@ hyle_apply_warnings(hyle_obs_c_test)
 hyle_apply_sanitizer(hyle_obs_c_test)
 add_test(NAME hyle_obs_c_test COMMAND hyle_obs_c_test)
 hyle_add_test(platform SOURCES platform/wait_test.cc platform/thread_test.cc platform/dynlib_test.cc platform/fs_test.cc platform/virtual_memory_test.cc platform/numa_test.cc platform/mapped_file_test.cc platform/cpu_test.cc)
-hyle_add_test(mem SOURCES mem/allocator_test.cc mem/shared_pool_test.cc mem/pool_stack_test.cc mem/alignment_test.cc mem/pmr_test.cc mem/growable_pool_test.cc mem/fiber_stack_test.cc mem/stats_test.cc mem/hugepage_test.cc mem/numa_test.cc DEPS hyle_platform)
+hyle_add_test(mem SOURCES mem/allocator_test.cc mem/shared_pool_test.cc mem/pool_stack_test.cc mem/alignment_test.cc mem/pmr_test.cc mem/growable_pool_test.cc mem/fiber_stack_test.cc mem/stats_test.cc mem/hugepage_test.cc mem/numa_test.cc DEPS hyle_platform mimalloc_static)
 hyle_add_test(util SOURCES util/ref_counted_test.cc util/scope_guard_test.cc util/type_name_test.cc util/registry_test.cc util/random_test.cc util/spin_lock_test.cc util/demangle_test.cc util/c_util_concurrency_test.cc DEPS hyle_container)
 add_executable(hyle_util_c_test util/c_util_test.c)
 target_link_libraries(hyle_util_c_test PRIVATE hyle_util)
@@ -94,11 +94,9 @@ hyle_add_test(math SOURCES math/scalar_test.cc)
 # compute-01: device/stream/event + completion. Always buildable (host fallback);
 # the GPU-specific test self-skips at runtime when no CUDA device is present. The
 # test TU is pure C++ (all CUDA is inside hyle_compute), so it needs no nvcc.
-# compute-02: device buffer (alloc/set/get(offset)/copy/clear + pinned staging),
-# headline test = KV-cache pattern (large buffer repeated offset writes).
-# compute-02b: PinnedStaging batched submit plus optional pinned_allocator +
-# mem::SharedPool/Arena composition -- needs hyle_mem for the pool/arena tests.
-hyle_add_test(compute SOURCES compute/device_test.cc compute/buffer_test.cc compute/pinned_pool_test.cc compute/device_pool_test.cc compute/kernel_test.cc compute/contract_test.cc compute/host_ops_test.cc DEPS hyle_mem)
+# compute-02: owned backend buffer + offset copy + explicit host mapping/coherence.
+# Headline tests = KV-cache repeated offset writes and direct HostBuffer mapping.
+hyle_add_test(compute SOURCES compute/device_test.cc compute/buffer_test.cc compute/device_pool_test.cc compute/kernel_test.cc compute/contract_test.cc compute/host_ops_test.cc)
 # compute-06: self-authored SPIR-V compute kernel through the Vulkan backend (saxpy
 # end-to-end + batched). GPU-skips at runtime if no Vulkan loader/device. The co_await
 # completion case (#21) is #if HYLE_HAS_FCONTEXT-gated inside the TU, so link hyle_sched
@@ -129,6 +127,13 @@ if(HYLE_COMPUTE_VULKAN_ENABLED)
            COMMAND hyle_compute_vulkan_test --gtest_filter=VulkanCompute.*)
   set_tests_properties(hyle_compute_vulkan_staging_test PROPERTIES
                        ENVIRONMENT "HYLE_VK_FORCE_STAGING=1")
+  # Best-effort non-coherent HOST_CACHED variant. The test queries the selected memory type and
+  # skips honestly when the physical device exposes only coherent host-visible memory.
+  add_test(NAME hyle_compute_vulkan_noncoherent_test
+           COMMAND hyle_compute_vulkan_test
+                   --gtest_filter=VulkanCompute.NonCoherentHostBufferRoundTrip)
+  set_tests_properties(hyle_compute_vulkan_noncoherent_test PROPERTIES
+                       ENVIRONMENT "HYLE_VK_FORCE_NONCOHERENT=1")
   # #1 pipeline cache 落盘: a variant with HYLE_VK_PIPELINE_CACHE pointing at a build-dir file
   # (opt-in persistence, TEST-ONLY under HYLE_TESTING). Run TWICE in sequence via a fixture:
   # the first run seeds the file from an empty cache (proving the SAVE path -- PipelineCachePersist

@@ -2,18 +2,14 @@
 
 #include <cstring>
 
-#include "hyle/mem/allocator.h"
 #include "hyle/mem/hugepage.h"
-#include "hyle/mem/shared_pool.h"
 #include "hyle/platform/numa.h"
 #include "hyle/platform/virtual_memory.h"
 
 using hyle::mem::enable_allocator_numa;
 using hyle::mem::HugeFlags;
 using hyle::mem::HugeRegion;
-using hyle::mem::SharedPool;
 using hyle::mem::reserve_huge_1g_pages;
-using hyle::mem::system_allocator;
 using hyle::platform::kNumaAny;
 using hyle::platform::numa_current_node;
 using hyle::platform::numa_node_count;
@@ -69,20 +65,4 @@ TEST(MemNuma, ReserveHuge1gSoft) {
   EXPECT_TRUE(reserve_huge_1g_pages(0));
   (void)reserve_huge_1g_pages(1, kNumaAny, /*timeout_ms=*/50);
   (void)reserve_huge_1g_pages(1, 0, 50);
-}
-
-TEST(MemNuma, LargeSharedPoolUsesHugePath) {
-  // Slab >= ~2MiB → HugeRegion path inside SharedPool.
-  constexpr std::size_t kBlock = 64 * 1024;
-  constexpr std::uint32_t kCount = 64;  // 4 MiB slab
-  SharedPool pool(system_allocator(), kBlock, kCount);
-  void* a = pool.allocate();
-  void* b = pool.allocate();
-  ASSERT_NE(a, nullptr);
-  ASSERT_NE(b, nullptr);
-  EXPECT_NE(a, b);
-  std::memset(a, 0x11, kBlock);
-  pool.deallocate(a);
-  pool.deallocate(b);
-  // dtor frees huge or allocator slab cleanly
 }

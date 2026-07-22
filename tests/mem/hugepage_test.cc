@@ -11,30 +11,41 @@ using hyle::mem::advise_hugepage_range;
 using hyle::mem::AllocatorHugepagePolicy;
 using hyle::mem::enable_allocator_hugepages;
 using hyle::mem::HugeFlags;
-using hyle::mem::HugeRegion;
 using hyle::mem::hugepage_region_threshold;
+using hyle::mem::HugeRegion;
 using hyle::platform::large_page_align_up;
 using hyle::platform::large_page_size;
 using hyle::platform::page_size;
 
 TEST(HugeRegion, AllocateDefaultIsWritableAndAligned) {
-  const std::size_t want = hugepage_region_threshold();  // ~2 MiB
+  const std::size_t want = hugepage_region_threshold(); // ~2 MiB
   HugeRegion r = HugeRegion::allocate(want, HugeFlags::kThpHint);
   ASSERT_TRUE(r.valid());
   EXPECT_GE(r.size(), want);
   EXPECT_EQ(r.size(), large_page_align_up(want));
   // Fully writable.
   std::memset(r.data(), 0xA5, r.size());
-  EXPECT_EQ(static_cast<unsigned char*>(r.data())[0], 0xA5);
-  EXPECT_EQ(static_cast<unsigned char*>(r.data())[r.size() - 1], 0xA5);
+  EXPECT_EQ(static_cast<unsigned char *>(r.data())[0], 0xA5);
+  EXPECT_EQ(static_cast<unsigned char *>(r.data())[r.size() - 1], 0xA5);
+}
+
+TEST(HugeRegion, ReportsRequestedAndAcceptedPolicyWithoutOverclaiming) {
+  const auto requested = HugeFlags::kThpHint | HugeFlags::kPrefault;
+  HugeRegion r = HugeRegion::allocate(2u * 1024u * 1024u, requested);
+  ASSERT_TRUE(r.valid());
+  EXPECT_EQ(r.requested_flags(), requested);
+  EXPECT_TRUE(any(r.accepted_flags() & HugeFlags::kPrefault));
+  // THP advice is best-effort and platform-dependent; accepted_flags reports
+  // the call result.
+  EXPECT_EQ(r.requested_numa_node(), hyle::platform::kNumaAny);
 }
 
 TEST(HugeRegion, PrefaultTouchesPages) {
   // Smaller than 2 MiB still works (aligned up). Prefault is optional path.
-  HugeRegion r =
-      HugeRegion::allocate(page_size() * 8, HugeFlags::kThpHint | HugeFlags::kPrefault);
+  HugeRegion r = HugeRegion::allocate(
+      page_size() * 8, HugeFlags::kThpHint | HugeFlags::kPrefault);
   ASSERT_TRUE(r.valid());
-  auto* p = static_cast<unsigned char*>(r.data());
+  auto *p = static_cast<unsigned char *>(r.data());
   p[0] = 1;
   p[r.size() - 1] = 2;
   EXPECT_EQ(p[0], 1);
@@ -44,7 +55,7 @@ TEST(HugeRegion, PrefaultTouchesPages) {
 TEST(HugeRegion, MoveAndReset) {
   HugeRegion a = HugeRegion::allocate(page_size() * 4);
   ASSERT_TRUE(a.valid());
-  void* base = a.data();
+  void *base = a.data();
   HugeRegion b = std::move(a);
   EXPECT_FALSE(a.valid());
   EXPECT_TRUE(b.valid());
@@ -64,8 +75,8 @@ TEST(HugeRegion, HardBindRejectsInvalidNode) {
   const int invalid = static_cast<int>(count) + 100;
   ASSERT_NE(invalid, hyle::platform::kNumaAny);
   ASSERT_GE(static_cast<unsigned>(invalid), count);
-  HugeRegion r = HugeRegion::allocate(page_size(), HugeFlags::kNumaBind,
-                                      invalid);
+  HugeRegion r =
+      HugeRegion::allocate(page_size(), HugeFlags::kNumaBind, invalid);
   EXPECT_FALSE(r.valid());
 }
 
@@ -81,7 +92,7 @@ TEST(HugeRegion, AdviseHugepageRangeHelper) {
 TEST(HugepagePolicy, EnableDoesNotCrash) {
   AllocatorHugepagePolicy pol;
   pol.allow_thp = true;
-  pol.allow_large_os_pages = false;  // no privilege required
+  pol.allow_large_os_pages = false; // no privilege required
   enable_allocator_hugepages(pol);
   // Second call with large pages requested (may no-op without privileges).
   pol.allow_large_os_pages = true;

@@ -79,7 +79,7 @@ int main() {
   SaxpyParams p{kN, 2.0f, 3.0f, 0.5f};
   LaunchConfig cfg;
   cfg.grid = {blocks_for(kN, 256), 1, 1};
-  void* bufs[3] = {bx->device_ptr(), by->device_ptr(), bo->device_ptr()};
+  void* bufs[3] = {bx->native_handle(), by->native_handle(), bo->native_handle()};
   ScalarField field{0, sizeof(p)};
   KernelArgs ka{bufs, 3, &p, sizeof(p), &field, 1};
 

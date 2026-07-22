@@ -62,6 +62,16 @@ TEST(Alignment, UpDownConsistency) {
   }
 }
 
+TEST(Alignment, AddressAlignUpReportsOverflow) {
+  std::uintptr_t out = 0;
+  EXPECT_TRUE(hyle::mem::detail::try_align_up_address(65, 64, &out));
+  EXPECT_EQ(out, 128u);
+
+  out = 0xA5;
+  EXPECT_FALSE(hyle::mem::detail::try_align_up_address(UINTPTR_MAX - 31, 64, &out));
+  EXPECT_EQ(out, 0xA5u);  // failure does not publish a wrapped address
+}
+
 TEST(Alignment, PointerVariants) {
   alignas(64) char buf[256];
   char* base = buf;  // 64-aligned

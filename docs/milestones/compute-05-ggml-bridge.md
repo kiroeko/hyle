@@ -1,12 +1,12 @@
 # compute-05：ggml_bridge —— 借 ggml 算子（不借运行时）
 
-> **当前名称边界：**本文中的 host `MemoryArena` 旧称现对应 `SharedPool` / `SharedPoolCached`；旧头与旧 C ABI 已删除。当前 `PinnedStaging` 直接拥有一个 pinned host block 并 bump，不经 mem 池。
+> **当前边界（2026-07-21）：**ggml bridge 输入当前来自普通 HYLE host mem。compute HostBuffer 已分开 native handle、mapped pointer 与 coherence；错误 pinned allocator / 单块 staging API 已删除，且从来不是 ggml bridge 前置。异步 StagingRing 待真实 overlap 消费者。
 
 | 字段 | 值 |
 |---|---|
 | **阶段** | P5 |
 | **模块** | compute/ |
-| **前置** | compute-01（Device/Stream/Event）、compute-02（Buffer；本里程碑首消费者用 host 数据，Buffer 用于 ② CAD/CAE）、compute-02b（PinnedStaging，host 数据入口）、compute-03（spawn_blocking）、sched-11（spawn_blocking / BlockingPool / JoinHandle）、mem（Allocator） |
+| **前置** | compute-01（Device/Stream/Event）、compute-02（Buffer）、compute-03（spawn_blocking）、sched-11（spawn_blocking / BlockingPool / JoinHandle）、mem（普通 host Allocator） |
 | **状态** | ✅ **完成（2026-07-07，三平台真机 + 5 测试全绿）**。matmul 走 llama.cpp 忠实形态（gallocr 分配 device buffer + `tensor_set`/`tensor_get` 进出 host 数据）在 RTX 4070 真跑（Win MSVC+nvcc、WSL gcc14+nvcc）、mac CPU-only（Apple clang），三平台各 **5/5 PASSED**：MatmulDefaultDevice（host→ggml→host 端到端对拍）+ CpuThreadModelSplit（n_threads 二分）+ ConcurrentIndependentBackends（6 fiber 各自 backend）+ **BatchedMatmul（合批：3 不同形状 matmul 一图一提交，finding 4）** + **BackendReuseAcrossShapes（持久 gallocr create-once/reuse-many + move 语义 + 跨调用 reserve/realloc，红队补）**。**⚠️ 实现期重大设计修正**：**"HYLE 显存零拷贝注入 ggml 算子"愿景（发现 2 初版）被两阶段真跑 + WSL gdb 彻底证伪**——CUDA 后端 `buffer_from_host_ptr=false`（`ggml-cuda.cu:5032`）结构性否决外部显存指针；dummy-buffer 注入在合批 varied 形状崩于 `ggml-cuda.cu:1924`（共享 size-0 dummy 的 context 被 gallocr 弄丢，gdb 坐实）。**定案边界：host 归 HYLE（mem 喂入/取出）、device 归 ggml（gallocr），就像 llama.cpp**——专文 [`../architecture/borrowing-ggml-memory-model.md`](../architecture/borrowing-ggml-memory-model.md)，血泪 [`../debug/ggml-zerocopy-null-buffer-hunt.md`](../debug/ggml-zerocopy-null-buffer-hunt.md)。ggml/googletest 走纯 FetchContent（cil2cpp 形式，三机各自 `.deps` 下载，无 override）。 |
 
 > **范围**：把 ggml 当**算子库供应商**接进 HYLE——在**唯一一个 adapter 文件** `ggml_bridge.cc` 里，让 ggml 的 AI 算子（matmul/softmax/rope/conv…约 90 个）在 **HYLE 自管的显存/completion/调度** 之上运行。**借的是"算子 kernel"粒度，不是整库应用（不借 sd.cpp/llama.cpp），不 fork，不注入 ggml 运行时。**
@@ -41,7 +41,7 @@ ggml_backend_tensor_get(c, hyle_host_c, 0, ggml_nbytes(c));   // ← 结果拷�
 ```
 
 - **device 归 ggml**：不注入外部 `->data`、不造假 dummy buffer（那在多算子 varied 形状必崩）。ggml 算子内核依赖 buffer 的 `context->device`/`buft` 元数据 + 图内复用 + padding，是算子正确性的一部分。
-- **host 归 HYLE**：`tensor_set/get` 的 host 源/目标可以是 HYLE mem（`mem::Allocator`/`MemoryArena`）分配的内存。**性能接口点**：源用 pinned（compute-02b `PinnedStaging`）则 H2D 走 DMA 更快、可 async 重叠——借 ggml 的正确数据入口 = HYLE PinnedStaging → tensor_set → ggml 显存。
+- **host 归 HYLE**：`tensor_set/get` 的 host 源/目标当前是普通 HYLE `mem::Allocator` 数据。compute HostBuffer 已具备正确 mapped/coherence 合同，但 pinned 本身不等于异步重叠；只有 copy 真异步、slot 活到 Event completion 且至少两个 slot 在途时才有 overlap。StagingRing 待真实 async overlap 消费者。
 - **权重常驻**：反复用同一批权重（推理）时拷进 ggml 显存**一次**、常驻复用（llama.cpp 模式），非每次都拷。
 - **HYLE 显存自管的适用范围**：compute-04/06 自造 kernel（真零拷贝跑在 HYLE Buffer 上，已验证）+ ② CAD/CAE 数据（KV-cache/网格/BVH）。借 ggml 算 AI 这条路，device 侧让位给 ggml。
 - **quant padding**：F32 首版不涉；登记 quantized 类型须查 `ggml_backend_buft_get_alloc_size` 留 padding。

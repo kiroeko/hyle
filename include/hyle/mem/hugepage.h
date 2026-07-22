@@ -9,18 +9,20 @@
 #include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
-#  define HYLE_MEM_API
+#define HYLE_MEM_API
 #elif defined(HYLE_MEM_BUILD)
-#  define HYLE_MEM_API HYLE_EXPORT
+#define HYLE_MEM_API HYLE_EXPORT
 #else
-#  define HYLE_MEM_API HYLE_IMPORT
+#define HYLE_MEM_API HYLE_IMPORT
 #endif
 
-// Large-region hugepage + NUMA (mem-06b/06c) — complete standard-library surface.
+// Large-region hugepage + NUMA (mem-06b/06c) — complete standard-library
+// surface.
 //
 //   * TLB: large-page align + THP hint (access walk ~ N/2MiB).
 //   * NUMA: preferred / bind / interleave on large spans.
-//   * 1GiB OS pages: process-start reserve via mimalloc (opt-in, may need privileges).
+//   * 1GiB OS pages: process-start reserve via mimalloc (opt-in, may need
+//   privileges).
 // Fiber stacks / small objects must NOT use HugeRegion.
 
 namespace hyle::mem {
@@ -32,8 +34,8 @@ struct AllocatorHugepagePolicy {
   bool allow_large_os_pages = false;
 };
 
-HYLE_MEM_API void enable_allocator_hugepages(
-    AllocatorHugepagePolicy policy = {}) noexcept;
+HYLE_MEM_API void
+enable_allocator_hugepages(AllocatorHugepagePolicy policy = {}) noexcept;
 
 // 0 = all NUMA nodes (mimalloc default).
 HYLE_MEM_API void enable_allocator_numa(unsigned max_nodes = 0) noexcept;
@@ -74,7 +76,7 @@ HYLE_FORCE_INLINE bool any(HugeFlags f) noexcept {
 }
 
 class HugeRegion {
- public:
+public:
   HugeRegion() noexcept = default;
 
   // Reserve+commit `bytes` (large-page aligned). NUMA:
@@ -84,7 +86,10 @@ class HugeRegion {
                              HugeFlags flags = HugeFlags::kDefault,
                              int numa_node = platform::kNumaAny) noexcept {
     HugeRegion r;
-    if (bytes == 0) return r;
+    r.requested_flags_ = flags;
+    r.requested_numa_node_ = numa_node;
+    if (bytes == 0)
+      return r;
     const std::size_t aligned = platform::large_page_align_up(bytes);
     const bool interleave = any(flags & HugeFlags::kNumaInterleave);
     if (!interleave && numa_node != platform::kNumaAny &&
@@ -97,10 +102,11 @@ class HugeRegion {
     } else {
       r.region_ = platform::VmRegion::reserve_numa(aligned, numa_node);
     }
-    if (!r.region_.valid()) return HugeRegion{};
+    if (!r.region_.valid())
+      return r;
     if (!r.region_.commit(0, r.region_.size())) {
       r.region_.release();
-      return HugeRegion{};
+      return r;
     }
     if (interleave) {
       // Interleave and hard bind are requested guarantees, unlike preferred
@@ -108,8 +114,10 @@ class HugeRegion {
       if (!platform::vm_bind_numa_interleave(r.region_.data(),
                                              r.region_.size())) {
         r.region_.release();
-        return HugeRegion{};
+        return r;
       }
+      r.accepted_flags_ = r.accepted_flags_ | HugeFlags::kNumaInterleave;
+      r.numa_placement_applied_ = true;
     } else if (numa_node != platform::kNumaAny) {
       const auto pol = any(flags & HugeFlags::kNumaBind)
                            ? platform::NumaPolicy::kBind
@@ -118,35 +126,66 @@ class HugeRegion {
           r.region_.data(), r.region_.size(), numa_node, pol);
       if (!placed && pol == platform::NumaPolicy::kBind) {
         r.region_.release();
-        return HugeRegion{};
+        return r;
+      }
+      if (placed) {
+        r.numa_placement_applied_ = true;
+        if (pol == platform::NumaPolicy::kBind)
+          r.accepted_flags_ = r.accepted_flags_ | HugeFlags::kNumaBind;
       }
     }
     if (any(flags & HugeFlags::kThpHint)) {
-      (void)platform::vm_advise_hugepage(r.region_.data(), r.region_.size());
+      if (platform::vm_advise_hugepage(r.region_.data(), r.region_.size()))
+        r.accepted_flags_ = r.accepted_flags_ | HugeFlags::kThpHint;
     }
     if (any(flags & HugeFlags::kPrefault)) {
-      auto* p = static_cast<volatile char*>(r.region_.data());
+      auto *p = static_cast<volatile char *>(r.region_.data());
       const std::size_t step = platform::page_size();
       const std::size_t n = r.region_.size();
-      for (std::size_t off = 0; off < n; off += step) p[off] = p[off];
+      for (std::size_t off = 0; off < n; off += step)
+        p[off] = p[off];
+      r.accepted_flags_ = r.accepted_flags_ | HugeFlags::kPrefault;
     }
     return r;
   }
 
-  static HugeRegion allocate_local(
-      std::size_t bytes, HugeFlags flags = HugeFlags::kDefault) noexcept {
-    return allocate(bytes, flags, static_cast<int>(platform::numa_current_node()));
+  static HugeRegion
+  allocate_local(std::size_t bytes,
+                 HugeFlags flags = HugeFlags::kDefault) noexcept {
+    return allocate(bytes, flags,
+                    static_cast<int>(platform::numa_current_node()));
   }
 
   // Shared multi-MB arena: interleave + THP.
-  static HugeRegion allocate_interleaved(
-      std::size_t bytes, HugeFlags flags = HugeFlags::kThpHint) noexcept {
-    return allocate(bytes, flags | HugeFlags::kNumaInterleave, platform::kNumaAny);
+  static HugeRegion
+  allocate_interleaved(std::size_t bytes,
+                       HugeFlags flags = HugeFlags::kThpHint) noexcept {
+    return allocate(bytes, flags | HugeFlags::kNumaInterleave,
+                    platform::kNumaAny);
   }
 
-  HugeRegion(HugeRegion&& o) noexcept : region_(std::move(o.region_)) {}
-  HugeRegion& operator=(HugeRegion&& o) noexcept {
-    if (this != &o) region_ = std::move(o.region_);
+  HugeRegion(HugeRegion &&o) noexcept
+      : region_(std::move(o.region_)), requested_flags_(o.requested_flags_),
+        accepted_flags_(o.accepted_flags_),
+        requested_numa_node_(o.requested_numa_node_),
+        numa_placement_applied_(o.numa_placement_applied_) {
+    o.accepted_flags_ = HugeFlags::kNone;
+    o.requested_flags_ = HugeFlags::kNone;
+    o.requested_numa_node_ = platform::kNumaAny;
+    o.numa_placement_applied_ = false;
+  }
+  HugeRegion &operator=(HugeRegion &&o) noexcept {
+    if (this != &o) {
+      region_ = std::move(o.region_);
+      requested_flags_ = o.requested_flags_;
+      accepted_flags_ = o.accepted_flags_;
+      requested_numa_node_ = o.requested_numa_node_;
+      numa_placement_applied_ = o.numa_placement_applied_;
+      o.accepted_flags_ = HugeFlags::kNone;
+      o.requested_flags_ = HugeFlags::kNone;
+      o.requested_numa_node_ = platform::kNumaAny;
+      o.numa_placement_applied_ = false;
+    }
     return *this;
   }
   HYLE_DISABLE_COPY(HugeRegion);
@@ -154,21 +193,44 @@ class HugeRegion {
   bool valid() const noexcept { return region_.valid(); }
   explicit operator bool() const noexcept { return valid(); }
 
-  void* data() const noexcept { return region_.data(); }
+  void *data() const noexcept { return region_.data(); }
   std::size_t size() const noexcept { return region_.size(); }
 
-  void reset() noexcept { region_.release(); }
-
-  bool advise_hugepage() noexcept {
-    if (!valid()) return false;
-    return platform::vm_advise_hugepage(region_.data(), region_.size());
+  HugeFlags requested_flags() const noexcept { return requested_flags_; }
+  // Policies accepted by the OS-facing calls. For THP this means the advice
+  // call was accepted, not that the kernel has already promoted every physical
+  // page.
+  HugeFlags accepted_flags() const noexcept { return accepted_flags_; }
+  int requested_numa_node() const noexcept { return requested_numa_node_; }
+  bool numa_placement_applied() const noexcept {
+    return numa_placement_applied_;
   }
 
- private:
+  void reset() noexcept {
+    region_.release();
+    accepted_flags_ = HugeFlags::kNone;
+    numa_placement_applied_ = false;
+  }
+
+  bool advise_hugepage() noexcept {
+    if (!valid())
+      return false;
+    const bool accepted =
+        platform::vm_advise_hugepage(region_.data(), region_.size());
+    if (accepted)
+      accepted_flags_ = accepted_flags_ | HugeFlags::kThpHint;
+    return accepted;
+  }
+
+private:
   platform::VmRegion region_;
+  HugeFlags requested_flags_ = HugeFlags::kNone;
+  HugeFlags accepted_flags_ = HugeFlags::kNone;
+  int requested_numa_node_ = platform::kNumaAny;
+  bool numa_placement_applied_ = false;
 };
 
-HYLE_FORCE_INLINE bool advise_hugepage_range(void* ptr,
+HYLE_FORCE_INLINE bool advise_hugepage_range(void *ptr,
                                              std::size_t size) noexcept {
   return platform::vm_advise_hugepage(ptr, size);
 }
@@ -178,4 +240,4 @@ HYLE_FORCE_INLINE std::size_t hugepage_region_threshold() noexcept {
   return lp != 0 ? lp : (static_cast<std::size_t>(2u) * 1024u * 1024u);
 }
 
-}  // namespace hyle::mem
+} // namespace hyle::mem

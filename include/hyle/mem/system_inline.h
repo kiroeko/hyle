@@ -90,12 +90,14 @@ struct SystemAllocator {
   // allocator). All inline. ----
   template <class T>
   static T* allocate_n(std::size_t numel = 1, std::size_t alignment = alignof(T)) noexcept {
+    if (numel > SIZE_MAX / sizeof(T)) return nullptr;
     return static_cast<T*>(allocate(sizeof(T) * numel, alignment));
   }
   template <class T>
   static T* allocate_zeroed(std::size_t numel = 1) noexcept {
     static_assert(std::is_trivially_constructible_v<T>,
                   "allocate_zeroed requires trivially-constructible T");
+    if (numel > SIZE_MAX / sizeof(T)) return nullptr;
     std::size_t sz = sizeof(T) * numel;
     void* p = allocate(sz, alignof(T));
     if (p != nullptr) std::memset(p, 0, sz);
@@ -103,6 +105,7 @@ struct SystemAllocator {
   }
   template <class T>
   static void deallocate_n(T* ptr, std::size_t numel = 1) noexcept {
+    HYLE_FATAL_ASSERT(numel <= SIZE_MAX / sizeof(T));
     deallocate(ptr, sizeof(T) * numel, alignof(T));
   }
 };
