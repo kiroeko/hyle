@@ -6,14 +6,6 @@
 
 #include <mimalloc.h> // PRIVATE include -- mi_* types never leak to a header
 
-#if defined(_ADDRESS_SANITIZER) || defined(__SANITIZE_ADDRESS__)
-#define HYLE_MEM_ASAN 1
-#elif defined(__has_feature)
-#if __has_feature(address_sanitizer)
-#define HYLE_MEM_ASAN 1
-#endif
-#endif
-
 namespace hyle::mem {
 namespace {
 

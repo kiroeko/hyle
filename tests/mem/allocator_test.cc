@@ -15,6 +15,16 @@
 #include "hyle/mem/stats.h"
 #include "hyle/mem/system_inline.h"
 
+#if defined(_ADDRESS_SANITIZER) || defined(__SANITIZE_ADDRESS__)
+#include <sanitizer/asan_interface.h>
+#define HYLE_MEM_TEST_ASAN 1
+#elif defined(__has_feature)
+#if __has_feature(address_sanitizer)
+#include <sanitizer/asan_interface.h>
+#define HYLE_MEM_TEST_ASAN 1
+#endif
+#endif
+
 using hyle::mem::Allocator;
 using hyle::mem::kDefaultAlignment;
 using hyle::mem::QuotaAllocator;
@@ -86,6 +96,17 @@ TEST(Allocator, AllocateWriteFree) {
   std::memset(p, 0xAB, 128); // must be fully writable
   a.deallocate(p, 128);
 }
+
+#if defined(HYLE_MEM_TEST_ASAN)
+TEST(AllocatorAsan, SystemFreePoisonsUsableStorage) {
+  Allocator a = system_allocator();
+  void *p = a.allocate(64);
+  ASSERT_NE(p, nullptr);
+  EXPECT_EQ(__asan_address_is_poisoned(p), 0);
+  a.deallocate(p, 64);
+  EXPECT_NE(__asan_address_is_poisoned(p), 0);
+}
+#endif
 
 TEST(Allocator, AllocateZeroReturnsNull) {
   Allocator a = system_allocator();

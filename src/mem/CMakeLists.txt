@@ -28,13 +28,17 @@ else()
 endif()
 # TSan must instrument the shipping allocator too. Otherwise it cannot observe
 # mimalloc's synchronization when a freed block moves between thread-local heaps
-# and reports a false race between the old and new owners. Do not apply this to
-# ASan: CMake also puts this private static archive on some shared-library
-# consumers' link lines, and two instrumented copies trigger ASan's ODR checker.
+# and reports a false race between the old and new owners. ASan likewise needs
+# the archive compiled with sanitizer support: on MSVC, its public poison macros
+# deliberately become no-ops in an uninstrumented translation unit. Mimalloc's
+# MI_TRACK_ASAN mode then exposes logical frees to the process ASan runtime.
 if(HYLE_SANITIZER STREQUAL "tsan")
   # Mimalloc's own TSan mode widens two shared page flags that otherwise occupy
   # adjacent bitfields (the vendor documents this as issue #130).
   target_compile_definitions(mimalloc_static PRIVATE MI_TSAN=1)
+  hyle_apply_sanitizer(mimalloc_static)
+elseif(HYLE_SANITIZER STREQUAL "asan")
+  target_compile_definitions(mimalloc_static PRIVATE MI_TRACK_ASAN=1)
   hyle_apply_sanitizer(mimalloc_static)
 endif()
 target_link_libraries(hyle_mem PRIVATE mimalloc_static)
