@@ -25,10 +25,10 @@ last-error 分类和“失败指针 + 另查 TLS”的组合；未发布，不�
   六项在 MSVC ASan 下通过。
 - WSL Linux GCC 14 的同六项通过；error/platform 四项在 UBSan 下通过，覆盖
   `dlopen`/`dlsym`、`mmap`/`msync` 与 GNU `strerror_r` 分支。
-- macOS AppleClang 当前提交尚待远程复证，因此 A 阶段实现完成，但不把 platform
-  或 error 写成三平台最终冻结。
+- 2026-07-23 的 Apple M4 AppleClang 21 `hyle_platform_test` 148/148 通过，覆盖
+  DynLib/MappedFile 的共享错误集成；A 阶段资源路径已完成三平台复证。
 
-## B 阶段：VM + NUMA（2026-07-23，Windows/Linux 已完成）
+## B 阶段：VM + NUMA（2026-07-23，三平台已完成）
 
 - VM 页原语返回 8-byte `Status`，reserve/`VmRegion` 工厂返回 `Result`；成功态零分配，
   原生诊断只在失败路径构造。删除 `hyle_vm_last_error` 与 setter。
@@ -38,7 +38,9 @@ last-error 分类和“失败指针 + 另查 TLS”的组合；未发布，不�
 - `HugeRegion`、`FiberStack`、stack pool 与 sched 的 detached/task 路径传播共享错误；
   mem C 仍保留分配语义的小枚举，但直接按 StatusCode 映射，不再捕获 platform TLS。
 - Windows MSVC Release 的 platform/mem/sched C/C++ 与 mem header/surface 共 8 项通过；
-  WSL GCC 14 的同链路 8 项通过。
+  WSL GCC 14 与 Apple M4 AppleClang 21 的同链路各 8 项通过。macOS 非登录 SSH
+  下的 header checker 现用 `xcrun` 注入 SDK sysroot，不再把工具链环境误报为
+  `<cstddef>` 头缺陷。
 - Windows MSVC ASan 的 platform/mem 全绿；sched 受影响的新 `Fiber::create` 与 VM stack
   路径通过。sched 全套仅既有 `RetiredThreadHandlesStayBoundedAcrossBursts` 首轮瞬时观测到
   2（阈值 1），隔离复跑通过，不冒充单轮 138/138。WSL UBSan 的 platform 2/2、mem
@@ -47,7 +49,12 @@ last-error 分类和“失败指针 + 另查 TLS”的组合；未发布，不�
   为 897 ns；protect pair 为 460/439 ns；FiberStackPool 的 32-fiber batch p50 为
   7.3 us，直接 guarded VM 为 155 us。它们只证明接口重构没有离开既有统计带，不替代
   三平台正式性能证书。
-- macOS AppleClang 与本阶段 TSan 仍待复证，不能写成三平台冻结。
+- WSL TSan：platform 148/148、受影响 mem 27/27、sched 138/138 通过；WSL 的
+  随机高地址映射会让 GCC TSan 启动前报 `unexpected memory mapping`，sched 正式运行
+  用 `setarch x86_64 -R` 固定地址空间。它是 harness 环境要求，不是被测 race。
+
+**B 阶段完成。**后续只有新的消费者需求、跨平台回归或正式性能证书失效才重开，
+不再因 benchmark 形状自行扩张 VM/mem API。
 
 ## 完成条件
 

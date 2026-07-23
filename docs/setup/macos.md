@@ -42,6 +42,9 @@ cd ~/hyle
 
 - **NEON simd 变体**：`tests/CMakeLists` 按 `CMAKE_SYSTEM_PROCESSOR` 分支——arm64 建 `hyle_simd_neon_test`（x86 建 sse4/avx2）。这是 neon.h 全 op 对拍 scalar 的真闸门。
 - **kqueue io 后端**：mac 的 io proactor 走 kqueue，`hyle_io_*` 测试真跑该路径。
+- **独立头检查**：非登录 SSH 下直接调用 AppleClang 必须带 macOS SDK sysroot；
+  `mem-header-self-contained.py` 会通过 `/usr/bin/xcrun --sdk macosx --show-sdk-path`
+  自动发现，不要把标准库 `<cstddef>` 找不到误判成 HYLE 头文件缺依赖。
 
 ## 四、性能测试（bench）
 
@@ -118,4 +121,3 @@ cd ~/hyle
 - ⚠️ **portability 扩展（HYLE 代码侧，已在 `vulkan_backend.cc` 处理，无需手动配）**：MoltenVK 是 *portability* 驱动，`vkCreateInstance` 若不开 `VK_KHR_portability_enumeration`（instance 扩展 + `ENUMERATE_PORTABILITY` flag）会直接返 `VK_ERROR_INCOMPATIBLE_DRIVER(-9)`，创建 VkDevice 又须启用 `VK_KHR_portability_subset`（spec 强制）。HYLE 后端**运行时探测这两个扩展、advertise 才启用**（一份代码通吃 mac + Win/WSL discrete GPU）。记录于此以防将来重构 instance/device 创建时误删——ICD 设对了但测试仍 SKIP，先查这里。
 - ⚠️ **MoltenVK 不支持全部 Vulkan 特性**（它是 Metal 子集映射）——compute-06 的 storage buffer + push constant + compute dispatch 都在支持范围内；将来用到 MoltenVK 缺的扩展需查其 [支持矩阵](https://github.com/KhronosGroup/MoltenVK)。
 - 未装 MoltenVK 时：`volkInitialize()` 找不到 loader → Vulkan 后端 `vulkan_vtable()` 返回 null → `hyle_compute_vulkan_test` 运行时 `GTEST_SKIP`（不崩，优雅降级）。
-
