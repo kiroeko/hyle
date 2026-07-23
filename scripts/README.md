@@ -164,3 +164,13 @@ whether the QoS call succeeded, and the unsupported hard-affinity boundary;
 an unsuccessful QoS request rejects the certificate. Use at least
 `-n 15 --samples 4096` for a certificate; short runs are harness smoke tests only. See
 `docs/performance/benchmarks-mem.md` §8 for commands and interpretation.
+
+## `mem-fiber-stack-stat.py` — scheduler-owned fiber stack latency
+
+Runs `hyle_mem_fiber_stack_bench` in independent processes and aggregates the
+p50/p95/p99 latency of complete 32-fiber create/run/drain/destroy batches. The
+paired variants are scheduler-owned `FiberStackPool` reuse and direct guarded
+VM reserve/release. It records commit, dirty state, compiler/platform, Linux CPU
+binding and Apple QoS; dirty runs or a failed macOS QoS request are not release
+evidence. Formal runs use `-n 15 --samples 2048` on Windows/Linux and `-n 31`
+for each macOS QoS. See `docs/performance/benchmarks-mem.md` §5.

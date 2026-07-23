@@ -1,20 +1,20 @@
 # mem 实测铁证
 
 > 本页是 [performance 总账](./README.md) 的 **mem 模块**详节。
-> 源：`bench/mem/allocator_bench.cc`、`bench/mem/scenario_bench.cc`。
-> 通用分配器数据来自 2026-07-20 的 Win MSVC / WSL GCC 14 / Apple M4 AppleClang 实测；当前 `SharedPool` / `SharedPoolCache` 绑定 clean commit `8cf52f9`（Win/WSL `n=15`、M4 两种 QoS 各 `n=31`）。request closure 数据来自 2026-07-22 的 Win、WSL GCC 14/Clang 20 `n=15` 与 Apple M4 每种 QoS `n=31`，mem 实现绑定 commit `7f270bb`，调度审计绑定 `803dae6`。FixedPool section F、whole-request latency 与 fragmentation 绑定 clean commit `d3e4214`；request footprint 绑定 clean commit `02ec81e`。同契约性能判定信任配对 **[sign]**。
+> 源：`bench/mem/allocator_bench.cc`、`bench/mem/scenario_bench.cc`、`bench/mem/fiber_stack_bench.cc`。
+> 通用 churn 数据来自 2026-07-20 的 Win MSVC / WSL GCC 14 / Apple M4 AppleClang 实测；`SharedPool` / `SharedPoolCache` 绑定 clean commit `8cf52f9`。request closure、FixedPool、latency、fragmentation 和 footprint 按各节所列 commit。2026-07-23 的 MEM-FINAL-2 bump/realloc/adapter/fiber 证书统一绑定 clean product commit `2cbc307`：Win/WSL `n=15`；M4 为 `n=31`，bump/fiber 跑 interactive+utility，realloc/adapter 跑 interactive。同契约性能判定信任配对 **[sign]**。
 
 ## 当前性能封口状态
 
 本页独占 mem 的性能现状；architecture 和 guide 不复制点值。已签结果按各节标注的 commit
-有效，不因 API-only commit 自动失效。冻结前仍有四个有界证据缺口：
+有效，不因 API-only commit 自动失效。MEM-FINAL-2 的四个有界证据缺口已关闭：
 
-| 缺口 | 当前证据 | 关闭条件 |
+| 原缺口 | `2cbc307` 关闭证据 | 结论 |
 |---|---|---|
-| M4 PooledRegion/Stack | 旧 section A 对 PMR 为约 0.67x LOSE | 当前 harness 重签 interactive/utility；确认 workload/lifetime 对称后再优化或记录合同边界 |
-| realloc 分层 | 只有 runtime `Allocator::reallocate` vtable 对 raw `mi_realloc` | 增加 direct `SystemAllocator::reallocate`；direct 默认路径与 raw mi 同档，vtable 与同抽象层 peer 同档 |
-| adapter composition | Quota 有数据；counters-only Stats 和 Quota+Stats 未独立量化 | 正常组合 workload 给出吞吐/whole-operation 成本；leak map 明确为诊断慢路 |
-| FiberStackPool | 正确性与 scheduler 消费存在，缺真实 create/reuse 性能证书 | 用 sched consumer workload 对直接 VM reserve/release，报告缓存收益和 tail |
+| M4 PooledRegion/Stack | 对称 8192×64B batch；interactive 为 1.023x / 1.023x，utility 为 1.028x / 1.026x，均对 PMR sign WIN | 已关闭；旧 0.67x 作废 |
+| realloc 分层 | direct `SystemAllocator` 对 raw mi：Win 1.005x TIE、Linux 0.989x TIE、M4 1.018x WIN；runtime vtable 单列 | 默认路径同档；x86 动态多态税显式可见 |
+| adapter composition | direct、Quota、counters-only Stats、Quota→Stats 三平台独立量化 | 默认路径零装饰税；策略成本由用户按需购买 |
+| FiberStackPool | 真实 `Scheduler` 每 batch 创建/运行/销毁 32 fibers，缓存与直接 guarded VM 比较 p50/p95/p99 | 三平台、M4 双 QoS 全 percentile sign WIN |
 
 `SharedPool` hard core 的 immediate-global-free/精确容量合同强于 owner-local free list；它不以
 击败较弱合同的 oneTBB local churn 为冻结条件。吞吐形状由显式 `SharedPoolCache` 对拍，hard
@@ -27,7 +27,8 @@ core 仍报告绝对成本和较弱合同参照。
 | **SystemAllocator 内联** vs 裸 mi churn | 7.93 / 7.86 → **0.996 TIE** | 8.04 / 8.04 → **0.99 TIE** | 7.77 / 7.91 → **1.00 TIE** | ➖ 三平台平 mimalloc |
 | **vtable** vs 裸 mi churn | 8.67 / 7.86 → **0.91 LOSE sign** | 8.67 / 8.04 → **0.94 LOSE sign** | 7.93 / 7.91 → **1.00 TIE** | Win/WSL 有约 6–9% 多态税 |
 | **vtable** vs pmr(over mi) churn | 8.67 / 8.67 → **TIE** | 8.67 / 10.27 → **1.22 WIN sign** | 7.93 / 9.98 → **1.26 WIN** | 同类多态对照平或赢 pmr |
-| runtime **vtable reallocate** vs `mi_realloc` | 80 / 67 → **0.83 LOSE sign** | 83 / 77 → **0.92 LOSE sign** | 82 / 83 → **1.01 TIE** | Win/WSL 输裸 mi；不是 direct `SystemAllocator` 结论 |
+| direct **SystemAllocator reallocate** / raw `mi_realloc` | 66.979 / 67.691 → **1.005 TIE** | 79.279 / 78.995 → **0.989 TIE** | 81.643 / 83.577 → **1.018 WIN sign** | 默认编译期路径三平台同档 |
+| runtime **Allocator vtable reallocate** / raw `mi_realloc` | 74.922 / 67.691 → **0.906 LOSE sign** | 86.344 / 78.995 → **0.921 LOSE sign** | 81.329 / 83.577 → **1.020 WIN sign** | x86 有约 8–9% 动态多态税；M4 无税 |
 
 默认内联路径平 mimalloc；需要运行时注入的 vtable 路径对裸 mi 有可测税，但仍平或赢同为多态封装的 pmr。
 
@@ -37,14 +38,17 @@ core 仍报告绝对成本和较弱合同参照。
 
 | | Win | WSL | M4 |
 |---|---:|---:|---:|
-| PooledRegion ns | 0.55 | 0.37 | 2.23 |
-| StackAllocator ns | 0.55 | 0.37 | 2.23 |
-| pmr monotonic ns | 1.46 | 0.62 | **1.49** |
-| vs pmr | **约 2.6x WIN** | **约 1.7x WIN** | **约 0.67x LOSE** |
-| vs 裸 mi | **约 7x WIN** | **约 11x WIN** | **约 2.1x WIN** |
+| PooledRegion ns | 0.568 | 0.345 | 1.176 / 1.176 |
+| StackAllocator ns | 0.571 | 0.342 | 1.175 / 1.176 |
+| pmr monotonic ns | 1.483 | 0.648 | 1.204 / 1.209 |
+| Pooled / pmr throughput | **2.594x WIN** | **1.809x WIN** | **1.023x / 1.028x WIN sign** |
+| Stack / pmr throughput | **2.638x WIN** | **1.849x WIN** | **1.023x / 1.026x WIN sign** |
 
-M4 上旧证书中 pmr monotonic 更快，不能把 x86 结论外推到 ARM；该行是当前明确待重签的
-性能缺口，不与后面已重签并获胜的 `Region`/`FixedRegion` request workload 混为一项。
+M4 旧证书的约 0.67x 不是大小核结论，而是通用 alignment/overflow 检查留在每次已对齐
+成功分配的串行依赖上，并且 `PooledRegion` 的 invalid-state 检查位于返回值之后。当前实现以
+已对齐游标为常用 fast path、非对齐/溢出走完整 checked path，并把 invalid region 前置；
+Windows/Linux 大幅胜 PMR，M4 interactive/utility 都与 libc++ PMR 同档并稳定同侧。Darwin
+仍不冒充硬 P/E core 绑定，但双 QoS 已反证旧 lose 不是应保留的平台边界。
 
 ### Region / FixedRegion request scratch
 
@@ -283,29 +287,59 @@ free 的指针以 `std::as_const` 作为只读左值观测：GCC 不再把指针
 MSVC 也不为 const-pointer prvalue 增加临时对象。clean `d3e4214` 上 Windows、GCC、Clang 与
 M4 两种显式 QoS 均通过 spread/sign 双闸门；M4 的结论边界同上，不冒充硬 P/E 核证书。
 
-## 5. 装饰器与昂贵上下文复用
+## 5. 装饰器、昂贵上下文与 fiber stack
 
-同一 section F；Windows/WSL Clang 为 `n=15`，M4 为 interactive QoS `n=31`：
+### Allocator decoration 与昂贵上下文复用
 
-| workload | Windows/MSVC | Ubuntu/Clang 20.1 | Apple M4/AppleClang 21 | 结论 |
+MEM-FINAL-2 adapter-only section F 绑定 clean `2cbc307`。每个 operation 是 64B
+allocate + free；Windows/MSVC 与 Linux/GCC 14 固定 CPU 2 为 `n=15`，M4 interactive
+为 `n=31`。单位 ns/op：
+
+| workload | Windows/MSVC | Linux/GCC 14.2 | Apple M4/AppleClang 21 | 结论 |
 |---|---:|---:|---:|---|
-| strict requested-byte admission：`QuotaAllocator` / direct system | 22.181 / 9.144 ns/op | 19.529 / 6.004 ns/op | 9.498 / 7.680 ns/op | 可组合 hard admission 有明确原子 accounting 成本；不替代裸 allocator |
-| expensive reusable context loan：`PreservingObjectPool` / reconstruct | 20.894 / 266.230 ns/op，**12.7x** | 18.173 / 93.788 ns/op，**5.2x** | 8.900 / 70.247 ns/op，**7.9x** | 构造昂贵、归还后保留状态的 context 值得复用 |
+| direct system | **8.339** | **7.198** | **7.815** | 默认路径，不承担 adapter 成本 |
+| `QuotaAllocator -> system` | 21.712 | 20.907 | 9.750 | strict requested-byte admission 的原子 accounting |
+| counters-only `StatsAllocator -> system` | 30.015 | 29.291 | 10.518 | 计数/峰值；不含 leak map |
+| `QuotaAllocator -> StatsAllocator -> system` | 47.160 | 46.181 | 12.031 | 正常可组合路径；成本约为各层叠加 |
 
-quota 行体现的是可组合 hard admission 的价格，不应拿来替代裸 allocator；Preserve 行对应
-codec/session 等昂贵对象“构造一次、借还保留状态”的真实生命周期。
+三种 adapter 都是显式 opt-in，不应拿来替代裸 allocator。`StatsAllocator` 的 leak map 是
+诊断慢路，涉及锁与 map，不进入正常 counters-only 性能承诺。先前 section F 的昂贵 context
+证据仍有效：`PreservingObjectPool / reconstruct` 在 Windows、Linux Clang、M4 分别为
+20.894/266.230（12.7x）、18.173/93.788（5.2x）、8.900/70.247 ns/op（7.9x）；对应
+codec/session 等“构造一次、借还保留状态”的生命周期。
+
+### FiberStackPool：真实 scheduler consumer
+
+新 target `hyle_mem_fiber_stack_bench` 不单测一个孤立 cache API：每个样本通过真实
+`Scheduler` 创建、运行、drain 并销毁 32 个 standard-tier fibers；pool 组使用 scheduler-owned
+`FiberStackPool`，对照组每次直接 guarded VM reserve/release。表中单位为 **µs/32-fiber batch**，
+ratio 为逐进程 `direct_vm / scheduler_pool` latency：
+
+| 平台 / QoS | direct VM p50/p95/p99 | scheduler pool p50/p95/p99 | paired ratio p50/p95/p99 | 判定 |
+|---|---:|---:|---:|---|
+| Windows / MSVC 19.50 | 151.800 / 184.500 / 199.000 | **7.600 / 8.500 / 14.700** | **20.026 / 21.805 / 13.891** | 全部 15/15 **WIN** |
+| Linux / GCC 14.2，CPU 2 | 182.621 / 408.191 / 482.049 | **10.192 / 247.533 / 280.977** | **17.892 / 1.634 / 1.716** | 全部 15/15 **WIN** |
+| Apple M4 / interactive | 80.667 / 84.500 / 90.500 | **13.250 / 15.541 / 16.083** | **6.066 / 5.435 / 5.630** | 全部 31/31 **WIN** |
+| Apple M4 / utility | 144.708 / 171.542 / 219.709 | **19.417 / 123.458 / 130.125** | **7.474 / 1.389 / 1.686** | 全部 31/31 **WIN** |
+
+Linux/utility 的尾延迟收益小于 p50，但 p95/p99 仍稳定同侧；这正是报告整批生命周期 tail
+而不是只报 cache hit 纳秒数的原因。原始逐进程数据：
+[Windows](./mem-fiber-stack-win.csv)、[Linux](./mem-fiber-stack-linux.csv)、
+[M4 interactive](./mem-fiber-stack-m4.csv)、[M4 utility](./mem-fiber-stack-m4-utility.csv)。
+四份均为 clean `2cbc307`；M4 行记录 `qos_ok=1` 与 `affinity=unsupported`。
 
 ## 6. 选型
 
 ```text
 默认小对象             → SystemAllocator
 运行时注入/mock         → vtable Allocator（接受对裸 mi 的个位数 % 税）
-单线程 borrowed/owned bump → PooledRegion / StackAllocator（M4 上 pmr 可能更快）
+单线程 borrowed/owned bump → PooledRegion / StackAllocator
 单线程同尺寸可增长       → GrowablePool
 多线程、每线程独享       → GrowablePool × N
 共享固定块、严格配额     → SharedPool / ObjectPool<T>
 共享固定块、吞吐优先且有余量 → SharedPoolCache / ObjectPoolCache<T> over hard core
 通用多线程 malloc       → mimalloc / oneTBB；不要硬套固定 slab
+scheduler fiber 栈       → 由 Scheduler 持有 FiberStackPool；用户不直接管理 raw stack cache
 ```
 
 ## 7. 复跑
@@ -313,7 +347,47 @@ codec/session 等昂贵对象“构造一次、借还保留状态”的真实生
 ```bash
 # shipping-like bench；使用仓库同级 ../oneTBB 本地源码快照
 cmake --preset bench -DHYLE_BENCH_TBB=ON
-cmake --build --preset bench --target hyle_mem_scenarios_bench
+cmake --build --preset bench --target hyle_mem_bench hyle_mem_scenarios_bench hyle_mem_fiber_stack_bench
+
+# bump：Win/Linux n=15；M4 分别以 interactive/utility 跑 n=31
+HYLE_BENCH_SECTIONS=A \
+scripts/bench-stat.py build-bench/bin/hyle_mem_scenarios_bench -n 15 \
+  --pair "std::pmr::monotonic_buffer_resource (external, reconstruct)" \
+         "HYLE PooledRegion (bump, pooled block)" \
+  --pair "std::pmr::monotonic_buffer_resource (external, reconstruct)" \
+         "HYLE StackAllocator (bump, own slab)"
+
+# realloc：direct 默认路径和 runtime vtable 必须分开
+HYLE_BENCH_SECTIONS=R \
+scripts/bench-stat.py build-bench/bin/hyle_mem_bench -n 15 \
+  --pair "raw mi_realloc (SOTA)" \
+         "HYLE SystemAllocator::reallocate (compile-time)" \
+  --pair "raw mi_realloc (SOTA)" \
+         "HYLE Allocator::reallocate (vtable)"
+
+# adapter-only：不重复 section F 的其他长项
+HYLE_BENCH_SECTIONS=F HYLE_MEM_ADAPTER_ONLY=1 \
+scripts/bench-stat.py build-bench/bin/hyle_mem_scenarios_bench -n 15 \
+  --pair "HYLE system allocator (direct)" \
+         "HYLE QuotaAllocator -> system allocator" \
+  --pair "HYLE system allocator (direct)" \
+         "HYLE StatsAllocator counters-only -> system allocator" \
+  --pair "HYLE system allocator (direct)" \
+         "HYLE QuotaAllocator -> StatsAllocator -> system allocator"
+
+# scheduler-owned fiber stack 生命周期和 tail；Linux 另加 --cpu 2
+python3 scripts/mem-fiber-stack-stat.py \
+  build-bench/bin/hyle_mem_fiber_stack_bench -n 15 --samples 2048 --cpu 2 \
+  --raw docs/performance/mem-fiber-stack-linux.csv
+
+# macOS：无硬亲和 API，分别复核 application 的两种 QoS
+python3 scripts/mem-fiber-stack-stat.py \
+  build-bench/bin/hyle_mem_fiber_stack_bench -n 31 --samples 2048 \
+  --raw docs/performance/mem-fiber-stack-m4.csv
+HYLE_BENCH_APPLE_QOS=utility \
+python3 scripts/mem-fiber-stack-stat.py \
+  build-bench/bin/hyle_mem_fiber_stack_bench -n 31 --samples 2048 \
+  --raw docs/performance/mem-fiber-stack-m4-utility.csv
 
 export HYLE_BENCH_SECTIONS=DE
 export HYLE_BENCH_THREADS=8

@@ -12,7 +12,7 @@
 | [error 实测](./benchmarks-error.md) | **error 2026-07-20 三平台证书**（Status/Result vs absl + std::expected） |
 | [platform 实测](./benchmarks-platform.md) | **platform 2026-07-20 证书**（Parker/Thread/dir/vm/MappedFile；OS 段 n=15 Win/M4、WSL n=5） |
 | [time 实测](./benchmarks-time.md) | **time 2026-07-19 三平台证书**（clock / TimerWheel / CommonTimeoutQueue） |
-| [mem 实测](./benchmarks-mem.md) | **mem 2026-07-23 证书**：Region/FixedRegion request closure + HTTP request lifecycle/RSS + hard core/显式 owner cache + external FixedPool；HTTP retention/collect 已签 clean `17ca3c3` Windows+Linux `n=15`；显式 cache 已签 Windows + WSL GCC/Clang clean `n=15`、M4 interactive/utility 各 `n=31`；request latency、footprint 与 FixedPool 外部碎片有 raw CSV |
+| [mem 实测](./benchmarks-mem.md) | **mem 2026-07-23 证书**：MEM-FINAL-2 bump/realloc/adapter/scheduler-owned FiberStackPool 绑定 clean `2cbc307`，Win/Linux `n=15`、M4 `n=31`（bump/fiber 双 QoS）；另含 Region HTTP lifecycle/RSS、hard core/显式 cache、external FixedPool、request latency/footprint/fragmentation raw CSV |
 | [container 实测](./benchmarks-container.md) | **container 导航证书**：新鲜度、非 SOTA、选型；详表 → [benchmarks-mem-container.md](./benchmarks-mem-container.md) |
 | [container 详表](./benchmarks-mem-container.md) | hash/SwissTable/vec/list/str/path/fuzzy 长表 + 史；**入口见上** |
 | [simd 产品 kernel](./benchmarks-simd.md) | dot/saxpy、math、dtype、gather、vendor 竞争…；**op 全量不在此** |
@@ -73,7 +73,7 @@
 | **obs** log gate / preformatted / formatted | 0.91–2.11 / 8.85–22.48 / 50.9–84.6（三平台） | (无 std log) | n/a | n/a | 同步 sink 产出原语 | n/a | ➖ | ✅ gated 极轻；preformatted 含 quiescent-unregister active ref；C ABI 仅多 1.5–3.0ns；formatted 由 `std::format` 主导。详见 obs closure |
 | **mem** SystemAllocator churn(默认) | 7.93/8.04/7.77 | malloc OS | 25/4.7/20 | 大赢 OS | 裸 mimalloc | 7.86/8.04/7.91 | **~1.00x 三平台** | ➖**平 mi SOTA**(2026-07-20 n=15) |
 | **mem** Allocator vtable churn | 8.67/8.67/7.93 | pmr over mi | 8.67/10.3/9.98 | 平/1.22/1.26 | 裸 mi | 7.86/8.04/7.91 | **0.91/0.94/1.00** | ⚠️对 mi Win/Lin **sign 输~6–9%**；✅对 pmr 平/赢 |
-| **mem** PooledRegion/Stack bump | 0.57·0.55/0.36·0.36/2.23 | pmr monotonic | 1.46/0.62/**1.49** | **2.65/1.70/0.67x** | 裸 mi | 3.9/3.9/4.8 | 7–11x/2x | ⏳旧证书平台翻转；M4 当前 harness interactive/utility 待重签，非冻结结论 |
+| **mem** PooledRegion/Stack bump | 0.568·0.571/0.345·0.342/1.176·1.175 | pmr monotonic | 1.483/0.648/1.204 | **2.59·2.64/1.81·1.85/1.023·1.023x** | 裸 mi | 6.17/3.84/4.50 | 10–11x/3.8x | ✅ clean `2cbc307`：Win/Linux 明赢；M4 interactive/utility 均 sign WIN、同档，无硬 P/E 绑定宣称 |
 | **mem** Region owned request scratch | 1.674/1.137/2.282 | pmr monotonic release | 1.923/2.033/2.444 | **1.126/1.779/1.073** | Folly Arena（shape 参考，未同 harness 实测） | n/a | n/a | ✅三平台 sign 赢；WSL Clang 另为 1.482x；M4 interactive/utility 各 n=31 均赢，无硬核心亲和 |
 | **mem** GrowablePool 单线程 | 2.76/1.38/2.46 | pmr unsync | 5.57/11.3/3.47 | **2.0/8.3/1.4x** | 裸 mi | 4.75/4.31/5.80 | **1.7/3.1/2.4x** | ✅三平台赢公平 ST 标尺；固定共享池不是这条单线程合同的对手 |
 | **mem** GrowablePool 8t per-thread | 0.93/0.61/0.60 | mi 8t | 1.35/1.28/1.42 | **1.49/2.07/2.38x** | mi per-thread | 同左 | 同左 | ✅三平台 sign 赢 |
@@ -85,7 +85,9 @@
 | **mem** FixedPool whole-request p50（Win/Lin/M4，µs） | 26.600/24.428/23.584 | （无同合同 std） | n/a | n/a | oneTBB fixed_pool | 36.100/37.857/40.917 | **1.357/1.554/1.735x** | ✅ clean `d3e4214`：Win/Linux/M4 p50/p95/p99 全 WIN，M4 utility 同结论；split-tail cursor 关闭 Windows tail 缺口 |
 | **mem** Region 128MiB request reservation / payload（Win/Lin/M4） | **1.031/1.031/1.031** | pmr monotonic | 1.443/1.302/2.000 | **更低 28.6%/20.8%/48.5%** | 同 backing live RSS Δ (MiB) | 129.11/138.05/128.67 vs 128.59/144.09/128.72 | — | ✅ clean `02ec81e`：exact fragmentation 三平台更低；RSS Win +0.4% / Linux **-4.2%** / M4 -0.04%，三平台同档且 Linux 缺口关闭；full release backing 均为 0 |
 | **mem** FixedPool 75% mixed-fill 后 fragmented availability（Win/Lin/M4） | **0.6874/0.6874/0.6874** | （无同合同 std） | n/a | n/a | oneTBB fixed_pool | 0.4843/0.4816/0.4816 | **1.419/1.427/1.427x** | ✅ clean `d3e4214`：此 selective-free workload 下最大连续对象约 1.42x；两者 full recovery=1.000；不外推到任意分布 |
-| **mem** reallocate grow chain | 80/83/82 | std::realloc | 200/176/204 | ~2.5x | mi_realloc | 67/77/83 | **0.83/0.92/1.01** | ⚠️Win/Lin 输裸 mi；M4 平 |
+| **mem** direct SystemAllocator reallocate grow chain | 66.98/79.28/81.64 | std::realloc | 196/42/187 | 平台相关 | mi_realloc | 67.69/79.00/83.58 | **1.005/0.989/1.018** | ✅ clean `2cbc307`：Win/Linux TIE，M4 sign WIN；默认编译期路径同档 |
+| **mem** runtime Allocator vtable reallocate | 74.92/86.34/81.33 | std::realloc | 196/42/187 | 平台相关 | mi_realloc | 67.69/79.00/83.58 | **0.906/0.921/1.020** | ⚠️Win/Linux 动态多态税约 8–9%；M4 sign WIN；不混入默认路径结论 |
+| **mem** scheduler-owned FiberStackPool batch p50 | 7.60/10.19/13.25 µs | （无 std fiber stack cache） | n/a | n/a | direct guarded OS VM | 151.80/182.62/80.67 µs | **20.03/17.89/6.07x** | ✅ p50/p95/p99 三平台全 sign WIN；M4 utility 也全 WIN，详见 mem §5 raw CSV |
 | **container·hash** Hash&lt;T&gt; 16B POD 内联 | 0.43 | std::hash | ~0.9 | ~2x | wyhash | 0.94 | 2.2x | ✅赢(2026-07 改 abseil 单 128 位乘 mix64_2:0.59→0.43,vs wyhash 1.6x→2.2x) |
 | **container·hash** mix64 整数 | 0.44 | std::hash | 1.50 | 3.4x | wyhash64 | 0.57 | 1.27x | ✅赢(已 SOTA=abseil 同款单乘折叠) |
 | **container·hash** hash_bytes 8B(inline mix,非 XXH3) | 0.23/B | std::hash&lt;string&gt; | 0.29 | 1.3x | 裸 XXH3-small / wyhash | 0.21/0.30 | ~平/赢 wyhash | ➖**≤16B 走 inline mix 非 XXH3**(两算法比,非"输 XXH3");赢 wyhash-small、近平 XXH3-small |

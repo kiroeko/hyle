@@ -2,7 +2,7 @@
 
 | 字段 | 值 |
 |---|---|
-| **状态** | 🔶 封口候选，尚未冻结 |
+| **状态** | 🔶 API/性能已收口，等待 release-candidate certification |
 | **起始基线** | `024f379`（2026-07-23） |
 | **范围** | 只补 API parity、性能证据和最终认证；不新增 allocator 类型 |
 | **设计真源** | [`../architecture/mem-design.md`](../architecture/mem-design.md) |
@@ -20,7 +20,7 @@
 - C ABI 已重审为 C 用户形状：StatsAllocator snapshot/leak copy、三字值对象 FixedRegion、
   FixedPool 显式 control allocator、system collect；header/纯 C consumer/DLL·ELF manifest 为
   API closure 后 105 个动态导出同步。
-- Windows 177/177 C++ mem、纯 C 与 DLL 105/105 surface 通过；Linux 177/177 C++ mem、
+- Windows 178/178 C++ mem、纯 C 与 DLL 105/105 surface 通过；Linux 178/178 C++ mem、
   纯 C 与 ELF 105/105 surface 通过。
 
 `024f379` 是重审起点；本页勾选只记录后续任务验收，不自动等于最终候选 commit 的认证。
@@ -38,11 +38,11 @@
 
 ### MEM-FINAL-2：performance closure
 
-- [ ] 当前 harness 重签 M4 `PooledRegion`/`StackAllocator`，interactive 与 utility 分开报告。
-- [ ] 给 realloc 增加 direct `SystemAllocator::reallocate` 行，把默认 direct path 与运行时 vtable
+- [x] 当前 harness 重签 M4 `PooledRegion`/`StackAllocator`，interactive 与 utility 分开报告。
+- [x] 给 realloc 增加 direct `SystemAllocator::reallocate` 行，把默认 direct path 与运行时 vtable
   税分开。
-- [ ] 测 counters-only Stats 与 Quota+Stats 正常组合；leak map 只标诊断慢路。
-- [ ] 用 sched 的真实 fiber create/reuse workload 验证 `FiberStackPool`，不造孤立纳秒 API。
+- [x] 测 counters-only Stats 与 Quota+Stats 正常组合；leak map 只标诊断慢路。
+- [x] 用 sched 的真实 fiber create/reuse workload 验证 `FiberStackPool`，不造孤立纳秒 API。
 
 ### MEM-FINAL-3：release-candidate certification
 
