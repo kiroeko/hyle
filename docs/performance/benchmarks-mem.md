@@ -96,18 +96,20 @@ close。每个阶段等所有连接到达、server 已 clear/release 且静置 2
 vtable 的精确 outstanding bytes 与 OS RSS。比较默认 256 KiB cap、同 cap 后显式
 `system_collect(true)`、以及 unbounded retention；脚本交替三种子进程顺序并报告 p50/p99。
 
-2026-07-23 的 `n=15` Windows/MSVC 19.50 与 WSL/GCC 14 CPU 2 是 **dirty=1 的 harness / 设计
-诊断，不是 clean 发布证书**。它已经足以否定两个错误方向：提高 Region max block 到
-256 KiB/1 MiB 会把该 workload 的 backing peak 从约 154 MiB 提高到约 162/258 MiB，且不改善
-Linux RSS；仅调用 `Region::release()` 也不能保证 system heap 立刻 purge OS pages。
+正式签表前的参数诊断否定了两个错误方向：提高 Region max block 到 256 KiB/1 MiB 会把该
+workload 的 backing peak 从约 154 MiB 提高到约 162/258 MiB，且不改善 Linux RSS；仅调用
+`Region::release()` 也不能保证 system heap 立刻 purge OS pages。
+
+2026-07-23 clean `17ca3c3` 的正式证书为 Windows/MSVC 19.50 与 WSL/GCC 14 CPU 2 各
+`n=15` fresh processes，所有 90 行 raw 数据均为 `dirty=0`：
 
 | 平台 | 策略 | spike 后精确 backing | reuse RSS Δ vs warm p50 / p99 | 显式 collect p50 / p99 |
 |---|---|---:|---:|---:|
-| Windows | 256 KiB cap | **1.86 MiB** | 2.33 / 76.02 MiB | — |
-| Windows | cap + force collect | **1.86 MiB** | **1.11 / 1.12 MiB** | 7.90 / 8.93 ms |
-| Windows | unbounded | 153.37 MiB | 140.04 / 140.05 MiB | — |
+| Windows | 256 KiB cap | **1.86 MiB** | 2.33 / 22.14 MiB | — |
+| Windows | cap + force collect | **1.86 MiB** | **1.11 / 1.12 MiB** | 8.76 / 9.76 ms |
+| Windows | unbounded | 153.37 MiB | 140.05 / 140.05 MiB | — |
 | Linux CPU 2 | 256 KiB cap | **1.63 MiB** | 154.00 / 154.00 MiB | — |
-| Linux CPU 2 | cap + force collect | **1.63 MiB** | **-1.03 / -1.03 MiB** | 0.249 / 0.319 ms |
+| Linux CPU 2 | cap + force collect | **1.63 MiB** | **-1.03 / -1.03 MiB** | 0.252 / 0.297 ms |
 | Linux CPU 2 | unbounded | 153.14 MiB | 154.00 / 154.00 MiB | — |
 
 负 RSS delta 表示 force collect 顺带清掉了 warmup 前已有的当前线程 heap cache，不表示负内存。
@@ -115,19 +117,25 @@ Linux RSS；仅调用 `Region::release()` 也不能保证 system heap 立刻 pur
 allocator purge 时机控制；显式 force collect 可把 RSS 尾部收紧，但 Windows 约 8 ms 的成本
 证明它只能用于用户选择的 idle/pressure 冷路径，不能偷偷插进每个 request。因此新增
 `system_collect(bool force=false)`，保持热 `Allocator` 三函数 vtable 不变，并明确 worker pool
-需要在各自 worker 上执行。正式表仍需提交后以 clean HEAD 重跑并保存 raw CSV。
+需要在各自 worker 上执行。
+
+原始逐进程字段：[Windows CSV](./http-region-footprint-win.csv)、
+[Linux CSV](./http-region-footprint-linux.csv)。两份都是 clean `17ca3c3`、每平台 15×3 行；
+包含各阶段 RSS/backing 原值而不只保存聚合结果。
 
 ```bash
 # Windows（fresh process，三 variant 交替）
 python scripts/http-region-footprint-stat.py \
   build-bench/bin/hyle_http_bench.exe -n 15 --connections 128 \
   --spike-kib 1024 --block-kib 64 \
-  --dll-dir build-bench/msvc_19.50_cxx23_64_md_release
+  --dll-dir build-bench/msvc_19.50_cxx23_64_md_release \
+  --raw docs/performance/http-region-footprint-win.csv
 
 # Linux / WSL（同一逻辑 CPU）
 python3 scripts/http-region-footprint-stat.py \
   build-wsl-http-bench/bin/hyle_http_bench -n 15 --connections 128 \
-  --spike-kib 1024 --block-kib 64 --cpu 2
+  --spike-kib 1024 --block-kib 64 --cpu 2 \
+  --raw docs/performance/http-region-footprint-linux.csv
 ```
 
 ### GrowablePool

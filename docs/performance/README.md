@@ -12,7 +12,7 @@
 | [error 实测](./benchmarks-error.md) | **error 2026-07-20 三平台证书**（Status/Result vs absl + std::expected） |
 | [platform 实测](./benchmarks-platform.md) | **platform 2026-07-20 证书**（Parker/Thread/dir/vm/MappedFile；OS 段 n=15 Win/M4、WSL n=5） |
 | [time 实测](./benchmarks-time.md) | **time 2026-07-19 三平台证书**（clock / TimerWheel / CommonTimeoutQueue） |
-| [mem 实测](./benchmarks-mem.md) | **mem 2026-07-23 证书**：Region/FixedRegion request closure + hard core/显式 owner cache + external FixedPool；显式 cache 已签 Windows + WSL GCC/Clang clean `n=15`、M4 interactive/utility 各 `n=31`；request latency、footprint 与 FixedPool 外部碎片有 raw CSV |
+| [mem 实测](./benchmarks-mem.md) | **mem 2026-07-23 证书**：Region/FixedRegion request closure + HTTP request lifecycle/RSS + hard core/显式 owner cache + external FixedPool；HTTP retention/collect 已签 clean `17ca3c3` Windows+Linux `n=15`；显式 cache 已签 Windows + WSL GCC/Clang clean `n=15`、M4 interactive/utility 各 `n=31`；request latency、footprint 与 FixedPool 外部碎片有 raw CSV |
 | [container 实测](./benchmarks-container.md) | **container 导航证书**：新鲜度、非 SOTA、选型；详表 → [benchmarks-mem-container.md](./benchmarks-mem-container.md) |
 | [container 详表](./benchmarks-mem-container.md) | hash/SwissTable/vec/list/str/path/fuzzy 长表 + 史；**入口见上** |
 | [simd 产品 kernel](./benchmarks-simd.md) | dot/saxpy、math、dtype、gather、vendor 竞争…；**op 全量不在此** |
