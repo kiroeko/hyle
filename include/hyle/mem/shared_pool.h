@@ -851,7 +851,7 @@ public:
   void *allocate(std::size_t bytes,
                  std::size_t alignment = alignof(std::max_align_t)) noexcept {
     HYLE_FATAL_ASSERT(is_pow2(alignment)); // 0/non-pow2 -> wild ptr
-    if (bytes == 0)
+    if (bytes == 0 || cur_ == nullptr)
       return nullptr;
     const auto cur = reinterpret_cast<std::uintptr_t>(cur_);
     const auto e = reinterpret_cast<std::uintptr_t>(end_);
