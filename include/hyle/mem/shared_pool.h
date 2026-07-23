@@ -854,12 +854,12 @@ public:
     if (bytes == 0)
       return nullptr;
     const auto cur = reinterpret_cast<std::uintptr_t>(cur_);
-    std::uintptr_t aligned = 0;
-    if (!detail::try_align_up_address(cur, alignment, &aligned))
-      return nullptr;
     const auto e = reinterpret_cast<std::uintptr_t>(end_);
-    if (aligned > e || bytes > e - aligned)
+    const auto padding = (std::uintptr_t{0} - cur) & (alignment - 1);
+    const auto available = e - cur;
+    if (padding > available || bytes > available - padding)
       return nullptr;
+    const auto aligned = cur + padding;
     cur_ = reinterpret_cast<std::byte *>(aligned + bytes);
     return reinterpret_cast<void *>(aligned);
   }

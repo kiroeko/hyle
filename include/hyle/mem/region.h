@@ -42,12 +42,12 @@ public:
     if (bytes == 0 || cur_ == nullptr)
       return nullptr;
     const auto cur = reinterpret_cast<std::uintptr_t>(cur_);
-    std::uintptr_t aligned = 0;
-    if (!try_align_up_address(cur, alignment, &aligned))
-      return nullptr;
     const auto end = reinterpret_cast<std::uintptr_t>(end_);
-    if (aligned > end || bytes > end - aligned)
+    const auto padding = (std::uintptr_t{0} - cur) & (alignment - 1);
+    const auto available = end - cur;
+    if (padding > available || bytes > available - padding)
       return nullptr;
+    const auto aligned = cur + padding;
     cur_ = reinterpret_cast<std::byte *>(aligned + bytes);
     return reinterpret_cast<void *>(aligned);
   }
@@ -242,12 +242,12 @@ private:
   static void *allocate_from(Block *b, std::size_t bytes,
                              std::size_t alignment) noexcept {
     const auto cur = reinterpret_cast<std::uintptr_t>(b->cursor);
-    std::uintptr_t aligned = 0;
-    if (!detail::try_align_up_address(cur, alignment, &aligned))
-      return nullptr;
     const auto end = reinterpret_cast<std::uintptr_t>(b->end);
-    if (aligned > end || bytes > end - aligned)
+    const auto padding = (std::uintptr_t{0} - cur) & (alignment - 1);
+    const auto available = end - cur;
+    if (padding > available || bytes > available - padding)
       return nullptr;
+    const auto aligned = cur + padding;
     b->cursor = reinterpret_cast<std::byte *>(aligned + bytes);
     return reinterpret_cast<void *>(aligned);
   }
@@ -256,12 +256,12 @@ private:
     if (cursor_ == nullptr)
       return nullptr;
     const auto cur = reinterpret_cast<std::uintptr_t>(cursor_);
-    std::uintptr_t aligned = 0;
-    if (!detail::try_align_up_address(cur, alignment, &aligned))
-      return nullptr;
     const auto end = reinterpret_cast<std::uintptr_t>(end_);
-    if (aligned > end || bytes > end - aligned)
+    const auto padding = (std::uintptr_t{0} - cur) & (alignment - 1);
+    const auto available = end - cur;
+    if (padding > available || bytes > available - padding)
       return nullptr;
+    const auto aligned = cur + padding;
     cursor_ = reinterpret_cast<std::byte *>(aligned + bytes);
     return reinterpret_cast<void *>(aligned);
   }
