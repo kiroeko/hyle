@@ -1,6 +1,9 @@
 # error / platform / mem 功能与 C ABI 复审
 
-> **后续替代（2026-07-22）：**mem 固定块池现为 `SharedPool` / 显式 `SharedPoolCache`，C 面为 `hyle_shared_pool_*` / `hyle_shared_pool_cache_*`。后文旧称和入口计数仅记录当时审计。
+> **历史快照，已被后续复审替代：**mem 固定块池变化见
+> [`mem-close-plan`](./mem-close-plan.md)；error 的诊断 handler 已删除，当前产品形状见
+> [`error-module-reclosure`](./error-module-reclosure.md)。后文旧称、入口计数和 handler 描述只记录
+> 2026-07-19 当时的审计，不能当作当前 API 参考。
 
 > 2026-07-19。依据
 > [`c-abi-design.md`](../architecture/c-abi-design.md)、
@@ -15,7 +18,7 @@
 
 | 模块 | C 入口 | 纯 C test 直接出现 | guide 直接出现 | 结论 |
 |---|---:|---:|---:|---|
-| error | 52 | 52 | 52 | Status 全码、所有权、格式化、诊断均可达 |
+| error | 52 | 52 | 52 | 当时快照：含后来删除的诊断 handler |
 | platform | 114 | 114 | 114 | wait/thread/dynlib/VM/NUMA/fs/map/CPU 全覆盖 |
 | mem | 51 | 51 | 51 | allocator/arena/pool/hugepage 策略全覆盖 |
 
@@ -29,8 +32,8 @@
 
 - `Status` 是单字 tagged carrier；OK/无消息错误零分配，canonical 17 码、
   `Result<T>` 与传播宏齐全。
-- 诊断 handler 支持简单单槽与 scoped push/pop，C/C++ 作用域现在共用
-  严格 LIFO 还原门。
+- 当时曾提供诊断 handler；2026-07-23 reclosure 已删除，日志转由 `obs`、合同失败转由
+  fail-fast。这是历史实施记录，不是当前能力。
 - 下游并非只使用 `Internal`：compute 使用
   `InvalidArgument/ResourceExhausted/Unavailable/Unimplemented`，sched 使用
   `NotFound/Unavailable`；本轮把 platform thread 的 OS 错误从一律

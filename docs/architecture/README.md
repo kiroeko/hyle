@@ -54,7 +54,7 @@ HYLE infra（通用、不特化、贴硬件）
 | [`io-design.md`](./io-design.md) | 网络库选型：proactor 模型 + io_uring/IOCP/kqueue/epoll 四后端 + 只借 syscall 封装、调度绑 fiber |
 | [`sched-design.md`](./sched-design.md) | 统一调度器（4 节完整）：fcontext 上下文切换 + per-core 无锁 run-queue/work-stealing + Waker completion 脊 + 协程/fiber 统一 |
 | [`lifecycle-design.md`](./lifecycle-design.md) | **失败边界**：fail-fast 绝不 try-catch + 四类失败分类 + 取消(结构化并发/await点) + 背压 + 优雅关闭 + 故障隔离=进程边界 + 跨 C-ABI 错误约定 |
-| [`error-design.md`](./error-design.md) | **error 产品形状**：8 字节 Status、`std::expected` Result、分层上下文、C/FFI 所有权，以及 error/obs/fatal 的唯一职责边界 |
+| [`error-design.md`](./error-design.md) | **error 产品形状**：8 字节 Status、`std::expected` Result、分层上下文、首错聚合/格式化工具、C/FFI 所有权，以及 error/obs/fatal 的唯一职责边界 |
 | [`compute-design.md`](./compute-design.md) | 异构计算选型：device/stream/kernel 两层抽象 + 借上游 ggml（adapter 隔离）+ shader 一等公民 + GPU completion 接 sched |
 | [`borrowing-ggml-memory-model.md`](./borrowing-ggml-memory-model.md) | **借 ggml 的显存归属边界**：host 归 HYLE（mem 喂入/取出）、device 归 ggml（gallocr 自管），就像 llama.cpp——CUDA 结构性否决外部显存注入（gdb 坐实），HYLE 显存自管是 compute-04/06 自造 kernel 的领域 |
 | [`simd-design.md`](./simd-design.md) | SIMD 总设计：D-tag/七后端、自有 math/dtype/算法核、Runtime/native/exact 双轨及历史决策 |

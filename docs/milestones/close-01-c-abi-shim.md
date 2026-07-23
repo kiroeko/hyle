@@ -41,7 +41,10 @@
 - [x] error/platform/mem/time/simd/util/obs/container/**sched** 已封
   `include/hyle/c/<mod>.h`，纯 C 编译器可 include，与内部 C++ 头物理隔离；
   io/compute/graph 仍待各自模块收口。
-- [x] **样板 error**（2026-07-17，2026-07-19 复审）：`include/hyle/c/error.h` + 文档 [`c-error.md`](../guide/c-error.md)。Status 全码/所有权/格式化与诊断 handler 均可达；C/C++ scoped handler 共用严格 LIFO 还原门，乱序不再可能重发悬空回调。
+- [x] **样板 error**（2026-07-17，2026-07-23 重审）：`include/hyle/c/error.h` + 文档
+  [`c-error.md`](../guide/c-error.md)。Status 全码、所有权、上下文、buffer 格式化与传播均可达。
+  早期诊断 handler 已在 reclosure 中删除：日志归 `obs`，合同失败归 fail-fast，不再混入
+  可恢复错误 C ABI。
 - [x] **样板 platform**（2026-07-17，2026-07-19 扩面复审）：`include/hyle/c/platform.h` + `c_platform.cc` + 纯 C `hyle_platform_c_test`。覆盖 wait/Parker、Thread、DynLib、VM/VmRegion、hugepage/NUMA、完整 fs/env/fd、MappedFile、CPU/cache/topology；补 `hyle_platform_last_error`、thread opts `struct_size`、具名 flags/perms。纯 C 机械覆盖 114/114 入口。文档：[`c-platform.md`](../guide/c-platform.md)。
 - [x] **样板 mem**（2026-07-23 重审）：`include/hyle/c/mem.h` + `c_mem.cc` + 纯 C
   `hyle_mem_c_test`。覆盖 system allocator/collect、Quota/Stats、Region/FixedRegion/FixedPool、

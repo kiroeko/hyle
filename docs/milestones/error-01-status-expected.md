@@ -17,7 +17,9 @@
 
 > **实现注记**：Status 用 **clay 式指针标签**——公开头只有一个 `uintptr_t rep_`（8 字节，`static_assert` 钉死）：`0`=OK、`(code<<2)|1`=内联码无消息（零分配）、低 2 位清零的指针=堆 `StatusRep`（仅有消息时 malloc 一次，header-before-data 内联消息字节 + 手写原子 refcount）。**公开表面零 std 拥有型**（满足 coding-conventions 行 22 + clay 自有字符串先例；起因：用户指出高性能库不该泄 std::string）。
 > `ToString` 改 **buffer-fill**（`size_t ToString(char*,size_t)`，snprintf 式返回需长），不返回 `std::string`——彻底移除公开头的 std 拥有型；要碎片就用 `status_code_name()`/`message()`（都是 `string_view`）自组。
-> 传播宏用 `detail::FailReturn`（双向隐式转换 `Status`/`Result<T>`）+ `__COUNTER__` 唯一临时变量，规避 MSVC 无 GNU 语句表达式。`HYLE_FATAL_ASSERT` 早在 macros.h（00 步）；软断言 `HYLE_ASSERT` **不在本步**——它要走可安装诊断 handler 通道，故落在 error-02（`error_handler.h`），result.h 这层不定义（否则与 error_handler.h 双定义、按 include 顺序分叉行为）。
+> 当时的传播宏用 `detail::FailReturn`（双向隐式转换 `Status`/`Result<T>`）+
+> `__COUNTER__` 唯一临时变量，规避 MSVC 无 GNU 语句表达式。当时还计划把软断言放进
+> 可安装诊断 handler；该方向后来整体删除，当前 error 不提供 handler/软断言通道。
 
 ## 前置依赖
 
@@ -38,8 +40,8 @@
 - [ ] `include/hyle/error/result.h`：`Result<T>` = `std::expected<T, Status>` 的 HYLE 别名 + 约定。
 - [ ] 传播宏 `HYLE_RETURN_NOT_OK` / `HYLE_ASSIGN_OR_RAISE`（Rust `?` 式早返回，标准无等价）。
 - [ ] `HYLE_FATAL_ASSERT`（硬断言，已在 macros.h/00 步）。
-- [ ] 不做：`HYLE_ASSERT`（软断言，求值为 bool、release 不消失）——它要经诊断 handler 通道，随 error_handler vtable 一起落 error-02，不在这层。
-- [ ] 不做：error_handler vtable（跨 DLL 错误上报）留后续；只做进程内错误模型。
+- [ ] 当时不做：`HYLE_ASSERT`（软断言）；后续 handler 方向已整体删除。
+- [ ] 当时留后续：error_handler vtable；后续复审决定不进入当前产品面。
 
 ## 交付物
 

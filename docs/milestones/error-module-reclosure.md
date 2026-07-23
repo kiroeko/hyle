@@ -45,7 +45,9 @@ OS/CUDA/Vulkan 叶子诊断。未发布，不保留未经审查的旧 ABI。
 本轮不是“参考库有就照搬”：新增项均由 HYLE 自身调用证实（公开 `Result<void>`、大量
 Result 错误构造、graph 首错聚合、测试/日志的人读格式化）。payload、原生码公共 detail、
 StatusBuilder、自动日志和 `CO_*` 宏继续拒绝进入 error 核心。benchmark 新增正常格式化、
-`Result<void>` 与聚合形状；数字必须完成 n=15 与三平台复证后才写 performance。
+`Result<void>` 与聚合形状。Windows MSVC 19.50 n=15 已绑定 `768e2f2`：当前同形项目无
+lose；核心与正常路径拆成两个 executable，避免 whole-TU inline budget 污染核心证据。
+Linux/M4 当前接口仍待复证，数字与统计判定只见 performance。
 
 ## 完成条件
 

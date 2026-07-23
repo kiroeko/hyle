@@ -1,37 +1,45 @@
 # error 实测铁证
 
 > 本页是 [performance 总账](./README.md) 的 **error 模块**详节（`Status` / `Result`）。  
-> 模块归属：`include/hyle/error/`、`bench/error/status_bench.cc`。  
+> 模块归属：`include/hyle/error/`、`bench/error/status_bench.cc`（核心微观不变量）、
+> `bench/error/normal_bench.cc`（正常用户路径）。
 > **2026-07-23 当前接口 Windows n=15；2026-07-20 旧核心形状三平台 n=15**。
 > hash / SwissTable 不在本页——见 [mem / container 实测](./benchmarks-mem-container.md)（代码在 `container/`，非 util）。
 
 ## 当前接口（2026-07-23，Windows MSVC n=15）
 
-> 候选工作树基于 `bfa90ac`，包含 `WithContext`、新传播宏、C ABI 收缩和
-> CUDA/Vulkan/OS translator 重构；尚未提交，最终 clean commit 在提交轮补记。方法为
-> `scripts/bench-stat.py -n 15`，同一进程内 pair 信任 `[sign]`。Windows MSVC 19.50
-> Release，Abseil 开启。Linux/macOS 当前接口尚未复跑，因此本节不是三平台冻结证书。
+> commit `768e2f2`；方法为 `scripts/bench-stat.py -n 15`，同一进程内 pair 信任
+> `[sign]`。Windows MSVC 19.50 Release，Abseil 开启。核心与正常路径分成两个 executable：
+> 把后者追加进核心 TU 曾改变 MSVC whole-TU inline budget，令完全相同的 Result error
+> helper 从约 10ns 假退化到 13ns；拆分后恢复 9.893ns。因此两类证据必须物理隔离，不能让
+> benchmark 自身的体积改变被测产品 codegen。Linux/macOS 当前接口尚未复跑，本节仍不是
+> 三平台冻结证书。
 
 | 操作 | HYLE ns/op | 对照 ns/op | 配对结论 |
 |---|---:|---:|---|
-| `Status::Ok` 构造+检查 | 0.379 | absl 0.378 | TIE |
-| Status OK 拷贝 | 0.564 | absl 0.554 | **LOSE sign 0.984x**；绝对差 0.010 ns |
-| code-only 错误 | 0.371 | absl 1.729 | **WIN 4.533x** |
-| 带消息错误构造 | 27.636 | absl 53.992 | **WIN 1.941x** |
-| heap Status 拷贝 | 9.375 | absl 10.718 | **WIN 1.146x** |
-| 一层语义 context | 34.932 | absl StatusBuilder 317.594 | **WIN 9.073x** |
-| `WithContext(OK)` | 0.760 | 无同形对照 | 头内联 no-op；零分配 |
-| Result OK 传播 4 层（裸） | 0.752 | absl 0.982 / std 0.548 | **WIN absl 1.293x**；LOSE std（见下） |
-| Result OK 解包并消费 | 1.430 | std 1.419 | TIE，ratio 0.991 |
-| Result ERROR 上抛 3 层 | 9.975 | absl 22.044 | **WIN 2.193x** |
+| `Status::Ok` 构造+检查 | 0.547 | absl 0.549 | TIE |
+| Status OK 拷贝 | 0.568 | absl 0.563 | TIE |
+| code-only 错误 | 0.547 | absl 1.709 | **WIN 3.388x** |
+| 带消息错误构造 | 26.236 | absl 54.437 | **WIN 2.065x** |
+| heap Status 拷贝 | 9.467 | absl 10.724 | **WIN 1.143x** |
+| 一层语义 context | 35.444 | absl StatusBuilder 297.782 | **WIN 8.467x** |
+| `WithContext(OK)` | 0.566 | 无同形对照 | 头内联 no-op；零分配 |
+| Result OK 传播 4 层（裸） | 0.744 | absl 0.942 / std 0.551 | **WIN absl 1.259x**；std 仅作平凡错误下界 |
+| Result OK 解包并消费 | 1.439 | std 1.435 | TIE |
+| Result ERROR 上抛 3 层 | 9.893 | absl 21.885 | **WIN 2.198x** |
+| `Result<void>` OK 传播 2 调用 | 2.106 | 同语义手写 3.455 | **WIN 1.662x** |
+| `Result<void>` ERROR 传播 | 10.958 | 同语义手写 move 12.063 | **WIN sign 1.101x** |
+| caller-buffer 人读格式化 | 10.251 | 无同形 Abseil入口 | C/FFI/logging 基础路径 |
+| C++ owning `to_string` | 33.122 | absl 41.907 | **TIE sign**；中位数 1.262x，存在系统离群点 |
+| 首错聚合 `Update` | 9.343 | absl 10.796 | **WIN 1.156x** |
 
 空间不变：`Status=8B`，`Result<int>/Result<void>=16B`，Windows
 `absl::StatusOr<int>=24B`。
 
-本轮性能判断：实际 SOTA 同形对手 Abseil 上，除 OK 拷贝的 0.010 ns sign 微输外全部
-平或赢；新增 context 明确赢 9.07x。裸 OK 传播输 `std::expected<int,error_code>` 是
-不同错误能力的下界比较；真实的“解包并消费”形状统计平局。当前唯一需要继续跨平台
-观察的是 OK/heap 拷贝的 codegen 翻转，不需要为 benchmark 增加另一套产品类型。
+本轮性能判断：Windows 当前同形项目全部平或赢，没有已证实的 lose。`Result<void>` 的宏
+路径不只补齐易用性，正常/错误传播也不慢于正确移动的手写代码；首错聚合赢 Abseil。
+owning 格式化的中位数更快，但 n=15 有离群点，按规则只写 TIE。跨平台仍需观察
+OK/heap 拷贝的历史 codegen 翻转；不能用本节替代 Linux/M4 当前接口证书。
 
 ## 旧核心形状（2026-07-20 三平台快照）
 
@@ -102,4 +110,10 @@ scripts/bench-stat.py <build>/bin/hyle_error_bench -n 15 \
   --pair "std::expected (unwrap + use)" "HYLE Result (unwrap + use)" \
   --pair "absl::StatusBuilder SetPrepend" "HYLE Status::WithContext" \
   --pair "absl::StatusOr (manual check)" "HYLE Result + ASSIGN_OR_RETURN"
+
+scripts/bench-stat.py <build>/bin/hyle_error_normal_bench -n 15 \
+  --pair "manual Result<void> checks (OK)" "HYLE RETURN_IF_ERROR(Result<void>) (OK)" \
+  --pair "manual Result<void> checks (ERROR)" "HYLE RETURN_IF_ERROR(Result<void>) (ERROR)" \
+  --pair "absl::Status::ToString owning" "HYLE to_string owning" \
+  --pair "absl::Status::Update" "HYLE Status::Update"
 ```

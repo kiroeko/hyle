@@ -10,7 +10,7 @@
 |---|---|
 | [`usage-guide.md`](./usage-guide.md) | **怎么用**：模块入口、构建选项、SIMD 编译变体模型、最小用法和 C-ABI 边界。**集成第一站。** |
 | [`mem.md`](./mem.md) | **mem C++ 使用指南**：按 ownership/concurrency/capacity/lifetime 选 Region、Pool、Quota、Preserve 与 HugeRegion；性能只链接权威总账。 |
-| [`c-error.md`](./c-error.md) | **error 纯 C ABI**：`hyle_status` 所有权、工厂/查询、诊断 handler、自由函数导出清单。**FFI / 跨编译器第一站。** |
+| [`c-error.md`](./c-error.md) | **error 纯 C ABI**：`hyle_status` 所有权、工厂/查询、上下文、buffer 格式化与传播。**FFI / 跨编译器第一站。** |
 | [`c-platform.md`](./c-platform.md) | **platform 纯 C ABI**：Parker/Thread/DynLib/VM/mapped_file/fs/cpu/numa 不透明句柄与自由函数、named enum、所有权与易用示例。 |
 | [`c-mem.md`](./c-mem.md) | **mem C pre-release surface**：Allocator/Quota/Stats、Region/FixedRegion/FixedPool、硬/软 SharedPool、Stack/PooledRegion/GrowablePool/HugeRegion 与进程维护策略。 |
 | [`c-time.md`](./c-time.md) | **time 纯 C ABI**：单调/墙钟、饱和 deadline、sleep、TimerWheel/CommonTimeoutQueue opaque handle、visitor 与生命周期合同。 |
