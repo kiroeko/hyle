@@ -2,7 +2,7 @@
 
 > 本页是 [performance 总账](./README.md) 的 **mem 模块**详节。
 > 源：`bench/mem/allocator_bench.cc`、`bench/mem/scenario_bench.cc`。
-> 通用分配器数据来自 2026-07-20 的 Win MSVC / WSL GCC 14 / Apple M4 AppleClang 实测；旧共享池数据来自 2026-07-21 的同三平台 Release shipping-like 构建（`HYLE_BUILD_TESTS=OFF`），`bench-stat.py -n 9`；当前显式 `SharedPoolCache` 已完成 Windows MSVC、WSL GCC 14.2/Clang 20.1 clean `n=15` 与 Apple M4 interactive/utility 各 `n=31` 证书；hard core 的 acquire/release 收紧重签 clean commit `8cf52f9`（Win/WSL `n=15`、M4 两种 QoS 各 `n=31`）。request closure 数据来自 2026-07-22 的 Win、WSL GCC 14/Clang 20 `n=15` 与 Apple M4 每种 QoS `n=31`，mem 实现绑定 commit `7f270bb`，调度审计绑定 `803dae6`。FixedPool section F、whole-request latency 与 fragmentation 重签 clean commit `d3e4214`；request footprint 绑定 clean commit `02ec81e`。性能判定信任配对 **[sign]**。
+> 通用分配器数据来自 2026-07-20 的 Win MSVC / WSL GCC 14 / Apple M4 AppleClang 实测；当前 `SharedPool` / `SharedPoolCache` 绑定 clean commit `8cf52f9`（Win/WSL `n=15`、M4 两种 QoS 各 `n=31`）。request closure 数据来自 2026-07-22 的 Win、WSL GCC 14/Clang 20 `n=15` 与 Apple M4 每种 QoS `n=31`，mem 实现绑定 commit `7f270bb`，调度审计绑定 `803dae6`。FixedPool section F、whole-request latency 与 fragmentation 绑定 clean commit `d3e4214`；request footprint 绑定 clean commit `02ec81e`。同契约性能判定信任配对 **[sign]**。
 
 ## 1. 通用路径（`hyle_mem_bench`）
 
@@ -42,11 +42,10 @@ section F 的同一 request workload 每轮执行 4096 次 mixed-size（24–320
 | owned retained blocks：`Region` / PMR release | 1.674 / 1.923，**1.126x** | GCC 1.137 / 2.033，**1.779x**；Clang 1.239 / 1.838，**1.482x** | 2.282 / 2.444，**1.073x**；2.270 / 2.450，**1.083x**（均 31/31） | 全平台/编译器 **sign WIN**；Linux spread WIN |
 
 `Region` 现在缓存当前 ordinary block 的 cursor/end；block 搜索、增长、backing allocation
-隔离在 noinline slow path。相同校正 harness 下，Windows 旧实现为 2.196 ns/op、相对 PMR
-ratio 0.949（sign LOSE）；新路径降至 1.674 ns/op。`clear()` 仍复用全部 ordinary blocks，
-dedicated large block 仍归还 backing；优化没有删除逐次 alignment、hard reserved-byte limit
-或 requested-byte accounting。benchmark 对 HYLE/PMR 都以只读指针左值做观测，避免纳秒路径
-被 prvalue 临时对象或 GCC read-write asm operand 污染。
+隔离在 noinline slow path。`clear()` 复用全部 ordinary blocks，dedicated large block 归还
+backing；逐次 alignment、hard reserved-byte limit 与 requested-byte accounting 均保留。
+benchmark 对 HYLE/PMR 都以只读指针左值做观测，避免纳秒路径被 prvalue 临时对象或 GCC
+read-write asm operand 污染。
 
 M4 是 4 个 Performance + 6 个 Efficiency core，Darwin 没有受支持的硬亲和 API，也不能从
 benchmark 内证明实际 core class。harness 因此默认请求 `USER_INTERACTIVE`，并用
@@ -105,33 +104,25 @@ pmr resource 与其他池一样在计时 lambda 外构造。`scalable_allocator`
 
 ### 3.2 当前显式 cache：Windows / WSL / M4 clean 证书
 
-Windows 绑定 clean commit `5f35ec1`；WSL 原生 ext4 clean clone 绑定 `2056ef8`
-（只比前者多性能文档，mem 代码相同）。三套均为 Release、8 workers、64B block、
-request batch=64、working set=容量的 75%、handoff batch=256，`bench-stat.py -n 15`。
-WSL 关闭不影响 mem 生成代码的可选 HTTP/2、ggml、Vulkan 能力，保留 mimalloc、oneTBB、
-shared library 与 LTO。ratio 是每次进程内配对的 **HYLE / oneTBB op/s** 后再跨进程取中位数。
-M4 在 clean `c204a42` 上同样关闭这三个无关能力，使用 AppleClang 21 Release；默认请求
-`USER_INTERACTIVE`，并以 `UTILITY` 复核。Darwin 无公开硬亲和 API，两组只证明 application
-QoS 下的结论，不声称实际固定到 Performance/Efficiency core。
+绑定 clean commit `8cf52f9`。三平台均为 Release shipping-like、8 workers、64B block、
+request batch=64、working set=容量的 75%、handoff batch=256。Win MSVC 19.50 与 WSL
+GCC 14.2 为 `n=15`，Apple M4 AppleClang 21 的 `USER_INTERACTIVE` / `UTILITY` 各
+`n=31`。ratio 是每次进程内配对的 **HYLE / oneTBB op/s** 后再跨进程取中位数。
+Darwin 无公开硬亲和 API，两组只证明 application QoS 下的结论。
 
 | 平台 / 编译器 | 场景 | `SharedPoolCache` | oneTBB `fixed_pool` | HYLE/oneTBB throughput | 判定 |
 |---|---|---:|---:|---:|---|
-| Windows / MSVC 19.50 | request batch | **1.203 ns/op** | 2.208 ns/op | **1.846x**，range 1.463–2.255 | **WIN spread / WIN sign**（15/15，p=6.1e-05） |
-| Windows / MSVC 19.50 | handoff | **1.431 ns/op** | 7.288 ns/op | **5.004x**，range 3.794–7.075 | **WIN spread / WIN sign**（15/15，p=6.1e-05） |
-| WSL / GCC 14.2 | request batch | **1.279 ns/op** | 1.931 ns/op | **1.543x**，range 1.231–1.950 | spread TIE / **WIN sign**（15/15，p=6.1e-05） |
-| WSL / GCC 14.2 | handoff | **1.785 ns/op** | 8.012 ns/op | **4.923x**，range 3.649–6.040 | **WIN spread / WIN sign**（15/15，p=6.1e-05） |
-| WSL / Clang 20.1 | request batch | **1.193 ns/op** | 2.241 ns/op | **1.891x**，range 1.617–2.098 | spread TIE / **WIN sign**（15/15，p=6.1e-05） |
-| WSL / Clang 20.1 | handoff | **1.571 ns/op** | 6.473 ns/op | **3.893x**，range 3.168–5.118 | **WIN spread / WIN sign**（15/15，p=6.1e-05） |
-| Apple M4 / interactive | request batch | **0.889 ns/op** | 2.054 ns/op | **2.310x**，range 2.207–2.467 | **WIN spread / WIN sign**（31/31，p=9.3e-10） |
-| Apple M4 / interactive | handoff | **1.839 ns/op** | 4.976 ns/op | **2.714x**，range 2.447–3.056 | **WIN spread / WIN sign**（31/31，p=9.3e-10） |
-| Apple M4 / utility | request batch | **0.925 ns/op** | 2.150 ns/op | **2.321x**，range 2.171–2.424 | **WIN spread / WIN sign**（31/31，p=9.3e-10） |
-| Apple M4 / utility | handoff | **1.911 ns/op** | 5.020 ns/op | **2.642x**，range 0.909–2.943 | **WIN spread / WIN sign**（30/31，p=3.0e-08） |
+| Windows / MSVC 19.50 | request batch | **1.132 ns/op** | 2.060 ns/op | **1.837x**，range 1.641–2.005 | **WIN spread / WIN sign**（15/15，p=6.1e-05） |
+| Windows / MSVC 19.50 | handoff | **1.414 ns/op** | 9.898 ns/op | **6.972x**，range 4.295–7.403 | **WIN spread / WIN sign**（15/15，p=6.1e-05） |
+| WSL / GCC 14.2 | request batch | **1.186 ns/op** | 1.651 ns/op | **1.396x**，range 1.268–1.536 | spread TIE / **WIN sign**（15/15，p=6.1e-05） |
+| WSL / GCC 14.2 | handoff | **1.785 ns/op** | 6.502 ns/op | **3.835x**，range 3.126–5.649 | **WIN spread / WIN sign**（15/15，p=6.1e-05） |
+| Apple M4 / interactive | request batch | **0.888 ns/op** | 2.075 ns/op | **2.339x**，range 2.231–2.434 | **WIN spread / WIN sign**（31/31，p=9.3e-10） |
+| Apple M4 / interactive | handoff | **1.791 ns/op** | 5.054 ns/op | **2.804x**，range 2.530–3.019 | **WIN spread / WIN sign**（31/31，p=9.3e-10） |
+| Apple M4 / utility | request batch | **0.912 ns/op** | 2.116 ns/op | **2.311x**，range 2.212–2.402 | **WIN spread / WIN sign**（31/31，p=9.3e-10） |
+| Apple M4 / utility | handoff | **1.819 ns/op** | 5.051 ns/op | **2.793x**，range 2.537–3.066 | **WIN spread / WIN sign**（31/31，p=9.3e-10） |
 
-三套 request 表中裸 `mi_malloc/free` 分别为 1.353 / 1.390 / 1.442 ns/op，显式 cache
-都更快；但 mimalloc 是 growable general allocator，不是固定 buffer 的直接容量对手。
-Windows、两个 Linux 编译器与 M4 两种 QoS 的 paired direction 一致。utility handoff 有
-1/31 次反转且绝对 spread 较高，但中位优势 2.642x、spread/sign 双闸门仍通过；不把它隐去，
-也不把 interactive 数字外推为所有 Darwin 调度状态。
+显式 cache 的 locality 形状与 oneTBB fixed_pool 接近；Windows、WSL 与 M4 两种 QoS
+全部配对同侧。它不是硬容量视图，性能优势不能替代 3.4 的 quota 语义。
 
 ### 3.3 当前 hard core：三平台 clean 证书
 
@@ -141,68 +132,30 @@ interactive/utility 各 `n=31`。本次只收紧 Treiber 发布/消费所需的�
 release 发布 relaxed link，pop 用 acquire 消费；pop 不发布写入，push retry 也不读取
 旧节点内容，因此不需要 acq_rel/acquire。tag 饱和后的 serialized fallback 未改变。
 
-| 平台 / 编译器 | 场景 | `SharedPool` hard | oneTBB `fixed_pool` | HYLE/oneTBB throughput | 判定 |
-|---|---|---:|---:|---:|---|
-| Windows / MSVC 19.50 | request batch | 6.708 ns/op | 2.060 ns/op | 0.308x | **LOSE spread / LOSE sign**（0/15） |
-| Windows / MSVC 19.50 | handoff | **4.150 ns/op** | 9.898 ns/op | **2.326x** | **WIN spread / WIN sign**（15/15） |
-| WSL / GCC 14.2 | request batch | 6.506 ns/op | 1.651 ns/op | 0.257x | **LOSE spread / LOSE sign**（0/15） |
-| WSL / GCC 14.2 | handoff | **4.093 ns/op** | 6.502 ns/op | **1.569x** | spread TIE / **WIN sign**（15/15） |
-| Apple M4 / interactive | request batch | 8.307 ns/op | 2.075 ns/op | 0.251x | **LOSE spread / LOSE sign**（0/31） |
-| Apple M4 / interactive | handoff | 10.286 ns/op | 5.054 ns/op | 0.492x | **LOSE spread / LOSE sign**（0/31） |
-| Apple M4 / utility | request batch | 5.969 ns/op | 2.116 ns/op | 0.351x | **LOSE spread / LOSE sign**（0/31） |
-| Apple M4 / utility | handoff | 10.260 ns/op | 5.051 ns/op | 0.508x | **LOSE spread / LOSE sign**（0/31） |
+hard 与 fixed_pool 的可见性合同不同，因此下表只量化更强合同的成本，不做 WIN/LOSE
+或 SOTA verdict。request batch 中，oneTBB 的 allocate/free 都命中 owner 私有链，通常没有
+共享 RMW；HYLE hard 的 allocate 与 deallocate 各做一次共享 CAS。handoff 中 oneTBB 通常是
+本地 allocate + 一次 remote-free CAS，HYLE 仍是两端各一次 CAS。M4 对共享 atomic RMW
+更敏感，所以差距比 x86 明显；x86 上 HYLE 的简单分片链又可能抵消 tbbmalloc 元数据成本。
 
-M4 interactive 的改前 clean `c204a42` hard 基线为 request 11.694 ns、handoff
-12.170 ns；当前分别降到 8.307 ns（**-29.0%**）与 10.286 ns（**-15.5%**）。utility
-request 反而比 interactive 快，进一步说明无公开硬亲和 API 时绝对数会受 macOS 调度影响；
-两种 QoS 的方向一致，但不把其中任一组外推成固定 P/E core 结论。
+| 平台 / 编译器 | 场景 | `SharedPool` hard | oneTBB `fixed_pool` | HYLE/oneTBB throughput（成本参照） |
+|---|---|---:|---:|---:|
+| Windows / MSVC 19.50 | request batch | 6.708 ns/op | 2.060 ns/op | 0.308x |
+| Windows / MSVC 19.50 | handoff | **4.150 ns/op** | 9.898 ns/op | **2.326x** |
+| WSL / GCC 14.2 | request batch | 6.506 ns/op | 1.651 ns/op | 0.257x |
+| WSL / GCC 14.2 | handoff | **4.093 ns/op** | 6.502 ns/op | **1.569x** |
+| Apple M4 / interactive | request batch | 8.307 ns/op | 2.075 ns/op | 0.251x |
+| Apple M4 / interactive | handoff | 10.286 ns/op | 5.054 ns/op | 0.492x |
+| Apple M4 / utility | request batch | 5.969 ns/op | 2.116 ns/op | 0.351x |
+| Apple M4 / utility | handoff | 10.260 ns/op | 5.051 ns/op | 0.508x |
 
-显式 cache 是本次底层改动的控制组：Win request/handoff 为 1.132/1.414 ns，WSL 为
-1.186/1.785 ns，M4 interactive 为 0.888/1.791 ns、utility 为 0.912/1.819 ns；所有
-配对仍分别 15/15 或 31/31 赢 fixed_pool，没有为 hard 优化牺牲 cache 快路径。
+utility request 比 interactive 快，说明无公开硬亲和 API 时绝对数会受 macOS 调度影响；
+不把其中任一组外推成固定 P/E core 结论。
 
-这里的 oneTBB 比值只表示固定 buffer 下的成熟吞吐参照。request 行的 LOSE 不是
-`SharedPool` 同契约失败：oneTBB 的 owner-private free list 不提供 completed-free 全线程
-立即可见性。用户若不需要这个更强保证，应直接选择显式 `SharedPoolCache`，而不是要求
-hard core 模拟隐藏 TLS。
+如果用户不需要 completed-free 立即对全线程可见，应直接选择 3.2 的显式 cache；不能通过
+给 hard core 偷加隐藏 TLS 来抹掉这项同步成本。
 
-### 3.4 旧 TLS 实现的三平台基线（历史，不代表当前产品）
-
-下表绑定已删除的 `SharedPoolCached`。它证明 soft local-cache 形状值得保留，也暴露隐藏 TLS policy 的产品问题；当前 `SharedPoolCache` 已独立重签 Windows/WSL/M4，不能把旧数改名继承。
-
-配置：8 workers、64B block、request batch=64、working set=容量的 75%；handoff batch=256。表内 ratio 是每轮配对的 **HYLE / oneTBB fixed_pool op/s** 中位数，不是两个绝对中位数相除。
-
-#### Request batch lifecycle
-
-| 池 | Win MSVC | WSL GCC 14 | Apple M4 | 判定 |
-|---|---:|---:|---:|---|
-| `SharedPool` | 8.315 / 4.200 ns，**0.515x** | 6.609 / 2.280 ns，**0.338x** | 11.881 / 2.024 ns，**0.170x** | 三平台 **LOSE sign** |
-| `SharedPoolCached`（已删除） | 3.540 / 4.200 ns，**1.171x** | 1.754 / 2.280 ns，**1.285x** | 1.537 / 2.024 ns，**1.316x** | Win/WSL **WIN sign**；M4 **TIE sign**（8/9 同侧） |
-
-硬池为立即可见性付出共享原子与稳定空快照成本，不是本地 request churn 的吞吐选择。缓存池在 Win/WSL 稳赢；M4 中位数更快但有一次反转，按配对闸门只能判平。
-
-#### Pipelined producer/consumer handoff
-
-| 池 | Win MSVC | WSL GCC 14 | Apple M4 | 判定 |
-|---|---:|---:|---:|---|
-| `SharedPool` | 5.304 / 10.433 ns，**1.976x** | 3.807 / 9.239 ns，**2.380x** | 12.931 / 4.871 ns，**0.372x** | Win/WSL **WIN sign**；M4 **LOSE sign** |
-| `SharedPoolCached`（已删除） | 4.062 / 10.433 ns，**2.627x** | 2.414 / 9.239 ns，**3.807x** | 3.072 / 4.871 ns，**1.586x** | 三平台 **WIN sign** |
-
-这里存在真实平台翻转：硬池在 x86 handoff 赢 fixed_pool，在 Apple M4 输约 2.69x。缓存池三平台都赢，但它仍不提供硬容量。
-
-### 3.5 旧 TLS 实现的 Windows 参数扫描（历史）
-
-以下均为 `bench-stat.py -n 9`；扫描线程数、块大小和请求批次，避免用一个点代表整个能力面。
-
-| 维度 | 已删除 `SharedPoolCached` vs fixed_pool | `SharedPool` vs fixed_pool | 结论 |
-|---|---|---|---|
-| request，T=1/8/16，64B，batch=64 | **1.232/1.171/1.108 WIN** | **0.720/0.515/0.541 LOSE** | cached 随并发增加优势收窄但仍过 sign 闸门；hard 不适合本地批次 |
-| request，T=8，block=32/64/4096B | **1.636/1.171/1.098 WIN** | **0.669/0.515/0.479 LOSE** | 三个数量级内均保持硬/软分工 |
-| request，T=8，batch=8/64/128 | **0.993 TIE / 1.171 WIN / 0.898 TIE** | **0.969 TIE / 0.515 LOSE / 0.359 LOSE** | cached 只在中批次明确赢；不能把 batch=64 外推成无条件 SOTA |
-| handoff，T=1/8/16，64B | **1.134/2.627/2.003 WIN** | **0.691 LOSE / 1.976 WIN / 1.677 WIN** | T=1 退化成同线程；真并发 x86 handoff 两者都强，M4 见上表 |
-| handoff，T=8，block=32/64/4096B | **2.626/2.627/2.029 WIN** | **1.927/1.976/1.506 WIN** | x86 上跨线程迁移对块大小稳定 |
-
-### 3.6 硬容量证据
+### 3.4 硬容量证据
 
 当前显式 cache 的 Windows sanity 配置：8 workers、64B block、capacity=1024、请求 110%（1128 次）：
 
@@ -225,13 +178,10 @@ hard core 模拟隐藏 TLS。
 | Apple M4 / AppleClang 21，interactive | 5.868 ns/op | 9.318 ns/op | median 1.607，range 1.543–1.721 | **WIN spread / WIN sign**（31/31） |
 | Apple M4 / AppleClang 21，utility | 5.873 ns/op | 9.648 ns/op | median 1.668，range 1.544–1.798 | **WIN spread / WIN sign**（31/31） |
 
-首轮 HYLE 20.45 ns/op 对 oneTBB 8.66 ns/op 的差距没有通过换 workload 掩盖。路径分解显示
-同尺寸稳定复用并非瓶颈，主要成本是 mixed-size free→coalesce→bin 后紧接着
-allocate→split→bin 的重复索引维护。实现现在保留立即邻块合并和精确 requested-byte 统计，
-但用 one-entry free cursor 同时承接 recent return 与 split remainder；相邻释放直接与 cursor
-合并，非相邻或不匹配时才发布回普通 size bin。因此没有用 benchmark 专用 size class 换成绩，
-而是消除了 request-window 和初始线性填充都会遇到的索引往返。
-alignment/overflow 也改为相对已验证 block end 的 checked arithmetic。benchmark 中 alloc 后还要
+当前实现用 one-entry free cursor 同时承接 recent return 与 split remainder；相邻释放直接与
+cursor 合并，非相邻或不匹配时才发布回普通 size bin，同时保留立即邻块合并和精确
+requested-byte 统计。alignment/overflow 使用相对已验证 block end 的 checked arithmetic。
+benchmark 中 alloc 后还要
 free 的指针以 `std::as_const` 作为只读左值观测：GCC 不再把指针变量当 read-write asm operand，
 MSVC 也不为 const-pointer prvalue 增加临时对象。clean `d3e4214` 上 Windows、GCC、Clang 与
 M4 两种显式 QoS 均通过 spread/sign 双闸门；M4 的结论边界同上，不冒充硬 P/E 核证书。
@@ -365,12 +315,8 @@ python scripts/mem-cert-stat.py build-bench/bin/hyle_mem_scenarios_bench.exe \
 
 脚本保存每个 process/variant 的原始 percentile、HEAD 与 dirty 标记，并对每个 percentile 做
 paired reference/HYLE ratio 与 sign test。dirty run 只允许调试 harness，不进入正式表。
-pre-fix 诊断曾暴露 `FixedPool` 平台翻转；完整 hot graph 强制内联后，Windows 仍出现
-p50 TIE、p95/p99 LOSE。逐请求计数进一步排除了 bin 扫描：recent 命中约 95%，但约 96% 的
-分配会 split，旧路径把 split tail 插入 bin 后又在相邻释放时摘除。`d3e4214` 的 free cursor
-直接保留 split remainder，并在相邻释放时无索引合并；非相邻 cursor 仍发布到普通 size bin。
-因此 Windows 缺口关闭，Win/Linux/M4 的 p50/p95/p99 全部通过 paired sign 闸门；75% mixed-fill
-碎片证书未退化。该优化来自实际 request-window 生命周期，不新增 benchmark 专用公开形状。
+clean `d3e4214` 上 Win/Linux/M4 的 p50/p95/p99 全部通过 paired sign 闸门；75% mixed-fill
+碎片证书未退化。
 
 ## 9. Request footprint / fragmentation 证书
 
@@ -380,17 +326,8 @@ parser/graph scratch，约 20% 是偶发 2 MiB staging buffer；`clear/release` 
 request，最后 full release。HYLE `Region` 与 `std::pmr::monotonic_buffer_resource` 都由同一个
 bench-local mimalloc vtable backing，排除不同 system heap 的影响。
 
-首轮 128 MiB dirty A/B 发现旧默认 1 MiB block 在 Linux 形成大量 backing allocation：虽然
-`reserved/payload=1.007`，live RSS 却约 203 MiB；2/4/16 MiB 上限依次约 172/159/157 MiB，
-同轮 PMR 约 151 MiB。4 MiB 已获得绝大部分 RSS 收益且 `reserved/payload` 仅为 1.031；16 MiB
-只再省约 2 MiB RSS，却把精确 reservation 推到 1.062。Windows 4 MiB 的 live RSS 约 136 MiB，
-PMR 约 135 MiB。因此产品默认上限改为 4 MiB；`--block-mib` 保留作诊断参数，正式证书只签
-当前默认。以上 dirty A/B 是设计依据，不是发布表。
-
-随后对 Linux 剩余 RSS 差距做 backing usable-size 分解：旧实现把 `max_block_size` 当 user payload，
-实际向 backing 请求 `4 MiB + Region header/alignment`，在当前 mimalloc 上因此跨入更大的 size
-class。commit `02ec81e` 把 ordinary block size 明确定义成包含内部元数据的 total backing-byte
-target；单个 user allocation 放不下时才突破。4 MiB target 现在真正请求 4 MiB，没有改变
+`Region` 当前默认 ordinary backing target 为 4 MiB，且 target 包含内部元数据；单个 user
+allocation 放不下时才突破。`--block-mib` 仅作诊断参数，正式证书签当前默认。该定义不改变
 `clear()` retention、dedicated-large 释放或 hard `size_limit` 合同。
 
 证书把两个概念分开：
