@@ -67,10 +67,33 @@ ThreadStart* make_start(void (*entry)(void*), void* ctx, const ThreadOpts& o) {
 namespace hyle::platform {
 namespace {
 
-Status thread_os_error(const char* operation, unsigned long code) {
-  char message[96];
-  std::snprintf(message, sizeof(message), "%s failed (OS error %lu)", operation,
-                code);
+const char* win32_error_name(unsigned long code) noexcept {
+  switch (code) {
+    case ERROR_NOT_ENOUGH_MEMORY: return "ERROR_NOT_ENOUGH_MEMORY";
+    case ERROR_OUTOFMEMORY: return "ERROR_OUTOFMEMORY";
+    case ERROR_MAX_THRDS_REACHED: return "ERROR_MAX_THRDS_REACHED";
+    case ERROR_ACCESS_DENIED: return "ERROR_ACCESS_DENIED";
+    case ERROR_INVALID_PARAMETER: return "ERROR_INVALID_PARAMETER";
+    default: return "WIN32_ERROR";
+  }
+}
+
+Status thread_os_error(const char* operation, unsigned long code) noexcept {
+  char description[192]{};
+  DWORD length = ::FormatMessageA(
+      FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr,
+      static_cast<DWORD>(code), 0, description,
+      static_cast<DWORD>(sizeof(description)), nullptr);
+  while (length != 0 &&
+         (description[length - 1] == '\r' || description[length - 1] == '\n')) {
+    description[--length] = '\0';
+  }
+
+  char message[320];
+  std::snprintf(message, sizeof(message),
+                "windows %s failed: %s (%lu)%s%s", operation,
+                win32_error_name(code), code, length == 0 ? "" : ": ",
+                length == 0 ? "" : description);
   if (code == ERROR_NOT_ENOUGH_MEMORY || code == ERROR_OUTOFMEMORY ||
       code == ERROR_MAX_THRDS_REACHED) {
     return Status::ResourceExhausted(message);
@@ -196,10 +219,34 @@ void set_name(std::string_view name) noexcept {
 namespace hyle::platform {
 namespace {
 
-Status thread_os_error(const char* operation, int code) {
-  char message[96];
-  std::snprintf(message, sizeof(message), "%s failed (error %d)", operation,
-                code);
+const char* posix_error_name(int code) noexcept {
+  switch (code) {
+    case EAGAIN: return "EAGAIN";
+    case ENOMEM: return "ENOMEM";
+    case EINVAL: return "EINVAL";
+    case EPERM: return "EPERM";
+    case EACCES: return "EACCES";
+    default: return "ERRNO_UNKNOWN";
+  }
+}
+
+[[maybe_unused]] const char* strerror_text(int result, char* buffer) noexcept {
+  return result == 0 ? buffer : nullptr;
+}
+
+[[maybe_unused]] const char* strerror_text(char* result, char*) noexcept {
+  return result;
+}
+
+Status thread_os_error(const char* operation, int code) noexcept {
+  char description[192]{};
+  const char* text = strerror_text(
+      ::strerror_r(code, description, sizeof(description)), description);
+  char message[320];
+  std::snprintf(message, sizeof(message), "posix %s failed: %s (%d)%s%s",
+                operation, posix_error_name(code), code,
+                text == nullptr || text[0] == '\0' ? "" : ": ",
+                text == nullptr ? "" : text);
   if (code == EAGAIN || code == ENOMEM) {
     return Status::ResourceExhausted(message);
   }

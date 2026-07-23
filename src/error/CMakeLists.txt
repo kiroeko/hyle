@@ -1,1 +1,1 @@
-hyle_add_module(error SOURCES status.cc error_handler.cc c_error.cc)
+hyle_add_module(error SOURCES status.cc c_error.cc)

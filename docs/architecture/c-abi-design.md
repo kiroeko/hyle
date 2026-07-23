@@ -69,14 +69,13 @@ HYLE 不在 C ABI 上再包一层冗余 C++ facade：原生 `include/hyle/<mod>/
 
 > **函数指针表本身**也一并删了：它是为"运行时动态发现/版本谈判"设计的，与版本门同源。纯 `extern "C"` 导出 + 头文件声明已足够 FFI 直接绑（`dlsym`/bindgen/ctypes 都认符号），不需要把所有函数塞进一个结构体再 `api_get` 填表。
 
-## 4. 有状态诊断：先判断是不是产品能力
+## 4. 有状态能力：先判断是不是产品能力
 
 “有状态”不是免除 C ABI 的理由。先按用户场景分类：
 
 | 类 | 模块 | 当前判定与 C 用户路径 |
 |---|---|---|
 | `StatsAllocator` / `LeakTracker` / `AllocStats` | mem | 已认定为 opt-in 用户能力：opaque stats allocator + POD out-snapshot + bounded leak copy；默认 system allocator 不埋统计成本 |
-| `ErrorRecord` | error | 当前是错误处理器的测试记录器，不是产品对象。C 用户能力由 `hyle_error_set_handler` / `push_handler` / `pop_handler` 覆盖，可在自己的 callback state 中累计同样的信息 |
 
 **升级规则**：只要上述统计/诊断被提升为面向用户的产品能力，就必须导出；
 典型形态是 opaque handle + POD snapshot/visitor，或者在所属资源句柄上提供标量
@@ -96,7 +95,7 @@ HYLE 不在 C ABI 上再包一层冗余 C++ facade：原生 `include/hyle/<mod>/
 ## 5. 错误跨 C 边界
 
 - **返回值通道**：`hyle_status`（opaque owning handle，`uintptr_t rep`）值返回 + 分支；`HYLE_C_RETURN_IF_ERROR` 传播。`Result<T>`（`std::expected`）是模板，C 侧用 `hyle_status` + 出参表达。
-- **诊断通道**：`hyle_error_report` + 可换 handler（`hyle_error_set_handler` 简单单槽 / `hyle_error_push_handler`+`pop` 嵌套安全，对标 signal old-handler）。
+- **诊断通道**：独立使用 `hyle/c/obs.h`；error 不维护第二套全局 handler。
 - **绝不让 C++ 异常跨 C 边界**（UB）。catch 只在 adapter 边界做"外来异常→Status"。
 - **分配器层不走 `hyle_status`**（mem 的刻意分层）：C 句柄工厂的资源失败和可由 FFI 数据表达的非法值/溢出 layout 均直接返 NULL；`hyle_mem_last_error_code()` 以独立 TLS 小枚举区分 INVALID_ARGUMENT、OUT_OF_MEMORY、EXHAUSTED 与 PLATFORM，字符串只作诊断。生命周期、并发静默、foreign/double free 等时序契约违反仍 fail-fast。分配器是**最底层基元**，让它依赖上层 error 模块的 `Status` 会**倒置依赖**。HugeRegion 在调用 VM 原语时只复制本次失败原因到 mem 通道，并恢复调用者原有的 platform VM error。
 - **platform 按失败形状分通道**：Thread 构造返回 `hyle_status`；VM/NUMA/
@@ -104,14 +103,14 @@ HYLE 不在 C ABI 上再包一层冗余 C++ facade：原生 `include/hyle/<mod>/
   Parker wrapper 与 fs/fd 用 `hyle_platform_last_error`。所有字符串均线程
   局部，成功清空 stale 值。这样不把 100+ 个布尔/指针原语机械改成
   Status，同时保证每条资源失败路径可诊断。
-- 对照：ggml 用 `ggml_status` 返回码 + `ggml_abort` 回调；oneDNN 用 `dnnl_status_t` + C++ 层 `wrap_c_api` 转异常。HYLE 与 ggml 同构（返回码 + fail-fast）。
+- 对照：ggml 用 `ggml_status` 返回码；oneDNN 用 `dnnl_status_t` + C++ 层 `wrap_c_api` 转异常。HYLE 的可恢复失败同样走显式返回值，程序错误独立 fail-fast。
 
 ## 6. C++ API 易用性（第 1 层，给 C++ 用户）
 
 C++ 用户拿原生 API，易用性靠 C++ 语言特性本身：
 - **RAII**：`VmRegion`/`MappedFile`/`OwnedFd`/`StackAllocator` 析构自动释放，move-only。
 - **模板便利**：`Allocator::allocate_n<T>`/`construct<T>`/`make_unique<T>`、硬容量 `ObjectPool<T>`、显式软层 `ObjectPoolCache<T>`、`GrowablePool<T>`。
-- **类型安全**：强类型句柄、`Status::Is##Code()` 谓词、`Result<T>` 单子式传播（`HYLE_ASSIGN_OR_RAISE`）。
+- **类型安全**：强类型句柄、`Status::Is##Code()` 谓词、`Result<T>` 单子式传播（`HYLE_ASSIGN_OR_RETURN`）。
 
 C ABI 用户（第 2 层）的易用性则靠 **header-inline 便利层**（零新导出符号，不进 ABI）：
 - error：全码工厂 `hyle_status_not_found()` 等 + 谓词 `hyle_status_is_*()` + `HYLE_C_RETURN_IF_ERROR`。

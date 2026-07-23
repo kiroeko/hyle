@@ -75,10 +75,11 @@ HYLE 的每条纪律都回溯到四个**约束源**：① ABI 稳定 ② 编译�
 
 - **零异常**：错误路径不 throw（继承 clay 哲学）。
 - **内部用 `std::expected<T,E>`** 取代 clay 手写 `Result`（省 `aligned_storage`+`launder`）。
-- **保留 `HYLE_ASSIGN_OR_RAISE` / `HYLE_RETURN_NOT_OK` 宏**——标准无 Rust `?` 等价，这是真增量。
+- **只保留 `HYLE_ASSIGN_OR_RETURN` / `HYLE_RETURN_IF_ERROR` 两个传播宏**——标准无 Rust `?` 等价；命名与成熟库一致，并由真实产品调用验证。
 - **状态码用 X-macro 单一数据源**（clay `CLAY_FOREACH_STATUS_CODE`）：加错误码只改一行，自动生成 enum + 工厂 + 判定。
 - **零开销 OK 路径**：错误载体 OK 态零分配（参考 clay Status `rep_==0` 指针标签内联）。
-- **`HYLE_ASSERT` 求值为 bool 且 release 不消失**：`if (!HYLE_ASSERT(x)) return ...;`，release 下记录而非 UB。
+- **语义边界显式增加上下文**：外部 translator 保留 operation/原生错误名/数值；中间层仅在增加用户语义时调用 `Status::WithContext`。
+- **失败通道不重叠**：运营失败返 Status，程序错误 `HYLE_FATAL_ASSERT`，人读日志归 obs；不存在 soft assert 或 error 私有 handler。
 
 ## 6. 内存与对象生命周期
 
@@ -132,7 +133,7 @@ HYLE 的每条纪律都回溯到四个**约束源**：① ABI 稳定 ② 编译�
 
 ## 11. 速查表
 
-**继承（风格基因，照搬/微调）**：C-ABI vtable+`_o/_t`+make/destroy+显式 allocator、Status 指针标签内联、X-macro 码表、`ASSIGN_OR_RAISE`、侵入式 RefCounted/Ref、编译期 type_name+哈希、ScopeGuard/DEFER、header-before-data carray、type-erased core+typed shell、string_ref null_terminated 位、`HYLE_PAD`+对齐 static_assert、cache-line 对齐、三态可见性宏、Registry 自注册、std 分层纪律、decls.h include 纪律。
+**继承（风格基因，照搬/微调）**：C-ABI vtable+`_o/_t`+make/destroy+显式 allocator、Status 指针标签内联、X-macro 码表、传播宏（现名 `ASSIGN_OR_RETURN`）、侵入式 RefCounted/Ref、编译期 type_name+哈希、ScopeGuard/DEFER、header-before-data carray、type-erased core+typed shell、string_ref null_terminated 位、`HYLE_PAD`+对齐 static_assert、cache-line 对齐、三态可见性宏、Registry 自注册、std 分层纪律、decls.h include 纪律。
 
 **取代（C++23 吸收，留意图换实现）**：Comparable→`<=>`、SFINAE→concepts、Result 核心→`std::expected`、`str()`→`std::format`、catomics→`std::atomic`(留自旋锁 padding)、hashmap 宏 temp/哨兵→concept 模板(+SwissTable SIMD)、pragma pack→`alignas`、`same_as_t`→`std::type_identity_t`、Singleton leaky→Meyers。
 

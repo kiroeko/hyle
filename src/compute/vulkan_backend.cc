@@ -48,24 +48,61 @@
 namespace hyle::compute {
 namespace {
 
+const char* vk_result_name(VkResult result) noexcept {
+  switch (result) {
+    case VK_SUCCESS: return "VK_SUCCESS";
+    case VK_NOT_READY: return "VK_NOT_READY";
+    case VK_TIMEOUT: return "VK_TIMEOUT";
+    case VK_EVENT_SET: return "VK_EVENT_SET";
+    case VK_EVENT_RESET: return "VK_EVENT_RESET";
+    case VK_INCOMPLETE: return "VK_INCOMPLETE";
+    case VK_ERROR_OUT_OF_HOST_MEMORY: return "VK_ERROR_OUT_OF_HOST_MEMORY";
+    case VK_ERROR_OUT_OF_DEVICE_MEMORY: return "VK_ERROR_OUT_OF_DEVICE_MEMORY";
+    case VK_ERROR_INITIALIZATION_FAILED: return "VK_ERROR_INITIALIZATION_FAILED";
+    case VK_ERROR_DEVICE_LOST: return "VK_ERROR_DEVICE_LOST";
+    case VK_ERROR_MEMORY_MAP_FAILED: return "VK_ERROR_MEMORY_MAP_FAILED";
+    case VK_ERROR_LAYER_NOT_PRESENT: return "VK_ERROR_LAYER_NOT_PRESENT";
+    case VK_ERROR_EXTENSION_NOT_PRESENT: return "VK_ERROR_EXTENSION_NOT_PRESENT";
+    case VK_ERROR_FEATURE_NOT_PRESENT: return "VK_ERROR_FEATURE_NOT_PRESENT";
+    case VK_ERROR_INCOMPATIBLE_DRIVER: return "VK_ERROR_INCOMPATIBLE_DRIVER";
+    case VK_ERROR_TOO_MANY_OBJECTS: return "VK_ERROR_TOO_MANY_OBJECTS";
+    case VK_ERROR_FORMAT_NOT_SUPPORTED: return "VK_ERROR_FORMAT_NOT_SUPPORTED";
+    case VK_ERROR_FRAGMENTED_POOL: return "VK_ERROR_FRAGMENTED_POOL";
+    case VK_ERROR_UNKNOWN: return "VK_ERROR_UNKNOWN";
+    default: return "VK_RESULT_UNKNOWN";
+  }
+}
+
 // Translate a VkResult (external boundary) into a HYLE Status -- never leak VkResult
 // across the public API. Canonical taxonomy mirrors from_cuda in cuda_backend.cu.
 Status from_vk(VkResult r, const char* what) noexcept {
   if (r == VK_SUCCESS) return Status();
+  StatusCode code = StatusCode::Internal;
   switch (r) {
     case VK_ERROR_OUT_OF_HOST_MEMORY:
     case VK_ERROR_OUT_OF_DEVICE_MEMORY:
-      return Status::ResourceExhausted(what);
+    case VK_ERROR_TOO_MANY_OBJECTS:
+      code = StatusCode::ResourceExhausted;
+      break;
     case VK_ERROR_INITIALIZATION_FAILED:
     case VK_ERROR_INCOMPATIBLE_DRIVER:
     case VK_ERROR_DEVICE_LOST:
-      return Status::Unavailable(what);
+      code = StatusCode::Unavailable;
+      break;
+    case VK_ERROR_LAYER_NOT_PRESENT:
     case VK_ERROR_FEATURE_NOT_PRESENT:
     case VK_ERROR_EXTENSION_NOT_PRESENT:
-      return Status::Unimplemented(what);
+    case VK_ERROR_FORMAT_NOT_SUPPORTED:
+      code = StatusCode::Unimplemented;
+      break;
     default:
-      return Status::Internal(what);
+      break;
   }
+  char message[256];
+  std::snprintf(message, sizeof(message), "vulkan %s failed: %s (%d)",
+                what != nullptr ? what : "unknown operation", vk_result_name(r),
+                static_cast<int>(r));
+  return Status(code, message);
 }
 
 // ---- pipeline cache 落盘 (checklist #1) --------------------------------------------

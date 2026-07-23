@@ -305,7 +305,7 @@ class CancelCallback {
 //   HYLE_CHECK_CANCEL();  // returns Status::Cancelled from the enclosing fn if set
 //
 // Requires the enclosing function to return Status / Result<T> (so the early
-// return type-checks). Mirrors HYLE_ASSIGN_OR_RAISE's early-return style.
+// return type-checks). Mirrors HYLE_ASSIGN_OR_RETURN's early-return style.
 #define HYLE_CHECK_CANCEL()                              \
   do {                                                   \
     if (::hyle::sched::is_cancel_requested())            \

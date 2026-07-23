@@ -21,7 +21,7 @@ set_source_files_properties(core/c_core_test.c PROPERTIES LANGUAGE C)
 hyle_apply_warnings(hyle_core_c_test)
 hyle_apply_sanitizer(hyle_core_c_test)
 add_test(NAME hyle_core_c_test COMMAND hyle_core_c_test)
-hyle_add_test(error SOURCES error/status_test.cc error/error_handler_test.cc)
+hyle_add_test(error SOURCES error/status_test.cc)
 # close-01 sample: pure C TU (C compiler) linking only the C ABI header.
 add_executable(hyle_error_c_test error/c_error_test.c)
 target_link_libraries(hyle_error_c_test PRIVATE hyle_error)

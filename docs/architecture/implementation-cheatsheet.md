@@ -19,7 +19,7 @@
 
 ## 2. 失败模型(源:lifecycle-design §0 / charter)
 - **自家 bug 绝不 catch** → fail-fast:`HYLE_FATAL_ASSERT`/abort + 诊断。**默认 no-throw**;破例须"不伤热路径 + 为隔壁稳定 + catch 外来非自家 bug"且**拿数据撑**。
-- 运营失败显式返 `Status`/`std::expected` + `ASSIGN_OR_RAISE`。catch 只在 adapter 边界做"外来异常→Status",绝不外泄(异常跨 C-ABI = UB)。
+- 运营失败显式返 `Status`/`std::expected` + `HYLE_RETURN_IF_ERROR` / `HYLE_ASSIGN_OR_RETURN`。catch 只在 adapter 边界做"外来异常→Status",绝不外泄(异常跨 C-ABI = UB)。
 
 ## 3. 分层判据(源:roadmap 依赖图 / scope)
 - 依赖图无环:`error→platform→mem→container→sched→io/compute→graph`。**高层依赖低层;反向 = 架构倒置(禁)**。

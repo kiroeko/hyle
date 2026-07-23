@@ -1,5 +1,9 @@
 # error-01：Status + std::expected + ASSIGN_OR_RAISE 宏
 
+> **历史任务，已被 2026-07 的 [`error-module-reclosure`](./error-module-reclosure.md)
+> 取代。** 本文保留当时的名称、数字和验收事实；当前 API、边界与性能不要从本文推断，
+> 分别见 architecture/error-design、guide/c-error 和 performance/benchmarks-error。
+
 | 字段 | 值 |
 |---|---|
 | **阶段** | P0 |

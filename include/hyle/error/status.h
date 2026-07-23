@@ -3,15 +3,16 @@
 #include <cstddef>
 #include <cstdint>
 #include <string_view>
+#include <utility>
 
 #include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
-#  define HYLE_ERROR_API
+#define HYLE_ERROR_API
 #elif defined(HYLE_ERROR_BUILD)
-#  define HYLE_ERROR_API HYLE_EXPORT
+#define HYLE_ERROR_API HYLE_EXPORT
 #else
-#  define HYLE_ERROR_API HYLE_IMPORT
+#define HYLE_ERROR_API HYLE_IMPORT
 #endif
 
 namespace hyle {
@@ -25,24 +26,27 @@ namespace hyle {
 // here + one line in hyle/c/error.h (enum value + inline factory/predicate).
 // Code set follows the abseil/gRPC canonical taxonomy.
 //   X(PascalName, SCREAMING_NAME, value)
-#define HYLE_FOREACH_STATUS_CODE(X)                                            \
-  X(Ok, OK, 0)                                                                 \
-  X(Cancelled, CANCELLED, 1)                                                   \
-  X(Unknown, UNKNOWN, 2)                                                       \
-  X(InvalidArgument, INVALID_ARGUMENT, 3)                                      \
-  X(DeadlineExceeded, DEADLINE_EXCEEDED, 4)                                    \
-  X(NotFound, NOT_FOUND, 5)                                                    \
-  X(AlreadyExists, ALREADY_EXISTS, 6)                                          \
-  X(PermissionDenied, PERMISSION_DENIED, 7)                                    \
-  X(ResourceExhausted, RESOURCE_EXHAUSTED, 8)                                  \
-  X(FailedPrecondition, FAILED_PRECONDITION, 9)                                \
-  X(Aborted, ABORTED, 10)                                                      \
-  X(OutOfRange, OUT_OF_RANGE, 11)                                              \
-  X(Unimplemented, UNIMPLEMENTED, 12)                                          \
-  X(Internal, INTERNAL, 13)                                                    \
-  X(Unavailable, UNAVAILABLE, 14)                                              \
-  X(DataLoss, DATA_LOSS, 15)                                                   \
+#define HYLE_FOREACH_ERROR_STATUS_CODE(X)       \
+  X(Cancelled, CANCELLED, 1)                    \
+  X(Unknown, UNKNOWN, 2)                        \
+  X(InvalidArgument, INVALID_ARGUMENT, 3)       \
+  X(DeadlineExceeded, DEADLINE_EXCEEDED, 4)     \
+  X(NotFound, NOT_FOUND, 5)                     \
+  X(AlreadyExists, ALREADY_EXISTS, 6)           \
+  X(PermissionDenied, PERMISSION_DENIED, 7)     \
+  X(ResourceExhausted, RESOURCE_EXHAUSTED, 8)   \
+  X(FailedPrecondition, FAILED_PRECONDITION, 9) \
+  X(Aborted, ABORTED, 10)                       \
+  X(OutOfRange, OUT_OF_RANGE, 11)               \
+  X(Unimplemented, UNIMPLEMENTED, 12)           \
+  X(Internal, INTERNAL, 13)                     \
+  X(Unavailable, UNAVAILABLE, 14)               \
+  X(DataLoss, DATA_LOSS, 15)                    \
   X(Unauthenticated, UNAUTHENTICATED, 16)
+
+#define HYLE_FOREACH_STATUS_CODE(X) \
+  X(Ok, OK, 0)                      \
+  HYLE_FOREACH_ERROR_STATUS_CODE(X)
 
 enum class StatusCode : std::uint16_t {
 #define HYLE_STATUS_ENUMERATOR(name, screaming, value) name = value,
@@ -55,14 +59,27 @@ enum class StatusCode : std::uint16_t {
 HYLE_ERROR_API std::string_view status_code_name(StatusCode code) noexcept;
 
 namespace detail {
+constexpr bool status_code_is_valid(StatusCode code) noexcept {
+  return static_cast<std::uint16_t>(code) <=
+         static_cast<std::uint16_t>(StatusCode::Unauthenticated);
+}
+
+constexpr StatusCode normalize_status_code(StatusCode code) noexcept {
+  return status_code_is_valid(code) ? code : StatusCode::Unknown;
+}
+
 // Heap representation lives entirely in the DLL (status.cc). These are the only
 // operations the header needs; the layout of the rep is never exposed.
-HYLE_ERROR_API std::uintptr_t status_make_heap(StatusCode code, const char* msg,
-                                               std::size_t len);
+HYLE_ERROR_API std::uintptr_t status_make_heap(StatusCode code, const char *msg,
+                                               std::size_t len) noexcept;
+HYLE_ERROR_API std::uintptr_t status_make_context(
+    StatusCode code, const char *context, std::size_t context_len,
+    const char *message, std::size_t message_len) noexcept;
 HYLE_ERROR_API void status_retain(std::uintptr_t rep) noexcept;
 HYLE_ERROR_API void status_release(std::uintptr_t rep) noexcept;
 HYLE_ERROR_API StatusCode status_heap_code(std::uintptr_t rep) noexcept;
-HYLE_ERROR_API std::string_view status_heap_message(std::uintptr_t rep) noexcept;
+HYLE_ERROR_API std::string_view status_heap_message(
+    std::uintptr_t rep) noexcept;
 
 // Test-only: next status_make_heap fails as if malloc returned null (OOM path).
 // Shipped builds strip this (HYLE_TESTING off).
@@ -83,7 +100,8 @@ class [[nodiscard]] Status {
  public:
   Status() noexcept = default;  // OK
 
-  Status(StatusCode code, std::string_view message) {
+  Status(StatusCode code, std::string_view message) noexcept {
+    code = detail::normalize_status_code(code);
     if (code != StatusCode::Ok) {
       std::uintptr_t inlined =
           (static_cast<std::uintptr_t>(code) << kCodeShift) | kInlineTag;
@@ -100,15 +118,16 @@ class [[nodiscard]] Status {
   }
 
   explicit Status(StatusCode code) noexcept
-      : rep_(code == StatusCode::Ok
+      : rep_((code = detail::normalize_status_code(code)) == StatusCode::Ok
                  ? 0
-                 : (static_cast<std::uintptr_t>(code) << kCodeShift) | kInlineTag) {}
+                 : (static_cast<std::uintptr_t>(code) << kCodeShift) |
+                       kInlineTag) {}
 
-  Status(const Status& o) noexcept : rep_(o.rep_) {
+  Status(const Status &o) noexcept : rep_(o.rep_) {
     if (is_heap()) detail::status_retain(rep_);
   }
-  Status(Status&& o) noexcept : rep_(o.rep_) { o.rep_ = 0; }
-  Status& operator=(const Status& o) noexcept {
+  Status(Status &&o) noexcept : rep_(o.rep_) { o.rep_ = 0; }
+  Status &operator=(const Status &o) noexcept {
     if (this != &o) {
       if (is_heap()) detail::status_release(rep_);
       rep_ = o.rep_;
@@ -116,7 +135,7 @@ class [[nodiscard]] Status {
     }
     return *this;
   }
-  Status& operator=(Status&& o) noexcept {
+  Status &operator=(Status &&o) noexcept {
     if (this != &o) {
       if (is_heap()) detail::status_release(rep_);
       rep_ = o.rep_;
@@ -146,26 +165,49 @@ class [[nodiscard]] Status {
   // A null buffer is treated as cap=0, allowing a size-only query.
   // No allocation, no std owning type across the seam. "OK" | "CODE" |
   // "CODE: message". Compose from code_name()/message() if you want the pieces.
-  HYLE_ERROR_API std::size_t ToString(char* buf, std::size_t cap) const noexcept;
+  HYLE_ERROR_API std::size_t ToString(char *buf,
+                                      std::size_t cap) const noexcept;
+
+  // Prefix semantic context on an error: "context: existing message". OK and
+  // empty context are no-ops. Only the error path allocates; on allocation
+  // failure the original status (including any existing message) is preserved.
+#if defined(HYLE_ERROR_BUILD)
+  // The DLL emits these entry points as well as the slow path. Consumers see
+  // the inline definitions below, so their common OK path does not cross the
+  // DLL seam; keeping the entry points also makes incremental DLL relinks safe.
+  HYLE_ERROR_API Status WithContext(std::string_view context) const & noexcept;
+  HYLE_ERROR_API Status WithContext(std::string_view context) && noexcept;
+#else
+  Status WithContext(std::string_view context) const & noexcept {
+    if (ok() || context.empty()) return *this;
+    return WithContextSlow(context);
+  }
+  Status WithContext(std::string_view context) && noexcept {
+    if (ok() || context.empty()) return std::move(*this);
+    return std::move(*this).WithContextSlow(context);
+  }
+#endif
 
   // Per-code predicates: IsNotFound(), IsCancelled(), ... (Ok included).
-#define HYLE_STATUS_PREDICATE(name, screaming, value)                          \
+#define HYLE_STATUS_PREDICATE(name, screaming, value) \
   bool Is##name() const noexcept { return code() == StatusCode::name; }
   HYLE_FOREACH_STATUS_CODE(HYLE_STATUS_PREDICATE)
 #undef HYLE_STATUS_PREDICATE
 
   // Per-code factories: Status::NotFound("msg"), Status::Internal("msg"), ...
-#define HYLE_STATUS_FACTORY(name, screaming, value)                            \
-  static Status name(std::string_view message = {}) {                          \
-    return Status(StatusCode::name, message);                                  \
+#define HYLE_STATUS_FACTORY(name, screaming, value)            \
+  static Status name(std::string_view message = {}) noexcept { \
+    return Status(StatusCode::name, message);                  \
   }
-  HYLE_FOREACH_STATUS_CODE(HYLE_STATUS_FACTORY)
+  HYLE_FOREACH_ERROR_STATUS_CODE(HYLE_STATUS_FACTORY)
 #undef HYLE_STATUS_FACTORY
 
-  friend bool operator==(const Status& a, const Status& b) noexcept {
+  static Status Ok() noexcept { return Status(); }
+
+  friend bool operator==(const Status &a, const Status &b) noexcept {
     return a.code() == b.code() && a.message() == b.message();
   }
-  friend bool operator!=(const Status& a, const Status& b) noexcept {
+  friend bool operator!=(const Status &a, const Status &b) noexcept {
     return !(a == b);
   }
 
@@ -185,6 +227,12 @@ class [[nodiscard]] Status {
   }
 
  private:
+  // Keep the common OK/no-op path header-inline; only a real error crosses the
+  // shared-library seam and touches the heap representation.
+  HYLE_ERROR_API Status
+  WithContextSlow(std::string_view context) const & noexcept;
+  HYLE_ERROR_API Status WithContextSlow(std::string_view context) && noexcept;
+
   static constexpr std::uintptr_t kInlineTag = 1;
   static constexpr std::uintptr_t kCodeShift = 2;
 

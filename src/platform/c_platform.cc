@@ -227,7 +227,8 @@ hyle_status hyle_thread_spawn(hyle_thread_o** out, hyle_thread_entry_fn entry,
   auto r = hyle::platform::Thread::spawn(entry, ctx, to_cpp_opts(opts));
   if (!r.has_value()) {
     delete o;
-    return steal_status(std::move(r).error());
+    return steal_status(
+        std::move(r).error().WithContext("hyle_thread_spawn"));
   }
   o->t = std::move(*r);
   *out = o;

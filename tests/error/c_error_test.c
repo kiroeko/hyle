@@ -1,67 +1,21 @@
 /* Pure C consumer of include/hyle/c/error.h (close-01: no C++). */
-#include "hyle/c/error.h"
-
 #include <stdio.h>
 #include <string.h>
 
+#include "hyle/c/error.h"
+
 static int g_fails = 0;
 
-#define CHECK(cond)                                                            \
-  do {                                                                         \
-    if (!(cond)) {                                                             \
-      fprintf(stderr, "CHECK failed: %s (%s:%d)\n", #cond, __FILE__, __LINE__);\
-      ++g_fails;                                                               \
-    }                                                                          \
+#define CHECK(cond)                                                  \
+  do {                                                               \
+    if (!(cond)) {                                                   \
+      fprintf(stderr, "CHECK failed: %s (%s:%d)\n", #cond, __FILE__, \
+              __LINE__);                                             \
+      ++g_fails;                                                     \
+    }                                                                \
   } while (0)
 
-static int g_handler_hits = 0;
-static char g_last_msg[128];
-static hyle_severity g_last_severity = HYLE_SEVERITY_WARNING;
-
-static void on_report(void* user, hyle_severity sev, const char* file,
-                      uint32_t line, const char* message) {
-  (void)user;
-  g_last_severity = sev;
-  (void)file;
-  (void)line;
-  ++g_handler_hits;
-  if (message != NULL) {
-    size_t n = strlen(message);
-    if (n >= sizeof(g_last_msg)) n = sizeof(g_last_msg) - 1;
-    memcpy(g_last_msg, message, n);
-    g_last_msg[n] = '\0';
-  } else {
-    g_last_msg[0] = '\0';
-  }
-}
-
-static int g_handler2_hits = 0;
-static void on_report2(void* user, hyle_severity sev, const char* file,
-                       uint32_t line, const char* message) {
-  (void)user;
-  (void)sev;
-  (void)file;
-  (void)line;
-  (void)message;
-  ++g_handler2_hits;
-}
-
-static int g_self_uninstall_hits = 0;
-static void on_report_and_uninstall(void* user, hyle_severity sev,
-                                    const char* file, uint32_t line,
-                                    const char* message) {
-  (void)user;
-  (void)sev;
-  (void)file;
-  (void)line;
-  (void)message;
-  ++g_self_uninstall_hits;
-  hyle_error_set_handler(NULL, NULL);
-}
-
-static hyle_status helper_fail(void) {
-  return hyle_status_not_found("gone");
-}
+static hyle_status helper_fail(void) { return hyle_status_not_found("gone"); }
 
 static hyle_status helper_propagate(void) {
   HYLE_C_RETURN_IF_ERROR(helper_fail());
@@ -69,20 +23,26 @@ static hyle_status helper_propagate(void) {
 }
 
 int main(void) {
-  CHECK(hyle_error_last_error() != NULL);
-
   /* OK */
   hyle_status ok = hyle_status_ok();
   CHECK(hyle_status_is_ok(ok));
   CHECK(hyle_status_get_code(ok) == HYLE_STATUS_OK);
   CHECK(!hyle_status_has_message(ok));
-  CHECK(strcmp(hyle_status_message_cstr(ok), "") == 0);  /* OK -> "" */
+  CHECK(strcmp(hyle_status_message_cstr(ok), "") == 0); /* OK -> "" */
   {
     hyle_status generic =
         hyle_status_new(HYLE_STATUS_INVALID_ARGUMENT, "generic");
     CHECK(hyle_status_is_invalid_argument(generic));
     CHECK(strcmp(hyle_status_message_cstr(generic), "generic") == 0);
     hyle_status_free(&generic);
+  }
+  {
+    hyle_status invalid =
+        hyle_status_new((hyle_status_code)999, "foreign code");
+    CHECK(hyle_status_is_unknown(invalid));
+    CHECK(strcmp(hyle_status_message_cstr(invalid), "foreign code") == 0);
+    CHECK(strcmp(hyle_status_code_name((hyle_status_code)999), "Unknown") == 0);
+    hyle_status_free(&invalid);
   }
   {
     char buf[32];
@@ -99,7 +59,7 @@ int main(void) {
   CHECK(hyle_status_is_not_found(nf));
   CHECK(hyle_status_code_is(nf, HYLE_STATUS_NOT_FOUND));
   CHECK(strcmp(hyle_status_code_name(HYLE_STATUS_NOT_FOUND), "NotFound") == 0);
-  CHECK(hyle_status_message_cstr(nf)[0] == '\0');  /* inline code, no message */
+  CHECK(hyle_status_message_cstr(nf)[0] == '\0'); /* inline code, no message */
 
   hyle_status ca = hyle_status_cancelled(NULL);
   CHECK(hyle_status_is_cancelled(ca));
@@ -160,24 +120,24 @@ int main(void) {
   {
     hyle_status m = hyle_status_internal("to-be-freed");
     CHECK(hyle_status_is_internal(m));
-    hyle_status_move(&m, NULL);           /* NULL src -> frees dst, leaves it OK */
+    hyle_status_move(&m, NULL); /* NULL src -> frees dst, leaves it OK */
     CHECK(hyle_status_is_ok(m));
 
     hyle_status self = hyle_status_aborted("keep");
-    hyle_status_move(&self, &self);       /* dst==src -> no-op, still valid */
+    hyle_status_move(&self, &self); /* dst==src -> no-op, still valid */
     CHECK(hyle_status_is_aborted(self));
     hyle_status_free(&self);
 
-    hyle_status_move(NULL, NULL);         /* NULL dst -> safe no-op */
+    hyle_status_move(NULL, NULL); /* NULL dst -> safe no-op */
   }
 
   /* free is idempotent and NULL-safe */
-  hyle_status_free(NULL);                 /* must not crash */
+  hyle_status_free(NULL); /* must not crash */
   {
     hyle_status f = hyle_status_data_loss("x");
     hyle_status_free(&f);
-    CHECK(hyle_status_is_ok(f));           /* cleared to OK */
-    hyle_status_free(&f);                  /* second free is safe (idempotent) */
+    CHECK(hyle_status_is_ok(f)); /* cleared to OK */
+    hyle_status_free(&f);        /* second free is safe (idempotent) */
     CHECK(hyle_status_is_ok(f));
   }
 
@@ -193,10 +153,37 @@ int main(void) {
     char full[64];
     hyle_status_to_string(boom, full, sizeof(full));
     CHECK(strcmp(full, "Internal: boom") == 0);
-    const char* cm = hyle_status_message_cstr(boom);  /* zero-copy borrow */
+    const char *cm = hyle_status_message_cstr(boom); /* zero-copy borrow */
     CHECK(cm != NULL && strcmp(cm, "boom") == 0);
   }
   hyle_status_free(&boom);
+
+  /* in-place context: one owning handle, outermost-first text */
+  {
+    hyle_status contextual = hyle_status_unavailable("device lost");
+    hyle_status_add_context(&contextual, "vulkan vkQueueSubmit failed");
+    CHECK(hyle_status_is_unavailable(contextual));
+    CHECK(strcmp(hyle_status_message_cstr(contextual),
+                 "vulkan vkQueueSubmit failed: device lost") == 0);
+    hyle_status_add_context(&contextual, "launching kernel");
+    CHECK(
+        strcmp(hyle_status_message_cstr(contextual),
+               "launching kernel: vulkan vkQueueSubmit failed: device lost") ==
+        0);
+    hyle_status_add_context(&contextual, NULL); /* no-op */
+    hyle_status_add_context(NULL, "ignored");   /* no-op */
+    hyle_status_free(&contextual);
+
+    hyle_status code_only = hyle_status_not_found(NULL);
+    hyle_status_add_context(&code_only, "loading shader");
+    CHECK(strcmp(hyle_status_message_cstr(code_only), "loading shader") == 0);
+    hyle_status_free(&code_only);
+
+    hyle_status still_ok = hyle_status_ok();
+    hyle_status_add_context(&still_ok, "ignored on OK");
+    CHECK(hyle_status_is_ok(still_ok));
+    hyle_status_free(&still_ok);
+  }
 
   /* equals */
   hyle_status a = hyle_status_aborted("x");
@@ -208,56 +195,6 @@ int main(void) {
   hyle_status_free(&a);
   hyle_status_free(&b);
   hyle_status_free(&c);
-
-  /* diagnostic handler + reportf + macros */
-  g_handler_hits = 0;
-  g_last_msg[0] = '\0';
-  hyle_error_set_handler(on_report, NULL);
-  hyle_error_report(HYLE_SEVERITY_ERROR, "c_error_test.c", 1, "hello-c");
-  CHECK(g_handler_hits == 1);
-  CHECK(strcmp(g_last_msg, "hello-c") == 0);
-  hyle_error_reportf(HYLE_SEVERITY_WARNING, "c_error_test.c", 2, "n=%d", 7);
-  CHECK(g_handler_hits == 2);
-  CHECK(strcmp(g_last_msg, "n=7") == 0);
-  CHECK(g_last_severity == HYLE_SEVERITY_WARNING);
-  hyle_error_report((hyle_severity)99, NULL, 0, "invalid-severity");
-  CHECK(g_handler_hits == 3);
-  CHECK(g_last_severity == HYLE_SEVERITY_ERROR);
-  HYLE_C_ERROR("macro-lit");
-  CHECK(g_handler_hits == 4);
-  CHECK(strcmp(g_last_msg, "macro-lit") == 0);
-  HYLE_C_WARNF("w=%s", "ok");
-  CHECK(g_handler_hits == 5);
-  CHECK(strcmp(g_last_msg, "w=ok") == 0);
-
-  /* v3: nesting-safe push/pop. Outer handler = on_report (counts g_handler_hits);
-   * push a second handler, verify reports route to it, pop, verify the OUTER one
-   * is restored exactly (LIFO). */
-  {
-    int outer_before = g_handler_hits;
-    hyle_error_saved_handler_o* tok =
-        hyle_error_push_handler(on_report2, NULL);
-    CHECK(tok != NULL);
-    g_handler2_hits = 0;
-    hyle_error_report(HYLE_SEVERITY_ERROR, "c_error_test.c", 3, "inner");
-    CHECK(g_handler2_hits == 1);            /* inner handler saw it */
-    CHECK(g_handler_hits == outer_before);  /* outer did NOT */
-    hyle_error_pop_handler(tok);            /* restore outer */
-    hyle_error_report(HYLE_SEVERITY_ERROR, "c_error_test.c", 4, "back");
-    CHECK(g_handler_hits == outer_before + 1);  /* outer restored */
-    CHECK(strcmp(g_last_msg, "back") == 0);
-    hyle_error_pop_handler(NULL);           /* NULL is a safe no-op */
-  }
-
-  hyle_error_set_handler(NULL, NULL);
-
-  /* Handler replacement is reentrant: a callback may uninstall itself. */
-  g_self_uninstall_hits = 0;
-  hyle_error_set_handler(on_report_and_uninstall, NULL);
-  hyle_error_report(HYLE_SEVERITY_ERROR, "c_error_test.c", 5,
-                    "self-uninstall");
-  CHECK(g_self_uninstall_hits == 1);
-  hyle_error_set_handler(NULL, NULL);  /* already uninstalled: safe no-op */
 
   /* HYLE_C_RETURN_IF_ERROR */
   {

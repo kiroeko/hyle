@@ -71,7 +71,7 @@ HYLE `Device`/`Stream`/`Event` 抽象**不暴露** `cudaStream_t`/`ggml_backend_
 - **macOS（Apple clang，arm64/Apple Silicon，无 CUDA）**：`cmake -G "Unix Makefiles"` 配置时 `find_package(CUDAToolkit)` **找不到→compute 只编 host fallback**（真机验证无 CUDA 时的可移植性，非 `-DCMAKE_DISABLE_FIND_PACKAGE` 模拟）；`hyle_compute_test` **9/10 + 1 skip**（GPU 自跳过）。验证 host 后端的 device_alloc/memcpy 完成契约在第三个平台/编译器/架构（arm64 Apple clang）真跑通。
 
 ## 实现纪要 / 实测纠错（文档=当前真相）
-- **手动虚表非虚继承**（用户纠偏 + conventions §4/§10）：`ComputeBackend` 纯 fn-ptr 结构（同 `error_handler_t`）；每后端独立 TU 一张表（组合优于包含），非上帝类 switch。
+- **手动虚表非虚继承**（用户纠偏 + conventions §4/§10）：`ComputeBackend` 纯 fn-ptr 结构；每后端独立 TU 一张表（组合优于包含），非上帝类 switch。早期 `error_handler_t` 曾采用同类机制，但该无人消费的 error handler 已在 error-03 删除。
 - **去 pimpl 内联 3 字**（用户"性能优先、时间复杂度低"纠偏）：初版 Stream/Event 用 pimpl `Impl*`（每对象一次堆分配 + query() 多一次间接）；改为内联 `{vt,native void*,ordinal}`，公开头前向声明 `struct ComputeBackend` 仍不泄漏后端类型，query() 热路径省一次解引用。
 - **CUDA C++ 方言纠错**：初判可给 CUDA TU 传 C++23，实测 **nvcc 13.3 转发 `-std=c++23` 给 host 编译器时忽略之**（warning "flag not supported"），`std::expected` 不可用；**与 CMake 版本无关**（CMake 4.1 已支持 CUDA23 方言，是 nvcc 前端硬限制）。解法=拆 `types.h`（POD 无 result.h）让 `.cu` 编译时不碰 `std::expected`，CUDA TU 用 C++20、host TU 仍 C++23。
 - **显存单独、mem 只管 host RAM**（用户明确边界）：`cuda_backend` 的 `device_alloc`=`cudaMalloc`（真显存,**不**包 `mem::Allocator`——host 不能解引用显存）；host fallback 的 `device_alloc`=`std::malloc`（host "device"=host RAM，脊验证最小辅助，compute-02 buffer 抽象取代，届时 pinned host staging 才走 mem）。

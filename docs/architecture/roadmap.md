@@ -98,7 +98,7 @@ container/       │               │ compute   │  container 自带内联 SSE
 
 | 阶段 | 模块 | 里程碑（每个可独立编/测）| 旧预测 | 再投影(实测口径) |
 |---|---|---|---|---|
-| **P0** | error / obs-hook | Status+expected+ASSIGN_OR_RAISE / obs 埋点 | 3-5k | error ~0.7k + obs ~0.8k，✅ 预发布冻结 |
+| **P0** | error / obs-hook | Status+expected+context+ASSIGN_OR_RETURN / obs 埋点 | 3-5k | error 当前形状 Windows 已验，🔶 Linux/macOS 重证后冻结；obs 已收口 |
 | **P1** | platform | thread+park / vm+dynlib / path+fs+env | 5-8k | **~4.4k**，✅ 预发布冻结 |
 | **P2** | mem | Allocator+alignment / mimalloc / region / pool+stack / NUMA | 6-10k | **~1.8k**，实现主干稳定；公共形状/C surface 与跨平台性能尾仍在收口复审 |
 | **P2** | time | 单调钟 / 分层时间轮 | 1.5-2.5k | **~0.9k**，✅ 预发布冻结 |
@@ -154,7 +154,7 @@ container/       │               │ compute   │  container 自带内联 SSE
 | 决策 | 内容 | 出处 / 谁拍板 |
 |---|---|---|
 | C++ 标准 | **C++23**（GCC14+/Clang18+/MSVC19.43+）| charter；**用户拍板**（看编译器支持后定 23）|
-| 错误模型 | 零异常 + `std::expected`，保留 ASSIGN_OR_RAISE 宏 | charter |
+| 错误模型 | 零异常 + `std::expected`，保留 `ASSIGN_OR_RETURN` / `RETURN_IF_ERROR` 宏 | charter + error-design |
 | 命名/宏 | 继承 clay，前缀 `HYLE_` | charter |
 | 协程 | `co_await` 驱动 fiber | charter/sched |
 | executors | NVIDIA/stdexec，不等 C++26 STL | charter |

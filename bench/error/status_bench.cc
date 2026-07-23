@@ -30,6 +30,7 @@
 
 #if defined(HYLE_BENCH_ABSL)
 #  include "absl/status/status.h"
+#  include "absl/status/status_builder.h"
 #  include "absl/status/statusor.h"
 #endif
 
@@ -66,7 +67,7 @@ TrivResult triv_chain_ok(int x) {
 using StdResult = std::expected<int, std::error_code>;
 
 // --- propagation depth: a 4-deep call chain, the realistic "error bubbles up N frames"
-// pattern. Each layer forwards via ASSIGN_OR_RAISE (HYLE) so the macro + FailReturn
+// pattern. Each layer forwards via ASSIGN_OR_RETURN (HYLE) so the macro + FailReturn
 // conversion cost is in the measurement, not just a single construct. The ERROR-path leaf
 // returns a COPY of a pre-built error (no per-call malloc) so the chain measures the
 // PROPAGATION/unwind mechanism, not error construction (that's rows 3-4). Otherwise HYLE's
@@ -83,15 +84,15 @@ Result<int> hyle_leaf_err(int x) {
 }
 
 Result<int> hyle_chain_ok(int x) {
-  HYLE_ASSIGN_OR_RAISE(int a, hyle_leaf_ok(x));
-  HYLE_ASSIGN_OR_RAISE(int b, hyle_leaf_ok(a));
-  HYLE_ASSIGN_OR_RAISE(int c, hyle_leaf_ok(b));
+  HYLE_ASSIGN_OR_RETURN(int a, hyle_leaf_ok(x));
+  HYLE_ASSIGN_OR_RETURN(int b, hyle_leaf_ok(a));
+  HYLE_ASSIGN_OR_RETURN(int c, hyle_leaf_ok(b));
   return c;
 }
 Result<int> hyle_chain_err(int x) {
-  HYLE_ASSIGN_OR_RAISE(int a, hyle_leaf_ok(x));
-  HYLE_ASSIGN_OR_RAISE(int b, hyle_leaf_ok(a));
-  HYLE_ASSIGN_OR_RAISE(int c, hyle_leaf_err(b));  // fails here, unwinds the error up
+  HYLE_ASSIGN_OR_RETURN(int a, hyle_leaf_ok(x));
+  HYLE_ASSIGN_OR_RETURN(int b, hyle_leaf_ok(a));
+  HYLE_ASSIGN_OR_RETURN(int c, hyle_leaf_err(b));  // fails here, unwinds the error up
   return c;
 }
 
@@ -252,6 +253,44 @@ int main() {
     });
   }
 
+  // ---- (5b) add one semantic context layer to an existing error ----
+  {
+    Status err_h = Status::Unavailable("device queue is unavailable");
+#if defined(HYLE_BENCH_ABSL)
+    absl::Status err_a = absl::UnavailableError("device queue is unavailable");
+#endif
+    nb::Bench b;
+    b.title("error context: prefix one semantic layer")
+        .relative(true)
+        .batch(1)
+        .minEpochIterations(500000);
+#if defined(HYLE_BENCH_ABSL)
+    b.run("absl::StatusBuilder SetPrepend", [&] {
+      absl::Status s = absl::StatusBuilder(err_a).SetPrepend() << "submit work: ";
+      nb::doNotOptimizeAway(s.ok());
+    });
+#endif
+    b.run("HYLE Status::WithContext", [&] {
+      Status s = Status(err_h).WithContext("submit work");
+      nb::doNotOptimizeAway(s.ok());
+    });
+  }
+
+  // The no-op path stays inline in consumer code; it must remain suitable for
+  // unconditional contextualization at a boundary.
+  {
+    Status ok;
+    nb::Bench b;
+    b.title("WithContext on OK (no-op)")
+        .relative(true)
+        .batch(1)
+        .minEpochIterations(5000000);
+    b.run("HYLE Status::WithContext(OK)", [&] {
+      Status s = ok.WithContext("submit work");
+      nb::doNotOptimizeAway(s.ok());
+    });
+  }
+
   // ---- (6) success propagation through a 4-deep chain (macro + value plumbing) ----
   {
     nb::Bench b;
@@ -270,14 +309,14 @@ int main() {
       nb::doNotOptimizeAway(r.ok());
     });
 #endif
-    b.run("HYLE Result + ASSIGN_OR_RAISE", [&] {
+    b.run("HYLE Result + ASSIGN_OR_RETURN", [&] {
       auto r = hyle_chain_ok(++seed);
       nb::doNotOptimizeAway(r.has_value());
     });
   }
 
   // ---- (6b) success propagation, REALISTIC: the value is UNWRAPPED and consumed (the way
-  // real code uses it: ASSIGN_OR_RAISE the result, then use the int). The (6) micro-pattern
+  // real code uses it: ASSIGN_OR_RETURN the result, then use the int). The (6) micro-pattern
   // builds a Result and immediately destroys it in the loop -- which over-weights the one
   // extra dtor branch that expected<int,Status> carries (Status is non-trivially destructible
   // so it can OWN a heap message; std::error_code is trivial so it can't). This variant folds
@@ -313,7 +352,7 @@ int main() {
       nb::doNotOptimizeAway(r.ok());
     });
 #endif
-    b.run("HYLE Result + ASSIGN_OR_RAISE", [&] {
+    b.run("HYLE Result + ASSIGN_OR_RETURN", [&] {
       auto r = hyle_chain_err(++seed);
       nb::doNotOptimizeAway(r.has_value());
     });

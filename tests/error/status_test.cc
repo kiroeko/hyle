@@ -1,24 +1,28 @@
+#include "hyle/error/status.h"
+
 #include <gtest/gtest.h>
 
+#include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <string>
 #include <string_view>
+#include <thread>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 #include "hyle/error/result.h"
-#include "hyle/error/status.h"
 
 using hyle::Result;
 using hyle::Status;
-using hyle::StatusCode;
 using hyle::status_code_name;
+using hyle::StatusCode;
 
-// ToString now fills a caller buffer (no std::string across the seam). Tests may
-// use std::string freely, so wrap it for convenient comparison.
-static std::string to_str(const Status& s) {
+// ToString now fills a caller buffer (no std::string across the seam). Tests
+// may use std::string freely, so wrap it for convenient comparison.
+static std::string to_str(const Status &s) {
   char buf[128];
   std::size_t need = s.ToString(buf, sizeof(buf));
   EXPECT_LT(need, sizeof(buf));  // these fixtures are short; no truncation
@@ -54,8 +58,8 @@ TEST(Status, FactoryWithMessage) {
   EXPECT_EQ(to_str(s), "Internal: boom");
 }
 
-TEST(Status, OkFactoryIgnoresMessage) {
-  Status s = Status::Ok("ignored");
+TEST(Status, OkFactoryIsAlwaysMessageLess) {
+  Status s = Status::Ok();
   EXPECT_TRUE(s.ok());
   EXPECT_FALSE(s.has_message());
   EXPECT_EQ(to_str(s), "OK");
@@ -65,6 +69,16 @@ TEST(Status, CodeCtorHasNoMessage) {
   Status s(StatusCode::Aborted);
   EXPECT_TRUE(s.IsAborted());
   EXPECT_FALSE(s.has_message());
+}
+
+TEST(Status, InvalidCodeNormalizesToUnknown) {
+  Status code_only(static_cast<StatusCode>(999));
+  EXPECT_TRUE(code_only.IsUnknown());
+  EXPECT_FALSE(code_only.has_message());
+
+  Status with_message(static_cast<StatusCode>(999), "foreign code");
+  EXPECT_TRUE(with_message.IsUnknown());
+  EXPECT_EQ(with_message.message(), "foreign code");
 }
 
 TEST(Status, Equality) {
@@ -87,6 +101,61 @@ TEST(Status, MoveLeavesUsableSource) {
   Status b = std::move(a);
   EXPECT_TRUE(b.IsInternal());
   EXPECT_EQ(b.message(), "m");
+}
+
+TEST(Status, SharedMessageCopiesAcrossThreads) {
+  const Status source = Status::Internal("shared immutable failure");
+  std::atomic<int> failures{0};
+  std::vector<std::thread> threads;
+  threads.reserve(8);
+  for (int worker = 0; worker < 8; ++worker) {
+    threads.emplace_back([&] {
+      for (int i = 0; i < 10000; ++i) {
+        Status copy = source;
+        if (!copy.IsInternal() ||
+            copy.message() != "shared immutable failure") {
+          failures.fetch_add(1, std::memory_order_relaxed);
+        }
+      }
+    });
+  }
+  for (auto &thread : threads) thread.join();
+  EXPECT_EQ(failures.load(std::memory_order_relaxed), 0);
+}
+
+TEST(Status, WithContextOnOkIsNoOp) {
+  Status s = Status().WithContext("opening model");
+  EXPECT_TRUE(s.ok());
+  EXPECT_FALSE(s.has_message());
+}
+
+TEST(Status, WithContextAddsMessageToCodeOnlyError) {
+  Status s = Status::NotFound().WithContext("loading shader");
+  EXPECT_TRUE(s.IsNotFound());
+  EXPECT_EQ(s.message(), "loading shader");
+}
+
+TEST(Status, WithContextPrefixesWithoutMutatingLvalue) {
+  Status leaf = Status::Unavailable("device lost");
+  Status outer = leaf.WithContext("submitting kernel");
+  EXPECT_EQ(leaf.message(), "device lost");
+  EXPECT_EQ(outer.message(), "submitting kernel: device lost");
+  EXPECT_TRUE(outer.IsUnavailable());
+}
+
+TEST(Status, WithContextNestsOutermostFirst) {
+  Status s = Status::Internal("VK_ERROR_DEVICE_LOST (-4)")
+                 .WithContext("vulkan vkQueueSubmit failed")
+                 .WithContext("launching compute kernel");
+  EXPECT_EQ(s.message(),
+            "launching compute kernel: vulkan vkQueueSubmit failed: "
+            "VK_ERROR_DEVICE_LOST (-4)");
+}
+
+TEST(Status, EmptyContextPreservesSharedRepresentation) {
+  Status leaf = Status::Internal("same");
+  Status copy = leaf.WithContext("");
+  EXPECT_EQ(copy.message().data(), leaf.message().data());
 }
 
 // ---- exhaustive code-name table (every X-macro row) -------------------------
@@ -117,15 +186,15 @@ TEST(Status, EveryFactoryAndPredicateAgree) {
 TEST(Status, IsSmallObject) {
   // Tagged-pointer rep: exactly one word. This is the whole point of the
   // 8-byte design -- it is the error slot in every Result<T>.
-  EXPECT_EQ(sizeof(Status), sizeof(void*));
+  EXPECT_EQ(sizeof(Status), sizeof(void *));
 }
 
 TEST(Status, ToStringTruncates) {
   Status s = Status::Internal("boom");  // "Internal: boom" = 14 chars
   char small[5];
   std::size_t need = s.ToString(small, sizeof(small));
-  EXPECT_EQ(need, 14u);                       // full length reported
-  EXPECT_STREQ(small, "Inte");                // 4 bytes + NUL, truncated
+  EXPECT_EQ(need, 14u);         // full length reported
+  EXPECT_STREQ(small, "Inte");  // 4 bytes + NUL, truncated
   // zero-capacity must not write and must still report the needed length.
   EXPECT_EQ(s.ToString(nullptr, 0), 14u);
 }
@@ -166,7 +235,7 @@ TEST(Result, MonadicTransformOnValue) {
   EXPECT_EQ(*doubled, 42);
 }
 
-// ---- propagation macros: HYLE_RETURN_NOT_OK ---------------------------------
+// ---- propagation macros: HYLE_RETURN_IF_ERROR -------------------------------
 
 namespace {
 
@@ -175,33 +244,33 @@ Status inner_ok() { return Status(); }
 
 // returns Status, propagates Status
 Status chain_status(bool fail) {
-  HYLE_RETURN_NOT_OK(fail ? inner_fails() : inner_ok());
+  HYLE_RETURN_IF_ERROR(fail ? inner_fails() : inner_ok());
   return Status();
 }
 
 // returns Result<T>, propagates a bare Status (FailReturn -> unexpected)
 Result<int> chain_result_from_status(bool fail) {
-  HYLE_RETURN_NOT_OK(fail ? inner_fails() : inner_ok());
+  HYLE_RETURN_IF_ERROR(fail ? inner_fails() : inner_ok());
   return 7;
 }
 
 }  // namespace
 
-TEST(ReturnNotOk, PropagatesInStatusFunction) {
+TEST(ReturnIfError, PropagatesInStatusFunction) {
   EXPECT_TRUE(chain_status(false).ok());
   Status s = chain_status(true);
   EXPECT_TRUE(s.IsPermissionDenied());
   EXPECT_EQ(s.message(), "denied");
 }
 
-TEST(ReturnNotOk, PropagatesIntoResultFunction) {
+TEST(ReturnIfError, PropagatesIntoResultFunction) {
   EXPECT_EQ(chain_result_from_status(false).value(), 7);
   Result<int> r = chain_result_from_status(true);
   ASSERT_FALSE(r.has_value());
   EXPECT_TRUE(r.error().IsPermissionDenied());
 }
 
-// ---- propagation macros: HYLE_ASSIGN_OR_RAISE -------------------------------
+// ---- propagation macros: HYLE_ASSIGN_OR_RETURN ------------------------------
 
 namespace {
 
@@ -212,38 +281,38 @@ Result<int> parse_pos(int v) {
 
 // two assigns in one scope -> exercises __COUNTER__ uniqueness
 Result<int> sum_two(int a, int b) {
-  HYLE_ASSIGN_OR_RAISE(int x, parse_pos(a));
-  HYLE_ASSIGN_OR_RAISE(int y, parse_pos(b));
+  HYLE_ASSIGN_OR_RETURN(int x, parse_pos(a));
+  HYLE_ASSIGN_OR_RETURN(int y, parse_pos(b));
   return x + y;
 }
 
 // 3-level nesting: leaf -> mid -> top, error must bubble unchanged
 Result<int> leaf(int v) { return parse_pos(v); }
 Result<int> mid(int v) {
-  HYLE_ASSIGN_OR_RAISE(int x, leaf(v));
+  HYLE_ASSIGN_OR_RETURN(int x, leaf(v));
   return x + 1;
 }
 Result<int> top(int v) {
-  HYLE_ASSIGN_OR_RAISE(int x, mid(v));
+  HYLE_ASSIGN_OR_RETURN(int x, mid(v));
   return x + 1;
 }
 
 }  // namespace
 
-TEST(AssignOrRaise, BindsValueOnOk) {
+TEST(AssignOrReturn, BindsValueOnOk) {
   Result<int> r = sum_two(20, 22);
   ASSERT_TRUE(r.has_value());
   EXPECT_EQ(*r, 42);
 }
 
-TEST(AssignOrRaise, RaisesOnFirstError) {
+TEST(AssignOrReturn, ReturnsFirstError) {
   Result<int> r = sum_two(-1, 22);
   ASSERT_FALSE(r.has_value());
   EXPECT_TRUE(r.error().IsInvalidArgument());
   EXPECT_EQ(r.error().message(), "negative");
 }
 
-TEST(AssignOrRaise, ThreeLevelBubble) {
+TEST(AssignOrReturn, ThreeLevelBubble) {
   EXPECT_EQ(top(10).value(), 12);  // +1 +1
   Result<int> r = top(-5);
   ASSERT_FALSE(r.has_value());
@@ -251,7 +320,7 @@ TEST(AssignOrRaise, ThreeLevelBubble) {
   EXPECT_EQ(r.error().message(), "negative");
 }
 
-TEST(AssignOrRaise, RaisesOnSecondError) {
+TEST(AssignOrReturn, ReturnsSecondError) {
   // First assign ok, second fails -- exercises multi-assign + __COUNTER__.
   Result<int> r = sum_two(1, -2);
   ASSERT_FALSE(r.has_value());
@@ -300,6 +369,19 @@ TEST(Status, OomDegradesToInlineCodeWithoutMessage) {
   EXPECT_FALSE(s.has_message());
   EXPECT_TRUE(s.message().empty());
   EXPECT_EQ(to_str(s), "Internal");
+}
+
+TEST(Status, WithContextOomPreservesExistingMessage) {
+  Status leaf = Status::Unavailable("device lost");
+  const char *original = leaf.message().data();
+  hyle::detail::status_test_force_oom(true);
+  Status outer = std::move(leaf).WithContext("submitting kernel");
+  hyle::detail::status_test_force_oom(false);
+
+  EXPECT_TRUE(outer.IsUnavailable());
+  EXPECT_EQ(outer.message(), "device lost");
+  EXPECT_EQ(outer.message().data(), original);
+  EXPECT_TRUE(leaf.ok());
 }
 
 TEST(Status, UnknownCodeNameFallback) {

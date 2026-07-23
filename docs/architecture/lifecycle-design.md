@@ -56,8 +56,8 @@
 C++ 无异常**不能强制展开栈**（不像 Rust drop future）。HYLE 的解法优雅且零异常：
 
 - **每个 await 点是隐式取消点**：fiber `co_await` 一个操作时，若令牌已取消，awaitable **返回 `Status::Cancelled`** 而非结果。
-- **`HYLE_ASSIGN_OR_RAISE` 自动向上传播**：取消值像普通错误一样早返回，**正常 return 路径展开栈、RAII/`HYLE_DEFER` 逐层触发清理**。
-- 净效果：**用 `co_await` + `ASSIGN_OR_RAISE` 写的代码自动可取消、自动清理，无需异常、无需强制 unwind、无需 try-catch**。深层不查令牌的纯 CPU 循环不可取消（协作式的固有代价）——需要时手动插 `HYLE_CHECK_CANCEL()`。
+- **`HYLE_ASSIGN_OR_RETURN` 自动向上传播**：取消值像普通错误一样早返回，**正常 return 路径展开栈、RAII/`HYLE_DEFER` 逐层触发清理**。
+- 净效果：**用 `co_await` + `ASSIGN_OR_RETURN` 写的代码自动可取消、自动清理，无需异常、无需强制 unwind、无需 try-catch**。深层不查令牌的纯 CPU 循环不可取消（协作式的固有代价）——需要时手动插 `HYLE_CHECK_CANCEL()`。
 
 ### 难点：取消正阻塞在 io/GPU 上的 fiber
 

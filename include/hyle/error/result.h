@@ -22,13 +22,15 @@ namespace detail {
 // the conversion has to be carried explicitly -- that is this type's whole job.
 class FailReturn {
  public:
-  explicit FailReturn(Status status) : status_(std::move(status)) {}
+  explicit FailReturn(Status status) noexcept : status_(std::move(status)) {}
 
   // -> a function returning Status
-  operator Status() && { return std::move(status_); }  // NOLINT(*-explicit)
+  operator Status() && noexcept {
+    return std::move(status_);
+  }  // NOLINT(*-explicit)
   // -> a function returning Result<U>
   template <class U>
-  operator Result<U>() && {  // NOLINT(*-explicit)
+  operator Result<U>() && noexcept {  // NOLINT(*-explicit)
     return std::unexpected<Status>(std::move(status_));
   }
 
@@ -44,29 +46,24 @@ class FailReturn {
 // functions returning Status OR Result<T> thanks to detail::FailReturn.
 
 // Evaluate a Status expression; if not OK, return it (converted) immediately.
-#define HYLE_RETURN_NOT_OK(expr)                                               \
-  do {                                                                         \
-    ::hyle::Status hyle_status_ = (expr);                                      \
-    if (HYLE_UNLIKELY(!hyle_status_.ok())) {                                   \
-      return ::hyle::detail::FailReturn(std::move(hyle_status_));              \
-    }                                                                          \
+#define HYLE_RETURN_IF_ERROR(expr)                                \
+  do {                                                            \
+    ::hyle::Status hyle_status_ = (expr);                         \
+    if (HYLE_UNLIKELY(!hyle_status_.ok())) {                      \
+      return ::hyle::detail::FailReturn(std::move(hyle_status_)); \
+    }                                                             \
   } while (0)
 
 // Assign the value of a Result<T> to `lhs`, or early-return its error.
 // `lhs` may be a declaration ("auto x") or an existing lvalue. Uses a uniquely
 // named temporary (via __COUNTER__) so multiple uses in one scope never clash.
-#define HYLE_ASSIGN_OR_RAISE(lhs, expr)                                        \
-  HYLE_ASSIGN_OR_RAISE_IMPL(HYLE_CONCAT(hyle_or_, __COUNTER__), lhs, expr)
+#define HYLE_ASSIGN_OR_RETURN(lhs, expr) \
+  HYLE_ASSIGN_OR_RETURN_IMPL(HYLE_CONCAT(hyle_or_, __COUNTER__), lhs, expr)
 
-#define HYLE_ASSIGN_OR_RAISE_IMPL(tmp, lhs, expr)                              \
-  auto&& tmp = (expr);                                                         \
-  if (HYLE_UNLIKELY(!tmp.has_value())) {                                       \
-    return ::hyle::detail::FailReturn(std::move(tmp).error());                 \
-  }                                                                            \
-  lhs = *std::move(tmp)  /* operator*: has_value() already checked above, so   \
-                            skip .value()'s redundant check + throw path */
-
-// NOTE: HYLE_ASSERT (charter §5 soft assert) lives in error/error_handler.h --
-// it routes failures through the installable diagnostic handler, not a bare
-// fprintf. result.h is the lower Status/Result layer and intentionally does NOT
-// define it (would clash + diverge by include order).
+#define HYLE_ASSIGN_OR_RETURN_IMPL(tmp, lhs, expr)                          \
+  auto&& tmp = (expr);                                                      \
+  if (HYLE_UNLIKELY(!tmp.has_value())) {                                    \
+    return ::hyle::detail::FailReturn(std::move(tmp).error());              \
+  }                                                                         \
+  lhs = *std::move(tmp) /* operator*: has_value() already checked above, so \
+                           skip .value()'s redundant check + throw path */

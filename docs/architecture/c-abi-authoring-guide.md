@@ -14,7 +14,7 @@
 | RAII 类（`VmRegion`/`MappedFile`/`StackAllocator`） | **导出为 opaque 句柄** | `_o` 句柄 + create/destroy + 方法转发 |
 | 值语义 vtable（`Allocator`） | **导出为 POD struct** | 天然 C 形状（fn 指针 + state），显式桥接 |
 | 模板 `Foo<T>` | **不导出类型；导出能力** | 类型擦除：`<T>`→运行时 `size/align/enum`（见 design §1）；typed 便利用 header-inline 宏 |
-| 有状态调试/内省类（`StatsAllocator`/`ErrorRecord`） | **先判断是否是用户能力** | 用户需要的统计/诊断导出 opaque handle + POD snapshot/visitor；仅测试注入、内部 record 才可不导出 |
+| 有状态调试/内省类（如 `StatsAllocator`） | **先判断是否是用户能力** | 用户需要的统计/诊断导出 opaque handle + POD snapshot/visitor；仅测试注入、内部 recorder 才可不导出 |
 | 用 `std::` 拥有型 / `std::function` / `std::span` 的签名 | **改形态再导出** | 换成 ptr+len、fn 指针+ctx、buffer-fill/visitor |
 
 **判据不是"每个 C++ 符号都要有 C 对应"，是"能力有没有 C ABI 通路"**（design §1）。模板不可达≠能力缺失。

@@ -1,5 +1,10 @@
 # error-02：error_handler vtable 跨 DLL 错误上报
 
+> **历史任务，产物已退役。** 实际产品调用审查确认 handler/soft assert 与 obs/fatal
+> 重叠，未发布阶段已删除；当前任务结论见
+> [`error-module-reclosure`](./error-module-reclosure.md)。下文只记录当时为什么实现，
+> 不代表当前公开 API。
+
 | 字段 | 值 |
 |---|---|
 | **阶段** | P0 |

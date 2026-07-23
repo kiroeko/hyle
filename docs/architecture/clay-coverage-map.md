@@ -14,7 +14,7 @@
 > - **进度真相**:clay 地基(sys/utils/container 主体)**吸纳基本收口**；SIMD/IO/compute/graph 属于 HYLE 净新增支柱，不应计作 clay 欠账。simd-12 的正确 bit-pack 核、SoA complex 编排与 small-K 路由，以及 simd-13 的 SoA `ctanh/cpow` vendor displacement，在 clay 中均无对应能力，是 HYLE 净新增。**clay 吸纳权重 ≈ 33%**只描述旧 clay 库的覆盖比例，不代表项目整体完成度；整体状态只看 [`milestones/README.md`](../milestones/README.md)。
 >
 > **替换/延期核验结论(2026-06-29 逐项查 clay 源,回答"std/第三方替换的有没有暗漏 clay 逻辑、defer 的能否现在做")**:
-> - **std/第三方替换 = 真终态,无暗漏**:`result→std::expected`(ASSIGN_OR_RAISE 宏保留)、`sprintf→std::format`(clay 的"UTF-8 安全截断"本就是**注释掉的假功能**,HYLE 真 UTF-8 已落 string_algo:utf8_decode/length/icmp)、`func_traits/comparable→concepts/<=>`、`consts→<numbers>`、`thread_pool/worker→sched work-stealing`(重写超越)。逐个查过:**没有"std 其实没覆盖却被当替换"的坑**。
+> - **std/第三方替换 = 真终态,无暗漏**:`result→std::expected`(传播宏保留，现名 `ASSIGN_OR_RETURN`)、`sprintf→std::format`(clay 的"UTF-8 安全截断"本就是**注释掉的假功能**,HYLE 真 UTF-8 已落 string_algo:utf8_decode/length/icmp)、`func_traits/comparable→concepts/<=>`、`consts→<numbers>`、`thread_pool/worker→sched work-stealing`(重写超越)。逐个查过:**没有"std 其实没覆盖却被当替换"的坑**。
 > - **被当"待补"实为已做或故意**:`string_buf intern` **已实现**(等内容返同指针;"待补"只是全局单例便利层,次要);`CUSTOM_MEMORY_FUNCTIONS` **故意不做**(mimalloc 无 off-switch 是用户指令,非漏)。
 > - **`async_value`+`barrier` 地基已吸纳(sched-05,2026-06-29)**:fiber-aware 同步原语(CV + Mutex/WaitGroup/Latch/Channel)落地——这是 async_value"等待值就绪"+ barrier 倒数的**真机制**。API diff 揪出 clay async_value **不是** promise/future+waiter 而是值状态机 cell(`.cc` 42 行纯类型注册,无阻塞逻辑);故剩余 = 类型化 future 值封装(CV 上薄层,io/compute 需要时建)+ 可重置 Barrier(薄层),均**净新非移植**。`decls.h` include 纪律仍是个小真空待坐实。**真·clay 吸纳欠账 ≈ 零。**
 
@@ -29,7 +29,7 @@
 | `sys/string_buf.h` + `.cc` | 141+363 | container-06 | ✅ | 引用计数驻留池 `StringBuf`(pimpl 藏 SwissTable 内容索引+mutex)+ make/destroy 工厂；每唯一串单独分配(地址稳定)。**改进**：内容 equality 是最终身份；对外 ID 是 generation-tagged direct slot，hash collision 不别名、stale ID 不命中新串；永久 `intern/intern_many` 与可回收 `add/retain/remove` 分离。全局可变单例有意不做。 |
 | `sys/hashmap.h` | 809 | container-04 + container-04b | ✅ | concept 模板重写 + **实现 clay 只 TODO 的 SwissTable**(控制字节+SIMD探测+三角探测+tombstone)；**type-erased 冷核(resize/free 进 DLL,防 per-T 膨胀)+ erase abseil reclaim-to-empty + NEON group(aarch64 编过未跑)已补(container-04b✅)** |
 | `sys/murmur_hash.h` | 294 | container-02 | 🔶 | **运行期哈希→XXH3 已接(container-02✅,借 xxHash 替 murmur)**;编译期 type 哈希→**FNV-1a constexpr 已做(util-02 type_hash)**;murmur 本体未移植(无剩余用途) |
-| `sys/error.h` + `.cc` | 222+143 | **error-02** | ✅ | error_handler vtable(跨 DLL 诊断 sink)。改进:非变参 vtable(ABI 安全,clay 变参函数指针隐患)、干净 fatal(HYLE_TRAP vs clay rand+空写+exit)、补 charter §5 `HYLE_ASSERT`、record handler 无分配。NOT_IMPLEMENTED 等便利宏 gap 登记 |
+| `sys/error.h` + `.cc` | 222+143 | **error-02（历史）** | ♻️ | clay 的全局 error handler/soft assert 曾被移植，实际产品调用为零且与 obs 重叠，发布前已删除；保留的资产只有 8B `Status` 思路，现由 `error-design.md` 的 Status/Result/context 边界取代 |
 | `sys/os.h`+`os.linux.cc`+`os.shared.cc` | 795+830+210 | platform-02/03b | ✅ | **dynlib ✅(platform-02)**;**fs/env/os_info ✅(platform-03b)**:file_system_api 13 fn(stat/mkdir+recursive/remove+recursive/rename/copy/iterate/cwd/chdir/temp/home)+ touch + get_env_var,**buffer-fill+visitor 替 clay 分配式 strings_t/std::function,保 fs 在 P1**;改进 mkdir 幂等/temp 认环境变量/copy 可移植替 sendfile。`file_io`(open/read/write)+`mmap_*`→io-05;`socket_*`→io-04;`num_logical_processors`→♻️`std::thread::hardware_concurrency`;**`avx_support`→✅ simd-01 dispatch 取代并超越**(clay 单 `__builtin_cpu_supports("avx")`→HYLE `CpuFeatures` 全特性位 CPUID+XGETBV 探测);`absolute`/`ensure_parent`=组合登记。**virtual_memory clay 无**→platform-02b ✅(2026-07-17,net-new:`vm_*`+`VmRegion`+guarded) |
 | `sys/path.h` + `.cc` | 202+1372 | platform-03a (+platform-03b/io) | ✅ | **vtable `path_api_t`(16 函数)纯字符串半 ✅(platform-03a,落 container/path.{h,cc},232 行)**:extension(splitext)/strip/base/directory/parent_dir/pop_first/pop_last/split_all/join/join_array/normalize(native 折叠)/is_absolute(升级自 clay blend `is_relative`)/is_unc。修 clay directory 的 `//x` OOB。**vtable 外 ~1100 行**:path_contains/cmp_normalized=`stat`+`normalize` 组合(platform-03b 基元已备);make_safe_filename Win 域(随用补);path_rel blend⛔/sequence_decode 渲染域⛔;normalize_unc+宽字符↔UTF-8→宽字符随 io/Win 路径补 |
 | `sys/log.h` + `.cc` | 150+178 | obs-01/02 | ✅ | **日志产出**：level 门控 + 结构化 record + 64 槽 sink registry + TTY 彩色 stderr + caller-side `std::format`。相对 clay：非变参 callback、线程安全 registry、quiescent unregister（摘除后无旧 callback UAF）、默认输出不向重定向流塞 ANSI。**净新增 trace**：编译期零成本 seam + 单 Tracy client，已接 mem/sched/io/compute；纯 C ABI 见 `hyle/c/obs.h` |
@@ -84,17 +84,22 @@
 
 `simd-14` 的 FMA 符号/交错、magnitude、even/odd widen、invariant remainder 与 packed-bf16 accumulate 是 HYLE `simd/` 的净新增能力；clay 没有对应 vector API，故不新增 clay 吸纳欠账，也不改变 `math/half.h` 的硬件 dtype 取代结论。
 
-## 已修正的"完成"状态（红队核账发现的缩水）
+## 历史核账记录（后续状态以本表当前行和模块 design 为准）
+
+以下是 2026-06-28 当轮查漏产生的任务记录，不是当前产品待办；已完成、替代或撤销的
+结果已经合并到上面的当前映射。error 的现行边界见 [`error-design.md`](./error-design.md)。
 
 - **mem-03**：从"✅完成"改"🔶块池完成、Arena bump 待补(mem-03b)"。
 - **mem-01**：标注 typed 便利层待补(mem-01b)。
-- **error-01**：标注 error_handler vtable 待补(error-02)。
+- **error-01（历史）**：当时标注 error_handler vtable 待补(error-02)；该 handler 后经
+  实际消费者审查判定与 obs 重叠，已删除，不再是缺口。
 
-## 新登记的补漏里程碑
+## 当轮登记的补漏里程碑（历史）
 
 - **mem-01b**：allocator typed 便利层(`allocate<T>/construct<T>/make_unique<T>/destroy<T>` + pmr 钩子)。
 - **mem-03b**：`Arena` bump 分配器 + `ArenaAllocator` 适配 + `make_arena_allocator`。
-- **error-02**：error_handler vtable(跨 DLL 错误上报)。
+- **error-02**：当时实现 error_handler vtable；现已由 Status 返回值 + obs 日志双通道
+  取代并退役。
 - **container-06b**：`string_utils` 高层字符串工具(score_similarity/path_match/format_si/capitalize/replace/find_path_matches)+ `StringBuf` 全局单例 intern/usprintf。container-06 只做 string_ref 类型核心 + StringBuf 实例,这些高层/全局便利层显式登记待补,**非略过**。
 
 ## "clay 完全吸纳"在 P 几（见本文件末尾结论由 milestones/README 给出）

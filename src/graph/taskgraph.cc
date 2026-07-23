@@ -87,7 +87,7 @@ Status TaskGraph::evaluate() noexcept {
   for (std::uint32_t i = 0; i < n_nodes; ++i) {
     if (!dirty_[i]) continue;
     Status s = fn_[i](ctx_[i]);
-    if (!s.ok()) return s;  // abort sweep; node i stays dirty (retried next evaluate)
+    HYLE_RETURN_IF_ERROR(s);  // node i stays dirty (retried next evaluate)
     dirty_[i] = false;
   }
   return Status();
@@ -122,7 +122,7 @@ Status TaskGraph::evaluate_node(NodeId target) noexcept {
   for (std::uint32_t i = 0; i <= t; ++i) {
     if (!needed[i] || !dirty_[i]) continue;
     Status s = fn_[i](ctx_[i]);
-    if (!s.ok()) return s;  // abort; node i stays dirty (retried next evaluate)
+    HYLE_RETURN_IF_ERROR(s);  // node i stays dirty (retried next evaluate)
     dirty_[i] = false;
   }
   return Status();

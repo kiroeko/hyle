@@ -2,6 +2,7 @@
 #include <cuda.h>  // driver API (cuMemAddressReserve/cuMemCreate/cuMemMap) for the VMM pool
 #include <nvrtc.h>  // compute-04: runtime CUDA C -> PTX compilation
 
+#include <cstdio>
 #include <mutex>
 #include <new>
 #include <string>
@@ -32,28 +33,49 @@
 namespace hyle::compute {
 namespace {
 
+Status native_failure(StatusCode code, const char* domain, const char* operation,
+                      const char* name, int value,
+                      const char* description) noexcept {
+  const char* op = operation != nullptr ? operation : "unknown operation";
+  const char* error_name = name != nullptr ? name : "UNKNOWN";
+  char message[512];
+  if (description != nullptr && description[0] != '\0') {
+    std::snprintf(message, sizeof(message), "%s %s failed: %s (%d): %s",
+                  domain, op, error_name, value, description);
+  } else {
+    std::snprintf(message, sizeof(message), "%s %s failed: %s (%d)", domain,
+                  op, error_name, value);
+  }
+  return Status(code, message);
+}
+
 // Translate a cudaError_t (external boundary failure) into a HYLE Status. Uses the
 // canonical taxonomy: no-device/driver -> Unavailable, OOM -> ResourceExhausted,
-// bad arg -> InvalidArgument, else Internal. cudaGetErrorString gives the message.
+// bad arg -> InvalidArgument, else Internal. Preserve operation, native name,
+// numeric value and vendor description in the message.
 Status from_cuda(cudaError_t e, const char* what) noexcept {
   if (e == cudaSuccess) return Status();
-  // The message is backend-owned static storage; safe to pass to Status (it copies).
-  const char* msg = cudaGetErrorString(e);
+  StatusCode code = StatusCode::Internal;
   switch (e) {
     case cudaErrorNoDevice:
     case cudaErrorInsufficientDriver:
+      code = StatusCode::Unavailable;
+      break;
     case cudaErrorNotSupported:
-      return Status::Unavailable(msg);
+      code = StatusCode::Unimplemented;
+      break;
     case cudaErrorMemoryAllocation:
-      return Status::ResourceExhausted(msg);
+      code = StatusCode::ResourceExhausted;
+      break;
     case cudaErrorInvalidValue:
     case cudaErrorInvalidDevice:
-      return Status::InvalidArgument(msg);
+      code = StatusCode::InvalidArgument;
+      break;
     default:
-      // `what` disambiguates which call failed when the message is generic.
-      (void)what;
-      return Status::Internal(msg);
+      break;
   }
+  return native_failure(code, "cuda", what, cudaGetErrorName(e),
+                        static_cast<int>(e), cudaGetErrorString(e));
 }
 
 // Cached device count (cudaGetDeviceCount is cheap but this is queried at table
@@ -325,12 +347,17 @@ Status cuda_buffer_clear(void* base, std::size_t offset, std::uint8_t value,
 // Translate a CUresult (driver API) into a HYLE Status. cuGetErrorString gives text.
 Status from_cu(CUresult r, const char* what) noexcept {
   if (r == CUDA_SUCCESS) return Status();
+  const char* name = nullptr;
   const char* msg = nullptr;
+  cuGetErrorName(r, &name);
   cuGetErrorString(r, &msg);
-  const char* m = msg != nullptr ? msg : what;
-  if (r == CUDA_ERROR_OUT_OF_MEMORY) return Status::ResourceExhausted(m);
-  if (r == CUDA_ERROR_NOT_SUPPORTED) return Status::Unavailable(m);
-  return Status::Internal(m);
+  StatusCode code = StatusCode::Internal;
+  if (r == CUDA_ERROR_OUT_OF_MEMORY) code = StatusCode::ResourceExhausted;
+  if (r == CUDA_ERROR_NOT_SUPPORTED) code = StatusCode::Unimplemented;
+  if (r == CUDA_ERROR_INVALID_VALUE || r == CUDA_ERROR_INVALID_DEVICE)
+    code = StatusCode::InvalidArgument;
+  return native_failure(code, "cuda-driver", what, name, static_cast<int>(r),
+                        msg);
 }
 
 // A pool is one of these two, tagged so pool_is_vmm / dispatch can tell them apart.
@@ -589,8 +616,13 @@ void cuda_pool_free(void* handle, void* ptr, std::size_t size) noexcept {
 // Translate an nvrtcResult into a HYLE Status (compile-time failures).
 Status from_nvrtc(nvrtcResult r, const char* what) noexcept {
   if (r == NVRTC_SUCCESS) return Status();
-  const char* msg = nvrtcGetErrorString(r);
-  return Status::Internal(msg != nullptr ? msg : what);
+  StatusCode code = StatusCode::Internal;
+  if (r == NVRTC_ERROR_OUT_OF_MEMORY) code = StatusCode::ResourceExhausted;
+  if (r == NVRTC_ERROR_INVALID_INPUT || r == NVRTC_ERROR_INVALID_OPTION ||
+      r == NVRTC_ERROR_INVALID_PROGRAM)
+    code = StatusCode::InvalidArgument;
+  return native_failure(code, "nvrtc", what, nvrtcGetErrorString(r),
+                        static_cast<int>(r), nullptr);
 }
 
 // In-process PTX compile cache: hash(source) ^ arch -> PTX. Avoids recompiling the

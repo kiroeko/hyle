@@ -1,20 +1,15 @@
-// C-ABI bridge for the error module (include/hyle/c/error.h). Pure forwarding:
-// no extra policy. Lives in hyle_error so HYLE_ERROR_BUILD exports the symbols.
+// C-ABI bridge for Status (include/hyle/c/error.h). The C handle owns the same
+// tagged word as hyle::Status; bridge operations transfer or borrow that
+// ownership without exposing the heap representation. Native C++ consumers
+// inline context no-ops; this DLL-local bridge enters the exported method.
 
-#include "hyle/c/error.h"
-
-#include <cstdarg>
-#include <cstdio>
 #include <cstring>
-#include <mutex>
-#include <new>  // std::nothrow for the push/pop handler token
 #include <string_view>
 #include <type_traits>
+#include <utility>
 
-#include "hyle/error/error_handler.h"
+#include "hyle/c/error.h"
 #include "hyle/error/status.h"
-
-struct hyle_error_saved_handler_o;
 
 namespace {
 
@@ -23,128 +18,69 @@ static_assert(alignof(hyle_status) == alignof(std::uintptr_t));
 static_assert(std::is_standard_layout_v<hyle_status>);
 static_assert(std::is_trivially_copyable_v<hyle_status>);
 
-thread_local const char* g_c_error = "";
-
-hyle::StatusCode to_cpp_code(hyle_status_code c) noexcept {
-  // Values are identical to StatusCode by construction (static_assert'd below),
-  // so this is a plain cast -- no switch to keep in sync. An out-of-range FFI
-  // input is a contract violation, deliberately not clamped to Unknown here
-  // (status_code_name still maps unknown values to "Unknown").
-  return static_cast<hyle::StatusCode>(static_cast<std::uint16_t>(c));
+hyle::StatusCode to_cpp_code(hyle_status_code code) noexcept {
+  const auto raw = static_cast<std::uint16_t>(code);
+  return hyle::detail::normalize_status_code(
+      static_cast<hyle::StatusCode>(raw));
 }
 
-hyle_status_code to_c_code(hyle::StatusCode c) noexcept {
-  return static_cast<hyle_status_code>(static_cast<std::uint16_t>(c));
+hyle_status_code to_c_code(hyle::StatusCode code) noexcept {
+  return static_cast<hyle_status_code>(static_cast<std::uint16_t>(code));
 }
 
-// Single-source-of-truth guard: the hand-written C enum (hyle/c/error.h) and the
-// X-macro-generated C++ StatusCode must agree value-for-value, since both casts
-// above depend on it. Every row of the shared list is checked here -- add or
-// renumber a code on one side without the other and this fails to compile.
-#define HYLE_STATUS_ABI_MATCH(name, screaming, value)                          \
-  static_assert(static_cast<std::uint16_t>(hyle::StatusCode::name) ==          \
-                    static_cast<std::uint16_t>(HYLE_STATUS_##screaming),       \
-                "C hyle_status_code drifted from C++ StatusCode: " #screaming);
+#define HYLE_STATUS_ABI_MATCH(name, screaming, value)          \
+  static_assert(                                               \
+      static_cast<std::uint16_t>(hyle::StatusCode::name) ==    \
+          static_cast<std::uint16_t>(HYLE_STATUS_##screaming), \
+      "C hyle_status_code drifted from C++ StatusCode: " #screaming);
 HYLE_FOREACH_STATUS_CODE(HYLE_STATUS_ABI_MATCH)
 #undef HYLE_STATUS_ABI_MATCH
 
-hyle_status steal_to_c(hyle::Status&& s) noexcept {
-  hyle_status out;
-  out.rep = s.release_rep();
-  return out;
+hyle_status steal_to_c(hyle::Status &&status) noexcept {
+  return hyle_status{status.release_rep()};
 }
 
-hyle::Status adopt_from_c(hyle_status s) noexcept {
-  return hyle::Status::adopt_rep(s.rep);
+hyle::Status adopt_from_c(hyle_status status) noexcept {
+  return hyle::Status::adopt_rep(status.rep);
 }
 
-// ---- C diagnostic handler (process-wide, single slot) -----------------------
-struct CHandlerState {
-  std::recursive_mutex mutex;
-  hyle_error_report_fn fn = nullptr;
-  void* user = nullptr;
-  hyle::error_handler_t vtable{};
-  const hyle::error_handler_t* prev = nullptr;
-  bool installed = false;
-};
-
-CHandlerState& c_handler_state() noexcept {
-  static CHandlerState st;
-  return st;
-}
-
-hyle_error_saved_handler_o*& c_handler_push_top() noexcept {
-  static hyle_error_saved_handler_o* top = nullptr;
-  return top;
-}
-
-std::recursive_mutex& c_handler_set_mutex() noexcept {
-  // A C callback may replace/uninstall itself while error_report holds the
-  // recursive C++ dispatch lock. Preserve that supported reentrant shape here.
-  static std::recursive_mutex mu;
-  return mu;
-}
-
-void c_handler_on_report(hyle::error_handler_o* inst, hyle::Severity sev,
-                         const char* file, std::uint32_t line,
-                         const char* message) {
-  auto* st = reinterpret_cast<CHandlerState*>(inst);
-  if (st == nullptr) return;
-  std::lock_guard<std::recursive_mutex> lock(st->mutex);
-  if (st->fn != nullptr) {
-    st->fn(st->user,
-           static_cast<hyle_severity>(static_cast<std::uint8_t>(sev)), file,
-           line, message);
-  }
-}
-
-
-size_t copy_sv(std::string_view sv, char* buf, size_t cap) noexcept {
-  if (buf == nullptr || cap == 0) return sv.size();
-  size_t n = sv.size();
-  size_t write = n < cap - 1 ? n : cap - 1;
-  if (write > 0) std::memcpy(buf, sv.data(), write);
+std::size_t copy_sv(std::string_view value, char *buf,
+                    std::size_t cap) noexcept {
+  if (buf == nullptr || cap == 0) return value.size();
+  const std::size_t write = value.size() < cap - 1 ? value.size() : cap - 1;
+  if (write != 0) std::memcpy(buf, value.data(), write);
   buf[write] = '\0';
-  return n;
+  return value.size();
 }
 
 }  // namespace
-
-// Nesting-safe push/pop token (v3). Unlike the single static c_handler_state(),
-// each push OWNS its own state + vtable on the heap, so overrides nest (LIFO):
-// the token records the exact handler it displaced and reinstates it on pop.
-struct hyle_error_saved_handler_o {
-  CHandlerState state;                               // this override's fn/user + vtable
-  const hyle::error_handler_t* displaced = nullptr;  // reinstated on pop
-  const hyle::error_handler_t* installed = nullptr;  // must be current on pop
-  hyle_error_saved_handler_o* previous = nullptr;     // strict-LIFO validation
-};
 
 extern "C" {
 
 hyle_status hyle_status_ok(void) { return steal_to_c(hyle::Status()); }
 
-hyle_status hyle_status_new(hyle_status_code code, const char* msg) {
-  if (code == HYLE_STATUS_OK) return hyle_status_ok();
-  std::string_view m = msg != nullptr ? std::string_view(msg) : std::string_view();
-  return steal_to_c(hyle::Status(to_cpp_code(code), m));
+hyle_status hyle_status_new(hyle_status_code code, const char *msg) {
+  const hyle::StatusCode normalized = to_cpp_code(code);
+  if (normalized == hyle::StatusCode::Ok) return hyle_status_ok();
+  const std::string_view message =
+      msg == nullptr ? std::string_view() : std::string_view(msg);
+  return steal_to_c(hyle::Status(normalized, message));
 }
 
-void hyle_status_free(hyle_status* s) {
-  if (s == nullptr) return;
-  hyle::Status owned = adopt_from_c(*s);
-  s->rep = 0;  // clear C handle before owned dtor releases the heap rep
-  (void)owned;
+void hyle_status_free(hyle_status *status) {
+  if (status == nullptr) return;
+  hyle::Status owned = adopt_from_c(*status);
+  status->rep = 0;
 }
 
-hyle_status hyle_status_clone(hyle_status s) {
-  hyle::Status tmp = adopt_from_c(s);
-  hyle::Status copy = tmp;          // retain if heap
-  (void)tmp.release_rep();          // give ownership of original word back to caller
+hyle_status hyle_status_clone(hyle_status status) {
+  hyle::Status borrowed = adopt_from_c(status);
+  hyle::Status copy = borrowed;
+  (void)borrowed.release_rep();
   return steal_to_c(std::move(copy));
 }
 
-void hyle_status_move(hyle_status* dst, hyle_status* src) {
+void hyle_status_move(hyle_status *dst, hyle_status *src) {
   if (dst == nullptr) return;
   if (src == nullptr) {
     hyle_status_free(dst);
@@ -156,181 +92,67 @@ void hyle_status_move(hyle_status* dst, hyle_status* src) {
   src->rep = 0;
 }
 
-int hyle_status_is_ok(hyle_status s) {
-  hyle::Status tmp = adopt_from_c(s);
-  int ok = tmp.ok() ? 1 : 0;
-  (void)tmp.release_rep();
-  return ok;
+void hyle_status_add_context(hyle_status *status, const char *context) {
+  if (status == nullptr || context == nullptr || context[0] == '\0') return;
+  hyle::Status owned = adopt_from_c(*status);
+  status->rep = 0;
+  owned = std::move(owned).WithContext(context);
+  *status = steal_to_c(std::move(owned));
 }
 
-hyle_status_code hyle_status_get_code(hyle_status s) {
-  hyle::Status tmp = adopt_from_c(s);
-  hyle_status_code c = to_c_code(tmp.code());
-  (void)tmp.release_rep();
-  return c;
+int hyle_status_is_ok(hyle_status status) {
+  hyle::Status borrowed = adopt_from_c(status);
+  const int result = borrowed.ok() ? 1 : 0;
+  (void)borrowed.release_rep();
+  return result;
 }
 
-int hyle_status_has_message(hyle_status s) {
-  hyle::Status tmp = adopt_from_c(s);
-  int h = tmp.has_message() ? 1 : 0;
-  (void)tmp.release_rep();
-  return h;
+hyle_status_code hyle_status_get_code(hyle_status status) {
+  hyle::Status borrowed = adopt_from_c(status);
+  const hyle_status_code result = to_c_code(borrowed.code());
+  (void)borrowed.release_rep();
+  return result;
+}
+
+int hyle_status_has_message(hyle_status status) {
+  hyle::Status borrowed = adopt_from_c(status);
+  const int result = borrowed.has_message() ? 1 : 0;
+  (void)borrowed.release_rep();
+  return result;
 }
 
 int hyle_status_equals(hyle_status a, hyle_status b) {
   hyle::Status aa = adopt_from_c(a);
   hyle::Status bb = adopt_from_c(b);
-  int eq = (aa == bb) ? 1 : 0;
+  const int result = aa == bb ? 1 : 0;
   (void)aa.release_rep();
   (void)bb.release_rep();
-  return eq;
+  return result;
 }
 
-const char* hyle_status_code_name(hyle_status_code code) {
-  // status_code_name returns a string_view into a static literal table.
-  std::string_view n = hyle::status_code_name(to_cpp_code(code));
-  return n.data();  // NUL-terminated string literals from #name
+const char *hyle_status_code_name(hyle_status_code code) {
+  return hyle::status_code_name(to_cpp_code(code)).data();
 }
 
-size_t hyle_status_message(hyle_status s, char* buf, size_t cap) {
-  hyle::Status tmp = adopt_from_c(s);
-  size_t n = copy_sv(tmp.message(), buf, cap);
-  (void)tmp.release_rep();
-  return n;
+size_t hyle_status_message(hyle_status status, char *buf, size_t cap) {
+  hyle::Status borrowed = adopt_from_c(status);
+  const size_t result = copy_sv(borrowed.message(), buf, cap);
+  (void)borrowed.release_rep();
+  return result;
 }
 
-size_t hyle_status_to_string(hyle_status s, char* buf, size_t cap) {
-  hyle::Status tmp = adopt_from_c(s);
-  size_t n = tmp.ToString(buf, cap);
-  (void)tmp.release_rep();
-  return n;
+size_t hyle_status_to_string(hyle_status status, char *buf, size_t cap) {
+  hyle::Status borrowed = adopt_from_c(status);
+  const size_t result = borrowed.ToString(buf, cap);
+  (void)borrowed.release_rep();
+  return result;
 }
 
-const char* hyle_status_message_cstr(hyle_status s) {
-  hyle::Status tmp = adopt_from_c(s);
-  std::string_view m = tmp.message();
-  (void)tmp.release_rep();
-  // Heap message bytes are NUL-terminated and owned by the caller's handle, so
-  // the pointer stays valid until it is freed/moved; OK/inline codes carry no
-  // message -> return the empty string rather than a NULL data() pointer.
-  return m.empty() ? "" : m.data();
-}
-
-void hyle_error_set_handler(hyle_error_report_fn fn, void* user) {
-  // Serialize the simple single-slot API itself. Do not hold state.mutex while
-  // calling error_set_default_handler(): reporters take the dispatch lock first
-  // and then state.mutex, so doing the inverse here would deadlock.
-  std::lock_guard<std::recursive_mutex> set_lock(c_handler_set_mutex());
-  HYLE_FATAL_ASSERT(c_handler_push_top() == nullptr);
-  CHandlerState& st = c_handler_state();
-  if (fn == nullptr) {
-    const hyle::error_handler_t* prev = nullptr;
-    {
-      std::lock_guard<std::recursive_mutex> lock(st.mutex);
-      if (!st.installed) return;
-      prev = st.prev;
-    }
-    hyle::detail::error_restore_default_handler(&st.vtable, prev);
-    {
-      std::lock_guard<std::recursive_mutex> lock(st.mutex);
-      st.installed = false;
-      st.prev = nullptr;
-      st.fn = nullptr;
-      st.user = nullptr;
-    }
-    return;
-  }
-  bool was_installed = false;
-  {
-    std::lock_guard<std::recursive_mutex> lock(st.mutex);
-    st.fn = fn;
-    st.user = user;
-    st.vtable.inst = reinterpret_cast<hyle::error_handler_o*>(&st);
-    st.vtable.report = &c_handler_on_report;
-    was_installed = st.installed;
-  }
-  const hyle::error_handler_t* displaced =
-      hyle::error_set_default_handler(&st.vtable);
-  if (!was_installed) {
-    std::lock_guard<std::recursive_mutex> lock(st.mutex);
-    st.prev = displaced;
-    st.installed = true;
-  }
-}
-
-hyle_error_saved_handler_o* hyle_error_push_handler(hyle_error_report_fn fn,
-                                                    void* user) {
-  std::lock_guard<std::recursive_mutex> set_lock(c_handler_set_mutex());
-  auto* tok = new (std::nothrow) hyle_error_saved_handler_o{};
-  if (tok == nullptr) {
-    g_c_error = "hyle_error_push_handler: token allocation failed (out of memory)";
-    return nullptr;  // still-installed handler unchanged
-  }
-  g_c_error = "";
-  tok->previous = c_handler_push_top();
-  tok->state.fn = fn;
-  tok->state.user = user;
-  if (fn != nullptr) {
-    tok->state.vtable.inst =
-        reinterpret_cast<hyle::error_handler_o*>(&tok->state);
-    tok->state.vtable.report = &c_handler_on_report;
-    // Install this token's own vtable; capture whatever it displaced.
-    tok->displaced = hyle::error_set_default_handler(&tok->state.vtable);
-    tok->installed = &tok->state.vtable;
-  } else {
-    // Push a "reset to built-in" scope: install default, remember the previous.
-    tok->displaced = hyle::error_set_default_handler(nullptr);
-    tok->installed = hyle::error_default_handler();
-  }
-  tok->state.installed = true;
-  c_handler_push_top() = tok;
-  return tok;
-}
-
-void hyle_error_pop_handler(hyle_error_saved_handler_o* saved) {
-  if (saved == nullptr) return;
-  std::lock_guard<std::recursive_mutex> set_lock(c_handler_set_mutex());
-  HYLE_FATAL_ASSERT(c_handler_push_top() == saved);
-  // Reinstate exactly the handler this push displaced (LIFO restore).
-  hyle::detail::error_restore_default_handler(saved->installed,
-                                              saved->displaced);
-  c_handler_push_top() = saved->previous;
-  delete saved;
-}
-
-const char* hyle_error_last_error(void) { return g_c_error; }
-
-void hyle_error_report(hyle_severity severity, const char* file, uint32_t line,
-                       const char* message) {
-  const char* msg = message != nullptr ? message : "";
-  const char* f = file != nullptr ? file : "";
-  // error_report is printf-style; pass message as %s data.
-  hyle::Severity sev = hyle::Severity::Error;
-  if (severity == HYLE_SEVERITY_WARNING) sev = hyle::Severity::Warning;
-  if (severity == HYLE_SEVERITY_FATAL) sev = hyle::Severity::Fatal;
-  hyle::error_report(sev, f, line, "%s", msg);
-}
-
-void hyle_error_reportf(hyle_severity severity, const char* file, uint32_t line,
-                        const char* fmt, ...) {
-  const char* f = file != nullptr ? file : "";
-  char buf[1024];
-  buf[0] = '\0';
-  if (fmt != nullptr) {
-    va_list ap;
-    va_start(ap, fmt);
-    // vsnprintf is C++-safe here; cap leaves room for NUL.
-#if defined(_MSC_VER)
-    (void)_vsnprintf_s(buf, sizeof(buf), _TRUNCATE, fmt, ap);
-#else
-    (void)std::vsnprintf(buf, sizeof(buf), fmt, ap);
-#endif
-    va_end(ap);
-  }
-  hyle::Severity sev = hyle::Severity::Error;
-  if (severity == HYLE_SEVERITY_WARNING) sev = hyle::Severity::Warning;
-  if (severity == HYLE_SEVERITY_FATAL) sev = hyle::Severity::Fatal;
-  hyle::error_report(sev, f, line, "%s", buf);
+const char *hyle_status_message_cstr(hyle_status status) {
+  hyle::Status borrowed = adopt_from_c(status);
+  const std::string_view message = borrowed.message();
+  (void)borrowed.release_rep();
+  return message.empty() ? "" : message.data();
 }
 
 }  // extern "C"

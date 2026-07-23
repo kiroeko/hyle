@@ -229,7 +229,8 @@ Result<Stream> Stream::create(const Device& device) noexcept {
   DeviceEntry e = resolve(device);
   void* native = nullptr;
   Status st = e.vt->stream_create(e.local, &native);
-  if (!st.ok()) return std::unexpected(std::move(st));
+  if (!st.ok())
+    return std::unexpected(std::move(st).WithContext("creating compute stream"));
   Stream s;
   s.device_ = device;
   s.vt_ = e.vt;
@@ -293,7 +294,8 @@ Result<Event> Event::create(const Device& device) noexcept {
   DeviceEntry e = resolve(device);
   void* native = nullptr;
   Status st = e.vt->event_create(e.local, &native);
-  if (!st.ok()) return std::unexpected(std::move(st));
+  if (!st.ok())
+    return std::unexpected(std::move(st).WithContext("creating compute event"));
   Event ev;
   ev.vt_ = e.vt;
   ev.native_ = native;
@@ -309,7 +311,9 @@ Result<Event> Event::create_timing(const Device& device) noexcept {
     return std::unexpected(Status::Unimplemented("compute: backend has no GPU timing"));
   void* native = nullptr;
   Status st = e.vt->event_create_timing(e.local, &native);
-  if (!st.ok()) return std::unexpected(std::move(st));
+  if (!st.ok())
+    return std::unexpected(
+        std::move(st).WithContext("creating compute timing event"));
   Event ev;
   ev.vt_ = e.vt;
   ev.native_ = native;
@@ -343,7 +347,9 @@ Result<std::uint64_t> elapsed_ns(const Event& start, const Event& stop) noexcept
     return std::unexpected(Status::Unimplemented("compute: backend has no GPU timing"));
   std::uint64_t ns = 0;
   Status st = start.vt_->event_elapsed_ns(start.native_, stop.native_, &ns);
-  if (!st.ok()) return std::unexpected(std::move(st));
+  if (!st.ok())
+    return std::unexpected(
+        std::move(st).WithContext("reading compute event duration"));
   return ns;
 }
 
@@ -424,7 +430,8 @@ Result<Buffer> Buffer::create(const BufferType& type, std::size_t bytes) noexcep
   void* host = nullptr;
   Status st = type.vt_->buffer_alloc(type.ordinal_, type.kind_, bytes,
                                      &native, &host);
-  if (!st.ok()) return std::unexpected(std::move(st));
+  if (!st.ok())
+    return std::unexpected(std::move(st).WithContext("creating compute buffer"));
   HYLE_FATAL_ASSERT(native != nullptr);
   HYLE_FATAL_ASSERT((host != nullptr) == type.vt_->buffer_is_host(type.kind_));
   Buffer b;
@@ -481,7 +488,8 @@ Status Buffer::copy_from(const Buffer& src, std::size_t dst_offset,
   if (src.host_ != nullptr) {
     Status visibility =
         src.vt_->buffer_flush_host(src.native_, src_offset, size);
-    if (!visibility.ok()) return visibility;
+    if (!visibility.ok())
+      return std::move(visibility).WithContext("flushing source buffer before copy");
   }
   Status copied =
       vt_->buffer_copy(native_, dst_offset, src.native_, src_offset, size);
@@ -527,7 +535,8 @@ Result<DevicePool> DevicePool::create(const Device& device) noexcept {
   DeviceEntry e = resolve(device);
   void* handle = nullptr;
   Status st = e.vt->pool_create(e.local, &handle);
-  if (!st.ok()) return std::unexpected(std::move(st));
+  if (!st.ok())
+    return std::unexpected(std::move(st).WithContext("creating device pool"));
   DevicePool p;
   p.vt_ = e.vt;
   p.handle_ = handle;
@@ -545,7 +554,8 @@ Result<void*> DevicePool::alloc(std::size_t bytes) noexcept {
   void* ptr = nullptr;
   std::size_t actual = 0;
   Status st = vt_->pool_alloc(handle_, bytes, &ptr, &actual);
-  if (!st.ok()) return std::unexpected(std::move(st));
+  if (!st.ok())
+    return std::unexpected(std::move(st).WithContext("allocating from device pool"));
   return ptr;
 }
 
@@ -587,7 +597,8 @@ Result<Kernel> Kernel::compile(const Device& device, const char* source,
   void* module = nullptr;
   void* func = nullptr;
   Status st = e.vt->kernel_compile(e.local, source, entry, &module, &func);
-  if (!st.ok()) return std::unexpected(std::move(st));
+  if (!st.ok())
+    return std::unexpected(std::move(st).WithContext("compiling compute kernel"));
   Kernel k;
   k.vt_ = e.vt;
   k.module_ = module;
@@ -605,7 +616,8 @@ Result<Kernel> Kernel::load_ptx(const Device& device, const char* ptx,
   // no spec constants on the CUDA path.
   Status st = e.vt->kernel_load_ptx(e.local, ptx, /*code_size=*/0, entry,
                                     nullptr, 0, nullptr, 0, &module, &func);
-  if (!st.ok()) return std::unexpected(std::move(st));
+  if (!st.ok())
+    return std::unexpected(std::move(st).WithContext("loading PTX kernel"));
   Kernel k;
   k.vt_ = e.vt;
   k.module_ = module;
@@ -632,7 +644,8 @@ Result<Kernel> Kernel::load_spirv(const Device& device, const SpirvBlob& blob,
   Status st = e.vt->kernel_load_ptx(e.local, reinterpret_cast<const char*>(blob.words),
                                     blob.byte_size, entry, specs, spec_count,
                                     spec_data, spec_data_size, &module, &func);
-  if (!st.ok()) return std::unexpected(std::move(st));
+  if (!st.ok())
+    return std::unexpected(std::move(st).WithContext("loading SPIR-V kernel"));
   Kernel k;
   k.vt_ = e.vt;
   k.module_ = module;
@@ -647,7 +660,8 @@ Result<Kernel> Kernel::load_host(const Device& device, HostFn fn) noexcept {
   void* func = nullptr;
   Status st = e.vt->kernel_load_host(e.local, reinterpret_cast<void*>(fn), &module,
                                      &func);
-  if (!st.ok()) return std::unexpected(std::move(st));
+  if (!st.ok())
+    return std::unexpected(std::move(st).WithContext("loading host kernel"));
   Kernel k;
   k.vt_ = e.vt;
   k.module_ = module;
@@ -662,8 +676,7 @@ Status launch(Stream& stream, const Kernel& kernel, const LaunchConfig& config,
   // Native modules/functions are device-owned, not merely backend-owned.
   HYLE_FATAL_ASSERT(stream.vt_ == kernel.vt_ &&
                     stream.local_ == kernel.ordinal_);
-  Status valid = validate_kernel_args(args);
-  if (!valid.ok()) return valid;
+  HYLE_RETURN_IF_ERROR(validate_kernel_args(args));
   return stream.vt_->kernel_launch(stream.native_, kernel.module_, kernel.func_,
                                    &config, &args);
 }
@@ -681,8 +694,7 @@ Status launch_batch(Stream& stream, const BatchItem* items, unsigned count) noex
     const Kernel* k = items[i].kernel;
     HYLE_FATAL_ASSERT(k != nullptr && k->vt_ == stream.vt_ &&
                       k->ordinal_ == stream.local_);
-    Status valid = validate_kernel_args(items[i].args);
-    if (!valid.ok()) return valid;
+    HYLE_RETURN_IF_ERROR(validate_kernel_args(items[i].args));
     modules[i] = k->module_;
     funcs[i] = k->func_;
     configs[i] = items[i].config;
@@ -723,8 +735,7 @@ Result<RecordedLaunch> RecordedLaunch::record(Stream& stream, const Kernel& kern
   HYLE_FATAL_ASSERT(stream.vt_ != nullptr && kernel.vt_ != nullptr);
   HYLE_FATAL_ASSERT(stream.vt_ == kernel.vt_ &&
                     stream.local_ == kernel.ordinal_);
-  Status valid = validate_kernel_args(args);
-  if (!valid.ok()) return std::unexpected(std::move(valid));
+  HYLE_RETURN_IF_ERROR(validate_kernel_args(args));
   // A backend without a recording path (host: inline execution, recording gives nothing) has
   // a null slot -> Unimplemented, so the caller can fall back to launch().
   if (stream.vt_->recorded_create == nullptr)
@@ -732,7 +743,9 @@ Result<RecordedLaunch> RecordedLaunch::record(Stream& stream, const Kernel& kern
   void* rec = nullptr;
   Status st = stream.vt_->recorded_create(stream.native_, kernel.module_, kernel.func_,
                                           &config, &args, &rec);
-  if (!st.ok()) return std::unexpected(std::move(st));
+  if (!st.ok())
+    return std::unexpected(
+        std::move(st).WithContext("recording compute kernel launch"));
   RecordedLaunch r;
   r.vt_ = stream.vt_;
   r.recorded_ = rec;

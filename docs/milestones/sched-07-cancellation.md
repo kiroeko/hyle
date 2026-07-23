@@ -27,7 +27,7 @@ sched-10 已发平的协作 flag。本步的价值是**树**：`cancel_subtree` 
 - **`CancelToken`**：move-only 单 owner，**无 refcount**——每 `derive()` 新建 node，无 token 克隆/共享（这正是让整棵树能无锁的原因）。`root(alloc)`/`derive()`/`cancel()`/`is_cancelled()`。derive 时若父已 cancelled，子**born-cancelled**（父-cancel-然后-新子 race，同 shard 无锁处理）。drop 一个中间 token 时先把活着的子过继给祖父再释放。
 - **`CancelScope`**：RAII 把 token 的 flag 发布到当前 fiber 的 `cancel_flag_` seam，嵌套安全（保存/恢复前一 flag），**零改 join.cc/Fiber**——`is_cancel_requested()`/`abort()` 不变可用。task body 顶构造一个 CancelScope 即 opt-in 该 token。
 - **`CancelCallback`**：RAII 侵入式（记录 lives 在注册方的栈帧上，无分配），io 取消注册点。注册即查已取消（构造时已 cancelled 则**立即**跑 fn，否则永远漏）。析构自动 unregister（正常完成的 io op 拆掉它的 cancel 钩子）。
-- **`HYLE_CHECK_CANCEL()`**：纯 CPU 循环里的手动取消点——无 await 可搭便车的深 CPU 工作否则不可取消。set 则从 enclosing 函数返回 `Status::Cancelled`（要求返回 Status/Result<T>，仿 HYLE_ASSIGN_OR_RAISE 的早返回风格）。
+- **`HYLE_CHECK_CANCEL()`**：纯 CPU 循环里的手动取消点——无 await 可搭便车的深 CPU 工作否则不可取消。set 则从 enclosing 函数返回 `Status::Cancelled`（要求返回 Status/Result<T>，采用与当前 `HYLE_ASSIGN_OR_RETURN` 一致的早返回风格）。
 
 ## 核心机制：迭代传播 + pop-then-invoke + 析构过继
 

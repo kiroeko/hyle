@@ -880,7 +880,7 @@ if(HYLE_BENCH_ABSL)
   # absl::Status/StatusOr are the same tagged-pointer design as HYLE Status -> the
   # error bench's SOTA rival (same gate). absl::statusor pulls in absl::status.
   target_compile_definitions(hyle_error_bench PRIVATE HYLE_BENCH_ABSL)
-  target_link_libraries(hyle_error_bench PRIVATE absl::status absl::statusor)
+  target_link_libraries(hyle_error_bench PRIVATE absl::status absl::status_builder absl::statusor)
 endif()
 
 # compute bench (compute-06 #16): CPU submit cost, launch (re-record) vs replay (reuse a
