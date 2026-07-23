@@ -12,7 +12,7 @@
 | [`mem.md`](./mem.md) | **mem C++ 使用指南**：按 ownership/concurrency/capacity/lifetime 选 Region、Pool、Quota、Preserve 与 HugeRegion；含真实 workload 性能边界。 |
 | [`c-error.md`](./c-error.md) | **error 纯 C ABI**：`hyle_status` 所有权、工厂/查询、诊断 handler、自由函数导出清单。**FFI / 跨编译器第一站。** |
 | [`c-platform.md`](./c-platform.md) | **platform 纯 C ABI**：Parker/Thread/DynLib/VM/mapped_file/fs/cpu/numa 不透明句柄与自由函数、named enum、所有权与易用示例。 |
-| [`c-mem.md`](./c-mem.md) | **mem C draft surface**：Allocator/Quota、Region/FixedRegion/FixedPool、硬/软 SharedPool、Stack/PooledRegion/GrowablePool/HugeRegion 不透明句柄与策略。 |
+| [`c-mem.md`](./c-mem.md) | **mem C pre-release surface**：Allocator/Quota/Stats、Region/FixedRegion/FixedPool、硬/软 SharedPool、Stack/PooledRegion/GrowablePool/HugeRegion 与进程维护策略。 |
 | [`c-time.md`](./c-time.md) | **time 纯 C ABI**：单调/墙钟、饱和 deadline、sleep、TimerWheel/CommonTimeoutQueue opaque handle、visitor 与生命周期合同。 |
 | [`c-obs.md`](./c-obs.md) | **obs 纯 C ABI**：结构化 record、quiescent sink 生命周期、默认 sink，以及 C/FFI runtime trace 与原生零成本 trace 的边界。 |
 | [`c-util.md`](./c-util.md) | **util 纯 C ABI**：RNG POD、Ref/ScopeGuard/Registry/SpinLock 类型擦除句柄、demangle buffer-fill、所有权和并发合同。 |

@@ -82,6 +82,7 @@ int main(void) {
 
   /* ---- system allocator: alloc / write / realloc / free ---- */
   hyle_allocator sys = hyle_system_allocator();
+  CHECK(hyle_allocator_is_valid(sys));
   CHECK(sys.alloc != NULL && sys.free != NULL && sys.realloc != NULL);
   {
     counting_backing_state state = {sys, 0};
@@ -166,6 +167,33 @@ int main(void) {
     hyle_quota_allocator_destroy(quota);
   }
 
+  /* ---- opt-in stats allocator + optional leak inventory ---- */
+  {
+    hyle_stats_allocator *stats = hyle_stats_allocator_create(sys, 1);
+    CHECK(stats != NULL);
+    hyle_allocator a = hyle_stats_allocator_as_allocator(stats);
+    void *p = hyle_alloc(&a, 96, 16);
+    void *q = hyle_alloc(&a, 32, 8);
+    hyle_alloc_stats snapshot;
+    hyle_stats_allocator_snapshot(stats, &snapshot);
+    CHECK(snapshot.live_count == 2u);
+    CHECK(snapshot.live_bytes == 128u);
+    CHECK(snapshot.total_allocs == 2u);
+    CHECK(snapshot.peak_live_bytes == 128u);
+    CHECK(!hyle_stats_allocator_balanced(stats));
+    hyle_mem_leak leaks[1];
+    CHECK(hyle_stats_allocator_copy_leaks(stats, leaks, 1) == 2u);
+    CHECK(leaks[0].ptr != NULL && leaks[0].size > 0u);
+    hyle_free(&a, p, 96, 16);
+    hyle_free(&a, q, 32, 8);
+    CHECK(hyle_stats_allocator_balanced(stats));
+    CHECK(hyle_stats_allocator_copy_leaks(stats, NULL, 0) == 0u);
+    hyle_stats_allocator_reset(stats);
+    hyle_stats_allocator_snapshot(stats, &snapshot);
+    CHECK(snapshot.total_allocs == 0u && snapshot.peak_live_bytes == 0u);
+    hyle_stats_allocator_destroy(stats);
+  }
+
   /* ---- owned growable Region ---- */
   {
     hyle_region_options options = HYLE_REGION_OPTIONS_INIT;
@@ -197,26 +225,25 @@ int main(void) {
   /* ---- external fixed Region + variable-size FixedPool ---- */
   {
     unsigned char region_storage[512];
-    hyle_fixed_region_storage region_control;
-    hyle_fixed_region *r =
-        hyle_fixed_region_init(&region_control, region_storage,
-                               sizeof region_storage);
-    CHECK(r != NULL);
-    CHECK(hyle_fixed_region_capacity(r) == sizeof region_storage);
-    void *p = hyle_fixed_region_allocate(r, 64, 32);
+    hyle_fixed_region region;
+    CHECK(hyle_fixed_region_init(&region, region_storage,
+                                 sizeof region_storage));
+    CHECK(hyle_fixed_region_capacity(&region) == sizeof region_storage);
+    void *p = hyle_fixed_region_allocate(&region, 64, 32);
     CHECK(p != NULL && ((size_t)p % 32u) == 0u);
-    CHECK(hyle_fixed_region_used(r) >= 64u);
-    hyle_allocator region_alloc = hyle_fixed_region_as_allocator(r);
+    CHECK(hyle_fixed_region_used(&region) >= 64u);
+    hyle_allocator region_alloc = hyle_fixed_region_as_allocator(&region);
     CHECK(hyle_alloc(&region_alloc, 32, 8) != NULL);
-    hyle_fixed_region_clear(r);
-    CHECK(hyle_fixed_region_used(r) == 0u);
-    hyle_fixed_region_destroy(r);
-
-    /* Convenience create/destroy remains available when hidden control
-       allocation is acceptable. */
-    r = hyle_fixed_region_create(region_storage, sizeof region_storage);
-    CHECK(r != NULL);
-    hyle_fixed_region_destroy(r);
+    hyle_fixed_region_clear(&region);
+    CHECK(hyle_fixed_region_used(&region) == 0u);
+    CHECK(!hyle_fixed_region_init(NULL, region_storage,
+                                  sizeof region_storage));
+    {
+      hyle_fixed_region invalid = {{0, 0, 0}};
+      CHECK(hyle_fixed_region_allocate(&invalid, 8, 8) == NULL);
+      CHECK(!hyle_allocator_is_valid(
+          hyle_fixed_region_as_allocator(&invalid)));
+    }
 
     unsigned char pool_storage[4096];
     hyle_fixed_pool_storage pool_control;
@@ -241,7 +268,7 @@ int main(void) {
     hyle_fixed_pool_reset(pool); /* caller has discarded every allocation */
     hyle_fixed_pool_destroy(pool);
 
-    pool = hyle_fixed_pool_create(pool_storage, sizeof pool_storage);
+    pool = hyle_fixed_pool_create(sys, pool_storage, sizeof pool_storage);
     CHECK(pool != NULL);
     hyle_fixed_pool_destroy(pool);
   }
@@ -523,6 +550,9 @@ int main(void) {
     CHECK(hyle_stack_allocator_create(oom, 4096) == NULL);
     CHECK(hyle_mem_last_error()[0] != '\0');
 
+    CHECK(hyle_stats_allocator_create(oom, 0) == NULL);
+    CHECK(hyle_mem_last_error_code() == HYLE_MEM_ERROR_OUT_OF_MEMORY);
+
     /* The injected backing owns the opaque control object too. An always-OOM
        backing therefore fails create without falling through to global new. */
     hyle_growable_pool *gp = hyle_growable_pool_create(oom, 32, 0, 4);
@@ -587,6 +617,7 @@ int main(void) {
    */
   hyle_enable_allocator_hugepages(0, 0);
   hyle_enable_allocator_numa(0);
+  hyle_system_collect(0);
   CHECK(hyle_reserve_huge_1g_pages(0, HYLE_MEM_NUMA_ANY, 0) ==
         1); /* pages==0 ok */
 

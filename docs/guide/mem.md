@@ -114,7 +114,8 @@ if (auto context = contexts.try_loan()) {
 ### External variable-size pool
 
 `FixedPool` 把 block/allocation metadata 放进调用方 storage；free bins、边界和统计属于
-`FixedPool` 控制对象（C draft surface 的 opaque handle 由 HYLE system allocator 单独分配）。它支持
+`FixedPool` 控制对象（C surface 可由 caller-owned control 原地构造，或从显式 control
+allocator 创建 opaque handle）。它支持
 变长 allocate/deallocate/reallocate、精确 requested `used/peak` 和 O(1) 邻块合并；没有
 隐藏 payload heap，也不会 fallback。`reset()` 会一次性使所有旧指针失效，调用前必须
 保证无 live allocation。

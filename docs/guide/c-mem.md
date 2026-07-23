@@ -2,13 +2,13 @@
 
 > **发布面**：`include/hyle/c/mem.h`  
 > **实现**：`src/mem/c_mem.cc`（链 `hyle_mem`）  
-> **稳定性**：首次产品形状审查已完成；正式发布前仍可改，当前 manifest 不承诺 ABI 兼容
+> **稳定性**：正在按真实 C/FFI 用户任务重新审查；正式发布前可直接重塑，当前 manifest 不承诺 ABI 兼容
 > **命名**：全部 `hyle_*` / `HYLE_*`
 
-跨语言 / 跨编译器只许绑定本头，不要 include `hyle/mem/*.h`。有 `backing` 参数的 opaque
-control 与内部 storage 都由该 backing 分配。FixedRegion/FixedPool 同时提供 caller-owned
-`*_storage + *_init`（control/payload 都不触堆）和较方便的 `*_create`（control 使用 HYLE
-system allocator）；payload 始终只来自调用方 storage，绝不隐藏 fallback。
+跨语言 / 跨编译器只绑定本头，不要 include `hyle/mem/*.h`。有 `backing` 参数的 opaque
+control 与内部 storage 都由该 backing 分配。FixedRegion 是可按值持有的 3-word cursor；
+FixedPool 同时提供 caller-owned `*_storage + *_init`（control/payload 都不触堆）和
+`*_create(control_allocator, ...)`。两者的 payload 始终只来自调用方 storage，绝不 fallback。
 所有 opaque handle 对外使用 `hyle_region *`、`hyle_shared_pool *` 等产品名；尾缀 `_o`
 只存在于不可解引用的内部 struct tag，不进入用户变量和函数签名。
 
@@ -26,16 +26,17 @@ system allocator）；payload 始终只来自调用方 storage，绝不隐藏 fa
 | Allocator 句柄 | `hyle_allocator` | POD 值类型；按值传 |
 | system 分配器 | `hyle_system_allocator` | 进程级；alloc/free 携带相同 size/alignment |
 | QuotaAllocator | `hyle_quota_allocator_create` → `destroy` | 任意 backing 的严格 requested live-byte 上限 |
+| StatsAllocator | `hyle_stats_allocator_create` → `destroy` | opt-in 并发计数；可选慢速 leak inventory |
 | Region | `hyle_region_create` → `destroy` | owned growable bump；clear 保留普通 blocks |
-| FixedRegion | `hyle_fixed_region_init(control,storage)` 或 `create` → `destroy` | external bump；init 严格 no-heap |
-| FixedPool | `hyle_fixed_pool_init(control,storage)` 或 `create` → `destroy` | external variable-size alloc/free；init 严格 no-heap |
+| FixedRegion | `hyle_fixed_region_init(&region, storage, size)` | 按值 external bump；无 create/destroy、严格 no-heap |
+| FixedPool | `hyle_fixed_pool_init(control,storage)` 或 `create(control_allocator,...)` → `destroy` | external variable-size alloc/free；init 严格 no-heap |
 | SharedPool | `hyle_shared_pool_create` → `destroy` | **硬容量**；completed free 立即对所有线程可见 |
 | SharedPoolCache | `hyle_shared_pool_cache_create(pool, metadata, ...)` → `destroy` | **软视图**；显式 owner/capacity/batch，publish 后回 hard core |
 | StackAllocator | `hyle_stack_allocator_create` → `destroy` | 自有 slab，单线程 LIFO bump |
 | PooledRegion | `hyle_pooled_region_create(pool)` → `destroy` | 借 `SharedPool` 一个块 |
 | GrowablePool | `hyle_growable_pool_create` → `destroy` | 单线程、按需增长的裸槽池 |
 | HugeRegion | `hyle_huge_region_open*` → `destroy` | 大页 / NUMA host RAM 区 |
-| 进程策略 | `hyle_enable_allocator_*` / `hyle_reserve_huge_1g_pages` | 无句柄，全局软策略 |
+| 进程维护/策略 | `hyle_system_collect` / `hyle_enable_allocator_*` / `hyle_reserve_huge_1g_pages` | cold path 与全局软策略 |
 
 **sized-free 合同**：`free` / `deallocate` 必须带回分配请求时相同的 size 与 alignment。pool/region/stack 不保存每指针尺寸；传错是调用方契约违反。只有 system 分配器提供物理容量查询 `hyle_system_usable_size`。
 
@@ -57,7 +58,9 @@ typedef struct hyle_allocator {
 | `hyle_system_allocator()` | mimalloc-backed 进程级句柄 |
 | `hyle_system_usable_size(ptr)` | system 块真实可用字节；NULL→0 |
 | `hyle_system_good_size(size)` | 不分配地给出推荐 request size（≥size）；不承诺等于 alloc(size) 的 usable |
+| `hyle_system_collect(force)` | 显式要求 mimalloc 归还空闲内存；force 非零是可能达到毫秒级的冷路径 |
 | `hyle_alloc` / `hyle_free` / `hyle_realloc` | header-inline vtable 转发；alignment==0 使用默认对齐 |
+| `hyle_allocator_is_valid(a)` | header-inline 检查三个函数指针，供配置/FFI 边界验证 |
 
 C/C++ 两面通过 trampoline 显式构造，不 reinterpret 布局。
 `hyle_alloc/free/realloc(..., alignment=0)` 在头内直接折叠默认对齐，不再先跨 DLL 查询。
@@ -72,17 +75,28 @@ C/C++ 两面通过 trampoline 显式构造，不 reinterpret 布局。
 成功 live bytes 不会超过 limit；backing OOM 回滚。destroy 前必须释放全部 allocation 并
 静默并发访问。`used/peak/limit` 都按 requested bytes 计量。
 
-### 2.2 Region、FixedRegion 与 FixedPool
+### 2.2 StatsAllocator
+
+`hyle_stats_allocator_as_allocator()` 返回借用 wrapper 的 allocator；成功 alloc/free/realloc
+更新 64-bit 并发计数。`hyle_stats_allocator_snapshot(s, &out)` 用出参返回 POD，避免 FFI
+绑定大型 struct-return ABI。`track_leaks!=0` 额外维护带锁的 pointer→size map，并可用
+`copy_leaks` 分页/截断读取（复制时会从原 backing 取得临时数组）；这是诊断慢路，生产热路只开
+counters 或直接不用 wrapper。
+`reset` 要求没有 live allocation，并同时清空 leak inventory。
+
+### 2.3 Region、FixedRegion 与 FixedPool
 
 - `hyle_region_create` 的 options 以 `HYLE_REGION_OPTIONS_INIT` 初始化，并带
   `struct_size`。`clear` 保留普通 blocks、释放 dedicated large blocks；`release` 归还全部。
-- `hyle_fixed_region_init(&control,storage,size)` 是严格 no-heap bulk-reset bump；
-  `create` 只是为愿意接受 system control allocation 的用户保留的便利工厂。旧切片在 clear 后全部失效。
-- `hyle_fixed_pool_init(&control,storage,size)` 的 control/payload 都由调用方持有；`create` 是
-  control-owning 便利工厂。两者都支持 individual allocate/free/realloc。reset 前必须
+- `hyle_fixed_region_init(&region,storage,size)` 直接初始化 3-word 值对象，是严格 no-heap
+  bulk-reset bump；没有需要管理的 control allocation，也无需 destroy。旧切片在 clear 后全部失效。
+- `hyle_fixed_pool_init(&control,storage,size)` 的 control/payload 都由调用方持有；
+  `hyle_fixed_pool_create(control_allocator,storage,size)` 只从显式 allocator 创建 control，
+  `create_default` 才选择 system allocator。两者都支持 individual allocate/free/realloc。reset 前必须
   无 live allocation；foreign/double return 是合同错误并 fail-fast。
 
-三者都单线程。它们的 `as_allocator` 句柄借用 opaque object；destroy 后失效。
+三者都单线程。它们的 `as_allocator` 句柄借用原对象；Region/FixedPool destroy 后失效，
+FixedRegion 则在值对象或 payload storage 失效后失效。
 
 ```c
 unsigned char payload[4096];
@@ -245,12 +259,12 @@ hyle_shared_pool_destroy(pool);
 - `ObjectPool<T>` → 默认硬容量 typed 宏；`ObjectPoolCache<T>` → 显式 cache typed 宏 + publish；
 - `GrowablePool<T>` → runtime size/align + typed 宏；
 - `Allocator` typed helpers → 裸 `hyle_alloc/free`；
-- `QuotaAllocator` → opaque product adapter；`StatsAllocator` / `LeakTracker` 当前仍是 C++ 诊断设施。
+- `QuotaAllocator` / `StatsAllocator` → opaque adapter；统计通过 POD snapshot，泄漏通过 bounded copy。
 
 `tests/mem/c_surface_symbols.txt` 只检查声明、纯 C 引用和 DLL/ELF 导出一致。发布前仍可直接
-重塑，不把 manifest 当兼容承诺。首次产品审查决定：保留能映射真实 C/FFI 场景的 allocator、
-region、pool 与 topology 能力族，但不机械镜像方法；opaque `_o` 名隐藏、默认 backing 走
-header-inline convenience、默认 alignment 不跨 DLL、恒真的 HugeRegion `valid` 删除。mem
-使用独立 typed error code + 诊断字符串；external FixedRegion/FixedPool 提供 strict no-heap
-control；`StatsAllocator`/`LeakTracker` 没有真实 C 消费者，继续只留 C++。
+重塑，不把 manifest 当兼容承诺。当前审查保留能映射真实 C/FFI 场景的 allocator、region、
+pool、instrumentation 与 topology 能力族，但不机械镜像方法；opaque `_o` 名隐藏、默认
+backing 走 header-inline convenience、默认 alignment 不跨 DLL。mem 使用独立 typed error
+code + 诊断字符串；FixedRegion 用自然的 3-word C 值类型，复杂的 FixedPool 才保留 opaque
+no-heap control。模板 ctor/dtor、PMR 与 fiber stack RAII 仍属于原生 C++ 形状。
 发布后的冻结策略见 [`../architecture/c-abi-design.md`](../architecture/c-abi-design.md)。

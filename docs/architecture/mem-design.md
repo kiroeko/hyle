@@ -72,7 +72,7 @@ blocking borrow 不进入 `mem/` 基础池。等待策略依赖 fiber/condition/
 
 通用 malloc 借 mimalloc，不自造任意大小通用堆。sized-free 必须带回原请求的 size/alignment；backing identity 与 ownership 不能丢失。
 
-### 4.1 C surface 处置（发布前草案）
+### 4.1 C surface 处置（发布前审查）
 
 现有 `include/hyle/c/mem.h` 是早期实现，尚未形成兼容承诺。审查直接读取工作区中固定的
 oneTBB、mimalloc、Folly 与 marl 源码快照，不自行下载或更新参考库。当前结论是：
@@ -80,8 +80,9 @@ oneTBB、mimalloc、Folly 与 marl 源码快照，不自行下载或更新参考
 1. `hyle_allocator` 的 POD vtable 保留；它是 C/FFI 的注入脊，不要求 C++ object layout。
 2. 有独立 runtime state 的能力使用 opaque handle；C 不机械镜像模板对象和 C++ policy 类型。
 3. 构造函数收到 `backing` 时，control handle 与内部 storage 都必须服从该 backing，不能绕到
-   global `new`。FixedRegion/FixedPool/HugeRegion 没有 control-backing 参数，当前明确使用 HYLE
-   system allocator 分配小控制对象；external payload 仍绝不 fallback。
+   global `new`。FixedRegion 是三字按值 cursor，无 control allocation；FixedPool 的 owning
+   factory 显式接收 control allocator，external payload 始终不 fallback。HugeRegion 的 payload
+   由 OS VM 管理，小 control 当前使用 HYLE system allocator。
 4. C 传入的 size/layout/alignment 是可校验数据：非法构造参数返回 NULL + last-error，不让
    C++ contract assert 穿过 ABI。foreign/double return、错误 marker 和 live object 下销毁仍是
    已建立的调用合同违反，可 fail-fast。
@@ -90,9 +91,10 @@ oneTBB、mimalloc、Folly 与 marl 源码快照，不自行下载或更新参考
 6. `c_surface_symbols.txt` 只保证声明、纯 C 消费和实际导出同步；有意的产品改形必须更新它，
    它不是 ABI freeze。
 
-发布前仍须做三项决策：mem last-error 是否脱离 platform VM 的共享通道；FixedRegion/FixedPool
-是否需要 caller-owned in-place control 以覆盖严格 no-heap C 场景；Stats/Leak 的 C 面是否有真实
-消费者。没有场景证明前不靠“C++ 有这个类”自动扩符号。
+已收口的决定：mem 使用独立 TLS error code/string，HugeRegion 只临时复制 VM 失败原因；
+FixedRegion 按值、FixedPool 提供 caller-owned in-place control；StatsAllocator 作为 opt-in
+产品能力导出 POD snapshot 与 bounded leak copy。PMR、typed ctor/dtor 与 fiber RAII 没有
+自然 C 形状，不为追求符号 1:1 而导出。
 
 ## 5. 固定块池
 

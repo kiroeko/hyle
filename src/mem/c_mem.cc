@@ -17,6 +17,7 @@
 #include "hyle/c/mem.h"
 
 #include <cstddef>
+#include <cstring>
 #include <cstdio>
 #include <new>
 #include <type_traits>
@@ -31,6 +32,7 @@
 #include "hyle/mem/region.h"
 #include "hyle/mem/shared_pool.h"
 #include "hyle/mem/stack_allocator.h"
+#include "hyle/mem/stats.h"
 #include "hyle/platform/virtual_memory.h" // vm_last_error() for hyle_mem_last_error
 
 namespace {
@@ -221,20 +223,18 @@ struct hyle_quota_allocator_o {
       : backing(b), quota(to_cpp(&backing), limit) {}
 };
 
+struct hyle_stats_allocator_o {
+  hyle_allocator backing;
+  hyle::mem::StatsAllocator stats;
+  hyle_stats_allocator_o(hyle_allocator b, bool track_leaks)
+      : backing(b), stats(to_cpp(&backing), track_leaks) {}
+};
+
 struct hyle_region_o {
   hyle_allocator backing;
   hyle::mem::Region region;
   hyle_region_o(hyle_allocator b, hyle::mem::RegionOptions options) noexcept
       : backing(b), region(to_cpp(&backing), options) {}
-};
-
-struct hyle_fixed_region_o {
-  hyle_allocator backing;
-  bool owns_control;
-  hyle::mem::FixedRegion region;
-  hyle_fixed_region_o(hyle_allocator b, void *storage,
-                      std::size_t size, bool owns = true) noexcept
-      : backing(b), owns_control(owns), region(storage, size) {}
 };
 
 struct hyle_fixed_pool_o {
@@ -287,10 +287,6 @@ struct hyle_huge_region_o {
       : backing(b), region(std::move(r)) {}
 };
 
-static_assert(sizeof(hyle_fixed_region_o) <=
-              HYLE_FIXED_REGION_CONTROL_BYTES);
-static_assert(alignof(hyle_fixed_region_o) <=
-              alignof(hyle_fixed_region_storage));
 static_assert(sizeof(hyle_fixed_pool_o) <= HYLE_FIXED_POOL_CONTROL_BYTES);
 static_assert(alignof(hyle_fixed_pool_o) <=
               alignof(hyle_fixed_pool_storage));
@@ -323,6 +319,8 @@ size_t hyle_system_good_size(size_t size) {
   return hyle::mem::system_good_size(size);
 }
 
+void hyle_system_collect(int force) { hyle::mem::system_collect(force != 0); }
+
 /* ---- allocator adapters ---------------------------------------------------
  */
 
@@ -354,6 +352,108 @@ size_t hyle_quota_allocator_peak(const hyle_quota_allocator_o *q) {
 }
 size_t hyle_quota_allocator_limit(const hyle_quota_allocator_o *q) {
   return q ? q->quota.limit() : 0;
+}
+
+hyle_stats_allocator_o *
+hyle_stats_allocator_create(hyle_allocator backing, int track_leaks) {
+  set_mem_error(HYLE_MEM_ERROR_NONE, nullptr);
+  if (!valid_backing(backing)) {
+    set_mem_error(HYLE_MEM_ERROR_INVALID_ARGUMENT,
+                  "hyle_stats_allocator_create: invalid backing");
+    return nullptr;
+  }
+  void *memory = backing.alloc(backing.state, sizeof(hyle_stats_allocator_o),
+                               alignof(hyle_stats_allocator_o));
+  if (memory == nullptr) {
+    set_mem_error(HYLE_MEM_ERROR_OUT_OF_MEMORY,
+                  "hyle_stats_allocator_create: control allocation failed");
+    return nullptr;
+  }
+  try {
+    return ::new (memory) hyle_stats_allocator_o(backing, track_leaks != 0);
+  } catch (...) {
+    backing.free(backing.state, memory, sizeof(hyle_stats_allocator_o),
+                 alignof(hyle_stats_allocator_o));
+    set_mem_error(HYLE_MEM_ERROR_OUT_OF_MEMORY,
+                  "hyle_stats_allocator_create: instrumentation allocation failed");
+    return nullptr;
+  }
+}
+
+void hyle_stats_allocator_destroy(hyle_stats_allocator_o *s) {
+  free_handle(s);
+}
+
+hyle_allocator hyle_stats_allocator_as_allocator(hyle_stats_allocator_o *s) {
+  return s ? from_cpp(s->stats.get())
+           : hyle_allocator{nullptr, nullptr, nullptr, nullptr};
+}
+
+static hyle_alloc_stats stats_snapshot(const hyle_stats_allocator_o *s) {
+  hyle_alloc_stats out{};
+  if (s == nullptr)
+    return out;
+  const hyle::mem::AllocStatsSnapshot in = s->stats.snapshot();
+  out.live_count = in.live_count;
+  out.live_bytes = in.live_bytes;
+  out.total_allocs = in.total_allocs;
+  out.total_frees = in.total_frees;
+  out.total_bytes_allocated = in.total_bytes_allocated;
+  out.peak_live_bytes = in.peak_live_bytes;
+  out.reallocs = in.reallocs;
+  return out;
+}
+
+void hyle_stats_allocator_snapshot(const hyle_stats_allocator_o *s,
+                                   hyle_alloc_stats *out) {
+  if (out != nullptr)
+    *out = stats_snapshot(s);
+}
+
+void hyle_stats_allocator_reset(hyle_stats_allocator_o *s) {
+  if (s != nullptr) {
+    s->stats.stats().reset();
+    if (s->stats.leaks() != nullptr)
+      s->stats.leaks()->clear();
+  }
+}
+
+int hyle_stats_allocator_balanced(const hyle_stats_allocator_o *s) {
+  return s != nullptr && s->stats.balanced();
+}
+
+size_t hyle_stats_allocator_copy_leaks(const hyle_stats_allocator_o *s,
+                                       hyle_mem_leak *out, size_t capacity) {
+  static_assert(sizeof(hyle_mem_leak) == sizeof(hyle::mem::LeakEntry));
+  static_assert(alignof(hyle_mem_leak) == alignof(hyle::mem::LeakEntry));
+  static_assert(offsetof(hyle_mem_leak, ptr) ==
+                offsetof(hyle::mem::LeakEntry, ptr));
+  static_assert(offsetof(hyle_mem_leak, size) ==
+                offsetof(hyle::mem::LeakEntry, size));
+  if (s == nullptr || s->stats.leaks() == nullptr)
+    return 0;
+  if (out == nullptr || capacity == 0)
+    return s->stats.leaks()->outstanding();
+  if (capacity > SIZE_MAX / sizeof(hyle::mem::LeakEntry)) {
+    set_mem_error(HYLE_MEM_ERROR_OUT_OF_MEMORY,
+                  "hyle_stats_allocator_copy_leaks: capacity overflow");
+    return s->stats.leaks()->outstanding();
+  }
+  const size_t bytes = capacity * sizeof(hyle::mem::LeakEntry);
+  void *scratch = s->backing.alloc(s->backing.state, bytes,
+                                   alignof(hyle::mem::LeakEntry));
+  if (scratch == nullptr) {
+    set_mem_error(HYLE_MEM_ERROR_OUT_OF_MEMORY,
+                  "hyle_stats_allocator_copy_leaks: scratch allocation failed");
+    return s->stats.leaks()->outstanding();
+  }
+  auto *entries = static_cast<hyle::mem::LeakEntry *>(scratch);
+  const size_t total = s->stats.leaks()->copy_leaks(entries, capacity);
+  const size_t copied = total < capacity ? total : capacity;
+  std::memcpy(out, entries, copied * sizeof(*entries));
+  s->backing.free(s->backing.state, scratch, bytes,
+                  alignof(hyle::mem::LeakEntry));
+  return total;
 }
 
 /* ---- Region family --------------------------------------------------------
@@ -421,72 +521,77 @@ hyle_allocator hyle_region_as_allocator(hyle_region_o *r) {
            : hyle_allocator{nullptr, nullptr, nullptr, nullptr};
 }
 
-hyle_fixed_region_o *
-hyle_fixed_region_init(hyle_fixed_region_storage *control, void *storage,
-                       size_t size) {
+int hyle_fixed_region_init(hyle_fixed_region *r, void *storage, size_t size) {
   set_mem_error(HYLE_MEM_ERROR_NONE, nullptr);
-  if (control == nullptr || storage == nullptr || size == 0) {
-    set_mem_error(HYLE_MEM_ERROR_INVALID_ARGUMENT,
-                  "hyle_fixed_region_init: invalid control or storage");
-    return nullptr;
-  }
-  const hyle_allocator backing = system_backing();
-  auto *r = ::new (static_cast<void *>(control->bytes))
-      hyle_fixed_region_o(backing, storage, size, false);
-  if (!r->region.valid()) {
-    destroy_external_control(r);
+  const std::uintptr_t begin = reinterpret_cast<std::uintptr_t>(storage);
+  if (r != nullptr)
+    r->state[0] = r->state[1] = r->state[2] = 0;
+  if (r == nullptr || storage == nullptr || size == 0 ||
+      size > UINTPTR_MAX - begin) {
     set_mem_error(HYLE_MEM_ERROR_INVALID_ARGUMENT,
                   "hyle_fixed_region_init: invalid storage");
-    return nullptr;
+    return 0;
   }
-  return r;
+  r->state[0] = begin;
+  r->state[1] = begin;
+  r->state[2] = begin + size;
+  return 1;
 }
 
-hyle_fixed_region_o *hyle_fixed_region_create(void *storage, size_t size) {
-  set_mem_error(HYLE_MEM_ERROR_NONE, nullptr);
-  if (storage == nullptr || size == 0) {
-    set_mem_error(HYLE_MEM_ERROR_INVALID_ARGUMENT,
-        "hyle_fixed_region_create: invalid storage");
-    return nullptr;
-  }
-  const hyle_allocator backing = system_backing();
-  auto *r = allocate_handle<hyle_fixed_region_o>(backing, storage, size);
-  if (r == nullptr) {
-    set_mem_error(HYLE_MEM_ERROR_OUT_OF_MEMORY,
-                  "hyle_fixed_region_create: control allocation failed");
-    return nullptr;
-  }
-  if (!r->region.valid()) {
-    free_handle(r);
-    set_mem_error(HYLE_MEM_ERROR_INVALID_ARGUMENT,
-                  "hyle_fixed_region_create: invalid storage");
-    return nullptr;
-  }
-  return r;
+static bool valid_fixed_region(const hyle_fixed_region *r) {
+  return r != nullptr && r->state[0] != 0 && r->state[1] >= r->state[0] &&
+         r->state[1] <= r->state[2];
 }
-void hyle_fixed_region_destroy(hyle_fixed_region_o *r) {
-  destroy_external_control(r);
-}
-void *hyle_fixed_region_allocate(hyle_fixed_region_o *r, size_t bytes,
+
+void *hyle_fixed_region_allocate(hyle_fixed_region *r, size_t bytes,
                                  size_t alignment) {
   std::size_t normalized = 0;
-  return r && normalize_alignment(alignment, &normalized)
-             ? r->region.allocate(bytes, normalized)
-             : nullptr;
+  if (!valid_fixed_region(r) || bytes == 0 ||
+      !normalize_alignment(alignment, &normalized))
+    return nullptr;
+  const std::uintptr_t current = r->state[1];
+  if (current > UINTPTR_MAX - (normalized - 1))
+    return nullptr;
+  const std::uintptr_t aligned =
+      (current + normalized - 1) & ~(std::uintptr_t(normalized) - 1);
+  if (aligned > r->state[2] || bytes > r->state[2] - aligned)
+    return nullptr;
+  r->state[1] = aligned + bytes;
+  return reinterpret_cast<void *>(aligned);
 }
-void hyle_fixed_region_clear(hyle_fixed_region_o *r) {
+void hyle_fixed_region_clear(hyle_fixed_region *r) {
   if (r)
-    r->region.clear();
+    r->state[1] = r->state[0];
 }
-size_t hyle_fixed_region_used(const hyle_fixed_region_o *r) {
-  return r ? r->region.used() : 0;
+size_t hyle_fixed_region_used(const hyle_fixed_region *r) {
+  return r && r->state[1] >= r->state[0] ? r->state[1] - r->state[0] : 0;
 }
-size_t hyle_fixed_region_capacity(const hyle_fixed_region_o *r) {
-  return r ? r->region.capacity() : 0;
+size_t hyle_fixed_region_capacity(const hyle_fixed_region *r) {
+  return r && r->state[2] >= r->state[0] ? r->state[2] - r->state[0] : 0;
 }
-hyle_allocator hyle_fixed_region_as_allocator(hyle_fixed_region_o *r) {
-  return r ? from_cpp(r->region.as_allocator())
-           : hyle_allocator{nullptr, nullptr, nullptr, nullptr};
+
+namespace {
+void *c_fixed_region_alloc(void *state, size_t size, size_t alignment) {
+  return hyle_fixed_region_allocate(static_cast<hyle_fixed_region *>(state),
+                                    size, alignment);
+}
+void c_fixed_region_free(void *, void *, size_t, size_t) {}
+void *c_fixed_region_realloc(void *state, void *ptr, size_t old_size,
+                             size_t new_size, size_t alignment) {
+  if (new_size == 0)
+    return nullptr;
+  void *out = c_fixed_region_alloc(state, new_size, alignment);
+  if (out != nullptr && ptr != nullptr)
+    std::memcpy(out, ptr, old_size < new_size ? old_size : new_size);
+  return out;
+}
+} // namespace
+
+hyle_allocator hyle_fixed_region_as_allocator(hyle_fixed_region *r) {
+  return valid_fixed_region(r)
+             ? hyle_allocator{&c_fixed_region_alloc, &c_fixed_region_free,
+                              &c_fixed_region_realloc, r}
+             : hyle_allocator{nullptr, nullptr, nullptr, nullptr};
 }
 
 hyle_fixed_pool_o *
@@ -510,9 +615,14 @@ hyle_fixed_pool_init(hyle_fixed_pool_storage *control, void *storage,
   return p;
 }
 
-hyle_fixed_pool_o *hyle_fixed_pool_create(void *storage, size_t size) {
+hyle_fixed_pool_o *hyle_fixed_pool_create(hyle_allocator backing,
+                                          void *storage, size_t size) {
   set_mem_error(HYLE_MEM_ERROR_NONE, nullptr);
-  const hyle_allocator backing = system_backing();
+  if (!valid_backing(backing)) {
+    set_mem_error(HYLE_MEM_ERROR_INVALID_ARGUMENT,
+                  "hyle_fixed_pool_create: invalid control allocator");
+    return nullptr;
+  }
   auto *p = allocate_handle<hyle_fixed_pool_o>(backing, storage, size);
   if (p == nullptr) {
     set_mem_error(HYLE_MEM_ERROR_OUT_OF_MEMORY,

@@ -1,5 +1,6 @@
 #include "hyle/mem/stats.h"
 
+#include <memory>
 #include <mutex>
 #include <unordered_map>
 #include <utility>
@@ -152,13 +153,14 @@ void LeakTracker::clear() noexcept {
 // State_ pointer stores StatsState*.
 StatsAllocator::StatsAllocator(Allocator backing, bool track_leaks) {
   HYLE_FATAL_ASSERT(backing.valid());
-  auto* s = new StatsState;
+  auto s = std::make_unique<StatsState>();
   s->backing = backing;
   if (track_leaks) {
-    s->leaks = new LeakTracker();
+    auto leaks = std::make_unique<LeakTracker>();
+    s->leaks = leaks.release();
     s->owns_leaks = true;
   }
-  state_ = reinterpret_cast<State*>(s);
+  state_ = reinterpret_cast<State*>(s.release());
 }
 
 StatsAllocator::~StatsAllocator() {

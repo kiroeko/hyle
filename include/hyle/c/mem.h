@@ -1,17 +1,17 @@
 /* SPDX: same as HYLE.
  *
- * Product-reviewed pure-C surface for the HYLE mem module. Before the first
- * release, names and signatures may still change when real use finds a better
- * shape; the current manifest is not an ABI compatibility promise.
+ * Pre-release pure-C surface for the HYLE mem module. This header is reviewed
+ * by C user tasks rather than mechanically mirroring the native C++ classes;
+ * names and signatures are not an ABI compatibility promise before 1.0.
  *
  * Naming: every symbol is `hyle_*` / `HYLE_*`.
  * Do NOT include hyle/mem/ headers from C or cross-compiler FFI.
  *
- * Surface: the injectable Allocator vtable, quota/region/external-buffer
- * allocators, hard/soft shared pools, stack/pooled regions, growable raw-slot
- * pools, HugeRegion, and process-wide mimalloc policy knobs. Opaque public
- * aliases hide implementation tags; common constructors have header-inline
- * system-backing forms. Docs (1:1):
+ * Surface: the injectable Allocator vtable; quota/stats decorators; owned and
+ * external regions; variable-size, fixed-slot, cached and growable pools;
+ * HugeRegion; and process-wide mimalloc maintenance/policy. Opaque public
+ * aliases hide owning implementation objects; common constructors have
+ * header-inline system-backing forms. Docs (1:1):
  * docs/guide/c-mem.md
  */
 #ifndef HYLE_C_MEM_H_
@@ -83,6 +83,12 @@ typedef struct hyle_allocator {
   void *state;
 } hyle_allocator;
 
+/* A zero-initialized allocator is the null handle. This validator is useful at
+ * FFI/configuration boundaries; hot code should normally dispatch directly. */
+static inline int hyle_allocator_is_valid(hyle_allocator a) {
+  return a.alloc != NULL && a.free != NULL && a.realloc != NULL;
+}
+
 /* Default alignment when a caller passes 0 (matches alignof(max_align_t)).
  * Header-inline so the common hyle_alloc(..., 0) path folds this to a constant
  * instead of paying a DLL call before the allocator dispatch. */
@@ -137,6 +143,10 @@ HYLE_MEM_C_API size_t hyle_system_usable_size(const void *ptr);
  * shape).
  * >= size; not guaranteed equal to usable_size(alloc(size)); 0->0. */
 HYLE_MEM_C_API size_t hyle_system_good_size(size_t size);
+/* Ask the process heap to return unused memory. force==0 is the ordinary
+ * maintenance path; non-zero requests an aggressive, potentially millisecond
+ * cold-path collection. */
+HYLE_MEM_C_API void hyle_system_collect(int force);
 
 /* ========================================================================== */
 /* Allocator adapter — strict requested-byte quota */
@@ -162,6 +172,60 @@ hyle_quota_allocator_limit(const hyle_quota_allocator *q);
 static inline hyle_quota_allocator *
 hyle_quota_allocator_create_default(size_t limit) {
   return hyle_quota_allocator_create(hyle_system_allocator(), limit);
+}
+
+/* ========================================================================== */
+/* Allocator adapter — opt-in counters and optional leak inventory */
+/* ========================================================================== */
+
+typedef struct hyle_alloc_stats {
+  uint64_t live_count;
+  uint64_t live_bytes;
+  uint64_t total_allocs;
+  uint64_t total_frees;
+  uint64_t total_bytes_allocated;
+  uint64_t peak_live_bytes;
+  uint64_t reallocs;
+} hyle_alloc_stats;
+
+typedef struct hyle_mem_leak {
+  void *ptr;
+  size_t size;
+} hyle_mem_leak;
+
+typedef struct hyle_stats_allocator_o hyle_stats_allocator;
+
+/* Thread-safe opt-in instrumentation over `backing`. Non-zero track_leaks adds
+ * a locked pointer map and is intended for diagnostics, not production hot
+ * paths. The returned allocator and all its allocations must be quiesced
+ * before destroy. */
+HYLE_MEM_C_API hyle_stats_allocator *
+hyle_stats_allocator_create(hyle_allocator backing, int track_leaks);
+HYLE_MEM_C_API void hyle_stats_allocator_destroy(hyle_stats_allocator *s);
+HYLE_MEM_C_API hyle_allocator
+hyle_stats_allocator_as_allocator(hyle_stats_allocator *s);
+/* Writes a point-in-time POD snapshot. A NULL s writes zeros; a NULL out is a
+ * no-op. Using an out parameter avoids platform-specific large-struct return
+ * conventions in FFI generators. */
+HYLE_MEM_C_API void
+hyle_stats_allocator_snapshot(const hyle_stats_allocator *s,
+                              hyle_alloc_stats *out);
+/* Reset requires no live allocation through this wrapper; it also clears the
+ * optional leak inventory. */
+HYLE_MEM_C_API void hyle_stats_allocator_reset(hyle_stats_allocator *s);
+HYLE_MEM_C_API int
+hyle_stats_allocator_balanced(const hyle_stats_allocator *s);
+/* Copies at most capacity entries and returns the total outstanding count.
+ * The diagnostic copy may obtain a temporary array from the original backing;
+ * when that allocation fails, out is untouched and last-error reports OOM.
+ * When leak tracking is disabled (or s==NULL), returns 0. */
+HYLE_MEM_C_API size_t
+hyle_stats_allocator_copy_leaks(const hyle_stats_allocator *s,
+                                hyle_mem_leak *out, size_t capacity);
+
+static inline hyle_stats_allocator *
+hyle_stats_allocator_create_default(int track_leaks) {
+  return hyle_stats_allocator_create(hyle_system_allocator(), track_leaks);
 }
 
 /* ========================================================================== */
@@ -211,28 +275,17 @@ hyle_region_create_default(const hyle_region_options *options) {
 /* FixedRegion — non-owning bump allocation over caller storage */
 /* ========================================================================== */
 
-typedef struct hyle_fixed_region_o hyle_fixed_region;
+/* A FixedRegion is exactly a three-pointer bump cursor, so C owns it by value:
+ * no opaque 128-byte control buffer, hidden allocation, or destroy step. Treat
+ * `state` as private and initialize it with hyle_fixed_region_init(). */
+typedef struct hyle_fixed_region {
+  uintptr_t state[3];
+} hyle_fixed_region;
 
-/* Caller-owned control storage for a strict no-heap FixedRegion handle. The
- * bytes are intentionally opaque; the pointer member gives the internal
- * pointer/size-only control object its required alignment on supported ABIs. */
-#define HYLE_FIXED_REGION_CONTROL_BYTES 128u
-typedef union hyle_fixed_region_storage {
-  void *alignment;
-  unsigned char bytes[HYLE_FIXED_REGION_CONTROL_BYTES];
-} hyle_fixed_region_storage;
-
-/* Strict no-heap construction: both control and payload storage are caller
- * owned. destroy() ends the control lifetime but does not free either buffer. */
-HYLE_MEM_C_API hyle_fixed_region *
-hyle_fixed_region_init(hyle_fixed_region_storage *control, void *storage,
-                       size_t size);
-/* Convenience factory: payload allocation still never falls back, but the
- * small opaque control is allocated from the system allocator. `storage`
- * remains caller-owned and must outlive the control/results. */
-HYLE_MEM_C_API hyle_fixed_region *hyle_fixed_region_create(void *storage,
-                                                           size_t size);
-HYLE_MEM_C_API void hyle_fixed_region_destroy(hyle_fixed_region *r);
+/* Initializes r over caller-owned storage. Returns 1 on success, 0 with
+ * last-error on invalid/null/overflowing storage. */
+HYLE_MEM_C_API int hyle_fixed_region_init(hyle_fixed_region *r, void *storage,
+                                          size_t size);
 HYLE_MEM_C_API void *hyle_fixed_region_allocate(hyle_fixed_region *r,
                                                 size_t bytes, size_t alignment);
 HYLE_MEM_C_API void hyle_fixed_region_clear(hyle_fixed_region *r);
@@ -258,10 +311,11 @@ typedef union hyle_fixed_pool_storage {
 HYLE_MEM_C_API hyle_fixed_pool *
 hyle_fixed_pool_init(hyle_fixed_pool_storage *control, void *storage,
                      size_t size);
-/* Convenience factory: no payload fallback, but create() allocates the opaque
- * control from the system allocator. Individual allocations can be freed. */
-HYLE_MEM_C_API hyle_fixed_pool *hyle_fixed_pool_create(void *storage,
-                                                       size_t size);
+/* Convenience factory: no payload fallback; create() allocates the opaque
+ * control from the supplied allocator. Individual allocations can be freed. */
+HYLE_MEM_C_API hyle_fixed_pool *
+hyle_fixed_pool_create(hyle_allocator control_allocator, void *storage,
+                       size_t size);
 HYLE_MEM_C_API void hyle_fixed_pool_destroy(hyle_fixed_pool *p);
 HYLE_MEM_C_API void *hyle_fixed_pool_allocate(hyle_fixed_pool *p,
                                               size_t bytes, size_t alignment);
@@ -275,6 +329,11 @@ HYLE_MEM_C_API size_t hyle_fixed_pool_used(const hyle_fixed_pool *p);
 HYLE_MEM_C_API size_t hyle_fixed_pool_capacity(const hyle_fixed_pool *p);
 HYLE_MEM_C_API hyle_allocator
 hyle_fixed_pool_as_allocator(hyle_fixed_pool *p);
+
+static inline hyle_fixed_pool *hyle_fixed_pool_create_default(void *storage,
+                                                              size_t size) {
+  return hyle_fixed_pool_create(hyle_system_allocator(), storage, size);
+}
 
 /* ========================================================================== */
 /* SharedPool — sharded fixed-size block pool (HARD capacity) */

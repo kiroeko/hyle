@@ -3,18 +3,20 @@
 > **信源**：本文件是 HYLE **对外 C ABI 面的设计推理与决策**。落地细节看 `include/hyle/c/*.h` 与各模块 `docs/guide/c-*.md`（逐符号 1:1）；本文件只管"为什么这么设计"。
 > 上位依据：[`engineering-charter.md`](./engineering-charter.md) §6（FFI 决策）、[`coding-conventions.md`](./coding-conventions.md) §4（C-ABI 范式）。本文件在其之上补齐**具体做法与实证对照**。
 
-## 0. 定调（用户拍板）
+## 0. 目标与边界
 
-**HYLE 从一开始就设计为"C++ 实现、全面导出 C ABI"。** 对外发布面尽可能全部走纯 `extern "C"` 的 `include/hyle/c/*.h`，让任意语言（Python/Rust/Go/TS/…）FFI 直接绑。
+**HYLE 是 C++ 基础加速库；`include/hyle/c/*.h` 是另行设计的 C/FFI 产品面，
+不是把原生 C++ 类自动翻译一遍。** C ABI 覆盖适合跨语言使用的运行时能力，模板、
+RAII 和 C++ 标准库适配只在存在自然 C 用户任务时才下沉。
 
 - **C ABI 是唯一承诺跨编译器/跨 STL/跨语言稳定的接缝**——几乎所有 OS/语言都认 C 调用约定 + C 结构体布局。
 - **两种消费者、两条独立线路**（关键区分）：
   - **C++ 用户**：直接用 `include/hyle/<mod>/*.h` 的原生 C++ API（模板、RAII、`Allocator`/`VmRegion`/`ObjectPool<T>`）。不关心跨语言。**这条线的"完整"独立评估**——C++ 面本身完整即可。
   - **跨语言用户**：只绑 `include/hyle/c/*.h`。**这条线的"完整"也独立评估**——每个能力有没有 C ABI 通路。
   - 两条线互不牵扯：C++ 有模板 ≠ C ABI 缺能力；C ABI 没导出某类 ≠ C++ 用户拿不到。
-  - 但“符号不必 1:1”不等于“能力可以消失”：不能直接导出的模板、RAII、
-    协程或回调组合，必须在对应 `docs/guide/c-*.md` 给出可执行的 C 组合
-    路径。既没有直接接口、也没有组合路径，才是需要补的 C ABI 能力缺口。
+  - 但“符号不必 1:1”不等于任意删能力：属于 C/FFI 产品范围而不能直接导出的
+    模板、RAII、协程或回调组合，应在对应 `docs/guide/c-*.md` 给出可执行的 C 组合
+    路径。明确只服务原生 C++ 的能力则应写清边界，不制造生硬的 C 壳。
 
 ## 1. 核心手法：类型擦除（C++ → C ABI 的关键结论）
 
@@ -72,7 +74,7 @@ C ABI 要当一等公民，数据模型就得是**运行时参数化**，而非*
 
 | 类 | 模块 | 当前判定与 C 用户路径 |
 |---|---|---|
-| `StatsAllocator` / `LeakTracker` / `AllocStats` | mem | 当前是内部 debug/test 设施，不承诺为稳定产品能力。C 用户可包装公开的 `hyle_allocator` vtable 做业务计数，逐地址泄漏归因用 ASan/Valgrind/语言 profiler；完整 recipe 见 `c-mem.md` |
+| `StatsAllocator` / `LeakTracker` / `AllocStats` | mem | 已认定为 opt-in 用户能力：opaque stats allocator + POD out-snapshot + bounded leak copy；默认 system allocator 不埋统计成本 |
 | `ErrorRecord` | error | 当前是错误处理器的测试记录器，不是产品对象。C 用户能力由 `hyle_error_set_handler` / `push_handler` / `pop_handler` 覆盖，可在自己的 callback state 中累计同样的信息 |
 
 **升级规则**：只要上述统计/诊断被提升为面向用户的产品能力，就必须导出；
@@ -85,8 +87,8 @@ C ABI 要当一等公民，数据模型就得是**运行时参数化**，而非*
 
 **注意区分**（措辞要精确）：
 - `ObjectPool<T>`：**泛型语法不可达，但能力可达**（经 arena + 宏）——不是"不需要"。
-- `StatsAllocator`：当前只把它当内部测试设施；业务计数有公开 allocator
-  wrapper 路径。若将来承诺完整 allocator 统计/泄漏追踪，它就必须有正式 C ABI。
+- `StatsAllocator`：已通过 `hyle_stats_allocator_*` 提供正式 C 通路；计数是 opt-in
+  wrapper，逐地址 leak inventory 还需显式开启，因此不污染默认分配热路。
 两者目前都没有同名 C 对象，但前者是直接类型擦除，后者是明确的产品边界判定；
 都必须在用户 guide 中交代可达路径，不能只写“C++ only”。
 
