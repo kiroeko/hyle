@@ -1,5 +1,8 @@
 #pragma once
 
+#include <utility>
+
+#include "hyle/error/result.h"
 #include "hyle/macros.h"
 #include "hyle/visibility.h"
 
@@ -13,8 +16,8 @@
 
 // Dynamic library loading (clay dynlib). Cross-platform dlopen/LoadLibrary. RAII
 // over clay's manual open/close: a DynLib closes on destruction, so a forgotten
-// close can't leak the OS handle. Error detail is a thread-local string (no
-// allocator, unlike clay's char*(Allocator*)).
+// close can't leak the OS handle. Recoverable loader failures are returned as
+// Result values; there is no module-local last-error side channel.
 //
 // STATUS (platform-audit followup #21): the original motivation — dlopen the
 // CPUID-scored best SIMD backend as a separate loadable unit (conventions §10) —
@@ -30,24 +33,16 @@ namespace hyle::platform {
 // Platform shared-library file extension WITHOUT the dot: "dll" / "so" / "dylib".
 HYLE_PLATFORM_API const char* dynlib_extension() noexcept;
 
-// The last dynlib error on THIS thread (open/symbol failure), or "" if none.
-// Valid until the next failing dynlib call on the same thread.
-HYLE_PLATFORM_API const char* dynlib_last_error() noexcept;
-// Set/clear the thread-local dynlib error. Primarily for C-ABI wrapper failures
-// that occur after the OS library handle was acquired (e.g. wrapper OOM).
-HYLE_PLATFORM_API void dynlib_set_last_error(const char* msg) noexcept;
-
 // An owned handle to a loaded shared library. Move-only; closes on destruction.
 class DynLib {
  public:
-  // Load the library at `path`. On failure returns an invalid DynLib (valid()
-  // == false); see dynlib_last_error() for why.
-  HYLE_PLATFORM_API static DynLib open(const char* path) noexcept;
+  // Load the library at `path`.
+  HYLE_PLATFORM_API static Result<DynLib> open(const char* path) noexcept;
 
   // Attach to a library ALREADY mapped into this process (clay dynlib_get).
-  // Does NOT load if absent -- returns invalid instead (Win GetModuleHandle /
-  // POSIX dlopen(RTLD_NOLOAD)). Use when another component already loaded the
-  // DLL and you only need a handle for symbol lookup.
+  // Does NOT load if absent -- returns NotFound (Win GetModuleHandle / POSIX
+  // dlopen(RTLD_NOLOAD)). Use when another component already loaded the DLL and
+  // you only need a handle for symbol lookup.
   // Ownership: Windows handle is non-owning (GetModuleHandle does not pin);
   // POSIX NOLOAD bumps the dlopen refcount so the DynLib owns a close.
   // NAME MATCHING: RTLD_NOLOAD matches an already-loaded image by its INSTALL
@@ -55,13 +50,13 @@ class DynLib {
   // macOS especially, pass the install-name (e.g. "libSystem.B.dylib", not
   // "libSystem.dylib") -- the alias resolves under open() but NOLOAD returns
   // invalid for it. Prefer the exact name/path the library was loaded under.
-  HYLE_PLATFORM_API static DynLib get(const char* path) noexcept;
+  HYLE_PLATFORM_API static Result<DynLib> get(const char* path) noexcept;
 
   // A handle to the current process image (POSIX dlopen(nullptr) / Win
   // GetModuleHandle(nullptr)) for resolving already-loaded symbols. Windows is
   // non-owning; POSIX dlopen increments a refcount, so the destructor balances
   // it with dlclose.
-  HYLE_PLATFORM_API static DynLib current() noexcept;
+  HYLE_PLATFORM_API static Result<DynLib> current() noexcept;
 
   DynLib() noexcept = default;
   HYLE_PLATFORM_API ~DynLib();
@@ -76,14 +71,18 @@ class DynLib {
   bool valid() const noexcept { return handle_ != nullptr; }
   explicit operator bool() const noexcept { return valid(); }
 
-  // Address of exported `name`, or nullptr if absent (sets dynlib_last_error()).
-  HYLE_PLATFORM_API void* symbol(const char* name) const noexcept;
+  // Address of exported `name`. A platform may legally export a null-valued
+  // symbol, so success is represented by the Result state rather than pointer
+  // truthiness.
+  HYLE_PLATFORM_API Result<void*> symbol(const char* name) const noexcept;
 
   // Typed symbol lookup: dl.symbol_as<int(*)(void)>("foo"). Caller asserts the
   // signature (the loader cannot check it).
   template <class Fn>
-  Fn symbol_as(const char* name) const noexcept {
-    return reinterpret_cast<Fn>(symbol(name));
+  Result<Fn> symbol_as(const char* name) const noexcept {
+    Result<void*> address = symbol(name);
+    if (!address) return std::unexpected(std::move(address).error());
+    return reinterpret_cast<Fn>(*address);
   }
 
   // Close early (also done by the destructor). Safe to call on an invalid lib.

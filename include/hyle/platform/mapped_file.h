@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "hyle/error/result.h"
 #include "hyle/macros.h"
 #include "hyle/visibility.h"
 
@@ -40,15 +41,14 @@ class MappedFile {
 
   // Map [offset, offset+length) of `path` (length==0 => to end of file). An
   // explicit length must NOT extend past the file's end -- mapping past EOF is
-  // rejected (!valid()), so a read-write mapping never silently grows the file
-  // and no access ever faults past EOF. offset is aligned to the OS mapping
+  // rejected with OutOfRange, so a read-write mapping never silently grows the
+  // file and no access ever faults past EOF. offset is aligned to the OS mapping
   // granularity internally (any value works; data() points at the exact offset).
-  // On failure the returned MappedFile is !valid() (see platform vm_last_error()).
+  // Failures carry operation and native OS diagnostics in the returned Status.
   // kReadWrite needs a writable file; kReadOnly / kCopyOnWrite need only read.
-  HYLE_PLATFORM_API static MappedFile open(const char* path,
-                                           Mode mode = Mode::kReadOnly,
-                                           std::size_t offset = 0,
-                                           std::size_t length = 0) noexcept;
+  HYLE_PLATFORM_API static Result<MappedFile> open(
+      const char* path, Mode mode = Mode::kReadOnly, std::size_t offset = 0,
+      std::size_t length = 0) noexcept;
 
   MappedFile() noexcept = default;
   HYLE_PLATFORM_API ~MappedFile();
@@ -64,9 +64,9 @@ class MappedFile {
   // Mapped length in bytes.
   std::size_t size() const noexcept { return size_; }
 
-  // Flush dirty pages back to the file (kReadWrite only; no-op that returns true
+  // Flush dirty pages back to the file (kReadWrite only; OK no-op
   // for kReadOnly / kCopyOnWrite). msync(MS_SYNC) / FlushViewOfFile.
-  HYLE_PLATFORM_API bool flush() noexcept;
+  HYLE_PLATFORM_API Status flush() noexcept;
 
   // Unmap early (also done by the destructor). Safe on an invalid mapping.
   HYLE_PLATFORM_API void reset() noexcept;

@@ -97,12 +97,23 @@ HYLE 不在 C ABI 上再包一层冗余 C++ facade：原生 `include/hyle/<mod>/
 - **返回值通道**：`hyle_status`（opaque owning handle，`uintptr_t rep`）值返回 + 分支；`HYLE_C_RETURN_IF_ERROR` 传播。`Result<T>`（`std::expected`）是模板，C 侧用 `hyle_status` + 出参表达。
 - **诊断通道**：独立使用 `hyle/c/obs.h`；error 不维护第二套全局 handler。
 - **绝不让 C++ 异常跨 C 边界**（UB）。catch 只在 adapter 边界做"外来异常→Status"。
-- **分配器层不走 `hyle_status`**（mem 的刻意分层）：C 句柄工厂的资源失败和可由 FFI 数据表达的非法值/溢出 layout 均直接返 NULL；`hyle_mem_last_error_code()` 以独立 TLS 小枚举区分 INVALID_ARGUMENT、OUT_OF_MEMORY、EXHAUSTED 与 PLATFORM，字符串只作诊断。生命周期、并发静默、foreign/double free 等时序契约违反仍 fail-fast。分配器是**最底层基元**，让它依赖上层 error 模块的 `Status` 会**倒置依赖**。HugeRegion 在调用 VM 原语时只复制本次失败原因到 mem 通道，并恢复调用者原有的 platform VM error。
-- **platform 按失败形状分通道**：Thread 构造返回 `hyle_status`；VM/NUMA/
-  MappedFile 用 `hyle_vm_last_error`；DynLib 用 `hyle_dynlib_last_error`；
-  Parker wrapper 与 fs/fd 用 `hyle_platform_last_error`。所有字符串均线程
-  局部，成功清空 stale 值。这样不把 100+ 个布尔/指针原语机械改成
-  Status，同时保证每条资源失败路径可诊断。
+- **分配器热路不返回 owning `hyle_status`**（mem 的刻意分层）：C 句柄工厂的
+  资源失败和可由 FFI 数据表达的非法值/溢出 layout 均直接返 NULL；
+  `hyle_mem_last_error_code()` 以独立 TLS 小枚举区分 INVALID_ARGUMENT、
+  OUT_OF_MEMORY、EXHAUSTED 与 PLATFORM，字符串只作诊断。生命周期、并发静默、
+  foreign/double free 等时序契约违反仍 fail-fast。理由不是“error 在 mem
+  上层”——实际层级是 error(P0) → platform(P1) → mem(P2)，mem 已经经 platform
+  传递链接 error；理由是**分配失败路径不能依赖可能分配消息存储的 owning Status**，
+  且 alloc/free 热路不能增加对象管理税。HugeRegion 在调用 VM 原语时只复制本次
+  失败原因到 mem 通道，并恢复调用者原有的 platform VM error。这个小枚举是否改为
+  共享 code-only taxonomy 留给 VM/NUMA + mem 联合阶段，不能在本文把当前独立通道
+  写成已经统一。
+- **platform 按失败形状分通道**：Thread 构造、DynLib 与 MappedFile 的
+  可恢复失败返回 `hyle_status` + 出参，因此 C 与 C++ 共用错误分类且没有
+  “NULL 究竟是合法值还是失败”的歧义；VM/NUMA 原语暂用
+  `hyle_vm_last_error`，Parker wrapper 与 fs/fd 暂用
+  `hyle_platform_last_error`。后两者是未发布 ABI 的迁移中间态，不是推荐的
+  新接口模板；后续按真实调用链分批迁移，而不是一次机械改写全部 bool/指针原语。
 - 对照：ggml 用 `ggml_status` 返回码；oneDNN 用 `dnnl_status_t` + C++ 层 `wrap_c_api` 转异常。HYLE 的可恢复失败同样走显式返回值，程序错误独立 fail-fast。
 
 ## 6. C++ API 易用性（第 1 层，给 C++ 用户）

@@ -464,10 +464,11 @@ int main() {
     });
     b.run("HYLE MappedFile open+sum (zero-copy)", [&] {
       std::uint64_t s = 0;
-      MappedFile m = MappedFile::open(path.c_str());
-      if (m.valid()) {
-        const unsigned char* d = static_cast<const unsigned char*>(m.data());
-        for (std::size_t i = 0; i < m.size(); ++i) s += d[i];
+      auto mapped = MappedFile::open(path.c_str());
+      if (mapped) {
+        const unsigned char* d =
+            static_cast<const unsigned char*>(mapped->data());
+        for (std::size_t i = 0; i < mapped->size(); ++i) s += d[i];
       }
       nb::doNotOptimizeAway(s);
     });

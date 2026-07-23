@@ -229,7 +229,8 @@ posix mmap failed: ENOMEM (12): Cannot allocate memory
 
 ### 真实产品路径
 
-- platform：原生 OS 失败 → Status → C ABI；
+- platform：Thread/DynLib/MappedFile 的原生 OS 失败 → Status → C ABI；VM/NUMA
+  尚在迁移期，不能把目标态误写成全模块现状；
 - compute：CUDA/Vulkan 叶子错误 → buffer/kernel 高层上下文；
 - graph：`Result<T>` 提取与跨层传播；
 - 成功路径和错误路径分开报告，禁止用高错误率混合 workload 掩盖成功路径回退。

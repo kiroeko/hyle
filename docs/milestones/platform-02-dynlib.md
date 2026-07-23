@@ -13,7 +13,7 @@
 
 - **覆盖**:open/sym(→symbol/symbol_as)/close/error/extension。
 - **改进①(RAII)**:clay 手动 open/close(忘 close 漏 OS 句柄);HYLE `DynLib` 析构自动 close,move-only 转移所有权。
-- **改进②(错误)**:clay error 走 `char*(Allocator*)`;HYLE thread-local 256B buffer + `dynlib_last_error()`——无分配,dlopen/GetLastError 失败信息直接拿。
+- **改进②(错误，历史实现)**:clay error 走 `char*(Allocator*)`;初版 HYLE 用 thread-local 256B buffer + `dynlib_last_error()`。
 - **改进③(typed)**:`symbol_as<Fn>(name)` 类型化查符号(clay 只 void*)。
 - **POSIX 语义**:`RTLD_NOW|RTLD_LOCAL`——NOW 在 load 时解析全符号(缺符号当场失败,非调用时崩)、LOCAL 不把库符号泄进全局。
 - **gap 登记**:~~clay `dynlib_get(path)`~~ → ✅ **`DynLib::get(path)`**(2026-07-17):Win `GetModuleHandle`(非拥有)/POSIX `dlopen(RTLD_NOLOAD)`(拥有一次 close);未加载则失败不加载。
@@ -30,10 +30,17 @@
 
 ## 交付物
 
-- `include/hyle/platform/dynlib.h`（DynLib RAII + dynlib_extension + last_error）
+- `include/hyle/platform/dynlib.h`（DynLib RAII + dynlib_extension；当前错误形状见下方追记）
 - `src/platform/dynlib.cc`（Win LoadLibrary / POSIX dlopen）+ CMake(Linux 链 `${CMAKE_DL_LIBS}`)
 - `tests/platform/dynlib_test.cc`（8）
 
 ## 参考
 
 - clay `sys/os.h` dynlib 段(345-399)。conventions §10（变体 DLL + dlopen + score 选优）。
+
+## 2026-07-23 追记：错误接口重收口
+
+本页正文保留 platform-02 当时的任务事实。未发布 ABI 在
+[`platform-error-convergence`](./platform-error-convergence.md) 中改为 C++ `Result`、
+C `hyle_status` + 出参；模块私有 `dynlib_last_error` 已删除。当前稳定接口只看
+architecture 与 guide，不从历史任务正文推断。

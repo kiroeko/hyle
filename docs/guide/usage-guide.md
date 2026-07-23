@@ -541,7 +541,9 @@ void* p = r.usable();                                // 首个可写字节（越
 
 // 文件内存映射：RO / RW(回盘) / COW(私有)，对标 Rust memmap2
 #include "hyle/platform/mapped_file.h"
-MappedFile m = MappedFile::open("weights.bin", MappedFile::Mode::kReadOnly);
+HYLE_ASSIGN_OR_RETURN(
+    MappedFile m,
+    MappedFile::open("weights.bin", MappedFile::Mode::kReadOnly));
 if (m.valid()) { const float* w = static_cast<const float*>(m.data()); /* 零拷贝读 */ }
 
 // 文件系统 + 原子临时文件（返回打开的句柄，TOCTOU 安全）
@@ -559,7 +561,8 @@ auto t = Thread::spawn(&entry, ctx, opts);
 // 动态库（RTLD_NOLOAD 附着已加载；macOS 传 install-name）+ CPU 特性
 #include "hyle/platform/dynlib.h"
 #include "hyle/platform/cpu.h"
-DynLib lib = DynLib::open("plugin.so");  auto fn = lib.symbol_as<int(*)()>("entry");
+HYLE_ASSIGN_OR_RETURN(DynLib lib, DynLib::open("plugin.so"));
+HYLE_ASSIGN_OR_RETURN(auto fn, lib.symbol_as<int(*)()>("entry"));
 if (cpu_features().avx2) { /* 运行期安全走 AVX2 */ }  // best_isa() 是 simd dispatch 的依据
 const auto& cache = cache_info();        // L1D/L1I/L2/L3 bytes；未知级为 0
 const auto& topo = cpu_topology();       // 逻辑 CPU 与可信的 P/E 分类

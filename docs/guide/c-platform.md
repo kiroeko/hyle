@@ -1,22 +1,23 @@
 # HYLE C ABI：platform
 
 > **发布面**：`include/hyle/c/platform.h`  
-> **实现**：`src/platform/c_platform.cc`（链 `hyle_platform`；spawn 失败依赖 `hyle_error`）  
+> **实现**：`src/platform/c_platform.cc`（链 `hyle_platform` + `hyle_error`）
 > **稳定性**：未发布，无 ABI 版本门（纯 `extern "C"` 自由函数导出）  
 > **命名**：全部 `hyle_*` / `HYLE_*`
 
 跨语言 / 跨编译器只许绑本头（及 `hyle/c/error.h`）。不要 include `hyle/platform/*.h`。
 
-失败诊断按子系统分三条线程局部通道：
+资源构造、动态加载和文件映射的可恢复失败直接返回拥有型 `hyle_status`；
+尚未迁移的低层原语保留线程局部诊断通道：
 
 | 返回面 | 诊断 |
 |---|---|
-| Thread spawn | 返回 `hyle_status`，用 `hyle_status_message_cstr` |
-| VM / NUMA / MappedFile | `hyle_vm_last_error()` |
-| DynLib | `hyle_dynlib_last_error()` |
+| Thread spawn / DynLib / MappedFile | 返回 `hyle_status`，用 `hyle_status_message_cstr` |
+| VM / NUMA | `hyle_vm_last_error()` |
 | Parker create / fs / fd | `hyle_platform_last_error()` |
 
-last-error 指针借用到同线程下一次相关调用；成功会清空旧错误。
+`hyle_status` 由调用方用 `hyle_status_free` 释放；last-error 指针借用到同线程
+下一次相关调用，成功会清空旧错误。
 
 ---
 
@@ -93,15 +94,14 @@ last-error 指针借用到同线程下一次相关调用；成功会清空旧错
 
 | 符号 | 说明 |
 |---|---|
-| `hyle_dynlib_open(path)` | 加载；失败 NULL |
-| `hyle_dynlib_get(path)` | **仅**附着已加载，不加载缺失模块 |
-| `hyle_dynlib_current` | 当前映像 |
+| `hyle_dynlib_open(out, path)` | 加载；成功写拥有句柄，失败返 `hyle_status` |
+| `hyle_dynlib_get(out, path)` | **仅**附着已加载，不加载缺失模块；返回 Status |
+| `hyle_dynlib_current(out)` | 当前映像；返回 Status |
 | `hyle_dynlib_close` | 释放句柄 |
 | `hyle_dynlib_valid` | 1/0 |
-| `hyle_dynlib_symbol(lib, name)` | 符号地址或 NULL |
-| `hyle_dynlib_last_error` | 线程局部错误串 |
+| `hyle_dynlib_symbol(out, lib, name)` | 成功写符号地址；Status 的成功态可表达合法的 NULL 值符号 |
 | `hyle_dynlib_extension` | `"dll"` / `"so"` / `"dylib"` |
-| `hyle_dynlib_open_symbol(path, name, out_lib, out_sym)` | open+resolve；成功 1，`*out_lib` 由调用方 close |
+| `hyle_dynlib_open_symbol(out_lib, out_sym, path, name)` | open+resolve；返回 Status，成功后 `*out_lib` 由调用方 close |
 
 ### 3.4 Virtual memory（DLL + inline）
 
@@ -185,10 +185,10 @@ soft 建议，绝不影响正确性。Linux 用 madvise；Windows/macOS 匿名�
 | 符号 | 说明 |
 |---|---|
 | `hyle_map_mode` | `READ_ONLY` / `READ_WRITE` / `COPY_ON_WRITE`（对标 memmap2） |
-| `hyle_mapped_file_open(path, mode, offset, length)` | length=0→到 EOF；支持非页对齐 offset（内部扩大/对齐 OS view）；失败 NULL（见 `hyle_vm_last_error`） |
+| `hyle_mapped_file_open(out, path, mode, offset, length)` | length=0→到 EOF；支持非页对齐 offset（内部扩大/对齐 OS view）；返回 Status |
 | `hyle_mapped_file_destroy(m)` | unmap + 关句柄 |
 | `hyle_mapped_file_valid` / `hyle_mapped_file_data` / `hyle_mapped_file_size` | 查询 |
-| `hyle_mapped_file_flush(m)` | 回写脏页（RW；RO/COW 为 no-op 返 1） |
+| `hyle_mapped_file_flush(m)` | 回写脏页（RW；RO/COW 为 OK no-op）；返回 Status |
 
 ### 3.6 CPU（DLL + 常量）
 
@@ -267,16 +267,25 @@ hyle_status st = hyle_thread_spawn_opts(
 ### DynLib / open_symbol
 
 ```c
-hyle_dynlib_o* lib = hyle_dynlib_get("kernel32.dll"); /* or libm.so.6 */
-void* sym = hyle_dynlib_symbol(lib, "GetCurrentProcessId");
-hyle_dynlib_close(lib);
+hyle_dynlib_o* lib = NULL;
+hyle_status st = hyle_dynlib_get(&lib, "kernel32.dll"); /* or libm.so.6 */
+if (hyle_status_is_ok(st)) {
+  void* sym = NULL;
+  hyle_status sym_st = hyle_dynlib_symbol(&sym, lib, "GetCurrentProcessId");
+  if (hyle_status_is_ok(sym_st)) { /* use sym */ }
+  hyle_status_free(&sym_st);
+  hyle_dynlib_close(lib);
+}
+hyle_status_free(&st);
 
 hyle_dynlib_o* plug = NULL;
 void* entry = NULL;
-if (hyle_dynlib_open_symbol("plugin.so", "entry", &plug, &entry)) {
+hyle_status plug_st = hyle_dynlib_open_symbol(&plug, &entry, "plugin.so", "entry");
+if (hyle_status_is_ok(plug_st)) {
   /* use entry */
   hyle_dynlib_close(plug);
 }
+hyle_status_free(&plug_st);
 ```
 
 ### VM

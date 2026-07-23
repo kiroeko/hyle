@@ -38,7 +38,7 @@ extern "C" {
 /* Last recoverable error from C-shim facilities that do not return hyle_status
  * and do not have a more specific channel (currently Parker wrapper creation
  * and filesystem/fd operations). Thread-local; "" means none. VM/mapped/NUMA
- * use hyle_vm_last_error; DynLib uses hyle_dynlib_last_error. */
+ * still use hyle_vm_last_error; DynLib returns hyle_status directly. */
 HYLE_PLATFORM_C_API const char* hyle_platform_last_error(void);
 
 /* ========================================================================== */
@@ -159,22 +159,29 @@ HYLE_PLATFORM_C_API void hyle_this_thread_set_name(const char* name);
 
 typedef struct hyle_dynlib_o hyle_dynlib_o;
 
-HYLE_PLATFORM_C_API hyle_dynlib_o* hyle_dynlib_open(const char* path);
+/* Status-returning creators clear *out before work. On success the caller owns
+ * *out and must hyle_dynlib_close it; status is always caller-freed. */
+HYLE_PLATFORM_C_API hyle_status hyle_dynlib_open(hyle_dynlib_o** out,
+                                                 const char* path);
 /* Already-loaded only; does not load if missing. */
-HYLE_PLATFORM_C_API hyle_dynlib_o* hyle_dynlib_get(const char* path);
-HYLE_PLATFORM_C_API hyle_dynlib_o* hyle_dynlib_current(void);
+HYLE_PLATFORM_C_API hyle_status hyle_dynlib_get(hyle_dynlib_o** out,
+                                                const char* path);
+HYLE_PLATFORM_C_API hyle_status hyle_dynlib_current(hyle_dynlib_o** out);
 HYLE_PLATFORM_C_API void hyle_dynlib_close(hyle_dynlib_o* lib);
 HYLE_PLATFORM_C_API int hyle_dynlib_valid(const hyle_dynlib_o* lib);
-HYLE_PLATFORM_C_API void* hyle_dynlib_symbol(hyle_dynlib_o* lib, const char* name);
-HYLE_PLATFORM_C_API const char* hyle_dynlib_last_error(void);
+/* Clears *out before lookup; a successful NULL symbol is distinguished from
+ * failure by the returned Status. */
+HYLE_PLATFORM_C_API hyle_status hyle_dynlib_symbol(void** out,
+                                                   hyle_dynlib_o* lib,
+                                                   const char* name);
 HYLE_PLATFORM_C_API const char* hyle_dynlib_extension(void); /* "dll"/"so"/"dylib" */
 
-/* Open path and resolve symbol. On success *out_lib owns the library (caller
- * must hyle_dynlib_close) and *out_sym is the address. Returns 1 on success. */
-HYLE_PLATFORM_C_API int hyle_dynlib_open_symbol(const char* path,
-                                                const char* name,
-                                                hyle_dynlib_o** out_lib,
-                                                void** out_sym);
+/* Open path and resolve symbol. Both out values are cleared before work. On
+ * success *out_lib owns the library (caller must hyle_dynlib_close) and
+ * *out_sym is the address. */
+HYLE_PLATFORM_C_API hyle_status hyle_dynlib_open_symbol(
+    hyle_dynlib_o** out_lib, void** out_sym, const char* path,
+    const char* name);
 
 /* ========================================================================== */
 /* Virtual memory                                                             */
@@ -408,17 +415,16 @@ typedef enum hyle_map_mode {
 /* Opaque mapping handle; destroy unmaps + closes. */
 typedef struct hyle_mapped_file_o hyle_mapped_file_o;
 /* Map [offset,offset+length) of `path` (length==0 => to EOF). Unaligned offsets
- * are supported; the implementation aligns the OS view internally. NULL on
- * failure (see hyle_vm_last_error). */
-HYLE_PLATFORM_C_API hyle_mapped_file_o* hyle_mapped_file_open(const char* path,
-                                                             hyle_map_mode mode,
-                                                             size_t offset,
-                                                             size_t length);
+ * are supported; the implementation aligns the OS view internally. *out is
+ * cleared before work; on success caller owns it and must destroy it. */
+HYLE_PLATFORM_C_API hyle_status hyle_mapped_file_open(
+    hyle_mapped_file_o** out, const char* path, hyle_map_mode mode,
+    size_t offset, size_t length);
 HYLE_PLATFORM_C_API void hyle_mapped_file_destroy(hyle_mapped_file_o* m);
 HYLE_PLATFORM_C_API int hyle_mapped_file_valid(const hyle_mapped_file_o* m);
 HYLE_PLATFORM_C_API void* hyle_mapped_file_data(hyle_mapped_file_o* m);
 HYLE_PLATFORM_C_API size_t hyle_mapped_file_size(const hyle_mapped_file_o* m);
-HYLE_PLATFORM_C_API int hyle_mapped_file_flush(hyle_mapped_file_o* m);
+HYLE_PLATFORM_C_API hyle_status hyle_mapped_file_flush(hyle_mapped_file_o* m);
 
 /* ========================================================================== */
 /* CPU features (1:1 with hyle::platform::CpuFeatures bools, as int 0/1)      */

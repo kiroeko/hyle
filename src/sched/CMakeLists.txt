@@ -51,7 +51,7 @@ hyle_add_module(sched
     c_sched.cc
     ${_fctx_asm}
   DEPS hyle_platform hyle_time
-  PUBLIC_DEPS hyle_mem hyle_container)
+  PUBLIC_DEPS hyle_error hyle_mem hyle_container)
 
 if(MSVC)
   # The MASM files tag their PROCs with BOOST_CONTEXT_EXPORT (undefined in-file).

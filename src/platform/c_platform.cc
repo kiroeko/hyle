@@ -276,90 +276,104 @@ void hyle_this_thread_set_name(const char* name) {
   hyle::platform::this_thread::set_name(name != nullptr ? name : "");
 }
 
-hyle_dynlib_o* hyle_dynlib_open(const char* path) {
-  if (path == nullptr) {
-    hyle::platform::dynlib_set_last_error("hyle_dynlib_open: path is NULL");
-    return nullptr;
+hyle_status hyle_dynlib_open(hyle_dynlib_o** out, const char* path) {
+  if (out == nullptr) {
+    return steal_status(
+        hyle::Status::InvalidArgument("hyle_dynlib_open: out is NULL"));
   }
+  *out = nullptr;
   auto lib = hyle::platform::DynLib::open(path);
-  if (!lib.valid()) return nullptr;
+  if (!lib) return steal_status(std::move(lib).error());
   auto* o = new (std::nothrow) hyle_dynlib_o{};
   if (!o) {
-    hyle::platform::dynlib_set_last_error(
-        "hyle_dynlib_open: wrapper allocation failed (out of memory)");
-    return nullptr;
+    return steal_status(hyle::Status::ResourceExhausted(
+        "hyle_dynlib_open: wrapper allocation failed"));
   }
-  o->lib = std::move(lib);
-  return o;
+  o->lib = std::move(*lib);
+  *out = o;
+  return steal_status(hyle::Status());
 }
 
-hyle_dynlib_o* hyle_dynlib_get(const char* path) {
+hyle_status hyle_dynlib_get(hyle_dynlib_o** out, const char* path) {
+  if (out == nullptr) {
+    return steal_status(
+        hyle::Status::InvalidArgument("hyle_dynlib_get: out is NULL"));
+  }
+  *out = nullptr;
   auto lib = hyle::platform::DynLib::get(path);
-  if (!lib.valid()) return nullptr;
+  if (!lib) return steal_status(std::move(lib).error());
   auto* o = new (std::nothrow) hyle_dynlib_o{};
   if (!o) {
-    hyle::platform::dynlib_set_last_error(
-        "hyle_dynlib_get: wrapper allocation failed (out of memory)");
-    return nullptr;
+    return steal_status(hyle::Status::ResourceExhausted(
+        "hyle_dynlib_get: wrapper allocation failed"));
   }
-  o->lib = std::move(lib);
-  return o;
+  o->lib = std::move(*lib);
+  *out = o;
+  return steal_status(hyle::Status());
 }
 
-hyle_dynlib_o* hyle_dynlib_current(void) {
+hyle_status hyle_dynlib_current(hyle_dynlib_o** out) {
+  if (out == nullptr) {
+    return steal_status(
+        hyle::Status::InvalidArgument("hyle_dynlib_current: out is NULL"));
+  }
+  *out = nullptr;
   auto lib = hyle::platform::DynLib::current();
-  if (!lib.valid()) return nullptr;
+  if (!lib) return steal_status(std::move(lib).error());
   auto* o = new (std::nothrow) hyle_dynlib_o{};
   if (!o) {
-    hyle::platform::dynlib_set_last_error(
-        "hyle_dynlib_current: wrapper allocation failed (out of memory)");
-    return nullptr;
+    return steal_status(hyle::Status::ResourceExhausted(
+        "hyle_dynlib_current: wrapper allocation failed"));
   }
-  o->lib = std::move(lib);
-  return o;
+  o->lib = std::move(*lib);
+  *out = o;
+  return steal_status(hyle::Status());
 }
 
 void hyle_dynlib_close(hyle_dynlib_o* lib) { delete lib; }
 int hyle_dynlib_valid(const hyle_dynlib_o* lib) {
   return lib != nullptr && lib->lib.valid() ? 1 : 0;
 }
-void* hyle_dynlib_symbol(hyle_dynlib_o* lib, const char* name) {
-  if (!lib || !name) {
-    hyle::platform::dynlib_set_last_error(
-        "hyle_dynlib_symbol: library or name is NULL");
-    return nullptr;
+hyle_status hyle_dynlib_symbol(void** out, hyle_dynlib_o* lib,
+                               const char* name) {
+  if (out == nullptr) {
+    return steal_status(
+        hyle::Status::InvalidArgument("hyle_dynlib_symbol: out is NULL"));
   }
-  return lib->lib.symbol(name);
-}
-const char* hyle_dynlib_last_error(void) {
-  return hyle::platform::dynlib_last_error();
+  *out = nullptr;
+  if (lib == nullptr) {
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_dynlib_symbol: library is NULL"));
+  }
+  auto symbol = lib->lib.symbol(name);
+  if (!symbol) return steal_status(std::move(symbol).error());
+  *out = *symbol;
+  return steal_status(hyle::Status());
 }
 const char* hyle_dynlib_extension(void) {
   return hyle::platform::dynlib_extension();
 }
 
-int hyle_dynlib_open_symbol(const char* path, const char* name,
-                            hyle_dynlib_o** out_lib, void** out_sym) {
+hyle_status hyle_dynlib_open_symbol(hyle_dynlib_o** out_lib, void** out_sym,
+                                    const char* path, const char* name) {
   if (out_lib) *out_lib = nullptr;
   if (out_sym) *out_sym = nullptr;
   if (!path || !name || !out_lib || !out_sym) {
-    hyle::platform::dynlib_set_last_error(
-        "hyle_dynlib_open_symbol: invalid argument");
-    return 0;
+    return steal_status(
+        hyle::Status::InvalidArgument("hyle_dynlib_open_symbol: invalid argument"));
   }
-  hyle_dynlib_o* lib = hyle_dynlib_open(path);
-  if (!hyle_dynlib_valid(lib)) {
+  hyle_dynlib_o* lib = nullptr;
+  hyle_status status = hyle_dynlib_open(&lib, path);
+  if (!hyle_status_is_ok(status)) return status;
+  void* sym = nullptr;
+  status = hyle_dynlib_symbol(&sym, lib, name);
+  if (!hyle_status_is_ok(status)) {
     hyle_dynlib_close(lib);
-    return 0;
-  }
-  void* sym = hyle_dynlib_symbol(lib, name);
-  if (sym == nullptr) {
-    hyle_dynlib_close(lib);
-    return 0;
+    return status;
   }
   *out_lib = lib;
   *out_sym = sym;
-  return 1;
+  return status;
 }
 
 size_t hyle_page_size(void) { return hyle::platform::page_size(); }
@@ -870,26 +884,25 @@ int hyle_fs_unset_env_var(const char* name) {
                    "hyle_fs_unset_env_var failed");
 }
 
-hyle_mapped_file_o* hyle_mapped_file_open(const char* path, hyle_map_mode mode,
-                                          size_t offset, size_t length) {
-  if (!path || (mode != HYLE_MAP_READ_ONLY &&
-                mode != HYLE_MAP_READ_WRITE &&
-                mode != HYLE_MAP_COPY_ON_WRITE)) {
-    hyle::platform::vm_set_last_error(
-        "hyle_mapped_file_open: null path or invalid mode");
-    return nullptr;
+hyle_status hyle_mapped_file_open(hyle_mapped_file_o** out, const char* path,
+                                  hyle_map_mode mode, size_t offset,
+                                  size_t length) {
+  if (out == nullptr) {
+    return steal_status(
+        hyle::Status::InvalidArgument("hyle_mapped_file_open: out is NULL"));
   }
+  *out = nullptr;
   auto m = hyle::platform::MappedFile::open(
       path, static_cast<hyle::platform::MappedFile::Mode>(mode), offset, length);
-  if (!m.valid()) return nullptr;
+  if (!m) return steal_status(std::move(m).error());
   auto* o = new (std::nothrow) hyle_mapped_file_o{};
   if (!o) {
-    hyle::platform::vm_set_last_error(
-        "hyle_mapped_file_open: wrapper allocation failed (out of memory)");
-    return nullptr;
+    return steal_status(hyle::Status::ResourceExhausted(
+        "hyle_mapped_file_open: wrapper allocation failed"));
   }
-  o->mf = std::move(m);
-  return o;
+  o->mf = std::move(*m);
+  *out = o;
+  return steal_status(hyle::Status());
 }
 void hyle_mapped_file_destroy(hyle_mapped_file_o* m) { delete m; }
 int hyle_mapped_file_valid(const hyle_mapped_file_o* m) {
@@ -901,8 +914,12 @@ void* hyle_mapped_file_data(hyle_mapped_file_o* m) {
 size_t hyle_mapped_file_size(const hyle_mapped_file_o* m) {
   return m ? m->mf.size() : 0;
 }
-int hyle_mapped_file_flush(hyle_mapped_file_o* m) {
-  return m && m->mf.flush() ? 1 : 0;
+hyle_status hyle_mapped_file_flush(hyle_mapped_file_o* m) {
+  if (m == nullptr) {
+    return steal_status(
+        hyle::Status::InvalidArgument("hyle_mapped_file_flush: mapping is NULL"));
+  }
+  return steal_status(m->mf.flush());
 }
 
 }  // extern "C"

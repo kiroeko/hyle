@@ -34,6 +34,19 @@
 | **park_timeout 快路径** | 9.2 ns | 10.6 ns | 1.95 ns | ➖ 与 park 快路径同档 |
 | **park_timeout(0) 轮询** | ~3740 ns | **~59k ns** | **3.7 ns** | ⚠️ **极端平台差**：Mac 近免费；Win µs；Linux ~60µs |
 
+### 2026-07-23 `Result<MappedFile>` 成功路径复证
+
+DynLib/MappedFile 错误接口迁入共享 `Status` 后，benchmark 已改为用户实际写法：
+`auto mapped = MappedFile::open(...); if (mapped) mapped->data()`。Windows MSVC 19.50
+n=5 得到 HYLE **43.37 µs**、raw mapping **41.82 µs**、ifstream **58.50 µs**；
+配对中位比分别 **0.955x** 与 **1.327x**。它与上表旧 n=15 的
+43.7/42.0/62.3 µs 落在同一统计带，未观察到 `Result` 成功态附加税，因此不改三平台
+总判定。n=5 的符号检验最低 p=0.0625，本次只作“未回退”复证，不升级为新胜负证书。
+
+WSL GCC 14 同形状 n=5 因完整 platform suite 在当前环境超过 10 分钟执行上限，未形成
+可回收统计输出；旧 Linux n=5 数字继续保留但不冒充本轮重测。Linux 正确性与 UBSan
+已通过，性能仍待在低噪声会话复跑；macOS 当前提交同样待远程复证。
+
 ## 非 SOTA / 需诚实标价
 
 ### 1. `vm_reserve`+`vm_commit` 输 raw 一步分配（真，非噪声）

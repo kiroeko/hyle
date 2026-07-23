@@ -1,11 +1,13 @@
 #include "hyle/platform/mapped_file.h"
 
+#include <cerrno>
+#include <cstdio>
 #include <cstdint>
+#include <cstring>
 #include <new>
 #include <utility>
 
 #include "hyle/platform.h"
-#include "hyle/platform/virtual_memory.h"  // vm_set_last_error (shared error channel)
 
 #if defined(HYLE_OS_WINDOWS)
 #  define WIN32_LEAN_AND_MEAN
@@ -23,12 +25,50 @@ namespace hyle::platform {
 
 // ---- Windows ----------------------------------------------------------------
 namespace {
+const char* win32_mapping_error_name(DWORD code) noexcept {
+  switch (code) {
+    case ERROR_FILE_NOT_FOUND: return "ERROR_FILE_NOT_FOUND";
+    case ERROR_PATH_NOT_FOUND: return "ERROR_PATH_NOT_FOUND";
+    case ERROR_ACCESS_DENIED: return "ERROR_ACCESS_DENIED";
+    case ERROR_NOT_ENOUGH_MEMORY: return "ERROR_NOT_ENOUGH_MEMORY";
+    case ERROR_OUTOFMEMORY: return "ERROR_OUTOFMEMORY";
+    case ERROR_INVALID_PARAMETER: return "ERROR_INVALID_PARAMETER";
+    default: return "WIN32_MAPPING_ERROR";
+  }
+}
+
+Status win32_mapping_error(const char* operation, DWORD code) noexcept {
+  char description[192]{};
+  DWORD length = ::FormatMessageA(
+      FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, code,
+      0, description, static_cast<DWORD>(sizeof(description)), nullptr);
+  while (length != 0 &&
+         (description[length - 1] == '\r' || description[length - 1] == '\n')) {
+    description[--length] = '\0';
+  }
+  char message[320];
+  std::snprintf(message, sizeof(message),
+                "windows %s failed: %s (%lu)%s%s", operation,
+                win32_mapping_error_name(code), static_cast<unsigned long>(code),
+                length == 0 ? "" : ": ", length == 0 ? "" : description);
+  if (code == ERROR_FILE_NOT_FOUND || code == ERROR_PATH_NOT_FOUND) {
+    return Status::NotFound(message);
+  }
+  if (code == ERROR_ACCESS_DENIED) return Status::PermissionDenied(message);
+  if (code == ERROR_NOT_ENOUGH_MEMORY || code == ERROR_OUTOFMEMORY) {
+    return Status::ResourceExhausted(message);
+  }
+  if (code == ERROR_INVALID_PARAMETER) return Status::InvalidArgument(message);
+  return Status::Unavailable(message);
+}
+
 // UTF-8 -> UTF-16 for CreateFileW. Dynamically sized so conversion itself does
 // not impose an artificial path limit. nullptr on invalid UTF-8 / OOM.
 struct WBuf {
   wchar_t stack[512];
   wchar_t* ptr = nullptr;
   wchar_t* heap = nullptr;
+  bool out_of_memory = false;
   explicit WBuf(const char* utf8) noexcept {
     if (utf8 == nullptr) return;
     const int need = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, utf8,
@@ -38,6 +78,7 @@ struct WBuf {
     if (need > static_cast<int>(sizeof(stack) / sizeof(stack[0]))) {
       heap = new (std::nothrow) wchar_t[static_cast<std::size_t>(need)];
       ptr = heap;
+      out_of_memory = ptr == nullptr;
     }
     if (ptr == nullptr ||
         MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, utf8, -1, ptr,
@@ -52,18 +93,27 @@ struct WBuf {
 };
 }  // namespace
 
-MappedFile MappedFile::open(const char* path, Mode mode, std::size_t offset,
-                            std::size_t length) noexcept {
-  vm_set_last_error(nullptr);
+Result<MappedFile> MappedFile::open(const char* path, Mode mode,
+                                    std::size_t offset,
+                                    std::size_t length) noexcept {
   MappedFile m;
-  if (path == nullptr) {
-    vm_set_last_error("MappedFile::open: null path");
-    return m;
+  if (path == nullptr || path[0] == '\0') {
+    return std::unexpected(
+        Status::InvalidArgument("mapped file open: empty path"));
+  }
+  if (mode != Mode::kReadOnly && mode != Mode::kReadWrite &&
+      mode != Mode::kCopyOnWrite) {
+    return std::unexpected(
+        Status::InvalidArgument("mapped file open: invalid mode"));
   }
   WBuf w(path);
   if (!w.ptr) {
-    vm_set_last_error("MappedFile::open: path conversion failed");
-    return m;
+    return std::unexpected(
+        w.out_of_memory
+            ? Status::ResourceExhausted(
+                  "mapped file open: path conversion allocation failed")
+            : Status::InvalidArgument(
+                  "mapped file open: path is not valid UTF-8"));
   }
 
   const DWORD access = (mode == Mode::kReadWrite)
@@ -73,21 +123,21 @@ MappedFile MappedFile::open(const char* path, Mode mode, std::size_t offset,
                               nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL,
                               nullptr);
   if (file == INVALID_HANDLE_VALUE) {
-    vm_set_last_error("MappedFile::open: CreateFile failed");
-    return m;
+    return std::unexpected(
+        win32_mapping_error("CreateFileW", ::GetLastError()));
   }
 
   LARGE_INTEGER fsize;
   if (!::GetFileSizeEx(file, &fsize)) {
+    const DWORD code = ::GetLastError();
     ::CloseHandle(file);
-    vm_set_last_error("MappedFile::open: GetFileSizeEx failed");
-    return m;
+    return std::unexpected(win32_mapping_error("GetFileSizeEx", code));
   }
   const std::uint64_t file_size = static_cast<std::uint64_t>(fsize.QuadPart);
   if (offset > file_size) {
     ::CloseHandle(file);
-    vm_set_last_error("MappedFile::open: offset past end of file");
-    return m;
+    return std::unexpected(
+        Status::OutOfRange("mapped file open: offset is past end of file"));
   }
   // An explicit length must stay within the file: mapping past EOF would let a
   // read-write mapping SILENTLY GROW the file on disk here (CreateFileMapping
@@ -95,8 +145,8 @@ MappedFile MappedFile::open(const char* path, Mode mode, std::size_t offset,
   // Reject it so both platforms agree and there is no surprise file growth.
   if (length != 0 && length > file_size - offset) {
     ::CloseHandle(file);
-    vm_set_last_error("MappedFile::open: offset+length past end of file");
-    return m;
+    return std::unexpected(Status::OutOfRange(
+        "mapped file open: requested range extends past end of file"));
   }
   std::size_t map_len = length != 0 ? length
                                     : static_cast<std::size_t>(file_size - offset);
@@ -104,8 +154,8 @@ MappedFile MappedFile::open(const char* path, Mode mode, std::size_t offset,
     // Empty file: a zero-length view is not creatable; report a valid-but-empty
     // mapping as failure (callers checking valid() get a clear signal).
     ::CloseHandle(file);
-    vm_set_last_error("MappedFile::open: zero-length mapping");
-    return m;
+    return std::unexpected(
+        Status::FailedPrecondition("mapped file open: mapping is empty"));
   }
 
   const DWORD prot = (mode == Mode::kReadWrite)      ? PAGE_READWRITE
@@ -117,9 +167,9 @@ MappedFile MappedFile::open(const char* path, Mode mode, std::size_t offset,
       file, nullptr, prot, static_cast<DWORD>(max_size >> 32),
       static_cast<DWORD>(max_size & 0xFFFFFFFFu), nullptr);
   if (mapping == nullptr) {
+    const DWORD code = ::GetLastError();
     ::CloseHandle(file);
-    vm_set_last_error("MappedFile::open: CreateFileMapping failed");
-    return m;
+    return std::unexpected(win32_mapping_error("CreateFileMappingW", code));
   }
 
   const DWORD view = (mode == Mode::kReadWrite)     ? FILE_MAP_WRITE
@@ -138,10 +188,10 @@ MappedFile MappedFile::open(const char* path, Mode mode, std::size_t offset,
                                static_cast<DWORD>(aligned_off & 0xFFFFFFFFu),
                                map_len + delta);
   if (base == nullptr) {
+    const DWORD code = ::GetLastError();
     ::CloseHandle(mapping);
     ::CloseHandle(file);
-    vm_set_last_error("MappedFile::open: MapViewOfFile failed");
-    return m;
+    return std::unexpected(win32_mapping_error("MapViewOfFile", code));
   }
 
   m.addr_ = static_cast<char*>(base) + delta;
@@ -154,17 +204,18 @@ MappedFile MappedFile::open(const char* path, Mode mode, std::size_t offset,
   return m;
 }
 
-bool MappedFile::flush() noexcept {
-  if (!valid() || mode_ != Mode::kReadWrite) return true;
+Status MappedFile::flush() noexcept {
+  if (!valid()) {
+    return Status::FailedPrecondition("mapped file flush: mapping is not open");
+  }
+  if (mode_ != Mode::kReadWrite) return Status();
   if (::FlushViewOfFile(addr_, size_) == 0) {
-    vm_set_last_error("MappedFile::flush: FlushViewOfFile failed");
-    return false;
+    return win32_mapping_error("FlushViewOfFile", ::GetLastError());
   }
   if (::FlushFileBuffers(reinterpret_cast<HANDLE>(h0_)) == 0) {
-    vm_set_last_error("MappedFile::flush: FlushFileBuffers failed");
-    return false;
+    return win32_mapping_error("FlushFileBuffers", ::GetLastError());
   }
-  return true;
+  return Status();
 }
 
 void MappedFile::reset() noexcept {
@@ -182,47 +233,96 @@ void MappedFile::reset() noexcept {
 #else
 
 // ---- POSIX ------------------------------------------------------------------
+namespace {
 
-MappedFile MappedFile::open(const char* path, Mode mode, std::size_t offset,
-                            std::size_t length) noexcept {
-  vm_set_last_error(nullptr);
+const char* posix_mapping_error_name(int code) noexcept {
+  switch (code) {
+    case ENOENT: return "ENOENT";
+    case EACCES: return "EACCES";
+    case EPERM: return "EPERM";
+    case ENOMEM: return "ENOMEM";
+    case EMFILE: return "EMFILE";
+    case ENFILE: return "ENFILE";
+    case EINVAL: return "EINVAL";
+    case EOVERFLOW: return "EOVERFLOW";
+    default: return "ERRNO_UNKNOWN";
+  }
+}
+
+[[maybe_unused]] const char* strerror_text(int result, char* buffer) noexcept {
+  return result == 0 ? buffer : nullptr;
+}
+
+[[maybe_unused]] const char* strerror_text(char* result, char*) noexcept {
+  return result;
+}
+
+Status posix_mapping_error(const char* operation, int code) noexcept {
+  char description[192]{};
+  const char* detail = strerror_text(
+      ::strerror_r(code, description, sizeof(description)), description);
+  char message[320];
+  std::snprintf(message, sizeof(message), "posix %s failed: %s (%d)%s%s",
+                operation, posix_mapping_error_name(code), code,
+                detail == nullptr || detail[0] == '\0' ? "" : ": ",
+                detail == nullptr ? "" : detail);
+  if (code == ENOENT) return Status::NotFound(message);
+  if (code == EACCES || code == EPERM) return Status::PermissionDenied(message);
+  if (code == ENOMEM || code == EMFILE || code == ENFILE) {
+    return Status::ResourceExhausted(message);
+  }
+  if (code == EINVAL || code == EOVERFLOW) {
+    return Status::InvalidArgument(message);
+  }
+  return Status::Unavailable(message);
+}
+
+}  // namespace
+
+Result<MappedFile> MappedFile::open(const char* path, Mode mode,
+                                    std::size_t offset,
+                                    std::size_t length) noexcept {
   MappedFile m;
-  if (path == nullptr) {
-    vm_set_last_error("MappedFile::open: null path");
-    return m;
+  if (path == nullptr || path[0] == '\0') {
+    return std::unexpected(
+        Status::InvalidArgument("mapped file open: empty path"));
+  }
+  if (mode != Mode::kReadOnly && mode != Mode::kReadWrite &&
+      mode != Mode::kCopyOnWrite) {
+    return std::unexpected(
+        Status::InvalidArgument("mapped file open: invalid mode"));
   }
   // kReadWrite needs write access; RO/COW only read.
   const int oflags = (mode == Mode::kReadWrite) ? O_RDWR : O_RDONLY;
   int fd = ::open(path, oflags | O_CLOEXEC);
   if (fd < 0) {
-    vm_set_last_error("MappedFile::open: open failed");
-    return m;
+    return std::unexpected(posix_mapping_error("open", errno));
   }
   struct ::stat st;
   if (::fstat(fd, &st) != 0) {
+    const int code = errno;
     ::close(fd);
-    vm_set_last_error("MappedFile::open: fstat failed");
-    return m;
+    return std::unexpected(posix_mapping_error("fstat", code));
   }
   const std::uint64_t file_size = static_cast<std::uint64_t>(st.st_size);
   if (offset > file_size) {
     ::close(fd);
-    vm_set_last_error("MappedFile::open: offset past end of file");
-    return m;
+    return std::unexpected(
+        Status::OutOfRange("mapped file open: offset is past end of file"));
   }
   // Reject an explicit length past EOF: accessing the past-EOF region SIGBUSes
   // on POSIX (and would silently grow the file on Windows) -- keep both agreeing.
   if (length != 0 && length > file_size - offset) {
     ::close(fd);
-    vm_set_last_error("MappedFile::open: offset+length past end of file");
-    return m;
+    return std::unexpected(Status::OutOfRange(
+        "mapped file open: requested range extends past end of file"));
   }
   std::size_t map_len = length != 0 ? length
                                     : static_cast<std::size_t>(file_size - offset);
   if (map_len == 0) {
     ::close(fd);
-    vm_set_last_error("MappedFile::open: zero-length mapping");
-    return m;
+    return std::unexpected(
+        Status::FailedPrecondition("mapped file open: mapping is empty"));
   }
 
   const int prot = (mode == Mode::kReadOnly) ? PROT_READ
@@ -235,11 +335,11 @@ MappedFile MappedFile::open(const char* path, Mode mode, std::size_t offset,
   const std::size_t delta = static_cast<std::size_t>(offset - aligned_off);
   void* base = ::mmap(nullptr, map_len + delta, prot, flags, fd,
                       static_cast<off_t>(aligned_off));
+  const int mmap_error = base == MAP_FAILED ? errno : 0;
   // The fd can be closed right after mmap: the mapping keeps its own reference.
   ::close(fd);
   if (base == MAP_FAILED) {
-    vm_set_last_error("MappedFile::open: mmap failed");
-    return m;
+    return std::unexpected(posix_mapping_error("mmap", mmap_error));
   }
 
   m.addr_ = static_cast<char*>(base) + delta;
@@ -250,14 +350,16 @@ MappedFile MappedFile::open(const char* path, Mode mode, std::size_t offset,
   return m;
 }
 
-bool MappedFile::flush() noexcept {
-  if (!valid() || mode_ != Mode::kReadWrite) return true;
+Status MappedFile::flush() noexcept {
+  if (!valid()) {
+    return Status::FailedPrecondition("mapped file flush: mapping is not open");
+  }
+  if (mode_ != Mode::kReadWrite) return Status();
   // msync needs a page-aligned address -> sync the whole underlying mapping.
   if (::msync(map_base_, map_len_, MS_SYNC) != 0) {
-    vm_set_last_error("MappedFile::flush: msync failed");
-    return false;
+    return posix_mapping_error("msync", errno);
   }
-  return true;
+  return Status();
 }
 
 void MappedFile::reset() noexcept {

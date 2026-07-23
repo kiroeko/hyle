@@ -221,25 +221,50 @@ int main(void) {
   const char* sys_sym = "cos";
   const char* ext = "so";
 #endif
-  hyle_dynlib_o* lib = hyle_dynlib_get(sys_lib);
+  hyle_dynlib_o* lib = NULL;
+  hyle_status dynlib_status = hyle_dynlib_get(&lib, sys_lib);
+  CHECK(hyle_status_is_ok(dynlib_status));
+  hyle_status_free(&dynlib_status);
   CHECK(hyle_dynlib_valid(lib));
-  CHECK(hyle_dynlib_symbol(lib, sys_sym) != NULL);
+  {
+    void* symbol = NULL;
+    dynlib_status = hyle_dynlib_symbol(&symbol, lib, sys_sym);
+    CHECK(hyle_status_is_ok(dynlib_status));
+    CHECK(symbol != NULL);
+    hyle_status_free(&dynlib_status);
+  }
   hyle_dynlib_close(lib);
   {
-    hyle_dynlib_o* current = hyle_dynlib_current();
+    hyle_dynlib_o* current = NULL;
+    dynlib_status = hyle_dynlib_current(&current);
+    CHECK(hyle_status_is_ok(dynlib_status));
+    hyle_status_free(&dynlib_status);
     CHECK(hyle_dynlib_valid(current));
     hyle_dynlib_close(current);
-    CHECK(hyle_dynlib_last_error() != NULL);
   }
   CHECK(strcmp(hyle_dynlib_extension(), ext) == 0);
+
+  dynlib_status = hyle_dynlib_open(NULL, sys_lib);
+  CHECK(hyle_status_is_invalid_argument(dynlib_status));
+  hyle_status_free(&dynlib_status);
+  {
+    void* cleared = (void*)(uintptr_t)1;
+    dynlib_status = hyle_dynlib_symbol(&cleared, NULL, sys_sym);
+    CHECK(hyle_status_is_invalid_argument(dynlib_status));
+    CHECK(cleared == NULL);
+    hyle_status_free(&dynlib_status);
+  }
 
   /* open_symbol on already-loadable system lib path may fail if path needs
    * absolute form; exercise API shape via get+symbol path above. Missing path: */
   {
     hyle_dynlib_o* miss = NULL;
     void* miss_sym = NULL;
-    CHECK(hyle_dynlib_open_symbol("hyle_no_such_plugin_xyz.so", "entry", &miss,
-                                 &miss_sym) == 0);
+    dynlib_status = hyle_dynlib_open_symbol(
+        &miss, &miss_sym, "hyle_no_such_plugin_xyz.so", "entry");
+    CHECK(!hyle_status_is_ok(dynlib_status));
+    CHECK(hyle_status_is_not_found(dynlib_status));
+    hyle_status_free(&dynlib_status);
     CHECK(miss == NULL);
     CHECK(miss_sym == NULL);
   }
@@ -548,11 +573,26 @@ int main(void) {
       CHECK((unsigned)typed_perms == HYLE_PERM_OWNER_READ);
     }
 
-    /* mapped file: an empty temp file yields a NULL (zero-length) mapping -- fine;
-     * exercise open + destroy-null here. A non-empty map is covered by the C++ test. */
-    hyle_mapped_file_o* m = hyle_mapped_file_open(tpath, HYLE_MAP_READ_ONLY, 0, 0);
+    /* mapped file: tpath contains the payload written above; exercise the
+     * Status-returning open plus invalid-mode failure. */
+    hyle_mapped_file_o* m = NULL;
+    hyle_status map_status = hyle_mapped_file_open(
+        &m, tpath, HYLE_MAP_READ_ONLY, 0, 0);
+    CHECK(hyle_status_is_ok(map_status));
+    CHECK(m != NULL);
+    hyle_status_free(&map_status);
     hyle_mapped_file_destroy(m);
-    CHECK(hyle_mapped_file_open(tpath, (hyle_map_mode)99, 0, 0) == NULL);
+    map_status = hyle_mapped_file_open(&m, tpath, (hyle_map_mode)99, 0, 0);
+    CHECK(!hyle_status_is_ok(map_status));
+    CHECK(hyle_status_is_invalid_argument(map_status));
+    CHECK(m == NULL);
+    hyle_status_free(&map_status);
+    map_status = hyle_mapped_file_open(NULL, tpath, HYLE_MAP_READ_ONLY, 0, 0);
+    CHECK(hyle_status_is_invalid_argument(map_status));
+    hyle_status_free(&map_status);
+    map_status = hyle_mapped_file_flush(NULL);
+    CHECK(hyle_status_is_invalid_argument(map_status));
+    hyle_status_free(&map_status);
 
     /* hard link: a second name for the same file (same volume). */
     char hpath[1040];
@@ -583,7 +623,11 @@ int main(void) {
       CHECK(fwrite(seed, 1, seed_len, sf) == seed_len);
       fclose(sf);
 
-      hyle_mapped_file_o* m = hyle_mapped_file_open(mpath, HYLE_MAP_READ_WRITE, 0, 0);
+      hyle_mapped_file_o* m = NULL;
+      hyle_status map_status = hyle_mapped_file_open(
+          &m, mpath, HYLE_MAP_READ_WRITE, 0, 0);
+      CHECK(hyle_status_is_ok(map_status));
+      hyle_status_free(&map_status);
       CHECK(m != NULL);
       CHECK(hyle_mapped_file_valid(m) == 1);
       CHECK(hyle_mapped_file_size(m) == seed_len);
@@ -592,12 +636,18 @@ int main(void) {
       if (d != NULL) {
         CHECK(memcmp(d, seed, seed_len) == 0);
         d[0] = (unsigned char)'Z';             /* dirty the first byte */
-        CHECK(hyle_mapped_file_flush(m) == 1);  /* RW flush persists to file */
+        map_status = hyle_mapped_file_flush(m);
+        CHECK(hyle_status_is_ok(map_status)); /* RW flush persists to file */
+        hyle_status_free(&map_status);
       }
       hyle_mapped_file_destroy(m);
 
       /* re-open read-only: the flushed write must be visible on disk. */
-      hyle_mapped_file_o* m2 = hyle_mapped_file_open(mpath, HYLE_MAP_READ_ONLY, 0, 0);
+      hyle_mapped_file_o* m2 = NULL;
+      map_status = hyle_mapped_file_open(
+          &m2, mpath, HYLE_MAP_READ_ONLY, 0, 0);
+      CHECK(hyle_status_is_ok(map_status));
+      hyle_status_free(&map_status);
       CHECK(m2 != NULL);
       CHECK(hyle_mapped_file_valid(m2) == 1);
       if (hyle_mapped_file_valid(m2)) {

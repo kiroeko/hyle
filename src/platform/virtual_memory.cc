@@ -26,7 +26,8 @@
 namespace hyle::platform {
 namespace {
 
-// Thread-local error buffer (same contract as dynlib_last_error).
+// Thread-local VM error buffer. This remains only until the VM/NUMA phase of
+// platform error convergence; DynLib already returns Status directly.
 thread_local char g_error[256] = {0};
 
 void set_error(const char* msg) noexcept {

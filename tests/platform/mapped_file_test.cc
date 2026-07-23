@@ -11,6 +11,7 @@
 #include <cstdlib>  // std::abort in the death test
 #include <cstring>
 #include <string>
+#include <string_view>
 
 #include "hyle/platform/fs.h"
 #include "hyle/platform/virtual_memory.h"  // page_size()
@@ -51,6 +52,14 @@ class MapTest : public ::testing::Test {
     std::fclose(f);
     return out;
   }
+
+  MappedFile open_map(MappedFile::Mode mode = MappedFile::Mode::kReadOnly,
+                      std::size_t offset = 0, std::size_t length = 0) {
+    auto result = MappedFile::open(path.c_str(), mode, offset, length);
+    EXPECT_TRUE(result.has_value())
+        << (result ? "" : result.error().message());
+    return result ? *std::move(result) : MappedFile{};
+  }
 };
 
 }  // namespace
@@ -59,7 +68,7 @@ TEST_F(MapTest, ReadOnlyMapsContent) {
   const char* msg = "hello mapped world";
   write_file(msg, std::strlen(msg));
 
-  MappedFile m = MappedFile::open(path.c_str(), MappedFile::Mode::kReadOnly);
+  MappedFile m = open_map();
   ASSERT_TRUE(m.valid());
   EXPECT_EQ(m.size(), std::strlen(msg));
   EXPECT_EQ(std::memcmp(m.data(), msg, std::strlen(msg)), 0);
@@ -70,12 +79,12 @@ TEST_F(MapTest, ReadWriteFlushPersists) {
   write_file(init.data(), init.size());
 
   {
-    MappedFile m = MappedFile::open(path.c_str(), MappedFile::Mode::kReadWrite);
+    MappedFile m = open_map(MappedFile::Mode::kReadWrite);
     ASSERT_TRUE(m.valid());
     ASSERT_EQ(m.size(), 64u);
     static_cast<char*>(m.data())[0] = 'Z';
     static_cast<char*>(m.data())[63] = 'Y';
-    EXPECT_TRUE(m.flush());
+    EXPECT_TRUE(m.flush().ok());
   }  // unmap
 
   std::string after = read_file();
@@ -89,11 +98,11 @@ TEST_F(MapTest, CopyOnWriteDoesNotTouchFile) {
   write_file(init.data(), init.size());
 
   {
-    MappedFile m = MappedFile::open(path.c_str(), MappedFile::Mode::kCopyOnWrite);
+    MappedFile m = open_map(MappedFile::Mode::kCopyOnWrite);
     ASSERT_TRUE(m.valid());
     static_cast<char*>(m.data())[0] = 'X';       // private write
     EXPECT_EQ(static_cast<char*>(m.data())[0], 'X');  // visible in-process
-    EXPECT_TRUE(m.flush());                       // no-op for COW
+    EXPECT_TRUE(m.flush().ok());                  // no-op for COW
   }
 
   // File on disk is UNCHANGED (private pages never written back).
@@ -108,7 +117,7 @@ TEST_F(MapTest, LargeFileMultiPage) {
   for (std::size_t i = 0; i < n; ++i) init[i] = static_cast<char>(i & 0x7F);
   write_file(init.data(), n);
 
-  MappedFile m = MappedFile::open(path.c_str(), MappedFile::Mode::kReadOnly);
+  MappedFile m = open_map();
   ASSERT_TRUE(m.valid());
   ASSERT_EQ(m.size(), n);
   EXPECT_EQ(std::memcmp(m.data(), init.data(), n), 0);
@@ -121,7 +130,7 @@ TEST_F(MapTest, OffsetMapping) {
   write_file(init.data(), init.size());
 
   // Map starting at page 1 (page-aligned offset), to end.
-  MappedFile m = MappedFile::open(path.c_str(), MappedFile::Mode::kReadOnly, pg, 0);
+  MappedFile m = open_map(MappedFile::Mode::kReadOnly, pg, 0);
   ASSERT_TRUE(m.valid());
   EXPECT_EQ(m.size(), pg);
   EXPECT_EQ(static_cast<char*>(m.data())[0], 'M');
@@ -139,7 +148,7 @@ TEST_F(MapTest, UnalignedOffsetToEnd) {
   write_file(init.data(), n);
 
   const std::size_t off = 100;  // deliberately unaligned (not a page/granularity)
-  MappedFile m = MappedFile::open(path.c_str(), MappedFile::Mode::kReadOnly, off, 0);
+  MappedFile m = open_map(MappedFile::Mode::kReadOnly, off, 0);
   ASSERT_TRUE(m.valid()) << "unaligned offset must map (rounded internally)";
   EXPECT_EQ(m.size(), n - off);  // length 0 => exactly [off, EOF)
   auto* p = static_cast<const unsigned char*>(m.data());
@@ -161,16 +170,45 @@ TEST_F(MapTest, UnalignedOffsetExplicitLength) {
 
   const std::size_t off = pg + 50;  // unaligned, and past the first page
   const std::size_t len = 200;      // within EOF (pg+250 < 2*pg)
-  MappedFile m = MappedFile::open(path.c_str(), MappedFile::Mode::kReadOnly, off, len);
+  MappedFile m = open_map(MappedFile::Mode::kReadOnly, off, len);
   ASSERT_TRUE(m.valid());
   EXPECT_EQ(m.size(), len);
   EXPECT_EQ(std::memcmp(m.data(), init.data() + off, len), 0);
 }
 
 TEST_F(MapTest, InvalidPathIsInvalid) {
-  MappedFile m = MappedFile::open((path + "_nope").c_str());
-  EXPECT_FALSE(m.valid());
-  EXPECT_EQ(m.data(), nullptr);
+  auto m = MappedFile::open((path + "_nope").c_str());
+  ASSERT_FALSE(m.has_value());
+  EXPECT_TRUE(m.error().IsNotFound());
+#if defined(_WIN32)
+  EXPECT_NE(m.error().message().find("CreateFileW"), std::string_view::npos);
+  EXPECT_NE(m.error().message().find("ERROR_FILE_NOT_FOUND"),
+            std::string_view::npos);
+#else
+  EXPECT_NE(m.error().message().find("open"), std::string_view::npos);
+  EXPECT_NE(m.error().message().find("ENOENT"), std::string_view::npos);
+#endif
+}
+
+TEST_F(MapTest, InvalidArgumentsAndEmptyMappingReturnStatus) {
+  auto empty_path = MappedFile::open("");
+  auto null_path = MappedFile::open(nullptr);
+  auto invalid_mode = MappedFile::open(
+      path.c_str(), static_cast<MappedFile::Mode>(255));
+  ASSERT_FALSE(empty_path.has_value());
+  ASSERT_FALSE(null_path.has_value());
+  ASSERT_FALSE(invalid_mode.has_value());
+  EXPECT_TRUE(empty_path.error().IsInvalidArgument());
+  EXPECT_TRUE(null_path.error().IsInvalidArgument());
+  EXPECT_TRUE(invalid_mode.error().IsInvalidArgument());
+
+  write_file("", 0);
+  auto empty_file = MappedFile::open(path.c_str());
+  ASSERT_FALSE(empty_file.has_value());
+  EXPECT_TRUE(empty_file.error().IsFailedPrecondition());
+
+  MappedFile unopened;
+  EXPECT_TRUE(unopened.flush().IsFailedPrecondition());
 }
 
 TEST_F(MapTest, LengthPastEofRejected) {
@@ -178,21 +216,23 @@ TEST_F(MapTest, LengthPastEofRejected) {
   write_file(init.data(), init.size());
   // An explicit length beyond the file must be refused (no silent file growth
   // on RW, no past-EOF SIGBUS region). File is 64 bytes; ask for 4096.
-  MappedFile rw = MappedFile::open(path.c_str(), MappedFile::Mode::kReadWrite, 0,
-                                   4096);
-  EXPECT_FALSE(rw.valid());
+  auto rw = MappedFile::open(path.c_str(), MappedFile::Mode::kReadWrite, 0,
+                             4096);
+  ASSERT_FALSE(rw.has_value());
+  EXPECT_TRUE(rw.error().IsOutOfRange());
   // The file must NOT have been grown by the rejected request.
   EXPECT_EQ(read_file().size(), 64u);
   // offset past EOF is likewise rejected.
-  MappedFile ro = MappedFile::open(path.c_str(), MappedFile::Mode::kReadOnly, 4096, 0);
-  EXPECT_FALSE(ro.valid());
+  auto ro = MappedFile::open(path.c_str(), MappedFile::Mode::kReadOnly, 4096, 0);
+  ASSERT_FALSE(ro.has_value());
+  EXPECT_TRUE(ro.error().IsOutOfRange());
 }
 
 TEST_F(MapTest, MoveTransfersMapping) {
   const char* msg = "movable";
   write_file(msg, std::strlen(msg));
 
-  MappedFile a = MappedFile::open(path.c_str());
+  MappedFile a = open_map();
   ASSERT_TRUE(a.valid());
   void* addr = a.data();
   MappedFile b = std::move(a);
@@ -219,8 +259,10 @@ TEST_F(MapTest, MoveAssignReleasesPrevious) {
     std::fclose(f);
   }
 
-  MappedFile src = MappedFile::open(path.c_str());
-  MappedFile dst = MappedFile::open(dst_path.c_str());
+  MappedFile src = open_map();
+  auto dst_result = MappedFile::open(dst_path.c_str());
+  ASSERT_TRUE(dst_result.has_value());
+  MappedFile dst = *std::move(dst_result);
   ASSERT_TRUE(src.valid());
   ASSERT_TRUE(dst.valid());
   void* src_addr = src.data();
@@ -254,8 +296,9 @@ TEST(MapDeathTest, ReadOnlyWriteFaults) {
   }
   EXPECT_DEATH(
       {
-        MappedFile m = MappedFile::open(p.c_str(), MappedFile::Mode::kReadOnly);
-        if (!m.valid()) std::abort();
+        auto result = MappedFile::open(p.c_str(), MappedFile::Mode::kReadOnly);
+        if (!result) std::abort();
+        MappedFile m = *std::move(result);
         volatile auto* d = static_cast<volatile char*>(m.data());
         d[0] = 'X';  // write to a PROT_READ / PAGE_READONLY mapping -> trap
       },
