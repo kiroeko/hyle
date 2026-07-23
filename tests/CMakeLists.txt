@@ -63,6 +63,19 @@ add_test(NAME hyle_mem_c_surface_test
                  --library "$<TARGET_FILE:hyle_mem>"
                  --symbol-tool "${_hyle_mem_symbol_tool}")
 
+# A combined include smoke test can hide transitive-include and include-order bugs.
+# Compile each public C++ mem header alone, plus the C ABI header as strict C.
+add_test(NAME hyle_mem_header_self_contained_test
+         COMMAND "${Python3_EXECUTABLE}"
+                 "${PROJECT_SOURCE_DIR}/scripts/mem-header-self-contained.py"
+                 --include-dir "${PROJECT_SOURCE_DIR}/include"
+                 --cc "${CMAKE_C_COMPILER}"
+                 --cxx "${CMAKE_CXX_COMPILER}"
+                 --c-compiler-id "${CMAKE_C_COMPILER_ID}"
+                 --cxx-compiler-id "${CMAKE_CXX_COMPILER_ID}"
+                 --c-frontend "${CMAKE_C_COMPILER_FRONTEND_VARIANT}"
+                 --cxx-frontend "${CMAKE_CXX_COMPILER_FRONTEND_VARIANT}")
+
 # close-01: pure C whole-buffer SIMD consumer. Register/native C++ types never cross this edge.
 add_executable(hyle_simd_c_test simd/c_simd_test.c)
 target_link_libraries(hyle_simd_c_test PRIVATE hyle_simd)

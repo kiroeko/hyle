@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <utility>
 
 #include "hyle/macros.h"
 #include "hyle/platform/numa.h"
