@@ -38,7 +38,7 @@ def exported_symbols(library: Path, symbol_tool: Optional[Path]) -> set[str]:
         return set(
             re.findall(
                 r"^\s+\d+\s+[0-9A-F]+\s+[0-9A-F]+\s+"
-                r"(hyle_[a-z0-9_]+)\s*$",
+                r"(hyle_[a-z0-9_]+)(?:\s+=.*)?\s*$",
                 output,
                 flags=re.MULTILINE,
             )
