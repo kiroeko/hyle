@@ -171,6 +171,24 @@ TEST(Allocator, ReallocateFromNullIsAllocate) {
   a.deallocate(p, 256, 64);
 }
 
+TEST(Allocator, CompileTimeReallocateHandlesNullAndPreservesAlignment) {
+  void *p = SystemAllocator::reallocate(nullptr, 0, 128);
+  ASSERT_NE(p, nullptr);
+  std::memset(p, 0x5A, 128);
+  p = SystemAllocator::reallocate(p, 128, 256);
+  ASSERT_NE(p, nullptr);
+  EXPECT_EQ(static_cast<unsigned char *>(p)[0], 0x5A);
+  SystemAllocator::deallocate(p, 256);
+
+  void *aligned = SystemAllocator::reallocate(nullptr, 0, 128, 64);
+  ASSERT_NE(aligned, nullptr);
+  EXPECT_TRUE(is_aligned(aligned, 64));
+  aligned = SystemAllocator::reallocate(aligned, 128, 256, 64);
+  ASSERT_NE(aligned, nullptr);
+  EXPECT_TRUE(is_aligned(aligned, 64));
+  SystemAllocator::deallocate(aligned, 256, 64);
+}
+
 TEST(Allocator, ManyDistinctNonOverlapping) {
   Allocator a = system_allocator();
   constexpr int kN = 256;

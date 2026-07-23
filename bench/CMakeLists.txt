@@ -117,6 +117,15 @@ if(WIN32)
 endif()
 hyle_apply_warnings(hyle_mem_scenarios_bench)
 
+# FiberStackPool is a scheduler-owned mem specialization. Certify it only
+# through the real Scheduler + Fiber create/run/destroy lifecycle, with direct
+# guarded VM reserve/release as the same-lifecycle baseline.
+if(HYLE_HAS_FCONTEXT)
+  add_executable(hyle_mem_fiber_stack_bench mem/fiber_stack_bench.cc)
+  target_link_libraries(hyle_mem_fiber_stack_bench PRIVATE hyle_sched)
+  hyle_apply_warnings(hyle_mem_fiber_stack_bench)
+endif()
+
 # platform primitive bench (red-team gap-fill): Parker park/unpark (futex/
 # WaitOnAddress) + Thread spawn/join. Links hyle_platform (Parker/Thread live there).
 add_executable(hyle_platform_bench platform/platform_bench.cc)

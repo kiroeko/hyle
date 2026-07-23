@@ -30,6 +30,17 @@ constexpr int kAllocs = 200000;
 // A spread of small sizes (the common allocator workload).
 std::uint32_t size_at(int i) { return 16 + ((i * 2654435761u) % 496); }  // 16..511
 
+// HYLE_BENCH_SECTIONS="R" runs only realloc. Unset/empty preserves the full
+// historical sweep; the filter keeps multi-process certification bounded.
+bool want_section(char id) {
+  const char* sections = std::getenv("HYLE_BENCH_SECTIONS");
+  if (sections == nullptr || sections[0] == '\0') return true;
+  for (const char* current = sections; *current != '\0'; ++current) {
+    if (*current == id) return true;
+  }
+  return false;
+}
+
 // std::pmr::memory_resource over mimalloc -- the SAME-CLASS rival to HYLE's
 // runtime Allocator vtable. BOTH are runtime polymorphism over the same backing
 // (mimalloc), so racing them isolates the DISPATCH cost (HYLE 3-fn fn-ptr vtable
@@ -51,7 +62,7 @@ int main() {
   Allocator a = system_allocator();  // mimalloc backing (HYLE_USE_MIMALLOC=ON)
 
   // ---- single-thread alloc/free churn ----
-  {
+  if (want_section('A')) {
     ankerl::nanobench::Bench b;
     b.title("alloc+free churn, 200k small blocks")
         .relative(true)
@@ -103,7 +114,7 @@ int main() {
   // because the denominator is tiny. Real callers WRITE the block they ask for.
   // Touching first+last byte (a cache miss on fresh memory dwarfs the indirect
   // call) is the apples-to-apples read of what the vtable actually costs in use.
-  {
+  if (want_section('B')) {
     ankerl::nanobench::Bench b;
     b.title("alloc + touch + free, 200k small blocks")
         .relative(true)
@@ -144,7 +155,7 @@ int main() {
   }
 
   // ---- batched alloc-all then free-all (exercises the free list / reuse) ----
-  {
+  if (want_section('C')) {
     constexpr int kN = 50000;
     ankerl::nanobench::Bench b;
     b.title("alloc-all then free-all, 50k blocks")
@@ -172,7 +183,7 @@ int main() {
   }
 
   // ---- concurrent allocation (mimalloc's design point: per-thread heaps) ----
-  {
+  if (want_section('D')) {
     constexpr int kThreads = 8;
     constexpr int kPer = 50000;
     auto run_threads = [](auto&& body) {
@@ -219,9 +230,12 @@ int main() {
   // dispatch branch). The realloc path had no direct bench (CArray growth exercises
   // it only indirectly). Grow a block through a sequence of sizes (16->1024 via
   // doubling) so realloc must sometimes copy. HYLE vtable reallocate vs raw
-  // mi_realloc (SOTA) vs std::realloc (OS). Each iteration starts from a fresh
-  // small block so the grow chain is identical across rivals.
-  {
+  // mi_realloc (SOTA) vs the compile-time SystemAllocator path vs the runtime
+  // Allocator vtable vs std::realloc (OS). Each iteration starts from a fresh
+  // small block so the grow chain is identical across rivals. Keeping the two
+  // HYLE rows separate prevents runtime injection cost from being attributed to
+  // the default compile-time path.
+  if (want_section('R')) {
     constexpr int kChains = 20000;
     static constexpr std::size_t kSizes[] = {16, 32, 64, 128, 256, 512, 1024};
     ankerl::nanobench::Bench b;
@@ -235,6 +249,17 @@ int main() {
         for (int s = 1; s < 7; ++s) p = mi_realloc(p, kSizes[s]);
         ankerl::nanobench::doNotOptimizeAway(p);
         mi_free(p);
+      }
+    });
+    b.run("HYLE SystemAllocator::reallocate (compile-time)", [&] {
+      for (int i = 0; i < kChains; ++i) {
+        void* p = hyle::mem::SystemAllocator::allocate(kSizes[0]);
+        for (int s = 1; s < 7; ++s) {
+          p = hyle::mem::SystemAllocator::reallocate(
+              p, kSizes[s - 1], kSizes[s]);
+        }
+        ankerl::nanobench::doNotOptimizeAway(p);
+        hyle::mem::SystemAllocator::deallocate(p, kSizes[6]);
       }
     });
     b.run("HYLE Allocator::reallocate (vtable)", [&] {

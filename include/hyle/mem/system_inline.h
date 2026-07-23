@@ -70,14 +70,11 @@ struct SystemAllocator {
       }
       return nullptr;
     }
-    void* result;
-    if (alignment <= kSystemDefaultAlignment) {
-      result = ptr == nullptr ? mi_malloc(new_size)
-                              : mi_realloc(ptr, new_size);
-    } else {
-      result = ptr == nullptr ? mi_malloc_aligned(new_size, alignment)
-                              : mi_realloc_aligned(ptr, new_size, alignment);
-    }
+    // Both mimalloc realloc forms accept nullptr as allocate. Calling them
+    // directly avoids a redundant pointer branch on every grow step.
+    void* result = alignment <= kSystemDefaultAlignment
+                       ? mi_realloc(ptr, new_size)
+                       : mi_realloc_aligned(ptr, new_size, alignment);
     if (result != nullptr) {
       if (ptr != nullptr) HYLE_TRACE_FREE_NAMED(ptr, "hyle.system");
       HYLE_TRACE_ALLOC_NAMED(result, new_size, "hyle.system");

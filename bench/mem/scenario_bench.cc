@@ -1184,11 +1184,12 @@ int main() {
   if (want_section('F')) {
     constexpr int kScratchAllocations = 4096;
     constexpr std::size_t kScratchBytes = 1024 * 1024;
+    const bool adapter_only = std::getenv("HYLE_MEM_ADAPTER_ONLY") != nullptr;
 
     // External parser/codec workspace: exactly the same caller-owned byte
     // buffer, no fallback, all temporaries die together at the end of one
     // request.
-    {
+    if (!adapter_only) {
       std::vector<std::byte> hyle_storage(kScratchBytes);
       std::vector<std::byte> pmr_storage(kScratchBytes);
       FixedRegion fixed(hyle_storage.data(), hyle_storage.size());
@@ -1218,7 +1219,7 @@ int main() {
     // Owned request/frame scratch: ordinary blocks are retained across clear(),
     // so this measures the warmed steady state expected by a server or graph
     // phase.
-    {
+    if (!adapter_only) {
       hyle::mem::RegionOptions options;
       options.initial_block_size = 64 * 1024;
       options.max_block_size = 256 * 1024;
@@ -1250,7 +1251,7 @@ int main() {
 
     // Variable-size allocator inside a fixed shared-memory/packet workspace.
     // The live window forces splitting, reuse and adjacent coalescing.
-    {
+    if (!adapter_only) {
       constexpr int kOperations = 4096;
       constexpr int kWindow = 128;
       constexpr std::size_t kStorageBytes = 1024 * 1024;
@@ -1304,14 +1305,22 @@ int main() {
 #endif
     }
 
-    // Strict admission is a policy adapter. Compare it only with the exact same
-    // backing calls so the delta is the atomic reservation/accounting cost.
+    // Opt-in policy adapters over exactly the same backing calls. This measures
+    // the normal counters-only Stats shape and the recommended Quota(Stats(sys))
+    // composition separately. Leak tracking is intentionally excluded: its
+    // locked hash map is a diagnostic slow path, not a production throughput
+    // feature.
     {
       constexpr int kOperations = 8192;
       QuotaAllocator quota(sys, 1024 * 1024);
       Allocator bounded = quota.get();
+      StatsAllocator stats(sys);
+      Allocator measured = stats.get();
+      StatsAllocator composed_stats(sys);
+      QuotaAllocator composed_quota(composed_stats.get(), 1024 * 1024);
+      Allocator composed = composed_quota.get();
       nb::Bench b;
-      b.title("allocator decoration: strict requested-byte quota")
+      b.title("allocator decoration: quota and counters-only stats")
           .relative(true)
           .batch(kOperations)
           .minEpochIterations(30);
@@ -1329,12 +1338,30 @@ int main() {
           bounded.deallocate(p, 64, 16);
         }
       });
+      b.run("HYLE StatsAllocator counters-only -> system allocator", [&] {
+        for (int i = 0; i < kOperations; ++i) {
+          void *p = require_allocation(measured.allocate(64, 16));
+          nb::doNotOptimizeAway(std::as_const(p));
+          measured.deallocate(p, 64, 16);
+        }
+        if (!stats.balanced())
+          std::abort();
+      });
+      b.run("HYLE QuotaAllocator -> StatsAllocator -> system allocator", [&] {
+        for (int i = 0; i < kOperations; ++i) {
+          void *p = require_allocation(composed.allocate(64, 16));
+          nb::doNotOptimizeAway(std::as_const(p));
+          composed.deallocate(p, 64, 16);
+        }
+        if (!composed_stats.balanced() || composed_quota.used() != 0)
+          std::abort();
+      });
     }
 
     // Compression/codec contexts are expensive to initialize and intentionally
     // keep state between uses. This isolates reconstruct-on-return vs
     // preserve-return.
-    {
+    if (!adapter_only) {
       struct Context {
         std::array<std::uint32_t, 1024> table{};
         Context() {

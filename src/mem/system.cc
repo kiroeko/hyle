@@ -70,16 +70,14 @@ void *system_realloc(void * /*state*/, void *ptr, std::size_t /*old_size*/,
     }
     return nullptr;
   }
-  std::size_t align = normalize_alignment(alignment);
   // mi_realloc_aligned preserves alignment and returns nullptr on OOM with the
   // original block left intact (C realloc contract) -- matches our vtable.
-  void *result;
-  if (align <= kDefaultAlignment) {
-    result = ptr == nullptr ? mi_malloc(new_size) : mi_realloc(ptr, new_size);
-  } else {
-    result = ptr == nullptr ? mi_malloc_aligned(new_size, align)
-                            : mi_realloc_aligned(ptr, new_size, align);
-  }
+  // Both forms accept nullptr as allocate; the default-aligned path therefore
+  // needs neither alignment normalization nor a separate pointer branch.
+  void *result = alignment <= kDefaultAlignment
+                     ? mi_realloc(ptr, new_size)
+                     : mi_realloc_aligned(ptr, new_size,
+                                          normalize_alignment(alignment));
   if (result != nullptr) {
     if (ptr != nullptr)
       HYLE_TRACE_FREE_NAMED(ptr, "hyle.system");
