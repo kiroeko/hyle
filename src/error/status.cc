@@ -160,10 +160,14 @@ std::size_t Status::ToString(char *buf, std::size_t cap) const noexcept {
   // copies only what fits; `need` keeps counting past the buffer end.
   std::size_t need = 0;
   auto append = [&](std::string_view s) noexcept {
-    for (char c : s) {
-      if (need + 1 < cap) buf[need] = c;  // leave room for the NUL
-      ++need;
+    if (need < cap) {
+      // Leave room for the terminator. Block copies matter for long native
+      // driver messages and avoid paying a branch for every output byte.
+      const std::size_t available = cap - need - 1;
+      const std::size_t copied = s.size() < available ? s.size() : available;
+      if (copied != 0) std::memcpy(buf + need, s.data(), copied);
     }
+    need += s.size();
   };
 
   if (ok()) {

@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <sstream>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -13,6 +14,7 @@
 #include <utility>
 #include <vector>
 
+#include "hyle/error/format.h"
 #include "hyle/error/result.h"
 
 using hyle::Result;
@@ -86,6 +88,45 @@ TEST(Status, Equality) {
   EXPECT_NE(Status::NotFound("x"), Status::NotFound("y"));
   EXPECT_NE(Status::NotFound("x"), Status::Internal("x"));
   EXPECT_EQ(Status(), Status::Ok());
+}
+
+TEST(Status, UpdateKeepsFirstError) {
+  Status overall;
+  overall.Update(Status{});
+  EXPECT_TRUE(overall.ok());
+
+  overall.Update(Status::Unavailable("first"));
+  overall.Update(Status::Internal("second"));
+  EXPECT_TRUE(overall.IsUnavailable());
+  EXPECT_EQ(overall.message(), "first");
+
+  Status source = Status::NotFound("copied");
+  Status copied;
+  copied.Update(source);
+  EXPECT_EQ(copied, source);
+
+  Status moved_source = Status::DataLoss("moved");
+  Status moved;
+  moved.Update(std::move(moved_source));
+  EXPECT_TRUE(moved.IsDataLoss());
+  EXPECT_TRUE(moved_source.ok());
+}
+
+TEST(Status, IgnoreErrorIsExplicitNoOp) {
+  Status::Internal("cleanup failed").IgnoreError();
+}
+
+TEST(Status, CppFormattingConvenience) {
+  Status status = Status::DataLoss("bad block");
+  EXPECT_EQ(hyle::to_string(status), "DataLoss: bad block");
+
+  std::ostringstream stream;
+  stream << status;
+  EXPECT_EQ(stream.str(), "DataLoss: bad block");
+
+  std::string long_message(400, 'x');
+  EXPECT_EQ(hyle::to_string(Status::Internal(long_message)),
+            "Internal: " + long_message);
 }
 
 TEST(Status, CopySharesMessage) {
@@ -222,7 +263,7 @@ TEST(Result, HoldsValue) {
 }
 
 TEST(Result, HoldsError) {
-  Result<int> r = std::unexpected(Status::OutOfRange("nope"));
+  Result<int> r = hyle::make_unexpected(Status::OutOfRange("nope"));
   ASSERT_FALSE(r.has_value());
   EXPECT_TRUE(r.error().IsOutOfRange());
   EXPECT_EQ(r.error().message(), "nope");
@@ -241,6 +282,10 @@ namespace {
 
 Status inner_fails() { return Status::PermissionDenied("denied"); }
 Status inner_ok() { return Status(); }
+Result<void> void_result(bool fail) {
+  if (fail) return hyle::make_unexpected(Status::Unavailable("down"));
+  return {};
+}
 
 // returns Status, propagates Status
 Status chain_status(bool fail) {
@@ -252,6 +297,16 @@ Status chain_status(bool fail) {
 Result<int> chain_result_from_status(bool fail) {
   HYLE_RETURN_IF_ERROR(fail ? inner_fails() : inner_ok());
   return 7;
+}
+
+Status chain_status_from_void_result(bool fail) {
+  HYLE_RETURN_IF_ERROR(void_result(fail));
+  return Status{};
+}
+
+Result<int> chain_result_from_void_result(bool fail) {
+  HYLE_RETURN_IF_ERROR(void_result(fail));
+  return 9;
 }
 
 }  // namespace
@@ -268,6 +323,20 @@ TEST(ReturnIfError, PropagatesIntoResultFunction) {
   Result<int> r = chain_result_from_status(true);
   ASSERT_FALSE(r.has_value());
   EXPECT_TRUE(r.error().IsPermissionDenied());
+}
+
+TEST(ReturnIfError, AcceptsResultVoidIntoStatusFunction) {
+  EXPECT_TRUE(chain_status_from_void_result(false).ok());
+  Status status = chain_status_from_void_result(true);
+  EXPECT_TRUE(status.IsUnavailable());
+  EXPECT_EQ(status.message(), "down");
+}
+
+TEST(ReturnIfError, AcceptsResultVoidIntoResultFunction) {
+  EXPECT_EQ(chain_result_from_void_result(false).value(), 9);
+  Result<int> result = chain_result_from_void_result(true);
+  ASSERT_FALSE(result.has_value());
+  EXPECT_TRUE(result.error().IsUnavailable());
 }
 
 // ---- propagation macros: HYLE_ASSIGN_OR_RETURN ------------------------------

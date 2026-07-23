@@ -211,6 +211,19 @@ class [[nodiscard]] Status {
     return !(a == b);
   }
 
+  // Keep the first failure while combining a sequence of independent
+  // operations. A later error never overwrites an earlier one.
+  void Update(const Status &status) noexcept {
+    if (ok() && !status.ok()) *this = status;
+  }
+  void Update(Status &&status) noexcept {
+    if (ok() && !status.ok()) *this = std::move(status);
+  }
+
+  // Make an intentionally discarded result visible at the call site. This is
+  // preferable to a bare `(void)status`, especially at cleanup boundaries.
+  void IgnoreError() const noexcept {}
+
   // ---- C-ABI ownership transfer (hyle/c/error.h bridge only) ----------------
   // Steal the tagged word (leaves *this OK). Pair with adopt_rep on the C side
   // of a boundary so heap reps are not double-released.

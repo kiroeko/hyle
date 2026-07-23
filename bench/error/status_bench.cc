@@ -21,10 +21,12 @@
 #include <cstdint>
 #include <cstdio>
 #include <expected>
+#include <string>
 #include <string_view>
 #include <system_error>
 #include <utility>
 
+#include "hyle/error/format.h"
 #include "hyle/error/result.h"
 #include "hyle/error/status.h"
 
@@ -94,6 +96,23 @@ Result<int> hyle_chain_err(int x) {
   HYLE_ASSIGN_OR_RETURN(int b, hyle_leaf_ok(a));
   HYLE_ASSIGN_OR_RETURN(int c, hyle_leaf_err(b));  // fails here, unwinds the error up
   return c;
+}
+
+Result<void> hyle_void_leaf(bool fail) {
+  return fail ? Result<void>(hyle::make_unexpected(hyle_prebuilt_err()))
+              : Result<void>();
+}
+Status hyle_void_chain(bool fail_first, bool fail_second) {
+  HYLE_RETURN_IF_ERROR(hyle_void_leaf(fail_first));
+  HYLE_RETURN_IF_ERROR(hyle_void_leaf(fail_second));
+  return Status{};
+}
+Status hyle_void_chain_manual(bool fail_first, bool fail_second) {
+  Result<void> first = hyle_void_leaf(fail_first);
+  if (!first) return first.error();
+  Result<void> second = hyle_void_leaf(fail_second);
+  if (!second) return second.error();
+  return Status{};
 }
 
 // std::expected equivalents (manual check-and-return, the idiom without a `?` operator).
@@ -355,6 +374,115 @@ int main() {
     b.run("HYLE Result + ASSIGN_OR_RETURN", [&] {
       auto r = hyle_chain_err(++seed);
       nb::doNotOptimizeAway(r.has_value());
+    });
+  }
+
+  // ---- (8) public Result<void> path: sched join/send/change operations use
+  // this shape, so RETURN_IF_ERROR must stay as cheap as the manual check.
+  {
+    nb::Bench b;
+    b.title("Result<void> propagate OK through 2 calls")
+        .relative(true)
+        .batch(1)
+        .minEpochIterations(2000000);
+    b.run("manual Result<void> checks", [&] {
+      bool fail_first = false;
+      bool fail_second = false;
+      nb::doNotOptimizeAway(fail_first);
+      nb::doNotOptimizeAway(fail_second);
+      Status status = hyle_void_chain_manual(fail_first, fail_second);
+      nb::doNotOptimizeAway(status.ok());
+    });
+    b.run("HYLE RETURN_IF_ERROR(Result<void>)", [&] {
+      bool fail_first = false;
+      bool fail_second = false;
+      nb::doNotOptimizeAway(fail_first);
+      nb::doNotOptimizeAway(fail_second);
+      Status status = hyle_void_chain(fail_first, fail_second);
+      nb::doNotOptimizeAway(status.ok());
+    });
+  }
+
+  {
+    nb::Bench b;
+    b.title("Result<void> propagate ERROR from second call")
+        .relative(true)
+        .batch(1)
+        .minEpochIterations(1000000);
+    b.run("manual Result<void> checks", [&] {
+      bool fail_first = false;
+      bool fail_second = true;
+      nb::doNotOptimizeAway(fail_first);
+      nb::doNotOptimizeAway(fail_second);
+      Status status = hyle_void_chain_manual(fail_first, fail_second);
+      nb::doNotOptimizeAway(status.ok());
+    });
+    b.run("HYLE RETURN_IF_ERROR(Result<void>)", [&] {
+      bool fail_first = false;
+      bool fail_second = true;
+      nb::doNotOptimizeAway(fail_first);
+      nb::doNotOptimizeAway(fail_second);
+      Status status = hyle_void_chain(fail_first, fail_second);
+      nb::doNotOptimizeAway(status.ok());
+    });
+  }
+
+  // ---- (9) normal diagnostics: fixed-buffer formatting is the C/FFI/logging
+  // primitive; allocating C++ formatting is an opt-in convenience layer.
+  {
+    Status status = Status::Unavailable(
+        "vulkan vkQueueSubmit failed: VK_ERROR_DEVICE_LOST (-4)");
+    char buffer[128];
+    nb::Bench b;
+    b.title("Status human-readable formatting")
+        .relative(true)
+        .batch(1)
+        .minEpochIterations(500000);
+    b.run("HYLE ToString caller buffer", [&] {
+      const std::size_t size = status.ToString(buffer, sizeof(buffer));
+      nb::doNotOptimizeAway(size);
+      nb::doNotOptimizeAway(buffer[0]);
+    });
+    b.run("HYLE to_string owning", [&] {
+      std::string text = hyle::to_string(status);
+      nb::doNotOptimizeAway(text);
+    });
+#if defined(HYLE_BENCH_ABSL)
+    const absl::Status absl_status =
+        absl::UnavailableError(status.message());
+    b.run("absl::Status::ToString owning", [&] {
+      std::string text = absl_status.ToString();
+      nb::doNotOptimizeAway(text);
+    });
+#endif
+  }
+
+  // ---- (10) deterministic aggregation: keep the first non-OK status.
+  {
+    const Status hyle_first = Status::NotFound("first");
+    const Status hyle_second = Status::Internal("second");
+#if defined(HYLE_BENCH_ABSL)
+    const absl::Status absl_first = absl::NotFoundError("first");
+    const absl::Status absl_second = absl::InternalError("second");
+#endif
+    nb::Bench b;
+    b.title("Status aggregate first error")
+        .relative(true)
+        .batch(1)
+        .minEpochIterations(1000000);
+#if defined(HYLE_BENCH_ABSL)
+    b.run("absl::Status::Update", [&] {
+      absl::Status status;
+      status.Update(absl_first);
+      status.Update(absl_second);
+      nb::doNotOptimizeAway(status.ok());
+    });
+#endif
+    b.run("HYLE Status::Update", [&] {
+      Status status;
+      status.Update(hyle_first);
+      status.Update(hyle_second);
+      nb::doNotOptimizeAway(status.ok());
     });
   }
 

@@ -306,6 +306,10 @@ c.IsInternal();                 // 每码一个谓词：IsNotFound() / IsCancell
 c.message();                    // string_view（无消息时为空），不拥有
 char buf[128];
 c.ToString(buf, sizeof buf);    // "Internal: shard 7 gone"；snprintf 式，返回完整长度
+
+#include "hyle/error/format.h"  // 仅需要 C++ owning/stream 输出的 TU 包含
+std::string text = hyle::to_string(c);
+std::cerr << c;
 ```
 
 **`Result<T>` = `std::expected<T, Status>`**（C++23，monadic `and_then`/`transform` 免费）。两个传播宏做 Rust `?`-式早返回，在返回 `Status` 或 `Result<T>` 的函数里都能用：
@@ -313,13 +317,23 @@ c.ToString(buf, sizeof buf);    // "Internal: shard 7 gone"；snprintf 式，返
 ```cpp
 #include "hyle/error/result.h"   // Result<T> + 两个早返回宏
 hyle::Result<int> parse(std::string_view s);
+hyle::Result<void> finish_step();
 
 hyle::Result<int> do_thing() {
   HYLE_RETURN_IF_ERROR(step1());              // Status 非 OK 立即返回
+  HYLE_RETURN_IF_ERROR(finish_step());        // Result<void> 也可直接传播
   HYLE_ASSIGN_OR_RETURN(int v, parse("42"));  // Result 失败则返回其 Status
   return v + 1;
 }
+
+hyle::Result<int> load() {
+  return hyle::make_unexpected(hyle::Status::NotFound("model"));
+}
 ```
+
+批量操作用 `overall.Update(next)` 保留第一个错误；明确接受清理失败时调用
+`cleanup().IgnoreError()`。`HYLE_ASSIGN_OR_RETURN` 可以声明变量，因此会展开成多条语句；
+放在 `if/else/for/while` 下时必须加 `{}`。
 
 **约定（重要）**：`Status` 只表达**运营失败**（找不到、超时、权限、OOM…）。
 自家 bug 不返 Status——用 `HYLE_FATAL_ASSERT`。外部后端 translator 在叶子保留

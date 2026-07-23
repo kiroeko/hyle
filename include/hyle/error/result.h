@@ -13,7 +13,41 @@ namespace hyle {
 template <class T>
 using Result = std::expected<T, Status>;
 
+// Construct the error arm of any Result<T> without repeating the standard
+// carrier type at every return site:
+//
+//   return make_unexpected(Status::NotFound("model"));
+//
+// Keep this Status-specific: a generic clone of std::unexpected would add no
+// HYLE value and could silently create the wrong error type.
+[[nodiscard]] inline std::unexpected<Status> make_unexpected(
+    Status status) noexcept {
+  return std::unexpected<Status>(std::move(status));
+}
+
 namespace detail {
+
+// Adaptor for the two value-less failure carriers accepted by
+// HYLE_RETURN_IF_ERROR. The success path only observes the carrier by reference;
+// it does not construct/copy a Status. On failure, lvalues copy their error and
+// temporaries move it.
+inline bool status_ok(const Status &status) noexcept { return status.ok(); }
+inline bool status_ok(const Result<void> &result) noexcept {
+  return result.has_value();
+}
+
+inline const Status &status_error(const Status &status) noexcept {
+  return status;
+}
+inline Status &&status_error(Status &&status) noexcept {
+  return std::move(status);
+}
+inline const Status &status_error(const Result<void> &result) noexcept {
+  return result.error();
+}
+inline Status &&status_error(Result<void> &&result) noexcept {
+  return std::move(result).error();
+}
 
 // Bridges an error Status into whatever the enclosing function returns: a bare
 // Status, or a Result<U> for any U (via std::unexpected). This is what lets a
@@ -22,20 +56,30 @@ namespace detail {
 // the conversion has to be carried explicitly -- that is this type's whole job.
 class FailReturn {
  public:
-  explicit FailReturn(Status status) noexcept : status_(std::move(status)) {}
+  explicit FailReturn(const Status &status) noexcept : status_(&status) {}
+  explicit FailReturn(Status &&status) noexcept
+      : status_(&status), movable_(&status) {}
 
   // -> a function returning Status
   operator Status() && noexcept {
-    return std::move(status_);
+    return Take();
   }  // NOLINT(*-explicit)
   // -> a function returning Result<U>
   template <class U>
   operator Result<U>() && noexcept {  // NOLINT(*-explicit)
-    return std::unexpected<Status>(std::move(status_));
+    return std::unexpected<Status>(Take());
   }
 
  private:
-  Status status_;
+  Status Take() noexcept {
+    return movable_ != nullptr ? Status(std::move(*movable_)) : Status(*status_);
+  }
+
+  // The proxy is used only as the operand of `return`; borrowing the carrier
+  // keeps its destructor trivial. This matters on MSVC: an owning proxy caused
+  // EH cleanup state to leak into the success path of every propagation macro.
+  const Status *status_;
+  Status *movable_ = nullptr;
 };
 
 }  // namespace detail
@@ -45,18 +89,22 @@ class FailReturn {
 // The standard has no `?`; these are the real ergonomic increment. Both work in
 // functions returning Status OR Result<T> thanks to detail::FailReturn.
 
-// Evaluate a Status expression; if not OK, return it (converted) immediately.
-#define HYLE_RETURN_IF_ERROR(expr)                                \
-  do {                                                            \
-    ::hyle::Status hyle_status_ = (expr);                         \
-    if (HYLE_UNLIKELY(!hyle_status_.ok())) {                      \
-      return ::hyle::detail::FailReturn(std::move(hyle_status_)); \
-    }                                                             \
+// Evaluate a Status or Result<void> expression; if not OK, return its Status
+// (converted) immediately.
+#define HYLE_RETURN_IF_ERROR(expr)                                         \
+  do {                                                                     \
+    auto &&hyle_status_ = (expr);                                          \
+    if (HYLE_UNLIKELY(!::hyle::detail::status_ok(hyle_status_))) {         \
+      return ::hyle::detail::FailReturn(::hyle::detail::status_error(      \
+          std::forward<decltype(hyle_status_)>(hyle_status_)));            \
+    }                                                                      \
   } while (0)
 
 // Assign the value of a Result<T> to `lhs`, or early-return its error.
 // `lhs` may be a declaration ("auto x") or an existing lvalue. Uses a uniquely
 // named temporary (via __COUNTER__) so multiple uses in one scope never clash.
+// Like other declaration-capable propagation macros, this expands to multiple
+// statements: use braces when it appears under if/else/for/while.
 #define HYLE_ASSIGN_OR_RETURN(lhs, expr) \
   HYLE_ASSIGN_OR_RETURN_IMPL(HYLE_CONCAT(hyle_or_, __COUNTER__), lhs, expr)
 

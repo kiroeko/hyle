@@ -64,6 +64,15 @@ Status failed = Status::Unavailable("device lost");
 - `StatusCode::Ok` 不能携带消息；越界的枚举值在公共/C 边界归一为 `Unknown`；
 - 相等比较 code 与完整消息；程序分支通常只判断 code。
 
+批量/清理场景只提供两个零额外状态的组合工具：
+
+- `overall.Update(next)`：`overall` 仍为 OK 时接收第一个错误，之后不覆盖；
+- `status.IgnoreError()`：明确标注调用方有意忽略一次失败，替代含义不清的 `(void)`。
+
+`status.h` 不引入 owning string 或 iostream。需要 C++ 人读输出时显式包含
+`hyle/error/format.h`，使用 caller-owned `to_string(status)` 或 `operator<<`；C/FFI/低层
+日志继续使用 `ToString(char*, size_t)`，避免为便利接口加重每个热路径 TU。
+
 canonical code 使用 Abseil/gRPC 的稳定集合，不增设每个后端一套公共枚举。常用边界：
 
 - `InvalidArgument`：调用者给出的值本身无效；
@@ -133,12 +142,21 @@ HYLE_ASSIGN_OR_RETURN(lhs, expr);
 合同：
 
 - `expr` 只求值一次；
-- 第一项接受 `Status`，第二项接受 `Result<T>`；
+- 第一项接受 `Status` 或无值成功态的 `Result<void>`，第二项接受 `Result<T>`；
 - 同时支持外层函数返回 `Status` 或 `Result<U>`；
 - 失败时移动 Status，成功路径不分配；
 - `ASSIGN_OR_RETURN` 可以声明新变量或给已有 lvalue 赋值；
 - 不隐藏日志、source location 或自动文本拼接；需要语义上下文的边界显式使用
   `WithContext`。
+
+构造 `Result<T>` 的失败分支使用 `make_unexpected(Status)`，避免每个调用点重复
+`std::unexpected<Status>`，但不包装 `std::expected`、不复制其容器 API。声明型
+`HYLE_ASSIGN_OR_RETURN` 与成熟库同样会展开为多条语句，作为 `if/else/for/while` 裸语句时
+必须加花括号。
+
+HYLE 当前 `sched::Task<T>` 是独立的协程值模型，并不返回 `Result<T>`；因此 error 不添加
+无法独立成立的 `CO_*` 宏。让异步任务携带 `Status/Result` 需要先审查 Task/JoinHandle 的
+所有权、取消和错误槽，是 sched×error 的后续架构议题，不伪装成 error 内两个宏即可解决。
 
 重构前的 `RETURN_NOT_OK` / `ASSIGN_OR_RAISE` 在产品代码中没有调用点，且 `RAISE` 暗示
 异常。HYLE 尚未发布，不保留兼容别名。新宏必须迁入 compute、graph、platform 等真实
@@ -230,9 +248,11 @@ posix mmap failed: ENOMEM (12): Cannot allocate memory
 ### 真实产品路径
 
 - platform：Thread/DynLib/MappedFile 的原生 OS 失败 → Status → C ABI；VM/NUMA
-  尚在迁移期，不能把目标态误写成全模块现状；
+  已迁入同一 translator/context 合同；
 - compute：CUDA/Vulkan 叶子错误 → buffer/kernel 高层上下文；
 - graph：`Result<T>` 提取与跨层传播；
+- sched：`Result<void>` 的 join/channel 正常返回与传播；
+- diagnostics：caller-buffer 与 opt-in owning string/stream 格式化；
 - 成功路径和错误路径分开报告，禁止用高错误率混合 workload 掩盖成功路径回退。
 
 任何新增上下文能力不得改变 OK/code-only representation。性能结果、平台、编译器、样本
