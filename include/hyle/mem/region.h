@@ -30,7 +30,7 @@ public:
     if (data == nullptr || size == 0)
       return;
     const auto address = reinterpret_cast<std::uintptr_t>(data);
-    if (size > std::numeric_limits<std::uintptr_t>::max() - address)
+    if (size > (std::numeric_limits<std::uintptr_t>::max)() - address)
       return;
     begin_ = reinterpret_cast<std::byte *>(address);
     cur_ = begin_;
@@ -145,7 +145,7 @@ struct RegionOptions {
   // bounded. Callers with a tighter working-set ceiling can lower it.
   std::size_t max_block_size = 4 * 1024 * 1024;
   std::size_t large_allocation_threshold = 256 * 1024;
-  std::size_t size_limit = std::numeric_limits<std::size_t>::max();
+  std::size_t size_limit = (std::numeric_limits<std::size_t>::max)();
 };
 
 // Owned growable single-threaded region. Allocations are bump-only and
@@ -320,7 +320,7 @@ private:
     std::size_t overhead = 0;
     if (!try_block_overhead(request_alignment, &overhead))
       return nullptr;
-    if (payload > std::numeric_limits<std::size_t>::max() - overhead)
+    if (payload > (std::numeric_limits<std::size_t>::max)() - overhead)
       return nullptr;
     const std::size_t bytes = overhead + payload;
     if (reserved_ > options_.size_limit ||
@@ -350,7 +350,7 @@ private:
   static bool try_block_overhead(std::size_t request_alignment,
                                  std::size_t *out) noexcept {
     if (request_alignment - 1 >
-        std::numeric_limits<std::size_t>::max() - sizeof(Block))
+        (std::numeric_limits<std::size_t>::max)() - sizeof(Block))
       return false;
     *out = sizeof(Block) + (request_alignment - 1);
     return true;
@@ -359,7 +359,7 @@ private:
   void *account(void *p, std::size_t bytes) noexcept {
     // requested live bytes cannot exceed reserved backing bytes; reaching this
     // assertion therefore indicates internal accounting corruption.
-    HYLE_FATAL_ASSERT(used_ <= std::numeric_limits<std::size_t>::max() - bytes);
+    HYLE_FATAL_ASSERT(used_ <= (std::numeric_limits<std::size_t>::max)() - bytes);
     used_ += bytes;
     if (used_ > peak_used_)
       peak_used_ = used_;

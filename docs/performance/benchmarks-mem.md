@@ -58,6 +58,78 @@ WSL Clang 20.1 shipping-like 构建固定到 guest CPU 2；三组均 15/15 同�
 virtual CPU 在 Windows 宿主上的实际 P/E core 映射，因此这只消除 guest 内迁移，不写成
 物理 P-core 证书。
 
+### Region 真实消费者：HTTP request lifecycle
+
+2026-07-23 首个模块外消费者把 `Region` 接入 `http_serve`：连接 parser/buffer 继续使用
+长生命周期 backing allocator，每个 handler 收到 request-scoped `Region::as_allocator()`；
+response body/header view、stream generator state 和 handler coroutine frame 一直存活到发送
+完成，随后 frame 销毁并 bulk clear。TCP/TLS 共用同一实现，Windows/MSVC 与 WSL/GCC 14
+的 mem + HTTP + TLS 回归均通过。
+
+真实场景同时暴露了默认 64 KiB/连接和异常请求高水位长期驻留的问题，因此 HTTP 没有
+照搬通用默认值：`HttpServeOptions` 默认 4 KiB 起步、ordinary block 最大 64 KiB、
+`>=64 KiB` dedicated allocation 在 clear 时立即归还；clear 后 ordinary backing 超过
+256 KiB 则全部 release。四个值都可由用户调整，`retain_limit=0` 表示请求间不保留。
+
+吞吐用 `hyle_http_bench` 的真实 64 connections × 64 keep-alive GET/response workload；
+Windows MSVC 19.50 Release，同机交替运行 current Region 路径和 clean `2fd7187` 的
+handler-direct-system-allocator 基线，各 `n=15`。ratio 是 baseline ns / Region ns，亦即
+Region / baseline throughput。1/2/4 workers 全部在噪声范围内；8 workers 的 benchmark
+本身仍标记 unstable，只记录数据、不签稳定结论。
+
+| workers | direct baseline median | request Region median | throughput ratio median（range） | 判定 |
+|---:|---:|---:|---:|---|
+| 1 | 11,298.66 ns/request | **11,068.09 ns/request** | 1.0107x（0.9491–1.0743） | **TIE** |
+| 2 | 7,803.30 ns/request | **7,748.29 ns/request** | 1.0043x（0.9629–1.0397） | **TIE** |
+| 4 | **4,271.87 ns/request** | 4,352.44 ns/request | 0.9894x（0.9509–1.0146） | **TIE** |
+| 8 | **4,208.84 ns/request** | 4,221.53 ns/request | 1.0137x（0.7965–1.2192） | unstable / 不判定 |
+
+这项证据的结论不是“arena 微基准更快”，而是更强的产品结论：真实 request ownership、
+streaming lifetime、keep-alive reuse 和有界 idle retention 可以同时成立，且当前小响应整链路
+没有可测吞吐税。
+
+#### 长连接高水位 / RSS 诊断
+
+`hyle_http_bench` 另有 fresh-process footprint 模式：128 条真实 keep-alive 连接同步执行
+small warmup → 每连接 1 MiB request-local spike（8 KiB ordinary allocations）→ small reuse →
+close。每个阶段等所有连接到达、server 已 clear/release 且静置 25 ms 后，同时读取 backing
+vtable 的精确 outstanding bytes 与 OS RSS。比较默认 256 KiB cap、同 cap 后显式
+`system_collect(true)`、以及 unbounded retention；脚本交替三种子进程顺序并报告 p50/p99。
+
+2026-07-23 的 `n=15` Windows/MSVC 19.50 与 WSL/GCC 14 CPU 2 是 **dirty=1 的 harness / 设计
+诊断，不是 clean 发布证书**。它已经足以否定两个错误方向：提高 Region max block 到
+256 KiB/1 MiB 会把该 workload 的 backing peak 从约 154 MiB 提高到约 162/258 MiB，且不改善
+Linux RSS；仅调用 `Region::release()` 也不能保证 system heap 立刻 purge OS pages。
+
+| 平台 | 策略 | spike 后精确 backing | reuse RSS Δ vs warm p50 / p99 | 显式 collect p50 / p99 |
+|---|---|---:|---:|---:|
+| Windows | 256 KiB cap | **1.86 MiB** | 2.33 / 76.02 MiB | — |
+| Windows | cap + force collect | **1.86 MiB** | **1.11 / 1.12 MiB** | 7.90 / 8.93 ms |
+| Windows | unbounded | 153.37 MiB | 140.04 / 140.05 MiB | — |
+| Linux CPU 2 | 256 KiB cap | **1.63 MiB** | 154.00 / 154.00 MiB | — |
+| Linux CPU 2 | cap + force collect | **1.63 MiB** | **-1.03 / -1.03 MiB** | 0.249 / 0.319 ms |
+| Linux CPU 2 | unbounded | 153.14 MiB | 154.00 / 154.00 MiB | — |
+
+负 RSS delta 表示 force collect 顺带清掉了 warmup 前已有的当前线程 heap cache，不表示负内存。
+三层结论必须分开：cap 把 HYLE/Region 的 ownership 确定地降低约 98.8%；OS RSS 还受 backing
+allocator purge 时机控制；显式 force collect 可把 RSS 尾部收紧，但 Windows 约 8 ms 的成本
+证明它只能用于用户选择的 idle/pressure 冷路径，不能偷偷插进每个 request。因此新增
+`system_collect(bool force=false)`，保持热 `Allocator` 三函数 vtable 不变，并明确 worker pool
+需要在各自 worker 上执行。正式表仍需提交后以 clean HEAD 重跑并保存 raw CSV。
+
+```bash
+# Windows（fresh process，三 variant 交替）
+python scripts/http-region-footprint-stat.py \
+  build-bench/bin/hyle_http_bench.exe -n 15 --connections 128 \
+  --spike-kib 1024 --block-kib 64 \
+  --dll-dir build-bench/msvc_19.50_cxx23_64_md_release
+
+# Linux / WSL（同一逻辑 CPU）
+python3 scripts/http-region-footprint-stat.py \
+  build-wsl-http-bench/bin/hyle_http_bench -n 15 --connections 128 \
+  --spike-kib 1024 --block-kib 64 --cpu 2
+```
+
 ### GrowablePool
 
 | | Win | WSL | M4 |

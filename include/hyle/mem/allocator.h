@@ -211,4 +211,13 @@ HYLE_MEM_API std::size_t system_usable_size(const void *ptr) noexcept;
 // platform allocator modes may expose only the requested payload as usable.
 HYLE_MEM_API std::size_t system_good_size(std::size_t size) noexcept;
 
+// Eagerly collect cached free blocks owned by the current thread's system heap.
+// Normal collection performs allocator maintenance without demanding an
+// immediate OS purge. `force=true` aggressively returns every possible page to
+// the OS and can be expensive; reserve it for explicit idle/pressure points,
+// never an allocation hot path. Long-lived worker pools should invoke this on
+// each worker whose heap needs collection. This is system_allocator-specific
+// and deliberately does not enlarge the hot three-function Allocator vtable.
+HYLE_MEM_API void system_collect(bool force = false) noexcept;
+
 } // namespace hyle::mem

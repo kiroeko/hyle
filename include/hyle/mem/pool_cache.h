@@ -36,7 +36,7 @@ public:
       std::uint32_t transfer_batch = kDefaultTransferBatch) noexcept
       : pool_(&pool), indices_(storage.data()) {
     if (storage.empty() ||
-        storage.size() > std::numeric_limits<std::uint32_t>::max())
+        storage.size() > (std::numeric_limits<std::uint32_t>::max)())
       return;
     capacity_ = static_cast<std::uint32_t>(storage.size());
     transfer_batch_ = normalize_batch(transfer_batch, capacity_);
@@ -52,7 +52,7 @@ public:
       : pool_(&pool), metadata_(metadata), capacity_(capacity), owns_(true) {
     if (!pool_->valid() || !metadata_.valid() || capacity_ == 0 ||
         static_cast<std::size_t>(capacity_) >
-            std::numeric_limits<std::size_t>::max() / sizeof(std::uint32_t))
+            (std::numeric_limits<std::size_t>::max)() / sizeof(std::uint32_t))
       return;
     indices_ = metadata_.allocate_n<std::uint32_t>(capacity_);
     if (indices_ == nullptr)

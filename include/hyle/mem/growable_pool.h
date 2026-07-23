@@ -71,7 +71,7 @@ public:
       return false;
     const std::size_t usable =
         slot_size < sizeof(void *) ? sizeof(void *) : slot_size;
-    return usable <= std::numeric_limits<std::size_t>::max() - (align - 1);
+    return usable <= (std::numeric_limits<std::size_t>::max)() - (align - 1);
   }
 
   // `slot_size`/`slot_align` describe one raw slot. The stride is rounded up so
@@ -200,7 +200,7 @@ private:
   bool grow() noexcept {
     std::uint32_t n = next_block_slots_;
     const std::size_t header = header_bytes();
-    const std::size_t max = std::numeric_limits<std::size_t>::max();
+    const std::size_t max = (std::numeric_limits<std::size_t>::max)();
     if (capacity_ > max - n)
       return false;
     if (stride_ > (max - header) / static_cast<std::size_t>(n))

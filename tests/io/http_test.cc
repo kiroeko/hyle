@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <atomic>
+#include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <memory>
@@ -60,15 +61,58 @@ struct Result {
   char stream_body_got[256] = {};        // decoded chunked stream body
   char stream2_body_got[256] = {};       // 5th req's decoded body (proves trailer fix)
   char post_seen[256] = {};              // body the server saw on the POST
+  std::atomic<int> handler_calls{0};
+  std::atomic<int> backing_4k_frees{0};
+  void* request_alloc_state[5] = {};
+  void* request_scratch[5] = {};
+  bool request_uses_region[5] = {};
+  int backing_4k_frees_seen[5] = {};
 };
+
+void* counting_alloc(void* state, std::size_t size,
+                     std::size_t alignment) noexcept {
+  (void)state;
+  return system_allocator().allocate(size, alignment);
+}
+
+void counting_free(void* state, void* ptr, std::size_t size,
+                   std::size_t alignment) noexcept {
+  if (ptr != nullptr && size == 4 * 1024) {
+    static_cast<Result*>(state)->backing_4k_frees.fetch_add(
+        1, std::memory_order_relaxed);
+  }
+  system_allocator().deallocate(ptr, size, alignment);
+}
+
+void* counting_realloc(void* state, void* ptr, std::size_t old_size,
+                       std::size_t new_size,
+                       std::size_t alignment) noexcept {
+  (void)state;
+  return system_allocator().reallocate(ptr, old_size, new_size, alignment);
+}
 
 // ---- server handler: routes on method+path ---------------------------------
 // A Task<HttpResponse> handler (Allocator first, per the coroutine-frame rule).
 // Routing lives here (skeleton gives the loop; business is the layer above).
-Task<HttpResponse> handler(Allocator /*alloc*/, void* ctx,
+Task<HttpResponse> handler(Allocator alloc, void* ctx,
                            const HttpRequest& req) noexcept {
   auto* r = static_cast<Result*>(ctx);
+  const int call = r->handler_calls.fetch_add(1, std::memory_order_relaxed);
+  void* scratch = alloc.allocate(64, alignof(std::max_align_t));
+  if (call < 5) {
+    r->request_alloc_state[call] = alloc.state();
+    r->request_scratch[call] = scratch;
+    r->request_uses_region[call] =
+        alloc.alloc_fn() != system_allocator().alloc_fn();
+    r->backing_4k_frees_seen[call] =
+        r->backing_4k_frees.load(std::memory_order_relaxed);
+  }
   HttpResponse resp;
+  if (scratch == nullptr) {
+    resp.set_status(500);
+    resp.set_body("request-region-oom");
+    co_return resp;
+  }
   if (req.method() == "POST") {
     // Echo back a fixed OK; record what body the server received.
     std::uint32_t n = req.body().size < 255 ? req.body().size : 255;
@@ -76,12 +120,25 @@ Task<HttpResponse> handler(Allocator /*alloc*/, void* ctx,
     r->post_seen[n] = '\0';
     resp.set_status(200);
     resp.add_header("Content-Type", "text/plain");
-    resp.set_body("posted-ok");
+    std::memcpy(scratch, "posted-ok", 9);
+    resp.set_body(string_ref{static_cast<const char*>(scratch), 9});
   } else if (req.path() == "/stream") {
     // Chunked streaming response (SSE-style token stream). The generator yields a
     // few fixed chunks then ends. ctx is a small counter kept in a static (test).
     resp.set_status(200);
     resp.add_header("Content-Type", "text/event-stream");
+    // The first streaming request deliberately creates >256 KiB of ordinary
+    // (<64 KiB each) request allocations. http_serve must finish streaming,
+    // then clear and release this high-water mark before request five.
+    if (call == 3) {
+      for (int i = 0; i < 10; ++i) {
+        if (alloc.allocate(32 * 1024, alignof(std::max_align_t)) == nullptr) {
+          resp.set_status(500);
+          resp.set_body("request-region-oom");
+          co_return resp;
+        }
+      }
+    }
     struct Gen {
       int i = 0;
       static StreamChunk next(void* g) noexcept {
@@ -93,14 +150,20 @@ Task<HttpResponse> handler(Allocator /*alloc*/, void* ctx,
                            self->i < 3};
       }
     };
-    // Gen must outlive the send; keep it in a static (single-threaded test).
-    static Gen g;
-    g.i = 0;
-    resp.set_stream(&Gen::next, &g);
+    // The stream state deliberately lives in the request Region. This catches
+    // clearing the Region before send_response has drained the generator.
+    Gen* g = alloc.construct<Gen>();
+    if (g == nullptr) {
+      resp.set_status(500);
+      resp.set_body("request-region-oom");
+      co_return resp;
+    }
+    resp.set_stream(&Gen::next, g);
   } else {
     resp.set_status(200);
     resp.add_header("Content-Type", "text/plain");
-    resp.set_body("hello-hyle");
+    std::memcpy(scratch, "hello-hyle", 10);
+    resp.set_body(string_ref{static_cast<const char*>(scratch), 10});
   }
   co_return resp;
 }
@@ -110,7 +173,8 @@ Task<int> server_fiber(Allocator alloc, IoContext* io, TcpListener* ls,
   // Accept up to 2 connections (one for the keep-alive test client, room for more).
   TcpStream conn = co_await ls->accept(kOwner);
   if (conn.valid()) {
-    co_await http_serve(alloc, std::move(conn), &handler, r);
+    Allocator counted(&counting_alloc, &counting_free, &counting_realloc, r);
+    co_await http_serve(counted, std::move(conn), &handler, r);
   }
   r->server_done.store(true, std::memory_order_release);
   co_return 0;
@@ -376,6 +440,20 @@ TEST(IoHttp, GetKeepAlive) {
   // same connection -- must succeed and decode correctly.
   EXPECT_EQ(r->stream2_status.load(), 200);
   EXPECT_STREQ(r->stream2_body_got, "tok-A tok-B tok-C");
+  // The high-level server supplies a Region allocator, retains its backing block
+  // on this keep-alive connection, and clears the logical request allocations.
+  // Identical handler frames + first scratch allocation therefore reuse the same
+  // addresses on every request instead of growing across the connection.
+  ASSERT_EQ(r->handler_calls.load(), 5);
+  ASSERT_NE(r->request_alloc_state[0], nullptr);
+  ASSERT_NE(r->request_scratch[0], nullptr);
+  for (int i = 0; i < 5; ++i) {
+    EXPECT_TRUE(r->request_uses_region[i]);
+    EXPECT_EQ(r->request_alloc_state[i], r->request_alloc_state[0]);
+    if (i < 4) EXPECT_EQ(r->request_scratch[i], r->request_scratch[0]);
+  }
+  EXPECT_GT(r->backing_4k_frees_seen[4], r->backing_4k_frees_seen[3])
+      << "request Region high-water blocks were retained past the cap";
 }
 
 // Request-smuggling defense (RFC 7230 §3.3.3, red-team fix 2026-07-05). The server

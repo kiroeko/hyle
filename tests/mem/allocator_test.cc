@@ -30,6 +30,7 @@ using hyle::mem::kDefaultAlignment;
 using hyle::mem::QuotaAllocator;
 using hyle::mem::StatsAllocator;
 using hyle::mem::system_allocator;
+using hyle::mem::system_collect;
 using hyle::mem::system_good_size;
 using hyle::mem::system_usable_size;
 using hyle::mem::SystemAllocator;
@@ -81,6 +82,17 @@ TEST(Allocator, SystemAllocatorIsValid) {
   Allocator a = system_allocator();
   EXPECT_TRUE(a.valid());
   EXPECT_NE(a.alloc_fn(), nullptr);
+}
+
+TEST(Allocator, SystemCollectPreservesLiveAllocations) {
+  Allocator allocator = system_allocator();
+  auto *live = allocator.allocate_n<std::uint64_t>(128);
+  ASSERT_NE(live, nullptr);
+  live[0] = 0x123456789abcdef0ULL;
+  system_collect();
+  EXPECT_EQ(live[0], 0x123456789abcdef0ULL);
+  allocator.deallocate_n(live, 128);
+  system_collect(true);
 }
 
 TEST(Allocator, DefaultAllocatorIsInvalid) {

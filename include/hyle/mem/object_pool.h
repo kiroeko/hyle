@@ -190,7 +190,7 @@ public:
         capacity_(capacity) {
     HYLE_FATAL_ASSERT(alloc_.valid());
     if (!pool_.valid() || capacity_ == 0 ||
-        capacity_ > std::numeric_limits<std::size_t>::max() / sizeof(T *))
+        capacity_ > (std::numeric_limits<std::size_t>::max)() / sizeof(T *))
       return;
     all_ = alloc_.template allocate_n<T *>(capacity_);
     if (all_ == nullptr)

@@ -2,6 +2,7 @@
 
 #include <cstring>
 
+#include "hyle/mem/region.h"
 #include "picohttpparser.h"
 
 // io-10 HTTP/1.1 integration layer. HYLE owns the io (co_await TcpStream over the
@@ -630,36 +631,55 @@ sched::Task<bool> HttpServerConn::send_response(const HttpResponse& resp) noexce
 
 // ---- high-level http_serve -------------------------------------------------
 
-sched::Task<void> http_serve(mem::Allocator alloc, TcpStream stream,
-                             HttpHandlerFn handler, void* ctx) noexcept {
-  HttpServerConn conn{alloc, std::move(stream)};
-  if (!conn.valid()) co_return;
-  for (;;) {
-    HttpRequest* req = co_await conn.next_request();
-    if (req == nullptr) break;
-    bool keep = req->keep_alive();
-    sched::Task<HttpResponse> ht = handler(alloc, ctx, *req);
-    HttpResponse resp = co_await ht;
-    if (!(co_await conn.send_response(resp))) break;
-    if (!keep) break;
-  }
-  co_return;
-}
+namespace {
 
-#if defined(HYLE_IO_TLS)
-sched::Task<void> http_serve(mem::Allocator alloc, TlsStream stream,
-                             HttpHandlerFn handler, void* ctx) noexcept {
+template <class Stream>
+sched::Task<void> http_serve_impl(mem::Allocator alloc, Stream stream,
+                                  HttpHandlerFn handler, void* ctx,
+                                  HttpServeOptions options) noexcept {
   HttpServerConn conn{alloc, std::move(stream)};
   if (!conn.valid()) co_return;
+  // Connection parsing/storage stays on the long-lived backing allocator. Only
+  // handler-owned, request-lifetime work uses this region. Retain ordinary blocks
+  // across keep-alive requests so a hot connection pays the backing allocation
+  // cost once; clear after the response and handler frame are both gone.
+  mem::Region request_region{alloc, options.request_region};
   for (;;) {
     HttpRequest* req = co_await conn.next_request();
     if (req == nullptr) break;
     const bool keep = req->keep_alive();
-    sched::Task<HttpResponse> task = handler(alloc, ctx, *req);
-    HttpResponse response = co_await task;
-    if (!(co_await conn.send_response(response)) || !keep) break;
+    bool sent = false;
+    {
+      // Destruction order is part of the contract: response, then handler Task
+      // (whose coroutine frame may own response views), then Region::clear().
+      // This keeps body/header views and streaming state alive through the send.
+      mem::Allocator request_alloc = request_region.as_allocator();
+      sched::Task<HttpResponse> task = handler(request_alloc, ctx, *req);
+      if (!task.valid()) break;
+      HttpResponse response = co_await task;
+      sent = co_await conn.send_response(response);
+    }
+    request_region.clear();
+    if (request_region.reserved() > options.request_region_retain_limit)
+      request_region.release();
+    if (!sent || !keep) break;
   }
   co_return;
+}
+
+}  // namespace
+
+sched::Task<void> http_serve(mem::Allocator alloc, TcpStream stream,
+                             HttpHandlerFn handler, void* ctx,
+                             HttpServeOptions options) noexcept {
+  return http_serve_impl(alloc, std::move(stream), handler, ctx, options);
+}
+
+#if defined(HYLE_IO_TLS)
+sched::Task<void> http_serve(mem::Allocator alloc, TlsStream stream,
+                             HttpHandlerFn handler, void* ctx,
+                             HttpServeOptions options) noexcept {
+  return http_serve_impl(alloc, std::move(stream), handler, ctx, options);
 }
 #endif
 

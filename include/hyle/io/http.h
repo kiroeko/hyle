@@ -9,6 +9,7 @@
 #include "hyle/io/tcp.h"
 #include "hyle/io/tls.h"
 #include "hyle/mem/allocator.h"
+#include "hyle/mem/region.h"
 #include "hyle/sched/coro.h"
 
 #if defined(HYLE_STATIC)
@@ -284,20 +285,51 @@ class HttpServerConn {
 // handler is a type-erased fn producing a Task; routing lives inside it. This is the
 // thin llama.cpp-style wrapper built on the primitives above.
 //
-// handler contract: HttpResponse must be fully described by the time its Task
-// completes (body view / stream ctx must outlive the subsequent send -- typically
-// the handler keeps them on its own coroutine frame or in caller-owned storage).
-// Allocator is FIRST (the coroutine-frame allocation idiom -- a handler that IS a
-// Task coroutine needs the allocator as its first parameter; see coro.h).
+// The Allocator passed to each handler is a request-scoped mem::Region view. Its
+// ordinary blocks are reused by that keep-alive connection up to the configured
+// retention limit, while all logical allocations are cleared after the response has
+// been sent and the handler Task/coroutine frame has been destroyed. The connection
+// parser and transport keep using the long-lived `alloc` passed to http_serve. A
+// handler may therefore allocate response headers, body views, stream state, nested
+// Task frames, and other scratch directly from its Allocator without individual
+// frees or cross-request retention. Anything that must survive the request must use
+// caller-owned storage instead.
+//
+// HttpResponse must be fully described by the time its Task completes. Body/header
+// views and stream ctx may point into the request allocator because it remains alive
+// through the subsequent send. Allocator is FIRST (the coroutine-frame allocation
+// idiom -- a handler that IS a Task coroutine needs it first; see coro.h).
 using HttpHandlerFn = sched::Task<HttpResponse> (*)(mem::Allocator alloc, void* ctx,
                                                     const HttpRequest& req) noexcept;
 
+struct HttpServeOptions {
+  // HTTP starts much smaller than Region's general-purpose 64 KiB default: a
+  // keep-alive server may have thousands of mostly idle connections. Ordinary
+  // blocks grow geometrically to 64 KiB; >=64 KiB allocations are dedicated and
+  // Region::clear() returns them immediately.
+  mem::RegionOptions request_region = []() constexpr {
+    mem::RegionOptions options;
+    options.initial_block_size = 4 * 1024;
+    options.max_block_size = 64 * 1024;
+    options.large_allocation_threshold = 64 * 1024;
+    return options;
+  }();
+
+  // After large blocks have been cleared, release all retained ordinary blocks
+  // when their backing-byte high-water mark exceeds this cap. Zero means retain
+  // nothing between requests. This bounds one pathological request's effect on a
+  // long-lived connection without taxing the normal small-request path.
+  std::size_t request_region_retain_limit = 256 * 1024;
+};
+
 HYLE_IO_API sched::Task<void> http_serve(mem::Allocator alloc, TcpStream stream,
-                                         HttpHandlerFn handler, void* ctx) noexcept;
+                                         HttpHandlerFn handler, void* ctx,
+                                         HttpServeOptions options = {}) noexcept;
 #if defined(HYLE_IO_TLS)
 HYLE_IO_API sched::Task<void> http_serve(mem::Allocator alloc, TlsStream stream,
                                          HttpHandlerFn handler,
-                                         void* ctx) noexcept;
+                                         void* ctx,
+                                         HttpServeOptions options = {}) noexcept;
 #endif
 
 // ---- HttpClientConn --------------------------------------------------------

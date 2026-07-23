@@ -241,21 +241,35 @@ struct HttpsResult {
   std::atomic<int> status{0};
   std::atomic<int> server_stage{0};
   std::atomic<int> client_stage{0};
+  std::atomic<bool> handler_used_region{false};
   char body[32] = {};
 };
+
+Task<HttpResponse> https_handler(Allocator alloc, void* context,
+                                 const hyle::io::HttpRequest&) noexcept {
+  auto* result = static_cast<HttpsResult*>(context);
+  result->handler_used_region.store(
+      alloc.alloc_fn() != system_allocator().alloc_fn(),
+      std::memory_order_relaxed);
+  char* body = alloc.allocate_n<char>(8);
+  HttpResponse response;
+  if (body == nullptr) {
+    response.set_status(500);
+    response.set_body({"request-region-oom", 18});
+    co_return response;
+  }
+  std::memcpy(body, "https-ok", 8);
+  response.set_body({body, 8});
+  co_return response;
+}
 
 Task<int> https_server(Allocator alloc, IoContext*, TcpListener* listener,
                        TlsContext* context, HttpsResult* result) {
   TcpStream socket = co_await listener->accept(kOwner);
   TlsStream tls(std::move(socket), *context, true);
   if (co_await tls_handshake(alloc, tls) == 0) {
-    HttpServerConn http(alloc, std::move(tls));
-    auto* request = co_await http.next_request();
-    if (request != nullptr) {
-      HttpResponse response;
-      response.set_body({"https-ok", 8});
-      (void)co_await http.send_response(response);
-    }
+    co_await hyle::io::http_serve(alloc, std::move(tls), &https_handler,
+                                  result);
   }
   result->server_done.store(true, std::memory_order_release);
   co_return 0;
@@ -326,6 +340,7 @@ TEST(IoTls, HttpRunsOverTlsTransport) {
   EXPECT_TRUE(result->client_done.load());
   EXPECT_EQ(result->status.load(), 200);
   EXPECT_STREQ(result->body, "https-ok");
+  EXPECT_TRUE(result->handler_used_region.load());
 }
 
 #if defined(HYLE_IO_HTTP2)

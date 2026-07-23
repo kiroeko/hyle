@@ -102,6 +102,8 @@ std::size_t system_good_size(std::size_t size) noexcept {
   return size != 0 ? mi_good_size(size) : 0;
 }
 
+void system_collect(bool force) noexcept { mi_collect(force); }
+
 void enable_allocator_hugepages(AllocatorHugepagePolicy policy) noexcept {
   // Programmatic stand-in for MIMALLOC_ALLOW_THP /
   // MIMALLOC_ALLOW_LARGE_OS_PAGES. Call early; mimalloc reads options on first

@@ -49,7 +49,7 @@ public:
         alignment > alignof(Allocation) ? alignment : alignof(Allocation);
 
     std::size_t lower = sizeof(Block) + sizeof(Allocation);
-    if (bytes > std::numeric_limits<std::size_t>::max() - lower)
+    if (bytes > (std::numeric_limits<std::size_t>::max)() - lower)
       return nullptr;
     lower += bytes;
 
@@ -201,7 +201,7 @@ private:
       capacity_ = 0;
       return;
     }
-    if (capacity_ > std::numeric_limits<std::uintptr_t>::max() - aligned) {
+    if (capacity_ > (std::numeric_limits<std::uintptr_t>::max)() - aligned) {
       begin_ = nullptr;
       capacity_ = 0;
       return;
@@ -284,7 +284,7 @@ private:
     a->requested = bytes;
     a->magic = kAllocationMagic;
     HYLE_FATAL_ASSERT(used_ <=
-                      std::numeric_limits<std::size_t>::max() - bytes);
+                      (std::numeric_limits<std::size_t>::max)() - bytes);
     used_ += bytes;
     if (used_ > peak_)
       peak_ = used_;

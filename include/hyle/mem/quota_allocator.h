@@ -24,7 +24,7 @@ class QuotaAllocator {
 public:
   explicit QuotaAllocator(
       Allocator backing,
-      std::size_t limit = std::numeric_limits<std::size_t>::max()) noexcept
+      std::size_t limit = (std::numeric_limits<std::size_t>::max)()) noexcept
       : backing_(backing), limit_(limit) {
     HYLE_FATAL_ASSERT(backing_.valid());
   }

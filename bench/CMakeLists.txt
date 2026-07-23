@@ -270,7 +270,7 @@ if(HYLE_HAS_FCONTEXT)
   target_link_libraries(hyle_http_bench PRIVATE hyle_sched hyle_io nanobench)
   hyle_apply_warnings(hyle_http_bench)
   if(WIN32)
-    target_link_libraries(hyle_http_bench PRIVATE ws2_32)
+    target_link_libraries(hyle_http_bench PRIVATE ws2_32 psapi)
   endif()
 
   # io multishot-recv bench (io-07b): does the multishot + provided-buffer-ring
