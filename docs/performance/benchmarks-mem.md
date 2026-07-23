@@ -2,7 +2,7 @@
 
 > 本页是 [performance 总账](./README.md) 的 **mem 模块**详节。
 > 源：`bench/mem/allocator_bench.cc`、`bench/mem/scenario_bench.cc`、`bench/mem/fiber_stack_bench.cc`。
-> 通用 churn 数据来自 2026-07-20 的 Win MSVC / WSL GCC 14 / Apple M4 AppleClang 实测；`SharedPool` / `SharedPoolCache` 绑定 clean commit `8cf52f9`。request closure、FixedPool、latency、fragmentation 和 footprint 按各节所列 commit。2026-07-23 的 MEM-FINAL-2 bump/realloc/adapter/fiber 证书统一绑定 clean product commit `2cbc307`：Win/WSL `n=15`；M4 为 `n=31`，bump/fiber 跑 interactive+utility，realloc/adapter 跑 interactive。同契约性能判定信任配对 **[sign]**。
+> 通用 churn 数据来自 2026-07-20 的 Win MSVC / WSL GCC 14 / Apple M4 AppleClang 实测；`SharedPool` / `SharedPoolCache` 绑定 clean commit `8cf52f9`。request closure、FixedPool、latency、fragmentation 和 footprint 按各节所列 commit。2026-07-23 的 MEM-FINAL-2 bump/realloc/adapter/fiber 证书统一绑定 clean product commit `2cbc307`：Win/WSL `n=15`；M4 为 `n=31`，bump/fiber 跑 interactive+utility，realloc/adapter 跑 interactive。同契约性能判定信任配对 **[sign]**。最终候选 `551be0b` 相对该提交的产品差异只有 `hugepage.h` 的直接标准头依赖，不改变受测实现；其余是文档/认证工具。raw/result 继续诚实绑定实际采样 commit，不重写 HEAD。
 
 ## 当前性能封口状态
 

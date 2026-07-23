@@ -195,5 +195,5 @@ benchmark 以场景和合同分组，入口是 `hyle_mem_scenarios_bench`；用
 [`../performance/benchmarks-mem.md`](../performance/benchmarks-mem.md)，本指南不复制点值、
 win/loss 或待补证据。性能结果用来帮助选型，不改变前述 ownership/capacity 合同。
 
-当前设计边界见 [`../architecture/mem-design.md`](../architecture/mem-design.md)；发布前剩余任务
-见 [`../milestones/mem-close-plan.md`](../milestones/mem-close-plan.md)。
+当前设计边界见 [`../architecture/mem-design.md`](../architecture/mem-design.md)；预发布冻结的
+验收记录见 [`../milestones/mem-close-plan.md`](../milestones/mem-close-plan.md)。

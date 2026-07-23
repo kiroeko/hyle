@@ -12,8 +12,8 @@ HYLE 当前不是“功能只完成一半”的骨架，也还不是可直接发
 | 外部产品面 | **部分完成** | 原生 C++ API 已广泛存在；多个模块已有独立 C/FFI surface，另有 install/export、跨编译器和 FFI 门未完 |
 | 完整北极星能力 | **约 70–80% 判断带** | graph-02 后两步、compute 后端/算子尾、统一发布验收 |
 
-2026-07-23 的 `cloc`：`src + include` 产品源码 **76,723** 行，tests **34,600**，
-bench **15,367**，docs（含 raw CSV）**21,312**。LOC 只说明资产体量，不作为功能或
+2026-07-23 的 `cloc`：`src + include` 产品源码 **76,724** 行，tests **34,610**，
+bench **15,367**，docs（含 raw CSV）**21,325**。LOC 只说明资产体量，不作为功能或
 SOTA 的替代证据。
 
 ## 预发布冻结门
@@ -45,7 +45,7 @@ SOTA 的替代证据。
 | 模块 | 判定 | 后续方式 |
 |---|---|---|
 | error/platform/time/simd/util/obs | **预发布冻结** | 只按上述触发器重开；SVE/RVV 真机证据仍是平台到位后的专项补证 |
-| mem | **封口候选，尚未冻结** | 功能族、API closure 与 MEM-FINAL-2 性能证据已完成；只剩最终三平台 C/C++、sanitizer 与导出/header 认证，见 [`mem-close-plan.md`](./mem-close-plan.md) |
+| mem | **预发布冻结** | 功能/API/性能已收口；最终候选 `551be0b` 通过三平台 C/C++、sanitizer、105 项动态导出与逐头独立编译认证，见 [`mem-close-plan.md`](./mem-close-plan.md) |
 | container | **预发布冻结** | StringBuf 复杂度/争用/batch/三平台强 peer 已收口；已知 Linux/M4 lifecycle 常数边界写入证书 |
 | sched | **预发布冻结** | 双任务腿、饱和/关闭红队、114 入口 C ABI 与 guide 已收口；marl 15 遍三平台为 Win/Lin 明确赢、M4 统计平局；只按触发器重开 |
 | io | **下一批强收口** | 功能/下游/红队/测试性能/C ABI/指南六项一次完成 |

@@ -2,7 +2,7 @@
 
 | 字段 | 值 |
 |---|---|
-| **状态** | 🔶 API/性能已收口，等待 release-candidate certification |
+| **状态** | ✅ 完成；mem 进入预发布冻结（2026-07-23） |
 | **起始基线** | `024f379`（2026-07-23） |
 | **范围** | 只补 API parity、性能证据和最终认证；不新增 allocator 类型 |
 | **设计真源** | [`../architecture/mem-design.md`](../architecture/mem-design.md) |
@@ -22,6 +22,8 @@
   API closure 后 105 个动态导出同步。
 - Windows 178/178 C++ mem、纯 C 与 DLL 105/105 surface 通过；Linux 178/178 C++ mem、
   纯 C 与 ELF 105/105 surface 通过。
+- 最终候选 `551be0b`：公开头逐个独立编译时发现并修复 `hugepage.h` 对 `<utility>` 的
+  间接 include 依赖；Windows ASan DLL 的 alias 导出行也纳入 manifest 校验。
 
 `024f379` 是重审起点；本页勾选只记录后续任务验收，不自动等于最终候选 commit 的认证。
 
@@ -46,13 +48,26 @@
 
 ### MEM-FINAL-3：release-candidate certification
 
-- [ ] 最终 API/perf commit 上跑 Windows x64、Linux GCC/Clang、macOS arm64 完整 mem 与纯 C。
-- [ ] 跑适用的 ASan/UBSan/TSan、DLL/ELF/Mach-O 导出清单和 header self-contained 检查。
-- [ ] 更新 performance 的 raw/result metadata；检查 architecture/guide/performance/milestone
+- [x] 最终 API/perf commit 上跑 Windows x64、Linux GCC/Clang、macOS arm64 完整 mem 与纯 C。
+- [x] 跑适用的 ASan/UBSan/TSan、DLL/ELF/Mach-O 导出清单和 header self-contained 检查。
+- [x] 更新 performance 的 raw/result metadata；检查 architecture/guide/performance/milestone
   没有互相复制的陈旧现状。
+
+最终候选认证矩阵（commit `551be0b`）：
+
+| 平台 / 工具链 | 完整 C++ mem + 纯 C | 动态 C surface | 独立头单元 | sanitizer |
+|---|---|---|---|---|
+| Windows x64 / MSVC 19.50 | 178/178 + PASS | DLL 105/105 | 16 C++ + 1 C | MSVC ASan PASS |
+| Linux x64 / GCC 14.2 | 178/178 + PASS | ELF 105/105 | 16 C++ + 1 C | GCC TSan PASS（`setarch -R`） |
+| Linux x64 / Clang 20.1 | 178/178 + PASS | ELF 105/105 | 16 C++ + 1 C | Clang ASan/UBSan PASS |
+| macOS arm64 / AppleClang 21 | 178/178 + PASS | Mach-O 105/105 | 16 C++ + 1 C | —；三类 sanitizer 已由 Win/Linux 覆盖 |
+
+performance raw 不重写：最终性能产品提交仍为 clean `2cbc307`；`551be0b` 相对它的产品差异
+只有 `hugepage.h` 补直接 `<utility>` include，不改变实现、ABI 或生成路径，其余差异均为
+文档/认证工具。因此原始 CSV 和统计结果仍绑定实际产生数据的 commit，而不是伪造新 metadata。
 
 ## 停止点
 
-三个 work item 全部通过后，本任务关闭，mem 标记“预发布冻结”并移出主动重构队列。
+三个 work item 已全部通过，本任务关闭；mem 标记“预发布冻结”并移出主动重构队列。
 冻结和重开条件只认 [`mem-design.md` §12](../architecture/mem-design.md#12-收口定义与重开边界)，
 不再新增“再观察几轮”或“所有数字都必须赢较弱合同对手”等不可验收条件。
