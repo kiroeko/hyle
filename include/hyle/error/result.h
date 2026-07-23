@@ -31,7 +31,9 @@ namespace detail {
 // HYLE_RETURN_IF_ERROR. The success path only observes the carrier by reference;
 // it does not construct/copy a Status. On failure, lvalues copy their error and
 // temporaries move it.
-inline bool status_ok(const Status &status) noexcept { return status.ok(); }
+inline bool status_ok(const Status &status) noexcept {
+  return status.ok();
+}
 inline bool status_ok(const Result<void> &result) noexcept {
   return result.has_value();
 }
@@ -56,30 +58,20 @@ inline Status &&status_error(Result<void> &&result) noexcept {
 // the conversion has to be carried explicitly -- that is this type's whole job.
 class FailReturn {
  public:
-  explicit FailReturn(const Status &status) noexcept : status_(&status) {}
-  explicit FailReturn(Status &&status) noexcept
-      : status_(&status), movable_(&status) {}
+  explicit FailReturn(Status status) noexcept : status_(std::move(status)) {}
 
   // -> a function returning Status
   operator Status() && noexcept {
-    return Take();
+    return std::move(status_);
   }  // NOLINT(*-explicit)
   // -> a function returning Result<U>
   template <class U>
   operator Result<U>() && noexcept {  // NOLINT(*-explicit)
-    return std::unexpected<Status>(Take());
+    return std::unexpected<Status>(std::move(status_));
   }
 
  private:
-  Status Take() noexcept {
-    return movable_ != nullptr ? Status(std::move(*movable_)) : Status(*status_);
-  }
-
-  // The proxy is used only as the operand of `return`; borrowing the carrier
-  // keeps its destructor trivial. This matters on MSVC: an owning proxy caused
-  // EH cleanup state to leak into the success path of every propagation macro.
-  const Status *status_;
-  Status *movable_ = nullptr;
+  Status status_;
 };
 
 }  // namespace detail

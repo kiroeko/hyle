@@ -329,6 +329,12 @@ add_executable(hyle_error_bench error/status_bench.cc)
 target_link_libraries(hyle_error_bench PRIVATE hyle_error nanobench)
 hyle_apply_warnings(hyle_error_bench)
 
+# Real error workflows live in a second TU/executable so extending them cannot
+# perturb the core carrier microbench's whole-TU inlining/code layout.
+add_executable(hyle_error_normal_bench error/normal_bench.cc)
+target_link_libraries(hyle_error_normal_bench PRIVATE hyle_error nanobench)
+hyle_apply_warnings(hyle_error_normal_bench)
+
 # misc-module bench (gap-fill #37): util/random (xoshiro256++ vs std::mt19937_64),
 # time/clock (monotonic/realtime vs std::chrono), obs/log (produce-path overhead).
 # random is header-only (util); clock needs hyle_time, log needs hyle_obs.
@@ -881,6 +887,8 @@ if(HYLE_BENCH_ABSL)
   # error bench's SOTA rival (same gate). absl::statusor pulls in absl::status.
   target_compile_definitions(hyle_error_bench PRIVATE HYLE_BENCH_ABSL)
   target_link_libraries(hyle_error_bench PRIVATE absl::status absl::status_builder absl::statusor)
+  target_compile_definitions(hyle_error_normal_bench PRIVATE HYLE_BENCH_ABSL)
+  target_link_libraries(hyle_error_normal_bench PRIVATE absl::status)
 endif()
 
 # compute bench (compute-06 #16): CPU submit cost, launch (re-record) vs replay (reuse a
