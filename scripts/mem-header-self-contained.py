@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import platform
 import subprocess
 import tempfile
 from pathlib import Path
@@ -29,6 +30,7 @@ def compile_header(
     header: str,
     language: str,
     work_dir: Path,
+    sysroot: str,
 ) -> None:
     suffix = ".c" if language == "c" else ".cc"
     stem = header.replace("/", "_").replace(".", "_")
@@ -56,8 +58,10 @@ def compile_header(
             standard,
             "-fsyntax-only",
             f"-I{include_dir}",
-            str(source),
         ]
+        if sysroot:
+            command.extend(["-isysroot", sysroot])
+        command.append(str(source))
 
     result = subprocess.run(command, text=True, capture_output=True, check=False)
     if result.returncode != 0:
@@ -67,6 +71,17 @@ def compile_header(
 
 def main() -> int:
     args = parse_args()
+    sysroot = ""
+    if platform.system() == "Darwin":
+        result = subprocess.run(
+            ["/usr/bin/xcrun", "--sdk", "macosx", "--show-sdk-path"],
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        if result.returncode != 0 or not result.stdout.strip():
+            raise RuntimeError(f"could not discover the macOS SDK: {result.stderr}")
+        sysroot = result.stdout.strip()
     include_dir = args.include_dir.resolve()
     mem_dir = include_dir / "hyle" / "mem"
     headers = [path.relative_to(include_dir).as_posix() for path in sorted(mem_dir.glob("*.h"))]
@@ -84,6 +99,7 @@ def main() -> int:
                 header,
                 "c++",
                 work_dir,
+                sysroot,
             )
         compile_header(
             args.cc,
@@ -93,6 +109,7 @@ def main() -> int:
             "hyle/c/mem.h",
             "c",
             work_dir,
+            sysroot,
         )
 
     print(f"mem headers self-contained: {len(headers)} C++ + 1 C")
