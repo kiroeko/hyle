@@ -28,11 +28,26 @@ last-error 分类和“失败指针 + 另查 TLS”的组合；未发布，不�
 - macOS AppleClang 当前提交尚待远程复证，因此 A 阶段实现完成，但不把 platform
   或 error 写成三平台最终冻结。
 
-## B 阶段：VM + NUMA（待执行）
+## B 阶段：VM + NUMA（2026-07-23，Windows/Linux 已完成）
 
-VM/NUMA 仍使用 `hyle_vm_last_error`。它们直接穿过 `FiberStack`、`HugeRegion`、mem C
-ABI 与若干热内存形状，须独立审计失败分层、底层依赖方向和 hot path，再决定哪些
-资源构造返回 Result、哪些页原语保留零分配紧凑结果。A 阶段不宣称 platform 已全收口。
+- VM 页原语返回 8-byte `Status`，reserve/`VmRegion` 工厂返回 `Result`；成功态零分配，
+  原生诊断只在失败路径构造。删除 `hyle_vm_last_error` 与 setter。
+- NUMA 返回 `NumaPlacement`（Applied/NotNeeded/Unavailable）：preferred 的可用降级不再
+  冒充“已放置”，hard bind/interleave 无法满足时返回结构化错误。
+- C ABI 全面采用 `hyle_status` + out，`VmRegion::adopt` 只在成功后转移所有权。
+- `HugeRegion`、`FiberStack`、stack pool 与 sched 的 detached/task 路径传播共享错误；
+  mem C 仍保留分配语义的小枚举，但直接按 StatusCode 映射，不再捕获 platform TLS。
+- Windows MSVC Release 的 platform/mem/sched C/C++ 与 mem header/surface 共 8 项通过；
+  WSL GCC 14 的同链路 8 项通过。
+- Windows MSVC ASan 的 platform/mem 全绿；sched 受影响的新 `Fiber::create` 与 VM stack
+  路径通过。sched 全套仅既有 `RetiredThreadHandlesStayBoundedAcrossBursts` 首轮瞬时观测到
+  2（阈值 1），隔离复跑通过，不冒充单轮 138/138。WSL UBSan 的 platform 2/2、mem
+  4/4、sched 2/2 全绿。
+- 当前形状的 Windows 定向 smoke：VM reserve/commit/decommit/release 为 1167 ns，raw
+  为 897 ns；protect pair 为 460/439 ns；FiberStackPool 的 32-fiber batch p50 为
+  7.3 us，直接 guarded VM 为 155 us。它们只证明接口重构没有离开既有统计带，不替代
+  三平台正式性能证书。
+- macOS AppleClang 与本阶段 TSan 仍待复证，不能写成三平台冻结。
 
 ## 完成条件
 

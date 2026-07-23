@@ -47,6 +47,16 @@ WSL GCC 14 同形状 n=5 因完整 platform suite 在当前环境超过 10 分�
 可回收统计输出；旧 Linux n=5 数字继续保留但不冒充本轮重测。Linux 正确性与 UBSan
 已通过，性能仍待在低噪声会话复跑；macOS 当前提交同样待远程复证。
 
+### 2026-07-23 VM `Result/Status` 成功路径复证
+
+VM/NUMA 删除 TLS last-error 后，benchmark 使用当前用户形状：reserve 取
+`Result<void*>`，commit/protect/release 取 `Status`。Windows MSVC 19.50 的定向 smoke
+run 得到一页 reserve+commit+release：raw **897.42 ns**、HYLE **1167.11 ns**（0.769x）；
+RW↔RO protect pair：raw **438.51 ns**、HYLE **459.52 ns**（0.954x）。它们分别落在旧证书
+1144/877 ns 与 446/428 ns 的同一带内，没有观察到结构化成功态带来的额外回退；两步
+VM 的合同差和 protect 的约 5% 薄封装税仍按下节原判定。该单进程 run 只作接口迁移
+回归哨兵，不替代上表 n=15 三平台证书；Linux/macOS 新接口仍待性能复证。
+
 ## 非 SOTA / 需诚实标价
 
 ### 1. `vm_reserve`+`vm_commit` 输 raw 一步分配（真，非噪声）
@@ -95,6 +105,9 @@ Win/M4 赢 ifstream（零拷贝优势）；Linux 上 med **12.7 vs 8.7 µs**（i
 
 ```bash
 cmake --build <build> --target hyle_platform_bench
+# 定向 smoke，避免运行无关的阻塞/线程段：
+HYLE_PLATFORM_BENCH_ONLY=vm-cycle,vm-protect \
+  <build>/bin/hyle_platform_bench
 # OS 段建议 n=5~15；单遍先确认墙钟 <~60s
 scripts/bench-stat.py <build>/bin/hyle_platform_bench -n 5 \
   --pair "std::condition_variable ping-pong" "HYLE Parker ping-pong" \

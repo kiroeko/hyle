@@ -63,7 +63,7 @@ TEST(FiberGuard, PoolRecycleAcrossFibers) {
   FiberStackPool pool(kFiberStackDefault, /*cache_cap=*/4);
   void* first_base = nullptr;
   {
-    FiberStack s = pool.acquire();
+    FiberStack s = pool.acquire().value();
     first_base = s.base();
     int v = 0;
     Fiber f(std::move(s), &mark_entry, &v, &pool);
@@ -74,7 +74,7 @@ TEST(FiberGuard, PoolRecycleAcrossFibers) {
   }
   EXPECT_EQ(pool.cached(), 1u);
   {
-    FiberStack s = pool.acquire();
+    FiberStack s = pool.acquire().value();
     EXPECT_EQ(s.base(), first_base);
     int v = 0;
     Fiber f(std::move(s), &mark_entry, &v, &pool);

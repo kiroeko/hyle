@@ -185,8 +185,13 @@ if (p != nullptr) bounded.deallocate(p, 4096, 64);
 
 `HugeRegion::requested_flags()` 记录调用者策略；`accepted_flags()` 记录 OS-facing 调用已
 接受的 THP/prefault/strict placement。THP advice 被接受不代表每一物理页已经提升。
-`numa_placement_applied()` 单独说明 placement 调用结果。hard bind/interleave 不能满足时
-返回 invalid region；preferred/THP 是 best-effort。
+`numa_placement_applied()` 单独说明 placement 调用结果。`allocate*` 返回
+`Result<HugeRegion>`：hard bind/interleave 不能满足时返回带原因的 Status；preferred
+可以返回可用 region 但 `numa_placement_applied()==false`，THP 仍是 best-effort。
+
+`FiberStack::allocate` 与 `FiberStackPool::acquire` 同样返回 `Result<FiberStack>`，使 sched
+能保留原生 VM 失败原因；可信固定配置仍可用 `Fiber` 便利构造，用户输入应走
+`Fiber::create` 的可恢复接口。
 
 ## 如何看性能
 

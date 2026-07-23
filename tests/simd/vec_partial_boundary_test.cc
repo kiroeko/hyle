@@ -86,10 +86,9 @@ void CheckLoadUPageEndNoFault() {
 
   // Reserve two pages: [0,page) becomes RW (holds the data), [page,2*page) stays
   // no-access so an over-read past the logical range faults in it.
-  pf::VmRegion region = pf::VmRegion::reserve(page * 2);
-  ASSERT_TRUE(region.valid()) << pf::vm_last_error();
-  ASSERT_TRUE(region.commit(0, page)) << pf::vm_last_error();
-  ASSERT_TRUE(region.protect(page, page, pf::Protect::kNone)) << pf::vm_last_error();
+  pf::VmRegion region = pf::VmRegion::reserve(page * 2).value();
+  ASSERT_TRUE(region.commit(0, page).ok());
+  ASSERT_TRUE(region.protect(page, page, pf::Protect::kNone).ok());
   auto* base = static_cast<unsigned char*>(region.data());
 
   // Exactly kLogical bytes ending at the first-page boundary.

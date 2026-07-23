@@ -79,13 +79,35 @@ void Fiber::release_stack_() noexcept {
   if (pool_ != nullptr) {
     pool_->release(std::move(stack_));
   } else {
-    stack_.reset();
+    (void)stack_.reset();
   }
   pool_ = nullptr;
 }
 
+Result<Fiber> Fiber::create(std::size_t stack_size, EntryFn entry,
+                            void* arg) noexcept {
+  if (entry == nullptr) {
+    return std::unexpected(Status::InvalidArgument("fiber entry is null"));
+  }
+  if (stack_size < kMinStackSize) {
+    return std::unexpected(
+        Status::InvalidArgument("fiber stack is smaller than one page"));
+  }
+  auto stack = mem::FiberStack::allocate(stack_size);
+  if (!stack) {
+    return std::unexpected(
+        std::move(stack).error().WithContext("fiber stack allocation"));
+  }
+  return Fiber(*std::move(stack), entry, arg, nullptr);
+}
+
 Fiber::Fiber(std::size_t stack_size, EntryFn entry, void* arg)
-    : Fiber(mem::FiberStack::allocate(stack_size), entry, arg, nullptr) {}
+    : Fiber([stack_size] {
+        auto stack = mem::FiberStack::allocate(stack_size);
+        HYLE_FATAL_ASSERT(stack.has_value());
+        return *std::move(stack);
+      }(),
+            entry, arg, nullptr) {}
 
 Fiber::Fiber(mem::FiberStack stack, EntryFn entry, void* arg,
              mem::FiberStackPool* pool)

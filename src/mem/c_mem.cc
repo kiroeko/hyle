@@ -17,9 +17,10 @@
 #include "hyle/c/mem.h"
 
 #include <cstddef>
-#include <cstring>
 #include <cstdio>
+#include <cstring>
 #include <new>
+#include <string_view>
 #include <type_traits>
 #include <utility>
 
@@ -33,7 +34,6 @@
 #include "hyle/mem/shared_pool.h"
 #include "hyle/mem/stack_allocator.h"
 #include "hyle/mem/stats.h"
-#include "hyle/platform/virtual_memory.h" // vm_last_error() for hyle_mem_last_error
 
 namespace {
 
@@ -55,30 +55,29 @@ void set_mem_error(hyle_mem_error code, const char *message) noexcept {
   std::snprintf(g_mem_last_error, sizeof(g_mem_last_error), "%s", message);
 }
 
-void set_mem_error_from_platform(const char *fallback) noexcept {
-  const char *message = hyle::platform::vm_last_error();
-  set_mem_error(HYLE_MEM_ERROR_PLATFORM,
-                message != nullptr && message[0] != '\0' ? message : fallback);
+hyle_mem_error mem_error_from_status(hyle::StatusCode code) noexcept {
+  switch (code) {
+  case hyle::StatusCode::InvalidArgument:
+  case hyle::StatusCode::OutOfRange:
+    return HYLE_MEM_ERROR_INVALID_ARGUMENT;
+  case hyle::StatusCode::ResourceExhausted:
+    return HYLE_MEM_ERROR_OUT_OF_MEMORY;
+  default:
+    return HYLE_MEM_ERROR_PLATFORM;
+  }
 }
 
-class VmErrorCapture {
-public:
-  VmErrorCapture() noexcept {
-    const char *previous = hyle::platform::vm_last_error();
-    std::snprintf(previous_, sizeof(previous_), "%s",
-                  previous != nullptr ? previous : "");
-    hyle::platform::vm_set_last_error(nullptr);
+void set_mem_error_from_status(const hyle::Status &status,
+                               const char *fallback) noexcept {
+  g_mem_last_error_code = mem_error_from_status(status.code());
+  const std::string_view message = status.message();
+  if (!message.empty()) {
+    std::snprintf(g_mem_last_error, sizeof(g_mem_last_error), "%.*s",
+                  static_cast<int>(message.size()), message.data());
+  } else {
+    std::snprintf(g_mem_last_error, sizeof(g_mem_last_error), "%s", fallback);
   }
-  ~VmErrorCapture() {
-    hyle::platform::vm_set_last_error(previous_[0] != '\0' ? previous_
-                                                               : nullptr);
-  }
-  VmErrorCapture(const VmErrorCapture &) = delete;
-  VmErrorCapture &operator=(const VmErrorCapture &) = delete;
-
-private:
-  char previous_[512] = {};
-};
+}
 
 static_assert(std::is_standard_layout_v<hyle_allocator>);
 static_assert(std::is_trivially_copyable_v<hyle_allocator>);
@@ -1052,15 +1051,16 @@ hyle_huge_region_o *hyle_huge_region_open(size_t bytes, uint32_t flags,
                   "hyle_huge_region_open: invalid size or flag combination");
     return nullptr;
   }
-  VmErrorCapture vm_error;
   auto r =
       hyle::mem::HugeRegion::allocate(bytes, to_huge_flags(flags), numa_node);
-  if (!r.valid()) {
-    set_mem_error_from_platform("hyle_huge_region_open: allocation failed");
+  if (!r) {
+    set_mem_error_from_status(r.error(),
+                              "hyle_huge_region_open: allocation failed");
     return nullptr;
   }
   const hyle_allocator backing = system_backing();
-  auto *out = allocate_handle<hyle_huge_region_o>(backing, std::move(r));
+  auto *out =
+      allocate_handle<hyle_huge_region_o>(backing, *std::move(r));
   if (out == nullptr) {
     set_mem_error(HYLE_MEM_ERROR_OUT_OF_MEMORY,
         "hyle_huge_region_open: control allocation failed (out of memory)");
@@ -1083,15 +1083,15 @@ hyle_huge_region_o *hyle_huge_region_open_local(size_t bytes, uint32_t flags) {
         "hyle_huge_region_open_local: invalid size or flag combination");
     return nullptr;
   }
-  VmErrorCapture vm_error;
   auto r = hyle::mem::HugeRegion::allocate_local(bytes, to_huge_flags(flags));
-  if (!r.valid()) {
-    set_mem_error_from_platform(
-        "hyle_huge_region_open_local: allocation failed");
+  if (!r) {
+    set_mem_error_from_status(
+        r.error(), "hyle_huge_region_open_local: allocation failed");
     return nullptr;
   }
   const hyle_allocator backing = system_backing();
-  auto *out = allocate_handle<hyle_huge_region_o>(backing, std::move(r));
+  auto *out =
+      allocate_handle<hyle_huge_region_o>(backing, *std::move(r));
   if (out == nullptr) {
     set_mem_error(HYLE_MEM_ERROR_OUT_OF_MEMORY,
                   "hyle_huge_region_open_local: control allocation failed "
@@ -1109,15 +1109,15 @@ hyle_huge_region_o *hyle_huge_region_open_interleaved(size_t bytes) {
                   "hyle_huge_region_open_interleaved: size must be nonzero");
     return nullptr;
   }
-  VmErrorCapture vm_error;
   auto r = hyle::mem::HugeRegion::allocate_interleaved(bytes);
-  if (!r.valid()) {
-    set_mem_error_from_platform(
-        "hyle_huge_region_open_interleaved: allocation failed");
+  if (!r) {
+    set_mem_error_from_status(
+        r.error(), "hyle_huge_region_open_interleaved: allocation failed");
     return nullptr;
   }
   const hyle_allocator backing = system_backing();
-  auto *out = allocate_handle<hyle_huge_region_o>(backing, std::move(r));
+  auto *out =
+      allocate_handle<hyle_huge_region_o>(backing, *std::move(r));
   if (out == nullptr) {
     set_mem_error(HYLE_MEM_ERROR_OUT_OF_MEMORY,
         "hyle_huge_region_open_interleaved: control allocation failed (out of "

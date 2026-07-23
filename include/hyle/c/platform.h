@@ -14,7 +14,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "hyle/c/error.h" /* hyle_status for Thread spawn failures */
+#include "hyle/c/error.h" /* hyle_status for recoverable resource failures */
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,8 +37,8 @@ extern "C" {
 
 /* Last recoverable error from C-shim facilities that do not return hyle_status
  * and do not have a more specific channel (currently Parker wrapper creation
- * and filesystem/fd operations). Thread-local; "" means none. VM/mapped/NUMA
- * still use hyle_vm_last_error; DynLib returns hyle_status directly. */
+ * and filesystem/fd operations). Thread-local; "" means none. Thread, DynLib,
+ * MappedFile and VM/NUMA return hyle_status directly. */
 HYLE_PLATFORM_C_API const char* hyle_platform_last_error(void);
 
 /* ========================================================================== */
@@ -202,24 +202,20 @@ static inline size_t hyle_page_align_up(size_t n) {
   return (n + (p - 1)) & ~(p - 1);
 }
 
-HYLE_PLATFORM_C_API void* hyle_vm_reserve(size_t size);
-HYLE_PLATFORM_C_API int hyle_vm_commit(void* ptr, size_t size);   /* 1 ok */
-HYLE_PLATFORM_C_API int hyle_vm_decommit(void* ptr, size_t size);
-HYLE_PLATFORM_C_API int hyle_vm_release(void* base, size_t size);
-HYLE_PLATFORM_C_API int hyle_vm_protect(void* ptr, size_t size, hyle_protect prot);
-HYLE_PLATFORM_C_API const char* hyle_vm_last_error(void);
+HYLE_PLATFORM_C_API hyle_status hyle_vm_reserve(void** out, size_t size);
+HYLE_PLATFORM_C_API hyle_status hyle_vm_commit(void* ptr, size_t size);
+HYLE_PLATFORM_C_API hyle_status hyle_vm_decommit(void* ptr, size_t size);
+HYLE_PLATFORM_C_API hyle_status hyle_vm_release(void* base, size_t size);
+HYLE_PLATFORM_C_API hyle_status hyle_vm_protect(void* ptr, size_t size,
+                                                hyle_protect prot);
 
 /* Reserve+commit RW; size rounded up to page. Pair with hyle_vm_free_rw,
  * passing the original request size. */
-HYLE_PLATFORM_C_API void* hyle_vm_alloc_rw(size_t size);
+HYLE_PLATFORM_C_API hyle_status hyle_vm_alloc_rw(void** out, size_t size);
 /* Release a block from hyle_vm_alloc_rw (size is the original request; rounded
  * up to page internally). Exported (not inline) so cross-language FFI callers
- * release without reconstructing the page rounding themselves. Returns 1 ok. */
-HYLE_PLATFORM_C_API int hyle_vm_free_rw(void* p, size_t size);
-
-/* Set the thread-local vm error string (NULL clears). Mirrors the C++
- * vm_set_last_error; lets an FFI soft-fail path leave a breadcrumb. */
-HYLE_PLATFORM_C_API void hyle_vm_set_last_error(const char* msg);
+ * release without reconstructing the page rounding themselves. */
+HYLE_PLATFORM_C_API hyle_status hyle_vm_free_rw(void* p, size_t size);
 
 /* ========================================================================== */
 /* Hugepage / THP hints (v3) — soft advice, never required for correctness.   */
@@ -236,10 +232,11 @@ static inline size_t hyle_large_page_align_up(size_t n) {
   if (n > SIZE_MAX - (p - 1)) return 0;
   return (n + (p - 1)) & ~(p - 1);
 }
-/* MADV_HUGEPAGE / MADV_NOHUGEPAGE on Linux; false + vm_last_error elsewhere.
- * ptr must be page-aligned; size rounded up. Empty range -> 1 (no-op). */
-HYLE_PLATFORM_C_API int hyle_vm_advise_hugepage(void* ptr, size_t size);
-HYLE_PLATFORM_C_API int hyle_vm_advise_no_hugepage(void* ptr, size_t size);
+/* MADV_HUGEPAGE / MADV_NOHUGEPAGE on Linux. Unsupported platforms return
+ * HYLE_STATUS_UNIMPLEMENTED. Empty ranges are successful no-ops. */
+HYLE_PLATFORM_C_API hyle_status hyle_vm_advise_hugepage(void* ptr, size_t size);
+HYLE_PLATFORM_C_API hyle_status hyle_vm_advise_no_hugepage(void* ptr,
+                                                           size_t size);
 
 /* ========================================================================== */
 /* NUMA topology + placement (v3)                                             */
@@ -257,6 +254,12 @@ typedef enum hyle_numa_policy {
   HYLE_NUMA_INTERLEAVE = 2 /* stripe across all nodes (Linux) */
 } hyle_numa_policy;
 
+typedef enum hyle_numa_placement {
+  HYLE_NUMA_PLACEMENT_APPLIED = 0,
+  HYLE_NUMA_PLACEMENT_NOT_NEEDED = 1,
+  HYLE_NUMA_PLACEMENT_UNAVAILABLE = 2
+} hyle_numa_placement;
+
 /* Node count (>=1) and the calling thread's home node (< count). */
 HYLE_PLATFORM_C_API unsigned hyle_numa_node_count(void);
 HYLE_PLATFORM_C_API unsigned hyle_numa_current_node(void);
@@ -264,32 +267,34 @@ HYLE_PLATFORM_C_API unsigned hyle_numa_current_node(void);
 /* NUMA node owning logical CPU `cpu` (0 on failure / single-node / out-of-range). */
 HYLE_PLATFORM_C_API unsigned hyle_numa_node_of_cpu(unsigned cpu);
 
-/* Bind an existing page-aligned mapping. Empty range -> 1. Honest contract:
- * single-node box -> 1 (no-op); multi-node hard bind / interleave without an OS
- * API -> 0 (+ vm_last_error). See hyle::platform::vm_bind_numa. */
-HYLE_PLATFORM_C_API int hyle_vm_bind_numa(void* ptr, size_t size, int node,
-                                          hyle_numa_policy policy);
+/* Bind an existing page-aligned mapping. `out_placement` may be NULL when the
+ * caller does not need to distinguish applied/no-op/soft fallback. */
+HYLE_PLATFORM_C_API hyle_status hyle_vm_bind_numa(
+    hyle_numa_placement* out_placement, void* ptr, size_t size, int node,
+    hyle_numa_policy policy);
 /* Stripe [ptr,ptr+size) across all nodes (alias for INTERLEAVE). */
-HYLE_PLATFORM_C_API int hyle_vm_bind_numa_interleave(void* ptr, size_t size);
+HYLE_PLATFORM_C_API hyle_status hyle_vm_bind_numa_interleave(
+    hyle_numa_placement* out_placement, void* ptr, size_t size);
 /* Reserve `size` (page-rounded) preferring `node` (HYLE_NUMA_ANY == plain
- * reserve). NULL on failure. Commit/release with the usual hyle_vm_* APIs. */
-HYLE_PLATFORM_C_API void* hyle_vm_reserve_numa(size_t size, int node);
+ * reserve). `out_placement` may be NULL. */
+HYLE_PLATFORM_C_API hyle_status hyle_vm_reserve_numa(
+    void** out, hyle_numa_placement* out_placement, size_t size, int node);
 
 /* RAII region (opaque). destroy releases the reservation. */
 typedef struct hyle_vm_region_o hyle_vm_region_o;
-HYLE_PLATFORM_C_API hyle_vm_region_o* hyle_vm_region_reserve(size_t size);
-HYLE_PLATFORM_C_API hyle_vm_region_o* hyle_vm_region_reserve_guarded(
-    size_t usable);
+HYLE_PLATFORM_C_API hyle_status hyle_vm_region_reserve(
+    hyle_vm_region_o** out, size_t size);
+HYLE_PLATFORM_C_API hyle_status hyle_vm_region_reserve_guarded(
+    hyle_vm_region_o** out, size_t usable);
 /* Reserve preferring NUMA `node` (HYLE_NUMA_ANY == plain reserve), as a managed
- * region handle. NULL on failure. (v5) */
-HYLE_PLATFORM_C_API hyle_vm_region_o* hyle_vm_region_reserve_numa(size_t size,
-                                                                 int node);
+ * region handle. Returns Status and writes `*out` on success. */
+HYLE_PLATFORM_C_API hyle_status hyle_vm_region_reserve_numa(
+    hyle_vm_region_o** out, size_t size, int node);
 /* Adopt an existing page-aligned reservation from hyle_vm_reserve* into a region
  * handle (destroy releases it). `size` must be the rounded size that pairs with
- * release. NULL on failure (e.g. base==NULL). Ownership transfers to the region.
- * (v5) */
-HYLE_PLATFORM_C_API hyle_vm_region_o* hyle_vm_region_adopt(void* base,
-                                                          size_t size);
+ * release. Ownership transfers only after Status success. */
+HYLE_PLATFORM_C_API hyle_status hyle_vm_region_adopt(
+    hyle_vm_region_o** out, void* base, size_t size);
 HYLE_PLATFORM_C_API void hyle_vm_region_destroy(hyle_vm_region_o* r);
 HYLE_PLATFORM_C_API int hyle_vm_region_valid(const hyle_vm_region_o* r);
 HYLE_PLATFORM_C_API void* hyle_vm_region_data(hyle_vm_region_o* r);
@@ -297,13 +302,16 @@ HYLE_PLATFORM_C_API size_t hyle_vm_region_size(const hyle_vm_region_o* r);
 HYLE_PLATFORM_C_API void* hyle_vm_region_usable(hyle_vm_region_o* r);
 HYLE_PLATFORM_C_API size_t hyle_vm_region_usable_size(const hyle_vm_region_o* r);
 HYLE_PLATFORM_C_API int hyle_vm_region_has_guard(const hyle_vm_region_o* r);
-HYLE_PLATFORM_C_API int hyle_vm_region_commit(hyle_vm_region_o* r, size_t off,
-                                              size_t len);
-HYLE_PLATFORM_C_API int hyle_vm_region_commit_usable(hyle_vm_region_o* r);
-HYLE_PLATFORM_C_API int hyle_vm_region_decommit(hyle_vm_region_o* r, size_t off,
-                                                size_t len);
-HYLE_PLATFORM_C_API int hyle_vm_region_protect(hyle_vm_region_o* r, size_t off,
-                                               size_t len, hyle_protect prot);
+HYLE_PLATFORM_C_API hyle_numa_placement hyle_vm_region_numa_placement(
+    const hyle_vm_region_o* r);
+HYLE_PLATFORM_C_API hyle_status hyle_vm_region_commit(
+    hyle_vm_region_o* r, size_t off, size_t len);
+HYLE_PLATFORM_C_API hyle_status hyle_vm_region_commit_usable(
+    hyle_vm_region_o* r);
+HYLE_PLATFORM_C_API hyle_status hyle_vm_region_decommit(
+    hyle_vm_region_o* r, size_t off, size_t len);
+HYLE_PLATFORM_C_API hyle_status hyle_vm_region_protect(
+    hyle_vm_region_o* r, size_t off, size_t len, hyle_protect prot);
 
 /* ========================================================================== */
 /* Filesystem + environment (buffer-fill / visitor; no hidden alloc)          */

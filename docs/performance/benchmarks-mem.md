@@ -328,6 +328,11 @@ Linux/utility 的尾延迟收益小于 p50，但 p95/p99 仍稳定同侧；这�
 [M4 interactive](./mem-fiber-stack-m4.csv)、[M4 utility](./mem-fiber-stack-m4-utility.csv)。
 四份均为 clean `2cbc307`；M4 行记录 `qos_ok=1` 与 `affinity=unsupported`。
 
+2026-07-23 `FiberStack::{allocate}` / pool `acquire` 改为 `Result<FiberStack>` 后，Windows
+MSVC 19.50 用当前 benchmark 形状做 100-sample smoke：scheduler pool p50/p95/p99
+**7.3/8.1/14.4 µs**，direct VM **155.0/196.1/230.7 µs**。与上表旧正式证书处于同一带，
+没有观察到 Result 成功态回退；样本数不足以替换 n=15 正式表，只作为迁移哨兵。
+
 ## 6. 选型
 
 ```text

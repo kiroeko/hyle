@@ -2,7 +2,8 @@
 
 > **历史任务记录。**本文中的 `MemoryArena`、模块 API 表和“Stats 仅 C++”均已被后续设计
 > 替代。当前 mem 设计见 [`../architecture/mem-design.md`](../architecture/mem-design.md)，
-> 当前 C API 见 [`../guide/c-mem.md`](../guide/c-mem.md)。后文保留当时验收语境。
+> 当前 C API 见 [`../guide/c-mem.md`](../guide/c-mem.md)，VM/NUMA 错误接口追记见
+> [`platform-error-convergence.md`](platform-error-convergence.md)。后文保留当时验收语境。
 
 | 字段 | 值 |
 |---|---|

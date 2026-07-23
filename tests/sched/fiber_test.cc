@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <utility>
 #include <vector>
 
 #include "hyle/sched/fiber.h"
@@ -38,7 +39,23 @@ void probe_entry(void* arg) {
   p->carried = local;       // 111 iff `local` survived both yields
 }
 
+void no_yield_entry(void* arg);
+
 }  // namespace
+
+TEST(Fiber, RecoverableCreateValidatesAndRuns) {
+  int value = 0;
+  auto invalid = Fiber::create(kDefaultStackSize, nullptr, &value);
+  ASSERT_FALSE(invalid);
+  EXPECT_TRUE(invalid.error().IsInvalidArgument());
+
+  auto created = Fiber::create(kDefaultStackSize, &no_yield_entry, &value);
+  ASSERT_TRUE(created);
+  Fiber fiber = *std::move(created);
+  fiber.resume();
+  EXPECT_TRUE(fiber.done());
+  EXPECT_EQ(value, 7);
+}
 
 TEST(Fiber, StackPreservedAcrossNestedYields) {
   Probe p;

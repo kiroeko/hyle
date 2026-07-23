@@ -43,6 +43,10 @@ static_assert(HYLE_NUMA_PREFERRED ==
               static_cast<int>(hyle::platform::NumaPolicy::kPreferred));
 static_assert(HYLE_NUMA_INTERLEAVE ==
               static_cast<int>(hyle::platform::NumaPolicy::kInterleave));
+static_assert(HYLE_NUMA_PLACEMENT_APPLIED ==
+              static_cast<int>(hyle::platform::NumaPlacement::kApplied));
+static_assert(HYLE_NUMA_PLACEMENT_UNAVAILABLE ==
+              static_cast<int>(hyle::platform::NumaPlacement::kUnavailable));
 static_assert(HYLE_MAP_READ_ONLY ==
               static_cast<int>(hyle::platform::MappedFile::Mode::kReadOnly));
 static_assert(HYLE_MAP_COPY_ON_WRITE ==
@@ -74,6 +78,11 @@ hyle_status steal_status(hyle::Status&& s) noexcept {
   hyle_status out;
   out.rep = s.release_rep();
   return out;
+}
+
+hyle_numa_placement to_c_numa_placement(
+    hyle::platform::NumaPlacement placement) noexcept {
+  return static_cast<hyle_numa_placement>(placement);
 }
 
 // C volatile uint32_t* is the public wait word; Parker uses atomic<uint32_t>.
@@ -156,6 +165,25 @@ struct hyle_vm_region_o {
 struct hyle_mapped_file_o {
   hyle::platform::MappedFile mf;
 };
+
+static hyle_status wrap_vm_region(
+    hyle_vm_region_o** out,
+    hyle::Result<hyle::platform::VmRegion>&& region) noexcept {
+  if (out == nullptr) {
+    return steal_status(
+        hyle::Status::InvalidArgument("VM region output pointer is NULL"));
+  }
+  *out = nullptr;
+  if (!region) return steal_status(std::move(region).error());
+  auto* wrapper = new (std::nothrow) hyle_vm_region_o{};
+  if (wrapper == nullptr) {
+    return steal_status(
+        hyle::Status::ResourceExhausted("VM region wrapper allocation failed"));
+  }
+  wrapper->region = *std::move(region);
+  *out = wrapper;
+  return steal_status(hyle::Status::Ok());
+}
 
 extern "C" {
 
@@ -377,111 +405,108 @@ hyle_status hyle_dynlib_open_symbol(hyle_dynlib_o** out_lib, void** out_sym,
 }
 
 size_t hyle_page_size(void) { return hyle::platform::page_size(); }
-void* hyle_vm_reserve(size_t size) { return hyle::platform::vm_reserve(size); }
-int hyle_vm_commit(void* ptr, size_t size) {
-  return hyle::platform::vm_commit(ptr, size) ? 1 : 0;
+hyle_status hyle_vm_reserve(void** out, size_t size) {
+  if (out == nullptr) {
+    return steal_status(
+        hyle::Status::InvalidArgument("hyle_vm_reserve: out is NULL"));
+  }
+  *out = nullptr;
+  auto result = hyle::platform::vm_reserve(size);
+  if (!result) return steal_status(std::move(result).error());
+  *out = *result;
+  return steal_status(hyle::Status::Ok());
 }
-int hyle_vm_decommit(void* ptr, size_t size) {
-  return hyle::platform::vm_decommit(ptr, size) ? 1 : 0;
+hyle_status hyle_vm_commit(void* ptr, size_t size) {
+  return steal_status(hyle::platform::vm_commit(ptr, size));
 }
-int hyle_vm_release(void* base, size_t size) {
-  return hyle::platform::vm_release(base, size) ? 1 : 0;
+hyle_status hyle_vm_decommit(void* ptr, size_t size) {
+  return steal_status(hyle::platform::vm_decommit(ptr, size));
 }
-int hyle_vm_protect(void* ptr, size_t size, hyle_protect prot) {
+hyle_status hyle_vm_release(void* base, size_t size) {
+  return steal_status(hyle::platform::vm_release(base, size));
+}
+hyle_status hyle_vm_protect(void* ptr, size_t size, hyle_protect prot) {
   if (!valid_protect(prot)) {
-    hyle::platform::vm_set_last_error("hyle_vm_protect: invalid protection");
-    return 0;
+    return steal_status(
+        hyle::Status::InvalidArgument("hyle_vm_protect: invalid protection"));
   }
-  return hyle::platform::vm_protect(ptr, size, to_cpp_protect(prot)) ? 1 : 0;
+  return steal_status(
+      hyle::platform::vm_protect(ptr, size, to_cpp_protect(prot)));
 }
-const char* hyle_vm_last_error(void) { return hyle::platform::vm_last_error(); }
 
-void* hyle_vm_alloc_rw(size_t size) {
-  if (size == 0) {
-    hyle::platform::vm_set_last_error("hyle_vm_alloc_rw: size is zero");
-    return nullptr;
+hyle_status hyle_vm_alloc_rw(void** out, size_t size) {
+  if (out == nullptr) {
+    return steal_status(
+        hyle::Status::InvalidArgument("hyle_vm_alloc_rw: out is NULL"));
   }
+  *out = nullptr;
   size_t aligned = hyle_page_align_up(size);
   if (aligned == 0) {
-    hyle::platform::vm_set_last_error("hyle_vm_alloc_rw: size overflow");
-    return nullptr;
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_vm_alloc_rw: size is zero or overflows page alignment"));
   }
-  void* base = hyle::platform::vm_reserve(aligned);
-  if (base == nullptr) return nullptr;
-  // vm_commit makes the range Protect::kReadWrite.
-  if (!hyle::platform::vm_commit(base, aligned)) {
+  auto reserved = hyle::platform::vm_reserve(aligned);
+  if (!reserved) return steal_status(std::move(reserved).error());
+  void* base = *reserved;
+  hyle::Status status = hyle::platform::vm_commit(base, aligned);
+  if (!status.ok()) {
     (void)hyle::platform::vm_release(base, aligned);
-    return nullptr;
+    return steal_status(
+        std::move(status).WithContext("hyle_vm_alloc_rw commit"));
   }
-  return base;
+  *out = base;
+  return steal_status(hyle::Status::Ok());
 }
 
-int hyle_vm_free_rw(void* p, size_t size) {
+hyle_status hyle_vm_free_rw(void* p, size_t size) {
   // Same page rounding as alloc_rw's reserve, so the released span matches.
   const size_t aligned = hyle_page_align_up(size);
   if (p != nullptr && aligned == 0) {
-    hyle::platform::vm_set_last_error(
-        "hyle_vm_free_rw: zero or overflowing size");
-    return 0;
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_vm_free_rw: zero or overflowing size"));
   }
-  return hyle::platform::vm_release(p, aligned) ? 1 : 0;
+  return steal_status(hyle::platform::vm_release(p, aligned));
 }
 
-hyle_vm_region_o* hyle_vm_region_reserve(size_t size) {
-  auto r = hyle::platform::VmRegion::reserve(size);
-  if (!r.valid()) return nullptr;
-  auto* o = new (std::nothrow) hyle_vm_region_o{};
-  if (!o) {
-    hyle::platform::vm_set_last_error("vm_region create: wrapper allocation failed (out of memory)");
-    return nullptr;
-  }
-  o->region = std::move(r);
-  return o;
+hyle_status hyle_vm_region_reserve(hyle_vm_region_o** out, size_t size) {
+  return wrap_vm_region(out, hyle::platform::VmRegion::reserve(size));
 }
 
-hyle_vm_region_o* hyle_vm_region_reserve_guarded(size_t usable) {
-  auto r = hyle::platform::VmRegion::reserve_guarded(usable);
-  if (!r.valid()) return nullptr;
-  auto* o = new (std::nothrow) hyle_vm_region_o{};
-  if (!o) {
-    hyle::platform::vm_set_last_error("vm_region create: wrapper allocation failed (out of memory)");
-    return nullptr;
-  }
-  o->region = std::move(r);
-  return o;
+hyle_status hyle_vm_region_reserve_guarded(hyle_vm_region_o** out,
+                                           size_t usable) {
+  return wrap_vm_region(out,
+                        hyle::platform::VmRegion::reserve_guarded(usable));
 }
 
-hyle_vm_region_o* hyle_vm_region_reserve_numa(size_t size, int node) {
-  auto r = hyle::platform::VmRegion::reserve_numa(size, node);
-  if (!r.valid()) return nullptr;
-  auto* o = new (std::nothrow) hyle_vm_region_o{};
-  if (!o) {
-    hyle::platform::vm_set_last_error("vm_region create: wrapper allocation failed (out of memory)");
-    return nullptr;
-  }
-  o->region = std::move(r);
-  return o;
+hyle_status hyle_vm_region_reserve_numa(hyle_vm_region_o** out, size_t size,
+                                        int node) {
+  return wrap_vm_region(out,
+                        hyle::platform::VmRegion::reserve_numa(size, node));
 }
 
-hyle_vm_region_o* hyle_vm_region_adopt(void* base, size_t size) {
-  if (base == nullptr || size == 0) {
-    hyle::platform::vm_set_last_error(
-        "hyle_vm_region_adopt: null base or zero size");
-    return nullptr;
+hyle_status hyle_vm_region_adopt(hyle_vm_region_o** out, void* base,
+                                 size_t size) {
+  if (out == nullptr) {
+    return steal_status(
+        hyle::Status::InvalidArgument("hyle_vm_region_adopt: out is NULL"));
   }
+  *out = nullptr;
   // Allocate the wrapper before taking ownership. On wrapper OOM the caller
   // still owns `base`; an adopt API must transfer ownership only on success.
   auto* o = new (std::nothrow) hyle_vm_region_o{};
   if (!o) {
-    hyle::platform::vm_set_last_error("vm_region create: wrapper allocation failed (out of memory)");
-    return nullptr;
+    return steal_status(
+        hyle::Status::ResourceExhausted("VM region wrapper allocation failed"));
   }
-  o->region = hyle::platform::VmRegion::adopt(base, size);
-  if (!o->region.valid()) {
+  auto adopted = hyle::platform::VmRegion::adopt(base, size);
+  if (!adopted) {
+    hyle::Status status = std::move(adopted).error();
     delete o;
-    return nullptr;
+    return steal_status(std::move(status));
   }
-  return o;
+  o->region = *std::move(adopted);
+  *out = o;
+  return steal_status(hyle::Status::Ok());
 }
 
 void hyle_vm_region_destroy(hyle_vm_region_o* r) { delete r; }
@@ -503,41 +528,45 @@ size_t hyle_vm_region_usable_size(const hyle_vm_region_o* r) {
 int hyle_vm_region_has_guard(const hyle_vm_region_o* r) {
   return r && r->region.has_guard() ? 1 : 0;
 }
-int hyle_vm_region_commit(hyle_vm_region_o* r, size_t off, size_t len) {
-  if (r == nullptr) {
-    hyle::platform::vm_set_last_error("hyle_vm_region_commit: region is NULL");
-    return 0;
-  }
-  return r && r->region.commit(off, len) ? 1 : 0;
+hyle_numa_placement hyle_vm_region_numa_placement(
+    const hyle_vm_region_o* r) {
+  return r ? to_c_numa_placement(r->region.numa_placement())
+           : HYLE_NUMA_PLACEMENT_NOT_NEEDED;
 }
-int hyle_vm_region_commit_usable(hyle_vm_region_o* r) {
+hyle_status hyle_vm_region_commit(hyle_vm_region_o* r, size_t off,
+                                  size_t len) {
   if (r == nullptr) {
-    hyle::platform::vm_set_last_error(
-        "hyle_vm_region_commit_usable: region is NULL");
-    return 0;
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_vm_region_commit: region is NULL"));
   }
-  return r && r->region.commit_usable() ? 1 : 0;
+  return steal_status(r->region.commit(off, len));
 }
-int hyle_vm_region_decommit(hyle_vm_region_o* r, size_t off, size_t len) {
+hyle_status hyle_vm_region_commit_usable(hyle_vm_region_o* r) {
   if (r == nullptr) {
-    hyle::platform::vm_set_last_error(
-        "hyle_vm_region_decommit: region is NULL");
-    return 0;
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_vm_region_commit_usable: region is NULL"));
   }
-  return r && r->region.decommit(off, len) ? 1 : 0;
+  return steal_status(r->region.commit_usable());
 }
-int hyle_vm_region_protect(hyle_vm_region_o* r, size_t off, size_t len,
-                           hyle_protect prot) {
+hyle_status hyle_vm_region_decommit(hyle_vm_region_o* r, size_t off,
+                                    size_t len) {
+  if (r == nullptr) {
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_vm_region_decommit: region is NULL"));
+  }
+  return steal_status(r->region.decommit(off, len));
+}
+hyle_status hyle_vm_region_protect(hyle_vm_region_o* r, size_t off,
+                                   size_t len, hyle_protect prot) {
   if (!valid_protect(prot)) {
-    hyle::platform::vm_set_last_error(
-        "hyle_vm_region_protect: invalid protection");
-    return 0;
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_vm_region_protect: invalid protection"));
   }
   if (r == nullptr) {
-    hyle::platform::vm_set_last_error("hyle_vm_region_protect: region is NULL");
-    return 0;
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_vm_region_protect: region is NULL"));
   }
-  return r && r->region.protect(off, len, to_cpp_protect(prot)) ? 1 : 0;
+  return steal_status(r->region.protect(off, len, to_cpp_protect(prot)));
 }
 
 hyle_file_info hyle_fs_stat(const char* path) {
@@ -724,18 +753,14 @@ hyle_cpu_topology hyle_cpu_topology_get(void) {
 
 /* ---- v3: hugepage/THP + NUMA ------------------------------------------------ */
 
-void hyle_vm_set_last_error(const char* msg) {
-  hyle::platform::vm_set_last_error(msg);
-}
-
 size_t hyle_large_page_size(void) { return hyle::platform::large_page_size(); }
 
-int hyle_vm_advise_hugepage(void* ptr, size_t size) {
-  return hyle::platform::vm_advise_hugepage(ptr, size) ? 1 : 0;
+hyle_status hyle_vm_advise_hugepage(void* ptr, size_t size) {
+  return steal_status(hyle::platform::vm_advise_hugepage(ptr, size));
 }
 
-int hyle_vm_advise_no_hugepage(void* ptr, size_t size) {
-  return hyle::platform::vm_advise_no_hugepage(ptr, size) ? 1 : 0;
+hyle_status hyle_vm_advise_no_hugepage(void* ptr, size_t size) {
+  return steal_status(hyle::platform::vm_advise_no_hugepage(ptr, size));
 }
 
 unsigned hyle_numa_node_count(void) { return hyle::platform::numa_node_count(); }
@@ -748,23 +773,47 @@ unsigned hyle_numa_node_of_cpu(unsigned cpu) {
   return hyle::platform::numa_node_of_cpu(cpu);
 }
 
-int hyle_vm_bind_numa(void* ptr, size_t size, int node, hyle_numa_policy policy) {
+hyle_status hyle_vm_bind_numa(hyle_numa_placement* out_placement, void* ptr,
+                              size_t size, int node,
+                              hyle_numa_policy policy) {
   if (!valid_numa_policy(policy)) {
-    hyle::platform::vm_set_last_error("hyle_vm_bind_numa: invalid policy");
-    return 0;
+    return steal_status(
+        hyle::Status::InvalidArgument("hyle_vm_bind_numa: invalid policy"));
   }
-  return hyle::platform::vm_bind_numa(ptr, size, node,
-                                      to_cpp_numa_policy(policy))
-             ? 1
-             : 0;
+  auto result = hyle::platform::vm_bind_numa(
+      ptr, size, node, to_cpp_numa_policy(policy));
+  if (!result) return steal_status(std::move(result).error());
+  if (out_placement != nullptr) {
+    *out_placement = to_c_numa_placement(*result);
+  }
+  return steal_status(hyle::Status::Ok());
 }
 
-int hyle_vm_bind_numa_interleave(void* ptr, size_t size) {
-  return hyle::platform::vm_bind_numa_interleave(ptr, size) ? 1 : 0;
+hyle_status hyle_vm_bind_numa_interleave(
+    hyle_numa_placement* out_placement, void* ptr, size_t size) {
+  auto result = hyle::platform::vm_bind_numa_interleave(ptr, size);
+  if (!result) return steal_status(std::move(result).error());
+  if (out_placement != nullptr) {
+    *out_placement = to_c_numa_placement(*result);
+  }
+  return steal_status(hyle::Status::Ok());
 }
 
-void* hyle_vm_reserve_numa(size_t size, int node) {
-  return hyle::platform::vm_reserve_numa(size, node);
+hyle_status hyle_vm_reserve_numa(void** out,
+                                 hyle_numa_placement* out_placement,
+                                 size_t size, int node) {
+  if (out == nullptr) {
+    return steal_status(
+        hyle::Status::InvalidArgument("hyle_vm_reserve_numa: out is NULL"));
+  }
+  *out = nullptr;
+  auto result = hyle::platform::vm_reserve_numa(size, node);
+  if (!result) return steal_status(std::move(result).error());
+  *out = result->data;
+  if (out_placement != nullptr) {
+    *out_placement = to_c_numa_placement(result->placement);
+  }
+  return steal_status(hyle::Status::Ok());
 }
 
 /* ---- v4: fs perms/symlink/tempfile/env-write + mapped file ----------------- */

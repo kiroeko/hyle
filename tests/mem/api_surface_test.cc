@@ -123,6 +123,12 @@ static_assert(!std::is_move_constructible_v<FixedPool>);
 static_assert(!std::is_move_constructible_v<SharedPool>);
 static_assert(!std::is_move_constructible_v<SharedPoolCache>);
 static_assert(std::is_move_constructible_v<FiberStack>);
+static_assert(requires(FiberStack stack, FiberStackPool pool) {
+  { FiberStack::allocate(kFiberStackDefault) }
+      -> std::same_as<hyle::Result<FiberStack>>;
+  { pool.acquire() } -> std::same_as<hyle::Result<FiberStack>>;
+  { stack.reset() } -> std::same_as<hyle::Status>;
+});
 
 TEST(MemApiSurface, PublicCapabilityFamiliesCompileTogether) {
   EXPECT_EQ(kFiberStackSmall, 16u * 1024u);
@@ -131,20 +137,16 @@ TEST(MemApiSurface, PublicCapabilityFamiliesCompileTogether) {
   EXPECT_GE(kDefaultAlignment, alignof(void*));
 }
 
-TEST(MemApiSurface, CErrorChannelDoesNotOverwritePlatformVmError) {
-  hyle::platform::vm_set_last_error("platform sentinel");
+TEST(MemApiSurface, CErrorChannelMapsStructuredFailures) {
   hyle_allocator invalid{};
   EXPECT_EQ(hyle_shared_pool_create(invalid, 64, 4, 0), nullptr);
   EXPECT_EQ(hyle_mem_last_error_code(), HYLE_MEM_ERROR_INVALID_ARGUMENT);
   EXPECT_NE(hyle_mem_last_error()[0], '\0');
-  EXPECT_STREQ(hyle::platform::vm_last_error(), "platform sentinel");
 
   EXPECT_EQ(hyle_huge_region_open(0, HYLE_HUGE_NONE, HYLE_MEM_NUMA_ANY),
             nullptr);
   EXPECT_EQ(hyle_mem_last_error_code(), HYLE_MEM_ERROR_INVALID_ARGUMENT);
   EXPECT_NE(hyle_mem_last_error()[0], '\0');
-  EXPECT_STREQ(hyle::platform::vm_last_error(), "platform sentinel");
-  hyle::platform::vm_set_last_error(nullptr);
 }
 
 // Compile-checked user recipes. Keep these deliberately short and mirrored in

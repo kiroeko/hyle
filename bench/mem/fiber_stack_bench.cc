@@ -126,13 +126,14 @@ void run_batch(Scheduler &scheduler, FiberStackPool *pool, bool use_pool,
     item.value = 0;
 
   for (std::size_t i = 0; i != kFibers; ++i) {
-    FiberStack stack =
+    auto acquired =
         use_pool ? pool->acquire() : FiberStack::allocate(kFiberStackDefault);
-    if (!stack.valid()) {
+    if (!acquired) {
       std::fputs("hyle_mem_fiber_stack_bench: stack allocation failed\n",
                  stderr);
       std::abort();
     }
+    FiberStack stack = *std::move(acquired);
     fibers.emplace_back(std::move(stack), &fiber_entry, &work[i],
                         use_pool ? pool : nullptr);
     if (!scheduler.spawn(&fibers.back())) {

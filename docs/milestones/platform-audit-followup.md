@@ -1,5 +1,9 @@
 # platform 模块审查处置清单 (followup)
 
+> **后续追记（2026-07-23）：**本文保留审计当时的错误接口结论；DynLib、MappedFile、
+> VM/NUMA 已迁到共享 `Status`/`Result` 与 `hyle_status` + out。见
+> [`platform-error-convergence.md`](platform-error-convergence.md)。
+
 > 2026-07-18 对 platform 做四维度体检(① 功能完整+下游利用 / ② 红队实现 / ③ 测试+性能 / ④ C ABI+guide+close)。4 个子代理并行审 + 主进程逐条对代码核实红队与功能关键项。本文件是处置清单 + handoff。
 
 ## 体检总体结论

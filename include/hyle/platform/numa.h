@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "hyle/error/result.h"
 #include "hyle/macros.h"
 #include "hyle/visibility.h"
 
@@ -21,8 +22,8 @@
 //   Bind      — hard node (Linux MPOL_BIND; may fail if node is tight)
 //   Interleave— stripe across all nodes (shared large arenas)
 //
-// Single-node machines: count==1, current==0; bind/interleave degrade to no-ops
-// that still return true. No libnuma / hwloc.
+// Single-node machines: count==1, current==0; bind/interleave return
+// kNotNeeded. No libnuma / hwloc.
 
 namespace hyle::platform {
 
@@ -34,6 +35,20 @@ enum class NumaPolicy : std::uint8_t {
   kPreferred = 0,   // MPOL_PREFERRED (soft)
   kBind = 1,        // MPOL_BIND (hard; Linux)
   kInterleave = 2,  // MPOL_INTERLEAVE all nodes (Linux)
+};
+
+// Whether a successful NUMA request changed placement. Preferred placement may
+// legitimately fall back while leaving a fully usable allocation; callers must
+// not confuse that with an applied policy.
+enum class NumaPlacement : std::uint8_t {
+  kApplied = 0,
+  kNotNeeded = 1,   // ANY, empty range, or a single-node machine
+  kUnavailable = 2  // soft preferred fallback; allocation remains usable
+};
+
+struct NumaReservation {
+  void* data = nullptr;
+  NumaPlacement placement = NumaPlacement::kNotNeeded;
 };
 
 // Number of NUMA nodes with memory/CPUs, always >= 1.
@@ -50,19 +65,22 @@ HYLE_PLATFORM_API unsigned numa_current_node() noexcept;
 HYLE_PLATFORM_API unsigned numa_node_of_cpu(unsigned cpu) noexcept;
 
 // Bind an existing page-aligned mapping.
-//   kPreferred + node: soft home (node==kNumaAny -> true no-op)
-//   kBind + node:      hard home; invalid node -> false
-//   kInterleave:       ignore node; stripe all nodes (Linux); soft true elsewhere
-// Empty range -> true. Soft errors never trap.
-HYLE_PLATFORM_API bool vm_bind_numa(void* ptr, std::size_t size, int node,
-                                    NumaPolicy policy = NumaPolicy::kPreferred) noexcept;
+//   kPreferred + node: soft home (node==kNumaAny -> kNotNeeded)
+//   kBind + node:      hard home; invalid/unsupported -> Status error
+//   kInterleave:       ignore node; stripe all nodes; unsupported -> error
+// Empty range -> kNotNeeded. Soft preferred fallback -> kUnavailable.
+HYLE_PLATFORM_API Result<NumaPlacement> vm_bind_numa(
+    void* ptr, std::size_t size, int node,
+    NumaPolicy policy = NumaPolicy::kPreferred) noexcept;
 
 // Stripe [ptr,ptr+size) across all NUMA nodes (alias for Interleave).
-HYLE_PLATFORM_API bool vm_bind_numa_interleave(void* ptr, std::size_t size) noexcept;
+HYLE_PLATFORM_API Result<NumaPlacement> vm_bind_numa_interleave(
+    void* ptr, std::size_t size) noexcept;
 
 // Reserve `size` bytes (page-rounded) preferring `node`. node == kNumaAny
-// equals vm_reserve. On failure nullptr (see vm_last_error). Caller commits /
-// releases with the usual vm_* APIs (same ownership as vm_reserve).
-HYLE_PLATFORM_API void* vm_reserve_numa(std::size_t size, int node) noexcept;
+// equals vm_reserve. The returned placement distinguishes applied placement
+// from a soft preferred fallback. Caller commits/releases `data` with vm_*.
+HYLE_PLATFORM_API Result<NumaReservation> vm_reserve_numa(
+    std::size_t size, int node) noexcept;
 
 }  // namespace hyle::platform

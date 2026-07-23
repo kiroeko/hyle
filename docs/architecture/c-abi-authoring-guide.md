@@ -88,7 +88,10 @@ extern "C" {
    - C/FFI 参数表达的非法值或溢出（零尺寸、非 2 幂 alignment、layout 乘加溢出、backing 缺 fn 指针）在桥接层验证，返 NULL/错误码并给出原因；不要把不可信 C 数据送进 C++ ctor 的 assert。
    - 资源故障（control/slab OOM、池耗尽）同样返 NULL/错误码。
    - 已有对象的生命周期、并发静默、foreign/double free 等程序错误仍 fail-fast；这些不是普通资源不足。
-   - **句柄返回型 API 返 NULL 时，配一条 thread-local last-error 串**（如 mem 的 `hyle_mem_last_error`，转发 platform 的 `vm_set_last_error`）：NULL 只说"失败了"，C 用户还需知道"为什么失败"（invalid backing？OOM？池耗尽？）——与 error 模块的 `hyle_status_message_cstr` 呼应，跨 C 边界的失败都要能取到人可读原因。**每条** NULL 返回路径都要设串，别让 C 用户读到上一次的过时串。
+   - 一般资源构造采用 **`hyle_status` + out 参数**：成功才写出所有权，失败同时携带
+     分类和消息。只有 alloc/free 热路或分配器工厂明确证明 owning Status 不合适时，
+     才可使用 NULL + 模块本地紧凑错误码/诊断串（如 mem）；不得转发或暂存另一模块
+     的 TLS。每条 NULL 路径都必须覆盖本模块错误码和消息，避免过时诊断。
    - 只在系统边界校验一次；内部/框架保证不重复校验。
 
 4. **跨 ABI POD 要钉布局，输入 options 要能演进**：

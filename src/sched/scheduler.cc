@@ -1296,10 +1296,13 @@ Status Scheduler::spawn_detached_(unsigned worker_idx, bool pinned,
     return Status::InvalidArgument("detached task worker is out of range");
 
   mem::FiberStackPool* pool = impl_->fiber_stack_pool(stack_size);
-  mem::FiberStack stack =
+  auto stack_result =
       pool != nullptr ? pool->acquire() : mem::FiberStack::allocate(stack_size);
-  if (!stack.valid())
-    return Status::ResourceExhausted("detached task stack allocation failed");
+  if (!stack_result) {
+    return std::move(stack_result).error().WithContext(
+        "detached task stack allocation");
+  }
+  mem::FiberStack stack = *std::move(stack_result);
 
   void* storage =
       impl_->allocator.allocate(sizeof(DetachedDriver), alignof(DetachedDriver));

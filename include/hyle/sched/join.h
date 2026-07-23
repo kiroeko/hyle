@@ -494,14 +494,16 @@ JoinHandle<T> spawn_task(Scheduler& sched, mem::Allocator alloc, Task<T> task,
   // spawn/join loop then reuses stacks instead of reserve_guarded'ing every time.
   // A non-tier size gets a one-off stack (pool == nullptr, released on destroy).
   mem::FiberStackPool* pool = sched.fiber_stack_pool(stack_size);
-  mem::FiberStack stack =
+  auto stack_result =
       pool != nullptr ? pool->acquire() : mem::FiberStack::allocate(stack_size);
-  if (!stack.valid()) {
+  if (!stack_result) {
     alloc.deallocate(d, sizeof(TaskDriver<T>), alignof(TaskDriver<T>));
-    st->set_error(Status::ResourceExhausted("fiber stack allocation failed"));
+    st->set_error(std::move(stack_result).error().WithContext(
+        "task fiber stack allocation"));
     st->release();
     return JoinHandle<T>(st);
   }
+  mem::FiberStack stack = *std::move(stack_result);
   new (d) TaskDriver<T>{alloc, std::move(task), st,
                         Fiber(std::move(stack), &TaskDriver<T>::entry, d, pool)};
   // dispatch() frees the driver via this hook AFTER the fiber finishes and is off

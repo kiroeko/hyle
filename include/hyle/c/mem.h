@@ -616,8 +616,7 @@ typedef enum hyle_mem_numa_node { HYLE_MEM_NUMA_ANY = -1 } hyle_mem_numa_node;
 typedef struct hyle_huge_region_o hyle_huge_region;
 
 /* Reserve+commit `bytes` (large-page aligned), placed per flags/node.
- * NULL on failure (see hyle_mem_last_error via platform's hyle_vm_last_error).
- */
+ * NULL on failure; inspect hyle_mem_last_error_code/message. */
 HYLE_MEM_C_API hyle_huge_region *
 hyle_huge_region_open(size_t bytes, uint32_t flags, int numa_node);
 /* Prefer the calling thread's home node. */
@@ -662,10 +661,9 @@ typedef enum hyle_mem_error {
 HYLE_MEM_C_API hyle_mem_error hyle_mem_last_error_code(void);
 
 /* Last error from a mem C operation on THIS thread, or "" if none. This is an
- * independent mem channel: mem factories do not overwrite hyle_vm_last_error;
- * HugeRegion temporarily captures and copies its VM cause here, then restores
- * the platform channel. Valid until the next mem operation that updates this
- * thread's channel. */
+ * independent mem channel. HugeRegion maps its structured platform Status into
+ * this allocation-oriented taxonomy. Valid until the next mem operation that
+ * updates this thread's channel. */
 HYLE_MEM_C_API const char *hyle_mem_last_error(void);
 
 /* ========================================================================== */

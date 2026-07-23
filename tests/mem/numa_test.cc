@@ -16,15 +16,17 @@ using hyle::platform::numa_node_count;
 using hyle::platform::page_size;
 
 TEST(MemNuma, HugeRegionOnNodeZero) {
-  HugeRegion r = HugeRegion::allocate(page_size() * 8, HugeFlags::kThpHint, 0);
+  HugeRegion r =
+      HugeRegion::allocate(page_size() * 8, HugeFlags::kThpHint, 0).value();
   ASSERT_TRUE(r.valid());
   std::memset(r.data(), 0xAB, 128);
   EXPECT_EQ(static_cast<unsigned char*>(r.data())[0], 0xAB);
 }
 
 TEST(MemNuma, HugeRegionLocal) {
-  HugeRegion r =
-      HugeRegion::allocate_local(page_size() * 8, HugeFlags::kThpHint);
+  HugeRegion r = HugeRegion::allocate_local(page_size() * 8,
+                                             HugeFlags::kThpHint)
+                     .value();
   ASSERT_TRUE(r.valid());
   EXPECT_GE(r.size(), page_size() * 8);
   std::memset(r.data(), 0xCD, 64);
@@ -32,8 +34,9 @@ TEST(MemNuma, HugeRegionLocal) {
 }
 
 TEST(MemNuma, HugeRegionAnyNode) {
-  HugeRegion r =
-      HugeRegion::allocate(page_size() * 4, HugeFlags::kNone, kNumaAny);
+  HugeRegion r = HugeRegion::allocate(page_size() * 4, HugeFlags::kNone,
+                                      kNumaAny)
+                     .value();
   ASSERT_TRUE(r.valid());
 }
 
@@ -47,15 +50,18 @@ TEST(MemNuma, EnableAllocatorNuma) {
 }
 
 TEST(MemNuma, HugeRegionInterleaved) {
-  HugeRegion r = HugeRegion::allocate_interleaved(page_size() * 16);
+  HugeRegion r =
+      HugeRegion::allocate_interleaved(page_size() * 16).value();
   ASSERT_TRUE(r.valid());
   std::memset(r.data(), 0x3C, 64);
   EXPECT_EQ(static_cast<unsigned char*>(r.data())[0], 0x3C);
 }
 
 TEST(MemNuma, HugeRegionHardBindFlag) {
-  HugeRegion r = HugeRegion::allocate(page_size() * 8,
-                                      HugeFlags::kThpHint | HugeFlags::kNumaBind, 0);
+  HugeRegion r =
+      HugeRegion::allocate(page_size() * 8,
+                           HugeFlags::kThpHint | HugeFlags::kNumaBind, 0)
+          .value();
   ASSERT_TRUE(r.valid());
 }
 

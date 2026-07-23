@@ -18,6 +18,20 @@ static int g_fails = 0;
     }                                                                          \
   } while (0)
 
+static int status_ok(hyle_status status) {
+  int ok = hyle_status_is_ok(status);
+  hyle_status_free(&status);
+  return ok;
+}
+
+static hyle_status_code status_code(hyle_status status) {
+  hyle_status_code code = hyle_status_get_code(status);
+  hyle_status_free(&status);
+  return code;
+}
+
+static void status_discard(hyle_status status) { hyle_status_free(&status); }
+
 static void thr_entry(void* ctx) {
   int* p = (int*)ctx;
   *p = 42;
@@ -270,7 +284,8 @@ int main(void) {
   }
 
   /* VM guarded */
-  hyle_vm_region_o* reg = hyle_vm_region_reserve_guarded(hyle_page_size());
+  hyle_vm_region_o* reg = NULL;
+  CHECK(status_ok(hyle_vm_region_reserve_guarded(&reg, hyle_page_size())));
   CHECK(hyle_vm_region_valid(reg));
   CHECK(hyle_vm_region_has_guard(reg));
   CHECK(hyle_vm_region_usable_size(reg) == hyle_page_size());
@@ -285,37 +300,44 @@ int main(void) {
   /* v5: region reserve_numa (ANY == plain) + adopt an existing raw reservation */
   {
     size_t pg = hyle_page_size();
-    hyle_vm_region_o* rn = hyle_vm_region_reserve_numa(pg * 2, HYLE_NUMA_ANY);
+    hyle_vm_region_o* rn = NULL;
+    CHECK(status_ok(
+        hyle_vm_region_reserve_numa(&rn, pg * 2, HYLE_NUMA_ANY)));
     CHECK(hyle_vm_region_valid(rn));
-    CHECK(hyle_vm_region_commit(rn, 0, pg * 2));
+    CHECK(status_ok(hyle_vm_region_commit(rn, 0, pg * 2)));
     ((unsigned char*)hyle_vm_region_data(rn))[0] = 0x5A;
     CHECK(((unsigned char*)hyle_vm_region_data(rn))[0] == 0x5A);
     hyle_vm_region_destroy(rn);
 
     /* adopt: raw reserve -> hand ownership to a region handle (destroy releases) */
-    void* raw = hyle_vm_reserve(pg);
+    void* raw = NULL;
+    CHECK(status_ok(hyle_vm_reserve(&raw, pg)));
     CHECK(raw != NULL);
-    hyle_vm_region_o* ad = hyle_vm_region_adopt(raw, pg);
+    hyle_vm_region_o* ad = NULL;
+    CHECK(status_ok(hyle_vm_region_adopt(&ad, raw, pg)));
     CHECK(hyle_vm_region_valid(ad));
     CHECK(hyle_vm_region_data(ad) == raw);
     CHECK(hyle_vm_region_size(ad) == pg);
     hyle_vm_region_destroy(ad);  /* releases the adopted reservation */
-    /* adopt(NULL) -> NULL (nothing adopted) */
-    CHECK(hyle_vm_region_adopt(NULL, pg) == NULL);
+    /* adopt(NULL) fails without taking ownership. */
+    CHECK(status_code(hyle_vm_region_adopt(&ad, NULL, pg)) ==
+          HYLE_STATUS_INVALID_ARGUMENT);
   }
 
   /* free vm + alloc_rw */
   {
     size_t pg = hyle_page_size();
-    void* base = hyle_vm_reserve(pg);
+    void* base = NULL;
+    CHECK(status_ok(hyle_vm_reserve(&base, pg)));
     CHECK(base != NULL);
-    CHECK(hyle_vm_commit(base, pg));
-    CHECK(hyle_vm_release(base, pg));
+    CHECK(status_ok(hyle_vm_commit(base, pg)));
+    CHECK(status_ok(hyle_vm_release(base, pg)));
 
-    void* rw = hyle_vm_alloc_rw(pg / 2 + 1);
+    void* rw = NULL;
+    CHECK(status_ok(hyle_vm_alloc_rw(&rw, pg / 2 + 1)));
     CHECK(rw != NULL);
     ((unsigned char*)rw)[0] = 1;
-    CHECK(hyle_vm_free_rw(rw, pg / 2 + 1));
+    CHECK(status_ok(hyle_vm_free_rw(rw, pg / 2 + 1)));
   }
 
   /* free-function vm_protect / vm_decommit thin forwards. Two pages so we can
@@ -323,47 +345,52 @@ int main(void) {
    * a locked page actually faults; here we just cover the C forward + recovery.) */
   {
     size_t pg = hyle_page_size();
-    void* base = hyle_vm_reserve(pg * 2);
+    void* base = NULL;
+    CHECK(status_ok(hyle_vm_reserve(&base, pg * 2)));
     CHECK(base != NULL);
-    CHECK(hyle_vm_commit(base, pg * 2));
+    CHECK(status_ok(hyle_vm_commit(base, pg * 2)));
     ((unsigned char*)base)[0] = 0x10;
 
     /* protect the low page read-only: still readable, restore RW and rewrite. */
-    CHECK(hyle_vm_protect(base, pg, HYLE_PROTECT_READ) == 1);
+    CHECK(status_ok(hyle_vm_protect(base, pg, HYLE_PROTECT_READ)));
     CHECK(((unsigned char*)base)[0] == 0x10);
-    CHECK(hyle_vm_protect(base, pg, HYLE_PROTECT_READ_WRITE) == 1);
-    CHECK(hyle_vm_protect(base, pg, (hyle_protect)99) == 0);
+    CHECK(status_ok(hyle_vm_protect(base, pg, HYLE_PROTECT_READ_WRITE)));
+    CHECK(status_code(hyle_vm_protect(base, pg, (hyle_protect)99)) ==
+          HYLE_STATUS_INVALID_ARGUMENT);
     ((unsigned char*)base)[0] = 0x20;
     CHECK(((unsigned char*)base)[0] == 0x20);
 
     /* decommit the high page, then recommit and use it (contents undefined). */
-    CHECK(hyle_vm_decommit((unsigned char*)base + pg, pg) == 1);
-    CHECK(hyle_vm_commit((unsigned char*)base + pg, pg) == 1);
+    CHECK(status_ok(hyle_vm_decommit((unsigned char*)base + pg, pg)));
+    CHECK(status_ok(hyle_vm_commit((unsigned char*)base + pg, pg)));
     ((unsigned char*)base)[pg] = 0x30;
     CHECK(((unsigned char*)base)[pg] == 0x30);
 
-    CHECK(hyle_vm_release(base, pg * 2) == 1);
+    CHECK(status_ok(hyle_vm_release(base, pg * 2)));
   }
 
   /* managed region: commit_usable / protect / decommit thin forwards. */
   {
     size_t pg = hyle_page_size();
-    hyle_vm_region_o* r = hyle_vm_region_reserve(pg * 2);
+    hyle_vm_region_o* r = NULL;
+    CHECK(status_ok(hyle_vm_region_reserve(&r, pg * 2)));
     CHECK(hyle_vm_region_valid(r));
     /* commit_usable: whole reservation RW (no guard on a plain reserve). */
-    CHECK(hyle_vm_region_commit_usable(r) == 1);
+    CHECK(status_ok(hyle_vm_region_commit_usable(r)));
     unsigned char* d = (unsigned char*)hyle_vm_region_data(r);
     CHECK(d != NULL);
     if (d != NULL) {
       d[0] = 0x41;
       CHECK(d[0] == 0x41);
       /* protect page 0 read-only then restore. */
-      CHECK(hyle_vm_region_protect(r, 0, pg, HYLE_PROTECT_READ) == 1);
+      CHECK(status_ok(
+          hyle_vm_region_protect(r, 0, pg, HYLE_PROTECT_READ)));
       CHECK(d[0] == 0x41); /* read still allowed */
-      CHECK(hyle_vm_region_protect(r, 0, pg, HYLE_PROTECT_READ_WRITE) == 1);
+      CHECK(status_ok(
+          hyle_vm_region_protect(r, 0, pg, HYLE_PROTECT_READ_WRITE)));
       /* decommit page 1 then recommit via region commit and use it. */
-      CHECK(hyle_vm_region_decommit(r, pg, pg) == 1);
-      CHECK(hyle_vm_region_commit(r, pg, pg) == 1);
+      CHECK(status_ok(hyle_vm_region_decommit(r, pg, pg)));
+      CHECK(status_ok(hyle_vm_region_commit(r, pg, pg)));
       d[pg] = 0x42;
       CHECK(d[pg] == 0x42);
     }
@@ -477,35 +504,42 @@ int main(void) {
     CHECK(hyle_numa_node_of_cpu(0) < nc);         /* CPU 0 -> a valid node */
     CHECK(hyle_numa_node_of_cpu(1u << 20) < nc);  /* out-of-range CPU: 0 fallback */
 
-    /* set/clear last-error round trip */
-    hyle_vm_set_last_error("c_plat_probe");
-    CHECK(strcmp(hyle_vm_last_error(), "c_plat_probe") == 0);
-    hyle_vm_set_last_error(NULL);
-    CHECK(hyle_vm_last_error()[0] == '\0');
-
     size_t pg = hyle_page_size();
     /* ANY == plain reserve; region is writable after commit. */
-    void* rn = hyle_vm_reserve_numa(pg * 2, HYLE_NUMA_ANY);
+    void* rn = NULL;
+    hyle_numa_placement placement = HYLE_NUMA_PLACEMENT_APPLIED;
+    CHECK(status_ok(hyle_vm_reserve_numa(
+        &rn, &placement, pg * 2, HYLE_NUMA_ANY)));
     CHECK(rn != NULL);
-    CHECK(hyle_vm_commit(rn, pg * 2));
+    CHECK(placement == HYLE_NUMA_PLACEMENT_NOT_NEEDED);
+    CHECK(status_ok(hyle_vm_commit(rn, pg * 2)));
     ((unsigned char*)rn)[0] = 0x5A;
     CHECK(((unsigned char*)rn)[0] == 0x5A);
     /* Empty range bind is always a no-op success. */
-    CHECK(hyle_vm_bind_numa(NULL, 0, 0, HYLE_NUMA_PREFERRED) == 1);
-    CHECK(hyle_vm_bind_numa(NULL, 0, 0, (hyle_numa_policy)99) == 0);
+    CHECK(status_ok(hyle_vm_bind_numa(
+        &placement, NULL, 0, 0, HYLE_NUMA_PREFERRED)));
+    CHECK(placement == HYLE_NUMA_PLACEMENT_NOT_NEEDED);
+    CHECK(status_code(hyle_vm_bind_numa(
+              NULL, NULL, 0, 0, (hyle_numa_policy)99)) ==
+          HYLE_STATUS_INVALID_ARGUMENT);
     /* Preferred to a valid node: soft, always OK. */
-    CHECK(hyle_vm_bind_numa(rn, pg * 2, 0, HYLE_NUMA_PREFERRED) == 1);
+    CHECK(status_ok(hyle_vm_bind_numa(
+        &placement, rn, pg * 2, 0, HYLE_NUMA_PREFERRED)));
     /* Single-node box: hard bind / interleave degrade to no-op success. */
     if (nc <= 1u) {
-      CHECK(hyle_vm_bind_numa(rn, pg * 2, 0, HYLE_NUMA_BIND) == 1);
-      CHECK(hyle_vm_bind_numa_interleave(rn, pg * 2) == 1);
+      CHECK(status_ok(hyle_vm_bind_numa(
+          &placement, rn, pg * 2, 0, HYLE_NUMA_BIND)));
+      CHECK(status_ok(hyle_vm_bind_numa_interleave(
+          &placement, rn, pg * 2)));
     }
-    CHECK(hyle_vm_release(rn, pg * 2));
+    CHECK(status_ok(hyle_vm_release(rn, pg * 2)));
 
     /* reserve preferring the current home node. */
-    void* rl = hyle_vm_reserve_numa(pg, (int)hyle_numa_current_node());
+    void* rl = NULL;
+    CHECK(status_ok(hyle_vm_reserve_numa(
+        &rl, &placement, pg, (int)hyle_numa_current_node())));
     CHECK(rl != NULL);
-    CHECK(hyle_vm_release(rl, pg));
+    CHECK(status_ok(hyle_vm_release(rl, pg)));
   }
 
   /* v3: hugepage / THP hints (soft; size may be 0 on exotic arches) */
@@ -517,11 +551,12 @@ int main(void) {
     }
     /* advise is best-effort: call on a committed region, don't assert result. */
     size_t pg = hyle_page_size();
-    void* h = hyle_vm_alloc_rw(pg);
+    void* h = NULL;
+    CHECK(status_ok(hyle_vm_alloc_rw(&h, pg)));
     CHECK(h != NULL);
-    (void)hyle_vm_advise_hugepage(h, pg);
-    (void)hyle_vm_advise_no_hugepage(h, pg);
-    CHECK(hyle_vm_free_rw(h, pg));
+    status_discard(hyle_vm_advise_hugepage(h, pg));
+    status_discard(hyle_vm_advise_no_hugepage(h, pg));
+    CHECK(status_ok(hyle_vm_free_rw(h, pg)));
   }
 
   /* v4: fs permissions + env write + temp file + mapped file */

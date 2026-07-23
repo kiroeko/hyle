@@ -18,7 +18,7 @@ using hyle::platform::page_align_up;
 using hyle::platform::page_size;
 
 TEST(FiberStack, AllocateDefaultHasGuardAndUsable) {
-  FiberStack s = FiberStack::allocate(kFiberStackDefault);
+  FiberStack s = FiberStack::allocate(kFiberStackDefault).value();
   ASSERT_TRUE(s.valid());
   EXPECT_TRUE(s.has_guard());
   EXPECT_NE(s.base(), nullptr);
@@ -33,7 +33,7 @@ TEST(FiberStack, AllocateDefaultHasGuardAndUsable) {
 }
 
 TEST(FiberStack, UsableIsWritable) {
-  FiberStack s = FiberStack::allocate(kFiberStackSmall);
+  FiberStack s = FiberStack::allocate(kFiberStackSmall).value();
   ASSERT_TRUE(s.valid());
   auto* p = static_cast<unsigned char*>(s.base());
   std::memset(p, 0xA5, s.size());
@@ -49,9 +49,9 @@ TEST(FiberStack, TierSizes) {
   EXPECT_LT(kFiberStackSmall, kFiberStackDefault);
   EXPECT_LT(kFiberStackDefault, kFiberStackLarge);
 
-  FiberStack small = FiberStack::allocate(kFiberStackSmall);
-  FiberStack def = FiberStack::allocate(kFiberStackDefault);
-  FiberStack large = FiberStack::allocate(kFiberStackLarge);
+  FiberStack small = FiberStack::allocate(kFiberStackSmall).value();
+  FiberStack def = FiberStack::allocate(kFiberStackDefault).value();
+  FiberStack large = FiberStack::allocate(kFiberStackLarge).value();
   ASSERT_TRUE(small.valid());
   ASSERT_TRUE(def.valid());
   ASSERT_TRUE(large.valid());
@@ -63,26 +63,26 @@ TEST(FiberStack, TierSizes) {
 }
 
 TEST(FiberStack, MoveTransfersOwnership) {
-  FiberStack a = FiberStack::allocate(kFiberStackDefault);
+  FiberStack a = FiberStack::allocate(kFiberStackDefault).value();
   ASSERT_TRUE(a.valid());
   void* base = a.base();
   FiberStack b = std::move(a);
   EXPECT_FALSE(a.valid());
   EXPECT_TRUE(b.valid());
   EXPECT_EQ(b.base(), base);
-  b.reset();
+  EXPECT_TRUE(b.reset().ok());
   EXPECT_FALSE(b.valid());
 }
 
 TEST(FiberStackPool, AcquireReleaseRecycles) {
   FiberStackPool pool(kFiberStackDefault, /*cache_cap=*/8);
-  FiberStack s1 = pool.acquire();
+  FiberStack s1 = pool.acquire().value();
   ASSERT_TRUE(s1.valid());
   void* base1 = s1.base();
   pool.release(std::move(s1));
   EXPECT_EQ(pool.cached(), 1u);
 
-  FiberStack s2 = pool.acquire();
+  FiberStack s2 = pool.acquire().value();
   ASSERT_TRUE(s2.valid());
   EXPECT_EQ(s2.base(), base1);  // recycled
   EXPECT_EQ(pool.cached(), 0u);
@@ -91,9 +91,9 @@ TEST(FiberStackPool, AcquireReleaseRecycles) {
 
 TEST(FiberStackPool, CacheCapDropsExtra) {
   FiberStackPool pool(kFiberStackSmall, /*cache_cap=*/2);
-  FiberStack a = pool.acquire();
-  FiberStack b = pool.acquire();
-  FiberStack c = pool.acquire();
+  FiberStack a = pool.acquire().value();
+  FiberStack b = pool.acquire().value();
+  FiberStack c = pool.acquire().value();
   ASSERT_TRUE(a.valid());
   ASSERT_TRUE(b.valid());
   ASSERT_TRUE(c.valid());
@@ -105,7 +105,7 @@ TEST(FiberStackPool, CacheCapDropsExtra) {
 
 TEST(FiberStackPool, WrongSizeNotCached) {
   FiberStackPool pool(kFiberStackDefault, /*cache_cap=*/8);
-  FiberStack wrong = FiberStack::allocate(kFiberStackSmall);
+  FiberStack wrong = FiberStack::allocate(kFiberStackSmall).value();
   ASSERT_TRUE(wrong.valid());
   pool.release(std::move(wrong));
   EXPECT_EQ(pool.cached(), 0u);
@@ -121,7 +121,9 @@ TEST(FiberStackPool, ConcurrentAcquireRelease) {
   for (int t = 0; t < kThreads; ++t) {
     threads.emplace_back([&] {
       for (int i = 0; i < kIters; ++i) {
-        FiberStack s = pool.acquire();
+        auto acquired = pool.acquire();
+        if (!acquired) return;
+        FiberStack s = *std::move(acquired);
         if (!s.valid() || !s.has_guard()) return;
         // touch usable so the page is real
         *static_cast<volatile unsigned char*>(s.base()) = 1;
@@ -141,8 +143,10 @@ TEST(FiberStackPool, ConcurrentAcquireRelease) {
 TEST(FiberStackDeathTest, GuardPageWriteFaults) {
   EXPECT_DEATH(
       {
-        FiberStack s = FiberStack::allocate(kFiberStackSmall);
-        if (!s.valid() || !s.has_guard()) std::abort();
+        auto allocated = FiberStack::allocate(kFiberStackSmall);
+        if (!allocated) std::abort();
+        FiberStack s = *std::move(allocated);
+        if (!s.has_guard()) std::abort();
         // guard() is the low no-access page one page below base(); writing it is
         // exactly the stack-overflow-past-the-bottom the guard exists to catch.
         volatile auto* g = static_cast<volatile unsigned char*>(s.guard());

@@ -28,10 +28,10 @@ class FiberStack {
   FiberStack() noexcept = default;
 
   // Reserve + commit `usable` (page-rounded) RW bytes with a low guard page.
-  // On failure: !valid() (see platform::vm_last_error()).
-  static FiberStack allocate(std::size_t usable_bytes) noexcept {
+  static Result<FiberStack> allocate(std::size_t usable_bytes) noexcept {
     FiberStack s;
-    s.region_ = platform::VmRegion::reserve_guarded(usable_bytes);
+    HYLE_ASSIGN_OR_RETURN(s.region_,
+                          platform::VmRegion::reserve_guarded(usable_bytes));
     return s;
   }
 
@@ -60,7 +60,7 @@ class FiberStack {
   std::size_t total_reserved() const noexcept { return region_.size(); }
 
   // Early release (also done by the destructor via VmRegion).
-  void reset() noexcept { region_.release(); }
+  Status reset() noexcept { return region_.release(); }
 
  private:
   platform::VmRegion region_;
@@ -91,7 +91,7 @@ class FiberStackPool {
   }
 
   // Pop a cached stack or allocate a fresh one.
-  FiberStack acquire() noexcept {
+  Result<FiberStack> acquire() noexcept {
     lock_.lock();
     if (n_free_ > 0) {
       FiberStack s = std::move(free_[--n_free_]);
@@ -108,7 +108,7 @@ class FiberStackPool {
     // usable_tier_ is the REQUEST; VmRegion rounds up -- match on actual size.
     const std::size_t want = platform::page_align_up(usable_tier_);
     if (s.size() != want) {
-      s.reset();
+      (void)s.reset();
       return;
     }
     lock_.lock();
@@ -118,7 +118,7 @@ class FiberStackPool {
       return;
     }
     lock_.unlock();
-    s.reset();
+    (void)s.reset();
   }
 
  private:

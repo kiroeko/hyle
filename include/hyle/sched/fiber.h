@@ -55,8 +55,15 @@ class Fiber {
  public:
   using EntryFn = void (*)(void* arg);
 
+  // Recoverable construction for user-controlled inputs. Returns a structured
+  // allocation/validation error and does not start the fiber.
+  HYLE_SCHED_API static Result<Fiber> create(std::size_t stack_size,
+                                             EntryFn entry,
+                                             void* arg) noexcept;
+
   // Allocate a guarded stack of `stack_size` usable bytes and prepare `entry`.
-  // Does not start running until the first resume().
+  // Convenience contract for trusted sizes: invalid input/allocation failure is
+  // fatal. Use create() when failure is recoverable. Does not start until resume.
   HYLE_SCHED_API Fiber(std::size_t stack_size, EntryFn entry, void* arg);
 
   // Take ownership of a pre-built stack (e.g. from FiberStackPool::acquire).

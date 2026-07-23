@@ -1,5 +1,9 @@
 # platform-02b：virtual_memory（host 虚拟内存）
 
+> **历史任务记录。**下文保留当时的 `nullptr`/`bool` + TLS 验收语境；当前 VM/NUMA
+> 已改为共享 `Status`/`Result`，C ABI 为 `hyle_status` + out。见
+> [`platform-error-convergence.md`](platform-error-convergence.md)。
+
 | 字段 | 值 |
 |---|---|
 | **阶段** | P1 |

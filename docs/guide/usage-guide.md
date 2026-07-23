@@ -535,8 +535,10 @@ HYLE 内部 C++23；稳定边界是 `include/hyle/c/*.h` 的纯 `extern "C"` **�
 // 虚拟内存：保留/提交分离 + guard page（fiber 栈、大缓冲的地基）
 #include "hyle/platform/virtual_memory.h"
 using namespace hyle::platform;
-VmRegion r = VmRegion::reserve_guarded(64 * 1024);  // 低 1 页永久 no-access 守护页
-r.commit_usable();                                   // 提交可用区为 RW
+HYLE_ASSIGN_OR_RETURN(
+    VmRegion r,
+    VmRegion::reserve_guarded(64 * 1024));           // 低 1 页永久 no-access 守护页
+HYLE_RETURN_IF_ERROR(r.commit_usable());             // 提交可用区为 RW
 void* p = r.usable();                                // 首个可写字节（越界写→守护页 fault）
 
 // 文件内存映射：RO / RW(回盘) / COW(私有)，对标 Rust memmap2

@@ -7,17 +7,16 @@
 
 跨语言 / 跨编译器只许绑本头（及 `hyle/c/error.h`）。不要 include `hyle/platform/*.h`。
 
-资源构造、动态加载和文件映射的可恢复失败直接返回拥有型 `hyle_status`；
-尚未迁移的低层原语保留线程局部诊断通道：
+资源构造、动态加载、文件映射和 VM/NUMA 的可恢复失败直接返回拥有型
+`hyle_status`：
 
 | 返回面 | 诊断 |
 |---|---|
-| Thread spawn / DynLib / MappedFile | 返回 `hyle_status`，用 `hyle_status_message_cstr` |
-| VM / NUMA | `hyle_vm_last_error()` |
+| Thread spawn / DynLib / MappedFile / VM / NUMA | 返回 `hyle_status`，用 `hyle_status_message_cstr` |
 | Parker create / fs / fd | `hyle_platform_last_error()` |
 
-`hyle_status` 由调用方用 `hyle_status_free` 释放；last-error 指针借用到同线程
-下一次相关调用，成功会清空旧错误。
+`hyle_status` 由调用方用 `hyle_status_free` 释放；剩余 last-error 指针借用到同线程
+下一次相关调用。
 
 ---
 
@@ -110,27 +109,26 @@
 | `hyle_protect` | `NONE` / `READ` / `READ_WRITE` |
 | `hyle_page_size` | 页大小 |
 | `hyle_page_align_up` | **inline**：上取整；0→0 |
-| `hyle_vm_reserve` / `hyle_vm_commit` / `hyle_vm_decommit` / `hyle_vm_release` / `hyle_vm_protect` | 原语；bool→int 1/0 |
-| `hyle_vm_last_error` | |
-| `hyle_vm_set_last_error(msg)` | 设线程局部错误串；NULL 清空（v3） |
-| `hyle_vm_alloc_rw(size)` | reserve+commit RW（size 上取整） |
-| `hyle_vm_free_rw(p, size)` | 释放 `alloc_rw` 的块（size 为原始请求，内部按页上取整）；导出符号，1=成功 |
-| `hyle_vm_region_reserve` / `reserve_guarded` | 不透明 region；guarded 低 1 页 NOACCESS |
-| `hyle_vm_region_reserve_numa(size, node)`（v5） | 偏好 NUMA `node`（`HYLE_NUMA_ANY`==普通 reserve）的托管 region；失败 NULL |
-| `hyle_vm_region_adopt(base, size)`（v5） | 把 `hyle_vm_reserve*` 的裸预留收编进 region 句柄（destroy 释放）；`size` 须为配对 release 的取整值；`base==NULL`→NULL；所有权转移给 region |
+| `hyle_vm_reserve(out, size)` / `commit` / `decommit` / `release` / `protect` | 全部返回 `hyle_status`；reserve 成功写 `*out` |
+| `hyle_vm_alloc_rw(out, size)` | reserve+commit RW（size 上取整）；返回 Status |
+| `hyle_vm_free_rw(p, size)` | 释放 `alloc_rw` 的块（size 为原始请求）；返回 Status |
+| `hyle_vm_region_reserve(out, size)` / `reserve_guarded` | Status+out；guarded 低 1 页 NOACCESS |
+| `hyle_vm_region_reserve_numa(out, size, node)` | 偏好 NUMA `node`（`HYLE_NUMA_ANY`==普通 reserve）的托管 region |
+| `hyle_vm_region_adopt(out, base, size)` | 收编裸预留；只有成功后才转移所有权，wrapper OOM/参数错误时调用方仍拥有 base |
 | `hyle_vm_region_destroy` | |
-| `hyle_vm_region_valid` / `hyle_vm_region_data` / `hyle_vm_region_size` / `hyle_vm_region_usable` / `hyle_vm_region_usable_size` / `hyle_vm_region_has_guard` | 查询 |
-| `hyle_vm_region_commit` / `hyle_vm_region_commit_usable` / `hyle_vm_region_decommit` / `hyle_vm_region_protect` | 子区间 |
+| `hyle_vm_region_valid` / `data` / `size` / `usable` / `usable_size` / `has_guard` / `numa_placement` | 查询 |
+| `hyle_vm_region_commit` / `commit_usable` / `decommit` / `protect` | 子区间，返回 Status |
 
 ### 3.4b Hugepage / THP（DLL + inline，v3）
 
-soft 建议，绝不影响正确性。Linux 用 madvise；Windows/macOS 匿名区无等价 → 返回 0 + `vm_last_error`。
+soft 建议，绝不影响正确性。Linux 用 madvise；Windows/macOS 匿名区无等价时返回
+`HYLE_STATUS_UNIMPLEMENTED`，映射保持可用。
 
 | 符号 | 说明 |
 |---|---|
 | `hyle_large_page_size` | 大页字节（未知/不支持→0） |
 | `hyle_large_page_align_up(n)` | **inline**：上取整到大页（0 回退普通页）；n==0→0 |
-| `hyle_vm_advise_hugepage(ptr, size)` | 空范围→1；ptr 须页对齐；bool→int |
+| `hyle_vm_advise_hugepage(ptr, size)` | 空范围→OK；ptr 须页对齐；返回 Status |
 | `hyle_vm_advise_no_hugepage(ptr, size)` | 同上，反向建议 |
 
 ### 3.4c NUMA 拓扑 + 放置（DLL + 常量，v3）
@@ -139,12 +137,13 @@ soft 建议，绝不影响正确性。Linux 用 madvise；Windows/macOS 匿名�
 |---|---|
 | `hyle_numa_node`：`HYLE_NUMA_ANY` | 具名 enum；`(-1)` 无 NUMA 约束 |
 | `hyle_numa_policy` | `PREFERRED`(软) / `BIND`(硬,Linux) / `INTERLEAVE`(全节点条带) |
+| `hyle_numa_placement` | `APPLIED` / `NOT_NEEDED` / `UNAVAILABLE`（软 preferred 降级） |
 | `hyle_numa_node_count` | 节点数 ≥1 |
 | `hyle_numa_current_node` | 调用线程 home 节点（< count） |
 | `hyle_numa_node_of_cpu(cpu)` | 逻辑 CPU 所属节点（< count；越界/单节点/失败→0）；配 `affinity_cpu` 把 worker 的 arena 放到其核所在节点 |
-| `hyle_vm_bind_numa(ptr, size, node, policy)` | 绑定已有映射；空范围→1；单节点→1(no-op)；多节点无 OS API 的硬绑定/交错→0(+`vm_last_error`) |
-| `hyle_vm_bind_numa_interleave(ptr, size)` | 全节点条带（INTERLEAVE 别名） |
-| `hyle_vm_reserve_numa(size, node)` | 预留偏好 `node`（ANY==普通 reserve）；失败 NULL；用 `hyle_vm_*` commit/release |
+| `hyle_vm_bind_numa(out_placement, ptr, size, node, policy)` | 返回 Status；placement 出参可 NULL；硬绑定/交错无法满足是错误 |
+| `hyle_vm_bind_numa_interleave(out_placement, ptr, size)` | 全节点条带（INTERLEAVE 别名） |
+| `hyle_vm_reserve_numa(out, out_placement, size, node)` | Status+out；preferred 失败仍可成功分配并报告 `UNAVAILABLE` |
 
 ### 3.5 fs / env（DLL）
 

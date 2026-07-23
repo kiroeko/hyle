@@ -19,7 +19,7 @@ using hyle::platform::page_size;
 
 TEST(HugeRegion, AllocateDefaultIsWritableAndAligned) {
   const std::size_t want = hugepage_region_threshold(); // ~2 MiB
-  HugeRegion r = HugeRegion::allocate(want, HugeFlags::kThpHint);
+  HugeRegion r = HugeRegion::allocate(want, HugeFlags::kThpHint).value();
   ASSERT_TRUE(r.valid());
   EXPECT_GE(r.size(), want);
   EXPECT_EQ(r.size(), large_page_align_up(want));
@@ -31,7 +31,8 @@ TEST(HugeRegion, AllocateDefaultIsWritableAndAligned) {
 
 TEST(HugeRegion, ReportsRequestedAndAcceptedPolicyWithoutOverclaiming) {
   const auto requested = HugeFlags::kThpHint | HugeFlags::kPrefault;
-  HugeRegion r = HugeRegion::allocate(2u * 1024u * 1024u, requested);
+  HugeRegion r =
+      HugeRegion::allocate(2u * 1024u * 1024u, requested).value();
   ASSERT_TRUE(r.valid());
   EXPECT_EQ(r.requested_flags(), requested);
   EXPECT_TRUE(any(r.accepted_flags() & HugeFlags::kPrefault));
@@ -43,7 +44,9 @@ TEST(HugeRegion, ReportsRequestedAndAcceptedPolicyWithoutOverclaiming) {
 TEST(HugeRegion, PrefaultTouchesPages) {
   // Smaller than 2 MiB still works (aligned up). Prefault is optional path.
   HugeRegion r = HugeRegion::allocate(
-      page_size() * 8, HugeFlags::kThpHint | HugeFlags::kPrefault);
+                     page_size() * 8,
+                     HugeFlags::kThpHint | HugeFlags::kPrefault)
+                     .value();
   ASSERT_TRUE(r.valid());
   auto *p = static_cast<unsigned char *>(r.data());
   p[0] = 1;
@@ -53,20 +56,21 @@ TEST(HugeRegion, PrefaultTouchesPages) {
 }
 
 TEST(HugeRegion, MoveAndReset) {
-  HugeRegion a = HugeRegion::allocate(page_size() * 4);
+  HugeRegion a = HugeRegion::allocate(page_size() * 4).value();
   ASSERT_TRUE(a.valid());
   void *base = a.data();
   HugeRegion b = std::move(a);
   EXPECT_FALSE(a.valid());
   EXPECT_TRUE(b.valid());
   EXPECT_EQ(b.data(), base);
-  b.reset();
+  EXPECT_TRUE(b.reset().ok());
   EXPECT_FALSE(b.valid());
 }
 
 TEST(HugeRegion, ZeroBytesInvalid) {
-  HugeRegion r = HugeRegion::allocate(0);
-  EXPECT_FALSE(r.valid());
+  auto r = HugeRegion::allocate(0);
+  ASSERT_FALSE(r);
+  EXPECT_TRUE(r.error().IsInvalidArgument());
 }
 
 TEST(HugeRegion, HardBindRejectsInvalidNode) {
@@ -75,13 +79,14 @@ TEST(HugeRegion, HardBindRejectsInvalidNode) {
   const int invalid = static_cast<int>(count) + 100;
   ASSERT_NE(invalid, hyle::platform::kNumaAny);
   ASSERT_GE(static_cast<unsigned>(invalid), count);
-  HugeRegion r =
-      HugeRegion::allocate(page_size(), HugeFlags::kNumaBind, invalid);
-  EXPECT_FALSE(r.valid());
+  auto r = HugeRegion::allocate(page_size(), HugeFlags::kNumaBind, invalid);
+  ASSERT_FALSE(r);
+  EXPECT_TRUE(r.error().IsOutOfRange());
 }
 
 TEST(HugeRegion, AdviseHugepageRangeHelper) {
-  HugeRegion r = HugeRegion::allocate(page_size() * 4, HugeFlags::kNone);
+  HugeRegion r =
+      HugeRegion::allocate(page_size() * 4, HugeFlags::kNone).value();
   ASSERT_TRUE(r.valid());
   // Soft — may be false off Linux.
   (void)advise_hugepage_range(r.data(), r.size());

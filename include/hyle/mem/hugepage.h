@@ -83,60 +83,81 @@ public:
   // Reserve+commit `bytes` (large-page aligned). NUMA:
   //   kNumaInterleave → stripe all nodes
   //   else reserve_numa(node) + preferred or kNumaBind
-  static HugeRegion allocate(std::size_t bytes,
-                             HugeFlags flags = HugeFlags::kDefault,
-                             int numa_node = platform::kNumaAny) noexcept {
+  static Result<HugeRegion> allocate(
+      std::size_t bytes, HugeFlags flags = HugeFlags::kDefault,
+      int numa_node = platform::kNumaAny) noexcept {
     HugeRegion r;
     r.requested_flags_ = flags;
     r.requested_numa_node_ = numa_node;
-    if (bytes == 0)
-      return r;
+    if (bytes == 0) {
+      return std::unexpected(
+          Status::InvalidArgument("HugeRegion allocate: size is zero"));
+    }
     const std::size_t aligned = platform::large_page_align_up(bytes);
+    if (aligned == 0) {
+      return std::unexpected(
+          Status::OutOfRange("HugeRegion allocate: size overflow"));
+    }
     const bool interleave = any(flags & HugeFlags::kNumaInterleave);
     if (!interleave && numa_node != platform::kNumaAny &&
         (numa_node < 0 ||
          static_cast<unsigned>(numa_node) >= platform::numa_node_count())) {
-      return r;
+      return std::unexpected(Status::OutOfRange(
+          "HugeRegion allocate: NUMA node index is out of range"));
     }
     if (interleave) {
-      r.region_ = platform::VmRegion::reserve(aligned);
+      HYLE_ASSIGN_OR_RETURN(r.region_, platform::VmRegion::reserve(aligned));
     } else {
-      r.region_ = platform::VmRegion::reserve_numa(aligned, numa_node);
+      HYLE_ASSIGN_OR_RETURN(r.region_,
+                            platform::VmRegion::reserve_numa(aligned, numa_node));
     }
-    if (!r.region_.valid())
-      return r;
-    if (!r.region_.commit(0, r.region_.size())) {
-      r.region_.release();
-      return r;
+    Status status = r.region_.commit(0, r.region_.size());
+    if (!status.ok()) {
+      (void)r.region_.release();
+      return std::unexpected(
+          std::move(status).WithContext("HugeRegion allocate commit"));
     }
+    platform::NumaPlacement placement = r.region_.numa_placement();
     if (interleave) {
       // Interleave and hard bind are requested guarantees, unlike preferred
       // placement. Do not return a valid region while silently violating them.
-      if (!platform::vm_bind_numa_interleave(r.region_.data(),
-                                             r.region_.size())) {
-        r.region_.release();
-        return r;
+      auto placed = platform::vm_bind_numa_interleave(r.region_.data(),
+                                                       r.region_.size());
+      if (!placed) {
+        Status error = std::move(placed).error();
+        (void)r.region_.release();
+        return std::unexpected(
+            std::move(error).WithContext("HugeRegion allocate interleave"));
       }
+      placement = *placed;
       r.accepted_flags_ = r.accepted_flags_ | HugeFlags::kNumaInterleave;
-      r.numa_placement_applied_ = true;
     } else if (numa_node != platform::kNumaAny) {
       const auto pol = any(flags & HugeFlags::kNumaBind)
                            ? platform::NumaPolicy::kBind
                            : platform::NumaPolicy::kPreferred;
-      const bool placed = platform::vm_bind_numa(
-          r.region_.data(), r.region_.size(), numa_node, pol);
-      if (!placed && pol == platform::NumaPolicy::kBind) {
-        r.region_.release();
-        return r;
+      // reserve_numa only requests preferred placement. A hard bind must still
+      // go through the hard-policy API; Windows correctly rejects this on a
+      // multi-node machine because VirtualAlloc2 preference is not a guarantee.
+      if (pol == platform::NumaPolicy::kBind) {
+        auto placed = platform::vm_bind_numa(
+            r.region_.data(), r.region_.size(), numa_node, pol);
+        if (!placed) {
+          Status error = std::move(placed).error();
+          (void)r.region_.release();
+          return std::unexpected(
+              std::move(error).WithContext("HugeRegion allocate hard bind"));
+        }
+        placement = *placed;
       }
-      if (placed) {
-        r.numa_placement_applied_ = true;
-        if (pol == platform::NumaPolicy::kBind)
-          r.accepted_flags_ = r.accepted_flags_ | HugeFlags::kNumaBind;
+      if (pol == platform::NumaPolicy::kBind) {
+        r.accepted_flags_ = r.accepted_flags_ | HugeFlags::kNumaBind;
       }
     }
+    r.numa_placement_applied_ =
+        placement == platform::NumaPlacement::kApplied;
     if (any(flags & HugeFlags::kThpHint)) {
-      if (platform::vm_advise_hugepage(r.region_.data(), r.region_.size()))
+      status = platform::vm_advise_hugepage(r.region_.data(), r.region_.size());
+      if (status.ok())
         r.accepted_flags_ = r.accepted_flags_ | HugeFlags::kThpHint;
     }
     if (any(flags & HugeFlags::kPrefault)) {
@@ -150,7 +171,7 @@ public:
     return r;
   }
 
-  static HugeRegion
+  static Result<HugeRegion>
   allocate_local(std::size_t bytes,
                  HugeFlags flags = HugeFlags::kDefault) noexcept {
     return allocate(bytes, flags,
@@ -158,7 +179,7 @@ public:
   }
 
   // Shared multi-MB arena: interleave + THP.
-  static HugeRegion
+  static Result<HugeRegion>
   allocate_interleaved(std::size_t bytes,
                        HugeFlags flags = HugeFlags::kThpHint) noexcept {
     return allocate(bytes, flags | HugeFlags::kNumaInterleave,
@@ -207,20 +228,23 @@ public:
     return numa_placement_applied_;
   }
 
-  void reset() noexcept {
-    region_.release();
+  Status reset() noexcept {
+    Status status = region_.release();
+    if (!status.ok()) return status;
     accepted_flags_ = HugeFlags::kNone;
     numa_placement_applied_ = false;
+    return Status::Ok();
   }
 
-  bool advise_hugepage() noexcept {
-    if (!valid())
-      return false;
-    const bool accepted =
+  Status advise_hugepage() noexcept {
+    if (!valid()) {
+      return Status::FailedPrecondition("HugeRegion advise: region is empty");
+    }
+    Status status =
         platform::vm_advise_hugepage(region_.data(), region_.size());
-    if (accepted)
+    if (status.ok())
       accepted_flags_ = accepted_flags_ | HugeFlags::kThpHint;
-    return accepted;
+    return status;
   }
 
 private:
@@ -231,8 +255,8 @@ private:
   bool numa_placement_applied_ = false;
 };
 
-HYLE_FORCE_INLINE bool advise_hugepage_range(void *ptr,
-                                             std::size_t size) noexcept {
+HYLE_FORCE_INLINE Status advise_hugepage_range(void *ptr,
+                                               std::size_t size) noexcept {
   return platform::vm_advise_hugepage(ptr, size);
 }
 

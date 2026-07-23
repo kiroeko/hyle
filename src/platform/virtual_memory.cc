@@ -1,5 +1,6 @@
 #include "hyle/platform/virtual_memory.h"
 
+#include <cstdio>
 #include <cstring>
 
 #include "hyle/macros.h"
@@ -26,43 +27,53 @@
 namespace hyle::platform {
 namespace {
 
-// Thread-local VM error buffer. This remains only until the VM/NUMA phase of
-// platform error convergence; DynLib already returns Status directly.
-thread_local char g_error[256] = {0};
-
-void set_error(const char* msg) noexcept {
-  if (msg == nullptr) {
-    g_error[0] = '\0';
-    return;
-  }
-  std::size_t n = std::strlen(msg);
-  if (n >= sizeof(g_error)) n = sizeof(g_error) - 1;
-  std::memcpy(g_error, msg, n);
-  g_error[n] = '\0';
-}
-
-void clear_error() noexcept { g_error[0] = '\0'; }
-
 #if defined(HYLE_OS_WINDOWS)
-void set_error_win() noexcept {
-  DWORD code = GetLastError();
-  char buf[256];
-  DWORD len = FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-                             nullptr, code, 0, buf, sizeof(buf), nullptr);
-  if (len == 0) {
-    set_error("unknown VirtualAlloc/Protect error");
-  } else {
-    // Trim trailing CR/LF that FormatMessage often appends.
-    while (len > 0 && (buf[len - 1] == '\r' || buf[len - 1] == '\n' || buf[len - 1] == ' ')) {
-      buf[--len] = '\0';
-    }
-    set_error(buf);
+Status native_status(const char* operation, DWORD code) noexcept {
+  char description[192]{};
+  DWORD length = ::FormatMessageA(
+      FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr,
+      code, 0, description, sizeof(description), nullptr);
+  while (length > 0 && (description[length - 1] == '\r' ||
+                        description[length - 1] == '\n' ||
+                        description[length - 1] == ' ')) {
+    description[--length] = '\0';
   }
+  char message[320]{};
+  std::snprintf(message, sizeof(message), "%s failed (win32=%lu): %s",
+                operation, static_cast<unsigned long>(code),
+                length != 0 ? description : "unknown Windows error");
+  if (code == ERROR_NOT_ENOUGH_MEMORY || code == ERROR_OUTOFMEMORY ||
+      code == ERROR_COMMITMENT_LIMIT) {
+    return Status::ResourceExhausted(message);
+  }
+  if (code == ERROR_ACCESS_DENIED) return Status::PermissionDenied(message);
+  if (code == ERROR_INVALID_PARAMETER || code == ERROR_INVALID_ADDRESS) {
+    return Status::InvalidArgument(message);
+  }
+  if (code == ERROR_NOT_SUPPORTED || code == ERROR_CALL_NOT_IMPLEMENTED) {
+    return Status::Unimplemented(message);
+  }
+  return Status::Unavailable(message);
 }
 #else
-void set_error_errno() noexcept {
-  const char* msg = std::strerror(errno);
-  set_error(msg != nullptr ? msg : "unknown mmap/mprotect error");
+Status native_status(const char* operation, int code) noexcept {
+  char description[192]{};
+  const char* text = description;
+#  if defined(__GLIBC__) && defined(_GNU_SOURCE)
+  text = ::strerror_r(code, description, sizeof(description));
+#  else
+  if (::strerror_r(code, description, sizeof(description)) != 0) {
+    text = "unknown POSIX error";
+  }
+#  endif
+  char message[320]{};
+  std::snprintf(message, sizeof(message), "%s failed (errno=%d): %s",
+                operation, code, text);
+  if (code == ENOMEM) return Status::ResourceExhausted(message);
+  if (code == EACCES || code == EPERM) return Status::PermissionDenied(message);
+  if (code == EINVAL) return Status::InvalidArgument(message);
+  if (code == ENOSYS || code == ENOTSUP) return Status::Unimplemented(message);
+  return Status::Unavailable(message);
 }
 #endif
 
@@ -80,10 +91,9 @@ std::size_t page_size_cached() noexcept {
   return kPage;
 }
 
-void require_page_aligned(const void* ptr) noexcept {
-  if (ptr == nullptr) return;
-  std::uintptr_t a = reinterpret_cast<std::uintptr_t>(ptr);
-  HYLE_FATAL_ASSERT((a % page_size_cached()) == 0);
+bool page_aligned(const void* ptr) noexcept {
+  return ptr == nullptr ||
+         (reinterpret_cast<std::uintptr_t>(ptr) % page_size_cached()) == 0;
 }
 
 std::size_t align_size(std::size_t size) noexcept {
@@ -96,6 +106,26 @@ DWORD protect_to_win(Protect prot) noexcept {
   if (prot == Protect::kRead) return PAGE_READONLY;
   if (prot == Protect::kReadWrite) return PAGE_READWRITE;
   return PAGE_NOACCESS;  // kNone (and any future unknown -> safest)
+}
+
+bool range_is_reserved_uncommitted(void* ptr, std::size_t size) noexcept {
+  auto cursor = reinterpret_cast<std::uintptr_t>(ptr);
+  if (size > UINTPTR_MAX - cursor) return false;
+  const std::uintptr_t end = cursor + size;
+  while (cursor < end) {
+    MEMORY_BASIC_INFORMATION mbi{};
+    if (::VirtualQuery(reinterpret_cast<void*>(cursor), &mbi, sizeof(mbi)) ==
+            0 ||
+        mbi.State != MEM_RESERVE) {
+      return false;
+    }
+    const auto region = reinterpret_cast<std::uintptr_t>(mbi.BaseAddress);
+    if (mbi.RegionSize > UINTPTR_MAX - region) return false;
+    const std::uintptr_t region_end = region + mbi.RegionSize;
+    if (region_end <= cursor) return false;
+    cursor = region_end < end ? region_end : end;
+  }
+  return true;
 }
 #else
 int protect_to_posix(Protect prot) noexcept {
@@ -113,14 +143,9 @@ bool range_ok(void* base, std::size_t size, std::size_t offset,
   return true;
 }
 
-bool align_nonempty_size(std::size_t requested, std::size_t& aligned,
-                         const char* what) noexcept {
+bool align_nonempty_size(std::size_t requested, std::size_t& aligned) noexcept {
   aligned = align_size(requested);
-  if (requested != 0 && aligned == 0) {
-    set_error(what);
-    return false;
-  }
-  return true;
+  return requested == 0 || aligned != 0;
 }
 
 }  // namespace
@@ -154,184 +179,166 @@ std::size_t large_page_size() noexcept {
   return kLarge;
 }
 
-const char* vm_last_error() noexcept { return g_error; }
-
-void vm_set_last_error(const char* msg) noexcept {
-  if (msg == nullptr) {
-    clear_error();
-    return;
+Status vm_advise_hugepage(void* ptr, std::size_t size) noexcept {
+  if (size == 0) return Status::Ok();
+  if (ptr == nullptr || !page_aligned(ptr)) {
+    return Status::InvalidArgument(
+        "vm advise hugepage: pointer is null or not page-aligned");
   }
-  set_error(msg);
-}
-
-bool vm_advise_hugepage(void* ptr, std::size_t size) noexcept {
-  clear_error();
-  if (size == 0) return true;
-  if (ptr == nullptr) {
-    set_error("vm_advise_hugepage: null pointer for non-empty range");
-    return false;
+  if (!align_nonempty_size(size, size)) {
+    return Status::OutOfRange("vm advise hugepage: size overflow");
   }
-  require_page_aligned(ptr);
-  if (!align_nonempty_size(size, size,
-                           "vm_advise_hugepage: size overflow"))
-    return false;
 #if defined(HYLE_OS_LINUX) && defined(MADV_HUGEPAGE)
   if (::madvise(ptr, size, MADV_HUGEPAGE) != 0) {
-    set_error_errno();
-    return false;
+    return native_status("madvise(MADV_HUGEPAGE)", errno);
   }
-  return true;
+  return Status::Ok();
 #else
   (void)ptr;
   (void)size;
-  // No portable anonymous-THP madvise on Windows/macOS.
-  set_error("vm_advise_hugepage: not supported on this platform");
-  return false;
+  return Status::Unimplemented(
+      "anonymous hugepage advice is unavailable on this platform");
 #endif
 }
 
-bool vm_advise_no_hugepage(void* ptr, std::size_t size) noexcept {
-  clear_error();
-  if (size == 0) return true;
-  if (ptr == nullptr) {
-    set_error("vm_advise_no_hugepage: null pointer for non-empty range");
-    return false;
+Status vm_advise_no_hugepage(void* ptr, std::size_t size) noexcept {
+  if (size == 0) return Status::Ok();
+  if (ptr == nullptr || !page_aligned(ptr)) {
+    return Status::InvalidArgument(
+        "vm advise no-hugepage: pointer is null or not page-aligned");
   }
-  require_page_aligned(ptr);
-  if (!align_nonempty_size(size, size,
-                           "vm_advise_no_hugepage: size overflow"))
-    return false;
+  if (!align_nonempty_size(size, size)) {
+    return Status::OutOfRange("vm advise no-hugepage: size overflow");
+  }
 #if defined(HYLE_OS_LINUX) && defined(MADV_NOHUGEPAGE)
   if (::madvise(ptr, size, MADV_NOHUGEPAGE) != 0) {
-    set_error_errno();
-    return false;
+    return native_status("madvise(MADV_NOHUGEPAGE)", errno);
   }
-  return true;
+  return Status::Ok();
 #else
   (void)ptr;
   (void)size;
-  set_error("vm_advise_no_hugepage: not supported on this platform");
-  return false;
+  return Status::Unimplemented(
+      "anonymous no-hugepage advice is unavailable on this platform");
 #endif
 }
 
-void* vm_reserve(std::size_t size) noexcept {
-  clear_error();
+Result<void*> vm_reserve(std::size_t size) noexcept {
   size = align_size(size);
   if (size == 0) {
-    set_error("vm_reserve: size rounds to 0");
-    return nullptr;
+    return std::unexpected(Status::InvalidArgument(
+        "vm reserve: size is zero or overflows page alignment"));
   }
 #if defined(HYLE_OS_WINDOWS)
   // Reserve only -- no physical pages. PAGE_NOACCESS until commit.
   void* p = ::VirtualAlloc(nullptr, size, MEM_RESERVE, PAGE_NOACCESS);
   if (p == nullptr) {
-    set_error_win();
-    return nullptr;
+    return std::unexpected(native_status("VirtualAlloc(MEM_RESERVE)",
+                                         ::GetLastError()));
   }
   return p;
 #else
   // PROT_NONE + anonymous: address space reserved, no access until mprotect.
   void* p = ::mmap(nullptr, size, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
   if (p == MAP_FAILED) {
-    set_error_errno();
-    return nullptr;
+    return std::unexpected(native_status("mmap(PROT_NONE)", errno));
   }
   return p;
 #endif
 }
 
-bool vm_commit(void* ptr, std::size_t size) noexcept {
-  clear_error();
-  if (size == 0) return true;
-  if (ptr == nullptr) {
-    set_error("vm_commit: null pointer for non-empty range");
-    return false;
+Status vm_commit(void* ptr, std::size_t size) noexcept {
+  if (size == 0) return Status::Ok();
+  if (ptr == nullptr || !page_aligned(ptr)) {
+    return Status::InvalidArgument(
+        "vm commit: pointer is null or not page-aligned");
   }
-  require_page_aligned(ptr);
-  if (!align_nonempty_size(size, size, "vm_commit: size overflow")) return false;
+  if (!align_nonempty_size(size, size)) {
+    return Status::OutOfRange("vm commit: size overflow");
+  }
 #if defined(HYLE_OS_WINDOWS)
   void* p = ::VirtualAlloc(ptr, size, MEM_COMMIT, PAGE_READWRITE);
   if (p == nullptr) {
-    set_error_win();
-    return false;
+    return native_status("VirtualAlloc(MEM_COMMIT)", ::GetLastError());
   }
-  return true;
+  return Status::Ok();
 #else
   if (::mprotect(ptr, size, PROT_READ | PROT_WRITE) != 0) {
-    set_error_errno();
-    return false;
+    return native_status("mprotect(PROT_READ|PROT_WRITE)", errno);
   }
-  return true;
+  return Status::Ok();
 #endif
 }
 
-bool vm_decommit(void* ptr, std::size_t size) noexcept {
-  clear_error();
-  if (size == 0) return true;
-  if (ptr == nullptr) {
-    set_error("vm_decommit: null pointer for non-empty range");
-    return false;
+Status vm_decommit(void* ptr, std::size_t size) noexcept {
+  if (size == 0) return Status::Ok();
+  if (ptr == nullptr || !page_aligned(ptr)) {
+    return Status::InvalidArgument(
+        "vm decommit: pointer is null or not page-aligned");
   }
-  require_page_aligned(ptr);
-  if (!align_nonempty_size(size, size, "vm_decommit: size overflow"))
-    return false;
+  if (!align_nonempty_size(size, size)) {
+    return Status::OutOfRange("vm decommit: size overflow");
+  }
 #if defined(HYLE_OS_WINDOWS)
   if (::VirtualFree(ptr, size, MEM_DECOMMIT) == 0) {
-    set_error_win();
-    return false;
+    return native_status("VirtualFree(MEM_DECOMMIT)", ::GetLastError());
   }
-  return true;
+  return Status::Ok();
 #else
   // Drop physical pages, then restore no-access so accidental touch faults
   // instead of silently re-faulting in a RW mapping.
+  int advice_error = 0;
   if (::madvise(ptr, size, MADV_DONTNEED) != 0) {
-    // Non-fatal on some platforms; still try mprotect.
+    advice_error = errno;
   }
   if (::mprotect(ptr, size, PROT_NONE) != 0) {
-    set_error_errno();
-    return false;
+    return native_status("mprotect(PROT_NONE)", errno);
   }
-  return true;
+  if (advice_error != 0) {
+    return native_status("madvise(MADV_DONTNEED)", advice_error);
+  }
+  return Status::Ok();
 #endif
 }
 
-bool vm_release(void* base, std::size_t size) noexcept {
-  clear_error();
-  if (base == nullptr) return true;
-  require_page_aligned(base);
+Status vm_release(void* base, std::size_t size) noexcept {
+  if (base == nullptr) return Status::Ok();
+  if (!page_aligned(base)) {
+    return Status::InvalidArgument("vm release: base is not page-aligned");
+  }
   size = align_size(size);
   if (size == 0) {
-    set_error("vm_release: size rounds to 0");
-    return false;
+    return Status::InvalidArgument(
+        "vm release: size is zero or overflows page alignment");
   }
 #if defined(HYLE_OS_WINDOWS)
   // MEM_RELEASE requires dwSize == 0 and the ORIGINAL reserve base.
   (void)size;
   if (::VirtualFree(base, 0, MEM_RELEASE) == 0) {
-    set_error_win();
-    return false;
+    return native_status("VirtualFree(MEM_RELEASE)", ::GetLastError());
   }
-  return true;
+  return Status::Ok();
 #else
   if (::munmap(base, size) != 0) {
-    set_error_errno();
-    return false;
+    return native_status("munmap", errno);
   }
-  return true;
+  return Status::Ok();
 #endif
 }
 
-bool vm_protect(void* ptr, std::size_t size, Protect prot) noexcept {
-  clear_error();
-  if (size == 0) return true;
-  if (ptr == nullptr) {
-    set_error("vm_protect: null pointer for non-empty range");
-    return false;
+Status vm_protect(void* ptr, std::size_t size, Protect prot) noexcept {
+  if (prot != Protect::kNone && prot != Protect::kRead &&
+      prot != Protect::kReadWrite) {
+    return Status::InvalidArgument("vm protect: invalid protection mode");
   }
-  require_page_aligned(ptr);
-  if (!align_nonempty_size(size, size, "vm_protect: size overflow"))
-    return false;
+  if (size == 0) return Status::Ok();
+  if (ptr == nullptr || !page_aligned(ptr)) {
+    return Status::InvalidArgument(
+        "vm protect: pointer is null or not page-aligned");
+  }
+  if (!align_nonempty_size(size, size)) {
+    return Status::OutOfRange("vm protect: size overflow");
+  }
 #if defined(HYLE_OS_WINDOWS)
   // Windows: VirtualProtect needs the pages to be committed for non-NOACCESS
   // changes in some cases; for PAGE_NOACCESS on committed pages it works.
@@ -339,68 +346,63 @@ bool vm_protect(void* ptr, std::size_t size, Protect prot) noexcept {
   // NOACCESS (guard page is either never committed, or committed then locked).
   DWORD old = 0;
   if (::VirtualProtect(ptr, size, protect_to_win(prot), &old) == 0) {
+    const DWORD protect_error = ::GetLastError();
     // If the range was only reserved (never committed), PAGE_NOACCESS is already
     // the reserve state -- treat kNone on reserved-only as success via re-reserve
     // semantics: try MEM_COMMIT first only for RW/Read.
     if (prot == Protect::kNone) {
       // Reserved-but-uncommitted pages are already no-access on Windows.
       // VirtualProtect on pure reserved memory fails; that is OK for kNone.
-      MEMORY_BASIC_INFORMATION mbi{};
-      if (::VirtualQuery(ptr, &mbi, sizeof(mbi)) != 0 &&
-          (mbi.State & MEM_RESERVE) != 0 && (mbi.State & MEM_COMMIT) == 0) {
-        return true;
+      if (range_is_reserved_uncommitted(ptr, size)) {
+        return Status::Ok();
       }
     }
-    set_error_win();
-    return false;
+    return native_status("VirtualProtect", protect_error);
   }
-  return true;
+  return Status::Ok();
 #else
   if (::mprotect(ptr, size, protect_to_posix(prot)) != 0) {
-    set_error_errno();
-    return false;
+    return native_status("mprotect", errno);
   }
-  return true;
+  return Status::Ok();
 #endif
 }
 
 // ---- VmRegion ---------------------------------------------------------------
 
-VmRegion VmRegion::reserve(std::size_t size) noexcept {
+Result<VmRegion> VmRegion::reserve(std::size_t size) noexcept {
   VmRegion r;
-  void* p = vm_reserve(size);
-  if (p == nullptr) return r;
+  HYLE_ASSIGN_OR_RETURN(void* p, vm_reserve(size));
   r.base_ = p;
   r.size_ = page_align_up(size);
   r.guarded_ = false;
   return r;
 }
 
-VmRegion VmRegion::reserve_numa(std::size_t size, int node) noexcept {
+Result<VmRegion> VmRegion::reserve_numa(std::size_t size, int node) noexcept {
   VmRegion r;
-  void* p = vm_reserve_numa(size, node);
-  if (p == nullptr) return r;
-  r.base_ = p;
+  HYLE_ASSIGN_OR_RETURN(NumaReservation reservation,
+                        vm_reserve_numa(size, node));
+  r.base_ = reservation.data;
   r.size_ = page_align_up(size);
   r.guarded_ = false;
+  r.numa_placement_ = reservation.placement;
   return r;
 }
 
-VmRegion VmRegion::adopt(void* base, std::size_t size) noexcept {
+Result<VmRegion> VmRegion::adopt(void* base, std::size_t size) noexcept {
   VmRegion r;
-  clear_error();
   if (base == nullptr || size == 0) {
-    set_error("VmRegion::adopt: null base or zero size");
-    return r;
+    return std::unexpected(
+        Status::InvalidArgument("VmRegion adopt: null base or zero size"));
   }
   if ((reinterpret_cast<std::uintptr_t>(base) % page_size()) != 0) {
-    set_error("VmRegion::adopt: base is not page-aligned");
-    return r;
+    return std::unexpected(
+        Status::InvalidArgument("VmRegion adopt: base is not page-aligned"));
   }
   const std::size_t aligned = page_align_up(size);
   if (aligned == 0) {
-    set_error("VmRegion::adopt: size overflow");
-    return r;
+    return std::unexpected(Status::OutOfRange("VmRegion adopt: size overflow"));
   }
   r.base_ = base;
   r.size_ = aligned;
@@ -408,28 +410,31 @@ VmRegion VmRegion::adopt(void* base, std::size_t size) noexcept {
   return r;
 }
 
-VmRegion VmRegion::reserve_guarded(std::size_t usable) noexcept {
+Result<VmRegion> VmRegion::reserve_guarded(std::size_t usable) noexcept {
   VmRegion r;
   std::size_t page = page_size();
   std::size_t usable_aligned = page_align_up(usable == 0 ? 1 : usable);
   if (usable_aligned == 0 || usable_aligned > SIZE_MAX - page) {
-    set_error("VmRegion::reserve_guarded: size overflow");
-    return r;
+    return std::unexpected(
+        Status::OutOfRange("VmRegion reserve guarded: size overflow"));
   }
   std::size_t total = page + usable_aligned;
-  void* p = vm_reserve(total);
-  if (p == nullptr) return r;
+  HYLE_ASSIGN_OR_RETURN(void* p, vm_reserve(total));
   // Commit only the usable high range; leave the low page reserved/no-access.
   auto* bytes = static_cast<std::byte*>(p);
-  if (!vm_commit(bytes + page, usable_aligned)) {
-    vm_release(p, total);
-    return VmRegion{};
+  Status status = vm_commit(bytes + page, usable_aligned);
+  if (!status.ok()) {
+    (void)vm_release(p, total);
+    return std::unexpected(std::move(status).WithContext(
+        "VmRegion reserve guarded commit usable range"));
   }
   // Explicit protect on the guard page (no-op-ish on POSIX reserve, documents
   // intent; on Windows reserved-uncommitted is already NOACCESS).
-  if (!vm_protect(p, page, Protect::kNone)) {
-    vm_release(p, total);
-    return VmRegion{};
+  status = vm_protect(p, page, Protect::kNone);
+  if (!status.ok()) {
+    (void)vm_release(p, total);
+    return std::unexpected(std::move(status).WithContext(
+        "VmRegion reserve guarded protect guard page"));
   }
   r.base_ = p;
   r.size_ = total;
@@ -437,70 +442,83 @@ VmRegion VmRegion::reserve_guarded(std::size_t usable) noexcept {
   return r;
 }
 
-VmRegion::~VmRegion() { release(); }
+VmRegion::~VmRegion() { (void)release(); }
 
 VmRegion::VmRegion(VmRegion&& o) noexcept
-    : base_(o.base_), size_(o.size_), guarded_(o.guarded_) {
+    : base_(o.base_),
+      size_(o.size_),
+      guarded_(o.guarded_),
+      numa_placement_(o.numa_placement_) {
   o.base_ = nullptr;
   o.size_ = 0;
   o.guarded_ = false;
+  o.numa_placement_ = NumaPlacement::kNotNeeded;
 }
 
 VmRegion& VmRegion::operator=(VmRegion&& o) noexcept {
   if (this != &o) {
-    release();
+    (void)release();
     base_ = o.base_;
     size_ = o.size_;
     guarded_ = o.guarded_;
+    numa_placement_ = o.numa_placement_;
     o.base_ = nullptr;
     o.size_ = 0;
     o.guarded_ = false;
+    o.numa_placement_ = NumaPlacement::kNotNeeded;
   }
   return *this;
 }
 
-bool VmRegion::commit(std::size_t offset, std::size_t len) noexcept {
+Status VmRegion::commit(std::size_t offset, std::size_t len) noexcept {
   if (!range_ok(base_, size_, offset, len)) {
-    set_error("VmRegion::commit: out of range");
-    return false;
+    return valid() ? Status::OutOfRange("VmRegion commit: range is out of bounds")
+                   : Status::FailedPrecondition("VmRegion commit: region is empty");
   }
-  if (len == 0) return true;
+  if (len == 0) return Status::Ok();
   return vm_commit(static_cast<std::byte*>(base_) + offset, len);
 }
 
-bool VmRegion::decommit(std::size_t offset, std::size_t len) noexcept {
+Status VmRegion::decommit(std::size_t offset, std::size_t len) noexcept {
   if (!range_ok(base_, size_, offset, len)) {
-    set_error("VmRegion::decommit: out of range");
-    return false;
+    return valid()
+               ? Status::OutOfRange("VmRegion decommit: range is out of bounds")
+               : Status::FailedPrecondition("VmRegion decommit: region is empty");
   }
-  if (len == 0) return true;
+  if (len == 0) return Status::Ok();
   return vm_decommit(static_cast<std::byte*>(base_) + offset, len);
 }
 
-bool VmRegion::protect(std::size_t offset, std::size_t len, Protect prot) noexcept {
+Status VmRegion::protect(std::size_t offset, std::size_t len,
+                         Protect prot) noexcept {
   if (!range_ok(base_, size_, offset, len)) {
-    set_error("VmRegion::protect: out of range");
-    return false;
+    return valid()
+               ? Status::OutOfRange("VmRegion protect: range is out of bounds")
+               : Status::FailedPrecondition("VmRegion protect: region is empty");
   }
-  if (len == 0) return true;
+  if (len == 0) return Status::Ok();
   return vm_protect(static_cast<std::byte*>(base_) + offset, len, prot);
 }
 
-bool VmRegion::commit_usable() noexcept {
-  if (!valid()) return false;
+Status VmRegion::commit_usable() noexcept {
+  if (!valid()) {
+    return Status::FailedPrecondition("VmRegion commit usable: region is empty");
+  }
   if (guarded_) {
     return commit(page_size(), usable_size());
   }
   return commit(0, size_);
 }
 
-void VmRegion::release() noexcept {
-  if (base_ == nullptr) return;
-  // Best-effort; destructor must not throw / cannot report.
-  (void)vm_release(base_, size_);
+Status VmRegion::release() noexcept {
+  if (base_ == nullptr) return Status::Ok();
+  Status status = vm_release(base_, size_);
+  if (!status.ok()) return status;
   base_ = nullptr;
   size_ = 0;
   guarded_ = false;
+  numa_placement_ = NumaPlacement::kNotNeeded;
+  return Status::Ok();
 }
 
 }  // namespace hyle::platform

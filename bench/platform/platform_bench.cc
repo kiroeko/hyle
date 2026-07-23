@@ -1,3 +1,7 @@
+#if defined(_MSC_VER)
+#  define _CRT_SECURE_NO_WARNINGS 1
+#endif
+
 // platform primitive bench (red-team gap-fill #55/#57): Parker park/unpark and
 // Thread spawn/join -- the cross-platform blocking + thread primitives that the
 // scheduler rides on but that had ZERO benchmark (only mentioned in comments).
@@ -28,7 +32,9 @@
 
 #include <atomic>
 #include <condition_variable>
+#include <cstdlib>
 #include <cstdint>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <mutex>
@@ -69,8 +75,12 @@ void noop_entry(void*) {}
 }  // namespace
 
 int main() {
+  const char* only = std::getenv("HYLE_PLATFORM_BENCH_ONLY");
+  const auto enabled = [only](const char* tag) noexcept {
+    return only == nullptr || only[0] == '\0' || std::strstr(only, tag) != nullptr;
+  };
   // ---- 1. Parker fast path: unpark-then-park (token present, no sleep) -------
-  {
+  if (enabled("parker-fast")) {
     constexpr int kIters = 100000;
     Parker parker;
     nb::Bench b;
@@ -102,7 +112,7 @@ int main() {
   // Thread A parks waiting for B; B unparks A then parks waiting for A; repeat.
   // Each leg is a real futex/WaitOnAddress sleep+wake. Rival: the same ping-pong
   // on std::condition_variable (the std "block until told" primitive).
-  {
+  if (enabled("parker-block")) {
     constexpr int kRounds = 20000;
     {
       nb::Bench b;
@@ -155,7 +165,7 @@ int main() {
   // ---- 3. Thread spawn+join round-trip: HYLE Thread vs std::thread -----------
   // OS-dominated; std::thread IS the SOTA (same syscalls). Proves HYLE's ABI-clean
   // handle (native CreateThread/pthread + stack/affinity options) costs no more.
-  {
+  if (enabled("thread")) {
     constexpr int kSpawns = 2000;
     nb::Bench b;
     b.title("thread spawn+join round-trip")
@@ -182,7 +192,7 @@ int main() {
   // step (stats + stores a path). Syscall-dominated (readdir/FindNextFile), so the
   // win is bounded -- but the no-allocation visitor should still edge out the
   // entry-materializing iterator. Scans the current directory (read-only).
-  {
+  if (enabled("directory")) {
     nb::Bench b;
     b.title("directory_iterate (visitor vs std::filesystem)")
         .relative(true)
@@ -210,7 +220,7 @@ int main() {
   // VirtualAlloc (Windows). The SOTA floor IS the raw syscall (same kernel work);
   // this proves the wrapper adds no measurable overhead. One page per iteration
   // (reserve address space, commit RW, release) -- syscall-dominated cold path.
-  {
+  if (enabled("vm-cycle")) {
     constexpr int kIters = 20000;
     const std::size_t pg = hyle::platform::page_size();
     nb::Bench b;
@@ -234,10 +244,11 @@ int main() {
     });
     b.run("HYLE vm_reserve+commit+release", [&] {
       for (int i = 0; i < kIters; ++i) {
-        void* p = vm_reserve(pg);
-        if (p) {
-          vm_commit(p, pg);
-          vm_release(p, pg);
+        auto reserved = vm_reserve(pg);
+        void* p = reserved ? *reserved : nullptr;
+        if (p != nullptr) {
+          (void)vm_commit(p, pg);
+          (void)vm_release(p, pg);
         }
         nb::doNotOptimizeAway(p);
       }
@@ -247,7 +258,7 @@ int main() {
   // ---- 6. Large-region commit throughput: reserve once, commit a big span ----
   // The mem/fiber-stack pattern: reserve a large arena, then commit it. Measures
   // the page-fault / mprotect cost over a multi-MiB span (not per-page syscall).
-  {
+  if (enabled("vm-large")) {
     constexpr std::size_t kSpan = 16u * 1024u * 1024u;  // 16 MiB
     constexpr int kIters = 200;
     nb::Bench b;
@@ -257,10 +268,11 @@ int main() {
         .minEpochIterations(3);
     b.run("HYLE vm_reserve+commit(16MiB)+release", [&] {
       for (int i = 0; i < kIters; ++i) {
-        void* p = vm_reserve(kSpan);
-        if (p) {
-          vm_commit(p, kSpan);
-          vm_release(p, kSpan);
+        auto reserved = vm_reserve(kSpan);
+        void* p = reserved ? *reserved : nullptr;
+        if (p != nullptr) {
+          (void)vm_commit(p, kSpan);
+          (void)vm_release(p, kSpan);
         }
         nb::doNotOptimizeAway(p);
       }
@@ -273,7 +285,7 @@ int main() {
   // (futex / WaitOnAddress via wait_on_address + wake_one). Parker layers a
   // token-safe 3-state machine on top; the gap here is exactly that safety's cost,
   // measured against the bare syscall (an honest floor, like section 1's flag).
-  {
+  if (enabled("parker-raw")) {
     constexpr int kRounds = 20000;
     nb::Bench b;
     // minEpochIterations kept modest: each epoch is 2*kRounds real futex wakes.
@@ -336,7 +348,7 @@ int main() {
   // kernel entry (Win ~µs, Linux futex ETIMEDOUT ~tens of µs). Old 100k made
   // bench-stat -n15 multi-hour on WSL. Ratio vs fast path only needs order-of-
   // magnitude, not 1% precision.
-  {
+  if (enabled("parker-timeout")) {
     constexpr int kIters = 500;
     Parker parker;
     nb::Bench b;
@@ -364,11 +376,12 @@ int main() {
   // so the raw syscall IS the floor (same kernel work). Reserve+commit one page
   // once, then time a RW->RO->RW toggle PAIR per iteration (leaves the page RW so
   // the run repeats cleanly). Proves the wrapper + enum mapping cost nothing.
-  {
+  if (enabled("vm-protect")) {
     constexpr int kIters = 50000;
     const std::size_t pg = page_size();
-    void* base = vm_reserve(pg);
-    if (base) vm_commit(base, pg);
+    auto reserved = vm_reserve(pg);
+    void* base = reserved ? *reserved : nullptr;
+    if (base != nullptr) (void)vm_commit(base, pg);
     nb::Bench b;
     b.title("VM protect toggle (1 page RW<->RO pair)")
         .relative(true)
@@ -389,12 +402,12 @@ int main() {
     });
     b.run("HYLE vm_protect", [&] {
       for (int i = 0; i < kIters; ++i) {
-        vm_protect(base, pg, Protect::kRead);
-        vm_protect(base, pg, Protect::kReadWrite);
+        (void)vm_protect(base, pg, Protect::kRead);
+        (void)vm_protect(base, pg, Protect::kReadWrite);
       }
       nb::doNotOptimizeAway(base);
     });
-    if (base) vm_release(base, pg);
+    if (base != nullptr) (void)vm_release(base, pg);
   }
 
   // ---- 10. mapped_file open+read: HYLE vs std::ifstream vs raw mmap ----------
@@ -403,7 +416,7 @@ int main() {
   // file" rival: it COPIES every byte into a buffer. The raw mmap / MapViewOfFile
   // path is the zero-copy FLOOR (the same syscalls HYLE wraps). Each row opens,
   // sums every byte (forces the reads / page faults), and closes. 64 KiB scratch.
-  {
+  if (enabled("mapped-file")) {
     namespace sfs = std::filesystem;
     constexpr std::size_t kBytes = 64u * 1024u;
     const std::string path =

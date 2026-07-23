@@ -104,15 +104,13 @@ HYLE 不在 C ABI 上再包一层冗余 C++ facade：原生 `include/hyle/<mod>/
   foreign/double free 等时序契约违反仍 fail-fast。理由不是“error 在 mem
   上层”——实际层级是 error(P0) → platform(P1) → mem(P2)，mem 已经经 platform
   传递链接 error；理由是**分配失败路径不能依赖可能分配消息存储的 owning Status**，
-  且 alloc/free 热路不能增加对象管理税。HugeRegion 在调用 VM 原语时只复制本次
-  失败原因到 mem 通道，并恢复调用者原有的 platform VM error。这个小枚举是否改为
-  共享 code-only taxonomy 留给 VM/NUMA + mem 联合阶段，不能在本文把当前独立通道
-  写成已经统一。
-- **platform 按失败形状分通道**：Thread 构造、DynLib 与 MappedFile 的
+  且 alloc/free 热路不能增加对象管理税。HugeRegion 的 C++ `Result` 失败在 C 桥接层
+  按共享 StatusCode 映射为 mem 小枚举并复制消息；不再读取、清空或恢复 platform TLS。
+  这保留分配器热路的紧凑合同，同时消除跨子系统的隐式诊断耦合。
+- **platform 按失败形状分通道**：Thread 构造、DynLib、MappedFile 与 VM/NUMA 的
   可恢复失败返回 `hyle_status` + 出参，因此 C 与 C++ 共用错误分类且没有
-  “NULL 究竟是合法值还是失败”的歧义；VM/NUMA 原语暂用
-  `hyle_vm_last_error`，Parker wrapper 与 fs/fd 暂用
-  `hyle_platform_last_error`。后两者是未发布 ABI 的迁移中间态，不是推荐的
+  “NULL 究竟是合法值还是失败”的歧义；Parker wrapper 与 fs/fd 暂用
+  `hyle_platform_last_error`。它是未发布 ABI 的迁移中间态，不是推荐的
   新接口模板；后续按真实调用链分批迁移，而不是一次机械改写全部 bool/指针原语。
 - 对照：ggml 用 `ggml_status` 返回码；oneDNN 用 `dnnl_status_t` + C++ 层 `wrap_c_api` 转异常。HYLE 的可恢复失败同样走显式返回值，程序错误独立 fail-fast。
 
