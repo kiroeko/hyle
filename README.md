@@ -5,7 +5,7 @@
 1. **调度** — 一个调度器同时管 线程 / 进程 / 纤程 / 协程
 2. **内存** — 分配器 / arena / cache-line 对齐 / NUMA
 3. **计算** — CPU SIMD + GPU（CUDA / Vulkan），算子借 ggml
-4. **IO** — 网络（proactor + tcp/udp co_await socket；HTTP serving/client 规划中）+ 文件 + 跨进程共享内存
+4. **IO** — proactor 网络（TCP/UDP/TLS/HTTP/1.1+2）+ 文件 + 跨进程共享内存
 
 **差异点在"同一套底座"**：GPU 算完、网卡收到包、fiber 主动让出——都回到同一个调度器、唤醒同一个 fiber，而不是四个子系统各开线程池、各跑事件循环互相打架。所以 HYLE 不是"又一个 hashmap / 日志库"，而是让 计算 / 并发 / 内存 / IO 无阻抗拼在一起的那层地基。
 
@@ -18,6 +18,11 @@
 ## 上手
 
 **想把 HYLE 当依赖用？先看 [使用指南 `docs/guide/usage-guide.md`](./docs/guide/usage-guide.md)**——构建选项、各模块最小用法、SIMD 编译变体模型、C-ABI 边界（面向库使用者）。可运行的示例工程见最外层 [`samples/`](./samples/)。
+
+## 文档
+
+文档目录的职责、冲突优先级和更新纪律见
+**[`docs/README.md`](./docs/README.md)**。设计、使用、性能和施工记录不再互相复制。
 
 ## 设计文档
 
@@ -48,7 +53,7 @@
 
 | 文档 | 内容 |
 |---|---|
-| [mem 内存](./docs/architecture/mem-design.md) | 通用 malloc 借 mimalloc + 自造专用分配器 + 修 5 bug + NUMA/大页/64B 对齐 |
+| [mem 内存](./docs/architecture/mem-design.md) | host-RAM 边界、allocator/region/pool/stack/diagnostics、C++/C 能力映射与 NUMA/大页 |
 | [container 容器](./docs/architecture/container-design.md) | 唯一造不借的 T0 + SwissTable SIMD 探测 + SmallVector/intrusive/lock-free（供 sched）|
 | [simd 向量化](./docs/architecture/simd-design.md) | D-tag/七后端 + 自有 math/dtype/算法核 + Runtime/native/exact 双轨派发 |
 | [sched 调度器](./docs/architecture/sched-design.md) | fcontext 切换 + 无锁 work-stealing + Waker completion 脊 + 协程/fiber 统一 |
@@ -69,7 +74,7 @@
 
 | 文档 | 内容 |
 |---|---|
-| [里程碑索引](./docs/milestones/README.md) | **唯一进度信源**：~80 个里程碑，逐步计划 + 预测 vs 真实 LOC + clay API diff + 状态（进度口径见其顶部三口径表：里程碑计数 ~82% 是高估，真实 ~40% 能力 / ~48% LOC）|
+| [里程碑索引](./docs/milestones/README.md) | Jira 式任务索引：逐项目的、依赖、验收、提交和当前待办；历史任务中的旧名/旧数字不是当前产品说明 |
 | [使用指南](./docs/guide/usage-guide.md) | 面向库使用者：构建选项、各模块最小用法、SIMD 编译变体模型、C-ABI 边界 |
 | [调用安全契约](./docs/guide/usage-contract.md) | 为 SOTA 性能保留的特定调用约束（fiber/thread_local、分配器跨线程 free）|
 
@@ -87,8 +92,9 @@ hyle/
 ├─ third_party/           产品/测试依赖（mimalloc/ggml/googletest/nanobench…；SIMD vendor 对照外置）
 └─ docs/
    ├─ setup/              开发环境准备（按平台：windows/linux-wsl/macos + dependencies；构建/测试/性能测试 × 三平台）
-   ├─ architecture/       架构设计文档（设计/背景/决策；代码才是唯一信源）
-   ├─ milestones/         里程碑逐步计划（唯一进度信源）
+   ├─ architecture/       当前架构、边界和长期设计决策
+   ├─ performance/        性能方法、原始结果、结论和待补证据
+   ├─ milestones/         Jira 式任务、验收与提交记录
    ├─ guide/              使用指南 + 调用安全契约（面向库使用者）
    └─ debug/              调试/事故追查记录
 ```

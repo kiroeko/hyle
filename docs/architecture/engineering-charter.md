@@ -66,7 +66,8 @@
 ## 5. 边界
 
 - **模块公开/内部二分**：每模块有 `include/`（公开）与 `src/`（内部）。公开头不泄漏内部实现类型。
-- **ABI 承诺只在 C 接缝**：内部 C++ 接口不作 ABI 承诺（可随版本演进）；唯一稳定 ABI 是对外 C 头（§6）。
+- **ABI 承诺只在 C 接缝**：原生 C++ 头是正式 source API，但不承诺跨编译器/跨 STL 二进制
+  兼容；唯一稳定 binary ABI 是对外 C 头（§6）。
 - **依赖方向**：`sched/` 是 `io/`、`compute/` 的 completion 共同地基，单向依赖；`graph/` 跑在 `sched/` 上。无环。
 - **第三方解耦**：ggml 等通过 adapter 对接上游 pin 版，HYLE 抽象不暴露第三方类型（见 compute-design.md）。
 

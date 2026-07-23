@@ -60,7 +60,7 @@ target function 再 `HWY_EXPORT/HWY_DYNAMIC_DISPATCH`；HYLE 的预编译 batch 
 
 普通应用的发布外观不归 SIMD C++ 头所有：
 
-1. `include/hyle/c/simd.h` 已由 close-01 提供唯一稳定入口，只含 pointer/count、POD、opaque handle
+1. `include/hyle/c/simd.h` 提供跨语言/跨编译器稳定入口，只含 pointer/count、POD、opaque handle
    和自由 C 函数；C、C++、C#、Java、Rust 等消费方在各自工程里适配本语言容器。
 2. HYLE 不提供 `std::span`/`std::vector` 伞头，也不在核心仓库维护某一种语言的容器便利层；这避免
    “C ABI 是发布契约，但文档却把 C++ facade 当普通用户入口”的双重产品面。

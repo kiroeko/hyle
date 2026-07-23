@@ -4,6 +4,22 @@
 > 源：`bench/mem/allocator_bench.cc`、`bench/mem/scenario_bench.cc`。
 > 通用分配器数据来自 2026-07-20 的 Win MSVC / WSL GCC 14 / Apple M4 AppleClang 实测；当前 `SharedPool` / `SharedPoolCache` 绑定 clean commit `8cf52f9`（Win/WSL `n=15`、M4 两种 QoS 各 `n=31`）。request closure 数据来自 2026-07-22 的 Win、WSL GCC 14/Clang 20 `n=15` 与 Apple M4 每种 QoS `n=31`，mem 实现绑定 commit `7f270bb`，调度审计绑定 `803dae6`。FixedPool section F、whole-request latency 与 fragmentation 绑定 clean commit `d3e4214`；request footprint 绑定 clean commit `02ec81e`。同契约性能判定信任配对 **[sign]**。
 
+## 当前性能封口状态
+
+本页独占 mem 的性能现状；architecture 和 guide 不复制点值。已签结果按各节标注的 commit
+有效，不因 API-only commit 自动失效。冻结前仍有四个有界证据缺口：
+
+| 缺口 | 当前证据 | 关闭条件 |
+|---|---|---|
+| M4 PooledRegion/Stack | 旧 section A 对 PMR 为约 0.67x LOSE | 当前 harness 重签 interactive/utility；确认 workload/lifetime 对称后再优化或记录合同边界 |
+| realloc 分层 | 只有 runtime `Allocator::reallocate` vtable 对 raw `mi_realloc` | 增加 direct `SystemAllocator::reallocate`；direct 默认路径与 raw mi 同档，vtable 与同抽象层 peer 同档 |
+| adapter composition | Quota 有数据；counters-only Stats 和 Quota+Stats 未独立量化 | 正常组合 workload 给出吞吐/whole-operation 成本；leak map 明确为诊断慢路 |
+| FiberStackPool | 正确性与 scheduler 消费存在，缺真实 create/reuse 性能证书 | 用 sched consumer workload 对直接 VM reserve/release，报告缓存收益和 tail |
+
+`SharedPool` hard core 的 immediate-global-free/精确容量合同强于 owner-local free list；它不以
+击败较弱合同的 oneTBB local churn 为冻结条件。吞吐形状由显式 `SharedPoolCache` 对拍，hard
+core 仍报告绝对成本和较弱合同参照。
+
 ## 1. 通用路径（`hyle_mem_bench`）
 
 | 场景 | Win | WSL | M4 | 判定 |
@@ -11,7 +27,7 @@
 | **SystemAllocator 内联** vs 裸 mi churn | 7.93 / 7.86 → **0.996 TIE** | 8.04 / 8.04 → **0.99 TIE** | 7.77 / 7.91 → **1.00 TIE** | ➖ 三平台平 mimalloc |
 | **vtable** vs 裸 mi churn | 8.67 / 7.86 → **0.91 LOSE sign** | 8.67 / 8.04 → **0.94 LOSE sign** | 7.93 / 7.91 → **1.00 TIE** | Win/WSL 有约 6–9% 多态税 |
 | **vtable** vs pmr(over mi) churn | 8.67 / 8.67 → **TIE** | 8.67 / 10.27 → **1.22 WIN sign** | 7.93 / 9.98 → **1.26 WIN** | 同类多态对照平或赢 pmr |
-| **reallocate** vs `mi_realloc` | 80 / 67 → **0.83 LOSE sign** | 83 / 77 → **0.92 LOSE sign** | 82 / 83 → **1.01 TIE** | Win/WSL 输裸 mi |
+| runtime **vtable reallocate** vs `mi_realloc` | 80 / 67 → **0.83 LOSE sign** | 83 / 77 → **0.92 LOSE sign** | 82 / 83 → **1.01 TIE** | Win/WSL 输裸 mi；不是 direct `SystemAllocator` 结论 |
 
 默认内联路径平 mimalloc；需要运行时注入的 vtable 路径对裸 mi 有可测税，但仍平或赢同为多态封装的 pmr。
 
@@ -27,7 +43,8 @@
 | vs pmr | **约 2.6x WIN** | **约 1.7x WIN** | **约 0.67x LOSE** |
 | vs 裸 mi | **约 7x WIN** | **约 11x WIN** | **约 2.1x WIN** |
 
-M4 上 pmr monotonic 更快，不能把 x86 结论外推到 ARM。
+M4 上旧证书中 pmr monotonic 更快，不能把 x86 结论外推到 ARM；该行是当前明确待重签的
+性能缺口，不与后面已重签并获胜的 `Region`/`FixedRegion` request workload 混为一项。
 
 ### Region / FixedRegion request scratch
 

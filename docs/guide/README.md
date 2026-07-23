@@ -8,8 +8,8 @@
 
 | 文档 | 给谁 / 讲什么 |
 |---|---|
-| [`usage-guide.md`](./usage-guide.md) | **怎么用**：模块就绪度、构建选项全集、SIMD 编译变体模型、各模块最小用法、C-ABI 边界。**集成第一站。** |
-| [`mem.md`](./mem.md) | **mem C++ 使用指南**：按 ownership/concurrency/capacity/lifetime 选 Region、Pool、Quota、Preserve 与 HugeRegion；含真实 workload 性能边界。 |
+| [`usage-guide.md`](./usage-guide.md) | **怎么用**：模块入口、构建选项、SIMD 编译变体模型、最小用法和 C-ABI 边界。**集成第一站。** |
+| [`mem.md`](./mem.md) | **mem C++ 使用指南**：按 ownership/concurrency/capacity/lifetime 选 Region、Pool、Quota、Preserve 与 HugeRegion；性能只链接权威总账。 |
 | [`c-error.md`](./c-error.md) | **error 纯 C ABI**：`hyle_status` 所有权、工厂/查询、诊断 handler、自由函数导出清单。**FFI / 跨编译器第一站。** |
 | [`c-platform.md`](./c-platform.md) | **platform 纯 C ABI**：Parker/Thread/DynLib/VM/mapped_file/fs/cpu/numa 不透明句柄与自由函数、named enum、所有权与易用示例。 |
 | [`c-mem.md`](./c-mem.md) | **mem C pre-release surface**：Allocator/Quota/Stats、Region/FixedRegion/FixedPool、硬/软 SharedPool、Stack/PooledRegion/GrowablePool/HugeRegion 与进程维护策略。 |
@@ -29,8 +29,10 @@
 里怎样组合出来。找不到稳定组合通路就是 C ABI 缺口，不能用“C 没有模板”略过；
 `c-sched` §9 是非平凡组合 recipe 的样板。
 
-## 三份文档的分工（别混）
+## 用户文档的分工
 
 - **guide（这里）**：正常怎么用 + 怎么调才安全 —— 使用者视角。
 - **[`architecture/`](../architecture/)**：为什么这么造、各支柱选型、clay 资产负债 —— 贡献者视角。
+- **[`performance/`](../performance/README.md)**：绑定 commit 的 benchmark 方法、点值与 win/loss；guide 不复制。
+- **[`milestones/`](../milestones/README.md)**：施工任务和当前待办；guide 不维护就绪度镜像。
 - **[`samples/`](../../samples/)**：照着抄就能跑的示例工程 —— 上手最快。

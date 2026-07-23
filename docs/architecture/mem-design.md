@@ -1,6 +1,9 @@
 # HYLE mem/ 设计
 
-> Tier 0 host-RAM 基础设施。上游约束见 [`hyle-scope.md`](./hyle-scope.md) 与 [`coding-conventions.md`](./coding-conventions.md)。本页同时记录当前实现与需求驱动的产品处置；没有生产消费者不等于自动删除，也不等于自动上架。
+> Tier 0 host-RAM 基础设施。本页是 mem 当前边界、公共能力形状和长期合同的设计真源。
+> 用户写法见 [`../guide/mem.md`](../guide/mem.md) 与 [`../guide/c-mem.md`](../guide/c-mem.md)，
+> 实测只见 [`../performance/benchmarks-mem.md`](../performance/benchmarks-mem.md)，当前收口任务只见
+> [`../milestones/mem-close-plan.md`](../milestones/mem-close-plan.md)。
 
 ## 1. 边界
 
@@ -26,7 +29,7 @@ mem 不提供 pinned allocator 或单块 staging convenience。compute `Buffer` 
 | `FiberStackPool` | sched worker/fiber | guarded stack、三档尺寸、跨 worker release、Scheduler 覆盖全部 fiber 生命周期 |
 | `HugeRegion` | 显式大块内存调用方 | THP/NUMA 是显式策略，不由 pool 根据 allocator identity 偷换 backing |
 | graph evaluation 临时区 | `parallel_eval` 的 level/handle/outcome 与 wavefront CSR/state | 明确的 phase lifetime，是通用 owned Region 的内部 workload；graph-aware liveness/reserve 仍归 graph |
-| `PooledRegion` / `StackAllocator` / `GrowablePool` | 无生产调用 | 当前仅公开能力、C draft surface、测试与 benchmark |
+| `PooledRegion` / `StackAllocator` / `GrowablePool` | 无生产调用 | 面向外部 infra 用户的公开能力；已有 C++/C 产品面、测试与 benchmark |
 | `SharedPool` / `SharedPoolCache` | 无生产实例 | hard core + 显式 owner-local cache；当前仅公开能力、测试与 benchmark |
 | `ObjectPool<T>` / `ObjectPoolCache<T>` | 无生产实例 | typed hard core + 显式 cache，已实现并测试 |
 | compute `Buffer` / `DevicePool` | 当前无生产创建点 | 不归 mem；Buffer 已显式分开 native handle、host mapping 与 coherence 操作 |
@@ -72,10 +75,10 @@ blocking borrow 不进入 `mem/` 基础池。等待策略依赖 fiber/condition/
 
 通用 malloc 借 mimalloc，不自造任意大小通用堆。sized-free 必须带回原请求的 size/alignment；backing identity 与 ownership 不能丢失。
 
-### 4.1 C surface 处置（发布前审查）
+### 4.1 C/FFI 产品面
 
-现有 `include/hyle/c/mem.h` 是早期实现，尚未形成兼容承诺。审查直接读取工作区中固定的
-oneTBB、mimalloc、Folly 与 marl 源码快照，不自行下载或更新参考库。当前结论是：
+`include/hyle/c/mem.h` 按 C 用户任务独立设计；发布前仍可破坏性改形，但不能用符号数量
+代替能力审查。设计参考工作区中固定的 oneTBB、mimalloc、Folly 与 marl 源码快照：
 
 1. `hyle_allocator` 的 POD vtable 保留；它是 C/FFI 的注入脊，不要求 C++ object layout。
 2. 有独立 runtime state 的能力使用 opaque handle；C 不机械镜像模板对象和 C++ policy 类型。
@@ -179,35 +182,29 @@ external 能力按 allocation model 分成两个类型：
 - io provided-buffer ring 归 `io/`。
 - generic `MemorySpace`、把 unified/device memory 塞进 mem allocator、自动 NUMA 迁移、soft limit 冒充 hard quota 均否决。
 
-## 10. 能力矩阵与优先级
+## 10. 公共能力矩阵
 
-| 能力 | 处置 | 原因 |
-|---|---|---|
-| `SystemAllocator` / `Allocator` / typed helpers | 保留；typed count 回绕已修 | 内部广泛真实消费者，成熟库共同基础 |
-| `PmrResource` | 保留；validity/full-vtable equality 已修 | std 生态适配边界 |
-| `FiberStackPool` | 保留 | sched 真实热路径 |
-| `SharedPool` / `SharedPoolCache` | 保留；显式组合，injected backing authoritative | hard capacity 与 owner-local soft visibility 是不同真实合同 |
-| `ObjectPool` / `ObjectPoolCache` | Reconstruct core/cache + `PoolLoan` 已实现 | typed bounded reuse、hard/soft visibility 与 RAII return |
-| `PreservingObjectPool` | 已实现独立 Preserve lifetime | 昂贵对象只构析一次，不与 slot cache 混淆 |
-| `StackAllocator` | 保留；alignment 加法回绕已修 | 常见 LIFO scratch |
-| `GrowablePool` | 保留；diagnostics 已实现 | 常见 single-thread typed reuse；当前无生产消费者 |
-| `PooledRegion` | 精确命名已完成，旧兼容名已删除 | borrowed single hard-pool block |
-| owned `Region(size_limit)` | 已实现 | request/frame/graph phase 的 growable bulk lifetime |
-| `FixedRegion` / `FixedPool` | 已实现为两个正交 external 类型 | bump bulk reset 与 variable individual free 不混合 |
-| `QuotaAllocator` | 已实现 | 任意 sized-free backing 的严格 live-byte budget |
-| HugeRegion/NUMA policy | 保留显式能力 | 大数据/HPC 真实但平台受限 |
-| compute HostBuffer | native handle / host mapping / coherence 已显式分层 | Vulkan 不再把 `VkMem*` 冒充可写地址 |
-| compute `StagingRing` | 至少两个 async transfer 在途的消费者出现后实现 | ownership 由 HostBuffer/Event/backpressure 决定 |
-| graph-aware allocator / io buffer ring | 下沉所属模块 | 专用生命周期不属于通用 mem |
+| 用户形状 | C++ 原生产品面 | C/FFI 产品面 | 合同 |
+|---|---|---|---|
+| 默认/注入分配 | `SystemAllocator`、`Allocator`、typed helpers | `hyle_system_allocator`、`hyle_allocator`、inline alloc/free/realloc | 默认 direct path；运行时注入保留 backing identity |
+| heap size/pressure | `system_good_size/usable_size/collect` | 同名 `hyle_system_*` | 显式查询与回收，不隐藏周期线程 |
+| byte admission | `QuotaAllocator` | `hyle_quota_allocator_*` | strict live requested-byte budget |
+| 统计/泄漏诊断 | `StatsAllocator`、`LeakTracker` | `hyle_stats_allocator_*` + POD snapshot/bounded copy | opt-in；默认 system 热路零统计税 |
+| owned request scratch | `Region` | `hyle_region_*` + options | growable、bulk clear、可设 reserved-byte hard limit |
+| caller-buffer scratch | `FixedRegion` | 三字按值 `hyle_fixed_region` | no heap、no fallback、bulk reset |
+| borrowed/LIFO scratch | `PooledRegion`、`StackAllocator` | 对应 opaque handle | 单线程；borrowed block 或 owned slab |
+| external variable heap | `FixedPool` | in-place control 或显式 control allocator | caller storage、individual free/realloc、no fallback |
+| hard shared slots | `SharedPool`、`ObjectPool<T>` | `hyle_shared_pool_*` + typed raw-slot 宏 | remote free 立即可见、精确 hard capacity |
+| owner-local soft cache | `SharedPoolCache`、`ObjectPoolCache<T>` | `hyle_shared_pool_cache_*` + typed raw-slot 宏 | 显式 owner/cache/publish，容量是 soft visibility window |
+| growable owner-local slots | `GrowablePool<T>` | runtime size/alignment `hyle_growable_pool_*` | 单线程、几何增长、Reconstruct |
+| preserve/RAII loan | `PreservingObjectPool<T>`、`PoolLoan` | raw slot acquire/release，由调用方管理 init/cleanup | 能力可组合；C 不伪造 ctor/dtor/RAII |
+| PMR | `PmrResource` | 不适用 | C++ 标准库适配，不制造 C 壳 |
+| guarded fiber stack | `FiberStack`、`FiberStackPool` | sched C ABI 内部消费 | scheduler-owned runtime specialization，不暴露危险 raw stack control |
+| THP/NUMA span | `HugeRegion` + policy | `hyle_huge_region_*` + policy | 显式请求、可观察 accepted/applied 状态 |
 
-2026-07-22 收口执行新增的是成熟、正交的基础形状，不以 benchmark 参数命名：
-
-1. `SystemAllocator` typed count 防回绕；`PmrResource` 构造验证完整 vtable，equality 比较三函数 + state。
-2. `StackAllocator` / `PooledRegion` 通过可合成地址测试的 checked-align helper 防 `uintptr_t` 回绕。
-3. `SharedPool` 不再根据 system allocator identity 隐式进入 HugeRegion；THP/NUMA 由显式 backing/provider 表达。
-4. compute Buffer 分开 native handle / mapped host pointer；范围 flush/invalidate 按 Vulkan `nonCoherentAtomSize` 扩边；零长度公共 no-op；async Kernel/Buffer 存活和 producer completion 责任显式。错误 pinned allocator 与单块 staging API 已删除。
-5. `Region`/`FixedRegion`、`FixedPool`、`QuotaAllocator`、`PoolLoan` 与 Preserve 类型均有独立 ownership/capacity/lifetime 合同，并已接入 C ABI（模板对象 policy 除外）。
-6. 隐式 `SharedPoolCached`/`ObjectPoolCached` 与跨 DLL TLS registry 已删除；soft 层改为显式 `SharedPoolCache`/`ObjectPoolCache`，Windows 配对 A/B 同时降低 request/handoff 延迟。
+C ABI 的“完整”按用户能力可达判断，不按 C++ 符号 1:1 判断。模板 ctor/dtor、RAII 和 PMR
+没有自然 C 对象形状；raw slot 与显式 cleanup 是 C 的惯用表达。属于 C 用户范围的标量状态
+查询则应直接提供，不能用“模板不可导出”回避。
 
 ## 11. 用户选型
 
@@ -231,7 +228,26 @@ GPU pinned/mapped host RAM             → compute HostBuffer（native handle + 
 异步 staging                          → compute StagingRing（待真实 async overlap 消费者）
 ```
 
-## 12. 验证边界
+## 12. 收口定义与重开边界
+
+mem 进入预发布冻结必须同时满足：
+
+1. 常见 host-RAM ownership/concurrency/capacity/lifetime 形状已由上表覆盖，专用生命周期明确
+   归 compute/graph/io/sched；不再因 benchmark 参数新增 allocator 类型。
+2. C++ 与 C/FFI 分别通过用户任务审查；C 产品范围内的能力有直接接口或可复制组合，
+   ownership、销毁顺序和失败语义无需理解内部实现才能写对。
+3. 最终候选 commit 通过 Windows/Linux/macOS、纯 C、导出清单、OOM/overflow 和适用的
+   ASan/UBSan/TSan。
+4. throughput-oriented 能力有正常 workload、同合同成熟 peer、throughput 与 whole-operation
+   latency；空间型能力有 peak/retention/fragmentation 证据。没有同合同 peer 时只报告绝对成本
+   和较弱合同参照，不制造 SOTA 结论。
+5. architecture、guide、performance 和 milestone 各守自己的文档职责，不复制相互的状态表。
+
+五项通过即冻结，不等待任意“观察若干迭代”。冻结后只有 correctness/security、真实消费者
+暴露能力缺失、新平台使合同失效或既定 harness 确认的持续性能回归可以重开；LOC、命名偏好、
+亚纳秒波动和无 workload 的猜测不能重开。
+
+## 13. 验证边界
 
 - allocator：typed count overflow、完整 backing identity、alignment、OOM、PMR throw boundary；下游消费者的 NULL/Status/fail-fast 另按各自公开合同审计。
 - Buffer host path：native handle 不得冒充 mapped pointer；CUDA/Vulkan/host 三后端都验证 `host_data()` 可写、kernel 参数仍拿正确 native handle。test-only 选择器穷举后确认 Win/Mac 物理设备只提供 coherent host-visible type，non-coherent driver round-trip 明确 skip；范围算术用真实 `nonCoherentAtomSize` synthetic 测试覆盖，不冒充硬件未提供的 driver 路径已执行。

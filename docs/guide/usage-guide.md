@@ -4,23 +4,26 @@
 >
 > 区别于另外两份：[`architecture/`](../architecture/) 是设计内幕（为什么这么造，面向贡献者）；[`usage-contract.md`](./usage-contract.md)（同目录）是**为 SOTA 性能保留的调用安全边界**（哪些用法会触发 UB，必读但只讲"红线"）。本指南讲"正常怎么用"。
 >
-> **诚实状态**：HYLE 在建设中。下表标注每个模块就绪度；标 📋 的尚未实现，**别依赖**。
+> 项目施工状态见 [`../milestones/README.md`](../milestones/README.md)。本指南不复制就绪度，
+> 只列当前源码中的稳定入口和正常用法；绑定 commit 的性能数字只见
+> [`../performance/`](../performance/README.md)。
 
-## 0. 模块就绪度（先看这张，别用没就绪的）
+## 0. 模块入口
 
-| 模块 | 头文件入口 | 状态 | 一句话能力 |
-|---|---|---|---|
-| `error/` | `hyle/error/status.h` `result.h` `error_handler.h` | ✅ | `Status` / `std::expected` 错误模型 + `ASSIGN_OR_RAISE` |
-| `mem/` | `hyle/mem/allocator.h` 等 | ✅ | `Allocator` vtable（mimalloc backing）+ arena/pool/stack |
-| `platform/` | `hyle/platform/{thread,wait,dynlib,fs,virtual_memory,numa,mapped_file,cpu}.h` | ✅ | thread(name/affinity/priority)+park、dynlib、fs(权限/symlink/hardlink/tempfile/env)、虚拟内存+guard、NUMA/大页、文件内存映射、CPU 特性探测。三平台真机验证 |
-| `container/` | `hyle/container/{swiss_table,carray,small_vector,string_ref,...}.h` | ✅ | SwissTable、CArray、SmallVector、lock-free 队列、string_ref |
-| `time/` | `hyle/time/clock.h` | ✅ | 单调钟/墙钟/sleep（ns） |
-| `util/` | `hyle/util/{ref_counted,registry,scope_guard,...}.h` | ✅ | `Ref<T>`、Registry、`DEFER`、type_name |
-| `obs/` | `hyle/obs/log.h` / `trace.h` | ✅ | 结构化同步日志 + quiescent sink；默认零成本、可选 Tracy trace |
-| `sched/` | `hyle/sched/{scheduler,fiber,coro,sync}.h` | ✅ | fcontext M:N + work-stealing、worker-stack/fiber 双任务腿、Waker/timer、同步与消息、取消/Join、优雅关闭、blocking offload；纯 C ABI |
-| `simd/` | `hyle/simd/{dispatch,vec,dtype,math}.h` | 🔶 | 运行期 ISA 探测（含纯 AVX 档 kAvx）+ 可移植 `vec<T,N>`；scalar/SSE4.2/AVX2/AVX512/NEON 定宽后端与 SVE/RVV scalable 后端均已执行对拍，AVX512 由 Intel SDE 验证正确性和 kAvx512 派发，性能结论仍只接受真机 benchmark |
-| `io/` | `hyle/io/{proactor,net,io_context,tcp,udp}.h` | ✅ | proactor 三后端 + read/write/socket/datagram 真 op(**无 stub**);co_await socket 层 + **shard-per-core**(每 worker 一 ring + fiber 亲和 spawn_on 绑核,share-nothing)+ **TcpListener/TcpStream + UdpSocket** RAII 封装;真 loopback TCP/UDP echo 三后端真测+TSan;echo+pipelined benchmark;park 合并(空闲真睡眠、eventfd 唤醒)。待 file/shmem(io-05)|
-| `compute/` `graph/` | — | 📋 | 尚未开工 |
+| 模块 | 主要头文件入口 | 用途 |
+|---|---|---|
+| `error/` | `hyle/error/{status,result,error_handler}.h` | Status/Result 与错误上报 |
+| `mem/` | `hyle/mem/{allocator,region,shared_pool,fixed_pool}.h` | allocator、region/pool、诊断与 NUMA/大页；选型见 [`mem.md`](./mem.md) |
+| `platform/` | `hyle/platform/{thread,wait,fs,virtual_memory,numa,mapped_file,cpu}.h` | OS 线程、等待、文件系统、VM 与拓扑 |
+| `container/` | `hyle/container/{swiss_table,carray,small_vector,string_ref}.h` | flat map、连续/内联容器、字符串和并发队列 |
+| `time/` | `hyle/time/{clock,timer_wheel,common_timeout_queue}.h` | 时钟、deadline、通用与固定时长 timer source |
+| `util/` | `hyle/util/{ref_counted,registry,scope_guard,random}.h` | 引用所有权、registry、scope guard 与 RNG |
+| `obs/` | `hyle/obs/{log,trace}.h` | 结构化日志与可选 trace |
+| `sched/` | `hyle/sched/{scheduler,fiber,coro,sync}.h` | M:N fiber/coroutine、work stealing、同步、取消与 blocking offload |
+| `simd/` | `hyle/simd/{dispatch,ops,math,native}.h` | runtime/native/exact SIMD；层级选择见 [`simd-usage.md`](./simd-usage.md) |
+| `io/` | `hyle/io/{io_context,tcp,udp,file,shared_memory,tls,http,http2}.h` | proactor 网络/文件/共享内存和协议适配 |
+| `compute/` | `hyle/compute/{device,buffer,stream,kernel,device_pool}.h` | host/CUDA/Vulkan device、buffer、completion 与 kernel |
+| `graph/` | `hyle/graph/{taskgraph,parallel,data_parallel}.h` | 增量任务图和数据并行编排 |
 
 ## 1. 构建与集成
 
@@ -75,7 +78,8 @@ HYLE 的构建开关分**两个范畴**，别混（速查：**A 类产品参数 
 
 > 还有 `HYLE_BENCH_{MOODYCAMEL,TBB,RIGTORP,XSIMD,SIMDUTF,BOOST,WYHASH,MARL}`(队列/分配器/math/utf8/侵入容器/hash 对标)。`HYLE_BENCH_{HIGHWAY,XSIMD}` 都使用 `HYLE_BENCH_VENDOR_DIR` 下的固定外部 checkout；SIMDUTF 仍在 `third_party/`。其余是 opt-in sibling clone。**一键全开**：先运行 `scripts/fetch-bench-vendors.{sh,ps1}`，再运行 `scripts/setup-bench-libs.sh`，最后 `cmake --preset bench-all-sota`。全清单与运行法见 [`scripts/README.md`](../../scripts/README.md)。
 >
-> **向量化数学核(Highway/xsimd)与 utf8 SIMD(simdutf)当前仍在 `third_party/` 无条件编进生产、默认全速**——这是 simd-20 的迁移中状态；外部 checkout 仅供 unchanged benchmark 对照。无产品 `-D` 开关，运行期 `cpu_features().avx2` 门控(老 CPU 落 scalar 不 SIGILL)。上面的 `HYLE_BENCH_*` 仅 toggle bench 的 SOTA 对比行,不影响产品默认。
+> 产品 SIMD math 不再依赖 in-tree Highway/xsimd；固定外部 checkout 只用于 benchmark 对照。
+> `simdutf` 仍作为 UTF-8 产品核 vendored。`HYLE_BENCH_*` 只切换对照行，不改变产品路径。
 
 **集成方最小命令**（静态链、不编测试）：
 ```bash
@@ -228,7 +232,7 @@ hyle::simd::hypot_in_range_f32_batch(a, b, dst, n);
 | `hypot_f32_batch` | 输入可能跨极端数量级，或需要完整 `std::hypot` 语义 | exponent scaling，避免中间平方溢出及不必要的下溢 |
 | `hypot_in_range_f32_batch` | 调用方已知数据处于普通范围，吞吐优先 | direct square/add/sqrt，允许实现融合FMA；`a`、`b` 必须有限，且中间和必须可表示；不保护极小输入的平方下溢，末位舍入可随ISA不同 |
 
-`hypot_in_range_f32_batch` 不在热路径逐元素检查契约。一个简单的**防溢出充分条件**是每个输入都满足 `|x| <= sqrt(FLT_MAX/2) ≈ 1.30438e19`；若输入可能接近上限、包含无穷/NaN，或必须保留极小非正规数，请用完整版本。`dst` 可与 `a` 或 `b` **完全同址**原位写回，但其他部分重叠不支持。真机 `bench-stat -n15`：AVX2为0.140 vs 0.281 ns/op（约 **2.03×**），Apple NEON为0.220 vs 0.454 ns/op（约 **2.07×**）。f64 direct-formula 试验仅统计打平，因此没有发布名不副实的 `hypot_in_range_f64_batch`。
+`hypot_in_range_f32_batch` 不在热路径逐元素检查契约。一个简单的**防溢出充分条件**是每个输入都满足 `|x| <= sqrt(FLT_MAX/2) ≈ 1.30438e19`；若输入可能接近上限、包含无穷/NaN，或必须保留极小非正规数，请用完整版本。`dst` 可与 `a` 或 `b` **完全同址**原位写回，但其他部分重叠不支持。f64 direct-formula 没有稳定收益，因此不提供 `hypot_in_range_f64_batch`；实测见 [`../performance/benchmarks-simd.md`](../performance/benchmarks-simd.md)。
 
 ## 3. 各就绪模块最小用法
 
@@ -264,7 +268,7 @@ mem/ 提供一组**专用分配器**,各自为一种分配模式设计。**选�
 
 hard pool 与 cache 是组合层，但合同不同：`SharedPool` 不隐藏 block；`SharedPoolCache` 可能在其他 owner cache 仍有 free block 时返回 `nullptr`。不要把 cache 性能冒充 hard pool 性能。最新数字与对手形状见 [`performance/benchmarks-mem.md`](../performance/benchmarks-mem.md)；调用红线见 [`usage-contract.md`](./usage-contract.md) §2.1。
 
-### 3.2 container —— SwissTable（对标 absl 追平/超，快 std 2.4-5.3x）
+### 3.2 container —— SwissTable
 ```cpp
 #include "hyle/container/swiss_table.h"
 using hyle::container::SwissTable;
@@ -274,7 +278,7 @@ if (uint64_t* v = m.find(42)) { /* *v == 100 */ }
 ```
 其余：`CArray<T>`（侵入式数组）、`SmallVector<T,N>`、`string_ref`（视图字符串）、`BoundedQueue`（lock-free MPMC）。
 
-**哈希器（`hyle/container/hash.h`）**：默认 `Hash<T>` / `hash_bytes` 已 best-of-breed——整数/指针/≤16B POD 走内联 mix（无调用），字节串按长度选最快核（17-128B→XXH3、>128B→wyhash）。**绝大多数用法（map key）无需关心**。仅一个进阶开关：`hash_bytes` 对 **>16B 字节串**走出线核（把 7490 行 xxhash.h 挡在你的 TU 外），代价是一次 ~1ns 调用（在 **短串** ~64B 上占比可见,长串摊平、≤16B key 不走此路）。**若** profiler 显示你有一个热循环在 hash 大量 **短字节串（17~128B）**、且你愿意让该 TU 吃 xxhash.h 的编译期开销,用 opt-in 头消掉那 1ns:
+**哈希器（`hyle/container/hash.h`）**：默认 `Hash<T>` / `hash_bytes` 让整数/指针/≤16B POD 走内联 mix，字节串按长度选择 XXH3 或 wyhash。**绝大多数 map key 用法无需关心**。`hash_bytes` 对 >16B 字节串使用 out-of-line kernel，避免让大型 vendor 头进入用户 TU；若 profiler 显示短字节串哈希的调用边界是热点，可选择 inline 入口，以编译时间换运行时调用消除。具体阈值和实测只见 performance：
 ```cpp
 #include "hyle/container/hash_inline.h"   // 仅此 TU 拉入 xxhash/wyhash（编译期代价）
 uint64_t h = hyle::container::hash_bytes_inline(p, n);  // 与 hash_bytes 结果 bit-identical，无 seam
@@ -438,12 +442,14 @@ uint64_t span = hyle::time::fast_monotonic_ns() - a;  // 同核近距离两读,�
 | 你的场景 | 用 | 为什么 / 别用啥 |
 |---|---|---|
 | **任意/混合超时时长,海量 arm/cancel**(fiber sleep 任意时长、通用定时) | `TimerWheel`(分层时间轮) | 8 层×64 槽覆盖完整 `uint64_t` 纳秒域，arm/cancel 摊还 O(1)，取消立即摘链。**通用默认，拿不准用它**。对真实 indexed eager-erase min-heap，当前双平台 arm/cancel、expire、churn 均领先。 |
-| **海量定时器共享同一固定时长**(百万连接都是 30s 超时) | `CommonTimeoutQueue` | 单条有序侵入链：同一时长的 deadline 天然递增，arm/expire/cancel 都是 O(1)。一个队列只管一种时长；混合时长必须用 wheel。Windows/WSL 对同形裸 TAILQ 有小幅优势，但 Apple M4 expire 目前只有约 **0.57x**；它是工作量 specialization，不是跨架构性能保证。 |
+| **海量定时器共享同一固定时长**(百万连接都是 30s 超时) | `CommonTimeoutQueue` | 单条有序侵入链：同一时长的 deadline 天然递增，arm/expire/cancel 都是 O(1)。一个队列只管一种时长；混合时长必须用 wheel。跨架构性能边界见 performance 总账。 |
 | **定时器较少或已有 heap 生态** | indexed min-heap | HYLE 不提供；heap 可以做到 eager O(log n) keyed erase，不能把对手建模成惰性墓碑。轮的价值是大量任意 deadline 下更低的常数和 O(1) cancel，不是声称 heap 必然有墓碑。 |
 
 **一句话决策树**:任意时长 → `TimerWheel`(默认);海量**相同**时长 → `CommonTimeoutQueue`。多种固定时长并存 = 建多个 `CommonTimeoutQueue`,由**调用方**按时长路由(像 libevent 的 `common_timeout_queues[]`——路由是消费者的事,不在数据结构里)。
 
-> **就绪度**:`TimerWheel` 已接入 sched(fiber `sleep_for_ns`/`sleep_until_ns` 用它)。`CommonTimeoutQueue` 已实现 + 三平台测试 + benchmark 验证,**但其目标消费者(io reactor 的连接超时)尚未落地**——它是"就位待接入"的结构,不是已在服役。M4 的明确 lose 也意味着接入前应以真实 io workload 再验。性能数据见 [`performance/benchmarks-sched.md`](../performance/benchmarks-sched.md) 时间轮节。
+`TimerWheel` 适合任意 deadline；`CommonTimeoutQueue` 只适合同一 duration 且 deadline
+非递减的 workload。实现与消费者状态见 milestones，性能数据见
+[`../performance/benchmarks-time.md`](../performance/benchmarks-time.md)。
 
 `TimerEntry` 是侵入式节点，地址必须稳定；不能复制/移动，且析构前必须从 source 或
 到期输出链中移除。source 只移动到期节点，不调用回调：
@@ -496,14 +502,17 @@ Ref/ScopeGuard/Registry/SpinLock opaque handle；46 个可调用入口、生命�
 callback 合同见 [`c-util.md`](./c-util.md)。`type_name<T>`/`type_hash<T>` 依赖
 C++ 静态类型，是唯一有意不做运行时擦除的 util 能力。
 
-**性能须知（何时 Ref 划算、何处别用）**：`Ref` 拷贝 = 1 次 incref（原子加），析构 = 1 次 decref（原子减），与 `std::shared_ptr` 算法同工（各 2 个 locked RMW）。原子 RMW 不是免费的（~几 ns，且跨核共享时更贵）。据此：
+**性能须知（何时 Ref 划算、何处别用）**：`Ref` 拷贝与析构需要原子引用计数；跨核共享时
+cache-line ownership 转移会放大成本。具体点值见 performance，据此：
 - **传参优先 `const Ref<T>&` 或裸 `T*`（借用），别按值传** —— 每次按值传拷贝都是一对 incref/decref。函数只是"看一眼"对象时收借用引用，只有真正要"延长生命周期/存起来"时才按值收 `Ref<T>`。这和 `shared_ptr` 的最佳实践一致。
 - **别在紧循环里反复拷贝+析构同一个 `Ref`** —— 背靠背的两个原子(同 cache line)会串行化(第二个卡在第一个排空 store buffer 之后)，把原子延迟暴露到极致。需要在循环内多次访问同一对象时，循环外持一个 `Ref`、循环内用 `.get()` 或 `const&`。（性能文档那条 microbench 正是这个反模式，不代表真实开销。）
 - **单线程、生命周期明确**时，直接裸指针 / 值语义 / `unique_ptr` 往往比任何引用计数都快 —— 引用计数是为"共享所有权 + 不确定谁最后释放"付的税。`Ref` 的价值在侵入式对象模型和省一次控制块分配，不在让引用计数本身变快；跨 ABI 使用的是独立的 type-erased `hyle_util_ref`，不是冻结 `Ref<T>` 布局。
 
-### 3.8 io —— proactor 完成式 IO（🔶 co_await + shard-per-core + TcpListener/Stream）
+### 3.8 io —— proactor 完成式 IO
 
-**⚠️ 现状:真 TCP/UDP echo 已能跑通,走 shard-per-core（性能天花板架构）。** 典型用法:起 `Scheduler` + `IoContext io(sched, num_workers)`;`tcp_listen(io, owner, "0.0.0.0", port)` 得 `TcpListener`,`co_await ls.accept(owner)` 得 `TcpStream`,再 `co_await conn.read(buf,len)` / `co_await conn.write(buf,len)`;客户端 `tcp_socket` + `co_await s.connect(&ss,len)`。UDP:`udp_bind(io, owner, host, port)` / `udp_socket(io, owner)` 得 `UdpSocket`,`co_await sock.recv_from(buf,len,&peer)` / `co_await sock.send_to(buf,len,&dest,dlen)`。**四层**:① `proactor.h` 收割接缝 + io_uring/IOCP/epoll 三后端 + 全 submit 真 op(含 recvfrom/sendto);② `net.h` co_await awaitable(`IoOperation` slot 承 result + Waker 唤醒);③ `io_context.h` **每 worker 一 proactor**,`bind_fd(worker,fd)` 绑核 + hook 接 worker 循环收割本核 ring;④ `tcp.h`/`udp.h` RAII `TcpStream/TcpListener/UdpSocket`。**shard-per-core 用法要点**:连接 fd `bind_fd` 到 owner 核,服务它的 fiber 用 `Scheduler::spawn_on(owner, fiber)` **钉该核**——submit/reap/resume 全在一个核,零跨核同步。**取舍**:连接分片跨核=负载可能倾斜(热连接压一个核),这是 share-nothing 的固有取舍(seastar 同)。空闲 worker 走 park 合并(真睡眠 + eventfd 跨线程唤醒,非 1ms 轮询)。**未做**:file/shmem(io-05)。这里讲清模型与取舍。
+典型用法是创建 `Scheduler` 与 `IoContext`，把连接绑定 owner worker，再用 `tcp_listen` /
+`tcp_socket`、`UdpSocket`、`File` 或 `SharedMemory` 的 RAII/awaitable 接口。网络、文件、TLS、
+HTTP 的完整 C++ recipe 与生命周期见 [`io.md`](./io.md)；本总指南只保留执行模型。
 
 **前提（模型不同于传统，必须知道）**：HYLE io 是 **proactor（完成式）**，不是 reactor（就绪式）。传统写法是 `read()` 阻塞、或 `epoll` 等"可读"后自己 `read`；HYLE 是"**提交 IO → fiber 让出 → 内核做完 → 唤醒 fiber**"。你不"等可读"，你"提交读、完成时拿到已读好的数据"。这与 fiber 天然契合（提交即让出、完成即续跑），也是 C++ 标准网络的方向（WG21 P2300/P4100）。std 无异步 IO 等价物，故非"替换 std"，是净新增机制。
 
@@ -515,7 +524,9 @@ C++ 静态类型，是唯一有意不做运行时擦除的 util 能力。
 | **IOCP**（Windows）| Windows 唯一 | OS 原生真 proactor |
 | **epoll**（Linux）| **仅当 io_uring 不可用**（老内核 / `kernel.io_uring_disabled` sysctl / 容器 seccomp 挡） | reactor，内部模拟完成（就绪→内联 IO→completion），保住"io_uring 被禁的硬化容器/k8s"仍能跑 |
 
-**一句话**：正式运行走 io_uring/IOCP（SOTA），epoll 是"io_uring 被关掉时"的兜底降级，非默认——`init()` 自动按此顺序选，`HYLE_IO_FORCE_EPOLL` 仅测试用。**性能对标已补**（io-04 echo 64 连接×64 round-trip + pipelined 512 流高扇出：reinject+COOP 优化后单 worker **平裸 epoll、单核赢 asio 1.25x/libuv 1.52x**、shard-per-core 扩展 4w 赢 epoll 2.25x、park 合并空闲 syscall 421→3）——见 [`performance/benchmarks-io.md`](../performance/benchmarks-io.md)。
+正式运行优先 io_uring/IOCP；epoll 是 Linux 上 io_uring 不可用时的兼容后端，
+`HYLE_IO_FORCE_EPOLL` 仅用于测试。绑定 commit 的吞吐、扩展性和 syscall 结果见
+[`../performance/benchmarks-io.md`](../performance/benchmarks-io.md)。
 
 
 ## 4. C-ABI 边界（跨 DLL / FFI）

@@ -2,7 +2,9 @@
 
 > **HYLE = HYbrid LEvels**。一个通用高性能 C++ infra——给 AI 推理引擎 / CAD·BIM·CAE 工程计算管线 / agent 共用的、贴近硬件的混合计算基底。是对 `slate-render` 中 clay infra 层的重构与扩大。
 >
-> 本目录是 HYLE **设计/背景/决策的信源**：设计推理、背景、命名、源码位置、重构路线都集中在此。**注意：代码本身才是实现的唯一信源**——文档描述与代码冲突时以代码为准（性能结论以 `performance.md` 实测为准）。
+> 本目录是 HYLE **当前架构、边界和长期设计决策的信源**。代码决定实现事实；性能结论只以
+> [`../performance/`](../performance/README.md) 的绑定 commit 实测为准；任务状态只在
+> [`../milestones/`](../milestones/README.md) 维护。完整分层规则见 [`../README.md`](../README.md)。
 
 ## HYLE 是什么
 
@@ -12,7 +14,8 @@
 
 - **地基（继承 clay，约占 1/3）**：内存分配器 + 容器（flat hashmap/carray/cstring）+ 跨平台原子（catomics）+ 并行编排骨架（taskgraph）。
 - **支柱（自造，约占 2/3）**：统一调度（线程/进程/纤程/协程）、fiber、网络 IO、SIMD、异构计算。
-- **体量（2026-07-17）**：自有生产（`src`+`include`）已 **~53k**（其中 **simd ~34k ≈64%**）；纪律收口终态预期 **~65–80k** 生产，做满守界约 **~80–100k**。含测/文档的自有工程 ~105k；git 全跟踪含 third_party ~187k；再加 ggml 等足迹 ~200–350k+。旧「完成 ~28–40k」投影已作废。详见 [`hyle-scope.md`](./hyle-scope.md) 规模节与 [`../milestones/midterm-report-2026-07-scale-positioning.md`](../milestones/midterm-report-2026-07-scale-positioning.md)。
+- **范围与体量口径**：见 [`hyle-scope.md`](./hyle-scope.md)；当前实测 LOC 和施工状态只在
+  milestone 任务记录中维护，架构入口不复制每日快照。
 
 ## 模块划分
 
@@ -43,8 +46,8 @@ HYLE infra（通用、不特化、贴硬件）
 | [`motivation.md`](./motivation.md) | **动机**：为什么是现在/为谁做——四样全压负载、双北极星(推理引擎 ＋ CAD/BIM/CAE 工程管线)、比 Seastar 多异构维度、极致=吃尽硬件独家加速 |
 | [`engineering-charter.md`](./engineering-charter.md) | **工程章程**：动手前最终依据——C++23 标准/错误模型/命名宏、开发范式、测试方案、边界、对外 FFI 决策 |
 | [`coding-conventions.md`](./coding-conventions.md) | **编码规范**：每一行怎么写才不破范式——std 分层/include/宏纪律、C-ABI 范式、错误处理、能力 dispatch 三层模型、clay 独特写法三张表 |
-| [`c-abi-design.md`](./c-abi-design.md) | **C++ 库如何全面导出 C ABI（why）**：类型擦除（编译期 `<T>`→运行时 size/enum）、三层架构（实现/C ABI/可选 C++ 便利层，ggml/oneDNN 实证）、版本协商删除决策（场景驱动非标配，clay 零/ggml 仅插件）、有状态调试类留 C++、错误跨边界、两条消费者线路的易用性 |
-| [`c-abi-authoring-guide.md`](./c-abi-authoring-guide.md) | **给 HYLE 开发者的 C ABI 施工参考（how）**：导出面归类判据、文件与接线、opaque control、零 reinterpret、FFI 数据校验、时序误用 fail-fast、纯 C smoke 与跨平台验证。mem 是机械实现样板，但其产品 surface 仍是发布前 draft。 |
+| [`c-abi-design.md`](./c-abi-design.md) | **C++ 原生 API 与独立 C/FFI 产品面（why）**：能力映射而非机械镜像、类型擦除、错误边界、跨编译器 ABI 与两条消费者线路的易用性 |
+| [`c-abi-authoring-guide.md`](./c-abi-authoring-guide.md) | **给 HYLE 开发者的 C ABI 施工参考（how）**：导出面归类判据、文件与接线、opaque control、零 reinterpret、FFI 数据校验、时序误用 fail-fast、纯 C smoke 与跨平台验证；mem 是已审查样板 |
 | [`util-design.md`](./util-design.md) | **util 架构与维护边界**：七个能力族、原生 C++/类型擦除 C ABI 双面、依赖/性能边界和机械维护闸门。 |
 | [`clay-asset-liability.md`](./clay-asset-liability.md) | clay 资产负债表：六子系统逐个盘点（内存/DataModel/SIMD/容器/并发/taskgraph），含 5 个 bug、空位 grep 证据、继承/重写判断 |
 | [`hyle-scope.md`](./hyle-scope.md) | scope 定义：定位、两条主轴、7 模块划分、规模（生产已 ~53k / 终态纪律 ~65–80k / 足迹含 ggml ~200–350k+）、边界外明确不做的东西 |
@@ -58,7 +61,7 @@ HYLE infra（通用、不特化、贴硬件）
 | [`time-design.md`](./time-design.md) | time 依赖位置、时钟分层、双 timer source、所有权数据流、C++/C ABI 双面与维护硬门 |
 | [`obs-design.md`](./obs-design.md) | obs 双通路：同步结构化日志的 quiescent sink 生命周期、C ABI trampoline，以及默认零成本/开启时单 Tracy client 的 trace 架构 |
 | [`simd-vendor-surface.md`](./simd-vendor-surface.md) | 产品零 Highway/xsimd 的边界、外部 benchmark 对照和可选 simdutf 薄借 |
-| [`mem-design.md`](./mem-design.md) | 内存设计：通用 malloc 借 mimalloc + 模块化专用分配器（region/pool/stack/fiber 栈）+ NUMA/大页/对齐与失败合同；公共形状和 C draft surface 的当前审查结论 |
+| [`mem-design.md`](./mem-design.md) | mem 当前整体设计：host-RAM 边界、模块化 allocator/region/pool/stack/diagnostics、C++/C 能力映射、所有权与失败合同 |
 | [`container-design.md`](./container-design.md) | 容器设计：唯一"造不借"的 T0 + 补 SwissTable SIMD 探测 + SmallVector/intrusive/lock-free 队列（供 sched）|
 | [`graph-design.md`](./graph-design.md) | **graph 支柱选型**：北极星② CAD/BIM/CAE 编排——依赖 DAG 增量重算(graph-01,clay taskgraph 零增量资产、从零造脏标记/缓存)+ 数据并行层(graph-02 parallel_for/reduce,归属拍板归 graph)；clay 继承面 ~800-1.5k 骨架 vs 从零 3-4k 增量引擎；纯编排层零自有执行资源(跑 sched+compute 之上)|
 | [`graph-02-design.md`](./graph-02-design.md) | **graph-02 数据并行层设计**：parallel_for/reduce/scan/sort over range，跑 HYLE sched(不借 oneTBB 运行时,只借其设计)。五决策：分块=递归 split+grainsize(work-stealing 友好非静态均分)/reduce=fast+deterministic 双档(浮点结合性)/kernel=Body 收 subrange(接 simd 紧循环)/scan v1 就做/复用 graph-01 sched 基建。分块靠 graph-02、块内靠 simd 的零阻抗接缝 |
@@ -68,11 +71,10 @@ HYLE infra（通用、不特化、贴硬件）
 | [`references.md`](./references.md) | 参考库映射：clone 的 20+ 库 → HYLE 模块，借/参考标注、开工优先级（含 Intel oneMath/oneDNN）|
 | [`usage-contract.md`](../guide/usage-contract.md) | **调用安全边界**：为 SOTA 性能保留的特定调用约束（fiber 勿跨 yield 持有 thread_local；分配器跨线程 free 安全/勿 static+LTO 内联进 fiber 体），每条带机制+安全模式+后果 |
 
-## 进度
+## 文档职责
 
-进度**不在此维护**（避免与里程碑表 drift）——逐里程碑的真实状态 + cloc 实测 LOC + clay API diff 见 [`../milestones/README.md`](../milestones/README.md)，那是**唯一进度信源**。本目录只管设计、背景、决策这些慢变内容。
-
-一句话现状（粗粒度）：地基层（error/platform/mem/container/time/util/obs）立住；**sched 支柱 01~11 全 ✅ 收口**（work-stealing、Waker、同步原语、Task/co_await、spawn_on、JoinHandle、blocking pool、优雅关闭与结构化取消）；**simd 支柱完成内部双轨收口**（387 个公开/selector 寄存器名 + scalar/SSE4.2/AVX2/AVX512/NEON/SVE/RVV 七后端，Runtime/native/exact 双轨，产品零 Highway/xsimd，Windows/WSL/macOS/SDE/SVE/RVV 多 VL 全绿）；**io 支柱完成实现、低层 C ABI、红队与三平台证书收口**（IOCP/io_uring/epoll/kqueue、TCP/UDP/file/shmem、timeout/cancel、multishot、TLS、DNS/signal、HTTP/1.1+2）。M4 TLS/kqueue 多 worker、handshake、专项 peer benchmark 与高层 HTTP/TLS C facade 是公开性能/产品尾，不伪装成 SOTA；**compute/graph 有真实主干但能力面仍薄**。
+本目录不维护完成百分比、测试计数、某次 benchmark 数字或下一步排期。模块设计稳定后应
+合并到这里；施工过程留在 milestones，性能证据留在 performance，用户 recipe 留在 guide。
 
 ---
 

@@ -1,6 +1,8 @@
-# close-01：对外纯 `extern "C"` C-ABI shim（发布给用户的唯一稳定接缝）
+# close-01：独立 `extern "C"` C/FFI 产品面
 
-> **后续替代（2026-07-22）：**隐式 cached 池已删除；当前 C 面是 `hyle_shared_pool_*` hard core + 显式附着的 `hyle_shared_pool_cache_*`。本文后文保留当时记录。
+> 本页是跨模块 C/FFI 施工任务，不是当前 API 参考。稳定原则见
+> [`../architecture/c-abi-design.md`](../architecture/c-abi-design.md)，逐符号用法见
+> [`../guide/`](../guide/README.md)。
 
 | 字段 | 值 |
 |---|---|
@@ -11,14 +13,16 @@
 | **骨架?** | 否 |
 | **状态** | 🔶 **部分落地**：error + platform + mem + time + obs + util + simd + container + sched C-ABI ✅（2026-07-20）；全库跨编译器 / FFI 冒烟仍待 |
 
-> **本文件的目的**：把"发布后用户必须用稳定 C ABI"这件事**白纸黑字钉死**，避免后面忘了或被"反正 C++ 头能用"糊弄过去。实现细节临到开工再细化，但**产品铁律 + 验收门槛现在就定**。
+> **本文件的目的**：跟踪 C/FFI 产品面的跨模块实施与验收。HYLE 是 C++ 库，原生 C++
+> 头是 C++ 用户的首选 source API；C ABI 另行设计，用于 C 和跨编译器/跨语言绑定。
 
 ## 产品铁律（用户拍板，2026-06）
 
-**HYLE 发布给外部使用者绑定的、唯一承诺 ABI 稳定的接缝 = 纯 `extern "C"` C 头 shim。** 推论：
+**纯 `extern "C"` C 头是唯一承诺跨编译器/跨 STL/跨语言二进制稳定的接缝，
+但不是唯一产品 API。** 推论：
 
-1. **C++ 头（`include/hyle/**/*.h`，除 `include/hyle/c/`）不是发布产品面**。它们服务内部实现、
-   同工具链源码开发和 expert kernel，**不承诺跨编译器/跨 STL/跨语言稳定**。核心仓库也不另建
+1. **C++ 头（`include/hyle/**/*.h`，除 `include/hyle/c/`）是原生 C++ 产品面**。它们服务
+   同工具链源码开发和 expert kernel，提供模板/RAII/PMR，但**不承诺跨编译器/跨 STL ABI 稳定**。核心仓库也不另建
    `std::vector`、C#、Java 或 Rust 容器 facade；这些薄适配由消费方或独立 binding 项目拥有。
    今天 samples 直接使用 C++ 头属开发期集成，**不等于** charter §6 承诺的稳定 C ABI。
 2. **未做 close-01 之前，HYLE 不具备"可发布给 FFI 消费方"的资格**。Python ctypes / Rust bindgen / TS N-API 绑的必须是 C shim，不是现在的 C++ 头。**发布说明里必须讲清这条**，别让用户拿 C++ `.dll` 去跨语言绑然后踩 mangling。
@@ -39,7 +43,12 @@
   io/compute/graph 仍待各自模块收口。
 - [x] **样板 error**（2026-07-17，2026-07-19 复审）：`include/hyle/c/error.h` + 文档 [`c-error.md`](../guide/c-error.md)。Status 全码/所有权/格式化与诊断 handler 均可达；C/C++ scoped handler 共用严格 LIFO 还原门，乱序不再可能重发悬空回调。
 - [x] **样板 platform**（2026-07-17，2026-07-19 扩面复审）：`include/hyle/c/platform.h` + `c_platform.cc` + 纯 C `hyle_platform_c_test`。覆盖 wait/Parker、Thread、DynLib、VM/VmRegion、hugepage/NUMA、完整 fs/env/fd、MappedFile、CPU/cache/topology；补 `hyle_platform_last_error`、thread opts `struct_size`、具名 flags/perms。纯 C 机械覆盖 114/114 入口。文档：[`c-platform.md`](../guide/c-platform.md)。
-- [x] **样板 mem**（2026-07-17，2026-07-20 复审）：`include/hyle/c/mem.h` + `c_mem.cc` + 纯 C `hyle_mem_c_test`。面：`hyle_allocator` vtable、system allocator、硬容量 SharedPool / 软容量 SharedPoolCached、StackAllocator / pooled Arena / GrowablePool / HugeRegion、进程级 hugepage/NUMA、typed 池宏；资源失败均有 last-error，成功清 stale。模板构造层由 runtime size/align + typed 宏覆盖；Allocator typed 层由裸 alloc/free 覆盖。AllocStats/LeakTracker/StatsAllocator 当前明确为内部 debug/test 边界，C 业务计数可包装公开 allocator；若提升为产品能力必须补 opaque + snapshot/visitor。入口数以当前 `c-mem.md` 机械表为准。文档：[`c-mem.md`](../guide/c-mem.md)。
+- [x] **样板 mem**（2026-07-23 重审）：`include/hyle/c/mem.h` + `c_mem.cc` + 纯 C
+  `hyle_mem_c_test`。覆盖 system allocator/collect、Quota/Stats、Region/FixedRegion/FixedPool、
+  hard `SharedPool` + 显式 `SharedPoolCache`、Stack/PooledRegion/GrowablePool、HugeRegion 与
+  typed raw-slot 宏；Stats 用 POD out-snapshot + bounded leak copy。101 个动态导出由 header、
+  纯 C consumer 与 DLL/ELF manifest 同步。能力边界和剩余 parity 审计见
+  [`mem-final`](./mem-close-plan.md)，逐符号文档见 [`c-mem.md`](../guide/c-mem.md)。
 - [x] **util**（2026-07-19 全面复审）：`include/hyle/c/util.h` + `c_util.cc` + 纯 C smoke。RNG 用稳定 POD；Ref/ScopeGuard/Registry/SpinLock 用 opaque handle + callback/ctx 类型擦除；demangle/help 用 buffer-fill。机械覆盖 46/46 可调用入口，其中动态导出 44 个、header-inline 2 个；三平台导出及 C/C++ 测试通过。仅 `type_name<T>`/`type_hash<T>` 因依赖编译器静态类型而有意留 C++。文档：[`c-util.md`](../guide/c-util.md)，复审：[`util-module-closure.md`](./util-module-closure.md)。
 - [x] **container**（2026-07-19 收口）：`include/hyle/c/container.h` +
       `c_container.cc`，覆盖字符串/路径、StringBuf、runtime-erased POD
@@ -62,7 +71,9 @@
       [`c-obs.md`](../guide/c-obs.md)，复审：
       [`obs-module-closure.md`](./obs-module-closure.md)。
 - error/platform/mem 五维复审（功能/下游利用、红队实现、测试/性能、ABI 覆盖、用户文档）见 [`core-foundation-c-abi-audit.md`](./core-foundation-c-abi-audit.md)；time 见 [`time-module-closure.md`](./time-module-closure.md)，util 见 [`util-module-closure.md`](./util-module-closure.md)，container 见 [`container-module-closure.md`](./container-module-closure.md)。
-- **架构定调（2026-07-18）**：删除三模块的 `hyle_*_api` 函数指针表 + `api_get` + 版本门/版本宏——纯 `extern "C"` 自由函数导出（对齐 ggml 核心）。版本协商是"分发独立编译插件"才需要的件（clay 零、ggml 仅 backend 插件处），HYLE 单一 `.so`、未发布不背此负担。C++→C ABI 的类型擦除手法、三层架构、有状态调试类留 C++ 等决策见 [`../architecture/c-abi-design.md`](../architecture/c-abi-design.md)。
+- **架构定调（2026-07-18，2026-07-23 修订）**：纯 `extern "C"` 自由函数导出；版本协商
+  只在独立插件边界需要。C++ 原生面与 C/FFI 面独立审查；有状态能力不能仅因“是类”而从
+  C 排除。稳定原则见 [`../architecture/c-abi-design.md`](../architecture/c-abi-design.md)。
 - [x] **SIMD**：`include/hyle/c/simd.h` + `c_simd.cc` + [`c-simd.md`](../guide/c-simd.md)；
       纯 C 预处理入口 **247/247** 被测试引用，动态库导出 **244/244**（另 3 个 typed header-inline）。
 - [x] SIMD 是首批语义样板之一：新增 `include/hyle/c/simd.h`；add/dot/math/scan/dtype/sort/

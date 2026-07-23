@@ -1,6 +1,10 @@
-# HYLE 里程碑索引
+# HYLE 任务索引（milestones）
 
-> 实现的真正"步骤"在这里——**~89 个里程碑**(表 94 行 − 5 个 ⛔否决;早期"约 58"已随施工中细拆 03a/b/c、04a/b/c/d、07a/b/c、compute-02b/02c/07/08 补登等增长,现以本表为准),每个 1-4k 行、可独立编/测/基准。`roadmap.md` 是依赖层(阶段)的拓扑序与决策；本目录是**可执行的逐步计划**，每步一文档。
+> 本目录是 Jira 式 work-item 记录：每项写目的、依赖、实施、验收和提交。任务正文保留
+> 当时的名称、数字与判断，不承担当前架构或性能真相；稳定结论必须合并到
+> [`../architecture/`](../architecture/README.md)，性能结果归
+> [`../performance/`](../performance/README.md)，用户写法归 [`../guide/`](../guide/README.md)。
+> 文档分层规则见 [`../README.md`](../README.md)。
 >
 > **排期视图**：想知道"还没做的都因为什么没做、前置齐没、能不能现在开工"，看 [`backlog-map.md`](./backlog-map.md)——按欠账原因(A 广度延期 / B 能力驱动半成品 / C 依赖序未到支柱)分类 + 依赖就绪度 + 开工顺序。**防"能力驱动"沦为"永远等"**。
 >
@@ -88,9 +92,9 @@ util ~1.3k · time ~0.9k · obs/error/graph 各 ~0.6–0.8k。
 | mem-01 | P2 | mem | Allocator vtable + 修 alignment（骨架版含最小 mimalloc 包装）| platform-01 | 1-2k | 182 | ✅ 完成(vtable+裸alloc+typed层) |
 | mem-01b | P2 | mem | allocator typed 便利层(allocate<T>/construct/make_unique/destroy) | mem-01 | 1k | 并入allocator.h | ✅ 完成(补漏:clay allocator.h typed层) |
 | mem-02 | P2 | mem | mimalloc backing 完整接入(封 vtable 后) | mem-01 | 1-2k | vendored(system.cc+~30) | ✅ 完成(透明替换31测试不变;Win 4-12x>默认堆/Linux真实模式5.2x;快路径修复) |
-| mem-03 | P2 | mem | SharedPool 硬容量 + SharedPoolCached 软容量，共用 sharded core | mem-01 | 2-3k | 双池 core 758 生产 + 1122 测试/bench；相关 8 文件 bundle 2834（较旧实现 +766） | ✅ completed free 立即共享、稳定双快照；cached TLS 128 + magazine 32 + publish；tag 饱和永久 serialized、绝不回绕；三平台 fixed_pool 场景证书完成 |
+| mem-03 | P2 | mem | SharedPool 硬容量 + owner-local cache 探索 | mem-01 | 2-3k | 双池 core 758 生产 + 1122 测试/bench；相关 8 文件 bundle 2834（较旧实现 +766） | ✅ 历史任务完成；后续删除隐式 TLS 形状，当前产品为显式 `SharedPoolCache`，见 mem design |
 | mem-03b | P2 | mem | PooledRegion bump 分配器 + Allocator 适配 | mem-03 | 1k | 并入 `shared_pool.h` | ✅ `PooledRegion` 只借 `SharedPool` 的一个硬容量块；未发布的 `Arena/reset` 旧名已删除 |
-| mem-04 | P2 | mem | ObjectPool/ObjectPoolCached + StackAllocator | mem-02 | 2-3k | 见当前实现 | ✅ `ObjectPool<T>` 默认硬容量，`ObjectPoolCached<T>` 显式软容量；StackAllocator 修 bug#4 |
+| mem-04 | P2 | mem | ObjectPool + cache + StackAllocator | mem-02 | 2-3k | 见当前实现 | ✅ 历史任务完成；当前类型为 `ObjectPool<T>` / `ObjectPoolCache<T>`；StackAllocator 修 bug#4 |
 | mem-05 | P2 | mem | ~~MemorySpace 组合抽象 + xcpu_freelist~~ | mem-03 | — | — | ⛔ 双双否决:MemorySpace=异构内存过度设计(device 边界=显式 copy,统一内存无互传,见 mem-design);xcpu_freelist=同线程常数优化,与固定 slab"不假性耗尽"硬冲突+生命周期耦合,评估后不采用(跨核 free 正确性已由地址路由原子 push 给,理由见 mem-design) |
 | mem-06 | P2 | mem | NUMA + 大页 + stats(修下溢) | mem-05 | 2-3k | — | ✅ 切片全收：06a stats / 06b hugepage / [06c](./mem-06c-numa.md) NUMA |
 | [mem-06a](./mem-06a-stats.md) | P2 | mem | AllocStats + StatsAllocator + LeakTracker（修 clay 无符号下溢）| mem-01 | 0.3-0.6k | stats.h/cc + 13 测 | ✅ 完成(2026-07-17)。opt-in 装饰器；system 热路径零税 |
@@ -187,7 +191,7 @@ util ~1.3k · time ~0.9k · obs/error/graph 各 ~0.6–0.8k。
 | [compute-09](./compute-09-op-face.md) | P5 | compute | ggml_bridge 算子面扩展:通用图执行器 + elementwise/norm(step-1)+ FFN block 权重常驻(step-2)| compute-05 | ~220 code + ~200 test | ✅ **step-1+2 完成(2026-07-09/07-10)**。**step-1**:抽通用图执行器 `elementwise_blocking`(matmul 那套 ctx→gallocr→H2D→compute→D2H→free 样板写一次),铺 rms_norm/silu/add/mul 各只一句建图——纠正"消费者驱动才加算子"误用(推理链本身就是消费者,只暴露 matmul 让 HYLE 像玩具)。**step-2**:`FfnBlock` 完整 LLaMA 式 FFN 子块,**权重常驻显存**(`ggml_backend_alloc_ctx_tensors_from_buft` 构造拷入一次,每次 forward 只喂激活;两条独立 device 路:常驻 weight buffer vs gallocr 激活)——matmul 缺的真推理机制。GPU fp32 matmul 降精度→后端感知容差(CPU 严格闸)。红队闭环(step-1 4 项/step-2 3 项)。WSL GPU RTX4070+CPU 21/21 + MSVC GPU+CPU 9/9。**step-3 attention(rope/softmax/permute)→ backlog #102** |
 | [graph-01](./graph-01-incremental-recompute.md) | P6 | graph | taskgraph 剥特化 + 绑 sched:脏标记增量重算 + 拓扑并行 + 结果缓存(== TBB flow_graph 类 DAG 编排)| sched-03 | ~765 code | ✅ **step-1+2+3(demand)完成(2026-07-10,支柱破土)**。**step-1**(WSL+MSVC 13/13):`TaskGraph` 脏标记增量重算核心——节点=fn-ptr+ctx 闭包、边逆创建序→插入序天然拓扑序(无排序/环检测)、脏传播 eager/重算 lazy、SoA+CSR;改一输入只重算下游脏、干净复用缓存(clay 零增量资产从零造);串行纯 CPU。**step-2**(WSL+ASan+TSan+MSVC 各 7/7):`evaluate_parallel` 同层独立脏节点并行跑 sched work-stealing、逐层 fork-join;sched 隔离 gated(核心处处编)。**step-3 demand**(19/19+ASan):`evaluate_node(target)` 只重算依赖锥(Salsa/Adapton)。**step-3 wavefront**(WSL+ASan+TSan+MSVC 各 14/14):`evaluate_parallel_wavefront` 节点在自己脏 deps 完成即起(不等整层),长短腿图缩短关键路径(标准 DAG 执行器能力,通用库须做全非"预设消费者够用")。**四轮红队闭环**(move OOB / Status-in-JoinState UAF / demand 锥闭包 / wavefront 栈 Channel send-after-free UAF)。graph-01 三步全落地 |
 | [graph-02](./graph-02-data-parallel.md) | P6 | graph | **数据并行层**:parallel_for/reduce/scan/sort over range(+ blocked_range/partitioner)| sched, simd | ~400 code(step-1) | 🟡 **step-1 完成(2026-07-10)**。`BlockedRange` + `parallel_for`(递归二分 split+grainsize+auto 档)+ `parallel_reduce`(fast 档,左→右 fixed-tree fold),递归 fork-join 跑 HYLE sched(借 oneTBB 设计不借运行时)。Body 收 subrange 接 simd。WSL+ASan+TSan+MSVC 各 14/14 + 红队闭环(揪修 kAutoGrain sentinel 被 ctor 销毁致大 range hang + auto-grain floor + deterministic 注释误述)。**step-2 = reduce_deterministic + scan(两趟)/ step-3 = parallel_sort(借 simd vqsort)未做**。归 graph(compute 铁律把铺多核推给 graph-02) |
-| [close-01](./close-01-c-abi-shim.md) | P6 | 收口 | C-ABI shim(对外纯 C 头) | 各模块稳定 | 2-3k | 见专文 | 🔶 **九模块已落地(2026-07-20)**：error/platform/mem/time/simd/util/obs/container/sched 具有纯 C 头、实现、测试和指南；io/compute/graph、install/export、跨编译器与 TS/Python FFI 冒烟仍待。唯一稳定发布面仍是纯 C |
+| [close-01](./close-01-c-abi-shim.md) | P6 | 收口 | 独立 C/FFI 产品面 | 各模块稳定 | 2-3k | 见专文 | 🔶 九模块已有纯 C 头、实现、测试和指南；io/compute/graph、install/export、跨编译器与 FFI 冒烟仍待。原生 C++ 是首选 source API；C ABI 是跨编译器/跨语言稳定接缝 |
 | close-02 | P6 | 收口 | serialize(simdjson/flatbuffers) + hash + T3 便利 | container | 4-6k | — | ❓ **占位 + scope 待澄清(审计发现)**。现把"serialize/hash/T3"糊成一个占位、点名 flatbuffers/simdjson 却**无设计、无接口形状**。`hyle-scope` 内部打架:"二进制序列化原语"算 IN、"IDL/schema 编译器·RPC"算 OUT。**待你拍**:① 借 flatbuffers/capnproto 的 builder+reader **当序列化原语**(不含 schema 编译器),还是 ② 把 wire-format 全推 L1。JSON 借 simdjson 已明确(scope 一致)。现状是"看着像计划的占位",需决策 |
 | close-03 | P6 | 收口 | FFI 绑定(TS N-API / Python ctypes) | close-01 | 2-3k | — | 占位 |
 

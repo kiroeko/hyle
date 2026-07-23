@@ -1,7 +1,9 @@
 # simd-23：SIMD 性能证据收口与发布入口裁决
 
-> 状态：✅ SIMD 41-name 性能闭环 + 实用 op 审计完成；❌ C++ 容器 facade 于 2026-07-17
-> 按 close-01 产品铁律撤回。依赖 simd-22；发布给用户的唯一稳定入口是纯 C ABI。
+> **历史任务记录。**本任务当时按“只发布 C ABI”撤回一版 C++ 容器 facade；该全局前提
+> 已修订为“原生 C++ source API + 独立 C/FFI 产品面”。当前原则见
+> [`../architecture/c-abi-design.md`](../architecture/c-abi-design.md)，SIMD 当前使用层见
+> [`../guide/simd-usage.md`](../guide/simd-usage.md)。后文保留当时裁决过程。
 
 ## 为什么有这一项
 

@@ -1,6 +1,8 @@
 # mem-06c：NUMA 就近放置
 
-> **后续替代（2026-07-22）：**本文中的“大 `MemoryArena` slab”现指 `SharedPool` hard core；soft 层是显式 `SharedPoolCache`，不另有 slab。
+> **历史任务记录。**本文中的 `MemoryArena`、模块 API 表和“Stats 仅 C++”均已被后续设计
+> 替代。当前 mem 设计见 [`../architecture/mem-design.md`](../architecture/mem-design.md)，
+> 当前 C API 见 [`../guide/c-mem.md`](../guide/c-mem.md)。后文保留当时验收语境。
 
 | 字段 | 值 |
 |---|---|

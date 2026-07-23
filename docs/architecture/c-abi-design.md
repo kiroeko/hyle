@@ -1,4 +1,4 @@
-# C ABI 设计决策（C++ 库如何全面导出 C ABI）
+# C ABI 设计决策（C++ 库的独立 C/FFI 产品面）
 
 > **信源**：本文件是 HYLE **对外 C ABI 面的设计推理与决策**。落地细节看 `include/hyle/c/*.h` 与各模块 `docs/guide/c-*.md`（逐符号 1:1）；本文件只管"为什么这么设计"。
 > 上位依据：[`engineering-charter.md`](./engineering-charter.md) §6（FFI 决策）、[`coding-conventions.md`](./coding-conventions.md) §4（C-ABI 范式）。本文件在其之上补齐**具体做法与实证对照**。
@@ -33,22 +33,23 @@ C ABI 要当一等公民，数据模型就得是**运行时参数化**，而非*
 - `ObjectPool<T>` / `ObjectPoolCache<T>` 不直接导出模板，但定长对象池能力分别经 `hyle_shared_pool_*` / `hyle_shared_pool_cache_*` + typed 宏可达 → **不缺**。
 - 泛型语法不可达（`<T>`），但能力经 size 擦除全部可达。
 
-## 2. 三层架构（业界通用解，ggml/oneDNN 实证）
+## 2. 双产品面与共享实现（ggml/oneDNN 实证）
 
 ```
-┌─ 第 3 层：C++ 便利层（可选，header-only，在 C ABI 之上）
-│   ggml-cpp.h / oneDNN dnnl.hpp — RAII/模板/类型安全，包 C 句柄，零新导出符号
-├─ 第 2 层：C ABI（发布契约，extern "C"）        ← HYLE 的 include/hyle/c/*.h
-│   opaque 句柄 + 自由函数 + POD + 返回码。唯一 ABI 稳定面，所有语言绑这层
-└─ 第 1 层：C++ 实现（内部，不发布）              ← HYLE 的 src/*.cc + include/hyle/<mod>/*.h
-    模板、类、std:: 自由用；C++23 的 ABI 风险被第 2 层完全隔离
+┌─ 原生 C++ 产品面                         ← include/hyle/<mod>/*.h
+│   模板、RAII、强类型与 std::pmr；是 C++ 用户的首选 source API
+├─ C/FFI 产品面                            ← include/hyle/c/*.h
+│   opaque 句柄 + 自由函数 + POD；是跨编译器/跨语言的 ABI 稳定面
+└─ 共享实现                                ← src/*.cc + header-inline fast path
+    两个产品面复用算法与合同，但分别按语言习惯设计，不要求符号或对象布局 1:1
 ```
 
 **实证（源码在 `C:\public\project-hyle\` 下）**：
 - **ggml**：21 个 C 头 `extern "C"` + **唯一 1 个** C++ only 头 `ggml-cpp.h`（`#ifndef __cplusplus #error`，仅 `unique_ptr`+deleter 包 C 句柄，deleter 调 `ggml_free`）。内部实现是 C++（8 `.cpp` vs 3 `.c`，`ggml-impl.h` 有 template/std::），但**对外零 C++ 泄漏**。ggml 不是"避免了模板"，是**领域决定其公开数据模型天然是 C 形状**（`ggml_tensor` = 运行时 `enum type` 标签，非模板）——类型多态放运行时，C ABI 自然一等公民。
 - **oneDNN**：26 C 头 + 16 C++ 头；`dnnl.hpp` `#include "dnnl.h"`，用 `handle<T, traits>` 模板（`shared_ptr` + `handle_traits<T>::destructor` 调 C 的 `dnnl_*_destroy`）包 opaque C 句柄，`error::wrap_c_api` 把 C 返回码转 C++ 异常。**重量级 C++ 便利层，但仍在 C ABI 之上**。
 
-**HYLE 现状**：第 1、2 层已在 error/platform/mem/time/obs/simd/util 等模块落地。**第 3 层（对标 ggml-cpp.h/dnnl.hpp 的 C++ 便利包装）目前不做**——因为 HYLE 的 C++ 用户直接用原生第一等的 `include/hyle/<mod>/*.h`（本就是 RAII/模板），比"包 C 句柄的壳"更好；只有当对外主接口是 C（ggml/oneDNN 那样）才需要那层壳补 C++ RAII。**HYLE 不是那种库，故不需要。**
+HYLE 不在 C ABI 上再包一层冗余 C++ facade：原生 `include/hyle/<mod>/*.h` 本身就是
+第一等 C++ 产品面。C ABI 只承担自然的 C 用户任务与跨语言稳定接缝。
 
 ## 3. 版本协商：删除（场景驱动，非默认标配）
 
@@ -115,7 +116,7 @@ C++ 用户拿原生 API，易用性靠 C++ 语言特性本身：
 C ABI 用户（第 2 层）的易用性则靠 **header-inline 便利层**（零新导出符号，不进 ABI）：
 - error：全码工厂 `hyle_status_not_found()` 等 + 谓词 `hyle_status_is_*()` + `HYLE_C_RETURN_IF_ERROR`。
 - platform：`hyle_thread_opts_set_*` + `HYLE_THREAD_OPTS_INIT` + `hyle_page_align_up` inline。
-- mem：`hyle_alloc`/`free`/`realloc` 便利转发 + `*_create_default` system-backing 构造 + 默认硬容量 `HYLE_OBJECT_POOL_*`、显式软容量 `HYLE_OBJECT_POOL_CACHED_*` typed 宏（`HYLE_ALIGNOF` 跨 C/C++ shim）。默认 alignment 在头内常量折叠，不先跨 DLL 查询。
+- mem：`hyle_alloc`/`free`/`realloc` 便利转发 + `*_create_default` system-backing 构造 + 默认硬容量 `HYLE_OBJECT_POOL_*`、显式软容量 `HYLE_OBJECT_POOL_CACHE_*` typed 宏（`HYLE_ALIGNOF` 跨 C/C++ shim）。默认 alignment 在头内常量折叠，不先跨 DLL 查询。
 
 **原则**：两条线各自把易用性做到位——C++ 靠语言特性，C 靠 header-inline 糖 + opaque 句柄。inline 糖不进 DLL 导出、零 ABI 风险，是"给 C 用户便利但不污染稳定面"的标准手法（HYLE 与 ggml/oneDNN 一致）。
 

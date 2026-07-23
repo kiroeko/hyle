@@ -1,8 +1,9 @@
 # SIMD 使用指南
 
-> **当前状态（2026-07-19）**：SIMD close-01 已落地。外部用户的稳定入口是纯 C
-> `include/hyle/c/simd.h`；完整 C 符号、POD 和 FFI 说明见 [`c-simd.md`](./c-simd.md)。
-> `hyle/simd/*.h` 继续服务内部/同工具链 C++ 与 expert source kernel，不承诺跨编译器 ABI。
+> `include/hyle/c/simd.h` 是 whole-buffer 的跨语言/跨编译器稳定入口；完整 C 符号、POD 和
+> FFI 说明见 [`c-simd.md`](./c-simd.md)。`hyle/simd/*.h` 是原生 C++ source surface，
+> 其中 whole-buffer 算法供 C++ 用户使用，寄存器 DSL/native 头属于 expert tier；均不承诺
+> 跨编译器 ABI。
 
 HYLE SIMD 不要求普通用户认识 300 多个寄存器原语。那些原语主要用于实现 kernel、移植 ISA 和做
 Highway parity。应用通常只应调用处理整段连续数据的语义接口，让预编译库在运行时选择当前 CPU
@@ -12,8 +13,8 @@ Highway parity。应用通常只应调用处理整段连续数据的语义接口
 
 | 需求 | 应选层 | 是否运行时选 ISA | 稳定性 |
 |---|---|---:|---|
-| 发布一个二进制给未知 CPU | `hyle/c/simd.h` whole-buffer C ABI | 是，每个模块缓存选择结果 | 唯一稳定发布面 |
-| 当前参与 HYLE 开发、同一工具链调用 | `hyle/simd/{ops,math,...}.h` | 是 | 开发期 C++ core，不承诺 ABI |
+| 发布一个二进制给未知 CPU 或跨语言绑定 | `hyle/c/simd.h` whole-buffer C ABI | 是，每个模块缓存选择结果 | binary-stable C/FFI 面 |
+| C++ 用户调用 whole-buffer 算法 | `hyle/simd/{ops,math,...}.h` | 是 | 原生 source API，不承诺跨工具链 ABI |
 | 整个 HYLE 只在一种已知 ISA 上运行 | `HYLE_SIMD_EXACT_TARGET` | 否，直接绑定目标实现 | 构建配置 |
 | 自己写一个固定 ISA 的 kernel TU | `hyle/simd/native.h` / `native/*.h` | 否 | expert source surface |
 | 自己写一个 kernel，仍要发布给未知 CPU | `hyle_add_fat_kernel` + `HYLE_SIMD_SELECT_FAT_KERNEL` | 是，每个完整 kernel 选一次 | source integration |
