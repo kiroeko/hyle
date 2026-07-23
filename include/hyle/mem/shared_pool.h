@@ -855,7 +855,14 @@ public:
       return nullptr;
     const auto cur = reinterpret_cast<std::uintptr_t>(cur_);
     const auto e = reinterpret_cast<std::uintptr_t>(end_);
-    const auto padding = (std::uintptr_t{0} - cur) & (alignment - 1);
+    const auto mask = alignment - 1;
+    if (HYLE_LIKELY((cur & mask) == 0)) {
+      if (bytes > e - cur)
+        return nullptr;
+      cur_ = reinterpret_cast<std::byte *>(cur + bytes);
+      return reinterpret_cast<void *>(cur);
+    }
+    const auto padding = (std::uintptr_t{0} - cur) & mask;
     const auto available = e - cur;
     const auto consumed = bytes + padding;
     if (consumed < bytes || consumed > available)
