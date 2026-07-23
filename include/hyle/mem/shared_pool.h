@@ -857,7 +857,8 @@ public:
     const auto e = reinterpret_cast<std::uintptr_t>(end_);
     const auto padding = (std::uintptr_t{0} - cur) & (alignment - 1);
     const auto available = e - cur;
-    if (padding > available || bytes > available - padding)
+    const auto consumed = bytes + padding;
+    if (consumed < bytes || consumed > available)
       return nullptr;
     const auto aligned = cur + padding;
     cur_ = reinterpret_cast<std::byte *>(aligned + bytes);

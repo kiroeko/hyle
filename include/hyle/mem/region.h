@@ -45,7 +45,8 @@ public:
     const auto end = reinterpret_cast<std::uintptr_t>(end_);
     const auto padding = (std::uintptr_t{0} - cur) & (alignment - 1);
     const auto available = end - cur;
-    if (padding > available || bytes > available - padding)
+    const auto consumed = bytes + padding;
+    if (consumed < bytes || consumed > available)
       return nullptr;
     const auto aligned = cur + padding;
     cur_ = reinterpret_cast<std::byte *>(aligned + bytes);
@@ -245,7 +246,8 @@ private:
     const auto end = reinterpret_cast<std::uintptr_t>(b->end);
     const auto padding = (std::uintptr_t{0} - cur) & (alignment - 1);
     const auto available = end - cur;
-    if (padding > available || bytes > available - padding)
+    const auto consumed = bytes + padding;
+    if (consumed < bytes || consumed > available)
       return nullptr;
     const auto aligned = cur + padding;
     b->cursor = reinterpret_cast<std::byte *>(aligned + bytes);
@@ -259,7 +261,8 @@ private:
     const auto end = reinterpret_cast<std::uintptr_t>(end_);
     const auto padding = (std::uintptr_t{0} - cur) & (alignment - 1);
     const auto available = end - cur;
-    if (padding > available || bytes > available - padding)
+    const auto consumed = bytes + padding;
+    if (consumed < bytes || consumed > available)
       return nullptr;
     const auto aligned = cur + padding;
     cursor_ = reinterpret_cast<std::byte *>(aligned + bytes);
