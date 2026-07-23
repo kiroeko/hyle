@@ -159,10 +159,13 @@ int main(void) {
     void *p = hyle_alloc(&a, 96, 16);
     CHECK(p != NULL);
     CHECK(hyle_quota_allocator_used(quota) == 96u);
+    CHECK(hyle_quota_allocator_remaining(quota) == 32u);
     CHECK(hyle_alloc(&a, 33, 16) == NULL);
+    CHECK(hyle_quota_allocator_remaining(quota) == 32u);
     CHECK(hyle_quota_allocator_limit(quota) == 128u);
     hyle_free(&a, p, 96, 16);
     CHECK(hyle_quota_allocator_used(quota) == 0u);
+    CHECK(hyle_quota_allocator_remaining(quota) == 128u);
     CHECK(hyle_quota_allocator_peak(quota) == 96u);
     hyle_quota_allocator_destroy(quota);
   }
@@ -194,7 +197,25 @@ int main(void) {
     hyle_stats_allocator_destroy(stats);
   }
 
-  /* ---- owned growable Region ---- */
+  /* ---- compile-checked recipe: quota + counters-only stats ---- */
+  {
+    hyle_stats_allocator *stats = hyle_stats_allocator_create_default(0);
+    CHECK(stats != NULL);
+    hyle_allocator measured = hyle_stats_allocator_as_allocator(stats);
+    hyle_quota_allocator *quota = hyle_quota_allocator_create(measured, 256);
+    CHECK(quota != NULL);
+    hyle_allocator bounded = hyle_quota_allocator_as_allocator(quota);
+    void *p = hyle_alloc(&bounded, 96, 16);
+    CHECK(p != NULL);
+    CHECK(hyle_quota_allocator_remaining(quota) == 160u);
+    hyle_free(&bounded, p, 96, 16);
+    /* The C quota handle itself was allocated through measured. */
+    hyle_quota_allocator_destroy(quota);
+    CHECK(hyle_stats_allocator_balanced(stats));
+    hyle_stats_allocator_destroy(stats);
+  }
+
+  /* ---- compile-checked recipe: owned request Region ---- */
   {
     hyle_region_options options = HYLE_REGION_OPTIONS_INIT;
     CHECK(options.max_block_size == 4u * 1024u * 1024u);
@@ -229,13 +250,18 @@ int main(void) {
     CHECK(hyle_fixed_region_init(&region, region_storage,
                                  sizeof region_storage));
     CHECK(hyle_fixed_region_capacity(&region) == sizeof region_storage);
+    CHECK(hyle_fixed_region_remaining(&region) == sizeof region_storage);
     void *p = hyle_fixed_region_allocate(&region, 64, 32);
     CHECK(p != NULL && ((size_t)p % 32u) == 0u);
     CHECK(hyle_fixed_region_used(&region) >= 64u);
+    CHECK(hyle_fixed_region_remaining(&region) ==
+          hyle_fixed_region_capacity(&region) -
+              hyle_fixed_region_used(&region));
     hyle_allocator region_alloc = hyle_fixed_region_as_allocator(&region);
     CHECK(hyle_alloc(&region_alloc, 32, 8) != NULL);
     hyle_fixed_region_clear(&region);
     CHECK(hyle_fixed_region_used(&region) == 0u);
+    CHECK(hyle_fixed_region_remaining(&region) == sizeof region_storage);
     CHECK(!hyle_fixed_region_init(NULL, region_storage,
                                   sizeof region_storage));
     {
@@ -255,15 +281,18 @@ int main(void) {
     void *b = hyle_fixed_pool_allocate(pool, 200, 32);
     CHECK(a != NULL && b != NULL);
     CHECK(hyle_fixed_pool_used(pool) == 300u);
+    CHECK(hyle_fixed_pool_peak(pool) == 300u);
     a = hyle_fixed_pool_reallocate(pool, a, 100, 128, 64);
     CHECK(a != NULL);
     hyle_allocator pool_alloc = hyle_fixed_pool_as_allocator(pool);
     void *c = hyle_alloc(&pool_alloc, 64, 16);
     CHECK(c != NULL);
+    CHECK(hyle_fixed_pool_peak(pool) >= hyle_fixed_pool_used(pool));
     hyle_free(&pool_alloc, c, 64, 16);
     hyle_fixed_pool_deallocate(pool, a);
     hyle_fixed_pool_deallocate(pool, b);
     CHECK(hyle_fixed_pool_used(pool) == 0u);
+    CHECK(hyle_fixed_pool_peak(pool) >= 300u);
     CHECK(hyle_fixed_pool_allocate(pool, 2048, 64) != NULL);
     hyle_fixed_pool_reset(pool); /* caller has discarded every allocation */
     hyle_fixed_pool_destroy(pool);
@@ -320,7 +349,7 @@ int main(void) {
     CHECK(hyle_shared_pool_create(bad, 64, 4, 0) == NULL);
   }
 
-  /* ---- SharedPoolCache: explicit local cache / publish / allocator view -- */
+  /* ---- compile-checked recipe: typed SharedPoolCache + publish ----------- */
   {
     typedef struct {
       unsigned char bytes[128];
@@ -469,6 +498,7 @@ int main(void) {
         hyle_growable_pool_create_default(sizeof(long), 0, 2);
     CHECK(gp != NULL);
     CHECK(hyle_growable_pool_live(gp) == 0u);
+    CHECK(hyle_growable_pool_slot_stride(gp) >= sizeof(long));
     long *slots[100];
     for (int i = 0; i < 100; ++i) {
       slots[i] = (long *)hyle_growable_pool_acquire(gp);

@@ -168,6 +168,8 @@ HYLE_MEM_C_API size_t
 hyle_quota_allocator_peak(const hyle_quota_allocator *q);
 HYLE_MEM_C_API size_t
 hyle_quota_allocator_limit(const hyle_quota_allocator *q);
+HYLE_MEM_C_API size_t
+hyle_quota_allocator_remaining(const hyle_quota_allocator *q);
 
 static inline hyle_quota_allocator *
 hyle_quota_allocator_create_default(size_t limit) {
@@ -291,6 +293,7 @@ HYLE_MEM_C_API void *hyle_fixed_region_allocate(hyle_fixed_region *r,
 HYLE_MEM_C_API void hyle_fixed_region_clear(hyle_fixed_region *r);
 HYLE_MEM_C_API size_t hyle_fixed_region_used(const hyle_fixed_region *r);
 HYLE_MEM_C_API size_t hyle_fixed_region_capacity(const hyle_fixed_region *r);
+HYLE_MEM_C_API size_t hyle_fixed_region_remaining(const hyle_fixed_region *r);
 HYLE_MEM_C_API hyle_allocator
 hyle_fixed_region_as_allocator(hyle_fixed_region *r);
 
@@ -326,6 +329,7 @@ HYLE_MEM_C_API void *hyle_fixed_pool_reallocate(hyle_fixed_pool *p, void *ptr,
                                                 size_t alignment);
 HYLE_MEM_C_API void hyle_fixed_pool_reset(hyle_fixed_pool *p);
 HYLE_MEM_C_API size_t hyle_fixed_pool_used(const hyle_fixed_pool *p);
+HYLE_MEM_C_API size_t hyle_fixed_pool_peak(const hyle_fixed_pool *p);
 HYLE_MEM_C_API size_t hyle_fixed_pool_capacity(const hyle_fixed_pool *p);
 HYLE_MEM_C_API hyle_allocator
 hyle_fixed_pool_as_allocator(hyle_fixed_pool *p);
@@ -562,6 +566,9 @@ HYLE_MEM_C_API size_t
 hyle_growable_pool_capacity(const hyle_growable_pool *p);
 /* Live (acquired, not yet released) slot count. */
 HYLE_MEM_C_API size_t hyle_growable_pool_live(const hyle_growable_pool *p);
+/* Actual aligned byte stride between raw slots; may exceed slot_size. */
+HYLE_MEM_C_API size_t
+hyle_growable_pool_slot_stride(const hyle_growable_pool *p);
 
 static inline hyle_growable_pool *
 hyle_growable_pool_create_default(size_t slot_size, size_t slot_align,

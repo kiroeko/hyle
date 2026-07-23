@@ -10,6 +10,7 @@ hyle_fixed_pool_create
 hyle_fixed_pool_deallocate
 hyle_fixed_pool_destroy
 hyle_fixed_pool_init
+hyle_fixed_pool_peak
 hyle_fixed_pool_reallocate
 hyle_fixed_pool_reset
 hyle_fixed_pool_used
@@ -18,6 +19,7 @@ hyle_fixed_region_as_allocator
 hyle_fixed_region_capacity
 hyle_fixed_region_clear
 hyle_fixed_region_init
+hyle_fixed_region_remaining
 hyle_fixed_region_used
 hyle_growable_pool_acquire
 hyle_growable_pool_capacity
@@ -26,6 +28,7 @@ hyle_growable_pool_destroy
 hyle_growable_pool_live
 hyle_growable_pool_release
 hyle_growable_pool_reset
+hyle_growable_pool_slot_stride
 hyle_huge_region_accepted_flags
 hyle_huge_region_data
 hyle_huge_region_destroy
@@ -51,6 +54,7 @@ hyle_quota_allocator_destroy
 hyle_quota_allocator_as_allocator
 hyle_quota_allocator_limit
 hyle_quota_allocator_peak
+hyle_quota_allocator_remaining
 hyle_quota_allocator_used
 hyle_region_allocate
 hyle_region_as_allocator

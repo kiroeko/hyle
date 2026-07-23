@@ -353,6 +353,9 @@ size_t hyle_quota_allocator_peak(const hyle_quota_allocator_o *q) {
 size_t hyle_quota_allocator_limit(const hyle_quota_allocator_o *q) {
   return q ? q->quota.limit() : 0;
 }
+size_t hyle_quota_allocator_remaining(const hyle_quota_allocator_o *q) {
+  return q ? q->quota.remaining() : 0;
+}
 
 hyle_stats_allocator_o *
 hyle_stats_allocator_create(hyle_allocator backing, int track_leaks) {
@@ -569,6 +572,9 @@ size_t hyle_fixed_region_used(const hyle_fixed_region *r) {
 size_t hyle_fixed_region_capacity(const hyle_fixed_region *r) {
   return r && r->state[2] >= r->state[0] ? r->state[2] - r->state[0] : 0;
 }
+size_t hyle_fixed_region_remaining(const hyle_fixed_region *r) {
+  return r && r->state[2] >= r->state[1] ? r->state[2] - r->state[1] : 0;
+}
 
 namespace {
 void *c_fixed_region_alloc(void *state, size_t size, size_t alignment) {
@@ -665,6 +671,9 @@ void hyle_fixed_pool_reset(hyle_fixed_pool_o *p) {
 }
 size_t hyle_fixed_pool_used(const hyle_fixed_pool_o *p) {
   return p ? p->pool.used() : 0;
+}
+size_t hyle_fixed_pool_peak(const hyle_fixed_pool_o *p) {
+  return p ? p->pool.peak() : 0;
 }
 size_t hyle_fixed_pool_capacity(const hyle_fixed_pool_o *p) {
   return p ? p->pool.capacity() : 0;
@@ -1021,6 +1030,10 @@ size_t hyle_growable_pool_capacity(const hyle_growable_pool_o *p) {
 
 size_t hyle_growable_pool_live(const hyle_growable_pool_o *p) {
   return p ? p->core.live() : 0;
+}
+
+size_t hyle_growable_pool_slot_stride(const hyle_growable_pool_o *p) {
+  return p ? p->core.slot_stride() : 0;
 }
 
 /* ---- HugeRegion ------------------------------------------------------------

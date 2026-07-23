@@ -146,6 +146,41 @@ reservation。它计 requested live bytes，不计 allocator usable size/metadat
 loan 等调用合同错误允许 fail-fast。`StatsAllocator`/`LeakTracker` 可以与 Quota 叠加，
 但 wrapper 顺序决定各层看到 requested attempt 还是 backing success。
 
+## 三份最短组合
+
+这些形状由 `MemUsageRecipe` 测试直接编译执行。
+
+```cpp
+// request bulk lifetime
+hyle::mem::Region request(hyle::mem::system_allocator());
+void* scratch = request.allocate(4096, 64);
+request.clear();
+```
+
+```cpp
+// typed owner-local cache over a hard pool
+hyle::mem::ObjectPool<int> core(hyle::mem::system_allocator(), 32);
+hyle::mem::ObjectPoolCache<int> local(core, 8, 2);
+{
+  auto value = local.try_loan(7);
+  if (value) *value += 1;
+} // loan returns before the cache is published
+local.publish();
+```
+
+```cpp
+// quota is the call-side outer layer; rejected requests do not reach stats
+hyle::mem::StatsAllocator stats(hyle::mem::system_allocator());
+hyle::mem::QuotaAllocator quota(stats.get(), 1u << 20);
+hyle::mem::Allocator bounded = quota.get();
+void* p = bounded.allocate(4096, 64);
+if (p != nullptr) bounded.deallocate(p, 4096, 64);
+```
+
+声明顺序同时表达销毁顺序：调用外层 `QuotaAllocator` 先析构，backing `StatsAllocator` 后析构；
+所有借用 allocator 和 allocation 必须先失效。交换 wrapper 顺序会改变“被 quota 拒绝的尝试”
+是否进入统计，必须由调用者按观测目标选择。
+
 ## HugeRegion：请求不等于承诺
 
 `HugeRegion::requested_flags()` 记录调用者策略；`accepted_flags()` 记录 OS-facing 调用已

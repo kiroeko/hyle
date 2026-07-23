@@ -204,7 +204,8 @@ external 能力按 allocation model 分成两个类型：
 
 C ABI 的“完整”按用户能力可达判断，不按 C++ 符号 1:1 判断。模板 ctor/dtor、RAII 和 PMR
 没有自然 C 对象形状；raw slot 与显式 cleanup 是 C 的惯用表达。属于 C 用户范围的标量状态
-查询则应直接提供，不能用“模板不可导出”回避。
+查询则直接提供：Quota `remaining`、FixedRegion `remaining`、FixedPool `peak` 与 GrowablePool
+runtime `slot_stride` 均不要求用户重演内部布局。
 
 ## 11. 用户选型
 

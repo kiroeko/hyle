@@ -3,7 +3,7 @@
 | 字段 | 值 |
 |---|---|
 | **状态** | 🔶 封口候选，尚未冻结 |
-| **基线** | `024f379`（2026-07-23） |
+| **起始基线** | `024f379`（2026-07-23） |
 | **范围** | 只补 API parity、性能证据和最终认证；不新增 allocator 类型 |
 | **设计真源** | [`../architecture/mem-design.md`](../architecture/mem-design.md) |
 | **性能真源** | [`../performance/benchmarks-mem.md`](../performance/benchmarks-mem.md) |
@@ -13,26 +13,27 @@
 功能面与“何时算完成”在 architecture；性能结果与输项在 performance；这里仅列未完成任务、
 验收和最终提交。
 
-## 已完成到基线
+## 已完成证据
 
 - 功能族已封闭：allocator/diagnostics、owned/external/borrowed region、hard/soft/growable pool、
   object lifetime、fiber stack、THP/NUMA 均有明确产品形状或模块归属。
 - C ABI 已重审为 C 用户形状：StatsAllocator snapshot/leak copy、三字值对象 FixedRegion、
   FixedPool 显式 control allocator、system collect；header/纯 C consumer/DLL·ELF manifest 为
-  101 个动态导出同步。
-- Windows 完整 mem 174/174、纯 C/C surface 通过；WSL 相关 C++、纯 C 与 ELF 101/101 通过。
+  API closure 后 105 个动态导出同步。
+- Windows 177/177 C++ mem、纯 C 与 DLL 105/105 surface 通过；Linux 177/177 C++ mem、
+  纯 C 与 ELF 105/105 surface 通过。
 
-上述是 `024f379` 的任务证据，不自动等于最终候选 commit 的认证。
+`024f379` 是重审起点；本页勾选只记录后续任务验收，不自动等于最终候选 commit 的认证。
 
 ## 剩余 work items
 
 ### MEM-FINAL-1：API closure
 
-- [ ] 裁决并一次补齐 C 用户需要的只读观察量：`QuotaAllocator::remaining()`、
+- [x] 裁决并一次补齐 C 用户需要的只读观察量：`QuotaAllocator::remaining()`、
   `FixedRegion::remaining()`、`FixedPool::peak()`、`GrowablePoolCore::slot_stride()`。
-- [ ] C 与 C++ 各写/编译三份最短 recipe：request region、typed cached pool、quota+stats；
+- [x] C 与 C++ 各写/编译三份最短 recipe：request region、typed cached pool、quota+stats；
   验证默认路径、注入路径、ownership 与销毁顺序自然。
-- [ ] 在 C guide 明确 FiberStack 是 scheduler-owned specialization；没有独立 C consumer 时
+- [x] 在 C guide 明确 FiberStack 是 scheduler-owned specialization；没有独立 C consumer 时
   不导出 raw stack control。
 
 ### MEM-FINAL-2：performance closure

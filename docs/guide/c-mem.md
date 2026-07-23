@@ -73,7 +73,8 @@ C/C++ 两面通过 trampoline 显式构造，不 reinterpret 布局。
 
 `hyle_quota_allocator_as_allocator()` 返回借用 wrapper 的 allocator。并发分配先原子 reserve，
 成功 live bytes 不会超过 limit；backing OOM 回滚。destroy 前必须释放全部 allocation 并
-静默并发访问。`used/peak/limit` 都按 requested bytes 计量。
+静默并发访问。`used/peak/limit/remaining` 都按 requested bytes 计量；`remaining` 是当前仍可
+reserve 的严格预算，不是 backing 的物理空闲字节。
 
 ### 2.2 StatsAllocator
 
@@ -97,6 +98,10 @@ counters 或直接不用 wrapper。
 
 三者都单线程。它们的 `as_allocator` 句柄借用原对象；Region/FixedPool destroy 后失效，
 FixedRegion 则在值对象或 payload storage 失效后失效。
+
+观察量：FixedRegion 提供 `used/capacity/remaining`；FixedPool 提供
+`used/peak/capacity`。FixedPool 的 peak 是自创建以来 requested live bytes 的高水位，reset
+不会把历史峰值伪装成零。
 
 ```c
 unsigned char payload[4096];
@@ -192,7 +197,8 @@ C/C++ 使用同一产品名，未发布阶段不保留 `Arena/reset` 兼容壳�
 | `hyle_growable_pool_destroy` | 释放全部块 |
 | `hyle_growable_pool_acquire` / `release` | 取/还裸槽，不运行 ctor/dtor |
 | `hyle_growable_pool_reset` | trim 全部块；要求无活槽 |
-| `hyle_growable_pool_capacity` / `live` | 查询 |
+| `hyle_growable_pool_capacity` / `live` | 当前总槽数 / 已借出槽数 |
+| `hyle_growable_pool_slot_stride` | 对齐后的实际槽间距，可能大于请求的 slot_size |
 
 typed 宏为 `HYLE_GROWABLE_POOL_CREATE/ACQUIRE/RELEASE`。需要 ctor/dtor 的 C++ 用户使用 `GrowablePool<T>`。
 
@@ -215,6 +221,65 @@ typed 宏为 `HYLE_GROWABLE_POOL_CREATE/ACQUIRE/RELEASE`。需要 ctor/dtor 的 
 flags：`HYLE_HUGE_THP_HINT`、`HYLE_HUGE_PREFAULT`、`HYLE_HUGE_NUMA_BIND`、`HYLE_HUGE_NUMA_INTERLEAVE`；无 NUMA 约束用 `HYLE_MEM_NUMA_ANY`。
 
 ## 8. 常用写法
+
+下面三段分别覆盖 request bulk lifetime、typed owner cache 和 adapter composition；同样代码形状
+由 `hyle_mem_c_test` 以纯 C 编译器持续编译执行。
+
+### Request Region
+
+```c
+hyle_region *request = hyle_region_create_default(NULL);
+if (request != NULL) {
+  void *scratch = hyle_region_allocate(request, 4096, 64);
+  if (scratch != NULL) {
+    /* process one request */
+    hyle_region_clear(request);
+  }
+  hyle_region_destroy(request);
+}
+```
+
+### Typed cached pool
+
+```c
+typedef struct { int id; double value; } Node;
+hyle_shared_pool *core = HYLE_OBJECT_POOL_CREATE_DEFAULT(Node, 1024);
+if (core != NULL) {
+  hyle_shared_pool_cache *local =
+      HYLE_OBJECT_POOL_CACHE_CREATE_DEFAULT(core, 64, 16);
+  if (local != NULL) {
+    Node *node = HYLE_OBJECT_POOL_CACHE_ACQUIRE(local, Node);
+    if (node != NULL) {
+      node->id = 7; /* C 负责初始化/清理裸槽 */
+      HYLE_OBJECT_POOL_CACHE_RELEASE(local, node);
+    }
+    HYLE_OBJECT_POOL_CACHE_PUBLISH(local);
+    hyle_shared_pool_cache_destroy(local);
+  }
+  hyle_shared_pool_destroy(core);
+}
+```
+
+### Quota + Stats
+
+```c
+hyle_stats_allocator *stats = hyle_stats_allocator_create_default(0);
+if (stats != NULL) {
+  hyle_allocator measured = hyle_stats_allocator_as_allocator(stats);
+  hyle_quota_allocator *quota =
+      hyle_quota_allocator_create(measured, 1u << 20);
+  if (quota != NULL) {
+    hyle_allocator bounded = hyle_quota_allocator_as_allocator(quota);
+    void *p = hyle_alloc(&bounded, 4096, 64);
+    if (p != NULL) hyle_free(&bounded, p, 4096, 64);
+    hyle_quota_allocator_destroy(quota);
+  }
+  hyle_stats_allocator_destroy(stats);
+}
+```
+
+这里 Quota 是调用外层：被 quota 拒绝的请求不会进入 Stats backing。C opaque quota control
+本身由 `measured` 分配，因此先 destroy quota，再读取最终 balanced snapshot 或 destroy stats。
 
 ### 硬容量共享池
 
@@ -266,5 +331,7 @@ hyle_shared_pool_destroy(pool);
 pool、instrumentation 与 topology 能力族，但不机械镜像方法；opaque `_o` 名隐藏、默认
 backing 走 header-inline convenience、默认 alignment 不跨 DLL。mem 使用独立 typed error
 code + 诊断字符串；FixedRegion 用自然的 3-word C 值类型，复杂的 FixedPool 才保留 opaque
-no-heap control。模板 ctor/dtor、PMR 与 fiber stack RAII 仍属于原生 C++ 形状。
+no-heap control。模板 ctor/dtor 与 PMR 仍属于原生 C++ 形状。`FiberStack`/`FiberStackPool`
+是 scheduler-owned runtime specialization：sched 的 C ABI 在内部消费它们；没有独立 C
+consumer 时不导出可绕过 scheduler 生命周期的 raw stack control。这是明确边界，不是遗漏。
 发布后的冻结策略见 [`../architecture/c-abi-design.md`](../architecture/c-abi-design.md)。

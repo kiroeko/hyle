@@ -93,6 +93,7 @@ static_assert(requires(FixedPool p, void* ptr, std::size_t n) {
   { p.deallocate(ptr) } -> std::same_as<void>;
   { p.reallocate(ptr, n, n, n) } -> std::same_as<void*>;
   { p.reset() } -> std::same_as<void>;
+  { p.peak() } -> std::same_as<std::size_t>;
   { p.as_allocator() } -> std::same_as<Allocator>;
 });
 
@@ -101,6 +102,11 @@ static_assert(requires(QuotaAllocator q) {
   { q.used() } -> std::same_as<std::size_t>;
   { q.peak() } -> std::same_as<std::size_t>;
   { q.limit() } -> std::same_as<std::size_t>;
+  { q.remaining() } -> std::same_as<std::size_t>;
+});
+
+static_assert(requires(FixedRegion r) {
+  { r.remaining() } -> std::same_as<std::size_t>;
 });
 
 static_assert(requires(StatsAllocator s) {
@@ -139,6 +145,40 @@ TEST(MemApiSurface, CErrorChannelDoesNotOverwritePlatformVmError) {
   EXPECT_NE(hyle_mem_last_error()[0], '\0');
   EXPECT_STREQ(hyle::platform::vm_last_error(), "platform sentinel");
   hyle::platform::vm_set_last_error(nullptr);
+}
+
+// Compile-checked user recipes. Keep these deliberately short and mirrored in
+// docs/guide/mem.md; they test the public shape rather than internal details.
+TEST(MemUsageRecipe, RequestRegion) {
+  Region request(system_allocator());
+  ASSERT_NE(request.allocate(128, 64), nullptr);
+  request.clear();
+  EXPECT_EQ(request.bytes_used(), 0u);
+}
+
+TEST(MemUsageRecipe, TypedCachedPool) {
+  ObjectPool<int> core(system_allocator(), 32);
+  ASSERT_TRUE(core.valid());
+  ObjectPoolCache<int> local(core, 8, 2);
+  ASSERT_TRUE(local.valid());
+  {
+    auto value = local.try_loan(7);
+    ASSERT_TRUE(value);
+    EXPECT_EQ(*value, 7);
+  }
+  local.publish();
+}
+
+TEST(MemUsageRecipe, QuotaAndStatsComposition) {
+  StatsAllocator stats(system_allocator());
+  QuotaAllocator quota(stats.get(), 256);
+  Allocator bounded = quota.get();
+  void* p = bounded.allocate(96, 16);
+  ASSERT_NE(p, nullptr);
+  EXPECT_EQ(quota.remaining(), 160u);
+  bounded.deallocate(p, 96, 16);
+  EXPECT_TRUE(stats.balanced());
+  EXPECT_EQ(quota.remaining(), 256u);
 }
 
 }  // namespace

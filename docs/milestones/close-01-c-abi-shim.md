@@ -46,7 +46,7 @@
 - [x] **样板 mem**（2026-07-23 重审）：`include/hyle/c/mem.h` + `c_mem.cc` + 纯 C
   `hyle_mem_c_test`。覆盖 system allocator/collect、Quota/Stats、Region/FixedRegion/FixedPool、
   hard `SharedPool` + 显式 `SharedPoolCache`、Stack/PooledRegion/GrowablePool、HugeRegion 与
-  typed raw-slot 宏；Stats 用 POD out-snapshot + bounded leak copy。101 个动态导出由 header、
+  typed raw-slot 宏；Stats 用 POD out-snapshot + bounded leak copy。105 个动态导出由 header、
   纯 C consumer 与 DLL/ELF manifest 同步。能力边界和剩余 parity 审计见
   [`mem-final`](./mem-close-plan.md)，逐符号文档见 [`c-mem.md`](../guide/c-mem.md)。
 - [x] **util**（2026-07-19 全面复审）：`include/hyle/c/util.h` + `c_util.cc` + 纯 C smoke。RNG 用稳定 POD；Ref/ScopeGuard/Registry/SpinLock 用 opaque handle + callback/ctx 类型擦除；demangle/help 用 buffer-fill。机械覆盖 46/46 可调用入口，其中动态导出 44 个、header-inline 2 个；三平台导出及 C/C++ 测试通过。仅 `type_name<T>`/`type_hash<T>` 因依赖编译器静态类型而有意留 C++。文档：[`c-util.md`](../guide/c-util.md)，复审：[`util-module-closure.md`](./util-module-closure.md)。

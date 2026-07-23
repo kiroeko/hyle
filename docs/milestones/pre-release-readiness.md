@@ -44,7 +44,7 @@ docs **17.5k**。LOC 只说明资产体量，不作为功能或 SOTA 的替代�
 | 模块 | 判定 | 后续方式 |
 |---|---|---|
 | error/platform/time/simd/util/obs | **预发布冻结** | 只按上述触发器重开；SVE/RVV 真机证据仍是平台到位后的专项补证 |
-| mem | **封口候选，尚未冻结** | 功能族已封闭；只剩 API parity/recipe、四项性能证据、最终三平台+sanitizer 认证，见 [`mem-close-plan.md`](./mem-close-plan.md) |
+| mem | **封口候选，尚未冻结** | 功能族与 API closure 已完成；只剩四项性能证据、最终三平台+sanitizer 认证，见 [`mem-close-plan.md`](./mem-close-plan.md) |
 | container | **预发布冻结** | StringBuf 复杂度/争用/batch/三平台强 peer 已收口；已知 Linux/M4 lifecycle 常数边界写入证书 |
 | sched | **预发布冻结** | 双任务腿、饱和/关闭红队、114 入口 C ABI 与 guide 已收口；marl 15 遍三平台为 Win/Lin 明确赢、M4 统计平局；只按触发器重开 |
 | io | **下一批强收口** | 功能/下游/红队/测试性能/C ABI/指南六项一次完成 |
