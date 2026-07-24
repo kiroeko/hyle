@@ -1,10 +1,13 @@
 #pragma once
 
 #include <cstddef>
+#include <optional>
 
 #include "hyle/error/status.h"
 #include "hyle/macros.h"
 #include "hyle/mem/allocator.h"
+#include "hyle/platform/cpu.h"
+#include "hyle/platform/thread.h"
 #include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
@@ -25,6 +28,15 @@ class Fiber;
 class Waker;  // sched-04: re-injects a suspended fiber (needs impl_ via friend)
 HYLE_SCHED_API void wait_for_shutdown() noexcept;
 
+struct SchedulerOptions {
+  // A preference, not a hard filter: all process-available CPUs remain usable.
+  // It only changes which CPUs lower-index workers are pinned to first.
+  platform::CpuOrder worker_cpu_order = platform::CpuOrder::kOsDefault;
+  // Optional OS scheduling preference. On macOS this maps to QoS and is the
+  // portable way to request performance-oriented placement without fake pins.
+  std::optional<platform::ThreadPriority> worker_priority;
+};
+
 // M:N work-stealing scheduler: N OS-thread workers, each with its own FIFO local
 // run-queue (container WsFifoQueue), a shared global injection queue (Vyukov
 // MPMC), and random-victim stealing. A fiber that yields goes back on a local
@@ -42,6 +54,8 @@ class HYLE_SCHED_API Scheduler {
   // local queue and the global injection queue (power of two).
   Scheduler(unsigned num_workers, mem::Allocator alloc,
             std::size_t queue_capacity);
+  Scheduler(unsigned num_workers, mem::Allocator alloc,
+            std::size_t queue_capacity, SchedulerOptions options);
   // Recoverable construction path for C/FFI and runtimes that treat allocation
   // or OS-thread creation failure as an operational error. On failure `status`
   // is non-OK and valid()==false; the object remains destructible but no other
@@ -49,6 +63,9 @@ class HYLE_SCHED_API Scheduler {
   // the native fail-fast contract and asserts construction succeeded.
   Scheduler(unsigned num_workers, mem::Allocator alloc,
             std::size_t queue_capacity, Status* status) noexcept;
+  Scheduler(unsigned num_workers, mem::Allocator alloc,
+            std::size_t queue_capacity, SchedulerOptions options,
+            Status* status) noexcept;
   ~Scheduler();
   HYLE_DISABLE_COPY_AND_MOVE(Scheduler);
 
@@ -189,7 +206,8 @@ class HYLE_SCHED_API Scheduler {
   struct Impl;
   Impl* impl_;
   void init_(unsigned num_workers, mem::Allocator alloc,
-             std::size_t queue_capacity, Status* status) noexcept;
+             std::size_t queue_capacity, SchedulerOptions options,
+             Status* status) noexcept;
   Status spawn_detached_(unsigned worker_idx, bool pinned, DetachedFn fn,
                          void* ctx, std::size_t stack_size) noexcept;
 };

@@ -156,9 +156,34 @@ mask，新线程会继承它。常见 Windows / Linux
 拓扑不分配；时间是读取 OS CPU 记录必需的 O(N)，用于 runtime 初始化/重配，不应塞进每个
 task 的热路径。
 
-platform 暂不公开“每 CPU 的 core kind/cache sharing”高层对象：`cache_info()` 只是容量提示，
-不能据此猜共享关系。worker placement、NUMA/cache-aware stealing 是 sched 的策略，等其真实
-调用形状确定后再由内部拓扑原语支撑，避免 platform 固化一套 benchmark 形状。
+需要优先使用强核时，不要假设“大编号/小编号就是 P-core”。`available_cpu_info()` 返回当前
+进程可用 CPU 的 `id / performance_rank / kind`：rank 越大表示 OS 在本机报告的能力档越强，
+0 表示无法建立可信的 CPU-id 映射。常用软偏好直接用有序重载：
+
+```cpp
+HYLE_ASSIGN_OR_RETURN(auto count, available_cpu_count());
+std::vector<unsigned> cpus(count);
+HYLE_ASSIGN_OR_RETURN(auto ordered_count,
+    available_cpu_ids(CpuOrder::kPerformanceFirst,
+                      cpus.data(), cpus.size()));
+// cpus 仍包含全部可用 CPU，只是已知强核排前；未知平台保持 OS 顺序。
+
+SchedulerOptions scheduler_opts;
+scheduler_opts.worker_cpu_order = CpuOrder::kPerformanceFirst;
+scheduler_opts.worker_priority = ThreadPriority::kHigh; // macOS: QoS 软偏好
+const unsigned workers = static_cast<unsigned>(std::min<std::size_t>(4, count));
+Scheduler scheduler(workers, allocator, 1024, scheduler_opts);
+```
+
+若业务必须**只**用强核，读取 `CpuInfo::kind == CpuKind::kPerformance` 后自行过滤，再交给
+`CpuAffinity`；若全部为 `kUnknown`，HYLE 不会把猜测冒充硬保证。Windows 使用
+`EfficiencyClass`，Linux 只信内核 `cpu_capacity`。macOS 能报告 P/E 数量却没有可靠的
+logical-id 硬绑映射，所以 per-CPU rank 明确 unknown；低延迟/强核软倾向应使用
+`SchedulerOptions::worker_priority = ThreadPriority::kHigh/kHighest` 对应的系统 QoS，而不是
+猜 CPU id。该 priority 选项同样是显式 opt-in；默认不改变 OS 调度优先级。
+
+`cache_info()` 仍只是容量提示，不猜 cache sharing。NUMA/cache-aware stealing 属于 sched
+策略；platform 只提供可组合的 CPU 事实、排序与 affinity 机制。
 
 NUMA preferred 是软策略：分配成功而 placement 为 `Unavailable` 仍是一块可用内存。只有
 bind/interleave 的硬策略失败才应让依赖精确放置的工作失败。

@@ -571,6 +571,29 @@ HYLE_PLATFORM_C_API hyle_status hyle_cpu_available_count(size_t* out_count);
 HYLE_PLATFORM_C_API hyle_status hyle_cpu_available_ids(
     size_t* out_count, unsigned* dst, size_t cap);
 
+typedef enum hyle_cpu_kind {
+  HYLE_CPU_KIND_UNKNOWN = 0,
+  HYLE_CPU_KIND_EFFICIENCY = 1,
+  HYLE_CPU_KIND_PERFORMANCE = 2
+} hyle_cpu_kind;
+
+typedef struct hyle_cpu_info {
+  unsigned id;
+  unsigned performance_rank; /* larger = stronger on this machine; 0 unknown */
+  uint32_t kind;             /* hyle_cpu_kind */
+} hyle_cpu_info;
+
+typedef enum hyle_cpu_order {
+  HYLE_CPU_ORDER_OS_DEFAULT = 0,
+  HYLE_CPU_ORDER_PERFORMANCE_FIRST = 1,
+  HYLE_CPU_ORDER_EFFICIENCY_FIRST = 2
+} hyle_cpu_order;
+
+HYLE_PLATFORM_C_API hyle_status hyle_cpu_available_info(
+    size_t* out_count, hyle_cpu_info* dst, size_t cap);
+HYLE_PLATFORM_C_API hyle_status hyle_cpu_available_ids_ordered(
+    size_t* out_count, hyle_cpu_order order, unsigned* dst, size_t cap);
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif

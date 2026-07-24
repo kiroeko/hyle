@@ -638,6 +638,13 @@ pinned_opts.config_policy = ThreadConfigPolicy::kRequired;
 auto pinned = Thread::spawn(&entry, ctx, pinned_opts); // 设置失败则 entry 不运行
 ```
 
+需要少量 worker 优先使用强核时，用
+`available_cpu_ids(CpuOrder::kPerformanceFirst, ...)` 或
+`SchedulerOptions::worker_cpu_order`；该偏好保留所有可用 CPU，强核信息未知时保持 OS 顺序。
+需要“只用强核”的硬合同则过滤 `available_cpu_info()` 的 `CpuKind::kPerformance`，不能把
+unknown 当 performance。macOS 用 `SchedulerOptions::worker_priority = ThreadPriority::kHigh`
+走 QoS，不猜 logical CPU 编号；两个 scheduler 选项都默认关闭。
+
 **跨平台语义提醒**：`create_symlink` 在 Windows 需开发者模式/管理员（否则返回 `PermissionDenied`）；`set_env_var(name,"")` 在 Windows 删除变量、POSIX 保留空值；thread 配置默认 best-effort，需要保证时选 `ThreadConfigPolicy::kRequired` 或检查 `this_thread::set_*` 的 Status（macOS 硬 affinity 明确 `Unimplemented`，priority 走 QoS）。`cpu_topology()` 只报告系统明确提供的 P/E 分类；信息不足时把全部逻辑 CPU 归入 performance 并令 `hybrid=false`，不做频率启发式猜测。worker 数用动态 `available_cpu_count()`，绑核 id 用 `available_cpu_ids()`；二者都遵守进程 affinity/cpuset。纯 C / FFI 消费者用 `hyle/c/platform.h`（见 [`c-platform.md`](./c-platform.md)）。
 
 本指南讲"正常用法"。**为 SOTA 性能保留的调用约束**（违反 = UB，非 HYLE bug）单独列在 [`usage-contract.md`](./usage-contract.md)（同目录）：fiber 跨 yield 的 thread_local、分配器跨线程 free、CPUID 探测的 LTO 隔离等。集成前过一遍。

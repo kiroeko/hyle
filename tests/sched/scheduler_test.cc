@@ -6,6 +6,14 @@
 #include <thread>
 #include <vector>
 
+#if defined(_WIN32)
+#  define WIN32_LEAN_AND_MEAN
+#  define NOMINMAX
+#  include <windows.h>
+#elif defined(__linux__)
+#  include <sched.h>
+#endif
+
 #include "hyle/mem/allocator.h"
 #include "hyle/sched/fiber.h"
 #include "hyle/sched/scheduler.h"
@@ -15,7 +23,9 @@ using hyle::mem::system_allocator;
 using hyle::sched::Fiber;
 using hyle::sched::kDefaultStackSize;
 using hyle::sched::Scheduler;
+using hyle::sched::SchedulerOptions;
 using hyle::sched::Waker;
+using hyle::platform::CpuOrder;
 
 namespace {
 void* fail_alloc(void*, std::size_t, std::size_t) noexcept { return nullptr; }
@@ -39,6 +49,25 @@ void body_entry(void* p) {
   }
   b->completed->fetch_add(1, std::memory_order_acq_rel);
 }
+
+#if defined(_WIN32) || defined(__linux__)
+void observe_current_cpu(void* raw) {
+  unsigned cpu = ~0u;
+#  if defined(_WIN32)
+  PROCESSOR_NUMBER number{};
+  ::GetCurrentProcessorNumberEx(&number);
+  cpu = number.Number;
+  for (WORD group = 0; group < number.Group; ++group) {
+    cpu += ::GetActiveProcessorCount(group);
+  }
+#  else
+  const int current = ::sched_getcpu();
+  if (current >= 0) cpu = static_cast<unsigned>(current);
+#  endif
+  static_cast<std::atomic<unsigned>*>(raw)->store(cpu,
+                                                  std::memory_order_release);
+}
+#endif
 }  // namespace
 
 TEST(Scheduler, RecoverableConstructionReportsQueueOom) {
@@ -76,6 +105,50 @@ TEST(Scheduler, RecoverableConstructionRejectsInvalidShape) {
       2, system_allocator(), std::size_t{1} << 32, &status);
   EXPECT_TRUE(status.IsInvalidArgument());
   EXPECT_FALSE(too_large_queue.valid());
+
+  SchedulerOptions invalid_options;
+  invalid_options.worker_cpu_order = static_cast<CpuOrder>(255);
+  Scheduler invalid_order(2, system_allocator(), 64, invalid_options, &status);
+  EXPECT_TRUE(status.IsInvalidArgument());
+  EXPECT_FALSE(invalid_order.valid());
+
+  invalid_options = {};
+  invalid_options.worker_priority =
+      static_cast<hyle::platform::ThreadPriority>(127);
+  Scheduler invalid_priority(1, system_allocator(), 64, invalid_options,
+                             &status);
+  EXPECT_TRUE(status.IsInvalidArgument());
+  EXPECT_FALSE(invalid_priority.valid());
+}
+
+TEST(Scheduler, WorkerCpuOrderIsAnExplicitConstructionPreference) {
+  SchedulerOptions options;
+  options.worker_cpu_order = CpuOrder::kPerformanceFirst;
+  options.worker_priority = hyle::platform::ThreadPriority::kHigh;
+  hyle::Status status;
+  Scheduler scheduler(1, system_allocator(), 64, options, &status);
+  ASSERT_TRUE(status.ok()) << status.message();
+  EXPECT_TRUE(scheduler.valid());
+}
+
+TEST(Scheduler, PerformanceFirstPinsFirstWorkerToPreferredCpu) {
+#if !defined(_WIN32) && !defined(__linux__)
+  GTEST_SKIP() << "platform has no hard thread affinity";
+#else
+  unsigned expected = ~0u;
+  auto available = hyle::platform::available_cpu_ids(
+      CpuOrder::kPerformanceFirst, &expected, 1);
+  ASSERT_TRUE(available.has_value()) << available.error().message();
+  ASSERT_NE(expected, ~0u);
+
+  std::atomic<unsigned> observed{~0u};
+  SchedulerOptions options;
+  options.worker_cpu_order = CpuOrder::kPerformanceFirst;
+  Scheduler scheduler(1, system_allocator(), 64, options);
+  ASSERT_TRUE(scheduler.schedule(&observe_current_cpu, &observed).ok());
+  scheduler.drain();
+  EXPECT_EQ(observed.load(std::memory_order_acquire), expected);
+#endif
 }
 
 TEST(Scheduler, DetachedCallbacksOwnTheirLifetimeAndReportAdmission) {

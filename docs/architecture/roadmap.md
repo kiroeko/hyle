@@ -99,7 +99,7 @@ container/       │               │ compute   │  container 自带内联 SSE
 | 阶段 | 模块 | 里程碑（每个可独立编/测）| 旧预测 | 再投影(实测口径) |
 |---|---|---|---|---|
 | **P0** | error / obs-hook | Status+expected+context+ASSIGN_OR_RETURN / obs 埋点 | 3-5k | error 自身已在 Win/GCC14/M4 正确性与两类性能证书后冻结；全库 adoption audit 进行中，mem 消费者切片已统一共享 Status；obs 已收口 |
-| **P1** | platform | thread+park / vm+dynlib / path+fs+env / CPU | 5-8k | **~6.4k**（含 C surface），🔶 按实际使用标准主动收口；系统/进程 CPU 已拆分，Thread 支持 required 与单核/集合 affinity，sched 消费真实稀疏 id |
+| **P1** | platform | thread+park / vm+dynlib / path+fs+env / CPU | 5-8k | **~6.7k**（含 C surface），🔶 按实际使用标准主动收口；系统/进程 CPU 已拆分，Thread 支持 required 与单核/集合 affinity；逐 CPU 能力与显式强/弱核优先已由 sched 消费，不按 id/频率猜测 |
 | **P2** | mem | Allocator+alignment / mimalloc / region / pool+stack / NUMA | 6-10k | **~1.8k**，实现主干稳定；公共形状/C surface 与跨平台性能尾仍在收口复审 |
 | **P2** | time | 单调钟 / 分层时间轮 | 1.5-2.5k | **~0.9k**，✅ 预发布冻结 |
 | **P3** | container | ring/MPMC / XXH3 / carray / SwissTable / SmallVector / string | 7-11k | **~4.9k**，✅ StringBuf 复杂度/三平台强 peer 收口后预发布冻结 |

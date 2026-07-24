@@ -11,6 +11,7 @@
 #include <stdint.h>
 
 #include "hyle/c/mem.h"
+#include "hyle/c/platform.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -61,11 +62,15 @@ typedef struct hyle_sched_options {
   size_t queue_capacity;
   size_t fiber_stack_size;
   hyle_allocator backing;
+  int worker_cpu_order;     /* hyle_cpu_order; default keeps OS order */
+  int has_worker_priority;  /* 0/1 */
+  int worker_priority;      /* hyle_thread_priority when present */
 } hyle_sched_options;
 
 #define HYLE_SCHED_OPTIONS_INIT                                                \
   { (uint32_t)sizeof(hyle_sched_options), 0, 1024, 64 * 1024,                 \
-    { NULL, NULL, NULL, NULL } }
+    { NULL, NULL, NULL, NULL }, HYLE_CPU_ORDER_OS_DEFAULT, 0,                \
+    HYLE_THREAD_PRIORITY_NORMAL }
 
 HYLE_SCHED_C_API hyle_sched_options hyle_sched_options_default(void);
 HYLE_SCHED_C_API hyle_sched_scheduler* hyle_sched_scheduler_create(

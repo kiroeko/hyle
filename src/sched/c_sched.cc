@@ -183,9 +183,19 @@ struct hyle_sched_scheduler_o {
   hyle::sched::Scheduler scheduler;
   std::size_t stack_size;
   hyle_sched_scheduler_o(hyle_allocator b, unsigned workers,
-                         std::size_t capacity, std::size_t stack)
+                         std::size_t capacity, std::size_t stack,
+                         hyle_cpu_order cpu_order, int has_priority,
+                         hyle_thread_priority priority)
       : backing(b),
-        scheduler(workers, to_cpp(&backing), capacity, &init_status),
+        scheduler(workers, to_cpp(&backing), capacity,
+                  hyle::sched::SchedulerOptions{
+                      static_cast<hyle::platform::CpuOrder>(cpu_order),
+                      has_priority
+                          ? std::optional<hyle::platform::ThreadPriority>(
+                                static_cast<hyle::platform::ThreadPriority>(
+                                    priority))
+                          : std::nullopt},
+                  &init_status),
         stack_size(stack) {}
 };
 struct hyle_sched_waker_o {
@@ -398,12 +408,20 @@ hyle_sched_scheduler* hyle_sched_scheduler_create(
   if (o.num_workers > 1024 ||
       o.queue_capacity < 2 || o.queue_capacity > (size_t{1} << 31) ||
       !std::has_single_bit(o.queue_capacity) ||
-      o.fiber_stack_size < hyle::mem::kFiberStackSmall) {
-    set_error("invalid workers, power-of-two queue capacity, or fiber stack size");
+      o.fiber_stack_size < hyle::mem::kFiberStackSmall ||
+      o.worker_cpu_order < HYLE_CPU_ORDER_OS_DEFAULT ||
+      o.worker_cpu_order > HYLE_CPU_ORDER_EFFICIENCY_FIRST ||
+      (o.has_worker_priority != 0 && o.has_worker_priority != 1) ||
+      (o.has_worker_priority &&
+       (o.worker_priority < HYLE_THREAD_PRIORITY_LOWEST ||
+        o.worker_priority > HYLE_THREAD_PRIORITY_HIGHEST))) {
+    set_error("invalid workers, queue, stack size, CPU order, or priority");
     return nullptr;
   }
   auto* out = make_handle<hyle_sched_scheduler_o>(
-      o.backing, o.num_workers, o.queue_capacity, o.fiber_stack_size);
+      o.backing, o.num_workers, o.queue_capacity, o.fiber_stack_size,
+      static_cast<hyle_cpu_order>(o.worker_cpu_order), o.has_worker_priority,
+      static_cast<hyle_thread_priority>(o.worker_priority));
   if (out != nullptr && !out->scheduler.valid()) {
     const bool unavailable = out->init_status.IsUnavailable();
     drop_handle(out);

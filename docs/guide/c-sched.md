@@ -39,6 +39,9 @@ static void add_one(void* p) {
 int main(void) {
   hyle_sched_options opts = hyle_sched_options_default();
   opts.num_workers = 0;                 /* 动态进程可用 CPU 数，不是整机总数 */
+  opts.worker_cpu_order = HYLE_CPU_ORDER_PERFORMANCE_FIRST; /* 少量 worker 先占强核 */
+  opts.has_worker_priority = 1;
+  opts.worker_priority = HYLE_THREAD_PRIORITY_HIGH; /* macOS: QoS 软偏好 */
   hyle_sched_scheduler* s = hyle_sched_scheduler_create(&opts);
   if (!s) return 1;
 
@@ -52,6 +55,14 @@ int main(void) {
 
 回调不得让异常越过 C 边界。外语绑定应在 trampoline 内捕获其语言异常并转成
 本语言的错误通道。
+
+`worker_cpu_order` 只是 worker pin 的顺序偏好，不减少可用 CPU。默认
+`HYLE_CPU_ORDER_OS_DEFAULT` 保持系统顺序；`PERFORMANCE_FIRST` 适合延迟/吞吐优先，
+`EFFICIENCY_FIRST` 适合后台或功耗敏感工作。平台无法可靠分类时两者都退化为 OS 顺序，
+不会用 CPU 编号猜核型。macOS 没有硬 affinity，强核软倾向应结合线程 QoS。
+设置 `has_worker_priority=1` 后，`worker_priority` 使用 platform 的五档
+`hyle_thread_priority`；默认 `has_worker_priority=0`，不会改变 OS 优先级。Linux 提升优先级
+可能需要额外权限，scheduler 的线程配置按 best-effort 处理。
 
 ## 2. 生命周期与优雅关闭
 

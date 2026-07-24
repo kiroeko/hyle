@@ -144,6 +144,37 @@ HYLE_PLATFORM_API const CacheInfo& cache_info() noexcept;
 HYLE_PLATFORM_API Result<std::size_t> available_cpu_ids(
     unsigned* dst, std::size_t cap) noexcept;
 
+// Per-CPU facts for the current process view. performance_rank is monotonic
+// only within this machine: larger means a stronger OS-reported CPU class, 0
+// means the OS did not provide a trustworthy CPU-id mapping. Kind is derived
+// from the available set: the highest known rank is kPerformance, lower known
+// ranks are kEfficiency, and rank 0 stays kUnknown.
+enum class CpuKind : std::uint32_t {
+  kUnknown = 0,
+  kEfficiency = 1,
+  kPerformance = 2,
+};
+
+struct CpuInfo {
+  unsigned id = 0;
+  unsigned performance_rank = 0;
+  CpuKind kind = CpuKind::kUnknown;
+};
+
+enum class CpuOrder : std::uint8_t {
+  kOsDefault = 0,
+  kPerformanceFirst = 1,
+  kEfficiencyFirst = 2,
+};
+
+// Same buffer-fill contract as available_cpu_ids(). The ordered overload keeps
+// all process-available CPUs, merely ordering known stronger/weaker classes
+// first. If ranks are unavailable it preserves the OS order instead of guessing.
+HYLE_PLATFORM_API Result<std::size_t> available_cpu_info(
+    CpuInfo* dst, std::size_t cap) noexcept;
+HYLE_PLATFORM_API Result<std::size_t> available_cpu_ids(
+    CpuOrder order, unsigned* dst, std::size_t cap) noexcept;
+
 // Common worker/shard sizing shape. Equivalent to a count-only ids query and
 // likewise dynamic; avoids making callers spell a dummy buffer-fill request.
 HYLE_PLATFORM_API Result<std::size_t> available_cpu_count() noexcept;

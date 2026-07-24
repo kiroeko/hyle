@@ -207,6 +207,8 @@ soft 建议，绝不影响正确性。Linux 用 madvise；Windows/macOS 匿名�
 | `hyle_cpu_topology_get` | 缓存的系统视图：`system_logical_cpus`、performance/efficiency CPU 数与 `is_hybrid` |
 | `hyle_cpu_available_count(out_count)` | 动态进程视图的 count-only 便利入口；创建 worker / 选择 shard 数优先用它 |
 | `hyle_cpu_available_ids(out_count, dst, cap)` | 动态进程视图；返回 Status，`*out_count` 是完整数量，最多写 cap 个可用于 thread affinity 的 id；`dst==NULL` 可只查数 |
+| `hyle_cpu_available_info(out_count, dst, cap)` | 每个可用 CPU 的 id、单机单调 `performance_rank` 与 `hyle_cpu_kind`；rank 0 = 未知 |
+| `hyle_cpu_available_ids_ordered(out_count, order, dst, cap)` | 保留全部可用 CPU，按 OS 默认/强核优先/能效核优先排列；未知时不猜 |
 
 拓扑只采用 OS/CPU 的明确分类（Windows `EfficiencyClass`、macOS
 `hw.perflevelN`、Linux `cpu_capacity`）。若平台没有可靠信息，会保守返回
@@ -217,6 +219,11 @@ soft 建议，绝不影响正确性。Linux 用 madvise；Windows/macOS 匿名�
 可用 id 是 `[0, count)`：Linux cpuset/affinity 可产生稀疏 id。该查询不缓存，以观察运行期
 限制变化；Linux 返回调用线程的 mask（其新建线程会继承）。它是初始化/重配控制面，不应在
 每 task 热路径重复调用。
+
+“优先”与“只允许”要分开：`HYLE_CPU_ORDER_PERFORMANCE_FIRST` 是软排序，不会丢掉能效核；
+硬限制时过滤 `HYLE_CPU_KIND_PERFORMANCE` 后传给 `hyle_thread_opts_set_affinity_cpus`。
+若 kind 全是 `UNKNOWN`，不能声称获得了强核集合。Windows rank 来自 `EfficiencyClass`，Linux
+只用内核 `cpu_capacity`；macOS 不提供可靠的 logical-id 硬绑映射，按线程 QoS 表达软偏好。
 
 ### 3.7 导出形态
 

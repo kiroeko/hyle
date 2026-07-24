@@ -833,6 +833,73 @@ hyle_status hyle_cpu_available_ids(size_t* out_count, unsigned* dst,
   return steal_status(hyle::Status::Ok());
 }
 
+hyle_status hyle_cpu_available_info(size_t* out_count, hyle_cpu_info* dst,
+                                    size_t cap) {
+  if (out_count == nullptr) {
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_cpu_available_info: out_count is NULL"));
+  }
+  *out_count = 0;
+  if (dst == nullptr) {
+    auto result = hyle::platform::available_cpu_info(nullptr, 0);
+    if (!result) return steal_status(std::move(result).error());
+    *out_count = *result;
+    return steal_status(hyle::Status::Ok());
+  }
+  for (unsigned attempt = 0; attempt < 4; ++attempt) {
+    auto count = hyle::platform::available_cpu_info(nullptr, 0);
+    if (!count) return steal_status(std::move(count).error());
+    const size_t temp_cap = cap < *count ? cap : *count;
+    hyle::platform::CpuInfo stack[128];
+    auto* temp = temp_cap <= 128
+                     ? stack
+                     : new (std::nothrow) hyle::platform::CpuInfo[temp_cap];
+    if (temp == nullptr) {
+      return steal_status(hyle::Status::ResourceExhausted(
+          "hyle_cpu_available_info: temporary allocation failed"));
+    }
+    auto result = hyle::platform::available_cpu_info(temp, temp_cap);
+    if (!result) {
+      if (temp != stack) delete[] temp;
+      return steal_status(std::move(result).error());
+    }
+    if (*result > *count && cap > *count) {
+      if (temp != stack) delete[] temp;
+      continue;
+    }
+    const size_t written = temp_cap < *result ? temp_cap : *result;
+    for (size_t i = 0; i < written; ++i) {
+      dst[i] = {temp[i].id, temp[i].performance_rank,
+                static_cast<uint32_t>(temp[i].kind)};
+    }
+    if (temp != stack) delete[] temp;
+    *out_count = *result;
+    return steal_status(hyle::Status::Ok());
+  }
+  return steal_status(hyle::Status::Unavailable(
+      "hyle_cpu_available_info: CPU set changed repeatedly"));
+}
+
+hyle_status hyle_cpu_available_ids_ordered(size_t* out_count,
+                                           hyle_cpu_order order,
+                                           unsigned* dst, size_t cap) {
+  if (out_count == nullptr) {
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_cpu_available_ids_ordered: out_count is NULL"));
+  }
+  *out_count = 0;
+  if (order < HYLE_CPU_ORDER_OS_DEFAULT ||
+      order > HYLE_CPU_ORDER_EFFICIENCY_FIRST) {
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_cpu_available_ids_ordered: order is invalid"));
+  }
+  auto result = hyle::platform::available_cpu_ids(
+      static_cast<hyle::platform::CpuOrder>(order), dst, cap);
+  if (!result) return steal_status(std::move(result).error());
+  *out_count = *result;
+  return steal_status(hyle::Status::Ok());
+}
+
 /* ---- v3: hugepage/THP + NUMA ------------------------------------------------ */
 
 size_t hyle_large_page_size(void) { return hyle::platform::large_page_size(); }

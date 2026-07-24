@@ -12,11 +12,13 @@
 // We compile it at the default baseline (no -mavx etc.), so the compiler cannot emit
 // anything beyond it here.
 
+#include <algorithm>
 #include <cerrno>
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <limits>
 #include <new>
 
@@ -636,6 +638,120 @@ Result<std::size_t> query_available_cpu_ids(unsigned* dst,
 #endif
 }
 
+void fill_cpu_performance_ranks(const unsigned* ids, std::size_t count,
+                                unsigned* ranks) noexcept {
+  std::memset(ranks, 0, count * sizeof(*ranks));
+#if defined(HYLE_OS_WINDOWS)
+  const std::size_t system_count = hardware_concurrency();
+  unsigned rank_stack[256]{};
+  unsigned* rank_by_id = system_count <= 256
+                             ? rank_stack
+                             : new (std::nothrow) unsigned[system_count]{};
+  if (rank_by_id == nullptr) return;
+
+  DWORD bytes = 0;
+  (void)::GetSystemCpuSetInformation(nullptr, 0, &bytes,
+                                     ::GetCurrentProcess(), 0);
+  unsigned char storage_stack[4096];
+  unsigned char* storage = bytes <= sizeof(storage_stack)
+                               ? storage_stack
+                               : new (std::nothrow) unsigned char[bytes];
+  if (bytes != 0 && storage != nullptr &&
+      ::GetSystemCpuSetInformation(
+          reinterpret_cast<PSYSTEM_CPU_SET_INFORMATION>(storage), bytes,
+          &bytes, ::GetCurrentProcess(), 0)) {
+    for (DWORD offset = 0; offset < bytes;) {
+      auto* info =
+          reinterpret_cast<PSYSTEM_CPU_SET_INFORMATION>(storage + offset);
+      if (info->Size == 0 || info->Size > bytes - offset) break;
+      if (info->Type == CpuSetInformation) {
+        const auto& set = info->CpuSet;
+        unsigned flat = set.LogicalProcessorIndex;
+        for (WORD group = 0; group < set.Group; ++group) {
+          flat += ::GetActiveProcessorCount(group);
+        }
+        if (flat < system_count) {
+          // Zero is the portable "unknown" sentinel, so shift Windows' native
+          // 0-based EfficiencyClass into a positive monotonic rank.
+          rank_by_id[flat] = static_cast<unsigned>(set.EfficiencyClass) + 1u;
+        }
+      }
+      offset += info->Size;
+    }
+    for (std::size_t i = 0; i < count; ++i) {
+      if (ids[i] < system_count) ranks[i] = rank_by_id[ids[i]];
+    }
+  }
+  if (storage != storage_stack) delete[] storage;
+  if (rank_by_id != rank_stack) delete[] rank_by_id;
+#elif defined(HYLE_OS_LINUX)
+  for (std::size_t i = 0; i < count; ++i) {
+    char path[96];
+    std::snprintf(path, sizeof(path),
+                  "/sys/devices/system/cpu/cpu%u/cpu_capacity", ids[i]);
+    (void)read_sysfs_unsigned(path, ranks[i]);
+  }
+#else
+  (void)ids;
+#endif
+}
+
+Result<std::size_t> query_available_cpu_info(CpuInfo* dst,
+                                             std::size_t cap) noexcept {
+  if (dst == nullptr) return query_available_cpu_ids(nullptr, 0);
+
+  for (unsigned attempt = 0; attempt < 4; ++attempt) {
+    auto count_result = query_available_cpu_ids(nullptr, 0);
+    if (!count_result) return std::unexpected(std::move(count_result).error());
+    const std::size_t capacity = *count_result;
+    if (capacity > (std::numeric_limits<std::size_t>::max() /
+                    (2u * sizeof(unsigned)))) {
+      return std::unexpected(
+          Status::OutOfRange("available CPU info count overflows storage"));
+    }
+
+    unsigned stack[512];
+    unsigned* storage = capacity <= 256
+                            ? stack
+                            : new (std::nothrow) unsigned[capacity * 2u];
+    if (storage == nullptr) {
+      return std::unexpected(Status::ResourceExhausted(
+          "available CPU info allocation failed"));
+    }
+    unsigned* ids = storage;
+    unsigned* ranks = storage + capacity;
+    auto filled = query_available_cpu_ids(ids, capacity);
+    if (!filled) {
+      if (storage != stack) delete[] storage;
+      return std::unexpected(std::move(filled).error());
+    }
+    if (*filled > capacity) {
+      if (storage != stack) delete[] storage;
+      continue;  // affinity expanded between the count and fill snapshots
+    }
+
+    const std::size_t count = *filled;
+    fill_cpu_performance_ranks(ids, count, ranks);
+    unsigned max_rank = 0;
+    for (std::size_t i = 0; i < count; ++i) {
+      if (ranks[i] > max_rank) max_rank = ranks[i];
+    }
+    const std::size_t written = std::min(cap, count);
+    for (std::size_t i = 0; i < written; ++i) {
+      dst[i].id = ids[i];
+      dst[i].performance_rank = ranks[i];
+      dst[i].kind = ranks[i] == 0
+                        ? CpuKind::kUnknown
+                        : (ranks[i] == max_rank ? CpuKind::kPerformance
+                                                : CpuKind::kEfficiency);
+    }
+    if (storage != stack) delete[] storage;
+    return count;
+  }
+  return std::unexpected(Status::Unavailable(
+      "available CPU info changed repeatedly during snapshot"));
+}
+
 CpuTopology detect_topology() noexcept {
   CpuTopology out;
   out.system_logical_cpus = hardware_concurrency();
@@ -769,6 +885,80 @@ const CacheInfo& cache_info() noexcept {
 Result<std::size_t> available_cpu_ids(unsigned* dst,
                                       std::size_t cap) noexcept {
   return query_available_cpu_ids(dst, cap);
+}
+
+Result<std::size_t> available_cpu_info(CpuInfo* dst,
+                                       std::size_t cap) noexcept {
+  return query_available_cpu_info(dst, cap);
+}
+
+Result<std::size_t> available_cpu_ids(CpuOrder order, unsigned* dst,
+                                      std::size_t cap) noexcept {
+  if (order == CpuOrder::kOsDefault) return query_available_cpu_ids(dst, cap);
+  if (order != CpuOrder::kPerformanceFirst &&
+      order != CpuOrder::kEfficiencyFirst) {
+    return std::unexpected(Status::InvalidArgument("CPU order is invalid"));
+  }
+  if (dst == nullptr) return query_available_cpu_ids(nullptr, 0);
+
+  for (unsigned attempt = 0; attempt < 4; ++attempt) {
+    auto count_result = query_available_cpu_info(nullptr, 0);
+    if (!count_result) return std::unexpected(std::move(count_result).error());
+    const std::size_t capacity = *count_result;
+    CpuInfo stack[256];
+    CpuInfo* infos = capacity <= 256
+                         ? stack
+                         : new (std::nothrow) CpuInfo[capacity];
+    if (infos == nullptr) {
+      return std::unexpected(Status::ResourceExhausted(
+          "ordered available CPU allocation failed"));
+    }
+    auto filled = query_available_cpu_info(infos, capacity);
+    if (!filled) {
+      if (infos != stack) delete[] infos;
+      return std::unexpected(std::move(filled).error());
+    }
+    if (*filled > capacity) {
+      if (infos != stack) delete[] infos;
+      continue;
+    }
+
+    const std::size_t count = *filled;
+    bool have_different_known_ranks = false;
+    bool have_unknown_rank = false;
+    unsigned first_rank = 0;
+    for (std::size_t i = 0; i < count; ++i) {
+      if (infos[i].performance_rank == 0) {
+        have_unknown_rank = true;
+        continue;
+      }
+      if (first_rank == 0) first_rank = infos[i].performance_rank;
+      if (infos[i].performance_rank != first_rank) {
+        have_different_known_ranks = true;
+      }
+    }
+    const bool have_known_rank = first_rank != 0;
+    if (have_different_known_ranks || (have_known_rank && have_unknown_rank)) {
+      std::sort(infos, infos + count, [order](const CpuInfo& a,
+                                             const CpuInfo& b) noexcept {
+        const bool a_known = a.performance_rank != 0;
+        const bool b_known = b.performance_rank != 0;
+        if (a_known != b_known) return a_known;  // unknown is never guessed first
+        if (a.performance_rank != b.performance_rank) {
+          return order == CpuOrder::kPerformanceFirst
+                     ? a.performance_rank > b.performance_rank
+                     : a.performance_rank < b.performance_rank;
+        }
+        return a.id < b.id;
+      });
+    }
+    const std::size_t written = std::min(cap, count);
+    for (std::size_t i = 0; i < written; ++i) dst[i] = infos[i].id;
+    if (infos != stack) delete[] infos;
+    return count;
+  }
+  return std::unexpected(Status::Unavailable(
+      "available CPU order changed repeatedly during snapshot"));
 }
 
 Result<std::size_t> available_cpu_count() noexcept {

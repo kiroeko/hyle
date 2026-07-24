@@ -8,10 +8,12 @@
 
 #include <algorithm>
 #include <cstring>
+#include <limits>
 #include <vector>
 
 #if defined(_WIN32)
 #  define WIN32_LEAN_AND_MEAN
+#  define NOMINMAX
 #  include <windows.h>
 #elif defined(__linux__)
 #  include <sched.h>
@@ -24,6 +26,9 @@ using hyle::platform::cache_line_size;
 using hyle::platform::cache_info;
 using hyle::platform::cpu_topology;
 using hyle::platform::cpu_features;
+using hyle::platform::CpuInfo;
+using hyle::platform::CpuKind;
+using hyle::platform::CpuOrder;
 using hyle::platform::CpuFeatures;
 using hyle::platform::Isa;
 using hyle::platform::isa_name;
@@ -87,6 +92,98 @@ TEST(Cpu, AvailableCpuIdsRespectBufferFillAndAreUnique) {
   ASSERT_EQ(*filled, ids.size());
   std::sort(ids.begin(), ids.end());
   EXPECT_EQ(std::adjacent_find(ids.begin(), ids.end()), ids.end());
+}
+
+TEST(Cpu, AvailableCpuInfoMatchesIdsAndClassifiesKnownRanks) {
+  auto count = hyle::platform::available_cpu_info(nullptr, 0);
+  ASSERT_TRUE(count.has_value()) << count.error().message();
+  std::vector<CpuInfo> info(*count);
+  auto filled = hyle::platform::available_cpu_info(info.data(), info.size());
+  ASSERT_TRUE(filled.has_value()) << filled.error().message();
+  ASSERT_EQ(*filled, info.size());
+
+  std::vector<unsigned> ids(*count);
+  ASSERT_TRUE(available_cpu_ids(ids.data(), ids.size()).has_value());
+  for (std::size_t i = 0; i < info.size(); ++i) EXPECT_EQ(info[i].id, ids[i]);
+
+  unsigned max_rank = 0;
+  for (const auto& cpu : info) max_rank = std::max(max_rank, cpu.performance_rank);
+  for (const auto& cpu : info) {
+    if (cpu.performance_rank == 0) {
+      EXPECT_EQ(cpu.kind, CpuKind::kUnknown);
+    } else if (cpu.performance_rank == max_rank) {
+      EXPECT_EQ(cpu.kind, CpuKind::kPerformance);
+    } else {
+      EXPECT_EQ(cpu.kind, CpuKind::kEfficiency);
+    }
+  }
+#if defined(__APPLE__)
+  EXPECT_TRUE(std::all_of(info.begin(), info.end(), [](const CpuInfo& cpu) {
+    return cpu.performance_rank == 0 && cpu.kind == CpuKind::kUnknown;
+  }));
+#endif
+}
+
+TEST(Cpu, OrderedAvailableIdsPreferKnownRanksWithoutDroppingCpus) {
+  auto count = available_cpu_ids(nullptr, 0);
+  ASSERT_TRUE(count.has_value()) << count.error().message();
+  std::vector<CpuInfo> info(*count);
+  ASSERT_TRUE(hyle::platform::available_cpu_info(info.data(), info.size()));
+  std::vector<unsigned> natural(*count), performance(*count), efficiency(*count);
+  ASSERT_TRUE(available_cpu_ids(natural.data(), natural.size()));
+  ASSERT_TRUE(available_cpu_ids(CpuOrder::kPerformanceFirst,
+                                performance.data(), performance.size()));
+  ASSERT_TRUE(available_cpu_ids(CpuOrder::kEfficiencyFirst,
+                                efficiency.data(), efficiency.size()));
+
+  auto sorted_natural = natural;
+  auto sorted_performance = performance;
+  auto sorted_efficiency = efficiency;
+  std::sort(sorted_natural.begin(), sorted_natural.end());
+  std::sort(sorted_performance.begin(), sorted_performance.end());
+  std::sort(sorted_efficiency.begin(), sorted_efficiency.end());
+  EXPECT_EQ(sorted_performance, sorted_natural);
+  EXPECT_EQ(sorted_efficiency, sorted_natural);
+
+  auto rank_of = [&info](unsigned id) {
+    auto found = std::find_if(info.begin(), info.end(),
+                              [id](const CpuInfo& cpu) { return cpu.id == id; });
+    return found == info.end() ? 0u : found->performance_rank;
+  };
+  bool unknown_seen = false;
+  unsigned previous = std::numeric_limits<unsigned>::max();
+  for (unsigned id : performance) {
+    const unsigned rank = rank_of(id);
+    if (rank == 0) unknown_seen = true;
+    else {
+      EXPECT_FALSE(unknown_seen);
+      EXPECT_LE(rank, previous);
+      previous = rank;
+    }
+  }
+  unknown_seen = false;
+  previous = 0;
+  for (unsigned id : efficiency) {
+    const unsigned rank = rank_of(id);
+    if (rank == 0) unknown_seen = true;
+    else {
+      EXPECT_FALSE(unknown_seen);
+      EXPECT_GE(rank, previous);
+      previous = rank;
+    }
+  }
+
+  const bool all_unknown = std::all_of(info.begin(), info.end(),
+                                       [](const CpuInfo& cpu) {
+                                         return cpu.performance_rank == 0;
+                                       });
+  if (all_unknown) {
+    EXPECT_EQ(performance, natural);
+    EXPECT_EQ(efficiency, natural);
+  }
+  auto invalid = available_cpu_ids(static_cast<CpuOrder>(255), nullptr, 0);
+  ASSERT_FALSE(invalid.has_value());
+  EXPECT_TRUE(invalid.error().IsInvalidArgument());
 }
 
 TEST(Cpu, AvailableCpuIdsTracksRuntimeAffinityChange) {

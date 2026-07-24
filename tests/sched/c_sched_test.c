@@ -183,6 +183,8 @@ int main(void) {
   hyle_sched_scheduler_destroy(prefix_scheduler);
 
   hyle_sched_options automatic = HYLE_SCHED_OPTIONS_INIT;
+  CHECK(automatic.worker_cpu_order == HYLE_CPU_ORDER_OS_DEFAULT);
+  CHECK(automatic.has_worker_priority == 0);
   {
     size_t available = 0;
     CHECK(status_ok(hyle_cpu_available_count(&available)));
@@ -244,9 +246,23 @@ int main(void) {
   CHECK(hyle_sched_last_error() != NULL);
   CHECK(strlen(hyle_sched_last_error()) != 0);
 
+  invalid = hyle_sched_options_default();
+  invalid.num_workers = 1;
+  invalid.worker_cpu_order = 99;
+  CHECK(hyle_sched_scheduler_create(&invalid) == NULL);
+  CHECK(strlen(hyle_sched_last_error()) != 0);
+
+  invalid = hyle_sched_options_default();
+  invalid.has_worker_priority = 2;
+  CHECK(hyle_sched_scheduler_create(&invalid) == NULL);
+  CHECK(strlen(hyle_sched_last_error()) != 0);
+
   hyle_sched_options options = hyle_sched_options_default();
   options.num_workers = 2;
   options.queue_capacity = 256;
+  options.worker_cpu_order = HYLE_CPU_ORDER_PERFORMANCE_FIRST;
+  options.has_worker_priority = 1;
+  options.worker_priority = HYLE_THREAD_PRIORITY_HIGH;
   hyle_sched_scheduler* scheduler = hyle_sched_scheduler_create(&options);
   CHECK(scheduler != NULL);
   CHECK(hyle_sched_num_workers(scheduler) == 2);

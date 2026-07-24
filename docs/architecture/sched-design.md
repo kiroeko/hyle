@@ -96,6 +96,13 @@ sched 的 deadline/超时只需要三样，先钉这个最小面，full timer �
 | **steal 协议** | 本地空 → 随机选 victim 偷一半;**且每 61 次 find_task 先查 global 一次**(`kGlobalQueueInterval`,tokio 同款质数)防本地 firehose 饿死全局注入 | Tokio 实证:纯偷会饿死 global,需周期查。**固定 61 非 EWMA 自调**:tokio 的 EWMA 自调(200µs/均值、clamp 2-127)只对超长 poll workload 有意义,固定质数已堵住饥饿洞(=正确性点);饥饿真实存在——探针实证 1-worker yield-hog 转 1700 万次而全局 victim 从未运行,加周期查后 49ms 内跑 |
 
 **调度循环（每个 worker 线程,实际 find_task 顺序）**：
+
+> **worker 选核边界（2026-07-24）**：scheduler 默认按 platform 返回的 OS 可用 CPU 顺序
+> pin worker；用户可通过 `SchedulerOptions::worker_cpu_order` 显式选择 performance-first 或
+> efficiency-first。该偏好只重排完整可用集合，不减少 worker 可用核；能力未知时保持 OS 顺序。
+> platform 负责可信的逐 CPU 事实，sched 负责 placement，避免在调度器里根据 CPU id/频率猜
+> 大小核。独立的 `worker_priority` 把 OS priority/QoS 传入 worker 创建；macOS 无可靠逻辑 id
+> 映射时，它是可执行的强核软偏好。两个选项均为 opt-in，默认不改变 OS 策略。
 ```
 loop:
   f = pinned.pop()                    // 0. 钉在本核的 fiber(shard-per-core io),永不被偷,io 延迟优先

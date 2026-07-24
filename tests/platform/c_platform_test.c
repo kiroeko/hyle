@@ -632,6 +632,22 @@ int main(void) {
           HYLE_STATUS_INVALID_ARGUMENT);
     CHECK(status_ok(hyle_cpu_available_ids(&available, &first, 1)));
     CHECK(available >= 1u && first != ~0u);
+    {
+      hyle_cpu_info info = {0, 0, HYLE_CPU_KIND_UNKNOWN};
+      size_t info_count = 0;
+      CHECK(status_ok(hyle_cpu_available_info(&info_count, &info, 1)));
+      CHECK(info_count == available && info.id == first);
+      CHECK(info.kind <= HYLE_CPU_KIND_PERFORMANCE);
+
+      unsigned preferred = ~0u;
+      size_t ordered_count = 0;
+      CHECK(status_ok(hyle_cpu_available_ids_ordered(
+          &ordered_count, HYLE_CPU_ORDER_PERFORMANCE_FIRST, &preferred, 1)));
+      CHECK(ordered_count == available && preferred != ~0u);
+      CHECK(status_code(hyle_cpu_available_ids_ordered(
+                &ordered_count, (hyle_cpu_order)99, &preferred, 1)) ==
+            HYLE_STATUS_INVALID_ARGUMENT);
+    }
   }
   {
     hyle_isa isa = HYLE_ISA_SCALAR;      /* named enums usable as types */

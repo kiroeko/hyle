@@ -362,6 +362,8 @@ struct Scheduler::Impl {
   Scheduler* owner;  // for tls_owner / current_waker()
 
   Impl(unsigned num_workers, mem::Allocator alloc, std::size_t cap,
+       platform::CpuOrder cpu_order,
+       std::optional<platform::ThreadPriority> worker_priority,
        Scheduler* sched)
       : global(alloc, num_workers, cap),
         inline_jobs(alloc, num_workers, cap < 256 ? cap : 256),
@@ -395,8 +397,8 @@ struct Scheduler::Impl {
     // sparse (for example {4, 6}); Windows ids flatten processor groups. Keep
     // placement a sched policy, but consume the platform process view exactly.
     std::vector<unsigned> available_cpus(num_workers);
-    auto available = platform::available_cpu_ids(available_cpus.data(),
-                                                  available_cpus.size());
+    auto available = platform::available_cpu_ids(
+        cpu_order, available_cpus.data(), available_cpus.size());
     const std::size_t pin_count =
         available ? std::min<std::size_t>(*available, available_cpus.size()) : 0;
     for (unsigned i = 0; i < num_workers; ++i) {
@@ -406,6 +408,7 @@ struct Scheduler::Impl {
       // runtime affinity change cannot make the scheduler unusable.
       platform::ThreadOpts opts;
       if (i < pin_count) opts.affinity = available_cpus[i];
+      opts.priority = worker_priority;
       char wname[24];
       std::snprintf(wname, sizeof(wname), "hyle-wkr-%u", i);
       opts.name = wname;  // string_view; spawn() copies it synchronously (make_start)
@@ -1208,7 +1211,17 @@ Scheduler::Scheduler(unsigned num_workers, mem::Allocator alloc,
                      std::size_t queue_capacity)
     : impl_(nullptr) {
   Status status;
-  init_(num_workers, alloc, queue_capacity, &status);
+  init_(num_workers, alloc, queue_capacity, {}, &status);
+  HYLE_FATAL_ASSERT(status.ok() &&
+                    "scheduler construction failed; use the Status overload "
+                    "when resource failure is recoverable");
+}
+
+Scheduler::Scheduler(unsigned num_workers, mem::Allocator alloc,
+                     std::size_t queue_capacity, SchedulerOptions options)
+    : impl_(nullptr) {
+  Status status;
+  init_(num_workers, alloc, queue_capacity, options, &status);
   HYLE_FATAL_ASSERT(status.ok() &&
                     "scheduler construction failed; use the Status overload "
                     "when resource failure is recoverable");
@@ -1218,11 +1231,20 @@ Scheduler::Scheduler(unsigned num_workers, mem::Allocator alloc,
                      std::size_t queue_capacity, Status* status) noexcept
     : impl_(nullptr) {
   HYLE_FATAL_ASSERT(status != nullptr);
-  init_(num_workers, alloc, queue_capacity, status);
+  init_(num_workers, alloc, queue_capacity, {}, status);
+}
+
+Scheduler::Scheduler(unsigned num_workers, mem::Allocator alloc,
+                     std::size_t queue_capacity, SchedulerOptions options,
+                     Status* status) noexcept
+    : impl_(nullptr) {
+  HYLE_FATAL_ASSERT(status != nullptr);
+  init_(num_workers, alloc, queue_capacity, options, status);
 }
 
 void Scheduler::init_(unsigned num_workers, mem::Allocator alloc,
-                      std::size_t queue_capacity, Status* status) noexcept {
+                      std::size_t queue_capacity, SchedulerOptions options,
+                      Status* status) noexcept {
   *status = Status{};
   if (!alloc.valid()) {
     *status = Status::InvalidArgument(
@@ -1234,6 +1256,18 @@ void Scheduler::init_(unsigned num_workers, mem::Allocator alloc,
         "scheduler worker count must be in [1, 1024]");
     return;
   }
+  if (options.worker_cpu_order != platform::CpuOrder::kOsDefault &&
+      options.worker_cpu_order != platform::CpuOrder::kPerformanceFirst &&
+      options.worker_cpu_order != platform::CpuOrder::kEfficiencyFirst) {
+    *status = Status::InvalidArgument("scheduler worker CPU order is invalid");
+    return;
+  }
+  if (options.worker_priority &&
+      (*options.worker_priority < platform::ThreadPriority::kLowest ||
+       *options.worker_priority > platform::ThreadPriority::kHighest)) {
+    *status = Status::InvalidArgument("scheduler worker priority is invalid");
+    return;
+  }
   if (queue_capacity < 2 || queue_capacity > (std::size_t{1} << 31) ||
       !std::has_single_bit(queue_capacity)) {
     *status = Status::InvalidArgument(
@@ -1242,7 +1276,9 @@ void Scheduler::init_(unsigned num_workers, mem::Allocator alloc,
   }
   try {
     Impl* candidate =
-        new (std::nothrow) Impl(num_workers, alloc, queue_capacity, this);
+        new (std::nothrow) Impl(num_workers, alloc, queue_capacity,
+                                options.worker_cpu_order,
+                                options.worker_priority, this);
     if (candidate == nullptr) {
       *status = Status::ResourceExhausted(
           "scheduler implementation allocation failed");

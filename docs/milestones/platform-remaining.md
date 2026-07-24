@@ -30,7 +30,7 @@
 - 无可信数据时返回：
   `performance_cpus=system_logical_cpus, efficiency_cpus=0, hybrid=false`。
   这是“无法确认异构”，不是宣称物理上一定同构；不使用最大频率猜测。
-- 当前只提供聚合计数，不提供逐 CPU 类型数组。
+- 聚合视图仍用于容量展示；逐 CPU 的可调度事实由 A7 的动态进程视图提供。
 
 ### A3. C wrapper 共享错误
 
@@ -64,6 +64,21 @@ error 的统一所有权释放；platform 不再保留私有 last-error。
 - Linux 动态 mask 精确允许集合内迁移；Windows 硬 mask 要求集合位于同一 processor group；
   macOS 继续诚实返回不支持。one-of/轮转/超订仍属于 sched placement 策略。
 
+### A7. 逐 CPU 性能能力与强核优先（2026-07-24）
+
+- `available_cpu_info()` 返回当前进程可用 CPU 的真实 id、单机内单调的
+  `performance_rank` 与 `CpuKind`；C ABI 等价覆盖。rank 0 明确表示未知。
+- Windows 只信任 CPU Set `EfficiencyClass`，Linux 只信任内核导出的
+  `cpu_capacity`；不根据逻辑 id 或瞬时/最大频率猜测。macOS 无公开的逻辑 CPU 到
+  perflevel 稳定映射，因此逐 CPU 保持 unknown，软偏好使用已有 QoS priority。
+- `available_cpu_ids(CpuOrder, ...)` 保留所有可用 CPU，只改变已知能力的选择顺序；未知
+  能力不会被猜成强核。默认重载继续保持 OS 顺序与原有零额外探测路径。
+- sched 通过 `SchedulerOptions::worker_cpu_order` 显式消费该顺序。默认不替用户改变功耗/
+  调度策略；用户选择 performance-first 时，少量 worker 会先占已知强核。需要“只用强核”
+  的硬约束时，先过滤 `CpuInfo::kind`，再传给 `CpuAffinity`。
+- `SchedulerOptions::worker_priority` / C ABI 对等字段把 worker 的 OS priority/QoS 公开为
+  独立 opt-in；这是 macOS 无硬 affinity 时可执行的强核软偏好，不把 QoS 偷塞进 CPU 排序。
+
 ### B1. macOS parker timeout
 
 `Parker.ParkTimeoutReturnsFalseOnTimeout` 直接测量 20 ms 无唤醒等待：
@@ -87,8 +102,8 @@ macOS 真机通过，确认 `os_sync_wait_on_address_with_timeout` 当前参数�
 
 ## 有意保留
 
-- cache associativity、每级 line size、逐 CPU P/E 类型数组：当前消费者只需要容量、
-  false-sharing line、可信的系统 P/E 聚合和独立的进程可用 CPU id；不从聚合值猜 worker 数。
+- cache associativity、每级 line size：当前消费者只需要容量、false-sharing line、可信的
+  系统 P/E 聚合和独立的进程可用 CPU 能力；不从聚合值猜 worker 数或单核类型。
 - Linux 不依据 cpufreq 猜 P/E；若内核不导出 scheduler capacity，则保持
   unknown/homogeneous fallback。
 - platform C ABI 已覆盖 wait/Parker、Thread、DynLib、VM/VmRegion、

@@ -138,6 +138,24 @@ logical CPU id 数组，避免泄漏 `cpu_set_t`/`GROUP_AFFINITY`；Windows 对�
 集合明确拒绝，与 marl 的硬 mask 限制一致，不用 CPU Sets 的软选择假装严格约束。单核仍是
 便利形状；默认无 affinity 和单核路径都只有既有的一次启动载荷分配。
 
+### 2026-07-24 强核优先是初始化控制面，不是任务热路径
+
+`available_cpu_info()` 把 oneTBB `core_type` / hwloc `cpukinds` 同类的“拓扑事实”留在
+platform；`SchedulerOptions::worker_cpu_order` 才是 sched 的 opt-in placement 策略。默认
+`available_cpu_ids()` 仍直接走旧查询，不读性能能力、不排序。performance/efficiency-first
+保留所有 CPU：Windows 扫一次 CPU Set 记录，Linux 对当前可用 id 读取 `cpu_capacity`，之后
+只在已知 rank 确有差异或已知/未知混合时做 O(N log N) 排序；同质或全未知机器保持 OS 顺序。
+常见 ≤256 CPU 使用栈数组，超大机器才有一次临时 heap allocation。
+
+这条路径只在 scheduler 构造或用户显式查询时发生，不进入 task submit/steal/dispatch 热路，
+因此新增纳秒 microbenchmark 会主要测 sysfs/Windows 拓扑枚举并扭曲 API。验收锁住可观察行为：
+Windows 与 WSL/Linux 用单 worker performance-first scheduler，worker 实际运行 CPU 必须等于
+排序结果的第一个 id；纯 C 同时覆盖 buffer-fill、无效 enum 与 fallback。Apple M4 因系统不
+公开稳定的 logical-id→perflevel 映射而返回 unknown、保持 OS 顺序；想表达软强核偏好的用户
+使用 `SchedulerOptions::worker_priority = ThreadPriority::kHigh`（QoS），不伪造硬 pin。
+priority 只在线程创建时写入 `ThreadOpts`，不进入任务热路。性能结论是默认路径无回归，
+opt-in 初始化路径与原生能力查询同阶；它不宣称改变 OS 最终调度质量。
+
 ## 非 SOTA / 需诚实标价
 
 ### 1. staged VM 对 raw 一步分配的旧“输”不是同合同对比
