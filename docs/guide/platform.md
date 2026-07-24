@@ -75,7 +75,9 @@ HYLE_RETURN_IF_ERROR(file.close());
 
 read 返回 0 才是 EOF；read/write 返回短计数仍是成功。`MappedFile` 适合映射本身带来价值的
 场景，例如大模型权重、随机访问、共享页和 COW；不要假设 64 KiB 顺序全扫也会比缓冲 read
-快。stat/size/权限/symlink 和所有 path 变更都返回 Result/Status：不存在、空文件/0000 权限、
+快。默认优先使用返回 `Result<size_t>` 的安全 read/write；只有 profile 已确认这层成为瓶颈，
+才借 `FileHandle::get()` 调 native I/O。`get()` 不转移所有权，不得关闭借出的 raw handle；
+需要转移时使用 `release()`。stat/size/权限/symlink 和所有 path 变更都返回 Result/Status：不存在、空文件/0000 权限、
 visitor 提前停止不再共享一个 0。跨平台代码优先 `is_readonly/set_readonly`，不要把 Windows
 合成的 POSIX mode 当真实 ACL。cwd/temp/home/env 同样返回 `Result<size_t>`：值是完整长度，
 可先用 `dst=nullptr` 查询；环境变量未设置是 `NotFound`，已设置为空是成功的 0。

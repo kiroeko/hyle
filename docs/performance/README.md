@@ -10,7 +10,7 @@
 |---|---|
 | 本页（对标总账） | 全模块 win/loss ledger 一览 + 总账小结（最常看的一张表） |
 | [error 实测](./benchmarks-error.md) | **error 2026-07-24 当前接口三平台 n=15 冻结证书**（核心与正常路径分离，当前同形项无 LOSE） |
-| [platform 实测](./benchmarks-platform.md) | **platform 2026-07-20 证书**（Parker/Thread/dir/vm/MappedFile；OS 段 n=15 Win/M4、WSL n=5） |
+| [platform 实测](./benchmarks-platform.md) | **platform 2026-07-24 当前证书**（Parker/Thread/dir/vm/FileHandle/MappedFile；文件与 zero-timeout 三平台 n=15） |
 | [time 实测](./benchmarks-time.md) | **time 2026-07-19 三平台证书**（clock / TimerWheel / CommonTimeoutQueue） |
 | [mem 实测](./benchmarks-mem.md) | **mem 2026-07-23 证书**：MEM-FINAL-2 bump/realloc/adapter/scheduler-owned FiberStackPool 绑定 clean `2cbc307`，Win/Linux `n=15`、M4 `n=31`（bump/fiber 双 QoS）；另含 Region HTTP lifecycle/RSS、hard core/显式 cache、external FixedPool、request latency/footprint/fragmentation raw CSV |
 | [container 实测](./benchmarks-container.md) | **container 导航证书**：新鲜度、非 SOTA、选型；详表 → [benchmarks-mem-container.md](./benchmarks-mem-container.md) |
@@ -55,11 +55,14 @@
 | **math** tanh(best-of-breed→xsimd) | 0.44 | libm scalar | 6.3–8.7 | 14–20x | Highway / xsimd | 0.54/0.45 | 1.22x/1.0x | ✅平 xsimd、反超 Highway(双平台一致) |
 | **platform** Parker ping-pong(真阻塞) | 341/22.5k/2053(Win/Lin/M4) | std::condition_variable | 638/23.5k/2130 | **1.75x/1.05x/1.05x** | (std CV 即实用标尺) | 同左 | 同左 | ⚠️**平台翻转**(Win 大赢;Lin/M4 平或微赢)。旧 2.99x 作废。见 [platform](./benchmarks-platform.md) |
 | **platform** Thread spawn+join | 43.4k/33.6k/10.6k | std::thread | 44.4k/33.6k/10.7k | ~1.0x 三平台 | std::thread(即 SOTA) | 同左 | ~1.0x | ➖平(OS 主导,证零封装税) |
-| **platform** directory_iterate visitor | 40.23k/6.5k/16.5k | std::filesystem | 39.76k/13.7k/18.4k | **0.981/2.15/1.12x** | filesystem | 同左 | 同左 | ⚠️当前 Win n=15 平；Lin/M4 旧证赢，待新接口真机复跑 |
-| **platform** vm_reserve+commit vs raw 一步 | 1144/1075/846 | raw 一步分配 | 877/848/332 | **0.77/0.78/0.39x** | raw 一步 | 同左 | 同左 | ❌**by-design 两步**输一步 raw;非漏优化 |
-| **platform** MappedFile vs ifstream | 43.7k/12.7k/14.1k | ifstream 拷贝 | 62.3k/**8.7k**/21.7k | **1.39/0.68/1.53x** | — | — | — | ⚠️**平台翻转**(Win/M4 赢;Linux 64KiB ifstream 更快) |
-| **platform** MappedFile vs raw mmap | 43.7k/12.7k/14.1k | raw mmap | 42.0k/12.2k/13.7k | **0.96/0.96/0.97x** | raw 地板 | 同左 | ~平 | ➖近地板(~3–4% 封装税) |
-| **platform** Parker 快路径 / park_timeout(0) | 9.7·3740 / 10.6·59k / 2.0·3.7 ns | (无公平对手) | n/a | n/a | atomic floor 非对等 | n/a | n/a | ➖快路径绝对值;0-timeout **平台极差** |
+| **platform** directory_iterate visitor | 40.23k/7.05k/16.46k | std::filesystem | 39.76k/14.97k/18.25k | **0.981/2.135/1.109x** | filesystem | 同左 | 同左 | ⚠️当前三平台证书：Win TIE，Linux/M4 WIN |
+| **platform** vm_allocate_rw vs raw 一步 | 885/860.9/309.8 | raw 一步分配 | 880/853.8/305.0 | **0.987/0.978/0.982x** | raw 一步 | 同左 | 同左 | ➖三平台 TIE，普通 VM 形状近 OS 地板 |
+| **platform** vm_reserve+commit vs raw 一步 | 1144/1086.3/720.5 | raw 一步分配 | 877/853.8/305.0 | **0.77/0.779/0.421x** | raw 一步 | 同左 | 同左 | ❌**by-design 两步**输一步 raw；购买 staged commit，非漏优化 |
+| **platform** MappedFile 64KiB vs ifstream | 45.05k/11.48k/13.31k | ifstream 拷贝 | 79.42k/**8.72k**/20.11k | **1.76/0.76/1.51x** | 使用形状标尺 | 同左 | 同左 | ⚠️Win/M4 赢；Linux 小顺扫应选 buffered read |
+| **platform** MappedFile vs 同合同 raw mmap | 45.05k/11.48k/13.31k | raw validated mmap | 44.77k/11.22k/13.15k | **0.992/0.982/0.992x** | raw 地板 | 同左 | ≤1.8% | ➖Win/M4 TIE；WSL sign 输 1.8%，完整 Result/RAII 接近地板 |
+| **platform** FileHandle vs raw open/read/close | 34.41k/7.64k/11.90k | raw OS | 35.01k/7.49k/11.62k | **1.006/0.976/0.978x** | raw 地板 | 同左 | ≤2.4% | ➖Win TIE；POSIX 安全便利路径付 2.2–2.4%，`get()` 保留 hard escape |
+| **platform** persistent MappedFile 随机页访问 | 2.309/2.532/0.647 | ifstream seek/read | 2585.7/420.5/1527.9 | **1125/168/2355x** | page-cache random access | 同左 | 同左 | ✅真实 mapping 甜点三平台大赢 |
+| **platform** Parker token / `park_timeout(0)` | 9.215·1.690 / 9.818·0.564 / 1.850·1.346 ns | (无公平对手) | n/a | n/a | atomic floor 非对等 | n/a | n/a | ✅zero-timeout 纯 load；旧 µs 级路径作废 |
 | **time** realtime_ns | 14.68 | std::chrono::system_clock | 14.76 | 1.0x | std::chrono(即标尺,同 OS 原语) | 14.76 | 1.0x | ➖平 |
 | **time** monotonic_ns | 13.22/13.07/12.93(Win/Lin/M4) | std::chrono::steady_clock | 13.30/13.07/12.88 | 全部统计平 | std::chrono(即标尺,同 OS 原语) | 同左 | 1.0x | ➖header-inline 后三平台与 std 同档 |
 | **time** fast_monotonic_ns(opt-in rdtsc) | 7.37/7.13/12.93 | HYLE monotonic_ns | 13.22/13.07/12.93 | 1.79x/1.84x/1.0x | (std 无 opt-in TSC 钟) | n/a | n/a | ✅x86 快约1.8x；M4 透明回退(非默认,可能跳变) |

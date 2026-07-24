@@ -3,8 +3,9 @@
 > 本页是 [performance 总账](./README.md) 的 **platform 模块**详节。  
 > 源：`bench/platform/platform_bench.cc` → `hyle_platform_bench`。  
 > 方法：`scripts/bench-stat.py`，信任 **[sign] 配对符号检验**。  
-> **2026-07-20 重测**：Win MSVC 19.50 / Apple M4 AppleClang 21 均为 **n=15**；  
-> WSL GCC 14.2 **n=5**（修 bench 墙钟后；n=5 时 sign p 门 0.01 常达不到，方向看 med ratio + 5/5 一致性）。  
+> **2026-07-24 当前 SOTA 修正（实现 `75f3a45`）**：Win MSVC 19.50、WSL GCC 14.2、
+> Apple M4 AppleClang 21 的 zero-timeout、MappedFile、FileHandle 与持久随机访问均为
+> **n=15**；其它 OS 阻塞段沿用下文标明的新鲜证书。
 > 旧 2026-06-30 双平台证书作废（源码 7 月大幅改过）。  
 > sched 同步/fiber 不在本页 → [benchmarks-sched.md](./benchmarks-sched.md)。
 
@@ -12,7 +13,7 @@
 
 | 段 | 问题 | 处置 |
 |---|---|---|
-| `park_timeout(0)` × 100k × 多 epoch | 每次真进内核（Win ~µs，Linux futex ETIMEDOUT ~数十 µs）；WSL 单遍曾 **70s+**，n=15 小时级 | kIters **100k→500**；文档只报数量级 |
+| 旧 `park_timeout(0)` × 100k × 多 epoch | 旧实现每次真进内核（Win ~µs，Linux futex ETIMEDOUT ~数十 µs）；WSL 单遍曾 **70s+** | `75f3a45` 改纯用户态 load，恢复 100k iterations；三平台 n=15 见总表 |
 | raw-wait 乒乓 `minEpochIterations(30)` | Linux ~20µs/round × 20k × 30 epoch → 单段数分钟 | minEpoch **30→5** |
 | 双份阻塞乒乓（vs CV + vs raw） | 同形状跑两遍 | 保留（语义不同），接受 WSL n=5 |
 
@@ -30,10 +31,12 @@
 | **vm_allocate_rw+release** vs raw 一步 | 885 / 880 → **TIE**（n=5） | 860.9 / 853.8 → **TIE 0.978x**（n=5） | 309.8 / 305.0 → **TIE 0.982x**（n=5） | ➖ 三平台当前正常用户形状近 OS 地板 |
 | **vm_reserve+commit+release** vs raw 一步 | 1144 / 877 → **sign LOSE 0.77x** | 1086.3 / 853.8 → **0.779x 方向**（n=5） | 720.5 / 305.0 → **spread LOSE 0.421x**（n=5） | ❌ **契约差**：两步 vs 一步；见下 |
 | **vm_protect** vs raw | 446 / 428 → **sign LOSE 0.96x** | 390.0 / 383.6 → **TIE 0.957x**（n=5） | 675.7 / 693.8 → **paired TIE 0.996x**（n=5） | ➖ 近平；小封装税 |
-| **MappedFile** vs ifstream | 43.7k / 62.3k → **sign WIN 1.39x** | 10.63k / **7.97k → LOSE 0.745x**（n=15） | 13.32k / 19.89k → **WIN 1.492x**（n=15） | ⚠️ **平台翻转**：Win/M4 赢拷贝路径；**Linux 64KiB ifstream 更快** |
-| **MappedFile** vs raw mmap | 43.7k / 42.0k → **sign LOSE 0.96x** | 10.63k / 10.36k → **TIE 0.976x**（n=15） | 13.32k / 12.84k → **sign LOSE 0.968x**（n=15） | ➖ 近地板，~2–4% 封装税 |
-| **park_timeout 快路径** | 9.2 ns | 10.6 ns | 1.95 ns | ➖ 与 park 快路径同档 |
-| **park_timeout(0) 轮询** | ~3740 ns | **~59k ns** | **3.7 ns** | ⚠️ **极端平台差**：Mac 近免费；Win µs；Linux ~60µs |
+| **MappedFile** vs ifstream（64 KiB 打开+全扫） | 45.048k / 79.425k → **WIN 1.763x** | 11.479k / **8.723k → LOSE 0.760x** | 13.314k / 20.111k → **WIN 1.510x** | ⚠️ **选型翻转**：Win/M4 赢；Linux 小文件顺扫用 buffered read |
+| **MappedFile** vs 同合同 raw mmap | 45.048k / 44.766k → **TIE 0.992x** | 11.479k / 11.219k → **sign LOSE 0.982x** | 13.314k / 13.146k → **TIE 0.992x** | ➖ 同样 UTF/path、size/range 验证后距地板 ≤1.8% |
+| **FileHandle** vs raw open/read/close | 34.414k / 35.006k → **TIE 1.006x** | 7.641k / 7.486k → **sign LOSE 0.976x** | 11.904k / 11.620k → **sign LOSE 0.978x** | ➖ 安全 Result/RAII 路径距裸地板 ≤2.4%；极端路径可借 `get()` |
+| **持久 MappedFile 随机页访问** vs ifstream seek/read | 2.309 / 2585.654 → **WIN 1125x** | 2.532 / 420.476 → **WIN 168x** | 0.647 / 1527.861 → **WIN 2355x** | ✅ 16 MiB warm page-cache、1024 个非顺序 page probe；真实 mapping 甜点 |
+| **park_timeout token 快路径** | 9.215 ns | 9.818 ns | 1.850 ns | ➖ token consume 的 acquire RMW 绝对值 |
+| **park_timeout(0) 无 token 轮询** | **1.690 ns** | **0.564 ns** | **1.346 ns** | ✅ 纯用户态 load；旧 3.7 µs / 59 µs / 3.7 ns 全部作废 |
 
 ### 2026-07-23 `Result<MappedFile>` 成功路径复证
 
@@ -41,8 +44,9 @@ DynLib/MappedFile 错误接口迁入共享 `Status` 后，benchmark 已改为用
 `auto mapped = MappedFile::open(...); if (mapped) mapped->data()`。Windows MSVC 19.50
 n=5 得到 HYLE **43.37 µs**、raw mapping **41.82 µs**、ifstream **58.50 µs**；
 配对中位比分别 **0.955x** 与 **1.327x**。它与上表旧 n=15 的
-43.7/42.0/62.3 µs 落在同一统计带，未观察到 `Result` 成功态附加税，因此不改三平台
-总判定。n=5 的符号检验最低 p=0.0625，本次只作“未回退”复证，不升级为新胜负证书。
+43.7/42.0/62.3 µs 落在同一统计带，未观察到 `Result` 成功态附加税。本段只保留接口迁移
+历史；raw 行当时缺少 HYLE 必做的 file-size/range validation，当前胜负以总表的
+2026-07-24 同合同 n=15 证书为准。
 
 WSL GCC 14 的完整 platform suite 仍不适合作为一次性命令；2026-07-24 已按实际场景拆段
 复跑：VM/protect n=5、directory/MappedFile n=15。当前数字见总表与下方最终复证记录，
@@ -173,11 +177,10 @@ directory/MappedFile 各跑 n=15。n=5 的 sign 最低 p=0.0625，所以只在 s
   接口迁移回退。
 - directory：WSL **7.05/14.97 µs，2.135x WIN，15/15**；M4
   **16.46/18.25 µs，1.109x WIN，15/15**。
-- MappedFile：WSL 对 ifstream **0.745x LOSE**、对 raw mmap **0.976x TIE**；M4 对 ifstream
-  **1.492x WIN**、对 raw mmap **0.968x sign LOSE**。两平台再次证明封装贴近 raw 地板，
-  Linux 64 KiB 的合同选择仍应优先 buffered read，M4 则适合 mapping。
+- 本段 MappedFile 数字已由同日稍后的同合同 raw baseline 与持久随机访问证书取代，见总表；
+  保留结论仍是 Linux 64 KiB 顺扫优先 buffered read，持久/随机访问才是 mapping 的战场。
 
-## 非 SOTA / 需诚实标价
+## 性能边界 / 需诚实标价
 
 ### 1. staged VM 对 raw 一步分配的旧“输”不是同合同对比
 
@@ -211,16 +214,27 @@ arena），两次 OS 操作就是其合同成本。普通立即使用场景应�
 
 atomic flag 无 unpark-before-park 安全；binary_semaphore 快路径仍 futex。只报 ~2–10 ns 绝对值。
 
-### 5. `park_timeout(0)` 平台差巨大
+### 5. `park_timeout(0)` 已从 OS 路径收回用户态
 
-同一语义：Mac ~4 ns，Win ~4 µs，Linux ~60 µs。  
-这是 **OS 对 0-timeout wait 的实现差**，不是 HYLE 逻辑分叉 bug。热路径应用 **token 快路径**，避免靠 0-timeout 轮询。
+旧实现错误地把“非阻塞检查”送入 zero-deadline OS wait，Windows 约 3.7 µs、WSL 约
+59 µs，且最初的 x86 CAS 修法在 M4 反而要 12.7 ns。当前利用 Parker 单 consumer 合同：
+无 token 只做 relaxed load，看到 token 才做 acquire RMW。三平台为
+**1.690 / 0.564 / 1.346 ns**（Win/WSL/M4），没有 syscall、没有发布 PARKED，也不丢竞态 token。
 
-### 6. Linux 上 MappedFile 对 64KiB ifstream **输 0.68x**
+### 6. Linux 上 MappedFile 对 64 KiB ifstream 仍输，但不是封装失速
 
-Win/M4 赢 ifstream（零拷贝优势）；Linux 上 med **12.7 vs 8.7 µs**（ifstream 更快）。  
-对 raw mmap 仍 ~0.96x 平 → **不是 HYLE 封装烂**，是「小文件 open+mmap+fault+close」在 Linux 上不比缓冲 read 便宜。  
-大文件/随机访问才是 MappedFile 的战场；本 bench 64KiB 全扫更偏 ifstream 甜点。总账勿写“MappedFile 无条件赢 ifstream”。
+Win/M4 赢 ifstream；Linux 当前为 **11.479 vs 8.723 µs（0.760x）**。同合同 raw mmap 是
+11.219 µs，HYLE 只多 1.8%，所以根因仍是「小文件 open+mmap+fault+close」不比 buffered
+read 便宜。持久 16 MiB 非顺序页 probe 中 MappedFile 在三平台赢 seek/read **168–2355x**。
+总账不得写“MappedFile 无条件赢 ifstream”，guide 应按访问形状选型。
+
+### 7. FileHandle 的安全便利路径距 raw 2.4% 内
+
+`open_file + FileHandle::read + close` 在 Windows 与 raw TIE；WSL/M4 分别有 2.4%/2.2%
+的 paired sign LOSE。绝对差是每次 64 KiB 完整 open/read/close 的 0.15/0.28 µs，购买参数
+校验、EINTR、`Result<size_t>`、统一原生诊断与 RAII。这已处于共享基础库的 raw-floor 带，
+不通过把 OS 头/错误翻译塞进 public inline API 来换数字。若实际 profile 证明这段成为瓶颈，用户
+仍可借一字 owner 的 `FileHandle::get()` 调 native I/O，所有权不丢。
 
 ## 复跑
 
@@ -239,5 +253,7 @@ scripts/bench-stat.py <build>/bin/hyle_platform_bench -n 5 \
   --pair "raw wait_on_address+wake floor" "HYLE Parker ping-pong" \
   --pair "raw mprotect / VirtualProtect" "HYLE vm_protect" \
   --pair "std::ifstream read+sum (copies)" "HYLE MappedFile open+sum (zero-copy)" \
-  --pair "raw mmap+sum floor" "HYLE MappedFile open+sum (zero-copy)"
+  --pair "raw validated mmap+sum floor" "HYLE MappedFile open+sum (zero-copy)" \
+  --pair "raw OS open+read+close" "HYLE FileHandle open+read+close" \
+  --pair "persistent ifstream seek+read" "persistent HYLE MappedFile direct access"
 ```

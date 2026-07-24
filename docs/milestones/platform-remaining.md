@@ -18,6 +18,13 @@
 > 形状已补齐 Linux/M4 统计证书，详见 performance 文档。platform 进入预发布冻结；只有真实
 > 消费者缺口、支持平台变化、正确性 bug 或当前同合同性能回退才能重开。
 
+> **SOTA 性能回审（2026-07-24）：**`504d671` / `75f3a45` 把 zero-timeout 从 OS wait
+> 收回单 consumer 用户态 load，Win/WSL/M4 n=15 为 **1.690/0.564/1.346 ns**，platform 与
+> sched C/C++ 三平台回归全绿。`3997964` 将 MappedFile raw 对照补成同等 UTF/path、文件大小
+> 与范围验证，并新增 FileHandle raw floor 和 16 MiB 持久随机页访问：mapping 同合同距 raw
+> ≤1.8%，安全 FileHandle 距 raw ≤2.4%，持久随机访问赢 ifstream seek/read 168–2355x。
+> 点值和选择边界只以 performance/guide 为准，本任务单仅记录重开原因与验收提交。
+
 ## 已完成
 
 ### A1. cache capacity
