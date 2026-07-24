@@ -30,10 +30,10 @@
 
 | 固定统计口径 | 当前 | 命令/说明 |
 |---|---|---|
-| **全库代码** | **240,068** | `cloc . --vcs=git`；含 docs/third_party，**≠ 自写** |
-| **自实现（含测试）** | **113,889** | `cloc include/hyle src tests --exclude-lang=CMake,Text` |
-| **自实现（不含测试）** | **78,486** | `cloc include/hyle src --exclude-lang=CMake`；库本体硬锚 |
-| **当前审查模块 platform 实现** | **6,710** | C/C++ 公共头 + `src/platform`，不含测试 |
+| **全库代码** | **241,257** | `cloc . --vcs=git`；含 docs/third_party，**≠ 自写** |
+| **自实现（含测试）** | **114,518** | `cloc include/hyle src tests --exclude-lang=CMake,Text` |
+| **自实现（不含测试）** | **78,831** | `cloc include/hyle src --exclude-lang=CMake`；库本体硬锚 |
+| **当前审查模块 mem 实现** | **4,795** | C/C++ 公共头 + `src/mem`，不含测试 |
 | **终态生产（纪律收口 A）** | **~75–90k** | 主预期 |
 | **终态生产（做满守界 B）** | **~85–105k** | compute/graph/发布面收口更满 |
 | 失控上限 C | 120k+ 生产 | 应避免 |
