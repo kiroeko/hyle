@@ -226,7 +226,7 @@ typed 宏为 `HYLE_GROWABLE_POOL_CREATE/ACQUIRE/RELEASE`。需要 ctor/dtor 的 
 | `hyle_huge_region_requested_numa_node` / `numa_placement_applied` | NUMA 请求与实际 placement 结果 |
 | `hyle_enable_allocator_hugepages` | 启用 mimalloc THP / large OS page 策略 |
 | `hyle_enable_allocator_numa` | 配置 mimalloc NUMA node 数 |
-| `hyle_reserve_huge_1g_pages` | 预留 1GiB 大页；无权限/连续 host RAM 时返回 UNAVAILABLE |
+| `hyle_reserve_huge_1g_pages` | 预留 1GiB 大页；非法 node/溢出返回 OUT_OF_RANGE，mimalloc 无法取得连续 host RAM 时返回 RESOURCE_EXHAUSTED，并保留 native error |
 
 mem 不再维护私有 TLS error code/string。冷路径与全库共用 `hyle_status`；成功 Status 是 8B
 零值、零分配，错误消息分配失败时仍保留 code。热分配路径则完全不构造 Status。

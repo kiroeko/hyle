@@ -60,6 +60,10 @@ budget 污染核心证据。
   “NULL 后另查线程状态”的两步协议；C 用户直接使用 error 的 code/message/传播宏。
 - alloc/realloc、region bump、pool pop/acquire 等热路径仍返回指针/NULL，未增加 Status
   构造、TLS 写或 DLL 调用；成功冷工厂返回 8B 零值 Status，零分配。
+- 回审原生 C++ 后，将唯一仍为 bool 的进程级冷策略 `reserve_huge_1g_pages` 改为 Status；
+  C ABI 直接转移原始 Status，不再把失败二次猜成笼统 Unavailable。pool/region 的
+  `valid()/NULL` 保留为原地不可移动 owning object 与 admission 热路的值合同，不引入
+  `Result<unique_ptr>` 控制分配。
 - Windows Release 的 mem C++/纯 C 定向测试通过。该工作属于 error adoption，不重开
   已冻结的 mem 能力面或性能设计。
 

@@ -129,6 +129,9 @@ static_assert(requires(FiberStack stack, FiberStackPool pool) {
   { pool.acquire() } -> std::same_as<hyle::Result<FiberStack>>;
   { stack.reset() } -> std::same_as<hyle::Status>;
 });
+static_assert(requires {
+  { reserve_huge_1g_pages(0) } -> std::same_as<hyle::Status>;
+});
 
 TEST(MemApiSurface, PublicCapabilityFamiliesCompileTogether) {
   EXPECT_EQ(kFiberStackSmall, 16u * 1024u);

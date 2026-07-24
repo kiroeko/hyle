@@ -718,6 +718,12 @@ int main(void) {
   hyle_enable_allocator_numa(0);
   hyle_system_collect(0);
   CHECK_OK(hyle_reserve_huge_1g_pages(0, HYLE_MEM_NUMA_ANY, 0));
+  {
+    hyle_status status = hyle_reserve_huge_1g_pages(1, -2, 1);
+    CHECK(hyle_status_is_out_of_range(status));
+    CHECK(hyle_status_has_message(status));
+    hyle_status_free(&status);
+  }
 
   if (g_fails) {
     fprintf(stderr, "c_mem_test: %d failed\n", g_fails);

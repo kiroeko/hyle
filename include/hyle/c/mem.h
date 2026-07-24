@@ -663,8 +663,9 @@ HYLE_MEM_C_API void hyle_enable_allocator_hugepages(int allow_thp,
 /* max_nodes==0 => all NUMA nodes (mimalloc default). */
 HYLE_MEM_C_API void hyle_enable_allocator_numa(unsigned max_nodes);
 /* Reserve `pages` contiguous 1GiB huge OS pages into mimalloc's arenas.
- * numa_node==HYLE_MEM_NUMA_ANY => interleave; timeout_ms==0 => mimalloc
- * default. A failure usually means insufficient privilege or contiguous RAM. */
+ * numa_node==HYLE_MEM_NUMA_ANY => interleave; timeout_ms==0 => HYLE's short
+ * default. Invalid node/size returns OUT_OF_RANGE; a native reservation
+ * failure returns RESOURCE_EXHAUSTED and preserves the native value. */
 HYLE_MEM_C_API hyle_status
 hyle_reserve_huge_1g_pages(size_t pages, int numa_node, unsigned timeout_ms);
 

@@ -4,6 +4,10 @@
 #include "hyle/macros.h"
 #include "hyle/obs/trace.h"
 
+#include <cerrno>
+#include <cstdio>
+#include <limits>
+
 #include <mimalloc.h> // PRIVATE include -- mi_* types never leak to a header
 
 namespace hyle::mem {
@@ -123,10 +127,21 @@ void enable_allocator_numa(unsigned max_nodes) noexcept {
   mi_option_set(mi_option_use_numa_nodes, static_cast<long>(max_nodes));
 }
 
-bool reserve_huge_1g_pages(std::size_t pages, int numa_node,
-                           unsigned timeout_ms) noexcept {
+Status reserve_huge_1g_pages(std::size_t pages, int numa_node,
+                             unsigned timeout_ms) noexcept {
   if (pages == 0)
-    return true;
+    return Status::Ok();
+  constexpr std::size_t kHuge1GiB = std::size_t{1} << 30;
+  if (pages > (std::numeric_limits<std::size_t>::max)() / kHuge1GiB) {
+    return Status::OutOfRange(
+        "reserve_huge_1g_pages: requested byte size overflows size_t");
+  }
+  if (numa_node != platform::kNumaAny &&
+      (numa_node < 0 ||
+       static_cast<unsigned>(numa_node) >= platform::numa_node_count())) {
+    return Status::OutOfRange(
+        "reserve_huge_1g_pages: NUMA node index is out of range");
+  }
   // mimalloc: 0 success, non-zero error. timeout 0 → use a short default so a
   // fragmented box does not hang the process for minutes.
   const std::size_t t =
@@ -138,7 +153,22 @@ bool reserve_huge_1g_pages(std::size_t pages, int numa_node,
   } else {
     rc = mi_reserve_huge_os_pages_at(pages, numa_node, t);
   }
-  return rc == 0;
+  if (rc == 0)
+    return Status::Ok();
+
+  char message[192];
+  const char *native_name = rc == ENOMEM ? "ENOMEM" : "unknown";
+  std::snprintf(message, sizeof(message),
+                "mimalloc reserve huge 1GiB pages failed: native=%s (%d), "
+                "pages=%zu, numa_node=%d",
+                native_name, rc, pages, numa_node);
+  // The pinned mimalloc implementation returns ENOMEM for privilege,
+  // fragmentation and arena-management failures. It does not expose enough
+  // detail to claim PermissionDenied or DeadlineExceeded, so preserve its
+  // native value and use the honest resource classification. Keep Unknown for
+  // a future backend/native code outside that documented contract.
+  return rc == ENOMEM ? Status::ResourceExhausted(message)
+                      : Status::Unknown(message);
 }
 
 } // namespace hyle::mem

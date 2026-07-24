@@ -1139,12 +1139,8 @@ void hyle_enable_allocator_numa(unsigned max_nodes) {
 
 hyle_status hyle_reserve_huge_1g_pages(size_t pages, int numa_node,
                                        unsigned timeout_ms) {
-  if (hyle::mem::reserve_huge_1g_pages(pages, numa_node, timeout_ms)) {
-    return steal_status(hyle::Status());
-  }
-  return steal_status(hyle::Status::Unavailable(
-      "hyle_reserve_huge_1g_pages: reservation failed (insufficient "
-      "privilege or contiguous memory)"));
+  return steal_status(
+      hyle::mem::reserve_huge_1g_pages(pages, numa_node, timeout_ms));
 }
 
 } // extern "C"

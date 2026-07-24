@@ -29,6 +29,10 @@ mem 是 host RAM 的基础原语层。它不替业务猜生命周期，也不把
 GPU staging、submission/completion lifetime 属于 `compute/transfer`，不由 mem 用“通用
 pinned pool”猜测。graph tensor liveness planner 属于 graph；mem 只提供它消费的 Region。
 
+进程启动期若需要显式预留 1 GiB OS 大页，调用 `reserve_huge_1g_pages`。它是冷策略入口，
+返回 `Status`：非法 node/尺寸是 `OutOfRange`，mimalloc 无法取得连续 host RAM 是
+`ResourceExhausted`；失败后仍可继续使用普通页。不要在请求热路反复调用。
+
 ## Region 家族
 
 ### Owned request scratch

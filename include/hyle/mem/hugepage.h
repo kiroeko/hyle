@@ -45,12 +45,13 @@ HYLE_MEM_API void enable_allocator_numa(unsigned max_nodes = 0) noexcept;
 // Reserve `pages` contiguous 1GiB huge OS pages into mimalloc's arenas.
 //   numa_node == platform::kNumaAny → interleave across nodes
 //   otherwise → pin to that node
-// timeout_ms: 0 = mimalloc default wait. Returns true if reservation succeeded
-// (or pages==0). Soft failure (no privileges / fragmented RAM) → false; process
-// remains usable with normal pages.
-HYLE_MEM_API bool reserve_huge_1g_pages(std::size_t pages,
-                                        int numa_node = platform::kNumaAny,
-                                        unsigned timeout_ms = 0) noexcept;
+// timeout_ms: 0 = HYLE's short default wait. Returns OK if reservation
+// succeeded (or pages==0), OutOfRange for an invalid node/size, and
+// ResourceExhausted when mimalloc cannot reserve the requested contiguous host
+// RAM. The process remains usable with normal pages after a failed reservation.
+HYLE_MEM_API Status reserve_huge_1g_pages(
+    std::size_t pages, int numa_node = platform::kNumaAny,
+    unsigned timeout_ms = 0) noexcept;
 
 // ---- HugeRegion -------------------------------------------------------------
 

@@ -178,6 +178,9 @@ external 能力按 allocation model 分成两个类型：
 ## 9. NUMA、大页与专用模块
 
 - `HugeRegion`、显式 NUMA bind/interleave、THP/prefault 保留；策略失败是可观察的降级或错误，不保证自动 NUMA 最优。
+- `reserve_huge_1g_pages` 是进程启动期冷控制面，原生 C++ 返回 `Status`，C ABI 原样转移同一
+  representation；不得在 C 层把 bool 重新猜成错误原因。mimalloc 当前只暴露 ENOMEM，映射
+  `ResourceExhausted` 并在 message 保留 native value，非法 node/溢出为 `OutOfRange`。
 - `FiberStackPool` 保留且是当前内部刚需。
 - graph 当前可直接消费通用 owned Region；`GraphArena::measure/reserve/allocate` 这类 graph-aware worst-case/liveness 策略等到对应消费者落地，归 `graph/`。
 - `Buffer(kHostPinned)` 的 native-handle/mapped-pointer 合同先在 P0 纠正；`StagingRing` 等到至少两个异步传输在途、slot 复用受 Event 约束时再落地，归 `compute/`。
@@ -202,7 +205,7 @@ external 能力按 allocation model 分成两个类型：
 | preserve/RAII loan | `PreservingObjectPool<T>`、`PoolLoan` | raw slot acquire/release，由调用方管理 init/cleanup | 能力可组合；C 不伪造 ctor/dtor/RAII |
 | PMR | `PmrResource` | 不适用 | C++ 标准库适配，不制造 C 壳 |
 | guarded fiber stack | `FiberStack`、`FiberStackPool` | sched C ABI 内部消费 | scheduler-owned runtime specialization，不暴露危险 raw stack control |
-| THP/NUMA span | `HugeRegion` + policy | `hyle_huge_region_*` + policy | 显式请求、可观察 accepted/applied 状态 |
+| THP/NUMA span | `HugeRegion` + policy、`reserve_huge_1g_pages` | `hyle_huge_region_*` + policy | 显式请求、可观察 accepted/applied 状态；冷预留失败返回同一 Status |
 
 C ABI 的“完整”按用户能力可达判断，不按 C++ 符号 1:1 判断。模板 ctor/dtor、RAII 和 PMR
 没有自然 C 对象形状；raw slot 与显式 cleanup 是 C 的惯用表达。属于 C 用户范围的标量状态

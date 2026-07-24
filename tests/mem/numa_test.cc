@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
 
 #include <cstring>
+#include <limits>
+#include <string_view>
 
 #include "hyle/mem/hugepage.h"
 #include "hyle/platform/numa.h"
@@ -10,6 +12,7 @@ using hyle::mem::enable_allocator_numa;
 using hyle::mem::HugeFlags;
 using hyle::mem::HugeRegion;
 using hyle::mem::reserve_huge_1g_pages;
+using hyle::Status;
 using hyle::platform::kNumaAny;
 using hyle::platform::numa_current_node;
 using hyle::platform::numa_node_count;
@@ -66,9 +69,17 @@ TEST(MemNuma, HugeRegionHardBindFlag) {
 }
 
 TEST(MemNuma, ReserveHuge1gSoft) {
-  // Almost always false without admin/hugetlb — must not crash or hang long.
-  (void)reserve_huge_1g_pages(0);  // no-op true
-  EXPECT_TRUE(reserve_huge_1g_pages(0));
-  (void)reserve_huge_1g_pages(1, kNumaAny, /*timeout_ms=*/50);
-  (void)reserve_huge_1g_pages(1, 0, 50);
+  // Usually ResourceExhausted without admin/hugetlb; must not crash or hang.
+  EXPECT_TRUE(reserve_huge_1g_pages(0).ok());
+  reserve_huge_1g_pages(1, kNumaAny, /*timeout_ms=*/50).IgnoreError();
+  reserve_huge_1g_pages(1, 0, 50).IgnoreError();
+
+  Status invalid_node = reserve_huge_1g_pages(1, -2, 1);
+  EXPECT_TRUE(invalid_node.IsOutOfRange());
+  EXPECT_NE(invalid_node.message().find("NUMA node"), std::string_view::npos);
+
+  Status overflow = reserve_huge_1g_pages(
+      (std::numeric_limits<std::size_t>::max)() / (std::size_t{1} << 30) + 1,
+      kNumaAny, 1);
+  EXPECT_TRUE(overflow.IsOutOfRange());
 }
