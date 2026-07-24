@@ -46,28 +46,47 @@ hyle_apply_warnings(hyle_mem_c_test)
 hyle_apply_sanitizer(hyle_mem_c_test)
 add_test(NAME hyle_mem_c_test COMMAND hyle_mem_c_test)
 
-# Keep the pre-release mem C manifest, pure-C consumer, and DLL/.so exports in sync.
+# Keep reviewed C manifests, pure-C consumers, and DLL/.so exports in sync.
 # Before first release this is drift detection, not a compatibility promise.
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 if(WIN32)
   get_filename_component(_hyle_linker_dir "${CMAKE_LINKER}" DIRECTORY)
-  set(_hyle_mem_symbol_tool "${_hyle_linker_dir}/dumpbin.exe")
+  set(_hyle_c_symbol_tool "${_hyle_linker_dir}/dumpbin.exe")
 elseif(CMAKE_NM)
-  set(_hyle_mem_symbol_tool "${CMAKE_NM}")
+  set(_hyle_c_symbol_tool "${CMAKE_NM}")
 else()
-  find_program(_hyle_mem_symbol_tool NAMES nm REQUIRED)
+  find_program(_hyle_c_symbol_tool NAMES nm REQUIRED)
 endif()
 add_test(NAME hyle_mem_c_surface_test
          COMMAND "${Python3_EXECUTABLE}"
-                 "${PROJECT_SOURCE_DIR}/scripts/mem-c-surface-check.py"
+                 "${PROJECT_SOURCE_DIR}/scripts/c-surface-check.py"
+                 --module mem
                  --library "$<TARGET_FILE:hyle_mem>"
-                 --symbol-tool "${_hyle_mem_symbol_tool}")
+                 --symbol-tool "${_hyle_c_symbol_tool}")
+add_test(NAME hyle_platform_c_surface_test
+         COMMAND "${Python3_EXECUTABLE}"
+                 "${PROJECT_SOURCE_DIR}/scripts/c-surface-check.py"
+                 --module platform
+                 --library "$<TARGET_FILE:hyle_platform>"
+                 --symbol-tool "${_hyle_c_symbol_tool}")
 
 # A combined include smoke test can hide transitive-include and include-order bugs.
-# Compile each public C++ mem header alone, plus the C ABI header as strict C.
+# Compile each public C++ module header alone, plus its C ABI header as strict C.
 add_test(NAME hyle_mem_header_self_contained_test
          COMMAND "${Python3_EXECUTABLE}"
-                 "${PROJECT_SOURCE_DIR}/scripts/mem-header-self-contained.py"
+                 "${PROJECT_SOURCE_DIR}/scripts/header-self-contained.py"
+                 --module mem
+                 --include-dir "${PROJECT_SOURCE_DIR}/include"
+                 --cc "${CMAKE_C_COMPILER}"
+                 --cxx "${CMAKE_CXX_COMPILER}"
+                 --c-compiler-id "${CMAKE_C_COMPILER_ID}"
+                 --cxx-compiler-id "${CMAKE_CXX_COMPILER_ID}"
+                 --c-frontend "${CMAKE_C_COMPILER_FRONTEND_VARIANT}"
+                 --cxx-frontend "${CMAKE_CXX_COMPILER_FRONTEND_VARIANT}")
+add_test(NAME hyle_platform_header_self_contained_test
+         COMMAND "${Python3_EXECUTABLE}"
+                 "${PROJECT_SOURCE_DIR}/scripts/header-self-contained.py"
+                 --module platform
                  --include-dir "${PROJECT_SOURCE_DIR}/include"
                  --cc "${CMAKE_C_COMPILER}"
                  --cxx "${CMAKE_CXX_COMPILER}"

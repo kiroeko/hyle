@@ -9,6 +9,10 @@
 | **性能真源** | [`../performance/benchmarks-mem.md`](../performance/benchmarks-mem.md) |
 | **用户入口** | [`../guide/mem.md`](../guide/mem.md)、[`../guide/c-mem.md`](../guide/c-mem.md) |
 
+> **当前替代（2026-07-24）：**下文 105 项是最终候选 `551be0b` 的历史证书；后续共享 error
+> 收敛删除 2 个模块私有错误入口，当前产品面为 **103/103**，已由通用 C surface 门禁在
+> Windows/ELF/Mach-O 重新验证。能力面未因此减少。
+
 这是 Jira 式剩余 work item，不再复制完整能力表、设计理由或 benchmark 点值。mem 的稳定
 功能面与“何时算完成”在 architecture；性能结果与输项在 performance；这里仅列未完成任务、
 验收和最终提交。

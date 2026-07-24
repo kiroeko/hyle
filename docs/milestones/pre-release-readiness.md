@@ -45,8 +45,8 @@ SOTA 的替代证据。
 | 模块 | 判定 | 后续方式 |
 |---|---|---|
 | error/time/simd/util/obs | **预发布冻结** | 只按上述触发器重开；SVE/RVV 真机证据仍是平台到位后的专项补证 |
-| platform | **主动收口复审** | 按实际使用形状重审公开/内部边界；已完成 fs/env/VM 与系统拓扑/进程 CPU 配额分离，继续审依赖方采用和线程形状 |
-| mem | **预发布冻结** | 功能/API/性能已收口；最终候选 `551be0b` 通过三平台 C/C++、sanitizer、105 项动态导出与逐头独立编译认证，见 [`mem-close-plan.md`](./mem-close-plan.md) |
+| platform | **预发布冻结** | 实际使用形状、下游采用与当前接口性能已收口；三平台 111 项动态 C surface、8 C++ + 1 C 独立头认证见 [`platform-remaining.md`](./platform-remaining.md) |
+| mem | **预发布冻结** | 功能/API/性能已收口；当前 post-error-convergence 三平台 **103** 项动态导出与 16 C++ + 1 C 独立头认证，见 [`mem-close-plan.md`](./mem-close-plan.md) |
 | container | **预发布冻结** | StringBuf 复杂度/争用/batch/三平台强 peer 已收口；已知 Linux/M4 lifecycle 常数边界写入证书 |
 | sched | **预发布冻结** | 双任务腿、饱和/关闭红队、114 入口 C ABI 与 guide 已收口；marl 15 遍三平台为 Win/Lin 明确赢、M4 统计平局；只按触发器重开 |
 | io | **下一批强收口** | 功能/下游/红队/测试性能/C ABI/指南六项一次完成 |
@@ -55,7 +55,8 @@ SOTA 的替代证据。
 
 ## 冻结证据入口
 
-- platform：[`platform-audit-followup.md`](./platform-audit-followup.md)；mem 当前任务：
+- platform：[`platform-remaining.md`](./platform-remaining.md)（历史审计细节见
+  [`platform-audit-followup.md`](./platform-audit-followup.md)）；mem：
   [`mem-close-plan.md`](./mem-close-plan.md)，稳定设计和性能分别在 architecture/performance；
 - time/obs/util/container：[`time-module-closure.md`](./time-module-closure.md)、
   [`obs-module-closure.md`](./obs-module-closure.md)、

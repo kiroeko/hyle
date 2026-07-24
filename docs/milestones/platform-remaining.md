@@ -10,6 +10,14 @@
 > 本文保留实现边界与仍有意不做的内容，避免后来者把“未知”误读成
 > “同构”，或再次引入启发式探测。
 
+> **预发布冻结证书（2026-07-24）：**实际使用导向复审已完成。Windows MSVC、WSL GCC 14、
+> Apple M4 AppleClang 21 均通过 platform C++/纯 C 功能测试、**111/111** C 声明↔纯 C
+> 引用↔DLL/ELF/Mach-O 导出一致性，以及 **8 个 C++ + 1 个 C** 公开头独立编译。下游审计
+> 确认 mem/container/sched 消费动态进程 CPU 视图，无自造 OS 拓扑/affinity/priority；唯一
+> `hardware_concurrency` 是可用 CPU 查询失败后的保底。VM/fs/MappedFile 当前 `Result/Status`
+> 形状已补齐 Linux/M4 统计证书，详见 performance 文档。platform 进入预发布冻结；只有真实
+> 消费者缺口、支持平台变化、正确性 bug 或当前同合同性能回退才能重开。
+
 ## 已完成
 
 ### A1. cache capacity

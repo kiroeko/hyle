@@ -103,8 +103,8 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 
 | 固定统计口径 | code | 说明 |
 |---|---:|---|
-| **全库代码** | **239,882** | `cloc . --vcs=git`；含 docs 与 in-tree third_party |
-| **自实现（含测试）** | **113,879** | `include/hyle + src + tests`，排除 CMake/Text |
+| **全库代码** | **240,068** | `cloc . --vcs=git`；含 docs 与 in-tree third_party |
+| **自实现（含测试）** | **113,889** | `include/hyle + src + tests`，排除 CMake/Text |
 | **自实现（不含测试）** | **78,486** | `include/hyle + src`；库本体硬锚 |
 | **当前审查模块 platform 实现** | **6,710** | C/C++ 公共头 + `src/platform`，不含测试 |
 | 再加 ggml 等大依赖足迹 | **~200–350k+** | 由 ggml 主导，不计入「自有生产」 |
@@ -278,6 +278,7 @@ WebSocket、gRPC（依赖 protobuf/IDL，更靠 L1）仍后置于范围外。
 ## 进度
 
 路线图见 [`roadmap.md`](./roadmap.md);逐里程碑实时状态见
-[`milestones/README.md`](../milestones/README.md)。当前：八个底层模块完成强收口；
+[`milestones/README.md`](../milestones/README.md)。当前：八个底层模块完成强收口，platform 已按
+实际使用标准完成三平台 C surface/独立头/当前接口性能证书并进入预发布冻结；
 sched/io 已完成同等级模块审计并带公开性能尾进入预发布冻结；compute 的 CPU/CUDA/Vulkan/ggml 主干和
 graph-01/graph-02 step-1 已实现，二者都不是 stub，但仍有产品能力尾。

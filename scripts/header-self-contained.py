@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Compile every public mem header in an otherwise empty translation unit."""
+"""Compile every public header of one module in an otherwise empty TU."""
 
 from __future__ import annotations
 
 import argparse
 import platform
+import re
 import subprocess
 import tempfile
 from pathlib import Path
@@ -12,6 +13,7 @@ from pathlib import Path
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
+    parser.add_argument("--module", required=True)
     parser.add_argument("--include-dir", required=True, type=Path)
     parser.add_argument("--cc", required=True)
     parser.add_argument("--cxx", required=True)
@@ -19,7 +21,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--cxx-compiler-id", required=True)
     parser.add_argument("--c-frontend", default="")
     parser.add_argument("--cxx-frontend", default="")
-    return parser.parse_args()
+    args = parser.parse_args()
+    if re.fullmatch(r"[a-z][a-z0-9_]*", args.module) is None:
+        parser.error("--module must be a lowercase C identifier")
+    return args
 
 
 def compile_header(
@@ -53,12 +58,7 @@ def compile_header(
         ]
     else:
         standard = "-std=c11" if language == "c" else "-std=c++23"
-        command = [
-            compiler,
-            standard,
-            "-fsyntax-only",
-            f"-I{include_dir}",
-        ]
+        command = [compiler, standard, "-fsyntax-only", f"-I{include_dir}"]
         if sysroot:
             command.extend(["-isysroot", sysroot])
         command.append(str(source))
@@ -83,12 +83,15 @@ def main() -> int:
             raise RuntimeError(f"could not discover the macOS SDK: {result.stderr}")
         sysroot = result.stdout.strip()
     include_dir = args.include_dir.resolve()
-    mem_dir = include_dir / "hyle" / "mem"
-    headers = [path.relative_to(include_dir).as_posix() for path in sorted(mem_dir.glob("*.h"))]
+    module_dir = include_dir / "hyle" / args.module
+    headers = [
+        path.relative_to(include_dir).as_posix()
+        for path in sorted(module_dir.glob("*.h"))
+    ]
     if not headers:
-        raise RuntimeError(f"no mem headers found under {mem_dir}")
+        raise RuntimeError(f"no {args.module} headers found under {module_dir}")
 
-    with tempfile.TemporaryDirectory(prefix="hyle-mem-headers-") as temp:
+    with tempfile.TemporaryDirectory(prefix=f"hyle-{args.module}-headers-") as temp:
         work_dir = Path(temp)
         for header in headers:
             compile_header(
@@ -106,13 +109,13 @@ def main() -> int:
             args.c_compiler_id,
             args.c_frontend,
             include_dir,
-            "hyle/c/mem.h",
+            f"hyle/c/{args.module}.h",
             "c",
             work_dir,
             sysroot,
         )
 
-    print(f"mem headers self-contained: {len(headers)} C++ + 1 C")
+    print(f"{args.module} headers self-contained: {len(headers)} C++ + 1 C")
     return 0
 
 

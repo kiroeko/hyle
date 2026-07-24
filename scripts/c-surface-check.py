@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Keep the pre-release mem C declarations, pure-C use, and exports in sync."""
+"""Keep a pre-release module's C declarations, pure-C use, and exports in sync."""
 
 from __future__ import annotations
 
@@ -13,11 +13,6 @@ from typing import Optional
 
 
 SYMBOL = re.compile(r"\b(hyle_[a-z0-9_]+)\s*\(")
-EXPORT_DECL = re.compile(
-    r"\bHYLE_MEM_C_API\b(?:(?![;{]).)*?\b(hyle_[a-z0-9_]+)\s*\(",
-    re.DOTALL,
-)
-TEST_BODY_MARKER = "HYLE_C_MEM_COVERAGE_BODY_MARKER"
 
 
 def strip_comments(text: str) -> str:
@@ -74,18 +69,26 @@ def report_set(label: str, expected: set[str], actual: set[str]) -> bool:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
+    parser.add_argument("--module", required=True)
     parser.add_argument("--library", type=Path)
     parser.add_argument("--symbol-tool", type=Path)
     parser.add_argument("--print-declarations", action="store_true")
     args = parser.parse_args()
+    if re.fullmatch(r"[a-z][a-z0-9_]*", args.module) is None:
+        parser.error("--module must be a lowercase C identifier")
 
     root = Path(__file__).resolve().parents[1]
-    header = root / "include/hyle/c/mem.h"
-    test = root / "tests/mem/c_mem_test.c"
-    manifest_path = root / "tests/mem/c_surface_symbols.txt"
+    header = root / f"include/hyle/c/{args.module}.h"
+    test = root / f"tests/{args.module}/c_{args.module}_test.c"
+    manifest_path = root / f"tests/{args.module}/c_surface_symbols.txt"
+    api_macro = f"HYLE_{args.module.upper()}_C_API"
+    export_decl = re.compile(
+        rf"\b{api_macro}\b(?:(?![;{{]).)*?\b(hyle_[a-z0-9_]+)\s*\(",
+        re.DOTALL,
+    )
 
     header_text = strip_comments(header.read_text(encoding="utf-8"))
-    declared = set(EXPORT_DECL.findall(header_text))
+    declared = set(export_decl.findall(header_text))
     if args.print_declarations:
         print(*sorted(declared), sep="\n")
         return 0
@@ -95,16 +98,20 @@ def main() -> int:
         for line in manifest_path.read_text(encoding="utf-8").splitlines()
         if line.strip() and not line.startswith("#")
     }
-    ok = report_set("mem C surface declarations", manifest, declared)
+    ok = report_set(f"{args.module} C surface declarations", manifest, declared)
 
     test_text = strip_comments(test.read_text(encoding="utf-8"))
-    marker = test_text.find(TEST_BODY_MARKER)
+    marker_text = f"HYLE_C_{args.module.upper()}_COVERAGE_BODY_MARKER"
+    marker = test_text.find(marker_text)
     if marker < 0:
         print(f"Coverage marker missing from {test}", file=sys.stderr)
         return 1
     exercised = set(SYMBOL.findall(test_text[marker:]))
     missing_test = sorted(manifest - exercised)
-    print(f"mem C pure-C references: {len(manifest) - len(missing_test)}/{len(manifest)}")
+    print(
+        f"{args.module} C pure-C references: "
+        f"{len(manifest) - len(missing_test)}/{len(manifest)}"
+    )
     if missing_test:
         print("Missing from pure-C test:", *missing_test, sep="\n  ")
         ok = False
@@ -115,7 +122,9 @@ def main() -> int:
             for name in exported_symbols(args.library, args.symbol_tool)
             if name.startswith("hyle_")
         }
-        ok = report_set("mem C binary exports", manifest, actual_exports) and ok
+        ok = report_set(
+            f"{args.module} C binary exports", manifest, actual_exports
+        ) and ok
 
     return 0 if ok else 1
 

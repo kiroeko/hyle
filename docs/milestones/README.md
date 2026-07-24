@@ -30,8 +30,8 @@
 
 | 固定统计口径 | 当前 | 命令/说明 |
 |---|---|---|
-| **全库代码** | **239,882** | `cloc . --vcs=git`；含 docs/third_party，**≠ 自写** |
-| **自实现（含测试）** | **113,879** | `cloc include/hyle src tests --exclude-lang=CMake,Text` |
+| **全库代码** | **240,068** | `cloc . --vcs=git`；含 docs/third_party，**≠ 自写** |
+| **自实现（含测试）** | **113,889** | `cloc include/hyle src tests --exclude-lang=CMake,Text` |
 | **自实现（不含测试）** | **78,486** | `cloc include/hyle src --exclude-lang=CMake`；库本体硬锚 |
 | **当前审查模块 platform 实现** | **6,710** | C/C++ 公共头 + `src/platform`，不含测试 |
 | **终态生产（纪律收口 A）** | **~75–90k** | 主预期 |
@@ -84,14 +84,14 @@ util ~1.3k · time ~0.9k · obs/error/graph 各 ~0.6–0.8k。
 | [obs-01](./obs-01-log.md) | P0 | obs | 同步结构化日志 + quiescent sink registry | 00 | ~1k | 见 closure | ✅ **2026-07-19 收口**：record fields/source/time、caller-side format、TTY default sink；active-ref 摘除保证无旧 callback UAF，自摘安全/跨摘拒绝；纯 C POD+opaque sink；三平台 + ASan/UBSan/TSan + 三层性能基准。详见 [`obs-module-closure.md`](./obs-module-closure.md) |
 | [obs-02](./obs-module-closure.md) | P0 | obs | 编译期 trace/counter hook + Tracy 后端 | **能力 C6** | 1-2k | seam + 下游 hooks | ✅ **2026-07-19 收口**：OFF 参数不求值/零依赖；ON 覆盖 zone/plot/counter/fiber/frame/message/memory/thread-name，接入 mem/sched/io/compute；多 DLL 从“每模块静态 TracyClient”修为单 shared client；Windows/WSL/M4 双态通过，C/FFI 有稳定 runtime trace no-op/Tracy seam |
 | platform-01 | P1 | platform | thread + park(futex/WaitOnAddress/ulock) | error-01 | 2k | 527 | ✅ 完成 |
-| platform-02 | P1 | platform | virtual_memory + dynlib | platform-01 | 1k | 158 (dynlib) | 🔶 dynlib ✅(DynLib RAII,Win/Linux 真测);virtual_memory→platform-02b |
+| platform-02 | P1 | platform | virtual_memory + dynlib | platform-01 | 1k | 158 (dynlib) | ✅ 拆分完成：dynlib + platform-02b virtual_memory |
 | [platform-02b](./platform-02b-virtual-memory.md) | P1 | platform | virtual_memory(host: reserve/commit/decommit/release + protect/guard) | platform-01 | 0.4-0.8k | 356 (+120 测试) | ✅ 完成(2026-07-17)。`vm_*` + `VmRegion` + `reserve_guarded`；双平台 9/9。消费者=**mem-08 fiber_stack ✅** |
-| platform-03 | P1 | platform | path + fs + env + os_info | platform-01 | 1k | — | 🔶 拆分 |
+| platform-03 | P1 | platform | path + fs + env + os_info | platform-01 | 1k | — | ✅ 拆分完成：03a path + 03b fs/env + 03c Win UTF-8 |
 | platform-03a | P1 | container | path 字符串操作(join/dirname/basename/extension/normalize/split/is_absolute) | container-06,container-03 | 0.6-1k | 232 (+166 测试) | ✅ 完成(吸纳 clay path_api_t 16 函数纯字符串半;落 container 非 platform——避 P1 反向依赖 P3;3 处语义升级:splitext extension/真 is_absolute/normalize native;修 directory 的 //x OOB;clay path.cc 1372 行无美化空函数,vtable 外 ~1100 行 fs/blend/Win 域分流登记) |
 | platform-03b | P1 | platform | fs/env/os_info syscall:stat/mkdir/remove/rename/copy/iterate/cwd/temp/home + getenv | platform-01,platform-03a | 0.5-1k | 379 (+162 测试) | ✅ 完成(file_system_api 13 fn + helper;buffer-fill+visitor 保 P1 零 mem/container 依赖,比 clay 分配式更精简;改进:mkdir 幂等/temp 认环境变量/copy 可移植替 sendfile/env 读净增;双平台 14/14 fs,platform 19→33;file_io/mmap→io-05、avx→simd、absolute 组合登记) |
 | [platform-03c](./platform-03c-win-utf8.md) | P1 | platform | Win UTF-8(...A→...W)+ 长路径 \\?\ + copy_file 内核零拷贝 | platform-03b | 0.1k | fs.cc 320→475 | ✅ 完成(WidePath/fill_w 自包含 UTF-8↔UTF-16,12 个 ...A 全转 ...W;揪出+修 touch() 双重 ANSI;\\?\ 扩展前缀 >260 长路径(drive 测过/UNC 写不验);Linux copy_file_range 内核零拷贝失败回退。双平台 36/18,含 UTF-8/长路径/大文件拷贝测试。UNC 实跑待网络共享) |
 | [platform-error-convergence](./platform-error-convergence.md) | P1 | platform + error | 可恢复失败统一 Status/Result，删除私有/借用 TLS | error-03,platform-02/03 | — | 见任务页 | ✅ DynLib/MappedFile/VM/NUMA 已统一；Win/WSL/M4 验证见任务页 |
-| [platform-final](./platform-remaining.md) | P1 | platform + sched | 实际使用导向收口：CPU 配额、集合 affinity、逐 CPU 能力与强核优先 | platform-01/02/03 | — | 见任务页 | 🔶 CPU 能力形状已完成：可信 rank/kind + C ABI + `SchedulerOptions` opt-in；默认 OS 顺序不变，三平台证书见性能页 |
+| [platform-final](./platform-remaining.md) | P1 | platform + sched | 实际使用导向收口：CPU 配额、集合 affinity、逐 CPU 能力与强核优先 | platform-01/02/03 | — | 见任务页 | ✅ **预发布冻结（2026-07-24）**：可信 rank/kind + scheduler opt-in；111 项 C 声明/纯 C 引用/三平台导出全对齐，8 C++ + 1 C 独立头全过；当前接口 Linux/M4 性能复证完成 |
 | mem-01 | P2 | mem | Allocator vtable + 修 alignment（骨架版含最小 mimalloc 包装）| platform-01 | 1-2k | 182 | ✅ 完成(vtable+裸alloc+typed层) |
 | mem-01b | P2 | mem | allocator typed 便利层(allocate<T>/construct/make_unique/destroy) | mem-01 | 1k | 并入allocator.h | ✅ 完成(补漏:clay allocator.h typed层) |
 | mem-02 | P2 | mem | mimalloc backing 完整接入(封 vtable 后) | mem-01 | 1-2k | vendored(system.cc+~30) | ✅ 完成(透明替换31测试不变;Win 4-12x>默认堆/Linux真实模式5.2x;快路径修复) |
@@ -105,7 +105,7 @@ util ~1.3k · time ~0.9k · obs/error/graph 各 ~0.6–0.8k。
 | [mem-06c](./mem-06c-numa.md) | P2 | mem | NUMA：query + preferred bind + HugeRegion node + mi use_numa | platform-02b,mem-02 | 0.4-0.8k | numa.h/cc | ✅ 完成(2026-07-17)。soft preferred；单 node 平凡正确；无 libnuma |
 | mem-07 | P2 | mem | GrowablePool(growable/单线程池) + PmrResource(std::pmr 适配) | mem-03 | 1-2k | 145 (+116 测试) | ✅ 完成(吸纳 clay memory_pool/stl_allocator/generic_allocator;修 clay move-assign bug;generic_allocator⛔=Allocator 已是它) |
 | [mem-08](./mem-08-fiber-stack.md) | P2 | mem | fiber_stack：guard + 分级 + FiberStackPool + Fiber 接线 | platform-02b,sched-01 | 0.5-1k | ~518 code(头+接线+测) | ✅ 完成(2026-07-17)。`FiberStack`=`reserve_guarded`;Small/Default/Large;池回收;`Fiber` 默认 guarded。Win+WSL mem 56/56、sched 108/108 |
-| [mem-final](./mem-close-plan.md) | close | mem | 功能/API/性能收口与 release-candidate certification | mem-01..08 | — | 见任务单 | ✅ **预发布冻结（2026-07-23）**：最终候选 `551be0b` 三平台 C++/纯 C、ASan/UBSan/TSan、DLL/ELF/Mach-O 105 项导出及 16 C++ + 1 C 独立头单元全通过 |
+| [mem-final](./mem-close-plan.md) | close | mem | 功能/API/性能收口与 release-candidate certification | mem-01..08 | — | 见任务单 | ✅ **预发布冻结（2026-07-23）**：候选 `551be0b` 原 105 项；post-error-convergence 当前 103 项三平台导出及 16 C++ + 1 C 独立头全通过，ASan/UBSan/TSan 证书不变 |
 | [time-01](./time-01-clock.md) | P2 | time | 单调/墙钟、deadline、sleep | core | — | 见里程碑 | ✅ **2026-07-19 收口**：标准钟 header-inline；TSC/coarse opt-in；饱和 deadline 与绝对 sleep；C ABI；三平台 16 clock 测试 + ASan/UBSan |
 | [time-02](./time-02-timer-wheel.md) | P2 | time | TimerWheel + CommonTimeoutQueue | time-01,core | — | 见里程碑 | ✅ **2026-07-19 收口**：8×64 覆盖完整 uint64-ns；精确 owner/lifecycle；indexed eager heap 与直接 TAILQ 真实基线；wheel 三平台三负载全赢。Common 在 M4 expire 仅 0.57x，诚实保留；C ABI + 33 timer 测试。**解锁 sched-04b/io-06** |
 | container-01 | P3 | container | vendor 有界 ring(Vyukov/rigtorp,骨架用) | mem-01 | 1-2k | 220 | ✅ 完成 |

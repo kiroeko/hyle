@@ -43,7 +43,7 @@ cd ~/hyle
 - **NEON simd 变体**：`tests/CMakeLists` 按 `CMAKE_SYSTEM_PROCESSOR` 分支——arm64 建 `hyle_simd_neon_test`（x86 建 sse4/avx2）。这是 neon.h 全 op 对拍 scalar 的真闸门。
 - **kqueue io 后端**：mac 的 io proactor 走 kqueue，`hyle_io_*` 测试真跑该路径。
 - **独立头检查**：非登录 SSH 下直接调用 AppleClang 必须带 macOS SDK sysroot；
-  `mem-header-self-contained.py` 会通过 `/usr/bin/xcrun --sdk macosx --show-sdk-path`
+  `header-self-contained.py` 会通过 `/usr/bin/xcrun --sdk macosx --show-sdk-path`
   自动发现，不要把标准库 `<cstddef>` 找不到误判成 HYLE 头文件缺依赖。
 
 ## 四、性能测试（bench）

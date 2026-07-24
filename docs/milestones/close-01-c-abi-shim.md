@@ -45,11 +45,12 @@
   [`c-error.md`](../guide/c-error.md)。Status 全码、所有权、上下文、buffer 格式化与传播均可达。
   早期诊断 handler 已在 reclosure 中删除：日志归 `obs`，合同失败归 fail-fast，不再混入
   可恢复错误 C ABI。
-- [x] **样板 platform**（2026-07-17，2026-07-19 扩面复审）：`include/hyle/c/platform.h` + `c_platform.cc` + 纯 C `hyle_platform_c_test`。覆盖 wait/Parker、Thread、DynLib、VM/VmRegion、hugepage/NUMA、完整 fs/env/fd、MappedFile、CPU/cache/topology；补 `hyle_platform_last_error`、thread opts `struct_size`、具名 flags/perms。纯 C 机械覆盖 114/114 入口。文档：[`c-platform.md`](../guide/c-platform.md)。
+- [x] **样板 platform**（2026-07-17，2026-07-24 最终复审）：`include/hyle/c/platform.h` + `c_platform.cc` + 纯 C `hyle_platform_c_test`。覆盖 wait/Parker、Thread、DynLib、VM/VmRegion、hugepage/NUMA、完整 fs/env/fd、MappedFile、CPU/cache/topology/per-CPU 能力；私有 `hyle_platform_last_error` 已删除并统一共享 Status。当前 **111/111** 动态声明、纯 C 引用与三平台导出机械对齐。文档：[`c-platform.md`](../guide/c-platform.md)。
 - [x] **样板 mem**（2026-07-23 重审）：`include/hyle/c/mem.h` + `c_mem.cc` + 纯 C
   `hyle_mem_c_test`。覆盖 system allocator/collect、Quota/Stats、Region/FixedRegion/FixedPool、
   hard `SharedPool` + 显式 `SharedPoolCache`、Stack/PooledRegion/GrowablePool、HugeRegion 与
-  typed raw-slot 宏；Stats 用 POD out-snapshot + bounded leak copy。105 个动态导出由 header、
+  typed raw-slot 宏；Stats 用 POD out-snapshot + bounded leak copy。当前 post-error-convergence
+  **103** 个动态导出由 header、
   纯 C consumer 与 DLL/ELF manifest 同步。能力边界和剩余 parity 审计见
   [`mem-final`](./mem-close-plan.md)，逐符号文档见 [`c-mem.md`](../guide/c-mem.md)。
 - [x] **util**（2026-07-19 全面复审）：`include/hyle/c/util.h` + `c_util.cc` + 纯 C smoke。RNG 用稳定 POD；Ref/ScopeGuard/Registry/SpinLock 用 opaque handle + callback/ctx 类型擦除；demangle/help 用 buffer-fill。机械覆盖 46/46 可调用入口，其中动态导出 44 个、header-inline 2 个；三平台导出及 C/C++ 测试通过。仅 `type_name<T>`/`type_hash<T>` 因依赖编译器静态类型而有意留 C++。文档：[`c-util.md`](../guide/c-util.md)，复审：[`util-module-closure.md`](./util-module-closure.md)。

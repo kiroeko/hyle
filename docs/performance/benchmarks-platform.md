@@ -26,12 +26,12 @@
 | **Parker** vs raw wait 地板 | 356 / 310 → TIE | 22.2k / 21.2k → **0.95x 平** | 2035 / 2062 → **sign 近平** | ➖ 三态机税在噪声/个位数 % |
 | **Parker 快路径** unpark+park | 9.71（floor 4.68） | 10.64（floor 4.63） | 1.99（floor 0.90） | ➖ 只报绝对值；atomic **非公平对手** |
 | **Thread spawn+join** vs std::thread | 43.4k / 44.4k → **TIE** | 33.56k / 33.56k → **TIE** | 10.6k / 10.7k → **TIE** | ➖ 平（OS 主导，证零封装税） |
-| **directory_iterate** vs std::filesystem | 40.23k / 39.76k → **TIE 0.981x**（2026-07-24 n=15） | 6.5k / 13.7k → **spread WIN 2.15x** | 16.5k / 18.4k → **WIN 1.12x** | ⚠️ 平台差：当前 Win 平；Lin/M4 旧证赢 |
-| **vm_allocate_rw+release** vs raw 一步 | 885 / 880 → **TIE**（2026-07-24 n=5） | 待复证 | 待复证 | ➖ Win 已证当前正常用户形状近 OS 地板 |
-| **vm_reserve+commit+release** vs raw 一步 | 1144 / 877 → **sign LOSE 0.77x** | 1075 / 848 → **0.78x 输** | 846 / 332 → **LOSE 0.39x** | ❌ **契约差**：两步 vs 一步；见下 |
-| **vm_protect** vs raw | 446 / 428 → **sign LOSE 0.96x** | 407 / 393 → **0.97x 微税** | 937 / 938 → **TIE** | ➖ 近平；小封装税 |
-| **MappedFile** vs ifstream | 43.7k / 62.3k → **sign WIN 1.39x** | 12.7k / **8.7k → 0.68x 输** | 14.1k / 21.7k → **WIN 1.53x** | ⚠️ **平台翻转**：Win/M4 赢拷贝路径；**Linux 64KiB ifstream 更快** |
-| **MappedFile** vs raw mmap | 43.7k / 42.0k → **sign LOSE 0.96x** | 12.7k / 12.2k → **0.96x 平** | 14.1k / 13.7k → **sign LOSE 0.97x** | ➖ 近地板，~3–4% 封装税 |
+| **directory_iterate** vs std::filesystem | 40.23k / 39.76k → **TIE 0.981x**（n=15） | 7.05k / 14.97k → **WIN 2.135x**（n=15） | 16.46k / 18.25k → **WIN 1.109x**（n=15） | ⚠️ 平台差：Win 平；Lin/M4 赢 |
+| **vm_allocate_rw+release** vs raw 一步 | 885 / 880 → **TIE**（n=5） | 860.9 / 853.8 → **TIE 0.978x**（n=5） | 309.8 / 305.0 → **TIE 0.982x**（n=5） | ➖ 三平台当前正常用户形状近 OS 地板 |
+| **vm_reserve+commit+release** vs raw 一步 | 1144 / 877 → **sign LOSE 0.77x** | 1086.3 / 853.8 → **0.779x 方向**（n=5） | 720.5 / 305.0 → **spread LOSE 0.421x**（n=5） | ❌ **契约差**：两步 vs 一步；见下 |
+| **vm_protect** vs raw | 446 / 428 → **sign LOSE 0.96x** | 390.0 / 383.6 → **TIE 0.957x**（n=5） | 675.7 / 693.8 → **paired TIE 0.996x**（n=5） | ➖ 近平；小封装税 |
+| **MappedFile** vs ifstream | 43.7k / 62.3k → **sign WIN 1.39x** | 10.63k / **7.97k → LOSE 0.745x**（n=15） | 13.32k / 19.89k → **WIN 1.492x**（n=15） | ⚠️ **平台翻转**：Win/M4 赢拷贝路径；**Linux 64KiB ifstream 更快** |
+| **MappedFile** vs raw mmap | 43.7k / 42.0k → **sign LOSE 0.96x** | 10.63k / 10.36k → **TIE 0.976x**（n=15） | 13.32k / 12.84k → **sign LOSE 0.968x**（n=15） | ➖ 近地板，~2–4% 封装税 |
 | **park_timeout 快路径** | 9.2 ns | 10.6 ns | 1.95 ns | ➖ 与 park 快路径同档 |
 | **park_timeout(0) 轮询** | ~3740 ns | **~59k ns** | **3.7 ns** | ⚠️ **极端平台差**：Mac 近免费；Win µs；Linux ~60µs |
 
@@ -44,9 +44,9 @@ n=5 得到 HYLE **43.37 µs**、raw mapping **41.82 µs**、ifstream **58.50 µs
 43.7/42.0/62.3 µs 落在同一统计带，未观察到 `Result` 成功态附加税，因此不改三平台
 总判定。n=5 的符号检验最低 p=0.0625，本次只作“未回退”复证，不升级为新胜负证书。
 
-WSL GCC 14 同形状 n=5 因完整 platform suite 在当前环境超过 10 分钟执行上限，未形成
-可回收统计输出；旧 Linux n=5 数字继续保留但不冒充本轮重测。Linux 正确性与 UBSan
-已通过，性能仍待在低噪声会话复跑；macOS 当前提交同样待远程复证。
+WSL GCC 14 的完整 platform suite 仍不适合作为一次性命令；2026-07-24 已按实际场景拆段
+复跑：VM/protect n=5、directory/MappedFile n=15。当前数字见总表与下方最终复证记录，
+不再保留“新接口待复证”状态。
 
 ### 2026-07-23 VM `Result/Status` 成功路径复证
 
@@ -56,7 +56,7 @@ run 得到一页 reserve+commit+release：raw **897.42 ns**、HYLE **1167.11 ns*
 RW↔RO protect pair：raw **438.51 ns**、HYLE **459.52 ns**（0.954x）。它们分别落在旧证书
 1144/877 ns 与 446/428 ns 的同一带内，没有观察到结构化成功态带来的额外回退；两步
 VM 的合同差和 protect 的约 5% 薄封装税仍按下节原判定。该单进程 run 只作接口迁移
-回归哨兵，不替代上表 n=15 三平台证书；Linux/macOS 新接口仍待性能复证。
+回归哨兵；Linux/macOS 当前接口已由下方 2026-07-24 定向证书补齐。
 
 ### 2026-07-24 一步 RW mapping
 
@@ -66,7 +66,7 @@ POSIX 直接调用一次 `mmap(PROT_READ|PROT_WRITE)`。Windows MSVC 19.50 Relea
 5 进程配对中位数为 raw **879.84 ns**、HYLE **885.24 ns**，HYLE/raw op/s 比
 **0.987**（每轮 0.985–0.994）；按 n=5 纪律判统计平。旧 staged 形状为
 **1130.69 ns**，继续服务“先保留地址、以后分批 commit”的不同合同，不再被当成普通
-分配形状的性能代表。Linux/macOS 尚待在对应真机补证，因此总表不外推 Windows 结论。
+分配形状的性能代表。Linux/macOS 后续定向复证同样把一步形状判为统计平，见下。
 
 ### 2026-07-24 filesystem `Result/Status` 成功路径
 
@@ -75,7 +75,7 @@ POSIX 直接调用一次 `mmap(PROT_READ|PROT_WRITE)`。Windows MSVC 19.50 Relea
 n=15 得到 HYLE **40.23 us**、std::filesystem **39.76 us**，配对 op/s 中位比
 **0.981**（7/15 在 1 以上，sign p=1.0），spread/sign 都判统计平。它取代旧 Win
 “sign 输 0.93x”记录；扫描的当前目录内容会影响绝对值，因此只采用同进程配对结论。
-Linux/macOS 仍保留旧接口证书，待新接口真机复跑后再更新。
+Linux/macOS 当前接口已在同日 n=15 复跑并更新总表。
 
 ### 2026-07-24 cwd / home / env 错误收敛
 
@@ -156,6 +156,27 @@ Windows 与 WSL/Linux 用单 worker performance-first scheduler，worker 实际�
 priority 只在线程创建时写入 `ThreadOpts`，不进入任务热路。性能结论是默认路径无回归，
 opt-in 初始化路径与原生能力查询同阶；它不宣称改变 OS 最终调度质量。
 
+### 2026-07-24 Linux / M4 当前接口最终复证
+
+为避免完整 suite 的 OS 阻塞段再次占机十分钟以上，本轮按用户场景拆开运行；源码均为当前
+`Result/Status` 接口。WSL GCC 14.2 与 Apple M4 AppleClang 21 的 VM/protect 各跑 n=5，
+directory/MappedFile 各跑 n=15。n=5 的 sign 最低 p=0.0625，所以只在 spread 足够时判胜负，
+其余写 TIE 或方向；n=15 使用配对 sign 结论。
+
+- 一步 `vm_allocate_rw`：WSL HYLE/raw **860.9/853.8 ns，0.978x TIE**；M4
+  **309.8/305.0 ns，0.982x TIE**。与 Windows 0.987x TIE 合并后，三平台普通形状均已证近
+  OS 地板。
+- 分阶段 reserve+commit：WSL **1086.3/853.8 ns，0.779x**，5/5 同方向但 n=5 不升级统计
+  lose；M4 **720.5/305.0 ns，spread LOSE 0.421x**。这是明确购买延迟 commit 合同的第二次
+  OS 操作，不是该用普通一步形状时的性能缺口。
+- protect：WSL 配对 **0.957x TIE**；M4 配对 **0.996x TIE**。两者都是原生调用主导，未见
+  接口迁移回退。
+- directory：WSL **7.05/14.97 µs，2.135x WIN，15/15**；M4
+  **16.46/18.25 µs，1.109x WIN，15/15**。
+- MappedFile：WSL 对 ifstream **0.745x LOSE**、对 raw mmap **0.976x TIE**；M4 对 ifstream
+  **1.492x WIN**、对 raw mmap **0.968x sign LOSE**。两平台再次证明封装贴近 raw 地板，
+  Linux 64 KiB 的合同选择仍应优先 buffered read，M4 则适合 mapping。
+
 ## 非 SOTA / 需诚实标价
 
 ### 1. staged VM 对 raw 一步分配的旧“输”不是同合同对比
@@ -174,7 +195,7 @@ arena），两次 OS 操作就是其合同成本。普通立即使用场景应�
 
 ### 2. `directory_iterate` 的平台差异
 
-- Linux/M4 旧证仍赢（d_type/原生目录枚举 + visitor 无分配）。
+- Linux/M4 当前 n=15 证书仍赢（d_type/原生目录枚举 + visitor 无分配）。
 - Win 底层都是 `FindNextFileW` 量级，HYLE 还付 UTF-16→UTF-8 visitor 转换；当前 n=15
   是统计平，不宣称结构性赢。旧“sign 输 0.93x”已被当前接口复测取代。
 - 不把任一 OS 的方向外推到另外两个平台。

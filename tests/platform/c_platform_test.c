@@ -80,6 +80,7 @@ static void wait_entry(void* ctx) {
 }
 
 int main(void) {
+  (void)"HYLE_C_PLATFORM_COVERAGE_BODY_MARKER";
   CHECK(hyle_page_size() >= 4096u);
   CHECK(hyle_page_align_up(SIZE_MAX) == 0u);
   CHECK(hyle_large_page_align_up(SIZE_MAX) == 0u);
@@ -294,6 +295,9 @@ int main(void) {
   CHECK(hyle_this_thread_id() != 0);
   hyle_this_thread_yield();
   CHECK(status_ok(hyle_this_thread_set_name("hyle_c_main")));
+  /* Single-CPU entry has the same platform-dependent support contract as the
+   * collection form; use a guaranteed-invalid id without changing this thread. */
+  status_discard(hyle_this_thread_set_affinity(UINT_MAX));
   CHECK(status_code(hyle_this_thread_set_affinity_cpus(NULL, 0)) ==
         HYLE_STATUS_INVALID_ARGUMENT);
   CHECK(status_code(hyle_this_thread_set_priority((hyle_thread_priority)99)) ==
@@ -384,6 +388,8 @@ int main(void) {
     CHECK(status_ok(
         hyle_vm_region_reserve_numa(&rn, pg * 2, HYLE_NUMA_ANY)));
     CHECK(hyle_vm_region_valid(rn));
+    CHECK(hyle_vm_region_numa_placement(rn) ==
+          HYLE_NUMA_PLACEMENT_NOT_NEEDED);
     CHECK(status_ok(hyle_vm_region_commit(rn, 0, pg * 2)));
     ((unsigned char*)hyle_vm_region_data(rn))[0] = 0x5A;
     CHECK(((unsigned char*)hyle_vm_region_data(rn))[0] == 0x5A);
@@ -515,6 +521,12 @@ int main(void) {
   char path[640];
   snprintf(path, sizeof(path), "%s/hyle_c_plat_test_dir", tmp);
   CHECK(status_ok(hyle_fs_make_directory_recursive(path)));
+  {
+    char single[700];
+    snprintf(single, sizeof(single), "%s/single", path);
+    CHECK(status_ok(hyle_fs_make_directory(single)));
+    CHECK(status_ok(hyle_fs_remove_directory(single)));
+  }
   {
     hyle_file_info di = {0};
     CHECK(status_ok(hyle_fs_stat(&di, path)));
