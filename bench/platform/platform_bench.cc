@@ -31,6 +31,7 @@
 #include <nanobench.h>
 
 #include <atomic>
+#include <cerrno>
 #include <condition_variable>
 #include <cstdlib>
 #include <cstdint>
@@ -54,6 +55,7 @@
 #else
 #  include <fcntl.h>
 #  include <sys/mman.h>
+#  include <sys/stat.h>
 #  include <unistd.h>
 #endif
 
@@ -414,12 +416,14 @@ int main() {
     if (base != nullptr) (void)vm_release(base, pg);
   }
 
-  // ---- 10. mapped_file open+read: HYLE vs std::ifstream vs raw mmap ----------
+  // ---- 10. mapped_file open+read: HYLE vs std::ifstream vs validated mmap ----
   // Zero-copy file load (weights/datasets): MappedFile maps the bytes and the OS
   // pages them in on touch -- no user-space copy. std::ifstream is the std "read a
   // file" rival: it COPIES every byte into a buffer. The raw mmap / MapViewOfFile
-  // path is the zero-copy FLOOR (the same syscalls HYLE wraps). Each row opens,
-  // sums every byte (forces the reads / page faults), and closes. 64 KiB scratch.
+  // path is the same-contract zero-copy FLOOR: unlike the old raw row, it also
+  // validates UTF-8 on Windows, queries file size, and maps exactly to EOF.
+  // Each row opens, sums every byte (forces the reads / page faults), and closes.
+  // 64 KiB scratch intentionally records the small sequential-read crossover.
   if (enabled("mapped-file")) {
     namespace sfs = std::filesystem;
     constexpr std::size_t kBytes = 64u * 1024u;
@@ -445,36 +449,64 @@ int main() {
         s += static_cast<unsigned char>(buf[i]);
       nb::doNotOptimizeAway(s);
     });
-    b.run("raw mmap+sum floor", [&] {
+    b.run("raw validated mmap+sum floor", [&] {
       std::uint64_t s = 0;
 #if defined(_WIN32)
-      HANDLE fh = ::CreateFileA(path.c_str(), GENERIC_READ, FILE_SHARE_READ,
-                                nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL,
-                                nullptr);
-      if (fh != INVALID_HANDLE_VALUE) {
-        HANDLE mh =
-            ::CreateFileMappingA(fh, nullptr, PAGE_READONLY, 0, 0, nullptr);
-        if (mh) {
-          const unsigned char* d = static_cast<const unsigned char*>(
-              ::MapViewOfFile(mh, FILE_MAP_READ, 0, 0, 0));
-          if (d) {
-            for (std::size_t i = 0; i < kBytes; ++i) s += d[i];
-            ::UnmapViewOfFile(d);
+      wchar_t wide[512];
+      const int need = ::MultiByteToWideChar(
+          CP_UTF8, MB_ERR_INVALID_CHARS, path.c_str(), -1, nullptr, 0);
+      if (need > 0 &&
+          need <= static_cast<int>(sizeof(wide) / sizeof(wide[0])) &&
+          ::MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, path.c_str(),
+                                -1, wide, need) == need) {
+        HANDLE fh = ::CreateFileW(wide, GENERIC_READ,
+                                  FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr,
+                                  OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+        if (fh != INVALID_HANDLE_VALUE) {
+          LARGE_INTEGER file_size;
+          if (::GetFileSizeEx(fh, &file_size) && file_size.QuadPart > 0) {
+            const std::uint64_t n =
+                static_cast<std::uint64_t>(file_size.QuadPart);
+            HANDLE mh = ::CreateFileMappingW(
+                fh, nullptr, PAGE_READONLY, static_cast<DWORD>(n >> 32),
+                static_cast<DWORD>(n & 0xFFFFFFFFu), nullptr);
+            if (mh) {
+              SYSTEM_INFO si;
+              ::GetSystemInfo(&si);  // same offset/granularity contract as HYLE
+              const unsigned char* d = nullptr;
+              if (si.dwAllocationGranularity != 0) {
+                d = static_cast<const unsigned char*>(::MapViewOfFile(
+                    mh, FILE_MAP_READ, 0, 0, static_cast<SIZE_T>(n)));
+              }
+              if (d) {
+                for (std::uint64_t i = 0; i < n; ++i) s += d[i];
+                ::UnmapViewOfFile(d);
+              }
+              ::CloseHandle(mh);
+            }
           }
-          ::CloseHandle(mh);
+          ::CloseHandle(fh);
         }
-        ::CloseHandle(fh);
       }
 #else
-      int fd = ::open(path.c_str(), O_RDONLY);
+      int fd = ::open(path.c_str(), O_RDONLY | O_CLOEXEC);
       if (fd >= 0) {
-        void* pv = ::mmap(nullptr, kBytes, PROT_READ, MAP_PRIVATE, fd, 0);
-        if (pv != MAP_FAILED) {
-          const unsigned char* d = static_cast<const unsigned char*>(pv);
-          for (std::size_t i = 0; i < kBytes; ++i) s += d[i];
-          ::munmap(pv, kBytes);
+        struct ::stat st;
+        if (::fstat(fd, &st) == 0 && st.st_size > 0) {
+          const std::size_t n = static_cast<std::size_t>(st.st_size);
+          const long pg = ::sysconf(_SC_PAGESIZE);
+          void* pv = pg > 0
+                         ? ::mmap(nullptr, n, PROT_READ, MAP_PRIVATE, fd, 0)
+                         : MAP_FAILED;
+          ::close(fd);
+          fd = -1;
+          if (pv != MAP_FAILED) {
+            const unsigned char* d = static_cast<const unsigned char*>(pv);
+            for (std::size_t i = 0; i < n; ++i) s += d[i];
+            ::munmap(pv, n);
+          }
         }
-        ::close(fd);
+        if (fd >= 0) ::close(fd);
       }
 #endif
       nb::doNotOptimizeAway(s);
@@ -487,6 +519,155 @@ int main() {
             static_cast<const unsigned char*>(mapped->data());
         for (std::size_t i = 0; i < mapped->size(); ++i) s += d[i];
       }
+      nb::doNotOptimizeAway(s);
+    });
+    std::error_code ec;
+    sfs::remove(path, ec);
+  }
+
+  // ---- 11. persistent mapping for random page access ------------------------
+  // This is MappedFile's real application shape (weights/datasets/resources),
+  // not the 64KiB open+sequential-scan crossover above. Both rivals stay open
+  // and read the same warm page-cache data; only the access mechanism differs.
+  if (enabled("mapped-random")) {
+    namespace sfs = std::filesystem;
+    constexpr std::size_t kPage = 4096;
+    constexpr std::size_t kPages = 4096;  // 16 MiB
+    constexpr std::size_t kProbes = 1024;
+    constexpr std::size_t kBytes = kPage * kPages;
+    const std::string path =
+        (sfs::temp_directory_path() / "hyle_platform_bench_random.bin").string();
+    {
+      std::ofstream f(path, std::ios::binary | std::ios::trunc);
+      std::vector<char> chunk(64u * 1024u);
+      for (std::size_t i = 0; i < chunk.size(); ++i) {
+        chunk[i] = static_cast<char>(i & 0x7F);
+      }
+      for (std::size_t written = 0; written < kBytes;
+           written += chunk.size()) {
+        f.write(chunk.data(), static_cast<std::streamsize>(chunk.size()));
+      }
+    }
+    std::vector<std::size_t> offsets(kProbes);
+    for (std::size_t i = 0; i < offsets.size(); ++i) {
+      // 4051 is coprime to 4096: visit distinct, non-sequential pages.
+      offsets[i] = ((i * 4051u) & (kPages - 1u)) * kPage + (i & 63u);
+    }
+    std::ifstream stream(path, std::ios::binary);
+    auto mapped = MappedFile::open(path.c_str());
+    nb::Bench b;
+    b.title("persistent 16MiB random-page reads")
+        .relative(true)
+        .batch(kProbes)
+        .minEpochIterations(20);
+    b.run("persistent ifstream seek+read", [&] {
+      std::uint64_t s = 0;
+      for (std::size_t offset : offsets) {
+        char byte = 0;
+        stream.seekg(static_cast<std::streamoff>(offset));
+        stream.read(&byte, 1);
+        s += static_cast<unsigned char>(byte);
+      }
+      nb::doNotOptimizeAway(s);
+    });
+    // Direct mapped loads are roughly three orders faster; give this row its
+    // own larger sample floor without making the seek/read row take minutes.
+    b.minEpochIterations(3000);
+    b.run("persistent HYLE MappedFile direct access", [&] {
+      std::uint64_t s = 0;
+      if (mapped) {
+        const auto* data = static_cast<const unsigned char*>(mapped->data());
+        for (std::size_t offset : offsets) s += data[offset];
+      }
+      nb::doNotOptimizeAway(s);
+    });
+    if (mapped) mapped->reset();
+    stream.close();
+    std::error_code ec;
+    sfs::remove(path, ec);
+  }
+
+  // ---- 12. FileHandle open+sequential read vs the same raw OS calls ---------
+  // FileHandle is the normal synchronous streaming shape. The buffer lives
+  // outside the timed rows; each operation opens, reads the whole cached file,
+  // sums it, and closes. This isolates Result/RAII success-path overhead from
+  // allocator and iostream buffering policy.
+  if (enabled("file-handle")) {
+    namespace sfs = std::filesystem;
+    constexpr std::size_t kBytes = 64u * 1024u;
+    const std::string path =
+        (sfs::temp_directory_path() / "hyle_platform_bench_read.bin").string();
+    {
+      std::ofstream f(path, std::ios::binary | std::ios::trunc);
+      std::vector<char> seed(kBytes);
+      for (std::size_t i = 0; i < kBytes; ++i) {
+        seed[i] = static_cast<char>(i & 0x7F);
+      }
+      f.write(seed.data(), static_cast<std::streamsize>(kBytes));
+    }
+    std::vector<unsigned char> buffer(kBytes);
+    nb::Bench b;
+    b.title("FileHandle open+read 64KiB (same raw OS calls)")
+        .relative(true)
+        .minEpochIterations(50);
+    b.run("raw OS open+read+close", [&] {
+      std::size_t total = 0;
+#if defined(_WIN32)
+      wchar_t wide[512];
+      const int need = ::MultiByteToWideChar(
+          CP_UTF8, MB_ERR_INVALID_CHARS, path.c_str(), -1, nullptr, 0);
+      HANDLE fh = INVALID_HANDLE_VALUE;
+      if (need > 0 &&
+          need <= static_cast<int>(sizeof(wide) / sizeof(wide[0])) &&
+          ::MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, path.c_str(),
+                                -1, wide, need) == need) {
+        fh = ::CreateFileW(wide, GENERIC_READ,
+                           FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr,
+                           OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+      }
+      if (fh != INVALID_HANDLE_VALUE) {
+        while (total < buffer.size()) {
+          DWORD got = 0;
+          const DWORD want = static_cast<DWORD>(buffer.size() - total);
+          if (!::ReadFile(fh, buffer.data() + total, want, &got, nullptr) ||
+              got == 0) {
+            break;
+          }
+          total += got;
+        }
+        ::CloseHandle(fh);
+      }
+#else
+      int fd = ::open(path.c_str(), O_RDONLY | O_CLOEXEC);
+      if (fd >= 0) {
+        while (total < buffer.size()) {
+          const ssize_t got = ::read(fd, buffer.data() + total,
+                                     buffer.size() - total);
+          if (got < 0 && errno == EINTR) continue;
+          if (got <= 0) break;
+          total += static_cast<std::size_t>(got);
+        }
+        ::close(fd);
+      }
+#endif
+      std::uint64_t s = 0;
+      for (std::size_t i = 0; i < total; ++i) s += buffer[i];
+      nb::doNotOptimizeAway(s);
+    });
+    b.run("HYLE FileHandle open+read+close", [&] {
+      std::size_t total = 0;
+      auto file = hyle::platform::open_file(
+          path.c_str(), hyle::platform::kOpenRead);
+      if (file) {
+        while (total < buffer.size()) {
+          auto got = file->read(buffer.data() + total, buffer.size() - total);
+          if (!got || *got == 0) break;
+          total += *got;
+        }
+        (void)file->close();
+      }
+      std::uint64_t s = 0;
+      for (std::size_t i = 0; i < total; ++i) s += buffer[i];
       nb::doNotOptimizeAway(s);
     });
     std::error_code ec;
