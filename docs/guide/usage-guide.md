@@ -614,9 +614,9 @@ if (!env) {
 }
 HYLE_RETURN_IF_ERROR(set_env_var("MYAPP_MODE", "fast"));
 
-// 线程：ABI-clean 句柄 + name/affinity/stack/priority（best-effort，需权限时软降级）
+// 线程：ABI-clean 句柄 + name/affinity/stack/priority；默认 best-effort
 #include "hyle/platform/thread.h"
-ThreadOpts opts; opts.name = "worker"; opts.affinity_cpu = 0; opts.priority = ThreadPriority::kHigh;
+ThreadOpts opts; opts.name = "worker"; opts.priority = ThreadPriority::kHigh;
 auto t = Thread::spawn(&entry, ctx, opts);
 
 // 动态库（RTLD_NOLOAD 附着已加载；macOS 传 install-name）+ CPU 特性
@@ -632,10 +632,13 @@ unsigned first_cpu;
 HYLE_ASSIGN_OR_RETURN(
     std::size_t available,
     available_cpu_ids(&first_cpu, 1));   // 完整进程配额；写入首个真实 id
-if (available != 0) opts.affinity_cpu = first_cpu; // id 可稀疏，不能用 0..count 猜
+ThreadOpts pinned_opts;
+if (available != 0) pinned_opts.affinity_cpu = first_cpu; // id 可稀疏
+pinned_opts.config_policy = ThreadConfigPolicy::kRequired;
+auto pinned = Thread::spawn(&entry, ctx, pinned_opts); // 设置失败则 entry 不运行
 ```
 
-**跨平台语义提醒**：`create_symlink` 在 Windows 需开发者模式/管理员（否则返回 `PermissionDenied`）；`set_env_var(name,"")` 在 Windows 删除变量、POSIX 保留空值；thread priority/affinity 是 best-effort（无权限软降级）。`cpu_topology()` 只报告系统明确提供的 P/E 分类；信息不足时把全部逻辑 CPU 归入 performance 并令 `hybrid=false`，不做频率启发式猜测。worker 数用动态 `available_cpu_count()`，绑核 id 用 `available_cpu_ids()`；二者都遵守进程 affinity/cpuset。纯 C / FFI 消费者用 `hyle/c/platform.h`（见 [`c-platform.md`](./c-platform.md)）。
+**跨平台语义提醒**：`create_symlink` 在 Windows 需开发者模式/管理员（否则返回 `PermissionDenied`）；`set_env_var(name,"")` 在 Windows 删除变量、POSIX 保留空值；thread 配置默认 best-effort，需要保证时选 `ThreadConfigPolicy::kRequired` 或检查 `this_thread::set_*` 的 Status（macOS 硬 affinity 明确 `Unimplemented`，priority 走 QoS）。`cpu_topology()` 只报告系统明确提供的 P/E 分类；信息不足时把全部逻辑 CPU 归入 performance 并令 `hybrid=false`，不做频率启发式猜测。worker 数用动态 `available_cpu_count()`，绑核 id 用 `available_cpu_ids()`；二者都遵守进程 affinity/cpuset。纯 C / FFI 消费者用 `hyle/c/platform.h`（见 [`c-platform.md`](./c-platform.md)）。
 
 本指南讲"正常用法"。**为 SOTA 性能保留的调用约束**（违反 = UB，非 HYLE bug）单独列在 [`usage-contract.md`](./usage-contract.md)（同目录）：fiber 跨 yield 的 thread_local、分配器跨线程 free、CPUID 探测的 LTO 隔离等。集成前过一遍。
 

@@ -44,6 +44,17 @@ error 的统一所有权释放；platform 不再保留私有 last-error。
 - `available_cpu_ids()` / `hyle_cpu_available_ids()` 动态读取 affinity/cpuset/CPU Sets，
   返回可直接用于 thread affinity 的真实（可能稀疏）id，worker 数取其完整 count。
 
+### A5. Thread 配置合同与下游 placement（2026-07-24）
+
+- `ThreadOpts::config_policy` 默认 best-effort；required 在用户 entry 前完成设置，失败返回
+  `Status` 且 entry 不运行。C ABI 具名 policy 与 setter 1:1 覆盖。
+- `this_thread::set_name/set_affinity/set_priority` 返回共享 `Status`，不再只能静默吞错；
+  Linux 大 CPU id 使用动态 mask，macOS priority 使用 QoS，硬 pin 明确不支持。
+- sched worker 用 `available_cpu_ids` 返回的真实（可能稀疏）id，而非把 worker ordinal
+  当 OS CPU id；placement 仍属 sched 策略，platform 只提供机制与错误。
+- 默认 Thread 创建路径不做 required 握手、不增加 refcount RMW；required 的同步成本只在
+  用户明确请求强保证时发生。
+
 ### B1. macOS parker timeout
 
 `Parker.ParkTimeoutReturnsFalseOnTimeout` 直接测量 20 ms 无唤醒等待：

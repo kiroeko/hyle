@@ -6,6 +6,7 @@
 #endif
 #include "hyle/c/platform.h"
 
+#include <limits.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -165,6 +166,8 @@ int main(void) {
   opts.has_affinity_cpu = 0; /* do not constrain heterogeneous CI hosts */
   hyle_thread_opts_set_priority(&opts, HYLE_THREAD_PRIORITY_NORMAL);
   CHECK(opts.has_priority && opts.priority == HYLE_THREAD_PRIORITY_NORMAL);
+  hyle_thread_opts_set_config_policy(&opts, HYLE_THREAD_CONFIG_REQUIRED);
+  CHECK(opts.config_policy == HYLE_THREAD_CONFIG_REQUIRED);
   hyle_status st = hyle_thread_spawn(&t, thr_entry, &ran, &opts);
   CHECK(hyle_status_is_ok(st));
   hyle_status_free(&st);
@@ -188,6 +191,22 @@ int main(void) {
     CHECK(hyle_status_is_invalid_argument(small));
     CHECK(bad == NULL);
     hyle_status_free(&small);
+  }
+
+  /* Required setup is observable: an impossible CPU rejects spawn and never
+   * invokes the user's entry. */
+  {
+    int must_not_run = 0;
+    hyle_thread_o* bad = NULL;
+    hyle_thread_opts strict = HYLE_THREAD_OPTS_INIT;
+    hyle_thread_opts_set_affinity(&strict, UINT_MAX);
+    hyle_thread_opts_set_config_policy(&strict, HYLE_THREAD_CONFIG_REQUIRED);
+    hyle_status strict_status =
+        hyle_thread_spawn(&bad, thr_entry, &must_not_run, &strict);
+    CHECK(!hyle_status_is_ok(strict_status));
+    CHECK(bad == NULL);
+    CHECK(must_not_run == 0);
+    hyle_status_free(&strict_status);
   }
 
   /* FFI-friendly spawn_opts: no struct/has_ flags, sentinels for defaults
@@ -218,7 +237,9 @@ int main(void) {
   CHECK(hyle_hardware_concurrency() >= 1u);
   CHECK(hyle_this_thread_id() != 0);
   hyle_this_thread_yield();
-  hyle_this_thread_set_name("hyle_c_main");
+  CHECK(status_ok(hyle_this_thread_set_name("hyle_c_main")));
+  CHECK(status_code(hyle_this_thread_set_priority((hyle_thread_priority)99)) ==
+        HYLE_STATUS_INVALID_ARGUMENT);
 
   /* DynLib */
 #if defined(_WIN32)

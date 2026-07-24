@@ -74,17 +74,19 @@ last-error；C 与 C++ 共用 error 的 code、message 和所有权规则。
 | `hyle_hardware_concurrency` | 系统在线逻辑 CPU 数 ≥1；worker 数优先用下文 `hyle_cpu_available_count` |
 | `hyle_this_thread_id` | 稳定线程 id |
 | `hyle_this_thread_yield` | |
-| `hyle_this_thread_set_name` | name 可 NULL→空串 |
+| `hyle_this_thread_set_name` | 返回 Status；name 可 NULL→空串 |
+| `hyle_this_thread_set_affinity` / `set_priority` | 调用线程逐项配置；失败可观察 |
 
 **头内 inline / 宏**（无 DLL）：
 
 | 符号 | 说明 |
 |---|---|
-| `hyle_thread_opts` | 首字段 `struct_size`，其后为 `name` / `has_stack_size`+`stack_size` / `has_affinity_cpu`+`affinity_cpu` / `has_priority`+`priority` |
-| `hyle_thread_priority`（v4） | `LOWEST`/`LOW`/`NORMAL`/`HIGH`/`HIGHEST`（-2..2）；best-effort，POSIX 提权需权限 |
+| `hyle_thread_opts` | 首字段 `struct_size`，其后为 name/stack/affinity/priority 与 `config_policy` |
+| `hyle_thread_priority` | `LOWEST`/`LOW`/`NORMAL`/`HIGH`/`HIGHEST`（-2..2）；Linux 提升需权限，macOS 映射 QoS |
+| `hyle_thread_config_policy` | 默认 `BEST_EFFORT`；`REQUIRED` 在 entry 前同步配置，失败不运行 entry |
 | `HYLE_THREAD_OPTS_INIT` | 默认初始化宏；会写 `struct_size`，不是全零字节 |
 | `hyle_thread_opts_default` | 返回默认 opts |
-| `hyle_thread_opts_set_name` / `hyle_thread_opts_set_stack_size` / `hyle_thread_opts_set_affinity` / `hyle_thread_opts_set_priority` | setter |
+| `hyle_thread_opts_set_name` / `set_stack_size` / `set_affinity` / `set_priority` / `set_config_policy` | setter |
 
 ### 3.3 DynLib（DLL）
 
@@ -277,6 +279,7 @@ hyle_thread_o* t = NULL;
 hyle_thread_opts opts = HYLE_THREAD_OPTS_INIT;
 hyle_thread_opts_set_name(&opts, "worker");
 hyle_thread_opts_set_stack_size(&opts, 2u * 1024u * 1024u);
+hyle_thread_opts_set_config_policy(&opts, HYLE_THREAD_CONFIG_REQUIRED);
 hyle_status st = hyle_thread_spawn(&t, worker, &flag, &opts);
 if (!hyle_status_is_ok(st)) { hyle_status_free(&st); return; }
 hyle_status_free(&st);
@@ -289,6 +292,10 @@ FFI 不方便构造结构体时可直接：
 hyle_status st = hyle_thread_spawn_opts(
     &t, worker, &flag, "worker", 0, -1, HYLE_THREAD_PRIORITY_NORMAL);
 ```
+
+`spawn_opts` 是默认 best-effort 的简写；需要 required 或需要“不设置 priority”时使用完整
+`hyle_thread_opts`。required affinity 在 macOS 返回 `HYLE_STATUS_UNIMPLEMENTED`。已经在
+entry 内时可调用 `hyle_this_thread_set_*` 并按普通 `hyle_status` 规则检查、释放。
 
 ### DynLib / open_symbol
 

@@ -78,7 +78,9 @@ clay fs 每个返回路径的 API 都走 `Allocator*` + `const char*`,目录列�
 - **`OwnedFd`**：零成本 fd/HANDLE 所有权 RAII（Rust `OwnedFd`/seastar `file_desc` 血统）——move-only、无 vtable/堆/refcount、一个 word；temp file 的返回类型，未来同步文件 fd 可复用。
 - **env 写**：`set_env_var`/`unset_env_var`（POSIX setenv/unsetenv、Win `_putenv_s`；文档标注与并发读非线程安全）。
 - **`MappedFile`**（新 `mapped_file.h/.cc`）：文件内存映射 RAII，三模式 RO/RW/COW（对标 Rust memmap2 Mmap/MmapMut/MmapCopy）。POSIX mmap MAP_SHARED/PRIVATE + msync；Win CreateFileMapping/MapViewOfFile PAGE_READONLY/READWRITE/WRITECOPY + FlushViewOfFile。**offset 内部对齐**（Win 按 dwAllocationGranularity 64K / POSIX 按 page），`data()` 返回请求 offset 的精确位置（memmap2 风格，支持任意 offset）。归 platform（同步 host 内存，与 VmRegion 同层）；跨进程 shmem 仍归 io-05。
-- **thread priority**：`ThreadOpts::priority`（5 档 kLowest..kHighest 可移植梯）——Win `SetThreadPriority`、POSIX `setpriority` nice 映射，best-effort（提权需权限 → soft no-op）。
+- **thread priority**：`ThreadOpts::priority`（5 档 kLowest..kHighest 可移植梯）——Windows
+  `SetThreadPriority`、Linux per-thread nice、macOS QoS；默认 best-effort，required 或
+  `this_thread::set_priority` 会把权限/系统失败返回为共享 Status。
 
 **C ABI v4**：以上全部导出到 `hyle_platform_api` 表尾（保 v2/v3 前缀布局），`hyle_file_info` 加 `is_symlink`，thread opts 加 priority，MappedFile 走 opaque handle，temp file 走 `intptr_t` fd + `hyle_fs_close_fd`。文档 `docs/guide/c-platform.md` 1:1。
 

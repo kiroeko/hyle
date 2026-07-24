@@ -25,15 +25,15 @@
 ### 整体进度与体量（诚实，2026-07-19 锚定）——分母别混
 
 > **生产 = `cloc src include` 的 code 列**（header+C++/CUDA 等，不含 tests/bench/docs/third_party）。
-> **旧投影「完成时生产 ~28–40k / 中值 34k」已作废**：当前生产已 **~67.2k**，单 **simd ~37.7k**。
+> **旧投影「完成时生产 ~28–40k / 中值 34k」已作废**：当前生产已 **~78.0k**，单 **simd ~37.5k**。
 > 权威规模节：[`../architecture/hyle-scope.md`](../architecture/hyle-scope.md)。中期报告：[`midterm-report-2026-07-scale-positioning.md`](./midterm-report-2026-07-scale-positioning.md)。SIMD 当前补缺账本：[`simd-capability-fill-list.md`](./simd-capability-fill-list.md)。
 
 | 口径 | 当前（约） | 说明 |
 |---|---|---|
-| **生产 `src`+`include`** | **77,808** | 库本体硬锚 |
-| tests / bench / docs | 34,942 / 15,012 / 22,239 | |
+| **生产 `src`+`include`** | **78,023** | 库本体硬锚 |
+| tests / bench / docs | 35,059 / 15,012 / 22,239 | |
 | 自有工程（git 跟踪且排除 third_party） | **156,142** | |
-| git 全跟踪（含 in-tree third_party） | **238,579** | simdutf/mimalloc 等，**≠ 自写** |
+| git 全跟踪（含 in-tree third_party） | **238,969** | simdutf/mimalloc 等，**≠ 自写** |
 | **终态生产（纪律收口 A）** | **~75–90k** | 主预期 |
 | **终态生产（做满守界 B）** | **~85–105k** | compute/graph/发布面收口更满 |
 | 失控上限 C | 120k+ 生产 | 应避免 |
@@ -46,7 +46,7 @@
 | **对完整愿景的功能完成度** | 能力清单 + 头牌缺口 | 不再给伪精确百分比：底层多数冻结，platform 主动复审；compute/graph 与发布面仍有能力尾 |
 
 **模块生产粗表（2026-07-24）**：simd ~37.5k · io ~9.0k · container
-~4.9k · platform ~5.7k（含公共 C 头为 ~6.1k）· compute ~4.1k · sched ~5.1k · mem ~4.3k ·
+~4.9k · platform ~5.9k（含公共 C 头为 **6,317**）· compute ~4.1k · sched ~5.1k · mem ~4.3k ·
 util ~1.3k · time ~0.9k · obs/error/graph 各 ~0.6–0.8k。
 
 预发布冻结门、重开触发器和下一步顺序见

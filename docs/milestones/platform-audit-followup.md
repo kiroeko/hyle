@@ -4,6 +4,10 @@
 > VM/NUMA 已迁到共享 `Status`/`Result` 与 `hyle_status` + out。见
 > [`platform-error-convergence.md`](platform-error-convergence.md)。
 
+> **Thread 追记（2026-07-24）：**旧实现把 worker ordinal 当 CPU id 且吞掉配置失败。
+> 当前 sched 消费 `available_cpu_ids()` 的真实稀疏 id；Thread 提供 best-effort/required
+> 双合同与返回 Status 的 `this_thread::set_*`。当前合同见 guide，本任务单只作历史记录。
+
 > 2026-07-18 对 platform 做四维度体检(① 功能完整+下游利用 / ② 红队实现 / ③ 测试+性能 / ④ C ABI+guide+close)。4 个子代理并行审 + 主进程逐条对代码核实红队与功能关键项。本文件是处置清单 + handoff。
 
 ## 体检总体结论
@@ -69,7 +73,9 @@ platform **功能完整、C ABI 接近满分**:8 子系统(wait/cpu/numa/virtual
   - bench:park_timeout / vm_protect / mapped_file 三热路径无 bench。
 
 ### P5 下游利用错配 [✓ 已接上 — #21 fd9ea83]
-- **[✓ 已做] 调度器 worker 绑核/命名**:scheduler.cc worker spawn 传 `affinity_cpu=i`(每 worker 绑一核)+ `name="hyle-wkr-N"`(top/htop/perf 可见)。platform guard 越界 best-effort 跳过;当前无"当前线程重绑"API,只 spawn 时设(足够——worker 生命周期固定)。
+- **[✓ 已修正] 调度器 worker 绑核/命名**：最初版本传 `affinity_cpu=i`；后续回审发现 Linux
+  稀疏 cpuset 下 ordinal 不是 OS id。当前按 `available_cpu_ids()` 顺序绑定，超额 worker
+  保持可迁移；`this_thread::set_affinity` 也已提供 Status-returning 的显式重绑机制。
 - **[✓ 已登记] dynlib 动机落空**:dynlib.h 头注登记为 FFI-only 铺垫(SIMD 实为进程内 TU + cpu_features 表派发,非 dlopen)。保留因其为干净、已测、有真实 FFI 用途的 platform 能力。
 - 其余仅-C ABI 暴露(thread stack/priority、numa bind/interleave、mapped_file/fs 整套、vm_free_rw)多为面向 FFI 嵌入者的合理超前铺垫,非错配。
 

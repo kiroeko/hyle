@@ -97,18 +97,18 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 
 > **信源**：体量以 `cloc` 实测为准；能力进度以 [`../milestones/README.md`](../milestones/README.md) 为准。
 > **口径**：生产 = `src` + `include` 的 code 列（不含 tests/bench/docs、不含 third_party）。
-> **2026-07-24 锚定**：旧投影「完成时生产 ~28–40k / 中值 34k」**已作废**——当前生产已 **77.8k**，单 simd **37.5k**。当前判断见 [`../milestones/pre-release-readiness.md`](../milestones/pre-release-readiness.md)；更早数字只作历史快照。
+> **2026-07-24 锚定**：旧投影「完成时生产 ~28–40k / 中值 34k」**已作废**——当前生产已 **78.0k**，单 simd **37.5k**。当前判断见 [`../milestones/pre-release-readiness.md`](../milestones/pre-release-readiness.md)；更早数字只作历史快照。
 
 ### 当前实测（2026-07-24）
 
 | 口径 | code | 说明 |
 |---|---:|---|
-| **生产 `src`+`include`** | **77,808** | 库本体；不含测试 |
-| tests | **34,942** | 由同语言口径 112,750 - 77,808 得出 |
+| **生产 `src`+`include`** | **78,023** | 库本体；不含测试 |
+| tests | **35,059** | 由同语言口径 113,082 - 78,023 得出 |
 | bench | **15,012** | |
 | docs | **22,239** | Markdown + CSV |
 | 自有工程（`--vcs=git --exclude-dir=third_party,.deps`） | **156,142** | 含测/文档/脚本 |
-| git 全跟踪（含 in-tree third_party） | **238,579** | 含 simdutf/mimalloc/fcontext 等 |
+| git 全跟踪（含 in-tree third_party） | **238,969** | 含 simdutf/mimalloc/fcontext 等 |
 | 再加 ggml 等大依赖足迹 | **~200–350k+** | 由 ggml 主导，不计入「自有生产」 |
 
 **生产按模块（src+include，约）：**

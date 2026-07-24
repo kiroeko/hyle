@@ -1,5 +1,9 @@
 # platform-01：thread + park（地址等待原语）
 
+> **当前追记（2026-07-24）：**初版只要求 affinity“不崩”且静默 best-effort，现已由
+> `ThreadConfigPolicy` 的 best-effort/required 双合同、返回 Status 的 `this_thread::set_*`
+> 和 sched 稀疏 CPU id 消费替代。本文是早期任务验收，不是当前 API 指南。
+
 | 字段 | 值 |
 |---|---|
 | **阶段** | P1 |

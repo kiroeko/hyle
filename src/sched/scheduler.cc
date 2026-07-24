@@ -1,5 +1,6 @@
 #include "hyle/sched/scheduler.h"
 
+#include <algorithm>
 #include <atomic>
 #include <bit>
 #include <condition_variable>
@@ -19,6 +20,7 @@
 #include "hyle/macros.h"
 #include "hyle/mem/fiber_stack.h"
 #include "hyle/obs/trace.h"
+#include "hyle/platform/cpu.h"
 #include "hyle/platform/thread.h"
 #include "hyle/platform/wait.h"
 #include "hyle/sched/fiber.h"
@@ -389,13 +391,21 @@ struct Scheduler::Impl {
         return;
       }
     }
+    // Affinity ids are OS ids, not dense worker ordinals. Linux cpusets can be
+    // sparse (for example {4, 6}); Windows ids flatten processor groups. Keep
+    // placement a sched policy, but consume the platform process view exactly.
+    std::vector<unsigned> available_cpus(num_workers);
+    auto available = platform::available_cpu_ids(available_cpus.data(),
+                                                  available_cpus.size());
+    const std::size_t pin_count =
+        available ? std::min<std::size_t>(*available, available_cpus.size()) : 0;
     for (unsigned i = 0; i < num_workers; ++i) {
-      // Pin worker i to logical core i (one-to-one when workers <= cores; the
-      // platform layer best-effort-skips an out-of-range pin) and name it for
-      // observability (top/htop, perf). affinity_cpu is honored only at spawn —
-      // there is no post-hoc rebind API. platform-01 D3: sched per-core pinning.
+      // Pin one-to-one while a real process-available id exists. Explicit
+      // over-subscription leaves surplus workers movable instead of pretending
+      // worker ordinal i is a valid CPU. Placement remains best-effort so a
+      // runtime affinity change cannot make the scheduler unusable.
       platform::ThreadOpts opts;
-      opts.affinity_cpu = i;
+      if (i < pin_count) opts.affinity_cpu = available_cpus[i];
       char wname[24];
       std::snprintf(wname, sizeof(wname), "hyle-wkr-%u", i);
       opts.name = wname;  // string_view; spawn() copies it synchronously (make_start)

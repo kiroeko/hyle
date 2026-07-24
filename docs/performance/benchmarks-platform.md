@@ -111,6 +111,25 @@ container `StringBuf` 的 shard 档位都已从整机 `hardware_concurrency` 切
 Windows/Linux 约束到单 CPU 的测试分别断言 scheduler 默认 1 worker、SharedPool 默认 1 shard，
 避免“platform API 正确但 HYLE 自己仍过度并发”的纸面收口。
 
+### 2026-07-24 线程配置失败可观察
+
+`ThreadOpts` 保留默认 best-effort，同时增加 opt-in required：新线程在调用用户 entry 前完成
+name/affinity/priority；Windows 由创建者配置 thread handle 后打开入口 gate，POSIX 由新线程
+配置并通过一次地址等待握手交回 `spawn()`；失败时 entry 不运行。
+required 是线程创建控制面，时间复杂度 O(1) 加所请求的 OS 配置调用，空间仍是一份既有的
+`ThreadStart` 分配。默认 spawn+join 基准路径没有等待、没有额外引用计数 RMW，仍是上表与
+`std::thread` 统计平的同一形状；不能用 required 的同步保证去对比异步 best-effort。
+
+Linux affinity mask 改用动态 `CPU_ALLOC`，不再把 ≥1024 CPU 静默跳过；明显越界 id 在分配
+mask 前先按 configured CPU 数拒绝，避免错误输入制造超大控制面分配。macOS priority 从
+无区分度的 `SCHED_OTHER` priority 0 映射改为系统 QoS；硬 affinity required 明确返回
+`Unimplemented`。`this_thread::set_*` 同样返回共享 Status，只有失败路构造诊断。
+
+sched 的 worker placement 也已从 `affinity_cpu=i` 改为消费 `available_cpu_ids()` 的真实 id；
+WSL 回归把调用线程临时限制到两个非 dense CPU，断言两个 worker 各得到正确的 singleton
+mask。显式超额 worker 不伪造 CPU id，多出的 worker 保持 OS 可迁移。这些都是创建期 OS
+控制路径，不新增纳秒 microbenchmark；正确性、复杂度与默认热路径无回归是对应验收。
+
 ## 非 SOTA / 需诚实标价
 
 ### 1. staged VM 对 raw 一步分配的旧“输”不是同合同对比

@@ -106,12 +106,20 @@ hyle::platform::ThreadOpts to_cpp_opts(const hyle_thread_opts* opts) {
     o.priority = static_cast<hyle::platform::ThreadPriority>(
         static_cast<std::int8_t>(opts->priority));
   }
+  o.config_policy = opts->config_policy == HYLE_THREAD_CONFIG_REQUIRED
+                        ? hyle::platform::ThreadConfigPolicy::kRequired
+                        : hyle::platform::ThreadConfigPolicy::kBestEffort;
   return o;
 }
 
 bool valid_priority(int p) noexcept {
   return p >= HYLE_THREAD_PRIORITY_LOWEST &&
          p <= HYLE_THREAD_PRIORITY_HIGHEST;
+}
+
+bool valid_thread_config_policy(int policy) noexcept {
+  return policy == HYLE_THREAD_CONFIG_BEST_EFFORT ||
+         policy == HYLE_THREAD_CONFIG_REQUIRED;
 }
 
 bool valid_protect(hyle_protect p) noexcept {
@@ -238,6 +246,10 @@ hyle_status hyle_thread_spawn(hyle_thread_o** out, hyle_thread_entry_fn entry,
     return steal_status(
         hyle::Status::InvalidArgument("thread priority out of range"));
   }
+  if (opts != nullptr && !valid_thread_config_policy(opts->config_policy)) {
+    return steal_status(
+        hyle::Status::InvalidArgument("thread config policy is invalid"));
+  }
   auto* o = new (std::nothrow) hyle_thread_o{};
   if (o == nullptr) {
     return steal_status(hyle::Status::ResourceExhausted("thread object OOM"));
@@ -290,8 +302,21 @@ uint64_t hyle_this_thread_id(void) {
   return hyle::platform::this_thread::get_id();
 }
 void hyle_this_thread_yield(void) { hyle::platform::this_thread::yield(); }
-void hyle_this_thread_set_name(const char* name) {
-  hyle::platform::this_thread::set_name(name != nullptr ? name : "");
+hyle_status hyle_this_thread_set_name(const char* name) {
+  return steal_status(hyle::platform::this_thread::set_name(
+      name != nullptr ? name : ""));
+}
+hyle_status hyle_this_thread_set_affinity(unsigned cpu) {
+  return steal_status(hyle::platform::this_thread::set_affinity(cpu));
+}
+hyle_status hyle_this_thread_set_priority(hyle_thread_priority priority) {
+  if (!valid_priority(static_cast<int>(priority))) {
+    return steal_status(
+        hyle::Status::InvalidArgument("thread priority out of range"));
+  }
+  return steal_status(hyle::platform::this_thread::set_priority(
+      static_cast<hyle::platform::ThreadPriority>(
+          static_cast<std::int8_t>(priority))));
 }
 
 hyle_status hyle_dynlib_open(hyle_dynlib_o** out, const char* path) {

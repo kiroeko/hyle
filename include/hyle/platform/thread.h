@@ -12,15 +12,24 @@ namespace hyle::platform {
 
 // Options a raw std::thread cannot express but the work-stealing scheduler needs
 // (sched-design §3.3 per-core pinning; std::thread can't even set stack size).
-// All fields are layout-stable (view + trivially-copyable optionals) so this
-// struct is ABI-clean across the DLL seam. `name` is a view: spawn() copies it
-// synchronously, the caller owns the backing buffer.
+// This is the natural C++ surface; cross-compiler/FFI users use
+// hyle/c/platform.h. `name` is a view: spawn() copies it synchronously, so the
+// caller only needs to keep the backing buffer alive through the call.
 // Portable 5-level priority. OS priority models diverge wildly (Windows discrete
 // levels vs POSIX nice vs SCHED_FIFO), so we expose a small portable ladder and
 // map it per-OS. Best-effort: a level the OS won't grant without privilege is a
 // soft no-op (the thread still runs at default), never a failure.
 enum class ThreadPriority : std::int8_t {
   kLowest = -2, kLow = -1, kNormal = 0, kHigh = 1, kHighest = 2,
+};
+
+// What spawn() should do when an explicitly requested name, affinity or
+// priority cannot be applied. Best-effort is the portable default (notably,
+// macOS has no public hard CPU-pinning API). Required makes setup synchronous:
+// spawn returns the setup Status and never calls entry on failure.
+enum class ThreadConfigPolicy : std::uint8_t {
+  kBestEffort = 0,
+  kRequired = 1,
 };
 
 struct ThreadOpts {
@@ -30,6 +39,7 @@ struct ThreadOpts {
   // are flattened. IDs may be sparse under Linux cpusets. Best-effort on macOS.
   std::optional<unsigned> affinity_cpu;
   std::optional<ThreadPriority> priority;    // scheduling priority (best-effort; needs privilege on POSIX)
+  ThreadConfigPolicy config_policy = ThreadConfigPolicy::kBestEffort;
 };
 
 // Owning thread handle. Move-only. Stores the raw OS handle (no std::thread in
@@ -46,7 +56,8 @@ class HYLE_PLATFORM_API Thread {
 
   // entry(ctx) runs on the new thread; ctx must outlive the thread's execution.
   // Function-pointer + void* (not std::function): ABI-clean + zero type erasure.
-  // Returns Internal on OS spawn failure.
+  // Returns a structured OS creation failure. With kRequired it also returns
+  // configuration failures and guarantees entry was not called.
   static Result<Thread> spawn(void (*entry)(void*), void* ctx, ThreadOpts opts = {});
 
   bool joinable() const noexcept { return handle_ != 0; }
@@ -67,8 +78,12 @@ namespace this_thread {
 HYLE_PLATFORM_API std::uint64_t get_id() noexcept;
 // Hint to the OS scheduler to relinquish the rest of this time slice.
 HYLE_PLATFORM_API void yield() noexcept;
-// Set the calling thread's name (best-effort; see ThreadOpts::name limits).
-HYLE_PLATFORM_API void set_name(std::string_view name) noexcept;
+// Configure the calling thread. Unlike best-effort ThreadOpts, these return the
+// native failure through the shared error model. Ignoring a failure must be
+// explicit with Status::IgnoreError(). affinity_cpu uses available_cpu_ids().
+HYLE_PLATFORM_API Status set_name(std::string_view name) noexcept;
+HYLE_PLATFORM_API Status set_affinity(unsigned affinity_cpu) noexcept;
+HYLE_PLATFORM_API Status set_priority(ThreadPriority priority) noexcept;
 }  // namespace this_thread
 
 }  // namespace hyle::platform

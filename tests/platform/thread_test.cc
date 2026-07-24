@@ -5,15 +5,18 @@
 #include <gtest/gtest.h>
 
 #include <atomic>
+#include <limits>
 
 #if !defined(_WIN32)
 #  include <pthread.h>  // pthread_getname_np (Linux + macOS)
 #  include <sched.h>    // sched_getaffinity + cpu_set_t (Linux)
 #endif
 
+#include "hyle/platform/cpu.h"
 #include "hyle/platform/thread.h"
 
 using hyle::platform::Thread;
+using hyle::platform::ThreadConfigPolicy;
 using hyle::platform::ThreadOpts;
 using hyle::platform::ThreadPriority;
 namespace this_thread = hyle::platform::this_thread;
@@ -37,7 +40,9 @@ TEST(Thread, SpawnWithNameAndAffinity) {
   std::atomic<bool> ran{false};
   ThreadOpts opts;
   opts.name = "hyle-worker";
-  opts.affinity_cpu = 0u;
+  unsigned cpu = 0;
+  auto available = hyle::platform::available_cpu_ids(&cpu, 1);
+  if (available && *available != 0) opts.affinity_cpu = cpu;
   auto r = Thread::spawn(
       [](void* a) { static_cast<std::atomic<bool>*>(a)->store(true); }, &ran,
       opts);
@@ -55,6 +60,7 @@ struct ProbeResult {
   char name[64] = {0};
   int name_rc = -1;
 #if defined(__linux__)
+  unsigned cpu = 0;
   int affinity_ok = -1;  // 1 if the pinned CPU is set in the running mask
 #endif
 };
@@ -64,8 +70,9 @@ void probe_entry(void* arg) {
 #if defined(__linux__)
   cpu_set_t set;
   CPU_ZERO(&set);
-  if (::sched_getaffinity(0, sizeof(set), &set) == 0) {
-    r->affinity_ok = CPU_ISSET(0, &set) ? 1 : 0;
+  if (r->cpu < CPU_SETSIZE &&
+      ::sched_getaffinity(0, sizeof(set), &set) == 0) {
+    r->affinity_ok = CPU_ISSET(r->cpu, &set) ? 1 : 0;
   }
 #endif
 }
@@ -75,7 +82,14 @@ TEST(Thread, NameTakesEffect) {
   ProbeResult res;
   ThreadOpts opts;
   opts.name = "hyle-probe";
-  opts.affinity_cpu = 0u;
+  unsigned cpu = 0;
+  auto available = hyle::platform::available_cpu_ids(&cpu, 1);
+  if (available && *available != 0) {
+    opts.affinity_cpu = cpu;
+#if defined(__linux__)
+    res.cpu = cpu;
+#endif
+  }
   auto r = Thread::spawn(&probe_entry, &res, opts);
   ASSERT_TRUE(r.has_value());
   std::move(*r).join();
@@ -83,8 +97,7 @@ TEST(Thread, NameTakesEffect) {
   // Linux truncates thread names to 15 chars; "hyle-probe" (10) fits exactly.
   EXPECT_STREQ(res.name, "hyle-probe");
 #if defined(__linux__)
-  // affinity_cpu=0 pinned the thread to CPU 0 -> it must be in the running mask.
-  // (Skip if the OS refused the pin, e.g. cgroup cpuset excludes CPU 0.)
+  // The actual process-available id (which may be sparse) must be in the mask.
   if (res.affinity_ok != -1) { EXPECT_EQ(res.affinity_ok, 1); }
 #endif
 }
@@ -110,7 +123,14 @@ TEST(Thread, HardwareConcurrencyIsPositive) {
 TEST(ThisThread, IdAndHelpers) {
   EXPECT_NE(this_thread::get_id(), 0u);
   this_thread::yield();             // must not crash
-  this_thread::set_name("hyle-main");  // best-effort, must not crash
+  EXPECT_TRUE(this_thread::set_name("hyle-main").ok());
+  EXPECT_FALSE(this_thread::set_affinity(
+                   std::numeric_limits<unsigned>::max())
+                   .ok());
+  EXPECT_TRUE(this_thread::set_priority(
+                  static_cast<ThreadPriority>(
+                      std::numeric_limits<std::int8_t>::max()))
+                  .IsInvalidArgument());
   SUCCEED();
 }
 
@@ -177,6 +197,31 @@ TEST(Thread, AffinityOutOfRangeDoesNotCrash) {
       opts);
   ASSERT_TRUE(r.has_value());
   std::move(*r).join();
+  EXPECT_TRUE(ran.load());
+}
+
+TEST(Thread, RequiredSetupRejectsInvalidAffinityWithoutRunningEntry) {
+  std::atomic<bool> ran{false};
+  ThreadOpts opts;
+  opts.affinity_cpu = std::numeric_limits<unsigned>::max();
+  opts.config_policy = ThreadConfigPolicy::kRequired;
+  auto result = Thread::spawn(
+      [](void* arg) { static_cast<std::atomic<bool>*>(arg)->store(true); },
+      &ran, opts);
+  ASSERT_FALSE(result.has_value());
+  EXPECT_FALSE(ran.load());
+}
+
+TEST(Thread, RequiredSetupCompletesBeforeSpawnReturns) {
+  std::atomic<bool> ran{false};
+  ThreadOpts opts;
+  opts.name = "hyle-required-name-that-is-longer-than-linux-limit";
+  opts.config_policy = ThreadConfigPolicy::kRequired;
+  auto result = Thread::spawn(
+      [](void* arg) { static_cast<std::atomic<bool>*>(arg)->store(true); },
+      &ran, opts);
+  ASSERT_TRUE(result.has_value());
+  std::move(*result).join();
   EXPECT_TRUE(ran.load());
 }
 

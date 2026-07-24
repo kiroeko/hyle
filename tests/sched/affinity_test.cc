@@ -5,6 +5,10 @@
 #include <thread>
 #include <vector>
 
+#if defined(__linux__)
+#  include <sched.h>
+#endif
+
 #include "hyle/mem/allocator.h"
 #include "hyle/sched/fiber.h"
 #include "hyle/sched/scheduler.h"
@@ -141,3 +145,64 @@ TEST(Affinity, PinnedFiberWakesBackOnOwnerWorker) {
   EXPECT_EQ(w->after.load(), static_cast<int>(kTarget))
       << "woken pinned fiber resumed on the wrong worker";
 }
+
+#if defined(__linux__)
+namespace {
+struct NativeAffinityProbe {
+  unsigned expected_cpu = 0;
+  int mask_count = -1;
+  bool contains_expected = false;
+};
+
+void native_affinity_probe(void* arg) {
+  auto* probe = static_cast<NativeAffinityProbe*>(arg);
+  cpu_set_t mask;
+  CPU_ZERO(&mask);
+  if (::sched_getaffinity(0, sizeof(mask), &mask) == 0) {
+    probe->mask_count = CPU_COUNT(&mask);
+    probe->contains_expected = CPU_ISSET(probe->expected_cpu, &mask) != 0;
+  }
+}
+
+struct AffinityRestore {
+  cpu_set_t mask;
+  ~AffinityRestore() { (void)::sched_setaffinity(0, sizeof(mask), &mask); }
+};
+}  // namespace
+
+TEST(Affinity, WorkerPlacementUsesSparseProcessCpuIds) {
+  AffinityRestore restore{};
+  CPU_ZERO(&restore.mask);
+  ASSERT_EQ(::sched_getaffinity(0, sizeof(restore.mask), &restore.mask), 0);
+
+  unsigned selected[2]{};
+  std::size_t found = 0;
+  // Pick high ids so a dense worker ordinal (0, 1) cannot accidentally pass.
+  for (int cpu = CPU_SETSIZE - 1; cpu >= 0 && found < 2; --cpu) {
+    if (CPU_ISSET(cpu, &restore.mask)) selected[found++] = cpu;
+  }
+  if (found < 2 || (selected[0] == 1 && selected[1] == 0)) {
+    GTEST_SKIP() << "need two non-dense allowed CPU ids";
+  }
+
+  cpu_set_t sparse;
+  CPU_ZERO(&sparse);
+  CPU_SET(selected[0], &sparse);
+  CPU_SET(selected[1], &sparse);
+  ASSERT_EQ(::sched_setaffinity(0, sizeof(sparse), &sparse), 0);
+
+  Scheduler sched(2, system_allocator(), 64);
+  NativeAffinityProbe probes[2]{{selected[1]}, {selected[0]}};
+  Fiber first(kDefaultStackSize, &native_affinity_probe, &probes[0]);
+  Fiber second(kDefaultStackSize, &native_affinity_probe, &probes[1]);
+  ASSERT_TRUE(sched.spawn_on(0, &first));
+  ASSERT_TRUE(sched.spawn_on(1, &second));
+  sched.drain();
+  sched.shutdown();
+
+  for (const auto& probe : probes) {
+    EXPECT_EQ(probe.mask_count, 1);
+    EXPECT_TRUE(probe.contains_expected);
+  }
+}
+#endif

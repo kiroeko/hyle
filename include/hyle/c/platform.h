@@ -80,6 +80,13 @@ typedef enum hyle_thread_priority {
   HYLE_THREAD_PRIORITY_HIGHEST = 2
 } hyle_thread_priority;
 
+/* Explicit setup failure policy. REQUIRED makes spawn wait for native setup;
+ * entry is not called and the returned status carries the failure. */
+typedef enum hyle_thread_config_policy {
+  HYLE_THREAD_CONFIG_BEST_EFFORT = 0,
+  HYLE_THREAD_CONFIG_REQUIRED = 1
+} hyle_thread_config_policy;
+
 typedef struct hyle_thread_opts {
   /* Set by HYLE_THREAD_OPTS_INIT/default(). Values smaller than the current
    * readable prefix (including zero) are rejected, preventing a newer library
@@ -92,11 +99,13 @@ typedef struct hyle_thread_opts {
   unsigned affinity_cpu;     /* id from hyle_cpu_available_ids() */
   int has_priority;          /* 0/1 (v4) */
   int priority;              /* hyle_thread_priority if has_priority */
+  int config_policy;         /* hyle_thread_config_policy */
 } hyle_thread_opts;
 
 /* Default-init helper: hyle_thread_opts o = HYLE_THREAD_OPTS_INIT; */
 #define HYLE_THREAD_OPTS_INIT \
-  { (uint32_t)sizeof(hyle_thread_opts), NULL, 0, 0, 0, 0, 0, 0 }
+  { (uint32_t)sizeof(hyle_thread_opts), NULL, 0, 0, 0, 0, 0, 0, \
+    HYLE_THREAD_CONFIG_BEST_EFFORT }
 
 static inline hyle_thread_opts hyle_thread_opts_default(void) {
   hyle_thread_opts o = HYLE_THREAD_OPTS_INIT;
@@ -124,6 +133,10 @@ static inline void hyle_thread_opts_set_priority(hyle_thread_opts* o,
   o->has_priority = 1;
   o->priority = (int)p;
 }
+static inline void hyle_thread_opts_set_config_policy(
+    hyle_thread_opts* o, hyle_thread_config_policy policy) {
+  if (o) o->config_policy = (int)policy;
+}
 
 /* *out set on success. Returns hyle_status (free on error; OK has no heap). */
 HYLE_PLATFORM_C_API hyle_status hyle_thread_spawn(hyle_thread_o** out,
@@ -146,7 +159,10 @@ HYLE_PLATFORM_C_API int hyle_thread_joinable(const hyle_thread_o* t);
 HYLE_PLATFORM_C_API unsigned hyle_hardware_concurrency(void);
 HYLE_PLATFORM_C_API uint64_t hyle_this_thread_id(void);
 HYLE_PLATFORM_C_API void hyle_this_thread_yield(void);
-HYLE_PLATFORM_C_API void hyle_this_thread_set_name(const char* name);
+HYLE_PLATFORM_C_API hyle_status hyle_this_thread_set_name(const char* name);
+HYLE_PLATFORM_C_API hyle_status hyle_this_thread_set_affinity(unsigned cpu);
+HYLE_PLATFORM_C_API hyle_status hyle_this_thread_set_priority(
+    hyle_thread_priority priority);
 
 /* ========================================================================== */
 /* DynLib                                                                     */

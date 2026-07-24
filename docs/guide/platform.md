@@ -21,7 +21,7 @@ platform 是 HYLE 的跨 OS 原语层。它服务两类调用者：HYLE 内部�
 | 大文件随机访问/共享映射 | `MappedFile` | 小文件必然 mmap | RO/RW/COW；Linux 小文件顺扫未必赢 read |
 | 查询 cwd/temp/home | 对应 `*_directory` buffer-fill | 猜环境变量/固定 `/tmp` | `Result<size_t>` 是完整长度；可先 size query |
 | 读取/修改进程环境 | `get/set/unset_env_var` | 把 unset 和空值都当 0 | unset=`NotFound`；写操作仅应在启动期做 |
-| 一次性启动 OS 线程 | `Thread::spawn` | sched task/fiber | move-only；join 回收；priority/affinity best-effort |
+| 一次性启动 OS 线程 | `Thread::spawn` | sched task/fiber | move-only；join 回收；配置默认 best-effort，可选 required |
 | 大量轻量任务 | sched | 每任务一个 `Thread` | platform 只提供线程地基 |
 | token 不丢失的线程 park/unpark | `Parker` | 裸 condition variable 拼状态 | unpark-before-park 可消费 token |
 | 等待调用方已有的原子字 | `wait_on_address` | `Parker` 再包一层 | 允许伪唤醒，必须循环检查谓词 |
@@ -100,9 +100,27 @@ dangling link 时显式传 `kFile` 或 `kDirectory`，才具有跨平台一致�
 它不是计数 semaphore，多次 unpark 可以合并成一个 token。`wait_on_address` 更底层，适合
 对象已经拥有原子状态字的内部同步原语；伪唤醒允许发生，因此始终循环检查业务谓词。
 
-`Thread` 适合少量长寿命 OS 线程、runtime worker 或必须设置 stack/name/affinity 的边界。
-任务级并发用 sched。affinity 和 priority 是跨 OS best-effort：尤其在权限受限环境、macOS
-以及异构核机器上，不应把请求成功调用等同于精确落在某个核型。绑核 id 应取自
+`Thread` 适合少量长寿命 OS 线程、runtime worker 或必须设置 stack/name/affinity 的边界；
+任务级并发用 sched。`ThreadOpts` 默认 `kBestEffort`，适合“能设则设、失败仍可运行”的
+可移植 runtime。确实依赖设置（隔离核、基准控制线程、实时服务线程）时改成 required：
+
+```cpp
+unsigned cpu = 0;
+HYLE_ASSIGN_OR_RETURN(auto count, available_cpu_ids(&cpu, 1));
+if (count == 0) return Status::FailedPrecondition("no available CPU");
+
+ThreadOpts opts;
+opts.name = "ingest";
+opts.affinity_cpu = cpu;
+opts.config_policy = ThreadConfigPolicy::kRequired;
+HYLE_ASSIGN_OR_RETURN(auto thread, Thread::spawn(&entry, ctx, opts));
+// 返回成功前 name/affinity 已设置；设置失败时 entry 根本不会运行。
+```
+
+已在线程入口内、需要逐项处理错误时，直接用 `this_thread::set_name/set_affinity/set_priority`；
+三者返回共享 `Status`，不另造 errno/TLS 通道。Linux priority 提升通常需要权限；macOS
+priority 映射到系统 QoS，且没有公开的硬 CPU pin API，所以 required affinity 返回
+`Unimplemented`。best-effort 会显式忽略这些失败并继续运行。绑核 id 必须取自
 `available_cpu_ids()`；Linux cpuset 可能产生 `{2, 6}` 这种稀疏 id，不能拿 `[0, count)` 猜。
 
 ## CPU、cache 与 NUMA
