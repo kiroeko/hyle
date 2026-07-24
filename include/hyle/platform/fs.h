@@ -204,42 +204,42 @@ HYLE_PLATFORM_API Result<FileHandle> create_temp_file(
     const char* dir, const char* prefix, char* dst, std::size_t cap) noexcept;
 
 // ---- working / special directories (buffer-fill) ----------------------------
-// Current working directory into dst[cap]. Returns the full length (>= cap =>
-// truncated; 0 on failure).
-HYLE_PLATFORM_API std::size_t current_directory(char* dst,
-                                                std::size_t cap) noexcept;
+// Current working directory into dst[cap]. The Result value is the full length
+// (>= cap => truncated); OS/encoding/allocation failures remain distinguishable.
+HYLE_PLATFORM_API Result<std::size_t> current_directory(
+    char* dst, std::size_t cap) noexcept;
 
-// Change the working directory. Returns true on success.
-HYLE_PLATFORM_API bool change_directory(const char* path) noexcept;
+// Change the process working directory.
+HYLE_PLATFORM_API Status change_directory(const char* path) noexcept;
 
-// System temp directory (honors $TMPDIR/$TMP/$TEMP, else the OS default) into
-// dst[cap]. Returns the full length. clay hard-coded P_tmpdir and ignored the
-// environment; honoring it is the documented platform behavior.
-HYLE_PLATFORM_API std::size_t temp_directory(char* dst,
-                                             std::size_t cap) noexcept;
+// System temp directory (POSIX: $TMPDIR/$TMP/$TEMP then /tmp; Windows:
+// GetTempPathW) into dst[cap]. This is path discovery, not a writability probe;
+// use create_temp_file when a usable temp location is required.
+HYLE_PLATFORM_API Result<std::size_t> temp_directory(
+    char* dst, std::size_t cap) noexcept;
 
 // User home directory (Win: %USERPROFILE%; POSIX: $HOME, else the passwd entry)
-// into dst[cap]. Returns the full length (0 on failure). clay's `app_folder`.
-HYLE_PLATFORM_API std::size_t home_directory(char* dst,
-                                             std::size_t cap) noexcept;
+// into dst[cap]. The Result value is the full length. clay's `app_folder`.
+HYLE_PLATFORM_API Result<std::size_t> home_directory(
+    char* dst, std::size_t cap) noexcept;
 
 // ---- environment ------------------------------------------------------------
-// Read environment variable `name` into dst[cap] (buffer-fill). Returns the full
-// value length, or npos if the variable is unset (distinct from set-but-empty,
-// which returns 0). dst is always NUL-terminated when cap>0.
-inline constexpr std::size_t kEnvNotSet = static_cast<std::size_t>(-1);
-HYLE_PLATFORM_API std::size_t get_env_var(const char* name, char* dst,
-                                          std::size_t cap) noexcept;
+// Read environment variable `name` into dst[cap] (buffer-fill). The Result value
+// is the full value length; unset is NotFound (distinct from set-but-empty, whose
+// value is 0). dst is always NUL-terminated when cap>0 on success.
+HYLE_PLATFORM_API Result<std::size_t> get_env_var(
+    const char* name, char* dst, std::size_t cap) noexcept;
 
 // Set / unset an environment variable in this process. POSIX setenv/unsetenv,
-// Windows _putenv_s. Returns true on success. NOT thread-safe against concurrent
+// Windows _wputenv_s. NOT thread-safe against concurrent
 // get_env_var/getenv in other threads (same caveat as the C library) -- set env
 // during startup, before spawning threads that read it.
 // PLATFORM DIFFERENCE: set_env_var(name, "") keeps a zero-length value on POSIX
-// (distinct from unset) but DELETES the variable on Windows (_putenv_s treats an
+// (distinct from unset) but DELETES the variable on Windows (_wputenv_s treats an
 // empty value as removal -- Windows has no "present but empty" env var).
-HYLE_PLATFORM_API bool set_env_var(const char* name, const char* value) noexcept;
-HYLE_PLATFORM_API bool unset_env_var(const char* name) noexcept;
+HYLE_PLATFORM_API Status set_env_var(const char* name,
+                                     const char* value) noexcept;
+HYLE_PLATFORM_API Status unset_env_var(const char* name) noexcept;
 
 // ---- directory iteration (visitor, no allocation) ---------------------------
 // Type-erased core: calls `visit(name, is_dir, ctx)` once per entry in `path`,

@@ -47,12 +47,13 @@ class FsTest : public ::testing::Test {
 
   void SetUp() override {
     char tmp[4096];
-    std::size_t n = temp_directory(tmp, sizeof(tmp));
-    ASSERT_GT(n, 0u);
-    ASSERT_LT(n, sizeof(tmp));
+    auto temp = temp_directory(tmp, sizeof(tmp));
+    ASSERT_TRUE(temp.has_value()) << temp.error().message();
+    ASSERT_GT(*temp, 0u);
+    ASSERT_LT(*temp, sizeof(tmp));
     // std::string concat (not snprintf into a fixed buffer, which GCC flags as
     // possibly-truncated since tmp can be up to 4096 chars).
-    root = std::string(tmp, n) + "/hyle_fs_test_" +
+    root = std::string(tmp, *temp) + "/hyle_fs_test_" +
            std::to_string(reinterpret_cast<std::uintptr_t>(this));
     (void)remove_directory_recursive(root.c_str());  // clear any stale leftover
     ASSERT_TRUE(make_directory(root.c_str()).ok());
@@ -73,15 +74,23 @@ TEST(FsBoundary, NullInputsAndInvalidOpenFlagsFailSafely) {
   EXPECT_TRUE(file_size(nullptr).error().IsInvalidArgument());
   EXPECT_TRUE(get_permissions(nullptr).error().IsInvalidArgument());
   EXPECT_TRUE(read_symlink(nullptr, nullptr, 0).error().IsInvalidArgument());
-  EXPECT_EQ(get_env_var(nullptr, nullptr, 0), kEnvNotSet);
+  EXPECT_TRUE(get_env_var(nullptr, nullptr, 0).error().IsInvalidArgument());
+  EXPECT_TRUE(get_env_var("", nullptr, 0).error().IsInvalidArgument());
+  EXPECT_TRUE(get_env_var("A=B", nullptr, 0).error().IsInvalidArgument());
+  EXPECT_TRUE(set_env_var(nullptr, "value").IsInvalidArgument());
+  EXPECT_TRUE(set_env_var("NAME", nullptr).IsInvalidArgument());
+  EXPECT_TRUE(set_env_var("A=B", "value").IsInvalidArgument());
+  EXPECT_TRUE(unset_env_var(nullptr).IsInvalidArgument());
+  EXPECT_TRUE(change_directory(nullptr).IsInvalidArgument());
   EXPECT_FALSE(open_file(nullptr, kOpenRead).has_value());
   EXPECT_FALSE(open_file("unused", 0).has_value());
   EXPECT_FALSE(
       open_file("unused", kOpenCreate | kOpenTruncate).has_value());
 
   char tmp[4] = {'x', 'x', 'x', '\0'};
-  const std::size_t need = temp_directory(nullptr, sizeof(tmp));
-  EXPECT_GT(need, 0u);
+  auto need = temp_directory(nullptr, sizeof(tmp));
+  ASSERT_TRUE(need.has_value());
+  EXPECT_GT(*need, 0u);
 }
 
 TEST_F(FsTest, StatExistsDirectoryFile) {
@@ -327,9 +336,9 @@ TEST_F(FsTest, RemoveRecursiveDoesNotFollowDirLink) {
 
 TEST_F(FsTest, SpecialDirectoriesNonEmpty) {
   char buf[4096];
-  EXPECT_GT(current_directory(buf, sizeof(buf)), 0u);
-  EXPECT_GT(temp_directory(buf, sizeof(buf)), 0u);
-  EXPECT_GT(home_directory(buf, sizeof(buf)), 0u);
+  EXPECT_GT(current_directory(buf, sizeof(buf)).value(), 0u);
+  EXPECT_GT(temp_directory(buf, sizeof(buf)).value(), 0u);
+  EXPECT_GT(home_directory(buf, sizeof(buf)).value(), 0u);
 }
 
 TEST(FsEnv, HomeDirectorySupportsLongEnvironmentValue) {
@@ -339,15 +348,15 @@ TEST(FsEnv, HomeDirectorySupportsLongEnvironmentValue) {
   const char* name = "HOME";
 #endif
   char old[4096];
-  const std::size_t old_len = get_env_var(name, old, sizeof(old));
-  ASSERT_NE(old_len, kEnvNotSet);
-  ASSERT_LT(old_len, sizeof(old));
+  auto old_len = get_env_var(name, old, sizeof(old));
+  ASSERT_TRUE(old_len.has_value()) << old_len.error().message();
+  ASSERT_LT(*old_len, sizeof(old));
   std::string value(700, 'h');
-  ASSERT_TRUE(set_env_var(name, value.c_str()));
+  ASSERT_TRUE(set_env_var(name, value.c_str()).ok());
   char got[1024];
-  EXPECT_EQ(home_directory(got, sizeof(got)), value.size());
+  EXPECT_EQ(home_directory(got, sizeof(got)).value(), value.size());
   EXPECT_STREQ(got, value.c_str());
-  EXPECT_TRUE(set_env_var(name, old));
+  EXPECT_TRUE(set_env_var(name, old).ok());
 }
 
 // Non-ASCII UTF-8 path round-trips through every fs op. POSIX is byte-
@@ -375,31 +384,36 @@ TEST_F(FsTest, Utf8NonAsciiPath) {
 
 TEST_F(FsTest, ChangeDirectoryRoundTrip) {
   char before[4096];
-  ASSERT_GT(current_directory(before, sizeof(before)), 0u);
-  ASSERT_TRUE(change_directory(root.c_str()));
+  ASSERT_GT(current_directory(before, sizeof(before)).value(), 0u);
+  ASSERT_TRUE(change_directory(root.c_str()).ok());
   char now[4096];
-  ASSERT_GT(current_directory(now, sizeof(now)), 0u);
+  ASSERT_GT(current_directory(now, sizeof(now)).value(), 0u);
   // cwd now ends with our scratch dir's base name.
   EXPECT_NE(std::strstr(now, "hyle_fs_test_"), nullptr);
-  EXPECT_TRUE(change_directory(before));  // restore for other tests
+  EXPECT_TRUE(change_directory(before).ok());  // restore for other tests
+}
+
+TEST_F(FsTest, ChangeDirectoryMissingIsNotFound) {
+  EXPECT_TRUE(change_directory(path("missing-cwd").c_str()).IsNotFound());
 }
 
 TEST(FsEnv, GetEnvVarSetAndUnset) {
   char buf[4096];
   // PATH is set on every platform CI runs on.
-  std::size_t n = get_env_var("PATH", buf, sizeof(buf));
-  EXPECT_NE(n, kEnvNotSet);
-  EXPECT_GT(n, 0u);
+  auto n = get_env_var("PATH", buf, sizeof(buf));
+  ASSERT_TRUE(n.has_value()) << n.error().message();
+  EXPECT_GT(*n, 0u);
 
-  // A name that cannot exist -> kEnvNotSet (distinct from set-but-empty).
-  EXPECT_EQ(get_env_var("HYLE_DEFINITELY_UNSET_XYZZY_123", buf, sizeof(buf)),
-            kEnvNotSet);
+  // A name that cannot exist -> NotFound (distinct from set-but-empty).
+  EXPECT_TRUE(get_env_var("HYLE_DEFINITELY_UNSET_XYZZY_123", buf, sizeof(buf))
+                  .error()
+                  .IsNotFound());
 }
 
 TEST(FsEnv, BufferFillTruncates) {
   // current_directory into a tiny buffer: NUL-terminated, returns full length.
   char tiny[4];
-  std::size_t full = current_directory(tiny, sizeof(tiny));
+  std::size_t full = current_directory(tiny, sizeof(tiny)).value();
   EXPECT_EQ(std::strlen(tiny), 3u);  // 3 chars + NUL
   EXPECT_GE(full, std::strlen(tiny));
 }
@@ -439,12 +453,13 @@ TEST_F(FsTest, IsDirectoryDistinguishesFile) {
 
 TEST(FsEnv, EnvVarTinyBufferTruncates) {
   char tiny[4];
-  std::size_t n = get_env_var("PATH", tiny, sizeof(tiny));
-  if (n == kEnvNotSet) {
+  auto n = get_env_var("PATH", tiny, sizeof(tiny));
+  if (!n && n.error().IsNotFound()) {
     GTEST_SKIP() << "PATH unset in this environment";
   }
+  ASSERT_TRUE(n.has_value()) << n.error().message();
   EXPECT_EQ(std::strlen(tiny), 3u);
-  EXPECT_GE(n, 3u);
+  EXPECT_GE(*n, 3u);
 }
 
 // ---- v4: permissions --------------------------------------------------------
@@ -563,21 +578,22 @@ TEST_F(FsTest, HardLinkSharesData) {
 
 TEST(FsEnv, SetEmptyValueSemantics) {
   const char* kName = "HYLE_FS_EMPTY_VAR";
-  ASSERT_TRUE(set_env_var(kName, ""));
+  ASSERT_TRUE(set_env_var(kName, "").ok());
   char buf[8];
-  std::size_t n = get_env_var(kName, buf, sizeof(buf));
+  auto n = get_env_var(kName, buf, sizeof(buf));
 #if defined(_WIN32)
-  // PLATFORM DIFFERENCE: Windows _putenv_s(name,"") DELETES the variable (there
+  // PLATFORM DIFFERENCE: Windows _wputenv_s(name,"") DELETES the variable (there
   // is no "set to empty" -- an empty value IS removal), so a get reports unset.
-  EXPECT_EQ(n, kEnvNotSet);
+  ASSERT_FALSE(n.has_value());
+  EXPECT_TRUE(n.error().IsNotFound());
 #else
   // POSIX setenv(name,"",1) keeps the variable present with a zero-length value,
   // distinct from unset. This is the "set-but-empty vs unset" distinction.
-  EXPECT_NE(n, kEnvNotSet);
-  EXPECT_EQ(n, 0u);
+  ASSERT_TRUE(n.has_value());
+  EXPECT_EQ(*n, 0u);
 #endif
-  EXPECT_TRUE(unset_env_var(kName));
-  EXPECT_EQ(get_env_var(kName, buf, sizeof(buf)), kEnvNotSet);  // truly unset
+  EXPECT_TRUE(unset_env_var(kName).ok());
+  EXPECT_TRUE(get_env_var(kName, buf, sizeof(buf)).error().IsNotFound());
 }
 
 TEST(FileHandle, MoveAndRelease) {
@@ -604,7 +620,9 @@ TEST(FileHandle, MoveAndRelease) {
 
 TEST(FileHandle, OpenFileWriteThenReadRoundTrip) {
   char dir[4096];
-  ASSERT_NE(temp_directory(dir, sizeof(dir)), 0u);
+  auto temp = temp_directory(dir, sizeof(dir));
+  ASSERT_TRUE(temp.has_value()) << temp.error().message();
+  ASSERT_NE(*temp, 0u);
   std::string p = std::string(dir) + "/hyle_openfile_test.txt";
   const char msg[] = "hello platform io";
   const std::size_t len = sizeof(msg) - 1;  // exclude NUL
@@ -646,11 +664,23 @@ TEST(FileHandle, OpenFileWriteThenReadRoundTrip) {
 
 TEST(FsEnv, SetGetUnsetRoundTrip) {
   const char* kName = "HYLE_FS_TEST_VAR";
-  EXPECT_TRUE(set_env_var(kName, "hello-42"));
+  EXPECT_TRUE(set_env_var(kName, "hello-42").ok());
   char buf[64];
-  std::size_t n = get_env_var(kName, buf, sizeof(buf));
-  ASSERT_NE(n, kEnvNotSet);
+  auto n = get_env_var(kName, buf, sizeof(buf));
+  ASSERT_TRUE(n.has_value()) << n.error().message();
   EXPECT_STREQ(buf, "hello-42");
-  EXPECT_TRUE(unset_env_var(kName));
-  EXPECT_EQ(get_env_var(kName, buf, sizeof(buf)), kEnvNotSet);
+  EXPECT_TRUE(unset_env_var(kName).ok());
+  EXPECT_TRUE(get_env_var(kName, buf, sizeof(buf)).error().IsNotFound());
+}
+
+TEST(FsEnv, Utf8NameAndValueRoundTrip) {
+  const char* kName = "HYLE_\xE7\x8E\xAF\xE5\xA2\x83";  // HYLE_环境
+  const char* kValue = "\xE5\x80\xBC_\xF0\x9F\x9A\x80";  // 值_🚀
+  ASSERT_TRUE(set_env_var(kName, kValue).ok());
+  char buf[64];
+  auto size = get_env_var(kName, buf, sizeof(buf));
+  ASSERT_TRUE(size.has_value()) << size.error().message();
+  EXPECT_EQ(*size, std::strlen(kValue));
+  EXPECT_STREQ(buf, kValue);
+  EXPECT_TRUE(unset_env_var(kName).ok());
 }

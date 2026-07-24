@@ -3,7 +3,6 @@
 #include "hyle/c/platform.h"
 
 #include <atomic>
-#include <cstring>
 #include <new>
 #include <type_traits>
 #include <utility>
@@ -56,24 +55,6 @@ static_assert(HYLE_MAP_COPY_ON_WRITE ==
 static_assert(HYLE_ISA_SCALAR ==
               static_cast<int>(hyle::platform::Isa::kScalar));
 static_assert(HYLE_ISA_RVV == static_cast<int>(hyle::platform::Isa::kRvv));
-
-thread_local char g_platform_error[256] = {0};
-
-void set_platform_error(const char* message) noexcept {
-  if (message == nullptr) {
-    g_platform_error[0] = '\0';
-    return;
-  }
-  std::size_t n = std::strlen(message);
-  if (n >= sizeof(g_platform_error)) n = sizeof(g_platform_error) - 1;
-  std::memcpy(g_platform_error, message, n);
-  g_platform_error[n] = '\0';
-}
-
-int fs_result(bool ok, const char* failure) noexcept {
-  set_platform_error(ok ? nullptr : failure);
-  return ok ? 1 : 0;
-}
 
 hyle_status steal_status(hyle::Status&& s) noexcept {
   hyle_status out;
@@ -187,8 +168,6 @@ static hyle_status wrap_vm_region(
 }
 
 extern "C" {
-
-const char* hyle_platform_last_error(void) { return g_platform_error; }
 
 void hyle_wait_on_address(volatile uint32_t* addr, uint32_t expected) {
   if (addr == nullptr) return;
@@ -635,32 +614,53 @@ hyle_status hyle_fs_copy_file(const char* from, const char* to) {
 hyle_status hyle_fs_touch(const char* path) {
   return steal_status(hyle::platform::touch(path));
 }
-size_t hyle_fs_current_directory(char* dst, size_t cap) {
-  const size_t n = hyle::platform::current_directory(dst, cap);
-  set_platform_error(n == 0 ? "hyle_fs_current_directory failed" : nullptr);
-  return n;
-}
-int hyle_fs_change_directory(const char* path) {
-  return fs_result(path && hyle::platform::change_directory(path),
-                   "hyle_fs_change_directory failed");
-}
-size_t hyle_fs_temp_directory(char* dst, size_t cap) {
-  const size_t n = hyle::platform::temp_directory(dst, cap);
-  set_platform_error(n == 0 ? "hyle_fs_temp_directory failed" : nullptr);
-  return n;
-}
-size_t hyle_fs_home_directory(char* dst, size_t cap) {
-  const size_t n = hyle::platform::home_directory(dst, cap);
-  set_platform_error(n == 0 ? "hyle_fs_home_directory failed" : nullptr);
-  return n;
-}
-size_t hyle_env_get(const char* name, char* dst, size_t cap) {
-  if (!name) {
-    set_platform_error("hyle_env_get: name is NULL");
-    return HYLE_ENV_NOT_SET;
+hyle_status hyle_fs_current_directory(size_t* out_size, char* dst, size_t cap) {
+  if (out_size == nullptr) {
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_fs_current_directory: out_size is NULL"));
   }
-  set_platform_error(nullptr);
-  return hyle::platform::get_env_var(name, dst, cap);
+  *out_size = 0;
+  auto result = hyle::platform::current_directory(dst, cap);
+  if (!result) return steal_status(std::move(result).error());
+  *out_size = *result;
+  return steal_status(hyle::Status::Ok());
+}
+hyle_status hyle_fs_change_directory(const char* path) {
+  return steal_status(hyle::platform::change_directory(path));
+}
+hyle_status hyle_fs_temp_directory(size_t* out_size, char* dst, size_t cap) {
+  if (out_size == nullptr) {
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_fs_temp_directory: out_size is NULL"));
+  }
+  *out_size = 0;
+  auto result = hyle::platform::temp_directory(dst, cap);
+  if (!result) return steal_status(std::move(result).error());
+  *out_size = *result;
+  return steal_status(hyle::Status::Ok());
+}
+hyle_status hyle_fs_home_directory(size_t* out_size, char* dst, size_t cap) {
+  if (out_size == nullptr) {
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_fs_home_directory: out_size is NULL"));
+  }
+  *out_size = 0;
+  auto result = hyle::platform::home_directory(dst, cap);
+  if (!result) return steal_status(std::move(result).error());
+  *out_size = *result;
+  return steal_status(hyle::Status::Ok());
+}
+hyle_status hyle_env_get(size_t* out_size, const char* name, char* dst,
+                         size_t cap) {
+  if (out_size == nullptr) {
+    return steal_status(
+        hyle::Status::InvalidArgument("hyle_env_get: out_size is NULL"));
+  }
+  *out_size = 0;
+  auto result = hyle::platform::get_env_var(name, dst, cap);
+  if (!result) return steal_status(std::move(result).error());
+  *out_size = *result;
+  return steal_status(hyle::Status::Ok());
 }
 
 hyle_status hyle_fs_directory_iterate(int* out_completed, const char* path,
@@ -935,13 +935,11 @@ hyle_status hyle_fs_write(size_t* out_moved, hyle_file_handle file,
   *out_moved = *result;
   return steal_status(hyle::Status::Ok());
 }
-int hyle_fs_set_env_var(const char* name, const char* value) {
-  return fs_result(name && hyle::platform::set_env_var(name, value),
-                   "hyle_fs_set_env_var failed");
+hyle_status hyle_env_set(const char* name, const char* value) {
+  return steal_status(hyle::platform::set_env_var(name, value));
 }
-int hyle_fs_unset_env_var(const char* name) {
-  return fs_result(name && hyle::platform::unset_env_var(name),
-                   "hyle_fs_unset_env_var failed");
+hyle_status hyle_env_unset(const char* name) {
+  return steal_status(hyle::platform::unset_env_var(name));
 }
 
 hyle_status hyle_mapped_file_open(hyle_mapped_file_o** out, const char* path,

@@ -17,6 +17,8 @@ platform 是 HYLE 的跨 OS 原语层。它服务两类调用者：HYLE 内部�
 | 顺序读写普通文件 | `FileHandle` | `MappedFile` | move-only；短读/短写正常；显式 close 可观察错误 |
 | 原子创建临时文件 | `create_temp_file` | 先生成名字再 open | 返回已打开 handle，避免 TOCTOU |
 | 大文件随机访问/共享映射 | `MappedFile` | 小文件必然 mmap | RO/RW/COW；Linux 小文件顺扫未必赢 read |
+| 查询 cwd/temp/home | 对应 `*_directory` buffer-fill | 猜环境变量/固定 `/tmp` | `Result<size_t>` 是完整长度；可先 size query |
+| 读取/修改进程环境 | `get/set/unset_env_var` | 把 unset 和空值都当 0 | unset=`NotFound`；写操作仅应在启动期做 |
 | 一次性启动 OS 线程 | `Thread::spawn` | sched task/fiber | move-only；join 回收；priority/affinity best-effort |
 | 大量轻量任务 | sched | 每任务一个 `Thread` | platform 只提供线程地基 |
 | token 不丢失的线程 park/unpark | `Parker` | 裸 condition variable 拼状态 | unpark-before-park 可消费 token |
@@ -72,7 +74,10 @@ read 返回 0 才是 EOF；read/write 返回短计数仍是成功。`MappedFile`
 场景，例如大模型权重、随机访问、共享页和 COW；不要假设 64 KiB 顺序全扫也会比缓冲 read
 快。stat/size/权限/symlink 和所有 path 变更都返回 Result/Status：不存在、空文件/0000 权限、
 visitor 提前停止不再共享一个 0。跨平台代码优先 `is_readonly/set_readonly`，不要把 Windows
-合成的 POSIX mode 当真实 ACL。cwd/temp/home/env 的 buffer-fill 是最后一组待迁移旧面。
+合成的 POSIX mode 当真实 ACL。cwd/temp/home/env 同样返回 `Result<size_t>`：值是完整长度，
+可先用 `dst=nullptr` 查询；环境变量未设置是 `NotFound`，已设置为空是成功的 0。
+`temp_directory` 只发现 OS/环境配置的路径，不额外探测可写性；需要真正可用且无 TOCTOU
+窗口的临时文件时直接调用 `create_temp_file`。
 
 ## 等待与线程
 
@@ -98,7 +103,7 @@ bind/interleave 的硬策略失败才应让依赖精确放置的工作失败。
 
 资源构造/查询返回 `Result<T>`，资源变更返回 `Status`；成功态不分配，完整原生诊断只在
 失败路构造。`exists/is_directory/is_symlink` 把不存在表达为成功的 false，但不会吞掉权限或
-I/O 错误。不要在这些 API 失败后读取 `hyle_platform_last_error()`：它们已直接携带共享 error。
+I/O 错误。platform 的公开可恢复失败全部直接携带共享 error，不存在另一套 TLS last-error。
 
 所有 RAII owner 都是 move-only。借出的 `data()`、symbol pointer、raw handle 或 unparker
 视图不得活过 owner；`release()` 明确把回收责任转给调用方。

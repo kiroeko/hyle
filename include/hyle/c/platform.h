@@ -35,12 +35,6 @@ extern "C" {
 #  define HYLE_PLATFORM_C_API
 #endif
 
-/* Transitional last error only for cwd/temp/home/env buffer-fill, chdir and
- * env-write functions that still return scalar sentinels. Filesystem path and
- * resource APIs already return hyle_status. Thread-local; "" means none. This
- * symbol is removed in the next platform reclosure increment. */
-HYLE_PLATFORM_C_API const char* hyle_platform_last_error(void);
-
 /* ========================================================================== */
 /* wait / Parker                                                              */
 /* ========================================================================== */
@@ -347,17 +341,20 @@ HYLE_PLATFORM_C_API hyle_status hyle_fs_copy_file(const char* from,
                                                   const char* to);
 HYLE_PLATFORM_C_API hyle_status hyle_fs_touch(const char* path);
 
-/* snprintf-style buffer fill: returns full length; >=cap means truncated. */
-HYLE_PLATFORM_C_API size_t hyle_fs_current_directory(char* dst, size_t cap);
-HYLE_PLATFORM_C_API int hyle_fs_change_directory(const char* path);
-HYLE_PLATFORM_C_API size_t hyle_fs_temp_directory(char* dst, size_t cap);
-HYLE_PLATFORM_C_API size_t hyle_fs_home_directory(char* dst, size_t cap);
+/* snprintf-style buffer fills: *out_size is the full length, so >=cap means
+ * truncated. It is zeroed on entry/failure. dst==NULL is a size query. */
+HYLE_PLATFORM_C_API hyle_status hyle_fs_current_directory(
+    size_t* out_size, char* dst, size_t cap);
+HYLE_PLATFORM_C_API hyle_status hyle_fs_change_directory(const char* path);
+HYLE_PLATFORM_C_API hyle_status hyle_fs_temp_directory(
+    size_t* out_size, char* dst, size_t cap);
+HYLE_PLATFORM_C_API hyle_status hyle_fs_home_directory(
+    size_t* out_size, char* dst, size_t cap);
 
-/* Env sentinel: hyle_env_get returns this (== (size_t)-1 / SIZE_MAX) when the
- * variable is unset. Stays a #define rather than an enum: a size_t-valued
- * sentinel does not fit C's int-typed enumerators before C23. */
-#define HYLE_ENV_NOT_SET ((size_t)-1)
-HYLE_PLATFORM_C_API size_t hyle_env_get(const char* name, char* dst, size_t cap);
+/* Environment read: unset is HYLE_STATUS_NOT_FOUND; a present empty value is
+ * success with *out_size==0. */
+HYLE_PLATFORM_C_API hyle_status hyle_env_get(
+    size_t* out_size, const char* name, char* dst, size_t cap);
 
 /* Directory iterate: visit(name,is_dir,ctx) returns 0 to stop normally.
  * out_completed is 1 when every entry was visited, 0 on early stop/failure. */
@@ -433,8 +430,9 @@ HYLE_PLATFORM_C_API hyle_status hyle_fs_write(size_t* out_moved,
                                               hyle_file_handle file,
                                               const void* buf, size_t n);
 /* Environment write / unset (process-wide; not thread-safe vs concurrent reads). */
-HYLE_PLATFORM_C_API int hyle_fs_set_env_var(const char* name, const char* value);
-HYLE_PLATFORM_C_API int hyle_fs_unset_env_var(const char* name);
+HYLE_PLATFORM_C_API hyle_status hyle_env_set(const char* name,
+                                             const char* value);
+HYLE_PLATFORM_C_API hyle_status hyle_env_unset(const char* name);
 
 /* ========================================================================== */
 /* Memory-mapped file (v4)                                                    */

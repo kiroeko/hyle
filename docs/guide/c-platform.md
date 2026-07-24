@@ -7,16 +7,14 @@
 
 跨语言 / 跨编译器只许绑本头（及 `hyle/c/error.h`）。不要 include `hyle/platform/*.h`。
 
-资源构造、动态加载、文件映射和 VM/NUMA 的可恢复失败直接返回拥有型
-`hyle_status`：
+所有可恢复失败都直接返回拥有型 `hyle_status`：
 
 | 返回面 | 诊断 |
 |---|---|
-| Parker / Thread / DynLib / MappedFile / VM / NUMA / 打开的文件资源 | 返回 `hyle_status`，用 `hyle_status_message_cstr` |
-| cwd/temp/home/env 的旧 buffer-fill 与 env 写 | `hyle_platform_last_error()`（最后一组过渡接口） |
+| Parker / Thread / DynLib / MappedFile / VM / NUMA / fs / env | 返回 `hyle_status`，用 `hyle_status_get_code` / `hyle_status_message_cstr` |
 
-`hyle_status` 由调用方用 `hyle_status_free` 释放；剩余 last-error 指针借用到同线程
-下一次相关调用。
+`hyle_status` 由调用方用 `hyle_status_free` 释放。platform 不再维护模块私有 TLS
+last-error；C 与 C++ 共用 error 的 code、message 和所有权规则。
 
 ---
 
@@ -44,7 +42,7 @@
 | hugepage/THP | `hyle_vm_advise_hugepage` 等 | soft 建议，无句柄 |
 | NUMA | `hyle_numa_*` / `hyle_vm_reserve_numa` / `hyle_vm_bind_numa*` | reserve 配对 release |
 | fs/env | buffer-fill / visitor | 无堆句柄 |
-| fs 权限/链接/临时文件/env 写 | `hyle_fs_get_permissions` / `hyle_fs_*_symlink` / `hyle_fs_create_temp_file` / `hyle_fs_set_env_var` | temp file 返回 `hyle_file_handle`（`hyle_fs_close` 释放） |
+| fs 权限/链接/临时文件/env 写 | `hyle_fs_get_permissions` / `hyle_fs_*_symlink` / `hyle_fs_create_temp_file` / `hyle_env_set` | temp file 返回 `hyle_file_handle`（`hyle_fs_close` 释放） |
 | MappedFile | `hyle_mapped_file_*` | destroy 释放 |
 | cpu | `hyle_cpu_features_get` 等 | 值返回 POD |
 
@@ -58,7 +56,6 @@
 
 | 符号 | 说明 |
 |---|---|
-| `hyle_platform_last_error` | 仅剩 cwd/temp/home/env buffer-fill、chdir 与 env 写的线程局部失败串；`""`=无；不得用于 fs path/resource Status API |
 | `hyle_wait_on_address(addr, expected)` | 地址等待；允许伪唤醒 |
 | `hyle_wait_on_address_for(addr, expected, timeout_ns)` | 0=超时，1=唤醒/变化/伪唤醒 |
 | `hyle_wake_one` / `hyle_wake_all` | 唤醒 |
@@ -156,10 +153,9 @@ soft 建议，绝不影响正确性。Linux 用 madvise；Windows/macOS 匿名�
 | `hyle_fs_make_directory*` | Status；已存在目录为 OK，已存在非目录为 `ALREADY_EXISTS` |
 | `hyle_fs_remove_directory*` / `hyle_fs_remove_file` | Status；递归删除保留首个失败，且不跟随 symlink/junction |
 | `hyle_fs_rename` / `hyle_fs_copy_file` / `hyle_fs_touch` | Status；保留原生 operation/code/message |
-| `hyle_fs_current_directory` / `hyle_fs_temp_directory` / `hyle_fs_home_directory` | buffer-fill：返回完整长，`>=cap` 截断；`dst==NULL` 可只查长度 |
-| `hyle_fs_change_directory` | 过渡形状：int 成败，失败读 TLS；下一增量改 Status |
-| `HYLE_ENV_NOT_SET` | `(size_t)-1`；size_t sentinel，保留 `#define`（enum 成员在 C23 前装不下 size_t 值） |
-| `hyle_env_get(name, dst, cap)` | 未设置→`HYLE_ENV_NOT_SET` |
+| `hyle_fs_current_directory(out_size,dst,cap)` / `temp` / `home` | Status+out buffer-fill；`*out_size>=cap` 表示截断，`dst==NULL` 可只查长度 |
+| `hyle_fs_change_directory(path)` | Status；缺失、权限、非法 UTF-8 分开报告 |
+| `hyle_env_get(out_size,name,dst,cap)` | Status+out；未设置为 `NOT_FOUND`，已设置为空是成功且 size=0 |
 | `hyle_fs_visit_fn` | `(name, is_dir, ctx)→int`；0 停止 |
 | `hyle_fs_directory_iterate(out_completed,...)` | Status+out；visitor 提前停止是成功且 completed=0，打开/枚举失败是 Status |
 
@@ -179,7 +175,7 @@ soft 建议，绝不影响正确性。Linux 用 madvise；Windows/macOS 匿名�
 | `hyle_fs_open(out, path, flags)` | Status+out；`flags`=`HYLE_OPEN_READ/WRITE/CREATE/TRUNCATE/APPEND` OR；Windows 用 UTF-16 API；无需 mmap 的普通 I/O |
 | `hyle_fs_read(out_moved, file, buf, n)` / `hyle_fs_write(out_moved, file, buf, n)` | Status+out；读 0=EOF，短读/短写是成功，调用方可继续 |
 | `hyle_fs_close(file)` | 返回 Status；关闭 create_temp_file / open 返回的 handle；INVALID 安全 |
-| `hyle_fs_set_env_var(name, value)` / `hyle_fs_unset_env_var(name)` | 进程级；与并发读非线程安全 |
+| `hyle_env_set(name, value)` / `hyle_env_unset(name)` | Status；进程级，与并发读非线程安全；Windows 写入也按 UTF-8 转 UTF-16 |
 
 ### 3.5c MappedFile —— 文件内存映射（DLL，v4）
 
@@ -334,9 +330,13 @@ hyle_vm_region_destroy(r);
 
 ```c
 char tmp[512];
-if (hyle_fs_temp_directory(tmp, sizeof tmp) == 0) {
-  fprintf(stderr, "platform: %s\n", hyle_platform_last_error());
+size_t full = 0;
+hyle_status st = hyle_fs_temp_directory(&full, tmp, sizeof tmp);
+if (!hyle_status_is_ok(st)) {
+  fprintf(stderr, "platform: %s\n", hyle_status_message_cstr(st));
 }
+hyle_status_free(&st);
+if (full >= sizeof tmp) { /* truncated: retry with a larger buffer */ }
 ```
 
 ---

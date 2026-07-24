@@ -29,9 +29,10 @@ class MapTest : public ::testing::Test {
 
   void SetUp() override {
     char tmp[4096];
-    std::size_t n = fs::temp_directory(tmp, sizeof(tmp));
-    ASSERT_GT(n, 0u);
-    path = std::string(tmp, n) + "/hyle_map_test_" +
+    auto temp = fs::temp_directory(tmp, sizeof(tmp));
+    ASSERT_TRUE(temp.has_value()) << temp.error().message();
+    ASSERT_GT(*temp, 0u);
+    path = std::string(tmp, *temp) + "/hyle_map_test_" +
            std::to_string(reinterpret_cast<std::uintptr_t>(this));
   }
   void TearDown() override { (void)fs::remove_file(path.c_str()); }
@@ -285,9 +286,10 @@ TEST_F(MapTest, MoveAssignReleasesPrevious) {
 // scratch path (fixtures aren't shared into the death child cleanly).
 TEST(MapDeathTest, ReadOnlyWriteFaults) {
   char tmp[4096];
-  std::size_t n = fs::temp_directory(tmp, sizeof(tmp));
-  ASSERT_GT(n, 0u);
-  std::string p = std::string(tmp, n) + "/hyle_map_death";
+  auto temp = fs::temp_directory(tmp, sizeof(tmp));
+  ASSERT_TRUE(temp.has_value()) << temp.error().message();
+  ASSERT_GT(*temp, 0u);
+  std::string p = std::string(tmp, *temp) + "/hyle_map_death";
   {
     std::FILE* f = std::fopen(p.c_str(), "wb");
     ASSERT_NE(f, nullptr);

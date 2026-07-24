@@ -82,7 +82,6 @@ int main(void) {
   CHECK(hyle_page_size() >= 4096u);
   CHECK(hyle_page_align_up(SIZE_MAX) == 0u);
   CHECK(hyle_large_page_align_up(SIZE_MAX) == 0u);
-  CHECK(hyle_platform_last_error() != NULL);
 
   /* Parker */
   hyle_parker_o* p = NULL;
@@ -401,7 +400,10 @@ int main(void) {
 
   /* fs */
   char tmp[512];
-  size_t n = hyle_fs_temp_directory(tmp, sizeof(tmp));
+  size_t n = 0;
+  CHECK(status_code(hyle_fs_temp_directory(NULL, tmp, sizeof(tmp))) ==
+        HYLE_STATUS_INVALID_ARGUMENT);
+  CHECK(status_ok(hyle_fs_temp_directory(&n, tmp, sizeof(tmp))));
   CHECK(n > 0 && n < sizeof(tmp));
   int path_value = 0;
   CHECK(status_code(hyle_fs_exists(NULL, tmp)) ==
@@ -423,8 +425,13 @@ int main(void) {
   {
     char cwd[1024];
     char home[1024];
-    CHECK(hyle_fs_current_directory(cwd, sizeof(cwd)) > 0u);
-    CHECK(hyle_fs_home_directory(home, sizeof(home)) > 0u);
+    size_t cwd_size = 0;
+    size_t home_size = 0;
+    CHECK(status_ok(
+              hyle_fs_current_directory(&cwd_size, cwd, sizeof(cwd))) &&
+          cwd_size > 0u);
+    CHECK(status_ok(hyle_fs_home_directory(&home_size, home, sizeof(home))) &&
+          home_size > 0u);
   }
   char path[640];
   snprintf(path, sizeof(path), "%s/hyle_c_plat_test_dir", tmp);
@@ -464,9 +471,12 @@ int main(void) {
   }
   {
     char cwd[1024];
-    CHECK(hyle_fs_current_directory(cwd, sizeof(cwd)) > 0u);
-    CHECK(hyle_fs_change_directory(path));
-    CHECK(hyle_fs_change_directory(cwd));
+    size_t cwd_size = 0;
+    CHECK(status_ok(
+              hyle_fs_current_directory(&cwd_size, cwd, sizeof(cwd))) &&
+          cwd_size > 0u);
+    CHECK(status_ok(hyle_fs_change_directory(path)));
+    CHECK(status_ok(hyle_fs_change_directory(cwd)));
   }
   {
     char link[720];
@@ -493,8 +503,21 @@ int main(void) {
   CHECK(status_ok(hyle_fs_remove_directory_recursive(path)));
 
   char envbuf[64];
-  size_t en = hyle_env_get("PATH", envbuf, sizeof(envbuf));
-  CHECK(en != HYLE_ENV_NOT_SET);
+  size_t en = 0;
+  CHECK(status_code(hyle_env_get(NULL, "PATH", envbuf, sizeof(envbuf))) ==
+        HYLE_STATUS_INVALID_ARGUMENT);
+  en = 7u;
+  envbuf[0] = 'x';
+  CHECK(status_code(hyle_env_get(&en, NULL, envbuf, sizeof(envbuf))) ==
+        HYLE_STATUS_INVALID_ARGUMENT);
+  CHECK(en == 0u && envbuf[0] == '\0');
+  CHECK(status_code(hyle_env_set(NULL, "value")) ==
+        HYLE_STATUS_INVALID_ARGUMENT);
+  CHECK(status_code(hyle_env_set("NAME", NULL)) ==
+        HYLE_STATUS_INVALID_ARGUMENT);
+  CHECK(status_code(hyle_env_unset(NULL)) == HYLE_STATUS_INVALID_ARGUMENT);
+  CHECK(status_ok(hyle_env_get(&en, "PATH", envbuf, sizeof(envbuf))));
+  CHECK(en > 0u);
 
   hyle_cpu_features cpu = hyle_cpu_features_get();
   CHECK(cpu.logical_cpus >= 1u);
@@ -593,12 +616,19 @@ int main(void) {
   /* v4: fs permissions + env write + temp file + mapped file */
   {
     /* env round trip */
-    CHECK(hyle_fs_set_env_var("HYLE_C_PLAT_V4", "yes"));
+    CHECK(status_ok(hyle_env_set("HYLE_C_PLAT_V4", "yes")));
     char eb[16];
-    CHECK(hyle_env_get("HYLE_C_PLAT_V4", eb, sizeof(eb)) != HYLE_ENV_NOT_SET);
+    size_t env_size = 0;
+    CHECK(status_ok(hyle_env_get(
+        &env_size, "HYLE_C_PLAT_V4", eb, sizeof(eb))));
+    CHECK(env_size == 3u);
     CHECK(strcmp(eb, "yes") == 0);
-    CHECK(hyle_fs_unset_env_var("HYLE_C_PLAT_V4"));
-    CHECK(hyle_env_get("HYLE_C_PLAT_V4", eb, sizeof(eb)) == HYLE_ENV_NOT_SET);
+    CHECK(status_ok(hyle_env_unset("HYLE_C_PLAT_V4")));
+    env_size = 7u;
+    CHECK(status_code(hyle_env_get(
+              &env_size, "HYLE_C_PLAT_V4", eb, sizeof(eb))) ==
+          HYLE_STATUS_NOT_FOUND);
+    CHECK(env_size == 0u);
 
     /* temp file: open handle + real path */
     char tpath[1024];
@@ -651,8 +681,9 @@ int main(void) {
     CHECK(status_code(hyle_fs_open(&rfd, tpath, HYLE_OPEN_CREATE)) ==
           HYLE_STATUS_INVALID_ARGUMENT);
     CHECK(rfd == HYLE_FILE_HANDLE_INVALID);
-    CHECK(hyle_fs_temp_directory(NULL, 32) > 0u); /* NULL = size query */
-    CHECK(hyle_platform_last_error()[0] == '\0');
+    size_t temp_size = 0;
+    CHECK(status_ok(hyle_fs_temp_directory(&temp_size, NULL, 32)) &&
+          temp_size > 0u); /* NULL dst = size query */
     CHECK(status_code(hyle_fs_read(
               &moved, HYLE_FILE_HANDLE_INVALID, NULL, 1)) ==
           HYLE_STATUS_INVALID_ARGUMENT);

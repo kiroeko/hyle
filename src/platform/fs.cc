@@ -54,6 +54,14 @@ std::size_t fill(char* dst, std::size_t cap, const char* src,
   return len;
 }
 
+void clear_output(char* dst, std::size_t cap) noexcept {
+  if (dst != nullptr && cap != 0) dst[0] = '\0';
+}
+
+bool valid_env_name(const char* name) noexcept {
+  return name != nullptr && name[0] != '\0' && std::strchr(name, '=') == nullptr;
+}
+
 // Join "a/b" into dst[cap]. Returns false (no write) if it would not fit. Bounded
 // and allocation-free -- used to rebuild child paths during recursion without
 // snprintf (whose worst-case length trips GCC -Wformat-truncation under -Werror).
@@ -159,13 +167,14 @@ Status win32_fs_status(const char* operation, DWORD code) noexcept {
 // body is slash-normalized; callers needing collapse should normalize first.
 class WidePath {
  public:
-  explicit WidePath(const char* utf8) noexcept {
+  explicit WidePath(const char* utf8, bool extended_path = true) noexcept {
     if (utf8 == nullptr) return;
-    int need = MultiByteToWideChar(CP_UTF8, 0, utf8, -1, nullptr, 0);
+    int need = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, utf8, -1,
+                                   nullptr, 0);
     if (need <= 0) return;  // includes the NUL
     int wlen = need - 1;
 
-    if (wlen >= kLongThreshold) {
+    if (extended_path && wlen >= kLongThreshold) {
       auto is_alpha = [](char c) {
         return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
       };
@@ -181,6 +190,9 @@ class WidePath {
           // needs a network share -- registered in the coverage map).
           if (build_extended(utf8, need, L"\\\\?\\UNC\\", 2)) return;
         }
+        if (allocation_failed_) return;
+        std::free(heap_);
+        heap_ = nullptr;
       }
       // not absolute (or build failed): fall through to a plain conversion.
     }
@@ -188,10 +200,16 @@ class WidePath {
     wchar_t* dst = stack_;
     if (static_cast<std::size_t>(need) > kStack) {
       heap_ = static_cast<wchar_t*>(std::malloc(need * sizeof(wchar_t)));
-      if (heap_ == nullptr) return;
+      if (heap_ == nullptr) {
+        allocation_failed_ = true;
+        return;
+      }
       dst = heap_;
     }
-    if (MultiByteToWideChar(CP_UTF8, 0, utf8, -1, dst, need) <= 0) return;
+    if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, utf8, -1, dst,
+                            need) <= 0) {
+      return;
+    }
     w_ = dst;
   }
   ~WidePath() { std::free(heap_); }
@@ -199,6 +217,7 @@ class WidePath {
   WidePath& operator=(const WidePath&) = delete;
 
   const wchar_t* w() const noexcept { return w_; }
+  bool allocation_failed() const noexcept { return allocation_failed_; }
 
  private:
   // Build prefix + (body minus `skip` leading chars), slash-normalized to '\'.
@@ -209,12 +228,17 @@ class WidePath {
     wchar_t* dst = stack_;
     if (static_cast<std::size_t>(cap) > kStack) {
       heap_ = static_cast<wchar_t*>(std::malloc(cap * sizeof(wchar_t)));
-      if (heap_ == nullptr) return false;
+      if (heap_ == nullptr) {
+        allocation_failed_ = true;
+        return false;
+      }
       dst = heap_;
     }
     for (int i = 0; i < plen; ++i) dst[i] = prefix[i];
-    if (MultiByteToWideChar(CP_UTF8, 0, utf8, -1, dst + plen, need) <= 0)
+    if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, utf8, -1,
+                            dst + plen, need) <= 0) {
       return false;
+    }
     if (skip) {  // drop the leading "\\" of a UNC path (prefix supplies its own)
       std::memmove(dst + plen, dst + plen + skip,
                    (need - skip) * sizeof(wchar_t));
@@ -232,26 +256,31 @@ class WidePath {
   wchar_t stack_[kStack];
   wchar_t* heap_ = nullptr;
   const wchar_t* w_ = nullptr;
+  bool allocation_failed_ = false;
 };
 
 // UTF-16 -> UTF-8 buffer-fill (snprintf semantics): write into dst[cap], always
 // NUL-terminate when cap>0, return the FULL UTF-8 length (>= cap => truncated).
 // `wlen` is the UTF-16 length excluding any terminator (-1 lets it scan).
-std::size_t fill_w(char* dst, std::size_t cap, const wchar_t* src,
-                   int wlen) noexcept {
+Result<std::size_t> fill_w(char* dst, std::size_t cap, const wchar_t* src,
+                           int wlen) noexcept {
   if (dst == nullptr) cap = 0;
-  int need = WideCharToMultiByte(CP_UTF8, 0, src, wlen, nullptr, 0, nullptr,
-                                 nullptr);
-  if (need <= 0) return fill(dst, cap, "", 0);
+  int need = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, src, wlen,
+                                 nullptr, 0, nullptr, nullptr);
+  if (need <= 0) {
+    return std::unexpected(
+        win32_fs_status("WideCharToMultiByte(size)", ::GetLastError()));
+  }
   const std::size_t full =
       static_cast<std::size_t>(need - (wlen == -1 ? 1 : 0));
   if (cap == 0) return full;
   if (full < cap) {
-    int got =
-        WideCharToMultiByte(CP_UTF8, 0, src, wlen, dst, need, nullptr, nullptr);
+    int got = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, src, wlen, dst,
+                                  need, nullptr, nullptr);
     if (got <= 0) {
       dst[0] = '\0';
-      return full;
+      return std::unexpected(
+          win32_fs_status("WideCharToMultiByte", ::GetLastError()));
     }
     const std::size_t written =
         static_cast<std::size_t>(got - (wlen == -1 ? 1 : 0));
@@ -262,14 +291,16 @@ std::size_t fill_w(char* dst, std::size_t cap, const wchar_t* src,
   char* tmp = static_cast<char*>(std::malloc(need + 1));
   if (tmp == nullptr) {
     dst[0] = '\0';
-    return full;
+    return std::unexpected(
+        Status::ResourceExhausted("UTF-16 to UTF-8 scratch allocation failed"));
   }
-  int got = WideCharToMultiByte(CP_UTF8, 0, src, wlen, tmp, need, nullptr,
-                                nullptr);
+  int got = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, src, wlen, tmp,
+                                need, nullptr, nullptr);
   if (got <= 0) {
+    const DWORD code = ::GetLastError();
     std::free(tmp);
     dst[0] = '\0';
-    return full;
+    return std::unexpected(win32_fs_status("WideCharToMultiByte", code));
   }
   const std::size_t converted =
       static_cast<std::size_t>(got - (wlen == -1 ? 1 : 0));
@@ -389,7 +420,8 @@ Status copy_file(const char* from, const char* to) noexcept {
   return win32_fs_status("CopyFileW", ::GetLastError());
 }
 
-std::size_t current_directory(char* dst, std::size_t cap) noexcept {
+Result<std::size_t> current_directory(char* dst, std::size_t cap) noexcept {
+  clear_output(dst, cap);
   wchar_t stack[512];
   wchar_t* buf = stack;
   wchar_t* heap = nullptr;
@@ -401,24 +433,40 @@ std::size_t current_directory(char* dst, std::size_t cap) noexcept {
     buf_cap = n;
     heap = static_cast<wchar_t*>(
         std::malloc(static_cast<std::size_t>(buf_cap) * sizeof(wchar_t)));
-    if (heap == nullptr) return fill(dst, cap, "", 0);
+    if (heap == nullptr) {
+      return std::unexpected(Status::ResourceExhausted(
+          "current directory: UTF-16 buffer allocation failed"));
+    }
     buf = heap;
     n = GetCurrentDirectoryW(buf_cap, buf);
   }
-  std::size_t out =
-      (n == 0 || n >= buf_cap)
-          ? fill(dst, cap, "", 0)
-          : fill_w(dst, cap, buf, static_cast<int>(n));
+  if (n == 0) {
+    const DWORD code = ::GetLastError();
+    std::free(heap);
+    return std::unexpected(win32_fs_status("GetCurrentDirectoryW", code));
+  }
+  if (n >= buf_cap) {
+    std::free(heap);
+    return std::unexpected(Status::Aborted(
+        "current directory changed while it was being read"));
+  }
+  auto out = fill_w(dst, cap, buf, static_cast<int>(n));
   std::free(heap);
   return out;
 }
 
-bool change_directory(const char* path) noexcept {
+Status change_directory(const char* path) noexcept {
   WidePath wp(path);
-  return wp.w() != nullptr && SetCurrentDirectoryW(wp.w()) != 0;
+  if (wp.w() == nullptr) {
+    return Status::InvalidArgument(
+        "change directory: path is null or not valid UTF-8");
+  }
+  if (SetCurrentDirectoryW(wp.w()) != 0) return Status::Ok();
+  return win32_fs_status("SetCurrentDirectoryW", ::GetLastError());
 }
 
-std::size_t temp_directory(char* dst, std::size_t cap) noexcept {
+Result<std::size_t> temp_directory(char* dst, std::size_t cap) noexcept {
+  clear_output(dst, cap);
   wchar_t stack[512];
   wchar_t* buf = stack;
   wchar_t* heap = nullptr;
@@ -428,68 +476,96 @@ std::size_t temp_directory(char* dst, std::size_t cap) noexcept {
     buf_cap = n + 1;
     heap = static_cast<wchar_t*>(
         std::malloc(static_cast<std::size_t>(buf_cap) * sizeof(wchar_t)));
-    if (heap == nullptr) return fill(dst, cap, "", 0);
+    if (heap == nullptr) {
+      return std::unexpected(Status::ResourceExhausted(
+          "temp directory: UTF-16 buffer allocation failed"));
+    }
     buf = heap;
     n = GetTempPathW(buf_cap, buf);
   }
-  if (n == 0 || n >= buf_cap) {
+  if (n == 0) {
+    const DWORD code = ::GetLastError();
     std::free(heap);
-    return fill(dst, cap, "", 0);
+    return std::unexpected(win32_fs_status("GetTempPathW", code));
+  }
+  if (n >= buf_cap) {
+    std::free(heap);
+    return std::unexpected(
+        Status::Aborted("temp directory changed while it was being read"));
   }
   while (n > 1 && (buf[n - 1] == L'\\' || buf[n - 1] == L'/')) --n;  // trim sep
-  std::size_t out = fill_w(dst, cap, buf, static_cast<int>(n));
+  auto out = fill_w(dst, cap, buf, static_cast<int>(n));
   std::free(heap);
   return out;
 }
 
-std::size_t home_directory(char* dst, std::size_t cap) noexcept {
-  wchar_t stack[512];
-  wchar_t* buf = stack;
-  wchar_t* heap = nullptr;
-  DWORD buf_cap = static_cast<DWORD>(sizeof(stack) / sizeof(stack[0]));
-  DWORD n = GetEnvironmentVariableW(L"USERPROFILE", buf, buf_cap);
-  if (n >= buf_cap) {
-    buf_cap = n;
-    heap = static_cast<wchar_t*>(
-        std::malloc(static_cast<std::size_t>(buf_cap) * sizeof(wchar_t)));
-    if (heap == nullptr) return fill(dst, cap, "", 0);
-    buf = heap;
-    n = GetEnvironmentVariableW(L"USERPROFILE", buf, buf_cap);
+Result<std::size_t> home_directory(char* dst, std::size_t cap) noexcept {
+  return get_env_var("USERPROFILE", dst, cap);
+}
+
+Result<std::size_t> get_env_var(const char* name, char* dst,
+                                std::size_t cap) noexcept {
+  clear_output(dst, cap);
+  if (!valid_env_name(name)) {
+    return std::unexpected(Status::InvalidArgument(
+        "get environment variable: name is null, empty, or contains '='"));
   }
-  std::size_t out =
-      (n == 0 || n >= buf_cap)
-          ? fill(dst, cap, "", 0)
-          : fill_w(dst, cap, buf, static_cast<int>(n));
-  std::free(heap);
-  return out;
-}
-
-std::size_t get_env_var(const char* name, char* dst, std::size_t cap) noexcept {
-  if (name == nullptr) return kEnvNotSet;
-  WidePath wn(name);
-  if (wn.w() == nullptr) return kEnvNotSet;
-  // Query length first. 0 with ERROR_ENVVAR_NOT_FOUND => unset (vs set-empty).
-  DWORD need = GetEnvironmentVariableW(wn.w(), nullptr, 0);
-  if (need == 0) {
-    if (GetLastError() == ERROR_ENVVAR_NOT_FOUND) return kEnvNotSet;
-    return fill(dst, cap, "", 0);  // set but empty
+  WidePath wn(name, /*extended_path=*/false);
+  if (wn.w() == nullptr) {
+    if (wn.allocation_failed()) {
+      return std::unexpected(Status::ResourceExhausted(
+          "environment variable name conversion allocation failed"));
+    }
+    return std::unexpected(Status::InvalidArgument(
+        "get environment variable: name is not valid UTF-8"));
   }
   wchar_t stackw[512];
-  wchar_t* wbuf = stackw;
-  wchar_t* heapw = nullptr;
-  if (need > 512) {
-    heapw = static_cast<wchar_t*>(std::malloc(need * sizeof(wchar_t)));
-    if (heapw == nullptr) return fill(dst, cap, "", 0);
-    wbuf = heapw;
+  for (int attempt = 0; attempt != 4; ++attempt) {
+    ::SetLastError(ERROR_SUCCESS);
+    const DWORD need = GetEnvironmentVariableW(wn.w(), nullptr, 0);
+    if (need == 0) {
+      const DWORD code = ::GetLastError();
+      if (code == ERROR_ENVVAR_NOT_FOUND) {
+        return std::unexpected(Status::NotFound(
+            "get environment variable: variable is not set"));
+      }
+      if (code == ERROR_SUCCESS) return std::size_t{0};
+      return std::unexpected(
+          win32_fs_status("GetEnvironmentVariableW(size)", code));
+    }
+    wchar_t* heapw = nullptr;
+    wchar_t* wbuf = stackw;
+    if (need > sizeof(stackw) / sizeof(stackw[0])) {
+      heapw = static_cast<wchar_t*>(
+          std::malloc(static_cast<std::size_t>(need) * sizeof(wchar_t)));
+      if (heapw == nullptr) {
+        return std::unexpected(Status::ResourceExhausted(
+            "environment variable: UTF-16 buffer allocation failed"));
+      }
+      wbuf = heapw;
+    }
+    ::SetLastError(ERROR_SUCCESS);
+    const DWORD got = GetEnvironmentVariableW(wn.w(), wbuf, need);
+    const DWORD code = ::GetLastError();
+    if (got == 0) {
+      std::free(heapw);
+      if (code == ERROR_ENVVAR_NOT_FOUND) {
+        return std::unexpected(Status::NotFound(
+            "get environment variable: variable is not set"));
+      }
+      if (code == ERROR_SUCCESS) return std::size_t{0};
+      return std::unexpected(win32_fs_status("GetEnvironmentVariableW", code));
+    }
+    if (got >= need) {
+      std::free(heapw);
+      continue;  // the process-global value grew between the two calls
+    }
+    auto result = fill_w(dst, cap, wbuf, static_cast<int>(got));
+    std::free(heapw);
+    return result;
   }
-  DWORD got = GetEnvironmentVariableW(wn.w(), wbuf, need);
-  // Race guard: if another thread grew the var between the size probe and here,
-  // got >= need and wbuf is NOT filled -> return empty rather than read past need.
-  std::size_t r = (got != 0 && got < need)
-                      ? fill_w(dst, cap, wbuf, static_cast<int>(got))
-                      : fill(dst, cap, "", 0);
-  std::free(heapw);
-  return r;
+  return std::unexpected(Status::Aborted(
+      "environment variable kept changing while it was being read"));
 }
 
 Result<bool> directory_iterate(const char* path,
@@ -541,6 +617,7 @@ Result<bool> directory_iterate(const char* path,
         win32_fs_status("FindFirstFileExW", ::GetLastError()));
   }
   bool stopped = false;
+  Status iteration_status = Status::Ok();
   do {
     const wchar_t* wname = fd.cFileName;
     if (wname[0] == L'.' &&
@@ -551,19 +628,25 @@ Result<bool> directory_iterate(const char* path,
     // bytes + NUL < 1024 -- it ALWAYS fits. So skip fill_w's length-probe call
     // (WideCharToMultiByte(...,nullptr,0,...)) and convert in ONE call straight
     // into the fixed buffer. wlen=-1 processes the terminator too, so the output
-    // is NUL-terminated and `got` includes it. Fall back to fill_w only on the
-    // impossible failure (0 = bad input / would-truncate), keeping correctness.
-    int got = WideCharToMultiByte(CP_UTF8, 0, wname, -1, name,
+    // is NUL-terminated and `got` includes it. A malformed UTF-16 name is an
+    // explicit enumeration error instead of reaching the visitor as "".
+    int got = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, wname, -1, name,
                                   static_cast<int>(sizeof(name)), nullptr, nullptr);
-    if (got <= 0) fill_w(name, sizeof(name), wname, -1);  // defensive, never hit here
+    if (got <= 0) {
+      iteration_status =
+          win32_fs_status("WideCharToMultiByte(directory entry)", ::GetLastError());
+      break;
+    }
     bool dir = (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
     if (!visit(name, dir, ctx)) {
       stopped = true;
       break;
     }
   } while (FindNextFileW(h, &fd));
-  const DWORD end_error = stopped ? ERROR_NO_MORE_FILES : GetLastError();
+  const DWORD end_error =
+      (stopped || !iteration_status.ok()) ? ERROR_NO_MORE_FILES : GetLastError();
   const BOOL closed = FindClose(h);
+  if (!iteration_status.ok()) return std::unexpected(std::move(iteration_status));
   if (!stopped && end_error != ERROR_NO_MORE_FILES) {
     return std::unexpected(win32_fs_status("FindNextFileW", end_error));
   }
@@ -793,10 +876,12 @@ Result<std::size_t> read_symlink(const char* path, char* dst,
 
 Result<FileHandle> create_temp_file(const char* dir, const char* prefix,
                                     char* dst, std::size_t cap) noexcept {
+  clear_output(dst, cap);
   char dirbuf[1024];
   if (dir == nullptr) {
-    std::size_t n = temp_directory(dirbuf, sizeof(dirbuf));
-    if (n == 0 || n >= sizeof(dirbuf)) {
+    auto temp = temp_directory(dirbuf, sizeof(dirbuf));
+    if (!temp) return std::unexpected(std::move(temp).error());
+    if (*temp >= sizeof(dirbuf)) {
       return std::unexpected(
           Status::OutOfRange("create temp file: temp directory is too long"));
     }
@@ -847,9 +932,16 @@ Result<FileHandle> create_temp_file(const char* dir, const char* prefix,
     HANDLE h = CreateFileW(wpath, GENERIC_READ | GENERIC_WRITE, 0, nullptr,
                            CREATE_NEW, FILE_ATTRIBUTE_TEMPORARY, nullptr);
     if (h != INVALID_HANDLE_VALUE) {
-      char u8[MAX_PATH * 3];
-      if (WideCharToMultiByte(CP_UTF8, 0, wpath, -1, u8, sizeof(u8), nullptr,
-                              nullptr) > 0) {
+      if (dst != nullptr && cap != 0) {
+        char u8[MAX_PATH * 3];
+        if (WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, wpath, -1, u8,
+                                sizeof(u8), nullptr, nullptr) <= 0) {
+          const DWORD conversion_error = ::GetLastError();
+          ::CloseHandle(h);
+          ::DeleteFileW(wpath);
+          return std::unexpected(win32_fs_status(
+              "WideCharToMultiByte(temp path)", conversion_error));
+        }
         fill(dst, cap, u8, std::strlen(u8));
       }
       return FileHandle{reinterpret_cast<std::intptr_t>(h)};
@@ -864,13 +956,59 @@ Result<FileHandle> create_temp_file(const char* dir, const char* prefix,
       "create temp file: exhausted unique-name retries"));
 }
 
-bool set_env_var(const char* name, const char* value) noexcept {
-  return name != nullptr &&
-         _putenv_s(name, value != nullptr ? value : "") == 0;
+Status set_env_var(const char* name, const char* value) noexcept {
+  if (!valid_env_name(name) || value == nullptr) {
+    return Status::InvalidArgument(
+        "set environment variable: invalid name or null value");
+  }
+  WidePath wn(name, /*extended_path=*/false);
+  WidePath wv(value, /*extended_path=*/false);
+  if (wn.w() == nullptr || wv.w() == nullptr) {
+    if (wn.allocation_failed() || wv.allocation_failed()) {
+      return Status::ResourceExhausted(
+          "environment variable UTF-16 conversion allocation failed");
+    }
+    return Status::InvalidArgument(
+        "set environment variable: name or value is not valid UTF-8");
+  }
+  const int code = _wputenv_s(wn.w(), wv.w());
+  if (code == 0) return Status::Ok();
+  if (code == EINVAL) {
+    return Status::InvalidArgument("_wputenv_s rejected the name or value");
+  }
+  if (code == ENOMEM) {
+    return Status::ResourceExhausted("_wputenv_s could not allocate storage");
+  }
+  char message[128];
+  std::snprintf(message, sizeof(message), "_wputenv_s failed: errno %d", code);
+  return Status::Unavailable(message);
 }
 
-bool unset_env_var(const char* name) noexcept {
-  return name != nullptr && _putenv_s(name, "") == 0;
+Status unset_env_var(const char* name) noexcept {
+  if (!valid_env_name(name)) {
+    return Status::InvalidArgument(
+        "unset environment variable: invalid name");
+  }
+  WidePath wn(name, /*extended_path=*/false);
+  if (wn.w() == nullptr) {
+    if (wn.allocation_failed()) {
+      return Status::ResourceExhausted(
+          "environment variable name conversion allocation failed");
+    }
+    return Status::InvalidArgument(
+        "unset environment variable: name is not valid UTF-8");
+  }
+  const int code = _wputenv_s(wn.w(), L"");
+  if (code == 0) return Status::Ok();
+  if (code == EINVAL) {
+    return Status::InvalidArgument("_wputenv_s rejected the name");
+  }
+  if (code == ENOMEM) {
+    return Status::ResourceExhausted("_wputenv_s could not allocate storage");
+  }
+  char message[128];
+  std::snprintf(message, sizeof(message), "_wputenv_s failed: errno %d", code);
+  return Status::Unavailable(message);
 }
 
 #else
@@ -1089,17 +1227,50 @@ Status copy_file(const char* from, const char* to) noexcept {
   return status;
 }
 
-std::size_t current_directory(char* dst, std::size_t cap) noexcept {
-  char buf[4096];
-  if (::getcwd(buf, sizeof(buf)) == nullptr) return fill(dst, cap, "", 0);
-  return fill(dst, cap, buf, std::strlen(buf));
+Result<std::size_t> current_directory(char* dst, std::size_t cap) noexcept {
+  clear_output(dst, cap);
+  char stack[512];
+  char* buf = stack;
+  char* heap = nullptr;
+  std::size_t buf_cap = sizeof(stack);
+  for (;;) {
+    if (::getcwd(buf, buf_cap) != nullptr) {
+      const std::size_t result = fill(dst, cap, buf, std::strlen(buf));
+      std::free(heap);
+      return result;
+    }
+    const int code = errno;
+    if (code != ERANGE) {
+      std::free(heap);
+      return std::unexpected(posix_fs_status("getcwd", code));
+    }
+    if (buf_cap > std::numeric_limits<std::size_t>::max() / 2) {
+      std::free(heap);
+      return std::unexpected(
+          Status::OutOfRange("current directory path is too long"));
+    }
+    buf_cap *= 2;
+    char* grown = static_cast<char*>(std::realloc(heap, buf_cap));
+    if (grown == nullptr) {
+      std::free(heap);
+      return std::unexpected(Status::ResourceExhausted(
+          "current directory buffer allocation failed"));
+    }
+    heap = grown;
+    buf = heap;
+  }
 }
 
-bool change_directory(const char* path) noexcept {
-  return ::chdir(path) == 0;
+Status change_directory(const char* path) noexcept {
+  if (path == nullptr) {
+    return Status::InvalidArgument("change directory: path is null");
+  }
+  if (::chdir(path) == 0) return Status::Ok();
+  return posix_fs_status("chdir", errno);
 }
 
-std::size_t temp_directory(char* dst, std::size_t cap) noexcept {
+Result<std::size_t> temp_directory(char* dst, std::size_t cap) noexcept {
+  clear_output(dst, cap);
   const char* t = std::getenv("TMPDIR");
   if (t == nullptr || t[0] == '\0') t = std::getenv("TMP");
   if (t == nullptr || t[0] == '\0') t = std::getenv("TEMP");
@@ -1109,25 +1280,65 @@ std::size_t temp_directory(char* dst, std::size_t cap) noexcept {
   return fill(dst, cap, t, n);
 }
 
-std::size_t home_directory(char* dst, std::size_t cap) noexcept {
+Result<std::size_t> home_directory(char* dst, std::size_t cap) noexcept {
+  clear_output(dst, cap);
   const char* h = std::getenv("HOME");
   if (h != nullptr && h[0] != '\0') return fill(dst, cap, h, std::strlen(h));
   // getpwuid returns a pointer into shared static storage (not thread-safe);
   // getpwuid_r fills caller buffers instead.
   struct passwd pw;
   struct passwd* result = nullptr;
-  char buf[1024];
-  if (::getpwuid_r(::getuid(), &pw, buf, sizeof(buf), &result) == 0 &&
-      result != nullptr && result->pw_dir != nullptr) {
-    return fill(dst, cap, result->pw_dir, std::strlen(result->pw_dir));
+  char stack[1024];
+  char* buf = stack;
+  char* heap = nullptr;
+  std::size_t buf_cap = sizeof(stack);
+  for (;;) {
+    const int code = ::getpwuid_r(::getuid(), &pw, buf, buf_cap, &result);
+    if (code == 0 && result != nullptr && result->pw_dir != nullptr &&
+        result->pw_dir[0] != '\0') {
+      const std::size_t size =
+          fill(dst, cap, result->pw_dir, std::strlen(result->pw_dir));
+      std::free(heap);
+      return size;
+    }
+    if (code == 0) {
+      std::free(heap);
+      return std::unexpected(
+          Status::NotFound("home directory: user has no passwd entry"));
+    }
+    if (code != ERANGE) {
+      std::free(heap);
+      return std::unexpected(posix_fs_status("getpwuid_r", code));
+    }
+    if (buf_cap > std::numeric_limits<std::size_t>::max() / 2) {
+      std::free(heap);
+      return std::unexpected(
+          Status::OutOfRange("home directory passwd entry is too large"));
+    }
+    buf_cap *= 2;
+    char* grown = static_cast<char*>(std::realloc(heap, buf_cap));
+    if (grown == nullptr) {
+      std::free(heap);
+      return std::unexpected(Status::ResourceExhausted(
+          "home directory passwd buffer allocation failed"));
+    }
+    heap = grown;
+    buf = heap;
   }
-  return fill(dst, cap, "", 0);
 }
 
-std::size_t get_env_var(const char* name, char* dst, std::size_t cap) noexcept {
-  if (name == nullptr) return kEnvNotSet;
+Result<std::size_t> get_env_var(const char* name, char* dst,
+                                std::size_t cap) noexcept {
+  clear_output(dst, cap);
+  if (!valid_env_name(name)) {
+    return std::unexpected(Status::InvalidArgument(
+        "get environment variable: name is null, empty, or contains '='"));
+  }
   const char* v = std::getenv(name);
-  if (v == nullptr) return kEnvNotSet;
+  if (v == nullptr) {
+    return std::unexpected(
+        Status::NotFound("get environment variable: variable is not set"));
+  }
   return fill(dst, cap, v, std::strlen(v));
 }
 
@@ -1280,10 +1491,12 @@ Result<std::size_t> read_symlink(const char* path, char* dst,
 
 Result<FileHandle> create_temp_file(const char* dir, const char* prefix,
                                     char* dst, std::size_t cap) noexcept {
+  clear_output(dst, cap);
   char dirbuf[1024];
   if (dir == nullptr) {
-    std::size_t n = temp_directory(dirbuf, sizeof(dirbuf));
-    if (n == 0 || n >= sizeof(dirbuf)) {
+    auto temp = temp_directory(dirbuf, sizeof(dirbuf));
+    if (!temp) return std::unexpected(std::move(temp).error());
+    if (*temp >= sizeof(dirbuf)) {
       return std::unexpected(
           Status::OutOfRange("create temp file: temp directory is too long"));
     }
@@ -1311,13 +1524,22 @@ Result<FileHandle> create_temp_file(const char* dir, const char* prefix,
   return FileHandle{static_cast<std::intptr_t>(fd)};
 }
 
-bool set_env_var(const char* name, const char* value) noexcept {
-  return name != nullptr &&
-         ::setenv(name, value != nullptr ? value : "", 1) == 0;
+Status set_env_var(const char* name, const char* value) noexcept {
+  if (!valid_env_name(name) || value == nullptr) {
+    return Status::InvalidArgument(
+        "set environment variable: invalid name or null value");
+  }
+  if (::setenv(name, value, 1) == 0) return Status::Ok();
+  return posix_fs_status("setenv", errno);
 }
 
-bool unset_env_var(const char* name) noexcept {
-  return name != nullptr && ::unsetenv(name) == 0;
+Status unset_env_var(const char* name) noexcept {
+  if (!valid_env_name(name)) {
+    return Status::InvalidArgument(
+        "unset environment variable: invalid name");
+  }
+  if (::unsetenv(name) == 0) return Status::Ok();
+  return posix_fs_status("unsetenv", errno);
 }
 
 Result<bool> directory_iterate(const char* path,

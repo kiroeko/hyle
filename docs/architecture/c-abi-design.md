@@ -107,8 +107,9 @@ HYLE 不在 C ABI 上再包一层冗余 C++ facade：原生 `include/hyle/<mod>/
 - **platform 按失败形状分通道**：Parker/Thread 构造、DynLib、MappedFile、VM/NUMA 与
   打开的 file resource 都返回 `hyle_status` + 出参，因此 C 与 C++ 共用错误分类且没有
   “NULL/INVALID 究竟是合法值还是失败”的歧义。fs path 查询区分普通 false 与 OS 失败，
-  path 变更、权限、symlink 和遍历也已采用 Status(+out)。仅 cwd/temp/home/env buffer-fill、
-  chdir/env 写暂用 `hyle_platform_last_error`；它是未发布 ABI 的最后迁移中间态。
+  path 变更、权限、symlink、遍历、cwd/temp/home/env buffer-fill 与 env 写均采用
+  Status(+out)。platform 不保留模块私有 last-error；环境变量未设置用 `NOT_FOUND`，不再
+  占用 `SIZE_MAX` sentinel。
 - 对照：ggml 用 `ggml_status` 返回码；oneDNN 用 `dnnl_status_t` + C++ 层 `wrap_c_api` 转异常。HYLE 的可恢复失败同样走显式返回值，程序错误独立 fail-fast。
 
 ## 6. C++ API 易用性（第 1 层，给 C++ 用户）

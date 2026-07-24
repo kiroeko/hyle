@@ -77,6 +77,18 @@ n=15 得到 HYLE **40.23 us**、std::filesystem **39.76 us**，配对 op/s 中�
 “sign 输 0.93x”记录；扫描的当前目录内容会影响绝对值，因此只采用同进程配对结论。
 Linux/macOS 仍保留旧接口证书，待新接口真机复跑后再更新。
 
+### 2026-07-24 cwd / home / env 错误收敛
+
+这些入口是进程级控制面，不是数据热路径：cwd/temp/home/env buffer-fill 必须至少读取并
+复制 N 字节，因此时间 O(N) 是渐近下界。常见目录使用栈缓冲；仅超长 POSIX cwd/passwd
+记录或 Windows UTF 转换暂存才几何增长到 O(N) 空间。Windows env 长度竞态最多重试 4 次，
+不可能无界自旋；set/unset 仍是一次 CRT/OS 环境更新。
+
+本轮不为它们新增纳秒 microbenchmark：数值主要测 OS、进程环境锁和字符串长度，且会把
+接口再次拉向 benchmark 形状。性能验收采用复杂度/分配路径审查，并由 Release/ASan 的
+真实 buffer-fill、UTF-8 round-trip、unset/empty 分离和长 HOME 场景覆盖。结构化 Status
+只在失败时构造诊断，成功 Result 是栈上值，不增加成功路堆分配。
+
 ## 非 SOTA / 需诚实标价
 
 ### 1. staged VM 对 raw 一步分配的旧“输”不是同合同对比

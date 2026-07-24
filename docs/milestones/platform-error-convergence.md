@@ -92,6 +92,23 @@ last-error 分类和“失败指针 + 另查 TLS”的组合；未发布，不�
 
 下一增量完成 cwd/temp/home/env，随后删除 `hyle_platform_last_error`。
 
+## E 阶段：cwd / special directories / environment（2026-07-24，Windows 完成）
+
+- C++ cwd/temp/home/env buffer-fill 返回 `Result<size_t>`，chdir/env 写返回 `Status`；环境
+  变量未设置为 `NotFound`，与“已设置为空”的成功 size=0 明确分离。
+- C ABI 使用 `hyle_status + out_size`，环境入口收束为对称的
+  `hyle_env_get/set/unset`；删除 `HYLE_ENV_NOT_SET` 和模块私有
+  `hyle_platform_last_error`。platform 的公开可恢复失败至此全部走共享 error。
+- Windows 环境读写统一 UTF-8↔UTF-16；读侧对进程全局环境值的长度竞态做有界重试。
+  POSIX `getcwd` / `getpwuid_r` 改为几何增长缓冲，不再把超过 4096/1024 字节吞成空串。
+- 常见成功路使用 512B/1024B 栈缓冲；超长输入才几何增长，复杂度 O(输出长度)、额外
+  空间 O(输出长度)，已经是必须复制 UTF-8 buffer-fill 的渐近下界，不为冷控制面制造
+  无意义 microbenchmark。
+
+Windows MSVC Release 的 platform/mem C/C++、mem C surface/header 六项通过，MSVC
+ASan 的 platform/mem C/C++ 四项通过；WSL/GCC 14 Release 从当前源码构建并通过
+platform C/C++ 2/2。Windows 是本机主证，WSL 只作为 POSIX 行为回归，不外推性能。
+
 ## 完成条件
 
 - Windows/Linux/macOS 当前接口的 C/C++ tests 通过，ASan/TSan 按涉及路径复证。

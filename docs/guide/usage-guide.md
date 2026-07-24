@@ -598,6 +598,16 @@ HYLE_RETURN_IF_ERROR(create_hard_link("a.txt", "b.txt"));
 char tgt[4096];
 HYLE_ASSIGN_OR_RETURN(std::size_t target_size,
                       read_symlink("link", tgt, sizeof tgt));
+char temp_dir[1024];
+HYLE_ASSIGN_OR_RETURN(std::size_t temp_size,
+                      temp_directory(temp_dir, sizeof temp_dir));
+char value[256];
+auto env = get_env_var("MYAPP_CACHE", value, sizeof value);
+if (!env) {
+  if (env.error().IsNotFound()) { /* 未设置：选择默认目录 */ }
+  else { return env.error(); }
+}
+HYLE_RETURN_IF_ERROR(set_env_var("MYAPP_MODE", "fast"));
 
 // 线程：ABI-clean 句柄 + name/affinity/stack/priority（best-effort，需权限时软降级）
 #include "hyle/platform/thread.h"
@@ -614,7 +624,7 @@ const auto& cache = cache_info();        // L1D/L1I/L2/L3 bytes；未知级为 0
 const auto& topo = cpu_topology();       // 逻辑 CPU 与可信的 P/E 分类
 ```
 
-**跨平台语义提醒**：`create_symlink` 在 Windows 需开发者模式/管理员（无则软失败）；`set_env_var(name,"")` 在 Windows 删除变量、POSIX 保留空值；thread priority/affinity 是 best-effort（无权限软降级）。`cpu_topology()` 只报告系统明确提供的 P/E 分类；信息不足时把全部逻辑 CPU 归入 performance 并令 `hybrid=false`，不做频率启发式猜测。纯 C / FFI 消费者用 `hyle/c/platform.h`（见 [`c-platform.md`](./c-platform.md)）。
+**跨平台语义提醒**：`create_symlink` 在 Windows 需开发者模式/管理员（否则返回 `PermissionDenied`）；`set_env_var(name,"")` 在 Windows 删除变量、POSIX 保留空值；thread priority/affinity 是 best-effort（无权限软降级）。`cpu_topology()` 只报告系统明确提供的 P/E 分类；信息不足时把全部逻辑 CPU 归入 performance 并令 `hybrid=false`，不做频率启发式猜测。纯 C / FFI 消费者用 `hyle/c/platform.h`（见 [`c-platform.md`](./c-platform.md)）。
 
 本指南讲"正常用法"。**为 SOTA 性能保留的调用约束**（违反 = UB，非 HYLE bug）单独列在 [`usage-contract.md`](./usage-contract.md)（同目录）：fiber 跨 yield 的 thread_local、分配器跨线程 free、CPUID 探测的 LTO 隔离等。集成前过一遍。
 
