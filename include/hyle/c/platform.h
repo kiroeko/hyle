@@ -312,12 +312,22 @@ HYLE_PLATFORM_C_API hyle_status hyle_vm_region_protect(
 /* Filesystem + environment (buffer-fill / visitor; no hidden alloc)          */
 /* ========================================================================== */
 
+typedef enum hyle_file_type {
+  HYLE_FILE_TYPE_UNKNOWN = 0,
+  HYLE_FILE_TYPE_REGULAR = 1,
+  HYLE_FILE_TYPE_DIRECTORY = 2,
+  HYLE_FILE_TYPE_SYMLINK = 3,
+  HYLE_FILE_TYPE_BLOCK_DEVICE = 4,
+  HYLE_FILE_TYPE_CHARACTER_DEVICE = 5,
+  HYLE_FILE_TYPE_FIFO = 6,
+  HYLE_FILE_TYPE_SOCKET = 7
+} hyle_file_type;
+
 typedef struct hyle_file_info {
-  int exists; /* 0/1 */
-  int is_directory;
+  hyle_file_type type; /* target kind; stat follows symlinks */
   uint64_t size;
   int64_t modified_time; /* seconds since epoch */
-  int is_symlink;        /* v4: path itself is a symbolic link (lstat semantics) */
+  int is_symlink;        /* path itself is a symbolic link (lstat semantics) */
 } hyle_file_info;
 
 HYLE_PLATFORM_C_API hyle_status hyle_fs_stat(hyle_file_info* out,
@@ -356,9 +366,11 @@ HYLE_PLATFORM_C_API hyle_status hyle_fs_home_directory(
 HYLE_PLATFORM_C_API hyle_status hyle_env_get(
     size_t* out_size, const char* name, char* dst, size_t cap);
 
-/* Directory iterate: visit(name,is_dir,ctx) returns 0 to stop normally.
+/* Directory iterate: visit(name,type,ctx) returns 0 to stop normally. `type`
+ * describes the entry itself (symlinks are not followed).
  * out_completed is 1 when every entry was visited, 0 on early stop/failure. */
-typedef int (*hyle_fs_visit_fn)(const char* name, int is_dir, void* ctx);
+typedef int (*hyle_fs_visit_fn)(const char* name, hyle_file_type type,
+                                void* ctx);
 HYLE_PLATFORM_C_API hyle_status hyle_fs_directory_iterate(
     int* out_completed, const char* path, hyle_fs_visit_fn visit, void* ctx);
 
@@ -384,10 +396,17 @@ HYLE_PLATFORM_C_API hyle_status hyle_fs_is_readonly(int* out,
                                                     const char* path);
 HYLE_PLATFORM_C_API hyle_status hyle_fs_set_readonly(const char* path,
                                                      int readonly);
-/* Symlinks. create_symlink may return PermissionDenied on Windows without
- * Developer Mode/admin privilege. */
+typedef enum hyle_symlink_kind {
+  HYLE_SYMLINK_AUTO = 0,
+  HYLE_SYMLINK_FILE = 1,
+  HYLE_SYMLINK_DIRECTORY = 2
+} hyle_symlink_kind;
+/* Symlinks. Pass an explicit kind for a portable dangling link. AUTO infers an
+ * existing target on Windows. Creation may return PERMISSION_DENIED there
+ * without Developer Mode/admin privilege. */
 HYLE_PLATFORM_C_API hyle_status hyle_fs_create_symlink(const char* target,
-                                                       const char* link);
+                                                        const char* link,
+                                                        hyle_symlink_kind kind);
 HYLE_PLATFORM_C_API hyle_status hyle_fs_create_hard_link(const char* target,
                                                          const char* link);
 HYLE_PLATFORM_C_API hyle_status hyle_fs_is_symlink(int* out,
@@ -401,11 +420,12 @@ HYLE_PLATFORM_C_API hyle_status hyle_fs_read_symlink(size_t* out_size,
 typedef intptr_t hyle_file_handle;
 #define HYLE_FILE_HANDLE_INVALID ((hyle_file_handle)-1)
 /* Atomically create a temp file; writes an OPEN read-write handle to *out and
- * the path to dst[cap]. Close it with hyle_fs_close. dir==NULL => system temp
- * dir. *out is HYLE_FILE_HANDLE_INVALID on entry/failure. */
+ * the path to dst[cap]. *out_path_size receives the full path length even when
+ * dst is truncated. Close it with hyle_fs_close. dir==NULL => system temp dir.
+ * Outputs are INVALID/0 on entry and failure. */
 HYLE_PLATFORM_C_API hyle_status hyle_fs_create_temp_file(
-    hyle_file_handle* out, const char* dir, const char* prefix, char* dst,
-    size_t cap);
+    hyle_file_handle* out, size_t* out_path_size, const char* dir,
+    const char* prefix, char* dst, size_t cap);
 /* Close a handle from create_temp_file/open. Safe on INVALID. */
 HYLE_PLATFORM_C_API hyle_status hyle_fs_close(hyle_file_handle file);
 /* open_file flags (OR them): READ/WRITE pick access; CREATE makes a missing file;

@@ -38,9 +38,9 @@ static void thr_entry(void* ctx) {
 }
 
 static int visit_count = 0;
-static int visit_cb(const char* name, int is_dir, void* ctx) {
+static int visit_cb(const char* name, hyle_file_type type, void* ctx) {
   (void)name;
-  (void)is_dir;
+  (void)type;
   (void)ctx;
   ++visit_count;
   return 1;
@@ -439,7 +439,7 @@ int main(void) {
   {
     hyle_file_info di = {0};
     CHECK(status_ok(hyle_fs_stat(&di, path)));
-    CHECK(di.exists && di.is_directory);
+    CHECK(di.type == HYLE_FILE_TYPE_DIRECTORY);
   }
   visit_count = 0;
   int completed = 0;
@@ -481,8 +481,11 @@ int main(void) {
   {
     char link[720];
     snprintf(link, sizeof(link), "%s/f-link", path);
+    CHECK(status_code(hyle_fs_create_symlink(
+              file, link, (hyle_symlink_kind)99)) ==
+          HYLE_STATUS_INVALID_ARGUMENT);
     /* Symlink creation may require a host privilege (notably on Windows). */
-    if (status_ok(hyle_fs_create_symlink(file, link))) {
+    if (status_ok(hyle_fs_create_symlink(file, link, HYLE_SYMLINK_AUTO))) {
       char target[1024];
       size_t need = 0;
       CHECK(status_ok(hyle_fs_read_symlink(&need, link, NULL, 0)));
@@ -633,12 +636,19 @@ int main(void) {
     /* temp file: open handle + real path */
     char tpath[1024];
     hyle_file_handle fd = HYLE_FILE_HANDLE_INVALID;
+    size_t tpath_size = 0;
     CHECK(status_code(hyle_fs_create_temp_file(
-              NULL, NULL, "hyle_c", tpath, sizeof(tpath))) ==
+              NULL, &tpath_size, NULL, "hyle_c", tpath, sizeof(tpath))) ==
           HYLE_STATUS_INVALID_ARGUMENT);
+    fd = 7;
+    CHECK(status_code(hyle_fs_create_temp_file(
+              &fd, NULL, NULL, "hyle_c", tpath, sizeof(tpath))) ==
+          HYLE_STATUS_INVALID_ARGUMENT);
+    CHECK(fd == HYLE_FILE_HANDLE_INVALID);
     CHECK(status_ok(hyle_fs_create_temp_file(
-        &fd, NULL, "hyle_c", tpath, sizeof(tpath))));
+        &fd, &tpath_size, NULL, "hyle_c", tpath, sizeof(tpath))));
     CHECK(fd != HYLE_FILE_HANDLE_INVALID);
+    CHECK(tpath_size == strlen(tpath));
     CHECK(status_ok(hyle_fs_exists(&path_value, tpath)) && path_value);
     /* permissions: the temp file exists -> nonzero perms; readonly round trip */
     uint32_t temp_mode = 0;
@@ -735,9 +745,11 @@ int main(void) {
   {
     char mpath[1024];
     hyle_file_handle fd = HYLE_FILE_HANDLE_INVALID;
+    size_t mpath_size = 0;
     CHECK(status_ok(hyle_fs_create_temp_file(
-        &fd, NULL, "hyle_c_map", mpath, sizeof(mpath))));
+        &fd, &mpath_size, NULL, "hyle_c_map", mpath, sizeof(mpath))));
     CHECK(fd != HYLE_FILE_HANDLE_INVALID);
+    CHECK(mpath_size == strlen(mpath));
     CHECK(status_ok(hyle_fs_close(fd)));
 
     const char* seed = "hyle mapped C-ABI payload 0123456789";

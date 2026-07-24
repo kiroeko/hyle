@@ -16,6 +16,8 @@ platform 是 HYLE 的跨 OS 原语层。它服务两类调用者：HYLE 内部�
 | 普通小对象、容器 backing | mem 的 `Allocator` / `Region` | platform VM | platform 不替代 malloc |
 | 顺序读写普通文件 | `FileHandle` | `MappedFile` | move-only；短读/短写正常；显式 close 可观察错误 |
 | 原子创建临时文件 | `create_temp_file` | 先生成名字再 open | 返回已打开 handle，避免 TOCTOU |
+| 只需低成本枚举目录名和类型 | `for_each_entry` | 每项都 `stat` | entry 类型不跟随 symlink；常见路径零额外 stat |
+| 需要完整单项元数据 | `stat` | 把目录遍历的 entry type 当完整 stat | 跟随 symlink，并另报 path 自身是否 symlink |
 | 大文件随机访问/共享映射 | `MappedFile` | 小文件必然 mmap | RO/RW/COW；Linux 小文件顺扫未必赢 read |
 | 查询 cwd/temp/home | 对应 `*_directory` buffer-fill | 猜环境变量/固定 `/tmp` | `Result<size_t>` 是完整长度；可先 size query |
 | 读取/修改进程环境 | `get/set/unset_env_var` | 把 unset 和空值都当 0 | unset=`NotFound`；写操作仅应在启动期做 |
@@ -78,6 +80,18 @@ visitor 提前停止不再共享一个 0。跨平台代码优先 `is_readonly/se
 可先用 `dst=nullptr` 查询；环境变量未设置是 `NotFound`，已设置为空是成功的 0。
 `temp_directory` 只发现 OS/环境配置的路径，不额外探测可写性；需要真正可用且无 TOCTOU
 窗口的临时文件时直接调用 `create_temp_file`。
+
+`stat(path)` 成功就表示对象存在，`FileInfo` 因此不再复制一份可能互相矛盾的 `exists`
+状态；`type` 是跟随 symlink 后的 target 类型，而 `is_symlink` 描述 path 自身。批量目录
+扫描则用 `for_each_entry(name, FileType)`：它返回 entry 自身类型（symlink 不跟随），优先使用
+`dirent` / `FindFirstFile` 已有元数据，只有 POSIX 文件系统返回 `DT_UNKNOWN` 才补一次 `lstat`。
+这是一条无分配快速原语；确实需要 size/mtime 时由调用方只对选中的 entry 调 `stat`，platform
+不制造持有字符串和分配器策略的高层 directory object。
+
+`create_temp_file` 返回 `CreatedTempFile{file, path_size}`。handle 始终是权威资源，`path_size`
+遵循其它 buffer-fill API 的完整长度合同，因而调用方不会在 path 被截断时误拿半条路径删除。
+Windows 创建 symlink 时必须编码 file/directory：已有 target 可用 `SymlinkKind::kAuto`；创建
+dangling link 时显式传 `kFile` 或 `kDirectory`，才具有跨平台一致语义。
 
 ## 等待与线程
 

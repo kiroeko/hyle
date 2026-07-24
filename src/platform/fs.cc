@@ -324,10 +324,40 @@ Result<FileInfo> stat(const char* path) noexcept {
     return std::unexpected(
         win32_fs_status("GetFileAttributesExW", ::GetLastError()));
   }
+  const bool link = (d.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0;
+  if (link) {
+    // GetFileAttributesExW can describe the link itself even when its target is
+    // missing. Open without OPEN_REPARSE_POINT so stat's target-following
+    // contract is real; keep this extra work off the overwhelmingly common
+    // non-link path.
+    HANDLE h = CreateFileW(
+        wp.w(), FILE_READ_ATTRIBUTES,
+        FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr,
+        OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, nullptr);
+    if (h == INVALID_HANDLE_VALUE) {
+      return std::unexpected(
+          win32_fs_status("CreateFileW(stat target)", ::GetLastError()));
+    }
+    BY_HANDLE_FILE_INFORMATION target;
+    if (!GetFileInformationByHandle(h, &target)) {
+      const DWORD code = ::GetLastError();
+      ::CloseHandle(h);
+      return std::unexpected(
+          win32_fs_status("GetFileInformationByHandle", code));
+    }
+    const BOOL closed = ::CloseHandle(h);
+    if (!closed) {
+      return std::unexpected(
+          win32_fs_status("CloseHandle(stat)", ::GetLastError()));
+    }
+    d.dwFileAttributes = target.dwFileAttributes;
+    d.ftLastWriteTime = target.ftLastWriteTime;
+    d.nFileSizeHigh = target.nFileSizeHigh;
+    d.nFileSizeLow = target.nFileSizeLow;
+  }
   bool dir = (d.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
-  r.exists = true;
-  r.is_directory = dir;
-  r.is_symlink = (d.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0;
+  r.type = dir ? FileType::kDirectory : FileType::kRegular;
+  r.is_symlink = link;
   r.size = dir ? 0
                : (static_cast<std::uint64_t>(d.nFileSizeHigh) << 32) |
                      d.nFileSizeLow;
@@ -569,7 +599,7 @@ Result<std::size_t> get_env_var(const char* name, char* dst,
 }
 
 Result<bool> directory_iterate(const char* path,
-                               bool (*visit)(const char*, bool, void*),
+                               bool (*visit)(const char*, FileType, void*),
                                void* ctx) noexcept {
   if (path == nullptr || visit == nullptr) {
     return std::unexpected(
@@ -637,8 +667,15 @@ Result<bool> directory_iterate(const char* path,
           win32_fs_status("WideCharToMultiByte(directory entry)", ::GetLastError());
       break;
     }
-    bool dir = (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
-    if (!visit(name, dir, ctx)) {
+    FileType type = FileType::kRegular;
+    if ((fd.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0) {
+      type = FileType::kSymlink;
+    } else if ((fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
+      type = FileType::kDirectory;
+    } else if ((fd.dwFileAttributes & FILE_ATTRIBUTE_DEVICE) != 0) {
+      type = FileType::kCharacterDevice;
+    }
+    if (!visit(name, type, ctx)) {
       stopped = true;
       break;
     }
@@ -766,17 +803,24 @@ Status set_readonly(const char* path, bool readonly) noexcept {
   return set_permissions(path, readonly ? 0444u : 0666u);
 }
 
-Status create_symlink(const char* target, const char* link) noexcept {
+Status create_symlink(const char* target, const char* link,
+                      SymlinkKind kind) noexcept {
   WidePath wt(target), wl(link);
-  if (wt.w() == nullptr || wl.w() == nullptr) {
+  if (wt.w() == nullptr || wl.w() == nullptr ||
+      (kind != SymlinkKind::kAuto && kind != SymlinkKind::kFile &&
+       kind != SymlinkKind::kDirectory)) {
     return Status::InvalidArgument(
-        "create symlink: path is null or not valid UTF-8");
+        "create symlink: invalid path, UTF-8, or kind");
   }
   // Flag bit is target type; add UNPRIVILEGED_CREATE so Developer Mode suffices.
   DWORD flags = SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE;
-  auto target_is_directory = is_directory(target);
-  if (!target_is_directory) return std::move(target_is_directory).error();
-  if (*target_is_directory) {
+  bool directory = kind == SymlinkKind::kDirectory;
+  if (kind == SymlinkKind::kAuto) {
+    auto target_is_directory = is_directory(target);
+    if (!target_is_directory) return std::move(target_is_directory).error();
+    directory = *target_is_directory;
+  }
+  if (directory) {
     flags |= SYMBOLIC_LINK_FLAG_DIRECTORY;
   }
   if (CreateSymbolicLinkW(wl.w(), wt.w(), flags) != 0) return Status::Ok();
@@ -796,10 +840,18 @@ Status create_hard_link(const char* target, const char* link) noexcept {
 }
 
 Result<bool> is_symlink(const char* path) noexcept {
-  auto info = stat(path);
-  if (info) return info->is_symlink;
-  if (info.error().IsNotFound()) return false;
-  return std::unexpected(std::move(info).error());
+  WidePath wp(path);
+  if (wp.w() == nullptr) {
+    return std::unexpected(Status::InvalidArgument(
+        "is symlink: path is null or not valid UTF-8"));
+  }
+  const DWORD attributes = ::GetFileAttributesW(wp.w());
+  if (attributes != INVALID_FILE_ATTRIBUTES) {
+    return (attributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0;
+  }
+  const DWORD code = ::GetLastError();
+  if (code == ERROR_FILE_NOT_FOUND || code == ERROR_PATH_NOT_FOUND) return false;
+  return std::unexpected(win32_fs_status("GetFileAttributesW symlink", code));
 }
 
 Result<std::size_t> read_symlink(const char* path, char* dst,
@@ -874,8 +926,8 @@ Result<std::size_t> read_symlink(const char* path, char* dst,
   return fill_w(dst, cap, name, static_cast<int>(len / sizeof(wchar_t)));
 }
 
-Result<FileHandle> create_temp_file(const char* dir, const char* prefix,
-                                    char* dst, std::size_t cap) noexcept {
+Result<CreatedTempFile> create_temp_file(const char* dir, const char* prefix,
+                                         char* dst, std::size_t cap) noexcept {
   clear_output(dst, cap);
   char dirbuf[1024];
   if (dir == nullptr) {
@@ -932,19 +984,19 @@ Result<FileHandle> create_temp_file(const char* dir, const char* prefix,
     HANDLE h = CreateFileW(wpath, GENERIC_READ | GENERIC_WRITE, 0, nullptr,
                            CREATE_NEW, FILE_ATTRIBUTE_TEMPORARY, nullptr);
     if (h != INVALID_HANDLE_VALUE) {
-      if (dst != nullptr && cap != 0) {
-        char u8[MAX_PATH * 3];
-        if (WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, wpath, -1, u8,
-                                sizeof(u8), nullptr, nullptr) <= 0) {
-          const DWORD conversion_error = ::GetLastError();
-          ::CloseHandle(h);
-          ::DeleteFileW(wpath);
-          return std::unexpected(win32_fs_status(
-              "WideCharToMultiByte(temp path)", conversion_error));
-        }
-        fill(dst, cap, u8, std::strlen(u8));
+      char u8[MAX_PATH * 3];
+      if (WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, wpath, -1, u8,
+                              sizeof(u8), nullptr, nullptr) <= 0) {
+        const DWORD conversion_error = ::GetLastError();
+        ::CloseHandle(h);
+        ::DeleteFileW(wpath);
+        return std::unexpected(win32_fs_status(
+            "WideCharToMultiByte(temp path)", conversion_error));
       }
-      return FileHandle{reinterpret_cast<std::intptr_t>(h)};
+      const std::size_t path_size = std::strlen(u8);
+      fill(dst, cap, u8, path_size);
+      return CreatedTempFile{
+          FileHandle{reinterpret_cast<std::intptr_t>(h)}, path_size};
     }
     const DWORD code = GetLastError();
     if (code != ERROR_FILE_EXISTS) {
@@ -1051,6 +1103,30 @@ Status posix_fs_status(const char* operation, int code) noexcept {
   return Status::Unavailable(message);
 }
 
+FileType file_type_from_mode(mode_t mode) noexcept {
+  if (S_ISREG(mode)) return FileType::kRegular;
+  if (S_ISDIR(mode)) return FileType::kDirectory;
+  if (S_ISLNK(mode)) return FileType::kSymlink;
+  if (S_ISBLK(mode)) return FileType::kBlockDevice;
+  if (S_ISCHR(mode)) return FileType::kCharacterDevice;
+  if (S_ISFIFO(mode)) return FileType::kFifo;
+  if (S_ISSOCK(mode)) return FileType::kSocket;
+  return FileType::kUnknown;
+}
+
+FileType file_type_from_dirent(unsigned char type) noexcept {
+  switch (type) {
+    case DT_REG: return FileType::kRegular;
+    case DT_DIR: return FileType::kDirectory;
+    case DT_LNK: return FileType::kSymlink;
+    case DT_BLK: return FileType::kBlockDevice;
+    case DT_CHR: return FileType::kCharacterDevice;
+    case DT_FIFO: return FileType::kFifo;
+    case DT_SOCK: return FileType::kSocket;
+    default: return FileType::kUnknown;
+  }
+}
+
 }  // namespace
 
 Result<FileInfo> stat(const char* path) noexcept {
@@ -1062,13 +1138,11 @@ Result<FileInfo> stat(const char* path) noexcept {
   if (::stat(path, &s) != 0) {
     return std::unexpected(posix_fs_status("stat", errno));
   }
-  bool reg = S_ISREG(s.st_mode);
-  r.is_directory = S_ISDIR(s.st_mode);
-  r.exists = true;
-  r.size = reg ? static_cast<std::uint64_t>(s.st_size) : 0;
+  r.type = file_type_from_mode(s.st_mode);
+  r.size = r.is_regular() ? static_cast<std::uint64_t>(s.st_size) : 0;
   r.modified_time = static_cast<std::int64_t>(s.st_mtime);
   // stat() follows symlinks; an extra lstat tells us if the path ITSELF is a link
-  // (a symlink to a dir still reports is_directory=true above, as callers expect).
+  // (a symlink to a directory therefore has type=kDirectory + is_symlink=true).
   struct ::stat ls;
   if (::lstat(path, &ls) == 0 && S_ISLNK(ls.st_mode)) r.is_symlink = true;
   return r;
@@ -1445,9 +1519,12 @@ Status set_readonly(const char* path, bool readonly) noexcept {
   return posix_fs_status("chmod readonly", errno);
 }
 
-Status create_symlink(const char* target, const char* link) noexcept {
-  if (target == nullptr || link == nullptr) {
-    return Status::InvalidArgument("create symlink: path is null");
+Status create_symlink(const char* target, const char* link,
+                      SymlinkKind kind) noexcept {
+  if (target == nullptr || link == nullptr ||
+      (kind != SymlinkKind::kAuto && kind != SymlinkKind::kFile &&
+       kind != SymlinkKind::kDirectory)) {
+    return Status::InvalidArgument("create symlink: invalid path or kind");
   }
   if (::symlink(target, link) == 0) return Status::Ok();
   return posix_fs_status("symlink", errno);
@@ -1489,8 +1566,8 @@ Result<std::size_t> read_symlink(const char* path, char* dst,
   return fill(dst, cap, buf, static_cast<std::size_t>(n));
 }
 
-Result<FileHandle> create_temp_file(const char* dir, const char* prefix,
-                                    char* dst, std::size_t cap) noexcept {
+Result<CreatedTempFile> create_temp_file(const char* dir, const char* prefix,
+                                         char* dst, std::size_t cap) noexcept {
   clear_output(dst, cap);
   char dirbuf[1024];
   if (dir == nullptr) {
@@ -1520,8 +1597,9 @@ Result<FileHandle> create_temp_file(const char* dir, const char* prefix,
   tmpl[w] = '\0';
   int fd = ::mkstemp(tmpl);
   if (fd < 0) return std::unexpected(posix_fs_status("mkstemp", errno));
-  fill(dst, cap, tmpl, std::strlen(tmpl));
-  return FileHandle{static_cast<std::intptr_t>(fd)};
+  const std::size_t path_size = std::strlen(tmpl);
+  fill(dst, cap, tmpl, path_size);
+  return CreatedTempFile{FileHandle{static_cast<std::intptr_t>(fd)}, path_size};
 }
 
 Status set_env_var(const char* name, const char* value) noexcept {
@@ -1543,7 +1621,7 @@ Status unset_env_var(const char* name) noexcept {
 }
 
 Result<bool> directory_iterate(const char* path,
-                               bool (*visit)(const char*, bool, void*),
+                               bool (*visit)(const char*, FileType, void*),
                                void* ctx) noexcept {
   if (path == nullptr || visit == nullptr) {
     return std::unexpected(
@@ -1567,21 +1645,17 @@ Result<bool> directory_iterate(const char* path,
         (name[1] == '\0' || (name[1] == '.' && name[2] == '\0')))
       continue;
     // d_type may be DT_UNKNOWN on some filesystems; fall back to lstat then.
-    bool dir;
-    if (de->d_type == DT_DIR) {
-      dir = true;
-    } else if (de->d_type == DT_UNKNOWN) {
-      // lstat, NOT stat: a symlink-to-directory must report as a non-directory
-      // (false), matching the DT_LNK fast path. Otherwise remove_directory_
-      // recursive would follow the link and delete OUTSIDE the tree.
+    FileType type = file_type_from_dirent(de->d_type);
+    if (type == FileType::kUnknown) {
+      // lstat, NOT stat: report the entry itself and never follow a symlink.
       char child[4096];
       struct ::stat st;
-      dir = join_path(child, sizeof(child), path, name) &&
-            ::lstat(child, &st) == 0 && S_ISDIR(st.st_mode);
-    } else {
-      dir = false;
+      if (join_path(child, sizeof(child), path, name) &&
+          ::lstat(child, &st) == 0) {
+        type = file_type_from_mode(st.st_mode);
+      }
     }
-    if (!visit(name, dir, ctx)) {
+    if (!visit(name, type, ctx)) {
       stopped = true;
       break;
     }
@@ -1640,14 +1714,14 @@ Result<bool> exists(const char* path) noexcept {
 
 Result<bool> is_directory(const char* path) noexcept {
   auto info = stat(path);
-  if (info) return info->is_directory;
+  if (info) return info->is_directory();
   if (info.error().IsNotFound()) return false;
   return std::unexpected(std::move(info).error());
 }
 
 Result<std::uint64_t> file_size(const char* path) noexcept {
   HYLE_ASSIGN_OR_RETURN(FileInfo info, stat(path));
-  if (info.is_directory) {
+  if (info.is_directory()) {
     return std::unexpected(
         Status::FailedPrecondition("file size: path is a directory"));
   }
@@ -1735,7 +1809,7 @@ struct RmCtx {
 constexpr unsigned kRmMaxDepth = 512;
 Status rm_recursive_depth(const char* path, unsigned depth) noexcept;
 
-bool rm_visit(const char* name, bool is_dir, void* vctx) noexcept {
+bool rm_visit(const char* name, FileType type, void* vctx) noexcept {
   auto* c = static_cast<RmCtx*>(vctx);
   char child[4096];
   if (!join_path(child, sizeof(child), c->dir, name)) {
@@ -1743,19 +1817,16 @@ bool rm_visit(const char* name, bool is_dir, void* vctx) noexcept {
         Status::OutOfRange("recursive remove: child path is too long"));
     return false;
   }
-  // A symlink/junction child: delete the LINK, never recurse into its target
-  // (which may live outside the tree). is_symlink tests the entry ITSELF (lstat
-  // on POSIX / reparse bit on Windows), so this guards the Windows case where
-  // directory_iterate reports a directory junction as is_dir=true (platform-audit #1).
-  auto link = is_symlink(child);
-  if (!link) {
-    c->status.Update(std::move(link).error());
-    return false;
-  }
+  // The iterator reports the entry itself, so symlinks/reparse points can be
+  // removed without an extra lstat/GetFileAttributes syscall per child.
   Status status;
-  if (*link) status = remove_symlink(child);
-  else if (is_dir) status = rm_recursive_depth(child, c->depth + 1);
-  else status = remove_file(child);
+  if (type == FileType::kSymlink) {
+    status = remove_symlink(child);
+  } else if (type == FileType::kDirectory) {
+    status = rm_recursive_depth(child, c->depth + 1);
+  } else {
+    status = remove_file(child);
+  }
   c->status.Update(std::move(status));
   return c->status.ok();
 }

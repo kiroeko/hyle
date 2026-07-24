@@ -25,6 +25,10 @@ static_assert(std::is_trivially_copyable_v<hyle_thread_opts>);
 static_assert(offsetof(hyle_thread_opts, struct_size) == 0);
 static_assert(std::is_standard_layout_v<hyle_file_info>);
 static_assert(std::is_trivially_copyable_v<hyle_file_info>);
+static_assert(HYLE_FILE_TYPE_UNKNOWN ==
+              static_cast<int>(hyle::platform::FileType::kUnknown));
+static_assert(HYLE_FILE_TYPE_SOCKET ==
+              static_cast<int>(hyle::platform::FileType::kSocket));
 static_assert(std::is_standard_layout_v<hyle_cpu_features>);
 static_assert(std::is_trivially_copyable_v<hyle_cpu_features>);
 static_assert(std::is_standard_layout_v<hyle_cache_info>);
@@ -125,9 +129,10 @@ struct DirVisitPack {
   void* user;
 };
 
-bool dir_visit_trampoline(const char* name, bool is_dir, void* ctx) {
+bool dir_visit_trampoline(const char* name, hyle::platform::FileType type,
+                          void* ctx) {
   auto* pack = static_cast<DirVisitPack*>(ctx);
-  return pack->fn(name, is_dir ? 1 : 0, pack->user) != 0;
+  return pack->fn(name, static_cast<hyle_file_type>(type), pack->user) != 0;
 }
 
 }  // namespace
@@ -550,8 +555,7 @@ hyle_status hyle_fs_stat(hyle_file_info* out, const char* path) {
   *out = {};
   auto info = hyle::platform::stat(path);
   if (!info) return steal_status(std::move(info).error());
-  out->exists = info->exists ? 1 : 0;
-  out->is_directory = info->is_directory ? 1 : 0;
+  out->type = static_cast<hyle_file_type>(info->type);
   out->size = info->size;
   out->modified_time = info->modified_time;
   out->is_symlink = info->is_symlink ? 1 : 0;
@@ -849,8 +853,24 @@ hyle_status hyle_fs_is_readonly(int* out, const char* path) {
 hyle_status hyle_fs_set_readonly(const char* path, int readonly) {
   return steal_status(hyle::platform::set_readonly(path, readonly != 0));
 }
-hyle_status hyle_fs_create_symlink(const char* target, const char* link) {
-  return steal_status(hyle::platform::create_symlink(target, link));
+hyle_status hyle_fs_create_symlink(const char* target, const char* link,
+                                   hyle_symlink_kind kind) {
+  hyle::platform::SymlinkKind cpp_kind;
+  switch (kind) {
+    case HYLE_SYMLINK_AUTO:
+      cpp_kind = hyle::platform::SymlinkKind::kAuto;
+      break;
+    case HYLE_SYMLINK_FILE:
+      cpp_kind = hyle::platform::SymlinkKind::kFile;
+      break;
+    case HYLE_SYMLINK_DIRECTORY:
+      cpp_kind = hyle::platform::SymlinkKind::kDirectory;
+      break;
+    default:
+      return steal_status(hyle::Status::InvalidArgument(
+          "hyle_fs_create_symlink: invalid kind"));
+  }
+  return steal_status(hyle::platform::create_symlink(target, link, cpp_kind));
 }
 hyle_status hyle_fs_create_hard_link(const char* target, const char* link) {
   return steal_status(hyle::platform::create_hard_link(target, link));
@@ -878,16 +898,19 @@ hyle_status hyle_fs_read_symlink(size_t* out_size, const char* path, char* dst,
   *out_size = *result;
   return steal_status(hyle::Status::Ok());
 }
-hyle_status hyle_fs_create_temp_file(hyle_file_handle* out, const char* dir,
+hyle_status hyle_fs_create_temp_file(hyle_file_handle* out,
+                                     size_t* out_path_size, const char* dir,
                                      const char* prefix, char* dst, size_t cap) {
-  if (out == nullptr) {
+  if (out != nullptr) *out = hyle::platform::FileHandle::kInvalid;
+  if (out_path_size != nullptr) *out_path_size = 0;
+  if (out == nullptr || out_path_size == nullptr) {
     return steal_status(hyle::Status::InvalidArgument(
-        "hyle_fs_create_temp_file: out is NULL"));
+        "hyle_fs_create_temp_file: output is NULL"));
   }
-  *out = hyle::platform::FileHandle::kInvalid;
   auto result = hyle::platform::create_temp_file(dir, prefix, dst, cap);
   if (!result) return steal_status(std::move(result).error());
-  *out = result->release();
+  *out_path_size = result->path_size;
+  *out = result->file.release();
   return steal_status(hyle::Status::Ok());
 }
 hyle_status hyle_fs_close(hyle_file_handle file) {

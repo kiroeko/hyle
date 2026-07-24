@@ -210,8 +210,8 @@ int main() {
     b.run("HYLE directory_iterate (visitor)", [&] {
       std::uint64_t n = 0;
       auto completed = hyle::platform::for_each_entry(
-          ".", [&](const char*, bool is_dir) {
-            n += is_dir ? 2 : 1;
+          ".", [&](const char*, hyle::platform::FileType type) {
+            n += type == hyle::platform::FileType::kDirectory ? 2 : 1;
           });
       nb::doNotOptimizeAway(completed.has_value());
       nb::doNotOptimizeAway(n);

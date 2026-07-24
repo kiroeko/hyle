@@ -586,8 +586,10 @@ if (m.valid()) { const float* w = static_cast<const float*>(m.data()); /* 零拷
 #include "hyle/platform/fs.h"
 char path[1024];
 HYLE_ASSIGN_OR_RETURN(
-    FileHandle file,
+    CreatedTempFile temporary,
     create_temp_file(nullptr, "myapp", path, sizeof path)); // mkstemp/CREATE_NEW
+FileHandle& file = temporary.file;
+if (temporary.path_size >= sizeof path) { /* 路径被截断：关闭 handle 后处理 */ }
 const char payload[] = "ready";
 HYLE_ASSIGN_OR_RETURN(
     std::size_t wrote,
@@ -595,6 +597,9 @@ HYLE_ASSIGN_OR_RETURN(
 HYLE_RETURN_IF_ERROR(file.close()); // 显式 close 才能观察延迟写回/关闭失败
 HYLE_RETURN_IF_ERROR(set_permissions("f.txt", 0644));
 HYLE_RETURN_IF_ERROR(create_hard_link("a.txt", "b.txt"));
+// Windows 必须知道 target 类型；dangling directory link 要显式给 kind。
+HYLE_RETURN_IF_ERROR(create_symlink(
+    "future-dir", "dir-link", SymlinkKind::kDirectory));
 char tgt[4096];
 HYLE_ASSIGN_OR_RETURN(std::size_t target_size,
                       read_symlink("link", tgt, sizeof tgt));

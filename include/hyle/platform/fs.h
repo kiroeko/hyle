@@ -79,14 +79,35 @@ class FileHandle {
 };
 
 // ---- query (stat) -----------------------------------------------------------
-// Result of stat(): a snapshot of one path. A successful stat has exists=true;
-// absence and OS failures are carried by Result instead of being collapsed.
+// Portable file kinds. Directory iteration reports the entry itself (so a
+// symlink is kSymlink); stat() follows a symlink and reports its target kind.
+// kUnknown is a real fallback for platform/filesystem kinds without a portable
+// representation, not a missing-path sentinel.
+enum class FileType : std::uint8_t {
+  kUnknown = 0,
+  kRegular = 1,
+  kDirectory = 2,
+  kSymlink = 3,
+  kBlockDevice = 4,
+  kCharacterDevice = 5,
+  kFifo = 6,
+  kSocket = 7,
+};
+
+// Result of stat(): a snapshot of one existing path. Absence and OS failures
+// are carried by Result, so redundant `exists` state cannot disagree with it.
 struct FileInfo {
-  bool exists = false;
-  bool is_directory = false;
+  FileType type = FileType::kUnknown;  // target kind (stat follows symlinks)
   bool is_symlink = false;           // path itself is a symbolic link (lstat semantics)
   std::uint64_t size = 0;            // bytes (regular files); 0 for directories
   std::int64_t modified_time = 0;    // seconds since the epoch (mtime)
+
+  constexpr bool is_regular() const noexcept {
+    return type == FileType::kRegular;
+  }
+  constexpr bool is_directory() const noexcept {
+    return type == FileType::kDirectory;
+  }
 };
 
 // Stat `path`, following symlinks for target type/size while retaining whether
@@ -157,11 +178,22 @@ HYLE_PLATFORM_API Status set_readonly(const char* path,
                                       bool readonly) noexcept;
 
 // ---- symbolic links ---------------------------------------------------------
-// Create a symlink at `link` pointing to `target`. POSIX: symlink(2). Windows:
-// CreateSymbolicLinkW -- requires Developer Mode or admin (SeCreateSymboliclink
-// privilege); without it returns PermissionDenied.
+// Windows must encode whether a symlink targets a file or directory. kAuto is
+// convenient for an existing target; pass an explicit kind for a dangling link.
+// POSIX validates but otherwise ignores the kind because symlink(2) is untyped.
+enum class SymlinkKind : std::uint8_t {
+  kAuto = 0,
+  kFile = 1,
+  kDirectory = 2,
+};
+
+// Create a symlink at `link` pointing to `target`. Windows requires Developer
+// Mode or admin (SeCreateSymboliclink privilege); without it returns
+// PermissionDenied.
 HYLE_PLATFORM_API Status create_symlink(const char* target,
-                                        const char* link) noexcept;
+                                        const char* link,
+                                        SymlinkKind kind =
+                                            SymlinkKind::kAuto) noexcept;
 // Create a HARD link at `link` to `target` (another name for the same file
 // data). POSIX link(2) / Windows CreateHardLinkW. Same-volume, regular files
 // only (no directory hard links); no special privilege.
@@ -200,7 +232,12 @@ HYLE_PLATFORM_API Result<FileHandle> open_file(const char* path,
 // nobody can swap the file between creation and use. The actual path is written
 // to dst[cap] (buffer-fill). A returned handle always owns the created file.
 // The file is NOT auto-deleted: the caller unlinks it (or keeps it) via the path.
-HYLE_PLATFORM_API Result<FileHandle> create_temp_file(
+struct CreatedTempFile {
+  FileHandle file;
+  std::size_t path_size = 0;  // full UTF-8 length, excluding NUL
+};
+
+HYLE_PLATFORM_API Result<CreatedTempFile> create_temp_file(
     const char* dir, const char* prefix, char* dst, std::size_t cap) noexcept;
 
 // ---- working / special directories (buffer-fill) ----------------------------
@@ -242,28 +279,31 @@ HYLE_PLATFORM_API Status set_env_var(const char* name,
 HYLE_PLATFORM_API Status unset_env_var(const char* name) noexcept;
 
 // ---- directory iteration (visitor, no allocation) ---------------------------
-// Type-erased core: calls `visit(name, is_dir, ctx)` once per entry in `path`,
+// Type-erased core: calls `visit(name, type, ctx)` once per entry in `path`,
 // EXCLUDING "." and "..". `name` is just the base name (not joined with `path`).
+// `type` describes the directory entry itself and therefore does not follow
+// symlinks. It comes from dirent/FindFirst metadata without a per-entry stat in
+// the common case; kUnknown is possible on filesystems with no portable kind.
 // Stops early if `visit` returns false; that is a successful Result(false), not
 // an enumeration failure.
 // Compiled once in fs.cc (no per-callback-type code).
 // Result value is true when every entry was visited, false when the visitor
 // stopped normally. Opening/enumerating failures are Status errors.
 HYLE_PLATFORM_API Result<bool> directory_iterate(
-    const char* path, bool (*visit)(const char* name, bool is_dir, void* ctx),
+    const char* path, bool (*visit)(const char* name, FileType type, void* ctx),
     void* ctx) noexcept;
 
-// Ergonomic wrapper: pass any callable `fn(const char* name, bool is_dir)->bool`
+// Ergonomic wrapper: pass any callable `fn(const char* name, FileType)->bool`
 // (return false to stop early) or `->void`. Inline, so no allocation and the
 // lambda body inlines into the trampoline.
 template <class Fn>
 Result<bool> for_each_entry(const char* path, Fn&& fn) {
-  auto trampoline = [](const char* name, bool is_dir, void* ctx) -> bool {
+  auto trampoline = [](const char* name, FileType type, void* ctx) -> bool {
     Fn& f = *static_cast<Fn*>(ctx);
-    if constexpr (requires { { f(name, is_dir) } -> std::same_as<bool>; }) {
-      return f(name, is_dir);
+    if constexpr (requires { { f(name, type) } -> std::same_as<bool>; }) {
+      return f(name, type);
     } else {
-      f(name, is_dir);
+      f(name, type);
       return true;
     }
   };

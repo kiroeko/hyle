@@ -146,7 +146,7 @@ soft 建议，绝不影响正确性。Linux 用 madvise；Windows/macOS 匿名�
 
 | 符号 | 说明 |
 |---|---|
-| `hyle_file_info` | `exists` / `is_directory` / `size` / `modified_time` / `is_symlink`（v4） |
+| `hyle_file_type` / `hyle_file_info` | `type` / `size` / `modified_time` / `is_symlink`；stat 成功本身就表示存在，不保留可矛盾的 `exists` 字段 |
 | `hyle_fs_stat(out, path)` | Status+out；缺失是 `NOT_FOUND`，不返回伪造的全零 stat |
 | `hyle_fs_exists(out, path)` / `hyle_fs_is_directory(out, path)` | Status+out；缺失是成功的 false，权限/I/O 失败仍是 Status |
 | `hyle_fs_file_size(out, path)` | Status+out；空文件是成功的 0，缺失与目录分别是 `NOT_FOUND` / `FAILED_PRECONDITION` |
@@ -156,8 +156,8 @@ soft 建议，绝不影响正确性。Linux 用 madvise；Windows/macOS 匿名�
 | `hyle_fs_current_directory(out_size,dst,cap)` / `temp` / `home` | Status+out buffer-fill；`*out_size>=cap` 表示截断，`dst==NULL` 可只查长度 |
 | `hyle_fs_change_directory(path)` | Status；缺失、权限、非法 UTF-8 分开报告 |
 | `hyle_env_get(out_size,name,dst,cap)` | Status+out；未设置为 `NOT_FOUND`，已设置为空是成功且 size=0 |
-| `hyle_fs_visit_fn` | `(name, is_dir, ctx)→int`；0 停止 |
-| `hyle_fs_directory_iterate(out_completed,...)` | Status+out；visitor 提前停止是成功且 completed=0，打开/枚举失败是 Status |
+| `hyle_fs_visit_fn` | `(name, hyle_file_type, ctx)→int`；0 停止；类型描述 entry 自身，不跟随 symlink |
+| `hyle_fs_directory_iterate(out_completed,...)` | Status+out；无分配快速遍历，常见文件系统不逐项 stat；visitor 提前停止是成功且 completed=0 |
 
 ### 3.5b fs 权限 / 符号链接 / 临时文件 / env 写（DLL，v4）
 
@@ -166,12 +166,12 @@ soft 建议，绝不影响正确性。Linux 用 madvise；Windows/macOS 匿名�
 | `hyle_fs_get_permissions(out,path)` | Status+out；低 9 位权限，合法 0000 不再与失败混淆；Windows 由 READONLY 合成 |
 | `hyle_fs_set_permissions(path, mode)` | Status；POSIX chmod；Windows 只认写位→READONLY |
 | `hyle_fs_is_readonly(out,path)` / `hyle_fs_set_readonly(path, ro)` | Status(+out)；跨平台可靠子集 |
-| `hyle_fs_create_symlink(target, link)` | Status；Windows 无开发者模式/管理员时 `PERMISSION_DENIED` |
+| `hyle_fs_create_symlink(target, link, kind)` | Status；`AUTO` 适合已存在 target，创建可移植的 dangling link 必须显式 `FILE/DIRECTORY`；Windows 仍可能 `PERMISSION_DENIED` |
 | `hyle_fs_create_hard_link(target, link)` | Status；硬链接（同卷、仅文件） |
 | `hyle_fs_is_symlink(out,path)` | Status+out；自身是否符号链接（不跟随），缺失为 false |
 | `hyle_fs_read_symlink(out_size,path,dst,cap)` | Status+out buffer-fill；非链接为 `FAILED_PRECONDITION` |
 | `hyle_file_handle` / `HYLE_FILE_HANDLE_INVALID` | 一字宽 native file resource；可容纳 POSIX fd / Windows HANDLE，不暗示 POSIX 语义 |
-| `hyle_fs_create_temp_file(out, dir, prefix, dst, cap)` | Status+out；原子创建并返回**打开的** `hyle_file_handle`，路径写 dst，避免 TOCTOU |
+| `hyle_fs_create_temp_file(out, out_path_size, dir, prefix, dst, cap)` | Status+out；原子创建并返回**打开的** handle；完整路径长度即使 dst 截断也可见，避免 TOCTOU |
 | `hyle_fs_open(out, path, flags)` | Status+out；`flags`=`HYLE_OPEN_READ/WRITE/CREATE/TRUNCATE/APPEND` OR；Windows 用 UTF-16 API；无需 mmap 的普通 I/O |
 | `hyle_fs_read(out_moved, file, buf, n)` / `hyle_fs_write(out_moved, file, buf, n)` | Status+out；读 0=EOF，短读/短写是成功，调用方可继续 |
 | `hyle_fs_close(file)` | 返回 Status；关闭 create_temp_file / open 返回的 handle；INVALID 安全 |

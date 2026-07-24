@@ -104,8 +104,8 @@ TEST_F(FsTest, StatExistsDirectoryFile) {
   EXPECT_FALSE(is_directory(f.c_str()).value_or(true));
 
   FileInfo s = stat(f.c_str()).value();
-  EXPECT_TRUE(s.exists);
-  EXPECT_FALSE(s.is_directory);
+  EXPECT_EQ(s.type, FileType::kRegular);
+  EXPECT_FALSE(s.is_directory());
   EXPECT_EQ(s.size, 0u);
 
   // A missing path is an explicit NotFound, not an all-zero pseudo-stat.
@@ -220,8 +220,8 @@ TEST_F(FsTest, DirectoryIterateVisitsEntriesNotDotDot) {
   ASSERT_TRUE(make_directory(path("d1").c_str()).ok());
 
   std::vector<std::string> files, dirs;
-  auto completed = for_each_entry(root.c_str(), [&](const char* name, bool is_dir) {
-    if (is_dir)
+  auto completed = for_each_entry(root.c_str(), [&](const char* name, FileType type) {
+    if (type == FileType::kDirectory)
       dirs.emplace_back(name);
     else
       files.emplace_back(name);
@@ -239,7 +239,7 @@ TEST_F(FsTest, ForEachEntryEarlyStop) {
   for (int i = 0; i < 5; ++i)
     ASSERT_TRUE(touch(path(("e" + std::to_string(i)).c_str()).c_str()).ok());
   int seen = 0;
-  auto completed = for_each_entry(root.c_str(), [&](const char*, bool) -> bool {
+  auto completed = for_each_entry(root.c_str(), [&](const char*, FileType) -> bool {
     ++seen;
     return seen < 2;  // stop after the second entry
   });
@@ -250,7 +250,7 @@ TEST_F(FsTest, ForEachEntryEarlyStop) {
 
 TEST_F(FsTest, IterateMissingDirReturnsNotFound) {
   auto result = for_each_entry(path("ghost").c_str(),
-                               [](const char*, bool) { /* never called */ });
+                               [](const char*, FileType) { /* never called */ });
   ASSERT_FALSE(result.has_value());
   EXPECT_TRUE(result.error().IsNotFound());
 }
@@ -373,8 +373,9 @@ TEST_F(FsTest, Utf8NonAsciiPath) {
 
   // The non-ASCII entry name comes back intact through the visitor (UTF-8).
   bool found = false;
-  auto completed = for_each_entry(dir.c_str(), [&](const char* name, bool is_dir) {
-    if (!is_dir && std::strcmp(name, "\xE6\x96\x87\xE4\xBB\xB6.txt") == 0)
+  auto completed = for_each_entry(dir.c_str(), [&](const char* name, FileType type) {
+    if (type == FileType::kRegular &&
+        std::strcmp(name, "\xE6\x96\x87\xE4\xBB\xB6.txt") == 0)
       found = true;
   });
   ASSERT_TRUE(completed.has_value());
@@ -507,7 +508,20 @@ TEST_F(FsTest, SymlinkCreateReadAndDetect) {
   }
   EXPECT_TRUE(is_symlink(link.c_str()).value_or(false));
   EXPECT_FALSE(is_symlink(target.c_str()).value_or(true));
-  EXPECT_TRUE(stat(link.c_str()).value().is_symlink);
+  FileInfo link_info = stat(link.c_str()).value();
+  EXPECT_TRUE(link_info.is_symlink);
+  EXPECT_EQ(link_info.type, FileType::kRegular);  // stat follows the link
+
+  bool saw_link = false;
+  auto iterated = for_each_entry(
+      root.c_str(), [&](const char* name, FileType type) {
+        if (std::strcmp(name, "link.txt") == 0) {
+          saw_link = true;
+          EXPECT_EQ(type, FileType::kSymlink);  // iteration does not follow it
+        }
+      });
+  ASSERT_TRUE(iterated.has_value());
+  EXPECT_TRUE(saw_link);
 
   char buf[4096];
   std::size_t n = read_symlink(link.c_str(), buf, sizeof(buf)).value();
@@ -524,6 +538,25 @@ TEST_F(FsTest, SymlinkCreateReadAndDetect) {
   EXPECT_EQ(std::strlen(tiny), 3u);       // 3 bytes + NUL
 }
 
+TEST_F(FsTest, ExplicitSymlinkKindSupportsDanglingDirectoryTarget) {
+  const std::string target = path("directory-created-later");
+  const std::string link = path("dangling-directory-link");
+  auto created = create_symlink(target.c_str(), link.c_str(),
+                                SymlinkKind::kDirectory);
+  if (!created.ok()) {
+    GTEST_SKIP() << "create_symlink unavailable (needs privilege on this OS)";
+  }
+  EXPECT_TRUE(is_symlink(link.c_str()).value_or(false));
+  EXPECT_TRUE(stat(link.c_str()).error().IsNotFound());
+  EXPECT_TRUE(remove_directory_recursive(link.c_str()).ok());
+  EXPECT_FALSE(is_symlink(link.c_str()).value_or(true));
+}
+
+TEST_F(FsTest, CreateSymlinkRejectsUnknownKind) {
+  EXPECT_TRUE(create_symlink("target", "link", static_cast<SymlinkKind>(99))
+                  .IsInvalidArgument());
+}
+
 // ---- v4: temp file + FileHandle ----------------------------------------------
 
 TEST_F(FsTest, CreateTempFileIsUniqueAndOpen) {
@@ -533,8 +566,10 @@ TEST_F(FsTest, CreateTempFileIsUniqueAndOpen) {
   auto br = create_temp_file(root.c_str(), "hyle", p2, sizeof(p2));
   ASSERT_TRUE(ar.has_value()) << ar.error().message();
   ASSERT_TRUE(br.has_value()) << br.error().message();
-  FileHandle a = std::move(*ar);
-  FileHandle b = std::move(*br);
+  EXPECT_EQ(ar->path_size, std::strlen(p1));
+  EXPECT_EQ(br->path_size, std::strlen(p2));
+  FileHandle a = std::move(ar->file);
+  FileHandle b = std::move(br->file);
   ASSERT_TRUE(a.valid());
   ASSERT_TRUE(b.valid());
   EXPECT_STRNE(p1, p2);              // unique names
@@ -600,7 +635,8 @@ TEST(FileHandle, MoveAndRelease) {
   char path[4096];
   auto created = create_temp_file(nullptr, "hyle_file", path, sizeof(path));
   ASSERT_TRUE(created.has_value()) << created.error().message();
-  FileHandle a = std::move(*created);
+  EXPECT_EQ(created->path_size, std::strlen(path));
+  FileHandle a = std::move(created->file);
   ASSERT_TRUE(a.valid());
   std::intptr_t raw = a.get();
 
