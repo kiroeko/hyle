@@ -178,7 +178,14 @@ owned growable `Region` 已提供：
 external 能力按 allocation model 分成两个类型：
 
 1. `FixedRegion`：调用方借入 storage、bump + bulk reset、无 individual free。
-2. `FixedPool`：调用方借入 storage、size-bin segregated-fit variable-size allocate/free/realloc、boundary metadata O(1) 邻块合并；realloc 优先复用 retained span 或后一空闲邻块，常见 shrink/regrow 与 adjacent grow 均为 O(1)，搬移/复制留在 noinline 冷路；单线程且无 fallback。
+2. `FixedPool`：调用方借入 storage、TLSF 风格的 two-level segregated-fit variable-size
+   allocate/free/realloc；一级 logarithmic range、每级 8 个线性 subdivision 与两层 bitmap
+   把空闲块定位限制为 O(1)，不会随 free-block 数量退化为扫描。侵入式 free list 和 boundary
+   metadata 使插入、删除与邻块合并也是 O(1)。一个 recent-free cursor 只作为时间局部性快路，
+   未命中后至多取得一个 bitmap-selected list head。realloc 优先复用 retained span 或后一空闲
+   邻块，常见 shrink/regrow 与 adjacent grow 均为 O(1)；只有必须搬移时复制
+   O(min(old,new))，并留在 noinline 冷路。它单线程、无 fallback；约 4 KiB 的显式 control
+   是长寿命通用固定堆为 bounded lookup 支付的常量成本，不适合作为每个 request 的临时对象。
 
 ## 9. NUMA、大页与专用模块
 
@@ -204,7 +211,7 @@ external 能力按 allocation model 分成两个类型：
 | owned request scratch | `Region` | `hyle_region_*` + options | growable、bulk clear、可设 reserved-byte hard limit |
 | caller-buffer scratch | `FixedRegion` | 三字按值 `hyle_fixed_region` | no heap、no fallback、bulk reset |
 | borrowed/LIFO scratch | `PooledRegion`、`StackAllocator` | 对应 opaque handle | 单线程；borrowed block 或 owned slab |
-| external variable heap | `FixedPool` | in-place control 或显式 control allocator | caller storage、individual free/realloc、no fallback |
+| external variable heap | `FixedPool` | in-place control 或显式 control allocator | caller storage、individual free/realloc、two-level bitmap O(1) fit/merge、no fallback；约 4 KiB 长寿命 control |
 | hard shared slots | `SharedPool`、`ObjectPool<T>` | `hyle_shared_pool_*` + typed raw-slot 宏 | remote free 立即可见、精确 hard capacity |
 | owner-local soft cache | `SharedPoolCache`、`ObjectPoolCache<T>` | `hyle_shared_pool_cache_*` + typed raw-slot 宏 | 显式 owner/cache/publish，容量是 soft visibility window |
 | growable owner-local slots | `GrowablePool<T>` | runtime size/alignment `hyle_growable_pool_*` | 单线程、几何增长、Reconstruct |
@@ -264,7 +271,7 @@ mem 进入预发布冻结必须同时满足：
 - allocator：typed count overflow、完整 backing identity、alignment、OOM、PMR throw boundary；下游消费者的 NULL/Status/fail-fast 另按各自公开合同审计。
 - Buffer host path：native handle 不得冒充 mapped pointer；CUDA/Vulkan/host 三后端都验证 `host_data()` 可写、kernel 参数仍拿正确 native handle。test-only 选择器穷举后确认 Win/Mac 物理设备只提供 coherent host-visible type，non-coherent driver round-trip 明确 skip；范围算术用真实 `nonCoherentAtomSize` synthetic 测试覆盖，不冒充硬件未提供的 driver 路径已执行。
 - bump/region：alignment 回绕、owned growth、bulk clear、large block、hard size limit、bytes used/reserved、external storage 无 fallback。
-- fixed pools：耗尽/回收、remote free、hard quota、soft publish、稳定空快照、tag 饱和、authoritative backing、lifetime/TSan/ASan。
+- fixed pools：耗尽/回收、remote free、hard quota、soft publish、稳定空快照、tag 饱和、authoritative backing、lifetime/TSan/ASan；FixedPool 另验证大 alignment/overflow、随机 realloc/碎片回收和与 free-block 数量无关的至多两候选查找。
 - object pools：Reconstruct + move-only Loan、早退/异常自动归还、hard/soft handoff；Preserve 一次构析与状态保留。
 - diagnostics：membership fail-fast 保留；`HYLE_TESTING` 已覆盖 shared/cached/object/growable pool 的 double return/destroy、foreign pointer 与 outstanding allocation，shipping 构建完全剥离额外状态和指令。
 - performance workload 必须描述 request batch、producer/consumer handoff、quota、expensive-context reuse 等用户行为，并扫描线程、工作集、容量和批次；不能围绕内部阈值造场景。
@@ -273,8 +280,9 @@ mem 进入预发布冻结必须同时满足：
 
 ## 参考
 
-- oneTBB scalable allocator / memory_pool / fixed_pool
-- mimalloc local + concurrent free lists
+- oneTBB scalable allocator / memory_pool / fixed_pool / IndexedBins
+- mimalloc local + concurrent free lists / segment span queues
 - Folly Arena / ThreadCachedArena
 - marl BoundedPool / PoolPolicy / Loan
+- TLSF two-level bitmap mapping；Boost.Interprocess `rbtree_best_fit` 作为 O(log N) 备选形状对照
 - ggml gallocr 与 llama.cpp pinned upload ring

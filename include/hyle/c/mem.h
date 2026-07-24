@@ -319,19 +319,20 @@ HYLE_MEM_C_API hyle_allocator
 hyle_fixed_region_as_allocator(hyle_fixed_region *r);
 
 /* ========================================================================== */
-/* FixedPool — variable-size segregated-fit allocator over caller storage */
+/* FixedPool — O(1) two-level segregated-fit heap over caller storage */
 /* ========================================================================== */
 
 typedef struct hyle_fixed_pool_o hyle_fixed_pool;
 
-#define HYLE_FIXED_POOL_CONTROL_BYTES 1024u
+#define HYLE_FIXED_POOL_CONTROL_BYTES 4096u
 typedef union hyle_fixed_pool_storage {
   void *alignment;
   unsigned char bytes[HYLE_FIXED_POOL_CONTROL_BYTES];
 } hyle_fixed_pool_storage;
 
-/* Strict no-heap construction: control is caller-owned and allocation metadata
- * lives inside payload storage. destroy() frees neither buffer. */
+/* Strict no-heap construction: the 4 KiB control is caller-owned and allocation
+ * metadata lives inside payload storage. Keep control in the pool's long-lived
+ * owner rather than creating it per request. destroy() frees neither buffer. */
 HYLE_MEM_C_API hyle_status
 hyle_fixed_pool_init(hyle_fixed_pool **out, hyle_fixed_pool_storage *control,
                      void *storage, size_t size);

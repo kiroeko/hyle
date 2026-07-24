@@ -13,7 +13,8 @@
 control 与内部 storage 都由该 backing 分配；显式区分 payload/metadata 的产品则分别服从
 对应 allocator。FixedRegion 是可按值持有的 3-word cursor；
 FixedPool 同时提供 caller-owned `*_storage + *_init`（control/payload 都不触堆）和
-`*_create(control_allocator, ...)`。两者的 payload 始终只来自调用方 storage，绝不 fallback。
+`*_create(control_allocator, ...)`。`hyle_fixed_pool_storage` 是 4096-byte 的长寿命索引
+control；两种构造的 payload 始终只来自调用方 storage，绝不 fallback。
 所有 opaque handle 对外使用 `hyle_region *`、`hyle_shared_pool *` 等产品名；尾缀 `_o`
 只存在于不可解引用的内部 struct tag，不进入用户变量和函数签名。
 
@@ -39,7 +40,7 @@ FixedPool 同时提供 caller-owned `*_storage + *_init`（control/payload 都�
 | StatsAllocator | `hyle_stats_allocator_create(&out,backing,metadata,track)` → `destroy` | 测量 backing；control/诊断状态服从 metadata；可选慢速 leak inventory |
 | Region | `hyle_region_create(&out,...)` → `destroy` | owned growable bump；clear 保留普通 blocks |
 | FixedRegion | `hyle_fixed_region_init(&region, storage, size)` | 返回 Status；按值 external bump；无 create/destroy、严格 no-heap |
-| FixedPool | `hyle_fixed_pool_init(&pool,control,storage)` 或 `create(&pool,control_allocator,...)` → `destroy` | external variable-size alloc/free；init 严格 no-heap |
+| FixedPool | `hyle_fixed_pool_init(&pool,control,storage)` 或 `create(&pool,control_allocator,...)` → `destroy` | external variable-size alloc/free；O(1) two-level fit/merge；init 严格 no-heap；4096-byte control |
 | SharedPool | `hyle_shared_pool_create(&out,...)` → `destroy` | **硬容量**；completed free 立即对所有线程可见 |
 | SharedPoolCache | `hyle_shared_pool_cache_create(&out,pool,...)` → `destroy` | **软视图**；显式 owner/capacity/batch，publish 后回 hard core |
 | StackAllocator | `hyle_stack_allocator_create(&out,...)` → `destroy` | 自有 slab，单线程 LIFO bump |
@@ -112,7 +113,12 @@ reserve 的严格预算，不是 backing 的物理空闲字节。
   `hyle_fixed_pool_create(&out,control_allocator,storage,size)` 只从显式 allocator 创建 control，
   `create_default` 才选择 system allocator。两者都支持 individual allocate/free/realloc；realloc
   可 O(1) 原地利用当前 span/后一空闲邻块，shrink 保留 span 让后续 regrow 仍为 O(1)。reset 前必须
-  无 live allocation；foreign/double return 是合同错误并 fail-fast。
+  无 live allocation；foreign/double return 是合同错误并 fail-fast。两级 bitmap 索引使
+  allocate/free/邻块合并的查找工作为 O(1)，不会随空闲块数量增长。
+
+`hyle_fixed_pool_storage` 固定为 4096 bytes：把它嵌入拥有 payload 的长寿命 owner、放在
+static storage，或用 `create` 从合适的 control allocator 分配一次。不要在每个 request 的小栈
+帧里反复创建；小 buffer 的 phase scratch 应选三字的 `hyle_fixed_region`。
 
 三者都单线程。它们的 `as_allocator` 句柄借用原对象；Region/FixedPool destroy 后失效，
 FixedRegion 则在值对象或 payload storage 失效后失效。

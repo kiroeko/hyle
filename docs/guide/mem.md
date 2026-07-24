@@ -17,7 +17,7 @@ mem 是 host RAM 的基础原语层。它不替业务猜生命周期，也不把
 | 调用方 buffer 中的临时对象 | `FixedRegion` | `hyle_fixed_region` 值对象 | external、单线程、bump、无 fallback |
 | 从共享硬池借一个 scratch block | `PooledRegion` | `hyle_pooled_region` | 单线程、固定容量、整体归还 |
 | LIFO checkpoint/rewind scratch | `StackAllocator` | `hyle_stack_allocator` | owned fixed slab、单线程 |
-| 外部 buffer 内变长 alloc/free | `FixedPool` | `hyle_fixed_pool` | 单线程、individual free、无 fallback、立即合并邻块 |
+| 外部 buffer 内变长 alloc/free | `FixedPool` | `hyle_fixed_pool` | 单线程、O(1) indexed fit/merge、individual free、无 fallback；约 4 KiB control |
 | 多线程固定块、严格容量 | `SharedPool` | `hyle_shared_pool` | hard capacity；free 完成后立即全局可见 |
 | worker-local 热点固定块复用 | `SharedPoolCache` over `SharedPool` | `hyle_shared_pool_cache` | 显式 owner/capacity/batch；可见性是 soft，需 publish |
 | 固定数量 typed 对象，每次重建 | `ObjectPool<T>` | `HYLE_OBJECT_POOL_*` 裸槽宏 | C 自行 init/cleanup；C++ 跑 ctor/dtor |
@@ -125,18 +125,23 @@ if (auto context = contexts.try_loan()) {
 
 ### External variable-size pool
 
-`FixedPool` 把 block/allocation metadata 放进调用方 storage；free bins、边界和统计属于
-`FixedPool` 控制对象（C surface 可由 caller-owned control 原地构造，或从显式 control
-allocator 创建 opaque handle）。它支持
-变长 allocate/deallocate/reallocate、精确 requested `used/peak` 和 O(1) 邻块合并；realloc
-在当前物理 span 足够或后一邻块空闲时 O(1) 原地 grow，shrink 保留 span 供后续 O(1)
-regrow（与成熟 fixed-pool realloc 一致）；没有
-隐藏 payload heap，也不会 fallback。`reset()` 会一次性使所有旧指针失效，调用前必须
-保证无 live allocation。
+`FixedPool` 把 block/allocation metadata 放进调用方 storage；two-level segregated free lists、
+两层 bitmap、边界和统计属于 `FixedPool` 控制对象（C surface 可由 caller-owned control 原地
+构造，或从显式 control allocator 创建 opaque handle）。一级按数量级定位，二级把每个范围
+分成 8 段；分配未命中 recent-free 快路后直接取得一个满足大小的链表头，不扫描同级空闲块。
+因此 allocate/free/邻块合并的索引工作都是 O(1)，不会因长期碎片化退化。它支持变长
+allocate/deallocate/reallocate、精确 requested `used/peak`；realloc 在当前物理 span 足够或后一
+邻块空闲时 O(1) 原地 grow，shrink 保留 span 供后续 O(1) regrow；只有搬移时复制
+O(min(old,new))。没有隐藏 payload heap，也不会 fallback。`reset()` 会一次性使所有旧指针
+失效，调用前必须保证无 live allocation。
+
+这个 bounded lookup 需要约 4 KiB 的显式 control。把它放进 arena/cache/device owner 等
+长寿命对象，或通过 control allocator 创建一次并复用；不要为每个 request 在小栈帧上构造。
+如果 storage 本来就很小、生命周期按 phase 结束，`FixedRegion` 的三字 bump cursor 更合适。
 
 它偏向“可诊断、低碎片、固定 backing”的基础设施合同，不应替代：
 
-- request scratch（用 `FixedRegion`，更快且没有 individual-free metadata）；
+- request scratch（用 `FixedRegion`，更快、control 更小且没有 individual-free metadata）；
 - 同尺寸对象池（用 `SharedPool` / `ObjectPool`）；
 - 通用 growable malloc（用 system allocator）。
 

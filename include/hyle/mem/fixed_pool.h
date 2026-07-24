@@ -18,12 +18,12 @@ namespace hyle::mem {
 // All per-block/allocation metadata lives inside that buffer; the control
 // object owns only indexes and counters. Construction and every operation
 // perform no hidden heap allocation and there is no fallback. Free
-// blocks are indexed by logarithmic size bins; a one-entry free cursor keeps a
-// recent return or split remainder out of the index while it remains on the
-// active allocation path. Boundary metadata still gives O(1) adjacent
-// coalescing. Allocation normally visits one matching size class instead of
-// scanning every physical block. The storage must outlive the pool and every
-// live allocation.
+// blocks are indexed by a two-level segregated-fit bitmap. The first level is
+// logarithmic and every range has eight linear subdivisions, so a suitable
+// free-list head is found in O(1) without walking unrelated blocks. A one-entry
+// free cursor keeps a recent return or split remainder on the active allocation
+// path. Boundary metadata gives O(1) adjacent coalescing. The storage must
+// outlive the pool and every live allocation.
 class FixedPool {
 public:
   FixedPool() noexcept = default;
@@ -42,18 +42,19 @@ public:
   HYLE_FORCE_INLINE void *
   allocate(std::size_t bytes,
            std::size_t alignment = alignof(std::max_align_t)) noexcept {
+#if defined(HYLE_TESTING)
+    debug_last_fit_candidates_ = 0;
+#endif
     HYLE_FATAL_ASSERT(is_pow2(alignment));
     if (bytes == 0 || !valid())
       return nullptr;
     const std::size_t effective_alignment =
         alignment > alignof(Allocation) ? alignment : alignof(Allocation);
 
-    std::size_t lower = sizeof(Block) + sizeof(Allocation);
-    if (bytes > (std::numeric_limits<std::size_t>::max)() - lower)
-      return nullptr;
-    lower += bytes;
-
     if (recent_free_ != nullptr) {
+#if defined(HYLE_TESTING)
+      ++debug_last_fit_candidates_;
+#endif
       if (void *out = allocate_from(recent_free_, bytes, effective_alignment,
                                     false);
           out != nullptr)
@@ -61,21 +62,26 @@ public:
       publish_recent();
     }
 
-    std::uint64_t candidates =
-        nonempty_bins_ & (~std::uint64_t{0} << bin_index(lower));
-    while (candidates != 0) {
-      const unsigned bin = static_cast<unsigned>(std::countr_zero(candidates));
-      candidates &= candidates - 1;
-      for (Block *b = bins_[bin]; b != nullptr; b = b->free_next) {
+    // Only indexed lookup needs the conservative, address-independent span.
+    // A hot recent cursor can prove the exact fit directly and avoids this
+    // overflow/mapping work entirely.
+    std::size_t required = 0;
+    if (!required_span(bytes, effective_alignment, &required))
+      return nullptr;
+
+    unsigned first = 0;
+    unsigned second = 0;
+    Block *b = find_suitable(required, &first, &second);
+    if (b == nullptr)
+      return nullptr;
 #if defined(HYLE_TESTING)
-        validate(b);
+    ++debug_last_fit_candidates_;
+    validate(b);
 #endif
-        if (void *out = allocate_from(b, bytes, effective_alignment, true);
-            out != nullptr)
-          return out;
-      }
-    }
-    return nullptr;
+    void *out =
+        allocate_from(b, bytes, effective_alignment, true, first, second);
+    HYLE_FATAL_ASSERT(out != nullptr);
+    return out;
   }
 
   HYLE_FORCE_INLINE void deallocate(void *ptr) noexcept {
@@ -156,9 +162,12 @@ public:
     b->previous_span = 0;
     b->magic = kBlockMagic;
     b->free = true;
-    for (Block *&head : bins_)
-      head = nullptr;
-    nonempty_bins_ = 0;
+    for (auto &row : bins_)
+      for (Block *&head : row)
+        head = nullptr;
+    for (std::uint8_t &map : second_level_nonempty_)
+      map = 0;
+    first_level_nonempty_ = 0;
     recent_free_ = nullptr;
     insert_free(b);
     used_ = 0;
@@ -167,6 +176,14 @@ public:
   std::size_t capacity() const noexcept { return capacity_; }
   std::size_t used() const noexcept { return used_; }
   std::size_t peak() const noexcept { return peak_; }
+
+#if defined(HYLE_TESTING)
+  // Structural test hook: the TLSF index examines at most the optional recent
+  // cursor and one bitmap-selected free-list head, regardless of fragmentation.
+  std::uint32_t debug_last_fit_candidates() const noexcept {
+    return debug_last_fit_candidates_;
+  }
+#endif
 
   Allocator as_allocator() noexcept {
     return Allocator(&pool_alloc, &pool_free, &pool_realloc, this);
@@ -189,7 +206,21 @@ private:
 
   static constexpr std::uint32_t kBlockMagic = 0x48594C45u;
   static constexpr std::uint32_t kAllocationMagic = 0x4D454D41u;
-  static constexpr unsigned kBinCount = sizeof(std::size_t) * 8;
+  // Eight subdivisions are a mature TLSF configuration: they bound lookup to
+  // one bitmap-selected list while keeping this explicit control object near
+  // 4 KiB on 64-bit targets. A finer 16/32-way index would spend 8/16 KiB per
+  // pool for lower class rounding; an RB tree would reduce control footprint
+  // but make allocation/free O(log free_blocks).
+  static constexpr unsigned kSecondLevelBits = 3;
+  static constexpr unsigned kSecondLevelCount = 1u << kSecondLevelBits;
+  static constexpr unsigned kAlignmentBits =
+      static_cast<unsigned>(std::countr_zero(alignof(Block)));
+  static constexpr unsigned kFirstLevelShift =
+      kSecondLevelBits + kAlignmentBits;
+  static constexpr unsigned kFirstLevelCount =
+      std::numeric_limits<std::size_t>::digits - kFirstLevelShift + 1;
+  static constexpr std::size_t kSmallBlock =
+      std::size_t{1} << kFirstLevelShift;
 
   static constexpr std::size_t minimum_block_span() noexcept {
     return sizeof(Block) + sizeof(Allocation) + alignof(Allocation) + 1;
@@ -246,9 +277,11 @@ private:
     return reinterpret_cast<Allocation *>(header);
   }
 
-  HYLE_FORCE_INLINE void *allocate_from(Block *b, std::size_t bytes,
-                                        std::size_t effective_alignment,
-                                        bool indexed) noexcept {
+  HYLE_FORCE_INLINE void *
+  allocate_from(Block *b, std::size_t bytes,
+                std::size_t effective_alignment, bool indexed,
+                unsigned indexed_first = 0,
+                unsigned indexed_second = 0) noexcept {
     const auto block_addr = reinterpret_cast<std::uintptr_t>(b);
     const auto raw_payload = block_addr + sizeof(Block) + sizeof(Allocation);
     const auto block_end = block_addr + b->span;
@@ -269,7 +302,7 @@ private:
     const std::uintptr_t split_addr = payload_end + split_padding;
 
     if (indexed)
-      remove_free(b);
+      remove_free(b, indexed_first, indexed_second);
     else {
       HYLE_FATAL_ASSERT(recent_free_ == b);
       recent_free_ = nullptr;
@@ -404,33 +437,133 @@ private:
     a->requested = new_size;
   }
 
-  HYLE_FORCE_INLINE static unsigned bin_index(std::size_t span) noexcept {
-    HYLE_FATAL_ASSERT(span != 0);
-    return static_cast<unsigned>(std::bit_width(span) - 1);
+  HYLE_FORCE_INLINE static bool
+  required_span(std::size_t bytes, std::size_t alignment,
+                std::size_t *out) noexcept {
+    HYLE_FATAL_ASSERT(out != nullptr && is_pow2(alignment));
+    constexpr std::size_t fixed = sizeof(Block) + sizeof(Allocation);
+    std::size_t required = fixed;
+    static_assert(alignof(Allocation) == alignof(Block));
+    static_assert((sizeof(Block) + sizeof(Allocation)) % alignof(Block) == 0);
+    // raw_payload is Block-aligned. Since both values are powers of two and
+    // effective alignment is never smaller, the largest possible leading pad
+    // is alignment - alignof(Block), not alignment - 1.
+    const std::size_t payload_padding = alignment - alignof(Block);
+    const std::size_t split_padding = alignof(Block) - 1;
+    const std::size_t max = (std::numeric_limits<std::size_t>::max)();
+    if (payload_padding > max - required)
+      return false;
+    required += payload_padding;
+    if (bytes > max - required)
+      return false;
+    required += bytes;
+    if (split_padding > max - required)
+      return false;
+    *out = required + split_padding;
+    return true;
   }
+
+  // Floor-map a free span into one FL/SL class. Small blocks use linear
+  // alignof(Block) steps; larger blocks divide every power-of-two interval
+  // into eight equal ranges.
+  HYLE_FORCE_INLINE static void mapping_insert(std::size_t span,
+                                               unsigned *first,
+                                               unsigned *second) noexcept {
+    HYLE_FATAL_ASSERT(span != 0 && first != nullptr && second != nullptr);
+    if (span < kSmallBlock) {
+      *first = 0;
+      *second = static_cast<unsigned>(span >> kAlignmentBits);
+      return;
+    }
+    const unsigned msb = static_cast<unsigned>(std::bit_width(span) - 1);
+    *first = msb - (kFirstLevelShift - 1);
+    *second = static_cast<unsigned>(span >> (msb - kSecondLevelBits)) ^
+              kSecondLevelCount;
+  }
+
+  // Ceil-map a request so every block in the selected class is large enough;
+  // this is what removes the old per-bin linear fit scan.
+  HYLE_FORCE_INLINE static bool mapping_search(std::size_t span,
+                                               unsigned *first,
+                                               unsigned *second) noexcept {
+    if (span >= kSmallBlock) {
+      const unsigned msb = static_cast<unsigned>(std::bit_width(span) - 1);
+      const std::size_t round =
+          (std::size_t{1} << (msb - kSecondLevelBits)) - 1;
+      if (span > (std::numeric_limits<std::size_t>::max)() - round)
+        return false;
+      span += round;
+    }
+    mapping_insert(span, first, second);
+    return *first < kFirstLevelCount;
+  }
+
+  HYLE_FORCE_INLINE Block *find_suitable(std::size_t span, unsigned *first,
+                                         unsigned *second) noexcept {
+    HYLE_FATAL_ASSERT(first != nullptr && second != nullptr);
+    if (!mapping_search(span, first, second))
+      return nullptr;
+
+    std::uint32_t second_map =
+        static_cast<std::uint32_t>(second_level_nonempty_[*first]) &
+        (std::uint32_t{0xFF} << *second);
+    if (second_map == 0) {
+      const std::uint64_t first_map =
+          first_level_nonempty_ &
+          (~std::uint64_t{0} << static_cast<unsigned>(*first + 1));
+      if (first_map == 0)
+        return nullptr;
+      *first = static_cast<unsigned>(std::countr_zero(first_map));
+      second_map = second_level_nonempty_[*first];
+    }
+    *second = static_cast<unsigned>(std::countr_zero(second_map));
+    Block *b = bins_[*first][*second];
+    HYLE_FATAL_ASSERT(b != nullptr && b->span >= span);
+    return b;
+  }
+
   HYLE_FORCE_INLINE void insert_free(Block *b) noexcept {
     HYLE_FATAL_ASSERT(b->free);
-    const unsigned bin = bin_index(b->span);
+    unsigned first = 0;
+    unsigned second = 0;
+    mapping_insert(b->span, &first, &second);
+    HYLE_FATAL_ASSERT(first < kFirstLevelCount &&
+                      second < kSecondLevelCount);
     b->free_prev = nullptr;
-    b->free_next = bins_[bin];
-    if (bins_[bin] != nullptr)
-      bins_[bin]->free_prev = b;
-    bins_[bin] = b;
-    nonempty_bins_ |= std::uint64_t{1} << bin;
+    b->free_next = bins_[first][second];
+    if (bins_[first][second] != nullptr)
+      bins_[first][second]->free_prev = b;
+    bins_[first][second] = b;
+    first_level_nonempty_ |= std::uint64_t{1} << first;
+    second_level_nonempty_[first] |=
+        static_cast<std::uint8_t>(1u << second);
   }
   HYLE_FORCE_INLINE void remove_free(Block *b) noexcept {
     HYLE_FATAL_ASSERT(b->free);
-    const unsigned bin = bin_index(b->span);
+    unsigned first = 0;
+    unsigned second = 0;
+    mapping_insert(b->span, &first, &second);
+    remove_free(b, first, second);
+  }
+
+  HYLE_FORCE_INLINE void remove_free(Block *b, unsigned first,
+                                     unsigned second) noexcept {
+    HYLE_FATAL_ASSERT(b->free && first < kFirstLevelCount &&
+                      second < kSecondLevelCount);
     if (b->free_prev != nullptr)
       b->free_prev->free_next = b->free_next;
     else {
-      HYLE_FATAL_ASSERT(bins_[bin] == b);
-      bins_[bin] = b->free_next;
+      HYLE_FATAL_ASSERT(bins_[first][second] == b);
+      bins_[first][second] = b->free_next;
     }
     if (b->free_next != nullptr)
       b->free_next->free_prev = b->free_prev;
-    if (bins_[bin] == nullptr)
-      nonempty_bins_ &= ~(std::uint64_t{1} << bin);
+    if (bins_[first][second] == nullptr) {
+      second_level_nonempty_[first] &=
+          static_cast<std::uint8_t>(~(1u << second));
+      if (second_level_nonempty_[first] == 0)
+        first_level_nonempty_ &= ~(std::uint64_t{1} << first);
+    }
     b->free_prev = b->free_next = nullptr;
   }
   HYLE_FORCE_INLINE Block *coalesce(Block *b) noexcept {
@@ -480,9 +613,13 @@ private:
   std::size_t capacity_ = 0;
   std::size_t used_ = 0;
   std::size_t peak_ = 0;
-  Block *bins_[kBinCount]{};
-  std::uint64_t nonempty_bins_ = 0;
+  Block *bins_[kFirstLevelCount][kSecondLevelCount]{};
+  std::uint8_t second_level_nonempty_[kFirstLevelCount]{};
+  std::uint64_t first_level_nonempty_ = 0;
   Block *recent_free_ = nullptr;
+#if defined(HYLE_TESTING)
+  std::uint32_t debug_last_fit_candidates_ = 0;
+#endif
 };
 
 } // namespace hyle::mem

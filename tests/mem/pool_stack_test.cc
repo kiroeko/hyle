@@ -760,6 +760,30 @@ TEST(FixedPool, RejectsUnrepresentableExternalAddressRange) {
   EXPECT_FALSE(pool.valid());
 }
 
+TEST(FixedPool, LargeAlignmentAndOverflowKeepIndexInvariant) {
+  alignas(4096) std::byte storage[64 * 1024];
+  FixedPool pool(storage, sizeof(storage));
+  ASSERT_TRUE(pool.valid());
+
+  void *page_aligned = pool.allocate(257, 4096);
+  ASSERT_NE(page_aligned, nullptr);
+  EXPECT_EQ(reinterpret_cast<std::uintptr_t>(page_aligned) % 4096, 0u);
+  pool.deallocate(page_aligned);
+
+  EXPECT_EQ(pool.allocate((std::numeric_limits<std::size_t>::max)() - 32,
+                          64),
+            nullptr);
+  constexpr std::size_t highest_alignment =
+      std::size_t{1} << (std::numeric_limits<std::size_t>::digits - 1);
+  EXPECT_EQ(pool.allocate(64, highest_alignment), nullptr);
+
+  // Failed conservative mappings leave all free-list bitmaps untouched.
+  void *large = pool.allocate(48 * 1024, 64);
+  ASSERT_NE(large, nullptr);
+  pool.deallocate(large);
+  EXPECT_EQ(pool.used(), 0u);
+}
+
 TEST(FixedPool, RandomizedMixedSizeModelPreservesLiveAllocations) {
   alignas(64) std::byte storage[64 * 1024];
   FixedPool pool(storage, sizeof(storage));
@@ -876,6 +900,40 @@ TEST(FixedPool, RandomizedReallocateModelPreservesDataAndAccounting) {
   EXPECT_EQ(pool.used(), expected_used);
   for (const Live &allocation : live)
     pool.deallocate(allocation.ptr);
+  EXPECT_EQ(pool.used(), 0u);
+}
+
+TEST(FixedPool, FragmentedLookupExaminesAtMostTwoCandidates) {
+  alignas(64) std::byte storage[64 * 1024];
+  FixedPool pool(storage, sizeof(storage));
+  std::vector<void *> holes;
+  std::vector<void *> barriers;
+  holes.reserve(96);
+  barriers.reserve(96);
+
+  // Model a long-lived packet/cache arena: differently sized values are
+  // separated by live guards, then returned out of size order. The final small
+  // return occupies the one-entry cursor, while many unsuitable and suitable
+  // holes remain indexed.
+  for (std::size_t i = 0; i < 96; ++i) {
+    void *hole = pool.allocate(192 + (i % 12) * 32, 16);
+    void *barrier = pool.allocate(48, 16);
+    ASSERT_NE(hole, nullptr);
+    ASSERT_NE(barrier, nullptr);
+    holes.push_back(hole);
+    barriers.push_back(barrier);
+  }
+  for (std::size_t i = 1; i < holes.size(); ++i)
+    pool.deallocate(holes[i]);
+  pool.deallocate(holes[0]); // too small recent cursor
+
+  void *selected = pool.allocate(400, 64);
+  ASSERT_NE(selected, nullptr);
+  EXPECT_LE(pool.debug_last_fit_candidates(), 2u);
+
+  pool.deallocate(selected);
+  for (void *barrier : barriers)
+    pool.deallocate(barrier);
   EXPECT_EQ(pool.used(), 0u);
 }
 
