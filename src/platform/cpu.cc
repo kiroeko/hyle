@@ -1,3 +1,7 @@
+#if defined(__linux__) && !defined(_GNU_SOURCE)
+#  define _GNU_SOURCE 1
+#endif
+
 #include "hyle/platform/cpu.h"
 
 // cpu.cc -- the ISOLATED, LTO-DISABLED probe TU (conventions §10 probe isolation).
@@ -8,9 +12,11 @@
 // We compile it at the default baseline (no -mavx etc.), so the compiler cannot emit
 // anything beyond it here.
 
+#include <cerrno>
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
+#include <cstdlib>
 #include <limits>
 #include <new>
 
@@ -29,6 +35,7 @@
 #include <sys/sysctl.h>  // sysctlbyname("hw.cachelinesize")
 #endif
 #if defined(HYLE_OS_LINUX)
+#include <sched.h>
 #include <unistd.h>  // sysconf(_SC_LEVEL1_DCACHE_LINESIZE)
 #endif
 
@@ -429,11 +436,209 @@ bool read_sysfs_unsigned(const char* path, unsigned& value) noexcept {
 }
 #endif
 
+Status cpu_query_status(const char* operation, unsigned long code) noexcept {
+  char message[160];
+  std::snprintf(message, sizeof(message), "%s failed: native code %lu",
+                operation, code);
+#if defined(HYLE_OS_WINDOWS)
+  if (code == ERROR_NOT_ENOUGH_MEMORY || code == ERROR_OUTOFMEMORY) {
+    return Status::ResourceExhausted(message);
+  }
+  if (code == ERROR_ACCESS_DENIED) return Status::PermissionDenied(message);
+  if (code == ERROR_INVALID_PARAMETER) return Status::InvalidArgument(message);
+#else
+  if (code == ENOMEM) return Status::ResourceExhausted(message);
+  if (code == EACCES || code == EPERM) {
+    return Status::PermissionDenied(message);
+  }
+  if (code == EINVAL) return Status::InvalidArgument(message);
+#endif
+  return Status::Unavailable(message);
+}
+
+Result<std::size_t> query_available_cpu_ids(unsigned* dst,
+                                            std::size_t cap) noexcept {
+  if (dst == nullptr) cap = 0;
+#if defined(HYLE_OS_WINDOWS)
+  HANDLE process = ::GetCurrentProcess();
+
+  // A process may explicitly select CPU Set ids. Empty means no CPU-Set
+  // restriction; exclusive sets allocated to another process remain unusable.
+  ULONG default_count = 0;
+  ::SetLastError(ERROR_SUCCESS);
+  BOOL defaults_ok =
+      ::GetProcessDefaultCpuSets(process, nullptr, 0, &default_count);
+  DWORD code = defaults_ok ? ERROR_SUCCESS : ::GetLastError();
+  if (!defaults_ok && code != ERROR_INSUFFICIENT_BUFFER) {
+    return std::unexpected(
+        cpu_query_status("GetProcessDefaultCpuSets(size)", code));
+  }
+  ULONG default_stack[64];
+  ULONG* default_ids = nullptr;
+  bool default_ids_heap = false;
+  if (default_count != 0) {
+    if (default_count <= sizeof(default_stack) / sizeof(default_stack[0])) {
+      default_ids = default_stack;
+    } else {
+      default_ids = new (std::nothrow) ULONG[default_count];
+      default_ids_heap = true;
+      if (default_ids == nullptr) {
+        return std::unexpected(Status::ResourceExhausted(
+            "available CPU ids: default-set allocation failed"));
+      }
+    }
+    ULONG actual = default_count;
+    if (!::GetProcessDefaultCpuSets(process, default_ids, default_count,
+                                    &actual)) {
+      code = ::GetLastError();
+      if (default_ids_heap) delete[] default_ids;
+      return std::unexpected(
+          cpu_query_status("GetProcessDefaultCpuSets", code));
+    }
+    default_count = actual;
+  }
+
+  DWORD bytes = 0;
+  (void)::GetSystemCpuSetInformation(nullptr, 0, &bytes, process, 0);
+  if (bytes == 0) {
+    code = ::GetLastError();
+    if (default_ids_heap) delete[] default_ids;
+    return std::unexpected(
+        cpu_query_status("GetSystemCpuSetInformation(size)", code));
+  }
+  unsigned char storage_stack[4096];
+  unsigned char* storage = nullptr;
+  bool storage_heap = false;
+  if (bytes <= sizeof(storage_stack)) {
+    storage = storage_stack;
+  } else {
+    storage = new (std::nothrow) unsigned char[bytes];
+    storage_heap = true;
+    if (storage == nullptr) {
+      if (default_ids_heap) delete[] default_ids;
+      return std::unexpected(Status::ResourceExhausted(
+          "available CPU ids: CPU-set allocation failed"));
+    }
+  }
+  if (!::GetSystemCpuSetInformation(
+          reinterpret_cast<PSYSTEM_CPU_SET_INFORMATION>(storage), bytes,
+          &bytes, process, 0)) {
+    code = ::GetLastError();
+    if (storage_heap) delete[] storage;
+    if (default_ids_heap) delete[] default_ids;
+    return std::unexpected(
+        cpu_query_status("GetSystemCpuSetInformation", code));
+  }
+
+  const WORD groups = ::GetActiveProcessorGroupCount();
+  DWORD_PTR process_mask = 0, system_mask = 0;
+  const bool use_affinity_mask =
+      groups == 1 &&
+      ::GetProcessAffinityMask(process, &process_mask, &system_mask) != 0;
+  std::size_t count = 0;
+  for (DWORD offset = 0; offset < bytes;) {
+    auto* info =
+        reinterpret_cast<PSYSTEM_CPU_SET_INFORMATION>(storage + offset);
+    if (info->Size == 0 || info->Size > bytes - offset) break;
+    if (info->Type == CpuSetInformation) {
+      const auto& set = info->CpuSet;
+      bool selected = default_count == 0;
+      for (ULONG i = 0; !selected && i < default_count; ++i) {
+        selected = default_ids[i] == set.Id;
+      }
+      if (selected && (!set.Allocated || set.AllocatedToTargetProcess)) {
+        if (!use_affinity_mask ||
+            (set.LogicalProcessorIndex < sizeof(DWORD_PTR) * 8u &&
+             (process_mask & (DWORD_PTR{1} << set.LogicalProcessorIndex)))) {
+          unsigned flat = set.LogicalProcessorIndex;
+          for (WORD group = 0; group < set.Group; ++group) {
+            flat += ::GetActiveProcessorCount(group);
+          }
+          if (count < cap) dst[count] = flat;
+          ++count;
+        }
+      }
+    }
+    offset += info->Size;
+  }
+  if (storage_heap) delete[] storage;
+  if (default_ids_heap) delete[] default_ids;
+  if (count == 0) {
+    return std::unexpected(Status::FailedPrecondition(
+        "available CPU ids: process has no usable CPU set"));
+  }
+  return count;
+#elif defined(HYLE_OS_LINUX)
+  auto copy_set = [dst, cap](const cpu_set_t* set, std::size_t bytes,
+                             std::size_t bits) noexcept
+      -> Result<std::size_t> {
+    std::size_t count = 0;
+    for (std::size_t cpu = 0; cpu < bits; ++cpu) {
+      if (CPU_ISSET_S(cpu, bytes, set)) {
+        if (count < cap) dst[count] = static_cast<unsigned>(cpu);
+        ++count;
+      }
+    }
+    if (count == 0) {
+      return std::unexpected(Status::FailedPrecondition(
+          "available CPU ids: affinity mask is empty"));
+    }
+    return count;
+  };
+
+  // The common <=1024-id case needs no allocation. Linux returns EINVAL when
+  // the supplied mask is smaller than the kernel's configured CPU id space;
+  // only then grow a dynamic CPU_ALLOC mask.
+  cpu_set_t fixed;
+  CPU_ZERO(&fixed);
+  if (::sched_getaffinity(0, sizeof(fixed), &fixed) == 0) {
+    return copy_set(&fixed, sizeof(fixed), CPU_SETSIZE);
+  }
+  int error = errno;
+  if (error != EINVAL) {
+    return std::unexpected(cpu_query_status(
+        "sched_getaffinity", static_cast<unsigned long>(error)));
+  }
+
+  for (std::size_t bits = CPU_SETSIZE * 2u;
+       bits <= (std::size_t{1} << 20);
+       bits *= 2) {
+    cpu_set_t* set = CPU_ALLOC(bits);
+    if (set == nullptr) {
+      return std::unexpected(Status::ResourceExhausted(
+          "available CPU ids: affinity-mask allocation failed"));
+    }
+    const std::size_t bytes = CPU_ALLOC_SIZE(bits);
+    CPU_ZERO_S(bytes, set);
+    if (::sched_getaffinity(0, bytes, set) == 0) {
+      auto result = copy_set(set, bytes, bits);
+      CPU_FREE(set);
+      return result;
+    }
+    error = errno;
+    CPU_FREE(set);
+    if (error != EINVAL) {
+      return std::unexpected(cpu_query_status(
+          "sched_getaffinity", static_cast<unsigned long>(error)));
+    }
+  }
+  return std::unexpected(Status::OutOfRange(
+      "available CPU ids: kernel CPU id space exceeds supported limit"));
+#else
+  const std::size_t count = hardware_concurrency();
+  const std::size_t written = count < cap ? count : cap;
+  for (std::size_t i = 0; i < written; ++i) {
+    dst[i] = static_cast<unsigned>(i);
+  }
+  return count;
+#endif
+}
+
 CpuTopology detect_topology() noexcept {
   CpuTopology out;
-  out.logical_cpus = hardware_concurrency();
-  if (out.logical_cpus == 0) out.logical_cpus = 1;
-  out.performance_cpus = out.logical_cpus;
+  out.system_logical_cpus = hardware_concurrency();
+  if (out.system_logical_cpus == 0) out.system_logical_cpus = 1;
+  out.performance_cpus = out.system_logical_cpus;
 
 #if defined(HYLE_OS_WINDOWS)
   DWORD bytes = 0;
@@ -463,7 +668,7 @@ CpuTopology detect_topology() noexcept {
     }
     offset += info->Size;
   }
-  if (count == out.logical_cpus && min_class < max_class) {
+  if (count == out.system_logical_cpus && min_class < max_class) {
     unsigned performance = 0;
     for (DWORD offset = 0; offset < bytes;) {
       auto* info =
@@ -502,7 +707,7 @@ CpuTopology detect_topology() noexcept {
       else efficiency += count;
     }
     if (performance != 0 && efficiency != 0 &&
-        performance + efficiency == out.logical_cpus) {
+        performance + efficiency == out.system_logical_cpus) {
       out.performance_cpus = performance;
       out.efficiency_cpus = efficiency;
       out.hybrid = true;
@@ -513,7 +718,7 @@ CpuTopology detect_topology() noexcept {
   // it when every process-visible logical CPU has a value and capacities differ.
   unsigned capacities[4096];
   unsigned found = 0, min_capacity = ~0u, max_capacity = 0;
-  for (unsigned cpu = 0; cpu < 4096 && found < out.logical_cpus; ++cpu) {
+  for (unsigned cpu = 0; cpu < 4096 && found < out.system_logical_cpus; ++cpu) {
     char path[96];
     std::snprintf(path, sizeof(path),
                   "/sys/devices/system/cpu/cpu%u/online", cpu);
@@ -527,7 +732,7 @@ CpuTopology detect_topology() noexcept {
     if (capacity < min_capacity) min_capacity = capacity;
     if (capacity > max_capacity) max_capacity = capacity;
   }
-  if (found == out.logical_cpus && min_capacity < max_capacity) {
+  if (found == out.system_logical_cpus && min_capacity < max_capacity) {
     unsigned performance = 0;
     for (unsigned i = 0; i < found; ++i) {
       if (capacities[i] == max_capacity) ++performance;
@@ -557,6 +762,11 @@ unsigned cache_line_size() noexcept {
 const CacheInfo& cache_info() noexcept {
   static const CacheInfo info = detect_cache_info();
   return info;
+}
+
+Result<std::size_t> available_cpu_ids(unsigned* dst,
+                                      std::size_t cap) noexcept {
+  return query_available_cpu_ids(dst, cap);
 }
 
 const CpuTopology& cpu_topology() noexcept {

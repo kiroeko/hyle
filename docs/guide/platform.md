@@ -27,6 +27,7 @@ platform 是 HYLE 的跨 OS 原语层。它服务两类调用者：HYLE 内部�
 | 等待调用方已有的原子字 | `wait_on_address` | `Parker` 再包一层 | 允许伪唤醒，必须循环检查谓词 |
 | 插件/可选系统库 | `DynLib` | 裸 `dlopen`/`LoadLibrary` 分叉 | `Result` 保留原生 loader 诊断 |
 | 运行时 ISA 派发 | `cpu_features` / `supports` | 编译机宏代替运行机探测 | 只调用当前进程可执行的 ISA |
+| 决定当前 worker 数/绑核 | `available_cpu_ids` | `hardware_concurrency` / `cpu_topology` | 动态遵守 affinity、cgroup/cpuset、Windows CPU Sets；id 可稀疏 |
 | cache 容量提示、P/E 总量 | `cache_info` / `cpu_topology` | 假定探测值永远存在 | 未知 cache 为 0；P/E 不做频率猜测 |
 
 ## 页内存
@@ -101,14 +102,26 @@ dangling link 时显式传 `kFile` 或 `kDirectory`，才具有跨平台一致�
 
 `Thread` 适合少量长寿命 OS 线程、runtime worker 或必须设置 stack/name/affinity 的边界。
 任务级并发用 sched。affinity 和 priority 是跨 OS best-effort：尤其在权限受限环境、macOS
-以及异构核机器上，不应把请求成功调用等同于精确落在某个核型。
+以及异构核机器上，不应把请求成功调用等同于精确落在某个核型。绑核 id 应取自
+`available_cpu_ids()`；Linux cpuset 可能产生 `{2, 6}` 这种稀疏 id，不能拿 `[0, count)` 猜。
 
 ## CPU、cache 与 NUMA
 
 `cpu_features()` 回答“本进程现在能安全执行什么指令”；`cache_info()` 的 L1/L2/L3 是容量
-提示，未知项为 0；`cpu_topology()` 当前提供逻辑 CPU 和 OS 明确报告的 P/E 总数。它们适合
-ISA dispatch、默认 shard 数和粗粒度策略，不足以表达每 CPU 的 core kind、cache sharing、
-process affinity/cgroup 限制。需要这类调度决策的调用者不能从聚合值自行猜拓扑。
+提示，未知项为 0。`cpu_topology()` 是缓存的系统在线硬件视图：
+`system_logical_cpus` 与 OS 明确报告的 P/E 总数，适合诊断和粗粒度硬件策略；它不回答容器
+或当前进程能开多少 worker。
+
+`available_cpu_ids(dst, cap)` 才是进程视图：返回完整可用数，最多写 `cap` 个可直接交给
+`ThreadOpts::affinity_cpu` 的 id；`dst=nullptr` 可只查询数量。查询刻意不缓存，因为 Linux
+affinity/cgroup/cpuset 和 Windows CPU Sets 可在进程运行时改变；Linux 具体读取调用线程的
+mask，新线程会继承它。常见 Windows / Linux
+拓扑不分配；时间是读取 OS CPU 记录必需的 O(N)，用于 runtime 初始化/重配，不应塞进每个
+task 的热路径。
+
+platform 暂不公开“每 CPU 的 core kind/cache sharing”高层对象：`cache_info()` 只是容量提示，
+不能据此猜共享关系。worker placement、NUMA/cache-aware stealing 是 sched 的策略，等其真实
+调用形状确定后再由内部拓扑原语支撑，避免 platform 固化一套 benchmark 形状。
 
 NUMA preferred 是软策略：分配成功而 placement 为 `Unavailable` 仍是一块可用内存。只有
 bind/interleave 的硬策略失败才应让依赖精确放置的工作失败。

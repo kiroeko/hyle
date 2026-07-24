@@ -2,6 +2,10 @@
 
 > **后续替代（2026-07-22）：**本文后文提到的旧 `MemoryArena` 当前由 `SharedPool` / 显式 `SharedPoolCache` 覆盖；旧头与 C ABI 已删除。
 
+> **后续替代（2026-07-24）：**platform 已删除模块私有 TLS last-error，公开可恢复失败统一走
+> error 的 `Status/Result`；CPU 聚合系统拓扑与动态进程可用 CPU 也已拆分。本文是历史任务单，
+> 当前使用合同以 guide 为准。
+
 > 2026-07-19。原清单 A1/A2/A3/B1 已实现并完成三平台验证。
 > 本文保留实现边界与仍有意不做的内容，避免后来者把“未知”误读成
 > “同构”，或再次引入启发式探测。
@@ -24,15 +28,21 @@
   `EfficiencyClass`，macOS 读取 `hw.perflevelN.logicalcpu`，Linux 只在
   每个可见 CPU 都有 `cpu_capacity` 且容量确实分级时分类。
 - 无可信数据时返回：
-  `performance_cpus=logical_cpus, efficiency_cpus=0, hybrid=false`。
+  `performance_cpus=system_logical_cpus, efficiency_cpus=0, hybrid=false`。
   这是“无法确认异构”，不是宣称物理上一定同构；不使用最大频率猜测。
 - 当前只提供聚合计数，不提供逐 CPU 类型数组。
 
-### A3. C wrapper OOM last-error
+### A3. C wrapper 共享错误
 
-Parker、DynLib、MappedFile、VmRegion 与 HugeRegion 的 C wrapper 分配失败
-均写入对应 thread-local last-error；非法参数也不再静默返回空句柄。
-error C ABI 另有 `hyle_error_last_error()` 覆盖 push-handler token OOM。
+后续 error 收敛已取代本任务当时的 TLS last-error 过渡形状：Parker、Thread、DynLib、
+MappedFile、VM/NUMA、fs/env 等公开可恢复失败都直接返回共享 `hyle_status`，C 调用方按
+error 的统一所有权释放；platform 不再保留私有 last-error。
+
+### A4. 系统拓扑与进程 CPU 配额
+
+- `cpu_topology()` / `hyle_cpu_topology_get()` 是缓存的系统在线 CPU 与可信 P/E 聚合。
+- `available_cpu_ids()` / `hyle_cpu_available_ids()` 动态读取 affinity/cpuset/CPU Sets，
+  返回可直接用于 thread affinity 的真实（可能稀疏）id，worker 数取其完整 count。
 
 ### B1. macOS parker timeout
 
@@ -57,12 +67,12 @@ macOS 真机通过，确认 `os_sync_wait_on_address_with_timeout` 当前参数�
 
 ## 有意保留
 
-- cache associativity、每级 line size、逐 CPU P/E 类型数组：当前消费者
-  只需要容量、false-sharing line 与聚合 worker 计数。
+- cache associativity、每级 line size、逐 CPU P/E 类型数组：当前消费者只需要容量、
+  false-sharing line、可信的系统 P/E 聚合和独立的进程可用 CPU id；不从聚合值猜 worker 数。
 - Linux 不依据 cpufreq 猜 P/E；若内核不导出 scheduler capacity，则保持
   unknown/homogeneous fallback。
 - platform C ABI 已覆盖 wait/Parker、Thread、DynLib、VM/VmRegion、
   hugepage/NUMA、完整 fs/env/fd、MappedFile、CPU/cache/topology。2026-07-19
-  复审又补了统一的 `hyle_platform_last_error`、thread opts `struct_size`、
-  具名权限/open flags 与逐符号纯 C 验收；不再有“其余
+  复审又补了 thread opts `struct_size`、具名权限/open flags 与逐符号纯 C 验收；后续
+  已删除过渡期 `hyle_platform_last_error` 并统一到共享 error；不再有“其余
   fs/mapped/NUMA 待更大范围 ABI”的缺口。

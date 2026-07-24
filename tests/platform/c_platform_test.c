@@ -523,8 +523,7 @@ int main(void) {
   CHECK(en > 0u);
 
   hyle_cpu_features cpu = hyle_cpu_features_get();
-  CHECK(cpu.logical_cpus >= 1u);
-  CHECK(hyle_cpu_isa_name(cpu.best_isa) != NULL);
+  CHECK(hyle_cpu_isa_name((uint32_t)hyle_cpu_best_isa()) != NULL);
   CHECK(hyle_cpu_supports_isa(HYLE_ISA_SCALAR) == 1);
   {
     unsigned cl = hyle_cpu_cache_line_size();
@@ -536,11 +535,19 @@ int main(void) {
     if (cache.l1d && cache.l2) CHECK(cache.l1d <= cache.l2);
     if (cache.l1i && cache.l2) CHECK(cache.l1i <= cache.l2);
     if (cache.l2 && cache.l3) CHECK(cache.l2 <= cache.l3);
-    CHECK(topo.logical_cpus >= 1u);
+    CHECK(topo.system_logical_cpus >= 1u);
     CHECK(topo.performance_cpus + topo.efficiency_cpus ==
-          topo.logical_cpus);
+          topo.system_logical_cpus);
     CHECK((topo.is_hybrid != 0) ==
           (topo.performance_cpus != 0 && topo.efficiency_cpus != 0));
+  }
+  {
+    size_t available = 0;
+    unsigned first = ~0u;
+    CHECK(status_code(hyle_cpu_available_ids(NULL, NULL, 0)) ==
+          HYLE_STATUS_INVALID_ARGUMENT);
+    CHECK(status_ok(hyle_cpu_available_ids(&available, &first, 1)));
+    CHECK(available >= 1u && first != ~0u);
   }
   {
     hyle_isa isa = HYLE_ISA_SCALAR;      /* named enums usable as types */

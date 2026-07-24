@@ -71,7 +71,7 @@ last-error；C 与 C++ 共用 error 的 code、message 和所有权规则。
 | `hyle_thread_spawn_opts(out, entry, ctx, name, stack, affinity, priority)` | FFI 便利入口；不用构造 opts/has 字段，0/-1 是默认 sentinel |
 | `hyle_thread_join` | join + **destroy** 句柄 |
 | `hyle_thread_joinable` | 1/0 |
-| `hyle_hardware_concurrency` | 逻辑 CPU 数 ≥1 |
+| `hyle_hardware_concurrency` | 系统在线逻辑 CPU 数 ≥1；worker 数优先用下文 `hyle_cpu_available_ids` |
 | `hyle_this_thread_id` | 稳定线程 id |
 | `hyle_this_thread_yield` | |
 | `hyle_this_thread_set_name` | name 可 NULL→空串 |
@@ -191,22 +191,29 @@ soft 建议，绝不影响正确性。Linux 用 madvise；Windows/macOS 匿名�
 
 | 符号 | 说明 |
 |---|---|
-| `hyle_cpu_features` | 与 C++ `CpuFeatures` **全 bool 字段 1:1**（C 用 int 0/1）+ `logical_cpus` + `best_isa` |
+| `hyle_cpu_features` | 与 C++ `CpuFeatures` **全 bool 字段 1:1**（C 用 int 0/1）；不混入拓扑或 ISA 派生值 |
 | x86 字段 | `sse2`…`avx10_2`（见头） |
 | arm 字段 | `neon`…`arm_bf16` |
 | RISC-V 字段 | `rvv`…`rvv_zvfhmin` |
 | `hyle_isa`：`HYLE_ISA_*` | 具名 enum；`SCALAR`/`SSE2`/…/`RVV` 粗粒度档（与 `Isa` 数值一致） |
 | `hyle_cpu_features_get` | 值返回 |
+| `hyle_cpu_best_isa` | 当前进程可安全执行的最高粗粒度 ISA 档 |
 | `hyle_cpu_supports_isa(isa)` | 本进程能否跑该档（同架构比较） |
 | `hyle_cpu_isa_name(isa)` | 稳定英文名（日志） |
 | `hyle_cpu_cache_line_size` | L1 数据缓存行字节数（主流 64；对齐/填充用；探测失败回退 64） |
 | `hyle_cpu_cache_info` | 值返回 `hyle_cache_info`：L1D/L1I/L2/L3 容量（字节；未知级为 0） |
-| `hyle_cpu_topology_get` | 值返回逻辑 CPU、performance/efficiency CPU 数与 `is_hybrid` |
+| `hyle_cpu_topology_get` | 缓存的系统视图：`system_logical_cpus`、performance/efficiency CPU 数与 `is_hybrid` |
+| `hyle_cpu_available_ids(out_count, dst, cap)` | 动态进程视图；返回 Status，`*out_count` 是完整数量，最多写 cap 个可用于 thread affinity 的 id；`dst==NULL` 可只查数 |
 
 拓扑只采用 OS/CPU 的明确分类（Windows `EfficiencyClass`、macOS
 `hw.perflevelN`、Linux `cpu_capacity`）。若平台没有可靠信息，会保守返回
-`performance_cpus == logical_cpus`、`efficiency_cpus == 0`、`is_hybrid == 0`；
+`performance_cpus == system_logical_cpus`、`efficiency_cpus == 0`、`is_hybrid == 0`；
 这表示“未确认异构”，不会根据最高频率猜核型。
+
+创建 worker 或绑核应使用 `hyle_cpu_available_ids`，不能把系统总数当进程配额，也不能假定
+可用 id 是 `[0, count)`：Linux cpuset/affinity 可产生稀疏 id。该查询不缓存，以观察运行期
+限制变化；Linux 返回调用线程的 mask（其新建线程会继承）。它是初始化/重配控制面，不应在
+每 task 热路径重复调用。
 
 ### 3.7 导出形态
 

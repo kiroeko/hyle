@@ -89,7 +89,7 @@ typedef struct hyle_thread_opts {
   int has_stack_size;        /* 0/1 */
   size_t stack_size;         /* bytes if has_stack_size */
   int has_affinity_cpu;      /* 0/1 */
-  unsigned affinity_cpu;     /* logical CPU if has_affinity_cpu */
+  unsigned affinity_cpu;     /* id from hyle_cpu_available_ids() */
   int has_priority;          /* 0/1 (v4) */
   int priority;              /* hyle_thread_priority if has_priority */
 } hyle_thread_opts;
@@ -493,9 +493,6 @@ typedef struct hyle_cpu_features {
       sve_bf16, arm_i8mm, arm_bf16;
   /* RISC-V (0 on non-RISC-V) */
   int rvv, rvv_zvbb, rvv_zvbc, rvv_zvkned, rvv_zvfh, rvv_zvfhmin;
-  /* extras for C convenience (not fields of C++ CpuFeatures) */
-  unsigned logical_cpus; /* >=1 */
-  uint32_t best_isa;     /* hyle::platform::Isa numeric value */
 } hyle_cpu_features;
 
 /* Coarse ISA tier values (match hyle::platform::Isa). Named enum (not an
@@ -514,6 +511,7 @@ typedef enum hyle_isa {
 } hyle_isa;
 
 HYLE_PLATFORM_C_API hyle_cpu_features hyle_cpu_features_get(void);
+HYLE_PLATFORM_C_API hyle_isa hyle_cpu_best_isa(void);
 /* 1 if this process can run the given HYLE_ISA_* tier (same-arch compare). */
 HYLE_PLATFORM_C_API int hyle_cpu_supports_isa(uint32_t isa);
 /* "scalar", "avx2", ... — stable English name for logging. */
@@ -526,7 +524,7 @@ typedef struct hyle_cache_info {
 } hyle_cache_info;
 
 typedef struct hyle_cpu_topology {
-  unsigned logical_cpus;
+  unsigned system_logical_cpus;
   unsigned performance_cpus;
   unsigned efficiency_cpus;
   int is_hybrid;
@@ -534,6 +532,12 @@ typedef struct hyle_cpu_topology {
 
 HYLE_PLATFORM_C_API hyle_cache_info hyle_cpu_cache_info(void);
 HYLE_PLATFORM_C_API hyle_cpu_topology hyle_cpu_topology_get(void);
+/* Process-available flattened CPU ids, accepted by hyle_thread_opts.affinity_cpu.
+ * *out_count is the full count; writes at most cap ids; dst==NULL is a count
+ * query. Unlike system topology, this observes affinity/cpuset restrictions.
+ * On Linux the calling thread's affinity is queried (new threads inherit it). */
+HYLE_PLATFORM_C_API hyle_status hyle_cpu_available_ids(
+    size_t* out_count, unsigned* dst, size_t cap);
 
 #ifdef __cplusplus
 } /* extern "C" */

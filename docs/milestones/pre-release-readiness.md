@@ -44,7 +44,8 @@ SOTA 的替代证据。
 
 | 模块 | 判定 | 后续方式 |
 |---|---|---|
-| error/platform/time/simd/util/obs | **预发布冻结** | 只按上述触发器重开；SVE/RVV 真机证据仍是平台到位后的专项补证 |
+| error/time/simd/util/obs | **预发布冻结** | 只按上述触发器重开；SVE/RVV 真机证据仍是平台到位后的专项补证 |
+| platform | **主动收口复审** | 按实际使用形状重审公开/内部边界；已完成 fs/env/VM 与系统拓扑/进程 CPU 配额分离，继续审依赖方采用和线程形状 |
 | mem | **预发布冻结** | 功能/API/性能已收口；最终候选 `551be0b` 通过三平台 C/C++、sanitizer、105 项动态导出与逐头独立编译认证，见 [`mem-close-plan.md`](./mem-close-plan.md) |
 | container | **预发布冻结** | StringBuf 复杂度/争用/batch/三平台强 peer 已收口；已知 Linux/M4 lifecycle 常数边界写入证书 |
 | sched | **预发布冻结** | 双任务腿、饱和/关闭红队、114 入口 C ABI 与 guide 已收口；marl 15 遍三平台为 Win/Lin 明确赢、M4 统计平局；只按触发器重开 |

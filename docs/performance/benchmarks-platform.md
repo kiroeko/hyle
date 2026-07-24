@@ -89,6 +89,21 @@ Linux/macOS 仍保留旧接口证书，待新接口真机复跑后再更新。
 真实 buffer-fill、UTF-8 round-trip、unset/empty 分离和长 HOME 场景覆盖。结构化 Status
 只在失败时构造诊断，成功 Result 是栈上值，不增加成功路堆分配。
 
+### 2026-07-24 系统拓扑与进程 CPU 配额分离
+
+`cpu_topology()` 保留一次探测、缓存读取的系统硬件视图；实际 worker 初始化新增
+`available_cpu_ids()`，直接读取 Linux 调用线程（新线程继承）的 affinity/cgroup/cpuset
+或 Windows 进程 CPU Sets，避免
+容器/受限进程按整机核数过度创建线程。查询时间为不可规避的 O(OS CPU 记录数)，输出为
+O(可用 CPU 数)；常见 Windows（CPU Set 记录 ≤4 KiB、默认 set ≤64）与 Linux（CPU id
+<1024）路径使用栈缓冲，无堆分配，超大机器才扩到 heap/dynamic CPU mask。
+
+这是一条 runtime 初始化/重配控制面，且其正确合同要求观察运行期 affinity 变化，因此不做
+会掩盖变化的全局 cache，也不新增以纳秒数塑造 API 的 microbenchmark。验收用 Release/ASan
+真实约束测试：临时把进程 affinity 缩为一个现有 CPU 后查询必须立即返回 1，再恢复原 mask；
+buffer-fill 另覆盖 count-only、截断返回完整长度和 id 唯一性。性能结论是与原生查询同阶、
+常见路径零堆分配，不把 OS 拓扑枚举时间冒充 HYLE 算法性能。
+
 ## 非 SOTA / 需诚实标价
 
 ### 1. staged VM 对 raw 一步分配的旧“输”不是同合同对比

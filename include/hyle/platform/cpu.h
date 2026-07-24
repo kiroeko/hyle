@@ -1,7 +1,9 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 
+#include "hyle/error/result.h"
 #include "hyle/platform.h"
 #include "hyle/visibility.h"
 
@@ -132,11 +134,22 @@ struct CacheInfo {
 
 HYLE_PLATFORM_API const CacheInfo& cache_info() noexcept;
 
-// OS-online logical CPU topology. If a platform cannot report a
+// CPU ids on which the current process may run, in the same id space accepted
+// by ThreadOpts::affinity_cpu. Buffer-fill: returns the full count and writes up
+// to cap ids; dst may be null for a count-only query. This is intentionally NOT
+// cached because affinity/cpuset restrictions can change while a process runs.
+// Unlike hardware_concurrency(), this respects Linux sched affinity/cgroups and
+// Windows process CPU Sets / single-group affinity masks. On Linux the affinity
+// mask belongs to the calling thread and is inherited by threads it creates.
+HYLE_PLATFORM_API Result<std::size_t> available_cpu_ids(
+    unsigned* dst, std::size_t cap) noexcept;
+
+// OS-online SYSTEM topology. Process availability is a separate, dynamic query
+// above. If a platform cannot report a
 // trustworthy P/E distinction, all CPUs are conservatively classified as
 // performance; frequency-based guessing is deliberately avoided.
 struct CpuTopology {
-  unsigned logical_cpus = 1;
+  unsigned system_logical_cpus = 1;
   unsigned performance_cpus = 1;
   unsigned efficiency_cpus = 0;
   bool hybrid = false;

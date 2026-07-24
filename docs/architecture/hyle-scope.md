@@ -97,33 +97,33 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 
 > **信源**：体量以 `cloc` 实测为准；能力进度以 [`../milestones/README.md`](../milestones/README.md) 为准。
 > **口径**：生产 = `src` + `include` 的 code 列（不含 tests/bench/docs、不含 third_party）。
-> **2026-07-19 锚定**：旧投影「完成时生产 ~28–40k / 中值 34k」**已作废**——当前生产已 **~67.2k**，单 simd **~37.7k**。当前判断见 [`../milestones/pre-release-readiness.md`](../milestones/pre-release-readiness.md)；7 月 17 日中期报告保留为历史快照。
+> **2026-07-24 锚定**：旧投影「完成时生产 ~28–40k / 中值 34k」**已作废**——当前生产已 **77.8k**，单 simd **37.5k**。当前判断见 [`../milestones/pre-release-readiness.md`](../milestones/pre-release-readiness.md)；更早数字只作历史快照。
 
-### 当前实测（2026-07-19）
+### 当前实测（2026-07-24）
 
 | 口径 | code | 说明 |
 |---|---:|---|
-| **生产 `src`+`include`** | **~67.2k** | 库本体 |
-| tests | ~29.9k | |
-| bench | ~13.2k | |
-| docs | ~17.5k | |
-| 自有工程（`--vcs=git --exclude-dir=third_party,.deps`） | **~105k** | 含测/文档/脚本 |
-| git 全跟踪（含 in-tree third_party） | **~187k** | 含 simdutf/mimalloc/fcontext 等 |
+| **生产 `src`+`include`** | **77,772** | 库本体；不含测试 |
+| tests | **34,822** | 由同语言口径 112,594 - 77,772 得出 |
+| bench | **15,012** | |
+| docs | **22,226** | Markdown + CSV |
+| 自有工程（`--vcs=git --exclude-dir=third_party,.deps`） | **155,973** | 含测/文档/脚本 |
+| git 全跟踪（含 in-tree third_party） | **238,410** | 含 simdutf/mimalloc/fcontext 等 |
 | 再加 ggml 等大依赖足迹 | **~200–350k+** | 由 ggml 主导，不计入「自有生产」 |
 
 **生产按模块（src+include，约）：**
 
 | 模块 | code | 占生产 |
 |---|---:|---:|
-| **simd** | **~37.7k** | **~56%** |
-| io | ~5.0k | ~7% |
-| compute | ~3.8k | ~6% |
-| sched | ~3.2k | ~5% |
-| container | ~4.9k | ~7% |
-| platform | ~4.4k | ~7% |
-| mem | ~1.8k | ~3% |
+| **simd** | **~37.5k** | **~48%** |
+| io | ~9.0k | ~12% |
+| compute | ~4.1k | ~5% |
+| sched | ~5.1k | ~7% |
+| container | ~4.9k | ~6% |
+| platform | ~5.7k | ~7% |
+| mem | ~4.3k | ~6% |
 | graph | ~0.6k | |
-| 其余基质（time/util/error/obs/…） | ~3.6k | ~5% |
+| 其余基质及顶层/C ABI 头 | ~6.4k | ~8% |
 
 ### 完成时投影（2026-07-19 重估，取代 28–40k）
 
@@ -136,7 +136,7 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 **含测试粗乘**：生产 ×1.4–1.6 → A 约 **95–125k**、B 约 **120–160k**（tests only）。
 **自有工程（+bench+docs）**：A 约 **130–160k**、B 约 **160–200k**。
 
-**剩余增量直觉（相对今日 ~67k 生产，非承诺）：**
+**剩余增量直觉（相对今日 77.8k 生产，非承诺）：**
 
 | 方向 | 再长（生产） |
 |---|---:|
@@ -162,7 +162,7 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 
 - **LOC 不是 SOTA 标尺**；完成度看能力清单 + 真测，不看是否碰到 70k/100k 整数。
 - **里程碑计数 ≠ 完成度**（颗粒不等重）。
-- **git 全跟踪 ~187k ≠ 自写 187k**（含 third_party）。
+- **git 全跟踪 238.4k ≠ 自写 238.4k**（含 third_party）。
 - 早期「simd 完成 ~5–8k / 全库完成 ~34k」是 **广度未展开时的低估**，不是当前目标。
 - 实现粒度：里程碑表见 milestones/README；拓扑序见 roadmap。
 

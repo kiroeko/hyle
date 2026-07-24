@@ -729,9 +729,11 @@ hyle_cpu_features hyle_cpu_features_get(void) {
   HYLE_B(rvv_zvfh);
   HYLE_B(rvv_zvfhmin);
 #undef HYLE_B
-  out.logical_cpus = hyle::platform::hardware_concurrency();
-  out.best_isa = static_cast<uint32_t>(hyle::platform::best_isa());
   return out;
+}
+
+hyle_isa hyle_cpu_best_isa(void) {
+  return static_cast<hyle_isa>(hyle::platform::best_isa());
 }
 
 int hyle_cpu_supports_isa(uint32_t isa) {
@@ -754,8 +756,21 @@ hyle_cache_info hyle_cpu_cache_info(void) {
 
 hyle_cpu_topology hyle_cpu_topology_get(void) {
   const auto& in = hyle::platform::cpu_topology();
-  return {in.logical_cpus, in.performance_cpus, in.efficiency_cpus,
+  return {in.system_logical_cpus, in.performance_cpus, in.efficiency_cpus,
           in.hybrid ? 1 : 0};
+}
+
+hyle_status hyle_cpu_available_ids(size_t* out_count, unsigned* dst,
+                                   size_t cap) {
+  if (out_count == nullptr) {
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_cpu_available_ids: out_count is NULL"));
+  }
+  *out_count = 0;
+  auto result = hyle::platform::available_cpu_ids(dst, cap);
+  if (!result) return steal_status(std::move(result).error());
+  *out_count = *result;
+  return steal_status(hyle::Status::Ok());
 }
 
 /* ---- v3: hugepage/THP + NUMA ------------------------------------------------ */
