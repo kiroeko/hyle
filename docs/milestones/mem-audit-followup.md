@@ -64,7 +64,7 @@ mem 实现**根本可靠**:最高风险的无锁分片 `MemoryArena`(ABA / 内�
 - **[#5a 已做 d1f7930]** `Allocator::valid()`(allocator.h:58-63)查全三指针(原只查 `alloc_fn`,null free/realloc 会 deref)。
 
 ### 文档同步 [已做]
-- **[已做] c-abi-design.md**:§1 类型擦除表加 GrowablePool 行(和 ObjectPool 并列);§5 补 mem 分配器层错误策略(资源失败 nullptr + last-error / 契约违反 abort;mem 刻意不依赖 error 模块 Status——最底层基元,依赖会倒置)。
+- **[后续纠正] c-abi-design.md**:§1 类型擦除表加 GrowablePool 行(和 ObjectPool 并列);§5 补 mem 分配器层错误策略(资源失败 nullptr + last-error / 契约违反 abort)。当时“mem 依赖 error 会倒置”的解释错误：error 是 P0 零上游根，mem 可直接依赖；是否在具体失败路径返回 Status 必须只按语义与成本裁决。
 - **[已做] c-abi-authoring-guide.md**:§3 铁律 3 补"池耗尽"+ "句柄返回型 API 返 NULL 时配 thread-local last-error 串"模式(呼应 hyle_status_message_cstr)。
 - **[已做] c-mem.md**:新增 §3.5 GrowablePool 章节(七件套 + 宏 + 裸槽模型,同 object pool);§3.9 纠正"泛型不可达"误述(→泛型语法过不了 C ABI 但能力经宏可达,同 ObjectPool<T>);3 处 create 资源失败改 graceful;last-error 覆盖扩面;章节顺延 §3.5-3.8→3.6-3.9(引用同步)。
 - **[附带,已做]** mem.h growable grow-OOM 注释修正(档 B 遗漏:原说 abort,实际 acquire 返 NULL graceful);README.md 索引修正(补 GrowablePool 句柄 + 去 stale "hyle_mem_api 表"——mem 无 api 表)。

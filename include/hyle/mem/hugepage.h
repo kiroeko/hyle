@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <utility>
 
+#include "hyle/error/result.h"
 #include "hyle/macros.h"
 #include "hyle/platform/numa.h"
 #include "hyle/platform/virtual_memory.h"

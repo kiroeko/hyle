@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <utility>
 
+#include "hyle/error/result.h"
 #include "hyle/macros.h"
 #include "hyle/platform/virtual_memory.h"
 #include "hyle/util/spin_lock.h"

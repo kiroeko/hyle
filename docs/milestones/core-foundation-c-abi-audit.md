@@ -38,8 +38,10 @@
   `InvalidArgument/ResourceExhausted/Unavailable/Unimplemented`，sched 使用
   `NotFound/Unavailable`；本轮把 platform thread 的 OS 错误从一律
   `Internal` 细分为资源耗尽、权限、参数与内部错误。
-- mem 不依赖 error 是刻意的依赖方向：最底层 allocator 失败走
-  NULL + thread-local string，避免 mem→error→mem 倒置。
+- **后续纠正：**这里把接口成本误写成了依赖约束。roadmap 的真实层级是
+  error(P0) → platform(P1) → mem(P2)，error 自身只用 CRT `malloc/free`，因此
+  mem 可以且现在显式依赖 error，不存在 mem→error→mem 环。allocator 热路继续走
+  NULL 是返回形状与成本裁决，不能作为拒绝依赖 error 的理由。
 
 ### platform
 

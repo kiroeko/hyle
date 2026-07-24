@@ -102,8 +102,8 @@ HYLE 不在 C ABI 上再包一层冗余 C++ facade：原生 `include/hyle/<mod>/
   `hyle_mem_last_error_code()` 以独立 TLS 小枚举区分 INVALID_ARGUMENT、
   OUT_OF_MEMORY、EXHAUSTED 与 PLATFORM，字符串只作诊断。生命周期、并发静默、
   foreign/double free 等时序契约违反仍 fail-fast。理由不是“error 在 mem
-  上层”——实际层级是 error(P0) → platform(P1) → mem(P2)，mem 已经经 platform
-  传递链接 error；理由是**分配失败路径不能依赖可能分配消息存储的 owning Status**，
+  上层”——实际层级是 error(P0) → platform(P1) → mem(P2)，mem 也显式链接
+  error；理由是**分配失败路径不能依赖可能分配消息存储的 owning Status**，
   且 alloc/free 热路不能增加对象管理税。HugeRegion 的 C++ `Result` 失败在 C 桥接层
   按共享 StatusCode 映射为 mem 小枚举并复制消息；不再读取、清空或恢复 platform TLS。
   这保留分配器热路的紧凑合同，同时消除跨子系统的隐式诊断耦合。

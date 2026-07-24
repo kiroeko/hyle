@@ -49,7 +49,7 @@ container/       │               │ compute   │  container 自带内联 SSE
    C-ABI shim（各模块稳定后逐个封）+ ffi 绑定（build-time） ◀ obs/ 埋点贯穿
 ```
 
-**无环校验**：core/error → platform → {mem, time, simd}；mem → container；{container,time} → sched → {io, compute}；simd → compute；compute/io → graph。单向，无回边。`time/` 的 timer intrusive primitive 已下沉 `core/intrusive_list.h`，因此 **time 不依赖 container**；旧版文档曾把 `container` 写成 time-02 前置，与实际构建顺序冲突，现已纠正。`simd/` **依赖 platform**（2026-07：CPUID 探测 `CpuFeatures`/`best_isa` 下沉 platform，simd 借它做运行期 ISA dispatch；此前 simd 是"零 HYLE 依赖根"、只用 `platform.h` 宏伞，下沉后升级为依赖 platform 模块本身）——simd 从 platform 分叉后**单边只喂 compute 的 kernel**，**不进 container、不进 sched 的关键路径**，故可与 mem/container/sched 链**大体并行**、晚点交付。CPUID 下沉 platform 让 container 也能查同一探测、安全上 AVX2 变体（如 container·str 的 count/rfind），不必依赖 simd。（曾计划 simd 依赖 mem 的对齐契约，但 kernel 走 LoadU/StoreU 非对齐 load，该边未落地。）
+**无环校验**：core/error → platform → {mem, time, simd}；mem → container；{container,time} → sched → {io, compute}；simd → compute；compute/io → graph。单向，无回边。**error 是 P0、零 HYLE 上游的公共失败值根；所有后续层都可直接依赖 error**，图中省略这些跨层直边只是为了可读性。因此 `mem → error` 合法且已显式声明，不会形成环；分配热路选择 `nullptr` 还是 `Status` 是接口/成本问题，不是依赖方向问题。`time/` 的 timer intrusive primitive 已下沉 `core/intrusive_list.h`，因此 **time 不依赖 container**；旧版文档曾把 `container` 写成 time-02 前置，与实际构建顺序冲突，现已纠正。`simd/` **依赖 platform**（2026-07：CPUID 探测 `CpuFeatures`/`best_isa` 下沉 platform，simd 借它做运行期 ISA dispatch；此前 simd 是"零 HYLE 依赖根"、只用 `platform.h` 宏伞，下沉后升级为依赖 platform 模块本身）——simd 从 platform 分叉后**单边只喂 compute 的 kernel**，**不进 container、不进 sched 的关键路径**，故可与 mem/container/sched 链**大体并行**、晚点交付。CPUID 下沉 platform 让 container 也能查同一探测、安全上 AVX2 变体（如 container·str 的 count/rfind），不必依赖 simd。（曾计划 simd 依赖 mem 的对齐契约，但 kernel 走 LoadU/StoreU 非对齐 load，该边未落地。）
 
 ## 二、施工计划：两个轴别混
 

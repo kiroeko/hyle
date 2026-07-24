@@ -11,7 +11,7 @@
 
 > **cloc 留档（`cloc include/hyle/mem src/mem tests/mem`）**：**182 行** = 41 头 + 140 cc（system.cc 裸 backing + allocator_test）+ 1 CMake。
 > **远低于估 1-2k，非 stub**——骨架版只做"vtable + 修对齐 + 裸 backing"三件事，故意精瘦：mem/ 的重头（arena/pool/stack/NUMA/大页/fiber栈/stats）全在 **mem-02..06**。本步 backing ~70 行、句柄 inline ~40 行、测试 ~140 行。对齐修复是**真生效**（16/32/64/128/256/4096 六档 `(uintptr_t)p%align==0` 全过），realloc 保数据已验。
-> **实现注记**：backing 用裸 `_aligned_malloc`/`posix_memalign`（用户拍板，mimalloc 留 mem-02 换进同一 vtable）。realloc=alloc+copy+free（可移植，mem-02 换 mi_realloc_aligned）。`Allocator` 句柄方法全 inline（纯转发零开销），公开表面只有函数指针+void*。失败返 nullptr 不用 Status，故不依赖 error/。
+> **实现注记**：backing 用裸 `_aligned_malloc`/`posix_memalign`（用户拍板，mimalloc 留 mem-02 换进同一 vtable）。realloc=alloc+copy+free（可移植，mem-02 换 mi_realloc_aligned）。`Allocator` 句柄方法全 inline（纯转发零开销），公开表面只有函数指针+void*。该里程碑的分配热路失败返 nullptr，因而当时没有调用 error API；这只是实现范围，不是依赖禁令。error 是 P0 根，后续 mem 可直接依赖。
 
 ## 前置依赖
 
@@ -42,7 +42,8 @@
 - mem-02 把 mimalloc 换进**同一个 vtable 后面**，调用方零改动——这正是 vtable 注入接缝的价值。
 
 ### D3：失败返回 nullptr（非 Status）
-- 分配器是热路径，OOM 返回 nullptr（调用方查），不用 Status（省体积）。故 mem-01 **不依赖 error/**。
+- 分配器是热路径，OOM 返回 nullptr（调用方查），不用 Status（省体积）。因此 mem-01
+  的这条热路**不调用 error API**；不能据此推出 mem 模块不得依赖 P0 error。
 
 ## 具体事务
 
