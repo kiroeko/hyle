@@ -101,7 +101,12 @@ hyle::platform::ThreadOpts to_cpp_opts(const hyle_thread_opts* opts) {
   if (opts == nullptr) return o;
   if (opts->name != nullptr && opts->name[0] != '\0') o.name = opts->name;
   if (opts->has_stack_size) o.stack_size = opts->stack_size;
-  if (opts->has_affinity_cpu) o.affinity_cpu = opts->affinity_cpu;
+  if (opts->affinity_cpu_count != 0) {
+    o.affinity = hyle::platform::CpuAffinity(std::span<const unsigned>(
+        opts->affinity_cpus, opts->affinity_cpu_count));
+  } else if (opts->has_affinity_cpu) {
+    o.affinity = opts->affinity_cpu;
+  }
   if (opts->has_priority) {
     o.priority = static_cast<hyle::platform::ThreadPriority>(
         static_cast<std::int8_t>(opts->priority));
@@ -246,6 +251,16 @@ hyle_status hyle_thread_spawn(hyle_thread_o** out, hyle_thread_entry_fn entry,
     return steal_status(
         hyle::Status::InvalidArgument("thread priority out of range"));
   }
+  if (opts != nullptr && opts->affinity_cpu_count != 0 &&
+      opts->affinity_cpus == nullptr) {
+    return steal_status(
+        hyle::Status::InvalidArgument("thread affinity CPU array is null"));
+  }
+  if (opts != nullptr && opts->has_affinity_cpu &&
+      opts->affinity_cpu_count != 0) {
+    return steal_status(hyle::Status::InvalidArgument(
+        "thread opts contains both single and set affinity"));
+  }
   if (opts != nullptr && !valid_thread_config_policy(opts->config_policy)) {
     return steal_status(
         hyle::Status::InvalidArgument("thread config policy is invalid"));
@@ -277,8 +292,7 @@ hyle_status hyle_thread_spawn_opts(hyle_thread_o** out, hyle_thread_entry_fn ent
     o.stack_size = stack_size;
   }
   if (affinity_cpu >= 0) {
-    o.has_affinity_cpu = 1;
-    o.affinity_cpu = static_cast<unsigned>(affinity_cpu);
+    hyle_thread_opts_set_affinity(&o, static_cast<unsigned>(affinity_cpu));
   }
   o.has_priority = 1;  // always set; HYLE_THREAD_PRIORITY_NORMAL==0 = default
   o.priority = priority;
@@ -308,6 +322,15 @@ hyle_status hyle_this_thread_set_name(const char* name) {
 }
 hyle_status hyle_this_thread_set_affinity(unsigned cpu) {
   return steal_status(hyle::platform::this_thread::set_affinity(cpu));
+}
+hyle_status hyle_this_thread_set_affinity_cpus(const unsigned* cpus,
+                                               size_t count) {
+  if (cpus == nullptr || count == 0) {
+    return steal_status(
+        hyle::Status::InvalidArgument("thread affinity CPU set is empty"));
+  }
+  return steal_status(hyle::platform::this_thread::set_affinity(
+      hyle::platform::CpuAffinity(std::span<const unsigned>(cpus, count))));
 }
 hyle_status hyle_this_thread_set_priority(hyle_thread_priority priority) {
   if (!valid_priority(static_cast<int>(priority))) {

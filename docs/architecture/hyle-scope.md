@@ -101,14 +101,12 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 
 ### 当前实测（2026-07-24）
 
-| 口径 | code | 说明 |
+| 固定统计口径 | code | 说明 |
 |---|---:|---|
-| **生产 `src`+`include`** | **78,023** | 库本体；不含测试 |
-| tests | **35,059** | 由同语言口径 113,082 - 78,023 得出 |
-| bench | **15,012** | |
-| docs | **22,239** | Markdown + CSV |
-| 自有工程（`--vcs=git --exclude-dir=third_party,.deps`） | **156,142** | 含测/文档/脚本 |
-| git 全跟踪（含 in-tree third_party） | **238,969** | 含 simdutf/mimalloc/fcontext 等 |
+| **全库代码** | **239,268** | `cloc . --vcs=git`；含 docs 与 in-tree third_party |
+| **自实现（含测试）** | **113,343** | `include/hyle + src + tests`，排除 CMake/Text |
+| **自实现（不含测试）** | **78,135** | `include/hyle + src`；库本体硬锚 |
+| **当前审查模块 platform 实现** | **6,429** | C/C++ 公共头 + `src/platform`，不含测试 |
 | 再加 ggml 等大依赖足迹 | **~200–350k+** | 由 ggml 主导，不计入「自有生产」 |
 
 **生产按模块（src+include，约）：**
@@ -120,10 +118,10 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 | compute | ~4.1k | ~5% |
 | sched | ~5.1k | ~7% |
 | container | ~4.9k | ~6% |
-| platform | ~5.7k | ~7% |
+| platform | ~6.4k（含公共 C 头） | ~8% |
 | mem | ~4.3k | ~6% |
 | graph | ~0.6k | |
-| 其余基质及顶层/C ABI 头 | ~6.4k | ~8% |
+| 其余基质及顶层/C ABI 头 | ~6.0k | ~8% |
 
 ### 完成时投影（2026-07-19 重估，取代 28–40k）
 

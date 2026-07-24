@@ -55,6 +55,15 @@ error 的统一所有权释放；platform 不再保留私有 last-error。
 - 默认 Thread 创建路径不做 required 握手、不增加 refcount RMW；required 的同步成本只在
   用户明确请求强保证时发生。
 
+### A6. 单 CPU 与 CPU 集合 affinity（2026-07-24）
+
+- `CpuAffinity` 统一表达无约束、单 CPU 与 CPU 列表；`ThreadOpts` 不暴露互斥的两个 C++
+  option。列表是调用期 view，spawn 同步复制到同一次 `ThreadStart` 分配的尾随区。
+- C ABI 保留常用单 CPU setter，并增加数组 setter / calling-thread 数组入口；空/null、同时
+  设置单 CPU 与数组会在边界返回共享 `InvalidArgument`。
+- Linux 动态 mask 精确允许集合内迁移；Windows 硬 mask 要求集合位于同一 processor group；
+  macOS 继续诚实返回不支持。one-of/轮转/超订仍属于 sched placement 策略。
+
 ### B1. macOS parker timeout
 
 `Parker.ParkTimeoutReturnsFalseOnTimeout` 直接测量 20 ms 无唤醒等待：

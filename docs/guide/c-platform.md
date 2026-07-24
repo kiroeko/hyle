@@ -75,18 +75,18 @@ last-error；C 与 C++ 共用 error 的 code、message 和所有权规则。
 | `hyle_this_thread_id` | 稳定线程 id |
 | `hyle_this_thread_yield` | |
 | `hyle_this_thread_set_name` | 返回 Status；name 可 NULL→空串 |
-| `hyle_this_thread_set_affinity` / `set_priority` | 调用线程逐项配置；失败可观察 |
+| `hyle_this_thread_set_affinity` / `_affinity_cpus` / `set_priority` | 调用线程逐项配置；单 CPU 或 CPU 数组；失败可观察 |
 
 **头内 inline / 宏**（无 DLL）：
 
 | 符号 | 说明 |
 |---|---|
-| `hyle_thread_opts` | 首字段 `struct_size`，其后为 name/stack/affinity/priority 与 `config_policy` |
+| `hyle_thread_opts` | 首字段 `struct_size`，其后为 name/stack/单 CPU 或 CPU 数组 affinity/priority 与 `config_policy` |
 | `hyle_thread_priority` | `LOWEST`/`LOW`/`NORMAL`/`HIGH`/`HIGHEST`（-2..2）；Linux 提升需权限，macOS 映射 QoS |
 | `hyle_thread_config_policy` | 默认 `BEST_EFFORT`；`REQUIRED` 在 entry 前同步配置，失败不运行 entry |
 | `HYLE_THREAD_OPTS_INIT` | 默认初始化宏；会写 `struct_size`，不是全零字节 |
 | `hyle_thread_opts_default` | 返回默认 opts |
-| `hyle_thread_opts_set_name` / `set_stack_size` / `set_affinity` / `set_priority` / `set_config_policy` | setter |
+| `hyle_thread_opts_set_name` / `set_stack_size` / `set_affinity` / `set_affinity_cpus` / `set_priority` / `set_config_policy` | setter；数组是 view，只需活到 spawn 返回 |
 
 ### 3.3 DynLib（DLL）
 
@@ -139,7 +139,7 @@ soft 建议，绝不影响正确性。Linux 用 madvise；Windows/macOS 匿名�
 | `hyle_numa_placement` | `APPLIED` / `NOT_NEEDED` / `UNAVAILABLE`（软 preferred 降级） |
 | `hyle_numa_node_count` | 节点数 ≥1 |
 | `hyle_numa_current_node` | 调用线程 home 节点（< count） |
-| `hyle_numa_node_of_cpu(cpu)` | 逻辑 CPU 所属节点（< count；越界/单节点/失败→0）；配 `affinity_cpu` 把 worker 的 arena 放到其核所在节点 |
+| `hyle_numa_node_of_cpu(cpu)` | 逻辑 CPU 所属节点（< count；越界/单节点/失败→0）；配单 CPU affinity 把 worker 的 arena 放到其核所在节点 |
 | `hyle_vm_bind_numa(out_placement, ptr, size, node, policy)` | 返回 Status；placement 出参可 NULL；硬绑定/交错无法满足是错误 |
 | `hyle_vm_bind_numa_interleave(out_placement, ptr, size)` | 全节点条带（INTERLEAVE 别名） |
 | `hyle_vm_reserve_numa(out, out_placement, size, node)` | Status+out；preferred 失败仍可成功分配并报告 `UNAVAILABLE` |
@@ -296,6 +296,19 @@ hyle_status st = hyle_thread_spawn_opts(
 `spawn_opts` 是默认 best-effort 的简写；需要 required 或需要“不设置 priority”时使用完整
 `hyle_thread_opts`。required affinity 在 macOS 返回 `HYLE_STATUS_UNIMPLEMENTED`。已经在
 entry 内时可调用 `hyle_this_thread_set_*` 并按普通 `hyle_status` 规则检查、释放。
+
+若线程应在一个应用分区内迁移，传数组而不是为每个 CPU 重复造一套 option：
+
+```c
+unsigned cpus[2] = {cpu_a, cpu_b}; /* id 来自 hyle_cpu_available_ids */
+hyle_thread_opts_set_affinity_cpus(&opts, cpus, 2);
+/* cpus 只需保持有效到 hyle_thread_spawn 返回。 */
+```
+
+单 CPU 适合 per-core shard/NUMA owner；数组适合性能核、NUMA-local 或应用保留核集合。
+Windows 一个硬 affinity 集合不能跨 processor group，跨组会返回
+`HYLE_STATUS_INVALID_ARGUMENT`；应由上层线程池拆 worker。macOS 没有公开硬 affinity，
+required 返回 `UNIMPLEMENTED`，best-effort 仍启动线程。轮转、one-of 和超订属于 sched 策略。
 
 ### DynLib / open_symbol
 

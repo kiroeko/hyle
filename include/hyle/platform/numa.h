@@ -60,7 +60,7 @@ HYLE_PLATFORM_API unsigned numa_current_node() noexcept;
 
 // NUMA node owning logical CPU `cpu` (0 on failure / single-node / unsupported /
 // out-of-range cpu). Always < numa_node_count(). Lets a caller that pinned a
-// worker to a core (ThreadOpts::affinity_cpu) place that worker's arena on the
+// worker to a core (ThreadOpts::affinity) place that worker's arena on the
 // core's node via vm_reserve_numa. Not a hot path (a /sys walk on Linux).
 HYLE_PLATFORM_API unsigned numa_node_of_cpu(unsigned cpu) noexcept;
 

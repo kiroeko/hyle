@@ -4,6 +4,7 @@
 #include <cerrno>
 #include <cstdio>
 #include <cstring>
+#include <limits>
 #include <new>
 #include <type_traits>
 
@@ -32,8 +33,7 @@ struct ThreadStart {
   void* ctx;
   char name[kThreadNameCap];
   bool has_name;
-  bool has_affinity;
-  unsigned cpu;
+  std::size_t affinity_count;
   bool has_priority;
   ThreadPriority priority;
   bool require_config;
@@ -45,8 +45,29 @@ struct ThreadStart {
   Status setup_status;
 };
 
+unsigned* affinity_cpus(ThreadStart* start) noexcept {
+  return reinterpret_cast<unsigned*>(start + 1);
+}
+
+const unsigned* affinity_cpus(const ThreadStart* start) noexcept {
+  return reinterpret_cast<const unsigned*>(start + 1);
+}
+
+void destroy_start(ThreadStart* start) noexcept {
+  start->~ThreadStart();
+  ::operator delete(start);
+}
+
 ThreadStart* make_start(void (*entry)(void*), void* ctx, const ThreadOpts& o) {
-  auto* s = new (std::nothrow) ThreadStart{};
+  if (o.affinity.size() >
+      (std::numeric_limits<std::size_t>::max() - sizeof(ThreadStart)) /
+          sizeof(unsigned)) {
+    return nullptr;
+  }
+  const std::size_t bytes =
+      sizeof(ThreadStart) + o.affinity.size() * sizeof(unsigned);
+  void* storage = ::operator new(bytes, std::nothrow);
+  auto* s = storage != nullptr ? ::new (storage) ThreadStart{} : nullptr;
   if (s == nullptr) return nullptr;
   s->entry = entry;
   s->ctx = ctx;
@@ -57,8 +78,10 @@ ThreadStart* make_start(void (*entry)(void*), void* ctx, const ThreadOpts& o) {
     std::memcpy(s->name, o.name.data(), n);
     s->name[n] = '\0';
   }
-  s->has_affinity = o.affinity_cpu.has_value();
-  s->cpu = o.affinity_cpu.value_or(0);
+  s->affinity_count = o.affinity.size();
+  for (std::size_t i = 0; i < s->affinity_count; ++i) {
+    affinity_cpus(s)[i] = o.affinity[i];
+  }
   s->has_priority = o.priority.has_value();
   s->priority = o.priority.value_or(ThreadPriority::kNormal);
   s->require_config = o.config_policy == ThreadConfigPolicy::kRequired;
@@ -72,7 +95,7 @@ bool valid_config_policy(ThreadConfigPolicy policy) noexcept {
 }
 
 void release_start(ThreadStart* s) noexcept {
-  if (s->refs.fetch_sub(1, std::memory_order_acq_rel) == 1) delete s;
+  if (s->refs.fetch_sub(1, std::memory_order_acq_rel) == 1) destroy_start(s);
 }
 
 void publish_required_setup(ThreadStart* s, Status status) noexcept {
@@ -171,27 +194,41 @@ Status set_name_impl(std::string_view name,
   return Status::Ok();
 }
 
-Status set_affinity_impl(unsigned flat_cpu,
+Status set_affinity_impl(const unsigned* cpus, std::size_t cpu_count,
                          HANDLE thread = ::GetCurrentThread()) noexcept {
-  unsigned cpu = flat_cpu;
-  const WORD groups = ::GetActiveProcessorGroupCount();
-  for (WORD group = 0; group < groups; ++group) {
-    const DWORD count = ::GetActiveProcessorCount(group);
-    if (cpu < count) {
-      if (cpu >= sizeof(KAFFINITY) * 8u) {
-        return Status::OutOfRange("thread affinity CPU exceeds group mask");
-      }
-      GROUP_AFFINITY affinity{};
-      affinity.Group = group;
-      affinity.Mask = static_cast<KAFFINITY>(1) << cpu;
-      if (!::SetThreadGroupAffinity(thread, &affinity, nullptr)) {
-        return thread_os_error("SetThreadGroupAffinity", ::GetLastError());
-      }
-      return Status::Ok();
-    }
-    cpu -= count;
+  if (cpu_count == 0) {
+    return Status::InvalidArgument("thread affinity CPU set is empty");
   }
-  return Status::OutOfRange("thread affinity CPU is not online");
+  const WORD groups = ::GetActiveProcessorGroupCount();
+  GROUP_AFFINITY affinity{};
+  bool have_group = false;
+  for (std::size_t i = 0; i < cpu_count; ++i) {
+    unsigned cpu = cpus[i];
+    bool found = false;
+    for (WORD group = 0; group < groups; ++group) {
+      const DWORD count = ::GetActiveProcessorCount(group);
+      if (cpu < count) {
+        if (cpu >= sizeof(KAFFINITY) * 8u) {
+          return Status::OutOfRange("thread affinity CPU exceeds group mask");
+        }
+        if (have_group && affinity.Group != group) {
+          return Status::InvalidArgument(
+              "thread affinity CPUs cross Windows processor groups");
+        }
+        affinity.Group = group;
+        affinity.Mask |= static_cast<KAFFINITY>(1) << cpu;
+        have_group = true;
+        found = true;
+        break;
+      }
+      cpu -= count;
+    }
+    if (!found) return Status::OutOfRange("thread affinity CPU is not online");
+  }
+  if (!::SetThreadGroupAffinity(thread, &affinity, nullptr)) {
+    return thread_os_error("SetThreadGroupAffinity", ::GetLastError());
+  }
+  return Status::Ok();
 }
 
 Status set_priority_impl(ThreadPriority priority,
@@ -215,8 +252,10 @@ Status apply_start_config(const ThreadStart& start,
                           HANDLE thread = ::GetCurrentThread()) noexcept {
   Status status;
   if (start.has_name) status.Update(set_name_impl(start.name, thread));
-  if (start.has_affinity)
-    status.Update(set_affinity_impl(start.cpu, thread));
+  if (start.affinity_count != 0) {
+    status.Update(set_affinity_impl(affinity_cpus(&start),
+                                    start.affinity_count, thread));
+  }
   if (start.has_priority)
     status.Update(set_priority_impl(start.priority, thread));
   return status;
@@ -240,7 +279,7 @@ DWORD WINAPI thread_trampoline(LPVOID arg) noexcept {
   if (s->require_config)
     release_start(s);
   else
-    delete s;
+    destroy_start(s);
   if (run_entry) entry(ctx);
   return 0;
 }
@@ -267,7 +306,7 @@ Result<Thread> Thread::spawn(void (*entry)(void*), void* ctx, ThreadOpts opts) {
       ::CreateThread(nullptr, stack, &thread_trampoline, s, flags, nullptr);
   if (h == nullptr) {
     const DWORD code = ::GetLastError();
-    delete s;
+    destroy_start(s);
     return std::unexpected(thread_os_error("CreateThread", code));
   }
   if (required) {
@@ -306,8 +345,11 @@ namespace this_thread {
 std::uint64_t get_id() noexcept { return ::GetCurrentThreadId(); }
 void yield() noexcept { ::SwitchToThread(); }
 Status set_name(std::string_view name) noexcept { return set_name_impl(name); }
-Status set_affinity(unsigned affinity_cpu) noexcept {
-  return set_affinity_impl(affinity_cpu);
+Status set_affinity(CpuAffinity affinity) noexcept {
+  if (affinity.empty()) {
+    return Status::InvalidArgument("thread affinity CPU set is empty");
+  }
+  return set_affinity_impl(affinity.data(), affinity.size());
 }
 Status set_priority(ThreadPriority priority) noexcept {
   return set_priority_impl(priority);
@@ -389,39 +431,49 @@ Status set_name_impl(std::string_view name) noexcept {
   return rc == 0 ? Status::Ok() : thread_os_error("pthread_setname_np", rc);
 }
 
-Status set_affinity_impl(unsigned cpu) noexcept {
+Status set_affinity_impl(const unsigned* cpus, std::size_t cpu_count) noexcept {
+  if (cpu_count == 0) {
+    return Status::InvalidArgument("thread affinity CPU set is empty");
+  }
 #  if defined(HYLE_OS_LINUX)
   // Match available_cpu_ids()'s explicit dynamic-mask ceiling. This prevents a
   // bogus UINT_MAX request from allocating hundreds of MiB without assuming
   // configured CPU ids are dense (hotplug systems may have holes).
-  if (cpu >= (std::size_t{1} << 20)) {
-    return Status::OutOfRange("thread affinity CPU exceeds supported id space");
+  unsigned max_cpu = 0;
+  for (std::size_t i = 0; i < cpu_count; ++i) {
+    if (cpus[i] >= (std::size_t{1} << 20)) {
+      return Status::OutOfRange(
+          "thread affinity CPU exceeds supported id space");
+    }
+    if (cpus[i] > max_cpu) max_cpu = cpus[i];
   }
 #    if defined(CPU_ALLOC)
-  const std::size_t count = static_cast<std::size_t>(cpu) + 1;
+  const std::size_t count = static_cast<std::size_t>(max_cpu) + 1;
   cpu_set_t* set = CPU_ALLOC(count);
   if (set == nullptr) {
     return Status::ResourceExhausted("thread affinity mask allocation failed");
   }
   const std::size_t bytes = CPU_ALLOC_SIZE(count);
   CPU_ZERO_S(bytes, set);
-  CPU_SET_S(cpu, bytes, set);
+  for (std::size_t i = 0; i < cpu_count; ++i) {
+    CPU_SET_S(cpus[i], bytes, set);
+  }
   const int rc = ::pthread_setaffinity_np(::pthread_self(), bytes, set);
   CPU_FREE(set);
 #    else
-  if (cpu >= CPU_SETSIZE) {
+  if (max_cpu >= CPU_SETSIZE) {
     return Status::OutOfRange("thread affinity CPU exceeds cpu_set_t");
   }
   cpu_set_t set;
   CPU_ZERO(&set);
-  CPU_SET(cpu, &set);
+  for (std::size_t i = 0; i < cpu_count; ++i) CPU_SET(cpus[i], &set);
   const int rc =
       ::pthread_setaffinity_np(::pthread_self(), sizeof(set), &set);
 #    endif
   return rc == 0 ? Status::Ok()
                  : thread_os_error("pthread_setaffinity_np", rc);
 #  else
-  (void)cpu;
+  (void)cpus;
   return Status::Unimplemented(
       "hard thread affinity is unavailable on macOS");
 #  endif
@@ -462,7 +514,10 @@ Status set_priority_impl(ThreadPriority priority) noexcept {
 Status apply_start_config(const ThreadStart& start) noexcept {
   Status status;
   if (start.has_name) status.Update(set_name_impl(start.name));
-  if (start.has_affinity) status.Update(set_affinity_impl(start.cpu));
+  if (start.affinity_count != 0) {
+    status.Update(
+        set_affinity_impl(affinity_cpus(&start), start.affinity_count));
+  }
   if (start.has_priority) status.Update(set_priority_impl(start.priority));
   return status;
 }
@@ -477,7 +532,7 @@ void* thread_trampoline(void* arg) noexcept {
   if (required)
     release_start(s);
   else
-    delete s;
+    destroy_start(s);
   if (run_entry) entry(ctx);
   return nullptr;
 }
@@ -501,14 +556,14 @@ Result<Thread> Thread::spawn(void (*entry)(void*), void* ctx, ThreadOpts opts) {
   const bool required = opts.config_policy == ThreadConfigPolicy::kRequired;
   int rc = ::pthread_attr_init(&attr);
   if (rc != 0) {
-    delete s;
+    destroy_start(s);
     return std::unexpected(thread_os_error("pthread_attr_init", rc));
   }
   if (opts.stack_size) {
     rc = ::pthread_attr_setstacksize(&attr, *opts.stack_size);
     if (rc != 0) {
       ::pthread_attr_destroy(&attr);
-      delete s;
+      destroy_start(s);
       return std::unexpected(
           thread_os_error("pthread_attr_setstacksize", rc));
     }
@@ -517,7 +572,7 @@ Result<Thread> Thread::spawn(void (*entry)(void*), void* ctx, ThreadOpts opts) {
   rc = ::pthread_create(&tid, &attr, &thread_trampoline, s);
   ::pthread_attr_destroy(&attr);
   if (rc != 0) {
-    delete s;
+    destroy_start(s);
     return std::unexpected(thread_os_error("pthread_create", rc));
   }
   if (required) {
@@ -576,8 +631,11 @@ std::uint64_t get_id() noexcept {
 }
 void yield() noexcept { ::sched_yield(); }
 Status set_name(std::string_view name) noexcept { return set_name_impl(name); }
-Status set_affinity(unsigned affinity_cpu) noexcept {
-  return set_affinity_impl(affinity_cpu);
+Status set_affinity(CpuAffinity affinity) noexcept {
+  if (affinity.empty()) {
+    return Status::InvalidArgument("thread affinity CPU set is empty");
+  }
+  return set_affinity_impl(affinity.data(), affinity.size());
 }
 Status set_priority(ThreadPriority priority) noexcept {
   return set_priority_impl(priority);

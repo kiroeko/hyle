@@ -6,7 +6,8 @@
 
 > **Thread 追记（2026-07-24）：**旧实现把 worker ordinal 当 CPU id 且吞掉配置失败。
 > 当前 sched 消费 `available_cpu_ids()` 的真实稀疏 id；Thread 提供 best-effort/required
-> 双合同与返回 Status 的 `this_thread::set_*`。当前合同见 guide，本任务单只作历史记录。
+> 双合同、单 CPU/CPU 集合 affinity 与返回 Status 的 `this_thread::set_*`。当前合同见 guide，
+> 本任务单只作历史记录。
 
 > 2026-07-18 对 platform 做四维度体检(① 功能完整+下游利用 / ② 红队实现 / ③ 测试+性能 / ④ C ABI+guide+close)。4 个子代理并行审 + 主进程逐条对代码核实红队与功能关键项。本文件是处置清单 + handoff。
 

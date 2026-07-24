@@ -633,7 +633,7 @@ HYLE_ASSIGN_OR_RETURN(
     std::size_t available,
     available_cpu_ids(&first_cpu, 1));   // 完整进程配额；写入首个真实 id
 ThreadOpts pinned_opts;
-if (available != 0) pinned_opts.affinity_cpu = first_cpu; // id 可稀疏
+if (available != 0) pinned_opts.affinity = first_cpu; // id 可稀疏；也可传 CpuAffinity{span}
 pinned_opts.config_policy = ThreadConfigPolicy::kRequired;
 auto pinned = Thread::spawn(&entry, ctx, pinned_opts); // 设置失败则 entry 不运行
 ```

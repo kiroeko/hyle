@@ -111,7 +111,7 @@ if (count == 0) return Status::FailedPrecondition("no available CPU");
 
 ThreadOpts opts;
 opts.name = "ingest";
-opts.affinity_cpu = cpu;
+opts.affinity = cpu;  // 单 worker 固定归属：单 CPU 便利形状
 opts.config_policy = ThreadConfigPolicy::kRequired;
 HYLE_ASSIGN_OR_RETURN(auto thread, Thread::spawn(&entry, ctx, opts));
 // 返回成功前 name/affinity 已设置；设置失败时 entry 根本不会运行。
@@ -123,6 +123,24 @@ priority 映射到系统 QoS，且没有公开的硬 CPU pin API，所以 requir
 `Unimplemented`。best-effort 会显式忽略这些失败并继续运行。绑核 id 必须取自
 `available_cpu_ids()`；Linux cpuset 可能产生 `{2, 6}` 这种稀疏 id，不能拿 `[0, count)` 猜。
 
+单 CPU 与 CPU 集合不是两套策略。`CpuAffinity{cpu}` 表示固定到一个 worker/core，适合
+per-core shard、NUMA arena owner；`CpuAffinity{std::span{cpus}}` 表示线程可在给定集合内
+迁移，适合把线程池限制在应用保留核、性能核或 NUMA-local 分区。集合是输入 view，但
+`Thread::spawn` 返回前会复制，所以 backing array 只需活过该次调用：
+
+```cpp
+const unsigned service_cpus[] = {2, 6}; // 实际代码应来自 available_cpu_ids()
+ThreadOpts opts;
+opts.affinity = CpuAffinity{std::span<const unsigned>(service_cpus)};
+opts.config_policy = ThreadConfigPolicy::kRequired;
+HYLE_ASSIGN_OR_RETURN(auto thread, Thread::spawn(&entry, ctx, opts));
+```
+
+Windows 的硬 affinity mask 一次只能属于一个 processor group，跨组集合返回
+`InvalidArgument`；这比把 CPU Sets 的软选择冒充硬约束更可靠。跨组并行应由 sched/线程池
+按 group 拆成多个 worker。`this_thread::set_affinity(cpu_or_set)` 提供同样的单核/集合形状。
+“从集合中轮转选一个”“超订 worker 如何放置”属于 sched placement，不放进 platform。
+
 ## CPU、cache 与 NUMA
 
 `cpu_features()` 回答“本进程现在能安全执行什么指令”；`cache_info()` 的 L1/L2/L3 是容量
@@ -132,7 +150,7 @@ priority 映射到系统 QoS，且没有公开的硬 CPU pin API，所以 requir
 
 `available_cpu_count()` / `available_cpu_ids(dst, cap)` 才是进程视图：前者是创建 worker、
 选择 shard 数的常用形状；后者返回完整可用数，最多写 `cap` 个可直接交给
-`ThreadOpts::affinity_cpu` 的 id；`dst=nullptr` 可只查询数量。查询刻意不缓存，因为 Linux
+`ThreadOpts::affinity` / `CpuAffinity` 的 id；`dst=nullptr` 可只查询数量。查询刻意不缓存，因为 Linux
 affinity/cgroup/cpuset 和 Windows CPU Sets 可在进程运行时改变；Linux 具体读取调用线程的
 mask，新线程会继承它。常见 Windows / Linux
 拓扑不分配；时间是读取 OS CPU 记录必需的 O(N)，用于 runtime 初始化/重配，不应塞进每个

@@ -405,7 +405,7 @@ struct Scheduler::Impl {
       // worker ordinal i is a valid CPU. Placement remains best-effort so a
       // runtime affinity change cannot make the scheduler unusable.
       platform::ThreadOpts opts;
-      if (i < pin_count) opts.affinity_cpu = available_cpus[i];
+      if (i < pin_count) opts.affinity = available_cpus[i];
       char wname[24];
       std::snprintf(wname, sizeof(wname), "hyle-wkr-%u", i);
       opts.name = wname;  // string_view; spawn() copies it synchronously (make_start)

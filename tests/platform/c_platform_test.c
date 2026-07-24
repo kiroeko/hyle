@@ -163,6 +163,15 @@ int main(void) {
   opts.has_stack_size = 0; /* spawn with the OS default after testing the helper */
   hyle_thread_opts_set_affinity(&opts, 0);
   CHECK(opts.has_affinity_cpu && opts.affinity_cpu == 0u);
+  {
+    const unsigned cpus[] = {2u, 6u};
+    hyle_thread_opts_set_affinity_cpus(&opts, cpus, 2u);
+    CHECK(!opts.has_affinity_cpu && opts.affinity_cpus == cpus &&
+          opts.affinity_cpu_count == 2u);
+    hyle_thread_opts_set_affinity(&opts, 0);
+    CHECK(opts.has_affinity_cpu && opts.affinity_cpus == NULL &&
+          opts.affinity_cpu_count == 0u);
+  }
   opts.has_affinity_cpu = 0; /* do not constrain heterogeneous CI hosts */
   hyle_thread_opts_set_priority(&opts, HYLE_THREAD_PRIORITY_NORMAL);
   CHECK(opts.has_priority && opts.priority == HYLE_THREAD_PRIORITY_NORMAL);
@@ -175,6 +184,32 @@ int main(void) {
   CHECK(hyle_thread_joinable(t));
   hyle_thread_join(t);
   CHECK(ran == 42);
+
+  /* The list-affinity C path accepts real (possibly sparse) available ids and
+   * copies the view during spawn. Keep best-effort for macOS, which has no hard
+   * affinity API but must still run the entry. */
+  {
+    unsigned cpus[2] = {0, 0};
+    size_t available = 0;
+    hyle_status ids_status =
+        hyle_cpu_available_ids(&available, cpus, 2);
+    CHECK(hyle_status_is_ok(ids_status));
+    hyle_status_free(&ids_status);
+    if (available != 0) {
+      int list_ran = 0;
+      hyle_thread_o* list_thread = NULL;
+      hyle_thread_opts list_opts = HYLE_THREAD_OPTS_INIT;
+      size_t selected = available < 2 ? available : 2;
+      hyle_thread_opts_set_affinity_cpus(&list_opts, cpus, selected);
+      hyle_status list_status = hyle_thread_spawn(
+          &list_thread, thr_entry, &list_ran, &list_opts);
+      CHECK(hyle_status_is_ok(list_status));
+      hyle_status_free(&list_status);
+      CHECK(list_thread != NULL);
+      hyle_thread_join(list_thread);
+      CHECK(list_ran == 42);
+    }
+  }
 
   {
     hyle_thread_opts too_small = HYLE_THREAD_OPTS_INIT;
@@ -191,6 +226,27 @@ int main(void) {
     CHECK(hyle_status_is_invalid_argument(small));
     CHECK(bad == NULL);
     hyle_status_free(&small);
+  }
+
+  /* C list affinity rejects malformed views at the boundary. */
+  {
+    hyle_thread_o* bad = NULL;
+    hyle_thread_opts malformed = HYLE_THREAD_OPTS_INIT;
+    malformed.affinity_cpu_count = 2;
+    hyle_status malformed_status =
+        hyle_thread_spawn(&bad, thr_entry, &ran, &malformed);
+    CHECK(hyle_status_is_invalid_argument(malformed_status));
+    CHECK(bad == NULL);
+    hyle_status_free(&malformed_status);
+
+    malformed = hyle_thread_opts_default();
+    hyle_thread_opts_set_affinity(&malformed, 0);
+    malformed.affinity_cpus = &malformed.affinity_cpu;
+    malformed.affinity_cpu_count = 1;
+    malformed_status = hyle_thread_spawn(&bad, thr_entry, &ran, &malformed);
+    CHECK(hyle_status_is_invalid_argument(malformed_status));
+    CHECK(bad == NULL);
+    hyle_status_free(&malformed_status);
   }
 
   /* Required setup is observable: an impossible CPU rejects spawn and never
@@ -238,6 +294,8 @@ int main(void) {
   CHECK(hyle_this_thread_id() != 0);
   hyle_this_thread_yield();
   CHECK(status_ok(hyle_this_thread_set_name("hyle_c_main")));
+  CHECK(status_code(hyle_this_thread_set_affinity_cpus(NULL, 0)) ==
+        HYLE_STATUS_INVALID_ARGUMENT);
   CHECK(status_code(hyle_this_thread_set_priority((hyle_thread_priority)99)) ==
         HYLE_STATUS_INVALID_ARGUMENT);
 

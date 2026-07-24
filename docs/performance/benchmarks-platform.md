@@ -116,8 +116,10 @@ Windows/Linux 约束到单 CPU 的测试分别断言 scheduler 默认 1 worker�
 `ThreadOpts` 保留默认 best-effort，同时增加 opt-in required：新线程在调用用户 entry 前完成
 name/affinity/priority；Windows 由创建者配置 thread handle 后打开入口 gate，POSIX 由新线程
 配置并通过一次地址等待握手交回 `spawn()`；失败时 entry 不运行。
-required 是线程创建控制面，时间复杂度 O(1) 加所请求的 OS 配置调用，空间仍是一份既有的
-`ThreadStart` 分配。默认 spawn+join 基准路径没有等待、没有额外引用计数 RMW，仍是上表与
+required 是线程创建控制面；name/priority/单 CPU 是 O(1) 加所请求的 OS 调用，N 个 CPU
+集合需要 O(N) 填 mask（Linux 另需清零到最大 id 的原生 mask）。空间仍是一份
+`ThreadStart` 尾随数组分配，不因集合再增加第二次 heap allocation。默认 spawn+join
+基准路径没有等待、没有额外引用计数 RMW，仍是上表与
 `std::thread` 统计平的同一形状；不能用 required 的同步保证去对比异步 best-effort。
 
 Linux affinity mask 改用动态 `CPU_ALLOC`，不再把 ≥1024 CPU 静默跳过；明显越界 id 在分配
@@ -129,6 +131,12 @@ sched 的 worker placement 也已从 `affinity_cpu=i` 改为消费 `available_cp
 WSL 回归把调用线程临时限制到两个非 dense CPU，断言两个 worker 各得到正确的 singleton
 mask。显式超额 worker 不伪造 CPU id，多出的 worker 保持 OS 可迁移。这些都是创建期 OS
 控制路径，不新增纳秒 microbenchmark；正确性、复杂度与默认热路径无回归是对应验收。
+
+集合 affinity 补齐的是实际隔离/分区能力，不是 benchmark 形状：marl 的 Affinity、Seastar
+的 `cpu_set_t` thread attr、ggml 的 thread cpumask 都允许多个 CPU。HYLE 对外保留扁平
+logical CPU id 数组，避免泄漏 `cpu_set_t`/`GROUP_AFFINITY`；Windows 对跨 processor-group
+集合明确拒绝，与 marl 的硬 mask 限制一致，不用 CPU Sets 的软选择假装严格约束。单核仍是
+便利形状；默认无 affinity 和单核路径都只有既有的一次启动载荷分配。
 
 ## 非 SOTA / 需诚实标价
 

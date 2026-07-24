@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <optional>
+#include <span>
 #include <string_view>
 
 #include "hyle/error/result.h"
@@ -32,12 +33,40 @@ enum class ThreadConfigPolicy : std::uint8_t {
   kRequired = 1,
 };
 
+// Portable hard-affinity shape: no restriction, one logical CPU, or a set of
+// logical CPUs on which the thread may migrate. CPU ids come from
+// available_cpu_ids() and may be sparse. A multi-CPU affinity is a view;
+// Thread::spawn() copies it before returning, so its backing storage only needs
+// to remain alive through the call. Deliberately no initializer_list overload:
+// storing a temporary list in ThreadOpts would dangle before spawn().
+class CpuAffinity {
+ public:
+  CpuAffinity() noexcept = default;
+  CpuAffinity(unsigned cpu) noexcept : single_cpu_(cpu), count_(1) {}
+  CpuAffinity(std::span<const unsigned> cpus) noexcept
+      : cpus_(cpus.data()), count_(cpus.size()) {}
+
+  bool empty() const noexcept { return count_ == 0; }
+  std::size_t size() const noexcept { return count_; }
+  const unsigned* data() const noexcept {
+    return cpus_ != nullptr ? cpus_ : (count_ != 0 ? &single_cpu_ : nullptr);
+  }
+  unsigned operator[](std::size_t index) const noexcept {
+    return data()[index];
+  }
+
+ private:
+  const unsigned* cpus_ = nullptr;
+  unsigned single_cpu_ = 0;
+  std::size_t count_ = 0;
+};
+
 struct ThreadOpts {
   std::string_view name;                     // <=15 bytes effective on Linux
   std::optional<std::size_t> stack_size;     // bytes; honored via native attrs
-  // OS logical CPU id returned by available_cpu_ids(); Windows processor groups
-  // are flattened. IDs may be sparse under Linux cpusets. Best-effort on macOS.
-  std::optional<unsigned> affinity_cpu;
+  // Empty means unrestricted. Windows CPU ids are flattened across processor
+  // groups, but one affinity set must stay within one group. Best-effort on macOS.
+  CpuAffinity affinity;
   std::optional<ThreadPriority> priority;    // scheduling priority (best-effort; needs privilege on POSIX)
   ThreadConfigPolicy config_policy = ThreadConfigPolicy::kBestEffort;
 };
@@ -80,9 +109,9 @@ HYLE_PLATFORM_API std::uint64_t get_id() noexcept;
 HYLE_PLATFORM_API void yield() noexcept;
 // Configure the calling thread. Unlike best-effort ThreadOpts, these return the
 // native failure through the shared error model. Ignoring a failure must be
-// explicit with Status::IgnoreError(). affinity_cpu uses available_cpu_ids().
+// explicit with Status::IgnoreError(). affinity uses available_cpu_ids().
 HYLE_PLATFORM_API Status set_name(std::string_view name) noexcept;
-HYLE_PLATFORM_API Status set_affinity(unsigned affinity_cpu) noexcept;
+HYLE_PLATFORM_API Status set_affinity(CpuAffinity affinity) noexcept;
 HYLE_PLATFORM_API Status set_priority(ThreadPriority priority) noexcept;
 }  // namespace this_thread
 

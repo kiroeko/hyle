@@ -97,6 +97,8 @@ typedef struct hyle_thread_opts {
   size_t stack_size;         /* bytes if has_stack_size */
   int has_affinity_cpu;      /* 0/1 */
   unsigned affinity_cpu;     /* id from hyle_cpu_available_ids() */
+  const unsigned* affinity_cpus; /* optional external id array; view until spawn */
+  size_t affinity_cpu_count; /* 0 = use single field above or no affinity */
   int has_priority;          /* 0/1 (v4) */
   int priority;              /* hyle_thread_priority if has_priority */
   int config_policy;         /* hyle_thread_config_policy */
@@ -104,7 +106,7 @@ typedef struct hyle_thread_opts {
 
 /* Default-init helper: hyle_thread_opts o = HYLE_THREAD_OPTS_INIT; */
 #define HYLE_THREAD_OPTS_INIT \
-  { (uint32_t)sizeof(hyle_thread_opts), NULL, 0, 0, 0, 0, 0, 0, \
+  { (uint32_t)sizeof(hyle_thread_opts), NULL, 0, 0, 0, 0, NULL, 0, 0, 0, \
     HYLE_THREAD_CONFIG_BEST_EFFORT }
 
 static inline hyle_thread_opts hyle_thread_opts_default(void) {
@@ -126,6 +128,16 @@ static inline void hyle_thread_opts_set_affinity(hyle_thread_opts* o,
   if (!o) return;
   o->has_affinity_cpu = 1;
   o->affinity_cpu = cpu;
+  o->affinity_cpus = NULL;
+  o->affinity_cpu_count = 0;
+}
+static inline void hyle_thread_opts_set_affinity_cpus(
+    hyle_thread_opts* o, const unsigned* cpus, size_t count) {
+  if (!o) return;
+  o->has_affinity_cpu = 0;
+  o->affinity_cpu = 0;
+  o->affinity_cpus = cpus;
+  o->affinity_cpu_count = count;
 }
 static inline void hyle_thread_opts_set_priority(hyle_thread_opts* o,
                                                  hyle_thread_priority p) {
@@ -161,6 +173,8 @@ HYLE_PLATFORM_C_API uint64_t hyle_this_thread_id(void);
 HYLE_PLATFORM_C_API void hyle_this_thread_yield(void);
 HYLE_PLATFORM_C_API hyle_status hyle_this_thread_set_name(const char* name);
 HYLE_PLATFORM_C_API hyle_status hyle_this_thread_set_affinity(unsigned cpu);
+HYLE_PLATFORM_C_API hyle_status hyle_this_thread_set_affinity_cpus(
+    const unsigned* cpus, size_t count);
 HYLE_PLATFORM_C_API hyle_status hyle_this_thread_set_priority(
     hyle_thread_priority priority);
 
@@ -550,7 +564,7 @@ HYLE_PLATFORM_C_API hyle_cache_info hyle_cpu_cache_info(void);
 HYLE_PLATFORM_C_API hyle_cpu_topology hyle_cpu_topology_get(void);
 /* Dynamic count-only convenience for worker/shard sizing. */
 HYLE_PLATFORM_C_API hyle_status hyle_cpu_available_count(size_t* out_count);
-/* Process-available flattened CPU ids, accepted by hyle_thread_opts.affinity_cpu.
+/* Process-available flattened CPU ids, accepted by hyle_thread_opts affinity.
  * *out_count is the full count; writes at most cap ids; dst==NULL is a count
  * query. Unlike system topology, this observes affinity/cpuset restrictions.
  * On Linux the calling thread's affinity is queried (new threads inherit it). */

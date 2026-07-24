@@ -135,8 +135,8 @@ struct CacheInfo {
 HYLE_PLATFORM_API const CacheInfo& cache_info() noexcept;
 
 // CPU ids on which the current process may run, in the same id space accepted
-// by ThreadOpts::affinity_cpu. Buffer-fill: returns the full count and writes up
-// to cap ids; dst may be null for a count-only query. This is intentionally NOT
+// by ThreadOpts::affinity / CpuAffinity. Buffer-fill: returns the full count and
+// writes up to cap ids; dst may be null for a count-only query. This is intentionally NOT
 // cached because affinity/cpuset restrictions can change while a process runs.
 // Unlike hardware_concurrency(), this respects Linux sched affinity/cgroups and
 // Windows process CPU Sets / single-group affinity masks. On Linux the affinity

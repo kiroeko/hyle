@@ -4,12 +4,19 @@
 
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <atomic>
 #include <limits>
+#include <span>
+#include <vector>
 
 #if !defined(_WIN32)
 #  include <pthread.h>  // pthread_getname_np (Linux + macOS)
 #  include <sched.h>    // sched_getaffinity + cpu_set_t (Linux)
+#else
+#  define WIN32_LEAN_AND_MEAN
+#  define NOMINMAX
+#  include <windows.h>
 #endif
 
 #include "hyle/platform/cpu.h"
@@ -19,6 +26,7 @@ using hyle::platform::Thread;
 using hyle::platform::ThreadConfigPolicy;
 using hyle::platform::ThreadOpts;
 using hyle::platform::ThreadPriority;
+using hyle::platform::CpuAffinity;
 namespace this_thread = hyle::platform::this_thread;
 
 TEST(Thread, SpawnRunsAndJoins) {
@@ -42,7 +50,7 @@ TEST(Thread, SpawnWithNameAndAffinity) {
   opts.name = "hyle-worker";
   unsigned cpu = 0;
   auto available = hyle::platform::available_cpu_ids(&cpu, 1);
-  if (available && *available != 0) opts.affinity_cpu = cpu;
+  if (available && *available != 0) opts.affinity = cpu;
   auto r = Thread::spawn(
       [](void* a) { static_cast<std::atomic<bool>*>(a)->store(true); }, &ran,
       opts);
@@ -85,7 +93,7 @@ TEST(Thread, NameTakesEffect) {
   unsigned cpu = 0;
   auto available = hyle::platform::available_cpu_ids(&cpu, 1);
   if (available && *available != 0) {
-    opts.affinity_cpu = cpu;
+    opts.affinity = cpu;
 #if defined(__linux__)
     res.cpu = cpu;
 #endif
@@ -191,7 +199,7 @@ TEST(Thread, AffinityOutOfRangeDoesNotCrash) {
   // Best-effort: absurd CPU index must not abort spawn/join.
   std::atomic<bool> ran{false};
   ThreadOpts opts;
-  opts.affinity_cpu = 4096u;
+  opts.affinity = 4096u;
   auto r = Thread::spawn(
       [](void* a) { static_cast<std::atomic<bool>*>(a)->store(true); }, &ran,
       opts);
@@ -203,7 +211,7 @@ TEST(Thread, AffinityOutOfRangeDoesNotCrash) {
 TEST(Thread, RequiredSetupRejectsInvalidAffinityWithoutRunningEntry) {
   std::atomic<bool> ran{false};
   ThreadOpts opts;
-  opts.affinity_cpu = std::numeric_limits<unsigned>::max();
+  opts.affinity = std::numeric_limits<unsigned>::max();
   opts.config_policy = ThreadConfigPolicy::kRequired;
   auto result = Thread::spawn(
       [](void* arg) { static_cast<std::atomic<bool>*>(arg)->store(true); },
@@ -211,6 +219,105 @@ TEST(Thread, RequiredSetupRejectsInvalidAffinityWithoutRunningEntry) {
   ASSERT_FALSE(result.has_value());
   EXPECT_FALSE(ran.load());
 }
+
+TEST(Thread, CpuAffinityRepresentsSingleAndSetWithoutOwningTheView) {
+  CpuAffinity none;
+  EXPECT_TRUE(none.empty());
+
+  CpuAffinity one{7u};
+  ASSERT_EQ(one.size(), 1u);
+  EXPECT_EQ(one[0], 7u);
+
+  const unsigned cpus[] = {2u, 6u, 9u};
+  CpuAffinity set{std::span<const unsigned>(cpus)};
+  ASSERT_EQ(set.size(), 3u);
+  EXPECT_EQ(set[0], 2u);
+  EXPECT_EQ(set[1], 6u);
+  EXPECT_EQ(set[2], 9u);
+}
+
+TEST(Thread, SpawnCopiesCpuAffinitySetBeforeReturning) {
+  auto count = hyle::platform::available_cpu_ids(nullptr, 0);
+  ASSERT_TRUE(count.has_value());
+  if (*count == 0) GTEST_SKIP() << "no available CPU ids";
+
+  std::vector<unsigned> available(*count);
+  auto filled = hyle::platform::available_cpu_ids(available.data(),
+                                                   available.size());
+  ASSERT_TRUE(filled.has_value());
+  const std::size_t selected = std::min<std::size_t>(2, available.size());
+  std::atomic<bool> ran{false};
+  ThreadOpts opts;
+  opts.affinity = CpuAffinity(
+      std::span<const unsigned>(available.data(), selected));
+#if !defined(__APPLE__)
+  opts.config_policy = ThreadConfigPolicy::kRequired;
+#endif
+  auto result = Thread::spawn(
+      [](void* arg) { static_cast<std::atomic<bool>*>(arg)->store(true); },
+      &ran, opts);
+  ASSERT_TRUE(result.has_value());
+  // The view is no longer needed once spawn has returned.
+  std::vector<unsigned>().swap(available);
+  std::move(*result).join();
+  EXPECT_TRUE(ran.load());
+}
+
+#if defined(__linux__)
+TEST(Thread, CpuAffinitySetTakesEffectExactly) {
+  auto count = hyle::platform::available_cpu_ids(nullptr, 0);
+  ASSERT_TRUE(count.has_value());
+  if (*count < 2) GTEST_SKIP() << "need two available CPUs";
+  std::vector<unsigned> available(*count);
+  ASSERT_TRUE(hyle::platform::available_cpu_ids(available.data(),
+                                                available.size()));
+  const unsigned selected[] = {available[0], available[1]};
+
+  struct Probe {
+    unsigned cpus[2];
+    int exact = 0;
+  } probe{{selected[0], selected[1]}, 0};
+  ThreadOpts opts;
+  opts.affinity = CpuAffinity(std::span<const unsigned>(selected));
+  opts.config_policy = ThreadConfigPolicy::kRequired;
+  auto result = Thread::spawn(
+      [](void* arg) {
+        auto* probe = static_cast<Probe*>(arg);
+        cpu_set_t mask;
+        CPU_ZERO(&mask);
+        if (::sched_getaffinity(0, sizeof(mask), &mask) != 0) return;
+        probe->exact = CPU_COUNT(&mask) == 2 &&
+                               CPU_ISSET(probe->cpus[0], &mask) &&
+                               CPU_ISSET(probe->cpus[1], &mask)
+                           ? 1
+                           : 0;
+      },
+      &probe, opts);
+  ASSERT_TRUE(result.has_value());
+  std::move(*result).join();
+  EXPECT_EQ(probe.exact, 1);
+}
+#endif
+
+#if defined(_WIN32)
+TEST(Thread, RequiredAffinityRejectsCrossProcessorGroupSet) {
+  if (::GetActiveProcessorGroupCount() < 2) {
+    GTEST_SKIP() << "need two Windows processor groups";
+  }
+  const unsigned first_group_size = ::GetActiveProcessorCount(0);
+  const unsigned cpus[] = {0u, first_group_size};
+  std::atomic<bool> ran{false};
+  ThreadOpts opts;
+  opts.affinity = CpuAffinity(std::span<const unsigned>(cpus));
+  opts.config_policy = ThreadConfigPolicy::kRequired;
+  auto result = Thread::spawn(
+      [](void* arg) { static_cast<std::atomic<bool>*>(arg)->store(true); },
+      &ran, opts);
+  ASSERT_FALSE(result.has_value());
+  EXPECT_TRUE(result.error().IsInvalidArgument());
+  EXPECT_FALSE(ran.load());
+}
+#endif
 
 TEST(Thread, RequiredSetupCompletesBeforeSpawnReturns) {
   std::atomic<bool> ran{false};
