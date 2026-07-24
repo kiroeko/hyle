@@ -14,7 +14,8 @@
 > Windows/ELF/Mach-O 重新验证。能力面未因此减少。随后 `1de939d` 完成依赖后回审：公共
 > alignment 溢出、HugeRegion placement flags、失效 cache allocator 语义已关闭；SharedPool
 > empty-proof 冷路与 FixedPool retained-span realloc 已重塑并重签，未新增 allocator 类型或
-> C ABI symbol。
+> C ABI symbol。`20f3676` 随后按成熟 TLSF/oneTBB/mimalloc 的索引形状回审 FixedPool：公开
+> 类型不增长，内部从最坏 O(free blocks) 的同 bin 扫描改为 O(1) 两级位图，并重签正常负载。
 
 这是 Jira 式剩余 work item，不再复制完整能力表、设计理由或 benchmark 点值。mem 的稳定
 功能面与“何时算完成”在 architecture；性能结果与输项在 performance；这里仅列未完成任务、
@@ -64,6 +65,17 @@
 - [x] 更新 performance 的 raw/result metadata；检查 architecture/guide/performance/milestone
   没有互相复制的陈旧现状。
 
+### MEM-FINAL-4：FixedPool bounded-lookup reclosure
+
+- [x] 对照 TLSF two-level mapping、oneTBB IndexedBins、mimalloc span queues 与 Boost
+  `rbtree_best_fit`，选择保留 `FixedPool` 产品类型、内部采用 8-way FL/SL bitmap。
+- [x] 删除同 size bin 的线性 fit scan；allocate/free/coalesce 索引 O(1)，搬移 realloc 仅保留
+  不可避免的 O(min(old,new)) copy；4096-byte 长寿命 control 成本写入 C/C++ guide。
+- [x] 以 96-hole arena 结构测试证明至多 cursor + 一个索引头，并通过随机 alloc/realloc、
+  大 alignment/overflow、Windows/WSL/M4 全门禁及 Linux ASan。
+- [x] `20f3676` 的 mixed-size、request percentile、fragmentation 在 Windows clean checkout 与
+  WSL/M4 同源码镜像重签；同形成熟参照无 LOSE，M4 interactive/utility 结论一致。
+
 最终候选认证矩阵（commit `551be0b`）：
 
 | 平台 / 工具链 | 完整 C++ mem + 纯 C | 动态 C surface | 独立头单元 | sanitizer |
@@ -73,9 +85,9 @@
 | Linux x64 / Clang 20.1 | 178/178 + PASS | ELF 105/105 | 16 C++ + 1 C | Clang ASan/UBSan PASS |
 | macOS arm64 / AppleClang 21 | 178/178 + PASS | Mach-O 105/105 | 16 C++ + 1 C | —；三类 sanitizer 已由 Win/Linux 覆盖 |
 
-performance raw 不重写：最终性能产品提交仍为 clean `2cbc307`；`551be0b` 相对它的产品差异
-只有 `hugepage.h` 补直接 `<utility>` include，不改变实现、ABI 或生成路径，其余差异均为
-文档/认证工具。因此原始 CSV 和统计结果仍绑定实际产生数据的 commit，而不是伪造新 metadata。
+历史 performance raw 不重写；各节继续绑定实际产生数据的 commit。FixedPool 的新 raw 另以
+`20f3676` 后缀保存：Windows 行是 clean 权威 checkout，WSL/M4 行如实保留副本旧 HEAD 与
+`dirty=1`，并以相同实现 hash 证明被测产品源码，不伪造镜像 Git metadata。
 
 ## 停止点
 
