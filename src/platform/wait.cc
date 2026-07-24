@@ -187,14 +187,13 @@ void Parker::unpark() noexcept {
 }
 
 bool Parker::park_timeout(std::uint64_t timeout_ns) noexcept {
-  // Polling must stay entirely in user space. Besides avoiding a zero-deadline
-  // syscall, this never publishes PARKED, so a racing unpark either gets
-  // consumed by this CAS or leaves a token for the next park.
+  // Polling must stay entirely in user space. Parker has one consumer, so the
+  // no-token path needs only a load; publishing PARKED or issuing a CAS here is
+  // needless work (and an uncontended CAS is notably expensive on Apple ARM).
+  // A racing unpark after an empty load simply leaves its token for next time.
   if (timeout_ns == 0) {
-    std::uint32_t expected = kNotified;
-    return state_.compare_exchange_strong(expected, kEmpty,
-                                          std::memory_order_acquire,
-                                          std::memory_order_relaxed);
+    if (state_.load(std::memory_order_relaxed) != kNotified) return false;
+    return state_.fetch_sub(1, std::memory_order_acquire) == kNotified;
   }
   // Same fetch_sub(1) token trick as park(), but SINGLE-SHOT: after one timed
   // wait we return regardless, because a spurious wake is indistinguishable from

@@ -351,7 +351,7 @@ int main() {
   // park_timeout has two hot regimes. FAST PATH: a token is already available
   // (unpark ran first), so the fetch_sub sees NOTIFIED and returns true with NO
   // syscall -- the same ~10ns/no-syscall floor as park()'s fast path (section 1).
-  // ZERO-TIMEOUT POLL: no token + timeout_ns==0 is also a pure user-space CAS.
+  // ZERO-TIMEOUT POLL: no token + timeout_ns==0 is a pure user-space load.
   // It must never publish PARKED or enter WaitOnAddress/futex; this benchmark is
   // the regression guard for an old Linux/WSL ~59us zero-deadline syscall path.
   if (enabled("parker-timeout")) {
