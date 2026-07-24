@@ -11,7 +11,10 @@
 
 > **当前替代（2026-07-24）：**下文 105 项是最终候选 `551be0b` 的历史证书；后续共享 error
 > 收敛删除 2 个模块私有错误入口，当前产品面为 **103/103**，已由通用 C surface 门禁在
-> Windows/ELF/Mach-O 重新验证。能力面未因此减少。
+> Windows/ELF/Mach-O 重新验证。能力面未因此减少。随后 `1de939d` 完成依赖后回审：公共
+> alignment 溢出、HugeRegion placement flags、失效 cache allocator 语义已关闭；SharedPool
+> empty-proof 冷路与 FixedPool retained-span realloc 已重塑并重签，未新增 allocator 类型或
+> C ABI symbol。
 
 这是 Jira 式剩余 work item，不再复制完整能力表、设计理由或 benchmark 点值。mem 的稳定
 功能面与“何时算完成”在 architecture；性能结果与输项在 performance；这里仅列未完成任务、
@@ -28,6 +31,10 @@
   纯 C 与 ELF 105/105 surface 通过。
 - 最终候选 `551be0b`：公开头逐个独立编译时发现并修复 `hugepage.h` 对 `<utility>` 的
   间接 include 依赖；Windows ASan DLL 的 alias 导出行也纳入 manifest 校验。
+- 依赖后回审 `1de939d`：Windows 188/188 + 4 个 mem gate、Linux 188/188、M4 187 PASS +
+  1 个无 affinity API 的预期 skip；Linux TSan 14 个共享并发组合 + 纯 C 零报告。新增
+  FixedPool realloc 对 oneTBB 在 Win/WSL/M4 双 QoS 全部 sign WIN；SharedPool/cache 重签见
+  performance，不把 hard-capacity 与 owner-local 合同混成一张胜负表。
 
 `024f379` 是重审起点；本页勾选只记录后续任务验收，不自动等于最终候选 commit 的认证。
 

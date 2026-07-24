@@ -2,7 +2,7 @@
 
 > 本页是 [performance 总账](./README.md) 的 **mem 模块**详节。
 > 源：`bench/mem/allocator_bench.cc`、`bench/mem/scenario_bench.cc`、`bench/mem/fiber_stack_bench.cc`。
-> 通用 churn 数据来自 2026-07-20 的 Win MSVC / WSL GCC 14 / Apple M4 AppleClang 实测；`SharedPool` / `SharedPoolCache` 绑定 clean commit `8cf52f9`。request closure、FixedPool、latency、fragmentation 和 footprint 按各节所列 commit。2026-07-23 的 MEM-FINAL-2 bump/realloc/adapter/fiber 证书统一绑定 clean product commit `2cbc307`：Win/WSL `n=15`；M4 为 `n=31`，bump/fiber 跑 interactive+utility，realloc/adapter 跑 interactive。同契约性能判定信任配对 **[sign]**。最终候选 `551be0b` 相对该提交的产品差异只有 `hugepage.h` 的直接标准头依赖，不改变受测实现；其余是文档/认证工具。raw/result 继续诚实绑定实际采样 commit，不重写 HEAD。
+> 通用 churn、request closure、FixedPool、latency、fragmentation 和 footprint 按各节所列 commit。2026-07-23 的 MEM-FINAL-2 bump/system-realloc/adapter/fiber 证书绑定 clean `2cbc307`。2026-07-24 增量回审产品提交 `1de939d` 重新签署 SharedPool/SharedPoolCache 与新增 FixedPool retained-span realloc：Win/WSL `n=15`，M4 interactive+utility 各 `n=31`。同契约性能判定信任配对 **[sign]**；旧 raw/result 继续诚实绑定实际采样 commit，不把历史数据伪改成 HEAD。
 
 ## 当前性能封口状态
 
@@ -19,6 +19,11 @@
 `SharedPool` hard core 的 immediate-global-free/精确容量合同强于 owner-local free list；它不以
 击败较弱合同的 oneTBB local churn 为冻结条件。吞吐形状由显式 `SharedPoolCache` 对拍，hard
 core 仍报告绝对成本和较弱合同参照。
+
+`1de939d` 还关闭了两个正常路径结构问题：SharedPool 将约 2 KiB 的 O(shards) stable-empty
+observation 栈状态移入 noinline exhaustion 冷路（MSVC shipping codegen 的成功入口只保留
+32B 栈帧）；FixedPool 将 retained-span/后一空闲邻块 grow 内联，搬移+copy 独立为 noinline
+冷路。后者新增 oneTBB fixed_pool realloc 同形对拍，见 §4。
 
 ## 1. 通用路径（`hyle_mem_bench`）
 
@@ -205,7 +210,7 @@ pmr resource 与其他池一样在计时 lambda 外构造。`scalable_allocator`
 
 ### 3.2 当前显式 cache：Windows / WSL / M4 clean 证书
 
-绑定 clean commit `8cf52f9`。三平台均为 Release shipping-like、8 workers、64B block、
+绑定 clean product commit `1de939d`。三平台均为 Release shipping-like、8 workers、64B block、
 request batch=64、working set=容量的 75%、handoff batch=256。Win MSVC 19.50 与 WSL
 GCC 14.2 为 `n=15`，Apple M4 AppleClang 21 的 `USER_INTERACTIVE` / `UTILITY` 各
 `n=31`。ratio 是每次进程内配对的 **HYLE / oneTBB op/s** 后再跨进程取中位数。
@@ -213,25 +218,24 @@ Darwin 无公开硬亲和 API，两组只证明 application QoS 下的结论。
 
 | 平台 / 编译器 | 场景 | `SharedPoolCache` | oneTBB `fixed_pool` | HYLE/oneTBB throughput | 判定 |
 |---|---|---:|---:|---:|---|
-| Windows / MSVC 19.50 | request batch | **1.132 ns/op** | 2.060 ns/op | **1.837x**，range 1.641–2.005 | **WIN spread / WIN sign**（15/15，p=6.1e-05） |
-| Windows / MSVC 19.50 | handoff | **1.414 ns/op** | 9.898 ns/op | **6.972x**，range 4.295–7.403 | **WIN spread / WIN sign**（15/15，p=6.1e-05） |
-| WSL / GCC 14.2 | request batch | **1.186 ns/op** | 1.651 ns/op | **1.396x**，range 1.268–1.536 | spread TIE / **WIN sign**（15/15，p=6.1e-05） |
-| WSL / GCC 14.2 | handoff | **1.785 ns/op** | 6.502 ns/op | **3.835x**，range 3.126–5.649 | **WIN spread / WIN sign**（15/15，p=6.1e-05） |
-| Apple M4 / interactive | request batch | **0.888 ns/op** | 2.075 ns/op | **2.339x**，range 2.231–2.434 | **WIN spread / WIN sign**（31/31，p=9.3e-10） |
-| Apple M4 / interactive | handoff | **1.791 ns/op** | 5.054 ns/op | **2.804x**，range 2.530–3.019 | **WIN spread / WIN sign**（31/31，p=9.3e-10） |
-| Apple M4 / utility | request batch | **0.912 ns/op** | 2.116 ns/op | **2.311x**，range 2.212–2.402 | **WIN spread / WIN sign**（31/31，p=9.3e-10） |
-| Apple M4 / utility | handoff | **1.819 ns/op** | 5.051 ns/op | **2.793x**，range 2.537–3.066 | **WIN spread / WIN sign**（31/31，p=9.3e-10） |
+| Windows / MSVC 19.50 | request batch | **1.131 ns/op** | 2.244 ns/op | **1.951x** | **WIN spread / WIN sign**（15/15，p=6.1e-05） |
+| Windows / MSVC 19.50 | handoff | **1.387 ns/op** | 8.894 ns/op | **6.419x** | **WIN spread / WIN sign**（15/15，p=6.1e-05） |
+| WSL / GCC 14.2 | request batch | **1.058 ns/op** | 1.703 ns/op | **1.593x** | **WIN spread / WIN sign**（15/15，p=6.1e-05） |
+| WSL / GCC 14.2 | handoff | **1.336 ns/op** | 7.305 ns/op | **5.493x** | **WIN spread / WIN sign**（15/15，p=6.1e-05） |
+| Apple M4 / interactive | request batch | **0.897 ns/op** | 2.108 ns/op | **2.348x** | **WIN spread / WIN sign**（31/31，p=9.3e-10） |
+| Apple M4 / interactive | handoff | **1.945 ns/op** | 4.994 ns/op | **2.601x** | **WIN spread / WIN sign**（31/31，p=9.3e-10） |
+| Apple M4 / utility | request batch | **0.938 ns/op** | 2.471 ns/op | **2.580x** | **WIN spread / WIN sign**（31/31，p=9.3e-10） |
+| Apple M4 / utility | handoff | **1.986 ns/op** | 5.152 ns/op | **2.593x** | **WIN spread / WIN sign**（31/31，p=9.3e-10） |
 
 显式 cache 的 locality 形状与 oneTBB fixed_pool 接近；Windows、WSL 与 M4 两种 QoS
 全部配对同侧。它不是硬容量视图，性能优势不能替代 3.4 的 quota 语义。
 
 ### 3.3 当前 hard core：三平台 clean 证书
 
-绑定 clean commit `8cf52f9`，Release shipping-like（`HYLE_BUILD_TESTS=OFF`）；配置与
+绑定 clean product commit `1de939d`，Release shipping-like（`HYLE_BUILD_TESTS=OFF`）；配置与
 3.2 相同。Win MSVC 19.50、WSL GCC 14.2 为 `n=15`，Apple M4 AppleClang 21 的
-interactive/utility 各 `n=31`。本次只收紧 Treiber 发布/消费所需的内存序：push 用
-release 发布 relaxed link，pop 用 acquire 消费；pop 不发布写入，push retry 也不读取
-旧节点内容，因此不需要 acq_rel/acquire。tag 饱和后的 serialized fallback 未改变。
+interactive/utility 各 `n=31`。home-shard 成功入口与 stable-empty 冷路已拆开；tag 饱和后的
+serialized fallback、立即全局可见和稳定空证明均未改变。
 
 hard 与 fixed_pool 的可见性合同不同，因此下表只量化更强合同的成本，不做 WIN/LOSE
 或 SOTA verdict。request batch 中，oneTBB 的 allocate/free 都命中 owner 私有链，通常没有
@@ -241,14 +245,14 @@ hard 与 fixed_pool 的可见性合同不同，因此下表只量化更强合同
 
 | 平台 / 编译器 | 场景 | `SharedPool` hard | oneTBB `fixed_pool` | HYLE/oneTBB throughput（成本参照） |
 |---|---|---:|---:|---:|
-| Windows / MSVC 19.50 | request batch | 6.708 ns/op | 2.060 ns/op | 0.308x |
-| Windows / MSVC 19.50 | handoff | **4.150 ns/op** | 9.898 ns/op | **2.326x** |
-| WSL / GCC 14.2 | request batch | 6.506 ns/op | 1.651 ns/op | 0.257x |
-| WSL / GCC 14.2 | handoff | **4.093 ns/op** | 6.502 ns/op | **1.569x** |
-| Apple M4 / interactive | request batch | 8.307 ns/op | 2.075 ns/op | 0.251x |
-| Apple M4 / interactive | handoff | 10.286 ns/op | 5.054 ns/op | 0.492x |
-| Apple M4 / utility | request batch | 5.969 ns/op | 2.116 ns/op | 0.351x |
-| Apple M4 / utility | handoff | 10.260 ns/op | 5.051 ns/op | 0.508x |
+| Windows / MSVC 19.50 | request batch | 6.556 ns/op | 2.244 ns/op | 0.354x |
+| Windows / MSVC 19.50 | handoff | **4.046 ns/op** | 8.894 ns/op | **2.176x** |
+| WSL / GCC 14.2 | request batch | 6.182 ns/op | 1.703 ns/op | 0.270x |
+| WSL / GCC 14.2 | handoff | **3.266 ns/op** | 7.305 ns/op | **2.132x** |
+| Apple M4 / interactive | request batch | 8.260 ns/op | 2.108 ns/op | 0.258x |
+| Apple M4 / interactive | handoff | 9.348 ns/op | 4.994 ns/op | 0.546x |
+| Apple M4 / utility | request batch | 5.963 ns/op | 2.471 ns/op | 0.420x |
+| Apple M4 / utility | handoff | 9.443 ns/op | 5.152 ns/op | 0.548x |
 
 utility request 比 interactive 快，说明无公开硬亲和 API 时绝对数会受 macOS 调度影响；
 不把其中任一组外推成固定 P/E core 结论。
@@ -286,6 +290,26 @@ benchmark 中 alloc 后还要
 free 的指针以 `std::as_const` 作为只读左值观测：GCC 不再把指针变量当 read-write asm operand，
 MSVC 也不为 const-pointer prvalue 增加临时对象。clean `d3e4214` 上 Windows、GCC、Clang 与
 M4 两种显式 QoS 均通过 spread/sign 双闸门；M4 的结论边界同上，不冒充硬 P/E 核证书。
+
+### 4.1 FixedPool retained-span realloc
+
+`1de939d` 新增真实 external-buffer grow/shrink 循环：同一个 16-aligned allocation 在
+256B/1024B 间反复 resize，每个 epoch 4096 cycles，HYLE 与 oneTBB `fixed_pool::realloc`
+各执行相同的 grow+shrink 次数。两者的 shrink 都保留物理 span，后续 regrow 不复制；HYLE
+还可在首次空间不足时 O(1) 合并后一空闲邻块，并把未消费尾部留在 pool。常用路径
+force-inline，真正搬移+copy 为 noinline 冷路。
+
+| 平台 / QoS | HYLE FixedPool | oneTBB fixed_pool realloc | HYLE/oneTBB throughput | 判定 |
+|---|---:|---:|---:|---|
+| Windows / MSVC 19.50 | **1.304 ns/op** | 1.681 ns/op | **1.288x**，range 1.246–1.323 | **WIN spread / WIN sign**（15/15） |
+| WSL / GCC 14.2 | **1.229 ns/op** | 1.711 ns/op | **1.381x**，range 1.322–1.440 | **WIN spread / WIN sign**（15/15） |
+| Apple M4 / interactive | **1.421 ns/op** | 2.358 ns/op | **1.659x**，range 1.616–1.876 | **WIN spread / WIN sign**（31/31） |
+| Apple M4 / utility | **1.437 ns/op** | 2.628 ns/op | **1.657x**，range 1.626–1.876 | **WIN spread / WIN sign**（31/31） |
+
+oneTBB 的 fixed_pool 是成熟但线程安全的 fixed-buffer 参照；它没有单线程特化，因此本表只证明
+HYLE 的单线程产品形状胜过该可用成熟实现，不声称存在一个未测的完全同并发合同对手。
+渐进复杂度上，retained-span/后一空闲邻块 resize 为 O(1)；只有无法原地容纳时才进入普通
+size-bin allocation（expected 小常数、最坏 O(free blocks)）并复制 O(min(old,new)) bytes。
 
 ## 5. 装饰器、昂贵上下文与 fiber stack
 
@@ -417,7 +441,9 @@ scripts/bench-stat.py build-bench/bin/hyle_mem_scenarios_bench -n 15 \
   --pair "std::pmr::monotonic_buffer_resource (release upstream blocks)" \
          "HYLE Region (retained ordinary blocks)" \
   --pair "oneTBB fixed_pool (thread-safe, hard buffer)" \
-         "HYLE FixedPool (single-thread, hard buffer)"
+         "HYLE FixedPool (single-thread, hard buffer)" \
+  --pair "oneTBB fixed_pool realloc (thread-safe)" \
+         "HYLE FixedPool (retained-span in-place resize)"
 
 # Apple M4：默认 USER_INTERACTIVE；再以 UTILITY 做较低优先级调度复核
 HYLE_BENCH_SECTIONS=F HYLE_BENCH_APPLE_QOS=utility \
@@ -427,7 +453,9 @@ scripts/bench-stat.py build-bench/bin/hyle_mem_scenarios_bench -n 31 \
   --pair "std::pmr::monotonic_buffer_resource (release upstream blocks)" \
          "HYLE Region (retained ordinary blocks)" \
   --pair "oneTBB fixed_pool (thread-safe, hard buffer)" \
-         "HYLE FixedPool (single-thread, hard buffer)"
+         "HYLE FixedPool (single-thread, hard buffer)" \
+  --pair "oneTBB fixed_pool realloc (thread-safe)" \
+         "HYLE FixedPool (retained-span in-place resize)"
 
 # quota 计数是单次语义证据；不把其中线程启动时间当吞吐比较
 HYLE_BENCH_SECTIONS=E build-bench/bin/hyle_mem_scenarios_bench
