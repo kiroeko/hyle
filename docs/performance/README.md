@@ -9,7 +9,7 @@
 | 文档 | 内容 |
 |---|---|
 | 本页（对标总账） | 全模块 win/loss ledger 一览 + 总账小结（最常看的一张表） |
-| [error 实测](./benchmarks-error.md) | **error 2026-07-23 当前接口 Win n=15**（核心与正常路径分离）+ 2026-07-20 旧核心形状三平台快照 |
+| [error 实测](./benchmarks-error.md) | **error 2026-07-24 当前接口三平台 n=15 冻结证书**（核心与正常路径分离，当前同形项无 LOSE） |
 | [platform 实测](./benchmarks-platform.md) | **platform 2026-07-20 证书**（Parker/Thread/dir/vm/MappedFile；OS 段 n=15 Win/M4、WSL n=5） |
 | [time 实测](./benchmarks-time.md) | **time 2026-07-19 三平台证书**（clock / TimerWheel / CommonTimeoutQueue） |
 | [mem 实测](./benchmarks-mem.md) | **mem 2026-07-23 证书**：MEM-FINAL-2 bump/realloc/adapter/scheduler-owned FiberStackPool 绑定 clean `2cbc307`，Win/Linux `n=15`、M4 `n=31`（bump/fiber 双 QoS）；另含 Region HTTP lifecycle/RSS、hard core/显式 cache、external FixedPool、request latency/footprint/fragmentation raw CSV |
@@ -24,21 +24,21 @@
 
 ## 对标总账（win/loss ledger，全部实测 vs 真 SOTA，非 std）
 
-> **一眼看尽输赢**。**两把标尺各拆成「组件名 + ns」两列**:`std组件`/`std ns`(基线下界——赢它是最低门槛)和 `SOTA组件`/`SOTA ns`(真门槛:absl/F14、mimalloc、moodycamel/tokio/rigtorp、Highway/xsimd、marl、boost、simdutf)。`比std`/`比SOTA`:>1=HYLE 快几倍。**判定**针对 SOTA:✅赢 / ➖平(噪声内) / ❌输(均附根因:by-design 接缝 / 约束选择 / 选错工具 / scalar 待优化,无一为未处理的真缺陷) / ⚠️平台翻转 / ⏳待补。`n/a`=该层无对等物(非未测:如 bounded-MPMC 队列无 std 等价物);`同std`=该项 std 本身即领域 SOTA,无独立第三方更快。**error 三平台行 = 2026-07-20 旧核心快照；标“当前 Win”的行 = 2026-07-23 commit `768e2f2` 两 executable n=15**，详见分账；其余模块日期不一，未刷新前勿当当前证书。
+> **一眼看尽输赢**。**两把标尺各拆成「组件名 + ns」两列**:`std组件`/`std ns`(基线下界——赢它是最低门槛)和 `SOTA组件`/`SOTA ns`(真门槛:absl/F14、mimalloc、moodycamel/tokio/rigtorp、Highway/xsimd、marl、boost、simdutf)。`比std`/`比SOTA`:>1=HYLE 快几倍。**判定**针对 SOTA:✅赢 / ➖平(噪声内) / ❌输(均附根因:by-design 接缝 / 约束选择 / 选错工具 / scalar 待优化,无一为未处理的真缺陷) / ⚠️平台翻转 / ⏳待补。`n/a`=该层无对等物(非未测:如 bounded-MPMC 队列无 std 等价物);`同std`=该项 std 本身即领域 SOTA,无独立第三方更快。**error 行均为 2026-07-24 commit `3539169` 的 Win/GCC14/M4 两 executable n=15 当前证书**；其余模块日期不一，未刷新前勿当当前证书。
 
 | 模块 · 操作 | HYLE ns | std 组件 | std ns | 比std | SOTA 组件 | SOTA ns | 比SOTA | 判定 |
 |---|---|---|---|---|---|---|---|---|
-| **error** Status::Ok 构造+ok() | 0.55/0.05/0.23(Win/Lin/M4) | std::expected&lt;int,ec&gt; | 0.56/0.18/1.07 | 平/3.4x/4.7x | absl::OkStatus | 0.55/0.05/0.23 | ~1.0x 三平台 | ➖平 absl；Lin/M4 赢 std |
-| **error** Status(code) inline 无消息 | 0.55/0.05/0.22 | std::unexpected&lt;ec&gt; | 0.37/0.05/0.22 | 三平台平 | absl code-only(仍堆) | 1.88/1.01/1.19 | **3.4/19.8/5.3x** | ✅三平台赢 absl(inline 零堆) |
-| **error** Status(msg) 带消息→堆 | 26.1/8.9/16.4 | (无 std 等价) | n/a | n/a | absl::NotFoundError | 54.8/22.2/32.4 | **2.1/2.5/1.9x** | ✅三平台赢 absl |
-| **error** Status 拷贝(OK) | 0.59/0.24/0.36 | n/a | n/a | n/a | absl::Status copy OK | 0.56/0.28/0.26 | 0.95/1.26/0.72x | ⚠️**平台翻转**(Win/M4 sign 输，Lin 赢) |
-| **error** Status 拷贝(heap,retain/release) | 9.40/10.34/3.17 | n/a | n/a | n/a | absl::Status copy | 10.70/9.32/4.15 | 1.14/0.90/1.31x | ⚠️**平台翻转**(Lin sign 输 0.90x；Win/M4 赢) |
-| **error** Result&lt;int&gt; 传播 OK(解包消费) | 1.45/0.33/1.59 | std::expected unwrap | 1.42/0.33/1.59 | ~1.0x 三平台 | (消费变体未对 absl) | n/a | n/a | ➖真实用法平 std |
-| **error** Result&lt;int&gt; 传播 ERROR 上抛 | 10.2/9.4/3.2 | (errc 无堆消息不可比) | n/a | n/a | absl::StatusOr | 22.0/22.2/6.8 | **2.1/2.4/2.1x** | ✅三平台赢 absl |
-| **error·当前 Win** 一层语义 context | 35.44 | (无 std 等价) | n/a | n/a | absl::StatusBuilder SetPrepend | 297.78 | **8.47x** | ✅当前接口 Win n=15 明确赢；Linux/M4 待当前形状复证 |
-| **error·当前 Win** `Result<void>` OK/ERROR 传播 | 2.11 / 10.96 | 正确 move 的手写检查 | 3.46 / 12.06 | **1.66 / 1.10x** | 同左（同语义下界） | 同左 | **1.66 / 1.10x** | ✅宏路径不为易用性牺牲性能 |
-| **error·当前 Win** owning 人读格式化 | 33.12 | (无 std 等价) | n/a | n/a | absl::Status::ToString | 41.91 | 中位数 1.26x | ➖配对 sign TIE（有系统离群点） |
-| **error·当前 Win** 首错聚合 | 9.34 | (无 std 等价) | n/a | n/a | absl::Status::Update | 10.80 | **1.16x** | ✅赢 |
+| **error** Status::Ok 构造+ok() | 0.554/0.050/0.226(Win/Lin/M4) | std::expected&lt;int,ec&gt; | 0.566/0.186/1.073 | 平/赢/赢 | absl::OkStatus | 0.558/0.059/0.226 | ~1.0x 三平台 | ➖三平台平 absl |
+| **error** Status(code) inline 无消息 | 0.548/0.058/0.224 | std::unexpected&lt;ec&gt; | 0.371/0.055/0.224 | 仅作平凡下界 | absl code-only(仍堆) | 1.698/1.028/1.202 | **3.14/17.29/5.36x** | ✅三平台赢 absl(inline 零堆) |
+| **error** Status(msg) 带消息→堆 | 28.05/9.04/15.42 | (无 std 等价) | n/a | n/a | absl::NotFoundError | 53.96/21.93/29.01 | **1.92/2.41/1.93x** | ✅三平台赢 absl |
+| **error** Status 拷贝(OK) | 0.560/0.277/0.241 | n/a | n/a | n/a | absl::Status copy OK | 0.562/0.275/0.264 | 平/平/**1.09x** | ✅三平台无输；M4 赢 |
+| **error** Status 拷贝(heap,retain/release) | 10.32/8.97/3.18 | n/a | n/a | n/a | absl::Status copy | 10.81/9.38/4.17 | **1.04/1.05/1.31x** | ✅内联 retain 后三平台 sign 赢 |
+| **error** Result&lt;int&gt; 传播 OK(解包消费) | 1.440/0.336/1.589 | std::expected unwrap | 1.435/0.335/1.589 | ~1.0x 三平台 | (消费变体未对 absl) | n/a | n/a | ➖真实用法平 std |
+| **error** Result&lt;int&gt; 传播 ERROR 上抛 | 9.85/10.26/3.21 | (errc 无堆消息不可比) | n/a | n/a | absl::StatusOr | 22.33/22.34/6.75 | **2.27/2.17/2.10x** | ✅三平台赢 absl |
+| **error** 一层语义 context | 35.39/21.21/16.25 | (无 std 等价) | n/a | n/a | absl::StatusBuilder | 298.04/103.89/114.98 | **8.48/4.89/7.03x** | ✅三平台赢 |
+| **error** `Result<void>` OK/ERROR 传播 | 2.07·9.90/0.291·8.88/0.494·3.30 | 正确 move 手写 | 2.11·10.17/0.684·9.24/0.491·3.30 | Win/Lin 赢或平，M4 平 | 同左（同语义下界） | 同左 | 同左 | ✅宏易用性无性能税 |
+| **error** owning 人读格式化 | 34.11/20.03/22.63 | (无 std 等价) | n/a | n/a | absl::Status::ToString | 42.62/25.93/27.83 | **1.25/1.30/1.21x** | ✅三平台 sign 赢 |
+| **error** 首错聚合 | 9.43/8.89/3.18 | (无 std 等价) | n/a | n/a | absl::Status::Update | 10.77/9.25/4.25 | **1.14/1.05/1.34x** | ✅三平台 sign 赢 |
 | **simd·ops** 可对拍 op 全量(矩阵 v4) | — | (无 std) | n/a | n/a | Highway 同 ISA 同 op | — | **LOSE=0** | ✅**Win/WSL/NEON 明确 LOSE 均为 0**(320/320/308 case)；?≠TIE；全表 [benchmarks-simd-ops.md](./benchmarks-simd-ops.md)→[orderswap-matrix](../milestones/simd-orderswap-matrix.md) |
 | **simd** dot product(4096 f32) | 0.024 | scalar autovec | 0.37 | 15x | Highway contrib/dot(真 SOTA 4-acc) | 0.024 | 1.00x | ✅**4 累加器展开后 0.079→0.024(3.3x)平真 SOTA**;旧"平 Highway 0.079"是两个都单累加器的假平局(对照用了 Highway 教学 kernel 非 contrib/dot),见 [benchmarks-simd.md](./benchmarks-simd.md) |
 | **simd** saxpy(4096 f32) | 0.026 | scalar autovec | 0.057 | 2.2x | Highway avx2 | 0.025 | 1.01x | ✅赢 std、平 Highway(element-wise 带宽受限,多累加器无益,未改) |
