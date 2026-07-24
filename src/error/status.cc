@@ -32,7 +32,7 @@ namespace {
 // right after the header (header-before-data, same idea as carray). Never
 // exposed in a public header -- only reached through the functions below.
 struct StatusRep {
-  std::atomic<std::uint32_t> refcount;
+  StatusRepHeader header;
   StatusCode code;
   std::uint32_t len;
   char *msg() noexcept { return reinterpret_cast<char *>(this + 1); }
@@ -40,6 +40,9 @@ struct StatusRep {
     return reinterpret_cast<const char *>(this + 1);
   }
 };
+
+static_assert(offsetof(StatusRep, header) == 0,
+              "the header-inline retain path requires a stable prefix");
 
 StatusRep *as_rep(std::uintptr_t rep) noexcept {
   return reinterpret_cast<StatusRep *>(rep);
@@ -77,7 +80,7 @@ std::uintptr_t status_make_heap(StatusCode code, const char *msg,
   // value, never abort). The error code survives; only the message is dropped.
   if (mem == nullptr) return 0;
   auto *rep = new (mem) StatusRep{};
-  rep->refcount.store(1, std::memory_order_relaxed);
+  rep->header.refcount.store(1, std::memory_order_relaxed);
   rep->code = code;
   rep->len = static_cast<std::uint32_t>(len);
   if (len != 0) std::memcpy(rep->msg(), msg, len);
@@ -112,7 +115,7 @@ std::uintptr_t status_make_context(StatusCode code, const char *context,
   void *mem = std::malloc(sizeof(StatusRep) + total + 1);
   if (mem == nullptr) return 0;
   auto *rep = new (mem) StatusRep{};
-  rep->refcount.store(1, std::memory_order_relaxed);
+  rep->header.refcount.store(1, std::memory_order_relaxed);
   rep->code = normalize_status_code(code);
   rep->len = static_cast<std::uint32_t>(total);
   char *out = rep->msg();
@@ -130,13 +133,9 @@ std::uintptr_t status_make_context(StatusCode code, const char *context,
   return bits;
 }
 
-void status_retain(std::uintptr_t rep) noexcept {
-  as_rep(rep)->refcount.fetch_add(1, std::memory_order_relaxed);
-}
-
 void status_release(std::uintptr_t rep) noexcept {
   StatusRep *r = as_rep(rep);
-  if (r->refcount.fetch_sub(1, std::memory_order_acq_rel) == 1) {
+  if (r->header.refcount.fetch_sub(1, std::memory_order_acq_rel) == 1) {
     r->~StatusRep();
     std::free(r);
   }

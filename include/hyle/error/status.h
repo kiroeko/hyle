@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include <string_view>
@@ -75,7 +76,16 @@ HYLE_ERROR_API std::uintptr_t status_make_heap(StatusCode code, const char *msg,
 HYLE_ERROR_API std::uintptr_t status_make_context(
     StatusCode code, const char *context, std::size_t context_len,
     const char *message, std::size_t message_len) noexcept;
-HYLE_ERROR_API void status_retain(std::uintptr_t rep) noexcept;
+// Keep the hot retain operation in consumer code, like Abseil/Folly intrusive
+// carriers do. Only this stable prefix is visible; allocation, message storage
+// and the last-release/free path remain inside the DLL.
+struct StatusRepHeader {
+  std::atomic<std::uint32_t> refcount;
+};
+inline void status_retain(std::uintptr_t rep) noexcept {
+  reinterpret_cast<StatusRepHeader *>(rep)->refcount.fetch_add(
+      1, std::memory_order_relaxed);
+}
 HYLE_ERROR_API void status_release(std::uintptr_t rep) noexcept;
 HYLE_ERROR_API StatusCode status_heap_code(std::uintptr_t rep) noexcept;
 HYLE_ERROR_API std::string_view status_heap_message(
@@ -248,9 +258,16 @@ class [[nodiscard]] Status {
 
   static constexpr std::uintptr_t kInlineTag = 1;
   static constexpr std::uintptr_t kCodeShift = 2;
+  static constexpr std::uintptr_t kMaxInlineRep =
+      (static_cast<std::uintptr_t>(StatusCode::Unauthenticated) <<
+       kCodeShift) |
+      kInlineTag;
 
-  // heap rep: nonzero with low 2 bits clear (malloc is >=16-byte aligned).
-  bool is_heap() const noexcept { return rep_ != 0 && (rep_ & 3) == 0; }
+  // Every valid inline representation is <= kMaxInlineRep; process heap
+  // addresses are above it. This single comparison covers OK (0), code-only
+  // errors and heap reps without the two dependent tests needed by
+  // `rep_ != 0 && (rep_ & 3) == 0` on AArch64.
+  bool is_heap() const noexcept { return rep_ > kMaxInlineRep; }
 
   std::uintptr_t rep_ = 0;  // 0 = OK
 };
