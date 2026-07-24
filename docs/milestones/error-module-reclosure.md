@@ -42,6 +42,11 @@ OS/CUDA/Vulkan 叶子诊断。未发布，不保留未经审查的旧 ABI。
   核心/正常路径均为 WIN/TIE，无未解释 LOSE，数字只见 performance。
 - header-inline retain 增量另通过 Windows ASan 与 WSL TSan 的 43/43 C++ + 纯 C，跨线程
   shared-message 测试覆盖实际 retain/release 竞争。
+- `b6f2470` 将 raw rep 所有权转移彻底移出公开 C++ API，只保留 `src/error` 内部 friend
+  bridge；C handle 新增 `HYLE_STATUS_INIT`，并用编译期测试锁住不再公开 adopt/release。
+- 最终增量在 Windows/WSL/M4 的 error、mem、platform、io C bridge 定向测试均为 5/5；
+  Windows ASan error C++/纯 C 为 2/2。三层真实语义 context 的 n=15 配对结果分别为
+  **WIN 5.114 / 6.290 / 6.724x**，复杂度边界与外推限制已写入 architecture/performance。
 
 ## 易用性/正常路径复审增量
 

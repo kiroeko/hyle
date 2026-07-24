@@ -6,7 +6,8 @@
 
 ## 当前冻结证书（2026-07-24，三平台 n=15）
 
-> 产品 commit `3539169`；Windows MSVC 19.50、WSL GCC 14.2、Apple M4 AppleClang 21，
+> 核心 carrier 产品 commit `3539169`，API 封口与三层 context 增量 commit `b6f2470`；
+> Windows MSVC 19.50、WSL GCC 14.2、Apple M4 AppleClang 21，
 > Release，Abseil 对照开启。方法为 `scripts/bench-stat.py -n 15`，同一进程内 pair 以
 > `[sign]` 为判定。下表顺序统一为 **Win / Linux / M4**，绝对 ns 不跨机器比较。
 
@@ -24,6 +25,7 @@ whole-TU inline budget，使完全相同的 Result error helper 从约 10ns 假�
 | 带消息错误构造 | 28.052 / 9.038 / 15.424 | absl 53.960 / 21.928 / 29.005 | **WIN 1.924 / 2.409 / 1.926x** |
 | heap Status 拷贝 | 10.322 / 8.974 / 3.181 | absl 10.805 / 9.380 / 4.166 | **WIN 1.043 / 1.049 / 1.309x** |
 | 一层语义 context | 35.392 / 21.209 / 16.247 | StatusBuilder 298.042 / 103.886 / 114.979 | **WIN 8.478 / 4.887 / 7.031x** |
+| 三层语义 context | 226.734 / 52.272 / 58.288 | StatusBuilder 1150.973 / 334.143 / 387.761 | **WIN 5.114 / 6.290 / 6.724x** |
 | `WithContext(OK)` | 0.742 / 0.277 / 0.480 | 无同形入口 | header-inline no-op，零分配 |
 | Result OK 传播 4 层（裸） | 0.758 / 0.184 / 1.073 | StatusOr 1.096 / 0.184 / 1.073 | Win **WIN 1.477x**；Lin/M4 TIE |
 | Result OK 解包并消费 | 1.440 / 0.336 / 1.589 | std 1.435 / 0.335 / 1.589 | 三平台 TIE |
@@ -63,6 +65,11 @@ heap 判定收成一个范围比较。API、8B 布局、C ABI、分配与最后�
 错误系统工作负载都已穷尽”；payload、序列化、backtrace 等未进入产品面的能力也不靠本证书
 虚增 benchmark。
 
+`WithContext` 每次按最终文本长度 O(context + message) 分配并复制；连续添加 k 个等长
+context 的总工作量因此为 O(k²)。这符合错误只跨少量语义边界增补说明的正常用法，三层
+实测仍在三平台稳定领先 StatusBuilder。若未来真实产品出现很深的 context 链，必须凭调用
+数据重新评估链式表示，不能从这张三层证书外推为任意深度 SOTA。
+
 ## 复跑命令
 
 ```bash
@@ -77,6 +84,7 @@ scripts/bench-stat.py <build>/bin/hyle_error_bench -n 15 \
   --pair "absl::Status copy (OK)" "HYLE Status copy (OK)" \
   --pair "std::expected (unwrap + use)" "HYLE Result (unwrap + use)" \
   --pair "absl::StatusBuilder SetPrepend" "HYLE Status::WithContext" \
+  --pair "absl::StatusBuilder SetPrepend x3" "HYLE Status::WithContext x3" \
   --pair "absl::StatusOr (manual check)" "HYLE Result + ASSIGN_OR_RETURN"
 
 scripts/bench-stat.py <build>/bin/hyle_error_normal_bench -n 15 \
