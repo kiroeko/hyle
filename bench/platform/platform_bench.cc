@@ -349,18 +349,11 @@ int main() {
   // park_timeout has two hot regimes. FAST PATH: a token is already available
   // (unpark ran first), so the fetch_sub sees NOTIFIED and returns true with NO
   // syscall -- the same ~10ns/no-syscall floor as park()'s fast path (section 1).
-  // ZERO-TIMEOUT POLL: no token + timeout_ns==0, so it takes the timed wait and
-  // returns false at once; that still ENTERS the OS wait (WaitOnAddress ms=0 /
-  // FUTEX_WAIT {0,0}), so this row is the syscall-entry cost of the timed path
-  // with no real sleep (a genuine expiry just adds the deadline's wall time on
-  // top). The gap between the two rows is exactly that syscall's price.
-  //
-  // kIters intentionally tiny for the zero-timeout arm: each call is a real
-  // kernel entry (Win ~µs, Linux futex ETIMEDOUT ~tens of µs). Old 100k made
-  // bench-stat -n15 multi-hour on WSL. Ratio vs fast path only needs order-of-
-  // magnitude, not 1% precision.
+  // ZERO-TIMEOUT POLL: no token + timeout_ns==0 is also a pure user-space CAS.
+  // It must never publish PARKED or enter WaitOnAddress/futex; this benchmark is
+  // the regression guard for an old Linux/WSL ~59us zero-deadline syscall path.
   if (enabled("parker-timeout")) {
-    constexpr int kIters = 500;
+    constexpr int kIters = 100000;
     Parker parker;
     nb::Bench b;
     b.title("Parker park_timeout: fast path vs zero-timeout poll")
@@ -374,7 +367,7 @@ int main() {
             parker.park_timeout(1'000'000'000ull));  // consumes it, no sleep
       }
     });
-    b.run("park_timeout zero-timeout poll (no token, syscall)", [&] {
+    b.run("park_timeout zero-timeout poll (no token, no syscall)", [&] {
       for (int i = 0; i < kIters; ++i) {
         nb::doNotOptimizeAway(parker.park_timeout(0));  // no token -> false at once
       }

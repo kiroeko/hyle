@@ -7,8 +7,7 @@
 
 // ---- low-level wait_on_address: one backend per OS --------------------------
 // Each maps the (addr, expected) compare-and-block 1:1 onto the platform futex.
-// Only the Windows path is built and tested on this machine; the Linux/macOS
-// paths are written to spec but NOT yet verified on real hardware/CI.
+// All three backends are exercised on their native Windows/Linux/macOS hosts.
 
 #if defined(HYLE_OS_WINDOWS)
 #  define WIN32_LEAN_AND_MEAN
@@ -29,18 +28,19 @@ void wait_on_address(const std::atomic<std::uint32_t>* addr,
 bool wait_on_address_for(const std::atomic<std::uint32_t>* addr,
                          std::uint32_t expected,
                          std::uint64_t timeout_ns) noexcept {
-  // WaitOnAddress takes a millisecond timeout. Round UP so a sub-ms deadline
-  // never truncates to 0 (=poll) unless the caller actually asked for 0. Clamp
-  // below INFINITE (0xFFFFFFFF) so a huge ns never accidentally means "forever".
-  DWORD ms;
+  // A zero timeout is a poll, not a request to enter the kernel with a zero
+  // deadline. WaitOnAddress(0) is microseconds slower than this atomic check.
   if (timeout_ns == 0) {
-    ms = 0;  // non-blocking poll
-  } else {
-    const std::uint64_t rounded =
-        timeout_ns / 1'000'000ull +
-        (timeout_ns % 1'000'000ull != 0 ? 1ull : 0ull);
-    ms = rounded >= INFINITE ? (INFINITE - 1) : static_cast<DWORD>(rounded);
+    return addr->load(std::memory_order_relaxed) != expected;
   }
+  // WaitOnAddress takes a millisecond timeout. Round UP so a sub-ms deadline
+  // never truncates to 0. Clamp below INFINITE (0xFFFFFFFF) so a huge ns never
+  // accidentally means "forever".
+  const std::uint64_t rounded =
+      timeout_ns / 1'000'000ull +
+      (timeout_ns % 1'000'000ull != 0 ? 1ull : 0ull);
+  const DWORD ms =
+      rounded >= INFINITE ? (INFINITE - 1) : static_cast<DWORD>(rounded);
   BOOL ok = ::WaitOnAddress(
       const_cast<volatile VOID*>(reinterpret_cast<const volatile VOID*>(addr)),
       &expected, sizeof(expected), ms);
@@ -80,10 +80,13 @@ void wait_on_address(const std::atomic<std::uint32_t>* addr,
 bool wait_on_address_for(const std::atomic<std::uint32_t>* addr,
                          std::uint32_t expected,
                          std::uint64_t timeout_ns) noexcept {
+  // FUTEX_WAIT with {0,0} is still a syscall (especially expensive under WSL).
+  if (timeout_ns == 0) {
+    return addr->load(std::memory_order_relaxed) != expected;
+  }
   // FUTEX_WAIT interprets its timespec as a RELATIVE duration (unlike
   // FUTEX_WAIT_BITSET, which is absolute). A relative timeout is exactly what
-  // the wheel wants: "sleep at most this long from now". timeout_ns == 0 gives
-  // {0,0} = non-blocking poll.
+  // the wheel wants: "sleep at most this long from now".
   struct timespec ts;
   ts.tv_sec = static_cast<time_t>(timeout_ns / 1'000'000'000ull);
   ts.tv_nsec = static_cast<long>(timeout_ns % 1'000'000'000ull);
@@ -120,6 +123,9 @@ void wait_on_address(const std::atomic<std::uint32_t>* addr,
 bool wait_on_address_for(const std::atomic<std::uint32_t>* addr,
                          std::uint32_t expected,
                          std::uint64_t timeout_ns) noexcept {
+  if (timeout_ns == 0) {
+    return addr->load(std::memory_order_relaxed) != expected;
+  }
   // os_sync_wait_on_address_with_timeout: OS_CLOCK_MACH_ABSOLUTE_TIME + a
   // RELATIVE deadline expressed in ns (macOS 14.4+). Matches the futex relative
   // model. Returns -1/errno==ETIMEDOUT on deadline.
@@ -181,6 +187,15 @@ void Parker::unpark() noexcept {
 }
 
 bool Parker::park_timeout(std::uint64_t timeout_ns) noexcept {
+  // Polling must stay entirely in user space. Besides avoiding a zero-deadline
+  // syscall, this never publishes PARKED, so a racing unpark either gets
+  // consumed by this CAS or leaves a token for the next park.
+  if (timeout_ns == 0) {
+    std::uint32_t expected = kNotified;
+    return state_.compare_exchange_strong(expected, kEmpty,
+                                          std::memory_order_acquire,
+                                          std::memory_order_relaxed);
+  }
   // Same fetch_sub(1) token trick as park(), but SINGLE-SHOT: after one timed
   // wait we return regardless, because a spurious wake is indistinguishable from
   // a partial-timeout here and the caller re-checks its condition + re-parks

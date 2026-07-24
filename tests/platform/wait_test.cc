@@ -124,9 +124,12 @@ TEST(Parker, ParkTimeoutConsumesExistingToken) {
 
 TEST(Parker, ParkTimeoutZeroIsNonBlockingPoll) {
   Parker p;
-  EXPECT_FALSE(p.park_timeout(0));  // no token -> immediate false
+  for (int i = 0; i < 1000; ++i) {
+    EXPECT_FALSE(p.park_timeout(0));  // no token; must not leave PARKED behind
+  }
   p.unpark();
   EXPECT_TRUE(p.park_timeout(0));  // token present -> immediate true
+  EXPECT_FALSE(p.park_timeout(0));  // consumed exactly once
 }
 
 TEST(Parker, ParkTimeoutWokenByUnpark) {
@@ -217,7 +220,8 @@ TEST(WaitOnAddress, TimedZeroIsPoll) {
   auto t0 = std::chrono::steady_clock::now();
   bool r = hyle::platform::detail::wait_on_address_for(&word, 0, 0);
   auto elapsed = std::chrono::steady_clock::now() - t0;
-  (void)r;  // timed out (false) or spurious wake (true) -- both fine
+  EXPECT_FALSE(r);  // equal at the poll instant
+  EXPECT_TRUE(hyle::platform::detail::wait_on_address_for(&word, 1, 0));
   // The real assertion: a zero timeout does NOT block for any meaningful time.
   EXPECT_LT(elapsed, std::chrono::milliseconds(200));
 }

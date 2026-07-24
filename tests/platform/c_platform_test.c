@@ -102,7 +102,7 @@ int main(void) {
   {
     uint32_t w = 5u;
     CHECK(hyle_wait_on_address_for(&w, 7u, 0) == 1); /* 5 != 7 -> immediate, 1 */
-    (void)hyle_wait_on_address_for(&w, 5u, 0);       /* poll: 0 (or spurious 1) */
+    CHECK(hyle_wait_on_address_for(&w, 5u, 0) == 0); /* equal: timed poll */
     hyle_wait_on_address(&w, 7u);                    /* 5 != 7 -> returns at once */
     hyle_wake_one(&w);                               /* no waiter -> no-op */
     hyle_wake_all(&w);                               /* no waiter -> no-op */
