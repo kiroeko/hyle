@@ -9,6 +9,7 @@
 #include <utility>
 
 #include "hyle/mem/allocator.h"
+#include "hyle/platform/cpu.h"
 #include "hyle/platform/thread.h"
 #include "hyle/sched/blocking.h"
 #include "hyle/sched/cancel.h"
@@ -23,6 +24,24 @@ namespace {
 thread_local const char* g_last_error = "";
 void clear_error() noexcept { g_last_error = ""; }
 void set_error(const char* message) noexcept { g_last_error = message; }
+
+unsigned default_worker_count() noexcept {
+  auto available = hyle::platform::available_cpu_count();
+  unsigned detected = 0;
+  if (available && *available != 0) {
+    detected = *available > 1024 ? 1024u : static_cast<unsigned>(*available);
+  } else {
+    detected = hyle::platform::hardware_concurrency();
+    if (detected > 1024) detected = 1024;
+  }
+  return detected == 0 ? 1 : detected;
+}
+
+hyle_sched_options scheduler_options_base() noexcept {
+  hyle_sched_options options = HYLE_SCHED_OPTIONS_INIT;
+  options.backing = hyle_system_allocator();
+  return options;
+}
 
 bool valid_backing(const hyle_allocator& a) noexcept {
   return a.alloc != nullptr && a.free != nullptr && a.realloc != nullptr;
@@ -351,16 +370,16 @@ extern "C" {
 const char* hyle_sched_last_error(void) { return g_last_error; }
 
 hyle_sched_options hyle_sched_options_default(void) {
-  hyle_sched_options o = HYLE_SCHED_OPTIONS_INIT;
-  const unsigned detected = hyle::platform::hardware_concurrency();
-  o.num_workers = detected == 0 ? 1 : (detected > 1024 ? 1024 : detected);
-  o.backing = hyle_system_allocator();
+  hyle_sched_options o = scheduler_options_base();
+  o.num_workers = default_worker_count();
   return o;
 }
 
 hyle_sched_scheduler* hyle_sched_scheduler_create(
     const hyle_sched_options* options) {
-  hyle_sched_options o = hyle_sched_options_default();
+  // Do not query the OS before overlaying explicit options. A caller-provided
+  // worker count needs no availability probe; automatic mode queries once below.
+  hyle_sched_options o = scheduler_options_base();
   if (options != nullptr) {
     if (options->struct_size < sizeof(options->struct_size)) {
       set_error("sched options struct_size is too small");
@@ -374,8 +393,7 @@ hyle_sched_scheduler* hyle_sched_scheduler_create(
     std::memcpy(&o, options, readable);
   }
   if (o.num_workers == 0) {
-    const unsigned detected = hyle::platform::hardware_concurrency();
-    o.num_workers = detected == 0 ? 1 : (detected > 1024 ? 1024 : detected);
+    o.num_workers = default_worker_count();
   }
   if (o.num_workers > 1024 ||
       o.queue_capacity < 2 || o.queue_capacity > (size_t{1} << 31) ||

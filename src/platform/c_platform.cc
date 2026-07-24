@@ -760,6 +760,18 @@ hyle_cpu_topology hyle_cpu_topology_get(void) {
           in.hybrid ? 1 : 0};
 }
 
+hyle_status hyle_cpu_available_count(size_t* out_count) {
+  if (out_count == nullptr) {
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_cpu_available_count: out_count is NULL"));
+  }
+  *out_count = 0;
+  auto result = hyle::platform::available_cpu_count();
+  if (!result) return steal_status(std::move(result).error());
+  *out_count = *result;
+  return steal_status(hyle::Status::Ok());
+}
+
 hyle_status hyle_cpu_available_ids(size_t* out_count, unsigned* dst,
                                    size_t cap) {
   if (out_count == nullptr) {

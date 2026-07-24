@@ -30,10 +30,10 @@
 
 | 口径 | 当前（约） | 说明 |
 |---|---|---|
-| **生产 `src`+`include`** | **77,774** | 库本体硬锚 |
-| tests / bench / docs | 34,823 / 15,012 / 22,228 | |
-| 自有工程（git 跟踪且排除 third_party） | **155,978** | |
-| git 全跟踪（含 in-tree third_party） | **238,415** | simdutf/mimalloc 等，**≠ 自写** |
+| **生产 `src`+`include`** | **77,808** | 库本体硬锚 |
+| tests / bench / docs | 34,942 / 15,012 / 22,239 | |
+| 自有工程（git 跟踪且排除 third_party） | **156,142** | |
+| git 全跟踪（含 in-tree third_party） | **238,579** | simdutf/mimalloc 等，**≠ 自写** |
 | **终态生产（纪律收口 A）** | **~75–90k** | 主预期 |
 | **终态生产（做满守界 B）** | **~85–105k** | compute/graph/发布面收口更满 |
 | 失控上限 C | 120k+ 生产 | 应避免 |

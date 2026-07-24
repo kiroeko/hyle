@@ -532,6 +532,8 @@ typedef struct hyle_cpu_topology {
 
 HYLE_PLATFORM_C_API hyle_cache_info hyle_cpu_cache_info(void);
 HYLE_PLATFORM_C_API hyle_cpu_topology hyle_cpu_topology_get(void);
+/* Dynamic count-only convenience for worker/shard sizing. */
+HYLE_PLATFORM_C_API hyle_status hyle_cpu_available_count(size_t* out_count);
 /* Process-available flattened CPU ids, accepted by hyle_thread_opts.affinity_cpu.
  * *out_count is the full count; writes at most cap ids; dst==NULL is a count
  * query. Unlike system topology, this observes affinity/cpuset restrictions.

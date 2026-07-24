@@ -92,7 +92,7 @@ Linux/macOS 仍保留旧接口证书，待新接口真机复跑后再更新。
 ### 2026-07-24 系统拓扑与进程 CPU 配额分离
 
 `cpu_topology()` 保留一次探测、缓存读取的系统硬件视图；实际 worker 初始化新增
-`available_cpu_ids()`，直接读取 Linux 调用线程（新线程继承）的 affinity/cgroup/cpuset
+`available_cpu_count()` / `available_cpu_ids()`，直接读取 Linux 调用线程（新线程继承）的 affinity/cgroup/cpuset
 或 Windows 进程 CPU Sets，避免
 容器/受限进程按整机核数过度创建线程。查询时间为不可规避的 O(OS CPU 记录数)，输出为
 O(可用 CPU 数)；常见 Windows（CPU Set 记录 ≤4 KiB、默认 set ≤64）与 Linux（CPU id
@@ -105,6 +105,11 @@ buffer-fill 另覆盖 count-only、截断返回完整长度和 id 唯一性。�
 常见路径零堆分配，不把 OS 拓扑枚举时间冒充 HYLE 算法性能。macOS 没有等价硬 affinity
 API，fallback 的 AppleClang/arm64 构建、CPU invariant 与纯 C 路径已在 M4 真机通过；运行期
 mask 变化测试按合同跳过，不把“不支持硬绑核”伪装成已验证能力。
+
+依赖方回审采用同一进程视图：sched C 默认 worker 数、mem `SharedPool` 默认 shard 数和
+container `StringBuf` 的 shard 档位都已从整机 `hardware_concurrency` 切换；显式用户配置不变。
+Windows/Linux 约束到单 CPU 的测试分别断言 scheduler 默认 1 worker、SharedPool 默认 1 shard，
+避免“platform API 正确但 HYLE 自己仍过度并发”的纸面收口。
 
 ## 非 SOTA / 需诚实标价
 

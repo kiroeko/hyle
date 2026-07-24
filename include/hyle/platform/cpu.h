@@ -144,6 +144,10 @@ HYLE_PLATFORM_API const CacheInfo& cache_info() noexcept;
 HYLE_PLATFORM_API Result<std::size_t> available_cpu_ids(
     unsigned* dst, std::size_t cap) noexcept;
 
+// Common worker/shard sizing shape. Equivalent to a count-only ids query and
+// likewise dynamic; avoids making callers spell a dummy buffer-fill request.
+HYLE_PLATFORM_API Result<std::size_t> available_cpu_count() noexcept;
+
 // OS-online SYSTEM topology. Process availability is a separate, dynamic query
 // above. If a platform cannot report a
 // trustworthy P/E distinction, all CPUs are conservatively classified as

@@ -71,7 +71,7 @@ last-error；C 与 C++ 共用 error 的 code、message 和所有权规则。
 | `hyle_thread_spawn_opts(out, entry, ctx, name, stack, affinity, priority)` | FFI 便利入口；不用构造 opts/has 字段，0/-1 是默认 sentinel |
 | `hyle_thread_join` | join + **destroy** 句柄 |
 | `hyle_thread_joinable` | 1/0 |
-| `hyle_hardware_concurrency` | 系统在线逻辑 CPU 数 ≥1；worker 数优先用下文 `hyle_cpu_available_ids` |
+| `hyle_hardware_concurrency` | 系统在线逻辑 CPU 数 ≥1；worker 数优先用下文 `hyle_cpu_available_count` |
 | `hyle_this_thread_id` | 稳定线程 id |
 | `hyle_this_thread_yield` | |
 | `hyle_this_thread_set_name` | name 可 NULL→空串 |
@@ -203,6 +203,7 @@ soft 建议，绝不影响正确性。Linux 用 madvise；Windows/macOS 匿名�
 | `hyle_cpu_cache_line_size` | L1 数据缓存行字节数（主流 64；对齐/填充用；探测失败回退 64） |
 | `hyle_cpu_cache_info` | 值返回 `hyle_cache_info`：L1D/L1I/L2/L3 容量（字节；未知级为 0） |
 | `hyle_cpu_topology_get` | 缓存的系统视图：`system_logical_cpus`、performance/efficiency CPU 数与 `is_hybrid` |
+| `hyle_cpu_available_count(out_count)` | 动态进程视图的 count-only 便利入口；创建 worker / 选择 shard 数优先用它 |
 | `hyle_cpu_available_ids(out_count, dst, cap)` | 动态进程视图；返回 Status，`*out_count` 是完整数量，最多写 cap 个可用于 thread affinity 的 id；`dst==NULL` 可只查数 |
 
 拓扑只采用 OS/CPU 的明确分类（Windows `EfficiencyClass`、macOS

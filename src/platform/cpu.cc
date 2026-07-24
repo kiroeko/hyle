@@ -771,6 +771,10 @@ Result<std::size_t> available_cpu_ids(unsigned* dst,
   return query_available_cpu_ids(dst, cap);
 }
 
+Result<std::size_t> available_cpu_count() noexcept {
+  return query_available_cpu_ids(nullptr, 0);
+}
+
 const CpuTopology& cpu_topology() noexcept {
   static const CpuTopology topology = detect_topology();
   return topology;

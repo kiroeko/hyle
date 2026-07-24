@@ -1,13 +1,31 @@
+#if defined(__linux__) && !defined(_GNU_SOURCE)
+#  define _GNU_SOURCE 1
+#endif
+
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
 
+#include "hyle/c/platform.h"
 #include "hyle/c/sched.h"
+
+#if defined(_WIN32)
+#  define WIN32_LEAN_AND_MEAN
+#  include <windows.h>
+#elif defined(__linux__)
+#  include <sched.h>
+#endif
 
 #define CHECK(expr)                  \
   do {                               \
     if (!(expr)) return __LINE__;    \
   } while (0)
+
+static int status_ok(hyle_status status) {
+  int ok = hyle_status_is_ok(status);
+  hyle_status_free(&status);
+  return ok;
+}
 
 typedef struct task_ctx {
   hyle_sched_mutex* mutex;
@@ -165,6 +183,55 @@ int main(void) {
   hyle_sched_scheduler_destroy(prefix_scheduler);
 
   hyle_sched_options automatic = HYLE_SCHED_OPTIONS_INIT;
+  {
+    size_t available = 0;
+    CHECK(status_ok(hyle_cpu_available_count(&available)));
+    CHECK(automatic.num_workers == 0);
+    hyle_sched_options detected = hyle_sched_options_default();
+    CHECK(detected.num_workers == (available > 1024 ? 1024u : available));
+  }
+#if defined(_WIN32)
+  if (GetActiveProcessorGroupCount() == 1) {
+    DWORD_PTR original = 0, system = 0;
+    if (GetProcessAffinityMask(GetCurrentProcess(), &original, &system) &&
+        original != 0) {
+      const DWORD_PTR single = original & (~original + 1);
+      if (SetProcessAffinityMask(GetCurrentProcess(), single)) {
+        hyle_sched_options restricted = hyle_sched_options_default();
+        const BOOL restored =
+            SetProcessAffinityMask(GetCurrentProcess(), original);
+        CHECK(restored != 0);
+        CHECK(restricted.num_workers == 1);
+      }
+    }
+  }
+#elif defined(__linux__)
+  {
+    cpu_set_t original;
+    CPU_ZERO(&original);
+    if (sched_getaffinity(0, sizeof(original), &original) == 0) {
+      int first = -1;
+      for (int cpu = 0; cpu < CPU_SETSIZE; ++cpu) {
+        if (CPU_ISSET(cpu, &original)) {
+          first = cpu;
+          break;
+        }
+      }
+      if (first >= 0) {
+        cpu_set_t single;
+        CPU_ZERO(&single);
+        CPU_SET(first, &single);
+        if (sched_setaffinity(0, sizeof(single), &single) == 0) {
+          hyle_sched_options restricted = hyle_sched_options_default();
+          const int restored =
+              sched_setaffinity(0, sizeof(original), &original);
+          CHECK(restored == 0);
+          CHECK(restricted.num_workers == 1);
+        }
+      }
+    }
+  }
+#endif
   hyle_sched_scheduler* automatic_scheduler =
       hyle_sched_scheduler_create(&automatic);
   CHECK(automatic_scheduler != NULL);

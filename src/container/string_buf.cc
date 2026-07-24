@@ -6,10 +6,10 @@
 #include <mutex>
 #include <new>
 #include <optional>
-#include <thread>
 
 #include "hyle/container/carray.h"
 #include "hyle/container/swiss_table.h"
+#include "hyle/platform/cpu.h"
 
 namespace hyle::container {
 
@@ -314,7 +314,8 @@ template <class Impl> bool remove_locked(Impl& impl, mem::Allocator alloc, Inter
 
 struct StringBuf::Impl {
   explicit Impl(mem::Allocator alloc) noexcept {
-    const unsigned workers = std::thread::hardware_concurrency();
+    auto available = platform::available_cpu_count();
+    const std::size_t workers = available && *available != 0 ? *available : 8;
     shard_bits = workers > 32 ? 6u : workers > 8 ? 5u : 4u;
     shard_count = 1u << shard_bits;
     for (auto& shard : shards) shard.emplace(alloc);

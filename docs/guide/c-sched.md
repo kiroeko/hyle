@@ -38,7 +38,7 @@ static void add_one(void* p) {
 
 int main(void) {
   hyle_sched_options opts = hyle_sched_options_default();
-  opts.num_workers = 0;                 /* 自动探测 */
+  opts.num_workers = 0;                 /* 动态进程可用 CPU 数，不是整机总数 */
   hyle_sched_scheduler* s = hyle_sched_scheduler_create(&opts);
   if (!s) return 1;
 

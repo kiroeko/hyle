@@ -88,6 +88,8 @@ copy/move，避免两个 cursor 无意间在同一 buffer 上重叠分配。
 
 - `SharedPool` 是共享 admission primitive。容量 N 就意味着最多 N 个 live block；任何线程
   完成 deallocate 后，其他线程能立即取得该 block。
+  默认共享 shard 数按当前进程可用 CPU（Linux 为调用线程可继承的 affinity）取 2 的幂，
+  而不是按容器外的整机核数浪费 metadata；仍受 128 与 block count 上限约束。
 - `SharedPoolCache` 是附着到 `SharedPool` 的单 owner L1。storage、容量、transfer batch 和
   生命周期都由用户显式选择；本地 free slot 只有在 `publish()`/析构后才回到共享 core。
 

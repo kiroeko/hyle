@@ -545,6 +545,10 @@ int main(void) {
   {
     size_t available = 0;
     unsigned first = ~0u;
+    CHECK(status_code(hyle_cpu_available_count(NULL)) ==
+          HYLE_STATUS_INVALID_ARGUMENT);
+    CHECK(status_ok(hyle_cpu_available_count(&available)));
+    CHECK(available >= 1u);
     CHECK(status_code(hyle_cpu_available_ids(NULL, NULL, 0)) ==
           HYLE_STATUS_INVALID_ARGUMENT);
     CHECK(status_ok(hyle_cpu_available_ids(&available, &first, 1)));

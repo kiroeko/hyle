@@ -103,12 +103,12 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 
 | 口径 | code | 说明 |
 |---|---:|---|
-| **生产 `src`+`include`** | **77,774** | 库本体；不含测试 |
-| tests | **34,823** | 由同语言口径 112,597 - 77,774 得出 |
+| **生产 `src`+`include`** | **77,808** | 库本体；不含测试 |
+| tests | **34,942** | 由同语言口径 112,750 - 77,808 得出 |
 | bench | **15,012** | |
-| docs | **22,228** | Markdown + CSV |
-| 自有工程（`--vcs=git --exclude-dir=third_party,.deps`） | **155,978** | 含测/文档/脚本 |
-| git 全跟踪（含 in-tree third_party） | **238,415** | 含 simdutf/mimalloc/fcontext 等 |
+| docs | **22,239** | Markdown + CSV |
+| 自有工程（`--vcs=git --exclude-dir=third_party,.deps`） | **156,142** | 含测/文档/脚本 |
+| git 全跟踪（含 in-tree third_party） | **238,579** | 含 simdutf/mimalloc/fcontext 等 |
 | 再加 ggml 等大依赖足迹 | **~200–350k+** | 由 ggml 主导，不计入「自有生产」 |
 
 **生产按模块（src+include，约）：**

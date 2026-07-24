@@ -10,7 +10,7 @@
 #include "hyle/macros.h"
 #include "hyle/mem/alignment.h"
 #include "hyle/mem/allocator.h"
-#include "hyle/platform/thread.h" // hardware_concurrency() -> shard count
+#include "hyle/platform/cpu.h" // process-available parallelism -> shard count
 
 // Shared fixed-size block pool plus an explicit owner-local cache layer.
 //
@@ -587,6 +587,7 @@ protected:
   void testing_push_to_shard(std::uint32_t s, void *p) noexcept {
     push_shard(s, return_index(p));
   }
+  std::uint32_t testing_num_shards() const noexcept { return num_shards_; }
 
   void *testing_allocate_from_home(std::uint32_t home) noexcept {
     const std::uint32_t idx = pop_any_shard(home);
@@ -633,9 +634,8 @@ private:
 
   static constexpr std::uint32_t kShardCap = 128; // bounds heads_ (128 -> 8 KB)
   static std::uint32_t default_shards() noexcept {
-    unsigned c = hyle::platform::hardware_concurrency();
-    if (c == 0)
-      c = 8; // unknown -> a sane default
+    auto available = hyle::platform::available_cpu_count();
+    std::size_t c = available && *available != 0 ? *available : 8;
     std::uint32_t p = 1;
     while (p < c && p < kShardCap)
       p <<= 1;
@@ -705,6 +705,9 @@ public:
   }
   void testing_push_to_shard(std::uint32_t shard, void *p) noexcept {
     detail::ShardedSlab::testing_push_to_shard(shard, p);
+  }
+  std::uint32_t testing_num_shards() const noexcept {
+    return detail::ShardedSlab::testing_num_shards();
   }
   void *testing_allocate_from_home(std::uint32_t home) noexcept {
     return detail::ShardedSlab::testing_allocate_from_home(home);

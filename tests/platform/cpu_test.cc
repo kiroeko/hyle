@@ -18,6 +18,7 @@
 #endif
 
 using hyle::platform::available_cpu_ids;
+using hyle::platform::available_cpu_count;
 using hyle::platform::best_isa;
 using hyle::platform::cache_line_size;
 using hyle::platform::cache_info;
@@ -68,6 +69,10 @@ TEST(Cpu, AvailableCpuIdsRespectBufferFillAndAreUnique) {
   auto count = available_cpu_ids(nullptr, 0);
   ASSERT_TRUE(count.has_value()) << count.error().message();
   ASSERT_GE(*count, 1u);
+  auto convenient_count = available_cpu_count();
+  ASSERT_TRUE(convenient_count.has_value())
+      << convenient_count.error().message();
+  EXPECT_EQ(*convenient_count, *count);
   EXPECT_LE(*count, cpu_topology().system_logical_cpus);
 
   unsigned first = ~0u;

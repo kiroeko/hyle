@@ -57,7 +57,7 @@ typedef void (*hyle_sched_blocking_done_fn)(void* ctx, int cancelled);
 
 typedef struct hyle_sched_options {
   uint32_t struct_size;
-  uint32_t num_workers; /* 0 = detected logical processors, capped at 1024 */
+  uint32_t num_workers; /* 0 = process-available CPUs, capped at 1024 */
   size_t queue_capacity;
   size_t fiber_stack_size;
   hyle_allocator backing;

@@ -27,7 +27,7 @@ platform 是 HYLE 的跨 OS 原语层。它服务两类调用者：HYLE 内部�
 | 等待调用方已有的原子字 | `wait_on_address` | `Parker` 再包一层 | 允许伪唤醒，必须循环检查谓词 |
 | 插件/可选系统库 | `DynLib` | 裸 `dlopen`/`LoadLibrary` 分叉 | `Result` 保留原生 loader 诊断 |
 | 运行时 ISA 派发 | `cpu_features` / `supports` | 编译机宏代替运行机探测 | 只调用当前进程可执行的 ISA |
-| 决定当前 worker 数/绑核 | `available_cpu_ids` | `hardware_concurrency` / `cpu_topology` | 动态遵守 affinity、cgroup/cpuset、Windows CPU Sets；id 可稀疏 |
+| 决定当前 worker 数/绑核 | `available_cpu_count` / `available_cpu_ids` | `hardware_concurrency` / `cpu_topology` | 动态遵守 affinity、cgroup/cpuset、Windows CPU Sets；id 可稀疏 |
 | cache 容量提示、P/E 总量 | `cache_info` / `cpu_topology` | 假定探测值永远存在 | 未知 cache 为 0；P/E 不做频率猜测 |
 
 ## 页内存
@@ -112,7 +112,8 @@ dangling link 时显式传 `kFile` 或 `kDirectory`，才具有跨平台一致�
 `system_logical_cpus` 与 OS 明确报告的 P/E 总数，适合诊断和粗粒度硬件策略；它不回答容器
 或当前进程能开多少 worker。
 
-`available_cpu_ids(dst, cap)` 才是进程视图：返回完整可用数，最多写 `cap` 个可直接交给
+`available_cpu_count()` / `available_cpu_ids(dst, cap)` 才是进程视图：前者是创建 worker、
+选择 shard 数的常用形状；后者返回完整可用数，最多写 `cap` 个可直接交给
 `ThreadOpts::affinity_cpu` 的 id；`dst=nullptr` 可只查询数量。查询刻意不缓存，因为 Linux
 affinity/cgroup/cpuset 和 Windows CPU Sets 可在进程运行时改变；Linux 具体读取调用线程的
 mask，新线程会继承它。常见 Windows / Linux

@@ -13,6 +13,13 @@
 #include "hyle/mem/shared_pool.h"
 #include "hyle/platform/thread.h"
 
+#if defined(_WIN32)
+#  define WIN32_LEAN_AND_MEAN
+#  include <windows.h>
+#elif defined(__linux__)
+#  include <sched.h>
+#endif
+
 using hyle::mem::SharedPool;
 using hyle::mem::SharedPoolCache;
 using hyle::mem::Allocator;
@@ -52,6 +59,47 @@ TEST(SharedPool, ExhaustionReturnsNull) {
   pool.deallocate(p0);
   pool.deallocate(p2);
   pool.deallocate(reused);
+}
+
+TEST(SharedPool, DefaultShardsFollowAvailableParallelism) {
+#if defined(_WIN32)
+  if (::GetActiveProcessorGroupCount() != 1) GTEST_SKIP();
+  DWORD_PTR original = 0, system = 0;
+  if (!::GetProcessAffinityMask(::GetCurrentProcess(), &original, &system) ||
+      original == 0) {
+    GTEST_SKIP();
+  }
+  const DWORD_PTR single = original & (~original + 1);
+  if (!::SetProcessAffinityMask(::GetCurrentProcess(), single)) GTEST_SKIP();
+  SharedPool pool(system_allocator(), 64, 64);
+  const BOOL restored = ::SetProcessAffinityMask(::GetCurrentProcess(), original);
+  ASSERT_NE(restored, 0);
+  ASSERT_TRUE(pool.valid());
+  EXPECT_EQ(pool.testing_num_shards(), 1u);
+#elif defined(__linux__)
+  cpu_set_t original;
+  CPU_ZERO(&original);
+  if (::sched_getaffinity(0, sizeof(original), &original) != 0) GTEST_SKIP();
+  int first = -1;
+  for (int cpu = 0; cpu < CPU_SETSIZE; ++cpu) {
+    if (CPU_ISSET(cpu, &original)) {
+      first = cpu;
+      break;
+    }
+  }
+  if (first < 0) GTEST_SKIP();
+  cpu_set_t single;
+  CPU_ZERO(&single);
+  CPU_SET(first, &single);
+  if (::sched_setaffinity(0, sizeof(single), &single) != 0) GTEST_SKIP();
+  SharedPool pool(system_allocator(), 64, 64);
+  const int restored = ::sched_setaffinity(0, sizeof(original), &original);
+  ASSERT_EQ(restored, 0);
+  ASSERT_TRUE(pool.valid());
+  EXPECT_EQ(pool.testing_num_shards(), 1u);
+#else
+  GTEST_SKIP() << "platform has no process affinity API";
+#endif
 }
 
 TEST(SharedPool, BlocksAlignedAndNonOverlapping) {

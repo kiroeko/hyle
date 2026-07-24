@@ -136,6 +136,9 @@ hyle_fixed_pool_destroy(pool); /* 不释放 control 或 payload */
 
 `SharedPool` 没有 TLS 隐藏。`deallocate()` 完成后，块立即进入共享 shard；`allocate()` 在返回 NULL 前用稳定双快照确认所有 shard 在同一公共区间内都为空，避免块跨 shard 移动造成分片假耗尽。
 
+内部默认 shard 数使用 platform 的动态进程可用 CPU 数（向上取 2 的幂，受 128 与 block
+count 限制），容器/cpuset 内不会按整机核数多建无意义的 cache-line head；C 调用者无需配置。
+
 正常路径使用 32-bit tag 的 64-bit CAS。tag 到饱和值的 shard 会**永久**切换到 serialized fallback，并用独立 64-bit change counter 参与空快照校验；tag 绝不回绕，因此长寿命池不会重新接受陈旧 CAS。
 
 | 符号 | 说明 |
