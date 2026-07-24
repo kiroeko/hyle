@@ -24,8 +24,8 @@ C ABI 要当一等公民，数据模型就得是**运行时参数化**，而非*
 
 | 编译期（C++，过不了 C） | 运行时擦除（C ABI 通路） |
 |---|---|
-| `ObjectPool<T>` / `ObjectPoolCache<T>` | hard pool 用 `hyle_shared_pool_create(sizeof(T), count, alignof(T))`；soft 层用 `hyle_shared_pool_cache_create(pool, metadata, capacity, batch)` 显式附着并 publish；`<T>` 降为 runtime size/alignment |
-| `GrowablePool<T>` | `hyle_growable_pool_create(slot_size, slot_align, initial_slots)` —— 非模板运行时核心（`detail::GrowablePoolCore`）承载擦除后的裸槽逻辑，`<T>` 模板只是跑 ctor/dtor 的薄包装 |
+| `ObjectPool<T>` / `ObjectPoolCache<T>` | hard pool 用 `hyle_shared_pool_create(&out,sizeof(T),count,alignof(T))`；soft 层用 `hyle_shared_pool_cache_create(&out,pool,metadata,capacity,batch)` 显式附着并 publish；`<T>` 降为 runtime size/alignment |
+| `GrowablePool<T>` | `hyle_growable_pool_create(&out,slot_size,slot_align,initial_slots)` —— 非模板运行时核心（`detail::GrowablePoolCore`）承载擦除后的裸槽逻辑，`<T>` 模板只是跑 ctor/dtor 的薄包装 |
 | `Allocator::construct<T>()` | 裸 `alloc` 返回内存，构造由调用方语言做 |
 | `Tensor<float, N>`（ggml 的对照） | `ggml_tensor { enum type; void* data; int64_t ne[]; }` —— 类型降成 `enum` 标签 |
 
@@ -97,16 +97,13 @@ HYLE 不在 C ABI 上再包一层冗余 C++ facade：原生 `include/hyle/<mod>/
 - **返回值通道**：`hyle_status`（opaque owning handle，`uintptr_t rep`）值返回 + 分支；`HYLE_C_RETURN_IF_ERROR` 传播。`Result<T>`（`std::expected`）是模板，C 侧用 `hyle_status` + 出参表达。
 - **诊断通道**：独立使用 `hyle/c/obs.h`；error 不维护第二套全局 handler。
 - **绝不让 C++ 异常跨 C 边界**（UB）。catch 只在 adapter 边界做"外来异常→Status"。
-- **分配器热路不返回 owning `hyle_status`**（mem 的刻意分层）：C 句柄工厂的
-  资源失败和可由 FFI 数据表达的非法值/溢出 layout 均直接返 NULL；
-  `hyle_mem_last_error_code()` 以独立 TLS 小枚举区分 INVALID_ARGUMENT、
-  OUT_OF_MEMORY、EXHAUSTED 与 PLATFORM，字符串只作诊断。生命周期、并发静默、
-  foreign/double free 等时序契约违反仍 fail-fast。理由不是“error 在 mem
-  上层”——实际层级是 error(P0) → platform(P1) → mem(P2)，mem 也显式链接
-  error；理由是**分配失败路径不能依赖可能分配消息存储的 owning Status**，
-  且 alloc/free 热路不能增加对象管理税。HugeRegion 的 C++ `Result` 失败在 C 桥接层
-  按共享 StatusCode 映射为 mem 小枚举并复制消息；不再读取、清空或恢复 platform TLS。
-  这保留分配器热路的紧凑合同，同时消除跨子系统的隐式诊断耦合。
+- **mem 按冷/热路径分层，不另造错误系统**：句柄工厂、external init、HugeRegion 和
+  诊断复制等冷路径统一返回 `hyle_status`，out 参数在前且进入时清空。成功 Status 是
+  8B 零值、零分配；错误消息 OOM 时仍保留 inline code。HugeRegion 直接把 C++/platform
+  Status 所有权交给 C，不降级成模块私有枚举，也没有 stale TLS。`alloc/realloc`、region
+  bump、pool pop/acquire 等热路径继续直接返回指针/NULL，不在容量耗尽/OOM 路上构造
+  owning Status；生命周期、foreign/double free 等契约违反仍 fail-fast。这是接口语义与
+  成本裁决，不是依赖约束：error 是 P0 零上游根，mem 显式依赖它且不会形成环。
 - **platform 按失败形状分通道**：Thread 构造、DynLib、MappedFile 与 VM/NUMA 的
   可恢复失败返回 `hyle_status` + 出参，因此 C 与 C++ 共用错误分类且没有
   “NULL 究竟是合法值还是失败”的歧义；Parker wrapper 与 fs/fd 暂用
@@ -124,7 +121,7 @@ C++ 用户拿原生 API，易用性靠 C++ 语言特性本身：
 C ABI 用户（第 2 层）的易用性则靠 **header-inline 便利层**（零新导出符号，不进 ABI）：
 - error：全码工厂 `hyle_status_not_found()` 等 + 谓词 `hyle_status_is_*()` + `HYLE_C_RETURN_IF_ERROR`。
 - platform：`hyle_thread_opts_set_*` + `HYLE_THREAD_OPTS_INIT` + `hyle_page_align_up` inline。
-- mem：`hyle_alloc`/`free`/`realloc` 便利转发 + `*_create_default` system-backing 构造 + 默认硬容量 `HYLE_OBJECT_POOL_*`、显式软容量 `HYLE_OBJECT_POOL_CACHE_*` typed 宏（`HYLE_ALIGNOF` 跨 C/C++ shim）。默认 alignment 在头内常量折叠，不先跨 DLL 查询。
+- mem：`hyle_alloc`/`free`/`realloc` 便利转发 + `*_create_default(&out,...)` system-backing 构造 + 默认硬容量 `HYLE_OBJECT_POOL_*`、显式软容量 `HYLE_OBJECT_POOL_CACHE_*` typed 宏（构造宏返回 Status；`HYLE_ALIGNOF` 跨 C/C++ shim）。默认 alignment 在头内常量折叠，不先跨 DLL 查询。
 
 **原则**：两条线各自把易用性做到位——C++ 靠语言特性，C 靠 header-inline 糖 + opaque 句柄。inline 糖不进 DLL 导出、零 ABI 风险，是"给 C 用户便利但不污染稳定面"的标准手法（HYLE 与 ggml/oneDNN 一致）。
 

@@ -86,17 +86,19 @@ blocking borrow 不进入 `mem/` 基础池。等待策略依赖 fiber/condition/
    global `new`。FixedRegion 是三字按值 cursor，无 control allocation；FixedPool 的 owning
    factory 显式接收 control allocator，external payload 始终不 fallback。HugeRegion 的 payload
    由 OS VM 管理，小 control 当前使用 HYLE system allocator。
-4. C 传入的 size/layout/alignment 是可校验数据：非法构造参数返回 NULL + last-error，不让
-   C++ contract assert 穿过 ABI。foreign/double return、错误 marker 和 live object 下销毁仍是
-   已建立的调用合同违反，可 fail-fast。
+4. C 传入的 size/layout/alignment 是可校验数据：冷构造/初始化返回 `hyle_status + out`，
+   非法参数不让 C++ contract assert 穿过 ABI；out 参数进入时清空。热 allocate/pop/acquire
+   保留指针/NULL 值合同。foreign/double return、错误 marker 和 live object 下销毁仍是已建立
+   的调用合同违反，可 fail-fast。
 5. `PooledRegion` 在 C/C++ 使用同一名字与 `clear()`；未发布阶段不保留 `Arena/reset` 兼容壳。
    adapter 统一用 `*_as_allocator`，不混用 `get`。
 6. `c_surface_symbols.txt` 只保证声明、纯 C 消费和实际导出同步；有意的产品改形必须更新它，
    它不是 ABI freeze。
 
-已收口的决定：mem 使用独立 TLS error code/string，HugeRegion 只临时复制 VM 失败原因；
-FixedRegion 按值、FixedPool 提供 caller-owned in-place control；StatsAllocator 作为 opt-in
-产品能力导出 POD snapshot 与 bounded leak copy。PMR、typed ctor/dtor 与 fiber RAII 没有
+已收口的决定：mem 不维护私有 TLS error，冷路径复用 P0 `hyle_status`；HugeRegion 直接
+传递 VM/NUMA Status，成功零分配，热分配路径不构造 Status。FixedRegion 按值、FixedPool
+提供 caller-owned in-place control；StatsAllocator 作为 opt-in 产品能力导出 POD snapshot
+与返回 Status 的 bounded leak copy。PMR、typed ctor/dtor 与 fiber RAII 没有
 自然 C 形状，不为追求符号 1:1 而导出。
 
 ## 5. 固定块池

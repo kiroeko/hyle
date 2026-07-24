@@ -9,10 +9,11 @@
 | 文档 | 给谁 / 讲什么 |
 |---|---|
 | [`usage-guide.md`](./usage-guide.md) | **怎么用**：模块入口、构建选项、SIMD 编译变体模型、最小用法和 C-ABI 边界。**集成第一站。** |
-| [`mem.md`](./mem.md) | **mem C++ 使用指南**：按 ownership/concurrency/capacity/lifetime 选 Region、Pool、Quota、Preserve 与 HugeRegion；性能只链接权威总账。 |
-| [`c-error.md`](./c-error.md) | **error 纯 C ABI**：`hyle_status` 所有权、工厂/查询、上下文、buffer 格式化与传播。**FFI / 跨编译器第一站。** |
+| [`error.md`](./error.md) | **error 语言无关选型入口 + C++ 自然写法**：按运营失败/空值合同/程序错误/诊断边界决定 Status、Result、值合同或 fail-fast；C 用户再去 c-error 查映射。 |
+| [`mem.md`](./mem.md) | **mem 语言无关选型入口 + C++ 自然写法**：按 ownership/concurrency/capacity/lifetime 决定什么情况用什么；C 用户再去 c-mem 查映射。 |
+| [`c-error.md`](./c-error.md) | **error C/FFI 精确映射**：选型沿用 error.md，只说明 `hyle_status` 的 owning 生命周期、Status/out、上下文、格式化与传播。 |
 | [`c-platform.md`](./c-platform.md) | **platform 纯 C ABI**：Parker/Thread/DynLib/VM/mapped_file/fs/cpu/numa 不透明句柄与自由函数、named enum、所有权与易用示例。 |
-| [`c-mem.md`](./c-mem.md) | **mem C pre-release surface**：Allocator/Quota/Stats、Region/FixedRegion/FixedPool、硬/软 SharedPool、Stack/PooledRegion/GrowablePool/HugeRegion 与进程维护策略。 |
+| [`c-mem.md`](./c-mem.md) | **mem C/FFI 精确映射**：选型沿用 mem.md，只说明 Status/out、opaque handle、typed 宏、所有权和各入口。 |
 | [`c-time.md`](./c-time.md) | **time 纯 C ABI**：单调/墙钟、饱和 deadline、sleep、TimerWheel/CommonTimeoutQueue opaque handle、visitor 与生命周期合同。 |
 | [`c-obs.md`](./c-obs.md) | **obs 纯 C ABI**：结构化 record、quiescent sink 生命周期、默认 sink，以及 C/FFI runtime trace 与原生零成本 trace 的边界。 |
 | [`c-util.md`](./c-util.md) | **util 纯 C ABI**：RNG POD、Ref/ScopeGuard/Registry/SpinLock 类型擦除句柄、demangle buffer-fill、所有权和并发合同。 |

@@ -80,7 +80,7 @@ util ~1.3k · time ~0.9k · obs/error/graph 各 ~0.6–0.8k。
 | **00-scaffolding** | P-1 | 构建 | CMake 多模块结构+GoogleTest/nanobench/sanitizer/CI+HYLE_宏骨架 | — | 0.6-1k | 294 | ✅ 完成 |
 | error-01 | P0 | error | Status + std::expected（历史首版） | 00 | 1-2k | 456 | 🗃️ 历史完成；接口与边界后由 error reclosure 重审 |
 | error-02 | P0 | error | error_handler vtable（历史） | error-01 | 1k | 127 (+74 测试) | 🗃️ 曾完成，实际消费者审查后退役；日志归 obs、合同违反归 fatal |
-| [error-03](./error-module-reclosure.md) | P0 | error | 面向真实调用重收 Status/Result/C ABI/context | error-01,obs-01 | — | 见任务页 | ✅ **2026-07-24 自身冻结**：功能/C++/C ABI 收口；Win/GCC14/M4 正确性 + 核心/正常路径 n=15，同形项无 LOSE；全库 adoption audit 另阶段执行 |
+| [error-03](./error-module-reclosure.md) | P0 | error | 面向真实调用重收 Status/Result/C ABI/context | error-01,obs-01 | — | 见任务页 | ✅ **2026-07-24 自身冻结**：功能/C++/C ABI 收口；Win/GCC14/M4 正确性 + 核心/正常路径 n=15，同形项无 LOSE；全库 adoption audit 进行中，mem 冷路径已统一 Status、私有 TLS 已删 |
 | [obs-01](./obs-01-log.md) | P0 | obs | 同步结构化日志 + quiescent sink registry | 00 | ~1k | 见 closure | ✅ **2026-07-19 收口**：record fields/source/time、caller-side format、TTY default sink；active-ref 摘除保证无旧 callback UAF，自摘安全/跨摘拒绝；纯 C POD+opaque sink；三平台 + ASan/UBSan/TSan + 三层性能基准。详见 [`obs-module-closure.md`](./obs-module-closure.md) |
 | [obs-02](./obs-module-closure.md) | P0 | obs | 编译期 trace/counter hook + Tracy 后端 | **能力 C6** | 1-2k | seam + 下游 hooks | ✅ **2026-07-19 收口**：OFF 参数不求值/零依赖；ON 覆盖 zone/plot/counter/fiber/frame/message/memory/thread-name，接入 mem/sched/io/compute；多 DLL 从“每模块静态 TracyClient”修为单 shared client；Windows/WSL/M4 双态通过，C/FFI 有稳定 runtime trace no-op/Tracy seam |
 | platform-01 | P1 | platform | thread + park(futex/WaitOnAddress/ulock) | error-01 | 2k | 527 | ✅ 完成 |

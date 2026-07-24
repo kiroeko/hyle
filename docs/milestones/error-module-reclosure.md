@@ -1,8 +1,8 @@
 # error-03：error 模块实际使用导向重收口
 
 > 本文是 Jira 式任务记录。稳定设计见
-> [`../architecture/error-design.md`](../architecture/error-design.md)，用户写法见
-> [`../guide/usage-guide.md`](../guide/usage-guide.md) 与
+> [`../architecture/error-design.md`](../architecture/error-design.md)，用户选型见
+> [`../guide/error.md`](../guide/error.md)，C/FFI 映射见
 > [`../guide/c-error.md`](../guide/c-error.md)，性能数字只见
 > [`../performance/benchmarks-error.md`](../performance/benchmarks-error.md)。
 
@@ -50,6 +50,18 @@ Result 错误构造、graph 首错聚合、测试/日志的人读格式化）。
 StatusBuilder、自动日志和 `CO_*` 宏继续拒绝进入 error 核心。benchmark 覆盖正常格式化、
 `Result<void>` 与聚合形状；核心与正常路径拆成两个 executable，避免 whole-TU inline
 budget 污染核心证据。
+
+## 全库 adoption audit：mem 消费者切片（2026-07-24）
+
+- roadmap 明确 error 是 P0 零上游根；mem 显式 PUBLIC 依赖 error，不存在依赖环。
+- mem 的句柄工厂、external init、HugeRegion、leak copy 与 1GiB page reserve 等冷路径
+  统一为 `hyle_status + out`；进入时清空 out，HugeRegion 保留原始 VM/NUMA Status。
+- 删除 mem 私有 `hyle_mem_error`、`hyle_mem_last_error*` TLS 通道，消除 stale-error 与
+  “NULL 后另查线程状态”的两步协议；C 用户直接使用 error 的 code/message/传播宏。
+- alloc/realloc、region bump、pool pop/acquire 等热路径仍返回指针/NULL，未增加 Status
+  构造、TLS 写或 DLL 调用；成功冷工厂返回 8B 零值 Status，零分配。
+- Windows Release 的 mem C++/纯 C 定向测试通过。该工作属于 error adoption，不重开
+  已冻结的 mem 能力面或性能设计。
 
 ## 完成条件
 

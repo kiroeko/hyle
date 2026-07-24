@@ -6,7 +6,9 @@
 > **命名**：全部 `hyle_*` / `HYLE_*`
 
 跨语言、跨编译器和纯 C 消费者只绑定本头，不 include `hyle/error/*.h`。error C 面
-只传递可恢复失败；日志和 sink 使用 `hyle/c/obs.h`。
+只传递可恢复失败；日志和 sink 使用 `hyle/c/obs.h`。如果还没决定应该用 Status、
+Result/out、空值合同还是 fail-fast，先看语言无关的 [`error.md`](./error.md)；本文只说明
+选定 Status 后怎样准确映射到 C/FFI。
 
 ## 1. 类型与所有权
 
@@ -70,6 +72,8 @@ hyle_status oom = hyle_status_resource_exhausted(NULL);
 
 ## 4. 常用写法
 
+### 4.1 普通传播与语义 context
+
 ```c
 hyle_status load_model(void) {
   hyle_status s = open_weights();
@@ -89,7 +93,38 @@ if (!hyle_status_is_ok(s)) {
 hyle_status_free(&s);
 ```
 
-## 5. 有意不导出
+### 4.2 `Status + out` 冷工厂
+
+```c
+#include "hyle/c/mem.h"
+
+hyle_status make_request_pool(hyle_shared_pool **out) {
+  /* 工厂进入时会清空 *out；成功后调用方拥有 *out。 */
+  return hyle_shared_pool_create_default(out, 256, 1024, 0);
+}
+
+hyle_status run(void) {
+  hyle_shared_pool *pool = NULL;
+  HYLE_C_RETURN_IF_ERROR(make_request_pool(&pool));
+
+  void *block = hyle_shared_pool_allocate(pool); /* 热路：耗尽就是 NULL */
+  if (block != NULL) hyle_shared_pool_deallocate(pool, block);
+  hyle_shared_pool_destroy(pool);
+  return hyle_status_ok();
+}
+```
+
+`HYLE_C_RETURN_IF_ERROR` 对非 OK Status 做所有权转移；调用者最终负责 free。成功 Status 是零值，
+宏直接继续。已有资源需要 cleanup 时使用普通分支，在 return 前先释放资源，不要用宏跳过清理。
+
+### 4.3 clone、move 与借用消息
+
+- 两个变量都要独立拥有同一错误：`hyle_status_clone`。
+- 只把所有权交给另一个变量：`hyle_status_move`。
+- `hyle_status_message_cstr` 只借用；原 Status 被 free/move/原地加 context 后指针失效。
+- 直接 `dst = src` 只是复制 tagged word，会造成 heap Status double free；禁止。
+
+## 5. C++ 到 C 的映射
 
 | C++ 能力 | C 路径 |
 |---|---|

@@ -74,7 +74,9 @@ extern "C" {
 1. **opaque 句柄 = control struct 内嵌 C++ 对象**，`_o` 类型**在 anon namespace 之外**定义（同 `hyle_vm_region_o`）：
    ```cpp
    struct hyle_foo_o { hyle::mod::Foo obj; /* ...ctor... */ };
-   hyle_foo_o* hyle_foo_create(...) { return new (std::nothrow) hyle_foo_o{...}; }
+   hyle_status hyle_foo_create(hyle_foo_o** out, ...) {
+     /* clear *out; construct; return Status */
+   }
    void hyle_foo_destroy(hyle_foo_o* f) { delete f; }  // delete on nullptr is safe
    ```
    句柄方法一律 `return f ? f->obj.method() : <默认>`（NULL 句柄安全）。若工厂接收用户注入的 allocator/backing，control 与其拥有的存储都必须由该 backing 分配和释放；不能悄悄回退全局 `new/delete`。无异常构造路径用 backing 分配 + placement new，并以 `noexcept`/编译期约束锁住。
@@ -85,13 +87,12 @@ extern "C" {
    - control 若存了调用方的 C 回调结构体，**存在前、C++ 对象在后**（析构逆序，C++ dtor 可能回调 backing）。
 
 3. **数据错误可恢复，时序契约违反 fail-fast**（区分二者）：
-   - C/FFI 参数表达的非法值或溢出（零尺寸、非 2 幂 alignment、layout 乘加溢出、backing 缺 fn 指针）在桥接层验证，返 NULL/错误码并给出原因；不要把不可信 C 数据送进 C++ ctor 的 assert。
-   - 资源故障（control/slab OOM、池耗尽）同样返 NULL/错误码。
+   - C/FFI 参数表达的非法值或溢出（零尺寸、非 2 幂 alignment、layout 乘加溢出、backing 缺 fn 指针）在桥接层验证，冷路径返回 `hyle_status` 并给出原因；不要把不可信 C 数据送进 C++ ctor 的 assert。
+   - 资源故障（control/slab OOM、池耗尽）同样返回结构化 Status。
    - 已有对象的生命周期、并发静默、foreign/double free 等程序错误仍 fail-fast；这些不是普通资源不足。
-   - 一般资源构造采用 **`hyle_status` + out 参数**：成功才写出所有权，失败同时携带
-     分类和消息。只有 alloc/free 热路或分配器工厂明确证明 owning Status 不合适时，
-     才可使用 NULL + 模块本地紧凑错误码/诊断串（如 mem）；不得转发或暂存另一模块
-     的 TLS。每条 NULL 路径都必须覆盖本模块错误码和消息，避免过时诊断。
+   - 一般资源构造采用 **`hyle_status` + out 参数**：out 在前、进入时清空，成功才写出
+     所有权，失败同时携带分类和消息。alloc/free、bump、pool pop/acquire 等热路可按其
+     值合同直接返回指针/NULL；不得因此给整个模块再造 TLS error 或模块私有码表。
    - 只在系统边界校验一次；内部/框架保证不重复校验。
 
 4. **跨 ABI POD 要钉布局，输入 options 要能演进**：
@@ -111,7 +112,7 @@ extern "C" {
 **C ABI 用户（跨语言/FFI）的易用性靠 header-inline 便利层**——零新导出符号、不进 ABI、纯语法糖。这是必做的一个维度，不是可选。mem/error/platform 已立的模式，照抄：
 
 - **便利转发**：`hyle_alloc/free/realloc`（经句柄调，省手解 fn 指针；NULL 句柄安全）。
-- **typed 宏**（类型擦除的用户侧糖）：`HYLE_OBJECT_POOL_CREATE(backing,T,n)` 替用户填 `sizeof(T)`/`HYLE_ALIGNOF(T)`；`HYLE_ALIGNOF` 是跨 C/C++ 的 alignof shim（C++/C23 `alignof`、C11 `_Alignof`、否则 0→默认对齐）。
+- **typed 宏**（类型擦除的用户侧糖）：`HYLE_OBJECT_POOL_CREATE(&out,backing,T,n)` 替用户填 `sizeof(T)`/`HYLE_ALIGNOF(T)` 并返回 `hyle_status`；`HYLE_ALIGNOF` 是跨 C/C++ 的 alignof shim（C++/C23 `alignof`、C11 `_Alignof`、否则 0→默认对齐）。
 - **工厂 + 谓词**（error 模式）：`hyle_status_not_found()` 等全码工厂 + `hyle_status_is_*()` 谓词 + `HYLE_C_RETURN_IF_ERROR`。
 - **opts 建造 + 尺寸初始化宏**（platform 模式）：`HYLE_THREAD_OPTS_INIT`
   + `hyle_thread_opts_set_*`；宏写 `struct_size`，因此应称“默认初始化”，

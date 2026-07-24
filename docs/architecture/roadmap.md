@@ -98,7 +98,7 @@ container/       │               │ compute   │  container 自带内联 SSE
 
 | 阶段 | 模块 | 里程碑（每个可独立编/测）| 旧预测 | 再投影(实测口径) |
 |---|---|---|---|---|
-| **P0** | error / obs-hook | Status+expected+context+ASSIGN_OR_RETURN / obs 埋点 | 3-5k | error 当前形状 Windows 已验，🔶 Linux/macOS 重证后冻结；obs 已收口 |
+| **P0** | error / obs-hook | Status+expected+context+ASSIGN_OR_RETURN / obs 埋点 | 3-5k | error 自身已在 Win/GCC14/M4 正确性与两类性能证书后冻结；全库 adoption audit 进行中，mem 消费者切片已统一共享 Status；obs 已收口 |
 | **P1** | platform | thread+park / vm+dynlib / path+fs+env | 5-8k | **~4.4k**，✅ 预发布冻结 |
 | **P2** | mem | Allocator+alignment / mimalloc / region / pool+stack / NUMA | 6-10k | **~1.8k**，实现主干稳定；公共形状/C surface 与跨平台性能尾仍在收口复审 |
 | **P2** | time | 单调钟 / 分层时间轮 | 1.5-2.5k | **~0.9k**，✅ 预发布冻结 |

@@ -17,10 +17,8 @@
 #include "hyle/c/mem.h"
 
 #include <cstddef>
-#include <cstdio>
 #include <cstring>
 #include <new>
-#include <string_view>
 #include <type_traits>
 #include <utility>
 
@@ -39,44 +37,8 @@ namespace {
 
 using hyle::mem::Allocator;
 
-// The C mem surface owns its diagnostic channel. In particular, a failed mem
-// factory must not overwrite a platform VM error observed by an unrelated
-// caller on the same thread.
-thread_local char g_mem_last_error[512] = {};
-thread_local hyle_mem_error g_mem_last_error_code = HYLE_MEM_ERROR_NONE;
-
-void set_mem_error(hyle_mem_error code, const char *message) noexcept {
-  g_mem_last_error_code = code;
-  if (code == HYLE_MEM_ERROR_NONE || message == nullptr ||
-      message[0] == '\0') {
-    g_mem_last_error[0] = '\0';
-    return;
-  }
-  std::snprintf(g_mem_last_error, sizeof(g_mem_last_error), "%s", message);
-}
-
-hyle_mem_error mem_error_from_status(hyle::StatusCode code) noexcept {
-  switch (code) {
-  case hyle::StatusCode::InvalidArgument:
-  case hyle::StatusCode::OutOfRange:
-    return HYLE_MEM_ERROR_INVALID_ARGUMENT;
-  case hyle::StatusCode::ResourceExhausted:
-    return HYLE_MEM_ERROR_OUT_OF_MEMORY;
-  default:
-    return HYLE_MEM_ERROR_PLATFORM;
-  }
-}
-
-void set_mem_error_from_status(const hyle::Status &status,
-                               const char *fallback) noexcept {
-  g_mem_last_error_code = mem_error_from_status(status.code());
-  const std::string_view message = status.message();
-  if (!message.empty()) {
-    std::snprintf(g_mem_last_error, sizeof(g_mem_last_error), "%.*s",
-                  static_cast<int>(message.size()), message.data());
-  } else {
-    std::snprintf(g_mem_last_error, sizeof(g_mem_last_error), "%s", fallback);
-  }
+hyle_status steal_status(hyle::Status &&status) noexcept {
+  return hyle_status{status.release_rep()};
 }
 
 static_assert(std::is_standard_layout_v<hyle_allocator>);
@@ -141,11 +103,7 @@ std::size_t norm_align(std::size_t a) noexcept {
 
 bool normalize_alignment(std::size_t input, std::size_t *out) noexcept {
   const std::size_t alignment = norm_align(input);
-  if ((alignment & (alignment - 1)) != 0) {
-    set_mem_error(HYLE_MEM_ERROR_INVALID_ARGUMENT,
-        "mem: alignment must be zero or a power of two");
-    return false;
-  }
+  if ((alignment & (alignment - 1)) != 0) return false;
   *out = alignment;
   return true;
 }
@@ -323,19 +281,24 @@ void hyle_system_collect(int force) { hyle::mem::system_collect(force != 0); }
 /* ---- allocator adapters ---------------------------------------------------
  */
 
-hyle_quota_allocator_o *hyle_quota_allocator_create(hyle_allocator backing,
-                                                    size_t limit) {
-  set_mem_error(HYLE_MEM_ERROR_NONE, nullptr);
+hyle_status hyle_quota_allocator_create(hyle_quota_allocator_o **out,
+                                        hyle_allocator backing, size_t limit) {
+  if (out == nullptr) {
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_quota_allocator_create: out is NULL"));
+  }
+  *out = nullptr;
   if (!valid_backing(backing)) {
-    set_mem_error(HYLE_MEM_ERROR_INVALID_ARGUMENT,
-        "hyle_quota_allocator_create: invalid backing");
-    return nullptr;
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_quota_allocator_create: invalid backing"));
   }
   auto *q = allocate_handle<hyle_quota_allocator_o>(backing, limit);
-  if (q == nullptr)
-    set_mem_error(HYLE_MEM_ERROR_OUT_OF_MEMORY,
-        "hyle_quota_allocator_create: control allocation failed");
-  return q;
+  if (q == nullptr) {
+    return steal_status(hyle::Status::ResourceExhausted(
+        "hyle_quota_allocator_create: control allocation failed"));
+  }
+  *out = q;
+  return steal_status(hyle::Status());
 }
 
 void hyle_quota_allocator_destroy(hyle_quota_allocator_o *q) { free_handle(q); }
@@ -356,29 +319,32 @@ size_t hyle_quota_allocator_remaining(const hyle_quota_allocator_o *q) {
   return q ? q->quota.remaining() : 0;
 }
 
-hyle_stats_allocator_o *
-hyle_stats_allocator_create(hyle_allocator backing, int track_leaks) {
-  set_mem_error(HYLE_MEM_ERROR_NONE, nullptr);
+hyle_status hyle_stats_allocator_create(hyle_stats_allocator_o **out,
+                                        hyle_allocator backing,
+                                        int track_leaks) {
+  if (out == nullptr) {
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_stats_allocator_create: out is NULL"));
+  }
+  *out = nullptr;
   if (!valid_backing(backing)) {
-    set_mem_error(HYLE_MEM_ERROR_INVALID_ARGUMENT,
-                  "hyle_stats_allocator_create: invalid backing");
-    return nullptr;
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_stats_allocator_create: invalid backing"));
   }
   void *memory = backing.alloc(backing.state, sizeof(hyle_stats_allocator_o),
                                alignof(hyle_stats_allocator_o));
   if (memory == nullptr) {
-    set_mem_error(HYLE_MEM_ERROR_OUT_OF_MEMORY,
-                  "hyle_stats_allocator_create: control allocation failed");
-    return nullptr;
+    return steal_status(hyle::Status::ResourceExhausted(
+        "hyle_stats_allocator_create: control allocation failed"));
   }
   try {
-    return ::new (memory) hyle_stats_allocator_o(backing, track_leaks != 0);
+    *out = ::new (memory) hyle_stats_allocator_o(backing, track_leaks != 0);
+    return steal_status(hyle::Status());
   } catch (...) {
     backing.free(backing.state, memory, sizeof(hyle_stats_allocator_o),
                  alignof(hyle_stats_allocator_o));
-    set_mem_error(HYLE_MEM_ERROR_OUT_OF_MEMORY,
-                  "hyle_stats_allocator_create: instrumentation allocation failed");
-    return nullptr;
+    return steal_status(hyle::Status::ResourceExhausted(
+        "hyle_stats_allocator_create: instrumentation allocation failed"));
   }
 }
 
@@ -424,30 +390,36 @@ int hyle_stats_allocator_balanced(const hyle_stats_allocator_o *s) {
   return s != nullptr && s->stats.balanced();
 }
 
-size_t hyle_stats_allocator_copy_leaks(const hyle_stats_allocator_o *s,
-                                       hyle_mem_leak *out, size_t capacity) {
+hyle_status hyle_stats_allocator_copy_leaks(
+    size_t *out_total, const hyle_stats_allocator_o *s, hyle_mem_leak *out,
+    size_t capacity) {
   static_assert(sizeof(hyle_mem_leak) == sizeof(hyle::mem::LeakEntry));
   static_assert(alignof(hyle_mem_leak) == alignof(hyle::mem::LeakEntry));
   static_assert(offsetof(hyle_mem_leak, ptr) ==
                 offsetof(hyle::mem::LeakEntry, ptr));
   static_assert(offsetof(hyle_mem_leak, size) ==
                 offsetof(hyle::mem::LeakEntry, size));
+  if (out_total == nullptr) {
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_stats_allocator_copy_leaks: out_total is NULL"));
+  }
+  *out_total = 0;
   if (s == nullptr || s->stats.leaks() == nullptr)
-    return 0;
-  if (out == nullptr || capacity == 0)
-    return s->stats.leaks()->outstanding();
+    return steal_status(hyle::Status());
+  if (out == nullptr || capacity == 0) {
+    *out_total = s->stats.leaks()->outstanding();
+    return steal_status(hyle::Status());
+  }
   if (capacity > SIZE_MAX / sizeof(hyle::mem::LeakEntry)) {
-    set_mem_error(HYLE_MEM_ERROR_OUT_OF_MEMORY,
-                  "hyle_stats_allocator_copy_leaks: capacity overflow");
-    return s->stats.leaks()->outstanding();
+    return steal_status(hyle::Status::OutOfRange(
+        "hyle_stats_allocator_copy_leaks: capacity overflow"));
   }
   const size_t bytes = capacity * sizeof(hyle::mem::LeakEntry);
   void *scratch = s->backing.alloc(s->backing.state, bytes,
                                    alignof(hyle::mem::LeakEntry));
   if (scratch == nullptr) {
-    set_mem_error(HYLE_MEM_ERROR_OUT_OF_MEMORY,
-                  "hyle_stats_allocator_copy_leaks: scratch allocation failed");
-    return s->stats.leaks()->outstanding();
+    return steal_status(hyle::Status::ResourceExhausted(
+        "hyle_stats_allocator_copy_leaks: scratch allocation failed"));
   }
   auto *entries = static_cast<hyle::mem::LeakEntry *>(scratch);
   const size_t total = s->stats.leaks()->copy_leaks(entries, capacity);
@@ -455,19 +427,23 @@ size_t hyle_stats_allocator_copy_leaks(const hyle_stats_allocator_o *s,
   std::memcpy(out, entries, copied * sizeof(*entries));
   s->backing.free(s->backing.state, scratch, bytes,
                   alignof(hyle::mem::LeakEntry));
-  return total;
+  *out_total = total;
+  return steal_status(hyle::Status());
 }
 
 /* ---- Region family --------------------------------------------------------
  */
 
-hyle_region_o *hyle_region_create(hyle_allocator backing,
-                                  const hyle_region_options *options) {
-  set_mem_error(HYLE_MEM_ERROR_NONE, nullptr);
+hyle_status hyle_region_create(hyle_region_o **out, hyle_allocator backing,
+                               const hyle_region_options *options) {
+  if (out == nullptr) {
+    return steal_status(
+        hyle::Status::InvalidArgument("hyle_region_create: out is NULL"));
+  }
+  *out = nullptr;
   if (!valid_backing(backing)) {
-    set_mem_error(HYLE_MEM_ERROR_INVALID_ARGUMENT,
-                  "hyle_region_create: invalid backing");
-    return nullptr;
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_region_create: invalid backing"));
   }
   hyle_region_options defaults = HYLE_REGION_OPTIONS_INIT;
   const hyle_region_options *in = options != nullptr ? options : &defaults;
@@ -475,9 +451,8 @@ hyle_region_o *hyle_region_create(hyle_allocator backing,
       in->initial_block_size == 0 ||
       in->max_block_size < in->initial_block_size ||
       in->large_allocation_threshold == 0) {
-    set_mem_error(HYLE_MEM_ERROR_INVALID_ARGUMENT,
-                  "hyle_region_create: invalid options");
-    return nullptr;
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_region_create: invalid options"));
   }
   hyle::mem::RegionOptions cpp;
   cpp.initial_block_size = in->initial_block_size;
@@ -485,10 +460,12 @@ hyle_region_o *hyle_region_create(hyle_allocator backing,
   cpp.large_allocation_threshold = in->large_allocation_threshold;
   cpp.size_limit = in->size_limit;
   auto *r = allocate_handle<hyle_region_o>(backing, cpp);
-  if (r == nullptr)
-    set_mem_error(HYLE_MEM_ERROR_OUT_OF_MEMORY,
-        "hyle_region_create: control allocation failed");
-  return r;
+  if (r == nullptr) {
+    return steal_status(hyle::Status::ResourceExhausted(
+        "hyle_region_create: control allocation failed"));
+  }
+  *out = r;
+  return steal_status(hyle::Status());
 }
 
 void hyle_region_destroy(hyle_region_o *r) { free_handle(r); }
@@ -523,21 +500,20 @@ hyle_allocator hyle_region_as_allocator(hyle_region_o *r) {
            : hyle_allocator{nullptr, nullptr, nullptr, nullptr};
 }
 
-int hyle_fixed_region_init(hyle_fixed_region *r, void *storage, size_t size) {
-  set_mem_error(HYLE_MEM_ERROR_NONE, nullptr);
+hyle_status hyle_fixed_region_init(hyle_fixed_region *r, void *storage,
+                                   size_t size) {
   const std::uintptr_t begin = reinterpret_cast<std::uintptr_t>(storage);
   if (r != nullptr)
     r->state[0] = r->state[1] = r->state[2] = 0;
   if (r == nullptr || storage == nullptr || size == 0 ||
       size > UINTPTR_MAX - begin) {
-    set_mem_error(HYLE_MEM_ERROR_INVALID_ARGUMENT,
-                  "hyle_fixed_region_init: invalid storage");
-    return 0;
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_fixed_region_init: invalid storage"));
   }
   r->state[0] = begin;
   r->state[1] = begin;
   r->state[2] = begin + size;
-  return 1;
+  return steal_status(hyle::Status());
 }
 
 static bool valid_fixed_region(const hyle_fixed_region *r) {
@@ -599,48 +575,54 @@ hyle_allocator hyle_fixed_region_as_allocator(hyle_fixed_region *r) {
              : hyle_allocator{nullptr, nullptr, nullptr, nullptr};
 }
 
-hyle_fixed_pool_o *
-hyle_fixed_pool_init(hyle_fixed_pool_storage *control, void *storage,
-                     size_t size) {
-  set_mem_error(HYLE_MEM_ERROR_NONE, nullptr);
+hyle_status hyle_fixed_pool_init(hyle_fixed_pool_o **out,
+                                 hyle_fixed_pool_storage *control,
+                                 void *storage, size_t size) {
+  if (out == nullptr) {
+    return steal_status(
+        hyle::Status::InvalidArgument("hyle_fixed_pool_init: out is NULL"));
+  }
+  *out = nullptr;
   if (control == nullptr) {
-    set_mem_error(HYLE_MEM_ERROR_INVALID_ARGUMENT,
-                  "hyle_fixed_pool_init: invalid control");
-    return nullptr;
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_fixed_pool_init: invalid control"));
   }
   const hyle_allocator backing = system_backing();
   auto *p = ::new (static_cast<void *>(control->bytes))
       hyle_fixed_pool_o(backing, storage, size, false);
   if (!p->pool.valid()) {
     destroy_external_control(p);
-    set_mem_error(HYLE_MEM_ERROR_INVALID_ARGUMENT,
-                  "hyle_fixed_pool_init: invalid storage");
-    return nullptr;
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_fixed_pool_init: invalid storage"));
   }
-  return p;
+  *out = p;
+  return steal_status(hyle::Status());
 }
 
-hyle_fixed_pool_o *hyle_fixed_pool_create(hyle_allocator backing,
-                                          void *storage, size_t size) {
-  set_mem_error(HYLE_MEM_ERROR_NONE, nullptr);
+hyle_status hyle_fixed_pool_create(hyle_fixed_pool_o **out,
+                                   hyle_allocator backing, void *storage,
+                                   size_t size) {
+  if (out == nullptr) {
+    return steal_status(
+        hyle::Status::InvalidArgument("hyle_fixed_pool_create: out is NULL"));
+  }
+  *out = nullptr;
   if (!valid_backing(backing)) {
-    set_mem_error(HYLE_MEM_ERROR_INVALID_ARGUMENT,
-                  "hyle_fixed_pool_create: invalid control allocator");
-    return nullptr;
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_fixed_pool_create: invalid control allocator"));
   }
   auto *p = allocate_handle<hyle_fixed_pool_o>(backing, storage, size);
   if (p == nullptr) {
-    set_mem_error(HYLE_MEM_ERROR_OUT_OF_MEMORY,
-                  "hyle_fixed_pool_create: control allocation failed");
-    return nullptr;
+    return steal_status(hyle::Status::ResourceExhausted(
+        "hyle_fixed_pool_create: control allocation failed"));
   }
   if (!p->pool.valid()) {
     free_handle(p);
-    set_mem_error(HYLE_MEM_ERROR_INVALID_ARGUMENT,
-                  "hyle_fixed_pool_create: invalid storage");
-    return nullptr;
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_fixed_pool_create: invalid storage"));
   }
-  return p;
+  *out = p;
+  return steal_status(hyle::Status());
 }
 void hyle_fixed_pool_destroy(hyle_fixed_pool_o *p) {
   destroy_external_control(p);
@@ -685,39 +667,38 @@ hyle_allocator hyle_fixed_pool_as_allocator(hyle_fixed_pool_o *p) {
 /* ---- SharedPool (hard capacity) -------------------------------------------
  */
 
-hyle_shared_pool_o *hyle_shared_pool_create(hyle_allocator backing,
-                                            size_t block_size,
-                                            uint32_t block_count,
-                                            size_t alignment) {
-  set_mem_error(HYLE_MEM_ERROR_NONE, nullptr);
+hyle_status hyle_shared_pool_create(hyle_shared_pool_o **out,
+                                    hyle_allocator backing, size_t block_size,
+                                    uint32_t block_count, size_t alignment) {
+  if (out == nullptr) {
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_shared_pool_create: out is NULL"));
+  }
+  *out = nullptr;
   if (!valid_backing(backing)) {
-    set_mem_error(HYLE_MEM_ERROR_INVALID_ARGUMENT,
-        "hyle_shared_pool_create: invalid backing (a fn pointer is null)");
-    return nullptr;
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_shared_pool_create: invalid backing (a fn pointer is null)"));
   }
   std::size_t normalized_alignment = 0;
   if (!normalize_alignment(alignment, &normalized_alignment) ||
       !valid_shared_pool_layout(block_size, block_count,
                                 normalized_alignment)) {
-    set_mem_error(HYLE_MEM_ERROR_INVALID_ARGUMENT,
-        "hyle_shared_pool_create: invalid or overflowing pool layout");
-    return nullptr;
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_shared_pool_create: invalid or overflowing pool layout"));
   }
   auto *p = allocate_handle<hyle_shared_pool_o>(
       backing, block_size, block_count, normalized_alignment);
   if (p == nullptr) {
-    set_mem_error(HYLE_MEM_ERROR_OUT_OF_MEMORY,
-        "hyle_shared_pool_create: control allocation failed (out of memory)");
-    return nullptr;
+    return steal_status(hyle::Status::ResourceExhausted(
+        "hyle_shared_pool_create: control allocation failed (out of memory)"));
   }
   if (!p->pool.valid()) {
     free_handle(p);
-    set_mem_error(HYLE_MEM_ERROR_OUT_OF_MEMORY,
-        "hyle_shared_pool_create: slab allocation failed (out of memory)");
-    return nullptr;
+    return steal_status(hyle::Status::ResourceExhausted(
+        "hyle_shared_pool_create: slab allocation failed (out of memory)"));
   }
-  set_mem_error(HYLE_MEM_ERROR_NONE, nullptr);
-  return p;
+  *out = p;
+  return steal_status(hyle::Status());
 }
 
 void hyle_shared_pool_destroy(hyle_shared_pool_o *p) { free_handle(p); }
@@ -753,34 +734,34 @@ hyle_allocator hyle_shared_pool_as_allocator(hyle_shared_pool_o *p) {
 /* ---- SharedPoolCache (explicit owner-local soft capacity) -----------------
  */
 
-hyle_shared_pool_cache_o *
-hyle_shared_pool_cache_create(hyle_shared_pool_o *pool,
-                              hyle_allocator metadata, uint32_t capacity,
-                              uint32_t transfer_batch) {
-  set_mem_error(HYLE_MEM_ERROR_NONE, nullptr);
+hyle_status hyle_shared_pool_cache_create(
+    hyle_shared_pool_cache_o **out, hyle_shared_pool_o *pool,
+    hyle_allocator metadata, uint32_t capacity, uint32_t transfer_batch) {
+  if (out == nullptr) {
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_shared_pool_cache_create: out is NULL"));
+  }
+  *out = nullptr;
   if (pool == nullptr || !valid_backing(metadata) || capacity == 0) {
-    set_mem_error(HYLE_MEM_ERROR_INVALID_ARGUMENT,
-                  "hyle_shared_pool_cache_create: pool, metadata allocator "
-                  "and nonzero capacity are required");
-    return nullptr;
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_shared_pool_cache_create: pool, metadata allocator and nonzero "
+        "capacity are required"));
   }
   auto *p = allocate_handle<hyle_shared_pool_cache_o>(
       metadata, pool->pool, capacity, transfer_batch);
   if (p == nullptr) {
-    set_mem_error(HYLE_MEM_ERROR_OUT_OF_MEMORY,
-                  "hyle_shared_pool_cache_create: control "
-                  "allocation failed (out of memory)");
-    return nullptr;
+    return steal_status(hyle::Status::ResourceExhausted(
+        "hyle_shared_pool_cache_create: control allocation failed (out of "
+        "memory)"));
   }
   if (!p->cache.valid()) {
     free_handle(p);
-    set_mem_error(HYLE_MEM_ERROR_OUT_OF_MEMORY,
-                  "hyle_shared_pool_cache_create: index metadata "
-                  "allocation failed (out of memory)");
-    return nullptr;
+    return steal_status(hyle::Status::ResourceExhausted(
+        "hyle_shared_pool_cache_create: index metadata allocation failed "
+        "(out of memory)"));
   }
-  set_mem_error(HYLE_MEM_ERROR_NONE, nullptr);
-  return p;
+  *out = p;
+  return steal_status(hyle::Status());
 }
 
 void hyle_shared_pool_cache_destroy(hyle_shared_pool_cache_o *p) {
@@ -828,38 +809,39 @@ hyle_allocator hyle_shared_pool_cache_as_allocator(hyle_shared_pool_cache_o *p) 
 /* ---- StackAllocator --------------------------------------------------------
  */
 
-hyle_stack_allocator_o *hyle_stack_allocator_create(hyle_allocator backing,
-                                                    size_t size) {
-  set_mem_error(HYLE_MEM_ERROR_NONE, nullptr);
+hyle_status hyle_stack_allocator_create(hyle_stack_allocator_o **out,
+                                        hyle_allocator backing, size_t size) {
+  if (out == nullptr) {
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_stack_allocator_create: out is NULL"));
+  }
+  *out = nullptr;
   // Validate C data before entering the C++ constructor; malformed input does
   // not expose a C++ assertion across the language boundary.
   if (!valid_backing(backing)) {
-    set_mem_error(HYLE_MEM_ERROR_INVALID_ARGUMENT,
-        "hyle_stack_allocator_create: invalid backing (a fn pointer is null)");
-    return nullptr;
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_stack_allocator_create: invalid backing (a fn pointer is "
+        "null)"));
   }
   if (size == 0) {
-    set_mem_error(HYLE_MEM_ERROR_INVALID_ARGUMENT,
-        "hyle_stack_allocator_create: size must be nonzero");
-    return nullptr;
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_stack_allocator_create: size must be nonzero"));
   }
   auto *s = allocate_handle<hyle_stack_allocator_o>(backing, size);
   if (s == nullptr) {
-    set_mem_error(HYLE_MEM_ERROR_OUT_OF_MEMORY,
-                  "hyle_stack_allocator_create: control "
-                  "allocation failed (out of memory)");
-    return nullptr;
+    return steal_status(hyle::Status::ResourceExhausted(
+        "hyle_stack_allocator_create: control allocation failed (out of "
+        "memory)"));
   }
   // slab-OOM in the C++ ctor -> invalid (graceful, not abort; followup #2 arch
   // B).
   if (!s->stack.valid()) {
     free_handle(s);
-    set_mem_error(HYLE_MEM_ERROR_OUT_OF_MEMORY,
-        "hyle_stack_allocator_create: slab allocation failed (out of memory)");
-    return nullptr;
+    return steal_status(hyle::Status::ResourceExhausted(
+        "hyle_stack_allocator_create: slab allocation failed (out of memory)"));
   }
-  set_mem_error(HYLE_MEM_ERROR_NONE, nullptr);
-  return s;
+  *out = s;
+  return steal_status(hyle::Status());
 }
 
 void hyle_stack_allocator_destroy(hyle_stack_allocator_o *s) { free_handle(s); }
@@ -906,30 +888,33 @@ hyle_allocator hyle_stack_allocator_as_allocator(hyle_stack_allocator_o *s) {
 
 /* ---- PooledRegion --------------------------------------------------------- */
 
-hyle_pooled_region_o *hyle_pooled_region_create(hyle_shared_pool_o *pool) {
-  set_mem_error(HYLE_MEM_ERROR_NONE, nullptr);
+hyle_status hyle_pooled_region_create(hyle_pooled_region_o **out,
+                                      hyle_shared_pool_o *pool) {
+  if (out == nullptr) {
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_pooled_region_create: out is NULL"));
+  }
+  *out = nullptr;
   if (!pool) {
-    set_mem_error(HYLE_MEM_ERROR_INVALID_ARGUMENT,
-        "hyle_pooled_region_create: pool is NULL");
-    return nullptr;
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_pooled_region_create: pool is NULL"));
   }
   auto *r = allocate_handle<hyle_pooled_region_o>(pool->backing, &pool->pool);
   if (r == nullptr) { // control OOM
-    set_mem_error(HYLE_MEM_ERROR_OUT_OF_MEMORY,
-        "hyle_pooled_region_create: control allocation failed (out of memory)");
-    return nullptr;
+    return steal_status(hyle::Status::ResourceExhausted(
+        "hyle_pooled_region_create: control allocation failed (out of "
+        "memory)"));
   }
   // Pool exhausted (no free block) is a graceful resource failure, not a
-  // contract violation: return NULL + set last-error so an FFI caller has a
-  // defensive path for callers that race for a bounded pool block.
+  // contract violation: return RESOURCE_EXHAUSTED so callers racing for a
+  // bounded pool block can distinguish it from bad input.
   if (!r->region.valid()) {
     free_handle(r);
-    set_mem_error(HYLE_MEM_ERROR_EXHAUSTED,
-        "hyle_pooled_region_create: pool exhausted (no free block)");
-    return nullptr;
+    return steal_status(hyle::Status::ResourceExhausted(
+        "hyle_pooled_region_create: pool exhausted (no free block)"));
   }
-  set_mem_error(HYLE_MEM_ERROR_NONE, nullptr);
-  return r;
+  *out = r;
+  return steal_status(hyle::Status());
 }
 
 void hyle_pooled_region_destroy(hyle_pooled_region_o *r) { free_handle(r); }
@@ -968,49 +953,40 @@ hyle_allocator hyle_pooled_region_as_allocator(hyle_pooled_region_o *r) {
 /* ---- GrowablePool ----------------------------------------------------------
  */
 
-hyle_growable_pool_o *hyle_growable_pool_create(hyle_allocator backing,
-                                                size_t slot_size,
-                                                size_t slot_align,
-                                                uint32_t initial_slots) {
-  set_mem_error(HYLE_MEM_ERROR_NONE, nullptr);
+hyle_status hyle_growable_pool_create(hyle_growable_pool_o **out,
+                                      hyle_allocator backing,
+                                      size_t slot_size, size_t slot_align,
+                                      uint32_t initial_slots) {
+  if (out == nullptr) {
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_growable_pool_create: out is NULL"));
+  }
+  *out = nullptr;
   if (!valid_backing(backing)) {
-    set_mem_error(HYLE_MEM_ERROR_INVALID_ARGUMENT,
-        "hyle_growable_pool_create: invalid backing (a fn pointer is null)");
-    return nullptr;
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_growable_pool_create: invalid backing (a fn pointer is null)"));
   }
   const size_t normalized_align = norm_align(slot_align);
   if (!hyle::mem::detail::GrowablePoolCore::valid_layout(slot_size,
                                                          normalized_align)) {
-    set_mem_error(HYLE_MEM_ERROR_INVALID_ARGUMENT,
-        "hyle_growable_pool_create: invalid or overflowing slot layout");
-    return nullptr;
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_growable_pool_create: invalid or overflowing slot layout"));
   }
   auto *p = allocate_handle<hyle_growable_pool_o>(
       backing, slot_size, normalized_align, initial_slots);
-  if (p == nullptr)
-    set_mem_error(HYLE_MEM_ERROR_OUT_OF_MEMORY,
-        "hyle_growable_pool_create: control allocation failed (out of memory)");
-  else
-    set_mem_error(HYLE_MEM_ERROR_NONE, nullptr);
-  return p;
+  if (p == nullptr) {
+    return steal_status(hyle::Status::ResourceExhausted(
+        "hyle_growable_pool_create: control allocation failed (out of "
+        "memory)"));
+  }
+  *out = p;
+  return steal_status(hyle::Status());
 }
 
 void hyle_growable_pool_destroy(hyle_growable_pool_o *p) { free_handle(p); }
 
 void *hyle_growable_pool_acquire(hyle_growable_pool_o *p) {
-  if (p == nullptr) {
-    set_mem_error(HYLE_MEM_ERROR_INVALID_ARGUMENT,
-        "hyle_growable_pool_acquire: pool is NULL");
-    return nullptr;
-  }
-  void *slot = p->core.acquire();
-  set_mem_error(slot == nullptr ? HYLE_MEM_ERROR_OUT_OF_MEMORY
-                                : HYLE_MEM_ERROR_NONE,
-                slot == nullptr
-                    ? "hyle_growable_pool_acquire: growth allocation failed "
-                      "(out of memory)"
-                    : nullptr);
-  return slot;
+  return p != nullptr ? p->core.acquire() : nullptr;
 }
 
 void hyle_growable_pool_release(hyle_growable_pool_o *p, void *slot) {
@@ -1038,94 +1014,89 @@ size_t hyle_growable_pool_slot_stride(const hyle_growable_pool_o *p) {
 /* ---- HugeRegion ------------------------------------------------------------
  */
 
-hyle_huge_region_o *hyle_huge_region_open(size_t bytes, uint32_t flags,
-                                          int numa_node) {
+hyle_status hyle_huge_region_open(hyle_huge_region_o **out, size_t bytes,
+                                  uint32_t flags, int numa_node) {
   constexpr uint32_t kKnownFlags = HYLE_HUGE_THP_HINT | HYLE_HUGE_PREFAULT |
                                    HYLE_HUGE_NUMA_BIND |
                                    HYLE_HUGE_NUMA_INTERLEAVE;
-  set_mem_error(HYLE_MEM_ERROR_NONE, nullptr);
+  if (out == nullptr) {
+    return steal_status(
+        hyle::Status::InvalidArgument("hyle_huge_region_open: out is NULL"));
+  }
+  *out = nullptr;
   if (bytes == 0 || (flags & ~kKnownFlags) != 0 ||
       ((flags & HYLE_HUGE_NUMA_BIND) != 0 &&
        (flags & HYLE_HUGE_NUMA_INTERLEAVE) != 0)) {
-    set_mem_error(HYLE_MEM_ERROR_INVALID_ARGUMENT,
-                  "hyle_huge_region_open: invalid size or flag combination");
-    return nullptr;
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_huge_region_open: invalid size or flag combination"));
   }
   auto r =
       hyle::mem::HugeRegion::allocate(bytes, to_huge_flags(flags), numa_node);
-  if (!r) {
-    set_mem_error_from_status(r.error(),
-                              "hyle_huge_region_open: allocation failed");
-    return nullptr;
-  }
+  if (!r) return steal_status(std::move(r).error());
   const hyle_allocator backing = system_backing();
-  auto *out =
+  auto *handle =
       allocate_handle<hyle_huge_region_o>(backing, *std::move(r));
-  if (out == nullptr) {
-    set_mem_error(HYLE_MEM_ERROR_OUT_OF_MEMORY,
-        "hyle_huge_region_open: control allocation failed (out of memory)");
-  } else {
-    set_mem_error(HYLE_MEM_ERROR_NONE, nullptr);
+  if (handle == nullptr) {
+    return steal_status(hyle::Status::ResourceExhausted(
+        "hyle_huge_region_open: control allocation failed (out of memory)"));
   }
-  return out;
+  *out = handle;
+  return steal_status(hyle::Status());
 }
 
-hyle_huge_region_o *hyle_huge_region_open_local(size_t bytes, uint32_t flags) {
+hyle_status hyle_huge_region_open_local(hyle_huge_region_o **out, size_t bytes,
+                                        uint32_t flags) {
   constexpr uint32_t kKnownFlags = HYLE_HUGE_THP_HINT | HYLE_HUGE_PREFAULT |
                                    HYLE_HUGE_NUMA_BIND |
                                    HYLE_HUGE_NUMA_INTERLEAVE;
-  set_mem_error(HYLE_MEM_ERROR_NONE, nullptr);
+  if (out == nullptr) {
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_huge_region_open_local: out is NULL"));
+  }
+  *out = nullptr;
   if (bytes == 0 || (flags & ~kKnownFlags) != 0 ||
       ((flags & HYLE_HUGE_NUMA_BIND) != 0 &&
        (flags & HYLE_HUGE_NUMA_INTERLEAVE) != 0)) {
-    set_mem_error(
-        HYLE_MEM_ERROR_INVALID_ARGUMENT,
-        "hyle_huge_region_open_local: invalid size or flag combination");
-    return nullptr;
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_huge_region_open_local: invalid size or flag combination"));
   }
   auto r = hyle::mem::HugeRegion::allocate_local(bytes, to_huge_flags(flags));
-  if (!r) {
-    set_mem_error_from_status(
-        r.error(), "hyle_huge_region_open_local: allocation failed");
-    return nullptr;
-  }
+  if (!r) return steal_status(std::move(r).error());
   const hyle_allocator backing = system_backing();
-  auto *out =
+  auto *handle =
       allocate_handle<hyle_huge_region_o>(backing, *std::move(r));
-  if (out == nullptr) {
-    set_mem_error(HYLE_MEM_ERROR_OUT_OF_MEMORY,
-                  "hyle_huge_region_open_local: control allocation failed "
-                  "(out of memory)");
-  } else {
-    set_mem_error(HYLE_MEM_ERROR_NONE, nullptr);
+  if (handle == nullptr) {
+    return steal_status(hyle::Status::ResourceExhausted(
+        "hyle_huge_region_open_local: control allocation failed (out of "
+        "memory)"));
   }
-  return out;
+  *out = handle;
+  return steal_status(hyle::Status());
 }
 
-hyle_huge_region_o *hyle_huge_region_open_interleaved(size_t bytes) {
-  set_mem_error(HYLE_MEM_ERROR_NONE, nullptr);
+hyle_status hyle_huge_region_open_interleaved(hyle_huge_region_o **out,
+                                              size_t bytes) {
+  if (out == nullptr) {
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_huge_region_open_interleaved: out is NULL"));
+  }
+  *out = nullptr;
   if (bytes == 0) {
-    set_mem_error(HYLE_MEM_ERROR_INVALID_ARGUMENT,
-                  "hyle_huge_region_open_interleaved: size must be nonzero");
-    return nullptr;
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_huge_region_open_interleaved: size must be nonzero"));
   }
   auto r = hyle::mem::HugeRegion::allocate_interleaved(bytes);
-  if (!r) {
-    set_mem_error_from_status(
-        r.error(), "hyle_huge_region_open_interleaved: allocation failed");
-    return nullptr;
-  }
+  if (!r) return steal_status(std::move(r).error());
   const hyle_allocator backing = system_backing();
-  auto *out =
+  auto *handle =
       allocate_handle<hyle_huge_region_o>(backing, *std::move(r));
-  if (out == nullptr) {
-    set_mem_error(HYLE_MEM_ERROR_OUT_OF_MEMORY,
-        "hyle_huge_region_open_interleaved: control allocation failed (out of "
-        "memory)");
-  } else {
-    set_mem_error(HYLE_MEM_ERROR_NONE, nullptr);
+  if (handle == nullptr) {
+    return steal_status(hyle::Status::ResourceExhausted(
+        "hyle_huge_region_open_interleaved: control allocation failed (out "
+        "of memory)"));
   }
-  return out;
+  *out = handle;
+  return steal_status(hyle::Status());
 }
 
 void hyle_huge_region_destroy(hyle_huge_region_o *r) { free_handle(r); }
@@ -1154,17 +1125,6 @@ int hyle_huge_region_numa_placement_applied(const hyle_huge_region_o *r) {
   return r && r->region.numa_placement_applied() ? 1 : 0;
 }
 
-/* ---- diagnostics -----------------------------------------------------------
- */
-
-const char *hyle_mem_last_error(void) {
-  return g_mem_last_error;
-}
-
-hyle_mem_error hyle_mem_last_error_code(void) {
-  return g_mem_last_error_code;
-}
-
 /* ---- process-wide policy ---------------------------------------------------
  */
 
@@ -1177,9 +1137,14 @@ void hyle_enable_allocator_numa(unsigned max_nodes) {
   hyle::mem::enable_allocator_numa(max_nodes);
 }
 
-int hyle_reserve_huge_1g_pages(size_t pages, int numa_node,
-                               unsigned timeout_ms) {
-  return hyle::mem::reserve_huge_1g_pages(pages, numa_node, timeout_ms) ? 1 : 0;
+hyle_status hyle_reserve_huge_1g_pages(size_t pages, int numa_node,
+                                       unsigned timeout_ms) {
+  if (hyle::mem::reserve_huge_1g_pages(pages, numa_node, timeout_ms)) {
+    return steal_status(hyle::Status());
+  }
+  return steal_status(hyle::Status::Unavailable(
+      "hyle_reserve_huge_1g_pages: reservation failed (insufficient "
+      "privilege or contiguous memory)"));
 }
 
 } // extern "C"

@@ -36,7 +36,8 @@ last-error 分类和“失败指针 + 另查 TLS”的组合；未发布，不�
   冒充“已放置”，hard bind/interleave 无法满足时返回结构化错误。
 - C ABI 全面采用 `hyle_status` + out，`VmRegion::adopt` 只在成功后转移所有权。
 - `HugeRegion`、`FiberStack`、stack pool 与 sched 的 detached/task 路径传播共享错误；
-  mem C 仍保留分配语义的小枚举，但直接按 StatusCode 映射，不再捕获 platform TLS。
+  当时 mem C 仍保留分配语义的小枚举；error adoption 后续已把 mem 冷工厂迁到
+  `hyle_status + out` 并删除该私有 TLS 通道，热分配 NULL 合同不变。
 - Windows MSVC Release 的 platform/mem/sched C/C++ 与 mem header/surface 共 8 项通过；
   WSL GCC 14 与 Apple M4 AppleClang 21 的同链路各 8 项通过。macOS 非登录 SSH
   下的 header checker 现用 `xcrun` 注入 SDK sysroot，不再把工具链环境误报为

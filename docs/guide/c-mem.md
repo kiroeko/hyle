@@ -5,12 +5,21 @@
 > **稳定性**：正在按真实 C/FFI 用户任务重新审查；正式发布前可直接重塑，当前 manifest 不承诺 ABI 兼容
 > **命名**：全部 `hyle_*` / `HYLE_*`
 
+本文只负责把**已经选定的 mem 能力**准确映射到 C/FFI：签名、Status/out、所有权和
+生命周期。还没决定该用 Region、FixedPool、SharedPool 还是 cache 时，先看语言无关的
+[`mem.md` 一页选择表](./mem.md)；这里不另立一套选型标准。
+
 跨语言 / 跨编译器只绑定本头，不要 include `hyle/mem/*.h`。有 `backing` 参数的 opaque
 control 与内部 storage 都由该 backing 分配。FixedRegion 是可按值持有的 3-word cursor；
 FixedPool 同时提供 caller-owned `*_storage + *_init`（control/payload 都不触堆）和
 `*_create(control_allocator, ...)`。两者的 payload 始终只来自调用方 storage，绝不 fallback。
 所有 opaque handle 对外使用 `hyle_region *`、`hyle_shared_pool *` 等产品名；尾缀 `_o`
 只存在于不可解引用的内部 struct tag，不进入用户变量和函数签名。
+
+所有可能失败的冷构造/初始化入口统一采用 `hyle_status + out`：out 参数在前，函数进入时
+先清空 `*out`，成功返回零值 OK，失败返回可拥有、可传播的共享 error Status。调用方始终用
+`hyle_status_free` 结束 Status 生命周期。`alloc/realloc`、region bump、pool pop/acquire
+仍在热路直接返回指针或 NULL；容量耗尽/OOM 是其值合同，不为每次调用制造 Status。
 
 ## 1. 链接与所有权
 
@@ -25,17 +34,17 @@ FixedPool 同时提供 caller-owned `*_storage + *_init`（control/payload 都�
 |---|---|---|
 | Allocator 句柄 | `hyle_allocator` | POD 值类型；按值传 |
 | system 分配器 | `hyle_system_allocator` | 进程级；alloc/free 携带相同 size/alignment |
-| QuotaAllocator | `hyle_quota_allocator_create` → `destroy` | 任意 backing 的严格 requested live-byte 上限 |
-| StatsAllocator | `hyle_stats_allocator_create` → `destroy` | opt-in 并发计数；可选慢速 leak inventory |
-| Region | `hyle_region_create` → `destroy` | owned growable bump；clear 保留普通 blocks |
-| FixedRegion | `hyle_fixed_region_init(&region, storage, size)` | 按值 external bump；无 create/destroy、严格 no-heap |
-| FixedPool | `hyle_fixed_pool_init(control,storage)` 或 `create(control_allocator,...)` → `destroy` | external variable-size alloc/free；init 严格 no-heap |
-| SharedPool | `hyle_shared_pool_create` → `destroy` | **硬容量**；completed free 立即对所有线程可见 |
-| SharedPoolCache | `hyle_shared_pool_cache_create(pool, metadata, ...)` → `destroy` | **软视图**；显式 owner/capacity/batch，publish 后回 hard core |
-| StackAllocator | `hyle_stack_allocator_create` → `destroy` | 自有 slab，单线程 LIFO bump |
-| PooledRegion | `hyle_pooled_region_create(pool)` → `destroy` | 借 `SharedPool` 一个块 |
-| GrowablePool | `hyle_growable_pool_create` → `destroy` | 单线程、按需增长的裸槽池 |
-| HugeRegion | `hyle_huge_region_open*` → `destroy` | 大页 / NUMA host RAM 区 |
+| QuotaAllocator | `hyle_quota_allocator_create(&out,...)` → `destroy` | 任意 backing 的严格 requested live-byte 上限 |
+| StatsAllocator | `hyle_stats_allocator_create(&out,...)` → `destroy` | opt-in 并发计数；可选慢速 leak inventory |
+| Region | `hyle_region_create(&out,...)` → `destroy` | owned growable bump；clear 保留普通 blocks |
+| FixedRegion | `hyle_fixed_region_init(&region, storage, size)` | 返回 Status；按值 external bump；无 create/destroy、严格 no-heap |
+| FixedPool | `hyle_fixed_pool_init(&pool,control,storage)` 或 `create(&pool,control_allocator,...)` → `destroy` | external variable-size alloc/free；init 严格 no-heap |
+| SharedPool | `hyle_shared_pool_create(&out,...)` → `destroy` | **硬容量**；completed free 立即对所有线程可见 |
+| SharedPoolCache | `hyle_shared_pool_cache_create(&out,pool,...)` → `destroy` | **软视图**；显式 owner/capacity/batch，publish 后回 hard core |
+| StackAllocator | `hyle_stack_allocator_create(&out,...)` → `destroy` | 自有 slab，单线程 LIFO bump |
+| PooledRegion | `hyle_pooled_region_create(&out,pool)` → `destroy` | 借 `SharedPool` 一个块 |
+| GrowablePool | `hyle_growable_pool_create(&out,...)` → `destroy` | 单线程、按需增长的裸槽池 |
+| HugeRegion | `hyle_huge_region_open*(&out,...)` → `destroy` | 大页 / NUMA host RAM 区 |
 | 进程维护/策略 | `hyle_system_collect` / `hyle_enable_allocator_*` / `hyle_reserve_huge_1g_pages` | cold path 与全局软策略 |
 
 **sized-free 合同**：`free` / `deallocate` 必须带回分配请求时相同的 size 与 alignment。pool/region/stack 不保存每指针尺寸；传错是调用方契约违反。只有 system 分配器提供物理容量查询 `hyle_system_usable_size`。
@@ -65,7 +74,7 @@ typedef struct hyle_allocator {
 C/C++ 两面通过 trampoline 显式构造，不 reinterpret 布局。
 `hyle_alloc/free/realloc(..., alignment=0)` 在头内直接折叠默认对齐，不再先跨 DLL 查询。
 
-拥有 backing 的构造器同时提供 header-inline `*_create_default(...)`，等价于传
+拥有 backing 的构造器同时提供 header-inline `*_create_default(&out, ...)`，等价于传
 `hyle_system_allocator()`；常用用户不必为了默认堆手写 allocator injection。显式
 `create(backing, ...)` 继续用于 quota/region/pool 组合与故障注入。
 
@@ -81,18 +90,18 @@ reserve 的严格预算，不是 backing 的物理空闲字节。
 `hyle_stats_allocator_as_allocator()` 返回借用 wrapper 的 allocator；成功 alloc/free/realloc
 更新 64-bit 并发计数。`hyle_stats_allocator_snapshot(s, &out)` 用出参返回 POD，避免 FFI
 绑定大型 struct-return ABI。`track_leaks!=0` 额外维护带锁的 pointer→size map，并可用
-`copy_leaks` 分页/截断读取（复制时会从原 backing 取得临时数组）；这是诊断慢路，生产热路只开
-counters 或直接不用 wrapper。
+`copy_leaks(&total,...)` 分页/截断读取并返回 Status（复制时会从原 backing 取得临时数组）；
+这是诊断慢路，生产热路只开 counters 或直接不用 wrapper。
 `reset` 要求没有 live allocation，并同时清空 leak inventory。
 
 ### 2.3 Region、FixedRegion 与 FixedPool
 
-- `hyle_region_create` 的 options 以 `HYLE_REGION_OPTIONS_INIT` 初始化，并带
+- `hyle_region_create(&out,...)` 的 options 以 `HYLE_REGION_OPTIONS_INIT` 初始化，并带
   `struct_size`。`clear` 保留普通 blocks、释放 dedicated large blocks；`release` 归还全部。
 - `hyle_fixed_region_init(&region,storage,size)` 直接初始化 3-word 值对象，是严格 no-heap
   bulk-reset bump；没有需要管理的 control allocation，也无需 destroy。旧切片在 clear 后全部失效。
-- `hyle_fixed_pool_init(&control,storage,size)` 的 control/payload 都由调用方持有；
-  `hyle_fixed_pool_create(control_allocator,storage,size)` 只从显式 allocator 创建 control，
+- `hyle_fixed_pool_init(&out,&control,storage,size)` 的 control/payload 都由调用方持有；
+  `hyle_fixed_pool_create(&out,control_allocator,storage,size)` 只从显式 allocator 创建 control，
   `create_default` 才选择 system allocator。两者都支持 individual allocate/free/realloc。reset 前必须
   无 live allocation；foreign/double return 是合同错误并 fail-fast。
 
@@ -106,8 +115,11 @@ FixedRegion 则在值对象或 payload storage 失效后失效。
 ```c
 unsigned char payload[4096];
 hyle_fixed_pool_storage control;
-hyle_fixed_pool *pool =
-    hyle_fixed_pool_init(&control, payload, sizeof payload);
+hyle_fixed_pool *pool = NULL;
+hyle_status status =
+    hyle_fixed_pool_init(&pool, &control, payload, sizeof payload);
+if (!hyle_status_is_ok(status)) { /* inspect/propagate status */ }
+hyle_status_free(&status);
 /* allocate/free ... */
 hyle_fixed_pool_destroy(pool); /* 不释放 control 或 payload */
 ```
@@ -120,7 +132,7 @@ hyle_fixed_pool_destroy(pool); /* 不释放 control 或 payload */
 
 | 符号 | 说明 |
 |---|---|
-| `hyle_shared_pool_create(backing, block_size, block_count, alignment)` | 建硬容量池；alignment==0→默认；资源失败或非法/溢出 layout→NULL + `hyle_mem_last_error` |
+| `hyle_shared_pool_create(&out, backing, block_size, block_count, alignment)` | 建硬容量池；alignment==0→默认；资源失败或非法/溢出 layout→非 OK Status，out 保持 NULL |
 | `hyle_shared_pool_destroy(p)` | 销毁池；调用方保证无块存活、无并发访问 |
 | `hyle_shared_pool_allocate(p)` | 取一块；稳定观察整池为空才返 NULL |
 | `hyle_shared_pool_deallocate(p, ptr)` | 立即发布到共享 core；NULL no-op |
@@ -132,7 +144,7 @@ hyle_fixed_pool_destroy(pool); /* 不释放 control 或 payload */
 
 | 宏 | 说明 |
 |---|---|
-| `HYLE_OBJECT_POOL_CREATE(backing, T, count)` | 用 `sizeof(T)` / `alignof(T)` 创建 `SharedPool` |
+| `HYLE_OBJECT_POOL_CREATE(&out, backing, T, count)` | 用 `sizeof(T)` / `alignof(T)` 创建 `SharedPool`，返回 Status |
 | `HYLE_OBJECT_POOL_ACQUIRE(pool, T)` | 返回裸、未初始化的 `T*` 槽；耗尽→NULL |
 | `HYLE_OBJECT_POOL_RELEASE(pool, p)` | 调用方先清理对象，再归还槽 |
 | `HYLE_ALIGNOF(T)` | C++/C23 `alignof`、C11 `_Alignof`，旧 C 则为 0 |
@@ -147,7 +159,7 @@ C 宏不运行 ctor/dtor。需要构造/析构语义时用 C++ `hyle::mem::Objec
 
 | 符号 | 说明 |
 |---|---|
-| `hyle_shared_pool_cache_create(pool, metadata, capacity, batch)` / `destroy` | 绑定 hard pool；destroy 自动 publish；pool 必须更长寿 |
+| `hyle_shared_pool_cache_create(&out, pool, metadata, capacity, batch)` / `destroy` | 返回 Status；绑定 hard pool；destroy 自动 publish；pool 必须更长寿 |
 | `hyle_shared_pool_cache_allocate` / `deallocate` | owner-local 快路；其他 cache 中的 free 块不可见 |
 | `hyle_shared_pool_cache_publish(p)` | 把本地 free indices 发布回 shared core |
 | `capacity` / `cached` / `transfer_batch` / `block_size` | 查询显式 policy 与当前软窗口 |
@@ -168,7 +180,7 @@ C++ 对应类型是附着到 `ObjectPool<T>` 的 `ObjectPoolCache<T>`。
 
 | 符号 | 说明 |
 |---|---|
-| `hyle_pooled_region_create(hyle_shared_pool* pool)` | 从硬容量 `SharedPool` 借一块；pool 为空、control OOM 或池耗尽→NULL + last-error |
+| `hyle_pooled_region_create(&out, pool)` | 从硬容量 `SharedPool` 借一块；pool 为空→INVALID_ARGUMENT，control OOM/池耗尽→RESOURCE_EXHAUSTED |
 | `hyle_pooled_region_destroy(r)` | 把整块还给 pool |
 | `hyle_pooled_region_allocate(r, bytes, alignment)` | 单线程 pointer bump；放不下→NULL |
 | `hyle_pooled_region_clear(r)` | 游标回块头；要求此前切片不再使用 |
@@ -182,7 +194,7 @@ C/C++ 使用同一产品名，未发布阶段不保留 `Arena/reset` 兼容壳�
 
 | 符号 | 说明 |
 |---|---|
-| `hyle_stack_allocator_create(backing, size)` / `destroy` | 自持 slab；资源失败或 size==0→NULL + last-error |
+| `hyle_stack_allocator_create(&out, backing, size)` / `destroy` | 自持 slab；资源失败或 size==0→非 OK Status |
 | `hyle_stack_allocator_allocate(s, bytes, alignment)` | 单线程 pointer bump；放不下→NULL |
 | `hyle_stack_allocator_mark` / `rewind` | 保存并恢复 LIFO 游标 |
 | `hyle_stack_allocator_reset` | 整体复用 |
@@ -193,7 +205,7 @@ C/C++ 使用同一产品名，未发布阶段不保留 `Arena/reset` 兼容壳�
 
 | 符号 | 说明 |
 |---|---|
-| `hyle_growable_pool_create(backing, slot_size, slot_align, initial_slots)` | 首块惰性分配，此后几何增长；资源失败→NULL + last-error |
+| `hyle_growable_pool_create(&out, backing, slot_size, slot_align, initial_slots)` | 首块惰性分配，此后几何增长；构造失败→非 OK Status |
 | `hyle_growable_pool_destroy` | 释放全部块 |
 | `hyle_growable_pool_acquire` / `release` | 取/还裸槽，不运行 ctor/dtor |
 | `hyle_growable_pool_reset` | trim 全部块；要求无活槽 |
@@ -202,21 +214,22 @@ C/C++ 使用同一产品名，未发布阶段不保留 `Arena/reset` 兼容壳�
 
 typed 宏为 `HYLE_GROWABLE_POOL_CREATE/ACQUIRE/RELEASE`。需要 ctor/dtor 的 C++ 用户使用 `GrowablePool<T>`。
 
-## 7. HugeRegion、诊断与进程策略
+## 7. HugeRegion、错误与进程策略
 
 | 符号 | 说明 |
 |---|---|
-| `hyle_huge_region_open(bytes, flags, numa_node)` | reserve+commit，按 flags/node 放置；失败→NULL |
+| `hyle_huge_region_open(&out, bytes, flags, numa_node)` | reserve+commit，按 flags/node 放置；直接返回 VM/NUMA 的结构化 Status |
 | `hyle_huge_region_open_local` | 偏好调用线程 home node |
 | `hyle_huge_region_open_interleaved` | 跨节点条带 + THP |
-| `hyle_huge_region_destroy` / `data` / `size` | 生命周期与查询；`open*` 只返回有效 handle 或 NULL，因此不导出恒真的 `valid` 镜像 |
+| `hyle_huge_region_destroy` / `data` / `size` | 生命周期与查询；`open*` 成功只交付有效 handle，因此不导出恒真的 `valid` 镜像 |
 | `hyle_huge_region_requested_flags` / `accepted_flags` | 区分请求策略与 OS-facing call 已接受策略 |
 | `hyle_huge_region_requested_numa_node` / `numa_placement_applied` | NUMA 请求与实际 placement 结果 |
-| `hyle_mem_last_error_code()` | factory/policy TLS typed code：NONE / INVALID_ARGUMENT / OUT_OF_MEMORY / EXHAUSTED / PLATFORM；供控制流使用，hot allocate/pop 不为清码写 TLS |
-| `hyle_mem_last_error()` | TLS 诊断字符串；不用于程序解析。mem 工厂不污染 platform VM error，HugeRegion 捕获 VM 原因后恢复 platform 通道 |
 | `hyle_enable_allocator_hugepages` | 启用 mimalloc THP / large OS page 策略 |
 | `hyle_enable_allocator_numa` | 配置 mimalloc NUMA node 数 |
-| `hyle_reserve_huge_1g_pages` | 预留 1GiB 大页；无权限/连续 host RAM 时软失败返 0 |
+| `hyle_reserve_huge_1g_pages` | 预留 1GiB 大页；无权限/连续 host RAM 时返回 UNAVAILABLE |
+
+mem 不再维护私有 TLS error code/string。冷路径与全库共用 `hyle_status`；成功 Status 是 8B
+零值、零分配，错误消息分配失败时仍保留 code。热分配路径则完全不构造 Status。
 
 flags：`HYLE_HUGE_THP_HINT`、`HYLE_HUGE_PREFAULT`、`HYLE_HUGE_NUMA_BIND`、`HYLE_HUGE_NUMA_INTERLEAVE`；无 NUMA 约束用 `HYLE_MEM_NUMA_ANY`。
 
@@ -228,8 +241,9 @@ flags：`HYLE_HUGE_THP_HINT`、`HYLE_HUGE_PREFAULT`、`HYLE_HUGE_NUMA_BIND`、`H
 ### Request Region
 
 ```c
-hyle_region *request = hyle_region_create_default(NULL);
-if (request != NULL) {
+hyle_region *request = NULL;
+hyle_status status = hyle_region_create_default(&request, NULL);
+if (hyle_status_is_ok(status)) {
   void *scratch = hyle_region_allocate(request, 4096, 64);
   if (scratch != NULL) {
     /* process one request */
@@ -237,44 +251,60 @@ if (request != NULL) {
   }
   hyle_region_destroy(request);
 }
+hyle_status_free(&status);
 ```
 
 ### Typed cached pool
 
 ```c
 typedef struct { int id; double value; } Node;
-hyle_shared_pool *core = HYLE_OBJECT_POOL_CREATE_DEFAULT(Node, 1024);
-if (core != NULL) {
-  hyle_shared_pool_cache *local =
-      HYLE_OBJECT_POOL_CACHE_CREATE_DEFAULT(core, 64, 16);
-  if (local != NULL) {
-    Node *node = HYLE_OBJECT_POOL_CACHE_ACQUIRE(local, Node);
-    if (node != NULL) {
-      node->id = 7; /* C 负责初始化/清理裸槽 */
-      HYLE_OBJECT_POOL_CACHE_RELEASE(local, node);
-    }
-    HYLE_OBJECT_POOL_CACHE_PUBLISH(local);
-    hyle_shared_pool_cache_destroy(local);
+hyle_status use_nodes(void) {
+  hyle_shared_pool *core = NULL;
+  HYLE_C_RETURN_IF_ERROR(
+      HYLE_OBJECT_POOL_CREATE_DEFAULT(&core, Node, 1024));
+
+  hyle_shared_pool_cache *local = NULL;
+  hyle_status status =
+      HYLE_OBJECT_POOL_CACHE_CREATE_DEFAULT(&local, core, 64, 16);
+  if (!hyle_status_is_ok(status)) {
+    hyle_shared_pool_destroy(core);
+    return status;
   }
+
+  Node *node = HYLE_OBJECT_POOL_CACHE_ACQUIRE(local, Node);
+  if (node != NULL) {
+    node->id = 7; /* C 负责初始化/清理裸槽 */
+    HYLE_OBJECT_POOL_CACHE_RELEASE(local, node);
+  }
+  HYLE_OBJECT_POOL_CACHE_PUBLISH(local);
+  hyle_shared_pool_cache_destroy(local);
   hyle_shared_pool_destroy(core);
+  return hyle_status_ok();
 }
 ```
 
 ### Quota + Stats
 
 ```c
-hyle_stats_allocator *stats = hyle_stats_allocator_create_default(0);
-if (stats != NULL) {
+hyle_status run_with_budget(void) {
+  hyle_stats_allocator *stats = NULL;
+  HYLE_C_RETURN_IF_ERROR(hyle_stats_allocator_create_default(&stats, 0));
+
   hyle_allocator measured = hyle_stats_allocator_as_allocator(stats);
-  hyle_quota_allocator *quota =
-      hyle_quota_allocator_create(measured, 1u << 20);
-  if (quota != NULL) {
-    hyle_allocator bounded = hyle_quota_allocator_as_allocator(quota);
-    void *p = hyle_alloc(&bounded, 4096, 64);
-    if (p != NULL) hyle_free(&bounded, p, 4096, 64);
-    hyle_quota_allocator_destroy(quota);
+  hyle_quota_allocator *quota = NULL;
+  hyle_status status =
+      hyle_quota_allocator_create(&quota, measured, 1u << 20);
+  if (!hyle_status_is_ok(status)) {
+    hyle_stats_allocator_destroy(stats);
+    return status;
   }
+
+  hyle_allocator bounded = hyle_quota_allocator_as_allocator(quota);
+  void *p = hyle_alloc(&bounded, 4096, 64);
+  if (p != NULL) hyle_free(&bounded, p, 4096, 64);
+  hyle_quota_allocator_destroy(quota);
   hyle_stats_allocator_destroy(stats);
+  return hyle_status_ok();
 }
 ```
 
@@ -284,37 +314,57 @@ if (stats != NULL) {
 ### 硬容量共享池
 
 ```c
-hyle_shared_pool* pool = hyle_shared_pool_create_default(256, 1024, 0);
-void* block = hyle_shared_pool_allocate(pool);
-if (block != NULL) hyle_shared_pool_deallocate(pool, block);
-hyle_shared_pool_destroy(pool);
+hyle_shared_pool* pool = NULL;
+hyle_status status = hyle_shared_pool_create_default(&pool, 256, 1024, 0);
+if (hyle_status_is_ok(status)) {
+  void* block = hyle_shared_pool_allocate(pool);
+  if (block != NULL) hyle_shared_pool_deallocate(pool, block);
+  hyle_shared_pool_destroy(pool);
+}
+hyle_status_free(&status);
 ```
 
 ### 显式 cache 的容量交接
 
 ```c
-hyle_shared_pool* pool = hyle_shared_pool_create_default(256, 4096, 0);
-hyle_shared_pool_cache* cache =
-    hyle_shared_pool_cache_create_default(pool, 128, 32);
-void* block = hyle_shared_pool_cache_allocate(cache);
-hyle_shared_pool_cache_deallocate(cache, block);
-hyle_shared_pool_cache_publish(cache); /* 本地 free 块现在对其他 owner 可见 */
-hyle_shared_pool_cache_destroy(cache);
-hyle_shared_pool_destroy(pool);
+hyle_status use_cached_blocks(void) {
+  hyle_shared_pool* pool = NULL;
+  HYLE_C_RETURN_IF_ERROR(
+      hyle_shared_pool_create_default(&pool, 256, 4096, 0));
+
+  hyle_shared_pool_cache* cache = NULL;
+  hyle_status status =
+      hyle_shared_pool_cache_create_default(&cache, pool, 128, 32);
+  if (!hyle_status_is_ok(status)) {
+    hyle_shared_pool_destroy(pool);
+    return status;
+  }
+
+  void* block = hyle_shared_pool_cache_allocate(cache);
+  hyle_shared_pool_cache_deallocate(cache, block);
+  hyle_shared_pool_cache_publish(cache);
+  hyle_shared_pool_cache_destroy(cache);
+  hyle_shared_pool_destroy(pool);
+  return hyle_status_ok();
+}
 ```
 
 ### typed 默认硬池
 
 ```c
 typedef struct { int a; double b; } Node;
-hyle_shared_pool* pool = HYLE_OBJECT_POOL_CREATE_DEFAULT(Node, 1024);
-Node* n = HYLE_OBJECT_POOL_ACQUIRE(pool, Node);
-if (n != NULL) {
-  n->a = 7;
-  n->b = 1.5;
-  HYLE_OBJECT_POOL_RELEASE(pool, n);
+hyle_shared_pool* pool = NULL;
+hyle_status status = HYLE_OBJECT_POOL_CREATE_DEFAULT(&pool, Node, 1024);
+if (hyle_status_is_ok(status)) {
+  Node* n = HYLE_OBJECT_POOL_ACQUIRE(pool, Node);
+  if (n != NULL) {
+    n->a = 7;
+    n->b = 1.5;
+    HYLE_OBJECT_POOL_RELEASE(pool, n);
+  }
+  hyle_shared_pool_destroy(pool);
 }
-hyle_shared_pool_destroy(pool);
+hyle_status_free(&status);
 ```
 
 ## 9. 导出边界
@@ -329,8 +379,8 @@ hyle_shared_pool_destroy(pool);
 `tests/mem/c_surface_symbols.txt` 只检查声明、纯 C 引用和 DLL/ELF 导出一致。发布前仍可直接
 重塑，不把 manifest 当兼容承诺。当前审查保留能映射真实 C/FFI 场景的 allocator、region、
 pool、instrumentation 与 topology 能力族，但不机械镜像方法；opaque `_o` 名隐藏、默认
-backing 走 header-inline convenience、默认 alignment 不跨 DLL。mem 使用独立 typed error
-code + 诊断字符串；FixedRegion 用自然的 3-word C 值类型，复杂的 FixedPool 才保留 opaque
+backing 走 header-inline convenience、默认 alignment 不跨 DLL。mem 冷路径使用共享
+`hyle_status`，不再另造 TLS error；FixedRegion 用自然的 3-word C 值类型，复杂的 FixedPool 才保留 opaque
 no-heap control。模板 ctor/dtor 与 PMR 仍属于原生 C++ 形状。`FiberStack`/`FiberStackPool`
 是 scheduler-owned runtime specialization：sched 的 C ABI 在内部消费它们；没有独立 C
 consumer 时不导出可绕过 scheduler 生命周期的 raw stack control。这是明确边界，不是遗漏。

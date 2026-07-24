@@ -137,16 +137,22 @@ TEST(MemApiSurface, PublicCapabilityFamiliesCompileTogether) {
   EXPECT_GE(kDefaultAlignment, alignof(void*));
 }
 
-TEST(MemApiSurface, CErrorChannelMapsStructuredFailures) {
+TEST(MemApiSurface, CFactoriesReturnStructuredStatus) {
   hyle_allocator invalid{};
-  EXPECT_EQ(hyle_shared_pool_create(invalid, 64, 4, 0), nullptr);
-  EXPECT_EQ(hyle_mem_last_error_code(), HYLE_MEM_ERROR_INVALID_ARGUMENT);
-  EXPECT_NE(hyle_mem_last_error()[0], '\0');
+  hyle_shared_pool* pool = nullptr;
+  hyle_status status = hyle_shared_pool_create(&pool, invalid, 64, 4, 0);
+  EXPECT_TRUE(hyle_status_is_invalid_argument(status));
+  EXPECT_EQ(pool, nullptr);
+  EXPECT_TRUE(hyle_status_has_message(status));
+  hyle_status_free(&status);
 
-  EXPECT_EQ(hyle_huge_region_open(0, HYLE_HUGE_NONE, HYLE_MEM_NUMA_ANY),
-            nullptr);
-  EXPECT_EQ(hyle_mem_last_error_code(), HYLE_MEM_ERROR_INVALID_ARGUMENT);
-  EXPECT_NE(hyle_mem_last_error()[0], '\0');
+  hyle_huge_region* region = nullptr;
+  status = hyle_huge_region_open(&region, 0, HYLE_HUGE_NONE,
+                                 HYLE_MEM_NUMA_ANY);
+  EXPECT_TRUE(hyle_status_is_invalid_argument(status));
+  EXPECT_EQ(region, nullptr);
+  EXPECT_TRUE(hyle_status_has_message(status));
+  hyle_status_free(&status);
 }
 
 // Compile-checked user recipes. Keep these deliberately short and mirrored in

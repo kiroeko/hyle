@@ -16,9 +16,15 @@ static int g_fails = 0;
     }                                                                          \
   } while (0)
 
+#define CHECK_OK(expr)                                                         \
+  do {                                                                         \
+    hyle_status _status = (expr);                                              \
+    CHECK(hyle_status_is_ok(_status));                                         \
+    hyle_status_free(&_status);                                                \
+  } while (0)
+
 /* A backing allocator whose alloc/realloc always fail -- simulates slab OOM so
- * the graceful create paths (NULL + last-error, followup #2 arch B) can be
- * exercised. */
+ * the graceful Status-returning create paths can be exercised. */
 static void *oom_alloc(void *st, size_t sz, size_t al) {
   (void)st;
   (void)sz;
@@ -78,7 +84,6 @@ int main(void) {
      cannot erase it. */
   (void)"HYLE_C_MEM_COVERAGE_BODY_MARKER";
   CHECK(hyle_default_alignment() >= sizeof(void *));
-  CHECK(hyle_mem_last_error_code() == HYLE_MEM_ERROR_NONE);
 
   /* ---- system allocator: alloc / write / realloc / free ---- */
   hyle_allocator sys = hyle_system_allocator();
@@ -88,8 +93,8 @@ int main(void) {
     counting_backing_state state = {sys, 0};
     hyle_allocator counting = {counting_alloc, counting_free,
                                counting_realloc, &state};
-    hyle_shared_pool *pool =
-        hyle_shared_pool_create(counting, 64, 8, 0);
+    hyle_shared_pool *pool = NULL;
+    CHECK_OK(hyle_shared_pool_create(&pool, counting, 64, 8, 0));
     CHECK(pool != NULL);
     CHECK(state.live_allocations >= 4u); /* control + slab + links + heads */
     hyle_shared_pool_destroy(pool);
@@ -97,21 +102,32 @@ int main(void) {
   }
   {
     hyle_allocator bad = {0};
-    CHECK(hyle_shared_pool_create(bad, 16, 1, 0) == NULL);
-    CHECK(hyle_mem_last_error_code() == HYLE_MEM_ERROR_INVALID_ARGUMENT);
-    CHECK(hyle_mem_last_error()[0] != '\0');
-    hyle_shared_pool *good = hyle_shared_pool_create(sys, 16, 1, 0);
+    hyle_shared_pool *bad_pool = (hyle_shared_pool *)(size_t)1;
+    hyle_status status = hyle_shared_pool_create(&bad_pool, bad, 16, 1, 0);
+    CHECK(hyle_status_is_invalid_argument(status));
+    CHECK(hyle_status_has_message(status));
+    CHECK(bad_pool == NULL); /* every factory clears out before work */
+    hyle_status_free(&status);
+    hyle_shared_pool *good = NULL;
+    CHECK_OK(hyle_shared_pool_create(&good, sys, 16, 1, 0));
     CHECK(good != NULL);
-    CHECK(hyle_mem_last_error_code() == HYLE_MEM_ERROR_NONE);
-    CHECK(hyle_mem_last_error()[0] == '\0');
     hyle_shared_pool_destroy(good);
 
     /* C inputs are data, not C++ contracts: invalid layouts fail gracefully. */
-    CHECK(hyle_shared_pool_create(sys, 0, 1, 0) == NULL);
-    CHECK(hyle_shared_pool_create(sys, 16, 1, 3) == NULL);
-    CHECK(hyle_shared_pool_cache_create(NULL, sys, 8, 2) == NULL);
-    CHECK(hyle_stack_allocator_create(sys, 0) == NULL);
-    CHECK(hyle_mem_last_error()[0] != '\0');
+    status = hyle_shared_pool_create(&bad_pool, sys, 0, 1, 0);
+    CHECK(hyle_status_is_invalid_argument(status));
+    hyle_status_free(&status);
+    status = hyle_shared_pool_create(&bad_pool, sys, 16, 1, 3);
+    CHECK(hyle_status_is_invalid_argument(status));
+    hyle_status_free(&status);
+    hyle_shared_pool_cache *bad_cache = NULL;
+    status = hyle_shared_pool_cache_create(&bad_cache, NULL, sys, 8, 2);
+    CHECK(hyle_status_is_invalid_argument(status));
+    hyle_status_free(&status);
+    hyle_stack_allocator *bad_stack = NULL;
+    status = hyle_stack_allocator_create(&bad_stack, sys, 0);
+    CHECK(hyle_status_is_invalid_argument(status));
+    hyle_status_free(&status);
   }
   {
     /* direct vtable call */
@@ -153,7 +169,8 @@ int main(void) {
 
   /* ---- strict byte quota allocator adapter ---- */
   {
-    hyle_quota_allocator *quota = hyle_quota_allocator_create(sys, 128);
+    hyle_quota_allocator *quota = NULL;
+    CHECK_OK(hyle_quota_allocator_create(&quota, sys, 128));
     CHECK(quota != NULL);
     hyle_allocator a = hyle_quota_allocator_as_allocator(quota);
     void *p = hyle_alloc(&a, 96, 16);
@@ -172,7 +189,8 @@ int main(void) {
 
   /* ---- opt-in stats allocator + optional leak inventory ---- */
   {
-    hyle_stats_allocator *stats = hyle_stats_allocator_create(sys, 1);
+    hyle_stats_allocator *stats = NULL;
+    CHECK_OK(hyle_stats_allocator_create(&stats, sys, 1));
     CHECK(stats != NULL);
     hyle_allocator a = hyle_stats_allocator_as_allocator(stats);
     void *p = hyle_alloc(&a, 96, 16);
@@ -185,12 +203,16 @@ int main(void) {
     CHECK(snapshot.peak_live_bytes == 128u);
     CHECK(!hyle_stats_allocator_balanced(stats));
     hyle_mem_leak leaks[1];
-    CHECK(hyle_stats_allocator_copy_leaks(stats, leaks, 1) == 2u);
+    size_t leak_count = 0;
+    CHECK_OK(hyle_stats_allocator_copy_leaks(&leak_count, stats, leaks, 1));
+    CHECK(leak_count == 2u);
     CHECK(leaks[0].ptr != NULL && leaks[0].size > 0u);
     hyle_free(&a, p, 96, 16);
     hyle_free(&a, q, 32, 8);
     CHECK(hyle_stats_allocator_balanced(stats));
-    CHECK(hyle_stats_allocator_copy_leaks(stats, NULL, 0) == 0u);
+    CHECK_OK(
+        hyle_stats_allocator_copy_leaks(&leak_count, stats, NULL, 0));
+    CHECK(leak_count == 0u);
     hyle_stats_allocator_reset(stats);
     hyle_stats_allocator_snapshot(stats, &snapshot);
     CHECK(snapshot.total_allocs == 0u && snapshot.peak_live_bytes == 0u);
@@ -199,10 +221,12 @@ int main(void) {
 
   /* ---- compile-checked recipe: quota + counters-only stats ---- */
   {
-    hyle_stats_allocator *stats = hyle_stats_allocator_create_default(0);
+    hyle_stats_allocator *stats = NULL;
+    CHECK_OK(hyle_stats_allocator_create_default(&stats, 0));
     CHECK(stats != NULL);
     hyle_allocator measured = hyle_stats_allocator_as_allocator(stats);
-    hyle_quota_allocator *quota = hyle_quota_allocator_create(measured, 256);
+    hyle_quota_allocator *quota = NULL;
+    CHECK_OK(hyle_quota_allocator_create(&quota, measured, 256));
     CHECK(quota != NULL);
     hyle_allocator bounded = hyle_quota_allocator_as_allocator(quota);
     void *p = hyle_alloc(&bounded, 96, 16);
@@ -223,7 +247,8 @@ int main(void) {
     options.max_block_size = 256;
     options.large_allocation_threshold = 192;
     options.size_limit = 2048;
-    hyle_region *r = hyle_region_create_default(&options);
+    hyle_region *r = NULL;
+    CHECK_OK(hyle_region_create_default(&r, &options));
     CHECK(r != NULL);
     void *p = hyle_region_allocate(r, 80, 64);
     CHECK(p != NULL && ((size_t)p % 64u) == 0u);
@@ -240,15 +265,18 @@ int main(void) {
     hyle_region_destroy(r);
 
     options.struct_size = 0;
-    CHECK(hyle_region_create(sys, &options) == NULL);
+    hyle_status status = hyle_region_create(&r, sys, &options);
+    CHECK(hyle_status_is_invalid_argument(status));
+    CHECK(r == NULL);
+    hyle_status_free(&status);
   }
 
   /* ---- external fixed Region + variable-size FixedPool ---- */
   {
     unsigned char region_storage[512];
     hyle_fixed_region region;
-    CHECK(hyle_fixed_region_init(&region, region_storage,
-                                 sizeof region_storage));
+    CHECK_OK(hyle_fixed_region_init(&region, region_storage,
+                                    sizeof region_storage));
     CHECK(hyle_fixed_region_capacity(&region) == sizeof region_storage);
     CHECK(hyle_fixed_region_remaining(&region) == sizeof region_storage);
     void *p = hyle_fixed_region_allocate(&region, 64, 32);
@@ -262,8 +290,10 @@ int main(void) {
     hyle_fixed_region_clear(&region);
     CHECK(hyle_fixed_region_used(&region) == 0u);
     CHECK(hyle_fixed_region_remaining(&region) == sizeof region_storage);
-    CHECK(!hyle_fixed_region_init(NULL, region_storage,
-                                  sizeof region_storage));
+    hyle_status status =
+        hyle_fixed_region_init(NULL, region_storage, sizeof region_storage);
+    CHECK(hyle_status_is_invalid_argument(status));
+    hyle_status_free(&status);
     {
       hyle_fixed_region invalid = {{0, 0, 0}};
       CHECK(hyle_fixed_region_allocate(&invalid, 8, 8) == NULL);
@@ -273,8 +303,9 @@ int main(void) {
 
     unsigned char pool_storage[4096];
     hyle_fixed_pool_storage pool_control;
-    hyle_fixed_pool *pool =
-        hyle_fixed_pool_init(&pool_control, pool_storage, sizeof pool_storage);
+    hyle_fixed_pool *pool = NULL;
+    CHECK_OK(hyle_fixed_pool_init(&pool, &pool_control, pool_storage,
+                                  sizeof pool_storage));
     CHECK(pool != NULL);
     CHECK(hyle_fixed_pool_capacity(pool) <= sizeof pool_storage);
     void *a = hyle_fixed_pool_allocate(pool, 100, 64);
@@ -297,14 +328,16 @@ int main(void) {
     hyle_fixed_pool_reset(pool); /* caller has discarded every allocation */
     hyle_fixed_pool_destroy(pool);
 
-    pool = hyle_fixed_pool_create(sys, pool_storage, sizeof pool_storage);
+    CHECK_OK(hyle_fixed_pool_create(&pool, sys, pool_storage,
+                                    sizeof pool_storage));
     CHECK(pool != NULL);
     hyle_fixed_pool_destroy(pool);
   }
 
   /* ---- SharedPool: allocate to exhaustion / deallocate / reset ---- */
   {
-    hyle_shared_pool *pool = hyle_shared_pool_create_default(256, 4, 0);
+    hyle_shared_pool *pool = NULL;
+    CHECK_OK(hyle_shared_pool_create_default(&pool, 256, 4, 0));
     CHECK(pool != NULL);
     CHECK(hyle_shared_pool_block_size(pool) == 256u);
     CHECK(hyle_shared_pool_capacity(pool) == 4u);
@@ -346,7 +379,10 @@ int main(void) {
     /* invalid backing -> NULL (system-boundary validation) */
     hyle_allocator bad;
     memset(&bad, 0, sizeof bad);
-    CHECK(hyle_shared_pool_create(bad, 64, 4, 0) == NULL);
+    hyle_status status = hyle_shared_pool_create(&pool, bad, 64, 4, 0);
+    CHECK(hyle_status_is_invalid_argument(status));
+    CHECK(pool == NULL);
+    hyle_status_free(&status);
   }
 
   /* ---- compile-checked recipe: typed SharedPoolCache + publish ----------- */
@@ -354,10 +390,11 @@ int main(void) {
     typedef struct {
       unsigned char bytes[128];
     } CachedNode;
-    hyle_shared_pool *pool = HYLE_OBJECT_POOL_CREATE_DEFAULT(CachedNode, 8);
+    hyle_shared_pool *pool = NULL;
+    CHECK_OK(HYLE_OBJECT_POOL_CREATE_DEFAULT(&pool, CachedNode, 8));
     CHECK(pool != NULL);
-    hyle_shared_pool_cache *cache =
-        HYLE_OBJECT_POOL_CACHE_CREATE_DEFAULT(pool, 4, 2);
+    hyle_shared_pool_cache *cache = NULL;
+    CHECK_OK(HYLE_OBJECT_POOL_CACHE_CREATE_DEFAULT(&cache, pool, 4, 2));
     CHECK(cache != NULL);
     CHECK(hyle_shared_pool_cache_block_size(cache) == sizeof(CachedNode));
     CHECK(hyle_shared_pool_cache_capacity(cache) == 4u);
@@ -399,7 +436,8 @@ int main(void) {
       int a;
       double b;
     } Node;
-    hyle_shared_pool *pool = HYLE_OBJECT_POOL_CREATE_DEFAULT(Node, 8);
+    hyle_shared_pool *pool = NULL;
+    CHECK_OK(HYLE_OBJECT_POOL_CREATE_DEFAULT(&pool, Node, 8));
     CHECK(pool != NULL);
     CHECK(hyle_shared_pool_block_size(pool) == sizeof(Node));
     CHECK(hyle_shared_pool_capacity(pool) == 8u);
@@ -415,7 +453,8 @@ int main(void) {
 
   /* ---- StackAllocator: bump / mark / rewind / reset ---- */
   {
-    hyle_stack_allocator *sa = hyle_stack_allocator_create_default(4096);
+    hyle_stack_allocator *sa = NULL;
+    CHECK_OK(hyle_stack_allocator_create_default(&sa, 4096));
     CHECK(sa != NULL);
     CHECK(hyle_stack_allocator_capacity(sa) == 4096u);
     CHECK(hyle_stack_allocator_remaining(sa) == 4096u);
@@ -446,9 +485,11 @@ int main(void) {
 
   /* ---- PooledRegion: bump over one pooled block ---- */
   {
-    hyle_shared_pool *pool = hyle_shared_pool_create_default(4096, 2, 0);
+    hyle_shared_pool *pool = NULL;
+    CHECK_OK(hyle_shared_pool_create_default(&pool, 4096, 2, 0));
     CHECK(pool != NULL);
-    hyle_pooled_region *region = hyle_pooled_region_create(pool);
+    hyle_pooled_region *region = NULL;
+    CHECK_OK(hyle_pooled_region_create(&region, pool));
     CHECK(region != NULL);
     CHECK(hyle_pooled_region_block_size(region) == 4096u);
     CHECK(hyle_pooled_region_remaining(region) == 4096u);
@@ -470,22 +511,24 @@ int main(void) {
     hyle_shared_pool_destroy(pool);
   }
 
-  /* ---- PooledRegion: pool exhaustion is graceful -- NULL + last-error ----
-   */
+  /* ---- PooledRegion: pool exhaustion is structured and graceful -------- */
   {
-    hyle_shared_pool *pool = hyle_shared_pool_create_default(4096, 1, 0);
+    hyle_shared_pool *pool = NULL;
+    CHECK_OK(hyle_shared_pool_create_default(&pool, 4096, 1, 0));
     CHECK(pool != NULL);
-    hyle_pooled_region *a1 =
-        hyle_pooled_region_create(pool); /* borrows the only block */
+    hyle_pooled_region *a1 = NULL;
+    CHECK_OK(hyle_pooled_region_create(&a1, pool));
     CHECK(a1 != NULL);
-    hyle_pooled_region *a2 = hyle_pooled_region_create(pool);
-    CHECK(a2 == NULL);                          /* graceful NULL, not abort */
-    CHECK(hyle_mem_last_error_code() == HYLE_MEM_ERROR_EXHAUSTED);
-    CHECK(hyle_mem_last_error()[0] != '\0');    /* a non-empty reason string */
+    hyle_pooled_region *a2 = (hyle_pooled_region *)(size_t)1;
+    hyle_status status = hyle_pooled_region_create(&a2, pool);
+    CHECK(hyle_status_is_resource_exhausted(status));
+    CHECK(hyle_status_has_message(status));
+    CHECK(a2 == NULL);
+    hyle_status_free(&status);
     hyle_pooled_region_destroy(a1); /* returns the only block */
-    hyle_pooled_region *a3 = hyle_pooled_region_create(pool);
+    hyle_pooled_region *a3 = NULL;
+    CHECK_OK(hyle_pooled_region_create(&a3, pool));
     CHECK(a3 != NULL);
-    CHECK(hyle_mem_last_error_code() == HYLE_MEM_ERROR_NONE);
     hyle_pooled_region_destroy(a3);
     hyle_shared_pool_destroy(pool);
   }
@@ -494,8 +537,8 @@ int main(void) {
    * ---- */
   {
     /* tiny initial count forces geometric growth across several blocks */
-    hyle_growable_pool *gp =
-        hyle_growable_pool_create_default(sizeof(long), 0, 2);
+    hyle_growable_pool *gp = NULL;
+    CHECK_OK(hyle_growable_pool_create_default(&gp, sizeof(long), 0, 2));
     CHECK(gp != NULL);
     CHECK(hyle_growable_pool_live(gp) == 0u);
     CHECK(hyle_growable_pool_slot_stride(gp) >= sizeof(long));
@@ -528,22 +571,28 @@ int main(void) {
     hyle_growable_pool_release(gp, again);
     hyle_growable_pool_destroy(gp);
 
-    /* invalid backing -> NULL + non-empty last-error */
+    /* Invalid backing -> structured error and cleared output. */
     hyle_allocator bad;
     memset(&bad, 0, sizeof bad);
-    CHECK(hyle_growable_pool_create(bad, 8, 0, 4) == NULL);
-    CHECK(hyle_mem_last_error()[0] != '\0');
+    hyle_status status = hyle_growable_pool_create(&gp, bad, 8, 0, 4);
+    CHECK(hyle_status_is_invalid_argument(status));
+    CHECK(hyle_status_has_message(status));
+    CHECK(gp == NULL);
+    hyle_status_free(&status);
 
     /* Runtime C layout is untrusted: a stride that would wrap must fail at
        create, not under-allocate and hand out a one-past-block pointer. */
-    CHECK(hyle_growable_pool_create(sys, SIZE_MAX, 16, 1) == NULL);
-    CHECK(hyle_mem_last_error()[0] != '\0');
+    status = hyle_growable_pool_create(&gp, sys, SIZE_MAX, 16, 1);
+    CHECK(hyle_status_is_invalid_argument(status));
+    CHECK(gp == NULL);
+    hyle_status_free(&status);
     /* typed convenience macros (raw slot, user-init) */
     typedef struct {
       int x;
       int y;
     } Pt;
-    hyle_growable_pool *tp = HYLE_GROWABLE_POOL_CREATE_DEFAULT(Pt, 8);
+    hyle_growable_pool *tp = NULL;
+    CHECK_OK(HYLE_GROWABLE_POOL_CREATE_DEFAULT(&tp, Pt, 8));
     CHECK(tp != NULL);
     Pt *pt =
         HYLE_GROWABLE_POOL_ACQUIRE(tp, Pt); /* typed, no cast at call site */
@@ -555,8 +604,7 @@ int main(void) {
     hyle_growable_pool_destroy(tp);
   }
 
-  /* ---- mock OOM backing: create is graceful (NULL + last-error, not abort)
-   * ---- */
+  /* ---- mock OOM backing: create is graceful Status, not abort ---------- */
   {
     hyle_allocator oom;
     oom.alloc = oom_alloc;
@@ -564,38 +612,54 @@ int main(void) {
     oom.realloc = oom_realloc;
     oom.state = NULL;
 
-    /* SharedPool slab OOM -> NULL + last-error (was a fatal abort before #2 B)
-     */
-    CHECK(hyle_shared_pool_create(oom, 64, 4, 0) == NULL);
-    CHECK(hyle_mem_last_error_code() == HYLE_MEM_ERROR_OUT_OF_MEMORY);
-    CHECK(hyle_mem_last_error()[0] != '\0');
-    hyle_shared_pool *cache_core =
-        hyle_shared_pool_create_default(64, 4, 0);
+    /* SharedPool slab OOM -> RESOURCE_EXHAUSTED (was a fatal abort). */
+    hyle_shared_pool *failed_pool = (hyle_shared_pool *)(size_t)1;
+    hyle_status status =
+        hyle_shared_pool_create(&failed_pool, oom, 64, 4, 0);
+    CHECK(hyle_status_is_resource_exhausted(status));
+    CHECK(hyle_status_has_message(status));
+    CHECK(failed_pool == NULL);
+    hyle_status_free(&status);
+    hyle_shared_pool *cache_core = NULL;
+    CHECK_OK(hyle_shared_pool_create_default(&cache_core, 64, 4, 0));
     CHECK(cache_core != NULL);
-    CHECK(hyle_shared_pool_cache_create(cache_core, oom, 4, 2) == NULL);
-    CHECK(hyle_mem_last_error()[0] != '\0');
+    hyle_shared_pool_cache *failed_cache = NULL;
+    status = hyle_shared_pool_cache_create(&failed_cache, cache_core, oom, 4,
+                                           2);
+    CHECK(hyle_status_is_resource_exhausted(status));
+    CHECK(failed_cache == NULL);
+    hyle_status_free(&status);
     hyle_shared_pool_destroy(cache_core);
 
-    /* StackAllocator slab OOM -> NULL + last-error */
-    CHECK(hyle_stack_allocator_create(oom, 4096) == NULL);
-    CHECK(hyle_mem_last_error()[0] != '\0');
+    /* StackAllocator slab OOM -> RESOURCE_EXHAUSTED. */
+    hyle_stack_allocator *failed_stack = NULL;
+    status = hyle_stack_allocator_create(&failed_stack, oom, 4096);
+    CHECK(hyle_status_is_resource_exhausted(status));
+    CHECK(failed_stack == NULL);
+    hyle_status_free(&status);
 
-    CHECK(hyle_stats_allocator_create(oom, 0) == NULL);
-    CHECK(hyle_mem_last_error_code() == HYLE_MEM_ERROR_OUT_OF_MEMORY);
+    hyle_stats_allocator *failed_stats = NULL;
+    status = hyle_stats_allocator_create(&failed_stats, oom, 0);
+    CHECK(hyle_status_is_resource_exhausted(status));
+    CHECK(failed_stats == NULL);
+    hyle_status_free(&status);
 
     /* The injected backing owns the opaque control object too. An always-OOM
        backing therefore fails create without falling through to global new. */
-    hyle_growable_pool *gp = hyle_growable_pool_create(oom, 32, 0, 4);
+    hyle_growable_pool *gp = NULL;
+    status = hyle_growable_pool_create(&gp, oom, 32, 0, 4);
+    CHECK(hyle_status_is_resource_exhausted(status));
     CHECK(gp == NULL);
-    CHECK(hyle_mem_last_error()[0] != '\0');
+    hyle_status_free(&status);
   }
 
   /* ---- HugeRegion: open / write / destroy (THP hint) ---- */
   {
     /* 4 MiB span; THP hint is soft, so open must still succeed everywhere. */
     size_t bytes = 4u * 1024u * 1024u;
-    hyle_huge_region *hr =
-        hyle_huge_region_open(bytes, HYLE_HUGE_THP_HINT, HYLE_MEM_NUMA_ANY);
+    hyle_huge_region *hr = NULL;
+    CHECK_OK(hyle_huge_region_open(&hr, bytes, HYLE_HUGE_THP_HINT,
+                                   HYLE_MEM_NUMA_ANY));
     CHECK(hr != NULL);
     if (hr != NULL) {
       CHECK(hyle_huge_region_size(hr) >= bytes);
@@ -611,36 +675,41 @@ int main(void) {
       hyle_huge_region_destroy(hr);
     }
 
-    hyle_huge_region *hl =
-        hyle_huge_region_open_local(bytes, HYLE_HUGE_THP_HINT);
+    hyle_huge_region *hl = NULL;
+    CHECK_OK(hyle_huge_region_open_local(&hl, bytes, HYLE_HUGE_THP_HINT));
     CHECK(hl != NULL);
     hyle_huge_region_destroy(hl);
 
-    hyle_huge_region *hi = hyle_huge_region_open_interleaved(bytes);
+    hyle_huge_region *hi = NULL;
+    CHECK_OK(hyle_huge_region_open_interleaved(&hi, bytes));
     CHECK(hi != NULL);
     hyle_huge_region_destroy(hi);
 
-    CHECK(hyle_huge_region_open(bytes,
-                                HYLE_HUGE_NUMA_BIND | HYLE_HUGE_NUMA_INTERLEAVE,
-                                HYLE_MEM_NUMA_ANY) == NULL);
-    CHECK(hyle_mem_last_error_code() == HYLE_MEM_ERROR_INVALID_ARGUMENT);
-    CHECK(hyle_mem_last_error()[0] != '\0');
-    CHECK(hyle_huge_region_open(bytes, 1u << 31, HYLE_MEM_NUMA_ANY) == NULL);
-    CHECK(hyle_mem_last_error()[0] != '\0');
+    hyle_status status = hyle_huge_region_open(
+        &hr, bytes, HYLE_HUGE_NUMA_BIND | HYLE_HUGE_NUMA_INTERLEAVE,
+        HYLE_MEM_NUMA_ANY);
+    CHECK(hyle_status_is_invalid_argument(status));
+    CHECK(hr == NULL);
+    hyle_status_free(&status);
+    status = hyle_huge_region_open(&hr, bytes, 1u << 31,
+                                   HYLE_MEM_NUMA_ANY);
+    CHECK(hyle_status_is_invalid_argument(status));
+    CHECK(hr == NULL);
+    hyle_status_free(&status);
 
     hyle_huge_region_destroy(NULL); /* NULL-safe */
   }
 
-  /* ---- diagnostics + named-enum types (FFI discoverability) ---- */
+  /* ---- structured Status + named-enum types (FFI discoverability) ---- */
   {
     hyle_huge_flags one_flag = HYLE_HUGE_THP_HINT; /* named enum as a type */
     hyle_mem_numa_node any = HYLE_MEM_NUMA_ANY;
     uint32_t flags = (uint32_t)one_flag | (uint32_t)HYLE_HUGE_PREFAULT;
-    hyle_huge_region *hr =
-        hyle_huge_region_open(2u * 1024u * 1024u, flags, (int)any);
+    hyle_huge_region *hr = NULL;
+    CHECK_OK(hyle_huge_region_open(&hr, 2u * 1024u * 1024u, flags,
+                                   (int)any));
     CHECK(hr != NULL);
     hyle_huge_region_destroy(hr);
-    CHECK(hyle_mem_last_error() != NULL); /* always a valid C string ("") */
   }
 
   /* ---- process-wide policy: callable, no crash (effect is global/soft) ----
@@ -648,8 +717,7 @@ int main(void) {
   hyle_enable_allocator_hugepages(0, 0);
   hyle_enable_allocator_numa(0);
   hyle_system_collect(0);
-  CHECK(hyle_reserve_huge_1g_pages(0, HYLE_MEM_NUMA_ANY, 0) ==
-        1); /* pages==0 ok */
+  CHECK_OK(hyle_reserve_huge_1g_pages(0, HYLE_MEM_NUMA_ANY, 0));
 
   if (g_fails) {
     fprintf(stderr, "c_mem_test: %d failed\n", g_fails);

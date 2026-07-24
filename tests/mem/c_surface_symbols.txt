@@ -39,8 +39,6 @@ hyle_huge_region_open_local
 hyle_huge_region_requested_flags
 hyle_huge_region_requested_numa_node
 hyle_huge_region_size
-hyle_mem_last_error_code
-hyle_mem_last_error
 hyle_pooled_region_allocate
 hyle_pooled_region_as_allocator
 hyle_pooled_region_block_size

@@ -12,7 +12,7 @@
 
 | 模块 | 主要头文件入口 | 用途 |
 |---|---|---|
-| `error/` | `hyle/error/{status,result}.h` | Status/Result 与分层错误上下文 |
+| `error/` | `hyle/error/{status,result}.h` | Status/Result 与分层错误上下文；选型见 [`error.md`](./error.md) |
 | `mem/` | `hyle/mem/{allocator,region,shared_pool,fixed_pool}.h` | allocator、region/pool、诊断与 NUMA/大页；选型见 [`mem.md`](./mem.md) |
 | `platform/` | `hyle/platform/{thread,wait,fs,virtual_memory,numa,mapped_file,cpu}.h` | OS 线程、等待、文件系统、VM 与拓扑 |
 | `container/` | `hyle/container/{swiss_table,carray,small_vector,string_ref}.h` | flat map、连续/内联容器、字符串和并发队列 |
@@ -287,6 +287,24 @@ uint64_t h = hyle::container::hash_bytes_inline(p, n);  // 与 hash_bytes 结果
 
 ### 3.3 error —— Status / Result / 上下文
 
+完整的语言无关选型、canonical code 和诊断边界见 [`error.md`](./error.md)；这里仅给集成时的
+最短 C++ 路径：
+
+| 情况 | 使用 |
+|---|---|
+| 只有成功/失败，调用者需要原因 | `Status` |
+| 成功返回一个值/RAII 资源 | `Result<T>` |
+| 批量独立步骤，保留第一个失败 | `Status::Update` |
+| 明确接受 cleanup 失败 | `IgnoreError`（让丢弃意图可见） |
+| allocator/pool pop/poll 的“暂时无值”是正常热路结果 | 指针/optional/小 enum，不强塞 Status |
+| HYLE 自身不变量破坏、double free、错误生命周期 | `HYLE_FATAL_ASSERT`，不允许恢复 |
+| 需要日志或 trace | 在最终消费边界交给 obs/宿主 logger，Status 自身不记录 |
+
+code 选择遵循调用者该做什么：坏参数用 `InvalidArgument`，合法参数但状态不允许用
+`FailedPrecondition`，OOM/配额/池耗尽用 `ResourceExhausted`，临时后端故障用
+`Unavailable`，永久缺能力用 `Unimplemented`。叶子 message 保留原生原因；中间层只有
+增加“用户正在做什么”的新语义时才加 context。不要解析 message 做程序分支。
+
 **`Status`** 是 8 字节 tagged-word 错误载体（`sizeof(Status)==sizeof(void*)`），三态零开销分级：
 - OK（`rep_==0`，最常见）与**无消息**错误（内联码）——**都不碰堆**；
 - 只有**带消息**的错误才 malloc 一次（引用计数，拷贝共享同一 backing）。
@@ -301,15 +319,15 @@ Status c = Status::Internal("shard 7 gone");  // 带消息，堆 rep（refcount�
 Status d = std::move(c).WithContext("loading model");
                                                // "loading model: shard 7 gone"
 
-if (!c.ok()) c.code();          // StatusCode::Internal（16 个 abseil/gRPC canonical 码）
-c.IsInternal();                 // 每码一个谓词：IsNotFound() / IsCancelled() / ...
-c.message();                    // string_view（无消息时为空），不拥有
+if (!d.ok()) d.code();          // StatusCode::Internal（16 个 canonical 非 OK 码）
+d.IsInternal();                 // 每码一个谓词：IsNotFound() / IsCancelled() / ...
+d.message();                    // string_view（无消息时为空），不拥有
 char buf[128];
-c.ToString(buf, sizeof buf);    // "Internal: shard 7 gone"；snprintf 式，返回完整长度
+d.ToString(buf, sizeof buf);    // "Internal: loading model: shard 7 gone"
 
 #include "hyle/error/format.h"  // 仅需要 C++ owning/stream 输出的 TU 包含
-std::string text = hyle::to_string(c);
-std::cerr << c;
+std::string text = hyle::to_string(d);
+std::cerr << d;                 // 应用侧 opt-in；HYLE 核心不会自动写日志
 ```
 
 **`Result<T>` = `std::expected<T, Status>`**（C++23，monadic `and_then`/`transform` 免费）。两个传播宏做 Rust `?`-式早返回，在返回 `Status` 或 `Result<T>` 的函数里都能用：
@@ -341,7 +359,9 @@ hyle::Result<int> load() {
 OOM 时保留错误码；增加 context OOM 时保留原消息。Status 传播不自动写日志，人读
 诊断统一使用 §3.5 的 obs。
 
-跨 DLL / C-FFI 消费者用纯 C 面（`hyle/c/error.h`），见 [`c-error.md`](./c-error.md)。
+跨 DLL / C-FFI 消费者用纯 C 面（`hyle/c/error.h`）：普通失败返回 `hyle_status`，成功还要
+交付句柄时使用首位 out 参数。mem 冷工厂就是这一形状，热 allocate/acquire 仍返回 NULL。
+完成选型后，精确的 owning 生命周期与 ABI 映射见 [`c-error.md`](./c-error.md)。
 
 ### 3.4 sched —— 纤程 + 调度器
 ```cpp

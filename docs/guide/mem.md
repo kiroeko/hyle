@@ -1,28 +1,30 @@
-# HYLE mem：按真实内存形状选择能力
+# HYLE mem：什么情况选择什么
 
 mem 是 host RAM 的基础原语层。它不替业务猜生命周期，也不把某个 benchmark 的最优
 形状包装成通用 allocator；使用者先确定 ownership、并发、容量和释放方式，再选择类型。
+本文是**语言无关的选型入口**，正文示例用最自然的 C++ RAII 写法；纯 C/FFI 用户先在这里
+选能力，再到 [`c-mem.md`](./c-mem.md) 查对应的 Status/out、opaque handle 和 typed 宏。
 
 ## 一页选择表
 
-| 需求 | 使用 | 关键合同 |
-|---|---|---|
-| 普通动态分配 / 依赖注入 | `system_allocator()` / `Allocator` | sized-free；free/realloc 带回原 size/alignment |
-| 接入 STL PMR | `PmrResource` | 借用 `Allocator` |
-| 任意 backing 的严格 live-byte admission | `QuotaAllocator` | 线程安全；按 requested bytes 精确计量 |
-| request/frame/graph phase 临时对象 | `Region` | owned、单线程、growable、bulk `clear()` |
-| 调用方 buffer 中的临时对象 | `FixedRegion` | external、单线程、bump、无 fallback |
-| 从共享硬池借一个 scratch block | `PooledRegion` | 单线程、固定容量、析构归还整块 |
-| LIFO checkpoint/rewind scratch | `StackAllocator` | owned fixed slab、单线程 |
-| 外部 buffer 内变长 alloc/free | `FixedPool` | 单线程、individual free、无 fallback、立即合并邻块 |
-| 多线程固定块、严格容量 | `SharedPool` | hard capacity；free 完成后立即全局可见 |
-| worker-local 热点固定块复用 | `SharedPoolCache` over `SharedPool` | 显式 owner/cache 容量/batch；跨线程可见性是 soft，需 publish |
-| 固定数量 typed 对象，每次重建 | `ObjectPool<T>` | create/destroy；构造失败退槽 |
-| 昂贵对象保留内部状态 | `PreservingObjectPool<T>` | 池建时构造一次，return 不析构 |
-| 单线程 typed 对象、容量可增长 | `GrowablePool<T>` | 指针稳定，按需增加 chunks |
-| 自动归还 pooled object | `PoolLoan<T, Owner>` / `try_loan()` | move-only；pool 必须比 loan 长寿 |
-| 大块、THP/NUMA placement | `HugeRegion` | requested 与 accepted policy 可分别查询 |
-| fiber stack | `FiberStack` / `FiberStackPool` | guard page + runtime 专用缓存 |
+| 需求 | C++ 形状 | C / FFI 形状 | 关键合同 |
+|---|---|---|---|
+| 普通动态分配 / 依赖注入 | `system_allocator()` / `Allocator` | `hyle_system_allocator` / `hyle_allocator` | sized-free；free/realloc 带回原 size/alignment |
+| 接入 STL PMR | `PmrResource` | 不需要：C 直接持有 allocator vtable | 借用 `Allocator` |
+| 任意 backing 的严格 live-byte admission | `QuotaAllocator` | `hyle_quota_allocator` | 线程安全；按 requested bytes 精确计量 |
+| request/frame/graph phase 临时对象 | `Region` | `hyle_region` | owned、单线程、growable、bulk `clear()` |
+| 调用方 buffer 中的临时对象 | `FixedRegion` | `hyle_fixed_region` 值对象 | external、单线程、bump、无 fallback |
+| 从共享硬池借一个 scratch block | `PooledRegion` | `hyle_pooled_region` | 单线程、固定容量、整体归还 |
+| LIFO checkpoint/rewind scratch | `StackAllocator` | `hyle_stack_allocator` | owned fixed slab、单线程 |
+| 外部 buffer 内变长 alloc/free | `FixedPool` | `hyle_fixed_pool` | 单线程、individual free、无 fallback、立即合并邻块 |
+| 多线程固定块、严格容量 | `SharedPool` | `hyle_shared_pool` | hard capacity；free 完成后立即全局可见 |
+| worker-local 热点固定块复用 | `SharedPoolCache` over `SharedPool` | `hyle_shared_pool_cache` | 显式 owner/capacity/batch；可见性是 soft，需 publish |
+| 固定数量 typed 对象，每次重建 | `ObjectPool<T>` | `HYLE_OBJECT_POOL_*` 裸槽宏 | C 自行 init/cleanup；C++ 跑 ctor/dtor |
+| 昂贵对象保留内部状态 | `PreservingObjectPool<T>` | SharedPool 裸槽 + 调用方状态协议 | return 不销毁内部状态；最终 cleanup 由 C 调用方负责 |
+| 单线程 typed 对象、容量可增长 | `GrowablePool<T>` | `hyle_growable_pool` / typed 宏 | 指针稳定，按需增加 chunks |
+| 自动归还 pooled object | `PoolLoan<T, Owner>` / `try_loan()` | 手动 acquire/release | owner 必须比 loan/slot 长寿 |
+| 大块、THP/NUMA placement | `HugeRegion` | `hyle_huge_region` | requested 与 accepted policy 可分别查询 |
+| fiber stack | `FiberStack` / `FiberStackPool` | 不独立导出；由 sched C ABI 管理 | guard page + runtime 专用缓存 |
 
 GPU staging、submission/completion lifetime 属于 `compute/transfer`，不由 mem 用“通用
 pinned pool”猜测。graph tensor liveness planner 属于 graph；mem 只提供它消费的 Region。

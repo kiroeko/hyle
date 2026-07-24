@@ -450,8 +450,8 @@ class Channel {
   HYLE_DISABLE_COPY_AND_MOVE(Channel);
 
   // Allocation failure leaves a closed/empty invalid channel. Check this once
-  // after construction; send/recv also fail safely so FFI factories can convert
-  // OOM into their normal NULL + last-error channel.
+  // after construction; send/recv also fail safely so an FFI factory can
+  // convert OOM into the shared Status channel.
   bool valid() const noexcept { return buf_ != nullptr; }
 
   // Enqueue `v`, blocking the fiber while the buffer is full. Returns false if
