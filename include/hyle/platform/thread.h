@@ -2,9 +2,14 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <functional>
+#include <memory>
+#include <new>
 #include <optional>
 #include <span>
 #include <string_view>
+#include <type_traits>
+#include <utility>
 
 #include "hyle/error/result.h"
 #include "hyle/platform/wait.h"  // HYLE_PLATFORM_API
@@ -89,10 +94,46 @@ class HYLE_PLATFORM_API Thread {
   // configuration failures and guarantees entry was not called.
   static Result<Thread> spawn(void (*entry)(void*), void* ctx, ThreadOpts opts = {});
 
+  // Owning C++ convenience: move a zero-argument callable into the new thread.
+  // This is the normal shape for capturing and move-only lambdas. It pays one
+  // extra cold-path allocation for the callable; the function-pointer overload
+  // above remains the allocation-minimal core used by sched and C/FFI adapters.
+  // As with std::thread, an exception escaping the callable terminates the
+  // process. A spawn/configuration failure destroys the callable without
+  // invoking it and is returned through Result.
+  template <class Fn>
+    requires std::invocable<std::decay_t<Fn>>
+  static Result<Thread> spawn(Fn&& fn, ThreadOpts opts = {}) {
+    using Callable = std::decay_t<Fn>;
+    using Start = CallableStart<Callable>;
+    auto* start = new (std::nothrow) Start{std::forward<Fn>(fn)};
+    if (start == nullptr) {
+      return std::unexpected(
+          Status::ResourceExhausted("thread callable allocation failed"));
+    }
+    auto result = spawn(&Start::invoke, start, opts);
+    if (!result) delete start;
+    return result;
+  }
+
   bool joinable() const noexcept { return handle_ != 0; }
   void join();
 
  private:
+  template <class Fn>
+  struct CallableStart {
+    Fn fn;
+
+    static void invoke(void* ctx) {
+      // Own before invoking so stack unwinding also releases the callable on
+      // toolchains where exceptions are enabled; Thread's OS trampoline is the
+      // uncaught-exception/fail-fast boundary.
+      std::unique_ptr<CallableStart> self(
+          static_cast<CallableStart*>(ctx));
+      std::invoke(std::move(self->fn));
+    }
+  };
+
   // HANDLE on Windows, pthread_t on POSIX, packed into uintptr_t. 0 = empty.
   std::uintptr_t handle_ = 0;
 };

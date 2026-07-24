@@ -146,6 +146,12 @@ C ABI 是独立但等价的产品面：
 - C 不机械复制 C++ 模板/RAII 名称，但必须能覆盖同一用户任务，不得出现 C 无法完成的
   platform 能力。
 
+C++ 在同一个无分配 core 上提供两种显式便利形状：`Thread::spawn(callable, opts)` 拥有 capturing/
+move-only callable；`platform/convenience.h` 以 header-only overload 返回 owning
+`std::string/std::vector`。后者负责 count/fill、动态视图重试与 STL 分配异常到 `Status` 的
+adapter 转换，但不进入 DLL/C ABI，也不让 `fs.h/cpu.h` 的 core 被迫引入 owning 类型。这样普通
+C++ 使用不重复样板，allocator/arena/FFI 与热调用者仍能控制每次分配。
+
 导出符号和精确所有权以 [`../guide/c-platform.md`](../guide/c-platform.md) 为用户信源；机械
 声明/纯 C 引用/动态库导出一致性是发布闸门，不在 architecture 复制易过时的符号计数。
 
@@ -157,6 +163,8 @@ platform 的 SOTA 标准不是“比系统调用快”，而是同合同下不�
 - 动态 CPU availability 保持 O(N) OS 查询，不能为 O(1) 缓存而返回过时 cpuset；只用于
   初始化/重配控制面，不进入每 task 热路径。
 - Thread 默认路径不为未请求的强保证增加握手/refcount；required 才支付同步配置成本。
+- callable 线程入口只在用户选择 owning 便利重载时多一次冷路径 heap 状态分配；OS thread 创建仍是
+  主成本，runtime/sched 与 C adapter 继续使用 allocation-minimal `entry + void*` core。
 - `wait_on_address` 直接落 OS 原语，Parker 只加一个原子状态机，不增 mutex/heap allocation。
 - `allocate_rw` 使用最少 OS mapping 操作；staged reserve+commit 的额外 syscall 是不同合同，
   不能拿来宣称普通分配性能。

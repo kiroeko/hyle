@@ -12,7 +12,7 @@
 
 > **预发布冻结证书（2026-07-24）：**实际使用导向复审已完成。Windows MSVC、WSL GCC 14、
 > Apple M4 AppleClang 21 均通过 platform C++/纯 C 功能测试、**111/111** C 声明↔纯 C
-> 引用↔DLL/ELF/Mach-O 导出一致性，以及 **8 个 C++ + 1 个 C** 公开头独立编译。下游审计
+> 引用↔DLL/ELF/Mach-O 导出一致性，以及 **9 个 C++ + 1 个 C** 公开头独立编译。下游审计
 > 确认 mem/container/sched 消费动态进程 CPU 视图，无自造 OS 拓扑/affinity/priority；唯一
 > `hardware_concurrency` 是可用 CPU 查询失败后的保底。VM/fs/MappedFile 当前 `Result/Status`
 > 形状已补齐 Linux/M4 统计证书，详见 performance 文档。platform 进入预发布冻结；只有真实
@@ -24,6 +24,11 @@
 > 与范围验证，并新增 FileHandle raw floor 和 16 MiB 持久随机页访问：mapping 同合同距 raw
 > ≤1.8%，安全 FileHandle 距 raw ≤2.4%，持久随机访问赢 ifstream seek/read 168–2355x。
 > 点值和选择边界只以 performance/guide 为准，本任务单仅记录重开原因与验收提交。
+
+> **易用性回审（2026-07-24）：**C ABI 保持 allocator-neutral buffer-fill/callback/opaque-owner
+> core；C++ 新增 capturing/move-only callable `Thread::spawn` 与 opt-in header-only owning
+> string/CPU 查询。普通用户不再手写 count/allocate/retry，性能敏感和 FFI 调用者也不支付
+> 隐藏分配。真实配方、截断/动态增长和 required 失败销毁路径纳入三平台测试。
 
 ## 已完成
 

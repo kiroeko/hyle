@@ -363,6 +363,8 @@ hyle_vm_region_destroy(r);
 
 ### fs
 
+固定上限明确时直接给栈/arena buffer；结果长度达到 `cap` 就表示截断：
+
 ```c
 char tmp[512];
 size_t full = 0;
@@ -373,6 +375,41 @@ if (!hyle_status_is_ok(st)) {
 hyle_status_free(&st);
 if (full >= sizeof tmp) { /* truncated: retry with a larger buffer */ }
 ```
+
+需要任意长度 owning 字符串时做 count→allocate→fill。C ABI 刻意不偷偷选择
+`malloc`、语言 runtime 或 HYLE allocator；下面的 storage policy 完全属于调用方：
+
+```c
+#include <stdint.h>
+#include <stdlib.h>
+
+char* tmp = NULL;
+size_t cap = 0;
+int complete = 0;
+for (unsigned attempt = 0; attempt != 4; ++attempt) {
+  size_t full = 0;
+  hyle_status st = hyle_fs_temp_directory(&full, tmp, cap);
+  if (!hyle_status_is_ok(st)) {
+    hyle_status_free(&st);
+    free(tmp);
+    return;
+  }
+  hyle_status_free(&st);
+  if (full < cap) { complete = 1; break; } /* includes empty string */
+  if (full == SIZE_MAX) { free(tmp); return; }
+  cap = full + 1;                     /* room for NUL */
+  char* grown = (char*)realloc(tmp, cap);
+  if (grown == NULL) { free(tmp); return; }
+  tmp = grown;
+}
+if (!complete) { free(tmp); return; } /* process state kept changing */
+/* use tmp; free(tmp) when done */
+```
+
+cwd/home/env/symlink 和 CPU ids/info 使用同一模式；数组的 `cap` 是元素数，不额外加 NUL。
+状态可能在 count 与 fill 之间变化，所以完整 owning helper 必须在返回数量超过容量时重试，
+不能把 partial buffer 当完整结果。C++ 用户可直接包含 `hyle/platform/convenience.h` 使用已封装
+的 owning 重载；它是 header-only source API，不是缺失的 C ABI 能力。
 
 ---
 

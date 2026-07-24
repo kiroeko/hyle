@@ -19,16 +19,38 @@ platform 是 HYLE 的跨 OS 原语层。它服务两类调用者：HYLE 内部�
 | 只需低成本枚举目录名和类型 | `for_each_entry` | 每项都 `stat` | entry 类型不跟随 symlink；常见路径零额外 stat |
 | 需要完整单项元数据 | `stat` | 把目录遍历的 entry type 当完整 stat | 跟随 symlink，并另报 path 自身是否 symlink |
 | 大文件随机访问/共享映射 | `MappedFile` | 小文件必然 mmap | RO/RW/COW；Linux 小文件顺扫未必赢 read |
-| 查询 cwd/temp/home | 对应 `*_directory` buffer-fill | 猜环境变量/固定 `/tmp` | `Result<size_t>` 是完整长度；可先 size query |
-| 读取/修改进程环境 | `get/set/unset_env_var` | 把 unset 和空值都当 0 | unset=`NotFound`；写操作仅应在启动期做 |
-| 一次性启动 OS 线程 | `Thread::spawn` | sched task/fiber | move-only；join 回收；配置默认 best-effort，可选 required |
+| 查询 cwd/temp/home | `convenience.h` owning 重载；自管存储用 buffer-fill | 猜环境变量/固定 `/tmp` | owning 返回 `std::string`；core 返回完整长度 |
+| 读取/修改进程环境 | owning `get_env_var(name)` 或 buffer-fill；`set/unset` | 把 unset 和空值都当 0 | unset=`NotFound`；写操作仅应在启动期做 |
+| 一次性启动 OS 线程 | `Thread::spawn(callable, opts)` | sched task/fiber | callable 状态由线程拥有；join 回收；可选 required |
 | 大量轻量任务 | sched | 每任务一个 `Thread` | platform 只提供线程地基 |
 | token 不丢失的线程 park/unpark | `Parker` | 裸 condition variable 拼状态 | unpark-before-park 可消费 token |
 | 等待调用方已有的原子字 | `wait_on_address` | `Parker` 再包一层 | 允许伪唤醒，必须循环检查谓词 |
 | 插件/可选系统库 | `DynLib` | 裸 `dlopen`/`LoadLibrary` 分叉 | `Result` 保留原生 loader 诊断 |
 | 运行时 ISA 派发 | `cpu_features` / `supports` | 编译机宏代替运行机探测 | 只调用当前进程可执行的 ISA |
-| 决定当前 worker 数/绑核 | `available_cpu_count` / `available_cpu_ids` | `hardware_concurrency` / `cpu_topology` | 动态遵守 affinity、cgroup/cpuset、Windows CPU Sets；id 可稀疏 |
+| 决定当前 worker 数/绑核 | owning `available_cpu_ids()` 或 buffer-fill core | `hardware_concurrency` / `cpu_topology` | 动态遵守 affinity、cgroup/cpuset、Windows CPU Sets；id 可稀疏 |
 | cache 容量提示、P/E 总量 | `cache_info` / `cpu_topology` | 假定探测值永远存在 | 未知 cache 为 0；P/E 不做频率猜测 |
+
+## C++ 的 owning 与无分配两层
+
+platform 对变长查询提供两层，不让一种形状勉强服务所有用户：
+
+- 日常控制面包含 `hyle/platform/convenience.h`，直接取得 owning
+  `std::string` / `std::vector`，自动处理 count、分配、变化后的重试和截断；分配失败仍是
+  `ResourceExhausted`，不会从这个边界抛出。
+- allocator/arena、C/FFI 或要求无隐藏分配的代码包含 `fs.h` / `cpu.h`，使用 buffer-fill
+  core。它写入调用方存储并返回完整长度/数量，没有被便利层替代。
+
+```cpp
+#include "hyle/platform/convenience.h"
+
+HYLE_ASSIGN_OR_RETURN(std::string cache_dir, temp_directory());
+HYLE_ASSIGN_OR_RETURN(std::vector<unsigned> cpus,
+                      available_cpu_ids(CpuOrder::kPerformanceFirst));
+```
+
+owning 查询是初始化/重配路径的易用入口，不应放进每 task 热路径；需要复用存储时直接用
+buffer-fill core。`convenience.h` 是显式 opt-in，原有 platform 头不会因此拉入 owning STL
+类型或改变 DLL/C ABI。
 
 ## 页内存
 
@@ -79,8 +101,9 @@ read 返回 0 才是 EOF；read/write 返回短计数仍是成功。`MappedFile`
 才借 `FileHandle::get()` 调 native I/O。`get()` 不转移所有权，不得关闭借出的 raw handle；
 需要转移时使用 `release()`。stat/size/权限/symlink 和所有 path 变更都返回 Result/Status：不存在、空文件/0000 权限、
 visitor 提前停止不再共享一个 0。跨平台代码优先 `is_readonly/set_readonly`，不要把 Windows
-合成的 POSIX mode 当真实 ACL。cwd/temp/home/env 同样返回 `Result<size_t>`：值是完整长度，
-可先用 `dst=nullptr` 查询；环境变量未设置是 `NotFound`，已设置为空是成功的 0。
+合成的 POSIX mode 当真实 ACL。普通 C++ 代码可从 `convenience.h` 直接取得 owning
+cwd/temp/home/env/symlink 字符串；要自管存储时使用 `Result<size_t>` buffer-fill，值是完整
+长度，可先用 `dst=nullptr` 查询。环境变量未设置是 `NotFound`，已设置为空是成功的 0。
 `temp_directory` 只发现 OS/环境配置的路径，不额外探测可写性；需要真正可用且无 TOCTOU
 窗口的临时文件时直接调用 `create_temp_file`。
 
@@ -104,7 +127,10 @@ dangling link 时显式传 `kFile` 或 `kDirectory`，才具有跨平台一致�
 
 `Thread` 适合少量长寿命 OS 线程、runtime worker 或必须设置 stack/name/affinity 的边界；
 任务级并发用 sched。`ThreadOpts` 默认 `kBestEffort`，适合“能设则设、失败仍可运行”的
-可移植 runtime。确实依赖设置（隔离核、基准控制线程、实时服务线程）时改成 required：
+可移植 runtime。普通 C++ 调用直接传 capturing/move-only lambda；线程拥有 callable，
+spawn/config 失败时销毁而不调用。未捕获异常与 `std::thread` 相同会 fail-fast。内部 runtime、
+C adapter 或需要自己管理 context 的代码仍可使用零额外 callable 分配的 `entry + void*` core。
+确实依赖设置（隔离核、基准控制线程、实时服务线程）时改成 required：
 
 ```cpp
 unsigned cpu = 0;
@@ -115,7 +141,9 @@ ThreadOpts opts;
 opts.name = "ingest";
 opts.affinity = cpu;  // 单 worker 固定归属：单 CPU 便利形状
 opts.config_policy = ThreadConfigPolicy::kRequired;
-HYLE_ASSIGN_OR_RETURN(auto thread, Thread::spawn(&entry, ctx, opts));
+HYLE_ASSIGN_OR_RETURN(auto thread, Thread::spawn([state = std::move(state)] {
+  run_worker(*state);
+}, opts));
 // 返回成功前 name/affinity 已设置；设置失败时 entry 根本不会运行。
 ```
 
@@ -150,7 +178,7 @@ Windows 的硬 affinity mask 一次只能属于一个 processor group，跨组�
 `system_logical_cpus` 与 OS 明确报告的 P/E 总数，适合诊断和粗粒度硬件策略；它不回答容器
 或当前进程能开多少 worker。
 
-`available_cpu_count()` / `available_cpu_ids(dst, cap)` 才是进程视图：前者是创建 worker、
+`available_cpu_count()` / `available_cpu_ids(...)` 才是进程视图：前者是创建 worker、
 选择 shard 数的常用形状；后者返回完整可用数，最多写 `cap` 个可直接交给
 `ThreadOpts::affinity` / `CpuAffinity` 的 id；`dst=nullptr` 可只查询数量。查询刻意不缓存，因为 Linux
 affinity/cgroup/cpuset 和 Windows CPU Sets 可在进程运行时改变；Linux 具体读取调用线程的
@@ -160,20 +188,19 @@ task 的热路径。
 
 需要优先使用强核时，不要假设“大编号/小编号就是 P-core”。`available_cpu_info()` 返回当前
 进程可用 CPU 的 `id / performance_rank / kind`：rank 越大表示 OS 在本机报告的能力档越强，
-0 表示无法建立可信的 CPU-id 映射。常用软偏好直接用有序重载：
+0 表示无法建立可信的 CPU-id 映射。普通 C++ 初始化代码用 `convenience.h` 的 owning 有序
+重载；复用调用方数组时使用三参数 buffer-fill 重载：
 
 ```cpp
-HYLE_ASSIGN_OR_RETURN(auto count, available_cpu_count());
-std::vector<unsigned> cpus(count);
-HYLE_ASSIGN_OR_RETURN(auto ordered_count,
-    available_cpu_ids(CpuOrder::kPerformanceFirst,
-                      cpus.data(), cpus.size()));
+HYLE_ASSIGN_OR_RETURN(
+    std::vector<unsigned> cpus,
+    available_cpu_ids(CpuOrder::kPerformanceFirst));
 // cpus 仍包含全部可用 CPU，只是已知强核排前；未知平台保持 OS 顺序。
 
 SchedulerOptions scheduler_opts;
 scheduler_opts.worker_cpu_order = CpuOrder::kPerformanceFirst;
 scheduler_opts.worker_priority = ThreadPriority::kHigh; // macOS: QoS 软偏好
-const unsigned workers = static_cast<unsigned>(std::min<std::size_t>(4, count));
+const unsigned workers = static_cast<unsigned>(std::min<std::size_t>(4, cpus.size()));
 Scheduler scheduler(workers, allocator, 1024, scheduler_opts);
 ```
 
@@ -192,8 +219,9 @@ bind/interleave 的硬策略失败才应让依赖精确放置的工作失败。
 
 ## 错误与所有权
 
-资源构造/查询返回 `Result<T>`，资源变更返回 `Status`；成功态不分配，完整原生诊断只在
-失败路构造。`exists/is_directory/is_symlink` 把不存在表达为成功的 false，但不会吞掉权限或
+资源构造/查询返回 `Result<T>`，资源变更返回 `Status`；core 成功态不隐藏分配，owning
+convenience 的分配是调用形状本身的显式选择，完整原生诊断只在失败路构造。
+`exists/is_directory/is_symlink` 把不存在表达为成功的 false，但不会吞掉权限或
 I/O 错误。platform 的公开可恢复失败全部直接携带共享 error，不存在另一套 TLS last-error。
 
 所有 RAII owner 都是 move-only。借出的 `data()`、symbol pointer、raw handle 或 unparker

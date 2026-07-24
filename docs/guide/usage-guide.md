@@ -584,6 +584,7 @@ if (m.valid()) { const float* w = static_cast<const float*>(m.data()); /* 零拷
 
 // 文件系统 + 原子临时文件（返回打开的句柄，TOCTOU 安全）
 #include "hyle/platform/fs.h"
+#include "hyle/platform/convenience.h" // opt-in owning string/vector 查询
 char path[1024];
 HYLE_ASSIGN_OR_RETURN(
     CreatedTempFile temporary,
@@ -600,14 +601,9 @@ HYLE_RETURN_IF_ERROR(create_hard_link("a.txt", "b.txt"));
 // Windows 必须知道 target 类型；dangling directory link 要显式给 kind。
 HYLE_RETURN_IF_ERROR(create_symlink(
     "future-dir", "dir-link", SymlinkKind::kDirectory));
-char tgt[4096];
-HYLE_ASSIGN_OR_RETURN(std::size_t target_size,
-                      read_symlink("link", tgt, sizeof tgt));
-char temp_dir[1024];
-HYLE_ASSIGN_OR_RETURN(std::size_t temp_size,
-                      temp_directory(temp_dir, sizeof temp_dir));
-char value[256];
-auto env = get_env_var("MYAPP_CACHE", value, sizeof value);
+HYLE_ASSIGN_OR_RETURN(std::string target, read_symlink("link"));
+HYLE_ASSIGN_OR_RETURN(std::string temp_dir, temp_directory());
+auto env = get_env_var("MYAPP_CACHE");
 if (!env) {
   if (env.error().IsNotFound()) { /* 未设置：选择默认目录 */ }
   else { return env.error(); }
@@ -617,7 +613,7 @@ HYLE_RETURN_IF_ERROR(set_env_var("MYAPP_MODE", "fast"));
 // 线程：ABI-clean 句柄 + name/affinity/stack/priority；默认 best-effort
 #include "hyle/platform/thread.h"
 ThreadOpts opts; opts.name = "worker"; opts.priority = ThreadPriority::kHigh;
-auto t = Thread::spawn(&entry, ctx, opts);
+auto t = Thread::spawn([state = std::move(state)] { run_worker(*state); }, opts);
 
 // 动态库（RTLD_NOLOAD 附着已加载；macOS 传 install-name）+ CPU 特性
 #include "hyle/platform/dynlib.h"
@@ -627,15 +623,13 @@ HYLE_ASSIGN_OR_RETURN(auto fn, lib.symbol_as<int(*)()>("entry"));
 if (cpu_features().avx2) { /* 运行期安全走 AVX2 */ }  // best_isa() 是 simd dispatch 的依据
 const auto& cache = cache_info();        // L1D/L1I/L2/L3 bytes；未知级为 0
 const auto& topo = cpu_topology();       // 缓存的系统 CPU 总量与可信 P/E 分类
-HYLE_ASSIGN_OR_RETURN(std::size_t worker_count, available_cpu_count());
-unsigned first_cpu;
 HYLE_ASSIGN_OR_RETURN(
-    std::size_t available,
-    available_cpu_ids(&first_cpu, 1));   // 完整进程配额；写入首个真实 id
+    std::vector<unsigned> available,
+    available_cpu_ids());                // 完整进程配额；真实 id 可稀疏
 ThreadOpts pinned_opts;
-if (available != 0) pinned_opts.affinity = first_cpu; // id 可稀疏；也可传 CpuAffinity{span}
+if (!available.empty()) pinned_opts.affinity = available.front();
 pinned_opts.config_policy = ThreadConfigPolicy::kRequired;
-auto pinned = Thread::spawn(&entry, ctx, pinned_opts); // 设置失败则 entry 不运行
+auto pinned = Thread::spawn([&] { run_pinned(); }, pinned_opts); // 设置失败则不运行
 ```
 
 需要少量 worker 优先使用强核时，用

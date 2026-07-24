@@ -165,7 +165,7 @@ int main() {
     }
   }
 
-  // ---- 3. Thread spawn+join round-trip: HYLE Thread vs std::thread -----------
+  // ---- 3. Thread spawn+join: std, allocation-minimal core, owning callable --
   // OS-dominated; std::thread IS the SOTA (same syscalls). Proves HYLE's ABI-clean
   // handle (native CreateThread/pthread + stack/affinity options) costs no more.
   if (enabled("thread")) {
@@ -184,6 +184,12 @@ int main() {
     b.run("HYLE platform::Thread spawn+join", [&] {
       for (int i = 0; i < kSpawns; ++i) {
         auto r = Thread::spawn(&noop_entry, nullptr);
+        if (r) r.value().join();
+      }
+    });
+    b.run("HYLE platform::Thread callable spawn+join", [&] {
+      for (int i = 0; i < kSpawns; ++i) {
+        auto r = Thread::spawn([] {});
         if (r) r.value().join();
       }
     });

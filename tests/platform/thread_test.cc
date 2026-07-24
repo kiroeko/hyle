@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <atomic>
 #include <limits>
+#include <memory>
 #include <span>
 #include <vector>
 
@@ -159,6 +160,63 @@ TEST(ThisThread, DistinctThreadsHaveDistinctIds) {
 TEST(Thread, DefaultConstructedNotJoinable) {
   Thread t;
   EXPECT_FALSE(t.joinable());
+}
+
+TEST(Thread, CallableOverloadOwnsCapturingLambda) {
+  std::atomic<int> value{0};
+  auto result = Thread::spawn([&value] {
+    value.store(42, std::memory_order_release);
+  });
+  ASSERT_TRUE(result.has_value()) << result.error().message();
+  std::move(*result).join();
+  EXPECT_EQ(value.load(std::memory_order_acquire), 42);
+}
+
+TEST(Thread, CallableOverloadAcceptsMoveOnlyState) {
+  std::atomic<int> value{0};
+  auto owned = std::make_unique<int>(73);
+  auto result = Thread::spawn(
+      [state = std::move(owned), &value] {
+        value.store(*state, std::memory_order_release);
+      });
+  ASSERT_TRUE(result.has_value()) << result.error().message();
+  EXPECT_EQ(owned, nullptr);
+  std::move(*result).join();
+  EXPECT_EQ(value.load(std::memory_order_acquire), 73);
+}
+
+TEST(Thread, CallableIsDestroyedWithoutRunningWhenRequiredSetupFails) {
+  struct MoveOnlyProbe {
+    std::atomic<int>* runs;
+    std::atomic<int>* destroys;
+    bool owns = true;
+
+    MoveOnlyProbe(std::atomic<int>* run_count,
+                  std::atomic<int>* destroy_count) noexcept
+        : runs(run_count), destroys(destroy_count) {}
+    MoveOnlyProbe(MoveOnlyProbe&& other) noexcept
+        : runs(other.runs), destroys(other.destroys), owns(other.owns) {
+      other.owns = false;
+    }
+    MoveOnlyProbe(const MoveOnlyProbe&) = delete;
+    ~MoveOnlyProbe() {
+      if (owns) destroys->fetch_add(1, std::memory_order_relaxed);
+    }
+    void operator()() {
+      runs->fetch_add(1, std::memory_order_relaxed);
+    }
+  };
+
+  std::atomic<int> runs{0};
+  std::atomic<int> destroys{0};
+  ThreadOpts opts;
+  opts.affinity = std::numeric_limits<unsigned>::max();
+  opts.config_policy = ThreadConfigPolicy::kRequired;
+  MoveOnlyProbe probe(&runs, &destroys);
+  auto result = Thread::spawn(std::move(probe), opts);
+  ASSERT_FALSE(result.has_value());
+  EXPECT_EQ(runs.load(std::memory_order_relaxed), 0);
+  EXPECT_EQ(destroys.load(std::memory_order_relaxed), 1);
 }
 
 TEST(Thread, NullEntryIsRejected) {

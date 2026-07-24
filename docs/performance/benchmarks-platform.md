@@ -27,6 +27,7 @@
 | **Parker** vs raw wait 地板 | 356 / 310 → TIE | 22.2k / 21.2k → **0.95x 平** | 2035 / 2062 → **sign 近平** | ➖ 三态机税在噪声/个位数 % |
 | **Parker 快路径** unpark+park | 9.71（floor 4.68） | 10.64（floor 4.63） | 1.99（floor 0.90） | ➖ 只报绝对值；atomic **非公平对手** |
 | **Thread spawn+join** vs std::thread | 43.4k / 44.4k → **TIE** | 33.56k / 33.56k → **TIE** | 10.6k / 10.7k → **TIE** | ➖ 平（OS 主导，证零封装税） |
+| **Thread owning callable** vs raw `entry+ctx` core | 40.529k / 40.081k → **TIE** | 32.787k / 33.511k → **TIE** | 10.510k / 10.538k → **TIE** | ➖ n=15 三平台平；便利状态分配淹没于 OS create/join |
 | **directory_iterate** vs std::filesystem | 40.23k / 39.76k → **TIE 0.981x**（n=15） | 7.05k / 14.97k → **WIN 2.135x**（n=15） | 16.46k / 18.25k → **WIN 1.109x**（n=15） | ⚠️ 平台差：Win 平；Lin/M4 赢 |
 | **vm_allocate_rw+release** vs raw 一步 | 885 / 880 → **TIE**（n=5） | 860.9 / 853.8 → **TIE 0.978x**（n=5） | 309.8 / 305.0 → **TIE 0.982x**（n=5） | ➖ 三平台当前正常用户形状近 OS 地板 |
 | **vm_reserve+commit+release** vs raw 一步 | 1144 / 877 → **sign LOSE 0.77x** | 1086.3 / 853.8 → **0.779x 方向**（n=5） | 720.5 / 305.0 → **spread LOSE 0.421x**（n=5） | ❌ **契约差**：两步 vs 一步；见下 |
@@ -91,7 +92,9 @@ Linux/macOS 当前接口已在同日 n=15 复跑并更新总表。
 本轮不为它们新增纳秒 microbenchmark：数值主要测 OS、进程环境锁和字符串长度，且会把
 接口再次拉向 benchmark 形状。性能验收采用复杂度/分配路径审查，并由 Release/ASan 的
 真实 buffer-fill、UTF-8 round-trip、unset/empty 分离和长 HOME 场景覆盖。结构化 Status
-只在失败时构造诊断，成功 Result 是栈上值，不增加成功路堆分配。
+只在失败时构造诊断，buffer-fill 成功 Result 是栈上值，不增加成功路堆分配。opt-in
+`convenience.h` owning 重载明确购买一次 `std::string` 分配与第二次 fill，并在视图增长时最多
+重试 4 次；这是初始化控制面形状，不由不需要 owner 的 core/FFI 用户承担。
 
 ### 2026-07-24 系统拓扑与进程 CPU 配额分离
 
@@ -106,7 +109,8 @@ O(可用 CPU 数)；常见 Windows（CPU Set 记录 ≤4 KiB、默认 set ≤64�
 会掩盖变化的全局 cache，也不新增以纳秒数塑造 API 的 microbenchmark。验收用 Release/ASan
 真实约束测试：临时把进程 affinity 缩为一个现有 CPU 后查询必须立即返回 1，再恢复原 mask；
 buffer-fill 另覆盖 count-only、截断返回完整长度和 id 唯一性。性能结论是与原生查询同阶、
-常见路径零堆分配，不把 OS 拓扑枚举时间冒充 HYLE 算法性能。macOS 没有等价硬 affinity
+buffer-fill 常见路径零堆分配，owning convenience 明确购买一个 `std::vector`；不把 OS 拓扑
+枚举时间冒充 HYLE 算法性能。macOS 没有等价硬 affinity
 API，fallback 的 AppleClang/arm64 构建、CPU invariant 与纯 C 路径已在 M4 真机通过；运行期
 mask 变化测试按合同跳过，不把“不支持硬绑核”伪装成已验证能力。
 
@@ -125,6 +129,14 @@ required 是线程创建控制面；name/priority/单 CPU 是 O(1) 加所请求�
 `ThreadStart` 尾随数组分配，不因集合再增加第二次 heap allocation。默认 spawn+join
 基准路径没有等待、没有额外引用计数 RMW，仍是上表与
 `std::thread` 统计平的同一形状；不能用 required 的同步保证去对比异步 best-effort。
+
+易用性收口新增 `Thread::spawn(callable, opts)`：它拥有 capturing/move-only callable，并在
+spawn/config 失败时销毁而不调用。该 opt-in 形状比 raw `entry + void*` core 多一份 callable
+状态分配，因此用同一个真实 create→trivial entry→join 合同单独复证。Win/WSL/M4 n=15
+分别为 callable/raw **40.529/40.081、32.787/33.511、10.510/10.538 µs**；配对 sign 均 TIE
+（Win 8/15，WSL 7/15，M4 12/15，M4 p=0.035 仍未过 0.01 门槛）。callable 对
+`std::thread` 也三平台 TIE。结论仅是 OS thread 创建尺度下无可测便利税；sched/runtime 仍走
+allocation-minimal core，不把每 task 并发改造成 OS thread。
 
 Linux affinity mask 改用动态 `CPU_ALLOC`，不再把 ≥1024 CPU 静默跳过；明显越界 id 在分配
 mask 前先按 configured CPU 数拒绝，避免错误输入制造超大控制面分配。macOS priority 从
@@ -247,6 +259,7 @@ HYLE_PLATFORM_BENCH_ONLY=vm-cycle,vm-protect \
 scripts/bench-stat.py <build>/bin/hyle_platform_bench -n 5 \
   --pair "std::condition_variable ping-pong" "HYLE Parker ping-pong" \
   --pair "std::thread spawn+join" "HYLE platform::Thread spawn+join" \
+  --pair "HYLE platform::Thread spawn+join" "HYLE platform::Thread callable spawn+join" \
   --pair "std::filesystem::directory_iterator" "HYLE directory_iterate (visitor)" \
   --pair "raw OS (mmap+munmap / VirtualAlloc+Free)" "HYLE vm_allocate_rw+release" \
   --pair "raw OS (mmap+munmap / VirtualAlloc+Free)" "HYLE vm_reserve+commit+release" \
