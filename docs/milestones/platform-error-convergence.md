@@ -75,6 +75,23 @@ last-error 分类和“失败指针 + 另查 TLS”的组合；未发布，不�
 
 下一增量迁移 path/env 标量失败面，并在 Linux/macOS 镜像回归后关闭 C 阶段。
 
+## D 阶段：filesystem path 操作（2026-07-24，Windows 完成）
+
+- C++ stat/size/permissions/readlink 返回 `Result<T>`，path 变更返回 `Status`；
+  `exists/is_directory/is_symlink` 将 NotFound 表达为成功的 false，但权限、编码和 I/O
+  失败不会再被吞成 false。空文件 size=0 与失败、合法 mode=0000 与失败已可区分。
+- 目录 visitor 提前停止返回成功的 `Result(false)`，打开/枚举/关闭失败才返回 error；
+  recursive remove 传播首个结构化失败，并继续保持“不跟随 symlink/junction”的数据安全线。
+- 对应 C ABI 全部改成 `hyle_status + out`，out 进入时清零；fs path 面不再读取 TLS。
+  `hyle_platform_last_error` 只剩 cwd/temp/home/env buffer-fill、chdir/env 写这一组。
+- Windows MSVC Release 的 platform/mem C/C++、mem C surface/header 六项通过；MSVC
+  ASan 的 platform/mem C/C++ 四项通过。WSL/GCC 以 C++23、`-Wall -Wextra -Werror`
+  编译当前 POSIX `fs.cc` 与 C bridge 通过（Linux 行为测试仍以真机复跑为准）。当前目录
+  遍历 n=15：HYLE 40.23 us、std::filesystem 39.76 us，配对中位比 0.981，sign/spread
+  均为统计平。
+
+下一增量完成 cwd/temp/home/env，随后删除 `hyle_platform_last_error`。
+
 ## 完成条件
 
 - Windows/Linux/macOS 当前接口的 C/C++ tests 通过，ASan/TSan 按涉及路径复证。

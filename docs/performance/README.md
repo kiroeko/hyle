@@ -55,7 +55,7 @@
 | **math** tanh(best-of-breed→xsimd) | 0.44 | libm scalar | 6.3–8.7 | 14–20x | Highway / xsimd | 0.54/0.45 | 1.22x/1.0x | ✅平 xsimd、反超 Highway(双平台一致) |
 | **platform** Parker ping-pong(真阻塞) | 341/22.5k/2053(Win/Lin/M4) | std::condition_variable | 638/23.5k/2130 | **1.75x/1.05x/1.05x** | (std CV 即实用标尺) | 同左 | 同左 | ⚠️**平台翻转**(Win 大赢;Lin/M4 平或微赢)。旧 2.99x 作废。见 [platform](./benchmarks-platform.md) |
 | **platform** Thread spawn+join | 43.4k/33.6k/10.6k | std::thread | 44.4k/33.6k/10.7k | ~1.0x 三平台 | std::thread(即 SOTA) | 同左 | ~1.0x | ➖平(OS 主导,证零封装税) |
-| **platform** directory_iterate visitor | 40.5k/6.5k/16.5k | std::filesystem | 32.0k/13.7k/18.4k | **0.93/2.15/1.12x** | filesystem | 同左 | 同左 | ⚠️**平台翻转**(Win sign 输;Lin/M4 赢 d_type+visitor) |
+| **platform** directory_iterate visitor | 40.23k/6.5k/16.5k | std::filesystem | 39.76k/13.7k/18.4k | **0.981/2.15/1.12x** | filesystem | 同左 | 同左 | ⚠️当前 Win n=15 平；Lin/M4 旧证赢，待新接口真机复跑 |
 | **platform** vm_reserve+commit vs raw 一步 | 1144/1075/846 | raw 一步分配 | 877/848/332 | **0.77/0.78/0.39x** | raw 一步 | 同左 | 同左 | ❌**by-design 两步**输一步 raw;非漏优化 |
 | **platform** MappedFile vs ifstream | 43.7k/12.7k/14.1k | ifstream 拷贝 | 62.3k/**8.7k**/21.7k | **1.39/0.68/1.53x** | — | — | — | ⚠️**平台翻转**(Win/M4 赢;Linux 64KiB ifstream 更快) |
 | **platform** MappedFile vs raw mmap | 43.7k/12.7k/14.1k | raw mmap | 42.0k/12.2k/13.7k | **0.96/0.96/0.97x** | raw 地板 | 同左 | ~平 | ➖近地板(~3–4% 封装税) |

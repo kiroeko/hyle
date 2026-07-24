@@ -35,10 +35,10 @@ extern "C" {
 #  define HYLE_PLATFORM_C_API
 #endif
 
-/* Transitional last error for path/env functions that still return scalar
- * sentinels. Resource-owning file/Parker APIs already return hyle_status.
- * Thread-local; "" means none. This symbol is removed when the remaining path
- * surface moves to Status in the next platform reclosure increment. */
+/* Transitional last error only for cwd/temp/home/env buffer-fill, chdir and
+ * env-write functions that still return scalar sentinels. Filesystem path and
+ * resource APIs already return hyle_status. Thread-local; "" means none. This
+ * symbol is removed in the next platform reclosure increment. */
 HYLE_PLATFORM_C_API const char* hyle_platform_last_error(void);
 
 /* ========================================================================== */
@@ -326,19 +326,26 @@ typedef struct hyle_file_info {
   int is_symlink;        /* v4: path itself is a symbolic link (lstat semantics) */
 } hyle_file_info;
 
-HYLE_PLATFORM_C_API hyle_file_info hyle_fs_stat(const char* path);
-HYLE_PLATFORM_C_API int hyle_fs_exists(const char* path);
-HYLE_PLATFORM_C_API int hyle_fs_is_directory(const char* path);
-HYLE_PLATFORM_C_API uint64_t hyle_fs_file_size(const char* path);
+HYLE_PLATFORM_C_API hyle_status hyle_fs_stat(hyle_file_info* out,
+                                             const char* path);
+HYLE_PLATFORM_C_API hyle_status hyle_fs_exists(int* out, const char* path);
+HYLE_PLATFORM_C_API hyle_status hyle_fs_is_directory(int* out,
+                                                     const char* path);
+HYLE_PLATFORM_C_API hyle_status hyle_fs_file_size(uint64_t* out,
+                                                  const char* path);
 
-HYLE_PLATFORM_C_API int hyle_fs_make_directory(const char* path);
-HYLE_PLATFORM_C_API int hyle_fs_make_directory_recursive(const char* path);
-HYLE_PLATFORM_C_API int hyle_fs_remove_directory(const char* path);
-HYLE_PLATFORM_C_API int hyle_fs_remove_directory_recursive(const char* path);
-HYLE_PLATFORM_C_API int hyle_fs_remove_file(const char* path);
-HYLE_PLATFORM_C_API int hyle_fs_rename(const char* from, const char* to);
-HYLE_PLATFORM_C_API int hyle_fs_copy_file(const char* from, const char* to);
-HYLE_PLATFORM_C_API int hyle_fs_touch(const char* path);
+HYLE_PLATFORM_C_API hyle_status hyle_fs_make_directory(const char* path);
+HYLE_PLATFORM_C_API hyle_status hyle_fs_make_directory_recursive(
+    const char* path);
+HYLE_PLATFORM_C_API hyle_status hyle_fs_remove_directory(const char* path);
+HYLE_PLATFORM_C_API hyle_status hyle_fs_remove_directory_recursive(
+    const char* path);
+HYLE_PLATFORM_C_API hyle_status hyle_fs_remove_file(const char* path);
+HYLE_PLATFORM_C_API hyle_status hyle_fs_rename(const char* from,
+                                               const char* to);
+HYLE_PLATFORM_C_API hyle_status hyle_fs_copy_file(const char* from,
+                                                  const char* to);
+HYLE_PLATFORM_C_API hyle_status hyle_fs_touch(const char* path);
 
 /* snprintf-style buffer fill: returns full length; >=cap means truncated. */
 HYLE_PLATFORM_C_API size_t hyle_fs_current_directory(char* dst, size_t cap);
@@ -352,12 +359,11 @@ HYLE_PLATFORM_C_API size_t hyle_fs_home_directory(char* dst, size_t cap);
 #define HYLE_ENV_NOT_SET ((size_t)-1)
 HYLE_PLATFORM_C_API size_t hyle_env_get(const char* name, char* dst, size_t cap);
 
-/* Directory iterate: visit(name, is_dir, ctx) return 0 to stop. Returns 0 if
- * path cannot be opened. */
+/* Directory iterate: visit(name,is_dir,ctx) returns 0 to stop normally.
+ * out_completed is 1 when every entry was visited, 0 on early stop/failure. */
 typedef int (*hyle_fs_visit_fn)(const char* name, int is_dir, void* ctx);
-HYLE_PLATFORM_C_API int hyle_fs_directory_iterate(const char* path,
-                                                  hyle_fs_visit_fn visit,
-                                                  void* ctx);
+HYLE_PLATFORM_C_API hyle_status hyle_fs_directory_iterate(
+    int* out_completed, const char* path, hyle_fs_visit_fn visit, void* ctx);
 
 /* ---- fs permissions / symlink / tempfile / env-write (v4) ------------------ */
 /* Permission bits (low 9 of POSIX mode); Windows synthesizes from READONLY. */
@@ -373,16 +379,25 @@ typedef enum hyle_file_perms {
   HYLE_PERM_OTHER_EXEC = 0001,
   HYLE_PERM_ALL = 0777
 } hyle_file_perms;
-HYLE_PLATFORM_C_API uint32_t hyle_fs_get_permissions(const char* path);
-HYLE_PLATFORM_C_API int hyle_fs_set_permissions(const char* path, uint32_t mode);
-HYLE_PLATFORM_C_API int hyle_fs_is_readonly(const char* path);
-HYLE_PLATFORM_C_API int hyle_fs_set_readonly(const char* path, int readonly);
-/* Symlinks. create_symlink needs privilege on Windows (soft-fails -> 0). */
-HYLE_PLATFORM_C_API int hyle_fs_create_symlink(const char* target, const char* link);
-HYLE_PLATFORM_C_API int hyle_fs_create_hard_link(const char* target, const char* link);
-HYLE_PLATFORM_C_API int hyle_fs_is_symlink(const char* path);
-HYLE_PLATFORM_C_API size_t hyle_fs_read_symlink(const char* path, char* dst,
-                                                size_t cap);
+HYLE_PLATFORM_C_API hyle_status hyle_fs_get_permissions(uint32_t* out,
+                                                        const char* path);
+HYLE_PLATFORM_C_API hyle_status hyle_fs_set_permissions(const char* path,
+                                                        uint32_t mode);
+HYLE_PLATFORM_C_API hyle_status hyle_fs_is_readonly(int* out,
+                                                    const char* path);
+HYLE_PLATFORM_C_API hyle_status hyle_fs_set_readonly(const char* path,
+                                                     int readonly);
+/* Symlinks. create_symlink may return PermissionDenied on Windows without
+ * Developer Mode/admin privilege. */
+HYLE_PLATFORM_C_API hyle_status hyle_fs_create_symlink(const char* target,
+                                                       const char* link);
+HYLE_PLATFORM_C_API hyle_status hyle_fs_create_hard_link(const char* target,
+                                                         const char* link);
+HYLE_PLATFORM_C_API hyle_status hyle_fs_is_symlink(int* out,
+                                                   const char* path);
+HYLE_PLATFORM_C_API hyle_status hyle_fs_read_symlink(size_t* out_size,
+                                                     const char* path,
+                                                     char* dst, size_t cap);
 /* A native file resource stored losslessly as one integer word: POSIX fd or
  * Windows HANDLE. The type name prevents cross-platform callers from assuming
  * POSIX fd semantics. */

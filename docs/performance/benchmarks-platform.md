@@ -26,7 +26,7 @@
 | **Parker** vs raw wait 地板 | 356 / 310 → TIE | 22.2k / 21.2k → **0.95x 平** | 2035 / 2062 → **sign 近平** | ➖ 三态机税在噪声/个位数 % |
 | **Parker 快路径** unpark+park | 9.71（floor 4.68） | 10.64（floor 4.63） | 1.99（floor 0.90） | ➖ 只报绝对值；atomic **非公平对手** |
 | **Thread spawn+join** vs std::thread | 43.4k / 44.4k → **TIE** | 33.56k / 33.56k → **TIE** | 10.6k / 10.7k → **TIE** | ➖ 平（OS 主导，证零封装税） |
-| **directory_iterate** vs std::filesystem | 40.5k / 32.0k → **sign LOSE 0.93x** | 6.5k / 13.7k → **spread WIN 2.15x** | 16.5k / 18.4k → **WIN 1.12x** | ⚠️ **平台翻转**：Lin/M4 赢；Win sign 输 |
+| **directory_iterate** vs std::filesystem | 40.23k / 39.76k → **TIE 0.981x**（2026-07-24 n=15） | 6.5k / 13.7k → **spread WIN 2.15x** | 16.5k / 18.4k → **WIN 1.12x** | ⚠️ 平台差：当前 Win 平；Lin/M4 旧证赢 |
 | **vm_allocate_rw+release** vs raw 一步 | 885 / 880 → **TIE**（2026-07-24 n=5） | 待复证 | 待复证 | ➖ Win 已证当前正常用户形状近 OS 地板 |
 | **vm_reserve+commit+release** vs raw 一步 | 1144 / 877 → **sign LOSE 0.77x** | 1075 / 848 → **0.78x 输** | 846 / 332 → **LOSE 0.39x** | ❌ **契约差**：两步 vs 一步；见下 |
 | **vm_protect** vs raw | 446 / 428 → **sign LOSE 0.96x** | 407 / 393 → **0.97x 微税** | 937 / 938 → **TIE** | ➖ 近平；小封装税 |
@@ -68,6 +68,15 @@ POSIX 直接调用一次 `mmap(PROT_READ|PROT_WRITE)`。Windows MSVC 19.50 Relea
 **1130.69 ns**，继续服务“先保留地址、以后分批 commit”的不同合同，不再被当成普通
 分配形状的性能代表。Linux/macOS 尚待在对应真机补证，因此总表不外推 Windows 结论。
 
+### 2026-07-24 filesystem `Result/Status` 成功路径
+
+目录遍历现在返回 `Result<bool>`：完整遍历为 true，visitor 正常提前停止为 false，OS 失败
+才是 error。benchmark 按真实用户写法保留并检查 Result。Windows MSVC 19.50 Release
+n=15 得到 HYLE **40.23 us**、std::filesystem **39.76 us**，配对 op/s 中位比
+**0.981**（7/15 在 1 以上，sign p=1.0），spread/sign 都判统计平。它取代旧 Win
+“sign 输 0.93x”记录；扫描的当前目录内容会影响绝对值，因此只采用同进程配对结论。
+Linux/macOS 仍保留旧接口证书，待新接口真机复跑后再更新。
+
 ## 非 SOTA / 需诚实标价
 
 ### 1. staged VM 对 raw 一步分配的旧“输”不是同合同对比
@@ -84,12 +93,12 @@ arena），两次 OS 操作就是其合同成本。普通立即使用场景应�
 基线同为一次 OS 操作且 Windows 已统计打平。保留旧行是为了标价 staged 合同，不再把它
 列为普通 platform 分配的性能缺口。
 
-### 2. Win `directory_iterate` sign 输 std（0.93x）
+### 2. `directory_iterate` 的平台差异
 
-- Linux/M4 仍赢（d_type 免 stat + visitor 无分配）。  
-- Win 底层都是 `FindNextFileW` 量级；HYLE 还付 UTF-16→UTF-8 visitor 转换。  
-- 旧账“Win 平”被 n=15 sign 翻成微输——**绝对值接近，结构不占优**。  
-- 不判“实现错误”，判 **Win 无 Linux 那种 d_type 优势**。
+- Linux/M4 旧证仍赢（d_type/原生目录枚举 + visitor 无分配）。
+- Win 底层都是 `FindNextFileW` 量级，HYLE 还付 UTF-16→UTF-8 visitor 转换；当前 n=15
+  是统计平，不宣称结构性赢。旧“sign 输 0.93x”已被当前接口复测取代。
+- 不把任一 OS 的方向外推到另外两个平台。
 
 ### 3. Parker vs CV 平台翻转（预期内）
 

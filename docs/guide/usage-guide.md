@@ -593,8 +593,11 @@ HYLE_ASSIGN_OR_RETURN(
     std::size_t wrote,
     file.write(payload, sizeof(payload) - 1));
 HYLE_RETURN_IF_ERROR(file.close()); // 显式 close 才能观察延迟写回/关闭失败
-set_permissions("f.txt", 0644);  create_hard_link("a.txt", "b.txt");
-char tgt[4096];  read_symlink("link", tgt, sizeof tgt);  // buffer-fill：返回完整长度
+HYLE_RETURN_IF_ERROR(set_permissions("f.txt", 0644));
+HYLE_RETURN_IF_ERROR(create_hard_link("a.txt", "b.txt"));
+char tgt[4096];
+HYLE_ASSIGN_OR_RETURN(std::size_t target_size,
+                      read_symlink("link", tgt, sizeof tgt));
 
 // 线程：ABI-clean 句柄 + name/affinity/stack/priority（best-effort，需权限时软降级）
 #include "hyle/platform/thread.h"

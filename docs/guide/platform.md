@@ -70,8 +70,9 @@ HYLE_RETURN_IF_ERROR(file.close());
 
 read 返回 0 才是 EOF；read/write 返回短计数仍是成功。`MappedFile` 适合映射本身带来价值的
 场景，例如大模型权重、随机访问、共享页和 COW；不要假设 64 KiB 顺序全扫也会比缓冲 read
-快。目录创建、权限、symlink、env 等标量接口目前仍是 bool/sentinel 形状；必须检查返回值，
-跨平台代码优先 `is_readonly/set_readonly`，不要把 Windows 合成的 POSIX mode 当真实 ACL。
+快。stat/size/权限/symlink 和所有 path 变更都返回 Result/Status：不存在、空文件/0000 权限、
+visitor 提前停止不再共享一个 0。跨平台代码优先 `is_readonly/set_readonly`，不要把 Windows
+合成的 POSIX mode 当真实 ACL。cwd/temp/home/env 的 buffer-fill 是最后一组待迁移旧面。
 
 ## 等待与线程
 
@@ -95,9 +96,9 @@ bind/interleave 的硬策略失败才应让依赖精确放置的工作失败。
 
 ## 错误与所有权
 
-资源构造返回 `Result<T>`，资源操作返回 `Status`；成功态不分配，完整原生诊断只在失败路
-构造。路径查询中“不存在”常是普通值，因此部分旧标量面仍返回 bool/0。不要在资源 API
-失败后读取 `hyle_platform_last_error()`：新资源面已直接携带共享 error。
+资源构造/查询返回 `Result<T>`，资源变更返回 `Status`；成功态不分配，完整原生诊断只在
+失败路构造。`exists/is_directory/is_symlink` 把不存在表达为成功的 false，但不会吞掉权限或
+I/O 错误。不要在这些 API 失败后读取 `hyle_platform_last_error()`：它们已直接携带共享 error。
 
 所有 RAII owner 都是 move-only。借出的 `data()`、symbol pointer、raw handle 或 unparker
 视图不得活过 owner；`release()` 明确把回收责任转给调用方。

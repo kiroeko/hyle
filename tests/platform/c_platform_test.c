@@ -403,8 +403,23 @@ int main(void) {
   char tmp[512];
   size_t n = hyle_fs_temp_directory(tmp, sizeof(tmp));
   CHECK(n > 0 && n < sizeof(tmp));
-  CHECK(hyle_fs_exists(tmp));
-  CHECK(hyle_fs_is_directory(tmp));
+  int path_value = 0;
+  CHECK(status_code(hyle_fs_exists(NULL, tmp)) ==
+        HYLE_STATUS_INVALID_ARGUMENT);
+  CHECK(status_code(hyle_fs_stat(NULL, tmp)) ==
+        HYLE_STATUS_INVALID_ARGUMENT);
+  CHECK(status_code(hyle_fs_directory_iterate(
+            NULL, tmp, visit_cb, NULL)) == HYLE_STATUS_INVALID_ARGUMENT);
+  path_value = 7;
+  CHECK(status_code(hyle_fs_exists(&path_value, NULL)) ==
+        HYLE_STATUS_INVALID_ARGUMENT);
+  CHECK(path_value == 0);
+  path_value = 7;
+  CHECK(status_code(hyle_fs_directory_iterate(
+            &path_value, tmp, NULL, NULL)) == HYLE_STATUS_INVALID_ARGUMENT);
+  CHECK(path_value == 0);
+  CHECK(status_ok(hyle_fs_exists(&path_value, tmp)) && path_value);
+  CHECK(status_ok(hyle_fs_is_directory(&path_value, tmp)) && path_value);
   {
     char cwd[1024];
     char home[1024];
@@ -413,31 +428,39 @@ int main(void) {
   }
   char path[640];
   snprintf(path, sizeof(path), "%s/hyle_c_plat_test_dir", tmp);
-  CHECK(hyle_fs_make_directory_recursive(path));
+  CHECK(status_ok(hyle_fs_make_directory_recursive(path)));
   {
-    hyle_file_info di = hyle_fs_stat(path);
+    hyle_file_info di = {0};
+    CHECK(status_ok(hyle_fs_stat(&di, path)));
     CHECK(di.exists && di.is_directory);
   }
   visit_count = 0;
-  CHECK(hyle_fs_directory_iterate(path, visit_cb, NULL));
+  int completed = 0;
+  CHECK(status_ok(
+            hyle_fs_directory_iterate(&completed, path, visit_cb, NULL)) &&
+        completed);
   char file[700];
   snprintf(file, sizeof(file), "%s/f.txt", path);
-  CHECK(hyle_fs_touch(file));
-  CHECK(hyle_fs_exists(file));
-  CHECK(hyle_fs_file_size(file) == 0u);
+  CHECK(status_ok(hyle_fs_touch(file)));
+  CHECK(status_ok(hyle_fs_exists(&path_value, file)) && path_value);
   {
-    uint32_t mode = hyle_fs_get_permissions(file);
+    uint64_t size = 1;
+    CHECK(status_ok(hyle_fs_file_size(&size, file)) && size == 0u);
+  }
+  {
+    uint32_t mode = 0;
+    CHECK(status_ok(hyle_fs_get_permissions(&mode, file)));
     CHECK(mode != 0u);
-    CHECK(hyle_fs_set_permissions(file, mode));
+    CHECK(status_ok(hyle_fs_set_permissions(file, mode)));
   }
   {
     char copy[720];
     char renamed[720];
     snprintf(copy, sizeof(copy), "%s/f-copy.txt", path);
     snprintf(renamed, sizeof(renamed), "%s/f-renamed.txt", path);
-    CHECK(hyle_fs_copy_file(file, copy));
-    CHECK(hyle_fs_rename(copy, renamed));
-    CHECK(hyle_fs_exists(renamed));
+    CHECK(status_ok(hyle_fs_copy_file(file, copy)));
+    CHECK(status_ok(hyle_fs_rename(copy, renamed)));
+    CHECK(status_ok(hyle_fs_exists(&path_value, renamed)) && path_value);
   }
   {
     char cwd[1024];
@@ -449,19 +472,25 @@ int main(void) {
     char link[720];
     snprintf(link, sizeof(link), "%s/f-link", path);
     /* Symlink creation may require a host privilege (notably on Windows). */
-    if (hyle_fs_create_symlink(file, link)) {
+    if (status_ok(hyle_fs_create_symlink(file, link))) {
       char target[1024];
-      size_t need = hyle_fs_read_symlink(link, NULL, 0);
+      size_t need = 0;
+      CHECK(status_ok(hyle_fs_read_symlink(&need, link, NULL, 0)));
       CHECK(need > 0u);
-      CHECK(hyle_fs_read_symlink(link, target, sizeof(target)) == need);
+      size_t got = 0;
+      CHECK(status_ok(
+                hyle_fs_read_symlink(&got, link, target, sizeof(target))) &&
+            got == need);
       CHECK(strcmp(target, file) == 0);
-      CHECK(hyle_fs_is_symlink(link));
+      CHECK(status_ok(hyle_fs_is_symlink(&path_value, link)) && path_value);
     }
   }
   visit_count = 0;
-  CHECK(hyle_fs_directory_iterate(path, visit_cb, NULL));
+  CHECK(status_ok(
+            hyle_fs_directory_iterate(&completed, path, visit_cb, NULL)) &&
+        completed);
   CHECK(visit_count >= 1);
-  CHECK(hyle_fs_remove_directory_recursive(path));
+  CHECK(status_ok(hyle_fs_remove_directory_recursive(path)));
 
   char envbuf[64];
   size_t en = hyle_env_get("PATH", envbuf, sizeof(envbuf));
@@ -580,12 +609,14 @@ int main(void) {
     CHECK(status_ok(hyle_fs_create_temp_file(
         &fd, NULL, "hyle_c", tpath, sizeof(tpath))));
     CHECK(fd != HYLE_FILE_HANDLE_INVALID);
-    CHECK(hyle_fs_exists(tpath));
+    CHECK(status_ok(hyle_fs_exists(&path_value, tpath)) && path_value);
     /* permissions: the temp file exists -> nonzero perms; readonly round trip */
-    CHECK(hyle_fs_get_permissions(tpath) != 0u);
-    CHECK(hyle_fs_set_readonly(tpath, 1) == 1);
-    CHECK(hyle_fs_is_readonly(tpath) == 1);
-    CHECK(hyle_fs_set_readonly(tpath, 0) == 1);
+    uint32_t temp_mode = 0;
+    CHECK(status_ok(hyle_fs_get_permissions(&temp_mode, tpath)) &&
+          temp_mode != 0u);
+    CHECK(status_ok(hyle_fs_set_readonly(tpath, 1)));
+    CHECK(status_ok(hyle_fs_is_readonly(&path_value, tpath)) && path_value);
+    CHECK(status_ok(hyle_fs_set_readonly(tpath, 0)));
     CHECK(status_ok(hyle_fs_close(fd)));
 
     /* File-handle I/O: write bytes, then read them back through the C API. */
@@ -657,12 +688,13 @@ int main(void) {
     /* hard link: a second name for the same file (same volume). */
     char hpath[1040];
     snprintf(hpath, sizeof(hpath), "%s.hln", tpath);
-    if (hyle_fs_create_hard_link(tpath, hpath)) {
-      CHECK(hyle_fs_exists(hpath));
-      CHECK(hyle_fs_is_symlink(hpath) == 0);  /* hard link, not a symlink */
-      hyle_fs_remove_file(hpath);
+    if (status_ok(hyle_fs_create_hard_link(tpath, hpath))) {
+      CHECK(status_ok(hyle_fs_exists(&path_value, hpath)) && path_value);
+      CHECK(status_ok(hyle_fs_is_symlink(&path_value, hpath)) &&
+            !path_value);
+      status_discard(hyle_fs_remove_file(hpath));
     }
-    hyle_fs_remove_file(tpath);
+    status_discard(hyle_fs_remove_file(tpath));
   }
 
   /* mapped_file DATA path over the C ABI: valid / data / size / flush on a
@@ -717,7 +749,7 @@ int main(void) {
       }
       hyle_mapped_file_destroy(m2);
     }
-    hyle_fs_remove_file(mpath);
+    status_discard(hyle_fs_remove_file(mpath));
   }
 
   if (g_fails) {

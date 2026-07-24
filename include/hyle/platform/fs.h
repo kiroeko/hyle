@@ -79,8 +79,8 @@ class FileHandle {
 };
 
 // ---- query (stat) -----------------------------------------------------------
-// Result of stat(): a snapshot of one path. `exists` is false for anything that
-// is neither a regular file nor a directory (or on error).
+// Result of stat(): a snapshot of one path. A successful stat has exists=true;
+// absence and OS failures are carried by Result instead of being collapsed.
 struct FileInfo {
   bool exists = false;
   bool is_directory = false;
@@ -89,42 +89,45 @@ struct FileInfo {
   std::int64_t modified_time = 0;    // seconds since the epoch (mtime)
 };
 
-// Stat `path`. Never fails loudly: a missing path returns {exists=false}.
-HYLE_PLATFORM_API FileInfo stat(const char* path) noexcept;
+// Stat `path`, following symlinks for target type/size while retaining whether
+// the path itself is a symlink. Missing paths return NotFound.
+HYLE_PLATFORM_API Result<FileInfo> stat(const char* path) noexcept;
 
-HYLE_PLATFORM_API bool exists(const char* path) noexcept;
-HYLE_PLATFORM_API bool is_directory(const char* path) noexcept;
-// Size in bytes, or 0 if absent / not a regular file.
-HYLE_PLATFORM_API std::uint64_t file_size(const char* path) noexcept;
+// Missing is the ordinary value false; permission/I/O failures remain errors.
+HYLE_PLATFORM_API Result<bool> exists(const char* path) noexcept;
+HYLE_PLATFORM_API Result<bool> is_directory(const char* path) noexcept;
+// Size in bytes. Missing paths return NotFound; directories return
+// FailedPrecondition rather than an ambiguous 0.
+HYLE_PLATFORM_API Result<std::uint64_t> file_size(const char* path) noexcept;
 
 // ---- directories ------------------------------------------------------------
-// Create one directory. Returns true on success OR if it already exists as a
-// directory (idempotent, unlike a bare mkdir which fails on EEXIST).
-HYLE_PLATFORM_API bool make_directory(const char* path) noexcept;
+// Create one directory. Already existing as a directory is OK (idempotent);
+// already existing as another kind is AlreadyExists.
+HYLE_PLATFORM_API Status make_directory(const char* path) noexcept;
 
 // Create `path` and every missing parent ("mkdir -p"). `/` and `\\` both split
-// components. Returns true if the full path exists as a directory afterward.
-HYLE_PLATFORM_API bool make_directory_recursive(const char* path) noexcept;
+// components. OK means the full path exists as a directory afterward.
+HYLE_PLATFORM_API Status make_directory_recursive(const char* path) noexcept;
 
-// Remove an empty directory. Returns true on success.
-HYLE_PLATFORM_API bool remove_directory(const char* path) noexcept;
+// Remove an empty directory.
+HYLE_PLATFORM_API Status remove_directory(const char* path) noexcept;
 
-// Remove a directory and ALL its contents ("rm -rf"). Returns true on success.
+// Remove a directory and ALL its contents ("rm -rf").
 // (Hard-to-reverse: deletes recursively. Caller owns the blast radius.)
-HYLE_PLATFORM_API bool remove_directory_recursive(const char* path) noexcept;
+HYLE_PLATFORM_API Status remove_directory_recursive(const char* path) noexcept;
 
 // ---- files ------------------------------------------------------------------
-// Remove a single file. Returns true on success.
-HYLE_PLATFORM_API bool remove_file(const char* path) noexcept;
+// Remove a single file.
+HYLE_PLATFORM_API Status remove_file(const char* path) noexcept;
 
-// Rename/move `from` to `to`. Returns true on success.
-HYLE_PLATFORM_API bool rename_path(const char* from, const char* to) noexcept;
+// Rename/move `from` to `to`.
+HYLE_PLATFORM_API Status rename_path(const char* from, const char* to) noexcept;
 
-// Copy a single file `from` -> `to`, overwriting `to`. Returns true on success.
-HYLE_PLATFORM_API bool copy_file(const char* from, const char* to) noexcept;
+// Copy a single file `from` -> `to`, overwriting `to`.
+HYLE_PLATFORM_API Status copy_file(const char* from, const char* to) noexcept;
 
 // Create `path` empty if absent, or bump its mtime if present (unix `touch`).
-HYLE_PLATFORM_API bool touch(const char* path) noexcept;
+HYLE_PLATFORM_API Status touch(const char* path) noexcept;
 
 // ---- permissions ------------------------------------------------------------
 // POSIX permission bits (the low 9 of st_mode). Windows has no POSIX permission
@@ -139,32 +142,37 @@ enum Perms : std::uint32_t {
   kPermAll = 0777,
 };
 
-// Permission bits of `path` (low 9), or 0 if absent / on error. On Windows a
-// synthesized mode (see above).
-HYLE_PLATFORM_API std::uint32_t get_permissions(const char* path) noexcept;
+// Permission bits of `path` (low 9). A legitimate mode 0000 remains distinct
+// from NotFound/PermissionDenied. Windows returns a synthesized mode (see above).
+HYLE_PLATFORM_API Result<std::uint32_t> get_permissions(
+    const char* path) noexcept;
 // Set permission bits. POSIX: chmod(mode & 0777). Windows: only the write bits
-// are honored (mapped to the READONLY attribute). Returns true on success.
-HYLE_PLATFORM_API bool set_permissions(const char* path, std::uint32_t mode) noexcept;
+// are honored (mapped to the READONLY attribute).
+HYLE_PLATFORM_API Status set_permissions(const char* path,
+                                         std::uint32_t mode) noexcept;
 // Portable subset: is the file present and not writable by the owner?
-HYLE_PLATFORM_API bool is_readonly(const char* path) noexcept;
+HYLE_PLATFORM_API Result<bool> is_readonly(const char* path) noexcept;
 // Portable subset: toggle owner write (POSIX: chmod +/-0200; Windows: READONLY).
-HYLE_PLATFORM_API bool set_readonly(const char* path, bool readonly) noexcept;
+HYLE_PLATFORM_API Status set_readonly(const char* path,
+                                      bool readonly) noexcept;
 
 // ---- symbolic links ---------------------------------------------------------
 // Create a symlink at `link` pointing to `target`. POSIX: symlink(2). Windows:
 // CreateSymbolicLinkW -- requires Developer Mode or admin (SeCreateSymboliclink
-// privilege); returns false without it (check the return, no trap).
-HYLE_PLATFORM_API bool create_symlink(const char* target, const char* link) noexcept;
+// privilege); without it returns PermissionDenied.
+HYLE_PLATFORM_API Status create_symlink(const char* target,
+                                        const char* link) noexcept;
 // Create a HARD link at `link` to `target` (another name for the same file
 // data). POSIX link(2) / Windows CreateHardLinkW. Same-volume, regular files
-// only (no directory hard links); no special privilege. Returns true on success.
-HYLE_PLATFORM_API bool create_hard_link(const char* target, const char* link) noexcept;
+// only (no directory hard links); no special privilege.
+HYLE_PLATFORM_API Status create_hard_link(const char* target,
+                                          const char* link) noexcept;
 // True if `path` itself is a symbolic link (does not follow it).
-HYLE_PLATFORM_API bool is_symlink(const char* path) noexcept;
-// Read a symlink's target into dst[cap] (buffer-fill; returns full length, >=cap
-// truncated, 0 if `path` is not a symlink / on error).
-HYLE_PLATFORM_API std::size_t read_symlink(const char* path, char* dst,
-                                           std::size_t cap) noexcept;
+HYLE_PLATFORM_API Result<bool> is_symlink(const char* path) noexcept;
+// Read a symlink's target into dst[cap] (buffer-fill; returns the full length;
+// >= cap means truncated). A non-symlink is FAILED_PRECONDITION.
+HYLE_PLATFORM_API Result<std::size_t> read_symlink(
+    const char* path, char* dst, std::size_t cap) noexcept;
 
 // ---- open / read / write ----------------------------------------------------
 // Flags for open_file (OR them). kRead/kWrite pick access; kCreate makes a
@@ -236,9 +244,12 @@ HYLE_PLATFORM_API bool unset_env_var(const char* name) noexcept;
 // ---- directory iteration (visitor, no allocation) ---------------------------
 // Type-erased core: calls `visit(name, is_dir, ctx)` once per entry in `path`,
 // EXCLUDING "." and "..". `name` is just the base name (not joined with `path`).
-// Stops early if `visit` returns false. Returns false if `path` can't be opened.
+// Stops early if `visit` returns false; that is a successful Result(false), not
+// an enumeration failure.
 // Compiled once in fs.cc (no per-callback-type code).
-HYLE_PLATFORM_API bool directory_iterate(
+// Result value is true when every entry was visited, false when the visitor
+// stopped normally. Opening/enumerating failures are Status errors.
+HYLE_PLATFORM_API Result<bool> directory_iterate(
     const char* path, bool (*visit)(const char* name, bool is_dir, void* ctx),
     void* ctx) noexcept;
 
@@ -246,7 +257,7 @@ HYLE_PLATFORM_API bool directory_iterate(
 // (return false to stop early) or `->void`. Inline, so no allocation and the
 // lambda body inlines into the trampoline.
 template <class Fn>
-bool for_each_entry(const char* path, Fn&& fn) {
+Result<bool> for_each_entry(const char* path, Fn&& fn) {
   auto trampoline = [](const char* name, bool is_dir, void* ctx) -> bool {
     Fn& f = *static_cast<Fn*>(ctx);
     if constexpr (requires { { f(name, is_dir) } -> std::same_as<bool>; }) {

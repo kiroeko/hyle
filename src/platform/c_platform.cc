@@ -563,75 +563,77 @@ hyle_status hyle_vm_region_protect(hyle_vm_region_o* r, size_t off,
   return steal_status(r->region.protect(off, len, to_cpp_protect(prot)));
 }
 
-hyle_file_info hyle_fs_stat(const char* path) {
-  hyle_file_info out{};
-  if (!path) {
-    set_platform_error("hyle_fs_stat: path is NULL");
-    return out;
+hyle_status hyle_fs_stat(hyle_file_info* out, const char* path) {
+  if (out == nullptr) {
+    return steal_status(
+        hyle::Status::InvalidArgument("hyle_fs_stat: out is NULL"));
   }
-  set_platform_error(nullptr);
-  auto i = hyle::platform::stat(path);
-  out.exists = i.exists ? 1 : 0;
-  out.is_directory = i.is_directory ? 1 : 0;
-  out.size = i.size;
-  out.modified_time = i.modified_time;
-  out.is_symlink = i.is_symlink ? 1 : 0;
-  return out;
+  *out = {};
+  auto info = hyle::platform::stat(path);
+  if (!info) return steal_status(std::move(info).error());
+  out->exists = info->exists ? 1 : 0;
+  out->is_directory = info->is_directory ? 1 : 0;
+  out->size = info->size;
+  out->modified_time = info->modified_time;
+  out->is_symlink = info->is_symlink ? 1 : 0;
+  return steal_status(hyle::Status::Ok());
 }
-int hyle_fs_exists(const char* path) {
-  if (path == nullptr) {
-    set_platform_error("hyle_fs_exists: path is NULL");
-    return 0;
+hyle_status hyle_fs_exists(int* out, const char* path) {
+  if (out == nullptr) {
+    return steal_status(
+        hyle::Status::InvalidArgument("hyle_fs_exists: out is NULL"));
   }
-  set_platform_error(nullptr);
-  return hyle::platform::exists(path) ? 1 : 0;
+  *out = 0;
+  auto result = hyle::platform::exists(path);
+  if (!result) return steal_status(std::move(result).error());
+  *out = *result ? 1 : 0;
+  return steal_status(hyle::Status::Ok());
 }
-int hyle_fs_is_directory(const char* path) {
-  if (path == nullptr) {
-    set_platform_error("hyle_fs_is_directory: path is NULL");
-    return 0;
+hyle_status hyle_fs_is_directory(int* out, const char* path) {
+  if (out == nullptr) {
+    return steal_status(
+        hyle::Status::InvalidArgument("hyle_fs_is_directory: out is NULL"));
   }
-  set_platform_error(nullptr);
-  return hyle::platform::is_directory(path) ? 1 : 0;
+  *out = 0;
+  auto result = hyle::platform::is_directory(path);
+  if (!result) return steal_status(std::move(result).error());
+  *out = *result ? 1 : 0;
+  return steal_status(hyle::Status::Ok());
 }
-uint64_t hyle_fs_file_size(const char* path) {
-  if (path == nullptr) {
-    set_platform_error("hyle_fs_file_size: path is NULL");
-    return 0;
+hyle_status hyle_fs_file_size(uint64_t* out, const char* path) {
+  if (out == nullptr) {
+    return steal_status(
+        hyle::Status::InvalidArgument("hyle_fs_file_size: out is NULL"));
   }
-  set_platform_error(nullptr);
-  return hyle::platform::file_size(path);
+  *out = 0;
+  auto result = hyle::platform::file_size(path);
+  if (!result) return steal_status(std::move(result).error());
+  *out = *result;
+  return steal_status(hyle::Status::Ok());
 }
-int hyle_fs_make_directory(const char* path) {
-  return fs_result(path && hyle::platform::make_directory(path),
-                   "hyle_fs_make_directory failed");
+hyle_status hyle_fs_make_directory(const char* path) {
+  return steal_status(hyle::platform::make_directory(path));
 }
-int hyle_fs_make_directory_recursive(const char* path) {
-  return fs_result(path && hyle::platform::make_directory_recursive(path),
-                   "hyle_fs_make_directory_recursive failed");
+hyle_status hyle_fs_make_directory_recursive(const char* path) {
+  return steal_status(hyle::platform::make_directory_recursive(path));
 }
-int hyle_fs_remove_directory(const char* path) {
-  return fs_result(path && hyle::platform::remove_directory(path),
-                   "hyle_fs_remove_directory failed");
+hyle_status hyle_fs_remove_directory(const char* path) {
+  return steal_status(hyle::platform::remove_directory(path));
 }
-int hyle_fs_remove_directory_recursive(const char* path) {
-  return fs_result(path && hyle::platform::remove_directory_recursive(path),
-                   "hyle_fs_remove_directory_recursive failed");
+hyle_status hyle_fs_remove_directory_recursive(const char* path) {
+  return steal_status(hyle::platform::remove_directory_recursive(path));
 }
-int hyle_fs_remove_file(const char* path) {
-  return fs_result(path && hyle::platform::remove_file(path),
-                   "hyle_fs_remove_file failed");
+hyle_status hyle_fs_remove_file(const char* path) {
+  return steal_status(hyle::platform::remove_file(path));
 }
-int hyle_fs_rename(const char* from, const char* to) {
-  return fs_result(from && to && hyle::platform::rename_path(from, to),
-                   "hyle_fs_rename failed");
+hyle_status hyle_fs_rename(const char* from, const char* to) {
+  return steal_status(hyle::platform::rename_path(from, to));
 }
-int hyle_fs_copy_file(const char* from, const char* to) {
-  return fs_result(from && to && hyle::platform::copy_file(from, to),
-                   "hyle_fs_copy_file failed");
+hyle_status hyle_fs_copy_file(const char* from, const char* to) {
+  return steal_status(hyle::platform::copy_file(from, to));
 }
-int hyle_fs_touch(const char* path) {
-  return fs_result(path && hyle::platform::touch(path), "hyle_fs_touch failed");
+hyle_status hyle_fs_touch(const char* path) {
+  return steal_status(hyle::platform::touch(path));
 }
 size_t hyle_fs_current_directory(char* dst, size_t cap) {
   const size_t n = hyle::platform::current_directory(dst, cap);
@@ -661,16 +663,23 @@ size_t hyle_env_get(const char* name, char* dst, size_t cap) {
   return hyle::platform::get_env_var(name, dst, cap);
 }
 
-int hyle_fs_directory_iterate(const char* path, hyle_fs_visit_fn visit,
-                              void* ctx) {
-  if (!path || !visit) {
-    set_platform_error("hyle_fs_directory_iterate: invalid argument");
-    return 0;
+hyle_status hyle_fs_directory_iterate(int* out_completed, const char* path,
+                                      hyle_fs_visit_fn visit, void* ctx) {
+  if (out_completed == nullptr) {
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_fs_directory_iterate: out_completed is NULL"));
+  }
+  *out_completed = 0;
+  if (visit == nullptr) {
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_fs_directory_iterate: visit is NULL"));
   }
   DirVisitPack pack{visit, ctx};
-  return fs_result(
-      hyle::platform::directory_iterate(path, &dir_visit_trampoline, &pack),
-      "hyle_fs_directory_iterate failed");
+  auto result =
+      hyle::platform::directory_iterate(path, &dir_visit_trampoline, &pack);
+  if (!result) return steal_status(std::move(result).error());
+  *out_completed = *result ? 1 : 0;
+  return steal_status(hyle::Status::Ok());
 }
 
 hyle_cpu_features hyle_cpu_features_get(void) {
@@ -812,56 +821,62 @@ hyle_status hyle_vm_reserve_numa(void** out,
 
 /* ---- v4: fs perms/symlink/tempfile/env-write + mapped file ----------------- */
 
-uint32_t hyle_fs_get_permissions(const char* path) {
-  if (path == nullptr) {
-    set_platform_error("hyle_fs_get_permissions: path is NULL");
-    return 0;
+hyle_status hyle_fs_get_permissions(uint32_t* out, const char* path) {
+  if (out == nullptr) {
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_fs_get_permissions: out is NULL"));
   }
-  set_platform_error(nullptr);
-  return hyle::platform::get_permissions(path);
+  *out = 0;
+  auto result = hyle::platform::get_permissions(path);
+  if (!result) return steal_status(std::move(result).error());
+  *out = *result;
+  return steal_status(hyle::Status::Ok());
 }
-int hyle_fs_set_permissions(const char* path, uint32_t mode) {
-  return fs_result(path && hyle::platform::set_permissions(path, mode),
-                   "hyle_fs_set_permissions failed");
+hyle_status hyle_fs_set_permissions(const char* path, uint32_t mode) {
+  return steal_status(hyle::platform::set_permissions(path, mode));
 }
-int hyle_fs_is_readonly(const char* path) {
-  if (path == nullptr) {
-    set_platform_error("hyle_fs_is_readonly: path is NULL");
-    return 0;
+hyle_status hyle_fs_is_readonly(int* out, const char* path) {
+  if (out == nullptr) {
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_fs_is_readonly: out is NULL"));
   }
-  set_platform_error(nullptr);
-  return hyle::platform::is_readonly(path) ? 1 : 0;
+  *out = 0;
+  auto result = hyle::platform::is_readonly(path);
+  if (!result) return steal_status(std::move(result).error());
+  *out = *result ? 1 : 0;
+  return steal_status(hyle::Status::Ok());
 }
-int hyle_fs_set_readonly(const char* path, int readonly) {
-  return fs_result(path && hyle::platform::set_readonly(path, readonly != 0),
-                   "hyle_fs_set_readonly failed");
+hyle_status hyle_fs_set_readonly(const char* path, int readonly) {
+  return steal_status(hyle::platform::set_readonly(path, readonly != 0));
 }
-int hyle_fs_create_symlink(const char* target, const char* link) {
-  return fs_result(
-      target && link && hyle::platform::create_symlink(target, link),
-      "hyle_fs_create_symlink failed");
+hyle_status hyle_fs_create_symlink(const char* target, const char* link) {
+  return steal_status(hyle::platform::create_symlink(target, link));
 }
-int hyle_fs_create_hard_link(const char* target, const char* link) {
-  return fs_result(
-      target && link && hyle::platform::create_hard_link(target, link),
-      "hyle_fs_create_hard_link failed");
+hyle_status hyle_fs_create_hard_link(const char* target, const char* link) {
+  return steal_status(hyle::platform::create_hard_link(target, link));
 }
-int hyle_fs_is_symlink(const char* path) {
-  if (path == nullptr) {
-    set_platform_error("hyle_fs_is_symlink: path is NULL");
-    return 0;
+hyle_status hyle_fs_is_symlink(int* out, const char* path) {
+  if (out == nullptr) {
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_fs_is_symlink: out is NULL"));
   }
-  set_platform_error(nullptr);
-  return hyle::platform::is_symlink(path) ? 1 : 0;
+  *out = 0;
+  auto result = hyle::platform::is_symlink(path);
+  if (!result) return steal_status(std::move(result).error());
+  *out = *result ? 1 : 0;
+  return steal_status(hyle::Status::Ok());
 }
-size_t hyle_fs_read_symlink(const char* path, char* dst, size_t cap) {
-  if (path == nullptr) {
-    set_platform_error("hyle_fs_read_symlink: path is NULL");
-    return 0;
+hyle_status hyle_fs_read_symlink(size_t* out_size, const char* path, char* dst,
+                                 size_t cap) {
+  if (out_size == nullptr) {
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_fs_read_symlink: out_size is NULL"));
   }
-  const size_t n = hyle::platform::read_symlink(path, dst, cap);
-  set_platform_error(n == 0 ? "hyle_fs_read_symlink failed" : nullptr);
-  return n;
+  *out_size = 0;
+  auto result = hyle::platform::read_symlink(path, dst, cap);
+  if (!result) return steal_status(std::move(result).error());
+  *out_size = *result;
+  return steal_status(hyle::Status::Ok());
 }
 hyle_status hyle_fs_create_temp_file(hyle_file_handle* out, const char* dir,
                                      const char* prefix, char* dst, size_t cap) {

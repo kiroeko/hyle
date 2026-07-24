@@ -34,7 +34,7 @@ class MapTest : public ::testing::Test {
     path = std::string(tmp, n) + "/hyle_map_test_" +
            std::to_string(reinterpret_cast<std::uintptr_t>(this));
   }
-  void TearDown() override { fs::remove_file(path.c_str()); }
+  void TearDown() override { (void)fs::remove_file(path.c_str()); }
 
   void write_file(const void* data, std::size_t len) {
     std::FILE* f = std::fopen(path.c_str(), "wb");
@@ -277,7 +277,7 @@ TEST_F(MapTest, MoveAssignReleasesPrevious) {
   EXPECT_EQ(dst.size(), src_size);
   EXPECT_EQ(std::memcmp(dst.data(), src_msg, std::strlen(src_msg)), 0);
 
-  fs::remove_file(dst_path.c_str());
+  (void)fs::remove_file(dst_path.c_str());
 }
 
 // Prove a read-only mapping actually traps on write (not just "opened ok"). Runs
@@ -303,5 +303,5 @@ TEST(MapDeathTest, ReadOnlyWriteFaults) {
         d[0] = 'X';  // write to a PROT_READ / PAGE_READONLY mapping -> trap
       },
       ".*");
-  fs::remove_file(p.c_str());
+  (void)fs::remove_file(p.c_str());
 }

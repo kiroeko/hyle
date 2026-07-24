@@ -13,7 +13,7 @@
 | 返回面 | 诊断 |
 |---|---|
 | Parker / Thread / DynLib / MappedFile / VM / NUMA / 打开的文件资源 | 返回 `hyle_status`，用 `hyle_status_message_cstr` |
-| 尚未迁移的 path/env 标量函数 | `hyle_platform_last_error()`（过渡接口） |
+| cwd/temp/home/env 的旧 buffer-fill 与 env 写 | `hyle_platform_last_error()`（最后一组过渡接口） |
 
 `hyle_status` 由调用方用 `hyle_status_free` 释放；剩余 last-error 指针借用到同线程
 下一次相关调用。
@@ -58,7 +58,7 @@
 
 | 符号 | 说明 |
 |---|---|
-| `hyle_platform_last_error` | 尚未迁移的 path/env 标量函数的线程局部失败串；`""`=无；不得用于 Parker/打开文件资源 |
+| `hyle_platform_last_error` | 仅剩 cwd/temp/home/env buffer-fill、chdir 与 env 写的线程局部失败串；`""`=无；不得用于 fs path/resource Status API |
 | `hyle_wait_on_address(addr, expected)` | 地址等待；允许伪唤醒 |
 | `hyle_wait_on_address_for(addr, expected, timeout_ns)` | 0=超时，1=唤醒/变化/伪唤醒 |
 | `hyle_wake_one` / `hyle_wake_all` | 唤醒 |
@@ -150,29 +150,30 @@ soft 建议，绝不影响正确性。Linux 用 madvise；Windows/macOS 匿名�
 | 符号 | 说明 |
 |---|---|
 | `hyle_file_info` | `exists` / `is_directory` / `size` / `modified_time` / `is_symlink`（v4） |
-| `hyle_fs_stat` | 整包 |
-| `hyle_fs_exists` / `hyle_fs_is_directory` / `hyle_fs_file_size` | |
-| `hyle_fs_make_directory` / `hyle_fs_make_directory_recursive` | |
-| `hyle_fs_remove_directory` / `hyle_fs_remove_directory_recursive` / `hyle_fs_remove_file` | |
-| `hyle_fs_rename` / `hyle_fs_copy_file` / `hyle_fs_touch` | |
+| `hyle_fs_stat(out, path)` | Status+out；缺失是 `NOT_FOUND`，不返回伪造的全零 stat |
+| `hyle_fs_exists(out, path)` / `hyle_fs_is_directory(out, path)` | Status+out；缺失是成功的 false，权限/I/O 失败仍是 Status |
+| `hyle_fs_file_size(out, path)` | Status+out；空文件是成功的 0，缺失与目录分别是 `NOT_FOUND` / `FAILED_PRECONDITION` |
+| `hyle_fs_make_directory*` | Status；已存在目录为 OK，已存在非目录为 `ALREADY_EXISTS` |
+| `hyle_fs_remove_directory*` / `hyle_fs_remove_file` | Status；递归删除保留首个失败，且不跟随 symlink/junction |
+| `hyle_fs_rename` / `hyle_fs_copy_file` / `hyle_fs_touch` | Status；保留原生 operation/code/message |
 | `hyle_fs_current_directory` / `hyle_fs_temp_directory` / `hyle_fs_home_directory` | buffer-fill：返回完整长，`>=cap` 截断；`dst==NULL` 可只查长度 |
-| `hyle_fs_change_directory` | |
+| `hyle_fs_change_directory` | 过渡形状：int 成败，失败读 TLS；下一增量改 Status |
 | `HYLE_ENV_NOT_SET` | `(size_t)-1`；size_t sentinel，保留 `#define`（enum 成员在 C23 前装不下 size_t 值） |
 | `hyle_env_get(name, dst, cap)` | 未设置→`HYLE_ENV_NOT_SET` |
 | `hyle_fs_visit_fn` | `(name, is_dir, ctx)→int`；0 停止 |
-| `hyle_fs_directory_iterate` | 打开失败→0 |
+| `hyle_fs_directory_iterate(out_completed,...)` | Status+out；visitor 提前停止是成功且 completed=0，打开/枚举失败是 Status |
 
 ### 3.5b fs 权限 / 符号链接 / 临时文件 / env 写（DLL，v4）
 
 | 符号 | 说明 |
 |---|---|
-| `hyle_fs_get_permissions(path)` | 低 9 位权限；Windows 由 READONLY 合成（0444/0666）；0 也可能是合法的 POSIX mode，先用 `hyle_fs_stat` 区分不存在 |
-| `hyle_fs_set_permissions(path, mode)` | POSIX chmod；Windows 只认写位→READONLY |
-| `hyle_fs_is_readonly(path)` / `hyle_fs_set_readonly(path, ro)` | 跨平台可靠子集 |
-| `hyle_fs_create_symlink(target, link)` | Windows 需开发者模式/管理员，无则→0 |
-| `hyle_fs_create_hard_link(target, link)` | 硬链接（同卷、仅文件）；POSIX link / Win CreateHardLinkW |
-| `hyle_fs_is_symlink(path)` | 自身是否符号链接（不跟随） |
-| `hyle_fs_read_symlink(path, dst, cap)` | buffer-fill；非链接/失败→0 |
+| `hyle_fs_get_permissions(out,path)` | Status+out；低 9 位权限，合法 0000 不再与失败混淆；Windows 由 READONLY 合成 |
+| `hyle_fs_set_permissions(path, mode)` | Status；POSIX chmod；Windows 只认写位→READONLY |
+| `hyle_fs_is_readonly(out,path)` / `hyle_fs_set_readonly(path, ro)` | Status(+out)；跨平台可靠子集 |
+| `hyle_fs_create_symlink(target, link)` | Status；Windows 无开发者模式/管理员时 `PERMISSION_DENIED` |
+| `hyle_fs_create_hard_link(target, link)` | Status；硬链接（同卷、仅文件） |
+| `hyle_fs_is_symlink(out,path)` | Status+out；自身是否符号链接（不跟随），缺失为 false |
+| `hyle_fs_read_symlink(out_size,path,dst,cap)` | Status+out buffer-fill；非链接为 `FAILED_PRECONDITION` |
 | `hyle_file_handle` / `HYLE_FILE_HANDLE_INVALID` | 一字宽 native file resource；可容纳 POSIX fd / Windows HANDLE，不暗示 POSIX 语义 |
 | `hyle_fs_create_temp_file(out, dir, prefix, dst, cap)` | Status+out；原子创建并返回**打开的** `hyle_file_handle`，路径写 dst，避免 TOCTOU |
 | `hyle_fs_open(out, path, flags)` | Status+out；`flags`=`HYLE_OPEN_READ/WRITE/CREATE/TRUNCATE/APPEND` OR；Windows 用 UTF-16 API；无需 mmap 的普通 I/O |
