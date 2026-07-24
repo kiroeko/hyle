@@ -10,22 +10,29 @@
 
 platform 把 Windows、Linux 和 macOS 的不同系统调用收敛成可组合的**机制**，供 HYLE
 内部地基层和需要直接控制 OS 资源的库用户共同使用。它位于共享 `error` 之上、
-`mem/time/simd/container/sched/io/compute` 之下：
+`mem/simd/container/sched/io/compute` 之下；`time` 是独立的零 HYLE 依赖根：
 
 ```text
-error
-  |
+error                                      time
+  |                               clock/sleep/timer semantics
 platform  -- CPU/OS facts, thread, wait, VM, file, dynlib
-  |\
+  |\                                         |
   | +------ simd/container        runtime ISA and cache facts
   +-------- mem                  VM, huge page, NUMA, guarded stack backing
-  +-------- sched                worker thread, affinity, priority, Parker
+  +-------- sched <---------------- timed deadlines
   +-------- io/compute           native file/plugin/backend foundations
 ```
 
 platform 不拥有调度策略、通用堆、异步 completion 或设备内存。它回答“OS 能做什么、怎样
 可靠地做”，上层回答“何时做、为哪个 workload 做”。这是避免底层 API 被某个 benchmark
-或单一内部消费者扭曲的首要边界。
+或单一内部消费者扭曲的首要边界。`Parker::park_timeout` 提供等待机制，但 clock/sleep 与
+deadline 的时间语义仍归 time/sched；不能因为 OS 同时实现二者就伪造一条 `platform → time`
+构建依赖。
+
+`hyle/platform.h` 只是跨编译器的 `HYLE_OS_*`/属性宏头；包含它不等于链接 platform 模块。
+只有直接调用本模块符号的实现才声明 private 依赖，公开头若命名 `CpuOrder`、`ThreadPriority`、
+`VmRegion` 等 platform 类型则声明 public 依赖。不得依靠 mem/sched 的传递链接掩盖直接消费，
+也不得因一个预处理宏虚构二进制依赖。
 
 ## 2. 功能面与公共形状
 

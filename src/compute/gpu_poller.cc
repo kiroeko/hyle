@@ -1,15 +1,16 @@
 #include "hyle/compute/gpu_await.h"
 
-#include <atomic>
-#include <chrono>
-#include <condition_variable>
 #include <mutex>
-#include <thread>
+#include <new>
+#include <stdexcept>
+#include <utility>
 #include <vector>
 
 #include "hyle/compute/stream.h"
 #include "hyle/macros.h"
 #include "hyle/obs/trace.h"
+#include "hyle/platform/thread.h"
+#include "hyle/platform/wait.h"
 #include "hyle/sched/waker.h"
 
 // compute-03: the GPU completion poller (plan A). A single dedicated thread holds the
@@ -18,10 +19,12 @@
 // blocking thread per op. NOT a second scheduler -- it only observes completions and
 // re-injects fibers through sched's existing Waker spine (same role as io's reap).
 //
-// Poll cadence: when events are in flight, poll with a short sleep between sweeps
-// (cudaEventQuery is a cheap non-blocking check; a tight spin would burn a core). When
-// none are in flight, block on a condvar until register() adds one -- zero cost idle
-// (the io park-boundary idea: don't busy-poll when there's nothing to reap).
+// Poll cadence: when events are in flight, use Parker::park_timeout between sweeps
+// (cudaEventQuery is a cheap non-blocking check; a tight spin would burn a core). A
+// registration can interrupt that timeout, while a plain sleep could not. When none
+// are in flight, park until register() adds one -- zero cost idle. Thread creation,
+// parking and wakeup all use platform's portable failure/wait contracts rather than
+// inventing a second OS abstraction inside compute.
 
 namespace hyle::compute {
 namespace detail {
@@ -34,27 +37,53 @@ class GpuPoller {
     return p;
   }
 
-  void register_op(GpuOp* op) noexcept {
+  Status register_op(GpuOp* op) noexcept {
     {
       std::lock_guard<std::mutex> lk(mu_);
-      if (!running_) {
-        running_ = true;
-        thread_ = std::thread([this] { run(); });
+      // shutdown() drains already-registered work but deliberately rejects new
+      // work. Without this state check a registration could land after the
+      // poller exited but before shutdown reset its thread handle.
+      if (stop_) {
+        return Status::FailedPrecondition(
+            "GPU completion poller is shutting down");
       }
-      inflight_.push_back(op);
+
+      try {
+        inflight_.push_back(op);
+      } catch (const std::bad_alloc&) {
+        return Status::ResourceExhausted(
+            "GPU completion registration allocation failed");
+      } catch (const std::length_error&) {
+        return Status::ResourceExhausted(
+            "GPU completion registration capacity exhausted");
+      }
+
+      if (!running_) {
+        platform::ThreadOpts opts;
+        opts.name = "hyle.gpu-poller";
+        auto spawned = platform::Thread::spawn([this] { run(); }, opts);
+        if (!spawned) {
+          inflight_.pop_back();
+          return std::move(spawned).error().WithContext(
+              "start GPU completion poller");
+        }
+        thread_ = std::move(*spawned);
+        running_ = true;
+      }
     }
-    cv_.notify_one();  // wake the poller if it was idle-waiting
+    wake_.unpark();  // interrupt either the idle park or the polling timeout
+    return Status();
   }
 
   void shutdown() noexcept {
-    std::thread t;
+    platform::Thread t;
     {
       std::lock_guard<std::mutex> lk(mu_);
       if (!running_) return;
       stop_ = true;
       t = std::move(thread_);
     }
-    cv_.notify_one();
+    wake_.unpark();
     if (t.joinable()) t.join();
     std::lock_guard<std::mutex> lk(mu_);
     running_ = false;
@@ -66,20 +95,14 @@ class GpuPoller {
  private:
   void run() noexcept {
     HYLE_TRACE_THREAD_NAME("hyle.gpu-poller");
-    std::vector<GpuOp*> ready;  // reused scratch: ops observed done this sweep
     for (;;) {
-      {
-        std::unique_lock<std::mutex> lk(mu_);
-        // Idle-wait while nothing is in flight (and not stopping). Zero-cost idle.
-        cv_.wait(lk, [this] { return stop_ || !inflight_.empty(); });
-        if (stop_ && inflight_.empty()) return;
-      }
-      // Sweep the in-flight list OUTSIDE the lock as much as possible: take a snapshot
-      // under lock, query each (query() is a backend vtable call -> cheap, no CUDA API
-      // reentrancy risk since we're on our own thread), collect the ready ones, then
-      // remove + wake them under lock. Waker::wake() is called WITHOUT our lock held
-      // (it reaches into the scheduler; keep our critical section tight + deadlock-free).
-      ready.clear();
+      // Query + remove under the poller lock. Completed ops are threaded through
+      // their frozen stack slots, so the reap path never allocates and cannot
+      // terminate this noexcept thread during memory pressure. Waker::wake() is
+      // called only after releasing our lock because it enters the scheduler.
+      GpuOp* ready = nullptr;
+      bool has_work = false;
+      bool stopping = false;
       {
         HYLE_TRACE_ZONE_NAMED("hyle.compute.gpu_reap");
         std::unique_lock<std::mutex> lk(mu_);
@@ -91,7 +114,8 @@ class GpuPoller {
                                     // surface via stream sync; query() maps non-NotReady
                                     // -> ready, matching compute-01's contract)
             op->done = true;
-            ready.push_back(op);
+            op->ready_next = ready;
+            ready = op;
             // swap-remove from the in-flight list (order doesn't matter).
             inflight_[i] = inflight_.back();
             inflight_.pop_back();
@@ -99,40 +123,51 @@ class GpuPoller {
             ++i;
           }
         }
+        has_work = !inflight_.empty();
+        stopping = stop_;
       }
 #if defined(HYLE_TRACE) && defined(HYLE_TRACE_TRACY)
       static thread_local unsigned long long trace_completions = 0;
-      trace_completions += ready.size();
+      for (GpuOp* op = ready; op != nullptr; op = op->ready_next) {
+        ++trace_completions;
+      }
       HYLE_TRACE_COUNTER("hyle.compute.gpu_completions", trace_completions);
 #endif
       // Wake outside the lock.
-      for (GpuOp* op : ready) op->waker.wake();
-
-      // If work remains, sleep briefly before the next sweep (avoid a hot spin). The
-      // interval trades latency vs CPU; 50us is well below typical GPU op latency and
-      // negligible CPU. (A future tuning knob / the plan-B worker-veto model removes
-      // the poller thread entirely.)
-      bool has_work;
-      {
-        std::lock_guard<std::mutex> lk(mu_);
-        has_work = !inflight_.empty();
-        if (stop_ && inflight_.empty()) return;
+      while (ready != nullptr) {
+        GpuOp* op = ready;
+        ready = ready->ready_next;
+        op->ready_next = nullptr;
+        op->waker.wake();
       }
-      if (has_work) std::this_thread::sleep_for(std::chrono::microseconds(50));
+
+      if (stopping && !has_work) return;
+
+      // 50us is well below typical GPU op latency and avoids a hot spin. Unlike
+      // sleep_for, park_timeout is interrupted immediately by new registration
+      // or shutdown. A token arriving before park is remembered, so there is no
+      // condition-variable lost-wakeup window.
+      if (has_work) {
+        (void)wake_.park_timeout(50'000);
+      } else {
+        wake_.park();
+      }
     }
   }
 
   std::mutex mu_;
-  std::condition_variable cv_;
   std::vector<GpuOp*> inflight_;
-  std::thread thread_;
+  platform::Parker wake_;
+  platform::Thread thread_;
   bool running_ = false;
   bool stop_ = false;
 };
 
 }  // namespace
 
-void gpu_poll_register(GpuOp* op) noexcept { GpuPoller::instance().register_op(op); }
+Status gpu_poll_register(GpuOp* op) noexcept {
+  return GpuPoller::instance().register_op(op);
+}
 
 void gpu_poll_shutdown() noexcept { GpuPoller::instance().shutdown(); }
 
@@ -167,7 +202,13 @@ bool StreamComplete::await_suspend(std::coroutine_handle<>) noexcept {
   // false resumes the coroutine after the fiber comes back (same pattern as io RecvOp).
   op_.waker = sched::current_waker();
   armed_ = true;
-  detail::gpu_poll_register(&op_);
+  Status registration = detail::gpu_poll_register(&op_);
+  if (!registration.ok()) {
+    op_.status = std::move(registration);
+    op_.done = true;
+    armed_ = false;
+    return false;
+  }
   sched::suspend();  // fiber yields; poller's wake re-injects it
   return false;      // fiber is back -> continue the coroutine
 }

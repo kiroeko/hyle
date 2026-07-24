@@ -30,6 +30,29 @@
 > string/CPU 查询。普通用户不再手写 count/allocate/retry，性能敏感和 FFI 调用者也不支付
 > 隐藏分配。真实配方、截断/动态增长和 required 失败销毁路径纳入三平台测试。
 
+> **全库下游消费回审（2026-07-24）：**生产实现（`src/`，不把 benchmark/test/tool 当产品
+> 缺陷）已按“platform 通用机制 / 下游特化机制”逐项扫描。发现并修复两处真实绕过：compute
+> 的 GPU poller 改用 `platform::Thread + Parker`，线程/注册资源失败返回共享 `Status`，完成扫描
+> 零分配；Vulkan 管线缓存的环境变量与文件访问改走 platform 的 UTF-8 fs 合同，并固定为启动
+> 时同一路径快照，缓存 fixture 直接使用非 ASCII 文件名验收。依赖可见性也按公开形状修正：
+> compute/container 的直接实现消费为 private，公开 `SchedulerOptions` 命名 platform 类型的
+> sched 为 public；io 只有编译期 `HYLE_OS_*` 宏而没有 platform 符号/类型，不再伪报二进制依赖。
+> 其余原生调用的保留边界如下表；这张表是防止以后“为了统一而错误统一”的审计基线。
+
+| 下游 | 结论 | 原因 |
+|---|---|---|
+| `mem` / `container` | 已正确消费 | VM、NUMA、页信息、动态进程 CPU 视图均走 platform；此前收口已回归。 |
+| `sched` | 已正确消费 | worker 使用 `Thread/Parker/available_cpu_ids`；blocking pool 与停机屏障的 `std::condition_variable` 是多等待者谓词协调，不等价于单 token Parker。 |
+| `compute` | 本轮修复 | poller 的线程/等待/错误与 Vulkan cache 的 env/fs 已收束；CUDA/Vulkan runtime 调用仍是 compute 后端语义。 |
+| `io` | 有意保留原生后端 | IOCP/epoll/io_uring、OVERLAPPED 文件句柄、ring `mmap` 与 named shared memory 是异步 I/O/跨进程共享语义，platform 的同步 FileHandle、匿名 VM、MappedFile 不能替代。 |
+| `time` | 有意保持零 HYLE 依赖 | 单调/墙钟与 sleep 是 time 自己的产品语义；按依赖图不反向依赖 platform。 |
+| `obs` / `util` | 有意保留窄适配 | TTY/debug sink 与符号反解是模块私有外部适配，不形成用户需要的通用 platform 类型。 |
+| `simd` / `math` / `graph` | 无重复 OS 抽象 | 扫描未发现应改走 platform 的生产调用。 |
+
+判定规则：只有跨模块可复用的 OS 机制进入 platform；设备/runtime、异步完成模型、命名共享
+对象、时钟语义和输出/符号适配仍由拥有其合同的模块实现。传递链接不算依赖声明，直接使用
+platform 类型或符号的模块必须显式声明依赖。
+
 ## 已完成
 
 ### A1. cache capacity

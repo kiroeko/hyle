@@ -25,7 +25,11 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   set(HYLE_CONTAINER_ARM64 TRUE)
   list(APPEND _container_arch_sources str_search_neon.cc)
 endif()
-hyle_add_module(container SOURCES hash.cc carray.cc string_buf.cc path.cc swiss_table.cc string_algo.cc string_ref.cc c_container.cc str_search_scalar.cc ${_container_arch_sources} PUBLIC_DEPS hyle_mem hyle_platform)
+hyle_add_module(container
+  SOURCES hash.cc carray.cc string_buf.cc path.cc swiss_table.cc string_algo.cc
+          string_ref.cc c_container.cc str_search_scalar.cc ${_container_arch_sources}
+  DEPS hyle_platform
+  PUBLIC_DEPS hyle_mem)
 target_include_directories(hyle_container PRIVATE
   "${PROJECT_SOURCE_DIR}/third_party/xxhash"
   "${PROJECT_SOURCE_DIR}/third_party/wyhash"

@@ -29,11 +29,14 @@
 #include "volk.h"  // must precede any vulkan header; VK_NO_PROTOTYPES set by target
 
 #include <cstdint>
-#include <cstdio>    // fopen/fread/fwrite -- pipeline cache 落盘 (checklist #1, env-gated)
-#include <cstdlib>   // getenv -- pipeline-cache path (#1) + TEST-ONLY staging forcing (make_mem)
+#include <cstdio>    // snprintf
+#include <cstdlib>   // TEST-ONLY staging/non-coherent forcing
 #include <cstring>
+#include <limits>
 #include <mutex>
 #include <new>
+#include <stdexcept>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -41,6 +44,8 @@
 #include "hyle/compute/types.h"
 #include "hyle/error/status.h"
 #include "hyle/macros.h"
+#include "hyle/platform/convenience.h"
+#include "hyle/platform/fs.h"
 #if defined(HYLE_TESTING)
 #  include "hyle/visibility.h"  // HYLE_EXPORT -- export the #1 cache-flush test hook across the DLL
 #endif
@@ -122,9 +127,35 @@ struct PipeCacheHeader {
 };
 constexpr char kPipeCacheMagic[8] = {'H', 'Y', 'L', 'E', 'P', 'C', '0', '1'};
 
-const char* pipe_cache_path() noexcept {
-  const char* p = std::getenv("HYLE_VK_PIPELINE_CACHE");
-  return (p != nullptr && p[0] != '\0') ? p : nullptr;
+std::string read_pipe_cache_path() noexcept {
+  // platform owns UTF-8 <-> native environment conversion. In particular, a
+  // Windows cache path must not pass through the CRT ANSI getenv/fopen pair.
+  auto path = platform::get_env_var("HYLE_VK_PIPELINE_CACHE");
+  if (!path || path->empty()) return {};
+  return std::move(*path);
+}
+
+bool read_all(platform::FileHandle* file, void* dst, std::size_t size) noexcept {
+  auto* bytes = static_cast<std::uint8_t*>(dst);
+  std::size_t offset = 0;
+  while (offset != size) {
+    auto read = file->read(bytes + offset, size - offset);
+    if (!read || *read == 0) return false;
+    offset += *read;
+  }
+  return true;
+}
+
+bool write_all(platform::FileHandle* file, const void* src,
+               std::size_t size) noexcept {
+  const auto* bytes = static_cast<const std::uint8_t*>(src);
+  std::size_t offset = 0;
+  while (offset != size) {
+    auto written = file->write(bytes + offset, size - offset);
+    if (!written || *written == 0) return false;
+    offset += *written;
+  }
+  return true;
 }
 
 // Read a persisted cache blob whose header UUID matches `uuid` into `out`. Returns true and
@@ -132,40 +163,51 @@ const char* pipe_cache_path() noexcept {
 // mismatch/short/absent file returns false (caller creates an empty cache).
 bool load_pipe_cache(const char* path, const uint8_t uuid[VK_UUID_SIZE],
                      std::vector<uint8_t>* out) noexcept {
-  std::FILE* f = std::fopen(path, "rb");
-  if (f == nullptr) return false;  // first run / no file
-  bool ok = false;
-  if (std::fseek(f, 0, SEEK_END) == 0) {
-    long sz = std::ftell(f);
-    if (sz > static_cast<long>(sizeof(PipeCacheHeader))) {
-      std::rewind(f);
-      PipeCacheHeader h{};
-      if (std::fread(&h, sizeof(h), 1, f) == 1 &&
-          std::memcmp(h.magic, kPipeCacheMagic, sizeof(kPipeCacheMagic)) == 0 &&
-          std::memcmp(h.uuid, uuid, VK_UUID_SIZE) == 0) {
-        std::size_t payload = static_cast<std::size_t>(sz) - sizeof(PipeCacheHeader);
-        out->resize(payload);
-        ok = std::fread(out->data(), 1, payload, f) == payload;
-        if (!ok) out->clear();
-      }
-    }
+  auto size = platform::file_size(path);
+  if (!size || *size <= sizeof(PipeCacheHeader) ||
+      *size > std::numeric_limits<std::size_t>::max()) {
+    return false;  // first run, invalid file, or not representable in this process
   }
-  std::fclose(f);
-  return ok;
+  auto opened = platform::open_file(path, platform::kOpenRead);
+  if (!opened) return false;
+
+  PipeCacheHeader header{};
+  if (!read_all(&*opened, &header, sizeof(header)) ||
+      std::memcmp(header.magic, kPipeCacheMagic, sizeof(kPipeCacheMagic)) != 0 ||
+      std::memcmp(header.uuid, uuid, VK_UUID_SIZE) != 0) {
+    return false;
+  }
+
+  const std::size_t payload = static_cast<std::size_t>(*size) - sizeof(header);
+  try {
+    out->resize(payload);
+  } catch (const std::bad_alloc&) {
+    return false;
+  } catch (const std::length_error&) {
+    return false;
+  }
+  if (read_all(&*opened, out->data(), payload)) return true;
+  out->clear();
+  return false;
 }
 
 // Serialize `blob` (from vkGetPipelineCacheData) under a header stamped with `uuid`. Best-
 // effort: a write failure is swallowed (the cache is an optimization, not correctness).
 void save_pipe_cache(const char* path, const uint8_t uuid[VK_UUID_SIZE],
                      const std::vector<uint8_t>& blob) noexcept {
-  std::FILE* f = std::fopen(path, "wb");
-  if (f == nullptr) return;
+  auto opened = platform::open_file(
+      path, platform::kOpenWrite | platform::kOpenCreate |
+                platform::kOpenTruncate);
+  if (!opened) return;
   PipeCacheHeader h{};
   std::memcpy(h.magic, kPipeCacheMagic, sizeof(kPipeCacheMagic));
   std::memcpy(h.uuid, uuid, VK_UUID_SIZE);
-  std::fwrite(&h, sizeof(h), 1, f);
-  if (!blob.empty()) std::fwrite(blob.data(), 1, blob.size(), f);
-  std::fclose(f);
+  if (!write_all(&*opened, &h, sizeof(h))) return;
+  if (!blob.empty()) (void)write_all(&*opened, blob.data(), blob.size());
+  // Persistence is a best-effort optimization, but close still runs here rather
+  // than through stdio so UTF-8 path handling is identical to every platform fs
+  // consumer. The returned close error is intentionally ignored.
+  opened->close().IgnoreError();
 }
 
 // ---- process-wide Vulkan context (created once, shared by all streams/buffers) -------
@@ -184,6 +226,7 @@ struct VkContext {
                                          // is externally-synchronized (spec) + guards lazy
                                          // per-Kernel pipeline creation against concurrent first-launch.
   VkPipelineCache pipe_cache = VK_NULL_HANDLE;  // shared cache (checklist #1: not per-kernel)
+  std::string pipeline_cache_path;        // owned UTF-8 startup snapshot; empty = disabled
   uint8_t cache_uuid[VK_UUID_SIZE] = {};  // pipelineCacheUUID: cache validity key (换卡/换驱动作废)
   uint32_t max_push = 0;                  // maxPushConstantsSize (checklist #4 device limit)
   uint32_t max_wg_count[3] = {0, 0, 0};   // maxComputeWorkGroupCount x/y/z (#20 clamp guard)
@@ -197,6 +240,9 @@ struct VkContext {
   VkContext() noexcept { init(); }
 
   void init() noexcept {
+    // Snapshot once: load and eventual save must address the same file even if
+    // another library mutates the process environment while this context lives.
+    pipeline_cache_path = read_pipe_cache_path();
     if (volkInitialize() != VK_SUCCESS) return;  // no loader -> stay !ok
     VkApplicationInfo app{VK_STRUCTURE_TYPE_APPLICATION_INFO};
     app.apiVersion = VK_API_VERSION_1_2;
@@ -290,8 +336,8 @@ struct VkContext {
     // blob, seed the cache from it (cold-start avoids re-compiling SPIR-V->ISA); else empty.
     VkPipelineCacheCreateInfo pcci{VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO};
     std::vector<uint8_t> seed;
-    if (const char* cp = pipe_cache_path())
-      if (load_pipe_cache(cp, cache_uuid, &seed) && !seed.empty()) {
+    if (!pipeline_cache_path.empty())
+      if (load_pipe_cache(pipeline_cache_path.c_str(), cache_uuid, &seed) && !seed.empty()) {
         pcci.initialDataSize = seed.size();
         pcci.pInitialData = seed.data();
       }
@@ -329,8 +375,7 @@ struct VkContext {
   // out-ptr gets the size, then we read the blob and frame it with the UUID header.
   ~VkContext() {
     if (!ok || pipe_cache == VK_NULL_HANDLE) return;
-    const char* cp = pipe_cache_path();
-    if (cp == nullptr) return;
+    if (pipeline_cache_path.empty()) return;
     // No build_mtx here (unlike the flush hook): the Meyers-singleton dtor runs at process
     // exit AFTER worker threads/fibers have stopped, so no build races this read. Taking the
     // member mutex during its own object's destruction would be the riskier choice.
@@ -339,7 +384,7 @@ struct VkContext {
     std::vector<uint8_t> blob(n);
     if (vkGetPipelineCacheData(device, pipe_cache, &n, blob.data()) != VK_SUCCESS) return;
     blob.resize(n);  // n may shrink to the actual written size
-    save_pipe_cache(cp, cache_uuid, blob);
+    save_pipe_cache(pipeline_cache_path.c_str(), cache_uuid, blob);
   }
 };
 
@@ -1817,8 +1862,7 @@ HYLE_EXPORT std::size_t vk_staging_capacity_for_test(void* native) noexcept {
 HYLE_EXPORT std::size_t vk_pipeline_cache_flush_for_test() noexcept {
   VkContext& c = ctx();
   if (!c.ok || c.pipe_cache == VK_NULL_HANDLE) return 0;
-  const char* cp = pipe_cache_path();
-  if (cp == nullptr) return 0;
+  if (c.pipeline_cache_path.empty()) return 0;
   // vkGetPipelineCacheData is host access to the cache -> externally-synchronized (spec), and
   // build_pipeline writes it under build_mtx. Hold the SAME lock so a concurrent first-launch
   // build can't race this read (红队: same external-sync rule as the pipeline build).
@@ -1828,7 +1872,7 @@ HYLE_EXPORT std::size_t vk_pipeline_cache_flush_for_test() noexcept {
   std::vector<uint8_t> blob(n);
   if (vkGetPipelineCacheData(c.device, c.pipe_cache, &n, blob.data()) != VK_SUCCESS) return 0;
   blob.resize(n);
-  save_pipe_cache(cp, c.cache_uuid, blob);
+  save_pipe_cache(c.pipeline_cache_path.c_str(), c.cache_uuid, blob);
   return blob.size();
 }
 #endif

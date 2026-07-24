@@ -14,6 +14,7 @@
 # the .cc, never named in a public compute header).
 set(_compute_sources compute.cc host_backend.cc host_ops.cc)
 set(_compute_public_deps hyle_error hyle_mem)
+set(_compute_private_deps "")
 
 if(HYLE_COMPUTE_CUDA)
   # cuda_backend.cu is a CUDA-language TU (compiled by nvcc, host side by the same
@@ -27,6 +28,9 @@ endif()
 # HYLE_COMPUTE_VULKAN_ENABLED (volk + Vulkan-Headers + glslang fetched, loader at runtime).
 if(HYLE_COMPUTE_VULKAN_ENABLED)
   list(APPEND _compute_sources vulkan_backend.cc)
+  # vulkan_backend.cc uses platform's UTF-8 env/FileHandle contract for the
+  # optional persistent pipeline cache, even on a target without fcontext.
+  list(APPEND _compute_private_deps hyle_platform)
 endif()
 
 if(HYLE_HAS_FCONTEXT)
@@ -36,7 +40,13 @@ if(HYLE_HAS_FCONTEXT)
   # sched/waker.h, so a consumer of that header needs sched).
   list(APPEND _compute_sources gpu_poller.cc)
   list(APPEND _compute_public_deps hyle_sched)
+  # compute.cc and gpu_poller.cc directly consume Thread/Parker. Keep the
+  # implementation dependency explicit instead of relying on mem/sched's
+  # transitive linkage to platform.
+  list(APPEND _compute_private_deps hyle_platform)
 endif()
+
+list(REMOVE_DUPLICATES _compute_private_deps)
 
 # compute-05 ggml_bridge: borrow ggml operators on HYLE-managed VRAM/completion/sched.
 # ggml_bridge.cc is a PLAIN C++ TU (NOT a .cu) -- ggml compiles its own CUDA internally;
@@ -47,7 +57,9 @@ if(HYLE_COMPUTE_GGML AND HYLE_HAS_FCONTEXT)
   list(APPEND _compute_sources ggml_bridge.cc)
 endif()
 
-hyle_add_module(compute SOURCES ${_compute_sources} PUBLIC_DEPS ${_compute_public_deps})
+hyle_add_module(compute SOURCES ${_compute_sources}
+                DEPS ${_compute_private_deps}
+                PUBLIC_DEPS ${_compute_public_deps})
 
 if(HYLE_HAS_FCONTEXT)
   # compute.cc uses Fiber::current() to keep heavyweight CUDA/Vulkan first-use

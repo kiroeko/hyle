@@ -3,8 +3,7 @@
 #include <gtest/gtest.h>
 
 #include <cstdint>
-#include <cstdio>    // fopen/fseek/ftell -- verify #1 cache file was written non-empty
-#include <cstdlib>   // getenv -- read HYLE_VK_PIPELINE_CACHE path the CTest variant sets
+#include <cstdlib>   // getenv -- TEST-ONLY staging forcing
 #include <cstring>
 #include <utility>
 #include <vector>
@@ -13,6 +12,8 @@
 #include "hyle/compute/device.h"
 #include "hyle/compute/device_pool.h"
 #include "hyle/compute/stream.h"
+#include "hyle/platform/convenience.h"
+#include "hyle/platform/fs.h"
 // SPIR-V embedded as `inline constexpr SpirvBlob` by tools/hyle_shader.py (via
 // hyle_embed_shader in tests/CMakeLists). Namespace hyle_test_shaders keeps the symbols from
 // clashing -- the --namespace feature the tool provides. Pass the blob to Kernel::load_spirv.
@@ -432,8 +433,8 @@ TEST(VulkanCompute, TimingMeasuresElapsed) {
 // file); the load+UUID path is exercised by the SAME variant's SECOND run seeding from this
 // file (saxpy stays green => the seeded cache was accepted, not rejected).
 TEST(VulkanCompute, PipelineCachePersist) {
-  const char* path = std::getenv("HYLE_VK_PIPELINE_CACHE");
-  if (path == nullptr || path[0] == '\0')
+  auto path = platform::get_env_var("HYLE_VK_PIPELINE_CACHE");
+  if (!path || path->empty())
     GTEST_SKIP() << "HYLE_VK_PIPELINE_CACHE unset (persistence is opt-in; cache variant sets it)";
   Device vk;
   if (!find_vulkan(vk)) GTEST_SKIP() << "no Vulkan device";
@@ -461,12 +462,11 @@ TEST(VulkanCompute, PipelineCachePersist) {
   EXPECT_GT(written, 0u) << "cache flush wrote an empty payload";
 
   // The framed file must exist and exceed the header (magic + UUID = 24 bytes).
-  std::FILE* f = std::fopen(path, "rb");
-  ASSERT_NE(f, nullptr) << "cache file not created at " << path;
-  std::fseek(f, 0, SEEK_END);
-  long sz = std::ftell(f);
-  std::fclose(f);
-  EXPECT_GT(sz, 24) << "cache file has no payload beyond the header";
+  auto size = platform::file_size(path->c_str());
+  ASSERT_TRUE(size.has_value())
+      << "cache file not created at " << *path << ": "
+      << size.error().message();
+  EXPECT_GT(*size, 24u) << "cache file has no payload beyond the header";
 }
 
 // #2/#3 specialization constants: load saxpy_spec.comp with local_size (id 0) and SCALE (id 1,

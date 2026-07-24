@@ -2,7 +2,9 @@
 # Windows IOCP (ReadFile/WriteFile/WSARecv/WSASend/AcceptEx/ConnectEx) and Linux
 # io_uring (raw syscalls, no liburing link) + epoll reactor fallback. Binds to
 # sched via the Waker spine -- proactor.cc only moves completion tokens, sched/
-# owns the wake. Depends on platform (HYLE_OS_* macros).
+# owns the wake. `hyle/platform.h` contributes compile-time HYLE_OS_* macros but
+# no platform library symbol/type; the native async backends therefore do not
+# claim a direct binary dependency on the synchronous platform module.
 #
 # io_context.cc is the io<->sched integration (io-04): it plugs the proactor into
 # the sched worker loop, so it depends on hyle_sched. sched only exists where
@@ -10,7 +12,7 @@
 # only there -- proactor.cc itself never depends on sched, keeping the proactor
 # usable on any platform.
 set(_io_sources proactor.cc c_io.cc shared_memory.cc)
-set(_io_deps hyle_error hyle_platform hyle_mem hyle_container)
+set(_io_deps hyle_error hyle_mem hyle_container)
 if(HYLE_HAS_FCONTEXT)
   # The co_await layers (net/tcp/udp/file/signal) and the DNS offload need sched
   # (the scheduler drives the reap; dns uses spawn_blocking). Only buildable where

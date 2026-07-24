@@ -56,8 +56,9 @@ namespace detail {
 // op->status/op->done and fires op->waker. The slot lives on the awaiting fiber's
 // frozen stack; the poller dereferences it until it fires, then drops it (one-shot).
 // Starts the poller thread on first use. Thread-safe (called from a worker fiber;
-// the poller runs on its own thread).
-HYLE_COMPUTE_API void gpu_poll_register(GpuOp* op) noexcept;
+// the poller runs on its own thread). A thread-start or registration allocation
+// failure is returned rather than terminating the noexcept await path.
+HYLE_COMPUTE_API Status gpu_poll_register(GpuOp* op) noexcept;
 // Stop the poller thread (process teardown / test cleanup). Waits until no in-flight
 // events remain, then joins. Idempotent.
 HYLE_COMPUTE_API void gpu_poll_shutdown() noexcept;
@@ -75,6 +76,7 @@ struct GpuOp {
   Event event;             // the completion signal (owns backend cudaEvent_t)
   Status status;           // filled before the wake (OK, or a device error)
   bool done = false;       // set true by the poller before waking (single-shot)
+  GpuOp* ready_next = nullptr;  // poller-private allocation-free ready chain
 };
 
 // co_await StreamComplete{&stream} -> Status : suspend the fiber until ALL work
