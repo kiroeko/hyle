@@ -109,7 +109,7 @@ class FiberStackPool {
     // usable_tier_ is the REQUEST; VmRegion rounds up -- match on actual size.
     const std::size_t want = platform::page_align_up(usable_tier_);
     if (s.size() != want) {
-      (void)s.reset();
+      s.reset().IgnoreError();
       return;
     }
     lock_.lock();
@@ -119,7 +119,7 @@ class FiberStackPool {
       return;
     }
     lock_.unlock();
-    (void)s.reset();
+    s.reset().IgnoreError();
   }
 
  private:

@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <cstdint>
+#include <limits>
 #include <thread>
 #include <vector>
 
@@ -14,6 +15,56 @@ using hyle::mem::LeakEntry;
 using hyle::mem::LeakTracker;
 using hyle::mem::StatsAllocator;
 using hyle::mem::system_allocator;
+
+namespace {
+
+struct MetadataBackingState {
+  std::size_t calls = 0;
+  std::size_t fail_at = (std::numeric_limits<std::size_t>::max)();
+  std::size_t outstanding = 0;
+};
+
+void* metadata_alloc(void* opaque, std::size_t size,
+                     std::size_t alignment) noexcept {
+  auto& state = *static_cast<MetadataBackingState*>(opaque);
+  const std::size_t call = state.calls++;
+  if (call == state.fail_at) return nullptr;
+  void* pointer = system_allocator().allocate(size, alignment);
+  if (pointer != nullptr) ++state.outstanding;
+  return pointer;
+}
+
+void metadata_free(void* opaque, void* pointer, std::size_t size,
+                   std::size_t alignment) noexcept {
+  if (pointer == nullptr) return;
+  auto& state = *static_cast<MetadataBackingState*>(opaque);
+  EXPECT_GT(state.outstanding, 0u);
+  --state.outstanding;
+  system_allocator().deallocate(pointer, size, alignment);
+}
+
+void* metadata_realloc(void* opaque, void* pointer, std::size_t old_size,
+                       std::size_t new_size,
+                       std::size_t alignment) noexcept {
+  auto& state = *static_cast<MetadataBackingState*>(opaque);
+  if (new_size == 0) {
+    metadata_free(opaque, pointer, old_size, alignment);
+    return nullptr;
+  }
+  const std::size_t call = state.calls++;
+  if (call == state.fail_at) return nullptr;
+  void* out = system_allocator().reallocate(pointer, old_size, new_size,
+                                             alignment);
+  if (pointer == nullptr && out != nullptr) ++state.outstanding;
+  return out;
+}
+
+hyle::mem::Allocator metadata_backing(MetadataBackingState* state) {
+  return hyle::mem::Allocator(&metadata_alloc, &metadata_free,
+                              &metadata_realloc, state);
+}
+
+}  // namespace
 
 // clay bug reproduction: unsigned (0 - old_size) must NOT wrap counters.
 TEST(AllocStats, FreeDoesNotUnderflow) {
@@ -73,7 +124,7 @@ TEST(AllocStats, PeakTracksHighWater) {
 }
 
 TEST(StatsAllocator, BalancedRoundTrip) {
-  StatsAllocator sa(system_allocator());
+  StatsAllocator sa = StatsAllocator::create(system_allocator()).value();
   auto a = sa.get();
   void* p = a.allocate(128);
   ASSERT_NE(p, nullptr);
@@ -85,8 +136,52 @@ TEST(StatsAllocator, BalancedRoundTrip) {
   EXPECT_EQ(sa.snapshot().total_frees, 1u);
 }
 
+TEST(StatsAllocator, ConstructionOomReturnsStatusAndLeaksNothing) {
+  for (std::size_t fail_at = 0; fail_at != 2; ++fail_at) {
+    MetadataBackingState state;
+    state.fail_at = fail_at;
+    auto created = StatsAllocator::create(system_allocator(),
+                                          /*track_leaks=*/true,
+                                          metadata_backing(&state));
+    ASSERT_FALSE(created) << "fail_at=" << fail_at;
+    EXPECT_TRUE(created.error().IsResourceExhausted());
+    EXPECT_EQ(state.outstanding, 0u) << "fail_at=" << fail_at;
+  }
+}
+
+TEST(StatsAllocator, StateAndLeakMapUseInjectedBacking) {
+  MetadataBackingState state;
+  {
+    auto created = StatsAllocator::create(system_allocator(),
+                                          /*track_leaks=*/true,
+                                          metadata_backing(&state));
+    ASSERT_TRUE(created);
+    StatsAllocator stats = *std::move(created);
+    EXPECT_GE(state.outstanding, 2u);  // LeakTracker::Impl + StatsState.
+
+    const std::size_t calls_before_data = state.calls;
+    hyle::mem::Allocator measured = stats.get();
+    void* pointer = measured.allocate(64, 16);
+    ASSERT_NE(pointer, nullptr);
+    // The measured allocation uses the separate system backing. At least one
+    // PMR allocation here proves leak metadata did not fall back to global new.
+    EXPECT_GE(state.calls, calls_before_data + 1);
+    measured.deallocate(pointer, 64, 16);
+  }
+  EXPECT_EQ(state.outstanding, 0u);
+}
+
+TEST(LeakTracker, ConstructionOomReturnsStatus) {
+  MetadataBackingState state;
+  state.fail_at = 0;
+  auto created = LeakTracker::create(metadata_backing(&state));
+  ASSERT_FALSE(created);
+  EXPECT_TRUE(created.error().IsResourceExhausted());
+  EXPECT_EQ(state.outstanding, 0u);
+}
+
 TEST(StatsAllocator, ReallocPreservesAccounting) {
-  StatsAllocator sa(system_allocator());
+  StatsAllocator sa = StatsAllocator::create(system_allocator()).value();
   auto a = sa.get();
   void* p = a.allocate(64);
   ASSERT_NE(p, nullptr);
@@ -100,7 +195,8 @@ TEST(StatsAllocator, ReallocPreservesAccounting) {
 }
 
 TEST(StatsAllocator, ReallocUsesRecordedOldSizeWhenTrackingLeaks) {
-  StatsAllocator sa(system_allocator(), /*track_leaks=*/true);
+  StatsAllocator sa =
+      StatsAllocator::create(system_allocator(), /*track_leaks=*/true).value();
   auto a = sa.get();
   void* p = a.allocate(64);
   ASSERT_NE(p, nullptr);
@@ -115,7 +211,7 @@ TEST(StatsAllocator, ReallocUsesRecordedOldSizeWhenTrackingLeaks) {
 }
 
 TEST(StatsAllocator, ReallocToZeroIsFree) {
-  StatsAllocator sa(system_allocator());
+  StatsAllocator sa = StatsAllocator::create(system_allocator()).value();
   auto a = sa.get();
   void* p = a.allocate(32);
   ASSERT_NE(p, nullptr);
@@ -125,7 +221,7 @@ TEST(StatsAllocator, ReallocToZeroIsFree) {
 }
 
 TEST(StatsAllocator, ManyAllocsPeak) {
-  StatsAllocator sa(system_allocator());
+  StatsAllocator sa = StatsAllocator::create(system_allocator()).value();
   auto a = sa.get();
   void* ps[16];
   for (int i = 0; i < 16; ++i) {
@@ -141,7 +237,7 @@ TEST(StatsAllocator, ManyAllocsPeak) {
 }
 
 TEST(StatsAllocator, ConcurrentNoLostCounts) {
-  StatsAllocator sa(system_allocator());
+  StatsAllocator sa = StatsAllocator::create(system_allocator()).value();
   auto a = sa.get();
   constexpr int kThreads = 4;
   constexpr int kIters = 500;
@@ -163,7 +259,8 @@ TEST(StatsAllocator, ConcurrentNoLostCounts) {
 }
 
 TEST(LeakTracker, DetectsOutstanding) {
-  StatsAllocator sa(system_allocator(), /*track_leaks=*/true);
+  StatsAllocator sa =
+      StatsAllocator::create(system_allocator(), /*track_leaks=*/true).value();
   ASSERT_NE(sa.leaks(), nullptr);
   auto a = sa.get();
   void* p = a.allocate(77);
@@ -180,7 +277,8 @@ TEST(LeakTracker, DetectsOutstanding) {
 }
 
 TEST(LeakTracker, LeakRemainsUntilFreed) {
-  StatsAllocator sa(system_allocator(), /*track_leaks=*/true);
+  StatsAllocator sa =
+      StatsAllocator::create(system_allocator(), /*track_leaks=*/true).value();
   auto a = sa.get();
   void* leak = a.allocate(16);
   void* ok = a.allocate(16);
@@ -193,7 +291,7 @@ TEST(LeakTracker, LeakRemainsUntilFreed) {
 }
 
 TEST(LeakTracker, DoubleFreeNotTracked) {
-  LeakTracker lt;
+  LeakTracker lt = LeakTracker::create(system_allocator()).value();
   void* fake = reinterpret_cast<void*>(static_cast<std::uintptr_t>(0x1000));
   lt.track_alloc(fake, 8);
   EXPECT_TRUE(lt.track_free(fake));
@@ -202,7 +300,7 @@ TEST(LeakTracker, DoubleFreeNotTracked) {
 }
 
 TEST(LeakTracker, TrackFreeReturnsRecordedSize) {
-  LeakTracker lt;
+  LeakTracker lt = LeakTracker::create(system_allocator()).value();
   void* fake = reinterpret_cast<void*>(static_cast<std::uintptr_t>(0x2000));
   lt.track_alloc(fake, 4096);
   std::size_t got = 0;
@@ -217,7 +315,8 @@ TEST(LeakTracker, TrackFreeReturnsRecordedSize) {
 TEST(StatsAllocator, WrongFreeSizeAccountedByRecorded) {
   // With leak tracking, a caller that frees with the WRONG size must not
   // corrupt live_bytes — accounting uses the recorded alloc size.
-  StatsAllocator sa(system_allocator(), /*track_leaks=*/true);
+  StatsAllocator sa =
+      StatsAllocator::create(system_allocator(), /*track_leaks=*/true).value();
   auto a = sa.get();
   void* p = a.allocate(200);
   ASSERT_NE(p, nullptr);

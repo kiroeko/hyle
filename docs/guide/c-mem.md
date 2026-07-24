@@ -10,7 +10,8 @@
 [`mem.md` 一页选择表](./mem.md)；这里不另立一套选型标准。
 
 跨语言 / 跨编译器只绑定本头，不要 include `hyle/mem/*.h`。有 `backing` 参数的 opaque
-control 与内部 storage 都由该 backing 分配。FixedRegion 是可按值持有的 3-word cursor；
+control 与内部 storage 都由该 backing 分配；显式区分 payload/metadata 的产品则分别服从
+对应 allocator。FixedRegion 是可按值持有的 3-word cursor；
 FixedPool 同时提供 caller-owned `*_storage + *_init`（control/payload 都不触堆）和
 `*_create(control_allocator, ...)`。两者的 payload 始终只来自调用方 storage，绝不 fallback。
 所有 opaque handle 对外使用 `hyle_region *`、`hyle_shared_pool *` 等产品名；尾缀 `_o`
@@ -35,7 +36,7 @@ FixedPool 同时提供 caller-owned `*_storage + *_init`（control/payload 都�
 | Allocator 句柄 | `hyle_allocator` | POD 值类型；按值传 |
 | system 分配器 | `hyle_system_allocator` | 进程级；alloc/free 携带相同 size/alignment |
 | QuotaAllocator | `hyle_quota_allocator_create(&out,...)` → `destroy` | 任意 backing 的严格 requested live-byte 上限 |
-| StatsAllocator | `hyle_stats_allocator_create(&out,...)` → `destroy` | opt-in 并发计数；可选慢速 leak inventory |
+| StatsAllocator | `hyle_stats_allocator_create(&out,backing,metadata,track)` → `destroy` | 测量 backing；control/诊断状态服从 metadata；可选慢速 leak inventory |
 | Region | `hyle_region_create(&out,...)` → `destroy` | owned growable bump；clear 保留普通 blocks |
 | FixedRegion | `hyle_fixed_region_init(&region, storage, size)` | 返回 Status；按值 external bump；无 create/destroy、严格 no-heap |
 | FixedPool | `hyle_fixed_pool_init(&pool,control,storage)` 或 `create(&pool,control_allocator,...)` → `destroy` | external variable-size alloc/free；init 严格 no-heap |
@@ -90,9 +91,16 @@ reserve 的严格预算，不是 backing 的物理空闲字节。
 `hyle_stats_allocator_as_allocator()` 返回借用 wrapper 的 allocator；成功 alloc/free/realloc
 更新 64-bit 并发计数。`hyle_stats_allocator_snapshot(s, &out)` 用出参返回 POD，避免 FFI
 绑定大型 struct-return ABI。`track_leaks!=0` 额外维护带锁的 pointer→size map，并可用
-`copy_leaks(&total,...)` 分页/截断读取并返回 Status（复制时会从原 backing 取得临时数组）；
+`copy_leaks(&total,...)` 分页/截断读取并返回 Status（复制时会从 metadata 取得临时数组）；
 这是诊断慢路，生产热路只开 counters 或直接不用 wrapper。
 `reset` 要求没有 live allocation，并同时清空 leak inventory。
+
+`backing` 是真正被观察的数据域；opaque control、稳定计数状态和 leak map 使用独立
+`metadata`。因此 Stats 可以安全包住 fixed-block 或 strict-quota allocator，而不会在第一笔
+用户 allocation 前用诊断状态污染其容量。普通用法选 `create_default`；测量自定义 backing
+但不想自管诊断内存时用 `create_with_default_metadata`；只有需要 arena ownership、故障注入
+或隔离诊断开销时才同时显式传两者。所有构造阶段 OOM 都直接返回 RESOURCE_EXHAUSTED，
+已完成的 metadata 分配会原域回滚。
 
 ### 2.3 Region、FixedRegion 与 FixedPool
 

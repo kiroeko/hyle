@@ -110,6 +110,8 @@ static_assert(requires(FixedRegion r) {
 });
 
 static_assert(requires(StatsAllocator s) {
+  { StatsAllocator::create(system_allocator()) }
+      -> std::same_as<hyle::Result<StatsAllocator>>;
   { s.get() } -> std::same_as<Allocator>;
   { s.snapshot() } -> std::same_as<AllocStatsSnapshot>;
   { s.balanced() } -> std::same_as<bool>;
@@ -181,7 +183,7 @@ TEST(MemUsageRecipe, TypedCachedPool) {
 }
 
 TEST(MemUsageRecipe, QuotaAndStatsComposition) {
-  StatsAllocator stats(system_allocator());
+  StatsAllocator stats = StatsAllocator::create(system_allocator()).value();
   QuotaAllocator quota(stats.get(), 256);
   Allocator bounded = quota.get();
   void* p = bounded.allocate(96, 16);

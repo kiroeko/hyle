@@ -118,7 +118,7 @@ TEST(GrowablePool, InterleavedChurn) {
 }
 
 TEST(GrowablePool, ClearReclaimsAndReusable) {
-  StatsAllocator sa(system_allocator());
+  StatsAllocator sa = StatsAllocator::create(system_allocator()).value();
   auto backing = sa.get();
   // create N (forces geometric growth), destroy all, clear -> blocks handed back.
   GrowablePool<std::uint64_t> pool(backing, 16);

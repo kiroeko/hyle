@@ -264,7 +264,8 @@ struct ThrowsInCtor {
 } // namespace
 
 TEST(AllocatorTyped, ConstructorFailureReleasesStorage) {
-  StatsAllocator tracked(system_allocator());
+  StatsAllocator tracked =
+      StatsAllocator::create(system_allocator()).value();
   Allocator a = tracked.get();
   EXPECT_THROW((void)a.construct<ThrowsInCtor>(), std::runtime_error);
   EXPECT_TRUE(tracked.balanced());
@@ -428,7 +429,8 @@ TEST(QuotaAllocator, ConcurrentAdmissionNeverExceedsHardLimit) {
 TEST(AllocatorComposition, StatsOverQuotaOverSharedPoolKeepsOneTruth) {
   hyle::mem::SharedPool pool(system_allocator(), 128, 1, 64);
   QuotaAllocator quota(pool.as_allocator(), 512);
-  StatsAllocator stats(quota.get(), /*track_leaks=*/true);
+  StatsAllocator stats =
+      StatsAllocator::create(quota.get(), /*track_leaks=*/true).value();
   Allocator alloc = stats.get();
 
   auto *p = static_cast<unsigned char *>(alloc.allocate(32, 16));
@@ -462,7 +464,9 @@ TEST(AllocatorComposition, StatsOverQuotaOverSharedPoolKeepsOneTruth) {
 
 TEST(AllocatorComposition, QuotaOverStatsOverSharedPoolKeepsOneTruth) {
   hyle::mem::SharedPool pool(system_allocator(), 128, 1, 64);
-  StatsAllocator stats(pool.as_allocator(), /*track_leaks=*/true);
+  StatsAllocator stats = StatsAllocator::create(
+                             pool.as_allocator(), /*track_leaks=*/true)
+                             .value();
   QuotaAllocator quota(stats.get(), 512);
   Allocator alloc = quota.get();
 
@@ -482,7 +486,7 @@ TEST(AllocatorComposition, QuotaOverStatsOverSharedPoolKeepsOneTruth) {
 TEST(AllocatorComposition, PmrOverDecoratedSharedPoolReturnsCapacity) {
   hyle::mem::SharedPool pool(system_allocator(), 128, 1, 64);
   QuotaAllocator quota(pool.as_allocator(), 128);
-  StatsAllocator stats(quota.get());
+  StatsAllocator stats = StatsAllocator::create(quota.get()).value();
   hyle::mem::PmrResource resource(stats.get());
   std::pmr::polymorphic_allocator<std::byte> alloc(&resource);
 

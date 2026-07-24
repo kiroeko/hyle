@@ -12,6 +12,7 @@ mem 是 host RAM 的基础原语层。它不替业务猜生命周期，也不把
 | 普通动态分配 / 依赖注入 | `system_allocator()` / `Allocator` | `hyle_system_allocator` / `hyle_allocator` | sized-free；free/realloc 带回原 size/alignment |
 | 接入 STL PMR | `PmrResource` | 不需要：C 直接持有 allocator vtable | 借用 `Allocator` |
 | 任意 backing 的严格 live-byte admission | `QuotaAllocator` | `hyle_quota_allocator` | 线程安全；按 requested bytes 精确计量 |
+| opt-in allocation 计数 / 泄漏诊断 | `StatsAllocator::create(backing,track,metadata)` | `hyle_stats_allocator` | 被测 backing 与诊断 metadata 分域；计数线程安全，leak inventory 是慢路 |
 | request/frame/graph phase 临时对象 | `Region` | `hyle_region` | owned、单线程、growable、bulk `clear()` |
 | 调用方 buffer 中的临时对象 | `FixedRegion` | `hyle_fixed_region` 值对象 | external、单线程、bump、无 fallback |
 | 从共享硬池借一个 scratch block | `PooledRegion` | `hyle_pooled_region` | 单线程、固定容量、整体归还 |
@@ -150,7 +151,9 @@ reservation。它计 requested live bytes，不计 allocator usable size/metadat
 
 资源耗尽返回 null；invalid alignment、foreign/double return、错误 sized-free、销毁时仍有
 loan 等调用合同错误允许 fail-fast。`StatsAllocator`/`LeakTracker` 可以与 Quota 叠加，
-但 wrapper 顺序决定各层看到 requested attempt 还是 backing success。
+但 wrapper 顺序决定各层看到 requested attempt 还是 backing success。它们的冷构造返回
+`Result`，不会从 `new` 抛出 OOM；Stats 的第三个参数是独立 metadata allocator，默认 system。
+被测 backing 即使是 fixed-block/strict-quota，诊断 control/hash 也不会偷占其容量。
 
 ## 三份最短组合
 
@@ -176,7 +179,8 @@ local.publish();
 
 ```cpp
 // quota is the call-side outer layer; rejected requests do not reach stats
-hyle::mem::StatsAllocator stats(hyle::mem::system_allocator());
+hyle::mem::StatsAllocator stats =
+    hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()).value();
 hyle::mem::QuotaAllocator quota(stats.get(), 1u << 20);
 hyle::mem::Allocator bounded = quota.get();
 void* p = bounded.allocate(4096, 64);

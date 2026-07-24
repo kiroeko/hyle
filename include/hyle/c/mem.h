@@ -201,13 +201,16 @@ typedef struct hyle_mem_leak {
 
 typedef struct hyle_stats_allocator_o hyle_stats_allocator;
 
-/* Thread-safe opt-in instrumentation over `backing`. Non-zero track_leaks adds
- * a locked pointer map and is intended for diagnostics, not production hot
- * paths. The returned allocator and all its allocations must be quiesced
- * before destroy. */
+/* Thread-safe opt-in instrumentation over `backing`. Stable wrapper state,
+ * opaque control and the optional locked pointer map use `metadata`; keeping
+ * those domains separate permits measuring a fixed-block/strict-quota backing.
+ * Non-zero track_leaks is intended for diagnostics, not production hot paths.
+ * The returned allocator and all its allocations must be quiesced before
+ * destroy. */
 HYLE_MEM_C_API hyle_status
 hyle_stats_allocator_create(hyle_stats_allocator **out,
-                            hyle_allocator backing, int track_leaks);
+                            hyle_allocator backing, hyle_allocator metadata,
+                            int track_leaks);
 HYLE_MEM_C_API void hyle_stats_allocator_destroy(hyle_stats_allocator *s);
 HYLE_MEM_C_API hyle_allocator
 hyle_stats_allocator_as_allocator(hyle_stats_allocator *s);
@@ -223,7 +226,7 @@ HYLE_MEM_C_API void hyle_stats_allocator_reset(hyle_stats_allocator *s);
 HYLE_MEM_C_API int
 hyle_stats_allocator_balanced(const hyle_stats_allocator *s);
 /* Copies at most capacity entries and writes the total outstanding count.
- * The diagnostic copy may obtain a temporary array from the original backing;
+ * The diagnostic copy may obtain a temporary array from the metadata allocator;
  * when that allocation fails, out is untouched and Status reports
  * RESOURCE_EXHAUSTED. When leak tracking is disabled (or s==NULL), writes 0. */
 HYLE_MEM_C_API hyle_status
@@ -234,7 +237,15 @@ hyle_stats_allocator_copy_leaks(size_t *out_total,
 static inline hyle_status
 hyle_stats_allocator_create_default(hyle_stats_allocator **out,
                                     int track_leaks) {
-  return hyle_stats_allocator_create(out, hyle_system_allocator(),
+  hyle_allocator system = hyle_system_allocator();
+  return hyle_stats_allocator_create(out, system, system, track_leaks);
+}
+
+/* Measure an arbitrary backing while using the system allocator only for
+ * stable wrapper/leak metadata. */
+static inline hyle_status hyle_stats_allocator_create_with_default_metadata(
+    hyle_stats_allocator **out, hyle_allocator backing, int track_leaks) {
+  return hyle_stats_allocator_create(out, backing, hyle_system_allocator(),
                                      track_leaks);
 }
 

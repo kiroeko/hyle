@@ -1314,9 +1314,9 @@ int main() {
       constexpr int kOperations = 8192;
       QuotaAllocator quota(sys, 1024 * 1024);
       Allocator bounded = quota.get();
-      StatsAllocator stats(sys);
+      StatsAllocator stats = StatsAllocator::create(sys).value();
       Allocator measured = stats.get();
-      StatsAllocator composed_stats(sys);
+      StatsAllocator composed_stats = StatsAllocator::create(sys).value();
       QuotaAllocator composed_quota(composed_stats.get(), 1024 * 1024);
       Allocator composed = composed_quota.get();
       nb::Bench b;
@@ -1569,7 +1569,8 @@ int main() {
                             retained_after_clear, reuse_reserved, released,
                             baseline, live, cleared, reuse, released_memory);
       } else if (std::strcmp(variant, "pmr_monotonic") == 0) {
-        StatsAllocator tracked(footprint_backing);
+        StatsAllocator tracked =
+            StatsAllocator::create(footprint_backing).value();
         PmrResource upstream(tracked.get());
         std::pmr::monotonic_buffer_resource region(&upstream);
         mi_collect(true);

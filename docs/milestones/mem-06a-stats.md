@@ -17,7 +17,9 @@ clay `SystemAllocator::realloc` 用无符号 `(new_size - old_size)` 与
 1. **`AllocStats`**：64 位原子计数（`live_count/bytes`、`total_*`、`peak_live_bytes`、`reallocs`）。free / shrink **只做减法**，从不算 `0 - old`。
 2. **`StatsAllocator`**：装饰任意 `Allocator`；`system_allocator` **不**自动挂 stats（热路径零税）。
 3. **`LeakTracker`**（可选）：`ptr→size` 图；`outstanding` / `copy_leaks`。
-4. 生产默认不碰；测试与 debug 工具显式 `StatsAllocator(system_allocator(), track_leaks)`。
+4. 生产默认不碰；测试与 debug 工具显式
+   `StatsAllocator::create(measured, track_leaks, metadata)`。当前收口 API 返回 `Result`；被测
+   allocation 与诊断 metadata 分域，第三参数默认 system allocator，构造 OOM 不抛出。
 
 ## 交付
 

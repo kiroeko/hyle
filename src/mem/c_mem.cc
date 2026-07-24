@@ -19,6 +19,7 @@
 #include <cstddef>
 #include <cstring>
 #include <new>
+#include <optional>
 #include <type_traits>
 #include <utility>
 
@@ -181,10 +182,14 @@ struct hyle_quota_allocator_o {
 };
 
 struct hyle_stats_allocator_o {
+  // `backing` is the control/metadata allocator so generic free_handle returns
+  // this opaque object through the same domain that created it.
   hyle_allocator backing;
-  hyle::mem::StatsAllocator stats;
-  hyle_stats_allocator_o(hyle_allocator b, bool track_leaks)
-      : backing(b), stats(to_cpp(&backing), track_leaks) {}
+  hyle_allocator measured;
+  std::optional<hyle::mem::StatsAllocator> stats;
+  hyle_stats_allocator_o(hyle_allocator metadata,
+                         hyle_allocator measured_backing) noexcept
+      : backing(metadata), measured(measured_backing) {}
 };
 
 struct hyle_region_o {
@@ -321,31 +326,34 @@ size_t hyle_quota_allocator_remaining(const hyle_quota_allocator_o *q) {
 
 hyle_status hyle_stats_allocator_create(hyle_stats_allocator_o **out,
                                         hyle_allocator backing,
+                                        hyle_allocator metadata,
                                         int track_leaks) {
   if (out == nullptr) {
     return steal_status(hyle::Status::InvalidArgument(
         "hyle_stats_allocator_create: out is NULL"));
   }
   *out = nullptr;
-  if (!valid_backing(backing)) {
+  if (!valid_backing(backing) || !valid_backing(metadata)) {
     return steal_status(hyle::Status::InvalidArgument(
-        "hyle_stats_allocator_create: invalid backing"));
+        "hyle_stats_allocator_create: invalid backing or metadata"));
   }
-  void *memory = backing.alloc(backing.state, sizeof(hyle_stats_allocator_o),
-                               alignof(hyle_stats_allocator_o));
-  if (memory == nullptr) {
+  auto *handle =
+      allocate_handle<hyle_stats_allocator_o>(metadata, backing);
+  if (handle == nullptr) {
     return steal_status(hyle::Status::ResourceExhausted(
         "hyle_stats_allocator_create: control allocation failed"));
   }
-  try {
-    *out = ::new (memory) hyle_stats_allocator_o(backing, track_leaks != 0);
-    return steal_status(hyle::Status());
-  } catch (...) {
-    backing.free(backing.state, memory, sizeof(hyle_stats_allocator_o),
-                 alignof(hyle_stats_allocator_o));
-    return steal_status(hyle::Status::ResourceExhausted(
-        "hyle_stats_allocator_create: instrumentation allocation failed"));
+  auto created = hyle::mem::StatsAllocator::create(
+      to_cpp(&handle->measured), track_leaks != 0,
+      to_cpp(&handle->backing));
+  if (!created) {
+    hyle::Status status = std::move(created).error();
+    free_handle(handle);
+    return steal_status(std::move(status));
   }
+  handle->stats.emplace(*std::move(created));
+  *out = handle;
+  return steal_status(hyle::Status());
 }
 
 void hyle_stats_allocator_destroy(hyle_stats_allocator_o *s) {
@@ -353,7 +361,7 @@ void hyle_stats_allocator_destroy(hyle_stats_allocator_o *s) {
 }
 
 hyle_allocator hyle_stats_allocator_as_allocator(hyle_stats_allocator_o *s) {
-  return s ? from_cpp(s->stats.get())
+  return s ? from_cpp(s->stats->get())
            : hyle_allocator{nullptr, nullptr, nullptr, nullptr};
 }
 
@@ -361,7 +369,7 @@ static hyle_alloc_stats stats_snapshot(const hyle_stats_allocator_o *s) {
   hyle_alloc_stats out{};
   if (s == nullptr)
     return out;
-  const hyle::mem::AllocStatsSnapshot in = s->stats.snapshot();
+  const hyle::mem::AllocStatsSnapshot in = s->stats->snapshot();
   out.live_count = in.live_count;
   out.live_bytes = in.live_bytes;
   out.total_allocs = in.total_allocs;
@@ -380,14 +388,14 @@ void hyle_stats_allocator_snapshot(const hyle_stats_allocator_o *s,
 
 void hyle_stats_allocator_reset(hyle_stats_allocator_o *s) {
   if (s != nullptr) {
-    s->stats.stats().reset();
-    if (s->stats.leaks() != nullptr)
-      s->stats.leaks()->clear();
+    s->stats->stats().reset();
+    if (s->stats->leaks() != nullptr)
+      s->stats->leaks()->clear();
   }
 }
 
 int hyle_stats_allocator_balanced(const hyle_stats_allocator_o *s) {
-  return s != nullptr && s->stats.balanced();
+  return s != nullptr && s->stats->balanced();
 }
 
 hyle_status hyle_stats_allocator_copy_leaks(
@@ -404,10 +412,10 @@ hyle_status hyle_stats_allocator_copy_leaks(
         "hyle_stats_allocator_copy_leaks: out_total is NULL"));
   }
   *out_total = 0;
-  if (s == nullptr || s->stats.leaks() == nullptr)
+  if (s == nullptr || s->stats->leaks() == nullptr)
     return steal_status(hyle::Status());
   if (out == nullptr || capacity == 0) {
-    *out_total = s->stats.leaks()->outstanding();
+    *out_total = s->stats->leaks()->outstanding();
     return steal_status(hyle::Status());
   }
   if (capacity > SIZE_MAX / sizeof(hyle::mem::LeakEntry)) {
@@ -422,7 +430,7 @@ hyle_status hyle_stats_allocator_copy_leaks(
         "hyle_stats_allocator_copy_leaks: scratch allocation failed"));
   }
   auto *entries = static_cast<hyle::mem::LeakEntry *>(scratch);
-  const size_t total = s->stats.leaks()->copy_leaks(entries, capacity);
+  const size_t total = s->stats->leaks()->copy_leaks(entries, capacity);
   const size_t copied = total < capacity ? total : capacity;
   std::memcpy(out, entries, copied * sizeof(*entries));
   s->backing.free(s->backing.state, scratch, bytes,

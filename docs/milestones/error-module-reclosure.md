@@ -64,6 +64,11 @@ budget 污染核心证据。
   C ABI 直接转移原始 Status，不再把失败二次猜成笼统 Unavailable。pool/region 的
   `valid()/NULL` 保留为原地不可移动 owning object 与 admission 热路的值合同，不引入
   `Result<unique_ptr>` 控制分配。
+- 回审 instrumentation 后，`StatsAllocator`/`LeakTracker` 冷构造改为 `Result`，C ABI 直接转移
+  同一 Status；被测 backing 与诊断 metadata 显式分域，构造任一点 OOM 都原域回滚。由此
+  Stats 可以包住 fixed-block/strict-quota allocator，而不让 control/hash 偷占或违反其容量。
+- HugeRegion rollback 与 FiberStackPool 析构式归还中的非主错误，用 `IgnoreError()` 明确标注
+  “保留原错误/无可报告调用者”，不再用 C cast 丢弃共享 error。
 - Windows Release 的 mem C++/纯 C 定向测试通过。该工作属于 error adoption，不重开
   已冻结的 mem 能力面或性能设计。
 

@@ -82,8 +82,11 @@ blocking borrow 不进入 `mem/` 基础池。等待策略依赖 fiber/condition/
 
 1. `hyle_allocator` 的 POD vtable 保留；它是 C/FFI 的注入脊，不要求 C++ object layout。
 2. 有独立 runtime state 的能力使用 opaque handle；C 不机械镜像模板对象和 C++ policy 类型。
-3. 构造函数收到 `backing` 时，control handle 与内部 storage 都必须服从该 backing，不能绕到
-   global `new`。FixedRegion 是三字按值 cursor，无 control allocation；FixedPool 的 owning
+3. 构造函数收到单一 `backing` 时，control handle 与内部 storage 都必须服从该 backing，不能
+   绕到 global `new`。明确区分 payload/metadata 的组合产品分别服从两个域：StatsAllocator
+   的 backing 是被测数据域，稳定 state、LeakTracker hash 与 C opaque control 服从 metadata，
+   后者默认 system。这样 fixed-block/strict-quota backing 不会被任意尺寸诊断对象破坏合同。
+   两域的构造 OOM 均经 `Result`/`hyle_status` 返回并原域回滚。FixedRegion 是三字按值 cursor，无 control allocation；FixedPool 的 owning
    factory 显式接收 control allocator，external payload 始终不 fallback。HugeRegion 的 payload
    由 OS VM 管理，小 control 当前使用 HYLE system allocator。
 4. C 传入的 size/layout/alignment 是可校验数据：冷构造/初始化返回 `hyle_status + out`，
@@ -194,7 +197,7 @@ external 能力按 allocation model 分成两个类型：
 | 默认/注入分配 | `SystemAllocator`、`Allocator`、typed helpers | `hyle_system_allocator`、`hyle_allocator`、inline alloc/free/realloc | 默认 direct path；运行时注入保留 backing identity |
 | heap size/pressure | `system_good_size/usable_size/collect` | 同名 `hyle_system_*` | 显式查询与回收，不隐藏周期线程 |
 | byte admission | `QuotaAllocator` | `hyle_quota_allocator_*` | strict live requested-byte budget |
-| 统计/泄漏诊断 | `StatsAllocator`、`LeakTracker` | `hyle_stats_allocator_*` + POD snapshot/bounded copy | opt-in；默认 system 热路零统计税 |
+| 统计/泄漏诊断 | `StatsAllocator::create(backing,track,metadata)`、`LeakTracker::create(metadata)` | `hyle_stats_allocator_*` + POD snapshot/bounded copy | opt-in；被测/诊断域分离；构造 OOM 返回共享 error；默认 system 热路零统计税 |
 | owned request scratch | `Region` | `hyle_region_*` + options | growable、bulk clear、可设 reserved-byte hard limit |
 | caller-buffer scratch | `FixedRegion` | 三字按值 `hyle_fixed_region` | no heap、no fallback、bulk reset |
 | borrowed/LIFO scratch | `PooledRegion`、`StackAllocator` | 对应 opaque handle | 单线程；borrowed block 或 owned slab |

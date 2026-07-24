@@ -51,6 +51,47 @@ typedef struct counting_backing_state {
   size_t live_allocations;
 } counting_backing_state;
 
+typedef struct failing_metadata_state {
+  hyle_allocator upstream;
+  size_t calls;
+  size_t fail_at;
+  size_t live_allocations;
+} failing_metadata_state;
+
+static void *failing_metadata_alloc(void *st, size_t size, size_t alignment) {
+  failing_metadata_state *state = (failing_metadata_state *)st;
+  size_t call = state->calls++;
+  if (call == state->fail_at)
+    return NULL;
+  void *p = state->upstream.alloc(state->upstream.state, size, alignment);
+  if (p != NULL)
+    ++state->live_allocations;
+  return p;
+}
+
+static void failing_metadata_free(void *st, void *p, size_t size,
+                                  size_t alignment) {
+  failing_metadata_state *state = (failing_metadata_state *)st;
+  if (p != NULL)
+    --state->live_allocations;
+  state->upstream.free(state->upstream.state, p, size, alignment);
+}
+
+static void *failing_metadata_realloc(void *st, void *p, size_t old_size,
+                                      size_t new_size, size_t alignment) {
+  failing_metadata_state *state = (failing_metadata_state *)st;
+  size_t call = state->calls++;
+  if (call == state->fail_at)
+    return NULL;
+  void *out = state->upstream.realloc(state->upstream.state, p, old_size,
+                                      new_size, alignment);
+  if (p == NULL && out != NULL)
+    ++state->live_allocations;
+  else if (p != NULL && new_size == 0)
+    --state->live_allocations;
+  return out;
+}
+
 static void *counting_alloc(void *st, size_t size, size_t alignment) {
   counting_backing_state *state = (counting_backing_state *)st;
   void *p = state->upstream.alloc(state->upstream.state, size, alignment);
@@ -190,7 +231,7 @@ int main(void) {
   /* ---- opt-in stats allocator + optional leak inventory ---- */
   {
     hyle_stats_allocator *stats = NULL;
-    CHECK_OK(hyle_stats_allocator_create(&stats, sys, 1));
+    CHECK_OK(hyle_stats_allocator_create(&stats, sys, sys, 1));
     CHECK(stats != NULL);
     hyle_allocator a = hyle_stats_allocator_as_allocator(stats);
     void *p = hyle_alloc(&a, 96, 16);
@@ -216,6 +257,38 @@ int main(void) {
     hyle_stats_allocator_reset(stats);
     hyle_stats_allocator_snapshot(stats, &snapshot);
     CHECK(snapshot.total_allocs == 0u && snapshot.peak_live_bytes == 0u);
+    hyle_stats_allocator_destroy(stats);
+  }
+  {
+    /* Opaque control, LeakTracker state and StatsState are three independent
+     * metadata allocations. Every failure point must preserve Status and
+     * unwind earlier allocations through the same injected domain. */
+    size_t fail_at;
+    for (fail_at = 0; fail_at != 3; ++fail_at) {
+      failing_metadata_state state = {sys, 0, fail_at, 0};
+      hyle_allocator metadata = {failing_metadata_alloc,
+                                 failing_metadata_free,
+                                 failing_metadata_realloc, &state};
+      hyle_stats_allocator *failed = (hyle_stats_allocator *)(size_t)1;
+      hyle_status status =
+          hyle_stats_allocator_create(&failed, sys, metadata, 1);
+      CHECK(hyle_status_is_resource_exhausted(status));
+      CHECK(failed == NULL);
+      CHECK(state.live_allocations == 0u);
+      hyle_status_free(&status);
+    }
+  }
+  {
+    /* Measuring a constrained/failing backing must not force control state
+     * through it. The convenience helper keeps metadata on the system heap. */
+    hyle_allocator oom = {oom_alloc, oom_free, oom_realloc, NULL};
+    hyle_stats_allocator *stats = NULL;
+    CHECK_OK(hyle_stats_allocator_create_with_default_metadata(&stats, oom,
+                                                               0));
+    CHECK(stats != NULL);
+    hyle_allocator measured = hyle_stats_allocator_as_allocator(stats);
+    CHECK(hyle_alloc(&measured, 64, 16) == NULL);
+    CHECK(hyle_stats_allocator_balanced(stats));
     hyle_stats_allocator_destroy(stats);
   }
 
@@ -639,7 +712,7 @@ int main(void) {
     hyle_status_free(&status);
 
     hyle_stats_allocator *failed_stats = NULL;
-    status = hyle_stats_allocator_create(&failed_stats, oom, 0);
+    status = hyle_stats_allocator_create(&failed_stats, oom, oom, 0);
     CHECK(hyle_status_is_resource_exhausted(status));
     CHECK(failed_stats == NULL);
     hyle_status_free(&status);

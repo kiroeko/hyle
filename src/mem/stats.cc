@@ -1,18 +1,24 @@
 #include "hyle/mem/stats.h"
 
-#include <memory>
+#include <memory_resource>
 #include <mutex>
 #include <unordered_map>
 #include <utility>
 
+#include "hyle/mem/pmr.h"
 #include "hyle/util/spin_lock.h"
 
 namespace hyle::mem {
 
 // Nested Impl must be completed in this namespace (not an anon ns) for MSVC.
 struct LeakTracker::Impl {
+  explicit Impl(Allocator allocator)
+      : backing(allocator), resource(allocator), live(&resource) {}
+
+  Allocator backing;
   mutable util::SpinLock lock;
-  std::unordered_map<void*, std::size_t> live;
+  PmrResource resource;
+  std::pmr::unordered_map<void*, std::size_t> live;
 };
 
 namespace {
@@ -20,10 +26,16 @@ namespace {
 // ---- StatsAllocator vtable state (TU-local) ---------------------------------
 
 struct StatsState {
+  StatsState(Allocator b, Allocator m, LeakTracker&& tracker,
+             bool track) noexcept
+      : backing(b), metadata(m), leaks(std::move(tracker)),
+        track_leaks(track) {}
+
   Allocator backing;
+  Allocator metadata;
   AllocStats stats;
-  LeakTracker* leaks = nullptr;
-  bool owns_leaks = false;
+  LeakTracker leaks;
+  bool track_leaks = false;
 };
 
 void* stats_alloc(void* st, std::size_t size, std::size_t alignment) noexcept {
@@ -31,7 +43,7 @@ void* stats_alloc(void* st, std::size_t size, std::size_t alignment) noexcept {
   void* p = s->backing.allocate(size, alignment);
   if (p != nullptr && size > 0) {
     s->stats.record_alloc(size);
-    if (s->leaks) s->leaks->track_alloc(p, size);
+    if (s->track_leaks) s->leaks.track_alloc(p, size);
   }
   return p;
 }
@@ -47,9 +59,9 @@ void stats_free(void* st, void* ptr, std::size_t size,
   // time (robust to a caller passing the wrong size to deallocate). Falls back
   // to the caller's size for untracked ptrs / when tracking is off.
   std::size_t account = size;
-  if (s->leaks) {
+  if (s->track_leaks) {
     std::size_t recorded = 0;
-    if (s->leaks->track_free(ptr, &recorded)) account = recorded;
+    if (s->leaks.track_free(ptr, &recorded)) account = recorded;
   }
   if (account > 0) s->stats.record_free(account);
   s->backing.deallocate(ptr, size, alignment);
@@ -63,14 +75,14 @@ void* stats_realloc(void* st, void* ptr, std::size_t old_size,
   if (new_size > 0 && p == nullptr) return nullptr;
 
   std::size_t accounted_old_size = old_size;
-  if (s->leaks) {
+  if (s->track_leaks) {
     if (ptr != nullptr) {
       std::size_t recorded = 0;
-      if (s->leaks->track_free(ptr, &recorded)) {
+      if (s->leaks.track_free(ptr, &recorded)) {
         accounted_old_size = recorded;
       }
     }
-    if (p != nullptr && new_size > 0) s->leaks->track_alloc(p, new_size);
+    if (p != nullptr && new_size > 0) s->leaks.track_alloc(p, new_size);
   }
   s->stats.record_realloc(accounted_old_size, new_size);
   return p;
@@ -83,19 +95,47 @@ void* stats_realloc(void* st, void* ptr, std::size_t old_size,
 
 // ---- LeakTracker ------------------------------------------------------------
 
-LeakTracker::LeakTracker() : impl_(new Impl) {}
-LeakTracker::~LeakTracker() { delete impl_; }
+Result<LeakTracker> LeakTracker::create(Allocator metadata) noexcept {
+  if (!metadata.valid()) {
+    return std::unexpected(
+        Status::InvalidArgument("LeakTracker create: invalid metadata"));
+  }
+  void* memory = metadata.allocate(sizeof(Impl), alignof(Impl));
+  if (memory == nullptr) {
+    return std::unexpected(Status::ResourceExhausted(
+        "LeakTracker create: metadata allocation failed"));
+  }
+  LeakTracker tracker;
+  try {
+    tracker.impl_ = ::new (memory) Impl(metadata);
+  } catch (...) {
+    metadata.deallocate(memory, sizeof(Impl), alignof(Impl));
+    return std::unexpected(Status::ResourceExhausted(
+        "LeakTracker create: map construction failed"));
+  }
+  return tracker;
+}
+
+LeakTracker::~LeakTracker() { destroy(); }
 
 LeakTracker::LeakTracker(LeakTracker&& o) noexcept : impl_(o.impl_) {
   o.impl_ = nullptr;
 }
 LeakTracker& LeakTracker::operator=(LeakTracker&& o) noexcept {
   if (this != &o) {
-    delete impl_;
+    destroy();
     impl_ = o.impl_;
     o.impl_ = nullptr;
   }
   return *this;
+}
+
+void LeakTracker::destroy() noexcept {
+  if (impl_ == nullptr) return;
+  const Allocator backing = impl_->backing;
+  impl_->~Impl();
+  backing.deallocate(impl_, sizeof(Impl), alignof(Impl));
+  impl_ = nullptr;
 }
 
 void LeakTracker::track_alloc(void* p, std::size_t size) noexcept {
@@ -151,23 +191,42 @@ void LeakTracker::clear() noexcept {
 // ---- StatsAllocator ---------------------------------------------------------
 
 // State_ pointer stores StatsState*.
-StatsAllocator::StatsAllocator(Allocator backing, bool track_leaks) {
-  HYLE_FATAL_ASSERT(backing.valid());
-  auto s = std::make_unique<StatsState>();
-  s->backing = backing;
-  if (track_leaks) {
-    auto leaks = std::make_unique<LeakTracker>();
-    s->leaks = leaks.release();
-    s->owns_leaks = true;
+Result<StatsAllocator> StatsAllocator::create(Allocator backing,
+                                             bool track_leaks,
+                                             Allocator metadata) noexcept {
+  if (!backing.valid() || !metadata.valid()) {
+    return std::unexpected(
+        Status::InvalidArgument(
+            "StatsAllocator create: invalid backing or metadata"));
   }
-  state_ = reinterpret_cast<State*>(s.release());
+
+  LeakTracker tracker;
+  if (track_leaks) {
+    auto result = LeakTracker::create(metadata);
+    if (!result) return std::unexpected(std::move(result).error());
+    tracker = *std::move(result);
+  }
+
+  void* memory = metadata.allocate(sizeof(StatsState), alignof(StatsState));
+  if (memory == nullptr) {
+    return std::unexpected(Status::ResourceExhausted(
+        "StatsAllocator create: state allocation failed"));
+  }
+  StatsAllocator out;
+  out.state_ = reinterpret_cast<State*>(
+      ::new (memory)
+          StatsState(backing, metadata, std::move(tracker), track_leaks));
+  return out;
 }
 
-StatsAllocator::~StatsAllocator() {
+StatsAllocator::~StatsAllocator() { destroy(); }
+
+void StatsAllocator::destroy() noexcept {
   if (state_ == nullptr) return;
   auto* s = reinterpret_cast<StatsState*>(state_);
-  if (s->owns_leaks) delete s->leaks;
-  delete s;
+  const Allocator metadata = s->metadata;
+  s->~StatsState();
+  metadata.deallocate(s, sizeof(StatsState), alignof(StatsState));
   state_ = nullptr;
 }
 
@@ -177,11 +236,7 @@ StatsAllocator::StatsAllocator(StatsAllocator&& o) noexcept : state_(o.state_) {
 
 StatsAllocator& StatsAllocator::operator=(StatsAllocator&& o) noexcept {
   if (this != &o) {
-    if (state_ != nullptr) {
-      auto* s = reinterpret_cast<StatsState*>(state_);
-      if (s->owns_leaks) delete s->leaks;
-      delete s;
-    }
+    destroy();
     state_ = o.state_;
     o.state_ = nullptr;
   }
@@ -205,11 +260,15 @@ const AllocStats& StatsAllocator::stats() const noexcept {
 }
 
 LeakTracker* StatsAllocator::leaks() noexcept {
-  return state_ ? reinterpret_cast<StatsState*>(state_)->leaks : nullptr;
+  if (state_ == nullptr) return nullptr;
+  auto* s = reinterpret_cast<StatsState*>(state_);
+  return s->track_leaks ? &s->leaks : nullptr;
 }
 
 const LeakTracker* StatsAllocator::leaks() const noexcept {
-  return state_ ? reinterpret_cast<const StatsState*>(state_)->leaks : nullptr;
+  if (state_ == nullptr) return nullptr;
+  const auto* s = reinterpret_cast<const StatsState*>(state_);
+  return s->track_leaks ? &s->leaks : nullptr;
 }
 
 }  // namespace hyle::mem

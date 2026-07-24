@@ -115,7 +115,7 @@ public:
     }
     Status status = r.region_.commit(0, r.region_.size());
     if (!status.ok()) {
-      (void)r.region_.release();
+      r.region_.release().IgnoreError();
       return std::unexpected(
           std::move(status).WithContext("HugeRegion allocate commit"));
     }
@@ -127,7 +127,7 @@ public:
                                                        r.region_.size());
       if (!placed) {
         Status error = std::move(placed).error();
-        (void)r.region_.release();
+        r.region_.release().IgnoreError();
         return std::unexpected(
             std::move(error).WithContext("HugeRegion allocate interleave"));
       }
@@ -145,7 +145,7 @@ public:
             r.region_.data(), r.region_.size(), numa_node, pol);
         if (!placed) {
           Status error = std::move(placed).error();
-          (void)r.region_.release();
+          r.region_.release().IgnoreError();
           return std::unexpected(
               std::move(error).WithContext("HugeRegion allocate hard bind"));
         }

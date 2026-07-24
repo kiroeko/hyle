@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "hyle/error/result.h"
 #include "hyle/macros.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/visibility.h"
@@ -145,11 +146,16 @@ struct LeakEntry {
 // Optional ptr→size map. Debug/tooling only (lock + hash). Not for prod hot path.
 class HYLE_MEM_API LeakTracker {
  public:
-  LeakTracker();
+  // Metadata and every hash-table node use `metadata`. Construction failure is
+  // an operational resource error, not an exception from the mem API.
+  static Result<LeakTracker> create(
+      Allocator metadata = system_allocator()) noexcept;
   ~LeakTracker();
   HYLE_DISABLE_COPY(LeakTracker);
   LeakTracker(LeakTracker&& o) noexcept;
   LeakTracker& operator=(LeakTracker&& o) noexcept;
+
+  bool valid() const noexcept { return impl_ != nullptr; }
 
   void track_alloc(void* p, std::size_t size) noexcept;
   // Erase a tracked allocation. Returns false if ptr was not tracked
@@ -164,6 +170,10 @@ class HYLE_MEM_API LeakTracker {
   void clear() noexcept;
 
  private:
+  friend class StatsAllocator;
+  LeakTracker() noexcept = default;
+  void destroy() noexcept;
+
   struct Impl;
   Impl* impl_ = nullptr;
 };
@@ -172,13 +182,22 @@ class HYLE_MEM_API LeakTracker {
 // Owns the vtable state; Allocator from get() is valid only while *this lives.
 class HYLE_MEM_API StatsAllocator {
  public:
-  // track_leaks=true enables LeakTracker (slower; for leak tests).
-  explicit StatsAllocator(Allocator backing, bool track_leaks = false);
+  // track_leaks=true enables LeakTracker (slower; for leak tests). `backing`
+  // remains the allocator being measured; stable wrapper state and optional
+  // tracker nodes use the separate `metadata` allocator. This separation lets
+  // StatsAllocator wrap a fixed-block/strict-quota allocator whose contract
+  // cannot satisfy arbitrary control allocations. No global-new or exception
+  // side channel is used for construction.
+  static Result<StatsAllocator> create(Allocator backing,
+                                       bool track_leaks = false,
+                                       Allocator metadata =
+                                           system_allocator()) noexcept;
   ~StatsAllocator();
   HYLE_DISABLE_COPY(StatsAllocator);
   StatsAllocator(StatsAllocator&& o) noexcept;
   StatsAllocator& operator=(StatsAllocator&& o) noexcept;
 
+  bool valid() const noexcept { return state_ != nullptr; }
   Allocator get() const noexcept;
   AllocStats& stats() noexcept;
   const AllocStats& stats() const noexcept;
@@ -189,6 +208,9 @@ class HYLE_MEM_API StatsAllocator {
   const LeakTracker* leaks() const noexcept;
 
  private:
+  StatsAllocator() noexcept = default;
+  void destroy() noexcept;
+
   struct State;
   State* state_ = nullptr;
 };
