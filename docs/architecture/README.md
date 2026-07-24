@@ -21,13 +21,21 @@
 
 ```
 HYLE infra（通用、不特化、贴硬件）
-├─ mem/       极致内存管理     ← 继承 clay 分配器+arena，修 5 bug，加 NUMA/大页/cache-line
-├─ container/ 超越 std 容器    ← 继承 hashmap/carray/cstring，加 SwissTable SIMD/SmallVector/intrusive/lock-free
-├─ simd/      SIMD 抽象        ← 推倒重写：可移植 vector + 运行时 dispatch + AVX512 + bf16
-├─ sched/     统一调度【核心】   ← 线程/进程/纤程/协程一张表：fiber 上下文 + per-core 无锁 run-queue + work-stealing
-├─ io/        网络 IO          ← proactor（io_uring/IOCP/kqueue/epoll），与 sched 一体（fiber 遇 IO 让出）
-├─ compute/   异构计算          ← device/stream/buffer/kernel 抽象，借上游 ggml 作算子供应商
-└─ graph/     并行任务编排       ← 北极星② 编排：继承 clay taskgraph ~1k 骨架(剥离特化)+ 从零造增量重算引擎(脏标记/缓存,clay 零资产)+ 数据并行层;跑在 sched+compute 之上
+├─ 基础基质
+│  ├─ core/      宏、基础类型和零依赖 intrusive/atomic 原语
+│  ├─ error/     统一失败值与跨 ABI 诊断
+│  ├─ platform/  CPU/thread/wait/VM/fs/dynlib 跨 OS 机制
+│  ├─ time/      单调时间、deadline 与 timer source
+│  ├─ util/      无更合适 owner 的窄通用工具
+│  └─ obs/       日志、trace 与 instrumentation hook
+├─ mem/          极致 host 内存管理：allocator/region/pool/NUMA/大页/fiber stack
+├─ container/    超越 std 容器：SwissTable/SmallVector/intrusive/lock-free
+├─ simd/         SIMD 抽象：可移植 vector + 运行时 dispatch + dtype/math/算法核
+├─ math/         标量数值类型、常量与基础数学能力
+├─ sched/        统一调度【核心】：fiber + per-core run-queue + work-stealing + coroutine
+├─ io/           proactor IO：io_uring/IOCP/kqueue/epoll，与 sched completion 一体
+├─ compute/      异构计算：device/stream/buffer/kernel，隔离 ggml 与原生 backend
+└─ graph/        并行任务编排：增量重算 + 数据并行，运行在 sched/compute 之上
 ```
 
 ## 贯穿性设计原则
@@ -55,6 +63,7 @@ HYLE infra（通用、不特化、贴硬件）
 | [`sched-design.md`](./sched-design.md) | 统一调度器（4 节完整）：fcontext 上下文切换 + per-core 无锁 run-queue/work-stealing + Waker completion 脊 + 协程/fiber 统一 |
 | [`lifecycle-design.md`](./lifecycle-design.md) | **失败边界**：fail-fast 绝不 try-catch + 四类失败分类 + 取消(结构化并发/await点) + 背压 + 优雅关闭 + 故障隔离=进程边界 + 跨 C-ABI 错误约定 |
 | [`error-design.md`](./error-design.md) | **error 产品形状**：8 字节 Status、`std::expected` Result、分层上下文、首错聚合/格式化工具、C/FFI 所有权，以及 error/obs/fatal 的唯一职责边界 |
+| [`platform-design.md`](./platform-design.md) | **platform 跨 OS 机制层**：CPU 系统/进程视图区分、Thread/Parker、VM/NUMA、fs/mmap/dynlib，及与 mem/sched/io/compute 的所有权边界 |
 | [`compute-design.md`](./compute-design.md) | 异构计算选型：device/stream/kernel 两层抽象 + 借上游 ggml（adapter 隔离）+ shader 一等公民 + GPU completion 接 sched |
 | [`borrowing-ggml-memory-model.md`](./borrowing-ggml-memory-model.md) | **借 ggml 的显存归属边界**：host 归 HYLE（mem 喂入/取出）、device 归 ggml（gallocr 自管），就像 llama.cpp——CUDA 结构性否决外部显存注入（gdb 坐实），HYLE 显存自管是 compute-04/06 自造 kernel 的领域 |
 | [`simd-design.md`](./simd-design.md) | SIMD 总设计：D-tag/七后端、自有 math/dtype/算法核、Runtime/native/exact 双轨及历史决策 |
