@@ -72,6 +72,12 @@ enum class Protect : std::uint8_t {
 // until vm_commit. Returns the base or a structured failure.
 HYLE_PLATFORM_API Result<void*> vm_reserve(std::size_t size) noexcept;
 
+// Allocate one committed read-write mapping in a single OS operation
+// (VirtualAlloc RESERVE|COMMIT / mmap PROT_READ|WRITE). Pair with vm_release,
+// passing the same request size; use vm_reserve+vm_commit when staged commit is
+// the desired contract.
+HYLE_PLATFORM_API Result<void*> vm_allocate_rw(std::size_t size) noexcept;
+
 // Make [ptr, ptr+size) resident and Protect::kReadWrite.
 HYLE_PLATFORM_API Status vm_commit(void* ptr, std::size_t size) noexcept;
 
@@ -107,6 +113,10 @@ class VmRegion {
  public:
   // Reserve `size` bytes (rounded up).
   HYLE_PLATFORM_API static Result<VmRegion> reserve(std::size_t size) noexcept;
+
+  // Allocate an immediately usable RW region with one OS mapping operation.
+  HYLE_PLATFORM_API static Result<VmRegion> allocate_rw(
+      std::size_t size) noexcept;
 
   // Like reserve(), but soft-prefer NUMA `node` (see numa.h; kNumaAny = plain).
   HYLE_PLATFORM_API static Result<VmRegion> reserve_numa(

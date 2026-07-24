@@ -35,10 +35,10 @@ extern "C" {
 #  define HYLE_PLATFORM_C_API
 #endif
 
-/* Last recoverable error from C-shim facilities that do not return hyle_status
- * and do not have a more specific channel (currently Parker wrapper creation
- * and filesystem/fd operations). Thread-local; "" means none. Thread, DynLib,
- * MappedFile and VM/NUMA return hyle_status directly. */
+/* Transitional last error for path/env functions that still return scalar
+ * sentinels. Resource-owning file/Parker APIs already return hyle_status.
+ * Thread-local; "" means none. This symbol is removed when the remaining path
+ * surface moves to Status in the next platform reclosure increment. */
 HYLE_PLATFORM_C_API const char* hyle_platform_last_error(void);
 
 /* ========================================================================== */
@@ -60,7 +60,8 @@ HYLE_PLATFORM_C_API void hyle_wake_all(volatile uint32_t* addr);
 
 /* Token-safe parker (Rust std model). Opaque; create/destroy pair. */
 typedef struct hyle_parker_o hyle_parker_o;
-HYLE_PLATFORM_C_API hyle_parker_o* hyle_parker_create(void);
+/* Clears *out first; success transfers an opaque Parker to the caller. */
+HYLE_PLATFORM_C_API hyle_status hyle_parker_create(hyle_parker_o** out);
 HYLE_PLATFORM_C_API void hyle_parker_destroy(hyle_parker_o* p);
 HYLE_PLATFORM_C_API void hyle_parker_park(hyle_parker_o* p);
 HYLE_PLATFORM_C_API void hyle_parker_unpark(hyle_parker_o* p);
@@ -382,14 +383,19 @@ HYLE_PLATFORM_C_API int hyle_fs_create_hard_link(const char* target, const char*
 HYLE_PLATFORM_C_API int hyle_fs_is_symlink(const char* path);
 HYLE_PLATFORM_C_API size_t hyle_fs_read_symlink(const char* path, char* dst,
                                                 size_t cap);
-/* Atomically create a temp file; returns an OPEN read-write handle as intptr_t
- * (-1 on failure, TOCTOU-safe idiom), path written to dst[cap]. Close it with
- * hyle_fs_close_fd. dir==NULL => system temp dir. */
-HYLE_PLATFORM_C_API intptr_t hyle_fs_create_temp_file(const char* dir,
-                                                      const char* prefix,
-                                                      char* dst, size_t cap);
-/* Close a raw fd/HANDLE (from create_temp_file or open_file). Safe on -1. */
-HYLE_PLATFORM_C_API void hyle_fs_close_fd(intptr_t fd);
+/* A native file resource stored losslessly as one integer word: POSIX fd or
+ * Windows HANDLE. The type name prevents cross-platform callers from assuming
+ * POSIX fd semantics. */
+typedef intptr_t hyle_file_handle;
+#define HYLE_FILE_HANDLE_INVALID ((hyle_file_handle)-1)
+/* Atomically create a temp file; writes an OPEN read-write handle to *out and
+ * the path to dst[cap]. Close it with hyle_fs_close. dir==NULL => system temp
+ * dir. *out is HYLE_FILE_HANDLE_INVALID on entry/failure. */
+HYLE_PLATFORM_C_API hyle_status hyle_fs_create_temp_file(
+    hyle_file_handle* out, const char* dir, const char* prefix, char* dst,
+    size_t cap);
+/* Close a handle from create_temp_file/open. Safe on INVALID. */
+HYLE_PLATFORM_C_API hyle_status hyle_fs_close(hyle_file_handle file);
 /* open_file flags (OR them): READ/WRITE pick access; CREATE makes a missing file;
  * TRUNCATE empties it; APPEND puts writes at EOF. */
 typedef enum hyle_file_open_flags {
@@ -399,13 +405,18 @@ typedef enum hyle_file_open_flags {
   HYLE_OPEN_TRUNCATE = 1u << 3,
   HYLE_OPEN_APPEND = 1u << 4
 } hyle_file_open_flags;
-/* Open `path` with `flags` (HYLE_OPEN_* OR'd); returns an OS fd/HANDLE as intptr_t,
- * or -1 on failure. Close via hyle_fs_close_fd. UTF-8 path (wide APIs on Windows). */
-HYLE_PLATFORM_C_API intptr_t hyle_fs_open(const char* path, unsigned flags);
-/* Read/write on an fd from hyle_fs_open or hyle_fs_create_temp_file. Returns bytes
- * moved (0 == EOF on read; a short count is normal), or -1 on error. */
-HYLE_PLATFORM_C_API int64_t hyle_fs_read(intptr_t fd, void* buf, size_t n);
-HYLE_PLATFORM_C_API int64_t hyle_fs_write(intptr_t fd, const void* buf, size_t n);
+/* Open `path` with `flags` (HYLE_OPEN_* OR'd); READ and/or WRITE is required.
+ * Writes a native resource to *out, INVALID on entry/failure. */
+HYLE_PLATFORM_C_API hyle_status hyle_fs_open(hyle_file_handle* out,
+                                             const char* path, unsigned flags);
+/* Read/write on a handle from hyle_fs_open/create_temp_file. On success
+ * *out_moved is the byte count (read 0 == EOF; a short count is normal). */
+HYLE_PLATFORM_C_API hyle_status hyle_fs_read(size_t* out_moved,
+                                             hyle_file_handle file, void* buf,
+                                             size_t n);
+HYLE_PLATFORM_C_API hyle_status hyle_fs_write(size_t* out_moved,
+                                              hyle_file_handle file,
+                                              const void* buf, size_t n);
 /* Environment write / unset (process-wide; not thread-safe vs concurrent reads). */
 HYLE_PLATFORM_C_API int hyle_fs_set_env_var(const char* name, const char* value);
 HYLE_PLATFORM_C_API int hyle_fs_unset_env_var(const char* name);

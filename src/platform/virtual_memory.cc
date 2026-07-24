@@ -247,6 +247,29 @@ Result<void*> vm_reserve(std::size_t size) noexcept {
 #endif
 }
 
+Result<void*> vm_allocate_rw(std::size_t size) noexcept {
+  const std::size_t aligned = page_align_up(size);
+  if (aligned == 0) {
+    return std::unexpected(Status::InvalidArgument(
+        "vm allocate RW: size is zero or overflows page alignment"));
+  }
+#if defined(HYLE_OS_WINDOWS)
+  void* base = ::VirtualAlloc(nullptr, aligned, MEM_RESERVE | MEM_COMMIT,
+                              PAGE_READWRITE);
+  if (base == nullptr) {
+    return std::unexpected(native_status("VirtualAlloc(MEM_RESERVE|MEM_COMMIT)",
+                                         ::GetLastError()));
+  }
+#else
+  void* base = ::mmap(nullptr, aligned, PROT_READ | PROT_WRITE,
+                      MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+  if (base == MAP_FAILED) {
+    return std::unexpected(native_status("mmap(PROT_READ|PROT_WRITE)", errno));
+  }
+#endif
+  return base;
+}
+
 Status vm_commit(void* ptr, std::size_t size) noexcept {
   if (size == 0) return Status::Ok();
   if (ptr == nullptr || !page_aligned(ptr)) {
@@ -377,6 +400,14 @@ Result<VmRegion> VmRegion::reserve(std::size_t size) noexcept {
   r.size_ = page_align_up(size);
   r.guarded_ = false;
   return r;
+}
+
+Result<VmRegion> VmRegion::allocate_rw(std::size_t size) noexcept {
+  HYLE_ASSIGN_OR_RETURN(void* base, vm_allocate_rw(size));
+  VmRegion region;
+  region.base_ = base;
+  region.size_ = page_align_up(size);
+  return region;
 }
 
 Result<VmRegion> VmRegion::reserve_numa(std::size_t size, int node) noexcept {

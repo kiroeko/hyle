@@ -57,6 +57,24 @@ last-error 分类和“失败指针 + 另查 TLS”的组合；未发布，不�
 **B 阶段完成。**后续只有新的消费者需求、跨平台回归或正式性能证书失效才重开，
 不再因 benchmark 形状自行扩张 VM/mem API。
 
+## C 阶段：Parker + 打开文件资源（2026-07-24，Windows 完成）
+
+- C++ 文件资源从 `OwnedFd` 收束为跨平台名 `FileHandle`；`open_file` /
+  `create_temp_file` 返回 `Result<FileHandle>`，read/write 返回 `Result<size_t>`，显式
+  `close()` 返回 `Status`。析构仍兜底关闭，但需要观察延迟写回错误的用户应显式 close。
+- POSIX read/write 处理 EINTR 和单次 I/O 上限；Windows/POSIX 失败保留 operation、原生
+  code/name/message，并映射到共享 Status code。
+- C ABI 的 Parker create 与打开文件 create/open/read/write/close 全部改为
+  `hyle_status + out`；native file 值收束为 `hyle_file_handle`，不再把 Windows HANDLE
+  命名为 fd；TLS last-error 只暂留给下一阶段迁移的 path/env 标量面。
+- 增加 C++ `vm_allocate_rw` / `VmRegion::allocate_rw`，C `hyle_vm_alloc_rw` 也改走一次
+  OS mapping，而非为了复用 staged API 付 reserve+commit 两次系统调用。
+- Windows MSVC Release：platform C/C++ 与下游 mem C/C++、C surface/header 检查通过；
+  MSVC ASan 下 platform/mem C/C++ 四项通过。VM 5 进程配对中位数：raw OS
+  879.8 ns，HYLE 单步 885.2 ns（0.987x，统计平）；旧 staged 形状 1130.7 ns。
+
+下一增量迁移 path/env 标量失败面，并在 Linux/macOS 镜像回归后关闭 C 阶段。
+
 ## 完成条件
 
 - Windows/Linux/macOS 当前接口的 C/C++ tests 通过，ASan/TSan 按涉及路径复证。

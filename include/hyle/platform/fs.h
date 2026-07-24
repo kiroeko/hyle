@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "hyle/error/result.h"
 #include "hyle/macros.h"
 #include "hyle/visibility.h"
 
@@ -30,23 +31,23 @@
 
 namespace hyle::platform {
 
-// ---- OwnedFd ----------------------------------------------------------------
-// Zero-cost owning wrapper over a raw OS file descriptor / HANDLE (Rust OwnedFd /
-// seastar file_desc / folly File lineage). Move-only, closes on destruction. No
+// ---- FileHandle --------------------------------------------------------------
+// Zero-cost owning wrapper over a raw OS file descriptor / HANDLE (folly::File /
+// seastar file_desc lineage). Move-only, closes on destruction. No
 // vtable, no heap, no refcount -- one word; the compiler lowers it to a bare fd.
 // The raw value is stored as intptr_t: a POSIX int fd or a Windows HANDLE both
 // fit. kInvalid (-1) is the empty state (matches POSIX -1 and is never a valid
 // Windows HANDLE returned by CreateFile, which yields INVALID_HANDLE_VALUE == -1).
-class OwnedFd {
+class FileHandle {
  public:
   static constexpr std::intptr_t kInvalid = -1;
 
-  OwnedFd() noexcept = default;
-  explicit OwnedFd(std::intptr_t raw) noexcept : raw_(raw) {}
-  HYLE_PLATFORM_API ~OwnedFd();
-  OwnedFd(OwnedFd&& o) noexcept : raw_(o.raw_) { o.raw_ = kInvalid; }
-  HYLE_PLATFORM_API OwnedFd& operator=(OwnedFd&& o) noexcept;
-  HYLE_DISABLE_COPY(OwnedFd);
+  FileHandle() noexcept = default;
+  explicit FileHandle(std::intptr_t raw) noexcept : raw_(raw) {}
+  HYLE_PLATFORM_API ~FileHandle();
+  FileHandle(FileHandle&& o) noexcept : raw_(o.raw_) { o.raw_ = kInvalid; }
+  HYLE_PLATFORM_API FileHandle& operator=(FileHandle&& o) noexcept;
+  HYLE_DISABLE_COPY(FileHandle);
 
   bool valid() const noexcept { return raw_ != kInvalid; }
   explicit operator bool() const noexcept { return valid(); }
@@ -60,15 +61,18 @@ class OwnedFd {
     raw_ = kInvalid;
     return r;
   }
-  // Close early (also done by the destructor). Safe on an empty OwnedFd.
-  HYLE_PLATFORM_API void reset() noexcept;
+  // Close early (also done by the destructor). Safe on an empty handle. Unlike
+  // the destructor, this reports close/flush failures that may matter after a
+  // write. The handle is empty after the call even when close reports failure.
+  HYLE_PLATFORM_API Status close() noexcept;
 
-  // Read up to `n` bytes into `buf`; returns bytes read (0 == EOF), or -1 on
-  // error. A short read is normal, not an error. Invalid fd -> -1.
-  HYLE_PLATFORM_API std::int64_t read(void* buf, std::size_t n) noexcept;
-  // Write `n` bytes from `buf`; returns bytes written (may be short on a full
-  // disk / pipe), or -1 on error. Invalid fd -> -1.
-  HYLE_PLATFORM_API std::int64_t write(const void* buf, std::size_t n) noexcept;
+  // Read up to `n` bytes; 0 is EOF and a short read is normal. EINTR is retried.
+  HYLE_PLATFORM_API Result<std::size_t> read(void* buf,
+                                             std::size_t n) noexcept;
+  // Write up to `n` bytes; a short write is a successful result the caller may
+  // continue. EINTR is retried. Neither operation uses a TLS error side channel.
+  HYLE_PLATFORM_API Result<std::size_t> write(const void* buf,
+                                              std::size_t n) noexcept;
 
  private:
   std::intptr_t raw_ = kInvalid;
@@ -173,10 +177,12 @@ enum OpenFlags {
   kOpenAppend = 1u << 4,    // writes go to end-of-file
 };
 
-// Open `path` with `flags` (OpenFlags OR'd). Returns an OwnedFd; !valid() on
-// failure. Wide APIs on Windows (UTF-8 path, no ANSI mis-decode). The general
-// file-I/O primitive the module was missing (read a config without mmap, etc).
-HYLE_PLATFORM_API OwnedFd open_file(const char* path, unsigned flags) noexcept;
+// Open `path` with `flags` (OpenFlags OR'd). Wide APIs on Windows (UTF-8 path,
+// no ANSI mis-decode). Exactly one or both of kOpenRead/kOpenWrite must be set.
+// Failures preserve native operation/code/message. The general file-I/O
+// primitive the module was missing (read a config without mmap, etc).
+HYLE_PLATFORM_API Result<FileHandle> open_file(const char* path,
+                                               unsigned flags) noexcept;
 
 // ---- temporary files --------------------------------------------------------
 // Atomically create a uniquely-named file under `dir` (NULL => temp_directory())
@@ -184,10 +190,10 @@ HYLE_PLATFORM_API OwnedFd open_file(const char* path, unsigned flags) noexcept;
 // mkstemp / Windows GetTempFileName+CreateFile). Returning the open handle -- not
 // just a path -- is the TOCTOU-safe idiom (SEI CERT FIO21-C, Rust NamedTempFile):
 // nobody can swap the file between creation and use. The actual path is written
-// to dst[cap] (buffer-fill). On failure the returned OwnedFd is !valid().
+// to dst[cap] (buffer-fill). A returned handle always owns the created file.
 // The file is NOT auto-deleted: the caller unlinks it (or keeps it) via the path.
-HYLE_PLATFORM_API OwnedFd create_temp_file(const char* dir, const char* prefix,
-                                           char* dst, std::size_t cap) noexcept;
+HYLE_PLATFORM_API Result<FileHandle> create_temp_file(
+    const char* dir, const char* prefix, char* dst, std::size_t cap) noexcept;
 
 // ---- working / special directories (buffer-fill) ----------------------------
 // Current working directory into dst[cap]. Returns the full length (>= cap =>

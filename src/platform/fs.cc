@@ -19,6 +19,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <limits>
 
 #include "hyle/platform.h"  // HYLE_OS_* for the branches below (the _GNU_SOURCE/_CRT
                             // feature macros above MUST stay raw -- they precede ALL
@@ -67,13 +68,14 @@ bool join_path(char* dst, std::size_t cap, const char* a,
   return true;
 }
 
-// Close a raw fd/HANDLE. DEFINED in each platform section below (close() vs
-// CloseHandle); DECLARED here so the platform-agnostic OwnedFd tail can call it.
-void close_raw(std::intptr_t raw) noexcept;
+// Raw file-handle operations. Defined once per OS and shared by FileHandle.
+Status close_raw(std::intptr_t raw) noexcept;
 // Raw read/write on an fd/HANDLE (per-OS defs below), declared for the
-// platform-agnostic OwnedFd::read/write tail. Bytes moved, or -1 on error.
-std::int64_t read_raw(std::intptr_t raw, void* buf, std::size_t n) noexcept;
-std::int64_t write_raw(std::intptr_t raw, const void* buf, std::size_t n) noexcept;
+// platform-agnostic FileHandle::read/write tail.
+Result<std::size_t> read_raw(std::intptr_t raw, void* buf,
+                             std::size_t n) noexcept;
+Result<std::size_t> write_raw(std::intptr_t raw, const void* buf,
+                              std::size_t n) noexcept;
 
 }  // namespace
 
@@ -87,6 +89,63 @@ std::int64_t write_raw(std::intptr_t raw, const void* buf, std::size_t n) noexce
 // pass UTF-8 everywhere (matching POSIX, which is byte-transparent).
 
 namespace {
+
+const char* win32_fs_error_name(DWORD code) noexcept {
+  switch (code) {
+    case ERROR_FILE_NOT_FOUND: return "ERROR_FILE_NOT_FOUND";
+    case ERROR_PATH_NOT_FOUND: return "ERROR_PATH_NOT_FOUND";
+    case ERROR_ACCESS_DENIED: return "ERROR_ACCESS_DENIED";
+    case ERROR_PRIVILEGE_NOT_HELD: return "ERROR_PRIVILEGE_NOT_HELD";
+    case ERROR_ALREADY_EXISTS: return "ERROR_ALREADY_EXISTS";
+    case ERROR_FILE_EXISTS: return "ERROR_FILE_EXISTS";
+    case ERROR_DISK_FULL: return "ERROR_DISK_FULL";
+    case ERROR_NOT_ENOUGH_MEMORY: return "ERROR_NOT_ENOUGH_MEMORY";
+    case ERROR_INVALID_HANDLE: return "ERROR_INVALID_HANDLE";
+    case ERROR_INVALID_PARAMETER: return "ERROR_INVALID_PARAMETER";
+    case ERROR_FILENAME_EXCED_RANGE: return "ERROR_FILENAME_EXCED_RANGE";
+    default: return "WIN32_ERROR";
+  }
+}
+
+Status win32_fs_status(const char* operation, DWORD code) noexcept {
+  char description[192]{};
+  DWORD length = ::FormatMessageA(
+      FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, code,
+      0, description, static_cast<DWORD>(sizeof(description)), nullptr);
+  while (length != 0 &&
+         (description[length - 1] == '\r' || description[length - 1] == '\n')) {
+    description[--length] = '\0';
+  }
+  char message[320];
+  std::snprintf(message, sizeof(message), "windows %s failed: %s (%lu)%s%s",
+                operation, win32_fs_error_name(code),
+                static_cast<unsigned long>(code), length == 0 ? "" : ": ",
+                length == 0 ? "" : description);
+  if (code == ERROR_FILE_NOT_FOUND || code == ERROR_PATH_NOT_FOUND) {
+    return Status::NotFound(message);
+  }
+  if (code == ERROR_ACCESS_DENIED || code == ERROR_PRIVILEGE_NOT_HELD ||
+      code == ERROR_SHARING_VIOLATION || code == ERROR_WRITE_PROTECT) {
+    return Status::PermissionDenied(message);
+  }
+  if (code == ERROR_ALREADY_EXISTS || code == ERROR_FILE_EXISTS) {
+    return Status::AlreadyExists(message);
+  }
+  if (code == ERROR_DISK_FULL || code == ERROR_HANDLE_DISK_FULL ||
+      code == ERROR_NOT_ENOUGH_MEMORY || code == ERROR_OUTOFMEMORY ||
+      code == ERROR_TOO_MANY_OPEN_FILES) {
+    return Status::ResourceExhausted(message);
+  }
+  if (code == ERROR_INVALID_HANDLE) return Status::FailedPrecondition(message);
+  if (code == ERROR_INVALID_PARAMETER || code == ERROR_INVALID_NAME) {
+    return Status::InvalidArgument(message);
+  }
+  if (code == ERROR_FILENAME_EXCED_RANGE) return Status::OutOfRange(message);
+  if (code == ERROR_NOT_SUPPORTED || code == ERROR_CALL_NOT_IMPLEMENTED) {
+    return Status::Unimplemented(message);
+  }
+  return Status::Unavailable(message);
+}
 
 // UTF-8 const char* -> UTF-16, with a stack buffer and heap fallback for long
 // paths (RAII frees the heap copy). Self-contained in platform: no mem/container
@@ -453,35 +512,54 @@ bool directory_iterate(const char* path,
 }
 
 namespace {
-void close_raw(std::intptr_t raw) noexcept {
-  if (raw != OwnedFd::kInvalid) CloseHandle(reinterpret_cast<HANDLE>(raw));
+Status close_raw(std::intptr_t raw) noexcept {
+  if (raw == FileHandle::kInvalid) return Status::Ok();
+  if (::CloseHandle(reinterpret_cast<HANDLE>(raw))) return Status::Ok();
+  return win32_fs_status("CloseHandle", ::GetLastError());
 }
-std::int64_t read_raw(std::intptr_t raw, void* buf, std::size_t n) noexcept {
-  if (raw == OwnedFd::kInvalid) return -1;
+Result<std::size_t> read_raw(std::intptr_t raw, void* buf,
+                             std::size_t n) noexcept {
+  if (raw == FileHandle::kInvalid) {
+    return std::unexpected(
+        Status::FailedPrecondition("file read: handle is closed"));
+  }
   DWORD want = n > 0xFFFFFFFFull ? 0xFFFFFFFFu : static_cast<DWORD>(n);
   DWORD got = 0;
-  if (!ReadFile(reinterpret_cast<HANDLE>(raw), buf, want, &got, nullptr)) return -1;
-  return static_cast<std::int64_t>(got);
+  if (!ReadFile(reinterpret_cast<HANDLE>(raw), buf, want, &got, nullptr)) {
+    return std::unexpected(win32_fs_status("ReadFile", ::GetLastError()));
+  }
+  return static_cast<std::size_t>(got);
 }
-std::int64_t write_raw(std::intptr_t raw, const void* buf, std::size_t n) noexcept {
-  if (raw == OwnedFd::kInvalid) return -1;
+Result<std::size_t> write_raw(std::intptr_t raw, const void* buf,
+                              std::size_t n) noexcept {
+  if (raw == FileHandle::kInvalid) {
+    return std::unexpected(
+        Status::FailedPrecondition("file write: handle is closed"));
+  }
   DWORD want = n > 0xFFFFFFFFull ? 0xFFFFFFFFu : static_cast<DWORD>(n);
   DWORD put = 0;
-  if (!WriteFile(reinterpret_cast<HANDLE>(raw), buf, want, &put, nullptr)) return -1;
-  return static_cast<std::int64_t>(put);
+  if (!WriteFile(reinterpret_cast<HANDLE>(raw), buf, want, &put, nullptr)) {
+    return std::unexpected(win32_fs_status("WriteFile", ::GetLastError()));
+  }
+  return static_cast<std::size_t>(put);
 }
 }  // namespace
 
-OwnedFd open_file(const char* path, unsigned flags) noexcept {
+Result<FileHandle> open_file(const char* path, unsigned flags) noexcept {
   constexpr unsigned kKnown = kOpenRead | kOpenWrite | kOpenCreate |
                               kOpenTruncate | kOpenAppend;
   if (path == nullptr || (flags & ~kKnown) != 0 ||
+      (flags & (kOpenRead | kOpenWrite)) == 0 ||
       ((flags & (kOpenCreate | kOpenTruncate | kOpenAppend)) != 0 &&
        (flags & kOpenWrite) == 0)) {
-    return OwnedFd{};
+    return std::unexpected(
+        Status::InvalidArgument("open file: invalid path or flag combination"));
   }
   WidePath wp(path);
-  if (wp.w() == nullptr) return OwnedFd{};
+  if (wp.w() == nullptr) {
+    return std::unexpected(
+        Status::InvalidArgument("open file: path is not valid UTF-8"));
+  }
   DWORD access = 0;
   if (flags & kOpenRead) access |= GENERIC_READ;
   if (flags & kOpenWrite) {
@@ -494,8 +572,10 @@ OwnedFd open_file(const char* path, unsigned flags) noexcept {
     creation = (flags & kOpenCreate) ? OPEN_ALWAYS : OPEN_EXISTING;
   HANDLE h = CreateFileW(wp.w(), access, FILE_SHARE_READ | FILE_SHARE_WRITE,
                          nullptr, creation, FILE_ATTRIBUTE_NORMAL, nullptr);
-  if (h == INVALID_HANDLE_VALUE) return OwnedFd{};
-  return OwnedFd{reinterpret_cast<std::intptr_t>(h)};
+  if (h == INVALID_HANDLE_VALUE) {
+    return std::unexpected(win32_fs_status("CreateFileW", ::GetLastError()));
+  }
+  return FileHandle{reinterpret_cast<std::intptr_t>(h)};
 }
 
 std::uint32_t get_permissions(const char* path) noexcept {
@@ -601,16 +681,22 @@ std::size_t read_symlink(const char* path, char* dst, std::size_t cap) noexcept 
   return fill_w(dst, cap, name, static_cast<int>(len / sizeof(wchar_t)));
 }
 
-OwnedFd create_temp_file(const char* dir, const char* prefix, char* dst,
-                         std::size_t cap) noexcept {
+Result<FileHandle> create_temp_file(const char* dir, const char* prefix,
+                                    char* dst, std::size_t cap) noexcept {
   char dirbuf[1024];
   if (dir == nullptr) {
     std::size_t n = temp_directory(dirbuf, sizeof(dirbuf));
-    if (n == 0 || n >= sizeof(dirbuf)) return OwnedFd{};
+    if (n == 0 || n >= sizeof(dirbuf)) {
+      return std::unexpected(
+          Status::OutOfRange("create temp file: temp directory is too long"));
+    }
     dir = dirbuf;
   }
   WidePath wd(dir);
-  if (wd.w() == nullptr) return OwnedFd{};
+  if (wd.w() == nullptr) {
+    return std::unexpected(
+        Status::InvalidArgument("create temp file: invalid UTF-8 directory"));
+  }
   std::size_t dl = std::wcslen(wd.w());
   wchar_t wpre[16];
   const char* p = prefix != nullptr ? prefix : "tmp";
@@ -628,7 +714,10 @@ OwnedFd create_temp_file(const char* dir, const char* prefix, char* dst,
   const wchar_t kHex[] = L"0123456789abcdef";
   for (int attempt = 0; attempt < kMaxTries; ++attempt) {
     // dir + '\' + prefix + 16 hex + ".tmp" + NUL
-    if (dl + 1 + pl + 16 + 4 + 1 > MAX_PATH) return OwnedFd{};
+    if (dl + 1 + pl + 16 + 4 + 1 > MAX_PATH) {
+      return std::unexpected(
+          Status::OutOfRange("create temp file: generated path is too long"));
+    }
     wchar_t wpath[MAX_PATH];
     std::memcpy(wpath, wd.w(), dl * sizeof(wchar_t));
     std::size_t w = dl;
@@ -653,12 +742,16 @@ OwnedFd create_temp_file(const char* dir, const char* prefix, char* dst,
                               nullptr) > 0) {
         fill(dst, cap, u8, std::strlen(u8));
       }
-      return OwnedFd{reinterpret_cast<std::intptr_t>(h)};
+      return FileHandle{reinterpret_cast<std::intptr_t>(h)};
     }
-    if (GetLastError() != ERROR_FILE_EXISTS) return OwnedFd{};  // real error, no orphan
+    const DWORD code = GetLastError();
+    if (code != ERROR_FILE_EXISTS) {
+      return std::unexpected(win32_fs_status("CreateFileW(CREATE_NEW)", code));
+    }
     // else: name collided -> loop and try a fresh random name.
   }
-  return OwnedFd{};  // exhausted retries (astronomically unlikely)
+  return std::unexpected(Status::AlreadyExists(
+      "create temp file: exhausted unique-name retries"));
 }
 
 bool set_env_var(const char* name, const char* value) noexcept {
@@ -673,6 +766,44 @@ bool unset_env_var(const char* name) noexcept {
 #else
 
 // ---- POSIX ------------------------------------------------------------------
+
+namespace {
+
+[[maybe_unused]] const char* strerror_text(int result, char* buffer) noexcept {
+  return result == 0 ? buffer : nullptr;
+}
+[[maybe_unused]] const char* strerror_text(char* result, char*) noexcept {
+  return result;
+}
+
+Status posix_fs_status(const char* operation, int code) noexcept {
+  char description[192]{};
+  const char* detail = strerror_text(
+      ::strerror_r(code, description, sizeof(description)), description);
+  char message[320];
+  std::snprintf(message, sizeof(message), "posix %s failed: errno %d%s%s",
+                operation, code,
+                detail == nullptr || detail[0] == '\0' ? "" : ": ",
+                detail == nullptr ? "" : detail);
+  if (code == ENOENT || code == ENOTDIR) return Status::NotFound(message);
+  if (code == EACCES || code == EPERM || code == EROFS) {
+    return Status::PermissionDenied(message);
+  }
+  if (code == EEXIST) return Status::AlreadyExists(message);
+  if (code == ENOMEM || code == ENOSPC || code == EDQUOT || code == EMFILE ||
+      code == ENFILE) {
+    return Status::ResourceExhausted(message);
+  }
+  if (code == EBADF) return Status::FailedPrecondition(message);
+  if (code == EINVAL || code == EFAULT) return Status::InvalidArgument(message);
+  if (code == ENAMETOOLONG || code == EFBIG || code == EOVERFLOW) {
+    return Status::OutOfRange(message);
+  }
+  if (code == ENOSYS || code == ENOTSUP) return Status::Unimplemented(message);
+  return Status::Unavailable(message);
+}
+
+}  // namespace
 
 FileInfo stat(const char* path) noexcept {
   struct ::stat s;
@@ -854,26 +985,52 @@ std::size_t get_env_var(const char* name, char* dst, std::size_t cap) noexcept {
 }
 
 namespace {
-void close_raw(std::intptr_t raw) noexcept {
-  if (raw != OwnedFd::kInvalid) ::close(static_cast<int>(raw));
+Status close_raw(std::intptr_t raw) noexcept {
+  if (raw == FileHandle::kInvalid) return Status::Ok();
+  if (::close(static_cast<int>(raw)) == 0) return Status::Ok();
+  return posix_fs_status("close", errno);
 }
-std::int64_t read_raw(std::intptr_t raw, void* buf, std::size_t n) noexcept {
-  if (raw == OwnedFd::kInvalid) return -1;
-  return static_cast<std::int64_t>(::read(static_cast<int>(raw), buf, n));
+Result<std::size_t> read_raw(std::intptr_t raw, void* buf,
+                             std::size_t n) noexcept {
+  if (raw == FileHandle::kInvalid) {
+    return std::unexpected(
+        Status::FailedPrecondition("file read: handle is closed"));
+  }
+  const std::size_t max_io =
+      static_cast<std::size_t>(std::numeric_limits<ssize_t>::max());
+  const std::size_t want = n < max_io ? n : max_io;
+  for (;;) {
+    const ssize_t moved = ::read(static_cast<int>(raw), buf, want);
+    if (moved >= 0) return static_cast<std::size_t>(moved);
+    if (errno != EINTR) return std::unexpected(posix_fs_status("read", errno));
+  }
 }
-std::int64_t write_raw(std::intptr_t raw, const void* buf, std::size_t n) noexcept {
-  if (raw == OwnedFd::kInvalid) return -1;
-  return static_cast<std::int64_t>(::write(static_cast<int>(raw), buf, n));
+Result<std::size_t> write_raw(std::intptr_t raw, const void* buf,
+                              std::size_t n) noexcept {
+  if (raw == FileHandle::kInvalid) {
+    return std::unexpected(
+        Status::FailedPrecondition("file write: handle is closed"));
+  }
+  const std::size_t max_io =
+      static_cast<std::size_t>(std::numeric_limits<ssize_t>::max());
+  const std::size_t want = n < max_io ? n : max_io;
+  for (;;) {
+    const ssize_t moved = ::write(static_cast<int>(raw), buf, want);
+    if (moved >= 0) return static_cast<std::size_t>(moved);
+    if (errno != EINTR) return std::unexpected(posix_fs_status("write", errno));
+  }
 }
 }  // namespace
 
-OwnedFd open_file(const char* path, unsigned flags) noexcept {
+Result<FileHandle> open_file(const char* path, unsigned flags) noexcept {
   constexpr unsigned kKnown = kOpenRead | kOpenWrite | kOpenCreate |
                               kOpenTruncate | kOpenAppend;
   if (path == nullptr || (flags & ~kKnown) != 0 ||
+      (flags & (kOpenRead | kOpenWrite)) == 0 ||
       ((flags & (kOpenCreate | kOpenTruncate | kOpenAppend)) != 0 &&
        (flags & kOpenWrite) == 0)) {
-    return OwnedFd{};
+    return std::unexpected(
+        Status::InvalidArgument("open file: invalid path or flag combination"));
   }
   int f;
   const bool rd = (flags & kOpenRead) != 0, wr = (flags & kOpenWrite) != 0;
@@ -885,8 +1042,8 @@ OwnedFd open_file(const char* path, unsigned flags) noexcept {
   if (flags & kOpenAppend) f |= O_APPEND;
   f |= O_CLOEXEC;
   int fd = (flags & kOpenCreate) ? ::open(path, f, 0644) : ::open(path, f);
-  if (fd < 0) return OwnedFd{};
-  return OwnedFd{static_cast<std::intptr_t>(fd)};
+  if (fd < 0) return std::unexpected(posix_fs_status("open", errno));
+  return FileHandle{static_cast<std::intptr_t>(fd)};
 }
 
 std::uint32_t get_permissions(const char* path) noexcept {
@@ -933,19 +1090,25 @@ std::size_t read_symlink(const char* path, char* dst, std::size_t cap) noexcept 
   return fill(dst, cap, buf, static_cast<std::size_t>(n));
 }
 
-OwnedFd create_temp_file(const char* dir, const char* prefix, char* dst,
-                         std::size_t cap) noexcept {
+Result<FileHandle> create_temp_file(const char* dir, const char* prefix,
+                                    char* dst, std::size_t cap) noexcept {
   char dirbuf[1024];
   if (dir == nullptr) {
     std::size_t n = temp_directory(dirbuf, sizeof(dirbuf));
-    if (n == 0 || n >= sizeof(dirbuf)) return OwnedFd{};
+    if (n == 0 || n >= sizeof(dirbuf)) {
+      return std::unexpected(
+          Status::OutOfRange("create temp file: temp directory is too long"));
+    }
     dir = dirbuf;
   }
   const char* p = prefix != nullptr ? prefix : "tmp";
   // Build "<dir>/<prefix>XXXXXX" (mkstemp replaces the 6 X's atomically).
   char tmpl[1024];
   std::size_t dl = std::strlen(dir), pl = std::strlen(p);
-  if (dl + 1 + pl + 6 + 1 > sizeof(tmpl)) return OwnedFd{};
+  if (dl + 1 + pl + 6 + 1 > sizeof(tmpl)) {
+    return std::unexpected(
+        Status::OutOfRange("create temp file: generated path is too long"));
+  }
   std::memcpy(tmpl, dir, dl);
   std::size_t w = dl;
   if (w == 0 || tmpl[w - 1] != '/') tmpl[w++] = '/';
@@ -955,9 +1118,9 @@ OwnedFd create_temp_file(const char* dir, const char* prefix, char* dst,
   w += 6;
   tmpl[w] = '\0';
   int fd = ::mkstemp(tmpl);
-  if (fd < 0) return OwnedFd{};
+  if (fd < 0) return std::unexpected(posix_fs_status("mkstemp", errno));
   fill(dst, cap, tmpl, std::strlen(tmpl));
-  return OwnedFd{static_cast<std::intptr_t>(fd)};
+  return FileHandle{static_cast<std::intptr_t>(fd)};
 }
 
 bool set_env_var(const char* name, const char* value) noexcept {
@@ -1016,28 +1179,37 @@ bool directory_iterate(const char* path,
 
 // ---- portable (built on the primitives above) -------------------------------
 
-// OwnedFd: platform-agnostic RAII; close_raw() is the per-OS close (defined in
+// FileHandle: platform-agnostic RAII; close_raw() is the per-OS close (defined in
 // each section above, declared at the top of the file).
-OwnedFd::~OwnedFd() { close_raw(raw_); }
+FileHandle::~FileHandle() { (void)close_raw(raw_); }
 
-OwnedFd& OwnedFd::operator=(OwnedFd&& o) noexcept {
+FileHandle& FileHandle::operator=(FileHandle&& o) noexcept {
   if (this != &o) {
-    close_raw(raw_);
+    (void)close_raw(raw_);
     raw_ = o.raw_;
     o.raw_ = kInvalid;
   }
   return *this;
 }
 
-void OwnedFd::reset() noexcept {
-  close_raw(raw_);
+Status FileHandle::close() noexcept {
+  Status status = close_raw(raw_);
   raw_ = kInvalid;
+  return status;
 }
 
-std::int64_t OwnedFd::read(void* buf, std::size_t n) noexcept {
+Result<std::size_t> FileHandle::read(void* buf, std::size_t n) noexcept {
+  if (n != 0 && buf == nullptr) {
+    return std::unexpected(
+        Status::InvalidArgument("file read: null buffer for nonzero length"));
+  }
   return read_raw(raw_, buf, n);
 }
-std::int64_t OwnedFd::write(const void* buf, std::size_t n) noexcept {
+Result<std::size_t> FileHandle::write(const void* buf, std::size_t n) noexcept {
+  if (n != 0 && buf == nullptr) {
+    return std::unexpected(
+        Status::InvalidArgument("file write: null buffer for nonzero length"));
+  }
   return write_raw(raw_, buf, n);
 }
 

@@ -63,6 +63,7 @@ using hyle::platform::page_size;
 using hyle::platform::Protect;
 using hyle::platform::Thread;
 using hyle::platform::ThreadOpts;
+using hyle::platform::vm_allocate_rw;
 using hyle::platform::vm_commit;
 using hyle::platform::vm_protect;
 using hyle::platform::vm_release;
@@ -239,6 +240,14 @@ int main() {
                          MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
         if (p != MAP_FAILED) ::munmap(p, pg);
 #endif
+        nb::doNotOptimizeAway(p);
+      }
+    });
+    b.run("HYLE vm_allocate_rw+release", [&] {
+      for (int i = 0; i < kIters; ++i) {
+        auto allocated = vm_allocate_rw(pg);
+        void* p = allocated ? *allocated : nullptr;
+        if (p != nullptr) (void)vm_release(p, pg);
         nb::doNotOptimizeAway(p);
       }
     });

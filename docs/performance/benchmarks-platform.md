@@ -27,6 +27,7 @@
 | **Parker 快路径** unpark+park | 9.71（floor 4.68） | 10.64（floor 4.63） | 1.99（floor 0.90） | ➖ 只报绝对值；atomic **非公平对手** |
 | **Thread spawn+join** vs std::thread | 43.4k / 44.4k → **TIE** | 33.56k / 33.56k → **TIE** | 10.6k / 10.7k → **TIE** | ➖ 平（OS 主导，证零封装税） |
 | **directory_iterate** vs std::filesystem | 40.5k / 32.0k → **sign LOSE 0.93x** | 6.5k / 13.7k → **spread WIN 2.15x** | 16.5k / 18.4k → **WIN 1.12x** | ⚠️ **平台翻转**：Lin/M4 赢；Win sign 输 |
+| **vm_allocate_rw+release** vs raw 一步 | 885 / 880 → **TIE**（2026-07-24 n=5） | 待复证 | 待复证 | ➖ Win 已证当前正常用户形状近 OS 地板 |
 | **vm_reserve+commit+release** vs raw 一步 | 1144 / 877 → **sign LOSE 0.77x** | 1075 / 848 → **0.78x 输** | 846 / 332 → **LOSE 0.39x** | ❌ **契约差**：两步 vs 一步；见下 |
 | **vm_protect** vs raw | 446 / 428 → **sign LOSE 0.96x** | 407 / 393 → **0.97x 微税** | 937 / 938 → **TIE** | ➖ 近平；小封装税 |
 | **MappedFile** vs ifstream | 43.7k / 62.3k → **sign WIN 1.39x** | 12.7k / **8.7k → 0.68x 输** | 14.1k / 21.7k → **WIN 1.53x** | ⚠️ **平台翻转**：Win/M4 赢拷贝路径；**Linux 64KiB ifstream 更快** |
@@ -57,9 +58,19 @@ RW↔RO protect pair：raw **438.51 ns**、HYLE **459.52 ns**（0.954x）。它�
 VM 的合同差和 protect 的约 5% 薄封装税仍按下节原判定。该单进程 run 只作接口迁移
 回归哨兵，不替代上表 n=15 三平台证书；Linux/macOS 新接口仍待性能复证。
 
+### 2026-07-24 一步 RW mapping
+
+面向普通“拿一块立即可写的页内存”场景增加 `vm_allocate_rw` /
+`VmRegion::allocate_rw`；Windows 直接调用一次 `VirtualAlloc(MEM_RESERVE|MEM_COMMIT)`，
+POSIX 直接调用一次 `mmap(PROT_READ|PROT_WRITE)`。Windows MSVC 19.50 Release 的
+5 进程配对中位数为 raw **879.84 ns**、HYLE **885.24 ns**，HYLE/raw op/s 比
+**0.987**（每轮 0.985–0.994）；按 n=5 纪律判统计平。旧 staged 形状为
+**1130.69 ns**，继续服务“先保留地址、以后分批 commit”的不同合同，不再被当成普通
+分配形状的性能代表。Linux/macOS 尚待在对应真机补证，因此总表不外推 Windows 结论。
+
 ## 非 SOTA / 需诚实标价
 
-### 1. `vm_reserve`+`vm_commit` 输 raw 一步分配（真，非噪声）
+### 1. staged VM 对 raw 一步分配的旧“输”不是同合同对比
 
 ```text
 raw Win:  VirtualAlloc(MEM_RESERVE|MEM_COMMIT)   // 1 syscall
@@ -68,9 +79,10 @@ raw POSIX: mmap(PROT_READ|WRITE)                 // 1
 HYLE:      mmap(PROT_NONE) + mprotect/commit     // 2
 ```
 
-**原因**：API 有意拆成「先占地址空间、再按需 commit」（fiber 栈 / 大 arena 模式），不是漏优化。  
-**处理**：对标表保留但标 **by-design 两步 vs 一步**；需要一步的调用方用 `vm_alloc`（若有）或直接 raw。  
-**不**用平台宏把两步合成一步伪装成赢——会破坏可移植语义。
+`vm_reserve` + `vm_commit` 有意表达「先占地址空间、以后按需提交」（fiber 栈、稀疏大
+arena），两次 OS 操作就是其合同成本。普通立即使用场景应选 `vm_allocate_rw`，它和 raw
+基线同为一次 OS 操作且 Windows 已统计打平。保留旧行是为了标价 staged 合同，不再把它
+列为普通 platform 分配的性能缺口。
 
 ### 2. Win `directory_iterate` sign 输 std（0.93x）
 
@@ -113,6 +125,7 @@ scripts/bench-stat.py <build>/bin/hyle_platform_bench -n 5 \
   --pair "std::condition_variable ping-pong" "HYLE Parker ping-pong" \
   --pair "std::thread spawn+join" "HYLE platform::Thread spawn+join" \
   --pair "std::filesystem::directory_iterator" "HYLE directory_iterate (visitor)" \
+  --pair "raw OS (mmap+munmap / VirtualAlloc+Free)" "HYLE vm_allocate_rw+release" \
   --pair "raw OS (mmap+munmap / VirtualAlloc+Free)" "HYLE vm_reserve+commit+release" \
   --pair "raw wait_on_address+wake floor" "HYLE Parker ping-pong" \
   --pair "raw mprotect / VirtualProtect" "HYLE vm_protect" \

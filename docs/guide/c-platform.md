@@ -12,8 +12,8 @@
 
 | 返回面 | 诊断 |
 |---|---|
-| Thread spawn / DynLib / MappedFile / VM / NUMA | 返回 `hyle_status`，用 `hyle_status_message_cstr` |
-| Parker create / fs / fd | `hyle_platform_last_error()` |
+| Parker / Thread / DynLib / MappedFile / VM / NUMA / 打开的文件资源 | 返回 `hyle_status`，用 `hyle_status_message_cstr` |
+| 尚未迁移的 path/env 标量函数 | `hyle_platform_last_error()`（过渡接口） |
 
 `hyle_status` 由调用方用 `hyle_status_free` 释放；剩余 last-error 指针借用到同线程
 下一次相关调用。
@@ -44,7 +44,7 @@
 | hugepage/THP | `hyle_vm_advise_hugepage` 等 | soft 建议，无句柄 |
 | NUMA | `hyle_numa_*` / `hyle_vm_reserve_numa` / `hyle_vm_bind_numa*` | reserve 配对 release |
 | fs/env | buffer-fill / visitor | 无堆句柄 |
-| fs 权限/链接/临时文件/env 写 | `hyle_fs_get_permissions` / `hyle_fs_*_symlink` / `hyle_fs_create_temp_file` / `hyle_fs_set_env_var` | temp file 返回 fd（`hyle_fs_close_fd` 释放） |
+| fs 权限/链接/临时文件/env 写 | `hyle_fs_get_permissions` / `hyle_fs_*_symlink` / `hyle_fs_create_temp_file` / `hyle_fs_set_env_var` | temp file 返回 `hyle_file_handle`（`hyle_fs_close` 释放） |
 | MappedFile | `hyle_mapped_file_*` | destroy 释放 |
 | cpu | `hyle_cpu_features_get` 等 | 值返回 POD |
 
@@ -58,11 +58,11 @@
 
 | 符号 | 说明 |
 |---|---|
-| `hyle_platform_last_error` | Parker create、fs/fd 的线程局部失败串；`""`=无 |
+| `hyle_platform_last_error` | 尚未迁移的 path/env 标量函数的线程局部失败串；`""`=无；不得用于 Parker/打开文件资源 |
 | `hyle_wait_on_address(addr, expected)` | 地址等待；允许伪唤醒 |
 | `hyle_wait_on_address_for(addr, expected, timeout_ns)` | 0=超时，1=唤醒/变化/伪唤醒 |
 | `hyle_wake_one` / `hyle_wake_all` | 唤醒 |
-| `hyle_parker_create` / `hyle_parker_destroy` | 不透明 Parker；wrapper OOM 返回 NULL 并写 `hyle_platform_last_error` |
+| `hyle_parker_create(out)` / `hyle_parker_destroy` | 不透明 Parker；create 返回 Status 并先清空 `*out` |
 | `hyle_parker_park` / `unpark` | token 模型（Rust std） |
 | `hyle_parker_park_timeout` | 1=消费 token，0=超时/无 token |
 
@@ -110,7 +110,7 @@
 | `hyle_page_size` | 页大小 |
 | `hyle_page_align_up` | **inline**：上取整；0→0 |
 | `hyle_vm_reserve(out, size)` / `commit` / `decommit` / `release` / `protect` | 全部返回 `hyle_status`；reserve 成功写 `*out` |
-| `hyle_vm_alloc_rw(out, size)` | reserve+commit RW（size 上取整）；返回 Status |
+| `hyle_vm_alloc_rw(out, size)` | 一次 OS 操作得到可立即使用的 RW mapping（size 上取整）；返回 Status |
 | `hyle_vm_free_rw(p, size)` | 释放 `alloc_rw` 的块（size 为原始请求）；返回 Status |
 | `hyle_vm_region_reserve(out, size)` / `reserve_guarded` | Status+out；guarded 低 1 页 NOACCESS |
 | `hyle_vm_region_reserve_numa(out, size, node)` | 偏好 NUMA `node`（`HYLE_NUMA_ANY`==普通 reserve）的托管 region |
@@ -173,10 +173,11 @@ soft 建议，绝不影响正确性。Linux 用 madvise；Windows/macOS 匿名�
 | `hyle_fs_create_hard_link(target, link)` | 硬链接（同卷、仅文件）；POSIX link / Win CreateHardLinkW |
 | `hyle_fs_is_symlink(path)` | 自身是否符号链接（不跟随） |
 | `hyle_fs_read_symlink(path, dst, cap)` | buffer-fill；非链接/失败→0 |
-| `hyle_fs_create_temp_file(dir, prefix, dst, cap)` | 原子创建；返回**打开的** fd（`intptr_t`，-1 失败，TOCTOU 安全）；路径写 dst |
-| `hyle_fs_open(path, flags)` | 打开文件→fd（`intptr_t`，-1 失败）；`flags`=`HYLE_OPEN_READ/WRITE/CREATE/TRUNCATE/APPEND` OR；宽字符路径；通用文件 I/O（无需 mmap） |
-| `hyle_fs_read(fd, buf, n)` / `hyle_fs_write(fd, buf, n)` | 在 fd 上读/写；返回字节数（读 0=EOF，短读正常），-1 失败 |
-| `hyle_fs_close_fd(fd)` | 关闭 create_temp_file / open 返回的 fd；-1 安全 |
+| `hyle_file_handle` / `HYLE_FILE_HANDLE_INVALID` | 一字宽 native file resource；可容纳 POSIX fd / Windows HANDLE，不暗示 POSIX 语义 |
+| `hyle_fs_create_temp_file(out, dir, prefix, dst, cap)` | Status+out；原子创建并返回**打开的** `hyle_file_handle`，路径写 dst，避免 TOCTOU |
+| `hyle_fs_open(out, path, flags)` | Status+out；`flags`=`HYLE_OPEN_READ/WRITE/CREATE/TRUNCATE/APPEND` OR；Windows 用 UTF-16 API；无需 mmap 的普通 I/O |
+| `hyle_fs_read(out_moved, file, buf, n)` / `hyle_fs_write(out_moved, file, buf, n)` | Status+out；读 0=EOF，短读/短写是成功，调用方可继续 |
+| `hyle_fs_close(file)` | 返回 Status；关闭 create_temp_file / open 返回的 handle；INVALID 安全 |
 | `hyle_fs_set_env_var(name, value)` / `hyle_fs_unset_env_var(name)` | 进程级；与并发读非线程安全 |
 
 ### 3.5c MappedFile —— 文件内存映射（DLL，v4）
@@ -222,7 +223,7 @@ soft 建议，绝不影响正确性。Linux 用 madvise；Windows/macOS 匿名�
 |---|---|
 | `Unparker` 类型 | 用 `hyle_parker_unpark` 同一句柄 |
 | `DynLib::symbol_as<Fn>`（模板） | 用 `hyle_dynlib_symbol` + 调用方 cast |
-| `OwnedFd`（RAII） | temp file 走 `intptr_t` fd + `hyle_fs_close_fd` |
+| `FileHandle`（RAII） | C 走 `hyle_file_handle` + `hyle_fs_close`；不把 Windows HANDLE 伪称 POSIX fd |
 | `VmRegion::release` / `MappedFile::reset`（提前释放） | 用 `hyle_vm_region_destroy` / `hyle_mapped_file_destroy` |
 | path 词法 / container 字符串 | 不在 platform C 面 |
 | 模板 `for_each_entry` | C 用 `hyle_fs_directory_iterate` |
@@ -235,10 +236,31 @@ soft 建议，绝不影响正确性。Linux 用 madvise；Windows/macOS 匿名�
 ### Parker
 
 ```c
-hyle_parker_o* p = hyle_parker_create();
+hyle_parker_o* p = NULL;
+hyle_status st = hyle_parker_create(&p);
+if (!hyle_status_is_ok(st)) { hyle_status_free(&st); return; }
+hyle_status_free(&st);
 hyle_parker_unpark(p);
 hyle_parker_park(p);
 hyle_parker_destroy(p);
+```
+
+### 普通文件 I/O
+
+```c
+hyle_file_handle file = HYLE_FILE_HANDLE_INVALID;
+hyle_status st = hyle_fs_open(
+    &file, "config.bin", HYLE_OPEN_READ);
+if (!hyle_status_is_ok(st)) { hyle_status_free(&st); return; }
+hyle_status_free(&st);
+
+unsigned char buf[4096];
+size_t got = 0;
+st = hyle_fs_read(&got, file, buf, sizeof buf);
+if (hyle_status_is_ok(st)) { /* consume buf[0..got), got==0 means EOF */ }
+hyle_status_free(&st);
+st = hyle_fs_close(file); /* report close/flush failures */
+hyle_status_free(&st);
 ```
 
 ### Thread
@@ -290,11 +312,18 @@ hyle_status_free(&plug_st);
 ### VM
 
 ```c
-void* p = hyle_vm_alloc_rw(4096);
+void* p = NULL;
+hyle_status st = hyle_vm_alloc_rw(&p, 4096);
+if (!hyle_status_is_ok(st)) { hyle_status_free(&st); return; }
+hyle_status_free(&st);
 /* ... */
-hyle_vm_free_rw(p, 4096);
+hyle_status free_st = hyle_vm_free_rw(p, 4096);
+hyle_status_free(&free_st);
 
-hyle_vm_region_o* r = hyle_vm_region_reserve_guarded(64 * 1024);
+hyle_vm_region_o* r = NULL;
+st = hyle_vm_region_reserve_guarded(&r, 64 * 1024);
+if (!hyle_status_is_ok(st)) { hyle_status_free(&st); return; }
+hyle_status_free(&st);
 char* lo = (char*)hyle_vm_region_usable(r);
 size_t n = hyle_vm_region_usable_size(r);
 hyle_vm_region_destroy(r);

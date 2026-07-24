@@ -69,9 +69,10 @@ TEST(FsBoundary, NullInputsAndInvalidOpenFlagsFailSafely) {
   EXPECT_FALSE(remove_directory_recursive(nullptr));
   EXPECT_FALSE(touch(nullptr));
   EXPECT_EQ(get_env_var(nullptr, nullptr, 0), kEnvNotSet);
-  EXPECT_FALSE(open_file(nullptr, kOpenRead).valid());
-  EXPECT_FALSE(open_file("unused",
-                         kOpenCreate | kOpenTruncate).valid());
+  EXPECT_FALSE(open_file(nullptr, kOpenRead).has_value());
+  EXPECT_FALSE(open_file("unused", 0).has_value());
+  EXPECT_FALSE(
+      open_file("unused", kOpenCreate | kOpenTruncate).has_value());
 
   char tmp[4] = {'x', 'x', 'x', '\0'};
   const std::size_t need = temp_directory(nullptr, sizeof(tmp));
@@ -494,24 +495,28 @@ TEST_F(FsTest, SymlinkCreateReadAndDetect) {
   EXPECT_EQ(std::strlen(tiny), 3u);       // 3 bytes + NUL
 }
 
-// ---- v4: temp file + OwnedFd ------------------------------------------------
+// ---- v4: temp file + FileHandle ----------------------------------------------
 
 TEST_F(FsTest, CreateTempFileIsUniqueAndOpen) {
   ASSERT_TRUE(make_directory_recursive(root.c_str()));
   char p1[4096], p2[4096];
-  OwnedFd a = create_temp_file(root.c_str(), "hyle", p1, sizeof(p1));
-  OwnedFd b = create_temp_file(root.c_str(), "hyle", p2, sizeof(p2));
+  auto ar = create_temp_file(root.c_str(), "hyle", p1, sizeof(p1));
+  auto br = create_temp_file(root.c_str(), "hyle", p2, sizeof(p2));
+  ASSERT_TRUE(ar.has_value()) << ar.error().message();
+  ASSERT_TRUE(br.has_value()) << br.error().message();
+  FileHandle a = std::move(*ar);
+  FileHandle b = std::move(*br);
   ASSERT_TRUE(a.valid());
   ASSERT_TRUE(b.valid());
   EXPECT_STRNE(p1, p2);              // unique names
   EXPECT_TRUE(exists(p1));          // the file really exists on disk
   EXPECT_TRUE(exists(p2));
-  EXPECT_NE(a.get(), OwnedFd::kInvalid);
+  EXPECT_NE(a.get(), FileHandle::kInvalid);
   // Prove the returned handle is genuinely OPEN FOR WRITE (not just a path):
   // write through it, then read the bytes back from the path.
   const char msg[] = "hyle-temp";
   ASSERT_TRUE(write_all_fd(a.get(), msg, sizeof(msg) - 1));
-  a.reset();  // close so the write is flushed/visible before we read the path
+  EXPECT_TRUE(a.close().ok());
   std::FILE* f = std::fopen(p1, "rb");
   ASSERT_NE(f, nullptr);
   char buf[16] = {0};
@@ -561,13 +566,15 @@ TEST(FsEnv, SetEmptyValueSemantics) {
   EXPECT_EQ(get_env_var(kName, buf, sizeof(buf)), kEnvNotSet);  // truly unset
 }
 
-TEST(OwnedFd, MoveAndRelease) {
+TEST(FileHandle, MoveAndRelease) {
   char path[4096];
-  OwnedFd a = create_temp_file(nullptr, "hyle_ofd", path, sizeof(path));
+  auto created = create_temp_file(nullptr, "hyle_file", path, sizeof(path));
+  ASSERT_TRUE(created.has_value()) << created.error().message();
+  FileHandle a = std::move(*created);
   ASSERT_TRUE(a.valid());
   std::intptr_t raw = a.get();
 
-  OwnedFd b = std::move(a);          // move transfers ownership
+  FileHandle b = std::move(a);       // move transfers ownership
   EXPECT_FALSE(a.valid());
   EXPECT_TRUE(b.valid());
   EXPECT_EQ(b.get(), raw);
@@ -575,39 +582,49 @@ TEST(OwnedFd, MoveAndRelease) {
   std::intptr_t released = b.release();  // give up ownership without closing
   EXPECT_FALSE(b.valid());
   EXPECT_EQ(released, raw);
-  // We now own `released`; hand it to a fresh OwnedFd so it is closed + file removed.
-  OwnedFd c{released};
+  // We now own `released`; hand it to a fresh handle so it is closed.
+  FileHandle c{released};
   EXPECT_TRUE(c.valid());
   remove_file(path);
 }
 
-TEST(OwnedFd, OpenFileWriteThenReadRoundTrip) {
+TEST(FileHandle, OpenFileWriteThenReadRoundTrip) {
   char dir[4096];
   ASSERT_NE(temp_directory(dir, sizeof(dir)), 0u);
   std::string p = std::string(dir) + "/hyle_openfile_test.txt";
   const char msg[] = "hello platform io";
   const std::size_t len = sizeof(msg) - 1;  // exclude NUL
   {
-    OwnedFd fd = open_file(p.c_str(), kOpenWrite | kOpenCreate | kOpenTruncate);
-    ASSERT_TRUE(fd.valid());
-    EXPECT_EQ(fd.write(msg, len), static_cast<std::int64_t>(len));
+    auto opened = open_file(
+        p.c_str(), kOpenWrite | kOpenCreate | kOpenTruncate);
+    ASSERT_TRUE(opened.has_value()) << opened.error().message();
+    auto wrote = opened->write(msg, len);
+    ASSERT_TRUE(wrote.has_value()) << wrote.error().message();
+    EXPECT_EQ(*wrote, len);
+    EXPECT_TRUE(opened->close().ok());
   }
   {
-    OwnedFd fd = open_file(p.c_str(), kOpenRead);
-    ASSERT_TRUE(fd.valid());
+    auto opened = open_file(p.c_str(), kOpenRead);
+    ASSERT_TRUE(opened.has_value()) << opened.error().message();
     char buf[64] = {0};
-    std::int64_t got = fd.read(buf, sizeof(buf));
-    EXPECT_EQ(got, static_cast<std::int64_t>(len));
-    EXPECT_EQ(std::string(buf, got > 0 ? static_cast<std::size_t>(got) : 0),
-              "hello platform io");
+    auto got = opened->read(buf, sizeof(buf));
+    ASSERT_TRUE(got.has_value()) << got.error().message();
+    EXPECT_EQ(*got, len);
+    EXPECT_EQ(std::string(buf, *got), "hello platform io");
   }
-  // Missing file for read -> invalid; read/write on an empty fd -> -1.
-  EXPECT_FALSE(
-      open_file((std::string(dir) + "/hyle_no_such.txt").c_str(), kOpenRead).valid());
-  OwnedFd empty;
+  // Missing file and operations on a closed handle preserve structured errors.
+  auto missing =
+      open_file((std::string(dir) + "/hyle_no_such.txt").c_str(), kOpenRead);
+  EXPECT_FALSE(missing.has_value());
+  EXPECT_TRUE(missing.error().IsNotFound());
+  FileHandle empty;
   char b[4];
-  EXPECT_EQ(empty.read(b, sizeof(b)), static_cast<std::int64_t>(-1));
-  EXPECT_EQ(empty.write(b, sizeof(b)), static_cast<std::int64_t>(-1));
+  auto closed_read = empty.read(b, sizeof(b));
+  auto closed_write = empty.write(b, sizeof(b));
+  EXPECT_TRUE(closed_read.error().IsFailedPrecondition());
+  EXPECT_TRUE(closed_write.error().IsFailedPrecondition());
+  EXPECT_TRUE(empty.read(nullptr, 1).error().IsInvalidArgument());
+  EXPECT_TRUE(empty.write(nullptr, 1).error().IsInvalidArgument());
   remove_file(p.c_str());
 }
 

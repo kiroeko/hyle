@@ -585,7 +585,14 @@ if (m.valid()) { const float* w = static_cast<const float*>(m.data()); /* 零拷
 // 文件系统 + 原子临时文件（返回打开的句柄，TOCTOU 安全）
 #include "hyle/platform/fs.h"
 char path[1024];
-OwnedFd fd = create_temp_file(nullptr, "myapp", path, sizeof path);  // mkstemp/CREATE_NEW
+HYLE_ASSIGN_OR_RETURN(
+    FileHandle file,
+    create_temp_file(nullptr, "myapp", path, sizeof path)); // mkstemp/CREATE_NEW
+const char payload[] = "ready";
+HYLE_ASSIGN_OR_RETURN(
+    std::size_t wrote,
+    file.write(payload, sizeof(payload) - 1));
+HYLE_RETURN_IF_ERROR(file.close()); // 显式 close 才能观察延迟写回/关闭失败
 set_permissions("f.txt", 0644);  create_hard_link("a.txt", "b.txt");
 char tgt[4096];  read_symlink("link", tgt, sizeof tgt);  // buffer-fill：返回完整长度
 

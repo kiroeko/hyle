@@ -85,7 +85,9 @@ int main(void) {
   CHECK(hyle_platform_last_error() != NULL);
 
   /* Parker */
-  hyle_parker_o* p = hyle_parker_create();
+  hyle_parker_o* p = NULL;
+  CHECK(status_code(hyle_parker_create(NULL)) == HYLE_STATUS_INVALID_ARGUMENT);
+  CHECK(status_ok(hyle_parker_create(&p)));
   CHECK(p != NULL);
   hyle_parker_unpark(p);
   hyle_parker_park(p);
@@ -571,36 +573,59 @@ int main(void) {
 
     /* temp file: open handle + real path */
     char tpath[1024];
-    intptr_t fd = hyle_fs_create_temp_file(NULL, "hyle_c", tpath, sizeof(tpath));
-    CHECK(fd != -1);
+    hyle_file_handle fd = HYLE_FILE_HANDLE_INVALID;
+    CHECK(status_code(hyle_fs_create_temp_file(
+              NULL, NULL, "hyle_c", tpath, sizeof(tpath))) ==
+          HYLE_STATUS_INVALID_ARGUMENT);
+    CHECK(status_ok(hyle_fs_create_temp_file(
+        &fd, NULL, "hyle_c", tpath, sizeof(tpath))));
+    CHECK(fd != HYLE_FILE_HANDLE_INVALID);
     CHECK(hyle_fs_exists(tpath));
     /* permissions: the temp file exists -> nonzero perms; readonly round trip */
     CHECK(hyle_fs_get_permissions(tpath) != 0u);
     CHECK(hyle_fs_set_readonly(tpath, 1) == 1);
     CHECK(hyle_fs_is_readonly(tpath) == 1);
     CHECK(hyle_fs_set_readonly(tpath, 0) == 1);
-    hyle_fs_close_fd(fd);  /* void; closes the open temp handle */
+    CHECK(status_ok(hyle_fs_close(fd)));
 
-    /* open_file + fd read/write: write bytes, then read them back via the C fd API. */
-    intptr_t wfd =
-        hyle_fs_open(tpath, HYLE_OPEN_WRITE | HYLE_OPEN_CREATE | HYLE_OPEN_TRUNCATE);
-    CHECK(wfd != -1);
-    const char* payload = "c-abi fd io";
-    CHECK(hyle_fs_write(wfd, payload, 11) == 11);
-    hyle_fs_close_fd(wfd);
-    intptr_t rfd = hyle_fs_open(tpath, HYLE_OPEN_READ);
-    CHECK(rfd != -1);
+    /* File-handle I/O: write bytes, then read them back through the C API. */
+    hyle_file_handle wfd = HYLE_FILE_HANDLE_INVALID;
+    CHECK(status_code(hyle_fs_open(NULL, tpath, HYLE_OPEN_READ)) ==
+          HYLE_STATUS_INVALID_ARGUMENT);
+    CHECK(status_ok(hyle_fs_open(
+        &wfd, tpath,
+        HYLE_OPEN_WRITE | HYLE_OPEN_CREATE | HYLE_OPEN_TRUNCATE)));
+    CHECK(wfd != HYLE_FILE_HANDLE_INVALID);
+    const char* payload = "c-abi file io";
+    const size_t payload_size = strlen(payload);
+    size_t moved = 0;
+    CHECK(status_code(hyle_fs_read(NULL, wfd, NULL, 0)) ==
+          HYLE_STATUS_INVALID_ARGUMENT);
+    CHECK(status_code(hyle_fs_write(NULL, wfd, NULL, 0)) ==
+          HYLE_STATUS_INVALID_ARGUMENT);
+    CHECK(status_ok(hyle_fs_write(&moved, wfd, payload, payload_size)) &&
+          moved == payload_size);
+    CHECK(status_ok(hyle_fs_close(wfd)));
+    hyle_file_handle rfd = HYLE_FILE_HANDLE_INVALID;
+    CHECK(status_ok(hyle_fs_open(&rfd, tpath, HYLE_OPEN_READ)));
+    CHECK(rfd != HYLE_FILE_HANDLE_INVALID);
     char rbuf[32] = {0};
-    CHECK(hyle_fs_read(rfd, rbuf, sizeof(rbuf)) == 11 && memcmp(rbuf, payload, 11) == 0);
-    hyle_fs_close_fd(rfd);
-    CHECK(hyle_fs_open("/no/such/hyle/path", HYLE_OPEN_READ) == -1);  /* missing -> -1 */
-    CHECK(hyle_platform_last_error()[0] != '\0');
-    CHECK(hyle_fs_open(tpath, HYLE_OPEN_CREATE) == -1); /* create needs write */
-    CHECK(hyle_platform_last_error()[0] != '\0');
+    CHECK(status_ok(hyle_fs_read(&moved, rfd, rbuf, sizeof(rbuf))) &&
+          moved == payload_size && memcmp(rbuf, payload, payload_size) == 0);
+    CHECK(status_ok(hyle_fs_close(rfd)));
+    CHECK(status_code(hyle_fs_open(
+              &rfd, "/no/such/hyle/path", HYLE_OPEN_READ)) ==
+          HYLE_STATUS_NOT_FOUND);
+    CHECK(rfd == HYLE_FILE_HANDLE_INVALID);
+    CHECK(status_code(hyle_fs_open(&rfd, tpath, HYLE_OPEN_CREATE)) ==
+          HYLE_STATUS_INVALID_ARGUMENT);
+    CHECK(rfd == HYLE_FILE_HANDLE_INVALID);
     CHECK(hyle_fs_temp_directory(NULL, 32) > 0u); /* NULL = size query */
     CHECK(hyle_platform_last_error()[0] == '\0');
-    CHECK(hyle_fs_read(-1, NULL, 1) == -1);
-    CHECK(hyle_platform_last_error()[0] != '\0');
+    CHECK(status_code(hyle_fs_read(
+              &moved, HYLE_FILE_HANDLE_INVALID, NULL, 1)) ==
+          HYLE_STATUS_INVALID_ARGUMENT);
+    CHECK(status_ok(hyle_fs_close(HYLE_FILE_HANDLE_INVALID)));
     {
       hyle_file_open_flags typed_flags = HYLE_OPEN_READ;
       hyle_file_perms typed_perms = HYLE_PERM_OWNER_READ;
@@ -646,9 +671,11 @@ int main(void) {
    * byte + flush, then re-open read-only to confirm the flush hit the file. */
   {
     char mpath[1024];
-    intptr_t fd = hyle_fs_create_temp_file(NULL, "hyle_c_map", mpath, sizeof(mpath));
-    CHECK(fd != -1);
-    hyle_fs_close_fd(fd);  /* drop the mkstemp handle; we rewrite via stdio */
+    hyle_file_handle fd = HYLE_FILE_HANDLE_INVALID;
+    CHECK(status_ok(hyle_fs_create_temp_file(
+        &fd, NULL, "hyle_c_map", mpath, sizeof(mpath))));
+    CHECK(fd != HYLE_FILE_HANDLE_INVALID);
+    CHECK(status_ok(hyle_fs_close(fd)));
 
     const char* seed = "hyle mapped C-ABI payload 0123456789";
     size_t seed_len = strlen(seed);

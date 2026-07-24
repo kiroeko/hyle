@@ -214,14 +214,19 @@ void hyle_wake_all(volatile uint32_t* addr) {
   hyle::platform::detail::wake_all(as_atomic_mut(addr));
 }
 
-hyle_parker_o* hyle_parker_create(void) {
-  set_platform_error(nullptr);
+hyle_status hyle_parker_create(hyle_parker_o** out) {
+  if (out == nullptr) {
+    return steal_status(
+        hyle::Status::InvalidArgument("hyle_parker_create: out is NULL"));
+  }
+  *out = nullptr;
   auto* p = new (std::nothrow) hyle_parker_o{};
   if (p == nullptr) {
-    set_platform_error(
-        "hyle_parker_create: wrapper allocation failed (out of memory)");
+    return steal_status(hyle::Status::ResourceExhausted(
+        "hyle_parker_create: wrapper allocation failed"));
   }
-  return p;
+  *out = p;
+  return steal_status(hyle::Status::Ok());
 }
 void hyle_parker_destroy(hyle_parker_o* p) { delete p; }
 void hyle_parker_park(hyle_parker_o* p) {
@@ -441,21 +446,9 @@ hyle_status hyle_vm_alloc_rw(void** out, size_t size) {
         hyle::Status::InvalidArgument("hyle_vm_alloc_rw: out is NULL"));
   }
   *out = nullptr;
-  size_t aligned = hyle_page_align_up(size);
-  if (aligned == 0) {
-    return steal_status(hyle::Status::InvalidArgument(
-        "hyle_vm_alloc_rw: size is zero or overflows page alignment"));
-  }
-  auto reserved = hyle::platform::vm_reserve(aligned);
-  if (!reserved) return steal_status(std::move(reserved).error());
-  void* base = *reserved;
-  hyle::Status status = hyle::platform::vm_commit(base, aligned);
-  if (!status.ok()) {
-    (void)hyle::platform::vm_release(base, aligned);
-    return steal_status(
-        std::move(status).WithContext("hyle_vm_alloc_rw commit"));
-  }
-  *out = base;
+  auto allocated = hyle::platform::vm_allocate_rw(size);
+  if (!allocated) return steal_status(std::move(allocated).error());
+  *out = *allocated;
   return steal_status(hyle::Status::Ok());
 }
 
@@ -870,60 +863,62 @@ size_t hyle_fs_read_symlink(const char* path, char* dst, size_t cap) {
   set_platform_error(n == 0 ? "hyle_fs_read_symlink failed" : nullptr);
   return n;
 }
-intptr_t hyle_fs_create_temp_file(const char* dir, const char* prefix, char* dst,
-                                  size_t cap) {
-  hyle::platform::OwnedFd fd = hyle::platform::create_temp_file(dir, prefix, dst, cap);
-  const intptr_t raw = fd.release();
-  set_platform_error(raw == hyle::platform::OwnedFd::kInvalid
-                         ? "hyle_fs_create_temp_file failed"
-                         : nullptr);
-  return raw;  // transfer ownership to the C caller (close via close_fd)
-}
-void hyle_fs_close_fd(intptr_t fd) {
-  set_platform_error(nullptr);
-  hyle::platform::OwnedFd owned{fd};  // adopts and closes on scope exit
-  (void)owned;
-}
-intptr_t hyle_fs_open(const char* path, unsigned flags) {
-  if (path == nullptr) {
-    set_platform_error("hyle_fs_open: path is NULL");
-    return hyle::platform::OwnedFd::kInvalid;
+hyle_status hyle_fs_create_temp_file(hyle_file_handle* out, const char* dir,
+                                     const char* prefix, char* dst, size_t cap) {
+  if (out == nullptr) {
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_fs_create_temp_file: out is NULL"));
   }
-  const unsigned known = HYLE_OPEN_READ | HYLE_OPEN_WRITE | HYLE_OPEN_CREATE |
-                         HYLE_OPEN_TRUNCATE | HYLE_OPEN_APPEND;
-  if ((flags & ~known) != 0 ||
-      ((flags & (HYLE_OPEN_CREATE | HYLE_OPEN_TRUNCATE | HYLE_OPEN_APPEND)) != 0 &&
-       (flags & HYLE_OPEN_WRITE) == 0)) {
-    set_platform_error("hyle_fs_open: invalid flag combination");
-    return hyle::platform::OwnedFd::kInvalid;
-  }
-  const intptr_t raw = hyle::platform::open_file(path, flags).release();
-  set_platform_error(raw == hyle::platform::OwnedFd::kInvalid
-                         ? "hyle_fs_open failed"
-                         : nullptr);
-  return raw;
+  *out = hyle::platform::FileHandle::kInvalid;
+  auto result = hyle::platform::create_temp_file(dir, prefix, dst, cap);
+  if (!result) return steal_status(std::move(result).error());
+  *out = result->release();
+  return steal_status(hyle::Status::Ok());
 }
-int64_t hyle_fs_read(intptr_t fd, void* buf, size_t n) {
-  if (n != 0 && buf == nullptr) {
-    set_platform_error("hyle_fs_read: buffer is NULL for nonzero length");
-    return -1;
+hyle_status hyle_fs_close(hyle_file_handle file) {
+  hyle::platform::FileHandle owned{file};
+  return steal_status(owned.close());
+}
+hyle_status hyle_fs_open(hyle_file_handle* out, const char* path,
+                         unsigned flags) {
+  if (out == nullptr) {
+    return steal_status(
+        hyle::Status::InvalidArgument("hyle_fs_open: out is NULL"));
   }
-  hyle::platform::OwnedFd tmp{fd};       // borrow (don't close: caller owns fd)
-  int64_t r = tmp.read(buf, n);
+  *out = hyle::platform::FileHandle::kInvalid;
+  auto result = hyle::platform::open_file(path, flags);
+  if (!result) return steal_status(std::move(result).error());
+  *out = result->release();
+  return steal_status(hyle::Status::Ok());
+}
+hyle_status hyle_fs_read(size_t* out_moved, hyle_file_handle file, void* buf,
+                         size_t n) {
+  if (out_moved == nullptr) {
+    return steal_status(
+        hyle::Status::InvalidArgument("hyle_fs_read: out_moved is NULL"));
+  }
+  *out_moved = 0;
+  hyle::platform::FileHandle tmp{file};  // borrow; release before returning
+  auto result = tmp.read(buf, n);
   tmp.release();
-  set_platform_error(r < 0 ? "hyle_fs_read failed" : nullptr);
-  return r;
+  if (!result) return steal_status(std::move(result).error());
+  *out_moved = *result;
+  return steal_status(hyle::Status::Ok());
 }
-int64_t hyle_fs_write(intptr_t fd, const void* buf, size_t n) {
-  if (n != 0 && buf == nullptr) {
-    set_platform_error("hyle_fs_write: buffer is NULL for nonzero length");
-    return -1;
+hyle_status hyle_fs_write(size_t* out_moved, hyle_file_handle file,
+                          const void* buf,
+                          size_t n) {
+  if (out_moved == nullptr) {
+    return steal_status(
+        hyle::Status::InvalidArgument("hyle_fs_write: out_moved is NULL"));
   }
-  hyle::platform::OwnedFd tmp{fd};
-  int64_t r = tmp.write(buf, n);
+  *out_moved = 0;
+  hyle::platform::FileHandle tmp{file};
+  auto result = tmp.write(buf, n);
   tmp.release();
-  set_platform_error(r < 0 ? "hyle_fs_write failed" : nullptr);
-  return r;
+  if (!result) return steal_status(std::move(result).error());
+  *out_moved = *result;
+  return steal_status(hyle::Status::Ok());
 }
 int hyle_fs_set_env_var(const char* name, const char* value) {
   return fs_result(name && hyle::platform::set_env_var(name, value),

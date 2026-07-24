@@ -16,6 +16,7 @@ using hyle::platform::page_size;
 using hyle::platform::Protect;
 using hyle::platform::vm_advise_hugepage;
 using hyle::platform::vm_advise_no_hugepage;
+using hyle::platform::vm_allocate_rw;
 using hyle::platform::vm_commit;
 using hyle::platform::vm_decommit;
 using hyle::platform::vm_protect;
@@ -47,6 +48,27 @@ TEST(VirtualMemory, ReserveCommitWriteRelease) {
   }
 
   ASSERT_TRUE(vm_release(base, p * 2).ok());
+}
+
+TEST(VirtualMemory, AllocateRwIsImmediatelyUsable) {
+  auto allocated = vm_allocate_rw(17);
+  ASSERT_TRUE(allocated.has_value()) << allocated.error().message();
+  auto* bytes = static_cast<unsigned char*>(*allocated);
+  bytes[0] = 0x2a;
+  bytes[16] = 0x7f;
+  EXPECT_EQ(bytes[0], 0x2a);
+  EXPECT_EQ(bytes[16], 0x7f);
+  EXPECT_TRUE(vm_release(bytes, 17).ok());
+  EXPECT_TRUE(vm_allocate_rw(0).error().IsInvalidArgument());
+}
+
+TEST(VirtualMemory, VmRegionAllocateRwOwnsCommittedMapping) {
+  auto allocated = VmRegion::allocate_rw(page_size() + 1);
+  ASSERT_TRUE(allocated.has_value()) << allocated.error().message();
+  EXPECT_EQ(allocated->size(), page_size() * 2);
+  auto* bytes = static_cast<unsigned char*>(allocated->data());
+  bytes[page_size()] = 0x55;
+  EXPECT_EQ(bytes[page_size()], 0x55);
 }
 
 TEST(VirtualMemory, ProtectNoneThenRestore) {

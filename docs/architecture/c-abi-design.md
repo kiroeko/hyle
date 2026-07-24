@@ -104,17 +104,17 @@ HYLE 不在 C ABI 上再包一层冗余 C++ facade：原生 `include/hyle/<mod>/
   bump、pool pop/acquire 等热路径继续直接返回指针/NULL，不在容量耗尽/OOM 路上构造
   owning Status；生命周期、foreign/double free 等契约违反仍 fail-fast。这是接口语义与
   成本裁决，不是依赖约束：error 是 P0 零上游根，mem 显式依赖它且不会形成环。
-- **platform 按失败形状分通道**：Thread 构造、DynLib、MappedFile 与 VM/NUMA 的
-  可恢复失败返回 `hyle_status` + 出参，因此 C 与 C++ 共用错误分类且没有
-  “NULL 究竟是合法值还是失败”的歧义；Parker wrapper 与 fs/fd 暂用
-  `hyle_platform_last_error`。它是未发布 ABI 的迁移中间态，不是推荐的
-  新接口模板；后续按真实调用链分批迁移，而不是一次机械改写全部 bool/指针原语。
+- **platform 按失败形状分通道**：Parker/Thread 构造、DynLib、MappedFile、VM/NUMA 与
+  打开的 file resource 都返回 `hyle_status` + 出参，因此 C 与 C++ 共用错误分类且没有
+  “NULL/INVALID 究竟是合法值还是失败”的歧义。旧 path/env 标量面暂用
+  `hyle_platform_last_error`；它是未发布 ABI 的迁移中间态，不是推荐的新接口模板，
+  后续按真实调用链分批迁移，而不是一次机械改写全部 bool/查询原语。
 - 对照：ggml 用 `ggml_status` 返回码；oneDNN 用 `dnnl_status_t` + C++ 层 `wrap_c_api` 转异常。HYLE 的可恢复失败同样走显式返回值，程序错误独立 fail-fast。
 
 ## 6. C++ API 易用性（第 1 层，给 C++ 用户）
 
 C++ 用户拿原生 API，易用性靠 C++ 语言特性本身：
-- **RAII**：`VmRegion`/`MappedFile`/`OwnedFd`/`StackAllocator` 析构自动释放，move-only。
+- **RAII**：`VmRegion`/`MappedFile`/`FileHandle`/`StackAllocator` 析构自动释放，move-only。
 - **模板便利**：`Allocator::allocate_n<T>`/`construct<T>`/`make_unique<T>`、硬容量 `ObjectPool<T>`、显式软层 `ObjectPoolCache<T>`、`GrowablePool<T>`。
 - **类型安全**：强类型句柄、`Status::Is##Code()` 谓词、`Result<T>` 单子式传播（`HYLE_ASSIGN_OR_RETURN`）。
 
