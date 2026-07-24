@@ -33,13 +33,14 @@
 #include "hyle/mem/shared_pool.h"
 #include "hyle/mem/stack_allocator.h"
 #include "hyle/mem/stats.h"
+#include "../error/status_access.h"
 
 namespace {
 
 using hyle::mem::Allocator;
 
 hyle_status steal_status(hyle::Status &&status) noexcept {
-  return hyle_status{status.release_rep()};
+  return hyle_status{hyle::detail::StatusAccess::release(status)};
 }
 
 static_assert(std::is_standard_layout_v<hyle_allocator>);

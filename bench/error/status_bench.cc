@@ -291,6 +291,40 @@ int main() {
     });
   }
 
+  // Flattening context is deliberately a normal user operation, not a hidden
+  // linked-list payload. Three layers cover the architecture's realistic
+  // outer/middle/leaf diagnostic shape and expose repeated-copy costs.
+  {
+    Status err_h = Status::Unavailable("device queue is unavailable");
+#if defined(HYLE_BENCH_ABSL)
+    absl::Status err_a = absl::UnavailableError("device queue is unavailable");
+#endif
+    nb::Bench b;
+    b.title("error context: prefix three semantic layers")
+        .relative(true)
+        .batch(1)
+        .minEpochIterations(250000);
+#if defined(HYLE_BENCH_ABSL)
+    b.run("absl::StatusBuilder SetPrepend x3", [&] {
+      absl::Status s = err_a;
+      s = absl::StatusBuilder(std::move(s)).SetPrepend()
+          << "dispatch batch: ";
+      s = absl::StatusBuilder(std::move(s)).SetPrepend()
+          << "execute graph: ";
+      s = absl::StatusBuilder(std::move(s)).SetPrepend()
+          << "serve request: ";
+      nb::doNotOptimizeAway(s.ok());
+    });
+#endif
+    b.run("HYLE Status::WithContext x3", [&] {
+      Status s = Status(err_h)
+                     .WithContext("dispatch batch")
+                     .WithContext("execute graph")
+                     .WithContext("serve request");
+      nb::doNotOptimizeAway(s.ok());
+    });
+  }
+
   // ---- (6) success propagation through a 4-deep chain (macro + value plumbing) ----
   {
     nb::Bench b;

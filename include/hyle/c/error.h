@@ -54,12 +54,19 @@ typedef struct hyle_status {
   uintptr_t rep; /* opaque owning handle */
 } hyle_status;
 
+/* Constant zero/OK initializer. Every hyle_status passed as a destination to
+ * free/move/add_context must first be initialized with this macro or returned
+ * by a hyle_status_* factory. */
+#define HYLE_STATUS_INIT {0}
+
 /* construct / destroy */
 HYLE_ERROR_C_API hyle_status hyle_status_ok(void);
 HYLE_ERROR_C_API hyle_status hyle_status_new(hyle_status_code code,
                                              const char *msg);
 HYLE_ERROR_C_API void hyle_status_free(hyle_status *s);
 HYLE_ERROR_C_API hyle_status hyle_status_clone(hyle_status s);
+/* dst must already hold an initialized Status. Its old value is freed before
+ * src is moved into it; src becomes OK. NULL src means "free dst". */
 HYLE_ERROR_C_API void hyle_status_move(hyle_status *dst, hyle_status *src);
 /* Prefix context in place. NULL/OK/empty are no-ops; allocation failure keeps
  * the original code and message unchanged. */

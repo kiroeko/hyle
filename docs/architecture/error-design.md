@@ -103,6 +103,12 @@ canonical code 使用 Abseil/gRPC 的稳定集合，不增设每个后端一套�
 - 分配失败时返回原 Status，不能为了增加上下文反而丢掉已有消息；
 - rvalue 重载消费原对象，const lvalue 重载产生独立值。
 
+单次组合必须读取并生成完整文本，因此时间/空间是最优的
+`O(context.size + message.size)`。连续 k 层会重复复制已扁平文本，等长 context 的整个构造
+序列最坏为 O(k²)；真实产品只应添加少量语义层。三层场景列入冻结 benchmark，若将来出现
+深层机器生成 context，再以真实调用决定是否引入链式 representation，不能提前让所有
+Status 承担节点和最终格式化复杂度。
+
 示例最终消息：
 
 ```text
@@ -169,6 +175,10 @@ C ABI 保持一个 machine word 的 owning handle：
 ```c
 typedef struct hyle_status { uintptr_t rep; } hyle_status;
 ```
+
+公开 C++ `Status` 不暴露 raw representation 的 adopt/release；跨 C ABI 的零拷贝 ownership
+转移只由 `src/error` 内部 bridge 完成。C handle 的零值 initializer 是
+`HYLE_STATUS_INIT`，所有会释放/替换旧值的 pointer API 都要求目标已初始化。
 
 能力必须覆盖：
 

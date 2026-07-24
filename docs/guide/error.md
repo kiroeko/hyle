@@ -107,6 +107,21 @@ if (status.IsUnavailable()) {
 `cleanup().IgnoreError()`。`HYLE_ASSIGN_OR_RETURN` 会展开成多条语句，放在
 `if/else/for/while` 下必须加 `{}`。
 
+## 常见坑
+
+- 不要对来自用户输入、I/O 或设备操作的 `Result<T>` 直接调用 `.value()`；错误分支会抛
+  `std::bad_expected_access`，绕开 HYLE 的值式失败协议。用传播宏，或先检查再移动
+  `result.error()`。只有测试和已由不变量证明成功的初始化代码适合 `.value()`。
+- `Status::message()` 返回借用 `string_view`。原 Status 被销毁、赋值，或作为 rvalue 加
+  context 后，不要继续使用先前 view；保留一份 Status copy 可以延长共享消息寿命。
+- `status.WithContext(text)` 对 lvalue 保留原值并返回新 Status；
+  `std::move(status).WithContext(text)` 消费原值，适合传播边界。不要机械地给每层函数名加壳。
+- 不同 Status 副本可以跨线程传递；同一个 Status 对象不能在一边 `Update`/赋值的同时被
+  另一线程读取。线程安全的是共享的不可变 message representation，不是对同一 C++ 对象的
+  并发读写。
+- `HYLE_ASSIGN_OR_RETURN` 支持声明，但会展开成多条语句；控制流下必须使用花括号。宏不会
+  自动增加 context，也不会替你清理此前获得的裸资源。
+
 ## 语言边界
 
 C++ 的 `Result<T>` 在 C/FFI 中映射为“返回 `hyle_status` + 首位 out 参数”；C++ 的

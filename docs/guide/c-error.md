@@ -21,14 +21,18 @@ typedef struct hyle_status { uintptr_t rep; } hyle_status;
 
 | 操作 | API |
 |---|---|
-| 创建 | `hyle_status_ok`、`hyle_status_new`、header-inline 每码工厂 |
+| 初始化/创建 | `HYLE_STATUS_INIT`、`hyle_status_ok`、`hyle_status_new`、header-inline 每码工厂 |
 | 拷贝 | `hyle_status_clone`，禁止用 `dst = src` 伪拷贝 owning handle |
-| 转移 | `hyle_status_move(&dst, &src)`，先释放 dst，再把 src 置 OK |
+| 转移 | `hyle_status_move(&dst, &src)`；dst 必须已初始化，先释放 dst，再把 src 置 OK |
 | 释放 | `hyle_status_free(&s)`，NULL 安全、幂等、释放后为 OK |
 | 增加上下文 | `hyle_status_add_context(&s, context)`，原地替换 owning handle |
 
 OK 与无消息错误零分配；带消息错误共享引用计数 representation。非法 C enum 输入归一为
 `HYLE_STATUS_UNKNOWN`。
+
+每个 `hyle_status` 在传给 `free`、作为 `move` 的 dst 或传给 `add_context` 前，都必须由
+`HYLE_STATUS_INIT`、`hyle_status_ok()`、工厂返回值或另一次合法 move 初始化。不要把未初始化
+的栈变量交给这些函数：`move` 会先释放 dst 中原有的 owning handle。
 
 ## 2. DLL 导出符号
 
@@ -120,9 +124,22 @@ hyle_status run(void) {
 ### 4.3 clone、move 与借用消息
 
 - 两个变量都要独立拥有同一错误：`hyle_status_clone`。
-- 只把所有权交给另一个变量：`hyle_status_move`。
+- 只把所有权交给另一个变量：先用 `HYLE_STATUS_INIT` 初始化 dst，再调用
+  `hyle_status_move`。
 - `hyle_status_message_cstr` 只借用；原 Status 被 free/move/原地加 context 后指针失效。
 - 直接 `dst = src` 只是复制 tagged word，会造成 heap Status double free；禁止。
+- 每个 owning handle 最终恰好 free 一次；`hyle_status_free` 会把它重置为 OK，因此对同一
+  已正确初始化的变量重复 free 是安全的。
+
+```c
+hyle_status src = hyle_status_unavailable("device lost");
+hyle_status dst = HYLE_STATUS_INIT;
+hyle_status_move(&dst, &src); /* src 现在是 OK */
+hyle_status_free(&dst);
+```
+
+传播宏只适用于当前函数可以立即 return 的位置。如果前面已经取得文件、锁或 opaque handle，
+先用普通分支完成 cleanup，再返回 Status；宏不会自动展开资源清理。
 
 ## 5. C++ 到 C 的映射
 
@@ -131,7 +148,7 @@ hyle_status run(void) {
 | `Result<T>` | `hyle_status` 返回值 + 成功出参 |
 | `HYLE_RETURN_IF_ERROR` / `HYLE_ASSIGN_OR_RETURN` | `HYLE_C_RETURN_IF_ERROR` 或普通分支 |
 | `Status::WithContext` | `hyle_status_add_context` |
-| `Status::release_rep` / `adopt_rep` | 仅内部桥接，不是用户 ABI |
+| C++/C representation 转移 | 仅由 HYLE 源码内部 bridge 完成；公开 C++ API 不暴露 raw rep |
 | 日志、sink | 独立的 `hyle/c/obs.h` 产品面 |
 
 ## 6. 验收

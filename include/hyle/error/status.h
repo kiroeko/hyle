@@ -60,6 +60,8 @@ enum class StatusCode : std::uint16_t {
 HYLE_ERROR_API std::string_view status_code_name(StatusCode code) noexcept;
 
 namespace detail {
+class StatusAccess;
+
 constexpr bool status_code_is_valid(StatusCode code) noexcept {
   return static_cast<std::uint16_t>(code) <=
          static_cast<std::uint16_t>(StatusCode::Unauthenticated);
@@ -234,22 +236,9 @@ class [[nodiscard]] Status {
   // preferable to a bare `(void)status`, especially at cleanup boundaries.
   void IgnoreError() const noexcept {}
 
-  // ---- C-ABI ownership transfer (hyle/c/error.h bridge only) ----------------
-  // Steal the tagged word (leaves *this OK). Pair with adopt_rep on the C side
-  // of a boundary so heap reps are not double-released.
-  std::uintptr_t release_rep() noexcept {
-    std::uintptr_t r = rep_;
-    rep_ = 0;
-    return r;
-  }
-  // Take ownership of a tagged word produced by release_rep() or equivalent.
-  static Status adopt_rep(std::uintptr_t rep) noexcept {
-    Status s;
-    s.rep_ = rep;
-    return s;
-  }
-
  private:
+  friend class detail::StatusAccess;
+
   // Keep the common OK/no-op path header-inline; only a real error crosses the
   // shared-library seam and touches the heap representation.
   HYLE_ERROR_API Status

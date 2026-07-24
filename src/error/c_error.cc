@@ -10,6 +10,7 @@
 
 #include "hyle/c/error.h"
 #include "hyle/error/status.h"
+#include "status_access.h"
 
 namespace {
 
@@ -37,11 +38,11 @@ HYLE_FOREACH_STATUS_CODE(HYLE_STATUS_ABI_MATCH)
 #undef HYLE_STATUS_ABI_MATCH
 
 hyle_status steal_to_c(hyle::Status &&status) noexcept {
-  return hyle_status{status.release_rep()};
+  return hyle_status{hyle::detail::StatusAccess::release(status)};
 }
 
 hyle::Status adopt_from_c(hyle_status status) noexcept {
-  return hyle::Status::adopt_rep(status.rep);
+  return hyle::detail::StatusAccess::adopt(status.rep);
 }
 
 std::size_t copy_sv(std::string_view value, char *buf,
@@ -76,7 +77,7 @@ void hyle_status_free(hyle_status *status) {
 hyle_status hyle_status_clone(hyle_status status) {
   hyle::Status borrowed = adopt_from_c(status);
   hyle::Status copy = borrowed;
-  (void)borrowed.release_rep();
+  (void)hyle::detail::StatusAccess::release(borrowed);
   return steal_to_c(std::move(copy));
 }
 
@@ -103,21 +104,21 @@ void hyle_status_add_context(hyle_status *status, const char *context) {
 int hyle_status_is_ok(hyle_status status) {
   hyle::Status borrowed = adopt_from_c(status);
   const int result = borrowed.ok() ? 1 : 0;
-  (void)borrowed.release_rep();
+  (void)hyle::detail::StatusAccess::release(borrowed);
   return result;
 }
 
 hyle_status_code hyle_status_get_code(hyle_status status) {
   hyle::Status borrowed = adopt_from_c(status);
   const hyle_status_code result = to_c_code(borrowed.code());
-  (void)borrowed.release_rep();
+  (void)hyle::detail::StatusAccess::release(borrowed);
   return result;
 }
 
 int hyle_status_has_message(hyle_status status) {
   hyle::Status borrowed = adopt_from_c(status);
   const int result = borrowed.has_message() ? 1 : 0;
-  (void)borrowed.release_rep();
+  (void)hyle::detail::StatusAccess::release(borrowed);
   return result;
 }
 
@@ -125,8 +126,8 @@ int hyle_status_equals(hyle_status a, hyle_status b) {
   hyle::Status aa = adopt_from_c(a);
   hyle::Status bb = adopt_from_c(b);
   const int result = aa == bb ? 1 : 0;
-  (void)aa.release_rep();
-  (void)bb.release_rep();
+  (void)hyle::detail::StatusAccess::release(aa);
+  (void)hyle::detail::StatusAccess::release(bb);
   return result;
 }
 
@@ -137,21 +138,21 @@ const char *hyle_status_code_name(hyle_status_code code) {
 size_t hyle_status_message(hyle_status status, char *buf, size_t cap) {
   hyle::Status borrowed = adopt_from_c(status);
   const size_t result = copy_sv(borrowed.message(), buf, cap);
-  (void)borrowed.release_rep();
+  (void)hyle::detail::StatusAccess::release(borrowed);
   return result;
 }
 
 size_t hyle_status_to_string(hyle_status status, char *buf, size_t cap) {
   hyle::Status borrowed = adopt_from_c(status);
   const size_t result = borrowed.ToString(buf, cap);
-  (void)borrowed.release_rep();
+  (void)hyle::detail::StatusAccess::release(borrowed);
   return result;
 }
 
 const char *hyle_status_message_cstr(hyle_status status) {
   hyle::Status borrowed = adopt_from_c(status);
   const std::string_view message = borrowed.message();
-  (void)borrowed.release_rep();
+  (void)hyle::detail::StatusAccess::release(borrowed);
   return message.empty() ? "" : message.data();
 }
 

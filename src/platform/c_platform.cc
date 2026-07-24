@@ -17,6 +17,7 @@
 #include "hyle/platform/thread.h"
 #include "hyle/platform/virtual_memory.h"
 #include "hyle/platform/wait.h"
+#include "../error/status_access.h"
 
 namespace {
 
@@ -76,7 +77,7 @@ int fs_result(bool ok, const char* failure) noexcept {
 
 hyle_status steal_status(hyle::Status&& s) noexcept {
   hyle_status out;
-  out.rep = s.release_rep();
+  out.rep = hyle::detail::StatusAccess::release(s);
   return out;
 }
 

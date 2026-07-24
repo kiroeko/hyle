@@ -10,6 +10,7 @@
 
 #include "hyle/error/result.h"
 #include "hyle/macros.h"
+#include "status_access.h"
 
 namespace hyle {
 
@@ -197,7 +198,7 @@ Status Status::WithContextSlow(std::string_view context) const & noexcept {
   const std::string_view current = message();
   const std::uintptr_t rep = detail::status_make_context(
       code(), context.data(), context.size(), current.data(), current.size());
-  return rep == 0 ? *this : adopt_rep(rep);
+  return rep == 0 ? *this : detail::StatusAccess::adopt(rep);
 }
 
 Status Status::WithContextSlow(std::string_view context) && noexcept {
@@ -205,7 +206,7 @@ Status Status::WithContextSlow(std::string_view context) && noexcept {
   const std::uintptr_t rep = detail::status_make_context(
       code(), context.data(), context.size(), current.data(), current.size());
   if (rep == 0) return std::move(*this);
-  Status result = adopt_rep(rep);
+  Status result = detail::StatusAccess::adopt(rep);
   if (is_heap()) detail::status_release(rep_);
   rep_ = 0;
   return result;

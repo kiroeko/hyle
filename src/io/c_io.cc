@@ -9,6 +9,7 @@
 #include "hyle/io/proactor.h"
 #include "hyle/io/shared_memory.h"
 #include "c_io_internal.h"
+#include "../error/status_access.h"
 
 namespace hyle::io::c_detail {
 
@@ -674,7 +675,7 @@ hyle_status hyle_io_shared_memory_unlink(const char* name) {
     clear_error();
   else
     set_error("shared memory unlink failed");
-  return hyle_status{status.release_rep()};
+  return hyle_status{hyle::detail::StatusAccess::release(status)};
 }
 
 }  // extern "C"

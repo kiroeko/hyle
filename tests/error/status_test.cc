@@ -230,6 +230,15 @@ TEST(Status, IsSmallObject) {
   EXPECT_EQ(sizeof(Status), sizeof(void *));
 }
 
+template <class T>
+concept HasPublicReleaseRep = requires(T& value) { value.release_rep(); };
+
+template <class T>
+concept HasPublicAdoptRep = requires(std::uintptr_t rep) { T::adopt_rep(rep); };
+
+static_assert(!HasPublicReleaseRep<Status>);
+static_assert(!HasPublicAdoptRep<Status>);
+
 TEST(Status, ToStringTruncates) {
   Status s = Status::Internal("boom");  // "Internal: boom" = 14 chars
   char small[5];

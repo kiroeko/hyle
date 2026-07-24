@@ -24,6 +24,10 @@ static hyle_status helper_propagate(void) {
 
 int main(void) {
   /* OK */
+  hyle_status zero = HYLE_STATUS_INIT;
+  CHECK(hyle_status_is_ok(zero));
+  hyle_status_free(&zero);
+
   hyle_status ok = hyle_status_ok();
   CHECK(hyle_status_is_ok(ok));
   CHECK(hyle_status_get_code(ok) == HYLE_STATUS_OK);
@@ -110,7 +114,7 @@ int main(void) {
   CHECK(hyle_status_get_code(nf2) == HYLE_STATUS_NOT_FOUND);
 
   /* move */
-  hyle_status dst = hyle_status_ok();
+  hyle_status dst = HYLE_STATUS_INIT;
   hyle_status_move(&dst, &nf2);
   CHECK(hyle_status_is_ok(nf2));
   CHECK(hyle_status_is_not_found(dst));
