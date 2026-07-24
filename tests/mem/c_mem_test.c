@@ -770,6 +770,12 @@ int main(void) {
     CHECK(hr == NULL);
     hyle_status_free(&status);
 
+    status = hyle_huge_region_open_local(
+        &hr, bytes, HYLE_HUGE_NUMA_INTERLEAVE);
+    CHECK(hyle_status_is_invalid_argument(status));
+    CHECK(hr == NULL);
+    hyle_status_free(&status);
+
     hyle_huge_region_destroy(NULL); /* NULL-safe */
   }
 

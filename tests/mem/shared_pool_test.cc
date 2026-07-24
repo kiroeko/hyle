@@ -237,6 +237,10 @@ TEST(SharedPoolCache, OwnedMetadataOomLeavesInvalidEmptyCache) {
 
   EXPECT_FALSE(cache.valid());
   EXPECT_EQ(cache.allocate(), nullptr);
+  Allocator alloc = cache.as_allocator();
+  EXPECT_TRUE(alloc.valid());
+  EXPECT_EQ(alloc.allocate(32, 16), nullptr);
+  EXPECT_EQ(alloc.reallocate(nullptr, 0, 32, 16), nullptr);
   EXPECT_EQ(cache.cached(), 0u);
   EXPECT_EQ(metadata.used(), 0u);
 }

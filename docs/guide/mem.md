@@ -98,10 +98,12 @@ typed shell。Cache 指 slot visibility，不代表对象状态被保留。
 
 ```cpp
 hyle::mem::SharedPool core(hyle::mem::system_allocator(), 64, 4096);
+if (!core.valid()) { /* propagate slab/metadata OOM before use */ }
 std::array<std::uint32_t, 128> local_slots{};
 hyle::mem::SharedPoolCache local(core, local_slots, 32);
+if (!local.valid()) { /* reject unusable cache before use */ }
 void* p = local.allocate();
-local.deallocate(p);
+if (p != nullptr) local.deallocate(p);
 local.publish();  // handoff / idle / owner transfer boundary
 ```
 
@@ -110,6 +112,7 @@ local.publish();  // handoff / idle / owner transfer boundary
 ```cpp
 hyle::mem::PreservingObjectPool<CodecContext> contexts(
     hyle::mem::system_allocator(), 32, dictionary);
+if (!contexts.valid()) { /* propagate construction OOM */ }
 
 if (auto context = contexts.try_loan()) {
   context->reset_stream();
@@ -125,7 +128,9 @@ if (auto context = contexts.try_loan()) {
 `FixedPool` 把 block/allocation metadata 放进调用方 storage；free bins、边界和统计属于
 `FixedPool` 控制对象（C surface 可由 caller-owned control 原地构造，或从显式 control
 allocator 创建 opaque handle）。它支持
-变长 allocate/deallocate/reallocate、精确 requested `used/peak` 和 O(1) 邻块合并；没有
+变长 allocate/deallocate/reallocate、精确 requested `used/peak` 和 O(1) 邻块合并；realloc
+在当前物理 span 足够或后一邻块空闲时 O(1) 原地 grow，shrink 保留 span 供后续 O(1)
+regrow（与成熟 fixed-pool realloc 一致）；没有
 隐藏 payload heap，也不会 fallback。`reset()` 会一次性使所有旧指针失效，调用前必须
 保证无 live allocation。
 
@@ -171,7 +176,9 @@ request.clear();
 ```cpp
 // typed owner-local cache over a hard pool
 hyle::mem::ObjectPool<int> core(hyle::mem::system_allocator(), 32);
+if (!core.valid()) { /* propagate slab/metadata OOM */ }
 hyle::mem::ObjectPoolCache<int> local(core, 8, 2);
+if (!local.valid()) { /* propagate cache metadata OOM */ }
 {
   auto value = local.try_loan(7);
   if (value) *value += 1;
@@ -200,6 +207,7 @@ if (p != nullptr) bounded.deallocate(p, 4096, 64);
 `numa_placement_applied()` 单独说明 placement 调用结果。`allocate*` 返回
 `Result<HugeRegion>`：hard bind/interleave 不能满足时返回带原因的 Status；preferred
 可以返回可用 region 但 `numa_placement_applied()==false`，THP 仍是 best-effort。
+bind 与 interleave 互斥；interleave 必须搭配 `kNumaAny`，不能传给 `allocate_local`。
 
 `FiberStack::allocate` 与 `FiberStackPool::acquire` 同样返回 `Result<FiberStack>`，使 sched
 能保留原生 VM 失败原因；可信固定配置仍可用 `Fiber` 便利构造，用户输入应走

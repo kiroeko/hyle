@@ -78,6 +78,17 @@ HYLE_FORCE_INLINE bool any(HugeFlags f) noexcept {
   return static_cast<std::uint8_t>(f) != 0;
 }
 
+HYLE_FORCE_INLINE constexpr bool valid_huge_flags(HugeFlags flags) noexcept {
+  constexpr auto known = static_cast<std::uint8_t>(HugeFlags::kThpHint) |
+                         static_cast<std::uint8_t>(HugeFlags::kPrefault) |
+                         static_cast<std::uint8_t>(HugeFlags::kNumaBind) |
+                         static_cast<std::uint8_t>(HugeFlags::kNumaInterleave);
+  const auto bits = static_cast<std::uint8_t>(flags);
+  const auto placement = static_cast<std::uint8_t>(HugeFlags::kNumaBind) |
+                         static_cast<std::uint8_t>(HugeFlags::kNumaInterleave);
+  return (bits & ~known) == 0 && (bits & placement) != placement;
+}
+
 class HugeRegion {
 public:
   HugeRegion() noexcept = default;
@@ -91,6 +102,10 @@ public:
     HugeRegion r;
     r.requested_flags_ = flags;
     r.requested_numa_node_ = numa_node;
+    if (!valid_huge_flags(flags)) {
+      return std::unexpected(Status::InvalidArgument(
+          "HugeRegion allocate: unknown or conflicting flags"));
+    }
     if (bytes == 0) {
       return std::unexpected(
           Status::InvalidArgument("HugeRegion allocate: size is zero"));
@@ -101,6 +116,10 @@ public:
           Status::OutOfRange("HugeRegion allocate: size overflow"));
     }
     const bool interleave = any(flags & HugeFlags::kNumaInterleave);
+    if (interleave && numa_node != platform::kNumaAny) {
+      return std::unexpected(Status::InvalidArgument(
+          "HugeRegion allocate: interleave requires NUMA-any"));
+    }
     if (!interleave && numa_node != platform::kNumaAny &&
         (numa_node < 0 ||
          static_cast<unsigned>(numa_node) >= platform::numa_node_count())) {
@@ -176,6 +195,10 @@ public:
   static Result<HugeRegion>
   allocate_local(std::size_t bytes,
                  HugeFlags flags = HugeFlags::kDefault) noexcept {
+    if (any(flags & HugeFlags::kNumaInterleave)) {
+      return std::unexpected(Status::InvalidArgument(
+          "HugeRegion allocate_local: interleave is not local placement"));
+    }
     return allocate(bytes, flags,
                     static_cast<int>(platform::numa_current_node()));
   }

@@ -113,6 +113,8 @@ blocking borrow 不进入 `mem/` 基础池。等待策略依赖 fiber/condition/
 - 固定 block size + runtime capacity。
 - completed `deallocate()` 立即进入 shared core；remote free 可见。
 - 两次稳定全-shard 快照消除 block 在扫描背后迁移造成的假耗尽。
+- home-shard 成功路径只做一次 CAS，保持 expected O(1)；O(shards) observation 数组与稳定空
+  快照被隔离到 noinline exhaustion 冷路，不让正常成功调用保留约 2 KiB 栈帧。
 - 64-bit packed head；32-bit version 饱和后永久进入该 shard 的 serialized mode，不回绕。
 - 用于严格 object/block quota、跨线程 handoff；本地 request churn 不是它的吞吐强项。
 
@@ -176,11 +178,12 @@ owned growable `Region` 已提供：
 external 能力按 allocation model 分成两个类型：
 
 1. `FixedRegion`：调用方借入 storage、bump + bulk reset、无 individual free。
-2. `FixedPool`：调用方借入 storage、size-bin segregated-fit variable-size allocate/free/realloc、boundary metadata O(1) 邻块合并；单线程且无 fallback。
+2. `FixedPool`：调用方借入 storage、size-bin segregated-fit variable-size allocate/free/realloc、boundary metadata O(1) 邻块合并；realloc 优先复用 retained span 或后一空闲邻块，常见 shrink/regrow 与 adjacent grow 均为 O(1)，搬移/复制留在 noinline 冷路；单线程且无 fallback。
 
 ## 9. NUMA、大页与专用模块
 
-- `HugeRegion`、显式 NUMA bind/interleave、THP/prefault 保留；策略失败是可观察的降级或错误，不保证自动 NUMA 最优。
+- `HugeRegion`、显式 NUMA bind/interleave、THP/prefault 保留；bind/interleave 互斥，interleave
+  只能搭配 NUMA-any 且不能走 local factory；策略失败是可观察的降级或错误，不保证自动 NUMA 最优。
 - `reserve_huge_1g_pages` 是进程启动期冷控制面，原生 C++ 返回 `Status`，C ABI 原样转移同一
   representation；不得在 C 层把 bool 重新猜成错误原因。mimalloc 当前只暴露 ENOMEM，映射
   `ResourceExhausted` 并在 message 保留 native value，非法 node/溢出为 `OutOfRange`。

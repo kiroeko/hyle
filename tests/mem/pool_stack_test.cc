@@ -671,6 +671,48 @@ TEST(FixedPool, ReallocatePreservesBytesAndAllocatorAdapterWorks) {
   EXPECT_EQ(pool.used(), 0u);
 }
 
+TEST(FixedPool, ReallocateGrowsIntoAdjacentFreeBlockInPlace) {
+  alignas(64) std::byte storage[4096];
+  FixedPool pool(storage, sizeof(storage));
+  auto *first = static_cast<unsigned char *>(pool.allocate(256, 16));
+  void *adjacent = pool.allocate(512, 16);
+  void *barrier = pool.allocate(2400, 16);
+  ASSERT_NE(first, nullptr);
+  ASSERT_NE(adjacent, nullptr);
+  ASSERT_NE(barrier, nullptr);
+  std::memset(first, 0xA5, 256);
+
+  pool.deallocate(adjacent);
+  auto *grown = static_cast<unsigned char *>(
+      pool.reallocate(first, 256, 600, 16));
+  ASSERT_EQ(grown, first);
+  for (std::size_t i = 0; i < 256; ++i)
+    EXPECT_EQ(grown[i], 0xA5);
+  EXPECT_EQ(pool.used(), 3000u);
+
+  // The unused part of the merged neighbor remains independently usable.
+  void *remainder = pool.allocate(64, 16);
+  ASSERT_NE(remainder, nullptr);
+  pool.deallocate(remainder);
+  pool.deallocate(grown);
+  pool.deallocate(barrier);
+  EXPECT_EQ(pool.used(), 0u);
+}
+
+TEST(FixedPool, ReallocateShrinkRetainsSpanForConstantTimeRegrow) {
+  alignas(64) std::byte storage[2048];
+  FixedPool pool(storage, sizeof(storage));
+  void *p = pool.allocate(1400, 16);
+  ASSERT_NE(p, nullptr);
+  ASSERT_EQ(pool.allocate(800, 16), nullptr);
+
+  ASSERT_EQ(pool.reallocate(p, 1400, 128, 16), p);
+  EXPECT_EQ(pool.allocate(800, 16), nullptr);
+  ASSERT_EQ(pool.reallocate(p, 128, 1400, 16), p);
+  pool.deallocate(p);
+  EXPECT_EQ(pool.used(), 0u);
+}
+
 TEST(FixedPool, RecentFreeMissPublishesBlockAndResetReclaimsEverything) {
   alignas(64) std::byte storage[4096];
   FixedPool pool(storage, sizeof(storage));
@@ -769,6 +811,72 @@ TEST(FixedPool, RandomizedMixedSizeModelPreservesLiveAllocations) {
   EXPECT_EQ(pool.used(), 0u);
   EXPECT_NE(pool.allocate(48 * 1024, 64), nullptr)
       << "all adjacent blocks should coalesce after randomized churn";
+}
+
+TEST(FixedPool, RandomizedReallocateModelPreservesDataAndAccounting) {
+  alignas(64) std::byte storage[64 * 1024];
+  FixedPool pool(storage, sizeof(storage));
+  struct Live {
+    unsigned char *ptr;
+    std::size_t size;
+    unsigned char tag;
+  };
+  std::vector<Live> live;
+  std::uint32_t random = 0x243f6a88u;
+  auto next_random = [&] {
+    random = random * 1664525u + 1013904223u;
+    return random;
+  };
+  auto verify = [](const Live &allocation, std::size_t bytes) {
+    for (std::size_t i = 0; i < bytes; ++i)
+      ASSERT_EQ(allocation.ptr[i], allocation.tag);
+  };
+
+  for (int step = 0; step < 12000; ++step) {
+    const unsigned op = live.empty() ? 0 : next_random() % 3;
+    if (op == 0 && live.size() < 128) {
+      const std::size_t bytes = 1 + next_random() % 768;
+      auto *p = static_cast<unsigned char *>(pool.allocate(bytes, 16));
+      if (p != nullptr) {
+        const auto tag = static_cast<unsigned char>(1 + step % 251);
+        std::memset(p, tag, bytes);
+        live.push_back({p, bytes, tag});
+      }
+    } else if (op == 1) {
+      const std::size_t index = next_random() % live.size();
+      Live &allocation = live[index];
+      verify(allocation, allocation.size);
+      const std::size_t new_size = 1 + next_random() % 1024;
+      auto *resized = static_cast<unsigned char *>(pool.reallocate(
+          allocation.ptr, allocation.size, new_size, 16));
+      if (resized != nullptr) {
+        const std::size_t preserved =
+            allocation.size < new_size ? allocation.size : new_size;
+        allocation.ptr = resized;
+        verify(allocation, preserved);
+        allocation.size = new_size;
+        std::memset(allocation.ptr, allocation.tag, allocation.size);
+      } else {
+        verify(allocation, allocation.size);
+      }
+    } else {
+      const std::size_t index = next_random() % live.size();
+      verify(live[index], live[index].size);
+      pool.deallocate(live[index].ptr);
+      live[index] = live.back();
+      live.pop_back();
+    }
+  }
+
+  std::size_t expected_used = 0;
+  for (const Live &allocation : live) {
+    verify(allocation, allocation.size);
+    expected_used += allocation.size;
+  }
+  EXPECT_EQ(pool.used(), expected_used);
+  for (const Live &allocation : live)
+    pool.deallocate(allocation.ptr);
+  EXPECT_EQ(pool.used(), 0u);
 }
 
 TEST(FixedPoolDeathTest, DoubleReturnTraps) {

@@ -23,11 +23,27 @@ HYLE_FORCE_INLINE constexpr bool is_pow2(std::size_t a) noexcept {
   return a != 0 && (a & (a - 1)) == 0;
 }
 
+// Overflow-aware form for sizes derived from untrusted or runtime input.
+// `out` is written only on success.
+HYLE_FORCE_INLINE constexpr bool try_align_up(
+    std::size_t n, std::size_t a, std::size_t *out) noexcept {
+  HYLE_FATAL_ASSERT(is_pow2(a));
+  HYLE_FATAL_ASSERT(out != nullptr);
+  const std::size_t padding = a - 1;
+  if (n > SIZE_MAX - padding)
+    return false;
+  *out = (n + padding) & ~padding;
+  return true;
+}
+
 // Smallest multiple of `a` that is >= n.
+// An unrepresentable result is a caller bug; use try_align_up() when overflow
+// is an expected input condition.
 HYLE_FORCE_INLINE constexpr std::size_t align_up(std::size_t n,
                                                  std::size_t a) noexcept {
-  HYLE_FATAL_ASSERT(is_pow2(a));
-  return (n + (a - 1)) & ~(a - 1);
+  std::size_t out = 0;
+  HYLE_FATAL_ASSERT(try_align_up(n, a, &out));
+  return out;
 }
 
 // Largest multiple of `a` that is <= n.

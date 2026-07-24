@@ -145,9 +145,10 @@ HYLE_MEM_C_API size_t hyle_system_usable_size(const void *ptr);
  * shape).
  * >= size; not guaranteed equal to usable_size(alloc(size)); 0->0. */
 HYLE_MEM_C_API size_t hyle_system_good_size(size_t size);
-/* Ask the process heap to return unused memory. force==0 is the ordinary
- * maintenance path; non-zero requests an aggressive, potentially millisecond
- * cold-path collection. */
+/* Ask the calling thread's system heap to return unused memory. force==0 is
+ * the ordinary maintenance path; non-zero requests an aggressive, potentially
+ * millisecond cold-path collection. Long-lived worker pools must invoke it on
+ * each worker whose heap should be collected. */
 HYLE_MEM_C_API void hyle_system_collect(int force);
 
 /* ========================================================================== */
@@ -620,15 +621,15 @@ static inline hyle_status hyle_growable_pool_create_default(
 /* HugeRegion — huge-page / NUMA-placed span */
 /* ========================================================================== */
 
-/* HugeFlags bits (soft hints; correctness never depends on them). Named enum so
- * cross-language FFI tools surface the flags as typed constants. */
+/* HugeFlags bits. THP is a soft hint; bind/interleave are strict placement
+ * requests and are mutually exclusive. Named enum so cross-language FFI tools
+ * surface the flags as typed constants. */
 typedef enum hyle_huge_flags {
   HYLE_HUGE_NONE = 0,
   HYLE_HUGE_THP_HINT = 1u << 0,  /* MADV_HUGEPAGE hint (Linux) */
   HYLE_HUGE_PREFAULT = 1u << 1,  /* touch every page up front */
   HYLE_HUGE_NUMA_BIND = 1u << 2, /* hard-bind to node (else preferred) */
-  HYLE_HUGE_NUMA_INTERLEAVE = 1u
-                              << 3 /* stripe across all nodes (ignores node) */
+  HYLE_HUGE_NUMA_INTERLEAVE = 1u << 3 /* stripe across all nodes */
 } hyle_huge_flags;
 
 /* No NUMA constraint (matches HYLE_NUMA_ANY in c/platform.h). Named enum for
@@ -637,11 +638,12 @@ typedef enum hyle_mem_numa_node { HYLE_MEM_NUMA_ANY = -1 } hyle_mem_numa_node;
 
 typedef struct hyle_huge_region_o hyle_huge_region;
 
-/* Reserve+commit `bytes` (large-page aligned), placed per flags/node. */
+/* Reserve+commit `bytes` (large-page aligned), placed per flags/node.
+ * INTERLEAVE requires HYLE_MEM_NUMA_ANY. */
 HYLE_MEM_C_API hyle_status
 hyle_huge_region_open(hyle_huge_region **out, size_t bytes, uint32_t flags,
                       int numa_node);
-/* Prefer the calling thread's home node. */
+/* Prefer/bind to the calling thread's home node; INTERLEAVE is invalid here. */
 HYLE_MEM_C_API hyle_status
 hyle_huge_region_open_local(hyle_huge_region **out, size_t bytes,
                             uint32_t flags);

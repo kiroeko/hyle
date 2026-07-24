@@ -68,7 +68,7 @@ typedef struct hyle_allocator {
 | `hyle_system_allocator()` | mimalloc-backed 进程级句柄 |
 | `hyle_system_usable_size(ptr)` | system 块真实可用字节；NULL→0 |
 | `hyle_system_good_size(size)` | 不分配地给出推荐 request size（≥size）；不承诺等于 alloc(size) 的 usable |
-| `hyle_system_collect(force)` | 显式要求 mimalloc 归还空闲内存；force 非零是可能达到毫秒级的冷路径 |
+| `hyle_system_collect(force)` | 收集调用线程的 mimalloc heap；force 非零可能达到毫秒级；worker pool 需在每个目标 worker 上调用 |
 | `hyle_alloc` / `hyle_free` / `hyle_realloc` | header-inline vtable 转发；alignment==0 使用默认对齐 |
 | `hyle_allocator_is_valid(a)` | header-inline 检查三个函数指针，供配置/FFI 边界验证 |
 
@@ -110,7 +110,8 @@ reserve 的严格预算，不是 backing 的物理空闲字节。
   bulk-reset bump；没有需要管理的 control allocation，也无需 destroy。旧切片在 clear 后全部失效。
 - `hyle_fixed_pool_init(&out,&control,storage,size)` 的 control/payload 都由调用方持有；
   `hyle_fixed_pool_create(&out,control_allocator,storage,size)` 只从显式 allocator 创建 control，
-  `create_default` 才选择 system allocator。两者都支持 individual allocate/free/realloc。reset 前必须
+  `create_default` 才选择 system allocator。两者都支持 individual allocate/free/realloc；realloc
+  可 O(1) 原地利用当前 span/后一空闲邻块，shrink 保留 span 让后续 regrow 仍为 O(1)。reset 前必须
   无 live allocation；foreign/double return 是合同错误并 fail-fast。
 
 三者都单线程。它们的 `as_allocator` 句柄借用原对象；Region/FixedPool destroy 后失效，
@@ -242,7 +243,7 @@ typed 宏为 `HYLE_GROWABLE_POOL_CREATE/ACQUIRE/RELEASE`。需要 ctor/dtor 的 
 mem 不再维护私有 TLS error code/string。冷路径与全库共用 `hyle_status`；成功 Status 是 8B
 零值、零分配，错误消息分配失败时仍保留 code。热分配路径则完全不构造 Status。
 
-flags：`HYLE_HUGE_THP_HINT`、`HYLE_HUGE_PREFAULT`、`HYLE_HUGE_NUMA_BIND`、`HYLE_HUGE_NUMA_INTERLEAVE`；无 NUMA 约束用 `HYLE_MEM_NUMA_ANY`。
+flags：`HYLE_HUGE_THP_HINT`、`HYLE_HUGE_PREFAULT`、`HYLE_HUGE_NUMA_BIND`、`HYLE_HUGE_NUMA_INTERLEAVE`；bind/interleave 互斥，interleave 只能搭配 `HYLE_MEM_NUMA_ANY`，也不能传给 `open_local`。无 NUMA 约束用 `HYLE_MEM_NUMA_ANY`。
 
 ## 8. 常用写法
 

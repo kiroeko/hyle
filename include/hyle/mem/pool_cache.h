@@ -146,8 +146,11 @@ private:
     auto *self = static_cast<SharedPoolCache *>(state);
     if (size == 0)
       return nullptr;
-    HYLE_FATAL_ASSERT(self->valid_ &&
-                      self->pool_->cache_request_fits(size, alignment));
+    // Construction OOM is a runtime allocation failure, not a caller bug.
+    // Keep the allocator handle complete and consistently always-failing.
+    if (!self->valid_)
+      return nullptr;
+    HYLE_FATAL_ASSERT(self->pool_->cache_request_fits(size, alignment));
     return self->allocate();
   }
 

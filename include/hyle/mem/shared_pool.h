@@ -339,12 +339,20 @@ protected:
 #endif
   }
 
-  // Pop from the home shard or any fallback shard. A failed first collect is
-  // not enough: independent shard snapshots can otherwise miss a free that
-  // moves behind the scan. A second identical tagged-head collect proves every
-  // shard remained empty over one common interval (barring the documented
-  // finite tag wrap).
-  std::uint32_t pop_any_shard(std::uint32_t home) noexcept {
+  // The overwhelmingly common successful home-shard path stays in the caller
+  // and has no O(shards) stack frame. Only a miss enters the stable-empty proof
+  // below. A failed first collect is not enough: independent shard snapshots
+  // can otherwise miss a free that moves behind the scan. A second identical
+  // tagged-head collect proves every shard remained empty over one common
+  // interval (barring the documented finite tag wrap).
+  HYLE_FORCE_INLINE std::uint32_t
+  pop_any_shard(std::uint32_t home) noexcept {
+    const std::uint32_t idx = pop_shard(home);
+    return idx != kNull ? idx : pop_any_shard_slow(home);
+  }
+
+  HYLE_NOINLINE std::uint32_t
+  pop_any_shard_slow(std::uint32_t home) noexcept {
     thread_local std::uint32_t last_remote = 0; // hint only; holds no block
     EmptyObservation observed[kShardCap];
     for (;;) {
@@ -382,8 +390,16 @@ protected:
     }
   }
 
-  std::uint32_t pop_any_shard_batch(std::uint32_t home, std::uint32_t want,
-                                    std::uint32_t *out) noexcept {
+  HYLE_FORCE_INLINE std::uint32_t
+  pop_any_shard_batch(std::uint32_t home, std::uint32_t want,
+                      std::uint32_t *out) noexcept {
+    const std::uint32_t n = pop_shard_batch(home, want, out);
+    return n != 0 ? n : pop_any_shard_batch_slow(home, want, out);
+  }
+
+  HYLE_NOINLINE std::uint32_t
+  pop_any_shard_batch_slow(std::uint32_t home, std::uint32_t want,
+                           std::uint32_t *out) noexcept {
     thread_local std::uint32_t last_remote = 0; // hint only; holds no block
     EmptyObservation observed[kShardCap];
     for (;;) {

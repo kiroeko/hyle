@@ -1305,6 +1305,51 @@ int main() {
 #endif
     }
 
+    // External-buffer vector/packet growth: resize one live allocation across
+    // two working sizes. Both implementations expose fixed-pool realloc; this
+    // exercises adjacent-free in-place grow plus retained-span shrink/regrow,
+    // rather than a synthetic allocator-only primitive.
+    if (!adapter_only) {
+      constexpr int kResizeCycles = 4096;
+      constexpr std::size_t kSmall = 256;
+      constexpr std::size_t kLarge = 1024;
+      constexpr std::size_t kStorageBytes = 64 * 1024;
+      std::vector<std::byte> storage(kStorageBytes);
+      FixedPool pool(storage.data(), storage.size());
+      void *hyle_ptr = require_allocation(pool.allocate(kSmall, 16));
+      std::memset(hyle_ptr, 0xA5, kSmall);
+      nb::Bench b;
+      b.title("external fixed buffer: repeated grow/shrink realloc")
+          .relative(true)
+          .batch(static_cast<std::uint64_t>(kResizeCycles) * 2)
+          .minEpochIterations(100);
+      b.run("HYLE FixedPool (retained-span in-place resize)", [&] {
+        for (int i = 0; i < kResizeCycles; ++i) {
+          hyle_ptr = require_allocation(
+              pool.reallocate(hyle_ptr, kSmall, kLarge, 16));
+          hyle_ptr = require_allocation(
+              pool.reallocate(hyle_ptr, kLarge, kSmall, 16));
+          nb::doNotOptimizeAway(std::as_const(hyle_ptr));
+        }
+      });
+#if defined(HYLE_BENCH_TBB)
+      std::vector<std::byte> tbb_storage(kStorageBytes +
+                                         kTbbFixedBootstrapBytes);
+      tbb::fixed_pool tbb_pool(tbb_storage.data(), tbb_storage.size());
+      void *tbb_ptr = require_allocation(tbb_pool.malloc(kSmall));
+      std::memset(tbb_ptr, 0xA5, kSmall);
+      b.run("oneTBB fixed_pool realloc (thread-safe)", [&] {
+        for (int i = 0; i < kResizeCycles; ++i) {
+          tbb_ptr = require_allocation(tbb_pool.realloc(tbb_ptr, kLarge));
+          tbb_ptr = require_allocation(tbb_pool.realloc(tbb_ptr, kSmall));
+          nb::doNotOptimizeAway(std::as_const(tbb_ptr));
+        }
+      });
+      tbb_pool.free(tbb_ptr);
+#endif
+      pool.deallocate(hyle_ptr);
+    }
+
     // Opt-in policy adapters over exactly the same backing calls. This measures
     // the normal counters-only Stats shape and the recommended Quota(Stats(sys))
     // composition separately. Leak tracking is intentionally excluded: its

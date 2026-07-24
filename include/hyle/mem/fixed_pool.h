@@ -113,29 +113,41 @@ public:
     recent_free_ = coalesce(b);
   }
 
-  void *reallocate(void *ptr, std::size_t old_size, std::size_t new_size,
-                   std::size_t alignment = alignof(std::max_align_t)) noexcept {
+  HYLE_FORCE_INLINE void *
+  reallocate(void *ptr, std::size_t old_size, std::size_t new_size,
+             std::size_t alignment = alignof(std::max_align_t)) noexcept {
+    HYLE_FATAL_ASSERT(is_pow2(alignment));
+    if (ptr == nullptr || new_size == 0)
+      return reallocate_slow(ptr, old_size, new_size, alignment);
+    Allocation *a = allocation_for(ptr);
+    HYLE_FATAL_ASSERT(a->magic == kAllocationMagic && a->requested == old_size);
+    if ((reinterpret_cast<std::uintptr_t>(ptr) & (alignment - 1)) == 0 &&
+        resize_in_place(a, ptr, new_size)) {
+      account_resize(a, old_size, new_size);
+      return ptr;
+    }
+    return reallocate_slow(ptr, old_size, new_size, alignment);
+  }
+
+private:
+  HYLE_NOINLINE void *reallocate_slow(void *ptr, std::size_t old_size,
+                                      std::size_t new_size,
+                                      std::size_t alignment) noexcept {
     if (ptr == nullptr)
       return allocate(new_size, alignment);
     if (new_size == 0) {
       deallocate(ptr);
       return nullptr;
     }
-    Allocation *a = allocation_for(ptr);
-    HYLE_FATAL_ASSERT(a->magic == kAllocationMagic && a->requested == old_size);
-    if (new_size <= old_size) {
-      used_ -= old_size - new_size;
-      a->requested = new_size;
-      return ptr;
-    }
     void *out = allocate(new_size, alignment);
     if (out == nullptr)
       return nullptr;
-    std::memcpy(out, ptr, old_size);
+    std::memcpy(out, ptr, old_size < new_size ? old_size : new_size);
     deallocate(ptr);
     return out;
   }
 
+public:
   void reset() noexcept {
     if (!valid())
       return;
@@ -297,6 +309,99 @@ private:
     Block *b = recent_free_;
     recent_free_ = nullptr;
     insert_free(b);
+  }
+
+  HYLE_FORCE_INLINE void detach_free(Block *b) noexcept {
+    if (recent_free_ == b)
+      recent_free_ = nullptr;
+    else
+      remove_free(b);
+  }
+
+  // Return representable tail bytes to the pool after an in-place resize. The
+  // preceding block remains live, so only the following neighbor can merge.
+  HYLE_FORCE_INLINE void split_resized_tail(Block *b, void *ptr,
+                                             std::size_t bytes) noexcept {
+    const auto block_addr = reinterpret_cast<std::uintptr_t>(b);
+    const auto block_end = block_addr + b->span;
+    const auto payload_end = reinterpret_cast<std::uintptr_t>(ptr) + bytes;
+    const auto padding =
+        (std::uintptr_t{0} - payload_end) & (alignof(Block) - 1);
+    if (padding > block_end - payload_end)
+      return;
+    const auto split_addr = payload_end + padding;
+    const std::size_t consumed =
+        static_cast<std::size_t>(split_addr - block_addr);
+    const std::size_t remainder = b->span - consumed;
+    if (remainder < minimum_block_span())
+      return;
+
+    b->span = consumed;
+    auto *tail = ::new (reinterpret_cast<void *>(split_addr)) Block;
+    tail->span = remainder;
+    tail->previous_span = consumed;
+    tail->magic = kBlockMagic;
+    tail->free = true;
+
+    if (Block *following = next(tail);
+        following != nullptr && following->free) {
+      detach_free(following);
+      tail->span += following->span;
+    }
+    if (Block *following = next(tail); following != nullptr)
+      following->previous_span = tail->span;
+
+    if (recent_free_ == nullptr)
+      recent_free_ = tail;
+    else
+      insert_free(tail);
+  }
+
+  // O(1) resize when the allocation already has enough physical span or its
+  // immediately following block is free. This avoids a bin search and copy in
+  // the common vector/buffer growth shape while preserving hard capacity.
+  HYLE_FORCE_INLINE bool resize_in_place(Allocation *a, void *ptr,
+                                          std::size_t new_size) noexcept {
+    Block *b = a->block;
+    const auto payload = reinterpret_cast<std::uintptr_t>(ptr);
+    const auto block_end = reinterpret_cast<std::uintptr_t>(b) + b->span;
+    // Match mature realloc semantics: a shrink changes the requested size but
+    // retains the physical span, making a later regrow within it a true O(1)
+    // metadata update. Compacting every shrink would mutate free indexes on a
+    // normal vector/buffer resize loop and lose the retained-capacity benefit.
+    if (new_size <= block_end - payload)
+      return true;
+
+    Block *following = next(b);
+    if (following == nullptr || !following->free)
+      return false;
+#if defined(HYLE_TESTING)
+    validate(following);
+#endif
+    const auto combined_end =
+        reinterpret_cast<std::uintptr_t>(following) + following->span;
+    if (new_size > combined_end - payload)
+      return false;
+
+    detach_free(following);
+    b->span = static_cast<std::size_t>(combined_end -
+                                      reinterpret_cast<std::uintptr_t>(b));
+    if (Block *after = next(b); after != nullptr)
+      after->previous_span = b->span;
+    split_resized_tail(b, ptr, new_size);
+    return true;
+  }
+
+  HYLE_FORCE_INLINE void account_resize(Allocation *a, std::size_t old_size,
+                                         std::size_t new_size) noexcept {
+    HYLE_FATAL_ASSERT(used_ >= old_size &&
+                      new_size <=
+                          (std::numeric_limits<std::size_t>::max)() -
+                              (used_ - old_size));
+    used_ = used_ - old_size + new_size;
+    if (used_ > peak_)
+      peak_ = used_;
+    a->requested = new_size;
   }
 
   HYLE_FORCE_INLINE static unsigned bin_index(std::size_t span) noexcept {

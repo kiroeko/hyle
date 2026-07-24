@@ -13,6 +13,7 @@ using hyle::mem::is_aligned;
 using hyle::mem::is_aligned_ptr;
 using hyle::mem::is_pow2;
 using hyle::mem::kMaxSimdAlignment;
+using hyle::mem::try_align_up;
 
 TEST(Alignment, IsPow2) {
   EXPECT_TRUE(is_pow2(1));
@@ -31,6 +32,20 @@ TEST(Alignment, AlignUpSize) {
   EXPECT_EQ(align_up(63u, 64), 64u);
   EXPECT_EQ(align_up(64u, 64), 64u);
   EXPECT_EQ(align_up(65u, 64), 128u);
+}
+
+TEST(Alignment, TryAlignUpReportsSizeOverflow) {
+  std::size_t out = 0;
+  EXPECT_TRUE(try_align_up(65, 64, &out));
+  EXPECT_EQ(out, 128u);
+
+  out = 0xA5;
+  EXPECT_FALSE(try_align_up(SIZE_MAX - 31, 64, &out));
+  EXPECT_EQ(out, 0xA5u);
+}
+
+TEST(AlignmentDeathTest, AlignUpRejectsSizeOverflow) {
+  EXPECT_DEATH((void)align_up(SIZE_MAX - 31, 64), ".*");
 }
 
 TEST(Alignment, AlignDownSize) {

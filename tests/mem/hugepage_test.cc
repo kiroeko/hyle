@@ -73,6 +73,28 @@ TEST(HugeRegion, ZeroBytesInvalid) {
   EXPECT_TRUE(r.error().IsInvalidArgument());
 }
 
+TEST(HugeRegion, RejectsUnknownAndContradictoryPlacementFlags) {
+  auto unknown = HugeRegion::allocate(
+      page_size(), static_cast<HugeFlags>(std::uint8_t{1} << 7));
+  ASSERT_FALSE(unknown);
+  EXPECT_TRUE(unknown.error().IsInvalidArgument());
+
+  auto conflict = HugeRegion::allocate(
+      page_size(), HugeFlags::kNumaBind | HugeFlags::kNumaInterleave);
+  ASSERT_FALSE(conflict);
+  EXPECT_TRUE(conflict.error().IsInvalidArgument());
+
+  auto named_node_interleave = HugeRegion::allocate(
+      page_size(), HugeFlags::kNumaInterleave, 0);
+  ASSERT_FALSE(named_node_interleave);
+  EXPECT_TRUE(named_node_interleave.error().IsInvalidArgument());
+
+  auto local_interleave =
+      HugeRegion::allocate_local(page_size(), HugeFlags::kNumaInterleave);
+  ASSERT_FALSE(local_interleave);
+  EXPECT_TRUE(local_interleave.error().IsInvalidArgument());
+}
+
 TEST(HugeRegion, HardBindRejectsInvalidNode) {
   const unsigned count = hyle::platform::numa_node_count();
   ASSERT_LE(count, static_cast<unsigned>(INT_MAX - 100));
