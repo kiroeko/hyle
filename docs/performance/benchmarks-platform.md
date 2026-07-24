@@ -102,7 +102,9 @@ O(可用 CPU 数)；常见 Windows（CPU Set 记录 ≤4 KiB、默认 set ≤64�
 会掩盖变化的全局 cache，也不新增以纳秒数塑造 API 的 microbenchmark。验收用 Release/ASan
 真实约束测试：临时把进程 affinity 缩为一个现有 CPU 后查询必须立即返回 1，再恢复原 mask；
 buffer-fill 另覆盖 count-only、截断返回完整长度和 id 唯一性。性能结论是与原生查询同阶、
-常见路径零堆分配，不把 OS 拓扑枚举时间冒充 HYLE 算法性能。
+常见路径零堆分配，不把 OS 拓扑枚举时间冒充 HYLE 算法性能。macOS 没有等价硬 affinity
+API，fallback 的 AppleClang/arm64 构建、CPU invariant 与纯 C 路径已在 M4 真机通过；运行期
+mask 变化测试按合同跳过，不把“不支持硬绑核”伪装成已验证能力。
 
 ## 非 SOTA / 需诚实标价
 

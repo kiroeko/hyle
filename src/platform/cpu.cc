@@ -436,6 +436,7 @@ bool read_sysfs_unsigned(const char* path, unsigned& value) noexcept {
 }
 #endif
 
+#if defined(HYLE_OS_WINDOWS) || defined(HYLE_OS_LINUX)
 Status cpu_query_status(const char* operation, unsigned long code) noexcept {
   char message[160];
   std::snprintf(message, sizeof(message), "%s failed: native code %lu",
@@ -455,6 +456,7 @@ Status cpu_query_status(const char* operation, unsigned long code) noexcept {
 #endif
   return Status::Unavailable(message);
 }
+#endif
 
 Result<std::size_t> query_available_cpu_ids(unsigned* dst,
                                             std::size_t cap) noexcept {

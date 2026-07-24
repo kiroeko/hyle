@@ -523,6 +523,7 @@ int main(void) {
   CHECK(en > 0u);
 
   hyle_cpu_features cpu = hyle_cpu_features_get();
+  (void)cpu; /* architecture-specific assertions below may compile out */
   CHECK(hyle_cpu_isa_name((uint32_t)hyle_cpu_best_isa()) != NULL);
   CHECK(hyle_cpu_supports_isa(HYLE_ISA_SCALAR) == 1);
   {
