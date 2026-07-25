@@ -67,11 +67,12 @@
       owning `hyle_status`；37 个动态符号 + 4 个 header-inline 便利入口，不冻结
       C++ 类布局，不导出 STL/模板。文档：
       [`c-time.md`](../guide/c-time.md)。
-- [x] **obs**（2026-07-19 收口）：`include/hyle/c/obs.h` + `c_obs.cc` + 纯 C
-      `hyle_obs_c_test`。覆盖结构化 record、level、quiescent opaque sink、默认 sink，
-      以及 OFF 时稳定 no-op / ON 时接单一 Tracy client 的 runtime trace；12 个日志
-      动态入口 + 11 个 trace 动态入口 + 5 个 header-inline level 便利入口。C++ 原生
-      trace 宏仍保留编译期零成本能力。文档：
+- [x] **obs**（2026-07-25 严格复审）：`include/hyle/c/obs.h` + `c_obs.cc` + 纯 C
+      `hyle_obs_c_test`。覆盖结构化 record、level、quiescent opaque sink、optional flush、
+      默认 sink，以及 OFF 时稳定 no-op / ON 时接单一 Tracy client 的 runtime trace；
+      23 个动态入口 + 5 个 header-inline level 便利入口。可恢复失败统一使用 owning
+      `hyle_status`，不再有 obs 私有 TLS last-error。C++ 原生 trace 宏仍保留编译期
+      零成本能力。文档：
       [`c-obs.md`](../guide/c-obs.md)，复审：
       [`obs-module-closure.md`](./obs-module-closure.md)。
 - error/platform/mem 五维复审（功能/下游利用、红队实现、测试/性能、ABI 覆盖、用户文档）见 [`core-foundation-c-abi-audit.md`](./core-foundation-c-abi-audit.md)；time 见 [`time-module-closure.md`](./time-module-closure.md)，util 见 [`util-module-closure.md`](./util-module-closure.md)，container 见 [`container-module-closure.md`](./container-module-closure.md)。

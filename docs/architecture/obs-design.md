@@ -23,7 +23,7 @@ sink/运维系统的职责；obs 只提供基础库应有的安全产出接缝�
              |                       |              |                 |
              +------ structured log core -----------+                 |
                          |                                             |
-              level gate + registry snapshot                          |
+              level gate + immutable snapshot                         |
               + per-sink active reference                             |
                          |                                             |
           +--------------+----------------+                            |
@@ -55,39 +55,58 @@ profiler singleton，时间线与 fiber 身份被拆开。静态 HYLE 则仍用�
 caller builds record
         |
         v
-threshold gate -- dropped --> return false / 0（正常，不是错误）
+threshold gate -- dropped --> return false / emitted=0（正常，不是错误）
         |
         v
-registry lock: snapshot live slots + acquire active references
+short reader epoch: copy immutable published snapshot
+                    + acquire per-sink active references
         |
         v
-unlock, invoke callbacks synchronously
+invoke callbacks synchronously（producer 不拿 registry mutex）
         |
         v
 release active references, wake unregister waiter
 ```
 
-registry 固定 64 槽，不在 emit 热路径分配。锁只覆盖 live-slot 快照；任何 sink
-callback、格式化和 I/O 都不持 registry 锁。每个快照对 slot 持 active reference，
-因此 `remove_sink` / `hyle_obs_sink_destroy` 成功返回后，其他线程不可能仍在旧
-callback 中，调用方可安全释放 state。
+registry 固定 64 槽，不在 emit 热路径分配。add/remove 在 mutation mutex 下改 live
+slot，再发布两代 in-place immutable snapshot；producer 只做原子 reader epoch、复制
+snapshot 和 active-reference，不拿 registry mutex。snapshot reader-count 与多 waiter-count、
+active refcount 与 remover waiter bit 分别位于一个原子状态字，release 的一次 RMW 同时决定
+是否唤醒；不存在独立 waiter flag 的 missed-wake 窗口。remove 在发布不含目标的新一代后
+排空旧 snapshot reader 与目标 active callback，因此 `remove_sink` /
+`hyle_obs_sink_destroy` 成功返回后，其他线程不可能仍在旧 callback 中，调用方可安全
+释放 state。两代 snapshot 复用前先排空短 reader epoch，既没有无界 retired-list，也
+没有 emit 分配。
 
 callback 可以摘除自己。实现先把 callback/state 复制到局部变量，外部 callback
 返回后不再访问 opaque wrapper；本次 callback 的 state 仍须活到自己返回。callback
 内跨摘另一个 sink 会被拒绝：目标可能已被同一 dispatch 快照持有且尚未调用，等待
 它退出会等待当前线程自己，形成死锁。
 
+注册 sink 内再次产生日志不会重入注册 sink 图，否则一个诊断 callback 就能无限递归。
+默认 stderr sink 仍启用时，nested record 直接落 stderr；默认 sink 已关闭时返回
+“没有 sink 收到”。`flush_sinks` 同步调用每个可选 flush callback，并使用相同的
+递归抑制与 active-reference 生命周期。这个形状对应 Abseil 的 registered-sink
+recursion guard 与 Flush、Folly 的同步 handler + flush 合同。
+
+registry 采用 process-lifetime `NoDestructor`：它第一次真正使用时构造但不参与静态
+析构。这样比 registry 更晚析构的全局对象仍可记录或查询，不会访问已经销毁的 mutex。
+
 默认 sink 用 stderr；只有 stderr 真连 TTY 时才输出 ANSI 色码，重定向到文件/CI
 不会污染 escape sequence。默认 sink 自带串行锁，避免多线程 record 的多个
-`fprintf` 片段互相穿插。
+`fprintf` 片段互相穿插。source/message/field 中的换行、TAB、ESC 和其他 ASCII control 会
+转义成可见文本，使一条 record 始终只占一个物理行，也不能借用户数据注入终端控制码。
 
 ## 3. 两种日志调用面
 
 `HYLE_LOG_*` 是 C++ 便利面：宏先做一次门控，未通过时参数不求值、不进入
-`std::format`；通过后在调用方 1 KiB 栈缓冲格式化，并附 file/function/line。
+`std::format`；通过后在调用方 1 KiB 栈缓冲格式化，并附 file/function/line。超长文本
+显式以 `...[truncated]` 结尾，避免静默截断；需要完整大 payload 时应直接构造 record，
+或让应用自己的日志系统管理拥有型缓冲。
 `log_record` 则适合已有结构化字段或已经格式化好的消息。
 
-稳定发布面是 `include/hyle/c/obs.h`：
+经本轮审查的 C/FFI 发布面是 `include/hyle/c/obs.h`（首发前仍可按产品需要调整，不把
+“已审查”误写成兼容承诺）：
 
 - POD record/field；
 - opaque sink create/destroy；
@@ -96,6 +115,10 @@ callback 可以摘除自己。实现先把 callback/state 复制到局部变量�
 
 C ABI 不暴露 `std::format`、C++ reference、STL、Tracy 类型或 C++ 类布局。各语言
 在本语言侧格式化后调用 `hyle_obs_log`，或构造 POD record。
+
+可恢复失败统一返回 owning `hyle_status`：输入错误、重复/不存在、registry 满和 callback
+内跨摘分别保留共享 error taxonomy；gate/no-sink 是 OK + `out_emitted=0`。obs 不再维护
+私有 TLS `last_error`。
 
 HYLE 的底层模块**不应为了证明 obs 被使用而主动打日常日志**：库无法替应用决定
 日志策略，非请求输出也会污染宿主进程。下游利用发生在 trace hook；error/status
@@ -142,6 +165,6 @@ Tracy。plot/frame/pool 名同理应使用字面量或其他稳定存储。
 5. Windows、Linux、macOS 至少各跑一次 ON 构建。
 
 性能数与仪器见
-[`../performance/benchmarks-mem-container.md`](../performance/benchmarks-mem-container.md)，
+[`../performance/benchmarks-obs.md`](../performance/benchmarks-obs.md)，
 模块收口证据见
 [`../milestones/obs-module-closure.md`](../milestones/obs-module-closure.md)。

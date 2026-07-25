@@ -360,13 +360,20 @@ target_link_libraries(hyle_error_normal_bench PRIVATE hyle_error nanobench)
 hyle_apply_warnings(hyle_error_normal_bench)
 endif()
 
-# misc-module bench (gap-fill #37): util/random (xoshiro256++ vs std::mt19937_64),
-# time/clock (monotonic/realtime vs std::chrono), obs/log (produce-path overhead).
-# random is header-only (util); clock needs hyle_time, log needs hyle_obs.
-if(TARGET hyle_time AND TARGET hyle_obs AND TARGET hyle_util)
+# misc-module bench (gap-fill #37): util/random (xoshiro256++ vs std::mt19937_64)
+# and time/clock (monotonic/realtime vs std::chrono). obs has a dedicated runner.
+if(TARGET hyle_time AND TARGET hyle_util)
 add_executable(hyle_misc_bench misc/misc_bench.cc)
-target_link_libraries(hyle_misc_bench PRIVATE hyle_time hyle_obs hyle_util nanobench)
+target_link_libraries(hyle_misc_bench PRIVATE hyle_time hyle_util nanobench)
 hyle_apply_warnings(hyle_misc_bench)
+endif()
+
+# obs uses its own actual-workload certificate: gated formatting, structured
+# records, fanout scaling, C Status seam and multi-producer registry reads.
+if(TARGET hyle_obs)
+add_executable(hyle_obs_bench obs/obs_bench.cc)
+target_link_libraries(hyle_obs_bench PRIVATE hyle_obs nanobench)
+hyle_apply_warnings(hyle_obs_bench)
 endif()
 
 # util-core gets a focused, normal-use certificate. It deliberately does not
@@ -951,6 +958,10 @@ if(HYLE_BENCH_ABSL)
   target_link_libraries(hyle_error_bench PRIVATE absl::status absl::status_builder absl::statusor)
   target_compile_definitions(hyle_error_normal_bench PRIVATE HYLE_BENCH_ABSL)
   target_link_libraries(hyle_error_normal_bench PRIVATE absl::status)
+  if(TARGET hyle_obs_bench)
+    target_compile_definitions(hyle_obs_bench PRIVATE HYLE_BENCH_ABSL)
+    target_link_libraries(hyle_obs_bench PRIVATE absl::log absl::log_sink)
+  endif()
 endif()
 endif() # TARGET hyle_container
 
@@ -983,7 +994,7 @@ hyle_register_benches(io
 hyle_register_benches(error
   hyle_error_bench
   hyle_error_normal_bench)
-hyle_register_benches(obs hyle_misc_bench)
+hyle_register_benches(obs hyle_obs_bench)
 hyle_register_benches(util hyle_util_core_bench)
 hyle_register_benches(time
   hyle_misc_bench

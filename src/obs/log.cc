@@ -3,6 +3,8 @@
 #include <atomic>
 #include <cstdio>
 #include <mutex>
+#include <new>
+#include <utility>
 
 #include "hyle/macros.h"
 #include "hyle/platform.h"
@@ -19,27 +21,88 @@ namespace hyle::obs {
 namespace {
 
 constexpr std::size_t kMaxSinks = 64;
+constexpr std::size_t kActiveWaiterBit =
+    std::size_t{1} << (sizeof(std::size_t) * 8 - 1);
+constexpr std::size_t kActiveCountMask = kActiveWaiterBit - 1;
+constexpr std::size_t kSnapshotWaiterOne =
+    std::size_t{1} << (sizeof(std::size_t) * 4);
+constexpr std::size_t kSnapshotReaderMask = kSnapshotWaiterOne - 1;
+static_assert(sizeof(std::size_t) >= 4);
 
 struct SinkSlot {
   LogSink sink{};
+  // High bit = a remover is waiting; remaining bits = dispatch references.
+  // Keeping both in one atomic makes the decrement-and-notify decision immune
+  // to the missed-wake race of a separate waiter flag.
   std::atomic<std::size_t> active{0};
-  std::atomic<bool> waiting{false};
-  bool registered = false;  // guarded by g_mutex
+  bool registered = false;  // guarded by RegistryState::mutex
   bool retiring = false;    // prevents reuse until remove's callback drain ends
 };
 
 struct ActiveFrame {
   SinkSlot* slot;
   ActiveFrame* previous;
+  bool removed_self = false;
 };
 
-std::atomic<LogLevel> g_level{LogLevel::Info};
-std::mutex g_mutex;
-std::mutex g_default_mutex;
-SinkSlot g_slots[kMaxSinks];
-SinkSlot* g_registered[kMaxSinks];
-std::size_t g_count = 0;
-bool g_initialized = false;
+struct Dispatch {
+  SinkSlot* slot;
+  LogSink sink;
+};
+
+struct SinkSnapshot {
+  Dispatch entries[kMaxSinks]{};
+  std::size_t count = 0;
+};
+
+void default_write(void*, const LogRecord& record) noexcept;
+
+struct RegistryState {
+  RegistryState() noexcept {
+    slots[0].sink = LogSink{nullptr, &default_write, nullptr};
+    slots[0].registered = true;
+    registered[0] = &slots[0];
+    count = 1;
+    snapshots[0].entries[0] = Dispatch{&slots[0], slots[0].sink};
+    snapshots[0].count = 1;
+    published.store(&snapshots[0], std::memory_order_relaxed);
+  }
+
+  // Mutations are rare and serialize here. Emitters never take this mutex:
+  // they copy one immutable published snapshot during a short reader epoch.
+  std::mutex mutex;
+  std::mutex default_mutex;
+  SinkSlot slots[kMaxSinks];
+  SinkSlot* registered[kMaxSinks]{};
+  std::size_t count = 0;
+  SinkSnapshot snapshots[2];
+  std::atomic<SinkSnapshot*> published{nullptr};
+  // Low half = readers copying a published snapshot; high half = mutations
+  // waiting for a zero-reader epoch. A single word supports multiple removers
+  // without the missed wake possible with one shared boolean waiter flag.
+  std::atomic<std::size_t> snapshot_state{0};
+};
+
+// Logging is valid from process-lifetime destructors. A normal function-local
+// RegistryState would itself be destroyed during static teardown and make a
+// later destructor log undefined. Match Abseil's NoDestructor shape: construct
+// on first real registry use, never tear the process-global sink seam down.
+template <class T>
+class NoDestructor {
+ public:
+  NoDestructor() noexcept { ::new (storage_) T(); }
+  T& get() noexcept { return *std::launder(reinterpret_cast<T*>(storage_)); }
+
+ private:
+  alignas(T) unsigned char storage_[sizeof(T)];
+};
+
+RegistryState& registry() noexcept {
+  static NoDestructor<RegistryState> state;
+  return state.get();
+}
+
+constinit std::atomic<LogLevel> g_level{LogLevel::Info};
 thread_local ActiveFrame* g_active_frame = nullptr;
 
 bool valid_record_level(LogLevel value) noexcept {
@@ -78,8 +141,31 @@ const char* level_color(LogLevel level) noexcept {
   return "";
 }
 
+// Keep one physical record per line and prevent arbitrary message/field data
+// from injecting terminal control sequences. This is intentionally a streaming
+// transform: the default sink is an I/O path and does not need a second buffer
+// or an allocation merely to be safe.
+void write_escaped(FILE* stream, const char* text) noexcept {
+  for (const unsigned char* cursor =
+           reinterpret_cast<const unsigned char*>(text);
+       *cursor != 0; ++cursor) {
+    switch (*cursor) {
+      case '\n': std::fputs("\\n", stream); break;
+      case '\r': std::fputs("\\r", stream); break;
+      case '\t': std::fputs("\\t", stream); break;
+      default:
+        if (*cursor < 0x20 || *cursor == 0x7f) {
+          std::fprintf(stream, "\\x%02x", static_cast<unsigned>(*cursor));
+        } else {
+          std::fputc(static_cast<int>(*cursor), stream);
+        }
+        break;
+    }
+  }
+}
+
 void default_write(void*, const LogRecord& record) noexcept {
-  std::lock_guard<std::mutex> lock(g_default_mutex);
+  std::lock_guard<std::mutex> lock(registry().default_mutex);
 #if defined(HYLE_OS_WINDOWS)
   const bool color_enabled = _isatty(_fileno(stderr)) != 0;
 #else
@@ -89,13 +175,15 @@ void default_write(void*, const LogRecord& record) noexcept {
   const char* reset = color_enabled ? "\x1b[0m" : "";
   std::fprintf(stderr, "%s[%s]%s ", color, level_name(record.level), reset);
   if (record.file != nullptr && record.line != 0) {
-    std::fprintf(stderr, "%s:%u ", record.file,
-                 static_cast<unsigned>(record.line));
+    write_escaped(stderr, record.file);
+    std::fprintf(stderr, ":%u ", static_cast<unsigned>(record.line));
   }
-  std::fputs(record.message, stderr);
+  write_escaped(stderr, record.message);
   for (std::size_t i = 0; i < record.field_count; ++i) {
-    std::fprintf(stderr, " %s=%s", record.fields[i].key,
-                 record.fields[i].value);
+    std::fputc(' ', stderr);
+    write_escaped(stderr, record.fields[i].key);
+    std::fputc('=', stderr);
+    write_escaped(stderr, record.fields[i].value);
   }
   std::fputc('\n', stderr);
   std::fflush(stderr);
@@ -111,14 +199,17 @@ bool same_sink(const LogSink& a, const LogSink& b) noexcept {
   return a.state == b.state && a.write == b.write;
 }
 
-SinkSlot* find_locked(LogSink sink, bool registered_only) noexcept {
+SinkSlot* find_locked(RegistryState& state, LogSink sink,
+                      bool registered_only) noexcept {
   if (registered_only) {
-    for (std::size_t i = 0; i < g_count; ++i) {
-      if (same_sink(g_registered[i]->sink, sink)) return g_registered[i];
+    for (std::size_t i = 0; i < state.count; ++i) {
+      if (same_sink(state.registered[i]->sink, sink)) {
+        return state.registered[i];
+      }
     }
     return nullptr;
   }
-  for (SinkSlot& slot : g_slots) {
+  for (SinkSlot& slot : state.slots) {
     if (slot.sink.write != nullptr && same_sink(slot.sink, sink)) {
       return &slot;
     }
@@ -126,34 +217,63 @@ SinkSlot* find_locked(LogSink sink, bool registered_only) noexcept {
   return nullptr;
 }
 
-bool add_locked(LogSink sink) noexcept {
-  // A retiring duplicate is not re-added until its last old callback leaves.
-  if (SinkSlot* same = find_locked(sink, false); same != nullptr) {
-    if (same->registered || same->retiring ||
-        same->active.load(std::memory_order_acquire) != 0) {
-      return false;
-    }
-    same->registered = true;
-    g_registered[g_count++] = same;
-    return true;
+void wait_for_snapshot_readers(RegistryState& state) noexcept {
+  std::size_t snapshot = state.snapshot_state.fetch_add(
+      kSnapshotWaiterOne, std::memory_order_seq_cst);
+  snapshot += kSnapshotWaiterOne;
+  while ((snapshot & kSnapshotReaderMask) != 0) {
+    state.snapshot_state.wait(snapshot, std::memory_order_seq_cst);
+    snapshot = state.snapshot_state.load(std::memory_order_seq_cst);
   }
-  for (SinkSlot& slot : g_slots) {
-    if (!slot.registered && !slot.retiring &&
-        slot.active.load(std::memory_order_acquire) == 0) {
-      slot.sink = sink;
-      slot.registered = true;
-      g_registered[g_count++] = &slot;
-      return true;
-    }
-  }
-  return false;
+  state.snapshot_state.fetch_sub(kSnapshotWaiterOne,
+                                 std::memory_order_seq_cst);
 }
 
-void ensure_init_locked() noexcept {
-  if (!g_initialized) {
-    HYLE_FATAL_ASSERT(add_locked(LogSink{nullptr, &default_write}));
-    g_initialized = true;
+// Caller holds state.mutex. Two in-place immutable snapshots are enough: wait
+// until no emitter is copying the inactive generation, fill it, then publish.
+// A remover performs one more reader drain after publication before waiting on
+// the target slot, closing the old-snapshot -> active-reference handoff race.
+void publish_locked(RegistryState& state) noexcept {
+  wait_for_snapshot_readers(state);
+  SinkSnapshot* current = state.published.load(std::memory_order_relaxed);
+  SinkSnapshot* next = current == &state.snapshots[0] ? &state.snapshots[1]
+                                                     : &state.snapshots[0];
+  next->count = state.count;
+  for (std::size_t i = 0; i < state.count; ++i) {
+    next->entries[i] = Dispatch{state.registered[i],
+                                state.registered[i]->sink};
   }
+  state.published.store(next, std::memory_order_release);
+}
+
+Status add_locked(RegistryState& state, LogSink sink) noexcept {
+  // A retiring duplicate is not re-added until its last old callback leaves.
+  if (SinkSlot* same = find_locked(state, sink, false); same != nullptr) {
+    if (same->registered) {
+      return Status::AlreadyExists("log sink is already registered");
+    }
+    if (same->retiring ||
+        (same->active.load(std::memory_order_acquire) &
+         kActiveCountMask) != 0) {
+      return Status::FailedPrecondition("log sink is still retiring");
+    }
+    same->registered = true;
+    state.registered[state.count++] = same;
+    publish_locked(state);
+    return {};
+  }
+  for (SinkSlot& slot : state.slots) {
+    if (!slot.registered && !slot.retiring &&
+        (slot.active.load(std::memory_order_acquire) &
+         kActiveCountMask) == 0) {
+      slot.sink = sink;
+      slot.registered = true;
+      state.registered[state.count++] = &slot;
+      publish_locked(state);
+      return {};
+    }
+  }
+  return Status::ResourceExhausted("log sink registry is full");
 }
 
 std::size_t current_active_count(SinkSlot* slot) noexcept {
@@ -167,71 +287,146 @@ std::size_t current_active_count(SinkSlot* slot) noexcept {
 
 void wait_for_other_callbacks(SinkSlot* slot) noexcept {
   const std::size_t self = current_active_count(slot);
-  std::size_t active = slot->active.load(std::memory_order_acquire);
-  while (active > self) {
+  std::size_t active =
+      slot->active.fetch_or(kActiveWaiterBit, std::memory_order_acq_rel);
+  while ((active & kActiveCountMask) > self) {
     slot->active.wait(active, std::memory_order_acquire);
     active = slot->active.load(std::memory_order_acquire);
   }
 }
 
-void finish_retire(SinkSlot* slot) noexcept {
-  std::lock_guard<std::mutex> lock(g_mutex);
+void finish_retire(RegistryState& state, SinkSlot* slot) noexcept {
+  std::lock_guard<std::mutex> lock(state.mutex);
   if (slot->retiring &&
-      slot->active.load(std::memory_order_acquire) == 0) {
+      (slot->active.load(std::memory_order_acquire) &
+       kActiveCountMask) == 0) {
     slot->retiring = false;
-    slot->waiting.store(false, std::memory_order_release);
     slot->sink = {};
+    slot->active.store(0, std::memory_order_release);
+  }
+}
+
+std::size_t snapshot_sinks(RegistryState& state,
+                           Dispatch (&snapshot)[kMaxSinks]) noexcept {
+  state.snapshot_state.fetch_add(1, std::memory_order_seq_cst);
+  const SinkSnapshot* published =
+      state.published.load(std::memory_order_acquire);
+  const std::size_t count = published->count;
+  for (std::size_t i = 0; i < count; ++i) {
+    SinkSlot* slot = published->entries[i].slot;
+    slot->active.fetch_add(1, std::memory_order_relaxed);
+    snapshot[i] = published->entries[i];
+  }
+  const std::size_t prior =
+      state.snapshot_state.fetch_sub(1, std::memory_order_seq_cst);
+  if ((prior & ~kSnapshotReaderMask) != 0) {
+    state.snapshot_state.notify_all();
+  }
+  return count;
+}
+
+void release_dispatch(RegistryState& state, Dispatch& dispatch,
+                      bool finish_self_retire = false) noexcept {
+  const std::size_t prior =
+      dispatch.slot->active.fetch_sub(1, std::memory_order_release);
+  if ((prior & kActiveWaiterBit) != 0) {
+    dispatch.slot->active.notify_all();
+    // An external remover performs the final cleanup itself before returning.
+    // Only self-removal must defer cleanup until this callback releases its own
+    // reference. Letting every last releaser race to finish a retirement can
+    // leave a stale helper that observes a later reuse of the same fixed slot.
+    if (finish_self_retire && (prior & kActiveCountMask) == 1) {
+      finish_retire(state, dispatch.slot);
+    }
   }
 }
 
 }  // namespace
 
-LogSink default_sink() noexcept { return LogSink{nullptr, &default_write}; }
-
-bool add_sink(LogSink sink) noexcept {
-  if (sink.write == nullptr) return false;
-  std::lock_guard<std::mutex> lock(g_mutex);
-  ensure_init_locked();
-  return add_locked(sink);
+LogSink default_sink() noexcept {
+  return LogSink{nullptr, &default_write, nullptr};
 }
 
-bool remove_sink(LogSink sink) noexcept {
+Status add_sink(LogSink sink) noexcept {
+  if (sink.write == nullptr) {
+    return Status::InvalidArgument("log sink write callback must be non-null");
+  }
+  RegistryState& state = registry();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  return add_locked(state, sink);
+}
+
+Status remove_sink(LogSink sink) noexcept {
+  if (sink.write == nullptr) {
+    return Status::InvalidArgument("log sink write callback must be non-null");
+  }
+  RegistryState& state = registry();
   SinkSlot* slot;
+  bool self_removal = false;
   {
-    std::lock_guard<std::mutex> lock(g_mutex);
-    ensure_init_locked();
-    slot = find_locked(sink, true);
-    if (slot == nullptr) return false;
+    std::lock_guard<std::mutex> lock(state.mutex);
+    slot = find_locked(state, sink, true);
+    if (slot == nullptr) {
+      return Status::NotFound("log sink is not registered");
+    }
     // A dispatch owns an active reference for every sink in its snapshot before
     // it invokes the first callback. Waiting for a different sink from inside a
     // callback could therefore wait on this very thread's pending callback.
     // Self-removal is safe because the trampoline no longer touches state after
     // returning from foreign code; reject all cross-removal here.
     if (g_active_frame != nullptr && g_active_frame->slot != slot) {
-      return false;
+      return Status::FailedPrecondition(
+          "a sink callback cannot remove a different sink");
     }
+    self_removal = g_active_frame != nullptr;
+    if (self_removal) g_active_frame->removed_self = true;
     slot->registered = false;
     slot->retiring = true;
-    slot->waiting.store(true, std::memory_order_release);
-    for (std::size_t i = 0; i < g_count; ++i) {
-      if (g_registered[i] == slot) {
-        g_registered[i] = g_registered[--g_count];
+    for (std::size_t i = 0; i < state.count; ++i) {
+      if (state.registered[i] == slot) {
+        state.registered[i] = state.registered[--state.count];
         break;
       }
     }
+    publish_locked(state);
   }
+  wait_for_snapshot_readers(state);
   wait_for_other_callbacks(slot);
-  finish_retire(slot);
-  return true;
+  if (!self_removal) finish_retire(state, slot);
+  return {};
 }
 
 std::size_t sink_count() noexcept {
-  std::lock_guard<std::mutex> lock(g_mutex);
-  ensure_init_locked();
-  return g_count;
+  RegistryState& state = registry();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  return state.count;
 }
 
 std::size_t sink_capacity() noexcept { return kMaxSinks; }
+
+std::size_t flush_sinks() noexcept {
+  // A flush callback may itself log. Nested registered-sink dispatch would
+  // otherwise recurse through the same arbitrary callback graph.
+  if (g_active_frame != nullptr) return 0;
+
+  RegistryState& state = registry();
+  Dispatch snapshot[kMaxSinks];
+  const std::size_t count = snapshot_sinks(state, snapshot);
+  std::size_t flushed = 0;
+  for (std::size_t i = 0; i < count; ++i) {
+    if (snapshot[i].sink.flush != nullptr) {
+      ActiveFrame frame{snapshot[i].slot, g_active_frame};
+      g_active_frame = &frame;
+      snapshot[i].sink.flush(snapshot[i].sink.state);
+      g_active_frame = frame.previous;
+      ++flushed;
+      release_dispatch(state, snapshot[i], frame.removed_self);
+    } else {
+      release_dispatch(state, snapshot[i]);
+    }
+  }
+  return flushed;
+}
 
 void set_level(LogLevel value) noexcept {
   HYLE_FATAL_ASSERT(valid_threshold(value));
@@ -258,33 +453,26 @@ bool log_record(const LogRecord& record) noexcept {
     HYLE_FATAL_ASSERT(record.fields[i].value != nullptr);
   }
 
-  struct Dispatch {
-    SinkSlot* slot;
-    LogSink sink;
-  };
-  Dispatch snapshot[kMaxSinks];
-  std::size_t count = 0;
-  {
-    std::lock_guard<std::mutex> lock(g_mutex);
-    ensure_init_locked();
-    for (std::size_t i = 0; i < g_count; ++i) {
-      SinkSlot* slot = g_registered[i];
-      slot->active.fetch_add(1, std::memory_order_relaxed);
-      snapshot[count++] = Dispatch{slot, slot->sink};
-    }
+  // Match mature sink registries: a sink is allowed to log for diagnostics,
+  // but that nested record must not re-enter the registered sink graph. If the
+  // caller kept the default sink enabled, preserve the record on stderr;
+  // otherwise report that no sink received it.
+  if (g_active_frame != nullptr) {
+    if (!default_sink_enabled()) return false;
+    default_write(nullptr, record);
+    return true;
   }
+
+  RegistryState& state = registry();
+  Dispatch snapshot[kMaxSinks];
+  const std::size_t count = snapshot_sinks(state, snapshot);
 
   for (std::size_t i = 0; i < count; ++i) {
     ActiveFrame frame{snapshot[i].slot, g_active_frame};
     g_active_frame = &frame;
     snapshot[i].sink.write(snapshot[i].sink.state, record);
     g_active_frame = frame.previous;
-    const std::size_t prior =
-        snapshot[i].slot->active.fetch_sub(1, std::memory_order_release);
-    if (snapshot[i].slot->waiting.load(std::memory_order_acquire)) {
-      snapshot[i].slot->active.notify_all();
-      if (prior == 1) finish_retire(snapshot[i].slot);
-    }
+    release_dispatch(state, snapshot[i], frame.removed_self);
   }
   return count != 0;
 }
@@ -294,22 +482,26 @@ bool log_message(LogLevel log_level, const char* message) noexcept {
 }
 
 bool default_sink_enabled() noexcept {
-  std::lock_guard<std::mutex> lock(g_mutex);
-  ensure_init_locked();
-  return find_locked(default_sink(), true) != nullptr;
+  RegistryState& state = registry();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  return find_locked(state, default_sink(), true) != nullptr;
 }
 
-bool set_default_sink_enabled(bool enabled) noexcept {
+Status set_default_sink_enabled(bool enabled) noexcept {
+  RegistryState& state = registry();
   if (enabled) {
-    std::lock_guard<std::mutex> lock(g_mutex);
-    ensure_init_locked();
-    if (find_locked(default_sink(), true) != nullptr) return true;
-    return add_locked(default_sink());
+    std::lock_guard<std::mutex> lock(state.mutex);
+    if (find_locked(state, default_sink(), true) != nullptr) return {};
+    return add_locked(state, default_sink());
   }
-  if (remove_sink(default_sink())) return true;
+  Status status = remove_sink(default_sink());
+  if (status.ok()) return {};
   // Concurrent same-direction disables are idempotent: one thread may have
   // removed it between our intent and remove_sink's lookup.
-  return !default_sink_enabled();
+  if (status.code() == StatusCode::NotFound && !default_sink_enabled()) {
+    return {};
+  }
+  return status;
 }
 
 }  // namespace hyle::obs

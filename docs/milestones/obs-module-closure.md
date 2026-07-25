@@ -1,87 +1,130 @@
-# obs 模块收口（2026-07-19）
+# obs 模块严格收口（2026-07-25）
 
-obs 的功能、红队正确性、下游 trace 接入、测试/性能、纯 C ABI 和用户文档已完成
-一次全面收口。设计信源见
-[`../architecture/obs-design.md`](../architecture/obs-design.md)，使用指南见
-[`../guide/c-obs.md`](../guide/c-obs.md)。
+obs 已按“实际使用而非 benchmark 形状”的当前合同完成复审。它是**实现体量小、横向影响面
+大**的底层模块：产品面只有同步结构化日志 producer 与编译期 trace seam；生命周期、
+C ABI、构建后端和 mem/sched/io/compute 埋点会穿过全库。
 
-## 1. 功能与边界
+稳定设计见 [`../architecture/obs-design.md`](../architecture/obs-design.md)，用户选型见
+[`../guide/obs.md`](../guide/obs.md)，C/FFI 精确映射见
+[`../guide/c-obs.md`](../guide/c-obs.md)，性能点值只见
+[`../performance/benchmarks-obs.md`](../performance/benchmarks-obs.md)。
 
-| 面 | 收口结果 |
+## 1. 功能面与负空间
+
+| 真实场景 | 最终能力 / 选择 |
 |---|---|
-| 日志 record | level/message + key/value fields + source file/function/line + 可选 Unix ns |
-| 格式化 | C++ `std::format_to_n` 1 KiB 栈缓冲；宏在格式化前门控并捕获调用点 |
-| sink | 64 槽同步 fan-out、默认 TTY 彩色 stderr、自定义 C++/C sink |
-| 生命周期 | quiescent unregister；跨线程旧 callback 排空；callback 自摘安全；跨摘拒绝 |
-| trace | zone/plot/counter/fiber/frame/message/alloc/free/thread name |
-| 下游 | mem/sched/io/compute 均有真实 hook；OFF 构建全部消失 |
-| 明确不做 | 日志队列/滚动/上传/聚合/告警、trace viewer；属于 sink/运维层 |
+| 机器可读失败、重试、传播 | 继续使用 error 的 `Status` / `Result`；日志不能替代控制流 |
+| 普通诊断文本 | level-gated `HYLE_LOG_*`；未通过时参数不求值 |
+| 已格式化或结构化诊断 | borrowed `LogRecord`：message、fields、source、可选 timestamp |
+| 接已有 logger/队列/文件/遥测 | 同步 `LogSink{state, write, flush}` adapter；callback 内复制后可异步 |
+| 安全动态卸载 sink | quiescent unregister；返回后其他线程不再使用旧 callback/state |
+| profiling 时间线 | OFF 编译期消失、ON 汇入一个 Tracy client 的 native trace seam |
+| C / FFI | POD record、opaque sink、共享 `hyle_status`、runtime trace seam |
 
-log 没有被 HYLE 各原语主动调用是有意边界，不是“下游未利用”：基础库不应擅自向
-宿主输出业务日志。机器可读失败继续走 error/status；需要记录时由调用方主动发
-record。trace 才是应由基础库内部布置的性能观测面，因此已接入四个热路径模块。
+明确不做：category 配置树、per-sink routing policy、异步线程/队列、文件滚动、上传、聚合、
+查询、告警和 profiler viewer。已有 Abseil/Folly/spdlog 的应用应注册一个 adapter sink，
+而不是让 HYLE 再造第二套日志框架。category 若只是业务字段可直接作为 record field；只有
+真实消费者证明需要 producer-side routing 才重开。GPU timeline 也应由 compute 的真实
+后端合同驱动，不先投机增加 obs API。
 
-## 2. 红队发现与修复
+## 2. 成熟库对账与本轮架构修正
 
-| 问题 | 修复 |
+| 参考 | 借鉴 | 没有照搬的部分 |
+|---|---|---|
+| Abseil `LogSink` | 同步 sink、Flush、registered-sink recursion suppression、process-lifetime registry | 完整 LogEntry/config/category 元数据不属于轻量底层 seam |
+| Folly logging | 同步 handler + flush、默认终端控制字符防护、应用层 category 思路 | async writer/category tree 留给现有应用 logger |
+| Tracy | 编译期 no-op 宏、单一 backend client、zone/counter/memory/fiber 形状 | 不自造 viewer/protocol |
+
+本轮发现旧 registry 为 producer 复制 snapshot 时持 mutation mutex；它虽然通过旧 benchmark，
+却会把多 producer 正常路径串在控制面锁上。最终改为两份原地 immutable snapshot：mutation
+串行发布，producer 用短 reader epoch 复制已发布代并取得 per-slot active reference。emit
+不分配、不拿 mutation mutex；remove 发布新代后排空旧 reader/callback，保留可证明的
+quiescent unregister。
+
+其他修正：
+
+- registry 改为 first-use、永不析构，晚期静态析构日志/查询不触碰已销毁 mutex；
+- 高频 add/remove/log 重复压力发现独立 active/waiting 原子有极低概率 missed wake，且
+  外部 remover 与 last releaser 都收尾会让旧 helper 跨入固定槽下一代；active 改为
+  waiter-bit + refcount 单状态字，自摘才由本 callback 延迟收尾。snapshot 也用
+  reader-count + 多 waiter-count 单状态字，release 同一次 RMW 决定唤醒；
+- registered sink 内递归日志不再重入 sink 图；默认 stderr 开启时只直落 default，否则
+  正常返回未投递；flush 使用同一抑制和生命周期合同；
+- 默认 stderr 把换行、TAB、ESC 与 ASCII control 转义为可见文本，一条 record 保持一个
+  物理行，避免日志/终端控制注入；
+- 1 KiB format 缓冲显式以 `...[truncated]` 结尾，不再静默截断；
+- `LogSink` 增加可选 flush；add/remove/default-control 改为共享 `Status`，保留
+  InvalidArgument/AlreadyExists/NotFound/ResourceExhausted/FailedPrecondition 原因；
+- obs runtime target 正确公开依赖 error；HYLE C++ 内部仍直接走 native API，不绕 C ABI。
+
+## 3. C++ 与 C ABI 易用性
+
+C++ 默认路径是 `HYLE_LOG_*`，已有文本/字段走 `log_message`/`log_record`，接宿主日志走
+`LogSink`，profiling 走 `HYLE_TRACE_*`。guide 明确 borrowed lifetime、callback 并发、
+自摘/跨摘、format 截断和 trace name 存储期，不要求用户从 benchmark 反推用法。
+
+C ABI 删除未经审查的 obs 私有 TLS last-error，全部可恢复失败统一返回 owning
+`hyle_status`，out parameter 在工作前清空；gate/no-sink 是 OK + `out_emitted=0`。record
+保持纯 C POD，sink 为 opaque ownership handle，并提供 write/optional flush。23 个
+`extern "C"` 符号通过 declaration 清单、纯 C reference 与 shared DLL export 三重机械
+核对；header-inline 五个 level helper 复用同一 Status seam。首发前仍可调整 ABI，这里认证
+的是能力完整和形状易用，不虚构兼容承诺。
+
+## 4. 正确性、依赖与三平台
+
+| 闸门 | 结果 |
 |---|---|
-| 旧 mutex-snapshot 允许 remove 返回后旧 callback 继续使用 state，存在 UAF 窗口 | slot active reference + retiring 状态 + atomic wait，remove 成功后保证其他 callback 排空 |
-| callback 跨摘同一快照中待调用 sink 会等待当前线程自己 | callback 内只允许摘当前 sink；跨摘在改变 registry 前拒绝 |
-| C opaque handle 自摘后 trampoline 可能继续访问已 delete wrapper | 进外部 callback 前复制 callback/state，返回后不再碰 wrapper |
-| 静态 TracyClient 分别链入多 DLL，产生多个 profiler singleton | Tracy target 跟随 `BUILD_SHARED_LIBS`；共享 HYLE 只加载一个 shared client |
-| 默认 stderr 多次 `fprintf` 会在线程间穿插，且重定向仍输出 ANSI | 默认 sink 独立锁；`isatty`/`_isatty` 后才着色 |
-| trace message 误用 literal-only 入口接动态串 | 动态 message 复制长度；另留 literal 快路径 |
-| 所有匿名 Fiber 共用一个 Tracy 身份 | 每个 Fiber 保存稳定唯一 trace name |
-| C query 可能留下旧 last-error，invalid should-log 无诊断 | 所有成功 query 清 stale；非法 record level 设置线程局部错误 |
+| Windows MSVC Release | obs header/C++/pure-C/C-surface 4/4 |
+| WSL2 GCC 14 Release | 同组 4/4 |
+| Apple M4 AppleClang Release | 同组 4/4 |
+| WSL ASan / UBSan | 同组各 4/4 |
+| WSL TSan | 27 个 C++ case + pure-C 通过；并发 churn 额外 100 轮；WSL 地址布局需 `setarch x86_64 -R` |
+| retirement/reuse 重复压力 | Windows、M4 各 500 轮；修前约几十轮可复现 hang，修后通过 |
+| Trace ON，真实消费者 | Windows/WSL/M4 均构建 obs+mem+sched+io+compute，并通过 obs 4/4 |
+| C surface | 23/23 declaration、纯 C reference、DLL export |
 
-## 3. C ABI
+Trace ON 三平台仍由一个 `hyle_tracy_client` target 承载。Windows 对所有受影响组件打开
+`HYLE_WERROR=ON` 会在本轮未修改的 SIMD 代码触发既有 unused/unreachable warning；关闭
+WERROR 后 obs 与全部真实 trace 消费者构建/测试通过。该 warning debt 归 SIMD 严格复审，
+不通过顺手改未审模块来伪装 obs 结论。
 
-`include/hyle/c/obs.h` 是纯 C 发布面：
+依赖图上 obs runtime 只新增正确的 `obs -> error`；native trace 是 header/CMake 横切 seam，
+不是让 error/platform/mem/time 反向二进制依赖 obs。基础库内部不擅自输出日常 log 是边界，
+不是 adoption 漏洞；mem/sched/io/compute 使用 trace 才是正确的内部消费。
 
-- 12 个日志/registry 动态入口；
-- 11 个 runtime trace 动态入口；
-- 5 个 header-inline level 便利函数；
-- 2 个 POD（field/record）、1 个 opaque sink、1 个 opaque-sized zone token。
+## 5. 性能与 SOTA 判定
 
-没有模块 api 表、版本协商、STL、C++ 异常、C++ reference 或 Tracy 类型。输入错误
-通过线程局部 `hyle_obs_last_error` 报告；正常 gate/no-sink 返回 0 但不制造错误。
-纯 C 测试覆盖全部便利函数、record 扩展大小、错误、sink 生命周期和 runtime trace。
+三平台 Release、15 个独立运行、中位数、sink 无 I/O：
 
-有意仅 C++：`std::format` 模板、编译期零成本 trace 宏、native `LogSink` 值类型。
-这些能力在 C 侧分别由“语言侧格式化 + POD emit”、runtime trace、opaque sink 覆盖。
-
-## 4. 验收证据
-
-| 环境 | 结果 |
-|---|---|
-| Windows x64 MSVC Release | obs C++/pure-C 通过；下游 mem/sched/io/compute 回归通过 |
-| WSL2 GCC 14 Release | obs C++/pure-C 通过 |
-| WSL2 GCC 14 ASan/UBSan/TSan | obs C++/pure-C 全通过 |
-| Apple M4 AppleClang Release | obs C++/pure-C 通过 |
-| Tracy ON（Windows/WSL/M4） | obs + mem/sched/io/compute 通过 |
-| Tracy ON + static HYLE（WSL GCC14） | obs C++/pure-C 通过；单 archive 在最终程序解析 |
-| shared Tracy 依赖 | PE/ELF/Mach-O 均确认各模块只依赖一个 `hyle_tracy_client` |
-
-Release 三平台代表值（nanobench，无 I/O）：
-
-| 场景 | Windows | WSL | Apple M4 |
+| 场景（ns/op） | Windows | WSL2 | M4 utility |
 |---|---:|---:|---:|
-| gated `HYLE_LOG_INFO` | 2.03–2.11 ns | 1.05–1.09 ns | 0.91–0.92 ns |
-| C++ preformatted + 1 sink | 22.48 ns | 13.07 ns | 8.85 ns |
-| C ABI preformatted + 1 C sink | 23.93 ns | 16.03 ns | 10.68 ns |
-| `std::format` + safe fan-out | 81.9–84.6 ns | 69.5–71.4 ns | 50.9–53.5 ns |
+| gated macro | 2.007 | 0.916 | 0.906 |
+| native preformatted，1 sink | 39.328 | 34.488 | 25.001 |
+| structured 4 fields | 38.690 | 34.464 | 24.267 |
+| `std::format` 宏 | 92.150 | 85.761 | 64.356 |
+| C Status seam | 41.406 | 37.020 | 27.237 |
+| 8 producer，per emit | 95.171 | 64.011 | 123.902 |
 
-C ABI 对 native preformatted seam 的增量约 1.5/3.0/1.8 ns。emit 相比旧版多出的
-active-reference 成本换来了可证明的 quiescent unregister；真实 sink I/O 通常远大于
-这十余纳秒。gated 热路径曾因 helper 形状回退到 Windows 约 3.5 ns，最终通过宏前置
-gate 恢复到约 2.1 ns。
+复杂度为 gate O(1)、emit/flush O(S)、mutation O(S≤64)。Windows 同 workload 的旧
+exclusive-mutex A/B：单 producer约 43.9 ns、8 producer约 205 ns；immutable 版约
+40 ns/92–100 ns，多 producer 改进约 2 倍且不改变公开 API。最终 wait-state 修正后 8
+producer 为 95.2 ns，仍在同档。M4 同时跑 interactive/
+utility，因无硬 P/E affinity 支持只报告 QoS；短 normal 行即使 utility 仍可高波动，不能把
+heterogeneous scheduling 噪声写成核心性能。
 
-## 5. 收口结论
+Abseil 可选行约 439 ns gated、892 ns stream+ToSinkOnly，但它承载完整 LogEntry/config
+元数据，不是同合同胜负。当前认证的是：算法复杂度与成熟同步 registry 同档、正常路径无
+已知锁/分配缺口、C seam 只多约 2–3 ns；没有同 metadata/ownership 合同的 peer 时不宣称
+“几十倍 SOTA”。
 
-obs 现在具备基础库所需的完整“结构化日志产出 + profiling trace 产出”能力，
-生命周期、C ABI 和三平台行为均已闭环。后续只有两类合理扩展：
+## 6. 严格收口结论与重开条件
 
-- 新模块接入已有 trace 原语；
-- 经真实消费者/profile 证明需要后，再新增 record 字段或 sink 类型。
+obs 的功能面、复杂度、C++/C 形状、依赖、guide 和三平台证据已经满足当前严格合同，可以
+停止反复重构。只有以下证据可重开：
 
-异步日志系统、运维聚合和自造 profiler 不应重新塞回 obs。
+- 真实应用需要 producer-side category/per-sink filtering，且 adapter field 不够；
+- 真正的 GPU/backend profiling 消费者要求现有 trace seam 无法表达的事件；
+- 同 quiescent ownership/metadata 合同的成熟 peer 证明复杂度档或正常路径存在实质差距；
+- correctness/security/ABI、平台或 Tracy backend 变化破坏当前合同。
+
+异步日志系统、运维能力、纯粹为了赢 benchmark 的 record 元数据或亚纳秒波动不能单独重开。

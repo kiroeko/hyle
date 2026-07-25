@@ -10,6 +10,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "hyle/c/error.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -63,44 +65,47 @@ typedef struct hyle_obs_log_record {
 typedef struct hyle_obs_sink_o hyle_obs_sink;
 typedef void (*hyle_obs_sink_write_fn)(void* state,
                                        const hyle_obs_log_record* record);
+typedef void (*hyle_obs_sink_flush_fn)(void* state);
 
-/* Thread-local diagnostic for recoverable C-boundary failures. */
-HYLE_OBS_C_API const char* hyle_obs_last_error(void);
-
-HYLE_OBS_C_API int hyle_obs_set_level(hyle_obs_log_level level);
+/* Recoverable failures use the shared owning hyle_status contract. Output
+ * parameters are cleared before work; gated/no-sink delivery is OK with
+ * *out_emitted == 0, not an error. */
+HYLE_OBS_C_API hyle_status hyle_obs_set_level(hyle_obs_log_level level);
 HYLE_OBS_C_API hyle_obs_log_level hyle_obs_get_level(void);
 HYLE_OBS_C_API int hyle_obs_should_log(hyle_obs_log_level level);
-HYLE_OBS_C_API int hyle_obs_emit_record(
-    const hyle_obs_log_record* record);
-HYLE_OBS_C_API int hyle_obs_log(hyle_obs_log_level level,
-                                const char* message);
+HYLE_OBS_C_API hyle_status hyle_obs_emit_record(
+    int* out_emitted, const hyle_obs_log_record* record);
+HYLE_OBS_C_API hyle_status hyle_obs_log(
+    int* out_emitted, hyle_obs_log_level level, const char* message);
 
 /* create registers immediately. destroy unregisters quiescently and is NULL
  * safe. A successful return guarantees no callback on another thread still
  * uses state. A callback may destroy its OWN handle; destroying another sink
  * from a callback fails (it may be pending in the same dispatch snapshot). */
-HYLE_OBS_C_API hyle_obs_sink* hyle_obs_sink_create(
-    hyle_obs_sink_write_fn write, void* state);
-HYLE_OBS_C_API int hyle_obs_sink_destroy(hyle_obs_sink* sink);
+HYLE_OBS_C_API hyle_status hyle_obs_sink_create(
+    hyle_obs_sink** out, hyle_obs_sink_write_fn write,
+    hyle_obs_sink_flush_fn flush, void* state);
+HYLE_OBS_C_API hyle_status hyle_obs_sink_destroy(hyle_obs_sink* sink);
 HYLE_OBS_C_API size_t hyle_obs_sink_count(void);
 HYLE_OBS_C_API size_t hyle_obs_sink_capacity(void);
+HYLE_OBS_C_API size_t hyle_obs_flush_sinks(void);
 HYLE_OBS_C_API int hyle_obs_default_sink_enabled(void);
-HYLE_OBS_C_API int hyle_obs_set_default_sink_enabled(int enabled);
+HYLE_OBS_C_API hyle_status hyle_obs_set_default_sink_enabled(int enabled);
 
-static inline int hyle_obs_log_trace(const char* message) {
-  return hyle_obs_log(HYLE_OBS_LOG_TRACE, message);
+static inline hyle_status hyle_obs_log_trace(const char* message) {
+  return hyle_obs_log(NULL, HYLE_OBS_LOG_TRACE, message);
 }
-static inline int hyle_obs_log_debug(const char* message) {
-  return hyle_obs_log(HYLE_OBS_LOG_DEBUG, message);
+static inline hyle_status hyle_obs_log_debug(const char* message) {
+  return hyle_obs_log(NULL, HYLE_OBS_LOG_DEBUG, message);
 }
-static inline int hyle_obs_log_info(const char* message) {
-  return hyle_obs_log(HYLE_OBS_LOG_INFO, message);
+static inline hyle_status hyle_obs_log_info(const char* message) {
+  return hyle_obs_log(NULL, HYLE_OBS_LOG_INFO, message);
 }
-static inline int hyle_obs_log_warn(const char* message) {
-  return hyle_obs_log(HYLE_OBS_LOG_WARN, message);
+static inline hyle_status hyle_obs_log_warn(const char* message) {
+  return hyle_obs_log(NULL, HYLE_OBS_LOG_WARN, message);
 }
-static inline int hyle_obs_log_error(const char* message) {
-  return hyle_obs_log(HYLE_OBS_LOG_ERROR, message);
+static inline hyle_status hyle_obs_log_error(const char* message) {
+  return hyle_obs_log(NULL, HYLE_OBS_LOG_ERROR, message);
 }
 
 /* Runtime trace seam for C/FFI callers. These are no-ops when HYLE was built

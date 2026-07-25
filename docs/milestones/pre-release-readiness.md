@@ -3,19 +3,19 @@
 ## 结论
 
 HYLE 的“实现进度”与“当前标准的收口证书”必须分开读：除 compute/graph 仍有产品能力尾，
-其余模块的主体实现基本存在；但只有 **error、platform、mem、time、core、util-core** 已按本轮实际使用导向
+其余模块的主体实现基本存在；但只有 **error、platform、mem、time、core、util-core、obs** 已按本轮实际使用导向
 完成严格复审。早期标成 closure/frozen 的任务仍是有效施工证据，不自动等于新标准认证。
 
 | 层次 | 当前判断 | 下一动作 |
 |---|---|---|
-| 严格认证基线 | error、platform、mem、time、core、util-core；build/package system | 只因明确触发器或依赖受影响项局部回验 |
-| 已实现、待新标准复审 | obs、math、util-runtime、container、sched、io、simd | 按本文队列逐模块收口，不按旧 benchmark 形状默认通过 |
+| 严格认证基线 | error、platform、mem、time、core、util-core、obs；build/package system | 只因明确触发器或依赖受影响项局部回验 |
+| 已实现、待新标准复审 | math、util-runtime、container、sched、io、simd | 按本文队列逐模块收口，不按旧 benchmark 形状默认通过 |
 | 仍有能力尾 | compute、graph | 先用真实北极星补能力，再执行同一严格合同 |
 | 整库发布面 | build/package 基线完成 | 模块内 C ABI 随模块收；最后只做跨编译器 ABI/FFI/bundle 总验收 |
 
 build/package system 已完成严格收口：模块 target 图、可组合子集、三种交付形状、三平台
 all-component CPU SDK/外部 consumer、CI 与 AArch64 cross 已成为可执行契约。`util-core seam`
-也已严格收口；当前审查单元进入 **obs**。依赖 container 的 Registry/runtime 仍按队列留在
+与 obs 也已严格收口；当前审查单元进入 **container**。依赖 container 的 Registry/runtime 仍按队列留在
 container 后，不能由 util-core 证书提前冻结。当前队列见“施工顺序”。
 
 ## 底座五模块交叉引用复验（2026-07-25）
@@ -52,7 +52,7 @@ static mem 闭包在 `-Werror` 下干净构建；AppleClang shared 20/20。三�
 未声明的二进制依赖。
 
 因此这五个底座模块的**相互引用可以关闭**；util-core 对 mem 的受影响边也已回验，下一审查
-单元是 obs。性能边界另作
+单元是 container。性能边界另作
 诚实限定：Windows 已量到 shared direct-import 相对同进程 raw mimalloc 约 4.5–6% 的 DSO
 边界成本；三平台“同链接形状”的最终性能证书仍登记在 performance 文档，不能把本次依赖
 正确性结论扩大成该项已证明 SOTA。
@@ -78,10 +78,10 @@ benchmark 宣称 SOTA。
 
 排序依据是**接口爆炸半径 + 消费关系**，不是目录顺序，也不是谁的 benchmark 更多：
 
-1. **core**：冻结 version、公开头与 intrusive 基础形状；对已收口 time 做受影响项回验。
-2. **build/package system**：让 CMake target 图准确描述模块组织；审 options→宏→target、依赖获取、三平台统一入口、static/shared、模块子集、source embed、install/find_package、交叉编译与生成目录治理。
+1. **core**（✅ 2026-07-25）：冻结 version、公开头与 intrusive 基础形状；对已收口 time 做受影响项回验。
+2. **build/package system**（✅ 2026-07-25）：target 图、三平台入口、static/shared/source 三种交付、模块子集、install/find_package、交叉编译与生成目录治理已收口。
 3. **util-core seam**（✅ 2026-07-25）：低层 header-only 能力及 include/link 边已收口；mem 的 SpinLock 消费已局部回验，Registry 未被提前冻结。
-4. **obs**（当前下一项）：分开审 log runtime 与 trace gate；统一 C error 形状，再核 mem/sched/io/compute hooks 是否正确。
+4. **obs**（✅ 2026-07-25）：log runtime 与 trace gate 已分开审；共享 Status、immutable sink snapshot、C surface 与 mem/sched/io/compute hooks 已签证。
 5. **container**：在 mem/platform/util-core 稳定后审容器能力、复杂度、争用、allocator/error 和 C/C++ 形状。
 6. **util-runtime / 完整 util**：container 稳定后再冻结 Registry、type-erasure 与完整 C ABI，合并 util-core 的证书。
 7. **sched**：汇合 platform/mem/time/container；按真实任务、同步、取消、关闭和 blocking workload 审算法及 API。
@@ -109,7 +109,8 @@ math 的处理相反：它当前不是经过独立需求设计的产品，而是
 | core | 功能主体存在 | ✅ 严格收口；最终实现 `71dabf7`，三平台同合同无 LOSE |
 | build/package system | 组织与三种交付形状完成 | ✅ 严格收口；最终发布矩阵与触发器见任务页 |
 | util-core | 低层公开头能力完成 | ✅ 严格收口；实际使用形状、依赖边、三平台正确性/TSan/性能已签证 |
-| util-runtime、obs、math、container、sched、io、simd | 功能主体基本完成 | 待按新合同认证；旧 closure 是输入证据，不是自动通行证 |
+| obs | 功能主体完成 | ✅ 严格收口；同步 structured producer + compile-time trace seam，三平台 n=15/并发/sanitizer/C surface 已签证 |
+| util-runtime、math、container、sched、io、simd | 功能主体基本完成 | 待按新合同认证；旧 closure 是输入证据，不是自动通行证 |
 | compute、graph | 主干存在、不是 stub | 仍有能力尾；完成能力后按同合同认证 |
 
 ## 停止与重开规则

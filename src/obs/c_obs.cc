@@ -5,9 +5,11 @@
 #include <cstring>
 #include <new>
 #include <type_traits>
+#include <utility>
 
 #include "hyle/obs/log.h"
 #include "hyle/obs/trace.h"
+#include "../error/status_access.h"
 
 #if defined(HYLE_TRACE) && defined(HYLE_TRACE_TRACY)
 #  include <tracy/TracyC.h>
@@ -15,13 +17,19 @@
 
 struct hyle_obs_sink_o {
   hyle_obs_sink_write_fn write;
+  hyle_obs_sink_flush_fn flush;
   void* state;
   hyle::obs::LogSink native;
 
-  hyle_obs_sink_o(hyle_obs_sink_write_fn callback, void* callback_state) noexcept
+  hyle_obs_sink_o(hyle_obs_sink_write_fn callback,
+                  hyle_obs_sink_flush_fn flush_callback,
+                  void* callback_state) noexcept
       : write(callback),
+        flush(flush_callback),
         state(callback_state),
-        native{this, &hyle_obs_sink_o::dispatch} {}
+        native{this, &hyle_obs_sink_o::dispatch,
+               flush_callback != nullptr ? &hyle_obs_sink_o::flush_dispatch
+                                         : nullptr} {}
 
   static void dispatch(void* opaque,
                        const hyle::obs::LogRecord& record) noexcept {
@@ -44,14 +52,21 @@ struct hyle_obs_sink_o {
     };
     callback(callback_state, &c_record);
   }
+
+  static void flush_dispatch(void* opaque) noexcept {
+    // The native sink only installs this trampoline when flush is non-null.
+    auto* self = static_cast<hyle_obs_sink_o*>(opaque);
+    hyle_obs_sink_flush_fn callback = self->flush;
+    void* callback_state = self->state;
+    callback(callback_state);
+  }
 };
 
 namespace {
 
-thread_local const char* g_last_error = "";
-
-void clear_error() noexcept { g_last_error = ""; }
-void set_error(const char* message) noexcept { g_last_error = message; }
+hyle_status steal_status(hyle::Status&& status) noexcept {
+  return hyle_status{hyle::detail::StatusAccess::release(status)};
+}
 
 bool valid_level(hyle_obs_log_level level, bool threshold) noexcept {
   const int raw = static_cast<int>(level);
@@ -106,46 +121,40 @@ static_assert(static_cast<int>(hyle::obs::LogLevel::Off) == HYLE_OBS_LOG_OFF);
 
 extern "C" {
 
-const char* hyle_obs_last_error(void) { return g_last_error; }
-
-int hyle_obs_set_level(hyle_obs_log_level level) {
+hyle_status hyle_obs_set_level(hyle_obs_log_level level) {
   if (!valid_level(level, true)) {
-    set_error("invalid log threshold");
-    return 0;
+    return steal_status(
+        hyle::Status::InvalidArgument("invalid log threshold"));
   }
   hyle::obs::set_level(static_cast<hyle::obs::LogLevel>(level));
-  clear_error();
-  return 1;
+  return hyle_status{};
 }
 
 hyle_obs_log_level hyle_obs_get_level(void) {
-  clear_error();
   return static_cast<hyle_obs_log_level>(hyle::obs::level());
 }
 
 int hyle_obs_should_log(hyle_obs_log_level level) {
-  if (!valid_level(level, false)) {
-    set_error("invalid log record level");
-    return 0;
-  }
-  clear_error();
+  if (!valid_level(level, false)) return 0;
   return hyle::obs::should_log(
              static_cast<hyle::obs::LogLevel>(level))
              ? 1
              : 0;
 }
 
-int hyle_obs_emit_record(const hyle_obs_log_record* record) {
+hyle_status hyle_obs_emit_record(int* out_emitted,
+                                 const hyle_obs_log_record* record) {
+  if (out_emitted != nullptr) *out_emitted = 0;
   constexpr std::size_t kRequired =
       offsetof(hyle_obs_log_record, message) +
       sizeof(const char*);
   if (record == nullptr || record->struct_size < kRequired) {
-    set_error("log record is null or has an invalid struct_size");
-    return 0;
+    return steal_status(hyle::Status::InvalidArgument(
+        "log record is null or has an invalid struct_size"));
   }
   if (!valid_level(record->level, false) || record->message == nullptr) {
-    set_error("log record has an invalid level or null message");
-    return 0;
+    return steal_status(hyle::Status::InvalidArgument(
+        "log record has an invalid level or null message"));
   }
 
   hyle::obs::LogRecord native{
@@ -161,14 +170,14 @@ int hyle_obs_emit_record(const hyle_obs_log_record* record) {
     native.field_count = record->field_count;
   }
   if (native.field_count != 0 && native.fields == nullptr) {
-    set_error("log record field_count requires a non-null fields array");
-    return 0;
+    return steal_status(hyle::Status::InvalidArgument(
+        "log record field_count requires a non-null fields array"));
   }
   for (std::size_t i = 0; i < native.field_count; ++i) {
     if (native.fields[i].key == nullptr ||
         native.fields[i].value == nullptr) {
-      set_error("log field key and value must be non-null");
-      return 0;
+      return steal_status(hyle::Status::InvalidArgument(
+          "log field key and value must be non-null"));
     }
   }
   if (has_member<const char*>(
@@ -188,78 +197,76 @@ int hyle_obs_emit_record(const hyle_obs_log_record* record) {
     native.timestamp_ns = record->timestamp_ns;
   }
 
-  clear_error();
-  return hyle::obs::log_record(native) ? 1 : 0;
+  const bool emitted = hyle::obs::log_record(native);
+  if (out_emitted != nullptr) *out_emitted = emitted ? 1 : 0;
+  return hyle_status{};
 }
 
-int hyle_obs_log(hyle_obs_log_level level, const char* message) {
+hyle_status hyle_obs_log(int* out_emitted, hyle_obs_log_level level,
+                         const char* message) {
+  if (out_emitted != nullptr) *out_emitted = 0;
   if (!valid_level(level, false) || message == nullptr) {
-    set_error("log level is invalid or message is null");
-    return 0;
+    return steal_status(hyle::Status::InvalidArgument(
+        "log level is invalid or message is null"));
   }
-  clear_error();
-  return hyle::obs::log_message(
-             static_cast<hyle::obs::LogLevel>(level), message)
-             ? 1
-             : 0;
+  const bool emitted = hyle::obs::log_message(
+      static_cast<hyle::obs::LogLevel>(level), message);
+  if (out_emitted != nullptr) *out_emitted = emitted ? 1 : 0;
+  return hyle_status{};
 }
 
-hyle_obs_sink* hyle_obs_sink_create(hyle_obs_sink_write_fn write,
-                                    void* state) {
+hyle_status hyle_obs_sink_create(hyle_obs_sink** out,
+                                 hyle_obs_sink_write_fn write,
+                                 hyle_obs_sink_flush_fn flush, void* state) {
+  if (out == nullptr) {
+    return steal_status(hyle::Status::InvalidArgument(
+        "sink output must be non-null"));
+  }
+  *out = nullptr;
   if (write == nullptr) {
-    set_error("sink callback must be non-null");
-    return nullptr;
+    return steal_status(hyle::Status::InvalidArgument(
+        "sink write callback must be non-null"));
   }
-  auto* sink = new (std::nothrow) hyle_obs_sink(write, state);
+  auto* sink = new (std::nothrow) hyle_obs_sink(write, flush, state);
   if (sink == nullptr) {
-    set_error("sink allocation failed");
-    return nullptr;
+    return steal_status(
+        hyle::Status::ResourceExhausted("sink allocation failed"));
   }
-  if (!hyle::obs::add_sink(sink->native)) {
+  hyle::Status status = hyle::obs::add_sink(sink->native);
+  if (!status.ok()) {
     delete sink;
-    set_error("sink registry is full");
-    return nullptr;
+    return steal_status(std::move(status));
   }
-  clear_error();
-  return sink;
+  *out = sink;
+  return hyle_status{};
 }
 
-int hyle_obs_sink_destroy(hyle_obs_sink* sink) {
-  if (sink == nullptr) {
-    clear_error();
-    return 1;
-  }
-  if (!hyle::obs::remove_sink(sink->native)) {
-    set_error("sink is absent or cross-removal was attempted in a callback");
-    return 0;
+hyle_status hyle_obs_sink_destroy(hyle_obs_sink* sink) {
+  if (sink == nullptr) return hyle_status{};
+  hyle::Status status = hyle::obs::remove_sink(sink->native);
+  if (!status.ok()) {
+    return steal_status(std::move(status));
   }
   delete sink;
-  clear_error();
-  return 1;
+  return hyle_status{};
 }
 
 size_t hyle_obs_sink_count(void) {
-  clear_error();
   return hyle::obs::sink_count();
 }
 
 size_t hyle_obs_sink_capacity(void) {
-  clear_error();
   return hyle::obs::sink_capacity();
 }
 
+size_t hyle_obs_flush_sinks(void) { return hyle::obs::flush_sinks(); }
+
 int hyle_obs_default_sink_enabled(void) {
-  clear_error();
   return hyle::obs::default_sink_enabled() ? 1 : 0;
 }
 
-int hyle_obs_set_default_sink_enabled(int enabled) {
-  if (!hyle::obs::set_default_sink_enabled(enabled != 0)) {
-    set_error("default sink state could not be changed");
-    return 0;
-  }
-  clear_error();
-  return 1;
+hyle_status hyle_obs_set_default_sink_enabled(int enabled) {
+  return steal_status(hyle::obs::set_default_sink_enabled(enabled != 0));
 }
 
 int hyle_obs_trace_enabled(void) {

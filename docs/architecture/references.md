@@ -95,7 +95,9 @@
 ### obs/（Tier 2 hook / Tier 3 重机器）
 | 库 | 角色 | 说明 |
 |---|---|---|
-| **tracy** | **参考设计，不整库引入** | obs/ hook 照搬三点：①宏埋点+编译期 no-op（零开销关闭，开 zone 仅 2.25ns）②TLS 无锁 SPSC 队列 ③scoped zone(RAII)。**支持 fiber 追踪**（`TRACY_FIBERS`，正中 HYLE）但**百万 fiber 不能 always-on**（≤65534 source location），只采样/调试子集。整库带 server/UI 是 L2 工具、非 infra |
+| **tracy** | **后端 + 参考设计** | native hook 的编译期 no-op、scoped zone、plot/counter/fiber/frame/message/memory/thread-name 由 Tracy 承载；HYLE 只保留自己的 seam，并保证 shared build 全进程一个 client。server/UI 是外部 profiler 工具，不复制进 obs 产品 API |
+| **abseil-cpp** | **参考 + benchmark 机制项** | 同步 `LogSink`、全局注册/摘除、flush、sink 内日志不递归回注册图、process-lifetime registry 是 log runtime 的直接形状参考；其完整 LogEntry 带更多 metadata，点值只能标载荷差异，不能冒充同合同胜负 |
+| **folly** | **参考** | handler 同步线程语义、flush、category/handler 分层及默认转义不可信控制字符。HYLE 借安全边界与 adapter 形状；hierarchical category、async writer/file/upload 属于应用日志系统，不塞进低层 producer seam |
 
 ### io/（Tier 1）
 | 库 | 角色 | 说明 |

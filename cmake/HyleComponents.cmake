@@ -37,6 +37,7 @@ endif()
 # io/compute/graph products include sched; sched in turn closes the runtime
 # chain.
 set(_HYLE_DEPS_PLATFORM error)
+set(_HYLE_DEPS_OBS error)
 set(_HYLE_DEPS_TIME error)
 set(_HYLE_DEPS_MEM error platform)
 set(_HYLE_DEPS_SIMD platform)

@@ -25,15 +25,15 @@
 ### 整体进度与体量（诚实，2026-07-25 锚定）——分母别混
 
 > **生产 = `cloc src include` 的 code 列**（header+C++/CUDA 等，不含 tests/bench/docs/third_party）。
-> **旧投影「完成时生产 ~28–40k / 中值 34k」已作废**：当前生产已 **~80.0k**，单 **simd ~37.5k**。
+> **旧投影「完成时生产 ~28–40k / 中值 34k」已作废**：当前生产已 **~80.2k**，单 **simd ~37.5k**。
 > 权威规模节：[`../architecture/hyle-scope.md`](../architecture/hyle-scope.md)。中期报告：[`midterm-report-2026-07-scale-positioning.md`](./midterm-report-2026-07-scale-positioning.md)。SIMD 当前补缺账本：[`simd-capability-fill-list.md`](./simd-capability-fill-list.md)。
 
 | 固定统计口径 | 当前 | 命令/说明 |
 |---|---|---|
-| **全库代码** | **248,555** | `cloc . --vcs=git`；含 docs/third_party，**≠ 自写** |
-| **自实现（含测试）** | **116,477** | `cloc include/hyle src tests --exclude-lang=CMake,Text` |
-| **自实现（不含测试）** | **80,086** | `cloc include/hyle src --exclude-lang=CMake,Text`；库本体硬锚 |
-| **当前审查单元 util-core 实现** | **553** | random/ref-counted/scope-guard/spin-lock/type-name 五个公开头；不含测试/CMake/Text |
+| **全库代码** | **249,281** | `cloc . --vcs=git`；含 docs/third_party，**≠ 自写** |
+| **自实现（含测试）** | **116,752** | `cloc include/hyle src tests --exclude-lang=CMake,Text` |
+| **自实现（不含测试）** | **80,252** | `cloc include/hyle src --exclude-lang=CMake,Text`；库本体硬锚 |
+| **当前审查单元 obs 实现** | **1,018** | `include/hyle/obs` + `include/hyle/c/obs.h` + `src/obs`；不含测试/CMake/Text |
 | **终态生产（纪律收口 A）** | **~75–90k** | 主预期 |
 | **终态生产（做满守界 B）** | **~85–105k** | compute/graph/发布面收口更满 |
 | 失控上限 C | 120k+ 生产 | 应避免 |
@@ -43,11 +43,11 @@
 | **里程碑计数** | 颗粒不等重 | **勿当完成度**（小 util 与大 compute 各记 1） |
 | **生产 LOC ÷ 终态 A 中值 ~82.5k** | 代码量进度 | **~97%**；SIMD 体量放大该数，**≠ 能力完成度** |
 | **生产 LOC ÷ 终态 B 中值 ~95k** | 做满剧本 | **~84%** |
-| **对完整愿景的功能完成度** | 能力清单 + 头牌缺口 | 除 compute/graph 能力尾外主体大多已实现；当前严格证书为 error/platform/mem/time/core/util-core，其余按队列复审 |
+| **对完整愿景的功能完成度** | 能力清单 + 头牌缺口 | 除 compute/graph 能力尾外主体大多已实现；当前严格证书为 error/platform/mem/time/core/util-core/obs 与 build/package，其余按队列复审 |
 
 **模块生产粗表（2026-07-25）**：simd ~37.5k · io ~9.0k · platform **7,020**
 （含公共 C 头）· container ~4.9k · compute ~4.1k · sched ~5.1k · mem ~5.1k ·
-util ~1.3k · error **984** · time ~0.9k · obs/graph 各 ~0.6–0.8k。
+util ~1.3k · error **984** · time ~0.9k · obs **1,018** · graph ~0.6–0.8k。
 
 预发布严格收口合同、重开触发器和唯一下一模块见
 [`pre-release-readiness.md`](./pre-release-readiness.md)。“实现完成”、旧 closure 与当前严格证书不可混用。
@@ -77,7 +77,7 @@ util ~1.3k · error **984** · time ~0.9k · obs/graph 各 ~0.6–0.8k。
 >
 > **2026-07-25 证书口径升级**：下表的 ✅/“冻结”只说明对应历史 work item 已完成，
 > 不自动取得当前实际使用导向的严格证书。当前 error/platform/mem/time/core 通过；
-> build/package system 与 util-core seam 已严格收口；当前进入 obs，其余顺序只见 [`pre-release-readiness.md`](./pre-release-readiness.md)。
+> build/package system、util-core seam 与 obs 已严格收口；当前进入 container，其余顺序只见 [`pre-release-readiness.md`](./pre-release-readiness.md)。
 
 | ID | 阶段 | 模块 | 目的(一行) | 前置 | 预测LOC | 真实LOC | 状态 |
 |---|---|---|---|---|---|---|---|
@@ -87,8 +87,8 @@ util ~1.3k · error **984** · time ~0.9k · obs/graph 各 ~0.6–0.8k。
 | error-01 | P0 | error | Status + std::expected（历史首版） | 00 | 1-2k | 456 | 🗃️ 历史完成；接口与边界后由 error reclosure 重审 |
 | error-02 | P0 | error | error_handler vtable（历史） | error-01 | 1k | 127 (+74 测试) | 🗃️ 曾完成，实际消费者审查后退役；日志归 obs、合同违反归 fatal |
 | [error-03](./error-module-reclosure.md) | P0 | error | 面向真实调用重收 Status/Result/C ABI/context | error-01,obs-01 | — | 见任务页 | ✅ **2026-07-24 自身冻结**：功能/C++/C ABI 收口；Win/GCC14/M4 正确性 + 核心/正常路径 n=15，同形项无 LOSE；全库 adoption audit 进行中，mem 冷路径已统一 Status、私有 TLS 已删 |
-| [obs-01](./obs-01-log.md) | P0 | obs | 同步结构化日志 + quiescent sink registry | 00 | ~1k | 见 closure | ✅ **2026-07-19 收口**：record fields/source/time、caller-side format、TTY default sink；active-ref 摘除保证无旧 callback UAF，自摘安全/跨摘拒绝；纯 C POD+opaque sink；三平台 + ASan/UBSan/TSan + 三层性能基准。详见 [`obs-module-closure.md`](./obs-module-closure.md) |
-| [obs-02](./obs-module-closure.md) | P0 | obs | 编译期 trace/counter hook + Tracy 后端 | **能力 C6** | 1-2k | seam + 下游 hooks | ✅ **2026-07-19 收口**：OFF 参数不求值/零依赖；ON 覆盖 zone/plot/counter/fiber/frame/message/memory/thread-name，接入 mem/sched/io/compute；多 DLL 从“每模块静态 TracyClient”修为单 shared client；Windows/WSL/M4 双态通过，C/FFI 有稳定 runtime trace no-op/Tracy seam |
+| [obs-01](./obs-01-log.md) | P0 | obs | 同步结构化日志 + quiescent sink registry | error | ~1k | 见 closure | ✅ **2026-07-25 严格收口**：共享 Status、flush/递归抑制、process-lifetime registry、防控制字符注入；immutable snapshot 令 emit 无分配/无 mutation mutex；23/23 C surface；三平台 sanitizer/n=15/多 producer。详见 [`obs-module-closure.md`](./obs-module-closure.md) |
+| [obs-02](./obs-module-closure.md) | P0 | obs | 编译期 trace/counter hook + Tracy 后端 | **能力 C6** | 1-2k | seam + 下游 hooks | ✅ **2026-07-25 严格复审**：OFF 参数不求值/零依赖；ON 覆盖 mem/sched/io/compute 且三平台构建验证；所有 shared 模块汇入一个 Tracy client；runtime C seam 与 native 热路径边界写入 guide |
 | platform-01 | P1 | platform | thread + park(futex/WaitOnAddress/ulock) | error-01 | 2k | 527 | ✅ 完成 |
 | platform-02 | P1 | platform | virtual_memory + dynlib | platform-01 | 1k | 158 (dynlib) | ✅ 拆分完成：dynlib + platform-02b virtual_memory |
 | [platform-02b](./platform-02b-virtual-memory.md) | P1 | platform | virtual_memory(host: reserve/commit/decommit/release + protect/guard) | platform-01 | 0.4-0.8k | 356 (+120 测试) | ✅ 完成(2026-07-17)。`vm_*` + `VmRegion` + `reserve_guarded`；双平台 9/9。消费者=**mem-08 fiber_stack ✅** |

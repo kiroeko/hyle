@@ -107,6 +107,7 @@ hyle_add_c_surface_test(core)
 hyle_add_c_surface_test(platform)
 hyle_add_c_surface_test(error)
 hyle_add_c_surface_test(time)
+hyle_add_c_surface_test(obs)
 
 # A combined include smoke test can hide transitive-include and include-order bugs.
 # Compile each public C++ module header alone, plus its C ABI header as strict C.
@@ -116,6 +117,7 @@ hyle_add_header_self_contained_test(platform)
 hyle_add_header_self_contained_test(error)
 hyle_add_header_self_contained_test(time)
 hyle_add_header_self_contained_test(util)
+hyle_add_header_self_contained_test(obs)
 
 # close-01: pure C whole-buffer SIMD consumer. Register/native C++ types never cross this edge.
 hyle_add_c_test(simd simd/c_simd_test.c)

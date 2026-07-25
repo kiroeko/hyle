@@ -15,6 +15,7 @@
 | [time 实测](./benchmarks-time.md) | **time 2026-07-25 当前三平台证书**（clock / exact-ns radix TimerQueue / CommonTimeoutQueue；含 Seastar faithful baseline、order-swap 与 M4 QoS） |
 | [mem 实测](./benchmarks-mem.md) | **mem 2026-07-25 当前证书**：`6213115` 关闭 Region 长寿命遍历复杂度并以 31-process×10,001-epoch scaling、正常 request p50/p95/p99 重签；`20f3676` 的 O(1) FixedPool、`1de939d` 的 SharedPool/cache 与 `2cbc307` 的其余证书继续有效 |
 | [util-core 实测](./benchmarks-util.md) | **util-core 2026-07-25 三平台 n=15 证书**：Rng/Ref/SpinLock 实际形状；oneTBB 正反序；mutex 反例与适用边界 |
+| [obs 实测](./benchmarks-obs.md) | **obs 2026-07-25 三平台 n=15 证书**：gate、immutable sink snapshot、structured/C ABI、fan-out 与多 producer；成熟库只作同机制对照，不作跨合同倍数宣称 |
 | [container 实测](./benchmarks-container.md) | **container 导航证书**：新鲜度、非 SOTA、选型；详表 → [benchmarks-mem-container.md](./benchmarks-mem-container.md) |
 | [container 详表](./benchmarks-mem-container.md) | hash/SwissTable/vec/str/path/fuzzy 长表 + 史；**入口见上** |
 | [simd 产品 kernel](./benchmarks-simd.md) | dot/saxpy、math、dtype、gather、vendor 竞争…；**op 全量不在此** |
@@ -78,7 +79,7 @@
 | **util-core** SpinLock 无争用 | 3.830/4.574/0.935 | std::mutex | 11.248/2.378/9.191 | 2.91/**0.52**/9.75x | oneTBB spin_mutex | 3.823/4.595/0.907 | 0.997/1.010/0.980x | ➖正反序同档；Linux mutex 反例保留 |
 | **util-core** SpinLock 2/8 threads | 9.834·59.535/7.800·48.593/1.793·4.297 | mutex（选择边界） | 15.357·62.261/37.264·38.939/高方差 | 平台翻转 | oneTBB spin_mutex | 9.766·61.646/7.688·48.451/1.772·4.187 | 约 0.98–1.04x | ➖oneTBB 正反序同档；高争用不据此选 spin |
 | **util-core** Ref fan-out 64 | 8.312/7.976/3.202 | shared_ptr | 8.248/10.779/3.211 | **1.006/1.353/1.003x** | shared_ptr ownership 原子基线 | 同左 | 同左 | ✅ Win/M4 TIE、Linux WIN；旧 MSVC 20% LOSE 已消除 |
-| **obs** log gate / preformatted / formatted | 0.91–2.11 / 8.85–22.48 / 50.9–84.6（三平台） | (无 std log) | n/a | n/a | 同步 sink 产出原语 | n/a | ➖ | ✅ gated 极轻；preformatted 含 quiescent-unregister active ref；C ABI 仅多 1.5–3.0ns；formatted 由 `std::format` 主导。详见 obs closure |
+| **obs** gate / preformatted / structured / 8-producer | 2.007·39.328·38.690·95.171 / 0.916·34.488·34.464·64.011 / 0.906·25.001·24.267·123.902 (Win/Lin/M4) | (无 std log) | n/a | n/a | 同步 sink registry 机制参照 Abseil/Folly | 非同合同 | n/a | ✅ O(1) gate、O(S) emit；热路径无分配/无 mutation mutex；C Status seam +2–3ns。无同 metadata/ownership peer，故不作跨合同胜负。见 [obs](./benchmarks-obs.md) |
 | **mem** SystemAllocator churn(static/source direct) | 7.93/8.04/7.77 | malloc OS | 25/4.7/20 | 大赢 OS | 裸 mimalloc | 7.86/8.04/7.91 | **~1.00x 三平台** | ➖合并形状**平 mi SOTA**(2026-07-20 n=15) |
 | **mem** SystemAllocator churn(shared direct-import) | 8.22/待签/待签 | malloc OS | 37.22/—/— | 4.53x/—/— | exe 内裸 mimalloc | 7.75/—/— | **0.943/—/—** | ⚠️ 2026-07-25 Windows 诊断：约 6% DSO seam 上界；三平台同链接模型证书待补，不冒充 static 行 |
 | **mem** Allocator vtable churn | 8.67/8.67/7.93 | pmr over mi | 8.67/10.3/9.98 | 平/1.22/1.26 | 裸 mi | 7.86/8.04/7.91 | **0.91/0.94/1.00** | ⚠️对 mi Win/Lin **sign 输~6–9%**；✅对 pmr 平/赢 |

@@ -4,9 +4,6 @@
 //     baseline; xoshiro256++ is the modern recommended general-purpose PRNG).
 //   * time/clock    -- monotonic_ns()/realtime_ns() read latency vs std::chrono
 //     steady_clock/system_clock now() (same OS primitive; measures wrapper cost).
-//   * obs/log       -- gated-out cost, safe preformatted fan-out through both
-//     native C++ and stable C ABI, plus caller formatting + fan-out. All use
-//     counting sinks (NO stderr I/O).
 //   * util/spin_lock -- SpinLock lock/unlock uncontended vs std::mutex (the TTAS
 //     spinlock claim; for short critical sections a spinlock should beat a mutex's
 //     syscall-capable lock).
@@ -28,7 +25,6 @@
 #include <vector>
 
 #include "hyle/c/util.h"
-#include "hyle/obs/log.h"
 #include "hyle/time/clock.h"
 #include "hyle/util/random.h"
 #include "hyle/util/ref_counted.h"
@@ -36,17 +32,6 @@
 
 namespace {
 namespace nb = ankerl::nanobench;
-
-// Counting sink: records calls, does NO I/O -> isolates format+fanout overhead.
-std::uint64_t g_log_calls = 0;
-void counting_write(void* /*state*/,
-                    const hyle::obs::LogRecord& /*record*/) noexcept {
-  ++g_log_calls;
-}
-void c_counting_write(void* /*state*/,
-                      const hyle_obs_log_record* /*record*/) {
-  ++g_log_calls;
-}
 
 // Minimal RefCounted subject for the Ref vs shared_ptr bench. One int payload, so
 // the only difference measured is the refcount mechanism (intrusive atomic in the
@@ -367,53 +352,5 @@ int main() {
     });
   }
 
-  // ---- obs/log: produce-path overhead (no I/O) ----
-  // Remove the auto-installed stderr sink so we measure library cost, not terminal.
-  hyle::obs::remove_sink(hyle::obs::default_sink());
-  {
-    nb::Bench b;
-    b.title("log gated-out (level below threshold)").relative(true).batch(1).minEpochIterations(2000000);
-    hyle::obs::set_level(hyle::obs::LogLevel::Warn);  // Info logs are dropped
-    b.run("HYLE_LOG_INFO (dropped at gate)", [&] {
-      int x = static_cast<int>(g_log_calls);
-      HYLE_LOG_INFO("value={}", x);  // should_log false -> no format, no fanout
-      nb::doNotOptimizeAway(x);
-    });
-  }
-  {
-    hyle::obs::LogSink sink{nullptr, &counting_write};
-    hyle::obs::add_sink(sink);
-    hyle::obs::set_level(hyle::obs::LogLevel::Info);
-    nb::Bench b;
-    b.title("log preformatted emit to 1 sink (no I/O)")
-        .relative(true)
-        .batch(1)
-        .minEpochIterations(1000000);
-    b.run("C++ log_message", [&] {
-      nb::doNotOptimizeAway(
-          hyle::obs::log_message(hyle::obs::LogLevel::Info, "ready"));
-    });
-    hyle::obs::remove_sink(sink);
-
-    hyle_obs_sink* c_sink = hyle_obs_sink_create(&c_counting_write, nullptr);
-    if (c_sink == nullptr) return 1;
-    b.run("C ABI hyle_obs_log", [&] {
-      nb::doNotOptimizeAway(hyle_obs_log(HYLE_OBS_LOG_INFO, "ready"));
-    });
-    if (!hyle_obs_sink_destroy(c_sink)) return 1;
-  }
-  {
-    hyle::obs::LogSink sink{nullptr, &counting_write};
-    hyle::obs::add_sink(sink);
-    hyle::obs::set_level(hyle::obs::LogLevel::Info);  // Info now passes
-    nb::Bench b;
-    b.title("log emit: format + fanout to 1 sink (no I/O)").relative(true).batch(1).minEpochIterations(500000);
-    b.run("HYLE_LOG_INFO (counting sink)", [&] {
-      int x = static_cast<int>(g_log_calls & 0xff);
-      HYLE_LOG_INFO("iter={} hex={:x}", x, x);  // std::format into stack buf + fanout
-      nb::doNotOptimizeAway(g_log_calls);
-    });
-    hyle::obs::remove_sink(sink);
-  }
   return 0;
 }

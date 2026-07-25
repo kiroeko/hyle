@@ -98,24 +98,24 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 
 > **信源**：体量以 `cloc` 实测为准；能力进度以 [`../milestones/README.md`](../milestones/README.md) 为准。
 > **口径**：生产 = `src` + `include` 的 code 列（不含 tests/bench/docs、不含 third_party）。
-> **2026-07-25 锚定**：旧投影「完成时生产 ~28–40k / 中值 34k」**已作废**——当前生产已 **80.1k**，单 simd **37.5k**。当前判断见 [`../milestones/pre-release-readiness.md`](../milestones/pre-release-readiness.md)；更早数字只作历史快照。
+> **2026-07-25 锚定**：旧投影「完成时生产 ~28–40k / 中值 34k」**已作废**——当前生产已 **80.2k**，单 simd **37.5k**。当前判断见 [`../milestones/pre-release-readiness.md`](../milestones/pre-release-readiness.md)；更早数字只作历史快照。
 
 ### 当前实测（2026-07-25）
 
 | 固定统计口径 | code | 说明 |
 |---|---:|---|
-| **全库代码** | **248,555** | `cloc . --vcs=git`；含 docs 与 in-tree third_party |
-| **自实现（含测试）** | **116,477** | `include/hyle + src + tests`，排除 CMake/Text |
-| **自实现（不含测试）** | **80,086** | `include/hyle + src`；库本体硬锚 |
-| **当前审查单元 util-core 实现** | **553** | random/ref-counted/scope-guard/spin-lock/type-name 五个公开头；不含测试/CMake/Text |
+| **全库代码** | **249,281** | `cloc . --vcs=git`；含 docs 与 in-tree third_party |
+| **自实现（含测试）** | **116,752** | `include/hyle + src + tests`，排除 CMake/Text |
+| **自实现（不含测试）** | **80,252** | `include/hyle + src`；库本体硬锚 |
+| **当前审查单元 obs 实现** | **1,018** | `include/hyle/obs` + `include/hyle/c/obs.h` + `src/obs`；不含测试/CMake/Text |
 | 再加 ggml 等大依赖足迹 | **~200–350k+** | 由 ggml 主导，不计入「自有生产」 |
 
 **生产按模块（src+include，约）：**
 
 | 模块 | code | 占生产 |
 |---|---:|---:|
-| **simd** | **~37.5k** | **~48%** |
-| io | ~9.0k | ~12% |
+| **simd** | **~37.5k** | **~47%** |
+| io | ~9.0k | ~11% |
 | compute | ~4.1k | ~5% |
 | sched | ~5.1k | ~7% |
 | container | ~4.9k | ~6% |
@@ -123,7 +123,10 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 | mem | ~5.1k | ~6% |
 | graph | ~0.6k | |
 | error | ~1.0k（含公共 C 头） | ~1% |
-| 其余基质及顶层/C ABI 头 | ~5.0k | ~6% |
+| util | ~1.3k | ~2% |
+| obs | **1,018**（含公共 C 头） | ~1% |
+| time | ~0.9k（含公共 C 头） | ~1% |
+| 其余基质及顶层/C ABI 头 | ~1.8k | ~2% |
 
 ### 完成时投影（2026-07-19 重估，取代 28–40k）
 
@@ -136,7 +139,7 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 **含测试粗乘**：生产 ×1.4–1.6 → A 约 **95–125k**、B 约 **120–160k**（tests only）。
 **自有工程（+bench+docs）**：A 约 **130–160k**、B 约 **160–200k**。
 
-**剩余增量直觉（相对今日 77.8k 生产，非承诺）：**
+**剩余增量直觉（相对今日 80.2k 生产，非承诺）：**
 
 | 方向 | 再长（生产） |
 |---|---:|
@@ -226,7 +229,7 @@ clay 从未把光追逻辑、USD/Hydra 协议、service 端点吸进 `infra/`—
 | **③ actor 框架/语言运行时** | ✅ **KEEP OUT** | actor 是 fiber+channel 之上的**模型**(L1)。HYLE 给 fiber+channel 原语,actor 上层拼。判对。 |
 | **③ GUI/窗口系统** | ✅ **KEEP OUT** | 领域,与北极星无关。 |
 | **④ 构建/包管理/测试框架**(CMake/GoogleTest)| ✅ **KEEP OUT** | 工具链,判对。 |
-| **④ 日志聚合/监控后端** | 🔄 **部分 PULL IN** | **边界已收口（2026-07-19）**：日志/trace 的“产出原语”属于 L0，聚合、轮转、上传、查询、告警和 viewer 属于运维栈，继续 KEEP OUT。日志是运行期 level gate + 同步结构化 sink；trace 是另一条编译期面，默认 OFF 时参数不求值/零后端依赖，ON 时接单一共享 Tracy client。真实 hook 已覆盖 mem/sched/io/compute（含 fiber 身份、线程名、zone/counter/memory），不再只是 fiber 单点。C/FFI 有稳定 runtime trace seam，但函数 no-op 不宣称零指令；纳秒热路径用原生宏。架构、生命周期和三平台验收见 [`obs-design.md`](./obs-design.md) / [`../milestones/obs-module-closure.md`](../milestones/obs-module-closure.md)。 |
+| **④ 日志聚合/监控后端** | 🔄 **部分 PULL IN** | **严格边界已收口（2026-07-25）**：日志/trace 的“产出原语”属于 L0，聚合、轮转、上传、查询、告警和 viewer 属于运维栈，继续 KEEP OUT。日志是运行期 level gate + 同步 borrowed record + immutable sink snapshot；emit 无分配/无 mutation mutex，quiescent unregister、flush、递归抑制与 process-lifetime registry 已闭环。trace 是另一条编译期面，默认 OFF 时参数不求值/零后端依赖，ON 时接单一共享 Tracy client。真实 hook 覆盖 mem/sched/io/compute。C/FFI 使用共享 Status、POD record/opaque sink 与 runtime trace seam；函数 no-op 不宣称零指令，纳秒热路径用原生宏。架构、生命周期和三平台验收见 [`obs-design.md`](./obs-design.md) / [`../milestones/obs-module-closure.md`](../milestones/obs-module-closure.md)。 |
 | **④ GC** | ✅ **KEEP OUT** | 做分配器不做 GC,判对。 |
 | **DataModel(undo/序列化/协作)** | 🟡 **拆开看** | undo/协作=L2 领域(KEEP OUT);内含的**序列化**已单独在 DISCUSS-2。原"整块不纳入"太粗。 |
 | **替换 ggml 算子/训练推理引擎** | ✅ **KEEP OUT** | compute 只做抽象层,判对(借 ggml 是明确决策)。 |
@@ -281,7 +284,8 @@ WebSocket、gRPC（依赖 protobuf/IDL，更靠 L1）仍后置于范围外。
 
 路线图见 [`roadmap.md`](./roadmap.md)；逐里程碑实时状态见
 [`milestones/README.md`](../milestones/README.md)。当前除 compute/graph 仍有产品能力尾外，
-其余模块主体基本实现；但按 2026-07-25 的实际使用导向合同，严格证书只有
-error/platform/mem/time。旧 container/util/obs/simd/sched/io closure 是复审输入证据，
+其余模块主体基本实现；但按 2026-07-25 的实际使用导向合同，严格证书已有
+error/platform/mem/time/core、build/package、util-core 与 obs。旧 container/simd/sched/io
+closure 以及 util-runtime 的既有结果仍只是复审输入证据，
 不能替代本轮功能、复杂度、C/C++ 易用性、依赖采用和双 guide 认证。当前队列见
 [`pre-release-readiness.md`](../milestones/pre-release-readiness.md)。

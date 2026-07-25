@@ -13,14 +13,37 @@ static int g_fails = 0;
     }                                                                         \
   } while (0)
 
+static int status_ok(hyle_status status) {
+  int ok = hyle_status_is_ok(status);
+  if (!ok) {
+    fprintf(stderr, "unexpected status: %s\n",
+            hyle_status_message_cstr(status));
+  }
+  hyle_status_free(&status);
+  return ok;
+}
+
+static hyle_status_code take_status_code(hyle_status status) {
+  hyle_status_code code = hyle_status_get_code(status);
+  hyle_status_free(&status);
+  return code;
+}
+
+#define CHECK_OK(expr) CHECK(status_ok((expr)))
+
 struct capture {
   size_t calls;
+  size_t flushes;
   hyle_obs_log_level level;
   size_t fields;
   uint32_t line;
   uint64_t timestamp_ns;
   char message[64];
 };
+
+static void capture_flush(void* state) {
+  ++((struct capture*)state)->flushes;
+}
 
 static void capture_write(void* state, const hyle_obs_log_record* record) {
   struct capture* capture = (struct capture*)state;
@@ -43,55 +66,66 @@ static void self_remove_write(void* state,
   struct self_remove* self = (struct self_remove*)state;
   (void)record;
   ++self->calls;
-  CHECK(hyle_obs_sink_destroy(self->sink));
+  CHECK_OK(hyle_obs_sink_destroy(self->sink));
   self->sink = NULL;
 }
 
 struct cross_remove {
   hyle_obs_sink* target;
-  int result;
+  hyle_status_code result;
 };
 
 static void cross_remove_write(void* state,
                                const hyle_obs_log_record* record) {
   struct cross_remove* cross = (struct cross_remove*)state;
   (void)record;
-  cross->result = hyle_obs_sink_destroy(cross->target);
+  cross->result = take_status_code(hyle_obs_sink_destroy(cross->target));
 }
 
 int main(void) {
-  CHECK(hyle_obs_set_default_sink_enabled(0));
+  (void)"HYLE_C_OBS_COVERAGE_BODY_MARKER";
+  CHECK_OK(hyle_obs_set_default_sink_enabled(0));
   CHECK(!hyle_obs_default_sink_enabled());
   CHECK(hyle_obs_sink_capacity() >= 1);
   CHECK(hyle_obs_sink_count() == 0);
 
-  CHECK(!hyle_obs_set_level((hyle_obs_log_level)99));
-  CHECK(strstr(hyle_obs_last_error(), "threshold") != NULL);
-  CHECK(hyle_obs_set_level(HYLE_OBS_LOG_TRACE));
-  CHECK(strcmp(hyle_obs_last_error(), "") == 0);
+  CHECK(take_status_code(hyle_obs_set_level((hyle_obs_log_level)99)) ==
+        HYLE_STATUS_INVALID_ARGUMENT);
+  CHECK_OK(hyle_obs_set_level(HYLE_OBS_LOG_TRACE));
   CHECK(hyle_obs_get_level() == HYLE_OBS_LOG_TRACE);
   CHECK(hyle_obs_should_log(HYLE_OBS_LOG_DEBUG));
   CHECK(!hyle_obs_should_log(HYLE_OBS_LOG_OFF));
-  CHECK(strstr(hyle_obs_last_error(), "record level") != NULL);
   CHECK(hyle_obs_get_level() == HYLE_OBS_LOG_TRACE);
-  CHECK(strcmp(hyle_obs_last_error(), "") == 0);
 
-  CHECK(hyle_obs_sink_create(NULL, NULL) == NULL);
-  CHECK(strstr(hyle_obs_last_error(), "callback") != NULL);
+  {
+    hyle_obs_sink* invalid = (hyle_obs_sink*)(uintptr_t)1;
+    CHECK(take_status_code(
+              hyle_obs_sink_create(&invalid, NULL, NULL, NULL)) ==
+          HYLE_STATUS_INVALID_ARGUMENT);
+    CHECK(invalid == NULL);
+  }
 
   {
     struct capture capture = {0};
-    hyle_obs_sink* sink = hyle_obs_sink_create(capture_write, &capture);
+    hyle_obs_sink* sink = NULL;
+    CHECK_OK(hyle_obs_sink_create(&sink, capture_write, capture_flush,
+                                  &capture));
     CHECK(sink != NULL);
     CHECK(hyle_obs_sink_count() == 1);
-    CHECK(hyle_obs_log_info("hello"));
-    CHECK(hyle_obs_log(HYLE_OBS_LOG_INFO, "direct"));
-    CHECK(hyle_obs_log_trace("trace"));
-    CHECK(hyle_obs_log_debug("debug"));
-    CHECK(hyle_obs_log_warn("warn"));
-    CHECK(hyle_obs_log_error("error"));
+    CHECK_OK(hyle_obs_log_info("hello"));
+    {
+      int emitted = 0;
+      CHECK_OK(hyle_obs_log(&emitted, HYLE_OBS_LOG_INFO, "direct"));
+      CHECK(emitted);
+    }
+    CHECK_OK(hyle_obs_log_trace("trace"));
+    CHECK_OK(hyle_obs_log_debug("debug"));
+    CHECK_OK(hyle_obs_log_warn("warn"));
+    CHECK_OK(hyle_obs_log_error("error"));
     CHECK(capture.calls == 6);
     CHECK(strcmp(capture.message, "error") == 0);
+    CHECK(hyle_obs_flush_sinks() == 1);
+    CHECK(capture.flushes == 1);
 
     {
       hyle_obs_log_field fields[] = {
@@ -107,7 +141,9 @@ int main(void) {
       record.function = "serve";
       record.line = 42;
       record.timestamp_ns = UINT64_C(123);
-      CHECK(hyle_obs_emit_record(&record));
+      int emitted = 0;
+      CHECK_OK(hyle_obs_emit_record(&emitted, &record));
+      CHECK(emitted);
       CHECK(capture.level == HYLE_OBS_LOG_WARN);
       CHECK(capture.fields == 2);
       CHECK(capture.line == 42);
@@ -117,29 +153,33 @@ int main(void) {
     {
       hyle_obs_log_record bad = HYLE_OBS_LOG_RECORD_INIT;
       bad.struct_size = 1;
-      CHECK(!hyle_obs_emit_record(&bad));
-      CHECK(strstr(hyle_obs_last_error(), "struct_size") != NULL);
+      CHECK(take_status_code(hyle_obs_emit_record(NULL, &bad)) ==
+            HYLE_STATUS_INVALID_ARGUMENT);
       bad = (hyle_obs_log_record)HYLE_OBS_LOG_RECORD_INIT;
       bad.message = NULL;
-      CHECK(!hyle_obs_emit_record(&bad));
-      CHECK(strstr(hyle_obs_last_error(), "null message") != NULL);
+      CHECK(take_status_code(hyle_obs_emit_record(NULL, &bad)) ==
+            HYLE_STATUS_INVALID_ARGUMENT);
     }
 
-    CHECK(hyle_obs_set_level(HYLE_OBS_LOG_OFF));
-    CHECK(!hyle_obs_log_error("gated"));
+    CHECK_OK(hyle_obs_set_level(HYLE_OBS_LOG_OFF));
+    {
+      int emitted = 1;
+      CHECK_OK(hyle_obs_log(&emitted, HYLE_OBS_LOG_ERROR, "gated"));
+      CHECK(!emitted);
+    }
     CHECK(capture.calls == 7);
-    CHECK(hyle_obs_sink_destroy(sink));
-    CHECK(hyle_obs_sink_destroy(NULL));
+    CHECK_OK(hyle_obs_sink_destroy(sink));
+    CHECK_OK(hyle_obs_sink_destroy(NULL));
     CHECK(hyle_obs_sink_count() == 0);
   }
 
   /* A sink may unregister/destroy its own opaque handle in its callback. */
   {
     struct self_remove self = {0};
-    CHECK(hyle_obs_set_level(HYLE_OBS_LOG_INFO));
-    self.sink = hyle_obs_sink_create(self_remove_write, &self);
+    CHECK_OK(hyle_obs_set_level(HYLE_OBS_LOG_INFO));
+    CHECK_OK(hyle_obs_sink_create(&self.sink, self_remove_write, NULL, &self));
     CHECK(self.sink != NULL);
-    CHECK(hyle_obs_log_info("self-remove"));
+    CHECK_OK(hyle_obs_log_info("self-remove"));
     CHECK(self.calls == 1);
     CHECK(self.sink == NULL);
     CHECK(hyle_obs_sink_count() == 0);
@@ -149,17 +189,16 @@ int main(void) {
   {
     struct cross_remove cross = {0};
     struct capture target = {0};
-    hyle_obs_sink* remover =
-        hyle_obs_sink_create(cross_remove_write, &cross);
+    hyle_obs_sink* remover = NULL;
+    CHECK_OK(hyle_obs_sink_create(&remover, cross_remove_write, NULL, &cross));
     CHECK(remover != NULL);
-    cross.target = hyle_obs_sink_create(capture_write, &target);
+    CHECK_OK(hyle_obs_sink_create(&cross.target, capture_write, NULL, &target));
     CHECK(cross.target != NULL);
-    CHECK(hyle_obs_log_info("cross-remove"));
-    CHECK(!cross.result);
-    CHECK(strstr(hyle_obs_last_error(), "cross-removal") != NULL);
+    CHECK_OK(hyle_obs_log_info("cross-remove"));
+    CHECK(cross.result == HYLE_STATUS_FAILED_PRECONDITION);
     CHECK(target.calls == 1);
-    CHECK(hyle_obs_sink_destroy(remover));
-    CHECK(hyle_obs_sink_destroy(cross.target));
+    CHECK_OK(hyle_obs_sink_destroy(remover));
+    CHECK_OK(hyle_obs_sink_destroy(cross.target));
     CHECK(hyle_obs_sink_count() == 0);
   }
 
@@ -183,9 +222,9 @@ int main(void) {
           hyle_obs_trace_enabled() == 1);
   }
 
-  CHECK(hyle_obs_set_default_sink_enabled(1));
+  CHECK_OK(hyle_obs_set_default_sink_enabled(1));
   CHECK(hyle_obs_default_sink_enabled());
-  CHECK(hyle_obs_set_default_sink_enabled(0));
+  CHECK_OK(hyle_obs_set_default_sink_enabled(0));
 
   if (g_fails != 0) {
     fprintf(stderr, "obs_c_test: %d failure(s)\n", g_fails);

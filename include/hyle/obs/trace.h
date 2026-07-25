@@ -1,46 +1,25 @@
 #pragma once
 
-// obs-02: instrumentation / trace hooks (capability C6). A COMPILE-TIME-GATED seam
-// for zone timing, counters/plots, fiber tracking, and frame marks. This is the
-// "hot-path" half of obs/ (log.h is the cold structured-log half).
+// Compile-time-gated profiling hooks for zones, plots/counters, fibers, frames,
+// messages, memory and thread names. This is independent from log.h's runtime
+// structured-log path.
 //
-// ZERO-COST LAW (the load-bearing constraint, ratified 2026-07-03): these hooks
-// are meant to be embedded in the FIBER SWITCH (~21ns) and io-reap nanosecond hot
-// paths. So the gate is COMPILE-TIME, not the runtime `should_log` gate log.h uses
-// (a relaxed load + a cross-DLL call -- fine for logging, far too much for a
-// nanosecond path). When HYLE_TRACE is undefined (the default, and every shipped/
-// benchmarked build) EVERY macro below expands to nothing -- `(void)0` / a discarded
-// value -- so the compiler emits IDENTICAL code with and without the hooks present.
-// This mirrors tracy's TRACY_ENABLE model exactly (tracy macros vanish when it is
-// undefined). Acceptance is by objdump: the fiber-switch assembly must be
-// instruction-for-instruction identical gated on/off, and scheduler_ext_bench must
-// not move. "Embed in the hot path from day one" only holds because the OFF state
-// is provably free.
-//
-// TWO LAYERS:
-//   1. This header is HYLE's OWN stable hook surface (HYLE_TRACE_*). Product code
-//      and the scheduler/io hot paths call ONLY these -- never tracy directly --
-//      so the profiler backend can change without touching a single call site.
-//   2. A backend fills them in. The first backend is tracy (HYLE_TRACE_TRACY),
-//      borrowed whole (header + one TU), not reinvented. Selected at build time.
-//
-// Enable with -DHYLE_TRACE (+ the backend's own switch, e.g. -DHYLE_TRACE_TRACY
-// which also defines TRACY_ENABLE for the vendored client). Off => this header
-// pulls in NOTHING (no backend include), keeping the default build dependency-free.
+// Product code calls only HYLE_TRACE_*; a selected backend fills the macros in.
+// The default OFF form does not evaluate arguments, call a function or include a
+// backend. This makes it safe to leave hooks in fiber switching, IO completion
+// and allocation paths. A Tracy build defines HYLE_TRACE_TRACY through the public
+// hyle_trace CMake target and links one shared client for the whole HYLE process.
 
 // ---- backend selection ------------------------------------------------------
-// HYLE_TRACE is the master gate. A backend macro (HYLE_TRACE_TRACY) picks who fills
-// the hooks. Defining a backend implies the master gate (so callers need only pass
-// the backend switch). With no backend, HYLE_TRACE alone still gates everything off
-// -- the hooks stay empty (useful to prove the seam compiles with zero backend).
+// A backend define implies the master gate. HYLE_TRACE without a selected backend
+// deliberately remains a no-op rather than exposing a half-wired profiler.
 #if defined(HYLE_TRACE_TRACY) && !defined(HYLE_TRACE)
 #  define HYLE_TRACE
 #endif
 
 #if defined(HYLE_TRACE) && defined(HYLE_TRACE_TRACY)
 
-// tracy backend. Fiber tracking needs TRACY_FIBERS (the TracyFiber* macros only
-// exist when it is set) -- turn it on here so HYLE's fiber hooks always resolve.
+// Fiber tracking needs TRACY_FIBERS; enable it consistently for every consumer.
 #  ifndef TRACY_FIBERS
 #    define TRACY_FIBERS
 #  endif
@@ -48,27 +27,23 @@
 #  include <cstring>
 #  include <tracy/Tracy.hpp>
 
-// Zone timing (RAII: times the enclosing scope). tracy caches a static constexpr
-// SourceLocationData per site -- zero allocation, the runtime cost is one lock-free
-// queue write at scope entry and one at exit.
+// Zone timing is RAII for the enclosing scope. A named zone uses a literal/static
+// site name; dynamic detail belongs in HYLE_TRACE_MESSAGE or the C runtime zone-text
+// seam.
 #  define HYLE_TRACE_ZONE() ZoneScoped
 #  define HYLE_TRACE_ZONE_NAMED(name) ZoneScopedN(name)
 
-// A numeric time series (tracy plot). `name` MUST be a string literal / long-lived
+// A numeric time series. `name` MUST be a string literal / long-lived
 // pointer (tracy stores the pointer by identity, not a copy).
 #  define HYLE_TRACE_PLOT(name, value) TracyPlot(name, value)
-// tracy has no discrete incremental counter; a counter IS a plot of its running
-// value. Callers that want an increment maintain the sum and plot it (documented).
+// A counter is a plot of the caller-maintained running value.
 #  define HYLE_TRACE_COUNTER(name, value) \
     TracyPlot(name, static_cast<std::int64_t>(value))
 
-// Fiber tracking: mark which fiber the current OS thread is running, so zones/plots
-// attribute to the FIBER track rather than the physical worker thread -- exactly
-// what an M:N fiber scheduler needs. `name` identifies the fiber and MUST be a
-// stable, long-lived pointer (tracy keys the fiber by pointer identity; the SAME
-// fiber must always pass the SAME pointer, even across worker migration). Enter is
-// idempotent per switch; a direct fiber->fiber switch may Enter again without an
-// intervening Leave (tracy allows it). Leave when returning to non-fiber code.
+// Mark which fiber the current OS thread is running so zones/plots follow logical
+// execution across worker migration. `name` identifies the fiber and MUST be a
+// stable, long-lived pointer; the same fiber must always pass the same pointer.
+// Leave when returning to non-fiber code.
 #  define HYLE_TRACE_FIBER_ENTER(name) TracyFiberEnter(name)
 #  define HYLE_TRACE_FIBER_LEAVE() TracyFiberLeave
 
@@ -96,9 +71,7 @@
 
 #else  // ---- OFF (default) or a gate with no backend: every hook vanishes -------
 
-// Each macro expands to a statement/expression that generates NO code. Args are
-// NOT evaluated (a plot value / message that is itself expensive must not run when
-// tracing is off) -- consistent with tracy's off-state, which also drops its args.
+// Arguments are not evaluated when tracing is off.
 #  define HYLE_TRACE_ZONE() ((void)0)
 #  define HYLE_TRACE_ZONE_NAMED(name) ((void)0)
 #  define HYLE_TRACE_PLOT(name, value) ((void)0)

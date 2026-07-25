@@ -133,26 +133,19 @@ lookup/retain/remove 为预期 O(1)，`size()` 只扫硬上限 64 shard。旧表
 
 3. **反哺检查(全表 error→path,无可反哺项)**——① **string_ref 的 SIMD 反向扫核**(`str_rfind_char` SSE2、`str_find_last_of` PCMPISTRI)对 path **不适用**:path 组件短(basename ~12-20 字符,远低于 SIMD 收益阈值,账本"string_ref SIMD 仅 multi-KB 扫才划算"),且这些核是**导出符号**(有 ~1ns call seam)、会破坏 extension/base/directory 的 `constexpr`。实测 base/directory 平手 string_view **标量**反向扫已印证——短组件标量扫即最优,无 SIMD 空间。② **string_algo/hash/mem/simd** 与 path 零分配视图扫**正交**(path 不分配、不 hash、不做数值核)。结论:path 的赢点(零分配结构 + 最优标量扫)自成一体,总表其他模块的优化无一能反哺。
 
-## 其他旧 mixed runner 项（obs/log、SwissTable iterate）
+## 旧 mixed runner 中保留的 container 项
 
-> util 已迁到当前 [`benchmarks-util.md`](./benchmarks-util.md)，time 已迁到
-> [`benchmarks-time.md`](./benchmarks-time.md)；本节不保留它们的过时点值。余下数字来自
-> 2026-07-19 mixed runner，只是 obs/container 后续严格复审的输入，不是当前证书。
+> util、time、obs 已分别迁到当前 [`benchmarks-util.md`](./benchmarks-util.md)、
+> [`benchmarks-time.md`](./benchmarks-time.md)、[`benchmarks-obs.md`](./benchmarks-obs.md)；
+> 本文件不再保留它们的过时点值。这里只保留尚待 container 严格复审的历史输入。
 
 | 场景 | HYLE | 标尺 | vs 标尺 | 结论 |
 |---|---|---|---|---|
 | **SwissTable iterate**(for_each) | **2.48 ns** | std::unordered_map 8.73 | **3.5x** | ✅ 赢(扁平 ctrl 扫 vs 节点指针链) |
-| **time clock / radix queue / common** | → | → | → | **已迁出** [benchmarks-time.md](./benchmarks-time.md)（2026-07-25 三平台；勿用本表旧数据） |
-| **log gated-out** | 2.03–2.11(Win)/1.05–1.09(WSL)/0.91–0.92(M4) | (无 std 对照) | — | relaxed level gate + branch；参数不求值、不格式化 |
-| **log preformatted C++**(1 sink,无 I/O) | 22.48/13.07/8.85 ns | (无 std 对照) | — | mutex snapshot + per-slot active refs + callback；换取 quiescent unregister |
-| **log preformatted C ABI**(1 C sink,无 I/O) | 23.93/16.03/10.68 ns | native C++ 上行 | +1.45/+2.96/+1.83 ns | POD bridge + opaque trampoline 的真实 ABI 成本很小 |
-| **log formatted emit**(1 sink,无 I/O) | 81.9–84.6/69.5–71.4/50.9–53.5 ns | (无 std 对照) | — | `std::format_to_n` + safe fan-out；真实 I/O sink 通常远大于此 |
 
-**诚实结论**:① **SwissTable iterate 赢 std::unordered_map 3.5x**——扁平 ctrl 字节扫 +
-连续 slot(cache 友好)碾压节点指针链；`for_each` 是函数模板(内联、零分配)。
-② **obs 旧收口的三层性能**：宏 gate 0.91–2.11ns；
-preformatted native 8.85–22.48ns；C ABI trampoline 再加 1.45–2.96ns。
-完整红队见 [`../milestones/obs-module-closure.md`](../milestones/obs-module-closure.md)。
+**历史结论**：SwissTable iterate 赢 std::unordered_map 3.5x——扁平 ctrl 字节扫 + 连续
+slot(cache 友好)对节点指针链；`for_each` 是函数模板(内联、零分配)。该数字仍只是 container
+严格复审的输入，不自动成为当前证书。
 
 ## 模糊路径匹配（container-06c，`fuzzy_bench.cc`）
 

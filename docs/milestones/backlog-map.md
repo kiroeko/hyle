@@ -92,7 +92,7 @@
 
 | 里程碑 | 状态 | 待决 |
 |---|---|---|
-| close-01 C-ABI shim | 🔶 多模块已有 surface | error/platform/mem/time 已随严格复审认证；simd/util/obs/container/sched/io 的既有 C 面随各模块重新核覆盖和 error 形状；compute/graph + install/export/FFI 待做 |
+| close-01 C-ABI shim | 🔶 多模块已有 surface | error/platform/mem/time/obs 已随严格复审认证；simd/util-runtime/container/sched/io 的既有 C 面随各模块重新核覆盖和 error 形状；compute/graph + install/export/FFI 待做 |
 | close-02 serialize | ❓ scope 待澄清 | 借 flatbuffers/capnproto builder+reader 当原语 vs 全推 L1?JSON 借 simdjson 已定 |
 | close-03 FFI 绑定 | 占位 | 依赖 close-01 |
 | graph-02 数据并行层 | ✅ **归属已定(2026-07-10)** | **归 graph**(graph-design.md §2):compute 铁律把铺多核推给 graph-02 fork-join,归 compute 会破其"不起线程池"边界;消费者与 graph-01 同源。序列化(close-02)仍待 scope 复核 |

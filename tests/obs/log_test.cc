@@ -16,6 +16,13 @@ using namespace hyle::obs;
 
 namespace {
 
+// Constructed before main, so it runs after ordinary function-local statics
+// during process teardown. The test executable itself is the assertion: a
+// process-lifetime registry remains valid for this late access.
+struct LateRegistryAccess {
+  ~LateRegistryAccess() { (void)sink_count(); }
+} g_late_registry_access;
+
 // A capture sink: records (level, msg) into a vector so tests assert on what was
 // emitted, without touching stderr. One instance per test; registered as a sink
 // via its {this, &write} pair.
@@ -39,14 +46,14 @@ class LogTest : public ::testing::Test {
  protected:
   Capture cap;
   void SetUp() override {
-    remove_sink(default_sink());  // silence console during tests
-    add_sink(cap.as_sink());
+    ASSERT_TRUE(remove_sink(default_sink()).ok());  // silence console
+    ASSERT_TRUE(add_sink(cap.as_sink()).ok());
     set_level(LogLevel::Trace);
   }
   void TearDown() override {
-    remove_sink(cap.as_sink());
+    EXPECT_TRUE(remove_sink(cap.as_sink()).ok());
     set_level(LogLevel::Info);     // restore default
-    add_sink(default_sink());      // restore console for other suites
+    EXPECT_TRUE(add_sink(default_sink()).ok());  // restore console
   }
 };
 
@@ -93,6 +100,7 @@ TEST_F(LogTest, LogFmtTruncatesAtFixedBufferBoundary) {
   HYLE_LOG_INFO("{}", std::string(2048, 'x'));
   ASSERT_EQ(cap.recs.size(), 1u);
   EXPECT_EQ(cap.recs[0].msg.size(), 1023u);
+  EXPECT_TRUE(cap.recs[0].msg.ends_with("...[truncated]"));
 }
 
 TEST_F(LogTest, MacroCapturesCallerSourceLocation) {
@@ -109,10 +117,10 @@ TEST_F(LogTest, MacroCapturesCallerSourceLocation) {
     }
   } source;
   LogSink sink{&source, &SourceCapture::write};
-  ASSERT_TRUE(add_sink(sink));
+  ASSERT_TRUE(add_sink(sink).ok());
   const std::uint32_t expected_line = __LINE__ + 1;
   HYLE_LOG_INFO("source");
-  EXPECT_TRUE(remove_sink(sink));
+  EXPECT_TRUE(remove_sink(sink).ok());
   EXPECT_NE(source.file.find("log_test.cc"), std::string::npos);
   EXPECT_NE(source.function.find("MacroCapturesCallerSourceLocation"),
             std::string::npos);
@@ -135,7 +143,7 @@ TEST_F(LogTest, StructuredRecordCarriesFieldsAndSource) {
     }
   } structured;
   LogSink sink{&structured, &StructuredCapture::write};
-  ASSERT_TRUE(add_sink(sink));
+  ASSERT_TRUE(add_sink(sink).ok());
   LogRecord record{
       .level = LogLevel::Warn,
       .message = "slow request",
@@ -147,7 +155,7 @@ TEST_F(LogTest, StructuredRecordCarriesFieldsAndSource) {
       .timestamp_ns = 123,
   };
   EXPECT_TRUE(log_record(record));
-  EXPECT_TRUE(remove_sink(sink));
+  EXPECT_TRUE(remove_sink(sink).ok());
   EXPECT_EQ(structured.fields, 2u);
   EXPECT_EQ(structured.file, "server.cc");
   EXPECT_EQ(structured.line, 42u);
@@ -173,25 +181,25 @@ TEST_F(LogTest, MacrosRouteToLevels) {
 
 TEST_F(LogTest, MultipleSinksAllReceive) {
   Capture second;
-  add_sink(second.as_sink());
+  ASSERT_TRUE(add_sink(second.as_sink()).ok());
   log_message(LogLevel::Info, "broadcast");
-  remove_sink(second.as_sink());
+  EXPECT_TRUE(remove_sink(second.as_sink()).ok());
   EXPECT_EQ(cap.recs.size(), 1u);
   ASSERT_EQ(second.recs.size(), 1u);
   EXPECT_EQ(second.recs[0].msg, "broadcast");
 }
 
-TEST_F(LogTest, AddSinkIsIdempotent) {
-  add_sink(cap.as_sink());  // already added in SetUp -> dedupe
+TEST_F(LogTest, DuplicateSinkIsRejectedWithoutDuplicateDelivery) {
+  EXPECT_EQ(add_sink(cap.as_sink()).code(), hyle::StatusCode::AlreadyExists);
   log_message(LogLevel::Info, "once");
   EXPECT_EQ(cap.recs.size(), 1u);  // not 2
 }
 
 TEST_F(LogTest, RemoveSinkStopsDelivery) {
-  remove_sink(cap.as_sink());
+  ASSERT_TRUE(remove_sink(cap.as_sink()).ok());
   log_message(LogLevel::Info, "gone");
   EXPECT_TRUE(cap.recs.empty());
-  add_sink(cap.as_sink());  // re-add so TearDown's remove is balanced
+  ASSERT_TRUE(add_sink(cap.as_sink()).ok());  // balance TearDown
 }
 
 // Default level is Info: a fresh process drops Trace/Debug. Verified by reading
@@ -204,11 +212,9 @@ TEST(LogDefault, DefaultLevelIsInfo) {
 }
 
 // Concurrency stress: many threads log_message in parallel while another churns
-// add_sink/remove_sink. Validates the registry stays race-free under the lock
-// (snapshot-under-lock, emit-outside-lock) -- the hard assertion is "no crash, no
-// TSan race, no hang, every logger's message delivered". Run under WSL TSan
-// (setarch -R): this is the lock gate for obs. (A seqlock read path was tried for
-// lock-free fan-out but TSan flagged it as UB; reverted to the mutex.)
+// add_sink/remove_sink. Validates immutable snapshots and quiescent retirement
+// stay race-free -- the hard assertion is "no crash, no TSan race, no hang, every
+// logger's message delivered".
 TEST(LogConcurrency, ParallelLogVsChurn) {
   set_level(LogLevel::Trace);
   std::atomic<std::uint64_t> calls{0};
@@ -220,24 +226,28 @@ TEST(LogConcurrency, ParallelLogVsChurn) {
                      static_cast<Counter*>(s)->c->fetch_add(
                          1, std::memory_order_relaxed);
                    }};
-  remove_sink(default_sink());  // keep stderr quiet during the storm
-  add_sink(counting);
+  ASSERT_TRUE(remove_sink(default_sink()).ok());
+  ASSERT_TRUE(add_sink(counting).ok());
 
   constexpr int kLoggers = 6;
   constexpr int kPerThread = 5000;
   std::atomic<bool> stop{false};
+  std::atomic<bool> registry_ok{true};
   std::vector<std::thread> ts;
   for (int t = 0; t < kLoggers; ++t)
     ts.emplace_back([&] {
       for (int i = 0; i < kPerThread; ++i) log_message(LogLevel::Info, "x");
     });
-  // Churn thread: repeatedly add/remove a second sink to drive the seqlock.
+  // Churn thread: repeatedly add/remove a second sink to republish snapshots.
   Counter c2{&calls};
   LogSink churn{&c2, counting.write};
   std::thread churner([&] {
     while (!stop.load(std::memory_order_relaxed)) {
-      add_sink(churn);
-      remove_sink(churn);
+      hyle::Status status = add_sink(churn);
+      if (!status.ok() || !remove_sink(churn).ok()) {
+        registry_ok.store(false, std::memory_order_relaxed);
+        break;
+      }
     }
   });
 
@@ -248,14 +258,15 @@ TEST(LogConcurrency, ParallelLogVsChurn) {
   // At least the counting sink saw every message from every logger (the churn
   // sink may have added more; we only assert a sane lower bound + no crash/hang).
   EXPECT_GE(calls.load(), static_cast<std::uint64_t>(kLoggers) * kPerThread);
+  EXPECT_TRUE(registry_ok.load(std::memory_order_relaxed));
 
-  remove_sink(counting);
+  EXPECT_TRUE(remove_sink(counting).ok());
   set_level(LogLevel::Info);
-  add_sink(default_sink());
+  EXPECT_TRUE(add_sink(default_sink()).ok());
 }
 
 TEST(LogConcurrency, RemoveWaitsForConcurrentCallback) {
-  remove_sink(default_sink());
+  ASSERT_TRUE(remove_sink(default_sink()).ok());
   set_level(LogLevel::Trace);
   struct Blocking {
     std::mutex mutex;
@@ -273,7 +284,7 @@ TEST(LogConcurrency, RemoveWaitsForConcurrentCallback) {
     }
   } blocking;
   LogSink sink{&blocking, &Blocking::write};
-  ASSERT_TRUE(add_sink(sink));
+  ASSERT_TRUE(add_sink(sink).ok());
 
   std::thread logger([&] { log_message(LogLevel::Info, "blocked"); });
   {
@@ -282,7 +293,7 @@ TEST(LogConcurrency, RemoveWaitsForConcurrentCallback) {
   }
   std::atomic<bool> removed{false};
   std::thread remover([&] {
-    EXPECT_TRUE(remove_sink(sink));
+    EXPECT_TRUE(remove_sink(sink).ok());
     removed.store(true, std::memory_order_release);
   });
   std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -295,39 +306,39 @@ TEST(LogConcurrency, RemoveWaitsForConcurrentCallback) {
   logger.join();
   remover.join();
   EXPECT_TRUE(removed.load(std::memory_order_acquire));
-  add_sink(default_sink());
+  EXPECT_TRUE(add_sink(default_sink()).ok());
   set_level(LogLevel::Info);
 }
 
 TEST(LogConcurrency, CallbackCanRemoveItselfWithoutDeadlock) {
-  remove_sink(default_sink());
+  ASSERT_TRUE(remove_sink(default_sink()).ok());
   set_level(LogLevel::Trace);
   struct SelfRemoving {
     LogSink sink{};
     bool removed = false;
     static void write(void* state, const LogRecord&) noexcept {
       auto* self = static_cast<SelfRemoving*>(state);
-      self->removed = remove_sink(self->sink);
+      self->removed = remove_sink(self->sink).ok();
     }
   } state;
   state.sink = LogSink{&state, &SelfRemoving::write};
-  ASSERT_TRUE(add_sink(state.sink));
+  ASSERT_TRUE(add_sink(state.sink).ok());
   EXPECT_TRUE(log_message(LogLevel::Info, "remove"));
   EXPECT_TRUE(state.removed);
-  EXPECT_FALSE(remove_sink(state.sink));
-  add_sink(default_sink());
+  EXPECT_EQ(remove_sink(state.sink).code(), hyle::StatusCode::NotFound);
+  EXPECT_TRUE(add_sink(default_sink()).ok());
   set_level(LogLevel::Info);
 }
 
 TEST(LogConcurrency, CallbackCannotCrossRemovePendingSink) {
-  remove_sink(default_sink());
+  ASSERT_TRUE(remove_sink(default_sink()).ok());
   set_level(LogLevel::Trace);
   struct CrossRemoving {
     LogSink target{};
     bool result = true;
     static void write(void* state, const LogRecord&) noexcept {
       auto* self = static_cast<CrossRemoving*>(state);
-      self->result = remove_sink(self->target);
+      self->result = remove_sink(self->target).ok();
     }
   } remover;
   std::atomic<std::size_t> target_calls{0};
@@ -339,32 +350,80 @@ TEST(LogConcurrency, CallbackCannotCrossRemovePendingSink) {
             1, std::memory_order_relaxed);
       }};
   remover.target = target;
-  ASSERT_TRUE(add_sink(first));
-  ASSERT_TRUE(add_sink(target));
+  ASSERT_TRUE(add_sink(first).ok());
+  ASSERT_TRUE(add_sink(target).ok());
 
   EXPECT_TRUE(log_message(LogLevel::Info, "cross-remove"));
   EXPECT_FALSE(remover.result);
   EXPECT_EQ(target_calls.load(std::memory_order_relaxed), 1u);
-  EXPECT_TRUE(remove_sink(first));
-  EXPECT_TRUE(remove_sink(target));
-  add_sink(default_sink());
+  EXPECT_TRUE(remove_sink(first).ok());
+  EXPECT_TRUE(remove_sink(target).ok());
+  EXPECT_TRUE(add_sink(default_sink()).ok());
   set_level(LogLevel::Info);
 }
 
+TEST_F(LogTest, NestedLogFromSinkDoesNotReenterSinkGraph) {
+  struct Recursive {
+    std::size_t calls = 0;
+    bool nested_delivered = true;
+    static void write(void* state, const LogRecord&) noexcept {
+      auto* self = static_cast<Recursive*>(state);
+      ++self->calls;
+      if (self->calls < 32) {
+        self->nested_delivered =
+            log_message(LogLevel::Warn, "nested from sink");
+      }
+    }
+  } recursive;
+  LogSink sink{&recursive, &Recursive::write};
+  ASSERT_TRUE(add_sink(sink).ok());
+
+  EXPECT_TRUE(log_message(LogLevel::Info, "outer"));
+  EXPECT_EQ(recursive.calls, 1u);
+  EXPECT_FALSE(recursive.nested_delivered);  // default sink is disabled in fixture
+  ASSERT_EQ(cap.recs.size(), 1u);
+  EXPECT_EQ(cap.recs[0].msg, "outer");
+  EXPECT_TRUE(remove_sink(sink).ok());
+}
+
+TEST_F(LogTest, FlushInvokesOptionalCallbackWithoutNestedFanout) {
+  struct Buffered {
+    std::size_t writes = 0;
+    std::size_t flushes = 0;
+    static void write(void* state, const LogRecord&) noexcept {
+      ++static_cast<Buffered*>(state)->writes;
+    }
+    static void flush(void* state) noexcept {
+      auto* self = static_cast<Buffered*>(state);
+      ++self->flushes;
+      (void)log_message(LogLevel::Debug, "nested during flush");
+    }
+  } buffered;
+  LogSink sink{&buffered, &Buffered::write, &Buffered::flush};
+  ASSERT_TRUE(add_sink(sink).ok());
+
+  EXPECT_EQ(flush_sinks(), 1u);
+  EXPECT_EQ(buffered.flushes, 1u);
+  EXPECT_EQ(buffered.writes, 0u);
+  EXPECT_TRUE(cap.recs.empty());
+  EXPECT_TRUE(remove_sink(sink).ok());
+}
+
 TEST(LogRegistry, ReportsCapacityAndRejectsOverflow) {
-  remove_sink(default_sink());
+  ASSERT_TRUE(remove_sink(default_sink()).ok());
   auto noop = +[](void*, const LogRecord&) noexcept {};
   std::vector<std::uintptr_t> identities(sink_capacity());
   for (std::size_t i = 0; i < identities.size(); ++i) {
-    EXPECT_TRUE(add_sink(LogSink{&identities[i], noop}));
+    EXPECT_TRUE(add_sink(LogSink{&identities[i], noop}).ok());
   }
   EXPECT_EQ(sink_count(), sink_capacity());
   std::uintptr_t overflow = 0;
-  EXPECT_FALSE(add_sink(LogSink{&overflow, noop}));
+  EXPECT_EQ(add_sink(LogSink{&overflow, noop}).code(),
+            hyle::StatusCode::ResourceExhausted);
   for (std::size_t i = 0; i < identities.size(); ++i) {
-    EXPECT_TRUE(remove_sink(LogSink{&identities[i], noop}));
+    EXPECT_TRUE(remove_sink(LogSink{&identities[i], noop}).ok());
   }
-  add_sink(default_sink());
+  EXPECT_TRUE(add_sink(default_sink()).ok());
 }
 
 TEST(LogLevelValidation, OffIsThresholdOnly) {
@@ -396,21 +455,44 @@ TEST(LogContracts, InvalidNativeInputsFailFast) {
 }
 
 TEST(LogDefaultSink, StateSetterIsIdempotentAndReportsSuccess) {
-  EXPECT_TRUE(set_default_sink_enabled(false));
-  EXPECT_TRUE(set_default_sink_enabled(false));
+  EXPECT_TRUE(set_default_sink_enabled(false).ok());
+  EXPECT_TRUE(set_default_sink_enabled(false).ok());
   EXPECT_FALSE(default_sink_enabled());
-  EXPECT_TRUE(set_default_sink_enabled(true));
-  EXPECT_TRUE(set_default_sink_enabled(true));
+  EXPECT_TRUE(set_default_sink_enabled(true).ok());
+  EXPECT_TRUE(set_default_sink_enabled(true).ok());
   EXPECT_TRUE(default_sink_enabled());
 }
 
+TEST(LogDefaultSink, EscapesControlsAndKeepsOnePhysicalRecord) {
+  ASSERT_TRUE(set_default_sink_enabled(true).ok());
+  set_level(LogLevel::Info);
+  LogField field{"key\t", "value\r"};
+  LogRecord record{
+      .level = LogLevel::Info,
+      .message = "line1\nline2\x1b[31m",
+      .fields = &field,
+      .field_count = 1,
+      .file = "source\nfile\x1b",
+      .line = 9,
+  };
+
+  testing::internal::CaptureStderr();
+  EXPECT_TRUE(log_record(record));
+  const std::string output = testing::internal::GetCapturedStderr();
+  EXPECT_NE(output.find("source\\nfile\\x1b:9"), std::string::npos);
+  EXPECT_NE(output.find("line1\\nline2\\x1b[31m"), std::string::npos);
+  EXPECT_NE(output.find("key\\t=value\\r"), std::string::npos);
+  EXPECT_EQ(output.find('\x1b'), std::string::npos);
+  EXPECT_EQ(output.find('\n'), output.size() - 1);
+}
+
 TEST(LogDefaultSink, ConcurrentSameDirectionSettersAreIdempotent) {
-  ASSERT_TRUE(set_default_sink_enabled(true));
+  ASSERT_TRUE(set_default_sink_enabled(true).ok());
   std::atomic<bool> all_ok{true};
   std::vector<std::thread> threads;
   for (int i = 0; i < 8; ++i) {
     threads.emplace_back([&] {
-      if (!set_default_sink_enabled(false)) {
+      if (!set_default_sink_enabled(false).ok()) {
         all_ok.store(false, std::memory_order_relaxed);
       }
     });
@@ -422,7 +504,7 @@ TEST(LogDefaultSink, ConcurrentSameDirectionSettersAreIdempotent) {
   threads.clear();
   for (int i = 0; i < 8; ++i) {
     threads.emplace_back([&] {
-      if (!set_default_sink_enabled(true)) {
+      if (!set_default_sink_enabled(true).ok()) {
         all_ok.store(false, std::memory_order_relaxed);
       }
     });

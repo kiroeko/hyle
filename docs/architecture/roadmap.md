@@ -20,7 +20,7 @@ util 产品：container ──▶ util-runtime
 
 util-core ··▶ mem / sched / graph
 hyle_trace - -▶ every hyle_add_module target - -▶ one optional Tracy client
-obs-runtime ──▶ application/FFI sinks
+error ──▶ obs-runtime ──▶ application/FFI sinks
 math ──▶ users（当前无生产下游）
 ```
 
@@ -33,7 +33,7 @@ math ──▶ users（当前无生产下游）
 |---|---|---|---|
 | `core` | — | — | 基础宏、intrusive 原语供底层头使用 |
 | `error` | — | — | 全库可恢复失败值根 |
-| `obs-runtime` (`hyle_obs`) | — | — | log/C ABI 产品；与 trace build seam 分开 |
+| `obs-runtime` (`hyle_obs`) | error | — | log/C ABI 产品；共享 Status；与 trace build seam 分开 |
 | `math` | —（INTERFACE） | — | 独立公开标量助手，当前无生产模块消费者 |
 | `platform` | error | — | OS/thread/VM/fs/CPU 机制；`hyle/platform.h` 宏头本身零链接 |
 | `mem` | error、platform | mimalloc | `util::SpinLock`、obs trace hook |
@@ -67,10 +67,10 @@ util 能力时必须先判断属于哪一层，禁止让 util-core 反向 includ
 platform 分叉，sched 再汇入 io/compute/graph。`math` 是当前没有生产下游的合法用户叶；它的
 存在不应因此从完整模块图消失。
 
-部分旧 C shim（包括 util/obs，另有 container/simd/sched/io）仍使用模块私有
-`last_error`。这不是新的依赖事实，也不能在图里假装已经连到 error；它是 error adoption
-审计尚未完成的显式欠账。迁移时允许形成 `error → <module C adapter>` 的单向边，不会导致
-error 反向依赖 obs 或形成环。
+部分旧 C shim（包括 util，另有 container/simd/sched/io）仍使用模块私有
+`last_error`，是 error adoption 审计尚未完成的显式欠账。obs 已在 2026-07-25 复审中迁到
+共享 `hyle_status`，形成 `error → obs-runtime` 的单向边，不会导致 error 反向依赖 obs
+或形成环。
 
 ## 二、施工计划：四个轴别混
 
@@ -94,7 +94,7 @@ error 反向依赖 obs 或形成环。
 | **C3 结构化取消** | CancelToken 树 + await 取消点，父取消传播子 | sched-07 | ✅ sched CancelToken 树与 io TCP/UDP cancellable convenience 已接通；HTTP whole-request 统一 cancel/deadline 仍是产品层尾项 |
 | **C4 优雅关闭** | 两阶段 drain：停收新连接 → 排空在途 → 逆序清理 | sched-08；触发靠 **C10 的 signal 处理**（SIGTERM/SIGINT）| ✅ **完成(2026-07-05)**。调研 seastar gate/tokio TaskTracker 后落地:关闭只需**平的关闭信号广播 + 在途计数归零,不需 sched-07 取消树**(与 C3 解耦)。sched-08:`begin_shutdown()` 置 accepting=false 拒新 spawn + 广播全 worker;`drain_for(timeout)` 等 outstanding 归零(超时返 false);`shutdown_requested()` 长命 fiber 轮询退出。有栈 fiber 超时不强杀(协作退/detach)。signal_set(C10 ✅)作触发器。双平台 sched 85/85 + WSL TSan 净 |
 | **C5 文件/共享内存 io** | 异步文件读写（openat/statx/fsync/fallocate）+ 跨进程 shmem | io-05 | ✅ 文件原语 + `File` RAII + **命名 shared memory**（Win file mapping / POSIX `shm_open`，C++ RAII + C opaque ABI）。普通 C++ `File` 按 capability 自动选原生异步或 `IoContext` blocking pool：io_uring 数据/metadata 快腿、IOCP data overlapped，IOCP metadata 与 epoll/kqueue regular-file 自动卸载，不堵 worker；低层 Proactor 保留精确机制语义 |
-| **C6 可观测性** | 结构化日志 + trace/counter 埋点（对标 Tracy）| obs-01/02 ✅；2026-07-19 模块收口 | ✅ 结构化 record + quiescent sink + 纯 C ABI；默认零成本 trace seam 覆盖 zone/plot/counter/fiber/frame/message/memory/thread-name，已接 mem/sched/io/compute。共享构建只加载一个 Tracy client。架构与验收见 [`obs-design.md`](./obs-design.md) / [`../milestones/obs-module-closure.md`](../milestones/obs-module-closure.md) |
+| **C6 可观测性** | 结构化日志 + trace/counter 埋点（对标 Tracy）| obs-01/02 ✅；2026-07-25 严格收口 | ✅ 同步 borrowed record + immutable sink snapshot + quiescent unregister/flush/递归抑制 + 共享 Status C ABI；默认零成本 native trace seam 覆盖 zone/plot/counter/fiber/frame/message/memory/thread-name，已接 mem/sched/io/compute。共享构建只加载一个 Tracy client。架构与验收见 [`obs-design.md`](./obs-design.md) / [`../milestones/obs-module-closure.md`](../milestones/obs-module-closure.md) |
 | **C7 并发原语补全** | Semaphore / RwLock / oneshot / broadcast·watch / JoinHandle+select·when_all | **sched-09**（Semaphore/RwLock/oneshot/broadcast/watch）+ **sched-10**（JoinHandle + when_all/when_any(select) 结构化并发）| ✅ **完成**（sched-10 JoinHandle+spawn_task+when_all/when_any;sched-09 Semaphore/RwLock/oneshot/watch/broadcast 2026-07-03 落地,tokio 语义抄全建在 CV 地基,双平台 73/73 + WSL TSan 净;**select=C2 前置已就位**） |
 | **C8 阻塞卸载** | `spawn_blocking`：把阻塞 syscall/CPU 活扔到卸载池,不拖死 shard worker | **sched-11**（阻塞卸载线程池） | ✅ **完成**（2026-07-03,sched-11:懒创建池上限512+10s keep-alive,结果经现有 JoinHandle 回传,双平台82/82+WSL TSan 净）。sysmon 不做(tokio 也无,卸载显式)。真服务器调阻塞库(DB驱动/文件/getaddrinfo)可用 |
 | **C9 TLS** | 加密 socket（over co_await stream）| **io-08**（借 OpenSSL memory-BIO shim over 现有 stream）| ✅ **完成(三平台,2026-07-05)**。借 OpenSSL memory-BIO 泵:SSL 引擎只做握手+加解密(纯内存),密文收发由 co_await TcpStream 驱动(SSL_get_error WANT_READ/WRITE→flush_wbio/feed_rbio)。TlsContext/TlsStream + 自由函数 tls_handshake/read/write/shutdown。踩坑全抄(MOVING_WRITE_BUFFER/错误队列/EOF 三分/BIO 所有权)。红队审三大面净+修 2 隐患。loopback TLS 握手+加密 echo:Linux io_uring+epoll+TSan 净 / **Windows IOCP 净**(vcpkg OpenSSL 3.6.3,机制与平台无关一次编过) |
@@ -121,7 +121,7 @@ P0–P6 只表示最早可编译的拓扑层。不在这里复制 LOC、冻结�
 
 | 拓扑层 | 本层可建立的目标 | 为什么在这一层 |
 |---|---|---|
-| **P0** | core、error、obs-runtime、math、util-core headers、`hyle_trace` gate | 零 HYLE 模块上游；先冻结基础值、宏、header 合同与跨切 gate |
+| **P0** | core、error、obs-runtime、math、util-core headers、`hyle_trace` gate | obs-runtime 只依赖同层 error；其余零 HYLE 模块上游；先冻结基础值、宏、header 合同与跨切 gate |
 | **P1** | platform、time | 两者只需 P0；time 不需等 platform |
 | **P2** | mem、simd | 都需 platform；mem 另直接需 error |
 | **P3** | container | 公开依赖 mem，实现依赖 platform |
@@ -144,7 +144,7 @@ simd 不进 sched 链，只在 compute 汇合。obs-runtime 是用户产品根�
 | 波次 | 审查单元 | 排序理由 |
 |---|---|---|
 | **R0 基线** | error、platform、mem、time | 已按当前实际使用标准形成严格证书；后续只有触发器或依赖受影响项可重开 |
-| **R1 根、构建与接缝** | core ✅ → build/package system ✅ → util-core seam ✅ → obs（当前） | core/header 先稳；随后让 target 图、模块装配、迁移/安装和三平台入口成为可执行架构，再冻结被广泛 include 的 util-core，当前继续横切 obs |
+| **R1 根、构建与接缝** | core ✅ → build/package system ✅ → util-core seam ✅ → obs ✅ | 根、装配、低层 util 头与可观测横切 seam 已按当前合同冻结；下一单元进入 container |
 | **R2 容器层** | container → util-runtime/完整 util | container 是 sched/io/graph 和 Registry 的地基；先稳表/字符串/并发容器，再冻结依赖它的 Registry/C ABI |
 | **R3 运行时链** | sched → io | sched 汇合 mem/time/container/platform，io 再消费 sched；反序会反复改 timeout/cancel/completion 形状 |
 | **R4 计算基础** | math↔simd 边界审查 → simd | math 是 clay math 被 std/SIMD 吸收后的残余，不先假定它应独立；先裁决 scalar/std/SIMD 归属，再冻结 SIMD dispatch、类型、算法与正常 batch API |

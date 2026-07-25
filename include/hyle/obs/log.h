@@ -2,11 +2,13 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <format>
 #include <source_location>
 #include <utility>
 
 #include "hyle/c/obs.h"
+#include "hyle/error/status.h"
 #include "hyle/macros.h"
 #include "hyle/visibility.h"
 
@@ -53,17 +55,24 @@ struct LogRecord {
 // sink from a callback is rejected because it may still be pending in the same
 // dispatch snapshot; perform cross-removal outside all sink callbacks.
 struct LogSink {
-  void* state;
-  void (*write)(void* state, const LogRecord& record) noexcept;
+  void* state = nullptr;
+  void (*write)(void* state, const LogRecord& record) noexcept = nullptr;
+  // Optional. flush_sinks() invokes this synchronously; it may run concurrently
+  // with write() and therefore follows the same thread-safety/noexcept contract.
+  void (*flush)(void* state) noexcept = nullptr;
 };
 
-// Identity is {state, write}. add returns false for a null callback, duplicate,
-// retiring duplicate or a full registry. remove returns false when absent or
-// when a callback attempts to remove a different sink.
-HYLE_OBS_API bool add_sink(LogSink sink) noexcept;
-HYLE_OBS_API bool remove_sink(LogSink sink) noexcept;
+// Identity is {state, write}; flush is behavior, not identity. Registry changes
+// return the shared HYLE Status taxonomy so callers can distinguish malformed,
+// duplicate, absent, full and callback cross-removal cases.
+HYLE_OBS_API Status add_sink(LogSink sink) noexcept;
+HYLE_OBS_API Status remove_sink(LogSink sink) noexcept;
 HYLE_OBS_API std::size_t sink_count() noexcept;
 HYLE_OBS_API std::size_t sink_capacity() noexcept;
+// Flush every registered sink that provides a callback. Returns the number
+// invoked. Nested flush from a sink callback is suppressed, like nested log
+// fan-out, to keep arbitrary sink implementations recursion-safe.
+HYLE_OBS_API std::size_t flush_sinks() noexcept;
 
 // Global threshold. Off is valid as a threshold and silences all records.
 HYLE_OBS_API void set_level(LogLevel level) noexcept;
@@ -80,13 +89,14 @@ HYLE_OBS_API bool log_message(LogLevel level, const char* message) noexcept;
 // identity remains stable.
 HYLE_OBS_API LogSink default_sink() noexcept;
 HYLE_OBS_API bool default_sink_enabled() noexcept;
-// Idempotently reach the requested state. Returns false only when the registry
-// cannot be changed (full, retiring duplicate, or cross-removal from a callback).
-HYLE_OBS_API bool set_default_sink_enabled(bool enabled) noexcept;
+// Idempotently reach the requested state. Failure uses the same Status contract
+// as add/remove (full, retiring duplicate, or callback cross-removal).
+HYLE_OBS_API Status set_default_sink_enabled(bool enabled) noexcept;
 
 // Caller-side format convenience. The fixed 1 KiB buffer avoids allocation;
-// oversized messages are truncated. The source location is attached as
-// structured metadata and macros below capture the caller, not this template.
+// oversized messages end in "...[truncated]" rather than being cut silently.
+// The source location is attached as structured metadata and macros below
+// capture the caller, not this template.
 namespace detail {
 
 template <class... Args>
@@ -96,6 +106,12 @@ void log_fmt_unchecked_at(LogLevel log_level, std::source_location source,
   auto result = std::format_to_n(buffer, sizeof(buffer) - 1, fmt,
                                  std::forward<Args>(args)...);
   *result.out = '\0';
+  if (result.size >= static_cast<decltype(result.size)>(sizeof(buffer))) {
+    constexpr char kMarker[] = "...[truncated]";
+    static_assert(sizeof(kMarker) <= sizeof(buffer));
+    std::memcpy(buffer + sizeof(buffer) - sizeof(kMarker), kMarker,
+                sizeof(kMarker));
+  }
   LogRecord record{
       .level = log_level,
       .message = buffer,
