@@ -17,6 +17,7 @@
 #include "hyle/c/mem.h"
 
 #include <cstddef>
+#include <cstdint>
 #include <cstring>
 #include <new>
 #include <optional>
@@ -399,6 +400,17 @@ int hyle_stats_allocator_balanced(const hyle_stats_allocator_o *s) {
   return s != nullptr && s->stats->balanced();
 }
 
+uint64_t hyle_stats_allocator_leak_records_dropped(
+    const hyle_stats_allocator_o *s) {
+  if (s == nullptr || s->stats->leaks() == nullptr)
+    return 0;
+  return s->stats->leaks()->dropped_records();
+}
+
+int hyle_stats_allocator_leaks_complete(const hyle_stats_allocator_o *s) {
+  return hyle_stats_allocator_leak_records_dropped(s) == 0;
+}
+
 hyle_status hyle_stats_allocator_copy_leaks(
     size_t *out_total, const hyle_stats_allocator_o *s, hyle_mem_leak *out,
     size_t capacity) {
@@ -417,7 +429,11 @@ hyle_status hyle_stats_allocator_copy_leaks(
     return steal_status(hyle::Status());
   if (out == nullptr || capacity == 0) {
     *out_total = s->stats->leaks()->outstanding();
-    return steal_status(hyle::Status());
+    return s->stats->leaks()->complete()
+               ? steal_status(hyle::Status())
+               : steal_status(hyle::Status::DataLoss(
+                     "hyle_stats_allocator_copy_leaks: metadata OOM made "
+                     "the leak inventory incomplete"));
   }
   if (capacity > SIZE_MAX / sizeof(hyle::mem::LeakEntry)) {
     return steal_status(hyle::Status::OutOfRange(
@@ -437,7 +453,11 @@ hyle_status hyle_stats_allocator_copy_leaks(
   s->backing.free(s->backing.state, scratch, bytes,
                   alignof(hyle::mem::LeakEntry));
   *out_total = total;
-  return steal_status(hyle::Status());
+  return s->stats->leaks()->complete()
+             ? steal_status(hyle::Status())
+             : steal_status(hyle::Status::DataLoss(
+                   "hyle_stats_allocator_copy_leaks: metadata OOM made the "
+                   "leak inventory incomplete"));
 }
 
 /* ---- Region family --------------------------------------------------------
@@ -584,20 +604,28 @@ hyle_allocator hyle_fixed_region_as_allocator(hyle_fixed_region *r) {
              : hyle_allocator{nullptr, nullptr, nullptr, nullptr};
 }
 
-hyle_status hyle_fixed_pool_init(hyle_fixed_pool_o **out,
-                                 hyle_fixed_pool_storage *control,
-                                 void *storage, size_t size) {
+size_t hyle_fixed_pool_control_size(void) { return sizeof(hyle_fixed_pool_o); }
+
+size_t hyle_fixed_pool_control_alignment(void) {
+  return alignof(hyle_fixed_pool_o);
+}
+
+hyle_status hyle_fixed_pool_init(hyle_fixed_pool_o **out, void *control,
+                                 size_t control_bytes, void *storage,
+                                 size_t size) {
   if (out == nullptr) {
     return steal_status(
         hyle::Status::InvalidArgument("hyle_fixed_pool_init: out is NULL"));
   }
   *out = nullptr;
-  if (control == nullptr) {
+  if (control == nullptr || control_bytes < sizeof(hyle_fixed_pool_o) ||
+      reinterpret_cast<std::uintptr_t>(control) % alignof(hyle_fixed_pool_o) !=
+          0) {
     return steal_status(hyle::Status::InvalidArgument(
-        "hyle_fixed_pool_init: invalid control"));
+        "hyle_fixed_pool_init: control is null, undersized, or misaligned"));
   }
   const hyle_allocator backing = system_backing();
-  auto *p = ::new (static_cast<void *>(control->bytes))
+  auto *p = ::new (control)
       hyle_fixed_pool_o(backing, storage, size, false);
   if (!p->pool.valid()) {
     destroy_external_control(p);

@@ -13,8 +13,9 @@
 control 与内部 storage 都由该 backing 分配；显式区分 payload/metadata 的产品则分别服从
 对应 allocator。FixedRegion 是可按值持有的 3-word cursor；
 FixedPool 同时提供 caller-owned `*_storage + *_init`（control/payload 都不触堆）和
-`*_create(control_allocator, ...)`。`hyle_fixed_pool_storage` 是 4096-byte 的长寿命索引
-control；两种构造的 payload 始终只来自调用方 storage，绝不 fallback。
+`*_create(control_allocator, ...)`。`hyle_fixed_pool_storage` 是保证足够的 4096-byte 长寿命
+索引 control；动态 FFI 可先查 exact runtime size/alignment。两种构造的 payload 始终只来自
+调用方 storage，绝不 fallback。
 所有 opaque handle 对外使用 `hyle_region *`、`hyle_shared_pool *` 等产品名；尾缀 `_o`
 只存在于不可解引用的内部 struct tag，不进入用户变量和函数签名。
 
@@ -40,7 +41,7 @@ control；两种构造的 payload 始终只来自调用方 storage，绝不 fall
 | StatsAllocator | `hyle_stats_allocator_create(&out,backing,metadata,track)` → `destroy` | 测量 backing；control/诊断状态服从 metadata；可选慢速 leak inventory |
 | Region | `hyle_region_create(&out,...)` → `destroy` | owned growable bump；clear 保留普通 blocks |
 | FixedRegion | `hyle_fixed_region_init(&region, storage, size)` | 返回 Status；按值 external bump；无 create/destroy、严格 no-heap |
-| FixedPool | `hyle_fixed_pool_init(&pool,control,storage)` 或 `create(&pool,control_allocator,...)` → `destroy` | external variable-size alloc/free；O(1) two-level fit/merge；init 严格 no-heap；4096-byte control |
+| FixedPool | `hyle_fixed_pool_init(&pool,control,control_bytes,storage,size)` 或 `create(&pool,control_allocator,...)` → `destroy` | external variable-size alloc/free；O(1) two-level fit/merge；init 严格 no-heap；约 4 KiB control |
 | SharedPool | `hyle_shared_pool_create(&out,...)` → `destroy` | **硬容量**；completed free 立即对所有线程可见 |
 | SharedPoolCache | `hyle_shared_pool_cache_create(&out,pool,...)` → `destroy` | **软视图**；显式 owner/capacity/batch，publish 后回 hard core |
 | StackAllocator | `hyle_stack_allocator_create(&out,...)` → `destroy` | 自有 slab，单线程 LIFO bump |
@@ -71,10 +72,13 @@ typedef struct hyle_allocator {
 | `hyle_system_good_size(size)` | 不分配地给出推荐 request size（≥size）；不承诺等于 alloc(size) 的 usable |
 | `hyle_system_collect(force)` | 收集调用线程的 mimalloc heap；force 非零可能达到毫秒级；worker pool 需在每个目标 worker 上调用 |
 | `hyle_alloc` / `hyle_free` / `hyle_realloc` | header-inline vtable 转发；alignment==0 使用默认对齐 |
+| `hyle_calloc` / `hyle_realloc_array` | header-inline、count 乘法防溢出；resize 失败/溢出时旧 allocation 保持有效 |
 | `hyle_allocator_is_valid(a)` | header-inline 检查三个函数指针，供配置/FFI 边界验证 |
 
 C/C++ 两面通过 trampoline 显式构造，不 reinterpret 布局。
 `hyle_alloc/free/realloc(..., alignment=0)` 在头内直接折叠默认对齐，不再先跨 DLL 查询。
+这些是纯 C header helper，所以使用标准 C 的 `<stddef.h>/<stdint.h>/<string.h>`；HYLE 的
+C++ 实现文件继续用 `<cstddef>/<cstdint>/<cstring>`，两侧不混写语言头。
 
 拥有 backing 的构造器同时提供 header-inline `*_create_default(&out, ...)`，等价于传
 `hyle_system_allocator()`；常用用户不必为了默认堆手写 allocator injection。显式
@@ -96,6 +100,11 @@ reserve 的严格预算，不是 backing 的物理空闲字节。
 这是诊断慢路，生产热路只开 counters 或直接不用 wrapper。
 `reset` 要求没有 live allocation，并同时清空 leak inventory。
 
+若记录某次 allocation 时 metadata OOM，用户 allocation 仍成功、计数仍精确，但
+`hyle_stats_allocator_leak_records_dropped()!=0` 且 `leaks_complete()==0`。`copy_leaks` 仍复制
+已知条目并写已知 total，同时返回 `HYLE_STATUS_DATA_LOSS`，提醒调用方不能把已知条目当完整
+清单。释放全部 allocation 后 reset 才清掉历史 dropped 状态。
+
 `backing` 是真正被观察的数据域；opaque control、稳定计数状态和 leak map 使用独立
 `metadata`。因此 Stats 可以安全包住 fixed-block 或 strict-quota allocator，而不会在第一笔
 用户 allocation 前用诊断状态污染其容量。普通用法选 `create_default`；测量自定义 backing
@@ -109,16 +118,19 @@ reserve 的严格预算，不是 backing 的物理空闲字节。
   `struct_size`。`clear` 保留普通 blocks、释放 dedicated large blocks；`release` 归还全部。
 - `hyle_fixed_region_init(&region,storage,size)` 直接初始化 3-word 值对象，是严格 no-heap
   bulk-reset bump；没有需要管理的 control allocation，也无需 destroy。旧切片在 clear 后全部失效。
-- `hyle_fixed_pool_init(&out,&control,storage,size)` 的 control/payload 都由调用方持有；
+- `hyle_fixed_pool_init(&out,&control,sizeof control,storage,size)` 的 control/payload 都由调用方持有；
   `hyle_fixed_pool_create(&out,control_allocator,storage,size)` 只从显式 allocator 创建 control，
   `create_default` 才选择 system allocator。两者都支持 individual allocate/free/realloc；realloc
   可 O(1) 原地利用当前 span/后一空闲邻块，shrink 保留 span 让后续 regrow 仍为 O(1)。reset 前必须
   无 live allocation；foreign/double return 是合同错误并 fail-fast。两级 bitmap 索引使
   allocate/free/邻块合并的查找工作为 O(1)，不会随空闲块数量增长。
 
-`hyle_fixed_pool_storage` 固定为 4096 bytes：把它嵌入拥有 payload 的长寿命 owner、放在
-static storage，或用 `create` 从合适的 control allocator 分配一次。不要在每个 request 的小栈
-帧里反复创建；小 buffer 的 phase scratch 应选三字的 `hyle_fixed_region`。
+`hyle_fixed_pool_storage` 保证 4096 bytes/alignment 足以容纳当前实现：把它嵌入拥有 payload 的
+长寿命 owner、放在 static storage，或用 `create` 从合适的 control allocator 分配一次。动态
+FFI/插件若自己分配 control，使用 `hyle_fixed_pool_control_size/alignment()` 的 runtime 值；
+`init` 同时接收 `control_bytes`，旧 header 的小 buffer 会返回 INVALID_ARGUMENT 而不是被覆盖。
+不要在每个 request 的小栈帧里反复创建；小 buffer 的 phase scratch 应选三字的
+`hyle_fixed_region`。
 
 三者都单线程。它们的 `as_allocator` 句柄借用原对象；Region/FixedPool destroy 后失效，
 FixedRegion 则在值对象或 payload storage 失效后失效。
@@ -132,7 +144,8 @@ unsigned char payload[4096];
 hyle_fixed_pool_storage control;
 hyle_fixed_pool *pool = NULL;
 hyle_status status =
-    hyle_fixed_pool_init(&pool, &control, payload, sizeof payload);
+    hyle_fixed_pool_init(&pool, &control, sizeof control,
+                         payload, sizeof payload);
 if (!hyle_status_is_ok(status)) { /* inspect/propagate status */ }
 hyle_status_free(&status);
 /* allocate/free ... */

@@ -1,5 +1,6 @@
 #include "hyle/mem/stats.h"
 
+#include <limits>
 #include <memory_resource>
 #include <mutex>
 #include <unordered_map>
@@ -19,6 +20,7 @@ struct LeakTracker::Impl {
   mutable util::SpinLock lock;
   PmrResource resource;
   std::pmr::unordered_map<void*, std::size_t> live;
+  std::uint64_t dropped_records = 0;
 };
 
 namespace {
@@ -147,6 +149,10 @@ void LeakTracker::track_alloc(void* p, std::size_t size) noexcept {
   try {
     impl_->live[p] = size;
   } catch (...) {
+    if (impl_->dropped_records !=
+        (std::numeric_limits<std::uint64_t>::max)()) {
+      ++impl_->dropped_records;
+    }
   }
 }
 
@@ -164,6 +170,12 @@ std::size_t LeakTracker::outstanding() const noexcept {
   if (impl_ == nullptr) return 0;
   std::lock_guard<util::SpinLock> lock(impl_->lock);
   return impl_->live.size();
+}
+
+std::uint64_t LeakTracker::dropped_records() const noexcept {
+  if (impl_ == nullptr) return 0;
+  std::lock_guard<util::SpinLock> lock(impl_->lock);
+  return impl_->dropped_records;
 }
 
 std::size_t LeakTracker::copy_leaks(LeakEntry* out, std::size_t cap) const noexcept {
@@ -186,6 +198,7 @@ void LeakTracker::clear() noexcept {
   if (impl_ == nullptr) return;
   std::lock_guard<util::SpinLock> lock(impl_->lock);
   impl_->live.clear();
+  impl_->dropped_records = 0;
 }
 
 // ---- StatsAllocator ---------------------------------------------------------

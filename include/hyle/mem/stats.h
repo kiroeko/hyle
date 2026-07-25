@@ -164,9 +164,17 @@ class HYLE_MEM_API LeakTracker {
   // account frees by the RECORDED size, robust to a wrong size passed to free.
   bool track_free(void* p, std::size_t* out_size = nullptr) noexcept;
   std::size_t outstanding() const noexcept;
+  // Number of allocation records that could not be inserted because the
+  // injected metadata allocator was exhausted. Nonzero means the inventory is
+  // conservative/incomplete since the last clear(); counters remain exact.
+  std::uint64_t dropped_records() const noexcept;
+  bool complete() const noexcept { return dropped_records() == 0; }
   // Copy up to `cap` live entries into `out`. Returns total outstanding
-  // (may be > cap if truncated).
+  // known entries (may be > cap if truncated). Check complete() before
+  // treating this as an exhaustive leak report.
   std::size_t copy_leaks(LeakEntry* out, std::size_t cap) const noexcept;
+  // Clears known entries and the historical dropped-record count. Call only
+  // when no allocation from the measured allocator remains live.
   void clear() noexcept;
 
  private:

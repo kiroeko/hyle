@@ -22,6 +22,7 @@
  * std::size_t. */
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "hyle/c/error.h"
 
@@ -133,6 +134,35 @@ static inline void *hyle_realloc(const hyle_allocator *a, void *ptr,
                     alignment != 0 ? alignment : hyle_default_alignment());
 }
 
+/* Overflow-safe zeroed array allocation over any injected allocator. This is
+ * header-inline because zeroing is a caller-side policy, not a fourth vtable
+ * operation; successful storage is byte-zeroed exactly once. */
+static inline void *hyle_calloc(const hyle_allocator *a, size_t count,
+                                size_t element_size, size_t alignment) {
+  if (element_size != 0 && count > SIZE_MAX / element_size)
+    return NULL;
+  size_t bytes = count * element_size;
+  void *ptr = hyle_alloc(a, bytes, alignment);
+  if (ptr != NULL)
+    memset(ptr, 0, bytes);
+  return ptr;
+}
+
+/* Resize an array whose element size is unchanged. Both old/new byte products
+ * are checked before dispatch; on overflow or allocation failure the original
+ * allocation remains live, matching hyle_realloc's contract. */
+static inline void *hyle_realloc_array(const hyle_allocator *a, void *ptr,
+                                       size_t old_count, size_t new_count,
+                                       size_t element_size,
+                                       size_t alignment) {
+  if (element_size != 0 &&
+      (old_count > SIZE_MAX / element_size ||
+       new_count > SIZE_MAX / element_size))
+    return NULL;
+  return hyle_realloc(a, ptr, old_count * element_size,
+                      new_count * element_size, alignment);
+}
+
 /* ---- system usable/good size (SystemAllocator only) ------------------------
  */
 /* HYLE's Allocator is a sized-free model, so there is no vtable usable_size().
@@ -226,10 +256,20 @@ hyle_stats_allocator_snapshot(const hyle_stats_allocator *s,
 HYLE_MEM_C_API void hyle_stats_allocator_reset(hyle_stats_allocator *s);
 HYLE_MEM_C_API int
 hyle_stats_allocator_balanced(const hyle_stats_allocator *s);
+/* Number of leak-map insertions dropped by metadata OOM since reset. Counters
+ * remain exact, but a nonzero value means the leak inventory is not exhaustive.
+ * NULL/disabled tracking returns 0. */
+HYLE_MEM_C_API uint64_t
+hyle_stats_allocator_leak_records_dropped(const hyle_stats_allocator *s);
+HYLE_MEM_C_API int
+hyle_stats_allocator_leaks_complete(const hyle_stats_allocator *s);
 /* Copies at most capacity entries and writes the total outstanding count.
  * The diagnostic copy may obtain a temporary array from the metadata allocator;
  * when that allocation fails, out is untouched and Status reports
- * RESOURCE_EXHAUSTED. When leak tracking is disabled (or s==NULL), writes 0. */
+ * RESOURCE_EXHAUSTED. If earlier metadata OOM dropped an allocation record,
+ * known entries are still copied but Status reports DATA_LOSS; query
+ * leak_records_dropped for the count. When leak tracking is disabled (or
+ * s==NULL), writes 0. */
 HYLE_MEM_C_API hyle_status
 hyle_stats_allocator_copy_leaks(size_t *out_total,
                                 const hyle_stats_allocator *s,
@@ -330,12 +370,19 @@ typedef union hyle_fixed_pool_storage {
   unsigned char bytes[HYLE_FIXED_POOL_CONTROL_BYTES];
 } hyle_fixed_pool_storage;
 
-/* Strict no-heap construction: the 4 KiB control is caller-owned and allocation
- * metadata lives inside payload storage. Keep control in the pool's long-lived
- * owner rather than creating it per request. destroy() frees neither buffer. */
+/* Exact runtime requirements for FFI/dynamic allocation. The convenience
+ * hyle_fixed_pool_storage is guaranteed large/aligned enough for this build. */
+HYLE_MEM_C_API size_t hyle_fixed_pool_control_size(void);
+HYLE_MEM_C_API size_t hyle_fixed_pool_control_alignment(void);
+
+/* Strict no-heap construction: control and payload are caller-owned. Passing
+ * control_bytes makes a header/library mismatch fail with INVALID_ARGUMENT
+ * instead of constructing past an older caller's buffer. Keep control in the
+ * pool's long-lived owner rather than creating it per request. destroy() frees
+ * neither buffer. */
 HYLE_MEM_C_API hyle_status
-hyle_fixed_pool_init(hyle_fixed_pool **out, hyle_fixed_pool_storage *control,
-                     void *storage, size_t size);
+hyle_fixed_pool_init(hyle_fixed_pool **out, void *control,
+                     size_t control_bytes, void *storage, size_t size);
 /* Convenience factory: no payload fallback; create() allocates the opaque
  * control from the supplied allocator. Individual allocations can be freed. */
 HYLE_MEM_C_API hyle_status

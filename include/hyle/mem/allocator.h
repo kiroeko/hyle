@@ -118,23 +118,40 @@ public:
   }
 
   // Zero-initialized storage for trivially-constructible T.
-  template <class T> T *allocate_zeroed(std::size_t numel = 1) const noexcept {
+  template <class T>
+  T *allocate_zeroed(std::size_t numel = 1,
+                     std::size_t alignment = alignof(T)) const noexcept {
     static_assert(std::is_trivially_constructible_v<T>,
                   "allocate_zeroed requires trivially-constructible T");
     if (numel > SIZE_MAX / sizeof(T))
       return nullptr;
     std::size_t sz = sizeof(T) * numel;
-    void *p = allocate(sz, alignof(T));
+    void *p = allocate(sz, alignment);
     if (p != nullptr)
       std::memset(p, 0, sz);
     return static_cast<T *>(p);
   }
 
+  // Resize typed raw storage. Overflow/failure leaves the original allocation
+  // live; new_numel==0 follows the backing's deallocation semantics.
+  template <class T>
+  T *reallocate_n(T *ptr, std::size_t old_numel, std::size_t new_numel,
+                  std::size_t alignment = alignof(T)) const noexcept {
+    static_assert(std::is_trivially_copyable_v<T>,
+                  "reallocate_n requires trivially-copyable T");
+    if (old_numel > SIZE_MAX / sizeof(T) ||
+        new_numel > SIZE_MAX / sizeof(T))
+      return nullptr;
+    return static_cast<T *>(reallocate(ptr, sizeof(T) * old_numel,
+                                       sizeof(T) * new_numel, alignment));
+  }
+
   // Free typed storage from allocate_n/allocate_zeroed (no destructor call).
   template <class T>
-  void deallocate_n(T *ptr, std::size_t numel = 1) const noexcept {
+  void deallocate_n(T *ptr, std::size_t numel = 1,
+                    std::size_t alignment = alignof(T)) const noexcept {
     HYLE_FATAL_ASSERT(numel <= SIZE_MAX / sizeof(T));
-    deallocate(ptr, sizeof(T) * numel, alignof(T));
+    deallocate(ptr, sizeof(T) * numel, alignment);
   }
 
   // Allocate + placement-new a T. nullptr if allocation failed.

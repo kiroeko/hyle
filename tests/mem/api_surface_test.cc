@@ -39,6 +39,8 @@ static_assert(std::is_standard_layout_v<RegionOptions>);
 static_assert(RegionOptions{}.max_block_size == 4u * 1024u * 1024u);
 static_assert(std::is_standard_layout_v<AllocStatsSnapshot>);
 static_assert(std::derived_from<PmrResource, std::pmr::memory_resource>);
+static_assert(
+    std::derived_from<AlignedPmrResource, std::pmr::memory_resource>);
 
 template <class A>
 concept AllocatorSurface = requires(A a, void* p, std::size_t n) {
@@ -116,6 +118,12 @@ static_assert(requires(StatsAllocator s) {
   { s.snapshot() } -> std::same_as<AllocStatsSnapshot>;
   { s.balanced() } -> std::same_as<bool>;
   { s.leaks() } -> std::same_as<LeakTracker*>;
+});
+
+static_assert(requires(LeakTracker tracker) {
+  { tracker.outstanding() } -> std::same_as<std::size_t>;
+  { tracker.dropped_records() } -> std::same_as<std::uint64_t>;
+  { tracker.complete() } -> std::same_as<bool>;
 });
 
 static_assert(std::is_move_constructible_v<Region>);

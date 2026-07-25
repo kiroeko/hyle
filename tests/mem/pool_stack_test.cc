@@ -555,6 +555,59 @@ TEST(Region, ClearReusesMultipleRetainedBlocksWithoutBackingAllocation) {
   EXPECT_EQ(state.outstanding, 0u);
 }
 
+TEST(Region, PeakIsExactDuringAndAcrossEpochsWithoutHotPathPeakUpdates) {
+  Region region(system_allocator());
+  ASSERT_NE(region.allocate(80, 16), nullptr);
+  EXPECT_EQ(region.bytes_used(), 80u);
+  EXPECT_EQ(region.peak_used(), 80u);
+  ASSERT_NE(region.allocate(48, 16), nullptr);
+  EXPECT_EQ(region.peak_used(), 128u);
+
+  region.clear();
+  EXPECT_EQ(region.bytes_used(), 0u);
+  EXPECT_EQ(region.peak_used(), 128u);
+  ASSERT_NE(region.allocate(256, 16), nullptr);
+  EXPECT_EQ(region.peak_used(), 256u);
+
+  region.release();
+  EXPECT_EQ(region.bytes_used(), 0u);
+  EXPECT_EQ(region.peak_used(), 256u);
+}
+
+TEST(Region, LongLivedReuseExaminesEachRetainedBlockAtMostOncePerEpoch) {
+  FailAllocatorState state;
+  {
+    hyle::mem::Allocator counting(&fail_alloc, &fail_free, &fail_realloc,
+                                  &state);
+    RegionOptions options;
+    options.initial_block_size = 128;
+    options.max_block_size = 128;
+    options.large_allocation_threshold = 4096;
+    Region region(counting, options);
+
+    // One 64-byte request fits in each 128-byte total backing target after the
+    // Region header/alignment allowance. A restart-from-head search would
+    // inspect roughly N*(N-1)/2 blocks on every reuse round; the monotonic
+    // retained cursor must inspect exactly one block per transition instead.
+    constexpr std::size_t kRetainedBlocks = 512;
+    constexpr int kReuseEpochs = 64;
+    for (std::size_t i = 0; i < kRetainedBlocks; ++i)
+      ASSERT_NE(region.allocate(64, 16), nullptr);
+    const std::size_t warmed_calls = state.calls;
+    ASSERT_EQ(warmed_calls, kRetainedBlocks);
+
+    for (int epoch = 0; epoch < kReuseEpochs; ++epoch) {
+      region.clear();
+      for (std::size_t i = 0; i < kRetainedBlocks; ++i)
+        ASSERT_NE(region.allocate(64, 16), nullptr) << "epoch=" << epoch;
+      EXPECT_EQ(state.calls, warmed_calls) << "epoch=" << epoch;
+      EXPECT_EQ(region.debug_reuse_candidates(), kRetainedBlocks - 1)
+          << "epoch=" << epoch;
+    }
+  }
+  EXPECT_EQ(state.outstanding, 0u);
+}
+
 TEST(Region, MoveTransfersCachedCursorWithoutOverlapOrBackingGrowth) {
   FailAllocatorState state;
   {

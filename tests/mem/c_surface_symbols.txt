@@ -7,6 +7,8 @@ hyle_fixed_pool_allocate
 hyle_fixed_pool_as_allocator
 hyle_fixed_pool_capacity
 hyle_fixed_pool_create
+hyle_fixed_pool_control_alignment
+hyle_fixed_pool_control_size
 hyle_fixed_pool_deallocate
 hyle_fixed_pool_destroy
 hyle_fixed_pool_init
@@ -98,6 +100,8 @@ hyle_stats_allocator_balanced
 hyle_stats_allocator_copy_leaks
 hyle_stats_allocator_create
 hyle_stats_allocator_destroy
+hyle_stats_allocator_leak_records_dropped
+hyle_stats_allocator_leaks_complete
 hyle_stats_allocator_reset
 hyle_stats_allocator_snapshot
 hyle_system_allocator

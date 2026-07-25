@@ -191,6 +191,16 @@ int main(void) {
       CHECK(q2[i] == i * 3); /* data preserved */
     hyle_free(&sys, q2, sizeof(int) * 16, 0);
 
+    int *zeroed = (int *)hyle_calloc(&sys, 8, sizeof(int), 64);
+    CHECK(zeroed != NULL && ((size_t)zeroed % 64u) == 0u);
+    for (int i = 0; i < 8; ++i)
+      CHECK(zeroed[i] == 0);
+    zeroed = (int *)hyle_realloc_array(&sys, zeroed, 8, 16, sizeof(int), 64);
+    CHECK(zeroed != NULL);
+    hyle_free(&sys, zeroed, 16 * sizeof(int), 64);
+    CHECK(hyle_calloc(&sys, SIZE_MAX, 2, 0) == NULL);
+    CHECK(hyle_realloc_array(&sys, NULL, 0, SIZE_MAX, 2, 0) == NULL);
+
     /* NULL-handle guards on the inline helpers */
     CHECK(hyle_alloc(NULL, 16, 0) == NULL);
     hyle_free(NULL, NULL, 0, 0); /* must not crash */
@@ -277,6 +287,34 @@ int main(void) {
       CHECK(state.live_allocations == 0u);
       hyle_status_free(&status);
     }
+  }
+  {
+    /* Optional leak metadata may fail after construction without failing the
+     * measured allocation. The inventory must report DATA_LOSS instead of
+     * silently looking complete; reset starts a fresh diagnostic epoch. */
+    failing_metadata_state state = {sys, 0, (size_t)-1, 0};
+    hyle_allocator metadata = {failing_metadata_alloc, failing_metadata_free,
+                               failing_metadata_realloc, &state};
+    hyle_stats_allocator *stats = NULL;
+    CHECK_OK(hyle_stats_allocator_create(&stats, sys, metadata, 1));
+    state.fail_at = state.calls;
+    hyle_allocator measured = hyle_stats_allocator_as_allocator(stats);
+    void *p = hyle_alloc(&measured, 64, 16);
+    CHECK(p != NULL);
+    CHECK(hyle_stats_allocator_leak_records_dropped(stats) == 1u);
+    CHECK(!hyle_stats_allocator_leaks_complete(stats));
+    size_t known = 99u;
+    hyle_status incomplete =
+        hyle_stats_allocator_copy_leaks(&known, stats, NULL, 0);
+    CHECK(hyle_status_is_data_loss(incomplete));
+    CHECK(known == 0u);
+    hyle_status_free(&incomplete);
+    hyle_free(&measured, p, 64, 16);
+    hyle_stats_allocator_reset(stats);
+    CHECK(hyle_stats_allocator_leak_records_dropped(stats) == 0u);
+    CHECK(hyle_stats_allocator_leaks_complete(stats));
+    hyle_stats_allocator_destroy(stats);
+    CHECK(state.live_allocations == 0u);
   }
   {
     /* Measuring a constrained/failing backing must not force control state
@@ -377,8 +415,11 @@ int main(void) {
     unsigned char pool_storage[4096];
     hyle_fixed_pool_storage pool_control;
     hyle_fixed_pool *pool = NULL;
-    CHECK_OK(hyle_fixed_pool_init(&pool, &pool_control, pool_storage,
-                                  sizeof pool_storage));
+    CHECK(hyle_fixed_pool_control_size() <= sizeof pool_control);
+    CHECK(hyle_fixed_pool_control_alignment() <=
+          HYLE_ALIGNOF(hyle_fixed_pool_storage));
+    CHECK_OK(hyle_fixed_pool_init(&pool, &pool_control, sizeof pool_control,
+                                  pool_storage, sizeof pool_storage));
     CHECK(pool != NULL);
     CHECK(hyle_fixed_pool_capacity(pool) <= sizeof pool_storage);
     void *a = hyle_fixed_pool_allocate(pool, 100, 64);
@@ -400,6 +441,14 @@ int main(void) {
     CHECK(hyle_fixed_pool_allocate(pool, 2048, 64) != NULL);
     hyle_fixed_pool_reset(pool); /* caller has discarded every allocation */
     hyle_fixed_pool_destroy(pool);
+
+    pool = (hyle_fixed_pool *)(size_t)1;
+    hyle_status undersized = hyle_fixed_pool_init(
+        &pool, &pool_control, hyle_fixed_pool_control_size() - 1,
+        pool_storage, sizeof pool_storage);
+    CHECK(hyle_status_is_invalid_argument(undersized));
+    CHECK(pool == NULL);
+    hyle_status_free(&undersized);
 
     CHECK_OK(hyle_fixed_pool_create(&pool, sys, pool_storage,
                                     sizeof pool_storage));

@@ -198,6 +198,7 @@ public:
   }
 
   void clear() noexcept {
+    record_peak();
     Block **link = &blocks_;
     while (*link != nullptr) {
       Block *b = *link;
@@ -210,11 +211,23 @@ public:
         link = &b->next;
       }
     }
+    // Reuse retained ordinary blocks in list order. `reuse_next_` only moves
+    // forward during one clear epoch: a block whose remaining tail cannot
+    // satisfy a request is never rescanned later in that epoch. This is the
+    // same monotonic-block discipline used by mature arenas and bounds total
+    // retained-block inspection to O(blocks) per epoch (amortized O(1) per
+    // block transition), instead of restarting at the list head and becoming
+    // O(blocks^2) over a long-lived multi-block arena.
     select_block(blocks_);
+    reuse_next_ = blocks_ != nullptr ? blocks_->next : nullptr;
     used_ = 0;
+#if defined(HYLE_TESTING)
+    debug_reuse_candidates_ = 0;
+#endif
   }
 
   void release() noexcept {
+    record_peak();
     Block *b = blocks_;
     while (b != nullptr) {
       Block *next = b->next;
@@ -223,14 +236,31 @@ public:
     }
     blocks_ = nullptr;
     select_block(nullptr);
+    reuse_next_ = nullptr;
     used_ = reserved_ = 0;
     next_block_size_ = options_.initial_block_size;
+#if defined(HYLE_TESTING)
+    debug_reuse_candidates_ = 0;
+#endif
   }
 
   std::size_t bytes_used() const noexcept { return used_; }
   std::size_t reserved() const noexcept { return reserved_; }
-  std::size_t peak_used() const noexcept { return peak_used_; }
+  // The completed-epoch high water is folded lazily. Returning the maximum
+  // keeps this query exact during an active epoch without adding a peak
+  // load/compare/store dependency to every allocation.
+  std::size_t peak_used() const noexcept {
+    return used_ > peak_used_ ? used_ : peak_used_;
+  }
   std::size_t size_limit() const noexcept { return options_.size_limit; }
+
+#if defined(HYLE_TESTING)
+  // Structural test hook: after clear(), each retained ordinary block is
+  // considered at most once before the Region grows again.
+  std::size_t debug_reuse_candidates() const noexcept {
+    return debug_reuse_candidates_;
+  }
+#endif
 
   Allocator as_allocator() noexcept {
     return Allocator(&region_alloc, &region_free, &region_realloc, this);
@@ -303,9 +333,13 @@ private:
 
     const bool large = bytes >= options_.large_allocation_threshold;
     if (!large) {
-      for (Block *b = blocks_; b != nullptr; b = b->next) {
-        if (b == current_block_ || b->large)
-          continue;
+      while (reuse_next_ != nullptr) {
+        Block *b = reuse_next_;
+        reuse_next_ = b->next;
+#if defined(HYLE_TESTING)
+        ++debug_reuse_candidates_;
+#endif
+        HYLE_FATAL_ASSERT(!b->large);
         if (void *p = allocate_from(b, bytes, alignment)) {
           select_block(b);
           return account(p, bytes);
@@ -381,13 +415,17 @@ private:
   }
 
   void *account(void *p, std::size_t bytes) noexcept {
-    // requested live bytes cannot exceed reserved backing bytes; reaching this
-    // assertion therefore indicates internal accounting corruption.
-    HYLE_FATAL_ASSERT(used_ <= (std::numeric_limits<std::size_t>::max)() - bytes);
+    // Every successful request consumes at least `bytes` from finite retained
+    // backing, so used_ + bytes cannot overflow while Region invariants hold.
+    // Peak folding is deferred to clear/release/query to keep the bump path to
+    // one dependent counter update.
     used_ += bytes;
+    return p;
+  }
+
+  void record_peak() noexcept {
     if (used_ > peak_used_)
       peak_used_ = used_;
-    return p;
   }
 
   static void *region_alloc(void *state, std::size_t size,
@@ -418,10 +456,18 @@ private:
     used_ = other.used_;
     reserved_ = other.reserved_;
     peak_used_ = other.peak_used_;
+    reuse_next_ = other.reuse_next_;
+#if defined(HYLE_TESTING)
+    debug_reuse_candidates_ = other.debug_reuse_candidates_;
+#endif
     other.blocks_ = nullptr;
     other.select_block(nullptr);
+    other.reuse_next_ = nullptr;
     other.used_ = other.reserved_ = other.peak_used_ = 0;
     other.next_block_size_ = other.options_.initial_block_size;
+#if defined(HYLE_TESTING)
+    other.debug_reuse_candidates_ = 0;
+#endif
   }
 
   Allocator backing_;
@@ -434,6 +480,14 @@ private:
   std::size_t used_ = 0;
   std::size_t reserved_ = 0;
   std::size_t peak_used_ = 0;
+  // First retained ordinary block not yet considered in the current clear
+  // epoch. It is deliberately independent of `blocks_`: newly grown blocks
+  // are prepended to the ownership list but must not make already exhausted
+  // blocks eligible for another scan.
+  Block *reuse_next_ = nullptr;
+#if defined(HYLE_TESTING)
+  std::size_t debug_reuse_candidates_ = 0;
+#endif
 };
 
 } // namespace hyle::mem

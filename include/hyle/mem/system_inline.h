@@ -91,19 +91,33 @@ struct SystemAllocator {
     return static_cast<T*>(allocate(sizeof(T) * numel, alignment));
   }
   template <class T>
-  static T* allocate_zeroed(std::size_t numel = 1) noexcept {
+  static T* allocate_zeroed(std::size_t numel = 1,
+                            std::size_t alignment = alignof(T)) noexcept {
     static_assert(std::is_trivially_constructible_v<T>,
                   "allocate_zeroed requires trivially-constructible T");
     if (numel > SIZE_MAX / sizeof(T)) return nullptr;
     std::size_t sz = sizeof(T) * numel;
-    void* p = allocate(sz, alignof(T));
+    void* p = allocate(sz, alignment);
     if (p != nullptr) std::memset(p, 0, sz);
     return static_cast<T*>(p);
   }
   template <class T>
-  static void deallocate_n(T* ptr, std::size_t numel = 1) noexcept {
+  static T* reallocate_n(T* ptr, std::size_t old_numel,
+                         std::size_t new_numel,
+                         std::size_t alignment = alignof(T)) noexcept {
+    static_assert(std::is_trivially_copyable_v<T>,
+                  "reallocate_n requires trivially-copyable T");
+    if (old_numel > SIZE_MAX / sizeof(T) ||
+        new_numel > SIZE_MAX / sizeof(T))
+      return nullptr;
+    return static_cast<T*>(reallocate(ptr, sizeof(T) * old_numel,
+                                      sizeof(T) * new_numel, alignment));
+  }
+  template <class T>
+  static void deallocate_n(T* ptr, std::size_t numel = 1,
+                           std::size_t alignment = alignof(T)) noexcept {
     HYLE_FATAL_ASSERT(numel <= SIZE_MAX / sizeof(T));
-    deallocate(ptr, sizeof(T) * numel, alignof(T));
+    deallocate(ptr, sizeof(T) * numel, alignment);
   }
 };
 

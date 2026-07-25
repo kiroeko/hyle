@@ -11,6 +11,7 @@
 
 using hyle::mem::AllocStats;
 using hyle::mem::AllocStatsSnapshot;
+using hyle::mem::Allocator;
 using hyle::mem::LeakEntry;
 using hyle::mem::LeakTracker;
 using hyle::mem::StatsAllocator;
@@ -177,6 +178,37 @@ TEST(LeakTracker, ConstructionOomReturnsStatus) {
   auto created = LeakTracker::create(metadata_backing(&state));
   ASSERT_FALSE(created);
   EXPECT_TRUE(created.error().IsResourceExhausted());
+  EXPECT_EQ(state.outstanding, 0u);
+}
+
+TEST(LeakTracker, MetadataOomMakesInventoryObservablyIncomplete) {
+  MetadataBackingState state;
+  {
+    auto created = StatsAllocator::create(system_allocator(),
+                                          /*track_leaks=*/true,
+                                          metadata_backing(&state));
+    ASSERT_TRUE(created);
+    StatsAllocator stats = *std::move(created);
+    ASSERT_NE(stats.leaks(), nullptr);
+    EXPECT_TRUE(stats.leaks()->complete());
+
+    // Fail the next metadata allocation: the measured allocation itself still
+    // succeeds, counters remain exact, and the optional map reports its loss.
+    state.fail_at = state.calls;
+    Allocator measured = stats.get();
+    void* pointer = measured.allocate(64, 16);
+    ASSERT_NE(pointer, nullptr);
+    EXPECT_EQ(stats.snapshot().live_count, 1u);
+    EXPECT_EQ(stats.leaks()->outstanding(), 0u);
+    EXPECT_EQ(stats.leaks()->dropped_records(), 1u);
+    EXPECT_FALSE(stats.leaks()->complete());
+
+    measured.deallocate(pointer, 64, 16);
+    EXPECT_TRUE(stats.balanced());
+    stats.leaks()->clear();
+    EXPECT_EQ(stats.leaks()->dropped_records(), 0u);
+    EXPECT_TRUE(stats.leaks()->complete());
+  }
   EXPECT_EQ(state.outstanding, 0u);
 }
 

@@ -10,7 +10,7 @@ mem 是 host RAM 的基础原语层。它不替业务猜生命周期，也不把
 | 需求 | C++ 形状 | C / FFI 形状 | 关键合同 |
 |---|---|---|---|
 | 普通动态分配 / 依赖注入 | `system_allocator()` / `Allocator` | `hyle_system_allocator` / `hyle_allocator` | sized-free；free/realloc 带回原 size/alignment |
-| 接入 STL PMR | `PmrResource` | 不需要：C 直接持有 allocator vtable | 借用 `Allocator` |
+| 接入 STL PMR | `PmrResource`；buffer base 需显式高对齐时 `AlignedPmrResource` | 不需要：C 直接持有 allocator vtable | 借用 `Allocator`；高对齐不等于逐元素隔离 |
 | 任意 backing 的严格 live-byte admission | `QuotaAllocator` | `hyle_quota_allocator` | 线程安全；按 requested bytes 精确计量 |
 | opt-in allocation 计数 / 泄漏诊断 | `StatsAllocator::create(backing,track,metadata)` | `hyle_stats_allocator` | 被测 backing 与诊断 metadata 分域；计数线程安全，leak inventory 是慢路 |
 | request/frame/graph phase 临时对象 | `Region` | `hyle_region` | owned、单线程、growable、bulk `clear()` |
@@ -33,6 +33,38 @@ pinned pool”猜测。graph tensor liveness planner 属于 graph；mem 只提�
 进程启动期若需要显式预留 1 GiB OS 大页，调用 `reserve_huge_1g_pages`。它是冷策略入口，
 返回 `Status`：非法 node/尺寸是 `OutOfRange`，mimalloc 无法取得连续 host RAM 是
 `ResourceExhausted`；失败后仍可继续使用普通页。不要在请求热路反复调用。
+
+## 通用 allocator、typed array 与 PMR
+
+`Allocator` 是 HYLE 内部和 C++ 用户的按值注入句柄；模块之间直接传这个 C++ 类型，不经
+C ABI。`allocate_n<T>` / `allocate_zeroed<T>` / `reallocate_n<T>` 会检查 count 乘法溢出，
+并允许显式 alignment；用同一个 alignment 调 `deallocate_n`。`reallocate_n` 失败或溢出时
+旧 allocation 仍然有效；因为底层 resize 可能按字节搬移，它只接受 trivially-copyable `T`，
+带构析/自引用状态的对象应新建 storage 后逐对象 move/销毁。
+
+```cpp
+hyle::mem::Allocator alloc = hyle::mem::system_allocator();
+auto* samples = alloc.allocate_zeroed<float>(1024, 64);
+if (samples == nullptr) return resource_exhausted;
+if (auto* grown = alloc.reallocate_n(samples, 1024, 4096, 64)) {
+  samples = grown;
+  alloc.deallocate_n(samples, 4096, 64);
+} else {
+  alloc.deallocate_n(samples, 1024, 64);  // realloc failure preserved it
+}
+```
+
+`PmrResource` 只做普通 PMR 转接。若 SIMD/cache/page-sensitive 容器明确需要更高的**底层
+buffer 起始地址**，使用 `AlignedPmrResource(alloc, alignment)`；这对应 oneTBB
+`cache_aligned_resource` 的需求形状，但 alignment 由用户选择，不把平台 cache policy 塞进
+所有容器。它不会给相邻元素自动加 padding；防 false sharing 仍需 padded/aligned element。
+
+```cpp
+hyle::mem::AlignedPmrResource cache_buffer(
+    hyle::mem::system_allocator(), 64);
+std::pmr::vector<std::byte> bytes(&cache_buffer);
+bytes.resize(4096);  // bytes.data() 至少 64-byte aligned
+```
 
 ## Region 家族
 
@@ -59,11 +91,18 @@ scratch.release();                      // 确定归还全部 backing capacity
 ```
 
 `bytes_used()` 是成功请求的 payload 总数；`reserved()` 是当前 backing bytes；
-`peak_used()` 不因 clear/release 清零。individual deallocate 是 no-op。大于 threshold 的
+`peak_used()` 在当前 epoch 中也精确，并且不因 clear/release 清零（实现把已完成 epoch 的峰值
+延迟到边界折叠，避免每次 allocation 更新 peak）。individual deallocate 是 no-op。大于 threshold 的
 dedicated block 在 `clear()` 时归还，普通 block 保留复用。`initial_block_size` / `max_block_size`
 是 ordinary block 的总 backing-byte target，已经包含 Region header 与最坏 alignment padding；
 单个请求放不下时允许为该 block 突破 target。这样 4 MiB target 不会只因内部 header 变成
 `4 MiB + metadata`，`size_limit` 与 allocator size class 也更可预测。
+
+长寿命、多 block Region 在每次 `clear()` 后用单调 cursor 依次复用 retained blocks；一个
+epoch 内每个 block 至多考察一次，所以总过渡 O(blocks)、分摊到 block transition 为 O(1)。
+某个 block 的尾部不能满足当前请求后，本 epoch 不再回头尝试更小请求；这是 bounded bump
+arena 用少量 tail slack 换取可预测复杂度的合同。若小请求尺寸高度交错且必须回收每个洞，
+应选 `FixedPool`，而不是把 Region 当 variable-size heap。
 
 ### External workspace
 
@@ -167,6 +206,11 @@ loan 等调用合同错误允许 fail-fast。`StatsAllocator`/`LeakTracker` 可�
 `Result`，不会从 `new` 抛出 OOM；Stats 的第三个参数是独立 metadata allocator，默认 system。
 被测 backing 即使是 fixed-block/strict-quota，诊断 control/hash 也不会偷占其容量。
 
+启用 leak map 时，metadata OOM 不应让真正的用户 allocation 失败。此时 allocation counters
+仍精确，`leaks()->dropped_records()` 增加且 `complete()==false`；已知 inventory 仍可读取，
+但不能宣称它穷尽了全部 leak。确认没有 live allocation 后 `clear()`/Stats reset 才会恢复
+complete。只要计数、不需要逐指针报告时不要启用 leak tracking。
+
 ## 三份最短组合
 
 这些形状由 `MemUsageRecipe` 测试直接编译执行。
@@ -221,7 +265,8 @@ bind 与 interleave 互斥；interleave 必须搭配 `kNumaAny`，不能传给 `
 ## 如何看性能
 
 benchmark 以场景和合同分组，入口是 `hyle_mem_scenarios_bench`；用
-`HYLE_BENCH_SECTIONS=F` 跑收口 workload。正式性能表只维护在
+`HYLE_BENCH_SECTIONS=F` 跑正常 request workload，用 `HYLE_BENCH_SECTIONS=J` 跑长寿命
+Region retained-block scaling。正式性能表只维护在
 [`../performance/benchmarks-mem.md`](../performance/benchmarks-mem.md)，本指南不复制点值、
 win/loss 或待补证据。性能结果用来帮助选型，不改变前述 ownership/capacity 合同。
 

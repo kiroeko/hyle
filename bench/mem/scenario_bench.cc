@@ -25,6 +25,8 @@
 //     clear/release retention, and process RSS in isolated processes.
 //  I. Fixed-buffer fragmentation certification: largest satisfiable object
 //     after mixed fill/selective free, normalized to each pool's empty limit.
+//  J. Long-lived Region scaling: clear/reuse over 32..2048 retained blocks.
+//     This catches restart-from-head traversal that short request benches hide.
 
 #include <mimalloc.h>
 #include <nanobench.h>
@@ -468,6 +470,49 @@ void report_request_latency_pair(const char *scenario, const char *first_name,
   };
   print(first_name, first_result);
   print(second_name, second_result);
+}
+
+void report_region_reuse_scaling(std::size_t retained_blocks, int samples) {
+  using Clock = std::chrono::steady_clock;
+  RegionOptions options;
+  options.initial_block_size = 128;
+  options.max_block_size = 128;
+  options.large_allocation_threshold = 4096;
+  Region region(system_allocator(), options);
+  for (std::size_t i = 0; i != retained_blocks; ++i)
+    require_allocation(region.allocate(64, 16));
+
+  auto run_epoch = [&] {
+    region.clear();
+    for (std::size_t i = 0; i != retained_blocks; ++i) {
+      void *p = require_allocation(region.allocate(64, 16));
+      nb::doNotOptimizeAway(std::as_const(p));
+    }
+  };
+  for (int i = 0; i != 16; ++i)
+    run_epoch();
+
+  std::vector<std::uint64_t> measured;
+  measured.reserve(static_cast<std::size_t>(samples));
+  for (int i = 0; i != samples; ++i) {
+    const auto begin = Clock::now();
+    run_epoch();
+    const auto end = Clock::now();
+    measured.push_back(static_cast<std::uint64_t>(
+        std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin)
+            .count()));
+  }
+  const RequestLatency result = summarize_latency(std::move(measured));
+  std::printf(
+      "HYLE_MEM_CERT region_scaling scenario=retained_clear_reuse "
+      "retained_blocks=%zu samples=%d allocations_per_epoch=%zu "
+      "p50_ns=%llu p95_ns=%llu p99_ns=%llu p50_ns_per_allocation=%.6f\n",
+      retained_blocks, samples, retained_blocks,
+      static_cast<unsigned long long>(result.p50_ns),
+      static_cast<unsigned long long>(result.p95_ns),
+      static_cast<unsigned long long>(result.p99_ns),
+      static_cast<double>(result.p50_ns) /
+          static_cast<double>(retained_blocks));
 }
 
 inline void *require_allocation(void *p) noexcept {
@@ -1706,6 +1751,15 @@ int main() {
         return 2;
       }
     }
+  }
+
+  // ---- J. LONG-LIVED REGION RETAINED-BLOCK SCALING -----------------------
+  if (want_section('J')) {
+    const int samples = env_int("HYLE_MEM_REGION_SAMPLES", 1001);
+    print_certificate_metadata();
+    for (std::size_t blocks : {std::size_t{32}, std::size_t{128},
+                               std::size_t{512}, std::size_t{2048}})
+      report_region_reuse_scaling(blocks, samples);
   }
 
   return 0;

@@ -235,17 +235,35 @@ TEST(AllocatorTyped, AllocateZeroedZeroes) {
   a.deallocate_n(p, 8);
 }
 
+TEST(AllocatorTyped, ArrayResizePreservesExplicitAlignmentAndContents) {
+  Allocator a = system_allocator();
+  int *p = a.allocate_zeroed<int>(8, 64);
+  ASSERT_NE(p, nullptr);
+  EXPECT_TRUE(is_aligned(p, 64));
+  p[0] = 17;
+  p[7] = 29;
+  p = a.reallocate_n(p, 8, 32, 64);
+  ASSERT_NE(p, nullptr);
+  EXPECT_TRUE(is_aligned(p, 64));
+  EXPECT_EQ(p[0], 17);
+  EXPECT_EQ(p[7], 29);
+  a.deallocate_n(p, 32, 64);
+}
+
 TEST(AllocatorTyped, CountOverflowReturnsNull) {
   Allocator a = system_allocator();
   constexpr std::size_t too_many = SIZE_MAX / sizeof(std::uint64_t) + 2;
   EXPECT_EQ(a.allocate_n<std::uint64_t>(too_many), nullptr);
   EXPECT_EQ(a.allocate_zeroed<std::uint64_t>(too_many), nullptr);
+  EXPECT_EQ(a.reallocate_n<std::uint64_t>(nullptr, 0, too_many), nullptr);
 }
 
 TEST(SystemAllocatorTyped, CountOverflowReturnsNull) {
   constexpr std::size_t too_many = SIZE_MAX / sizeof(std::uint64_t) + 2;
   EXPECT_EQ(SystemAllocator::allocate_n<std::uint64_t>(too_many), nullptr);
   EXPECT_EQ(SystemAllocator::allocate_zeroed<std::uint64_t>(too_many), nullptr);
+  EXPECT_EQ(SystemAllocator::reallocate_n<std::uint64_t>(nullptr, 0, too_many),
+            nullptr);
 }
 
 TEST(SystemAllocatorTypedDeathTest, DeallocateCountOverflowTraps) {

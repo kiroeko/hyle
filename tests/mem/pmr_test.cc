@@ -9,6 +9,7 @@
 #include "hyle/mem/allocator.h"
 
 using hyle::mem::Allocator;
+using hyle::mem::AlignedPmrResource;
 using hyle::mem::PmrResource;
 using hyle::mem::system_allocator;
 
@@ -108,4 +109,32 @@ TEST(PmrResourceDeathTest, InvalidAllocatorTrapsAtConstruction) {
 TEST(PmrResource, ExposesAllocator) {
   PmrResource res(system_allocator());
   EXPECT_EQ(res.allocator().alloc_fn(), system_allocator().alloc_fn());
+}
+
+TEST(AlignedPmrResource, AlignsContainerBaseWithoutChangingElementStride) {
+  AlignedPmrResource resource(system_allocator(), 64);
+  std::pmr::vector<std::uint8_t> bytes(&resource);
+  bytes.resize(257);
+  ASSERT_NE(bytes.data(), nullptr);
+  EXPECT_EQ(reinterpret_cast<std::uintptr_t>(bytes.data()) % 64, 0u);
+  EXPECT_EQ(resource.minimum_alignment(), 64u);
+}
+
+TEST(AlignedPmrResource, EqualityIncludesMinimumAlignment) {
+  AlignedPmrResource a(system_allocator(), 64);
+  AlignedPmrResource b(system_allocator(), 64);
+  AlignedPmrResource c(system_allocator(), 128);
+  PmrResource plain(system_allocator());
+  EXPECT_TRUE(a.is_equal(b));
+  EXPECT_FALSE(a.is_equal(c));
+  EXPECT_FALSE(a.is_equal(plain));
+}
+
+TEST(AlignedPmrResourceDeathTest, InvalidAlignmentTrapsAtConstruction) {
+  EXPECT_DEATH(
+      {
+        AlignedPmrResource resource(system_allocator(), 3);
+        (void)resource;
+      },
+      ".*");
 }

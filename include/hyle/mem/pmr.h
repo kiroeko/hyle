@@ -4,6 +4,7 @@
 #include <memory_resource>
 #include <new>
 
+#include "hyle/mem/alignment.h"
 #include "hyle/mem/allocator.h"
 
 // std::pmr::memory_resource backed by a HYLE Allocator. Lets any pmr-aware std
@@ -22,6 +23,14 @@
 // to the std container that requested the allocation, never back into HYLE code.
 
 namespace hyle::mem {
+
+namespace detail {
+inline bool allocator_identity_equal(const Allocator& a,
+                                     const Allocator& b) noexcept {
+  return a.alloc_fn() == b.alloc_fn() && a.free_fn() == b.free_fn() &&
+         a.realloc_fn() == b.realloc_fn() && a.state() == b.state();
+}
+}  // namespace detail
 
 class PmrResource : public std::pmr::memory_resource {
  public:
@@ -49,13 +58,53 @@ class PmrResource : public std::pmr::memory_resource {
   bool do_is_equal(
       const std::pmr::memory_resource& other) const noexcept override {
     const auto* o = dynamic_cast<const PmrResource*>(&other);
-    return o != nullptr && o->alloc_.alloc_fn() == alloc_.alloc_fn() &&
-           o->alloc_.free_fn() == alloc_.free_fn() &&
-           o->alloc_.realloc_fn() == alloc_.realloc_fn() &&
-           o->alloc_.state() == alloc_.state();
+    return o != nullptr && detail::allocator_identity_equal(o->alloc_, alloc_);
   }
 
   Allocator alloc_;
+};
+
+// PMR adapter that raises every allocation's BASE alignment to at least the
+// caller-selected power of two. This is the std-container shape corresponding
+// to oneTBB's cache_aligned_resource without forcing a cache policy into the
+// general PmrResource path. It aligns the container buffer, not every element;
+// callers that need per-element cache-line isolation must still pad the type.
+class AlignedPmrResource : public std::pmr::memory_resource {
+ public:
+  AlignedPmrResource(Allocator alloc, std::size_t minimum_alignment) noexcept
+      : alloc_(alloc), minimum_alignment_(minimum_alignment) {
+    HYLE_FATAL_ASSERT(alloc_.valid());
+    HYLE_FATAL_ASSERT(is_pow2(minimum_alignment_));
+  }
+
+  Allocator allocator() const noexcept { return alloc_; }
+  std::size_t minimum_alignment() const noexcept { return minimum_alignment_; }
+
+ private:
+  std::size_t effective(std::size_t requested) const noexcept {
+    return requested < minimum_alignment_ ? minimum_alignment_ : requested;
+  }
+
+  void* do_allocate(std::size_t bytes, std::size_t alignment) override {
+    void* p = alloc_.allocate(bytes, effective(alignment));
+    if (p == nullptr) throw std::bad_alloc{};
+    return p;
+  }
+
+  void do_deallocate(void* p, std::size_t bytes,
+                     std::size_t alignment) override {
+    alloc_.deallocate(p, bytes, effective(alignment));
+  }
+
+  bool do_is_equal(
+      const std::pmr::memory_resource& other) const noexcept override {
+    const auto* o = dynamic_cast<const AlignedPmrResource*>(&other);
+    return o != nullptr && o->minimum_alignment_ == minimum_alignment_ &&
+           detail::allocator_identity_equal(o->alloc_, alloc_);
+  }
+
+  Allocator alloc_;
+  std::size_t minimum_alignment_;
 };
 
 }  // namespace hyle::mem

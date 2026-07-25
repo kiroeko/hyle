@@ -176,8 +176,10 @@ C ABI 保持一个 machine word 的 owning handle：
 typedef struct hyle_status { uintptr_t rep; } hyle_status;
 ```
 
-公开 C++ `Status` 不暴露 raw representation 的 adopt/release；跨 C ABI 的零拷贝 ownership
-转移只由 `src/error` 内部 bridge 完成。C handle 的零值 initializer 是
+公开 C++ `Status` 不暴露 raw representation 的 adopt/release。HYLE 各模块内部只传 C++
+`Status` / `Result<T>`，不通过 `hyle_status` 互调；raw representation 的零拷贝 ownership
+转移只允许出现在 `src/*/c_*.cc` 对外 C ABI shim（共同使用 `src/error/status_access.h`），
+不是模块间 ABI。C handle 的零值 initializer 是
 `HYLE_STATUS_INIT`，所有会释放/替换旧值的 pointer API 都要求目标已初始化。
 
 能力必须覆盖：
