@@ -59,6 +59,21 @@ Tier 0 dependencies: mem allocator + platform CPU discovery
 IntrusiveList 已下沉 core，因为 error/time/sched 都需要它；它不再属于 container
 库或 container C ABI。
 
+### SmallVector 的成熟形状门
+
+SmallVector 的接口不再由“小 N push benchmark”定义。本轮同时对照本地
+Abseil `InlinedVector`、Folly `small_vector` 与 Boost `small_vector`：三者共同证明
+inline storage 只是存储策略，用户仍需要普通 owning sequence 的值语义。HYLE 当前
+共同面包括 copy/move、initializer-list、连续/反向迭代、reserve、resize、任意位置
+emplace/insert、单项/范围 erase 与 clear；自别名参数即使触发 inline→heap 迁移也安全。
+位置插入和删除只搬移受影响后缀，复杂度为 O(size-position)，已达到连续存储容器的
+渐进下界；trivially-copyable T 使用 memmove，其他 T 只要求 nothrow move construction，
+不额外要求 move assignment。
+
+仍待按真实消费者决定的外围面是 range/count construction、range insert/assign、swap、
+shrink-to-fit 和比较运算。`at()` 没有机械照抄：HYLE 构建可关闭异常，必须先决定是
+Status/nullable 访问还是 fatal checked access，不能用一个异常形状破坏全库合同。
+
 ## SwissTable
 
 SwissTable 不是 clay 线性探测 map 的换名版，而是完整的 flat Swiss 形状：
@@ -173,6 +188,11 @@ container 对外依赖。hex encode/decode 当前是无查表分支的标量/编
 
 “保留能力”不等于冻结当前函数列表；“暂定”也不等于为了缩 ABI 直接删。最终 C 面只为
 跨边界仍成立的动态能力服务，HYLE 内部 C++ 模块继续直接使用 typed API。
+
+2026-07-25 的消费审计确认：仓内生产代码只直接使用 typed queue（sched），没有任何
+模块通过 container C queue/ConcurrentVector facade 回调自己。因而这些 C 名称不能以
+“内部已有用户”为由冻结；下一轮必须按真实 FFI 角色重命名或删除，而不是继续保留早期
+`push/pop` 的机械镜像。
 
 - options 带 `struct_size`；allocator 按值捕获但 state 生命周期由调用方保证。
 - 对象只经 create/destroy；不导出 C++ 类布局、STL、模板或异常。

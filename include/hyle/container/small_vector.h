@@ -144,6 +144,12 @@ public:
   const_reverse_iterator rend() const noexcept {
     return const_reverse_iterator(begin());
   }
+  const_reverse_iterator crbegin() const noexcept {
+    return const_reverse_iterator(cend());
+  }
+  const_reverse_iterator crend() const noexcept {
+    return const_reverse_iterator(cbegin());
+  }
 
   bool try_reserve(size_type requested) noexcept {
     return requested <= cap_ || grow_to(requested);
@@ -212,6 +218,36 @@ public:
     HYLE_FATAL_ASSERT(try_push_back(std::move(value)));
   }
 
+  template <class... Args>
+  iterator emplace(const_iterator position, Args &&...args) {
+    HYLE_FATAL_ASSERT(position >= cbegin() && position <= cend());
+    const size_type index = static_cast<size_type>(position - cbegin());
+    if (index == size_) {
+      emplace_back(std::forward<Args>(args)...);
+      return data_ + index;
+    }
+
+    // Construct before growth or shifting so arguments may alias any current
+    // element. The saved value also gives the operation the strong guarantee
+    // when its user-defined construction throws.
+    T saved(std::forward<Args>(args)...);
+    if (size_ == cap_)
+      reserve(next_capacity(size_ + 1));
+
+    open_gap(index);
+    ::new (static_cast<void *>(data_ + index)) T(std::move(saved));
+    ++size_;
+    return data_ + index;
+  }
+
+  iterator insert(const_iterator position, const T &value) {
+    return emplace(position, value);
+  }
+
+  iterator insert(const_iterator position, T &&value) {
+    return emplace(position, std::move(value));
+  }
+
   void pop_back() noexcept {
     HYLE_FATAL_ASSERT(!empty());
     --size_;
@@ -265,20 +301,29 @@ public:
   }
 
   iterator erase(const_iterator position) noexcept {
-    HYLE_FATAL_ASSERT(position >= begin() && position < end());
-    const size_type index = static_cast<size_type>(position - begin());
+    HYLE_FATAL_ASSERT(position >= cbegin() && position < cend());
+    return erase(position, position + 1);
+  }
+
+  iterator erase(const_iterator first, const_iterator last) noexcept {
+    HYLE_FATAL_ASSERT(first >= cbegin() && first <= last && last <= cend());
+    const size_type first_index = static_cast<size_type>(first - cbegin());
+    const size_type count = static_cast<size_type>(last - first);
+    if (count == 0)
+      return data_ + first_index;
+
     if constexpr (std::is_trivially_copyable_v<T>) {
-      std::memmove(data_ + index, data_ + index + 1,
-                   (size_ - index - 1) * sizeof(T));
+      std::memmove(data_ + first_index, data_ + first_index + count,
+                   (size_ - first_index - count) * sizeof(T));
     } else {
-      static_assert(std::is_nothrow_move_assignable_v<T>,
-                    "SmallVector::erase requires nothrow move assignment");
-      for (size_type i = index; i + 1 < size_; ++i)
-        data_[i] = std::move(data_[i + 1]);
-      data_[size_ - 1].~T();
+      destroy_range(data_ + first_index, count);
+      for (size_type i = first_index; i + count < size_; ++i) {
+        ::new (static_cast<void *>(data_ + i)) T(std::move(data_[i + count]));
+        data_[i + count].~T();
+      }
     }
-    --size_;
-    return data_ + index;
+    size_ -= count;
+    return data_ + first_index;
   }
 
 private:
@@ -291,6 +336,20 @@ private:
     if constexpr (!std::is_trivially_destructible_v<T>) {
       for (size_type i = count; i != 0; --i)
         first[i - 1].~T();
+    }
+  }
+
+  void open_gap(size_type index) noexcept {
+    HYLE_FATAL_ASSERT(index < size_ && size_ < cap_);
+    if constexpr (std::is_trivially_copyable_v<T>) {
+      std::memmove(data_ + index + 1, data_ + index,
+                   (size_ - index) * sizeof(T));
+      data_[index].~T();
+    } else {
+      for (size_type i = size_; i > index; --i) {
+        ::new (static_cast<void *>(data_ + i)) T(std::move(data_[i - 1]));
+        data_[i - 1].~T();
+      }
     }
   }
 

@@ -41,7 +41,9 @@ for (const std::string& name : names) consume(name);
 ```
 
 `SmallVector` 的常用值语义与 `std::vector` 相同：copy 是深拷贝，move-only 元素可用，
-clear/erase/pop 会析构元素。为了让 allocator OOM 后原 vector 仍可恢复，`T` 必须
+`emplace/insert` 可在任意位置构造，单项/范围 `erase` 会析构元素并只移动后缀；这些
+位置操作与成熟 inline vector 一样是 O(尾部长度)，不是为 benchmark 增加的旁路。
+为了让 allocator OOM 后原 vector 仍可恢复，`T` 必须
 nothrow move-construct/destruct；POD 仍走 memcpy relocation。`try_reserve`、
 `try_emplace_back`、`try_push_back` 报告 allocation failure；无 `try_` 的熟悉入口把
 OOM 当 fatal。若序列经常远超 N，inline bytes 只会放大每个 owner，对它使用普通

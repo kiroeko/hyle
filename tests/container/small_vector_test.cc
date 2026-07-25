@@ -11,6 +11,21 @@ using hyle::container::SmallVector;
 using hyle::mem::Allocator;
 using hyle::mem::system_allocator;
 
+namespace {
+
+struct MoveConstructOnly {
+  explicit MoveConstructOnly(int input) noexcept : value(input) {}
+  MoveConstructOnly(const MoveConstructOnly&) = default;
+  MoveConstructOnly(MoveConstructOnly&&) noexcept = default;
+  ~MoveConstructOnly() noexcept {}
+  MoveConstructOnly& operator=(const MoveConstructOnly&) = delete;
+  MoveConstructOnly& operator=(MoveConstructOnly&&) = delete;
+
+  int value;
+};
+
+}  // namespace
+
 // ---- SmallVector ------------------------------------------------------------
 
 TEST(SmallVector, StaysInlineUnderN) {
@@ -143,4 +158,58 @@ TEST(SmallVector, CopyHasValueSemantics) {
   assigned = original;
   EXPECT_EQ(assigned.size(), original.size());
   EXPECT_EQ(assigned[2], "c");
+}
+
+TEST(SmallVector, PositionalInsertAndEmplaceMatchVectorShape) {
+  SmallVector<std::string, 3> values({"alpha", "gamma"});
+  auto inserted = values.insert(values.begin() + 1, std::string("beta"));
+  ASSERT_EQ(inserted, values.begin() + 1);
+  EXPECT_EQ(*inserted, "beta");
+
+  auto first = values.emplace(values.begin(), 3, 'x');
+  ASSERT_EQ(first, values.begin());
+  EXPECT_EQ(*first, "xxx");
+  ASSERT_EQ(values.size(), 4u);
+  EXPECT_EQ(values[0], "xxx");
+  EXPECT_EQ(values[1], "alpha");
+  EXPECT_EQ(values[2], "beta");
+  EXPECT_EQ(values[3], "gamma");
+}
+
+TEST(SmallVector, PositionalInsertMayAliasAcrossSpill) {
+  SmallVector<std::string, 2> values({"alpha", "omega"});
+  values.insert(values.begin() + 1, values.front());
+  ASSERT_FALSE(values.inline_storage());
+  ASSERT_EQ(values.size(), 3u);
+  EXPECT_EQ(values[0], "alpha");
+  EXPECT_EQ(values[1], "alpha");
+  EXPECT_EQ(values[2], "omega");
+}
+
+TEST(SmallVector, EraseRangeMovesOnlyTheTail) {
+  SmallVector<std::string, 3> values({"zero", "one", "two", "three", "four"});
+  auto next = values.erase(values.begin() + 1, values.begin() + 4);
+  ASSERT_EQ(next, values.begin() + 1);
+  ASSERT_EQ(values.size(), 2u);
+  EXPECT_EQ(values[0], "zero");
+  EXPECT_EQ(values[1], "four");
+
+  next = values.erase(values.begin(), values.begin());
+  EXPECT_EQ(next, values.begin());
+  EXPECT_EQ(values.size(), 2u);
+}
+
+TEST(SmallVector, PositionalMutationNeedsNoMoveAssignment) {
+  SmallVector<MoveConstructOnly, 2> values;
+  values.emplace_back(1);
+  values.emplace_back(3);
+  values.emplace(values.begin() + 1, 2);
+  ASSERT_EQ(values.size(), 3u);
+  EXPECT_EQ(values[0].value, 1);
+  EXPECT_EQ(values[1].value, 2);
+  EXPECT_EQ(values[2].value, 3);
+
+  values.erase(values.begin(), values.begin() + 2);
+  ASSERT_EQ(values.size(), 1u);
+  EXPECT_EQ(values[0].value, 3);
 }

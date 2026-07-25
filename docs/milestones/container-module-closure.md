@@ -13,7 +13,10 @@
 > map/set 五/四项均领先 Abseil；WSL map 四项领先、miss 慢约 3%，set hit 同档、miss
 > 慢约 6%、insert/iterate 领先。map 已按成熟语义拆分 insert/try_emplace/
 > insert_or_assign，并补
-> operator[]；SmallVector 的完整常用面及三平台强 peer 证据仍在复审，
+> operator[]；SmallVector 已按 Abseil/Folly/Boost 的共同形状补任意位置
+> emplace/insert、范围 erase 与 const reverse iteration，位置操作保持连续容器最优的
+> O(尾部长度) 且自别名 spill 安全；range construction/insert/assign、容量收缩等外围面
+> 及三平台强 peer 证据仍在复审，
 > 因此 container **尚未获得 2026-07-25 严格证书**。
 > 复审也删除了无生产消费者、属于 quick-open 应用策略的 fuzzy scorer/top-K 及其 C
 > 导出；旧 container-06c 仍作为历史任务记录保留。
@@ -31,7 +34,8 @@ Linux x64 和 macOS arm64 的最终验证命令与结果记录在本文末尾。
 - CArray：记录 allocator/alignment，alias-safe growth，新增 fallible
   `try_reserve/try_push_back`，所有容量计算先检查 overflow。
 - SmallVector：修正 allocator-aware move assignment、inline/heap 别名增长和
-  overflow。
+  overflow；补 mature inline-vector 共有的 positional emplace/insert 与 range erase，
+  非平凡 T 不再因删除/移动后缀额外要求 move assignment。
 - SwissTable：const 查询/遍历、reserve/clear、alias insert、OOM 状态保持、move
   元数据完整；新增真正无 mapped-slot 税的 FlatHashSet，以及 key 只读/value 可写的
   map iterator 和只读 set iterator；C ABI map 也使用 flat ctrl+slot Swiss probing，
