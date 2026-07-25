@@ -233,18 +233,24 @@ thief 从 top steal
 `hyle_container_ws_fifo_queue_capacity` 是 owner FIFO + 批量转移队列；
 owner 在 back push、front pop；`try_steal_into` 要求两个不同且等容量的队列。
 
-`hyle_container_concurrent_vector_create`、
-`hyle_container_concurrent_vector_create_system`、
-`hyle_container_concurrent_vector_destroy`、
-`hyle_container_concurrent_vector_try_push_back`、
-`hyle_container_concurrent_vector_size`、
-`hyle_container_concurrent_vector_capacity`、
-`hyle_container_concurrent_vector_at` 是 append-only `void*` vector。
+`hyle_container_concurrent_ptr_vector_create`、
+`hyle_container_concurrent_ptr_vector_create_system`、
+`hyle_container_concurrent_ptr_vector_destroy`、
+`hyle_container_concurrent_ptr_vector_reserve`、
+`hyle_container_concurrent_ptr_vector_try_push_back`、
+`hyle_container_concurrent_ptr_vector_size`、
+`hyle_container_concurrent_ptr_vector_capacity`、
+`hyle_container_concurrent_ptr_vector_try_get` 是 append-only pointer vector。
 `try_push_back` 返回
-Status 并写 `out_index`；已经发布的元素地址不移动，调用者仍负责 payload 生命周期。
+Status 并写 `out_index`；已经发布的 index 稳定，HYLE 不拥有或移动 payload 指向的
+对象，调用者仍负责其生命周期。
 多个 `push` 可真正并行；`size` 返回已领取 index 数，不是 in-flight push 的完成栅栏。
 读取新 tail 前必须等待对应 push 返回或等待所有 writers quiesce；并发 append 期间可读
 事先完成的 prefix。
+create 的 `first_segment_capacity` 只选择首段及后续倍增粒度，不执行预分配；已知批量
+大小时应先调用 `reserve`，把 OOM 和 segment allocation 移出 writer hot path。
+`try_get` 以返回值表示 index 是否存在，并通过 out 写 payload；因此合法 NULL payload
+不会再和越界混淆，失败时 out 保持不变。
 
 所有并发容器的 `create` 都是 Status + out；创建完成后，满/空/竞争仍走原来的
 无分配热路径返回值。`void*` payload 可为 NULL，HYLE 不解释也不拥有它。
@@ -259,7 +265,7 @@ Status 并写 `out_index`；已经发布的元素地址不移动，调用者仍�
 | `FlatHashMap<K,V>` | `hyle_container_hash_map_*`：C++ map 可拥有 non-trivial 值；C/FFI map 则按 options 中的 size/alignment 擦除 POD，hash/equality 由 callback+ctx 注入 |
 | `FlatHashSet<K>` | `hyle_container_hash_set_*`：按 options 中的 key size/alignment 擦除 POD；独立 set slot，不用 map + dummy value |
 | `BoundedQueue<T>` / `ShardedQueue<T>` / `WorkStealingDeque<T>` / `WsFifoQueue<T>` | 对应 `hyle_container_*queue*` / `*_deque_*` opaque 句柄接受 `void*` payload；payload 生命周期归调用方 |
-| `ConcurrentVector<T>` | `hyle_container_concurrent_vector_*` append `void*`；调用方保存 typed payload |
+| `ConcurrentVector<T>` | `hyle_container_concurrent_ptr_vector_*` append caller-owned `void*`；名称明确它不是 arbitrary POD 类型擦除 |
 | `Hash<T>` / `hash_bytes` | C 侧对实际字节调用 `hyle_container_hash_bytes`，或向 flat map 注入业务 hash callback；不暴露 vendor 实现头 |
 
 这张表表达的是“C++ 静态形状不跨 ABI、运行时能力仍可达”。如果未来需要

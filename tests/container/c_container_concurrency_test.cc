@@ -61,12 +61,16 @@ TEST(ContainerCAbi, BoundedQueueMpmcConservesPointers) {
 TEST(ContainerCAbi, ConcurrentVectorPublishesStableIndices) {
   constexpr std::size_t kWriters = 4;
   constexpr std::size_t kPerWriter = 10000;
-  hyle_container_concurrent_vector* vector = nullptr;
+  hyle_container_concurrent_ptr_vector* vector = nullptr;
   hyle_status create =
-      hyle_container_concurrent_vector_create_system(&vector, 1);
+      hyle_container_concurrent_ptr_vector_create_system(&vector, 1);
   ASSERT_TRUE(hyle_status_is_ok(create));
   hyle_status_free(&create);
   ASSERT_NE(vector, nullptr);
+  hyle_status reserve = hyle_container_concurrent_ptr_vector_reserve(
+      vector, kWriters * kPerWriter);
+  ASSERT_TRUE(hyle_status_is_ok(reserve));
+  hyle_status_free(&reserve);
 
   std::vector<std::thread> threads;
   for (std::size_t writer = 0; writer < kWriters; ++writer) {
@@ -75,8 +79,9 @@ TEST(ContainerCAbi, ConcurrentVectorPublishesStableIndices) {
         void* value = reinterpret_cast<void*>(
             static_cast<std::uintptr_t>(writer * kPerWriter + i + 1));
         std::size_t index = SIZE_MAX;
-        hyle_status status = hyle_container_concurrent_vector_try_push_back(
-            &index, vector, value);
+        hyle_status status =
+            hyle_container_concurrent_ptr_vector_try_push_back(
+                &index, vector, value);
         EXPECT_TRUE(hyle_status_is_ok(status));
         EXPECT_NE(index, SIZE_MAX);
         hyle_status_free(&status);
@@ -85,14 +90,16 @@ TEST(ContainerCAbi, ConcurrentVectorPublishesStableIndices) {
   }
   for (std::thread& thread : threads) thread.join();
 
-  ASSERT_EQ(hyle_container_concurrent_vector_size(vector),
+  ASSERT_EQ(hyle_container_concurrent_ptr_vector_size(vector),
             kWriters * kPerWriter);
   std::uint64_t sum = 0;
   for (std::size_t i = 0; i < kWriters * kPerWriter; ++i) {
-    sum += reinterpret_cast<std::uintptr_t>(
-        hyle_container_concurrent_vector_at(vector, i));
+    void* value = nullptr;
+    ASSERT_TRUE(
+        hyle_container_concurrent_ptr_vector_try_get(vector, i, &value));
+    sum += reinterpret_cast<std::uintptr_t>(value);
   }
   const std::uint64_t count = kWriters * kPerWriter;
   EXPECT_EQ(sum, count * (count + 1) / 2);
-  hyle_container_concurrent_vector_destroy(vector);
+  hyle_container_concurrent_ptr_vector_destroy(vector);
 }

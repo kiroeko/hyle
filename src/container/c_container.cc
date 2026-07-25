@@ -417,10 +417,10 @@ struct hyle_container_ws_fifo_queue_o {
       : backing(allocator), value(to_cpp(&backing), capacity) {}
   hc::WsFifoQueue<void*, hyle::mem::Allocator> value;
 };
-struct hyle_container_concurrent_vector_o {
+struct hyle_container_concurrent_ptr_vector_o {
   hyle_allocator backing;
-  hyle_container_concurrent_vector_o(hyle_allocator allocator,
-                                     std::size_t capacity)
+  hyle_container_concurrent_ptr_vector_o(hyle_allocator allocator,
+                                         std::size_t capacity)
       : backing(allocator), value(to_cpp(&backing), capacity) {}
   hc::ConcurrentVector<void*, hyle::mem::Allocator> value;
 };
@@ -1508,57 +1508,78 @@ int hyle_container_ws_fifo_queue_try_steal_into(
   return result.ok;
 }
 
-hyle_status hyle_container_concurrent_vector_create(
-    hyle_container_concurrent_vector** out, hyle_allocator backing,
-    size_t initial_capacity) {
+hyle_status hyle_container_concurrent_ptr_vector_create(
+    hyle_container_concurrent_ptr_vector** out, hyle_allocator backing,
+    size_t first_segment_capacity) {
   if (out == nullptr)
-    return hyle_status_invalid_argument("concurrent vector output is NULL");
-  *out = nullptr;
-  if (!valid_backing(backing) ||
-      initial_capacity >
-      (size_t(1) << (sizeof(size_t) * 8 - 1))) {
     return hyle_status_invalid_argument(
-        "invalid allocator or initial capacity");
+        "concurrent pointer vector output is NULL");
+  *out = nullptr;
+  if (!valid_backing(backing)) {
+    return hyle_status_invalid_argument(
+        "invalid concurrent pointer vector allocator");
   }
-  auto* vector = allocate_handle<hyle_container_concurrent_vector>(
-      backing, backing, initial_capacity);
+  const size_t max_first_segment =
+      (SIZE_MAX / sizeof(void*) + 1) / 2;
+  if (first_segment_capacity > max_first_segment)
+    return hyle_status_out_of_range(
+        "concurrent pointer vector segment capacity overflows address space");
+  auto* vector = allocate_handle<hyle_container_concurrent_ptr_vector>(
+      backing, backing, first_segment_capacity);
   if (vector == nullptr)
     return hyle_status_resource_exhausted(
-        "concurrent vector allocation failed");
+        "concurrent pointer vector allocation failed");
   *out = vector;
   return hyle_status_ok();
 }
-void hyle_container_concurrent_vector_destroy(
-    hyle_container_concurrent_vector* vector) {
+void hyle_container_concurrent_ptr_vector_destroy(
+    hyle_container_concurrent_ptr_vector* vector) {
   free_handle(vector);
 }
-hyle_status hyle_container_concurrent_vector_try_push_back(
-    size_t* out_index, hyle_container_concurrent_vector* vector, void* item) {
+hyle_status hyle_container_concurrent_ptr_vector_reserve(
+    hyle_container_concurrent_ptr_vector* vector, size_t count) {
+  if (vector == nullptr)
+    return hyle_status_invalid_argument(
+        "concurrent pointer vector is NULL");
+  if (count > SIZE_MAX / sizeof(void*))
+    return hyle_status_out_of_range(
+        "concurrent pointer vector capacity overflows address space");
+  if (!vector->value.try_reserve(count))
+    return hyle_status_resource_exhausted(
+        "concurrent pointer vector storage allocation failed");
+  return hyle_status_ok();
+}
+hyle_status hyle_container_concurrent_ptr_vector_try_push_back(
+    size_t* out_index, hyle_container_concurrent_ptr_vector* vector,
+    void* item) {
   if (out_index == nullptr || vector == nullptr)
     return hyle_status_invalid_argument(
-        "index output and concurrent vector are required");
+        "index output and concurrent pointer vector are required");
   *out_index = SIZE_MAX;
   const size_t index = vector->value.try_push_back(item);
   if (index == SIZE_MAX)
     return hyle_status_resource_exhausted(
-        "concurrent vector storage allocation failed");
+        "concurrent pointer vector storage allocation failed");
   *out_index = index;
   return hyle_status_ok();
 }
-size_t hyle_container_concurrent_vector_size(
-    const hyle_container_concurrent_vector* vector) {
+size_t hyle_container_concurrent_ptr_vector_size(
+    const hyle_container_concurrent_ptr_vector* vector) {
   if (vector == nullptr) return 0;
   return vector->value.size();
 }
-size_t hyle_container_concurrent_vector_capacity(
-    const hyle_container_concurrent_vector* vector) {
+size_t hyle_container_concurrent_ptr_vector_capacity(
+    const hyle_container_concurrent_ptr_vector* vector) {
   if (vector == nullptr) return 0;
   return vector->value.capacity();
 }
-void* hyle_container_concurrent_vector_at(
-    const hyle_container_concurrent_vector* vector, size_t index) {
-  if (vector == nullptr || index >= vector->value.size()) return nullptr;
-  return vector->value[index];
+int hyle_container_concurrent_ptr_vector_try_get(
+    const hyle_container_concurrent_ptr_vector* vector, size_t index,
+    void** out_item) {
+  if (vector == nullptr || out_item == nullptr || index >= vector->value.size())
+    return 0;
+  *out_item = vector->value[index];
+  return 1;
 }
 
 }  // extern "C"

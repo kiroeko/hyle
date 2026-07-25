@@ -54,7 +54,7 @@ Tier 0 dependencies: mem allocator + platform CPU discovery
 | path/text algorithms | typed view/buffer-fill | pointer/count/buffer-fill | 无 STL 所有权跨边界 |
 | bounded/sharded queues | typed payload | `void*` payload opaque handle | HYLE 不拥有 payload |
 | work steal/share | typed payload | `void*` payload opaque handle | owner/thief 契约不同，不能混用 |
-| concurrent vector | typed append-only + random-access iterator | `void*` append-only | 多 writer 并行领取 index；地址稳定；quiesce 后 iterator/range；`size()` 不是 in-flight 完成栅栏；fallible path 分配失败不留洞 |
+| concurrent vector | typed append-only + random-access iterator | named `concurrent_ptr_vector` | caller-owned `void*` payload；多 writer 并行领取 index；地址稳定；quiesce 后读取；`size()` 不是 in-flight 完成栅栏；fallible path 分配失败不留洞 |
 
 IntrusiveList 已下沉 core，因为 error/time/sched 都需要它；它不再属于 container
 库或 container C ABI。
@@ -200,8 +200,8 @@ container 对外依赖。hex encode/decode 当前是无查表分支的标量/编
 | StringBuf | 保留 opaque 能力 | permanent 与 refcounted lifecycle 都有真实跨语言用途；检查 batch/result 形状 |
 | erased POD vector | 保留能力 | C 没有模板，size/alignment + allocator 是合理动态形状；不加入 C++ ctor/dtor callback |
 | erased POD flat map/set | 保留能力、形状已重塑 | map 拆分 insert/insert_or_assign；set 用独立最小 handle，共享 value_size=0 raw policy，但不暴露伪 value |
-| 四类 pointer queue | **能力暂定，命名已重塑** | C 热路径统一 `try_*`；Chase-Lev 明示 owner bottom/thief top，WsFifo 明示 back/front；后续仍决定是否都值得长期导出 |
-| pointer ConcurrentVector | **暂定** | 跨线程 append 有用途，但 `void*` 形状覆盖面窄；比较 erased POD 与 caller-owned pointer 两种真实场景 |
+| 四类 pointer queue | 保留能力、角色已审定 | C 热路径统一 `try_*`；pointer 是跨 FFI 的 caller-owned work handle，不增加 runtime stride/copy callback；Chase-Lev 明示 owner bottom/thief top，WsFifo 明示 back/front |
+| concurrent pointer vector | 保留能力、形状已重塑 | 明确命名 `concurrent_ptr_vector`；reserve 预分配 stable segments；`try_get(out)` 区分越界与合法 NULL payload；不冒充 erased POD vector |
 
 “保留能力”不等于冻结当前函数列表；“暂定”也不等于为了缩 ABI 直接删。最终 C 面只为
 跨边界仍成立的动态能力服务，HYLE 内部 C++ 模块继续直接使用 typed API。
@@ -212,6 +212,17 @@ container 对外依赖。hex encode/decode 当前是无查表分支的标量/编
 front/back 角色写进函数名。能力是否长期保留仍由真实 FFI 消费决定，不能因已重命名就
 自动冻结。
 
+2026-07-26 对照本地 rigtorp/Vyukov、oneTBB、crossbeam 与 moodycamel 后，pointer
+queue 能力转为保留：work item/foreign object 本来就由调用方拥有，固定 `void*` 能让
+lock-free hot path 保持定宽搬运，不引入运行时 element stride、copy callback 或逐项
+分配。四类并非同一 benchmark 的重复品，而是 strict MPMC FIFO、sharded relaxed FIFO、
+owner-LIFO/thief-FIFO 与 owner-FIFO/batch-share 四种不同调度合同。
+
+C concurrent facade 则确有旧形状问题：它只存 pointer 却叫通用 concurrent vector，且
+旧 `at()` 无法区分越界与合法 NULL payload。现改名 `concurrent_ptr_vector`，以
+`try_get(out)` 返回 presence，并补 typed/oneTBB 都有的 cold `reserve`。create 的
+`first_segment_capacity` 只决定首段粒度、不偷偷分配；真实预热必须显式 reserve。
+
 2026-07-26 又按本地 Abseil/Folly/simdutf 的字符串边界回审早期 Clay facade：
 `capitalize(C-ident -> UI title)` 是应用展示策略，已从 C++/C 公共面删除；旧
 `utf8_icmp` 只折叠 ASCII，却用名称暗示 Unicode case folding，也已删除。保留的
@@ -221,7 +232,7 @@ C hash traversal 同样不再冒充标准 `for_each`：提前停止的 callback 
 `map/set_visit`，返回 1 表示完整遍历、0 表示 visitor 停止或参数无效。
 
 同一命名规则也覆盖线性容器：erased POD vector 使用 `try_push_back/try_pop_back`，
-pointer ConcurrentVector 使用 `try_push_back` 并返回稳定 index；不再让一个裸 `push`
+concurrent pointer vector 使用 `try_push_back` 并返回稳定 index；不再让一个裸 `push`
 掩盖尾部方向或可失败的 allocation。
 
 - options 带 `struct_size`；allocator 按值捕获但 state 生命周期由调用方保证。

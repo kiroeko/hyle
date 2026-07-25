@@ -532,7 +532,14 @@ static void test_queues_and_concurrent_vector(void) {
   hyle_container_work_stealing_deque* deque = NULL;
   hyle_container_ws_fifo_queue* source = NULL;
   hyle_container_ws_fifo_queue* target = NULL;
-  hyle_container_concurrent_vector* vector = NULL;
+  hyle_container_concurrent_ptr_vector* vector = NULL;
+  {
+    hyle_container_concurrent_ptr_vector* invalid =
+        (hyle_container_concurrent_ptr_vector*)1;
+    CHECK(status_code(hyle_container_concurrent_ptr_vector_create_system(
+              &invalid, SIZE_MAX)) == HYLE_STATUS_OUT_OF_RANGE);
+    CHECK(invalid == NULL);
+  }
   CHECK(status_ok(
       hyle_container_bounded_queue_create_system(&bounded, 8)));
   CHECK(status_ok(
@@ -544,7 +551,7 @@ static void test_queues_and_concurrent_vector(void) {
   CHECK(status_ok(
       hyle_container_ws_fifo_queue_create_system(&target, 8)));
   CHECK(status_ok(
-      hyle_container_concurrent_vector_create_system(&vector, 2)));
+      hyle_container_concurrent_ptr_vector_create_system(&vector, 2)));
 
   CHECK(bounded != NULL && hyle_container_bounded_queue_capacity(bounded) == 8);
   CHECK(hyle_container_bounded_queue_try_push(bounded, &a));
@@ -579,16 +586,29 @@ static void test_queues_and_concurrent_vector(void) {
   hyle_container_ws_fifo_queue_destroy(target);
 
   CHECK(vector != NULL);
-  CHECK(status_ok(hyle_container_concurrent_vector_try_push_back(
+  CHECK(status_code(hyle_container_concurrent_ptr_vector_reserve(
+            vector, SIZE_MAX)) == HYLE_STATUS_OUT_OF_RANGE);
+  CHECK(status_ok(hyle_container_concurrent_ptr_vector_reserve(vector, 8)));
+  CHECK(hyle_container_concurrent_ptr_vector_capacity(vector) >= 8);
+  CHECK(status_ok(hyle_container_concurrent_ptr_vector_try_push_back(
                       &index, vector, &a)) &&
         index == 0);
-  CHECK(status_ok(hyle_container_concurrent_vector_try_push_back(
-                      &index, vector, &b)) &&
+  CHECK(status_ok(hyle_container_concurrent_ptr_vector_try_push_back(
+                      &index, vector, NULL)) &&
         index == 1);
-  CHECK(hyle_container_concurrent_vector_size(vector) == 2);
-  CHECK(hyle_container_concurrent_vector_capacity(vector) >= 2);
-  CHECK(hyle_container_concurrent_vector_at(vector, 1) == &b);
-  hyle_container_concurrent_vector_destroy(vector);
+  CHECK(status_ok(hyle_container_concurrent_ptr_vector_try_push_back(
+                      &index, vector, &b)) &&
+        index == 2);
+  CHECK(hyle_container_concurrent_ptr_vector_size(vector) == 3);
+  output = &a;
+  CHECK(hyle_container_concurrent_ptr_vector_try_get(vector, 1, &output));
+  CHECK(output == NULL);
+  output = &a;
+  CHECK(!hyle_container_concurrent_ptr_vector_try_get(vector, 3, &output));
+  CHECK(output == &a);
+  CHECK(hyle_container_concurrent_ptr_vector_try_get(vector, 2, &output));
+  CHECK(output == &b);
+  hyle_container_concurrent_ptr_vector_destroy(vector);
 }
 
 int main(void) {
@@ -698,15 +718,17 @@ int main(void) {
     fail_after_allocator failing = {hyle_system_allocator(), 1};
     hyle_allocator fail_storage = {fail_after_alloc, fail_after_free,
                                    fail_after_realloc, &failing};
-    hyle_container_concurrent_vector* vector = NULL;
+    hyle_container_concurrent_ptr_vector* vector = NULL;
     size_t index;
-    CHECK(status_ok(hyle_container_concurrent_vector_create(
+    CHECK(status_ok(hyle_container_concurrent_ptr_vector_create(
         &vector, fail_storage, 1)));
     CHECK(vector != NULL);
-    CHECK(status_code(hyle_container_concurrent_vector_try_push_back(
+    CHECK(status_code(hyle_container_concurrent_ptr_vector_reserve(
+              vector, 1)) == HYLE_STATUS_RESOURCE_EXHAUSTED);
+    CHECK(status_code(hyle_container_concurrent_ptr_vector_try_push_back(
               &index, vector, NULL)) == HYLE_STATUS_RESOURCE_EXHAUSTED);
     CHECK(index == SIZE_MAX);
-    hyle_container_concurrent_vector_destroy(vector);
+    hyle_container_concurrent_ptr_vector_destroy(vector);
   }
   CHECK(hyle_container_hash_bytes(NULL, 1, 0) == 0);
   (void)hyle_container_hash_bytes(NULL, 0, 0);

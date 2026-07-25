@@ -474,30 +474,39 @@ HYLE_CONTAINER_C_API int hyle_container_ws_fifo_queue_try_steal_into(
 HYLE_CONTAINER_C_API size_t hyle_container_ws_fifo_queue_capacity(
     const hyle_container_ws_fifo_queue* queue);
 
-typedef struct hyle_container_concurrent_vector_o
-    hyle_container_concurrent_vector;
+typedef struct hyle_container_concurrent_ptr_vector_o
+    hyle_container_concurrent_ptr_vector;
 /* Multi-writer append-only pointer vector. size() counts reserved indices and
  * is not a completion fence for in-flight pushes. Read a newly appended index
  * only after its push returns, or quiesce writers before traversing [0,size()). */
-HYLE_CONTAINER_C_API hyle_status hyle_container_concurrent_vector_create(
-    hyle_container_concurrent_vector** out, hyle_allocator backing,
-    size_t initial_capacity);
-static inline hyle_status hyle_container_concurrent_vector_create_system(
-    hyle_container_concurrent_vector** out, size_t initial_capacity) {
-  return hyle_container_concurrent_vector_create(
-      out, hyle_system_allocator(), initial_capacity);
+HYLE_CONTAINER_C_API hyle_status hyle_container_concurrent_ptr_vector_create(
+    hyle_container_concurrent_ptr_vector** out, hyle_allocator backing,
+    size_t first_segment_capacity);
+static inline hyle_status hyle_container_concurrent_ptr_vector_create_system(
+    hyle_container_concurrent_ptr_vector** out,
+    size_t first_segment_capacity) {
+  return hyle_container_concurrent_ptr_vector_create(
+      out, hyle_system_allocator(), first_segment_capacity);
 }
-HYLE_CONTAINER_C_API void hyle_container_concurrent_vector_destroy(
-    hyle_container_concurrent_vector* vector);
+HYLE_CONTAINER_C_API void hyle_container_concurrent_ptr_vector_destroy(
+    hyle_container_concurrent_ptr_vector* vector);
+/* Preallocates stable segments for at least count pointers. */
+HYLE_CONTAINER_C_API hyle_status hyle_container_concurrent_ptr_vector_reserve(
+    hyle_container_concurrent_ptr_vector* vector, size_t count);
 /* Appends one caller-owned pointer and returns its stable index. */
-HYLE_CONTAINER_C_API hyle_status hyle_container_concurrent_vector_try_push_back(
-    size_t* out_index, hyle_container_concurrent_vector* vector, void* item);
-HYLE_CONTAINER_C_API size_t hyle_container_concurrent_vector_size(
-    const hyle_container_concurrent_vector* vector);
-HYLE_CONTAINER_C_API size_t hyle_container_concurrent_vector_capacity(
-    const hyle_container_concurrent_vector* vector);
-HYLE_CONTAINER_C_API void* hyle_container_concurrent_vector_at(
-    const hyle_container_concurrent_vector* vector, size_t index);
+HYLE_CONTAINER_C_API hyle_status
+hyle_container_concurrent_ptr_vector_try_push_back(
+    size_t* out_index, hyle_container_concurrent_ptr_vector* vector,
+    void* item);
+HYLE_CONTAINER_C_API size_t hyle_container_concurrent_ptr_vector_size(
+    const hyle_container_concurrent_ptr_vector* vector);
+HYLE_CONTAINER_C_API size_t hyle_container_concurrent_ptr_vector_capacity(
+    const hyle_container_concurrent_ptr_vector* vector);
+/* Returns 1 and writes the payload (which may itself be NULL) when index is
+ * present. Returns 0 and leaves out_item unchanged when out of range/invalid. */
+HYLE_CONTAINER_C_API int hyle_container_concurrent_ptr_vector_try_get(
+    const hyle_container_concurrent_ptr_vector* vector, size_t index,
+    void** out_item);
 
 #ifdef __cplusplus
 }
