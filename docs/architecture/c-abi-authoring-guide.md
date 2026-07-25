@@ -33,7 +33,8 @@
 ## 2. 头文件骨架（照抄 mem.h 顶部，替换 MOD/mod）
 
 ```c
-/* SPDX: same as HYLE. Pure C ABI for the HYLE <mod> module (close-01).
+/* SPDX-License-Identifier: LicenseRef-HYLE-Proprietary
+ * Pure C ABI for the HYLE <mod> module (close-01).
  * Naming: every symbol is hyle_* / HYLE_*. Do NOT include hyle/<mod>/ from C.
  * Docs (1:1 with this header): docs/guide/c-<mod>.md */
 #ifndef HYLE_C_<MOD>_H_

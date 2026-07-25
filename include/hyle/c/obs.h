@@ -1,4 +1,4 @@
-/* SPDX: same as HYLE.
+/* SPDX-License-Identifier: LicenseRef-HYLE-Proprietary
  *
  * Pure C ABI for HYLE structured logging and explicit trace emission.
  * Native zero-cost trace macros remain in hyle/obs/trace.h.

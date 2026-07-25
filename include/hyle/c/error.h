@@ -1,4 +1,4 @@
-/* SPDX: same as HYLE.
+/* SPDX-License-Identifier: LicenseRef-HYLE-Proprietary
  *
  * Pure C ABI for the HYLE error module (close-01).
  * Naming: every symbol is `hyle_*` / `HYLE_*`.

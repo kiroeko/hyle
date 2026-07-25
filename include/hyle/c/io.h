@@ -1,4 +1,4 @@
-/* SPDX: same as HYLE.
+/* SPDX-License-Identifier: LicenseRef-HYLE-Proprietary
  *
  * Pure C ABI for HYLE completion-based I/O. The stable seam is an opaque
  * proactor plus caller-owned POD completions; C++ coroutines, STL and backend

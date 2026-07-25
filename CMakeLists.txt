@@ -305,11 +305,11 @@ endif()
 #      validator tool (the "pre-compile tool folder" for HYLE devs + clients).
 # The slate-bundled Vulkan (headers v270, stale) is NOT used.
 option(HYLE_COMPUTE_VULKAN "compute-06: self-authored Vulkan compute SPIR-V kernels" ON)
-if(HYLE_INSTALL AND HYLE_STATIC AND HYLE_BUILD_COMPUTE AND HYLE_COMPUTE_VULKAN)
+if(HYLE_INSTALL AND HYLE_BUILD_COMPUTE AND HYLE_COMPUTE_VULKAN)
   message(FATAL_ERROR
-    "A static install containing compute currently requires "
+    "An install containing compute currently requires "
     "-DHYLE_COMPUTE_VULKAN=OFF; the fetched volk archive is not yet included "
-    "in HYLE's relocatable package.")
+    "with its license payload in HYLE's relocatable package.")
 endif()
 set(HYLE_COMPUTE_VULKAN_ENABLED OFF)
 if(HYLE_BUILD_COMPUTE AND HYLE_COMPUTE_VULKAN)

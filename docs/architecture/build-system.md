@@ -83,7 +83,7 @@ Highway/xsimd checkout 只在 `simd` 已选时检查，因此打开 benchmark �
 等组装意外依赖 SIMD 对手。benchmark executable 的模块归属显式登记在 CMake 中，不能靠文件名
 或开发者记忆推断。
 
-io 的 fetched nghttp2、compute 的 fetched ggml，以及 static compute 的 volk 打包尚未完成；
+io 的 fetched nghttp2、compute 的 fetched ggml/volk 打包尚未完成；
 `HYLE_INSTALL=ON` 遇到这些组合会在 configure 阶段拒绝，不能产出缺运行库的“半可迁移包”。
 cross compile 和三平台完整迁移矩阵也尚未取得最终证书，状态只见 build/package milestone。
 
@@ -94,5 +94,6 @@ cross compile 和三平台完整迁移矩阵也尚未取得最终证书，状态
 - 不在 CMake 中写开发机绝对路径；preset 是可选入口包，不是编译成功的隐藏前置。
 - parent-owned 的 generator、toolchain、配置、输出目录和 `BUILD_SHARED_LIBS` 不得被 subproject 改写。
 - source tree 只存源码与审查过的 vendored 资产；cache、下载、生成头和制品一律进 build tree。
-- 编入所选组件的 vendored 实现许可证随 install graph 安装；HYLE 自身公开发布前仍必须在仓库根
-  确定并加入项目许可证，构建系统不能替项目臆造授权。
+- HYLE 当前 proprietary notice、第三方总清单，以及编入所选组件的 vendored/ported 许可证随
+  install graph 安装；许可证 payload 与 binary/archive 一样属于可迁移闭包。完整边界见
+  [`licensing.md`](./licensing.md)。

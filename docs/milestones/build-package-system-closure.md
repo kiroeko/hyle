@@ -61,10 +61,11 @@
   mem、container benchmark 不再要求全局 SIMD vendor 或 compute/io 配置。
 - [x] relocatable install/export/component package 落地；build/install target 同名 `hyle::<module>`，
   shared/static simd+mem 独立 consumer 均真实运行，static mimalloc link-only 后端自动传播。
-- [ ] io/nghttp2、compute/ggml 与 static compute/volk 的 fetched 依赖打包；交叉编译、
+- [ ] io/nghttp2、compute/ggml/volk 的 fetched 依赖打包；交叉编译、
   preset/toolchain/CI 与三平台最终矩阵。
-- [ ] 正式发布前选择并加入 HYLE 项目许可证；当前 package 已按所选实现图携带 vendored licenses，
-  但仓库根没有 HYLE 自身 LICENSE，构建系统不能代替项目所有者决定授权。
+- [x] 当前发布策略确定为暂时闭源：根 `LICENSE` 使用 `LicenseRef-HYLE-Proprietary` 对应的
+  rights-reserved notice；`THIRD_PARTY_NOTICES.md` 区分原创、vendored、ported、fetched，安装包
+  按 target 图携带 HYLE notice 与实际第三方 license payload。
 
 ### 第一轮验证证据（`86cb325`）
 
@@ -109,15 +110,17 @@
   `Hyle_AVAILABLE_COMPONENTS`/`Hyle_AVAILABLE_FEATURES` 作为可审计组装 manifest。
 - install/export target 直接来自产品 target 图；测试构建禁止安装，避免 `HYLE_TESTING` 布局泄漏；
   尚未随包迁移的 fetched runtime/archive 组合 configure fail-fast。
+- proprietary 决策不覆盖第三方：Highway port 选择 Apache-2.0，JPEG XL/xsimd 保留 BSD-3，
+  原来 9 个不可机读的 `SPDX: same as HYLE` 改为 `LicenseRef-HYLE-Proprietary`。
 
 ### 本轮四项代码量
 
 | 固定口径 | code |
 |---|---:|
-| 全库（含 docs/in-tree third_party） | 246,810 |
+| 全库（含 docs/in-tree third_party） | 246,909 |
 | 自实现（含测试） | 116,284 |
 | 自实现（不含测试） | 79,957 |
-| build/package 实现 | 3,265 |
+| build/package 实现 | 3,293 |
 
 最后一项统计自有 root/module/test/bench/sample CMake、`cmake/`、preset，以及
 build/fetch/setup/QEMU scripts；不含 vendored CMake、测试源码和文档。

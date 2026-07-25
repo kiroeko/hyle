@@ -1,7 +1,6 @@
 // Copyright 2021 Google LLC
 // Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 // SPDX-License-Identifier: Apache-2.0
-// SPDX-License-Identifier: BSD-3-Clause
 //
 // HYLE semantic migration of Highway vqsort shared constants.
 // Origin file: hwy/contrib/sort/shared-inl.h

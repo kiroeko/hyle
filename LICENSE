@@ -1,0 +1,32 @@
+HYLE PROPRIETARY SOFTWARE NOTICE
+
+Copyright (c) 2026 the HYLE copyright holders. All rights reserved.
+
+Except for third-party materials identified in THIRD_PARTY_NOTICES.md or in
+their accompanying notices, the source code, documentation, build files, and
+other original HYLE materials in this repository (the "HYLE Materials") are
+proprietary.
+
+No license or permission is granted merely by making the HYLE Materials
+available. Unless you have separate written authorization from the applicable
+copyright holder(s), you may not use, copy, modify, merge, publish, distribute,
+sublicense, sell, disclose, or create derivative works from the HYLE Materials.
+
+Authorized recipients may use the HYLE Materials only within the scope of their
+written authorization. They must preserve this notice and every applicable
+third-party copyright and license notice.
+
+Third-party materials are not covered by this proprietary notice. They remain
+subject to their respective license terms, which take precedence for those
+materials. See THIRD_PARTY_NOTICES.md and the referenced license files.
+
+THE HYLE MATERIALS ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE, TITLE, AND NON-INFRINGEMENT. TO THE MAXIMUM
+EXTENT PERMITTED BY APPLICABLE LAW, THE COPYRIGHT HOLDERS SHALL NOT BE LIABLE
+FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY ARISING FROM OR RELATED TO THE HYLE
+MATERIALS OR THEIR USE.
+
+This notice is not an open-source license. A later HYLE release may use different
+terms, but that requires an explicit license change by the applicable copyright
+holder(s).

@@ -1,4 +1,4 @@
-/* SPDX: same as HYLE.
+/* SPDX-License-Identifier: LicenseRef-HYLE-Proprietary
  *
  * Pure C ABI for HYLE clocks and timer queues (close-01).
  * C++ layouts and intrusive hooks never cross this edge.

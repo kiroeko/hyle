@@ -177,10 +177,11 @@ hyle_stage_runtime_dependencies(app) # Windows shared DLL closure；其他形状
 - `Hyle_AVAILABLE_COMPONENTS` 可审计模块闭包，`Hyle_AVAILABLE_FEATURES` 可审计 trace、TLS、CUDA、
   Vulkan 等可选能力；不要从本机恰好装了什么反推包的形状。
 - 当前 package 若含 io，需 `HYLE_IO_HTTP2=OFF`；若含 compute，需
-  `HYLE_COMPUTE_GGML=OFF`，static 还需 `HYLE_COMPUTE_VULKAN=OFF`。这些 fetched runtime/archive
+  `HYLE_COMPUTE_GGML=OFF -DHYLE_COMPUTE_VULKAN=OFF`。这些 fetched runtime/archive 与 license
   纳入 export graph 前，构建系统会 fail-fast，不生成缺文件的“半可迁移包”。
-- 所选模块实际编入的 mimalloc、xxHash、wyhash、simdutf、fcontext、picohttpparser 许可证会随
-  安装前缀迁移；HYLE 自身许可证仍是正式发布前的仓库治理事项。
+- 安装前缀始终带 HYLE proprietary notice 和第三方总清单；实际编入的 mimalloc、xxHash、
+  wyhash、simdutf、fcontext、picohttpparser、Highway/xsimd/JPEG XL port 以及可选 Tracy 的
+  许可证按 target 图迁移。拿到源码或 SDK 不等于取得 HYLE 原创部分的外部使用许可。
 - **当前边界（诚实）**：error/platform/mem/time/obs/simd/util/container 已有纯 `extern "C"` C ABI；其他模块仍在
   close-01 队列。SIMD 外部调用必须用 `hyle/c/simd.h`，不能把 C++ mangled symbol 当 FFI。
 

@@ -1,4 +1,4 @@
-/* SPDX: same as HYLE.
+/* SPDX-License-Identifier: LicenseRef-HYLE-Proprietary
  *
  * Pure C ABI for reusable HYLE util runtime facilities (close-01).
  * C++ template types remain source-level; their capabilities are erased below

@@ -1,4 +1,4 @@
-/* SPDX: same as HYLE.
+/* SPDX-License-Identifier: LicenseRef-HYLE-Proprietary
  *
  * Pre-release pure-C surface for the HYLE mem module. This header is reviewed
  * by C user tasks rather than mechanically mirroring the native C++ classes;

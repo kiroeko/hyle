@@ -1,4 +1,4 @@
-/* SPDX: same as HYLE.
+/* SPDX-License-Identifier: LicenseRef-HYLE-Proprietary
  *
  * Pure C ABI for the HYLE scheduler. C++ fibers, coroutines and templates never
  * cross this boundary; callbacks and opaque handles are the type-erased seam.

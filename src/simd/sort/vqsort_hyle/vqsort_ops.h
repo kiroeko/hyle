@@ -1,7 +1,6 @@
 // Copyright 2021 Google LLC
 // Copyright 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 // SPDX-License-Identifier: Apache-2.0
-// SPDX-License-Identifier: BSD-3-Clause
 //
 // HYLE helpers for the vqsort port of Highway contrib/sort.
 // Origin: hwy/base.h + hwy/cache_control.h + hwy/contrib/algo/copy-inl.h

@@ -30,10 +30,19 @@ function(hyle_install_package)
   # Tracy is part of the public inline trace contract when enabled, so its one
   # client target and public header tree travel with a trace-enabled package.
   if(TARGET hyle_tracy_client)
+    if(NOT EXISTS "${HYLE_TRACY_DIR}/LICENSE")
+      message(FATAL_ERROR
+        "The selected Tracy checkout has no LICENSE at '${HYLE_TRACY_DIR}/LICENSE'; "
+        "refusing to package third-party code without its terms.")
+    endif()
     list(APPEND _hyle_export_targets hyle_tracy_client)
     install(DIRECTORY "${HYLE_TRACY_DIR}/public/"
       DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/hyle/vendor/tracy-public"
       COMPONENT Hyle_Development)
+    install(FILES "${HYLE_TRACY_DIR}/LICENSE"
+      DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/Hyle"
+      RENAME tracy-LICENSE
+      COMPONENT Hyle_Runtime)
   endif()
 
   # These fetched implementation libraries do not yet expose a relocatable
@@ -51,11 +60,11 @@ function(hyle_install_package)
       "-DHYLE_COMPUTE_GGML=OFF; the fetched ggml runtime libraries are not yet "
       "included in HYLE's relocatable package.")
   endif()
-  if(HYLE_STATIC AND HYLE_BUILD_COMPUTE AND HYLE_COMPUTE_VULKAN_ENABLED)
+  if(HYLE_BUILD_COMPUTE AND HYLE_COMPUTE_VULKAN_ENABLED)
     message(FATAL_ERROR
-      "A static install containing compute currently requires "
+      "An install containing compute currently requires "
       "-DHYLE_COMPUTE_VULKAN=OFF; the fetched volk archive is not yet included "
-      "in HYLE's relocatable package.")
+      "with its license payload in HYLE's relocatable package.")
   endif()
 
   install(TARGETS ${_hyle_export_targets}
@@ -72,6 +81,14 @@ function(hyle_install_package)
   install(DIRECTORY "${HYLE_SOURCE_DIR}/include/hyle"
     DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
     COMPONENT Hyle_Development)
+  install(FILES "${HYLE_SOURCE_DIR}/LICENSE"
+    DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/Hyle"
+    RENAME HYLE-LICENSE
+    COMPONENT Hyle_Runtime)
+  install(FILES "${HYLE_SOURCE_DIR}/THIRD_PARTY_NOTICES.md"
+    DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/Hyle"
+    RENAME THIRD_PARTY-NOTICES.md
+    COMPONENT Hyle_Runtime)
   # License payload follows the selected implementation graph, just like binary
   # targets. Do not make a migrated package depend on the source checkout for
   # notices belonging to code compiled into its HYLE libraries.
@@ -79,39 +96,52 @@ function(hyle_install_package)
     install(FILES "${HYLE_SOURCE_DIR}/third_party/mimalloc/LICENSE"
       DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/Hyle"
       RENAME mimalloc-LICENSE
-      COMPONENT Hyle_Development)
+      COMPONENT Hyle_Runtime)
   endif()
   if(TARGET hyle_container)
     install(FILES "${HYLE_SOURCE_DIR}/third_party/xxhash/LICENSE"
       DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/Hyle"
       RENAME xxhash-LICENSE
-      COMPONENT Hyle_Development)
+      COMPONENT Hyle_Runtime)
     install(FILES "${HYLE_SOURCE_DIR}/third_party/wyhash/LICENSE"
       DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/Hyle"
       RENAME wyhash-LICENSE
-      COMPONENT Hyle_Development)
+      COMPONENT Hyle_Runtime)
     install(FILES
       "${HYLE_SOURCE_DIR}/third_party/simdutf/LICENSE-MIT"
       DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/Hyle"
       RENAME simdutf-LICENSE-MIT
-      COMPONENT Hyle_Development)
+      COMPONENT Hyle_Runtime)
     install(FILES
       "${HYLE_SOURCE_DIR}/third_party/simdutf/LICENSE-APACHE"
       DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/Hyle"
       RENAME simdutf-LICENSE-APACHE
-      COMPONENT Hyle_Development)
+      COMPONENT Hyle_Runtime)
+  endif()
+  if(TARGET hyle_simd)
+    # Highway-derived kernels use the Apache-2.0 choice of Highway's dual
+    # license. The standard text is already kept in-tree for simdutf as well.
+    install(FILES "${HYLE_SOURCE_DIR}/third_party/simdutf/LICENSE-APACHE"
+      DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/Hyle"
+      RENAME highway-Apache-2.0-LICENSE
+      COMPONENT Hyle_Runtime)
+    install(FILES
+      "${HYLE_SOURCE_DIR}/third_party/ported/LICENSE-JPEG-XL-BSD-3-Clause"
+      "${HYLE_SOURCE_DIR}/third_party/ported/LICENSE-XSIMD-BSD-3-Clause"
+      DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/Hyle"
+      COMPONENT Hyle_Runtime)
   endif()
   if(TARGET hyle_sched)
     install(FILES "${HYLE_SOURCE_DIR}/third_party/fcontext/LICENSE_1_0.txt"
       DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/Hyle"
       RENAME fcontext-LICENSE_1_0.txt
-      COMPONENT Hyle_Development)
+      COMPONENT Hyle_Runtime)
   endif()
   if(TARGET hyle_io AND HYLE_HAS_FCONTEXT)
     install(FILES "${HYLE_SOURCE_DIR}/third_party/picohttpparser/LICENSE"
       DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/Hyle"
       RENAME picohttpparser-LICENSE
-      COMPONENT Hyle_Development)
+      COMPONENT Hyle_Runtime)
   endif()
 
   set(_hyle_package_dir "${CMAKE_INSTALL_LIBDIR}/cmake/Hyle")
