@@ -195,6 +195,14 @@ class IntrusiveList {
   void remove(T* node) noexcept {
     HYLE_FATAL_ASSERT(node != nullptr);
     HYLE_FATAL_ASSERT(hook_of(node)->linked());
+    remove_unchecked(node);
+  }
+
+  // Low-level companion for owners whose membership invariant already proves
+  // the node is linked in this list. This keeps redundant contract branches out
+  // of timer cancel hot paths; public data structures still validate ownership
+  // before calling it.
+  void remove_unchecked(T* node) noexcept {
     unlink(hook_of(node));
   }
 

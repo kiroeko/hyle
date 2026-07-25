@@ -90,10 +90,13 @@ class TimerQueue {
     }
     HYLE_FATAL_ASSERT(entry->owned_by(this));
     const std::size_t bucket = bucket_for(entry->deadline_ns_);
-    buckets_[bucket].remove(entry);
+    buckets_[bucket].remove_unchecked(entry);
     clear_occupied_if_empty(bucket);
     entry->set_owner(nullptr);
     --count_;
+    // Reset on the empty transition so the first subsequent arm publishes its
+    // exact deadline instead of inheriting a stale early wake from the previous
+    // generation. That branch saves a potentially expensive event-loop wake.
     if (count_ == 0) next_ns_ = UINT64_MAX;
     return true;
   }
@@ -228,7 +231,9 @@ class TimerQueue {
 
   void add_entry_no_count(TimerEntry* entry) noexcept {
     const std::size_t bucket = bucket_for(entry->deadline_ns_);
-    buckets_[bucket].push_back(entry);
+    // schedule() and the rebucket path both establish an unlinked node before
+    // entering here; avoid repeating the linked-state branch on every arm.
+    buckets_[bucket].push_back_unchecked(entry);
     mark_occupied(bucket);
     if (entry->deadline_ns_ < next_ns_) next_ns_ = entry->deadline_ns_;
   }

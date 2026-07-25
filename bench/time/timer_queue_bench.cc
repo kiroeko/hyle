@@ -231,9 +231,11 @@ struct IndexedHeapTimer {
 // ---- same-complexity mature rival: Seastar timer_set radix buckets ---------
 // Faithful dependency-free port of seastar/core/timer-set.hh's core algorithm:
 // 64 leading-zero buckets plus one already-due bucket, intrusive O(1) removal,
-// minimum tracking, and sorting deferred until expire. The node carries the same
-// exact-owner safety metadata as HYLE; callbacks/executors are excluded from both
-// sides because the benchmark ends at delivery to a caller-owned ready list.
+// minimum tracking, and sorting deferred until expire. The node carries HYLE's
+// same persistent user-data/callback and exact-owner metadata. Callbacks are not
+// invoked on either side because the benchmark ends at delivery to a
+// caller-owned ready list, but omitting the fields would shrink the rival node
+// from the real 48-byte public contract to an artificial 40-byte benchmark node.
 struct RadixTimerSet {
   static constexpr std::size_t kBuckets = 65;
   static constexpr std::uint64_t kNever =
@@ -241,7 +243,8 @@ struct RadixTimerSet {
 
   struct Node {
     std::uint64_t deadline = 0;
-    std::uint64_t id = 0;
+    void* data = nullptr;
+    void (*fire_callback)(Node*) noexcept = nullptr;
     Node* prev = nullptr;
     Node* next = nullptr;
     const void* owner = nullptr;
@@ -299,7 +302,12 @@ struct RadixTimerSet {
   std::uint64_t next = kNever;
   std::uint64_t live = 0;
 
-  explicit RadixTimerSet(std::size_t capacity) : nodes(capacity) {}
+  explicit RadixTimerSet(std::size_t capacity) : nodes(capacity) {
+    for (std::size_t i = 0; i < nodes.size(); ++i) {
+      nodes[i].data =
+          reinterpret_cast<void*>(static_cast<std::uintptr_t>(i));
+    }
+  }
 
   std::size_t index_for(std::uint64_t deadline) const noexcept {
     if (deadline <= last) return kBuckets - 1;
@@ -315,9 +323,12 @@ struct RadixTimerSet {
 
   void schedule(std::uint64_t id, std::uint64_t deadline) noexcept {
     Node& node = nodes[static_cast<std::size_t>(id)];
-    HYLE_FATAL_ASSERT(node.owner == nullptr);
+    if (node.owner != nullptr) {
+      HYLE_FATAL_ASSERT(node.owner == this);
+      cancel(id);
+    }
+    HYLE_FATAL_ASSERT(node.prev == nullptr && node.next == nullptr);
     node.deadline = deadline;
-    node.id = id;
     node.owner = this;
     insert_node(&node);
     ++live;
@@ -383,6 +394,9 @@ struct RadixTimerSet {
     return fired;
   }
 };
+
+static_assert(sizeof(RadixTimerSet::Node) == sizeof(TimerEntry),
+              "same-class radix baseline must retain public node metadata");
 
 }  // namespace
 

@@ -104,7 +104,7 @@ class CommonTimeoutQueue {
         (void)cancel(e);
         if (!list_.empty() && list_.back()->deadline_ns_ > deadline_ns) {
           e->deadline_ns_ = old_deadline;
-          list_.push_back(e);
+          list_.push_back_unchecked(e);
           e->set_owner(this);
           ++count_;
           return false;
@@ -118,7 +118,7 @@ class CommonTimeoutQueue {
       }
     }
     e->deadline_ns_ = deadline_ns;
-    list_.push_back(e);  // ordered => append keeps the list sorted, O(1)
+    list_.push_back_unchecked(e);  // ordered => append stays sorted, O(1)
     e->set_owner(this);
     ++count_;
     return true;
@@ -145,7 +145,7 @@ class CommonTimeoutQueue {
     HYLE_FATAL_ASSERT(e != nullptr);
     if (!e->hook_.linked()) return false;
     HYLE_FATAL_ASSERT(e->owned_by(this));
-    list_.remove(e);
+    list_.remove_unchecked(e);
     e->set_owner(nullptr);
     --count_;
     return true;
