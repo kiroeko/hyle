@@ -217,6 +217,8 @@ front/back 角色写进函数名。能力是否长期保留仍由真实 FFI 消�
 `utf8_icmp` 只折叠 ASCII，却用名称暗示 Unicode case folding，也已删除。保留的
 UTF-8 基元只承诺 validate/count；C escaping 则改为明确的 `string_c_escape`，对 NUL、
 控制字节和非 UTF-8 byte 都产生完整转义。这里删的是错误抽象，不是为了缩符号数。
+C hash traversal 同样不再冒充标准 `for_each`：提前停止的 callback 形状改名为
+`map/set_visit`，返回 1 表示完整遍历、0 表示 visitor 停止或参数无效。
 
 同一命名规则也覆盖线性容器：erased POD vector 使用 `try_push_back/try_pop_back`，
 pointer ConcurrentVector 使用 `try_push_back` 并返回稳定 index；不再让一个裸 `push`

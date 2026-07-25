@@ -325,7 +325,9 @@ HYLE_CONTAINER_C_API int hyle_container_hash_map_contains(
     const hyle_container_hash_map* map, const void* key);
 HYLE_CONTAINER_C_API int hyle_container_hash_map_erase(
     hyle_container_hash_map* map, const void* key);
-HYLE_CONTAINER_C_API int hyle_container_hash_map_for_each(
+/* Visits occupied entries until visitor returns 0. Returns 1 only when the
+ * complete table was visited; returns 0 for early stop or invalid arguments. */
+HYLE_CONTAINER_C_API int hyle_container_hash_map_visit(
     hyle_container_hash_map* map, hyle_container_hash_map_visit_fn visitor,
     void* context);
 
@@ -373,7 +375,9 @@ HYLE_CONTAINER_C_API int hyle_container_hash_set_contains(
     const hyle_container_hash_set* set, const void* key);
 HYLE_CONTAINER_C_API int hyle_container_hash_set_erase(
     hyle_container_hash_set* set, const void* key);
-HYLE_CONTAINER_C_API int hyle_container_hash_set_for_each(
+/* Visits occupied keys until visitor returns 0. Returns 1 only when the
+ * complete set was visited; returns 0 for early stop or invalid arguments. */
+HYLE_CONTAINER_C_API int hyle_container_hash_set_visit(
     const hyle_container_hash_set* set,
     hyle_container_hash_set_visit_fn visitor, void* context);
 

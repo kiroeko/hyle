@@ -1258,7 +1258,7 @@ int hyle_container_hash_map_erase(hyle_container_hash_map* map,
   raw.erase_slot(slot);
   return 1;
 }
-int hyle_container_hash_map_for_each(
+int hyle_container_hash_map_visit(
     hyle_container_hash_map* map, hyle_container_hash_map_visit_fn visitor,
     void* context) {
   if (map == nullptr || visitor == nullptr) return 0;
@@ -1273,7 +1273,7 @@ int hyle_container_hash_map_for_each(
           visitor(raw.key(index), raw.value(index), context) != 0;
       if (!keep_going) break;
     }
-  return 1;
+  return keep_going ? 1 : 0;
 }
 
 hyle_status hyle_container_hash_set_create(
@@ -1352,7 +1352,7 @@ int hyle_container_hash_set_erase(hyle_container_hash_set* set,
   raw.erase_slot(slot);
   return 1;
 }
-int hyle_container_hash_set_for_each(
+int hyle_container_hash_set_visit(
     const hyle_container_hash_set* set,
     hyle_container_hash_set_visit_fn visitor, void* context) {
   if (set == nullptr || visitor == nullptr) return 0;
@@ -1366,7 +1366,7 @@ int hyle_container_hash_set_for_each(
       keep_going = visitor(raw.key(index), context) != 0;
       if (!keep_going) break;
     }
-  return 1;
+  return keep_going ? 1 : 0;
 }
 
 static bool valid_queue_capacity(size_t capacity) {

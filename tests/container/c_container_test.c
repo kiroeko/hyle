@@ -61,6 +61,12 @@ static int visit_map(const void* key, void* value, void* context) {
   ++*(int*)context;
   return 1;
 }
+static int stop_map_visit(const void* key, void* value, void* context) {
+  (void)key;
+  (void)value;
+  ++*(int*)context;
+  return 0;
+}
 static int visit_aligned_key(const void* key, void* value, void* context) {
   (void)value;
   CHECK(((uintptr_t)key % HYLE_CONTAINER_ALIGNOF(uint64_t)) == 0);
@@ -71,6 +77,11 @@ static int visit_aligned_set_key(const void* key, void* context) {
   CHECK(((uintptr_t)key % HYLE_CONTAINER_ALIGNOF(uint64_t)) == 0);
   ++*(int*)context;
   return 1;
+}
+static int stop_set_visit(const void* key, void* context) {
+  (void)key;
+  ++*(int*)context;
+  return 0;
 }
 
 typedef struct tracking_allocator {
@@ -377,8 +388,14 @@ static void test_vector_and_map(void) {
     CHECK(status_ok(hyle_container_hash_map_insert_or_assign(
         &result, map, &input, &output)));
   }
-  CHECK(hyle_container_hash_map_for_each(map, visit_map, &visits));
+  CHECK(hyle_container_hash_map_visit(map, visit_map, &visits));
   CHECK(visits == 2);
+  {
+    int stopped_visits = 0;
+    CHECK(!hyle_container_hash_map_visit(map, stop_map_visit,
+                                         &stopped_visits));
+    CHECK(stopped_visits == 1);
+  }
   {
     int i;
     for (i = 3; i < 200; ++i) {
@@ -432,8 +449,8 @@ static void test_vector_and_map(void) {
       const char byte = (char)i;
       CHECK(map_inserted(aligned, &i, &byte));
     }
-    CHECK(hyle_container_hash_map_for_each(aligned, visit_aligned_key,
-                                           &visited));
+    CHECK(hyle_container_hash_map_visit(aligned, visit_aligned_key,
+                                        &visited));
     CHECK(visited == 40);
     hyle_container_hash_map_destroy(aligned);
   }
@@ -482,9 +499,14 @@ static void test_hash_set(void) {
     CHECK(result == HYLE_CONTAINER_ALREADY_PRESENT);
     CHECK(hyle_container_hash_set_size(set) == 200);
   }
-  CHECK(hyle_container_hash_set_for_each(set, visit_aligned_set_key,
-                                         &visits));
+  CHECK(hyle_container_hash_set_visit(set, visit_aligned_set_key, &visits));
   CHECK(visits == 200);
+  {
+    int stopped_visits = 0;
+    CHECK(!hyle_container_hash_set_visit(set, stop_set_visit,
+                                         &stopped_visits));
+    CHECK(stopped_visits == 1);
+  }
   for (i = 1; i < 200; i += 2)
     CHECK(hyle_container_hash_set_erase(set, &i));
   for (i = 0; i < 200; ++i)

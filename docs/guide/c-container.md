@@ -156,7 +156,7 @@ ASCII 单字节便利函数全部 header-inline：
 `hyle_container_hash_map_insert`、`hyle_container_hash_map_find`、
 `hyle_container_hash_map_insert_or_assign`、
 `hyle_container_hash_map_find_const`、`hyle_container_hash_map_contains`、
-`hyle_container_hash_map_erase`、`hyle_container_hash_map_for_each`。
+`hyle_container_hash_map_erase`、`hyle_container_hash_map_visit`。
 
 这是 control-byte + SIMD group probing 的平坦 Swiss map，不是链式 C facade。
 `capacity` 是 slot 数，最大装载量较小；增长/erase 会使返回的 key/value 地址失效。
@@ -165,7 +165,8 @@ ASCII 单字节便利函数全部 header-inline：
 `insert_or_assign` 会覆盖，并返回 `HYLE_CONTAINER_ASSIGNED`。新 key 都返回
 `HYLE_CONTAINER_INSERTED`。两者都支持 key/value 指向当前 map slot，growth 前会先
 保存借用字节。
-`for_each` 的 visitor 返回 0 可提前停止；遍历期间不得修改 map。
+`visit` 的 visitor 返回 0 可提前停止；此时 `visit` 也返回 0，完整遍历返回 1。
+遍历期间不得修改 map。
 
 ## 运行时擦除 flat hash set
 
@@ -180,12 +181,13 @@ control/probe 核心，但 occupied slot 只存 hash 和 key，没有 dummy mapp
 `hyle_container_hash_set_reserve`、`hyle_container_hash_set_clear`、
 `hyle_container_hash_set_insert`、`hyle_container_hash_set_find`、
 `hyle_container_hash_set_contains`、`hyle_container_hash_set_erase`、
-`hyle_container_hash_set_for_each`。
+`hyle_container_hash_set_visit`。
 
 key 的 POD、hash/equality callback、context 生命周期和地址失效规则与 C map 相同。
 `insert` 用 `HYLE_CONTAINER_INSERTED` / `HYLE_CONTAINER_ALREADY_PRESENT` 区分新成员与
 重复成员；`find` 返回 set 内只读 canonical key，未找到返回 `NULL`。遍历只暴露
-`const void* key`，visitor 返回 0 可提前停止，遍历期间不得修改 set。
+`const void* key`；visitor 返回 0 时 `visit` 返回 0，完整遍历返回 1。遍历期间不得
+修改 set。
 
 ## 并发容器
 
