@@ -1,5 +1,8 @@
 #pragma once
 
+#include <algorithm>
+#include <compare>
+#include <concepts>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
@@ -90,20 +93,52 @@ class PodVector {
 
   PodVector() noexcept : alloc_(mem::system_allocator()) {}
   explicit PodVector(mem::Allocator alloc) noexcept : alloc_(alloc) {}
+  explicit PodVector(size_type count)
+    requires std::is_default_constructible_v<T>
+      : PodVector() {
+    resize(count);
+  }
+  PodVector(size_type count, const T& value) : PodVector() {
+    resize(count, value);
+  }
+  PodVector(mem::Allocator alloc, size_type count)
+    requires std::is_default_constructible_v<T>
+      : PodVector(alloc) {
+    resize(count);
+  }
+  PodVector(mem::Allocator alloc, size_type count, const T& value)
+      : PodVector(alloc) {
+    resize(count, value);
+  }
+  template <std::input_iterator It, std::sentinel_for<It> Sentinel>
+    requires (std::constructible_from<T, std::iter_reference_t<It>> ||
+              (std::contiguous_iterator<It> &&
+               std::same_as<std::remove_cv_t<std::iter_value_t<It>>, T>))
+  PodVector(It first, Sentinel last) : PodVector() {
+    construct_with_cleanup([&] { append_range(first, last); });
+  }
+  template <std::input_iterator It, std::sentinel_for<It> Sentinel>
+    requires (std::constructible_from<T, std::iter_reference_t<It>> ||
+              (std::contiguous_iterator<It> &&
+               std::same_as<std::remove_cv_t<std::iter_value_t<It>>, T>))
+  PodVector(mem::Allocator alloc, It first, Sentinel last)
+      : PodVector(alloc) {
+    construct_with_cleanup([&] { append_range(first, last); });
+  }
   PodVector(std::initializer_list<T> init) : PodVector() {
-    append_copy(init.begin(), init.end());
+    append_range(init.begin(), init.end());
   }
   PodVector(mem::Allocator alloc, std::initializer_list<T> init)
       : alloc_(alloc) {
-    append_copy(init.begin(), init.end());
+    append_range(init.begin(), init.end());
   }
   PodVector(const PodVector& other) : alloc_(other.alloc_) {
-    append_copy(other.begin(), other.end());
+    append_range(other.begin(), other.end());
   }
   PodVector& operator=(const PodVector& other) {
     if (this == &other) return *this;
     PodVector replacement(alloc_);
-    replacement.append_copy(other.begin(), other.end());
+    replacement.append_range(other.begin(), other.end());
     *this = std::move(replacement);
     return *this;
   }
@@ -188,10 +223,11 @@ class PodVector {
       // `v` may alias an element in this array. reallocate is allowed to move
       // the backing block, so preserve it before growth (std::vector supports
       // the same push_back(v[0]) shape).
-      const T copy = v;
+      alignas(T) std::byte saved[sizeof(T)];
+      copy_bytes(saved, std::addressof(v), sizeof(T));
       if (s > UINT64_MAX / 2) return false;
       if (!grow_to(s == 0 ? 4 : s * 2)) return false;
-      copy_one(data_ + s, copy);
+      copy_bytes(data_ + s, saved, sizeof(T));
     } else {
       copy_one(data_ + s, v);
     }
@@ -200,20 +236,61 @@ class PodVector {
   }
 
   iterator insert(const_iterator position, const T& value) {
+    return insert(position, 1, value);
+  }
+
+  iterator insert(const_iterator position, size_type count, const T& value) {
     const size_type index = position_index(position, true);
-    const T copy = value;
-    if (size() == capacity()) {
-      const size_type current = size();
-      HYLE_FATAL_ASSERT(current <= UINT64_MAX / 2);
-      reserve(current == 0 ? 4 : current * 2);
-    }
     const size_type current = size();
-    std::memmove(static_cast<void*>(data_ + index + 1),
+    if (count == 0) return data_ == nullptr ? nullptr : data_ + index;
+    HYLE_FATAL_ASSERT(count <= UINT64_MAX - current);
+    alignas(T) std::byte saved[sizeof(T)];
+    copy_bytes(saved, std::addressof(value), sizeof(T));
+    const size_type requested = current + count;
+    if (requested > capacity()) reserve(next_capacity(requested));
+    std::memmove(static_cast<void*>(data_ + index + count),
                  static_cast<const void*>(data_ + index),
                  static_cast<std::size_t>(current - index) * sizeof(T));
-    copy_one(data_ + index, copy);
-    carray_header(data_)->size = current + 1;
+    for (size_type i = 0; i < count; ++i)
+      copy_bytes(data_ + index + i, saved, sizeof(T));
+    carray_header(data_)->size = requested;
     return data_ + index;
+  }
+
+  template <std::input_iterator It, std::sentinel_for<It> Sentinel>
+    requires (std::constructible_from<T, std::iter_reference_t<It>> ||
+              (std::contiguous_iterator<It> &&
+               std::same_as<std::remove_cv_t<std::iter_value_t<It>>, T>))
+  iterator insert(const_iterator position, It first, Sentinel last) {
+    const size_type index = position_index(position, true);
+    // Materialize before reserve/memmove so self-ranges and single-pass input
+    // iterators have the same predictable shape as std::vector.
+    PodVector inserted(alloc_);
+    inserted.append_range(first, last);
+    return insert_prepared(index, inserted);
+  }
+
+  iterator insert(const_iterator position, std::initializer_list<T> init) {
+    return insert(position, init.begin(), init.end());
+  }
+
+  void assign(size_type count, const T& value) {
+    PodVector replacement(alloc_, count, value);
+    *this = std::move(replacement);
+  }
+
+  template <std::input_iterator It, std::sentinel_for<It> Sentinel>
+    requires (std::constructible_from<T, std::iter_reference_t<It>> ||
+              (std::contiguous_iterator<It> &&
+               std::same_as<std::remove_cv_t<std::iter_value_t<It>>, T>))
+  void assign(It first, Sentinel last) {
+    PodVector replacement(alloc_);
+    replacement.append_range(first, last);
+    *this = std::move(replacement);
+  }
+
+  void assign(std::initializer_list<T> init) {
+    assign(init.begin(), init.end());
   }
 
   void pop_back() noexcept {
@@ -224,6 +301,10 @@ class PodVector {
   bool try_resize(size_type count)
     requires std::is_default_constructible_v<T>
   {
+    if (count <= size()) {
+      if (data_ != nullptr) carray_header(data_)->size = count;
+      return true;
+    }
     if (count > capacity() && !grow_to(count)) return false;
     const T value{};
     for (size_type i = size(); i < count; ++i) copy_one(data_ + i, value);
@@ -232,12 +313,19 @@ class PodVector {
   }
 
   bool try_resize(size_type count, const T& value) noexcept {
+    if (count <= size()) {
+      if (data_ != nullptr) carray_header(data_)->size = count;
+      return true;
+    }
+    alignas(T) std::byte saved[sizeof(T)];
+    copy_bytes(saved, std::addressof(value), sizeof(T));
     if (count > capacity()) {
-      const T copy = value;
       if (!grow_to(count)) return false;
-      for (size_type i = size(); i < count; ++i) copy_one(data_ + i, copy);
+      for (size_type i = size(); i < count; ++i)
+        copy_bytes(data_ + i, saved, sizeof(T));
     } else {
-      for (size_type i = size(); i < count; ++i) copy_one(data_ + i, value);
+      for (size_type i = size(); i < count; ++i)
+        copy_bytes(data_ + i, saved, sizeof(T));
     }
     if (data_ != nullptr) carray_header(data_)->size = count;
     return true;
@@ -275,16 +363,50 @@ class PodVector {
     if (data_) carray_header(data_)->size = 0;
   }
 
+  bool try_shrink_to_fit() noexcept {
+    if (data_ == nullptr || capacity() == size()) return true;
+    if (size() == 0) {
+      detail::carray_free_internal(data_, sizeof(T));
+      data_ = nullptr;
+      return true;
+    }
+    void* replacement = detail::carray_set_capacity_internal(
+        data_, size(), sizeof(T), alignof(T), alloc_);
+    if (replacement == nullptr) return false;
+    data_ = static_cast<T*>(replacement);
+    return true;
+  }
+
+  void shrink_to_fit() { HYLE_FATAL_ASSERT(try_shrink_to_fit()); }
+
   void swap(PodVector& other) noexcept {
     using std::swap;
     swap(data_, other.data_);
     swap(alloc_, other.alloc_);
   }
 
+  friend bool operator==(const PodVector& left, const PodVector& right)
+    requires std::equality_comparable<T>
+  {
+    return left.size() == right.size() &&
+           std::equal(left.begin(), left.end(), right.begin());
+  }
+
+  friend auto operator<=>(const PodVector& left, const PodVector& right)
+    requires std::three_way_comparable<T>
+  {
+    return std::lexicographical_compare_three_way(
+        left.begin(), left.end(), right.begin(), right.end());
+  }
+
  private:
+  static void copy_bytes(void* destination, const void* source,
+                         std::size_t size) noexcept {
+    std::memcpy(destination, source, size);
+  }
+
   static void copy_one(pointer destination, const T& source) noexcept {
-    std::memcpy(static_cast<void*>(destination),
-                static_cast<const void*>(std::addressof(source)), sizeof(T));
+    copy_bytes(destination, std::addressof(source), sizeof(T));
   }
 
   size_type position_index(const_iterator position, bool allow_end) const
@@ -298,17 +420,73 @@ class PodVector {
     return static_cast<size_type>(position - cbegin());
   }
 
-  void append_copy(const_pointer first, const_pointer last) {
-    if (first == last) return;
-    const auto distance = std::distance(first, last);
-    HYLE_FATAL_ASSERT(distance >= 0);
-    reserve(static_cast<size_type>(distance));
-    if (distance != 0) {
-      std::memcpy(static_cast<void*>(data_),
-                  static_cast<const void*>(std::addressof(*first)),
-                  static_cast<std::size_t>(distance) * sizeof(T));
-      carray_header(data_)->size = static_cast<size_type>(distance);
+  template <class Fn>
+  void construct_with_cleanup(Fn&& fn) {
+    try {
+      std::forward<Fn>(fn)();
+    } catch (...) {
+      detail::carray_free_internal(data_, sizeof(T));
+      data_ = nullptr;
+      throw;
     }
+  }
+
+  iterator insert_prepared(size_type index, const PodVector& inserted) {
+    const size_type count = inserted.size();
+    const size_type current = size();
+    if (count == 0) return data_ == nullptr ? nullptr : data_ + index;
+    HYLE_FATAL_ASSERT(count <= UINT64_MAX - current);
+    const size_type requested = current + count;
+    if (requested > capacity()) reserve(next_capacity(requested));
+    std::memmove(static_cast<void*>(data_ + index + count),
+                 static_cast<const void*>(data_ + index),
+                 static_cast<std::size_t>(current - index) * sizeof(T));
+    copy_bytes(data_ + index, inserted.data(),
+               static_cast<std::size_t>(count) * sizeof(T));
+    carray_header(data_)->size = requested;
+    return data_ + index;
+  }
+
+  template <std::input_iterator It, std::sentinel_for<It> Sentinel>
+    requires (std::constructible_from<T, std::iter_reference_t<It>> ||
+              (std::contiguous_iterator<It> &&
+               std::same_as<std::remove_cv_t<std::iter_value_t<It>>, T>))
+  void append_range(It first, Sentinel last) {
+    if constexpr (std::contiguous_iterator<It> &&
+                  std::same_as<std::remove_cv_t<std::iter_value_t<It>>, T>) {
+      size_type additional = 0;
+      for (It probe = first; probe != last; ++probe) {
+        HYLE_FATAL_ASSERT(additional != UINT64_MAX - size());
+        ++additional;
+      }
+      reserve(size() + additional);
+      if (additional != 0) {
+        copy_bytes(data_ + size(), std::to_address(first),
+                   static_cast<std::size_t>(additional) * sizeof(T));
+        carray_header(data_)->size += additional;
+      }
+    } else {
+      if constexpr (std::forward_iterator<It>) {
+        size_type additional = 0;
+        for (It probe = first; probe != last; ++probe) {
+          HYLE_FATAL_ASSERT(additional != UINT64_MAX - size());
+          ++additional;
+        }
+        reserve(size() + additional);
+      }
+      for (; first != last; ++first) {
+        T value(*first);
+        push_back(value);
+      }
+    }
+  }
+
+  size_type next_capacity(size_type required) const noexcept {
+    const size_type current = capacity();
+    if (current == 0) return required < 4 ? 4 : required;
+    if (current > UINT64_MAX / 2) return required;
+    const size_type doubled = current * 2;
+    return doubled < required ? required : doubled;
   }
 
   bool grow_to(size_type cap) noexcept {

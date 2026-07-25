@@ -8,7 +8,7 @@
 > `ConcurrentVector` 已按 oneTBB 实际合同改为并行 writer；Windows/WSL n=15 的
 > 单 writer、range iteration 与读旧 prefix+写 tail 均领先，8 writer 同档；WSL 逐次
 > `operator[]` 顺扫仍慢约 2x，但正常 range-for 已快 1.39x。GCC 14 TSan（禁用 WSL
-> ASLR 后）200 个 typed 测试、纯 C 测试及并发组重复 30 轮通过。
+> ASLR 后）205 个 typed 测试、纯 C 测试及并发组重复 30 轮通过。
 > 真正的 typed `FlatHashSet` 与 map/set 标准 forward iteration 已完成；Windows 的
 > map/set 五/四项均领先 Abseil；WSL map 四项领先、miss 慢约 3%，set hit 同档、miss
 > 慢约 6%、insert/iterate 领先。map 已按成熟语义拆分 insert/try_emplace/
@@ -39,9 +39,10 @@ Linux x64 和 macOS arm64 的最终验证命令与结果记录在本文末尾。
 
 ## 功能与下游
 
-- PodVector（旧实现名 CArray）：记录 allocator/alignment，alias-safe growth，新增
-  默认构造、copy 值语义、resize、位置 insert/范围 erase 与 fallible
-  `try_reserve/try_push_back/try_resize`，所有容量计算先检查 overflow。
+- PodVector（旧实现名 CArray）：记录 allocator/alignment，alias-safe growth，新增默认/
+  count/range 构造、copy 值语义、assign、count/range insert、范围 erase、shrink、比较与
+  fallible `try_reserve/try_push_back/try_resize/try_shrink_to_fit`；连续输入批量 memcpy，
+  single-pass 输入只消费一次，所有容量计算先检查 overflow。
 - SmallVector：修正 allocator-aware move assignment、inline/heap 别名增长、构造异常
   清理和 overflow；补 mature inline-vector 共有的 count/range construction、assign/
   insert、positional emplace、range erase、swap、shrink-to-fit 与 comparison，非平凡 T

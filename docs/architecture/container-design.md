@@ -83,16 +83,21 @@ push/read microbenchmark 数字宣称新的性能结论。
 
 旧 `CArray<T>` 把 clay 实现名和窄 benchmark 形状一起暴露给了用户。当前公开主类型改为
 `PodVector<T>`，并按 `std::vector` 与 Folly `fbvector` 的共同连续序列习惯提供默认构造、
-copy/move、front/back、正反迭代、reserve、push_back、resize、位置 insert、单项/范围
-erase、clear 与 swap；`try_reserve/try_push_back/try_resize` 保留 HYLE allocator 的可恢复
-OOM 通路。它刻意只接受 trivially-copyable T：这是 C/FFI-friendly byte relocation 合同，
-不是第二个通用 `std::vector`。非平凡值用 SmallVector 或标准 vector。
+count/range/initializer-list 构造、copy/move、front/back、正反迭代、reserve、push_back、
+resize、count/range insert、assign、单项/范围 erase、clear、swap、shrink-to-fit 与值比较；
+`try_reserve/try_push_back/try_resize/try_shrink_to_fit` 保留 HYLE allocator 的可恢复 OOM
+通路。它刻意只接受 trivially-copyable T：这是 C/FFI-friendly byte relocation 合同，
+不是第二个通用 `std::vector`。非平凡值用 SmallVector 或标准 vector。byte relocation
+不额外要求 T 的 C++ copy constructor；增长前的别名值以对齐 byte snapshot 保存。
 
 header-before-data、recorded allocator/alignment 和 type-erased reallocate core 仍是内部
 实现，新增接口没有改变 indexed read 的单次寻址或增长时利用 backing realloc 的能力。
-位置 insert/erase 为 memmove 后缀，复杂度 O(size-position)，达到连续存储下界。首轮
-Windows 同合同 growth/read benchmark 仍分别约 1.48x/1.0x `std::vector`；新增 API 本身
-不能借旧 push/read 数字宣称 SOTA，若真实消费者把位置 mutation 变成热点再单独建证书。
+contiguous range 直接批量 memcpy；single-pass input range 只消费一次。range insert 先
+物化输入，再以一次 memmove 搬后缀和一次 memcpy 写入；复杂度
+O(size-position+inserted-count)，达到连续存储下界。缩短 resize 为 O(1)，不会构造无用
+fill value；shrink O(size)，失败保留原 block。首轮 Windows 同合同 growth/read benchmark
+仍分别约 1.48x/1.0x `std::vector`；新增 API 本身不能借旧 push/read 数字宣称 SOTA，若
+真实消费者把位置 mutation 变成热点再单独建证书。
 
 ## SwissTable
 

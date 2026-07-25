@@ -57,10 +57,13 @@ nothrow move-construct/destruct；POD 仍走 memcpy relocation。`try_reserve`�
 
 `PodVector<T>` 明确表示按字节 relocation 的容器，适合 packet descriptors、数值索引、
 C ABI 数据和自定义 HYLE allocator。它默认即可构造，也能显式注入 allocator；拥有
-copy/move 值语义、位置 insert、范围 erase、resize 与连续/反向迭代。它不适合
-`std::string`、智能指针或自引用对象；这些类型用 `SmallVector` 或 `std::vector`。
-任何增长都会使旧 data/element pointer 失效。普通操作把 OOM 当 fatal；需要恢复时先用
-`try_reserve`，push/resize 也各有 `try_` 入口。
+copy/move 值语义、count/range 构造与 assign/insert、范围 erase、resize、shrink、swap、
+比较和连续/反向迭代。连续 range 批量复制；single-pass input range 只读取一次；插入
+自己的 range 即使增长也安全。它不适合 `std::string`、智能指针或自引用对象；这些类型
+用 `SmallVector` 或 `std::vector`。任何增长、shrink 或位置 mutation 都可能使旧 data/
+element pointer 失效。普通操作把 OOM 当 fatal；需要恢复时使用 `try_reserve`、
+`try_push_back`、`try_resize` 或 `try_shrink_to_fit`。和 SmallVector 一样，当前没有在全库
+越界策略确定前机械加入 `at()`。
 
 ## FlatHashMap 与 FlatHashSet
 

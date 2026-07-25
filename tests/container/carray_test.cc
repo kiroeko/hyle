@@ -1,7 +1,11 @@
 #include <gtest/gtest.h>
 
+#include <array>
 #include <cstdint>
+#include <iterator>
 #include <numeric>
+#include <sstream>
+#include <type_traits>
 #include <vector>
 
 #include "hyle/container/pod_vector.h"
@@ -9,6 +13,7 @@
 
 using hyle::container::PodVector;
 using hyle::container::carray_header;
+using hyle::mem::Allocator;
 using hyle::mem::system_allocator;
 
 namespace {
@@ -18,6 +23,43 @@ void* fail_realloc(void*, void*, std::size_t, std::size_t,
                    std::size_t) noexcept {
   return nullptr;
 }
+
+struct ToggleAllocatorState {
+  Allocator backing = system_allocator();
+  bool fail = false;
+};
+
+void* toggle_alloc(void* raw_state, std::size_t size,
+                   std::size_t alignment) noexcept {
+  auto* state = static_cast<ToggleAllocatorState*>(raw_state);
+  return state->fail ? nullptr : state->backing.allocate(size, alignment);
+}
+
+void toggle_free(void* raw_state, void* pointer, std::size_t size,
+                 std::size_t alignment) noexcept {
+  auto* state = static_cast<ToggleAllocatorState*>(raw_state);
+  state->backing.deallocate(pointer, size, alignment);
+}
+
+void* toggle_realloc(void* raw_state, void* pointer, std::size_t old_size,
+                     std::size_t new_size,
+                     std::size_t alignment) noexcept {
+  auto* state = static_cast<ToggleAllocatorState*>(raw_state);
+  return state->fail ? nullptr : state->backing.reallocate(
+                                     pointer, old_size, new_size, alignment);
+}
+
+struct CopyDeletedPod {
+  CopyDeletedPod() = default;
+  CopyDeletedPod(const CopyDeletedPod&) = delete;
+  CopyDeletedPod& operator=(const CopyDeletedPod&) = delete;
+  CopyDeletedPod(CopyDeletedPod&&) = default;
+  CopyDeletedPod& operator=(CopyDeletedPod&&) = default;
+
+  int value = 0;
+};
+
+static_assert(std::is_trivially_copyable_v<CopyDeletedPod>);
 }  // namespace
 
 TEST(PodVector, EmptyState) {
@@ -183,4 +225,92 @@ TEST(PodVector, PositionalInsertMayAliasAcrossGrowth) {
   EXPECT_EQ(values[0], 4);
   EXPECT_EQ(values[1], 4);
   EXPECT_EQ(values[2], 5);
+}
+
+TEST(PodVector, CountAndRangeConstructionMatchSequenceShape) {
+  PodVector<int> defaults(3);
+  ASSERT_EQ(defaults.size(), 3u);
+  EXPECT_EQ(std::accumulate(defaults.begin(), defaults.end(), 0), 0);
+
+  PodVector<int> filled(4, 7);
+  ASSERT_EQ(filled.size(), 4u);
+  EXPECT_EQ(filled.back(), 7);
+
+  const std::array<int, 4> source = {1, 2, 3, 4};
+  PodVector<int> forward(source.begin(), source.end());
+  EXPECT_TRUE(std::equal(forward.begin(), forward.end(), source.begin()));
+
+  std::istringstream stream("5 6 7");
+  PodVector<int> input((std::istream_iterator<int>(stream)),
+                       std::istream_iterator<int>());
+  EXPECT_EQ(input, (PodVector<int>{5, 6, 7}));
+}
+
+TEST(PodVector, RangeAndCountInsertAreSelfAliasSafe) {
+  PodVector<int> values({1, 2, 3});
+  auto inserted = values.insert(values.begin() + 1, values.begin(),
+                                values.end());
+  ASSERT_EQ(inserted, values.begin() + 1);
+  EXPECT_EQ(values, (PodVector<int>{1, 1, 2, 3, 2, 3}));
+
+  inserted = values.insert(values.begin() + 2, 2, values.back());
+  ASSERT_EQ(inserted, values.begin() + 2);
+  EXPECT_EQ(values, (PodVector<int>{1, 1, 3, 3, 2, 3, 2, 3}));
+
+  std::istringstream stream("8 9");
+  values.insert(values.end(), std::istream_iterator<int>(stream),
+                std::istream_iterator<int>());
+  EXPECT_EQ(values.back(), 9);
+}
+
+TEST(PodVector, AssignSwapAndComparisonMatchValueContainerShape) {
+  PodVector<int> values({0, 1, 2, 3});
+  values.assign(values.begin() + 1, values.end() - 1);
+  EXPECT_EQ(values, (PodVector<int>{1, 2}));
+
+  values.assign(3, values.front());
+  EXPECT_EQ(values, (PodVector<int>{1, 1, 1}));
+  values.assign({4, 5});
+
+  PodVector<int> other({9});
+  swap(values, other);
+  EXPECT_EQ(values, (PodVector<int>{9}));
+  EXPECT_EQ(other, (PodVector<int>{4, 5}));
+  EXPECT_GT(values, other);
+}
+
+TEST(PodVector, FailedShrinkPreservesStorageAndEmptyShrinkReleasesIt) {
+  ToggleAllocatorState state;
+  Allocator allocator(toggle_alloc, toggle_free, toggle_realloc, &state);
+  PodVector<int> values(allocator, 5, 7);
+  values.reserve(16);
+  int* const data_before = values.data();
+  const std::uint64_t capacity_before = values.capacity();
+
+  state.fail = true;
+  EXPECT_FALSE(values.try_shrink_to_fit());
+  EXPECT_EQ(values.data(), data_before);
+  EXPECT_EQ(values.capacity(), capacity_before);
+  ASSERT_EQ(values.size(), 5u);
+  for (int value : values) EXPECT_EQ(value, 7);
+
+  values.clear();
+  EXPECT_TRUE(values.try_shrink_to_fit());
+  EXPECT_EQ(values.data(), nullptr);
+  EXPECT_EQ(values.capacity(), 0u);
+}
+
+TEST(PodVector, ByteRelocationDoesNotRequireCopyConstruction) {
+  CopyDeletedPod source[2];
+  source[0].value = 7;
+  source[1].value = 9;
+
+  PodVector<CopyDeletedPod> values(source, source + 2);
+  values.push_back(values.front());
+  PodVector<CopyDeletedPod> copy(values);
+
+  ASSERT_EQ(copy.size(), 3u);
+  EXPECT_EQ(copy[0].value, 7);
+  EXPECT_EQ(copy[1].value, 9);
+  EXPECT_EQ(copy[2].value, 7);
 }

@@ -51,12 +51,12 @@ void* carray_set_capacity_internal(void* data, std::uint64_t min_capacity,
     return new_data;
   }
 
-  // Grow an EXISTING block via reallocate: the base (header+data as one block) is
-  // handed to the allocator, which can grow it IN PLACE (mimalloc mi_realloc) --
-  // skipping the alloc-new + memcpy + free that a manual grow pays. old_capacity/
-  // header_offset/align are unchanged across a grow, so the header stays at the same
-  // offset; reallocate preserves the block's bytes (header included) whether it grows
-  // in place or relocates. Only capacity changes afterward.
+  // Resize an EXISTING block via reallocate: the base (header+data as one block)
+  // is handed to the allocator, which can grow it IN PLACE (mimalloc
+  // mi_realloc), skipping the alloc-new + memcpy + free that a manual grow
+  // pays. It may also shrink for PodVector::shrink_to_fit(). header_offset and
+  // align stay unchanged; reallocate preserves the block's bytes whether it
+  // resizes in place or relocates. Only capacity changes afterward.
   CArrayHeader* old_h = carray_header(data);
   HYLE_FATAL_ASSERT(min_capacity >= old_h->size);
   // Existing storage owns its allocator/alignment metadata. Never let a caller
