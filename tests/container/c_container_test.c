@@ -306,16 +306,16 @@ static void test_vector_and_map(void) {
   CHECK(status_ok(hyle_container_vector_create(&vector, &vector_options)));
   CHECK(vector != NULL);
   input = 11;
-  CHECK(status_ok(hyle_container_vector_push(vector, &input)));
+  CHECK(status_ok(hyle_container_vector_try_push_back(vector, &input)));
   input = 22;
-  CHECK(status_ok(hyle_container_vector_push(vector, &input)));
+  CHECK(status_ok(hyle_container_vector_try_push_back(vector, &input)));
   CHECK(hyle_container_vector_size(vector) == 2);
   CHECK(hyle_container_vector_capacity(vector) >= 2);
   CHECK(*(int*)hyle_container_vector_at(vector, 0) == 11);
   CHECK(hyle_container_vector_data(vector) != NULL);
   CHECK(hyle_container_vector_data_const(vector) != NULL);
   CHECK(status_ok(hyle_container_vector_reserve(vector, 32)));
-  CHECK(hyle_container_vector_pop(vector, &output) && output == 22);
+  CHECK(hyle_container_vector_try_pop_back(vector, &output) && output == 22);
   hyle_container_vector_clear(vector);
   CHECK(hyle_container_vector_size(vector) == 0);
   hyle_container_vector_destroy(vector);
@@ -479,9 +479,11 @@ static void test_queues_and_concurrent_vector(void) {
   hyle_container_ws_fifo_queue_destroy(target);
 
   CHECK(vector != NULL);
-  CHECK(status_ok(hyle_container_concurrent_vector_push(&index, vector, &a)) &&
+  CHECK(status_ok(hyle_container_concurrent_vector_try_push_back(
+                      &index, vector, &a)) &&
         index == 0);
-  CHECK(status_ok(hyle_container_concurrent_vector_push(&index, vector, &b)) &&
+  CHECK(status_ok(hyle_container_concurrent_vector_try_push_back(
+                      &index, vector, &b)) &&
         index == 1);
   CHECK(hyle_container_concurrent_vector_size(vector) == 2);
   CHECK(hyle_container_concurrent_vector_capacity(vector) >= 2);
@@ -581,7 +583,7 @@ int main(void) {
     CHECK(status_ok(hyle_container_concurrent_vector_create(
         &vector, fail_storage, 1)));
     CHECK(vector != NULL);
-    CHECK(status_code(hyle_container_concurrent_vector_push(
+    CHECK(status_code(hyle_container_concurrent_vector_try_push_back(
               &index, vector, NULL)) == HYLE_STATUS_RESOURCE_EXHAUSTED);
     CHECK(index == SIZE_MAX);
     hyle_container_concurrent_vector_destroy(vector);

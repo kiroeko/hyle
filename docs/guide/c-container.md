@@ -44,7 +44,7 @@ int main(void) {
     return 1;
   }
   hyle_status_free(&st);
-  st = hyle_container_vector_push(v, &x);
+  st = hyle_container_vector_try_push_back(v, &x);
   if (!hyle_status_is_ok(st)) {
     hyle_status_free(&st);
     hyle_container_vector_destroy(v);
@@ -131,10 +131,12 @@ ASCII 单字节便利函数全部 header-inline：
 `hyle_container_vector_size`、`hyle_container_vector_capacity`、
 `hyle_container_vector_data`、`hyle_container_vector_data_const`、
 `hyle_container_vector_at`、`hyle_container_vector_reserve`、
-`hyle_container_vector_push`、`hyle_container_vector_pop`、
+`hyle_container_vector_try_push_back`、
+`hyle_container_vector_try_pop_back`、
 `hyle_container_vector_clear`。
 
-其中 `create` / `reserve` / `push` 返回 Status；`pop` 的 0 只是容器为空。
+其中 `create` / `reserve` / `try_push_back` 返回 Status；`try_pop_back` 的 0 只是
+容器为空。
 
 任何可能增长的操作都可能使先前由 `data`/`at` 返回的地址失效。`push` 支持 item
 来自当前 vector 内部，即使增长也不会读悬空地址。
@@ -211,10 +213,11 @@ owner 在 back push、front pop；`try_steal_into` 要求两个不同且等容�
 `hyle_container_concurrent_vector_create`、
 `hyle_container_concurrent_vector_create_system`、
 `hyle_container_concurrent_vector_destroy`、
-`hyle_container_concurrent_vector_push`、
+`hyle_container_concurrent_vector_try_push_back`、
 `hyle_container_concurrent_vector_size`、
 `hyle_container_concurrent_vector_capacity`、
-`hyle_container_concurrent_vector_at` 是 append-only `void*` vector。`push` 返回
+`hyle_container_concurrent_vector_at` 是 append-only `void*` vector。
+`try_push_back` 返回
 Status 并写 `out_index`；已经发布的元素地址不移动，调用者仍负责 payload 生命周期。
 多个 `push` 可真正并行；`size` 返回已领取 index 数，不是 in-flight push 的完成栅栏。
 读取新 tail 前必须等待对应 push 返回或等待所有 writers quiesce；并发 append 期间可读

@@ -981,8 +981,8 @@ hyle_status hyle_container_vector_reserve(hyle_container_vector* vector,
   vector->data = replacement;
   return hyle_status_ok();
 }
-hyle_status hyle_container_vector_push(hyle_container_vector* vector,
-                                       const void* item) {
+hyle_status hyle_container_vector_try_push_back(hyle_container_vector* vector,
+                                                const void* item) {
   if (vector == nullptr || item == nullptr)
     return hyle_status_invalid_argument(
         vector == nullptr ? "vector is NULL" : "item is NULL");
@@ -1015,7 +1015,8 @@ hyle_status hyle_container_vector_push(hyle_container_vector* vector,
   hc::carray_header(vector->data)->size = size + 1;
   return hyle_status_ok();
 }
-int hyle_container_vector_pop(hyle_container_vector* vector, void* out_item) {
+int hyle_container_vector_try_pop_back(hyle_container_vector* vector,
+                                       void* out_item) {
   if (vector == nullptr || out_item == nullptr) return 0;
   if (hc::carray_size(vector->data) == 0) return 0;
   const size_t index = hc::carray_size(vector->data) - 1;
@@ -1391,7 +1392,7 @@ void hyle_container_concurrent_vector_destroy(
     hyle_container_concurrent_vector* vector) {
   free_handle(vector);
 }
-hyle_status hyle_container_concurrent_vector_push(
+hyle_status hyle_container_concurrent_vector_try_push_back(
     size_t* out_index, hyle_container_concurrent_vector* vector, void* item) {
   if (out_index == nullptr || vector == nullptr)
     return hyle_status_invalid_argument(

@@ -75,8 +75,8 @@ TEST(ContainerCAbi, ConcurrentVectorPublishesStableIndices) {
         void* value = reinterpret_cast<void*>(
             static_cast<std::uintptr_t>(writer * kPerWriter + i + 1));
         std::size_t index = SIZE_MAX;
-        hyle_status status =
-            hyle_container_concurrent_vector_push(&index, vector, value);
+        hyle_status status = hyle_container_concurrent_vector_try_push_back(
+            &index, vector, value);
         EXPECT_TRUE(hyle_status_is_ok(status));
         EXPECT_NE(index, SIZE_MAX);
         hyle_status_free(&status);

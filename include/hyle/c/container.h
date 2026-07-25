@@ -260,9 +260,11 @@ HYLE_CONTAINER_C_API void* hyle_container_vector_at(
     hyle_container_vector* vector, size_t index);
 HYLE_CONTAINER_C_API hyle_status hyle_container_vector_reserve(
     hyle_container_vector* vector, size_t capacity);
-HYLE_CONTAINER_C_API hyle_status hyle_container_vector_push(
+/* Tail mutation. try_push_back reports allocation failure through Status;
+ * try_pop_back returns 0 when empty and writes out_item only on success. */
+HYLE_CONTAINER_C_API hyle_status hyle_container_vector_try_push_back(
     hyle_container_vector* vector, const void* item);
-HYLE_CONTAINER_C_API int hyle_container_vector_pop(
+HYLE_CONTAINER_C_API int hyle_container_vector_try_pop_back(
     hyle_container_vector* vector, void* out_item);
 HYLE_CONTAINER_C_API void hyle_container_vector_clear(
     hyle_container_vector* vector);
@@ -439,7 +441,8 @@ static inline hyle_status hyle_container_concurrent_vector_create_system(
 }
 HYLE_CONTAINER_C_API void hyle_container_concurrent_vector_destroy(
     hyle_container_concurrent_vector* vector);
-HYLE_CONTAINER_C_API hyle_status hyle_container_concurrent_vector_push(
+/* Appends one caller-owned pointer and returns its stable index. */
+HYLE_CONTAINER_C_API hyle_status hyle_container_concurrent_vector_try_push_back(
     size_t* out_index, hyle_container_concurrent_vector* vector, void* item);
 HYLE_CONTAINER_C_API size_t hyle_container_concurrent_vector_size(
     const hyle_container_concurrent_vector* vector);
