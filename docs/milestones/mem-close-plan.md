@@ -2,20 +2,23 @@
 
 | 字段 | 值 |
 |---|---|
-| **状态** | ✅ 完成；mem 进入预发布冻结（2026-07-23） |
+| **状态** | ✅ 完成；2026-07-25 依赖/成熟库回审后重新冻结 |
 | **起始基线** | `024f379`（2026-07-23） |
 | **范围** | 只补 API parity、性能证据和最终认证；不新增 allocator 类型 |
 | **设计真源** | [`../architecture/mem-design.md`](../architecture/mem-design.md) |
 | **性能真源** | [`../performance/benchmarks-mem.md`](../performance/benchmarks-mem.md) |
 | **用户入口** | [`../guide/mem.md`](../guide/mem.md)、[`../guide/c-mem.md`](../guide/c-mem.md) |
 
-> **当前替代（2026-07-24）：**下文 105 项是最终候选 `551be0b` 的历史证书；后续共享 error
-> 收敛删除 2 个模块私有错误入口，当前产品面为 **103/103**，已由通用 C surface 门禁在
-> Windows/ELF/Mach-O 重新验证。能力面未因此减少。随后 `1de939d` 完成依赖后回审：公共
+> **当前替代（2026-07-25）：**下文 105 项是候选 `551be0b` 的历史证书；共享 error
+> 收敛曾把产品面降为 103 项，当前 `6213115` 在成熟库/API/复杂度回审后为 **107/107**。
+> 新增的是 FixedPool runtime control layout 与 LeakTracker incomplete-inventory 观察量，不是
+> 内部 C ABI；HYLE 模块间仍只用 C++ `Allocator/Status/Result`。`1de939d` 完成依赖后回审：公共
 > alignment 溢出、HugeRegion placement flags、失效 cache allocator 语义已关闭；SharedPool
 > empty-proof 冷路与 FixedPool retained-span realloc 已重塑并重签，未新增 allocator 类型或
 > C ABI symbol。`20f3676` 随后按成熟 TLSF/oneTBB/mimalloc 的索引形状回审 FixedPool：公开
-> 类型不增长，内部从最坏 O(free blocks) 的同 bin 扫描改为 O(1) 两级位图，并重签正常负载。
+> 类型不增长，内部从最坏 O(free blocks) 的同 bin 扫描改为 O(1) 两级位图。`6213115` 又把
+> Region 长寿命复用从潜在 O(blocks²) 收口为每 epoch O(blocks)，补齐 aligned PMR、array
+> resize 与诊断降级语义，并以较长三平台证书重签。
 
 这是 Jira 式剩余 work item，不再复制完整能力表、设计理由或 benchmark 点值。mem 的稳定
 功能面与“何时算完成”在 architecture；性能结果与输项在 performance；这里仅列未完成任务、
@@ -36,6 +39,10 @@
   1 个无 affinity API 的预期 skip；Linux TSan 14 个共享并发组合 + 纯 C 零报告。新增
   FixedPool realloc 对 oneTBB 在 Win/WSL/M4 双 QoS 全部 sign WIN；SharedPool/cache 重签见
   performance，不把 hard-capacity 与 owner-local 合同混成一张胜负表。
+- 最终回审 `6213115`：Windows/Linux/macOS 的 197-test 普通构建、纯 C、107/107 动态 surface、
+  16 C++ + 1 C 独立头均通过；MSVC ASan 为 198/198，Linux TSan 33 个相关/并发测试与纯 C
+  零报告。shipping benchmark 明确 `HYLE_TESTING=OFF`，不把诊断构建数据签成产品性能。
+  scenario 证书脚本已机械拒绝 `testing=1` 的 benchmark，防止该边界再靠人工记忆。
 
 `024f379` 是重审起点；本页勾选只记录后续任务验收，不自动等于最终候选 commit 的认证。
 
@@ -76,6 +83,19 @@
 - [x] `20f3676` 的 mixed-size、request percentile、fragmentation 在 Windows clean checkout 与
   WSL/M4 同源码镜像重签；同形成熟参照无 LOSE，M4 interactive/utility 结论一致。
 
+### MEM-FINAL-5：成熟能力、C 边界与长寿命 Region reclosure
+
+- [x] 逐项处置 oneTBB scalable/fixed/cache-aligned/memory-pool、Folly Arena/ThreadCachedArena、
+  mimalloc 与 marl：新增 `AlignedPmrResource` 和 overflow-safe array resize；通用 growable heap、
+  hidden TLS arena 与 GPU/graph 生命周期明确由已有 backing 或拥有语义的模块负责。
+- [x] C++ 内部依赖审计确认普通 mem 实现不包含 `hyle/c/*`、不使用 `hyle_status`；C ABI 只在
+  `src/mem/c_mem.cc` outward shim。C 侧补 runtime FixedPool control layout、calloc/realloc-array
+  和 LeakTracker dropped/complete，107 个声明/纯 C 调用/动态导出同步。
+- [x] Region clear 后使用单调 retained cursor，结构测试以 512 blocks×64 epochs 证明每 block
+  每 epoch 至多考察一次；peak 在边界延迟折叠、查询仍精确，正常 request 热路无回归。
+- [x] 三平台 shipping 构建重签：scaling 为 31 process×10,001 epochs/size；normal request 为
+  Win/Linux 15、M4 双 QoS 各 31 process×10,001 samples，Region 同合同 percentile 无 LOSE。
+
 最终候选认证矩阵（commit `551be0b`）：
 
 | 平台 / 工具链 | 完整 C++ mem + 纯 C | 动态 C surface | 独立头单元 | sanitizer |
@@ -85,12 +105,20 @@
 | Linux x64 / Clang 20.1 | 178/178 + PASS | ELF 105/105 | 16 C++ + 1 C | Clang ASan/UBSan PASS |
 | macOS arm64 / AppleClang 21 | 178/178 + PASS | Mach-O 105/105 | 16 C++ + 1 C | —；三类 sanitizer 已由 Win/Linux 覆盖 |
 
+当前产品认证（commit `6213115`；镜像按实际旧 HEAD/dirty 记录，但同步同一产品源码）：
+
+| 平台 / 工具链 | 完整 C++ mem + 纯 C | 动态 C surface | 独立头单元 | sanitizer |
+|---|---|---|---|---|
+| Windows x64 / MSVC 19.50 | 197/197 + PASS | DLL 107/107 | 16 C++ + 1 C | MSVC ASan 198/198 + C PASS |
+| Linux x64 / GCC 14.2 | 197/197 + PASS | ELF 107/107 | 16 C++ + 1 C | GCC TSan 33 relevant + C PASS |
+| macOS arm64 / AppleClang 21 | 197/197 + PASS | Mach-O 107/107 | 16 C++ + 1 C | —；ASan/TSan 由 Win/Linux 当前源码覆盖 |
+
 历史 performance raw 不重写；各节继续绑定实际产生数据的 commit。FixedPool 的新 raw 另以
 `20f3676` 后缀保存：Windows 行是 clean 权威 checkout，WSL/M4 行如实保留副本旧 HEAD 与
 `dirty=1`，并以相同实现 hash 证明被测产品源码，不伪造镜像 Git metadata。
 
 ## 停止点
 
-三个 work item 已全部通过，本任务关闭；mem 标记“预发布冻结”并移出主动重构队列。
+五个 work item 已全部通过，本任务关闭；mem 标记“预发布冻结”并移出主动重构队列。
 冻结和重开条件只认 [`mem-design.md` §12](../architecture/mem-design.md#12-收口定义与重开边界)，
 不再新增“再观察几轮”或“所有数字都必须赢较弱合同对手”等不可验收条件。

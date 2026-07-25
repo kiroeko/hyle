@@ -116,6 +116,11 @@ def main():
         meta, runtime, rows = parse(result.stdout + result.stderr)
         if meta is None or meta["format"] != 1 or not rows:
             sys.exit(f"run {index}: missing metadata or scaling rows")
+        if "HYLE_MEM_CERT build testing=0" not in result.stdout + result.stderr:
+            sys.exit(
+                f"run {index}: benchmark is not a shipping build "
+                "(HYLE_TESTING must be OFF)"
+            )
         if meta["platform"] == "macos":
             if runtime is None or runtime["qos_ok"] != 1:
                 sys.exit(f"run {index}: Apple QoS metadata missing/unsuccessful")

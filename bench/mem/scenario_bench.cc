@@ -424,6 +424,11 @@ void print_certificate_metadata() {
 #else
   std::printf("HYLE_MEM_CERT meta format=1 compiler=unknown platform=unknown\n");
 #endif
+#if defined(HYLE_TESTING)
+  std::printf("HYLE_MEM_CERT build testing=1\n");
+#else
+  std::printf("HYLE_MEM_CERT build testing=0\n");
+#endif
 }
 
 template <class First, class Second>

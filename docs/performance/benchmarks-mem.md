@@ -2,7 +2,7 @@
 
 > 本页是 [performance 总账](./README.md) 的 **mem 模块**详节。
 > 源：`bench/mem/allocator_bench.cc`、`bench/mem/scenario_bench.cc`、`bench/mem/fiber_stack_bench.cc`。
-> 通用 churn、request closure、FixedPool、latency、fragmentation 和 footprint 按各节所列 commit。2026-07-23 的 MEM-FINAL-2 bump/system-realloc/adapter/fiber 证书绑定 clean `2cbc307`。2026-07-24 增量回审产品提交 `1de939d` 重新签署 SharedPool/SharedPoolCache 与 FixedPool retained-span realloc；`20f3676` 又把 FixedPool 的普通 allocation 从最坏 O(free blocks) 收口为 TLSF 风格 O(1) 两级索引，并重签 mixed/latency/fragmentation。同契约性能判定信任配对 **[sign]**；旧 raw/result 继续诚实绑定实际采样 commit，不把历史数据伪改成 HEAD。
+> 通用 churn、request closure、FixedPool、latency、fragmentation 和 footprint 按各节所列 commit。2026-07-25 的 `6213115` 把长寿命 Region 从 restart-from-head 收口为每 epoch 单调遍历，并在三平台 shipping 构建上重签正常 request 与 32→2048 retained-block scaling；此前 `2cbc307`、`1de939d`、`20f3676` 分别签署 bump/system-realloc/fiber、SharedPool/cache 和 O(1) FixedPool。同契约性能判定信任配对 **[sign]**；旧 raw/result 继续诚实绑定实际采样 commit，不把历史数据伪改成 HEAD。
 
 ## 当前性能封口状态
 
@@ -19,6 +19,14 @@
 `SharedPool` hard core 的 immediate-global-free/精确容量合同强于 owner-local free list；它不以
 击败较弱合同的 oneTBB local churn 为冻结条件。吞吐形状由显式 `SharedPoolCache` 对拍，hard
 core 仍报告绝对成本和较弱合同参照。
+
+`6213115` 关闭最后一个 arena 复杂度缺口：Region clear 后不再为每次 block transition 从链头
+重扫，而是像 Folly Arena 一样单调推进 retained cursor；结构测试硬性证明每个 block 每 epoch
+至多考察一次。热路径同时把 peak 折叠延迟到 clear/release/query，在保持 `peak_used()` 任意
+时刻精确的前提下去掉每次 allocation 的 peak 依赖链。正常 request 与长寿命 scaling 证据见
+§2/§8，正式数据全部来自 `HYLE_TESTING=OFF` 的 shipping 构建；测试诊断构建的临时数据未入表。
+当前 scenario benchmark 还会输出 `HYLE_MEM_CERT build testing=0/1`，四个证书脚本在看到
+`testing=1` 或缺失 build marker 时直接拒绝采样，避免以后再次把诊断成本签进产品表。
 
 `1de939d` 还关闭了两个正常路径结构问题：SharedPool 将约 2 KiB 的 O(shards) stable-empty
 observation 栈状态移入 noinline exhaustion 冷路（MSVC shipping codegen 的成功入口只保留
@@ -57,32 +65,35 @@ Windows/Linux 大幅胜 PMR，M4 interactive/utility 都与 libc++ PMR 同档并
 
 ### Region / FixedRegion request scratch
 
-section F 的同一 request workload 每轮执行 4096 次 mixed-size（24–320B）、16B 对齐分配，
-然后 bulk clear/release。Win 与 WSL 同机错开运行；M4 为 macOS 26.5.2 / AppleClang 21，
-分别显式请求 `USER_INTERACTIVE` 与 `UTILITY` QoS。数字是独立进程的中位 ns/op，表内 ratio
-是逐进程配对 throughput ratio 的中位数。
+section G 每个 request 执行 4096 次 mixed-size（24–320B）、16B 对齐分配，然后 bulk
+clear/release；每个进程对 HYLE/reference 交替顺序采 10,001 个 request。`6213115` 的当前
+shipping 结果在 §8 给出完整 p50/p95/p99：Windows/Linux 的 external/owned 两种 Region 与
+M4 interactive/utility 全部 paired sign WIN。Win 与 WSL 同机错开；Linux 固定 guest CPU 2；
+Darwin 不支持硬 P/E core 亲和，因此只签 application QoS，不冒充物理核心类别。
 
-| workload | Windows/MSVC，n=15 | Ubuntu GCC 14.2 / Clang 20.1，均 n=15 | Apple M4 interactive / utility，各 n=31 | 判定 |
-|---|---:|---:|---:|---|
-| external caller-owned storage：`FixedRegion` / PMR reconstruct | 1.210 / 2.072，**1.682x** | GCC 0.839 / 1.199，**1.432x**；Clang 0.915 / 1.736，**1.899x** | 1.010 / 1.551，**1.537x**（30/31）；1.007 / 1.552，**1.540x**（31/31） | 全平台/编译器 **sign WIN**；Win/Linux spread WIN |
-| owned retained blocks：`Region` / PMR release | 1.674 / 1.923，**1.126x** | GCC 1.137 / 2.033，**1.779x**；Clang 1.239 / 1.838，**1.482x** | 2.282 / 2.444，**1.073x**；2.270 / 2.450，**1.083x**（均 31/31） | 全平台/编译器 **sign WIN**；Linux spread WIN |
+长寿命复杂度另由 section J 独立签署：先真实保留 N 个 ordinary blocks，再对同一 Region
+执行 10,001 次 clear/reuse epoch，每个平台 31 个进程。表中是跨进程中位
+`p50_ns_per_allocation`；末列是 2048/32 blocks 的单位成本比。若仍从链头重扫，单位成本会
+随 block 数近似增长 64×；当前只反映 loop/cache/clock 的常数变化：
 
-`Region` 现在缓存当前 ordinary block 的 cursor/end；block 搜索、增长、backing allocation
-隔离在 noinline slow path。`clear()` 复用全部 ordinary blocks，dedicated large block 归还
-backing；逐次 alignment、hard reserved-byte limit 与 requested-byte accounting 均保留。
-benchmark 对 HYLE/PMR 都以只读指针左值做观测，避免纳秒路径被 prvalue 临时对象或 GCC
-read-write asm operand 污染。
+| 平台 / QoS | 32 blocks | 128 | 512 | 2048 | 2048/32 |
+|---|---:|---:|---:|---:|---:|
+| Windows / MSVC 19.50 | 3.125 | 3.906 | 3.711 | 3.955 | **1.266x** |
+| WSL / GCC 14.2，CPU 2 | 3.250 | 3.125 | 3.070 | 3.174 | **0.977x** |
+| Apple M4 / interactive | 2.594 | 2.930 | 3.174 | 4.679 | **1.804x** |
+| Apple M4 / utility | 2.594 | 2.930 | 3.174 | 4.680 | **1.804x** |
 
-M4 是 4 个 Performance + 6 个 Efficiency core，Darwin 没有受支持的硬亲和 API，也不能从
-benchmark 内证明实际 core class。harness 因此默认请求 `USER_INTERACTIVE`，并用
-`HYLE_BENCH_APPLE_QOS=utility` 复核较低优先级调度；两组相对结论一致。额外的
-`taskpolicy -b` background 审计出现 100% 以上绝对 spread，`FixedRegion` 仅 23/31 同侧，
-不满足闸门。故这里签的是前台/application QoS 下的 M4 结论，不外推为所有 QoS 或硬绑定
-P/E 核的结论。
+M4 两种 QoS 的中位数几乎逐项相同；interactive 个别进程在 32-block 短 epoch 上被调度放大，
+不影响 31-process 中位。1.804× 不是超线性遍历：硬结构门禁同时以 512 blocks×64 epochs
+断言每个 epoch 恰好只考察 511 个后续候选且不增长 backing。这里签的是线性总工作、摊还
+O(1) block transition，不承诺跨越 L1/L2 工作集后每次 allocation 的绝对 ns 完全不变。
 
-WSL Clang 20.1 shipping-like 构建固定到 guest CPU 2；三组均 15/15 同侧。WSL 不公开该
-virtual CPU 在 Windows 宿主上的实际 P/E core 映射，因此这只消除 guest 内迁移，不写成
-物理 P-core 证书。
+原始逐进程行：
+[Windows](./mem-region-scaling-win-6213115.csv)、
+[Linux mirror](./mem-region-scaling-wsl-6213115.csv)、
+[M4 interactive mirror](./mem-region-scaling-m4-6213115.csv)、
+[M4 utility mirror](./mem-region-scaling-m4-utility-6213115.csv)。Windows 是 clean `6213115`；
+WSL/M4 是 Windows 源码副本，按实际旧 HEAD/`dirty=1` 记录，不伪造镜像 Git 元数据。
 
 ### Region 真实消费者：HTTP request lifecycle
 
@@ -460,45 +471,52 @@ scripts/bench-stat.py build-bench/bin/hyle_mem_scenarios_bench -n 31 \
 
 # quota 计数是单次语义证据；不把其中线程启动时间当吞吐比较
 HYLE_BENCH_SECTIONS=E build-bench/bin/hyle_mem_scenarios_bench
+
+# 长寿命 Region：31 个独立进程，每进程/每尺寸 10,001 clear/reuse epochs
+python3 scripts/mem-region-scaling-stat.py \
+  build-bench/bin/hyle_mem_scenarios_bench -n 31 --samples 10001 --cpu 2 \
+  --raw docs/performance/mem-region-scaling-wsl-6213115.csv
 ```
 
 Linux/WSL 必须从 ext4 工作副本运行；Win、WSL 同机时必须错开，不得并发采样。Apple M4 使用本地 APFS 工作副本。
 
 ## 8. Request 尾延迟证书
 
-section G 与 section F 使用相同的 4096 次 mixed-size request，但每次只在整个 request
+section G 使用同一个 4096 次 mixed-size request，但每次只在整个 request
 边界读取一次 `steady_clock`。报告的是 **ns/request** 的 nearest-rank p50/p95/p99，不是给每次
 allocation 插时钟，也不是把 nanobench epoch 当用户延迟。每个样本内 HYLE/对照交替先后顺序，
-降低固定执行顺序与温漂偏差；正式证书至少 4096 samples、15 个独立进程，M4 延续 QoS 审计。
+降低固定执行顺序与温漂偏差；`6213115` 每进程使用 10,001 samples，Windows/Linux 至少 15 个
+独立进程，M4 每种 QoS 31 个进程。
 
-FixedPool 行由 `20f3676` 当前实现重签；其余 Region 行仍绑定 clean `d3e4214`，没有用本轮
-无关采样改写。数字均为 `HYLE / reference` 的 p50/p95/p99，单位 **µs/request**；ratio 是逐
+Region 行由当前 clean `6213115` 重签；Linux/M4 的同一 shipping build 也重签 FixedPool，
+Windows FixedPool 保留未被本次产品改动影响的 clean `20f3676` 行。数字均为
+`HYLE / reference` 的 p50/p95/p99，单位 **µs/request**；ratio 是逐
 进程配对 `reference/HYLE` 的中位数，三项依次对应 p50/p95/p99：
 
 | 平台 / QoS | request shape | HYLE p50/p95/p99 | reference p50/p95/p99 | paired ratio | 判定 |
 |---|---|---:|---:|---:|---|
-| Win / MSVC 19.50 | external `FixedRegion` / PMR reconstruct | 4.900 / 4.900 / 7.400 | 8.200 / 8.300 / 13.000 | 1.673 / 1.694 / 1.756 | **WIN / WIN / WIN** |
-| Win / MSVC 19.50 | owned `Region` / PMR release | 6.800 / 6.800 / 12.100 | 8.300 / 8.400 / 15.200 | 1.221 / 1.235 / 1.292 | **WIN / WIN / WIN** |
+| Win / MSVC 19.50 | external `FixedRegion` / PMR reconstruct | 7.000 / 7.500 / 12.900 | 8.200 / 8.300 / 14.900 | 1.171 / 1.107 / 1.163 | **WIN / WIN / WIN** |
+| Win / MSVC 19.50 | owned `Region` / PMR release | 5.400 / 5.800 / 10.200 | 7.600 / 7.700 / 14.200 | 1.407 / 1.328 / 1.430 | **WIN / WIN / WIN** |
 | Win / MSVC 19.50 | `FixedPool` / oneTBB fixed_pool | 28.600 / 34.600 / 60.900 | 42.900 / 48.100 / 81.600 | 1.500 / 1.395 / 1.336 | **WIN / WIN / WIN** |
-| Linux / Clang 20.1 CPU 2 | external `FixedRegion` / PMR reconstruct | 4.119 / 4.145 / 7.046 | 7.651 / 7.784 / 13.968 | 1.858 / 1.877 / 2.094 | **WIN / WIN / WIN** |
-| Linux / Clang 20.1 CPU 2 | owned `Region` / PMR release | 5.381 / 5.436 / 10.557 | 8.147 / 9.026 / 15.051 | 1.514 / 1.651 / 1.574 | **WIN / WIN / WIN** |
-| Linux / GCC 14.2 CPU 2 | `FixedPool` / oneTBB fixed_pool | 23.500 / 29.434 / 52.040 | 32.147 / 38.977 / 66.579 | 1.371 / 1.308 / 1.259 | **WIN / WIN / WIN** |
-| Apple M4 / interactive | external `FixedRegion` / PMR reconstruct | 3.667 / 3.750 / 3.834 | 6.333 / 6.417 / 6.500 | 1.727 / 1.711 / 1.696 | **WIN / WIN / WIN** |
-| Apple M4 / interactive | owned `Region` / PMR release | 5.667 / 5.792 / 5.875 | 9.917 / 10.084 / 10.292 | 1.750 / 1.741 / 1.752 | **WIN / WIN / WIN** |
-| Apple M4 / interactive | `FixedPool` / oneTBB fixed_pool | 24.209 / 24.542 / 30.000 | 41.000 / 42.541 / 47.750 | 1.692 / 1.732 / 1.598 | **WIN / WIN / WIN** |
-| Apple M4 / utility | external `FixedRegion` / PMR reconstruct | 3.666 / 3.708 / 3.750 | 6.333 / 6.417 / 6.459 | 1.727 / 1.731 / 1.722 | **WIN / WIN / WIN** |
-| Apple M4 / utility | owned `Region` / PMR release | 5.667 / 5.750 / 5.833 | 9.916 / 10.000 / 10.125 | 1.743 / 1.739 / 1.736 | **WIN / WIN / WIN** |
-| Apple M4 / utility | `FixedPool` / oneTBB fixed_pool | 24.458 / 25.000 / 30.084 | 39.208 / 41.542 / 45.916 | 1.600 / 1.661 / 1.528 | **WIN / WIN / WIN** |
+| Linux / GCC 14.2 CPU 2 | external `FixedRegion` / PMR reconstruct | 3.470 / 4.122 / 5.183 | 4.875 / 4.912 / 8.098 | 1.405 / 1.194 / 1.435 | **WIN / WIN / WIN** |
+| Linux / GCC 14.2 CPU 2 | owned `Region` / PMR release | 5.689 / 5.942 / 8.554 | 8.254 / 9.006 / 14.289 | 1.451 / 1.524 / 1.709 | **WIN / WIN / WIN** |
+| Linux / GCC 14.2 CPU 2 | `FixedPool` / oneTBB fixed_pool | 22.814 / 28.698 / 49.612 | 33.374 / 38.592 / 61.088 | 1.474 / 1.368 / 1.253 | **WIN / WIN / WIN** |
+| Apple M4 / interactive | external `FixedRegion` / PMR reconstruct | 4.125 / 4.209 / 4.291 | 6.334 / 6.458 / 6.541 | 1.536 / 1.534 / 1.525 | **WIN / WIN / WIN** |
+| Apple M4 / interactive | owned `Region` / PMR release | 5.500 / 6.125 / 6.375 | 9.958 / 10.084 / 10.250 | 1.803 / 1.664 / 1.608 | **WIN / WIN / WIN** |
+| Apple M4 / interactive | `FixedPool` / oneTBB fixed_pool | 24.292 / 24.583 / 29.042 | 40.791 / 42.667 / 46.958 | 1.679 / 1.731 / 1.611 | **WIN / WIN / WIN** |
+| Apple M4 / utility | external `FixedRegion` / PMR reconstruct | 4.125 / 4.209 / 4.291 | 6.334 / 6.458 / 6.542 | 1.535 / 1.525 / 1.524 | **WIN / WIN / WIN** |
+| Apple M4 / utility | owned `Region` / PMR release | 5.500 / 6.084 / 6.375 | 9.958 / 10.125 / 10.292 | 1.811 / 1.664 / 1.617 | **WIN / WIN / WIN** |
+| Apple M4 / utility | `FixedPool` / oneTBB fixed_pool | 24.458 / 24.958 / 29.542 | 40.750 / 42.583 / 47.292 | 1.666 / 1.701 / 1.592 | **WIN / WIN / WIN** |
 
-原始逐进程 percentile：
-[Windows CSV](./mem-request-latency-win.csv)、
-[Linux CSV](./mem-request-latency-linux.csv)、
-[M4 interactive CSV](./mem-request-latency-m4.csv)、
-[M4 utility CSV](./mem-request-latency-m4-utility.csv)。四份文件的所有行均为同一 commit、
-`dirty=0`、`qos_ok=1`；Windows/Linux 各 15 process，M4 每种 QoS 各 31 process。M4 raw
-行分别记录 `qos=user-interactive/utility` 与 `affinity=unsupported`，不冒充硬 P/E 核绑定。
+`6213115` 原始逐进程 percentile：
+[Windows clean](./mem-request-latency-win-6213115.csv)、
+[Linux mirror](./mem-request-latency-wsl-6213115.csv)、
+[M4 interactive mirror](./mem-request-latency-m4-6213115.csv)、
+[M4 utility mirror](./mem-request-latency-m4-utility-6213115.csv)。Windows 为 clean HEAD；
+Linux/M4 是同一产品源码副本并如实记录旧 HEAD/`dirty=1`。M4 raw 分别记录
+`qos=user-interactive/utility` 与 `affinity=unsupported`，不冒充硬 P/E 核绑定。
 
-`20f3676` FixedPool 重签原始行：
+Windows `20f3676` FixedPool 重签原始行继续有效：
 [Windows](./mem-request-latency-fixed-pool-win-20f3676.csv)、
 [Linux mirror](./mem-request-latency-fixed-pool-linux-20f3676.csv)、
 [M4 interactive mirror](./mem-request-latency-fixed-pool-m4-20f3676.csv)、
@@ -509,21 +527,21 @@ clean `20f3676`；两套镜像行按副本现状记录旧 HEAD/`dirty=1`，其 F
 ```bash
 # Linux：固定同一逻辑 CPU
 python3 scripts/mem-cert-stat.py build-bench/bin/hyle_mem_scenarios_bench \
-  -n 15 --samples 4096 --cpu 2 \
-  --raw docs/performance/mem-request-latency-linux.csv
+  -n 15 --samples 10001 --cpu 2 \
+  --raw docs/performance/mem-request-latency-wsl-6213115.csv
 
 # macOS：无受支持的硬亲和 API，延续 USER_INTERACTIVE / UTILITY 两组 QoS 审计
 python3 scripts/mem-cert-stat.py build-bench/bin/hyle_mem_scenarios_bench \
-  -n 31 --samples 4096 --raw docs/performance/mem-request-latency-m4.csv
+  -n 31 --samples 10001 --raw docs/performance/mem-request-latency-m4-6213115.csv
 HYLE_BENCH_APPLE_QOS=utility \
   python3 scripts/mem-cert-stat.py build-bench/bin/hyle_mem_scenarios_bench \
-  -n 31 --samples 4096 --raw docs/performance/mem-request-latency-m4-utility.csv
+  -n 31 --samples 10001 --raw docs/performance/mem-request-latency-m4-utility-6213115.csv
 
 # Windows：oneTBB 的运行时 DLL 在 build tree 的配置目录中
 python scripts/mem-cert-stat.py build-bench/bin/hyle_mem_scenarios_bench.exe \
-  -n 15 --samples 4096 \
+  -n 15 --samples 10001 \
   --dll-dir build-bench/msvc_19.50_cxx23_64_md_release \
-  --raw docs/performance/mem-request-latency-win.csv
+  --raw docs/performance/mem-request-latency-win-6213115.csv
 ```
 
 脚本保存每个 process/variant 的原始 percentile、HEAD 与 dirty 标记，并对每个 percentile 做

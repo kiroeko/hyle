@@ -163,6 +163,11 @@ def main():
                 sys.exit(f"run {run_index} {variant}: invalid footprint row")
             if current_metadata is None or current_metadata["format"] != 1:
                 sys.exit(f"run {run_index} {variant}: invalid certificate metadata")
+            if "HYLE_MEM_CERT build testing=0" not in output:
+                sys.exit(
+                    f"run {run_index} {variant}: benchmark is not a shipping "
+                    "build (HYLE_TESTING must be OFF)"
+                )
             runtime = parse_apple_runtime(output)
             if current_metadata["platform"] == "macos":
                 if runtime is None or runtime["qos_ok"] != 1:

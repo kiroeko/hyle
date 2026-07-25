@@ -140,13 +140,19 @@ def main():
                 f"run {index} exited {result.returncode}: "
                 f"{(result.stderr or result.stdout)[:500]}"
             )
-        rows = parse_rows(result.stdout + result.stderr)
-        current_metadata = parse_meta(result.stdout + result.stderr)
+        combined_output = result.stdout + result.stderr
+        rows = parse_rows(combined_output)
+        current_metadata = parse_meta(combined_output)
         if not rows:
             sys.exit(f"run {index}: no HYLE_MEM_CERT rows parsed")
         if current_metadata is None or current_metadata["format"] != 1:
             sys.exit(f"run {index}: missing or unsupported HYLE_MEM_CERT meta")
-        runtime = parse_apple_runtime(result.stdout + result.stderr)
+        if "HYLE_MEM_CERT build testing=0" not in combined_output:
+            sys.exit(
+                f"run {index}: benchmark is not a shipping build "
+                "(HYLE_TESTING must be OFF)"
+            )
+        runtime = parse_apple_runtime(combined_output)
         if current_metadata["platform"] == "macos":
             if runtime is None or runtime["qos_ok"] != 1:
                 sys.exit(f"run {index}: Apple QoS metadata missing or unsuccessful")

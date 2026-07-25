@@ -97,16 +97,16 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 
 > **信源**：体量以 `cloc` 实测为准；能力进度以 [`../milestones/README.md`](../milestones/README.md) 为准。
 > **口径**：生产 = `src` + `include` 的 code 列（不含 tests/bench/docs、不含 third_party）。
-> **2026-07-24 锚定**：旧投影「完成时生产 ~28–40k / 中值 34k」**已作废**——当前生产已 **78.5k**，单 simd **37.5k**。当前判断见 [`../milestones/pre-release-readiness.md`](../milestones/pre-release-readiness.md)；更早数字只作历史快照。
+> **2026-07-25 锚定**：旧投影「完成时生产 ~28–40k / 中值 34k」**已作废**——当前生产已 **79.1k**，单 simd **37.5k**。当前判断见 [`../milestones/pre-release-readiness.md`](../milestones/pre-release-readiness.md)；更早数字只作历史快照。
 
-### 当前实测（2026-07-24）
+### 当前实测（2026-07-25）
 
 | 固定统计口径 | code | 说明 |
 |---|---:|---|
-| **全库代码** | **240,068** | `cloc . --vcs=git`；含 docs 与 in-tree third_party |
-| **自实现（含测试）** | **113,889** | `include/hyle + src + tests`，排除 CMake/Text |
-| **自实现（不含测试）** | **78,486** | `include/hyle + src`；库本体硬锚 |
-| **当前审查模块 platform 实现** | **6,710** | C/C++ 公共头 + `src/platform`，不含测试 |
+| **全库代码** | **243,911** | `cloc . --vcs=git`；含 docs 与 in-tree third_party |
+| **自实现（含测试）** | **115,003** | `include/hyle + src + tests`，排除 CMake/Text |
+| **自实现（不含测试）** | **79,107** | `include/hyle + src`；库本体硬锚 |
+| **当前审查模块 mem 实现** | **5,071** | C/C++ 公共头 + `src/mem`，不含测试 |
 | 再加 ggml 等大依赖足迹 | **~200–350k+** | 由 ggml 主导，不计入「自有生产」 |
 
 **生产按模块（src+include，约）：**
@@ -119,7 +119,7 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 | sched | ~5.1k | ~7% |
 | container | ~4.9k | ~6% |
 | platform | ~6.7k（含公共 C 头） | ~9% |
-| mem | ~4.3k | ~6% |
+| mem | ~5.1k | ~6% |
 | graph | ~0.6k | |
 | 其余基质及顶层/C ABI 头 | ~6.0k | ~8% |
 

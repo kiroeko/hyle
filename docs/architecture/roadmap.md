@@ -100,7 +100,7 @@ container/       │               │ compute   │  container 自带内联 SSE
 |---|---|---|---|---|
 | **P0** | error / obs-hook | Status+expected+context+ASSIGN_OR_RETURN / obs 埋点 | 3-5k | error 自身已在 Win/GCC14/M4 正确性与两类性能证书后冻结；全库 adoption audit 进行中，mem 消费者切片已统一共享 Status；obs 已收口 |
 | **P1** | platform | thread+park / vm+dynlib / path+fs+env / CPU | 5-8k | **~6.7k**（含 C surface），✅ 预发布冻结；系统/进程 CPU 已拆分，Thread 支持 required 与单核/集合 affinity；逐 CPU 能力与显式强/弱核优先已由 sched 消费；111 项 C surface 与 9 个独立头三平台机械验收 |
-| **P2** | mem | Allocator+alignment / mimalloc / region / pool+stack / NUMA | 6-10k | **~1.8k**，实现主干稳定；公共形状/C surface 与跨平台性能尾仍在收口复审 |
+| **P2** | mem | Allocator+alignment / mimalloc / region / pool+stack / NUMA | 6-10k | 稳定设计见 [`mem-design.md`](./mem-design.md)；冻结任务/当前认证只见 [`../milestones/mem-close-plan.md`](../milestones/mem-close-plan.md) |
 | **P2** | time | 单调钟 / 分层时间轮 | 1.5-2.5k | **~0.9k**，✅ 预发布冻结 |
 | **P3** | container | ring/MPMC / XXH3 / carray / SwissTable / SmallVector / string | 7-11k | **~4.9k**，✅ StringBuf 复杂度/三平台强 peer 收口后预发布冻结 |
 | **P3** | simd | 七后端 + 双轨 + dtype/math/sort/bitpack/search… | 10-16k | **已 ~34k 生产**（远超「~5–8k」旧投影）；补缺见 simd-capability-fill-list / simd-25，冻结无谓扩名 |
@@ -109,10 +109,9 @@ container/       │               │ compute   │  container 自带内联 SSE
 | **P5** | compute | device/stream / buffer / completion / kernel / ggml_bridge / Vulkan | 10-16k | **已 ~3.8k**（仍简）；终态弹性 **+3～15k** 视自造深度 |
 | **P6** | graph + 收口 | 增量重算 / 数据并行 / C-ABI / T3 | 11-17k | graph **已 ~0.6k**（graph-01 完整、graph-02 部分，薄但非 stub）；close-01 八模块完成、上层/发布门待做 |
 
-**HYLE 自有合计（2026-07-19）**：生产 **~67.2k**；终态纪律现重估
-**~75–90k** / 做满守界 **~85–105k**（旧 28–40k 作废）。当前分层判断与
-冻结规则见
-[`pre-release-readiness.md`](../milestones/pre-release-readiness.md)。
+本页不保存易漂移的当前 LOC 或完成百分比。实测体量只见 [`hyle-scope.md`](./hyle-scope.md)，
+当前任务/冻结状态只见 [`../milestones/README.md`](../milestones/README.md) 与各模块 closure；
+这里的旧预测列只保留规划来源，不作为当前规模或完成度。
 
 > **⚠️ scope 负空间待复核（2026-07-03）**：审计里被判"有意不做(L1/运维栈 out-of-scope)"的项(如 TLS 一度、log 聚合、序列化边界、数据并行归属等)——其中**部分可能判错了**,`hyle-scope.md` 的负空间是项目早期写的,本身可能"漏点"。这些**不当已决**,留作后续讨论;TLS 已从"排除"改判为 C9 真能力就是一例修正。序列化 IN/OUT 边界、数据并行层归属尤其待拍。
 
@@ -124,15 +123,8 @@ container/       │               │ compute   │  container 自带内联 SSE
 > clay API diff 是 [`../milestones/README.md`](../milestones/README.md) 的"全部里程碑"表，**那是唯一信源**。
 > 本文件只管**拓扑序、施工计划、决策、验收门槛**这些慢变内容。
 >
-> 一句话现状（粗粒度，细节看 milestones）：**地基层（error/platform/mem/container/time/util/obs）基本立住；
-> sched 支柱已完成 work-stealing、Waker、同步原语、Task/co_await、fiber 亲和、
-> timer、结构化取消、优雅关闭与 blocking pool 的同等级收口；**simd 支柱基本完成**（dispatch + vec 抽象 +
-> scalar/SSE4.2/AVX2/AVX512/NEON 定宽后端 + SVE/RVV scalable 后端实跑 + Runtime/native/exact 双轨 + fp16/bf16/fp8 dtype + HYLE 自有数学/排序/bitpack/RNG 核，产品零 Highway/xsimd、外部对照追平；AVX512 由 Intel SDE 验正确性，SVE/RVV 多 VL 由 QEMU 验证）；**io 支柱已完成实现、C ABI、红队与三平台证书收口**（IOCP/io_uring/epoll/kqueue、shard-per-core、TCP/UDP、file 自动卸载、shmem、timeout/cancel、DNS/signal、TLS、HTTP/1.1+2、multishot/fixed-file）。当前不可声称整个 IO SOTA：M4 TLS/kqueue 多 worker、TLS handshake、专项 peer benchmark 与 HTTP whole-request cancel/C 高层 HTTP/TLS facade 是公开尾项；**compute/graph 有真实主干但能力面仍薄**。**
-> 体量/进度（2026-07-19）：生产 **~67.2k**；÷终态纪律中值
-> ~82.5k ≈ **~81% LOC**，但 SIMD 体量会放大这个比例；完整愿景的功能判断带为
-> **约 75–85%**。多数底层模块已完成同等级收口；mem 因公共形状与 draft C surface
-> 主动重开复审，compute/graph 有真实主干但仍有能力尾，close-01 的上层 C ABI/install/FFI 门未完。
-> **勿用里程碑计数当完成度**。
+> 本节有意不再复制“一句话现状”、模块冻结表、LOC 或完成百分比：这些快变信息曾多次与
+> milestones 漂移。roadmap 只回答依赖顺序和验收门；当前状态沿上面的唯一信源链接读取。
 
 
 

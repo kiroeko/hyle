@@ -22,18 +22,18 @@
 
 ## 预测 vs 真实 LOC（防玩具化）
 
-### 整体进度与体量（诚实，2026-07-24 锚定）——分母别混
+### 整体进度与体量（诚实，2026-07-25 锚定）——分母别混
 
 > **生产 = `cloc src include` 的 code 列**（header+C++/CUDA 等，不含 tests/bench/docs/third_party）。
-> **旧投影「完成时生产 ~28–40k / 中值 34k」已作废**：当前生产已 **~78.5k**，单 **simd ~37.5k**。
+> **旧投影「完成时生产 ~28–40k / 中值 34k」已作废**：当前生产已 **~79.1k**，单 **simd ~37.5k**。
 > 权威规模节：[`../architecture/hyle-scope.md`](../architecture/hyle-scope.md)。中期报告：[`midterm-report-2026-07-scale-positioning.md`](./midterm-report-2026-07-scale-positioning.md)。SIMD 当前补缺账本：[`simd-capability-fill-list.md`](./simd-capability-fill-list.md)。
 
 | 固定统计口径 | 当前 | 命令/说明 |
 |---|---|---|
-| **全库代码** | **242,194** | `cloc . --vcs=git`；含 docs/third_party，**≠ 自写** |
-| **自实现（含测试）** | **114,675** | `cloc include/hyle src tests --exclude-lang=CMake,Text` |
-| **自实现（不含测试）** | **78,943** | `cloc include/hyle src --exclude-lang=CMake`；库本体硬锚 |
-| **当前审查模块 mem 实现** | **4,907** | C/C++ 公共头 + `src/mem`，不含测试 |
+| **全库代码** | **243,911** | `cloc . --vcs=git`；含 docs/third_party，**≠ 自写** |
+| **自实现（含测试）** | **115,003** | `cloc include/hyle src tests --exclude-lang=CMake,Text` |
+| **自实现（不含测试）** | **79,107** | `cloc include/hyle src --exclude-lang=CMake`；库本体硬锚 |
+| **当前审查模块 mem 实现** | **5,071** | C/C++ 公共头 + `src/mem`，不含测试 |
 | **终态生产（纪律收口 A）** | **~75–90k** | 主预期 |
 | **终态生产（做满守界 B）** | **~85–105k** | compute/graph/发布面收口更满 |
 | 失控上限 C | 120k+ 生产 | 应避免 |
@@ -45,8 +45,8 @@
 | **生产 LOC ÷ 终态 B 中值 ~95k** | 做满剧本 | **~83%** |
 | **对完整愿景的功能完成度** | 能力清单 + 头牌缺口 | 不再给伪精确百分比：底层多数冻结，platform 主动复审；compute/graph 与发布面仍有能力尾 |
 
-**模块生产粗表（2026-07-24）**：simd ~37.5k · io ~9.0k · container
-~4.9k · platform **6,710**（含公共 C 头）· compute ~4.1k · sched ~5.1k · mem ~4.3k ·
+**模块生产粗表（2026-07-25）**：simd ~37.5k · io ~9.0k · container
+~4.9k · platform **6,710**（含公共 C 头）· compute ~4.1k · sched ~5.1k · mem ~5.1k ·
 util ~1.3k · time ~0.9k · obs/error/graph 各 ~0.6–0.8k。
 
 预发布冻结门、重开触发器和下一步顺序见
