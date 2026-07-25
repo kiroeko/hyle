@@ -15,6 +15,7 @@ error 是 HYLE 的统一失败值层。它帮助调用方把可恢复失败跨�
 | 明确接受 cleanup 失败 | `IgnoreError` | `hyle_status_free` 前显式注释/处理 | 无意图地丢弃返回值 |
 | allocator、pool pop、poll 的“暂时无值”本来就是正常热路结果 | 指针、`optional` 或小 enum | 指针/标量值合同 | 每次构造 owning Status |
 | 参数、文件、权限、OOM、超时、设备暂不可用等运营失败 | canonical `Status` code | 同一 `hyle_status_code` | abort 或异常跨 ABI |
+| C/POSIX 调用刚失败，手里有 errno | `status_from_errno(errno, "operation")` | `hyle_status_from_errno` | 各模块复制 `strerror` + switch |
 | HYLE 内部不变量损坏、double free、错误生命周期 | `HYLE_FATAL_ASSERT` | fail-fast 合同 | 返回 Status 后继续运行 |
 | 需要写日志或 trace | 最终消费边界交给 `obs`/宿主 logger | `hyle/c/obs.h` | error 内部自动日志或第二套 handler |
 
@@ -72,6 +73,23 @@ code 表达调用者应如何处理，程序只按 code 分支，不解析 messa
 
 `Internal` 不是掩盖 HYLE bug 的桶。若内部不变量已经损坏，调用方不能安全恢复，应
 fail-fast；Status 只表示程序状态仍然有效、调用方可以决定下一步的失败。
+
+## errno 边界不要重复造轮子
+
+系统调用失败后要立刻保存 errno，再交给统一工厂；不要在其它可能修改 errno 的调用之后
+才读取：
+
+```cpp
+int fd = ::open(path, O_RDONLY);
+if (fd < 0) {
+  const int error = errno;
+  return hyle::status_from_errno(error, "opening model weights");
+}
+```
+
+`status_code_from_errno` 适合已经自行构造完整 native message、只需要共享分类的 platform/
+backend adapter。操作合同确实更具体时可以覆盖通用 code，例如线程创建的 `EAGAIN` 应报
+`ResourceExhausted`。不要为同一个 errno 在 fs、VM、NUMA 中各维护一套近似 switch。
 
 ## message、context 与日志
 

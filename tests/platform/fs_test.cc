@@ -696,6 +696,22 @@ TEST(FileHandle, OpenFileWriteThenReadRoundTrip) {
   (void)remove_file(p.c_str());
 }
 
+TEST(FileHandle, OpenHandleDoesNotBlockAtomicRenameOrDelete) {
+  char dir[4096];
+  auto temp = temp_directory(dir, sizeof(dir));
+  ASSERT_TRUE(temp.has_value()) << temp.error().message();
+  std::string original = std::string(dir) + "/hyle_share_delete.txt";
+  std::string renamed = original + ".renamed";
+  ASSERT_TRUE(touch(original.c_str()).ok());
+
+  auto opened = open_file(original.c_str(), kOpenRead);
+  ASSERT_TRUE(opened.has_value()) << opened.error().message();
+  EXPECT_TRUE(rename_path(original.c_str(), renamed.c_str()).ok());
+  EXPECT_TRUE(remove_file(renamed.c_str()).ok());
+  EXPECT_TRUE(opened->valid());
+  EXPECT_TRUE(opened->close().ok());
+}
+
 // ---- v4: environment write --------------------------------------------------
 
 TEST(FsEnv, SetGetUnsetRoundTrip) {

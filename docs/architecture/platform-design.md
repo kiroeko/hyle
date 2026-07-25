@@ -43,8 +43,8 @@ deadline 的时间语义仍归 time/sched；不能因为 OS 同时实现二者�
 | 地址等待 | `detail::wait_on_address*`、`Parker`、`Unparker` | mutex/worker parking/waker 地基 | 裸等待允许伪唤醒；Parker 保存一个 token，解决 unpark-before-park |
 | 虚拟内存 | `VmRegion` 与 `vm_*` | staged commit、guard page、大块地址保留、自定义 owner | 页粒度；reserve 与 commit 分离；RAII 优先，裸函数供底层组合 |
 | NUMA/大页 | `NumaPlacement`、`vm_bind_numa*`、huge-page advice | 大块 arena、per-node backing、THP 提示 | preferred 是软结果；bind/interleave 是硬合同；建议失败不破坏 mapping |
-| 文件系统与环境 | `FileInfo`、`FileHandle`、无分配 visitor、buffer-fill 查询 | 配置、资源、目录扫描、临时文件、部署环境 | UTF-8 路径；短读写正常；不存在与权限/IO 错误分开 |
-| 文件映射 | `MappedFile` | 大文件随机访问、权重/数据集、COW | RO/RW/COW 明确；任意 offset；move-only RAII |
+| 文件系统与环境 | `FileInfo`、`FileHandle`、无分配 visitor、buffer-fill 查询 | 配置、资源、目录扫描、临时文件、部署环境 | UTF-8 路径；短读写正常；打开 owner 不阻塞原子替换路径 |
+| 文件映射 | `MappedFile` + `Advice`/`prefetch`/`lock` | 大文件随机访问、权重/数据集、COW、显式 warm-up/驻留 | RO/RW/COW；任意 offset；hint 与 residency 不隐式发生 |
 | 动态库 | `DynLib` | 插件、用户 backend、FFI 宿主符号 | open/get/current 语义分开；符号签名由调用方承担 |
 
 这些能力共同遵循“窄机制 + 明确 owner + 可恢复错误”的形状。platform 不提供一个巨型
@@ -111,6 +111,12 @@ portable priority 和配置策略。view 参数在 `spawn()` 返回前同步复�
 mapping。device VRAM、pinned host memory、coherence 与 GPU completion 归 `compute`，不能
 用 `VmRegion` 或 `mem::Allocator` 抹掉 backend 生命周期。
 
+对权重、索引和数据集，映射 owner 与访问策略分开：`Advice` 只给 kernel 访问模式提示，
+`prefetch` 是 will-need 便利入口，`lock/unlock` 才明确购买驻留。它们都作用于已有 mapping，
+不在 `open()` 时暗中 fault 全文件或消耗 memlock 配额。POSIX 使用 `madvise/mlock`；Windows
+只对 `WillNeed` 有 `PrefetchVirtualMemory` 对等能力，其它 hint 诚实返回 `Unimplemented`，
+residency 使用 `VirtualLock`。unsupported hint 不影响 mapping 的正确性。
+
 NUMA preferred 与 huge-page advice 是策略提示，返回值必须让用户看见是否 applied、not
 needed 或 unavailable。依赖精确放置时使用 bind/interleave 的硬合同并处理失败；软降级后
 mapping 仍然有效。
@@ -130,6 +136,8 @@ link、目录 visitor、cwd/temp/home/env、同步 open/read/write 和原子临�
 - 递归删除绝不跟随 symlink/junction；这是数据安全合同，不是实现细节。
 - `create_temp_file` 原子创建并返回已打开 handle，避免“生成名字再打开”的 TOCTOU 窗口。
 - `FileHandle` 的短读/短写是成功；需要观察 close/flush 失败时必须显式 close。
+- Windows `FileHandle`/`MappedFile` 以 `FILE_SHARE_DELETE` 打开，使 rename/delete 与 POSIX
+  一样只替换目录项、已有 owner 继续持有文件对象；这也是原子模型/缓存更新的必要合同。
 
 platform 不拥有 path 字符串算法、glob、watcher、高层 directory object、async stream 或虚拟
 文件系统。纯词法 path 操作属于 container/string，变化通知和异步数据流属于 io。
@@ -139,6 +147,10 @@ platform 不拥有 path 字符串算法、glob、watcher、高层 directory obje
 platform 可以依赖最底层 error。资源创建和有值查询返回 `Result<T>`，状态变更返回
 `Status`；错误保存 HYLE code、operation 和原生系统诊断。成功热路径不分配，模块不维护
 私有 TLS last-error，也不让 errno/GetLastError 越过调用边界后才被读取。
+
+POSIX fs、MappedFile、VM 与 NUMA 的 generic errno code 必须来自 error 的
+`status_code_from_errno`；只有系统调用合同更具体时才局部覆盖。Win32/CUDA/Vulkan 是独立
+native domain，由各自 owner 保留定长 translator，不能硬套 errno。
 
 C++ 资源 owner（`Thread`、`VmRegion`、`FileHandle`、`MappedFile`、`DynLib`）均为 move-only
 RAII；借出的 pointer、symbol、native handle 或 view 不得活过 owner。需要转移回收责任时必须
@@ -178,6 +190,8 @@ platform 的 SOTA 标准不是“比系统调用快”，而是同合同下不�
 - directory visitor 常见路径不逐项 stat、不分配；只有文件系统不给类型时才补查询。
 - VM、MappedFile、DynLib 与 FileHandle 的成功生命周期无异常和隐藏堆分配；错误消息只在
   冷失败路构造。
+- `MappedFile::advise`、`lock`、`unlock` 是 O(1) 参数检查 + 至多一个 native call，零 heap
+  allocation；成本由 range 大小导致的 kernel page work 决定，不伪装成纳秒用户态原语。
 
 基准必须比较相同语义：HYLE wrapper 对 raw OS、目录 visitor 对同等 metadata 的 std/OS
 形状、MappedFile 同时对 buffered stream 和 raw mmap。点值、样本和平台输赢只维护在

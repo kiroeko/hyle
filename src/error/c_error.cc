@@ -68,6 +68,16 @@ hyle_status hyle_status_new(hyle_status_code code, const char *msg) {
   return steal_to_c(hyle::Status(normalized, message));
 }
 
+hyle_status_code hyle_status_code_from_errno(int error_number) {
+  return to_c_code(hyle::status_code_from_errno(error_number));
+}
+
+hyle_status hyle_status_from_errno(int error_number, const char *context) {
+  return steal_to_c(hyle::status_from_errno(
+      error_number, context == nullptr ? std::string_view()
+                                      : std::string_view(context)));
+}
+
 void hyle_status_free(hyle_status *status) {
   if (status == nullptr) return;
   hyle::Status owned = adopt_from_c(*status);

@@ -63,6 +63,12 @@ typedef struct hyle_status {
 HYLE_ERROR_C_API hyle_status hyle_status_ok(void);
 HYLE_ERROR_C_API hyle_status hyle_status_new(hyle_status_code code,
                                              const char *msg);
+/* Canonical errno adapter. errno==0 produces OK. `context` may be NULL; a
+ * non-empty value is prefixed to the native CRT description. */
+HYLE_ERROR_C_API hyle_status_code hyle_status_code_from_errno(
+    int error_number);
+HYLE_ERROR_C_API hyle_status hyle_status_from_errno(int error_number,
+                                                    const char *context);
 HYLE_ERROR_C_API void hyle_status_free(hyle_status *s);
 HYLE_ERROR_C_API hyle_status hyle_status_clone(hyle_status s);
 /* dst must already hold an initialized Status. Its old value is freed before

@@ -184,10 +184,18 @@ soft 建议，绝不影响正确性。Linux 用 madvise；Windows/macOS 匿名�
 | 符号 | 说明 |
 |---|---|
 | `hyle_map_mode` | `READ_ONLY` / `READ_WRITE` / `COPY_ON_WRITE`（对标 memmap2） |
+| `hyle_map_advice` | `NORMAL` / `RANDOM` / `SEQUENTIAL` / `WILL_NEED` / `DONT_NEED` |
 | `hyle_mapped_file_open(out, path, mode, offset, length)` | length=0→到 EOF；支持非页对齐 offset（内部扩大/对齐 OS view）；返回 Status |
 | `hyle_mapped_file_destroy(m)` | unmap + 关句柄 |
 | `hyle_mapped_file_valid` / `hyle_mapped_file_data` / `hyle_mapped_file_size` | 查询 |
 | `hyle_mapped_file_flush(m)` | 回写脏页（RW；RO/COW 为 OK no-op）；返回 Status |
+| `hyle_mapped_file_advise(m, advice, offset, length)` | 映射范围 hint；length=0→到结尾；不支持返回 UNIMPLEMENTED |
+| `hyle_mapped_file_lock` / `unlock` / `locked` | 显式 page residency；幂等；失败可见，不影响 owner 有效性 |
+
+Windows 只有 `WILL_NEED` 有直接 hint 对等物；POSIX 支持五档 `madvise`。hint 返回
+`HYLE_STATUS_UNIMPLEMENTED` 时 mapping 仍可正常使用。`lock` 受系统权限和 memlock quota
+约束，调用方必须检查 Status；它不是 prefetch 的别名。打开的 mapping 在 Windows 也允许
+路径 rename/delete，已有 opaque owner 继续持有原文件对象。
 
 ### 3.6 CPU（DLL + 常量）
 
@@ -417,7 +425,7 @@ cwd/home/env/symlink 和 CPU ids/info 使用同一模式；数组的 `cap` 是�
 
 HYLE 未发布，C ABI 面无版本门/协商——发布前按需自由演进，追求干净正确。发布后如何冻结 ABI 见 [`../architecture/c-abi-design.md`](../architecture/c-abi-design.md) §3。
 
-导出面覆盖：wait/Parker、Thread（priority 5 档）、DynLib、VM 自由函数 + VmRegion（含 `reserve_numa`/`adopt`）、hugepage·THP、NUMA（node 查询 + preferred/bind/interleave + `reserve_numa`）、fs/env（权限/符号链接/硬链接/原子临时文件/env 写）、MappedFile（RO/RW/COW）、cpu 全字段。
+导出面覆盖：wait/Parker、Thread（priority 5 档）、DynLib、VM 自由函数 + VmRegion（含 `reserve_numa`/`adopt`）、hugepage·THP、NUMA（node 查询 + preferred/bind/interleave + `reserve_numa`）、fs/env（权限/符号链接/硬链接/原子临时文件/env 写）、MappedFile（RO/RW/COW + advice/residency）、cpu 全字段。
 
 > mem 的 `StatsAllocator` / `LeakTracker` 不属于 platform 导出面；其 C ABI
 > 位于 [`c-mem.md`](./c-mem.md) §2.2。

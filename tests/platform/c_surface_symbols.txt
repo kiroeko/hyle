@@ -55,11 +55,15 @@ hyle_fs_touch
 hyle_fs_write
 hyle_hardware_concurrency
 hyle_large_page_size
+hyle_mapped_file_advise
 hyle_mapped_file_data
 hyle_mapped_file_destroy
 hyle_mapped_file_flush
+hyle_mapped_file_lock
+hyle_mapped_file_locked
 hyle_mapped_file_open
 hyle_mapped_file_size
+hyle_mapped_file_unlock
 hyle_mapped_file_valid
 hyle_numa_current_node
 hyle_numa_node_count

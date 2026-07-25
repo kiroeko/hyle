@@ -9,8 +9,8 @@
 | 文档 | 内容 |
 |---|---|
 | 本页（对标总账） | 全模块 win/loss ledger 一览 + 总账小结（最常看的一张表） |
-| [error 实测](./benchmarks-error.md) | **error 2026-07-24 当前接口三平台 n=15 冻结证书**（核心与正常路径分离，当前同形项无 LOSE） |
-| [platform 实测](./benchmarks-platform.md) | **platform 2026-07-24 当前证书**（Parker/Thread/dir/vm/FileHandle/MappedFile；owning callable、文件与 zero-timeout 三平台 n=15） |
+| [error 实测](./benchmarks-error.md) | **error 2026-07-25 当前接口三平台 n=15 冻结证书**（核心与正常路径分离，errno 成熟库对照已补，当前同形项无 LOSE） |
+| [platform 实测](./benchmarks-platform.md) | **platform 2026-07-25 当前证书**（既有性能表不变；MappedFile advice/residency 按 OS-call complexity 守门） |
 | [time 实测](./benchmarks-time.md) | **time 2026-07-19 三平台证书**（clock / TimerWheel / CommonTimeoutQueue） |
 | [mem 实测](./benchmarks-mem.md) | **mem 2026-07-25 当前证书**：`6213115` 关闭 Region 长寿命遍历复杂度并以 31-process×10,001-epoch scaling、正常 request p50/p95/p99 重签；`20f3676` 的 O(1) FixedPool、`1de939d` 的 SharedPool/cache 与 `2cbc307` 的其余证书继续有效 |
 | [container 实测](./benchmarks-container.md) | **container 导航证书**：新鲜度、非 SOTA、选型；详表 → [benchmarks-mem-container.md](./benchmarks-mem-container.md) |
@@ -24,7 +24,7 @@
 
 ## 对标总账（win/loss ledger，全部实测 vs 真 SOTA，非 std）
 
-> **一眼看尽输赢**。**两把标尺各拆成「组件名 + ns」两列**:`std组件`/`std ns`(基线下界——赢它是最低门槛)和 `SOTA组件`/`SOTA ns`(真门槛:absl/F14、mimalloc、moodycamel/tokio/rigtorp、Highway/xsimd、marl、boost、simdutf)。`比std`/`比SOTA`:>1=HYLE 快几倍。**判定**针对 SOTA:✅赢 / ➖平(噪声内) / ❌输(均附根因:by-design 接缝 / 约束选择 / 选错工具 / scalar 待优化,无一为未处理的真缺陷) / ⚠️平台翻转 / ⏳待补。`n/a`=该层无对等物(非未测:如 bounded-MPMC 队列无 std 等价物);`同std`=该项 std 本身即领域 SOTA,无独立第三方更快。**error 行均为 2026-07-24 commit `3539169` 的 Win/GCC14/M4 两 executable n=15 当前证书**；其余模块日期不一，未刷新前勿当当前证书。
+> **一眼看尽输赢**。**两把标尺各拆成「组件名 + ns」两列**:`std组件`/`std ns`(基线下界——赢它是最低门槛)和 `SOTA组件`/`SOTA ns`(真门槛:absl/F14、mimalloc、moodycamel/tokio/rigtorp、Highway/xsimd、marl、boost、simdutf)。`比std`/`比SOTA`:>1=HYLE 快几倍。**判定**针对 SOTA:✅赢 / ➖平(噪声内) / ❌输(均附根因:by-design 接缝 / 约束选择 / 选错工具 / scalar 待优化,无一为未处理的真缺陷) / ⚠️平台翻转 / ⏳待补。`n/a`=该层无对等物(非未测:如 bounded-MPMC 队列无 std 等价物);`同std`=该项 std 本身即领域 SOTA,无独立第三方更快。**error 既有行来自 2026-07-24 `3539169`，errno 行为 2026-07-25 当前源码；均为 Win/GCC14/M4、n=15**；其余模块日期不一，未刷新前勿当当前证书。
 
 | 模块 · 操作 | HYLE ns | std 组件 | std ns | 比std | SOTA 组件 | SOTA ns | 比SOTA | 判定 |
 |---|---|---|---|---|---|---|---|---|
@@ -39,6 +39,7 @@
 | **error** `Result<void>` OK/ERROR 传播 | 2.07·9.90/0.291·8.88/0.494·3.30 | 正确 move 手写 | 2.11·10.17/0.684·9.24/0.491·3.30 | Win/Lin 赢或平，M4 平 | 同左（同语义下界） | 同左 | 同左 | ✅宏易用性无性能税 |
 | **error** owning 人读格式化 | 34.11/20.03/22.63 | (无 std 等价) | n/a | n/a | absl::Status::ToString | 42.62/25.93/27.83 | **1.25/1.30/1.21x** | ✅三平台 sign 赢 |
 | **error** 首错聚合 | 9.43/8.89/3.18 | (无 std 等价) | n/a | n/a | absl::Status::Update | 10.77/9.25/4.25 | **1.14/1.05/1.34x** | ✅三平台 sign 赢 |
+| **error** errno→Status + operation | 39.35/51.13/25.90 | (无 std 等价) | n/a | n/a | absl::ErrnoToStatus | 112.35/51.69/71.93 | **2.86/1.01/2.94x** | ✅三平台 paired sign 赢；O(1) 分类、一次最终分配 |
 | **simd·ops** 可对拍 op 全量(矩阵 v4) | — | (无 std) | n/a | n/a | Highway 同 ISA 同 op | — | **LOSE=0** | ✅**Win/WSL/NEON 明确 LOSE 均为 0**(320/320/308 case)；?≠TIE；全表 [benchmarks-simd-ops.md](./benchmarks-simd-ops.md)→[orderswap-matrix](../milestones/simd-orderswap-matrix.md) |
 | **simd** dot product(4096 f32) | 0.024 | scalar autovec | 0.37 | 15x | Highway contrib/dot(真 SOTA 4-acc) | 0.024 | 1.00x | ✅**4 累加器展开后 0.079→0.024(3.3x)平真 SOTA**;旧"平 Highway 0.079"是两个都单累加器的假平局(对照用了 Highway 教学 kernel 非 contrib/dot),见 [benchmarks-simd.md](./benchmarks-simd.md) |
 | **simd** saxpy(4096 f32) | 0.026 | scalar autovec | 0.057 | 2.2x | Highway avx2 | 0.025 | 1.01x | ✅赢 std、平 Highway(element-wise 带宽受限,多累加器无益,未改) |

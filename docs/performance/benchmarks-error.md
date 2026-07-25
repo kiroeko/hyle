@@ -4,9 +4,10 @@
 > 模块归属：`include/hyle/error/`、`bench/error/status_bench.cc`（核心 carrier）和
 > `bench/error/normal_bench.cc`（正常用户 workflow）。hash / SwissTable 不在本页。
 
-## 当前冻结证书（2026-07-24，三平台 n=15）
+## 当前冻结证书（2026-07-25，三平台 n=15）
 
 > 核心 carrier 产品 commit `3539169`，API 封口与三层 context 增量 commit `b6f2470`；
+> errno 行来自 2026-07-25 成熟库反向审计增量；
 > Windows MSVC 19.50、WSL GCC 14.2、Apple M4 AppleClang 21，
 > Release，Abseil 对照开启。方法为 `scripts/bench-stat.py -n 15`，同一进程内 pair 以
 > `[sign]` 为判定。下表顺序统一为 **Win / Linux / M4**，绝对 ns 不跨机器比较。
@@ -43,6 +44,7 @@ whole-TU inline budget，使完全相同的 Result error helper 从约 10ns 假�
 | caller-buffer 人读格式化 | 10.727 / 9.989 / 8.028 | 无同形 Abseil 入口 | C/FFI/logging 基础路径 |
 | C++ owning `to_string` | 34.109 / 20.028 / 22.626 | absl 42.621 / 25.928 / 27.833 | **WIN 1.247 / 1.302 / 1.212x** |
 | 首错聚合 `Update` | 9.425 / 8.891 / 3.181 | absl 10.771 / 9.248 / 4.249 | **WIN 1.143 / 1.045 / 1.336x** |
+| errno→canonical Status + operation | **39.352 / 51.131 / 25.900** | absl `ErrnoToStatus` 112.347 / 51.693 / 71.926 | **WIN 2.858 / 1.011 / 2.940x**；15/15、14/15、15/15 同向 |
 
 空间不变：`Status=8B`，`Result<int>/Result<void>=16B`；`absl::Status=8B`，
 `absl::StatusOr<int>` 在 Windows 为 24B、Linux/M4 为 16B。
@@ -64,6 +66,12 @@ heap 判定收成一个范围比较。API、8B 布局、C ABI、分配与最后�
 因此当前功能面上的同形核心与正常路径三平台 **没有已确认 LOSE**。这不是“所有可能的
 错误系统工作负载都已穷尽”；payload、序列化、backtrace 等未进入产品面的能力也不靠本证书
 虚增 benchmark。
+
+errno 行是成熟库直接同合同：都做 canonical 映射、取得线程安全 native description、前置
+operation 并返回 owning Status。HYLE 的失败路径只分配最终 Status；没有照搬 Abseil 首次
+使用时建立的全 errno string cache。Linux 初版因每次无条件清零 256B scratch 稳定小输约
+2–4%；改为只初始化首字节后回到 1.011x paired sign WIN，同时不改变首次失败延迟、常驻内存
+或 API。这是正常实现路径的常数修复，不是 benchmark metadata。
 
 `WithContext` 每次按最终文本长度 O(context + message) 分配并复制；连续添加 k 个等长
 context 的总工作量因此为 O(k²)。这符合错误只跨少量语义边界增补说明的正常用法，三层
@@ -91,5 +99,6 @@ scripts/bench-stat.py <build>/bin/hyle_error_normal_bench -n 15 \
   --pair "manual Result<void> checks (OK)" "HYLE RETURN_IF_ERROR(Result<void>) (OK)" \
   --pair "manual Result<void> checks (ERROR)" "HYLE RETURN_IF_ERROR(Result<void>) (ERROR)" \
   --pair "absl::Status::ToString owning" "HYLE to_string owning" \
-  --pair "absl::Status::Update" "HYLE Status::Update"
+  --pair "absl::Status::Update" "HYLE Status::Update" \
+  --pair "absl::ErrnoToStatus" "HYLE status_from_errno"
 ```

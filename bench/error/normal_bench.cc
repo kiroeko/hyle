@@ -3,6 +3,7 @@
 // budget and therefore the codegen of the core carrier micro-invariants.
 #include <nanobench.h>
 
+#include <cerrno>
 #include <cstddef>
 #include <string>
 #include <utility>
@@ -153,6 +154,27 @@ int main() {
       Status status;
       status.Update(hyle_first);
       status.Update(hyle_second);
+      nb::doNotOptimizeAway(status.ok());
+    });
+  }
+
+  // Real native-leaf construction: classify errno, obtain the CRT diagnostic,
+  // and prepend the operation in one Status allocation. Abseil exposes the
+  // same canonical adapter and is the direct mature-library comparison.
+  {
+    nb::Bench bench;
+    bench.title("errno to canonical Status with operation context")
+        .relative(true)
+        .batch(1)
+        .minEpochIterations(500000);
+#if defined(HYLE_BENCH_ABSL)
+    bench.run("absl::ErrnoToStatus", [&] {
+      absl::Status status = absl::ErrnoToStatus(ENOENT, "opening model");
+      nb::doNotOptimizeAway(status.ok());
+    });
+#endif
+    bench.run("HYLE status_from_errno", [&] {
+      Status status = hyle::status_from_errno(ENOENT, "opening model");
       nb::doNotOptimizeAway(status.ok());
     });
   }

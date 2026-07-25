@@ -82,3 +82,16 @@ budget 污染核心证据。
 以上条件已经满足，error 自身功能面冻结。后续只按 architecture 的真实触发器重开；
 HYLE 全库是否仍有私有错误系统、漏 context 或错误码滥用，作为下一阶段 adoption audit，
 不反向扩大 error 核心 API。
+
+## 成熟库反向审计增量（2026-07-25）
+
+- 对照 Abseil `Status/ErrnoToStatus`、Folly `Expected/exception_wrapper`、Boost.Outcome/
+  `system_code` 与 oneTBB 异常边界。接受真正重复出现的 errno canonical adapter；C++ 与 C
+  均覆盖，error C surface 从 14 个增至 16 个并新增机械导出/独立头门禁。
+- platform 的 POSIX fs、MappedFile、VM、NUMA translator 改为复用统一 errno taxonomy，仅
+  保留操作语义明确的 override；thread 的 EAGAIN 资源耗尽映射正是这种 override。
+- 没有引入任意 payload、StatusBuilder、自动 source location/backtrace、exception_ptr 或
+  隐式日志：当前没有程序化消费者，加入会扩大每个失败值的形状和依赖。
+- errno 工厂为 O(1) 分类、一次最终 Status 分配；三平台对 Abseil 同合同 n=15 为
+  2.858x / 1.011x / 2.940x WIN。Linux 小回退通过去掉无意义的整块 scratch 清零修复，未引入
+  全局错误字符串 cache 或 benchmark-only 状态。

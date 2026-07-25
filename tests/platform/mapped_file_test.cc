@@ -12,12 +12,14 @@
 #include <cstring>
 #include <string>
 #include <string_view>
+#include <utility>
 
 #include "hyle/platform/fs.h"
 #include "hyle/platform/virtual_memory.h"  // page_size()
 
 using hyle::platform::MappedFile;
 using hyle::platform::page_size;
+using hyle::Status;
 namespace fs = hyle::platform;
 
 namespace {
@@ -73,6 +75,64 @@ TEST_F(MapTest, ReadOnlyMapsContent) {
   ASSERT_TRUE(m.valid());
   EXPECT_EQ(m.size(), std::strlen(msg));
   EXPECT_EQ(std::memcmp(m.data(), msg, std::strlen(msg)), 0);
+}
+
+TEST_F(MapTest, OpenMappingDoesNotBlockAtomicRenameOrDelete) {
+  const char* msg = "replaceable mapped content";
+  write_file(msg, std::strlen(msg));
+  MappedFile m = open_map();
+  ASSERT_TRUE(m.valid());
+
+  const std::string renamed = path + ".renamed";
+  ASSERT_TRUE(fs::rename_path(path.c_str(), renamed.c_str()).ok());
+  ASSERT_TRUE(fs::remove_file(renamed.c_str()).ok());
+  EXPECT_EQ(std::memcmp(m.data(), msg, std::strlen(msg)), 0);
+}
+
+TEST_F(MapTest, AdviceCoversWholeAndBoundedRanges) {
+  std::string init(page_size() * 2, 'A');
+  write_file(init.data(), init.size());
+  MappedFile m = open_map();
+
+  EXPECT_TRUE(m.advise(MappedFile::Advice::kNormal).ok());
+  EXPECT_TRUE(
+      m.advise(MappedFile::Advice::kNormal, 7, page_size()).ok());
+  Status sequential = m.advise(MappedFile::Advice::kSequential);
+  EXPECT_TRUE(sequential.ok() || sequential.IsUnimplemented());
+  Status prefetch = m.prefetch();
+  EXPECT_TRUE(prefetch.ok() || prefetch.IsUnimplemented());
+  EXPECT_TRUE(m.advise(MappedFile::Advice::kNormal, m.size(), 0).ok());
+  EXPECT_TRUE(m.advise(MappedFile::Advice::kNormal, m.size() + 1, 0)
+                  .IsOutOfRange());
+  EXPECT_TRUE(m.advise(MappedFile::Advice::kNormal, m.size() - 1, 2)
+                  .IsOutOfRange());
+  EXPECT_TRUE(m.advise(static_cast<MappedFile::Advice>(255))
+                  .IsInvalidArgument());
+}
+
+TEST_F(MapTest, PageLockIsExplicitAndIdempotentWhenAvailable) {
+  std::string init(page_size(), 'A');
+  write_file(init.data(), init.size());
+  MappedFile m = open_map();
+  EXPECT_FALSE(m.locked());
+
+  Status locked = m.lock();
+  if (locked.ok()) {
+    EXPECT_TRUE(m.locked());
+    EXPECT_TRUE(m.lock().ok());
+
+    MappedFile moved = std::move(m);
+    EXPECT_FALSE(m.locked());
+    EXPECT_TRUE(moved.locked());
+    EXPECT_TRUE(moved.unlock().ok());
+    EXPECT_FALSE(moved.locked());
+    EXPECT_TRUE(moved.unlock().ok());
+  } else {
+    // Containers and restricted CI commonly set a zero/small memlock quota.
+    EXPECT_TRUE(locked.IsPermissionDenied() || locked.IsResourceExhausted() ||
+                locked.IsUnavailable());
+    EXPECT_FALSE(m.locked());
+  }
 }
 
 TEST_F(MapTest, ReadWriteFlushPersists) {
@@ -210,6 +270,10 @@ TEST_F(MapTest, InvalidArgumentsAndEmptyMappingReturnStatus) {
 
   MappedFile unopened;
   EXPECT_TRUE(unopened.flush().IsFailedPrecondition());
+  EXPECT_TRUE(unopened.advise(MappedFile::Advice::kNormal)
+                  .IsFailedPrecondition());
+  EXPECT_TRUE(unopened.lock().IsFailedPrecondition());
+  EXPECT_TRUE(unopened.unlock().IsFailedPrecondition());
 }
 
 TEST_F(MapTest, LengthPastEofRejected) {

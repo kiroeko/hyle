@@ -40,6 +40,8 @@ OK 与无消息错误零分配；带消息错误共享引用计数 representatio
 |---|---|---|
 | `hyle_status_ok` | `() -> hyle_status` | OK |
 | `hyle_status_new` | `(code, msg) -> hyle_status` | 通用构造；NULL msg 表示无消息 |
+| `hyle_status_code_from_errno` | `(errno) -> code` | O(1) canonical 分类；0 返回 OK |
+| `hyle_status_from_errno` | `(errno, context) -> status` | 线程安全 native description；NULL context 可用 |
 | `hyle_status_free` | `(status*)` | 释放并置 OK；NULL 安全 |
 | `hyle_status_clone` | `(status) -> status` | 新的独立 owning handle |
 | `hyle_status_move` | `(dst*, src*)` | 转移所有权 |
@@ -96,6 +98,20 @@ if (!hyle_status_is_ok(s)) {
 }
 hyle_status_free(&s);
 ```
+
+原生 C/POSIX 叶子直接保存 errno 并构造同一个 owning Status：
+
+```c
+int fd = open(path, O_RDONLY);
+if (fd < 0) {
+  int error_number = errno;
+  return hyle_status_from_errno(error_number, "opening model weights");
+}
+```
+
+`error_number == 0` 返回 OK。`context == NULL` 只保留 native description；返回值仍按普通
+`hyle_status` clone/move/free。若操作合同需要更具体分类，用
+`hyle_status_code_from_errno` 取得默认 code 后再做少量明确覆盖，不复制整张映射表。
 
 ### 4.2 `Status + out` 冷工厂
 
@@ -158,4 +174,5 @@ cmake --build <build> --target hyle_error_c_test
 ctest --test-dir <build> -R hyle_error_c_test --output-on-failure
 ```
 
-纯 C 测试覆盖创建、查询、clone/move/free、非法 enum、借用消息、上下文和早返回。
+纯 C 测试覆盖创建、查询、clone/move/free、非法 enum、errno、借用消息、上下文和早返回；
+机械 surface test 同时锁定 16 个 DLL 导出，独立头测试确保 `hyle/c/error.h` 单独以 C 编译。

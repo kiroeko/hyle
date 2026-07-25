@@ -130,7 +130,27 @@ creating device buffer: vulkan vkAllocateMemory failed: VK_ERROR_OUT_OF_DEVICE_M
 泄漏进公共头；若将来确有按原生码分支的需求，再设计独立、定长的 detail，而不是提前
 引入通用 payload 系统。
 
-### 2.3 `Result<T>` 与传播
+### 2.3 原生 errno 适配
+
+POSIX/CRT 叶子边界不应在每个模块重复发明 errno 分类。error 提供两个公共基础能力：
+
+```cpp
+StatusCode status_code_from_errno(int error_number) noexcept;
+Status status_from_errno(int error_number,
+                         std::string_view operation = {}) noexcept;
+```
+
+前者按 Abseil `ErrnoToStatusCode` 的成熟 canonical taxonomy 做 O(1) 分类；后者同时取得
+线程安全的 native description，并生成 `operation: description`。`errno == 0` 返回零值 OK；
+失败路径只有最终 Status 的一次分配，OOM 只丢 message、不丢 code。一般调用方优先用工厂，
+不再手写 `strerror`、message 拼接和 code switch。
+
+通用映射不是操作语义的替代品。某个系统调用对同一 errno 有更具体的合同，可以局部覆盖；
+例如 `pthread_create(EAGAIN)` 是资源耗尽，而通用 I/O 映射把 EAGAIN 视为暂不可用。需要在
+诊断中保留原生符号名和数值的 platform/backend translator 仍可自己格式化 message，但 code
+必须复用公共 taxonomy，避免 fs、VM、NUMA 和 mmap 对同一 errno 给出不同 code。
+
+### 2.4 `Result<T>` 与传播
 
 ```cpp
 template <class T>
@@ -189,6 +209,7 @@ typedef struct hyle_status { uintptr_t rep; } hyle_status;
 - code、message、相等比较和 buffer-fill 格式化；
 - 借用 NUL 结尾消息，生命周期绑定 owning handle；
 - 原地增加上下文；
+- errno 到 canonical code/Status 的直接适配；
 - 返回 `hyle_status` 的函数使用 `HYLE_C_RETURN_IF_ERROR` 传播。
 
 上下文接口采用原地所有权形状：
@@ -215,7 +236,7 @@ warning/error/fatal API。
 ```cpp
 Status from_vk(VkResult result, std::string_view operation) noexcept;
 Status from_cuda(cudaError_t error, std::string_view operation) noexcept;
-Status from_errno(int error, std::string_view operation) noexcept;
+Status status_from_errno(int error, std::string_view operation) noexcept;
 ```
 
 translator 必须：
@@ -227,6 +248,10 @@ translator 必须：
 5. 使用固定栈缓冲或一次 Status 消息分配，不在成功路径格式化；
 6. 不把 CUDA/Vulkan/OS 类型放进公共 API；
 7. 未知原生值仍返回 `Unknown`/`Internal` 和完整数值，不能只写“failed”。
+
+`status_from_errno` 是通用 POSIX/CRT 入口；platform 的 syscall-specific translator 在保留
+原生名称/数值时复用它的 canonical code。CUDA、Vulkan、Win32 等非 errno domain 继续由
+所属叶子模块做定长 translator，不把 vendor 类型或注册表塞进 error 公共头。
 
 推荐文本：
 
@@ -256,6 +281,8 @@ posix mmap failed: ENOMEM (12): Cannot allocate memory
 - code-only 和 message error 对标 Abseil Status；
 - `WithContext(OK, ...)` 零分配且接近普通分支成本；
 - 一层/三层 context 与 Abseil StatusBuilder 的等价文本场景对标。
+- errno 分类是 O(1)，`status_from_errno` 与 Abseil `ErrnoToStatus` 做同形 operation+native
+  description 对照；不得为跑分引入全量常驻错误文本表或改变首次失败合同。
 
 ### 真实产品路径
 

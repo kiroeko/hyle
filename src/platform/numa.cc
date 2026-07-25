@@ -63,11 +63,7 @@ Status numa_native_status(const char* operation, int code) noexcept {
   char message[288]{};
   std::snprintf(message, sizeof(message), "%s failed (errno=%d): %s",
                 operation, code, text);
-  if (code == ENOMEM) return Status::ResourceExhausted(message);
-  if (code == EACCES || code == EPERM) return Status::PermissionDenied(message);
-  if (code == EINVAL) return Status::InvalidArgument(message);
-  if (code == ENOSYS) return Status::Unimplemented(message);
-  return Status::Unavailable(message);
+  return Status(status_code_from_errno(code), message);
 }
 #endif
 

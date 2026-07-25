@@ -30,10 +30,11 @@
 
 | 固定统计口径 | 当前 | 命令/说明 |
 |---|---|---|
-| **全库代码** | **243,911** | `cloc . --vcs=git`；含 docs/third_party，**≠ 自写** |
-| **自实现（含测试）** | **115,003** | `cloc include/hyle src tests --exclude-lang=CMake,Text` |
-| **自实现（不含测试）** | **79,107** | `cloc include/hyle src --exclude-lang=CMake`；库本体硬锚 |
-| **当前审查模块 mem 实现** | **5,071** | C/C++ 公共头 + `src/mem`，不含测试 |
+| **全库代码** | **244,635** | `cloc . --vcs=git`；含 docs/third_party，**≠ 自写** |
+| **自实现（含测试）** | **115,546** | `cloc include/hyle src tests --exclude-lang=CMake,Text` |
+| **自实现（不含测试）** | **79,506** | `cloc include/hyle src --exclude-lang=CMake,Text`；库本体硬锚 |
+| **当前审查模块 error 实现** | **984** | C/C++ 公共头 + `src/error`，不含测试 |
+| **当前审查模块 platform 实现** | **7,020** | C/C++ 公共头 + `src/platform`，不含测试 |
 | **终态生产（纪律收口 A）** | **~75–90k** | 主预期 |
 | **终态生产（做满守界 B）** | **~85–105k** | compute/graph/发布面收口更满 |
 | 失控上限 C | 120k+ 生产 | 应避免 |
@@ -45,9 +46,9 @@
 | **生产 LOC ÷ 终态 B 中值 ~95k** | 做满剧本 | **~83%** |
 | **对完整愿景的功能完成度** | 能力清单 + 头牌缺口 | 不再给伪精确百分比：底层多数冻结，platform 主动复审；compute/graph 与发布面仍有能力尾 |
 
-**模块生产粗表（2026-07-25）**：simd ~37.5k · io ~9.0k · container
-~4.9k · platform **6,710**（含公共 C 头）· compute ~4.1k · sched ~5.1k · mem ~5.1k ·
-util ~1.3k · time ~0.9k · obs/error/graph 各 ~0.6–0.8k。
+**模块生产粗表（2026-07-25）**：simd ~37.5k · io ~9.0k · platform **7,020**
+（含公共 C 头）· container ~4.9k · compute ~4.1k · sched ~5.1k · mem ~5.1k ·
+util ~1.3k · error **984** · time ~0.9k · obs/graph 各 ~0.6–0.8k。
 
 预发布冻结门、重开触发器和下一步顺序见
 [`pre-release-readiness.md`](./pre-release-readiness.md)。冻结模块不再因猜测做无限轮全审。
@@ -91,7 +92,7 @@ util ~1.3k · time ~0.9k · obs/error/graph 各 ~0.6–0.8k。
 | platform-03b | P1 | platform | fs/env/os_info syscall:stat/mkdir/remove/rename/copy/iterate/cwd/temp/home + getenv | platform-01,platform-03a | 0.5-1k | 379 (+162 测试) | ✅ 完成(file_system_api 13 fn + helper;buffer-fill+visitor 保 P1 零 mem/container 依赖,比 clay 分配式更精简;改进:mkdir 幂等/temp 认环境变量/copy 可移植替 sendfile/env 读净增;双平台 14/14 fs,platform 19→33;file_io/mmap→io-05、avx→simd、absolute 组合登记) |
 | [platform-03c](./platform-03c-win-utf8.md) | P1 | platform | Win UTF-8(...A→...W)+ 长路径 \\?\ + copy_file 内核零拷贝 | platform-03b | 0.1k | fs.cc 320→475 | ✅ 完成(WidePath/fill_w 自包含 UTF-8↔UTF-16,12 个 ...A 全转 ...W;揪出+修 touch() 双重 ANSI;\\?\ 扩展前缀 >260 长路径(drive 测过/UNC 写不验);Linux copy_file_range 内核零拷贝失败回退。双平台 36/18,含 UTF-8/长路径/大文件拷贝测试。UNC 实跑待网络共享) |
 | [platform-error-convergence](./platform-error-convergence.md) | P1 | platform + error | 可恢复失败统一 Status/Result，删除私有/借用 TLS | error-03,platform-02/03 | — | 见任务页 | ✅ DynLib/MappedFile/VM/NUMA 已统一；Win/WSL/M4 验证见任务页 |
-| [platform-final](./platform-remaining.md) | P1 | platform + sched | 实际使用导向收口：CPU 配额、集合 affinity、逐 CPU 能力与强核优先 | platform-01/02/03 | — | 见任务页 | ✅ **预发布冻结（2026-07-24）**：可信 rank/kind + scheduler opt-in；111 项 C 声明/纯 C 引用/三平台导出全对齐，8 C++ + 1 C 独立头全过；当前接口 Linux/M4 性能复证完成 |
+| [platform-final](./platform-remaining.md) | P1 | platform + sched | 实际使用导向收口：CPU 配额、集合 affinity、逐 CPU 能力与强核优先 | platform-01/02/03 | — | 见任务页 | ✅ **预发布冻结（2026-07-25 反向审计）**：可信 rank/kind + scheduler opt-in；MappedFile advice/residency 与 Windows share-delete 补齐；118 项 C 声明/纯 C 引用/三平台导出全对齐，9 C++ + 1 C 独立头全过 |
 | mem-01 | P2 | mem | Allocator vtable + 修 alignment（骨架版含最小 mimalloc 包装）| platform-01 | 1-2k | 182 | ✅ 完成(vtable+裸alloc+typed层) |
 | mem-01b | P2 | mem | allocator typed 便利层(allocate<T>/construct/make_unique/destroy) | mem-01 | 1k | 并入allocator.h | ✅ 完成(补漏:clay allocator.h typed层) |
 | mem-02 | P2 | mem | mimalloc backing 完整接入(封 vtable 后) | mem-01 | 1-2k | vendored(system.cc+~30) | ✅ 完成(透明替换31测试不变;Win 4-12x>默认堆/Linux真实模式5.2x;快路径修复) |

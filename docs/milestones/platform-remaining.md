@@ -11,7 +11,7 @@
 > “同构”，或再次引入启发式探测。
 
 > **预发布冻结证书（2026-07-24）：**实际使用导向复审已完成。Windows MSVC、WSL GCC 14、
-> Apple M4 AppleClang 21 均通过 platform C++/纯 C 功能测试、**111/111** C 声明↔纯 C
+> Apple M4 AppleClang 21 均通过 platform C++/纯 C 功能测试、**118/118** C 声明↔纯 C
 > 引用↔DLL/ELF/Mach-O 导出一致性，以及 **9 个 C++ + 1 个 C** 公开头独立编译。下游审计
 > 确认 mem/container/sched 消费动态进程 CPU 视图，无自造 OS 拓扑/affinity/priority；唯一
 > `hardware_concurrency` 是可用 CPU 查询失败后的保底。VM/fs/MappedFile 当前 `Result/Status`
@@ -139,6 +139,14 @@ macOS 真机通过，确认 `os_sync_wait_on_address_with_timeout` 当前参数�
 - Windows 纳秒转毫秒上取整不再溢出；文件 append 改用原子
   `FILE_APPEND_DATA`；目录枚举会区分正常结束与系统错误。
 - MappedFile Windows 路径转换不再有 1024 wchar 人工上限。
+- 对照 Folly `MemoryMapping` 补齐显式 access advice、prefetch 与 page residency；默认 open
+  不预取、不锁页，POSIX 走 madvise/mlock，Windows 只诚实实现 will-need + VirtualLock。
+- 对照 libuv 的 portable file open 语义，Windows FileHandle/MappedFile 增加
+  `FILE_SHARE_DELETE`，原子 rename/delete 不再被已打开 owner 阻塞，并有三平台回归测试。
+- POSIX fs、MappedFile、VM、NUMA 不再各维护近似 errno code switch，统一消费 error 的
+  canonical taxonomy；操作特定 override 仍留在 owner。
+- C ABI 同步覆盖四个 mapped advice/residency 操作；platform surface 机械清单增至 118 个，
+  C++/C 独立头与 Windows/WSL/M4 定向测试通过。
 - Linux NUMA policy mask 覆盖 256 nodes，非法 node/range 明确失败。
 - ErrorRecord 析构自动恢复、重复 install 幂等；空 format/无效 handler
   不再崩溃。

@@ -12,8 +12,8 @@ HYLE 当前不是“功能只完成一半”的骨架，也还不是可直接发
 | 外部产品面 | **部分完成** | 原生 C++ API 已广泛存在；多个模块已有独立 C/FFI surface，另有 install/export、跨编译器和 FFI 门未完 |
 | 完整北极星能力 | **约 70–80% 判断带** | graph-02 后两步、compute 后端/算子尾、统一发布验收 |
 
-2026-07-25 的 `cloc`：`src + include` 产品源码 **79,107** 行，tests **35,896**，
-bench **15,275**，docs（含 raw CSV）**24,699**。LOC 只说明资产体量，不作为功能或
+2026-07-25 的 `cloc`：`src + include` 产品源码 **79,506** 行，tests **36,040**，
+bench **15,293**，docs（含 raw CSV）**24,825**。LOC 只说明资产体量，不作为功能或
 SOTA 的替代证据。
 
 ## 预发布冻结门
@@ -45,7 +45,7 @@ SOTA 的替代证据。
 | 模块 | 判定 | 后续方式 |
 |---|---|---|
 | error/time/simd/util/obs | **预发布冻结** | 只按上述触发器重开；SVE/RVV 真机证据仍是平台到位后的专项补证 |
-| platform | **预发布冻结** | 实际使用形状、下游采用与当前接口性能已收口；三平台 111 项动态 C surface、8 C++ + 1 C 独立头认证见 [`platform-remaining.md`](./platform-remaining.md) |
+| platform | **预发布冻结** | 实际使用形状、下游采用与当前接口性能已收口；三平台 118 项动态 C surface、9 C++ + 1 C 独立头认证见 [`platform-remaining.md`](./platform-remaining.md) |
 | mem | **预发布冻结** | `6213115` 成熟库/复杂度回审后重新冻结；三平台 **107** 项动态导出、16 C++ + 1 C 独立头、197 tests 与当前 ASan/TSan 认证见 [`mem-close-plan.md`](./mem-close-plan.md) |
 | container | **预发布冻结** | StringBuf 复杂度/争用/batch/三平台强 peer 已收口；已知 Linux/M4 lifecycle 常数边界写入证书 |
 | sched | **预发布冻结** | 双任务腿、饱和/关闭红队、114 入口 C ABI 与 guide 已收口；marl 15 遍三平台为 Win/Lin 明确赢、M4 统计平局；只按触发器重开 |

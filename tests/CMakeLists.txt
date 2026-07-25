@@ -69,6 +69,12 @@ add_test(NAME hyle_platform_c_surface_test
                  --module platform
                  --library "$<TARGET_FILE:hyle_platform>"
                  --symbol-tool "${_hyle_c_symbol_tool}")
+add_test(NAME hyle_error_c_surface_test
+         COMMAND "${Python3_EXECUTABLE}"
+                 "${PROJECT_SOURCE_DIR}/scripts/c-surface-check.py"
+                 --module error
+                 --library "$<TARGET_FILE:hyle_error>"
+                 --symbol-tool "${_hyle_c_symbol_tool}")
 
 # A combined include smoke test can hide transitive-include and include-order bugs.
 # Compile each public C++ module header alone, plus its C ABI header as strict C.
@@ -87,6 +93,17 @@ add_test(NAME hyle_platform_header_self_contained_test
          COMMAND "${Python3_EXECUTABLE}"
                  "${PROJECT_SOURCE_DIR}/scripts/header-self-contained.py"
                  --module platform
+                 --include-dir "${PROJECT_SOURCE_DIR}/include"
+                 --cc "${CMAKE_C_COMPILER}"
+                 --cxx "${CMAKE_CXX_COMPILER}"
+                 --c-compiler-id "${CMAKE_C_COMPILER_ID}"
+                 --cxx-compiler-id "${CMAKE_CXX_COMPILER_ID}"
+                 --c-frontend "${CMAKE_C_COMPILER_FRONTEND_VARIANT}"
+                 --cxx-frontend "${CMAKE_CXX_COMPILER_FRONTEND_VARIANT}")
+add_test(NAME hyle_error_header_self_contained_test
+         COMMAND "${Python3_EXECUTABLE}"
+                 "${PROJECT_SOURCE_DIR}/scripts/header-self-contained.py"
+                 --module error
                  --include-dir "${PROJECT_SOURCE_DIR}/include"
                  --cc "${CMAKE_C_COMPILER}"
                  --cxx "${CMAKE_CXX_COMPILER}"

@@ -1,6 +1,7 @@
 #include "hyle/error/status.h"
 
 #include <atomic>
+#include <cerrno>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
@@ -23,6 +24,188 @@ std::string_view status_code_name(StatusCode code) noexcept {
 #undef HYLE_STATUS_NAME_CASE
   }
   return "Unknown";
+}
+
+StatusCode status_code_from_errno(int error_number) noexcept {
+  // Keep this mapping aligned with Abseil's mature ErrnoToStatusCode taxonomy.
+  // Guard less-portable errno constants so the same TU compiles with the MSVC
+  // CRT as well as glibc/libSystem. Do not list alias pairs such as
+  // EWOULDBLOCK/EAGAIN twice: many platforms give them the same value.
+  switch (error_number) {
+    case 0: return StatusCode::Ok;
+    case EINVAL:
+    case ENAMETOOLONG:
+    case E2BIG:
+    case EDOM:
+    case EFAULT:
+    case EILSEQ:
+    case ENOTTY:
+    case ESPIPE:
+#ifdef EDESTADDRREQ
+    case EDESTADDRREQ:
+#endif
+#ifdef ENOPROTOOPT
+    case ENOPROTOOPT:
+#endif
+#ifdef ENOTSOCK
+    case ENOTSOCK:
+#endif
+#ifdef EPROTOTYPE
+    case EPROTOTYPE:
+#endif
+      return StatusCode::InvalidArgument;
+#ifdef ETIMEDOUT
+    case ETIMEDOUT: return StatusCode::DeadlineExceeded;
+#endif
+    case ENODEV:
+    case ENOENT:
+    case ENXIO:
+    case ESRCH:
+#ifdef ENOMEDIUM
+    case ENOMEDIUM:
+#endif
+      return StatusCode::NotFound;
+    case EEXIST:
+#ifdef EADDRNOTAVAIL
+    case EADDRNOTAVAIL:
+#endif
+#ifdef EALREADY
+    case EALREADY:
+#endif
+#ifdef ENOTUNIQ
+    case ENOTUNIQ:
+#endif
+      return StatusCode::AlreadyExists;
+    case EPERM:
+    case EACCES:
+    case EROFS:
+#ifdef ENOKEY
+    case ENOKEY:
+#endif
+      return StatusCode::PermissionDenied;
+    case ENOTEMPTY:
+    case EISDIR:
+    case ENOTDIR:
+    case EBADF:
+    case EBUSY:
+    case ECHILD:
+    case EPIPE:
+#ifdef EADDRINUSE
+    case EADDRINUSE:
+#endif
+#ifdef EBADFD
+    case EBADFD:
+#endif
+#ifdef EISCONN
+    case EISCONN:
+#endif
+#ifdef EISNAM
+    case EISNAM:
+#endif
+#ifdef ENOTBLK
+    case ENOTBLK:
+#endif
+#ifdef ENOTCONN
+    case ENOTCONN:
+#endif
+#ifdef ESHUTDOWN
+    case ESHUTDOWN:
+#endif
+    case ETXTBSY:
+#ifdef EUNATCH
+    case EUNATCH:
+#endif
+      return StatusCode::FailedPrecondition;
+    case ENOSPC:
+    case EMFILE:
+    case EMLINK:
+    case ENFILE:
+    case ENOMEM:
+#ifdef EDQUOT
+    case EDQUOT:
+#endif
+#ifdef ENOBUFS
+    case ENOBUFS:
+#endif
+#ifdef EUSERS
+    case EUSERS:
+#endif
+      return StatusCode::ResourceExhausted;
+    case EFBIG:
+    case EOVERFLOW:
+    case ERANGE:
+#ifdef ECHRNG
+    case ECHRNG:
+#endif
+      return StatusCode::OutOfRange;
+    case ENOSYS:
+    case EXDEV:
+#ifdef ENOTSUP
+    case ENOTSUP:
+#endif
+#ifdef EAFNOSUPPORT
+    case EAFNOSUPPORT:
+#endif
+#ifdef ENOPKG
+    case ENOPKG:
+#endif
+#ifdef EPFNOSUPPORT
+    case EPFNOSUPPORT:
+#endif
+#ifdef EPROTONOSUPPORT
+    case EPROTONOSUPPORT:
+#endif
+#ifdef ESOCKTNOSUPPORT
+    case ESOCKTNOSUPPORT:
+#endif
+      return StatusCode::Unimplemented;
+    case EAGAIN:
+    case EINTR:
+    case ENOLCK:
+#ifdef ECOMM
+    case ECOMM:
+#endif
+#ifdef ECONNREFUSED
+    case ECONNREFUSED:
+#endif
+#ifdef ECONNABORTED
+    case ECONNABORTED:
+#endif
+#ifdef ECONNRESET
+    case ECONNRESET:
+#endif
+#ifdef EHOSTDOWN
+    case EHOSTDOWN:
+#endif
+#ifdef EHOSTUNREACH
+    case EHOSTUNREACH:
+#endif
+#ifdef ENETDOWN
+    case ENETDOWN:
+#endif
+#ifdef ENETRESET
+    case ENETRESET:
+#endif
+#ifdef ENETUNREACH
+    case ENETUNREACH:
+#endif
+#ifdef ENOLINK
+    case ENOLINK:
+#endif
+#ifdef ENONET
+    case ENONET:
+#endif
+      return StatusCode::Unavailable;
+    case EDEADLK:
+#ifdef ESTALE
+    case ESTALE:
+#endif
+      return StatusCode::Aborted;
+#ifdef ECANCELED
+    case ECANCELED: return StatusCode::Cancelled;
+#endif
+    default: return StatusCode::Unknown;
+  }
 }
 
 namespace detail {
@@ -152,6 +335,56 @@ std::string_view status_heap_message(std::uintptr_t rep) noexcept {
 }
 
 }  // namespace detail
+
+namespace {
+
+[[maybe_unused]] const char *errno_text(int result, char *buffer) noexcept {
+  return result == 0 ? buffer : nullptr;
+}
+
+[[maybe_unused]] const char *errno_text(char *result, char *) noexcept {
+  return result;
+}
+
+std::string_view describe_errno(int error_number, char *buffer,
+                                std::size_t cap) noexcept {
+#if defined(_WIN32)
+  if (::strerror_s(buffer, cap, error_number) == 0 && buffer[0] != '\0') {
+    return buffer;
+  }
+#else
+  const char *text = errno_text(
+      ::strerror_r(error_number, buffer, cap), buffer);
+  if (text != nullptr && text[0] != '\0') return text;
+#endif
+  const int written = std::snprintf(buffer, cap, "errno %d", error_number);
+  if (written <= 0) return "unknown errno";
+  const std::size_t length = static_cast<std::size_t>(written);
+  return std::string_view(buffer, length < cap ? length : cap - 1);
+}
+
+}  // namespace
+
+Status status_from_errno(int error_number, std::string_view context) noexcept {
+  const StatusCode code = status_code_from_errno(error_number);
+  if (code == StatusCode::Ok) return Status{};
+
+  // strerror[_r] writes the diagnostic on success. Initializing only the first
+  // byte avoids clearing the full scratch buffer on every native error while
+  // preserving a deterministic fallback on CRT failure.
+  char description[256];
+  description[0] = '\0';
+  const std::string_view native =
+      describe_errno(error_number, description, sizeof(description));
+  std::uintptr_t rep = 0;
+  if (context.empty()) {
+    rep = detail::status_make_heap(code, native.data(), native.size());
+  } else {
+    rep = detail::status_make_context(code, context.data(), context.size(),
+                                      native.data(), native.size());
+  }
+  return rep != 0 ? detail::StatusAccess::adopt(rep) : Status(code);
+}
 
 std::size_t Status::ToString(char *buf, std::size_t cap) const noexcept {
   if (buf == nullptr) cap = 0;

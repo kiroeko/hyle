@@ -19,6 +19,8 @@ platform 是 HYLE 的跨 OS 原语层。它服务两类调用者：HYLE 内部�
 | 只需低成本枚举目录名和类型 | `for_each_entry` | 每项都 `stat` | entry 类型不跟随 symlink；常见路径零额外 stat |
 | 需要完整单项元数据 | `stat` | 把目录遍历的 entry type 当完整 stat | 跟随 symlink，并另报 path 自身是否 symlink |
 | 大文件随机访问/共享映射 | `MappedFile` | 小文件必然 mmap | RO/RW/COW；Linux 小文件顺扫未必赢 read |
+| 映射权重/数据集的显式 warm-up | `MappedFile::prefetch` / `advise` | `open()` 自动触碰全文件 | hint 不影响正确性；Windows 仅 will-need |
+| 映射页必须驻留以压低 fault 尾延迟 | `MappedFile::lock`，检查 Status | 把 prefetch 当驻留保证 | 受权限/memlock quota 限制；用后 unlock |
 | 查询 cwd/temp/home | `convenience.h` owning 重载；自管存储用 buffer-fill | 猜环境变量/固定 `/tmp` | owning 返回 `std::string`；core 返回完整长度 |
 | 读取/修改进程环境 | owning `get_env_var(name)` 或 buffer-fill；`set/unset` | 把 unset 和空值都当 0 | unset=`NotFound`；写操作仅应在启动期做 |
 | 一次性启动 OS 线程 | `Thread::spawn(callable, opts)` | sched task/fiber | callable 状态由线程拥有；join 回收；可选 required |
@@ -118,6 +120,24 @@ cwd/temp/home/env/symlink 字符串；要自管存储时使用 `Result<size_t>` 
 遵循其它 buffer-fill API 的完整长度合同，因而调用方不会在 path 被截断时误拿半条路径删除。
 Windows 创建 symlink 时必须编码 file/directory：已有 target 可用 `SymlinkKind::kAuto`；创建
 dangling link 时显式传 `kFile` 或 `kDirectory`，才具有跨平台一致语义。
+
+模型/数据集需要 warm-up 时对已经打开的 mapping 显式调用，而不是让所有 open 承担 page
+fault：
+
+```cpp
+HYLE_ASSIGN_OR_RETURN(auto weights,
+                      MappedFile::open("weights.bin", MappedFile::Mode::kReadOnly));
+HYLE_RETURN_IF_ERROR(weights.prefetch());
+// 只有尾延迟确实要求常驻时才购买这一资源合同。
+HYLE_RETURN_IF_ERROR(weights.lock());
+// ... use weights.data() ...
+HYLE_RETURN_IF_ERROR(weights.unlock());
+```
+
+`Advice` 是性能 hint：POSIX 支持 normal/random/sequential/will-need/dont-need；Windows 只有
+will-need 可对等实现，其余返回 `Unimplemented`，调用方可选择忽略 hint 继续使用 mapping。
+`lock` 则是明确请求，失败通常表示权限或进程 quota，不应静默当成功。打开的 FileHandle/
+MappedFile 在三平台都不会阻止 rename/delete，因此可先原子替换路径，让旧 owner 自然读完。
 
 ## 等待与线程
 

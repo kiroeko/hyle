@@ -59,6 +59,13 @@ enum class StatusCode : std::uint16_t {
 // so the name table lives in exactly one translation unit.
 HYLE_ERROR_API std::string_view status_code_name(StatusCode code) noexcept;
 
+// Map a C/POSIX errno value onto the canonical Status taxonomy. This is a
+// pure O(1) classification and returns Ok for error_number == 0. Individual
+// OS operations may still override the generic mapping when their contract
+// gives an errno a more specific meaning (for example pthread_create(EAGAIN)
+// is resource exhaustion rather than a retryable I/O condition).
+HYLE_ERROR_API StatusCode status_code_from_errno(int error_number) noexcept;
+
 namespace detail {
 class StatusAccess;
 
@@ -263,5 +270,13 @@ class [[nodiscard]] Status {
 
 static_assert(sizeof(Status) == sizeof(std::uintptr_t),
               "Status must stay a single tagged word");
+
+// Construct a Status from errno without making callers repeat strerror and
+// canonical-code plumbing. `context` names the failed operation; the final
+// message is "context: native description". errno==0 is OK and ignores
+// context. The failure path performs one Status allocation; OOM preserves the
+// mapped code and drops only the message, like every other Status factory.
+HYLE_ERROR_API Status status_from_errno(
+    int error_number, std::string_view context = {}) noexcept;
 
 }  // namespace hyle

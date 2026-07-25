@@ -753,8 +753,12 @@ Result<FileHandle> open_file(const char* path, unsigned flags) noexcept {
     creation = (flags & kOpenCreate) ? CREATE_ALWAYS : TRUNCATE_EXISTING;
   else
     creation = (flags & kOpenCreate) ? OPEN_ALWAYS : OPEN_EXISTING;
-  HANDLE h = CreateFileW(wp.w(), access, FILE_SHARE_READ | FILE_SHARE_WRITE,
-                         nullptr, creation, FILE_ATTRIBUTE_NORMAL, nullptr);
+  // Match POSIX's unlink/rename-while-open lifetime: an owning FileHandle keeps
+  // the file object alive but must not block atomic replacement of its path.
+  // libuv uses the same share mask for its portable file surface.
+  HANDLE h = CreateFileW(
+      wp.w(), access, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+      nullptr, creation, FILE_ATTRIBUTE_NORMAL, nullptr);
   if (h == INVALID_HANDLE_VALUE) {
     return std::unexpected(win32_fs_status("CreateFileW", ::GetLastError()));
   }
@@ -1085,22 +1089,13 @@ Status posix_fs_status(const char* operation, int code) noexcept {
                 operation, code,
                 detail == nullptr || detail[0] == '\0' ? "" : ": ",
                 detail == nullptr ? "" : detail);
-  if (code == ENOENT || code == ENOTDIR) return Status::NotFound(message);
-  if (code == EACCES || code == EPERM || code == EROFS) {
-    return Status::PermissionDenied(message);
-  }
-  if (code == EEXIST) return Status::AlreadyExists(message);
-  if (code == ENOMEM || code == ENOSPC || code == EDQUOT || code == EMFILE ||
-      code == ENFILE) {
-    return Status::ResourceExhausted(message);
-  }
-  if (code == EBADF) return Status::FailedPrecondition(message);
-  if (code == EINVAL || code == EFAULT) return Status::InvalidArgument(message);
+  // The error module owns the generic errno taxonomy. Filesystem operations
+  // override only the cases whose path contract is more specific.
+  if (code == ENOTDIR) return Status::NotFound(message);
   if (code == ENAMETOOLONG || code == EFBIG || code == EOVERFLOW) {
     return Status::OutOfRange(message);
   }
-  if (code == ENOSYS || code == ENOTSUP) return Status::Unimplemented(message);
-  return Status::Unavailable(message);
+  return Status(status_code_from_errno(code), message);
 }
 
 FileType file_type_from_mode(mode_t mode) noexcept {

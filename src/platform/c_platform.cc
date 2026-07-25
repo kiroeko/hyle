@@ -56,6 +56,10 @@ static_assert(HYLE_MAP_READ_ONLY ==
 static_assert(HYLE_MAP_COPY_ON_WRITE ==
               static_cast<int>(
                   hyle::platform::MappedFile::Mode::kCopyOnWrite));
+static_assert(HYLE_MAP_ADVICE_NORMAL ==
+              static_cast<int>(hyle::platform::MappedFile::Advice::kNormal));
+static_assert(HYLE_MAP_ADVICE_DONT_NEED ==
+              static_cast<int>(hyle::platform::MappedFile::Advice::kDontNeed));
 static_assert(HYLE_ISA_SCALAR ==
               static_cast<int>(hyle::platform::Isa::kScalar));
 static_assert(HYLE_ISA_RVV == static_cast<int>(hyle::platform::Isa::kRvv));
@@ -1143,6 +1147,38 @@ hyle_status hyle_mapped_file_flush(hyle_mapped_file_o* m) {
         hyle::Status::InvalidArgument("hyle_mapped_file_flush: mapping is NULL"));
   }
   return steal_status(m->mf.flush());
+}
+
+hyle_status hyle_mapped_file_advise(hyle_mapped_file_o* m,
+                                    hyle_map_advice advice, size_t offset,
+                                    size_t length) {
+  if (m == nullptr) {
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_mapped_file_advise: mapping is NULL"));
+  }
+  return steal_status(m->mf.advise(
+      static_cast<hyle::platform::MappedFile::Advice>(advice), offset,
+      length));
+}
+
+hyle_status hyle_mapped_file_lock(hyle_mapped_file_o* m) {
+  if (m == nullptr) {
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_mapped_file_lock: mapping is NULL"));
+  }
+  return steal_status(m->mf.lock());
+}
+
+hyle_status hyle_mapped_file_unlock(hyle_mapped_file_o* m) {
+  if (m == nullptr) {
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_mapped_file_unlock: mapping is NULL"));
+  }
+  return steal_status(m->mf.unlock());
+}
+
+int hyle_mapped_file_locked(const hyle_mapped_file_o* m) {
+  return m != nullptr && m->mf.locked() ? 1 : 0;
 }
 
 }  // extern "C"

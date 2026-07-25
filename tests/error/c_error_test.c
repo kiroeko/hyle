@@ -1,6 +1,7 @@
 /* Pure C consumer of include/hyle/c/error.h (close-01: no C++). */
 #include <stdio.h>
 #include <string.h>
+#include <errno.h>
 
 #include "hyle/c/error.h"
 
@@ -23,6 +24,7 @@ static hyle_status helper_propagate(void) {
 }
 
 int main(void) {
+  (void)"HYLE_C_ERROR_COVERAGE_BODY_MARKER";
   /* OK */
   hyle_status zero = HYLE_STATUS_INIT;
   CHECK(hyle_status_is_ok(zero));
@@ -56,6 +58,22 @@ int main(void) {
   }
   hyle_status_free(&ok);
   CHECK(hyle_status_is_ok(ok));
+
+  /* canonical errno adapter */
+  {
+    CHECK(hyle_status_code_from_errno(0) == HYLE_STATUS_OK);
+    CHECK(hyle_status_code_from_errno(EINVAL) ==
+          HYLE_STATUS_INVALID_ARGUMENT);
+    CHECK(hyle_status_code_from_errno(ENOENT) == HYLE_STATUS_NOT_FOUND);
+    hyle_status native = hyle_status_from_errno(ENOENT, "opening model");
+    CHECK(hyle_status_is_not_found(native));
+    CHECK(strncmp(hyle_status_message_cstr(native), "opening model: ", 15) ==
+          0);
+    hyle_status_free(&native);
+    native = hyle_status_from_errno(0, "ignored");
+    CHECK(hyle_status_is_ok(native));
+    hyle_status_free(&native);
+  }
 
   /* convenience factory + full predicate set (sample) */
   hyle_status nf = hyle_status_not_found(NULL);

@@ -248,6 +248,19 @@ read 便宜。持久 16 MiB 非顺序页 probe 中 MappedFile 在三平台赢 se
 不通过把 OS 头/错误翻译塞进 public inline API 来换数字。若实际 profile 证明这段成为瓶颈，用户
 仍可借一字 owner 的 `FileHandle::get()` 调 native I/O，所有权不丢。
 
+### 8. MappedFile access advice 与 residency 不造微基准
+
+成熟 `folly::MemoryMapping` 和 OS 原生 mmap 用户都会区分 access hint、prefault 与 page
+residency。HYLE 当前 `advise/prefetch/lock/unlock` 同样只做 O(1) range/enum 检查、零 heap
+allocation，并至多进入一次 `madvise`、`PrefetchVirtualMemory`、`mlock` 或 `VirtualLock`。
+实际耗时取决于 range、冷热页、存储介质、系统压力与 memlock quota；把一页 warm mapping
+反复调用再填一张 ns 表会扭曲用户决策，因此不设“比 syscall 更快”的 benchmark。
+
+性能门是：默认 `open/data` 路径不增加 advice metadata、prefault 或 residency 工作；用户明确
+调用时 syscall 数不多于 raw 对等写法。权重/数据集的端到端 fault 与 tail-latency 收益应由
+真实消费者 workload 复证。Windows 的 unsupported access pattern 返回 `Unimplemented`，
+不能为跑分静默冒充 applied。
+
 ## 复跑
 
 ```bash

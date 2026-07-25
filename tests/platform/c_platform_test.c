@@ -831,6 +831,22 @@ int main(void) {
         &m, tpath, HYLE_MAP_READ_ONLY, 0, 0);
     CHECK(hyle_status_is_ok(map_status));
     CHECK(m != NULL);
+    CHECK(hyle_mapped_file_valid(m));
+    CHECK(hyle_mapped_file_data(m) != NULL);
+    CHECK(hyle_mapped_file_size(m) == payload_size);
+    map_status = hyle_mapped_file_advise(
+        m, HYLE_MAP_ADVICE_NORMAL, 0, 0);
+    CHECK(hyle_status_is_ok(map_status));
+    hyle_status_free(&map_status);
+    CHECK(!hyle_mapped_file_locked(m));
+    map_status = hyle_mapped_file_lock(m);
+    if (hyle_status_is_ok(map_status)) {
+      CHECK(hyle_mapped_file_locked(m));
+      hyle_status_free(&map_status);
+      map_status = hyle_mapped_file_unlock(m);
+      CHECK(hyle_status_is_ok(map_status));
+      CHECK(!hyle_mapped_file_locked(m));
+    }
     hyle_status_free(&map_status);
     hyle_mapped_file_destroy(m);
     map_status = hyle_mapped_file_open(&m, tpath, (hyle_map_mode)99, 0, 0);
@@ -842,6 +858,16 @@ int main(void) {
     CHECK(hyle_status_is_invalid_argument(map_status));
     hyle_status_free(&map_status);
     map_status = hyle_mapped_file_flush(NULL);
+    CHECK(hyle_status_is_invalid_argument(map_status));
+    hyle_status_free(&map_status);
+    map_status = hyle_mapped_file_advise(
+        NULL, HYLE_MAP_ADVICE_NORMAL, 0, 0);
+    CHECK(hyle_status_is_invalid_argument(map_status));
+    hyle_status_free(&map_status);
+    map_status = hyle_mapped_file_lock(NULL);
+    CHECK(hyle_status_is_invalid_argument(map_status));
+    hyle_status_free(&map_status);
+    map_status = hyle_mapped_file_unlock(NULL);
     CHECK(hyle_status_is_invalid_argument(map_status));
     hyle_status_free(&map_status);
 

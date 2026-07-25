@@ -494,6 +494,14 @@ typedef enum hyle_map_mode {
   HYLE_MAP_COPY_ON_WRITE = 2
 } hyle_map_mode;
 
+typedef enum hyle_map_advice {
+  HYLE_MAP_ADVICE_NORMAL = 0,
+  HYLE_MAP_ADVICE_RANDOM = 1,
+  HYLE_MAP_ADVICE_SEQUENTIAL = 2,
+  HYLE_MAP_ADVICE_WILL_NEED = 3,
+  HYLE_MAP_ADVICE_DONT_NEED = 4
+} hyle_map_advice;
+
 /* Opaque mapping handle; destroy unmaps + closes. */
 typedef struct hyle_mapped_file_o hyle_mapped_file_o;
 /* Map [offset,offset+length) of `path` (length==0 => to EOF). Unaligned offsets
@@ -507,6 +515,14 @@ HYLE_PLATFORM_C_API int hyle_mapped_file_valid(const hyle_mapped_file_o* m);
 HYLE_PLATFORM_C_API void* hyle_mapped_file_data(hyle_mapped_file_o* m);
 HYLE_PLATFORM_C_API size_t hyle_mapped_file_size(const hyle_mapped_file_o* m);
 HYLE_PLATFORM_C_API hyle_status hyle_mapped_file_flush(hyle_mapped_file_o* m);
+/* Access hints apply to [offset,offset+length); length==0 means to end.
+ * Unsupported OS hints return UNIMPLEMENTED. */
+HYLE_PLATFORM_C_API hyle_status hyle_mapped_file_advise(
+    hyle_mapped_file_o* m, hyle_map_advice advice, size_t offset,
+    size_t length);
+HYLE_PLATFORM_C_API hyle_status hyle_mapped_file_lock(hyle_mapped_file_o* m);
+HYLE_PLATFORM_C_API hyle_status hyle_mapped_file_unlock(hyle_mapped_file_o* m);
+HYLE_PLATFORM_C_API int hyle_mapped_file_locked(const hyle_mapped_file_o* m);
 
 /* ========================================================================== */
 /* CPU features (1:1 with hyle::platform::CpuFeatures bools, as int 0/1)      */

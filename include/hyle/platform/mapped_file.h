@@ -39,6 +39,18 @@ class MappedFile {
                   // hit the file; the file may even be opened read-only (MmapCopy)
   };
 
+  // Kernel access-pattern hints for a mapped range. These are performance
+  // hints, never correctness requirements. POSIX maps them to madvise. Windows
+  // can apply kWillNeed through PrefetchVirtualMemory; unsupported hints return
+  // Unimplemented instead of silently claiming that the request was applied.
+  enum class Advice : std::uint8_t {
+    kNormal = 0,
+    kRandom = 1,
+    kSequential = 2,
+    kWillNeed = 3,
+    kDontNeed = 4,
+  };
+
   // Map [offset, offset+length) of `path` (length==0 => to end of file). An
   // explicit length must NOT extend past the file's end -- mapping past EOF is
   // rejected with OutOfRange, so a read-write mapping never silently grows the
@@ -68,6 +80,24 @@ class MappedFile {
   // for kReadOnly / kCopyOnWrite). msync(MS_SYNC) / FlushViewOfFile.
   HYLE_PLATFORM_API Status flush() noexcept;
 
+  // Advise the kernel about [offset, offset+length). length==0 means through
+  // the end of this mapping. Empty end ranges are successful no-ops. The
+  // common path performs one native call and no allocation.
+  HYLE_PLATFORM_API Status advise(Advice advice, std::size_t offset = 0,
+                                  std::size_t length = 0) noexcept;
+
+  // Convenience for the common model/dataset warm-up request.
+  Status prefetch(std::size_t offset = 0, std::size_t length = 0) noexcept {
+    return advise(Advice::kWillNeed, offset, length);
+  }
+
+  // Keep the mapped pages resident (mlock/VirtualLock). This may fail because
+  // of process limits or privilege and therefore stays explicit. Repeated
+  // lock/unlock calls are idempotent. Unmapping also releases the OS lock.
+  HYLE_PLATFORM_API Status lock() noexcept;
+  HYLE_PLATFORM_API Status unlock() noexcept;
+  bool locked() const noexcept { return locked_; }
+
   // Unmap early (also done by the destructor). Safe on an invalid mapping.
   HYLE_PLATFORM_API void reset() noexcept;
 
@@ -85,6 +115,7 @@ class MappedFile {
   std::intptr_t h0_ = -1;
   std::intptr_t h1_ = -1;
   Mode mode_ = Mode::kReadOnly;
+  bool locked_ = false;
 };
 
 }  // namespace hyle::platform

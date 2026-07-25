@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 
 #include <atomic>
+#include <cerrno>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
@@ -220,6 +221,43 @@ TEST(Status, EveryFactoryAndPredicateAgree) {
   }
   HYLE_FOREACH_STATUS_CODE(HYLE_CHECK_FACTORY)
 #undef HYLE_CHECK_FACTORY
+}
+
+TEST(Status, ErrnoMapsToCanonicalCodes) {
+  EXPECT_EQ(hyle::status_code_from_errno(0), StatusCode::Ok);
+  EXPECT_EQ(hyle::status_code_from_errno(EINVAL),
+            StatusCode::InvalidArgument);
+  EXPECT_EQ(hyle::status_code_from_errno(ENOENT), StatusCode::NotFound);
+  EXPECT_EQ(hyle::status_code_from_errno(EACCES),
+            StatusCode::PermissionDenied);
+  EXPECT_EQ(hyle::status_code_from_errno(ENOMEM),
+            StatusCode::ResourceExhausted);
+  EXPECT_EQ(hyle::status_code_from_errno(ERANGE), StatusCode::OutOfRange);
+}
+
+TEST(Status, ErrnoFactoryUsesOneNativeMessageAndContext) {
+  Status ok = hyle::status_from_errno(0, "ignored");
+  EXPECT_TRUE(ok.ok());
+  EXPECT_FALSE(ok.has_message());
+
+  Status missing = hyle::status_from_errno(ENOENT, "opening model");
+  EXPECT_TRUE(missing.IsNotFound());
+  EXPECT_TRUE(missing.has_message());
+  EXPECT_EQ(missing.message().find("opening model: "), 0u);
+  EXPECT_GT(missing.message().size(), std::strlen("opening model: "));
+
+  Status code_only = hyle::status_from_errno(ENOENT, "");
+  EXPECT_TRUE(code_only.IsNotFound());
+  EXPECT_TRUE(code_only.has_message());
+}
+
+TEST(Status, ErrnoFactoryOomPreservesCanonicalCode) {
+  hyle::detail::status_test_force_oom(true);
+  Status missing = hyle::status_from_errno(ENOENT, "opening model");
+  hyle::detail::status_test_force_oom(false);
+
+  EXPECT_TRUE(missing.IsNotFound());
+  EXPECT_FALSE(missing.has_message());
 }
 
 // ---- Status is a small, cheap carrier ---------------------------------------

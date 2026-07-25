@@ -32,7 +32,10 @@ const char* win32_mapping_error_name(DWORD code) noexcept {
     case ERROR_ACCESS_DENIED: return "ERROR_ACCESS_DENIED";
     case ERROR_NOT_ENOUGH_MEMORY: return "ERROR_NOT_ENOUGH_MEMORY";
     case ERROR_OUTOFMEMORY: return "ERROR_OUTOFMEMORY";
+    case ERROR_WORKING_SET_QUOTA: return "ERROR_WORKING_SET_QUOTA";
     case ERROR_INVALID_PARAMETER: return "ERROR_INVALID_PARAMETER";
+    case ERROR_PRIVILEGE_NOT_HELD: return "ERROR_PRIVILEGE_NOT_HELD";
+    case ERROR_NOT_LOCKED: return "ERROR_NOT_LOCKED";
     default: return "WIN32_MAPPING_ERROR";
   }
 }
@@ -54,11 +57,15 @@ Status win32_mapping_error(const char* operation, DWORD code) noexcept {
   if (code == ERROR_FILE_NOT_FOUND || code == ERROR_PATH_NOT_FOUND) {
     return Status::NotFound(message);
   }
-  if (code == ERROR_ACCESS_DENIED) return Status::PermissionDenied(message);
-  if (code == ERROR_NOT_ENOUGH_MEMORY || code == ERROR_OUTOFMEMORY) {
+  if (code == ERROR_ACCESS_DENIED || code == ERROR_PRIVILEGE_NOT_HELD) {
+    return Status::PermissionDenied(message);
+  }
+  if (code == ERROR_NOT_ENOUGH_MEMORY || code == ERROR_OUTOFMEMORY ||
+      code == ERROR_WORKING_SET_QUOTA) {
     return Status::ResourceExhausted(message);
   }
   if (code == ERROR_INVALID_PARAMETER) return Status::InvalidArgument(message);
+  if (code == ERROR_NOT_LOCKED) return Status::FailedPrecondition(message);
   return Status::Unavailable(message);
 }
 
@@ -119,9 +126,9 @@ Result<MappedFile> MappedFile::open(const char* path, Mode mode,
   const DWORD access = (mode == Mode::kReadWrite)
                            ? (GENERIC_READ | GENERIC_WRITE)
                            : GENERIC_READ;
-  HANDLE file = ::CreateFileW(w.ptr, access, FILE_SHARE_READ | FILE_SHARE_WRITE,
-                              nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL,
-                              nullptr);
+  HANDLE file = ::CreateFileW(
+      w.ptr, access, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+      nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
   if (file == INVALID_HANDLE_VALUE) {
     return std::unexpected(
         win32_mapping_error("CreateFileW", ::GetLastError()));
@@ -218,6 +225,75 @@ Status MappedFile::flush() noexcept {
   return Status();
 }
 
+Status MappedFile::advise(Advice advice, std::size_t offset,
+                          std::size_t length) noexcept {
+  if (!valid()) {
+    return Status::FailedPrecondition("mapped file advise: mapping is not open");
+  }
+  if (advice < Advice::kNormal || advice > Advice::kDontNeed) {
+    return Status::InvalidArgument("mapped file advise: invalid advice");
+  }
+  if (offset > size_ || (length != 0 && length > size_ - offset)) {
+    return Status::OutOfRange("mapped file advise: range is outside mapping");
+  }
+  const std::size_t span = length != 0 ? length : size_ - offset;
+  if (span == 0 || advice == Advice::kNormal) return Status{};
+
+  if (advice != Advice::kWillNeed) {
+    return Status::Unimplemented(
+        "mapped file advice is not available on Windows");
+  }
+
+  // Resolve dynamically: PrefetchVirtualMemory was added in Windows 8, while
+  // HYLE's binary may still be loaded on an older host. Avoid a hard import
+  // that would prevent the whole DLL from loading there.
+  struct MemoryRangeEntry {
+    void* virtual_address;
+    std::size_t number_of_bytes;
+  };
+  using PrefetchFn = BOOL(WINAPI*)(HANDLE, ULONG_PTR, MemoryRangeEntry*, ULONG);
+  static const PrefetchFn prefetch = []() noexcept -> PrefetchFn {
+    HMODULE kernel = ::GetModuleHandleW(L"kernel32.dll");
+    return kernel == nullptr
+               ? nullptr
+               : reinterpret_cast<PrefetchFn>(
+                     ::GetProcAddress(kernel, "PrefetchVirtualMemory"));
+  }();
+  if (prefetch == nullptr) {
+    return Status::Unimplemented(
+        "PrefetchVirtualMemory is unavailable on this Windows version");
+  }
+  MemoryRangeEntry range{static_cast<char*>(addr_) + offset, span};
+  if (!prefetch(::GetCurrentProcess(), 1, &range, 0)) {
+    return win32_mapping_error("PrefetchVirtualMemory", ::GetLastError());
+  }
+  return Status{};
+}
+
+Status MappedFile::lock() noexcept {
+  if (!valid()) {
+    return Status::FailedPrecondition("mapped file lock: mapping is not open");
+  }
+  if (locked_) return Status{};
+  if (!::VirtualLock(map_base_, map_len_)) {
+    return win32_mapping_error("VirtualLock", ::GetLastError());
+  }
+  locked_ = true;
+  return Status{};
+}
+
+Status MappedFile::unlock() noexcept {
+  if (!valid()) {
+    return Status::FailedPrecondition("mapped file unlock: mapping is not open");
+  }
+  if (!locked_) return Status{};
+  if (!::VirtualUnlock(map_base_, map_len_)) {
+    return win32_mapping_error("VirtualUnlock", ::GetLastError());
+  }
+  locked_ = false;
+  return Status{};
+}
+
 void MappedFile::reset() noexcept {
   if (map_base_ != nullptr) ::UnmapViewOfFile(map_base_);
   if (h1_ != -1) ::CloseHandle(reinterpret_cast<HANDLE>(h1_));
@@ -228,6 +304,7 @@ void MappedFile::reset() noexcept {
   map_len_ = 0;
   h0_ = -1;
   h1_ = -1;
+  locked_ = false;
 }
 
 #else
@@ -238,6 +315,7 @@ namespace {
 const char* posix_mapping_error_name(int code) noexcept {
   switch (code) {
     case ENOENT: return "ENOENT";
+    case ENOTDIR: return "ENOTDIR";
     case EACCES: return "EACCES";
     case EPERM: return "EPERM";
     case ENOMEM: return "ENOMEM";
@@ -266,15 +344,8 @@ Status posix_mapping_error(const char* operation, int code) noexcept {
                 operation, posix_mapping_error_name(code), code,
                 detail == nullptr || detail[0] == '\0' ? "" : ": ",
                 detail == nullptr ? "" : detail);
-  if (code == ENOENT) return Status::NotFound(message);
-  if (code == EACCES || code == EPERM) return Status::PermissionDenied(message);
-  if (code == ENOMEM || code == EMFILE || code == ENFILE) {
-    return Status::ResourceExhausted(message);
-  }
-  if (code == EINVAL || code == EOVERFLOW) {
-    return Status::InvalidArgument(message);
-  }
-  return Status::Unavailable(message);
+  if (code == ENOTDIR) return Status::NotFound(message);
+  return Status(status_code_from_errno(code), message);
 }
 
 }  // namespace
@@ -362,12 +433,76 @@ Status MappedFile::flush() noexcept {
   return Status();
 }
 
+Status MappedFile::advise(Advice advice, std::size_t offset,
+                          std::size_t length) noexcept {
+  if (!valid()) {
+    return Status::FailedPrecondition("mapped file advise: mapping is not open");
+  }
+  if (advice < Advice::kNormal || advice > Advice::kDontNeed) {
+    return Status::InvalidArgument("mapped file advise: invalid advice");
+  }
+  if (offset > size_ || (length != 0 && length > size_ - offset)) {
+    return Status::OutOfRange("mapped file advise: range is outside mapping");
+  }
+  const std::size_t span = length != 0 ? length : size_ - offset;
+  if (span == 0) return Status{};
+
+  int native = MADV_NORMAL;
+  switch (advice) {
+    case Advice::kNormal: native = MADV_NORMAL; break;
+    case Advice::kRandom: native = MADV_RANDOM; break;
+    case Advice::kSequential: native = MADV_SEQUENTIAL; break;
+    case Advice::kWillNeed: native = MADV_WILLNEED; break;
+    case Advice::kDontNeed: native = MADV_DONTNEED; break;
+  }
+
+  // madvise requires a page-aligned start. Mapping an unaligned file offset
+  // created a leading prefix in map_base_; include only the unavoidable prefix
+  // of the first page and keep the request inside the underlying view.
+  const long native_page = ::sysconf(_SC_PAGESIZE);
+  const std::size_t page =
+      native_page > 0 ? static_cast<std::size_t>(native_page) : 4096u;
+  const std::uintptr_t requested =
+      reinterpret_cast<std::uintptr_t>(addr_) + offset;
+  const std::uintptr_t aligned = requested - requested % page;
+  const std::size_t native_span = span + (requested - aligned);
+  if (::madvise(reinterpret_cast<void*>(aligned), native_span, native) != 0) {
+    return posix_mapping_error("madvise", errno);
+  }
+  return Status{};
+}
+
+Status MappedFile::lock() noexcept {
+  if (!valid()) {
+    return Status::FailedPrecondition("mapped file lock: mapping is not open");
+  }
+  if (locked_) return Status{};
+  if (::mlock(map_base_, map_len_) != 0) {
+    return posix_mapping_error("mlock", errno);
+  }
+  locked_ = true;
+  return Status{};
+}
+
+Status MappedFile::unlock() noexcept {
+  if (!valid()) {
+    return Status::FailedPrecondition("mapped file unlock: mapping is not open");
+  }
+  if (!locked_) return Status{};
+  if (::munlock(map_base_, map_len_) != 0) {
+    return posix_mapping_error("munlock", errno);
+  }
+  locked_ = false;
+  return Status{};
+}
+
 void MappedFile::reset() noexcept {
   if (map_base_ != nullptr) ::munmap(map_base_, map_len_);
   addr_ = nullptr;
   size_ = 0;
   map_base_ = nullptr;
   map_len_ = 0;
+  locked_ = false;
 }
 
 #endif
@@ -378,13 +513,15 @@ MappedFile::~MappedFile() { reset(); }
 
 MappedFile::MappedFile(MappedFile&& o) noexcept
     : addr_(o.addr_), size_(o.size_), map_base_(o.map_base_),
-      map_len_(o.map_len_), h0_(o.h0_), h1_(o.h1_), mode_(o.mode_) {
+      map_len_(o.map_len_), h0_(o.h0_), h1_(o.h1_), mode_(o.mode_),
+      locked_(o.locked_) {
   o.addr_ = nullptr;
   o.size_ = 0;
   o.map_base_ = nullptr;
   o.map_len_ = 0;
   o.h0_ = -1;
   o.h1_ = -1;
+  o.locked_ = false;
 }
 
 MappedFile& MappedFile::operator=(MappedFile&& o) noexcept {
@@ -397,12 +534,14 @@ MappedFile& MappedFile::operator=(MappedFile&& o) noexcept {
     h0_ = o.h0_;
     h1_ = o.h1_;
     mode_ = o.mode_;
+    locked_ = o.locked_;
     o.addr_ = nullptr;
     o.size_ = 0;
     o.map_base_ = nullptr;
     o.map_len_ = 0;
     o.h0_ = -1;
     o.h1_ = -1;
+    o.locked_ = false;
   }
   return *this;
 }

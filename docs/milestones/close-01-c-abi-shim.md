@@ -45,7 +45,7 @@
   [`c-error.md`](../guide/c-error.md)。Status 全码、所有权、上下文、buffer 格式化与传播均可达。
   早期诊断 handler 已在 reclosure 中删除：日志归 `obs`，合同失败归 fail-fast，不再混入
   可恢复错误 C ABI。
-- [x] **样板 platform**（2026-07-17，2026-07-24 最终复审）：`include/hyle/c/platform.h` + `c_platform.cc` + 纯 C `hyle_platform_c_test`。覆盖 wait/Parker、Thread、DynLib、VM/VmRegion、hugepage/NUMA、完整 fs/env/fd、MappedFile、CPU/cache/topology/per-CPU 能力；私有 `hyle_platform_last_error` 已删除并统一共享 Status。当前 **111/111** 动态声明、纯 C 引用与三平台导出机械对齐。文档：[`c-platform.md`](../guide/c-platform.md)。
+- [x] **样板 platform**（2026-07-17，2026-07-25 最终复审）：`include/hyle/c/platform.h` + `c_platform.cc` + 纯 C `hyle_platform_c_test`。覆盖 wait/Parker、Thread、DynLib、VM/VmRegion、hugepage/NUMA、完整 fs/env/fd、MappedFile（含 advice/residency）、CPU/cache/topology/per-CPU 能力；私有 `hyle_platform_last_error` 已删除并统一共享 Status。当前 **118/118** 动态声明、纯 C 引用与三平台导出机械对齐。文档：[`c-platform.md`](../guide/c-platform.md)。
 - [x] **样板 mem**（2026-07-23 重审）：`include/hyle/c/mem.h` + `c_mem.cc` + 纯 C
   `hyle_mem_c_test`。覆盖 system allocator/collect、Quota/Stats、Region/FixedRegion/FixedPool、
   hard `SharedPool` + 显式 `SharedPoolCache`、Stack/PooledRegion/GrowablePool、HugeRegion 与
