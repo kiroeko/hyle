@@ -11,23 +11,23 @@
 
 ## 完成定义
 
-- [ ] 清点根/模块 CMake、helper、preset、toolchain、CI、构建脚本和文档，画出现状 target/
+- [x] 清点根/模块 CMake、helper、preset、toolchain、CI、构建脚本和文档，画出现状 target/
   option/feature/dependency 图；删除重复或相互矛盾的环境契约。
-- [ ] 每个产品模块由一个规范 target 描述自身 source、public header、C ABI、直接 link 依赖和
+- [x] 每个产品模块由一个规范 target 描述自身 source、public header、C ABI、直接 link 依赖和
   compile feature；目录顺序、偶然 include 与全局变量不能冒充依赖。
-- [ ] 整库与模块子集都能按依赖闭包组装；CPU-only 与 CUDA/Vulkan/TLS/trace 等可选能力隔离，
+- [x] 整库与模块子集都能按依赖闭包组装；CPU-only 与 CUDA/Vulkan/TLS/trace 等可选能力隔离，
   未选择的模块/benchmark 不探测、下载或链接其第三方。
-- [ ] shared/static、源码嵌入（FetchContent/`add_subdirectory`）、安装后
+- [x] shared/static、源码嵌入（FetchContent/`add_subdirectory`）、安装后
   `find_package`/component targets 四条路径使用一致的 public contract 和传递依赖。
-- [ ] Windows、Linux/WSL、macOS 使用一致的高层入口；Ninja/Make/MSBuild 不是隐藏前置，
+- [x] Windows、Linux/WSL、macOS 使用一致的高层入口；Ninja/Make/MSBuild 不是隐藏前置，
   compiler/toolchain/SDK 要么被发现，要么给出可操作失败，不能写死本机绝对路径。
-- [ ] 交叉编译不依赖不可执行的 `try_run`；生成文件、cache、artifact 全在 build tree，复制源码
+- [x] 交叉编译不依赖不可执行的 `try_run`；生成文件、cache、artifact 全在 build tree，复制源码
   或改变平台不会误用旧 cache；常见并发/中断不会留下需要手工猜测的锁死状态。
-- [ ] tests/bench 按模块归属，并有机械 aggregate target；构建某模块验证面会同时产出其 C++、
+- [x] tests/bench 按模块归属，并有机械 aggregate target；构建某模块验证面会同时产出其 C++、
   pure-C、header/surface/ABI 门，而不是让 CTest 运行缺失或陈旧 binary。
-- [ ] architecture 解释组织模型和边界，guide 给出“选哪些模块、怎样嵌入/安装/迁移”的可运行
+- [x] architecture 解释组织模型和边界，guide 给出“选哪些模块、怎样嵌入/安装/迁移”的可运行
   recipe，setup 只记录工具链准备，milestone 只保留发现与施工证据。
-- [ ] 三平台验证 clean configure/build/test；至少覆盖整库、core-only/代表性子集、CPU-only、
+- [x] 三平台验证 clean configure/build/test；至少覆盖整库、core-only/代表性子集、CPU-only、
   shared/static、`add_subdirectory`、install/`find_package` consumer 和一条交叉编译 configure。
 
 ## core 收口期间已经暴露的基线问题
@@ -68,7 +68,7 @@
   static 导出 link-only archives/头/依赖，许可证和 feature manifest 随包迁移。
 - [x] 平台 preset/toolchain/CI 入口：Windows/Linux/macOS 有同构 configure/build/test/workflow；
   Windows 明分 VS generator 与 vswhere+Ninja；AArch64 走标准 toolchain file；CI 含 core 和 package smoke。
-- [ ] 三平台最终发布矩阵（all-component CPU SDK、代表性 source embed、远端 CI 结果）。
+- [x] 三平台最终发布矩阵（all-component CPU SDK、代表性 source embed、远端 CI 结果）。
 - [x] io/nghttp2 package 闭环：固定版本协议核始终为私有 PIC archive；shared io 吸收实现，static
   io 通过 export graph 传递 archive/生成头；MIT 全文和 `io_http2` feature manifest 随包迁移。
 - [x] 当前发布策略确定为暂时闭源：根 `LICENSE` 使用 `LicenseRef-HYLE-Proprietary` 对应的
@@ -157,24 +157,40 @@
 - 本机同时安装旧 VS 2022 与新 VS 18 时，第一次 generator-free smoke 真抓出 CMake 默认选择旧
   MSVC 19.38 的问题；最终 Windows 入口明确为受支持 VS 2022 generator，或由
   `scripts/hyle-windows.ps1` 经 vswhere 选择最新 C++ toolchain 后使用 Ninja，不再静默选旧编译器。
-- `cmake/HyleCiPackageSmoke.cmake` 已在 MSVC 19.50 + Ninja 从空 scratch 真跑：shared/static error
-  SDK 分别 configure/build/install，两个 pure-C package consumer 均 build + CTest 1/1；脚本限制
-  `--parallel 2`。CI 在三平台复用该流程，并另跑 core C++/C/header/surface 聚合。
+- `cmake/HyleCiPackageSmoke.cmake` 从空 scratch 制作 shared/static mem SDK，并运行同一个 pure-C
+  error+mem consumer：shared 覆盖 `mem -> platform -> error` loader chain，static 覆盖 mimalloc
+  link-only archive，且 `.c` 保持 C17、最终链接使用 toolchain C++ driver。脚本限制 `--parallel 2`；
+  CI 在三平台复用该流程，并另跑 core C++/C/header/surface 聚合。
 - Linux AArch64 reference toolchain 分离 host program 与 target library/include/package 搜索，并用
   static-library try-compile 禁止目标程序执行。WSL 从临时原生目录用 GCC 14.2 真 configure/build，
   `file` 确认产物为 ARM aarch64 ELF shared object；CI 对同一 preset 设硬门。
+
+### 最终发布矩阵（`61f38ac`）
+
+- Windows MSVC 19.50、WSL GCC 14.2、Apple M4 AppleClang 21 均从空 build tree 生成
+  `HYLE_COMPONENTS=all`、shared、TLS/CUDA OFF 的确定性 CPU SDK；14 个组件完整 install。
+- 每个平台都从安装前缀独立 configure/build/run 四个消费者：C++ simd+mem、纯 C error、纯 C
+  io+HTTP/2、C++ compute，合计各 4/4。Windows 安装 13 个 HYLE DLL，compute consumer 只 staging
+  自身闭包的 8 个；M4 识别 NEON，compute 至少枚举 host device。
+- 第一次 WSL 真运行暴露 ELF executable RUNPATH 不会传递给间接 shared dependency；没有用
+  `LD_LIBRARY_PATH` 掩盖，而是让每个安装的 HYLE shared target 自带 sibling-relative lookup。
+  修复后 `readelf` 确认 simd/platform 为 `RUNPATH [$ORIGIN]`，`otool` 确认二者为
+  `LC_RPATH @loader_path`；安装 CMake 文件三平台均无 source/build 绝对路径。
+- 代表性 source embed 已由 Windows container sample 真运行；core 子集和 package smoke 由三平台
+  CI 守门，AArch64 GCC 14 交叉 target 另有不可执行目标程序的硬门。完整 compute/io 矩阵保留为
+  release check，不把每次提交 CI 变成全量依赖构建。
 
 ### 本轮四项代码量
 
 | 固定口径 | code |
 |---|---:|
-| 全库（含 docs/in-tree third_party） | 247,815 |
+| 全库（含 docs/in-tree third_party） | 247,871 |
 | 自实现（含测试） | 116,284 |
 | 自实现（不含测试） | 79,957 |
-| build/package 实现 | 3,903 |
+| build/package 实现 | 4,005 |
 
-最后一项统计自有 root/module/test/bench/sample CMake、`cmake/`、preset、CI，以及
-build/fetch/setup/QEMU scripts；不含 vendored CMake、测试源码和文档。
+最后一项固定为 40 个自有 CMake 文件 + preset/CI + 8 个 build/fetch/setup/QEMU shell/PowerShell
+guard；不含 vendored CMake、测试源码和文档。旧 3,903 是选择器漏项，不能冒充本轮增长。
 
 ## 审查顺序
 

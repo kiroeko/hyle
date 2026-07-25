@@ -8,14 +8,15 @@ HYLE 的“实现进度”与“当前标准的收口证书”必须分开读：
 
 | 层次 | 当前判断 | 下一动作 |
 |---|---|---|
-| 严格认证基线 | error、platform、mem、time、core | 只因明确触发器或依赖受影响项局部回验 |
+| 严格认证基线 | error、platform、mem、time、core；build/package system | 只因明确触发器或依赖受影响项局部回验 |
 | 已实现、待新标准复审 | obs、math、util、container、sched、io、simd | 按本文队列逐模块收口，不按旧 benchmark 形状默认通过 |
 | 仍有能力尾 | compute、graph | 先用真实北极星补能力，再执行同一严格合同 |
-| 整库发布面 | 部分完成 | 模块内 C ABI 随模块收；最后只做 install/export/FFI/bundle 总验收 |
+| 整库发布面 | build/package 基线完成 | 模块内 C ABI 随模块收；最后只做跨编译器 ABI/FFI/bundle 总验收 |
 
-当前审查单元是 **build/package system**，完成后进入 util-core：构建
-系统必须把模块 target 图、可组合子集、迁移/安装和三平台环境变成可执行契约，不能继续让
-关键前置散落在 CMake、preset、脚本与文档之间。当前队列见“施工顺序”。
+build/package system 已完成严格收口：模块 target 图、可组合子集、三种交付形状、三平台
+all-component CPU SDK/外部 consumer、CI 与 AArch64 cross 已成为可执行契约。当前审查单元进入
+**util-core seam**；只审低层 header-only 能力和 include/link 边，不提前冻结依赖 container 的
+Registry/runtime。当前队列见“施工顺序”。
 
 ## 严格收口合同
 
@@ -67,6 +68,7 @@ math 的处理相反：它当前不是经过独立需求设计的产品，而是
 | mem | 功能主体完成 | ✅ 严格收口；已在 error/platform 变化后回审 |
 | time | 功能主体完成 | ✅ 严格收口；core 变化时只做依赖回验 |
 | core | 功能主体存在 | ✅ 严格收口；最终实现 `71dabf7`，三平台同合同无 LOSE |
+| build/package system | 组织与三种交付形状完成 | ✅ 严格收口；最终发布矩阵与触发器见任务页 |
 | util、obs、math、container、sched、io、simd | 功能主体基本完成 | 待按新合同认证；旧 closure 是输入证据，不是自动通行证 |
 | compute、graph | 主干存在、不是 stub | 仍有能力尾；完成能力后按同合同认证 |
 
@@ -88,4 +90,4 @@ math 的处理相反：它当前不是经过独立需求设计的产品，而是
 - 构建拓扑和慢变顺序：[`../architecture/roadmap.md`](../architecture/roadmap.md)；参考库角色：[`../architecture/references.md`](../architecture/references.md)。
 - 当前任务与 LOC：[`README.md`](./README.md)；每个旧 closure 文件只是该轮施工证据。
 - 稳定设计：[`../architecture/`](../architecture/README.md)；性能：[`../performance/`](../performance/README.md)；用户入口：[`../guide/`](../guide/README.md)。
-- 已严格认证模块：[`error-module-reclosure.md`](./error-module-reclosure.md)、[`platform-remaining.md`](./platform-remaining.md)、[`mem-close-plan.md`](./mem-close-plan.md)、[`time-module-closure.md`](./time-module-closure.md)。
+- 已严格认证模块/系统：[`error-module-reclosure.md`](./error-module-reclosure.md)、[`platform-remaining.md`](./platform-remaining.md)、[`mem-close-plan.md`](./mem-close-plan.md)、[`time-module-closure.md`](./time-module-closure.md)、[`core-module-closure.md`](./core-module-closure.md)、[`build-package-system-closure.md`](./build-package-system-closure.md)。

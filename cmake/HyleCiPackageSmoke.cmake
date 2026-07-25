@@ -1,9 +1,10 @@
 # Cross-platform binary-package smoke used by CI and maintainers. It creates
-# shared simd+mem and static error SDKs, then configures/builds/runs a
-# source-independent pure-C consumer against each install prefix.  The shared
-# shape also runs the C++ simd+mem consumer so ELF/Mach-O sibling-library lookup
-# is tested, not merely package configure/link. Keep this bounded: full
-# compute/io delivery matrices are release checks, not per-commit fan heaters.
+# shared and static mem SDKs, then configures/builds/runs one source-independent
+# pure-C error+mem consumer against each install prefix.  Shared mem exercises
+# the mem -> platform -> error loader chain; static mem exercises the private
+# mimalloc archive and C++ link-driver closure. Keep this bounded: full
+# simd/compute/io delivery matrices are release checks, not per-commit fan
+# heaters.
 
 cmake_minimum_required(VERSION 3.25)
 
@@ -35,13 +36,10 @@ endif()
 foreach(_linkage IN ITEMS shared static)
   if(_linkage STREQUAL "static")
     set(_static ON)
-    set(_components error)
   else()
     set(_static OFF)
-    # A comma stays one execute_process argument; HYLE_COMPONENTS normalizes it
-    # to a CMake list.  A literal semicolon would be split into a stray `mem`.
-    set(_components "simd,mem")
   endif()
+  set(_components mem)
   set(_build "${HYLE_SMOKE_ROOT}/package-${_linkage}")
   set(_prefix "${HYLE_SMOKE_ROOT}/prefix-${_linkage}")
   set(_consumer "${HYLE_SMOKE_ROOT}/consumer-${_linkage}")
@@ -75,19 +73,4 @@ foreach(_linkage IN ITEMS shared static)
     "${CMAKE_CTEST_COMMAND}" --test-dir "${_consumer}" -C Release
     --output-on-failure)
 
-  if(_linkage STREQUAL "shared")
-    set(_cpp_consumer "${HYLE_SMOKE_ROOT}/consumer-shared-cxx")
-    _hyle_smoke_run("configure shared C++ transitive consumer"
-      "${CMAKE_COMMAND}" -S "${HYLE_SOURCE_DIR}/samples/04_prebuilt_lib"
-      -B "${_cpp_consumer}"
-      ${_hyle_generator_args}
-      -DCMAKE_BUILD_TYPE=Release
-      -DCMAKE_PREFIX_PATH=${_prefix})
-    _hyle_smoke_run("build shared C++ transitive consumer"
-      "${CMAKE_COMMAND}" --build "${_cpp_consumer}" --config Release
-      --parallel 2)
-    _hyle_smoke_run("run shared C++ transitive consumer"
-      "${CMAKE_CTEST_COMMAND}" --test-dir "${_cpp_consumer}" -C Release
-      --output-on-failure)
-  endif()
 endforeach()

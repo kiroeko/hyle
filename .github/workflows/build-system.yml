@@ -71,11 +71,11 @@ jobs:
         if: runner.os == 'Windows'
         run: ./scripts/hyle-windows.ps1 -Action Test -Preset windows-ninja -R "^hyle_core_" --output-on-failure
 
-      - name: Verify shared/static installed pure-C consumers (Unix)
+      - name: Verify installed package consumers (Unix)
         if: runner.os != 'Windows'
         run: cmake -DHYLE_SOURCE_DIR=${{ github.workspace }} -DHYLE_SMOKE_ROOT=${{ runner.temp }}/hyle-package-smoke "-DHYLE_SMOKE_GENERATOR=${{ matrix.generator }}" -P cmake/HyleCiPackageSmoke.cmake
 
-      - name: Verify shared/static installed pure-C consumers (Windows selected MSVC)
+      - name: Verify installed package consumers (Windows selected MSVC)
         if: runner.os == 'Windows'
         run: ./scripts/hyle-windows.ps1 -Action PackageSmoke -SmokeRoot ${{ runner.temp }}/hyle-package-smoke
 
