@@ -59,7 +59,7 @@ C surface gate 在共享构建检查动态导出表，在静态构建检查 arch
 二者都还要对齐 reviewed manifest、声明和 pure-C 引用，不能用“静态库没有 exports”跳过 ABI
 完整性验证。
 
-## 测试归属
+## 验证产物归属
 
 `hyle_add_test(module ...)` 和 pure-C helper 只在对应产品 target 存在时创建测试。每个已选模块
 有 `hyle_<module>_tests` aggregate，统一 `hyle_tests` 依赖全部已解析组件的 aggregate。因此：
@@ -68,8 +68,14 @@ C surface gate 在共享构建检查动态导出表，在静态构建检查 arch
 - 构建 `hyle_tests` 后运行 CTest，登记项与当前组件闭包一致；
 - 切换同一 build tree 的 `HYLE_COMPONENTS` 会重新生成 target/test 集，而不是沿用旧模块。
 
-benchmark 仍在本轮下一阶段按相同原则拆归属；install/export、cross compile 和三平台完整迁移
-矩阵尚未取得最终证书，状态只见 build/package milestone。
+benchmark 使用同一套组织边界：只有已解析组件的 benchmark 会进入 target 图；
+`hyle_<module>_benches` 构建一个模块的完整 benchmark 集，`hyle_benches` 构建所有已选组件的集合。
+Highway/xsimd checkout 只在 `simd` 已选时检查，因此打开 benchmark 不会让 core、mem、container
+等组装意外依赖 SIMD 对手。benchmark executable 的模块归属显式登记在 CMake 中，不能靠文件名
+或开发者记忆推断。
+
+install/export、cross compile 和三平台完整迁移矩阵尚未取得最终证书，状态只见 build/package
+milestone。
 
 ## 维护规则
 

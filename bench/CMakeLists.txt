@@ -4,8 +4,22 @@
 # HyleModule.cmake) makes hyle_<mod>_bench linked to hyle_<mod> + nanobench.
 #
 # Highway/xsimd are deliberately external and pinned here: benchmark rivals must
-# remain unchanged while simd-20 ports their product kernels into HYLE. Product
-# targets still consume their in-repo copies until the staged extraction finishes.
+# remain unchanged after their product kernels were ported into HYLE. Product
+# targets are independent of these external benchmark-only checkouts.
+add_custom_target(hyle_benches)
+foreach(_component IN LISTS HYLE_KNOWN_COMPONENTS)
+  string(TOUPPER "${_component}" _component_upper)
+  if(HYLE_BUILD_${_component_upper})
+    add_custom_target(hyle_${_component}_benches)
+    add_dependencies(hyle_benches hyle_${_component}_benches)
+  endif()
+endforeach()
+unset(_component)
+unset(_component_upper)
+
+# The external Highway/xsimd pair belongs to SIMD parity only. A core/mem/etc.
+# benchmark configuration must not require or even inspect these checkouts.
+if(TARGET hyle_simd)
 include(vendor-versions)
 
 if(WIN32)
@@ -74,6 +88,7 @@ hyle_require_pinned_bench_vendor(
   "xsimd" "${_hyle_bench_xsimd_dir}" "${HYLE_BENCH_VENDOR_XSIMD_REV}" "include/xsimd/xsimd.hpp")
 message(STATUS
   "HYLE bench vendors: Highway ${HYLE_BENCH_VENDOR_HIGHWAY_REV}, xsimd ${HYLE_BENCH_VENDOR_XSIMD_REV} (${HYLE_BENCH_VENDOR_DIR})")
+endif()
 
 add_library(nanobench STATIC nanobench_impl.cc)
 target_include_directories(nanobench SYSTEM PUBLIC
@@ -81,6 +96,7 @@ target_include_directories(nanobench SYSTEM PUBLIC
 find_package(Threads REQUIRED)
 target_link_libraries(nanobench PUBLIC Threads::Threads)
 
+if(TARGET hyle_container)
 hyle_add_bench(container SOURCES container/container_bench_main.cc container/swiss_table_bench.cc container/string_buf_bench.cc container/string_ref_bench.cc container/path_bench.cc container/string_algo_bench.cc DEPS hyle_platform)
 # string_algo utf8 bench races simdutf (the SIMD utf8 SOTA) for the comparison row.
 # simdutf is VENDORED in third_party and compiled into hyle_container (the product uses it
@@ -102,9 +118,11 @@ if(HYLE_BENCH_SIMDUTF)
     set_source_files_properties("${_simdutf}/simdutf.cpp" PROPERTIES COMPILE_OPTIONS "-w")
   endif()
 endif()
+endif() # TARGET hyle_container
 # mem bench links mimalloc_static directly so it can call raw mi_malloc/mi_free as
 # the SOTA baseline (the static lib's PUBLIC include exposes mimalloc.h). hyle_mem
 # links mimalloc PRIVATE, so the bench can't borrow the symbol transitively.
+if(TARGET hyle_mem)
 hyle_add_bench(mem SOURCES mem/allocator_bench.cc DEPS mimalloc_static)
 
 # arena/pool/stack specialized-allocator cluster vs std::pmr (std's arena/pool, no
@@ -125,12 +143,15 @@ if(HYLE_HAS_FCONTEXT)
   target_link_libraries(hyle_mem_fiber_stack_bench PRIVATE hyle_sched)
   hyle_apply_warnings(hyle_mem_fiber_stack_bench)
 endif()
+endif() # TARGET hyle_mem
 
 # platform primitive bench (red-team gap-fill): Parker park/unpark (futex/
 # WaitOnAddress) + Thread spawn/join. Links hyle_platform (Parker/Thread live there).
+if(TARGET hyle_platform)
 add_executable(hyle_platform_bench platform/platform_bench.cc)
 target_link_libraries(hyle_platform_bench PRIVATE hyle_platform nanobench)
 hyle_apply_warnings(hyle_platform_bench)
+endif()
 
 # sched bench: fiber switch (~23ns) + spawn throughput vs std::async (~7-9x). Now
 # compiled into the default bench build (no longer withheld). It once crashed at
@@ -140,15 +161,17 @@ hyle_apply_warnings(hyle_platform_bench)
 # and the original crasher is NOT reproducible on native ext4. Evidence (SIGILL +
 # clean instrumented runs) points to a 9p/WSL paging artifact, not this code. Kept
 # IN the build on purpose: if it ever recurs, we investigate head-on, not hide it.
-hyle_add_bench(sched SOURCES sched/scheduler_bench.cc)
+if(TARGET hyle_sched)
+  hyle_add_bench(sched SOURCES sched/scheduler_bench.cc)
+endif()
 
 # io echo bench (io-04): the concurrent-connection perf comparison the io-01/02/03
 # notes deferred until there was a real load. Drives kConns x kRoundTrips echoes
 # through HYLE's shard-per-core stack at 1/2/4/8 workers (scaling) + a raw epoll
-# readiness-loop baseline (Linux). Hard-depends on sched (io<->sched integration),
-# so gate on fcontext like sched itself. Needs ws2_32 on Windows (socketpair
-# emulation via loopback TCP).
-if(HYLE_HAS_FCONTEXT)
+# readiness-loop baseline (Linux). The io product target already closes over sched
+# and its fcontext implementation. Needs ws2_32 on Windows (socketpair emulation
+# via loopback TCP).
+if(TARGET hyle_io)
   hyle_add_bench(io SOURCES io/echo_bench.cc DEPS hyle_sched)
   if(WIN32)
     target_link_libraries(hyle_io_bench PRIVATE ws2_32)
@@ -325,6 +348,7 @@ endif()
 # error-module bench: Status/Result (zero-dependency root, every hot-path return type)
 # vs std::expected + absl::Status/StatusOr (the same tagged-pointer design; gated
 # -DHYLE_BENCH_ABSL, absl::status/statusor linked in the absl block below). Own exe.
+if(TARGET hyle_error)
 add_executable(hyle_error_bench error/status_bench.cc)
 target_link_libraries(hyle_error_bench PRIVATE hyle_error nanobench)
 hyle_apply_warnings(hyle_error_bench)
@@ -334,23 +358,29 @@ hyle_apply_warnings(hyle_error_bench)
 add_executable(hyle_error_normal_bench error/normal_bench.cc)
 target_link_libraries(hyle_error_normal_bench PRIVATE hyle_error nanobench)
 hyle_apply_warnings(hyle_error_normal_bench)
+endif()
 
 # misc-module bench (gap-fill #37): util/random (xoshiro256++ vs std::mt19937_64),
 # time/clock (monotonic/realtime vs std::chrono), obs/log (produce-path overhead).
 # random is header-only (util); clock needs hyle_time, log needs hyle_obs.
+if(TARGET hyle_time AND TARGET hyle_obs AND TARGET hyle_util)
 add_executable(hyle_misc_bench misc/misc_bench.cc)
 target_link_libraries(hyle_misc_bench PRIVATE hyle_time hyle_obs hyle_util nanobench)
 hyle_apply_warnings(hyle_misc_bench)
+endif()
 
 # time-02 timer wheel bench: the wheel vs an indexed eager-erase min-heap (the
 # actual libevent/libuv shape), plus CommonTimeoutQueue vs an embedded intrusive
 # TAILQ (libevent common-timeout shape). Own exe.
+if(TARGET hyle_time)
 add_executable(hyle_timer_queue_bench time/timer_queue_bench.cc)
 target_link_libraries(hyle_timer_queue_bench PRIVATE hyle_time nanobench)
 hyle_apply_warnings(hyle_timer_queue_bench)
+endif()
 
 # sched-05 fiber-aware sync primitives bench (own exe: scheduler_bench.cc already
 # owns main(), so this is a second target rather than another source in it).
+if(TARGET hyle_sched)
 add_executable(hyle_sched_sync_bench sched/sync_bench.cc)
 target_link_libraries(hyle_sched_sync_bench PRIVATE hyle_sched nanobench)
 hyle_apply_warnings(hyle_sched_sync_bench)
@@ -400,6 +430,7 @@ if(HYLE_HAS_FCONTEXT)
   target_link_libraries(hyle_sched_ext_bench PRIVATE hyle_sched nanobench)
   hyle_apply_warnings(hyle_sched_ext_bench)
 endif()
+endif() # TARGET hyle_sched
 
 # task #9: lock-free queue cluster SOTA parity. HYLE baselines (BoundedQueue,
 # WsFifoQueue, WorkStealingDeque, ConcurrentVector) ALWAYS compile into this exe;
@@ -407,6 +438,7 @@ endif()
 # The same-family work-stealing rival (crossbeam-deque) is a SEPARATE Rust crate
 # (bench/rust/crossbeam_queue_bench) since it can't link a C++ TU -- run it on its
 # own and lay the ns/op side by side (see docs/architecture/performance.md).
+if(TARGET hyle_container)
 add_executable(hyle_queue_sota_bench container/queue_sota_bench.cc)
 # BoundedQueue/ShardedQueue default to compile-time SystemAllocator -> inline mi_malloc
 # into this exe; link mimalloc_static (symbols are internal to hyle_mem.dll).
@@ -422,13 +454,13 @@ hyle_apply_warnings(hyle_queue_sota_bench)
 add_executable(hyle_container_misc_bench container/container_misc_bench.cc)
 target_link_libraries(hyle_container_misc_bench PRIVATE hyle_container hyle_mem nanobench mimalloc_static)
 hyle_apply_warnings(hyle_container_misc_bench)
+endif()
 
 # core's allocation-free intrusive primitive: normal FIFO batching, arbitrary
 # unlink, and non-empty batch discard. The Boost peer uses the same member-hook
 # auto-unlink lifetime contract; std::list is an allocating floor only.
-add_executable(hyle_core_bench core/core_bench.cc)
-target_link_libraries(hyle_core_bench PRIVATE hyle_core nanobench)
-hyle_apply_warnings(hyle_core_bench)
+if(TARGET hyle_core)
+hyle_add_bench(core SOURCES core/core_bench.cc)
 
 # boost::intrusive::list -- the canonical intrusive-container SOTA (header-only).
 # Enable with -DHYLE_BENCH_BOOST=ON; point HYLE_BOOST_DIR at a boost tree (the
@@ -454,9 +486,11 @@ if(HYLE_BENCH_BOOST)
   endif()
   target_compile_definitions(hyle_core_bench PRIVATE HYLE_BENCH_BOOST)
 endif()
+endif() # TARGET hyle_core
 
 # container-06c fuzzy path match bench: proves O(N) scaling (ns/candidate flat across
 # N=1k/10k/100k) + races the std subsequence floor (are the fzf bonuses ~free?). Own exe.
+if(TARGET hyle_container)
 add_executable(hyle_fuzzy_bench container/fuzzy_bench.cc)
 target_link_libraries(hyle_fuzzy_bench PRIVATE hyle_container nanobench)
 hyle_apply_warnings(hyle_fuzzy_bench)
@@ -532,11 +566,13 @@ if(HYLE_BENCH_RIGTORP)
   target_compile_definitions(hyle_queue_sota_bench PRIVATE HYLE_BENCH_RIGTORP)
   target_include_directories(hyle_queue_sota_bench SYSTEM PRIVATE "${HYLE_RIGTORP_DIR}/include")
 endif()
+endif() # TARGET hyle_container
 
 # simd bench: dot/saxpy raced across scalar-autovec / HYLE sse4 / HYLE avx2 (+ Highway if
 # enabled). Each kernel TU is compiled with ITS OWN -march so the per-ISA codegen is real
 # and isolated (one backend per TU). The scalar baseline TU gets NO -march (auto-vec only
 # = the honest "free from the optimizer" reference). Built into one exe.
+if(TARGET hyle_simd)
 add_executable(hyle_simd_bench
   simd/simd_bench.cc
   simd/simd_kernels_scalar.cc
@@ -844,10 +880,12 @@ if(HYLE_BENCH_HIGHWAY)
   # math bench's Highway contrib/math comparison is configured beside its target above. Do not
   # force its x86-only ISA flags here: HYLE_BENCH_HIGHWAY is also valid on NEON.
 endif()
+endif() # TARGET hyle_simd
 
 # Optional SOTA parity: HYLE fiber sync vs marl (the fiber-sync library this
 # design converged from). Off by default (marl is an external build). Enable with
 # -DHYLE_BENCH_MARL=ON; point HYLE_MARL_DIR at a cloned marl (sibling default).
+if(TARGET hyle_sched)
 option(HYLE_BENCH_MARL "build the fiber-sync-vs-marl parity bench" OFF)
 if(HYLE_BENCH_MARL)
   set(HYLE_MARL_DIR "${PROJECT_SOURCE_DIR}/../marl" CACHE PATH "cloned marl")
@@ -865,10 +903,12 @@ if(HYLE_BENCH_MARL)
     target_link_libraries(hyle_sched_blocking_bench PRIVATE marl)
   endif()
 endif()
+endif() # TARGET hyle_sched
 
 # Optional SOTA parity bench: SwissTable vs absl::flat_hash_map. Off by default
 # (abseil is a heavy external build). Enable with -DHYLE_BENCH_ABSL=ON; point
 # HYLE_ABSL_DIR at a cloned abseil-cpp (defaults to a sibling of the repo).
+if(TARGET hyle_container)
 option(HYLE_BENCH_ABSL "build the SwissTable-vs-absl parity bench" OFF)
 if(HYLE_BENCH_ABSL)
   set(HYLE_ABSL_DIR "${PROJECT_SOURCE_DIR}/../abseil-cpp" CACHE PATH "cloned abseil-cpp")
@@ -896,6 +936,7 @@ if(HYLE_BENCH_ABSL)
   target_compile_definitions(hyle_error_normal_bench PRIVATE HYLE_BENCH_ABSL)
   target_link_libraries(hyle_error_normal_bench PRIVATE absl::status)
 endif()
+endif() # TARGET hyle_container
 
 # compute bench (compute-06 #16): CPU submit cost, launch (re-record) vs replay (reuse a
 # recorded command buffer). Vulkan-only (record/replay is a Vulkan optimization); gate on it.
@@ -907,3 +948,67 @@ if(HYLE_COMPUTE_VULKAN_ENABLED)
   target_include_directories(hyle_compute_bench PRIVATE "${HYLE_SHADER_DIR}")
   hyle_apply_warnings(hyle_compute_bench)
 endif()
+
+# Benchmark ownership mirrors product-module ownership. The aggregate targets
+# let an integrator build all selected benchmarks or one selected module's suite
+# without knowing the individual executable names.
+hyle_register_benches(mem
+  hyle_mem_scenarios_bench
+  hyle_mem_fiber_stack_bench)
+hyle_register_benches(platform hyle_platform_bench)
+hyle_register_benches(io
+  hyle_io_scaling_bench
+  hyle_accept_bench
+  hyle_conn_lifecycle_bench
+  hyle_http_bench
+  hyle_multishot_bench
+  hyle_multishot_echo_bench
+  hyle_io_tls_bench)
+hyle_register_benches(error
+  hyle_error_bench
+  hyle_error_normal_bench)
+hyle_register_benches(obs hyle_misc_bench)
+hyle_register_benches(util hyle_misc_bench)
+hyle_register_benches(time
+  hyle_misc_bench
+  hyle_timer_queue_bench)
+hyle_register_benches(sched
+  hyle_sched_sync_bench
+  hyle_sched_sync_ext_bench
+  hyle_sched_blocking_bench
+  hyle_sched_cancel_bench
+  hyle_sched_join_bench
+  hyle_sched_ext_bench
+  hyle_sched_marl_bench)
+hyle_register_benches(container
+  hyle_queue_sota_bench
+  hyle_container_misc_bench
+  hyle_fuzzy_bench
+  hyle_hash_bench
+  hyle_absl_bench)
+hyle_register_benches(simd
+  hyle_simd_bench
+  hyle_math_bench
+  hyle_math_scaling_bench
+  hyle_bitpack_bench
+  hyle_activation_bench
+  hyle_scan_bench
+  hyle_search_bench
+  hyle_mixed_dot_bench
+  hyle_sort_bench
+  hyle_radix_sort_bench
+  hyle_gather_bench_avx2
+  hyle_gather_bench_avx512
+  hyle_op_parity_bench_avx2
+  hyle_op_parity_bench_avx512
+  hyle_op_parity_bench_sse4
+  hyle_op_parity_full_bench_avx2
+  hyle_op_parity_widen_bench_avx2
+  hyle_stream_bench_avx2
+  hyle_crypto_bench_avx2
+  hyle_op_parity_full_bench_neon
+  hyle_op_parity_bench_neon
+  hyle_op_parity_widen_bench_neon
+  hyle_stream_bench_neon
+  hyle_dtype_bench)
+hyle_register_benches(compute hyle_compute_bench)

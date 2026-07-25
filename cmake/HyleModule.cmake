@@ -273,6 +273,30 @@ function(hyle_add_test module)
   endif()
 endfunction()
 
+# Register benchmark executables under stable all-selected and per-module
+# aggregate targets. Direct add_executable benches use hyle_register_benches;
+# hyle_add_bench registers its conventional target automatically.
+function(hyle_register_bench module target)
+  if(NOT TARGET ${target})
+    message(FATAL_ERROR "Cannot register missing benchmark target: ${target}")
+  endif()
+  if(TARGET hyle_benches)
+    if(NOT TARGET hyle_${module}_benches)
+      add_custom_target(hyle_${module}_benches)
+      add_dependencies(hyle_benches hyle_${module}_benches)
+    endif()
+    add_dependencies(hyle_${module}_benches ${target})
+  endif()
+endfunction()
+
+function(hyle_register_benches module)
+  foreach(target IN LISTS ARGN)
+    if(TARGET ${target})
+      hyle_register_bench(${module} ${target})
+    endif()
+  endforeach()
+endfunction()
+
 # hyle_add_bench(<module> SOURCES ...) -> bench exe linked to hyle_<module> + nanobench
 function(hyle_add_bench module)
   if(NOT TARGET hyle_${module})
@@ -283,6 +307,7 @@ function(hyle_add_bench module)
   add_executable(${target} ${ARG_SOURCES})
   target_link_libraries(${target} PRIVATE hyle_${module} nanobench ${ARG_DEPS})
   hyle_apply_warnings(${target})
+  hyle_register_bench(${module} ${target})
 endfunction()
 
 # hyle_stage_runtime_dependencies(<consumer-target>)

@@ -57,7 +57,8 @@
   pure-C binary 不再漏构建；static C surface 改查 archive globals、shared 仍查 exports。
 - [x] Windows source embed 用 `hyle_stage_runtime_dependencies()` 局部复制传递 DLL；不恢复全局
   输出目录劫持。container sample 已 build+run。
-- [ ] benchmark 按组件惰性创建，core benchmark 不再要求全局 SIMD vendor 或 compute/io 配置。
+- [x] benchmark 按组件惰性创建；`hyle_<module>_benches` / `hyle_benches` 明确聚合归属，core、
+  mem、container benchmark 不再要求全局 SIMD vendor 或 compute/io 配置。
 - [ ] install/export/component package、交叉编译、preset/toolchain/CI 与三平台最终矩阵。
 
 ### 第一轮验证证据（`86cb325`）
@@ -72,14 +73,26 @@
 - 默认 `all` 全组件 configure 已通过；完整 `hyle_tests` 会重编 ggml CUDA，超过本轮合理成本后
   精确终止该构建进程树。它留到 compute 隔离与最终矩阵，不用烧机器冒充新增证据。
 
+### benchmark 组装验证（本轮）
+
+- Windows MSVC 19.50：`HYLE_COMPONENTS=core` 不提供 vendor 路径即可 configure；
+  `hyle_core_benches` 7 步构建并真实运行，Ninja 图只有 core/nanobench/core bench。
+- WSL GCC 14.2：同一 core-only 配置不提供 vendor 路径，7 步构建；目标图同样没有
+  mem/platform/io/compute/simd 泄漏。默认 GCC 13.3 按既有 14+ 契约 fail-fast。
+- Windows `mem`：resolved=`error,platform,mem`，`hyle_mem_benches` 只产出 mem allocator/scenario
+  两个 benchmark；Windows `container`：resolved=`error,platform,mem,container`，模块 aggregate
+  完整产出 5 个 container benchmark。
+- Windows `simd`：只有此组件配置才校验固定版 Highway/xsimd；`hyle_simd_benches` 机械聚合
+  当前平台全部 20 个 SIMD benchmark executable。
+
 ### 本轮四项代码量
 
 | 固定口径 | code |
 |---|---:|
-| 全库（含 docs/in-tree third_party） | 246,382 |
+| 全库（含 docs/in-tree third_party） | 246,516 |
 | 自实现（含测试） | 116,282 |
 | 自实现（不含测试） | 79,955 |
-| build/package 实现 | 2,980 |
+| build/package 实现 | 3,039 |
 
 最后一项统计自有 root/module/test/bench/sample CMake、`cmake/`、preset，以及
 build/fetch/setup/QEMU scripts；不含 vendored CMake、测试源码和文档。

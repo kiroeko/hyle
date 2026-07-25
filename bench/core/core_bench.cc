@@ -51,7 +51,7 @@ using BoostList = bi::list<BoostNode, bi::member_hook<BoostNode, BoostHook, &Boo
 }  // namespace
 
 int main() {
-  const bool rival_first = rival_first_requested();
+  [[maybe_unused]] const bool rival_first = rival_first_requested();
   auto nodes = std::make_unique<Node[]>(kNodes);
   for (int index = 0; index < kNodes; ++index) nodes[index].value = index;
 

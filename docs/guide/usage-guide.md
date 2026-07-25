@@ -50,7 +50,7 @@ HYLE 的构建开关分**产品/组装参数**与**benchmark 对照门**两个�
 
 - **A. 产品/组装参数**（`HYLE_<名>` cache 变量）——决定选哪些模块、static/shared、可选
   backend、测试与工程严格度；普通集成最常用的是 `HYLE_COMPONENTS` 和 `HYLE_STATIC`。
-- **B. 开发/基准对照门**（`HYLE_BENCH_<名>`，共 **10 个 gate**；其中 7 个 clone 类各配一个 `HYLE_<X>_DIR` 路径变量）——**只往 benchmark 加对照行，对出厂库零影响**。此外，任何 `-DHYLE_BUILD_BENCH=ON` 都须有 `HYLE_BENCH_VENDOR_DIR` 指向固定版 Highway/xsimd 对照 checkout；Windows/mac 有默认，Linux/WSL 显式设置。集成方永远用不到（见 §1.2.1）。
+- **B. 开发/基准对照门**（`HYLE_BENCH_<名>`，共 **10 个 gate**；其中 7 个 clone 类各配一个 `HYLE_<X>_DIR` 路径变量）——**只往 benchmark 加对照行，对出厂库零影响**。只有已选组件的 benchmark 会创建；仅当组件闭包含 `simd` 时才检查 `HYLE_BENCH_VENDOR_DIR` 下固定版 Highway/xsimd checkout。集成方永远用不到（见 §1.2.1）。
 - **CMake preset** 是开发机入口组合，不是产品参数或构建前置；集成方不需要 preset。
 
 > **命名约定**：凡产品参数都是 `HYLE_<名>` cache 变量，用 `-D` 设；bench 对照门统一带 `HYLE_BENCH_` 前缀，自我标记为 B 类。CMakePresets 里的 `bench` / `bench-all-sota` 是**预设包**（不是参数本身），`--preset` 选用——它们只是"把一组 `-D` 一次设好"的快捷方式，`bench-` 前缀表明展开的全是 B 类 bench 门。
@@ -63,7 +63,7 @@ HYLE 的构建开关分**产品/组装参数**与**benchmark 对照门**两个�
 | `HYLE_COMPONENTS` | `all` | 组件名的 `;`/`,` 列表 | 只组装所需根；支持 core/error/obs/math/platform/time/mem/simd/container/util/sched/io/compute/graph，依赖自动闭包 |
 | `HYLE_STATIC` | `OFF`(SHARED) | `ON`/`OFF` | 要静态链进你的二进制（无 HYLE DLL 分发）设 ON；不改变父工程 `BUILD_SHARED_LIBS` |
 | `HYLE_BUILD_TESTS` | 顶层 `ON`、嵌入 `OFF` | `ON`/`OFF` | ON 时只创建已选组件测试，并派生 `HYLE_TESTING`；`hyle_<module>_tests` 同时构建该模块 C++/C binary |
-| `HYLE_BUILD_BENCH` | `OFF` | `ON`/`OFF` | 只有想跑微基准才开（拉 nanobench）。开了才解锁 B 类门 |
+| `HYLE_BUILD_BENCH` | `OFF` | `ON`/`OFF` | 只有想跑微基准才开；仅创建组件闭包内的 benchmark。构建 `hyle_<module>_benches` 或全部已选组件的 `hyle_benches` |
 | `HYLE_WERROR` | `OFF` | `ON`/`OFF` | CI 用 ON；本地开发 OFF |
 | `HYLE_SANITIZER` | `off` | `off`/`asan`/`tsan`/`ubsan` | 查内存/数据竞争/UB 时开（配 Debug/RelWithDebInfo）。**严格校验**：非法值直接 `FATAL_ERROR`（不静默降级为 off）；认编译器原生别名 `address`→asan、`thread`→tsan、`undefined`→ubsan、`none`→off。**MSVC 只支持 asan**（tsan/ubsan 在 MSVC 会 `FATAL_ERROR`，需 GCC/Clang，如 WSL） |
 | `HYLE_DEPS_DIR` | `<hyle-build>/_deps` | path | FetchContent 下载/构建缓存；需要跨多个 build tree 复用时显式指向共享 cache，不能放进源码树 |
@@ -111,7 +111,7 @@ source embed/install consumer 必须继承的产品合同：
 | `win` | Windows MSVC + Ninja Release；需要先进入 VS developer environment |
 | `wsl` | Linux/WSL GCC14 + Ninja Release；重压/benchmark 使用 native ext4 checkout |
 | `wsl-tsan` | 继承 wsl，独立 build tree 启用 ThreadSanitizer |
-| `bench` | `HYLE_BUILD_BENCH=ON` + Release，独立 `build-bench` cache；先有 `HYLE_BENCH_VENDOR_DIR` 中固定版 Highway/xsimd |
+| `bench` | 默认 all-components + `HYLE_BUILD_BENCH=ON` + Release，独立 `build-bench` cache；因包含 SIMD，先准备 `HYLE_BENCH_VENDOR_DIR` 中固定版 Highway/xsimd。自选非 SIMD 组件不需要它 |
 | `bench-all-sota` | 继承 `bench`，再把全部 10 个 `HYLE_BENCH_*` gate 一次设 ON（先 fetch SIMD vendors，clone 类再跑 `setup-bench-libs.sh`） |
 
 ```bash
