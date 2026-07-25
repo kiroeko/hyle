@@ -42,7 +42,8 @@ printf("HYLE %s\n", hyle_version_string());
 | `hyle_intrusive_hook_unlink` | 从当前链 O(1) 摘除；NULL/idle 幂等 |
 | `hyle_intrusive_list_init` | 使用 list 前必须调用 |
 | `hyle_intrusive_list_empty` | NULL 视为空；已初始化 list 为 O(1) |
-| `hyle_intrusive_list_push_back/front` | O(1)；成功 1，NULL 或 double-link 为 0 |
+| `hyle_intrusive_list_push_back/front` | O(1) 无分支；前置条件是 list/hook 非 NULL 且 hook 未链接 |
+| `hyle_intrusive_list_try_push_back/front` | O(1) checked 入口；成功 1，NULL 或 double-link 为 0 |
 | `hyle_intrusive_list_front/back` | 返回 hook；空/NULL 返回 NULL，不摘链 |
 | `hyle_intrusive_list_pop_front/back` | O(1) 摘链并返回 hook；空/NULL 返回 NULL |
 | `hyle_intrusive_list_clear` | O(n) 摘除全部节点，不释放节点 |

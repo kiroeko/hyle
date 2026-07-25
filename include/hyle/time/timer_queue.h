@@ -233,7 +233,7 @@ class TimerQueue {
     const std::size_t bucket = bucket_for(entry->deadline_ns_);
     // schedule() and the rebucket path both establish an unlinked node before
     // entering here; avoid repeating the linked-state branch on every arm.
-    buckets_[bucket].push_back_unchecked(entry);
+    buckets_[bucket].push_back(entry);
     mark_occupied(bucket);
     if (entry->deadline_ns_ < next_ns_) next_ns_ = entry->deadline_ns_;
   }

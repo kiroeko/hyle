@@ -27,10 +27,12 @@ struct IntrusiveListHook {
   bool linked() const noexcept { return prev_ != nullptr; }
   void unlink() noexcept {
     if (!linked()) return;
-    prev_->next_ = next_;
-    next_->prev_ = prev_;
-    prev_ = nullptr;
+    IntrusiveListHook* previous = prev_;
+    IntrusiveListHook* next = next_;
+    previous->next_ = next;
+    next->prev_ = previous;
     next_ = nullptr;
+    prev_ = nullptr;
   }
 
  private:
@@ -50,8 +52,8 @@ class IntrusiveList {
                 "intrusive container_of requires a standard-layout node");
 
   IntrusiveList() noexcept {
-    sentinel_.prev_ = &sentinel_;
     sentinel_.next_ = &sentinel_;
+    sentinel_.prev_ = &sentinel_;
   }
   IntrusiveList(const IntrusiveList&) = delete;
   IntrusiveList& operator=(const IntrusiveList&) = delete;
@@ -67,22 +69,24 @@ class IntrusiveList {
 
   bool empty() const noexcept { return sentinel_.next_ == &sentinel_; }
 
+  // Preconditions: node is non-null and its selected hook is not linked.
   void push_back(T* node) noexcept {
-    HYLE_FATAL_ASSERT(node != nullptr);
-    HYLE_FATAL_ASSERT(!hook_of(node)->linked());
-    push_back_unchecked(node);
+    insert_before(&sentinel_, hook_of(node));
   }
   void push_front(T* node) noexcept {
-    HYLE_FATAL_ASSERT(node != nullptr);
-    HYLE_FATAL_ASSERT(!hook_of(node)->linked());
     insert_before(sentinel_.next_, hook_of(node));
   }
 
-  // Low-level companion for an owner that has already checked both
-  // preconditions as part of a larger invariant. Keeping the link-only core
-  // separate avoids repeating branches on production hot paths without
-  // weakening their checks.
-  void push_back_unchecked(T* node) noexcept { insert_before(&sentinel_, hook_of(node)); }
+  bool try_push_back(T* node) noexcept {
+    if (node == nullptr || hook_of(node)->linked()) return false;
+    push_back(node);
+    return true;
+  }
+  bool try_push_front(T* node) noexcept {
+    if (node == nullptr || hook_of(node)->linked()) return false;
+    push_front(node);
+    return true;
+  }
 
   T* front() noexcept { return empty() ? nullptr : node_of(sentinel_.next_); }
   const T* front() const noexcept { return empty() ? nullptr : node_of(sentinel_.next_); }
@@ -117,12 +121,12 @@ class IntrusiveList {
     IntrusiveListHook* current = sentinel_.next_;
     while (current != &sentinel_) {
       IntrusiveListHook* next = current->next_;
-      current->prev_ = nullptr;
       current->next_ = nullptr;
+      current->prev_ = nullptr;
       current = next;
     }
-    sentinel_.prev_ = &sentinel_;
     sentinel_.next_ = &sentinel_;
+    sentinel_.prev_ = &sentinel_;
   }
 
   // Detach and consume the complete list without updating the sentinel for
@@ -251,10 +255,12 @@ class IntrusiveList {
   }
 
   static void unlink_unchecked(IntrusiveListHook* hook) noexcept {
-    hook->prev_->next_ = hook->next_;
-    hook->next_->prev_ = hook->prev_;
-    hook->prev_ = nullptr;
+    IntrusiveListHook* previous = hook->prev_;
+    IntrusiveListHook* next = hook->next_;
+    previous->next_ = next;
+    next->prev_ = previous;
     hook->next_ = nullptr;
+    hook->prev_ = nullptr;
   }
 
   IntrusiveListHook sentinel_;

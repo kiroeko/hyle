@@ -43,11 +43,11 @@ core 不依赖 error/platform/mem/time，也不创建资源，因此没有 Statu
 进一个 list，需要多重 membership 就嵌多个 hook。节点析构自动摘链，list 析构/`clear()`
 会把所有 hook 复位；复制/移动 hook 不复制 membership。
 
-公开 checked push 拒绝空指针和 double-link；`push_back_unchecked` 是 time 已由 exact-owner
-状态证明前置条件后的热路 seam。`remove(node)` 与 Boost `erase(valid_iterator)` 一样以“非空且
-属于该 list”为前置条件，不存/查 owner；membership 可选时直接用幂等 `hook.unlink()`。类型
-必须是 standard-layout，member-to-parent 恢复沿用 Boost `parent_from_member` 一类实现并
-launder。
+`push_back/front` 与 Boost 的 Release 容器一样以“node 非空、该 hook 未链接”为前置条件；
+输入可能重复时用返回 bool 的 `try_push_back/front`。`remove(node)` 同样以“非空且属于该
+list”为前置条件，不存/查 owner；membership 可选时直接用幂等 `hook.unlink()`。time 已用
+exact-owner 状态证明这些热路前置条件。类型必须是 standard-layout，member-to-parent 恢复
+沿用 Boost `parent_from_member` 一类实现并 launder。
 
 | 操作 | 复杂度 |
 |---|---:|

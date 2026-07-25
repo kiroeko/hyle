@@ -87,23 +87,33 @@ static inline int hyle_intrusive_list_empty(const hyle_intrusive_list* list) {
   return list == NULL || list->sentinel.next == &list->sentinel;
 }
 
-static inline int hyle_intrusive_list_push_back(hyle_intrusive_list* list,
-                                                hyle_intrusive_list_hook* hook) {
-  if (list == NULL || hook == NULL || hyle_intrusive_hook_linked(hook)) return 0;
+static inline void hyle_intrusive_list_push_back(hyle_intrusive_list* list,
+                                                 hyle_intrusive_list_hook* hook) {
   hook->prev = list->sentinel.prev;
   hook->next = &list->sentinel;
   list->sentinel.prev->next = hook;
   list->sentinel.prev = hook;
-  return 1;
 }
 
-static inline int hyle_intrusive_list_push_front(hyle_intrusive_list* list,
-                                                 hyle_intrusive_list_hook* hook) {
-  if (list == NULL || hook == NULL || hyle_intrusive_hook_linked(hook)) return 0;
+static inline void hyle_intrusive_list_push_front(hyle_intrusive_list* list,
+                                                  hyle_intrusive_list_hook* hook) {
   hook->prev = &list->sentinel;
   hook->next = list->sentinel.next;
   list->sentinel.next->prev = hook;
   list->sentinel.next = hook;
+}
+
+static inline int hyle_intrusive_list_try_push_back(hyle_intrusive_list* list,
+                                                    hyle_intrusive_list_hook* hook) {
+  if (list == NULL || hook == NULL || hyle_intrusive_hook_linked(hook)) return 0;
+  hyle_intrusive_list_push_back(list, hook);
+  return 1;
+}
+
+static inline int hyle_intrusive_list_try_push_front(hyle_intrusive_list* list,
+                                                     hyle_intrusive_list_hook* hook) {
+  if (list == NULL || hook == NULL || hyle_intrusive_hook_linked(hook)) return 0;
+  hyle_intrusive_list_push_front(list, hook);
   return 1;
 }
 

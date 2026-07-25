@@ -39,10 +39,11 @@ int main(void) {
   hyle_intrusive_list_init(&source);
   hyle_intrusive_list_init(&destination);
   CHECK(hyle_intrusive_list_empty(&source));
-  CHECK(hyle_intrusive_list_push_back(&source, &a.hook));
-  CHECK(hyle_intrusive_list_push_back(&source, &b.hook));
-  CHECK(!hyle_intrusive_list_push_back(&source, &a.hook));
-  CHECK(hyle_intrusive_list_push_front(&destination, &c.hook));
+  CHECK(hyle_intrusive_list_try_push_back(&source, &a.hook));
+  hyle_intrusive_list_push_back(&source, &b.hook);
+  CHECK(!hyle_intrusive_list_try_push_back(&source, &a.hook));
+  CHECK(!hyle_intrusive_list_try_push_front(NULL, &c.hook));
+  CHECK(hyle_intrusive_list_try_push_front(&destination, &c.hook));
   CHECK(hyle_intrusive_list_append(&destination, &source));
   CHECK(hyle_intrusive_list_empty(&source));
   CHECK(HYLE_INTRUSIVE_ENTRY(hyle_intrusive_list_pop_front(&destination), test_node, hook) == &c);

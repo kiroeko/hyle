@@ -167,15 +167,18 @@ TEST(IntrusiveList, CopyingOrMovingHookDoesNotCopyMembership) {
   EXPECT_TRUE(source.hook.linked());
 }
 
-TEST(IntrusiveList, RejectsInvalidMembershipOperations) {
-  EXPECT_DEATH(
-      {
-        NodeList list;
-        Node node(1);
-        list.push_back(&node);
-        list.push_back(&node);
-      },
-      "");
+TEST(IntrusiveList, TryInsertionRejectsInvalidMembership) {
+  NodeList list;
+  Node node(1);
+  EXPECT_FALSE(list.try_push_back(nullptr));
+  EXPECT_TRUE(list.try_push_back(&node));
+  EXPECT_FALSE(list.try_push_front(&node));
+  EXPECT_EQ(list.pop_front(), &node);
+  EXPECT_TRUE(list.try_push_front(&node));
+  EXPECT_EQ(list.pop_back(), &node);
+}
+
+TEST(IntrusiveList, RejectsSelfTransfers) {
   EXPECT_DEATH(
       {
         NodeList list;

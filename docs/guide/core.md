@@ -59,15 +59,15 @@ Request* next = ready.pop_front();
 
 它不拥有节点、不分配，push/pop/remove/append 都是 O(1)。节点析构或 list 析构会自动摘链；
 但节点 linked 时不可移动地址。一个对象若同时进入 ready 与 timeout 两条链，需要两个独立
-hook。跨线程并发需要外部同步。
+hook。跨线程并发需要外部同步。`push_back/front` 要求 node 非空且该 hook 当前未链接；输入
+可能重复时改用返回 bool 的 `try_push_back/front`。
 
 下列情况不要用它：希望容器拥有元素、需要随机访问/完整 STL iterator、节点地址会因 vector
 扩容改变，或只是普通小集合。此时优先选 `SmallVector`、`CArray`、`SwissTable` 或标准容器。
 
-`push_back_unchecked` 只给已经用独立 owner 字段证明前置条件的框架热路。`remove(node)` 要求
-node 非空且属于该 list；不知道是否 linked 时用幂等 `node.hook.unlink()`。`consume_all` 的
-callback 执行前当前节点已经 unlinked，可以销毁或加入另一条链；`for_each` callback 不得改变
-membership。
+`remove(node)` 要求 node 非空且属于该 list；不知道是否 linked 时用幂等
+`node.hook.unlink()`。`consume_all` 的 callback 执行前当前节点已经 unlinked，可以销毁或
+加入另一条链；`for_each` callback 不得改变 membership。
 
 ## 宏的使用边界
 
