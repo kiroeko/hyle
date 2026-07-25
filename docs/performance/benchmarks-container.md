@@ -11,7 +11,7 @@
 |---|---|---|
 | **StringBuf / string 收口表** | ✅ **2026-07-19 三平台** | Win / WSL / M4；lifecycle 落后已诚实登记 |
 | **path** | ✅ 双平台 n=15 | Win+Lin；算法基线 + filesystem 分离 |
-| **FlatHashMap / FlatHashSet** | ✅ Windows+WSL n=15；⏳ M4 | 同合同 Abseil；WSL set miss 是已登记小缺口 |
+| **FlatHashMap / FlatHashSet** | ✅ Windows+WSL n=15；⏳ M4 | 同合同 Abseil；WSL map/set miss 是已登记小缺口 |
 | **hash / mix64 / Hash&lt;T&gt;** | ⚠️ 历史 + 红队公平性更正 | ⏳ 待三平台 `bench-stat -n15` 重写表 |
 | **SmallVector / CArray** | ⚠️ 主 Win + 部分补测 | owning vector 形状待本轮统一三平台刷新 |
 | **ConcurrentVector** | ✅ Windows+WSL n=15；⏳ M4 | append/range iteration 同合同 SOTA；WSL `operator[]` 是已知缺口 |
@@ -26,7 +26,7 @@
 | **mix64 / Hash&lt;T&gt; 小 POD** | wyhash / abseil 形 | ✅ 赢或 SOTA 同款（整数 / 16B POD） |
 | **hash_bytes ≤16B** | XXH3-small / wyhash | ➖ **inline mix**（不同算法）；非「输 XXH3 wrapper」 |
 | **hash_bytes 中长串** | 裸 XXH3 / wyhash | ➖ 默认出线核有 seam；&gt;128B 选择 wyhash |
-| **FlatHashMap** | absl::flat_hash_map / Folly F14 | ✅ Windows/WSL 五项均胜 Abseil；⏳ M4 |
+| **FlatHashMap** | absl::flat_hash_map / Folly F14 | ✅ Win 五项胜；WSL 四项胜、miss 0.97x；⏳ M4 |
 | **FlatHashSet** | absl::flat_hash_set / Folly F14 | ✅ 真 set slot/API；Win 四项胜；WSL hit 平、miss 0.94x、insert/iterate 胜；⏳ M4 |
 | **SmallVector** | absl::InlinedVector | ✅ 小 N churn **赢** 同款 SOTA |
 | **CArray** | std::vector | ✅ growth 赢（mimalloc 质量）；read 平 |
@@ -46,26 +46,27 @@ Windows x64 / MSVC 19.50：
 
 | 操作 | HYLE map | Abseil map | HYLE set | Abseil set | n=15 判定 |
 |---|---:|---:|---:|---:|---|
-| hit | **2.446 ns** | 3.084 ns | **1.891 ns** | 3.136 ns | HYLE 1.26x / 1.66x；均 15/15 |
-| miss | **4.568 ns** | 4.871 ns | **4.419 ns** | 5.951 ns | HYLE 1.07x / 1.35x；均 15/15 |
-| fresh insert | **11.195 ns** | 24.790 ns | **10.159 ns** | 19.475 ns | HYLE 2.21x / 1.92x；均 15/15 |
-| iterate | **0.976 ns** | 1.987 ns | **1.004 ns** | 1.916 ns | HYLE 2.04x / 1.91x；均 15/15 |
-| build+erase | **18.817 ns** | 34.729 ns | — | — | HYLE 1.85x；15/15 |
+| hit | **2.464 ns** | 3.010 ns | **1.891 ns** | 3.136 ns | HYLE 1.21x / 1.66x；均 15/15 |
+| miss | **4.499 ns** | 4.801 ns | **4.419 ns** | 5.951 ns | HYLE 1.07x / 1.35x；均 15/15 |
+| fresh insert | **11.742 ns** | 24.672 ns | **10.159 ns** | 19.475 ns | HYLE 2.07x / 1.92x；均 15/15 |
+| iterate | **0.980 ns** | 1.857 ns | **1.004 ns** | 1.916 ns | HYLE 1.90x / 1.91x；均 15/15 |
+| build+erase | **19.396 ns** | 34.748 ns | — | — | HYLE 1.80x；15/15 |
 
 WSL / GCC 14.2：
 
 | 操作 | HYLE map | Abseil map | HYLE set | Abseil set | n=15 判定 |
 |---|---:|---:|---:|---:|---|
-| hit | **1.804 ns** | 2.129 ns | **1.454 ns** | 1.461 ns | map HYLE 1.18x；set 统计同档（8/15） |
-| miss | **3.986 ns** | 4.051 ns | 4.327 ns | **4.059 ns** | map HYLE 1.02x；set **Abseil 1.06x（14/15）** |
-| fresh insert | **10.946 ns** | 15.875 ns | **10.084 ns** | 11.396 ns | HYLE 1.45x / 1.13x；均 15/15 |
-| iterate | **0.771 ns** | 1.835 ns | **0.834 ns** | 1.835 ns | HYLE 2.38x / 2.20x；均 15/15 |
-| build+erase | **17.964 ns** | 24.479 ns | — | — | HYLE 1.36x；15/15 |
+| hit | **1.669 ns** | 1.910 ns | **1.454 ns** | 1.461 ns | map HYLE 1.15x；set 统计同档（8/15） |
+| miss | 3.860 ns | **3.730 ns** | 4.327 ns | **4.059 ns** | **Abseil 1.03x（map 13/15）/ 1.06x（set 14/15）** |
+| fresh insert | **10.286 ns** | 14.354 ns | **10.084 ns** | 11.396 ns | HYLE 1.39x / 1.13x；均 15/15 |
+| iterate | **0.736 ns** | 1.698 ns | **0.834 ns** | 1.835 ns | HYLE 2.30x / 2.20x；均 15/15 |
+| build+erase | **16.668 ns** | 22.900 ns | — | — | HYLE 1.37x；15/15 |
 
 迭代器不是为 benchmark 另设的旁路：map/set 都提供标准 forward range，内部持有当前
 control group 的 occupied mask，用户的正常 range-for 与测试走同一实现。set 共享 map
 的 Swiss probe/resize 核心，但 empty mapped policy 不占 slot bytes。Windows 全胜、WSL
-map 全胜并不能抹掉 WSL set miss 的约 6% 差距；M4 未刷，所以这里不写“三平台 SOTA”。
+四个主要方向领先并不能抹掉 WSL map/set miss 的约 3%/6% 差距；M4 未刷，所以这里
+不写“三平台 SOTA”。
 
 ### ConcurrentVector：先校正合同，再谈速度（Windows/WSL Release，n=15）
 
@@ -120,9 +121,10 @@ WSL 的逐次索引差距与 GCC 对运行时 segment 定位的代码生成有�
 4. **string_ref 短输入 split/rfind/count**  
    4KB 点值可有 **0.83–0.96x**（DLL/dispatcher）；长输入摊平。
 
-5. **FlatHashSet WSL miss 与 M4 证书**
-   WSL miss 约 **0.94x Abseil**，hit 同档；map/set 的 M4 n=15 尚未刷新。这个差距没有
-   通过增加常态 metadata 或特化 benchmark key 来隐藏。
+5. **FlatHashMap/Set WSL miss 与 M4 证书**
+   WSL map/set miss 分别约 **0.97x/0.94x Abseil**，其余 map 项领先、set hit 同档；
+   map/set 的 M4 n=15 尚未刷新。这个差距没有通过增加常态 metadata 或特化 benchmark
+   key 来隐藏。
 
 6. **队列类**  
    能力已收口；性能叙事分散在 queue_sota_bench / sched——需要时单开，勿与 Swiss 表混谈。

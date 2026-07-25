@@ -107,12 +107,15 @@
 | **container·hash** hash_bytes 16B(inline mix,非 XXH3) | 0.15/B | std::hash&lt;string&gt; | 0.35 | 2.3x | 裸 XXH3-small / wyhash | 0.12/0.15 | ~平 wyhash | ➖同上(inline mix vs XXH3-small,不同算法;热路径 Hash&lt;T&gt; 见上行赢 wyhash 2.2x) |
 | **container·hash** hash_bytes 64B | 0.055/B | std::hash&lt;string&gt; | 0.45 | 8x | 裸 XXH3(同 hasher) | 0.043 | **不同链接模型，不签 SOTA** | ⚠️ HYLE 默认出线核、裸 XXH3 全内联；约 1ns 是共享库 seam 而非算法差异。≤16B typed key 已走 inline mix；旧 `hash_bytes_inline` 因泄漏私有 vendor 头且无法保证 header/static/shared/source 一致交付而删除。较长输入须按相同链接形状重测，热点优先缓存 hash/批处理 |
 | **container·hash** hash_bytes 256B(best-of-breed→wyhash) | 0.029/B | std::hash&lt;string&gt; | 0.073 | 2.5x | 裸 XXH3 / wyhash | 0.075/0.029 | **XXH3 2.6x / 平 wyhash** | ✅**best-of-breed 按长度选 wyhash**(>128B),256B 0.082→0.029=2.8x,精确追平 raw wyhash;详节⑥ |
-| **container·map** find-hit(100k u64) | 2.21 | std::unordered_map | 10.47 | 4.74x | absl flat_hash_map | 3.03 | 1.30x | ✅赢 |
-| **container·map** find-miss(100k) | 4.36 | std::unordered_map | 11.57 | 2.65x | absl flat_hash_map | 4.86 | 1.09x | ✅赢(噪声内略胜) |
-| **container·map** insert(100k fresh) | 11.58 | std::unordered_map | 80.07 | 6.92x | absl flat_hash_map | 24.53 | 2.30x | ✅赢 |
-| **container·map** erase(100k) | 18.01 | std::unordered_map | 93.10 | 5.17x | absl flat_hash_map | 34.60 | 1.83x | ✅赢 |
-| **container·map** iterate(100k visit) | 0.96 | std::unordered_map | 8.37 | 8.7x | absl flat_hash_map | 1.94 | 2.0x | ✅赢 std 8.7x、**反超 absl 2.0x**(2026-07 for_each 改 SIMD 组扫:2.32→0.96=2.4x,补 absl 对标揪出旧逐字节扫曾输 absl 1.2x) |
-| **container·map** SwissTable iterate(for_each) | 0.96 | std::unordered_map | 8.37 | 8.7x | absl flat_hash_map | 1.94 | 2.0x | ✅同上(match_full 组扫 + for_each 模板无迭代器对象开销) |
+| **container·map** find-hit(100k u64, Win) | 2.464 | std::unordered_map（历史） | 10.47 | 4.25x | absl flat_hash_map | 3.010 | 1.21x | ✅ Win 15/15；WSL 1.15x 15/15 |
+| **container·map** find-miss(100k, Win) | 4.499 | std::unordered_map（历史） | 11.57 | 2.57x | absl flat_hash_map | 4.801 | 1.07x | ✅ Win 15/15；⚠️ WSL **0.97x**，Absl 13/15 |
+| **container·map** insert(100k fresh, Win) | 11.742 | std::unordered_map（历史） | 80.07 | 6.82x | absl flat_hash_map | 24.672 | 2.07x | ✅ Win/WSL 15/15；WSL 1.39x |
+| **container·map** erase(100k build+erase, Win) | 19.396 | std::unordered_map（历史） | 93.10 | 4.80x | absl flat_hash_map | 34.748 | 1.80x | ✅ Win/WSL 15/15；WSL 1.37x |
+| **container·map** iterate(100k visit, Win) | 0.980 | std::unordered_map（历史） | 8.37 | 8.54x | absl flat_hash_map | 1.857 | 1.90x | ✅ match_full 组扫；WSL 2.30x |
+| **container·set** find-hit(100k u64, Win) | 1.891 | （无当前 std 证书） | — | — | absl flat_hash_set | 3.136 | 1.66x | ✅ Win 15/15；WSL TIE 8/15 |
+| **container·set** find-miss(100k, Win) | 4.419 | （无当前 std 证书） | — | — | absl flat_hash_set | 5.951 | 1.35x | ✅ Win 15/15；⚠️ WSL **0.94x**，Absl 14/15 |
+| **container·set** insert(100k fresh, Win) | 10.159 | （无当前 std 证书） | — | — | absl flat_hash_set | 19.475 | 1.92x | ✅ Win/WSL 15/15；WSL 1.13x |
+| **container·set** iterate(100k visit, Win) | 1.004 | （无当前 std 证书） | — | — | absl flat_hash_set | 1.916 | 1.91x | ✅ 真 set slot + group iterator；WSL 2.20x |
 | **container·vec** SmallVector 小 N | 0.41 | std::vector | 16.8 | 41x | absl::InlinedVector | 0.84–1.0 | 2.0–2.4x | ✅赢同款 small-vector SOTA(absl 侧 spread 大取范围) |
 | **container·vec** SmallVector 溢出(64>内联16) | 0.88 | std::vector | 4.70 | 5.3x | absl::InlinedVector | 2.40 | 2.7x | ✅赢同款(堆溢出/增长路径) |
 | **container·vec** CArray growth/read | 0.51/0.18 | std::vector(即 SOTA) | 0.75/0.18 | 1.48x/1.0x | std::vector(同 std,本身即 SOTA) | 0.75/0.18 | 1.48x/1.0x | ✅赢 growth(2026-07 grow 真改 reallocate;赢因 mimalloc 分配器质量非"原地无copy",详节纠错)/ ➖平 read |

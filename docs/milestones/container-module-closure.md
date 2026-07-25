@@ -8,10 +8,12 @@
 > `ConcurrentVector` 已按 oneTBB 实际合同改为并行 writer；Windows/WSL n=15 的
 > 单 writer、range iteration 与读旧 prefix+写 tail 均领先，8 writer 同档；WSL 逐次
 > `operator[]` 顺扫仍慢约 2x，但正常 range-for 已快 1.39x。GCC 14 TSan（禁用 WSL
-> ASLR 后）186 个 typed 测试、纯 C 测试及并发组重复 30 轮通过。
+> ASLR 后）188 个 typed 测试、纯 C 测试及并发组重复 30 轮通过。
 > 真正的 typed `FlatHashSet` 与 map/set 标准 forward iteration 已完成；Windows 的
-> map/set 五/四项均领先 Abseil，WSL map 五项领先，set hit 同档、miss 仍慢约 6%、
-> insert/iterate 领先。map 便利接口、SmallVector 及三平台强 peer 证据仍在复审，
+> map/set 五/四项均领先 Abseil；WSL map 四项领先、miss 慢约 3%，set hit 同档、miss
+> 慢约 6%、insert/iterate 领先。map 已按成熟语义拆分 insert/try_emplace/
+> insert_or_assign，并补
+> operator[]；SmallVector 的完整常用面及三平台强 peer 证据仍在复审，
 > 因此 container **尚未获得 2026-07-25 严格证书**。
 > 复审也删除了无生产消费者、属于 quick-open 应用策略的 fuzzy scorer/top-K 及其 C
 > 导出；旧 container-06c 仍作为历史任务记录保留。
@@ -34,6 +36,9 @@ Linux x64 和 macOS arm64 的最终验证命令与结果记录在本文末尾。
   元数据完整；新增真正无 mapped-slot 税的 FlatHashSet，以及 key 只读/value 可写的
   map iterator 和只读 set iterator；C ABI map 也使用 flat ctrl+slot Swiss probing，
   不是链式 facade。
+- FlatHashMap：`insert` 不再暗中覆盖；`try_emplace` 命中不构造 mapped value，
+  `insert_or_assign` 明确覆盖，`operator[]` 负责默认构造；growth 前保存借用本表的
+  emplace 参数，不会在 rehash 后读悬空 slot。
 - StringRef/StringAlgo/Path：null/range/overflow、严格 UTF-8、hex validation、
   O(N log K) top-K、路径边界；ASCII lower/upper 增加
   scalar/SSE4/AVX2/AVX512/NEON 动态 kernel。

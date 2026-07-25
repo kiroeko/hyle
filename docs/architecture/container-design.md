@@ -80,6 +80,9 @@ type-erased cold core；typed find/insert/erase 保持 header-inline，避免廉
 `FlatHashSet` 共享这一 probing/resize core，但 empty mapped policy 不占 slot 空间；
 map/set iterator 都用 control-group full mask 跳转 occupied lane。map entry 的 key
 只读、value 可写，set iterator 只读 key，因此不会经 iterator 破坏 hash 不变量。
+map 的 mutation 语义按成熟容器拆开：`insert` 不覆盖，`try_emplace` 命中不构造
+mapped value，`insert_or_assign` 才覆盖，`operator[]` 只为 default-constructible value
+提供熟悉入口；它们都复用单 hash、单 fused probe 的热路径。
 
 边界原则：
 
@@ -183,7 +186,8 @@ container 对外依赖。hex encode/decode 当前是无查表分支的标量/编
 
 “SOTA”必须逐契约、逐操作成立，不能写成整个 container 的无条件标签：
 
-- flat Swiss map 对 std 和 absl 的已测核心操作成立；
+- flat Swiss map 的 Windows 已测核心操作领先 Abseil；WSL 除 miss 约慢 3% 外领先，
+  set miss 约慢 6%，不作无条件 SOTA 宣称；
 - CArray/SmallVector/队列按各自对等形状判断；
 - 路径的大倍数主要来自零分配结构，对同形 string-view 扫描通常是平局；
 - StringBuf 长串增长、重复 churn、并发分片和 batch 分别验收；单调用仍有 DLL seam；
