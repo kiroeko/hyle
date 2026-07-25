@@ -22,8 +22,8 @@ jobs:
         include:
           - label: Windows
             os: windows-latest
-            preset: windows
-            generator: Visual Studio 17 2022
+            preset: windows-ninja
+            generator: Ninja
           - label: Linux
             os: ubuntu-latest
             preset: linux
@@ -47,17 +47,37 @@ jobs:
           echo "CC=gcc-14" >> "$GITHUB_ENV"
           echo "CXX=g++-14" >> "$GITHUB_ENV"
 
-      - name: Configure core
+      - name: Configure core (Unix)
+        if: runner.os != 'Windows'
         run: cmake --preset ${{ matrix.preset }} -DHYLE_COMPONENTS=core -DHYLE_WERROR=ON
 
-      - name: Build core verification surface
+      - name: Configure core (Windows selected MSVC)
+        if: runner.os == 'Windows'
+        run: ./scripts/hyle-windows.ps1 -Action Configure -Preset windows-ninja -DHYLE_COMPONENTS=core -DHYLE_WERROR=ON
+
+      - name: Build core verification surface (Unix)
+        if: runner.os != 'Windows'
         run: cmake --build --preset ${{ matrix.preset }} --target hyle_core_tests --parallel 2
 
-      - name: Run core verification surface
+      - name: Build core verification surface (Windows selected MSVC)
+        if: runner.os == 'Windows'
+        run: ./scripts/hyle-windows.ps1 -Action Build -Preset windows-ninja --target hyle_core_tests --parallel 2
+
+      - name: Run core verification surface (Unix)
+        if: runner.os != 'Windows'
         run: ctest --preset ${{ matrix.preset }} -R "^hyle_core_" --output-on-failure
 
-      - name: Verify shared/static installed pure-C consumers
+      - name: Run core verification surface (Windows selected MSVC)
+        if: runner.os == 'Windows'
+        run: ./scripts/hyle-windows.ps1 -Action Test -Preset windows-ninja -R "^hyle_core_" --output-on-failure
+
+      - name: Verify shared/static installed pure-C consumers (Unix)
+        if: runner.os != 'Windows'
         run: cmake -DHYLE_SOURCE_DIR=${{ github.workspace }} -DHYLE_SMOKE_ROOT=${{ runner.temp }}/hyle-package-smoke "-DHYLE_SMOKE_GENERATOR=${{ matrix.generator }}" -P cmake/HyleCiPackageSmoke.cmake
+
+      - name: Verify shared/static installed pure-C consumers (Windows selected MSVC)
+        if: runner.os == 'Windows'
+        run: ./scripts/hyle-windows.ps1 -Action PackageSmoke -SmokeRoot ${{ runner.temp }}/hyle-package-smoke
 
   linux-aarch64-cross:
     name: Linux AArch64 cross configure/build

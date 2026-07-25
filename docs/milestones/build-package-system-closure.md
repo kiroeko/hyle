@@ -168,10 +168,10 @@
 
 | 固定口径 | code |
 |---|---:|
-| 全库（含 docs/in-tree third_party） | 247,782 |
+| 全库（含 docs/in-tree third_party） | 247,815 |
 | 自实现（含测试） | 116,284 |
 | 自实现（不含测试） | 79,957 |
-| build/package 实现 | 3,873 |
+| build/package 实现 | 3,903 |
 
 最后一项统计自有 root/module/test/bench/sample CMake、`cmake/`、preset、CI，以及
 build/fetch/setup/QEMU scripts；不含 vendored CMake、测试源码和文档。

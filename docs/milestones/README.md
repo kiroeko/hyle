@@ -30,10 +30,10 @@
 
 | 固定统计口径 | 当前 | 命令/说明 |
 |---|---|---|
-| **全库代码** | **247,782** | `cloc . --vcs=git`；含 docs/third_party，**≠ 自写** |
+| **全库代码** | **247,815** | `cloc . --vcs=git`；含 docs/third_party，**≠ 自写** |
 | **自实现（含测试）** | **116,284** | `cloc include/hyle src tests --exclude-lang=CMake,Text` |
 | **自实现（不含测试）** | **79,957** | `cloc include/hyle src --exclude-lang=CMake,Text`；库本体硬锚 |
-| **当前审查单元 build/package 实现** | **3,873** | 自有 CMake/preset/CI + build/fetch/setup/QEMU scripts；排除 vendored CMake、测试源码与文档 |
+| **当前审查单元 build/package 实现** | **3,903** | 自有 CMake/preset/CI + build/fetch/setup/QEMU scripts；排除 vendored CMake、测试源码与文档 |
 | **终态生产（纪律收口 A）** | **~75–90k** | 主预期 |
 | **终态生产（做满守界 B）** | **~85–105k** | compute/graph/发布面收口更满 |
 | 失控上限 C | 120k+ 生产 | 应避免 |

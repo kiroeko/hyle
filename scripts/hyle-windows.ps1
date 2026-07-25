@@ -1,7 +1,8 @@
 param(
-    [ValidateSet('Configure', 'Build', 'Test', 'Workflow')]
+    [ValidateSet('Configure', 'Build', 'Test', 'Workflow', 'PackageSmoke')]
     [string]$Action = 'Configure',
     [string]$Preset = 'windows-ninja',
+    [string]$SmokeRoot,
     [Parameter(ValueFromRemainingArguments = $true)]
     [string[]]$ExtraArgs
 )
@@ -42,7 +43,7 @@ foreach ($line in $environmentLines) {
     }
 }
 
-if ($Action -in @('Configure', 'Build', 'Workflow') -and
+if ($Action -in @('Configure', 'Build', 'Workflow', 'PackageSmoke') -and
     -not (Get-Command ninja -ErrorAction SilentlyContinue)) {
     throw 'The windows-ninja preset requires Ninja on PATH.'
 }
@@ -52,6 +53,15 @@ switch ($Action) {
     'Build'     { & cmake --build --preset $Preset @ExtraArgs }
     'Test'      { & ctest --preset $Preset @ExtraArgs }
     'Workflow'  { & cmake --workflow --preset $Preset @ExtraArgs }
+    'PackageSmoke' {
+        if (-not $SmokeRoot) {
+            throw 'Action PackageSmoke requires -SmokeRoot <scratch-directory>.'
+        }
+        $sourceDir = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
+        $smokeScript = Join-Path $sourceDir 'cmake\HyleCiPackageSmoke.cmake'
+        & cmake "-DHYLE_SOURCE_DIR=$sourceDir" "-DHYLE_SMOKE_ROOT=$SmokeRoot" `
+            -DHYLE_SMOKE_GENERATOR=Ninja -P $smokeScript
+    }
 }
 if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE

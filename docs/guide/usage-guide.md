@@ -188,6 +188,8 @@ hyle_stage_runtime_dependencies(app) # Windows shared DLL closure；其他形状
   `CMAKE_INSTALL_LIBDIR`/`INCLUDEDIR` 等直接设成绝对路径，否则无法整体搬迁，configure 会拒绝。
 - imported target 自动传播 C++23、`HYLE_STATIC`、公开头与依赖模块；静态 mem 的 mimalloc 后端也作为
   内部 `LINK_ONLY` target 随包安装，用户不手写它。
+- 纯 C 工程消费 static package 时，`HyleConfig` 只为最终链接启用 CXX language，让 CMake 选择当前
+  toolchain 的 C++ ABI/runtime；`.c` 源仍按 C17 编译，不硬编码 `stdc++` 或 `c++`。
 - package 只承诺它实际安装的组件；请求缺失 component 会在 configure 阶段列出 available 清单。
 - `Hyle_AVAILABLE_COMPONENTS` 可审计模块闭包，`Hyle_AVAILABLE_FEATURES` 可审计 trace、TLS、CUDA、
   Vulkan 等可选能力；不要从本机恰好装了什么反推包的形状。
