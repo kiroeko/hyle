@@ -145,7 +145,7 @@ class CommonTimeoutQueue {
     HYLE_FATAL_ASSERT(e != nullptr);
     if (!e->hook_.linked()) return false;
     HYLE_FATAL_ASSERT(e->owned_by(this));
-    list_.remove_unchecked(e);
+    list_.remove(e);
     e->set_owner(nullptr);
     --count_;
     return true;

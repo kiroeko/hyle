@@ -64,9 +64,10 @@ hook。跨线程并发需要外部同步。
 下列情况不要用它：希望容器拥有元素、需要随机访问/完整 STL iterator、节点地址会因 vector
 扩容改变，或只是普通小集合。此时优先选 `SmallVector`、`CArray`、`SwissTable` 或标准容器。
 
-`push_back_unchecked`、`remove_unchecked` 只给已经用独立 owner 字段证明前置条件的框架热路；
-普通用户使用 checked 入口。`consume_all` 的 callback 执行前当前节点已经 unlinked，可以销毁
-或加入另一条链；`for_each` callback 不得改变 membership。
+`push_back_unchecked` 只给已经用独立 owner 字段证明前置条件的框架热路。`remove(node)` 要求
+node 非空且属于该 list；不知道是否 linked 时用幂等 `node.hook.unlink()`。`consume_all` 的
+callback 执行前当前节点已经 unlinked，可以销毁或加入另一条链；`for_each` callback 不得改变
+membership。
 
 ## 宏的使用边界
 

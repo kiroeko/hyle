@@ -1,6 +1,7 @@
 #include <nanobench.h>
 
 #include <cstddef>
+#include <cstdlib>
 #include <list>
 #include <memory>
 #include <vector>
@@ -17,6 +18,18 @@ using hyle::core::IntrusiveList;
 using hyle::core::IntrusiveListHook;
 
 constexpr int kNodes = 4096;
+
+bool rival_first_requested() {
+#if defined(_WIN32)
+  char* value = nullptr;
+  std::size_t size = 0;
+  const bool present = _dupenv_s(&value, &size, "HYLE_BENCH_RIVAL_FIRST") == 0 && value != nullptr;
+  std::free(value);
+  return present;
+#else
+  return std::getenv("HYLE_BENCH_RIVAL_FIRST") != nullptr;
+#endif
+}
 
 struct Node {
   int value = 0;
@@ -38,6 +51,7 @@ using BoostList = bi::list<BoostNode, bi::member_hook<BoostNode, BoostHook, &Boo
 }  // namespace
 
 int main() {
+  const bool rival_first = rival_first_requested();
   auto nodes = std::make_unique<Node[]>(kNodes);
   for (int index = 0; index < kNodes; ++index) nodes[index].value = index;
 
@@ -59,7 +73,7 @@ int main() {
         .relative(true)
         .batch(kNodes)
         .minEpochIterations(2000);
-    bench.run("HYLE IntrusiveList", [&] {
+    auto run_hyle = [&] {
       NodeList list;
       for (int index = 0; index < kNodes; ++index) {
         list.push_back(&nodes[index]);
@@ -67,16 +81,25 @@ int main() {
       while (list.pop_front() != nullptr) {
       }
       nb::doNotOptimizeAway(&list);
-    });
+    };
 #if defined(HYLE_BENCH_BOOST)
-    bench.run("boost::intrusive auto_unlink", [&] {
+    auto run_boost = [&] {
       BoostList list;
       for (int index = 0; index < kNodes; ++index) {
         list.push_back(boost_nodes[index]);
       }
       while (!list.empty()) list.pop_front();
       nb::doNotOptimizeAway(&list);
-    });
+    };
+    if (rival_first) {
+      bench.run("boost::intrusive auto_unlink", run_boost);
+      bench.run("HYLE IntrusiveList", run_hyle);
+    } else {
+      bench.run("HYLE IntrusiveList", run_hyle);
+      bench.run("boost::intrusive auto_unlink", run_boost);
+    }
+#else
+    bench.run("HYLE IntrusiveList", run_hyle);
 #endif
     bench.run("std::list (allocating floor)", [&] {
       std::list<int> list;
@@ -92,16 +115,16 @@ int main() {
         .relative(true)
         .batch(kNodes)
         .minEpochIterations(2000);
-    bench.run("HYLE IntrusiveList::remove", [&] {
+    auto run_hyle = [&] {
       NodeList list;
       for (int index = 0; index < kNodes; ++index) {
         list.push_back(&nodes[index]);
       }
       for (int index : order) list.remove(&nodes[index]);
       nb::doNotOptimizeAway(&list);
-    });
+    };
 #if defined(HYLE_BENCH_BOOST)
-    bench.run("boost::intrusive::erase", [&] {
+    auto run_boost = [&] {
       BoostList list;
       for (int index = 0; index < kNodes; ++index) {
         list.push_back(boost_nodes[index]);
@@ -110,7 +133,16 @@ int main() {
         list.erase(BoostList::s_iterator_to(boost_nodes[index]));
       }
       nb::doNotOptimizeAway(&list);
-    });
+    };
+    if (rival_first) {
+      bench.run("boost::intrusive::erase", run_boost);
+      bench.run("HYLE IntrusiveList::remove", run_hyle);
+    } else {
+      bench.run("HYLE IntrusiveList::remove", run_hyle);
+      bench.run("boost::intrusive::erase", run_boost);
+    }
+#else
+    bench.run("HYLE IntrusiveList::remove", run_hyle);
 #endif
   }
 
@@ -120,21 +152,30 @@ int main() {
         .relative(true)
         .batch(kNodes)
         .minEpochIterations(2000);
-    bench.run("HYLE IntrusiveList auto detach", [&] {
+    auto run_hyle = [&] {
       NodeList list;
       for (int index = 0; index < kNodes; ++index) {
         list.push_back(&nodes[index]);
       }
       nb::doNotOptimizeAway(&list);
-    });
+    };
 #if defined(HYLE_BENCH_BOOST)
-    bench.run("boost::intrusive auto_unlink detach", [&] {
+    auto run_boost = [&] {
       BoostList list;
       for (int index = 0; index < kNodes; ++index) {
         list.push_back(boost_nodes[index]);
       }
       nb::doNotOptimizeAway(&list);
-    });
+    };
+    if (rival_first) {
+      bench.run("boost::intrusive auto_unlink detach", run_boost);
+      bench.run("HYLE IntrusiveList auto detach", run_hyle);
+    } else {
+      bench.run("HYLE IntrusiveList auto detach", run_hyle);
+      bench.run("boost::intrusive auto_unlink detach", run_boost);
+    }
+#else
+    bench.run("HYLE IntrusiveList auto detach", run_hyle);
 #endif
   }
 }

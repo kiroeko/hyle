@@ -46,8 +46,9 @@
 
 core 当前覆盖基础库需要的 version/cache/compiler contract/intrusive primitive，且 C 对所有
 语言无关能力都有路径。runtime CPU 探测归 platform，owning container 归 container，Status
-归 error；不把这些吸入零依赖根。IntrusiveList 的 unchecked seam 有 time exact-owner 真实
-消费者，不是 benchmark 接口；O(1) size/iterator 生态没有需求证据，故不增长元数据和面积。
+归 error；不把这些吸入零依赖根。IntrusiveList 的 unchecked push seam 有 time exact-owner
+真实消费者；remove 则采用成熟库的 valid-membership 前置条件，并以幂等 hook unlink 承担可选
+membership。两者都不是 benchmark 接口；O(1) size/iterator 生态没有需求证据，故不增长元数据。
 
 ## 后续触发器
 

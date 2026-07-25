@@ -225,21 +225,12 @@ class IntrusiveList {
     return count;
   }
 
-  // Precondition: node belongs to this list. Exact ownership is deliberately
-  // not stored in each hook; matching mature intrusive containers, that keeps
-  // the hook at two pointers and the hot path branch-free.
+  // Preconditions: node is non-null and belongs to this list. Matching mature
+  // intrusive containers, erase/remove does not store or check an owner on the
+  // hot path. Use node's idempotent hook.unlink() when membership is optional.
   void remove(T* node) noexcept {
-    HYLE_FATAL_ASSERT(node != nullptr);
-    IntrusiveListHook* hook = hook_of(node);
-    HYLE_FATAL_ASSERT(hook->linked());
-    unlink_unchecked(hook);
+    unlink_unchecked(hook_of(node));
   }
-
-  // Low-level companion for owners whose membership invariant already proves
-  // the node is linked in this list. This keeps redundant contract branches out
-  // of timer cancel hot paths; public data structures still validate ownership
-  // before calling it.
-  void remove_unchecked(T* node) noexcept { unlink_unchecked(hook_of(node)); }
 
  private:
   static IntrusiveListHook* hook_of(T* node) noexcept { return &(node->*Hook); }

@@ -90,7 +90,7 @@ class TimerQueue {
     }
     HYLE_FATAL_ASSERT(entry->owned_by(this));
     const std::size_t bucket = bucket_for(entry->deadline_ns_);
-    buckets_[bucket].remove_unchecked(entry);
+    buckets_[bucket].remove(entry);
     clear_occupied_if_empty(bucket);
     entry->set_owner(nullptr);
     --count_;
