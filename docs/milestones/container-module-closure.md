@@ -5,7 +5,9 @@
 > POD/显式 allocator 形状改为默认可用的 `SmallVector`、`FlatHashMap`，并把 C ABI
 > 从私有 TLS last-error 改为共享 `hyle_status + out`；当前动态 C 面为 106 个声明。
 > 新增的 [`container.md`](../guide/container.md) 负责告诉用户什么场景选择什么。
-> `ConcurrentVector` 已按 oneTBB 实际合同改为并行 writer，Windows n=15 为同档；
+> `ConcurrentVector` 已按 oneTBB 实际合同改为并行 writer；Windows/WSL n=15 的
+> 单 writer 与读旧 prefix+写 tail 均领先，8 writer 同档，WSL 逐次索引顺扫仍慢约 2x；
+> GCC 14 TSan（禁用 WSL ASLR 后）181 个 typed 测试、纯 C 测试及并发组重复 30 轮通过。
 > 真正的 typed `FlatHashSet`、map 迭代/便利接口及跨平台强 peer 性能证据仍在复审，
 > 因此 container **尚未获得 2026-07-25 严格证书**。
 > 复审也删除了无生产消费者、属于 quick-open 应用策略的 fuzzy scorer/top-K 及其 C

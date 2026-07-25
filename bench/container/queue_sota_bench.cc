@@ -415,26 +415,35 @@ void bench_ws_steal() {
 // ---- 5. ConcurrentVector: push_back + indexed read (vs tbb) ------------------
 void bench_concurrent_vector() {
   constexpr int kN = 100000;
-  {
+  const char* variant = std::getenv("HYLE_QUEUE_BENCH_VARIANT");
+  const bool run_hyle =
+      variant == nullptr || std::string_view(variant) == "hyle";
+  const bool run_tbb =
+      variant == nullptr || std::string_view(variant) == "tbb";
+  const char* selected_case = std::getenv("HYLE_QUEUE_BENCH_CV_CASE");
+  const auto run_case = [selected_case](std::string_view name) {
+    return selected_case == nullptr || std::string_view(selected_case) == name;
+  };
+  if (run_case("push")) {
     ankerl::nanobench::Bench b;
     b.title("ConcurrentVector single-thread push_back (100k)")
         .relative(true)
         .batch(kN)
         .minEpochIterations(20);
-    b.run("HYLE ConcurrentVector", [&] {
+    if (run_hyle) b.run("HYLE ConcurrentVector", [&] {
       ConcurrentVector<std::uint64_t> v;
       for (int i = 0; i < kN; ++i) v.push_back(static_cast<std::uint64_t>(i));
       ankerl::nanobench::doNotOptimizeAway(v.size());
     });
 #if defined(HYLE_BENCH_TBB)
-    b.run("tbb concurrent_vector", [&] {
+    if (run_tbb) b.run("tbb concurrent_vector", [&] {
       tbb::concurrent_vector<std::uint64_t> v;
       for (int i = 0; i < kN; ++i) v.push_back(static_cast<std::uint64_t>(i));
       ankerl::nanobench::doNotOptimizeAway(v.size());
     });
 #endif
   }
-  {
+  if (run_case("writers")) {
     constexpr int kThreads = 8;
     constexpr int kPerThread = 25000;
     constexpr int kTotal = kThreads * kPerThread;
@@ -443,7 +452,7 @@ void bench_concurrent_vector() {
         .relative(true)
         .batch(kTotal)
         .minEpochIterations(10);
-    b.run("HYLE ConcurrentVector", [&] {
+    if (run_hyle) b.run("HYLE ConcurrentVector", [&] {
       ConcurrentVector<std::uint64_t> v;
       v.reserve(kTotal);
       std::atomic<bool> go{false};
@@ -461,7 +470,7 @@ void bench_concurrent_vector() {
       ankerl::nanobench::doNotOptimizeAway(v.size());
     });
 #if defined(HYLE_BENCH_TBB)
-    b.run("tbb concurrent_vector", [&] {
+    if (run_tbb) b.run("tbb concurrent_vector", [&] {
       tbb::concurrent_vector<std::uint64_t> v;
       v.reserve(kTotal);
       std::atomic<bool> go{false};
@@ -480,7 +489,7 @@ void bench_concurrent_vector() {
     });
 #endif
   }
-  {
+  if (run_case("read")) {
     // Lock-free read hot path: sequential index sum over a prebuilt vector.
     ConcurrentVector<std::uint64_t> hv;
     for (int i = 0; i < kN; ++i) hv.push_back(static_cast<std::uint64_t>(i));
@@ -489,7 +498,7 @@ void bench_concurrent_vector() {
         .relative(true)
         .batch(kN)
         .minEpochIterations(50);
-    b.run("HYLE ConcurrentVector", [&] {
+    if (run_hyle) b.run("HYLE ConcurrentVector", [&] {
       std::uint64_t sum = 0;
       for (int i = 0; i < kN; ++i) sum += hv[static_cast<std::size_t>(i)];
       ankerl::nanobench::doNotOptimizeAway(sum);
@@ -498,7 +507,7 @@ void bench_concurrent_vector() {
     static tbb::concurrent_vector<std::uint64_t> tv;
     if (tv.empty())
       for (int i = 0; i < kN; ++i) tv.push_back(static_cast<std::uint64_t>(i));
-    b.run("tbb concurrent_vector", [&] {
+    if (run_tbb) b.run("tbb concurrent_vector", [&] {
       std::uint64_t sum = 0;
       for (int i = 0; i < kN; ++i) sum += tv[static_cast<std::size_t>(i)];
       ankerl::nanobench::doNotOptimizeAway(sum);
@@ -512,12 +521,12 @@ void bench_concurrent_vector() {
   // reader threads sum a FULLY-BUILT prefix [0,kPre) in a loop while ONE writer
   // appends another kPre items concurrently (forcing segment growth). Readers only
   // touch the pre-built prefix, so neither HYLE nor tbb can read a half-constructed
-  // tail (fair). This stresses the real cost: HYLE's per-read acquire-load of size_
-  // shares a cache line with the writer's release-store -- does that coexist with
-  // the writer as well as tbb's index-only read? Win or lose, printed. batch =
+  // tail (fair). This stresses stable segmented indexing while the reservation
+  // counter and cold growth path are active on another thread. Win or lose,
+  // printed. batch =
   // R*kPre*kRounds (total reads); the number is ns per lock-free read under writer
   // contention. minEpochIterations low (each epoch spawns+joins R+1 threads).
-  {
+  if (run_case("read-write")) {
     constexpr int kPre = 100000;     // pre-built, fully-constructed prefix
     constexpr int kReaders = 4;      // concurrent lock-free readers
     constexpr int kRounds = 8;       // full-prefix sweeps per reader thread
@@ -527,7 +536,7 @@ void bench_concurrent_vector() {
         .batch(static_cast<std::uint64_t>(kReaders) * kPre * kRounds)
         .minEpochIterations(10);
 
-    b.run("HYLE ConcurrentVector", [&] {
+    if (run_hyle) b.run("HYLE ConcurrentVector", [&] {
       ConcurrentVector<std::uint64_t> v;
       for (int i = 0; i < kPre; ++i) v.push_back(static_cast<std::uint64_t>(i));
       std::atomic<bool> go{false};
@@ -552,7 +561,7 @@ void bench_concurrent_vector() {
       ankerl::nanobench::doNotOptimizeAway(sink.load());
     });
 #if defined(HYLE_BENCH_TBB)
-    b.run("tbb concurrent_vector", [&] {
+    if (run_tbb) b.run("tbb concurrent_vector", [&] {
       tbb::concurrent_vector<std::uint64_t> v;
       for (int i = 0; i < kPre; ++i) v.push_back(static_cast<std::uint64_t>(i));
       std::atomic<bool> go{false};

@@ -107,8 +107,10 @@ owner/thief 角色是合同；违反单 owner 约束不是“稍慢”，而是�
 `ConcurrentVector` 与 oneTBB 一样允许 writers 原子领取不同索引并并行构造，只有跨
 segment allocation 进入冷锁。安全模式是：writers join/quiesce 后遍历；append 返回后
 使用它返回的 index；或在 append 期间只读事先完成的 prefix。`size()` 是 reservation
-count，不能在 writers 活跃时把 `[0,size())` 当作全部构造完成。元素构造必须 noexcept；
-OOM 在领取 index 前返回，不会留下永久洞。
+count，不能在 writers 活跃时把 `[0,size())` 当作全部构造完成。元素构造必须 noexcept。
+可恢复的 `try_emplace_back/try_push_back` 会先完成容量分配，OOM 不领取 index、不会
+留下永久洞；普通 `emplace_back/push_back` 把 OOM 视为 fatal，因而用单次原子取号走
+oneTBB 同级的常用快路径。
 
 ## 常见坑
 

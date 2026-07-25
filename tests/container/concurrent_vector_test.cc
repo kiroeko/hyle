@@ -80,6 +80,18 @@ TEST(ConcurrentVector, DestructorRunsPerElement) {
   EXPECT_EQ(live.load(), 0);  // all destroyed, none leaked/double-freed
 }
 
+TEST(ConcurrentVector, LargeAppendAcrossSegments) {
+  ConcurrentVector<std::uint64_t> v;
+  constexpr std::size_t kCount = 100000;
+  for (std::size_t i = 0; i < kCount; ++i) {
+    ASSERT_EQ(v.emplace_back(i), i);
+  }
+  ASSERT_EQ(v.size(), kCount);
+  EXPECT_EQ(v[0], 0u);
+  EXPECT_EQ(v[kCount / 2], kCount / 2);
+  EXPECT_EQ(v[kCount - 1], kCount - 1);
+}
+
 TEST(ConcurrentVector, AllocationFailureDoesNotReserveAHole) {
   Allocator failing{&fail_alloc, &fail_free, &fail_realloc, nullptr};
   using FailingVector = ConcurrentVector<int, Allocator>;

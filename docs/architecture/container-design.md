@@ -52,7 +52,7 @@ Tier 0 dependencies: mem allocator + platform CPU discovery
 | path/text algorithms | typed view/buffer-fill | pointer/count/buffer-fill | 无 STL 所有权跨边界 |
 | bounded/sharded queues | typed payload | `void*` payload opaque handle | HYLE 不拥有 payload |
 | work steal/share | typed payload | `void*` payload opaque handle | owner/thief 契约不同，不能混用 |
-| concurrent vector | typed append-only | `void*` append-only | 多 writer 并行领取 index；地址稳定；quiesce 后遍历，`size()` 不是 in-flight 完成栅栏 |
+| concurrent vector | typed append-only | `void*` append-only | 多 writer 并行领取 index；地址稳定；quiesce 后遍历，`size()` 不是 in-flight 完成栅栏；fallible path 分配失败不留洞 |
 
 IntrusiveList 已下沉 core，因为 error/time/sched 都需要它；它不再属于 container
 库或 container C ABI。
