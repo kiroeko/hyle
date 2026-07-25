@@ -26,6 +26,11 @@ function(hyle_install_package)
   if(HYLE_STATIC AND TARGET mimalloc_static)
     list(APPEND _hyle_export_targets mimalloc_static)
   endif()
+  # nghttp2 is always a private static protocol core. A shared hyle_io absorbs
+  # it; only a static hyle_io needs the archive exported through LINK_ONLY.
+  if(HYLE_STATIC AND TARGET nghttp2_static)
+    list(APPEND _hyle_export_targets nghttp2_static)
+  endif()
 
   # Tracy is part of the public inline trace contract when enabled, so its one
   # client target and public header tree travel with a trace-enabled package.
@@ -49,11 +54,6 @@ function(hyle_install_package)
   # install contract. A PRIVATE shared dependency is still a runtime dependency;
   # it does not magically become part of hyle_io/hyle_compute. Refuse every
   # package shape that would otherwise install a target with missing artifacts.
-  if(HYLE_BUILD_IO AND HYLE_IO_HTTP2)
-    message(FATAL_ERROR
-      "An install containing io currently requires -DHYLE_IO_HTTP2=OFF; the "
-      "pinned nghttp2 target is not yet included in HYLE's relocatable package.")
-  endif()
   if(HYLE_BUILD_COMPUTE AND HYLE_COMPUTE_GGML)
     message(FATAL_ERROR
       "An install containing compute currently requires "
@@ -143,6 +143,27 @@ function(hyle_install_package)
       RENAME picohttpparser-LICENSE
       COMPONENT Hyle_Runtime)
   endif()
+  if(TARGET nghttp2_static)
+    if(NOT EXISTS "${nghttp2_SOURCE_DIR}/COPYING")
+      message(FATAL_ERROR
+        "The selected nghttp2 checkout has no COPYING at "
+        "'${nghttp2_SOURCE_DIR}/COPYING'; refusing to package it without terms.")
+    endif()
+    install(FILES "${nghttp2_SOURCE_DIR}/COPYING"
+      DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/Hyle"
+      RENAME nghttp2-LICENSE
+      COMPONENT Hyle_Runtime)
+    if(HYLE_STATIC)
+      # nghttp2_static's imported target retains its reviewed include contract.
+      # The static consumer reaches it only through LINK_ONLY, but installing the
+      # two public headers keeps the target independently valid and relocatable.
+      install(FILES
+        "${nghttp2_SOURCE_DIR}/lib/includes/nghttp2/nghttp2.h"
+        "${nghttp2_BINARY_DIR}/lib/includes/nghttp2/nghttp2ver.h"
+        DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/nghttp2"
+        COMPONENT Hyle_Development)
+    endif()
+  endif()
 
   set(_hyle_package_dir "${CMAKE_INSTALL_LIBDIR}/cmake/Hyle")
   set(HYLE_PACKAGE_COMPONENTS "${_hyle_package_components}")
@@ -153,6 +174,9 @@ function(hyle_install_package)
   endif()
   if(HYLE_BUILD_IO AND OpenSSL_FOUND)
     list(APPEND HYLE_PACKAGE_FEATURES io_tls)
+  endif()
+  if(TARGET nghttp2_static)
+    list(APPEND HYLE_PACKAGE_FEATURES io_http2)
   endif()
   if(HYLE_BUILD_COMPUTE AND HYLE_COMPUTE_CUDA)
     list(APPEND HYLE_PACKAGE_FEATURES compute_cuda)

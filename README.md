@@ -1,6 +1,7 @@
 # HYLE
 
-**HYLE（HYbrid LEvels）是一个 C++ 基础设施库**，编译成带 C-ABI 的共享库，给上层当地基。把四样东西做在**同一套底座**上：
+**HYLE（HYbrid LEvels）是一个 C++ 基础设施库**，可组装为带 C ABI 的共享/静态库，也可按单独授权
+交付完整源码，给上层当地基。把四样东西做在**同一套底座**上：
 
 1. **调度** — 一个调度器同时管 线程 / 进程 / 纤程 / 协程
 2. **内存** — 分配器 / arena / cache-line 对齐 / NUMA
@@ -18,6 +19,9 @@
 ## 上手
 
 **想把 HYLE 当依赖用？先看 [使用指南 `docs/guide/usage-guide.md`](./docs/guide/usage-guide.md)**——构建选项、各模块最小用法、SIMD 编译变体模型、C-ABI 边界（面向库使用者）。可运行的示例工程见最外层 [`samples/`](./samples/)。
+
+**制作客户交付物？看 [交付形状 `docs/guide/distribution.md`](./docs/guide/distribution.md)**——
+headers+shared、headers+static 与完整源码是三种一等形状，均与具体授权范围分开处理。
 
 ## 文档
 
@@ -91,7 +95,7 @@ hyle/
 ├─ bench/                 nanobench 对标 SOTA（container/mem/sched/simd/io/time/platform/error + rust/ crossbeam）
 ├─ samples/               可运行示例工程
 ├─ scripts/               工具（bench-stat.py 统计法等）
-├─ third_party/           产品/测试依赖（mimalloc/ggml/googletest/nanobench…；SIMD vendor 对照外置）
+├─ third_party/           已审查的 in-tree vendored/ported 资产；其他 pinned 依赖由 FetchContent 取得
 └─ docs/
    ├─ setup/              开发环境准备（按平台：windows/linux-wsl/macos + dependencies；构建/测试/性能测试 × 三平台）
    ├─ architecture/       当前架构、边界和长期设计决策

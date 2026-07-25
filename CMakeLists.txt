@@ -143,46 +143,43 @@ endif()
 # pinned: HTTP/2 parsers are security-sensitive and an uncontrolled system
 # version would make identical HYLE builds behave differently.
 option(HYLE_IO_HTTP2 "io-11: HTTP/2 via nghttp2 protocol core" ON)
-if(HYLE_INSTALL AND HYLE_BUILD_IO AND HYLE_IO_HTTP2)
-  message(FATAL_ERROR
-    "An install containing io currently requires -DHYLE_IO_HTTP2=OFF; the "
-    "pinned nghttp2 target is not yet included in HYLE's relocatable package.")
-endif()
 set(HYLE_DEPS_DIR "${HYLE_BINARY_DIR}/_deps" CACHE PATH
     "Build-tree directory for dependencies fetched by HYLE")
 if(HYLE_BUILD_IO AND HYLE_IO_HTTP2)
   set(FETCHCONTENT_BASE_DIR "${HYLE_DEPS_DIR}")
   include(FetchContent)
   set(NGHTTP2_PIN_COMMIT "68cb6900fde14c77f0cd7add0e094a862960eb99") # v1.69.0
-  set(ENABLE_LIB_ONLY ON CACHE BOOL "" FORCE)
-  set(ENABLE_APP OFF CACHE BOOL "" FORCE)
-  set(ENABLE_EXAMPLES OFF CACHE BOOL "" FORCE)
-  set(ENABLE_HPACK_TOOLS OFF CACHE BOOL "" FORCE)
-  set(ENABLE_DOC OFF CACHE BOOL "" FORCE)
-  set(ENABLE_HTTP3 OFF CACHE BOOL "" FORCE)
-  # nghttp2's generic BUILD_STATIC_LIBS knob must not leak into an embedding
-  # application's cache. Give only the dependency subdirectory a normal-variable
-  # override, then restore the caller's value after FetchContent returns.
-  set(_hyle_had_build_static_libs FALSE)
-  if(DEFINED BUILD_STATIC_LIBS)
-    set(_hyle_had_build_static_libs TRUE)
-    set(_hyle_saved_build_static_libs "${BUILD_STATIC_LIBS}")
-  endif()
-  set(BUILD_STATIC_LIBS ${HYLE_STATIC})
   FetchContent_Declare(nghttp2
     GIT_REPOSITORY https://github.com/nghttp2/nghttp2.git
     GIT_TAG        ${NGHTTP2_PIN_COMMIT}
     GIT_SHALLOW    TRUE)
-  FetchContent_MakeAvailable(nghttp2)
-  if(_hyle_had_build_static_libs)
-    set(BUILD_STATIC_LIBS "${_hyle_saved_build_static_libs}")
-  else()
-    unset(BUILD_STATIC_LIBS)
-  endif()
-  unset(_hyle_had_build_static_libs)
-  unset(_hyle_saved_build_static_libs)
+  # nghttp2 is a pinned PRIVATE protocol kernel, not a second public/runtime ABI.
+  # Always build one PIC archive: a shared hyle_io absorbs it; a static hyle_io
+  # exports the archive as LINK_ONLY. block() keeps nghttp2's generic options from
+  # changing an embedding parent's BUILD_{SHARED,STATIC}_LIBS contract.
+  block()
+    set(ENABLE_LIB_ONLY ON)
+    set(ENABLE_APP OFF)
+    set(ENABLE_EXAMPLES OFF)
+    set(ENABLE_HPACK_TOOLS OFF)
+    set(ENABLE_DOC OFF)
+    set(ENABLE_HTTP3 OFF)
+    set(ENABLE_FAILMALLOC OFF)
+    set(ENABLE_THREADS OFF)
+    set(BUILD_TESTING OFF)
+    set(BUILD_SHARED_LIBS OFF)
+    set(BUILD_STATIC_LIBS ON)
+    FetchContent_MakeAvailable(nghttp2)
+  endblock()
+  FetchContent_GetProperties(nghttp2)
+  # The upstream subproject owns no part of HYLE's install layout. Ignore its
+  # generic install rules; HylePackage installs the exact target/header/license
+  # closure with HYLE component ownership.
+  set_property(DIRECTORY "${nghttp2_SOURCE_DIR}" PROPERTY EXCLUDE_FROM_ALL TRUE)
+  set_target_properties(nghttp2_static PROPERTIES POSITION_INDEPENDENT_CODE ON)
   message(STATUS
-    "HYLE: nghttp2 v1.69.0 (${NGHTTP2_PIN_COMMIT}) -- io-11 HTTP/2 enabled")
+    "HYLE: nghttp2 v1.69.0 (${NGHTTP2_PIN_COMMIT}) -- io-11 HTTP/2 enabled "
+    "as a private static protocol core")
 endif()
 
 # ---- optional CUDA (compute-01 CUDA backend) --------------------------------
@@ -433,6 +430,8 @@ unset(_component_upper)
 
 include(HylePackage)
 hyle_install_package()
+include(HyleSourcePackage)
+hyle_add_source_package()
 
 if(HYLE_BUILD_TESTS)
   enable_testing()

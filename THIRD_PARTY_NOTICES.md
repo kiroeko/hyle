@@ -15,6 +15,12 @@ license text and the notices in each source file control.
 | Boost.Context fcontext assembly | `sched` context switching | BSL-1.0 | `third_party/fcontext/LICENSE_1_0.txt` / `fcontext-LICENSE_1_0.txt` |
 | picohttpparser | `io` HTTP/1 parser | MIT option of MIT OR Perl | `third_party/picohttpparser/LICENSE` / `picohttpparser-LICENSE` |
 
+## Pinned fetched implementations included in packages
+
+| Component | HYLE use | License | Full text in checkout / installed package |
+|---|---|---|---|
+| nghttp2 | `io` HTTP/2 protocol core | MIT | fetched checkout `COPYING` / `nghttp2-LICENSE` |
+
 ## Code ported into HYLE sources
 
 | Origin | HYLE files | Selected license | Full text in source / installed package |
@@ -30,7 +36,7 @@ the permissions or conditions applying to these third-party portions.
 
 Trace builds may compile and redistribute Tracy's client and public headers; its checkout's
 `LICENSE` must accompany that package. OpenSSL, CUDA, and GPU driver runtimes are normally
-provided by the target system and remain governed by their suppliers. nghttp2, ggml, volk,
+provided by the target system and remain governed by their suppliers. ggml, volk,
 Vulkan-Headers, and glslang are pinned build dependencies for optional product features; an
 installable HYLE package is rejected until the selected dependency's artifacts and license
 payload are both represented in the export graph.

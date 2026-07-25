@@ -61,11 +61,16 @@
   mem、container benchmark 不再要求全局 SIMD vendor 或 compute/io 配置。
 - [x] relocatable install/export/component package 落地；build/install target 同名 `hyle::<module>`，
   shared/static simd+mem 独立 consumer 均真实运行，static mimalloc link-only 后端自动传播。
-- [ ] io/nghttp2、compute/ggml/volk 的 fetched 依赖打包；交叉编译、
+- [ ] compute/ggml/volk 的 fetched 依赖打包；交叉编译、
   preset/toolchain/CI 与三平台最终矩阵。
+- [x] io/nghttp2 package 闭环：固定版本协议核始终为私有 PIC archive；shared io 吸收实现，static
+  io 通过 export graph 传递 archive/生成头；MIT 全文和 `io_http2` feature manifest 随包迁移。
 - [x] 当前发布策略确定为暂时闭源：根 `LICENSE` 使用 `LicenseRef-HYLE-Proprietary` 对应的
   rights-reserved notice；`THIRD_PARTY_NOTICES.md` 区分原创、vendored、ported、fetched，安装包
   按 target 图携带 HYLE notice 与实际第三方 license payload。
+- [x] 授权与 artifact shape 解耦：binary package 覆盖 headers+shared/headers+static；新增
+  `hyle_source_package` 从 clean Git commit 生成完整 tracked source zip、commit manifest 与 SHA-256，
+  允许特定客户在 proprietary 授权下取得源码而不把它误称为开源。
 
 ### 第一轮验证证据（`86cb325`）
 
@@ -112,15 +117,23 @@
   尚未随包迁移的 fetched runtime/archive 组合 configure fail-fast。
 - proprietary 决策不覆盖第三方：Highway port 选择 Apache-2.0，JPEG XL/xsimd 保留 BSD-3，
   原来 9 个不可机读的 `SPDX: same as HYLE` 改为 `LicenseRef-HYLE-Proprietary`。
+- Windows MSVC 19.50 io+HTTP/2 shared/static package 均由全新 Release build 生成；独立纯 C
+  `samples/06_installed_io_http2` 只通过 `find_package(Hyle COMPONENTS io)` 构建并真跑。shared 包的
+  nghttp2 PIC archive 被 `hyle_io.dll` 吸收、无第二 DLL；static 包自动传播 `hyle::nghttp2_static`、
+  生成头和 archive，consumer 没有源码 checkout 路径或手写 link item。
+- shared io 的 `Hyle_Runtime` 单组件安装带 7 个 HYLE DLL 及完整 license closure，只有
+  `nghttp2-LICENSE` 而无 standalone nghttp2 binary；安装后的 CMake 文件没有 source/build 绝对路径。
+- `hyle_source_package` 在施工脏树上按预期 fail-fast；干净提交上生成 zip + SHA-256，归档只含统一
+  `hyle-0.1.0-source/` 前缀，manifest 固定 commit，解压后的 core-only consumer build 可独立完成。
 
 ### 本轮四项代码量
 
 | 固定口径 | code |
 |---|---:|
-| 全库（含 docs/in-tree third_party） | 246,909 |
+| 全库（含 docs/in-tree third_party） | 247,146 |
 | 自实现（含测试） | 116,284 |
 | 自实现（不含测试） | 79,957 |
-| build/package 实现 | 3,293 |
+| build/package 实现 | 3,397 |
 
 最后一项统计自有 root/module/test/bench/sample CMake、`cmake/`、preset，以及
 build/fetch/setup/QEMU scripts；不含 vendored CMake、测试源码和文档。

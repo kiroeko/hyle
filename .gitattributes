@@ -1,1 +1,2 @@
 docs/performance/*.csv text eol=lf
+SOURCE-MANIFEST.txt export-subst

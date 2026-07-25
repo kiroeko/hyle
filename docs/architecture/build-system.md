@@ -6,6 +6,18 @@ HYLE 的 CMake target 图是项目组织架构的可执行版本，不只是“�
 源码、公开头、C ABI、直接依赖、可选后端和验证面都必须归属到 target；文档解释怎样选择，
 不能用目录顺序、全局变量或维护者记忆补全隐藏依赖。
 
+授权方式与交付形状正交。HYLE 当前是 proprietary，不代表客户只能拿二进制；经单独书面授权的
+客户可以取得完整源码。构建系统把交付形状明确分为三类：
+
+| 交付形状 | 构建入口 | 内容与用途 |
+|---|---|---|
+| headers + shared libraries | `HYLE_INSTALL=ON; HYLE_STATIC=OFF` | 动态 SDK；安装 target、运行库、头、manifest 和 license closure |
+| headers + static libraries | `HYLE_INSTALL=ON; HYLE_STATIC=ON` | 静态 SDK；额外传播 link-only 私有 archive/系统依赖 |
+| complete source | `hyle_source_package` | 干净 Git commit 的完整 tracked tree；客户用同一 component/feature 图自行组装 |
+
+三者改变的是 artifact closure，不改变许可证。源码包不能从工作目录盲拷贝：target 遇到 tracked
+修改或未跟踪文件会拒绝，产物带 export-substituted commit manifest 与 SHA-256。
+
 ## 产品组件
 
 每个二进制模块有 build-tree target `hyle_<module>` 和消费别名 `hyle::<module>`。用户通过
@@ -83,7 +95,8 @@ Highway/xsimd checkout 只在 `simd` 已选时检查，因此打开 benchmark �
 等组装意外依赖 SIMD 对手。benchmark executable 的模块归属显式登记在 CMake 中，不能靠文件名
 或开发者记忆推断。
 
-io 的 fetched nghttp2、compute 的 fetched ggml/volk 打包尚未完成；
+io 的 pinned nghttp2 作为私有 PIC archive：shared io 将其吸收，不产生第二个运行时 ABI；static io
+通过 `LINK_ONLY` 迁移 archive、生成头和 MIT 条款。compute 的 fetched ggml/volk 打包尚未完成，
 `HYLE_INSTALL=ON` 遇到这些组合会在 configure 阶段拒绝，不能产出缺运行库的“半可迁移包”。
 cross compile 和三平台完整迁移矩阵也尚未取得最终证书，状态只见 build/package milestone。
 

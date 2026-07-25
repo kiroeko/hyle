@@ -6,6 +6,10 @@ HYLE 在正式发布前暂时闭源。HYLE 原创材料采用仓库根 [`LICENSE
 proprietary notice：保留全部权利，仅按权利人的单独书面授权使用。这不是自定义开源许可证，
 也不因某人能读取仓库就自动授予使用、修改或分发权。
 
+这里的“闭源/proprietary”描述**授权方式**，不描述客户能拿到什么文件。特定客户可以按合同取得
+完整源码，也可以取得静态或动态 SDK；同样，拿到二进制也不自动取得未写入授权的权利。授权范围
+与交付形状是两条正交轴，构建系统必须支持 source、headers + static、headers + shared 三种交付。
+
 原创源文件需要短标识时使用：
 
 ```text
@@ -38,6 +42,11 @@ notice 条件。构建系统按 target 图选择 payload，缺少许可证与缺
 内部开发构建可以引用本机 checkout，但任何交付给另一主体的源码包、SDK、安装前缀或二进制
 制品都必须保留这些文件。外部 OpenSSL/CUDA/驱动等由部署环境提供时，不复制其文件，但仍须遵守
 供应商条款。
+
+完整源码交付由 `hyle_source_package` 从干净的 Git tree 生成；它包含全部受版本控制的 HYLE 源码、
+测试、benchmark、文档、脚本和 in-tree third_party，并用 `SOURCE-MANIFEST.txt` 固定 commit。它不把
+本机 build/cache 或 fetched checkout 冒充项目源码；离线客户可以另行取得依赖源码，再通过标准
+`FETCHCONTENT_SOURCE_DIR_<NAME>` 输入组装。
 
 ## 将来开源
 

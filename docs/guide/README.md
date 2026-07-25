@@ -9,6 +9,7 @@
 | 文档 | 给谁 / 讲什么 |
 |---|---|
 | [`usage-guide.md`](./usage-guide.md) | **怎么用**：模块入口、构建选项、SIMD 编译变体模型、最小用法和 C-ABI 边界。**集成第一站。** |
+| [`distribution.md`](./distribution.md) | **怎么交付**：headers+shared、headers+static、完整源码三种形状；授权与 artifact 正交，含可运行命令和离线依赖注入。 |
 | [`core.md`](./core.md) | **core 选型入口 + C++ 自然写法**：compile/runtime version、静态/运行时 cache line、prefetch、intrusive list 的适用场景与生命周期坑。 |
 | [`error.md`](./error.md) | **error 语言无关选型入口 + C++ 自然写法**：按运营失败/空值合同/程序错误/诊断边界决定 Status、Result、值合同或 fail-fast；C 用户再去 c-error 查映射。 |
 | [`mem.md`](./mem.md) | **mem 语言无关选型入口 + C++ 自然写法**：按 ownership/concurrency/capacity/lifetime 决定什么情况用什么；C 用户再去 c-mem 查映射。 |

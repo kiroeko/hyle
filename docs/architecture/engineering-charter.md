@@ -81,7 +81,8 @@
 
 - **对外契约 = 一层纯 C 头**：不透明句柄（opaque handle）+ `create/destroy` 配对 + 值类型结构体 + 显式 allocator。所有跨语言消费方绑这一套。
 - **消费方**：TS 写的 agent（N-API / WASM）、Python 写的训练/推理（ctypes/cffi）、Rust（bindgen `-sys` + 安全封装）——共用同一 C 头。
-- **编译为共享库**（跨语言/插件化必须）；内部 C++ 模块可保留 header 风格但不外露。
+- **共享/静态 binary SDK 都保留同一 C ABI**；跨语言动态加载通常选择共享库，单体/嵌入式可选静态库。
+  经单独授权还可交付完整源码；交付形状不改变唯一 FFI 接缝，也不改变授权范围。
 
 ### 与 clay 的关系（回答"clay 是不是也这样保 ABI 稳定"）
 - **方向一致**：clay 已用「`*_api_t` 函数指针 vtable + 不透明指针 + make/destroy 工厂 + 显式 Allocator 注入」穿透 DLL 边界、避免导出 C++ 类布局/STL。

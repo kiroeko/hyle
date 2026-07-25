@@ -1,5 +1,8 @@
 # HYLE 使用指南（面向库使用者）
 
+构建并消费 HYLE 见本页；向客户制作 headers+shared、headers+static 或完整源码交付物，见
+[`distribution.md`](./distribution.md)。交付形状不决定授权范围。
+
 > 这份文档面向**集成 HYLE 的开发者**——把 HYLE 当依赖用的人。它回答"怎么构建、有哪些开关、每个模块怎么调"。
 >
 > 区别于另外两份：[`architecture/`](../architecture/) 是设计内幕（为什么这么造，面向贡献者）；[`usage-contract.md`](./usage-contract.md)（同目录）是**为 SOTA 性能保留的调用安全边界**（哪些用法会触发 UB，必读但只讲"红线"）。本指南讲"正常怎么用"。
@@ -176,8 +179,9 @@ hyle_stage_runtime_dependencies(app) # Windows shared DLL closure；其他形状
 - package 只承诺它实际安装的组件；请求缺失 component 会在 configure 阶段列出 available 清单。
 - `Hyle_AVAILABLE_COMPONENTS` 可审计模块闭包，`Hyle_AVAILABLE_FEATURES` 可审计 trace、TLS、CUDA、
   Vulkan 等可选能力；不要从本机恰好装了什么反推包的形状。
-- 当前 package 若含 io，需 `HYLE_IO_HTTP2=OFF`；若含 compute，需
-  `HYLE_COMPUTE_GGML=OFF -DHYLE_COMPUTE_VULKAN=OFF`。这些 fetched runtime/archive 与 license
+- io package 可保留默认 `HYLE_IO_HTTP2=ON`：pinned nghttp2 静态协议核被 shared io 吸收，static
+  io package 自动迁移其 link-only archive、生成头和 MIT 条款。当前 package 若含 compute，仍需
+  `HYLE_COMPUTE_GGML=OFF -DHYLE_COMPUTE_VULKAN=OFF`；这些 fetched runtime/archive 与 license
   纳入 export graph 前，构建系统会 fail-fast，不生成缺文件的“半可迁移包”。
 - 安装前缀始终带 HYLE proprietary notice 和第三方总清单；实际编入的 mimalloc、xxHash、
   wyhash、simdutf、fcontext、picohttpparser、Highway/xsimd/JPEG XL port 以及可选 Tracy 的

@@ -1,0 +1,13 @@
+cmake_minimum_required(VERSION 3.25)
+project(hyle_sample_installed_io_http2 LANGUAGES C)
+
+find_package(Hyle 0.1 REQUIRED COMPONENTS io)
+if(NOT io_http2 IN_LIST Hyle_AVAILABLE_FEATURES)
+  message(FATAL_ERROR
+    "This sample requires an HYLE package built with HYLE_IO_HTTP2=ON; "
+    "available features: ${Hyle_AVAILABLE_FEATURES}")
+endif()
+
+add_executable(installed_io_http2_consumer main.c)
+target_link_libraries(installed_io_http2_consumer PRIVATE hyle::io)
+hyle_stage_runtime_dependencies(installed_io_http2_consumer)

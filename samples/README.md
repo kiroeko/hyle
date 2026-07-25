@@ -28,8 +28,9 @@ target_link_libraries(your_app PRIVATE hyle::container hyle::mem)  # 按需选�
 | [`03_sched_fibers/`](./03_sched_fibers/) | sched | `Scheduler` + `Fiber`：spawn 多个纤程、`yield()` 协作、`shutdown()` 排空 |
 | [`04_prebuilt_lib/`](./04_prebuilt_lib/) | 构建/集成 | install + `find_package(Hyle COMPONENTS simd mem)`；同一 consumer 验证 shared/static、传递依赖、mimalloc 私有后端和 Windows DLL staging |
 | [`05_installed_c/`](./05_installed_c/) | error C ABI | 纯 C 工程消费安装包；验证 imported target 不把 C++23 编译要求错误施加到 C TU |
+| [`06_installed_io_http2/`](./06_installed_io_http2/) | io C ABI + HTTP/2 | 纯 C 工程消费 shared/static io package；审计 `io_http2` feature，并证明 pinned nghttp2 闭包不依赖源码 checkout |
 
-> 01-03 用源码 `add_subdirectory` 集成；04-05 用安装包集成。
+> 01-03 用源码 `add_subdirectory` 集成；04-06 用安装包集成。
 
 ## 构建单个示例
 

@@ -4,7 +4,8 @@
 
 ## HYLE 是什么
 
-**一个 C++ 基础设施库**（编译成带 C-ABI 的共享库），给上层（AI 推理引擎、CAD/BIM/CAE 工程计算管线、训练框架、agent）当地基。把四样东西做在**同一套底座**上：
+**一个 C++ 基础设施库**（可组装成带 C ABI 的共享/静态库，也可按授权交付完整源码），给上层
+（AI 推理引擎、CAD/BIM/CAE 工程计算管线、训练框架、agent）当地基。把四样东西做在**同一套底座**上：
 
 1. **调度** — 一个调度器同时管 线程 / 进程 / 纤程 / 协程
 2. **内存** — 分配器 / arena / cache-line 对齐 / NUMA
@@ -103,10 +104,10 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 
 | 固定统计口径 | code | 说明 |
 |---|---:|---|
-| **全库代码** | **246,909** | `cloc . --vcs=git`；含 docs 与 in-tree third_party |
+| **全库代码** | **247,146** | `cloc . --vcs=git`；含 docs 与 in-tree third_party |
 | **自实现（含测试）** | **116,284** | `include/hyle + src + tests`，排除 CMake/Text |
 | **自实现（不含测试）** | **79,957** | `include/hyle + src`；库本体硬锚 |
-| **当前审查单元 build/package 实现** | **3,293** | 自有 CMake/preset + build/fetch/setup/QEMU scripts；排除 vendored CMake、测试源码与文档 |
+| **当前审查单元 build/package 实现** | **3,397** | 自有 CMake/preset + build/fetch/setup/QEMU scripts；排除 vendored CMake、测试源码与文档 |
 | 再加 ggml 等大依赖足迹 | **~200–350k+** | 由 ggml 主导，不计入「自有生产」 |
 
 **生产按模块（src+include，约）：**

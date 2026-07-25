@@ -1,0 +1,16 @@
+HYLE complete source distribution
+
+Git commit: $Format:%H$
+
+This archive contains the complete Git-tracked HYLE tree for the commit above:
+original source, public headers, C ABI, build files, tests, benchmarks, samples,
+documentation, scripts, and in-tree third-party materials.
+
+Local build trees, caches, ignored files, and fetched dependency checkouts are not
+part of the HYLE source tree and are not included. Pinned fetched dependencies can
+be obtained by CMake or supplied separately through the standard
+FETCHCONTENT_SOURCE_DIR_<NAME> inputs for an offline/customer-controlled build.
+
+Source access does not change the license. Rights to use, modify, disclose, or
+redistribute this source are defined by LICENSE, THIRD_PARTY_NOTICES.md, and the
+recipient's separate written authorization from the applicable rightsholder(s).
