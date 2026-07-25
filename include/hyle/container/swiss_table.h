@@ -136,14 +136,20 @@ class SwissTable {
     template <bool Enabled = IsConst>
       requires Enabled
     BasicIterator(const BasicIterator<false>& other) noexcept
-        : owner_(other.owner_), index_(other.index_) {}
+        : owner_(other.owner_), index_(other.index_), group_(other.group_),
+          remaining_(other.remaining_) {}
 
     reference operator*() const noexcept { return owner_->slots_[index_]; }
     pointer operator->() const noexcept { return owner_->slots_ + index_; }
 
     BasicIterator& operator++() noexcept {
-      ++index_;
-      skip_empty();
+      ++remaining_;
+      if (remaining_) {
+        index_ = group_ + remaining_.lowest();
+      } else {
+        group_ += kGroup;
+        load_next_group();
+      }
       return *this;
     }
     BasicIterator operator++(int) noexcept {
@@ -159,19 +165,27 @@ class SwissTable {
 
    private:
     BasicIterator(Owner* owner, std::size_t index) noexcept
-        : owner_(owner), index_(index) {
-      skip_empty();
+        : owner_(owner), index_(index), group_(index), remaining_(0) {
+      if (owner_ != nullptr && index_ < owner_->cap_) load_next_group();
     }
 
-    void skip_empty() noexcept {
+    void load_next_group() noexcept {
       if (owner_ == nullptr) return;
-      while (index_ < owner_->cap_ &&
-             !detail::ctrl_is_full(owner_->ctrl_[index_]))
-        ++index_;
+      while (group_ < owner_->cap_) {
+        remaining_ = detail::Group(owner_->ctrl_ + group_).match_full();
+        if (remaining_) {
+          index_ = group_ + remaining_.lowest();
+          return;
+        }
+        group_ += kGroup;
+      }
+      index_ = owner_->cap_;
     }
 
     Owner* owner_ = nullptr;
     std::size_t index_ = 0;
+    std::size_t group_ = 0;
+    detail::BitMask remaining_{0};
   };
 
   using iterator = BasicIterator<false>;

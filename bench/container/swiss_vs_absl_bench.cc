@@ -1,3 +1,5 @@
+#define _CRT_SECURE_NO_WARNINGS 1
+
 // SwissTable vs absl::flat_hash_map -- the SOTA parity check (not just "beat the
 // known-slow std::unordered_map"). abseil is the design HYLE's SwissTable is
 // modeled on, so this is the honest "did we actually match the reference?" bench.
@@ -7,14 +9,18 @@
 #include <nanobench.h>
 
 #include <cstdint>
+#include <cstdlib>
 #include <random>
+#include <string_view>
 #include <vector>
 
 #include "absl/container/flat_hash_map.h"
+#include "absl/container/flat_hash_set.h"
 #include "hyle/container/swiss_table.h"
 #include "hyle/mem/allocator.h"
 
 using hyle::container::SwissTable;
+using hyle::container::FlatHashSet;
 using hyle::mem::system_allocator;
 
 namespace {
@@ -123,4 +129,93 @@ int bench_swiss_vs_absl() {
   return 0;
 }
 
-int main() { return bench_swiss_vs_absl(); }
+int bench_set_vs_absl() {
+  const std::vector<std::uint64_t> keys = gen(kN, 42);
+  const std::vector<std::uint64_t> misses = gen(kN, 1337);
+  FlatHashSet<std::uint64_t> hyle;
+  absl::flat_hash_set<std::uint64_t> absl_set;
+  for (std::uint64_t key : keys) {
+    hyle.insert(key);
+    absl_set.insert(key);
+  }
+
+  {
+    ankerl::nanobench::Bench b;
+    b.title("set find-hit vs absl, 100k")
+        .relative(true)
+        .batch(kN)
+        .minEpochIterations(20);
+    b.run("absl::flat_hash_set", [&] {
+      std::size_t found = 0;
+      for (std::uint64_t key : keys) found += absl_set.contains(key);
+      ankerl::nanobench::doNotOptimizeAway(found);
+    });
+    b.run("HYLE FlatHashSet", [&] {
+      std::size_t found = 0;
+      for (std::uint64_t key : keys) found += hyle.contains(key);
+      ankerl::nanobench::doNotOptimizeAway(found);
+    });
+  }
+  {
+    ankerl::nanobench::Bench b;
+    b.title("set find-miss vs absl, 100k")
+        .relative(true)
+        .batch(kN)
+        .minEpochIterations(20);
+    b.run("absl::flat_hash_set", [&] {
+      std::size_t found = 0;
+      for (std::uint64_t key : misses) found += absl_set.contains(key);
+      ankerl::nanobench::doNotOptimizeAway(found);
+    });
+    b.run("HYLE FlatHashSet", [&] {
+      std::size_t found = 0;
+      for (std::uint64_t key : misses) found += hyle.contains(key);
+      ankerl::nanobench::doNotOptimizeAway(found);
+    });
+  }
+  {
+    ankerl::nanobench::Bench b;
+    b.title("set insert vs absl, 100k (fresh)")
+        .relative(true)
+        .batch(kN)
+        .minEpochIterations(5);
+    b.run("absl::flat_hash_set", [&] {
+      absl::flat_hash_set<std::uint64_t> set;
+      for (std::uint64_t key : keys) set.insert(key);
+      ankerl::nanobench::doNotOptimizeAway(set.size());
+    });
+    b.run("HYLE FlatHashSet", [&] {
+      FlatHashSet<std::uint64_t> set;
+      for (std::uint64_t key : keys) set.insert(key);
+      ankerl::nanobench::doNotOptimizeAway(set.size());
+    });
+  }
+  {
+    ankerl::nanobench::Bench b;
+    b.title("set iterate vs absl, 100k")
+        .relative(true)
+        .batch(kN)
+        .minEpochIterations(20);
+    b.run("absl::flat_hash_set", [&] {
+      std::uint64_t sum = 0;
+      for (std::uint64_t key : absl_set) sum += key;
+      ankerl::nanobench::doNotOptimizeAway(sum);
+    });
+    b.run("HYLE FlatHashSet", [&] {
+      std::uint64_t sum = 0;
+      for (std::uint64_t key : hyle) sum += key;
+      ankerl::nanobench::doNotOptimizeAway(sum);
+    });
+  }
+  return 0;
+}
+
+int main() {
+  const char* filter = std::getenv("HYLE_ABSL_BENCH_FILTER");
+  if (filter != nullptr && std::string_view(filter) == "map")
+    return bench_swiss_vs_absl();
+  if (filter != nullptr && std::string_view(filter) == "set")
+    return bench_set_vs_absl();
+  const int map_result = bench_swiss_vs_absl();
+  return map_result == 0 ? bench_set_vs_absl() : map_result;
+}

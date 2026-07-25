@@ -937,7 +937,7 @@ if(HYLE_BENCH_ABSL)
   add_subdirectory("${HYLE_ABSL_DIR}" "${CMAKE_BINARY_DIR}/abseil" EXCLUDE_FROM_ALL)
   add_executable(hyle_absl_bench container/swiss_vs_absl_bench.cc)
   target_link_libraries(hyle_absl_bench PRIVATE hyle_container nanobench
-    absl::flat_hash_map)
+    absl::flat_hash_map absl::flat_hash_set)
   hyle_apply_warnings(hyle_absl_bench)
   # absl::InlinedVector is the small-vector SOTA -> feed it to the misc bench too.
   target_compile_definitions(hyle_container_misc_bench PRIVATE HYLE_BENCH_ABSL)
