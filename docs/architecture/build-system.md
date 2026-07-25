@@ -44,8 +44,12 @@ requested/resolved 清单，因此一次构建“组装了什么”可审计。
 
 组件选择同时控制依赖发现：不选 `io` 就不探测 OpenSSL、不取得 nghttp2；不选 `compute`
 就不探测 CUDA，也不取得 ggml/Vulkan-Headers/volk/glslang。第三方默认写入当前 HYLE build
-tree 的 `_deps`；需要跨 build tree 共享下载缓存时显式设置 `HYLE_DEPS_DIR`，生成物不能写入
-或依赖源码树。
+tree 的 `_deps`，源码与生成物一起归该 build tree 所有；不同 toolchain/build tree 不共享这个
+目录。离线或经审查的依赖源码通过标准 `FETCHCONTENT_SOURCE_DIR_<NAME>` 注入，生成物仍留在本
+build tree，不能写入或依赖源码树。
+
+TLS 与 CUDA 使用 `AUTO|ON|OFF` 三态：AUTO 仅供便利探测，ON 是硬能力契约，OFF 不运行依赖探测。
+正式 SDK/CI 必须显式选择 ON/OFF，因此构建机偶然安装了某个 SDK 不会改变发布形状。
 
 ## 四条消费路径
 

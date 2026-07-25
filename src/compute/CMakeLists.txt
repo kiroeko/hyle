@@ -16,7 +16,7 @@ set(_compute_sources compute.cc host_backend.cc host_ops.cc)
 set(_compute_public_deps hyle_error hyle_mem)
 set(_compute_private_deps "")
 
-if(HYLE_COMPUTE_CUDA)
+if(HYLE_COMPUTE_CUDA_ENABLED)
   # cuda_backend.cu is a CUDA-language TU (compiled by nvcc, host side by the same
   # MSVC/GCC as everything else via -ccbin). CMake's first-class CUDA support
   # (enable_language(CUDA) in the root) drives this from the .cu extension.
@@ -92,7 +92,7 @@ if(HYLE_COMPUTE_GGML AND HYLE_HAS_FCONTEXT)
 endif()
 
 
-if(HYLE_COMPUTE_CUDA)
+if(HYLE_COMPUTE_CUDA_ENABLED)
   # Link the CUDA runtime (cudaMalloc/Stream/Event/EventQuery live here). CUDA::cudart
   # is the shared runtime target find_package(CUDAToolkit) provides; PRIVATE because
   # the CUDA types never appear in compute's public headers (backend.h is internal).

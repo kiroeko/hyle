@@ -9,6 +9,7 @@ set(HYLE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 set(HYLE_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}")
 list(APPEND CMAKE_MODULE_PATH "${HYLE_SOURCE_DIR}/cmake")
 include(HyleComponents)
+include(HyleFeatureOption)
 
 # ---- C++23 baseline + toolchain gate ----------------------------------------
 set(CMAKE_CXX_STANDARD 23)
@@ -119,21 +120,25 @@ include(HyleTrace)    # obs-02: HYLE_TRACE gate + optional tracy backend (defaul
 include(HyleTesting)  # HYLE_TESTING gate: test-only interfaces (derived from HYLE_BUILD_TESTS)
 
 # ---- optional OpenSSL (io-08 TLS) -------------------------------------------
-# TLS is an OPTIONAL capability: if OpenSSL is found the io module builds tls.cc
-# and links it; if not, TLS simply isn't compiled and a user who doesn't want TLS
-# carries ZERO OpenSSL dependency (same "opt-in capability = opt-in dependency"
-# rule as HYLE_TRACE/tracy). DYNAMIC link on purpose -- a security lib should
-# track the system's CVE updates, not be baked statically into HYLE's artifact.
-# Linux: found zero-config via the system libssl-dev. Windows: pass OPENSSL_ROOT_DIR
-# or use a vcpkg toolchain. Install/runtime-DLL distribution is a close-phase
-# concern (see docs/milestones/close-01), not any single io milestone.
-if(HYLE_BUILD_IO)
+# AUTO preserves convenient source builds; ON makes TLS part of the requested
+# product contract; OFF is deterministic and does not even probe OpenSSL.
+hyle_auto_feature_option(HYLE_IO_TLS "Build the io TLS capability using OpenSSL")
+set(HYLE_IO_TLS_ENABLED OFF)
+if(HYLE_BUILD_IO AND NOT HYLE_IO_TLS STREQUAL "OFF")
   find_package(OpenSSL QUIET)
   if(OpenSSL_FOUND)
-    message(STATUS "HYLE: OpenSSL ${OPENSSL_VERSION} found -- io-08 TLS enabled")
+    set(HYLE_IO_TLS_ENABLED ON)
+    message(STATUS
+      "HYLE: io TLS ${HYLE_IO_TLS} -- enabled with OpenSSL ${OPENSSL_VERSION}")
+  elseif(HYLE_IO_TLS STREQUAL "ON")
+    message(FATAL_ERROR
+      "HYLE_IO_TLS=ON requires OpenSSL, but it was not found. Set OPENSSL_ROOT_DIR "
+      "or CMAKE_TOOLCHAIN_FILE, or select HYLE_IO_TLS=AUTO/OFF.")
   else()
-    message(STATUS "HYLE: OpenSSL not found -- io-08 TLS disabled (set OPENSSL_ROOT_DIR to enable)")
+    message(STATUS "HYLE: io TLS AUTO -- OpenSSL not found, capability disabled")
   endif()
+elseif(HYLE_BUILD_IO)
+  message(STATUS "HYLE: io TLS OFF -- dependency probe skipped")
 endif()
 
 # ---- HTTP/2 protocol core (io-11) ------------------------------------------
@@ -183,27 +188,27 @@ if(HYLE_BUILD_IO AND HYLE_IO_HTTP2)
 endif()
 
 # ---- optional CUDA (compute-01 CUDA backend) --------------------------------
-# The compute pillar's CUDA backend is an OPTIONAL capability, same "opt-in
-# capability = opt-in dependency" rule as OpenSSL/tracy: if the CUDA Toolkit is
-# found we enable the CUDA language and compile cuda_backend.cu (nvcc), so a real
-# GPU can be driven; if not, compute still builds with ONLY the host fallback
-# backend and carries zero CUDA dependency. HYLE_COMPUTE_CUDA gates the .cu source +
-# the cuda_vtable() reference (backend.h) so a CUDA-free build is fully inert.
-#
-# CMake's first-class CUDA support: find_package finds the toolkit; enable_language
-# turns .cu files into nvcc TUs (host side via -ccbin = our C++ compiler). We do NOT
-# make CUDA a hard project language (LANGUAGES line stays C CXX ASM) so a machine
-# with no CUDA (mac, CI without a toolkit) configures fine.
-set(HYLE_COMPUTE_CUDA OFF)
-if(HYLE_BUILD_COMPUTE)
+# CUDA follows the same deterministic AUTO/ON/OFF contract as TLS.  Keep the
+# public compile definition HYLE_COMPUTE_CUDA; the CMake-side result has the
+# distinct *_ENABLED name so a string value such as "OFF" is never truth-tested.
+hyle_auto_feature_option(HYLE_COMPUTE_CUDA "Build the compute CUDA backend")
+set(HYLE_COMPUTE_CUDA_ENABLED OFF)
+if(HYLE_BUILD_COMPUTE AND NOT HYLE_COMPUTE_CUDA STREQUAL "OFF")
   find_package(CUDAToolkit QUIET)
   if(CUDAToolkit_FOUND)
     enable_language(CUDA)
-    set(HYLE_COMPUTE_CUDA ON)
-    message(STATUS "HYLE: CUDA Toolkit ${CUDAToolkit_VERSION} found -- compute CUDA backend enabled")
+    set(HYLE_COMPUTE_CUDA_ENABLED ON)
+    message(STATUS
+      "HYLE: compute CUDA ${HYLE_COMPUTE_CUDA} -- enabled with Toolkit ${CUDAToolkit_VERSION}")
+  elseif(HYLE_COMPUTE_CUDA STREQUAL "ON")
+    message(FATAL_ERROR
+      "HYLE_COMPUTE_CUDA=ON requires CUDAToolkit, but it was not found. Set "
+      "CUDAToolkit_ROOT or CMAKE_TOOLCHAIN_FILE, or select HYLE_COMPUTE_CUDA=AUTO/OFF.")
   else()
-    message(STATUS "HYLE: CUDA Toolkit not found -- compute uses host fallback only")
+    message(STATUS "HYLE: compute CUDA AUTO -- Toolkit not found, host backend only")
   endif()
+elseif(HYLE_BUILD_COMPUTE)
+  message(STATUS "HYLE: compute CUDA OFF -- dependency probe and CUDA language skipped")
 endif()
 
 # ---- optional ggml operator library (compute-05 ggml_bridge) -----------------
@@ -242,13 +247,13 @@ if(HYLE_BUILD_COMPUTE AND HYLE_COMPUTE_GGML)
   # GGML_CUDA_FA OFF: skip ~120 FlashAttention kernel instances (attention, not matmul).
   # The bridge borrows GEMM/elementwise; FA is unused and dominates first-build time.
   set(GGML_CUDA_FA       OFF CACHE BOOL "" FORCE)
-  if(HYLE_COMPUTE_CUDA)
+  if(HYLE_COMPUTE_CUDA_ENABLED)
     set(GGML_CUDA ON  CACHE BOOL "" FORCE)  # CUDA backend (zero-copy device_ptr path)
   else()
     set(GGML_CUDA OFF CACHE BOOL "" FORCE)
   endif()
 
-  message(STATUS "HYLE: ggml via FetchContent pin ${GGML_PIN_COMMIT} (cache: ${HYLE_DEPS_DIR}, GGML_CUDA=${HYLE_COMPUTE_CUDA})")
+  message(STATUS "HYLE: ggml via FetchContent pin ${GGML_PIN_COMMIT} (cache: ${HYLE_DEPS_DIR}, GGML_CUDA=${HYLE_COMPUTE_CUDA_ENABLED})")
   FetchContent_Declare(ggml
     GIT_REPOSITORY https://github.com/ggml-org/ggml.git
     GIT_TAG        ${GGML_PIN_COMMIT}
@@ -413,9 +418,10 @@ if(HYLE_BUILD_SCHED)
       "The selected component set requires sched, but HYLE has no fcontext assembly for "
       "${CMAKE_SYSTEM_NAME}/${CMAKE_SYSTEM_PROCESSOR}/${CMAKE_CXX_COMPILER_ID}")
   endif()
-  enable_language(ASM)
   if(MSVC)
     enable_language(ASM_MASM)
+  else()
+    enable_language(ASM)
   endif()
 endif()
 

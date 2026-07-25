@@ -24,12 +24,13 @@ export PATH=/opt/homebrew/bin:$PATH
 cd ~/hyle
 /opt/homebrew/bin/cmake -S . -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_C_COMPILER=/Library/Developer/CommandLineTools/usr/bin/clang \
-  -DCMAKE_CXX_COMPILER=/Library/Developer/CommandLineTools/usr/bin/clang++
+  -DCMAKE_CXX_COMPILER=/Library/Developer/CommandLineTools/usr/bin/clang++ \
+  -DHYLE_COMPUTE_CUDA=OFF
 /opt/homebrew/bin/cmake --build build -j8
 ```
 
-- ggml/googletest 首次配置**自动联网拉**到 `.deps`（mac 有网即可），之后缓存复用。
-- 配置会打印 `CUDA Toolkit not found -- compute uses host fallback only`（mac 无 CUDA，正常）；ggml 编 CPU-only（Apple 上还会带 Metal backend，但 HYLE bridge 只用 CPU 路径）。
+- ggml/googletest 首次配置自动联网拉到 `build/_deps`（mac 有网即可）。
+- CUDA 显式 OFF，配置不会探测 Toolkit；ggml 编 CPU-only（Apple 上还会带 Metal backend，但 HYLE bridge 只用 CPU 路径）。
 
 ## 三、测试
 
@@ -78,7 +79,7 @@ scripts/fetch-bench-vendors.sh
 
 ## 六、可选依赖
 
-- **OpenSSL**：`brew install openssl@3`，配置时 `-DOPENSSL_ROOT_DIR=/opt/homebrew/opt/openssl@3` 启用 TLS。
+- **OpenSSL**：`brew install openssl@3`，配置时 `-DHYLE_IO_TLS=ON -DOPENSSL_ROOT_DIR=/opt/homebrew/opt/openssl@3` 启用 TLS。
 - **CUDA**：mac 无 NVIDIA GPU，不适用。
 
 ## 七、Vulkan compute（compute-06，Apple 走 MoltenVK）
@@ -96,7 +97,7 @@ Apple 无原生 Vulkan——**MoltenVK 是 Vulkan-over-Metal 的 ICD**（把 Vul
 - `molten-vk` → `/opt/homebrew/lib/libMoltenVK.dylib` + ICD manifest `…/molten-vk/*/etc/vulkan/icd.d/MoltenVK_icd.json`。
 - `vulkan-loader` → `/opt/homebrew/lib/libvulkan.dylib`（volk dlopen 的就是它）。
 - `vulkan-tools` → `vulkaninfo`（验证用）。
-- HYLE 侧 **headers + volk + glslang 仍走 FetchContent**（`.deps`，与 Win/WSL 同）——brew 只提供 **loader + MoltenVK ICD**（driver 层，HYLE 不 vendor），不提供编译期头。
+- HYLE 侧 **headers + volk + glslang 仍走 FetchContent**（当前 build tree 的 `_deps`，与 Win/WSL 同）——brew 只提供 **loader + MoltenVK ICD**（driver 层，HYLE 不 vendor），不提供编译期头。
 
 **验证 MoltenVK 通**（应枚举出 Apple GPU、driverID = MoltenVK）：
 

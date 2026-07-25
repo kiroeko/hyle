@@ -27,7 +27,7 @@ call "C:\Program Files\Microsoft Visual Studio\18\Enterprise\Common7\Tools\VsDev
 call "C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
 ```
 
-- ⚠️ **INCLUDE 没注入的症状**：ninja 用 cache 里的 cl 报 `C1083: 找不到 <chrono>/<stdbool.h>`——**不是缺头，是环境没注入**（新开 shell 没 call vcvars/VsDevCmd，或在半配置的 `.deps` 状态下 rebuild）。对策：确保每个跑 cmake 的 shell 都先 call 一次。
+- ⚠️ **INCLUDE 没注入的症状**：ninja 用 cache 里的 cl 报 `C1083: 找不到 <chrono>/<stdbool.h>`——**不是缺头，是环境没注入**（新开 shell 没 call vcvars/VsDevCmd，或在半配置的 build `_deps` 状态下 rebuild）。对策：确保每个跑 cmake 的 shell 都先 call 一次。
 - VsDevCmd 可能打印 `vswhere.exe 不是内部或外部命令`——**无害**，有 fallback，照样正确注入。
 
 ## 三、git-bash 调 cmd 的坑（本仓库常用 git-bash 驱动）
@@ -39,7 +39,7 @@ call "C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Auxiliary\Build\
 ## 四、构建
 
 ```bat
-:: 配置（首次会 FetchContent 自动联网拉 ggml + googletest 到 .deps，之后缓存复用）
+:: 配置（首次会 FetchContent 自动联网拉依赖到 build\_deps）
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 
 :: 构建单个目标 / 全部
@@ -96,10 +96,11 @@ cmd.exe //c "C:\public\vcpkg\vcpkg.exe install openssl:x64-windows"
 配置时指向它（对现有 build 目录也能加）：
 
 ```bat
-cmake -S . -B build -DOPENSSL_ROOT_DIR=C:/public/vcpkg/installed/x64-windows
+cmake -S . -B build -DHYLE_IO_TLS=ON ^
+  -DOPENSSL_ROOT_DIR=C:/public/vcpkg/installed/x64-windows
 ```
 
-成功打印 `HYLE: OpenSSL 3.x found -- io-08 TLS enabled`。**运行 TLS 测试**加 DLL 到 PATH：
+成功打印 `HYLE: io TLS ON -- enabled with OpenSSL 3.x`。**运行 TLS 测试**加 DLL 到 PATH：
 
 ```bat
 set PATH=C:\public\vcpkg\installed\x64-windows\bin;%PATH%
@@ -109,6 +110,6 @@ cd build\bin && hyle_io_tls_test.exe
 ### CUDA（GPU 后端）
 
 - 装 CUDA Toolkit **13.3**（本仓库统一版本）到 `C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3`，确保 `bin` 入 PATH + `CUDA_PATH` 指 v13.3。
-- 在 VsDevCmd/vcvars 环境里 `find_package(CUDAToolkit)` 自动找到，配置打印 `CUDA Toolkit 13.3 found -- compute CUDA backend enabled`。
+- 需要 CUDA 的构建显式传 `-DHYLE_COMPUTE_CUDA=ON`；配置打印 `compute CUDA ON -- enabled with Toolkit 13.3`。
 - ⚠️ 某 shell 看不到 nvcc = 该 shell 在装 CUDA 前启动的 stale-env，新开 shell 即正常。
 - cuDNN/TensorRT 当前里程碑不需要，见 [`dependencies.md`](./dependencies.md)。

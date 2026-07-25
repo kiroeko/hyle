@@ -25,9 +25,9 @@ cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
 
 - `/mnt/c/...` 是 **9p 网络挂载**（Windows 盘），不稳、慢、CPU 打不饱和——重 IO / 构建 / 压力测试在上面**性能数字全废**，还可能触发诡异卡顿。
 - **唯一权威源是 Windows 工作树** `C:\public\project-hyle\hyle`；`/root/hyle` 只是可丢弃、可覆盖的原生 ext4 执行镜像，不从 WSL 目录反向恢复或合并代码。
-- 每次 WSL 验证前，从 `/mnt/c/public/project-hyle/hyle/` 受控执行 `rsync -a --delete` 覆盖 `/root/hyle/`。可排除并保留 WSL 本机 `.deps/` 与 `build*/`，但源码必须单向同步为 Windows 当前工作树，包括未提交改动。
+- 每次 WSL 验证前，从 `/mnt/c/public/project-hyle/hyle/` 受控执行 `rsync -a --delete` 覆盖 `/root/hyle/`。可排除并保留 WSL 本机 `build*/`（依赖在各 build 的 `_deps` 中），但源码必须单向同步为 Windows 当前工作树，包括未提交改动。
 - 同步只负责搬源码；构建、测试、调试、压力与 benchmark 全部在 `/root/hyle` 运行，`/mnt/c` 上的执行结果不作验收证据。
-- `.deps` 与 build 目录留在 `/root/hyle`，避免跨 9p 共享 FetchContent 缓存和构建产物。
+- build 目录及其 `_deps` 留在 `/root/hyle`，避免跨 9p 共享 FetchContent 源码和构建产物。
 
 ## 三、构建
 
@@ -37,11 +37,12 @@ export PATH=/usr/local/cuda/bin:$PATH   # 非交互 shell 缺 cuda bin（见下 
 
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14 \
-  -DCMAKE_CUDA_COMPILER=/usr/local/cuda/bin/nvcc -DCMAKE_CUDA_HOST_COMPILER=g++-14
+  -DCMAKE_CUDA_COMPILER=/usr/local/cuda/bin/nvcc -DCMAKE_CUDA_HOST_COMPILER=g++-14 \
+  -DHYLE_COMPUTE_CUDA=ON
 cmake --build build
 ```
 
-- ggml/googletest 首次配置自动联网拉到 `.deps`，之后缓存复用（删 build 不重下）。
+- ggml/googletest 首次配置自动联网拉到 `build/_deps`；删除 build 会一并删除，避免跨 toolchain 污染。
 - `wsl.exe` 从 Windows 侧驱动的坑：`wsl.exe -e bash -lc '...'` 外层 git-bash 会吃掉 `$VAR`；把逻辑写成 `.sh`（在 WSL 原生 bash 里跑变量才正常）。传 `/mnt/c/x.sh` 路径给 wsl.exe 会被 git-bash 改写 → 用 `wsl.exe -e bash -lc 'bash /root/x.sh'`，脚本直接在 `/root` 用 heredoc 生成、别 cp。
 
 ## 四、测试

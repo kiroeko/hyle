@@ -9,13 +9,15 @@
 | C++ 编译器 / CMake / Ninja / 汇编器 | **硬门槛** | CMake FATAL_ERROR，配置失败 | CMake 自带检查 |
 | **ggml** | **自动拉取**（FetchContent） | 有网自动下；无网且无缓存则配置失败 | `FetchContent`（pin commit） |
 | **googletest** | **自动拉取**（FetchContent） | 同上（仅影响测试，`-DHYLE_BUILD_TESTS=OFF` 可跳） | `FetchContent`（pin tag v1.15.2） |
-| **volk + Vulkan-Headers + glslang** | **自动拉取**（FetchContent，compute-06） | 全 pin `vulkan-sdk-1.4.341.0`，落 `.deps`；缺网首配失败 | `FetchContent`（三个 pin commit） |
+| **volk + Vulkan-Headers + glslang** | **自动拉取**（FetchContent，compute-06） | 全 pin `vulkan-sdk-1.4.341.0`，落 build tree `_deps`；缺网首配失败 | `FetchContent`（三个 pin commit） |
 | **Vulkan loader + ICD/driver** | 可选能力（compute-06 运行时） | 无则 Vulkan 后端运行时禁用（`vulkan_vtable()` 返 null），其余全绿 | volk 运行时 dlopen `vulkan-1.dll`/`libvulkan.so`/`libvulkan.dylib` |
-| **OpenSSL** | 可选能力 | TLS（io-08）不编，其余全绿 | `find_package(OpenSSL QUIET)` |
-| **CUDA Toolkit** | 可选能力 | GPU 后端不编，host fallback 顶上，其余全绿 | `find_package(CUDAToolkit QUIET)` |
+| **OpenSSL** | 可选能力 | `HYLE_IO_TLS=AUTO/OFF` 可无 TLS；ON 时缺失即配置失败 | `find_package(OpenSSL QUIET)` |
+| **CUDA Toolkit** | 可选能力 | `HYLE_COMPUTE_CUDA=AUTO/OFF` 可只用 host；ON 时缺失即配置失败 | `find_package(CUDAToolkit QUIET)` |
 | **cuDNN / TensorRT** | 可选能力（更后） | 当前里程碑不依赖，完全可不装 | 手动 `-I/-L`（未来算子/推理路径） |
 
-**"可选能力 = 可选依赖"铁律**：OpenSSL/CUDA 找到才启用对应代码，找不到静默跳过、配置照样成功。所以一台**只装了硬门槛**的机器 `cmake` 就能过（ggml/gtest 联网自动下），只是没有 TLS/GPU。
+**"可选能力 = 可选依赖"铁律**：OpenSSL/CUDA 都是 `AUTO|ON|OFF`。AUTO 找到就启用、找不到降级；
+ON 要求能力存在，否则配置失败；OFF 连依赖都不探测。只有本地探索适合 AUTO，正式 SDK/CI 应写死 ON/OFF，
+避免构建机环境暗中改变产物。
 
 ---
 
@@ -26,15 +28,21 @@
 - ggml → `GIT_TAG eced84c86f8b012c752c016f7fe789adea168e1e`（v0.15.3）
 - googletest → `GIT_TAG v1.15.2`
 
-**默认行为（开箱即用，需联网）**：新机器 clone HYLE → 跑 `cmake` → FetchContent **自动联网 clone** 这两个依赖到 `.deps/<dep>-src`，编进 `.deps/<dep>-build`。**你什么都不用准备**（除了有网）。
+**默认行为（开箱即用，需联网）**：新机器 clone HYLE → 跑 `cmake` → FetchContent 自动联网 clone
+到 `<hyle-build>/_deps/<dep>-src`，生成物进入同一 build tree 的 `_deps/<dep>-build`。删除 build tree
+会一并删除这些内容，这是有意的：不同编译器、架构、sanitizer 或 CMake option 不能误共享依赖生成物。
 
-**持久缓存（删 build 不重下）**：根 `CMakeLists.txt` 把 `FETCHCONTENT_BASE_DIR` 钉到源码树内的 `.deps/`（`.gitignored`）。所以：
-- `rm -rf build` 重新配置 → **不重新下载**（源码还在 `.deps/<dep>-src`）
-- 同一机器开第二个 build 目录 → 复用同一 `.deps`
+**离线/已审查源码**：用 FetchContent 标准 override 给每个依赖注入源码，而不是共享另一个 build tree：
 
-> 这套「pin + 持久 `.deps`」借鉴 cil2cpp 的 `FETCHCONTENT_BASE_DIR` 用法。`.deps` 是**每台机器各自的**（Windows `C:\public\project-hyle\hyle\.deps`、WSL `/root/hyle/.deps`、mac `~/hyle/.deps`），不跨机共享。ggml 和 googletest **一视同仁**——都由 CMake 联网下载、都进 `.deps/<dep>-src`，无特殊对待。
+```bash
+cmake -S . -B build -DFETCHCONTENT_SOURCE_DIR_GGML=/approved/ggml
+```
 
-**ggml 的构建开关（HYLE 强制设定，见根 CMakeLists）**：`GGML_OPENMP=OFF`（compute-05 发现 10：n_threads=1 叶子，不让 ggml 起 OpenMP 线程）、`GGML_BUILD_TESTS/EXAMPLES=OFF`、`GGML_CUDA_FA=OFF`（跳 ~120 个 FlashAttention kernel，桥只用 GEMM，省首编时间）、`GGML_CUDA` 跟随是否找到 CUDA。
+其他名字同理：`GOOGLETEST`、`NGHTTP2`、`VOLK`、`VULKAN_HEADERS`、`GLSLANG`。`HYLE_DEPS_DIR`
+可以移动**当前 build tree 自己的**依赖区，但不能指向源码树，也不应被不同 toolchain/build tree 共用。
+仓库根 `.deps/` 只是旧开发树兼容的 ignored 路径，不是现行默认契约。
+
+**ggml 的构建开关（HYLE 强制设定，见根 CMakeLists）**：`GGML_OPENMP=OFF`（compute-05 发现 10：n_threads=1 叶子，不让 ggml 起 OpenMP 线程）、`GGML_BUILD_TESTS/EXAMPLES=OFF`、`GGML_CUDA_FA=OFF`（跳 ~120 个 FlashAttention kernel，桥只用 GEMM，省首编时间）、`GGML_CUDA` 跟随最终启用的 CUDA 能力。
 
 **关掉 ggml（无 compute 需求时）**：`-DHYLE_COMPUTE_GGML=OFF` → 不拉 ggml、不编 ggml_bridge，compute 其余（01–04）照编。
 
@@ -42,7 +50,9 @@
 
 ## OpenSSL（io-08 TLS，可选）
 
-TLS 是可选能力：`find_package(OpenSSL)` 找到就编 `tls.cc` + 打开 `HYLE_IO_TLS`；找不到完全不编，**零 OpenSSL 依赖**。**动态链**（安全库应跟随系统 CVE 更新，不静态焊死）。
+TLS 是三态能力：`HYLE_IO_TLS=AUTO` 自动发现，`ON` 要求 OpenSSL，`OFF` 不探测且保持零 OpenSSL
+依赖。启用后编 `tls.cc` 并对消费者公开同名编译宏。OpenSSL 使用动态链（安全库应跟随系统 CVE
+更新，不静态焊死）。
 
 - **Linux/WSL**：`sudo apt install libssl-dev`（系统包，零配置，装完重配即启用）。
 - **Windows**：无系统级 MSVC OpenSSL 开发库，用 **vcpkg**（详见 [`windows.md`](./windows.md) 依赖节）。
@@ -52,7 +62,8 @@ TLS 是可选能力：`find_package(OpenSSL)` 找到就编 `tls.cc` + 打开 `HY
 
 ## CUDA Toolkit（compute GPU 后端，可选）
 
-`find_package(CUDAToolkit QUIET)` 找到 → `HYLE_COMPUTE_CUDA=ON` + `enable_language(CUDA)` + 编 `cuda_backend.cu`；找不到 → 只编 host fallback，**零 CUDA 依赖**，其余全绁。
+`HYLE_COMPUTE_CUDA=AUTO` 时 CMake 自动发现 Toolkit；`ON` 要求找到；`OFF` 不运行依赖探测、不启用
+CUDA language，只编 host fallback。最终启用时才编 `cuda_backend.cu` 并链接 CUDA runtime/driver/NVRTC。
 
 - **本仓库统一 CUDA 13.3**（RTX 4070 / sm_89）。Windows toolkit 在 `C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3`；WSL 在 `/usr/local/cuda-13.3`（软链 `/usr/local/cuda`）。装法见平台文件。
 - **编译/链接不需要 PATH**（CMake 走 `find_package`）；**运行 GPU 测试**要 CUDA runtime DLL 在 PATH（Windows）。

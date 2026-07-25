@@ -27,11 +27,9 @@ compile_commands.json
 /_deps/
 /vendor/*/
 
-# compute-05 / tests: ggml + googletest are FetchContent deps (CMakeLists.txt / tests/
-# CMakeLists.txt), pinned by commit/tag. FETCHCONTENT_BASE_DIR points here so a first
-# `cmake` auto-fetches them into .deps/<dep>-src ONCE, reused across `rm -rf build` and
-# regenerations. .deps is per-machine (Win C:\..., WSL /root/hyle, mac ~/hyle). Nothing
-# pre-placed in third_party for these -- pure open-box auto-download (cil2cpp form).
+# Legacy/local dependency directory. The supported default is each build tree's
+# `_deps`; offline source trees are injected with FETCHCONTENT_SOURCE_DIR_<NAME>.
+# Keep old developer caches ignored, but never make this path a build contract.
 /.deps/
 
 # local build helper (machine-specific hardcoded paths)

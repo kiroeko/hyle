@@ -70,11 +70,16 @@ HYLE 的构建开关分**产品/组装参数**与**benchmark 对照门**两个�
 | `HYLE_INSTALL` | `OFF` | `ON`/`OFF` | 显式生成 relocatable `HyleConfig.cmake`、组件 targets 和 install rules；与 `HYLE_BUILD_TESTS=ON` 互斥，避免发布 test-only ABI |
 | `HYLE_WERROR` | `OFF` | `ON`/`OFF` | CI 用 ON；本地开发 OFF |
 | `HYLE_SANITIZER` | `off` | `off`/`asan`/`tsan`/`ubsan` | 查内存/数据竞争/UB 时开（配 Debug/RelWithDebInfo）。**严格校验**：非法值直接 `FATAL_ERROR`（不静默降级为 off）；认编译器原生别名 `address`→asan、`thread`→tsan、`undefined`→ubsan、`none`→off。**MSVC 只支持 asan**（tsan/ubsan 在 MSVC 会 `FATAL_ERROR`，需 GCC/Clang，如 WSL） |
-| `HYLE_DEPS_DIR` | `<hyle-build>/_deps` | path | FetchContent 下载/构建缓存；需要跨多个 build tree 复用时显式指向共享 cache，不能放进源码树 |
+| `HYLE_DEPS_DIR` | `<hyle-build>/_deps` | path | 当前 build tree 的 FetchContent 源码/生成物；不要让不同 toolchain/build tree 共用。离线源码用标准 `FETCHCONTENT_SOURCE_DIR_<NAME>` 注入 |
 | `HYLE_SIMD_EXACT_TARGET` | 空（runtime fat） | SCALAR/SSE4/AVX2/AVX512/NEON/SVE/RVV | 构建整库 exact ISA；普通分发不要改，见 §2 |
 | `HYLE_TRACE` | `OFF` | `ON`/`OFF` | 编译期 instrumentation；ON 还需 `HYLE_TRACY_DIR` |
 | `HYLE_IO_HTTP2` | `ON` | `ON`/`OFF` | 仅在选中 io 时取得 nghttp2；OFF 保留 unavailable stub C ABI |
-| `HYLE_COMPUTE_GGML` / `HYLE_COMPUTE_VULKAN` | `ON` | `ON`/`OFF` | 仅在选中 compute 时取得对应供应商；CUDA 当前仅在 compute 被选时自动探测 |
+| `HYLE_IO_TLS` | `AUTO` | `AUTO`/`ON`/`OFF` | AUTO 有 OpenSSL 就启用；ON 把 TLS 设为硬交付契约，缺依赖即失败；OFF 不探测 OpenSSL |
+| `HYLE_COMPUTE_CUDA` | `AUTO` | `AUTO`/`ON`/`OFF` | AUTO 有 Toolkit 就启用；ON 要求 CUDA；OFF 不探测 Toolkit、也不启用 CUDA language |
+| `HYLE_COMPUTE_GGML` / `HYLE_COMPUTE_VULKAN` | `ON` | `ON`/`OFF` | 仅在选中 compute 时取得对应供应商 |
+
+`AUTO` 适合本地尝试；正式 SDK/CI 必须显式写 `ON` 或 `OFF`，否则同一命令可能因构建机安装的 SDK
+不同而得到不同 feature manifest。`ON` 的意义不是“尽量开启”，而是“这个产物没有该能力就拒绝产生”。
 
 #### 测试专用接口（`HYLE_TESTING` 门控——集成方零残留）
 

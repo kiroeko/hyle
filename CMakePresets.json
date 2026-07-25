@@ -4,18 +4,14 @@
   "configurePresets": [
     {
       "name": "win",
-      "displayName": "Windows MSVC (Ninja, Release, TLS via vcpkg OpenSSL)",
-      "description": "Day-to-day Windows dev build. Run inside a VsDevCmd x64 shell (cl/ml64/INCLUDE injected). OpenSSL is picked up from vcpkg so io-08 TLS builds without passing -DOPENSSL_ROOT_DIR each time: set the OPENSSL_ROOT_DIR env var to override, else the repo-convention path C:/public/vcpkg/installed/x64-windows is used. If OpenSSL isn't installed there, TLS just isn't compiled (opt-in dependency).",
+      "displayName": "Windows MSVC (Ninja, Release)",
+      "description": "Day-to-day Windows dev build. Run inside a VsDevCmd x64 shell (cl/ml64/INCLUDE injected). No machine-specific SDK path is embedded: pass -DHYLE_IO_TLS=ON -DOPENSSL_ROOT_DIR=<prefix> when TLS is required, or select OFF for a deterministic TLS-free build.",
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build",
       "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" },
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
-        "OPENSSL_ROOT_DIR": "$env{OPENSSL_ROOT_DIR}",
         "HYLE_BUILD_BENCH": "OFF"
-      },
-      "environment": {
-        "OPENSSL_ROOT_DIR": "C:/public/vcpkg/installed/x64-windows"
       }
     },
     {

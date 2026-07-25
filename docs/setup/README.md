@@ -25,10 +25,10 @@
 HYLE 的依赖分三类，决定了「新机器 `cmake` 会不会失败」：
 
 1. **硬门槛（必需，缺了 CMake 直接 FATAL_ERROR）**：C++ 编译器（GCC14+ / Clang18+ / MSVC19.43+）、CMake 3.25+、Ninja、汇编器（MASM/GAS）。这些**不自动装**，人得先装好——见各平台文件第一节。
-2. **自动拉取（联网自动，无需人工）**：`ggml`、`googletest` 走 **FetchContent**——新机器首次 `cmake` 会**自动联网 clone** 到 `.deps/`（[`dependencies.md` §FetchContent](./dependencies.md)）。**有网就开箱即用**，之后缓存复用（删 build 不重下）。
-3. **可选能力（找到才启用，找不到静默跳过）**：OpenSSL（TLS）、CUDA（GPU 后端）。**缺了不报错**，只是对应功能不编——`cmake` 照样成功、其余全绿。cuDNN/TensorRT 更靠后（当前里程碑不依赖）。
+2. **自动拉取（联网自动，无需人工）**：`ggml`、`googletest` 走 **FetchContent**——新机器首次 `cmake` 会自动联网 clone 到当前 build tree 的 `_deps/`（[`dependencies.md` §FetchContent](./dependencies.md)）。离线时显式注入已审查源码目录。
+3. **可选能力（三态契约）**：OpenSSL（TLS）、CUDA（GPU 后端）取值都是 `AUTO|ON|OFF`。AUTO 可降级，ON 缺依赖即失败，OFF 不探测；正式 CI/交付必须写 ON/OFF。cuDNN/TensorRT 更靠后（当前里程碑不依赖）。
 
-> **一句话**：硬门槛靠人装（第 1 类），ggml/gtest 自动下（第 2 类），GPU/TLS 可有可无（第 3 类）。所以「新机器直接 `cmake` 失败」几乎总是第 1 类没装齐，或第 2 类**没网**。
+> **一句话**：硬门槛靠人装，FetchContent 依赖联网下载或显式注入源码，GPU/TLS 则由 AUTO/ON/OFF 明确选择。
 
 ## 「能不能自动化装好一切？」——诚实回答
 
@@ -50,6 +50,6 @@ cmake --build build
 cd build/bin && ./hyle_sched_test   # 换任意模块测试
 ```
 
-- 看配置日志确认可选能力状态：`OpenSSL ... found` / `CUDA Toolkit ... found` / `ggml via FetchContent`。
+- 看配置日志确认可选能力状态：`io TLS <AUTO|ON|OFF>` / `compute CUDA <AUTO|ON|OFF>` / `ggml via FetchContent`。
 - lock-free 改动**必须**过 WSL TSan（[`linux-wsl.md`](./linux-wsl.md)）。
 - 性能数字**必须**在原生文件系统（非 9p / 非网络盘）跑，见各平台「性能测试」节。

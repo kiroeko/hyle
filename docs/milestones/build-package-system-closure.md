@@ -50,7 +50,10 @@
 - [x] 引入 `HYLE_COMPONENTS` 产品根与直接依赖 fixed-point closure；unknown component fail-fast，
   configure 输出 requested/resolved manifest。
 - [x] 第三方发现/取得受 io/compute 组件约束；core、mem、container 子集不再探测 GPU/协议依赖，
-  默认依赖缓存从源码 `.deps` 移到 build tree，可用 `HYLE_DEPS_DIR` 显式共享。
+  默认依赖区从源码 `.deps` 移到各自 build tree；离线源码用标准 `FETCHCONTENT_SOURCE_DIR_<NAME>`
+  注入，不跨 toolchain 共享依赖生成物。
+- [x] TLS/CUDA 从“构建机碰巧找到就改变产物”改为 `AUTO|ON|OFF`：ON 缺依赖 fail-fast，OFF
+  零探测，正式 SDK/CI 可声明确定 feature contract；Windows preset 不再写死维护者 vcpkg 路径。
 - [x] HYLE 模块显式选择 STATIC/SHARED，不再改 embedding parent 的 `BUILD_SHARED_LIBS`、输出目录
   和 configuration types；三个 source-embed sample 已按组件根组装。
 - [x] tests 按存在的 module target 创建；新增 `hyle_<module>_tests` / `hyle_tests` aggregate，
@@ -130,10 +133,10 @@
 
 | 固定口径 | code |
 |---|---:|
-| 全库（含 docs/in-tree third_party） | 247,146 |
+| 全库（含 docs/in-tree third_party） | 247,200 |
 | 自实现（含测试） | 116,284 |
 | 自实现（不含测试） | 79,957 |
-| build/package 实现 | 3,397 |
+| build/package 实现 | 3,431 |
 
 最后一项统计自有 root/module/test/bench/sample CMake、`cmake/`、preset，以及
 build/fetch/setup/QEMU scripts；不含 vendored CMake、测试源码和文档。
