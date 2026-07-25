@@ -106,6 +106,12 @@ slot 是 flat storage；grow、rehash、erase 都会使相关 pointer/reference 
 纯 C/FFI 对应使用独立的 `hyle_container_hash_set_*` erased POD handle，同样不需要
 dummy mapped value。
 
+map/set 都是 owning 值容器：K/V 可复制时支持深 copy/copy assignment，也可从 iterator
+range 或 initializer-list 构造/批量 insert，并支持 `swap` 与忽略迭代顺序的内容相等。
+forward range 会先 reserve 一次；input iterator 只读取一次。move-only value 的 map
+自然仍不可复制，但 move、lookup、insert/erase 不受影响。批量插入遇到重复 key 沿用
+单项 `insert` 语义：保留先到的 mapped value，不暗中覆盖。
+
 ## 字符串、驻留与路径
 
 `StringView` 不拥有字节。`null_terminated` 只说明 `data[size]` 确实可读且为 NUL，不能

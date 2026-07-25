@@ -1,11 +1,14 @@
 #pragma once
 
+#include <concepts>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <functional>
+#include <initializer_list>
 #include <iterator>
 #include <new>
+#include <tuple>
 #include <type_traits>
 #include <utility>
 
@@ -207,8 +210,61 @@ class SwissTable {
   explicit SwissTable(Alloc alloc, Hash hash = Hash{}, Eq eq = Eq{})
       : alloc_(std::move(alloc)), hash_(std::move(hash)), eq_(std::move(eq)) {}
 
+  template <std::input_iterator It, std::sentinel_for<It> Sentinel>
+  SwissTable(It first, Sentinel last)
+    requires(std::is_default_constructible_v<Alloc> &&
+             std::is_default_constructible_v<Hash> &&
+             std::is_default_constructible_v<Eq>)
+      : SwissTable() {
+    construct_with_cleanup([&] { insert(first, last); });
+  }
+
+  template <std::input_iterator It, std::sentinel_for<It> Sentinel>
+  SwissTable(Alloc alloc, It first, Sentinel last,
+             Hash hash = Hash{}, Eq eq = Eq{})
+      : SwissTable(std::move(alloc), std::move(hash), std::move(eq)) {
+    construct_with_cleanup([&] { insert(first, last); });
+  }
+
+  SwissTable(std::initializer_list<std::pair<K, V>> init)
+    requires(std::is_default_constructible_v<Alloc> &&
+             std::is_default_constructible_v<Hash> &&
+             std::is_default_constructible_v<Eq>)
+      : SwissTable(init.begin(), init.end()) {}
+
+  SwissTable(Alloc alloc, std::initializer_list<std::pair<K, V>> init,
+             Hash hash = Hash{}, Eq eq = Eq{})
+      : SwissTable(std::move(alloc), init.begin(), init.end(),
+                   std::move(hash), std::move(eq)) {}
+
   ~SwissTable() { free_storage(); }
-  HYLE_DISABLE_COPY(SwissTable);
+  SwissTable(const SwissTable& other)
+    requires(std::is_copy_constructible_v<K> &&
+             std::is_copy_constructible_v<V> &&
+             std::is_copy_constructible_v<Alloc> &&
+             std::is_copy_constructible_v<Hash> &&
+             std::is_copy_constructible_v<Eq>)
+      : alloc_(other.alloc_), hash_(other.hash_), eq_(other.eq_) {
+    construct_with_cleanup([&] { copy_entries(other); });
+  }
+
+  SwissTable& operator=(const SwissTable& other)
+    requires(std::is_copy_constructible_v<K> &&
+             std::is_copy_constructible_v<V> &&
+             std::is_copy_constructible_v<Alloc> &&
+             std::is_copy_constructible_v<Hash> &&
+             std::is_copy_constructible_v<Eq> &&
+             std::is_nothrow_swappable_v<Alloc> &&
+             std::is_nothrow_swappable_v<Hash> &&
+             std::is_nothrow_swappable_v<Eq>)
+  {
+    if (this == &other) return *this;
+    SwissTable replacement(alloc_, other.hash_, other.eq_);
+    replacement.copy_entries(other);
+    swap(replacement);
+    return *this;
+  }
+
   SwissTable(SwissTable&& o) noexcept(
       std::is_nothrow_move_constructible_v<Alloc> &&
       std::is_nothrow_move_constructible_v<Hash> &&
@@ -246,6 +302,27 @@ class SwissTable {
     o.size_ = 0;
     o.growth_left_ = 0;
     return *this;
+  }
+
+  void swap(SwissTable& other) noexcept(
+      std::is_nothrow_swappable_v<Alloc> &&
+      std::is_nothrow_swappable_v<Hash> &&
+      std::is_nothrow_swappable_v<Eq>) {
+    using std::swap;
+    swap(alloc_, other.alloc_);
+    swap(hash_, other.hash_);
+    swap(eq_, other.eq_);
+    swap(ctrl_, other.ctrl_);
+    swap(slots_, other.slots_);
+    swap(cap_, other.cap_);
+    swap(mask_, other.mask_);
+    swap(size_, other.size_);
+    swap(growth_left_, other.growth_left_);
+  }
+
+  friend void swap(SwissTable& left, SwissTable& right) noexcept(
+      noexcept(left.swap(right))) {
+    left.swap(right);
   }
 
   std::size_t size() const noexcept { return size_; }
@@ -448,6 +525,26 @@ class SwissTable {
     return try_emplace(std::move(key), std::move(value)).second;
   }
 
+  template <std::input_iterator It, std::sentinel_for<It> Sentinel>
+  void insert(It first, Sentinel last) {
+    if constexpr (std::forward_iterator<It>) {
+      std::size_t additional = 0;
+      for (It probe = first; probe != last; ++probe) {
+        HYLE_FATAL_ASSERT(additional != static_cast<std::size_t>(-1) - size_);
+        ++additional;
+      }
+      HYLE_FATAL_ASSERT(reserve(size_ + additional));
+    }
+    for (; first != last; ++first) {
+      auto&& item = *first;
+      insert(range_key(item), range_value(item));
+    }
+  }
+
+  void insert(std::initializer_list<std::pair<K, V>> init) {
+    insert(init.begin(), init.end());
+  }
+
   V& operator[](K key)
     requires std::is_nothrow_default_constructible_v<V>
   {
@@ -518,7 +615,51 @@ class SwissTable {
     }
   }
 
+  friend bool operator==(const SwissTable& left, const SwissTable& right)
+    requires std::equality_comparable<V>
+  {
+    if (left.size_ != right.size_) return false;
+    for (const Entry& entry : left) {
+      const V* value = right.find(entry.key());
+      if (value == nullptr || !(*value == entry.value())) return false;
+    }
+    return true;
+  }
+
  private:
+  template <class Item>
+  static decltype(auto) range_key(Item&& item) {
+    if constexpr (requires { std::forward<Item>(item).key(); }) {
+      return std::forward<Item>(item).key();
+    } else {
+      return std::get<0>(std::forward<Item>(item));
+    }
+  }
+
+  template <class Item>
+  static decltype(auto) range_value(Item&& item) {
+    if constexpr (requires { std::forward<Item>(item).value(); }) {
+      return std::forward<Item>(item).value();
+    } else {
+      return std::get<1>(std::forward<Item>(item));
+    }
+  }
+
+  template <class Fn>
+  void construct_with_cleanup(Fn&& fn) {
+    try {
+      std::forward<Fn>(fn)();
+    } catch (...) {
+      free_storage();
+      throw;
+    }
+  }
+
+  void copy_entries(const SwissTable& other) {
+    HYLE_FATAL_ASSERT(reserve(other.size_));
+    insert(other.begin(), other.end());
+  }
+
   template <class Q>
     requires(std::is_nothrow_invocable_r_v<std::uint64_t, const Hash&,
                                            const Q&> &&
@@ -771,9 +912,41 @@ class FlatHashSet {
   explicit FlatHashSet(Alloc alloc, Hash hash = Hash{}, Eq eq = Eq{})
       : table_(std::move(alloc), std::move(hash), std::move(eq)) {}
 
-  HYLE_DISABLE_COPY(FlatHashSet);
+  template <std::input_iterator It, std::sentinel_for<It> Sentinel>
+    requires std::constructible_from<K, std::iter_reference_t<It>>
+  FlatHashSet(It first, Sentinel last) {
+    insert(first, last);
+  }
+
+  template <std::input_iterator It, std::sentinel_for<It> Sentinel>
+    requires std::constructible_from<K, std::iter_reference_t<It>>
+  FlatHashSet(Alloc alloc, It first, Sentinel last,
+              Hash hash = Hash{}, Eq eq = Eq{})
+      : table_(std::move(alloc), std::move(hash), std::move(eq)) {
+    insert(first, last);
+  }
+
+  FlatHashSet(std::initializer_list<K> init)
+      : FlatHashSet(init.begin(), init.end()) {}
+
+  FlatHashSet(Alloc alloc, std::initializer_list<K> init,
+              Hash hash = Hash{}, Eq eq = Eq{})
+      : FlatHashSet(std::move(alloc), init.begin(), init.end(),
+                    std::move(hash), std::move(eq)) {}
+
+  FlatHashSet(const FlatHashSet&) = default;
+  FlatHashSet& operator=(const FlatHashSet&) = default;
   FlatHashSet(FlatHashSet&&) = default;
   FlatHashSet& operator=(FlatHashSet&&) = default;
+
+  void swap(FlatHashSet& other) noexcept(noexcept(table_.swap(other.table_))) {
+    table_.swap(other.table_);
+  }
+
+  friend void swap(FlatHashSet& left, FlatHashSet& right) noexcept(
+      noexcept(left.swap(right))) {
+    left.swap(right);
+  }
 
   std::size_t size() const noexcept { return table_.size(); }
   std::size_t capacity() const noexcept { return table_.capacity(); }
@@ -813,6 +986,25 @@ class FlatHashSet {
     return table_.insert(std::move(key), detail::SwissSetValue{});
   }
 
+  template <std::input_iterator It, std::sentinel_for<It> Sentinel>
+    requires std::constructible_from<K, std::iter_reference_t<It>>
+  void insert(It first, Sentinel last) {
+    if constexpr (std::forward_iterator<It>) {
+      std::size_t additional = 0;
+      for (It probe = first; probe != last; ++probe) {
+        HYLE_FATAL_ASSERT(
+            additional != static_cast<std::size_t>(-1) - size());
+        ++additional;
+      }
+      HYLE_FATAL_ASSERT(reserve(size() + additional));
+    }
+    for (; first != last; ++first) insert(K(*first));
+  }
+
+  void insert(std::initializer_list<K> init) {
+    insert(init.begin(), init.end());
+  }
+
   template <class Q>
     requires(std::is_nothrow_invocable_r_v<std::uint64_t, const Hash&,
                                            const Q&> &&
@@ -833,6 +1025,13 @@ class FlatHashSet {
   void for_each(Fn&& fn) const {
     table_.for_each(
         [&](const K& key, const detail::SwissSetValue&) { fn(key); });
+  }
+
+  friend bool operator==(const FlatHashSet& left, const FlatHashSet& right) {
+    if (left.size() != right.size()) return false;
+    for (const K& key : left)
+      if (!right.contains(key)) return false;
+    return true;
   }
 
  private:

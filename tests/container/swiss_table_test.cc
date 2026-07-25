@@ -4,8 +4,10 @@
 #include <iterator>
 #include <memory>
 #include <random>
+#include <stdexcept>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <unordered_map>
 #include <vector>
 
@@ -20,6 +22,9 @@ using hyle::mem::system_allocator;
 static_assert(std::forward_iterator<FlatHashMap<int, int>::iterator>);
 static_assert(std::forward_iterator<FlatHashMap<int, int>::const_iterator>);
 static_assert(std::forward_iterator<FlatHashSet<int>::iterator>);
+static_assert(std::is_copy_constructible_v<FlatHashMap<int, std::string>>);
+static_assert(!std::is_copy_constructible_v<
+              FlatHashMap<int, std::unique_ptr<int>>>);
 
 namespace {
 
@@ -65,6 +70,28 @@ struct CountedMapValue {
 };
 
 int CountedMapValue::constructions = 0;
+
+struct ThrowingMapValue {
+  explicit ThrowingMapValue(int input) noexcept : value(input) { ++alive; }
+  ThrowingMapValue(const ThrowingMapValue& other) : value(other.value) {
+    if (copies_before_throw == 0)
+      throw std::runtime_error("copy failed");
+    --copies_before_throw;
+    ++alive;
+  }
+  ThrowingMapValue(ThrowingMapValue&& other) noexcept : value(other.value) {
+    ++alive;
+  }
+  ThrowingMapValue& operator=(ThrowingMapValue&& other) noexcept {
+    value = other.value;
+    return *this;
+  }
+  ~ThrowingMapValue() noexcept { --alive; }
+
+  static inline int alive = 0;
+  static inline int copies_before_throw = 0;
+  int value;
+};
 
 }  // namespace
 
@@ -504,4 +531,71 @@ TEST(FlatHashSet, FallibleInsertDoesNotChangeStateOnAllocationFailure) {
   FallibleSet set(failing);
   EXPECT_EQ(set.try_insert(1), FallibleSet::InsertResult::kOutOfMemory);
   EXPECT_TRUE(set.empty());
+}
+
+TEST(FlatHashMap, CopyRangeSwapAndEqualityMatchOwningContainerShape) {
+  std::vector<std::pair<int, std::string>> input = {
+      {1, "one"}, {2, "two"}, {1, "ignored"}};
+  FlatHashMap<int, std::string> values(input.begin(), input.end());
+  values.insert({{3, "three"}, {4, "four"}});
+  ASSERT_EQ(values.size(), 4u);
+  EXPECT_EQ(*values.find(1), "one");
+
+  FlatHashMap<int, std::string> copy(values);
+  EXPECT_EQ(copy, values);
+  *copy.find(1) = "changed";
+  EXPECT_NE(copy, values);
+  EXPECT_EQ(*values.find(1), "one");
+
+  FlatHashMap<int, std::string> assigned;
+  assigned = values;
+  EXPECT_EQ(assigned, values);
+
+  FlatHashMap<int, std::string> other({{9, "nine"}});
+  swap(assigned, other);
+  EXPECT_EQ(assigned.size(), 1u);
+  EXPECT_EQ(*assigned.find(9), "nine");
+  EXPECT_EQ(other, values);
+}
+
+TEST(FlatHashMap, ThrowingCopyDestroysCompletedEntries) {
+  ThrowingMapValue::alive = 0;
+  {
+    FlatHashMap<int, ThrowingMapValue> source;
+    source.try_emplace(1, 10);
+    source.try_emplace(2, 20);
+    source.try_emplace(3, 30);
+    ASSERT_EQ(ThrowingMapValue::alive, 3);
+
+    ThrowingMapValue::copies_before_throw = 1;
+    using ThrowingMap = FlatHashMap<int, ThrowingMapValue>;
+    EXPECT_THROW(
+        {
+          ThrowingMap copy(source);
+          (void)copy;
+        },
+        std::runtime_error);
+    EXPECT_EQ(ThrowingMapValue::alive, 3);
+  }
+  EXPECT_EQ(ThrowingMapValue::alive, 0);
+}
+
+TEST(FlatHashSet, CopyRangeSwapAndEqualityMatchOwningContainerShape) {
+  const std::vector<int> input = {1, 2, 3, 2};
+  FlatHashSet<int> values(input.begin(), input.end());
+  values.insert({3, 4, 5});
+  ASSERT_EQ(values.size(), 5u);
+
+  FlatHashSet<int> copy(values);
+  EXPECT_EQ(copy, values);
+  copy.erase(3);
+  EXPECT_NE(copy, values);
+  EXPECT_TRUE(values.contains(3));
+
+  FlatHashSet<int> assigned;
+  assigned = values;
+  FlatHashSet<int> other({9});
+  swap(assigned, other);
+  EXPECT_EQ(assigned, (FlatHashSet<int>{9}));
+  EXPECT_EQ(other, values);
 }

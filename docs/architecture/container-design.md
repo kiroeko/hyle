@@ -126,6 +126,14 @@ map 的 mutation 语义按成熟容器拆开：`insert` 不覆盖，`try_emplace
 mapped value，`insert_or_assign` 才覆盖，`operator[]` 只为 default-constructible value
 提供熟悉入口；它们都复用单 hash、单 fused probe 的热路径。
 
+Owning 容器语义也不再因早期 benchmark 壳而残缺：copy 在 K/V 可复制时启用，copy
+assignment 保留目标 allocator，range/initializer-list construction 与 insert、swap 和
+内容相等均可直接使用；move-only map 仍在类型层面不可复制。forward range 先按输入
+上界一次 reserve，避免逐级整表 rehash；single-pass input range 只消费一次。copy/range
+构造若元素复制抛异常会销毁已完成 slots 并释放 ctrl/storage。相等比较是 expected O(N)
+次 hash lookup，不依赖未指定的 slot/迭代顺序。这些冷/批量能力没有改变单 key fused
+probe 的指令路径。
+
 边界原则：
 
 - 所有容量乘法、对齐和 power-of-two 扩张先做 overflow 检查。
