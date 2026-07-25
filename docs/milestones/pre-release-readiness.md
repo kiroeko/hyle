@@ -18,6 +18,44 @@ all-component CPU SDK/外部 consumer、CI 与 AArch64 cross 已成为可执行�
 **util-core seam**；只审低层 header-only 能力和 include/link 边，不提前冻结依赖 container 的
 Registry/runtime。当前队列见“施工顺序”。
 
+## 底座五模块交叉引用复验（2026-07-25）
+
+在继续收口新模块前，`core/error/platform/mem/time` 已按源码 include、链接 target、安装后
+consumer 和二进制导出四层复验。最终二进制依赖图为：
+
+```text
+core      -> (none)
+error     -> (none)
+platform  -> error
+time      -> error
+mem       -> error + platform
+```
+
+合法但不增加二进制依赖的头文件边只有三类：time 的 timer queue 复用
+`core/intrusive_list.h`；mem 复用 `core/cache.h`；time 的 native clock 包含
+`hyle/platform.h` 读取 `HYLE_OS_*` 编译环境宏。`hyle/platform.h` 是零链接的编译环境头，
+不等同于 `hyle_platform` target。platform/mem/time 的 C shim 只通过 error 明确保留的
+`src/error/status_access.h` 桥接 `hyle_status`；HYLE C++ 实现没有绕经 C ABI，也没有形成
+私有实现反向依赖。
+
+复验发现并修掉一个真实产品缺陷：public `SystemAllocator` 的 shared 消费者曾直接引用
+`mi_*`，导致用户必须额外链接私有 `mimalloc_static`，测试中的手写依赖又遮住了这个问题。
+现在 static/source 形状仍直接内联 mimalloc 热路径；shared 形状改为调用 `hyle_mem` 导出的
+direct-import backend seam，mimalloc 保持 target-private。所有仅用于遮蔽传播错误的测试/
+benchmark 直连依赖均已删除；真正把 raw mimalloc 当性能对手的 mem benchmark 仍可显式链接。
+
+验收证据：Windows shared/static 五模块组均为 20/20；Linux GCC 14 shared 20/20，最终
+static mem 闭包在 `-Werror` 下干净构建；AppleClang shared 20/20。三平台 shared/static
+安装包的纯 C 与 C++ `SystemAllocator` consumer 均为 2/2，且 ELF/Mach-O shared
+`hyle_mem` 的 `mi_`/`_mi_` 导出计数为 0。组件解析也逐根验证为
+`core`、`error`、`error+platform`、`error+time`、`error+platform+mem`，没有环、反向边或
+未声明的二进制依赖。
+
+因此这五个底座模块的**相互引用可以关闭**，下一审查单元仍是 util-core seam。性能边界另作
+诚实限定：Windows 已量到 shared direct-import 相对同进程 raw mimalloc 约 4.5–6% 的 DSO
+边界成本；三平台“同链接形状”的最终性能证书仍登记在 performance 文档，不能把本次依赖
+正确性结论扩大成该项已证明 SOTA。
+
 ## 严格收口合同
 
 模块同时满足以下八项，才标成“当前标准严格收口”：

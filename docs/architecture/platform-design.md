@@ -10,11 +10,12 @@
 
 platform 把 Windows、Linux 和 macOS 的不同系统调用收敛成可组合的**机制**，供 HYLE
 内部地基层和需要直接控制 OS 资源的库用户共同使用。它位于共享 `error` 之上、
-`mem/simd/container/sched/io/compute` 之下；`time` 是独立的零 HYLE 依赖根：
+`mem/simd/container/sched/io/compute` 之下；`time` 是不经过 platform 的平行底层分支，
+其 native 核只借 core 头，C adapter 依赖 error：
 
 ```text
-error                                      time
-  |                               clock/sleep/timer semantics
+error -------------------------------+------ time
+  |                                  |  clock/sleep/timer semantics
 platform  -- CPU/OS facts, thread, wait, VM, file, dynlib
   |\                                         |
   | +------ simd/container        runtime ISA and cache facts
