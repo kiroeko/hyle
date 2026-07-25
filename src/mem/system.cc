@@ -17,12 +17,14 @@ namespace {
 
 // Round an alignment request up to something the backing accepts: a power of
 // two, at least kDefaultAlignment. A non-power-of-two request is a caller bug.
+#if !defined(HYLE_STATIC)
 std::size_t normalize_alignment(std::size_t a) noexcept {
   if (a < kDefaultAlignment)
     return kDefaultAlignment;
   HYLE_FATAL_ASSERT((a & (a - 1)) == 0);
   return a;
 }
+#endif
 
 } // namespace
 

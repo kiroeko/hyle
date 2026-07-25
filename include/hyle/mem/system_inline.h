@@ -36,18 +36,26 @@ inline constexpr std::size_t kSystemDefaultAlignment = kDefaultAlignment;
 namespace detail {
 
 #if defined(HYLE_STATIC)
+inline std::size_t system_backend_checked_alignment(
+    std::size_t alignment) noexcept {
+  HYLE_FATAL_ASSERT((alignment & (alignment - 1)) == 0);
+  return alignment;
+}
 inline void* system_backend_allocate(std::size_t size,
                                      std::size_t alignment) noexcept {
   return alignment <= kSystemDefaultAlignment
              ? mi_malloc(size)
-             : mi_malloc_aligned(size, alignment);
+             : mi_malloc_aligned(
+                   size, system_backend_checked_alignment(alignment));
 }
 inline void system_backend_deallocate(void* ptr) noexcept { mi_free(ptr); }
 inline void* system_backend_reallocate(void* ptr, std::size_t new_size,
                                        std::size_t alignment) noexcept {
   return alignment <= kSystemDefaultAlignment
              ? mi_realloc(ptr, new_size)
-             : mi_realloc_aligned(ptr, new_size, alignment);
+             : mi_realloc_aligned(
+                   ptr, new_size,
+                   system_backend_checked_alignment(alignment));
 }
 #else
 // Binary implementation seams, not a second user-facing allocator. Inline
