@@ -31,7 +31,7 @@ static hyle_status_code status_code(hyle_status status) {
 
 static int map_inserted(hyle_container_hash_map* map, const void* key,
                         const void* value) {
-  hyle_container_insert_result result = HYLE_CONTAINER_UPDATED;
+  hyle_container_insert_result result = HYLE_CONTAINER_ALREADY_PRESENT;
   return status_ok(hyle_container_hash_map_insert(&result, map, key, value)) &&
          result == HYLE_CONTAINER_INSERTED;
 }
@@ -341,6 +341,21 @@ static void test_vector_and_map(void) {
   CHECK(*(int*)hyle_container_hash_map_find(map, &input) == 10);
   CHECK(*(const int*)hyle_container_hash_map_find_const(map, &input) == 10);
   CHECK(hyle_container_hash_map_contains(map, &input));
+  {
+    hyle_container_insert_result result;
+    output = 99;
+    CHECK(status_ok(
+        hyle_container_hash_map_insert(&result, map, &input, &output)));
+    CHECK(result == HYLE_CONTAINER_ALREADY_PRESENT);
+    CHECK(*(int*)hyle_container_hash_map_find(map, &input) == 10);
+    CHECK(status_ok(hyle_container_hash_map_insert_or_assign(
+        &result, map, &input, &output)));
+    CHECK(result == HYLE_CONTAINER_ASSIGNED);
+    CHECK(*(int*)hyle_container_hash_map_find(map, &input) == 99);
+    output = 10;
+    CHECK(status_ok(hyle_container_hash_map_insert_or_assign(
+        &result, map, &input, &output)));
+  }
   CHECK(hyle_container_hash_map_for_each(map, visit_map, &visits));
   CHECK(visits == 2);
   {

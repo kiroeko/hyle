@@ -3,7 +3,7 @@
 > **2026-07-25 严格复审说明：** 本页保留 2026-07-19 的施工证据与当时点值，
 > 不再代表当前接口或“实际使用导向”的最终证书。严格复审已经把 C++ 值容器从
 > POD/显式 allocator 形状改为默认可用的 `SmallVector`、`FlatHashMap`，并把 C ABI
-> 从私有 TLS last-error 改为共享 `hyle_status + out`；当前动态 C 面为 106 个声明。
+> 从私有 TLS last-error 改为共享 `hyle_status + out`；当前动态 C 面为 107 个声明。
 > 新增的 [`container.md`](../guide/container.md) 负责告诉用户什么场景选择什么。
 > `ConcurrentVector` 已按 oneTBB 实际合同改为并行 writer；Windows/WSL n=15 的
 > 单 writer、range iteration 与读旧 prefix+写 tail 均领先，8 writer 同档；WSL 逐次
@@ -82,7 +82,7 @@ Linux x64 和 macOS arm64 的最终验证命令与结果记录在本文末尾。
 
 ## C ABI
 
-> 本节是 2026-07-19 历史验收，不代表未发布 ABI 已冻结。当前 106 个动态声明正在按
+> 本节是 2026-07-19 历史验收，不代表未发布 ABI 已冻结。当前 107 个动态声明正在按
 > 真实 C/FFI 场景重审；typed set 不会在形状未定时机械复制一套过时导出。
 
 - 头：`include/hyle/c/container.h`，实现：`src/container/c_container.cc`。

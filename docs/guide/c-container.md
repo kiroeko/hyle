@@ -151,14 +151,17 @@ ASCII 单字节便利函数全部 header-inline：
 `hyle_container_hash_map_size`、`hyle_container_hash_map_capacity`、
 `hyle_container_hash_map_reserve`、`hyle_container_hash_map_clear`、
 `hyle_container_hash_map_insert`、`hyle_container_hash_map_find`、
+`hyle_container_hash_map_insert_or_assign`、
 `hyle_container_hash_map_find_const`、`hyle_container_hash_map_contains`、
 `hyle_container_hash_map_erase`、`hyle_container_hash_map_for_each`。
 
 这是 control-byte + SIMD group probing 的平坦 Swiss map，不是链式 C facade。
 `capacity` 是 slot 数，最大装载量较小；增长/erase 会使返回的 key/value 地址失效。
-`create` / `reserve` / `insert` 返回 Status。`insert` 另通过
-`hyle_container_insert_result` 区分 `HYLE_CONTAINER_INSERTED` 与
-`HYLE_CONTAINER_UPDATED`，并支持 key/value 指向当前 map slot。
+`create` / `reserve` / 两种 insert 返回 Status。和 typed 面一致，`insert` 在 key 已
+存在时保持原 value，并返回 `HYLE_CONTAINER_ALREADY_PRESENT`；只有
+`insert_or_assign` 会覆盖，并返回 `HYLE_CONTAINER_ASSIGNED`。新 key 都返回
+`HYLE_CONTAINER_INSERTED`。两者都支持 key/value 指向当前 map slot，growth 前会先
+保存借用字节。
 `for_each` 的 visitor 返回 0 可提前停止；遍历期间不得修改 map。
 
 ## 并发容器

@@ -162,12 +162,26 @@ container 对外依赖。hex encode/decode 当前是无查表分支的标量/编
 导出的宽接口；HYLE 尚未发布、C ABI 尚未冻结。typed 容器能力稳定后将从真实 FFI
 场景重新审查保留、合并或删除哪些入口，而不是为了兼容继续扩张。当前原则是：
 
+| C ABI 能力组 | 当前判定 | 重审方向 |
+|---|---|---|
+| string view/hash/search/path buffer-fill | 保留能力 | 都是 FFI-native POD/无状态入口；合并重复命名与错误哨兵，不按 C++ 每个成员机械导出 |
+| StringBuf | 保留 opaque 能力 | permanent 与 refcounted lifecycle 都有真实跨语言用途；检查 batch/result 形状 |
+| erased POD vector | 保留能力 | C 没有模板，size/alignment + allocator 是合理动态形状；不加入 C++ ctor/dtor callback |
+| erased POD flat map | 保留能力、正在重塑 | 已拆 insert/insert_or_assign；后续决定真 set 是同一 value_size=0 policy 还是独立最小 handle |
+| 四类 pointer queue | **暂定** | typed 角色合理，但 C 名称仍隐藏 try/owner/bottom 合同；先查 sched/FFI 消费者再决定改名、迁模块或删除导出 |
+| pointer ConcurrentVector | **暂定** | 跨线程 append 有用途，但 `void*` 形状覆盖面窄；比较 erased POD 与 caller-owned pointer 两种真实场景 |
+
+“保留能力”不等于冻结当前函数列表；“暂定”也不等于为了缩 ABI 直接删。最终 C 面只为
+跨边界仍成立的动态能力服务，HYLE 内部 C++ 模块继续直接使用 typed API。
+
 - options 带 `struct_size`；allocator 按值捕获但 state 生命周期由调用方保证。
 - 对象只经 create/destroy；不导出 C++ 类布局、STL、模板或异常。
 - create/reserve/insert/intern 等冷失败走共享 `hyle_status + out`；队列满空、map miss、
   stale ID 等正常热控制流不构造错误对象。
 - String/path 产出使用借用 view 或 buffer-fill。
 - CArray/SwissTable 通过运行时 item size/alignment/hash/equal 类型擦除。
+- C flat map 与 typed mutation 语义一致：insert 不覆盖，insert_or_assign 才覆盖；
+  三态结果明确区分 inserted/already-present/assigned。
 - 并发容器的稳定最小共同面使用 pointer payload。
 
 完整使用和失效规则见 [`c-container.md`](../guide/c-container.md)；收口证据见

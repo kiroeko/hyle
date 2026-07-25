@@ -310,9 +310,13 @@ HYLE_CONTAINER_C_API void hyle_container_hash_map_clear(
     hyle_container_hash_map* map);
 typedef enum hyle_container_insert_result {
   HYLE_CONTAINER_INSERTED = 0,
-  HYLE_CONTAINER_UPDATED = 1
+  HYLE_CONTAINER_ALREADY_PRESENT = 1,
+  HYLE_CONTAINER_ASSIGNED = 2
 } hyle_container_insert_result;
 HYLE_CONTAINER_C_API hyle_status hyle_container_hash_map_insert(
+    hyle_container_insert_result* out_result,
+    hyle_container_hash_map* map, const void* key, const void* value);
+HYLE_CONTAINER_C_API hyle_status hyle_container_hash_map_insert_or_assign(
     hyle_container_insert_result* out_result,
     hyle_container_hash_map* map, const void* key, const void* value);
 HYLE_CONTAINER_C_API void* hyle_container_hash_map_find(

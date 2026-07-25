@@ -1086,19 +1086,23 @@ void hyle_container_hash_map_clear(hyle_container_hash_map* map) {
   if (map == nullptr) return;
   map->value.clear();
 }
-hyle_status hyle_container_hash_map_insert(
+static hyle_status hash_map_insert_impl(
     hyle_container_insert_result* out_result,
-    hyle_container_hash_map* map, const void* key, const void* value) {
+    hyle_container_hash_map* map, const void* key, const void* value,
+    bool assign_existing) {
   if (out_result == nullptr || map == nullptr || key == nullptr ||
       value == nullptr)
     return hyle_status_invalid_argument(
         "result, map, key, and value are required");
-  *out_result = HYLE_CONTAINER_UPDATED;
+  *out_result = HYLE_CONTAINER_ALREADY_PRESENT;
   RawMap& raw = map->value;
   const uint64_t hash = raw.hash(key);
   const std::size_t existing = raw.find_slot(key, hash);
   if (existing != RawMap::kNoSlot) {
-    std::memmove(raw.value(existing), value, raw.options.value_size);
+    if (assign_existing) {
+      std::memmove(raw.value(existing), value, raw.options.value_size);
+      *out_result = HYLE_CONTAINER_ASSIGNED;
+    }
     return hyle_status_ok();
   }
 
@@ -1163,6 +1167,16 @@ hyle_status hyle_container_hash_map_insert(
   if (was_empty) --raw.growth_left;
   *out_result = HYLE_CONTAINER_INSERTED;
   return hyle_status_ok();
+}
+hyle_status hyle_container_hash_map_insert(
+    hyle_container_insert_result* out_result,
+    hyle_container_hash_map* map, const void* key, const void* value) {
+  return hash_map_insert_impl(out_result, map, key, value, false);
+}
+hyle_status hyle_container_hash_map_insert_or_assign(
+    hyle_container_insert_result* out_result,
+    hyle_container_hash_map* map, const void* key, const void* value) {
+  return hash_map_insert_impl(out_result, map, key, value, true);
 }
 void* hyle_container_hash_map_find(hyle_container_hash_map* map,
                                    const void* key) {
