@@ -20,13 +20,26 @@ def strip_comments(text: str) -> str:
     return re.sub(r"//[^\n]*", "", text)
 
 
-def exported_symbols(library: Path, symbol_tool: Optional[Path]) -> set[str]:
+def binary_symbols(
+    library: Path, symbol_tool: Optional[Path], static: bool
+) -> set[str]:
     if sys.platform == "win32":
         dumpbin = (
             str(symbol_tool) if symbol_tool is not None else shutil.which("dumpbin")
         )
         if dumpbin is None:
             raise RuntimeError("dumpbin is required to audit a Windows DLL")
+        if static:
+            output = subprocess.check_output(
+                [dumpbin, "/nologo", "/symbols", str(library)], text=True
+            )
+            return set(
+                re.findall(
+                    r"^.*\bExternal\s+\|\s+(hyle_[a-z0-9_]+)\s*$",
+                    output,
+                    flags=re.MULTILINE,
+                )
+            )
         output = subprocess.check_output(
             [dumpbin, "/nologo", "/exports", str(library)], text=True
         )
@@ -44,6 +57,11 @@ def exported_symbols(library: Path, symbol_tool: Optional[Path]) -> set[str]:
     if sys.platform == "darwin":
         output = subprocess.check_output([nm, "-gU", str(library)], text=True)
         prefix = "_hyle_"
+    elif static:
+        output = subprocess.check_output(
+            [nm, "-g", "--defined-only", str(library)], text=True
+        )
+        prefix = "hyle_"
     else:
         output = subprocess.check_output(
             [nm, "-D", "--defined-only", str(library)], text=True
@@ -72,6 +90,7 @@ def main() -> int:
     parser.add_argument("--module", required=True)
     parser.add_argument("--library", type=Path)
     parser.add_argument("--symbol-tool", type=Path)
+    parser.add_argument("--static", action="store_true")
     parser.add_argument("--print-declarations", action="store_true")
     args = parser.parse_args()
     if re.fullmatch(r"[a-z][a-z0-9_]*", args.module) is None:
@@ -119,11 +138,13 @@ def main() -> int:
     if args.library is not None:
         actual_exports = {
             name
-            for name in exported_symbols(args.library, args.symbol_tool)
+            for name in binary_symbols(args.library, args.symbol_tool, args.static)
             if name.startswith("hyle_")
         }
         ok = report_set(
-            f"{args.module} C binary exports", manifest, actual_exports
+            f"{args.module} C binary {'symbols' if args.static else 'exports'}",
+            manifest,
+            actual_exports,
         ) and ok
 
     return 0 if ok else 1

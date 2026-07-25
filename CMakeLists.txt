@@ -3,7 +3,12 @@ cmake_minimum_required(VERSION 3.25)
 project(hyle
   VERSION 0.1.0
   DESCRIPTION "HYbrid LEvels - general-purpose high-performance C++ infra"
-  LANGUAGES C CXX ASM)
+  LANGUAGES C CXX)
+
+set(HYLE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+set(HYLE_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}")
+list(APPEND CMAKE_MODULE_PATH "${HYLE_SOURCE_DIR}/cmake")
+include(HyleComponents)
 
 # ---- C++23 baseline + toolchain gate ----------------------------------------
 set(CMAKE_CXX_STANDARD 23)
@@ -27,7 +32,7 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC" AND CMAKE_CXX_COMPILER_VERSION VERS
 endif()
 
 # ---- global options ---------------------------------------------------------
-option(HYLE_BUILD_TESTS "build unit tests (GoogleTest)" ON)
+option(HYLE_BUILD_TESTS "build unit tests (GoogleTest)" ${PROJECT_IS_TOP_LEVEL})
 option(HYLE_BUILD_BENCH "build microbenchmarks (nanobench)" OFF)
 set(HYLE_SIMD_EXACT_TARGET "" CACHE STRING
     "Build hyle_simd for one required ISA; empty enables runtime dispatch")
@@ -67,29 +72,26 @@ message(STATUS "HYLE_SANITIZER = ${HYLE_SANITIZER}")
 # CMAKE_BUILD_TYPE. RelWithDebInfo kept: a perf lib needs an optimized build that
 # still profiles/symbolicates. MinSizeRel dropped (irrelevant for infra).
 get_property(_hyle_multi_config GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
-if(_hyle_multi_config)
-  set(CMAKE_CONFIGURATION_TYPES "Debug;Release;RelWithDebInfo" CACHE STRING "" FORCE)
-elseif(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Release CACHE STRING "" FORCE)  # perf-first default
-  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS Debug Release RelWithDebInfo)
-endif()
-
-if(HYLE_STATIC)
-  set(BUILD_SHARED_LIBS OFF)
-else()
-  set(BUILD_SHARED_LIBS ON)
+if(PROJECT_IS_TOP_LEVEL)
+  if(_hyle_multi_config)
+    set(CMAKE_CONFIGURATION_TYPES "Debug;Release;RelWithDebInfo" CACHE STRING "" FORCE)
+  elseif(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "" FORCE)  # perf-first top-level default
+    set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS Debug Release RelWithDebInfo)
+  endif()
 endif()
 
 # Unify runtime artifacts (.exe + .dll on Windows) into one dir so test/bench
 # exes find the shared libs they link against without PATH juggling.
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+if(PROJECT_IS_TOP_LEVEL)
+  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+  set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 # Static archives (.a/.lib) land in the SAME bin/ as shared libs, so a prebuilt-library
 # consumer (samples/04) finds the artifact in one predictable place regardless of
 # HYLE_STATIC. Without this, static .a defaults to per-target build subdirs.
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+  set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+endif()
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(HyleWarnings)
 include(HyleSanitizers)
 include(HyleModule)
@@ -105,11 +107,13 @@ include(HyleTesting)  # HYLE_TESTING gate: test-only interfaces (derived from HY
 # Linux: found zero-config via the system libssl-dev. Windows: pass OPENSSL_ROOT_DIR
 # or use a vcpkg toolchain. Install/runtime-DLL distribution is a close-phase
 # concern (see docs/milestones/close-01), not any single io milestone.
-find_package(OpenSSL QUIET)
-if(OpenSSL_FOUND)
-  message(STATUS "HYLE: OpenSSL ${OPENSSL_VERSION} found -- io-08 TLS enabled")
-else()
-  message(STATUS "HYLE: OpenSSL not found -- io-08 TLS disabled (set OPENSSL_ROOT_DIR to enable)")
+if(HYLE_BUILD_IO)
+  find_package(OpenSSL QUIET)
+  if(OpenSSL_FOUND)
+    message(STATUS "HYLE: OpenSSL ${OPENSSL_VERSION} found -- io-08 TLS enabled")
+  else()
+    message(STATUS "HYLE: OpenSSL not found -- io-08 TLS disabled (set OPENSSL_ROOT_DIR to enable)")
+  endif()
 endif()
 
 # ---- HTTP/2 protocol core (io-11) ------------------------------------------
@@ -119,9 +123,10 @@ endif()
 # pinned: HTTP/2 parsers are security-sensitive and an uncontrolled system
 # version would make identical HYLE builds behave differently.
 option(HYLE_IO_HTTP2 "io-11: HTTP/2 via nghttp2 protocol core" ON)
-if(HYLE_IO_HTTP2)
-  set(FETCHCONTENT_BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/.deps"
-      CACHE PATH "Persistent FetchContent cache (survives build/ wipes; per-machine tree)")
+set(HYLE_DEPS_DIR "${HYLE_BINARY_DIR}/_deps" CACHE PATH
+    "Build-tree directory for dependencies fetched by HYLE")
+if(HYLE_BUILD_IO AND HYLE_IO_HTTP2)
+  set(FETCHCONTENT_BASE_DIR "${HYLE_DEPS_DIR}")
   include(FetchContent)
   set(NGHTTP2_PIN_COMMIT "68cb6900fde14c77f0cd7add0e094a862960eb99") # v1.69.0
   set(ENABLE_LIB_ONLY ON CACHE BOOL "" FORCE)
@@ -167,14 +172,16 @@ endif()
 # turns .cu files into nvcc TUs (host side via -ccbin = our C++ compiler). We do NOT
 # make CUDA a hard project language (LANGUAGES line stays C CXX ASM) so a machine
 # with no CUDA (mac, CI without a toolkit) configures fine.
-find_package(CUDAToolkit QUIET)
-if(CUDAToolkit_FOUND)
-  enable_language(CUDA)
-  set(HYLE_COMPUTE_CUDA ON)
-  message(STATUS "HYLE: CUDA Toolkit ${CUDAToolkit_VERSION} found -- compute CUDA backend enabled")
-else()
-  set(HYLE_COMPUTE_CUDA OFF)
-  message(STATUS "HYLE: CUDA Toolkit not found -- compute uses host fallback only")
+set(HYLE_COMPUTE_CUDA OFF)
+if(HYLE_BUILD_COMPUTE)
+  find_package(CUDAToolkit QUIET)
+  if(CUDAToolkit_FOUND)
+    enable_language(CUDA)
+    set(HYLE_COMPUTE_CUDA ON)
+    message(STATUS "HYLE: CUDA Toolkit ${CUDAToolkit_VERSION} found -- compute CUDA backend enabled")
+  else()
+    message(STATUS "HYLE: CUDA Toolkit not found -- compute uses host fallback only")
+  endif()
 endif()
 
 # ---- optional ggml operator library (compute-05 ggml_bridge) -----------------
@@ -188,18 +195,12 @@ endif()
 # n_threads=1 leaf contract (compute-design 发现 10) REQUIRES OpenMP OFF and zero-copy
 # REQUIRES a pinned version. So we own the build via the knobs below, pinned to a commit.
 #
-# ZERO REPEATED DOWNLOADS = PERSISTENT FETCH CACHE (cil2cpp runtime/CMakeLists.txt form):
-# FETCHCONTENT_BASE_DIR pinned to an in-source .deps (.gitignored) so a FIRST `cmake` on a
-# fresh clone auto-fetches ggml into .deps/ggml-src ONCE, and every later `rm -rf build` /
-# reconfigure / second build dir on this machine REUSES it -- no re-download. This is the
-# "clone the repo, run cmake, it just works (online)" contract; there is NO pre-placed
-# source mirror (we tried SOURCE_DIR into third_party/ggml but it needs a manual per-
-# machine archive step -- against the open-box-auto-download intent, so removed).
-# .deps is per-machine (Win C:\..., WSL /root/hyle native ext4 NEVER /mnt/c, mac ~/hyle).
+# Fetches live under HYLE_DEPS_DIR (build-tree `_deps` by default), never in the source
+# tree. A developer who wants one cache shared by several disposable build trees can set
+# HYLE_DEPS_DIR explicitly; a source-embedded consumer otherwise gets an isolated cache.
 option(HYLE_COMPUTE_GGML "compute-05: borrow ggml operators via ggml_bridge" ON)
-if(HYLE_COMPUTE_GGML)
-  set(FETCHCONTENT_BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/.deps"
-      CACHE PATH "Persistent FetchContent cache (survives build/ wipes; per-machine tree)")
+if(HYLE_BUILD_COMPUTE AND HYLE_COMPUTE_GGML)
+  set(FETCHCONTENT_BASE_DIR "${HYLE_DEPS_DIR}")
   include(FetchContent)
   set(GGML_PIN_COMMIT "eced84c86f8b012c752c016f7fe789adea168e1e")  # v0.15.3
 
@@ -208,10 +209,8 @@ if(HYLE_COMPUTE_GGML)
   set(GGML_BUILD_TESTS   OFF CACHE BOOL "" FORCE)
   set(GGML_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
   set(GGML_CPU           ON  CACHE BOOL "" FORCE)  # CPU backend (n_threads=1 leaf path)
-  # ggml follows HYLE's BUILD_SHARED_LIBS (HYLE builds shared by default, line ~76): a
-  # FORCE OFF here is shadowed by that normal var anyway, and a lone-static ggml among
-  # shared HYLE libs invites ODR/symbol skew. So ggml is shared like the rest (runtime
-  # needs libggml.so on the path, handled by install/rpath in close-01).
+  # ggml follows HYLE_STATIC, but only inside its FetchContent scope. HYLE never changes
+  # an embedding parent's BUILD_SHARED_LIBS choice.
   # GGML_CUDA_FA OFF: skip ~120 FlashAttention kernel instances (attention, not matmul).
   # The bridge borrows GEMM/elementwise; FA is unused and dominates first-build time.
   set(GGML_CUDA_FA       OFF CACHE BOOL "" FORCE)
@@ -221,13 +220,30 @@ if(HYLE_COMPUTE_GGML)
     set(GGML_CUDA OFF CACHE BOOL "" FORCE)
   endif()
 
-  message(STATUS "HYLE: ggml via FetchContent pin ${GGML_PIN_COMMIT} (cache: .deps, GGML_CUDA=${HYLE_COMPUTE_CUDA})")
+  message(STATUS "HYLE: ggml via FetchContent pin ${GGML_PIN_COMMIT} (cache: ${HYLE_DEPS_DIR}, GGML_CUDA=${HYLE_COMPUTE_CUDA})")
   FetchContent_Declare(ggml
     GIT_REPOSITORY https://github.com/ggml-org/ggml.git
     GIT_TAG        ${GGML_PIN_COMMIT}
     GIT_SHALLOW    TRUE)
   # EXCLUDE_FROM_ALL: only the parts hyle_compute links get built (no ggml install/tests).
+  set(_hyle_had_build_shared_libs FALSE)
+  if(DEFINED BUILD_SHARED_LIBS)
+    set(_hyle_had_build_shared_libs TRUE)
+    set(_hyle_saved_build_shared_libs "${BUILD_SHARED_LIBS}")
+  endif()
+  if(HYLE_STATIC)
+    set(BUILD_SHARED_LIBS OFF)
+  else()
+    set(BUILD_SHARED_LIBS ON)
+  endif()
   FetchContent_MakeAvailable(ggml)
+  if(_hyle_had_build_shared_libs)
+    set(BUILD_SHARED_LIBS "${_hyle_saved_build_shared_libs}")
+  else()
+    unset(BUILD_SHARED_LIBS)
+  endif()
+  unset(_hyle_had_build_shared_libs)
+  unset(_hyle_saved_build_shared_libs)
 endif()
 
 
@@ -250,8 +266,7 @@ endif()
 #
 # THREE FetchContent DEPS, ALL PINNED TO vulkan-sdk-1.4.341.0 (matches the local runtime
 # loader 1.4.341 -- zero version skew), all Khronos/zeux source repos (NOT the LunarG SDK
-# packaging layer), landing in .deps (inherits FETCHCONTENT_BASE_DIR -> survives build
-# wipes, per-machine, open-box auto-download -- same as ggml/googletest):
+# packaging layer), landing in HYLE_DEPS_DIR (same policy as ggml/googletest):
 #   1. Vulkan-Headers (Khronos)  -- pure headers, version OWNED by HYLE not the machine.
 #   2. volk (zeux)               -- meta-loader; runtime dlopen, no .lib/SDK needed.
 #   3. glslang (Khronos)         -- GLSL->SPIR-V: ENABLE_OPT=OFF (no SPIRV-Tools dep),
@@ -259,9 +274,9 @@ endif()
 #      validator tool (the "pre-compile tool folder" for HYLE devs + clients).
 # The slate-bundled Vulkan (headers v270, stale) is NOT used.
 option(HYLE_COMPUTE_VULKAN "compute-06: self-authored Vulkan compute SPIR-V kernels" ON)
-if(HYLE_COMPUTE_VULKAN)
-  set(FETCHCONTENT_BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/.deps"
-      CACHE PATH "Persistent FetchContent cache (survives build/ wipes; per-machine tree)")
+set(HYLE_COMPUTE_VULKAN_ENABLED OFF)
+if(HYLE_BUILD_COMPUTE AND HYLE_COMPUTE_VULKAN)
+  set(FETCHCONTENT_BASE_DIR "${HYLE_DEPS_DIR}")
   include(FetchContent)
   # All pinned to vulkan-sdk-1.4.341.0 (== local loader 1.4.341, no skew).
   set(VULKAN_HEADERS_PIN "b5c8f996196ba4aa6d8f97e52b5d3b6e70f7e4e2")  # Vulkan-Headers 1.4.341.0
@@ -305,7 +320,7 @@ if(HYLE_COMPUTE_VULKAN)
 
   set(HYLE_COMPUTE_VULKAN_ENABLED ON)
   message(STATUS "HYLE: Vulkan compute enabled -- volk + Vulkan-Headers + glslang via "
-                 "FetchContent pin 1.4.341 (cache: .deps; loader dlopen'd at runtime, no SDK)")
+                 "FetchContent pin 1.4.341 (cache: ${HYLE_DEPS_DIR}; loader dlopen'd at runtime, no SDK)")
 endif()
 
 
@@ -323,8 +338,6 @@ if(MSVC)
   add_compile_options(
     "$<$<COMPILE_LANGUAGE:C,CXX>:/Zc:__cplusplus>"
     "$<$<COMPILE_LANGUAGE:C,CXX>:/utf-8>")
-  # fcontext fiber switching needs an assembler. On MSVC x64 that is MASM (ml64).
-  enable_language(ASM_MASM)
 endif()
 
 # ---- x86-64-v2 baseline: SSSE3 everywhere (GCC/Clang) ------------------------
@@ -345,49 +358,41 @@ if(NOT MSVC AND CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   endif()
 endif()
 
-# ---- modules (added per dependency layer, roadmap P-1..P6) ------------------
-add_subdirectory(src/core)   # 00-scaffolding: empty core + macro skeleton
-add_subdirectory(src/error)  # error-01: Status + Result + propagation macros
-add_subdirectory(src/obs)    # obs-01: structured log production (sink registry)
-add_subdirectory(src/platform)  # platform-01: thread + park (wait_on_address)
-add_subdirectory(src/mem)    # mem-01: Allocator vtable + alignment fix
-add_subdirectory(src/time)   # time-01: monotonic + realtime clock + sleep
-add_subdirectory(src/util)   # util-01: ref_counted (Ref<T>) + scope_guard (DEFER)
-add_subdirectory(src/math)   # math: scalar helpers (div_ceil/sgn/approx_eq)
-add_subdirectory(src/container)  # container-01: bounded MPMC ring (Vyukov)
-add_subdirectory(src/simd)   # simd-01: runtime CPUID dispatch + vec<T,N> D-tag + scalar
-
+# ---- modules (component closure + dependency order) -------------------------
 # sched fiber switching needs platform fcontext asm. Vendored asm covers x86_64 (MS/PE MASM,
 # SysV/ELF GAS, SysV/macho GAS) AND arm64 (AAPCS ELF/macho/PE). Wire each (platform, arch)
 # to its flavor; the sched CMakeLists picks the matching .S/.asm. Gate the module on having a
 # usable asm flavor for this target.
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+set(HYLE_HAS_FCONTEXT FALSE)
+if(HYLE_BUILD_SCHED)
+  if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+    if(MSVC OR CMAKE_SYSTEM_NAME STREQUAL "Linux" OR APPLE)
+      set(HYLE_HAS_FCONTEXT TRUE)
+    endif()
+  elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
+    if(APPLE OR CMAKE_SYSTEM_NAME STREQUAL "Linux")
+      set(HYLE_HAS_FCONTEXT TRUE)
+    endif()
+  endif()
+  if(NOT HYLE_HAS_FCONTEXT)
+    message(FATAL_ERROR
+      "The selected component set requires sched, but HYLE has no fcontext assembly for "
+      "${CMAKE_SYSTEM_NAME}/${CMAKE_SYSTEM_PROCESSOR}/${CMAKE_CXX_COMPILER_ID}")
+  endif()
+  enable_language(ASM)
   if(MSVC)
-    set(HYLE_HAS_FCONTEXT TRUE)
-  elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux" OR APPLE)
-    set(HYLE_HAS_FCONTEXT TRUE)  # GAS .S via the ASM language (elf on Linux, macho on Apple)
-  endif()
-elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
-  if(APPLE OR CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    set(HYLE_HAS_FCONTEXT TRUE)  # AAPCS GAS .S (macho on Apple Silicon, elf on arm64 Linux)
+    enable_language(ASM_MASM)
   endif()
 endif()
-if(HYLE_HAS_FCONTEXT)
-  add_subdirectory(src/sched)  # sched-01/02: fcontext fiber + run-queue/worker
-endif()
-add_subdirectory(src/io)     # io-01: proactor completion seam (IOCP; io_uring next)
 
-# compute-01: device/stream/event abstraction + event-poll completion primitive.
-# Host fallback backend always; CUDA backend when HYLE_COMPUTE_CUDA (toolkit found).
-# Depends only on error for now (compute-03 will add sched for GPU->fiber wakeup).
-add_subdirectory(src/compute)
-
-# graph-01: task-dependency DAG with dirty-flag incremental recompute (north-star ②
-# CAD/BIM/CAE parametric/simulation recompute). step-1 serial core depends on
-# error/mem/container only (builds anywhere); step-2 parallel evaluate (parallel_eval.cc)
-# is added inside src/graph/CMakeLists under HYLE_HAS_FCONTEXT (needs hyle_sched), exactly
-# like compute's gpu_poller.cc.
-add_subdirectory(src/graph)
+foreach(_component core error obs math platform time mem simd container util sched io compute graph)
+  string(TOUPPER "${_component}" _component_upper)
+  if(HYLE_BUILD_${_component_upper})
+    add_subdirectory("src/${_component}")
+  endif()
+endforeach()
+unset(_component)
+unset(_component_upper)
 
 if(HYLE_BUILD_TESTS)
   enable_testing()
@@ -402,4 +407,10 @@ if(_hyle_multi_config AND HYLE_BUILD_TESTS AND TARGET hyle_core_test)
   set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT hyle_core_test)
 endif()
 
-message(STATUS "HYLE ${PROJECT_VERSION} | ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION} | C++${CMAKE_CXX_STANDARD} | sanitizer=${HYLE_SANITIZER} | shared=${BUILD_SHARED_LIBS}")
+if(HYLE_STATIC)
+  set(_hyle_linkage static)
+else()
+  set(_hyle_linkage shared)
+endif()
+message(STATUS "HYLE ${PROJECT_VERSION} | ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION} | C++${CMAKE_CXX_STANDARD} | sanitizer=${HYLE_SANITIZER} | linkage=${_hyle_linkage} | components=${HYLE_RESOLVED_COMPONENTS}")
+unset(_hyle_linkage)

@@ -186,7 +186,11 @@ function(hyle_add_module name)
 
   set(target "hyle_${name}")
   if(ARG_SOURCES)
-    add_library(${target} ${ARG_SOURCES})
+    if(HYLE_STATIC)
+      add_library(${target} STATIC ${ARG_SOURCES})
+    else()
+      add_library(${target} SHARED ${ARG_SOURCES})
+    endif()
   else()
     add_library(${target} INTERFACE)
   endif()
@@ -216,7 +220,7 @@ function(hyle_add_module name)
     hyle_apply_sanitizer(${target})
     # tri-state export macro: HYLE_<NAME>_API
     string(TOUPPER "${name}" up)
-    if(BUILD_SHARED_LIBS)
+    if(NOT HYLE_STATIC)
       target_compile_definitions(${target} PRIVATE "HYLE_${up}_BUILD")
     else()
       target_compile_definitions(${target} PUBLIC "HYLE_STATIC")
@@ -235,6 +239,9 @@ endfunction()
 # module can have several test exes (e.g. simd compiles the SAME source per ISA variant
 # with different DEFINES/OPTIONS -- HYLE_SIMD_TARGET_AVX2 + -mavx2 etc.).
 function(hyle_add_test module)
+  if(NOT TARGET hyle_${module})
+    return()
+  endif()
   cmake_parse_arguments(ARG "NO_AUTORUN" "NAME" "SOURCES;DEPS;DEFINES;OPTIONS" ${ARGN})
   if(ARG_NAME)
     set(target "hyle_${module}_${ARG_NAME}_test")
@@ -251,6 +258,13 @@ function(hyle_add_test module)
   endif()
   hyle_apply_warnings(${target})
   hyle_apply_sanitizer(${target})
+  if(TARGET hyle_tests)
+    if(NOT TARGET hyle_${module}_tests)
+      add_custom_target(hyle_${module}_tests)
+      add_dependencies(hyle_tests hyle_${module}_tests)
+    endif()
+    add_dependencies(hyle_${module}_tests ${target})
+  endif()
   # NO_AUTORUN: build the target but don't register it as a ctest. For ISA
   # variants (avx512) that SIGILL on a host lacking the instruction set -- built
   # for compile validation + manual SDE runs, not bare-metal auto-run.
@@ -261,11 +275,35 @@ endfunction()
 
 # hyle_add_bench(<module> SOURCES ...) -> bench exe linked to hyle_<module> + nanobench
 function(hyle_add_bench module)
+  if(NOT TARGET hyle_${module})
+    return()
+  endif()
   cmake_parse_arguments(ARG "" "" "SOURCES;DEPS" ${ARGN})
   set(target "hyle_${module}_bench")
   add_executable(${target} ${ARG_SOURCES})
   target_link_libraries(${target} PRIVATE hyle_${module} nanobench ${ARG_DEPS})
   hyle_apply_warnings(${target})
+endfunction()
+
+# hyle_stage_runtime_dependencies(<consumer-target>)
+#
+# Windows does not have an rpath equivalent: a source-embedded executable can
+# link HYLE DLL import libraries successfully but still fail at startup unless
+# the DLLs are beside the executable (or manually placed on PATH).  Do not solve
+# that by overriding the parent project's global output directories.  Instead,
+# consumers that want a runnable build-tree executable opt into this standard
+# CMake runtime-DLL staging step. It also captures transitive runtime DLLs.
+function(hyle_stage_runtime_dependencies target)
+  if(NOT TARGET ${target})
+    message(FATAL_ERROR "hyle_stage_runtime_dependencies: target '${target}' does not exist")
+  endif()
+  if(WIN32 AND NOT HYLE_STATIC)
+    add_custom_command(TARGET ${target} POST_BUILD
+      COMMAND "${CMAKE_COMMAND}" -E copy -t "$<TARGET_FILE_DIR:${target}>"
+              "$<TARGET_RUNTIME_DLLS:${target}>"
+      COMMAND_EXPAND_LISTS
+      VERBATIM)
+  endif()
 endfunction()
 
 # hyle_embed_shader(<comp> <out-header> <name> [<namespace>])

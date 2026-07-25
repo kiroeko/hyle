@@ -45,6 +45,33 @@
 5. 当前 guide 明说 install/`find_package` 尚未实现，静态消费者需手写 mimalloc 等传递依赖；
    这意味着现有 target 图还不能完整承载迁移与组装。
 
+## 当前进度
+
+- [x] 引入 `HYLE_COMPONENTS` 产品根与直接依赖 fixed-point closure；unknown component fail-fast，
+  configure 输出 requested/resolved manifest。
+- [x] 第三方发现/取得受 io/compute 组件约束；core、mem、container 子集不再探测 GPU/协议依赖，
+  默认依赖缓存从源码 `.deps` 移到 build tree，可用 `HYLE_DEPS_DIR` 显式共享。
+- [x] HYLE 模块显式选择 STATIC/SHARED，不再改 embedding parent 的 `BUILD_SHARED_LIBS`、输出目录
+  和 configuration types；三个 source-embed sample 已按组件根组装。
+- [x] tests 按存在的 module target 创建；新增 `hyle_<module>_tests` / `hyle_tests` aggregate，
+  pure-C binary 不再漏构建；static C surface 改查 archive globals、shared 仍查 exports。
+- [x] Windows source embed 用 `hyle_stage_runtime_dependencies()` 局部复制传递 DLL；不恢复全局
+  输出目录劫持。container sample 已 build+run。
+- [ ] benchmark 按组件惰性创建，core benchmark 不再要求全局 SIMD vendor 或 compute/io 配置。
+- [ ] install/export/component package、交叉编译、preset/toolchain/CI 与三平台最终矩阵。
+
+### 本轮四项代码量
+
+| 固定口径 | code |
+|---|---:|
+| 全库（含 docs/in-tree third_party） | 246,372 |
+| 自实现（含测试） | 116,282 |
+| 自实现（不含测试） | 79,955 |
+| build/package 实现 | 2,980 |
+
+最后一项统计自有 root/module/test/bench/sample CMake、`cmake/`、preset，以及
+build/fetch/setup/QEMU scripts；不含 vendored CMake、测试源码和文档。
+
 ## 审查顺序
 
 1. **现状建模**：列 target、option→macro、public/private dependency、第三方获取与生成目录；

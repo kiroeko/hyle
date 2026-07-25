@@ -40,15 +40,19 @@ if(HYLE_TRACE)
     # The tracy client: ONE TU (TracyClient.cpp) compiled with TRACY_ENABLE. tracy
     # is a global singleton and its docs require the client TU be built exactly
     # once. HYLE is a multi-DLL build by default, so this target MUST follow
-    # BUILD_SHARED_LIBS: a STATIC archive linked into every hyle_*.dll creates one
+    # HYLE_STATIC: a STATIC archive linked into every hyle_*.dll creates one
     # profiler singleton per module. Shared HYLE gets one shared Tracy client;
     # static HYLE gets one archive resolved once by the final executable.
-    add_library(hyle_tracy_client "${HYLE_TRACY_DIR}/public/TracyClient.cpp")
+    if(HYLE_STATIC)
+      add_library(hyle_tracy_client STATIC "${HYLE_TRACY_DIR}/public/TracyClient.cpp")
+    else()
+      add_library(hyle_tracy_client SHARED "${HYLE_TRACY_DIR}/public/TracyClient.cpp")
+    endif()
     target_include_directories(hyle_tracy_client SYSTEM PUBLIC "${HYLE_TRACY_DIR}/public")
     target_compile_definitions(hyle_tracy_client
       PRIVATE TRACY_ENABLE TRACY_FIBERS
       INTERFACE TRACY_ENABLE TRACY_FIBERS)
-    if(BUILD_SHARED_LIBS)
+    if(NOT HYLE_STATIC)
       target_compile_definitions(hyle_tracy_client
         PRIVATE TRACY_EXPORTS
         INTERFACE TRACY_IMPORTS)

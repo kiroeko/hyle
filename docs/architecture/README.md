@@ -57,6 +57,7 @@ HYLE infra（通用、不特化、贴硬件）
 | [`c-abi-design.md`](./c-abi-design.md) | **C++ 原生 API 与独立 C/FFI 产品面（why）**：能力映射而非机械镜像、类型擦除、错误边界、跨编译器 ABI 与两条消费者线路的易用性 |
 | [`c-abi-authoring-guide.md`](./c-abi-authoring-guide.md) | **给 HYLE 开发者的 C ABI 施工参考（how）**：导出面归类判据、文件与接线、opaque control、零 reinterpret、FFI 数据校验、时序误用 fail-fast、纯 C smoke 与跨平台验证；mem 是已审查样板 |
 | [`core-design.md`](./core-design.md) | **core 零依赖根**：版本单源、静态 cache layout 与 runtime platform 分工、宏/可见性边界、Folly/Boost-shaped auto-unlink intrusive primitive 及 C/C++ 双面 |
+| [`build-system.md`](./build-system.md) | **项目组织的可执行描述**：组件依赖闭包、惰性第三方、static/shared、源码嵌入、runtime staging、测试归属及 install/package 待闭环边界 |
 | [`util-design.md`](./util-design.md) | **util 架构与维护边界**：七个能力族、原生 C++/类型擦除 C ABI 双面、依赖/性能边界和机械维护闸门。 |
 | [`clay-asset-liability.md`](./clay-asset-liability.md) | clay 资产负债表：六子系统逐个盘点（内存/DataModel/SIMD/容器/并发/taskgraph），含 5 个 bug、空位 grep 证据、继承/重写判断 |
 | [`hyle-scope.md`](./hyle-scope.md) | scope 定义：定位、模块分层、四项 `cloc` 口径、第三方边界、规模纪律与明确不做的东西 |

@@ -1,9 +1,8 @@
 include(FetchContent)
 
 # GoogleTest (charter: unit test framework). Pinned tag, FetchContent GIT form (same
-# open-box-auto-download contract as ggml): first `cmake` fetches it into .deps/
-# googletest-src ONCE (FETCHCONTENT_BASE_DIR=.deps, set in root), reused across build
-# wipes. No pre-placed mirror.
+# open-box-auto-download contract as ggml): first `cmake` fetches it under
+# HYLE_DEPS_DIR (build-tree `_deps` by default). No pre-placed mirror.
 FetchContent_Declare(
   googletest
   GIT_REPOSITORY https://github.com/google/googletest.git
@@ -13,38 +12,77 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
+add_custom_target(hyle_tests)
+
+function(hyle_ensure_module_test_target module)
+  if(NOT TARGET hyle_${module}_tests)
+    add_custom_target(hyle_${module}_tests)
+    add_dependencies(hyle_tests hyle_${module}_tests)
+  endif()
+endfunction()
+
+function(hyle_add_c_test module source)
+  if(NOT TARGET hyle_${module})
+    return()
+  endif()
+  set(target hyle_${module}_c_test)
+  add_executable(${target} "${source}")
+  target_link_libraries(${target} PRIVATE hyle_${module} ${ARGN})
+  set_source_files_properties("${source}" PROPERTIES LANGUAGE C)
+  hyle_apply_warnings(${target})
+  hyle_apply_sanitizer(${target})
+  add_test(NAME ${target} COMMAND ${target})
+  hyle_ensure_module_test_target(${module})
+  add_dependencies(hyle_${module}_tests ${target})
+endfunction()
+
+function(hyle_add_c_surface_test module)
+  if(NOT TARGET hyle_${module})
+    return()
+  endif()
+  set(_static_arg "")
+  if(HYLE_STATIC)
+    set(_static_arg --static)
+  endif()
+  add_test(NAME hyle_${module}_c_surface_test
+           COMMAND "${Python3_EXECUTABLE}"
+                   "${HYLE_SOURCE_DIR}/scripts/c-surface-check.py"
+                   --module "${module}"
+                   --library "$<TARGET_FILE:hyle_${module}>"
+                   --symbol-tool "${_hyle_c_symbol_tool}"
+                   ${_static_arg})
+  hyle_ensure_module_test_target(${module})
+  add_dependencies(hyle_${module}_tests hyle_${module})
+endfunction()
+
+function(hyle_add_header_self_contained_test module)
+  if(NOT TARGET hyle_${module})
+    return()
+  endif()
+  add_test(NAME hyle_${module}_header_self_contained_test
+           COMMAND "${Python3_EXECUTABLE}"
+                   "${HYLE_SOURCE_DIR}/scripts/header-self-contained.py"
+                   --module "${module}"
+                   --include-dir "${HYLE_SOURCE_DIR}/include"
+                   --cc "${CMAKE_C_COMPILER}"
+                   --cxx "${CMAKE_CXX_COMPILER}"
+                   --c-compiler-id "${CMAKE_C_COMPILER_ID}"
+                   --cxx-compiler-id "${CMAKE_CXX_COMPILER_ID}"
+                   --c-frontend "${CMAKE_C_COMPILER_FRONTEND_VARIANT}"
+                   --cxx-frontend "${CMAKE_CXX_COMPILER_FRONTEND_VARIANT}")
+  hyle_ensure_module_test_target(${module})
+endfunction()
+
 hyle_add_test(core SOURCES core/core_test.cc core/intrusive_list_test.cc)
 # close-01 sample: pure C TU (C compiler) linking only the core C ABI header.
-add_executable(hyle_core_c_test core/c_core_test.c)
-target_link_libraries(hyle_core_c_test PRIVATE hyle_core)
-set_source_files_properties(core/c_core_test.c PROPERTIES LANGUAGE C)
-hyle_apply_warnings(hyle_core_c_test)
-hyle_apply_sanitizer(hyle_core_c_test)
-add_test(NAME hyle_core_c_test COMMAND hyle_core_c_test)
+hyle_add_c_test(core core/c_core_test.c)
 hyle_add_test(error SOURCES error/status_test.cc)
 # close-01 sample: pure C TU (C compiler) linking only the C ABI header.
-add_executable(hyle_error_c_test error/c_error_test.c)
-target_link_libraries(hyle_error_c_test PRIVATE hyle_error)
-# Ensure the .c file is compiled as C, not C++ (some generators sniff extension).
-set_source_files_properties(error/c_error_test.c PROPERTIES LANGUAGE C)
-hyle_apply_warnings(hyle_error_c_test)
-hyle_apply_sanitizer(hyle_error_c_test)
-add_test(NAME hyle_error_c_test COMMAND hyle_error_c_test)
-
-add_executable(hyle_platform_c_test platform/c_platform_test.c)
-target_link_libraries(hyle_platform_c_test PRIVATE hyle_platform hyle_error)
-set_source_files_properties(platform/c_platform_test.c PROPERTIES LANGUAGE C)
-hyle_apply_warnings(hyle_platform_c_test)
-hyle_apply_sanitizer(hyle_platform_c_test)
-add_test(NAME hyle_platform_c_test COMMAND hyle_platform_c_test)
+hyle_add_c_test(error error/c_error_test.c)
+hyle_add_c_test(platform platform/c_platform_test.c hyle_error)
 
 # close-01: pure C TU linking only the mem C ABI header (hyle/c/mem.h -> hyle_mem).
-add_executable(hyle_mem_c_test mem/c_mem_test.c)
-target_link_libraries(hyle_mem_c_test PRIVATE hyle_mem)
-set_source_files_properties(mem/c_mem_test.c PROPERTIES LANGUAGE C)
-hyle_apply_warnings(hyle_mem_c_test)
-hyle_apply_sanitizer(hyle_mem_c_test)
-add_test(NAME hyle_mem_c_test COMMAND hyle_mem_c_test)
+hyle_add_c_test(mem mem/c_mem_test.c)
 
 # Keep reviewed C manifests, pure-C consumers, and DLL/.so exports in sync.
 # Before first release this is drift detection, not a compatibility promise.
@@ -57,135 +95,35 @@ elseif(CMAKE_NM)
 else()
   find_program(_hyle_c_symbol_tool NAMES nm REQUIRED)
 endif()
-add_test(NAME hyle_mem_c_surface_test
-         COMMAND "${Python3_EXECUTABLE}"
-                 "${PROJECT_SOURCE_DIR}/scripts/c-surface-check.py"
-                 --module mem
-                 --library "$<TARGET_FILE:hyle_mem>"
-                 --symbol-tool "${_hyle_c_symbol_tool}")
-add_test(NAME hyle_core_c_surface_test
-         COMMAND "${Python3_EXECUTABLE}"
-                 "${PROJECT_SOURCE_DIR}/scripts/c-surface-check.py"
-                 --module core
-                 --library "$<TARGET_FILE:hyle_core>"
-                 --symbol-tool "${_hyle_c_symbol_tool}")
-add_test(NAME hyle_platform_c_surface_test
-         COMMAND "${Python3_EXECUTABLE}"
-                 "${PROJECT_SOURCE_DIR}/scripts/c-surface-check.py"
-                 --module platform
-                 --library "$<TARGET_FILE:hyle_platform>"
-                 --symbol-tool "${_hyle_c_symbol_tool}")
-add_test(NAME hyle_error_c_surface_test
-         COMMAND "${Python3_EXECUTABLE}"
-                 "${PROJECT_SOURCE_DIR}/scripts/c-surface-check.py"
-                 --module error
-                 --library "$<TARGET_FILE:hyle_error>"
-                 --symbol-tool "${_hyle_c_symbol_tool}")
-add_test(NAME hyle_time_c_surface_test
-         COMMAND "${Python3_EXECUTABLE}"
-                 "${PROJECT_SOURCE_DIR}/scripts/c-surface-check.py"
-                 --module time
-                 --library "$<TARGET_FILE:hyle_time>"
-                 --symbol-tool "${_hyle_c_symbol_tool}")
+hyle_add_c_surface_test(mem)
+hyle_add_c_surface_test(core)
+hyle_add_c_surface_test(platform)
+hyle_add_c_surface_test(error)
+hyle_add_c_surface_test(time)
 
 # A combined include smoke test can hide transitive-include and include-order bugs.
 # Compile each public C++ module header alone, plus its C ABI header as strict C.
-add_test(NAME hyle_core_header_self_contained_test
-         COMMAND "${Python3_EXECUTABLE}"
-                 "${PROJECT_SOURCE_DIR}/scripts/header-self-contained.py"
-                 --module core
-                 --include-dir "${PROJECT_SOURCE_DIR}/include"
-                 --cc "${CMAKE_C_COMPILER}"
-                 --cxx "${CMAKE_CXX_COMPILER}"
-                 --c-compiler-id "${CMAKE_C_COMPILER_ID}"
-                 --cxx-compiler-id "${CMAKE_CXX_COMPILER_ID}"
-                 --c-frontend "${CMAKE_C_COMPILER_FRONTEND_VARIANT}"
-                 --cxx-frontend "${CMAKE_CXX_COMPILER_FRONTEND_VARIANT}")
-add_test(NAME hyle_mem_header_self_contained_test
-         COMMAND "${Python3_EXECUTABLE}"
-                 "${PROJECT_SOURCE_DIR}/scripts/header-self-contained.py"
-                 --module mem
-                 --include-dir "${PROJECT_SOURCE_DIR}/include"
-                 --cc "${CMAKE_C_COMPILER}"
-                 --cxx "${CMAKE_CXX_COMPILER}"
-                 --c-compiler-id "${CMAKE_C_COMPILER_ID}"
-                 --cxx-compiler-id "${CMAKE_CXX_COMPILER_ID}"
-                 --c-frontend "${CMAKE_C_COMPILER_FRONTEND_VARIANT}"
-                 --cxx-frontend "${CMAKE_CXX_COMPILER_FRONTEND_VARIANT}")
-add_test(NAME hyle_platform_header_self_contained_test
-         COMMAND "${Python3_EXECUTABLE}"
-                 "${PROJECT_SOURCE_DIR}/scripts/header-self-contained.py"
-                 --module platform
-                 --include-dir "${PROJECT_SOURCE_DIR}/include"
-                 --cc "${CMAKE_C_COMPILER}"
-                 --cxx "${CMAKE_CXX_COMPILER}"
-                 --c-compiler-id "${CMAKE_C_COMPILER_ID}"
-                 --cxx-compiler-id "${CMAKE_CXX_COMPILER_ID}"
-                 --c-frontend "${CMAKE_C_COMPILER_FRONTEND_VARIANT}"
-                 --cxx-frontend "${CMAKE_CXX_COMPILER_FRONTEND_VARIANT}")
-add_test(NAME hyle_error_header_self_contained_test
-         COMMAND "${Python3_EXECUTABLE}"
-                 "${PROJECT_SOURCE_DIR}/scripts/header-self-contained.py"
-                 --module error
-                 --include-dir "${PROJECT_SOURCE_DIR}/include"
-                 --cc "${CMAKE_C_COMPILER}"
-                 --cxx "${CMAKE_CXX_COMPILER}"
-                 --c-compiler-id "${CMAKE_C_COMPILER_ID}"
-                 --cxx-compiler-id "${CMAKE_CXX_COMPILER_ID}"
-                 --c-frontend "${CMAKE_C_COMPILER_FRONTEND_VARIANT}"
-                 --cxx-frontend "${CMAKE_CXX_COMPILER_FRONTEND_VARIANT}")
-add_test(NAME hyle_time_header_self_contained_test
-         COMMAND "${Python3_EXECUTABLE}"
-                 "${PROJECT_SOURCE_DIR}/scripts/header-self-contained.py"
-                 --module time
-                 --include-dir "${PROJECT_SOURCE_DIR}/include"
-                 --cc "${CMAKE_C_COMPILER}"
-                 --cxx "${CMAKE_CXX_COMPILER}"
-                 --c-compiler-id "${CMAKE_C_COMPILER_ID}"
-                 --cxx-compiler-id "${CMAKE_CXX_COMPILER_ID}"
-                 --c-frontend "${CMAKE_C_COMPILER_FRONTEND_VARIANT}"
-                 --cxx-frontend "${CMAKE_CXX_COMPILER_FRONTEND_VARIANT}")
+hyle_add_header_self_contained_test(core)
+hyle_add_header_self_contained_test(mem)
+hyle_add_header_self_contained_test(platform)
+hyle_add_header_self_contained_test(error)
+hyle_add_header_self_contained_test(time)
 
 # close-01: pure C whole-buffer SIMD consumer. Register/native C++ types never cross this edge.
-add_executable(hyle_simd_c_test simd/c_simd_test.c)
-target_link_libraries(hyle_simd_c_test PRIVATE hyle_simd)
-set_source_files_properties(simd/c_simd_test.c PROPERTIES LANGUAGE C)
-hyle_apply_warnings(hyle_simd_c_test)
-hyle_apply_sanitizer(hyle_simd_c_test)
-add_test(NAME hyle_simd_c_test COMMAND hyle_simd_c_test)
+hyle_add_c_test(simd simd/c_simd_test.c)
 
 hyle_add_test(obs SOURCES obs/log_test.cc)
-add_executable(hyle_obs_c_test obs/c_obs_test.c)
-target_link_libraries(hyle_obs_c_test PRIVATE hyle_obs)
-set_source_files_properties(obs/c_obs_test.c PROPERTIES LANGUAGE C)
-hyle_apply_warnings(hyle_obs_c_test)
-hyle_apply_sanitizer(hyle_obs_c_test)
-add_test(NAME hyle_obs_c_test COMMAND hyle_obs_c_test)
+hyle_add_c_test(obs obs/c_obs_test.c)
 hyle_add_test(platform SOURCES platform/wait_test.cc platform/thread_test.cc platform/dynlib_test.cc platform/fs_test.cc platform/virtual_memory_test.cc platform/numa_test.cc platform/mapped_file_test.cc platform/cpu_test.cc platform/convenience_test.cc)
 hyle_add_test(mem SOURCES mem/api_surface_test.cc mem/allocator_test.cc mem/shared_pool_test.cc mem/pool_stack_test.cc mem/alignment_test.cc mem/pmr_test.cc mem/growable_pool_test.cc mem/fiber_stack_test.cc mem/stats_test.cc mem/hugepage_test.cc mem/numa_test.cc DEPS hyle_platform mimalloc_static)
 hyle_add_test(util SOURCES util/ref_counted_test.cc util/scope_guard_test.cc util/type_name_test.cc util/registry_test.cc util/random_test.cc util/spin_lock_test.cc util/demangle_test.cc util/c_util_concurrency_test.cc DEPS hyle_container)
-add_executable(hyle_util_c_test util/c_util_test.c)
-target_link_libraries(hyle_util_c_test PRIVATE hyle_util)
-set_source_files_properties(util/c_util_test.c PROPERTIES LANGUAGE C)
-hyle_apply_warnings(hyle_util_c_test)
-hyle_apply_sanitizer(hyle_util_c_test)
-add_test(NAME hyle_util_c_test COMMAND hyle_util_c_test)
+hyle_add_c_test(util util/c_util_test.c)
 hyle_add_test(time SOURCES time/header_test.cc time/clock_test.cc
   time/timer_queue_test.cc time/common_timeout_queue_test.cc DEPS hyle_platform)
-add_executable(hyle_time_c_test time/c_time_test.c)
-target_link_libraries(hyle_time_c_test PRIVATE hyle_time)
-set_source_files_properties(time/c_time_test.c PROPERTIES LANGUAGE C)
-hyle_apply_warnings(hyle_time_c_test)
-hyle_apply_sanitizer(hyle_time_c_test)
-add_test(NAME hyle_time_c_test COMMAND hyle_time_c_test)
+hyle_add_c_test(time time/c_time_test.c)
 hyle_add_test(io SOURCES io/proactor_test.cc)
-add_executable(hyle_io_c_test io/c_io_test.c)
-target_link_libraries(hyle_io_c_test PRIVATE hyle_io hyle_mem)
-set_source_files_properties(io/c_io_test.c PROPERTIES LANGUAGE C)
-hyle_apply_warnings(hyle_io_c_test)
-hyle_apply_sanitizer(hyle_io_c_test)
-add_test(NAME hyle_io_c_test COMMAND hyle_io_c_test)
-if(WIN32)
+hyle_add_c_test(io io/c_io_test.c hyle_mem)
+if(WIN32 AND TARGET hyle_io_test)
   # The io test itself calls Winsock directly (WSASocketW/bind/getsockname/... in
   # the IOCP TCP round-trip test), so it needs ws2_32 linked into the test exe.
   target_link_libraries(hyle_io_test PRIVATE ws2_32)
@@ -252,26 +190,24 @@ if(HYLE_COMPUTE_VULKAN_ENABLED)
                        FIXTURES_REQUIRED VK_PIPE_CACHE)
 endif()
 hyle_add_test(container SOURCES container/bounded_queue_test.cc container/sharded_queue_test.cc container/work_stealing_deque_test.cc container/ws_fifo_queue_test.cc container/hash_test.cc container/carray_test.cc container/c_container_concurrency_test.cc container/small_vector_test.cc container/probe_test.cc container/swiss_table_test.cc container/string_ref_test.cc container/string_buf_test.cc container/concurrent_vector_test.cc container/string_algo_test.cc container/path_test.cc DEPS hyle_platform mimalloc_static)
-add_executable(hyle_container_c_test container/c_container_test.c)
-target_link_libraries(hyle_container_c_test PRIVATE hyle_container)
-set_source_files_properties(container/c_container_test.c PROPERTIES LANGUAGE C)
-hyle_apply_warnings(hyle_container_c_test)
-hyle_apply_sanitizer(hyle_container_c_test)
-add_test(NAME hyle_container_c_test COMMAND hyle_container_c_test)
+hyle_add_c_test(container container/c_container_test.c)
 # graph-01 (step-1): task-dependency DAG incremental recompute. Pure CPU, serial evaluate
 # -- no sched dep yet (parallel node execution is step-2).
 hyle_add_test(graph SOURCES graph/taskgraph_test.cc DEPS hyle_graph)
 # hash_test.cc includes the opt-in hyle/container/hash_inline.h, which pulls the
 # vendored xxhash + wyhash single-headers into that TU -- add their include dirs.
-target_include_directories(hyle_container_test SYSTEM PRIVATE
-  "${PROJECT_SOURCE_DIR}/third_party/xxhash"
-  "${PROJECT_SOURCE_DIR}/third_party/wyhash")
+if(TARGET hyle_container_test)
+  target_include_directories(hyle_container_test SYSTEM PRIVATE
+    "${HYLE_SOURCE_DIR}/third_party/xxhash"
+    "${HYLE_SOURCE_DIR}/third_party/wyhash")
+endif()
 # simd: the scalar test (dispatch + vec floor) always builds. The vec op suite is ALSO
 # compiled per real ISA backend (sse4 / avx2) -- SAME source, different HYLE_SIMD_TARGET_*
 # + -march, each pairing the backend against the naive reference. GCC/Clang need the
 # arch flag to enable the intrinsics; MSVC x64 has SSE4.2 unconditionally and uses
 # /arch:AVX2 for the 256-bit build. These variant exes run on the build host, which must
 # support the ISA (both dev platforms are AVX2 -- matches the variant-DLL test model).
+if(TARGET hyle_simd)
 hyle_add_test(simd SOURCES simd/dispatch_test.cc simd/vec_test.cc simd/native_test.cc
               simd/runtime_test.cc simd/ops_test.cc simd/search_test.cc simd/scan_test.cc simd/dtype_test.cc
               simd/math_test.cc simd/sort_test.cc simd/radix_sort_test.cc simd/bitpack_test.cc)
@@ -384,14 +320,10 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "riscv64|riscv")
                   OPTIONS -march=rv64gcv)
   endif()
 endif()
-if(HYLE_HAS_FCONTEXT)
+endif() # TARGET hyle_simd
+if(TARGET hyle_sched)
   hyle_add_test(sched SOURCES sched/fiber_test.cc sched/fiber_stack_guard_test.cc sched/run_queue_test.cc sched/scheduler_test.cc sched/waker_test.cc sched/sync_test.cc sched/timer_test.cc sched/coro_test.cc sched/affinity_test.cc sched/join_test.cc sched/blocking_test.cc sched/shutdown_test.cc sched/cancel_test.cc DEPS hyle_time)
-  add_executable(hyle_sched_c_test sched/c_sched_test.c)
-  target_link_libraries(hyle_sched_c_test PRIVATE hyle_sched)
-  set_source_files_properties(sched/c_sched_test.c PROPERTIES LANGUAGE C)
-  hyle_apply_warnings(hyle_sched_c_test)
-  hyle_apply_sanitizer(hyle_sched_c_test)
-  add_test(NAME hyle_sched_c_test COMMAND hyle_sched_c_test)
+  hyle_add_c_test(sched sched/c_sched_test.c)
   # graph-01 step-2: parallel evaluate over the sched work-stealing pool (level-by-level
   # fork-join). Needs sched (spawn_task/when_all/fiber). Same gate as sched itself.
   hyle_add_test(graph NAME parallel SOURCES graph/parallel_test.cc DEPS hyle_sched)
@@ -407,6 +339,7 @@ if(HYLE_HAS_FCONTEXT)
   if(HYLE_COMPUTE_GGML)
     hyle_add_test(compute NAME ggml_bridge SOURCES compute/ggml_bridge_test.cc DEPS hyle_sched hyle_mem)
   endif()
+  if(TARGET hyle_io)
   # io-04 net: the co_await socket layer needs BOTH io (proactor + IoContext) and
   # sched (scheduler drives the reap). Only buildable where sched exists.
   hyle_add_test(io NAME net SOURCES io/net_test.cc DEPS hyle_sched)
@@ -450,4 +383,5 @@ if(HYLE_HAS_FCONTEXT)
       target_link_libraries(hyle_io_http2_test PRIVATE ws2_32)
     endif()
   endif()
+  endif() # TARGET hyle_io
 endif()

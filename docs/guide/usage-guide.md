@@ -29,22 +29,29 @@
 
 ### 1.1 用 CMake 集成（推荐）
 
-HYLE 是标准 CMake 工程，每个模块导出 `hyle::<module>` 别名 target：
+HYLE 是标准 CMake 工程，每个模块导出 `hyle::<module>` 别名 target。先声明所需产品根，
+CMake 会自动加入依赖闭包，不会配置无关 GPU/IO 后端：
 
 ```cmake
-add_subdirectory(hyle)            # 或 FetchContent / find_package(未来)
+set(HYLE_COMPONENTS "container;simd" CACHE STRING "" FORCE)
+add_subdirectory(hyle)            # 或 FetchContent；find_package 在本轮打包收口中
 target_link_libraries(your_app PRIVATE hyle::container hyle::mem hyle::simd)
+hyle_stage_runtime_dependencies(your_app) # Windows shared build 的传递 DLL
 ```
 
-链接 `hyle::<module>` 自动带上 `include/` 头路径与依赖模块（如 `hyle::container` 自动拉 `hyle::mem`）。包含头一律 `#include "hyle/<module>/<header>.h"`。
+链接 `hyle::<module>` 自动带上 `include/` 头路径与依赖模块（如 `hyle::container` 自动拉
+`hyle::mem`）。包含头一律 `#include "hyle/<module>/<header>.h"`。源码嵌入默认不构建 HYLE
+自己的测试，也不修改父工程的 `BUILD_SHARED_LIBS`、输出目录或 configuration types。
 
 ### 1.2 构建选项全集（这是"开关太多"的答案）
 
-HYLE 的构建开关分**两个范畴**，别混（速查：**A 类产品参数 5 个 + B 类 bench 门 10 个 + 2 个 preset**）：
+HYLE 的构建开关分**产品/组装参数**与**benchmark 对照门**两个范畴，别混。构建系统审查期间
+不再维护容易漂移的“总共有几个开关”手工数字，以本表与 `cmake -LH` 为准：
 
-- **A. 产品构建参数**（`HYLE_<名>`，全大写下划线 = CMake cache 变量，共 **5 个**：`HYLE_STATIC` / `HYLE_BUILD_TESTS` / `HYLE_BUILD_BENCH` / `HYLE_WERROR` / `HYLE_SANITIZER`；外加 CMake 内建 `CMAKE_BUILD_TYPE`）——影响**出厂的库**：静态/动态、sanitizer、CI 严格度。这是你集成时唯一要管的。（注：SIMD 不暴露硬件开关——默认编全部 ISA 变体、运行期 CPUID 选最优，见 §2。）
+- **A. 产品/组装参数**（`HYLE_<名>` cache 变量）——决定选哪些模块、static/shared、可选
+  backend、测试与工程严格度；普通集成最常用的是 `HYLE_COMPONENTS` 和 `HYLE_STATIC`。
 - **B. 开发/基准对照门**（`HYLE_BENCH_<名>`，共 **10 个 gate**；其中 7 个 clone 类各配一个 `HYLE_<X>_DIR` 路径变量）——**只往 benchmark 加对照行，对出厂库零影响**。此外，任何 `-DHYLE_BUILD_BENCH=ON` 都须有 `HYLE_BENCH_VENDOR_DIR` 指向固定版 Highway/xsimd 对照 checkout；Windows/mac 有默认，Linux/WSL 显式设置。集成方永远用不到（见 §1.2.1）。
-- **2 个 CMake preset**（`bench` / `bench-all-sota`，唯一的 `CMakePresets.json`）——是"一组 `-D` 一次设好"的**预设包**，不是参数本身，`--preset` 选用。
+- **CMake preset** 是开发机入口组合，不是产品参数或构建前置；集成方不需要 preset。
 
 > **命名约定**：凡产品参数都是 `HYLE_<名>` cache 变量，用 `-D` 设；bench 对照门统一带 `HYLE_BENCH_` 前缀，自我标记为 B 类。CMakePresets 里的 `bench` / `bench-all-sota` 是**预设包**（不是参数本身），`--preset` 选用——它们只是"把一组 `-D` 一次设好"的快捷方式，`bench-` 前缀表明展开的全是 B 类 bench 门。
 
@@ -53,11 +60,17 @@ HYLE 的构建开关分**两个范畴**，别混（速查：**A 类产品参数 
 | 选项 | 默认 | 取值 | 何时改 |
 |---|---|---|---|
 | `CMAKE_BUILD_TYPE` | `Release` | `Debug`/`Release`/`RelWithDebInfo` | 性能库默认 Release(-O3)；要符号调试用 RelWithDebInfo |
-| `HYLE_STATIC` | `OFF`(SHARED) | `ON`/`OFF` | 要静态链进你的二进制（无 DLL 分发）设 ON |
-| `HYLE_BUILD_TESTS` | `ON` | `ON`/`OFF` | 当依赖集成时设 `OFF`（不编 GoogleTest，省时间）。**同时派生编译宏 `HYLE_TESTING`**：ON 时注入所有模块库(经 `hyle_testing` INTERFACE target)，解锁 `#if defined(HYLE_TESTING)` 门控的**测试专用接口**；OFF(集成/出厂)时这些接口不编译、出厂库零残留(见下"测试专用接口")|
+| `HYLE_COMPONENTS` | `all` | 组件名的 `;`/`,` 列表 | 只组装所需根；支持 core/error/obs/math/platform/time/mem/simd/container/util/sched/io/compute/graph，依赖自动闭包 |
+| `HYLE_STATIC` | `OFF`(SHARED) | `ON`/`OFF` | 要静态链进你的二进制（无 HYLE DLL 分发）设 ON；不改变父工程 `BUILD_SHARED_LIBS` |
+| `HYLE_BUILD_TESTS` | 顶层 `ON`、嵌入 `OFF` | `ON`/`OFF` | ON 时只创建已选组件测试，并派生 `HYLE_TESTING`；`hyle_<module>_tests` 同时构建该模块 C++/C binary |
 | `HYLE_BUILD_BENCH` | `OFF` | `ON`/`OFF` | 只有想跑微基准才开（拉 nanobench）。开了才解锁 B 类门 |
 | `HYLE_WERROR` | `OFF` | `ON`/`OFF` | CI 用 ON；本地开发 OFF |
 | `HYLE_SANITIZER` | `off` | `off`/`asan`/`tsan`/`ubsan` | 查内存/数据竞争/UB 时开（配 Debug/RelWithDebInfo）。**严格校验**：非法值直接 `FATAL_ERROR`（不静默降级为 off）；认编译器原生别名 `address`→asan、`thread`→tsan、`undefined`→ubsan、`none`→off。**MSVC 只支持 asan**（tsan/ubsan 在 MSVC 会 `FATAL_ERROR`，需 GCC/Clang，如 WSL） |
+| `HYLE_DEPS_DIR` | `<hyle-build>/_deps` | path | FetchContent 下载/构建缓存；需要跨多个 build tree 复用时显式指向共享 cache，不能放进源码树 |
+| `HYLE_SIMD_EXACT_TARGET` | 空（runtime fat） | SCALAR/SSE4/AVX2/AVX512/NEON/SVE/RVV | 构建整库 exact ISA；普通分发不要改，见 §2 |
+| `HYLE_TRACE` | `OFF` | `ON`/`OFF` | 编译期 instrumentation；ON 还需 `HYLE_TRACY_DIR` |
+| `HYLE_IO_HTTP2` | `ON` | `ON`/`OFF` | 仅在选中 io 时取得 nghttp2；OFF 保留 unavailable stub C ABI |
+| `HYLE_COMPUTE_GGML` / `HYLE_COMPUTE_VULKAN` | `ON` | `ON`/`OFF` | 仅在选中 compute 时取得对应供应商；CUDA 当前仅在 compute 被选时自动探测 |
 
 #### 测试专用接口（`HYLE_TESTING` 门控——集成方零残留）
 
@@ -83,23 +96,27 @@ HYLE 的构建开关分**两个范畴**，别混（速查：**A 类产品参数 
 
 **集成方最小命令**（静态链、不编测试）：
 ```bash
-cmake -S hyle -B build -DCMAKE_BUILD_TYPE=Release -DHYLE_STATIC=ON -DHYLE_BUILD_TESTS=OFF
+cmake -S hyle -B build -DCMAKE_BUILD_TYPE=Release -DHYLE_COMPONENTS="mem;container" \
+  -DHYLE_STATIC=ON -DHYLE_BUILD_TESTS=OFF
 cmake --build build
 ```
 
-#### 1.2.2 CMake preset（共 2 个，都是 bench 预设包）
+#### 1.2.2 开发用 CMake preset
 
-`CMakePresets.json` 只有 2 个 preset，**都属 B 类**（开发期跑基准用，不是产品参数）：
+`CMakePresets.json` 当前提供日常三平台入口与 benchmark 入口；它们是仓库维护便利，不是
+source embed/install consumer 必须继承的产品合同：
 
 | preset | 作用 |
 |---|---|
+| `win` | Windows MSVC + Ninja Release；需要先进入 VS developer environment |
+| `wsl` | Linux/WSL GCC14 + Ninja Release；重压/benchmark 使用 native ext4 checkout |
+| `wsl-tsan` | 继承 wsl，独立 build tree 启用 ThreadSanitizer |
 | `bench` | `HYLE_BUILD_BENCH=ON` + Release，独立 `build-bench` cache；先有 `HYLE_BENCH_VENDOR_DIR` 中固定版 Highway/xsimd |
 | `bench-all-sota` | 继承 `bench`，再把全部 10 个 `HYLE_BENCH_*` gate 一次设 ON（先 fetch SIMD vendors，clone 类再跑 `setup-bench-libs.sh`） |
 
 ```bash
-# Windows/macOS（vendor 默认目录）
-scripts/fetch-bench-vendors.sh
-scripts/setup-bench-libs.sh
+# Windows（PowerShell；其他 clone 型 rival 按 scripts/README 准备）
+scripts/fetch-bench-vendors.ps1
 cmake --preset bench-all-sota && cmake --build --preset bench-all-sota
 
 # Linux/WSL（vendor 在 ext4；generic preset 不替你选择 GCC14）
@@ -116,7 +133,9 @@ C++23。GCC 14+ / Clang 18+ / MSVC 19.43+（VS 17.13+）。CMake 3.25+。低于�
 
 ### 1.4 把 HYLE 编成什么库（动态 vs 静态）+ 怎么发布
 
-HYLE 默认编成**共享库**（`.so`/`.dll`，每模块一个 `hyle_<mod>`）；`-DHYLE_STATIC=ON` 编成**静态库**（`.a`/`.lib`）。两种产物都落在 `<build>/bin/`（运行时库、导入库、静态档统一在那）。怎么选：
+HYLE 默认编成**共享库**（`.so`/`.dll`，每个已选模块一个 `hyle_<mod>`）；
+`-DHYLE_STATIC=ON` 编成**静态库**（`.a`/`.lib`）。HYLE 作为顶层工程时产物集中在
+`<build>/bin/`；作为 subproject 时尊重父工程布局。怎么选：
 
 | 你的场景 | 选 | 命令 | 为什么 |
 |---|---|---|---|
