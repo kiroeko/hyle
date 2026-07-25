@@ -11,7 +11,7 @@
 |---|---|---|
 | **StringBuf / string 收口表** | ✅ **2026-07-19 三平台** | Win / WSL / M4；lifecycle 落后已诚实登记 |
 | **path** | ✅ 双平台 n=15 | Win+Lin；算法基线 + filesystem 分离 |
-| **SwissTable map** | ⚠️ **2026-07 快照**（多 Win/WSL） | 总账有 ns 行；**非**本轮 mem 式三平台 sign 全刷 |
+| **FlatHashMap / FlatHashSet** | ✅ Windows+WSL n=15；⏳ M4 | 同合同 Abseil；WSL set miss 是已登记小缺口 |
 | **hash / mix64 / Hash&lt;T&gt;** | ⚠️ 历史 + 红队公平性更正 | ⏳ 待三平台 `bench-stat -n15` 重写表 |
 | **SmallVector / CArray** | ⚠️ 主 Win + 部分补测 | owning vector 形状待本轮统一三平台刷新 |
 | **ConcurrentVector** | ✅ Windows+WSL n=15；⏳ M4 | append/range iteration 同合同 SOTA；WSL `operator[]` 是已知缺口 |
@@ -26,13 +26,46 @@
 | **mix64 / Hash&lt;T&gt; 小 POD** | wyhash / abseil 形 | ✅ 赢或 SOTA 同款（整数 / 16B POD） |
 | **hash_bytes ≤16B** | XXH3-small / wyhash | ➖ **inline mix**（不同算法）；非「输 XXH3 wrapper」 |
 | **hash_bytes 中长串** | 裸 XXH3 / wyhash | ➖ 默认出线核有 seam；&gt;128B 选择 wyhash |
-| **FlatHashMap** | absl::flat_hash_map / Folly F14 | ⚠️ 算法形状同档；迭代/API 与三平台强 peer 正在严格复审 |
+| **FlatHashMap** | absl::flat_hash_map / Folly F14 | ✅ Windows/WSL 五项均胜 Abseil；⏳ M4 |
+| **FlatHashSet** | absl::flat_hash_set / Folly F14 | ✅ 真 set slot/API；Win 四项胜；WSL hit 平、miss 0.94x、insert/iterate 胜；⏳ M4 |
 | **SmallVector** | absl::InlinedVector | ✅ 小 N churn **赢** 同款 SOTA |
 | **CArray** | std::vector | ✅ growth 赢（mimalloc 质量）；read 平 |
 | **string_ref 搜索** | string_view / libc | ➖ 自研 SIMD 项平；子串/字符集 **转发 std**（刻意） |
 | **StringBuf** | map+mutex / Absl 分片 peer | ⚠️ **Win 多平**；WSL/M4 lifecycle **输**；growth 赢；8t 距 Absl ~5% |
 | **path 词法** | string_view 扫 / filesystem | ✅ 平算法基线；**碾** filesystem（零分配结构差） |
 | **ConcurrentVector** | oneTBB `concurrent_vector` | ✅ Win/WSL：append、range iteration、并发 prefix 读同档或赢；⚠️ WSL `operator[]` 顺扫约 0.51x |
+
+### FlatHashMap / FlatHashSet：真实 typed 形状（Windows/WSL Release，n=15）
+
+对手是本地 Abseil flat hash，不是较弱的 `std::unordered_*`。key 为 100k 个固定随机
+`uint64_t`；hit/miss/iteration 使用预填表，insert 使用 fresh table，map erase 包含建表
+与删除。HYLE 与 Abseil 分别使用各自默认 hash，因此结果代表用户默认形状，不是强行
+共用 hasher 的探测器微测试。
+
+Windows x64 / MSVC 19.50：
+
+| 操作 | HYLE map | Abseil map | HYLE set | Abseil set | n=15 判定 |
+|---|---:|---:|---:|---:|---|
+| hit | **2.446 ns** | 3.084 ns | **1.891 ns** | 3.136 ns | HYLE 1.26x / 1.66x；均 15/15 |
+| miss | **4.568 ns** | 4.871 ns | **4.419 ns** | 5.951 ns | HYLE 1.07x / 1.35x；均 15/15 |
+| fresh insert | **11.195 ns** | 24.790 ns | **10.159 ns** | 19.475 ns | HYLE 2.21x / 1.92x；均 15/15 |
+| iterate | **0.976 ns** | 1.987 ns | **1.004 ns** | 1.916 ns | HYLE 2.04x / 1.91x；均 15/15 |
+| build+erase | **18.817 ns** | 34.729 ns | — | — | HYLE 1.85x；15/15 |
+
+WSL / GCC 14.2：
+
+| 操作 | HYLE map | Abseil map | HYLE set | Abseil set | n=15 判定 |
+|---|---:|---:|---:|---:|---|
+| hit | **1.804 ns** | 2.129 ns | **1.454 ns** | 1.461 ns | map HYLE 1.18x；set 统计同档（8/15） |
+| miss | **3.986 ns** | 4.051 ns | 4.327 ns | **4.059 ns** | map HYLE 1.02x；set **Abseil 1.06x（14/15）** |
+| fresh insert | **10.946 ns** | 15.875 ns | **10.084 ns** | 11.396 ns | HYLE 1.45x / 1.13x；均 15/15 |
+| iterate | **0.771 ns** | 1.835 ns | **0.834 ns** | 1.835 ns | HYLE 2.38x / 2.20x；均 15/15 |
+| build+erase | **17.964 ns** | 24.479 ns | — | — | HYLE 1.36x；15/15 |
+
+迭代器不是为 benchmark 另设的旁路：map/set 都提供标准 forward range，内部持有当前
+control group 的 occupied mask，用户的正常 range-for 与测试走同一实现。set 共享 map
+的 Swiss probe/resize 核心，但 empty mapped policy 不占 slot bytes。Windows 全胜、WSL
+map 全胜并不能抹掉 WSL set miss 的约 6% 差距；M4 未刷，所以这里不写“三平台 SOTA”。
 
 ### ConcurrentVector：先校正合同，再谈速度（Windows/WSL Release，n=15）
 
@@ -87,8 +120,9 @@ WSL 的逐次索引差距与 GCC 对运行时 segment 定位的代码生成有�
 4. **string_ref 短输入 split/rfind/count**  
    4KB 点值可有 **0.83–0.96x**（DLL/dispatcher）；长输入摊平。
 
-5. **hash / SwissTable 缺本轮三平台统一 sign 刷新**  
-   方向（赢 absl）多次坐实；绝对 ns 与跨平台翻转未按 mem 纪律重跑。
+5. **FlatHashSet WSL miss 与 M4 证书**
+   WSL miss 约 **0.94x Abseil**，hit 同档；map/set 的 M4 n=15 尚未刷新。这个差距没有
+   通过增加常态 metadata 或特化 benchmark key 来隐藏。
 
 6. **队列类**  
    能力已收口；性能叙事分散在 queue_sota_bench / sched——需要时单开，勿与 Swiss 表混谈。
@@ -99,6 +133,7 @@ WSL 的逐次索引差距与 GCC 对运行时 segment 定位的代码生成有�
 整数 / 小 POD key 哈希     → Hash<T> / mix64（热路径）
 长字节哈希                 → hash_bytes（>128B best-of wyhash）
 通用 hash map              → FlatHashMap
+高频 membership / 去重     → FlatHashSet
 栈上小数组                 → SmallVector
 堆动态数组                 → CArray（默认 SystemAllocator/mi）
 只读字符串视图 + 搜索      → string_ref（子串族借 std）
@@ -118,8 +153,9 @@ MPMC / stealing 队列       → bounded / sharded / WS deque（见 queue 文档
 # hash
 scripts/bench-stat.py <build>/bin/hyle_hash_bench -n 15 ...
 
-# Swiss vs absl（需 -DHYLE_BENCH_ABSL）
-scripts/bench-stat.py <build>/bin/hyle_swiss_vs_absl_bench -n 15 ...
+# map/set vs absl（需 -DHYLE_BENCH_ABSL；分别复跑）
+HYLE_ABSL_BENCH_FILTER=map scripts/bench-stat.py <build>/bin/hyle_absl_bench -n 15 ...
+HYLE_ABSL_BENCH_FILTER=set scripts/bench-stat.py <build>/bin/hyle_absl_bench -n 15 ...
 
 # vec
 scripts/bench-stat.py <build>/bin/hyle_container_misc_bench -n 15 ...

@@ -1,8 +1,8 @@
 #define _CRT_SECURE_NO_WARNINGS 1
 
-// SwissTable vs absl::flat_hash_map -- the SOTA parity check (not just "beat the
-// known-slow std::unordered_map"). abseil is the design HYLE's SwissTable is
-// modeled on, so this is the honest "did we actually match the reference?" bench.
+// FlatHashMap/FlatHashSet vs their Abseil peers -- the SOTA parity check (not
+// just "beat the known-slow std::unordered_* family"). Abseil is the design
+// HYLE's Swiss core is modeled on, so this is an honest reference comparison.
 // Built only when -DHYLE_BENCH_ABSL=ON locates the cloned abseil. Whatever the
 // numbers say, they print -- losing to absl is a real signal, not hidden.
 

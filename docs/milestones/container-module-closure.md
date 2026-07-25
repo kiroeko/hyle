@@ -8,8 +8,10 @@
 > `ConcurrentVector` 已按 oneTBB 实际合同改为并行 writer；Windows/WSL n=15 的
 > 单 writer、range iteration 与读旧 prefix+写 tail 均领先，8 writer 同档；WSL 逐次
 > `operator[]` 顺扫仍慢约 2x，但正常 range-for 已快 1.39x。GCC 14 TSan（禁用 WSL
-> ASLR 后）182 个 typed 测试、纯 C 测试及并发组重复 30 轮通过。
-> 真正的 typed `FlatHashSet`、map 迭代/便利接口及跨平台强 peer 性能证据仍在复审，
+> ASLR 后）186 个 typed 测试、纯 C 测试及并发组重复 30 轮通过。
+> 真正的 typed `FlatHashSet` 与 map/set 标准 forward iteration 已完成；Windows 的
+> map/set 五/四项均领先 Abseil，WSL map 五项领先，set hit 同档、miss 仍慢约 6%、
+> insert/iterate 领先。map 便利接口、SmallVector 及三平台强 peer 证据仍在复审，
 > 因此 container **尚未获得 2026-07-25 严格证书**。
 > 复审也删除了无生产消费者、属于 quick-open 应用策略的 fuzzy scorer/top-K 及其 C
 > 导出；旧 container-06c 仍作为历史任务记录保留。
@@ -29,7 +31,9 @@ Linux x64 和 macOS arm64 的最终验证命令与结果记录在本文末尾。
 - SmallVector：修正 allocator-aware move assignment、inline/heap 别名增长和
   overflow。
 - SwissTable：const 查询/遍历、reserve/clear、alias insert、OOM 状态保持、move
-  元数据完整；C ABI map 也使用 flat ctrl+slot Swiss probing，不是链式 facade。
+  元数据完整；新增真正无 mapped-slot 税的 FlatHashSet，以及 key 只读/value 可写的
+  map iterator 和只读 set iterator；C ABI map 也使用 flat ctrl+slot Swiss probing，
+  不是链式 facade。
 - StringRef/StringAlgo/Path：null/range/overflow、严格 UTF-8、hex validation、
   O(N log K) top-K、路径边界；ASCII lower/upper 增加
   scalar/SSE4/AVX2/AVX512/NEON 动态 kernel。
@@ -72,6 +76,9 @@ Linux x64 和 macOS arm64 的最终验证命令与结果记录在本文末尾。
     `mimalloc_static` 并启用 vendor 的 `MI_TSAN` page-flag 布局，188 项全绿。
 
 ## C ABI
+
+> 本节是 2026-07-19 历史验收，不代表未发布 ABI 已冻结。当前 106 个动态声明正在按
+> 真实 C/FFI 场景重审；typed set 不会在形状未定时机械复制一套过时导出。
 
 - 头：`include/hyle/c/container.h`，实现：`src/container/c_container.cc`。
 - 109/109 动态符号可从 Windows DLL 导出；另有 15 个 header-inline 便利入口。

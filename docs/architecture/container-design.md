@@ -22,7 +22,8 @@ C ABI 类型擦除层
           v                       v
 C++ typed / source surface      compiled cold cores
   PodVector<T> / SmallVector    hash_bytes, carray grow,
-  FlatHashMap<K,V>              Swiss resize/free,
+  FlatHashMap<K,V> /            Swiss resize/free,
+  FlatHashSet<K>
   string_ref / StringBuf        StringBuf/path/string algorithms
   typed queues                  runtime ISA dispatcher
           |                       |
@@ -45,6 +46,7 @@ Tier 0 dependencies: mem allocator + platform CPU discovery
 | 能力 | C++ 源码面 | 稳定 C ABI | 关键合同 |
 |---|---|---|---|
 | flat map | `FlatHashMap<K,V>`（实现名 `SwissTable`） | erased POD hash map | C++ 支持 non-trivial ownership 与异构查找；C 面按字节存 POD；ctrl+连续 slots；SIMD group probe |
+| flat set | `FlatHashSet<K>` | 暂无独立 set 导出 | 真 set API/slot；canonical-key find；只读 key 迭代；C ABI 待 typed 形状稳定后统一重审，不用 erased map 冒充 |
 | dynamic array | `CArray<T>` | erased POD vector | header-before-data；allocator/alignment 随 allocation 记录 |
 | inline array | `SmallVector<T,N>` | 不单独导出 | 通用 owning value semantics；POD 保留 memcpy relocation；N 是编译期类型，C 动态需求由 erased vector 覆盖 |
 | string view | `StringView`（实现名 `string_ref`） | `hyle_container_string_view` | ptr+u32 length+NUL bit；借用、不拥有 |
@@ -75,6 +77,9 @@ erase 在安全时把 tombstone 恢复成 empty，否则保留 deleted。resize/
 type-erased cold core；typed find/insert/erase 保持 header-inline，避免廉价 key
 每 probe 一次函数指针。C map 使用同一 ctrl/group/resize 机制，但 slot layout
 运行时计算为 `[stored hash][aligned key][aligned value]`；不是每元素分配的链表。
+`FlatHashSet` 共享这一 probing/resize core，但 empty mapped policy 不占 slot 空间；
+map/set iterator 都用 control-group full mask 跳转 occupied lane。map entry 的 key
+只读、value 可写，set iterator 只读 key，因此不会经 iterator 破坏 hash 不变量。
 
 边界原则：
 
@@ -150,7 +155,9 @@ container 对外依赖。hex encode/decode 当前是无查表分支的标量/编
 
 ## C ABI 边界
 
-`include/hyle/c/container.h` 遵守统一 C ABI 合同：
+`include/hyle/c/container.h` 当前遵守统一 C ABI 机械合同，但它仍包含早期按实现逐项
+导出的宽接口；HYLE 尚未发布、C ABI 尚未冻结。typed 容器能力稳定后将从真实 FFI
+场景重新审查保留、合并或删除哪些入口，而不是为了兼容继续扩张。当前原则是：
 
 - options 带 `struct_size`；allocator 按值捕获但 state 生命周期由调用方保证。
 - 对象只经 create/destroy；不导出 C++ 类布局、STL、模板或异常。

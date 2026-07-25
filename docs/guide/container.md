@@ -16,6 +16,7 @@ container 提供性能敏感的基础数据结构、借用字符串/路径算法
 | trivially-copyable 数据、运行时 allocator、C-friendly layout | `PodVector<T>`（实现名 `CArray<T>`） | 只做字节 relocation；不运行元素 ctor/dtor |
 | 普通长寿命非平凡动态序列 | `std::vector` + 可选 mem PMR adapter | HYLE 不造第二个通用 vector |
 | 高频 key→value lookup | `FlatHashMap<K,V>`（实现名 `SwissTable`） | flat slot、expected O(1)、引用在 grow/erase 后失效 |
+| 高频 membership / 去重 | `FlatHashSet<K>` | 真正 set slot，不为 empty mapped value 付空间；expected O(1) |
 | 非拥有字符串切片并使用 HYLE 搜索/路径算法 | `StringView`（实现名 `string_ref`） | ptr + u32 byte length + NUL bit；底层字节必须长寿 |
 | 内容去重并取得稳定字符串地址 | `StringInterner`（实现名 `StringBuf`） | 分片线程安全；永久视图或 generation ID 两种生命周期 |
 | 严格容量、多生产者多消费者 | `BoundedQueue<T>` | bounded MPMC；满/空是正常控制流，不分配 |
@@ -52,7 +53,7 @@ OOM 当 fatal。若序列经常远超 N，inline bytes 只会放大每个 owner�
 C ABI 数据和自定义 HYLE allocator。它不适合 `std::string`、智能指针或自引用对象；这些
 类型用 `SmallVector` 或 `std::vector`。任何增长都会使旧 data/element pointer 失效。
 
-## FlatHashMap
+## FlatHashMap 与 FlatHashSet
 
 ```cpp
 #include "hyle/container/swiss_table.h"
@@ -62,6 +63,14 @@ hyle::container::FlatHashMap<std::string, std::unique_ptr<Node>,
     nodes;
 nodes.insert("root", std::make_unique<Node>());
 if (auto* node = nodes.find(std::string_view("root"))) use(**node);
+
+hyle::container::FlatHashSet<std::string, TransparentStringHash,
+                             TransparentStringEq>
+    enabled;
+enabled.insert("avx2");
+if (const std::string* name = enabled.find(std::string_view("avx2"))) {
+  use_canonical_name(*name);
+}
 ```
 
 map 支持 owning non-trivial key/value、move-only value 和 compatible Hash/Eq 的异构
@@ -71,8 +80,15 @@ find/contains/erase。默认 `insert` 是 insert-or-assign：返回 true 表示�
 destroy 必须 noexcept，保证失败不留下半迁移 table。
 
 slot 是 flat storage；grow、rehash、erase 都会使相关 pointer/reference 失效。不要在
-`for_each` 回调中修改同一个 map。当前 typed 面只提供 map，没有把 map<key,empty> 冒充
-空间最优 set；需要大量 set 的代码在 FlatHashSet 完成前使用成熟 flat set。
+`for_each` 回调中修改同一个 map/set。map 可 range-for；每个 entry 用只读
+`entry.key()` 与可写 `entry.value()`，避免用户破坏 key 的 probe 位置。set 的 iterator
+只暴露 `const K&`。两者都是标准 forward iterator，并按 control group 批量跳过空槽，
+不是每个 capacity slot 都走完整查找。
+
+`FlatHashSet` 复用相同 ctrl/probe/resize 核心，但提供真正 set 接口；编译期约束保证
+每个 occupied slot 的 `value_type` 与 `K` 等大，不把 `map<K, Empty>` 的空间浪费暴露给
+用户。`find` 返回容器内 canonical key，适合用 `string_view` 查到 owning string。
+`try_insert` 区分 inserted、already-present 与 OOM；普通 `insert` 把 OOM 视为 fatal。
 
 ## 字符串、驻留与路径
 
@@ -117,8 +133,8 @@ range，因为它对 reservation count 取快照，并不额外发布仍在构�
 ## 常见坑
 
 - allocator 必须活到容器销毁；storage 必须由创建它的 allocator 释放。
-- `StringView`、map find 返回值和 vector data 都是借用地址，分别受来源/grow/erase 失效。
-- flat map 平均 O(1) 不等于 adversarial hash 安全；业务 Hash 必须提供足够熵且与 Eq 一致。
+- `StringView`、flat map/set find 返回值和 vector data 都是借用地址，分别受来源/grow/erase 失效。
+- flat map/set 平均 O(1) 不等于 adversarial hash 安全；业务 Hash 必须提供足够熵且与 Eq 一致。
 - `ShardedQueue` 不保证 global FIFO；work-stealing 两种队列也不提供 MPMC 的任意角色语义。
 - `ConcurrentVector::size()` 不是 live publication fence；并发写时读取新 tail 需要外部
   完成同步，或让 `T` 自己承载 atomic/future 状态。
