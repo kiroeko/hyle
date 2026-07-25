@@ -1,59 +1,130 @@
 {
-  "version": 3,
-  "cmakeMinimumRequired": { "major": 3, "minor": 21, "patch": 0 },
+  "version": 6,
+  "cmakeMinimumRequired": { "major": 3, "minor": 25, "patch": 0 },
   "configurePresets": [
     {
-      "name": "win",
-      "displayName": "Windows MSVC (Ninja, Release)",
-      "description": "Day-to-day Windows dev build. Run inside a VsDevCmd x64 shell (cl/ml64/INCLUDE injected). No machine-specific SDK path is embedded: pass -DHYLE_IO_TLS=ON -DOPENSSL_ROOT_DIR=<prefix> when TLS is required, or select OFF for a deterministic TLS-free build.",
-      "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build",
-      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" },
+      "name": "hyle-dev",
+      "hidden": true,
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
-        "HYLE_BUILD_BENCH": "OFF"
+        "HYLE_BUILD_TESTS": "ON",
+        "HYLE_BUILD_BENCH": "OFF",
+        "HYLE_IO_TLS": "OFF",
+        "HYLE_COMPUTE_CUDA": "OFF"
       }
     },
     {
-      "name": "wsl",
-      "displayName": "Linux/WSL GCC14 (Ninja, Release)",
-      "description": "Day-to-day Linux dev build. GCC 14 (the CMake toolchain gate rejects the distro-default gcc-13). TLS is found zero-config from the system libssl-dev. NOTE the 9p rule: run heavy IO / stress / bench from a native-ext4 clone (e.g. /root/hyle), never from /mnt/c.",
+      "name": "windows",
+      "displayName": "Windows VS 2022 CPU development",
+      "description": "Deterministic Visual Studio 2022 Release build. It needs MSVC 19.43+; use windows-ninja through scripts/hyle-windows.ps1 when a newer compiler is installed outside the VS 2022 generator.",
+      "inherits": "hyle-dev",
+      "generator": "Visual Studio 17 2022",
+      "binaryDir": "${sourceDir}/build-windows",
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" }
+    },
+    {
+      "name": "windows-ninja",
+      "displayName": "Windows selected MSVC + Ninja",
+      "description": "Ninja build using the MSVC environment selected by scripts/hyle-windows.ps1 (or an already initialized developer shell).",
+      "inherits": "hyle-dev",
       "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build-windows-ninja",
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" }
+    },
+    {
+      "name": "linux",
+      "displayName": "Linux CPU development",
+      "description": "Generator- and compiler-name-independent Release build. Select any supported GCC 14+ or Clang 18+ through CC/CXX or normal CMake arguments.",
+      "inherits": "hyle-dev",
+      "binaryDir": "${sourceDir}/build-linux",
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Linux" }
+    },
+    {
+      "name": "macos",
+      "displayName": "macOS CPU development",
+      "description": "Generator-independent Release build using the selected AppleClang/Clang toolchain; Ninja is optional.",
+      "inherits": "hyle-dev",
+      "binaryDir": "${sourceDir}/build-macos",
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Darwin" }
+    },
+    {
+      "name": "win",
+      "displayName": "Windows Ninja development (compatibility alias)",
+      "inherits": "windows-ninja"
+    },
+    {
+      "name": "wsl",
+      "displayName": "Linux/WSL GCC 14 development",
+      "description": "Convenience preset for machines that expose gcc-14/g++-14 by those names. Use the generic linux preset with CC/CXX for other supported toolchains.",
+      "inherits": "linux",
       "binaryDir": "${sourceDir}/build-wsl",
-      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Linux" },
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
         "CMAKE_C_COMPILER": "gcc-14",
-        "CMAKE_CXX_COMPILER": "g++-14",
-        "HYLE_BUILD_BENCH": "OFF"
+        "CMAKE_CXX_COMPILER": "g++-14"
       }
     },
     {
       "name": "wsl-tsan",
-      "displayName": "Linux/WSL GCC14 + ThreadSanitizer",
-      "description": "TSan build for lock-free / concurrency work (MANDATORY before landing such changes). Run the test exes under `setarch -R` to disable ASLR for stable TSan. Separate binary dir so it never shares a cache with the plain Release build.",
+      "displayName": "Linux/WSL GCC 14 + ThreadSanitizer",
+      "description": "Separate TSan build for lock-free/concurrency changes. Run executables under setarch -R when the host TSan runtime requires ASLR disabled.",
       "inherits": "wsl",
       "binaryDir": "${sourceDir}/build-wsl-tsan",
       "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
         "HYLE_SANITIZER": "tsan"
       }
     },
     {
-      "name": "bench",
-      "displayName": "benchmarks (pinned SIMD vendors)",
-      "description": "Release + microbenchmarks in an isolated build-bench cache. SIMD benches require the pinned external Highway/xsimd checkouts selected by HYLE_BENCH_VENDOR_DIR; run scripts/fetch-bench-vendors.{sh,ps1} first. On Linux/WSL, invoke this generic preset with CC=gcc-14 CXX=g++-14.",
-      "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build-bench",
+      "name": "windows-cuda",
+      "displayName": "Windows local CUDA development",
+      "description": "Explicit local-GPU build. native is correct here because this is not an installable SDK; packages must name their CUDA architectures.",
+      "inherits": "windows-ninja",
+      "binaryDir": "${sourceDir}/build-windows-cuda",
+      "cacheVariables": {
+        "HYLE_COMPUTE_CUDA": "ON",
+        "CMAKE_CUDA_ARCHITECTURES": "native"
+      }
+    },
+    {
+      "name": "package-cpu-shared",
+      "displayName": "Portable CPU SDK (shared)",
+      "description": "Deterministic all-component binary SDK input: tests/bench, TLS, and CUDA are explicitly OFF; ggml native tuning is disabled by HYLE_INSTALL.",
+      "binaryDir": "${sourceDir}/build-package-cpu-shared",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
+        "HYLE_COMPONENTS": "all",
+        "HYLE_BUILD_TESTS": "OFF",
+        "HYLE_BUILD_BENCH": "OFF",
+        "HYLE_INSTALL": "ON",
+        "HYLE_STATIC": "OFF",
+        "HYLE_IO_TLS": "OFF",
+        "HYLE_COMPUTE_CUDA": "OFF"
+      }
+    },
+    {
+      "name": "package-cpu-static",
+      "displayName": "Portable CPU SDK (static)",
+      "inherits": "package-cpu-shared",
+      "binaryDir": "${sourceDir}/build-package-cpu-static",
+      "cacheVariables": {
+        "HYLE_STATIC": "ON"
+      }
+    },
+    {
+      "name": "bench",
+      "displayName": "Benchmarks (pinned SIMD vendors)",
+      "description": "Generator-independent isolated benchmark build. Fetch the pinned Highway/xsimd opponents first; enable CUDA/TLS explicitly only for a benchmark that needs them.",
+      "inherits": "hyle-dev",
+      "binaryDir": "${sourceDir}/build-bench",
+      "cacheVariables": {
         "HYLE_BUILD_TESTS": "OFF",
         "HYLE_BUILD_BENCH": "ON"
       }
     },
     {
       "name": "bench-all-sota",
-      "displayName": "benchmarks + ALL gated SOTA rivals (DEV-ONLY, not a product build)",
-      "description": "DEV/BENCH-ONLY one-shot: flips every -DHYLE_BENCH_* gate ON so each bench races its real SOTA rival (not just std). These HYLE_BENCH_* gates are a SEPARATE category from the product build params (HYLE_STATIC/SANITIZER/WERROR/ISA tier) -- they ONLY add comparison rows to the benchmarks and NEVER affect the shipped library. Fetch pinned Highway/xsimd first with scripts/fetch-bench-vendors.{sh,ps1}; clone the other gated rivals (absl/tbb/marl/moodycamel/rigtorp/boost) with scripts/setup-bench-libs.sh (boost::intrusive needs the boost submodule checked out). simdutf remains vendored. Vectorized exp/log/tanh + utf8 are already unconditional in the product build (no flag).",
+      "displayName": "Benchmarks + all gated SOTA rivals",
+      "description": "Development-only comparison build. The HYLE_BENCH_* gates add opponent rows and never change the shipped library.",
       "inherits": "bench",
       "cacheVariables": {
         "HYLE_BENCH_ABSL": "ON",
@@ -66,13 +137,52 @@
         "HYLE_BENCH_RIGTORP": "ON",
         "HYLE_BENCH_BOOST": "ON"
       }
+    },
+    {
+      "name": "linux-aarch64-cross",
+      "displayName": "Linux AArch64 cross build",
+      "description": "Reference whole-project cross configuration. The toolchain discovers aarch64-linux-gnu GCC; override HYLE_CROSS_* cache variables for a nonstandard prefix/version.",
+      "binaryDir": "${sourceDir}/build-linux-aarch64-cross",
+      "toolchainFile": "${sourceDir}/cmake/toolchains/linux-aarch64-gcc.cmake",
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Linux" },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "HYLE_COMPONENTS": "core",
+        "HYLE_BUILD_TESTS": "OFF",
+        "HYLE_BUILD_BENCH": "OFF",
+        "HYLE_IO_TLS": "OFF",
+        "HYLE_COMPUTE_CUDA": "OFF"
+      }
     }
   ],
   "buildPresets": [
-    { "name": "win", "configurePreset": "win" },
-    { "name": "wsl", "configurePreset": "wsl" },
-    { "name": "wsl-tsan", "configurePreset": "wsl-tsan" },
-    { "name": "bench", "configurePreset": "bench" },
-    { "name": "bench-all-sota", "configurePreset": "bench-all-sota" }
+    { "name": "windows", "configurePreset": "windows", "configuration": "Release" },
+    { "name": "windows-ninja", "configurePreset": "windows-ninja", "configuration": "Release" },
+    { "name": "linux", "configurePreset": "linux", "configuration": "Release" },
+    { "name": "macos", "configurePreset": "macos", "configuration": "Release" },
+    { "name": "win", "configurePreset": "win", "configuration": "Release" },
+    { "name": "wsl", "configurePreset": "wsl", "configuration": "Release" },
+    { "name": "wsl-tsan", "configurePreset": "wsl-tsan", "configuration": "RelWithDebInfo" },
+    { "name": "windows-cuda", "configurePreset": "windows-cuda", "configuration": "Release" },
+    { "name": "package-cpu-shared", "configurePreset": "package-cpu-shared", "configuration": "Release" },
+    { "name": "package-cpu-static", "configurePreset": "package-cpu-static", "configuration": "Release" },
+    { "name": "bench", "configurePreset": "bench", "configuration": "Release" },
+    { "name": "bench-all-sota", "configurePreset": "bench-all-sota", "configuration": "Release" },
+    { "name": "linux-aarch64-cross", "configurePreset": "linux-aarch64-cross", "configuration": "Release" }
+  ],
+  "testPresets": [
+    { "name": "windows", "configurePreset": "windows", "configuration": "Release", "output": { "outputOnFailure": true }, "execution": { "noTestsAction": "error" } },
+    { "name": "windows-ninja", "configurePreset": "windows-ninja", "configuration": "Release", "output": { "outputOnFailure": true }, "execution": { "noTestsAction": "error" } },
+    { "name": "linux", "configurePreset": "linux", "configuration": "Release", "output": { "outputOnFailure": true }, "execution": { "noTestsAction": "error" } },
+    { "name": "macos", "configurePreset": "macos", "configuration": "Release", "output": { "outputOnFailure": true }, "execution": { "noTestsAction": "error" } },
+    { "name": "win", "configurePreset": "win", "configuration": "Release", "output": { "outputOnFailure": true }, "execution": { "noTestsAction": "error" } },
+    { "name": "wsl", "configurePreset": "wsl", "configuration": "Release", "output": { "outputOnFailure": true }, "execution": { "noTestsAction": "error" } },
+    { "name": "wsl-tsan", "configurePreset": "wsl-tsan", "configuration": "RelWithDebInfo", "output": { "outputOnFailure": true }, "execution": { "noTestsAction": "error" } }
+  ],
+  "workflowPresets": [
+    { "name": "windows-check", "steps": [ { "type": "configure", "name": "windows" }, { "type": "build", "name": "windows" }, { "type": "test", "name": "windows" } ] },
+    { "name": "windows-ninja-check", "steps": [ { "type": "configure", "name": "windows-ninja" }, { "type": "build", "name": "windows-ninja" }, { "type": "test", "name": "windows-ninja" } ] },
+    { "name": "linux-check", "steps": [ { "type": "configure", "name": "linux" }, { "type": "build", "name": "linux" }, { "type": "test", "name": "linux" } ] },
+    { "name": "macos-check", "steps": [ { "type": "configure", "name": "macos" }, { "type": "build", "name": "macos" }, { "type": "test", "name": "macos" } ] }
   ]
 }

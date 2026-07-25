@@ -112,6 +112,17 @@ ggml 的 CPU ISA 是交付物契约：通用安装包默认关闭 `GGML_NATIVE` 
 CPU 上同时得到每台机器的 ggml 最优 ISA，需另做每 ISA backend + runtime score/load 的产品形状。
 cross compile 和三平台完整迁移矩阵的最终证书只见 build/package milestone。
 
+平台 preset 只组合开发入口，不重新定义产品：Linux/macOS 不锁 generator，Windows 明分 CMake
+可直接管理的 VS 2022 与“已选择 MSVC + Ninja”两条路径；后者由 `scripts/hyle-windows.ps1` 经
+vswhere 发现现有工具链并临时导入环境。CI 对 Windows/Linux/macOS 运行 core 验证面，并在每个平台
+从空目录制作 shared/static error SDK，再由 pure-C `find_package` consumer 真运行。重型 CUDA/
+compute 包不塞进每提交 smoke，仍属发布矩阵。
+
+`cmake/toolchains/linux-aarch64-gcc.cmake` 是整项目交叉编译的参考入口：compiler/sysroot 属工具链，
+host program 与 target library/header/package 搜索严格分开，`CMAKE_TRY_COMPILE_TARGET_TYPE` 设为
+`STATIC_LIBRARY`，配置过程不得执行 target binary。专用 SVE/RVV QEMU 脚本是 ISA 产品测试，不能
+替代这条标准 CMake target-graph 迁移证书。
+
 ## 维护规则
 
 - 新模块必须同时登记 component、直接依赖和 module target；三处不一致由配置测试拦截。

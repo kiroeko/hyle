@@ -4,6 +4,33 @@ Project automation: environment setup and reproducible builds. The goal is that 
 **fresh checkout on any machine** can build, test, and benchmark HYLE without
 depending on a hand-crafted directory layout.
 
+## `hyle-windows.ps1` — select an installed MSVC environment
+
+CMake may know the VS 2022 generator but not a newer installed Visual Studio generation.
+This wrapper asks `vswhere` for the latest installation with the x64 C++ workload, imports
+its transient `VsDevCmd` environment, then invokes the `windows-ninja` presets:
+
+```powershell
+scripts/hyle-windows.ps1 -Action Configure -Preset windows-ninja
+scripts/hyle-windows.ps1 -Action Build -Preset windows-ninja --parallel 2
+scripts/hyle-windows.ps1 -Action Test -Preset windows-ninja --output-on-failure
+scripts/hyle-windows.ps1 -Action Workflow -Preset windows-ninja-check
+```
+
+It installs nothing and does not persistently change the caller's environment. Machines with a
+supported VS 2022 can instead use the `windows` presets directly, without Ninja or a dev shell.
+
+## Build/package verification automation
+
+`.github/workflows/build-system.yml` runs the same core verification surface on Windows, Linux,
+and macOS, then calls `cmake/HyleCiPackageSmoke.cmake`. The smoke creates shared and static error
+SDKs in scratch directories and builds/runs the pure-C installed consumer against both. It stays
+small enough for every commit; complete io/compute/CUDA SDK matrices remain release checks.
+
+`cmake/toolchains/linux-aarch64-gcc.cmake` plus the `linux-aarch64-cross` preset provides the
+whole-project cross-build entry. It never runs a target executable during configure; the SVE/RVV
+QEMU scripts below remain ISA-specific product tests rather than substitutes for CMake migration.
+
 ## `fetch-bench-vendors.{sh,ps1}` — fetch pinned SIMD benchmark rivals
 
 Every `HYLE_BUILD_BENCH=ON` configuration needs external, exact-revision
@@ -113,10 +140,8 @@ cmake --build --preset bench-all-sota
 > SIMD ISA tier). They ONLY add comparison rows to the benchmarks — they never
 > affect the shipped library. The `bench-` prefix on the preset name says so.
 
-- **Vectorized `exp/log/tanh` is always-on in the product during the staged
-  migration**: its current Highway/xsimd cores remain in `third_party/` until
-  simd-20 ports them. The external checkouts above are benchmark-only reference
-  rows, never product includes. The HYLE math row remains runtime-gated by
+- **Vectorized `exp/log/tanh` is always-on in the product**. External Highway/xsimd
+  checkouts are benchmark-only reference rows, never product includes. The HYLE math row remains runtime-gated by
   `cpu_features().avx2`; older CPUs fall back to scalar libm.
 - **boost::intrusive** needs the boost `libs/intrusive` submodule checked out
   (modular-boost clones leave submodules empty); without it `-DHYLE_BENCH_BOOST`
@@ -147,8 +172,8 @@ cargo run --release --config \
 
 ## Reproducing the dual-platform workflow
 
-- **Windows (MSVC)**: build dir `build/` (Ninja). Needs a VS dev environment
-  (`vcvars64.bat`) on PATH/sourced first.
+- **Windows (MSVC)**: `windows` uses the VS 2022 generator; `windows-ninja` uses the
+  environment selected by `hyle-windows.ps1`. Their build trees are separate.
 - **Linux (GCC14, incl. ThreadSanitizer)**: separate build dir `build-wsl*/`,
   `CXX=g++-14 CC=gcc-14`. Lock-free code MUST pass TSan
   (`-DHYLE_SANITIZER=tsan -DCMAKE_BUILD_TYPE=RelWithDebInfo`, run under

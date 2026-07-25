@@ -119,9 +119,13 @@ source embed/install consumer 必须继承的产品合同：
 
 | preset | 作用 |
 |---|---|
-| `win` | Windows MSVC + Ninja Release；需要先进入 VS developer environment |
-| `wsl` | Linux/WSL GCC14 + Ninja Release；重压/benchmark 使用 native ext4 checkout |
+| `windows` | 确定的 VS 2022 generator；要求其中 MSVC 19.43+，不要求 Ninja |
+| `windows-ninja` / `win` | 使用已选择的 MSVC + Ninja；`scripts/hyle-windows.ps1` 用 vswhere 自动导入最新已安装环境 |
+| `linux` / `macos` | 不指定 generator；通过 CC/CXX 或 CMake 正常规则选择受支持工具链 |
+| `wsl` | `linux` 的 gcc-14/g++-14 便利形状；重压/benchmark 使用 native ext4 checkout |
 | `wsl-tsan` | 继承 wsl，独立 build tree 启用 ThreadSanitizer |
+| `package-cpu-shared/static` | all-component、TLS/CUDA OFF、install ON 的确定性 CPU SDK 输入 |
+| `linux-aarch64-cross` | 标准 toolchain-file 驱动的 whole-project AArch64 cross configure/build；不执行 target binary |
 | `bench` | 默认 all-components + `HYLE_BUILD_BENCH=ON` + Release，独立 `build-bench` cache；因包含 SIMD，先准备 `HYLE_BENCH_VENDOR_DIR` 中固定版 Highway/xsimd。自选非 SIMD 组件不需要它 |
 | `bench-all-sota` | 继承 `bench`，再把全部 10 个 `HYLE_BENCH_*` gate 一次设 ON（先 fetch SIMD vendors，clone 类再跑 `setup-bench-libs.sh`） |
 
@@ -136,7 +140,8 @@ CC=gcc-14 CXX=g++-14 cmake --preset bench-all-sota -DHYLE_BENCH_VENDOR_DIR="$HOM
 cmake --build --preset bench-all-sota
 ```
 
-> 集成方不需要任何 preset——它们纯为开发期跑基准服务。产品构建只用 §1.2 的 A 类 `-D` 参数。
+> 集成方不需要继承这些 preset；它们是维护者的开发、CI、交叉编译和制包入口。嵌入方仍只用
+> §1.2 的 A 类 `-D` 参数，安装包消费者只用 imported targets。
 
 ### 1.3 工具链要求
 

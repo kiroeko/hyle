@@ -352,14 +352,13 @@ endif()
 # skips the loader trampoline (one less indirection per call = faster, matches HYLE's
 # perf goal). kompute uses the same dynamic-dispatch idea (VULKAN_HPP_DEFAULT_DISPATCHER).
 #
-# THREE FetchContent DEPS, ALL PINNED TO vulkan-sdk-1.4.341.0 (matches the local runtime
+# THREE PINNED DEPS at vulkan-sdk-1.4.341.0 (matches the local runtime
 # loader 1.4.341 -- zero version skew), all Khronos/zeux source repos (NOT the LunarG SDK
-# packaging layer), landing in HYLE_DEPS_DIR (same policy as ggml/googletest):
+# packaging layer), landing in HYLE_DEPS_DIR when their owning configuration needs them:
 #   1. Vulkan-Headers (Khronos)  -- pure headers, version OWNED by HYLE not the machine.
 #   2. volk (zeux)               -- meta-loader; runtime dlopen, no .lib/SDK needed.
 #   3. glslang (Khronos)         -- GLSL->SPIR-V: ENABLE_OPT=OFF (no SPIRV-Tools dep),
-#      tests/install/HLSL off, ENABLE_GLSLANG_BINARIES=ON to also build the `glslang`
-#      validator tool (the "pre-compile tool folder" for HYLE devs + clients).
+#      tests/install/HLSL off; fetched only for HYLE tests/bench shader generation.
 # The slate-bundled Vulkan (headers v270, stale) is NOT used.
 option(HYLE_COMPUTE_VULKAN "compute-06: self-authored Vulkan compute SPIR-V kernels" ON)
 set(HYLE_COMPUTE_VULKAN_ENABLED OFF)

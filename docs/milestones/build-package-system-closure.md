@@ -66,7 +66,9 @@
   shared/static simd+mem 独立 consumer 均真实运行，static mimalloc link-only 后端自动传播。
 - [x] compute/ggml/volk fetched 依赖打包：只编私有 PIC CPU/可选 CUDA/volk 闭包；shared 吸收、
   static 导出 link-only archives/头/依赖，许可证和 feature manifest 随包迁移。
-- [ ] 交叉编译、preset/toolchain/CI 与三平台最终矩阵。
+- [x] 平台 preset/toolchain/CI 入口：Windows/Linux/macOS 有同构 configure/build/test/workflow；
+  Windows 明分 VS generator 与 vswhere+Ninja；AArch64 走标准 toolchain file；CI 含 core 和 package smoke。
+- [ ] 三平台最终发布矩阵（all-component CPU SDK、代表性 source embed、远端 CI 结果）。
 - [x] io/nghttp2 package 闭环：固定版本协议核始终为私有 PIC archive；shared io 吸收实现，static
   io 通过 export graph 传递 archive/生成头；MIT 全文和 `io_http2` feature manifest 随包迁移。
 - [x] 当前发布策略确定为暂时闭源：根 `LICENSE` 使用 `LicenseRef-HYLE-Proprietary` 对应的
@@ -147,16 +149,31 @@
   `HYLE_SIMD_EXACT_TARGET=AVX2`，ggml 日志确认 `/arch:AVX2`，证明 exact HYLE/ggml ISA 同步生效；
   exact AVX2/AVX512 与本机 native 都是显式性能形状。
 
+### preset/toolchain/CI 验证
+
+- `CMakePresets.json` 升到与项目最低 CMake 3.25 一致的 schema 6；Windows/Linux/macOS 均有
+  configure/build/test/workflow，`cmake --list-presets=all` 通过。Unix preset 不锁 Ninja；CPU 开发
+  contract 显式关闭 TLS/CUDA，避免构建机偶然能力改变日常产物。
+- 本机同时安装旧 VS 2022 与新 VS 18 时，第一次 generator-free smoke 真抓出 CMake 默认选择旧
+  MSVC 19.38 的问题；最终 Windows 入口明确为受支持 VS 2022 generator，或由
+  `scripts/hyle-windows.ps1` 经 vswhere 选择最新 C++ toolchain 后使用 Ninja，不再静默选旧编译器。
+- `cmake/HyleCiPackageSmoke.cmake` 已在 MSVC 19.50 + Ninja 从空 scratch 真跑：shared/static error
+  SDK 分别 configure/build/install，两个 pure-C package consumer 均 build + CTest 1/1；脚本限制
+  `--parallel 2`。CI 在三平台复用该流程，并另跑 core C++/C/header/surface 聚合。
+- Linux AArch64 reference toolchain 分离 host program 与 target library/include/package 搜索，并用
+  static-library try-compile 禁止目标程序执行。WSL 从临时原生目录用 GCC 14.2 真 configure/build，
+  `file` 确认产物为 ARM aarch64 ELF shared object；CI 对同一 preset 设硬门。
+
 ### 本轮四项代码量
 
 | 固定口径 | code |
 |---|---:|
-| 全库（含 docs/in-tree third_party） | 247,414 |
+| 全库（含 docs/in-tree third_party） | 247,782 |
 | 自实现（含测试） | 116,284 |
 | 自实现（不含测试） | 79,957 |
-| build/package 实现 | 3,553 |
+| build/package 实现 | 3,873 |
 
-最后一项统计自有 root/module/test/bench/sample CMake、`cmake/`、preset，以及
+最后一项统计自有 root/module/test/bench/sample CMake、`cmake/`、preset、CI，以及
 build/fetch/setup/QEMU scripts；不含 vendored CMake、测试源码和文档。
 
 ## 审查顺序

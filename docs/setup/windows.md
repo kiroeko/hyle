@@ -1,23 +1,33 @@
 # Windows 环境准备（MSVC）
 
-> 主开发平台之一。工具链 = **MSVC 14.50（VS18 Enterprise）** + Ninja + Release。
+> 主开发平台之一。当前主机使用 **MSVC 14.50（VS18 Enterprise）** + Ninja；HYLE 的合同是
+> MSVC 19.43+，也支持 CMake 已认识的 VS 2022 generator。
 > 覆盖：构建 / 测试 / 性能测试三件事 + 依赖（OpenSSL、CUDA）。跨平台依赖总览见 [`dependencies.md`](./dependencies.md)。
 
 ## 一、硬门槛（必需，缺了 CMake 直接 FATAL_ERROR）
 
 | 组件 | 要求 | 装法 |
 |---|---|---|
-| Visual Studio 18（或 Build Tools） | C++ 工作负载（cl / MASM / Windows SDK） | VS Installer 勾「使用 C++ 的桌面开发」 |
+| Visual Studio / Build Tools | C++ 工作负载（cl / MASM / Windows SDK） | VS Installer 勾「使用 C++ 的桌面开发」 |
 | MSVC 编译器 | 19.43+（VS 17.13+） | 随 VS，C++23 `std::expected` 需要 |
 | CMake | 3.25+ | `winget install Kitware.CMake` 或随 VS |
-| Ninja | 任意近版 | `winget install Ninja-build.Ninja` 或随 VS |
+| Generator | VS generator 自带；Ninja 可选 | 新版 MSVC 尚未被当前 CMake generator 识别时用 `winget install Ninja-build.Ninja` |
 | Git | Git-for-Windows（自带 git-bash） | `winget install Git.Git` |
 
 **fcontext 门控**：sched 模块在 x86_64 + MSVC 下编（`HYLE_HAS_FCONTEXT`），MASM（ml64）做纤程切换汇编，`enable_language(ASM_MASM)` 自动接。
 
 ## 二、环境初始化（关键，每个构建 shell 都要先做）
 
-编译前必须先注入 MSVC 环境变量（INCLUDE/LIB/PATH）。两种可靠方式：
+Visual Studio generator 会自行选择工具链；Ninja 必须先注入 MSVC 环境变量。推荐让仓库脚本用
+`vswhere` 选最新已安装 C++ toolchain，不写死 Edition/版本路径：
+
+```powershell
+scripts/hyle-windows.ps1 -Action Configure -Preset windows-ninja
+scripts/hyle-windows.ps1 -Action Build -Preset windows-ninja --parallel 2
+scripts/hyle-windows.ps1 -Action Test -Preset windows-ninja --output-on-failure
+```
+
+也可手工初始化：
 
 ```bat
 :: 方式 A（推荐，最全）：VsDevCmd
@@ -39,12 +49,15 @@ call "C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Auxiliary\Build\
 ## 四、构建
 
 ```bat
-:: 配置（首次会 FetchContent 自动联网拉依赖到 build\_deps）
-cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+:: CMake 已支持且工具链达 19.43+ 的 VS 2022（无需 dev shell/Ninja）
+cmake --preset windows
+
+:: 或已初始化 dev shell 的 Ninja 入口
+cmake --preset windows-ninja
 
 :: 构建单个目标 / 全部
-cmake --build build --target hyle_io_test
-cmake --build build
+cmake --build --preset windows --target hyle_io_test --parallel 2
+cmake --build --preset windows --parallel 2
 ```
 
 - 目标名：`hyle_add_test(<mod>)` → `hyle_<mod>_test`；带 NAME 的 → `hyle_<mod>_<name>_test`（如 `hyle_compute_ggml_bridge_test`）。
@@ -54,11 +67,7 @@ cmake --build build
 ## 五、测试
 
 ```bat
-:: shared 库 .dll 与 .exe 同在 build\bin\，无需 PATH juggling
-cd build\bin && hyle_sched_test.exe
-
-:: 或用 ctest 跑全部
-ctest --test-dir build --output-on-failure
+ctest --preset windows --output-on-failure
 ```
 
 - **GPU 测试（compute）**：CUDA runtime DLL 需在 PATH。toolkit 的 `bin` 通常已入 PATH（`where nvcc` 命中即可）。`hyle_compute_ggml_bridge_test` 在 RTX 4070 上跑零拷贝 matmul。
@@ -110,6 +119,7 @@ cd build\bin && hyle_io_tls_test.exe
 ### CUDA（GPU 后端）
 
 - 装 CUDA Toolkit **13.3**（本仓库统一版本）到 `C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3`，确保 `bin` 入 PATH + `CUDA_PATH` 指 v13.3。
-- 需要 CUDA 的构建显式传 `-DHYLE_COMPUTE_CUDA=ON`；配置打印 `compute CUDA ON -- enabled with Toolkit 13.3`。
+- 需要 CUDA 的本机构建用 `windows-cuda`（或显式传 `HYLE_COMPUTE_CUDA=ON`）；本机 preset 使用
+  `CMAKE_CUDA_ARCHITECTURES=native`，SDK 则必须写明确 architecture 列表。
 - ⚠️ 某 shell 看不到 nvcc = 该 shell 在装 CUDA 前启动的 stale-env，新开 shell 即正常。
 - cuDNN/TensorRT 当前里程碑不需要，见 [`dependencies.md`](./dependencies.md)。

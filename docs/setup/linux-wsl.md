@@ -9,14 +9,16 @@
 |---|---|---|
 | GCC | **14+**（默认 gcc-13 过不了门槛） | `sudo apt install g++-14 gcc-14` |
 | CMake | 3.25+ | `sudo apt install cmake`（24.04 源 3.28） |
-| Ninja | 任意近版 | `sudo apt install ninja-build` |
+| Generator | Ninja 或 Make | `sudo apt install ninja-build`；没有 Ninja 时使用系统 Make |
 | GAS | 随 gcc（fcontext ELF 汇编） | 自带 |
 
 **必须显式指 gcc-14**（默认 `cc`/`c++` 是 gcc-13，CMake 硬门槛 FATAL_ERROR）：
 
 ```bash
-cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
-  -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14
+CC=gcc-14 CXX=g++-14 cmake --preset linux
+# 名称固定为 gcc-14/g++-14 的 WSL 机器也可直接：cmake --preset wsl
+cmake --build --preset linux --parallel 2
+ctest --preset linux --output-on-failure
 ```
 
 ## 二、⚠️ 9p 铁律（血泪，最重要）

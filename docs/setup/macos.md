@@ -17,16 +17,13 @@
 
 ## 二、构建
 
-无 ninja 时用 Unix Makefiles + 显式 clang：
+`macos` preset 不指定 generator；有 Ninja 就可用 Ninja，没有时 CMake 选择 Unix Makefiles：
 
 ```bash
 export PATH=/opt/homebrew/bin:$PATH
 cd ~/hyle
-/opt/homebrew/bin/cmake -S . -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release \
-  -DCMAKE_C_COMPILER=/Library/Developer/CommandLineTools/usr/bin/clang \
-  -DCMAKE_CXX_COMPILER=/Library/Developer/CommandLineTools/usr/bin/clang++ \
-  -DHYLE_COMPUTE_CUDA=OFF
-/opt/homebrew/bin/cmake --build build -j8
+/opt/homebrew/bin/cmake --preset macos
+/opt/homebrew/bin/cmake --build --preset macos --parallel 2
 ```
 
 - ggml/googletest 首次配置自动联网拉到 `build/_deps`（mac 有网即可）。
@@ -37,8 +34,7 @@ cd ~/hyle
 ```bash
 export PATH=/opt/homebrew/bin:$PATH
 cd ~/hyle
-./build/bin/hyle_compute_ggml_bridge_test     # CPU-only matmul（无 GPU 那格走 host）
-/opt/homebrew/bin/ctest --test-dir build --output-on-failure
+/opt/homebrew/bin/ctest --preset macos --output-on-failure
 ```
 
 - **NEON simd 变体**：`tests/CMakeLists` 按 `CMAKE_SYSTEM_PROCESSOR` 分支——arm64 建 `hyle_simd_neon_test`（x86 建 sse4/avx2）。这是 neon.h 全 op 对拍 scalar 的真闸门。
@@ -53,18 +49,10 @@ cd ~/hyle
 # 固定版 external Highway/xsimd 默认写入 ~/vendor。
 scripts/fetch-bench-vendors.sh
 
-# 有 Ninja 时用 preset；它独占 build-bench，绝不污染日常 build。
+# preset 不锁 generator，并独占 build-bench，不污染日常 build。
 /opt/homebrew/bin/cmake --preset bench
-/opt/homebrew/bin/cmake --build --preset bench --target hyle_sched_bench -j8
+/opt/homebrew/bin/cmake --build --preset bench --target hyle_sched_bench --parallel 2
 ./build-bench/bin/hyle_sched_bench
-
-# 只有 Unix Makefiles 时用另一个目录，不能与 Ninja preset 共用 build-bench。
-/opt/homebrew/bin/cmake -S . -B build-bench-make -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release \
-  -DCMAKE_C_COMPILER=/Library/Developer/CommandLineTools/usr/bin/clang \
-  -DCMAKE_CXX_COMPILER=/Library/Developer/CommandLineTools/usr/bin/clang++ \
-  -DHYLE_BUILD_BENCH=ON
-/opt/homebrew/bin/cmake --build build-bench-make --target hyle_sched_bench -j8
-./build-bench-make/bin/hyle_sched_bench
 ```
 
 - mac 是本地磁盘（APFS），性能数字可信；ARM 侧数字与 x86 不直接可比（架构不同）。
