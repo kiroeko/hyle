@@ -6,6 +6,7 @@
 #include <new>
 #include <type_traits>
 
+#include "hyle/core/cache.h"
 #include "hyle/macros.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/mem/system_inline.h"
@@ -172,8 +173,8 @@ class WorkStealingDeque {
   std::uint64_t mask_;
   // top (thief end) and bottom (owner end) are hammered by different threads;
   // keep them on separate cache lines to avoid false sharing.
-  alignas(HYLE_CACHE_LINE_SIZE) std::atomic<std::uint64_t> top_;
-  alignas(HYLE_CACHE_LINE_SIZE) std::atomic<std::uint64_t> bottom_;
+  alignas(core::kDestructiveInterferenceSize) std::atomic<std::uint64_t> top_;
+  alignas(core::kDestructiveInterferenceSize) std::atomic<std::uint64_t> bottom_;
 };
 
 }  // namespace hyle::container

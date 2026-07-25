@@ -13,7 +13,7 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
-hyle_add_test(core SOURCES core/scaffolding_test.cc)
+hyle_add_test(core SOURCES core/core_test.cc core/intrusive_list_test.cc)
 # close-01 sample: pure C TU (C compiler) linking only the core C ABI header.
 add_executable(hyle_core_c_test core/c_core_test.c)
 target_link_libraries(hyle_core_c_test PRIVATE hyle_core)
@@ -63,6 +63,12 @@ add_test(NAME hyle_mem_c_surface_test
                  --module mem
                  --library "$<TARGET_FILE:hyle_mem>"
                  --symbol-tool "${_hyle_c_symbol_tool}")
+add_test(NAME hyle_core_c_surface_test
+         COMMAND "${Python3_EXECUTABLE}"
+                 "${PROJECT_SOURCE_DIR}/scripts/c-surface-check.py"
+                 --module core
+                 --library "$<TARGET_FILE:hyle_core>"
+                 --symbol-tool "${_hyle_c_symbol_tool}")
 add_test(NAME hyle_platform_c_surface_test
          COMMAND "${Python3_EXECUTABLE}"
                  "${PROJECT_SOURCE_DIR}/scripts/c-surface-check.py"
@@ -84,6 +90,17 @@ add_test(NAME hyle_time_c_surface_test
 
 # A combined include smoke test can hide transitive-include and include-order bugs.
 # Compile each public C++ module header alone, plus its C ABI header as strict C.
+add_test(NAME hyle_core_header_self_contained_test
+         COMMAND "${Python3_EXECUTABLE}"
+                 "${PROJECT_SOURCE_DIR}/scripts/header-self-contained.py"
+                 --module core
+                 --include-dir "${PROJECT_SOURCE_DIR}/include"
+                 --cc "${CMAKE_C_COMPILER}"
+                 --cxx "${CMAKE_CXX_COMPILER}"
+                 --c-compiler-id "${CMAKE_C_COMPILER_ID}"
+                 --cxx-compiler-id "${CMAKE_CXX_COMPILER_ID}"
+                 --c-frontend "${CMAKE_C_COMPILER_FRONTEND_VARIANT}"
+                 --cxx-frontend "${CMAKE_CXX_COMPILER_FRONTEND_VARIANT}")
 add_test(NAME hyle_mem_header_self_contained_test
          COMMAND "${Python3_EXECUTABLE}"
                  "${PROJECT_SOURCE_DIR}/scripts/header-self-contained.py"

@@ -7,6 +7,7 @@
 #include <new>
 #include <utility>
 
+#include "hyle/core/cache.h"
 #include "hyle/macros.h"
 #include "hyle/mem/alignment.h"
 #include "hyle/mem/allocator.h"
@@ -660,7 +661,7 @@ private:
 
   // One Treiber-stack head per shard, each on its OWN cache line (kill false
   // sharing).
-  struct alignas(HYLE_CACHE_LINE_SIZE) ShardHead {
+  struct alignas(core::kDestructiveInterferenceSize) ShardHead {
     std::atomic<std::uint64_t>
         h; // index|version (lock-free until tag saturation)
     std::atomic_flag saturated_lock = ATOMIC_FLAG_INIT;

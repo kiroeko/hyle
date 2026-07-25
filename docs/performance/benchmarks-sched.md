@@ -1,5 +1,8 @@
 # sched 实测铁证
 
+> 历史段落中的 `HYLE_CACHE_LINE_SIZE` 是当时实现名；当前同一布局合同由
+> `core::kDestructiveInterferenceSize` 承载，Apple Silicon 为 128B。
+
 > 本页是 [performance 总账](./README.md) 的 **sched + queue** 详节:fiber 切换、fiber-aware 同步(marl 对标)、lock-free 队列簇。  
 > **platform 原语已拆出** → [benchmarks-platform.md](./benchmarks-platform.md)（2026-07-20 重测）。  
 > 环境:Win MSVC19.50 + Linux GCC14.2 Release(原生 ext4) + 部分 M4,nanobench。

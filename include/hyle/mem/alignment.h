@@ -16,7 +16,8 @@
 
 namespace hyle::mem {
 
-// 64 covers up to AVX512 loads/stores; matches HYLE_CACHE_LINE_SIZE.
+// 64 covers up to AVX-512 loads/stores. Cache-line spacing is a separate core
+// layout contract and is 128 bytes on Apple Silicon.
 inline constexpr std::size_t kMaxSimdAlignment = 64;
 
 HYLE_FORCE_INLINE constexpr bool is_pow2(std::size_t a) noexcept {

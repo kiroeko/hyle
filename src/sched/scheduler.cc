@@ -17,6 +17,7 @@
 #include "hyle/container/bounded_queue.h"
 #include "hyle/container/sharded_queue.h"
 #include "hyle/container/ws_fifo_queue.h"
+#include "hyle/core/cache.h"
 #include "hyle/macros.h"
 #include "hyle/mem/fiber_stack.h"
 #include "hyle/obs/trace.h"
@@ -228,7 +229,7 @@ struct Scheduler::Impl {
     // does not ping-pong one global cache line with all completing workers.
     // This field owns its cache line; otherwise producer writes would also
     // invalidate the worker-only cursors above it.
-    alignas(HYLE_CACHE_LINE_SIZE)
+    alignas(core::kDestructiveInterferenceSize)
         std::atomic<std::uint64_t> inline_outstanding{0};
     Worker(mem::Allocator a, std::size_t cap, std::uint64_t seed, unsigned i)
         : local(a, cap),

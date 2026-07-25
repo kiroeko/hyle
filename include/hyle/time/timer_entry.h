@@ -31,8 +31,9 @@ class TimerEntry {
   TimerEntry& operator=(TimerEntry&&) = delete;
 
   ~TimerEntry() {
-    // An armed node is still referenced by its source; a fired node stays in
-    // the caller's output list until popped. Either destruction would be UAF.
+    // An armed node is still referenced by its source, and a fired node must
+    // outlive its delivery list. Destroying the list first is safe because the
+    // core intrusive list detaches all hooks during destruction.
     HYLE_FATAL_ASSERT(owner_ == nullptr);
     HYLE_FATAL_ASSERT(!hook_.linked());
   }

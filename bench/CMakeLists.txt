@@ -414,15 +414,21 @@ target_link_libraries(hyle_queue_sota_bench PRIVATE hyle_container nanobench mim
 hyle_apply_warnings(hyle_queue_sota_bench)
 
 # task #19 breadth + gap-fill #34/#35: the claim-bearing containers. SmallVector
-# (inline storage) vs std::vector; IntrusiveList ("O(1) 无分配") vs std::list;
-# CArray (dynamic array) vs std::vector. Real SOTA rivals are opt-in: absl::
-# InlinedVector (-DHYLE_BENCH_ABSL, wired in the absl block below) and boost::
-# intrusive::list (-DHYLE_BENCH_BOOST, header-only block below). SmallVector
+# (inline storage) and CArray (dynamic array) vs std::vector. The real
+# SmallVector peer is opt-in absl::InlinedVector (-DHYLE_BENCH_ABSL, wired in
+# the absl block below). SmallVector
 # defaults to the compile-time SystemAllocator which INLINES mi_malloc into THIS
 # exe -> link mimalloc_static directly (symbols internal to hyle_mem.dll).
 add_executable(hyle_container_misc_bench container/container_misc_bench.cc)
 target_link_libraries(hyle_container_misc_bench PRIVATE hyle_container hyle_mem nanobench mimalloc_static)
 hyle_apply_warnings(hyle_container_misc_bench)
+
+# core's allocation-free intrusive primitive: normal FIFO batching, arbitrary
+# unlink, and non-empty batch discard. The Boost peer uses the same member-hook
+# auto-unlink lifetime contract; std::list is an allocating floor only.
+add_executable(hyle_core_bench core/core_bench.cc)
+target_link_libraries(hyle_core_bench PRIVATE hyle_core nanobench)
+hyle_apply_warnings(hyle_core_bench)
 
 # boost::intrusive::list -- the canonical intrusive-container SOTA (header-only).
 # Enable with -DHYLE_BENCH_BOOST=ON; point HYLE_BOOST_DIR at a boost tree (the
@@ -437,16 +443,16 @@ if(HYLE_BENCH_BOOST)
   # pulls a small dep closure (config/assert/core/move/static_assert) -- add each
   # lib's include/ dir in the modular case.
   if(EXISTS "${HYLE_BOOST_DIR}/boost/intrusive/list.hpp")
-    target_include_directories(hyle_container_misc_bench SYSTEM PRIVATE "${HYLE_BOOST_DIR}")
+    target_include_directories(hyle_core_bench SYSTEM PRIVATE "${HYLE_BOOST_DIR}")
   elseif(EXISTS "${HYLE_BOOST_DIR}/libs/intrusive/include/boost/intrusive/list.hpp")
     foreach(_bl intrusive config assert core move static_assert)
-      target_include_directories(hyle_container_misc_bench SYSTEM PRIVATE
+      target_include_directories(hyle_core_bench SYSTEM PRIVATE
         "${HYLE_BOOST_DIR}/libs/${_bl}/include")
     endforeach()
   else()
     message(FATAL_ERROR "HYLE_BENCH_BOOST=ON but no boost/intrusive/list.hpp at ${HYLE_BOOST_DIR} (checked monolithic + modular libs/ layout; run `git submodule update --init` in the boost tree)")
   endif()
-  target_compile_definitions(hyle_container_misc_bench PRIVATE HYLE_BENCH_BOOST)
+  target_compile_definitions(hyle_core_bench PRIVATE HYLE_BENCH_BOOST)
 endif()
 
 # container-06c fuzzy path match bench: proves O(N) scaling (ns/candidate flat across

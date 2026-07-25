@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstdint>
+
+#include "hyle/core/version_defs.h"
 #include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
@@ -13,11 +15,15 @@
 
 namespace hyle {
 
-// Packed version: (major << 16) | (minor << 8) | patch.
-HYLE_CORE_API std::uint32_t version() noexcept;
+inline constexpr std::uint32_t kVersionMajor = HYLE_VERSION_MAJOR;
+inline constexpr std::uint32_t kVersionMinor = HYLE_VERSION_MINOR;
+inline constexpr std::uint32_t kVersionPatch = HYLE_VERSION_PATCH;
+inline constexpr std::uint32_t kVersion = HYLE_VERSION_PACKED;
+inline constexpr const char kVersionString[] = HYLE_VERSION_STRING;
 
-// Scaffolding self-check: returns true if core is linked and callable.
-// Exists to validate the export macro across the DLL boundary in tests.
-HYLE_CORE_API bool scaffolding_ok() noexcept;
+// Runtime version of the linked hyle_core. Compare with kVersion when loading
+// HYLE dynamically or crossing a plugin/FFI boundary.
+HYLE_CORE_API std::uint32_t version() noexcept;
+HYLE_CORE_API const char* version_string() noexcept;
 
 }  // namespace hyle

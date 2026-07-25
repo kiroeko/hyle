@@ -29,7 +29,8 @@
 ### 命名 / 宏 / 可见性（继承 clay，改前缀 `HYLE_`）
 - `namespace hyle` + 内部 `hyle::detail`。
 - C++ 重类型大驼峰（`Allocator`/`SharedPool`/`SharedPoolCache`）；C-ABI 结构体 snake_case + `_t`(vtable)/`_o`(不透明实例)。
-- 导出宏三态（static/dllexport/dllimport，类比 `CLAY_SYS_API`）；`HYLE_FORCE_INLINE`、`HYLE_LIKELY/UNLIKELY`、`HYLE_CACHE_LINE_SIZE 64`、`HYLE_DISABLE_COPY_AND_ASSIGN`。
+- 导出宏三态（static/dllexport/dllimport，类比 `CLAY_SYS_API`）；`HYLE_FORCE_INLINE`、
+  `HYLE_LIKELY/UNLIKELY`、类型化 compile-time cache layout、`HYLE_DISABLE_COPY*`。
 - 删除 clay 里的老编译器退化分支（MSVC<1900、GCC5 等）。
 
 ## 3. 开发范式

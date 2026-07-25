@@ -9,6 +9,10 @@
 | **骨架?** | ✅（walking skeleton 第 0 步）|
 | **状态** | ✅ 完成（commit 3c8150d，后续 da95bfb 补构建配置）|
 
+> 本页保留首轮脚手架的历史名称与 checklist；当前 core 宏/cache 形状已由
+> [`core-module-closure`](./core-module-closure.md) 重审，`HYLE_CACHE_LINE_SIZE`、
+> `HYLE_ALIGNED`、`HYLE_PAD` 和 `scaffolding_test` 不再是现行 API。
+
 > **cloc 留档（完成时实测，`cloc --vcs=git`）**：本步贡献约 **294 行**（非文档）= core/macros/visibility/platform 头 + version.h/cc + scaffolding_test + 大部分 CMake/cmake 模块。CMake 占比高属正常（脚手架以构建配置为主）。无 stub。
 
 ## 前置依赖

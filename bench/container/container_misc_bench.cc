@@ -1,34 +1,26 @@
 // container misc bench (task #19 breadth + gap-fill #34/#35): the claim-bearing containers.
-// performance.md 桶A: SmallVector "小 N 省 malloc（大赢）"; intrusive list "O(1) 摘除、
-// 无分配"; CArray = the dynamic-array (std::vector equivalent, C-ABI header-before-data).
+// performance.md 桶A: SmallVector "小 N 省 malloc（大赢）";
+// CArray = the dynamic-array (std::vector equivalent, C-ABI header-before-data).
 //
 // SOTA rivals (not just std -- "只赢 std 不算价值"):
 //   * SmallVector  -> absl::InlinedVector (THE small-vector SOTA), gated -DHYLE_BENCH_ABSL
-//   * IntrusiveList -> boost::intrusive::list (canonical intrusive SOTA), gated -DHYLE_BENCH_BOOST
 //   * CArray       -> std::vector (the drop-in equivalent, always on)
 // std equivalents always run as the floor. Win or lose, printed.
 #include <nanobench.h>
 
 #include <cstddef>
 #include <cstdint>
-#include <list>
 #include <vector>
 
 #include "hyle/container/carray.h"
-#include "hyle/core/intrusive_list.h"
 #include "hyle/container/small_vector.h"
 #include "hyle/mem/allocator.h"
 
 #if defined(HYLE_BENCH_ABSL)
 #  include "absl/container/inlined_vector.h"
 #endif
-#if defined(HYLE_BENCH_BOOST)
-#  include <boost/intrusive/list.hpp>
-#endif
 
 using hyle::container::CArray;
-using hyle::core::IntrusiveList;
-using hyle::core::IntrusiveListHook;
 using hyle::container::SmallVector;
 using hyle::mem::system_allocator;
 
@@ -36,7 +28,6 @@ namespace {
 namespace nb = ankerl::nanobench;
 constexpr int kSmall = 8;      // fits inline (no spill) -- the SmallVector design point
 constexpr int kRounds = 1000;  // construct+fill+destroy churn per epoch
-constexpr int kNodes = 4096;   // intrusive vs std::list node count
 constexpr int kBig = 4096;     // CArray/vector growth element count
 }  // namespace
 
@@ -120,112 +111,6 @@ int main() {
         for (int i = 0; i < kSpill; ++i) v.push_back(i);
         nb::doNotOptimizeAway(v.data());
       }
-    });
-  }
-
-  // ---- IntrusiveList vs boost::intrusive::list vs std::list ------------------
-  // push-all + pop-all (the "O(1) 无分配" claim). Intrusive: links live in the
-  // node -> push/pop are pure pointer ops, ZERO allocation. boost::intrusive is
-  // the canonical SOTA intrusive container (same hook-in-node model) -> the real
-  // rival; std::list (node alloc per push) is the floor.
-  {
-    struct Node {
-      int v;
-      IntrusiveListHook hook;
-    };
-    std::vector<Node> nodes(kNodes);  // pre-allocated storage (intrusive owns no memory)
-    for (int i = 0; i < kNodes; ++i) nodes[i].v = i;
-
-    nb::Bench b;
-    b.title("list churn: push 4096 + pop_front all")
-        .relative(true)
-        .batch(kNodes)
-        .minEpochIterations(2000);
-    b.run("HYLE IntrusiveList (zero alloc)", [&] {
-      IntrusiveList<Node, &Node::hook> list;
-      for (int i = 0; i < kNodes; ++i) list.push_back(&nodes[i]);
-      while (list.pop_front() != nullptr) {
-      }
-      nb::doNotOptimizeAway(&list);
-    });
-#if defined(HYLE_BENCH_BOOST)
-    {
-      namespace bi = boost::intrusive;
-      struct BNode : bi::list_base_hook<> {
-        int v;
-      };
-      using BList = bi::list<BNode>;
-      std::vector<BNode> bnodes(kNodes);
-      for (int i = 0; i < kNodes; ++i) bnodes[i].v = i;
-      b.run("boost::intrusive::list (SOTA, zero alloc)", [&] {
-        BList list;
-        for (int i = 0; i < kNodes; ++i) list.push_back(bnodes[i]);
-        while (!list.empty()) list.pop_front();
-        nb::doNotOptimizeAway(&list);
-      });
-    }
-#endif
-    b.run("std::list<int> (node alloc per push)", [&] {
-      std::list<int> list;
-      for (int i = 0; i < kNodes; ++i) list.push_back(i);
-      while (!list.empty()) list.pop_front();
-      nb::doNotOptimizeAway(&list);
-    });
-  }
-
-  // ---- IntrusiveList::remove(node) vs std::list::erase(it): O(1) ANY-position-
-  // unlink. This is the intrusive headline ("O(1) 任意摘除, no traversal") that
-  // push/pop alone don't exercise. Workload: build, then remove every node in a
-  // SCRAMBLED order (not front/back) -- pure arbitrary unlink. Intrusive removes
-  // by node pointer (links in the node); std::list needs the iterator (kept in a
-  // side vector, valid across erases). boost::intrusive is the same-model SOTA.
-  {
-    struct Node {
-      int v;
-      IntrusiveListHook hook;
-    };
-    std::vector<Node> nodes(kNodes);
-    for (int i = 0; i < kNodes; ++i) nodes[i].v = i;
-    // Scrambled visit order (LCG-ish stride, coprime to kNodes=4096 via odd step).
-    std::vector<int> order(kNodes);
-    for (int i = 0; i < kNodes; ++i) order[i] = (i * 2654435761u) & (kNodes - 1);
-
-    nb::Bench b;
-    b.title("list arbitrary unlink: remove 4096 in scrambled order")
-        .relative(true)
-        .batch(kNodes)
-        .minEpochIterations(2000);
-    b.run("HYLE IntrusiveList::remove (O(1) by ptr)", [&] {
-      IntrusiveList<Node, &Node::hook> list;
-      for (int i = 0; i < kNodes; ++i) list.push_back(&nodes[i]);
-      for (int i = 0; i < kNodes; ++i) list.remove(&nodes[order[i]]);
-      nb::doNotOptimizeAway(&list);
-    });
-#if defined(HYLE_BENCH_BOOST)
-    {
-      namespace bi = boost::intrusive;
-      struct BNode : bi::list_base_hook<> {
-        int v;
-      };
-      using BList = bi::list<BNode>;
-      std::vector<BNode> bnodes(kNodes);
-      for (int i = 0; i < kNodes; ++i) bnodes[i].v = i;
-      b.run("boost::intrusive::list::erase (SOTA, O(1))", [&] {
-        BList list;
-        for (int i = 0; i < kNodes; ++i) list.push_back(bnodes[i]);
-        // erase(iterator_to(node)) -- O(1) unlink by node, same as HYLE remove.
-        for (int i = 0; i < kNodes; ++i) list.erase(BList::s_iterator_to(bnodes[order[i]]));
-        nb::doNotOptimizeAway(&list);
-      });
-    }
-#endif
-    b.run("std::list::erase(it) (O(1) given the iterator)", [&] {
-      std::list<int> list;
-      std::vector<std::list<int>::iterator> its;
-      its.reserve(kNodes);
-      for (int i = 0; i < kNodes; ++i) its.push_back(list.insert(list.end(), i));
-      for (int i = 0; i < kNodes; ++i) list.erase(its[order[i]]);
-      nb::doNotOptimizeAway(&list);
     });
   }
 

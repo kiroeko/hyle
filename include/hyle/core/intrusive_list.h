@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <new>
 #include <type_traits>
 
 #include "hyle/macros.h"
@@ -12,9 +13,25 @@ namespace hyle::core {
 // existed when timer_entry.h included hyle/container/intrusive_list.h.
 //
 // Embed one hook in a stable-address node, then list it via
-// IntrusiveList<Node, &Node::hook>. The list owns no nodes and allocates nothing.
+// IntrusiveList<Node, &Node::hook>. The list owns no nodes and allocates
+// nothing. Like folly::IntrusiveList's auto-unlink hook, destroying a node
+// detaches it; copying or moving a hook never copies list membership.
 struct IntrusiveListHook {
+  IntrusiveListHook() noexcept = default;
+  IntrusiveListHook(const IntrusiveListHook&) noexcept {}
+  IntrusiveListHook& operator=(const IntrusiveListHook&) noexcept { return *this; }
+  IntrusiveListHook(IntrusiveListHook&&) noexcept {}
+  IntrusiveListHook& operator=(IntrusiveListHook&&) noexcept { return *this; }
+  ~IntrusiveListHook() { unlink(); }
+
   bool linked() const noexcept { return prev_ != nullptr; }
+  void unlink() noexcept {
+    if (!linked()) return;
+    prev_->next_ = next_;
+    next_->prev_ = prev_;
+    prev_ = nullptr;
+    next_ = nullptr;
+  }
 
  private:
   template <class T, IntrusiveListHook T::* Hook>
@@ -38,6 +55,15 @@ class IntrusiveList {
   }
   IntrusiveList(const IntrusiveList&) = delete;
   IntrusiveList& operator=(const IntrusiveList&) = delete;
+  IntrusiveList(IntrusiveList&& other) noexcept : IntrusiveList() { append(other); }
+  IntrusiveList& operator=(IntrusiveList&& other) noexcept {
+    if (this != &other) {
+      clear();
+      append(other);
+    }
+    return *this;
+  }
+  ~IntrusiveList() { clear(); }
 
   bool empty() const noexcept { return sentinel_.next_ == &sentinel_; }
 
@@ -52,21 +78,16 @@ class IntrusiveList {
     insert_before(sentinel_.next_, hook_of(node));
   }
 
-  // Low-level companion for an owner that has already checked both preconditions
-  // as part of a larger invariant. Keeping the link-only core separate avoids
-  // repeating branches on production hot paths without weakening their checks.
-  void push_back_unchecked(T* node) noexcept {
-    insert_before(&sentinel_, hook_of(node));
-  }
+  // Low-level companion for an owner that has already checked both
+  // preconditions as part of a larger invariant. Keeping the link-only core
+  // separate avoids repeating branches on production hot paths without
+  // weakening their checks.
+  void push_back_unchecked(T* node) noexcept { insert_before(&sentinel_, hook_of(node)); }
 
   T* front() noexcept { return empty() ? nullptr : node_of(sentinel_.next_); }
-  const T* front() const noexcept {
-    return empty() ? nullptr : node_of(sentinel_.next_);
-  }
+  const T* front() const noexcept { return empty() ? nullptr : node_of(sentinel_.next_); }
   T* back() noexcept { return empty() ? nullptr : node_of(sentinel_.prev_); }
-  const T* back() const noexcept {
-    return empty() ? nullptr : node_of(sentinel_.prev_);
-  }
+  const T* back() const noexcept { return empty() ? nullptr : node_of(sentinel_.prev_); }
 
   T* pop_front() noexcept {
     if (empty()) return nullptr;
@@ -89,6 +110,19 @@ class IntrusiveList {
     h->prev_ = nullptr;
     h->next_ = nullptr;
     return node_of(h);
+  }
+
+  // Detach all nodes. The list never destroys them because it owns no storage.
+  void clear() noexcept {
+    IntrusiveListHook* current = sentinel_.next_;
+    sentinel_.prev_ = &sentinel_;
+    sentinel_.next_ = &sentinel_;
+    while (current != &sentinel_) {
+      IntrusiveListHook* next = current->next_;
+      current->prev_ = nullptr;
+      current->next_ = nullptr;
+      current = next;
+    }
   }
 
   // Detach and consume the complete list without updating the sentinel for
@@ -165,8 +199,7 @@ class IntrusiveList {
   // Move the longest front prefix satisfying pred to dst's tail. Scanning and
   // on_move are O(moved); relinking the complete range is O(1).
   template <class Pred, class OnMove>
-  std::size_t move_prefix_to(IntrusiveList& dst, Pred&& pred,
-                             OnMove&& on_move) noexcept {
+  std::size_t move_prefix_to(IntrusiveList& dst, Pred&& pred, OnMove&& on_move) noexcept {
     HYLE_FATAL_ASSERT(&dst != this);
     IntrusiveListHook* first = sentinel_.next_;
     IntrusiveListHook* after = first;
@@ -192,6 +225,9 @@ class IntrusiveList {
     return count;
   }
 
+  // Precondition: node belongs to this list. Exact ownership is deliberately
+  // not stored in each hook; matching mature intrusive containers, that keeps
+  // the hook at two pointers and the hot path branch-free.
   void remove(T* node) noexcept {
     HYLE_FATAL_ASSERT(node != nullptr);
     HYLE_FATAL_ASSERT(hook_of(node)->linked());
@@ -202,35 +238,24 @@ class IntrusiveList {
   // the node is linked in this list. This keeps redundant contract branches out
   // of timer cancel hot paths; public data structures still validate ownership
   // before calling it.
-  void remove_unchecked(T* node) noexcept {
-    unlink(hook_of(node));
-  }
+  void remove_unchecked(T* node) noexcept { hook_of(node)->unlink(); }
 
  private:
   static IntrusiveListHook* hook_of(T* node) noexcept { return &(node->*Hook); }
 
   static T* node_of(IntrusiveListHook* h) noexcept {
-    const auto off = reinterpret_cast<std::size_t>(
-        &(reinterpret_cast<T*>(0)->*Hook));
-    return reinterpret_cast<T*>(reinterpret_cast<std::byte*>(h) - off);
+    const auto off = reinterpret_cast<std::size_t>(&(reinterpret_cast<T*>(0)->*Hook));
+    return std::launder(reinterpret_cast<T*>(reinterpret_cast<std::byte*>(h) - off));
   }
   static const T* node_of(const IntrusiveListHook* h) noexcept {
     return node_of(const_cast<IntrusiveListHook*>(h));
   }
 
-  static void insert_before(IntrusiveListHook* pos,
-                            IntrusiveListHook* node) noexcept {
+  static void insert_before(IntrusiveListHook* pos, IntrusiveListHook* node) noexcept {
     node->prev_ = pos->prev_;
     node->next_ = pos;
     pos->prev_->next_ = node;
     pos->prev_ = node;
-  }
-
-  static void unlink(IntrusiveListHook* h) noexcept {
-    h->prev_->next_ = h->next_;
-    h->next_->prev_ = h->prev_;
-    h->prev_ = nullptr;
-    h->next_ = nullptr;
   }
 
   IntrusiveListHook sentinel_;

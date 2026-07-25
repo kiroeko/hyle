@@ -2,6 +2,7 @@
 
 #include <atomic>
 
+#include "hyle/core/cache.h"
 #include "hyle/macros.h"
 
 #if defined(_MSC_VER)
@@ -43,7 +44,7 @@ HYLE_FORCE_INLINE void cpu_relax() noexcept {
 #endif
 }
 
-class HYLE_ALIGNED SpinLock {
+class alignas(core::kDestructiveInterferenceSize) SpinLock {
  public:
   SpinLock() noexcept = default;
   HYLE_DISABLE_COPY_AND_MOVE(SpinLock);

@@ -417,20 +417,17 @@ TEST(TimerQueue, DestroyingNonEmptySourceFailsFast) {
       "");
 }
 
-TEST(TimerQueue, DestroyingEntryStillLinkedToFiredListFailsFast) {
-  EXPECT_DEATH_IF_SUPPORTED(
-      {
-        TimerEntry e;
-        TimerQueue::EntryList fired;
-        {
-          TimerQueue w(0);
-          w.schedule(&e, kMs);
-          w.advance(kMs, fired);
-        }
-        // fired is destroyed before e, but intrusive lists do not own or
-        // silently unlink nodes. TimerEntry catches the dangling membership.
-      },
-      "");
+TEST(TimerQueue, DestroyingFiredListDetachesEntriesForReuse) {
+  TimerEntry e;
+  {
+    TimerQueue::EntryList fired;
+    TimerQueue w(0);
+    w.schedule(&e, kMs);
+    w.advance(kMs, fired);
+  }
+  TimerQueue reuse(kMs);
+  reuse.schedule(&e, 2 * kMs);
+  EXPECT_TRUE(reuse.cancel(&e));
 }
 
 // ---- scale: a million arm/cancel churn, oracle-checked -----------------------

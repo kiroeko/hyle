@@ -9,6 +9,7 @@
 
 #include "hyle/container/hash.h"
 #include "hyle/container/probe.h"
+#include "hyle/core/cache.h"
 #include "hyle/macros.h"
 #include "hyle/mem/allocator.h"
 
@@ -165,7 +166,7 @@ class SwissTable {
     std::size_t stride = 0;
     ctrl_t want = detail::h2(h);
     for (;;) {
-      HYLE_PREFETCH(&slots_[pos]);  // overlap slot load with the ctrl SIMD match
+      core::prefetch_read(&slots_[pos]);  // overlap slot load with the ctrl SIMD match
       detail::Group g(ctrl_ + pos);
       for (std::uint32_t i : g.match(want)) {
         std::size_t idx = (pos + i) & mask_;

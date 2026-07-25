@@ -3,7 +3,7 @@
 > 本页是 [performance 总账](./README.md) 的 **container 模块**入口。  
 > **详表与优化史**（长）：[benchmarks-mem-container.md](./benchmarks-mem-container.md)（mem 已迁出，该文件以 container 为主）。  
 > **模块收口**（正确性/C ABI，非性能全表）：[../milestones/container-module-closure.md](../milestones/container-module-closure.md)（2026-07-19）。  
-> 队列/并发容器的 SOTA 对标多在 sched 消费路径 + `queue_sota_bench`；本页聚焦 hash / map / vec / list / str / path / fuzzy。
+> 队列/并发容器的 SOTA 对标多在 sched 消费路径 + `queue_sota_bench`；本页聚焦 hash / map / vec / str / path / fuzzy。IntrusiveList 已归 core，见 [`benchmarks-core`](./benchmarks-core.md)。
 
 ## 0. 数据新鲜度（先看这个）
 
@@ -13,7 +13,7 @@
 | **path** | ✅ 双平台 n=15 | Win+Lin；算法基线 + filesystem 分离 |
 | **SwissTable map** | ⚠️ **2026-07 快照**（多 Win/WSL） | 总账有 ns 行；**非**本轮 mem 式三平台 sign 全刷 |
 | **hash / mix64 / Hash&lt;T&gt;** | ⚠️ 历史 + 红队公平性更正 | ⏳ 待三平台 `bench-stat -n15` 重写表 |
-| **SmallVector / IntrusiveList / CArray** | ⚠️ 主 Win + 部分补测 | IntrusiveList 平 boost 已测 |
+| **SmallVector / CArray** | ⚠️ 主 Win + 部分补测 | owning vector 形状待本轮统一三平台刷新 |
 | **fuzzy path match** | ⚠️ 主 Linux | O(N) scaling 证毕 |
 | **并发队列** | 见 queue / sched 文 | 不在本页展开 |
 
@@ -29,7 +29,6 @@
 | **SwissTable** | absl::flat_hash_map | ✅ find/insert/erase/iterate **追平或反超**（iterate 组扫 2x absl） |
 | **SmallVector** | absl::InlinedVector | ✅ 小 N churn **赢** 同款 SOTA |
 | **CArray** | std::vector | ✅ growth 赢（mimalloc 质量）；read 平 |
-| **IntrusiveList** | boost::intrusive::list | ✅ 赢 std；**平 boost** |
 | **string_ref 搜索** | string_view / libc | ➖ 自研 SIMD 项平；子串/字符集 **转发 std**（刻意） |
 | **StringBuf** | map+mutex / Absl 分片 peer | ⚠️ **Win 多平**；WSL/M4 lifecycle **输**；growth 赢；8t 距 Absl ~5% |
 | **path 词法** | string_view 扫 / filesystem | ✅ 平算法基线；**碾** filesystem（零分配结构差） |
@@ -64,7 +63,6 @@
 通用 hash map              → SwissTable（vs absl 已够强）
 栈上小数组                 → SmallVector
 堆动态数组                 → CArray（默认 SystemAllocator/mi）
-侵入链表                   → IntrusiveList（= boost 形）
 只读字符串视图 + 搜索      → string_ref（子串族借 std）
 驻留串 / intern            → StringBuf（接受跨平台 lifecycle 税；要 growth/并发）
 路径词法（无 syscall）     → path（零分配；勿用 filesystem 当算法对手）
@@ -86,7 +84,7 @@ scripts/bench-stat.py <build>/bin/hyle_hash_bench -n 15 ...
 # Swiss vs absl（需 -DHYLE_BENCH_ABSL）
 scripts/bench-stat.py <build>/bin/hyle_swiss_vs_absl_bench -n 15 ...
 
-# vec/list
+# vec
 scripts/bench-stat.py <build>/bin/hyle_container_misc_bench -n 15 ...
 
 # string / StringBuf
@@ -105,7 +103,7 @@ scripts/bench-stat.py <build>/bin/hyle_path_bench -n 15 ...
 |---|---|
 | hash 公平性更正 + 长度表 | mem-container §container·hash |
 | SwissTable vs absl | mem-container §container·map + README 总账 |
-| SmallVector / list / CArray | mem-container §container·vec/list |
+| SmallVector / CArray | mem-container §container·vec |
 | string_ref / StringBuf 三平台收口 | mem-container §container·str |
 | path | mem-container §container·path |
 | fuzzy | mem-container §模糊路径 |

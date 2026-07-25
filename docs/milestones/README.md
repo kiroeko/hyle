@@ -82,6 +82,7 @@ util ~1.3k · error **984** · time ~0.9k · obs/graph 各 ~0.6–0.8k。
 | ID | 阶段 | 模块 | 目的(一行) | 前置 | 预测LOC | 真实LOC | 状态 |
 |---|---|---|---|---|---|---|---|
 | **00-scaffolding** | P-1 | 构建 | CMake 多模块结构+GoogleTest/nanobench/sanitizer/CI+HYLE_宏骨架 | — | 0.6-1k | 294 | ✅ 完成 |
+| [core-reclosure](./core-module-closure.md) | P-1 | core | version/cache/macros/visibility/intrusive 严格收口 | 00 | — | 待本轮 cloc | ▶ **2026-07-25 当前审查**：实现与 Win/WSL 回验完成，待 Apple/LOC/提交 |
 | error-01 | P0 | error | Status + std::expected（历史首版） | 00 | 1-2k | 456 | 🗃️ 历史完成；接口与边界后由 error reclosure 重审 |
 | error-02 | P0 | error | error_handler vtable（历史） | error-01 | 1k | 127 (+74 测试) | 🗃️ 曾完成，实际消费者审查后退役；日志归 obs、合同违反归 fatal |
 | [error-03](./error-module-reclosure.md) | P0 | error | 面向真实调用重收 Status/Result/C ABI/context | error-01,obs-01 | — | 见任务页 | ✅ **2026-07-24 自身冻结**：功能/C++/C ABI 收口；Win/GCC14/M4 正确性 + 核心/正常路径 n=15，同形项无 LOSE；全库 adoption audit 进行中，mem 冷路径已统一 Status、私有 TLS 已删 |

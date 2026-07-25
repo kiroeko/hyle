@@ -43,7 +43,8 @@ TEST(Cpu, FeaturesCachedIdempotent) {
   EXPECT_EQ(std::memcmp(&a, &b, sizeof(CpuFeatures)), 0);
 }
 
-// cache_line_size(): a sane power-of-two in [16, 256] (64 on all mainstream CPUs),
+// cache_line_size(): a sane power-of-two in [16, 256] (commonly 64; Apple
+// Silicon reports 128),
 // stable across calls (cached). An invariant, not a specific-box assertion.
 TEST(Cpu, CacheLineSizeSane) {
   const unsigned c = cache_line_size();

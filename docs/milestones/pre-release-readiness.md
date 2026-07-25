@@ -13,8 +13,9 @@ HYLE 的“实现进度”与“当前标准的收口证书”必须分开读：
 | 仍有能力尾 | compute、graph | 先用真实北极星补能力，再执行同一严格合同 |
 | 整库发布面 | 部分完成 | 模块内 C ABI 随模块收；最后只做 install/export/FFI/bundle 总验收 |
 
-当前唯一下一模块是 **core**。它虽然只有很小的 version/intrusive 基础面，却被 time 等底层
-头直接消费；先冻结它能避免后续以错误的 header seam 为地基。当前队列见“施工顺序”。
+当前审查模块是 **core**。它完成后先独立审查 build/package system，再进入 util-core：构建
+系统必须把模块 target 图、可组合子集、迁移/安装和三平台环境变成可执行契约，不能继续让
+关键前置散落在 CMake、preset、脚本与文档之间。当前队列见“施工顺序”。
 
 ## 严格收口合同
 
@@ -38,16 +39,17 @@ benchmark 宣称 SOTA。
 排序依据是**接口爆炸半径 + 消费关系**，不是目录顺序，也不是谁的 benchmark 更多：
 
 1. **core**：冻结 version、公开头与 intrusive 基础形状；对已收口 time 做受影响项回验。
-2. **util-core seam**：只审低层 header-only 能力及 include/link 边；对 mem 的 SpinLock 消费做局部回验，不提前冻结 Registry。
-3. **obs**：分开审 log runtime 与 trace gate；统一 C error 形状，再核 mem/sched/io/compute hooks 是否正确。
-4. **container**：在 mem/platform/util-core 稳定后审容器能力、复杂度、争用、allocator/error 和 C/C++ 形状。
-5. **util-runtime / 完整 util**：container 稳定后再冻结 Registry、type-erasure 与完整 C ABI，合并 util-core 的证书。
-6. **sched**：汇合 platform/mem/time/container；按真实任务、同步、取消、关闭和 blocking workload 审算法及 API。
-7. **io**：在 sched 合同稳定后审 proactor、网络/文件/TLS/HTTP 的普通路径、错误、deadline/cancel 与跨后端性能。
-8. **math↔simd 边界审查，再收 simd**：math 是 clay math 被 std/SIMD 承载后的残余，不预设独立模块合理；逐项裁决 scalar/std/SIMD/消费域归属后，再从用户 kernel/batch 入口核 SIMD dispatch、dtype/math/sort/search。不能把 381-op benchmark 当产品目录，也不能先给偶然的 math surface 扩 C ABI。
-9. **compute**：补完真实 CPU/GPU/ggml/Vulkan 产品能力后收口；复用已冻结 simd/sched/mem/platform。
-10. **graph**：最后汇合 sched/compute/simd，完成 DAG 与数据并行北极星能力后收口。
-11. **发布总验收**：install/export、跨编译器 ABI、纯 C/TS/Python 最小 FFI 和发布 bundle。
+2. **build/package system**：让 CMake target 图准确描述模块组织；审 options→宏→target、依赖获取、三平台统一入口、static/shared、模块子集、source embed、install/find_package、交叉编译与生成目录治理。
+3. **util-core seam**：只审低层 header-only 能力及 include/link 边；对 mem 的 SpinLock 消费做局部回验，不提前冻结 Registry。
+4. **obs**：分开审 log runtime 与 trace gate；统一 C error 形状，再核 mem/sched/io/compute hooks 是否正确。
+5. **container**：在 mem/platform/util-core 稳定后审容器能力、复杂度、争用、allocator/error 和 C/C++ 形状。
+6. **util-runtime / 完整 util**：container 稳定后再冻结 Registry、type-erasure 与完整 C ABI，合并 util-core 的证书。
+7. **sched**：汇合 platform/mem/time/container；按真实任务、同步、取消、关闭和 blocking workload 审算法及 API。
+8. **io**：在 sched 合同稳定后审 proactor、网络/文件/TLS/HTTP 的普通路径、错误、deadline/cancel 与跨后端性能。
+9. **math↔simd 边界审查，再收 simd**：先裁决 scalar/std/SIMD/消费域归属，再冻结 SIMD dispatch、dtype/math/sort/search。
+10. **compute**：补完真实 CPU/GPU/ggml/Vulkan 产品能力后收口；复用已冻结 simd/sched/mem/platform。
+11. **graph**：最后汇合 sched/compute/simd，完成 DAG 与数据并行北极星能力后收口。
+12. **发布总验收**：install/export、跨编译器 ABI、纯 C/TS/Python 最小 FFI 和发布 bundle。
 
 util 的两步是其真实产品分层：前一步只冻结低层自包含头，后一步才冻结依赖 container 的
 `hyle_util` runtime。两步必须使用同一任务页累计证据，禁止演变为两轮全模块复审。

@@ -10,11 +10,12 @@
 |---|---|
 | 本页（对标总账） | 全模块 win/loss ledger 一览 + 总账小结（最常看的一张表） |
 | [error 实测](./benchmarks-error.md) | **error 2026-07-25 当前接口三平台 n=15 冻结证书**（核心与正常路径分离，errno 成熟库对照已补，当前同形项无 LOSE） |
+| [core 实测](./benchmarks-core.md) | **core 当前证书**：IntrusiveList 对 Boost auto_unlink 同 ownership 的 FIFO/remove/batch-discard；cache/prefetch 只在真实消费者承重 |
 | [platform 实测](./benchmarks-platform.md) | **platform 2026-07-25 当前证书**（既有性能表不变；MappedFile advice/residency 按 OS-call complexity 守门） |
 | [time 实测](./benchmarks-time.md) | **time 2026-07-25 当前三平台证书**（clock / exact-ns radix TimerQueue / CommonTimeoutQueue；含 Seastar faithful baseline、order-swap 与 M4 QoS） |
 | [mem 实测](./benchmarks-mem.md) | **mem 2026-07-25 当前证书**：`6213115` 关闭 Region 长寿命遍历复杂度并以 31-process×10,001-epoch scaling、正常 request p50/p95/p99 重签；`20f3676` 的 O(1) FixedPool、`1de939d` 的 SharedPool/cache 与 `2cbc307` 的其余证书继续有效 |
 | [container 实测](./benchmarks-container.md) | **container 导航证书**：新鲜度、非 SOTA、选型；详表 → [benchmarks-mem-container.md](./benchmarks-mem-container.md) |
-| [container 详表](./benchmarks-mem-container.md) | hash/SwissTable/vec/list/str/path/fuzzy 长表 + 史；**入口见上** |
+| [container 详表](./benchmarks-mem-container.md) | hash/SwissTable/vec/str/path/fuzzy 长表 + 史；**入口见上** |
 | [simd 产品 kernel](./benchmarks-simd.md) | dot/saxpy、math、dtype、gather、vendor 竞争…；**op 全量不在此** |
 | [simd op 对拍证书](./benchmarks-simd-ops.md) | **逐 op vs Highway**：三平台 LOSE=0 摘要 + 覆盖树；全表 → [orderswap 矩阵](../milestones/simd-orderswap-matrix.md)（最新最全） |
 | [simd op 对拍方法论](./simd-op-benchmark-methodology.md) | op_parity 规程：形状、双序、锚点闸门、LOSE 证据阶梯 |
@@ -112,8 +113,6 @@
 | **container·vec** SmallVector 小 N | 0.41 | std::vector | 16.8 | 41x | absl::InlinedVector | 0.84–1.0 | 2.0–2.4x | ✅赢同款 small-vector SOTA(absl 侧 spread 大取范围) |
 | **container·vec** SmallVector 溢出(64>内联16) | 0.88 | std::vector | 4.70 | 5.3x | absl::InlinedVector | 2.40 | 2.7x | ✅赢同款(堆溢出/增长路径) |
 | **container·vec** CArray growth/read | 0.51/0.18 | std::vector(即 SOTA) | 0.75/0.18 | 1.48x/1.0x | std::vector(同 std,本身即 SOTA) | 0.75/0.18 | 1.48x/1.0x | ✅赢 growth(2026-07 grow 真改 reallocate;赢因 mimalloc 分配器质量非"原地无copy",详节纠错)/ ➖平 read |
-| **container·list** IntrusiveList push/pop | 3.15 | std::list | 25.0 | 7.1x | boost::intrusive::list | 2.77 | ~1.0x 平 | ✅赢 std 7.1x、**平 boost SOTA**(2026-07 checkout boost submodule 实测:ratio 0.88 gap12%«spread44%=统计平局) |
-| **container·list** IntrusiveList::remove(O(1)) | 3.13 | std::list::erase | 55.7 | 11.1x | boost::intrusive::list::erase | 3.15 | ~1.0x 平 | ✅赢 std、**平 boost SOTA**(任意位置 O(1) 摘除,两者同 circular-sentinel 形状) |
 | **container·str** StringBuf intern(100k/2k 唯一) | 28.86(Win) | 无锁 map floor | 19.78 | 0.685x | thread-safe peer(map+mutex) | 28.70 | **0.994x 平** | Win 平；WSL 0.772x、M4 0.934x，旧 1.17x 证书撤回 |
 | **container·str** StringBuf `intern_many` | 19.97(Win) | 无锁 map floor | 19.78 | **0.990x 平** | 同左 | 19.78 | 0.990x | M4 1.045x；WSL 0.732x，非全平台无条件赢 |
 | **container·str** StringBuf 1KiB unique growth | 101.58(Win) | std::unordered_set | 1813.93 | 17.86x | absl::flat_hash_set | 544.05 | **5.36x** | ✅ cached resident hash；WSL vs Absl 1.71x，M4 vs std 1.67x |

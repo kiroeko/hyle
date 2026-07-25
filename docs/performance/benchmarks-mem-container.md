@@ -43,18 +43,17 @@
 
 > 优化史要点：probe 预取、mix64 单乘折叠、H1=identity、SSSE3 match_empty、for_each 组扫、NEON pack 向量化。find-miss 旧 “~10% 待 profile” 已关。hash 层按 key 类型反哺 map（整数 key 本就 SOTA；复合/长串 key 吃 mix64_2 / wyhash）。
 
-## container·vec / ·list —— SmallVector / IntrusiveList / CArray（vs std + 真 SOTA，`container_misc_bench.cc`）
+## container·vec —— SmallVector / CArray（vs std + 真 SOTA，`container_misc_bench.cc`）
 
-> 环境:Win MSVC19.50 Release,nanobench。声明承重容器。**标尺升级**:不止 std——SmallVector→`absl::InlinedVector`(small-vector SOTA,gated `-DHYLE_BENCH_ABSL`)、IntrusiveList→`boost::intrusive::list`(侵入容器 canonical SOTA,gated `-DHYLE_BENCH_BOOST`)、CArray→`std::vector`(动态数组的 drop-in SOTA,本身已是高度调优,always-on)。
+> 环境:Win MSVC19.50 Release,nanobench。声明承重容器。SmallVector→`absl::InlinedVector`(small-vector SOTA,gated `-DHYLE_BENCH_ABSL`)，CArray→`std::vector`(动态数组 drop-in SOTA)。IntrusiveList 已归 core，当前实现与同形数据只见 [`benchmarks-core`](./benchmarks-core.md)，不在这里保留旧快照。
 
 | 场景 | HYLE | std | 真 SOTA(gated) | 结论 |
 |---|---|---|---|---|
 | **小 N churn**(建+填 8 int+析构) | SmallVector<int,16> **0.41 ns** | vector 16.8 / vector+reserve 3.06 | **absl::InlinedVector 0.84–1.0** | ✅ **赢 absl 2.0–2.4x**(absl 侧 spread 大)、赢 std 41x |
-| **list churn**(push 4096 + pop 全) | IntrusiveList **3.15 ns** | list 25.0 | boost::intrusive **2.77**(平) | **8x 赢 std、平 boost SOTA**(2026-07 实测) |
 | **动态数组 growth**(push_back 4096 int,无 reserve) | CArray<int> **0.51 ns** | vector **0.75** | (std::vector 即 SOTA) | ✅ **赢 std::vector 1.48x**(grow 用 reallocate) |
 | **动态数组 read**(顺序求和 4096) | CArray<int> **0.18 ns** | vector 0.18 | (std::vector 即 SOTA) | ➖ **平 std::vector**(arr[i] 单 load 兑现) |
 
-**诚实结论**:① **SmallVector 反超 absl::InlinedVector 2.0–2.4x**——不是"只赢 std":absl::InlinedVector 是 small-vector 的 SOTA(同 inline 存储设计),HYLE 0.41ns vs absl 0.84–1.0ns(absl 侧 nanobench 标 unstable、spread 大,故取范围),小 N churn 真赢同款 SOTA(也赢 std::vector 41x);溢出路径同样赢 absl 2.7x。② **IntrusiveList 8x 赢 std::list + 平 boost::intrusive SOTA(2026-07 实测,补 ⏳待补)**:零节点分配。checkout boost submodule(intrusive+config/assert/core/move/static_assert 依赖闭包)后实测:push/pop churn HYLE 3.15 vs boost 2.77(ratio 0.88,gap 12%«spread 44%=**统计平局**)、任意位置 O(1) remove HYLE 3.13 vs boost 3.15(平)。两者同 **circular-sentinel 双向链**形状(canonical intrusive),无抄漏——HYLE `unlink` 额外清 prev/next=nullptr 是 unlink-安全特性(支持 `linked()` 查询 + 安全重复 unlink),非性能差。list 项无可反哺的前轮优化(纯指针操作,不涉分配/hash/SIMD),测试项已覆盖 push/pop/front/back/任意 remove/empty 六种 + 两 bench 场景(churn + 乱序 unlink)。③ **CArray 反超 std::vector ~1.48x growth、平 read**:growth 赢的**真根因(2026-07 纠错)**——旧文档称"经 `reallocate()` mimalloc 原地扩展、无 copy"是**双重错**:① 当时代码根本没用 reallocate(是 `allocate`+`memcpy`+`free`,与 std::vector 同形);② 几何增长(4→8→16…)常跨 mimalloc size-class,**即便用 reallocate 也多是 relocate+copy,in-place 很少触发**。真正赢 std 的因是 **mimalloc 分配器质量**(比 std::vector 的 `operator new` 快)+ header-before-data 零索引开销,不是"原地无 copy"。现已把 grow **真改用 `mem::reallocate`**(兑现文档、且是更简 API：≤ 手动路径,偶尔省一次 copy),实测 growth 0.53→0.51ns、1.34x→1.48x(边际,证实 in-place 少触发);read 路径 arr[i] 单 load 与 vector 持平(header-before-data 布局零索引开销)。
+**诚实结论**：① SmallVector 在当前 Windows 快照中反超同形 `absl::InlinedVector`，但仍待按当前收口纪律统一刷新三平台；② CArray growth 的收益来自 mimalloc 分配质量与 `reallocate` 机会，不应再写成“保证原地无 copy”，indexed read 与 vector 同档。IntrusiveList 不再属于本节。
 
 ## container·str —— string_ref / StringBuf / string_algo（`string_ref_bench.cc` / `string_buf_bench.cc` / `string_algo_bench.cc`）
 

@@ -6,6 +6,7 @@
 #include <new>
 #include <type_traits>
 
+#include "hyle/core/cache.h"
 #include "hyle/macros.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/mem/system_inline.h"
@@ -125,8 +126,9 @@ class BoundedQueue {
   // share. HYLE's earlier port OMITTED this: an 8-byte T made Cell 16 bytes -> 4 cells
   // per line -> producers/consumers on neighbouring slots ping-pong the line (measured
   // ~1.33x slower than rigtorp at 4P/4C). alignas(cache line) restores parity. Cost:
-  // the buffer grows to capacity*64B (space-for-throughput, the same trade rigtorp makes).
-  struct alignas(HYLE_CACHE_LINE_SIZE) Cell {
+  // the buffer grows to one static cache line per slot (space-for-throughput,
+  // the same trade rigtorp makes).
+  struct alignas(core::kDestructiveInterferenceSize) Cell {
     std::atomic<std::uint64_t> seq;
     T data;
   };
@@ -151,8 +153,8 @@ class BoundedQueue {
   // Keep the two contended counters on separate cache lines (canonical Vyukov
   // layout) so producers hammering enqueue_pos_ don't false-share with
   // consumers hammering dequeue_pos_.
-  alignas(HYLE_CACHE_LINE_SIZE) std::atomic<std::uint64_t> enqueue_pos_;
-  alignas(HYLE_CACHE_LINE_SIZE) std::atomic<std::uint64_t> dequeue_pos_;
+  alignas(core::kDestructiveInterferenceSize) std::atomic<std::uint64_t> enqueue_pos_;
+  alignas(core::kDestructiveInterferenceSize) std::atomic<std::uint64_t> dequeue_pos_;
 };
 
 }  // namespace hyle::container

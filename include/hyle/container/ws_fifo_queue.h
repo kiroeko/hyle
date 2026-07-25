@@ -6,6 +6,7 @@
 #include <new>
 #include <type_traits>
 
+#include "hyle/core/cache.h"
 #include "hyle/macros.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/mem/system_inline.h"
@@ -206,8 +207,8 @@ class WsFifoQueue {
   HYLE_NO_UNIQUE_ADDRESS Alloc alloc_{};
   Slot* buf_ = nullptr;
   std::uint32_t mask_;
-  alignas(HYLE_CACHE_LINE_SIZE) std::atomic<std::uint64_t> head_;  // packed steal|real
-  alignas(HYLE_CACHE_LINE_SIZE) std::atomic<std::uint32_t> tail_;
+  alignas(core::kDestructiveInterferenceSize) std::atomic<std::uint64_t> head_;  // packed steal|real
+  alignas(core::kDestructiveInterferenceSize) std::atomic<std::uint32_t> tail_;
 };
 
 }  // namespace hyle::container

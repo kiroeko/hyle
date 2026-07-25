@@ -92,8 +92,11 @@ HYLE 的每条纪律都回溯到四个**约束源**：① ABI 稳定 ② 编译�
 - **header-before-data 侵入式数组**（carray）：指针即数据、`a[i]` 零间接、cache 友好、可直传 C API。**改进**：C++23 包一层带 `[[nodiscard]]`/迭代器的薄封装补类型安全。
 - **type-erased core + typed shell**：内联模板按类型在头里展开，重逻辑走 `HYLE_API` 的 `detail::*_internal(void*, item_size, ...)` 只编一份进 DLL。**保留为核心范式**（跨 DLL 防代码膨胀 + allocator 一致）。
 - **`string_ref` 的 `null_terminated` 位**：相对 `std::string_view` 的真实增量——标志为真才能零拷贝当 C 串传。保留。
-- **cache-line 对齐**：`HYLE_CACHE_LINE_SIZE 64`、`HYLE_ALIGNED`；并发结构体按 cache-line padding 防伪共享。
-- **显式 padding**：`HYLE_PAD(n)` + `-Wpadded`，禁隐式填充。
+- **cache-line 对齐**：C++ 使用 `core::kDestructiveInterferenceSize`，C/公共布局使用
+  `HYLE_STATIC_CACHE_LINE_SIZE`；Apple Silicon 为 128B，其余当前目标 64B。运行时算法事实用
+  `platform::cache_line_size()`，不得拿 runtime 值形成公共类型 ABI。
+- **padding**：优先 `alignas` + 真实字段布局与 `static_assert`；不保留只为压制 benchmark/
+  `-Wpadded` 的匿名 padding 宏。
 
 ## 8. 编译期设施
 
@@ -133,7 +136,7 @@ HYLE 的每条纪律都回溯到四个**约束源**：① ABI 稳定 ② 编译�
 
 ## 11. 速查表
 
-**继承（风格基因，照搬/微调）**：C-ABI vtable+`_o/_t`+make/destroy+显式 allocator、Status 指针标签内联、X-macro 码表、传播宏（现名 `ASSIGN_OR_RETURN`）、侵入式 RefCounted/Ref、编译期 type_name+哈希、ScopeGuard/DEFER、header-before-data carray、type-erased core+typed shell、string_ref null_terminated 位、`HYLE_PAD`+对齐 static_assert、cache-line 对齐、三态可见性宏、Registry 自注册、std 分层纪律、decls.h include 纪律。
+**继承（风格基因，照搬/微调）**：C-ABI vtable+`_o/_t`+make/destroy+显式 allocator、Status 指针标签内联、X-macro 码表、传播宏（现名 `ASSIGN_OR_RETURN`）、侵入式 RefCounted/Ref、编译期 type_name+哈希、ScopeGuard/DEFER、header-before-data carray、type-erased core+typed shell、string_ref null_terminated 位、显式布局 static_assert、类型化 cache-line 对齐、三态可见性宏、Registry 自注册、std 分层纪律、decls.h include 纪律。
 
 **取代（C++23 吸收，留意图换实现）**：Comparable→`<=>`、SFINAE→concepts、Result 核心→`std::expected`、`str()`→`std::format`、catomics→`std::atomic`(留自旋锁 padding)、hashmap 宏 temp/哨兵→concept 模板(+SwissTable SIMD)、pragma pack→`alignas`、`same_as_t`→`std::type_identity_t`、Singleton leaky→Meyers。
 

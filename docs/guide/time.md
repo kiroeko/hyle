@@ -79,10 +79,11 @@ due.consume_all([](hyle::time::TimerEntry* timer) noexcept {
 });
 ```
 
-queue 不分配、不执行 callback。`TimerEntry` 的地址必须稳定，且 entry/queue 都不可在仍 linked
-时销毁。`cancel` 对 idle entry 返回 false；已在同 queue 的 entry 再 schedule 是 reschedule；
-另一个 queue 的 entry 是合同错误。`advance` 时间必须非递减，输出 list 必须 drain 后才能
-re-arm/destroy 其中节点。
+queue 不分配、不执行 callback。`TimerEntry` 的地址在 linked 期间必须稳定；armed entry 必须先
+cancel 才能销毁，delivery list 中的 entry 必须活到 list 被 drain 或销毁。list 析构会自动摘除
+剩余节点，因此可以直接丢弃整个 delivery batch；节点随后可重新 arm。`cancel` 对 idle entry
+返回 false；已在同 queue 的 entry 再 schedule 是 reschedule；另一个 queue 的 entry 是合同
+错误。`advance` 时间必须非递减，仍在输出 list 中的节点不可直接 re-arm/destroy。
 
 `next_deadline()` 返回 optional chrono time point，适合正常 C++ event loop；紧凑系统边界可用
 `next_deadline_ns()`，空时为 `UINT64_MAX`。取消当前 minimum 后 next 允许保守地早醒一次，
