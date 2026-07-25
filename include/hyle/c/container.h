@@ -417,6 +417,9 @@ HYLE_CONTAINER_C_API size_t hyle_container_ws_fifo_queue_capacity(
 
 typedef struct hyle_container_concurrent_vector_o
     hyle_container_concurrent_vector;
+/* Multi-writer append-only pointer vector. size() counts reserved indices and
+ * is not a completion fence for in-flight pushes. Read a newly appended index
+ * only after its push returns, or quiesce writers before traversing [0,size()). */
 HYLE_CONTAINER_C_API hyle_status hyle_container_concurrent_vector_create(
     hyle_container_concurrent_vector** out, hyle_allocator backing,
     size_t initial_capacity);

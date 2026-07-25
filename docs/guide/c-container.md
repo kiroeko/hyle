@@ -206,6 +206,9 @@ consumer cursor 应由各 consumer 私有并在多次 pop 间保留。
 `hyle_container_concurrent_vector_capacity`、
 `hyle_container_concurrent_vector_at` 是 append-only `void*` vector。`push` 返回
 Status 并写 `out_index`；已经发布的元素地址不移动，调用者仍负责 payload 生命周期。
+多个 `push` 可真正并行；`size` 返回已领取 index 数，不是 in-flight push 的完成栅栏。
+读取新 tail 前必须等待对应 push 返回或等待所有 writers quiesce；并发 append 期间可读
+事先完成的 prefix。
 
 所有并发容器的 `create` 都是 Status + out；创建完成后，满/空/竞争仍走原来的
 无分配热路径返回值。`void*` payload 可为 NULL，HYLE 不解释也不拥有它。

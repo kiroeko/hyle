@@ -14,6 +14,7 @@
 | **SwissTable map** | ⚠️ **2026-07 快照**（多 Win/WSL） | 总账有 ns 行；**非**本轮 mem 式三平台 sign 全刷 |
 | **hash / mix64 / Hash&lt;T&gt;** | ⚠️ 历史 + 红队公平性更正 | ⏳ 待三平台 `bench-stat -n15` 重写表 |
 | **SmallVector / CArray** | ⚠️ 主 Win + 部分补测 | owning vector 形状待本轮统一三平台刷新 |
+| **ConcurrentVector** | ✅ Windows n=15；⏳ WSL/M4 | oneTBB 同合同：8 writer 平，单 writer/索引读 HYLE 赢 |
 | **并发队列** | 见 queue / sched 文 | 不在本页展开 |
 
 **读法**：标 ✅ 的可当当前产品结论；标 ⚠️ 的方向大体可信，但**不要**当 2026-07-20 式三平台 sign 证书去对外硬报绝对 ns。
@@ -31,6 +32,27 @@
 | **string_ref 搜索** | string_view / libc | ➖ 自研 SIMD 项平；子串/字符集 **转发 std**（刻意） |
 | **StringBuf** | map+mutex / Absl 分片 peer | ⚠️ **Win 多平**；WSL/M4 lifecycle **输**；growth 赢；8t 距 Absl ~5% |
 | **path 词法** | string_view 扫 / filesystem | ✅ 平算法基线；**碾** filesystem（零分配结构差） |
+| **ConcurrentVector** | oneTBB `concurrent_vector` | ✅ Windows：8 writer 统计平；单 writer/读 HYLE 显著赢 |
+
+### ConcurrentVector：先校正合同，再谈速度（Windows MSVC Release，n=15）
+
+旧实现把所有 writer 的元素构造放进一个 mutex；第一版并行改造又为“实时 size 只含
+完成连续前缀”增加全局 ordered commit，8 writer 仅为 oneTBB 的 0.17x。该 reader
+合同没有生产消费者，也是被单 writer+reader benchmark 诱导出来的错误形状，已撤销。
+
+当前合同与 oneTBB 对齐：append 返回后其 index 可用，或 writers quiesce 后遍历；并发
+append 时只能读取事先完成的 prefix。HYLE 额外保证 allocator failure 在领取 index 前
+发生，不进入 oneTBB 文档允许的 broken-vector 状态。
+
+| 正常用法 | HYLE median | oneTBB median | n=15 判定 |
+|---|---:|---:|---|
+| 单 writer push 100k | **6.409 ns** | 7.544 ns | HYLE 1.18x；15/15 |
+| 8 writer，预留后 append 200k | **33.735 ns** | 34.306 ns | **统计平**；ratio median 0.959，7/15 |
+| quiesce 后顺序索引读 | **0.917 ns** | 1.250 ns | HYLE 1.36x；15/15 |
+| 4 readers 读既有 prefix + 1 writer | **0.457 ns** | 0.511 ns | HYLE 1.12x；15/15 |
+
+以上只签 Windows。跨平台结论要用同一 `HYLE_QUEUE_BENCH_FILTER=concurrent-vector`
+和 `bench-stat.py -n 15` 在 WSL/M4 刷新；不能把本表外推为三平台证书。
 
 ## 2. 非 SOTA / 冻结边界（诚实清单）
 
@@ -92,6 +114,11 @@ scripts/bench-stat.py <build>/bin/hyle_string_buf_bench -n 15 ...
 
 # path
 scripts/bench-stat.py <build>/bin/hyle_path_bench -n 15 ...
+
+# ConcurrentVector only（queue bench 其余 workload 不运行）
+HYLE_QUEUE_BENCH_FILTER=concurrent-vector \
+  scripts/bench-stat.py <build>/bin/hyle_queue_sota_bench -n 15 \
+  --pair "HYLE ConcurrentVector" "tbb concurrent_vector"
 ```
 
 刷新后：改本页 §0 新鲜度 + 总账对应行；详表回填 [benchmarks-mem-container.md](./benchmarks-mem-container.md)。

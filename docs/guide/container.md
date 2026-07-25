@@ -22,7 +22,7 @@ container 提供性能敏感的基础数据结构、借用字符串/路径算法
 | 极高 MPMC 争用，可放弃全局 FIFO | `ShardedQueue<T>` | producer hint 分片；每 consumer 保留自己的 cursor |
 | 单 owner 做新任务、多个 thief 偷旧任务 | `WorkStealingDeque<T>` | owner bottom LIFO，thief top；固定容量 |
 | owner 需要 FIFO，thief 批量接走约一半 | `WsFifoQueue<T>` | 调度专用；两个队列必须容量相同 |
-| 并发 append，发布后索引/地址稳定 | `ConcurrentVector<T>` | 分段存储；当前 writer 路径串行化，适合 read-mostly publish |
+| 多 writer append，quiesce 后按索引遍历 | `ConcurrentVector<T>` | 分段稳定地址；append 并行，实时 `size()` 不是元素完成栅栏 |
 | 字节 hash | `hash_bytes` / `Hash<T>` | 小 typed key 内联；字节范围统一走稳定库入口 |
 | 词法路径切分/拼接/归一化 | `path.h` view/buffer API | 不访问文件系统，不解析 symlink/case/权限 |
 
@@ -101,11 +101,14 @@ symlink 或 Windows case rules 等价；需要真实 filesystem 行为时使用 
 - scheduler 的 worker 自己 push/pop、别人 steal：`WorkStealingDeque`。
 - owner 公平 FIFO，并希望空闲 worker 批量接工作：`WsFifoQueue`。
 
-这些容器构造时完成 storage allocation，热 push/pop/steal 不分配。容量与 owner/thief
-角色是合同；违反单 owner 约束不是“稍慢”，而是错误。`ConcurrentVector` 的段地址稳定
-适合 registry/snapshot 发布，但当前多 writer 由 mutex 串行化；不要把它当 oneTBB
-`concurrent_vector` 的同吞吐替代品。这个差距在 container 收口中单独处理，不由单 writer
-benchmark 掩盖。
+这些 queue 构造时完成 storage allocation，热 push/pop/steal 不分配。容量与
+owner/thief 角色是合同；违反单 owner 约束不是“稍慢”，而是错误。
+
+`ConcurrentVector` 与 oneTBB 一样允许 writers 原子领取不同索引并并行构造，只有跨
+segment allocation 进入冷锁。安全模式是：writers join/quiesce 后遍历；append 返回后
+使用它返回的 index；或在 append 期间只读事先完成的 prefix。`size()` 是 reservation
+count，不能在 writers 活跃时把 `[0,size())` 当作全部构造完成。元素构造必须 noexcept；
+OOM 在领取 index 前返回，不会留下永久洞。
 
 ## 常见坑
 
@@ -113,6 +116,8 @@ benchmark 掩盖。
 - `StringView`、map find 返回值和 vector data 都是借用地址，分别受来源/grow/erase 失效。
 - flat map 平均 O(1) 不等于 adversarial hash 安全；业务 Hash 必须提供足够熵且与 Eq 一致。
 - `ShardedQueue` 不保证 global FIFO；work-stealing 两种队列也不提供 MPMC 的任意角色语义。
+- `ConcurrentVector::size()` 不是 live publication fence；并发写时读取新 tail 需要外部
+  完成同步，或让 `T` 自己承载 atomic/future 状态。
 - `hash_bytes` 的 >16B 路径会跨库调用。若它确实成为极端热点，应先批处理或让上层缓存
   hash；HYLE 不公开依赖私有 vendor 头、且只适用于部分交付形状的 inline 旁路。
 - 性能数字、平台、对手合同和仍未 SOTA 的条目只见

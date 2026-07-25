@@ -1,3 +1,5 @@
+#define _CRT_SECURE_NO_WARNINGS 1
+
 // SOTA parity for the lock-free queue cluster (task #9). Until now these four
 // structures claimed to match moodycamel / tokio / oneTBB but had ZERO head-to-
 // head benchmark -- "coverage too low so assume SOTA" is exactly the self-
@@ -30,7 +32,9 @@
 #include <nanobench.h>
 
 #include <atomic>
+#include <cstdlib>
 #include <cstdint>
+#include <string_view>
 #include <thread>
 #include <vector>
 
@@ -431,6 +435,52 @@ void bench_concurrent_vector() {
 #endif
   }
   {
+    constexpr int kThreads = 8;
+    constexpr int kPerThread = 25000;
+    constexpr int kTotal = kThreads * kPerThread;
+    ankerl::nanobench::Bench b;
+    b.title("ConcurrentVector 8-writer reserved append (200k)")
+        .relative(true)
+        .batch(kTotal)
+        .minEpochIterations(10);
+    b.run("HYLE ConcurrentVector", [&] {
+      ConcurrentVector<std::uint64_t> v;
+      v.reserve(kTotal);
+      std::atomic<bool> go{false};
+      std::vector<std::thread> writers;
+      writers.reserve(kThreads);
+      for (int t = 0; t < kThreads; ++t) {
+        writers.emplace_back([&, t] {
+          while (!go.load(std::memory_order_acquire)) {}
+          for (int i = 0; i < kPerThread; ++i)
+            v.emplace_back(static_cast<std::uint64_t>(t) * kPerThread + i);
+        });
+      }
+      go.store(true, std::memory_order_release);
+      for (auto& writer : writers) writer.join();
+      ankerl::nanobench::doNotOptimizeAway(v.size());
+    });
+#if defined(HYLE_BENCH_TBB)
+    b.run("tbb concurrent_vector", [&] {
+      tbb::concurrent_vector<std::uint64_t> v;
+      v.reserve(kTotal);
+      std::atomic<bool> go{false};
+      std::vector<std::thread> writers;
+      writers.reserve(kThreads);
+      for (int t = 0; t < kThreads; ++t) {
+        writers.emplace_back([&, t] {
+          while (!go.load(std::memory_order_acquire)) {}
+          for (int i = 0; i < kPerThread; ++i)
+            v.emplace_back(static_cast<std::uint64_t>(t) * kPerThread + i);
+        });
+      }
+      go.store(true, std::memory_order_release);
+      for (auto& writer : writers) writer.join();
+      ankerl::nanobench::doNotOptimizeAway(v.size());
+    });
+#endif
+  }
+  {
     // Lock-free read hot path: sequential index sum over a prebuilt vector.
     ConcurrentVector<std::uint64_t> hv;
     for (int i = 0; i < kN; ++i) hv.push_back(static_cast<std::uint64_t>(i));
@@ -533,6 +583,14 @@ void bench_concurrent_vector() {
 }  // namespace
 
 int main() {
+  const char* filter = std::getenv("HYLE_QUEUE_BENCH_FILTER");
+  if (filter != nullptr) {
+    if (std::string_view(filter) == "concurrent-vector") {
+      bench_concurrent_vector();
+      return 0;
+    }
+    return 2;
+  }
   bench_single_thread();
   bench_mpmc<2, 2>();
   bench_mpmc<4, 4>();

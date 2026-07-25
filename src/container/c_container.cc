@@ -1383,7 +1383,7 @@ hyle_status hyle_container_concurrent_vector_push(
     return hyle_status_invalid_argument(
         "index output and concurrent vector are required");
   *out_index = SIZE_MAX;
-  const size_t index = vector->value.push_back(item);
+  const size_t index = vector->value.try_push_back(item);
   if (index == SIZE_MAX)
     return hyle_status_resource_exhausted(
         "concurrent vector storage allocation failed");

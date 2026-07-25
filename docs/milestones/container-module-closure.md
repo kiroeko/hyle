@@ -3,10 +3,11 @@
 > **2026-07-25 严格复审说明：** 本页保留 2026-07-19 的施工证据与当时点值，
 > 不再代表当前接口或“实际使用导向”的最终证书。严格复审已经把 C++ 值容器从
 > POD/显式 allocator 形状改为默认可用的 `SmallVector`、`FlatHashMap`，并把 C ABI
-> 从私有 TLS last-error 改为共享 `hyle_status + out`；当前动态 C 面为 108 个声明。
+> 从私有 TLS last-error 改为共享 `hyle_status + out`；当前动态 C 面为 106 个声明。
 > 新增的 [`container.md`](../guide/container.md) 负责告诉用户什么场景选择什么。
-> `ConcurrentVector` 的多 writer 形状、真正的 typed `FlatHashSet`、map 迭代/便利接口及
-> 同合同强 peer 性能证据仍在复审，因此 container **尚未获得 2026-07-25 严格证书**。
+> `ConcurrentVector` 已按 oneTBB 实际合同改为并行 writer，Windows n=15 为同档；
+> 真正的 typed `FlatHashSet`、map 迭代/便利接口及跨平台强 peer 性能证据仍在复审，
+> 因此 container **尚未获得 2026-07-25 严格证书**。
 > 复审也删除了无生产消费者、属于 quick-open 应用策略的 fuzzy scorer/top-K 及其 C
 > 导出；旧 container-06c 仍作为历史任务记录保留。
 > 下文的 109 exports、124 callable、TLS error 和性能表只应按历史快照阅读。
