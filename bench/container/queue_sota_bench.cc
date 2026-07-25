@@ -489,7 +489,7 @@ void bench_concurrent_vector() {
     });
 #endif
   }
-  if (run_case("read")) {
+  if (run_case("index")) {
     // Lock-free read hot path: sequential index sum over a prebuilt vector.
     ConcurrentVector<std::uint64_t> hv;
     for (int i = 0; i < kN; ++i) hv.push_back(static_cast<std::uint64_t>(i));
@@ -510,6 +510,30 @@ void bench_concurrent_vector() {
     if (run_tbb) b.run("tbb concurrent_vector", [&] {
       std::uint64_t sum = 0;
       for (int i = 0; i < kN; ++i) sum += tv[static_cast<std::size_t>(i)];
+      ankerl::nanobench::doNotOptimizeAway(sum);
+    });
+#endif
+  }
+  if (run_case("iterate")) {
+    ConcurrentVector<std::uint64_t> hv;
+    for (int i = 0; i < kN; ++i) hv.push_back(static_cast<std::uint64_t>(i));
+    ankerl::nanobench::Bench b;
+    b.title("ConcurrentVector range iteration sum (100k)")
+        .relative(true)
+        .batch(kN)
+        .minEpochIterations(50);
+    if (run_hyle) b.run("HYLE ConcurrentVector", [&] {
+      std::uint64_t sum = 0;
+      for (std::uint64_t value : hv) sum += value;
+      ankerl::nanobench::doNotOptimizeAway(sum);
+    });
+#if defined(HYLE_BENCH_TBB)
+    static tbb::concurrent_vector<std::uint64_t> tv;
+    if (tv.empty())
+      for (int i = 0; i < kN; ++i) tv.push_back(static_cast<std::uint64_t>(i));
+    if (run_tbb) b.run("tbb concurrent_vector", [&] {
+      std::uint64_t sum = 0;
+      for (std::uint64_t value : tv) sum += value;
       ankerl::nanobench::doNotOptimizeAway(sum);
     });
 #endif

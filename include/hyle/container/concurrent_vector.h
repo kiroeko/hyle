@@ -2,8 +2,10 @@
 
 #include <atomic>
 #include <bit>
+#include <compare>
 #include <cstddef>
 #include <cstdint>
+#include <iterator>
 #include <mutex>
 #include <new>
 #include <type_traits>
@@ -50,6 +52,145 @@ class ConcurrentVector {
 
  public:
   static constexpr std::size_t npos = static_cast<std::size_t>(-1);
+
+  template <bool IsConst>
+  class BasicIterator {
+    template <bool>
+    friend class BasicIterator;
+    friend class ConcurrentVector;
+
+    using Owner =
+        std::conditional_t<IsConst, const ConcurrentVector, ConcurrentVector>;
+
+   public:
+    using iterator_concept = std::random_access_iterator_tag;
+    using iterator_category = std::random_access_iterator_tag;
+    using value_type = T;
+    using difference_type = std::ptrdiff_t;
+    using reference = std::conditional_t<IsConst, const T&, T&>;
+    using pointer = std::conditional_t<IsConst, const T*, T*>;
+
+    BasicIterator() noexcept = default;
+
+    template <bool Enabled = IsConst>
+      requires Enabled
+    BasicIterator(const BasicIterator<false>& other) noexcept
+        : owner_(other.owner_), index_(other.index_), limit_(other.limit_),
+          pointer_(other.pointer_), segment_(other.segment_),
+          segment_begin_(other.segment_begin_),
+          segment_end_(other.segment_end_) {}
+
+    reference operator*() const noexcept { return *pointer_; }
+    pointer operator->() const noexcept { return pointer_; }
+    reference operator[](difference_type offset) const noexcept {
+      return (*owner_)[static_cast<std::size_t>(
+          static_cast<difference_type>(index_) + offset)];
+    }
+
+    BasicIterator& operator++() noexcept {
+      ++index_;
+      if (index_ >= limit_) {
+        pointer_ = nullptr;
+      } else if (index_ == segment_end_) {
+        ++segment_;
+        segment_begin_ = segment_end_;
+        segment_end_ += owner_->segment_capacity(segment_);
+        pointer_ = owner_->segments_[segment_];
+      } else {
+        ++pointer_;
+      }
+      return *this;
+    }
+    BasicIterator operator++(int) noexcept {
+      BasicIterator copy = *this;
+      ++*this;
+      return copy;
+    }
+    BasicIterator& operator--() noexcept {
+      const std::size_t next = index_ - 1;
+      if (pointer_ != nullptr && next >= segment_begin_) {
+        --index_;
+        --pointer_;
+      } else {
+        seek(next);
+      }
+      return *this;
+    }
+    BasicIterator operator--(int) noexcept {
+      BasicIterator copy = *this;
+      --*this;
+      return copy;
+    }
+
+    BasicIterator& operator+=(difference_type offset) noexcept {
+      seek(static_cast<std::size_t>(static_cast<difference_type>(index_) +
+                                    offset));
+      return *this;
+    }
+    BasicIterator& operator-=(difference_type offset) noexcept {
+      return *this += -offset;
+    }
+
+    friend BasicIterator operator+(BasicIterator it,
+                                   difference_type offset) noexcept {
+      it += offset;
+      return it;
+    }
+    friend BasicIterator operator+(difference_type offset,
+                                   BasicIterator it) noexcept {
+      it += offset;
+      return it;
+    }
+    friend BasicIterator operator-(BasicIterator it,
+                                   difference_type offset) noexcept {
+      it -= offset;
+      return it;
+    }
+    friend difference_type operator-(const BasicIterator& left,
+                                     const BasicIterator& right) noexcept {
+      return static_cast<difference_type>(left.index_) -
+             static_cast<difference_type>(right.index_);
+    }
+    friend bool operator==(const BasicIterator& left,
+                           const BasicIterator& right) noexcept {
+      return left.owner_ == right.owner_ && left.index_ == right.index_;
+    }
+    friend auto operator<=>(const BasicIterator& left,
+                            const BasicIterator& right) noexcept {
+      return left.index_ <=> right.index_;
+    }
+
+   private:
+    BasicIterator(Owner* owner, std::size_t index,
+                  std::size_t limit) noexcept
+        : owner_(owner), limit_(limit) {
+      seek(index);
+    }
+
+    void seek(std::size_t index) noexcept {
+      index_ = index;
+      if (index_ >= limit_) {
+        pointer_ = nullptr;
+        return;
+      }
+      const auto [segment, offset] = owner_->locate(index_);
+      segment_ = segment;
+      segment_begin_ = index_ - offset;
+      segment_end_ = segment_begin_ + owner_->segment_capacity(segment_);
+      pointer_ = owner_->segments_[segment_] + offset;
+    }
+
+    Owner* owner_ = nullptr;
+    std::size_t index_ = 0;
+    std::size_t limit_ = 0;
+    pointer pointer_ = nullptr;
+    std::uint32_t segment_ = 0;
+    std::size_t segment_begin_ = 0;
+    std::size_t segment_end_ = 0;
+  };
+
+  using iterator = BasicIterator<false>;
+  using const_iterator = BasicIterator<true>;
 
   // initial_capacity sizes the first segment (rounded to a power of two); it
   // does not allocate eagerly. Later segments double.
@@ -158,6 +299,29 @@ class ConcurrentVector {
     const auto [segment, offset] = locate(index);
     return segments_[segment][offset];
   }
+
+  // Iteration snapshots the reservation count. Use it only after writers have
+  // quiesced; it deliberately does not turn size() into a completion fence.
+  // The iterator caches its current segment pointer, so ++ is a plain pointer
+  // increment except at segment boundaries.
+  iterator begin() noexcept {
+    const std::size_t count = size();
+    return iterator(this, 0, count);
+  }
+  iterator end() noexcept {
+    const std::size_t count = size();
+    return iterator(this, count, count);
+  }
+  const_iterator begin() const noexcept {
+    const std::size_t count = size();
+    return const_iterator(this, 0, count);
+  }
+  const_iterator end() const noexcept {
+    const std::size_t count = size();
+    return const_iterator(this, count, count);
+  }
+  const_iterator cbegin() const noexcept { return begin(); }
+  const_iterator cend() const noexcept { return end(); }
 
   // Reservation count. It is exact after writers quiesce, but deliberately is
   // not an acquire-publication barrier for in-flight element constructors.

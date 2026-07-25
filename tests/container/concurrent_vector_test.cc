@@ -14,6 +14,10 @@ using hyle::container::ConcurrentVector;
 using hyle::mem::Allocator;
 using hyle::mem::system_allocator;
 
+static_assert(std::random_access_iterator<ConcurrentVector<int>::iterator>);
+static_assert(
+    std::random_access_iterator<ConcurrentVector<int>::const_iterator>);
+
 namespace {
 void* fail_alloc(void*, std::size_t, std::size_t) noexcept { return nullptr; }
 void fail_free(void*, void*, std::size_t, std::size_t) noexcept {}
@@ -90,6 +94,29 @@ TEST(ConcurrentVector, LargeAppendAcrossSegments) {
   EXPECT_EQ(v[0], 0u);
   EXPECT_EQ(v[kCount / 2], kCount / 2);
   EXPECT_EQ(v[kCount - 1], kCount - 1);
+}
+
+TEST(ConcurrentVector, RandomAccessIterationAcrossSegments) {
+  ConcurrentVector<int> v(2);
+  for (int i = 0; i < 1000; ++i) v.emplace_back(i);
+
+  int expected = 0;
+  for (int& value : v) {
+    EXPECT_EQ(value, expected++);
+    value += 1;
+  }
+  EXPECT_EQ(expected, 1000);
+
+  const ConcurrentVector<int>& view = v;
+  EXPECT_EQ(view.end() - view.begin(), 1000);
+  EXPECT_EQ(*(view.begin() + 511), 512);
+  EXPECT_EQ(view.begin()[999], 1000);
+
+  auto it = view.end();
+  --it;
+  EXPECT_EQ(*it, 1000);
+  it -= 999;
+  EXPECT_EQ(*it, 1);
 }
 
 TEST(ConcurrentVector, AllocationFailureDoesNotReserveAHole) {
