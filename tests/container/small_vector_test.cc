@@ -1,7 +1,11 @@
 #include <gtest/gtest.h>
 
+#include <array>
+#include <iterator>
 #include <memory>
 #include <numeric>
+#include <sstream>
+#include <stdexcept>
 #include <string>
 
 #include "hyle/container/small_vector.h"
@@ -23,6 +27,48 @@ struct MoveConstructOnly {
 
   int value;
 };
+
+struct ThrowingCopy {
+  explicit ThrowingCopy(int input) noexcept : value(input) { ++alive; }
+  ThrowingCopy(const ThrowingCopy& other) : value(other.value) {
+    if (copies_before_throw == 0) throw std::runtime_error("copy failed");
+    --copies_before_throw;
+    ++alive;
+  }
+  ThrowingCopy(ThrowingCopy&& other) noexcept : value(other.value) { ++alive; }
+  ~ThrowingCopy() noexcept { --alive; }
+  ThrowingCopy& operator=(const ThrowingCopy&) = delete;
+  ThrowingCopy& operator=(ThrowingCopy&&) = delete;
+
+  static inline int alive = 0;
+  static inline int copies_before_throw = 0;
+  int value;
+};
+
+struct ToggleAllocatorState {
+  Allocator backing = system_allocator();
+  bool fail = false;
+};
+
+void* toggle_allocate(void* raw_state, std::size_t size,
+                      std::size_t alignment) noexcept {
+  auto* state = static_cast<ToggleAllocatorState*>(raw_state);
+  return state->fail ? nullptr : state->backing.allocate(size, alignment);
+}
+
+void toggle_deallocate(void* raw_state, void* pointer, std::size_t size,
+                       std::size_t alignment) noexcept {
+  auto* state = static_cast<ToggleAllocatorState*>(raw_state);
+  state->backing.deallocate(pointer, size, alignment);
+}
+
+void* toggle_reallocate(void* raw_state, void* pointer, std::size_t old_size,
+                        std::size_t new_size,
+                        std::size_t alignment) noexcept {
+  auto* state = static_cast<ToggleAllocatorState*>(raw_state);
+  return state->fail ? nullptr : state->backing.reallocate(
+                                     pointer, old_size, new_size, alignment);
+}
 
 }  // namespace
 
@@ -212,4 +258,140 @@ TEST(SmallVector, PositionalMutationNeedsNoMoveAssignment) {
   values.erase(values.begin(), values.begin() + 2);
   ASSERT_EQ(values.size(), 1u);
   EXPECT_EQ(values[0].value, 3);
+}
+
+TEST(SmallVector, CountAndRangeConstructionMatchSequenceShape) {
+  SmallVector<int, 2> defaults(3);
+  ASSERT_EQ(defaults.size(), 3u);
+  EXPECT_EQ(std::accumulate(defaults.begin(), defaults.end(), 0), 0);
+
+  SmallVector<std::string, 2> filled(3, std::string("x"));
+  ASSERT_EQ(filled.size(), 3u);
+  EXPECT_EQ(filled[2], "x");
+
+  const std::array<int, 4> source = {1, 2, 3, 4};
+  SmallVector<int, 2> forward(source.begin(), source.end());
+  EXPECT_TRUE(std::equal(forward.begin(), forward.end(), source.begin()));
+
+  std::istringstream stream("5 6 7");
+  SmallVector<int, 2> input((std::istream_iterator<int>(stream)),
+                            std::istream_iterator<int>());
+  ASSERT_EQ(input.size(), 3u);
+  EXPECT_EQ(input[0], 5);
+  EXPECT_EQ(input[2], 7);
+}
+
+TEST(SmallVector, RangeAndCountInsertAreSelfAliasSafe) {
+  SmallVector<std::string, 3> values({"a", "b", "c"});
+  auto inserted = values.insert(values.begin() + 1, values.begin(),
+                                values.end());
+  ASSERT_EQ(inserted, values.begin() + 1);
+  EXPECT_EQ(values,
+            (SmallVector<std::string, 3>{"a", "a", "b", "c", "b", "c"}));
+
+  inserted = values.insert(values.begin() + 2, 2, values.back());
+  ASSERT_EQ(inserted, values.begin() + 2);
+  EXPECT_EQ(values, (SmallVector<std::string, 3>{
+                        "a", "a", "c", "c", "b", "c", "b", "c"}));
+
+  std::istringstream stream("8 9");
+  SmallVector<int, 2> numbers({1, 2});
+  numbers.insert(numbers.begin() + 1, std::istream_iterator<int>(stream),
+                 std::istream_iterator<int>());
+  EXPECT_EQ(numbers, (SmallVector<int, 2>{1, 8, 9, 2}));
+}
+
+TEST(SmallVector, AssignBuildsReplacementBeforeMutation) {
+  SmallVector<std::string, 2> values({"zero", "one", "two", "three"});
+  values.assign(values.begin() + 1, values.end() - 1);
+  EXPECT_EQ(values, (SmallVector<std::string, 2>{"one", "two"}));
+
+  values.assign(3, values.front());
+  EXPECT_EQ(values,
+            (SmallVector<std::string, 2>{"one", "one", "one"}));
+  values.assign({"fresh", "state"});
+  EXPECT_EQ(values, (SmallVector<std::string, 2>{"fresh", "state"}));
+}
+
+TEST(SmallVector, ShrinkSwapAndComparisonMatchValueContainerShape) {
+  SmallVector<int, 2> shrunk({1, 2, 3, 4, 5});
+  shrunk.reserve(16);
+  shrunk.erase(shrunk.begin() + 2, shrunk.end());
+  ASSERT_FALSE(shrunk.inline_storage());
+  shrunk.shrink_to_fit();
+  EXPECT_TRUE(shrunk.inline_storage());
+  EXPECT_EQ(shrunk.capacity(), 2u);
+
+  SmallVector<int, 2> exact(5, 7);
+  exact.reserve(16);
+  ASSERT_TRUE(exact.try_shrink_to_fit());
+  EXPECT_FALSE(exact.inline_storage());
+  EXPECT_EQ(exact.capacity(), exact.size());
+
+  SmallVector<int, 2> left({1});
+  SmallVector<int, 2> right({2, 3, 4});
+  swap(left, right);
+  EXPECT_EQ(left, (SmallVector<int, 2>{2, 3, 4}));
+  EXPECT_EQ(right, (SmallVector<int, 2>{1}));
+  EXPECT_LT(right, left);
+}
+
+TEST(SmallVector, FailedShrinkPreservesStorageAndValues) {
+  ToggleAllocatorState state;
+  Allocator allocator(toggle_allocate, toggle_deallocate, toggle_reallocate,
+                      &state);
+  SmallVector<int, 2, Allocator> values(allocator, 5, 7);
+  values.reserve(16);
+  int* const data_before = values.data();
+  const std::size_t capacity_before = values.capacity();
+
+  state.fail = true;
+  EXPECT_FALSE(values.try_shrink_to_fit());
+  EXPECT_EQ(values.data(), data_before);
+  EXPECT_EQ(values.capacity(), capacity_before);
+  ASSERT_EQ(values.size(), 5u);
+  for (int value : values) EXPECT_EQ(value, 7);
+}
+
+TEST(SmallVector, ThrowingRangeConstructionDestroysCompletedPrefix) {
+  ThrowingCopy::alive = 0;
+  {
+    const std::array<ThrowingCopy, 3> source = {
+        ThrowingCopy(1), ThrowingCopy(2), ThrowingCopy(3)};
+    ThrowingCopy::copies_before_throw = 1;
+    using ThrowVector = SmallVector<ThrowingCopy, 1>;
+    EXPECT_THROW(
+        {
+          ThrowVector copy(source.begin(), source.end());
+          (void)copy;
+        },
+        std::runtime_error);
+    EXPECT_EQ(ThrowingCopy::alive, 3);
+  }
+  EXPECT_EQ(ThrowingCopy::alive, 0);
+}
+
+TEST(SmallVector, ThrowingRangeMutationPreservesOriginal) {
+  ThrowingCopy::alive = 0;
+  {
+    const std::array<ThrowingCopy, 3> source = {
+        ThrowingCopy(1), ThrowingCopy(2), ThrowingCopy(3)};
+    SmallVector<ThrowingCopy, 1> values;
+    values.emplace_back(9);
+
+    ThrowingCopy::copies_before_throw = 1;
+    EXPECT_THROW(values.assign(source.begin(), source.end()),
+                 std::runtime_error);
+    ASSERT_EQ(values.size(), 1u);
+    EXPECT_EQ(values.front().value, 9);
+    EXPECT_EQ(ThrowingCopy::alive, 4);
+
+    ThrowingCopy::copies_before_throw = 1;
+    EXPECT_THROW(values.insert(values.begin(), source.begin(), source.end()),
+                 std::runtime_error);
+    ASSERT_EQ(values.size(), 1u);
+    EXPECT_EQ(values.front().value, 9);
+    EXPECT_EQ(ThrowingCopy::alive, 4);
+  }
+  EXPECT_EQ(ThrowingCopy::alive, 0);
 }

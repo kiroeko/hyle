@@ -1,5 +1,8 @@
 #pragma once
 
+#include <algorithm>
+#include <compare>
+#include <concepts>
 #include <cstddef>
 #include <cstring>
 #include <initializer_list>
@@ -36,6 +39,10 @@ class SmallVector {
                 "SmallVector requires nothrow move construction");
   static_assert(std::is_nothrow_destructible_v<T>,
                 "SmallVector requires nothrow destruction");
+  static_assert(std::is_nothrow_move_constructible_v<Alloc>,
+                "SmallVector requires nothrow allocator move construction");
+  static_assert(std::is_nothrow_move_assignable_v<Alloc>,
+                "SmallVector requires nothrow allocator move assignment");
 
 public:
   using value_type = T;
@@ -59,19 +66,59 @@ public:
       std::is_nothrow_move_constructible_v<Alloc>)
       : alloc_(std::move(alloc)), data_(inline_ptr()), cap_(N) {}
 
+  explicit SmallVector(size_type count)
+    requires std::is_default_constructible_v<Alloc> &&
+             std::is_default_constructible_v<T>
+      : SmallVector() {
+    construct_with_cleanup([&] { resize(count); });
+  }
+
+  SmallVector(size_type count, const T &value)
+    requires std::is_default_constructible_v<Alloc> &&
+             std::is_copy_constructible_v<T>
+      : SmallVector() {
+    construct_with_cleanup([&] { resize(count, value); });
+  }
+
+  SmallVector(Alloc alloc, size_type count)
+    requires std::is_default_constructible_v<T>
+      : SmallVector(std::move(alloc)) {
+    construct_with_cleanup([&] { resize(count); });
+  }
+
+  SmallVector(Alloc alloc, size_type count, const T &value)
+    requires std::is_copy_constructible_v<T>
+      : SmallVector(std::move(alloc)) {
+    construct_with_cleanup([&] { resize(count, value); });
+  }
+
+  template <std::input_iterator It, std::sentinel_for<It> Sentinel>
+  SmallVector(It first, Sentinel last)
+    requires std::is_default_constructible_v<Alloc>
+      : SmallVector() {
+    construct_with_cleanup([&] { append_range(first, last); });
+  }
+
+  template <std::input_iterator It, std::sentinel_for<It> Sentinel>
+  SmallVector(Alloc alloc, It first, Sentinel last)
+      : SmallVector(std::move(alloc)) {
+    construct_with_cleanup([&] { append_range(first, last); });
+  }
+
   SmallVector(std::initializer_list<T> init)
     requires std::is_default_constructible_v<Alloc>
       : SmallVector() {
-    append_copy(init.begin(), init.end());
+    construct_with_cleanup([&] { append_range(init.begin(), init.end()); });
   }
 
   SmallVector(Alloc alloc, std::initializer_list<T> init)
       : SmallVector(std::move(alloc)) {
-    append_copy(init.begin(), init.end());
+    construct_with_cleanup([&] { append_range(init.begin(), init.end()); });
   }
 
   SmallVector(const SmallVector &other) : SmallVector(other.alloc_) {
-    append_copy(other.begin(), other.end());
+    construct_with_cleanup(
+        [&] { append_range(other.begin(), other.end()); });
   }
 
   SmallVector(SmallVector &&other) noexcept
@@ -84,7 +131,7 @@ public:
       return *this;
     // Build first so a throwing T copy leaves *this unchanged.
     SmallVector replacement(alloc_);
-    replacement.append_copy(other.begin(), other.end());
+    replacement.append_range(other.begin(), other.end());
     *this = std::move(replacement);
     return *this;
   }
@@ -234,7 +281,7 @@ public:
     if (size_ == cap_)
       reserve(next_capacity(size_ + 1));
 
-    open_gap(index);
+    open_gap(index, 1);
     ::new (static_cast<void *>(data_ + index)) T(std::move(saved));
     ++size_;
     return data_ + index;
@@ -246,6 +293,46 @@ public:
 
   iterator insert(const_iterator position, T &&value) {
     return emplace(position, std::move(value));
+  }
+
+  iterator insert(const_iterator position, size_type count, const T &value) {
+    HYLE_FATAL_ASSERT(position >= cbegin() && position <= cend());
+    const size_type index = static_cast<size_type>(position - cbegin());
+    SmallVector inserted(alloc_);
+    inserted.resize(count, value);
+    return insert_prepared(index, inserted);
+  }
+
+  template <std::input_iterator It, std::sentinel_for<It> Sentinel>
+  iterator insert(const_iterator position, It first, Sentinel last) {
+    HYLE_FATAL_ASSERT(position >= cbegin() && position <= cend());
+    const size_type index = static_cast<size_type>(position - cbegin());
+    // Materialize first so self-ranges remain valid across reserve/shift and
+    // input iterators are consumed exactly once.
+    SmallVector inserted(alloc_);
+    inserted.append_range(first, last);
+    return insert_prepared(index, inserted);
+  }
+
+  iterator insert(const_iterator position, std::initializer_list<T> init) {
+    return insert(position, init.begin(), init.end());
+  }
+
+  void assign(size_type count, const T &value) {
+    SmallVector replacement(alloc_);
+    replacement.resize(count, value);
+    *this = std::move(replacement);
+  }
+
+  template <std::input_iterator It, std::sentinel_for<It> Sentinel>
+  void assign(It first, Sentinel last) {
+    SmallVector replacement(alloc_);
+    replacement.append_range(first, last);
+    *this = std::move(replacement);
+  }
+
+  void assign(std::initializer_list<T> init) {
+    assign(init.begin(), init.end());
   }
 
   void pop_back() noexcept {
@@ -300,6 +387,49 @@ public:
     HYLE_FATAL_ASSERT(try_resize(count, value));
   }
 
+  bool try_shrink_to_fit() noexcept {
+    if (inline_storage() || cap_ == size_)
+      return true;
+    if (size_ <= N) {
+      relocate_to(inline_ptr(), N);
+      return true;
+    }
+    pointer replacement = static_cast<pointer>(
+        alloc_.allocate(size_ * sizeof(T), alignof(T)));
+    if (replacement == nullptr)
+      return false;
+    relocate_to(replacement, size_);
+    return true;
+  }
+
+  void shrink_to_fit() { HYLE_FATAL_ASSERT(try_shrink_to_fit()); }
+
+  void swap(SmallVector &other) noexcept {
+    if (this == &other)
+      return;
+    SmallVector temporary(std::move(*this));
+    *this = std::move(other);
+    other = std::move(temporary);
+  }
+
+  friend void swap(SmallVector &left, SmallVector &right) noexcept {
+    left.swap(right);
+  }
+
+  friend bool operator==(const SmallVector &left, const SmallVector &right)
+    requires std::equality_comparable<T>
+  {
+    return left.size_ == right.size_ &&
+           std::equal(left.begin(), left.end(), right.begin());
+  }
+
+  friend auto operator<=>(const SmallVector &left, const SmallVector &right)
+    requires std::three_way_comparable<T>
+  {
+    return std::lexicographical_compare_three_way(
+        left.begin(), left.end(), right.begin(), right.end());
+  }
+
   iterator erase(const_iterator position) noexcept {
     HYLE_FATAL_ASSERT(position >= cbegin() && position < cend());
     return erase(position, position + 1);
@@ -339,15 +469,43 @@ private:
     }
   }
 
-  void open_gap(size_type index) noexcept {
-    HYLE_FATAL_ASSERT(index < size_ && size_ < cap_);
+  template <class Fn> void construct_with_cleanup(Fn &&fn) {
+    try {
+      std::forward<Fn>(fn)();
+    } catch (...) {
+      reset_storage();
+      throw;
+    }
+  }
+
+  iterator insert_prepared(size_type index, SmallVector &inserted) noexcept {
+    const size_type count = inserted.size_;
+    if (count == 0)
+      return data_ + index;
+    HYLE_FATAL_ASSERT(
+        count <= static_cast<size_type>(-1) / sizeof(T) - size_);
+    const size_type requested = size_ + count;
+    if (requested > cap_)
+      reserve(next_capacity(requested));
+    open_gap(index, count);
+    for (size_type i = 0; i < count; ++i)
+      ::new (static_cast<void *>(data_ + index + i))
+          T(std::move(inserted.data_[i]));
+    size_ = requested;
+    return data_ + index;
+  }
+
+  void open_gap(size_type index, size_type count) noexcept {
+    HYLE_FATAL_ASSERT(index <= size_ && count <= cap_ - size_);
+    if (count == 0)
+      return;
     if constexpr (std::is_trivially_copyable_v<T>) {
-      std::memmove(data_ + index + 1, data_ + index,
+      std::memmove(data_ + index + count, data_ + index,
                    (size_ - index) * sizeof(T));
-      data_[index].~T();
     } else {
       for (size_type i = size_; i > index; --i) {
-        ::new (static_cast<void *>(data_ + i)) T(std::move(data_[i - 1]));
+        ::new (static_cast<void *>(data_ + i - 1 + count))
+            T(std::move(data_[i - 1]));
         data_[i - 1].~T();
       }
     }
@@ -369,30 +527,44 @@ private:
     if (replacement == nullptr)
       return false;
 
-    if constexpr (std::is_trivially_copyable_v<T>) {
-      if (size_ != 0)
-        std::memcpy(replacement, data_, size_ * sizeof(T));
-    } else {
-      for (size_type i = 0; i < size_; ++i)
-        ::new (static_cast<void *>(replacement + i)) T(std::move(data_[i]));
-      destroy_range(data_, size_);
-    }
-
-    if (!inline_storage())
-      alloc_.deallocate(data_, cap_ * sizeof(T), alignof(T));
-    data_ = replacement;
-    cap_ = requested;
+    relocate_to(replacement, requested);
     return true;
   }
 
-  template <class It> void append_copy(It first, It last) {
-    const auto distance = std::distance(first, last);
-    HYLE_FATAL_ASSERT(distance >= 0);
-    reserve(static_cast<size_type>(distance));
-    for (; first != last; ++first) {
-      ::new (static_cast<void *>(data_ + size_)) T(*first);
-      ++size_;
+  void relocate_to(pointer replacement,
+                   size_type replacement_capacity) noexcept {
+    pointer old_data = data_;
+    const size_type old_capacity = cap_;
+    const bool old_inline = inline_storage();
+    if constexpr (std::is_trivially_copyable_v<T>) {
+      if (size_ != 0)
+        std::memcpy(replacement, old_data, size_ * sizeof(T));
+    } else {
+      for (size_type i = 0; i < size_; ++i)
+        ::new (static_cast<void *>(replacement + i))
+            T(std::move(old_data[i]));
+      destroy_range(old_data, size_);
     }
+
+    if (!old_inline)
+      alloc_.deallocate(old_data, old_capacity * sizeof(T), alignof(T));
+    data_ = replacement;
+    cap_ = replacement_capacity;
+  }
+
+  template <std::input_iterator It, std::sentinel_for<It> Sentinel>
+  void append_range(It first, Sentinel last) {
+    if constexpr (std::forward_iterator<It>) {
+      size_type additional = 0;
+      for (It probe = first; probe != last; ++probe) {
+        HYLE_FATAL_ASSERT(
+            additional < static_cast<size_type>(-1) / sizeof(T) - size_);
+        ++additional;
+      }
+      reserve(size_ + additional);
+    }
+    for (; first != last; ++first)
+      emplace_back(*first);
   }
 
   void move_from(SmallVector &other) noexcept {

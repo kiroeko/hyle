@@ -64,15 +64,20 @@ IntrusiveList 已下沉 core，因为 error/time/sched 都需要它；它不再�
 SmallVector 的接口不再由“小 N push benchmark”定义。本轮同时对照本地
 Abseil `InlinedVector`、Folly `small_vector` 与 Boost `small_vector`：三者共同证明
 inline storage 只是存储策略，用户仍需要普通 owning sequence 的值语义。HYLE 当前
-共同面包括 copy/move、initializer-list、连续/反向迭代、reserve、resize、任意位置
-emplace/insert、单项/范围 erase 与 clear；自别名参数即使触发 inline→heap 迁移也安全。
-位置插入和删除只搬移受影响后缀，复杂度为 O(size-position)，已达到连续存储容器的
-渐进下界；trivially-copyable T 使用 memmove，其他 T 只要求 nothrow move construction，
-不额外要求 move assignment。
+共同面包括 copy/move、count/range/initializer-list construction、连续/反向迭代、
+reserve、resize、任意位置 emplace/count/range insert、assign、单项/范围 erase、clear、
+swap、shrink-to-fit 和值比较；自别名参数即使触发 inline→heap 迁移也安全。
+位置插入和删除只搬移受影响后缀，复杂度为 O(size-position+inserted-count)，已达到
+连续存储容器的渐进下界；trivially-copyable T 使用 memmove，其他 T 只要求 nothrow
+move construction，不额外要求 move assignment。forward range 在写入前一次 reserve；
+single-pass input range 只消费一次。range/count insert 先建立 replacement sequence，
+换取自别名和抛异常时不破坏原容器的明确合同；它不在逐项插入时反复移动原后缀。
 
-仍待按真实消费者决定的外围面是 range/count construction、range insert/assign、swap、
-shrink-to-fit 和比较运算。`at()` 没有机械照抄：HYLE 构建可关闭异常，必须先决定是
-Status/nullable 访问还是 fatal checked access，不能用一个异常形状破坏全库合同。
+`try_shrink_to_fit()` 能把短序列从 heap 收回 inline storage，也能报告 heap 精确收缩的
+OOM 且保持原状态；普通 `shrink_to_fit()` 沿用本容器无错误返回入口的 fatal OOM 合同。
+`at()` 没有机械照抄：HYLE 构建可关闭异常，必须先决定是 Status/nullable 访问还是
+fatal checked access，不能用一个异常形状破坏全库合同。新增普通序列接口没有借旧
+push/read microbenchmark 数字宣称新的性能结论。
 
 ### PodVector 的成熟形状门
 

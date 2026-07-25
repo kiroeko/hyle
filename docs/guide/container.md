@@ -40,14 +40,18 @@ names.push_back(names.front());  // 即使这次触发 spill，别名也安全
 for (const std::string& name : names) consume(name);
 ```
 
-`SmallVector` 的常用值语义与 `std::vector` 相同：copy 是深拷贝，move-only 元素可用，
-`emplace/insert` 可在任意位置构造，单项/范围 `erase` 会析构元素并只移动后缀；这些
-位置操作与成熟 inline vector 一样是 O(尾部长度)，不是为 benchmark 增加的旁路。
-为了让 allocator OOM 后原 vector 仍可恢复，`T` 必须
+`SmallVector` 的常用值语义与 `std::vector` 相同：copy 是深拷贝，move-only 元素可用；
+可按 count、iterator range 或 initializer-list 构造，`assign` 可整体替换，count/range
+`insert`、单项/范围 `erase` 只移动受影响后缀。range 接口支持 single-pass input
+iterator；插入本容器自己的 range 即使 spill 也安全。`swap`、值比较和
+`try_shrink_to_fit`/`shrink_to_fit` 可用于普通容器生命周期，其中短序列可从 heap 收回
+inline storage。这些位置操作与成熟 inline vector 一样是 O(尾部长度+插入数量)，不是
+为 benchmark 增加的旁路。为了让 allocator OOM 后原 vector 仍可恢复，`T` 必须
 nothrow move-construct/destruct；POD 仍走 memcpy relocation。`try_reserve`、
-`try_emplace_back`、`try_push_back` 报告 allocation failure；无 `try_` 的熟悉入口把
-OOM 当 fatal。若序列经常远超 N，inline bytes 只会放大每个 owner，对它使用普通
-`std::vector`。
+`try_emplace_back`、`try_push_back` 和 `try_shrink_to_fit` 报告 allocation failure；
+无 `try_` 的熟悉入口以及 count/range mutation 把 OOM 当 fatal。当前不提供 `at()`：
+项目还没有选择跨异常/无异常构建一致的越界返回策略；需要检查时先比较 `size()`。
+若序列经常远超 N，inline bytes 只会放大每个 owner，对它使用普通 `std::vector`。
 
 ### POD 与通用 vector 不要混用
 

@@ -8,15 +8,15 @@
 > `ConcurrentVector` 已按 oneTBB 实际合同改为并行 writer；Windows/WSL n=15 的
 > 单 writer、range iteration 与读旧 prefix+写 tail 均领先，8 writer 同档；WSL 逐次
 > `operator[]` 顺扫仍慢约 2x，但正常 range-for 已快 1.39x。GCC 14 TSan（禁用 WSL
-> ASLR 后）193 个 typed 测试、纯 C 测试及并发组重复 30 轮通过。
+> ASLR 后）200 个 typed 测试、纯 C 测试及并发组重复 30 轮通过。
 > 真正的 typed `FlatHashSet` 与 map/set 标准 forward iteration 已完成；Windows 的
 > map/set 五/四项均领先 Abseil；WSL map 四项领先、miss 慢约 3%，set hit 同档、miss
 > 慢约 6%、insert/iterate 领先。map 已按成熟语义拆分 insert/try_emplace/
 > insert_or_assign，并补
-> operator[]；SmallVector 已按 Abseil/Folly/Boost 的共同形状补任意位置
-> emplace/insert、范围 erase 与 const reverse iteration，位置操作保持连续容器最优的
-> O(尾部长度) 且自别名 spill 安全；range construction/insert/assign、容量收缩等外围面
-> 及三平台强 peer 证据仍在复审，
+> operator[]；SmallVector 已按 Abseil/Folly/Boost 的共同形状补 count/range 构造、
+> assign/insert、任意位置 emplace、范围 erase、const reverse iteration、swap、容量收缩
+> 与值比较；位置操作保持连续容器最优的 O(尾部长度+插入数量)，自别名 spill 安全，
+> single-pass range 只消费一次。三平台强 peer 证据仍在复审，
 > 因此 container **尚未获得 2026-07-25 严格证书**。
 > 复审也删除了无生产消费者、属于 quick-open 应用策略的 fuzzy scorer/top-K 及其 C
 > 导出；C pointer queue 也已删除含糊的旧 `push/pop` 名称，统一为 `try_*` 并显式编码
@@ -42,9 +42,10 @@ Linux x64 和 macOS arm64 的最终验证命令与结果记录在本文末尾。
 - PodVector（旧实现名 CArray）：记录 allocator/alignment，alias-safe growth，新增
   默认构造、copy 值语义、resize、位置 insert/范围 erase 与 fallible
   `try_reserve/try_push_back/try_resize`，所有容量计算先检查 overflow。
-- SmallVector：修正 allocator-aware move assignment、inline/heap 别名增长和
-  overflow；补 mature inline-vector 共有的 positional emplace/insert 与 range erase，
-  非平凡 T 不再因删除/移动后缀额外要求 move assignment。
+- SmallVector：修正 allocator-aware move assignment、inline/heap 别名增长、构造异常
+  清理和 overflow；补 mature inline-vector 共有的 count/range construction、assign/
+  insert、positional emplace、range erase、swap、shrink-to-fit 与 comparison，非平凡 T
+  不再因删除/移动后缀额外要求 move assignment。
 - SwissTable：const 查询/遍历、reserve/clear、alias insert、OOM 状态保持、move
   元数据完整；新增真正无 mapped-slot 税的 FlatHashSet，以及 key 只读/value 可写的
   map iterator 和只读 set iterator；C ABI map 也使用 flat ctrl+slot Swiss probing，
