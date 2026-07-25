@@ -190,13 +190,16 @@ class [[nodiscard]] Status {
   // Prefix semantic context on an error: "context: existing message". OK and
   // empty context are no-ops. Only the error path allocates; on allocation
   // failure the original status (including any existing message) is preserved.
-#if defined(HYLE_ERROR_BUILD)
+#if defined(HYLE_ERROR_BUILD) && !defined(HYLE_STATIC)
   // The DLL emits these entry points as well as the slow path. Consumers see
   // the inline definitions below, so their common OK path does not cross the
   // DLL seam; keeping the entry points also makes incremental DLL relinks safe.
   HYLE_ERROR_API Status WithContext(std::string_view context) const & noexcept;
   HYLE_ERROR_API Status WithContext(std::string_view context) && noexcept;
 #else
+  // Static builds use one inline definition in every archive/consumer. Emitting
+  // a second strong out-of-line copy in hyle_error.lib collides as soon as a
+  // dependent archive also instantiates this hot-path wrapper.
   Status WithContext(std::string_view context) const & noexcept {
     if (ok() || context.empty()) return *this;
     return WithContextSlow(context);

@@ -48,7 +48,10 @@ if(HYLE_TRACE)
     else()
       add_library(hyle_tracy_client SHARED "${HYLE_TRACY_DIR}/public/TracyClient.cpp")
     endif()
-    target_include_directories(hyle_tracy_client SYSTEM PUBLIC "${HYLE_TRACY_DIR}/public")
+    target_include_directories(hyle_tracy_client SYSTEM PUBLIC
+      "$<BUILD_INTERFACE:${HYLE_TRACY_DIR}/public>"
+      "$<INSTALL_INTERFACE:${HYLE_INSTALL_INCLUDEDIR}/hyle/vendor/tracy-public>")
+    set_target_properties(hyle_tracy_client PROPERTIES EXPORT_NAME "_tracy_client")
     target_compile_definitions(hyle_tracy_client
       PRIVATE TRACY_ENABLE TRACY_FIBERS
       INTERFACE TRACY_ENABLE TRACY_FIBERS)
@@ -72,3 +75,4 @@ if(HYLE_TRACE)
 else()
   message(STATUS "HYLE_TRACE = OFF (hooks compile to nothing -- zero cost)")
 endif()
+set_target_properties(hyle_trace PROPERTIES EXPORT_NAME "_trace_config")

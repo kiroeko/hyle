@@ -40,14 +40,23 @@ tree 的 `_deps`；需要跨 build tree 共享下载缓存时显式设置 `HYLE_
 1. **仓库顶层构建**：默认 `all`，产物集中到 `<build>/bin`，tests 默认 ON、bench 默认 OFF。
 2. **源码嵌入**：父工程在 `add_subdirectory(hyle)` 前设置 `HYLE_COMPONENTS`；tests 在 subproject
    默认 OFF，HYLE 不改父工程的 `BUILD_SHARED_LIBS`、configuration types 或全局输出目录。
-3. **安装包消费**：目标形状是 `find_package(Hyle COMPONENTS ...)` 后继续链接同名
-   `hyle::<module>`。当前 install/export 尚未落地，属于本轮 build/package 收口的下一阶段。
-4. **直接预构建文件**：当前仅是诊断/ABI smoke 路径；缺少传递依赖建模，不是推荐发布面，
-   将由安装包路径取代。
+3. **安装包消费**：生产构建执行 `cmake --install`，下游用
+   `find_package(Hyle COMPONENTS ...)` 后链接同名 `hyle::<module>`；config 会拒绝安装中不存在的
+   component，并传播 C++23、static/shared、模块依赖和内部静态后端。`Hyle_AVAILABLE_COMPONENTS`
+   是本次组装的产品清单，`Hyle_AVAILABLE_FEATURES` 是 trace/TLS/CUDA/Vulkan 等能力清单。
+4. **直接预构建文件**：仅是诊断/ABI smoke 路径；缺少传递依赖建模，不是推荐发布面。
 
 Windows 源码嵌入时没有 rpath。consumer executable 链接共享 HYLE 后调用
 `hyle_stage_runtime_dependencies(target)`，会把其传递 DLL 放到 executable 同目录；这比让 HYLE
-篡改父工程输出目录更局部、也更容易迁移。Unix build tree 继续使用生成器的 rpath。
+篡改父工程输出目录更局部、也更容易迁移。安装包提供同名 helper；Unix build/install tree
+继续使用生成器的 rpath。
+
+install export 直接遍历已解析产品 target，不另造一份依赖表；build-tree alias 与 imported target
+都叫 `hyle::<module>`。`HYLE_INSTALL=ON` 只允许 `HYLE_BUILD_TESTS=OFF`，因为测试构建会有意改变
+`HYLE_TESTING` 门控布局，不能冒充可发布二进制。公开头整体安装（header-only foundation 有跨二进制
+组件引用），可用二进制组件由 `Hyle_AVAILABLE_COMPONENTS` 和 imported targets 决定。安装布局服从
+GNUInstallDirs；bin/lib/include/data 子目录必须保持相对路径，迁移根由 `CMAKE_INSTALL_PREFIX` 决定，
+避免 export 把第一次安装机器的绝对目录烙进 consumer。
 
 ## 静态、共享与 ABI
 
@@ -74,8 +83,9 @@ Highway/xsimd checkout 只在 `simd` 已选时检查，因此打开 benchmark �
 等组装意外依赖 SIMD 对手。benchmark executable 的模块归属显式登记在 CMake 中，不能靠文件名
 或开发者记忆推断。
 
-install/export、cross compile 和三平台完整迁移矩阵尚未取得最终证书，状态只见 build/package
-milestone。
+io 的 fetched nghttp2、compute 的 fetched ggml，以及 static compute 的 volk 打包尚未完成；
+`HYLE_INSTALL=ON` 遇到这些组合会在 configure 阶段拒绝，不能产出缺运行库的“半可迁移包”。
+cross compile 和三平台完整迁移矩阵也尚未取得最终证书，状态只见 build/package milestone。
 
 ## 维护规则
 
@@ -84,3 +94,5 @@ milestone。
 - 不在 CMake 中写开发机绝对路径；preset 是可选入口包，不是编译成功的隐藏前置。
 - parent-owned 的 generator、toolchain、配置、输出目录和 `BUILD_SHARED_LIBS` 不得被 subproject 改写。
 - source tree 只存源码与审查过的 vendored 资产；cache、下载、生成头和制品一律进 build tree。
+- 编入所选组件的 vendored 实现许可证随 install graph 安装；HYLE 自身公开发布前仍必须在仓库根
+  确定并加入项目许可证，构建系统不能替项目臆造授权。

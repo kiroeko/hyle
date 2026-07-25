@@ -13,8 +13,10 @@ set(_mi "${PROJECT_SOURCE_DIR}/third_party/mimalloc")
 # Whole library in one TU (mimalloc src/static.c #includes the rest). Static so
 # it folds into hyle_mem.dll; mi_* symbols stay internal (not re-exported).
 add_library(mimalloc_static STATIC "${_mi}/src/static.c")
-target_include_directories(mimalloc_static PUBLIC "${_mi}/include")
+target_include_directories(mimalloc_static PUBLIC
+  "$<BUILD_INTERFACE:${_mi}/include>")
 set_target_properties(mimalloc_static PROPERTIES POSITION_INDEPENDENT_CODE ON)
+set_target_properties(mimalloc_static PROPERTIES EXPORT_NAME "_mimalloc")
 # MSVC's C compiler chokes on mimalloc's atomic macros (they pass a TYPE arg;
 # C2275). mimalloc is built to compile as C++ there (MI_USE_CXX: std::atomic,
 # API stays extern "C" via mimalloc.h). GCC/Clang build it fine as C.

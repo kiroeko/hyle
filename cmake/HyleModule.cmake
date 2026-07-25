@@ -197,7 +197,9 @@ function(hyle_add_module name)
 
   if(ARG_SOURCES)
     target_include_directories(${target}
-      PUBLIC  "${PROJECT_SOURCE_DIR}/include"
+      PUBLIC
+        "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
+        "$<INSTALL_INTERFACE:${HYLE_INSTALL_INCLUDEDIR}>"
       PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
     # Export the C++23 requirement to CONSUMERS: a downstream target linking hyle::<mod>
     # includes our headers (which use `concept`, std::expected, etc.), so it must compile
@@ -220,17 +222,23 @@ function(hyle_add_module name)
     hyle_apply_sanitizer(${target})
     # tri-state export macro: HYLE_<NAME>_API
     string(TOUPPER "${name}" up)
-    if(NOT HYLE_STATIC)
-      target_compile_definitions(${target} PRIVATE "HYLE_${up}_BUILD")
-    else()
+    # The implementation always needs its BUILD discriminator. HYLE_STATIC only
+    # changes visibility; it must not make a module compile its consumer-inline
+    # definitions in the same TU as out-of-line bodies (error::WithContext was
+    # the first concrete duplicate-definition failure this exposed).
+    target_compile_definitions(${target} PRIVATE "HYLE_${up}_BUILD")
+    if(HYLE_STATIC)
       target_compile_definitions(${target} PUBLIC "HYLE_STATIC")
     endif()
   else()
-    target_include_directories(${target} INTERFACE "${PROJECT_SOURCE_DIR}/include")
+    target_include_directories(${target} INTERFACE
+      "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
+      "$<INSTALL_INTERFACE:${HYLE_INSTALL_INCLUDEDIR}>")
     target_compile_features(${target} INTERFACE cxx_std_23)  # header-only modules too
     target_link_libraries(${target} INTERFACE ${ARG_PUBLIC_DEPS} hyle_trace hyle_testing)
   endif()
 
+  set_target_properties(${target} PROPERTIES EXPORT_NAME "${name}")
   add_library(hyle::${name} ALIAS ${target})
 endfunction()
 

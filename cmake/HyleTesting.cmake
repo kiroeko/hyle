@@ -28,8 +28,11 @@
 add_library(hyle_testing INTERFACE)
 
 if(HYLE_BUILD_TESTS)
-  target_compile_definitions(hyle_testing INTERFACE HYLE_TESTING)
+  # Installable builds forbid HYLE_BUILD_TESTS, but keep the definition explicitly
+  # build-only as a second line of defence against exporting a test ABI/layout.
+  target_compile_definitions(hyle_testing INTERFACE "$<BUILD_INTERFACE:HYLE_TESTING>")
   message(STATUS "HYLE_TESTING = ON (test-only interfaces compiled; not for shipped builds)")
 else()
   message(STATUS "HYLE_TESTING = OFF (test-only interfaces stripped -- zero in shipped lib)")
 endif()
+set_target_properties(hyle_testing PROPERTIES EXPORT_NAME "_testing_config")

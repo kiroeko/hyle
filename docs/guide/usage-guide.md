@@ -64,6 +64,7 @@ HYLE 的构建开关分**产品/组装参数**与**benchmark 对照门**两个�
 | `HYLE_STATIC` | `OFF`(SHARED) | `ON`/`OFF` | 要静态链进你的二进制（无 HYLE DLL 分发）设 ON；不改变父工程 `BUILD_SHARED_LIBS` |
 | `HYLE_BUILD_TESTS` | 顶层 `ON`、嵌入 `OFF` | `ON`/`OFF` | ON 时只创建已选组件测试，并派生 `HYLE_TESTING`；`hyle_<module>_tests` 同时构建该模块 C++/C binary |
 | `HYLE_BUILD_BENCH` | `OFF` | `ON`/`OFF` | 只有想跑微基准才开；仅创建组件闭包内的 benchmark。构建 `hyle_<module>_benches` 或全部已选组件的 `hyle_benches` |
+| `HYLE_INSTALL` | `OFF` | `ON`/`OFF` | 显式生成 relocatable `HyleConfig.cmake`、组件 targets 和 install rules；与 `HYLE_BUILD_TESTS=ON` 互斥，避免发布 test-only ABI |
 | `HYLE_WERROR` | `OFF` | `ON`/`OFF` | CI 用 ON；本地开发 OFF |
 | `HYLE_SANITIZER` | `off` | `off`/`asan`/`tsan`/`ubsan` | 查内存/数据竞争/UB 时开（配 Debug/RelWithDebInfo）。**严格校验**：非法值直接 `FATAL_ERROR`（不静默降级为 off）；认编译器原生别名 `address`→asan、`thread`→tsan、`undefined`→ubsan、`none`→off。**MSVC 只支持 asan**（tsan/ubsan 在 MSVC 会 `FATAL_ERROR`，需 GCC/Clang，如 WSL） |
 | `HYLE_DEPS_DIR` | `<hyle-build>/_deps` | path | FetchContent 下载/构建缓存；需要跨多个 build tree 复用时显式指向共享 cache，不能放进源码树 |
@@ -148,25 +149,38 @@ HYLE 默认编成**共享库**（`.so`/`.dll`，每个已选模块一个 `hyle_<
 
 最小发布命令（动态、分发型、不带测试）：
 ```bash
-cmake -S hyle -B build -DCMAKE_BUILD_TYPE=Release -DHYLE_BUILD_TESTS=OFF
-cmake --build build           # 产物在 build/bin/  (libhyle_*.so / hyle_*.dll + .lib)
+cmake -S hyle -B build -DCMAKE_BUILD_TYPE=Release \
+  -DHYLE_COMPONENTS='simd;mem' -DHYLE_BUILD_TESTS=OFF -DHYLE_INSTALL=ON \
+  -DCMAKE_INSTALL_PREFIX=/opt/hyle
+cmake --build build -j2
+cmake --install build
 ```
 
-### 1.5 消费 HYLE 发布的二进制（链接预构建库）
+### 1.5 消费安装后的 HYLE package（推荐二进制路径）
 
-如果 HYLE 已被编好（上面那步），下游工程**不必再从源码 add_subdirectory**——直接链接预构建产物即可。这条路也是验证 `HYLE_<MOD>_API` 导出边界的方式。完整可跑示例见 [`samples/04_prebuilt_lib/`](../../samples/04_prebuilt_lib/)，要点：
+下游只需要安装前缀，不需要 HYLE 源码路径，也不应 `find_library` 猜文件名/静态链接顺序。
+完整 shared/static 可运行示例见 [`samples/04_prebuilt_lib/`](../../samples/04_prebuilt_lib/)：
 
 ```cmake
-# 1) 找到预构建库（动态的导入库 / 静态档都在 <hyle-build>/bin）
-find_library(HYLE_SIMD_LIB NAMES hyle_simd PATHS "<hyle-build>/bin" REQUIRED NO_DEFAULT_PATH)
+find_package(Hyle 0.1 REQUIRED COMPONENTS simd mem)
 
 add_executable(app main.cc)
-target_compile_features(app PRIVATE cxx_std_23)          # HYLE 头要 C++23
-target_include_directories(app PRIVATE "<hyle-repo>/include")
-target_link_libraries(app PRIVATE "${HYLE_SIMD_LIB}")
+target_link_libraries(app PRIVATE hyle::simd hyle::mem)
+hyle_stage_runtime_dependencies(app) # Windows shared DLL closure；其他形状 no-op
 ```
-- **静态消费**：HYLE 用 `-DHYLE_STATIC=ON` 编的话，下游也要 `target_compile_definitions(app PRIVATE HYLE_STATIC)`，让 `HYLE_<MOD>_API` 同样退化为空（对上库的编译方式）。**注意传递依赖**：静态链 `hyle_mem` 还需链 `mimalloc_static`（mem 的私有后端）；多模块静态消费要按依赖序把各模块 + 其依赖都列上——这类自动化是未来 `install()`+`find_package(hyle)`（P6 打包）要做的。`hyle_simd` 无此传递依赖，最干净。
-- **动态消费运行期**：Linux 让 loader 找到 `.so`（`RPATH` 指向 `<hyle-build>/bin` 或装进系统库路径）；Windows 把 `hyle_*.dll` 放在 exe 同目录或 `PATH`。
+- `CMAKE_PREFIX_PATH=/opt/hyle`（或 `Hyle_DIR=<prefix>/lib/cmake/Hyle`）告诉 CMake 去哪里找包。
+- 自定义安装根只设 `CMAKE_INSTALL_PREFIX`；可定制相对的 GNUInstallDirs 子目录，不要把
+  `CMAKE_INSTALL_LIBDIR`/`INCLUDEDIR` 等直接设成绝对路径，否则无法整体搬迁，configure 会拒绝。
+- imported target 自动传播 C++23、`HYLE_STATIC`、公开头与依赖模块；静态 mem 的 mimalloc 后端也作为
+  内部 `LINK_ONLY` target 随包安装，用户不手写它。
+- package 只承诺它实际安装的组件；请求缺失 component 会在 configure 阶段列出 available 清单。
+- `Hyle_AVAILABLE_COMPONENTS` 可审计模块闭包，`Hyle_AVAILABLE_FEATURES` 可审计 trace、TLS、CUDA、
+  Vulkan 等可选能力；不要从本机恰好装了什么反推包的形状。
+- 当前 package 若含 io，需 `HYLE_IO_HTTP2=OFF`；若含 compute，需
+  `HYLE_COMPUTE_GGML=OFF`，static 还需 `HYLE_COMPUTE_VULKAN=OFF`。这些 fetched runtime/archive
+  纳入 export graph 前，构建系统会 fail-fast，不生成缺文件的“半可迁移包”。
+- 所选模块实际编入的 mimalloc、xxHash、wyhash、simdutf、fcontext、picohttpparser 许可证会随
+  安装前缀迁移；HYLE 自身许可证仍是正式发布前的仓库治理事项。
 - **当前边界（诚实）**：error/platform/mem/time/obs/simd/util/container 已有纯 `extern "C"` C ABI；其他模块仍在
   close-01 队列。SIMD 外部调用必须用 `hyle/c/simd.h`，不能把 C++ mangled symbol 当 FFI。
 

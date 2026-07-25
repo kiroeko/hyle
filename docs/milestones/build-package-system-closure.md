@@ -59,7 +59,12 @@
   输出目录劫持。container sample 已 build+run。
 - [x] benchmark 按组件惰性创建；`hyle_<module>_benches` / `hyle_benches` 明确聚合归属，core、
   mem、container benchmark 不再要求全局 SIMD vendor 或 compute/io 配置。
-- [ ] install/export/component package、交叉编译、preset/toolchain/CI 与三平台最终矩阵。
+- [x] relocatable install/export/component package 落地；build/install target 同名 `hyle::<module>`，
+  shared/static simd+mem 独立 consumer 均真实运行，static mimalloc link-only 后端自动传播。
+- [ ] io/nghttp2、compute/ggml 与 static compute/volk 的 fetched 依赖打包；交叉编译、
+  preset/toolchain/CI 与三平台最终矩阵。
+- [ ] 正式发布前选择并加入 HYLE 项目许可证；当前 package 已按所选实现图携带 vendored licenses，
+  但仓库根没有 HYLE 自身 LICENSE，构建系统不能代替项目所有者决定授权。
 
 ### 第一轮验证证据（`86cb325`）
 
@@ -85,14 +90,34 @@
 - Windows `simd`：只有此组件配置才校验固定版 Highway/xsimd；`hyle_simd_benches` 机械聚合
   当前平台全部 20 个 SIMD benchmark executable。
 
+### install/package 第一轮验证
+
+- Windows MSVC 19.50：core-only shared 成功 install，core-only package 对 `COMPONENTS simd mem`
+  按预期拒绝；不会静默链接不存在的库。
+- Windows shared `simd;mem`：安装 resolved=`error,platform,mem,simd`，独立 sample 仅凭
+  `CMAKE_PREFIX_PATH` configure/build/run；runtime helper 自动 staging 4 个传递 DLL。
+- Windows static 同一组件集：首次构建暴露 `Status::WithContext` 静态 strong/inline 双定义；修正为
+  static 全 inline、shared 保留 DLL entry 后，独立 consumer 自动链接 platform/error/mimalloc 并运行。
+- Windows pure-C consumer（project 仅启用 C）分别消费 shared/static error package，均构建运行；
+  static imported target 正确带入 C++ linker runtime，不改变 `.c` 的编译语言。
+- shared `simd;mem` 安装前缀复制到全新目录后，独立 consumer 从复制前缀重新 configure/build/run，
+  证明 package config、targets、include/lib 路径不固化原 build/install 位置。
+- WSL GCC 14.2：shared/static error 均 install；纯 C consumer 只凭 `CMAKE_PREFIX_PATH` 构建运行。
+- Windows 自定义相对 GNUInstallDirs（`runtime/libs/headers/data`）安装后，纯 C consumer 从新
+  include/lib/config 布局构建运行；绝对子目录被拒绝，迁移根只由 prefix 表达。
+- missing-component 诊断列出 requested 与 available；安装包同时公开
+  `Hyle_AVAILABLE_COMPONENTS`/`Hyle_AVAILABLE_FEATURES` 作为可审计组装 manifest。
+- install/export target 直接来自产品 target 图；测试构建禁止安装，避免 `HYLE_TESTING` 布局泄漏；
+  尚未随包迁移的 fetched runtime/archive 组合 configure fail-fast。
+
 ### 本轮四项代码量
 
 | 固定口径 | code |
 |---|---:|
-| 全库（含 docs/in-tree third_party） | 246,516 |
-| 自实现（含测试） | 116,282 |
-| 自实现（不含测试） | 79,955 |
-| build/package 实现 | 3,039 |
+| 全库（含 docs/in-tree third_party） | 246,810 |
+| 自实现（含测试） | 116,284 |
+| 自实现（不含测试） | 79,957 |
+| build/package 实现 | 3,265 |
 
 最后一项统计自有 root/module/test/bench/sample CMake、`cmake/`、preset，以及
 build/fetch/setup/QEMU scripts；不含 vendored CMake、测试源码和文档。

@@ -1,9 +1,9 @@
 # HYLE samples
 
-可运行的示例 C++ 工程，演示把 HYLE 各模块**当 infra 集成进自己工程**的推荐姿势。
+可运行的 C/C++ 示例工程，演示把 HYLE 各模块**当 infra 集成进自己工程**的推荐姿势。
 每个示例是一个**独立 CMake 工程**——它通过 `add_subdirectory` 把 HYLE 仓库当子目录拉进来，
-这正是外部使用者最朴素的集成方式（未来 HYLE 提供 install/`find_package` 后会更简，但 subdir
-集成永远可用）。
+前三个示例使用源码嵌入；第四个使用安装后的 CMake package。两条路径都链接同名
+`hyle::<module>` target，subdir 集成也会长期保留。
 
 ## 接入模式（每个 sample 的 CMakeLists 都这么做）
 
@@ -26,10 +26,10 @@ target_link_libraries(your_app PRIVATE hyle::container hyle::mem)  # 按需选�
 | [`01_mem_container/`](./01_mem_container/) | mem + container | 显式 `Allocator` 注入 + `SwissTable`（对标 absl 的 flat hashmap）——HYLE 的"无隐藏全局堆"范式 + 旗舰容器 |
 | [`02_simd/`](./02_simd/) | simd | 运行期 ISA 派发的 `dot`/`saxpy` + 直接用 `vec<T,N>` D-tag 写宽度无关 kernel + 打印选中的 ISA 变体 |
 | [`03_sched_fibers/`](./03_sched_fibers/) | sched | `Scheduler` + `Fiber`：spawn 多个纤程、`yield()` 协作、`shutdown()` 排空 |
-| [`04_prebuilt_lib/`](./04_prebuilt_lib/) | 构建/集成 | 把 HYLE 编成**预构建库**(动态/静态)再链接的集成方式——验证 `HYLE_<MOD>_API` 导出/导入边界(对比 01-03 的源码 `add_subdirectory` 集成) |
+| [`04_prebuilt_lib/`](./04_prebuilt_lib/) | 构建/集成 | install + `find_package(Hyle COMPONENTS simd mem)`；同一 consumer 验证 shared/static、传递依赖、mimalloc 私有后端和 Windows DLL staging |
+| [`05_installed_c/`](./05_installed_c/) | error C ABI | 纯 C 工程消费安装包；验证 imported target 不把 C++23 编译要求错误施加到 C TU |
 
-> 只列**已就绪**模块（见 [`../docs/guide/usage-guide.md`](../docs/guide/usage-guide.md) §0 就绪度表）。io/compute/graph 尚未实现，无示例。
-> 01-03 用源码 `add_subdirectory` 集成；04 用**预构建库**集成（两种姿势都演示）。
+> 01-03 用源码 `add_subdirectory` 集成；04-05 用安装包集成。
 
 ## 构建单个示例
 

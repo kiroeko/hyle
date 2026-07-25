@@ -34,6 +34,26 @@ endif()
 # ---- global options ---------------------------------------------------------
 option(HYLE_BUILD_TESTS "build unit tests (GoogleTest)" ${PROJECT_IS_TOP_LEVEL})
 option(HYLE_BUILD_BENCH "build microbenchmarks (nanobench)" OFF)
+option(HYLE_INSTALL "generate install rules and a relocatable CMake package" OFF)
+if(HYLE_INSTALL AND HYLE_BUILD_TESTS)
+  message(FATAL_ERROR
+    "HYLE_INSTALL=ON requires HYLE_BUILD_TESTS=OFF. Test builds intentionally compile "
+    "HYLE_TESTING-only layouts and must never be installed as production libraries.")
+endif()
+set(HYLE_INSTALL_INCLUDEDIR "include")
+if(HYLE_INSTALL)
+  include(GNUInstallDirs)
+  set(HYLE_INSTALL_INCLUDEDIR "${CMAKE_INSTALL_INCLUDEDIR}")
+  foreach(_hyle_install_dir IN ITEMS BINDIR LIBDIR INCLUDEDIR DATADIR)
+    if(IS_ABSOLUTE "${CMAKE_INSTALL_${_hyle_install_dir}}")
+      message(FATAL_ERROR
+        "HYLE's relocatable package requires relative GNUInstallDirs values; "
+        "CMAKE_INSTALL_${_hyle_install_dir}='${CMAKE_INSTALL_${_hyle_install_dir}}' "
+        "is absolute. Set CMAKE_INSTALL_PREFIX for the destination instead.")
+    endif()
+  endforeach()
+  unset(_hyle_install_dir)
+endif()
 set(HYLE_SIMD_EXACT_TARGET "" CACHE STRING
     "Build hyle_simd for one required ISA; empty enables runtime dispatch")
 set_property(CACHE HYLE_SIMD_EXACT_TARGET PROPERTY STRINGS
@@ -123,6 +143,11 @@ endif()
 # pinned: HTTP/2 parsers are security-sensitive and an uncontrolled system
 # version would make identical HYLE builds behave differently.
 option(HYLE_IO_HTTP2 "io-11: HTTP/2 via nghttp2 protocol core" ON)
+if(HYLE_INSTALL AND HYLE_BUILD_IO AND HYLE_IO_HTTP2)
+  message(FATAL_ERROR
+    "An install containing io currently requires -DHYLE_IO_HTTP2=OFF; the "
+    "pinned nghttp2 target is not yet included in HYLE's relocatable package.")
+endif()
 set(HYLE_DEPS_DIR "${HYLE_BINARY_DIR}/_deps" CACHE PATH
     "Build-tree directory for dependencies fetched by HYLE")
 if(HYLE_BUILD_IO AND HYLE_IO_HTTP2)
@@ -199,6 +224,12 @@ endif()
 # tree. A developer who wants one cache shared by several disposable build trees can set
 # HYLE_DEPS_DIR explicitly; a source-embedded consumer otherwise gets an isolated cache.
 option(HYLE_COMPUTE_GGML "compute-05: borrow ggml operators via ggml_bridge" ON)
+if(HYLE_INSTALL AND HYLE_BUILD_COMPUTE AND HYLE_COMPUTE_GGML)
+  message(FATAL_ERROR
+    "An install containing compute currently requires "
+    "-DHYLE_COMPUTE_GGML=OFF; the fetched ggml runtime libraries are not yet "
+    "included in HYLE's relocatable package.")
+endif()
 if(HYLE_BUILD_COMPUTE AND HYLE_COMPUTE_GGML)
   set(FETCHCONTENT_BASE_DIR "${HYLE_DEPS_DIR}")
   include(FetchContent)
@@ -274,6 +305,12 @@ endif()
 #      validator tool (the "pre-compile tool folder" for HYLE devs + clients).
 # The slate-bundled Vulkan (headers v270, stale) is NOT used.
 option(HYLE_COMPUTE_VULKAN "compute-06: self-authored Vulkan compute SPIR-V kernels" ON)
+if(HYLE_INSTALL AND HYLE_STATIC AND HYLE_BUILD_COMPUTE AND HYLE_COMPUTE_VULKAN)
+  message(FATAL_ERROR
+    "A static install containing compute currently requires "
+    "-DHYLE_COMPUTE_VULKAN=OFF; the fetched volk archive is not yet included "
+    "in HYLE's relocatable package.")
+endif()
 set(HYLE_COMPUTE_VULKAN_ENABLED OFF)
 if(HYLE_BUILD_COMPUTE AND HYLE_COMPUTE_VULKAN)
   set(FETCHCONTENT_BASE_DIR "${HYLE_DEPS_DIR}")
@@ -393,6 +430,9 @@ foreach(_component core error obs math platform time mem simd container util sch
 endforeach()
 unset(_component)
 unset(_component_upper)
+
+include(HylePackage)
+hyle_install_package()
 
 if(HYLE_BUILD_TESTS)
   enable_testing()

@@ -417,6 +417,7 @@ std::size_t Status::ToString(char *buf, std::size_t cap) const noexcept {
   return need;
 }
 
+#if !defined(HYLE_STATIC)
 Status Status::WithContext(std::string_view context) const & noexcept {
   if (ok() || context.empty()) return *this;
   return WithContextSlow(context);
@@ -426,6 +427,7 @@ Status Status::WithContext(std::string_view context) && noexcept {
   if (ok() || context.empty()) return std::move(*this);
   return std::move(*this).WithContextSlow(context);
 }
+#endif
 
 Status Status::WithContextSlow(std::string_view context) const & noexcept {
   const std::string_view current = message();
