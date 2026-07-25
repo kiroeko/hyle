@@ -36,6 +36,12 @@ static int map_inserted(hyle_container_hash_map* map, const void* key,
          result == HYLE_CONTAINER_INSERTED;
 }
 
+static int set_inserted(hyle_container_hash_set* set, const void* key) {
+  hyle_container_insert_result result = HYLE_CONTAINER_ALREADY_PRESENT;
+  return status_ok(hyle_container_hash_set_insert(&result, set, key)) &&
+         result == HYLE_CONTAINER_INSERTED;
+}
+
 static hyle_container_string_view sv(const char* text) {
   hyle_container_string_view value =
       hyle_container_view(text, (uint32_t)strlen(text));
@@ -57,6 +63,11 @@ static int visit_map(const void* key, void* value, void* context) {
 }
 static int visit_aligned_key(const void* key, void* value, void* context) {
   (void)value;
+  CHECK(((uintptr_t)key % HYLE_CONTAINER_ALIGNOF(uint64_t)) == 0);
+  ++*(int*)context;
+  return 1;
+}
+static int visit_aligned_set_key(const void* key, void* context) {
   CHECK(((uintptr_t)key % HYLE_CONTAINER_ALIGNOF(uint64_t)) == 0);
   ++*(int*)context;
   return 1;
@@ -326,6 +337,15 @@ static void test_vector_and_map(void) {
   map_options.value_alignment = HYLE_CONTAINER_ALIGNOF(int);
   map_options.hash = constant_hash; /* force collision-chain coverage */
   map_options.backing = backing;
+  {
+    hyle_container_hash_map_options invalid = map_options;
+    hyle_container_hash_map* invalid_map = (hyle_container_hash_map*)1;
+    invalid.key_size = SIZE_MAX - 9;
+    invalid.key_alignment = 1;
+    CHECK(status_code(hyle_container_hash_map_create(&invalid_map, &invalid)) ==
+          HYLE_STATUS_INVALID_ARGUMENT);
+    CHECK(invalid_map == NULL);
+  }
   CHECK(status_ok(hyle_container_hash_map_create(&map, &map_options)));
   CHECK(map != NULL);
   input = 1;
@@ -421,6 +441,63 @@ static void test_vector_and_map(void) {
   CHECK(tracking.allocations == tracking.frees);
 }
 
+static void test_hash_set(void) {
+  hyle_container_hash_set_options options =
+      HYLE_CONTAINER_HASH_SET_OPTIONS_FOR(uint64_t);
+  hyle_container_hash_set* set = NULL;
+  tracking_allocator tracking = {hyle_system_allocator(), 0, 0};
+  hyle_allocator backing = {tracking_alloc, tracking_free, tracking_realloc,
+                            &tracking};
+  uint64_t i;
+  int visits = 0;
+
+  options.hash = constant_hash; /* force collision-chain coverage */
+  options.backing = backing;
+  {
+    hyle_container_hash_set_options invalid = options;
+    hyle_container_hash_set* invalid_set = (hyle_container_hash_set*)1;
+    invalid.key_size = SIZE_MAX - 9;
+    invalid.key_alignment = 1;
+    CHECK(status_code(hyle_container_hash_set_create(&invalid_set, &invalid)) ==
+          HYLE_STATUS_INVALID_ARGUMENT);
+    CHECK(invalid_set == NULL);
+  }
+  CHECK(status_ok(hyle_container_hash_set_create(&set, &options)));
+  CHECK(set != NULL);
+  CHECK(status_ok(hyle_container_hash_set_reserve(set, 64)));
+  CHECK(hyle_container_hash_set_capacity(set) >= 64);
+  for (i = 0; i < 200; ++i) CHECK(set_inserted(set, &i));
+  CHECK(hyle_container_hash_set_size(set) == 200);
+  for (i = 0; i < 200; ++i) {
+    const uint64_t* canonical =
+        (const uint64_t*)hyle_container_hash_set_find(set, &i);
+    CHECK(canonical != NULL && *canonical == i);
+    CHECK(hyle_container_hash_set_contains(set, &i));
+  }
+  {
+    hyle_container_insert_result result = HYLE_CONTAINER_INSERTED;
+    i = 42;
+    CHECK(status_ok(hyle_container_hash_set_insert(&result, set, &i)));
+    CHECK(result == HYLE_CONTAINER_ALREADY_PRESENT);
+    CHECK(hyle_container_hash_set_size(set) == 200);
+  }
+  CHECK(hyle_container_hash_set_for_each(set, visit_aligned_set_key,
+                                         &visits));
+  CHECK(visits == 200);
+  for (i = 1; i < 200; i += 2)
+    CHECK(hyle_container_hash_set_erase(set, &i));
+  for (i = 0; i < 200; ++i)
+    CHECK(hyle_container_hash_set_contains(set, &i) == ((i & 1) == 0));
+  for (i = 1000; i < 1100; ++i) CHECK(set_inserted(set, &i));
+  for (i = 1000; i < 1100; ++i)
+    CHECK(hyle_container_hash_set_contains(set, &i));
+  hyle_container_hash_set_clear(set);
+  CHECK(hyle_container_hash_set_size(set) == 0);
+  hyle_container_hash_set_destroy(set);
+  CHECK(tracking.allocations > 0);
+  CHECK(tracking.allocations == tracking.frees);
+}
+
 static void test_queues_and_concurrent_vector(void) {
   int a = 1;
   int b = 2;
@@ -499,6 +576,7 @@ int main(void) {
   test_strings_and_paths();
   test_string_buf();
   test_vector_and_map();
+  test_hash_set();
   test_queues_and_concurrent_vector();
   CHECK(status_code(hyle_container_bounded_queue_create(
             &bounded_queue, invalid_backing, 8)) ==
@@ -573,6 +651,25 @@ int main(void) {
                 &result, map, &key, &value)) == HYLE_STATUS_RESOURCE_EXHAUSTED);
     }
     hyle_container_hash_map_destroy(map);
+  }
+  {
+    hyle_container_hash_set_options options =
+        HYLE_CONTAINER_HASH_SET_OPTIONS_FOR(int);
+    hyle_container_hash_set* set = NULL;
+    int key = 1;
+    fail_after_allocator failing = {hyle_system_allocator(), 1};
+    hyle_allocator fail_storage = {fail_after_alloc, fail_after_free,
+                                   fail_after_realloc, &failing};
+    options.backing = fail_storage;
+    CHECK(status_ok(hyle_container_hash_set_create(&set, &options)));
+    CHECK(set != NULL);
+    {
+      hyle_container_insert_result result;
+      CHECK(status_code(hyle_container_hash_set_insert(&result, set, &key)) ==
+            HYLE_STATUS_RESOURCE_EXHAUSTED);
+      CHECK(result == HYLE_CONTAINER_ALREADY_PRESENT);
+    }
+    hyle_container_hash_set_destroy(set);
   }
   {
     fail_after_allocator failing = {hyle_system_allocator(), 1};

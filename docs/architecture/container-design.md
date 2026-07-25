@@ -43,10 +43,10 @@ Tier 0 dependencies: mem allocator + platform CPU discovery
 
 ## 数据结构面
 
-| 能力 | C++ 源码面 | 稳定 C ABI | 关键合同 |
+| 能力 | C++ 源码面 | C/FFI 动态面 | 关键合同 |
 |---|---|---|---|
 | flat map | `FlatHashMap<K,V>`（实现名 `SwissTable`） | erased POD hash map | C++ 支持 non-trivial ownership 与异构查找；C 面按字节存 POD；ctrl+连续 slots；SIMD group probe |
-| flat set | `FlatHashSet<K>` | 暂无独立 set 导出 | 真 set API/slot；canonical-key find；只读 key 迭代；C ABI 待 typed 形状稳定后统一重审，不用 erased map 冒充 |
+| flat set | `FlatHashSet<K>` | erased POD hash set | 真 set API/slot；canonical-key find；只读 key 迭代；C 面不要求 dummy mapped value |
 | POD dynamic array | `PodVector<T>` | erased POD vector | 默认可用或注入 allocator；copy/move 值语义；header-before-data；allocator/alignment 随 allocation 记录 |
 | inline array | `SmallVector<T,N>` | 不单独导出 | 通用 owning value semantics；POD 保留 memcpy relocation；N 是编译期类型，C 动态需求由 erased vector 覆盖 |
 | string view | `StringView`（实现名 `string_ref`） | `hyle_container_string_view` | ptr+u32 length+NUL bit；借用、不拥有 |
@@ -105,8 +105,10 @@ hash -> H1 起始 group + H2 七位指纹
 
 erase 在安全时把 tombstone 恢复成 empty，否则保留 deleted。resize/free 是
 type-erased cold core；typed find/insert/erase 保持 header-inline，避免廉价 key
-每 probe 一次函数指针。C map 使用同一 ctrl/group/resize 机制，但 slot layout
-运行时计算为 `[stored hash][aligned key][aligned value]`；不是每元素分配的链表。
+每 probe 一次函数指针。C map/set 使用同一 ctrl/group/resize 机制，slot layout
+分别在运行时计算为 `[stored hash][aligned key][aligned value]` 与
+`[stored hash][aligned key]`；不是每元素分配的链表，也不让 set 用户用 map +
+dummy value 模拟 membership。
 `FlatHashSet` 共享这一 probing/resize core，但 empty mapped policy 不占 slot 空间；
 map/set iterator 都用 control-group full mask 跳转 occupied lane。map entry 的 key
 只读、value 可写，set iterator 只读 key，因此不会经 iterator 破坏 hash 不变量。
@@ -197,7 +199,7 @@ container 对外依赖。hex encode/decode 当前是无查表分支的标量/编
 | string view/hash/search/path buffer-fill | 保留能力 | 都是 FFI-native POD/无状态入口；合并重复命名与错误哨兵，不按 C++ 每个成员机械导出 |
 | StringBuf | 保留 opaque 能力 | permanent 与 refcounted lifecycle 都有真实跨语言用途；检查 batch/result 形状 |
 | erased POD vector | 保留能力 | C 没有模板，size/alignment + allocator 是合理动态形状；不加入 C++ ctor/dtor callback |
-| erased POD flat map | 保留能力、正在重塑 | 已拆 insert/insert_or_assign；后续决定真 set 是同一 value_size=0 policy 还是独立最小 handle |
+| erased POD flat map/set | 保留能力、形状已重塑 | map 拆分 insert/insert_or_assign；set 用独立最小 handle，共享 value_size=0 raw policy，但不暴露伪 value |
 | 四类 pointer queue | **能力暂定，命名已重塑** | C 热路径统一 `try_*`；Chase-Lev 明示 owner bottom/thief top，WsFifo 明示 back/front；后续仍决定是否都值得长期导出 |
 | pointer ConcurrentVector | **暂定** | 跨线程 append 有用途，但 `void*` 形状覆盖面窄；比较 erased POD 与 caller-owned pointer 两种真实场景 |
 

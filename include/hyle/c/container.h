@@ -333,6 +333,54 @@ HYLE_CONTAINER_C_API int hyle_container_hash_map_for_each(
     hyle_container_hash_map* map, hyle_container_hash_map_visit_fn visitor,
     void* context);
 
+/* Runtime-erased POD hash set. Stores one canonical key per member and does
+ * not allocate a dummy mapped-value field in each flat slot. */
+typedef int (*hyle_container_hash_set_visit_fn)(const void* key,
+                                                 void* context);
+typedef struct hyle_container_hash_set_o hyle_container_hash_set;
+typedef struct hyle_container_hash_set_options {
+  uint32_t struct_size;
+  uint32_t reserved;
+  size_t key_size;
+  size_t key_alignment;
+  hyle_container_hash_fn hash;
+  hyle_container_equal_fn equal;
+  void* context;
+  hyle_allocator backing;
+} hyle_container_hash_set_options;
+#define HYLE_CONTAINER_HASH_SET_OPTIONS_INIT                                  \
+  {sizeof(hyle_container_hash_set_options), 0, 0, 0, NULL, NULL, NULL,        \
+   hyle_system_allocator()}
+#define HYLE_CONTAINER_HASH_SET_OPTIONS_FOR(key_type)                         \
+  {sizeof(hyle_container_hash_set_options), 0, sizeof(key_type),              \
+   HYLE_CONTAINER_ALIGNOF(key_type), NULL, NULL, NULL,                        \
+   hyle_system_allocator()}
+HYLE_CONTAINER_C_API hyle_status hyle_container_hash_set_create(
+    hyle_container_hash_set** out,
+    const hyle_container_hash_set_options* options);
+HYLE_CONTAINER_C_API void hyle_container_hash_set_destroy(
+    hyle_container_hash_set* set);
+HYLE_CONTAINER_C_API size_t hyle_container_hash_set_size(
+    const hyle_container_hash_set* set);
+HYLE_CONTAINER_C_API size_t hyle_container_hash_set_capacity(
+    const hyle_container_hash_set* set);
+HYLE_CONTAINER_C_API hyle_status hyle_container_hash_set_reserve(
+    hyle_container_hash_set* set, size_t count);
+HYLE_CONTAINER_C_API void hyle_container_hash_set_clear(
+    hyle_container_hash_set* set);
+HYLE_CONTAINER_C_API hyle_status hyle_container_hash_set_insert(
+    hyle_container_insert_result* out_result,
+    hyle_container_hash_set* set, const void* key);
+HYLE_CONTAINER_C_API const void* hyle_container_hash_set_find(
+    const hyle_container_hash_set* set, const void* key);
+HYLE_CONTAINER_C_API int hyle_container_hash_set_contains(
+    const hyle_container_hash_set* set, const void* key);
+HYLE_CONTAINER_C_API int hyle_container_hash_set_erase(
+    hyle_container_hash_set* set, const void* key);
+HYLE_CONTAINER_C_API int hyle_container_hash_set_for_each(
+    const hyle_container_hash_set* set,
+    hyle_container_hash_set_visit_fn visitor, void* context);
+
 /* Pointer payload queues: HYLE never owns or frees payload pointers. All
  * try_* operations are non-blocking; 0 means full/empty/contended as documented,
  * and an output item is written only on success. */

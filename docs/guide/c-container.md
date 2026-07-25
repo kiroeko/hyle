@@ -166,6 +166,26 @@ ASCII 单字节便利函数全部 header-inline：
 保存借用字节。
 `for_each` 的 visitor 返回 0 可提前停止；遍历期间不得修改 map。
 
+## 运行时擦除 flat hash set
+
+只做 membership、去重或需要取得 canonical key 时，用
+`HYLE_CONTAINER_HASH_SET_OPTIONS_FOR(K)` 和独立的
+`hyle_container_hash_set_*`，不要建立 `map<K, char>`。它与 map 共享 flat Swiss
+control/probe 核心，但 occupied slot 只存 hash 和 key，没有 dummy mapped-value 字段。
+
+入口：
+`hyle_container_hash_set_create`、`hyle_container_hash_set_destroy`、
+`hyle_container_hash_set_size`、`hyle_container_hash_set_capacity`、
+`hyle_container_hash_set_reserve`、`hyle_container_hash_set_clear`、
+`hyle_container_hash_set_insert`、`hyle_container_hash_set_find`、
+`hyle_container_hash_set_contains`、`hyle_container_hash_set_erase`、
+`hyle_container_hash_set_for_each`。
+
+key 的 POD、hash/equality callback、context 生命周期和地址失效规则与 C map 相同。
+`insert` 用 `HYLE_CONTAINER_INSERTED` / `HYLE_CONTAINER_ALREADY_PRESENT` 区分新成员与
+重复成员；`find` 返回 set 内只读 canonical key，未找到返回 `NULL`。遍历只暴露
+`const void* key`，visitor 返回 0 可提前停止，遍历期间不得修改 set。
+
 ## 并发容器
 
 所有 `try_*` 都是无分配、非阻塞热路径：返回 0 表示该次操作未取得元素/空间，out item
@@ -234,6 +254,7 @@ Status 并写 `out_index`；已经发布的元素地址不移动，调用者仍�
 |---|---|
 | `SmallVector<T,N>` / `PodVector<T>` | `hyle_container_vector_*`：options 传 `item_size`/`item_alignment`（通常用 `HYLE_CONTAINER_VECTOR_OPTIONS_FOR`），按值存储 trivially-copyable 元素。C ABI 不接收 C++ ctor/dtor callback；inline `N` 也不是稳定跨 ABI 属性 |
 | `FlatHashMap<K,V>` | `hyle_container_hash_map_*`：C++ map 可拥有 non-trivial 值；C/FFI map 则按 options 中的 size/alignment 擦除 POD，hash/equality 由 callback+ctx 注入 |
+| `FlatHashSet<K>` | `hyle_container_hash_set_*`：按 options 中的 key size/alignment 擦除 POD；独立 set slot，不用 map + dummy value |
 | `BoundedQueue<T>` / `ShardedQueue<T>` / `WorkStealingDeque<T>` / `WsFifoQueue<T>` | 对应 `hyle_container_*queue*` / `*_deque_*` opaque 句柄接受 `void*` payload；payload 生命周期归调用方 |
 | `ConcurrentVector<T>` | `hyle_container_concurrent_vector_*` append `void*`；调用方保存 typed payload |
 | `Hash<T>` / `hash_bytes` | C 侧对实际字节调用 `hyle_container_hash_bytes`，或向 flat map 注入业务 hash callback；不暴露 vendor 实现头 |

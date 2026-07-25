@@ -96,6 +96,8 @@ slot 是 flat storage；grow、rehash、erase 都会使相关 pointer/reference 
 每个 occupied slot 的 `value_type` 与 `K` 等大，不把 `map<K, Empty>` 的空间浪费暴露给
 用户。`find` 返回容器内 canonical key，适合用 `string_view` 查到 owning string。
 `try_insert` 区分 inserted、already-present 与 OOM；普通 `insert` 把 OOM 视为 fatal。
+纯 C/FFI 对应使用独立的 `hyle_container_hash_set_*` erased POD handle，同样不需要
+dummy mapped value。
 
 ## 字符串、驻留与路径
 

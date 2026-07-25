@@ -33,6 +33,44 @@ bool valid_backing(const hyle_allocator& backing) noexcept {
          backing.realloc != nullptr;
 }
 
+bool checked_align_up(std::size_t value, std::size_t alignment,
+                      std::size_t& out) noexcept {
+  if (!is_power_of_two(alignment) ||
+      value > SIZE_MAX - (alignment - 1))
+    return false;
+  out = (value + alignment - 1) & ~(alignment - 1);
+  return true;
+}
+
+bool checked_add(std::size_t left, std::size_t right,
+                 std::size_t& out) noexcept {
+  if (right > SIZE_MAX - left) return false;
+  out = left + right;
+  return true;
+}
+
+bool valid_hash_slot_layout(std::size_t key_size,
+                            std::size_t key_alignment,
+                            std::size_t value_size,
+                            std::size_t value_alignment) noexcept {
+  if (key_size == 0 || !is_power_of_two(key_alignment) ||
+      !is_power_of_two(value_alignment))
+    return false;
+  std::size_t key_offset;
+  std::size_t after_key;
+  std::size_t value_offset;
+  std::size_t after_value;
+  std::size_t block_size;
+  const std::size_t block_alignment =
+      std::max({alignof(std::uint64_t), key_alignment, value_alignment});
+  return checked_align_up(sizeof(std::uint64_t), key_alignment, key_offset) &&
+         checked_add(key_offset, key_size, after_key) &&
+         checked_align_up(after_key, value_alignment, value_offset) &&
+         checked_add(value_offset, value_size, after_value) &&
+         checked_align_up(after_value, block_alignment, block_size) &&
+         block_size != 0;
+}
+
 void* c_backing_alloc(void* state, std::size_t size,
                       std::size_t alignment) noexcept {
   const auto* backing = static_cast<const hyle_allocator*>(state);
@@ -285,6 +323,20 @@ struct RawMap {
   std::size_t block_alignment = 0;
 };
 
+hyle_container_hash_map_options raw_set_options(
+    const hyle_container_hash_set_options& options) noexcept {
+  hyle_container_hash_map_options raw = HYLE_CONTAINER_HASH_MAP_OPTIONS_INIT;
+  raw.key_size = options.key_size;
+  raw.key_alignment = options.key_alignment;
+  raw.value_size = 0;
+  raw.value_alignment = 1;
+  raw.hash = options.hash;
+  raw.equal = options.equal;
+  raw.context = options.context;
+  raw.backing = options.backing;
+  return raw;
+}
+
 template <class T, class... Args>
 T* allocate_handle(hyle_allocator backing, Args&&... args) noexcept {
   void* memory =
@@ -327,6 +379,14 @@ struct hyle_container_hash_map_o {
   explicit hyle_container_hash_map_o(
       const hyle_container_hash_map_options& options)
       : backing(options.backing), value(options, to_cpp(&backing)) {}
+  RawMap value;
+};
+struct hyle_container_hash_set_o {
+  hyle_allocator backing;
+  explicit hyle_container_hash_set_o(
+      const hyle_container_hash_set_options& options)
+      : backing(options.backing),
+        value(raw_set_options(options), to_cpp(&backing)) {}
   RawMap value;
 };
 struct hyle_container_bounded_queue_o {
@@ -384,6 +444,10 @@ static_assert(
     std::is_standard_layout_v<hyle_container_hash_map_options> &&
     std::is_trivially_copyable_v<hyle_container_hash_map_options> &&
     offsetof(hyle_container_hash_map_options, struct_size) == 0);
+static_assert(
+    std::is_standard_layout_v<hyle_container_hash_set_options> &&
+    std::is_trivially_copyable_v<hyle_container_hash_set_options> &&
+    offsetof(hyle_container_hash_set_options, struct_size) == 0);
 static_assert(static_cast<int>(hc::StealStatus::kOk) ==
               HYLE_CONTAINER_STEAL_OK);
 static_assert(static_cast<int>(hc::StealStatus::kEmpty) ==
@@ -1040,17 +1104,10 @@ hyle_status hyle_container_hash_map_create(
   *out = nullptr;
   if (options == nullptr ||
       options->struct_size < sizeof(hyle_container_hash_map_options) ||
-      options->key_size == 0 || options->value_size == 0 ||
-      !is_power_of_two(options->key_alignment) ||
-      !is_power_of_two(options->value_alignment) ||
-      !valid_backing(options->backing) ||
-      options->key_alignment > SIZE_MAX / 4 ||
-      options->value_alignment > SIZE_MAX / 4 ||
-      options->key_size >
-          SIZE_MAX - sizeof(std::uint64_t) - options->key_alignment ||
-      options->value_size >
-          SIZE_MAX - sizeof(std::uint64_t) - options->key_alignment -
-              options->key_size - options->value_alignment) {
+      options->value_size == 0 || !valid_backing(options->backing) ||
+      !valid_hash_slot_layout(options->key_size, options->key_alignment,
+                              options->value_size,
+                              options->value_alignment)) {
     return hyle_status_invalid_argument("invalid hash map options");
   }
   auto* map = allocate_handle<hyle_container_hash_map>(
@@ -1087,20 +1144,15 @@ void hyle_container_hash_map_clear(hyle_container_hash_map* map) {
   if (map == nullptr) return;
   map->value.clear();
 }
-static hyle_status hash_map_insert_impl(
+static hyle_status raw_hash_insert_impl(
     hyle_container_insert_result* out_result,
-    hyle_container_hash_map* map, const void* key, const void* value,
+    RawMap& raw, const void* key, const void* value,
     bool assign_existing) {
-  if (out_result == nullptr || map == nullptr || key == nullptr ||
-      value == nullptr)
-    return hyle_status_invalid_argument(
-        "result, map, key, and value are required");
   *out_result = HYLE_CONTAINER_ALREADY_PRESENT;
-  RawMap& raw = map->value;
   const uint64_t hash = raw.hash(key);
   const std::size_t existing = raw.find_slot(key, hash);
   if (existing != RawMap::kNoSlot) {
-    if (assign_existing) {
+    if (assign_existing && raw.options.value_size != 0) {
       std::memmove(raw.value(existing), value, raw.options.value_size);
       *out_result = HYLE_CONTAINER_ASSIGNED;
     }
@@ -1109,7 +1161,7 @@ static hyle_status hash_map_insert_impl(
 
   if (raw.cap == 0 && !raw.resize(hc::detail::kGroupWidth)) {
     return hyle_status_resource_exhausted(
-        "hash map storage allocation failed");
+        "hash table storage allocation failed");
   }
   std::size_t target = raw.find_insert_slot(hash);
   if (raw.growth_left == 0 &&
@@ -1119,8 +1171,8 @@ static hyle_status hash_map_insert_impl(
     // allocation-free.
     const bool key_alias =
         raw.aliases_slots(key, raw.options.key_size);
-    const bool value_alias =
-        raw.aliases_slots(value, raw.options.value_size);
+    const bool value_alias = raw.options.value_size != 0 &&
+                             raw.aliases_slots(value, raw.options.value_size);
     void* scratch = nullptr;
     const void* stable_key = key;
     const void* stable_value = value;
@@ -1130,14 +1182,16 @@ static hyle_status hash_map_insert_impl(
       scratch = raw.alloc.allocate(scratch_size, raw.block_alignment);
       if (scratch == nullptr) {
         return hyle_status_resource_exhausted(
-            "hash map alias scratch allocation failed");
+            "hash table alias scratch allocation failed");
       }
       auto* bytes = static_cast<std::byte*>(scratch);
       std::memmove(bytes, key, raw.options.key_size);
-      std::memmove(bytes + raw.options.key_size, value,
-                   raw.options.value_size);
+      if (raw.options.value_size != 0)
+        std::memmove(bytes + raw.options.key_size, value,
+                     raw.options.value_size);
       stable_key = bytes;
-      stable_value = bytes + raw.options.key_size;
+      if (raw.options.value_size != 0)
+        stable_value = bytes + raw.options.key_size;
     }
     if (raw.cap > SIZE_MAX / 2 ||
         !raw.resize(raw.size >= raw.cap - raw.cap / 8 ? raw.cap * 2
@@ -1147,12 +1201,13 @@ static hyle_status hash_map_insert_impl(
                              raw.options.key_size + raw.options.value_size,
                              raw.block_alignment);
       return hyle_status_resource_exhausted(
-          "hash map storage allocation failed");
+          "hash table storage allocation failed");
     }
     target = raw.find_insert_slot(hash);
     raw.set_hash(target, hash);
     std::memcpy(raw.key(target), stable_key, raw.options.key_size);
-    std::memcpy(raw.value(target), stable_value, raw.options.value_size);
+    if (raw.options.value_size != 0)
+      std::memcpy(raw.value(target), stable_value, raw.options.value_size);
     if (scratch != nullptr)
       raw.alloc.deallocate(scratch,
                            raw.options.key_size + raw.options.value_size,
@@ -1160,7 +1215,8 @@ static hyle_status hash_map_insert_impl(
   } else {
     raw.set_hash(target, hash);
     std::memcpy(raw.key(target), key, raw.options.key_size);
-    std::memcpy(raw.value(target), value, raw.options.value_size);
+    if (raw.options.value_size != 0)
+      std::memcpy(raw.value(target), value, raw.options.value_size);
   }
   const bool was_empty = raw.ctrl[target] == hc::detail::kEmpty;
   raw.set_ctrl(target, hc::detail::h2(hash));
@@ -1172,12 +1228,20 @@ static hyle_status hash_map_insert_impl(
 hyle_status hyle_container_hash_map_insert(
     hyle_container_insert_result* out_result,
     hyle_container_hash_map* map, const void* key, const void* value) {
-  return hash_map_insert_impl(out_result, map, key, value, false);
+  if (out_result == nullptr || map == nullptr || key == nullptr ||
+      value == nullptr)
+    return hyle_status_invalid_argument(
+        "result, map, key, and value are required");
+  return raw_hash_insert_impl(out_result, map->value, key, value, false);
 }
 hyle_status hyle_container_hash_map_insert_or_assign(
     hyle_container_insert_result* out_result,
     hyle_container_hash_map* map, const void* key, const void* value) {
-  return hash_map_insert_impl(out_result, map, key, value, true);
+  if (out_result == nullptr || map == nullptr || key == nullptr ||
+      value == nullptr)
+    return hyle_status_invalid_argument(
+        "result, map, key, and value are required");
+  return raw_hash_insert_impl(out_result, map->value, key, value, true);
 }
 void* hyle_container_hash_map_find(hyle_container_hash_map* map,
                                    const void* key) {
@@ -1224,6 +1288,99 @@ int hyle_container_hash_map_for_each(
       const std::size_t index = group + lane;
       keep_going =
           visitor(raw.key(index), raw.value(index), context) != 0;
+      if (!keep_going) break;
+    }
+  return 1;
+}
+
+hyle_status hyle_container_hash_set_create(
+    hyle_container_hash_set** out,
+    const hyle_container_hash_set_options* options) {
+  if (out == nullptr)
+    return hyle_status_invalid_argument("hash set output is NULL");
+  *out = nullptr;
+  if (options == nullptr ||
+      options->struct_size < sizeof(hyle_container_hash_set_options) ||
+      !valid_backing(options->backing) ||
+      !valid_hash_slot_layout(options->key_size, options->key_alignment, 0,
+                              1)) {
+    return hyle_status_invalid_argument("invalid hash set options");
+  }
+  auto* set = allocate_handle<hyle_container_hash_set>(options->backing,
+                                                        *options);
+  if (set == nullptr)
+    return hyle_status_resource_exhausted("hash set allocation failed");
+  *out = set;
+  return hyle_status_ok();
+}
+void hyle_container_hash_set_destroy(hyle_container_hash_set* set) {
+  free_handle(set);
+}
+size_t hyle_container_hash_set_size(const hyle_container_hash_set* set) {
+  if (set == nullptr) return 0;
+  return set->value.size;
+}
+size_t hyle_container_hash_set_capacity(const hyle_container_hash_set* set) {
+  if (set == nullptr) return 0;
+  return set->value.cap;
+}
+hyle_status hyle_container_hash_set_reserve(hyle_container_hash_set* set,
+                                            size_t count) {
+  if (set == nullptr)
+    return hyle_status_invalid_argument("set is NULL");
+  if (count > SIZE_MAX / 8)
+    return hyle_status_out_of_range(
+        "hash set capacity overflows address space");
+  if (!set->value.reserve(count))
+    return hyle_status_resource_exhausted(
+        "hash set bucket allocation failed");
+  return hyle_status_ok();
+}
+void hyle_container_hash_set_clear(hyle_container_hash_set* set) {
+  if (set == nullptr) return;
+  set->value.clear();
+}
+hyle_status hyle_container_hash_set_insert(
+    hyle_container_insert_result* out_result,
+    hyle_container_hash_set* set, const void* key) {
+  if (out_result == nullptr || set == nullptr || key == nullptr)
+    return hyle_status_invalid_argument(
+        "result, set, and key are required");
+  return raw_hash_insert_impl(out_result, set->value, key, nullptr, false);
+}
+const void* hyle_container_hash_set_find(
+    const hyle_container_hash_set* set, const void* key) {
+  if (set == nullptr || key == nullptr) return nullptr;
+  const uint64_t hash = set->value.hash(key);
+  const std::size_t slot = set->value.find_slot(key, hash);
+  return slot == RawMap::kNoSlot ? nullptr : set->value.key(slot);
+}
+int hyle_container_hash_set_contains(const hyle_container_hash_set* set,
+                                     const void* key) {
+  return hyle_container_hash_set_find(set, key) != nullptr;
+}
+int hyle_container_hash_set_erase(hyle_container_hash_set* set,
+                                  const void* key) {
+  if (set == nullptr || key == nullptr) return 0;
+  RawMap& raw = set->value;
+  const uint64_t hash = raw.hash(key);
+  const std::size_t slot = raw.find_slot(key, hash);
+  if (slot == RawMap::kNoSlot) return 0;
+  raw.erase_slot(slot);
+  return 1;
+}
+int hyle_container_hash_set_for_each(
+    const hyle_container_hash_set* set,
+    hyle_container_hash_set_visit_fn visitor, void* context) {
+  if (set == nullptr || visitor == nullptr) return 0;
+  const RawMap& raw = set->value;
+  bool keep_going = true;
+  for (std::size_t group = 0; keep_going && group < raw.cap;
+       group += hc::detail::kGroupWidth)
+    for (std::uint32_t lane :
+         hc::detail::Group(raw.ctrl + group).match_full()) {
+      const std::size_t index = group + lane;
+      keep_going = visitor(raw.key(index), context) != 0;
       if (!keep_going) break;
     }
   return 1;
