@@ -115,14 +115,14 @@ class IntrusiveList {
   // Detach all nodes. The list never destroys them because it owns no storage.
   void clear() noexcept {
     IntrusiveListHook* current = sentinel_.next_;
-    sentinel_.prev_ = &sentinel_;
-    sentinel_.next_ = &sentinel_;
     while (current != &sentinel_) {
       IntrusiveListHook* next = current->next_;
       current->prev_ = nullptr;
       current->next_ = nullptr;
       current = next;
     }
+    sentinel_.prev_ = &sentinel_;
+    sentinel_.next_ = &sentinel_;
   }
 
   // Detach and consume the complete list without updating the sentinel for
@@ -230,15 +230,16 @@ class IntrusiveList {
   // the hook at two pointers and the hot path branch-free.
   void remove(T* node) noexcept {
     HYLE_FATAL_ASSERT(node != nullptr);
-    HYLE_FATAL_ASSERT(hook_of(node)->linked());
-    remove_unchecked(node);
+    IntrusiveListHook* hook = hook_of(node);
+    HYLE_FATAL_ASSERT(hook->linked());
+    unlink_unchecked(hook);
   }
 
   // Low-level companion for owners whose membership invariant already proves
   // the node is linked in this list. This keeps redundant contract branches out
   // of timer cancel hot paths; public data structures still validate ownership
   // before calling it.
-  void remove_unchecked(T* node) noexcept { hook_of(node)->unlink(); }
+  void remove_unchecked(T* node) noexcept { unlink_unchecked(hook_of(node)); }
 
  private:
   static IntrusiveListHook* hook_of(T* node) noexcept { return &(node->*Hook); }
@@ -256,6 +257,13 @@ class IntrusiveList {
     node->next_ = pos;
     pos->prev_->next_ = node;
     pos->prev_ = node;
+  }
+
+  static void unlink_unchecked(IntrusiveListHook* hook) noexcept {
+    hook->prev_->next_ = hook->next_;
+    hook->next_->prev_ = hook->prev_;
+    hook->prev_ = nullptr;
+    hook->next_ = nullptr;
   }
 
   IntrusiveListHook sentinel_;
