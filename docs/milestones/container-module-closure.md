@@ -19,7 +19,8 @@
 > 及三平台强 peer 证据仍在复审，
 > 因此 container **尚未获得 2026-07-25 严格证书**。
 > 复审也删除了无生产消费者、属于 quick-open 应用策略的 fuzzy scorer/top-K 及其 C
-> 导出；旧 container-06c 仍作为历史任务记录保留。
+> 导出；C pointer queue 也已删除含糊的旧 `push/pop` 名称，统一为 `try_*` 并显式编码
+> owner bottom/top 与 FIFO back/front 角色；旧 container-06c 仍作为历史任务记录保留。
 > 下文的 109 exports、124 callable、TLS error 和性能表只应按历史快照阅读。
 
 ## 结论

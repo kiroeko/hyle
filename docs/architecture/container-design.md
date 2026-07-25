@@ -183,16 +183,17 @@ container 对外依赖。hex encode/decode 当前是无查表分支的标量/编
 | StringBuf | 保留 opaque 能力 | permanent 与 refcounted lifecycle 都有真实跨语言用途；检查 batch/result 形状 |
 | erased POD vector | 保留能力 | C 没有模板，size/alignment + allocator 是合理动态形状；不加入 C++ ctor/dtor callback |
 | erased POD flat map | 保留能力、正在重塑 | 已拆 insert/insert_or_assign；后续决定真 set 是同一 value_size=0 policy 还是独立最小 handle |
-| 四类 pointer queue | **暂定** | typed 角色合理，但 C 名称仍隐藏 try/owner/bottom 合同；先查 sched/FFI 消费者再决定改名、迁模块或删除导出 |
+| 四类 pointer queue | **能力暂定，命名已重塑** | C 热路径统一 `try_*`；Chase-Lev 明示 owner bottom/thief top，WsFifo 明示 back/front；后续仍决定是否都值得长期导出 |
 | pointer ConcurrentVector | **暂定** | 跨线程 append 有用途，但 `void*` 形状覆盖面窄；比较 erased POD 与 caller-owned pointer 两种真实场景 |
 
 “保留能力”不等于冻结当前函数列表；“暂定”也不等于为了缩 ABI 直接删。最终 C 面只为
 跨边界仍成立的动态能力服务，HYLE 内部 C++ 模块继续直接使用 typed API。
 
 2026-07-25 的消费审计确认：仓内生产代码只直接使用 typed queue（sched），没有任何
-模块通过 container C queue/ConcurrentVector facade 回调自己。因而这些 C 名称不能以
-“内部已有用户”为由冻结；下一轮必须按真实 FFI 角色重命名或删除，而不是继续保留早期
-`push/pop` 的机械镜像。
+模块通过 container C queue/ConcurrentVector facade 回调自己。因而早期含糊的
+`push/pop` 没有兼容理由：C queue 已统一为非阻塞 `try_*`，并把 owner/thief 与
+front/back 角色写进函数名。能力是否长期保留仍由真实 FFI 消费决定，不能因已重命名就
+自动冻结。
 
 - options 带 `struct_size`；allocator 按值捕获但 state 生命周期由调用方保证。
 - 对象只经 create/destroy；不导出 C++ 类布局、STL、模板或异常。

@@ -331,7 +331,9 @@ HYLE_CONTAINER_C_API int hyle_container_hash_map_for_each(
     hyle_container_hash_map* map, hyle_container_hash_map_visit_fn visitor,
     void* context);
 
-/* Pointer payload queues: HYLE never owns or frees payload pointers. */
+/* Pointer payload queues: HYLE never owns or frees payload pointers. All
+ * try_* operations are non-blocking; 0 means full/empty/contended as documented,
+ * and an output item is written only on success. */
 typedef struct hyle_container_bounded_queue_o hyle_container_bounded_queue;
 HYLE_CONTAINER_C_API hyle_status hyle_container_bounded_queue_create(
     hyle_container_bounded_queue** out, hyle_allocator backing,
@@ -343,9 +345,9 @@ static inline hyle_status hyle_container_bounded_queue_create_system(
 }
 HYLE_CONTAINER_C_API void hyle_container_bounded_queue_destroy(
     hyle_container_bounded_queue* queue);
-HYLE_CONTAINER_C_API int hyle_container_bounded_queue_push(
+HYLE_CONTAINER_C_API int hyle_container_bounded_queue_try_push(
     hyle_container_bounded_queue* queue, void* item);
-HYLE_CONTAINER_C_API int hyle_container_bounded_queue_pop(
+HYLE_CONTAINER_C_API int hyle_container_bounded_queue_try_pop(
     hyle_container_bounded_queue* queue, void** out_item);
 HYLE_CONTAINER_C_API size_t hyle_container_bounded_queue_capacity(
     const hyle_container_bounded_queue* queue);
@@ -362,9 +364,9 @@ static inline hyle_status hyle_container_sharded_queue_create_system(
 }
 HYLE_CONTAINER_C_API void hyle_container_sharded_queue_destroy(
     hyle_container_sharded_queue* queue);
-HYLE_CONTAINER_C_API int hyle_container_sharded_queue_push(
+HYLE_CONTAINER_C_API int hyle_container_sharded_queue_try_push(
     hyle_container_sharded_queue* queue, size_t producer_hint, void* item);
-HYLE_CONTAINER_C_API int hyle_container_sharded_queue_pop(
+HYLE_CONTAINER_C_API int hyle_container_sharded_queue_try_pop(
     hyle_container_sharded_queue* queue, size_t* cursor, void** out_item);
 HYLE_CONTAINER_C_API size_t hyle_container_sharded_queue_capacity(
     const hyle_container_sharded_queue* queue);
@@ -388,12 +390,13 @@ static inline hyle_status hyle_container_work_stealing_deque_create_system(
 }
 HYLE_CONTAINER_C_API void hyle_container_work_stealing_deque_destroy(
     hyle_container_work_stealing_deque* deque);
-HYLE_CONTAINER_C_API int hyle_container_work_stealing_deque_push(
+/* push/pop bottom are owner-only. Any thread may try_steal_top. */
+HYLE_CONTAINER_C_API int hyle_container_work_stealing_deque_try_push_bottom(
     hyle_container_work_stealing_deque* deque, void* item);
-HYLE_CONTAINER_C_API int hyle_container_work_stealing_deque_pop(
+HYLE_CONTAINER_C_API int hyle_container_work_stealing_deque_try_pop_bottom(
     hyle_container_work_stealing_deque* deque, void** out_item);
 HYLE_CONTAINER_C_API hyle_container_steal_status
-hyle_container_work_stealing_deque_steal(
+hyle_container_work_stealing_deque_try_steal_top(
     hyle_container_work_stealing_deque* deque, void** out_item);
 HYLE_CONTAINER_C_API size_t hyle_container_work_stealing_deque_capacity(
     const hyle_container_work_stealing_deque* deque);
@@ -409,11 +412,13 @@ static inline hyle_status hyle_container_ws_fifo_queue_create_system(
 }
 HYLE_CONTAINER_C_API void hyle_container_ws_fifo_queue_destroy(
     hyle_container_ws_fifo_queue* queue);
-HYLE_CONTAINER_C_API int hyle_container_ws_fifo_queue_push(
+/* The owner pushes at the back and pops at the front. A thief transfers a
+ * batch from source into its own equal-capacity target and receives one item. */
+HYLE_CONTAINER_C_API int hyle_container_ws_fifo_queue_try_push_back(
     hyle_container_ws_fifo_queue* queue, void* item);
-HYLE_CONTAINER_C_API int hyle_container_ws_fifo_queue_pop(
+HYLE_CONTAINER_C_API int hyle_container_ws_fifo_queue_try_pop_front(
     hyle_container_ws_fifo_queue* queue, void** out_item);
-HYLE_CONTAINER_C_API int hyle_container_ws_fifo_queue_steal_into(
+HYLE_CONTAINER_C_API int hyle_container_ws_fifo_queue_try_steal_into(
     hyle_container_ws_fifo_queue* source, hyle_container_ws_fifo_queue* target,
     void** out_item);
 HYLE_CONTAINER_C_API size_t hyle_container_ws_fifo_queue_capacity(

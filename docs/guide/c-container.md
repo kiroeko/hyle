@@ -166,18 +166,24 @@ ASCII 单字节便利函数全部 header-inline：
 
 ## 并发容器
 
+所有 `try_*` 都是无分配、非阻塞热路径：返回 0 表示该次操作未取得元素/空间，out item
+仅在返回成功时写入。名称刻意不再使用早期含糊的 `push/pop`：bounded/sharded 明示
+“可能因满/空失败”，work-stealing 明示 owner 的 bottom 与 thief 的 top，WsFifo 明示
+owner 的 back/front。调用者若要等待，应在 sched/platform 层组合 park/wake，而不是
+把容器误解成 blocking queue。
+
 `hyle_container_bounded_queue_create`、
 `hyle_container_bounded_queue_create_system`、
 `hyle_container_bounded_queue_destroy`、
-`hyle_container_bounded_queue_push`、
-`hyle_container_bounded_queue_pop`、
+`hyle_container_bounded_queue_try_push`、
+`hyle_container_bounded_queue_try_pop`、
 `hyle_container_bounded_queue_capacity` 是有界 MPMC ring。
 
 `hyle_container_sharded_queue_create`、
 `hyle_container_sharded_queue_create_system`、
 `hyle_container_sharded_queue_destroy`、
-`hyle_container_sharded_queue_push`、
-`hyle_container_sharded_queue_pop`、
+`hyle_container_sharded_queue_try_push`、
+`hyle_container_sharded_queue_try_pop`、
 `hyle_container_sharded_queue_capacity`、
 `hyle_container_sharded_queue_shard_count` 是高争用 MPMC 组合；producer hint 选分片，
 consumer cursor 应由各 consumer 私有并在多次 pop 间保留。
@@ -185,21 +191,22 @@ consumer cursor 应由各 consumer 私有并在多次 pop 间保留。
 `hyle_container_work_stealing_deque_create`、
 `hyle_container_work_stealing_deque_create_system`、
 `hyle_container_work_stealing_deque_destroy`、
-`hyle_container_work_stealing_deque_push`、
-`hyle_container_work_stealing_deque_pop`、
-`hyle_container_work_stealing_deque_steal`、
-`hyle_container_work_stealing_deque_capacity` 是单 owner push/pop、多个 thief steal
+`hyle_container_work_stealing_deque_try_push_bottom`、
+`hyle_container_work_stealing_deque_try_pop_bottom`、
+`hyle_container_work_stealing_deque_try_steal_top`、
+`hyle_container_work_stealing_deque_capacity` 是单 owner 在 bottom push/pop、多个
+thief 从 top steal
 的 Chase-Lev 风格 deque。steal 返回
 `HYLE_CONTAINER_STEAL_OK/EMPTY/ABORT`；ABORT 表示竞争，应重试。
 
 `hyle_container_ws_fifo_queue_create`、
 `hyle_container_ws_fifo_queue_create_system`、
 `hyle_container_ws_fifo_queue_destroy`、
-`hyle_container_ws_fifo_queue_push`、
-`hyle_container_ws_fifo_queue_pop`、
-`hyle_container_ws_fifo_queue_steal_into`、
+`hyle_container_ws_fifo_queue_try_push_back`、
+`hyle_container_ws_fifo_queue_try_pop_front`、
+`hyle_container_ws_fifo_queue_try_steal_into`、
 `hyle_container_ws_fifo_queue_capacity` 是 owner FIFO + 批量转移队列；
-`steal_into` 要求两个不同且等容量的队列。
+owner 在 back push、front pop；`try_steal_into` 要求两个不同且等容量的队列。
 
 `hyle_container_concurrent_vector_create`、
 `hyle_container_concurrent_vector_create_system`、

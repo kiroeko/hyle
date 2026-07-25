@@ -28,7 +28,7 @@ TEST(ContainerCAbi, BoundedQueueMpmcConservesPointers) {
       const std::uintptr_t base = producer * kPerProducer;
       for (std::uintptr_t i = 1; i <= kPerProducer; ++i) {
         void* value = reinterpret_cast<void*>(base + i);
-        while (!hyle_container_bounded_queue_push(queue, value))
+        while (!hyle_container_bounded_queue_try_push(queue, value))
           std::this_thread::yield();
         produced.fetch_add(1, std::memory_order_release);
       }
@@ -38,7 +38,7 @@ TEST(ContainerCAbi, BoundedQueueMpmcConservesPointers) {
     threads.emplace_back([&] {
       for (;;) {
         void* value = nullptr;
-        if (hyle_container_bounded_queue_pop(queue, &value)) {
+        if (hyle_container_bounded_queue_try_pop(queue, &value)) {
           sum.fetch_add(reinterpret_cast<std::uintptr_t>(value),
                         std::memory_order_relaxed);
           consumed.fetch_add(1, std::memory_order_relaxed);

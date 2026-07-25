@@ -1261,13 +1261,13 @@ HYLE_QUEUE_CREATE(hyle_container_work_stealing_deque)
 HYLE_QUEUE_CREATE(hyle_container_ws_fifo_queue)
 #undef HYLE_QUEUE_CREATE
 
-int hyle_container_bounded_queue_push(hyle_container_bounded_queue* queue,
-                                      void* item) {
+int hyle_container_bounded_queue_try_push(hyle_container_bounded_queue* queue,
+                                          void* item) {
   if (queue == nullptr) return 0;
   return queue->value.try_push(item);
 }
-int hyle_container_bounded_queue_pop(hyle_container_bounded_queue* queue,
-                                     void** out_item) {
+int hyle_container_bounded_queue_try_pop(hyle_container_bounded_queue* queue,
+                                         void** out_item) {
   if (queue == nullptr || out_item == nullptr) return 0;
   return queue->value.try_pop(*out_item);
 }
@@ -1303,13 +1303,13 @@ void hyle_container_sharded_queue_destroy(
     hyle_container_sharded_queue* queue) {
   free_handle(queue);
 }
-int hyle_container_sharded_queue_push(hyle_container_sharded_queue* queue,
-                                      size_t producer_hint, void* item) {
+int hyle_container_sharded_queue_try_push(hyle_container_sharded_queue* queue,
+                                          size_t producer_hint, void* item) {
   if (queue == nullptr) return 0;
   return queue->value.try_push(producer_hint, item);
 }
-int hyle_container_sharded_queue_pop(hyle_container_sharded_queue* queue,
-                                     size_t* cursor, void** out_item) {
+int hyle_container_sharded_queue_try_pop(hyle_container_sharded_queue* queue,
+                                         size_t* cursor, void** out_item) {
   if (queue == nullptr || cursor == nullptr || out_item == nullptr) return 0;
   return queue->value.try_pop(*cursor, *out_item);
 }
@@ -1323,19 +1323,19 @@ size_t hyle_container_sharded_queue_shard_count(
   if (queue == nullptr) return 0;
   return queue->value.num_shards();
 }
-int hyle_container_work_stealing_deque_push(
+int hyle_container_work_stealing_deque_try_push_bottom(
     hyle_container_work_stealing_deque* deque, void* item) {
   if (deque == nullptr) return 0;
   return deque->value.push_bottom(item);
 }
-int hyle_container_work_stealing_deque_pop(
+int hyle_container_work_stealing_deque_try_pop_bottom(
     hyle_container_work_stealing_deque* deque, void** out_item) {
   if (deque == nullptr || out_item == nullptr) return 0;
   const auto result = deque->value.pop_bottom();
   if (result.ok) *out_item = result.value;
   return result.ok;
 }
-hyle_container_steal_status hyle_container_work_stealing_deque_steal(
+hyle_container_steal_status hyle_container_work_stealing_deque_try_steal_top(
     hyle_container_work_stealing_deque* deque, void** out_item) {
   if (deque == nullptr || out_item == nullptr)
     return HYLE_CONTAINER_STEAL_EMPTY;
@@ -1343,19 +1343,19 @@ hyle_container_steal_status hyle_container_work_stealing_deque_steal(
   if (result.status == hc::StealStatus::kOk) *out_item = result.value;
   return static_cast<hyle_container_steal_status>(result.status);
 }
-int hyle_container_ws_fifo_queue_push(hyle_container_ws_fifo_queue* queue,
-                                      void* item) {
+int hyle_container_ws_fifo_queue_try_push_back(
+    hyle_container_ws_fifo_queue* queue, void* item) {
   if (queue == nullptr) return 0;
   return queue->value.push_back(item);
 }
-int hyle_container_ws_fifo_queue_pop(hyle_container_ws_fifo_queue* queue,
-                                     void** out_item) {
+int hyle_container_ws_fifo_queue_try_pop_front(
+    hyle_container_ws_fifo_queue* queue, void** out_item) {
   if (queue == nullptr || out_item == nullptr) return 0;
   const auto result = queue->value.pop();
   if (result.ok) *out_item = result.value;
   return result.ok;
 }
-int hyle_container_ws_fifo_queue_steal_into(
+int hyle_container_ws_fifo_queue_try_steal_into(
     hyle_container_ws_fifo_queue* source, hyle_container_ws_fifo_queue* target,
     void** out_item) {
   if (source == nullptr || target == nullptr || out_item == nullptr ||

@@ -447,34 +447,34 @@ static void test_queues_and_concurrent_vector(void) {
       hyle_container_concurrent_vector_create_system(&vector, 2)));
 
   CHECK(bounded != NULL && hyle_container_bounded_queue_capacity(bounded) == 8);
-  CHECK(hyle_container_bounded_queue_push(bounded, &a));
-  CHECK(hyle_container_bounded_queue_pop(bounded, &output) && output == &a);
+  CHECK(hyle_container_bounded_queue_try_push(bounded, &a));
+  CHECK(hyle_container_bounded_queue_try_pop(bounded, &output) && output == &a);
   hyle_container_bounded_queue_destroy(bounded);
 
   CHECK(sharded != NULL);
   CHECK(hyle_container_sharded_queue_shard_count(sharded) == 2);
   CHECK(hyle_container_sharded_queue_capacity(sharded) == 8);
-  CHECK(hyle_container_sharded_queue_push(sharded, 1, &b));
-  CHECK(hyle_container_sharded_queue_pop(sharded, &cursor, &output) &&
+  CHECK(hyle_container_sharded_queue_try_push(sharded, 1, &b));
+  CHECK(hyle_container_sharded_queue_try_pop(sharded, &cursor, &output) &&
         output == &b);
   hyle_container_sharded_queue_destroy(sharded);
 
   CHECK(deque != NULL);
   CHECK(hyle_container_work_stealing_deque_capacity(deque) == 8);
-  CHECK(hyle_container_work_stealing_deque_push(deque, &a));
-  CHECK(hyle_container_work_stealing_deque_steal(deque, &output) ==
+  CHECK(hyle_container_work_stealing_deque_try_push_bottom(deque, &a));
+  CHECK(hyle_container_work_stealing_deque_try_steal_top(deque, &output) ==
         HYLE_CONTAINER_STEAL_OK);
   CHECK(output == &a);
-  CHECK(!hyle_container_work_stealing_deque_pop(deque, &output));
+  CHECK(!hyle_container_work_stealing_deque_try_pop_bottom(deque, &output));
   hyle_container_work_stealing_deque_destroy(deque);
 
   CHECK(source != NULL && target != NULL);
   CHECK(hyle_container_ws_fifo_queue_capacity(source) == 8);
-  CHECK(hyle_container_ws_fifo_queue_push(source, &a));
-  CHECK(hyle_container_ws_fifo_queue_push(source, &b));
-  CHECK(hyle_container_ws_fifo_queue_steal_into(source, target, &output));
-  CHECK(hyle_container_ws_fifo_queue_pop(source, &output) ||
-        hyle_container_ws_fifo_queue_pop(target, &output));
+  CHECK(hyle_container_ws_fifo_queue_try_push_back(source, &a));
+  CHECK(hyle_container_ws_fifo_queue_try_push_back(source, &b));
+  CHECK(hyle_container_ws_fifo_queue_try_steal_into(source, target, &output));
+  CHECK(hyle_container_ws_fifo_queue_try_pop_front(source, &output) ||
+        hyle_container_ws_fifo_queue_try_pop_front(target, &output));
   hyle_container_ws_fifo_queue_destroy(source);
   hyle_container_ws_fifo_queue_destroy(target);
 
