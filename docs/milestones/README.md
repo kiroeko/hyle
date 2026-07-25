@@ -30,7 +30,7 @@
 
 | 固定统计口径 | 当前 | 命令/说明 |
 |---|---|---|
-| **全库代码** | **246,372** | `cloc . --vcs=git`；含 docs/third_party，**≠ 自写** |
+| **全库代码** | **246,382** | `cloc . --vcs=git`；含 docs/third_party，**≠ 自写** |
 | **自实现（含测试）** | **116,282** | `cloc include/hyle src tests --exclude-lang=CMake,Text` |
 | **自实现（不含测试）** | **79,955** | `cloc include/hyle src --exclude-lang=CMake,Text`；库本体硬锚 |
 | **当前审查单元 build/package 实现** | **2,980** | 自有 CMake/preset + build/fetch/setup/QEMU scripts；排除 vendored CMake、测试源码与文档 |

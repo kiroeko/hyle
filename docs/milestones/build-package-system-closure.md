@@ -60,11 +60,23 @@
 - [ ] benchmark 按组件惰性创建，core benchmark 不再要求全局 SIMD vendor 或 compute/io 配置。
 - [ ] install/export/component package、交叉编译、preset/toolchain/CI 与三平台最终矩阵。
 
+### 第一轮验证证据（`86cb325`）
+
+- Windows MSVC 19.50：core-only shared 4/4、static 4/4；同一 build tree 从 core 切换到 mem，
+  resolved=`error,platform,mem`，统一 aggregate 构建后 12/12；未出现 io/compute 依赖。
+- Windows source embed：container sample 只组装 `error,platform,mem,container`，35 步构建后
+  runtime staging 得到 4 个传递 DLL，程序真实运行并输出 SwissTable 结果。
+- WSL GCC14：core-only shared `hyle_core_tests` 4/4，未探测 GPU/协议依赖。
+- Apple M4 AppleClang 21：Unix Makefiles（机器没有 Ninja）core-only shared 4/4；证明组件入口
+  不依赖 preset 的 generator 假设。
+- 默认 `all` 全组件 configure 已通过；完整 `hyle_tests` 会重编 ggml CUDA，超过本轮合理成本后
+  精确终止该构建进程树。它留到 compute 隔离与最终矩阵，不用烧机器冒充新增证据。
+
 ### 本轮四项代码量
 
 | 固定口径 | code |
 |---|---:|
-| 全库（含 docs/in-tree third_party） | 246,372 |
+| 全库（含 docs/in-tree third_party） | 246,382 |
 | 自实现（含测试） | 116,282 |
 | 自实现（不含测试） | 79,955 |
 | build/package 实现 | 2,980 |
