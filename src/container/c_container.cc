@@ -283,7 +283,15 @@ struct RawMap {
     return true;
   }
   bool reserve(std::size_t count) noexcept {
-    if (count <= cap - cap / 8) return true;
+    if (cap != 0) {
+      const std::size_t max_live = cap - cap / 8;
+      if (count <= max_live) {
+        if (count <= size + growth_left) return true;
+        return resize(cap);
+      }
+    } else if (count == 0) {
+      return true;
+    }
     if (count > SIZE_MAX / 8) return false;
     const std::size_t required = (count * 8 + 6) / 7;
     std::size_t new_capacity = hc::detail::kGroupWidth;

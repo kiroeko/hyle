@@ -175,6 +175,8 @@ push/append/resize fill/insert 的输入都可来自当前 vector 的 live data�
 `insert_or_assign` 会覆盖，并返回 `HYLE_CONTAINER_ASSIGNED`。新 key 都返回
 `HYLE_CONTAINER_INSERTED`。两者都支持 key/value 指向当前 map slot，growth 前会先
 保存借用字节。
+`reserve(final_size)` 同时检查 slot capacity 与 tombstone growth budget；必要时会
+同容量 rehash，因此成功返回后不会因为旧 tombstone 立刻再次分配。set 复用相同合同。
 `visit` 的 visitor 返回 0 可提前停止；此时 `visit` 也返回 0，完整遍历返回 1。
 遍历期间不得修改 map。
 

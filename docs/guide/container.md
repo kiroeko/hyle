@@ -90,8 +90,10 @@ find/contains/erase。和 Abseil/Folly/std 的熟悉语义一致：`insert` 不�
 `try_emplace` 只在 key 不存在时构造 value，并返回 `{value_pointer, inserted}`；
 `insert_or_assign` 明确表示覆盖；默认构造 value 的常用计数/缓存可用 `operator[]`。
 这些普通入口把 OOM 当 fatal。需要恢复时用 `try_insert_or_assign`，或先
-`try_prepare_insert` 把可能的 grow/tombstone rehash 移到冷路径。Hash/Eq、元素 move/
-destroy 以及 `try_emplace` 的 value 构造必须 noexcept，保证失败不留下半迁移 table。
+`try_prepare_insert` 把可能的 grow/tombstone rehash 移到冷路径。`reserve(final_size)`
+本身也遵守熟悉的后续插入保证：若 tombstone 已吃光 growth budget，它会同容量 rehash，
+不会只看 slot capacity 就虚假成功。Hash/Eq、元素 move/destroy 以及 `try_emplace` 的
+value 构造必须 noexcept，保证失败不留下半迁移 table。
 
 slot 是 flat storage；grow、rehash、erase 都会使相关 pointer/reference 失效。不要在
 `for_each` 回调中修改同一个 map/set。map 可 range-for；每个 entry 用只读

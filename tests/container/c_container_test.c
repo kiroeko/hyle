@@ -748,6 +748,35 @@ int main(void) {
     hyle_container_hash_map_destroy(map);
   }
   {
+    hyle_container_hash_map_options options =
+        HYLE_CONTAINER_HASH_MAP_OPTIONS_FOR(int, int);
+    hyle_container_hash_map* map = NULL;
+    fail_after_allocator failing = {hyle_system_allocator(), 3};
+    hyle_allocator fail_storage = {fail_after_alloc, fail_after_free,
+                                   fail_after_realloc, &failing};
+    int key;
+    int value;
+    options.hash = constant_hash;
+    options.backing = fail_storage;
+    CHECK(status_ok(hyle_container_hash_map_create(&map, &options)));
+    CHECK(status_ok(hyle_container_hash_map_reserve(map, 28)));
+    CHECK(failing.successful_allocations_left == 0);
+    for (key = 0; key < 28; ++key) {
+      value = key * 2;
+      CHECK(map_inserted(map, &key, &value));
+    }
+    key = 3;
+    CHECK(hyle_container_hash_map_erase(map, &key));
+    failing.successful_allocations_left = 2;
+    CHECK(status_ok(hyle_container_hash_map_reserve(map, 28)));
+    CHECK(failing.successful_allocations_left == 0);
+    CHECK(hyle_container_hash_map_capacity(map) == 32);
+    key = 100;
+    value = 200;
+    CHECK(map_inserted(map, &key, &value));
+    hyle_container_hash_map_destroy(map);
+  }
+  {
     hyle_container_hash_set_options options =
         HYLE_CONTAINER_HASH_SET_OPTIONS_FOR(int);
     hyle_container_hash_set* set = NULL;

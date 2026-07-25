@@ -8,7 +8,7 @@
 > `ConcurrentVector` 已按 oneTBB 实际合同改为并行 writer；Windows/WSL n=15 的
 > 单 writer、range iteration 与读旧 prefix+写 tail 均领先，8 writer 同档；WSL 逐次
 > `operator[]` 顺扫仍慢约 2x，但正常 range-for 已快 1.39x。GCC 14 TSan（禁用 WSL
-> ASLR 后）208 个 typed 测试、纯 C 测试及并发组重复 30 轮通过。
+> ASLR 后）209 个 typed 测试、纯 C 测试及并发组重复 30 轮通过。
 > 真正的 typed `FlatHashSet` 与 map/set 标准 forward iteration 已完成；Windows 的
 > map/set 五/四项均领先 Abseil；WSL map 四项领先、miss 慢约 3%，set hit 同档、miss
 > 慢约 6%、insert/iterate 领先。map 已按成熟语义拆分 insert/try_emplace/
@@ -91,9 +91,10 @@ Linux x64 和 macOS arm64 的最终验证命令与结果记录在本文末尾。
 11. StringBuf 低位分片会固定 SwissTable 的 H1 低位；若再 rotate，会把固定位送入
     H2 tag。现改为用 hash 中间位分片，原 hash 的低位 H1/高位 H2 都保留完整熵，
     同时消掉每次 lookup 的第二次 avalanche。
-12. SwissTable 的普通 `reserve(size+1)` 看不见 tombstone 耗尽的 growth budget，
-    `insert()` 仍可能在 noexcept 路径内 fatal rehash。新增可失败
-    `try_prepare_insert()`，StringBuf 在插入前完成冷路径容量准备。
+12. SwissTable 的普通 `reserve(size+1)` 原来看不见 tombstone 耗尽的 growth budget，
+    会虚假成功而让下一次 `insert()` 在 noexcept 路径内 fatal rehash。现由 reserve
+    同容量 rehash兑现插入保证；`try_prepare_insert()` 复用该合同，StringBuf 在插入前
+    完成冷路径容量准备。
 13. TSan 最初把 mimalloc 跨线程复用的旧/新 owner 报成 StringBuf shard race；
     根因是 shipping allocator 没被 sanitizer 插桩。TSan 构建现同时编译
     `mimalloc_static` 并启用 vendor 的 `MI_TSAN` page-flag 布局，188 项全绿。

@@ -17,6 +17,7 @@
 using hyle::container::SwissTable;
 using hyle::container::FlatHashMap;
 using hyle::container::FlatHashSet;
+using hyle::mem::Allocator;
 using hyle::mem::system_allocator;
 
 static_assert(std::forward_iterator<FlatHashMap<int, int>::iterator>);
@@ -91,6 +92,35 @@ struct ThrowingMapValue {
   static inline int alive = 0;
   static inline int copies_before_throw = 0;
   int value;
+};
+
+struct ToggleAllocatorState {
+  Allocator backing = system_allocator();
+  bool fail = false;
+};
+
+void* toggle_alloc(void* raw_state, std::size_t size,
+                   std::size_t alignment) noexcept {
+  auto* state = static_cast<ToggleAllocatorState*>(raw_state);
+  return state->fail ? nullptr : state->backing.allocate(size, alignment);
+}
+
+void toggle_free(void* raw_state, void* pointer, std::size_t size,
+                 std::size_t alignment) noexcept {
+  auto* state = static_cast<ToggleAllocatorState*>(raw_state);
+  state->backing.deallocate(pointer, size, alignment);
+}
+
+void* toggle_realloc(void* raw_state, void* pointer, std::size_t old_size,
+                     std::size_t new_size,
+                     std::size_t alignment) noexcept {
+  auto* state = static_cast<ToggleAllocatorState*>(raw_state);
+  return state->fail ? nullptr : state->backing.reallocate(
+                                     pointer, old_size, new_size, alignment);
+}
+
+struct ConstantIntHash {
+  std::uint64_t operator()(int) const noexcept { return 7; }
 };
 
 }  // namespace
@@ -387,6 +417,31 @@ TEST(SwissTable, PrepareInsertIsFallibleAndMakesInsertAllocationFree) {
   EXPECT_EQ(ready.capacity(), capacity);
   ASSERT_NE(ready.find(7), nullptr);
   EXPECT_EQ(*ready.find(7), 9);
+}
+
+TEST(SwissTable, ReserveReclaimsTombstonesForItsInsertionGuarantee) {
+  ToggleAllocatorState state;
+  Allocator allocator(toggle_alloc, toggle_free, toggle_realloc, &state);
+  using CollisionMap =
+      FlatHashMap<int, int, ConstantIntHash, std::equal_to<>, Allocator>;
+  CollisionMap table(allocator, ConstantIntHash{}, std::equal_to<>{});
+  ASSERT_TRUE(table.reserve(28));
+  ASSERT_EQ(table.capacity(), 32u);
+  for (int i = 0; i < 28; ++i) ASSERT_TRUE(table.insert(i, i));
+  ASSERT_TRUE(table.needs_prepare_insert());
+  ASSERT_TRUE(table.erase(3));
+  ASSERT_TRUE(table.needs_prepare_insert());
+
+  const std::size_t capacity = table.capacity();
+  ASSERT_TRUE(table.reserve(table.size() + 1));
+  EXPECT_EQ(table.capacity(), capacity);
+  EXPECT_FALSE(table.needs_prepare_insert());
+
+  state.fail = true;
+  EXPECT_TRUE(table.insert(100, 100));
+  EXPECT_EQ(table.capacity(), capacity);
+  ASSERT_NE(table.find(100), nullptr);
+  EXPECT_EQ(*table.find(100), 100);
 }
 
 TEST(SwissTable, OwnsMoveOnlyNonTrivialValuesAcrossRehashEraseAndClear) {

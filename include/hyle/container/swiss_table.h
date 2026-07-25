@@ -337,7 +337,19 @@ class SwissTable {
   const_iterator cend() const noexcept { return end(); }
 
   bool reserve(std::size_t count) {
-    if (count <= cap_ - cap_ / 8) return true;
+    if (cap_ != 0) {
+      const std::size_t max_live = cap_ - cap_ / 8;
+      if (count <= max_live) {
+        // A tombstone reduces growth_left without consuming live size. The
+        // familiar reserve(count) guarantee therefore needs a same-capacity
+        // rehash when the requested final size exceeds the remaining empty-slot
+        // budget; merely comparing count with max_live is insufficient.
+        if (count <= size_ + growth_left_) return true;
+        return resize_to(cap_);
+      }
+    } else if (count == 0) {
+      return true;
+    }
     if (count > static_cast<std::size_t>(-1) / 8) return false;
     const std::size_t required = (count * 8 + 6) / 7;
     std::size_t new_cap = kMinCap;
@@ -345,31 +357,20 @@ class SwissTable {
       if (new_cap > static_cast<std::size_t>(-1) / 2) return false;
       new_cap *= 2;
     }
-    detail::SwissStorage s{ctrl_, slots_, cap_, mask_, size_, growth_left_};
-    if (!detail::swiss_resize(s, new_cap, sizeof(Slot), alignof(Slot), &alloc_,
-                              &allocate_thunk, &deallocate_thunk,
-                              &hash_slot_thunk, &hash_, &relocate_slot_thunk))
-      return false;
-    ctrl_ = s.ctrl;
-    slots_ = static_cast<Slot*>(s.slots);
-    cap_ = s.cap;
-    mask_ = s.mask;
-    size_ = s.size;
-    growth_left_ = s.growth_left;
-    return true;
+    return resize_to(new_cap);
   }
 
-  // Ensure the next absent-key insert cannot allocate. Unlike reserve(size+1),
-  // this also rehashes a table whose growth budget was consumed by tombstones.
-  // Callers that promise noexcept/OOM recovery can perform this cold step first,
-  // then use insert() while excluding concurrent mutation.
+  // Explicit fallible convenience for callers that need one allocation-free
+  // absent-key insert. reserve() itself honors the same tombstone-aware
+  // guarantee; this method derives the required final size for the caller.
   bool needs_prepare_insert() const noexcept {
     return cap_ == 0 || growth_left_ == 0;
   }
 
   bool try_prepare_insert() {
     if (!needs_prepare_insert()) return true;
-    return grow();
+    if (size_ == static_cast<std::size_t>(-1)) return false;
+    return reserve(size_ + 1);
   }
 
   void clear() noexcept {
@@ -799,6 +800,10 @@ class SwissTable {
     std::size_t new_cap = cap_ == 0 ? kMinCap
                           : size_ >= cap_ - cap_ / 8 ? cap_ * 2
                                                     : cap_;
+    return resize_to(new_cap);
+  }
+
+  bool resize_to(std::size_t new_cap) {
     detail::SwissStorage s{ctrl_, slots_, cap_, mask_, size_, growth_left_};
     if (!detail::swiss_resize(s, new_cap, sizeof(Slot), alignof(Slot), &alloc_,
                               &allocate_thunk, &deallocate_thunk,

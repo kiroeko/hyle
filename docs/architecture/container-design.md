@@ -162,9 +162,11 @@ Entry 缓存 table hash：新输入不可避免地是 Ω(L) 读字节，但 Swis
 每 shard 小块 slab，remove 后回到池内复用；大字符串立即归还注入 allocator，全部
 slab 在 StringBuf 销毁时归还。地址在有效生命周期内稳定。
 
-SwissTable 的 `try_prepare_insert()` 同时处理正常 grow 与 tombstone rehash，先把
-可能失败的 allocation 做完，随后 `insert()` 才是 allocation-free；StringBuf 因而
-能在 noexcept/batch API 中返回短前缀，而不是让冷路径 OOM 落进 fatal assert。
+SwissTable 的 `reserve(final-size)` 会同时处理正常 grow 与 tombstone 耗尽的 growth
+budget：容量足够时做同容量 rehash，而不是虚假返回成功。`try_prepare_insert()` 由此
+合同推导下一项所需 final-size，先把可能失败的 allocation 做完，随后 `insert()` 才是
+allocation-free；StringBuf 因而能在 noexcept/batch API 中返回短前缀，而不是让冷路径
+OOM 落进 fatal assert。
 
 | 操作 | 当前预期复杂度 | 下界/相对旧形状 |
 |---|---:|---|
