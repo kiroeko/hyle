@@ -2,18 +2,15 @@
 
 #include <bit>
 #include <cstdint>
-#include <random>
 #include <string>
 #include <string_view>
 #include <unordered_set>
 #include <vector>
 
 #include "hyle/container/hash.h"
-#include "hyle/container/hash_inline.h"  // opt-in inline variant (pulls xxhash/wyhash)
 
 using hyle::container::Hash;
 using hyle::container::hash_bytes;
-using hyle::container::hash_bytes_inline;
 
 TEST(Hash, BytesDeterministic) {
   const char* s = "hello world";
@@ -114,28 +111,6 @@ TEST(Hash, LengthDispatchBoundaryDeterministic) {
   EXPECT_EQ(hyle::container::hash_bytes(a.data(), 128), hyle::container::hash_bytes(a.data(), 128));
   EXPECT_EQ(hyle::container::hash_bytes(b.data(), 129), hyle::container::hash_bytes(b.data(), 129));
   EXPECT_NE(hyle::container::hash_bytes(a.data(), 128), hyle::container::hash_bytes(b.data(), 129));
-}
-
-// The opt-in header-inline variant MUST be bit-identical to the default out-of-line
-// hash_bytes across ALL length dispatch bands (<=16 inline / 17..128 XXH3 / >128
-// wyhash) and seeds -- otherwise a key hashed one way and looked up the other breaks.
-TEST(Hash, InlineVariantBitIdenticalToOutOfLine) {
-  std::mt19937_64 rng(12345);
-  // Cover every band + boundaries + the two crossover edges (16/17, 128/129).
-  for (std::size_t len : {std::size_t{0}, std::size_t{1}, std::size_t{7},
-                          std::size_t{8}, std::size_t{9}, std::size_t{15},
-                          std::size_t{16}, std::size_t{17}, std::size_t{31},
-                          std::size_t{64}, std::size_t{96}, std::size_t{127},
-                          std::size_t{128}, std::size_t{129}, std::size_t{192},
-                          std::size_t{256}, std::size_t{512}, std::size_t{1000}}) {
-    std::string s(len, '\0');
-    for (auto& c : s) c = static_cast<char>(rng() & 0xFF);
-    for (std::uint64_t seed : {std::uint64_t{0}, std::uint64_t{1}, std::uint64_t{0xDEADBEEF}}) {
-      EXPECT_EQ(hash_bytes(s.data(), len, seed),
-                hash_bytes_inline(s.data(), len, seed))
-          << "mismatch at len=" << len << " seed=" << seed;
-    }
-  }
 }
 
 TEST(Hash, IntAndEnumUsable) {

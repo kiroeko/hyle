@@ -67,10 +67,10 @@ util 能力时必须先判断属于哪一层，禁止让 util-core 反向 includ
 platform 分叉，sched 再汇入 io/compute/graph。`math` 是当前没有生产下游的合法用户叶；它的
 存在不应因此从完整模块图消失。
 
-部分旧 C shim（包括 util，另有 container/simd/sched/io）仍使用模块私有
-`last_error`，是 error adoption 审计尚未完成的显式欠账。obs 已在 2026-07-25 复审中迁到
-共享 `hyle_status`，形成 `error → obs-runtime` 的单向边，不会导致 error 反向依赖 obs
-或形成环。
+部分旧 C shim（util/simd/sched/io）仍使用模块私有 `last_error`，是 error adoption
+审计尚未完成的显式欠账。obs 与 container 已在 2026-07-25 复审中迁到共享
+`hyle_status`；container 的 C 冷失败现在形成直接 `error → container` 单向边，不会
+导致 error 反向依赖或形成环。
 
 ## 二、施工计划：四个轴别混
 

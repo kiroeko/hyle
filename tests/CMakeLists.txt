@@ -108,6 +108,7 @@ hyle_add_c_surface_test(platform)
 hyle_add_c_surface_test(error)
 hyle_add_c_surface_test(time)
 hyle_add_c_surface_test(obs)
+hyle_add_c_surface_test(container)
 
 # A combined include smoke test can hide transitive-include and include-order bugs.
 # Compile each public C++ module header alone, plus its C ABI header as strict C.
@@ -118,6 +119,7 @@ hyle_add_header_self_contained_test(error)
 hyle_add_header_self_contained_test(time)
 hyle_add_header_self_contained_test(util)
 hyle_add_header_self_contained_test(obs)
+hyle_add_header_self_contained_test(container)
 
 # close-01: pure C whole-buffer SIMD consumer. Register/native C++ types never cross this edge.
 hyle_add_c_test(simd simd/c_simd_test.c)
@@ -204,13 +206,6 @@ hyle_add_c_test(container container/c_container_test.c)
 # graph-01 (step-1): task-dependency DAG incremental recompute. Pure CPU, serial evaluate
 # -- no sched dep yet (parallel node execution is step-2).
 hyle_add_test(graph SOURCES graph/taskgraph_test.cc DEPS hyle_graph)
-# hash_test.cc includes the opt-in hyle/container/hash_inline.h, which pulls the
-# vendored xxhash + wyhash single-headers into that TU -- add their include dirs.
-if(TARGET hyle_container_test)
-  target_include_directories(hyle_container_test SYSTEM PRIVATE
-    "${HYLE_SOURCE_DIR}/third_party/xxhash"
-    "${HYLE_SOURCE_DIR}/third_party/wyhash")
-endif()
 # simd: the scalar test (dispatch + vec floor) always builds. The vec op suite is ALSO
 # compiled per real ISA backend (sse4 / avx2) -- SAME source, different HYLE_SIMD_TARGET_*
 # + -march, each pairing the backend against the naive reference. GCC/Clang need the

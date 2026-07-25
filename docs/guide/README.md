@@ -17,13 +17,14 @@
 | [`time.md`](./time.md) | **time 语言无关选型入口 + C++ 自然写法**：按 elapsed/墙钟/sleep/任意 deadline/同 duration timer 选择入口，并解释 single-owner、re-arm 与周期策略边界。 |
 | [`util.md`](./util.md) | **util 选型入口 + C++ 自然写法**：ScopeGuard/Ref/Rng/SpinLock/type-name/demangle 什么情况选什么，明确 core/runtime 分层、复杂度与常见坑。 |
 | [`obs.md`](./obs.md) | **obs 选型入口 + C++ 自然写法**：error/log/trace 怎么选，format/record/sink 生命周期、递归与异步桥接，以及 native trace 的零成本边界。 |
+| [`container.md`](./container.md) | **container 选型入口 + C++ 自然写法**：小序列/POD vector/flat map/字符串驻留/四类并发队列分别何时选择，明确失效、顺序和当前性能边界。 |
 | [`c-error.md`](./c-error.md) | **error C/FFI 精确映射**：选型沿用 error.md，只说明 `hyle_status` 的 owning 生命周期、Status/out、上下文、格式化与传播。 |
 | [`c-platform.md`](./c-platform.md) | **platform 纯 C ABI**：Parker/Thread/DynLib/VM/mapped_file/fs/cpu/numa 不透明句柄与自由函数、named enum、所有权与易用示例。 |
 | [`c-mem.md`](./c-mem.md) | **mem C/FFI 精确映射**：选型沿用 mem.md，只说明 Status/out、opaque handle、typed 宏、所有权和各入口。 |
 | [`c-time.md`](./c-time.md) | **time C/FFI 精确映射**：选型沿用 time.md，只说明 Status、opaque timer/queue、同步 visitor、所有权和 shutdown。 |
 | [`c-obs.md`](./c-obs.md) | **obs C/FFI 精确映射**：选型沿用 obs.md；共享 Status/out、结构化 record、opaque sink、flush 和 runtime trace。 |
 | [`c-util.md`](./c-util.md) | **util 纯 C ABI 精确映射**：选型沿用 util.md；RNG POD、Ref/ScopeGuard/Registry/SpinLock 类型擦除句柄、demangle buffer-fill、所有权和并发合同。 |
-| [`c-container.md`](./c-container.md) | **container 纯 C ABI**：字符串/路径、StringBuf、运行时擦除 flat Swiss map/vector、四类队列与 append-only vector；所有权、失效和并发合同。 |
+| [`c-container.md`](./c-container.md) | **container C/FFI 精确映射**：选型沿用 container.md；共享 Status/out、字符串/路径、运行时擦除 flat map/vector、并发 opaque handle 与失效合同。 |
 | [`c-simd.md`](./c-simd.md) | **SIMD 纯 C ABI**：247 个 whole-buffer 入口、低精度/排序 POD、RNG opaque handle、运行时 ISA 诊断、调用合同和 FFI 绑定方式。 |
 | [`c-sched.md`](./c-sched.md) | **sched 纯 C ABI**：worker-stack/fiber 双腿、Waker、优雅关闭、同步/消息/取消/blocking pool 的类型擦除入口、生命周期和外语绑定合同。 |
 | [`c-io.md`](./c-io.md) | **io 纯 C ABI**：proactor/completion、网络/文件提交、后端诊断、multishot/fixed-file、共享内存，以及 C 与 sched 的组合合同。 |

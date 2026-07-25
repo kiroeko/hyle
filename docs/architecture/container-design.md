@@ -15,14 +15,14 @@ container 是 Tier 0 数据结构层：提供平坦 hash、连续数组、字符
 C ABI 类型擦除层
   src/container/c_container.cc
     vector/map erased metadata, allocator-preserving handles,
-    pointer-payload concurrent facades, TLS last_error
+    pointer-payload concurrent facades, shared hyle_status cold failures
                       |
           +-----------+-----------+
           |                       |
           v                       v
 C++ typed / source surface      compiled cold cores
-  CArray<T> / SmallVector       hash_bytes, carray grow,
-  SwissTable<K,V>               Swiss resize/free,
+  PodVector<T> / SmallVector    hash_bytes, carray grow,
+  FlatHashMap<K,V>              Swiss resize/free,
   string_ref / StringBuf        StringBuf/path/string algorithms
   typed queues                  runtime ISA dispatcher
           |                       |
@@ -32,7 +32,8 @@ C++ typed / source surface      compiled cold cores
 Tier 0 dependencies: mem allocator + platform CPU discovery
 ```
 
-- `container -> mem -> platform` 是允许的基础依赖。
+- `container -> {error, mem, platform}` 是允许的基础依赖；error 是 C ABI 冷失败
+  的直接合同，不再藏在 mem 的传递依赖或模块私有 TLS 中。
 - container 不链接 `hyle_simd` 模块，避免 Tier 0→Tier 1 倒挂。
 - 字符串批处理的每 ISA TU 复用 `hyle/simd/vec.h` 的 header-only 寄存器 DSL；
   这不会调用 SIMD runtime，也不会把 SIMD 公共 ABI带入 container。
@@ -43,11 +44,11 @@ Tier 0 dependencies: mem allocator + platform CPU discovery
 
 | 能力 | C++ 源码面 | 稳定 C ABI | 关键合同 |
 |---|---|---|---|
-| flat map | `SwissTable<K,V>` | erased POD hash map | trivially-copyable key/value；ctrl+连续 slots；SIMD group probe |
+| flat map | `FlatHashMap<K,V>`（实现名 `SwissTable`） | erased POD hash map | C++ 支持 non-trivial ownership 与异构查找；C 面按字节存 POD；ctrl+连续 slots；SIMD group probe |
 | dynamic array | `CArray<T>` | erased POD vector | header-before-data；allocator/alignment 随 allocation 记录 |
-| inline array | `SmallVector<T,N>` | 不单独导出 | N 是编译期类型；C 动态需求由 erased vector 覆盖 |
-| string view | `string_ref` | `hyle_container_string_view` | ptr+u32 length+NUL bit；借用、不拥有 |
-| interner | `StringBuf` | opaque StringBuf | generation-tagged direct ID；内容相等才同一条目 |
+| inline array | `SmallVector<T,N>` | 不单独导出 | 通用 owning value semantics；POD 保留 memcpy relocation；N 是编译期类型，C 动态需求由 erased vector 覆盖 |
+| string view | `StringView`（实现名 `string_ref`） | `hyle_container_string_view` | ptr+u32 length+NUL bit；借用、不拥有 |
+| interner | `StringInterner`（实现名 `StringBuf`） | opaque StringBuf | generation-tagged direct ID；内容相等才同一条目 |
 | path/text algorithms | typed view/buffer-fill | pointer/count/buffer-fill | 无 STL 所有权跨边界 |
 | bounded/sharded queues | typed payload | `void*` payload opaque handle | HYLE 不拥有 payload |
 | work steal/share | typed payload | `void*` payload opaque handle | owner/thief 契约不同，不能混用 |
@@ -149,11 +150,12 @@ container 对外依赖。hex encode/decode 当前是无查表分支的标量/编
 
 ## C ABI 边界
 
-`include/hyle/c/container.h` 遵守 close-01：
+`include/hyle/c/container.h` 遵守统一 C ABI 合同：
 
-- 109 个 `extern "C"` 动态符号；15 个 header-inline 便利入口。
 - options 带 `struct_size`；allocator 按值捕获但 state 生命周期由调用方保证。
 - 对象只经 create/destroy；不导出 C++ 类布局、STL、模板或异常。
+- create/reserve/insert/intern 等冷失败走共享 `hyle_status + out`；队列满空、map miss、
+  stale ID 等正常热控制流不构造错误对象。
 - String/path 产出使用借用 view 或 buffer-fill。
 - CArray/SwissTable 通过运行时 item size/alignment/hash/equal 类型擦除。
 - 并发容器的稳定最小共同面使用 pointer payload。
@@ -167,7 +169,8 @@ container 对外依赖。hex encode/decode 当前是无查表分支的标量/编
 - graph/sched 使用 ConcurrentVector 类 append-only 发布结构。
 - error/time 等共享 intrusive 基础设施已归 core，不制造反向 container 依赖。
 - 其他模块可使用 `hash_bytes`，但 hash 模块不依赖 SIMD runtime；≤16B typed key
-  走 inline mix，热短字节串可显式选择 `hash_inline.h` 消掉 DLL seam。
+  走 inline mix，较长字节串走库内 XXH3/wyhash kernel。公开头不暴露 vendor 实现头；
+  共享库调用 seam 是交付合同的一部分，不再为微基准提供 source-only inline 旁路。
 
 ## 性能验收边界
 
@@ -179,7 +182,7 @@ container 对外依赖。hex encode/decode 当前是无查表分支的标量/编
 - StringBuf 长串增长、重复 churn、并发分片和 batch 分别验收；单调用仍有 DLL seam；
 - 4KB 字符扫描的 0.8x–0.95x 点值应结合 64KB/1MB、方差和调用形状，不包装成赢。
 
-测试矩阵包括 typed 单测、纯 C 124/124 调用覆盖、C++ C-ABI 并发测试、allocator
+测试矩阵包括 typed 单测、纯 C 调用覆盖、C++ C-ABI 并发测试、allocator
 故障注入、三平台构建/运行、ASan/UBSan/TSan，以及独立 SOTA benchmark。
 
 ## 维护红线

@@ -44,7 +44,9 @@
    距 sharded Absl+mutex 约 **4–5%**（~0.95x），接近但非碾压。
 
 3. **hash_bytes 默认 DLL 出线核**  
-   与裸 XXH3 同算法时有固定 seam；短串热点用 `hash_bytes_inline` / 小 key 走 `Hash&lt;T&gt;` inline mix。
+   与裸 XXH3 同算法时有固定 seam；小 typed key 走 `Hash&lt;T&gt;` inline mix。旧
+   `hash_bytes_inline` 只服务微基准且泄漏私有 vendor 头，已从公开面删除；较长字节串
+   接受动态库边界，真实热点应缓存 hash 或批处理。
 
 4. **string_ref 短输入 split/rfind/count**  
    4KB 点值可有 **0.83–0.96x**（DLL/dispatcher）；长输入摊平。

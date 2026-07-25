@@ -1,4 +1,5 @@
-/* Pure C ABI for HYLE container capabilities (close-01).
+/* SPDX-License-Identifier: LicenseRef-HYLE-Proprietary
+ * Pure C ABI for HYLE container capabilities (pre-release draft).
  * Docs: docs/guide/c-container.md */
 #ifndef HYLE_C_CONTAINER_H_
 #define HYLE_C_CONTAINER_H_
@@ -6,6 +7,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "hyle/c/error.h"
 #include "hyle/c/mem.h"
 
 #ifdef __cplusplus
@@ -79,7 +81,13 @@ static inline int hyle_container_path_is_separator(char c) {
   return c == '/' || c == '\\';
 }
 
-HYLE_CONTAINER_C_API const char* hyle_container_last_error(void);
+/* Error contract:
+ * - create/reserve/insert/intern operations return owning hyle_status values
+ *   and initialize their leading out parameter before doing work;
+ * - queue full/empty, map miss, and stale IDs are normal value results;
+ * - borrowed views require size == 0 || data != NULL.
+ * There is deliberately no module-private TLS last-error channel. */
+
 HYLE_CONTAINER_C_API uint64_t hyle_container_hash_bytes(
     const void* data, size_t size, uint64_t seed);
 
@@ -187,17 +195,19 @@ HYLE_CONTAINER_C_API uint32_t hyle_container_path_normalize(char* path);
 
 typedef struct hyle_container_string_buf_o hyle_container_string_buf;
 typedef uint64_t hyle_container_intern_id;
-HYLE_CONTAINER_C_API hyle_container_string_buf*
-hyle_container_string_buf_create(hyle_allocator backing);
-static inline hyle_container_string_buf*
-hyle_container_string_buf_create_system(void) {
-  return hyle_container_string_buf_create(hyle_system_allocator());
+HYLE_CONTAINER_C_API hyle_status hyle_container_string_buf_create(
+    hyle_container_string_buf** out, hyle_allocator backing);
+static inline hyle_status hyle_container_string_buf_create_system(
+    hyle_container_string_buf** out) {
+  return hyle_container_string_buf_create(out, hyle_system_allocator());
 }
 HYLE_CONTAINER_C_API void hyle_container_string_buf_destroy(
     hyle_container_string_buf* buffer);
-HYLE_CONTAINER_C_API hyle_container_intern_id hyle_container_string_buf_add(
-    hyle_container_string_buf* buffer, hyle_container_string_view text);
-HYLE_CONTAINER_C_API size_t hyle_container_string_buf_add_many(
+HYLE_CONTAINER_C_API hyle_status hyle_container_string_buf_add(
+    hyle_container_intern_id* out, hyle_container_string_buf* buffer,
+    hyle_container_string_view text);
+HYLE_CONTAINER_C_API hyle_status hyle_container_string_buf_add_many(
+    size_t* out_completed,
     hyle_container_string_buf* buffer,
     const hyle_container_string_view* input,
     hyle_container_intern_id* output, size_t count);
@@ -214,10 +224,11 @@ HYLE_CONTAINER_C_API size_t hyle_container_string_buf_remove_many(
 HYLE_CONTAINER_C_API hyle_container_string_view
 hyle_container_string_buf_lookup(hyle_container_string_buf* buffer,
                                  hyle_container_intern_id id);
-HYLE_CONTAINER_C_API hyle_container_string_view
-hyle_container_string_buf_intern(hyle_container_string_buf* buffer,
-                                 hyle_container_string_view text);
-HYLE_CONTAINER_C_API size_t hyle_container_string_buf_intern_many(
+HYLE_CONTAINER_C_API hyle_status hyle_container_string_buf_intern(
+    hyle_container_string_view* out, hyle_container_string_buf* buffer,
+    hyle_container_string_view text);
+HYLE_CONTAINER_C_API hyle_status hyle_container_string_buf_intern_many(
+    size_t* out_completed,
     hyle_container_string_buf* buffer,
     const hyle_container_string_view* input,
     hyle_container_string_view* output, size_t count);
@@ -239,7 +250,8 @@ typedef struct hyle_container_vector_options {
 #define HYLE_CONTAINER_VECTOR_OPTIONS_FOR(type, capacity)                      \
   {sizeof(hyle_container_vector_options), 0, sizeof(type),                    \
    HYLE_CONTAINER_ALIGNOF(type), (capacity), hyle_system_allocator()}
-HYLE_CONTAINER_C_API hyle_container_vector* hyle_container_vector_create(
+HYLE_CONTAINER_C_API hyle_status hyle_container_vector_create(
+    hyle_container_vector** out,
     const hyle_container_vector_options* options);
 HYLE_CONTAINER_C_API void hyle_container_vector_destroy(
     hyle_container_vector* vector);
@@ -253,9 +265,9 @@ HYLE_CONTAINER_C_API const void* hyle_container_vector_data_const(
     const hyle_container_vector* vector);
 HYLE_CONTAINER_C_API void* hyle_container_vector_at(
     hyle_container_vector* vector, size_t index);
-HYLE_CONTAINER_C_API int hyle_container_vector_reserve(
+HYLE_CONTAINER_C_API hyle_status hyle_container_vector_reserve(
     hyle_container_vector* vector, size_t capacity);
-HYLE_CONTAINER_C_API int hyle_container_vector_push(
+HYLE_CONTAINER_C_API hyle_status hyle_container_vector_push(
     hyle_container_vector* vector, const void* item);
 HYLE_CONTAINER_C_API int hyle_container_vector_pop(
     hyle_container_vector* vector, void* out_item);
@@ -290,20 +302,25 @@ typedef struct hyle_container_hash_map_options {
    HYLE_CONTAINER_ALIGNOF(key_type), sizeof(value_type),                      \
    HYLE_CONTAINER_ALIGNOF(value_type), NULL, NULL, NULL,                       \
    hyle_system_allocator()}
-HYLE_CONTAINER_C_API hyle_container_hash_map*
-hyle_container_hash_map_create(const hyle_container_hash_map_options* options);
+HYLE_CONTAINER_C_API hyle_status hyle_container_hash_map_create(
+    hyle_container_hash_map** out,
+    const hyle_container_hash_map_options* options);
 HYLE_CONTAINER_C_API void hyle_container_hash_map_destroy(
     hyle_container_hash_map* map);
 HYLE_CONTAINER_C_API size_t hyle_container_hash_map_size(
     const hyle_container_hash_map* map);
 HYLE_CONTAINER_C_API size_t hyle_container_hash_map_capacity(
     const hyle_container_hash_map* map);
-HYLE_CONTAINER_C_API int hyle_container_hash_map_reserve(
+HYLE_CONTAINER_C_API hyle_status hyle_container_hash_map_reserve(
     hyle_container_hash_map* map, size_t count);
 HYLE_CONTAINER_C_API void hyle_container_hash_map_clear(
     hyle_container_hash_map* map);
-/* Returns 1 when inserted, 0 when an existing value was updated, -1 on error. */
-HYLE_CONTAINER_C_API int hyle_container_hash_map_insert(
+typedef enum hyle_container_insert_result {
+  HYLE_CONTAINER_INSERTED = 0,
+  HYLE_CONTAINER_UPDATED = 1
+} hyle_container_insert_result;
+HYLE_CONTAINER_C_API hyle_status hyle_container_hash_map_insert(
+    hyle_container_insert_result* out_result,
     hyle_container_hash_map* map, const void* key, const void* value);
 HYLE_CONTAINER_C_API void* hyle_container_hash_map_find(
     hyle_container_hash_map* map, const void* key);
@@ -319,11 +336,13 @@ HYLE_CONTAINER_C_API int hyle_container_hash_map_for_each(
 
 /* Pointer payload queues: HYLE never owns or frees payload pointers. */
 typedef struct hyle_container_bounded_queue_o hyle_container_bounded_queue;
-HYLE_CONTAINER_C_API hyle_container_bounded_queue*
-hyle_container_bounded_queue_create(hyle_allocator backing, size_t capacity);
-static inline hyle_container_bounded_queue*
-hyle_container_bounded_queue_create_system(size_t capacity) {
-  return hyle_container_bounded_queue_create(hyle_system_allocator(), capacity);
+HYLE_CONTAINER_C_API hyle_status hyle_container_bounded_queue_create(
+    hyle_container_bounded_queue** out, hyle_allocator backing,
+    size_t capacity);
+static inline hyle_status hyle_container_bounded_queue_create_system(
+    hyle_container_bounded_queue** out, size_t capacity) {
+  return hyle_container_bounded_queue_create(out, hyle_system_allocator(),
+                                              capacity);
 }
 HYLE_CONTAINER_C_API void hyle_container_bounded_queue_destroy(
     hyle_container_bounded_queue* queue);
@@ -335,14 +354,14 @@ HYLE_CONTAINER_C_API size_t hyle_container_bounded_queue_capacity(
     const hyle_container_bounded_queue* queue);
 
 typedef struct hyle_container_sharded_queue_o hyle_container_sharded_queue;
-HYLE_CONTAINER_C_API hyle_container_sharded_queue*
-hyle_container_sharded_queue_create(hyle_allocator backing, size_t shard_count,
-                                    size_t capacity_per_shard);
-static inline hyle_container_sharded_queue*
-hyle_container_sharded_queue_create_system(size_t shard_count,
-                                           size_t capacity_per_shard) {
+HYLE_CONTAINER_C_API hyle_status hyle_container_sharded_queue_create(
+    hyle_container_sharded_queue** out, hyle_allocator backing,
+    size_t shard_count, size_t capacity_per_shard);
+static inline hyle_status hyle_container_sharded_queue_create_system(
+    hyle_container_sharded_queue** out, size_t shard_count,
+    size_t capacity_per_shard) {
   return hyle_container_sharded_queue_create(
-      hyle_system_allocator(), shard_count, capacity_per_shard);
+      out, hyle_system_allocator(), shard_count, capacity_per_shard);
 }
 HYLE_CONTAINER_C_API void hyle_container_sharded_queue_destroy(
     hyle_container_sharded_queue* queue);
@@ -362,13 +381,13 @@ typedef enum hyle_container_steal_status {
   HYLE_CONTAINER_STEAL_EMPTY = 1,
   HYLE_CONTAINER_STEAL_ABORT = 2
 } hyle_container_steal_status;
-HYLE_CONTAINER_C_API hyle_container_work_stealing_deque*
-hyle_container_work_stealing_deque_create(hyle_allocator backing,
-                                          size_t capacity);
-static inline hyle_container_work_stealing_deque*
-hyle_container_work_stealing_deque_create_system(size_t capacity) {
-  return hyle_container_work_stealing_deque_create(hyle_system_allocator(),
-                                                    capacity);
+HYLE_CONTAINER_C_API hyle_status hyle_container_work_stealing_deque_create(
+    hyle_container_work_stealing_deque** out, hyle_allocator backing,
+    size_t capacity);
+static inline hyle_status hyle_container_work_stealing_deque_create_system(
+    hyle_container_work_stealing_deque** out, size_t capacity) {
+  return hyle_container_work_stealing_deque_create(
+      out, hyle_system_allocator(), capacity);
 }
 HYLE_CONTAINER_C_API void hyle_container_work_stealing_deque_destroy(
     hyle_container_work_stealing_deque* deque);
@@ -383,11 +402,13 @@ HYLE_CONTAINER_C_API size_t hyle_container_work_stealing_deque_capacity(
     const hyle_container_work_stealing_deque* deque);
 
 typedef struct hyle_container_ws_fifo_queue_o hyle_container_ws_fifo_queue;
-HYLE_CONTAINER_C_API hyle_container_ws_fifo_queue*
-hyle_container_ws_fifo_queue_create(hyle_allocator backing, size_t capacity);
-static inline hyle_container_ws_fifo_queue*
-hyle_container_ws_fifo_queue_create_system(size_t capacity) {
-  return hyle_container_ws_fifo_queue_create(hyle_system_allocator(), capacity);
+HYLE_CONTAINER_C_API hyle_status hyle_container_ws_fifo_queue_create(
+    hyle_container_ws_fifo_queue** out, hyle_allocator backing,
+    size_t capacity);
+static inline hyle_status hyle_container_ws_fifo_queue_create_system(
+    hyle_container_ws_fifo_queue** out, size_t capacity) {
+  return hyle_container_ws_fifo_queue_create(out, hyle_system_allocator(),
+                                              capacity);
 }
 HYLE_CONTAINER_C_API void hyle_container_ws_fifo_queue_destroy(
     hyle_container_ws_fifo_queue* queue);
@@ -403,18 +424,18 @@ HYLE_CONTAINER_C_API size_t hyle_container_ws_fifo_queue_capacity(
 
 typedef struct hyle_container_concurrent_vector_o
     hyle_container_concurrent_vector;
-HYLE_CONTAINER_C_API hyle_container_concurrent_vector*
-hyle_container_concurrent_vector_create(hyle_allocator backing,
-                                        size_t initial_capacity);
-static inline hyle_container_concurrent_vector*
-hyle_container_concurrent_vector_create_system(size_t initial_capacity) {
-  return hyle_container_concurrent_vector_create(hyle_system_allocator(),
-                                                  initial_capacity);
+HYLE_CONTAINER_C_API hyle_status hyle_container_concurrent_vector_create(
+    hyle_container_concurrent_vector** out, hyle_allocator backing,
+    size_t initial_capacity);
+static inline hyle_status hyle_container_concurrent_vector_create_system(
+    hyle_container_concurrent_vector** out, size_t initial_capacity) {
+  return hyle_container_concurrent_vector_create(
+      out, hyle_system_allocator(), initial_capacity);
 }
 HYLE_CONTAINER_C_API void hyle_container_concurrent_vector_destroy(
     hyle_container_concurrent_vector* vector);
-HYLE_CONTAINER_C_API size_t hyle_container_concurrent_vector_push(
-    hyle_container_concurrent_vector* vector, void* item);
+HYLE_CONTAINER_C_API hyle_status hyle_container_concurrent_vector_push(
+    size_t* out_index, hyle_container_concurrent_vector* vector, void* item);
 HYLE_CONTAINER_C_API size_t hyle_container_concurrent_vector_size(
     const hyle_container_concurrent_vector* vector);
 HYLE_CONTAINER_C_API size_t hyle_container_concurrent_vector_capacity(

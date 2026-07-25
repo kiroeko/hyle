@@ -29,7 +29,7 @@ hyle_add_module(container
   SOURCES hash.cc carray.cc string_buf.cc path.cc swiss_table.cc string_algo.cc
           string_ref.cc c_container.cc str_search_scalar.cc ${_container_arch_sources}
   DEPS hyle_platform
-  PUBLIC_DEPS hyle_mem)
+  PUBLIC_DEPS hyle_error hyle_mem)
 target_include_directories(hyle_container PRIVATE
   "${PROJECT_SOURCE_DIR}/third_party/xxhash"
   "${PROJECT_SOURCE_DIR}/third_party/wyhash"

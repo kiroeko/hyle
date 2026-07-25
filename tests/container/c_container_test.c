@@ -1,6 +1,9 @@
 #define _CRT_SECURE_NO_WARNINGS 1
 #include "hyle/c/container.h"
 
+/* Everything below this marker is part of the reviewed pure-C surface. */
+enum { HYLE_C_CONTAINER_COVERAGE_BODY_MARKER = 0 };
+
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -13,6 +16,25 @@ static int g_failures;
       ++g_failures;                                                            \
     }                                                                          \
   } while (0)
+
+static int status_ok(hyle_status status) {
+  const int ok = hyle_status_is_ok(status);
+  hyle_status_free(&status);
+  return ok;
+}
+
+static hyle_status_code status_code(hyle_status status) {
+  const hyle_status_code code = hyle_status_get_code(status);
+  hyle_status_free(&status);
+  return code;
+}
+
+static int map_inserted(hyle_container_hash_map* map, const void* key,
+                        const void* value) {
+  hyle_container_insert_result result = HYLE_CONTAINER_UPDATED;
+  return status_ok(hyle_container_hash_map_insert(&result, map, key, value)) &&
+         result == HYLE_CONTAINER_INSERTED;
+}
 
 static hyle_container_string_view sv(const char* text) {
   hyle_container_string_view value =
@@ -182,11 +204,9 @@ static void test_strings_and_paths(void) {
     const unsigned char malformed[] = {0xc0u, 0x80u};
     CHECK(hyle_container_utf8_length(
               hyle_container_view((const char*)malformed, 2)) == -1);
-    CHECK(hyle_container_last_error()[0] != '\0');
     CHECK(hyle_container_utf8_icmp(
               hyle_container_view((const char*)malformed, 2), sv("ok"), 0) ==
           0);
-    CHECK(hyle_container_last_error()[0] != '\0');
   }
   CHECK(hyle_container_utf8_icmp(sv("Hello"), sv("hello"), 0) == 0);
   CHECK(hyle_container_fuzzy_score(sv("config.h"), sv("cfg"), 1) > 0);
@@ -228,37 +248,41 @@ static void test_strings_and_paths(void) {
   strcpy(output, "a//b/../c");
   CHECK(hyle_container_path_normalize(output) == 3);
   CHECK(strcmp(output, "a/c") == 0);
-  CHECK(hyle_container_last_error()[0] == '\0');
 }
 
 static void test_string_buf(void) {
-  hyle_container_string_buf* buffer =
-      hyle_container_string_buf_create_system();
+  hyle_container_string_buf* buffer = NULL;
   hyle_container_intern_id id;
   hyle_container_string_view value;
+  size_t completed;
+  CHECK(status_ok(hyle_container_string_buf_create_system(&buffer)));
   CHECK(buffer != NULL);
-  id = hyle_container_string_buf_add(buffer, sv("alpha"));
+  CHECK(status_ok(hyle_container_string_buf_add(&id, buffer, sv("alpha"))));
   CHECK(id != 0);
   CHECK(hyle_container_string_buf_size(buffer) == 1);
   value = hyle_container_string_buf_lookup(buffer, id);
   CHECK(value.size == 5 && value.null_terminated);
   CHECK(hyle_container_string_buf_retain(buffer, id));
   CHECK(hyle_container_string_buf_remove(buffer, id));
-  value = hyle_container_string_buf_intern(buffer, sv("alpha"));
+  CHECK(status_ok(
+      hyle_container_string_buf_intern(&value, buffer, sv("alpha"))));
   CHECK(value.size == 5);
   CHECK(hyle_container_string_buf_remove(buffer, id));
   CHECK(!hyle_container_string_buf_remove(buffer, id));
   {
     hyle_container_string_view input[] = {sv("one"), sv("two"), sv("one")};
     hyle_container_string_view output[3];
-    CHECK(hyle_container_string_buf_intern_many(buffer, input, output, 3) == 3);
+    CHECK(status_ok(hyle_container_string_buf_intern_many(
+        &completed, buffer, input, output, 3)) && completed == 3);
     CHECK(output[0].data == output[2].data);
-    CHECK(hyle_container_string_buf_intern_many(buffer, input, NULL, 3) == 3);
+    CHECK(status_ok(hyle_container_string_buf_intern_many(
+        &completed, buffer, input, NULL, 3)) && completed == 3);
   }
   {
     hyle_container_string_view input[] = {sv("batch-a"), sv("batch-b")};
     hyle_container_intern_id ids[2];
-    CHECK(hyle_container_string_buf_add_many(buffer, input, ids, 2) == 2);
+    CHECK(status_ok(hyle_container_string_buf_add_many(
+        &completed, buffer, input, ids, 2)) && completed == 2);
     CHECK(ids[0] != 0 && ids[1] != 0);
     CHECK(hyle_container_string_buf_retain_many(buffer, ids, 2) == 2);
     CHECK(hyle_container_string_buf_remove_many(buffer, ids, 2) == 2);
@@ -285,18 +309,18 @@ static void test_vector_and_map(void) {
   vector_options.item_alignment = HYLE_CONTAINER_ALIGNOF(int);
   vector_options.initial_capacity = 1;
   vector_options.backing = backing;
-  vector = hyle_container_vector_create(&vector_options);
+  CHECK(status_ok(hyle_container_vector_create(&vector, &vector_options)));
   CHECK(vector != NULL);
   input = 11;
-  CHECK(hyle_container_vector_push(vector, &input));
+  CHECK(status_ok(hyle_container_vector_push(vector, &input)));
   input = 22;
-  CHECK(hyle_container_vector_push(vector, &input));
+  CHECK(status_ok(hyle_container_vector_push(vector, &input)));
   CHECK(hyle_container_vector_size(vector) == 2);
   CHECK(hyle_container_vector_capacity(vector) >= 2);
   CHECK(*(int*)hyle_container_vector_at(vector, 0) == 11);
   CHECK(hyle_container_vector_data(vector) != NULL);
   CHECK(hyle_container_vector_data_const(vector) != NULL);
-  CHECK(hyle_container_vector_reserve(vector, 32));
+  CHECK(status_ok(hyle_container_vector_reserve(vector, 32)));
   CHECK(hyle_container_vector_pop(vector, &output) && output == 22);
   hyle_container_vector_clear(vector);
   CHECK(hyle_container_vector_size(vector) == 0);
@@ -308,16 +332,16 @@ static void test_vector_and_map(void) {
   map_options.value_alignment = HYLE_CONTAINER_ALIGNOF(int);
   map_options.hash = constant_hash; /* force collision-chain coverage */
   map_options.backing = backing;
-  map = hyle_container_hash_map_create(&map_options);
+  CHECK(status_ok(hyle_container_hash_map_create(&map, &map_options)));
   CHECK(map != NULL);
   input = 1;
   output = 10;
-  CHECK(hyle_container_hash_map_insert(map, &input, &output) == 1);
+  CHECK(map_inserted(map, &input, &output));
   input = 2;
   output = 20;
-  CHECK(hyle_container_hash_map_insert(map, &input, &output) == 1);
+  CHECK(map_inserted(map, &input, &output));
   CHECK(hyle_container_hash_map_size(map) == 2);
-  CHECK(hyle_container_hash_map_reserve(map, 64));
+  CHECK(status_ok(hyle_container_hash_map_reserve(map, 64)));
   CHECK(hyle_container_hash_map_capacity(map) >= 64);
   input = 1;
   CHECK(*(int*)hyle_container_hash_map_find(map, &input) == 10);
@@ -329,7 +353,7 @@ static void test_vector_and_map(void) {
     int i;
     for (i = 3; i < 200; ++i) {
       int mapped = i * 10;
-      CHECK(hyle_container_hash_map_insert(map, &i, &mapped) == 1);
+      CHECK(map_inserted(map, &i, &mapped));
     }
     for (i = 1; i < 200; ++i) {
       const int* mapped =
@@ -345,13 +369,13 @@ static void test_vector_and_map(void) {
              hyle_container_hash_map_capacity(map) -
                  hyle_container_hash_map_capacity(map) / 8) {
         int mapped = fill_key * 10;
-        CHECK(hyle_container_hash_map_insert(map, &fill_key, &mapped) == 1);
+        CHECK(map_inserted(map, &fill_key, &mapped));
         ++fill_key;
       }
       const int* aliased =
           (const int*)hyle_container_hash_map_find_const(map, &source_key);
       CHECK(aliased != NULL);
-      CHECK(hyle_container_hash_map_insert(map, &fill_key, aliased) == 1);
+      CHECK(map_inserted(map, &fill_key, aliased));
       CHECK(*(const int*)hyle_container_hash_map_find_const(map, &fill_key) ==
             70);
     }
@@ -370,12 +394,13 @@ static void test_vector_and_map(void) {
     /* value size 1 makes an unrounded raw slot stride misalign key #2+. */
     hyle_container_hash_map_options aligned_options =
         HYLE_CONTAINER_HASH_MAP_OPTIONS_FOR(uint64_t, char);
-    hyle_container_hash_map* aligned =
-        hyle_container_hash_map_create(&aligned_options);
+    hyle_container_hash_map* aligned = NULL;
+    CHECK(status_ok(
+        hyle_container_hash_map_create(&aligned, &aligned_options)));
     int visited = 0;
     for (uint64_t i = 0; i < 40; ++i) {
       const char byte = (char)i;
-      CHECK(hyle_container_hash_map_insert(aligned, &i, &byte) == 1);
+      CHECK(map_inserted(aligned, &i, &byte));
     }
     CHECK(hyle_container_hash_map_for_each(aligned, visit_aligned_key,
                                            &visited));
@@ -392,18 +417,25 @@ static void test_queues_and_concurrent_vector(void) {
   int b = 2;
   void* output = NULL;
   size_t cursor = 0;
-  hyle_container_bounded_queue* bounded =
-      hyle_container_bounded_queue_create_system(8);
-  hyle_container_sharded_queue* sharded =
-      hyle_container_sharded_queue_create_system(2, 4);
-  hyle_container_work_stealing_deque* deque =
-      hyle_container_work_stealing_deque_create_system(8);
-  hyle_container_ws_fifo_queue* source =
-      hyle_container_ws_fifo_queue_create_system(8);
-  hyle_container_ws_fifo_queue* target =
-      hyle_container_ws_fifo_queue_create_system(8);
-  hyle_container_concurrent_vector* vector =
-      hyle_container_concurrent_vector_create_system(2);
+  size_t index;
+  hyle_container_bounded_queue* bounded = NULL;
+  hyle_container_sharded_queue* sharded = NULL;
+  hyle_container_work_stealing_deque* deque = NULL;
+  hyle_container_ws_fifo_queue* source = NULL;
+  hyle_container_ws_fifo_queue* target = NULL;
+  hyle_container_concurrent_vector* vector = NULL;
+  CHECK(status_ok(
+      hyle_container_bounded_queue_create_system(&bounded, 8)));
+  CHECK(status_ok(
+      hyle_container_sharded_queue_create_system(&sharded, 2, 4)));
+  CHECK(status_ok(
+      hyle_container_work_stealing_deque_create_system(&deque, 8)));
+  CHECK(status_ok(
+      hyle_container_ws_fifo_queue_create_system(&source, 8)));
+  CHECK(status_ok(
+      hyle_container_ws_fifo_queue_create_system(&target, 8)));
+  CHECK(status_ok(
+      hyle_container_concurrent_vector_create_system(&vector, 2)));
 
   CHECK(bounded != NULL && hyle_container_bounded_queue_capacity(bounded) == 8);
   CHECK(hyle_container_bounded_queue_push(bounded, &a));
@@ -438,8 +470,10 @@ static void test_queues_and_concurrent_vector(void) {
   hyle_container_ws_fifo_queue_destroy(target);
 
   CHECK(vector != NULL);
-  CHECK(hyle_container_concurrent_vector_push(vector, &a) == 0);
-  CHECK(hyle_container_concurrent_vector_push(vector, &b) == 1);
+  CHECK(status_ok(hyle_container_concurrent_vector_push(&index, vector, &a)) &&
+        index == 0);
+  CHECK(status_ok(hyle_container_concurrent_vector_push(&index, vector, &b)) &&
+        index == 1);
   CHECK(hyle_container_concurrent_vector_size(vector) == 2);
   CHECK(hyle_container_concurrent_vector_capacity(vector) >= 2);
   CHECK(hyle_container_concurrent_vector_at(vector, 1) == &b);
@@ -449,25 +483,35 @@ static void test_queues_and_concurrent_vector(void) {
 int main(void) {
   hyle_allocator invalid_backing = {0};
   hyle_allocator failing_backing = {fail_alloc, fail_free, fail_realloc, NULL};
+  hyle_container_bounded_queue* bounded_queue = NULL;
+  hyle_container_string_buf* string_buffer = NULL;
   test_strings_and_paths();
   test_string_buf();
   test_vector_and_map();
   test_queues_and_concurrent_vector();
-  CHECK(hyle_container_bounded_queue_create(invalid_backing, 8) == NULL);
-  CHECK(hyle_container_last_error()[0] != '\0');
-  CHECK(hyle_container_bounded_queue_create(failing_backing, 8) == NULL);
-  CHECK(hyle_container_string_buf_create(failing_backing) == NULL);
+  CHECK(status_code(hyle_container_bounded_queue_create(
+            &bounded_queue, invalid_backing, 8)) ==
+        HYLE_STATUS_INVALID_ARGUMENT);
+  CHECK(bounded_queue == NULL);
+  CHECK(status_code(hyle_container_bounded_queue_create(
+            &bounded_queue, failing_backing, 8)) ==
+        HYLE_STATUS_RESOURCE_EXHAUSTED);
+  CHECK(status_code(hyle_container_string_buf_create(
+            &string_buffer, failing_backing)) == HYLE_STATUS_RESOURCE_EXHAUSTED);
   {
     /* One allocation for the C handle and one for StringBuf::Impl. */
     fail_after_allocator failing = {hyle_system_allocator(), 2};
     hyle_allocator fail_storage = {fail_after_alloc, fail_after_free,
                                    fail_after_realloc, &failing};
-    hyle_container_string_buf* strings =
-        hyle_container_string_buf_create(fail_storage);
+    hyle_container_string_buf* strings = NULL;
+    hyle_container_string_view interned;
+    CHECK(status_ok(
+        hyle_container_string_buf_create(&strings, fail_storage)));
     CHECK(strings != NULL);
-    CHECK(hyle_container_string_buf_intern(strings, sv("allocation")).data ==
-          NULL);
-    CHECK(hyle_container_last_error()[0] != '\0');
+    CHECK(status_code(hyle_container_string_buf_intern(
+              &interned, strings, sv("allocation"))) ==
+          HYLE_STATUS_RESOURCE_EXHAUSTED);
+    CHECK(interned.data == NULL);
     hyle_container_string_buf_destroy(strings);
   }
   {
@@ -477,19 +521,28 @@ int main(void) {
     fail_after_allocator sharing = {hyle_system_allocator(), 1};
     hyle_allocator a = {fail_after_alloc, fail_after_free, fail_after_realloc,
                         &bounded};
-    CHECK(hyle_container_bounded_queue_create(a, 8) == NULL);
+    hyle_container_sharded_queue* sharded_out = NULL;
+    hyle_container_work_stealing_deque* stealing_out = NULL;
+    hyle_container_ws_fifo_queue* sharing_out = NULL;
+    CHECK(status_code(hyle_container_bounded_queue_create(
+              &bounded_queue, a, 8)) == HYLE_STATUS_RESOURCE_EXHAUSTED);
     a.state = &sharded;
-    CHECK(hyle_container_sharded_queue_create(a, 2, 8) == NULL);
+    CHECK(status_code(hyle_container_sharded_queue_create(
+              &sharded_out, a, 2, 8)) == HYLE_STATUS_RESOURCE_EXHAUSTED);
     a.state = &stealing;
-    CHECK(hyle_container_work_stealing_deque_create(a, 8) == NULL);
+    CHECK(status_code(hyle_container_work_stealing_deque_create(
+              &stealing_out, a, 8)) == HYLE_STATUS_RESOURCE_EXHAUSTED);
     a.state = &sharing;
-    CHECK(hyle_container_ws_fifo_queue_create(a, 8) == NULL);
+    CHECK(status_code(hyle_container_ws_fifo_queue_create(
+              &sharing_out, a, 8)) == HYLE_STATUS_RESOURCE_EXHAUSTED);
   }
   {
     hyle_container_vector_options options =
         HYLE_CONTAINER_VECTOR_OPTIONS_FOR(int, 1);
+    hyle_container_vector* vector = NULL;
     options.backing = failing_backing;
-    CHECK(hyle_container_vector_create(&options) == NULL);
+    CHECK(status_code(hyle_container_vector_create(&vector, &options)) ==
+          HYLE_STATUS_RESOURCE_EXHAUSTED);
   }
   {
     hyle_container_hash_map_options options =
@@ -501,27 +554,31 @@ int main(void) {
     hyle_allocator fail_storage = {fail_after_alloc, fail_after_free,
                                    fail_after_realloc, &failing};
     options.backing = fail_storage;
-    map = hyle_container_hash_map_create(&options);
+    CHECK(status_ok(hyle_container_hash_map_create(&map, &options)));
     CHECK(map != NULL);
-    CHECK(hyle_container_hash_map_insert(map, &key, &value) == -1);
-    CHECK(hyle_container_last_error()[0] != '\0');
+    {
+      hyle_container_insert_result result;
+      CHECK(status_code(hyle_container_hash_map_insert(
+                &result, map, &key, &value)) == HYLE_STATUS_RESOURCE_EXHAUSTED);
+    }
     hyle_container_hash_map_destroy(map);
   }
   {
     fail_after_allocator failing = {hyle_system_allocator(), 1};
     hyle_allocator fail_storage = {fail_after_alloc, fail_after_free,
                                    fail_after_realloc, &failing};
-    hyle_container_concurrent_vector* vector =
-        hyle_container_concurrent_vector_create(fail_storage, 1);
+    hyle_container_concurrent_vector* vector = NULL;
+    size_t index;
+    CHECK(status_ok(hyle_container_concurrent_vector_create(
+        &vector, fail_storage, 1)));
     CHECK(vector != NULL);
-    CHECK(hyle_container_concurrent_vector_push(vector, NULL) == SIZE_MAX);
-    CHECK(hyle_container_last_error()[0] != '\0');
+    CHECK(status_code(hyle_container_concurrent_vector_push(
+              &index, vector, NULL)) == HYLE_STATUS_RESOURCE_EXHAUSTED);
+    CHECK(index == SIZE_MAX);
     hyle_container_concurrent_vector_destroy(vector);
   }
   CHECK(hyle_container_hash_bytes(NULL, 1, 0) == 0);
-  CHECK(hyle_container_last_error()[0] != '\0');
   (void)hyle_container_hash_bytes(NULL, 0, 0);
-  CHECK(hyle_container_last_error()[0] == '\0');
   printf("container_c_test: %s\n",
          g_failures == 0 ? "all checks passed" : "FAILED");
   return g_failures == 0 ? 0 : 1;

@@ -1,5 +1,14 @@
 # container 模块收口（2026-07-19）
 
+> **2026-07-25 严格复审说明：** 本页保留 2026-07-19 的施工证据与当时点值，
+> 不再代表当前接口或“实际使用导向”的最终证书。严格复审已经把 C++ 值容器从
+> POD/显式 allocator 形状改为默认可用的 `SmallVector`、`FlatHashMap`，并把 C ABI
+> 从私有 TLS last-error 改为共享 `hyle_status + out`；当前动态 C 面为 108 个声明。
+> 新增的 [`container.md`](../guide/container.md) 负责告诉用户什么场景选择什么。
+> `ConcurrentVector` 的多 writer 形状、真正的 typed `FlatHashSet`、map 迭代/便利接口及
+> 同合同强 peer 性能证据仍在复审，因此 container **尚未获得 2026-07-25 严格证书**。
+> 下文的 109 exports、124 callable、TLS error 和性能表只应按历史快照阅读。
+
 ## 结论
 
 container 的功能、红队、稳定 C ABI、使用文档和既有性能面已收口。Windows x64、

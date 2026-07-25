@@ -27,7 +27,7 @@
 |---|---|---|---|
 | ns/op(改 mix64_2 前→后) | 0.595 **→ 0.43** | 0.94 | ✅ **改 abseil 单乘后 1.38x,vs wyhash 从 1.6x→2.2x** |
 
-**结论(历史快照摘要)**:① 9-16B 改 abseil 单乘 `mix64_2` 热路径 1.38x；② ≤16B “输 XXH3”是伪命题；真 seam 税在 &gt;16B 出线核，opt-in `hash_inline.h` 可消；③ mix64 整数哈希已 SOTA；④ best-of-breed 按长度 XXH3/wyhash。完整推演见 git 历史中旧 `benchmarks-error-hash.md` 长注；**刷新时以三平台 bench-stat 重写本表**。
+**结论(历史快照摘要)**:① 9-16B 改 abseil 单乘 `mix64_2` 热路径 1.38x；② ≤16B “输 XXH3”是伪命题；真 seam 税在 &gt;16B 出线核；③ mix64 整数哈希已 SOTA；④ best-of-breed 按长度 XXH3/wyhash。历史上的 opt-in `hash_inline.h` 后续因只服务微基准且破坏三种交付形状一致性而删除。完整推演见 git 历史中旧 `benchmarks-error-hash.md` 长注；**刷新时以三平台 bench-stat 重写本表**。
 
 ## container·map —— SwissTable（`swiss_table_bench.cc` / `swiss_vs_absl_bench.cc`）
 

@@ -1,9 +1,9 @@
 # container 纯 C ABI 使用指南
 
-`#include "hyle/c/container.h"` 是 container 的稳定发布面。它只暴露
+`#include "hyle/c/container.h"` 是 container 的纯 C/FFI 发布面。它只暴露
 定宽 POD、buffer-fill 函数、allocator vtable 和 opaque handle；不暴露
 STL、模板或 C++ 对象布局。C++ 源码用户若与 HYLE 使用同一工具链，也可直接使用
-`hyle/container/*.h`，但那个接口不承诺跨编译器 ABI。
+`hyle/container/*.h`，而且通常应优先使用 typed C++ 面；它不承诺跨编译器 ABI。
 
 ## 共同合同
 
@@ -14,8 +14,14 @@ STL、模板或 C++ 对象布局。C++ 源码用户若与 HYLE 使用同一工�
   `out=NULL, capacity=0` 查询长度是受支持的。输入与输出不要重叠，除非函数明确
   是原地操作（`hyle_container_path_normalize`、
   `hyle_container_string_capitalize`）。
-- 失败后可读线程局部 `hyle_container_last_error`；下一次 container 调用会覆盖
-  或清空它。不要跨线程或跨后续调用保存该指针。
+- 创建、扩容、插入和驻留这类可能失败的冷路径统一返回共享 `hyle_status`，并把
+  结果写到首个 `out` 参数；进入函数时会先清空输出。调用者用
+  `hyle_status_is_ok` / `hyle_status_get_code` 检查，并始终用 `hyle_status_free`
+  释放返回状态。container 不再维护私有 TLS `last_error`。
+- 满队列、空队列、未找到 key、stale interner ID 都是正常控制流，不创建 Status；
+  仍由 `int`、空 view 或 `NULL` 表达。热路径因此没有错误字符串和分配成本。
+- 无状态查询要求 view 满足 `size == 0 || data != NULL`。非法 view 返回该函数的
+  中性/失败哨兵；这类编程错误不会偷偷写某个线程局部槽。
 - `*_create_system` 是 header-inline 的 system allocator 便利入口。自定义
   `hyle_allocator` 必须活到对应 handle 销毁；handle、内部存储和释放始终走同一
   allocator。
@@ -30,9 +36,21 @@ STL、模板或 C++ 对象布局。C++ 源码用户若与 HYLE 使用同一工�
 int main(void) {
   hyle_container_vector_options opt =
       HYLE_CONTAINER_VECTOR_OPTIONS_FOR(int, 16);
-  hyle_container_vector* v = hyle_container_vector_create(&opt);
+  hyle_container_vector* v = NULL;
   int x = 42;
-  if (v == NULL || !hyle_container_vector_push(v, &x)) return 1;
+  hyle_status st = hyle_container_vector_create(&v, &opt);
+  if (!hyle_status_is_ok(st)) {
+    hyle_status_free(&st);
+    return 1;
+  }
+  hyle_status_free(&st);
+  st = hyle_container_vector_push(v, &x);
+  if (!hyle_status_is_ok(st)) {
+    hyle_status_free(&st);
+    hyle_container_vector_destroy(v);
+    return 1;
+  }
+  hyle_status_free(&st);
   hyle_container_vector_destroy(v);
   return 0;
 }
@@ -85,17 +103,18 @@ ASCII 单字节便利函数全部 header-inline：
 ## StringBuf
 
 `hyle_container_string_buf_create` /
-`hyle_container_string_buf_create_system` 创建线程安全驻留池，
+`hyle_container_string_buf_create_system` 通过 Status + out 创建线程安全驻留池，
 `hyle_container_string_buf_destroy` 销毁。
 
-- 可回收生命周期：`hyle_container_string_buf_add` 返回 pool-local、带 generation
-  的 `hyle_container_intern_id`；用 `hyle_container_string_buf_retain`、
+- 可回收生命周期：`hyle_container_string_buf_add` 把 pool-local、带 generation
+  的 `hyle_container_intern_id` 写入 out；用 `hyle_container_string_buf_retain`、
   `hyle_container_string_buf_remove`、`hyle_container_string_buf_lookup` 管理。
   删除后的旧 ID 永远不会指向后来复用该 slot 的字符串。
 - 批量生命周期：`hyle_container_string_buf_add_many`、
   `hyle_container_string_buf_retain_many`、
-  `hyle_container_string_buf_remove_many` 返回已完成的前缀长度。C shim 以最多
-  64 项为一块，把 shard 锁和动态 ABI 接缝摊薄；非零 count 要求输入/输出数组有效。
+  `hyle_container_string_buf_remove_many` 处理批量生命周期。分配型 batch 通过
+  `out_completed` 保留已完成前缀；C shim 以最多 64 项为一块，把 shard 锁和动态
+  ABI 接缝摊薄。非零 count 要求输入/输出数组有效。
 - 永久驻留：`hyle_container_string_buf_intern` 和
   `hyle_container_string_buf_intern_many` 返回稳定、带尾零的借用视图，存活到池
   销毁。吞吐场景优先 batch，它只获取一次 shard lock set。
@@ -115,6 +134,8 @@ ASCII 单字节便利函数全部 header-inline：
 `hyle_container_vector_at`、`hyle_container_vector_reserve`、
 `hyle_container_vector_push`、`hyle_container_vector_pop`、
 `hyle_container_vector_clear`。
+
+其中 `create` / `reserve` / `push` 返回 Status；`pop` 的 0 只是容器为空。
 
 任何可能增长的操作都可能使先前由 `data`/`at` 返回的地址失效。`push` 支持 item
 来自当前 vector 内部，即使增长也不会读悬空地址。
@@ -136,7 +157,9 @@ ASCII 单字节便利函数全部 header-inline：
 
 这是 control-byte + SIMD group probing 的平坦 Swiss map，不是链式 C facade。
 `capacity` 是 slot 数，最大装载量较小；增长/erase 会使返回的 key/value 地址失效。
-`insert` 返回 1=新键、0=更新、-1=失败，并支持 key/value 指向当前 map slot。
+`create` / `reserve` / `insert` 返回 Status。`insert` 另通过
+`hyle_container_insert_result` 区分 `HYLE_CONTAINER_INSERTED` 与
+`HYLE_CONTAINER_UPDATED`，并支持 key/value 指向当前 map slot。
 `for_each` 的 visitor 返回 0 可提前停止；遍历期间不得修改 map。
 
 ## 并发容器
@@ -182,8 +205,11 @@ consumer cursor 应由各 consumer 私有并在多次 pop 间保留。
 `hyle_container_concurrent_vector_push`、
 `hyle_container_concurrent_vector_size`、
 `hyle_container_concurrent_vector_capacity`、
-`hyle_container_concurrent_vector_at` 是 append-only `void*` vector。成功 push 返回
-索引，失败返回 `SIZE_MAX`。已经发布的元素地址不移动；调用者仍负责 payload 生命周期。
+`hyle_container_concurrent_vector_at` 是 append-only `void*` vector。`push` 返回
+Status 并写 `out_index`；已经发布的元素地址不移动，调用者仍负责 payload 生命周期。
+
+所有并发容器的 `create` 都是 Status + out；创建完成后，满/空/竞争仍走原来的
+无分配热路径返回值。`void*` payload 可为 NULL，HYLE 不解释也不拥有它。
 
 ## C++ 形状在 C 中怎么取得
 
@@ -191,11 +217,11 @@ consumer cursor 应由各 consumer 私有并在多次 pop 间保留。
 
 | C++ 形状 | C/FFI 通路 |
 |---|---|
-| `SmallVector<T,N>` / `CArray<T>` | `hyle_container_vector_*`：options 传 `element_size`/`alignment`，按值存储 trivially-copyable 元素。inline `N` 是 C++ 对象布局便利，不是稳定跨 ABI 属性 |
-| `SwissTable<K,V>` | `hyle_container_hash_map_*`：key/value 按 options 中的 size/alignment 擦除，hash/equality 由 callback+ctx 注入 |
+| `SmallVector<T,N>` / `PodVector<T>` | `hyle_container_vector_*`：options 传 `element_size`/`alignment`，按值存储 trivially-copyable 元素。C ABI 不接收 C++ ctor/dtor callback；inline `N` 也不是稳定跨 ABI 属性 |
+| `FlatHashMap<K,V>` | `hyle_container_hash_map_*`：C++ map 可拥有 non-trivial 值；C/FFI map 则按 options 中的 size/alignment 擦除 POD，hash/equality 由 callback+ctx 注入 |
 | `BoundedQueue<T>` / `ShardedQueue<T>` / `WorkStealingDeque<T>` / `WsFifoQueue<T>` | 对应 `hyle_container_*queue*` / `*_deque_*` opaque 句柄接受 `void*` payload；payload 生命周期归调用方 |
 | `ConcurrentVector<T>` | `hyle_container_concurrent_vector_*` append `void*`；调用方保存 typed payload |
-| `hash_inline<T>` | 编译期 trivial-object 便利；C 侧对实际字节调用公开 hash C ABI，或向 swiss map 注入业务 hash callback |
+| `Hash<T>` / `hash_bytes` | C 侧对实际字节调用 `hyle_container_hash_bytes`，或向 flat map 注入业务 hash callback；不暴露 vendor 实现头 |
 
 这张表表达的是“C++ 静态形状不跨 ABI、运行时能力仍可达”。如果未来需要
 按值 POD queue，应该新增 `element_size`/`alignment` 的类型擦除接口，而不是

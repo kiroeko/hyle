@@ -12,8 +12,11 @@ TEST(ContainerCAbi, BoundedQueueMpmcConservesPointers) {
   constexpr std::uintptr_t kConsumers = 4;
   constexpr std::uintptr_t kPerProducer = 20000;
   constexpr std::uintptr_t kTotal = kProducers * kPerProducer;
-  hyle_container_bounded_queue* queue =
-      hyle_container_bounded_queue_create_system(1024);
+  hyle_container_bounded_queue* queue = nullptr;
+  hyle_status create =
+      hyle_container_bounded_queue_create_system(&queue, 1024);
+  ASSERT_TRUE(hyle_status_is_ok(create));
+  hyle_status_free(&create);
   ASSERT_NE(queue, nullptr);
 
   std::atomic<std::uintptr_t> produced{0};
@@ -58,8 +61,11 @@ TEST(ContainerCAbi, BoundedQueueMpmcConservesPointers) {
 TEST(ContainerCAbi, ConcurrentVectorPublishesStableIndices) {
   constexpr std::size_t kWriters = 4;
   constexpr std::size_t kPerWriter = 10000;
-  hyle_container_concurrent_vector* vector =
-      hyle_container_concurrent_vector_create_system(1);
+  hyle_container_concurrent_vector* vector = nullptr;
+  hyle_status create =
+      hyle_container_concurrent_vector_create_system(&vector, 1);
+  ASSERT_TRUE(hyle_status_is_ok(create));
+  hyle_status_free(&create);
   ASSERT_NE(vector, nullptr);
 
   std::vector<std::thread> threads;
@@ -68,8 +74,12 @@ TEST(ContainerCAbi, ConcurrentVectorPublishesStableIndices) {
       for (std::size_t i = 0; i < kPerWriter; ++i) {
         void* value = reinterpret_cast<void*>(
             static_cast<std::uintptr_t>(writer * kPerWriter + i + 1));
-        EXPECT_NE(hyle_container_concurrent_vector_push(vector, value),
-                  SIZE_MAX);
+        std::size_t index = SIZE_MAX;
+        hyle_status status =
+            hyle_container_concurrent_vector_push(&index, vector, value);
+        EXPECT_TRUE(hyle_status_is_ok(status));
+        EXPECT_NE(index, SIZE_MAX);
+        hyle_status_free(&status);
       }
     });
   }

@@ -325,22 +325,23 @@ mem/ 提供一组**专用分配器**,各自为一种分配模式设计。**选�
 
 hard pool 与 cache 是组合层，但合同不同：`SharedPool` 不隐藏 block；`SharedPoolCache` 可能在其他 owner cache 仍有 free block 时返回 `nullptr`。不要把 cache 性能冒充 hard pool 性能。最新数字与对手形状见 [`performance/benchmarks-mem.md`](../performance/benchmarks-mem.md)；调用红线见 [`usage-contract.md`](./usage-contract.md) §2.1。
 
-### 3.2 container —— SwissTable
+### 3.2 container —— 先按形状选
 ```cpp
 #include "hyle/container/swiss_table.h"
-using hyle::container::SwissTable;
-SwissTable<uint64_t, uint64_t> m(system_allocator());
+using hyle::container::FlatHashMap;
+FlatHashMap<uint64_t, uint64_t> m;
 m.insert(42, 100);
 if (uint64_t* v = m.find(42)) { /* *v == 100 */ }
 ```
-其余：`CArray<T>`（侵入式数组）、`SmallVector<T,N>`、`string_ref`（视图字符串）、`BoundedQueue`（lock-free MPMC）。
+`SmallVector<T,N>` 是通用 owning inline vector；`PodVector<T>` 才是按字节 relocation 的
+C-friendly 连续数组。字符串优先名为 `StringView` / `StringInterner`，并发队列必须按
+MPMC、sharded、owner-LIFO stealing、owner-FIFO sharing 的角色选择，不能只看 benchmark。
+完整选择表和坑点见 [`container.md`](./container.md)。
 
-**哈希器（`hyle/container/hash.h`）**：默认 `Hash<T>` / `hash_bytes` 让整数/指针/≤16B POD 走内联 mix，字节串按长度选择 XXH3 或 wyhash。**绝大多数 map key 用法无需关心**。`hash_bytes` 对 >16B 字节串使用 out-of-line kernel，避免让大型 vendor 头进入用户 TU；若 profiler 显示短字节串哈希的调用边界是热点，可选择 inline 入口，以编译时间换运行时调用消除。具体阈值和实测只见 performance：
-```cpp
-#include "hyle/container/hash_inline.h"   // 仅此 TU 拉入 xxhash/wyhash（编译期代价）
-uint64_t h = hyle::container::hash_bytes_inline(p, n);  // 与 hash_bytes 结果 bit-identical，无 seam
-```
-`hash_bytes_inline` 覆盖**全部长度**（≤16 内联 mix / 17-128 XXH3 / >128 wyhash，与 `hash_bytes` 同分派）——**刻意只做一个全长度函数，不按长度拆成多个 API**：≤16B 段默认 `hash_bytes` 本就内联（inline 变体与它字节级同码、零差别），长串段 seam 已摊平（省的 ~1ns 是噪声），**真有收益的只有 17~128B 短串这一段**。为"对称"给每个长度带都配一个 inline 入口只会制造和默认完全相同的冗余 API + 选择困惑，违背"不为对称加复杂度"——所以就这一个函数，用户按"要不要消 seam"而非"按长度"决策。**适用边界（重要）**：`hash_bytes_inline` 是 **header-inline、非 C-ABI 导出符号**，要求你**源码内嵌 / 静态链接 HYLE**（它把 xxhash.h/wyhash.h 编进你的 TU）；**纯 DLL / C-FFI 消费者用不了它，用默认 `hash_bytes`**（那才是 C-ABI 稳定、DLL 可调的）。默认 `hash.h` 不含它——不 include 就零代价。不确定就用 `hash_bytes`。
+**哈希器（`hyle/container/hash.h`）**：默认 `Hash<T>` / `hash_bytes` 让整数、指针和
+≤16B POD 走内联 mix，较长字节串按长度选择库内 XXH3 或 wyhash。公开 API 不再提供
+把私有 vendor 头拉入用户 TU 的 `hash_bytes_inline`：它只改善一个微基准调用 seam，
+却破坏 header/static/shared/source 三种交付的一致性。真实热点优先缓存 hash 或批处理。
 
 ### 3.3 error —— Status / Result / 上下文
 
