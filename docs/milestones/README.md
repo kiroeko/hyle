@@ -30,10 +30,10 @@
 
 | 固定统计口径 | 当前 | 命令/说明 |
 |---|---|---|
-| **全库代码** | **245,497** | `cloc . --vcs=git`；含 docs/third_party，**≠ 自写** |
+| **全库代码** | **245,551** | `cloc . --vcs=git`；含 docs/third_party，**≠ 自写** |
 | **自实现（含测试）** | **116,100** | `cloc include/hyle src tests --exclude-lang=CMake,Text` |
 | **自实现（不含测试）** | **79,791** | `cloc include/hyle src --exclude-lang=CMake,Text`；库本体硬锚 |
-| **当前审查模块 time 实现** | **1,218** | `cloc include/hyle/time include/hyle/c/time.h src/time --exclude-lang=CMake,Text` |
+| **当前审查模块 core 实现** | **250** | `cloc include/hyle/core include/hyle/c/core.h src/core --exclude-lang=CMake,Text` |
 | **终态生产（纪律收口 A）** | **~75–90k** | 主预期 |
 | **终态生产（做满守界 B）** | **~85–105k** | compute/graph/发布面收口更满 |
 | 失控上限 C | 120k+ 生产 | 应避免 |
@@ -43,14 +43,14 @@
 | **里程碑计数** | 颗粒不等重 | **勿当完成度**（小 util 与大 compute 各记 1） |
 | **生产 LOC ÷ 终态 A 中值 ~82.5k** | 代码量进度 | **~96%**；SIMD 体量放大该数，**≠ 能力完成度** |
 | **生产 LOC ÷ 终态 B 中值 ~95k** | 做满剧本 | **~83%** |
-| **对完整愿景的功能完成度** | 能力清单 + 头牌缺口 | 不再给伪精确百分比：底层多数冻结，platform 主动复审；compute/graph 与发布面仍有能力尾 |
+| **对完整愿景的功能完成度** | 能力清单 + 头牌缺口 | 除 compute/graph 能力尾外主体大多已实现；当前严格证书只有 error/platform/mem/time，其余按队列复审 |
 
 **模块生产粗表（2026-07-25）**：simd ~37.5k · io ~9.0k · platform **7,020**
 （含公共 C 头）· container ~4.9k · compute ~4.1k · sched ~5.1k · mem ~5.1k ·
 util ~1.3k · error **984** · time ~0.9k · obs/graph 各 ~0.6–0.8k。
 
-预发布冻结门、重开触发器和下一步顺序见
-[`pre-release-readiness.md`](./pre-release-readiness.md)。冻结模块不再因猜测做无限轮全审。
+预发布严格收口合同、重开触发器和唯一下一模块见
+[`pre-release-readiness.md`](./pre-release-readiness.md)。“实现完成”、旧 closure 与当前严格证书不可混用。
 
 **一句话**：**代码量已过「小 clay 升级版」预期**；能力上是 **「中型混合计算底座 + 库中库级 SIMD」**，不是玩具，也还不是全愿景收口。ggml 等借入不计入自有完成度。
 
@@ -74,6 +74,10 @@ util ~1.3k · error **984** · time ~0.9k · obs/graph 各 ~0.6–0.8k。
 > 不再是当前状态。portable 契约中的 stub/no-op 与后端扩展分层仍在
 > [`io-capability-fill-list.md`](./io-capability-fill-list.md) 跟踪，不能把
 > “主干可用”误读成 capability closure 已清零。
+>
+> **2026-07-25 证书口径升级**：下表的 ✅/“冻结”只说明对应历史 work item 已完成，
+> 不自动取得当前实际使用导向的严格证书。当前只有 error/platform/mem/time 通过；
+> core 是下一模块，其余顺序只见 [`pre-release-readiness.md`](./pre-release-readiness.md)。
 
 | ID | 阶段 | 模块 | 目的(一行) | 前置 | 预测LOC | 真实LOC | 状态 |
 |---|---|---|---|---|---|---|---|

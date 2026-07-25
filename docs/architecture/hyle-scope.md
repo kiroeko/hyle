@@ -103,10 +103,10 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 
 | 固定统计口径 | code | 说明 |
 |---|---:|---|
-| **全库代码** | **245,497** | `cloc . --vcs=git`；含 docs 与 in-tree third_party |
+| **全库代码** | **245,551** | `cloc . --vcs=git`；含 docs 与 in-tree third_party |
 | **自实现（含测试）** | **116,100** | `include/hyle + src + tests`，排除 CMake/Text |
 | **自实现（不含测试）** | **79,791** | `include/hyle + src`；库本体硬锚 |
-| **当前审查模块 time 实现** | **1,218** | `include/hyle/time + include/hyle/c/time.h + src/time`，不含测试 |
+| **当前审查模块 core 实现** | **250** | `include/hyle/core + include/hyle/c/core.h + src/core`，不含测试 |
 | 再加 ggml 等大依赖足迹 | **~200–350k+** | 由 ggml 主导，不计入「自有生产」 |
 
 **生产按模块（src+include，约）：**
@@ -128,7 +128,7 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 
 | 剧本 | 生产 code | 条件 |
 |---|---:|---|
-| **A 纪律收口（主预期）** | **~75–90k**（中值 **~82.5k**） | 八底层模块冻结；sched/io 收口；上层 C ABI/install；compute/graph 必要能力尾 |
+| **A 纪律收口（主预期）** | **~75–90k**（中值 **~82.5k**） | 已实现模块按新合同逐一认证；模块内 C ABI/guide；compute/graph 必要能力尾与 install |
 | **B 能力做满仍守边界** | **~85–105k** | compute 后端/算子尾更满；graph-02 完整；发布工具链完整 |
 | **C 失控上限（避免）** | **120k+** | 继续镜像 Highway contrib / 自研算子帝国 / 协议层吸入 infra |
 
@@ -278,8 +278,9 @@ WebSocket、gRPC（依赖 protobuf/IDL，更靠 L1）仍后置于范围外。
 
 ## 进度
 
-路线图见 [`roadmap.md`](./roadmap.md);逐里程碑实时状态见
-[`milestones/README.md`](../milestones/README.md)。当前：八个底层模块完成强收口，platform 已按
-实际使用标准完成三平台 C surface/独立头/当前接口性能证书并进入预发布冻结；
-sched/io 已完成同等级模块审计并带公开性能尾进入预发布冻结；compute 的 CPU/CUDA/Vulkan/ggml 主干和
-graph-01/graph-02 step-1 已实现，二者都不是 stub，但仍有产品能力尾。
+路线图见 [`roadmap.md`](./roadmap.md)；逐里程碑实时状态见
+[`milestones/README.md`](../milestones/README.md)。当前除 compute/graph 仍有产品能力尾外，
+其余模块主体基本实现；但按 2026-07-25 的实际使用导向合同，严格证书只有
+error/platform/mem/time。旧 container/util/obs/simd/sched/io closure 是复审输入证据，
+不能替代本轮功能、复杂度、C/C++ 易用性、依赖采用和双 guide 认证。当前队列见
+[`pre-release-readiness.md`](../milestones/pre-release-readiness.md)。

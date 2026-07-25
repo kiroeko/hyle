@@ -1,9 +1,9 @@
 # HYLE 实现路线图
 
-> 本页把设计里散落的硬依赖收成无环图，分解为**依赖层 × 里程碑 × 交付能力**三个轴，给每层定验收门槛，并维护慢变的关键决策。它既是施工顺序，也是对整体设计的端到端校验。
+> 本页把设计里散落的硬依赖收成无环图，分解为**依赖层 × 里程碑 × 交付能力 × 模块收口波次**四个轴，给每层定验收门槛，并维护慢变的关键决策。它既是施工顺序，也是对整体设计的端到端校验。
 >
-> **注意区分**：依赖层（P0-P6）是“谁先能编译”的拓扑序；里程碑才是真正的
-> 实现步骤（数量与状态以 milestones/README 为准）。别把依赖层当施工步数。
+> **注意区分**：依赖层（P0-P6）是“谁先能编译”的拓扑序；里程碑是真正的
+> 实现步骤；收口波次则是“谁先接受实际使用导向的发布复审”。三者不是一张表。
 
 ## 一、模块依赖图（验证无环）
 
@@ -72,13 +72,14 @@ platform 分叉，sched 再汇入 io/compute/graph。`math` 是当前没有生�
 审计尚未完成的显式欠账。迁移时允许形成 `error → <module C adapter>` 的单向边，不会导致
 error 反向依赖 obs 或形成环。
 
-## 二、施工计划：三个轴别混
+## 二、施工计划：四个轴别混
 
-**澄清**：依赖层（阶段 P0-P6）是**拓扑序**（谁先能编译），**不是实现步骤**。把总量只分成 7 个拓扑层仍不能当施工清单；真正的施工粒度在 milestone。正确做法分三个轴：
+**澄清**：依赖层（阶段 P0-P6）是**拓扑序**（谁先能编译），**不是实现步骤或当前复审队列**。把总量只分成 7 个拓扑层仍不能当施工清单；真正的施工粒度在 milestone。正确做法分四个轴：
 
 - **轴 A — 依赖层（阶段 P0-P6）**：哪层先能编译，下面表的拓扑序。粗粒度。
 - **轴 B — 里程碑（M）**：每个 work item 自成“实现→正确性→性能→文档”闭环。数量、实测 LOC 和当前状态只在 milestones/README 维护。
 - **轴 C — 交付能力（C）**：用户/消费者视角"这个库能做什么"。轴 B 是**机制**（收割接缝、timer queue、work-stealing），轴 C 是**能力**（带超时的网络 io、优雅关闭、取消）。见下节。
+- **轴 D — 模块严格收口（R）**：已有代码按“真实场景→成熟库→API/复杂度→C/C++→下游采用→文档”重新认证。它按接口爆炸半径排序，不按旧 benchmark 或目录顺序。
 
 ### 轴 C：交付能力清单（消费者视角）——机制的反向拉动者
 
@@ -133,6 +134,41 @@ P0–P6 只表示最早可编译的拓扑层。不在这里复制 LOC、冻结�
 P4 前汇合。util-runtime 与 sched 在 container 之后并行，但 util-core headers 从 P0 就可用。
 simd 不进 sched 链，只在 compute 汇合。obs-runtime 是用户产品根，trace gate 则横切全库；
 二者都不应被“不在最长链”误删。
+
+### 轴 D：模块严格收口顺序
+
+“实现完成”“旧 closure 任务完成”和“按当前标准通过预发布认证”是三件事。收口按接口
+爆炸半径走：先稳定根、header seam 与跨切面，再审其直接消费者；一个模块被修改后，只对
+已经认证的直接依赖/消费者做**受影响项回验**，不把整库重新打开。
+
+| 波次 | 审查单元 | 排序理由 |
+|---|---|---|
+| **R0 基线** | error、platform、mem、time | 已按当前实际使用标准形成严格证书；后续只有触发器或依赖受影响项可重开 |
+| **R1 根与接缝** | core → util-core seam → obs | core/header 与 util-core 被低层直接 include；obs trace 横切全库，必须先稳这些被广泛消费的边 |
+| **R2 容器层** | container → util-runtime/完整 util | container 是 sched/io/graph 和 Registry 的地基；先稳表/字符串/并发容器，再冻结依赖它的 Registry/C ABI |
+| **R3 运行时链** | sched → io | sched 汇合 mem/time/container/platform，io 再消费 sched；反序会反复改 timeout/cancel/completion 形状 |
+| **R4 计算基础** | math↔simd 边界审查 → simd | math 是 clay math 被 std/SIMD 吸收后的残余，不先假定它应独立；先裁决 scalar/std/SIMD 归属，再冻结 SIMD dispatch、类型、算法与正常 batch API |
+| **R5 未完支柱** | compute → graph | 这两者不是“复审已完成实现”，而是先补真实能力再按同一合同收口；graph 最后汇合 sched/compute/simd |
+| **R6 发布** | install/export → 全库 C/FFI 冒烟 → bundle | 每模块 C ABI 随本模块收口，不把接口设计推到最后；本层只做跨模块交付验证 |
+
+R1 的 util 只审 `SpinLock/cpu_relax`、`Ref`、`ScopeGuard`、RNG/type-name 等低层公开头的
+依赖与形状；Registry 和整个 `hyle_util` 产品必须等 container 后在 R2 完成。这是两个真实
+构建层的门，不是对同一模块做两轮无边界复审。当前严格状态与唯一“下一模块”只见
+[`pre-release-readiness.md`](../milestones/pre-release-readiness.md)。
+
+math 不按“28 行小模块”单独快速封口。它不是从用户场景独立设计出来的产品，而是 clay math
+迁移后，大部分能力被标准库或 hyle::simd 承载所剩的集合。R4 必须逐项回答“为什么是
+`hyle::math` 而不是 std、simd 或消费域”，再决定保留命名空间、迁移能力、合并目标或删除；
+在边界裁决前不为当前偶然 surface 机械扩 C ABI。
+
+每个 R 波次都使用同一合同：
+
+1. 从真实用户/HYLE 内部消费者场景列能力与负空间，再与本地成熟库逐项对账；参考库是查漏与算法/形状证据，不是照抄功能数量。
+2. 先审 C++ source API 的 ownership、lifetime、concurrency、failure 和组合方式；不得保留只为 benchmark 存在的类型、元数据或入口。
+3. 证明复杂度档与同合同正常用法性能；微基准只解释机制，不能反向塑造产品 API。点值、方法和 win/loss 只写 performance。
+4. C ABI 覆盖全部语言无关能力，使用共享 error 合同；C++ 模块内部不绕经 C ABI。纯 C 头、导出、生命周期和 FFI 组合必须机械验证。
+5. 同轮检查依赖的两面：本模块是否正确消费已冻结地基，以及直接下游是否仍自造重复机制或错误调用；只回验实际受影响边。
+6. 交付 architecture、语言无关/C++ 选型 guide、`c-<module>` 精确映射、坑点、测试和性能证书；milestone 只保存施工记录。
 
 ## 三、验收门槛与状态信源
 

@@ -4,6 +4,30 @@
 >
 > 角色定义：**借** = 进 HYLE 构建（封 adapter 或 vendored）；**参考** = 读其设计/代码，自己实现，不引入依赖。
 
+## 严格收口对照矩阵
+
+每轮模块复审先从真实场景出发，再去本地 clone 查成熟形状、算法和负空间。下表是最低
+对照集，不表示要复制其全部功能，也不允许把参考库的 benchmark API 搬进 HYLE 产品面。
+
+| HYLE 模块 | 首要本地参考 | 本轮主要核对什么 |
+|---|---|---|
+| core | C/C++ 标准库、Boost.Intrusive、folly | 版本/宏最小面、intrusive 生命周期与零额外所有权 |
+| error | `std::expected`、Abseil Status、folly Expected | 值大小、context、传播、OS/GPU 叶错误与 C owning handle |
+| platform | folly portability、libuv、Abseil、llama.cpp | thread/affinity、wait、VM/fs/dynlib、CPU dispatch 与平台忠实语义 |
+| mem | mimalloc、oneTBB allocator/pool、folly、seastar | 通用/专用分配边界、arena/pool/cache/NUMA/huge page、复杂度与跨线程 free |
+| time | Abseil、folly、libevent、seastar | clock 语义、deadline/sleep、arbitrary/common timer queue 与取消复杂度 |
+| util | folly、Abseil、Boost | scope/ref/random/registry/spin 的模块归属、生命周期、并发和 header seam |
+| obs | Tracy、folly | OFF 零成本、单 backend client、结构化 log、sink 摘除与 fiber trace |
+| math | clay math、C++23 `<bit>/<cmath>/<numbers>`、Eigen、HYLE simd | 把迁移残余逐项分给 std/scalar/SIMD/消费域，先裁决模块边界，再谈 API/C ABI |
+| container | Abseil、folly、oneTBB、moodycamel、rigtorp | SwissTable/SmallVector/string、并发/侵入式容器、allocator 与迭代失效 |
+| sched | marl、folly fibers、tokio、seastar、oneTBB/taskflow | fiber/work-stealing、同步/取消/关闭、blocking 与 oversubscription |
+| io | liburing、tokio-uring、seastar、Asio、libuv、libevent | proactor 生命周期、四后端语义、deadline/cancel、文件/网络与 backpressure |
+| simd | Highway、xsimd、simdutf、SLEEF、oneDNN | 用户 batch/kernel 面、dispatch/type/dtype/math/sort/search、精度与原生复杂度 |
+| compute | ggml、llama.cpp、oneDNN、Kompute、vitamin-cuda | device/stream/buffer/completion、CPU/GPU 算子、Vulkan/CUDA 和隐藏运行时 |
+| graph | oneTBB、taskflow、Eigen、OpenVDB | DAG 增量重算、fork-join/scan/sort、确定性与 CAD/CAE 真消费者 |
+
+对照结论必须落在对应 architecture/guide/performance；这里仅维护“应该读谁、读什么”。
+
 ## 按模块映射
 
 ### simd/（Tier 1）

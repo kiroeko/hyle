@@ -5,7 +5,7 @@
 >
 > 更新纪律:一个欠账里程碑落地后,从下面对应类目移除;新登记的缺口按类目归入。
 
-## 一、三类欠账(原因不同,处理方式不同)
+## 一、四类欠账(原因不同,处理方式不同)
 
 "没实现"不是一个原因。区分清楚才能排期:
 
@@ -14,6 +14,7 @@
 | **A 模块广度延期** | 地基/支柱模块内部,当时优先级低或缺硬件,**无下游能力在等** | 按价值/成本自行排期,不需要"消费者驱动"。该做就做 |
 | **B 能力驱动的半成品机制** | sched/io 里有前置依赖、孤立做会拍错接口的机制,**挂在轴 C 能力上等驱动** | 由其能力里程碑落地时定形。**关键:一旦前置齐 + 能力被选中,就必须开工,不能无限等** |
 | **C 依赖序未到的主体支柱** | compute/graph 两大支柱,不在"等驱动"逻辑里——它们本身是北极星驱动的支柱,只是**关键路径还没走到** | 走到即开工。是最大的剩余工作量 |
+| **D 严格收口证书债** | 主体实现和旧 closure 已有，但尚未按实际使用导向重新检查功能/API/复杂度/C ABI/guide/依赖 | 不盲目扩功能；按 pre-release-readiness 的爆炸半径顺序逐模块认证 |
 
 > **对"一直不做"的自省(2026-07-04)**:B 类的"等消费者驱动"是防投机的纪律(sched-04d 曾因此推迟是对的——当时接口会拍错)。但它**不该变成拖延的借口**:当一个能力的前置全部就绪时,它就该进入排期,而不是继续挂着。下面的"就绪度"列就是防这个——**标 🟢 就绪的必须排期,不能再等**。
 
@@ -91,17 +92,15 @@
 
 | 里程碑 | 状态 | 待决 |
 |---|---|---|
-| close-01 C-ABI shim | 🔶 八底层模块完成 | error/platform/mem/time/simd/util/obs/container 已完成；sched/io/compute/graph + install/export/跨编译器/FFI 待做 |
+| close-01 C-ABI shim | 🔶 多模块已有 surface | error/platform/mem/time 已随严格复审认证；simd/util/obs/container/sched/io 的既有 C 面随各模块重新核覆盖和 error 形状；compute/graph + install/export/FFI 待做 |
 | close-02 serialize | ❓ scope 待澄清 | 借 flatbuffers/capnproto builder+reader 当原语 vs 全推 L1?JSON 借 simdjson 已定 |
 | close-03 FFI 绑定 | 占位 | 依赖 close-01 |
 | graph-02 数据并行层 | ✅ **归属已定(2026-07-10)** | **归 graph**(graph-design.md §2):compute 铁律把铺多核推给 graph-02 fork-join,归 compute 会破其"不起线程池"边界;消费者与 graph-01 同源。序列化(close-02)仍待 scope 复核 |
 
 ## 六、一句话排期建议
 
-**2026-07-19 当前顺序**：八个底层模块按
-[`pre-release-readiness.md`](./pre-release-readiness.md) 进入预发布冻结，不再无限
-复审；先完成 container/StringBuf 本轮 SOTA 例外，再对 **sched → io** 做同等级六面
-收口并补 C ABI。container/StringBuf 例外已经完成。compute 已有
-CPU/CUDA/Vulkan/ggml 主干，graph 已有完整 graph-01
-和 graph-02 step-1，二者都不是“0 行待开工”；随后按北极星补其能力尾。最终统一做
-上层 C ABI、install/export、跨编译器和 FFI 冒烟。
+**2026-07-25 当前顺序**只见
+[`pre-release-readiness.md`](./pre-release-readiness.md)：严格基线为 error/platform/mem/time，
+当前从 core 开始，随后沿 util-core/obs → container → util-runtime → sched → io，之后先做
+math↔simd 边界裁决再收 simd。compute/graph 主干不是 0 行，但二者仍先补北极星能力尾再收口；最终做
+install/export、跨编译器和 FFI 冒烟。旧绿色 closure 保留为证据，不再当新证书。
