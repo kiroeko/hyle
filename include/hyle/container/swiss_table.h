@@ -335,10 +335,13 @@ class SwissTable {
   }
 
   template <class Q>
-  bool contains(const Q& key) const noexcept(noexcept(find(key)))
-    requires requires { find(key); }
+    requires(std::is_nothrow_invocable_r_v<std::uint64_t, const Hash&,
+                                           const Q&> &&
+             std::is_nothrow_invocable_r_v<bool, const Eq&, const K&,
+                                           const Q&>)
+  bool contains(const Q& key) const noexcept
   {
-    return find(key) != nullptr;
+    return const_cast<SwissTable*>(this)->template find_slot<Q>(key) != nullptr;
   }
 
   // Insert or assign. Returns true if a new key was inserted, false if updated.
@@ -733,10 +736,9 @@ class FlatHashSet {
   }
 
   template <class Q>
-  bool contains(const Q& key) const noexcept(noexcept(find(key)))
-    requires requires { find(key); }
+  bool contains(const Q& key) const noexcept
   {
-    return find(key) != nullptr;
+    return table_.contains(key);
   }
 
   InsertResult try_insert(K key) {
