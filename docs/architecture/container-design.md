@@ -212,6 +212,12 @@ container 对外依赖。hex encode/decode 当前是无查表分支的标量/编
 front/back 角色写进函数名。能力是否长期保留仍由真实 FFI 消费决定，不能因已重命名就
 自动冻结。
 
+2026-07-26 又按本地 Abseil/Folly/simdutf 的字符串边界回审早期 Clay facade：
+`capitalize(C-ident -> UI title)` 是应用展示策略，已从 C++/C 公共面删除；旧
+`utf8_icmp` 只折叠 ASCII，却用名称暗示 Unicode case folding，也已删除。保留的
+UTF-8 基元只承诺 validate/count；C escaping 则改为明确的 `string_c_escape`，对 NUL、
+控制字节和非 UTF-8 byte 都产生完整转义。这里删的是错误抽象，不是为了缩符号数。
+
 同一命名规则也覆盖线性容器：erased POD vector 使用 `try_push_back/try_pop_back`，
 pointer ConcurrentVector 使用 `try_push_back` 并返回稳定 index；不再让一个裸 `push`
 掩盖尾部方向或可失败的 allocation。

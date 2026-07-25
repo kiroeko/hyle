@@ -146,14 +146,10 @@ HYLE_CONTAINER_C_API size_t hyle_container_hex_encode(
     const void* data, size_t size, char* out, size_t capacity);
 HYLE_CONTAINER_C_API size_t hyle_container_hex_decode(
     hyle_container_string_view hex, void* out, size_t capacity);
-HYLE_CONTAINER_C_API size_t hyle_container_string_escape(
+HYLE_CONTAINER_C_API size_t hyle_container_string_c_escape(
     hyle_container_string_view text, char* out, size_t capacity);
-HYLE_CONTAINER_C_API void hyle_container_string_capitalize(char* text);
 HYLE_CONTAINER_C_API int64_t hyle_container_utf8_length(
     hyle_container_string_view text);
-HYLE_CONTAINER_C_API int hyle_container_utf8_icmp(
-    hyle_container_string_view left, hyle_container_string_view right,
-    int codepoint_limit);
 
 HYLE_CONTAINER_C_API hyle_container_string_view hyle_container_path_extension(
     hyle_container_string_view path);

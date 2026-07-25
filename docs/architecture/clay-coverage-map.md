@@ -2,6 +2,9 @@
 
 > **目的**：防"以为吸纳完了、其实漏文件/漏 API 层"。clay 源在 `slate-render/iron/infra/{include,src}/clay/`。
 > **目标口径（2026-07-03 澄清）**：HYLE 要 **能力覆盖 clay + 性能 ≥ clay,接口不必和 clay 一致**——clay 用户大多已不在,无接口兼容需求;HYLE 接口怎么好用/怎么 SOTA 怎么来。本表是 **clay 能力查漏参考**(防"以为吸纳完了、其实漏了仍需要的能力"),**不是** API 追平清单,也不是唯一权威进度标尺(进度唯一信源是 milestones/README)。
+> **2026-07-26 终态更正**：表内 `capitalize`/`utf8_icmp` 仍表示历史上曾完成吸纳，
+> 不表示它们继续属于公开能力；实际使用复审已删除这两个错误抽象，`escape` 则完善并
+> 改名为 `c_escape`。当前接口只看 architecture/guide。
 > **纪律（对抗审查）**：每个吸纳 clay 的里程碑闭环前对照 clay 同名文件查漏——**看有没有漏掉仍需要的能力**,缺的要么补、要么显式登记 `📋待办`,不许默默略过。查的是能力,不是签名/命名。
 > **状态图例**：✅ 完成 / 🔶 部分(有登记的缺口) / 📋 计划 / ♻️ 被 C++23/std 取代 / 🔻 借第三方(不自写) / ⛔ 不吸纳。
 > **行数(cloc 实测)**：clay 自有 ≈ **19,005**(sys 7917 + math 5831 + utils 3469 + parallel 811 + 顶层头 973;去 thirdparty)。HYLE 生产(src+include)≈ **8,130**（2026-06-29 cloc 复核;含 sched-05 同步原语 + conditional-notify + TSan fcontext 注解;旧值 8,048/7,757 已 stale）。mimalloc/xxhash/nanobench/fcontext/highway/xsimd/simdutf 第三方不计。

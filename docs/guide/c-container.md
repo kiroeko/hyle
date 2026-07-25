@@ -12,8 +12,7 @@ STL、模板或 C++ 对象布局。C++ 源码用户若与 HYLE 使用同一工�
 - 搜索失败返回 `HYLE_CONTAINER_NPOS`。所有长度都按字节计，UTF-8 函数除外。
 - buffer-fill 函数返回完整所需长度；容量大于零时尽量写入并追加 `NUL`。先用
   `out=NULL, capacity=0` 查询长度是受支持的。输入与输出不要重叠，除非函数明确
-  是原地操作（`hyle_container_path_normalize`、
-  `hyle_container_string_capitalize`）。
+  是原地操作（`hyle_container_path_normalize`）。
 - 创建、扩容、插入和驻留这类可能失败的冷路径统一返回共享 `hyle_status`，并把
   结果写到首个 `out` 参数；进入函数时会先清空输出。调用者用
   `hyle_status_is_ok` / `hyle_status_get_code` 检查，并始终用 `hyle_status_free`
@@ -83,10 +82,12 @@ ASCII 单字节便利函数全部 header-inline：
 `hyle_container_string_copy`、`hyle_container_string_concat`、
 `hyle_container_string_lower`、`hyle_container_string_upper`、
 `hyle_container_hex_encode`、`hyle_container_hex_decode`、
-`hyle_container_string_escape`、`hyle_container_string_capitalize`、
-`hyle_container_utf8_length`、`hyle_container_utf8_icmp`。
+`hyle_container_string_c_escape`、`hyle_container_utf8_length`。
 `hyle_container_utf8_length` 对非法 UTF-8 返回 -1。quick-open fuzzy ranking 是
 应用搜索策略，不是容器/FFI 基元；严格复审已从本模块删除。
+`string_c_escape` 对控制字符使用熟悉的 `\\n`/`\\t` 等形式，其余非打印字节（包括
+内嵌 NUL）使用固定三位八进制转义；它处理任意 byte string，不会把输出提前截断成
+伪 C 字符串。
 
 路径视图与 buffer-fill：
 `hyle_container_path_extension`、`hyle_container_path_strip_extension`、

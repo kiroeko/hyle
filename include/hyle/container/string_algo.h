@@ -13,8 +13,8 @@
 // algorithms as string_ref-in / buffer-fill-out, pulling in zero std streams.
 //
 // What is and isn't here (honest scope):
-//  * IN  : ASCII case classify/convert, capitalize (C-ident -> "Nice Name"),
-//          hex encode/decode, C escape, UTF-8 iterate/length/validate/icmp.
+//  * IN  : ASCII case classify/convert, hex encode/decode, C byte escape,
+//          UTF-8 iterate/length/validate.
 //  * std : str()/join()/to_string -> std::format; stoi/stod -> std::from_chars;
 //          tolower/toupper(std::string) -> these (ASCII, locale-free, no alloc).
 //  * GONE: clay only-declared formatting/fuzzy helpers. Application-specific
@@ -72,28 +72,6 @@ inline std::uint32_t to_upper(string_ref s, char* out,
   return detail::str_ascii_upper(s.data, s.size, out, cap);
 }
 
-// ---- capitalize (clay cstring.cc capitalize, in-place) ----------------------
-// Turns a C identifier into a UI-friendly name in place: '_'/space become a
-// space, and the first letter of each word is upper-cased. Special-cases the
-// "Ui" acronym -> "UI". Operates on a NUL-terminated mutable buffer.
-inline void capitalize(char* s) noexcept {
-  bool cap_next = true;
-  while (*s != '\0') {
-    if (cap_next) {
-      *s = to_ascii_upper(*s);
-      if (*s == 'U' && s[1] == 'i' && (s[2] == ' ' || s[2] == '_' || s[2] == 0))
-        s[1] = 'I';
-    }
-    if (*s == '_' || *s == ' ') {
-      *s = ' ';
-      cap_next = true;
-    } else {
-      cap_next = false;
-    }
-    ++s;
-  }
-}
-
 // ---- hex encode / C escape (buffer-fill) ------------------------------------
 // Lowercase hex of `len` bytes into out. Needs 2*len (+1 NUL) capacity; returns
 // the full hex length (2*len). Truncates to whole bytes if cap is short.
@@ -138,10 +116,13 @@ inline std::size_t hex_decode(string_ref hex, void* out,
   return need;
 }
 
-// C-escape `s` into out (\n \t \\ \" etc; printables pass through). Returns the
-// full escaped length (>= cap signals truncation). clay escaped to std::string;
-// HYLE is buffer-fill.
-inline std::size_t escape(string_ref s, char* out, std::size_t cap) noexcept {
+// C-escape arbitrary bytes into out. Named controls use \n/\t/etc, printable
+// ASCII passes through, and every other byte uses an unambiguous three-digit
+// octal escape (including embedded NUL and non-UTF-8 bytes). Returns the full
+// escaped length (>= cap signals truncation) and emits only complete escape
+// tokens. This is the allocation-free buffer-fill counterpart of Abseil
+// CEscape, not a UI/display policy.
+inline std::size_t c_escape(string_ref s, char* out, std::size_t cap) noexcept {
   auto esc = [](char c) -> char {
     switch (c) {
       case '\a': return 'a';
@@ -157,17 +138,28 @@ inline std::size_t escape(string_ref s, char* out, std::size_t cap) noexcept {
       default: return 0;
     }
   };
+  static constexpr char kOctal[] = "01234567";
   std::size_t need = 0, w = 0;
+  bool writing = true;
   for (std::uint32_t i = 0; i < s.size; ++i) {
-    char e = esc(s.data[i]);
-    std::size_t add = e ? 2 : 1;
-    if (w + add < cap) {
+    const unsigned char byte = static_cast<unsigned char>(s.data[i]);
+    const char e = esc(static_cast<char>(byte));
+    const bool printable = byte >= 0x20 && byte <= 0x7e;
+    const std::size_t add = e ? 2 : printable ? 1 : 4;
+    if (writing && cap != 0 && add <= cap - 1 - w) {
       if (e) {
         out[w++] = '\\';
         out[w++] = e;
+      } else if (printable) {
+        out[w++] = static_cast<char>(byte);
       } else {
-        out[w++] = s.data[i];
+        out[w++] = '\\';
+        out[w++] = kOctal[(byte >> 6) & 0x3];
+        out[w++] = kOctal[(byte >> 3) & 0x7];
+        out[w++] = kOctal[byte & 0x7];
       }
+    } else {
+      writing = false;
     }
     need = need > std::numeric_limits<std::size_t>::max() - add
                ? std::numeric_limits<std::size_t>::max()
@@ -177,7 +169,7 @@ inline std::size_t escape(string_ref s, char* out, std::size_t cap) noexcept {
   return need;
 }
 
-// ---- UTF-8 (clay utf8_decode / utf8_length / utf8_icmp) ---------------------
+// ---- UTF-8 validation/count --------------------------------------------------
 // Forward decoder over a byte range. next() returns the next code point, 0 at
 // end, and flips valid() to false on malformed input (clay's utf8_decode, on
 // string_ref instead of std::string::const_iterator).
@@ -249,24 +241,6 @@ HYLE_CONTAINER_API std::int64_t utf8_length_runtime(string_ref s) noexcept;
 }
 inline std::int64_t utf8_length(string_ref s) noexcept {
   return detail::utf8_length_runtime(s);
-}
-
-// Case-insensitive (ASCII fold) UTF-8 compare: <0, 0, >0. Compares up to `limit`
-// code points (0 = whole string). clay utf8_icmp.
-inline int utf8_icmp(string_ref a, string_ref b, int limit = 0) noexcept {
-  Utf8Decoder da(a), db(b);
-  int i = 0;
-  for (; (limit == 0 || i < limit) && !da.is_end() && !db.is_end(); ++i) {
-    int ca = da.next();
-    int cb = db.next();
-    if (ca < 128) ca = to_ascii_lower(static_cast<char>(ca));
-    if (cb < 128) cb = to_ascii_lower(static_cast<char>(cb));
-    if (ca < cb) return -1;
-    if (ca > cb) return 1;
-  }
-  if (limit > 0 && i == limit) return 0;
-  if (da.is_end() && db.is_end()) return 0;
-  return da.is_end() ? -1 : 1;
 }
 
 }  // namespace hyle::container

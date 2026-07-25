@@ -203,21 +203,22 @@ static void test_strings_and_paths(void) {
     CHECK(hyle_container_hex_decode(sv("01af"), decoded, sizeof(decoded)) == 2);
     CHECK(decoded[0] == 1 && decoded[1] == 0xaf);
   }
-  CHECK(hyle_container_string_escape(sv("a\n"), output, sizeof(output)) == 3);
+  CHECK(hyle_container_string_c_escape(sv("a\n"), output,
+                                       sizeof(output)) == 3);
   CHECK(strcmp(output, "a\\n") == 0);
-  strcpy(output, "ui_value");
-  hyle_container_string_capitalize(output);
-  CHECK(strcmp(output, "UI Value") == 0);
+  {
+    const unsigned char bytes[] = {'A', 0, 0x1f, 0xff};
+    CHECK(hyle_container_string_c_escape(
+              hyle_container_view((const char*)bytes, 4), output,
+              sizeof(output)) == 13);
+    CHECK(strcmp(output, "A\\000\\037\\377") == 0);
+  }
   CHECK(hyle_container_utf8_length(sv("hello")) == 5);
   {
     const unsigned char malformed[] = {0xc0u, 0x80u};
     CHECK(hyle_container_utf8_length(
               hyle_container_view((const char*)malformed, 2)) == -1);
-    CHECK(hyle_container_utf8_icmp(
-              hyle_container_view((const char*)malformed, 2), sv("ok"), 0) ==
-          0);
   }
-  CHECK(hyle_container_utf8_icmp(sv("Hello"), sv("hello"), 0) == 0);
 
   value = hyle_container_path_extension(sv("a/b.txt"));
   CHECK(value.size == 4 && memcmp(value.data, ".txt", 4) == 0);

@@ -1,5 +1,10 @@
 # container-06b：string_algo 字节串算法
 
+> **历史任务说明（2026-07-26）：** 本页记录当时对 Clay 实现的吸纳，不是当前公共
+> API 清单。实际使用导向复审已删除 UI 策略 `capitalize` 和语义误导的
+> `utf8_icmp`；`escape` 已改为能覆盖任意 byte/NUL 的 `c_escape`。当前合同以
+> architecture 与 guide 为准。
+
 | 字段 | 值 |
 |---|---|
 | **阶段** | P3 |

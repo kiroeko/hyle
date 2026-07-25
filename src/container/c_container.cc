@@ -626,33 +626,16 @@ size_t hyle_container_hex_decode(hyle_container_string_view hex, void* out,
   const size_t result = hc::hex_decode(to_cpp(hex), out, capacity);
   return result;
 }
-size_t hyle_container_string_escape(hyle_container_string_view text, char* out,
-                                    size_t capacity) {
+size_t hyle_container_string_c_escape(hyle_container_string_view text,
+                                      char* out, size_t capacity) {
   if (!valid_range(text.data, text.size, "invalid text view") ||
       !valid_output(out, capacity))
     return 0;
-  return hc::escape(to_cpp(text), out, capacity);
-}
-void hyle_container_string_capitalize(char* text) {
-  if (text == nullptr) return;
-  hc::capitalize(text);
+  return hc::c_escape(to_cpp(text), out, capacity);
 }
 int64_t hyle_container_utf8_length(hyle_container_string_view text) {
   if (!valid_range(text.data, text.size, "invalid text view")) return -1;
   return hc::utf8_length(to_cpp(text));
-}
-int hyle_container_utf8_icmp(hyle_container_string_view left,
-                             hyle_container_string_view right,
-                             int codepoint_limit) {
-  if (!valid_range(left.data, left.size, "invalid left string view") ||
-      !valid_range(right.data, right.size, "invalid right string view") ||
-      codepoint_limit < 0) {
-    return 0;
-  }
-  if (hc::utf8_length(to_cpp(left)) < 0 ||
-      hc::utf8_length(to_cpp(right)) < 0)
-    return 0;
-  return hc::utf8_icmp(to_cpp(left), to_cpp(right), codepoint_limit);
 }
 #define HYLE_PATH_VIEW_IMPL(name, method)                                      \
   hyle_container_string_view name(hyle_container_string_view path) {           \

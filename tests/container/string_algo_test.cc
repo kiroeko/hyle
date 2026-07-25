@@ -3,7 +3,6 @@
 #include <gtest/gtest.h>
 
 #include <array>
-#include <cstring>
 
 #include "hyle/container/string_ref.h"
 
@@ -70,20 +69,6 @@ TEST(StringAlgo, CaseConvertLongAndInPlace) {
   EXPECT_EQ(output[kSize], '\0');
 }
 
-TEST(StringAlgo, Capitalize) {
-  char a[] = "rect_width";
-  capitalize(a);
-  EXPECT_STREQ(a, "Rect Width");
-
-  char b[] = "ui_scale";  // "ui" acronym at a word start -> "UI"
-  capitalize(b);
-  EXPECT_STREQ(b, "UI Scale");
-
-  char c[] = "hello world";
-  capitalize(c);
-  EXPECT_STREQ(c, "Hello World");
-}
-
 TEST(StringAlgo, HexEncode) {
   char buf[16];
   const unsigned char bytes[] = {0x00, 0xAB, 0xFF, 0x10};
@@ -104,17 +89,27 @@ TEST(StringAlgo, HexDecodeAndValidation) {
 
 TEST(StringAlgo, Escape) {
   char buf[32];
-  std::size_t n = escape("a\tb\nc\\d"_sr, buf, sizeof(buf));
+  std::size_t n = c_escape("a\tb\nc\\d"_sr, buf, sizeof(buf));
   EXPECT_STREQ(buf, "a\\tb\\nc\\\\d");
   EXPECT_EQ(n, 10u);  // a \t b \n c \\ d = 1+2+1+2+1+2+1
+
+  const char binary[] = {'A', '\0', '\x1f', static_cast<char>(0xff)};
+  n = c_escape({binary, sizeof(binary)}, buf, sizeof(buf));
+  EXPECT_EQ(n, 13u);
+  EXPECT_STREQ(buf, "A\\000\\037\\377");
 }
 
 TEST(StringAlgo, EscapeReportsTruncation) {
   char buf[4];
   // Full escaped length reported even when the buffer can't hold it.
-  std::size_t n = escape("\n\n\n"_sr, buf, sizeof(buf));
+  std::size_t n = c_escape("\n\n\n"_sr, buf, sizeof(buf));
   EXPECT_EQ(n, 6u);  // 3 * "\n" = 6
-  EXPECT_LT(std::strlen(buf), 4u);
+  EXPECT_STREQ(buf, "\\n");
+
+  char tiny[2];
+  n = c_escape("\nA"_sr, tiny, sizeof(tiny));
+  EXPECT_EQ(n, 3u);
+  EXPECT_STREQ(tiny, "");  // truncation is a prefix; it never skips a token
 }
 
 TEST(StringAlgo, Utf8LengthAscii) {
@@ -168,12 +163,4 @@ TEST(StringAlgo, ScalarUtf8DecoderRejectsNonUnicodeSequences) {
   Utf8Decoder c(string_ref{maximum, 4});
   EXPECT_EQ(c.next(), 0x10FFFF);
   EXPECT_TRUE(c.valid());
-}
-
-TEST(StringAlgo, Utf8IcmpCaseFold) {
-  EXPECT_EQ(utf8_icmp("Hello"_sr, "hello"_sr), 0);   // ASCII fold
-  EXPECT_LT(utf8_icmp("abc"_sr, "abd"_sr), 0);
-  EXPECT_GT(utf8_icmp("abd"_sr, "abc"_sr), 0);
-  EXPECT_EQ(utf8_icmp("abcXX"_sr, "abcYY"_sr, 3), 0);  // limit to 3 cp
-  EXPECT_LT(utf8_icmp("ab"_sr, "abc"_sr), 0);          // prefix is "less"
 }
