@@ -63,6 +63,34 @@ function(hyle_install_package)
       COMPONENT Hyle_Runtime)
   endif()
 
+  # An installed shared HYLE module must be able to resolve sibling HYLE
+  # modules after the whole SDK prefix is moved.  A consumer executable's
+  # RUNPATH is not inherited while loading transitive ELF dependencies, so
+  # relying on the consumer's link line works for direct modules but fails for
+  # e.g. hyle_simd -> hyle_platform -> hyle_error.  Give each installed HYLE
+  # shared object its own loader-relative lookup path.  Keep this target-local:
+  # source-embedding parents retain ownership of their build/install RPATH.
+  if(NOT HYLE_STATIC AND UNIX)
+    if(APPLE)
+      set(_hyle_sibling_install_rpath "@loader_path")
+    else()
+      set(_hyle_sibling_install_rpath "$ORIGIN")
+    endif()
+    foreach(_hyle_export_target IN LISTS _hyle_export_targets)
+      get_target_property(_hyle_export_type
+        ${_hyle_export_target} TYPE)
+      if(_hyle_export_type STREQUAL "SHARED_LIBRARY" OR
+         _hyle_export_type STREQUAL "MODULE_LIBRARY")
+        set_target_properties(${_hyle_export_target} PROPERTIES
+          INSTALL_RPATH "${_hyle_sibling_install_rpath}"
+          INSTALL_RPATH_USE_LINK_PATH OFF)
+      endif()
+    endforeach()
+    unset(_hyle_export_target)
+    unset(_hyle_export_type)
+    unset(_hyle_sibling_install_rpath)
+  endif()
+
   install(TARGETS ${_hyle_export_targets}
     EXPORT HyleTargets
     RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}" COMPONENT Hyle_Runtime

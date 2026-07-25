@@ -65,7 +65,9 @@ TLS 与 CUDA 使用 `AUTO|ON|OFF` 三态：AUTO 仅供便利探测，ON 是硬�
 Windows 源码嵌入时没有 rpath。consumer executable 链接共享 HYLE 后调用
 `hyle_stage_runtime_dependencies(target)`，会把其传递 DLL 放到 executable 同目录；这比让 HYLE
 篡改父工程输出目录更局部、也更容易迁移。安装包提供同名 helper；Unix build/install tree
-继续使用生成器的 rpath。
+不要求用户设置全局 loader 环境：安装的每个 HYLE shared object 自带 sibling-relative lookup
+（ELF `$ORIGIN`、Mach-O `@loader_path`），因此传递模块依赖不错误依赖 executable RUNPATH 的继承。
+这只设置在 HYLE 的 install target，源码嵌入时仍由父工程拥有其 RPATH 策略。
 
 install export 直接遍历已解析产品 target，不另造一份依赖表；build-tree alias 与 imported target
 都叫 `hyle::<module>`。`HYLE_INSTALL=ON` 只允许 `HYLE_BUILD_TESTS=OFF`，因为测试构建会有意改变
@@ -115,8 +117,9 @@ cross compile 和三平台完整迁移矩阵的最终证书只见 build/package 
 平台 preset 只组合开发入口，不重新定义产品：Linux/macOS 不锁 generator，Windows 明分 CMake
 可直接管理的 VS 2022 与“已选择 MSVC + Ninja”两条路径；后者由 `scripts/hyle-windows.ps1` 经
 vswhere 发现现有工具链并临时导入环境。CI 对 Windows/Linux/macOS 运行 core 验证面，并在每个平台
-从空目录制作 shared/static error SDK，再由 pure-C `find_package` consumer 真运行。重型 CUDA/
-compute 包不塞进每提交 smoke，仍属发布矩阵。
+从空目录制作 shared simd+mem/static error SDK，再由 pure-C `find_package` consumer 真运行；shared
+形状还运行 C++ simd+mem consumer，机械覆盖传递 shared-object lookup。重型 CUDA/compute 包不塞进
+每提交 smoke，仍属发布矩阵。
 
 `cmake/toolchains/linux-aarch64-gcc.cmake` 是整项目交叉编译的参考入口：compiler/sysroot 属工具链，
 host program 与 target library/header/package 搜索严格分开，`CMAKE_TRY_COMPILE_TARGET_TYPE` 设为

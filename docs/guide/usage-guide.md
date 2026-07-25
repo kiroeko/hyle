@@ -184,6 +184,9 @@ target_link_libraries(app PRIVATE hyle::simd hyle::mem)
 hyle_stage_runtime_dependencies(app) # Windows shared DLL closure；其他形状 no-op
 ```
 - `CMAKE_PREFIX_PATH=/opt/hyle`（或 `Hyle_DIR=<prefix>/lib/cmake/Hyle`）告诉 CMake 去哪里找包。
+- Unix shared SDK 的 HYLE 模块用 loader-relative 路径寻找同一 `lib/` 中的其他 HYLE 模块；整体
+  移动 prefix 后不需要为 HYLE 内部传递依赖另设 `LD_LIBRARY_PATH`/`DYLD_LIBRARY_PATH`。系统部署
+  到非默认位置时，应用自身怎样找到第一个 HYLE 库仍由应用的 RPATH、loader 配置或打包器决定。
 - 自定义安装根只设 `CMAKE_INSTALL_PREFIX`；可定制相对的 GNUInstallDirs 子目录，不要把
   `CMAKE_INSTALL_LIBDIR`/`INCLUDEDIR` 等直接设成绝对路径，否则无法整体搬迁，configure 会拒绝。
 - imported target 自动传播 C++23、`HYLE_STATIC`、公开头与依赖模块；静态 mem 的 mimalloc 后端也作为

@@ -19,7 +19,8 @@ cmake --install build-sdk-shared --config Release
 
 交付安装前缀。它包含公开头、所选组件 DLL/shared objects、import libraries、CMake package、
 feature/component manifest、HYLE notice 和实际编入实现的第三方许可证。Windows consumer 对 executable
-调用 `hyle_stage_runtime_dependencies(target)`，即可 staging 传递 HYLE DLL。
+调用 `hyle_stage_runtime_dependencies(target)`，即可 staging 传递 HYLE DLL。Unix 安装库用
+`$ORIGIN`/`@loader_path` 解析同一 `lib/` 内的 HYLE 传递依赖；整体移动 prefix 不需要重写它们。
 
 ## headers + static libraries
 
