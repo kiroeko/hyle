@@ -30,7 +30,7 @@ mimalloc 相对各平台默认分配器(relative >100% = mimalloc 更快):
 
 ## benchmark 驱动的优化
 
-初版对所有分配无条件用 `mi_malloc_aligned`,Linux churn 仅 0.43x。基准暴露后:`mi_malloc` 本已保证 ≥16 字节(`alignof(max_align_t)`)对齐,故**默认对齐走 `mi_malloc` 快路径**,只有 over-aligned(>16,如 AVX512 64B)才走 `mi_*_aligned`。Linux churn 0.43x→0.62x;CArray 64B over-align 测试仍过(契约保持)。
+初版对所有分配无条件用 `mi_malloc_aligned`,Linux churn 仅 0.43x。基准暴露后:`mi_malloc` 本已保证 ≥16 字节(`alignof(max_align_t)`)对齐,故**默认对齐走 `mi_malloc` 快路径**,只有 over-aligned(>16,如 AVX512 64B)才走 `mi_*_aligned`。Linux churn 0.43x→0.62x;PodVector（当时名 CArray）64B over-align 测试仍过(契约保持)。
 
 ## 对抗式自审（六类）
 

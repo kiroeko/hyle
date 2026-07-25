@@ -43,7 +43,7 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 
 核心计算/并发（论点本身）
 ├─ mem/       极致内存管理  [T0] ← 继承 clay 分配器家族+arena，修 5 个 bug，加 NUMA/大页/cache-line
-├─ container/ 超越 std 容器 [T0] ← 继承 hashmap/carray/cstring + 核心 hasher，加 SwissTable SIMD/SmallVector/intrusive/lock-free
+├─ container/ 超越 std 容器 [T0] ← flat map/set、PodVector/SmallVector、string/interner 与调度并发结构
 ├─ sched/     统一调度【核心】[T0] ← 线程/进程/纤程/协程一张表：fiber 上下文 + per-core 无锁 run-queue + work-stealing（含 completion 脊）
 ├─ simd/      SIMD 抽象     [T1] ← 推倒重写：可移植 vector 类型 + 运行时 dispatch + AVX512 + bf16
 ├─ io/        网络 IO       [T1] ← 从零：proactor（io_uring/IOCP/epoll），与 sched 一体（fiber 遇 IO 让出）
@@ -69,7 +69,7 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 
 | Tier | 模块 | 换成现成库会怎样 | 怎么做 |
 |---|---|---|---|
-| **0 核心** | `sched/`、completion 脊（io/gpu/fiber 完成都唤醒同一 fiber）、`mem/`、`container/`（flat hashmap + carray + 核心 hasher murmur/xxhash）、C-ABI 边界 | **HYLE 就没了** | 自己造、深拥有、测试/性能预算最高 |
+| **0 核心** | `sched/`、completion 脊（io/gpu/fiber 完成都唤醒同一 fiber）、`mem/`、`container/`（flat map/set + PodVector + 核心 hasher）、C-ABI 边界 | **HYLE 就没了** | 自己造、深拥有、测试/性能预算最高 |
 | **1 兑现承诺** | `compute/`(GPU)、`io/`(网络)、`simd/` | 还像 HYLE，但"混合/极致性能"的卖点落空 | 自造，可借起步（compute 先包 ggml、simd 可参考 xsimd）|
 | **2 必要基质** | atomics、`platform/`(thread/vm/dynlib/env/path/fs)、`time/`(clock/deadline/timer queue)、`error/`(status+expected+assert)、`obs/` instrumentation hook、构建/ABI 骨架 | **照样是 HYLE**——只是没它编不过/跑不起来 | 优先用 std / 成熟算法，别在这层过度发明；但 `obs/` hook 要第一天嵌热路径 |
 | **3 便利** | `obs/` 重机器（sink/格式化/聚合）、`serialize/`、外围 hash（md5/uuid/base64）、`plugin/registry`、`random/`、`text/`、`compress/`、`config/`、`graph/` | 在不在都是 HYLE | 能缓则缓、薄封装别自造 |
@@ -104,10 +104,10 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 
 | 固定统计口径 | code | 说明 |
 |---|---:|---|
-| **全库代码** | **250,504** | `cloc . --vcs=git`；含 docs 与 in-tree third_party |
-| **自实现（含测试）** | **117,287** | `include/hyle + src + tests`，排除 CMake/Text |
-| **自实现（不含测试）** | **80,432** | `include/hyle + src`；库本体硬锚 |
-| **当前审查单元 container 实现** | **5,674** | `include/hyle/container` + `include/hyle/c/container.h` + `src/container`；不含测试/CMake/Text |
+| **全库代码** | **250,717** | `cloc . --vcs=git`；含 docs 与 in-tree third_party |
+| **自实现（含测试）** | **117,483** | `include/hyle + src + tests`，排除 CMake/Text |
+| **自实现（不含测试）** | **80,585** | `include/hyle + src`；库本体硬锚 |
+| **当前审查单元 container 实现** | **5,827** | `include/hyle/container` + `include/hyle/c/container.h` + `src/container`；不含测试/CMake/Text |
 | 再加 ggml 等大依赖足迹 | **~200–350k+** | 由 ggml 主导，不计入「自有生产」 |
 
 **生产按模块（src+include，约）：**

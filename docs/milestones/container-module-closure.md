@@ -33,8 +33,9 @@ Linux x64 和 macOS arm64 的最终验证命令与结果记录在本文末尾。
 
 ## 功能与下游
 
-- CArray：记录 allocator/alignment，alias-safe growth，新增 fallible
-  `try_reserve/try_push_back`，所有容量计算先检查 overflow。
+- PodVector（旧实现名 CArray）：记录 allocator/alignment，alias-safe growth，新增
+  默认构造、copy 值语义、resize、位置 insert/范围 erase 与 fallible
+  `try_reserve/try_push_back/try_resize`，所有容量计算先检查 overflow。
 - SmallVector：修正 allocator-aware move assignment、inline/heap 别名增长和
   overflow；补 mature inline-vector 共有的 positional emplace/insert 与 range erase，
   非平凡 T 不再因删除/移动后缀额外要求 move assignment。
@@ -60,7 +61,7 @@ Linux x64 和 macOS arm64 的最终验证命令与结果记录在本文末尾。
 
 ## 红队发现并修复
 
-1. CArray/SmallVector/SwissTable 的自别名输入在 growth 后可能读悬空地址。
+1. PodVector/SmallVector/FlatHashMap 的自别名输入在 growth 后可能读悬空地址。
 2. allocator/alignment 没有随 allocation 保存，跨 allocator reallocate/free
    可能错配。
 3. SwissTable move constructor 漏 mask，极端 reserve 由 assert 终止而非失败。

@@ -1,10 +1,10 @@
 // container misc bench (task #19 breadth + gap-fill #34/#35): the claim-bearing containers.
 // performance.md 桶A: SmallVector "小 N 省 malloc（大赢）";
-// CArray = the dynamic-array (std::vector equivalent, C-ABI header-before-data).
+// PodVector = the POD dynamic array (C-ABI-friendly header-before-data).
 //
 // SOTA rivals (not just std -- "只赢 std 不算价值"):
 //   * SmallVector  -> absl::InlinedVector (THE small-vector SOTA), gated -DHYLE_BENCH_ABSL
-//   * CArray       -> std::vector (the drop-in equivalent, always on)
+//   * PodVector    -> std::vector (the same contiguous POD use, always on)
 // std equivalents always run as the floor. Win or lose, printed.
 #include <nanobench.h>
 
@@ -20,7 +20,7 @@
 #  include "absl/container/inlined_vector.h"
 #endif
 
-using hyle::container::CArray;
+using hyle::container::PodVector;
 using hyle::container::SmallVector;
 using hyle::mem::system_allocator;
 
@@ -28,7 +28,7 @@ namespace {
 namespace nb = ankerl::nanobench;
 constexpr int kSmall = 8;      // fits inline (no spill) -- the SmallVector design point
 constexpr int kRounds = 1000;  // construct+fill+destroy churn per epoch
-constexpr int kBig = 4096;     // CArray/vector growth element count
+constexpr int kBig = 4096;     // PodVector/vector growth element count
 }  // namespace
 
 int main() {
@@ -114,8 +114,8 @@ int main() {
     });
   }
 
-  // ---- CArray vs std::vector: large-N push_back growth + indexed read --------
-  // CArray is the dynamic-array (std::vector equivalent) with a C-ABI header-
+  // ---- PodVector vs std::vector: large-N growth + indexed read ----------------
+  // PodVector is a POD-only dynamic array with a C-friendly header-
   // before-data layout: arr[i] is one load, the element ptr hands straight to a C
   // API. For trivially-copyable T both memcpy-grow, so this measures whether the
   // type-erased core + header layout costs anything vs std::vector's inline growth.
@@ -126,8 +126,8 @@ int main() {
         .relative(true)
         .batch(kBig)
         .minEpochIterations(5000);
-    b.run("HYLE CArray<int> (header-before-data)", [&] {
-      CArray<int> a(system_allocator());
+    b.run("HYLE PodVector<int> (header-before-data)", [&] {
+      PodVector<int> a(system_allocator());
       for (int i = 0; i < kBig; ++i) a.push_back(i);
       nb::doNotOptimizeAway(a.data());
     });
@@ -140,7 +140,7 @@ int main() {
   {
     // Indexed read hot path: sequential sum over a prebuilt array (the arr[i]
     // single-load claim). Build once, sum many times.
-    CArray<int> ha(system_allocator());
+    PodVector<int> ha(system_allocator());
     for (int i = 0; i < kBig; ++i) ha.push_back(i);
     std::vector<int> hv;
     for (int i = 0; i < kBig; ++i) hv.push_back(i);
@@ -149,7 +149,7 @@ int main() {
         .relative(true)
         .batch(kBig)
         .minEpochIterations(2000);
-    b.run("HYLE CArray<int>", [&] {
+    b.run("HYLE PodVector<int>", [&] {
       std::int64_t sum = 0;
       for (int i = 0; i < kBig; ++i) sum += ha[static_cast<std::uint64_t>(i)];
       nb::doNotOptimizeAway(sum);

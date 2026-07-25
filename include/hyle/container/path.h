@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <cstring>
 
-#include "hyle/container/carray.h"       // CArray<string_ref> (split_all result)
+#include "hyle/container/pod_vector.h"   // PodVector<string_ref> split result
 #include "hyle/container/string_ref.h"   // string_ref + dup/concat (+HYLE_CONTAINER_API)
 #include "hyle/macros.h"
 #include "hyle/mem/allocator.h"
@@ -203,8 +203,8 @@ HYLE_CONTAINER_API std::size_t join_array(char* dst, std::size_t cap,
 
 // Splits `path` into its elements (clay split_all). Allocates the array via
 // `alloc`; each element is a view INTO `path` (no string copies).
-HYLE_CONTAINER_API CArray<string_ref> split_all(string_ref path,
-                                                mem::Allocator alloc);
+HYLE_CONTAINER_API PodVector<string_ref> split_all(string_ref path,
+                                                   mem::Allocator alloc);
 
 // Replaces the extension: "test.jpg" + ".png" -> "test.png". If `path` has no
 // extension, `ext` is appended ("test" + ".png" -> "test.png" -- clay returned

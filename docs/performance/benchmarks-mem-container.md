@@ -43,17 +43,17 @@
 
 > 优化史要点：probe 预取、mix64 单乘折叠、H1=identity、SSSE3 match_empty、for_each 组扫、NEON pack 向量化。find-miss 旧 “~10% 待 profile” 已关。hash 层按 key 类型反哺 map（整数 key 本就 SOTA；复合/长串 key 吃 mix64_2 / wyhash）。
 
-## container·vec —— SmallVector / CArray（vs std + 真 SOTA，`container_misc_bench.cc`）
+## container·vec —— SmallVector / PodVector（vs std + 真 SOTA，`container_misc_bench.cc`）
 
-> 环境:Win MSVC19.50 Release,nanobench。声明承重容器。SmallVector→`absl::InlinedVector`(small-vector SOTA,gated `-DHYLE_BENCH_ABSL`)，CArray→`std::vector`(动态数组 drop-in SOTA)。IntrusiveList 已归 core，当前实现与同形数据只见 [`benchmarks-core`](./benchmarks-core.md)，不在这里保留旧快照。
+> 环境:Win MSVC19.50 Release,nanobench。声明承重容器。SmallVector→`absl::InlinedVector`(small-vector SOTA,gated `-DHYLE_BENCH_ABSL`)，PodVector→`std::vector`(同形连续 POD 动态数组)。IntrusiveList 已归 core，当前实现与同形数据只见 [`benchmarks-core`](./benchmarks-core.md)，不在这里保留旧快照。
 
 | 场景 | HYLE | std | 真 SOTA(gated) | 结论 |
 |---|---|---|---|---|
 | **小 N churn**(建+填 8 int+析构) | SmallVector<int,16> **0.41 ns** | vector 16.8 / vector+reserve 3.06 | **absl::InlinedVector 0.84–1.0** | ✅ **赢 absl 2.0–2.4x**(absl 侧 spread 大)、赢 std 41x |
-| **动态数组 growth**(push_back 4096 int,无 reserve) | CArray<int> **0.51 ns** | vector **0.75** | (std::vector 即 SOTA) | ✅ **赢 std::vector 1.48x**(grow 用 reallocate) |
-| **动态数组 read**(顺序求和 4096) | CArray<int> **0.18 ns** | vector 0.18 | (std::vector 即 SOTA) | ➖ **平 std::vector**(arr[i] 单 load 兑现) |
+| **动态数组 growth**(push_back 4096 int,无 reserve) | PodVector<int> **0.51 ns** | vector **0.75** | (std::vector 即 SOTA) | ✅ **赢 std::vector 1.48x**(grow 用 reallocate) |
+| **动态数组 read**(顺序求和 4096) | PodVector<int> **0.18 ns** | vector 0.18 | (std::vector 即 SOTA) | ➖ **平 std::vector**(arr[i] 单 load 兑现) |
 
-**诚实结论**：① SmallVector 在当前 Windows 快照中反超同形 `absl::InlinedVector`，但仍待按当前收口纪律统一刷新三平台；② CArray growth 的收益来自 mimalloc 分配质量与 `reallocate` 机会，不应再写成“保证原地无 copy”，indexed read 与 vector 同档。IntrusiveList 不再属于本节。
+**诚实结论**：① SmallVector 在当前 Windows 快照中反超同形 `absl::InlinedVector`，但仍待按当前收口纪律统一刷新三平台；② PodVector growth 的收益来自 mimalloc 分配质量与 `reallocate` 机会，不应再写成“保证原地无 copy”，indexed read 与 vector 同档。IntrusiveList 不再属于本节。
 
 ## container·str —— string_ref / StringBuf / string_algo（`string_ref_bench.cc` / `string_buf_bench.cc` / `string_algo_bench.cc`）
 

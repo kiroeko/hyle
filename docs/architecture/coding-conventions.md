@@ -28,7 +28,7 @@ HYLE 的每条纪律都回溯到四个**约束源**：① ABI 稳定 ② 编译�
 
 **禁 std 流（铁律）**：**全库不用 `<iostream>`/`std::cout`/`std::cerr`/`std::endl`/`<sstream>`/`std::ostream`**。理由：std 流体积大、慢（同步开销/locale/虚函数链）、ABI 不稳、错误处理糟糕——对极致性能 infra 是负担。诊断输出用 C 的 `std::fprintf(stderr, ...)`（printf 风格，如 `HYLE_FATAL_ASSERT`）；将来结构化输出走 HYLE 自己的 log（obs-01）。格式化用 `std::format`（值语义、无流），不用 `<<`。
 
-**禁 std 性能垃圾容器/哈希（铁律,用户 2026-06）**：生产代码**不用 `std::unordered_map`/`unordered_set`/`map`/`set`/`std::hash`**——它们慢(节点分配/指针追逐/弱哈希)、ABI 不稳。**有 HYLE 自己的就用自己的**:hashmap→`SwissTable`(container-04)、哈希→XXH3 `Hash<T>`(container-02)、动态数组→`CArray`/`SmallVector`、字符串→`string_ref`/`string_buf`(container-06)。
+**禁 std 性能垃圾容器/哈希（铁律,用户 2026-06）**：生产代码**不用 `std::unordered_map`/`unordered_set`/`map`/`set`/`std::hash`**——它们慢(节点分配/指针追逐/弱哈希)、ABI 不稳。**有 HYLE 自己的就用自己的**:hashmap→`FlatHashMap`(container-04)、哈希→XXH3 `Hash<T>`(container-02)、POD 动态数组→`PodVector`、小 owning 数组→`SmallVector`、字符串→`StringView`/`StringInterner`(container-06)。
 - **唯一例外:测试**可用 std 容器/哈希做**对拍 oracle**(参照基准),非生产路径。
 - `std::vector`/`std::unique_ptr` 在内部 `.cc` 做平凡局部 scratch 仍可(非性能热点、不出公开头);但凡 HYLE 有等价高性能物的场景,优先 HYLE 的。
 - **这条与"红队攻击残留脚手架"联动**:早期因依赖顺序临时用了 std 的,等 HYLE 等价物落地后**必须替换**(见红队纪律 + clay-coverage-map 脚手架债登记)。

@@ -126,8 +126,8 @@ std::size_t join_array(char* dst, std::size_t cap, const string_ref* parts,
   return out.finish();
 }
 
-CArray<string_ref> split_all(string_ref path, mem::Allocator alloc) {
-  CArray<string_ref> out(alloc);
+PodVector<string_ref> split_all(string_ref path, mem::Allocator alloc) {
+  PodVector<string_ref> out(alloc);
   string_ref rest = path;
   while (rest.size > 0) out.push_back(pop_first(&rest));
   return out;

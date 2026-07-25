@@ -295,7 +295,7 @@ hyle::simd::hypot_in_range_f32_batch(a, b, dst, n);
 
 ### 3.1 mem —— 两层分配器模型（默认零开销，注入 opt-in）
 **默认不用传 allocator**:头内联容器(`SmallVector`/`BoundedQueue`/`ShardedQueue`/`WsFifoQueue`/`WorkStealingDeque`/`ConcurrentVector`)默认参 `mem::SystemAllocator`——编译期绑定、无函数指针接缝(`[[no_unique_address]]` 不占字节)；static/source 形状内联直达 mimalloc，shared SDK 经 `hyle_mem` 一次直接 import 且不泄漏 vendor ABI。要 arena/mock/跨 DLL 才**显式 opt-in** 传运行时 `Allocator` 句柄。
-直接用 mem/ API 或 type-erased 容器(`SwissTable`/`CArray`/`string_buf`,出线核服务所有 T,按设计收运行时句柄)时,传 `system_allocator()`(mimalloc backing):
+直接用 mem/ API 或 type-erased-core 容器（`FlatHashMap`/`PodVector`/`StringInterner`）并需要指定 backing 时，传 `system_allocator()`（mimalloc backing）：
 ```cpp
 #include "hyle/mem/allocator.h"
 using hyle::mem::system_allocator;

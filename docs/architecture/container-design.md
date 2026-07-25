@@ -47,7 +47,7 @@ Tier 0 dependencies: mem allocator + platform CPU discovery
 |---|---|---|---|
 | flat map | `FlatHashMap<K,V>`（实现名 `SwissTable`） | erased POD hash map | C++ 支持 non-trivial ownership 与异构查找；C 面按字节存 POD；ctrl+连续 slots；SIMD group probe |
 | flat set | `FlatHashSet<K>` | 暂无独立 set 导出 | 真 set API/slot；canonical-key find；只读 key 迭代；C ABI 待 typed 形状稳定后统一重审，不用 erased map 冒充 |
-| dynamic array | `CArray<T>` | erased POD vector | header-before-data；allocator/alignment 随 allocation 记录 |
+| POD dynamic array | `PodVector<T>` | erased POD vector | 默认可用或注入 allocator；copy/move 值语义；header-before-data；allocator/alignment 随 allocation 记录 |
 | inline array | `SmallVector<T,N>` | 不单独导出 | 通用 owning value semantics；POD 保留 memcpy relocation；N 是编译期类型，C 动态需求由 erased vector 覆盖 |
 | string view | `StringView`（实现名 `string_ref`） | `hyle_container_string_view` | ptr+u32 length+NUL bit；借用、不拥有 |
 | interner | `StringInterner`（实现名 `StringBuf`） | opaque StringBuf | generation-tagged direct ID；内容相等才同一条目 |
@@ -73,6 +73,21 @@ emplace/insert、单项/范围 erase 与 clear；自别名参数即使触发 inl
 仍待按真实消费者决定的外围面是 range/count construction、range insert/assign、swap、
 shrink-to-fit 和比较运算。`at()` 没有机械照抄：HYLE 构建可关闭异常，必须先决定是
 Status/nullable 访问还是 fatal checked access，不能用一个异常形状破坏全库合同。
+
+### PodVector 的成熟形状门
+
+旧 `CArray<T>` 把 clay 实现名和窄 benchmark 形状一起暴露给了用户。当前公开主类型改为
+`PodVector<T>`，并按 `std::vector` 与 Folly `fbvector` 的共同连续序列习惯提供默认构造、
+copy/move、front/back、正反迭代、reserve、push_back、resize、位置 insert、单项/范围
+erase、clear 与 swap；`try_reserve/try_push_back/try_resize` 保留 HYLE allocator 的可恢复
+OOM 通路。它刻意只接受 trivially-copyable T：这是 C/FFI-friendly byte relocation 合同，
+不是第二个通用 `std::vector`。非平凡值用 SmallVector 或标准 vector。
+
+header-before-data、recorded allocator/alignment 和 type-erased reallocate core 仍是内部
+实现，新增接口没有改变 indexed read 的单次寻址或增长时利用 backing realloc 的能力。
+位置 insert/erase 为 memmove 后缀，复杂度 O(size-position)，达到连续存储下界。首轮
+Windows 同合同 growth/read benchmark 仍分别约 1.48x/1.0x `std::vector`；新增 API 本身
+不能借旧 push/read 数字宣称 SOTA，若真实消费者把位置 mutation 变成热点再单独建证书。
 
 ## SwissTable
 
@@ -204,7 +219,7 @@ pointer ConcurrentVector 使用 `try_push_back` 并返回稳定 index；不再�
 - create/reserve/insert/intern 等冷失败走共享 `hyle_status + out`；队列满空、map miss、
   stale ID 等正常热控制流不构造错误对象。
 - String/path 产出使用借用 view 或 buffer-fill。
-- CArray/SwissTable 通过运行时 item size/alignment/hash/equal 类型擦除。
+- PodVector/FlatHashMap 通过运行时 item size/alignment/hash/equal 类型擦除。
 - C flat map 与 typed mutation 语义一致：insert 不覆盖，insert_or_assign 才覆盖；
   三态结果明确区分 inserted/already-present/assigned。
 - 并发容器的稳定最小共同面使用 pointer payload。
@@ -227,7 +242,7 @@ pointer ConcurrentVector 使用 `try_push_back` 并返回稳定 index；不再�
 
 - flat Swiss map 的 Windows 已测核心操作领先 Abseil；WSL 除 miss 约慢 3% 外领先，
   set miss 约慢 6%，不作无条件 SOTA 宣称；
-- CArray/SmallVector/队列按各自对等形状判断；
+- PodVector/SmallVector/队列按各自对等形状判断；
 - 路径的大倍数主要来自零分配结构，对同形 string-view 扫描通常是平局；
 - StringBuf 长串增长、重复 churn、并发分片和 batch 分别验收；单调用仍有 DLL seam；
 - 4KB 字符扫描的 0.8x–0.95x 点值应结合 64KB/1MB、方差和调用形状，不包装成赢。

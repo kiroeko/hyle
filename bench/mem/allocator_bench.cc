@@ -227,7 +227,7 @@ int main() {
 
   // ---- reallocate: grow an existing block (the COLD path, but still benched) --
   // Allocator splits alloc/free/realloc (header rationale: register-friendly, no
-  // dispatch branch). The realloc path had no direct bench (CArray growth exercises
+  // dispatch branch). The realloc path had no direct bench (PodVector growth exercises
   // it only indirectly). Grow a block through a sequence of sizes (16->1024 via
   // doubling) so realloc must sometimes copy. HYLE vtable reallocate vs raw
   // mi_realloc (SOTA) vs the compile-time SystemAllocator path vs the runtime

@@ -13,7 +13,7 @@
 | **path** | ✅ 双平台 n=15 | Win+Lin；算法基线 + filesystem 分离 |
 | **FlatHashMap / FlatHashSet** | ✅ Windows+WSL n=15；⏳ M4 | 同合同 Abseil；WSL map/set miss 是已登记小缺口 |
 | **hash / mix64 / Hash&lt;T&gt;** | ⚠️ 历史 + 红队公平性更正 | ⏳ 待三平台 `bench-stat -n15` 重写表 |
-| **SmallVector / CArray** | ⚠️ 主 Win + 部分补测 | owning vector 形状待本轮统一三平台刷新 |
+| **SmallVector / PodVector** | ⚠️ 主 Win + 部分补测 | owning vector 形状待本轮统一三平台刷新 |
 | **ConcurrentVector** | ✅ Windows+WSL n=15；⏳ M4 | append/range iteration 同合同 SOTA；WSL `operator[]` 是已知缺口 |
 | **并发队列** | 见 queue / sched 文 | 不在本页展开 |
 
@@ -29,7 +29,7 @@
 | **FlatHashMap** | absl::flat_hash_map / Folly F14 | ✅ Win 五项胜；WSL 四项胜、miss 0.97x；⏳ M4 |
 | **FlatHashSet** | absl::flat_hash_set / Folly F14 | ✅ 真 set slot/API；Win 四项胜；WSL hit 平、miss 0.94x、insert/iterate 胜；⏳ M4 |
 | **SmallVector** | absl::InlinedVector | ✅ 小 N churn **赢** 同款 SOTA |
-| **CArray** | std::vector | ✅ growth 赢（mimalloc 质量）；read 平 |
+| **PodVector** | std::vector | ✅ growth 赢（mimalloc 质量）；read 平 |
 | **string_ref 搜索** | string_view / libc | ➖ 自研 SIMD 项平；子串/字符集 **转发 std**（刻意） |
 | **StringBuf** | map+mutex / Absl 分片 peer | ⚠️ **Win 多平**；WSL/M4 lifecycle **输**；growth 赢；8t 距 Absl ~5% |
 | **path 词法** | string_view 扫 / filesystem | ✅ 平算法基线；**碾** filesystem（零分配结构差） |
@@ -137,7 +137,7 @@ WSL 的逐次索引差距与 GCC 对运行时 segment 定位的代码生成有�
 通用 hash map              → FlatHashMap
 高频 membership / 去重     → FlatHashSet
 栈上小数组                 → SmallVector
-堆动态数组                 → CArray（默认 SystemAllocator/mi）
+POD 堆动态数组             → PodVector（默认 SystemAllocator/mi）
 只读字符串视图 + 搜索      → string_ref（子串族借 std）
 驻留串 / intern            → StringBuf（接受跨平台 lifecycle 税；要 growth/并发）
 路径词法（无 syscall）     → path（零分配；勿用 filesystem 当算法对手）
@@ -186,7 +186,7 @@ HYLE_QUEUE_BENCH_FILTER=concurrent-vector \
 |---|---|
 | hash 公平性更正 + 长度表 | mem-container §container·hash |
 | SwissTable vs absl | mem-container §container·map + README 总账 |
-| SmallVector / CArray | mem-container §container·vec |
+| SmallVector / PodVector | mem-container §container·vec |
 | string_ref / StringBuf 三平台收口 | mem-container §container·str |
 | path | mem-container §container·path |
 | util/obs 夹带 | 应看 util/obs 收口；mem-container「次要模块」勿当 container 主证书 |

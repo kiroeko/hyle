@@ -28,7 +28,7 @@ CMake 依赖实测两条独立链：`platform`→只依赖 `error`；`container`
 | `directory` | ✅ `directory`——**修 clay OOB**:全斜杠前缀(`//x`)时 clay 反扫下标下溢后先解引用再判越界；HYLE 先判界 |
 | `parent_dir` | ✅ `parent_dir`=`dup(directory(p))`(clay 单列只因其 directory 返 view、parent_dir 返 owned C 串;HYLE 一个 view op+dup 覆盖) |
 | `pop_first` / `pop_last` | ✅ 同名 |
-| `split_all` | ✅ `split_all`→`CArray<string_ref>`(元素是 path 内 view,零串拷) |
+| `split_all` | ✅ `split_all`→`PodVector<string_ref>`(元素是 path 内 view,零串拷) |
 | `join` | ✅ `join`(单 `/`,平台无关) |
 | `join_array` | ✅ `join_array`(buffer-fill snprintf 语义,折叠内部分隔符) |
 | `normalize` | ✅ `normalize`——吸纳 `path_normalize_native`(纯 `.`/`..`/`//` 折叠);blend `//` 前缀 + Win 盘符/UNC 大小写折叠**登记 platform-03**(耦合 fs 域) |
@@ -56,11 +56,11 @@ CMake 依赖实测两条独立链：`platform`→只依赖 `error`；`container`
 
 - **① 正确性**:18 测覆盖 16 API + 边界——空串/纯斜杠(`///`)/`..` 还原(相对保留不可约 `../`,绝对根吞 `/..`)/UNC/盘符(`C:` 非绝对)/join_array 截断报完整长度/directory 的 `//x` OOB(clay bug)真测;normalize 表驱动 14 例。`string_ref` size 为 uint32_t,反扫用 `i < size` 判下溢(借 string_ref.h 既有模式)。
 - **② 性能**:查询族(extension/base/directory/is_*)全 constexpr inline,可编译期求值;零分配(仅 join/split/replace 显式 alloc 注入);normalize 单遍+局部回扫(路径深度小,实际 O(n))。
-- **③ 规范**:path.h 只 include carray/string_ref/macros/allocator——**零 std 拥有型容器/流**(§1);返回 `CArray`/`string_ref` 全 HYLE 物;allocator 显式注入(§4)。
+- **③ 规范**:path.h 只 include pod_vector/string_ref/macros/allocator——**零 std 拥有型容器/流**(§1);返回 `PodVector`/`string_ref` 全 HYLE 物;allocator 显式注入(§4)。
 - **④ clay 覆盖**:vtable 16 函数逐个 diff(上表);vtable 外按域分流登记,**非略过**。
 - **⑤ 残留脚手架**:无(未临时借 std)。
 - **⑥ 过度复杂**:每函数单一职责;normalize 组件走查是 clay 算法的等价精简,非新发明。
-- **跨 DLL**:`split_all` 返 `CArray<string_ref>`,析构走 DLL 内 `carray_free_internal`(allocator 一致,无 CRT 堆错配);MSVC 无 C4251。
+- **跨 DLL**:`split_all` 返 `PodVector<string_ref>`,析构走 DLL 内 `carray_free_internal`(allocator 一致,无 CRT 堆错配);MSVC 无 C4251。
 
 ## 预测 vs 真实 LOC
 
@@ -74,4 +74,4 @@ CMake 依赖实测两条独立链：`platform`→只依赖 `error`；`container`
 
 ## 参考
 
-- clay `sys/path.h` + `sys/path.cc`(vtable 部分真实现)。conventions §1(禁 std 容器/流)、§4(allocator 注入)、§7(string_ref)。container-06(string_ref dup/concat/substr 复用)、container-03(CArray)。
+- clay `sys/path.h` + `sys/path.cc`(vtable 部分真实现)。conventions §1(禁 std 容器/流)、§4(allocator 注入)、§7(string_ref)。container-06(string_ref dup/concat/substr 复用)、container-03(PodVector，历史任务名 carray)。

@@ -1,5 +1,9 @@
 # container-03：carray header-before-data + RAII 壳
 
+> 历史任务名保留作 Jira 式施工记录。严格复审后的公开类型是 `PodVector<T>`，默认即可
+> 使用 system allocator，并已有 copy/move、resize、位置 insert 与范围 erase；
+> `CArray<T>` 不再是发布名。底层 `CArrayHeader/carray_*` 仍是实现细节名称。
+
 | 字段 | 值 |
 |---|---|
 | **阶段** | P3 |

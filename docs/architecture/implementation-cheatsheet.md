@@ -11,9 +11,9 @@
 - **服务对象(双北极星,都四样全压,合起来压满五支柱)**:① **类 llama.cpp 推理引擎**(io serving+HTTP+批调度+KV-cache+GPU/CPU kernel,拉满 io/sched/mem/compute) ② **CAD/BIM/CAE 工程计算管线**(参数化/仿真依赖 DAG 增量重算+几何/BVH kernel+**CAE 稀疏线代/迭代求解器**+大场景图·网格·矩阵+云端协同/HPC,额外拉满 **graph** 支柱——clay taskgraph 老本行,CAE 再把 compute/simd 压到求解器深度);③ 蜂群 agent(消费者之一,压 fiber+io+channel)。热路径 = fiber/io/channel/mem/hashmap/SIMD/**graph 重算**。
 
 ## 1. std 使用纪律(分层,源:coding-conventions §1)
-- **公开头/跨 DLL/C-ABI 签名禁 std 拥有型**:`std::string`/`vector`/`unordered_map`/`shared_ptr`/`function`。用 `string_ref`(视图)/`CArray`/SwissTable/侵入式 `Ref<T>`/函数指针。**硬线(可 lint)**:公开头 `#include <string>/<vector>/<unordered_map>` 用于导出符号 = 违规。
+- **公开头/跨 DLL/C-ABI 签名禁 std 拥有型**:`std::string`/`vector`/`unordered_map`/`shared_ptr`/`function`。用 `StringView`(视图)/`PodVector`/FlatHashMap/侵入式 `Ref<T>`/函数指针。**硬线(可 lint)**:公开头 `#include <string>/<vector>/<unordered_map>` 用于导出符号 = 违规。
 - **全库禁 std 流**:`<iostream>`/`cout`/`cerr`/`endl`/`<sstream>`/`ostream`。诊断走 `std::fprintf(stderr,...)` / obs log;格式化用 `std::format`(值语义)不用 `<<`。
-- **生产禁 std 垃圾容器/哈希**:`unordered_map/set`/`map/set`/`std::hash` → 用 SwissTable / XXH3 `Hash<T>` / `CArray`/`SmallVector` / `string_ref`/`string_buf`。
+- **生产禁 std 垃圾容器/哈希**:`unordered_map/set`/`map/set`/`std::hash` → 用 FlatHashMap/FlatHashSet / XXH3 `Hash<T>` / `PodVector`/`SmallVector` / `StringView`/`StringInterner`。
 - **内部实现可自由用 std**(非导出、非热路径);`std::expected` 是钦定错误模型。
 - **std 取代是否伤 SOTA?已逐条裁决**(coverage-map ①′):intrinsic 背书(`<bit>`→popcnt 等,objdump 证)/编译期零运行时/已实测赢/冷路径——无一落热路径。**新用 std 顶替热路径件前,先查该裁决或实测。**
 

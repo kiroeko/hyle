@@ -232,7 +232,7 @@ Status 并写 `out_index`；已经发布的元素地址不移动，调用者仍�
 
 | C++ 形状 | C/FFI 通路 |
 |---|---|
-| `SmallVector<T,N>` / `PodVector<T>` | `hyle_container_vector_*`：options 传 `element_size`/`alignment`，按值存储 trivially-copyable 元素。C ABI 不接收 C++ ctor/dtor callback；inline `N` 也不是稳定跨 ABI 属性 |
+| `SmallVector<T,N>` / `PodVector<T>` | `hyle_container_vector_*`：options 传 `item_size`/`item_alignment`（通常用 `HYLE_CONTAINER_VECTOR_OPTIONS_FOR`），按值存储 trivially-copyable 元素。C ABI 不接收 C++ ctor/dtor callback；inline `N` 也不是稳定跨 ABI 属性 |
 | `FlatHashMap<K,V>` | `hyle_container_hash_map_*`：C++ map 可拥有 non-trivial 值；C/FFI map 则按 options 中的 size/alignment 擦除 POD，hash/equality 由 callback+ctx 注入 |
 | `BoundedQueue<T>` / `ShardedQueue<T>` / `WorkStealingDeque<T>` / `WsFifoQueue<T>` | 对应 `hyle_container_*queue*` / `*_deque_*` opaque 句柄接受 `void*` payload；payload 生命周期归调用方 |
 | `ConcurrentVector<T>` | `hyle_container_concurrent_vector_*` append `void*`；调用方保存 typed payload |

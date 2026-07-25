@@ -118,7 +118,7 @@
 | **container·set** iterate(100k visit, Win) | 1.004 | （无当前 std 证书） | — | — | absl flat_hash_set | 1.916 | 1.91x | ✅ 真 set slot + group iterator；WSL 2.20x |
 | **container·vec** SmallVector 小 N | 0.41 | std::vector | 16.8 | 41x | absl::InlinedVector | 0.84–1.0 | 2.0–2.4x | ✅赢同款 small-vector SOTA(absl 侧 spread 大取范围) |
 | **container·vec** SmallVector 溢出(64>内联16) | 0.88 | std::vector | 4.70 | 5.3x | absl::InlinedVector | 2.40 | 2.7x | ✅赢同款(堆溢出/增长路径) |
-| **container·vec** CArray growth/read | 0.51/0.18 | std::vector(即 SOTA) | 0.75/0.18 | 1.48x/1.0x | std::vector(同 std,本身即 SOTA) | 0.75/0.18 | 1.48x/1.0x | ✅赢 growth(2026-07 grow 真改 reallocate;赢因 mimalloc 分配器质量非"原地无copy",详节纠错)/ ➖平 read |
+| **container·vec** PodVector growth/read | 0.51/0.18 | std::vector(即 SOTA) | 0.75/0.18 | 1.48x/1.0x | std::vector(同 std,本身即 SOTA) | 0.75/0.18 | 1.48x/1.0x | ✅赢 growth(2026-07 grow 真改 reallocate;赢因 mimalloc 分配器质量非"原地无copy",详节纠错)/ ➖平 read |
 | **container·str** StringBuf intern(100k/2k 唯一) | 28.86(Win) | 无锁 map floor | 19.78 | 0.685x | thread-safe peer(map+mutex) | 28.70 | **0.994x 平** | Win 平；WSL 0.772x、M4 0.934x，旧 1.17x 证书撤回 |
 | **container·str** StringBuf `intern_many` | 19.97(Win) | 无锁 map floor | 19.78 | **0.990x 平** | 同左 | 19.78 | 0.990x | M4 1.045x；WSL 0.732x，非全平台无条件赢 |
 | **container·str** StringBuf 1KiB unique growth | 101.58(Win) | std::unordered_set | 1813.93 | 17.86x | absl::flat_hash_set | 544.05 | **5.36x** | ✅ cached resident hash；WSL vs Absl 1.71x，M4 vs std 1.67x |

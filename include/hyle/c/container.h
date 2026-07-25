@@ -228,7 +228,7 @@ HYLE_CONTAINER_C_API hyle_status hyle_container_string_buf_intern_many(
 HYLE_CONTAINER_C_API uint32_t hyle_container_string_buf_size(
     const hyle_container_string_buf* buffer);
 
-/* Runtime-erased trivially-copyable vector (the CArray capability). */
+/* Runtime-erased trivially-copyable vector (the PodVector capability). */
 typedef struct hyle_container_vector_o hyle_container_vector;
 typedef struct hyle_container_vector_options {
   uint32_t struct_size;

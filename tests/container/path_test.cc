@@ -5,7 +5,7 @@
 #include <cstring>
 #include <string>
 
-#include "hyle/container/carray.h"
+#include "hyle/container/pod_vector.h"
 #include "hyle/container/string_ref.h"
 #include "hyle/mem/allocator.h"
 
@@ -182,7 +182,8 @@ TEST(Path, JoinArrayTruncates) {
 }
 
 TEST(Path, SplitAll) {
-  CArray<string_ref> parts = split_all("/usr/local/bin"_sr, system_allocator());
+  PodVector<string_ref> parts =
+      split_all("/usr/local/bin"_sr, system_allocator());
   ASSERT_EQ(parts.size(), 4u);
   EXPECT_TRUE(parts[0] == "/"_sr);
   EXPECT_TRUE(parts[1] == "usr"_sr);

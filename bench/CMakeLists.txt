@@ -465,7 +465,7 @@ target_link_libraries(hyle_queue_sota_bench PRIVATE hyle_container nanobench)
 hyle_apply_warnings(hyle_queue_sota_bench)
 
 # task #19 breadth + gap-fill #34/#35: the claim-bearing containers. SmallVector
-# (inline storage) and CArray (dynamic array) vs std::vector. The real
+# (inline storage) and PodVector (POD dynamic array) vs std::vector. The real
 # SmallVector peer is opt-in absl::InlinedVector (-DHYLE_BENCH_ABSL, wired in
 # the absl block below). SmallVector
 # defaults to the compile-time SystemAllocator and must close through hyle_mem,

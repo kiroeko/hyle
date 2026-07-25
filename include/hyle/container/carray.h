@@ -2,8 +2,10 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <initializer_list>
 #include <iterator>
+#include <memory>
 #include <type_traits>
 #include <utility>
 
@@ -13,7 +15,8 @@
 
 namespace hyle::container {
 
-// Intrusive dynamic array with a header-before-data layout (clay carray): the
+// Contiguous POD dynamic array with a header-before-data layout (from clay
+// carray): the
 // handle points AT the elements, and a CArrayHeader sits immediately before
 // them. So `arr[i]` is a single load with zero indirection and the element
 // pointer can be handed straight to a C API. A CArrayHeader-aware allocation
@@ -21,8 +24,8 @@ namespace hyle::container {
 //
 // Heavy logic is type-erased (carray_set_capacity_internal(void*, item_size,
 // ...)) and compiled ONCE into the DLL (conventions: type-erased core + typed
-// shell -> no per-T code bloat, one allocator path). The typed CArray<T> below
-// is a thin inline shell.
+// shell -> no per-T code bloat, one allocator path). The typed PodVector<T>
+// below is a thin inline shell.
 //
 // T must be trivially copyable (growth relocates via memcpy, like clay). Non-
 // trivial T (move-construct on grow) is deferred.
@@ -68,26 +71,48 @@ HYLE_CONTAINER_API void carray_free_internal(void* data,
 
 // ---- typed RAII shell -------------------------------------------------------
 template <class T>
-class CArray {
+class PodVector {
   static_assert(std::is_trivially_copyable_v<T>,
-                "CArray<T>: T must be trivially copyable (memcpy growth)");
+                "PodVector<T>: T must be trivially copyable (memcpy growth)");
 
  public:
   using value_type = T;
+  using size_type = std::uint64_t;
+  using difference_type = std::ptrdiff_t;
+  using reference = T&;
+  using const_reference = const T&;
+  using pointer = T*;
+  using const_pointer = const T*;
   using iterator = T*;
   using const_iterator = const T*;
+  using reverse_iterator = std::reverse_iterator<iterator>;
+  using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
-  explicit CArray(mem::Allocator alloc) noexcept : alloc_(alloc) {}
-  CArray(mem::Allocator alloc, std::initializer_list<T> init) : alloc_(alloc) {
-    reserve(init.size());
-    for (const T& v : init) push_back(v);
+  PodVector() noexcept : alloc_(mem::system_allocator()) {}
+  explicit PodVector(mem::Allocator alloc) noexcept : alloc_(alloc) {}
+  PodVector(std::initializer_list<T> init) : PodVector() {
+    append_copy(init.begin(), init.end());
   }
-  ~CArray() { detail::carray_free_internal(data_, sizeof(T)); }
+  PodVector(mem::Allocator alloc, std::initializer_list<T> init)
+      : alloc_(alloc) {
+    append_copy(init.begin(), init.end());
+  }
+  PodVector(const PodVector& other) : alloc_(other.alloc_) {
+    append_copy(other.begin(), other.end());
+  }
+  PodVector& operator=(const PodVector& other) {
+    if (this == &other) return *this;
+    PodVector replacement(alloc_);
+    replacement.append_copy(other.begin(), other.end());
+    *this = std::move(replacement);
+    return *this;
+  }
+  ~PodVector() { detail::carray_free_internal(data_, sizeof(T)); }
 
-  CArray(CArray&& o) noexcept : data_(o.data_), alloc_(o.alloc_) {
+  PodVector(PodVector&& o) noexcept : data_(o.data_), alloc_(o.alloc_) {
     o.data_ = nullptr;
   }
-  CArray& operator=(CArray&& o) noexcept {
+  PodVector& operator=(PodVector&& o) noexcept {
     if (this != &o) {
       detail::carray_free_internal(data_, sizeof(T));
       data_ = o.data_;
@@ -96,27 +121,61 @@ class CArray {
     }
     return *this;
   }
-  HYLE_DISABLE_COPY(CArray);
 
-  std::uint64_t size() const noexcept { return carray_size(data_); }
-  std::uint64_t capacity() const noexcept { return carray_capacity(data_); }
+  mem::Allocator allocator() const noexcept { return alloc_; }
+
+  size_type size() const noexcept { return carray_size(data_); }
+  size_type capacity() const noexcept { return carray_capacity(data_); }
   bool empty() const noexcept { return size() == 0; }
-  T* data() noexcept { return data_; }
-  const T* data() const noexcept { return data_; }
+  pointer data() noexcept { return data_; }
+  const_pointer data() const noexcept { return data_; }
 
-  T& operator[](std::uint64_t i) noexcept { return data_[i]; }
-  const T& operator[](std::uint64_t i) const noexcept { return data_[i]; }
-  T& back() noexcept { return data_[size() - 1]; }
+  reference operator[](size_type i) noexcept { return data_[i]; }
+  const_reference operator[](size_type i) const noexcept { return data_[i]; }
+  reference front() noexcept {
+    HYLE_FATAL_ASSERT(!empty());
+    return data_[0];
+  }
+  const_reference front() const noexcept {
+    HYLE_FATAL_ASSERT(!empty());
+    return data_[0];
+  }
+  reference back() noexcept {
+    HYLE_FATAL_ASSERT(!empty());
+    return data_[size() - 1];
+  }
+  const_reference back() const noexcept {
+    HYLE_FATAL_ASSERT(!empty());
+    return data_[size() - 1];
+  }
 
   iterator begin() noexcept { return data_; }
   iterator end() noexcept { return data_ ? data_ + size() : nullptr; }
   const_iterator begin() const noexcept { return data_; }
-  const_iterator end() const noexcept { return data_ ? data_ + size() : nullptr; }
+  const_iterator end() const noexcept {
+    return data_ ? data_ + size() : nullptr;
+  }
+  const_iterator cbegin() const noexcept { return begin(); }
+  const_iterator cend() const noexcept { return end(); }
+  reverse_iterator rbegin() noexcept { return reverse_iterator(end()); }
+  reverse_iterator rend() noexcept { return reverse_iterator(begin()); }
+  const_reverse_iterator rbegin() const noexcept {
+    return const_reverse_iterator(end());
+  }
+  const_reverse_iterator rend() const noexcept {
+    return const_reverse_iterator(begin());
+  }
+  const_reverse_iterator crbegin() const noexcept {
+    return const_reverse_iterator(cend());
+  }
+  const_reverse_iterator crend() const noexcept {
+    return const_reverse_iterator(cbegin());
+  }
 
-  void reserve(std::uint64_t n) {
+  void reserve(size_type n) {
     HYLE_FATAL_ASSERT(try_reserve(n));
   }
-  bool try_reserve(std::uint64_t n) noexcept {
+  bool try_reserve(size_type n) noexcept {
     return n <= capacity() || grow_to(n);
   }
 
@@ -124,7 +183,7 @@ class CArray {
     HYLE_FATAL_ASSERT(try_push_back(v));
   }
   bool try_push_back(const T& v) noexcept {
-    std::uint64_t s = size();
+    size_type s = size();
     if (s == capacity()) {
       // `v` may alias an element in this array. reallocate is allowed to move
       // the backing block, so preserve it before growth (std::vector supports
@@ -132,12 +191,29 @@ class CArray {
       const T copy = v;
       if (s > UINT64_MAX / 2) return false;
       if (!grow_to(s == 0 ? 4 : s * 2)) return false;
-      data_[s] = copy;
+      copy_one(data_ + s, copy);
     } else {
-      data_[s] = v;
+      copy_one(data_ + s, v);
     }
     carray_header(data_)->size = s + 1;
     return true;
+  }
+
+  iterator insert(const_iterator position, const T& value) {
+    const size_type index = position_index(position, true);
+    const T copy = value;
+    if (size() == capacity()) {
+      const size_type current = size();
+      HYLE_FATAL_ASSERT(current <= UINT64_MAX / 2);
+      reserve(current == 0 ? 4 : current * 2);
+    }
+    const size_type current = size();
+    std::memmove(static_cast<void*>(data_ + index + 1),
+                 static_cast<const void*>(data_ + index),
+                 static_cast<std::size_t>(current - index) * sizeof(T));
+    copy_one(data_ + index, copy);
+    carray_header(data_)->size = current + 1;
+    return data_ + index;
   }
 
   void pop_back() noexcept {
@@ -145,12 +221,97 @@ class CArray {
     carray_header(data_)->size = size() - 1;
   }
 
+  bool try_resize(size_type count)
+    requires std::is_default_constructible_v<T>
+  {
+    if (count > capacity() && !grow_to(count)) return false;
+    const T value{};
+    for (size_type i = size(); i < count; ++i) copy_one(data_ + i, value);
+    if (data_ != nullptr) carray_header(data_)->size = count;
+    return true;
+  }
+
+  bool try_resize(size_type count, const T& value) noexcept {
+    if (count > capacity()) {
+      const T copy = value;
+      if (!grow_to(count)) return false;
+      for (size_type i = size(); i < count; ++i) copy_one(data_ + i, copy);
+    } else {
+      for (size_type i = size(); i < count; ++i) copy_one(data_ + i, value);
+    }
+    if (data_ != nullptr) carray_header(data_)->size = count;
+    return true;
+  }
+
+  void resize(size_type count)
+    requires std::is_default_constructible_v<T>
+  {
+    HYLE_FATAL_ASSERT(try_resize(count));
+  }
+  void resize(size_type count, const T& value) {
+    HYLE_FATAL_ASSERT(try_resize(count, value));
+  }
+
+  iterator erase(const_iterator position) noexcept {
+    HYLE_FATAL_ASSERT(position >= cbegin() && position < cend());
+    return erase(position, position + 1);
+  }
+
+  iterator erase(const_iterator first, const_iterator last) noexcept {
+    const size_type index = position_index(first, true);
+    const size_type last_index = position_index(last, true);
+    HYLE_FATAL_ASSERT(index <= last_index);
+    const size_type count = last_index - index;
+    if (count == 0) return data_ == nullptr ? nullptr : data_ + index;
+    const size_type current = size();
+    std::memmove(static_cast<void*>(data_ + index),
+                 static_cast<const void*>(data_ + index + count),
+                 static_cast<std::size_t>(current - index - count) * sizeof(T));
+    carray_header(data_)->size = current - count;
+    return data_ + index;
+  }
+
   void clear() noexcept {
     if (data_) carray_header(data_)->size = 0;
   }
 
+  void swap(PodVector& other) noexcept {
+    using std::swap;
+    swap(data_, other.data_);
+    swap(alloc_, other.alloc_);
+  }
+
  private:
-  bool grow_to(std::uint64_t cap) noexcept {
+  static void copy_one(pointer destination, const T& source) noexcept {
+    std::memcpy(static_cast<void*>(destination),
+                static_cast<const void*>(std::addressof(source)), sizeof(T));
+  }
+
+  size_type position_index(const_iterator position, bool allow_end) const
+      noexcept {
+    if (data_ == nullptr) {
+      HYLE_FATAL_ASSERT(position == nullptr && allow_end);
+      return 0;
+    }
+    HYLE_FATAL_ASSERT(position >= cbegin());
+    HYLE_FATAL_ASSERT(allow_end ? position <= cend() : position < cend());
+    return static_cast<size_type>(position - cbegin());
+  }
+
+  void append_copy(const_pointer first, const_pointer last) {
+    if (first == last) return;
+    const auto distance = std::distance(first, last);
+    HYLE_FATAL_ASSERT(distance >= 0);
+    reserve(static_cast<size_type>(distance));
+    if (distance != 0) {
+      std::memcpy(static_cast<void*>(data_),
+                  static_cast<const void*>(std::addressof(*first)),
+                  static_cast<std::size_t>(distance) * sizeof(T));
+      carray_header(data_)->size = static_cast<size_type>(distance);
+    }
+  }
+
+  bool grow_to(size_type cap) noexcept {
     void* replacement = detail::carray_set_capacity_internal(
         data_, cap, sizeof(T), alignof(T), alloc_);
     if (replacement == nullptr) return false;
@@ -162,9 +323,9 @@ class CArray {
   mem::Allocator alloc_;
 };
 
-// Preferred name for the actual contract: byte-relocatable values, injected
-// allocator, and contiguous storage suitable for C interop.
 template <class T>
-using PodVector = CArray<T>;
+void swap(PodVector<T>& left, PodVector<T>& right) noexcept {
+  left.swap(right);
+}
 
 }  // namespace hyle::container

@@ -13,7 +13,7 @@ container 提供性能敏感的基础数据结构、借用字符串/路径算法
 | 需求 | 首选形状 | 不变量与代价 |
 |---|---|---|
 | 元素通常很少，希望避免首个 heap allocation | `SmallVector<T,N>` | owning、连续、支持非平凡/ move-only T；超过 N 后整体迁移 |
-| trivially-copyable 数据、运行时 allocator、C-friendly layout | `PodVector<T>`（实现名 `CArray<T>`） | 只做字节 relocation；不运行元素 ctor/dtor |
+| trivially-copyable 数据、C-friendly layout | `PodVector<T>` | 只做字节 relocation；默认 system allocator，也可注入运行时 allocator |
 | 普通长寿命非平凡动态序列 | `std::vector` + 可选 mem PMR adapter | HYLE 不造第二个通用 vector |
 | 高频 key→value lookup | `FlatHashMap<K,V>`（实现名 `SwissTable`） | flat slot、expected O(1)、引用在 grow/erase 后失效 |
 | 高频 membership / 去重 | `FlatHashSet<K>` | 真正 set slot，不为 empty mapped value 付空间；expected O(1) |
@@ -52,8 +52,11 @@ OOM 当 fatal。若序列经常远超 N，inline bytes 只会放大每个 owner�
 ### POD 与通用 vector 不要混用
 
 `PodVector<T>` 明确表示按字节 relocation 的容器，适合 packet descriptors、数值索引、
-C ABI 数据和自定义 HYLE allocator。它不适合 `std::string`、智能指针或自引用对象；这些
-类型用 `SmallVector` 或 `std::vector`。任何增长都会使旧 data/element pointer 失效。
+C ABI 数据和自定义 HYLE allocator。它默认即可构造，也能显式注入 allocator；拥有
+copy/move 值语义、位置 insert、范围 erase、resize 与连续/反向迭代。它不适合
+`std::string`、智能指针或自引用对象；这些类型用 `SmallVector` 或 `std::vector`。
+任何增长都会使旧 data/element pointer 失效。普通操作把 OOM 当 fatal；需要恢复时先用
+`try_reserve`，push/resize 也各有 `try_` 入口。
 
 ## FlatHashMap 与 FlatHashSet
 

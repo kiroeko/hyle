@@ -248,7 +248,7 @@ class RecordedLaunch {
 // The ergonomic launch: pass kernel arguments DIRECTLY and in source order, including
 // mixed pointer/scalar signatures such as `launch(s,k,cfg,a,n,b,alpha)`.
 // A variadic fold classifies each arg at COMPILE TIME (conventions §7 typed shell over a
-// type-erased C-ABI core, same as CArray): a `Buffer` -> its native_handle() appended to an
+// type-erased C-ABI core, same as PodVector): a `Buffer` -> its native_handle() appended to an
 // ordered buffer list (position = binding index); anything trivially-copyable -> memcpy'd
 // into a naturally-aligned byte blob (with a {offset,size} descriptor) and emits an
 // argument-order table so CUDA reconstructs the exact original signature. Vulkan pushes

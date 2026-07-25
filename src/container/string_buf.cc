@@ -7,7 +7,7 @@
 #include <new>
 #include <optional>
 
-#include "hyle/container/carray.h"
+#include "hyle/container/pod_vector.h"
 #include "hyle/container/swiss_table.h"
 #include "hyle/platform/cpu.h"
 
@@ -83,7 +83,7 @@ struct alignas(64) Shard {
 
   std::mutex mu;
   SwissTable<InternKey, Entry*, InternHash, InternEq, mem::Allocator> by_string;
-  CArray<IdSlot> by_id;
+  PodVector<IdSlot> by_id;
   std::uint32_t free_head = kNoSlot;
   std::uint32_t live_size = 0;
   FreeBlock* free_blocks[kSlabClassCount]{};
