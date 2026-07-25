@@ -35,7 +35,7 @@ math ──▶ users（当前无生产下游）
 | `error` | — | — | 全库可恢复失败值根 |
 | `obs-runtime` (`hyle_obs`) | — | — | log/C ABI 产品；与 trace build seam 分开 |
 | `math` | —（INTERFACE） | — | 独立公开标量助手，当前无生产模块消费者 |
-| `platform` | error | — | OS/thread/VM/fs/CPU 机制 |
+| `platform` | error | — | OS/thread/VM/fs/CPU 机制；`hyle/platform.h` 宏头本身零链接 |
 | `mem` | error、platform | mimalloc | `util::SpinLock`、obs trace hook |
 | `time` | error | — | native timer 借 `core/intrusive_list`；不链接 platform/container |
 | `container` | mem | platform | 公开 `ConcurrentVector` 借 `util::SpinLock` |

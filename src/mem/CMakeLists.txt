@@ -15,7 +15,11 @@ set(_mi "${PROJECT_SOURCE_DIR}/third_party/mimalloc")
 add_library(mimalloc_static STATIC "${_mi}/src/static.c")
 target_include_directories(mimalloc_static PUBLIC
   "$<BUILD_INTERFACE:${_mi}/include>")
-set_target_properties(mimalloc_static PROPERTIES POSITION_INDEPENDENT_CODE ON)
+set_target_properties(mimalloc_static PROPERTIES
+  POSITION_INDEPENDENT_CODE ON
+  C_VISIBILITY_PRESET hidden
+  CXX_VISIBILITY_PRESET hidden
+  VISIBILITY_INLINES_HIDDEN YES)
 set_target_properties(mimalloc_static PROPERTIES EXPORT_NAME "_mimalloc")
 # MSVC's C compiler chokes on mimalloc's atomic macros (they pass a TYPE arg;
 # C2275). mimalloc is built to compile as C++ there (MI_USE_CXX: std::atomic,

@@ -32,9 +32,10 @@ else()
 endif()
 
 # Direct target dependencies. Header-only/cross-cutting seams that do not need a
-# binary target (core headers, util-core headers, hyle_trace) are intentionally
-# absent. Complete io/compute/graph products include sched; sched in turn closes
-# the runtime chain.
+# binary target (core headers, util-core headers, hyle/platform.h compile-time
+# environment macros, hyle_trace) are intentionally absent. Complete
+# io/compute/graph products include sched; sched in turn closes the runtime
+# chain.
 set(_HYLE_DEPS_PLATFORM error)
 set(_HYLE_DEPS_TIME error)
 set(_HYLE_DEPS_MEM error platform)

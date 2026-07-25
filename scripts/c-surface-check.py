@@ -35,7 +35,12 @@ def binary_symbols(
             )
             return set(
                 re.findall(
-                    r"^.*\bExternal\s+\|\s+(hyle_[a-z0-9_]+)\s*$",
+                    # Match definitions only. Static objects legitimately carry
+                    # UNDEF references to their dependency modules; counting
+                    # those as this archive's own surface both disagrees with
+                    # nm --defined-only on Unix and hides dependency direction.
+                    r"^(?!.*\bUNDEF\b).*\bExternal\s+\|\s+"
+                    r"([A-Za-z_][A-Za-z0-9_]*)\s*$",
                     output,
                     flags=re.MULTILINE,
                 )
@@ -46,7 +51,7 @@ def binary_symbols(
         return set(
             re.findall(
                 r"^\s+\d+\s+[0-9A-F]+\s+[0-9A-F]+\s+"
-                r"(hyle_[a-z0-9_]+)(?:\s+=.*)?\s*$",
+                r"([A-Za-z_][A-Za-z0-9_]*)(?:\s+=.*)?\s*$",
                 output,
                 flags=re.MULTILINE,
             )
@@ -56,21 +61,23 @@ def binary_symbols(
         raise RuntimeError("nm is required to audit a Unix shared library")
     if sys.platform == "darwin":
         output = subprocess.check_output([nm, "-gU", str(library)], text=True)
-        prefix = "_hyle_"
+        strip_c_prefix = True
     elif static:
         output = subprocess.check_output(
             [nm, "-g", "--defined-only", str(library)], text=True
         )
-        prefix = "hyle_"
+        strip_c_prefix = False
     else:
         output = subprocess.check_output(
             [nm, "-D", "--defined-only", str(library)], text=True
         )
-        prefix = "hyle_"
+        strip_c_prefix = False
     return {
-        fields[-1][1:] if prefix.startswith("_") else fields[-1]
+        fields[-1][1:]
+        if strip_c_prefix and fields[-1].startswith("_")
+        else fields[-1]
         for line in output.splitlines()
-        if (fields := line.split()) and fields[-1].startswith(prefix)
+        if (fields := line.split())
     }
 
 
@@ -91,6 +98,7 @@ def main() -> int:
     parser.add_argument("--library", type=Path)
     parser.add_argument("--symbol-tool", type=Path)
     parser.add_argument("--static", action="store_true")
+    parser.add_argument("--forbid-prefix", action="append", default=[])
     parser.add_argument("--print-declarations", action="store_true")
     args = parser.parse_args()
     if re.fullmatch(r"[a-z][a-z0-9_]*", args.module) is None:
@@ -136,9 +144,12 @@ def main() -> int:
         ok = False
 
     if args.library is not None:
+        all_binary_symbols = binary_symbols(
+            args.library, args.symbol_tool, args.static
+        )
         actual_exports = {
             name
-            for name in binary_symbols(args.library, args.symbol_tool, args.static)
+            for name in all_binary_symbols
             if name.startswith("hyle_")
         }
         ok = report_set(
@@ -146,6 +157,17 @@ def main() -> int:
             manifest,
             actual_exports,
         ) and ok
+        for prefix in args.forbid_prefix:
+            forbidden = sorted(
+                name for name in all_binary_symbols if name.startswith(prefix)
+            )
+            if forbidden:
+                print(
+                    f"Forbidden binary prefix '{prefix}':",
+                    *forbidden,
+                    sep="\n  ",
+                )
+                ok = False
 
     return 0 if ok else 1
 

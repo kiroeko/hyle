@@ -440,19 +440,20 @@ endif() # TARGET hyle_sched
 # own and lay the ns/op side by side (see docs/architecture/performance.md).
 if(TARGET hyle_container)
 add_executable(hyle_queue_sota_bench container/queue_sota_bench.cc)
-# BoundedQueue/ShardedQueue default to compile-time SystemAllocator -> inline mi_malloc
-# into this exe; link mimalloc_static (symbols are internal to hyle_mem.dll).
-target_link_libraries(hyle_queue_sota_bench PRIVATE hyle_container nanobench mimalloc_static)
+# BoundedQueue/ShardedQueue default to compile-time SystemAllocator. A shared
+# build reaches the private backend through hyle_mem; a static build inherits
+# mimalloc as hyle_mem's link-only implementation dependency.
+target_link_libraries(hyle_queue_sota_bench PRIVATE hyle_container nanobench)
 hyle_apply_warnings(hyle_queue_sota_bench)
 
 # task #19 breadth + gap-fill #34/#35: the claim-bearing containers. SmallVector
 # (inline storage) and CArray (dynamic array) vs std::vector. The real
 # SmallVector peer is opt-in absl::InlinedVector (-DHYLE_BENCH_ABSL, wired in
 # the absl block below). SmallVector
-# defaults to the compile-time SystemAllocator which INLINES mi_malloc into THIS
-# exe -> link mimalloc_static directly (symbols internal to hyle_mem.dll).
+# defaults to the compile-time SystemAllocator and must close through hyle_mem,
+# not a benchmark-only vendor link.
 add_executable(hyle_container_misc_bench container/container_misc_bench.cc)
-target_link_libraries(hyle_container_misc_bench PRIVATE hyle_container hyle_mem nanobench mimalloc_static)
+target_link_libraries(hyle_container_misc_bench PRIVATE hyle_container hyle_mem nanobench)
 hyle_apply_warnings(hyle_container_misc_bench)
 endif()
 

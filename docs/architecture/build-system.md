@@ -38,9 +38,11 @@ compute  -> error + platform + mem + simd + sched
 graph    -> error + mem + container + sched
 ```
 
-箭头右侧是 target 依赖闭包，不重复 core/util-core 纯头和 `hyle_trace` 横切 gate。`all` 是完整
-产品默认值；逗号与分号都可分隔多个根。未知组件在 configure 阶段直接失败，配置日志打印
-requested/resolved 清单，因此一次构建“组装了什么”可审计。
+箭头右侧是 target 依赖闭包，不重复 core/util-core 纯头、只提供 OS/架构/编译器宏的
+`hyle/platform.h` 和 `hyle_trace` 横切 gate。包含 `hyle/platform.h` 只是零链接代价的编译环境
+依赖，不等于链接 `hyle::platform`；例如 time 的 native clock 实现用它选择 OS 分支，但 time 的
+二进制闭包仍然只有 error。`all` 是完整产品默认值；逗号与分号都可分隔多个根。未知组件在
+configure 阶段直接失败，配置日志打印 requested/resolved 清单，因此一次构建“组装了什么”可审计。
 
 组件选择同时控制依赖发现：不选 `io` 就不探测 OpenSSL、不取得 nghttp2；不选 `compute`
 就不探测 CUDA，也不取得 ggml/Vulkan-Headers/volk/glslang。第三方默认写入当前 HYLE build
@@ -117,10 +119,10 @@ cross compile 和三平台完整迁移矩阵的最终证书只见 build/package 
 平台 preset 只组合开发入口，不重新定义产品：Linux/macOS 不锁 generator，Windows 明分 CMake
 可直接管理的 VS 2022 与“已选择 MSVC + Ninja”两条路径；后者由 `scripts/hyle-windows.ps1` 经
 vswhere 发现现有工具链并临时导入环境。CI 对 Windows/Linux/macOS 运行 core 验证面，并在每个平台
-从空目录制作 shared/static mem SDK，再由 pure-C error+mem `find_package` consumer 真运行；shared
-形状机械覆盖 `mem -> platform -> error` 的传递 shared-object lookup，static 形状覆盖 mimalloc
-link-only archive 与 C++ link driver。simd、CUDA、compute/io 全矩阵不塞进每提交 smoke，仍属
-发布检查。
+从空目录制作 shared/static mem SDK，再由只链接 `hyle::mem` 的 pure-C error+mem consumer 与 C++
+`SystemAllocator` consumer 真运行；shared 形状机械覆盖 `mem -> platform -> error` 的传递
+shared-object lookup，并证明公开 inline 形状不泄漏 mimalloc 符号，static 形状覆盖 mimalloc
+link-only archive 与 C++ link driver。simd、CUDA、compute/io 全矩阵不塞进每提交 smoke，仍属发布检查。
 
 `cmake/toolchains/linux-aarch64-gcc.cmake` 是整项目交叉编译的参考入口：compiler/sysroot 属工具链，
 host program 与 target library/header/package 搜索严格分开，`CMAKE_TRY_COMPILE_TARGET_TYPE` 设为

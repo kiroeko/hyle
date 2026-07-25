@@ -66,7 +66,7 @@ HYLE 的每条纪律都回溯到四个**约束源**：① ABI 稳定 ② 编译�
 - **vtable 结构体 `xxx_api_t`**：纯函数指针结构体，`struct { inst* ; ret(*fn)(handle*, ...); }`；用 designated initializer 填表。
 - **不透明实例**：只前向声明，后缀约定 **`_o`**（实例）/ **`_t`**（vtable/值类型）；调用方持指针、不知布局。
 - **make/destroy 工厂**：`make_X()/destroy_X()` 配对，分配责任锁在 DLL 内（防 CRT 堆不匹配），禁客户端 `new/delete`。可返回带自定义 deleter 的 `unique_ptr`。
-- **分配显式可控,默认零开销**:默认走编译期 `SystemAllocator`(可内联直调 mimalloc,无运行时间接);需自定义分配器(arena/mock/跨 DLL)时**显式 opt-in 注入** `Allocator` 句柄。无隐藏全局堆。注入是能力非强制默认(详见 mem-design「分配器分层」)。
+- **分配显式可控,默认零间接**:默认走编译期 `SystemAllocator`（static/source 内联直达 mimalloc；shared 经 `hyle_mem` 一次 direct import，不泄漏 vendor ABI）；需自定义分配器(arena/mock/跨 DLL)时**显式 opt-in 注入** `Allocator` 句柄。无隐藏全局堆。注入是能力非强制默认(详见 mem-design「分配器分层」)。
 - **`extern "C"` 只在真需要 C 链接的自由函数上用**——别误以为"包个 extern C 就算合规"，clay 的 ABI 稳定主要靠 vtable+不透明指针，不是 extern "C"。
 
 **WHY**：C++ 无稳定 ABI（mangling/模板/异常跨边界）；vtable+不透明指针是同时满足"跨编译器稳定 + 可运行时替换实现 + 纯 C 可调"的唯一解。

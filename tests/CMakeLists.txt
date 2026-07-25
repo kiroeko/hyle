@@ -44,13 +44,20 @@ function(hyle_add_c_surface_test module)
   if(HYLE_STATIC)
     set(_static_arg --static)
   endif()
+  set(_private_symbol_args "")
+  if("${module}" STREQUAL "mem" AND NOT HYLE_STATIC)
+    list(APPEND _private_symbol_args
+      --forbid-prefix mi_
+      --forbid-prefix _mi_)
+  endif()
   add_test(NAME hyle_${module}_c_surface_test
            COMMAND "${Python3_EXECUTABLE}"
                    "${HYLE_SOURCE_DIR}/scripts/c-surface-check.py"
                    --module "${module}"
                    --library "$<TARGET_FILE:hyle_${module}>"
                    --symbol-tool "${_hyle_c_symbol_tool}"
-                   ${_static_arg})
+                   ${_static_arg}
+                   ${_private_symbol_args})
   hyle_ensure_module_test_target(${module})
   add_dependencies(hyle_${module}_tests hyle_${module})
 endfunction()
@@ -79,7 +86,7 @@ hyle_add_c_test(core core/c_core_test.c)
 hyle_add_test(error SOURCES error/status_test.cc)
 # close-01 sample: pure C TU (C compiler) linking only the C ABI header.
 hyle_add_c_test(error error/c_error_test.c)
-hyle_add_c_test(platform platform/c_platform_test.c hyle_error)
+hyle_add_c_test(platform platform/c_platform_test.c)
 
 # close-01: pure C TU linking only the mem C ABI header (hyle/c/mem.h -> hyle_mem).
 hyle_add_c_test(mem mem/c_mem_test.c)
@@ -115,11 +122,11 @@ hyle_add_c_test(simd simd/c_simd_test.c)
 hyle_add_test(obs SOURCES obs/log_test.cc)
 hyle_add_c_test(obs obs/c_obs_test.c)
 hyle_add_test(platform SOURCES platform/wait_test.cc platform/thread_test.cc platform/dynlib_test.cc platform/fs_test.cc platform/virtual_memory_test.cc platform/numa_test.cc platform/mapped_file_test.cc platform/cpu_test.cc platform/convenience_test.cc)
-hyle_add_test(mem SOURCES mem/api_surface_test.cc mem/allocator_test.cc mem/shared_pool_test.cc mem/pool_stack_test.cc mem/alignment_test.cc mem/pmr_test.cc mem/growable_pool_test.cc mem/fiber_stack_test.cc mem/stats_test.cc mem/hugepage_test.cc mem/numa_test.cc DEPS hyle_platform mimalloc_static)
+hyle_add_test(mem SOURCES mem/api_surface_test.cc mem/allocator_test.cc mem/shared_pool_test.cc mem/pool_stack_test.cc mem/alignment_test.cc mem/pmr_test.cc mem/growable_pool_test.cc mem/fiber_stack_test.cc mem/stats_test.cc mem/hugepage_test.cc mem/numa_test.cc)
 hyle_add_test(util SOURCES util/ref_counted_test.cc util/scope_guard_test.cc util/type_name_test.cc util/registry_test.cc util/random_test.cc util/spin_lock_test.cc util/demangle_test.cc util/c_util_concurrency_test.cc DEPS hyle_container)
 hyle_add_c_test(util util/c_util_test.c)
 hyle_add_test(time SOURCES time/header_test.cc time/clock_test.cc
-  time/timer_queue_test.cc time/common_timeout_queue_test.cc DEPS hyle_platform)
+  time/timer_queue_test.cc time/common_timeout_queue_test.cc)
 hyle_add_c_test(time time/c_time_test.c)
 hyle_add_test(io SOURCES io/proactor_test.cc)
 hyle_add_c_test(io io/c_io_test.c hyle_mem)
@@ -189,7 +196,7 @@ if(HYLE_COMPUTE_VULKAN_ENABLED)
                        ENVIRONMENT "HYLE_VK_PIPELINE_CACHE=${CMAKE_CURRENT_BINARY_DIR}/hyle_vk_缓存.bin"
                        FIXTURES_REQUIRED VK_PIPE_CACHE)
 endif()
-hyle_add_test(container SOURCES container/bounded_queue_test.cc container/sharded_queue_test.cc container/work_stealing_deque_test.cc container/ws_fifo_queue_test.cc container/hash_test.cc container/carray_test.cc container/c_container_concurrency_test.cc container/small_vector_test.cc container/probe_test.cc container/swiss_table_test.cc container/string_ref_test.cc container/string_buf_test.cc container/concurrent_vector_test.cc container/string_algo_test.cc container/path_test.cc DEPS hyle_platform mimalloc_static)
+hyle_add_test(container SOURCES container/bounded_queue_test.cc container/sharded_queue_test.cc container/work_stealing_deque_test.cc container/ws_fifo_queue_test.cc container/hash_test.cc container/carray_test.cc container/c_container_concurrency_test.cc container/small_vector_test.cc container/probe_test.cc container/swiss_table_test.cc container/string_ref_test.cc container/string_buf_test.cc container/concurrent_vector_test.cc container/string_algo_test.cc container/path_test.cc DEPS hyle_platform)
 hyle_add_c_test(container container/c_container_test.c)
 # graph-01 (step-1): task-dependency DAG incremental recompute. Pure CPU, serial evaluate
 # -- no sched dep yet (parallel node execution is step-2).

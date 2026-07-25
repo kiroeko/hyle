@@ -87,7 +87,7 @@ blocking borrow 不进入 `mem/` 基础池。等待策略依赖 fiber/condition/
 
 | 层 | 当前形状 | 产品处置 |
 |---|---|---|
-| `SystemAllocator` | 编译期无状态、header-inline 直调 mimalloc | 保留；修 typed count 乘法回绕 |
+| `SystemAllocator` | 编译期无状态；static/source 直调 mimalloc，shared 经 mem direct-import seam | 保留；修 typed count 乘法回绕且不向 shared consumer 泄漏 vendor 符号 |
 | `Allocator` | C++ 值句柄 `{alloc, free, realloc, state}` | 保留；内部运行时注入脊；C ABI 只在对外 shim 映射 |
 | `PmrResource` | `Allocator` → `std::pmr::memory_resource` | 保留；构造 assert valid，equality 比较完整三函数 + state |
 | `AlignedPmrResource` | 可选 minimum base alignment 的 PMR adapter | 保留；对应 oneTBB `cache_aligned_resource` 的用户需求，不给普通 PMR 强加 cache policy |

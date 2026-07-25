@@ -93,7 +93,7 @@ int main() {
         pa.deallocate_bytes(p, sz);
       }
     });
-    b.run("HYLE SystemAllocator (compile-time, inlined)", [&] {
+    b.run("HYLE SystemAllocator (default compile-time binding)", [&] {
       for (int i = 0; i < kAllocs; ++i) {
         void* p = hyle::mem::SystemAllocator::allocate(size_at(i));
         ankerl::nanobench::doNotOptimizeAway(p);

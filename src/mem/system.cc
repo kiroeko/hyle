@@ -1,14 +1,16 @@
 #include "hyle/mem/allocator.h"
 #include "hyle/mem/hugepage.h"
 
+#include <mimalloc.h> // PRIVATE include -- mi_* types never leak to a header
+
+#include "hyle/mem/system_inline.h"
+
 #include "hyle/macros.h"
 #include "hyle/obs/trace.h"
 
 #include <cerrno>
 #include <cstdio>
 #include <limits>
-
-#include <mimalloc.h> // PRIVATE include -- mi_* types never leak to a header
 
 namespace hyle::mem {
 namespace {
@@ -21,6 +23,33 @@ std::size_t normalize_alignment(std::size_t a) noexcept {
   HYLE_FATAL_ASSERT((a & (a - 1)) == 0);
   return a;
 }
+
+} // namespace
+
+#if !defined(HYLE_STATIC)
+namespace detail {
+
+void *system_backend_allocate(std::size_t size,
+                              std::size_t alignment) noexcept {
+  return alignment <= kDefaultAlignment
+             ? mi_malloc(size)
+             : mi_malloc_aligned(size, normalize_alignment(alignment));
+}
+
+void system_backend_deallocate(void *ptr) noexcept { mi_free(ptr); }
+
+void *system_backend_reallocate(void *ptr, std::size_t new_size,
+                                std::size_t alignment) noexcept {
+  return alignment <= kDefaultAlignment
+             ? mi_realloc(ptr, new_size)
+             : mi_realloc_aligned(ptr, new_size,
+                                  normalize_alignment(alignment));
+}
+
+} // namespace detail
+#endif
+
+namespace {
 
 // mimalloc backing (mem-design decision: borrow a battle-tested general malloc;
 // self-rolling one is wasted effort and necessarily worse). Wrapped behind the
@@ -48,9 +77,7 @@ void *system_alloc(void * /*state*/, std::size_t size,
   // at all -- mi_malloc already guarantees >= 16-byte. Skip normalize_alignment
   // (its assert + bit test) for the hot path; only over-aligned requests pay
   // it.
-  void *pointer = alignment <= kDefaultAlignment
-                      ? mi_malloc(size)
-                      : mi_malloc_aligned(size, normalize_alignment(alignment));
+  void *pointer = detail::system_backend_allocate(size, alignment);
   if (pointer != nullptr) {
     HYLE_TRACE_ALLOC_NAMED(pointer, size, "hyle.system");
   }
@@ -61,7 +88,7 @@ void system_free(void * /*state*/, void *ptr, std::size_t /*size*/,
                  std::size_t /*alignment*/) noexcept {
   if (ptr != nullptr) {
     HYLE_TRACE_FREE_NAMED(ptr, "hyle.system");
-    mi_free(ptr); // mi_free recovers size/alignment from the block
+    detail::system_backend_deallocate(ptr);
   }
 }
 
@@ -70,7 +97,7 @@ void *system_realloc(void * /*state*/, void *ptr, std::size_t /*old_size*/,
   if (new_size == 0) { // realloc-to-0 == free
     if (ptr != nullptr) {
       HYLE_TRACE_FREE_NAMED(ptr, "hyle.system");
-      mi_free(ptr);
+      detail::system_backend_deallocate(ptr);
     }
     return nullptr;
   }
@@ -78,10 +105,8 @@ void *system_realloc(void * /*state*/, void *ptr, std::size_t /*old_size*/,
   // original block left intact (C realloc contract) -- matches our vtable.
   // Both forms accept nullptr as allocate; the default-aligned path therefore
   // needs neither alignment normalization nor a separate pointer branch.
-  void *result = alignment <= kDefaultAlignment
-                     ? mi_realloc(ptr, new_size)
-                     : mi_realloc_aligned(ptr, new_size,
-                                          normalize_alignment(alignment));
+  void *result =
+      detail::system_backend_reallocate(ptr, new_size, alignment);
   if (result != nullptr) {
     if (ptr != nullptr)
       HYLE_TRACE_FREE_NAMED(ptr, "hyle.system");

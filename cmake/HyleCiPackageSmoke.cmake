@@ -1,8 +1,9 @@
 # Cross-platform binary-package smoke used by CI and maintainers. It creates
-# shared and static mem SDKs, then configures/builds/runs one source-independent
-# pure-C error+mem consumer against each install prefix.  Shared mem exercises
-# the mem -> platform -> error loader chain; static mem exercises the private
-# mimalloc archive and C++ link-driver closure. Keep this bounded: full
+# shared and static mem SDKs, then configures/builds/runs source-independent C
+# and C++ consumers against each install prefix. Shared mem exercises the mem
+# -> platform -> error loader chain and proves SystemAllocator does not leak
+# private mimalloc symbols; static mem exercises the link-only mimalloc archive
+# and C++ link-driver closure. Keep this bounded: full
 # simd/compute/io delivery matrices are release checks, not per-commit fan
 # heaters.
 
@@ -61,15 +62,15 @@ foreach(_linkage IN ITEMS shared static)
   _hyle_smoke_run("install ${_linkage} SDK"
     "${CMAKE_COMMAND}" --install "${_build}" --config Release)
 
-  _hyle_smoke_run("configure ${_linkage} pure-C consumer"
+  _hyle_smoke_run("configure ${_linkage} installed consumers"
     "${CMAKE_COMMAND}" -S "${HYLE_SOURCE_DIR}/samples/05_installed_c"
     -B "${_consumer}"
     ${_hyle_generator_args}
     -DCMAKE_BUILD_TYPE=Release
     -DCMAKE_PREFIX_PATH=${_prefix})
-  _hyle_smoke_run("build ${_linkage} pure-C consumer"
+  _hyle_smoke_run("build ${_linkage} installed consumers"
     "${CMAKE_COMMAND}" --build "${_consumer}" --config Release --parallel 2)
-  _hyle_smoke_run("run ${_linkage} pure-C consumer"
+  _hyle_smoke_run("run ${_linkage} installed consumers"
     "${CMAKE_CTEST_COMMAND}" --test-dir "${_consumer}" -C Release
     --output-on-failure)
 

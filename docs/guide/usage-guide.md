@@ -294,7 +294,7 @@ hyle::simd::hypot_in_range_f32_batch(a, b, dst, n);
 ## 3. 各就绪模块最小用法
 
 ### 3.1 mem —— 两层分配器模型（默认零开销，注入 opt-in）
-**默认不用传 allocator**:头内联容器(`SmallVector`/`BoundedQueue`/`ShardedQueue`/`WsFifoQueue`/`WorkStealingDeque`/`ConcurrentVector`)默认参 `mem::SystemAllocator`——编译期绑定、内联直调 mimalloc、零接缝(`[[no_unique_address]]` 不占字节)。要 arena/mock/跨 DLL 才**显式 opt-in** 传运行时 `Allocator` 句柄。
+**默认不用传 allocator**:头内联容器(`SmallVector`/`BoundedQueue`/`ShardedQueue`/`WsFifoQueue`/`WorkStealingDeque`/`ConcurrentVector`)默认参 `mem::SystemAllocator`——编译期绑定、无函数指针接缝(`[[no_unique_address]]` 不占字节)；static/source 形状内联直达 mimalloc，shared SDK 经 `hyle_mem` 一次直接 import 且不泄漏 vendor ABI。要 arena/mock/跨 DLL 才**显式 opt-in** 传运行时 `Allocator` 句柄。
 直接用 mem/ API 或 type-erased 容器(`SwissTable`/`CArray`/`string_buf`,出线核服务所有 T,按设计收运行时句柄)时,传 `system_allocator()`(mimalloc backing):
 ```cpp
 #include "hyle/mem/allocator.h"
@@ -315,7 +315,7 @@ mem/ 提供一组**专用分配器**,各自为一种分配模式设计。**选�
 
 | 你的场景 | 用 | 为什么 / 别用啥 |
 |---|---|---|
-| **通用大小、单纯想要快 malloc** | `system_allocator()`(SystemAllocator) | 内联直调 mimalloc,零接缝。不确定用啥就用它。 |
+| **通用大小、单纯想要快 malloc** | `SystemAllocator` / `system_allocator()` | 默认前者：编译期 direct binding；需要运行时注入形状才取后者句柄。不确定用啥就用 `SystemAllocator`。 |
 | **一个阶段内分配很多、整批一次性释放**(一次 taskgraph pass、一个请求的临时对象) | `Region` / `PooledRegion` / `StackAllocator` | 纯指针 bump，**无 per-object free**，clear/reset/析构整批释放；分别是 growable owned、借一个 SharedPool block、owned slab + mark/rewind。 |
 | **单线程、同一种固定大小对象反复 alloc/free**(对象池) | `GrowablePool<T>` | 单线程 free-list、无原子、按需增长。这是单线程对象池的正解。 |
 | **多线程共享有界固定池，容量必须准确** | `SharedPool` / `ObjectPool<T>` | **硬容量默认**：无 TLS 隐藏，completed free 立即共享；稳定双快照避免分片扫描假耗尽。正常 32-bit tagged CAS，tag 饱和的 shard 永久切入 serialized fallback，绝不回绕。 |

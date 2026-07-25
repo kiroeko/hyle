@@ -21,7 +21,7 @@ namespace hyle::container {
 // T (move-relocate) is deferred -- the scheduler's uses (handles/pointers/PODs)
 // are all trivial.
 //
-// Alloc defaults to the compile-time SystemAllocator (stateless, inlines to mi_malloc,
+// Alloc defaults to the compile-time SystemAllocator (stateless, direct-call dispatch,
 // zero seam tax -- and [[no_unique_address]] gives it ZERO bytes in the object). Pass a
 // runtime mem::Allocator (SmallVector<T,N,mem::Allocator>) to opt into injection (arena,
 // mock, cross-DLL). Either way the body is identical (alloc_.allocate(...)).

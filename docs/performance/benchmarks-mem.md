@@ -12,7 +12,7 @@
 | 原缺口 | `2cbc307` 关闭证据 | 结论 |
 |---|---|---|
 | M4 PooledRegion/Stack | 对称 8192×64B batch；interactive 为 1.023x / 1.023x，utility 为 1.028x / 1.026x，均对 PMR sign WIN | 已关闭；旧 0.67x 作废 |
-| realloc 分层 | direct `SystemAllocator` 对 raw mi：Win 1.005x TIE、Linux 0.989x TIE、M4 1.018x WIN；runtime vtable 单列 | 默认路径同档；x86 动态多态税显式可见 |
+| realloc 分层 | static/source direct `SystemAllocator` 对 raw mi：Win 1.005x TIE、Linux 0.989x TIE、M4 1.018x WIN；runtime vtable 单列 | 合并形状同档；x86 动态多态税显式可见 |
 | adapter composition | direct、Quota、counters-only Stats、Quota→Stats 三平台独立量化 | 默认路径零装饰税；策略成本由用户按需购买 |
 | FiberStackPool | 真实 `Scheduler` 每 batch 创建/运行/销毁 32 fibers，缓存与直接 guarded VM 比较 p50/p95/p99 | 三平台、M4 双 QoS 全 percentile sign WIN |
 
@@ -35,15 +35,27 @@ observation 栈状态移入 noinline exhaustion 冷路（MSVC shipping codegen �
 
 ## 1. 通用路径（`hyle_mem_bench`）
 
+2026-07-25 的底座依赖审计发现旧 benchmark 给可执行文件手工链接了 `mimalloc_static`，所以
+“SystemAllocator 内联”数字真实代表 **static/source 合并形状**，不能冒充 shared SDK consumer。
+shared 公开头现经 `hyle_mem` 的一次 direct-import seam 进入同一 mimalloc backend，不再要求用户
+链接或加载第二份 vendor 实现。Windows shipping 诊断为 churn 8.22 ns vs executable 内 raw mi
+7.75 ns（0.943x，约 6% DSO 边界上界），realloc 70.66 vs 67.64 ns（0.957x）；同轮 vtable 为
+8.08/72.45 ns。这个单机诊断用于诚实揭示交付形状，不是三平台 sign 证书，也不是同为 shared
+mimalloc 的对称对手；补齐三平台 shared-vs-shared 证书前，不宣称 shared 行已平 mi SOTA。
+
 | 场景 | Win | WSL | M4 | 判定 |
 |---|---|---|---|---|
-| **SystemAllocator 内联** vs 裸 mi churn | 7.93 / 7.86 → **0.996 TIE** | 8.04 / 8.04 → **0.99 TIE** | 7.77 / 7.91 → **1.00 TIE** | ➖ 三平台平 mimalloc |
+| **SystemAllocator static/source direct** vs 裸 mi churn | 7.93 / 7.86 → **0.996 TIE** | 8.04 / 8.04 → **0.99 TIE** | 7.77 / 7.91 → **1.00 TIE** | ➖ 合并形状三平台平 mimalloc |
+| **SystemAllocator shared direct-import** vs exe 内裸 mi churn | 8.22 / 7.75 → **0.943** | 待重签 | 待重签 | ⚠️ Windows 诊断：约 6% DSO seam 上界；待同链接模型三平台证书 |
 | **vtable** vs 裸 mi churn | 8.67 / 7.86 → **0.91 LOSE sign** | 8.67 / 8.04 → **0.94 LOSE sign** | 7.93 / 7.91 → **1.00 TIE** | Win/WSL 有约 6–9% 多态税 |
 | **vtable** vs pmr(over mi) churn | 8.67 / 8.67 → **TIE** | 8.67 / 10.27 → **1.22 WIN sign** | 7.93 / 9.98 → **1.26 WIN** | 同类多态对照平或赢 pmr |
-| direct **SystemAllocator reallocate** / raw `mi_realloc` | 66.979 / 67.691 → **1.005 TIE** | 79.279 / 78.995 → **0.989 TIE** | 81.643 / 83.577 → **1.018 WIN sign** | 默认编译期路径三平台同档 |
+| static/source direct **SystemAllocator reallocate** / raw `mi_realloc` | 66.979 / 67.691 → **1.005 TIE** | 79.279 / 78.995 → **0.989 TIE** | 81.643 / 83.577 → **1.018 WIN sign** | 合并形状三平台同档 |
+| shared direct-import **SystemAllocator reallocate** / exe 内 raw `mi_realloc` | 70.66 / 67.64 → **0.957** | 待重签 | 待重签 | ⚠️ Windows 诊断：约 4.5% DSO seam 上界 |
 | runtime **Allocator vtable reallocate** / raw `mi_realloc` | 74.922 / 67.691 → **0.906 LOSE sign** | 86.344 / 78.995 → **0.921 LOSE sign** | 81.329 / 83.577 → **1.020 WIN sign** | x86 有约 8–9% 动态多态税；M4 无税 |
 
-默认内联路径平 mimalloc；需要运行时注入的 vtable 路径对裸 mi 有可测税，但仍平或赢同为多态封装的 pmr。
+static/source direct 路径平 mimalloc；shared 默认路径保持编译期 direct binding，但必须支付一次
+库边界，不能再拿 benchmark-only vendor 补链消掉它。需要运行时注入的 vtable 路径对裸 mi 有
+可测税，但仍平或赢同为多态封装的 pmr。
 
 ## 2. Bump 与单线程定长对象
 

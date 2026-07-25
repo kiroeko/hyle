@@ -5,26 +5,21 @@
 #include <cstring>
 #include <type_traits>
 
-#include "hyle/macros.h"
+#include "hyle/mem/allocator.h"
 #include "hyle/obs/trace.h"
 
-// system_inline.h -- the COMPILE-TIME-bound default allocator. The whole point: a caller
-// that uses SystemAllocator (the container default) gets allocate() INLINED to a direct
-// `call mi_malloc`, with NO function-pointer indirection, NO double-hop, NO dispatch branch
-// -- i.e. parity with raw mimalloc in a merged/static build. The runtime `Allocator` vtable
-// (allocator.h) stays as the OPT-IN path for genuine runtime polymorphism (per-request
-// arena, mock, cross-DLL injection).
+// system_inline.h -- the COMPILE-TIME-bound default allocator. SystemAllocator
+// is stateless/EBO-friendly and never pays the runtime Allocator vtable's
+// function-pointer dispatch. In a static/merged build its methods inline to a
+// direct mi_* call. A shared-library consumer instead makes one direct import
+// call to hyle_mem's backend seam: the vendor symbols remain private to the DLL
+// and the public header is independently linkable.
 //
-// KEY (resolves the false "inline => must expose mimalloc.h" dilemma): we do NOT include
-// mimalloc.h. We forward-declare ONLY the 5 mi_* C functions we call. Their signatures use
-// only void*/size_t -- no mi_* type leaks. mimalloc's mi_decl_*/mi_attr_* are optimization
-// hints, NOT part of the ABI, so omitting them in our decl is link-compatible. This keeps
-// mimalloc.h out of every consumer TU while still letting allocate() inline to mi_malloc.
+// Static consumers do not include mimalloc.h: the five C functions below use
+// only void*/size_t, and the package carries their archive as a link-only
+// implementation dependency. Shared consumers do not name mi_* at all.
 //
-// The symbol resolves against mimalloc_static at link time. In a single binary / static
-// link, mi_malloc is in-image -> truly inlined. Across a DLL boundary the call is one
-// import hop (physics of any cross-DLL call), still better than the fn-ptr double-hop.
-
+#if defined(HYLE_STATIC) && !defined(HYLE_MEM_BUILD)
 extern "C" {
 void* mi_malloc(std::size_t size) noexcept;
 void* mi_malloc_aligned(std::size_t size, std::size_t alignment) noexcept;
@@ -32,24 +27,52 @@ void mi_free(void* p) noexcept;
 void* mi_realloc(void* p, std::size_t newsize) noexcept;
 void* mi_realloc_aligned(void* p, std::size_t newsize, std::size_t alignment) noexcept;
 }
+#endif
 
 namespace hyle::mem {
 
-// Default alignment when a caller does not ask for more (matches the strictest fundamental
-// scalar). Kept in sync with allocator.h's kDefaultAlignment.
-inline constexpr std::size_t kSystemDefaultAlignment = alignof(std::max_align_t);
+inline constexpr std::size_t kSystemDefaultAlignment = kDefaultAlignment;
 
-// Stateless, zero-size compile-time allocator over mimalloc. All methods inline to a direct
-// mi_* call. This is the DEFAULT for HYLE containers (Container<T, Alloc = SystemAllocator>):
-// the common host-RAM path pays zero indirection. Trivially copyable, empty (EBO-friendly).
+namespace detail {
+
+#if defined(HYLE_STATIC)
+inline void* system_backend_allocate(std::size_t size,
+                                     std::size_t alignment) noexcept {
+  return alignment <= kSystemDefaultAlignment
+             ? mi_malloc(size)
+             : mi_malloc_aligned(size, alignment);
+}
+inline void system_backend_deallocate(void* ptr) noexcept { mi_free(ptr); }
+inline void* system_backend_reallocate(void* ptr, std::size_t new_size,
+                                       std::size_t alignment) noexcept {
+  return alignment <= kSystemDefaultAlignment
+             ? mi_realloc(ptr, new_size)
+             : mi_realloc_aligned(ptr, new_size, alignment);
+}
+#else
+// Binary implementation seams, not a second user-facing allocator. Inline
+// container code keeps direct-call dispatch without leaking the vendor ABI
+// into a shared SDK's consumer link contract.
+HYLE_MEM_API void* system_backend_allocate(std::size_t size,
+                                           std::size_t alignment) noexcept;
+HYLE_MEM_API void system_backend_deallocate(void* ptr) noexcept;
+HYLE_MEM_API void* system_backend_reallocate(
+    void* ptr, std::size_t new_size, std::size_t alignment) noexcept;
+#endif
+
+}  // namespace detail
+
+// Stateless, zero-size compile-time allocator over the system backend. This is
+// the DEFAULT for HYLE containers (Container<T, Alloc = SystemAllocator>): the
+// common host-RAM path pays zero indirect dispatch. Trivially copyable and
+// empty (EBO-friendly).
 struct SystemAllocator {
-  // Default-aligned fast path inlines to `mi_malloc(size)`; over-aligned to mi_malloc_aligned.
+  // Default alignment takes the backend's plain fast path; over-alignment uses
+  // its aligned entry.
   static void* allocate(std::size_t size,
                         std::size_t alignment = kSystemDefaultAlignment) noexcept {
     if (size == 0) return nullptr;
-    void* pointer = alignment <= kSystemDefaultAlignment
-                        ? mi_malloc(size)
-                        : mi_malloc_aligned(size, alignment);
+    void* pointer = detail::system_backend_allocate(size, alignment);
     if (pointer != nullptr) {
       HYLE_TRACE_ALLOC_NAMED(pointer, size, "hyle.system");
     }
@@ -59,7 +82,7 @@ struct SystemAllocator {
                          std::size_t /*alignment*/ = kSystemDefaultAlignment) noexcept {
     if (ptr != nullptr) {
       HYLE_TRACE_FREE_NAMED(ptr, "hyle.system");
-      mi_free(ptr);
+      detail::system_backend_deallocate(ptr);
     }
   }
   static void* reallocate(void* ptr, std::size_t /*old_size*/, std::size_t new_size,
@@ -67,15 +90,14 @@ struct SystemAllocator {
     if (new_size == 0) {
       if (ptr != nullptr) {
         HYLE_TRACE_FREE_NAMED(ptr, "hyle.system");
-        mi_free(ptr);
+        detail::system_backend_deallocate(ptr);
       }
       return nullptr;
     }
-    // Both mimalloc realloc forms accept nullptr as allocate. Calling them
-    // directly avoids a redundant pointer branch on every grow step.
-    void* result = alignment <= kSystemDefaultAlignment
-                       ? mi_realloc(ptr, new_size)
-                       : mi_realloc_aligned(ptr, new_size, alignment);
+    // The backend realloc accepts nullptr as allocate, avoiding a redundant
+    // pointer branch on every grow step.
+    void* result =
+        detail::system_backend_reallocate(ptr, new_size, alignment);
     if (result != nullptr) {
       if (ptr != nullptr) HYLE_TRACE_FREE_NAMED(ptr, "hyle.system");
       HYLE_TRACE_ALLOC_NAMED(result, new_size, "hyle.system");
