@@ -19,8 +19,15 @@
 #include <bitset>
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <limits>
 #include <vector>
+
+#if defined(__APPLE__)
+#include <pthread.h>
+#endif
 
 #include "hyle/time/common_timeout_queue.h"
 #include "hyle/time/timer_queue.h"
@@ -32,6 +39,35 @@ using hyle::time::TimerEntry;
 using hyle::time::TimerQueue;
 
 constexpr std::uint64_t kMs = 100'000;
+
+// Darwin has no supported hard P/E-core affinity API. Pin the benchmark thread
+// to an application QoS class so an SSH-launched process does not inherit an
+// arbitrary background policy. `utility` provides the lower-priority audit;
+// neither mode is represented as physical core pinning.
+void configure_main_benchmark_thread() {
+#if defined(__APPLE__)
+  const char* requested = std::getenv("HYLE_BENCH_APPLE_QOS");
+  qos_class_t qos = QOS_CLASS_USER_INTERACTIVE;
+  const char* name = "user-interactive";
+  if (requested != nullptr && std::strcmp(requested, "utility") == 0) {
+    qos = QOS_CLASS_UTILITY;
+    name = "utility";
+  } else if (requested != nullptr &&
+             std::strcmp(requested, "interactive") != 0) {
+    std::fprintf(stderr,
+                 "hyle_timer_queue_bench: HYLE_BENCH_APPLE_QOS must be "
+                 "interactive or utility (got %s)\n",
+                 requested);
+    std::abort();
+  }
+  const int rc = pthread_set_qos_class_self_np(qos, 0);
+  std::fprintf(stderr,
+               "# HYLE_TIME_BENCH apple_main_qos=%s qos_ok=%d "
+               "affinity=unsupported\n",
+               name, rc == 0 ? 1 : 0);
+  if (rc != 0) std::abort();
+#endif
+}
 
 // ---- SOTA same-algorithm baseline for CommonTimeoutQueue --------------------
 // libevent embeds TAILQ_ENTRY directly in struct event and removes through the
@@ -241,57 +277,76 @@ struct RadixTimerSet {
   static constexpr std::uint64_t kNever =
       std::numeric_limits<std::uint64_t>::max();
 
+  struct Link {
+    Link* prev = nullptr;
+    Link* next = nullptr;
+  };
+
   struct Node {
+    Link hook;
     std::uint64_t deadline = 0;
     void* data = nullptr;
     void (*fire_callback)(Node*) noexcept = nullptr;
-    Node* prev = nullptr;
-    Node* next = nullptr;
     const void* owner = nullptr;
   };
 
   struct Bucket {
-    Node* head = nullptr;
-    Node* tail = nullptr;
+    // Seastar uses boost::intrusive::list with its defaults: a circular header
+    // node plus constant_time_size=true. Model that actual mature-library shape
+    // instead of a smaller null-terminated list that Seastar does not use.
+    Link root;
+    std::size_t count = 0;
 
-    bool empty() const noexcept { return head == nullptr; }
+    Bucket() noexcept {
+      root.prev = &root;
+      root.next = &root;
+    }
+
+    bool empty() const noexcept { return root.next == &root; }
     void push_back(Node* node) noexcept {
-      node->prev = tail;
-      node->next = nullptr;
-      if (tail != nullptr) tail->next = node;
-      else head = node;
-      tail = node;
+      Link* hook = &node->hook;
+      HYLE_FATAL_ASSERT(hook->prev == nullptr && hook->next == nullptr);
+      hook->prev = root.prev;
+      hook->next = &root;
+      root.prev->next = hook;
+      root.prev = hook;
+      ++count;
     }
     Node* pop_front() noexcept {
-      Node* node = head;
-      if (node == nullptr) return nullptr;
-      head = node->next;
-      if (head != nullptr) head->prev = nullptr;
-      else tail = nullptr;
-      node->prev = node->next = nullptr;
-      return node;
+      if (empty()) return nullptr;
+      Link* hook = root.next;
+      hook->next->prev = &root;
+      root.next = hook->next;
+      hook->prev = hook->next = nullptr;
+      --count;
+      return reinterpret_cast<Node*>(hook);  // hook is Node's first member
     }
     void remove(Node* node) noexcept {
-      if (node->prev != nullptr) node->prev->next = node->next;
-      else head = node->next;
-      if (node->next != nullptr) node->next->prev = node->prev;
-      else tail = node->prev;
-      node->prev = node->next = nullptr;
+      Link* hook = &node->hook;
+      hook->prev->next = hook->next;
+      hook->next->prev = hook->prev;
+      hook->prev = hook->next = nullptr;
+      --count;
     }
     void append(Bucket& source) noexcept {
       if (source.empty()) return;
-      if (tail != nullptr) {
-        tail->next = source.head;
-        source.head->prev = tail;
-      } else {
-        head = source.head;
-      }
-      tail = source.tail;
-      source.head = source.tail = nullptr;
+      Link* first = source.root.next;
+      Link* last = source.root.prev;
+      Link* dst_last = root.prev;
+      dst_last->next = first;
+      first->prev = dst_last;
+      last->next = &root;
+      root.prev = last;
+      count += source.count;
+      source.root.prev = &source.root;
+      source.root.next = &source.root;
+      source.count = 0;
     }
     template <class Fn>
     void for_each(Fn&& fn) noexcept {
-      for (Node* node = head; node != nullptr; node = node->next) fn(node);
+      for (Link* hook = root.next; hook != &root; hook = hook->next) {
+        fn(reinterpret_cast<Node*>(hook));
+      }
     }
   };
 
@@ -300,7 +355,6 @@ struct RadixTimerSet {
   std::bitset<kBuckets> nonempty{};
   std::uint64_t last = 0;
   std::uint64_t next = kNever;
-  std::uint64_t live = 0;
 
   explicit RadixTimerSet(std::size_t capacity) : nodes(capacity) {
     for (std::size_t i = 0; i < nodes.size(); ++i) {
@@ -327,11 +381,9 @@ struct RadixTimerSet {
       HYLE_FATAL_ASSERT(node.owner == this);
       cancel(id);
     }
-    HYLE_FATAL_ASSERT(node.prev == nullptr && node.next == nullptr);
     node.deadline = deadline;
     node.owner = this;
     insert_node(&node);
-    ++live;
   }
 
   void cancel(std::uint64_t id) noexcept {
@@ -342,7 +394,6 @@ struct RadixTimerSet {
     buckets[index].remove(&node);
     if (buckets[index].empty()) nonempty.reset(index);
     node.owner = nullptr;
-    --live;
   }
 
   std::uint64_t expire(std::uint64_t now, std::uint64_t& fired) noexcept {
@@ -375,24 +426,24 @@ struct RadixTimerSet {
         --nearest;
         if (nonempty.test(nearest)) break;
       }
-      for (Node* node = buckets[nearest].head; node != nullptr;
-           node = node->next) {
+      buckets[nearest].for_each([&](Node* node) noexcept {
         if (node->deadline < next) next = node->deadline;
-      }
+      });
     }
 
-    nb::doNotOptimizeAway(ready.head);
+    nb::doNotOptimizeAway(ready.count);
     // Match HYLE/Seastar's ready-list contract: expiry first disarms every node
     // while it remains linked in the returned list; caller delivery/drain is a
     // second pass. Folding disarm into drain would give the rival a weaker
     // lifecycle contract and hide the cost users actually pay.
     ready.for_each([](Node* node) noexcept { node->owner = nullptr; });
-    while (Node* node = ready.pop_front()) {
-      --live;
+    while (ready.pop_front() != nullptr) {
       ++fired;
     }
     return fired;
   }
+
+  bool empty() const noexcept { return nonempty.none(); }
 };
 
 static_assert(sizeof(RadixTimerSet::Node) == sizeof(TimerEntry),
@@ -401,6 +452,8 @@ static_assert(sizeof(RadixTimerSet::Node) == sizeof(TimerEntry),
 }  // namespace
 
 int main() {
+  configure_main_benchmark_thread();
+
   // Workload shape (the target reality): arm N timeouts, cancel most of them
   // before they fire (a response arrived), expire the survivors. N per op.
   constexpr std::uint64_t kN = 4096;
@@ -431,9 +484,9 @@ int main() {
       for (std::uint64_t i = 0; i < kN; ++i) {
         r.schedule(i, (i % 1000 + 1) * kMs);
       }
-      nb::doNotOptimizeAway(r.live);
+      nb::doNotOptimizeAway(r.empty());
       for (std::uint64_t i = 0; i < kN; ++i) r.cancel(i);
-      nb::doNotOptimizeAway(r.live);
+      nb::doNotOptimizeAway(r.empty());
     });
     b.run("HYLE TimerQueue (radix)", [&] {
       for (std::uint64_t i = 0; i < kN; ++i) {
@@ -442,6 +495,39 @@ int main() {
       nb::doNotOptimizeAway(w.size());
       for (std::uint64_t i = 0; i < kN; ++i) w.cancel(&e[i]);
       nb::doNotOptimizeAway(w.size());
+    });
+  }
+
+  // Registration-order guard for heterogeneous/frequency-scaling hosts. The
+  // normal block above runs the mature rival before HYLE; this block reverses
+  // that order with the same lifecycle and persistent node metadata.
+  {
+    nb::Bench b;
+    b.title("timer arm+cancel ORDER-SWAP (N=4096)")
+        .relative(true)
+        .batch(kN)
+        .minEpochIterations(200);
+    TimerQueue w(0);
+    std::vector<TimerEntry> e(kN);
+    RadixTimerSet r(kN);
+    for (std::uint64_t i = 0; i < kN; ++i) {
+      e[i].set_data(reinterpret_cast<void*>(static_cast<std::uintptr_t>(i)));
+    }
+    b.run("HYLE TimerQueue first", [&] {
+      for (std::uint64_t i = 0; i < kN; ++i) {
+        w.schedule(&e[i], (i % 1000 + 1) * kMs);
+      }
+      nb::doNotOptimizeAway(w.size());
+      for (std::uint64_t i = 0; i < kN; ++i) w.cancel(&e[i]);
+      nb::doNotOptimizeAway(w.size());
+    });
+    b.run("radix timer_set second", [&] {
+      for (std::uint64_t i = 0; i < kN; ++i) {
+        r.schedule(i, (i % 1000 + 1) * kMs);
+      }
+      nb::doNotOptimizeAway(r.empty());
+      for (std::uint64_t i = 0; i < kN; ++i) r.cancel(i);
+      nb::doNotOptimizeAway(r.empty());
     });
   }
 
@@ -474,7 +560,7 @@ int main() {
       for (std::uint64_t i = 0; i < kN; ++i) {
         r.schedule(i, radix_base + (i % 1000 + 1) * kMs);
       }
-      nb::doNotOptimizeAway(r.live);
+      nb::doNotOptimizeAway(r.empty());
       std::uint64_t fired = 0;
       r.expire(radix_base + 1001 * kMs, fired);
       radix_base += 1001 * kMs;
@@ -490,6 +576,51 @@ int main() {
       queue_base += 1001 * kMs;
       std::uint64_t fired = 0;
       out.consume_all([&](TimerEntry*) noexcept { ++fired; });
+      nb::doNotOptimizeAway(fired);
+    });
+  }
+
+  // Same order guard for mixed cancel/expire lifecycle. This specifically
+  // distinguishes a compiler/data-structure gap from fixed registration-order
+  // frequency bias on Linux guests and Apple Silicon.
+  {
+    nb::Bench b;
+    b.title("timer churn ORDER-SWAP (N=4096, 70% cancelled)")
+        .relative(true)
+        .batch(kN)
+        .minEpochIterations(200);
+    TimerQueue w(0);
+    std::vector<TimerEntry> e(kN);
+    RadixTimerSet r(kN);
+    for (std::uint64_t i = 0; i < kN; ++i) {
+      e[i].set_data(reinterpret_cast<void*>(static_cast<std::uintptr_t>(i)));
+    }
+    std::uint64_t queue_base = 0;
+    std::uint64_t radix_base = 0;
+    b.run("HYLE TimerQueue churn first", [&] {
+      for (std::uint64_t i = 0; i < kN; ++i) {
+        w.schedule(&e[i], queue_base + (i % 1000 + 1) * kMs);
+      }
+      for (std::uint64_t i = 0; i < kN; ++i) {
+        if (i % 10 < 7) w.cancel(&e[i]);
+      }
+      TimerQueue::EntryList out;
+      w.advance(queue_base + 1001 * kMs, out);
+      queue_base += 1001 * kMs;
+      std::uint64_t fired = 0;
+      out.consume_all([&](TimerEntry*) noexcept { ++fired; });
+      nb::doNotOptimizeAway(fired);
+    });
+    b.run("radix timer_set churn second", [&] {
+      for (std::uint64_t i = 0; i < kN; ++i) {
+        r.schedule(i, radix_base + (i % 1000 + 1) * kMs);
+      }
+      for (std::uint64_t i = 0; i < kN; ++i) {
+        if (i % 10 < 7) r.cancel(i);
+      }
+      std::uint64_t fired = 0;
+      r.expire(radix_base + 1001 * kMs, fired);
+      radix_base += 1001 * kMs;
       nb::doNotOptimizeAway(fired);
     });
   }
@@ -525,7 +656,7 @@ int main() {
       for (std::uint64_t i = 0; i < kN; ++i) {
         r.schedule(i, radix_base + (i % 1000 + 1) * kMs);
       }
-      nb::doNotOptimizeAway(r.live);
+      nb::doNotOptimizeAway(r.empty());
       for (std::uint64_t i = 0; i < kN; ++i) {
         if (i % 10 < 7) r.cancel(i);
       }
