@@ -103,7 +103,7 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 
 | 固定统计口径 | code | 说明 |
 |---|---:|---|
-| **全库代码** | **245,491** | `cloc . --vcs=git`；含 docs 与 in-tree third_party |
+| **全库代码** | **245,497** | `cloc . --vcs=git`；含 docs 与 in-tree third_party |
 | **自实现（含测试）** | **116,100** | `include/hyle + src + tests`，排除 CMake/Text |
 | **自实现（不含测试）** | **79,791** | `include/hyle + src`；库本体硬锚 |
 | **当前审查模块 time 实现** | **1,218** | `include/hyle/time + include/hyle/c/time.h + src/time`，不含测试 |

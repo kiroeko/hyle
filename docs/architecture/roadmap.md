@@ -1,72 +1,84 @@
 # HYLE 实现路线图
 
-> 动手前的收口：把设计里散落的硬依赖收成一张无环图，分解为**依赖层（阶段）× 里程碑（当前约 89 个，每个可独立编/测）**两个轴，给每阶段定验收门槛，并汇总全部决策（已决 + 待决）。这既是施工计划，也是对全部设计的最后一次端到端校验。
+> 本页把设计里散落的硬依赖收成无环图，分解为**依赖层 × 里程碑 × 交付能力**三个轴，给每层定验收门槛，并维护慢变的关键决策。它既是施工顺序，也是对整体设计的端到端校验。
 >
 > **注意区分**：依赖层（P0-P6）是“谁先能编译”的拓扑序；里程碑才是真正的
-> 实现步骤（当前约 89 个，以 milestones/README 为准）。别把依赖层当施工步数。
+> 实现步骤（数量与状态以 milestones/README 为准）。别把依赖层当施工步数。
 
 ## 一、模块依赖图（验证无环）
 
-箭头 = "依赖/被阻塞于"。只画硬依赖（编译期或接口契约级）。
+本节维护**当前产品构建与公开头的真实依赖**，不是按目录名猜层级，也不是只画 scheduler
+关键路径。图中 `A ──▶ B` 表示 **B 依赖 A**；`A ··▶ B` 是 header-only 编译依赖；
+`A - -▶ B` 是可选或跨切构建边。精确的 PUBLIC/PRIVATE/条件边以紧随其后的表为准。
 
-```
-error/  ────────────────────────────────────┐ (status + std::expected，零上游)
-  │                                          │  obs/ hook 接口
-  ▼                                          │  (最小埋点 API，P0 先定、
-platform/ (thread/vm/dynlib/path/fs/park)    │   空实现，各模块热路径嵌；
-  │                                          │   零 HYLE 依赖根)
-  ├───────────────────────────────┐           │
-  ▼                              ▼           │
-mem/          time/*          simd/          │
-mimalloc      clock +         (可移植         │
- backing,       radix queue     vector+        │
- 修 alignment）  │             dispatch)      │
-  │              │               │           │  simd 依赖 platform(借 CPUID
-  ▼              │               │ 喂         │  探测,2026-07 下沉);不 include mem;
-container/       │               │ compute   │  container 自带内联 SSE 探测片段,
-(ring/MPMC/      │               │ kernel    │  不依赖 simd/,但同样借 platform 的
- intrusive/      │               │           │  CPUID 上 AVX2 变体
- SwissTable)     │               │           │
-  │              │               │           │
-  └────────┬─────┘               │           │
-           ▼                     │           │
-   ┌─────────────────────────┐   │           │
-   │  sched/  (关键路径瓶颈)  │   │           │  ← 依赖 container(队列原语)+time
-   │  fcontext+work-stealing │   │           │    (deadline)+platform(park)+mem
-   │  +Waker completion 脊   │   │           │    (fiber栈)（不依赖 simd）
-   │  +fiber-aware sync      │   │           │
-   └───────────┬─────────────┘   │           │
-       ┌───────┼───────┐         │           │
-       ▼       ▼       ▼         │           │
-     io/    compute/  (graph/)   │           │
-   (proactor (device/   跑在      │           │
-    +liburing) stream/  sched 上  │           │
-       │       kernel             │           │
-       │       +ggml) ◀───────────┘           │
-       │       │   (simd 喂 kernel)            │
-       └───┬───┘                              │
-           ▼                                  │
-   C-ABI shim（各模块稳定后逐个封）+ ffi 绑定（build-time） ◀ obs/ 埋点贯穿
+```text
+主调度链：error ──▶ platform ──▶ mem ──▶ container ──▶ sched ──▶ io
+时间分支：core/header ··▶ time-native；error ──▶ time ──▶ sched
+计算分支：platform ──▶ simd ──▶ compute；sched ──▶ compute
+图分支：  container ──▶ graph；sched ──▶ graph
+util 产品：container ──▶ util-runtime
+
+util-core ··▶ mem / container / sched / graph
+hyle_trace - -▶ every hyle_add_module target - -▶ one optional Tracy client
+obs-runtime ──▶ application/FFI sinks
+math ──▶ users（当前无生产下游）
 ```
 
-`*` 图中 time 与 platform 并排只为对齐 sched 的多个前置，不表示 `platform → time`。
+### 构建目标真相表
 
-**无环校验**：`core/intrusive → time-native`；`error → {platform, time-C-ABI}`；
-`platform → {mem, simd}`；`mem → container`；`{platform, mem, container, time} → sched`；
-`sched → {io, compute, graph}`；`simd → compute`；`{compute, io} → graph`。单向，无回边。
-**error 是 P0、零 HYLE 上游的公共失败值根**；需要可恢复失败的 C adapter 可直接依赖它。
-`time` 原生 clock/timer 核心零 HYLE 二进制模块依赖，发布的 `hyle_time` 因 C ABI Status 显式链接
-`hyle_error`；它不依赖 `platform` 或 `container`。platform timed wait 只是 sched 组合的阻塞机制，
-不拥有时钟语义。`simd` 依赖 platform 的 `CpuFeatures`/`best_isa` 做运行期 ISA dispatch，
-单边喂 compute kernel，不进 container/sched 关键路径。
+下表列直接产品模块边，不重复每个 `hyle_add_module` 都自动 PUBLIC 连接的
+`hyle_trace` / `hyle_testing` gate；前者在图中单列，后者只是测试构建的 ODR 配置面，不是发布模块。
 
-## 二、施工计划：两个轴别混
+| 模块/目标 | PUBLIC target 依赖 | PRIVATE / 条件 target 依赖 | header-only / 跨切面 |
+|---|---|---|---|
+| `core` | — | — | 基础宏、intrusive 原语供底层头使用 |
+| `error` | — | — | 全库可恢复失败值根 |
+| `obs-runtime` (`hyle_obs`) | — | — | log/C ABI 产品；与 trace build seam 分开 |
+| `math` | —（INTERFACE） | — | 独立公开标量助手，当前无生产模块消费者 |
+| `platform` | error | — | OS/thread/VM/fs/CPU 机制 |
+| `mem` | error、platform | mimalloc | `util::SpinLock`、obs trace hook |
+| `time` | error | — | native timer 借 `core/intrusive_list`；不链接 platform/container |
+| `container` | mem | platform | 公开 `ConcurrentVector` 借 `util::SpinLock` |
+| `simd` | platform | — | 运行期 ISA 能力由 platform 提供 |
+| `util-runtime` (`hyle_util`) | container | — | registry 同时借 mem；其余 util headers 不依赖该二进制目标 |
+| `sched` | error、mem、container、platform | time | `util::SpinLock`、obs trace hook |
+| `io` | — | error、mem、container；有 fcontext 时 sched | obs trace hook |
+| `compute` | error、mem；有 fcontext 时 sched | platform、simd；可选 GPU/ggml 供应商 | obs trace hook |
+| `graph` | error、mem、container；有 fcontext 时 sched | — | `util::SpinLock` |
 
-**澄清**：依赖层（阶段 P0-P6）是**拓扑序**（谁先能编译），**不是实现步骤**。把总量分成 6 大步 = 每步上万行，不可落地。正确做法分两个轴：
+### 两个不能压成单节点的模块
+
+`util` 必须分层阅读。`SpinLock/cpu_relax`、`Ref`、`ScopeGuard`、RNG 与 type-name 是独立
+header-only 能力，可被低层模块直接使用；`Registry` 和 type-erased C ABI 才依赖
+container/mem，因而编译出的 `hyle_util` 位于 container 之后。container 只 include
+`util/spin_lock.h`，不链接 `hyle_util`，所以 target graph 没有 `container ↔ util` 环。新增
+util 能力时必须先判断属于哪一层，禁止让 util-core 反向 include container。
+`add_subdirectory` 在根 CMake 中的文本先后不是依赖层；这里只以 target link 与公开头合同判定顺序。
+
+`obs` 同样有两条线：`hyle_obs` 是独立的同步日志/C ABI 产品；`hyle_trace` 是
+`HyleModule.cmake` 自动 PUBLIC 传播给每个模块的 INTERFACE gate。默认 OFF 时它为空，开启时
+所有模块汇入同一个 `hyle_tracy_client`。产品代码 include `obs/trace.h` 不等于链接日志 DLL，
+依赖图必须用跨切虚线而不是伪造 `hyle_obs → 全库` 的硬边。
+
+### 无环结论与已知收束边
+
+实际 target graph 无环。最长基础链仍是
+`error → platform → mem → container → {sched, util-runtime}`；time、simd 分别从 error、
+platform 分叉，sched 再汇入 io/compute/graph。`math` 是当前没有生产下游的合法用户叶；它的
+存在不应因此从完整模块图消失。
+
+部分旧 C shim（包括 util/obs，另有 container/simd/sched/io）仍使用模块私有
+`last_error`。这不是新的依赖事实，也不能在图里假装已经连到 error；它是 error adoption
+审计尚未完成的显式欠账。迁移时允许形成 `error → <module C adapter>` 的单向边，不会导致
+error 反向依赖 obs 或形成环。
+
+## 二、施工计划：三个轴别混
+
+**澄清**：依赖层（阶段 P0-P6）是**拓扑序**（谁先能编译），**不是实现步骤**。把总量只分成 7 个拓扑层仍不能当施工清单；真正的施工粒度在 milestone。正确做法分三个轴：
 
 - **轴 A — 依赖层（阶段 P0-P6）**：哪层先能编译，下面表的拓扑序。粗粒度。
-- **轴 B — 里程碑（M）**：每模块拆 2-6 个里程碑，**每个 1-4k 行、各自可编可测可基准**。全项目约 **58 个里程碑**（milestones/README 为准），这才是真正的"步骤"。
-- **轴 C — 交付能力（C）**：用户/消费者视角"这个库能做什么"。轴 B 是**机制**（收割接缝、时间轮、work-stealing），轴 C 是**能力**（带超时的网络 io、优雅关闭、取消）。见下节。
+- **轴 B — 里程碑（M）**：每个 work item 自成“实现→正确性→性能→文档”闭环。数量、实测 LOC 和当前状态只在 milestones/README 维护。
+- **轴 C — 交付能力（C）**：用户/消费者视角"这个库能做什么"。轴 B 是**机制**（收割接缝、timer queue、work-stealing），轴 C 是**能力**（带超时的网络 io、优雅关闭、取消）。见下节。
 
 ### 轴 C：交付能力清单（消费者视角）——机制的反向拉动者
 
@@ -103,30 +115,26 @@ container/       │               │ compute   │  container 自带内联 SSE
 
 ### 依赖层 × 里程碑分解（轴 A × 轴 B）
 
-> **生产 LOC 列已 2026-06-29 用实测下修**(右列 = 再投影)。旧列锚"对标参考库体量"偏高 ~2x(foundation 5-6x、pillar ~2x);**已实现的非玩具**(33 真 op/零 stub/红队揪真 bug),下修一半因 std/C++23 取代 + 借第三方真精简、一半因部分广度仍待铺(会长回)。完整拆解 + 第三方(ggml 主导 ~150-250k)见 [`hyle-scope.md` 规模节](./hyle-scope.md)。
+P0–P6 只表示最早可编译的拓扑层。不在这里复制 LOC、冻结日期或完成度；它们分别属于
+[`hyle-scope.md`](./hyle-scope.md) 和 [`milestones/README.md`](../milestones/README.md)。
 
-| 阶段 | 模块 | 里程碑（每个可独立编/测）| 旧预测 | 再投影(实测口径) |
-|---|---|---|---|---|
-| **P0** | error / obs-hook | Status+expected+context+ASSIGN_OR_RETURN / obs 埋点 | 3-5k | error 自身已在 Win/GCC14/M4 正确性与两类性能证书后冻结；全库 adoption audit 进行中，mem 消费者切片已统一共享 Status；obs 已收口 |
-| **P1** | platform | thread+park / vm+dynlib / path+fs+env / CPU | 5-8k | **~6.7k**（含 C surface），✅ 预发布冻结；系统/进程 CPU 已拆分，Thread 支持 required 与单核/集合 affinity；逐 CPU 能力与显式强/弱核优先已由 sched 消费；MappedFile advice/residency 已补齐，118 项 C surface 与 10 个独立头三平台机械验收 |
-| **P2** | mem | Allocator+alignment / mimalloc / region / pool+stack / NUMA | 6-10k | 稳定设计见 [`mem-design.md`](./mem-design.md)；冻结任务/当前认证只见 [`../milestones/mem-close-plan.md`](../milestones/mem-close-plan.md) |
-| **P2** | time | typed clocks / deadline / radix timer queue / common timeout | 1.5-2.5k | **1,218 实现 LOC**，✅ 2026-07-25 预发布收口 |
-| **P3** | container | ring/MPMC / XXH3 / carray / SwissTable / SmallVector / string | 7-11k | **~4.9k**，✅ StringBuf 复杂度/三平台强 peer 收口后预发布冻结 |
-| **P3** | simd | 七后端 + 双轨 + dtype/math/sort/bitpack/search… | 10-16k | **已 ~34k 生产**（远超「~5–8k」旧投影）；补缺见 simd-capability-fill-list / simd-25，冻结无谓扩名 |
-| **P4** | sched | fcontext+栈池 / run-queue / work-stealing / Waker / CV+同步 / 协程胶水 | 10-15k | **已 ~3.1k** 主干收口；残余栈 guard 等边角 |
-| **P5** | io | proactor / 多后端 / net / file+shmem / HTTP | 9-14k | ✅ **预发布冻结（带公开性能尾）**：四后端、shmem、HTTP/1.1+2、低层 C ABI 与三平台证书已收口；M4 TLS/kqueue 多 worker、handshake 和专项 peer benchmark 留在性能台账 |
-| **P5** | compute | device/stream / buffer / completion / kernel / ggml_bridge / Vulkan | 10-16k | **已 ~3.8k**（仍简）；终态弹性 **+3～15k** 视自造深度 |
-| **P6** | graph + 收口 | 增量重算 / 数据并行 / C-ABI / T3 | 11-17k | graph **已 ~0.6k**（graph-01 完整、graph-02 部分，薄但非 stub）；close-01 八模块完成、上层/发布门待做 |
+| 拓扑层 | 本层可建立的目标 | 为什么在这一层 |
+|---|---|---|
+| **P0** | core、error、obs-runtime、math、util-core headers、`hyle_trace` gate | 零 HYLE 模块上游；先冻结基础值、宏、header 合同与跨切 gate |
+| **P1** | platform、time | 两者只需 P0；time 不需等 platform |
+| **P2** | mem、simd | 都需 platform；mem 另直接需 error |
+| **P3** | container | 公开依赖 mem，实现依赖 platform |
+| **P4** | sched、util-runtime/registry | 两者都要 container；sched 另要 time/platform/mem/error |
+| **P5** | io、compute、graph | 完整产品形状都消费 sched；compute 另消费 simd，graph/io 消费 container |
+| **P6** | install/export、跨编译器 ABI/FFI 冒烟、发布 bundle | 不是新模块；在各模块 C adapter 就地收口后做整库交付验收 |
 
-本页不保存易漂移的当前 LOC 或完成百分比。实测体量只见 [`hyle-scope.md`](./hyle-scope.md)，
-当前任务/冻结状态只见 [`../milestones/README.md`](../milestones/README.md) 与各模块 closure；
-这里的旧预测列只保留规划来源，不作为当前规模或完成度。
+**关键路径**：到 scheduler 的最长链是
+`error → platform → mem → container → sched`；独立的 `error → time → sched` 分支必须在
+P4 前汇合。util-runtime 与 sched 在 container 之后并行，但 util-core headers 从 P0 就可用。
+simd 不进 sched 链，只在 compute 汇合。obs-runtime 是用户产品根，trace gate 则横切全库；
+二者都不应被“不在最长链”误删。
 
-> **⚠️ scope 负空间待复核（2026-07-03）**：审计里被判"有意不做(L1/运维栈 out-of-scope)"的项(如 TLS 一度、log 聚合、序列化边界、数据并行归属等)——其中**部分可能判错了**,`hyle-scope.md` 的负空间是项目早期写的,本身可能"漏点"。这些**不当已决**,留作后续讨论;TLS 已从"排除"改判为 C9 真能力就是一例修正。序列化 IN/OUT 边界、数据并行层归属尤其待拍。
-
-**关键路径**（最长链）：`error → platform → mem → container → sched`。sched 是瓶颈，等 container 队列 + time + platform park 全就位。所以 **P2/P3 的 container/time 要尽早动**。simd 不在关键路径（依赖 platform 借 CPUID 探测，其余零 HYLE 依赖），可与整条链大体并行、晚点喂 compute。
-
-### 当前实现状态 → 见 milestones/README（唯一进度信源）
+## 三、验收门槛与状态信源
 
 > **进度不在这里维护**（避免两处状态表互相 drift）。逐里程碑的真实状态 + cloc 实测 LOC +
 > clay API diff 是 [`../milestones/README.md`](../milestones/README.md) 的"全部里程碑"表，**那是唯一信源**。
@@ -140,13 +148,13 @@ container/       │               │ compute   │  container 自带内联 SSE
 | 阶段 | 门槛 |
 |---|---|
 | SK 骨架 | **一个 fiber 在单 worker 上跑起→让出→被唤醒**（fcontext+最小脊打通，最高风险先验）|
-| P0 | error 跨三编译器编译；`std::expected` 往返；埋点 API 编译期零开销验证 |
-| P1 | platform 三平台（Linux/Win/mac）编译；dynlib 加载冒烟；park 原语单测 |
-| P2 | **mem：alignment 保证测试（64B 对齐必须真生效）**、并发分配 TSan、对标裸 mimalloc 不退化；time：单调性、时间轮到期精度 |
-| P3 | container：hash 函数与 hashmap 分开测，hash 对拍 XXH3/wyhash、表统一/默认 hasher 对拍 absl/F14；lock-free 队列 TSan + 线性化测试；simd：每后端对拍 scalar、数学函数 ULP 精度，synthetic op 不进入性能分母 |
-| P4 | **sched：百万次 fiber 切换基准、work-stealing 公平性、fiber-sync 正确性（TSan）、防惊群验证** |
-| P5 | io：echo/吞吐基准、proactor 四后端对齐；compute：device 枚举、CPU+GPU 后端对拍、completion 唤醒 fiber 链路通 |
-| P6 | graph：DAG 执行正确性；C-ABI shim：FFI 冒烟（TS/Python 各调一个）；全栈 sanitizer CI |
+| P0 | core/error/math/util-core 公开头自包含；Status/Result 所有权；obs log 生命周期；trace OFF 参数不求值、ON 只有一个 backend client |
+| P1 | platform 三平台编译与 OS 机制冒烟；time 单调/墙钟分离、饱和 deadline、exact-ns radix/common queue oracle |
+| P2 | mem 对齐/NUMA/pool/allocator 正确性与 mimalloc peer；simd 每后端对拍 scalar、ULP 与运行期 ISA 安全 |
+| P3 | container 的 hash/table/string/队列分层对标；lock-free 线性化与 TSan；公开头的 util-core include 边不得引入 `hyle_util` 链接环 |
+| P4 | sched 的 fiber/work-stealing/sync/timer 汇合；util-runtime 的 registry/ref/RNG/C ABI；两者都跑 TSan/ASan/UBSan 和对应热路 peer |
+| P5 | io 四后端与真网络/file；compute CPU/GPU 对拍与 completion；graph 增量 DAG/数据并行在 sched 上的真消费 |
+| P6 | install/export/package；纯 C 与跨编译器/FFI 冒烟；全库 sanitizer/ABI surface 和发布 bundle 验收 |
 
 ## 四、决策清单
 
@@ -177,25 +185,28 @@ container/       │               │ compute   │  container 自带内联 SSE
 | simd 向量 | **scalable-friendly 接口 + 先实现定宽后端**（x86 SSE4.2/AVX2/AVX512 + ARM NEON）；将来加 SVE/RVV 不改 API | simd-design；**用户拍板** |
 | hashmap 写法 | **concept 模板写内部 + 过边界特定类型封 C-ABI shim**；去掉 C 宏 temp/哨兵包袱 | container-design；**用户拍板** |
 
-### 待决（剩余均非阻塞，有安全默认、实现期可微调）
+### 历史选型（均已落地，保留决策来源）
 
-| # | 待决项 | 建议（默认采纳）| 阻塞? |
+| # | 当时的选型 | 落地决定 | 当前性质 |
 |---|---|---|---|
-| 1 | mem backing 选哪个 | **mimalloc**（现代/THP/MIT/v3 2026）| 否 |
-| 2 | mimalloc 怎么集成 | 封 `Allocator` vtable 后、不外露类型 | 否 |
-| 5 | simd 数学核 | vendor Highway+xsimd、封 adapter | 否 |
-| 6 | SVE/RVV 进首版? | v1 只 x86(SSE4.2/AVX2/AVX512)+ARM NEON，留接口 | 否 |
-| 8 | SwissTable 自实现 vs 抄 abseil | 自实现（边界+差异焦点）| 否 |
-| 9 | lock-free 队列归属/造借 | **vendoring 成熟实现**（Vyukov bounded MPMC / rigtorp SPSC，单头可内联），归 container/ 供 sched 消费；不自造（无 C-ABI 理由、难写对）。自造预算集中到 hashmap | 否 |
+| 1 | mem backing 选哪个 | **mimalloc**，封在 `Allocator` 后 | 已落地；当前设计见 mem-design |
+| 2 | mimalloc 怎么集成 | 不外露 mimalloc 类型 | 已落地 |
+| 5 | simd 数学核 | 成熟核与 HYLE adapter/自有算法面分层 | 已落地；当前供应商见 simd-design |
+| 6 | SVE/RVV 进首版? | 先实现定宽 x86/NEON，API 保留 scalable 扩展面 | 已落地 |
+| 8 | SwissTable 自实现 vs 抄 abseil | 自实现控制组/表结构，对标成熟 peer | 已落地 |
+| 9 | lock-free 队列归属/造借 | 归 container 供 sched 消费，按成熟算法形状实现/验证 | 已落地 |
 
-> 三个"接口/边界形状"待决（#3 device 内存、#4 simd 向量、#7 hashmap 写法）均已拍板，见上「已决」表。**剩余 6 项全部非阻塞**——采纳默认即可开工，实现期按需微调。
+> 三个“接口/边界形状”决策（#3 device 内存、#4 simd 向量、#7 hashmap 写法）见上「已决」表。本表不是 backlog；新的未决项必须进 milestones，不在 roadmap 里假装为“安全默认”。
 
 ### 实现期选择（非设计空白，落地时定策略）
 
-LIFO slot 轮询预算上限（**已落地**：`kMaxLifoPolls=3`，见 sched-design §2.2 + benchmarks-sched LIFO 节）；steal 的 backoff 曲线；GPU completion 选回调还是轮询线程。这些在 sched-design 已标注，是落地参数、非设计悬念。（**注**：原列此处的"阻塞 syscall 的 blocking 池 + sysmon"已在 2026-07-03 审计中**升级为真能力缺口** `spawn_blocking`——见轴 C 的 C8 / sched-11,不再当"实现期参数"糊过去,因为它是 tokio/seastar/marl 都有的公开 API。）
+steal backoff 曲线是可根据真负载调整的参数，不是架构空白。LIFO poll 上限、GPU
+completion poller 和 `spawn_blocking` 均已落地；其当前机制见 sched/compute design，当时的实施记录见 milestones。
 
-## 五、收口
+## 五、维护门
 
-设计阶段完整：**动机 → 定位 → 范式（charter/conventions）→ 六支柱深挖（io/sched/compute/simd/mem/container）→ 分层/规模/负空间（scope）→ 性能预期 → 参考库映射 → 依赖图/里程碑（本文）**。`docs/architecture/` 共 19 份，互相交叉引用，无环可施工。经 4 波参考库实证校验。
-
-**实现是约 58 个里程碑（每个 1-4k 行、可编可测可基准），不是 6 个万行黑箱。** 动手第一刀：**走骨架 SK**——纵切 error/platform/mem/container/sched 各取最小一片，打通"一个 fiber 跑起→让出→唤醒"，先验最高风险的 fcontext+调度脊。骨架立住后，按依赖层逐里程碑加厚。所有接口形状决策已拍定、待决项非阻塞，可干净开工。
+- `src/*/CMakeLists.txt` 的 target 依赖变化时，同一提交更新第一节真相表。
+- 公开头新增跨模块 include 时，必须判断是 PUBLIC target 边还是可证明自包含的 header-only 边。
+- util/obs 变更必须分别检查两层；禁止把 util-core 与 util-runtime、obs-runtime 与 trace gate 再次压成一个假节点。
+- 实时 LOC/状态只写 hyle-scope/milestones，性能点值只写 performance，本文只维护拓扑、能力顺序和慢变决策。
+- CI 应增加 CMake target graph 与公开头 include 扫描；人工 ASCII 只做可读摘要，真相表必须可由构建配置复核。

@@ -30,7 +30,7 @@
 
 | 固定统计口径 | 当前 | 命令/说明 |
 |---|---|---|
-| **全库代码** | **245,491** | `cloc . --vcs=git`；含 docs/third_party，**≠ 自写** |
+| **全库代码** | **245,497** | `cloc . --vcs=git`；含 docs/third_party，**≠ 自写** |
 | **自实现（含测试）** | **116,100** | `cloc include/hyle src tests --exclude-lang=CMake,Text` |
 | **自实现（不含测试）** | **79,791** | `cloc include/hyle src --exclude-lang=CMake,Text`；库本体硬锚 |
 | **当前审查模块 time 实现** | **1,218** | `cloc include/hyle/time include/hyle/c/time.h src/time --exclude-lang=CMake,Text` |
