@@ -3,6 +3,8 @@
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
+#include <memory>
 #include <new>
 #include <type_traits>
 
@@ -31,20 +33,26 @@ namespace hyle::container {
 // A thief steals roughly HALF of the victim's tasks into ITS OWN queue (amortizes
 // steal cost, sched-design §2.3), returning one to run immediately.
 //
-// T must be trivially copyable (fiber handles / pointers / PODs).
+// Slots are atomic to keep victim/thief accesses data-race-free. T must therefore
+// be default-constructible, satisfy std::atomic<T>'s value requirements, and be
+// always lock-free. Use a pointer or word-sized handle rather than embedding a
+// wide task object.
 // Alloc defaults to compile-time SystemAllocator ([[no_unique_address]] -> 0 bytes; buf is
 // the only alloc, once at construction). Opt into mem::Allocator for injection (sched does).
 template <class T, class Alloc = mem::SystemAllocator>
 class WsFifoQueue {
   static_assert(std::is_trivially_copyable_v<T>,
                 "WsFifoQueue<T>: T must be trivially copyable");
+  static_assert(std::is_default_constructible_v<T> && std::is_copy_constructible_v<T> &&
+                    std::is_move_constructible_v<T> && std::is_copy_assignable_v<T> &&
+                    std::is_move_assignable_v<T>,
+                "WsFifoQueue<T>: T must satisfy the preallocated std::atomic<T> value "
+                "requirements");
+  static_assert(std::atomic<T>::is_always_lock_free,
+                "WsFifoQueue<T>: atomic payload must always be lock-free; use a pointer "
+                "or word-sized handle");
 
  public:
-  struct PopResult {
-    bool ok;
-    T value;
-  };
-
   explicit WsFifoQueue(std::size_t capacity)
       requires std::is_default_constructible_v<Alloc>
       : mask_(static_cast<std::uint32_t>(capacity - 1)) {
@@ -70,7 +78,7 @@ class WsFifoQueue {
 
   // OWNER ONLY. Append at the tail. Returns false if full (caller spills to the
   // global queue). No CAS on the hot path -- just a release store of the tail.
-  bool push_back(T x) noexcept {
+  bool try_push_back(T x) noexcept {
     std::uint64_t h = head_.load(std::memory_order_acquire);
     std::uint32_t steal = unpack_steal(h);
     std::uint32_t tail = tail_.load(std::memory_order_relaxed);  // owner is sole writer
@@ -82,30 +90,34 @@ class WsFifoQueue {
     return true;
   }
 
-  // OWNER ONLY. Pop from the head (FIFO). Returns {false,_} if empty.
-  PopResult pop() noexcept {
+  // OWNER ONLY. Pop from the front (FIFO). Returns false without changing
+  // `out` if empty.
+  bool try_pop_front(T& out) noexcept {
     std::uint64_t h = head_.load(std::memory_order_acquire);
     for (;;) {
       std::uint32_t steal = unpack_steal(h);
       std::uint32_t real = unpack_real(h);
       std::uint32_t tail = tail_.load(std::memory_order_relaxed);
-      if (real == tail) return {false, T{}};  // empty
+      if (real == tail) return false;
       std::uint32_t next = real + 1;
       // Advance real. If no steal is in progress (steal==real), advance both so
       // the two stay together; otherwise leave steal where the thief put it.
       std::uint64_t next_h = (steal == real) ? pack(next, next) : pack(steal, next);
       if (head_.compare_exchange_weak(h, next_h, std::memory_order_acq_rel,
                                       std::memory_order_acquire)) {
-        return {true, buf_[real & mask_].v.load(std::memory_order_relaxed)};
+        const T value = buf_[real & mask_].v.load(std::memory_order_relaxed);
+        copy_out(out, value);
+        return true;
       }
       // h reloaded by compare_exchange; retry.
     }
   }
 
   // THIEF. Steal ~half of this (victim) queue's tasks INTO `dst` (the thief's own
-  // queue), returning one task to run now. {false,_} if nothing stolen (empty,
-  // another thief is mid-steal, or dst lacks room). `dst` is owned by the caller.
-  PopResult steal_into(WsFifoQueue& dst) noexcept {
+  // queue), returning one task in `out` to run now. Returns false without
+  // changing `out` if nothing was stolen (empty, another thief is mid-steal, or
+  // dst lacks room). `dst` is owned by the caller.
+  bool try_steal_into(WsFifoQueue& dst, T& out) noexcept {
     // Tokio local queues are identically sized. Supporting unlike capacities
     // requires a different reservation bound; reject that accidental shape
     // loudly instead of indexing dst with a source-sized batch.
@@ -114,23 +126,29 @@ class WsFifoQueue {
     // dst must have room for up to half a queue; if a concurrent steal already
     // reserved space in dst, bail (faithful to tokio's capacity guard).
     std::uint32_t dst_steal = unpack_steal(dst.head_.load(std::memory_order_acquire));
-    if (dst_tail - dst_steal > (mask_ + 1) / 2) return {false, T{}};
+    if (dst_tail - dst_steal > (mask_ + 1) / 2) return false;
 
     std::uint32_t n = steal_into2(dst, dst_tail);
-    if (n == 0) return {false, T{}};
+    if (n == 0) return false;
 
     n -= 1;  // we return one task directly; dst keeps the other n.
     std::uint32_t ret_pos = dst_tail + n;
-    T ret = dst.buf_[ret_pos & dst.mask_].v.load(std::memory_order_relaxed);
-    if (n == 0) return {true, ret};  // only one stolen; dst stays empty
+    const T value = dst.buf_[ret_pos & dst.mask_].v.load(std::memory_order_relaxed);
+    copy_out(out, value);
+    if (n == 0) return true;  // only one stolen; dst stays empty
     // Publish the remaining n in dst (release pairs with a future steal/pop).
     dst.tail_.store(dst_tail + n, std::memory_order_release);
-    return {true, ret};
+    return true;
   }
 
   std::size_t capacity() const noexcept { return valid() ? mask_ + 1 : 0; }
 
  private:
+  static void copy_out(T& out, const T& value) noexcept {
+    std::memcpy(static_cast<void*>(std::addressof(out)), std::addressof(value),
+                sizeof(T));
+  }
+
   // Reserve ~half, copy into dst, commit. Returns count stolen (incl. the one
   // the caller will return). Faithful to tokio steal_into2: reserve advances
   // `real` and leaves `steal` LAGGING (so the owner's pop continues past the

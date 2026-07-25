@@ -165,7 +165,7 @@ constexpr int kMaxLifoPolls = 3;
 
 // Every Nth find_task, check the GLOBAL inject queue BEFORE the local ring, so a
 // worker whose local queue is continuously refilled (e.g. a fiber that yields in a
-// loop -> reschedule -> local.push_back) cannot starve tasks injected to the global
+// loop -> reschedule -> local.try_push_back) cannot starve tasks injected to the global
 // queue indefinitely (complexity opportunity ③; starvation CONFIRMED by a probe:
 // a 1-worker yield-hog did 17M yields while a globally-injected victim never ran in
 // 500ms). tokio's global_queue_interval, default 61 -- a prime, to avoid harmonic
@@ -469,12 +469,12 @@ struct Scheduler::Impl {
       // Budget spent: demote to the local ring so it stays reachable, then fall
       // through to FIFO. If the ring is full, leave it in the slot (still makes
       // progress -- it'll be taken once the budget resets after a FIFO draw).
-      if (w.local.push_back(w.lifo_slot)) w.lifo_slot = nullptr;
+      if (w.local.try_push_back(w.lifo_slot)) w.lifo_slot = nullptr;
     }
-    auto r = w.local.pop();
-    if (r.ok) {
+    Fiber* local = nullptr;
+    if (w.local.try_pop_front(local)) {
       w.lifo_polls = 0;  // drawing from FIFO resets the LIFO budget
-      return r.value;
+      return local;
     }
     Fiber* g = nullptr;
     if (global.try_pop(w.pop_cursor, g)) return g;
@@ -482,8 +482,8 @@ struct Scheduler::Impl {
     for (unsigned a = 0; a < n; ++a) {
       unsigned v = static_cast<unsigned>(xorshift(w.rng) % n);
       if (v == self_idx) continue;
-      auto s = workers[v]->local.steal_into(w.local);
-      if (s.ok) return s.value;
+      Fiber* stolen = nullptr;
+      if (workers[v]->local.try_steal_into(w.local, stolen)) return stolen;
     }
     // Nothing in the ring/global/steal: if a fiber is still stuck in the slot
     // (budget was spent but the ring was full so we couldn't demote), run it now
@@ -508,7 +508,7 @@ struct Scheduler::Impl {
         workers[owner_idx]->pinned_overflow.push(f);
       return;  // owner is THIS running worker -> it'll pop next loop; no unpark
     }
-    if (!w.local.push_back(f)) {
+    if (!w.local.try_push_back(f)) {
       // Spill through every global shard, then an allocation-free intrusive
       // overflow. The current worker must never spin waiting for queues which
       // only workers (including itself) can drain.
@@ -768,7 +768,7 @@ struct Scheduler::Impl {
         return;  // this worker pops it next find_task; no notify (we ARE awake)
       }
       // Slot occupied: evict the older occupant to our local ring, install f.
-      if (w.local.push_back(w.lifo_slot)) {
+      if (w.local.try_push_back(w.lifo_slot)) {
         w.lifo_slot = f;
         return;
       }
@@ -1014,7 +1014,7 @@ struct Scheduler::Impl {
     if (!try_admit()) return false;
     const bool on_worker = t_current == this && t_worker_idx >= 0;
     if (on_worker) {
-      if (workers[static_cast<unsigned>(t_worker_idx)]->local.push_back(f)) {
+      if (workers[static_cast<unsigned>(t_worker_idx)]->local.try_push_back(f)) {
         notify();
         return true;
       }

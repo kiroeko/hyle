@@ -3,6 +3,8 @@
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
+#include <memory>
 #include <new>
 #include <type_traits>
 
@@ -62,7 +64,7 @@ class BoundedQueue {
 
   // Enqueue. Returns false if the queue is full. Lock-free; a contended caller
   // may retry the CAS, so this is not a wait-free operation.
-  bool try_push(T item) noexcept {
+  bool try_push(const T& item) noexcept {
     Cell* cell;
     std::uint64_t pos = enqueue_pos_.load(std::memory_order_relaxed);
     for (;;) {
@@ -86,7 +88,7 @@ class BoundedQueue {
         pos = enqueue_pos_.load(std::memory_order_relaxed);  // raced, reload
       }
     }
-    cell->data = item;
+    std::memcpy(cell->data, std::addressof(item), sizeof(T));
     cell->seq.store(pos + 1, std::memory_order_release);
     return true;
   }
@@ -111,7 +113,9 @@ class BoundedQueue {
         pos = dequeue_pos_.load(std::memory_order_relaxed);
       }
     }
-    out = cell->data;
+    // T's public contract is trivially-copyable, not copy-assignable. Copy the
+    // object representation so PODs with deleted assignment remain usable.
+    std::memcpy(static_cast<void*>(std::addressof(out)), cell->data, sizeof(T));
     // Release the slot for a producer one lap ahead.
     cell->seq.store(pos + mask_ + 1, std::memory_order_release);
     return true;
@@ -128,9 +132,15 @@ class BoundedQueue {
   // ~1.33x slower than rigtorp at 4P/4C). alignas(cache line) restores parity. Cost:
   // the buffer grows to one static cache line per slot (space-for-throughput,
   // the same trade rigtorp makes).
-  struct alignas(core::kDestructiveInterferenceSize) Cell {
+  static constexpr std::size_t kCellAlignment =
+      alignof(T) > core::kDestructiveInterferenceSize
+          ? alignof(T)
+          : core::kDestructiveInterferenceSize;
+  struct alignas(kCellAlignment) Cell {
     std::atomic<std::uint64_t> seq;
-    T data;
+    // A representation buffer avoids default-constructing/assigning T in every
+    // preallocated slot. Trivially-copyable values may round-trip through bytes.
+    alignas(T) std::byte data[sizeof(T)];
   };
 
   void init(std::size_t capacity) {

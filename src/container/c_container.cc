@@ -528,8 +528,8 @@ static_assert(static_cast<int>(hc::StealStatus::kOk) ==
               HYLE_CONTAINER_STEAL_OK);
 static_assert(static_cast<int>(hc::StealStatus::kEmpty) ==
               HYLE_CONTAINER_STEAL_EMPTY);
-static_assert(static_cast<int>(hc::StealStatus::kAbort) ==
-              HYLE_CONTAINER_STEAL_ABORT);
+static_assert(static_cast<int>(hc::StealStatus::kRetry) ==
+              HYLE_CONTAINER_STEAL_RETRY);
 
 extern "C" {
 
@@ -1660,34 +1660,29 @@ size_t hyle_container_sharded_queue_shard_count(
 int hyle_container_work_stealing_deque_try_push_bottom(
     hyle_container_work_stealing_deque* deque, void* item) {
   if (deque == nullptr) return 0;
-  return deque->value.push_bottom(item);
+  return deque->value.try_push_bottom(item);
 }
 int hyle_container_work_stealing_deque_try_pop_bottom(
     hyle_container_work_stealing_deque* deque, void** out_item) {
   if (deque == nullptr || out_item == nullptr) return 0;
-  const auto result = deque->value.pop_bottom();
-  if (result.ok) *out_item = result.value;
-  return result.ok;
+  return deque->value.try_pop_bottom(*out_item);
 }
 hyle_container_steal_status hyle_container_work_stealing_deque_try_steal_top(
     hyle_container_work_stealing_deque* deque, void** out_item) {
   if (deque == nullptr || out_item == nullptr)
     return HYLE_CONTAINER_STEAL_EMPTY;
-  const auto result = deque->value.steal();
-  if (result.status == hc::StealStatus::kOk) *out_item = result.value;
-  return static_cast<hyle_container_steal_status>(result.status);
+  return static_cast<hyle_container_steal_status>(
+      deque->value.try_steal_top(*out_item));
 }
 int hyle_container_ws_fifo_queue_try_push_back(
     hyle_container_ws_fifo_queue* queue, void* item) {
   if (queue == nullptr) return 0;
-  return queue->value.push_back(item);
+  return queue->value.try_push_back(item);
 }
 int hyle_container_ws_fifo_queue_try_pop_front(
     hyle_container_ws_fifo_queue* queue, void** out_item) {
   if (queue == nullptr || out_item == nullptr) return 0;
-  const auto result = queue->value.pop();
-  if (result.ok) *out_item = result.value;
-  return result.ok;
+  return queue->value.try_pop_front(*out_item);
 }
 int hyle_container_ws_fifo_queue_try_steal_into(
     hyle_container_ws_fifo_queue* source, hyle_container_ws_fifo_queue* target,
@@ -1696,9 +1691,7 @@ int hyle_container_ws_fifo_queue_try_steal_into(
       source == target || source->value.capacity() != target->value.capacity()) {
     return 0;
   }
-  const auto result = source->value.steal_into(target->value);
-  if (result.ok) *out_item = result.value;
-  return result.ok;
+  return source->value.try_steal_into(target->value, *out_item);
 }
 
 hyle_status hyle_container_concurrent_ptr_vector_create(

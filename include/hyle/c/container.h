@@ -442,7 +442,8 @@ typedef struct hyle_container_work_stealing_deque_o
 typedef enum hyle_container_steal_status {
   HYLE_CONTAINER_STEAL_OK = 0,
   HYLE_CONTAINER_STEAL_EMPTY = 1,
-  HYLE_CONTAINER_STEAL_ABORT = 2
+  /* Another owner/thief won this attempt; retry according to caller policy. */
+  HYLE_CONTAINER_STEAL_RETRY = 2
 } hyle_container_steal_status;
 HYLE_CONTAINER_C_API hyle_status hyle_container_work_stealing_deque_create(
     hyle_container_work_stealing_deque** out, hyle_allocator backing,

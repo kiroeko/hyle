@@ -5,8 +5,8 @@
 //   * same kBatch = 512 fill+drain wave
 //   * Worker::new_fifo()  == HYLE WsFifoQueue (tokio-style FIFO owner queue)
 //   * Worker::new_lifo()  == HYLE WorkStealingDeque (Chase-Lev LIFO)
-//   * steal_batch_and_pop == HYLE WsFifoQueue::steal_into (steal ~half + return one)
-//   * Stealer::steal      == HYLE WorkStealingDeque::steal (one item)
+//   * steal_batch_and_pop == HYLE WsFifoQueue::try_steal_into (steal ~half + return one)
+//   * Stealer::steal      == HYLE WorkStealingDeque::try_steal_top (one item)
 //
 // HONEST cross-language caveats (printed, not hidden):
 //   * Different language + compiler (rustc LLVM vs MSVC/GCC). Same -O3+LTO+1 CGU.
@@ -84,7 +84,7 @@ fn bench_owner_lifo() {
     });
 }
 
-// 3. STEAL drain via steal_batch_and_pop (== HYLE WsFifoQueue::steal_into):
+// 3. STEAL drain via steal_batch_and_pop (== HYLE WsFifoQueue::try_steal_into):
 //    owner fills BATCH, thief steals ~half into its own worker + pops one, drains.
 fn bench_steal_batch() {
     let victim: Worker<u64> = Worker::new_fifo();
@@ -111,7 +111,7 @@ fn bench_steal_batch() {
     });
 }
 
-// 4. Single-item steal (== HYLE WorkStealingDeque::steal): owner fills, thief
+// 4. Single-item steal (== HYLE WorkStealingDeque::try_steal_top): owner fills, thief
 //    steals one at a time off a LIFO deque.
 fn bench_steal_one() {
     let w: Worker<u64> = Worker::new_lifo();

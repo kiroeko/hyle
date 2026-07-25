@@ -8,7 +8,7 @@
 > `ConcurrentVector` 已按 oneTBB 实际合同改为并行 writer；Windows/WSL n=15 的
 > 单 writer、range iteration 与读旧 prefix+写 tail 均领先，8 writer 同档；WSL 逐次
 > `operator[]` 顺扫仍慢约 2x，但正常 range-for 已快 1.39x。GCC 14 TSan（禁用 WSL
-> ASLR 后）209 个 typed 测试、纯 C 测试及并发组重复 30 轮通过。
+> ASLR 后）210 个 typed 测试、纯 C 测试及并发组重复 30 轮通过。
 > 真正的 typed `FlatHashSet` 与 map/set 标准 forward iteration 已完成；Windows 的
 > map/set 五/四项均领先 Abseil；WSL map 四项领先、miss 慢约 3%，set hit 同档、miss
 > 慢约 6%、insert/iterate 领先。map 已按成熟语义拆分 insert/try_emplace/
@@ -28,6 +28,10 @@
 > pointer queue 对照 rigtorp/Vyukov、crossbeam、moodycamel 后确认保留；旧 C
 > `ConcurrentVector` 则改为诚实的 `concurrent_ptr_vector`，补 reserve，并以
 > `try_get(out)` 区分合法 NULL payload 与越界。
+> typed work-stealing API 也已与 C 面统一为带角色/方向的 `try_*`；pop/steal 失败不写
+> out，竞争第三态由容易误解的 abort 改为 retry，底层算法与内存序不变；BoundedQueue
+> 的 byte slot 不再暗中要求 payload 可默认构造/赋值，stealing queue 则明确写出
+> preallocated atomic<T> 的类型约束并要求 always lock-free。
 > erased POD vector 也补齐 pointer/count batch append/insert、resize、erase 与 shrink；
 > 纯 C 用户不再需要逐元素跨 ABI 或自行篡改隐藏 size。
 > 下文的 109 exports、124 callable、TLS error 和性能表只应按历史快照阅读。
@@ -64,7 +68,8 @@ Linux x64 和 macOS arm64 的最终验证命令与结果记录在本文末尾。
   消除扩容/删除的重复长串扫描；构造时一次选择 16/32/64 shard；短 Entry slab
   高水位复用；永久 intern 与可回收生命周期分离，四类 batch API 摊薄锁/ABI。
 - Bounded/Sharded/WorkStealing/WsFifo：构造 OOM 产生可检测 invalid 状态，C
-  create 不会返回半初始化 handle；Sharded consumer cursor 公平推进。
+  create 不会返回半初始化 handle；Sharded consumer cursor 公平推进；typed/C
+  非阻塞入口都用 `try_*`，并由名称显式区分 owner bottom/top 与 FIFO back/front。
 - ConcurrentVector：消除 capacity data race，限制 segment shift/address-space
   上界，OOM 返回 `SIZE_MAX`。
 - sched/graph 已消费队列和 append-only 能力。IntrusiveList 已归 core，避免

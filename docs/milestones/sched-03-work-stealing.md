@@ -36,7 +36,8 @@
 ### Step 1（提交 A）：多 worker + work-stealing + busy-spin
 - N 个 `platform::Thread` worker，每个持一个 `container::WsFifoQueue<Fiber*>` 本地队列。
 - 一个 global **无锁 `container::ShardedQueue<Fiber*, mem::Allocator>`(N 子环=每 worker 一环)** 注入：跨核 spawn / 外部线程提交 / 本地满溢出。(初版用单环 `BoundedQueue`,bench-02b 揪出单点 CAS 争用后改分片;work-stealing 无全局序需求,放弃全局 FIFO 零代价。)
-- worker 循环（§2.2）：`local.pop()` → 周期查 `global` → `steal_into` 随机 victim → 都空则 **busy `yield()`**（先不 park）。
+- worker 循环（§2.2）：`local.try_pop_front(out)` → 周期查 `global` →
+  `victim.local.try_steal_into(local, out)` → 都空则 **busy `yield()`**（先不 park）。
 - `spawn(Fiber*)`、`shutdown()`（置停止标志 + drain + join）。`thread_local` 当前 worker 指针（spawn 落本地队列）。
 - **目的**：先验多线程真跑 fiber + 偷取正确 + 关闭干净，不引入 park 的复杂度。
 

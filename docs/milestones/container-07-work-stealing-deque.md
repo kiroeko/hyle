@@ -12,7 +12,7 @@
 > **用途校正（2026-06）**：本 Chase-Lev deque 是 **owner-LIFO（深度优先 / fork-join 语义）**。原打算做 sched-03 调度器本地队列，但 sched-design §2.2 明确调度器要 **owner-FIFO 公平轮转**（LIFO 会让 yield 的 fiber 在单 worker 上独占、推翻 round-robin）。故调度器本地队列改用 **container-08**（tokio 式 FIFO work-stealing ring）；**本 deque 保留给 `graph-01` 的 taskgraph fork-join 执行器**（DFS 对 fork-join 反而是优点：cache 友好）。非废弃，是各就其位。
 
 > **cloc 留档（`cloc work_stealing_deque.h work_stealing_deque_test.cc`）**：**249 行** = 98 头 + 151 测试。header-only 模板，纯算法 + 强并发测试，非 stub。
-> **对抗式自审记录**：① **slot 用 `std::atomic<T>`(relaxed)** 而非裸 `T`——Lê 论文用裸数组 + fence 携带序，但 TSan 不模型化裸访问的 fence 序、会误报 owner-写/thief-读同槽；crossbeam 同样用 atomic slot。既正确又 TSan-clean。② **空判用有符号差** `(int64_t)(b-t)`——`pop_bottom` 把 bottom 减到可能回绕低于 top（空 deque），裸无符号 `t<=b` 会误判非空；crossbeam/st3 同款有符号转换。③ 编译期发现 `StealStatus` 嵌套模板导致 `<int>`/`<uint64_t>` 枚举类型不同、无法比较——**提到 namespace 作用域**（更好的 API，单一枚举）。
+> **对抗式自审记录**：① **slot 用 `std::atomic<T>`(relaxed)** 而非裸 `T`——Lê 论文用裸数组 + fence 携带序，但 TSan 不模型化裸访问的 fence 序。当前本地 Crossbeam 为泛型 T 使用 volatile，并在源码明确承认同槽 read/write 技术上是 data race/UB；HYLE 不复制这个泛型假象，改为只接受 always-lock-free atomic 的 pointer/word-sized handle，保持 C++ memory model 正确且 TSan-clean。② **空判用有符号差** `(int64_t)(b-t)`——`try_pop_bottom` 把 bottom 减到可能回绕低于 top（空 deque），裸无符号 `t<=b` 会误判非空；crossbeam/st3 同款有符号转换。③ 编译期发现 `StealStatus` 嵌套模板导致 `<int>`/`<uint64_t>` 枚举类型不同、无法比较——**提到 namespace 作用域**（更好的 API，单一枚举）。
 > **关键诚实缺口（必须显著记下）**：**TSan 不验 fence。** GCC `-Wtsan` 明告 `atomic_thread_fence` "is not supported with -fsanitize=thread"——TSan **不模型化独立 fence**，所以"TSan 零 data race"**没有**验证本 deque 最难的那部分（Lê 2013 的 seq_cst fence 携带的 StoreLoad 序）。且 x86 是 **TSO 强序**、本机**无 ARM**——fence 的正确性恰恰在最需要验证处（弱内存模型）**未经任何机器验证**。当前 fence 正确性仅靠：① 忠实移植已证明的 Lê 2013/crossbeam 算法；② 20 万项 1-owner-4-thief 守恒压力（能抓丢/重，抓不全 race）。**真闸门是模型检查器(loom/CDSChecker)或真 ARM 跑**——记为 sched-03/CI 的待办，不假装已验。`-Wno-tsan` 仅消警告噪音（否则刷屏 + 破 WERROR），**不消除此缺口**。
 > **实现注记**：有界 pow2、`Allocator` 注入、T 限 trivially-copyable；top/bottom 各 `alignas(64)` 防伪共享；不做动态扩容（Chase-Lev 原论文的 CAS 换数组 + 回收是另一难题，HYLE 不需无界）；批量 steal-half 留 sched-03。
 
@@ -35,20 +35,25 @@ container（T0）的 lock-free 原语，sched-03 的直接前置。sched-02 的 
 ### D1：移植 Chase-Lev，内存序照 Lê et al. 2013（不自创）
 - **不是 HYLE 发明**：Chase-Lev（2005）+ Lê/Pop/Cohen/Nardelli 2013《Correct and Efficient Work-Stealing for Weak Memory Models》给出 C11 原子的**精确内存序**。lock-free deque 是出名难写对的（ABA、ARM 弱序），照搬已证明的 order，不"简化"。
 - 三操作、三视角：
-  - `push_bottom`（**仅 owner**）：`b=bottom(relaxed)`；写 `buf[b%cap]`；`bottom.store(b+1, release)`。
-  - `pop_bottom`（**仅 owner**）：`b=bottom-1`；`bottom.store(b, relaxed)`；**`seq_cst fence`**；`t=top(relaxed)`；空/单元素分支（单元素与 thief 争用一次 `top` CAS）。
-  - `steal`（**thief**）：`t=top(acquire)`；**`seq_cst fence`**；`b=bottom(acquire)`；若 `t<b` 读 `buf[t%cap]` 然后 `top.compare_exchange(t,t+1, seq_cst,relaxed)`，失败=被抢、返回 EMPTY/ABORT。
+  - `try_push_bottom`（**仅 owner**）：`b=bottom(relaxed)`；写 `buf[b%cap]`；`bottom.store(b+1, release)`。
+  - `try_pop_bottom`（**仅 owner**）：`b=bottom-1`；`bottom.store(b, relaxed)`；**`seq_cst fence`**；`t=top(relaxed)`；空/单元素分支（单元素与 thief 争用一次 `top` CAS）。
+  - `try_steal_top`（**thief**）：`t=top(acquire)`；**`seq_cst fence`**；`b=bottom(acquire)`；若 `t<b` 读 `buf[t%cap]` 然后 `top.compare_exchange(t,t+1, seq_cst,relaxed)`，失败=被抢、返回 EMPTY/RETRY。
 
 ### D2：有界（固定 pow2 容量），不做动态增长
 - tokio 本地队列也是有界（256）。满了由 sched-03 甩 global。**不做** Chase-Lev 原论文的动态扩容数组（CAS 换数组 + 旧数组回收是额外难点，无界非 HYLE 所需）。容量 pow2、mask 取模、`Allocator` 注入 buffer。
 
 ### D3：T 限 trivially-copyable，返回用显式状态
-- T = fiber handle/指针/POD，`static_assert`。`pop_bottom`/`steal` 返回 `{status, value}`（成功/空/争用失败），不用异常、不用 std::optional 跨边界（值类型 + 状态枚举，header-only 模板内联）。
+- T = fiber handle/指针/POD，`static_assert`。`try_pop_bottom(out)` 返回 bool，
+  `try_steal_top(out)` 返回 `StealStatus::{kOk,kEmpty,kRetry}`；只有成功才写 out，
+  不用异常或 `std::optional`，header-only 模板保持内联。
 
 ## 具体事务
 
-- [ ] `include/hyle/container/work_stealing_deque.h`：`WorkStealingDeque<T>`，`push_bottom(T)` / `pop_bottom()->{ok,val}` / `steal()->{status,val}` / `capacity()`。non-copyable/non-movable。
-- [ ] **不做**：动态扩容、批量 steal-half（sched-03 再加，先单个 steal 正确）、sched 集成、global 队列。
+- [x] `include/hyle/container/work_stealing_deque.h`：`WorkStealingDeque<T>`，
+  `try_push_bottom(T)` / `try_pop_bottom(out)` / `try_steal_top(out)` / `capacity()`。
+  non-copyable/non-movable。
+- [x] **明确不做**：动态扩容、批量 steal-half；这不是未完成项，owner FIFO +
+  batch-share 由独立的 `WsFifoQueue` 承担。
 
 ## 交付物
 

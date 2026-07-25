@@ -144,6 +144,17 @@ symlink 或 Windows case rules 等价；需要真实 filesystem 行为时使用 
 这些 queue 构造时完成 storage allocation，热 push/pop/steal 不分配。容量与
 owner/thief 角色是合同；违反单 owner 约束不是“稍慢”，而是错误。
 
+所有可能因满、空或竞争失败的 typed 热入口也统一使用 `try_*`。Chase-Lev 使用
+`try_push_bottom`、`try_pop_bottom(out)`、`try_steal_top(out)`；最后一项返回
+`StealStatus::kOk/kEmpty/kRetry`，其中 retry 只是输掉本次竞争，不是取消。
+WsFifo 使用 `try_push_back`、`try_pop_front(out)`、`try_steal_into(target, out)`。
+失败时 out 保持原值；方向和 owner/thief 角色直接写在名称中，不再依靠记住实现细节。
+`BoundedQueue` 的 payload 只需 trivially-copyable，slot 保存对象表示，不额外要求默认
+构造或 copy assignment。两种 stealing queue 为保证环回 slot 的并发访问无数据竞争而
+使用 `std::atomic<T>`，并要求它 always lock-free；常见 pointer、整数和 word-sized handle
+满足，宽 task struct 请放在稳定 storage 中并传指针。它们的预分配 atomic slot 还要求 T
+可默认构造并满足标准 atomic 的 copy/move constructible/assignable 合同。
+
 `ConcurrentVector` 与 oneTBB 一样允许 writers 原子领取不同索引并并行构造，只有跨
 segment allocation 进入冷锁。安全模式是：writers join/quiesce 后遍历；append 返回后
 使用它返回的 index；或在 append 期间只读事先完成的 prefix。`size()` 是 reservation

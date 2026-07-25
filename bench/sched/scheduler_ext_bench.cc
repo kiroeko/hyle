@@ -1,6 +1,6 @@
 // Scheduler-layer gap benchmarks: the four sched behaviours the earlier benches
 // left uncovered (scheduler_bench = raw primitives; queue_sota_bench already
-// covers the work-stealing DATA STRUCTURE, i.e. WsFifoQueue::steal_into micro
+// covers the work-stealing DATA STRUCTURE, i.e. WsFifoQueue::try_steal_into micro
 // cost). These four measure SCHEDULER-LEVEL behaviour instead, so they are
 // complementary, not duplicative:
 //

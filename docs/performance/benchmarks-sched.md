@@ -34,7 +34,7 @@
 | WSL2 GCC Release(各 3 轮) | ~186 ns/往返 | ~121 ns/往返 | **延迟 −35%** |
 
 - **收益来源**:一次唤醒省掉 global-shard 的 CAS enqueue + `notify()` 的 seq_cst fence(常态还免了一次 futex 系统调用),且被唤醒 fiber 在**同核**恢复——生产者刚写的 buffer 还在 L1/L2。ping-pong / channel send / RPC reply / io echo 这类"A 唤 B、B 唤 A"的往返模式最受益。
-- **无回退**:LIFO 槽只拦截 `reinject`(唤醒路径),spawn 走 `local.push_back`(不变)——spawn 吞吐仍 339ns/任务(vs std::async 69x)。work-stealing 扩展仍近线性(1→2→4→8 = 1.9x/3.5x/5.4x),槽是 worker 私有、偷取路径看不到,不动 Dekker/CAS 反羊群数学。
+- **无回退**:LIFO 槽只拦截 `reinject`(唤醒路径),spawn 走 `local.try_push_back`(不变)——spawn 吞吐仍 339ns/任务(vs std::async 69x)。work-stealing 扩展仍近线性(1→2→4→8 = 1.9x/3.5x/5.4x),槽是 worker 私有、偷取路径看不到,不动 Dekker/CAS 反羊群数学。
 - **正确性**:槽是单线程字段(仅本 worker 填/取),worker 绝不会带着非空槽去 park(`find_task` 先清空),故无跨线程访问。**WSL `setarch -R` TSan:102/102 全绿、0 warning**。cooperative yield 走 `reschedule` 不经此路,tokio"yield 不入槽"公平规则自动满足。
 
 
@@ -195,7 +195,7 @@ CancelToken 树是 shard-local、(几乎)无锁结构——唯一原子是 per-n
 
 ## 调度器层缺口 bench：work-stealing 扩展 / spawn_on 亲和 / 协程胶水 / fiber sleep（`bench/sched/scheduler_ext_bench.cc`）
 
-> 补 sched 此前四个缺 bench 的行为。**边界(避免与既有重复)**:`scheduler_bench` 测原语(yield/spawn/suspend-wake spine),`queue_sota_bench` 已测 work-stealing **数据结构层**(WsFifoQueue steal_into 微观 ns),本节测**调度器层行为**——三者互补。双平台各 15 遍 `bench-stat.py`(Win MSVC19.50 + Linux GCC14.2 原生 ext4),gap>两变体 spread 之和才判赢/输。
+> 补 sched 此前四个缺 bench 的行为。**边界(避免与既有重复)**:`scheduler_bench` 测原语(yield/spawn/suspend-wake spine),`queue_sota_bench` 已测 work-stealing **数据结构层**(`WsFifoQueue::try_steal_into` 微观 ns),本节测**调度器层行为**——三者互补。双平台各 15 遍 `bench-stat.py`(Win MSVC19.50 + Linux GCC14.2 原生 ext4),gap>两变体 spread 之和才判赢/输。
 
 | 项 | HYLE(Win/Lin) | 基线 | 判定(15 遍,双平台) |
 |---|---|---|---|

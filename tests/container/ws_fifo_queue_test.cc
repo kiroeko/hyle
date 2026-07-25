@@ -17,65 +17,70 @@ using hyle::mem::system_allocator;
 
 TEST(WsFifoQueue, OwnerFifoPushPop) {
   WsFifoQueue<int> q(8);  // default = compile-time SystemAllocator
-  EXPECT_TRUE(q.push_back(10));
-  EXPECT_TRUE(q.push_back(20));
-  EXPECT_TRUE(q.push_back(30));
+  EXPECT_TRUE(q.try_push_back(10));
+  EXPECT_TRUE(q.try_push_back(20));
+  EXPECT_TRUE(q.try_push_back(30));
   // FIFO: pop returns oldest first (unlike the Chase-Lev deque's LIFO)
-  auto a = q.pop();
-  ASSERT_TRUE(a.ok);
-  EXPECT_EQ(a.value, 10);
-  auto b = q.pop();
-  ASSERT_TRUE(b.ok);
-  EXPECT_EQ(b.value, 20);
-  auto c = q.pop();
-  ASSERT_TRUE(c.ok);
-  EXPECT_EQ(c.value, 30);
-  EXPECT_FALSE(q.pop().ok);
+  int value = -1;
+  ASSERT_TRUE(q.try_pop_front(value));
+  EXPECT_EQ(value, 10);
+  ASSERT_TRUE(q.try_pop_front(value));
+  EXPECT_EQ(value, 20);
+  ASSERT_TRUE(q.try_pop_front(value));
+  EXPECT_EQ(value, 30);
+  EXPECT_FALSE(q.try_pop_front(value));
+  EXPECT_EQ(value, 30);
 }
 
 TEST(WsFifoQueue, FullPushRejected) {
   WsFifoQueue<int> q(2);
-  EXPECT_TRUE(q.push_back(1));
-  EXPECT_TRUE(q.push_back(2));
-  EXPECT_FALSE(q.push_back(3));  // capacity 2 -> full
+  EXPECT_TRUE(q.try_push_back(1));
+  EXPECT_TRUE(q.try_push_back(2));
+  EXPECT_FALSE(q.try_push_back(3));  // capacity 2 -> full
 }
 
 TEST(WsFifoQueue, WrapsAroundManyLaps) {
   WsFifoQueue<int> q(4);
   for (int i = 0; i < 1000; ++i) {
-    ASSERT_TRUE(q.push_back(i));
-    auto r = q.pop();
-    ASSERT_TRUE(r.ok);
-    EXPECT_EQ(r.value, i);
+    ASSERT_TRUE(q.try_push_back(i));
+    int value = -1;
+    ASSERT_TRUE(q.try_pop_front(value));
+    EXPECT_EQ(value, i);
   }
 }
 
-// ---- steal_into semantics (single-thread, deterministic) --------------------
+// ---- try_steal_into semantics (single-thread, deterministic) ----------------
 
 TEST(WsFifoQueue, StealMovesAboutHalfOldestFirst) {
   WsFifoQueue<int> victim(16);
   WsFifoQueue<int> thief(16);
-  for (int i = 0; i < 8; ++i) victim.push_back(i);  // 0..7
+  for (int i = 0; i < 8; ++i) victim.try_push_back(i);  // 0..7
 
   // Steal ~half (4): one returned directly, rest land in `thief`, oldest first.
-  auto r = victim.steal_into(thief);
-  ASSERT_TRUE(r.ok);
+  int value = -1;
+  ASSERT_TRUE(victim.try_steal_into(thief, value));
   // tokio takes ceil(8/2)=4; returns the LAST of the batch, leaves first 3 in thief.
   // The batch is the oldest 4 (0,1,2,3); returned = index dst_tail+(n-1).
-  EXPECT_EQ(r.value, 3);
+  EXPECT_EQ(value, 3);
   // thief now holds 0,1,2 (FIFO)
-  EXPECT_EQ(thief.pop().value, 0);
-  EXPECT_EQ(thief.pop().value, 1);
-  EXPECT_EQ(thief.pop().value, 2);
-  EXPECT_FALSE(thief.pop().ok);
+  ASSERT_TRUE(thief.try_pop_front(value));
+  EXPECT_EQ(value, 0);
+  ASSERT_TRUE(thief.try_pop_front(value));
+  EXPECT_EQ(value, 1);
+  ASSERT_TRUE(thief.try_pop_front(value));
+  EXPECT_EQ(value, 2);
+  EXPECT_FALSE(thief.try_pop_front(value));
   // victim retains the newer half (4,5,6,7)
-  EXPECT_EQ(victim.pop().value, 4);
+  ASSERT_TRUE(victim.try_pop_front(value));
+  EXPECT_EQ(value, 4);
 }
 
 TEST(WsFifoQueue, StealFromEmptyReturnsNotOk) {
   WsFifoQueue<int> victim(8);
   WsFifoQueue<int> thief(8);
-  EXPECT_FALSE(victim.steal_into(thief).ok);
+  int value = 99;
+  EXPECT_FALSE(victim.try_steal_into(thief, value));
+  EXPECT_EQ(value, 99);
 }
 
 // ---- concurrent conservation: 1 owner + N thieves (each own dst) ------------
@@ -110,16 +115,17 @@ TEST(WsFifoQueue, ConcurrentConservation) {
       [](void* p) {
         auto* a = static_cast<OwnerArgs*>(p);
         for (std::uint64_t id = 1; id <= kN; ++id) {
-          while (!a->q->push_back(id)) {
-            auto r = a->q->pop();  // full: drain own end to make room
-            if (r.ok) a->got->push_back(r.value);
+          while (!a->q->try_push_back(id)) {
+            std::uint64_t value = 0;
+            if (a->q->try_pop_front(value))  // full: drain own end
+              a->got->push_back(value);
           }
         }
         a->done->store(true, std::memory_order_release);
         for (;;) {  // drain remaining
-          auto r = a->q->pop();
-          if (r.ok) {
-            a->got->push_back(r.value);
+          std::uint64_t value = 0;
+          if (a->q->try_pop_front(value)) {
+            a->got->push_back(value);
           } else {
             break;
           }
@@ -140,22 +146,20 @@ TEST(WsFifoQueue, ConcurrentConservation) {
           // ever dropped -- that would silently lose an id.)
           auto absorb_steal = [&](std::uint64_t first) {
             a->got->push_back(first);
-            for (auto r = local.pop(); r.ok; r = local.pop()) {
-              a->got->push_back(r.value);
-            }
+            std::uint64_t value = 0;
+            while (local.try_pop_front(value)) a->got->push_back(value);
           };
           for (;;) {
-            auto s = a->victim->steal_into(local);
-            if (s.ok) {
-              absorb_steal(s.value);
+            std::uint64_t value = 0;
+            if (a->victim->try_steal_into(local, value)) {
+              absorb_steal(value);
             } else if (a->done->load(std::memory_order_acquire)) {
               // empty/contended AND owner done producing -> a few more tries,
               // then exit if still nothing.
               bool more = false;
               for (int k = 0; k < 64; ++k) {
-                auto s2 = a->victim->steal_into(local);
-                if (s2.ok) {
-                  absorb_steal(s2.value);
+                if (a->victim->try_steal_into(local, value)) {
+                  absorb_steal(value);
                   more = true;
                   break;
                 }

@@ -108,9 +108,9 @@ loop:
   f = pinned.pop()                    // 0. 钉在本核的 fiber(shard-per-core io),永不被偷,io 延迟优先
       ?? (tick%61==0 ? global.pop())  // 1. 每 61 次先查 global 防本地 firehose 饿死全局注入(机会③)
       ?? lifo_slot.take()             // 2. 刚在本核唤醒的,热 cache 优先(预算 kMaxLifoPolls=3)
-      ?? local_queue.pop()            // 3. 本地 FIFO ring(owner pop head)
+      ?? local_queue.try_pop_front(f) // 3. 本地 FIFO ring(owner pop front)
       ?? global.pop()                 // 4. 全局分片注入(常态兜底)
-      ?? steal_from_random_victim()   // 5. 随机 victim 偷一半
+      ?? victim.local.try_steal_into(local_queue, f) // 5. 随机 victim 偷一半
       ?? park()                       // 6. 都没有→挂起(见 2.3 防惊群)
   switch_to_fiber(f)                  // fcontext 切栈（第一节）
 ```

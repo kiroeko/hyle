@@ -15,66 +15,65 @@ using hyle::mem::system_allocator;
 using Status = hyle::container::StealStatus;
 
 // ---- single-thread owner semantics ------------------------------------------
-
 TEST(WorkStealingDeque, OwnerLifoPushPop) {
   WorkStealingDeque<int> d(8);
-  EXPECT_TRUE(d.push_bottom(10));
-  EXPECT_TRUE(d.push_bottom(20));
-  EXPECT_TRUE(d.push_bottom(30));
+  EXPECT_TRUE(d.try_push_bottom(10));
+  EXPECT_TRUE(d.try_push_bottom(20));
+  EXPECT_TRUE(d.try_push_bottom(30));
   // owner pops its own end LIFO
-  auto a = d.pop_bottom();
-  ASSERT_TRUE(a.ok);
-  EXPECT_EQ(a.value, 30);
-  auto b = d.pop_bottom();
-  ASSERT_TRUE(b.ok);
-  EXPECT_EQ(b.value, 20);
-  auto c = d.pop_bottom();
-  ASSERT_TRUE(c.ok);
-  EXPECT_EQ(c.value, 10);
+  int value = -1;
+  ASSERT_TRUE(d.try_pop_bottom(value));
+  EXPECT_EQ(value, 30);
+  ASSERT_TRUE(d.try_pop_bottom(value));
+  EXPECT_EQ(value, 20);
+  ASSERT_TRUE(d.try_pop_bottom(value));
+  EXPECT_EQ(value, 10);
 }
 
 TEST(WorkStealingDeque, EmptyPopReturnsNotOk) {
   WorkStealingDeque<int> d(8);
-  EXPECT_FALSE(d.pop_bottom().ok);
+  int value = 99;
+  EXPECT_FALSE(d.try_pop_bottom(value));
+  EXPECT_EQ(value, 99);
   // and stays usable afterwards (bottom was restored correctly)
-  EXPECT_TRUE(d.push_bottom(1));
-  auto r = d.pop_bottom();
-  ASSERT_TRUE(r.ok);
-  EXPECT_EQ(r.value, 1);
+  EXPECT_TRUE(d.try_push_bottom(1));
+  ASSERT_TRUE(d.try_pop_bottom(value));
+  EXPECT_EQ(value, 1);
 }
 
 TEST(WorkStealingDeque, FullPushRejected) {
   WorkStealingDeque<int> d(2);
-  EXPECT_TRUE(d.push_bottom(1));
-  EXPECT_TRUE(d.push_bottom(2));
-  EXPECT_FALSE(d.push_bottom(3));  // capacity 2 -> full
+  EXPECT_TRUE(d.try_push_bottom(1));
+  EXPECT_TRUE(d.try_push_bottom(2));
+  EXPECT_FALSE(d.try_push_bottom(3));  // capacity 2 -> full
 }
 
 TEST(WorkStealingDeque, StealTakesOldestThenOwnerNewest) {
   WorkStealingDeque<int> d(8);
-  d.push_bottom(10);
-  d.push_bottom(20);
-  d.push_bottom(30);
-  auto s = d.steal();  // thief end takes the OLDEST
-  ASSERT_EQ(s.status, Status::kOk);
-  EXPECT_EQ(s.value, 10);
-  auto p = d.pop_bottom();  // owner end takes the NEWEST
-  ASSERT_TRUE(p.ok);
-  EXPECT_EQ(p.value, 30);
+  d.try_push_bottom(10);
+  d.try_push_bottom(20);
+  d.try_push_bottom(30);
+  int value = -1;
+  ASSERT_EQ(d.try_steal_top(value), Status::kOk);  // oldest
+  EXPECT_EQ(value, 10);
+  ASSERT_TRUE(d.try_pop_bottom(value));  // owner end takes the newest
+  EXPECT_EQ(value, 30);
 }
 
 TEST(WorkStealingDeque, StealEmptyReportsEmpty) {
   WorkStealingDeque<int> d(8);
-  EXPECT_EQ(d.steal().status, Status::kEmpty);
+  int value = 99;
+  EXPECT_EQ(d.try_steal_top(value), Status::kEmpty);
+  EXPECT_EQ(value, 99);
 }
 
 TEST(WorkStealingDeque, WrapsAroundManyLaps) {
   WorkStealingDeque<int> d(4);
   for (int i = 0; i < 1000; ++i) {
-    ASSERT_TRUE(d.push_bottom(i));
-    auto r = d.pop_bottom();
-    ASSERT_TRUE(r.ok);
-    EXPECT_EQ(r.value, i);
+    ASSERT_TRUE(d.try_push_bottom(i));
+    int value = -1;
+    ASSERT_TRUE(d.try_pop_bottom(value));
+    EXPECT_EQ(value, i);
   }
 }
 
@@ -110,16 +109,17 @@ TEST(WorkStealingDeque, ConcurrentConservation) {
       [](void* p) {
         auto* a = static_cast<OwnerArgs*>(p);
         for (std::uint64_t id = 1; id <= kN; ++id) {
-          while (!a->d->push_bottom(id)) {
-            auto r = a->d->pop_bottom();  // full: reclaim from own end
-            if (r.ok) a->got->push_back(r.value);
+          while (!a->d->try_push_bottom(id)) {
+            std::uint64_t value = 0;
+            if (a->d->try_pop_bottom(value))  // reclaim from own end
+              a->got->push_back(value);
           }
         }
         a->done->store(true, std::memory_order_release);
         for (;;) {  // drain remaining owner-side
-          auto r = a->d->pop_bottom();
-          if (r.ok) {
-            a->got->push_back(r.value);
+          std::uint64_t value = 0;
+          if (a->d->try_pop_bottom(value)) {
+            a->got->push_back(value);
           } else {
             break;
           }
@@ -135,25 +135,25 @@ TEST(WorkStealingDeque, ConcurrentConservation) {
         [](void* p) {
           auto* a = static_cast<ThiefArgs*>(p);
           for (;;) {
-            auto s = a->d->steal();
-            if (s.status == Status::kOk) {
-              a->got->push_back(s.value);
-            } else if (s.status == Status::kEmpty &&
+            std::uint64_t value = 0;
+            const Status status = a->d->try_steal_top(value);
+            if (status == Status::kOk) {
+              a->got->push_back(value);
+            } else if (status == Status::kEmpty &&
                        a->done->load(std::memory_order_acquire)) {
               // Empty AND owner finished producing: try a few more in case the
               // owner is mid-drain, then exit.
               bool more = false;
               for (int k = 0; k < 64; ++k) {
-                auto s2 = a->d->steal();
-                if (s2.status == Status::kOk) {
-                  a->got->push_back(s2.value);
+                if (a->d->try_steal_top(value) == Status::kOk) {
+                  a->got->push_back(value);
                   more = true;
                   break;
                 }
               }
               if (!more) break;
             } else {
-              hyle::platform::this_thread::yield();  // kAbort or transient empty
+              hyle::platform::this_thread::yield();  // kRetry or transient empty
             }
           }
         },

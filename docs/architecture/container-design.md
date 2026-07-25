@@ -238,6 +238,16 @@ lock-free hot path 保持定宽搬运，不引入运行时 element stride、copy
 分配。四类并非同一 benchmark 的重复品，而是 strict MPMC FIFO、sharded relaxed FIFO、
 owner-LIFO/thief-FIFO 与 owner-FIFO/batch-share 四种不同调度合同。
 
+同一轮也把 typed work-stealing 面从早期算法名收束为公开合同：所有可能失败的热操作
+统一 `try_*`，方法名编码 bottom/top、back/front；pop/steal 通过 out 参数只在成功时
+写值。Chase-Lev 的第三态命名为 `kRetry`，与 Crossbeam 的竞态语义一致，不再用容易被
+理解为取消/终止的 `abort`。这只重塑调用面，底层内存序、定宽 slot 和复杂度不变。
+`BoundedQueue` 的值合同只要求 trivially-copyable，slot 只保存对象表示，不需要先默认
+构造 T。两种 stealing ring 的 slot 则必须是 atomic，避免环回写与旧 thief read 构成
+C++ data race；因此明确继承预分配 `std::atomic<T>` 的默认构造及 copy/move
+constructible/assignable 限制，并要求 always lock-free，宽 task 通过 pointer/word-sized
+handle 间接承载。
+
 C concurrent facade 则确有旧形状问题：它只存 pointer 却叫通用 concurrent vector，且
 旧 `at()` 无法区分越界与合法 NULL payload。现改名 `concurrent_ptr_vector`，以
 `try_get(out)` 返回 presence，并补 typed/oneTBB 都有的 cold `reserve`。create 的

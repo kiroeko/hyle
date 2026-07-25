@@ -234,7 +234,8 @@ consumer cursor 应由各 consumer 私有并在多次 pop 间保留。
 `hyle_container_work_stealing_deque_capacity` 是单 owner 在 bottom push/pop、多个
 thief 从 top steal
 的 Chase-Lev 风格 deque。steal 返回
-`HYLE_CONTAINER_STEAL_OK/EMPTY/ABORT`；ABORT 表示竞争，应重试。
+`HYLE_CONTAINER_STEAL_OK/EMPTY/RETRY`；RETRY 表示输掉本次竞争，调用方可按自己的
+退避策略重试；它不是取消或终止。
 
 `hyle_container_ws_fifo_queue_create`、
 `hyle_container_ws_fifo_queue_create_system`、

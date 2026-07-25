@@ -3,6 +3,7 @@
 #include <atomic>
 #include <cstdint>
 #include <thread>
+#include <type_traits>
 #include <unordered_set>
 #include <vector>
 
@@ -13,6 +14,25 @@
 using hyle::container::BoundedQueue;
 using hyle::mem::Allocator;
 using hyle::mem::system_allocator;
+
+namespace {
+
+struct alignas(128) TriviallyCopyableNonAssignable {
+  std::uint64_t value;
+
+  TriviallyCopyableNonAssignable() = delete;
+  explicit TriviallyCopyableNonAssignable(std::uint64_t init) : value(init) {}
+
+  TriviallyCopyableNonAssignable& operator=(const TriviallyCopyableNonAssignable&) =
+      delete;
+};
+
+static_assert(std::is_trivially_copyable_v<TriviallyCopyableNonAssignable>);
+static_assert(alignof(TriviallyCopyableNonAssignable) == 128);
+static_assert(!std::is_default_constructible_v<TriviallyCopyableNonAssignable>);
+static_assert(!std::is_copy_assignable_v<TriviallyCopyableNonAssignable>);
+
+}  // namespace
 
 TEST(BoundedQueue, SingleThreadFifo) {
   BoundedQueue<int> q(4);  // default = compile-time SystemAllocator
@@ -35,8 +55,9 @@ TEST(BoundedQueue, RejectsWhenFull) {
 
 TEST(BoundedQueue, RejectsWhenEmpty) {
   BoundedQueue<int> q(2);
-  int v = 0;
+  int v = 99;
   EXPECT_FALSE(q.try_pop(v));
+  EXPECT_EQ(v, 99);
 }
 
 TEST(BoundedQueue, WrapsAroundManyLaps) {
@@ -58,6 +79,14 @@ TEST(BoundedQueue, PointerPayload) {
   void* p = nullptr;
   ASSERT_TRUE(q.try_pop(p));
   EXPECT_EQ(p, &a);
+}
+
+TEST(BoundedQueue, TriviallyCopyablePayloadNeedNotBeAssignable) {
+  BoundedQueue<TriviallyCopyableNonAssignable> q(2);
+  ASSERT_TRUE(q.try_push(TriviallyCopyableNonAssignable{42}));
+  TriviallyCopyableNonAssignable out{0};
+  ASSERT_TRUE(q.try_pop(out));
+  EXPECT_EQ(out.value, 42u);
 }
 
 // Lock-free correctness gate (Windows stress; TSan deferred to Linux CI).

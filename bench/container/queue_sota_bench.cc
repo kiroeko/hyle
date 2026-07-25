@@ -333,11 +333,13 @@ void bench_ws_owner() {
 
   b.run("HYLE WsFifoQueue (FIFO owner)", [&] {
     static WsFifoQueue<std::uint64_t> q(kCap);
-    for (int i = 0; i < kBatch; ++i) q.push_back(static_cast<std::uint64_t>(i));
+    for (int i = 0; i < kBatch; ++i)
+      q.try_push_back(static_cast<std::uint64_t>(i));
     std::uint64_t sum = 0;
     for (int i = 0; i < kBatch; ++i) {
-      auto r = q.pop();
-      sum += r.value;
+      std::uint64_t value = 0;
+      q.try_pop_front(value);
+      sum += value;
     }
     ankerl::nanobench::doNotOptimizeAway(sum);
   });
@@ -345,11 +347,12 @@ void bench_ws_owner() {
   b.run("HYLE WorkStealingDeque (LIFO owner)", [&] {
     static WorkStealingDeque<std::uint64_t> d(kCap);
     for (int i = 0; i < kBatch; ++i)
-      d.push_bottom(static_cast<std::uint64_t>(i));
+      d.try_push_bottom(static_cast<std::uint64_t>(i));
     std::uint64_t sum = 0;
     for (int i = 0; i < kBatch; ++i) {
-      auto r = d.pop_bottom();
-      sum += r.value;
+      std::uint64_t value = 0;
+      d.try_pop_bottom(value);
+      sum += value;
     }
     ankerl::nanobench::doNotOptimizeAway(sum);
   });
@@ -378,35 +381,32 @@ void bench_ws_steal() {
       .batch(kBatch)
       .minEpochIterations(1000);
 
-  b.run("HYLE WsFifoQueue steal_into", [&] {
+  b.run("HYLE WsFifoQueue try_steal_into", [&] {
     static WsFifoQueue<std::uint64_t> victim(kCap);
     static WsFifoQueue<std::uint64_t> thief(kCap);
     for (int i = 0; i < kBatch; ++i)
-      victim.push_back(static_cast<std::uint64_t>(i));
+      victim.try_push_back(static_cast<std::uint64_t>(i));
     std::uint64_t sum = 0;
-    // Drain victim: each steal_into grabs ~half into `thief`, returns one.
+    // Drain victim: each try_steal_into grabs ~half into `thief`, returns one.
     for (;;) {
-      auto r = victim.steal_into(thief);
-      if (!r.ok) break;
-      sum += r.value;
+      std::uint64_t value = 0;
+      if (!victim.try_steal_into(thief, value)) break;
+      sum += value;
       // empty the thief's haul so capacity guard never trips
-      for (;;) {
-        auto t = thief.pop();
-        if (!t.ok) break;
-        sum += t.value;
-      }
+      while (thief.try_pop_front(value)) sum += value;
     }
     ankerl::nanobench::doNotOptimizeAway(sum);
   });
 
-  b.run("HYLE WorkStealingDeque steal", [&] {
+  b.run("HYLE WorkStealingDeque try_steal_top", [&] {
     static WorkStealingDeque<std::uint64_t> d(kCap);
     for (int i = 0; i < kBatch; ++i)
-      d.push_bottom(static_cast<std::uint64_t>(i));
+      d.try_push_bottom(static_cast<std::uint64_t>(i));
     std::uint64_t sum = 0;
     for (int i = 0; i < kBatch; ++i) {
-      auto r = d.steal();
-      if (r.status == hyle::container::StealStatus::kOk) sum += r.value;
+      std::uint64_t value = 0;
+      if (d.try_steal_top(value) == hyle::container::StealStatus::kOk)
+        sum += value;
     }
     ankerl::nanobench::doNotOptimizeAway(sum);
   });
