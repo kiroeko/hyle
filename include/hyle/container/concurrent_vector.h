@@ -33,10 +33,13 @@
 // store atomics/futures as T rather than making every vector append pay for it.
 //
 // The growth lock is cold: it is entered only when current capacity is
-// exhausted. Allocation completes before an index is reserved, so OOM never
-// strands a permanent hole (stronger than oneTBB's documented broken-vector
-// allocator-failure state). Element construction must be noexcept because the
-// index is already reserved when placement construction begins.
+// exhausted. The fallible try_* path allocates before reserving an index, so OOM
+// never strands a permanent hole (stronger than oneTBB's documented
+// broken-vector allocator-failure state). The ordinary fail-fast path can use a
+// single fetch_add like oneTBB: allocation failure terminates, so there is no
+// recoverable object whose hole must be repaired. Element construction must be
+// noexcept because the index is already reserved when placement construction
+// begins.
 
 namespace hyle::container {
 
@@ -115,8 +118,16 @@ class ConcurrentVector {
   template <class... Args>
     requires std::is_nothrow_constructible_v<T, Args...>
   std::size_t emplace_back(Args&&... args) noexcept {
-    const std::size_t index = try_emplace_back(std::forward<Args>(args)...);
+    // This is intentionally distinct from try_emplace_back(). In the common
+    // pre-reserved case one fetch_add gives each writer a disjoint slot; the
+    // recoverable API pays the CAS loop needed to avoid claiming past capacity.
+    const std::size_t index = size_.fetch_add(1, std::memory_order_relaxed);
     HYLE_FATAL_ASSERT(index != npos);
+    if (HYLE_UNLIKELY(index >= capacity_.load(std::memory_order_acquire)))
+      reserve(index + 1);
+    const auto [segment, offset] = locate(index);
+    ::new (static_cast<void*>(segments_[segment] + offset))
+        T(std::forward<Args>(args)...);
     return index;
   }
 
