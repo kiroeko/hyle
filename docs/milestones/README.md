@@ -25,15 +25,15 @@
 ### 整体进度与体量（诚实，2026-07-25 锚定）——分母别混
 
 > **生产 = `cloc src include` 的 code 列**（header+C++/CUDA 等，不含 tests/bench/docs/third_party）。
-> **旧投影「完成时生产 ~28–40k / 中值 34k」已作废**：当前生产已 **~79.8k**，单 **simd ~37.5k**。
+> **旧投影「完成时生产 ~28–40k / 中值 34k」已作废**：当前生产已 **~80.0k**，单 **simd ~37.5k**。
 > 权威规模节：[`../architecture/hyle-scope.md`](../architecture/hyle-scope.md)。中期报告：[`midterm-report-2026-07-scale-positioning.md`](./midterm-report-2026-07-scale-positioning.md)。SIMD 当前补缺账本：[`simd-capability-fill-list.md`](./simd-capability-fill-list.md)。
 
 | 固定统计口径 | 当前 | 命令/说明 |
 |---|---|---|
-| **全库代码** | **245,551** | `cloc . --vcs=git`；含 docs/third_party，**≠ 自写** |
-| **自实现（含测试）** | **116,100** | `cloc include/hyle src tests --exclude-lang=CMake,Text` |
-| **自实现（不含测试）** | **79,791** | `cloc include/hyle src --exclude-lang=CMake,Text`；库本体硬锚 |
-| **当前审查模块 core 实现** | **250** | `cloc include/hyle/core include/hyle/c/core.h src/core --exclude-lang=CMake,Text` |
+| **全库代码** | **246,177** | `cloc . --vcs=git`；含 docs/third_party，**≠ 自写** |
+| **自实现（含测试）** | **116,282** | `cloc include/hyle src tests --exclude-lang=CMake,Text` |
+| **自实现（不含测试）** | **79,955** | `cloc include/hyle src --exclude-lang=CMake,Text`；库本体硬锚 |
+| **刚完成模块 core 实现** | **490** | `include/hyle/core + include/hyle/c/core.h + include/hyle/{macros,visibility}.h + src/core`，不含测试 |
 | **终态生产（纪律收口 A）** | **~75–90k** | 主预期 |
 | **终态生产（做满守界 B）** | **~85–105k** | compute/graph/发布面收口更满 |
 | 失控上限 C | 120k+ 生产 | 应避免 |
@@ -41,9 +41,9 @@
 | 进度口径 | 怎么读 | 当前判断 |
 |---|---|---|
 | **里程碑计数** | 颗粒不等重 | **勿当完成度**（小 util 与大 compute 各记 1） |
-| **生产 LOC ÷ 终态 A 中值 ~82.5k** | 代码量进度 | **~96%**；SIMD 体量放大该数，**≠ 能力完成度** |
-| **生产 LOC ÷ 终态 B 中值 ~95k** | 做满剧本 | **~83%** |
-| **对完整愿景的功能完成度** | 能力清单 + 头牌缺口 | 除 compute/graph 能力尾外主体大多已实现；当前严格证书只有 error/platform/mem/time，其余按队列复审 |
+| **生产 LOC ÷ 终态 A 中值 ~82.5k** | 代码量进度 | **~97%**；SIMD 体量放大该数，**≠ 能力完成度** |
+| **生产 LOC ÷ 终态 B 中值 ~95k** | 做满剧本 | **~84%** |
+| **对完整愿景的功能完成度** | 能力清单 + 头牌缺口 | 除 compute/graph 能力尾外主体大多已实现；当前严格证书为 error/platform/mem/time/core，其余按队列复审 |
 
 **模块生产粗表（2026-07-25）**：simd ~37.5k · io ~9.0k · platform **7,020**
 （含公共 C 头）· container ~4.9k · compute ~4.1k · sched ~5.1k · mem ~5.1k ·
@@ -76,13 +76,14 @@ util ~1.3k · error **984** · time ~0.9k · obs/graph 各 ~0.6–0.8k。
 > “主干可用”误读成 capability closure 已清零。
 >
 > **2026-07-25 证书口径升级**：下表的 ✅/“冻结”只说明对应历史 work item 已完成，
-> 不自动取得当前实际使用导向的严格证书。当前只有 error/platform/mem/time 通过；
-> core 是下一模块，其余顺序只见 [`pre-release-readiness.md`](./pre-release-readiness.md)。
+> 不自动取得当前实际使用导向的严格证书。当前 error/platform/mem/time/core 通过；
+> build/package system 是下一审查单元，其余顺序只见 [`pre-release-readiness.md`](./pre-release-readiness.md)。
 
 | ID | 阶段 | 模块 | 目的(一行) | 前置 | 预测LOC | 真实LOC | 状态 |
 |---|---|---|---|---|---|---|---|
 | **00-scaffolding** | P-1 | 构建 | CMake 多模块结构+GoogleTest/nanobench/sanitizer/CI+HYLE_宏骨架 | — | 0.6-1k | 294 | ✅ 完成 |
-| [core-reclosure](./core-module-closure.md) | P-1 | core | version/cache/macros/visibility/intrusive 严格收口 | 00 | — | 待本轮 cloc | ▶ **2026-07-25 当前审查**：实现与 Win/WSL 回验完成，待 Apple/LOC/提交 |
+| [core-reclosure](./core-module-closure.md) | P-1 | core | version/cache/macros/visibility/intrusive 严格收口 | 00 | — | 490 生产 | ✅ **2026-07-25 严格收口**：最终实现 `71dabf7`；Win/WSL/M4 相关组 18/18、最终 API delta 8/8；Boost 同形三平台无 LOSE |
+| [build/package-reclosure](./build-package-system-closure.md) | P-1 | 构建/打包 | 用 target 图表达项目组织，完成可迁移、可裁剪组装与安装消费 | core | — | 待清点 | ▶ **当前审查**：先审组织模型与依赖隔离，再修入口/安装；不以当前 checkout 能编冒充完成 |
 | error-01 | P0 | error | Status + std::expected（历史首版） | 00 | 1-2k | 456 | 🗃️ 历史完成；接口与边界后由 error reclosure 重审 |
 | error-02 | P0 | error | error_handler vtable（历史） | error-01 | 1k | 127 (+74 测试) | 🗃️ 曾完成，实际消费者审查后退役；日志归 obs、合同违反归 fatal |
 | [error-03](./error-module-reclosure.md) | P0 | error | 面向真实调用重收 Status/Result/C ABI/context | error-01,obs-01 | — | 见任务页 | ✅ **2026-07-24 自身冻结**：功能/C++/C ABI 收口；Win/GCC14/M4 正确性 + 核心/正常路径 n=15，同形项无 LOSE；全库 adoption audit 进行中，mem 冷路径已统一 Status、私有 TLS 已删 |

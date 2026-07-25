@@ -11,8 +11,8 @@
 - [x] 按真实 plugin、cache layout、stable-node batch 场景裁定能力，不从 benchmark 反推 API；
 - [x] 对照 oneTBB version、Boost/Folly intrusive 与成熟 cache interference 形状；
 - [x] C++ 生命周期/复杂度、纯 C 等价能力、动态符号与 header 自包含有机械测试；
-- [ ] Windows/WSL/Apple 正确性与三平台同形性能全部归档；
-- [ ] 四项 LOC、文档索引、提交与推送完成。
+- [x] Windows/WSL/Apple 正确性与三平台同形性能全部归档；
+- [x] 四项 LOC、文档索引、提交与推送完成。
 
 ## 本轮变更
 
@@ -33,14 +33,28 @@
 ## 当前验收证据
 
 - Windows MSVC Release：core/time/mem/container/util/sched 相关 18/18；core C surface 与
-  C/C++ header self-contained 通过。
+  C/C++ header self-contained 通过；最终 API delta 8/8。
 - WSL GCC14 Release：core/time/mem/container/util/sched 相关 18/18；该组总耗时由既有
   `util_test` death-test 子进程链主导（116.98s）。此前并行超载的四个 cache-layout 队列
-  conservation 压测也已隔离 4/4。
-- Windows Boost 同形 n=15：FIFO/remove/batch-discard 三场景 paired sign 均为 HYLE win；
-  数字只在 performance 页。
-- WSL Boost 同形 n=15：FIFO/remove/batch-discard 均为 HYLE win；数字只在 performance 页。
-- Apple 待本任务提交同步后补齐。
+  conservation 压测也已隔离 4/4；最终 API delta 8/8。
+- Apple M4 AppleClang：同一相关组 18/18，最终 API delta 8/8。
+- Windows/WSL Boost 同形 n=15：FIFO/remove/batch-discard 三场景均为统计 TIE；Apple 默认与
+  rival-first 双顺序均为 FIFO HYLE win、remove/discard TIE。三平台无 LOSE，数字只在
+  performance 页。
+- 最终实现绑定 `71dabf7`；本任务页与性能证书的归档提交紧随其后。
+
+## 四项代码量
+
+| 固定口径 | code |
+|---|---:|
+| 全库（含 docs/in-tree third_party） | 246,177 |
+| 自实现（含测试） | 116,282 |
+| 自实现（不含测试） | 79,955 |
+| core 实现 | 490 |
+
+core 口径为 `include/hyle/core + include/hyle/c/core.h + include/hyle/macros.h +
+include/hyle/visibility.h + src/core`，不含测试；根级 macros/visibility 是 core 的逻辑产品面，
+不能因为不在 `core/` 目录而漏计。
 
 ## 功能与负空间结论
 

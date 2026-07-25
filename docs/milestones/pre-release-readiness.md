@@ -3,17 +3,17 @@
 ## 结论
 
 HYLE 的“实现进度”与“当前标准的收口证书”必须分开读：除 compute/graph 仍有产品能力尾，
-其余模块的主体实现基本存在；但只有 **error、platform、mem、time** 已按本轮实际使用导向
+其余模块的主体实现基本存在；但只有 **error、platform、mem、time、core** 已按本轮实际使用导向
 完成严格复审。早期标成 closure/frozen 的任务仍是有效施工证据，不自动等于新标准认证。
 
 | 层次 | 当前判断 | 下一动作 |
 |---|---|---|
-| 严格认证基线 | error、platform、mem、time | 只因明确触发器或依赖受影响项局部回验 |
-| 已实现、待新标准复审 | core、obs、math、util、container、sched、io、simd | 按本文队列逐模块收口，不按旧 benchmark 形状默认通过 |
+| 严格认证基线 | error、platform、mem、time、core | 只因明确触发器或依赖受影响项局部回验 |
+| 已实现、待新标准复审 | obs、math、util、container、sched、io、simd | 按本文队列逐模块收口，不按旧 benchmark 形状默认通过 |
 | 仍有能力尾 | compute、graph | 先用真实北极星补能力，再执行同一严格合同 |
 | 整库发布面 | 部分完成 | 模块内 C ABI 随模块收；最后只做 install/export/FFI/bundle 总验收 |
 
-当前审查模块是 **core**。它完成后先独立审查 build/package system，再进入 util-core：构建
+当前审查单元是 **build/package system**，完成后进入 util-core：构建
 系统必须把模块 target 图、可组合子集、迁移/安装和三平台环境变成可执行契约，不能继续让
 关键前置散落在 CMake、preset、脚本与文档之间。当前队列见“施工顺序”。
 
@@ -66,7 +66,7 @@ math 的处理相反：它当前不是经过独立需求设计的产品，而是
 | platform | 功能主体完成 | ✅ 严格收口 |
 | mem | 功能主体完成 | ✅ 严格收口；已在 error/platform 变化后回审 |
 | time | 功能主体完成 | ✅ 严格收口；core 变化时只做依赖回验 |
-| core | 功能主体存在 | **▶ 当前审查模块** |
+| core | 功能主体存在 | ✅ 严格收口；最终实现 `71dabf7`，三平台同合同无 LOSE |
 | util、obs、math、container、sched、io、simd | 功能主体基本完成 | 待按新合同认证；旧 closure 是输入证据，不是自动通行证 |
 | compute、graph | 主干存在、不是 stub | 仍有能力尾；完成能力后按同合同认证 |
 
