@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <cstdint>
+#include <iterator>
 #include <memory>
 #include <random>
 #include <string>
@@ -12,7 +13,13 @@
 #include "hyle/mem/allocator.h"
 
 using hyle::container::SwissTable;
+using hyle::container::FlatHashMap;
+using hyle::container::FlatHashSet;
 using hyle::mem::system_allocator;
+
+static_assert(std::forward_iterator<FlatHashMap<int, int>::iterator>);
+static_assert(std::forward_iterator<FlatHashMap<int, int>::const_iterator>);
+static_assert(std::forward_iterator<FlatHashSet<int>::iterator>);
 
 namespace {
 
@@ -376,4 +383,73 @@ TEST(SwissTable, FallibleInsertReportsAllocationFailure) {
   EXPECT_EQ(table.try_insert_or_assign(1, 2),
             FallibleTable::InsertResult::kOutOfMemory);
   EXPECT_TRUE(table.empty());
+}
+
+TEST(FlatHashMap, IterationKeepsKeysConstAndValuesMutable) {
+  FlatHashMap<int, int> table;
+  for (int i = 0; i < 1000; ++i) ASSERT_TRUE(table.insert(i, i * 2));
+
+  std::vector<bool> seen(1000, false);
+  for (auto& entry : table) {
+    const int key = entry.key();
+    ASSERT_GE(key, 0);
+    ASSERT_LT(key, 1000);
+    EXPECT_FALSE(seen[static_cast<std::size_t>(key)]);
+    seen[static_cast<std::size_t>(key)] = true;
+    entry.value() += 1;
+  }
+  for (bool value : seen) EXPECT_TRUE(value);
+
+  const FlatHashMap<int, int>& view = table;
+  std::size_t count = 0;
+  for (const auto& entry : view) {
+    EXPECT_EQ(entry.value(), entry.key() * 2 + 1);
+    ++count;
+  }
+  EXPECT_EQ(count, table.size());
+  ASSERT_NE(table.find_key(87), nullptr);
+  EXPECT_EQ(*table.find_key(87), 87);
+}
+
+TEST(FlatHashSet, InsertFindEraseAndIterate) {
+  FlatHashSet<int> set;
+  EXPECT_EQ(set.try_insert(7), FlatHashSet<int>::InsertResult::kInserted);
+  EXPECT_EQ(set.try_insert(7),
+            FlatHashSet<int>::InsertResult::kAlreadyPresent);
+  for (int i = 0; i < 1000; ++i) set.insert(i);
+  EXPECT_EQ(set.size(), 1000u);
+  EXPECT_TRUE(set.contains(511));
+  ASSERT_NE(set.find(511), nullptr);
+  EXPECT_EQ(*set.find(511), 511);
+
+  std::vector<bool> seen(1000, false);
+  for (const int key : set) {
+    ASSERT_GE(key, 0);
+    ASSERT_LT(key, 1000);
+    seen[static_cast<std::size_t>(key)] = true;
+  }
+  for (bool value : seen) EXPECT_TRUE(value);
+  EXPECT_TRUE(set.erase(511));
+  EXPECT_FALSE(set.contains(511));
+}
+
+TEST(FlatHashSet, HeterogeneousLookupReturnsCanonicalStoredKey) {
+  FlatHashSet<std::string, TransparentStringHash, TransparentStringEq> set;
+  ASSERT_TRUE(set.insert(std::string("alpha")));
+  const std::string_view query = "alpha";
+  const std::string* stored = set.find(query);
+  ASSERT_NE(stored, nullptr);
+  EXPECT_EQ(*stored, query);
+  EXPECT_TRUE(set.erase(query));
+  EXPECT_TRUE(set.empty());
+}
+
+TEST(FlatHashSet, FallibleInsertDoesNotChangeStateOnAllocationFailure) {
+  hyle::mem::Allocator failing{fail_alloc, fail_free, fail_realloc, nullptr};
+  using FallibleSet =
+      FlatHashSet<int, hyle::container::Hash<int>, std::equal_to<>,
+                  hyle::mem::Allocator>;
+  FallibleSet set(failing);
+  EXPECT_EQ(set.try_insert(1), FallibleSet::InsertResult::kOutOfMemory);
+  EXPECT_TRUE(set.empty());
 }

@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cstring>
 #include <functional>
+#include <iterator>
 #include <new>
 #include <type_traits>
 #include <utility>
@@ -90,10 +91,94 @@ class SwissTable {
   static constexpr std::size_t kMinCap = 16;  // >= both group widths, pow2
   static constexpr std::size_t kNoSlot = static_cast<std::size_t>(-1);
 
-  struct Slot {
-    K key;
-    V value;
+ public:
+  // The iterator-visible entry keeps keys read-only without storing const K,
+  // which would prevent noexcept move relocation during a flat-table rehash.
+  // This follows the same invariant as mature flat maps: values are mutable,
+  // keys can only change through erase+insert.
+  class Entry {
+    friend class SwissTable;
+
+   public:
+    const K& key() const noexcept { return key_; }
+    V& value() noexcept { return value_; }
+    const V& value() const noexcept { return value_; }
+
+   private:
+    Entry(K key, V value) noexcept
+        : key_(std::move(key)), value_(std::move(value)) {}
+
+    K key_;
+    HYLE_NO_UNIQUE_ADDRESS V value_;
   };
+
+  using value_type = Entry;
+
+  template <bool IsConst>
+  class BasicIterator {
+    template <bool>
+    friend class BasicIterator;
+    friend class SwissTable;
+
+    using Owner =
+        std::conditional_t<IsConst, const SwissTable, SwissTable>;
+
+   public:
+    using iterator_concept = std::forward_iterator_tag;
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = Entry;
+    using difference_type = std::ptrdiff_t;
+    using reference = std::conditional_t<IsConst, const Entry&, Entry&>;
+    using pointer = std::conditional_t<IsConst, const Entry*, Entry*>;
+
+    BasicIterator() noexcept = default;
+
+    template <bool Enabled = IsConst>
+      requires Enabled
+    BasicIterator(const BasicIterator<false>& other) noexcept
+        : owner_(other.owner_), index_(other.index_) {}
+
+    reference operator*() const noexcept { return owner_->slots_[index_]; }
+    pointer operator->() const noexcept { return owner_->slots_ + index_; }
+
+    BasicIterator& operator++() noexcept {
+      ++index_;
+      skip_empty();
+      return *this;
+    }
+    BasicIterator operator++(int) noexcept {
+      BasicIterator copy = *this;
+      ++*this;
+      return copy;
+    }
+
+    friend bool operator==(const BasicIterator& left,
+                           const BasicIterator& right) noexcept {
+      return left.owner_ == right.owner_ && left.index_ == right.index_;
+    }
+
+   private:
+    BasicIterator(Owner* owner, std::size_t index) noexcept
+        : owner_(owner), index_(index) {
+      skip_empty();
+    }
+
+    void skip_empty() noexcept {
+      if (owner_ == nullptr) return;
+      while (index_ < owner_->cap_ &&
+             !detail::ctrl_is_full(owner_->ctrl_[index_]))
+        ++index_;
+    }
+
+    Owner* owner_ = nullptr;
+    std::size_t index_ = 0;
+  };
+
+  using iterator = BasicIterator<false>;
+  using const_iterator = BasicIterator<true>;
+
+ private:
+  using Slot = Entry;
 
  public:
   SwissTable() requires(std::is_default_constructible_v<Alloc> &&
@@ -148,6 +233,13 @@ class SwissTable {
   std::size_t capacity() const noexcept { return cap_; }
   bool empty() const noexcept { return size_ == 0; }
 
+  iterator begin() noexcept { return iterator(this, 0); }
+  iterator end() noexcept { return iterator(this, cap_); }
+  const_iterator begin() const noexcept { return const_iterator(this, 0); }
+  const_iterator end() const noexcept { return const_iterator(this, cap_); }
+  const_iterator cbegin() const noexcept { return begin(); }
+  const_iterator cend() const noexcept { return end(); }
+
   bool reserve(std::size_t count) {
     if (count <= cap_ - cap_ / 8) return true;
     if (count > static_cast<std::size_t>(-1) / 8) return false;
@@ -201,22 +293,8 @@ class SwissTable {
              std::is_nothrow_invocable_r_v<bool, const Eq&, const K&,
                                            const Q&>)
   V* find(const Q& key) noexcept {
-    if (cap_ == 0) return nullptr;
-    std::uint64_t h = hash_(key);
-    std::size_t pos = detail::h1(h) & mask_;
-    std::size_t stride = 0;
-    ctrl_t want = detail::h2(h);
-    for (;;) {
-      core::prefetch_read(&slots_[pos]);  // overlap slot load with the ctrl SIMD match
-      detail::Group g(ctrl_ + pos);
-      for (std::uint32_t i : g.match(want)) {
-        std::size_t idx = (pos + i) & mask_;
-        if (HYLE_LIKELY(eq_(slots_[idx].key, key))) return &slots_[idx].value;
-      }
-      if (g.match_empty()) return nullptr;  // an empty slot => key not present
-      stride += kGroup;
-      pos = (pos + stride) & mask_;
-    }
+    Slot* slot = find_slot(key);
+    return slot == nullptr ? nullptr : &slot->value_;
   }
 
   template <class Q>
@@ -226,6 +304,20 @@ class SwissTable {
                                            const Q&>)
   const V* find(const Q& key) const noexcept {
     return const_cast<SwissTable*>(this)->template find<Q>(key);
+  }
+
+  // Key-preserving lookup for set adapters and callers that need the canonical
+  // stored key (for example after heterogeneous lookup). The key remains const
+  // because mutating it in place would invalidate its probe position.
+  template <class Q>
+    requires(std::is_nothrow_invocable_r_v<std::uint64_t, const Hash&,
+                                           const Q&> &&
+             std::is_nothrow_invocable_r_v<bool, const Eq&, const K&,
+                                           const Q&>)
+  const K* find_key(const Q& key) const noexcept {
+    const Slot* slot =
+        const_cast<SwissTable*>(this)->template find_slot<Q>(key);
+    return slot == nullptr ? nullptr : &slot->key_;
   }
 
   template <class Q>
@@ -257,7 +349,7 @@ class SwissTable {
     bool found = false;
     std::size_t idx = find_or_prepare(key, h, &found);
     if (found) {
-      slots_[idx].value = std::move(value);
+      slots_[idx].value_ = std::move(value);
       return InsertResult::kUpdated;
     }
     // Not present; `idx` is the first empty/deleted slot on the probe path. Only
@@ -269,7 +361,7 @@ class SwissTable {
       idx = find_insert_slot(h);  // cold path: rehash invalidated idx
       set_ctrl(idx, detail::h2(h));
       ::new (static_cast<void*>(slots_ + idx))
-          Slot{std::move(key), std::move(value)};
+          Slot(std::move(key), std::move(value));
       ++size_;
       --growth_left_;  // find_insert_slot after a rehash always selects empty
       return InsertResult::kInserted;
@@ -277,7 +369,7 @@ class SwissTable {
     bool was_empty = ctrl_[idx] == detail::kEmpty;
     set_ctrl(idx, detail::h2(h));
     ::new (static_cast<void*>(slots_ + idx))
-        Slot{std::move(key), std::move(value)};
+        Slot(std::move(key), std::move(value));
     ++size_;
     if (was_empty) --growth_left_;
     return InsertResult::kInserted;
@@ -312,7 +404,7 @@ class SwissTable {
       detail::Group g(ctrl_ + pos);
       for (std::uint32_t i : g.match(want)) {
         std::size_t idx = (pos + i) & mask_;
-        if (HYLE_LIKELY(eq_(slots_[idx].key, key))) {
+        if (HYLE_LIKELY(eq_(slots_[idx].key_, key))) {
           slots_[idx].~Slot();
           erase_at(idx);
           return true;
@@ -326,8 +418,8 @@ class SwissTable {
 
   // Visit every live (key, value): calls fn(const K&, V&) once per full slot, in
   // unspecified order. A function template (not std::function) so it inlines and
-  // adds no allocation. Needed by any owner of heap-pointer values (e.g.
-  // StringBuf) to release them on teardown, since there is no iterator yet.
+  // adds no allocation. This group-scan form remains the fastest full traversal;
+  // begin/end provide the familiar iterator shape.
   // fn must not insert/erase/grow the table while iterating.
   template <class Fn>
   void for_each(Fn&& fn) {
@@ -341,7 +433,7 @@ class SwissTable {
     for (std::size_t g = 0; g < cap_; g += kGroup) {
       for (std::uint32_t lane : detail::Group(ctrl_ + g).match_full()) {
         const std::size_t i = g + lane;
-        fn(slots_[i].key, slots_[i].value);
+        fn(slots_[i].key_, slots_[i].value_);
       }
     }
   }
@@ -351,18 +443,42 @@ class SwissTable {
     for (std::size_t g = 0; g < cap_; g += kGroup) {
       for (std::uint32_t lane : detail::Group(ctrl_ + g).match_full()) {
         const std::size_t i = g + lane;
-        fn(slots_[i].key, slots_[i].value);
+        fn(slots_[i].key_, slots_[i].value_);
       }
     }
   }
 
  private:
-  // Recompute a slot's key hash without the concrete type (key is at slot offset
-  // 0). Handed to the type-erased core so resize can rehash old slots.
+  template <class Q>
+    requires(std::is_nothrow_invocable_r_v<std::uint64_t, const Hash&,
+                                           const Q&> &&
+             std::is_nothrow_invocable_r_v<bool, const Eq&, const K&,
+                                           const Q&>)
+  Slot* find_slot(const Q& key) noexcept {
+    if (cap_ == 0) return nullptr;
+    const std::uint64_t h = hash_(key);
+    std::size_t pos = detail::h1(h) & mask_;
+    std::size_t stride = 0;
+    const ctrl_t want = detail::h2(h);
+    for (;;) {
+      core::prefetch_read(&slots_[pos]);
+      detail::Group g(ctrl_ + pos);
+      for (std::uint32_t i : g.match(want)) {
+        const std::size_t idx = (pos + i) & mask_;
+        if (HYLE_LIKELY(eq_(slots_[idx].key_, key))) return slots_ + idx;
+      }
+      if (g.match_empty()) return nullptr;
+      stride += kGroup;
+      pos = (pos + stride) & mask_;
+    }
+  }
+
+  // Recompute a slot's key hash without exposing the concrete type to the cold
+  // resize core.
   static std::uint64_t hash_slot_thunk(const void* slot,
                                        const void* hash_state) noexcept {
     return (*static_cast<const Hash*>(hash_state))(
-        *static_cast<const K*>(slot));
+        static_cast<const Slot*>(slot)->key_);
   }
 
   static void* allocate_thunk(void* state, std::size_t size,
@@ -381,7 +497,8 @@ class SwissTable {
     if constexpr (std::is_trivially_copyable_v<Slot>) {
       std::memcpy(destination, source, sizeof(Slot));
     } else {
-      ::new (destination) Slot{std::move(from->key), std::move(from->value)};
+      ::new (destination)
+          Slot(std::move(from->key_), std::move(from->value_));
       from->~Slot();
     }
   }
@@ -437,7 +554,7 @@ class SwissTable {
       detail::Group g(ctrl_ + pos);
       for (std::uint32_t i : g.match(want)) {
         std::size_t idx = (pos + i) & mask_;
-        if (HYLE_LIKELY(eq_(slots_[idx].key, key))) {
+        if (HYLE_LIKELY(eq_(slots_[idx].key_, key))) {
           *found = true;
           return idx;
         }
@@ -522,5 +639,126 @@ class SwissTable {
 template <class K, class V, class Hash = Hash<K>, class Eq = std::equal_to<>,
           class Alloc = mem::SystemAllocator>
 using FlatHashMap = SwissTable<K, V, Hash, Eq, Alloc>;
+
+namespace detail {
+struct SwissSetValue {};
+}  // namespace detail
+
+// Space-efficient Swiss set sharing FlatHashMap's probing/resize core. The
+// empty mapped policy occupies no slot bytes; this is a set API, not a public
+// map<Key, Unit> spelling.
+template <class K, class Hash = Hash<K>, class Eq = std::equal_to<>,
+          class Alloc = mem::SystemAllocator>
+class FlatHashSet {
+  using Table = SwissTable<K, detail::SwissSetValue, Hash, Eq, Alloc>;
+  static_assert(sizeof(typename Table::value_type) == sizeof(K),
+                "FlatHashSet must not pay mapped-value storage");
+
+ public:
+  enum class InsertResult : std::uint8_t {
+    kInserted,
+    kAlreadyPresent,
+    kOutOfMemory,
+  };
+
+  class iterator {
+    friend class FlatHashSet;
+    using MapIterator = typename Table::const_iterator;
+
+   public:
+    using iterator_concept = std::forward_iterator_tag;
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = K;
+    using difference_type = std::ptrdiff_t;
+    using reference = const K&;
+    using pointer = const K*;
+
+    iterator() noexcept = default;
+    reference operator*() const noexcept { return current_->key(); }
+    pointer operator->() const noexcept { return &current_->key(); }
+    iterator& operator++() noexcept {
+      ++current_;
+      return *this;
+    }
+    iterator operator++(int) noexcept {
+      iterator copy = *this;
+      ++*this;
+      return copy;
+    }
+    friend bool operator==(const iterator& left,
+                           const iterator& right) noexcept {
+      return left.current_ == right.current_;
+    }
+
+   private:
+    explicit iterator(MapIterator current) noexcept : current_(current) {}
+    MapIterator current_{};
+  };
+
+  using const_iterator = iterator;
+
+  FlatHashSet() = default;
+  explicit FlatHashSet(Alloc alloc, Hash hash = Hash{}, Eq eq = Eq{})
+      : table_(std::move(alloc), std::move(hash), std::move(eq)) {}
+
+  HYLE_DISABLE_COPY(FlatHashSet);
+  FlatHashSet(FlatHashSet&&) = default;
+  FlatHashSet& operator=(FlatHashSet&&) = default;
+
+  std::size_t size() const noexcept { return table_.size(); }
+  std::size_t capacity() const noexcept { return table_.capacity(); }
+  bool empty() const noexcept { return table_.empty(); }
+  bool reserve(std::size_t count) { return table_.reserve(count); }
+  bool try_prepare_insert() { return table_.try_prepare_insert(); }
+  void clear() noexcept { table_.clear(); }
+
+  template <class Q>
+  const K* find(const Q& key) const noexcept
+  {
+    return table_.find_key(key);
+  }
+
+  template <class Q>
+  bool contains(const Q& key) const noexcept(noexcept(find(key)))
+    requires requires { find(key); }
+  {
+    return find(key) != nullptr;
+  }
+
+  InsertResult try_insert(K key) {
+    using MapResult = typename Table::InsertResult;
+    const MapResult result = table_.try_insert_or_assign(
+        std::move(key), detail::SwissSetValue{});
+    if (result == MapResult::kInserted) return InsertResult::kInserted;
+    if (result == MapResult::kUpdated) return InsertResult::kAlreadyPresent;
+    return InsertResult::kOutOfMemory;
+  }
+
+  bool insert(K key) {
+    return table_.insert(std::move(key), detail::SwissSetValue{});
+  }
+
+  template <class Q>
+  bool erase(const Q& key) noexcept
+  {
+    return table_.erase(key);
+  }
+
+  iterator begin() noexcept { return iterator(table_.cbegin()); }
+  iterator end() noexcept { return iterator(table_.cend()); }
+  const_iterator begin() const noexcept { return iterator(table_.cbegin()); }
+  const_iterator end() const noexcept { return iterator(table_.cend()); }
+  const_iterator cbegin() const noexcept { return begin(); }
+  const_iterator cend() const noexcept { return end(); }
+
+  template <class Fn>
+  void for_each(Fn&& fn) const {
+    table_.for_each(
+        [&](const K& key, const detail::SwissSetValue&) { fn(key); });
+  }
+
+ private:
+  Table table_;
+};
 
 }  // namespace hyle::container
