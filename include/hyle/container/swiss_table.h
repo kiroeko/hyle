@@ -69,7 +69,7 @@ HYLE_CONTAINER_API void swiss_free(SwissStorage& s, std::size_t slot_size,
 //
 // The cold path (resize/free) is type-erased into swiss_table.cc (see detail::
 // above); the hot path is inlined per instantiation for zero indirection.
-template <class K, class V, class Hash = Hash<K>, class Eq = std::equal_to<K>,
+template <class K, class V, class Hash = Hash<K>, class Eq = std::equal_to<>,
           class Alloc = mem::SystemAllocator>
 class SwissTable {
   static_assert(std::is_nothrow_move_constructible_v<K> &&
@@ -519,7 +519,7 @@ class SwissTable {
 
 // Preferred public name. SwissTable remains as the implementation-specific
 // spelling for existing Hyle users and documents the probing strategy.
-template <class K, class V, class Hash = Hash<K>, class Eq = std::equal_to<K>,
+template <class K, class V, class Hash = Hash<K>, class Eq = std::equal_to<>,
           class Alloc = mem::SystemAllocator>
 using FlatHashMap = SwissTable<K, V, Hash, Eq, Alloc>;
 

@@ -310,7 +310,7 @@ TEST(SwissTable, FallibleReserveRejectsOverflowWithoutChangingState) {
 
 TEST(SwissTable, PrepareInsertIsFallibleAndMakesInsertAllocationFree) {
   hyle::mem::Allocator failing{fail_alloc, fail_free, fail_realloc, nullptr};
-  SwissTable<int, int, hyle::container::Hash<int>, std::equal_to<int>,
+  SwissTable<int, int, hyle::container::Hash<int>, std::equal_to<>,
              hyle::mem::Allocator>
       table(failing);
   EXPECT_FALSE(table.try_prepare_insert());
@@ -370,7 +370,7 @@ TEST(SwissTable, HeterogeneousLookupAndEraseAvoidKeyConstruction) {
 TEST(SwissTable, FallibleInsertReportsAllocationFailure) {
   hyle::mem::Allocator failing{fail_alloc, fail_free, fail_realloc, nullptr};
   using FallibleTable =
-      SwissTable<int, int, hyle::container::Hash<int>, std::equal_to<int>,
+      SwissTable<int, int, hyle::container::Hash<int>, std::equal_to<>,
                  hyle::mem::Allocator>;
   FallibleTable table(failing);
   EXPECT_EQ(table.try_insert_or_assign(1, 2),
