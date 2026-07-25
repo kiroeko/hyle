@@ -241,16 +241,19 @@ UTF-8 基元只承诺 validate/count；C escaping 则改为明确的 `string_c_e
 C hash traversal 同样不再冒充标准 `for_each`：提前停止的 callback 形状改名为
 `map/set_visit`，返回 1 表示完整遍历、0 表示 visitor 停止或参数无效。
 
-同一命名规则也覆盖线性容器：erased POD vector 使用 `try_push_back/try_pop_back`，
-concurrent pointer vector 使用 `try_push_back` 并返回稳定 index；不再让一个裸 `push`
-掩盖尾部方向或可失败的 allocation。
+同一命名规则也覆盖线性容器：erased POD vector 使用 `try_push_back/try_pop_back`，并以
+pointer/count 的 `try_append/try_insert/try_resize/erase/try_shrink_to_fit` 覆盖真正的 C
+批量序列需求；concurrent pointer vector 使用 `try_push_back` 并返回稳定 index。不再让
+一个裸 `push` 掩盖尾部方向或可失败的 allocation，也不要求 FFI 用户逐项跨 ABI。
 
 - options 带 `struct_size`；allocator 按值捕获但 state 生命周期由调用方保证。
 - 对象只经 create/destroy；不导出 C++ 类布局、STL、模板或异常。
 - create/reserve/insert/intern 等冷失败走共享 `hyle_status + out`；队列满空、map miss、
   stale ID 等正常热控制流不构造错误对象。
 - String/path 产出使用借用 view 或 buffer-fill。
-- PodVector/FlatHashMap 通过运行时 item size/alignment/hash/equal 类型擦除。
+- PodVector/FlatHashMap 通过运行时 item size/alignment/hash/equal 类型擦除；erased vector
+  的 batch mutation 是 O(搬移尾部+输入字节)，自别名 insert 仅在必要时申请 scratch，
+  OOM/越界不修改旧 size/data/capacity。
 - C flat map 与 typed mutation 语义一致：insert 不覆盖，insert_or_assign 才覆盖；
   三态结果明确区分 inserted/already-present/assigned。
 - 并发容器的稳定最小共同面使用 pointer payload。

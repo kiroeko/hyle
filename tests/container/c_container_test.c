@@ -315,6 +315,7 @@ static void test_vector_and_map(void) {
       HYLE_CONTAINER_HASH_MAP_OPTIONS_INIT;
   hyle_container_vector* vector;
   hyle_container_hash_map* map;
+  int batch[2] = {22, 33};
   int input;
   int output;
   int visits = 0;
@@ -330,17 +331,45 @@ static void test_vector_and_map(void) {
   CHECK(vector != NULL);
   input = 11;
   CHECK(status_ok(hyle_container_vector_try_push_back(vector, &input)));
-  input = 22;
-  CHECK(status_ok(hyle_container_vector_try_push_back(vector, &input)));
-  CHECK(hyle_container_vector_size(vector) == 2);
-  CHECK(hyle_container_vector_capacity(vector) >= 2);
+  CHECK(status_ok(hyle_container_vector_try_append(vector, batch, 2)));
+  CHECK(hyle_container_vector_size(vector) == 3);
+  CHECK(status_ok(hyle_container_vector_try_append(
+      vector, (const int*)hyle_container_vector_data_const(vector) + 1, 2)));
+  CHECK(hyle_container_vector_size(vector) == 5);
+  CHECK(status_ok(hyle_container_vector_try_resize(
+      vector, 7, hyle_container_vector_at(vector, 0))));
+  CHECK(hyle_container_vector_size(vector) == 7);
+  CHECK(status_ok(hyle_container_vector_try_insert(
+      vector, 1, (const int*)hyle_container_vector_data_const(vector) + 2,
+      2)));
+  CHECK(hyle_container_vector_size(vector) == 9);
+  CHECK(((int*)hyle_container_vector_data(vector))[0] == 11);
+  CHECK(((int*)hyle_container_vector_data(vector))[1] == 33);
+  CHECK(((int*)hyle_container_vector_data(vector))[2] == 22);
+  CHECK(status_ok(hyle_container_vector_erase(vector, 2, 3)));
+  CHECK(hyle_container_vector_size(vector) == 6);
+  CHECK(status_code(hyle_container_vector_try_insert(
+            vector, 7, batch, 2)) == HYLE_STATUS_OUT_OF_RANGE);
+  CHECK(status_code(hyle_container_vector_erase(vector, 5, 2)) ==
+        HYLE_STATUS_OUT_OF_RANGE);
+  CHECK(status_code(hyle_container_vector_try_resize(vector, 8, NULL)) ==
+        HYLE_STATUS_INVALID_ARGUMENT);
+  CHECK(status_ok(hyle_container_vector_try_append(vector, NULL, 0)));
+  CHECK(status_code(hyle_container_vector_try_append(vector, NULL, 1)) ==
+        HYLE_STATUS_INVALID_ARGUMENT);
   CHECK(*(int*)hyle_container_vector_at(vector, 0) == 11);
   CHECK(hyle_container_vector_data(vector) != NULL);
   CHECK(hyle_container_vector_data_const(vector) != NULL);
   CHECK(status_ok(hyle_container_vector_reserve(vector, 32)));
-  CHECK(hyle_container_vector_try_pop_back(vector, &output) && output == 22);
+  CHECK(status_ok(hyle_container_vector_try_shrink_to_fit(vector)));
+  CHECK(hyle_container_vector_capacity(vector) == 6);
+  CHECK(hyle_container_vector_try_pop_back(vector, &output) && output == 11);
+  CHECK(status_ok(hyle_container_vector_try_resize(vector, 2, NULL)));
   hyle_container_vector_clear(vector);
   CHECK(hyle_container_vector_size(vector) == 0);
+  CHECK(status_ok(hyle_container_vector_try_shrink_to_fit(vector)));
+  CHECK(hyle_container_vector_data(vector) == NULL);
+  CHECK(hyle_container_vector_capacity(vector) == 0);
   hyle_container_vector_destroy(vector);
 
   map_options.key_size = sizeof(int);
@@ -675,6 +704,29 @@ int main(void) {
     options.backing = failing_backing;
     CHECK(status_code(hyle_container_vector_create(&vector, &options)) ==
           HYLE_STATUS_RESOURCE_EXHAUSTED);
+  }
+  {
+    hyle_container_vector_options options =
+        HYLE_CONTAINER_VECTOR_OPTIONS_FOR(int, 4);
+    hyle_container_vector* vector = NULL;
+    int values[3] = {1, 2, 3};
+    fail_after_allocator failing = {hyle_system_allocator(), 2};
+    hyle_allocator fail_storage = {fail_after_alloc, fail_after_free,
+                                   fail_after_realloc, &failing};
+    options.backing = fail_storage;
+    CHECK(status_ok(hyle_container_vector_create(&vector, &options)));
+    CHECK(status_ok(hyle_container_vector_try_append(vector, values, 2)));
+    CHECK(status_code(hyle_container_vector_try_insert(
+              vector, 1, hyle_container_vector_data_const(vector), 2)) ==
+          HYLE_STATUS_RESOURCE_EXHAUSTED);
+    CHECK(hyle_container_vector_size(vector) == 2);
+    CHECK(status_code(hyle_container_vector_try_append(vector, values, 3)) ==
+          HYLE_STATUS_RESOURCE_EXHAUSTED);
+    CHECK(hyle_container_vector_size(vector) == 2);
+    CHECK(status_code(hyle_container_vector_try_shrink_to_fit(vector)) ==
+          HYLE_STATUS_RESOURCE_EXHAUSTED);
+    CHECK(hyle_container_vector_capacity(vector) == 4);
+    hyle_container_vector_destroy(vector);
   }
   {
     hyle_container_hash_map_options options =

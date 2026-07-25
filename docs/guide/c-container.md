@@ -133,14 +133,24 @@ ASCII 单字节便利函数全部 header-inline：
 `hyle_container_vector_data`、`hyle_container_vector_data_const`、
 `hyle_container_vector_at`、`hyle_container_vector_reserve`、
 `hyle_container_vector_try_push_back`、
+`hyle_container_vector_try_append`、
+`hyle_container_vector_try_resize`、
+`hyle_container_vector_try_insert`、
 `hyle_container_vector_try_pop_back`、
+`hyle_container_vector_erase`、
+`hyle_container_vector_try_shrink_to_fit`、
 `hyle_container_vector_clear`。
 
-其中 `create` / `reserve` / `try_push_back` 返回 Status；`try_pop_back` 的 0 只是
-容器为空。
+其中分配或检查 range 的 mutation 返回 Status；`try_pop_back` 的 0 只是容器为空。
+batch API 的 `count` 是元素数，不是字节数；非零 count 要求 `items` 指向连续的
+`count * item_size` 字节。`try_resize` 缩短时忽略 `fill_item`，增长时用它的一个元素
+重复填充，故增长时不得为 NULL。`try_insert` 接受 `index == size`，`erase` 要求整个
+`[index,index+count)` 位于 live range。空 vector 的 shrink 会释放 backing storage。
 
-任何可能增长的操作都可能使先前由 `data`/`at` 返回的地址失效。`push` 支持 item
-来自当前 vector 内部，即使增长也不会读悬空地址。
+任何增长、shrink、insert 或 erase 都可能使先前由 `data`/`at` 返回的地址失效。
+push/append/resize fill/insert 的输入都可来自当前 vector 的 live data；即使增长或
+移动后缀也不会读悬空/被覆盖地址。批量 append/insert 只跨一次 ABI，正常外部输入不
+分配额外临时块；只有自别名 insert 需要 scratch。OOM/越界返回时旧状态保持不变。
 
 ## 运行时擦除 flat hash map
 

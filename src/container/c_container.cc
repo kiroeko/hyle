@@ -425,6 +425,74 @@ struct hyle_container_concurrent_ptr_vector_o {
   hc::ConcurrentVector<void*, hyle::mem::Allocator> value;
 };
 
+namespace {
+
+enum class VectorSource { kExternal, kLiveAlias, kInvalid };
+
+VectorSource classify_vector_source(const hyle_container_vector* vector,
+                                    const void* items, std::size_t count,
+                                    std::size_t& byte_offset) noexcept {
+  byte_offset = 0;
+  if (count > SIZE_MAX / vector->item_size) return VectorSource::kInvalid;
+  if (vector->data == nullptr) return VectorSource::kExternal;
+  const auto begin = reinterpret_cast<std::uintptr_t>(vector->data);
+  const std::size_t capacity_bytes =
+      hc::carray_capacity(vector->data) * vector->item_size;
+  if (capacity_bytes > UINTPTR_MAX - begin) return VectorSource::kInvalid;
+  const auto address = reinterpret_cast<std::uintptr_t>(items);
+  if (address < begin || address >= begin + capacity_bytes)
+    return VectorSource::kExternal;
+  const std::size_t live_bytes =
+      hc::carray_size(vector->data) * vector->item_size;
+  const std::size_t input_bytes = count * vector->item_size;
+  byte_offset = static_cast<std::size_t>(address - begin);
+  if (byte_offset > live_bytes || input_bytes > live_bytes - byte_offset)
+    return VectorSource::kInvalid;
+  return VectorSource::kLiveAlias;
+}
+
+std::size_t vector_max_capacity(
+    const hyle_container_vector* vector) noexcept {
+  return (SIZE_MAX - sizeof(hc::CArrayHeader) - vector->item_alignment) /
+         vector->item_size;
+}
+
+hyle_status vector_reserve_for(hyle_container_vector* vector,
+                               std::size_t requested) {
+  const std::size_t current = hc::carray_capacity(vector->data);
+  if (requested <= current) return hyle_status_ok();
+  const std::size_t maximum = vector_max_capacity(vector);
+  if (requested > maximum)
+    return hyle_status_out_of_range(
+        "vector capacity overflows address space");
+  std::size_t target;
+  if (current == 0) {
+    target = requested < 4 ? 4 : requested;
+  } else if (current > SIZE_MAX / 2) {
+    target = requested;
+  } else {
+    target = std::max(requested, current * 2);
+  }
+  if (target > maximum) target = requested;
+  return hyle_container_vector_reserve(vector, target);
+}
+
+void fill_vector_items(void* destination, std::size_t count,
+                       const void* item, std::size_t item_size) noexcept {
+  if (count == 0) return;
+  std::memmove(destination, item, item_size);
+  auto* output = static_cast<std::byte*>(destination);
+  std::size_t completed = 1;
+  while (completed < count) {
+    const std::size_t batch = std::min(completed, count - completed);
+    std::memcpy(output + completed * item_size, output,
+                batch * item_size);
+    completed += batch;
+  }
+}
+
+}  // namespace
+
 static_assert(std::is_standard_layout_v<hyle_allocator>);
 static_assert(std::is_trivially_copyable_v<hyle_allocator>);
 static_assert(std::is_standard_layout_v<hyle_container_string_view>);
@@ -1030,36 +1098,117 @@ hyle_status hyle_container_vector_reserve(hyle_container_vector* vector,
 }
 hyle_status hyle_container_vector_try_push_back(hyle_container_vector* vector,
                                                 const void* item) {
-  if (vector == nullptr || item == nullptr)
+  return hyle_container_vector_try_append(vector, item, 1);
+}
+hyle_status hyle_container_vector_try_append(hyle_container_vector* vector,
+                                             const void* items,
+                                             size_t count) {
+  if (vector == nullptr || (count != 0 && items == nullptr))
     return hyle_status_invalid_argument(
-        vector == nullptr ? "vector is NULL" : "item is NULL");
+        vector == nullptr ? "vector is NULL" : "items are NULL");
+  if (count == 0) return hyle_status_ok();
   const size_t size = hc::carray_size(vector->data);
-  std::size_t aliased_offset = SIZE_MAX;
-  if (vector->data != nullptr) {
-    const auto begin = reinterpret_cast<std::uintptr_t>(vector->data);
-    const auto end = begin + size * vector->item_size;
-    const auto address = reinterpret_cast<std::uintptr_t>(item);
-    if (address >= begin && address < end) {
-      if (address > end - vector->item_size) {
-        return hyle_status_invalid_argument(
-            "aliased item does not contain a complete element");
-      }
-      aliased_offset = address - begin;
-    }
+  if (count > SIZE_MAX - size || count > SIZE_MAX / vector->item_size)
+    return hyle_status_out_of_range("vector size overflows address space");
+  std::size_t aliased_offset = 0;
+  const VectorSource source =
+      classify_vector_source(vector, items, count, aliased_offset);
+  if (source == VectorSource::kInvalid)
+    return hyle_status_invalid_argument(
+        "aliased items must be entirely inside live vector data");
+  hyle_status status = vector_reserve_for(vector, size + count);
+  if (!hyle_status_is_ok(status)) return status;
+  hyle_status_free(&status);
+  if (source == VectorSource::kLiveAlias)
+    items = static_cast<const std::byte*>(vector->data) + aliased_offset;
+  std::memmove(static_cast<std::byte*>(vector->data) +
+                   size * vector->item_size,
+               items, count * vector->item_size);
+  hc::carray_header(vector->data)->size = size + count;
+  return hyle_status_ok();
+}
+hyle_status hyle_container_vector_try_resize(hyle_container_vector* vector,
+                                             size_t requested,
+                                             const void* fill_item) {
+  if (vector == nullptr)
+    return hyle_status_invalid_argument("vector is NULL");
+  const size_t size = hc::carray_size(vector->data);
+  if (requested <= size) {
+    if (vector->data != nullptr)
+      hc::carray_header(vector->data)->size = requested;
+    return hyle_status_ok();
   }
-  if (size == hc::carray_capacity(vector->data)) {
-    const size_t next = size == 0 ? 4 : size * 2;
-    if (next < size)
-      return hyle_status_out_of_range("vector capacity overflows address space");
-    hyle_status status = hyle_container_vector_reserve(vector, next);
-    if (!hyle_status_is_ok(status)) return status;
+  if (fill_item == nullptr)
+    return hyle_status_invalid_argument(
+        "growing a vector requires fill_item");
+  std::size_t aliased_offset = 0;
+  const VectorSource source =
+      classify_vector_source(vector, fill_item, 1, aliased_offset);
+  if (source == VectorSource::kInvalid)
+    return hyle_status_invalid_argument(
+        "aliased fill_item must be entirely inside live vector data");
+  hyle_status status = vector_reserve_for(vector, requested);
+  if (!hyle_status_is_ok(status)) return status;
+  hyle_status_free(&status);
+  if (source == VectorSource::kLiveAlias)
+    fill_item = static_cast<const std::byte*>(vector->data) + aliased_offset;
+  fill_vector_items(static_cast<std::byte*>(vector->data) +
+                        size * vector->item_size,
+                    requested - size, fill_item, vector->item_size);
+  hc::carray_header(vector->data)->size = requested;
+  return hyle_status_ok();
+}
+hyle_status hyle_container_vector_try_insert(hyle_container_vector* vector,
+                                             size_t index,
+                                             const void* items,
+                                             size_t count) {
+  if (vector == nullptr || (count != 0 && items == nullptr))
+    return hyle_status_invalid_argument(
+        vector == nullptr ? "vector is NULL" : "items are NULL");
+  const size_t size = hc::carray_size(vector->data);
+  if (index > size)
+    return hyle_status_out_of_range("vector insert index is out of range");
+  if (count == 0) return hyle_status_ok();
+  if (count > SIZE_MAX - size || count > SIZE_MAX / vector->item_size)
+    return hyle_status_out_of_range("vector size overflows address space");
+
+  std::size_t aliased_offset = 0;
+  const VectorSource source =
+      classify_vector_source(vector, items, count, aliased_offset);
+  if (source == VectorSource::kInvalid)
+    return hyle_status_invalid_argument(
+        "aliased items must be entirely inside live vector data");
+  const size_t input_bytes = count * vector->item_size;
+  void* scratch = nullptr;
+  if (source == VectorSource::kLiveAlias) {
+    scratch = vector->backing.alloc(vector->backing.state, input_bytes,
+                                    vector->item_alignment);
+    if (scratch == nullptr)
+      return hyle_status_resource_exhausted(
+          "vector alias scratch allocation failed");
+    std::memcpy(scratch,
+                static_cast<const std::byte*>(vector->data) + aliased_offset,
+                input_bytes);
+    items = scratch;
   }
-  if (aliased_offset != SIZE_MAX)
-    item = static_cast<const std::byte*>(vector->data) + aliased_offset;
-  std::memcpy(static_cast<std::byte*>(vector->data) +
-                  size * vector->item_size,
-              item, vector->item_size);
-  hc::carray_header(vector->data)->size = size + 1;
+
+  hyle_status status = vector_reserve_for(vector, size + count);
+  if (!hyle_status_is_ok(status)) {
+    if (scratch != nullptr)
+      vector->backing.free(vector->backing.state, scratch, input_bytes,
+                           vector->item_alignment);
+    return status;
+  }
+  hyle_status_free(&status);
+  auto* data = static_cast<std::byte*>(vector->data);
+  std::memmove(data + (index + count) * vector->item_size,
+               data + index * vector->item_size,
+               (size - index) * vector->item_size);
+  std::memmove(data + index * vector->item_size, items, input_bytes);
+  hc::carray_header(vector->data)->size = size + count;
+  if (scratch != nullptr)
+    vector->backing.free(vector->backing.state, scratch, input_bytes,
+                         vector->item_alignment);
   return hyle_status_ok();
 }
 int hyle_container_vector_try_pop_back(hyle_container_vector* vector,
@@ -1067,11 +1216,47 @@ int hyle_container_vector_try_pop_back(hyle_container_vector* vector,
   if (vector == nullptr || out_item == nullptr) return 0;
   if (hc::carray_size(vector->data) == 0) return 0;
   const size_t index = hc::carray_size(vector->data) - 1;
-  std::memcpy(out_item, static_cast<std::byte*>(vector->data) +
-                            index * vector->item_size,
-              vector->item_size);
+  std::memmove(out_item, static_cast<std::byte*>(vector->data) +
+                             index * vector->item_size,
+               vector->item_size);
   hc::carray_header(vector->data)->size = index;
   return 1;
+}
+hyle_status hyle_container_vector_erase(hyle_container_vector* vector,
+                                        size_t index, size_t count) {
+  if (vector == nullptr)
+    return hyle_status_invalid_argument("vector is NULL");
+  const size_t size = hc::carray_size(vector->data);
+  if (index > size || count > size - index)
+    return hyle_status_out_of_range("vector erase range is out of bounds");
+  if (count == 0) return hyle_status_ok();
+  auto* data = static_cast<std::byte*>(vector->data);
+  std::memmove(data + index * vector->item_size,
+               data + (index + count) * vector->item_size,
+               (size - index - count) * vector->item_size);
+  hc::carray_header(vector->data)->size = size - count;
+  return hyle_status_ok();
+}
+hyle_status hyle_container_vector_try_shrink_to_fit(
+    hyle_container_vector* vector) {
+  if (vector == nullptr)
+    return hyle_status_invalid_argument("vector is NULL");
+  const size_t size = hc::carray_size(vector->data);
+  if (vector->data == nullptr || hc::carray_capacity(vector->data) == size)
+    return hyle_status_ok();
+  if (size == 0) {
+    hc::detail::carray_free_internal(vector->data, vector->item_size);
+    vector->data = nullptr;
+    return hyle_status_ok();
+  }
+  void* replacement = hc::detail::carray_set_capacity_internal(
+      vector->data, size, vector->item_size, vector->item_alignment,
+      to_cpp(&vector->backing));
+  if (replacement == nullptr)
+    return hyle_status_resource_exhausted(
+        "vector storage shrink allocation failed");
+  vector->data = replacement;
+  return hyle_status_ok();
 }
 void hyle_container_vector_clear(hyle_container_vector* vector) {
   if (vector == nullptr) return;

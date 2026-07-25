@@ -251,8 +251,7 @@ class PodVector {
     std::memmove(static_cast<void*>(data_ + index + count),
                  static_cast<const void*>(data_ + index),
                  static_cast<std::size_t>(current - index) * sizeof(T));
-    for (size_type i = 0; i < count; ++i)
-      copy_bytes(data_ + index + i, saved, sizeof(T));
+    fill_bytes(data_ + index, count, saved);
     carray_header(data_)->size = requested;
     return data_ + index;
   }
@@ -321,11 +320,9 @@ class PodVector {
     copy_bytes(saved, std::addressof(value), sizeof(T));
     if (count > capacity()) {
       if (!grow_to(count)) return false;
-      for (size_type i = size(); i < count; ++i)
-        copy_bytes(data_ + i, saved, sizeof(T));
+      fill_bytes(data_ + size(), count - size(), saved);
     } else {
-      for (size_type i = size(); i < count; ++i)
-        copy_bytes(data_ + i, saved, sizeof(T));
+      fill_bytes(data_ + size(), count - size(), saved);
     }
     if (data_ != nullptr) carray_header(data_)->size = count;
     return true;
@@ -407,6 +404,19 @@ class PodVector {
 
   static void copy_one(pointer destination, const T& source) noexcept {
     copy_bytes(destination, std::addressof(source), sizeof(T));
+  }
+
+  static void fill_bytes(pointer destination, size_type count,
+                         const void* value) noexcept {
+    if (count == 0) return;
+    copy_bytes(destination, value, sizeof(T));
+    size_type completed = 1;
+    while (completed < count) {
+      const size_type batch = std::min(completed, count - completed);
+      copy_bytes(destination + completed, destination,
+                 static_cast<std::size_t>(batch) * sizeof(T));
+      completed += batch;
+    }
   }
 
   size_type position_index(const_iterator position, bool allow_end) const

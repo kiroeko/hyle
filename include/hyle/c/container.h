@@ -260,8 +260,22 @@ HYLE_CONTAINER_C_API hyle_status hyle_container_vector_reserve(
  * try_pop_back returns 0 when empty and writes out_item only on success. */
 HYLE_CONTAINER_C_API hyle_status hyle_container_vector_try_push_back(
     hyle_container_vector* vector, const void* item);
+/* Batch mutation uses item-count, not byte-count. A non-zero count requires a
+ * pointer to count contiguous items. Input may alias the vector's live data. */
+HYLE_CONTAINER_C_API hyle_status hyle_container_vector_try_append(
+    hyle_container_vector* vector, const void* items, size_t count);
+/* fill_item is ignored when shrinking and required when growing. */
+HYLE_CONTAINER_C_API hyle_status hyle_container_vector_try_resize(
+    hyle_container_vector* vector, size_t size, const void* fill_item);
+HYLE_CONTAINER_C_API hyle_status hyle_container_vector_try_insert(
+    hyle_container_vector* vector, size_t index, const void* items,
+    size_t count);
 HYLE_CONTAINER_C_API int hyle_container_vector_try_pop_back(
     hyle_container_vector* vector, void* out_item);
+HYLE_CONTAINER_C_API hyle_status hyle_container_vector_erase(
+    hyle_container_vector* vector, size_t index, size_t count);
+HYLE_CONTAINER_C_API hyle_status hyle_container_vector_try_shrink_to_fit(
+    hyle_container_vector* vector);
 HYLE_CONTAINER_C_API void hyle_container_vector_clear(
     hyle_container_vector* vector);
 
