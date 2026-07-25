@@ -64,8 +64,9 @@
   mem、container benchmark 不再要求全局 SIMD vendor 或 compute/io 配置。
 - [x] relocatable install/export/component package 落地；build/install target 同名 `hyle::<module>`，
   shared/static simd+mem 独立 consumer 均真实运行，static mimalloc link-only 后端自动传播。
-- [ ] compute/ggml/volk 的 fetched 依赖打包；交叉编译、
-  preset/toolchain/CI 与三平台最终矩阵。
+- [x] compute/ggml/volk fetched 依赖打包：只编私有 PIC CPU/可选 CUDA/volk 闭包；shared 吸收、
+  static 导出 link-only archives/头/依赖，许可证和 feature manifest 随包迁移。
+- [ ] 交叉编译、preset/toolchain/CI 与三平台最终矩阵。
 - [x] io/nghttp2 package 闭环：固定版本协议核始终为私有 PIC archive；shared io 吸收实现，static
   io 通过 export graph 传递 archive/生成头；MIT 全文和 `io_http2` feature manifest 随包迁移。
 - [x] 当前发布策略确定为暂时闭源：根 `LICENSE` 使用 `LicenseRef-HYLE-Proprietary` 对应的
@@ -117,7 +118,7 @@
 - missing-component 诊断列出 requested 与 available；安装包同时公开
   `Hyle_AVAILABLE_COMPONENTS`/`Hyle_AVAILABLE_FEATURES` 作为可审计组装 manifest。
 - install/export target 直接来自产品 target 图；测试构建禁止安装，避免 `HYLE_TESTING` 布局泄漏；
-  尚未随包迁移的 fetched runtime/archive 组合 configure fail-fast。
+  fetched runtime/archive 只有闭包、头与 license 全部进入 target 图后才允许安装。
 - proprietary 决策不覆盖第三方：Highway port 选择 Apache-2.0，JPEG XL/xsimd 保留 BSD-3，
   原来 9 个不可机读的 `SPDX: same as HYLE` 改为 `LicenseRef-HYLE-Proprietary`。
 - Windows MSVC 19.50 io+HTTP/2 shared/static package 均由全新 Release build 生成；独立纯 C
@@ -129,14 +130,31 @@
 - `hyle_source_package` 在施工脏树上按预期 fail-fast；干净提交上生成 zip + SHA-256，归档只含统一
   `hyle-0.1.0-source/` 前缀，manifest 固定 commit，解压后的 core-only consumer build 可独立完成。
 
+### compute package 闭包验证
+
+- Windows MSVC 19.50 CPU shared compute：Release 从空 build tree 构建并安装；ggml-base/cpu/ggml 与
+  volk 被吸收到唯一 `hyle_compute.dll`，安装前缀没有供应商 DLL/archive。独立
+  `samples/07_installed_compute` 仅凭 package target 构建运行，枚举 2 个 device，Vulkan RTX 4070
+  真可用；安装树没有 source/build 绝对路径。
+- CPU static compute：134 步实际构建；包导出 ggml-base/cpu/ggml、volk、mimalloc 和 Threads 闭包，
+  安装所需 ggml/volk/Vulkan 头。独立 consumer 未手写供应商库即可链接运行。
+- CUDA static compute：显式 `CMAKE_CUDA_ARCHITECTURES=89` 后 275 步实际构建，产出 ggml-cuda 并
+  导出 CUDA runtime/cuBLAS/driver/NVRTC 依赖；独立 consumer 真链接运行，枚举 CUDA RTX 4070。
+  未指定 architecture 的 install 构建按预期拒绝 `native`，避免把构建机 GPU 冒充发布契约。
+- shared/static CPU feature manifest 均为 `compute_ggml;compute_vulkan`；CUDA static 另含
+  `compute_cuda`。三种安装前缀均携带 ggml、volk、Vulkan-Headers license closure，且生产配置
+  不取得 glslang。ggml 通用包默认 native OFF；另一次干净 install configure 令
+  `HYLE_SIMD_EXACT_TARGET=AVX2`，ggml 日志确认 `/arch:AVX2`，证明 exact HYLE/ggml ISA 同步生效；
+  exact AVX2/AVX512 与本机 native 都是显式性能形状。
+
 ### 本轮四项代码量
 
 | 固定口径 | code |
 |---|---:|
-| 全库（含 docs/in-tree third_party） | 247,200 |
+| 全库（含 docs/in-tree third_party） | 247,414 |
 | 自实现（含测试） | 116,284 |
 | 自实现（不含测试） | 79,957 |
-| build/package 实现 | 3,431 |
+| build/package 实现 | 3,553 |
 
 最后一项统计自有 root/module/test/bench/sample CMake、`cmake/`、preset，以及
 build/fetch/setup/QEMU scripts；不含 vendored CMake、测试源码和文档。

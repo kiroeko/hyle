@@ -9,7 +9,8 @@
 | C++ 编译器 / CMake / Ninja / 汇编器 | **硬门槛** | CMake FATAL_ERROR，配置失败 | CMake 自带检查 |
 | **ggml** | **自动拉取**（FetchContent） | 有网自动下；无网且无缓存则配置失败 | `FetchContent`（pin commit） |
 | **googletest** | **自动拉取**（FetchContent） | 同上（仅影响测试，`-DHYLE_BUILD_TESTS=OFF` 可跳） | `FetchContent`（pin tag v1.15.2） |
-| **volk + Vulkan-Headers + glslang** | **自动拉取**（FetchContent，compute-06） | 全 pin `vulkan-sdk-1.4.341.0`，落 build tree `_deps`；缺网首配失败 | `FetchContent`（三个 pin commit） |
+| **volk + Vulkan-Headers** | **自动拉取**（FetchContent，compute-06） | 全 pin `vulkan-sdk-1.4.341.0`，落 build tree `_deps`；缺网首配失败 | `FetchContent`（两个 pin commit） |
+| **glslang** | 测试/benchmark shader 工具 | 只在 compute tests/bench 打开时拉取；生产 SDK 不需要 | `FetchContent`（pin commit） |
 | **Vulkan loader + ICD/driver** | 可选能力（compute-06 运行时） | 无则 Vulkan 后端运行时禁用（`vulkan_vtable()` 返 null），其余全绿 | volk 运行时 dlopen `vulkan-1.dll`/`libvulkan.so`/`libvulkan.dylib` |
 | **OpenSSL** | 可选能力 | `HYLE_IO_TLS=AUTO/OFF` 可无 TLS；ON 时缺失即配置失败 | `find_package(OpenSSL QUIET)` |
 | **CUDA Toolkit** | 可选能力 | `HYLE_COMPUTE_CUDA=AUTO/OFF` 可只用 host；ON 时缺失即配置失败 | `find_package(CUDAToolkit QUIET)` |
@@ -42,7 +43,11 @@ cmake -S . -B build -DFETCHCONTENT_SOURCE_DIR_GGML=/approved/ggml
 可以移动**当前 build tree 自己的**依赖区，但不能指向源码树，也不应被不同 toolchain/build tree 共用。
 仓库根 `.deps/` 只是旧开发树兼容的 ignored 路径，不是现行默认契约。
 
-**ggml 的构建开关（HYLE 强制设定，见根 CMakeLists）**：`GGML_OPENMP=OFF`（compute-05 发现 10：n_threads=1 叶子，不让 ggml 起 OpenMP 线程）、`GGML_BUILD_TESTS/EXAMPLES=OFF`、`GGML_CUDA_FA=OFF`（跳 ~120 个 FlashAttention kernel，桥只用 GEMM，省首编时间）、`GGML_CUDA` 跟随最终启用的 CUDA 能力。
+**ggml 的构建开关（HYLE 强制设定，见根 CMakeLists）**：只构建私有 PIC 静态 CPU + 可选 CUDA
+闭包；关闭 OpenMP、BLAS/Accelerate、Metal/Vulkan/RPC、tests/examples/server、backend dynamic load、
+FA/NCCL/ccache，避免引入 HYLE 不消费的运行时。`GGML_CUDA` 跟随最终启用的 CUDA 能力。
+普通源码构建 `HYLE_COMPUTE_GGML_NATIVE=ON` 偏向本机性能；`HYLE_INSTALL=ON` 默认 OFF，x86 使用
+SSE4.2 baseline。已知部署 CPU 用 `HYLE_SIMD_EXACT_TARGET=AVX2/AVX512` 同步提高 HYLE 与 ggml ISA。
 
 **关掉 ggml（无 compute 需求时）**：`-DHYLE_COMPUTE_GGML=OFF` → 不拉 ggml、不编 ggml_bridge，compute 其余（01–04）照编。
 
@@ -64,6 +69,8 @@ TLS 是三态能力：`HYLE_IO_TLS=AUTO` 自动发现，`ON` 要求 OpenSSL，`O
 
 `HYLE_COMPUTE_CUDA=AUTO` 时 CMake 自动发现 Toolkit；`ON` 要求找到；`OFF` 不运行依赖探测、不启用
 CUDA language，只编 host fallback。最终启用时才编 `cuda_backend.cu` 并链接 CUDA runtime/driver/NVRTC。
+普通本机构建未指定时使用 `CMAKE_CUDA_ARCHITECTURES=native`；`HYLE_INSTALL=ON` 的 CUDA SDK 必须
+显式给出目标，例如 `-DCMAKE_CUDA_ARCHITECTURES='80;86;89'` 或 `all-major`，否则配置拒绝。
 
 - **本仓库统一 CUDA 13.3**（RTX 4070 / sm_89）。Windows toolkit 在 `C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.3`；WSL 在 `/usr/local/cuda-13.3`（软链 `/usr/local/cuda`）。装法见平台文件。
 - **编译/链接不需要 PATH**（CMake 走 `find_package`）；**运行 GPU 测试**要 CUDA runtime DLL 在 PATH（Windows）。

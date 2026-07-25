@@ -31,6 +31,19 @@ function(hyle_install_package)
   if(HYLE_STATIC AND TARGET nghttp2_static)
     list(APPEND _hyle_export_targets nghttp2_static)
   endif()
+  # ggml/volk are private PIC archives. Shared hyle_compute absorbs them;
+  # static hyle_compute carries their reviewed target closure through LINK_ONLY.
+  if(HYLE_STATIC AND TARGET ggml)
+    foreach(_hyle_ggml_target IN ITEMS ggml ggml-base ggml-cpu ggml-cuda)
+      if(TARGET ${_hyle_ggml_target})
+        list(APPEND _hyle_export_targets ${_hyle_ggml_target})
+      endif()
+    endforeach()
+    unset(_hyle_ggml_target)
+  endif()
+  if(HYLE_STATIC AND TARGET volk)
+    list(APPEND _hyle_export_targets volk)
+  endif()
 
   # Tracy is part of the public inline trace contract when enabled, so its one
   # client target and public header tree travel with a trace-enabled package.
@@ -48,23 +61,6 @@ function(hyle_install_package)
       DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/Hyle"
       RENAME tracy-LICENSE
       COMPONENT Hyle_Runtime)
-  endif()
-
-  # These fetched implementation libraries do not yet expose a relocatable
-  # install contract. A PRIVATE shared dependency is still a runtime dependency;
-  # it does not magically become part of hyle_io/hyle_compute. Refuse every
-  # package shape that would otherwise install a target with missing artifacts.
-  if(HYLE_BUILD_COMPUTE AND HYLE_COMPUTE_GGML)
-    message(FATAL_ERROR
-      "An install containing compute currently requires "
-      "-DHYLE_COMPUTE_GGML=OFF; the fetched ggml runtime libraries are not yet "
-      "included in HYLE's relocatable package.")
-  endif()
-  if(HYLE_BUILD_COMPUTE AND HYLE_COMPUTE_VULKAN_ENABLED)
-    message(FATAL_ERROR
-      "An install containing compute currently requires "
-      "-DHYLE_COMPUTE_VULKAN=OFF; the fetched volk archive is not yet included "
-      "with its license payload in HYLE's relocatable package.")
   endif()
 
   install(TARGETS ${_hyle_export_targets}
@@ -164,6 +160,57 @@ function(hyle_install_package)
         COMPONENT Hyle_Development)
     endif()
   endif()
+  if(TARGET ggml)
+    if(NOT EXISTS "${ggml_SOURCE_DIR}/LICENSE")
+      message(FATAL_ERROR
+        "The selected ggml checkout has no LICENSE at '${ggml_SOURCE_DIR}/LICENSE'; "
+        "refusing to package it without terms.")
+    endif()
+    install(FILES "${ggml_SOURCE_DIR}/LICENSE"
+      DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/Hyle"
+      RENAME ggml-LICENSE
+      COMPONENT Hyle_Runtime)
+    if(HYLE_STATIC)
+      install(DIRECTORY "${ggml_SOURCE_DIR}/include/"
+        DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+        COMPONENT Hyle_Development)
+    endif()
+  endif()
+  if(TARGET volk)
+    foreach(_hyle_license IN ITEMS
+        "${volk_SOURCE_DIR}/LICENSE.md"
+        "${vulkan_headers_SOURCE_DIR}/LICENSE.md"
+        "${vulkan_headers_SOURCE_DIR}/LICENSES/Apache-2.0.txt"
+        "${vulkan_headers_SOURCE_DIR}/LICENSES/MIT.txt")
+      if(NOT EXISTS "${_hyle_license}")
+        message(FATAL_ERROR
+          "The selected Vulkan dependency lacks license file '${_hyle_license}'.")
+      endif()
+    endforeach()
+    install(FILES "${volk_SOURCE_DIR}/LICENSE.md"
+      DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/Hyle"
+      RENAME volk-LICENSE.md
+      COMPONENT Hyle_Runtime)
+    install(FILES
+      "${vulkan_headers_SOURCE_DIR}/LICENSE.md"
+      "${vulkan_headers_SOURCE_DIR}/LICENSES/Apache-2.0.txt"
+      "${vulkan_headers_SOURCE_DIR}/LICENSES/MIT.txt"
+      DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/Hyle/Vulkan-Headers"
+      COMPONENT Hyle_Runtime)
+    if(HYLE_STATIC)
+      install(FILES "${volk_SOURCE_DIR}/volk.h"
+        DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/hyle/vendor/volk"
+        COMPONENT Hyle_Development)
+      install(DIRECTORY
+        "${vulkan_headers_SOURCE_DIR}/include/vulkan"
+        "${vulkan_headers_SOURCE_DIR}/include/vk_video"
+        DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/hyle/vendor/volk"
+        COMPONENT Hyle_Development)
+    endif()
+    install(PROGRAMS "${HYLE_SOURCE_DIR}/tools/hyle_shader.py"
+      DESTINATION "${CMAKE_INSTALL_BINDIR}"
+      COMPONENT Hyle_Development)
+  endif()
 
   set(_hyle_package_dir "${CMAKE_INSTALL_LIBDIR}/cmake/Hyle")
   set(HYLE_PACKAGE_COMPONENTS "${_hyle_package_components}")
@@ -178,6 +225,9 @@ function(hyle_install_package)
   if(TARGET nghttp2_static)
     list(APPEND HYLE_PACKAGE_FEATURES io_http2)
   endif()
+  if(TARGET ggml)
+    list(APPEND HYLE_PACKAGE_FEATURES compute_ggml)
+  endif()
   if(HYLE_BUILD_COMPUTE AND HYLE_COMPUTE_CUDA_ENABLED)
     list(APPEND HYLE_PACKAGE_FEATURES compute_cuda)
   endif()
@@ -186,11 +236,15 @@ function(hyle_install_package)
   endif()
   set(HYLE_PACKAGE_NEEDS_OPENSSL OFF)
   set(HYLE_PACKAGE_NEEDS_CUDA OFF)
+  set(HYLE_PACKAGE_NEEDS_THREADS OFF)
   if(HYLE_STATIC AND HYLE_BUILD_IO AND HYLE_IO_TLS_ENABLED)
     set(HYLE_PACKAGE_NEEDS_OPENSSL ON)
   endif()
   if(HYLE_STATIC AND HYLE_BUILD_COMPUTE AND HYLE_COMPUTE_CUDA_ENABLED)
     set(HYLE_PACKAGE_NEEDS_CUDA ON)
+  endif()
+  if(HYLE_STATIC AND TARGET ggml)
+    set(HYLE_PACKAGE_NEEDS_THREADS ON)
   endif()
 
   configure_package_config_file(

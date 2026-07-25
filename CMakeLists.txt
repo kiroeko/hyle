@@ -196,6 +196,17 @@ set(HYLE_COMPUTE_CUDA_ENABLED OFF)
 if(HYLE_BUILD_COMPUTE AND NOT HYLE_COMPUTE_CUDA STREQUAL "OFF")
   find_package(CUDAToolkit QUIET)
   if(CUDAToolkit_FOUND)
+    if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES OR
+       CMAKE_CUDA_ARCHITECTURES STREQUAL "")
+      set(CMAKE_CUDA_ARCHITECTURES native CACHE STRING
+        "CUDA architectures for HYLE and fetched CUDA kernels")
+    endif()
+    if(HYLE_INSTALL AND "native" IN_LIST CMAKE_CUDA_ARCHITECTURES)
+      message(FATAL_ERROR
+        "A CUDA-enabled binary SDK cannot use CMAKE_CUDA_ARCHITECTURES=native; "
+        "that would bind the package to the build GPU. Set an explicit list "
+        "(for example 80;86;89) or all-major, or select HYLE_COMPUTE_CUDA=OFF.")
+    endif()
     enable_language(CUDA)
     set(HYLE_COMPUTE_CUDA_ENABLED ON)
     message(STATUS
@@ -226,57 +237,101 @@ endif()
 # tree. A developer who wants one cache shared by several disposable build trees can set
 # HYLE_DEPS_DIR explicitly; a source-embedded consumer otherwise gets an isolated cache.
 option(HYLE_COMPUTE_GGML "compute-05: borrow ggml operators via ggml_bridge" ON)
-if(HYLE_INSTALL AND HYLE_BUILD_COMPUTE AND HYLE_COMPUTE_GGML)
-  message(FATAL_ERROR
-    "An install containing compute currently requires "
-    "-DHYLE_COMPUTE_GGML=OFF; the fetched ggml runtime libraries are not yet "
-    "included in HYLE's relocatable package.")
+set(_hyle_ggml_native_default ON)
+if(HYLE_INSTALL)
+  set(_hyle_ggml_native_default OFF)
 endif()
+option(HYLE_COMPUTE_GGML_NATIVE
+  "Tune ggml CPU kernels for the build CPU (not portable across CPUs)"
+  ${_hyle_ggml_native_default})
+unset(_hyle_ggml_native_default)
 if(HYLE_BUILD_COMPUTE AND HYLE_COMPUTE_GGML)
   set(FETCHCONTENT_BASE_DIR "${HYLE_DEPS_DIR}")
   include(FetchContent)
   set(GGML_PIN_COMMIT "eced84c86f8b012c752c016f7fe789adea168e1e")  # v0.15.3
 
-  # Own ggml's build knobs BEFORE it configures (cache vars it reads at option()).
-  set(GGML_OPENMP        OFF CACHE BOOL "" FORCE)  # 发现 10: n_threads=1 leaf; no OMP threads
-  set(GGML_BUILD_TESTS   OFF CACHE BOOL "" FORCE)
-  set(GGML_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-  set(GGML_CPU           ON  CACHE BOOL "" FORCE)  # CPU backend (n_threads=1 leaf path)
-  # ggml follows HYLE_STATIC, but only inside its FetchContent scope. HYLE never changes
-  # an embedding parent's BUILD_SHARED_LIBS choice.
-  # GGML_CUDA_FA OFF: skip ~120 FlashAttention kernel instances (attention, not matmul).
-  # The bridge borrows GEMM/elementwise; FA is unused and dominates first-build time.
-  set(GGML_CUDA_FA       OFF CACHE BOOL "" FORCE)
-  if(HYLE_COMPUTE_CUDA_ENABLED)
-    set(GGML_CUDA ON  CACHE BOOL "" FORCE)  # CUDA backend (zero-copy device_ptr path)
-  else()
-    set(GGML_CUDA OFF CACHE BOOL "" FORCE)
-  endif()
-
-  message(STATUS "HYLE: ggml via FetchContent pin ${GGML_PIN_COMMIT} (cache: ${HYLE_DEPS_DIR}, GGML_CUDA=${HYLE_COMPUTE_CUDA_ENABLED})")
   FetchContent_Declare(ggml
     GIT_REPOSITORY https://github.com/ggml-org/ggml.git
     GIT_TAG        ${GGML_PIN_COMMIT}
     GIT_SHALLOW    TRUE)
-  # EXCLUDE_FROM_ALL: only the parts hyle_compute links get built (no ggml install/tests).
-  set(_hyle_had_build_shared_libs FALSE)
-  if(DEFINED BUILD_SHARED_LIBS)
-    set(_hyle_had_build_shared_libs TRUE)
-    set(_hyle_saved_build_shared_libs "${BUILD_SHARED_LIBS}")
-  endif()
-  if(HYLE_STATIC)
+  # ggml is a pinned implementation kernel, not a second public/runtime ABI.
+  # Always build a PIC static closure: shared hyle_compute absorbs it; static
+  # hyle_compute exports it through LINK_ONLY.  Normal variables + block() honor
+  # upstream option() without FORCE-writing an embedding parent's cache.
+  block()
+    # The hook runs inside ggml's project() before language detection.  Its own
+    # cmake_minimum_required(...3.28) would otherwise reset a parent policy.
+    set(HYLE_GGML_PARENT_PROJECT_INCLUDE_BEFORE
+      "${CMAKE_PROJECT_ggml_INCLUDE_BEFORE}")
+    set(CMAKE_PROJECT_ggml_INCLUDE_BEFORE
+      "${HYLE_SOURCE_DIR}/cmake/HyleGgmlProjectPolicy.cmake")
     set(BUILD_SHARED_LIBS OFF)
-  else()
-    set(BUILD_SHARED_LIBS ON)
-  endif()
-  FetchContent_MakeAvailable(ggml)
-  if(_hyle_had_build_shared_libs)
-    set(BUILD_SHARED_LIBS "${_hyle_saved_build_shared_libs}")
-  else()
-    unset(BUILD_SHARED_LIBS)
-  endif()
-  unset(_hyle_had_build_shared_libs)
-  unset(_hyle_saved_build_shared_libs)
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+    set(GGML_STANDALONE OFF)
+    set(GGML_BUILD_TESTS OFF)
+    set(GGML_BUILD_EXAMPLES OFF)
+    set(GGML_BUILD_SERVER OFF)
+    set(GGML_BACKEND_DL OFF)
+    set(GGML_OPENMP OFF)       # n_threads=1 leaf; HYLE owns outer parallelism
+    set(GGML_CCACHE OFF)
+    set(GGML_NATIVE ${HYLE_COMPUTE_GGML_NATIVE})
+    set(GGML_CPU ON)
+    set(GGML_CPU_ALL_VARIANTS OFF)
+    set(GGML_ACCELERATE OFF)
+    set(GGML_BLAS OFF)
+    set(GGML_LLAMAFILE OFF)
+    set(GGML_METAL OFF)
+    set(GGML_RPC OFF)
+    set(GGML_VULKAN OFF)
+    set(GGML_CUDA ${HYLE_COMPUTE_CUDA_ENABLED})
+    set(GGML_CUDA_FA OFF)      # bridge uses GEMM/elementwise, not FlashAttention
+    set(GGML_CUDA_NCCL OFF)    # no accidental machine-local multi-GPU dependency
+    # A binary SDK defaults to the x86-64-v2/SSE4 contract. A deliberately exact
+    # HYLE ISA package raises ggml to the same floor; a source/local build may
+    # explicitly retain upstream's build-CPU tuning via *_GGML_NATIVE.
+    if(NOT HYLE_COMPUTE_GGML_NATIVE AND
+       CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+      set(GGML_SSE42 ON)
+      set(GGML_AVX OFF)
+      set(GGML_AVX2 OFF)
+      set(GGML_BMI2 OFF)
+      set(GGML_AVX512 OFF)
+      set(GGML_AVX512_VBMI OFF)
+      set(GGML_AVX512_VNNI OFF)
+      set(GGML_AVX512_BF16 OFF)
+      if(NOT MSVC)
+        set(GGML_FMA OFF)
+        set(GGML_F16C OFF)
+      endif()
+      if(HYLE_SIMD_EXACT_TARGET STREQUAL "AVX2" OR
+         HYLE_SIMD_EXACT_TARGET STREQUAL "AVX512")
+        set(GGML_AVX ON)
+        set(GGML_AVX2 ON)
+        set(GGML_BMI2 ON)
+        if(NOT MSVC)
+          set(GGML_FMA ON)
+          set(GGML_F16C ON)
+        endif()
+      endif()
+      if(HYLE_SIMD_EXACT_TARGET STREQUAL "AVX512")
+        set(GGML_AVX512 ON)
+      endif()
+    endif()
+    FetchContent_MakeAvailable(ggml)
+  endblock()
+  FetchContent_GetProperties(ggml)
+  set_property(DIRECTORY "${ggml_SOURCE_DIR}" PROPERTY EXCLUDE_FROM_ALL TRUE)
+  foreach(_hyle_ggml_target IN ITEMS ggml ggml-base ggml-cpu ggml-cuda)
+    if(TARGET ${_hyle_ggml_target})
+      set_target_properties(${_hyle_ggml_target} PROPERTIES
+        POSITION_INDEPENDENT_CODE ON)
+    endif()
+  endforeach()
+  unset(_hyle_ggml_target)
+  message(STATUS
+    "HYLE: ggml ${GGML_PIN_COMMIT} -- private PIC static CPU kernel "
+    "(native=${HYLE_COMPUTE_GGML_NATIVE}, exact=${HYLE_SIMD_EXACT_TARGET}, "
+    "CUDA=${HYLE_COMPUTE_CUDA_ENABLED}, cache: ${HYLE_DEPS_DIR})")
 endif()
 
 
@@ -307,13 +362,8 @@ endif()
 #      validator tool (the "pre-compile tool folder" for HYLE devs + clients).
 # The slate-bundled Vulkan (headers v270, stale) is NOT used.
 option(HYLE_COMPUTE_VULKAN "compute-06: self-authored Vulkan compute SPIR-V kernels" ON)
-if(HYLE_INSTALL AND HYLE_BUILD_COMPUTE AND HYLE_COMPUTE_VULKAN)
-  message(FATAL_ERROR
-    "An install containing compute currently requires "
-    "-DHYLE_COMPUTE_VULKAN=OFF; the fetched volk archive is not yet included "
-    "with its license payload in HYLE's relocatable package.")
-endif()
 set(HYLE_COMPUTE_VULKAN_ENABLED OFF)
+set(HYLE_COMPUTE_SHADER_TOOLS_ENABLED OFF)
 if(HYLE_BUILD_COMPUTE AND HYLE_COMPUTE_VULKAN)
   set(FETCHCONTENT_BASE_DIR "${HYLE_DEPS_DIR}")
   include(FetchContent)
@@ -322,7 +372,10 @@ if(HYLE_BUILD_COMPUTE AND HYLE_COMPUTE_VULKAN)
   set(VOLK_PIN           "d979819fd03de3a7606d6e23d6ff4968942599da")  # volk 1.4.341.0
   set(GLSLANG_PIN        "f0bd0257c308b9a26562c1a30c4748a0219cc951")  # glslang 1.4.341.0
 
-  # 1. Vulkan-Headers first -- creates the Vulkan::Headers target volk/glslang can see.
+  # 1. Vulkan-Headers first -- creates the Vulkan::Headers target volk can see.
+  set(VULKAN_HEADERS_ENABLE_TESTS OFF)
+  set(VULKAN_HEADERS_ENABLE_INSTALL OFF)
+  set(VULKAN_HEADERS_ENABLE_MODULE OFF)
   FetchContent_Declare(vulkan_headers
     GIT_REPOSITORY https://github.com/KhronosGroup/Vulkan-Headers.git
     GIT_TAG        ${VULKAN_HEADERS_PIN}
@@ -330,36 +383,51 @@ if(HYLE_BUILD_COMPUTE AND HYLE_COMPUTE_VULKAN)
   FetchContent_MakeAvailable(vulkan_headers)
 
   # 2. volk -- point it at the fetched headers (VOLK_PULL_IN_VULKAN tries this var first).
-  set(VULKAN_HEADERS_INSTALL_DIR "${vulkan_headers_SOURCE_DIR}" CACHE PATH "" FORCE)
-  set(VOLK_PULL_IN_VULKAN ON  CACHE BOOL "" FORCE)
-  set(VOLK_INSTALL        OFF CACHE BOOL "" FORCE)
+  set(VULKAN_HEADERS_INSTALL_DIR "${vulkan_headers_SOURCE_DIR}")
+  set(VOLK_PULL_IN_VULKAN ON)
+  set(VOLK_INSTALL OFF)
   FetchContent_Declare(volk
     GIT_REPOSITORY https://github.com/zeux/volk.git
     GIT_TAG        ${VOLK_PIN}
     GIT_SHALLOW    TRUE)
   FetchContent_MakeAvailable(volk)
+  FetchContent_GetProperties(volk)
+  set_property(DIRECTORY "${vulkan_headers_SOURCE_DIR}" PROPERTY EXCLUDE_FROM_ALL TRUE)
+  set_property(DIRECTORY "${volk_SOURCE_DIR}" PROPERTY EXCLUDE_FROM_ALL TRUE)
+  set_target_properties(volk PROPERTIES POSITION_INDEPENDENT_CODE ON)
+  # Replace volk's raw fetched-source include paths with a relocatable two-sided
+  # contract.  The install root contains volk.h plus vulkan/ and vk_video/.
+  set_property(TARGET volk PROPERTY INTERFACE_INCLUDE_DIRECTORIES
+    "$<BUILD_INTERFACE:${volk_SOURCE_DIR}>;$<BUILD_INTERFACE:${vulkan_headers_SOURCE_DIR}/include>;$<INSTALL_INTERFACE:${HYLE_INSTALL_INCLUDEDIR}/hyle/vendor/volk>")
 
-  # 3. glslang build knobs OWNED before configure (cache vars it reads at option()).
-  set(ENABLE_OPT              OFF CACHE BOOL "" FORCE)  # no spirv-opt -> no SPIRV-Tools dep
-  set(ENABLE_HLSL             OFF CACHE BOOL "" FORCE)  # HYLE writes GLSL .comp, not HLSL
-  set(GLSLANG_TESTS           OFF CACHE BOOL "" FORCE)
-  set(GLSLANG_ENABLE_INSTALL  OFF CACHE BOOL "" FORCE)
-  set(BUILD_EXTERNAL          OFF CACHE BOOL "" FORCE)  # no /External (we pin deps ourselves)
-  set(ENABLE_SPIRV            ON  CACHE BOOL "" FORCE)  # GLSL -> SPIR-V (the whole point)
-  set(ENABLE_GLSLANG_BINARIES ON  CACHE BOOL "" FORCE)  # build the `glslang` validator tool
-  FetchContent_Declare(glslang
-    GIT_REPOSITORY https://github.com/KhronosGroup/glslang.git
-    GIT_TAG        ${GLSLANG_PIN}
-    GIT_SHALLOW    TRUE)
-  FetchContent_MakeAvailable(glslang)
-
-  # Python3 drives tools/hyle_shader.py (GLSL->SPIR-V->embedded header) via hyle_embed_shader.
-  # Interpreter-only (no dev headers); used at build time to regenerate the test shader headers.
-  find_package(Python3 REQUIRED COMPONENTS Interpreter)
+  # glslang/Python generate test and benchmark shaders; no product source links
+  # glslang.  Keep this heavy build-time tool out of a binary SDK configuration.
+  if(HYLE_BUILD_TESTS OR HYLE_BUILD_BENCH)
+    block()
+      set(ENABLE_OPT OFF)
+      set(ENABLE_HLSL OFF)
+      set(GLSLANG_TESTS OFF)
+      set(GLSLANG_ENABLE_INSTALL OFF)
+      set(BUILD_EXTERNAL OFF)
+      set(ENABLE_SPIRV ON)
+      set(ENABLE_GLSLANG_BINARIES ON)
+      FetchContent_Declare(glslang
+        GIT_REPOSITORY https://github.com/KhronosGroup/glslang.git
+        GIT_TAG        ${GLSLANG_PIN}
+        GIT_SHALLOW    TRUE)
+      FetchContent_MakeAvailable(glslang)
+    endblock()
+    FetchContent_GetProperties(glslang)
+    set_property(DIRECTORY "${glslang_SOURCE_DIR}" PROPERTY EXCLUDE_FROM_ALL TRUE)
+    find_package(Python3 REQUIRED COMPONENTS Interpreter)
+    set(HYLE_COMPUTE_SHADER_TOOLS_ENABLED ON)
+  endif()
 
   set(HYLE_COMPUTE_VULKAN_ENABLED ON)
-  message(STATUS "HYLE: Vulkan compute enabled -- volk + Vulkan-Headers + glslang via "
-                 "FetchContent pin 1.4.341 (cache: ${HYLE_DEPS_DIR}; loader dlopen'd at runtime, no SDK)")
+  message(STATUS
+    "HYLE: Vulkan compute enabled -- private PIC volk + Vulkan-Headers 1.4.341 "
+    "(shader tools=${HYLE_COMPUTE_SHADER_TOOLS_ENABLED}, cache: ${HYLE_DEPS_DIR}; "
+    "loader dlopen'd at runtime)")
 endif()
 
 

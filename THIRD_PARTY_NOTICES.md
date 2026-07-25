@@ -20,6 +20,9 @@ license text and the notices in each source file control.
 | Component | HYLE use | License | Full text in checkout / installed package |
 |---|---|---|---|
 | nghttp2 | `io` HTTP/2 protocol core | MIT | fetched checkout `COPYING` / `nghttp2-LICENSE` |
+| ggml | `compute` CPU/CUDA operator implementation | MIT | fetched checkout `LICENSE` / `ggml-LICENSE` |
+| volk | `compute` Vulkan meta-loader | MIT | fetched checkout `LICENSE.md` / `volk-LICENSE.md` |
+| Vulkan-Headers | Vulkan API declarations compiled with volk | Apache-2.0 OR MIT, by file | fetched checkout `LICENSE.md`, `LICENSES/` / `Vulkan-Headers/{LICENSE.md,Apache-2.0.txt,MIT.txt}` |
 
 ## Code ported into HYLE sources
 
@@ -36,10 +39,9 @@ the permissions or conditions applying to these third-party portions.
 
 Trace builds may compile and redistribute Tracy's client and public headers; its checkout's
 `LICENSE` must accompany that package. OpenSSL, CUDA, and GPU driver runtimes are normally
-provided by the target system and remain governed by their suppliers. ggml, volk,
-Vulkan-Headers, and glslang are pinned build dependencies for optional product features; an
-installable HYLE package is rejected until the selected dependency's artifacts and license
-payload are both represented in the export graph.
+provided by the target system and remain governed by their suppliers. glslang is fetched only
+when HYLE's Vulkan tests or benchmarks regenerate shaders; it is not linked into or installed
+with a production HYLE package.
 
 GoogleTest, nanobench, Highway, and xsimd checkouts used only as tests or benchmark opponents
 are not part of a production HYLE installation unless their code is explicitly listed above

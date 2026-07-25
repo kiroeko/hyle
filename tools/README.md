@@ -63,6 +63,7 @@ sizes). See `include/hyle/compute/kernel.h` and the `SpecializationConstants` te
 ## For HYLE's own build
 
 The `hyle_embed_shader()` CMake function (cmake/HyleModule.cmake) runs this tool at build time to
-regenerate the test-shader headers from `tools/shaders/*.comp`, using the glslang built via
-FetchContent. Requires Python3 (interpreter only). This is how the checked-in-style headers stay
-reproducible from source rather than hand-pasted SPIR-V words.
+regenerate the test-shader headers from `tools/shaders/*.comp`. Compute tests/benchmark builds
+fetch glslang for that job; production SDK builds neither fetch nor link it. Requires Python3
+(interpreter only). This is how the checked-in-style headers stay reproducible from source rather
+than hand-pasted SPIR-V words.

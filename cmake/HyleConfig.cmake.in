@@ -8,6 +8,9 @@ endif()
 if(@HYLE_PACKAGE_NEEDS_CUDA@)
   find_dependency(CUDAToolkit)
 endif()
+if(@HYLE_PACKAGE_NEEDS_THREADS@)
+  find_dependency(Threads)
+endif()
 
 include("${CMAKE_CURRENT_LIST_DIR}/HyleTargets.cmake")
 

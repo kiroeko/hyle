@@ -37,7 +37,7 @@ CMake 会自动加入依赖闭包，不会配置无关 GPU/IO 后端：
 
 ```cmake
 set(HYLE_COMPONENTS "container;simd" CACHE STRING "" FORCE)
-add_subdirectory(hyle)            # 或 FetchContent；find_package 在本轮打包收口中
+add_subdirectory(hyle)            # 或 FetchContent；已安装 SDK 使用 find_package
 target_link_libraries(your_app PRIVATE hyle::container hyle::mem hyle::simd)
 hyle_stage_runtime_dependencies(your_app) # Windows shared build 的传递 DLL
 ```
@@ -77,6 +77,8 @@ HYLE 的构建开关分**产品/组装参数**与**benchmark 对照门**两个�
 | `HYLE_IO_TLS` | `AUTO` | `AUTO`/`ON`/`OFF` | AUTO 有 OpenSSL 就启用；ON 把 TLS 设为硬交付契约，缺依赖即失败；OFF 不探测 OpenSSL |
 | `HYLE_COMPUTE_CUDA` | `AUTO` | `AUTO`/`ON`/`OFF` | AUTO 有 Toolkit 就启用；ON 要求 CUDA；OFF 不探测 Toolkit、也不启用 CUDA language |
 | `HYLE_COMPUTE_GGML` / `HYLE_COMPUTE_VULKAN` | `ON` | `ON`/`OFF` | 仅在选中 compute 时取得对应供应商 |
+| `HYLE_COMPUTE_GGML_NATIVE` | 普通构建 `ON`；install `OFF` | `ON`/`OFF` | ON 为当前 CPU 编译 ggml；可迁移包保持 OFF，已知 CPU 可配合 exact target 提升 ISA floor |
+| `CMAKE_CUDA_ARCHITECTURES` | 普通 CUDA 构建 `native` | CMake architecture 列表/`all-major` | CUDA SDK 必须显式给出，如 `80;86;89`；`HYLE_INSTALL=ON` 拒绝 `native` |
 
 `AUTO` 适合本地尝试；正式 SDK/CI 必须显式写 `ON` 或 `OFF`，否则同一命令可能因构建机安装的 SDK
 不同而得到不同 feature manifest。`ON` 的意义不是“尽量开启”，而是“这个产物没有该能力就拒绝产生”。
@@ -185,9 +187,11 @@ hyle_stage_runtime_dependencies(app) # Windows shared DLL closure；其他形状
 - `Hyle_AVAILABLE_COMPONENTS` 可审计模块闭包，`Hyle_AVAILABLE_FEATURES` 可审计 trace、TLS、CUDA、
   Vulkan 等可选能力；不要从本机恰好装了什么反推包的形状。
 - io package 可保留默认 `HYLE_IO_HTTP2=ON`：pinned nghttp2 静态协议核被 shared io 吸收，static
-  io package 自动迁移其 link-only archive、生成头和 MIT 条款。当前 package 若含 compute，仍需
-  `HYLE_COMPUTE_GGML=OFF -DHYLE_COMPUTE_VULKAN=OFF`；这些 fetched runtime/archive 与 license
-  纳入 export graph 前，构建系统会 fail-fast，不生成缺文件的“半可迁移包”。
+  io package 自动迁移其 link-only archive、生成头和 MIT 条款。
+- compute package 同样完整：shared `hyle_compute` 吸收 ggml/volk，static package 自动传播其
+  link-only archive、头与 Threads/CUDA 依赖；可运行 consumer 见
+  [`samples/07_installed_compute/`](../../samples/07_installed_compute/)。正式构建显式选择
+  `HYLE_COMPUTE_CUDA=ON/OFF`；ON 时还要给 `CMAKE_CUDA_ARCHITECTURES`，不能用 `native` 出 SDK。
 - 安装前缀始终带 HYLE proprietary notice 和第三方总清单；实际编入的 mimalloc、xxHash、
   wyhash、simdutf、fcontext、picohttpparser、Highway/xsimd/JPEG XL port 以及可选 Tracy 的
   许可证按 target 图迁移。拿到源码或 SDK 不等于取得 HYLE 原创部分的外部使用许可。

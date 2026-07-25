@@ -31,7 +31,30 @@ target_link_libraries(app PRIVATE hyle::mem hyle::simd)
 ```
 
 不要从安装目录手写 `.lib`/`.a` 文件名。imported target 会传播 C++ linker runtime、系统库和 mimalloc、
-nghttp2 等私有 link-only archive；绕开 target 就丢失静态闭包。
+nghttp2、ggml、volk 等私有 link-only archive；CUDA compute 包还会传播所需 Toolkit targets。绕开
+target 就丢失静态闭包。
+
+## compute SDK 的可复现能力契约
+
+正式 compute 包不要使用环境探测式默认值，显式声明 CUDA 能力；CUDA 包还必须声明实际支持的
+GPU architecture：
+
+```bash
+cmake -S . -B build-compute-sdk \
+  -DCMAKE_BUILD_TYPE=Release -DHYLE_COMPONENTS=compute \
+  -DHYLE_BUILD_TESTS=OFF -DHYLE_INSTALL=ON \
+  -DHYLE_COMPUTE_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES='80;86;89' \
+  -DCMAKE_INSTALL_PREFIX=/path/to/hyle-compute-sdk
+```
+
+CPU-only 包写 `HYLE_COMPUTE_CUDA=OFF`。shared 包把 ggml/volk 静态实现吸收到
+`hyle_compute`，不额外分发供应商 DLL；static 包通过 imported target 传播对应 archive、头与系统
+依赖。两种包都安装准确的 ggml/volk/Vulkan-Headers license closure 和 shader helper，用户不需要
+供应商源码 checkout。
+
+可迁移 compute 包默认 `HYLE_COMPUTE_GGML_NATIVE=OFF`；x86 ggml 使用 SSE4.2 安全基线。面向已知
+机器且性能优先时，用 `HYLE_SIMD_EXACT_TARGET=AVX2`/`AVX512` 让 HYLE 与 ggml 使用相同 ISA floor，
+或仅在同构本机源码构建显式打开 `HYLE_COMPUTE_GGML_NATIVE=ON`。后者产物不要发给更老 CPU。
 
 ## complete source
 

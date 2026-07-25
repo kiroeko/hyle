@@ -75,10 +75,8 @@ target_link_libraries(hyle_compute PRIVATE hyle_simd)
 
 if(HYLE_COMPUTE_VULKAN_ENABLED)
   # Link volk (the Vulkan meta-loader; dlopen's the runtime loader, no vulkan-1.lib
-  # needed) + glslang libs (for the pre-compile tool / future runtime compile). All
-  # PRIVATE: vk/volk/glslang types never appear in compute's public headers (they are
-  # confined to vulkan_backend.cc, like the .cu is for CUDA). HYLE_COMPUTE_VULKAN gates
-  # the #if in compute.cc/backend.h wiring. volk::volk pulls Vulkan-Headers transitively.
+  # needed). PRIVATE: vk/volk types never appear in compute's public headers. glslang
+  # is a test/bench shader-generation tool and is deliberately not a product link dep.
   target_link_libraries(hyle_compute PRIVATE volk::volk)
   target_compile_definitions(hyle_compute PRIVATE HYLE_COMPUTE_VULKAN)
 endif()
@@ -114,10 +112,7 @@ if(HYLE_COMPUTE_CUDA_ENABLED)
   # host-side C++ TUs still compile at C++23.
   set_target_properties(hyle_compute PROPERTIES
     CUDA_STANDARD 20
-    CUDA_STANDARD_REQUIRED ON
-    CUDA_ARCHITECTURES native)
-  # Target the build host's GPU arch (sm_89 / RTX 4070 here) via CUDA_ARCHITECTURES
-  # native (CMake >= 3.24): the self-compiled / known-hardware path (coding-conventions
-  # §10 build-time tier). A distributable multi-arch fat-binary + driver JIT is a later
-  # concern (compute packaging), not compute-01.
+    CUDA_STANDARD_REQUIRED ON)
+  # CMAKE_CUDA_ARCHITECTURES is set before enable_language(CUDA), so this target
+  # and fetched ggml CUDA kernels share one explicit package architecture contract.
 endif()

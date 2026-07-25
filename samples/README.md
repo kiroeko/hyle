@@ -2,7 +2,7 @@
 
 可运行的 C/C++ 示例工程，演示把 HYLE 各模块**当 infra 集成进自己工程**的推荐姿势。
 每个示例是一个**独立 CMake 工程**——它通过 `add_subdirectory` 把 HYLE 仓库当子目录拉进来，
-前三个示例使用源码嵌入；第四个使用安装后的 CMake package。两条路径都链接同名
+前三个示例使用源码嵌入；其余示例使用安装后的 CMake package。两条路径都链接同名
 `hyle::<module>` target，subdir 集成也会长期保留。
 
 ## 接入模式（每个 sample 的 CMakeLists 都这么做）
@@ -29,8 +29,9 @@ target_link_libraries(your_app PRIVATE hyle::container hyle::mem)  # 按需选�
 | [`04_prebuilt_lib/`](./04_prebuilt_lib/) | 构建/集成 | install + `find_package(Hyle COMPONENTS simd mem)`；同一 consumer 验证 shared/static、传递依赖、mimalloc 私有后端和 Windows DLL staging |
 | [`05_installed_c/`](./05_installed_c/) | error C ABI | 纯 C 工程消费安装包；验证 imported target 不把 C++23 编译要求错误施加到 C TU |
 | [`06_installed_io_http2/`](./06_installed_io_http2/) | io C ABI + HTTP/2 | 纯 C 工程消费 shared/static io package；审计 `io_http2` feature，并证明 pinned nghttp2 闭包不依赖源码 checkout |
+| [`07_installed_compute/`](./07_installed_compute/) | compute C++ API | 消费 CPU/CUDA、shared/static compute package；枚举真实 backend，并验证 ggml/volk/CUDA 传递闭包无需源码 checkout |
 
-> 01-03 用源码 `add_subdirectory` 集成；04-06 用安装包集成。
+> 01-03 用源码 `add_subdirectory` 集成；04-07 用安装包集成。
 
 ## 构建单个示例
 

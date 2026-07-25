@@ -100,9 +100,17 @@ Highway/xsimd checkout 只在 `simd` 已选时检查，因此打开 benchmark �
 或开发者记忆推断。
 
 io 的 pinned nghttp2 作为私有 PIC archive：shared io 将其吸收，不产生第二个运行时 ABI；static io
-通过 `LINK_ONLY` 迁移 archive、生成头和 MIT 条款。compute 的 fetched ggml/volk 打包尚未完成，
-`HYLE_INSTALL=ON` 遇到这些组合会在 configure 阶段拒绝，不能产出缺运行库的“半可迁移包”。
-cross compile 和三平台完整迁移矩阵也尚未取得最终证书，状态只见 build/package milestone。
+通过 `LINK_ONLY` 迁移 archive、生成头和 MIT 条款。compute 对 ggml/volk 使用同一闭包纪律：只构建
+HYLE 实际消费的 CPU、可选 CUDA 与 Vulkan meta-loader PIC 静态实现；shared compute 将它们吸收进
+`hyle_compute`，static compute 则导出 `LINK_ONLY` archive、所需头和 license。glslang 只服务 tests/
+benchmark 的离线 shader 生成，不进入生产 SDK。CUDA SDK 必须显式给出
+`CMAKE_CUDA_ARCHITECTURES`，不能把构建机的 `native` 烙成误称可分发的二进制。
+
+ggml 的 CPU ISA 是交付物契约：通用安装包默认关闭 `GGML_NATIVE` 并使用 x86 SSE4.2 baseline；已知
+部署机器可用 `HYLE_SIMD_EXACT_TARGET=AVX2/AVX512` 将 HYLE 与 ggml 提升到同一 ISA floor，源码自用
+也可显式打开 `HYLE_COMPUTE_GGML_NATIVE`。这不冒充 ggml 的多后端动态变体分发；若要一个包在未知
+CPU 上同时得到每台机器的 ggml 最优 ISA，需另做每 ISA backend + runtime score/load 的产品形状。
+cross compile 和三平台完整迁移矩阵的最终证书只见 build/package milestone。
 
 ## 维护规则
 
