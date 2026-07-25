@@ -84,10 +84,9 @@ ASCII 单字节便利函数全部 header-inline：
 `hyle_container_string_lower`、`hyle_container_string_upper`、
 `hyle_container_hex_encode`、`hyle_container_hex_decode`、
 `hyle_container_string_escape`、`hyle_container_string_capitalize`、
-`hyle_container_utf8_length`、`hyle_container_utf8_icmp`、
-`hyle_container_fuzzy_score`、`hyle_container_find_path_matches`。
-`hyle_container_utf8_length` 对非法 UTF-8 返回 -1。路径匹配把最佳结果写入调用方
-的 index/score 数组，不分配；结果按分数从高到低排列。
+`hyle_container_utf8_length`、`hyle_container_utf8_icmp`。
+`hyle_container_utf8_length` 对非法 UTF-8 返回 -1。quick-open fuzzy ranking 是
+应用搜索策略，不是容器/FFI 基元；严格复审已从本模块删除。
 
 路径视图与 buffer-fill：
 `hyle_container_path_extension`、`hyle_container_path_strip_extension`、

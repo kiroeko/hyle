@@ -3,7 +3,7 @@
 > 本页是 [performance 总账](./README.md) 的 **container 模块**入口。  
 > **详表与优化史**（长）：[benchmarks-mem-container.md](./benchmarks-mem-container.md)（mem 已迁出，该文件以 container 为主）。  
 > **模块收口**（正确性/C ABI，非性能全表）：[../milestones/container-module-closure.md](../milestones/container-module-closure.md)（2026-07-19）。  
-> 队列/并发容器的 SOTA 对标多在 sched 消费路径 + `queue_sota_bench`；本页聚焦 hash / map / vec / str / path / fuzzy。IntrusiveList 已归 core，见 [`benchmarks-core`](./benchmarks-core.md)。
+> 队列/并发容器的 SOTA 对标多在 sched 消费路径 + `queue_sota_bench`；本页聚焦 hash / map / vec / str / path。IntrusiveList 已归 core，见 [`benchmarks-core`](./benchmarks-core.md)。
 
 ## 0. 数据新鲜度（先看这个）
 
@@ -14,7 +14,6 @@
 | **SwissTable map** | ⚠️ **2026-07 快照**（多 Win/WSL） | 总账有 ns 行；**非**本轮 mem 式三平台 sign 全刷 |
 | **hash / mix64 / Hash&lt;T&gt;** | ⚠️ 历史 + 红队公平性更正 | ⏳ 待三平台 `bench-stat -n15` 重写表 |
 | **SmallVector / CArray** | ⚠️ 主 Win + 部分补测 | owning vector 形状待本轮统一三平台刷新 |
-| **fuzzy path match** | ⚠️ 主 Linux | O(N) scaling 证毕 |
 | **并发队列** | 见 queue / sched 文 | 不在本页展开 |
 
 **读法**：标 ✅ 的可当当前产品结论；标 ⚠️ 的方向大体可信，但**不要**当 2026-07-20 式三平台 sign 证书去对外硬报绝对 ns。
@@ -25,14 +24,13 @@
 |---|---|---|
 | **mix64 / Hash&lt;T&gt; 小 POD** | wyhash / abseil 形 | ✅ 赢或 SOTA 同款（整数 / 16B POD） |
 | **hash_bytes ≤16B** | XXH3-small / wyhash | ➖ **inline mix**（不同算法）；非「输 XXH3 wrapper」 |
-| **hash_bytes 中长串** | 裸 XXH3 / wyhash | ➖ 默认出线核有 seam；opt-in inline / best-of wyhash(&gt;128B) |
-| **SwissTable** | absl::flat_hash_map | ✅ find/insert/erase/iterate **追平或反超**（iterate 组扫 2x absl） |
+| **hash_bytes 中长串** | 裸 XXH3 / wyhash | ➖ 默认出线核有 seam；&gt;128B 选择 wyhash |
+| **FlatHashMap** | absl::flat_hash_map / Folly F14 | ⚠️ 算法形状同档；迭代/API 与三平台强 peer 正在严格复审 |
 | **SmallVector** | absl::InlinedVector | ✅ 小 N churn **赢** 同款 SOTA |
 | **CArray** | std::vector | ✅ growth 赢（mimalloc 质量）；read 平 |
 | **string_ref 搜索** | string_view / libc | ➖ 自研 SIMD 项平；子串/字符集 **转发 std**（刻意） |
 | **StringBuf** | map+mutex / Absl 分片 peer | ⚠️ **Win 多平**；WSL/M4 lifecycle **输**；growth 赢；8t 距 Absl ~5% |
 | **path 词法** | string_view 扫 / filesystem | ✅ 平算法基线；**碾** filesystem（零分配结构差） |
-| **fuzzy** | 子序列 floor | ✅ O(N) 实证；bonus 付 2.35x 买排序质量 |
 
 ## 2. 非 SOTA / 冻结边界（诚实清单）
 
@@ -61,14 +59,13 @@
 
 ```text
 整数 / 小 POD key 哈希     → Hash<T> / mix64（热路径）
-长字节哈希                 → hash_bytes（>128B best-of wyhash；要消 seam → inline）
-通用 hash map              → SwissTable（vs absl 已够强）
+长字节哈希                 → hash_bytes（>128B best-of wyhash）
+通用 hash map              → FlatHashMap
 栈上小数组                 → SmallVector
 堆动态数组                 → CArray（默认 SystemAllocator/mi）
 只读字符串视图 + 搜索      → string_ref（子串族借 std）
 驻留串 / intern            → StringBuf（接受跨平台 lifecycle 税；要 growth/并发）
 路径词法（无 syscall）     → path（零分配；勿用 filesystem 当算法对手）
-quick-open 模糊路径        → fuzzy（O(N) top-K）
 MPMC / stealing 队列       → bounded / sharded / WS deque（见 queue 文档）
 ```
 
@@ -108,5 +105,4 @@ scripts/bench-stat.py <build>/bin/hyle_path_bench -n 15 ...
 | SmallVector / CArray | mem-container §container·vec |
 | string_ref / StringBuf 三平台收口 | mem-container §container·str |
 | path | mem-container §container·path |
-| fuzzy | mem-container §模糊路径 |
 | util/obs 夹带 | 应看 util/obs 收口；mem-container「次要模块」勿当 container 主证书 |

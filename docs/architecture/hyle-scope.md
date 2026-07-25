@@ -104,10 +104,10 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 
 | 固定统计口径 | code | 说明 |
 |---|---:|---|
-| **全库代码** | **249,779** | `cloc . --vcs=git`；含 docs 与 in-tree third_party |
-| **自实现（含测试）** | **116,833** | `include/hyle + src + tests`，排除 CMake/Text |
-| **自实现（不含测试）** | **80,173** | `include/hyle + src`；库本体硬锚 |
-| **当前审查单元 container 实现** | **5,422** | `include/hyle/container` + `include/hyle/c/container.h` + `src/container`；不含测试/CMake/Text |
+| **全库代码** | **249,335** | `cloc . --vcs=git`；含 docs 与 in-tree third_party |
+| **自实现（含测试）** | **116,476** | `include/hyle + src + tests`，排除 CMake/Text |
+| **自实现（不含测试）** | **79,892** | `include/hyle + src`；库本体硬锚 |
+| **当前审查单元 container 实现** | **5,141** | `include/hyle/container` + `include/hyle/c/container.h` + `src/container`；不含测试/CMake/Text |
 | 再加 ggml 等大依赖足迹 | **~200–350k+** | 由 ggml 主导，不计入「自有生产」 |
 
 **生产按模块（src+include，约）：**

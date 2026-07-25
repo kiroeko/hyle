@@ -7,6 +7,8 @@
 > 新增的 [`container.md`](../guide/container.md) 负责告诉用户什么场景选择什么。
 > `ConcurrentVector` 的多 writer 形状、真正的 typed `FlatHashSet`、map 迭代/便利接口及
 > 同合同强 peer 性能证据仍在复审，因此 container **尚未获得 2026-07-25 严格证书**。
+> 复审也删除了无生产消费者、属于 quick-open 应用策略的 fuzzy scorer/top-K 及其 C
+> 导出；旧 container-06c 仍作为历史任务记录保留。
 > 下文的 109 exports、124 callable、TLS error 和性能表只应按历史快照阅读。
 
 ## 结论

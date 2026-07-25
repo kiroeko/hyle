@@ -17,7 +17,7 @@
 | [util-core 实测](./benchmarks-util.md) | **util-core 2026-07-25 三平台 n=15 证书**：Rng/Ref/SpinLock 实际形状；oneTBB 正反序；mutex 反例与适用边界 |
 | [obs 实测](./benchmarks-obs.md) | **obs 2026-07-25 三平台 n=15 证书**：gate、immutable sink snapshot、structured/C ABI、fan-out 与多 producer；成熟库只作同机制对照，不作跨合同倍数宣称 |
 | [container 实测](./benchmarks-container.md) | **container 导航证书**：新鲜度、非 SOTA、选型；详表 → [benchmarks-mem-container.md](./benchmarks-mem-container.md) |
-| [container 详表](./benchmarks-mem-container.md) | hash/SwissTable/vec/str/path/fuzzy 长表 + 史；**入口见上** |
+| [container 详表](./benchmarks-mem-container.md) | hash/map/vec/str/path 长表 + 历史；fuzzy 旧实验已移出产品面；**入口见上** |
 | [simd 产品 kernel](./benchmarks-simd.md) | dot/saxpy、math、dtype、gather、vendor 竞争…；**op 全量不在此** |
 | [simd op 对拍证书](./benchmarks-simd-ops.md) | **逐 op vs Highway**：三平台 LOSE=0 摘要 + 覆盖树；全表 → [orderswap 矩阵](../milestones/simd-orderswap-matrix.md)（最新最全） |
 | [simd op 对拍方法论](./simd-op-benchmark-methodology.md) | op_parity 规程：形状、双序、锚点闸门、LOSE 证据阶梯 |

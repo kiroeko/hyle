@@ -134,8 +134,6 @@ static void* fail_after_realloc(void* state, void* ptr, size_t old_size,
 
 static void test_strings_and_paths(void) {
   char output[128];
-  uint32_t indices[3];
-  int scores[3];
   hyle_container_string_view candidates[] = {
       sv("src/config.h"), sv("cfg.ini"), sv("none.txt")};
   hyle_container_string_view value;
@@ -209,10 +207,6 @@ static void test_strings_and_paths(void) {
           0);
   }
   CHECK(hyle_container_utf8_icmp(sv("Hello"), sv("hello"), 0) == 0);
-  CHECK(hyle_container_fuzzy_score(sv("config.h"), sv("cfg"), 1) > 0);
-  CHECK(hyle_container_find_path_matches(candidates, 3, sv("cfg"), indices,
-                                         scores, 3, 1) == 2);
-  CHECK(scores[0] >= scores[1]);
 
   value = hyle_container_path_extension(sv("a/b.txt"));
   CHECK(value.size == 4 && memcmp(value.data, ".txt", 4) == 0);

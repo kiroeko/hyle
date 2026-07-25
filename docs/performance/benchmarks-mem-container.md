@@ -149,6 +149,10 @@ slot(cache 友好)对节点指针链；`for_each` 是函数模板(内联、零�
 
 ## 模糊路径匹配（container-06c，`fuzzy_bench.cc`）
 
+> **历史实验，已不属于当前产品面。** 2026-07-25 严格复审确认该 quick-open 排名
+> 算法没有 HYLE 生产消费者，且是应用搜索策略而非 container 基元；实现、benchmark
+> 与 C 导出均已删除。下列数字只解释旧提交，不得作为当前 container 能力宣传。
+
 > 环境:Linux GCC14.2 Release,nanobench。净新设计,抄 fzf `src/algo/algo.go` V1 两趟算法(forward 找子序列结束位 → backward 收紧起点 → 收紧窗口评分)。**两件事要证明**(非单点 ratio):时间复杂度 + bonus 开销。
 
 | 场景 | ns/candidate | candidate/s | 结论 |

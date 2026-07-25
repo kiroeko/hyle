@@ -154,13 +154,6 @@ HYLE_CONTAINER_C_API int64_t hyle_container_utf8_length(
 HYLE_CONTAINER_C_API int hyle_container_utf8_icmp(
     hyle_container_string_view left, hyle_container_string_view right,
     int codepoint_limit);
-HYLE_CONTAINER_C_API int hyle_container_fuzzy_score(
-    hyle_container_string_view candidate, hyle_container_string_view pattern,
-    int path_aware);
-HYLE_CONTAINER_C_API uint32_t hyle_container_find_path_matches(
-    const hyle_container_string_view* candidates, uint32_t count,
-    hyle_container_string_view pattern, uint32_t* out_indices,
-    int* out_scores, uint32_t output_capacity, int path_aware);
 
 HYLE_CONTAINER_C_API hyle_container_string_view hyle_container_path_extension(
     hyle_container_string_view path);
