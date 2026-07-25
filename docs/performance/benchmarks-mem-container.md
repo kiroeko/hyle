@@ -133,21 +133,14 @@ lookup/retain/remove 为预期 O(1)，`size()` 只扫硬上限 64 shard。旧表
 
 3. **反哺检查(全表 error→path,无可反哺项)**——① **string_ref 的 SIMD 反向扫核**(`str_rfind_char` SSE2、`str_find_last_of` PCMPISTRI)对 path **不适用**:path 组件短(basename ~12-20 字符,远低于 SIMD 收益阈值,账本"string_ref SIMD 仅 multi-KB 扫才划算"),且这些核是**导出符号**(有 ~1ns call seam)、会破坏 extension/base/directory 的 `constexpr`。实测 base/directory 平手 string_view **标量**反向扫已印证——短组件标量扫即最优,无 SIMD 空间。② **string_algo/hash/mem/simd** 与 path 零分配视图扫**正交**(path 不分配、不 hash、不做数值核)。结论:path 的赢点(零分配结构 + 最优标量扫)自成一体,总表其他模块的优化无一能反哺。
 
-## 次要模块（util/random、time/clock、obs/log、SwissTable iterate，`misc_bench.cc` + `swiss_table_bench.cc`）
+## 其他旧 mixed runner 项（obs/log、SwissTable iterate）
 
-> 环境:Win MSVC19.50 + Linux GCC14.2 + Apple M4 AppleClang（2026-07-19
-> util/time/obs 收口复测）。nanobench。标尺 = std 等价物(同 OS 原语/同算法类),
-> 或 HYLE 自有(无 std 对等物时诚实标注)。三平台数字按 Win/Linux/M4 排列；
-> 高争用行只判断适用边界，不把高方差点值宣传成 SOTA。
+> util 已迁到当前 [`benchmarks-util.md`](./benchmarks-util.md)，time 已迁到
+> [`benchmarks-time.md`](./benchmarks-time.md)；本节不保留它们的过时点值。余下数字来自
+> 2026-07-19 mixed runner，只是 obs/container 后续严格复审的输入，不是当前证书。
 
 | 场景 | HYLE | 标尺 | vs 标尺 | 结论 |
 |---|---|---|---|---|
-| **Rng next_u64**(xoshiro256++) | 1.59/1.38/2.26 ns | std::mt19937_64 2.32/1.44/3.47* | 1.46x/平/1.53x | Win/M4 赢，Linux 平；M4 std 行方差高 |
-| **Rng runtime-varying range_u64** | 2.09/1.47/2.17 | std distribution 2.86/2.08/7.68 | 1.37/1.41/3.54x | ✅ 三平台赢且无偏 |
-| **Rng C batch fill** | 4.99/0.67/0.65 | native C++ 5.16/0.68/0.65 | 全部平 | 类型擦除 ABI 被 batch 摊薄 |
-| **SpinLock 无争用** | 3.71/4.79/1.01 | mutex 10.94/2.48/4.19 | 2.95x/0.52x/4.15x | 平台翻转，只限短低争用 |
-| **SpinLock 8 threads** | 50.17/60.44/271.88 | mutex 50.59/39.08/20.98 | 平/0.65x/0.08x | ❌ 高争用选 mutex |
-| **Ref fan-out** | 10.13/8.33/3.19 | shared_ptr 8.09/11.12/3.22 | 0.80x/1.34x/平 | 平台翻转；所有权形状而非普遍提速 |
 | **SwissTable iterate**(for_each) | **2.48 ns** | std::unordered_map 8.73 | **3.5x** | ✅ 赢(扁平 ctrl 扫 vs 节点指针链) |
 | **time clock / radix queue / common** | → | → | → | **已迁出** [benchmarks-time.md](./benchmarks-time.md)（2026-07-25 三平台；勿用本表旧数据） |
 | **log gated-out** | 2.03–2.11(Win)/1.05–1.09(WSL)/0.91–0.92(M4) | (无 std 对照) | — | relaxed level gate + branch；参数不求值、不格式化 |
@@ -155,18 +148,9 @@ lookup/retain/remove 为预期 O(1)，`size()` 只扫硬上限 64 shard。旧表
 | **log preformatted C ABI**(1 C sink,无 I/O) | 23.93/16.03/10.68 ns | native C++ 上行 | +1.45/+2.96/+1.83 ns | POD bridge + opaque trampoline 的真实 ABI 成本很小 |
 | **log formatted emit**(1 sink,无 I/O) | 81.9–84.6/69.5–71.4/50.9–53.5 ns | (无 std 对照) | — | `std::format_to_n` + safe fan-out；真实 I/O sink 通常远大于此 |
 
-**诚实结论**:① Rng 的 runtime-varying range 三平台赢；`next_u64` 在
-MSVC/AppleClang 赢而 GCC 平，不能再写成无条件 1.54x。真 Lemire 用一次 128 位乘
-和罕见 threshold 修正；基准必须让 bound 在运行时变化，避免编译器把常量除数折成
-魔数。C ABI 单值调用有 0.09–0.95ns seam，但 fill batch 三平台与 C++ 平。
-② SpinLock 的结果按平台甚至反向，高争用时 Linux/M4 均输 mutex；它是低争用
-短临界区工具，不是通用锁。Ref 也随工具链翻转，其价值是侵入式共享所有权和省控制
-块，而非原子 RMW 必然更快。完整 util 红队、ABI 和 sanitizer 证据见
-[`../milestones/util-module-closure.md`](../milestones/util-module-closure.md)。
-③ **SwissTable iterate 赢 std::unordered_map 3.5x**——扁平 ctrl 字节扫 +
+**诚实结论**:① **SwissTable iterate 赢 std::unordered_map 3.5x**——扁平 ctrl 字节扫 +
 连续 slot(cache 友好)碾压节点指针链；`for_each` 是函数模板(内联、零分配)。
-④ **time** 见 [benchmarks-time.md](./benchmarks-time.md) + time-module-closure。  
-⑤ **obs 收口后三层性能**：宏 gate 0.91–2.11ns；
+② **obs 旧收口的三层性能**：宏 gate 0.91–2.11ns；
 preformatted native 8.85–22.48ns；C ABI trampoline 再加 1.45–2.96ns。
 完整红队见 [`../milestones/obs-module-closure.md`](../milestones/obs-module-closure.md)。
 

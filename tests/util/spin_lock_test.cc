@@ -8,6 +8,9 @@
 
 using hyle::util::SpinLock;
 
+static_assert(sizeof(SpinLock) <= sizeof(void*),
+              "ordinary SpinLock must remain compact; pad at the owner");
+
 TEST(SpinLock, BasicLockUnlock) {
   SpinLock m;
   EXPECT_FALSE(m.is_locked());

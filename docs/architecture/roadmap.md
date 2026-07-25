@@ -18,7 +18,7 @@
 图分支：  container ──▶ graph；sched ──▶ graph
 util 产品：container ──▶ util-runtime
 
-util-core ··▶ mem / container / sched / graph
+util-core ··▶ mem / sched / graph
 hyle_trace - -▶ every hyle_add_module target - -▶ one optional Tracy client
 obs-runtime ──▶ application/FFI sinks
 math ──▶ users（当前无生产下游）
@@ -38,7 +38,7 @@ math ──▶ users（当前无生产下游）
 | `platform` | error | — | OS/thread/VM/fs/CPU 机制；`hyle/platform.h` 宏头本身零链接 |
 | `mem` | error、platform | mimalloc | `util::SpinLock`、obs trace hook |
 | `time` | error | — | native timer 借 `core/intrusive_list`；不链接 platform/container |
-| `container` | mem | platform | 公开 `ConcurrentVector` 借 `util::SpinLock` |
+| `container` | mem | platform | 当前无 util-core 边；ConcurrentVector 的非短写临界区使用 mutex |
 | `simd` | platform | — | 运行期 ISA 能力由 platform 提供 |
 | `util-runtime` (`hyle_util`) | container | — | registry 同时借 mem；其余 util headers 不依赖该二进制目标 |
 | `sched` | error、mem、container、platform | time | `util::SpinLock`、obs trace hook |
@@ -50,8 +50,8 @@ math ──▶ users（当前无生产下游）
 
 `util` 必须分层阅读。`SpinLock/cpu_relax`、`Ref`、`ScopeGuard`、RNG 与 type-name 是独立
 header-only 能力，可被低层模块直接使用；`Registry` 和 type-erased C ABI 才依赖
-container/mem，因而编译出的 `hyle_util` 位于 container 之后。container 只 include
-`util/spin_lock.h`，不链接 `hyle_util`，所以 target graph 没有 `container ↔ util` 环。新增
+container/mem，因而编译出的 `hyle_util` 位于 container 之后。container 不 include
+util-core 且不链接 `hyle_util`，所以 target graph 没有 `container ↔ util` 环。新增
 util 能力时必须先判断属于哪一层，禁止让 util-core 反向 include container。
 `add_subdirectory` 在根 CMake 中的文本先后不是依赖层；这里只以 target link 与公开头合同判定顺序。
 
@@ -144,7 +144,7 @@ simd 不进 sched 链，只在 compute 汇合。obs-runtime 是用户产品根�
 | 波次 | 审查单元 | 排序理由 |
 |---|---|---|
 | **R0 基线** | error、platform、mem、time | 已按当前实际使用标准形成严格证书；后续只有触发器或依赖受影响项可重开 |
-| **R1 根、构建与接缝** | core → build/package system → util-core seam → obs | core/header 先稳；随后让 target 图、模块装配、迁移/安装和三平台入口成为可执行架构，再继续冻结被广泛 include 的 util-core 与横切 obs |
+| **R1 根、构建与接缝** | core ✅ → build/package system ✅ → util-core seam ✅ → obs（当前） | core/header 先稳；随后让 target 图、模块装配、迁移/安装和三平台入口成为可执行架构，再冻结被广泛 include 的 util-core，当前继续横切 obs |
 | **R2 容器层** | container → util-runtime/完整 util | container 是 sched/io/graph 和 Registry 的地基；先稳表/字符串/并发容器，再冻结依赖它的 Registry/C ABI |
 | **R3 运行时链** | sched → io | sched 汇合 mem/time/container/platform，io 再消费 sched；反序会反复改 timeout/cancel/completion 形状 |
 | **R4 计算基础** | math↔simd 边界审查 → simd | math 是 clay math 被 std/SIMD 吸收后的残余，不先假定它应独立；先裁决 scalar/std/SIMD 归属，再冻结 SIMD dispatch、类型、算法与正常 batch API |

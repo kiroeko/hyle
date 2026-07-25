@@ -1,9 +1,11 @@
 #include <gtest/gtest.h>
 
 #include <array>
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <limits>
+#include <random>
 #include <set>
 #include <thread>
 #include <vector>
@@ -12,6 +14,8 @@
 
 using hyle::util::Rng;
 using hyle::util::thread_rng;
+
+static_assert(std::uniform_random_bit_generator<Rng>);
 
 TEST(Rng, DeterministicForSameSeed) {
   Rng a(12345), b(12345);
@@ -27,6 +31,29 @@ TEST(Rng, SeedOneMatchesPinnedXoshiroSequence) {
       0xfca3c79508f41507ull, 0x85fea5c90363f221ull,
   };
   for (std::uint64_t value : expected) EXPECT_EQ(rng.next_u64(), value);
+}
+
+TEST(Rng, StandardUrbgCompositionAndDiscard) {
+  Rng direct(55);
+  Rng discarded(55);
+  for (int i = 0; i < 17; ++i) (void)direct.next_u64();
+  discarded.discard(17);
+  EXPECT_EQ(discarded(), direct.next_u64());
+
+  std::array<int, 64> values{};
+  for (int i = 0; i < 64; ++i) values[static_cast<std::size_t>(i)] = i;
+  std::shuffle(values.begin(), values.end(), discarded);
+  std::sort(values.begin(), values.end());
+  for (int i = 0; i < 64; ++i) {
+    EXPECT_EQ(values[static_cast<std::size_t>(i)], i);
+  }
+
+  std::uniform_int_distribution<int> distribution(3, 9);
+  for (int i = 0; i < 1000; ++i) {
+    const int value = distribution(discarded);
+    EXPECT_GE(value, 3);
+    EXPECT_LE(value, 9);
+  }
 }
 
 TEST(Rng, DifferentSeedsDiverge) {
@@ -185,6 +212,17 @@ TEST(Rng, ShufflePermutes) {
     if (v[i] == i) ++fixed;
   }
   EXPECT_LT(fixed, kN / 2);  // a real shuffle moves most elements
+}
+
+TEST(Rng, IteratorShufflePermutes) {
+  Rng rng(2025);
+  std::array<int, 128> values{};
+  for (int i = 0; i < 128; ++i) values[static_cast<std::size_t>(i)] = i;
+  rng.shuffle(values.begin(), values.end());
+  std::sort(values.begin(), values.end());
+  for (int i = 0; i < 128; ++i) {
+    EXPECT_EQ(values[static_cast<std::size_t>(i)], i);
+  }
 }
 
 TEST(Rng, ThreadRngWorks) {

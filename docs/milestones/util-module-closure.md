@@ -1,4 +1,43 @@
-# util 模块全面收口（2026-07-19）
+# util 两阶段严格收口
+
+## 当前状态（2026-07-25）
+
+| 审查单元 | 当前结论 |
+|---|---|
+| `util-core`：Ref/ScopeGuard/Rng/type-name/SpinLock | ✅ 按真实使用、成熟库形状、三平台正确性与性能严格收口 |
+| `util-runtime`：Registry/demangle/当前 C adapter | 🟡 功能可用；等 container 严格收口后审 Registry 形状、共享 error 与完整 C ABI |
+
+本轮没有把目录名当成一个假节点。`util-core` 是零 HYLE 二进制依赖的公开头 seam；
+`util-runtime` 因 Registry 依赖 container，不能在其地基未冻结时先宣布完整 util/C ABI 稳定。
+当前架构见 [`../architecture/util-design.md`](../architecture/util-design.md)，用户选型见
+[`../guide/util.md`](../guide/util.md)，三平台 n=15 证书见
+[`../performance/benchmarks-util.md`](../performance/benchmarks-util.md)。
+
+### 本轮严格结论
+
+- ScopeGuard 补齐 `[[nodiscard]]`、显式 `invoke()`（至多一次）和 `active()`；Ref 支持 const
+  与兼容转换赋值，保持单指针 intrusive ownership 形状。
+- Rng 成为标准 URBG，补自然 iterator shuffle 与真实熵播种的 thread-local 默认流；显式 seed
+  仍可复现，安全随机明确不在范围内。
+- SpinLock 从无条件 cache-line padding 改为 oneTBB/Folly 同类紧凑 TTAS；首次 probe 不做
+  无效 RMW，指数 backoff 后 yield，AArch64 使用同类 instruction barrier。三工具链均为 1 byte。
+- 下游按临界区内容而非 benchmark 名称裁决：mem LeakTracker 与 ConcurrentVector 因锁内会
+  allocate/rehash/执行用户代码改用 mutex；mem 栈池、sched、graph 的真正短临界区保留 spin。
+- util-core 逐头 self-contained；Win/Linux/M4 正确性通过，Linux TSan 覆盖 Ref/Spin/C adapter、
+  mem 受影响项与 ConcurrentVector，无 race。Rng/Ref/SpinLock 同合同成熟 peer 无 material LOSE；
+  Linux mutex 反例保留在选择合同中。
+
+### 完整 util 的剩余门
+
+container 严格收口后，只续审而不重做 util-core：确认 Registry 的 key/storage/并发与 type-erasure
+形状，裁决 demangle 是否应独立 target，把历史 `hyle_util_last_error` 迁到共享
+error/`hyle_status`，再机械验证纯 C 头、动态导出、所有权和 callback 生命周期。完成这些后，
+本任务页才可把“完整 util”标成严格收口。
+
+## 历史施工记录（2026-07-19，已被上述当前证书取代）
+
+以下内容保留为当时的 work-item 证据。其 mixed 模块状态、SpinLock 布局/ARM 策略、下游采用和
+性能点值不是当前架构或性能真相；当前结论只看上方链接的 architecture/guide/performance。
 
 | 字段 | 结论 |
 |---|---|

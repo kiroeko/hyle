@@ -11,12 +11,11 @@
 #include "hyle/macros.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/mem/system_inline.h"
-#include "hyle/util/spin_lock.h"
 
 // Read-optimized append-only concurrent vector (clay parallel/concurrent_vector).
 // Usage pattern: insert once, read many, from many threads. Concurrent readers
 // are LOCK-FREE (one atomic load + an index computation); writers serialize on a
-// spin lock. Elements, once inserted, never move -- so a reference/index stays
+// mutex. Elements, once inserted, never move -- so a reference/index stays
 // valid for the life of the container, even across growth.
 //
 // HYLE redesign vs clay (clay had five issues, all fixed here):
@@ -85,7 +84,7 @@ class ConcurrentVector {
   // (serialized) and with concurrent readers (they see a consistent prefix).
   template <class... Args>
   std::size_t emplace_back(Args&&... args) {
-    std::lock_guard<util::SpinLock> guard(write_lock_);
+    std::lock_guard<std::mutex> guard(write_lock_);
     std::size_t i = size_.load(std::memory_order_relaxed);  // sole writer region
     auto [k, off] = locate(i);
     if (k >= max_segments()) return static_cast<std::size_t>(-1);
@@ -170,7 +169,10 @@ class ConcurrentVector {
 
   HYLE_NO_UNIQUE_ADDRESS Alloc alloc_{};
   std::atomic<std::size_t> size_{0};       // published count (release/acquire)
-  util::SpinLock write_lock_;              // serializes writers (rare by design)
+  // A writer may allocate a segment and run an arbitrary user constructor. That
+  // is not a bounded, few-instruction critical section, so a spin lock is the
+  // wrong primitive even though writers are expected to be rare.
+  std::mutex write_lock_;
   std::uint32_t first_shift_ = 0;          // log2(first segment capacity)
   std::uint32_t num_segments_ = 0;         // allocated segments (writer-owned)
   T* segments_[kMaxSegments] = {};         // fixed: never reallocates (the trick)

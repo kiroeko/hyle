@@ -7,7 +7,6 @@
 #include <utility>
 
 #include "hyle/mem/pmr.h"
-#include "hyle/util/spin_lock.h"
 
 namespace hyle::mem {
 
@@ -17,7 +16,9 @@ struct LeakTracker::Impl {
       : backing(allocator), resource(allocator), live(&resource) {}
 
   Allocator backing;
-  mutable util::SpinLock lock;
+  // unordered_map insert/erase may allocate, rehash and walk buckets. This is
+  // diagnostic code, not a few-instruction spin-lock critical section.
+  mutable std::mutex lock;
   PmrResource resource;
   std::pmr::unordered_map<void*, std::size_t> live;
   std::uint64_t dropped_records = 0;
@@ -142,7 +143,7 @@ void LeakTracker::destroy() noexcept {
 
 void LeakTracker::track_alloc(void* p, std::size_t size) noexcept {
   if (impl_ == nullptr || p == nullptr || size == 0) return;
-  std::lock_guard<util::SpinLock> lock(impl_->lock);
+  std::lock_guard<std::mutex> lock(impl_->lock);
   // Leak tracking is diagnostic and runs inside Allocator's noexcept vtable.
   // Hash-table growth may throw on OOM; losing one debug record is preferable
   // to terminating an otherwise successful allocation.
@@ -158,7 +159,7 @@ void LeakTracker::track_alloc(void* p, std::size_t size) noexcept {
 
 bool LeakTracker::track_free(void* p, std::size_t* out_size) noexcept {
   if (impl_ == nullptr || p == nullptr) return false;
-  std::lock_guard<util::SpinLock> lock(impl_->lock);
+  std::lock_guard<std::mutex> lock(impl_->lock);
   auto it = impl_->live.find(p);
   if (it == impl_->live.end()) return false;
   if (out_size != nullptr) *out_size = it->second;
@@ -168,19 +169,19 @@ bool LeakTracker::track_free(void* p, std::size_t* out_size) noexcept {
 
 std::size_t LeakTracker::outstanding() const noexcept {
   if (impl_ == nullptr) return 0;
-  std::lock_guard<util::SpinLock> lock(impl_->lock);
+  std::lock_guard<std::mutex> lock(impl_->lock);
   return impl_->live.size();
 }
 
 std::uint64_t LeakTracker::dropped_records() const noexcept {
   if (impl_ == nullptr) return 0;
-  std::lock_guard<util::SpinLock> lock(impl_->lock);
+  std::lock_guard<std::mutex> lock(impl_->lock);
   return impl_->dropped_records;
 }
 
 std::size_t LeakTracker::copy_leaks(LeakEntry* out, std::size_t cap) const noexcept {
   if (impl_ == nullptr) return 0;
-  std::lock_guard<util::SpinLock> lock(impl_->lock);
+  std::lock_guard<std::mutex> lock(impl_->lock);
   const std::size_t total = impl_->live.size();
   std::size_t i = 0;
   if (out != nullptr && cap > 0) {
@@ -196,7 +197,7 @@ std::size_t LeakTracker::copy_leaks(LeakEntry* out, std::size_t cap) const noexc
 
 void LeakTracker::clear() noexcept {
   if (impl_ == nullptr) return;
-  std::lock_guard<util::SpinLock> lock(impl_->lock);
+  std::lock_guard<std::mutex> lock(impl_->lock);
   impl_->live.clear();
   impl_->dropped_records = 0;
 }

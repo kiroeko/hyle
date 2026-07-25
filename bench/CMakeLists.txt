@@ -369,6 +369,17 @@ target_link_libraries(hyle_misc_bench PRIVATE hyle_time hyle_obs hyle_util nanob
 hyle_apply_warnings(hyle_misc_bench)
 endif()
 
+# util-core gets a focused, normal-use certificate. It deliberately does not
+# benchmark ScopeGuard/type_name (stack/constexpr mechanisms with no meaningful
+# runtime peer) or the container-dependent Registry, which belongs util-runtime.
+if(HYLE_BUILD_UTIL)
+add_executable(hyle_util_core_bench util/util_core_bench.cc)
+target_include_directories(hyle_util_core_bench PRIVATE "${PROJECT_SOURCE_DIR}/include")
+target_compile_features(hyle_util_core_bench PRIVATE cxx_std_23)
+target_link_libraries(hyle_util_core_bench PRIVATE nanobench)
+hyle_apply_warnings(hyle_util_core_bench)
+endif()
+
 # time-02 timer wheel bench: the wheel vs an indexed eager-erase min-heap (the
 # actual libevent/libuv shape), plus CommonTimeoutQueue vs an embedded intrusive
 # TAILQ (libevent common-timeout shape). Own exe.
@@ -544,6 +555,10 @@ if(HYLE_BENCH_TBB)
   add_subdirectory("${HYLE_TBB_DIR}" "${CMAKE_BINARY_DIR}/onetbb" EXCLUDE_FROM_ALL)
   target_compile_definitions(hyle_queue_sota_bench PRIVATE HYLE_BENCH_TBB)
   target_link_libraries(hyle_queue_sota_bench PRIVATE TBB::tbb)
+  if(TARGET hyle_util_core_bench)
+    target_compile_definitions(hyle_util_core_bench PRIVATE HYLE_BENCH_TBB)
+    target_link_libraries(hyle_util_core_bench PRIVATE TBB::tbb)
+  endif()
   # mem_scenarios_bench: oneTBB fixed_pool is the mature fixed-buffer throughput
   # reference (its tbbmalloc frontend has implicit thread-local ownership, so it
   # is not the same immediate-visibility contract as SharedPool);
@@ -969,7 +984,7 @@ hyle_register_benches(error
   hyle_error_bench
   hyle_error_normal_bench)
 hyle_register_benches(obs hyle_misc_bench)
-hyle_register_benches(util hyle_misc_bench)
+hyle_register_benches(util hyle_util_core_bench)
 hyle_register_benches(time
   hyle_misc_bench
   hyle_timer_queue_bench)

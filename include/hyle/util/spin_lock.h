@@ -1,8 +1,9 @@
 #pragma once
 
 #include <atomic>
+#include <cstdint>
+#include <thread>
 
-#include "hyle/core/cache.h"
 #include "hyle/macros.h"
 
 #if defined(_MSC_VER)
@@ -24,8 +25,14 @@
 //     local cache until the owner's release flips it.
 //   - cpu_relax() pause hint: cuts power, frees the sibling hyperthread, and
 //     speeds exit from the spin loop.
-//   - cache-line padding: the flag owns its line so it can't false-share with a
-//     neighbouring hot variable.
+//   - bounded exponential backoff: brief contention stays in CPU pause/yield
+//     instructions; sustained contention yields the OS thread. This is still a
+//     spin lock, not a substitute for a blocking mutex.
+//
+// The lock is deliberately COMPACT. Padding every lock to a cache line bloats
+// ordinary owner objects (oneTBB spin_mutex and Folly MicroSpinLock are compact
+// for the same reason). An owner that has measured false sharing should place
+// its lock/member in an explicitly cache-line-aligned wrapper.
 
 namespace hyle::util {
 
@@ -38,32 +45,54 @@ HYLE_FORCE_INLINE void cpu_relax() noexcept {
 #elif defined(__x86_64__) || defined(__i386__)
   __builtin_ia32_pause();
 #elif defined(__aarch64__) || defined(__arm__)
-  __asm__ __volatile__("yield");
+  // oneTBB and Folly use an instruction-synchronization barrier on AArch64.
+  // Apple's `yield` hint is too weak under a many-waiter hand-off and caused
+  // the releasing core to be mobbed by repeated atomic exchanges.
+  __asm__ __volatile__("isb" ::: "memory");
 #else
   // unknown arch: no-op (still correct, just no pipeline hint)
 #endif
 }
 
-class alignas(core::kDestructiveInterferenceSize) SpinLock {
+namespace detail {
+
+class SpinBackoff {
+ public:
+  void pause() noexcept {
+    if (count_ <= kPausesBeforeYield) {
+      for (std::uint32_t i = 0; i < count_; ++i) cpu_relax();
+      count_ *= 2;
+    } else {
+      std::this_thread::yield();
+    }
+  }
+
+ private:
+  static constexpr std::uint32_t kPausesBeforeYield = 16;
+  std::uint32_t count_ = 1;
+};
+
+}  // namespace detail
+
+class SpinLock {
  public:
   SpinLock() noexcept = default;
   HYLE_DISABLE_COPY_AND_MOVE(SpinLock);
 
   void lock() noexcept {
-    for (;;) {
-      // Fast path: claim it if free.
-      if (!flag_.exchange(true, std::memory_order_acquire)) return;
-      // Contended: spin on a RELAXED load (TTAS) until it looks free, so we
-      // re-attempt the write only when the owner has released -- no cache-line
-      // ping-pong while waiting.
-      while (flag_.load(std::memory_order_relaxed)) cpu_relax();
+    detail::SpinBackoff backoff;
+    // TTAS from the first probe matters under contention: an eager RMW fast
+    // path makes every arriving waiter write the already-owned cache line.
+    while (flag_.load(std::memory_order_relaxed) ||
+           flag_.exchange(true, std::memory_order_acq_rel)) {
+      backoff.pause();
     }
   }
 
   bool try_lock() noexcept {
     // One shot. relaxed pre-check avoids a needless RMW when already held.
     return !flag_.load(std::memory_order_relaxed) &&
-           !flag_.exchange(true, std::memory_order_acquire);
+           !flag_.exchange(true, std::memory_order_acq_rel);
   }
 
   void unlock() noexcept { flag_.store(false, std::memory_order_release); }
@@ -73,6 +102,7 @@ class alignas(core::kDestructiveInterferenceSize) SpinLock {
   }
 
  private:
+  static_assert(std::atomic<bool>::is_always_lock_free);
   std::atomic<bool> flag_{false};
 };
 

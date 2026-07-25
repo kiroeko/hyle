@@ -115,6 +115,7 @@ hyle_add_header_self_contained_test(mem)
 hyle_add_header_self_contained_test(platform)
 hyle_add_header_self_contained_test(error)
 hyle_add_header_self_contained_test(time)
+hyle_add_header_self_contained_test(util)
 
 # close-01: pure C whole-buffer SIMD consumer. Register/native C++ types never cross this edge.
 hyle_add_c_test(simd simd/c_simd_test.c)

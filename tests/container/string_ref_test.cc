@@ -228,7 +228,7 @@ TEST(StringRef, FindOfSimdCrossesBlockAndTail) {
     return string_ref::npos;
   };
   auto oracle_last_of = [&](bool want) -> std::uint32_t {
-    for (std::uint32_t i = b.size(); i-- > 0;) {
+    for (std::uint32_t i = static_cast<std::uint32_t>(b.size()); i-- > 0;) {
       bool in = (b[i] == '.' || b[i] == ';');
       if (in == want) return i;
     }

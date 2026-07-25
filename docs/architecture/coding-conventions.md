@@ -138,6 +138,6 @@ HYLE 的每条纪律都回溯到四个**约束源**：① ABI 稳定 ② 编译�
 
 **继承（风格基因，照搬/微调）**：C-ABI vtable+`_o/_t`+make/destroy+显式 allocator、Status 指针标签内联、X-macro 码表、传播宏（现名 `ASSIGN_OR_RETURN`）、侵入式 RefCounted/Ref、编译期 type_name+哈希、ScopeGuard/DEFER、header-before-data carray、type-erased core+typed shell、string_ref null_terminated 位、显式布局 static_assert、类型化 cache-line 对齐、三态可见性宏、Registry 自注册、std 分层纪律、decls.h include 纪律。
 
-**取代（C++23 吸收，留意图换实现）**：Comparable→`<=>`、SFINAE→concepts、Result 核心→`std::expected`、`str()`→`std::format`、catomics→`std::atomic`(留自旋锁 padding)、hashmap 宏 temp/哨兵→concept 模板(+SwissTable SIMD)、pragma pack→`alignas`、`same_as_t`→`std::type_identity_t`、Singleton leaky→Meyers。
+**取代（C++23 吸收，留意图换实现）**：Comparable→`<=>`、SFINAE→concepts、Result 核心→`std::expected`、`str()`→`std::format`、catomics→`std::atomic`（自旋锁默认紧凑，只有 owner 实测伪共享后显式 padding）、hashmap 宏 temp/哨兵→concept 模板(+SwissTable SIMD)、pragma pack→`alignas`、`same_as_t`→`std::type_identity_t`、Singleton leaky→Meyers。
 
 **淘汰（补旧编译器坑的包袱）**：整份 `C++17.h` polyfill、`asm("int $3")`→`__builtin_debugtrap`、`CLAY_INHERITS` 伪继承→真继承、MSVC<1900/GCC5 退化分支、编译期 `sizeof(char[-1])` 类型校验技巧→`static_assert`/concept。

@@ -16,7 +16,8 @@ namespace hyle::util {
 // (a moved-from guard is dismissed so the action fires exactly once). The action
 // must be noexcept-callable in practice -- it runs in a destructor.
 template <class Fn>
-class ScopeGuard {
+class [[nodiscard("a temporary ScopeGuard runs immediately; bind it to a name")]]
+    ScopeGuard {
   static_assert(!std::is_reference_v<Fn>,
                 "ScopeGuard owns its callable by value (use CTAD on a temporary "
                 "lambda, not an lvalue reference)");
@@ -37,6 +38,17 @@ class ScopeGuard {
 
   // Cancel the pending action (it will not run at scope exit).
   void dismiss() noexcept { active_ = false; }
+
+  // Run the action now, at most once. This is useful when cleanup is also the
+  // successful commit step and avoids spelling `fn(); guard.dismiss()` outside
+  // the guard even though the callable is intentionally encapsulated.
+  void invoke() noexcept {
+    if (!active_) return;
+    active_ = false;
+    fn_();
+  }
+
+  bool active() const noexcept { return active_; }
 
   HYLE_DISABLE_COPY(ScopeGuard);
   ScopeGuard& operator=(ScopeGuard&&) = delete;

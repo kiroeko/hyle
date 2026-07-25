@@ -137,6 +137,7 @@ struct NonVirtualBase : RefCounted<NonVirtualBase> {};
 struct UnsafeDerived : NonVirtualBase {};
 static_assert(!RefCompatible<UnsafeDerived>);
 static_assert(RefCompatible<Derived>);
+static_assert(RefCompatible<const Widget>);
 }  // namespace
 
 TEST(RefCounted, UpcastDerivedToBase) {
@@ -147,6 +148,25 @@ TEST(RefCounted, UpcastDerivedToBase) {
   Ref<Base> b2 = std::move(d); // move upcast -> steal
   EXPECT_EQ(b2->use_count(), 2u);
   EXPECT_EQ(d.get(), nullptr); // NOLINT(bugprone-use-after-move)
+}
+
+TEST(RefCounted, ConvertingAssignmentAndConstOwnership) {
+  Ref<Derived> derived = make_ref<Derived>();
+  Ref<Base> base;
+  base = derived;
+  EXPECT_EQ(base->kind(), 1);
+  EXPECT_EQ(base->use_count(), 2u);
+
+  Ref<const Base> read_only;
+  read_only = base;
+  EXPECT_EQ(read_only->kind(), 1);
+  EXPECT_EQ(read_only->use_count(), 3u);
+
+  Ref<const Base> moved;
+  moved = std::move(derived);
+  EXPECT_FALSE(derived);  // NOLINT(bugprone-use-after-move)
+  EXPECT_EQ(moved->kind(), 1);
+  EXPECT_EQ(moved->use_count(), 3u);
 }
 
 // Concurrent incref/decref must not corrupt the count (TSan gate on WSL). Many
@@ -200,7 +220,7 @@ TEST(RefCountedDeathTest, RejectsZeroOverflowAndUnderflow) {
       ([] {
         auto* widget = new Widget(1);
         widget->incref(std::numeric_limits<std::uint32_t>::max() - 1);
-        widget->incref();
+        widget->incref(1);
       }()),
       "");
   EXPECT_DEATH(

@@ -45,8 +45,18 @@ class RefCounted {
   HYLE_DISABLE_COPY_AND_MOVE(RefCounted);
 
   // New reference. relaxed: forming a ref requires already holding one, and
-  // handing a ref across threads carries its own synchronization.
-  void incref(std::uint32_t n = 1) noexcept {
+  // handing a ref across threads carries its own synchronization. The common
+  // single-reference operation deliberately does not consume the old value;
+  // MSVC can therefore emit `lock inc` instead of the slower value-returning
+  // `lock xadd` used by a checked batch operation. As with mature intrusive
+  // pointers, callers must already own a live reference and must not overflow
+  // the count; ordinary Ref copies maintain that invariant by construction.
+  void incref() const noexcept {
+    refcount_.fetch_add(1, std::memory_order_relaxed);
+  }
+
+  // Explicit batch change is uncommon and fully validates its arithmetic.
+  void incref(std::uint32_t n) const noexcept {
     HYLE_FATAL_ASSERT(n != 0);
     const std::uint32_t old =
         refcount_.fetch_add(n, std::memory_order_relaxed);
@@ -60,14 +70,29 @@ class RefCounted {
   // fence ONLY on the final drop, so the destroying thread sees all prior
   // releases before running destroy(). This is the Boost/libc++ shared_ptr
   // ordering: non-final decrefs pay only release, not a full acq_rel.
-  void decref(std::uint32_t n = 1) noexcept {
+  void decref() const noexcept {
+    // A release without a live +1 is an ownership-contract violation. Keeping
+    // that precondition out of this value-returning hot path is what lets Ref
+    // match shared_ptr on MSVC; the explicit batch overload remains checked.
+    const std::uint32_t old =
+        refcount_.fetch_sub(1, std::memory_order_release);
+    if (old == 1) {
+      std::atomic_thread_fence(std::memory_order_acquire);
+      const_cast<Sub*>(static_cast<const Sub*>(this))->destroy();
+    }
+  }
+
+  // Explicit batch change is uncommon and fully validates its arithmetic.
+  void decref(std::uint32_t n) const noexcept {
     HYLE_FATAL_ASSERT(n != 0);
     const std::uint32_t old =
         refcount_.fetch_sub(n, std::memory_order_release);
     HYLE_FATAL_ASSERT(old >= n);
     if (old == n) {
       std::atomic_thread_fence(std::memory_order_acquire);
-      static_cast<Sub*>(this)->destroy();  // CRTP dispatch (clay bug fixed)
+      // Reference ownership is logically mutable even through Ref<const T>.
+      // Teardown still runs on the concrete non-const object.
+      const_cast<Sub*>(static_cast<const Sub*>(this))->destroy();
     }
   }
 
@@ -85,7 +110,7 @@ class RefCounted {
   void destroy() { delete static_cast<Sub*>(this); }
 
  private:
-  std::atomic<std::uint32_t> refcount_;
+  mutable std::atomic<std::uint32_t> refcount_;
 };
 
 // A type that can back a Ref<T>: exposes incref/decref (i.e. derives from
@@ -106,11 +131,13 @@ struct ref_destruction_is_safe : std::true_type {};
 // Ref<Derived> would eventually execute `delete Base*`.
 template <class T>
 struct ref_destruction_is_safe<
-    T, std::void_t<typename T::hyle_refcounted_subtype>>
+    T, std::void_t<
+           typename std::remove_cv_t<T>::hyle_refcounted_subtype>>
     : std::bool_constant<
-          std::same_as<T, typename T::hyle_refcounted_subtype> ||
+          std::same_as<std::remove_cv_t<T>,
+                       typename std::remove_cv_t<T>::hyle_refcounted_subtype> ||
           std::has_virtual_destructor_v<
-              typename T::hyle_refcounted_subtype>> {};
+              typename std::remove_cv_t<T>::hyle_refcounted_subtype>> {};
 
 }  // namespace detail
 
@@ -163,6 +190,20 @@ class Ref {
       ptr_ = o.ptr_;
       o.ptr_ = nullptr;
     }
+    return *this;
+  }
+  template <class U>
+    requires std::convertible_to<U*, T*>
+  Ref& operator=(const Ref<U>& o) noexcept {
+    Ref tmp(o);
+    swap(tmp);
+    return *this;
+  }
+  template <class U>
+    requires std::convertible_to<U*, T*>
+  Ref& operator=(Ref<U>&& o) noexcept {
+    Ref tmp(std::move(o));
+    swap(tmp);
     return *this;
   }
   Ref& operator=(std::nullptr_t) noexcept {

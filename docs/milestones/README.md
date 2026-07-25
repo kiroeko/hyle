@@ -30,10 +30,10 @@
 
 | 固定统计口径 | 当前 | 命令/说明 |
 |---|---|---|
-| **全库代码** | **248,016** | `cloc . --vcs=git`；含 docs/third_party，**≠ 自写** |
-| **自实现（含测试）** | **116,333** | `cloc include/hyle src tests --exclude-lang=CMake,Text` |
-| **自实现（不含测试）** | **80,006** | `cloc include/hyle src --exclude-lang=CMake,Text`；库本体硬锚 |
-| **本轮交叉审计单元 core/error/platform/mem/time 实现** | **14,870** | 五模块 `src`、C++/C 公共头与 core/platform 根头；不含测试/CMake/Text |
+| **全库代码** | **248,555** | `cloc . --vcs=git`；含 docs/third_party，**≠ 自写** |
+| **自实现（含测试）** | **116,477** | `cloc include/hyle src tests --exclude-lang=CMake,Text` |
+| **自实现（不含测试）** | **80,086** | `cloc include/hyle src --exclude-lang=CMake,Text`；库本体硬锚 |
+| **当前审查单元 util-core 实现** | **553** | random/ref-counted/scope-guard/spin-lock/type-name 五个公开头；不含测试/CMake/Text |
 | **终态生产（纪律收口 A）** | **~75–90k** | 主预期 |
 | **终态生产（做满守界 B）** | **~85–105k** | compute/graph/发布面收口更满 |
 | 失控上限 C | 120k+ 生产 | 应避免 |
@@ -43,7 +43,7 @@
 | **里程碑计数** | 颗粒不等重 | **勿当完成度**（小 util 与大 compute 各记 1） |
 | **生产 LOC ÷ 终态 A 中值 ~82.5k** | 代码量进度 | **~97%**；SIMD 体量放大该数，**≠ 能力完成度** |
 | **生产 LOC ÷ 终态 B 中值 ~95k** | 做满剧本 | **~84%** |
-| **对完整愿景的功能完成度** | 能力清单 + 头牌缺口 | 除 compute/graph 能力尾外主体大多已实现；当前严格证书为 error/platform/mem/time/core，其余按队列复审 |
+| **对完整愿景的功能完成度** | 能力清单 + 头牌缺口 | 除 compute/graph 能力尾外主体大多已实现；当前严格证书为 error/platform/mem/time/core/util-core，其余按队列复审 |
 
 **模块生产粗表（2026-07-25）**：simd ~37.5k · io ~9.0k · platform **7,020**
 （含公共 C 头）· container ~4.9k · compute ~4.1k · sched ~5.1k · mem ~5.1k ·
@@ -77,13 +77,13 @@ util ~1.3k · error **984** · time ~0.9k · obs/graph 各 ~0.6–0.8k。
 >
 > **2026-07-25 证书口径升级**：下表的 ✅/“冻结”只说明对应历史 work item 已完成，
 > 不自动取得当前实际使用导向的严格证书。当前 error/platform/mem/time/core 通过；
-> build/package system 已严格收口；当前进入 util-core seam，其余顺序只见 [`pre-release-readiness.md`](./pre-release-readiness.md)。
+> build/package system 与 util-core seam 已严格收口；当前进入 obs，其余顺序只见 [`pre-release-readiness.md`](./pre-release-readiness.md)。
 
 | ID | 阶段 | 模块 | 目的(一行) | 前置 | 预测LOC | 真实LOC | 状态 |
 |---|---|---|---|---|---|---|---|
 | **00-scaffolding** | P-1 | 构建 | CMake 多模块结构+GoogleTest/nanobench/sanitizer/CI+HYLE_宏骨架 | — | 0.6-1k | 294 | ✅ 完成 |
 | [core-reclosure](./core-module-closure.md) | P-1 | core | version/cache/macros/visibility/intrusive 严格收口 | 00 | — | 490 生产 | ✅ **2026-07-25 严格收口**：最终实现 `71dabf7`；Win/WSL/M4 相关组 18/18、最终 API delta 8/8；Boost 同形三平台无 LOSE |
-| [build/package-reclosure](./build-package-system-closure.md) | P-1 | 构建/打包 | 用 target 图表达项目组织，完成可迁移、可裁剪组装与安装消费 | core | — | 见任务页 | ✅ **2026-07-25 严格收口**：component target 图、source/shared/static 三交付形状、三平台 all-CPU SDK + consumer、CI 与 AArch64 cross 门完成；下一审查 util-core seam |
+| [build/package-reclosure](./build-package-system-closure.md) | P-1 | 构建/打包 | 用 target 图表达项目组织，完成可迁移、可裁剪组装与安装消费 | core | — | 见任务页 | ✅ **2026-07-25 严格收口**：component target 图、source/shared/static 三交付形状、三平台 all-CPU SDK + consumer、CI 与 AArch64 cross 门完成 |
 | error-01 | P0 | error | Status + std::expected（历史首版） | 00 | 1-2k | 456 | 🗃️ 历史完成；接口与边界后由 error reclosure 重审 |
 | error-02 | P0 | error | error_handler vtable（历史） | error-01 | 1k | 127 (+74 测试) | 🗃️ 曾完成，实际消费者审查后退役；日志归 obs、合同违反归 fatal |
 | [error-03](./error-module-reclosure.md) | P0 | error | 面向真实调用重收 Status/Result/C ABI/context | error-01,obs-01 | — | 见任务页 | ✅ **2026-07-24 自身冻结**：功能/C++/C ABI 收口；Win/GCC14/M4 正确性 + 核心/正常路径 n=15，同形项无 LOSE；全库 adoption audit 进行中，mem 冷路径已统一 Status、私有 TLS 已删 |
@@ -126,14 +126,15 @@ util ~1.3k · error **984** · time ~0.9k · obs/graph 各 ~0.6–0.8k。
 | container-06c | P3 | container | 模糊路径匹配(fuzzy_match_score/path_match_score/find_path_matches) | container-06b | 0.5-1k | string_algo.h +~150 (+测试 ~110 +bench 130) | ✅ **完成(2026-07-05)**。**净新设计**(clay 只声明 cscore_path_match/find_path_matches 无实现),**抄 fzf src/algo/algo.go V1 算法**(非凭记忆现推):**两趟**——forward 找子序列结束位 → backward 收紧起点到最靠右可行位(把匹配 snap 到最 boundary-aligned 的 run,解决贪心"匹配错误的 c"),再在收紧窗口评分,O(cand) 零分配。**bonus 体系对齐 fzf 常量**(match16/boundary8/boundaryDelim9/camel7/consec4/firstChar×2/gap−3/−1)+ charClass 分类 + bonus_for(prev,cur);**filename 优先靠"'/' 作 delimiter 边界 + path 版 init_class=Delimiter 让串首白边界≤分隔边界"**(fzf 方案,非 ad-hoc 乘数)+ 长度 tiebreak。`find_path_matches` 定长最小堆 top-K,scores 存调用方缓冲=**零堆分配**(契约优先),O(N log K)。整数评分(优于 clay double)。ASCII 大小写不敏感(UTF-8 折叠留 phase 2)。**benchmark 证 O(N)**:ns/candidate 在 N=1k/10k/100k = 45.8/47.9/47.8(跨 100× 规模持平=线性铁证);完整评分 44.8ns vs std 子序列 floor 19.0ns=2.35x(诚实标:买的是 fzf 级排序质量,非纯匹配)。双平台 container 160/160 |
 | container-07 | P3 | container | 有界 Chase-Lev work-stealing deque(owner LIFO/DFS,供 graph fork-join) | mem-01 | 1-2k | 249 | ✅ 完成(用途:graph-01,非调度器本地队列) |
 | container-08 | P3 | container | 有界 work-stealing FIFO ring(tokio queue.rs:owner push免同步/pop+thief CAS packed-head/偷半) | mem-01 | 1-2k | 279 | ✅ 完成(sched-03 真前置) |
-| container-09 | P3 | container | ConcurrentVector 读优化并发向量(分段/读 lock-free/写 SpinLock) | mem-01,util-05 | 1-2k | 87 (+98 测试) | ✅ 完成(吸纳 clay parallel/concurrent_vector;修五问题:零拷贝1x内存/move-only/结构性不变量;WSL TSan 零 race) |
+| container-09 | P3 | container | ConcurrentVector 读优化并发向量（分段/读 lock-free/写 mutex） | mem-01 | 1-2k | 见当前实现 | ✅ 功能完成；2026-07-25 util-core 回审确认写侧会分配并执行用户构造函数，故从 SpinLock 改回 mutex；并发读写 TSan 通过，性能随 container 严格复审重签 |
 | [container-10](./container-10-sharded-queue.md) | P3 | container | ShardedQueue 分片有界 MPMC(N 个 Vyukov 子环,生产者 hash 分片消单点争用) | container-01 | 0.5-1k | 58 (+171 测试) | ✅ 完成(bench-02b 揪出单环 4P 输 moody 1.7x=单点 CAS 争用→分片根治;**双平台15遍反超 rigtorp Win3.27x/Lin5.3x**;复用 BoundedQueue placement-new 避 std 拥有型成员;保留有界弃全局 FIFO;双平台+WSL TSan 零 race。**已接入 sched global 注入**) |
-| util-01 | P3 | util | ref_counted(Ref<T> CRTP) + scope_guard(HYLE_DEFER) | 00 | 1k | 见 closure | ✅ **2026-07-19 复审收口**：修 clay destroy CRTP bug；release+末次 acquire fence；批量计数零/溢出/下溢 fail-fast；`RefCompatible` 拒绝非虚基类错误析构；C ABI 为 type-erased strong handle / scope cleanup |
-| util-02 | P3 | util | 编译期 type_name<T> + type_hash<T> | 00 | 0.5k | 44 (+50 测试) | ✅ 完成(probe 派生偏移>clay 硬编码;FNV-1a constexpr) |
-| util-03 | P3 | util | registry 自注册 + DECLARE/DEFINE 宏 | util-02,container-04 | 1k | 见 closure | ✅ **复审收口**：SwissTable；全部访问同步；creator 锁外调用可重入；move-only 参数和 `Ref` creator 修正；C ABI runtime registry |
-| util-04 | P3 | util | random(xoshiro256++ PRNG) | 00 | 0.5k | 见 closure | ✅ **复审收口**：原生 u32 Lemire、状态恢复、`long_jump`、极端 double range、TLS 唯一 seed；POD + batch C ABI |
-| util-05 | P3 | util | spin_lock(TTAS+pause+padding) | 00 | 0.5k | 见 closure | ✅ **复审收口**：x86 pause / ARM yield 三平台；TSan；高争用边界明确；opaque C ABI + inline relax |
-| util-06 | P3 | util | demangle 运行期符号反修饰(`__cxa_demangle`/`UnDecorateSymbolName`) | util-02 | 0.5k | 见 closure | ✅ **复审收口**：buffer-fill；MSVC 超长 decorated symbol 有界扩容；C ABI；三平台验证。总审计见 [`util-module-closure.md`](./util-module-closure.md) |
+| [util-core closure](./util-module-closure.md) | P3 | util-core | Ref/ScopeGuard/Rng/type-name/SpinLock 实际使用形状与 include seam | core/build | — | 见任务页 | ✅ **2026-07-25 严格收口**：零 binary dependency；成熟库对账；三平台正确性、Linux TSan 与 n=15 同合同性能；完整 C ABI 留 util-runtime |
+| util-01 | P3 | util-core | ref_counted(Ref<T> CRTP) + scope_guard(HYLE_DEFER) | 00 | 1k | 见 closure | ✅ const/兼容转换、单指针 intrusive 热路；ScopeGuard `nodiscard`/invoke/active；当前证书见总审计 |
+| util-02 | P3 | util-core | 编译期 type_name<T> + type_hash<T> | 00 | 0.5k | 44 (+50 测试) | ✅ Boost 同类 constexpr 形状；明确不作持久/跨编译器 ID |
+| util-03 | P3 | util-runtime | registry 自注册 + DECLARE/DEFINE 宏 | util-02,container-04 | 1k | 见 closure | 🟡 功能可用；SwissTable/并发/creator 旧证据保留，container 收口后重签公开形状与 C ABI |
+| util-04 | P3 | util-core | random(xoshiro256++ PRNG) | 00 | 0.5k | 见 closure | ✅ 标准 URBG、Lemire range、iterator shuffle、显式可复现/TLS 非安全流；三平台无 material LOSE |
+| util-05 | P3 | util-core | compact SpinLock（TTAS+backoff） | 00 | 0.5k | 见 closure | ✅ 1-byte 紧凑默认；x86 pause/AArch64 instruction barrier；oneTBB 正反序同档、TSan 通过；高争用/长临界区改用 mutex |
+| util-06 | P3 | util-runtime | demangle 运行期符号反修饰(`__cxa_demangle`/`UnDecorateSymbolName`) | util-02 | 0.5k | 见 closure | 🟡 功能与三平台旧证据保留；是否拆 target、共享 error 和完整 C ABI 随 util-runtime 重签 |
 | math-01 | P3 | math | scalar 标量助手(div_ceil/round_up_to_multiple/sgn/approx_eq) | 00 | 0.5k | 28 (+51 测试) | ✅ 完成(clay consts/utils 458 行绝大多数♻️ C++20/23 `<bit>`/`<numbers>`/`<cmath>`;只自写 std 真缺的4个;div_ceil 改溢出安全) |
 | bench-01 | P3 | bench | nanobench 设施 + SwissTable/StringBuf 对标 std | container-04/06 | — | bench设施 | ✅ 完成(SwissTable find2.7x/insert6.1x/erase4.1x>std;intern基准驱动优化0.94→1.31x;absl/F14对标→bench-02) |
 | bench-02 | P3+ | bench | 对标 SOTA(absl/F14/moodycamel/oneTBB/highway/marl,不止 std) | 各模块 | — | — | 📋 规划(用户提:对比 project-hyle 高性能库;拆 02a hashmap/02b 队列/02c hash+wyhash/02d simd-sched) |

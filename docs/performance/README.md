@@ -14,6 +14,7 @@
 | [platform 实测](./benchmarks-platform.md) | **platform 2026-07-25 当前证书**（既有性能表不变；MappedFile advice/residency 按 OS-call complexity 守门） |
 | [time 实测](./benchmarks-time.md) | **time 2026-07-25 当前三平台证书**（clock / exact-ns radix TimerQueue / CommonTimeoutQueue；含 Seastar faithful baseline、order-swap 与 M4 QoS） |
 | [mem 实测](./benchmarks-mem.md) | **mem 2026-07-25 当前证书**：`6213115` 关闭 Region 长寿命遍历复杂度并以 31-process×10,001-epoch scaling、正常 request p50/p95/p99 重签；`20f3676` 的 O(1) FixedPool、`1de939d` 的 SharedPool/cache 与 `2cbc307` 的其余证书继续有效 |
+| [util-core 实测](./benchmarks-util.md) | **util-core 2026-07-25 三平台 n=15 证书**：Rng/Ref/SpinLock 实际形状；oneTBB 正反序；mutex 反例与适用边界 |
 | [container 实测](./benchmarks-container.md) | **container 导航证书**：新鲜度、非 SOTA、选型；详表 → [benchmarks-mem-container.md](./benchmarks-mem-container.md) |
 | [container 详表](./benchmarks-mem-container.md) | hash/SwissTable/vec/str/path/fuzzy 长表 + 史；**入口见上** |
 | [simd 产品 kernel](./benchmarks-simd.md) | dot/saxpy、math、dtype、gather、vendor 竞争…；**op 全量不在此** |
@@ -71,13 +72,12 @@
 | **time** TimerQueue arm/cancel/expire | 见模块证书 | (std 无) | n/a | n/a | faithful Seastar radix | 同算法同档 | Win/M4 多数 1.05–1.43x；WSL churn 顺序敏感 | ⚠️ SOTA radix；WSL reverse churn 约慢7%，禁止写全胜 |
 | **time** TimerQueue vs indexed eager heap | 见模块证书 | (std 无) | n/a | n/a | libevent/libuv shape heap | 见详表 | 约2.25–9.83x | ✅ 三平台三负载胜，cancel 复杂度 O(1) vs O(log n) |
 | **time** CommonTimeoutQueue | 见模块证书 | (std 无) | n/a | n/a | checked / naked TAILQ | 见详表 | 同合同不输；M4 naked expire 约0.78x | ⚠️ 同合同 SOTA，公开安全税 |
-| **util** Rng next_u64(xoshiro256++) | 1.59/1.38/2.26 (Win/Lin/M4) | std::mt19937_64 | 2.32/1.44/3.47* | 1.46x/平/1.53x | std 即算法类标尺 | 同左 | 同左 | ✅ Win/M4 赢；GCC 标准库很强而平（M4 std 行方差高） |
-| **util** Rng varying range_u64 | 2.09/1.47/2.17 | std::uniform_int_distribution | 2.86/2.08/7.68 | 1.37/1.41/3.54x | Lemire 同法实现 | 同档 | — | ✅ 三平台赢；运行时 bound 避开常量除数折叠伪影 |
-| **util** Rng shuffle 1000 | 2.05/1.21/0.81 | std::shuffle | 6.71/1.19/7.35 | 3.28x/平/9.07x | std 即组合标尺 | 同左 | 同左 | ✅ Win/M4 赢、GCC 平；平台实现差异显著 |
-| **util** C ABI RNG fill / C++ fill | 4.99/0.67/0.65 | 原生 C++ batch | 5.16/0.68/0.65 | 全部平 | 原生 C++ | 同左 | ~1.0x | ➖ batch 摊薄 ABI seam；单值 C 调用仍多约 0.09–0.95ns |
-| **util** SpinLock lock/unlock(无争用) | 3.71/4.79/1.01 | std::mutex | 10.94/2.48/4.19 | 2.95x/**0.52x**/4.15x | OS mutex | 同左 | 平台翻转 | ⚠️ 仅短低争用；不能从 Windows 外推到 Linux |
-| **util** SpinLock 8-thread contention | 50.17/60.44/271.88 | std::mutex | 50.59/39.08/20.98 | 平/**0.65x**/**0.08x** | OS mutex | 同左 | 同左 | ❌ 高争用应选 mutex；M4 自旋尤其差 |
-| **util** Ref copy+destroy fan-out | 10.13/8.33/3.19 | std::shared_ptr | 8.09/11.12/3.22 | 0.80x/1.34x/平 | shared_ptr | 同左 | 平台翻转 | ⚠️ 价值是侵入式所有权/省控制块，不承诺每平台拷贝更快 |
+| **util-core** Rng next_u64 | 1.556/1.384/2.264 (Win/Lin/M4) | mt19937_64 | 2.282/1.443/2.561 | **1.463/1.045/1.131x** | xoshiro256++ canonical/Folly 同族 | 同算法档 | 同左 | ✅ 三平台 sign WIN |
+| **util-core** Rng varying range_u64 | 2.021/1.460/2.230 | std distribution | 2.832/2.018/7.784 | **1.390/1.382/3.494x** | Lemire mapping | canonical | 同左 | ✅ 三平台 WIN |
+| **util-core** iterator shuffle | 1.159/1.255/0.824 | std::shuffle(同一 Rng) | 5.747/1.331/3.731 | **4.917/1.060/4.525x** | 同 URBG Fisher–Yates | 同左 | 同左 | ✅ 三平台 sign WIN |
+| **util-core** SpinLock 无争用 | 3.830/4.574/0.935 | std::mutex | 11.248/2.378/9.191 | 2.91/**0.52**/9.75x | oneTBB spin_mutex | 3.823/4.595/0.907 | 0.997/1.010/0.980x | ➖正反序同档；Linux mutex 反例保留 |
+| **util-core** SpinLock 2/8 threads | 9.834·59.535/7.800·48.593/1.793·4.297 | mutex（选择边界） | 15.357·62.261/37.264·38.939/高方差 | 平台翻转 | oneTBB spin_mutex | 9.766·61.646/7.688·48.451/1.772·4.187 | 约 0.98–1.04x | ➖oneTBB 正反序同档；高争用不据此选 spin |
+| **util-core** Ref fan-out 64 | 8.312/7.976/3.202 | shared_ptr | 8.248/10.779/3.211 | **1.006/1.353/1.003x** | shared_ptr ownership 原子基线 | 同左 | 同左 | ✅ Win/M4 TIE、Linux WIN；旧 MSVC 20% LOSE 已消除 |
 | **obs** log gate / preformatted / formatted | 0.91–2.11 / 8.85–22.48 / 50.9–84.6（三平台） | (无 std log) | n/a | n/a | 同步 sink 产出原语 | n/a | ➖ | ✅ gated 极轻；preformatted 含 quiescent-unregister active ref；C ABI 仅多 1.5–3.0ns；formatted 由 `std::format` 主导。详见 obs closure |
 | **mem** SystemAllocator churn(static/source direct) | 7.93/8.04/7.77 | malloc OS | 25/4.7/20 | 大赢 OS | 裸 mimalloc | 7.86/8.04/7.91 | **~1.00x 三平台** | ➖合并形状**平 mi SOTA**(2026-07-20 n=15) |
 | **mem** SystemAllocator churn(shared direct-import) | 8.22/待签/待签 | malloc OS | 37.22/—/— | 4.53x/—/— | exe 内裸 mimalloc | 7.75/—/— | **0.943/—/—** | ⚠️ 2026-07-25 Windows 诊断：约 6% DSO seam 上界；三平台同链接模型证书待补，不冒充 static 行 |

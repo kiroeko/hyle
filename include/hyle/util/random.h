@@ -3,7 +3,9 @@
 #include <atomic>
 #include <cmath>
 #include <cstdint>
+#include <iterator>
 #include <limits>
+#include <random>
 
 #include "hyle/macros.h"
 
@@ -64,21 +66,41 @@ HYLE_FORCE_INLINE std::uint64_t mul128_hi_lo(std::uint64_t a, std::uint64_t b,
 inline std::atomic<std::uint64_t> g_thread_seed_sequence{
     0xA0761D6478BD642Full};
 
-// One relaxed RMW per thread, only at its first thread_rng() call. Addition of
-// one process-ASLR-dependent salt preserves uniqueness even if OS thread stacks
-// are later reused (the old stack-address-only scheme repeated in that case).
+// One relaxed RMW and one OS-backed std::random_device sample per thread, only
+// at its first thread_rng() call. The sequence preserves in-process uniqueness;
+// entropy makes ordinary runs differ across process starts. Failure falls back
+// to process ASLR salt + the still-unique sequence. None of this makes xoshiro
+// cryptographically secure: it only seeds a fast statistical PRNG.
 inline std::uint64_t next_thread_seed() noexcept {
   constexpr std::uint64_t kStep = 0x9E3779B97F4A7C15ull;
   const std::uint64_t sequence =
       g_thread_seed_sequence.fetch_add(kStep, std::memory_order_relaxed);
-  return sequence +
-         static_cast<std::uint64_t>(
-             reinterpret_cast<std::uintptr_t>(&g_thread_seed_sequence));
+  std::uint64_t entropy = 0;
+  try {
+    std::random_device source;
+    entropy = static_cast<std::uint64_t>(source());
+    entropy = (entropy << 32) ^ static_cast<std::uint64_t>(source());
+  } catch (...) {
+    // random_device construction/call is allowed to throw. thread_rng() is a
+    // noexcept convenience path, so retain a distinct but lower-entropy seed.
+  }
+  const auto process_salt = static_cast<std::uint64_t>(
+      reinterpret_cast<std::uintptr_t>(&g_thread_seed_sequence));
+  return sequence ^ detail::rotl(entropy, 17) ^ process_salt;
 }
 }  // namespace detail
 
 class Rng {
  public:
+  // UniformRandomBitGenerator surface. This lets Rng compose directly with
+  // std::shuffle and standard distributions instead of requiring HYLE-specific
+  // adapters. The named next_* helpers remain the convenient typed surface.
+  using result_type = std::uint64_t;
+  static constexpr result_type min() noexcept { return 0; }
+  static constexpr result_type max() noexcept {
+    return std::numeric_limits<result_type>::max();
+  }
+
   // Seed from a single u64 (SplitMix64-expanded into the 256-bit state).
   explicit constexpr Rng(
       std::uint64_t seed = 0xD1B54A32D192ED03ull) noexcept {
@@ -122,6 +144,14 @@ class Rng {
     s[2] ^= t;
     s[3] = detail::rotl(s[3], 45);
     return result;
+  }
+
+  HYLE_FORCE_INLINE result_type operator()() noexcept { return next_u64(); }
+
+  // Standard engines expose discard(n). It is intentionally O(n); use jump()
+  // or long_jump() for the fixed 2^128 / 2^192 parallel-stream leaps.
+  void discard(std::uint64_t count) noexcept {
+    while (count-- != 0) (void)next_u64();
   }
 
   std::uint32_t next_u32() noexcept {
@@ -198,6 +228,23 @@ class Rng {
       std::uint64_t j = range_u64(0, i - 1);
       if (j != i - 1) swap(i - 1, j);
     }
+  }
+
+  // Natural C++ range spelling. Keep the count+swap overload as the storage-
+  // agnostic primitive (and C callback bridge), but do not make ordinary users
+  // manufacture index callbacks just to shuffle a contiguous/random-access
+  // range. This preserves HYLE's fast Lemire map instead of routing through a
+  // standard-library implementation with different bounded-draw costs.
+  template <std::random_access_iterator Iterator>
+  void shuffle(Iterator first, Iterator last) {
+    const auto distance = last - first;
+    HYLE_FATAL_ASSERT(distance >= 0);
+    shuffle(static_cast<std::uint64_t>(distance),
+            [&](std::uint64_t left, std::uint64_t right) {
+              using Difference = std::iter_difference_t<Iterator>;
+              std::iter_swap(first + static_cast<Difference>(left),
+                             first + static_cast<Difference>(right));
+            });
   }
 
   // Advance 2^128 steps: two RNGs that then diverge produce non-overlapping

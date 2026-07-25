@@ -1,6 +1,11 @@
 # util 纯 C ABI 使用指南
 
-头文件是 `hyle/c/util.h`。它只含 C 类型、opaque handle、函数指针和 header-inline 便利函数，可被 C 编译器及常见 FFI 直接消费。失败诊断由线程局部 `hyle_util_last_error()` 提供；成功的可失败调用会清除旧错误。
+先用 [`util.md`](./util.md) 决定应选哪种能力；本页只说明它们怎样映射到纯 C/FFI。
+头文件是 `hyle/c/util.h`。它只含 C 类型、opaque handle、函数指针和 header-inline 便利函数，可被 C 编译器及常见 FFI 直接消费。
+
+当前 C 面属于依赖 container 的 util-runtime，不在本轮 util-core header seam 的严格证书内。
+它仍以线程局部 `hyle_util_last_error()` 报失败；完整 util 收口时会迁到共享 error/
+`hyle_status`，发布前不承诺保留当前签名。成功的可失败调用目前会清除旧错误。
 
 当前面为 **44 个动态导出 + 2 个 header-inline 入口**。没有 api 表或版本门。
 

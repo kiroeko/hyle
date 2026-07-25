@@ -61,7 +61,7 @@
 | `utils/string_utils.h` + `.cc` | 673+449 | container-06b | ✅(真实现部分) | 字节串算法吸纳 `string_algo.h`:hex_encode/escape/capitalize/UTF-8(decode/length/icmp)/ASCII case+分类器(全 buffer-fill 无 std 流)。**重大发现**:clay `format_si/find_path_matches/cscore_path_match/cstr_score_similarity` **只声明无实现**(src/ 全无),与 sprintf 假截断同款美化→无可吸纳,净新设计登记 container-06c。str/join/to_string→std::format♻️;stoi/stod→std::from_chars♻️;to_utf8/from_utf8(wchar)→platform-03 |
 | `utils/generic_allocator.h`/`stl_allocator.h` | 62/196 | mem-07 | ✅⛔ | **stl_allocator→`mem::PmrResource`**(std::pmr::memory_resource 包 Allocator,一个 resource 服务所有 T,取代每类型 rebind 样板)。**generic_allocator→⛔**:HYLE `Allocator` 值句柄已是它(type-erased {fn,state} 转发) |
 | `utils/singleton.h` | 133 | (util 待排) | 🔶♻️ | Meyers 单例(C++11 起 std 保证),薄封装待评 |
-| `utils/spin_lock.h` | 43 | util-05 | ✅ | `SpinLock`(TTAS + x86 pause/ARM yield + cache-line padding,升级 clay 裸 TAS)满足 Lockable；三平台证明只适合短低争用，高争用应选 mutex；opaque C ABI |
+| `utils/spin_lock.h` | 43 | util-05 | ✅ | `SpinLock`（紧凑 TTAS + bounded exponential backoff + x86 pause/AArch64 instruction barrier）升级 clay 裸 TAS并满足 Lockable；owner 仅在实测伪共享后显式 padding；长临界区/高争用选 mutex。当前 C++ 形状已严格签证，opaque C ABI 随 util-runtime 续审 |
 | `utils/vector_utils.h`/`device_utils.h`/`float16.h` | 98/125/52 | ♻️ / compute | ♻️⛔ | **2026-06-29 逐文件判定终态**:`vector_utils`(has_resize SFINAE 探测器等)→**♻️ C++23 concepts 取代**;`device_utils`(identity 函子=`std::identity` C++20 + host/device)→**♻️ + compute 域**;`float16`(`using float16=__half` CUDA 别名 + is_half traits,依赖 cuda_fp16.h)→**compute 域**(注意:simd-05 已落可移植 fp16/bf16 存储+转换,clay 这个是 CUDA 类型别名,非同物)。三者均**非 P3 clay 吸纳欠账** |
 
 ## parallel/ — 并发（thread_pool/async_value/concurrent_vector）

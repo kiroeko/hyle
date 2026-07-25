@@ -27,6 +27,19 @@ TEST(ScopeGuard, DismissCancels) {
   EXPECT_EQ(ran, 0);
 }
 
+TEST(ScopeGuard, InvokeRunsAtMostOnce) {
+  int ran = 0;
+  {
+    ScopeGuard guard{[&] noexcept { ++ran; }};
+    EXPECT_TRUE(guard.active());
+    guard.invoke();
+    EXPECT_EQ(ran, 1);
+    EXPECT_FALSE(guard.active());
+    guard.invoke();
+  }
+  EXPECT_EQ(ran, 1);
+}
+
 TEST(ScopeGuard, MoveFiresExactlyOnce) {
   int ran = 0;
   {
