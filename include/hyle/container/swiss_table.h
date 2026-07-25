@@ -108,6 +108,11 @@ class SwissTable {
     Entry(K key, V value) noexcept
         : key_(std::move(key)), value_(std::move(value)) {}
 
+    template <class... Args>
+      requires std::is_nothrow_constructible_v<V, Args...>
+    Entry(K key, std::in_place_t, Args&&... args) noexcept
+        : key_(std::move(key)), value_(std::forward<Args>(args)...) {}
+
     K key_;
     HYLE_NO_UNIQUE_ADDRESS V value_;
   };
@@ -392,13 +397,61 @@ class SwissTable {
     return InsertResult::kInserted;
   }
 
-  // Familiar convenience shape for callers that treat OOM as fatal. Returns
-  // true for a newly inserted key and false when an existing value was updated.
-  bool insert(K key, V value) {
+  // Explicit overwrite shape. Returns true when a new key was inserted and
+  // false when the existing mapped value was assigned. OOM is fatal; use the
+  // fallible method above when allocation failure is recoverable.
+  bool insert_or_assign(K key, V value) {
     const InsertResult result =
         try_insert_or_assign(std::move(key), std::move(value));
     HYLE_FATAL_ASSERT(result != InsertResult::kOutOfMemory);
     return result == InsertResult::kInserted;
+  }
+
+  // Familiar associative-container shape: insert never changes an existing
+  // mapped value. try_emplace additionally constructs V only after proving the
+  // key absent. Both keep the fused one-hash/one-probe common path.
+  template <class... Args>
+    requires std::is_nothrow_constructible_v<V, Args...>
+  std::pair<V*, bool> try_emplace(K key, Args&&... args) {
+    if (cap_ == 0) HYLE_FATAL_ASSERT(grow());
+
+    const std::uint64_t h = hash_(key);
+    bool found = false;
+    std::size_t idx = find_or_prepare(key, h, &found);
+    if (found) return {&slots_[idx].value_, false};
+
+    if (growth_left_ == 0 && ctrl_[idx] == detail::kEmpty) {
+      // Args may borrow another mapped value in this table. Preserve them
+      // before rehash invalidates flat-slot references; the extra move is paid
+      // only on the rare growth path.
+      V saved(std::forward<Args>(args)...);
+      HYLE_FATAL_ASSERT(grow());
+      idx = find_insert_slot(h);
+      set_ctrl(idx, detail::h2(h));
+      ::new (static_cast<void*>(slots_ + idx))
+          Slot(std::move(key), std::move(saved));
+      ++size_;
+      --growth_left_;
+      return {&slots_[idx].value_, true};
+    }
+
+    const bool was_empty = ctrl_[idx] == detail::kEmpty;
+    set_ctrl(idx, detail::h2(h));
+    ::new (static_cast<void*>(slots_ + idx))
+        Slot(std::move(key), std::in_place, std::forward<Args>(args)...);
+    ++size_;
+    if (was_empty) --growth_left_;
+    return {&slots_[idx].value_, true};
+  }
+
+  bool insert(K key, V value) {
+    return try_emplace(std::move(key), std::move(value)).second;
+  }
+
+  V& operator[](K key)
+    requires std::is_nothrow_default_constructible_v<V>
+  {
+    return *try_emplace(std::move(key)).first;
   }
 
   // Remove `key`. Returns true if it was present. The slot becomes empty when

@@ -536,7 +536,7 @@ int hyle_util_registry_register(
     *existing = CRegistryEntry{
         creator, creator_ctx, copied_help, priority};
   } else {
-    registry->entries.insert(
+    registry->entries.insert_or_assign(
         copied_key,
         CRegistryEntry{creator, creator_ctx, copied_help, priority});
   }

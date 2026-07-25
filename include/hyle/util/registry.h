@@ -80,7 +80,7 @@ class Registry {
       }
       // lower priority: keep the existing higher-priority creator (no-op)
     } else {
-      entries_.insert(key, Entry{creator, priority, help});
+      entries_.insert_or_assign(key, Entry{creator, priority, help});
     }
   }
 

@@ -443,7 +443,7 @@ Stream* SessionState::create_stream(std::int32_t id) noexcept {
   Stream* stream = allocate_stream(alloc);
   if (stream == nullptr) return nullptr;
   stream->id = id;
-  streams.insert(id, stream);
+  streams.insert_or_assign(id, stream);
   return stream;
 }
 
@@ -557,7 +557,7 @@ std::int32_t submit_request_state(
     return id;
   }
   stream->id = id;
-  state.streams.insert(id, stream);
+  state.streams.insert_or_assign(id, stream);
   return id;
 }
 

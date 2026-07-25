@@ -50,6 +50,22 @@ struct TransparentStringEq {
   }
 };
 
+struct CountedMapValue {
+  static int constructions;
+  int number;
+
+  explicit CountedMapValue(int value) noexcept : number(value) {
+    ++constructions;
+  }
+  CountedMapValue() noexcept : CountedMapValue(0) {}
+  CountedMapValue(CountedMapValue&& other) noexcept : number(other.number) {
+    ++constructions;
+  }
+  CountedMapValue& operator=(CountedMapValue&&) noexcept = default;
+};
+
+int CountedMapValue::constructions = 0;
+
 }  // namespace
 
 TEST(SwissTable, EmptyFindMisses) {
@@ -72,11 +88,13 @@ TEST(SwissTable, InsertFindBasic) {
   EXPECT_EQ(t.find(99), nullptr);
 }
 
-TEST(SwissTable, InsertExistingUpdates) {
+TEST(SwissTable, InsertDoesNotOverwriteAndInsertOrAssignDoes) {
   SwissTable<int, int> t;
   EXPECT_TRUE(t.insert(5, 50));
-  EXPECT_FALSE(t.insert(5, 51));  // update, not insert
+  EXPECT_FALSE(t.insert(5, 51));
   EXPECT_EQ(t.size(), 1u);
+  EXPECT_EQ(*t.find(5), 50);
+  EXPECT_FALSE(t.insert_or_assign(5, 51));
   EXPECT_EQ(*t.find(5), 51);
 }
 
@@ -101,7 +119,7 @@ TEST(SwissTable, MatchesUnorderedMapOracle) {
   for (int op = 0; op < 50000; ++op) {
     std::uint64_t k = rng() % 5000;  // dense space -> updates + collisions
     std::uint64_t v = rng();
-    bool ins = t.insert(k, v);
+    bool ins = t.insert_or_assign(k, v);
     bool oracle_new = oracle.find(k) == oracle.end();
     EXPECT_EQ(ins, oracle_new) << "insert/update disagreement at op " << op;
     oracle[k] = v;
@@ -187,7 +205,7 @@ TEST(SwissTable, EraseMatchesOracleUnderMixedOps) {
       EXPECT_EQ(t.erase(k), oracle.erase(k) == 1);
     } else {
       std::uint64_t v = rng();
-      t.insert(k, v);
+      t.insert_or_assign(k, v);
       oracle[k] = v;
     }
   }
@@ -263,6 +281,18 @@ TEST(SwissTable, InsertValueMayAliasSlotAcrossGrowth) {
   ASSERT_NE(aliased, nullptr);
   ASSERT_TRUE(table.insert(99, *aliased));  // triggers the 16 -> 32 grow
   ASSERT_NE(table.find(99), nullptr);
+  EXPECT_EQ(*table.find(99), 1003u);
+}
+
+TEST(SwissTable, TryEmplaceArgumentsMayAliasSlotAcrossGrowth) {
+  SwissTable<std::uint64_t, std::uint64_t> table;
+  for (std::uint64_t i = 0; i < 14; ++i) table.insert(i, 1000 + i);
+  const std::uint64_t* aliased = table.find(3);
+  ASSERT_NE(aliased, nullptr);
+  auto [value, inserted] = table.try_emplace(99, *aliased);
+  ASSERT_TRUE(inserted);
+  ASSERT_NE(value, nullptr);
+  EXPECT_EQ(*value, 1003u);
   EXPECT_EQ(*table.find(99), 1003u);
 }
 
@@ -345,11 +375,33 @@ TEST(SwissTable, OwnsMoveOnlyNonTrivialValuesAcrossRehashEraseAndClear) {
     EXPECT_EQ(**value, i * 3);
   }
   EXPECT_FALSE(table.insert(17, std::make_unique<int>(99)));
+  EXPECT_EQ(**table.find(17), 51);
+  EXPECT_FALSE(table.insert_or_assign(17, std::make_unique<int>(99)));
   EXPECT_EQ(**table.find(17), 99);
   EXPECT_TRUE(table.erase(17));
   EXPECT_EQ(table.find(17), nullptr);
   table.clear();
   EXPECT_TRUE(table.empty());
+}
+
+TEST(FlatHashMap, TryEmplaceConstructsOnlyForAbsentKeysAndSubscriptIsFamiliar) {
+  CountedMapValue::constructions = 0;
+  FlatHashMap<int, CountedMapValue> table;
+  auto [first, inserted] = table.try_emplace(7, 11);
+  ASSERT_TRUE(inserted);
+  ASSERT_NE(first, nullptr);
+  EXPECT_EQ(first->number, 11);
+  const int after_insert = CountedMapValue::constructions;
+
+  auto [same, inserted_again] = table.try_emplace(7, 99);
+  EXPECT_FALSE(inserted_again);
+  EXPECT_EQ(same, first);
+  EXPECT_EQ(same->number, 11);
+  EXPECT_EQ(CountedMapValue::constructions, after_insert);
+
+  table[9].number = 42;
+  ASSERT_NE(table.find(9), nullptr);
+  EXPECT_EQ(table.find(9)->number, 42);
 }
 
 TEST(SwissTable, OwnsNonTrivialStringKeys) {

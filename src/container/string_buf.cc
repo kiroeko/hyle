@@ -274,7 +274,7 @@ Entry* find_or_add_locked(Impl& impl, mem::Allocator alloc, const HashedText& in
     release_entry(shard, alloc, entry, true);
     return nullptr;
   }
-  shard.by_string.insert(InternKey{owned, input.table_hash}, entry);
+  shard.by_string.insert_or_assign(InternKey{owned, input.table_hash}, entry);
   ++shard.live_size;
   return entry;
 }

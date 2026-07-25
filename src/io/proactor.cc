@@ -1415,7 +1415,8 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
           impl_->pending_in.erase(fd);
           std::int64_t res = perform(fd, op);
           if (is_spurious(res)) {
-            impl_->pending_in.insert(fd, op);  // false alarm: re-watch, deliver nothing
+            impl_->pending_in.insert_or_assign(
+                fd, op);  // false alarm: re-watch, deliver nothing
           } else {
             out[n].user_data = op.user_data;
             out[n].result = res;
@@ -1426,7 +1427,8 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
             // caller waiting for a stream that ended; matches IOCP). We re-insert into
             // pending_in and let the unified re-arm below register the fd's watch.
             if (op.multishot && res >= 0) {
-              impl_->pending_in.insert(fd, op);  // keep multishot for next delivery
+              impl_->pending_in.insert_or_assign(
+                  fd, op);  // keep multishot for next delivery
               out[n].flags |= Completion::kMore;
               multishot_rearmed = true;
             }
@@ -1441,7 +1443,8 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
           impl_->pending_out.erase(fd);
           std::int64_t res = perform(fd, op);
           if (is_spurious(res)) {
-            impl_->pending_out.insert(fd, op);  // false alarm: re-watch, deliver nothing
+            impl_->pending_out.insert_or_assign(
+                fd, op);  // false alarm: re-watch, deliver nothing
           } else {
             out[n].user_data = op.user_data;
             out[n].result = res;
@@ -1861,8 +1864,9 @@ bool Proactor::epoll_arm_dgram(Impl* impl, int fd, unsigned events,
   // growth explicit as well, so OOM returns submit=false instead of reaching
   // SwissTable's infallible-insert assertion inside this noexcept API.
   if (side_pending || !side.try_prepare_insert()) return false;
-  side.insert(fd, Impl::PendingOp{opcode, buf, len, user_data, addr, addr_cap,
-                                  addrlen, flags});
+  side.insert_or_assign(
+      fd, Impl::PendingOp{opcode, buf, len, user_data, addr, addr_cap,
+                          addrlen, flags});
 
   epoll_event ev{};
   // Union of armed directions: our side + whatever the other side already has.
@@ -2973,7 +2977,7 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
               op.opcode == IORING_OP_RECV && (op.flags & MSG_OOB) != 0
                   ? EVFILT_EXCEPT
                   : EVFILT_READ;
-          if (rearm(fd, filter)) impl_->pending_in.insert(fd, op);
+          if (rearm(fd, filter)) impl_->pending_in.insert_or_assign(fd, op);
         } else {
           out[n].user_data = op.user_data;
           out[n].result = res;
@@ -2983,7 +2987,8 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
           // succeeded and the re-arm succeeds (a failed re-arm is terminal -- stamping
           // kMore would hang the caller waiting for a stream that ended; matches IOCP).
           if (op.multishot && res >= 0 && rearm(fd, EVFILT_READ)) {
-            impl_->pending_in.insert(fd, op);  // keep multishot for next delivery
+            impl_->pending_in.insert_or_assign(
+                fd, op);  // keep multishot for next delivery
             out[n].flags |= Completion::kMore;
           }
           ++n;
@@ -2996,7 +3001,8 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
         impl_->pending_out.erase(fd);
         std::int64_t res = perform(fd, op);
         if (is_spurious(res)) {
-          if (rearm(fd, EVFILT_WRITE)) impl_->pending_out.insert(fd, op);
+          if (rearm(fd, EVFILT_WRITE))
+            impl_->pending_out.insert_or_assign(fd, op);
         } else {
           out[n].user_data = op.user_data;
           out[n].result = res;
@@ -3087,8 +3093,9 @@ bool Proactor::epoll_arm_dgram(Impl* impl, int fd, unsigned events,
   }
   auto& side = is_read ? impl->pending_in : impl->pending_out;
   if (side.contains(fd) || !side.try_prepare_insert()) return false;
-  side.insert(fd, Impl::PendingOp{opcode, buf, len, user_data, addr, addr_cap,
-                                  addrlen, flags});
+  side.insert_or_assign(
+      fd, Impl::PendingOp{opcode, buf, len, user_data, addr, addr_cap,
+                          addrlen, flags});
   struct kevent kev;
   const short filter = static_cast<short>(events);
   EV_SET(&kev, static_cast<std::uintptr_t>(fd), filter, EV_ADD | EV_ONESHOT, 0, 0,
