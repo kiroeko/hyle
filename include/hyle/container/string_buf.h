@@ -105,6 +105,11 @@ class StringBuf {
   Impl* impl_;
 };
 
+// Application-facing names describe the capability rather than the historical
+// clay buffer implementation.
+using StringId = InternId;
+using StringInterner = StringBuf;
+
 // make/destroy factory (conventions §4): allocation responsibility stays inside
 // the DLL so a client built against a different CRT can't free DLL-owned memory.
 // Equivalent to `alloc.construct<StringBuf>(alloc)` / `alloc.destroy(p)`; offered

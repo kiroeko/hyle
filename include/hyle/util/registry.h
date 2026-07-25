@@ -131,7 +131,11 @@ class Registry {
   };
 
   mutable std::mutex mu_;
-  mutable container::SwissTable<container::string_ref, Entry> entries_;
+  mutable container::SwissTable<container::string_ref, Entry,
+                                container::Hash<container::string_ref>,
+                                std::equal_to<container::string_ref>,
+                                mem::Allocator>
+      entries_;
 };
 
 // Helper whose constructor registers a creator -- the static-init hook the

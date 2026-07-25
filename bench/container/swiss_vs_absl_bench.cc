@@ -33,7 +33,7 @@ int bench_swiss_vs_absl() {
   const std::vector<std::uint64_t> keys = gen(kN, 42);
   const std::vector<std::uint64_t> misses = gen(kN, 1337);
 
-  SwissTable<std::uint64_t, std::uint64_t> hyle(system_allocator());
+  SwissTable<std::uint64_t, std::uint64_t> hyle;
   absl::flat_hash_map<std::uint64_t, std::uint64_t> abslm;
   for (int i = 0; i < kN; ++i) {
     hyle.insert(keys[i], static_cast<std::uint64_t>(i));
@@ -81,7 +81,7 @@ int bench_swiss_vs_absl() {
       ankerl::nanobench::doNotOptimizeAway(m.size());
     });
     b.run("SwissTable", [&] {
-      SwissTable<std::uint64_t, std::uint64_t> t(system_allocator());
+      SwissTable<std::uint64_t, std::uint64_t> t;
       for (int i = 0; i < kN; ++i) t.insert(keys[i], static_cast<std::uint64_t>(i));
       ankerl::nanobench::doNotOptimizeAway(t.size());
     });
@@ -96,7 +96,7 @@ int bench_swiss_vs_absl() {
       ankerl::nanobench::doNotOptimizeAway(m.size());
     });
     b.run("SwissTable", [&] {
-      SwissTable<std::uint64_t, std::uint64_t> t(system_allocator());
+      SwissTable<std::uint64_t, std::uint64_t> t;
       for (int i = 0; i < kN; ++i) t.insert(keys[i], static_cast<std::uint64_t>(i));
       for (auto k : keys) t.erase(k);
       ankerl::nanobench::doNotOptimizeAway(t.size());

@@ -41,9 +41,10 @@ void core_set_ctrl(ctrl_t* ctrl, std::size_t cap, std::size_t i,
 }  // namespace
 
 bool swiss_resize(SwissStorage& s, std::size_t new_cap, std::size_t slot_size,
-                  std::size_t slot_align, mem::Allocator alloc,
+                  std::size_t slot_align, void* alloc_state,
+                  AllocateFn allocate, DeallocateFn deallocate,
                   std::uint64_t (*hash_slot)(const void*, const void*),
-                  const void* hash_state) {
+                  const void* hash_state, RelocateFn relocate_slot) {
   if (new_cap > static_cast<std::size_t>(-1) - kGroupWidth ||
       slot_size == 0 ||
       new_cap > static_cast<std::size_t>(-1) / slot_size)
@@ -53,12 +54,12 @@ bool swiss_resize(SwissStorage& s, std::size_t new_cap, std::size_t slot_size,
   std::size_t old_cap = s.cap;
 
   auto* new_ctrl = static_cast<ctrl_t*>(
-      alloc.allocate(new_cap + kGroupWidth, alignof(ctrl_t)));
+      allocate(alloc_state, new_cap + kGroupWidth, alignof(ctrl_t)));
   if (new_ctrl == nullptr) return false;
-  auto* new_slots =
-      static_cast<std::byte*>(alloc.allocate(new_cap * slot_size, slot_align));
+  auto* new_slots = static_cast<std::byte*>(
+      allocate(alloc_state, new_cap * slot_size, slot_align));
   if (new_slots == nullptr) {
-    alloc.deallocate(new_ctrl, new_cap + kGroupWidth, alignof(ctrl_t));
+    deallocate(alloc_state, new_ctrl, new_cap + kGroupWidth, alignof(ctrl_t));
     return false;
   }
   std::memset(new_ctrl, static_cast<int>(kEmpty), new_cap + kGroupWidth);
@@ -71,14 +72,15 @@ bool swiss_resize(SwissStorage& s, std::size_t new_cap, std::size_t slot_size,
       std::uint64_t h = hash_slot(slot, hash_state);
       std::size_t idx = core_find_insert_slot(new_ctrl, new_mask, h);
       core_set_ctrl(new_ctrl, new_cap, idx, h2(h));
-      std::memcpy(new_slots + idx * slot_size, slot, slot_size);
+      relocate_slot(new_slots + idx * slot_size,
+                    old_slots + i * slot_size, slot_size);
       ++new_size;
     }
   }
 
   if (old_ctrl != nullptr) {
-    alloc.deallocate(old_ctrl, old_cap + kGroupWidth, alignof(ctrl_t));
-    alloc.deallocate(old_slots, old_cap * slot_size, slot_align);
+    deallocate(alloc_state, old_ctrl, old_cap + kGroupWidth, alignof(ctrl_t));
+    deallocate(alloc_state, old_slots, old_cap * slot_size, slot_align);
   }
 
   s.ctrl = new_ctrl;
@@ -91,10 +93,10 @@ bool swiss_resize(SwissStorage& s, std::size_t new_cap, std::size_t slot_size,
 }
 
 void swiss_free(SwissStorage& s, std::size_t slot_size, std::size_t slot_align,
-                mem::Allocator alloc) {
+                void* alloc_state, DeallocateFn deallocate) {
   if (s.ctrl != nullptr) {
-    alloc.deallocate(s.ctrl, s.cap + kGroupWidth, alignof(ctrl_t));
-    alloc.deallocate(s.slots, s.cap * slot_size, slot_align);
+    deallocate(alloc_state, s.ctrl, s.cap + kGroupWidth, alignof(ctrl_t));
+    deallocate(alloc_state, s.slots, s.cap * slot_size, slot_align);
   }
 }
 

@@ -102,7 +102,10 @@ struct SessionState {
       : alloc(a), streams(a), input(a), server(is_server) {}
 
   mem::Allocator alloc;
-  container::SwissTable<std::int32_t, Stream*> streams;
+  container::SwissTable<std::int32_t, Stream*,
+                        container::Hash<std::int32_t>,
+                        std::equal_to<std::int32_t>, mem::Allocator>
+      streams;
   ByteBuf input;
   nghttp2_session* session = nullptr;
   nghttp2_mem ngmem{};

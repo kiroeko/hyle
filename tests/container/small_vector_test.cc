@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
 
+#include <memory>
 #include <numeric>
+#include <string>
 
 #include "hyle/container/small_vector.h"
 #include "hyle/mem/allocator.h"
@@ -89,4 +91,56 @@ TEST(SmallVector, PushBackMayAliasElementAcrossSpill) {
   v.push_back(v[0]);
   ASSERT_EQ(v.size(), 3u);
   EXPECT_EQ(v[2], 4);
+}
+
+TEST(SmallVector, OwnsNonTrivialValuesAcrossInlineAndHeapStorage) {
+  SmallVector<std::string, 2> values;
+  values.emplace_back("alpha");
+  values.push_back(std::string("beta"));
+  values.push_back(values[0]);  // aliased copy across spill
+
+  ASSERT_FALSE(values.inline_storage());
+  ASSERT_EQ(values.size(), 3u);
+  EXPECT_EQ(values[0], "alpha");
+  EXPECT_EQ(values[1], "beta");
+  EXPECT_EQ(values[2], "alpha");
+
+  values.erase(values.begin() + 1);
+  ASSERT_EQ(values.size(), 2u);
+  EXPECT_EQ(values[1], "alpha");
+  values.resize(4, std::string("tail"));
+  EXPECT_EQ(values[3], "tail");
+  values.clear();
+  EXPECT_TRUE(values.empty());
+}
+
+TEST(SmallVector, EmplaceArgumentsMayAliasAcrossSpill) {
+  SmallVector<std::string, 1> values;
+  values.emplace_back("kept");
+  values.emplace_back(values.front());
+  ASSERT_EQ(values.size(), 2u);
+  EXPECT_EQ(values[0], "kept");
+  EXPECT_EQ(values[1], "kept");
+}
+
+TEST(SmallVector, SupportsMoveOnlyValues) {
+  SmallVector<std::unique_ptr<int>, 1> values;
+  values.emplace_back(std::make_unique<int>(7));
+  values.push_back(std::make_unique<int>(9));
+  ASSERT_EQ(values.size(), 2u);
+  EXPECT_EQ(*values[0], 7);
+  EXPECT_EQ(*values[1], 9);
+}
+
+TEST(SmallVector, CopyHasValueSemantics) {
+  SmallVector<std::string, 2> original({"a", "b", "c"});
+  SmallVector<std::string, 2> copy(original);
+  copy[0] = "changed";
+  EXPECT_EQ(original[0], "a");
+  EXPECT_EQ(copy[0], "changed");
+
+  SmallVector<std::string, 2> assigned;
+  assigned = original;
+  EXPECT_EQ(assigned.size(), original.size());
+  EXPECT_EQ(assigned[2], "c");
 }

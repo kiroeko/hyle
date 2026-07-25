@@ -82,7 +82,7 @@ struct alignas(64) Shard {
   explicit Shard(mem::Allocator alloc) noexcept : by_string(alloc), by_id(alloc) {}
 
   std::mutex mu;
-  SwissTable<InternKey, Entry*, InternHash, InternEq> by_string;
+  SwissTable<InternKey, Entry*, InternHash, InternEq, mem::Allocator> by_string;
   CArray<IdSlot> by_id;
   std::uint32_t free_head = kNoSlot;
   std::uint32_t live_size = 0;

@@ -162,4 +162,9 @@ class CArray {
   mem::Allocator alloc_;
 };
 
+// Preferred name for the actual contract: byte-relocatable values, injected
+// allocator, and contiguous storage suitable for C interop.
+template <class T>
+using PodVector = CArray<T>;
+
 }  // namespace hyle::container

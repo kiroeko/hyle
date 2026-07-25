@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstring>
 #include <initializer_list>
+#include <iterator>
 #include <new>
 #include <type_traits>
 #include <utility>
@@ -13,140 +14,365 @@
 
 namespace hyle::container {
 
-// Vector with inline storage for the first N elements: small collections never
-// touch the heap; growth past N spills to an allocator-backed buffer. Design
-// follows folly small_vector (inline buffer + spill), not the code.
+// Vector with storage for the first N elements embedded in the object. It is a
+// std::vector-like owning container for genuinely small sequences, not a POD
+// benchmark fixture: non-trivial values are constructed, moved and destroyed
+// normally. Trivially copyable values retain the memcpy relocation fast path.
 //
-// T must be trivially copyable (relocation on spill/grow is memcpy). Non-trivial
-// T (move-relocate) is deferred -- the scheduler's uses (handles/pointers/PODs)
-// are all trivial.
+// Growth must be recoverable without leaving the original vector half-moved,
+// so T's move construction and destruction must not throw. This includes the
+// normal systems types (strings, smart pointers, handles and PODs) while making
+// the zero-exception contract explicit. Copy construction may throw; normal C++
+// unwinding destroys the completed prefix.
 //
-// Alloc defaults to the compile-time SystemAllocator (stateless, direct-call dispatch,
-// zero seam tax -- and [[no_unique_address]] gives it ZERO bytes in the object). Pass a
-// runtime mem::Allocator (SmallVector<T,N,mem::Allocator>) to opt into injection (arena,
-// mock, cross-DLL). Either way the body is identical (alloc_.allocate(...)).
+// Alloc defaults to the zero-state SystemAllocator. Pass mem::Allocator for a
+// runtime arena/mock/cross-DLL allocator. Allocation failure is available as a
+// bool through try_reserve()/try_emplace_back(); the std-shaped convenience
+// operations fail fast because they have no error return channel.
 template <class T, std::size_t N, class Alloc = mem::SystemAllocator>
 class SmallVector {
-  static_assert(std::is_trivially_copyable_v<T>,
-                "SmallVector<T,N>: T must be trivially copyable");
-  static_assert(N >= 1, "N must be >= 1");
+  static_assert(N >= 1, "SmallVector requires non-zero inline capacity");
+  static_assert(std::is_nothrow_move_constructible_v<T>,
+                "SmallVector requires nothrow move construction");
+  static_assert(std::is_nothrow_destructible_v<T>,
+                "SmallVector requires nothrow destruction");
 
- public:
+public:
   using value_type = T;
-  using iterator = T*;
-  using const_iterator = const T*;
+  using allocator_type = Alloc;
+  using size_type = std::size_t;
+  using difference_type = std::ptrdiff_t;
+  using reference = T &;
+  using const_reference = const T &;
+  using pointer = T *;
+  using const_pointer = const T *;
+  using iterator = T *;
+  using const_iterator = const T *;
+  using reverse_iterator = std::reverse_iterator<iterator>;
+  using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
-  // Default: only when Alloc is default-constructible (SystemAllocator is) -- the common
-  // zero-overhead path, no allocator argument needed.
-  SmallVector() noexcept requires std::is_default_constructible_v<Alloc>
+  SmallVector() noexcept(std::is_nothrow_default_constructible_v<Alloc>)
+    requires std::is_default_constructible_v<Alloc>
       : data_(inline_ptr()), cap_(N) {}
-  // Explicit allocator (runtime mem::Allocator injection, or any stateful Alloc).
-  explicit SmallVector(Alloc alloc) noexcept
-      : alloc_(alloc), data_(inline_ptr()), cap_(N) {}
-  SmallVector(Alloc alloc, std::initializer_list<T> init)
-      : SmallVector(alloc) {
-    reserve(init.size());
-    for (const T& v : init) push_back(v);
-  }
-  explicit SmallVector(std::initializer_list<T> init)
-      requires std::is_default_constructible_v<Alloc>
-      : SmallVector() {
-    reserve(init.size());
-    for (const T& v : init) push_back(v);
-  }
-  ~SmallVector() { free_heap(); }
 
-  SmallVector(SmallVector&& o) noexcept
-      : alloc_(o.alloc_), size_(o.size_), cap_(o.cap_) {
-    if (o.inline_storage()) {
-      data_ = inline_ptr();
-      std::memcpy(data_, o.data_, size_ * sizeof(T));  // copy inline elements
-    } else {
-      data_ = o.data_;       // steal heap buffer
-      o.data_ = o.inline_ptr();
-    }
-    o.size_ = 0;
-    o.cap_ = N;
+  explicit SmallVector(Alloc alloc) noexcept(
+      std::is_nothrow_move_constructible_v<Alloc>)
+      : alloc_(std::move(alloc)), data_(inline_ptr()), cap_(N) {}
+
+  SmallVector(std::initializer_list<T> init)
+    requires std::is_default_constructible_v<Alloc>
+      : SmallVector() {
+    append_copy(init.begin(), init.end());
   }
-  SmallVector& operator=(SmallVector&& o) noexcept {
-    if (this == &o) return *this;
-    free_heap();
-    alloc_ = o.alloc_;
-    size_ = o.size_;
-    cap_ = o.cap_;
-    if (o.inline_storage()) {
-      data_ = inline_ptr();
-      std::memcpy(data_, o.data_, size_ * sizeof(T));
-    } else {
-      data_ = o.data_;
-      o.data_ = o.inline_ptr();
-    }
-    o.size_ = 0;
-    o.cap_ = N;
+
+  SmallVector(Alloc alloc, std::initializer_list<T> init)
+      : SmallVector(std::move(alloc)) {
+    append_copy(init.begin(), init.end());
+  }
+
+  SmallVector(const SmallVector &other) : SmallVector(other.alloc_) {
+    append_copy(other.begin(), other.end());
+  }
+
+  SmallVector(SmallVector &&other) noexcept
+      : SmallVector(std::move(other.alloc_)) {
+    move_from(other);
+  }
+
+  SmallVector &operator=(const SmallVector &other) {
+    if (this == &other)
+      return *this;
+    // Build first so a throwing T copy leaves *this unchanged.
+    SmallVector replacement(alloc_);
+    replacement.append_copy(other.begin(), other.end());
+    *this = std::move(replacement);
     return *this;
   }
-  HYLE_DISABLE_COPY(SmallVector);
 
-  std::size_t size() const noexcept { return size_; }
-  std::size_t capacity() const noexcept { return cap_; }
+  SmallVector &operator=(SmallVector &&other) noexcept {
+    if (this == &other)
+      return *this;
+    reset_storage();
+    alloc_ = std::move(other.alloc_);
+    move_from(other);
+    return *this;
+  }
+
+  ~SmallVector() { reset_storage(); }
+
+  allocator_type &allocator() noexcept { return alloc_; }
+  const allocator_type &allocator() const noexcept { return alloc_; }
+
+  size_type size() const noexcept { return size_; }
+  size_type capacity() const noexcept { return cap_; }
+  static constexpr size_type inline_capacity() noexcept { return N; }
   bool empty() const noexcept { return size_ == 0; }
   bool inline_storage() const noexcept { return data_ == inline_ptr(); }
-  T* data() noexcept { return data_; }
-  const T* data() const noexcept { return data_; }
 
-  T& operator[](std::size_t i) noexcept { return data_[i]; }
-  const T& operator[](std::size_t i) const noexcept { return data_[i]; }
-  T& back() noexcept { return data_[size_ - 1]; }
+  pointer data() noexcept { return data_; }
+  const_pointer data() const noexcept { return data_; }
+  reference operator[](size_type i) noexcept { return data_[i]; }
+  const_reference operator[](size_type i) const noexcept { return data_[i]; }
+  reference front() noexcept {
+    HYLE_FATAL_ASSERT(!empty());
+    return data_[0];
+  }
+  const_reference front() const noexcept {
+    HYLE_FATAL_ASSERT(!empty());
+    return data_[0];
+  }
+  reference back() noexcept {
+    HYLE_FATAL_ASSERT(!empty());
+    return data_[size_ - 1];
+  }
+  const_reference back() const noexcept {
+    HYLE_FATAL_ASSERT(!empty());
+    return data_[size_ - 1];
+  }
 
   iterator begin() noexcept { return data_; }
-  iterator end() noexcept { return data_ + size_; }
   const_iterator begin() const noexcept { return data_; }
+  const_iterator cbegin() const noexcept { return data_; }
+  iterator end() noexcept { return data_ + size_; }
   const_iterator end() const noexcept { return data_ + size_; }
-
-  void reserve(std::size_t n) {
-    if (n > cap_) grow_to(n);
+  const_iterator cend() const noexcept { return data_ + size_; }
+  reverse_iterator rbegin() noexcept { return reverse_iterator(end()); }
+  const_reverse_iterator rbegin() const noexcept {
+    return const_reverse_iterator(end());
   }
-  void push_back(const T& v) {
+  reverse_iterator rend() noexcept { return reverse_iterator(begin()); }
+  const_reverse_iterator rend() const noexcept {
+    return const_reverse_iterator(begin());
+  }
+
+  bool try_reserve(size_type requested) noexcept {
+    return requested <= cap_ || grow_to(requested);
+  }
+
+  void reserve(size_type requested) {
+    HYLE_FATAL_ASSERT(try_reserve(requested));
+  }
+
+  template <class... Args> bool try_emplace_back(Args &&...args) {
     if (size_ == cap_) {
-      const T copy = v;  // preserve a possibly self-referential argument
-      HYLE_FATAL_ASSERT(cap_ <= static_cast<std::size_t>(-1) / 2);
-      grow_to(cap_ * 2);
-      data_[size_++] = copy;
+      if (size_ == static_cast<size_type>(-1) / sizeof(T))
+        return false;
+      // Construct first: args may refer to an existing element and grow_to()
+      // relocates it. This is the same normal-use guarantee as std::vector and
+      // Folly small_vector, paid only on the rare growth path.
+      T saved(std::forward<Args>(args)...);
+      if (!grow_to(next_capacity(size_ + 1)))
+        return false;
+      ::new (static_cast<void *>(data_ + size_)) T(std::move(saved));
+      ++size_;
+      return true;
+    }
+    ::new (static_cast<void *>(data_ + size_)) T(std::forward<Args>(args)...);
+    ++size_;
+    return true;
+  }
+
+  template <class... Args> reference emplace_back(Args &&...args) {
+    HYLE_FATAL_ASSERT(try_emplace_back(std::forward<Args>(args)...));
+    return back();
+  }
+
+  // Preserve the std::vector aliasing shape: push_back(v[0]) remains valid
+  // when growth relocates the source element.
+  bool try_push_back(const T &value) {
+    if (size_ != cap_) {
+      ::new (static_cast<void *>(data_ + size_)) T(value);
+      ++size_;
+      return true;
+    }
+    T saved(value);
+    if (!grow_to(next_capacity(size_ + 1)))
+      return false;
+    ::new (static_cast<void *>(data_ + size_)) T(std::move(saved));
+    ++size_;
+    return true;
+  }
+
+  bool try_push_back(T &&value) {
+    if (size_ != cap_) {
+      ::new (static_cast<void *>(data_ + size_)) T(std::move(value));
+      ++size_;
+      return true;
+    }
+    T saved(std::move(value));
+    if (!grow_to(next_capacity(size_ + 1)))
+      return false;
+    ::new (static_cast<void *>(data_ + size_)) T(std::move(saved));
+    ++size_;
+    return true;
+  }
+
+  void push_back(const T &value) { HYLE_FATAL_ASSERT(try_push_back(value)); }
+  void push_back(T &&value) {
+    HYLE_FATAL_ASSERT(try_push_back(std::move(value)));
+  }
+
+  void pop_back() noexcept {
+    HYLE_FATAL_ASSERT(!empty());
+    --size_;
+    data_[size_].~T();
+  }
+
+  void clear() noexcept {
+    destroy_range(data_, size_);
+    size_ = 0;
+  }
+
+  bool try_resize(size_type count) {
+    if (count < size_) {
+      destroy_range(data_ + count, size_ - count);
+      size_ = count;
+      return true;
+    }
+    if (count > cap_ && !grow_to(count))
+      return false;
+    while (size_ < count) {
+      ::new (static_cast<void *>(data_ + size_)) T();
+      ++size_;
+    }
+    return true;
+  }
+
+  bool try_resize(size_type count, const T &value) {
+    if (count <= size_)
+      return try_resize(count);
+    // value may alias this vector and growth may relocate it.
+    if (count > cap_) {
+      T saved(value);
+      if (!grow_to(count))
+        return false;
+      while (size_ < count) {
+        ::new (static_cast<void *>(data_ + size_)) T(saved);
+        ++size_;
+      }
+      return true;
+    }
+    while (size_ < count) {
+      ::new (static_cast<void *>(data_ + size_)) T(value);
+      ++size_;
+    }
+    return true;
+  }
+
+  void resize(size_type count) { HYLE_FATAL_ASSERT(try_resize(count)); }
+  void resize(size_type count, const T &value) {
+    HYLE_FATAL_ASSERT(try_resize(count, value));
+  }
+
+  iterator erase(const_iterator position) noexcept {
+    HYLE_FATAL_ASSERT(position >= begin() && position < end());
+    const size_type index = static_cast<size_type>(position - begin());
+    if constexpr (std::is_trivially_copyable_v<T>) {
+      std::memmove(data_ + index, data_ + index + 1,
+                   (size_ - index - 1) * sizeof(T));
     } else {
-      data_[size_++] = v;
+      static_assert(std::is_nothrow_move_assignable_v<T>,
+                    "SmallVector::erase requires nothrow move assignment");
+      for (size_type i = index; i + 1 < size_; ++i)
+        data_[i] = std::move(data_[i + 1]);
+      data_[size_ - 1].~T();
+    }
+    --size_;
+    return data_ + index;
+  }
+
+private:
+  pointer inline_ptr() noexcept { return reinterpret_cast<pointer>(inline_); }
+  const_pointer inline_ptr() const noexcept {
+    return reinterpret_cast<const_pointer>(inline_);
+  }
+
+  static void destroy_range(pointer first, size_type count) noexcept {
+    if constexpr (!std::is_trivially_destructible_v<T>) {
+      for (size_type i = count; i != 0; --i)
+        first[i - 1].~T();
     }
   }
-  void pop_back() noexcept {
-    HYLE_FATAL_ASSERT(size_ > 0);
-    --size_;
-  }
-  void clear() noexcept { size_ = 0; }
 
- private:
-  T* inline_ptr() noexcept { return reinterpret_cast<T*>(inline_); }
-  const T* inline_ptr() const noexcept {
-    return reinterpret_cast<const T*>(inline_);
+  size_type next_capacity(size_type required) const noexcept {
+    HYLE_FATAL_ASSERT(required <= static_cast<size_type>(-1) / sizeof(T));
+    if (cap_ > static_cast<size_type>(-1) / 2)
+      return required;
+    const size_type doubled = cap_ * 2;
+    return doubled < required ? required : doubled;
   }
 
-  void grow_to(std::size_t n) {
-    HYLE_FATAL_ASSERT(n >= size_ &&
-                      n <= static_cast<std::size_t>(-1) / sizeof(T));
-    T* nb = static_cast<T*>(alloc_.allocate(n * sizeof(T), alignof(T)));
-    HYLE_FATAL_ASSERT(nb != nullptr);
-    std::memcpy(nb, data_, size_ * sizeof(T));
-    free_heap();
-    data_ = nb;
-    cap_ = n;
+  bool grow_to(size_type requested) noexcept {
+    if (requested < size_ || requested > static_cast<size_type>(-1) / sizeof(T))
+      return false;
+    pointer replacement = static_cast<pointer>(
+        alloc_.allocate(requested * sizeof(T), alignof(T)));
+    if (replacement == nullptr)
+      return false;
+
+    if constexpr (std::is_trivially_copyable_v<T>) {
+      if (size_ != 0)
+        std::memcpy(replacement, data_, size_ * sizeof(T));
+    } else {
+      for (size_type i = 0; i < size_; ++i)
+        ::new (static_cast<void *>(replacement + i)) T(std::move(data_[i]));
+      destroy_range(data_, size_);
+    }
+
+    if (!inline_storage())
+      alloc_.deallocate(data_, cap_ * sizeof(T), alignof(T));
+    data_ = replacement;
+    cap_ = requested;
+    return true;
   }
-  void free_heap() noexcept {
-    if (!inline_storage()) alloc_.deallocate(data_, cap_ * sizeof(T), alignof(T));
+
+  template <class It> void append_copy(It first, It last) {
+    const auto distance = std::distance(first, last);
+    HYLE_FATAL_ASSERT(distance >= 0);
+    reserve(static_cast<size_type>(distance));
+    for (; first != last; ++first) {
+      ::new (static_cast<void *>(data_ + size_)) T(*first);
+      ++size_;
+    }
+  }
+
+  void move_from(SmallVector &other) noexcept {
+    if (!other.inline_storage()) {
+      data_ = other.data_;
+      size_ = other.size_;
+      cap_ = other.cap_;
+      other.data_ = other.inline_ptr();
+      other.size_ = 0;
+      other.cap_ = N;
+      return;
+    }
+    if constexpr (std::is_trivially_copyable_v<T>) {
+      if (other.size_ != 0)
+        std::memcpy(data_, other.data_, other.size_ * sizeof(T));
+      size_ = other.size_;
+      other.size_ = 0;
+    } else {
+      for (size_type i = 0; i < other.size_; ++i) {
+        ::new (static_cast<void *>(data_ + i)) T(std::move(other.data_[i]));
+        ++size_;
+      }
+      other.clear();
+    }
+  }
+
+  void reset_storage() noexcept {
+    clear();
+    if (!inline_storage())
+      alloc_.deallocate(data_, cap_ * sizeof(T), alignof(T));
+    data_ = inline_ptr();
+    cap_ = N;
   }
 
   HYLE_NO_UNIQUE_ADDRESS Alloc alloc_{};
-  T* data_;
-  std::size_t size_ = 0;
-  std::size_t cap_;
+  pointer data_;
+  size_type size_ = 0;
+  size_type cap_;
   alignas(T) std::byte inline_[N * sizeof(T)];
 };
 
-}  // namespace hyle::container
+} // namespace hyle::container

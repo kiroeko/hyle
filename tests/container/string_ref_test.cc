@@ -398,7 +398,7 @@ TEST(StringRef, Rsplit) {
 // string_ref is usable as a SwissTable key via its Hash specialization. Keys
 // must outlive the table (the table stores views, not copies).
 TEST(StringRef, AsSwissTableKey) {
-  SwissTable<string_ref, int> t(system_allocator());
+  SwissTable<string_ref, int> t;
   const char* keys[] = {"alpha", "beta", "gamma", "delta"};
   for (int i = 0; i < 4; ++i) t.insert(keys[i], i);
   EXPECT_EQ(t.size(), 4u);

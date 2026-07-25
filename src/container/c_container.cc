@@ -123,7 +123,8 @@ struct RawMap {
   ~RawMap() {
     hc::detail::SwissStorage storage{ctrl, slots, cap, mask, size,
                                      growth_left};
-    hc::detail::swiss_free(storage, block_size, block_alignment, alloc);
+    hc::detail::swiss_free(storage, block_size, block_alignment, &alloc,
+                           &deallocate);
   }
 
   static std::size_t align_up(std::size_t value, std::size_t alignment) {
@@ -223,11 +224,26 @@ struct RawMap {
     std::memcpy(&result, raw, sizeof(result));
     return result;
   }
+  static void* allocate(void* state, std::size_t bytes,
+                        std::size_t alignment) noexcept {
+    return static_cast<hyle::mem::Allocator*>(state)->allocate(bytes,
+                                                               alignment);
+  }
+  static void deallocate(void* state, void* pointer, std::size_t bytes,
+                         std::size_t alignment) noexcept {
+    static_cast<hyle::mem::Allocator*>(state)->deallocate(pointer, bytes,
+                                                           alignment);
+  }
+  static void relocate(void* destination, void* source,
+                       std::size_t bytes) noexcept {
+    std::memcpy(destination, source, bytes);
+  }
   bool resize(std::size_t new_capacity) noexcept {
     hc::detail::SwissStorage storage{ctrl, slots, cap, mask, size,
                                      growth_left};
-    if (!hc::detail::swiss_resize(storage, new_capacity, block_size,
-                                  block_alignment, alloc, &slot_hash, nullptr))
+    if (!hc::detail::swiss_resize(
+            storage, new_capacity, block_size, block_alignment, &alloc,
+            &allocate, &deallocate, &slot_hash, nullptr, &relocate))
       return false;
     ctrl = storage.ctrl;
     slots = static_cast<std::byte*>(storage.slots);

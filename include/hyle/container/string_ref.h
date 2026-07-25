@@ -326,6 +326,10 @@ struct string_ref {
   }
 };
 
+// Preferred C++ spelling. The lower-case name is retained for the existing
+// implementation and source consumers; both denote the same 16-byte view.
+using StringView = string_ref;
+
 static_assert(sizeof(string_ref) == 16, "string_ref must stay a 16-byte POD");
 static_assert(std::is_trivially_copyable_v<string_ref>);
 

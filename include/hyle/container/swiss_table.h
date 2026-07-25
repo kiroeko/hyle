@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cstring>
 #include <functional>
+#include <new>
 #include <type_traits>
 #include <utility>
 
@@ -12,6 +13,7 @@
 #include "hyle/core/cache.h"
 #include "hyle/macros.h"
 #include "hyle/mem/allocator.h"
+#include "hyle/mem/system_inline.h"
 
 namespace hyle::container {
 
@@ -32,16 +34,22 @@ struct SwissStorage {
 // Allocate new_cap slots, memset ctrl to empty, reinsert every full old slot,
 // free the old storage. `hash_slot(slot, hash_state)` recomputes a slot's hash
 // without knowing K (the key sits at slot offset 0). Updates `s` in place.
-HYLE_CONTAINER_API bool swiss_resize(SwissStorage& s, std::size_t new_cap,
-                                     std::size_t slot_size,
-                                     std::size_t slot_align, mem::Allocator alloc,
-                                     std::uint64_t (*hash_slot)(const void*,
-                                                                const void*),
-                                     const void* hash_state);
+using AllocateFn = void* (*)(void*, std::size_t, std::size_t) noexcept;
+using DeallocateFn = void (*)(void*, void*, std::size_t,
+                              std::size_t) noexcept;
+using RelocateFn = void (*)(void*, void*, std::size_t) noexcept;
+
+HYLE_CONTAINER_API bool swiss_resize(
+    SwissStorage& s, std::size_t new_cap, std::size_t slot_size,
+    std::size_t slot_align, void* alloc_state, AllocateFn allocate,
+    DeallocateFn deallocate,
+    std::uint64_t (*hash_slot)(const void*, const void*),
+    const void* hash_state, RelocateFn relocate_slot);
 
 // Free a table's ctrl+slot storage (no-op when empty).
 HYLE_CONTAINER_API void swiss_free(SwissStorage& s, std::size_t slot_size,
-                                   std::size_t slot_align, mem::Allocator alloc);
+                                   std::size_t slot_align, void* alloc_state,
+                                   DeallocateFn deallocate);
 }  // namespace detail
 
 // Open-addressing flat hash map with abseil SwissTable control bytes + SIMD
@@ -54,15 +62,28 @@ HYLE_CONTAINER_API void swiss_free(SwissStorage& s, std::size_t slot_size,
 // through it, so no later key depends on it) -- this returns growth and curbs
 // tombstone buildup under churn.
 //
-// K, V trivially copyable (slots relocate via memcpy on rehash), consistent with
-// CArray/SmallVector. Non-trivial element support is deferred.
+// K and V may be non-trivial. Rehash moves and destroys them through one cold
+// type-erased callback; trivially copyable slots retain the memcpy fast path.
+// Moves/destruction are required not to throw so a failed allocation leaves the
+// original table intact and rehash cannot strand a partially moved table.
 //
 // The cold path (resize/free) is type-erased into swiss_table.cc (see detail::
 // above); the hot path is inlined per instantiation for zero indirection.
-template <class K, class V, class Hash = Hash<K>, class Eq = std::equal_to<K>>
+template <class K, class V, class Hash = Hash<K>, class Eq = std::equal_to<K>,
+          class Alloc = mem::SystemAllocator>
 class SwissTable {
-  static_assert(std::is_trivially_copyable_v<K> && std::is_trivially_copyable_v<V>,
-                "SwissTable: K and V must be trivially copyable (deferred)");
+  static_assert(std::is_nothrow_move_constructible_v<K> &&
+                    std::is_nothrow_move_constructible_v<V>,
+                "SwissTable requires nothrow move construction");
+  static_assert(std::is_nothrow_destructible_v<K> &&
+                    std::is_nothrow_destructible_v<V>,
+                "SwissTable requires nothrow destruction");
+  static_assert(std::is_nothrow_move_assignable_v<V>,
+                "SwissTable requires nothrow value move assignment");
+  static_assert(std::is_nothrow_invocable_r_v<std::uint64_t, Hash, const K&>,
+                "SwissTable requires a noexcept hash function");
+  static_assert(std::is_nothrow_invocable_r_v<bool, Eq, const K&, const K&>,
+                "SwissTable requires a noexcept equality function");
 
   using ctrl_t = detail::ctrl_t;
   static constexpr std::size_t kGroup = detail::kGroupWidth;
@@ -75,14 +96,22 @@ class SwissTable {
   };
 
  public:
-  explicit SwissTable(mem::Allocator alloc, Hash hash = Hash{}, Eq eq = Eq{})
-      : alloc_(alloc), hash_(hash), eq_(eq) {}
+  SwissTable() requires(std::is_default_constructible_v<Alloc> &&
+                        std::is_default_constructible_v<Hash> &&
+                        std::is_default_constructible_v<Eq>) = default;
+
+  explicit SwissTable(Alloc alloc, Hash hash = Hash{}, Eq eq = Eq{})
+      : alloc_(std::move(alloc)), hash_(std::move(hash)), eq_(std::move(eq)) {}
 
   ~SwissTable() { free_storage(); }
   HYLE_DISABLE_COPY(SwissTable);
-  SwissTable(SwissTable&& o) noexcept
-      : alloc_(o.alloc_), hash_(o.hash_), eq_(o.eq_), ctrl_(o.ctrl_),
-        slots_(o.slots_), cap_(o.cap_), mask_(o.mask_), size_(o.size_),
+  SwissTable(SwissTable&& o) noexcept(
+      std::is_nothrow_move_constructible_v<Alloc> &&
+      std::is_nothrow_move_constructible_v<Hash> &&
+      std::is_nothrow_move_constructible_v<Eq>)
+      : alloc_(std::move(o.alloc_)), hash_(std::move(o.hash_)),
+        eq_(std::move(o.eq_)), ctrl_(o.ctrl_), slots_(o.slots_), cap_(o.cap_),
+        mask_(o.mask_), size_(o.size_),
         growth_left_(o.growth_left_) {
     o.ctrl_ = nullptr;
     o.slots_ = nullptr;
@@ -91,12 +120,15 @@ class SwissTable {
     o.size_ = 0;
     o.growth_left_ = 0;
   }
-  SwissTable& operator=(SwissTable&& o) noexcept {
+  SwissTable& operator=(SwissTable&& o) noexcept(
+      std::is_nothrow_move_assignable_v<Alloc> &&
+      std::is_nothrow_move_assignable_v<Hash> &&
+      std::is_nothrow_move_assignable_v<Eq>) {
     if (this == &o) return *this;
     free_storage();
-    alloc_ = o.alloc_;
-    hash_ = o.hash_;
-    eq_ = o.eq_;
+    alloc_ = std::move(o.alloc_);
+    hash_ = std::move(o.hash_);
+    eq_ = std::move(o.eq_);
     ctrl_ = o.ctrl_;
     slots_ = o.slots_;
     cap_ = o.cap_;
@@ -126,8 +158,9 @@ class SwissTable {
       new_cap *= 2;
     }
     detail::SwissStorage s{ctrl_, slots_, cap_, mask_, size_, growth_left_};
-    if (!detail::swiss_resize(s, new_cap, sizeof(Slot), alignof(Slot), alloc_,
-                              &hash_slot_thunk, &hash_))
+    if (!detail::swiss_resize(s, new_cap, sizeof(Slot), alignof(Slot), &alloc_,
+                              &allocate_thunk, &deallocate_thunk,
+                              &hash_slot_thunk, &hash_, &relocate_slot_thunk))
       return false;
     ctrl_ = s.ctrl;
     slots_ = static_cast<Slot*>(s.slots);
@@ -153,13 +186,21 @@ class SwissTable {
 
   void clear() noexcept {
     if (ctrl_ == nullptr) return;
+    destroy_live_slots();
     std::memset(ctrl_, static_cast<int>(detail::kEmpty), cap_ + kGroup);
     size_ = 0;
     growth_left_ = cap_ - cap_ / 8;
   }
 
-  // Returns pointer to the value for `key`, or nullptr if absent.
-  V* find(const K& key) noexcept {
+  // Returns pointer to the value for `key`, or nullptr if absent. Compatible
+  // transparent Hash/Eq objects permit allocation-free heterogeneous lookup
+  // (for example std::string keys queried by string_view).
+  template <class Q>
+    requires(std::is_nothrow_invocable_r_v<std::uint64_t, const Hash&,
+                                           const Q&> &&
+             std::is_nothrow_invocable_r_v<bool, const Eq&, const K&,
+                                           const Q&>)
+  V* find(const Q& key) noexcept {
     if (cap_ == 0) return nullptr;
     std::uint64_t h = hash_(key);
     std::size_t pos = detail::h1(h) & mask_;
@@ -178,55 +219,77 @@ class SwissTable {
     }
   }
 
-  const V* find(const K& key) const noexcept {
-    return const_cast<SwissTable*>(this)->find(key);
+  template <class Q>
+    requires(std::is_nothrow_invocable_r_v<std::uint64_t, const Hash&,
+                                           const Q&> &&
+             std::is_nothrow_invocable_r_v<bool, const Eq&, const K&,
+                                           const Q&>)
+  const V* find(const Q& key) const noexcept {
+    return const_cast<SwissTable*>(this)->template find<Q>(key);
   }
 
-  bool contains(const K& key) const noexcept { return find(key) != nullptr; }
+  template <class Q>
+  bool contains(const Q& key) const noexcept(noexcept(find(key)))
+    requires requires { find(key); }
+  {
+    return find(key) != nullptr;
+  }
 
   // Insert or assign. Returns true if a new key was inserted, false if updated.
   // ONE hash + ONE probe walk in the common case (clay/abseil's fused
   // find_or_prepare): the walk both checks for an existing key and records the
   // first empty/deleted slot to insert into. A second walk happens only when a
   // grow is actually triggered (amortized rare).
-  bool insert(const K& key, const V& value) {
+  enum class InsertResult : std::uint8_t {
+    kInserted,
+    kUpdated,
+    kOutOfMemory,
+  };
+
+  // By-value arguments deliberately preserve aliases into this table before a
+  // possible rehash. Rvalues move once; lvalues pay the copy their insertion
+  // already requires. The result distinguishes update from allocation failure.
+  InsertResult try_insert_or_assign(K key, V value) {
     if (cap_ == 0) {
-      const bool grown = grow();  // give the probe walk real storage
-      HYLE_FATAL_ASSERT(grown);
+      if (!grow()) return InsertResult::kOutOfMemory;
     }
     std::uint64_t h = hash_(key);
     bool found = false;
     std::size_t idx = find_or_prepare(key, h, &found);
     if (found) {
-      slots_[idx].value = value;
-      return false;
+      slots_[idx].value = std::move(value);
+      return InsertResult::kUpdated;
     }
     // Not present; `idx` is the first empty/deleted slot on the probe path. Only
     // an EMPTY target consumes growth -- reusing a tombstone (deleted) does not
     // (it was already counted against the load factor when erase made it). Grow
     // only when we'd take an empty slot and none is budgeted.
     if (growth_left_ == 0 && ctrl_[idx] == detail::kEmpty) {
-      // key/value are allowed to refer into this table. Rehash invalidates such
-      // references, so preserve both before entering the cold grow path.
-      const K key_copy = key;
-      const V value_copy = value;
-      const bool grown = grow();
-      HYLE_FATAL_ASSERT(grown);
+      if (!grow()) return InsertResult::kOutOfMemory;
       idx = find_insert_slot(h);  // cold path: rehash invalidated idx
       set_ctrl(idx, detail::h2(h));
-      slots_[idx].key = key_copy;
-      slots_[idx].value = value_copy;
+      ::new (static_cast<void*>(slots_ + idx))
+          Slot{std::move(key), std::move(value)};
       ++size_;
       --growth_left_;  // find_insert_slot after a rehash always selects empty
-      return true;
+      return InsertResult::kInserted;
     }
     bool was_empty = ctrl_[idx] == detail::kEmpty;
     set_ctrl(idx, detail::h2(h));
-    slots_[idx].key = key;
-    slots_[idx].value = value;
+    ::new (static_cast<void*>(slots_ + idx))
+        Slot{std::move(key), std::move(value)};
     ++size_;
     if (was_empty) --growth_left_;
-    return true;
+    return InsertResult::kInserted;
+  }
+
+  // Familiar convenience shape for callers that treat OOM as fatal. Returns
+  // true for a newly inserted key and false when an existing value was updated.
+  bool insert(K key, V value) {
+    const InsertResult result =
+        try_insert_or_assign(std::move(key), std::move(value));
+    HYLE_FATAL_ASSERT(result != InsertResult::kOutOfMemory);
+    return result == InsertResult::kInserted;
   }
 
   // Remove `key`. Returns true if it was present. The slot becomes empty when
@@ -234,7 +297,12 @@ class SwissTable {
   // no later key needs it as a stepping stone) -- which restores growth; else it
   // becomes a tombstone (find skips it, insert reuses it, grow drops it). This is
   // abseil's reclaim rule and keeps capacity tight under heavy churn.
-  bool erase(const K& key) noexcept {
+  template <class Q>
+    requires(std::is_nothrow_invocable_r_v<std::uint64_t, const Hash&,
+                                           const Q&> &&
+             std::is_nothrow_invocable_r_v<bool, const Eq&, const K&,
+                                           const Q&>)
+  bool erase(const Q& key) noexcept {
     if (cap_ == 0) return false;
     std::uint64_t h = hash_(key);
     std::size_t pos = detail::h1(h) & mask_;
@@ -245,6 +313,7 @@ class SwissTable {
       for (std::uint32_t i : g.match(want)) {
         std::size_t idx = (pos + i) & mask_;
         if (HYLE_LIKELY(eq_(slots_[idx].key, key))) {
+          slots_[idx].~Slot();
           erase_at(idx);
           return true;
         }
@@ -294,6 +363,27 @@ class SwissTable {
                                        const void* hash_state) noexcept {
     return (*static_cast<const Hash*>(hash_state))(
         *static_cast<const K*>(slot));
+  }
+
+  static void* allocate_thunk(void* state, std::size_t size,
+                              std::size_t alignment) noexcept {
+    return static_cast<Alloc*>(state)->allocate(size, alignment);
+  }
+
+  static void deallocate_thunk(void* state, void* ptr, std::size_t size,
+                               std::size_t alignment) noexcept {
+    static_cast<Alloc*>(state)->deallocate(ptr, size, alignment);
+  }
+
+  static void relocate_slot_thunk(void* destination, void* source,
+                                  std::size_t) noexcept {
+    auto* from = static_cast<Slot*>(source);
+    if constexpr (std::is_trivially_copyable_v<Slot>) {
+      std::memcpy(destination, source, sizeof(Slot));
+    } else {
+      ::new (destination) Slot{std::move(from->key), std::move(from->value)};
+      from->~Slot();
+    }
   }
 
   // Erase the live slot at `idx`. abseil reclaim: if the group at idx AND the
@@ -382,8 +472,9 @@ class SwissTable {
                           : size_ >= cap_ - cap_ / 8 ? cap_ * 2
                                                     : cap_;
     detail::SwissStorage s{ctrl_, slots_, cap_, mask_, size_, growth_left_};
-    if (!detail::swiss_resize(s, new_cap, sizeof(Slot), alignof(Slot), alloc_,
-                              &hash_slot_thunk, &hash_))
+    if (!detail::swiss_resize(s, new_cap, sizeof(Slot), alignof(Slot), &alloc_,
+                              &allocate_thunk, &deallocate_thunk,
+                              &hash_slot_thunk, &hash_, &relocate_slot_thunk))
       return false;
     ctrl_ = s.ctrl;
     slots_ = static_cast<Slot*>(s.slots);
@@ -395,13 +486,29 @@ class SwissTable {
   }
 
   void free_storage() noexcept {
+    destroy_live_slots();
     detail::SwissStorage s{ctrl_, slots_, cap_, mask_, size_, growth_left_};
-    detail::swiss_free(s, sizeof(Slot), alignof(Slot), alloc_);
+    detail::swiss_free(s, sizeof(Slot), alignof(Slot), &alloc_,
+                       &deallocate_thunk);
+    ctrl_ = nullptr;
+    slots_ = nullptr;
+    cap_ = 0;
+    mask_ = 0;
+    size_ = 0;
+    growth_left_ = 0;
   }
 
-  mem::Allocator alloc_;
-  Hash hash_;
-  Eq eq_;
+  void destroy_live_slots() noexcept {
+    if constexpr (!std::is_trivially_destructible_v<Slot>) {
+      for (std::size_t i = 0; i < cap_; ++i) {
+        if (detail::ctrl_is_full(ctrl_[i])) slots_[i].~Slot();
+      }
+    }
+  }
+
+  HYLE_NO_UNIQUE_ADDRESS Alloc alloc_{};
+  HYLE_NO_UNIQUE_ADDRESS Hash hash_{};
+  HYLE_NO_UNIQUE_ADDRESS Eq eq_{};
   ctrl_t* ctrl_ = nullptr;   // cap_ + kGroup bytes (tail mirrors first group)
   Slot* slots_ = nullptr;    // cap_ slots
   std::size_t cap_ = 0;      // power of two (or 0 when empty)
@@ -409,5 +516,11 @@ class SwissTable {
   std::size_t size_ = 0;     // full slots
   std::size_t growth_left_ = 0;  // inserts until next grow (7/8 load)
 };
+
+// Preferred public name. SwissTable remains as the implementation-specific
+// spelling for existing Hyle users and documents the probing strategy.
+template <class K, class V, class Hash = Hash<K>, class Eq = std::equal_to<K>,
+          class Alloc = mem::SystemAllocator>
+using FlatHashMap = SwissTable<K, V, Hash, Eq, Alloc>;
 
 }  // namespace hyle::container

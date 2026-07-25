@@ -1,8 +1,10 @@
 #include <gtest/gtest.h>
 
 #include <cstdint>
+#include <memory>
 #include <random>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 
@@ -21,17 +23,37 @@ void* fail_realloc(void*, void*, std::size_t, std::size_t,
   return nullptr;
 }
 
+struct TransparentStringHash {
+  std::uint64_t operator()(const std::string& value) const noexcept {
+    return operator()(std::string_view(value));
+  }
+  std::uint64_t operator()(std::string_view value) const noexcept {
+    return hyle::container::hash_bytes(value.data(), value.size());
+  }
+};
+
+struct TransparentStringEq {
+  bool operator()(const std::string& left,
+                  const std::string& right) const noexcept {
+    return left == right;
+  }
+  bool operator()(const std::string& left,
+                  std::string_view right) const noexcept {
+    return left == right;
+  }
+};
+
 }  // namespace
 
 TEST(SwissTable, EmptyFindMisses) {
-  SwissTable<int, int> t(system_allocator());
+  SwissTable<int, int> t;
   EXPECT_EQ(t.size(), 0u);
   EXPECT_EQ(t.find(42), nullptr);
   EXPECT_FALSE(t.contains(7));
 }
 
 TEST(SwissTable, InsertFindBasic) {
-  SwissTable<int, int> t(system_allocator());
+  SwissTable<int, int> t;
   EXPECT_TRUE(t.insert(1, 10));
   EXPECT_TRUE(t.insert(2, 20));
   EXPECT_TRUE(t.insert(3, 30));
@@ -44,7 +66,7 @@ TEST(SwissTable, InsertFindBasic) {
 }
 
 TEST(SwissTable, InsertExistingUpdates) {
-  SwissTable<int, int> t(system_allocator());
+  SwissTable<int, int> t;
   EXPECT_TRUE(t.insert(5, 50));
   EXPECT_FALSE(t.insert(5, 51));  // update, not insert
   EXPECT_EQ(t.size(), 1u);
@@ -52,7 +74,7 @@ TEST(SwissTable, InsertExistingUpdates) {
 }
 
 TEST(SwissTable, GrowsAcrossManyInserts) {
-  SwissTable<int, int> t(system_allocator());
+  SwissTable<int, int> t;
   for (int i = 0; i < 10000; ++i) ASSERT_TRUE(t.insert(i, i * 2));
   EXPECT_EQ(t.size(), 10000u);
   EXPECT_GT(t.capacity(), 10000u);  // grew past load factor
@@ -66,7 +88,7 @@ TEST(SwissTable, GrowsAcrossManyInserts) {
 // tests; production never uses it -- conventions §1). Random insert/find over
 // a shared key space must agree at every step.
 TEST(SwissTable, MatchesUnorderedMapOracle) {
-  SwissTable<std::uint64_t, std::uint64_t> t(system_allocator());
+  SwissTable<std::uint64_t, std::uint64_t> t;
   std::unordered_map<std::uint64_t, std::uint64_t> oracle;
   std::mt19937_64 rng(12345);
   for (int op = 0; op < 50000; ++op) {
@@ -97,7 +119,7 @@ TEST(SwissTable, MatchesUnorderedMapOracle) {
 }
 
 TEST(SwissTable, StringKeys) {
-  SwissTable<std::string_view, int> t(system_allocator());
+  SwissTable<std::string_view, int> t;
   std::vector<std::string> keep;
   for (int i = 0; i < 1000; ++i) keep.push_back("key_" + std::to_string(i));
   for (int i = 0; i < 1000; ++i) t.insert(keep[i], i);
@@ -109,7 +131,7 @@ TEST(SwissTable, StringKeys) {
 }
 
 TEST(SwissTable, EraseBasic) {
-  SwissTable<int, int> t(system_allocator());
+  SwissTable<int, int> t;
   t.insert(1, 10);
   t.insert(2, 20);
   t.insert(3, 30);
@@ -123,7 +145,7 @@ TEST(SwissTable, EraseBasic) {
 }
 
 TEST(SwissTable, EraseThenReinsertReusesTombstone) {
-  SwissTable<int, int> t(system_allocator());
+  SwissTable<int, int> t;
   for (int i = 0; i < 50; ++i) t.insert(i, i);
   for (int i = 0; i < 50; ++i) EXPECT_TRUE(t.erase(i));
   EXPECT_EQ(t.size(), 0u);
@@ -137,7 +159,7 @@ TEST(SwissTable, EraseThenReinsertReusesTombstone) {
 // Churn: alternate insert/erase heavily. The grow() same-size rehash must keep
 // capacity bounded (tombstones reclaimed), not grow unboundedly.
 TEST(SwissTable, ChurnBoundedCapacity) {
-  SwissTable<std::uint64_t, std::uint64_t> t(system_allocator());
+  SwissTable<std::uint64_t, std::uint64_t> t;
   std::mt19937_64 rng(99);
   for (int i = 0; i < 200000; ++i) {
     std::uint64_t k = rng() % 256;  // tiny live set, heavy churn
@@ -148,7 +170,7 @@ TEST(SwissTable, ChurnBoundedCapacity) {
 }
 
 TEST(SwissTable, EraseMatchesOracleUnderMixedOps) {
-  SwissTable<std::uint64_t, std::uint64_t> t(system_allocator());
+  SwissTable<std::uint64_t, std::uint64_t> t;
   std::unordered_map<std::uint64_t, std::uint64_t> oracle;
   std::mt19937_64 rng(7);
   for (int op = 0; op < 50000; ++op) {
@@ -176,7 +198,7 @@ TEST(SwissTable, EraseMatchesOracleUnderMixedOps) {
 // key probed through, those would diverge. This test pins the bounded-capacity
 // behavior: survivors intact, the churned key gone, no unbounded growth.)
 TEST(SwissTable, EraseReinsertChurnStaysBounded) {
-  SwissTable<int, int> t(system_allocator());
+  SwissTable<int, int> t;
   t.insert(1, 100);
   t.insert(2, 200);  // a couple of live keys so the table isn't trivially empty
   for (int i = 0; i < 100000; ++i) {
@@ -195,7 +217,7 @@ TEST(SwissTable, EraseReinsertChurnStaysBounded) {
 // Guards the group-scan for_each (match_full over kGroup bytes): a wrong mask would
 // miss live slots, double-visit (ctrl tail-mirror), or visit tombstones/empties.
 TEST(SwissTable, ForEachVisitsExactlyLiveSet) {
-  SwissTable<std::uint64_t, std::uint64_t> t(system_allocator());
+  SwissTable<std::uint64_t, std::uint64_t> t;
   // Empty: for_each is a no-op.
   { std::size_t n = 0; t.for_each([&](std::uint64_t, std::uint64_t&) { ++n; }); EXPECT_EQ(n, 0u); }
 
@@ -228,7 +250,7 @@ TEST(SwissTable, ForEachVisitsExactlyLiveSet) {
 }
 
 TEST(SwissTable, InsertValueMayAliasSlotAcrossGrowth) {
-  SwissTable<std::uint64_t, std::uint64_t> table(system_allocator());
+  SwissTable<std::uint64_t, std::uint64_t> table;
   for (std::uint64_t i = 0; i < 14; ++i) table.insert(i, 1000 + i);
   const std::uint64_t* aliased = table.find(3);
   ASSERT_NE(aliased, nullptr);
@@ -238,7 +260,7 @@ TEST(SwissTable, InsertValueMayAliasSlotAcrossGrowth) {
 }
 
 TEST(SwissTable, MoveConstructionPreservesProbeMask) {
-  SwissTable<std::uint64_t, std::uint64_t> source(system_allocator());
+  SwissTable<std::uint64_t, std::uint64_t> source;
   for (std::uint64_t i = 0; i < 1000; ++i) source.insert(i, i * 3);
   const std::size_t capacity = source.capacity();
   SwissTable<std::uint64_t, std::uint64_t> moved(std::move(source));
@@ -251,12 +273,12 @@ TEST(SwissTable, MoveConstructionPreservesProbeMask) {
 }
 
 TEST(SwissTable, ReserveClearMoveAssignAndConstTraversal) {
-  SwissTable<int, int> source(system_allocator());
+  SwissTable<int, int> source;
   ASSERT_TRUE(source.reserve(1000));
   EXPECT_GE(source.capacity() - source.capacity() / 8, 1000u);
   for (int i = 0; i < 100; ++i) source.insert(i, i + 1);
 
-  SwissTable<int, int> target(system_allocator());
+  SwissTable<int, int> target;
   target.insert(-1, -1);
   target = std::move(source);
   const SwissTable<int, int>& view = target;
@@ -277,7 +299,7 @@ TEST(SwissTable, ReserveClearMoveAssignAndConstTraversal) {
 }
 
 TEST(SwissTable, FallibleReserveRejectsOverflowWithoutChangingState) {
-  SwissTable<int, int> table(system_allocator());
+  SwissTable<int, int> table;
   ASSERT_TRUE(table.insert(7, 9));
   const std::size_t old_capacity = table.capacity();
   EXPECT_FALSE(table.reserve(static_cast<std::size_t>(-1)));
@@ -288,15 +310,70 @@ TEST(SwissTable, FallibleReserveRejectsOverflowWithoutChangingState) {
 
 TEST(SwissTable, PrepareInsertIsFallibleAndMakesInsertAllocationFree) {
   hyle::mem::Allocator failing{fail_alloc, fail_free, fail_realloc, nullptr};
-  SwissTable<int, int> table(failing);
+  SwissTable<int, int, hyle::container::Hash<int>, std::equal_to<int>,
+             hyle::mem::Allocator>
+      table(failing);
   EXPECT_FALSE(table.try_prepare_insert());
   EXPECT_TRUE(table.empty());
 
-  SwissTable<int, int> ready(system_allocator());
+  SwissTable<int, int> ready;
   ASSERT_TRUE(ready.try_prepare_insert());
   const std::size_t capacity = ready.capacity();
   EXPECT_TRUE(ready.insert(7, 9));
   EXPECT_EQ(ready.capacity(), capacity);
   ASSERT_NE(ready.find(7), nullptr);
   EXPECT_EQ(*ready.find(7), 9);
+}
+
+TEST(SwissTable, OwnsMoveOnlyNonTrivialValuesAcrossRehashEraseAndClear) {
+  SwissTable<int, std::unique_ptr<int>> table;
+  for (int i = 0; i < 1000; ++i) {
+    EXPECT_TRUE(table.insert(i, std::make_unique<int>(i * 3)));
+  }
+  ASSERT_EQ(table.size(), 1000u);
+  for (int i = 0; i < 1000; ++i) {
+    auto* value = table.find(i);
+    ASSERT_NE(value, nullptr);
+    ASSERT_NE(*value, nullptr);
+    EXPECT_EQ(**value, i * 3);
+  }
+  EXPECT_FALSE(table.insert(17, std::make_unique<int>(99)));
+  EXPECT_EQ(**table.find(17), 99);
+  EXPECT_TRUE(table.erase(17));
+  EXPECT_EQ(table.find(17), nullptr);
+  table.clear();
+  EXPECT_TRUE(table.empty());
+}
+
+TEST(SwissTable, OwnsNonTrivialStringKeys) {
+  SwissTable<std::string, int, TransparentStringHash, TransparentStringEq>
+      table;
+  for (int i = 0; i < 500; ++i) {
+    table.insert("key-" + std::to_string(i), i);
+  }
+  ASSERT_NE(table.find(std::string("key-301")), nullptr);
+  EXPECT_EQ(*table.find(std::string("key-301")), 301);
+}
+
+TEST(SwissTable, HeterogeneousLookupAndEraseAvoidKeyConstruction) {
+  SwissTable<std::string, int, TransparentStringHash, TransparentStringEq>
+      table;
+  table.insert("alpha", 7);
+  const std::string_view query = "alpha";
+  ASSERT_NE(table.find(query), nullptr);
+  EXPECT_EQ(*table.find(query), 7);
+  EXPECT_TRUE(table.contains(query));
+  EXPECT_TRUE(table.erase(query));
+  EXPECT_FALSE(table.contains(query));
+}
+
+TEST(SwissTable, FallibleInsertReportsAllocationFailure) {
+  hyle::mem::Allocator failing{fail_alloc, fail_free, fail_realloc, nullptr};
+  using FallibleTable =
+      SwissTable<int, int, hyle::container::Hash<int>, std::equal_to<int>,
+                 hyle::mem::Allocator>;
+  FallibleTable table(failing);
+  EXPECT_EQ(table.try_insert_or_assign(1, 2),
+            FallibleTable::InsertResult::kOutOfMemory);
+  EXPECT_TRUE(table.empty());
 }
