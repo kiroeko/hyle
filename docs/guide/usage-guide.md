@@ -16,7 +16,7 @@
 | `mem/` | `hyle/mem/{allocator,region,shared_pool,fixed_pool}.h` | allocator、region/pool、诊断与 NUMA/大页；选型见 [`mem.md`](./mem.md) |
 | `platform/` | `hyle/platform/{thread,wait,fs,virtual_memory,numa,mapped_file,cpu}.h` | OS 线程、等待、文件系统、VM 与拓扑 |
 | `container/` | `hyle/container/{swiss_table,carray,small_vector,string_ref}.h` | flat map、连续/内联容器、字符串和并发队列 |
-| `time/` | `hyle/time/{clock,timer_wheel,common_timeout_queue}.h` | 时钟、deadline、通用与固定时长 timer source |
+| `time/` | `hyle/time/{clock,timer_queue,common_timeout_queue}.h` | 时钟、deadline、线程 sleep 与两类 timer；选型见 [`time.md`](./time.md) |
 | `util/` | `hyle/util/{ref_counted,registry,scope_guard,random}.h` | 引用所有权、registry、scope guard 与 RNG |
 | `obs/` | `hyle/obs/{log,trace}.h` | 结构化日志与可选 trace |
 | `sched/` | `hyle/sched/{scheduler,fiber,coro,sync}.h` | M:N fiber/coroutine、work stealing、同步、取消与 blocking offload |
@@ -420,77 +420,23 @@ opaque sink，见 [`c-obs.md`](./c-obs.md)，不要直接绑定 C++ `LogSink` �
 
 ```cpp
 #include "hyle/time/clock.h"
-using hyle::time::Instant;
-auto t0 = Instant::now();                         // 单调钟快照
-auto deadline = hyle::time::deadline_after_ns(5'000'000);
-// ... 干活 ...
-uint64_t ns = t0.elapsed_ns();                    // 将来值安全钳到 0
-uint64_t left = hyle::time::remaining_ns(deadline);
-hyle::time::sleep_until_ns(deadline);             // 绝对单调 deadline
+#include "hyle/time/timer_queue.h"
+
+using namespace std::chrono_literals;
+auto started = hyle::time::Instant::now();
+auto deadline = hyle::time::deadline_after(5ms);
+auto elapsed = started.elapsed();
 ```
 
-`monotonic_ns()`、`realtime_ns()` 和纯算术 deadline helper 都是 header-inline；普通
-C++ 调用以及 sched/io 热路径不付 DLL 跳转。加法、`sleep_for_us/ms` 的单位换算采用
-饱和语义，极大超时不会回绕成已经过期。
+正常 deadline 永远使用 monotonic；realtime 只做墙钟时间戳；`fast_*` 是显式 profiling/
+coarse 日志选项，不能用于 timeout。任意或混合 deadline 用 exact-ns `TimerQueue`；海量相同
+duration 才用 `CommonTimeoutQueue`。二者都是 stable-address、single-owner 的侵入式数据
+结构，只交付节点而不执行 callback。OS 线程 sleep 用 `time::sleep_*`，HYLE fiber 必须使用
+`sched::sleep_*`，否则会阻塞 worker。
 
-**两个单调钟,按需选(默认用 `monotonic_ns`)**:
-
-| | `monotonic_ns()`(默认) | `fast_monotonic_ns()`(opt-in) |
-|---|---|---|
-| 实现 | QPC / clock_gettime(OS 原语) | rdtsc 直读 + 定点换算 |
-| 延迟 | 与同工作量 `std::chrono` 同档 | 通常比默认钟更低 |
-| 正确性 | ✅ 永远对、唤醒安全、跨核严格单调 | ⚠️ sleep 唤醒/VM 迁移可能跳变;跨核迁移可能小幅回退(无 max 钳制,差值会下溢) |
-| 可用于 deadline/超时 | ✅ **是**(sched 定时器键它) | ❌ **否** |
-| 硬件要求 | 无 | invariant TSC(CPUID 探测);无则透明回退默认钟 |
-| 首次调用 | 无 | 一次性校准 ~几 ms |
-
-**决策**:
-- **要算超时/deadline/sched 定时 → 永远 `monotonic_ns()`**(fast 版的跳变会让超时灾难性出错)。
-- **高频采样/profiling 打点,且偶发唤醒后毛刺可容忍 → `fast_monotonic_ns()`**;最好把线程钉核,或只对"同核近距离两次读"求差。
-- 拿不准 → `monotonic_ns()`。它与 `std::chrono` 做同样工作，且是 sched/io deadline 的统一时基。
-
-```cpp
-// 例:profiling 热路径打点(可容忍偶发毛刺,要最低读取成本)
-uint64_t a = hyle::time::fast_monotonic_ns();
-hot_path();
-uint64_t span = hyle::time::fast_monotonic_ns() - a;  // 同核近距离两读,安全
-```
-
-#### 3.6.1 定时器结构选型（海量超时:选对结构,别都塞一个堆）
-
-管理海量超时(io 超时、连接空闲超时、fiber sleep)时,`time/` 提供**两种定时器数据结构**,都满足同一 `TimerSource` 接口(`schedule`/`cancel`/`advance`/`next_deadline_ns`),**按负载选、编译期定、零虚调用开销**。这不是重复造轮子——SOTA 的 libevent 同样是两套并存(min-heap + `common_timeout` 队列),因为**一个结构吃不下所有定时负载**。
-
-| 你的场景 | 用 | 为什么 / 别用啥 |
-|---|---|---|
-| **任意/混合超时时长,海量 arm/cancel**(fiber sleep 任意时长、通用定时) | `TimerWheel`(分层时间轮) | 8 层×64 槽覆盖完整 `uint64_t` 纳秒域，arm/cancel 摊还 O(1)，取消立即摘链。**通用默认，拿不准用它**。对真实 indexed eager-erase min-heap，当前双平台 arm/cancel、expire、churn 均领先。 |
-| **海量定时器共享同一固定时长**(百万连接都是 30s 超时) | `CommonTimeoutQueue` | 单条有序侵入链：同一时长的 deadline 天然递增，arm/expire/cancel 都是 O(1)。一个队列只管一种时长；混合时长必须用 wheel。跨架构性能边界见 performance 总账。 |
-| **定时器较少或已有 heap 生态** | indexed min-heap | HYLE 不提供；heap 可以做到 eager O(log n) keyed erase，不能把对手建模成惰性墓碑。轮的价值是大量任意 deadline 下更低的常数和 O(1) cancel，不是声称 heap 必然有墓碑。 |
-
-**一句话决策树**:任意时长 → `TimerWheel`(默认);海量**相同**时长 → `CommonTimeoutQueue`。多种固定时长并存 = 建多个 `CommonTimeoutQueue`,由**调用方**按时长路由(像 libevent 的 `common_timeout_queues[]`——路由是消费者的事,不在数据结构里)。
-
-`TimerWheel` 适合任意 deadline；`CommonTimeoutQueue` 只适合同一 duration 且 deadline
-非递减的 workload。实现与消费者状态见 milestones，性能数据见
+完整选择表、代码、周期 timer 策略和生命周期陷阱见 [`time.md`](./time.md)；纯 C/FFI 的
+Status/opaque handle/visitor 映射见 [`c-time.md`](./c-time.md)；性能数字只见
 [`../performance/benchmarks-time.md`](../performance/benchmarks-time.md)。
-
-`TimerEntry` 是侵入式节点，地址必须稳定；不能复制/移动，且析构前必须从 source 或
-到期输出链中移除。source 只移动到期节点，不调用回调：
-
-```cpp
-#include "hyle/time/timer_wheel.h"
-
-hyle::time::TimerWheel wheel{hyle::time::monotonic_ns()};
-hyle::time::TimerEntry timer{my_context};
-hyle::time::TimerList fired;
-
-wheel.schedule_after(&timer, 25'000'000);  // 饱和 now + 25 ms
-wheel.advance(hyle::time::monotonic_ns(), fired);
-while (auto* entry = fired.pop_front()) {
-  consume(entry->data);
-}
-```
-
-纯 C、FFI 或跨编译器消费者使用 opaque handle、visitor 和 pointer/POD 接口，见
-[`c-time.md`](./c-time.md)；不要把上述 C++ 类布局当作稳定 ABI。
 
 ### 3.7 util —— Rng / Ref / Registry / DEFER
 ```cpp

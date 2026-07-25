@@ -51,7 +51,7 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 
 支撑层（为上面服务的基质，进主图因被广泛依赖）
 ├─ platform/  OS 抽象       [T2] ← thread/virtual_memory/dynlib/env/path/fs，按 clay *_api_t 细分；mem 要 vm、sched 要 thread、compute 要 dynlib
-├─ time/      时间/定时器    [T2] ← 单调钟 + timer wheel；sched 的 deadline/超时、io 的 timeout 依赖（单列：sched 强依赖 + 有设计分量）
+├─ time/      时间/定时器    [T2] ← typed clocks + deadline + exact-ns radix timer queue；sched/io 的 timeout 依赖
 ├─ error/     错误模型       [T2] ← status + std::expected + assert，万物用
 └─ obs/       可观测        [T2/3] ← instrumentation hook（计数器/trace point）T2 第一天嵌热路径；sink/聚合 T3 缓做
 ```
@@ -70,7 +70,7 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 |---|---|---|---|
 | **0 核心** | `sched/`、completion 脊（io/gpu/fiber 完成都唤醒同一 fiber）、`mem/`、`container/`（flat hashmap + carray + 核心 hasher murmur/xxhash）、C-ABI 边界 | **HYLE 就没了** | 自己造、深拥有、测试/性能预算最高 |
 | **1 兑现承诺** | `compute/`(GPU)、`io/`(网络)、`simd/` | 还像 HYLE，但"混合/极致性能"的卖点落空 | 自造，可借起步（compute 先包 ggml、simd 可参考 xsimd）|
-| **2 必要基质** | atomics、`platform/`(thread/vm/dynlib/env/path/fs)、`time/`(单调钟+timer wheel)、`error/`(status+expected+assert)、`obs/` instrumentation hook、构建/ABI 骨架 | **照样是 HYLE**——只是没它编不过/跑不起来 | 优先用 std / 借，别在这层过度发明；但 `obs/` hook 要第一天嵌热路径 |
+| **2 必要基质** | atomics、`platform/`(thread/vm/dynlib/env/path/fs)、`time/`(clock/deadline/timer queue)、`error/`(status+expected+assert)、`obs/` instrumentation hook、构建/ABI 骨架 | **照样是 HYLE**——只是没它编不过/跑不起来 | 优先用 std / 成熟算法，别在这层过度发明；但 `obs/` hook 要第一天嵌热路径 |
 | **3 便利** | `obs/` 重机器（sink/格式化/聚合）、`serialize/`、外围 hash（md5/uuid/base64）、`plugin/registry`、`random/`、`text/`、`compress/`、`config/`、`graph/` | 在不在都是 HYLE | 能缓则缓、薄封装别自造 |
 
 **为什么 `container/` 在 Tier 0 而 `simd/` 在 Tier 1**（同是"性能焦点"，凭什么分开）：
@@ -82,11 +82,11 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 - **力气往哪使**：性能预算、设计心力、测试深度按 0→3 递减。**别在 Tier 2 的 atomics 上手搓汇编，却把 Tier 0 的 completion 脊做含糊**——那是本末倒置。
 - **scope 反向看门**：凡不强化"同一套底座"的，都是出 scope / 该上移到 L1 的候选（与下方"边界外"同一把尺子）。
 
-注意：`time/`、`os/dynlib` 看着不起眼，但 `sched/` 的超时/deadline 依赖 `time/`、`compute/` 加载 GPU 后端依赖 `os/dynlib`——它们是**为 Tier 0 服务的仆从**，所以归 Tier 2 而非可缓的 Tier 3。`graph/` 虽在原 7 模块里，本质是建在 sched 之上的便利，归 Tier 3、贴近 L1。
+注意：`time/`、`os/dynlib` 看着不起眼，但 `sched/` 的超时/deadline 依赖 `time/`、`compute/` 加载 GPU 后端依赖 `os/dynlib`——它们是**为 Tier 0 服务的仆从**，所以归 Tier 2 而非可缓的 Tier 3。`graph/` 虽是顶层支柱之一，本质是建在 sched 之上的便利，归 Tier 3、贴近 L1。
 
 ## 完整性评估
 
-**结论：scope 结构上完整——不缺顶层模块**（核心计算/并发 7 + 支撑层 4 已覆盖 计算/并发/内存/IO + 基质 全部）。曾识别**两个模块内的缺口**,补在既有模块里、不新增顶层——**两者现均已落地**:
+**结论：scope 结构上完整——不缺顶层模块**（计算/并发/内存/IO 支柱与基质层均已覆盖）。曾识别**两个模块内的缺口**,补在既有模块里、不新增顶层——**两者现均已落地**:
 
 1. ✅ **`sched/` fiber-aware 同步原语已落地（sched-05）**:CV 地基 + Mutex(futex)/WaitGroup/Latch/Channel,双模 fiber/裸线程,对标 marl 全线追平/反超。`std::mutex` 会阻塞 worker 破坏 M:N 的隐患由"短锁用 futex、长等待用 fiber-aware CV"分工解决。
 2. ✅ **`simd/` dtype/math 层已落地并完成双轨收口（simd-05/06/20/22）**：fp16/bf16 ↔ fp32 硬件路径、fp8、HYLE 自有数学核与组合核；普通 Runtime、整库 exact、用户 TU native 三种部署面已统一，产品零 Highway/xsimd。
@@ -97,17 +97,16 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 
 > **信源**：体量以 `cloc` 实测为准；能力进度以 [`../milestones/README.md`](../milestones/README.md) 为准。
 > **口径**：生产 = `src` + `include` 的 code 列（不含 tests/bench/docs、不含 third_party）。
-> **2026-07-25 锚定**：旧投影「完成时生产 ~28–40k / 中值 34k」**已作废**——当前生产已 **79.1k**，单 simd **37.5k**。当前判断见 [`../milestones/pre-release-readiness.md`](../milestones/pre-release-readiness.md)；更早数字只作历史快照。
+> **2026-07-25 锚定**：旧投影「完成时生产 ~28–40k / 中值 34k」**已作废**——当前生产已 **79.8k**，单 simd **37.5k**。当前判断见 [`../milestones/pre-release-readiness.md`](../milestones/pre-release-readiness.md)；更早数字只作历史快照。
 
 ### 当前实测（2026-07-25）
 
 | 固定统计口径 | code | 说明 |
 |---|---:|---|
-| **全库代码** | **244,635** | `cloc . --vcs=git`；含 docs 与 in-tree third_party |
-| **自实现（含测试）** | **115,546** | `include/hyle + src + tests`，排除 CMake/Text |
-| **自实现（不含测试）** | **79,506** | `include/hyle + src`；库本体硬锚 |
-| **当前审查模块 error 实现** | **984** | C/C++ 公共头 + `src/error`，不含测试 |
-| **当前审查模块 platform 实现** | **7,020** | C/C++ 公共头 + `src/platform`，不含测试 |
+| **全库代码** | **245,491** | `cloc . --vcs=git`；含 docs 与 in-tree third_party |
+| **自实现（含测试）** | **116,100** | `include/hyle + src + tests`，排除 CMake/Text |
+| **自实现（不含测试）** | **79,791** | `include/hyle + src`；库本体硬锚 |
+| **当前审查模块 time 实现** | **1,218** | `include/hyle/time + include/hyle/c/time.h + src/time`，不含测试 |
 | 再加 ggml 等大依赖足迹 | **~200–350k+** | 由 ggml 主导，不计入「自有生产」 |
 
 **生产按模块（src+include，约）：**

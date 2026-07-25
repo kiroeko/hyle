@@ -61,10 +61,10 @@
       header-inline 便利入口。allocator/OOM/alias/collision/并发均有红队。文档：
       [`c-container.md`](../guide/c-container.md)，复审：
       [`container-module-closure.md`](./container-module-closure.md)。
-- [x] **time**（2026-07-19 收口）：`include/hyle/c/time.h` + `c_time.cc` + 纯 C
+- [x] **time**（2026-07-25 重新收口）：`include/hyle/c/time.h` + `c_time.cc` + 纯 C
       `hyle_time_c_test`。覆盖高精度/opt-in fast 时钟、饱和 deadline、sleep、opaque
-      `TimerEntry`、8×64 `TimerWheel`、`CommonTimeoutQueue`、visitor 批量到期回调和
-      recoverable last-error；34 个动态符号 + 4 个 header-inline 便利入口，不冻结
+      opaque timer、exact-ns radix general queue、`CommonTimeoutQueue`、visitor 批量交付和
+      owning `hyle_status`；37 个动态符号 + 4 个 header-inline 便利入口，不冻结
       C++ 类布局，不导出 STL/模板。文档：
       [`c-time.md`](../guide/c-time.md)。
 - [x] **obs**（2026-07-19 收口）：`include/hyle/c/obs.h` + `c_obs.cc` + 纯 C

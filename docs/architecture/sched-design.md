@@ -77,10 +77,10 @@
 sched 的 deadline/超时只需要三样，先钉这个最小面，full timer 留后：
 
 - **单调钟** `mono_now() -> u64`（纳秒，`CLOCK_MONOTONIC`/`QueryPerformanceCounter`，不受墙钟跳变影响——deadline 绝不能用墙钟）。**已落地**=`time::monotonic_ns()`（time-01）。
-- **timer wheel**：分层时间轮（hierarchical timing wheel），`add(deadline, fiber)` O(1) 摊还、`tick()` 批量到期。比 `priority_queue`（clay thread_pool 用的，O(log n)）更适合海量短超时（io timeout/fiber sleep）。**已落地**=`time::TimerWheel`（time-02，tokio 6×64 位图层级扩为 8×64，覆盖完整 `uint64_t` ns deadline；对 indexed eager-erase heap 的三类负载双平台均赢）。
-- **到期动作**：超时不直接执行回调，而是**把对应 fiber 标记就绪、塞回 run-queue**——与 completion 脊同一条唤醒路径（见 ③）。**已落地**=sched-04b：每 worker 持一个 `TimerWheel`，`sched::sleep_for_ns` arm 到本 worker 轮 + suspend；worker 循环顶 `fire_due_timers`（`wheel.empty()` 门=无 timer 零税）+ 用 `next_deadline_ns` 喂 `Parker::park_timeout` 不空转；到期经 sched-04a Waker rendezvous `reinject`——与 io 完成同一 `wake_rendezvous`。thread-mode `wait_for`/`wait_until` 已落地=sched-04c；fiber-mode(需跨 worker cancel)=sched-04d。
+- **timer queue**：65 桶 exact-ns radix queue，`schedule/cancel` O(1)，排序工作延迟到 expiry；相对 heap 消除 keyed cancel 的 O(log n)，相对固定 wheel 无 tick 量化。**已落地**=`time::TimerQueue`（time-02 复审；同 Seastar `timer_set` 的 SOTA 算法形状）。
+- **到期动作**：超时不直接执行回调，而是**把对应 fiber 标记就绪、塞回 run-queue**——与 completion 脊同一条唤醒路径（见 ③）。**已落地**=sched-04b：每 worker 持一个 `TimerQueue`，`sched::sleep_for_ns` arm 到本 worker queue + suspend；worker 循环顶 `fire_due_timers`（`timers.empty()` 门=无 timer 零税）+ 用 `next_deadline_ns` 喂 `Parker::park_timeout` 不空转；到期经 sched-04a Waker rendezvous `reinject`。thread-mode `wait_for`/`wait_until` 已落地=sched-04c；fiber timed wait=sched-04d。
 
-> 为什么单列 time/ 而非塞进 sched：timer wheel 有独立设计分量，且 io/ 的 timeout 也直接用它。但它是 sched 的仆从（T2），不反向依赖 sched。
+> 为什么单列 time/ 而非塞进 sched：clock/deadline/timer queue 有独立用户与设计分量，且 io timeout 也复用它。time 不反向依赖 sched。
 
 ### 2.2 run-queue 结构（调度单元 = fiber handle）
 
@@ -307,7 +307,7 @@ worker 调度循环（2.2）的第 0 步插入"收割 completion"：
  ┌──────────────────────────── worker i ────────────────────────────────┐
  │ pinned overflow -> pinned bounded queue                              │
  │ periodic global -> LIFO fast slot -> local WsFifoQueue -> steal      │
- │ timer wheel / io poll -> Waker rendezvous -> ready enqueue           │
+ │ timer queue / io poll -> Waker rendezvous -> ready enqueue           │
  │ <=8 by-value InlineJobs, then stackful Fiber/timer/io fairness poll   │
  └──────────────────────┬────────────────────────────────────────────────┘
                         │ queue saturation (cold path, no allocation)
@@ -343,7 +343,7 @@ worker 调度循环（2.2）的第 0 步插入"收割 completion"：
 
 ### 完成脊和下游
 
-`Waker` 的 wake-before-suspend rendezvous 是唯一恢复脊。time 的 TimerWheel、
+`Waker` 的 wake-before-suspend rendezvous 是唯一恢复脊。time 的 TimerQueue、
 io 的 IOCP/io_uring/epoll completion、compute 的 GPU poller、graph 的
 parallel evaluation 和 compute/io 的 BlockingPool 都已直接消费 sched；不是孤立
 模块。取消状态随 Fiber 迁移，不使用 thread-local scope。

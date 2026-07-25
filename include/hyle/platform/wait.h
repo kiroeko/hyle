@@ -32,9 +32,9 @@ HYLE_PLATFORM_API void wait_on_address(const std::atomic<std::uint32_t>* addr,
 // Timed variant: block until woken or `timeout_ns` elapses. Returns false iff it
 // returned because the timeout expired (best-effort: the OS may wake slightly
 // late, and a spurious wake still returns true -- callers loop and re-check).
-// timeout_ns == 0 is a non-blocking poll. Backs the timer wheel's park deadline:
-// the wheel computes the next-expiry ns, this hands it to futex/WaitOnAddress so
-// exactly one worker sleeps to that instant (no busy tick).
+// timeout_ns == 0 is a non-blocking poll. Backs an event loop's timer-queue
+// deadline: the owner computes the next-expiry duration and hands it to
+// futex/WaitOnAddress so the worker sleeps without periodic polling.
 HYLE_PLATFORM_API bool wait_on_address_for(
     const std::atomic<std::uint32_t>* addr, std::uint32_t expected,
     std::uint64_t timeout_ns) noexcept;
@@ -67,7 +67,7 @@ class Parker {
   // spurious wake -- it may return false early, and the caller is expected to
   // re-check its own condition and re-park with a fresh deadline (mirrors Rust
   // std's park_timeout). timeout_ns == 0 is a non-blocking check. This is the
-  // worker's "sleep until next timer" call: the timer wheel supplies the
+  // worker's "sleep until next timer" call: its timer queue supplies the
   // deadline, and the worker's loop re-checks + recomputes the bound each pass.
   HYLE_PLATFORM_API bool park_timeout(std::uint64_t timeout_ns) noexcept;
 

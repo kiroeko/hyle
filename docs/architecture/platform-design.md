@@ -216,7 +216,7 @@ platform 的 SOTA 标准不是“比系统调用快”，而是同合同下不�
 | 能力 | 归属 | 理由 |
 |---|---|---|
 | allocator/arena/pool/fiber stack owner | `mem` | 分配策略和对象生命周期，不是 OS syscall |
-| timer wheel/deadline policy | `time` / `sched` | platform 只提供 timed wait 机制 |
+| timer queue/deadline policy | `time` / `sched` | platform 只提供 timed wait 机制 |
 | thread pool/task/fiber/coroutine | `sched` | placement、取消、stealing 与结构化生命周期是调度策略 |
 | async file/network、watcher、shared-memory channel | `io` | completion、backpressure 与跨进程同步 |
 | VRAM/pinned/staging/coherence | `compute` | device/backend/event 生命周期 |

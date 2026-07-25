@@ -1,6 +1,6 @@
 /* SPDX: same as HYLE.
  *
- * Pure C ABI for HYLE clocks and timer sources (close-01).
+ * Pure C ABI for HYLE clocks and timer queues (close-01).
  * C++ layouts and intrusive hooks never cross this edge.
  * Docs (1:1 with this header): docs/guide/c-time.md
  */

@@ -16,12 +16,12 @@
 //     suspend()/Waker::wake() ping-pong (the identical shape from
 //     scheduler_bench). Isolates what the coroutine frame adds over the bare
 //     fiber spine -- "our sugar vs our own raw primitive", no external rival.
-//  4. FIBER SLEEP (sched-04b): the timing-wheel sleep spine. A single sleeper vs
+//  4. FIBER SLEEP (sched-04b): the timer-queue sleep spine. A single sleeper vs
 //     N sleepers concurrent on ONE worker -- if fiber sleep does NOT burn its
 //     worker, N concurrent sleeps of duration D finish in ~D, not N*D. This is
 //     the property that distinguishes fiber sleep from std::this_thread::sleep_for
-//     (which blocks a whole OS thread). Dominated by the OS timer floor (1ms
-//     wheel tick, ~15ms on Windows), so the number is wall-clock, not pure
+//     (which blocks a whole OS thread). Dominated by the OS wakeup floor
+//     (~15ms on Windows), so the number is wall-clock, not pure
 //     scheduler cost -- the CONTRAST between the two rows is the result.
 //
 // Env: Win MSVC Release + Linux GCC14 Release (native ext4), nanobench. Sub-us
@@ -293,19 +293,19 @@ int main() {
   }
 
   // ---- 4. fiber sleep: 1 sleeper vs N concurrent sleepers on ONE worker ------
-  // The sched-04b timing-wheel spine. Both rows run on a SINGLE worker and sleep
+  // The sched-04b timer-queue spine. Both rows run on a SINGLE worker and sleep
   // the SAME duration D; if fiber sleep does not burn the worker, N concurrent
-  // sleepers wake in ~D (one wheel tick fires them all), NOT N*D. So the two rows
+  // sleepers wake in ~D (one due batch fires them all), NOT N*D. So the two rows
   // being ~equal IS the result: proof that one worker carries many concurrent
   // sleepers without serializing them (the property std::this_thread::sleep_for
   // -- which blocks a whole OS thread -- cannot give). batch(1) = whole batch is
   // one op (the wall-clock to spawn the sleepers + wait for all to wake).
-  // Dominated by the OS timer floor (1ms wheel tick; ~15ms timer granularity on
-  // Windows), so these are wall-clock ms, not scheduler ns -- the CONTRAST (1 vs
+  // Dominated by the OS wakeup floor (~15ms timer granularity on Windows), so
+  // these are wall-clock ms, not scheduler ns -- the CONTRAST (1 vs
   // N ~equal) is what matters, not the absolute value. minEpochIterations(1) +
   // few epochs since each epoch is a real sleep.
   {
-    constexpr std::uint64_t kSleepNs = 2'000'000;  // 2ms (> 1ms wheel tick)
+    constexpr std::uint64_t kSleepNs = 2'000'000;  // 2 ms requested duration
     constexpr int kN = 64;
     ankerl::nanobench::Bench b;
     b.title("fiber sleep: 1 vs 64 concurrent sleepers (1 worker)")

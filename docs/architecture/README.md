@@ -12,10 +12,10 @@
 
 **差异点是"同一套底座"**：GPU 算完、网卡收包、fiber 让出，都回到同一个调度器、唤醒同一个 fiber，而非四个子系统各开线程池、各跑事件循环互相打架。HYLE 不是"又一个 hashmap/日志库"，而是让计算/并发/内存/IO 无阻抗拼在一起的那层地基。
 
-- **地基（继承 clay，约占 1/3）**：内存分配器 + 容器（flat hashmap/carray/cstring）+ 跨平台原子（catomics）+ 并行编排骨架（taskgraph）。
-- **支柱（自造，约占 2/3）**：统一调度（线程/进程/纤程/协程）、fiber、网络 IO、SIMD、异构计算。
-- **范围与体量口径**：见 [`hyle-scope.md`](./hyle-scope.md)；当前实测 LOC 和施工状态只在
-  milestone 任务记录中维护，架构入口不复制每日快照。
+- **地基（继承 clay 并重新收口）**：内存分配器 + 容器（flat hashmap/carray/cstring）+ 跨平台原子（catomics）+ 并行编排骨架（taskgraph）。
+- **支柱（自造）**：统一调度（线程/进程/纤程/协程）、fiber、网络 IO、SIMD、异构计算。二者是设计来源分类，不是 LOC 比例预算。
+- **范围与体量口径**：见 [`hyle-scope.md`](./hyle-scope.md)；当前任务状态只在
+  milestone 记录中维护，架构入口不复制施工流水。
 
 ## 模块划分
 
@@ -25,7 +25,7 @@ HYLE infra（通用、不特化、贴硬件）
 │  ├─ core/      宏、基础类型和零依赖 intrusive/atomic 原语
 │  ├─ error/     统一失败值与跨 ABI 诊断
 │  ├─ platform/  CPU/thread/wait/VM/fs/dynlib 跨 OS 机制
-│  ├─ time/      单调时间、deadline 与 timer source
+│  ├─ time/      typed clocks、deadline、thread sleep 与 timer queues
 │  ├─ util/      无更合适 owner 的窄通用工具
 │  └─ obs/       日志、trace 与 instrumentation hook
 ├─ mem/          极致 host 内存管理：allocator/region/pool/NUMA/大页/fiber stack
@@ -58,7 +58,7 @@ HYLE infra（通用、不特化、贴硬件）
 | [`c-abi-authoring-guide.md`](./c-abi-authoring-guide.md) | **给 HYLE 开发者的 C ABI 施工参考（how）**：导出面归类判据、文件与接线、opaque control、零 reinterpret、FFI 数据校验、时序误用 fail-fast、纯 C smoke 与跨平台验证；mem 是已审查样板 |
 | [`util-design.md`](./util-design.md) | **util 架构与维护边界**：七个能力族、原生 C++/类型擦除 C ABI 双面、依赖/性能边界和机械维护闸门。 |
 | [`clay-asset-liability.md`](./clay-asset-liability.md) | clay 资产负债表：六子系统逐个盘点（内存/DataModel/SIMD/容器/并发/taskgraph），含 5 个 bug、空位 grep 证据、继承/重写判断 |
-| [`hyle-scope.md`](./hyle-scope.md) | scope 定义：定位、两条主轴、7 模块划分、规模（生产已 ~53k / 终态纪律 ~65–80k / 足迹含 ggml ~200–350k+）、边界外明确不做的东西 |
+| [`hyle-scope.md`](./hyle-scope.md) | scope 定义：定位、模块分层、四项 `cloc` 口径、第三方边界、规模纪律与明确不做的东西 |
 | [`io-design.md`](./io-design.md) | 网络库选型：proactor 模型 + io_uring/IOCP/kqueue/epoll 四后端 + 只借 syscall 封装、调度绑 fiber |
 | [`sched-design.md`](./sched-design.md) | 统一调度器（4 节完整）：fcontext 上下文切换 + per-core 无锁 run-queue/work-stealing + Waker completion 脊 + 协程/fiber 统一 |
 | [`lifecycle-design.md`](./lifecycle-design.md) | **失败边界**：fail-fast 绝不 try-catch + 四类失败分类 + 取消(结构化并发/await点) + 背压 + 优雅关闭 + 故障隔离=进程边界 + 跨 C-ABI 错误约定 |
@@ -68,7 +68,7 @@ HYLE infra（通用、不特化、贴硬件）
 | [`borrowing-ggml-memory-model.md`](./borrowing-ggml-memory-model.md) | **借 ggml 的显存归属边界**：host 归 HYLE（mem 喂入/取出）、device 归 ggml（gallocr 自管），就像 llama.cpp——CUDA 结构性否决外部显存注入（gdb 坐实），HYLE 显存自管是 compute-04/06 自造 kernel 的领域 |
 | [`simd-design.md`](./simd-design.md) | SIMD 总设计：D-tag/七后端、自有 math/dtype/算法核、Runtime/native/exact 双轨及历史决策 |
 | [`simd-dispatch-guide.md`](./simd-dispatch-guide.md) | SIMD 当前部署与维护规范：ASCII 架构图、未知 CPU Runtime、整库 exact、用户 TU native、自定义 fat-kernel 与 C ABI 边界 |
-| [`time-design.md`](./time-design.md) | time 依赖位置、时钟分层、双 timer source、所有权数据流、C++/C ABI 双面与维护硬门 |
+| [`time-design.md`](./time-design.md) | time 依赖位置、时钟/算术/sleep 分层、radix/common queues、所有权数据流、C++/C ABI 双面与维护硬门 |
 | [`obs-design.md`](./obs-design.md) | obs 双通路：同步结构化日志的 quiescent sink 生命周期、C ABI trampoline，以及默认零成本/开启时单 Tracy client 的 trace 架构 |
 | [`simd-vendor-surface.md`](./simd-vendor-surface.md) | 产品零 Highway/xsimd 的边界、外部 benchmark 对照和可选 simdutf 薄借 |
 | [`mem-design.md`](./mem-design.md) | mem 当前整体设计：host-RAM 边界、模块化 allocator/region/pool/stack/diagnostics、C++/C 能力映射、所有权与失败合同 |

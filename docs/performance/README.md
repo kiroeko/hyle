@@ -11,7 +11,7 @@
 | 本页（对标总账） | 全模块 win/loss ledger 一览 + 总账小结（最常看的一张表） |
 | [error 实测](./benchmarks-error.md) | **error 2026-07-25 当前接口三平台 n=15 冻结证书**（核心与正常路径分离，errno 成熟库对照已补，当前同形项无 LOSE） |
 | [platform 实测](./benchmarks-platform.md) | **platform 2026-07-25 当前证书**（既有性能表不变；MappedFile advice/residency 按 OS-call complexity 守门） |
-| [time 实测](./benchmarks-time.md) | **time 2026-07-19 三平台证书**（clock / TimerWheel / CommonTimeoutQueue） |
+| [time 实测](./benchmarks-time.md) | **time 2026-07-25 当前三平台证书**（clock / exact-ns radix TimerQueue / CommonTimeoutQueue；含 Seastar faithful baseline、order-swap 与 M4 QoS） |
 | [mem 实测](./benchmarks-mem.md) | **mem 2026-07-25 当前证书**：`6213115` 关闭 Region 长寿命遍历复杂度并以 31-process×10,001-epoch scaling、正常 request p50/p95/p99 重签；`20f3676` 的 O(1) FixedPool、`1de939d` 的 SharedPool/cache 与 `2cbc307` 的其余证书继续有效 |
 | [container 实测](./benchmarks-container.md) | **container 导航证书**：新鲜度、非 SOTA、选型；详表 → [benchmarks-mem-container.md](./benchmarks-mem-container.md) |
 | [container 详表](./benchmarks-mem-container.md) | hash/SwissTable/vec/list/str/path/fuzzy 长表 + 史；**入口见上** |
@@ -65,13 +65,11 @@
 | **platform** FileHandle vs raw open/read/close | 34.41k/7.64k/11.90k | raw OS | 35.01k/7.49k/11.62k | **1.006/0.976/0.978x** | raw 地板 | 同左 | ≤2.4% | ➖Win TIE；POSIX 安全便利路径付 2.2–2.4%，`get()` 保留 hard escape |
 | **platform** persistent MappedFile 随机页访问 | 2.309/2.532/0.647 | ifstream seek/read | 2585.7/420.5/1527.9 | **1125/168/2355x** | page-cache random access | 同左 | 同左 | ✅真实 mapping 甜点三平台大赢 |
 | **platform** Parker token / `park_timeout(0)` | 9.215·1.690 / 9.818·0.564 / 1.850·1.346 ns | (无公平对手) | n/a | n/a | atomic floor 非对等 | n/a | n/a | ✅zero-timeout 纯 load；旧 µs 级路径作废 |
-| **time** realtime_ns | 14.68 | std::chrono::system_clock | 14.76 | 1.0x | std::chrono(即标尺,同 OS 原语) | 14.76 | 1.0x | ➖平 |
-| **time** monotonic_ns | 13.22/13.07/12.93(Win/Lin/M4) | std::chrono::steady_clock | 13.30/13.07/12.88 | 全部统计平 | std::chrono(即标尺,同 OS 原语) | 同左 | 1.0x | ➖header-inline 后三平台与 std 同档 |
-| **time** fast_monotonic_ns(opt-in rdtsc) | 7.37/7.13/12.93 | HYLE monotonic_ns | 13.22/13.07/12.93 | 1.79x/1.84x/1.0x | (std 无 opt-in TSC 钟) | n/a | n/a | ✅x86 快约1.8x；M4 透明回退(非默认,可能跳变) |
-| **time** fast_realtime_ns(opt-in coarse) | 3.20/3.90/13.64 | HYLE realtime_ns | 15.77/13.09/13.70 | 4.94x/3.36x/1.0x | (std 无 opt-in coarse 钟) | n/a | n/a | ✅Win/Linux 真赢；macOS 无 coarse 原语而回退 |
-| **time** timer wheel churn(arm+70%cancel+expire) | 12.87/13.63/7.62 | (std 无定时器结构) | n/a | n/a | indexed eager-erase heap(libevent/libuv 核心形状) | 20.85/16.01/11.03 | 1.62x/1.17x/1.45x | ✅**三平台赢**；对手按真实 keyed erase 建模、无墓碑 |
-| **time** timer wheel arm+cancel / arm+expire | 6.86·21.34/5.95·22.05/4.91·11.83 | (std 无) | n/a | n/a | indexed eager-erase heap | 10.42·49.80/6.73·40.64/8.36·23.74 | 1.52·2.33x/1.13·1.84x/1.70·2.01x | ✅三种工作量三平台同向；8×64 覆盖完整 uint64 ns 域 |
-| **time** CommonTimeoutQueue(固定时长)arm+expire/cancel | 3.28·2.70/3.14·1.99/3.52·3.06 | (std 无定时器结构) | n/a | n/a | 裸 TAILQ / checked TAILQ | 4.22·3.13/3.95·2.59/2.73·3.06；checked expire 3.61/3.21/4.21 | 裸 1.29·1.14x/1.29·1.30x/**0.77·平**；checked expire 1.10x/平/**1.16x** | ✅同语义三平台不输；⚠️ M4 对无检查裸下界仍输 |
+| **time** realtime/monotonic | 三平台约12–15 | `std::chrono` 对应钟 | 同档 | ~1.0x | std 本身即同 OS primitive | 同左 | ~1.0x | ➖ header-inline 默认钟无抽象退化 |
+| **time** fast monotonic/realtime | x86 约1.8x / 3.3–5.2x throughput | HYLE 默认钟 | 见详表 | 见左 | (无同合同 std fast clock) | n/a | n/a | ✅ Win/Linux opt-in 真收益；M4 availability=false 正常回退 |
+| **time** TimerQueue arm/cancel/expire | 见模块证书 | (std 无) | n/a | n/a | faithful Seastar radix | 同算法同档 | Win/M4 多数 1.05–1.43x；WSL churn 顺序敏感 | ⚠️ SOTA radix；WSL reverse churn 约慢7%，禁止写全胜 |
+| **time** TimerQueue vs indexed eager heap | 见模块证书 | (std 无) | n/a | n/a | libevent/libuv shape heap | 见详表 | 约2.25–9.83x | ✅ 三平台三负载胜，cancel 复杂度 O(1) vs O(log n) |
+| **time** CommonTimeoutQueue | 见模块证书 | (std 无) | n/a | n/a | checked / naked TAILQ | 见详表 | 同合同不输；M4 naked expire 约0.78x | ⚠️ 同合同 SOTA，公开安全税 |
 | **util** Rng next_u64(xoshiro256++) | 1.59/1.38/2.26 (Win/Lin/M4) | std::mt19937_64 | 2.32/1.44/3.47* | 1.46x/平/1.53x | std 即算法类标尺 | 同左 | 同左 | ✅ Win/M4 赢；GCC 标准库很强而平（M4 std 行方差高） |
 | **util** Rng varying range_u64 | 2.09/1.47/2.17 | std::uniform_int_distribution | 2.86/2.08/7.68 | 1.37/1.41/3.54x | Lemire 同法实现 | 同档 | — | ✅ 三平台赢；运行时 bound 避开常量除数折叠伪影 |
 | **util** Rng shuffle 1000 | 2.05/1.21/0.81 | std::shuffle | 6.71/1.19/7.35 | 3.28x/平/9.07x | std 即组合标尺 | 同左 | 同左 | ✅ Win/M4 赢、GCC 平；平台实现差异显著 |
@@ -158,7 +156,7 @@
 | **sched** RunQueue fifo/lifo push+next | 8.3/2.6 | (内部结构) | n/a | n/a | (无外部对手) | n/a | n/a | ➖HYLE 自有(完成唤醒热路径) |
 | **sched** remove_sleeper(park 退出) | O(1) | (内部结构) | n/a | n/a | tokio idle.rs(容忍 O(n)扫描) | O(n) | 复杂度赢 | ➖复杂度机会②:per-worker position 索引 swap-remove 消 O(worker数)扫描,缩短 idle_mu 临界区(HYLE 每次 park 退出都调,故值得;tokio 只罕见路径扫故容忍) |
 | **sched** global-queue 反饥饿 | 修 bug | (正确性) | n/a | n/a | tokio global_queue_interval=61 | 同款 | 修真 bug | ➖复杂度机会③:探针实证本地 firehose 饿死全局注入真实存在(yield-hog 1700万次而 victim 从不运行),每 61 tick 先查 global 修复(回归测试双向验证 pre-fail/post-49ms) |
-| **sched** fiber sleep(sched-04b) | — | (std 无 M:N fiber sleep) | n/a | n/a | tokio time driver(概念对照) | n/a | n/a | ➖SOTA 成本模型:无 sleeper 时 wheel.empty() 单比较=零税;arm O(1) 无分配;park_timeout 不空转(非逐 ms tick) |
+| **sched** fiber sleep(sched-04b) | — | (std 无 M:N fiber sleep) | n/a | n/a | Seastar/Tokio time driver（概念对照） | n/a | n/a | ➖SOTA 成本模型：无 sleeper 时 queue.empty() 单比较；arm O(1) 无分配；park 到 exact next deadline |
 | **sched** CV wait_for notify-before-deadline round-trip | 580(Win)/~(Lin) | std::condition_variable::wait_for | 1165(Win) | 2.0x | (std 是直接 SOTA) | n/a | n/a | ✅**Win 赢 2.0x**(gap99.8%»spread47%,15遍)/ **Lin 平**(glibc cv 已薄 futex 封装,gap3.4%«spread21%)——又一单平台数陷阱,同 sched-05 Parker |
 | **sched** CV wait_for 纯超时(1ms) | 15.58ms | std::condition_variable::wait_for | 15.58ms | ~1.0x | (OS 定时器地板) | n/a | n/a | ➖双平台平(gap0.1%«spread):HYLE 超时路径零额外开销,两者同被 OS ~15ms 定时器粒度地板 |
 | **sched** spawn_task+join 每任务(sched-10,批量摊销) | 390(Win)/423(Lin) | 裸 Fiber+WaitGroup(1)+slot | 338/415 | 0.87x/1.02x | (糖 vs 自有裸机制) | n/a | n/a | ➖**层开销 Win ~52ns/Lin 平局**:糖多 2 次堆分配换调用方零生命周期管理;初测单任务 ~1.3x/~2x 是 OS 唤醒抖动非层开销,批量摊销后现原形 |

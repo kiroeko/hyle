@@ -15,11 +15,11 @@ error/  ────────────────────────
   ▼                                          │  (最小埋点 API，P0 先定、
 platform/ (thread/vm/dynlib/path/fs/park)    │   空实现，各模块热路径嵌；
   │                                          │   零 HYLE 依赖根)
-  ├──────────────┬───────────────┐           │
-  ▼              ▼               ▼           │
-mem/          time/           simd/          │
-mimalloc      单调钟加         (可移植         │
- backing,       时间轮         vector+        │
+  ├───────────────────────────────┐           │
+  ▼                              ▼           │
+mem/          time/*          simd/          │
+mimalloc      clock +         (可移植         │
+ backing,       radix queue     vector+        │
  修 alignment）  │             dispatch)      │
   │              │               │           │  simd 依赖 platform(借 CPUID
   ▼              │               │ 喂         │  探测,2026-07 下沉);不 include mem;
@@ -49,7 +49,16 @@ container/       │               │ compute   │  container 自带内联 SSE
    C-ABI shim（各模块稳定后逐个封）+ ffi 绑定（build-time） ◀ obs/ 埋点贯穿
 ```
 
-**无环校验**：core/error → platform → {mem, simd}；mem → container；time 是独立零 HYLE 上游；{container, time} → sched → {io, compute}；simd → compute；compute/io → graph。单向，无回边。**error 是 P0、零 HYLE 上游的公共失败值根；所有需要可恢复失败值的后续层都可直接依赖 error**，图中省略这些跨层直边只是为了可读性。因此 `mem → error` 合法且已显式声明，不会形成环；分配热路选择 `nullptr` 还是 `Status` 是接口/成本问题，不是依赖方向问题。`time/` 自己拥有 clock/sleep 产品语义，timer intrusive primitive 已下沉 `core/intrusive_list.h`，因此 **time 不依赖 platform 或 container**；platform 的 timed wait 只是 sched 可组合的阻塞机制，不是时钟所有权。旧版文档曾把 `container` 写成 time-02 前置、又把 time 画成 platform 下游，均与实际构建依赖冲突，现已纠正。`simd/` **依赖 platform**（2026-07：CPUID 探测 `CpuFeatures`/`best_isa` 下沉 platform，simd 借它做运行期 ISA dispatch；此前 simd 是"零 HYLE 依赖根"、只用 `platform.h` 宏伞，下沉后升级为依赖 platform 模块本身）——simd 从 platform 分叉后**单边只喂 compute 的 kernel**，**不进 container、不进 sched 的关键路径**，故可与 mem/container/sched 链**大体并行**、晚点交付。CPUID 下沉 platform 让 container 也能查同一探测、安全上 AVX2 变体（如 container·str 的 count/rfind），不必依赖 simd。（曾计划 simd 依赖 mem 的对齐契约，但 kernel 走 LoadU/StoreU 非对齐 load，该边未落地。）
+`*` 图中 time 与 platform 并排只为对齐 sched 的多个前置，不表示 `platform → time`。
+
+**无环校验**：`core/intrusive → time-native`；`error → {platform, time-C-ABI}`；
+`platform → {mem, simd}`；`mem → container`；`{platform, mem, container, time} → sched`；
+`sched → {io, compute, graph}`；`simd → compute`；`{compute, io} → graph`。单向，无回边。
+**error 是 P0、零 HYLE 上游的公共失败值根**；需要可恢复失败的 C adapter 可直接依赖它。
+`time` 原生 clock/timer 核心零 HYLE 二进制模块依赖，发布的 `hyle_time` 因 C ABI Status 显式链接
+`hyle_error`；它不依赖 `platform` 或 `container`。platform timed wait 只是 sched 组合的阻塞机制，
+不拥有时钟语义。`simd` 依赖 platform 的 `CpuFeatures`/`best_isa` 做运行期 ISA dispatch，
+单边喂 compute kernel，不进 container/sched 关键路径。
 
 ## 二、施工计划：两个轴别混
 
@@ -101,7 +110,7 @@ container/       │               │ compute   │  container 自带内联 SSE
 | **P0** | error / obs-hook | Status+expected+context+ASSIGN_OR_RETURN / obs 埋点 | 3-5k | error 自身已在 Win/GCC14/M4 正确性与两类性能证书后冻结；全库 adoption audit 进行中，mem 消费者切片已统一共享 Status；obs 已收口 |
 | **P1** | platform | thread+park / vm+dynlib / path+fs+env / CPU | 5-8k | **~6.7k**（含 C surface），✅ 预发布冻结；系统/进程 CPU 已拆分，Thread 支持 required 与单核/集合 affinity；逐 CPU 能力与显式强/弱核优先已由 sched 消费；MappedFile advice/residency 已补齐，118 项 C surface 与 10 个独立头三平台机械验收 |
 | **P2** | mem | Allocator+alignment / mimalloc / region / pool+stack / NUMA | 6-10k | 稳定设计见 [`mem-design.md`](./mem-design.md)；冻结任务/当前认证只见 [`../milestones/mem-close-plan.md`](../milestones/mem-close-plan.md) |
-| **P2** | time | 单调钟 / 分层时间轮 | 1.5-2.5k | **~0.9k**，✅ 预发布冻结 |
+| **P2** | time | typed clocks / deadline / radix timer queue / common timeout | 1.5-2.5k | **1,218 实现 LOC**，✅ 2026-07-25 预发布收口 |
 | **P3** | container | ring/MPMC / XXH3 / carray / SwissTable / SmallVector / string | 7-11k | **~4.9k**，✅ StringBuf 复杂度/三平台强 peer 收口后预发布冻结 |
 | **P3** | simd | 七后端 + 双轨 + dtype/math/sort/bitpack/search… | 10-16k | **已 ~34k 生产**（远超「~5–8k」旧投影）；补缺见 simd-capability-fill-list / simd-25，冻结无谓扩名 |
 | **P4** | sched | fcontext+栈池 / run-queue / work-stealing / Waker / CV+同步 / 协程胶水 | 10-15k | **已 ~3.1k** 主干收口；残余栈 guard 等边角 |

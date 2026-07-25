@@ -15,7 +15,7 @@
 
 ## 核心决策与两个硬点
 ### ① 仲裁免原子，但必须对称
-连接 fiber 钉 owner worker（shard-per-core）：io ring、timer wheel、resume 全在**同一 worker 线程串行**（io completion 在 `io_context::poll` reap、timer 在 `fire_due_timers` fire）。故 `io_done`/`timer_fired` 用**普通标志**（seastar 式免原子；folly 的原子 CAS 只为跨线程 post，不适用）。
+连接 fiber 钉 owner worker（shard-per-core）：io ring、timer queue、resume 全在**同一 worker 线程串行**（io completion 在 `io_context::poll` reap、timer 在 `fire_due_timers` fire）。故 `io_done`/`timer_fired` 用**普通标志**（seastar 式免原子；folly 的原子 CAS 只为跨线程 post，不适用）。
 
 **但** `Fiber::wake_rendezvous()` 是 2 方握手（worker-dispatch + 一个 waker）。timed op 有**两个** waker（io + timer）。若两条路径都 wake，第二个会把 `wake_state_` 翻回去并**泄漏到 fiber 下次 suspend** → 丢/伪唤醒。所以**每一侧只在自己赢时 wake**：io 侧 `!timer_fired` 才 wake，timer 侧 `!io_done` 才 wake——保证每 episode **恰一次 wake_rendezvous**。timer 侧作 `TimerEntry::on_fire` 回调（`fire_due_timers` 走它而非盲目 sleep wake），能先查 io_done。
 
@@ -31,13 +31,13 @@ timer 赢 → 提交 proactor cancel，但那是**异步**的：被取消的内�
 io_uring `IORING_OP_ASYNC_CANCEL`（addr=user_data）/ IOCP `CancelIoEx`（扫 inflight 按 tagged token 匹配）/ epoll `EPOLL_CTL_DEL` + **合成 -ECANCELED**（epoll 无迟到 CQE，合成之以对称放 kernel-ref）。
 
 ## sched-04d 顺带落地（C2 反向拉动）
-`sched::arm_timeout`/`cancel_timeout`（复用 per-worker wheel，不 suspend）+ `TimerEntry::on_fire`。当初登记时最硬的「per-worker 跨核 cancel 命令队列」**被 shard-per-core 消掉了**——连接 fiber 钉核，timer arm/fire/cancel + io submit/reap 全在 owner worker 单线程串行，无跨线程，故非原子仲裁 + 无需 MPSC cancel 队列。当初推迟是对的（等 C2 定形接口）。
+`sched::arm_timeout`/`cancel_timeout`（复用 per-worker queue，不 suspend）+ `TimerEntry` callback。当初登记时最硬的「per-worker 跨核 cancel 命令队列」**被 shard-per-core 消掉了**——连接 fiber 钉核，timer arm/fire/cancel + io submit/reap 全在 owner worker 单线程串行，无跨线程，故非原子仲裁 + 无需 MPSC cancel 队列。当初推迟是对的（等 C2 定形接口）。
 
 ## 对抗式自审（正确性 / 生命周期 / TSan / 残留）
 - **红队审**：核心仲裁 / refcount / 迟到 CQE 时序均正确无 double-free，揪出 2 个泄漏（epoll 超时路径 + shutdown 不 drain，均已修）。
 - **计数分配器泄漏检测**（功能断言 + TSan 都抓不到泄漏，专门加）。
 - 三后端 × recv/accept 超时 × 泄漏检测 4/4 双平台 + WSL TSan 零 race。
-- **⑤ 残留**：`LINK_TIMEOUT` 作 io_uring 专属快路径优化留 backlog（不可移植；主线走应用层 wheel+cancel 三后端对称）。
+- **⑤ 残留**：`LINK_TIMEOUT` 作 io_uring 专属快路径优化留 backlog（不可移植；主线走应用层 queue+cancel 三后端对称）。
 
 ## 交付物
 - `include/hyle/io/net_timeout.h`（TimedSlot + complete_timed/timed_on_fire + make_timed_slot/resume_timed/on_submit_failed + Timed{Recv,Accept,Connect}Op）

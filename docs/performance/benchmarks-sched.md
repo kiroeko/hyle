@@ -242,62 +242,14 @@ CancelToken 树是 shard-local、(几乎)无锁结构——唯一原子是 per-n
 
 > **诚实边界**:① ShardedQueue 赢幅(Win 1.93-3.27x/Lin 5.3x)远超误差带(gap»spread,双平台 15 遍)。② 跨语言(crossbeam Rust)只下"同量级/有竞争力"。③ **单环 MPMC 2P/4P 是高方差微基准(spread 23-40%),双平台各 15 遍 `bench-stat.py` 统计**:单线程铁赢 rigtorp、2P/4P 平 rigtorp+moody(中位数偏赢但 gap«spread,不判"赢")。旧账"3 遍手动均值 4P 反超 1.08x"已被 15 遍统计法修正为平局——"反超"是噪声带内的乐观读数。cache-line pad + 去 backoff 确实消除了原来的 1.33x 落后(那是真结构缺陷),但没到"反超",到"平"。**ShardedQueue 本身 spread 偏大(Win 21%/Lin 43%):`bench_mpmc` 的 `minEpochIterations(50)` 对快 20 倍的 sharded 采样不足(nanobench 单遍即自报 "Unstable ~54 iters, 建议 543"),故 sharded 倍数取"量级铁赢"而非精确点值——这是待修的 bench 采样缺陷,非算法问题。** ④ work-stealing owner 路径单线程无争用(两侧同样)。⑤ **lock-free 闸门:WSL TSan(setarch -R,GCC14 RelWithDebInfo)队列族 32/32 零 data race**——cache-line pad 改了 Cell 布局,TSan 复验 MpmcStressConservation(4P/4C 守恒)等压力测试确认无 race。
 
-## 分层时间轮 vs min-heap（`bench/time/timer_wheel_bench.cc`，time-02）
+## timer 依赖的性能证据
 
-旧基线把 heap 的取消实现成 `vector<bool>` 墓碑、把 common-timeout 实现成
-`std::list + unordered_map`；这分别少算了真实 heap 的 keyed erase 能力，又给链表基线
-人为加了节点分配和 hash，不能用于 SOTA 结论。2026-07-19 收口时已按本地
-libevent `min_heap_erase_` 和 libuv `heap_remove` 重写为**预分配 indexed
-eager-erase binary heap**：节点保存 heap index，取消立即 sift/remove，不留墓碑。
-N=4096 timer/op，Windows / WSL / Apple M4 各 15 个独立进程。节点在 epoch
-外预分配并跨 epoch 复用，arm 与 consume 之间有 compiler memory barrier；因此
-数字不包含节点生命周期分配，也不能被编译器把整轮 arm+consume 融合删除。
+sched 当前使用 per-worker exact-ns radix `time::TimerQueue`，旧 8×64 wheel 已删除。
+timer queue 是独立底层模块，其 Seastar same-algorithm、indexed heap、CommonTimeoutQueue、
+order-swap 与 Apple QoS 表统一维护在
+[`benchmarks-time.md`](./benchmarks-time.md)，本 sched 文档不复制易腐点值。
 
-| 工作负载 | Windows：HYLE / heap | WSL：HYLE / heap | M4：HYLE / heap |
-|---|---:|---:|---:|
-| arm + cancel | 6.86 / 10.42 ns（**1.52x**） | 5.95 / 6.73 ns（**1.13x**） | 4.91 / 8.36 ns（**1.70x**） |
-| arm + expire | 21.34 / 49.80 ns（**2.33x**） | 22.05 / 40.64 ns（**1.84x**） | 11.83 / 23.74 ns（**2.01x**） |
-| churn（arm + 70% cancel + expire） | 12.87 / 20.85 ns（**1.62x**） | 13.63 / 16.01 ns（**1.17x**） | 7.62 / 11.03 ns（**1.45x**） |
-
-**核心诚实结论**:
-
-1. 三种形状在三个平台同向，时间轮的领先不依赖对手墓碑；对 eager-erase heap
-   仍成立。cancel 领先来自 O(1) 已知槽摘链对 O(log n) heap 修复，expire 领先来自
-   分槽批量转移。最新 WSL churn 为约 1.17x，仍是三平台中最窄的一档，不把它
-   外推成所有 Linux/所有负载的结构性大胜。
-2. 收口后的 wheel 是 **8×64**，覆盖完整 `uint64_t` 纳秒域；旧 6 层轮在约 2.18
-   年外会丢失高位并可能提前触发，这是正确性修复，不应用旧 6 KB footprint 解释新数据。
-3. 这仍是数据结构 microbenchmark，不代表所有 timer workload。timer 很少、heap 已嵌入
-   event loop，或需要其它 heap 操作时，整体系统成本可能不同。
-
-> **诚实边界**：① 时间轮是 per-worker 单线程结构，不是 lock-free；跨线程唤醒由 sched
-> completion spine 负责。② 没有把 folly EventBase 或完整 libevent event loop 链进来，
-> 对比的是其核心 heap 形状。③ 70% cancel 是合成压力参数，不是生产观测值。④
-> `TimerEntry` 现在记录精确 owner 并执行链接状态检查；这些安全合同已包含在 HYLE 数字中。
-
-## 两种定时器结构:TimerWheel vs CommonTimeoutQueue(`timer_wheel_bench.cc` 块 4/5)
-
-同一时长的 deadline 随单调钟天然有序，`CommonTimeoutQueue` 可以只做尾插、头摘和
-O(1) unlink。基线直接复刻 libevent `struct event` 内嵌 TAILQ link 的形状：
-预分配节点、零 hash、零每次分配。现在同时报告两条线：完全不检查的裸 TAILQ
-是理论常数下界；checked TAILQ 加入与 HYLE 相同的 reschedule、exact-owner、
-unlinked-node、deadline-order 合同，是实现质量的同语义标尺。
-
-| 固定时长负载 | Windows：HYLE / rival | WSL：HYLE / rival | M4：HYLE / rival |
-|---|---:|---:|---:|
-| arm + expire / 裸 TAILQ | 3.28 / 4.22 ns（**1.29x**） | 3.14 / 3.95 ns（**1.29x**） | 3.52 / 2.73 ns（**0.77x LOSE**） |
-| arm + cancel / 裸 TAILQ | 2.70 / 3.13 ns（**1.14x**） | 1.99 / 2.59 ns（**1.30x**） | 3.06 / 3.06 ns（**统计平局**） |
-| arm + expire / checked TAILQ | 3.28 / 3.61 ns（**1.10x**） | 3.14 / 3.21 ns（统计平局） | 3.52 / 4.21 ns（**1.16x WIN**） |
-
-- Common queue 没有“9–15x 超越 libevent”的证据；旧数字测的是不同分配模型，已废止。
-- 二轮 M4 狩猎把 HYLE 从 4.86 降到 3.52ns（约 -28%）：`pop_front` 利用已知
-  sentinel、`consume_all` 一次 detach 后寄存器遍历、free-entry 先看 hook 再在
-  uncommon path 读取 owner。order-swap 把 TAILQ 放前仍为 2.75/3.62ns，
-  排除固定顺序与睿频解释；background QoS 也不改变输赢方向。
-- M4 对 checked TAILQ 是 14/15 同向胜（paired ratio 1.16，`p=9.8e-4`），说明
-  链表实现损耗已修平；对裸 TAILQ 仍 0/15 胜（0.77x），剩余是生产安全合同成本。
-  两条都报告：不拿不同语义冒充实现胜利，也不删除防跨-source 腐化的合同换数字。
-- 混合时长不满足 append-order 前提，必须用 `TimerWheel`。拒绝型
-  `try_schedule` 是事务性的：失败不会丢掉旧 arm。
-- `CommonTimeoutQueue` 结构已完成并验证，但 io reactor 尚未以它路由固定时长连接超时；
-  当前在役 timed I/O 仍由每 worker `TimerWheel` 承担。
+sched 侧只保留系统合同：无 timer 时 `empty()` 门不读时钟；arm/cancel O(1) 且无分配；
+worker 把 exact `next_deadline_ns` 转成 Parker wait bound，不 periodic poll；到期节点通过同一
+Waker rendezvous 回到 ready queue。完整 fiber sleep/IO timeout 的端到端证据仍在本页其它
+对应章节。

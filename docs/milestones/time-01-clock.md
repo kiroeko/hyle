@@ -5,7 +5,7 @@
 | 阶段 | P2 |
 | 模块 | time/ |
 | 依赖 | core 宏/头；无编译期 HYLE 模块依赖 |
-| 状态 | ✅ 2026-07-19 收口；Windows MSVC + WSL GCC14 + Apple M4 Clang 真测 |
+| 状态 | ✅ 2026-07-25 随 time 全面复审重新验收；Windows MSVC + WSL GCC14 + Apple M4 Clang 真测 |
 
 ## 交付能力
 
@@ -18,7 +18,8 @@
 - `sleep_for_ns/us/ms()`、`sleep_until_ns()`。
 - `saturating_add_ns()`、`deadline_after_ns()`、`remaining_ns()`：统一消除
   `now + timeout` 溢出和过期减法下溢。
-- `Instant`：C++ 轻量 elapsed 快照；未来 instant 会钳到 0。
+- chrono typed facade：`Duration`、monotonic/realtime time point、duration/deadline/sleep overload。
+- `Instant`：C++ 轻量 elapsed 快照；便利方法钳到非负，两个 instant 相减保留有符号方向。
 
 纯 C/FFI 对应入口在 `include/hyle/c/time.h`，指南见
 [`docs/guide/c-time.md`](../guide/c-time.md)。
@@ -31,9 +32,9 @@
    标准钟本身的一跳。C ABI 仍由 DLL 导出稳定 wrapper。
 2. deadline 与单位乘法全部饱和；`Instant::elapsed_ns` 不再在未来 instant
    上无符号下溢。
-3. Windows `Sleep(DWORD)` 分块处理超长时长，避开 `INFINITE` 特殊值和
-   强转截断；POSIX `nanosleep` 只重试 `EINTR`，其他错误 fail-fast。
-4. `sleep_until_ns` 每次醒来重读单调钟，容忍系统早醒。
+3. Windows sleep 使用高分辨率 waitable timer；Linux absolute sleep 使用
+   `clock_nanosleep(CLOCK_MONOTONIC,TIMER_ABSTIME)`，只对 `EINTR` 重试。
+4. 相对 sleep 委托绝对 deadline，早醒后仍以 monotonic deadline 为准。
 5. fast realtime 的 epoch 乘法饱和，POSIX clock 调用失败不再静默使用
    未初始化 timespec。
 
@@ -42,14 +43,13 @@
 - `fast_monotonic_ns` 无全局 max 钳制，跨核/恢复/VM 迁移可能产生毛刺；
   它的价值是高频 profiling，而不是“更快的 deadline 时钟”。
 - `fast_realtime_ns` 值的单位仍是 ns，但分辨率通常只有 1–15ms。
-- Windows `Sleep` 本身是毫秒级且可能被调度器延迟；接口保证不主动向下
-  取整，不保证精准唤醒。
+- OS 调度器仍可能让线程晚醒；接口保证不主动向下取整、不早返回，不承诺实时调度。
 - 所有 deadline 均使用 absolute monotonic ns；墙钟跳变不得进入调度路径。
 
 ## 验收
 
-- 16 个 clock 测试：单调性、epoch、sleep 下限、coarse 对齐、TSC 校准/
-  fallback、deadline 饱和、过去/未来 sleep-until、未来 Instant。
+- 20 个 clock 测试：单调性、epoch、typed facade、sleep 下限、coarse/TSC
+  availability、deadline 饱和、过去/未来 sleep-until、signed Instant subtraction。
 - 纯 C smoke 覆盖每个时钟与便利入口。
 - sched/io 已改用 `deadline_after_ns`/`remaining_ns`，不再各自手写易溢出算术。
 - clock benchmark 与 `std::chrono` 比较完全相同的“转换为非负 uint64 ns”
@@ -61,3 +61,6 @@
 - MSVC `__msvc_chrono.hpp` QPC 频率特判
 - Abseil TSC 频率配对校准思路
 - Tracy invariant-TSC CPUID 探测
+
+当前设计、用法和数字分别见 [`time-design`](../architecture/time-design.md)、
+[`guide/time`](../guide/time.md) 与 [`benchmarks-time`](../performance/benchmarks-time.md)。

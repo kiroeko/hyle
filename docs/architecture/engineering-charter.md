@@ -6,7 +6,10 @@
 
 ## 1. Scope 与形状（收口）
 
-通用高性能 C++ infra，七模块：`mem / container / simd / sched / io / compute / graph`。地基继承 clay、支柱自造（设计意图；**生产 LOC 上 simd 已约占 ~64%**，不再用「1/3·2/3」当行数预期）。自有生产（2026-07-17）**已 ~53k**；纪律收口终态 **~65–80k**，做满守界 **~80–100k**（旧「完成 ~28–40k」作废）。含 third_party 的 git 足迹 ~187k；再加 ggml 等 **~200–350k+**。详见 [`hyle-scope.md`](./hyle-scope.md) 规模节与 [`../milestones/midterm-report-2026-07-scale-positioning.md`](../milestones/midterm-report-2026-07-scale-positioning.md)。实时能力进度以 milestones/README 为唯一信源。不特化、不往应用层叠。
+通用高性能 C++ infra：基础基质 + `mem / container / simd / math / sched / io / compute / graph`
+等支柱模块。地基继承 clay 并重新收口、支柱自造；这是设计来源，不再用
+「1/3·2/3」当 LOC 预算。当前四项实测与终态纪律只见
+[`hyle-scope.md`](./hyle-scope.md)；实时任务进度以 milestones/README 为唯一信源。不特化、不往应用层叠。
 
 ## 2. 标准
 

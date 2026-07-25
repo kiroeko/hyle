@@ -1,165 +1,137 @@
-# time 纯 C ABI 使用指南
+# HYLE time：纯 C / FFI 指南
 
-`include/hyle/c/time.h` 是 time 模块的稳定 C/FFI 接缝。它只暴露
-`uint64_t`、函数指针和 opaque handle；不会把 C++ 类、STL、模板或侵入链表
-布局带过 ABI。
-
-所有时间值均为纳秒。超时、deadline、elapsed 只能使用 monotonic 系列；
-realtime 只用于日志和时间戳。
-
-## 1. 时钟与 deadline
-
-| 入口 | 用途 |
-|---|---|
-| `hyle_time_monotonic_ns` | 稳定单调钟；deadline/elapsed 的默认选择 |
-| `hyle_time_fast_monotonic_ns` | x86 invariant-TSC 快速采样；不可用于 deadline |
-| `hyle_time_fast_monotonic_available` | 快速单调钟当前是否真走 TSC，否则会安全回退 |
-| `hyle_time_realtime_ns` | Unix epoch 高精度墙钟；允许被系统校时 |
-| `hyle_time_fast_realtime_ns` | 低分辨率 coarse 墙钟，适合高频日志时间戳 |
-| `hyle_time_sleep_for_ns` | 至少休眠给定时长；0 表示 yield |
-| `hyle_time_sleep_for_us` / `hyle_time_sleep_for_ms` | header-inline 单位便利函数，乘法饱和 |
-| `hyle_time_sleep_until_ns` | 睡到绝对 monotonic deadline；过去时间立即返回 |
-| `hyle_time_deadline_after_ns` | `monotonic_now + timeout`，溢出时饱和到 `UINT64_MAX` |
-| `hyle_time_remaining_ns` | deadline 距当前单调钟的剩余量，过期返回 0 |
+本页只解释 [`hyle/c/time.h`](../../include/hyle/c/time.h) 的 C ABI。先在
+[`time.md`](./time.md) 按场景选能力；C++ 用户直接使用 `hyle::time`，不要在 HYLE 内部绕 C ABI。
 
 ```c
 #include "hyle/c/time.h"
+```
 
-uint64_t deadline = hyle_time_deadline_after_ns(UINT64_C(50000000));
-/* ... */
-if (hyle_time_remaining_ns(deadline) == 0) {
-  /* timed out */
+## 时钟、deadline 与 sleep
+
+| 需求 | 入口 | 注意 |
+|---|---|---|
+| timeout / elapsed | `hyle_time_monotonic_ns` | 唯一可用于 deadline 的钟 |
+| 日志 / 协议时间戳 | `hyle_time_realtime_ns` | Unix epoch；会受校时影响 |
+| 高频 profiling | `hyle_time_fast_monotonic_ns` | 先查 available；禁止用于 deadline |
+| 粗粒度高频日志 | `hyle_time_fast_realtime_ns` | 先查 available；可能多次返回同值 |
+| 相对 timeout → deadline | `hyle_time_deadline_after_ns` | 饱和，不会 wrap 到过去 |
+| deadline → 剩余时间 | `hyle_time_remaining_ns` | 已到期返回 0 |
+| 阻塞 OS 线程 | `sleep_for_ns/us/ms`、`sleep_until_ns` | fiber 请用 sched；0 不等于 yield |
+
+```c
+uint64_t deadline = hyle_time_deadline_after_ns(UINT64_C(30000000));
+while (hyle_time_remaining_ns(deadline) != 0) {
+  /* poll work or pass the remaining duration to an OS wait */
 }
 ```
 
-`hyle_time_fast_monotonic_ns` 是 profiling 工具：休眠恢复、虚拟机迁移或跨核
-迁移后可能出现不适合调度语义的毛刺。即使
-`hyle_time_fast_monotonic_available()` 返回 1，也不要拿它生成 deadline。
+不要写 `hyle_time_monotonic_ns() + timeout`；大值会溢出。不要用 realtime 做 timeout；NTP、
+管理员调时或虚拟机时钟校正都会让它跳变。
 
-## 2. timer 节点所有权
+## 任意 deadline：hyle_time_queue
 
-`hyle_time_timer` 是一次分配、可重复 arm 的 opaque 节点：
-
-| 入口 | 用途 |
-|---|---|
-| `hyle_time_timer_create` / `hyle_time_timer_destroy` | 创建/销毁；销毁前必须未调度 |
-| `hyle_time_timer_user_data` / `hyle_time_timer_set_user_data` | 存取调用方的裸上下文指针 |
-| `hyle_time_timer_deadline_ns` | 最近一次成功 arm 的绝对 deadline |
-| `hyle_time_timer_is_scheduled` | 当前是否属于某个 timer source |
-
-一个 timer 同时最多属于一个 source。跨 source 重用会返回 0，并由
-`hyle_time_last_error()` 给出线程局部诊断。必须先 cancel 或等它被
-`advance` 取出，才能换 source 或 destroy。
-
-timer、wheel、queue 都是单线程拥有的数据结构。跨线程操作应由调用方投递
-命令给 owner 线程，而不是并发调用这些函数。
-
-## 3. 任意 deadline：timer wheel
+timer 和 queue 都是 opaque handle。timer 创建时分配一次；之后的 arm/cancel/advance 不分配。
 
 ```c
 static void on_due(hyle_time_timer* timer, void* ctx) {
+  struct request* req = hyle_time_timer_user_data(timer);
+  req->timed_out = 1;
   (void)ctx;
-  void* job = hyle_time_timer_user_data(timer);
-  /* timer 此时已脱离 wheel，可在这里重新 arm */
-  run_job(job);
 }
 
-hyle_time_wheel* wheel =
-    hyle_time_wheel_create(hyle_time_monotonic_ns());
-hyle_time_timer* timer = hyle_time_timer_create(job);
+hyle_time_queue* queue = NULL;
+hyle_time_timer* timer = NULL;
+hyle_status st = hyle_time_queue_create(&queue);
+if (!hyle_status_is_ok(st)) { /* read message, then free st */ }
+hyle_status_free(&st);
 
-if (!wheel || !timer ||
-    !hyle_time_wheel_schedule_after(wheel, timer, UINT64_C(30000000))) {
-  report(hyle_time_last_error());
-}
+st = hyle_time_timer_create(&timer, request);
+if (!hyle_status_is_ok(st)) { /* handle */ }
+hyle_status_free(&st);
 
-uint64_t next = hyle_time_wheel_next_deadline_ns(wheel);
-/* owner event loop park 到 next；醒来后： */
-size_t fired =
-    hyle_time_wheel_advance(wheel, hyle_time_monotonic_ns(), on_due, NULL);
+st = hyle_time_queue_schedule_after(queue, timer, UINT64_C(30000000));
+if (!hyle_status_is_ok(st)) { /* handle */ }
+hyle_status_free(&st);
 
-hyle_time_wheel_cancel(wheel, timer); /* 未调度时也是安全 no-op */
-hyle_time_timer_destroy(timer);
-hyle_time_wheel_destroy(wheel);       /* destroy 时必须为空 */
+size_t fired = 0;
+st = hyle_time_queue_advance(&fired, queue,
+                             hyle_time_monotonic_ns(), on_due, NULL);
+hyle_status_free(&st);
+
+int cancelled = 0;
+st = hyle_time_queue_cancel(&cancelled, queue, timer); /* idle 也成功 */
+hyle_status_free(&st);
+
+/* queue 必须先变空；timer 与 queue 都由创建它们的 HYLE 模块释放。 */
+st = hyle_time_timer_destroy(timer); hyle_status_free(&st);
+st = hyle_time_queue_destroy(queue); hyle_status_free(&st);
 ```
 
-导出入口：
+`hyle_time_queue_create_at` 只给 virtual clock、确定性测试或已经持有采样值的 event loop。
+用它创建的 queue 不应调用 header-inline `schedule_after`，因为后者采样真实 monotonic；应自行
+形成同一时域的绝对 deadline 后调用 `schedule`。
 
-| 入口 | 用途 |
-|---|---|
-| `hyle_time_wheel_create` / `hyle_time_wheel_destroy` | 创建 8×64、1ms 粒度的分层轮；销毁要求为空 |
-| `hyle_time_wheel_schedule` | 按绝对 monotonic deadline arm/reschedule |
-| `hyle_time_wheel_schedule_after` | header-inline 相对时长便利入口，饱和生成 deadline |
-| `hyle_time_wheel_cancel` | O(1) 真正摘链；无 tombstone |
-| `hyle_time_wheel_advance` | 把已到期节点交给同步 visitor，返回数量 |
-| `hyle_time_wheel_next_deadline_ns` | 下一次需要唤醒/级联的绝对时间；空时 `UINT64_MAX` |
-| `hyle_time_wheel_size` / `hyle_time_wheel_empty` | live timer 数量/空判断 |
+`advance` 的 `now_ns` 必须非递减。visitor 在 `advance` 调用线程同步执行，并且调用前 timer
+已经 unarm，因此 visitor 内可以 re-arm。visitor 为 NULL 仍会消费到期 timer。不同 radix
+bucket 的交付顺序不保证全序。
 
-wheel 的公开 deadline 是纳秒，但到期粒度为 1ms：永不早触发，最多晚一个
-tick。`next_deadline_ns` 可能是较高层的级联边界，而不是最终 timer
-deadline；event loop 应按它唤醒并再次 `advance`。
+## 同一 duration：hyle_time_common_queue
 
-`hyle_time_wheel_advance(..., NULL, ...)` 仍会消费到期 timer，只是不调用
-visitor。消费后 timer 可再次 arm 或销毁。
-
-## 4. 相同时长：common timeout queue
-
-当大量 timer 都采用同一固定时长（例如每个连接都是 30 秒 idle timeout）
-时，使用 `hyle_time_common_queue`。相同 duration 加到单调 now 上后，deadline
-天然非递减，因此 arm/expire/cancel 都是 O(1) 侵入链操作。
+大量连接共享一个固定 idle timeout 时，建立一个 common queue：
 
 ```c
-hyle_time_common_queue* idle =
-    hyle_time_common_queue_create(hyle_time_monotonic_ns(),
-                                  UINT64_C(30000000000));
-hyle_time_timer* conn_timer = hyle_time_timer_create(connection);
+hyle_time_common_queue* idle = NULL;
+hyle_time_timer* timer = NULL;
+hyle_status st = hyle_time_common_queue_create(
+    &idle, UINT64_C(30000000000)); /* 30 s */
+hyle_status_free(&st);
+st = hyle_time_timer_create(&timer, connection);
+hyle_status_free(&st);
 
-if (!hyle_time_common_queue_schedule_now(idle, conn_timer)) {
-  report(hyle_time_last_error());
-}
+st = hyle_time_common_queue_schedule_now(idle, timer);
+hyle_status_free(&st);
 
-hyle_time_common_queue_advance(
-    idle, hyle_time_monotonic_ns(), on_due, NULL);
+size_t fired = 0;
+st = hyle_time_common_queue_advance(
+    &fired, idle, hyle_time_monotonic_ns(), on_due, NULL);
+hyle_status_free(&st);
 ```
 
-导出入口：
+正常入口是 `schedule_now`，或者多个 arm 共用一次采样的 `schedule_after(queue,timer,now)`。
+显式 `schedule(queue,timer,deadline)` 只接受非递减 deadline；违反时返回 `INVALID_ARGUMENT`，
+若这是 reschedule，旧 arm 保持不变。混合 duration 用 general queue；不要为了通过顺序检查
+给 deadline 排序，因为那会改变 timeout 语义。
 
-| 入口 | 用途 |
+## Surface 速查
+
+| 分组 | 动态入口 | header-inline |
+|---|---|---|
+| clocks/deadline/sleep | `monotonic_ns`、`fast_monotonic_ns/available`、`realtime_ns`、`fast_realtime_ns/available`、`sleep_for_ns`、`sleep_until_ns`、`deadline_after_ns`、`remaining_ns` | `sleep_for_us/ms` |
+| timer node | `timer_create/destroy`、`timer_user_data/set_user_data`、`timer_deadline_ns`、`timer_is_scheduled` | — |
+| general queue | `queue_create/create_at/destroy`、`queue_schedule/cancel/advance/cancel_all`、`queue_next_deadline_ns/size/empty` | `queue_schedule_after` |
+| common queue | `common_queue_create/destroy`、`common_queue_schedule/schedule_after/cancel/advance/cancel_all`、`common_queue_next_deadline_ns/size/empty/duration_ns` | `common_queue_schedule_now` |
+
+表中短名都以 `hyle_time_` 为前缀。动态入口共 37 个，inline convenience 共 4 个；inline
+仍只调用动态 ABI，不暴露 C++ layout。
+
+## Status 与生命周期
+
+所有返回 `hyle_status` 的调用都把 Status 所有权交给调用方；成功和失败都调用
+`hyle_status_free(&status)`。常见错误：
+
+| 情况 | 状态 |
 |---|---|
-| `hyle_time_common_queue_create` / `hyle_time_common_queue_destroy` | 创建固定 duration 队列；销毁要求为空 |
-| `hyle_time_common_queue_schedule` | 显式绝对 deadline；必须保持非递减 |
-| `hyle_time_common_queue_schedule_after` | 用调用方提供的 `now_ns + duration` arm |
-| `hyle_time_common_queue_schedule_now` | header-inline 正常入口，内部读取 monotonic now |
-| `hyle_time_common_queue_cancel` | O(1) 摘链 |
-| `hyle_time_common_queue_advance` | 交付所有 `deadline <= now` 的节点 |
-| `hyle_time_common_queue_next_deadline_ns` | 队首绝对 deadline；空时 `UINT64_MAX` |
-| `hyle_time_common_queue_size` / `hyle_time_common_queue_empty` | live 数量/空判断 |
-| `hyle_time_common_queue_duration_ns` | 查询该 queue 的固定 duration |
+| create 的 out 为 NULL、advance 缺少 count out | `INVALID_ARGUMENT` |
+| 同一 timer 已被另一个 queue 拥有 | `FAILED_PRECONDITION` |
+| common deadline 破坏非递减顺序 | `INVALID_ARGUMENT` |
+| destroy 仍 scheduled 的 timer / 非空 queue | `FAILED_PRECONDITION` |
+| opaque control 分配失败 | `RESOURCE_EXHAUSTED` |
 
-显式 schedule 若破坏顺序会返回 0。新 timer 保持未调度；失败的 reschedule
-会保留原 arm，不会丢 timer。混合时长不要硬塞进 common queue，改用 wheel。
+`cancel_all` 是 shutdown/错误回滚入口：它 detach 全部 timer，并可经同步 visitor 把节点归还
+业务 owner。`UINT64_MAX` 同时可是真实远期 deadline 和 empty sentinel；需要区分时调用
+`*_empty()`。queue 是 single-owner；跨线程 arm/cancel 必须串行投递到 owner event loop。
 
-## 5. 失败、NULL 与回调规则
-
-- `hyle_time_last_error` 返回当前线程最近一次可恢复边界错误；不要 free。
-  成功的 fallible 调用会清除旧文本。
-- create OOM 返回 `NULL`。schedule/cancel 的 source、timer 为 `NULL` 或跨
-  source 所有权错误时返回 0。
-- 查询函数对 `NULL` 返回安全默认值：size/deadline-data 为 0（next
-  deadline 为 `UINT64_MAX`）、empty 为 1。
-- 非空 source 被 destroy、仍调度或仍挂在 fired list 中的 timer 被 destroy，
-  属于生命周期契约违反，会 fail-fast，而不是悄悄制造 UAF。
-- visitor 在调用 `advance` 的同一线程同步执行。当前 timer 已 unscheduled，
-  可以在 visitor 内重排或销毁；异常绝不能跨 C 回调边界。
-
-## 6. 有意不导出的 C++ 面
-
-| C++ 面 | C ABI 对应能力 |
-|---|---|
-| `Instant` | `hyle_time_monotonic_ns` + 调用方保存 `uint64_t` |
-| `TimerEntry` / `TimerList` 的侵入布局 | `hyle_time_timer` opaque handle + visitor |
-| `TimerSource` concept | 两组具体 opaque source 函数；C 不需要模板 concept |
-| `TimerEntry::on_fire` | `advance` visitor，避免把内部节点布局或 C++ `noexcept` 函数类型暴露给 C |
-
-这不是功能缺口：所有时钟、休眠、deadline、任意时长 timer 与固定时长
-timer 能力均可从纯 C/FFI 到达。
+完整动态 surface 由 `tests/time/c_surface_symbols.txt` 机械冻结；C 头自包含门同时用 C11 与
+C++23 编译。性能与平台证据只维护在
+[`benchmarks-time.md`](../performance/benchmarks-time.md)。

@@ -55,6 +55,7 @@
 |---|---|
 | [platform 跨 OS](./docs/architecture/platform-design.md) | CPU/thread/wait/VM/fs/dynlib 机制、系统/进程视图、内外职责和跨平台差异 |
 | [mem 内存](./docs/architecture/mem-design.md) | host-RAM 边界、allocator/region/pool/stack/diagnostics、C++/C 能力映射与 NUMA/大页 |
+| [time 时间与定时器](./docs/architecture/time-design.md) | typed clocks/deadline/sleep、exact-ns radix/common timer queues、single-owner 与 C/C++ 双面 |
 | [container 容器](./docs/architecture/container-design.md) | 唯一造不借的 T0 + SwissTable SIMD 探测 + SmallVector/intrusive/lock-free（供 sched）|
 | [simd 向量化](./docs/architecture/simd-design.md) | D-tag/七后端 + 自有 math/dtype/算法核 + Runtime/native/exact 双轨派发 |
 | [sched 调度器](./docs/architecture/sched-design.md) | fcontext 切换 + 无锁 work-stealing + Waker completion 脊 + 协程/fiber 统一 |

@@ -53,9 +53,10 @@ HYLE_FORCE_INLINE std::uint64_t monotonic_ns() noexcept {
 }
 
 // Fast monotonic counter in ns, read straight from the CPU timestamp counter
-// (rdtsc) instead of going through the OS primitive -- about 2x faster (~6ns vs
-// ~12ns) because it skips the QPC/clock_gettime call shell. Opt-in: you pick it
-// at the call site, the default monotonic_ns() pays nothing for its existence.
+// (rdtsc) instead of going through the OS primitive. It can be materially
+// cheaper because it skips the QPC/clock_gettime call shell; platform/build
+// point values live in the performance ledger. Opt-in: you pick it at the call
+// site, and the default monotonic_ns() pays nothing for its existence.
 //
 // TRADEOFFS (read before using -- this is why it is NOT the default):
 //   - Requires an invariant TSC (constant rate, synced across cores). Probed via
@@ -103,12 +104,13 @@ HYLE_FORCE_INLINE std::uint64_t realtime_ns() noexcept {
 // source exists; exact ratios are platform/build dependent and live in the
 // benchmark ledger rather than the API contract.
 //
-// TRADEOFF (why it is NOT the default, and unconditionally "available" unlike the
-// TSC path): the coarse clock's RESOLUTION is the OS timer tick, ~1-15 ms (measured
-// ~4 ms here), NOT nanoseconds. The value is still real wall-clock ns since the
-// epoch and never needs calibration -- it just updates only once per tick, so two
-// calls within the same tick return the SAME value. Same jump-on-adjust caveat as
-// realtime_ns() (never use for elapsed/deadlines -- use monotonic_ns()).
+// TRADEOFF (why it is NOT the default): when a native coarse clock is available,
+// its RESOLUTION is an OS tick rather than one nanosecond. The value is still a
+// wall-clock ns count since the epoch, but it may update only once per tick, so
+// nearby calls can return the same value. On systems without a coarse source this
+// entry falls back to realtime_ns(); query fast_realtime_available() when the
+// distinction affects policy. The same jump-on-adjust caveat as realtime_ns()
+// applies (never use it for elapsed/deadlines -- use monotonic_ns()).
 //
 // USE IT FOR: high-frequency wall-clock TIMESTAMPS where ms resolution is fine and
 // read cost matters -- log record stamps, trace events, sampling. When you need

@@ -133,9 +133,9 @@
 
 ## 总账
 
-**继承面（约占 HYLE 1/3，16-18k 行可留用）**：catomics 原子层、flat hashmap + carray + cstring + string_buf 容器、内存分配器家族（clay MemoryArena 能力现由 HYLE `SharedPool` / `SharedPoolCache` 覆盖）、math/utils + consts + host_device 宏、thread_pool（长任务池）、async_value（补 waiter）、taskgraph（剥离特化）。
+**继承面（clay 可留用资产）**：catomics 原子层、flat hashmap + carray + cstring + string_buf 容器、内存分配器家族（clay MemoryArena 能力现由 HYLE `SharedPool` / `SharedPoolCache` 覆盖）、math/utils + consts + host_device 宏、thread_pool（长任务池）、async_value（补 waiter）、taskgraph（剥离特化）。
 
-**负债面 / 从零造（HYLE 真正"加的东西"，30-50k 行级）**：
+**负债面 / 从零造（HYLE 真正“加的东西”）**：
 
 1. fiber 上下文切换
 2. 统一调度器（线程/进程/纤程/协程一张表，per-core 无锁 run-queue + work-stealing）
@@ -146,4 +146,7 @@
 7. 自有异构计算原语（device/stream/memory 抽象）
 8. 新容器（SmallVector/intrusive/lock-free 队列）
 
-**HYLE 总体量（2026-07-17）**：自有生产已 **~53k**（simd ~34k）；终态纪律 **~65–80k** / 做满 **~80–100k**（旧 28–40k 作废）。第三方+ggml 足迹 ~200–350k+。详见 hyle-scope.md 规模节与 milestones/midterm-report-2026-07-scale-positioning.md。这不是"重构 clay"，是"以 clay 为地基的全新 infra"。
+**HYLE 总体量**：当前四项 `cloc` 实测、终态纪律与第三方边界只见
+[`hyle-scope.md`](./hyle-scope.md)；2026-07-17 时的快照保留在
+[`midterm-report-2026-07-scale-positioning.md`](../milestones/midterm-report-2026-07-scale-positioning.md)。
+这不是“重构 clay”，是“以 clay 为地基的全新 infra”。

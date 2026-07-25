@@ -150,7 +150,7 @@ lookup/retain/remove 为预期 O(1)，`size()` 只扫硬上限 64 shard。旧表
 | **SpinLock 8 threads** | 50.17/60.44/271.88 | mutex 50.59/39.08/20.98 | 平/0.65x/0.08x | ❌ 高争用选 mutex |
 | **Ref fan-out** | 10.13/8.33/3.19 | shared_ptr 8.09/11.12/3.22 | 0.80x/1.34x/平 | 平台翻转；所有权形状而非普遍提速 |
 | **SwissTable iterate**(for_each) | **2.48 ns** | std::unordered_map 8.73 | **3.5x** | ✅ 赢(扁平 ctrl 扫 vs 节点指针链) |
-| **time clock / wheel / common** | → | → | → | **已迁出** [benchmarks-time.md](./benchmarks-time.md)（2026-07-19 三平台；勿用本表旧双平台 clock 行） |
+| **time clock / radix queue / common** | → | → | → | **已迁出** [benchmarks-time.md](./benchmarks-time.md)（2026-07-25 三平台；勿用本表旧数据） |
 | **log gated-out** | 2.03–2.11(Win)/1.05–1.09(WSL)/0.91–0.92(M4) | (无 std 对照) | — | relaxed level gate + branch；参数不求值、不格式化 |
 | **log preformatted C++**(1 sink,无 I/O) | 22.48/13.07/8.85 ns | (无 std 对照) | — | mutex snapshot + per-slot active refs + callback；换取 quiescent unregister |
 | **log preformatted C ABI**(1 C sink,无 I/O) | 23.93/16.03/10.68 ns | native C++ 上行 | +1.45/+2.96/+1.83 ns | POD bridge + opaque trampoline 的真实 ABI 成本很小 |

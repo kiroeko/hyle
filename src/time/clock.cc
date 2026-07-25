@@ -42,8 +42,8 @@ constexpr std::uint64_t scale_add_saturated(std::uint64_t whole,
 #if defined(HYLE_OS_WINDOWS)
 
 std::uint64_t fast_realtime_ns() noexcept {
-  // Coarse: reads KUSER_SHARED_DATA (no syscall), ~1.8 ns vs ~13.5 for the Precise
-  // variant, at the cost of ~1-15 ms resolution (updates on the timer tick).
+  // Coarse: reads KUSER_SHARED_DATA without the precise-clock path, at the cost
+  // of OS-tick resolution. Platform/build point values live in the perf ledger.
   FILETIME ft;
   GetSystemTimeAsFileTime(&ft);
   std::uint64_t ticks =
@@ -135,9 +135,9 @@ void sleep_for_ns(std::uint64_t ns) noexcept {
 #else  // POSIX (Linux / macOS)
 
 std::uint64_t fast_realtime_ns() noexcept {
-  // Linux CLOCK_REALTIME_COARSE is a vDSO read (~3 ns vs ~13 for CLOCK_REALTIME),
-  // resolution = the kernel tick (~1-4 ms). macOS/other POSIX lacking it fall back
-  // to CLOCK_REALTIME (still correct, just not faster there).
+  // Linux CLOCK_REALTIME_COARSE is a vDSO read with kernel-tick resolution.
+  // macOS/other POSIX lacking it fall back to CLOCK_REALTIME (still correct,
+  // just not faster there). Point values live in the perf ledger.
   struct timespec ts;
 #if defined(CLOCK_REALTIME_COARSE)
   HYLE_FATAL_ASSERT(clock_gettime(CLOCK_REALTIME_COARSE, &ts) == 0);
