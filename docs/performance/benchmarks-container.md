@@ -14,7 +14,7 @@
 | **SwissTable map** | ⚠️ **2026-07 快照**（多 Win/WSL） | 总账有 ns 行；**非**本轮 mem 式三平台 sign 全刷 |
 | **hash / mix64 / Hash&lt;T&gt;** | ⚠️ 历史 + 红队公平性更正 | ⏳ 待三平台 `bench-stat -n15` 重写表 |
 | **SmallVector / CArray** | ⚠️ 主 Win + 部分补测 | owning vector 形状待本轮统一三平台刷新 |
-| **ConcurrentVector** | ✅ Windows+WSL n=15；⏳ M4 | oneTBB 同合同；WSL 逐次索引顺扫是已知缺口 |
+| **ConcurrentVector** | ✅ Windows+WSL n=15；⏳ M4 | append/range iteration 同合同 SOTA；WSL `operator[]` 是已知缺口 |
 | **并发队列** | 见 queue / sched 文 | 不在本页展开 |
 
 **读法**：标 ✅ 的可当当前产品结论；标 ⚠️ 的方向大体可信，但**不要**当 2026-07-20 式三平台 sign 证书去对外硬报绝对 ns。
@@ -32,7 +32,7 @@
 | **string_ref 搜索** | string_view / libc | ➖ 自研 SIMD 项平；子串/字符集 **转发 std**（刻意） |
 | **StringBuf** | map+mutex / Absl 分片 peer | ⚠️ **Win 多平**；WSL/M4 lifecycle **输**；growth 赢；8t 距 Absl ~5% |
 | **path 词法** | string_view 扫 / filesystem | ✅ 平算法基线；**碾** filesystem（零分配结构差） |
-| **ConcurrentVector** | oneTBB `concurrent_vector` | ✅ Win/WSL：append 与并发 prefix 读同档或赢；⚠️ WSL 逐次索引顺扫约 0.51x |
+| **ConcurrentVector** | oneTBB `concurrent_vector` | ✅ Win/WSL：append、range iteration、并发 prefix 读同档或赢；⚠️ WSL `operator[]` 顺扫约 0.51x |
 
 ### ConcurrentVector：先校正合同，再谈速度（Windows/WSL Release，n=15）
 
@@ -49,23 +49,26 @@ Windows x64 / MSVC 19.50：
 
 | 正常用法 | HYLE median | oneTBB median | n=15 判定 |
 |---|---:|---:|---|
-| 单 writer push 100k | **6.017 ns** | 7.805 ns | HYLE 1.30x；15/15 |
-| 8 writer，预留后 append 200k | **33.055 ns** | 34.270 ns | **统计平**；12/15 HYLE 方向 |
-| quiesce 后逐次索引顺扫 | **0.918 ns** | 1.254 ns | HYLE 1.37x；15/15 |
-| 4 readers 读既有 prefix + 1 writer | **0.474 ns** | 0.849 ns | HYLE 1.79x；15/15；peer 绝对方差高 |
+| 单 writer push 100k | **5.952 ns** | 7.688 ns | HYLE 1.29x；15/15 |
+| 8 writer，预留后 append 200k | **32.255 ns** | 35.370 ns | HYLE 约 1.10x；13/15 |
+| quiesce 后 range iteration | **0.371 ns** | 1.242 ns | HYLE 3.35x；15/15 |
+| quiesce 后逐次 `operator[]` 顺扫 | **0.916 ns** | 1.250 ns | HYLE 1.36x；15/15 |
+| 4 readers 读既有 prefix + 1 writer | **0.476 ns** | 0.849 ns | HYLE 1.78x；15/15；peer 绝对方差高 |
 
 WSL / GCC 14.2：
 
 | 正常用法 | HYLE median | oneTBB median | n=15 判定 |
 |---|---:|---:|---|
-| 单 writer push 100k | **6.293 ns** | 7.071 ns | HYLE 1.12x；15/15 |
-| 8 writer，预留后 append 200k | **32.777 ns** | 34.654 ns | HYLE 约 1.05x；14/15 |
-| quiesce 后逐次索引顺扫 | 0.846 ns | **0.429 ns** | **oneTBB 1.97x；15/15，未收口** |
-| 4 readers 读既有 prefix + 1 writer | **0.471 ns** | 0.828 ns | HYLE 1.76x；15/15 |
+| 单 writer push 100k | **6.299 ns** | 7.359 ns | HYLE 1.17x；15/15 |
+| 8 writer，预留后 append 200k | **32.646 ns** | 34.182 ns | HYLE 约 1.05x；14/15 |
+| quiesce 后 range iteration | **0.280 ns** | 0.388 ns | HYLE 1.39x；15/15 |
+| quiesce 后逐次 `operator[]` 顺扫 | 0.840 ns | **0.427 ns** | **oneTBB 1.97x；15/15，未收口** |
+| 4 readers 读既有 prefix + 1 writer | **0.468 ns** | 0.866 ns | HYLE 1.85x；15/15 |
 
-WSL 的索引顺扫差距与 GCC 对运行时 segment 定位的代码生成有关；它没有被包装成赢。
-下一步用成熟容器的 iterator/range 形状同时补易用性和跨 segment 顺序遍历，再保留
-`operator[]` 随机索引作为独立证据。M4 尚未刷新，不能把本表外推为三平台证书。
+WSL 的逐次索引差距与 GCC 对运行时 segment 定位的代码生成有关；它没有被包装成赢。
+成熟容器的随机访问 iterator/range 形状已补齐：`++` 缓存 segment，因此正常顺序遍历
+在两平台都领先；`operator[]` 继续作为真正随机索引的独立证据与后续优化项。M4 尚未
+刷新，不能把本表外推为三平台证书。
 
 ## 2. 非 SOTA / 冻结边界（诚实清单）
 
@@ -133,6 +136,9 @@ HYLE_QUEUE_BENCH_FILTER=concurrent-vector \
   scripts/bench-stat.py <build>/bin/hyle_queue_sota_bench -n 15 \
   --pair "HYLE ConcurrentVector" "tbb concurrent_vector"
 ```
+
+定位单项时可再设 `HYLE_QUEUE_BENCH_VARIANT=hyle|tbb` 与
+`HYLE_QUEUE_BENCH_CV_CASE=push|writers|index|iterate|read-write`；正式对比不设这两项。
 
 刷新后：改本页 §0 新鲜度 + 总账对应行；详表回填 [benchmarks-mem-container.md](./benchmarks-mem-container.md)。
 

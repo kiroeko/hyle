@@ -110,7 +110,9 @@ segment allocation 进入冷锁。安全模式是：writers join/quiesce 后遍�
 count，不能在 writers 活跃时把 `[0,size())` 当作全部构造完成。元素构造必须 noexcept。
 可恢复的 `try_emplace_back/try_push_back` 会先完成容量分配，OOM 不领取 index、不会
 留下永久洞；普通 `emplace_back/push_back` 把 OOM 视为 fatal，因而用单次原子取号走
-oneTBB 同级的常用快路径。
+oneTBB 同级的常用快路径。writers quiesce 后可直接 range-for；iterator 是标准随机访问
+iterator，并在 `++` 时缓存当前 segment 指针。不要在 writers 活跃时创建全量 iterator
+range，因为它对 reservation count 取快照，并不额外发布仍在构造的 tail。
 
 ## 常见坑
 
