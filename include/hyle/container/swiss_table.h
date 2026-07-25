@@ -730,14 +730,20 @@ class FlatHashSet {
   void clear() noexcept { table_.clear(); }
 
   template <class Q>
-  const K* find(const Q& key) const noexcept
-  {
+    requires(std::is_nothrow_invocable_r_v<std::uint64_t, const Hash&,
+                                           const Q&> &&
+             std::is_nothrow_invocable_r_v<bool, const Eq&, const K&,
+                                           const Q&>)
+  const K* find(const Q& key) const noexcept {
     return table_.find_key(key);
   }
 
   template <class Q>
-  bool contains(const Q& key) const noexcept
-  {
+    requires(std::is_nothrow_invocable_r_v<std::uint64_t, const Hash&,
+                                           const Q&> &&
+             std::is_nothrow_invocable_r_v<bool, const Eq&, const K&,
+                                           const Q&>)
+  bool contains(const Q& key) const noexcept {
     return table_.contains(key);
   }
 
@@ -755,8 +761,11 @@ class FlatHashSet {
   }
 
   template <class Q>
-  bool erase(const Q& key) noexcept
-  {
+    requires(std::is_nothrow_invocable_r_v<std::uint64_t, const Hash&,
+                                           const Q&> &&
+             std::is_nothrow_invocable_r_v<bool, const Eq&, const K&,
+                                           const Q&>)
+  bool erase(const Q& key) noexcept {
     return table_.erase(key);
   }
 
