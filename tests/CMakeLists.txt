@@ -75,6 +75,12 @@ add_test(NAME hyle_error_c_surface_test
                  --module error
                  --library "$<TARGET_FILE:hyle_error>"
                  --symbol-tool "${_hyle_c_symbol_tool}")
+add_test(NAME hyle_time_c_surface_test
+         COMMAND "${Python3_EXECUTABLE}"
+                 "${PROJECT_SOURCE_DIR}/scripts/c-surface-check.py"
+                 --module time
+                 --library "$<TARGET_FILE:hyle_time>"
+                 --symbol-tool "${_hyle_c_symbol_tool}")
 
 # A combined include smoke test can hide transitive-include and include-order bugs.
 # Compile each public C++ module header alone, plus its C ABI header as strict C.
@@ -111,6 +117,17 @@ add_test(NAME hyle_error_header_self_contained_test
                  --cxx-compiler-id "${CMAKE_CXX_COMPILER_ID}"
                  --c-frontend "${CMAKE_C_COMPILER_FRONTEND_VARIANT}"
                  --cxx-frontend "${CMAKE_CXX_COMPILER_FRONTEND_VARIANT}")
+add_test(NAME hyle_time_header_self_contained_test
+         COMMAND "${Python3_EXECUTABLE}"
+                 "${PROJECT_SOURCE_DIR}/scripts/header-self-contained.py"
+                 --module time
+                 --include-dir "${PROJECT_SOURCE_DIR}/include"
+                 --cc "${CMAKE_C_COMPILER}"
+                 --cxx "${CMAKE_CXX_COMPILER}"
+                 --c-compiler-id "${CMAKE_C_COMPILER_ID}"
+                 --cxx-compiler-id "${CMAKE_CXX_COMPILER_ID}"
+                 --c-frontend "${CMAKE_C_COMPILER_FRONTEND_VARIANT}"
+                 --cxx-frontend "${CMAKE_CXX_COMPILER_FRONTEND_VARIANT}")
 
 # close-01: pure C whole-buffer SIMD consumer. Register/native C++ types never cross this edge.
 add_executable(hyle_simd_c_test simd/c_simd_test.c)
@@ -137,7 +154,7 @@ hyle_apply_warnings(hyle_util_c_test)
 hyle_apply_sanitizer(hyle_util_c_test)
 add_test(NAME hyle_util_c_test COMMAND hyle_util_c_test)
 hyle_add_test(time SOURCES time/header_test.cc time/clock_test.cc
-  time/timer_wheel_test.cc time/common_timeout_queue_test.cc DEPS hyle_platform)
+  time/timer_queue_test.cc time/common_timeout_queue_test.cc DEPS hyle_platform)
 add_executable(hyle_time_c_test time/c_time_test.c)
 target_link_libraries(hyle_time_c_test PRIVATE hyle_time)
 set_source_files_properties(time/c_time_test.c PROPERTIES LANGUAGE C)

@@ -20,7 +20,7 @@
 // got a packet / timer expired" all funnel back to one scheduler -- HYLE's thesis.
 //
 // sched-04a delivers the spine itself (suspend + wake, race-free). Deadline/timer
-// wiring (Waker fired by a timer wheel) is sched-04b, gated on time-02.
+// wiring (Waker fired by a timer queue) is sched-04b, gated on time.
 
 namespace hyle::sched {
 

@@ -9,7 +9,7 @@ namespace hyle::core {
 
 // Lowest-level intrusive linking primitive shared by time/ and container/.
 // Keeping it in core avoids the false time -> container module dependency that
-// existed when timer_source.h included hyle/container/intrusive_list.h.
+// existed when timer_entry.h included hyle/container/intrusive_list.h.
 //
 // Embed one hook in a stable-address node, then list it via
 // IntrusiveList<Node, &Node::hook>. The list owns no nodes and allocates nothing.
@@ -122,6 +122,44 @@ class IntrusiveList {
     sentinel_.next_ = h->next_;
     insert_before(&dst.sentinel_, h);
     return node_of(h);
+  }
+
+  // Concatenate `source` onto this list in O(1). Nodes stay linked throughout;
+  // neither list owns them. This is the radix/timing-wheel bucket-splice
+  // primitive and is also useful for batching completion queues.
+  void append(IntrusiveList& source) noexcept {
+    HYLE_FATAL_ASSERT(&source != this);
+    if (source.empty()) return;
+
+    IntrusiveListHook* first = source.sentinel_.next_;
+    IntrusiveListHook* last = source.sentinel_.prev_;
+    source.sentinel_.prev_ = &source.sentinel_;
+    source.sentinel_.next_ = &source.sentinel_;
+
+    IntrusiveListHook* dst_last = sentinel_.prev_;
+    dst_last->next_ = first;
+    first->prev_ = dst_last;
+    last->next_ = &sentinel_;
+    sentinel_.prev_ = last;
+  }
+
+  // Visit linked nodes without changing membership. `fn` must not unlink,
+  // destroy or relink the current node.
+  template <class Fn>
+  void for_each(Fn&& fn) noexcept {
+    IntrusiveListHook* current = sentinel_.next_;
+    while (current != &sentinel_) {
+      fn(node_of(current));
+      current = current->next_;
+    }
+  }
+  template <class Fn>
+  void for_each(Fn&& fn) const noexcept {
+    const IntrusiveListHook* current = sentinel_.next_;
+    while (current != &sentinel_) {
+      fn(node_of(current));
+      current = current->next_;
+    }
   }
 
   // Move the longest front prefix satisfying pred to dst's tail. Scanning and

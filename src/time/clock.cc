@@ -9,8 +9,6 @@
 #else
 #  include <cerrno>
 #  include <time.h>
-
-#  include <thread>
 #endif
 
 // x86-64 fast path (fast_monotonic_ns) reads the TSC directly. Pull in the
@@ -56,11 +54,9 @@ std::uint64_t fast_realtime_ns() noexcept {
   return scale_add_saturated(unix_ticks, 100ull, 0);
 }
 
-void sleep_for_ns(std::uint64_t ns) noexcept {
-  if (ns == 0) {
-    SwitchToThread();
-    return;
-  }
+namespace {
+
+void coarse_sleep_for_ns(std::uint64_t ns) noexcept {
   // Sleep takes ms (coarse, ~15ms granularity by default). Round up so we never
   // under-sleep. DWORD_MAX is INFINITE, so cap each finite chunk one below it.
   // Looping also avoids truncating durations longer than ~49.7 days.
@@ -75,6 +71,65 @@ void sleep_for_ns(std::uint64_t ns) noexcept {
   const DWORD ms = static_cast<DWORD>(
       ns / kNsPerMs + (ns % kNsPerMs != 0 ? 1ull : 0ull));
   Sleep(ms);
+}
+
+class ThreadWaitableTimer {
+ public:
+  ThreadWaitableTimer() noexcept {
+    // Windows 10 1803+ accepts flag 0x2 for high-resolution waitable timers.
+    // Keep the numeric value local so building against an older SDK does not
+    // remove the runtime capability probe.
+    constexpr DWORD kHighResolution = 0x00000002;
+    handle_ = ::CreateWaitableTimerExW(nullptr, nullptr, kHighResolution,
+                                       TIMER_ALL_ACCESS);
+    if (handle_ == nullptr) {
+      handle_ = ::CreateWaitableTimerExW(nullptr, nullptr, 0,
+                                         TIMER_ALL_ACCESS);
+    }
+  }
+  ~ThreadWaitableTimer() {
+    if (handle_ != nullptr) ::CloseHandle(handle_);
+  }
+  ThreadWaitableTimer(const ThreadWaitableTimer&) = delete;
+  ThreadWaitableTimer& operator=(const ThreadWaitableTimer&) = delete;
+
+  [[nodiscard]] HANDLE get() const noexcept { return handle_; }
+
+ private:
+  HANDLE handle_ = nullptr;
+};
+
+HANDLE thread_waitable_timer() noexcept {
+  thread_local ThreadWaitableTimer timer;
+  return timer.get();
+}
+
+}  // namespace
+
+void sleep_for_ns(std::uint64_t ns) noexcept {
+  // Match std/Abseil duration semantics: a zero/non-positive duration is an
+  // immediate no-op. Thread yielding is a scheduling primitive, not a sleep.
+  if (ns == 0) return;
+
+  HANDLE timer = thread_waitable_timer();
+  if (timer == nullptr) {
+    coarse_sleep_for_ns(ns);
+    return;
+  }
+
+  // Relative waitable-timer due times are negative 100ns units. Round upward
+  // to preserve the at-least contract. UINT64_MAX ns still fits in LONGLONG
+  // after division by 100.
+  const std::uint64_t ticks = ns / 100ull + (ns % 100ull != 0 ? 1ull : 0ull);
+  LARGE_INTEGER due;
+  due.QuadPart = -static_cast<LONGLONG>(ticks);
+  if (!::SetWaitableTimerEx(timer, &due, 0, nullptr, nullptr, nullptr, 0) ||
+      ::WaitForSingleObject(timer, INFINITE) != WAIT_OBJECT_0) {
+    // A restricted/old host may reject waitable timers. Sleeping coarsely is a
+    // correctness-preserving fallback; never turn a recoverable OS limitation
+    // into an early wake or process abort.
+    coarse_sleep_for_ns(ns);
+  }
 }
 
 #else  // POSIX (Linux / macOS)
@@ -96,10 +151,7 @@ std::uint64_t fast_realtime_ns() noexcept {
 }
 
 void sleep_for_ns(std::uint64_t ns) noexcept {
-  if (ns == 0) {
-    std::this_thread::yield();
-    return;
-  }
+  if (ns == 0) return;
   struct timespec req;
   req.tv_sec = static_cast<std::time_t>(ns / 1'000'000'000ull);
   req.tv_nsec = static_cast<long>(ns % 1'000'000'000ull);
@@ -113,12 +165,34 @@ void sleep_for_ns(std::uint64_t ns) noexcept {
 
 #endif
 
+bool fast_realtime_available() noexcept {
+#if defined(HYLE_OS_WINDOWS) || defined(CLOCK_REALTIME_COARSE)
+  return true;
+#else
+  return false;
+#endif
+}
+
 void sleep_until_ns(std::uint64_t deadline_ns) noexcept {
+#if defined(HYLE_OS_LINUX)
+  // Linux exposes the exact primitive this API means: an absolute
+  // CLOCK_MONOTONIC sleep. It avoids a userspace now/read/subtract loop and is
+  // immune to relative-wait drift across signals.
+  struct timespec deadline;
+  deadline.tv_sec = static_cast<std::time_t>(deadline_ns / 1'000'000'000ull);
+  deadline.tv_nsec = static_cast<long>(deadline_ns % 1'000'000'000ull);
+  int result;
+  do {
+    result = clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &deadline, nullptr);
+  } while (result == EINTR);
+  HYLE_FATAL_ASSERT(result == 0);
+#else
   for (;;) {
     const std::uint64_t now = monotonic_ns();
     if (deadline_ns <= now) return;
     sleep_for_ns(deadline_ns - now);
   }
+#endif
 }
 
 // ---------------------------------------------------------------------------

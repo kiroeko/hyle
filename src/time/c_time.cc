@@ -1,11 +1,13 @@
 #include "hyle/c/time.h"
 
 #include <new>
+#include <utility>
 
-#include "hyle/macros.h"
+#include "hyle/error/status.h"
 #include "hyle/time/clock.h"
 #include "hyle/time/common_timeout_queue.h"
-#include "hyle/time/timer_wheel.h"
+#include "hyle/time/timer_queue.h"
+#include "../error/status_access.h"
 
 struct hyle_time_timer_o {
   hyle::time::TimerEntry entry;
@@ -16,44 +18,41 @@ struct hyle_time_timer_o {
       : entry(this), user_data(data) {}
 };
 
-struct hyle_time_wheel_o {
-  hyle::time::TimerWheel wheel;
-  explicit hyle_time_wheel_o(uint64_t start_ns) noexcept : wheel(start_ns) {}
+struct hyle_time_queue_o {
+  hyle::time::TimerQueue queue;
+  explicit hyle_time_queue_o(uint64_t now_ns) noexcept : queue(now_ns) {}
 };
 
 struct hyle_time_common_queue_o {
   hyle::time::CommonTimeoutQueue queue;
-  hyle_time_common_queue_o(uint64_t start_ns, uint64_t duration_ns) noexcept
-      : queue(start_ns, duration_ns) {}
+  explicit hyle_time_common_queue_o(uint64_t duration_ns) noexcept
+      : queue(duration_ns) {}
 };
 
 namespace {
 
-thread_local const char* g_last_error = "";
-
-void clear_error() noexcept { g_last_error = ""; }
-void set_error(const char* message) noexcept { g_last_error = message; }
-
-bool valid_pair(const void* source, const hyle_time_timer* timer) noexcept {
-  if (source == nullptr || timer == nullptr) {
-    set_error("time source and timer must be non-null");
-    return false;
-  }
-  if (timer->c_owner != nullptr && timer->c_owner != source) {
-    set_error("timer is already scheduled on another source");
-    return false;
-  }
-  return true;
+hyle_status steal_status(hyle::Status&& status) noexcept {
+  return hyle_status{hyle::detail::StatusAccess::release(status)};
 }
 
-template <class Source>
-size_t advance_and_visit(Source& source, uint64_t now_ns,
-                         hyle_time_timer_visit_fn visit, void* ctx) noexcept {
-  hyle::time::TimerList fired;
-  source.advance(now_ns, fired);
+hyle::Status validate_pair(const void* source,
+                           const hyle_time_timer* timer) noexcept {
+  if (source == nullptr || timer == nullptr) {
+    return hyle::Status::InvalidArgument(
+        "time source and timer must be non-null");
+  }
+  if (timer->c_owner != nullptr && timer->c_owner != source) {
+    return hyle::Status::FailedPrecondition(
+        "timer is already scheduled on another source");
+  }
+  return hyle::Status{};
+}
+
+size_t visit_list(hyle::time::TimerList& entries,
+                  hyle_time_timer_visit_fn visit, void* ctx) noexcept {
   size_t count = 0;
-  fired.consume_all([&](hyle::time::TimerEntry* entry) noexcept {
-    auto* timer = static_cast<hyle_time_timer*>(entry->data);
+  entries.consume_all([&](hyle::time::TimerEntry* entry) noexcept {
+    auto* timer = static_cast<hyle_time_timer*>(entry->data());
     HYLE_FATAL_ASSERT(timer != nullptr);
     timer->c_owner = nullptr;
     ++count;
@@ -62,11 +61,25 @@ size_t advance_and_visit(Source& source, uint64_t now_ns,
   return count;
 }
 
+template <class Source>
+size_t advance_and_visit(Source& source, uint64_t now_ns,
+                         hyle_time_timer_visit_fn visit, void* ctx) noexcept {
+  hyle::time::TimerList fired;
+  source.advance(now_ns, fired);
+  return visit_list(fired, visit, ctx);
+}
+
+template <class Source>
+size_t cancel_all_and_visit(Source& source, hyle_time_timer_visit_fn visit,
+                            void* ctx) noexcept {
+  hyle::time::TimerList cancelled;
+  source.cancel_all(cancelled);
+  return visit_list(cancelled, visit, ctx);
+}
+
 }  // namespace
 
 extern "C" {
-
-const char* hyle_time_last_error(void) { return g_last_error; }
 
 uint64_t hyle_time_monotonic_ns(void) {
   return hyle::time::monotonic_ns();
@@ -83,6 +96,9 @@ uint64_t hyle_time_realtime_ns(void) {
 uint64_t hyle_time_fast_realtime_ns(void) {
   return hyle::time::fast_realtime_ns();
 }
+int hyle_time_fast_realtime_available(void) {
+  return hyle::time::fast_realtime_available() ? 1 : 0;
+}
 void hyle_time_sleep_for_ns(uint64_t ns) {
   hyle::time::sleep_for_ns(ns);
 }
@@ -96,19 +112,29 @@ uint64_t hyle_time_remaining_ns(uint64_t deadline_ns) {
   return hyle::time::remaining_ns(deadline_ns);
 }
 
-hyle_time_timer* hyle_time_timer_create(void* user_data) {
+hyle_status hyle_time_timer_create(hyle_time_timer** out, void* user_data) {
+  if (out == nullptr) {
+    return steal_status(
+        hyle::Status::InvalidArgument("timer output must be non-null"));
+  }
+  *out = nullptr;
   auto* timer = new (std::nothrow) hyle_time_timer(user_data);
   if (timer == nullptr) {
-    set_error("timer allocation failed");
-    return nullptr;
+    return steal_status(
+        hyle::Status::ResourceExhausted("timer allocation failed"));
   }
-  clear_error();
-  return timer;
+  *out = timer;
+  return steal_status(hyle::Status{});
 }
 
-void hyle_time_timer_destroy(hyle_time_timer* timer) {
-  if (timer != nullptr) HYLE_FATAL_ASSERT(timer->c_owner == nullptr);
+hyle_status hyle_time_timer_destroy(hyle_time_timer* timer) {
+  if (timer == nullptr) return steal_status(hyle::Status{});
+  if (timer->c_owner != nullptr || timer->entry.scheduled()) {
+    return steal_status(hyle::Status::FailedPrecondition(
+        "scheduled timer must be cancelled before destroy"));
+  }
   delete timer;
+  return steal_status(hyle::Status{});
 }
 
 void* hyle_time_timer_user_data(const hyle_time_timer* timer) {
@@ -120,129 +146,187 @@ void hyle_time_timer_set_user_data(hyle_time_timer* timer, void* user_data) {
 }
 
 uint64_t hyle_time_timer_deadline_ns(const hyle_time_timer* timer) {
-  return timer != nullptr ? timer->entry.deadline_ns : 0;
+  return timer != nullptr ? timer->entry.deadline_ns() : 0;
 }
 
 int hyle_time_timer_is_scheduled(const hyle_time_timer* timer) {
   return timer != nullptr && timer->entry.scheduled() ? 1 : 0;
 }
 
-hyle_time_wheel* hyle_time_wheel_create(uint64_t start_ns) {
-  auto* wheel = new (std::nothrow) hyle_time_wheel(start_ns);
-  if (wheel == nullptr) {
-    set_error("timer wheel allocation failed");
-    return nullptr;
+hyle_status hyle_time_queue_create_at(hyle_time_queue** out,
+                                      uint64_t now_ns) {
+  if (out == nullptr) {
+    return steal_status(
+        hyle::Status::InvalidArgument("timer queue output must be non-null"));
   }
-  clear_error();
-  return wheel;
-}
-
-void hyle_time_wheel_destroy(hyle_time_wheel* wheel) { delete wheel; }
-
-int hyle_time_wheel_schedule(hyle_time_wheel* wheel, hyle_time_timer* timer,
-                             uint64_t deadline_ns) {
-  if (!valid_pair(wheel, timer)) return 0;
-  wheel->wheel.schedule(&timer->entry, deadline_ns);
-  timer->c_owner = wheel;
-  clear_error();
-  return 1;
-}
-
-int hyle_time_wheel_cancel(hyle_time_wheel* wheel, hyle_time_timer* timer) {
-  if (!valid_pair(wheel, timer)) return 0;
-  wheel->wheel.cancel(&timer->entry);
-  timer->c_owner = nullptr;
-  clear_error();
-  return 1;
-}
-
-size_t hyle_time_wheel_advance(hyle_time_wheel* wheel, uint64_t now_ns,
-                               hyle_time_timer_visit_fn visit, void* ctx) {
-  if (wheel == nullptr) {
-    set_error("timer wheel must be non-null");
-    return 0;
-  }
-  const size_t count = advance_and_visit(wheel->wheel, now_ns, visit, ctx);
-  clear_error();
-  return count;
-}
-
-uint64_t hyle_time_wheel_next_deadline_ns(const hyle_time_wheel* wheel) {
-  return wheel != nullptr ? wheel->wheel.next_deadline_ns() : UINT64_MAX;
-}
-size_t hyle_time_wheel_size(const hyle_time_wheel* wheel) {
-  return wheel != nullptr ? wheel->wheel.size() : 0;
-}
-int hyle_time_wheel_empty(const hyle_time_wheel* wheel) {
-  return wheel == nullptr || wheel->wheel.empty() ? 1 : 0;
-}
-
-hyle_time_common_queue* hyle_time_common_queue_create(uint64_t start_ns,
-                                                       uint64_t duration_ns) {
-  auto* queue =
-      new (std::nothrow) hyle_time_common_queue(start_ns, duration_ns);
+  *out = nullptr;
+  auto* queue = new (std::nothrow) hyle_time_queue(now_ns);
   if (queue == nullptr) {
-    set_error("common timeout queue allocation failed");
-    return nullptr;
+    return steal_status(
+        hyle::Status::ResourceExhausted("timer queue allocation failed"));
   }
-  clear_error();
-  return queue;
+  *out = queue;
+  return steal_status(hyle::Status{});
 }
 
-void hyle_time_common_queue_destroy(hyle_time_common_queue* queue) {
+hyle_status hyle_time_queue_create(hyle_time_queue** out) {
+  return hyle_time_queue_create_at(out, hyle::time::monotonic_ns());
+}
+
+hyle_status hyle_time_queue_destroy(hyle_time_queue* queue) {
+  if (queue == nullptr) return steal_status(hyle::Status{});
+  if (!queue->queue.empty()) {
+    return steal_status(hyle::Status::FailedPrecondition(
+        "timer queue must be empty before destroy"));
+  }
   delete queue;
+  return steal_status(hyle::Status{});
 }
 
-int hyle_time_common_queue_schedule(hyle_time_common_queue* queue,
-                                    hyle_time_timer* timer,
-                                    uint64_t deadline_ns) {
-  if (!valid_pair(queue, timer)) return 0;
+hyle_status hyle_time_queue_schedule(hyle_time_queue* queue,
+                                     hyle_time_timer* timer,
+                                     uint64_t deadline_ns) {
+  hyle::Status status = validate_pair(queue, timer);
+  if (!status.ok()) return steal_status(std::move(status));
+  queue->queue.schedule(&timer->entry, deadline_ns);
+  timer->c_owner = queue;
+  return steal_status(hyle::Status{});
+}
+
+hyle_status hyle_time_queue_cancel(int* out_cancelled,
+                                   hyle_time_queue* queue,
+                                   hyle_time_timer* timer) {
+  hyle::Status status = validate_pair(queue, timer);
+  if (!status.ok()) return steal_status(std::move(status));
+  const bool cancelled = queue->queue.cancel(&timer->entry);
+  timer->c_owner = nullptr;
+  if (out_cancelled != nullptr) *out_cancelled = cancelled ? 1 : 0;
+  return steal_status(hyle::Status{});
+}
+
+hyle_status hyle_time_queue_advance(size_t* out_fired,
+                                    hyle_time_queue* queue, uint64_t now_ns,
+                                    hyle_time_timer_visit_fn visit, void* ctx) {
+  if (out_fired == nullptr || queue == nullptr) {
+    return steal_status(hyle::Status::InvalidArgument(
+        "timer queue and fired output must be non-null"));
+  }
+  if (now_ns < queue->queue.now_ns()) {
+    return steal_status(hyle::Status::InvalidArgument(
+        "timer queue advance timestamp must be non-decreasing"));
+  }
+  *out_fired = advance_and_visit(queue->queue, now_ns, visit, ctx);
+  return steal_status(hyle::Status{});
+}
+
+hyle_status hyle_time_queue_cancel_all(size_t* out_cancelled,
+                                       hyle_time_queue* queue,
+                                       hyle_time_timer_visit_fn visit,
+                                       void* ctx) {
+  if (out_cancelled == nullptr || queue == nullptr) {
+    return steal_status(hyle::Status::InvalidArgument(
+        "timer queue and cancelled output must be non-null"));
+  }
+  *out_cancelled = cancel_all_and_visit(queue->queue, visit, ctx);
+  return steal_status(hyle::Status{});
+}
+
+uint64_t hyle_time_queue_next_deadline_ns(const hyle_time_queue* queue) {
+  return queue != nullptr ? queue->queue.next_deadline_ns() : UINT64_MAX;
+}
+size_t hyle_time_queue_size(const hyle_time_queue* queue) {
+  return queue != nullptr ? queue->queue.size() : 0;
+}
+int hyle_time_queue_empty(const hyle_time_queue* queue) {
+  return queue == nullptr || queue->queue.empty() ? 1 : 0;
+}
+
+hyle_status hyle_time_common_queue_create(hyle_time_common_queue** out,
+                                          uint64_t duration_ns) {
+  if (out == nullptr) {
+    return steal_status(hyle::Status::InvalidArgument(
+        "common timeout queue output must be non-null"));
+  }
+  *out = nullptr;
+  auto* queue = new (std::nothrow) hyle_time_common_queue(duration_ns);
+  if (queue == nullptr) {
+    return steal_status(hyle::Status::ResourceExhausted(
+        "common timeout queue allocation failed"));
+  }
+  *out = queue;
+  return steal_status(hyle::Status{});
+}
+
+hyle_status hyle_time_common_queue_destroy(hyle_time_common_queue* queue) {
+  if (queue == nullptr) return steal_status(hyle::Status{});
+  if (!queue->queue.empty()) {
+    return steal_status(hyle::Status::FailedPrecondition(
+        "common timeout queue must be empty before destroy"));
+  }
+  delete queue;
+  return steal_status(hyle::Status{});
+}
+
+hyle_status hyle_time_common_queue_schedule(hyle_time_common_queue* queue,
+                                            hyle_time_timer* timer,
+                                            uint64_t deadline_ns) {
+  hyle::Status status = validate_pair(queue, timer);
+  if (!status.ok()) return steal_status(std::move(status));
   const bool ok = queue->queue.try_schedule(&timer->entry, deadline_ns);
   timer->c_owner =
       timer->entry.scheduled() ? static_cast<const void*>(queue) : nullptr;
   if (!ok) {
-    set_error("common timeout deadlines must be non-decreasing");
-    return 0;
+    return steal_status(hyle::Status::InvalidArgument(
+        "common timeout deadlines must be non-decreasing"));
   }
-  clear_error();
-  return 1;
+  return steal_status(hyle::Status{});
 }
 
-int hyle_time_common_queue_schedule_after(hyle_time_common_queue* queue,
-                                          hyle_time_timer* timer,
-                                          uint64_t now_ns) {
-  if (!valid_pair(queue, timer)) return 0;
+hyle_status hyle_time_common_queue_schedule_after(
+    hyle_time_common_queue* queue, hyle_time_timer* timer, uint64_t now_ns) {
+  hyle::Status status = validate_pair(queue, timer);
+  if (!status.ok()) return steal_status(std::move(status));
   const bool ok = queue->queue.try_schedule_after(&timer->entry, now_ns);
   timer->c_owner =
       timer->entry.scheduled() ? static_cast<const void*>(queue) : nullptr;
   if (!ok) {
-    set_error("common timeout deadlines must be non-decreasing");
-    return 0;
+    return steal_status(hyle::Status::InvalidArgument(
+        "common timeout deadlines must be non-decreasing"));
   }
-  clear_error();
-  return 1;
+  return steal_status(hyle::Status{});
 }
 
-int hyle_time_common_queue_cancel(hyle_time_common_queue* queue,
-                                  hyle_time_timer* timer) {
-  if (!valid_pair(queue, timer)) return 0;
-  queue->queue.cancel(&timer->entry);
+hyle_status hyle_time_common_queue_cancel(int* out_cancelled,
+                                          hyle_time_common_queue* queue,
+                                          hyle_time_timer* timer) {
+  hyle::Status status = validate_pair(queue, timer);
+  if (!status.ok()) return steal_status(std::move(status));
+  const bool cancelled = queue->queue.cancel(&timer->entry);
   timer->c_owner = nullptr;
-  clear_error();
-  return 1;
+  if (out_cancelled != nullptr) *out_cancelled = cancelled ? 1 : 0;
+  return steal_status(hyle::Status{});
 }
 
-size_t hyle_time_common_queue_advance(hyle_time_common_queue* queue,
-                                      uint64_t now_ns,
-                                      hyle_time_timer_visit_fn visit,
-                                      void* ctx) {
-  if (queue == nullptr) {
-    set_error("common timeout queue must be non-null");
-    return 0;
+hyle_status hyle_time_common_queue_advance(
+    size_t* out_fired, hyle_time_common_queue* queue, uint64_t now_ns,
+    hyle_time_timer_visit_fn visit, void* ctx) {
+  if (out_fired == nullptr || queue == nullptr) {
+    return steal_status(hyle::Status::InvalidArgument(
+        "common timeout queue and fired output must be non-null"));
   }
-  const size_t count = advance_and_visit(queue->queue, now_ns, visit, ctx);
-  clear_error();
-  return count;
+  *out_fired = advance_and_visit(queue->queue, now_ns, visit, ctx);
+  return steal_status(hyle::Status{});
+}
+
+hyle_status hyle_time_common_queue_cancel_all(
+    size_t* out_cancelled, hyle_time_common_queue* queue,
+    hyle_time_timer_visit_fn visit, void* ctx) {
+  if (out_cancelled == nullptr || queue == nullptr) {
+    return steal_status(hyle::Status::InvalidArgument(
+        "common timeout queue and cancelled output must be non-null"));
+  }
+  *out_cancelled = cancel_all_and_visit(queue->queue, visit, ctx);
+  return steal_status(hyle::Status{});
 }
 
 uint64_t hyle_time_common_queue_next_deadline_ns(

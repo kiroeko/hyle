@@ -218,6 +218,52 @@ TEST(IntrusiveList, ConsumeAllUnlinksBeforeCallbackAndAllowsRelink) {
   EXPECT_EQ(src.consume_all([](Node*) {}), 0u);
 }
 
+TEST(IntrusiveList, AppendSplicesWholeListAndPreservesOrder) {
+  NodeList dst;
+  NodeList src;
+  Node a(1), b(2), c(3), d(4);
+  dst.push_back(&a);
+  dst.push_back(&b);
+  src.push_back(&c);
+  src.push_back(&d);
+
+  dst.append(src);
+  EXPECT_TRUE(src.empty());
+  EXPECT_TRUE(c.hook.linked());
+  EXPECT_TRUE(d.hook.linked());
+  EXPECT_EQ(dst.pop_front(), &a);
+  EXPECT_EQ(dst.pop_front(), &b);
+  EXPECT_EQ(dst.pop_front(), &c);
+  EXPECT_EQ(dst.pop_front(), &d);
+  EXPECT_TRUE(dst.empty());
+
+  dst.append(src);
+  EXPECT_TRUE(dst.empty());
+}
+
+TEST(IntrusiveList, ForEachVisitsConstAndMutableListsWithoutUnlinking) {
+  NodeList list;
+  Node a(1), b(2), c(3);
+  list.push_back(&a);
+  list.push_back(&b);
+  list.push_back(&c);
+
+  int mutable_sum = 0;
+  list.for_each([&](Node* node) {
+    mutable_sum += node->v;
+    node->v *= 2;
+  });
+  EXPECT_EQ(mutable_sum, 6);
+
+  const NodeList& const_list = list;
+  int const_sum = 0;
+  const_list.for_each([&](const Node* node) { const_sum += node->v; });
+  EXPECT_EQ(const_sum, 12);
+  EXPECT_EQ(list.pop_front(), &a);
+  EXPECT_EQ(list.pop_front(), &b);
+  EXPECT_EQ(list.pop_front(), &c);
+}
+
 TEST(IntrusiveList, RejectsDoubleLinkAndSelfTransfer) {
   EXPECT_DEATH(
       {
@@ -233,6 +279,14 @@ TEST(IntrusiveList, RejectsDoubleLinkAndSelfTransfer) {
         Node a(1);
         list.push_back(&a);
         (void)list.move_front_to(list);
+      },
+      "");
+  EXPECT_DEATH(
+      {
+        NodeList list;
+        Node a(1);
+        list.push_back(&a);
+        list.append(list);
       },
       "");
 }

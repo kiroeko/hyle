@@ -25,14 +25,30 @@
 
 namespace hyle::time {
 
+using Duration = std::chrono::nanoseconds;
+using MonotonicClock = std::chrono::steady_clock;
+using MonotonicTimePoint =
+    std::chrono::time_point<MonotonicClock, Duration>;
+using RealtimeClock = std::chrono::system_clock;
+using RealtimeTimePoint = std::chrono::time_point<RealtimeClock, Duration>;
+
+// Typed C++ clock views. Raw *_ns functions remain the compact hot-path/C ABI
+// representation; normal C++ callers can use standard chrono types and avoid
+// mixing a wall timestamp, duration and monotonic deadline by accident.
+HYLE_FORCE_INLINE MonotonicTimePoint monotonic_now() noexcept {
+  return std::chrono::time_point_cast<Duration>(MonotonicClock::now());
+}
+
+HYLE_FORCE_INLINE RealtimeTimePoint realtime_now() noexcept {
+  return std::chrono::time_point_cast<Duration>(RealtimeClock::now());
+}
+
 // Steady monotonic counter in ns from an unspecified zero. The native C++ path
 // is header-inline over std::chrono, avoiding an extra hyle_time shared-library
 // hop before the standard library reaches CLOCK_MONOTONIC/QPC. The stable C ABI
 // remains an exported wrapper. This is the only clock for deadlines/timeouts.
 HYLE_FORCE_INLINE std::uint64_t monotonic_ns() noexcept {
-  const auto value = std::chrono::duration_cast<std::chrono::nanoseconds>(
-                         std::chrono::steady_clock::now().time_since_epoch())
-                         .count();
+  const auto value = monotonic_now().time_since_epoch().count();
   return value > 0 ? static_cast<std::uint64_t>(value) : 0;
 }
 
@@ -76,9 +92,7 @@ HYLE_TIME_API bool fast_monotonic_available() noexcept;
 // Header-inline for the same one-hop reason as monotonic_ns(). May jump if the
 // system clock is adjusted -- never use for elapsed/deadlines.
 HYLE_FORCE_INLINE std::uint64_t realtime_ns() noexcept {
-  const auto value = std::chrono::duration_cast<std::chrono::nanoseconds>(
-                         std::chrono::system_clock::now().time_since_epoch())
-                         .count();
+  const auto value = realtime_now().time_since_epoch().count();
   return value > 0 ? static_cast<std::uint64_t>(value) : 0;
 }
 
@@ -101,7 +115,13 @@ HYLE_FORCE_INLINE std::uint64_t realtime_ns() noexcept {
 // true sub-ms wall-clock precision (rare), use realtime_ns().
 HYLE_TIME_API std::uint64_t fast_realtime_ns() noexcept;
 
-// Sleep at least `ns` (the OS may round up / wake late). 0 yields.
+// True only when fast_realtime_ns() uses a genuinely coarser/faster native
+// source. It is false on platforms where that entry transparently falls back
+// to realtime_ns(), allowing a logging pipeline to make an informed choice.
+HYLE_TIME_API bool fast_realtime_available() noexcept;
+
+// Sleep at least `ns` (the OS may round up / wake late). 0 is an immediate
+// no-op; yielding is deliberately left to the scheduling API.
 HYLE_TIME_API void sleep_for_ns(std::uint64_t ns) noexcept;
 
 // Sleep until an absolute monotonic deadline. A deadline at/in the past returns
@@ -117,6 +137,46 @@ constexpr std::uint64_t saturating_add_ns(std::uint64_t base,
   return delta > UINT64_MAX - base ? UINT64_MAX : base + delta;
 }
 
+// Convert any standard duration to positive nanoseconds, rounding upward so a
+// requested wait/deadline never becomes shorter during unit conversion.
+// Non-positive/NaN values become zero; huge/infinite values saturate.
+template <class Rep, class Period>
+std::uint64_t duration_ns_saturated(
+    std::chrono::duration<Rep, Period> duration) noexcept {
+  using FloatNs = std::chrono::duration<long double, std::nano>;
+  const long double ns = FloatNs(duration).count();
+  if (!(ns > 0.0L)) return 0;
+  const long double max = static_cast<long double>(UINT64_MAX);
+  if (ns >= max) return UINT64_MAX;
+  const auto whole = static_cast<std::uint64_t>(ns);
+  return static_cast<long double>(whole) < ns ? whole + 1 : whole;
+}
+
+inline std::uint64_t to_monotonic_ns(MonotonicTimePoint point) noexcept {
+  const auto value = point.time_since_epoch().count();
+  return value > 0 ? static_cast<std::uint64_t>(value) : 0;
+}
+
+inline std::uint64_t to_realtime_ns(RealtimeTimePoint point) noexcept {
+  const auto value = point.time_since_epoch().count();
+  return value > 0 ? static_cast<std::uint64_t>(value) : 0;
+}
+
+inline MonotonicTimePoint monotonic_time_point(
+    std::uint64_t value_ns) noexcept {
+  constexpr auto max = static_cast<std::uint64_t>(Duration::max().count());
+  const auto clamped = value_ns > max ? Duration::max().count()
+                                      : static_cast<Duration::rep>(value_ns);
+  return MonotonicTimePoint(Duration(clamped));
+}
+
+inline RealtimeTimePoint realtime_time_point(std::uint64_t value_ns) noexcept {
+  constexpr auto max = static_cast<std::uint64_t>(Duration::max().count());
+  const auto clamped = value_ns > max ? Duration::max().count()
+                                      : static_cast<Duration::rep>(value_ns);
+  return RealtimeTimePoint(Duration(clamped));
+}
+
 inline std::uint64_t deadline_after_ns(std::uint64_t timeout_ns) noexcept {
   return saturating_add_ns(monotonic_ns(), timeout_ns);
 }
@@ -124,6 +184,27 @@ inline std::uint64_t deadline_after_ns(std::uint64_t timeout_ns) noexcept {
 inline std::uint64_t remaining_ns(std::uint64_t deadline_ns) noexcept {
   const std::uint64_t now = monotonic_ns();
   return deadline_ns > now ? deadline_ns - now : 0;
+}
+
+template <class Rep, class Period>
+inline MonotonicTimePoint deadline_after(
+    std::chrono::duration<Rep, Period> timeout) noexcept {
+  return monotonic_time_point(
+      deadline_after_ns(duration_ns_saturated(timeout)));
+}
+
+inline Duration remaining(MonotonicTimePoint deadline) noexcept {
+  const MonotonicTimePoint now = monotonic_now();
+  return deadline > now ? deadline - now : Duration::zero();
+}
+
+template <class Rep, class Period>
+inline void sleep_for(std::chrono::duration<Rep, Period> duration) noexcept {
+  sleep_for_ns(duration_ns_saturated(duration));
+}
+
+inline void sleep_until(MonotonicTimePoint deadline) noexcept {
+  sleep_until_ns(to_monotonic_ns(deadline));
 }
 
 inline void sleep_for_us(std::uint64_t us) noexcept {
@@ -136,20 +217,42 @@ inline void sleep_for_ms(std::uint64_t ms) noexcept {
                    : ms * 1'000'000ull);
 }
 
-// A captured monotonic instant; the ergonomic way to measure elapsed time
-// (tokio Instant). Header-inline -- no DLL hop for the arithmetic.
-struct Instant {
-  std::uint64_t ns = 0;
+// A type-safe monotonic snapshot (oneTBB tick_count / Tokio Instant shape).
+// The representation is hidden so it cannot be confused with realtime ns.
+class Instant {
+ public:
+  Instant() noexcept = default;
+  explicit Instant(MonotonicTimePoint point) noexcept : point_(point) {}
 
-  static Instant now() noexcept { return Instant{monotonic_ns()}; }
-  std::uint64_t elapsed_ns() const noexcept {
-    const std::uint64_t now_ns = monotonic_ns();
-    return now_ns > ns ? now_ns - ns : 0;
+  static Instant now() noexcept { return Instant(monotonic_now()); }
+  [[nodiscard]] MonotonicTimePoint time_point() const noexcept {
+    return point_;
   }
-  // ns from this instant to `later` (0 if later is actually earlier).
-  std::uint64_t until_ns(Instant later) const noexcept {
-    return later.ns > ns ? later.ns - ns : 0;
+  [[nodiscard]] Duration elapsed() const noexcept {
+    const MonotonicTimePoint now = monotonic_now();
+    return now > point_ ? now - point_ : Duration::zero();
   }
+  [[nodiscard]] std::uint64_t elapsed_ns() const noexcept {
+    return static_cast<std::uint64_t>(elapsed().count());
+  }
+  [[nodiscard]] Duration until(Instant later) const noexcept {
+    return later.point_ > point_ ? later.point_ - point_ : Duration::zero();
+  }
+  [[nodiscard]] std::uint64_t until_ns(Instant later) const noexcept {
+    return static_cast<std::uint64_t>(until(later).count());
+  }
+
+  friend Duration operator-(Instant later, Instant earlier) noexcept {
+    // Match std::chrono time-point subtraction: direction is meaningful, so
+    // reverse subtraction is negative rather than silently clamped to zero.
+    // elapsed()/until() retain their explicitly non-negative convenience shape.
+    return later.point_ - earlier.point_;
+  }
+  friend bool operator==(Instant, Instant) noexcept = default;
+  friend auto operator<=>(Instant, Instant) noexcept = default;
+
+ private:
+  MonotonicTimePoint point_{};
 };
 
 }  // namespace hyle::time

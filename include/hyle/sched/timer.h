@@ -13,33 +13,33 @@
 #endif
 
 namespace hyle::time {
-class TimerEntry;  // fwd: defined in time/timer_source.h (opaque here)
+class TimerEntry;  // fwd: defined in time/timer_entry.h (opaque here)
 }
 
 // Fiber sleep (sched-04b): a fiber suspends for a duration WITHOUT burning its
-// worker. This is the first consumer of the time-02 timing wheel through the
+// worker. This is the first consumer of time::TimerQueue through the
 // sched-04a Waker spine -- "timer expired" funnels into the same wake path as an
-// io/gpu completion (sched-design §3). Each worker owns a TimerWheel; a sleeping
-// fiber arms an entry on its worker's wheel and suspend()s. The worker, when it
-// would otherwise park, advances its wheel and fires due timers -> Waker::wake()
+// io/gpu completion (sched-design §3). Each worker owns a TimerQueue; a sleeping
+// fiber arms an entry on its worker's queue and suspend()s. The worker, when it
+// would otherwise park, advances its queue and fires due timers -> Waker::wake()
 // re-injects the fiber. Deadlines key on monotonic_ns (never the wall clock).
 //
 // COST MODEL (SOTA discipline): timers are touched ONLY on the park cold path.
-// A worker with runnable fibers never reads the wheel or a clock -- a workload
+// A worker with runnable fibers never reads the queue or a clock -- a workload
 // with no sleeping fibers pays nothing for this feature's existence. Arm is O(1),
-// the pre-park advance is O(#due) + O(8 levels) for the next-deadline scan.
+// the pre-park advance touches only due/rebucketed entries and occupied buckets.
 //
-// ConditionVariable::wait_for/wait_until also use this wheel. Their notify-vs-
+// ConditionVariable::wait_for/wait_until also use this queue. Their notify-vs-
 // timer race is atomic-arbitrated and the waiting fiber is temporarily pinned to
-// the wheel owner for that episode, so a notify winner cancels the loser timer on
-// the correct worker without cross-thread wheel mutation. Plain sleep is simpler:
+// the queue owner for that episode, so a notify winner cancels the loser timer on
+// the correct worker without cross-thread queue mutation. Plain sleep is simpler:
 // the timer is its sole waker.
 
 namespace hyle::sched {
 
-// Suspend the current fiber for AT LEAST `ns` nanoseconds (rounded up to the
-// wheel's 1ms tick), then resume. Must be called from inside a fiber running on
-// a Scheduler worker (asserts otherwise). ns == 0 resumes on the next tick.
+// Suspend the current fiber until the exact monotonic deadline is due, then
+// resume. Must be called from inside a fiber running on a Scheduler worker
+// (asserts otherwise). ns == 0 becomes due on the next scheduler advance.
 //
 // A sleeping fiber is still OUTSTANDING work: Scheduler::drain()/shutdown() block
 // until it wakes and finishes. A fiber sleeping N seconds therefore holds up
@@ -47,26 +47,26 @@ namespace hyle::sched {
 HYLE_SCHED_API void sleep_for_ns(std::uint64_t ns) noexcept;
 
 // Absolute-deadline variant: suspend until monotonic_ns() reaches at least
-// `deadline_ns`. A deadline already in the past resumes on the next tick.
+// `deadline_ns`. A past deadline becomes due on the next scheduler advance.
 HYLE_SCHED_API void sleep_until_ns(std::uint64_t deadline_ns) noexcept;
 
 // ---- timed-io building blocks (io-06 / C2) ----------------------------------
 // Lower-level timer arm/cancel that do NOT suspend -- for composing a timeout with
 // a concurrent io op (recv/accept/connect + deadline, first-to-fire wins). Unlike
 // sleep_*, the caller arms a timer AND submits an io op, then suspends ONCE; on
-// resume it arbitrates which fired. Both operate on the CURRENT worker's wheel and
+// resume it arbitrates which fired. Both operate on the CURRENT worker's queue and
 // MUST be called from a fiber on that worker (shard-per-core: the timed io fiber is
 // pinned, so arm/fire/cancel all happen single-threaded on one worker -- no
 // cross-core cancel queue needed, which is why this can ship without sched-04d).
 //
-// arm_timeout: schedule `entry` to fire at `deadline_ns`. With no on_fire
-// callback it wakes THIS fiber (entry.data is filled automatically, same as
-// sleep). With on_fire set, the caller must initialize entry.data BEFORE this
+// arm_timeout: schedule `entry` to fire at `deadline_ns`. With no fire callback
+// callback it wakes THIS fiber (entry payload is filled automatically, same as
+// sleep). With a fire callback set, the caller initializes the payload BEFORE this
 // call; the callback owns wake arbitration. The entry MUST outlive the wait
 // (put it on the coroutine/awaitable frame). Does NOT suspend.
 HYLE_SCHED_API void arm_timeout(time::TimerEntry* entry,
                                 std::uint64_t deadline_ns) noexcept;
-// cancel_timeout: remove `entry` from this worker's wheel if still armed (O(1),
+// cancel_timeout: remove `entry` from this worker's queue if still armed (O(1),
 // no-op if it already fired). Call when the io op won the race, so a stale timer
 // doesn't fire into a reused fiber. Same-worker only.
 HYLE_SCHED_API void cancel_timeout(time::TimerEntry* entry) noexcept;

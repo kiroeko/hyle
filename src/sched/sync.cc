@@ -9,7 +9,7 @@
 #include "hyle/sched/timer.h"
 #include "hyle/sched/waker.h"
 #include "hyle/time/clock.h"
-#include "hyle/time/timer_source.h"
+#include "hyle/time/timer_entry.h"
 
 namespace hyle::sched {
 namespace {
@@ -250,7 +250,7 @@ ConditionVariable::CvStatus ConditionVariable::finish_wait_timed_(
 
 void ConditionVariable::timed_fiber_fire_(
     time::TimerEntry* entry) noexcept {
-  auto* ctx = static_cast<TimedContext*>(entry->data);
+  auto* ctx = static_cast<TimedContext*>(entry->data());
   ConditionVariable* cv = ctx->cv;
   Waiter* node = ctx->node;
   bool wake = false;
@@ -307,15 +307,15 @@ ConditionVariable::CvStatus ConditionVariable::finish_wait_timed_fiber_(
 
   time::TimerEntry timer;
   TimedContext ctx{this, node};
-  timer.on_fire = &ConditionVariable::timed_fiber_fire_;
-  timer.data = &ctx;  // callback context; callback path does not need Fiber* data
+  timer.set_fire_callback(&ConditionVariable::timed_fiber_fire_);
+  timer.set_data(&ctx);  // callback context; callback path needs no Fiber payload
   // Publish the complete callback record before inserting it into the live
-  // wheel. A sub-tick deadline may fire as soon as arm_timeout returns.
+  // queue. A sub-tick deadline may fire as soon as arm_timeout returns.
   arm_timeout(&timer, deadline_from_now_(timeout_ns));
   suspend();
 
   // We resume on the temporary owner worker. If notify won before expiry, remove
-  // its still-live timer from this worker's wheel before the stack entry dies.
+  // its still-live timer from this worker's queue before the stack entry dies.
   if (timer.scheduled()) cancel_timeout(&timer);
   if (previous_owner < 0) self->set_owner_worker(-1);
   return node->timed_state.load(std::memory_order_acquire) == 2

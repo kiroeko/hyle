@@ -1,12 +1,10 @@
-// time-02 timer-wheel bench: is the hierarchical wheel actually the right data
-// structure for the "arm >> cancel >> expire" agent workload, or is a heap fine?
+// General/fixed-duration timer-queue bench for the real
+// "arm >> cancel >> expire" server/runtime workload.
 //
 // SOTA rival = a min-heap of (deadline, id), the structure Go/libev/libuv pick
 // for timers. It is the honest dependency-free comparison for the DATA STRUCTURE
-// claim in time-02-timer-wheel.md. (folly HHWheelTimer would be the same-family
-// rival, but it is welded to an EventBase/libevent loop + glog + boost -- linking
-// that into a microbench measures the event loop, not the wheel. tokio is Rust.
-// So we race the alternative ALGORITHM, which is what the design doc argues over.)
+// claim. The Seastar-shaped radix timer set below is the same-complexity rival;
+// the indexed libevent/libuv heap is the alternative algorithm.
 //
 // The heap baseline stores each node's heap index and erases it eagerly in
 // O(log n), matching libevent min_heap_erase_ and libuv heap_remove. The old
@@ -16,20 +14,24 @@
 // than the summed run-to-run spread is a STATISTICAL TIE, not a win.
 #include <nanobench.h>
 
+#include <array>
+#include <bit>
+#include <bitset>
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <vector>
 
 #include "hyle/time/common_timeout_queue.h"
-#include "hyle/time/timer_wheel.h"
+#include "hyle/time/timer_queue.h"
 
 namespace {
 namespace nb = ankerl::nanobench;
 using hyle::time::CommonTimeoutQueue;
 using hyle::time::TimerEntry;
-using hyle::time::TimerWheel;
+using hyle::time::TimerQueue;
 
-constexpr std::uint64_t kMs = TimerWheel::kTickNs;
+constexpr std::uint64_t kMs = 100'000;
 
 // ---- SOTA same-algorithm baseline for CommonTimeoutQueue --------------------
 // libevent embeds TAILQ_ENTRY directly in struct event and removes through the
@@ -226,6 +228,162 @@ struct IndexedHeapTimer {
   }
 };
 
+// ---- same-complexity mature rival: Seastar timer_set radix buckets ---------
+// Faithful dependency-free port of seastar/core/timer-set.hh's core algorithm:
+// 64 leading-zero buckets plus one already-due bucket, intrusive O(1) removal,
+// minimum tracking, and sorting deferred until expire. The node carries the same
+// exact-owner safety metadata as HYLE; callbacks/executors are excluded from both
+// sides because the benchmark ends at delivery to a caller-owned ready list.
+struct RadixTimerSet {
+  static constexpr std::size_t kBuckets = 65;
+  static constexpr std::uint64_t kNever =
+      std::numeric_limits<std::uint64_t>::max();
+
+  struct Node {
+    std::uint64_t deadline = 0;
+    std::uint64_t id = 0;
+    Node* prev = nullptr;
+    Node* next = nullptr;
+    const void* owner = nullptr;
+  };
+
+  struct Bucket {
+    Node* head = nullptr;
+    Node* tail = nullptr;
+
+    bool empty() const noexcept { return head == nullptr; }
+    void push_back(Node* node) noexcept {
+      node->prev = tail;
+      node->next = nullptr;
+      if (tail != nullptr) tail->next = node;
+      else head = node;
+      tail = node;
+    }
+    Node* pop_front() noexcept {
+      Node* node = head;
+      if (node == nullptr) return nullptr;
+      head = node->next;
+      if (head != nullptr) head->prev = nullptr;
+      else tail = nullptr;
+      node->prev = node->next = nullptr;
+      return node;
+    }
+    void remove(Node* node) noexcept {
+      if (node->prev != nullptr) node->prev->next = node->next;
+      else head = node->next;
+      if (node->next != nullptr) node->next->prev = node->prev;
+      else tail = node->prev;
+      node->prev = node->next = nullptr;
+    }
+    void append(Bucket& source) noexcept {
+      if (source.empty()) return;
+      if (tail != nullptr) {
+        tail->next = source.head;
+        source.head->prev = tail;
+      } else {
+        head = source.head;
+      }
+      tail = source.tail;
+      source.head = source.tail = nullptr;
+    }
+    template <class Fn>
+    void for_each(Fn&& fn) noexcept {
+      for (Node* node = head; node != nullptr; node = node->next) fn(node);
+    }
+  };
+
+  std::vector<Node> nodes;
+  std::array<Bucket, kBuckets> buckets{};
+  std::bitset<kBuckets> nonempty{};
+  std::uint64_t last = 0;
+  std::uint64_t next = kNever;
+  std::uint64_t live = 0;
+
+  explicit RadixTimerSet(std::size_t capacity) : nodes(capacity) {}
+
+  std::size_t index_for(std::uint64_t deadline) const noexcept {
+    if (deadline <= last) return kBuckets - 1;
+    return static_cast<std::size_t>(std::countl_zero(deadline ^ last));
+  }
+
+  void insert_node(Node* node) noexcept {
+    const std::size_t index = index_for(node->deadline);
+    buckets[index].push_back(node);
+    nonempty.set(index);
+    if (node->deadline < next) next = node->deadline;
+  }
+
+  void schedule(std::uint64_t id, std::uint64_t deadline) noexcept {
+    Node& node = nodes[static_cast<std::size_t>(id)];
+    HYLE_FATAL_ASSERT(node.owner == nullptr);
+    node.deadline = deadline;
+    node.id = id;
+    node.owner = this;
+    insert_node(&node);
+    ++live;
+  }
+
+  void cancel(std::uint64_t id) noexcept {
+    Node& node = nodes[static_cast<std::size_t>(id)];
+    if (node.owner == nullptr) return;
+    HYLE_FATAL_ASSERT(node.owner == this);
+    const std::size_t index = index_for(node.deadline);
+    buckets[index].remove(&node);
+    if (buckets[index].empty()) nonempty.reset(index);
+    node.owner = nullptr;
+    --live;
+  }
+
+  std::uint64_t expire(std::uint64_t now, std::uint64_t& fired) noexcept {
+    HYLE_FATAL_ASSERT(now >= last);
+    const std::size_t index = index_for(now);
+    Bucket ready;
+
+    // Exactly Seastar's splice of buckets known to be no later than `now`.
+    for (std::size_t i = index + 1; i < kBuckets; ++i) {
+      if (!nonempty.test(i)) continue;
+      ready.append(buckets[i]);
+      nonempty.reset(i);
+    }
+
+    Bucket inspect;
+    inspect.append(buckets[index]);
+    nonempty.reset(index);
+    last = now;
+    next = kNever;
+    while (Node* node = inspect.pop_front()) {
+      if (node->deadline <= now) ready.push_back(node);
+      else insert_node(node);
+    }
+
+    // If no reinsert found the exact minimum, Seastar scans the nearest
+    // non-empty radix bucket and computes its minimum lazily.
+    if (next == kNever && nonempty.any()) {
+      std::size_t nearest = kBuckets;
+      while (nearest != 0) {
+        --nearest;
+        if (nonempty.test(nearest)) break;
+      }
+      for (Node* node = buckets[nearest].head; node != nullptr;
+           node = node->next) {
+        if (node->deadline < next) next = node->deadline;
+      }
+    }
+
+    nb::doNotOptimizeAway(ready.head);
+    // Match HYLE/Seastar's ready-list contract: expiry first disarms every node
+    // while it remains linked in the returned list; caller delivery/drain is a
+    // second pass. Folding disarm into drain would give the rival a weaker
+    // lifecycle contract and hide the cost users actually pay.
+    ready.for_each([](Node* node) noexcept { node->owner = nullptr; });
+    while (Node* node = ready.pop_front()) {
+      --live;
+      ++fired;
+    }
+    return fired;
+  }
+};
+
 }  // namespace
 
 int main() {
@@ -243,10 +401,11 @@ int main() {
         .batch(kN)
         .minEpochIterations(200);
     IndexedHeapTimer h(kN);
-    TimerWheel w(0);
+    RadixTimerSet r(kN);
+    TimerQueue w(0);
     std::vector<TimerEntry> e(kN);
     for (std::uint64_t i = 0; i < kN; ++i) {
-      e[i].data = reinterpret_cast<void*>(static_cast<std::uintptr_t>(i));
+      e[i].set_data(reinterpret_cast<void*>(static_cast<std::uintptr_t>(i)));
     }
     b.run("indexed min-heap (libevent/libuv)", [&] {
       for (std::uint64_t i = 0; i < kN; ++i) h.schedule(i, (i % 1000 + 1) * kMs);
@@ -254,7 +413,15 @@ int main() {
       for (std::uint64_t i = 0; i < kN; ++i) h.cancel(i);
       nb::doNotOptimizeAway(h.live);
     });
-    b.run("HYLE timing wheel", [&] {
+    b.run("radix timer_set (Seastar shape)", [&] {
+      for (std::uint64_t i = 0; i < kN; ++i) {
+        r.schedule(i, (i % 1000 + 1) * kMs);
+      }
+      nb::doNotOptimizeAway(r.live);
+      for (std::uint64_t i = 0; i < kN; ++i) r.cancel(i);
+      nb::doNotOptimizeAway(r.live);
+    });
+    b.run("HYLE TimerQueue (radix)", [&] {
       for (std::uint64_t i = 0; i < kN; ++i) {
         w.schedule(&e[i], (i % 1000 + 1) * kMs);
       }
@@ -274,12 +441,14 @@ int main() {
         .batch(kN)
         .minEpochIterations(200);
     IndexedHeapTimer h(kN);
-    TimerWheel w(0);
+    RadixTimerSet r(kN);
+    TimerQueue w(0);
     std::vector<TimerEntry> e(kN);
     for (std::uint64_t i = 0; i < kN; ++i) {
-      e[i].data = reinterpret_cast<void*>(static_cast<std::uintptr_t>(i));
+      e[i].set_data(reinterpret_cast<void*>(static_cast<std::uintptr_t>(i)));
     }
-    std::uint64_t wheel_base = 0;
+    std::uint64_t queue_base = 0;
+    std::uint64_t radix_base = 0;
     b.run("indexed min-heap (libevent/libuv)", [&] {
       for (std::uint64_t i = 0; i < kN; ++i) h.schedule(i, (i % 1000 + 1) * kMs);
       nb::doNotOptimizeAway(h.live);
@@ -287,14 +456,24 @@ int main() {
       h.expire(1001 * kMs, fired);
       nb::doNotOptimizeAway(fired);
     });
-    b.run("HYLE timing wheel", [&] {
+    b.run("radix timer_set (Seastar shape)", [&] {
       for (std::uint64_t i = 0; i < kN; ++i) {
-        w.schedule(&e[i], wheel_base + (i % 1000 + 1) * kMs);
+        r.schedule(i, radix_base + (i % 1000 + 1) * kMs);
+      }
+      nb::doNotOptimizeAway(r.live);
+      std::uint64_t fired = 0;
+      r.expire(radix_base + 1001 * kMs, fired);
+      radix_base += 1001 * kMs;
+      nb::doNotOptimizeAway(fired);
+    });
+    b.run("HYLE TimerQueue (radix)", [&] {
+      for (std::uint64_t i = 0; i < kN; ++i) {
+        w.schedule(&e[i], queue_base + (i % 1000 + 1) * kMs);
       }
       nb::doNotOptimizeAway(w.size());
-      TimerWheel::EntryList out;
-      w.advance(wheel_base + 1001 * kMs, out);
-      wheel_base += 1001 * kMs;
+      TimerQueue::EntryList out;
+      w.advance(queue_base + 1001 * kMs, out);
+      queue_base += 1001 * kMs;
       std::uint64_t fired = 0;
       out.consume_all([&](TimerEntry*) noexcept { ++fired; });
       nb::doNotOptimizeAway(fired);
@@ -303,7 +482,7 @@ int main() {
 
   // ---- 3. realistic churn: arm N, cancel 70%, expire the rest ----
   // The full agent picture. Both structures eagerly remove cancellations; the
-  // comparison is O(1) wheel unlink vs O(log n) indexed-heap erase.
+  // comparison is O(1) radix unlink vs O(log n) indexed-heap erase.
   {
     nb::Bench b;
     b.title("timer churn (N=4096, 70% cancelled then expire)")
@@ -311,12 +490,14 @@ int main() {
         .batch(kN)
         .minEpochIterations(200);
     IndexedHeapTimer h(kN);
-    TimerWheel w(0);
+    RadixTimerSet r(kN);
+    TimerQueue w(0);
     std::vector<TimerEntry> e(kN);
     for (std::uint64_t i = 0; i < kN; ++i) {
-      e[i].data = reinterpret_cast<void*>(static_cast<std::uintptr_t>(i));
+      e[i].set_data(reinterpret_cast<void*>(static_cast<std::uintptr_t>(i)));
     }
-    std::uint64_t wheel_base = 0;
+    std::uint64_t queue_base = 0;
+    std::uint64_t radix_base = 0;
     b.run("indexed min-heap (libevent/libuv)", [&] {
       for (std::uint64_t i = 0; i < kN; ++i) h.schedule(i, (i % 1000 + 1) * kMs);
       nb::doNotOptimizeAway(h.live);
@@ -326,60 +507,73 @@ int main() {
       h.expire(1001 * kMs, fired);
       nb::doNotOptimizeAway(fired);
     });
-    b.run("HYLE timing wheel", [&] {
+    b.run("radix timer_set (Seastar shape)", [&] {
       for (std::uint64_t i = 0; i < kN; ++i) {
-        w.schedule(&e[i], wheel_base + (i % 1000 + 1) * kMs);
+        r.schedule(i, radix_base + (i % 1000 + 1) * kMs);
+      }
+      nb::doNotOptimizeAway(r.live);
+      for (std::uint64_t i = 0; i < kN; ++i) {
+        if (i % 10 < 7) r.cancel(i);
+      }
+      std::uint64_t fired = 0;
+      r.expire(radix_base + 1001 * kMs, fired);
+      radix_base += 1001 * kMs;
+      nb::doNotOptimizeAway(fired);
+    });
+    b.run("HYLE TimerQueue (radix)", [&] {
+      for (std::uint64_t i = 0; i < kN; ++i) {
+        w.schedule(&e[i], queue_base + (i % 1000 + 1) * kMs);
       }
       nb::doNotOptimizeAway(w.size());
       for (std::uint64_t i = 0; i < kN; ++i)
         if (i % 10 < 7) w.cancel(&e[i]);
-      TimerWheel::EntryList out;
-      w.advance(wheel_base + 1001 * kMs, out);
-      wheel_base += 1001 * kMs;
+      TimerQueue::EntryList out;
+      w.advance(queue_base + 1001 * kMs, out);
+      queue_base += 1001 * kMs;
       std::uint64_t fired = 0;
       out.consume_all([&](TimerEntry*) noexcept { ++fired; });
       nb::doNotOptimizeAway(fired);
     });
   }
 
-  // ---- 4. FIXED-DURATION serving load: wheel vs CommonTimeoutQueue ----
+  // ---- 4. FIXED-DURATION serving load: general vs common queue ----
   // HYLE's expiry path bulk-splices the due prefix to the ready list, then
   // clears ownership in one traversal.
   // The io-serving case: N connections all armed with the SAME timeout duration,
   // so deadlines are monotonic. This is CommonTimeoutQueue's home turf (one
-  // sorted list, O(1) tail-append). We race it against the general wheel on the
-  // SAME load to show WHEN to pick the queue over the wheel. Both arm N in
-  // ascending-deadline order, then expire all. (Not a "wheel is bad" bench --
-  // the wheel handles arbitrary durations the queue can't; this is the narrow
-  // slice where the queue's specialization pays.)
+  // sorted list, O(1) tail-append). We race it against the general queue on the
+  // SAME load to show WHEN to pick the specialization. Both arm N in
+  // ascending-deadline order, then expire all. The general queue handles
+  // arbitrary durations the common queue cannot; this is the narrow
+  // slice where the queue's specialization pays.
   {
     nb::Bench b;
     b.title("fixed-duration arm+expire (N=4096, same timeout)")
         .relative(true)
         .batch(kN)
         .minEpochIterations(200);
-    TimerWheel w(0);
-    std::vector<TimerEntry> wheel_entries(kN);
-    CommonTimeoutQueue q(0, kMs);
+    TimerQueue w(0);
+    std::vector<TimerEntry> queue_entries(kN);
+    CommonTimeoutQueue q(kMs);
     std::vector<TimerEntry> common_entries(kN);
     IntrusiveTimeoutQueue tailq(kN);
     IntrusiveTimeoutQueue checked_tailq(kN);
     for (std::uint64_t i = 0; i < kN; ++i) {
-      wheel_entries[i].data =
-          reinterpret_cast<void*>(static_cast<std::uintptr_t>(i));
-      common_entries[i].data =
-          reinterpret_cast<void*>(static_cast<std::uintptr_t>(i));
+      queue_entries[i].set_data(
+          reinterpret_cast<void*>(static_cast<std::uintptr_t>(i)));
+      common_entries[i].set_data(
+          reinterpret_cast<void*>(static_cast<std::uintptr_t>(i)));
     }
-    std::uint64_t wheel_base = 0;
-    b.run("HYLE timing wheel", [&] {
+    std::uint64_t queue_base = 0;
+    b.run("HYLE TimerQueue (radix)", [&] {
       for (std::uint64_t i = 0; i < kN; ++i) {
-        w.schedule(&wheel_entries[i],
-                   wheel_base + (i + 1) * kMs);  // monotonic
+        w.schedule(&queue_entries[i],
+                   queue_base + (i + 1) * kMs);  // monotonic
       }
       nb::doNotOptimizeAway(w.size());
-      TimerWheel::EntryList out;
-      w.advance(wheel_base + (kN + 1) * kMs, out);
-      wheel_base += (kN + 1) * kMs;
+      TimerQueue::EntryList out;
+      w.advance(queue_base + (kN + 1) * kMs, out);
+      queue_base += (kN + 1) * kMs;
       std::uint64_t fired = 0;
       out.consume_all([&](TimerEntry*) noexcept { ++fired; });
       nb::doNotOptimizeAway(fired);
@@ -425,7 +619,7 @@ int main() {
         .relative(true)
         .batch(kN)
         .minEpochIterations(200);
-    CommonTimeoutQueue q(0, kMs);
+    CommonTimeoutQueue q(kMs);
     std::vector<TimerEntry> common_entries(kN);
     IntrusiveTimeoutQueue tailq(kN);
 
@@ -451,31 +645,31 @@ int main() {
 
   // ---- 5. FIXED-DURATION arm+cancel (the serving hot path): all cancelled ----
   // Connections that respond before timeout -> arm then cancel. Same fixed
-  // duration. Queue cancel is O(1) unlink; wheel cancel is O(1) unlink + slot
-  // math. Shows the per-op arm/cancel cost on the queue's target load.
+  // duration. Both cancel through O(1) intrusive unlink; this shows the cost
+  // saved when the fixed-duration invariant removes radix bucket work.
   {
     nb::Bench b;
     b.title("fixed-duration arm+cancel (N=4096, same timeout, all cancelled)")
         .relative(true)
         .batch(kN)
         .minEpochIterations(200);
-    TimerWheel w(0);
-    std::vector<TimerEntry> wheel_entries(kN);
-    CommonTimeoutQueue q(0, kMs);
+    TimerQueue w(0);
+    std::vector<TimerEntry> queue_entries(kN);
+    CommonTimeoutQueue q(kMs);
     std::vector<TimerEntry> common_entries(kN);
     IntrusiveTimeoutQueue tailq(kN);
     for (std::uint64_t i = 0; i < kN; ++i) {
-      wheel_entries[i].data =
-          reinterpret_cast<void*>(static_cast<std::uintptr_t>(i));
-      common_entries[i].data =
-          reinterpret_cast<void*>(static_cast<std::uintptr_t>(i));
+      queue_entries[i].set_data(
+          reinterpret_cast<void*>(static_cast<std::uintptr_t>(i)));
+      common_entries[i].set_data(
+          reinterpret_cast<void*>(static_cast<std::uintptr_t>(i)));
     }
-    b.run("HYLE timing wheel", [&] {
+    b.run("HYLE TimerQueue (radix)", [&] {
       for (std::uint64_t i = 0; i < kN; ++i) {
-        w.schedule(&wheel_entries[i], (i + 1) * kMs);
+        w.schedule(&queue_entries[i], (i + 1) * kMs);
       }
       nb::doNotOptimizeAway(w.size());
-      for (std::uint64_t i = 0; i < kN; ++i) w.cancel(&wheel_entries[i]);
+      for (std::uint64_t i = 0; i < kN; ++i) w.cancel(&queue_entries[i]);
       nb::doNotOptimizeAway(w.size());
     });
     b.run("HYLE CommonTimeoutQueue", [&] {

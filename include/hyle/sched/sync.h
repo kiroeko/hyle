@@ -49,9 +49,9 @@
 // wins, the loser reports the other's outcome so no wake is lost). This covers
 // external submitters and cross-process federation threads.
 //
-// Fiber mode uses the per-worker time wheel plus a per-episode temporary pin:
+// Fiber mode uses the per-worker timer queue plus a per-episode temporary pin:
 // notify and timer arbitrate through one atomic winner byte; the winning wake
-// returns to the wheel owner, where a still-armed loser timer is cancelled O(1).
+// returns to the queue owner, where a still-armed loser timer is cancelled O(1).
 // This mirrors folly fibers Baton (atomic timeout-vs-post arbitration) without a
 // cross-worker timer mutation.
 
@@ -99,8 +99,8 @@ class ConditionVariable {
   // because of the timeout. Deadline keys on time::monotonic_ns().
   //
   // Bare threads use Parker::park_timeout. Fibers arm their current worker's
-  // timer wheel and are temporarily pinned to that worker for this wait episode,
-  // so the notify winner resumes on the wheel owner and cancels in O(1). An
+  // timer queue and are temporarily pinned to that worker for this wait episode,
+  // so the notify winner resumes on the queue owner and cancels in O(1). An
   // atomic winner state prevents timer+notify from waking the same episode twice.
   enum class CvStatus { kNoTimeout, kTimeout };
 

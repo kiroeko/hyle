@@ -27,7 +27,7 @@
 #include "hyle/sched/timer.h"
 #include "hyle/sched/waker.h"
 #include "hyle/time/clock.h"
-#include "hyle/time/timer_wheel.h"
+#include "hyle/time/timer_queue.h"
 #include "hyle/util/spin_lock.h"  // util::cpu_relax (pause hint)
 
 namespace hyle::sched {
@@ -50,12 +50,12 @@ namespace {
 // the private nested Impl type.
 thread_local Scheduler* tls_owner = nullptr;
 
-// The current worker's timing wheel, published by run_worker (file-local so the
+// The current worker's timing queue, published by run_worker (file-local so the
 // sleep_*_ns free functions can arm a timer without naming the private nested
 // Impl::Worker type). Null when not on a worker fiber. Single-threaded access:
-// only the owning worker thread reads/writes its own wheel (arm happens inside a
+// only the owning worker thread reads/writes its own queue (arm happens inside a
 // fiber running ON that worker; fire happens in that worker's loop).
-thread_local time::TimerWheel* tls_wheel = nullptr;
+thread_local time::TimerQueue* tls_timer_queue = nullptr;
 
 // The current worker's index, published by run_worker (file-local so the
 // current_worker_index() free function can read it without naming the private
@@ -187,14 +187,14 @@ struct Scheduler::Impl {
   struct Worker {
     container::WsFifoQueue<Fiber*, mem::Allocator> local;
     platform::Parker parker;  // non-movable -> Worker lives in a unique_ptr
-    // Per-worker timing wheel (sched-04b). Owned and touched ONLY by this worker
+    // Per-worker timing queue (sched-04b). Owned and touched ONLY by this worker
     // thread on its park cold path -> no lock needed. Sleeping fibers arm here;
     // the worker advances it before parking and fires due timers into the run
-    // loop. Sharding the wheel per-worker (vs one central) is the sched-side
+    // loop. Sharding the queue per-worker (vs one central) is the sched-side
     // choice the time-02 doc left open; per-worker keeps timer + woken fiber on
-    // the same core (cache-hot re-inject) and needs no wheel lock. Epoch = the
+    // the same core (cache-hot re-inject) and needs no queue lock. Epoch = the
     // monotonic ns captured at construction.
-    time::TimerWheel wheel;
+    time::TimerQueue timers;
     // Private queue for fibers PINNED to this worker (shard-per-core, io-04). A
     // bounded MPMC ring: any thread (a Waker firing on another core, or spawn_on)
     // pushes here, but ONLY this worker pops it, and the work-stealing path never
@@ -232,7 +232,7 @@ struct Scheduler::Impl {
         std::atomic<std::uint64_t> inline_outstanding{0};
     Worker(mem::Allocator a, std::size_t cap, std::uint64_t seed, unsigned i)
         : local(a, cap),
-          wheel(time::monotonic_ns()),
+          timers(time::monotonic_ns()),
           pinned(a, cap),
           rng(seed),
           idx(i),
@@ -788,33 +788,33 @@ struct Scheduler::Impl {
 
   // ---- sched-04b timer integration ------------------------------------------
 
-  // Advance THIS worker's wheel to now and re-inject every fiber whose sleep
-  // deadline passed. Called at the worker loop top; the wheel.empty() gate keeps
+  // Advance THIS worker's queue to now and re-inject every fiber whose sleep
+  // deadline passed. Called at the worker loop top; the queue.empty() gate keeps
   // it ~free when nothing is sleeping. Returns the number fired (informational --
   // the caller's find_task re-checks the queues regardless, so the count is not
   // load-bearing).
   std::size_t fire_due_timers(Worker& w) noexcept {
-    // Cheap gate: with no sleeping fiber the wheel is empty, so this is a single
+    // Cheap gate: with no sleeping fiber the queue is empty, so this is a single
     // size_t compare -- the "no timer workload pays nothing" property holds even
     // though we call this every loop iteration (needed so a perpetually-busy
-    // worker still services its OWN pinned timers; per-worker wheels aren't
-    // stealable, unlike tokio's single global wheel).
-    if (w.wheel.empty()) return 0;
-    time::TimerWheel::EntryList due;
-    w.wheel.advance(time::monotonic_ns(), due);
+    // worker still services its OWN pinned timers; per-worker queues aren't
+    // stealable, unlike tokio's single global queue).
+    if (w.timers.empty()) return 0;
+    time::TimerQueue::EntryList due;
+    w.timers.advance(time::monotonic_ns(), due);
     std::size_t n_fired = 0;
     due.consume_all([&](time::TimerEntry* e) noexcept {
-      // io-06: a timed-io entry carries an on_fire callback that ARBITRATES against
+      // io-06: a timed-io entry carries a fire callback that ARBITRATES against
       // a racing io completion (it may decline to wake if io already won) -- so the
       // timer side never blindly calls wake_rendezvous when io has already fired,
       // which would leave wake_state_ dirty and lost-wake the fiber's NEXT suspend.
       // A plain sleep entry has no callback: its data is the Fiber* and the timer is
       // its SOLE waker (no race), so wake it directly through the same rendezvous.
-      if (e->on_fire != nullptr) {
-        e->on_fire(e);  // timed-io arbiter (net_timeout.h): sets timer_fired, wakes
-                        // only if io hasn't already won
+      if (e->fire_callback() != nullptr) {
+        e->fire_callback()(e);  // timed-io arbiter: sets timer_fired and wakes
+                                // only if io hasn't already won
       } else {
-        auto* f = static_cast<Fiber*>(e->data);
+        auto* f = static_cast<Fiber*>(e->data());
         if (f->wake_rendezvous()) reinject(f);
       }
       ++n_fired;
@@ -828,10 +828,10 @@ struct Scheduler::Impl {
   }
 
   // Absolute-deadline park bound for this worker: how long park_timeout should
-  // sleep so it wakes for the nearest timer. UINT64_MAX (wheel empty) -> caller
+  // sleep so it wakes for the nearest timer. UINT64_MAX (queue empty) -> caller
   // parks untimed. Clamped at 0 for an already-due timer (park returns at once).
   std::uint64_t park_timeout_ns(Worker& w) noexcept {
-    std::uint64_t nd = w.wheel.next_deadline_ns();
+    std::uint64_t nd = w.timers.next_deadline_ns();
     if (nd == UINT64_MAX) return UINT64_MAX;
     std::uint64_t now = time::monotonic_ns();
     return nd > now ? nd - now : 0;
@@ -849,10 +849,10 @@ struct Scheduler::Impl {
     tls_owner = owner;
     tls_worker_idx = static_cast<int>(idx);  // publish for current_worker_index()
     Worker& w = *workers[idx];
-    tls_wheel = &w.wheel;  // publish for sleep_*_ns (file-local, this worker only)
+    tls_timer_queue = &w.timers;  // publish for sleep_*_ns (this worker only)
 
     while (!stop.load(std::memory_order_acquire)) {
-      // Fire this worker's due sleep timers FIRST (cheap wheel.empty() gate when
+      // Fire this worker's due sleep timers FIRST (cheap queue.empty() gate when
       // nothing is sleeping). Placed at the loop top -- not just the park path --
       // so a perpetually-busy worker still services its own pinned timers; a
       // fired timer re-injects its fiber, which the find_task below then runs.
@@ -942,7 +942,7 @@ struct Scheduler::Impl {
         dispatch(w, f);
         continue;
       }
-      // Park until unparked OR the nearest sleep timer is due. An empty wheel
+      // Park until unparked OR the nearest sleep timer is due. An empty queue
       // gives UINT64_MAX -> untimed park (exactly the pre-04b behaviour, zero
       // cost when no fiber is sleeping). A pending timer bounds the park so the
       // worker wakes to fire it; park_timeout returning false (timeout) is fine
@@ -992,7 +992,7 @@ struct Scheduler::Impl {
 
     t_current = nullptr;
     t_worker_idx = -1;
-    tls_wheel = nullptr;
+    tls_timer_queue = nullptr;
     tls_worker_idx = -1;
   }
 
@@ -1445,21 +1445,21 @@ void suspend() noexcept {
 void sleep_until_ns(std::uint64_t deadline_ns) noexcept {
   Fiber* self = Fiber::current();
   HYLE_FATAL_ASSERT(self != nullptr);  // sleep outside a fiber is a bug
-  HYLE_FATAL_ASSERT(tls_wheel != nullptr);  // must be on a scheduler worker
+  HYLE_FATAL_ASSERT(tls_timer_queue != nullptr);  // must be on a scheduler worker
 
   // The timer entry lives on THIS fiber's stack. Safe: the fiber suspends right
   // below and its stack is frozen until the timer (its sole waker) re-injects
-  // it, so the entry outlives its time in the wheel. data = the fiber to wake.
-  // O(1) onto this worker's own wheel (single-threaded: we ARE that worker).
+  // it, so the entry outlives its time in the queue. data = the fiber to wake.
+  // O(1) onto this worker's own queue (single-threaded: we ARE that worker).
   time::TimerEntry entry;
-  entry.data = self;
-  tls_wheel->schedule(&entry, deadline_ns);
+  entry.set_data(self);
+  tls_timer_queue->schedule(&entry, deadline_ns);
 
   // Suspend on the SAME spine as an io completion: request_wait + yield, and the
   // worker's dispatch rendezvous with the eventual timer fire (fire_due_timers
   // calls wake_rendezvous, exactly like Waker::wake). No competing waker exists
   // for a plain sleep, so the timer always fires and the entry always leaves the
-  // wheel -- no cancel needed (that's the fiber-mode wait_for/wait_until case,
+  // queue -- no cancel needed (that's the fiber-mode wait_for/wait_until case,
   // sched-04d).
   self->request_wait();
   Fiber::yield();
@@ -1470,30 +1470,30 @@ void sleep_for_ns(std::uint64_t ns) noexcept {
 }
 
 // ---- timed-io building blocks (io-06) ---------------------------------------
-// arm/cancel a timeout timer on THIS worker's wheel WITHOUT suspending, so a
+// arm/cancel a timeout timer on THIS worker's queue WITHOUT suspending, so a
 // timed io op can arm a deadline + submit an io op and then suspend once. Same
 // single-threaded per-worker discipline as sleep (we ARE the owning worker); the
-// timer wakes this fiber via the SAME reinject path (entry.data = self, fired by
+// timer wakes this fiber via the SAME reinject path (entry data = self, fired by
 // fire_due_timers -> wake_rendezvous). No cross-core cancel queue: the timed io
 // fiber is pinned (shard-per-core), so arm/fire/cancel are all on this worker.
 
 void arm_timeout(time::TimerEntry* entry, std::uint64_t deadline_ns) noexcept {
   Fiber* self = Fiber::current();
   HYLE_FATAL_ASSERT(self != nullptr);       // timed io outside a fiber is a bug
-  HYLE_FATAL_ASSERT(tls_wheel != nullptr);  // must be on a scheduler worker
-  if (entry->on_fire == nullptr) {
-    entry->data = self;  // default: direct reinject, same as sleep
+  HYLE_FATAL_ASSERT(tls_timer_queue != nullptr);  // must be on a scheduler worker
+  if (entry->fire_callback() == nullptr) {
+    entry->set_data(self);  // default: direct reinject, same as sleep
   } else {
     // Callback timers own their payload. It must be initialized BEFORE arm so a
     // sub-tick deadline can never expose a half-built callback record.
-    HYLE_FATAL_ASSERT(entry->data != nullptr);
+    HYLE_FATAL_ASSERT(entry->data() != nullptr);
   }
-  tls_wheel->schedule(entry, deadline_ns);
+  tls_timer_queue->schedule(entry, deadline_ns);
 }
 
 void cancel_timeout(time::TimerEntry* entry) noexcept {
-  HYLE_FATAL_ASSERT(tls_wheel != nullptr);
-  tls_wheel->cancel(entry);  // O(1); no-op if already fired
+  HYLE_FATAL_ASSERT(tls_timer_queue != nullptr);
+  (void)tls_timer_queue->cancel(entry);  // O(1); no-op if already fired
 }
 
 }  // namespace hyle::sched

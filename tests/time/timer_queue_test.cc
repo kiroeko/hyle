@@ -1,31 +1,32 @@
 #include <gtest/gtest.h>
 
+#include <chrono>
 #include <cstdint>
 #include <random>
 #include <type_traits>
 #include <vector>
 
-#include "hyle/time/timer_wheel.h"
+#include "hyle/time/timer_queue.h"
 
 using hyle::time::TimerEntry;
-using hyle::time::TimerWheel;
+using hyle::time::TimerQueue;
 
 namespace {
 
-constexpr std::uint64_t kMs = TimerWheel::kTickNs;  // 1ms in ns
+constexpr std::uint64_t kMs = 100'000;  // compact deterministic test unit
 
 static_assert(!std::is_copy_constructible_v<TimerEntry>);
 static_assert(!std::is_copy_assignable_v<TimerEntry>);
 static_assert(!std::is_move_constructible_v<TimerEntry>);
 static_assert(!std::is_move_assignable_v<TimerEntry>);
 
-// Drain the wheel to `now_ns` and return the fired payloads in fire order.
-std::vector<int> advance_collect(TimerWheel& w, std::uint64_t now_ns) {
-  TimerWheel::EntryList out;
+// Drain the queue to `now_ns` and return the fired payloads.
+std::vector<int> advance_collect(TimerQueue& w, std::uint64_t now_ns) {
+  TimerQueue::EntryList out;
   w.advance(now_ns, out);
   std::vector<int> ids;
   while (TimerEntry* e = out.pop_front()) {
-    ids.push_back(static_cast<int>(reinterpret_cast<std::uintptr_t>(e->data)));
+    ids.push_back(static_cast<int>(reinterpret_cast<std::uintptr_t>(e->data())));
   }
   return ids;
 }
@@ -39,8 +40,8 @@ TimerEntry make_entry(int id) {
 
 // ---- basic arm + fire --------------------------------------------------------
 
-TEST(TimerWheel, FiresAfterDeadline) {
-  TimerWheel w(0);
+TEST(TimerQueue, FiresAfterDeadline) {
+  TimerQueue w(0);
   TimerEntry e = make_entry(1);
   w.schedule(&e, 5 * kMs);
   EXPECT_EQ(w.size(), 1u);
@@ -56,27 +57,41 @@ TEST(TimerWheel, FiresAfterDeadline) {
   EXPECT_TRUE(w.empty());
 }
 
-TEST(TimerWheel, DueNowFiresOnNextAdvance) {
-  TimerWheel w(0);
-  // Advance the wheel first so "now" > 0.
+TEST(TimerQueue, DefaultConstructionAndTypedNextDeadlineFitNormalUse) {
+  using namespace std::chrono_literals;
+  TimerQueue w;
+  EXPECT_FALSE(w.next_deadline().has_value());
+  TimerEntry e = make_entry(1);
+  w.schedule_after(&e, 2ms);
+  const auto next = w.next_deadline();
+  ASSERT_TRUE(next.has_value());
+  EXPECT_GT(*next, hyle::time::MonotonicTimePoint{});
+  EXPECT_TRUE(w.cancel(&e));
+}
+
+TEST(TimerQueue, DueNowFiresOnNextAdvance) {
+  TimerQueue w(0);
+  // Advance first so "now" > 0.
   advance_collect(w, 10 * kMs);
   TimerEntry e = make_entry(7);
-  w.schedule(&e, 0);  // already behind current time -> next tick
+  w.schedule(&e, 0);  // already behind current time -> due on next advance
   EXPECT_EQ(w.size(), 1u);
-  auto fired = advance_collect(w, 11 * kMs);
+  auto fired = advance_collect(w, 10 * kMs);
   ASSERT_EQ(fired.size(), 1u);
   EXPECT_EQ(fired[0], 7);
 }
 
-// ---- expiry ORDER across many deadlines --------------------------------------
+// ---- incremental expiry across many deadlines ------------------------------
 
-TEST(TimerWheel, FiresInDeadlineOrder) {
-  TimerWheel w(0);
-  // Arm out of order; expiry must come back in ascending deadline order.
+TEST(TimerQueue, IncrementalAdvancesFireOnlyTheReachedDeadline) {
+  TimerQueue w(0);
+  // Arm out of order. Each incremental advance must expose only the deadline
+  // reached by that call; a single batched advance deliberately has no
+  // cross-bucket total-order guarantee.
   TimerEntry e100 = make_entry(100);
   TimerEntry e5 = make_entry(5);
   TimerEntry e999 = make_entry(999);
-  TimerEntry e64 = make_entry(64);  // exactly one level-0 rotation
+  TimerEntry e64 = make_entry(64);
   w.schedule(&e100, 100 * kMs);
   w.schedule(&e5, 5 * kMs);
   w.schedule(&e999, 999 * kMs);
@@ -84,7 +99,7 @@ TEST(TimerWheel, FiresInDeadlineOrder) {
   EXPECT_EQ(w.size(), 4u);
 
   std::vector<int> all;
-  // Advance in a few steps to exercise repeated cascades.
+  // Advance in a few steps to exercise repeated radix rebucketing.
   for (std::uint64_t t : {5, 64, 100, 999}) {
     for (int id : advance_collect(w, t * kMs)) all.push_back(id);
   }
@@ -96,9 +111,9 @@ TEST(TimerWheel, FiresInDeadlineOrder) {
   EXPECT_TRUE(w.empty());
 }
 
-// FIFO within the same tick (folly/tokio push_back semantics).
-TEST(TimerWheel, SameDeadlineIsFifo) {
-  TimerWheel w(0);
+// FIFO for equal deadlines.
+TEST(TimerQueue, SameDeadlineIsFifo) {
+  TimerQueue w(0);
   TimerEntry a = make_entry(1), b = make_entry(2), c = make_entry(3);
   w.schedule(&a, 50 * kMs);
   w.schedule(&b, 50 * kMs);
@@ -110,19 +125,18 @@ TEST(TimerWheel, SameDeadlineIsFifo) {
   EXPECT_EQ(fired[2], 3);
 }
 
-// ---- cascade correctness (the hierarchy's defining behaviour) ----------------
+// ---- radix boundary correctness ---------------------------------------------
 
-// An entry armed in a high level must cascade down and STILL fire at the right
-// tick, never early. Sweep every deadline that crosses level boundaries.
-TEST(TimerWheel, CascadeFiresAtExactTickNotEarly) {
+// Sweep deadlines around binary boundaries: rebucketing must never fire early.
+TEST(TimerQueue, RadixBoundariesFireExactlyAndNeverEarly) {
   // 64 = L1 boundary, 4096 = L2 boundary, plus off-boundary values.
   for (std::uint64_t deadline : {64ull, 65ull, 127ull, 128ull, 4096ull, 4097ull,
                                  5000ull, 262143ull, 262144ull}) {
-    TimerWheel w(0);
+    TimerQueue w(0);
     TimerEntry e = make_entry(42);
     w.schedule(&e, deadline * kMs);
 
-    // One tick before the deadline: must NOT have fired.
+    // One test unit before the deadline: must NOT have fired.
     auto before = advance_collect(w, (deadline - 1) * kMs);
     EXPECT_TRUE(before.empty()) << "fired early for deadline=" << deadline;
     EXPECT_EQ(w.size(), 1u) << "lost entry for deadline=" << deadline;
@@ -136,13 +150,13 @@ TEST(TimerWheel, CascadeFiresAtExactTickNotEarly) {
 }
 
 // Advancing straight past a far deadline in a single big step must still fire
-// everything that came due (cascade loop drains all intermediate slots).
-TEST(TimerWheel, SingleBigAdvanceFiresAllDue) {
-  TimerWheel w(0);
+// everything that came due in one call.
+TEST(TimerQueue, SingleBigAdvanceFiresAllDue) {
+  TimerQueue w(0);
   std::vector<TimerEntry> entries(200);
   for (int i = 1; i <= 200; ++i) {
-    entries[static_cast<std::size_t>(i - 1)].data =
-        reinterpret_cast<void*>(static_cast<std::uintptr_t>(i));
+    entries[static_cast<std::size_t>(i - 1)].set_data(
+        reinterpret_cast<void*>(static_cast<std::uintptr_t>(i)));
   }
   for (int i = 0; i < 200; ++i) {
     w.schedule(&entries[i], static_cast<std::uint64_t>(i + 1) * kMs);
@@ -152,32 +166,39 @@ TEST(TimerWheel, SingleBigAdvanceFiresAllDue) {
   auto fired = advance_collect(w, 200 * kMs);
   EXPECT_EQ(fired.size(), 200u);
   EXPECT_TRUE(w.empty());
-  // Order preserved.
-  for (int i = 0; i < 200; ++i) EXPECT_EQ(fired[i], i + 1);
+  // Radix delivery order across different buckets is intentionally unspecified.
+  std::vector<bool> seen(201, false);
+  for (int id : fired) {
+    ASSERT_GE(id, 1);
+    ASSERT_LE(id, 200);
+    EXPECT_FALSE(seen[static_cast<std::size_t>(id)]);
+    seen[static_cast<std::size_t>(id)] = true;
+  }
 }
 
 // ---- O(1) cancel, no leak ----------------------------------------------------
 
-TEST(TimerWheel, CancelRemovesAndDoesNotFire) {
-  TimerWheel w(0);
+TEST(TimerQueue, CancelRemovesAndDoesNotFire) {
+  TimerQueue w(0);
   TimerEntry a = make_entry(1), b = make_entry(2), c = make_entry(3);
   w.schedule(&a, 10 * kMs);
   w.schedule(&b, 20 * kMs);
   w.schedule(&c, 30 * kMs);
   EXPECT_EQ(w.size(), 3u);
 
-  w.cancel(&b);
+  EXPECT_TRUE(w.cancel(&b));
+  EXPECT_FALSE(w.cancel(&b));
   EXPECT_EQ(w.size(), 2u);
   EXPECT_FALSE(b.scheduled());
 
   auto fired = advance_collect(w, 100 * kMs);
   ASSERT_EQ(fired.size(), 2u);
-  EXPECT_EQ(fired[0], 1);
-  EXPECT_EQ(fired[1], 3);  // b was cancelled
+  EXPECT_TRUE((fired[0] == 1 && fired[1] == 3) ||
+              (fired[0] == 3 && fired[1] == 1));
 }
 
-TEST(TimerWheel, CancelIsIdempotentAndSafeAfterFire) {
-  TimerWheel w(0);
+TEST(TimerQueue, CancelIsIdempotentAndSafeAfterFire) {
+  TimerQueue w(0);
   TimerEntry e = make_entry(1);
   w.schedule(&e, 5 * kMs);
   w.cancel(&e);
@@ -195,32 +216,60 @@ TEST(TimerWheel, CancelIsIdempotentAndSafeAfterFire) {
   EXPECT_TRUE(w.empty());
 }
 
-// Cancel an entry sitting in a HIGH level (before it cascades down): the O(1)
-// recovery of (level, slot) must find it there.
-TEST(TimerWheel, CancelHighLevelEntry) {
-  TimerWheel w(0);
+TEST(TimerQueue, CancelAllDetachesEveryEntryForImmediateReuse) {
+  TimerQueue w(0);
+  TimerEntry a = make_entry(1), b = make_entry(2), c = make_entry(3);
+  w.schedule(&a, 100 * kMs);
+  w.schedule(&b, 2 * kMs);
+  w.schedule(&c, 10'000 * kMs);
+
+  TimerQueue::EntryList cancelled;
+  EXPECT_EQ(w.cancel_all(cancelled), 3u);
+  EXPECT_TRUE(w.empty());
+
+  std::size_t seen = 0;
+  while (TimerEntry* entry = cancelled.pop_front()) {
+    EXPECT_FALSE(entry->scheduled());
+    ++seen;
+  }
+  EXPECT_EQ(seen, 3u);
+
+  w.schedule(&a, kMs);
+  EXPECT_EQ(advance_collect(w, kMs), (std::vector<int>{1}));
+}
+
+TEST(TimerQueue, ChronoFacadeKeepsExactNanosecondDeadline) {
+  using namespace std::chrono_literals;
+  const hyle::time::MonotonicTimePoint origin{};
+  TimerQueue w(origin);
   TimerEntry e = make_entry(1);
-  w.schedule(&e, 5000 * kMs);  // lands in level 2
+  w.schedule_after(&e, 150us, origin);
+
+  TimerQueue::EntryList fired;
+  EXPECT_EQ(w.advance(origin + 149us, fired), 0u);
+  EXPECT_EQ(w.advance(origin + 150us, fired), 1u);
+  EXPECT_EQ(fired.pop_front(), &e);
+}
+
+// Cancel an entry in a far radix bucket.
+TEST(TimerQueue, CancelFarBucketEntry) {
+  TimerQueue w(0);
+  TimerEntry e = make_entry(1);
+  w.schedule(&e, 5000 * kMs);
   EXPECT_EQ(w.size(), 1u);
   w.cancel(&e);
   EXPECT_EQ(w.size(), 0u);
   EXPECT_TRUE(advance_collect(w, 6000 * kMs).empty());
 }
 
-// Cancel an entry AFTER it has partially cascaded: arm far out (level 2), then
-// advance across a level boundary so it re-slots into a finer level, THEN
-// cancel. cancel() recomputes level_for(elapsed_, deadline) with the NEW
-// elapsed_, so it must still locate the entry in its post-cascade slot. This is
-// the trickiest cancel path (red-team gap).
-TEST(TimerWheel, CancelAfterCascade) {
-  TimerWheel w(0);
+// Cancel after advance rebuckets a far entry relative to the new radix origin.
+TEST(TimerQueue, CancelAfterRebucket) {
+  TimerQueue w(0);
   TimerEntry e = make_entry(1);
-  w.schedule(&e, 5000 * kMs);  // level 2 (>= 4096 ticks)
-  // Advance to 4100ms: crosses the 4096 boundary, cascading e down toward L1/L0
-  // without firing it (deadline 5000 still in the future).
+  w.schedule(&e, 5000 * kMs);
+  // Advance near it without firing; the boundary bucket is reclassified.
   EXPECT_TRUE(advance_collect(w, 4100 * kMs).empty());
-  EXPECT_EQ(w.size(), 1u);  // still live, just re-slotted
-  // Now cancel from its cascaded position.
+  EXPECT_EQ(w.size(), 1u);
   w.cancel(&e);
   EXPECT_EQ(w.size(), 0u);
   EXPECT_FALSE(e.scheduled());
@@ -230,8 +279,8 @@ TEST(TimerWheel, CancelAfterCascade) {
 
 // ---- reschedule --------------------------------------------------------------
 
-TEST(TimerWheel, ScheduleOnScheduledReschedules) {
-  TimerWheel w(0);
+TEST(TimerQueue, ScheduleOnScheduledReschedules) {
+  TimerQueue w(0);
   TimerEntry e = make_entry(1);
   w.schedule(&e, 100 * kMs);
   w.schedule(&e, 10 * kMs);  // move earlier
@@ -245,26 +294,24 @@ TEST(TimerWheel, ScheduleOnScheduledReschedules) {
   EXPECT_TRUE(w.empty());
 }
 
-TEST(TimerWheel, ScheduleAfterUsesSaturatingDeadlineArithmetic) {
-  TimerWheel w(0);
+TEST(TimerQueue, ScheduleAfterUsesSaturatingDeadlineArithmetic) {
+  TimerQueue w(0);
   TimerEntry e = make_entry(1);
   w.schedule_after(&e, 50, 100);
-  EXPECT_EQ(e.deadline_ns, 150u);
+  EXPECT_EQ(e.deadline_ns(), 150u);
   w.cancel(&e);
 
   w.schedule_after(&e, 100, UINT64_MAX - 10);
-  EXPECT_EQ(e.deadline_ns, UINT64_MAX);
+  EXPECT_EQ(e.deadline_ns(), UINT64_MAX);
   w.cancel(&e);
 }
 
 // ---- complete uint64 deadline domain -----------------------------------------
 
-TEST(TimerWheel, FormerHorizonNoLongerFiresEarly) {
-  TimerWheel w(0);
+TEST(TimerQueue, FormerHorizonNoLongerFiresEarly) {
+  TimerQueue w(0);
   TimerEntry e = make_entry(1);
-  // The old six-level wheel clamped this to ~2.18 years and fired early.
-  // kMaxDurationTicks is now beyond the uint64-ns domain, so use the former
-  // six-level horizon explicitly.
+  // Regression for the old fixed-wheel horizon; radix timestamps cover uint64.
   const std::uint64_t far = (1ull << 36) + 1000;
   w.schedule(&e, far * kMs);
   EXPECT_EQ(w.size(), 1u);
@@ -278,58 +325,73 @@ TEST(TimerWheel, FormerHorizonNoLongerFiresEarly) {
 
 // ---- next_deadline_ns (the "no busy tick" contract) --------------------------
 
-TEST(TimerWheel, NextDeadlineReportsEarliest) {
-  TimerWheel w(100);  // non-zero epoch
+TEST(TimerQueue, NextDeadlineReportsEarliest) {
+  TimerQueue w(100);  // non-zero epoch
   EXPECT_EQ(w.next_deadline_ns(), UINT64_MAX);  // empty
 
   TimerEntry a = make_entry(1), b = make_entry(2);
   w.schedule(&a, 100 + 50 * kMs);
   w.schedule(&b, 100 + 20 * kMs);
-  // Earliest is b at 20ms -> reported deadline rounds to the tick boundary.
+  // Earliest is b at 20 units and is reported exactly.
   std::uint64_t nd = w.next_deadline_ns();
   EXPECT_EQ(nd, 100 + 20 * kMs);
 
   w.cancel(&b);
+  // Cancelling the minimum deliberately keeps a conservative stale wakeup so
+  // cancel stays O(1) without scanning its bucket.
+  EXPECT_EQ(w.next_deadline_ns(), 100 + 20 * kMs);
+  EXPECT_TRUE(advance_collect(w, 100 + 20 * kMs).empty());
   EXPECT_EQ(w.next_deadline_ns(), 100 + 50 * kMs);
   w.cancel(&a);
   EXPECT_EQ(w.next_deadline_ns(), UINT64_MAX);
 }
 
-// A far (top-level) deadline must still report a finite next_deadline_ns and
-// fire eventually -- exercises the top-level pseudo-ring path in next_expiration
-// (red-team gap: top-level next_deadline unexercised).
-TEST(TimerWheel, NextDeadlineTopLevelAndOverflowSaturates) {
-  TimerWheel w(0);
+// A far deadline remains exact and the complete uint64 range never wraps.
+TEST(TimerQueue, FarDeadlineAndUint64RangeStayExact) {
+  TimerQueue w(0);
   TimerEntry e = make_entry(1);
-  w.schedule(&e, 100'000 * kMs);  // ~100s -> a high level
+  w.schedule(&e, 100'000 * kMs);
   std::uint64_t nd = w.next_deadline_ns();
   EXPECT_NE(nd, UINT64_MAX);
-  EXPECT_LE(nd, 100'000 * kMs);  // reported no later than the deadline
+  EXPECT_EQ(nd, 100'000 * kMs);
   w.cancel(&e);
 
-  // An absurd deadline near u64 max must saturate to the horizon (not wrap to a
-  // tiny tick and fire early). It should land, and NOT fire before the horizon.
-  TimerWheel w2(0);
+  // An absolute deadline near u64 max must not wrap or fire early.
+  TimerQueue w2(0);
   TimerEntry big = make_entry(2);
-  w2.schedule(&big, UINT64_MAX - 100);  // within ~1ms of u64 max
+  w2.schedule(&big, UINT64_MAX - 100);
   EXPECT_EQ(w2.size(), 1u);
-  // next_deadline reports the next cascade boundary, not necessarily the final
-  // caller deadline for a high-level entry.
-  EXPECT_LE(w2.next_deadline_ns(), UINT64_MAX - 100);
-  // Far below the horizon: must not have fired (no early fire from overflow).
+  EXPECT_EQ(w2.next_deadline_ns(), UINT64_MAX - 100);
+  // Far below the deadline: must not have fired.
   EXPECT_TRUE(advance_collect(w2, 1000 * kMs).empty());
   EXPECT_EQ(w2.size(), 1u);
-  TimerWheel::EntryList final;
+  TimerQueue::EntryList final;
   w2.advance(UINT64_MAX, final);
   EXPECT_TRUE(w2.empty());
   TimerEntry* fired = final.pop_front();
   ASSERT_EQ(fired, &big);
   EXPECT_EQ(final.pop_front(), nullptr);
+
+  TimerQueue w3(0);
+  TimerEntry last = make_entry(3);
+  w3.schedule(&last, UINT64_MAX);
+  EXPECT_TRUE(w3.next_deadline().has_value());
+  EXPECT_TRUE(w3.cancel(&last));
 }
 
-TEST(TimerWheel, RejectsWrongOwnerAndLinkedOutputReuse) {
-  TimerWheel first(0);
-  TimerWheel second(0);
+TEST(TimerQueue, RejectsBackwardAdvance) {
+  EXPECT_DEATH_IF_SUPPORTED(
+      {
+        TimerQueue queue(100);
+        TimerQueue::EntryList out;
+        queue.advance(99, out);
+      },
+      "");
+}
+
+TEST(TimerQueue, RejectsWrongOwnerAndLinkedOutputReuse) {
+  TimerQueue first(0);
+  TimerQueue second(0);
   TimerEntry e = make_entry(1);
   first.schedule(&e, 10 * kMs);
 
@@ -339,29 +401,29 @@ TEST(TimerWheel, RejectsWrongOwnerAndLinkedOutputReuse) {
 
   TimerEntry linked = make_entry(2);
   first.schedule(&linked, 20 * kMs);
-  TimerWheel::EntryList out;
+  TimerQueue::EntryList out;
   first.advance(20 * kMs, out);
   EXPECT_DEATH_IF_SUPPORTED(first.schedule(&linked, 30 * kMs), "");
   EXPECT_EQ(out.pop_front(), &linked);
 }
 
-TEST(TimerWheel, DestroyingNonEmptySourceFailsFast) {
+TEST(TimerQueue, DestroyingNonEmptySourceFailsFast) {
   EXPECT_DEATH_IF_SUPPORTED(
       {
         TimerEntry e;
-        TimerWheel w(0);
+        TimerQueue w(0);
         w.schedule(&e, 10 * kMs);
       },
       "");
 }
 
-TEST(TimerWheel, DestroyingEntryStillLinkedToFiredListFailsFast) {
+TEST(TimerQueue, DestroyingEntryStillLinkedToFiredListFailsFast) {
   EXPECT_DEATH_IF_SUPPORTED(
       {
         TimerEntry e;
-        TimerWheel::EntryList fired;
+        TimerQueue::EntryList fired;
         {
-          TimerWheel w(0);
+          TimerQueue w(0);
           w.schedule(&e, kMs);
           w.advance(kMs, fired);
         }
@@ -373,21 +435,22 @@ TEST(TimerWheel, DestroyingEntryStillLinkedToFiredListFailsFast) {
 
 // ---- scale: a million arm/cancel churn, oracle-checked -----------------------
 
-// Mirrors the target workload (arm >> cancel >> fire). Cross-check the wheel's
+// Mirrors the target workload (arm >> cancel >> fire). Cross-check the queue's
 // fire set against a brute-force oracle: exactly the never-cancelled timers,
 // each fired once, in nondecreasing deadline order overall.
-TEST(TimerWheel, MillionArmCancelChurnMatchesOracle) {
+TEST(TimerQueue, MillionArmCancelChurnMatchesOracle) {
   constexpr int kN = 1'000'000;
-  TimerWheel w(0);
+  TimerQueue w(0);
   std::vector<TimerEntry> entries(kN);
   std::vector<std::uint64_t> deadlines(kN);
   std::vector<char> cancelled(kN, 0);
 
   std::mt19937_64 rng(12345);
-  // Deadlines spread across all levels: 1ms .. ~1M ms (~17min), so cascades run.
+  // Deadlines spread across the radix range: 1 .. ~1M test units.
   std::uniform_int_distribution<std::uint64_t> dl(1, 1'000'000);
   for (int i = 0; i < kN; ++i) {
-    entries[i].data = reinterpret_cast<void*>(static_cast<std::uintptr_t>(i));
+    entries[i].set_data(
+        reinterpret_cast<void*>(static_cast<std::uintptr_t>(i)));
     deadlines[i] = dl(rng);
     w.schedule(&entries[i], deadlines[i] * kMs);
   }
@@ -409,16 +472,16 @@ TEST(TimerWheel, MillionArmCancelChurnMatchesOracle) {
   std::vector<char> fired_seen(kN, 0);
   std::size_t fired_count = 0;
   std::uint64_t now = 0;
-  // Advance in 4096ms strides until the wheel empties.
+  // Advance in 4096-unit strides until the queue empties.
   while (!w.empty()) {
     now += 4096 * kMs;
-    TimerWheel::EntryList out;
+    TimerQueue::EntryList out;
     w.advance(now, out);
     while (TimerEntry* e = out.pop_front()) {
-      int id = static_cast<int>(reinterpret_cast<std::uintptr_t>(e->data));
+      int id = static_cast<int>(reinterpret_cast<std::uintptr_t>(e->data()));
       EXPECT_FALSE(cancelled[id]) << "cancelled timer fired: " << id;
       EXPECT_FALSE(fired_seen[id]) << "double fire: " << id;
-      EXPECT_GE(now, e->deadline_ns) << "early fire: " << id;
+      EXPECT_GE(now, e->deadline_ns()) << "early fire: " << id;
       fired_seen[id] = 1;
       ++fired_count;
     }

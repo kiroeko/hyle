@@ -52,13 +52,13 @@ TEST(SchedTimer, SleepResumesAfterDeadline) {
     sched.drain();
   }
   EXPECT_TRUE(s.done.load());
-  // Slept at least ~29ms (wheel rounds up to the 1ms tick; allow slack under it
-  // only for scheduler/OS granularity, never far below the request).
+  // Allow scheduler/OS measurement slack, but never resume far below the
+  // requested exact monotonic deadline.
   EXPECT_GE(s.elapsed, 25 * kMs) << "resumed too early: " << s.elapsed << " ns";
 }
 
 // Many fibers with DIFFERENT deadlines each resume, and in ascending-deadline
-// order overall (the wheel fires nearest-first).
+// order overall (the scheduler advances at the nearest deadline).
 TEST(SchedTimer, ManyDifferentDeadlinesAllResume) {
   constexpr int kN = 64;
   std::vector<std::unique_ptr<SleepProbe>> probes;

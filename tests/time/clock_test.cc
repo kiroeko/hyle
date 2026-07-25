@@ -1,14 +1,18 @@
 #include <gtest/gtest.h>
 
+#include <chrono>
 #include <cstdint>
 #include <limits>
+#include <time.h>
 
 #include "hyle/time/clock.h"
 
 using hyle::time::fast_monotonic_available;
 using hyle::time::fast_monotonic_ns;
 using hyle::time::fast_realtime_ns;
+using hyle::time::fast_realtime_available;
 using hyle::time::Instant;
+using hyle::time::MonotonicTimePoint;
 using hyle::time::monotonic_ns;
 using hyle::time::realtime_ns;
 using hyle::time::remaining_ns;
@@ -73,6 +77,14 @@ TEST(Clock, FastRealtimeTracksRealtime) {
   EXPECT_LT(diff, 50'000'000ull) << "precise=" << p << " coarse=" << f;
 }
 
+TEST(Clock, FastRealtimeAvailabilityMatchesFallbackContract) {
+#if defined(_WIN32) || defined(CLOCK_REALTIME_COARSE)
+  EXPECT_TRUE(fast_realtime_available());
+#else
+  EXPECT_FALSE(fast_realtime_available());
+#endif
+}
+
 TEST(Clock, SleepForNsSleepsAtLeastRequested) {
   // sleep_for must not under-sleep (measured by the monotonic clock).
   constexpr std::uint64_t req = 10'000'000ull;  // 10 ms
@@ -101,7 +113,7 @@ TEST(Clock, InstantUntil) {
 }
 
 TEST(Clock, ZeroSleepReturnsPromptly) {
-  // sleep_for_ns(0) yields; must return ~immediately (well under 100ms).
+  // A zero duration is a no-op, not an implicit scheduler yield.
   std::uint64_t a = monotonic_ns();
   sleep_for_ns(0);
   EXPECT_LT(monotonic_ns() - a, 100'000'000ull);
@@ -132,8 +144,45 @@ TEST(Clock, SaturatingDeadlineArithmetic) {
 }
 
 TEST(Clock, InstantElapsedClampsFutureInstant) {
-  Instant future{UINT64_MAX};
+  Instant future{MonotonicTimePoint::max()};
   EXPECT_EQ(future.elapsed_ns(), 0u);
+}
+
+TEST(Clock, ChronoFacadePreservesUnitsAndRoundsUp) {
+  using namespace std::chrono_literals;
+  EXPECT_EQ(hyle::time::duration_ns_saturated(1500us), 1'500'000u);
+  EXPECT_EQ(hyle::time::duration_ns_saturated(-1ns), 0u);
+  EXPECT_EQ(hyle::time::duration_ns_saturated(
+                std::chrono::duration<double, std::nano>(1.25)),
+            2u);
+
+  const auto start = hyle::time::monotonic_now();
+  const auto deadline = start + 2ms;
+  EXPECT_EQ(hyle::time::to_monotonic_ns(deadline),
+            hyle::time::to_monotonic_ns(start) + 2'000'000u);
+  EXPECT_EQ(hyle::time::monotonic_time_point(
+                hyle::time::to_monotonic_ns(deadline)),
+            deadline);
+  const auto wall = hyle::time::realtime_now();
+  EXPECT_EQ(hyle::time::realtime_time_point(hyle::time::to_realtime_ns(wall)),
+            wall);
+  EXPECT_GE(hyle::time::deadline_after(1ms), start);
+}
+
+TEST(Clock, InstantDifferenceIsTypedAndSigned) {
+  using namespace std::chrono_literals;
+  const Instant earlier{MonotonicTimePoint(10ns)};
+  const Instant later{MonotonicTimePoint(25ns)};
+  EXPECT_EQ(later - earlier, 15ns);
+  EXPECT_EQ(earlier - later, -15ns);
+  EXPECT_LT(earlier, later);
+}
+
+TEST(Clock, ChronoSleepUntilDoesNotReturnEarly) {
+  using namespace std::chrono_literals;
+  const auto deadline = hyle::time::monotonic_now() + 2ms;
+  hyle::time::sleep_until(deadline);
+  EXPECT_GE(hyle::time::monotonic_now(), deadline);
 }
 
 TEST(Clock, FastMonotonicTracksMonotonicOverSleep) {

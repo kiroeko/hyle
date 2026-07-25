@@ -9,7 +9,7 @@
 #include "hyle/sched/coro.h"
 #include "hyle/sched/timer.h"
 #include "hyle/sched/waker.h"
-#include "hyle/time/timer_source.h"
+#include "hyle/time/timer_entry.h"
 
 #if defined(HYLE_STATIC)
 #  define HYLE_IO_API
@@ -29,7 +29,7 @@
 // + HYLE's own scheduler, 2026-07-05):
 //
 //  1. ARBITRATION needs NO atomics but MUST be symmetric. A connection fiber is
-//     PINNED to its owner worker (shard-per-core): its io ring, timer wheel, and
+//     PINNED to its owner worker (shard-per-core): its io ring, timer queue, and
 //     resume all run on that ONE worker thread, serially (io completion reaped in
 //     io_context::poll; timer fired in fire_due_timers). So a plain `io_done` /
 //     `timer_fired` flag pair is race-free (seastar's non-atomic timer.cancel()
@@ -40,7 +40,7 @@
 //     LEAKS it into the fiber's next suspend -> a lost/spurious wake. So each side
 //     must WAKE ONLY IF IT WON: io side wakes iff !timer_fired; timer side wakes
 //     iff !io_done. That guarantees exactly ONE wake_rendezvous per episode. The
-//     timer side runs as TimerEntry::on_fire (fire_due_timers calls it instead of
+//     timer side runs as TimerEntry::fire_callback (fire_due_timers calls it instead of
 //     the blind sleep wake), so it can check io_done first.
 //
 //  2. LATE-COMPLETION LIFETIME. Timer wins -> we submit a proactor cancel, but that
@@ -66,7 +66,7 @@ namespace hyle::io {
 // owner worker => refcount + flags are PLAIN (non-atomic).
 struct TimedSlot {
   IoOperation io{};          // the io op's landing pad (reaper fills result)
-  time::TimerEntry timer{};  // armed on the owner worker's wheel; on_fire = arbiter
+  time::TimerEntry timer{};  // armed on owner worker's queue; callback = arbiter
   mem::Allocator alloc;      // frees the slot at refcount 0
   Proactor* p = nullptr;     // ring, for submit_cancel when the timer wins
   int refcount = 2;          // {kernel op, fiber}; non-atomic (owner-thread only)
@@ -120,14 +120,15 @@ inline void complete_timed(const Completion& c) noexcept {
   s->release();        // kernel ref spent
 }
 
-// Timer-side arbiter, installed as TimedSlot::timer.on_fire. Runs in fire_due_timers
+// Timer-side arbiter, installed as TimedSlot::timer's fire callback. Runs in
+// fire_due_timers
 // on the owner worker. Symmetric to complete_timed: mark timer_fired; wake ONLY if
 // io hasn't already won (else io already did the single wake -> touching
 // wake_rendezvous here would leak wake_state_). The timer holds NO ref, so it never
-// release()s. `e->data` points back to the slot (set in make_timed_slot) -- a direct
-// read, no offsetof (fire_due_timers doesn't touch data for on_fire entries).
+// release()s. `e->data()` points back to the slot (set in make_timed_slot) -- a direct
+// read, no offsetof (fire_due_timers doesn't touch data for callback entries).
 inline void timed_on_fire(time::TimerEntry* e) noexcept {
-  auto* s = static_cast<TimedSlot*>(e->data);
+  auto* s = static_cast<TimedSlot*>(e->data());
   s->timer_fired = true;
   if (s->io_done) return;  // io already won + woke the fiber: do not touch rendezvous
   s->io.waker.wake();      // timeout won -> exactly one wake_rendezvous this episode
@@ -136,7 +137,7 @@ inline void timed_on_fire(time::TimerEntry* e) noexcept {
 namespace detail {
 
 // Allocate + arm a timed op. Captures the fiber waker into the io slot, arms the
-// timer (on_fire = arbiter, so fire_due_timers routes through timed_on_fire, NOT the
+// timer (callback = arbiter, so fire_due_timers routes through timed_on_fire, NOT the
 // blind sleep wake). Caller then submits the io op with to_timed_token(slot).
 inline TimedSlot* make_timed_slot(mem::Allocator alloc, Proactor* p,
                                   std::uint64_t deadline_ns) noexcept {
@@ -147,8 +148,9 @@ inline TimedSlot* make_timed_slot(mem::Allocator alloc, Proactor* p,
   s->alloc = alloc;
   s->p = p;
   s->io.waker = sched::current_waker();
-  s->timer.on_fire = &timed_on_fire;  // route timer fire through the arbiter
-  s->timer.data = s;  // publish complete callback context before the live arm
+  s->timer.set_fire_callback(
+      &timed_on_fire);  // route timer fire through the arbiter
+  s->timer.set_data(s);  // publish complete callback context before the live arm
   sched::arm_timeout(&s->timer, deadline_ns);
   return s;
 }
@@ -158,7 +160,7 @@ inline std::int64_t resume_timed(TimedSlot* s) noexcept {
   std::int64_t result;
   if (s->io_done) {
     // io won (or completed alongside the timer). Cancel the timer if it hasn't
-    // fired -- synchronous wheel unlink, no late event. result = the io bytes/errno.
+    // fired -- synchronous queue unlink, no late event. result = the io bytes/errno.
     if (!s->timer_fired) sched::cancel_timeout(&s->timer);
     result = s->io.result;
     s->release();  // fiber ref (kernel ref was released by complete_timed)
