@@ -71,7 +71,7 @@
 | **rigtorp-MPMCQueue** / **MPMCQueue** | 参考(bench 对照)| 定长环形 MPMC(Vyukov 序号法);BoundedQueue 设计参考 + queue bench-02b 对标 |
 | **boost**(intrusive) | 参考 | 侵入式 list/map（sched run-queue/waiter 链）|
 
-### time/（Tier 0）
+### time/（Tier 2 必要基质）
 | 库 | 角色 | 说明 |
 |---|---|---|
 | **abseil-cpp** | 参考 | TSC 校准算法（`sysinfo.cc`：GetTimeTscPair 取最低延迟样本抗抢占 + MeasureTscFrequency 倍增窗口到 1% 收敛）；`fast_monotonic_ns` 的频率标定直接照搬其思路。另：abseil 默认关闭 cycle-clock 当 wall-time（唤醒可能错），正是 HYLE 不把 rdtsc 设默认钟的依据 |
