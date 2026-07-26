@@ -11,6 +11,7 @@
 #include "hyle/container/byte_ring_buffer.h"
 #include "hyle/container/carray.h"
 #include "hyle/container/concurrent_vector.h"
+#include "hyle/container/detail/adaptive_rw_lock.h"
 #include "hyle/container/dynamic_bitset.h"
 #include "hyle/container/path.h"
 #include "hyle/container/probe.h"
@@ -21,6 +22,7 @@
 #include "hyle/container/swiss_table.h"
 #include "hyle/container/work_stealing_deque.h"
 #include "hyle/container/ws_fifo_queue.h"
+#include "hyle/core/cache.h"
 #include "hyle/mem/allocator.h"
 
 namespace hc = hyle::container;
@@ -334,6 +336,15 @@ struct RawMap {
   std::size_t block_alignment = 0;
 };
 
+struct alignas(hyle::core::kDestructiveInterferenceSize) ConcurrentRawShard {
+  ConcurrentRawShard(const hyle_container_hash_map_options& options,
+                     hyle::mem::Allocator alloc)
+      : value(options, alloc) {}
+
+  hc::detail::AdaptiveRwLock lock;
+  RawMap value;
+};
+
 hyle_container_hash_map_options raw_set_options(
     const hyle_container_hash_set_options& options) noexcept {
   hyle_container_hash_map_options raw = HYLE_CONTAINER_HASH_MAP_OPTIONS_INIT;
@@ -419,6 +430,39 @@ struct hyle_container_hash_set_o {
       : backing(options.backing),
         value(raw_set_options(options), to_cpp(&backing)) {}
   RawMap value;
+};
+struct hyle_container_concurrent_hash_map_o {
+  hyle_allocator backing;
+  std::size_t shard_count = 0;
+  ConcurrentRawShard* shards = nullptr;
+
+  hyle_container_concurrent_hash_map_o(
+      const hyle_container_hash_map_options& options,
+      std::size_t requested_shards)
+      : backing(options.backing) {
+    if (requested_shards > SIZE_MAX / sizeof(ConcurrentRawShard)) return;
+    const std::size_t bytes = requested_shards * sizeof(ConcurrentRawShard);
+    void* storage = backing.alloc(backing.state, bytes,
+                                  alignof(ConcurrentRawShard));
+    if (storage == nullptr) return;
+    shards = static_cast<ConcurrentRawShard*>(storage);
+    const hyle::mem::Allocator alloc = to_cpp(&backing);
+    for (; shard_count < requested_shards; ++shard_count)
+      ::new (static_cast<void*>(shards + shard_count))
+          ConcurrentRawShard(options, alloc);
+  }
+
+  ~hyle_container_concurrent_hash_map_o() {
+    if (shards == nullptr) return;
+    const std::size_t count = shard_count;
+    while (shard_count != 0) shards[--shard_count].~ConcurrentRawShard();
+    backing.free(backing.state, shards, count * sizeof(ConcurrentRawShard),
+                 alignof(ConcurrentRawShard));
+  }
+
+  ConcurrentRawShard& shard(std::uint64_t hash) const noexcept {
+    return shards[(hash >> 32) & (shard_count - 1)];
+  }
 };
 struct hyle_container_bounded_queue_o {
   hyle_allocator backing;
@@ -1705,12 +1749,11 @@ void hyle_container_hash_map_clear(hyle_container_hash_map* map) {
   if (map == nullptr) return;
   map->value.clear();
 }
-static hyle_status raw_hash_insert_impl(
+static hyle_status raw_hash_insert_prehashed_impl(
     hyle_container_insert_result* out_result,
     RawMap& raw, const void* key, const void* value,
-    bool assign_existing) {
+    bool assign_existing, uint64_t hash) {
   *out_result = HYLE_CONTAINER_ALREADY_PRESENT;
-  const uint64_t hash = raw.hash(key);
   const std::size_t existing = raw.find_slot(key, hash);
   if (existing != RawMap::kNoSlot) {
     if (assign_existing && raw.options.value_size != 0) {
@@ -1786,6 +1829,12 @@ static hyle_status raw_hash_insert_impl(
   *out_result = HYLE_CONTAINER_INSERTED;
   return hyle_status_ok();
 }
+static hyle_status raw_hash_insert_impl(
+    hyle_container_insert_result* out_result, RawMap& raw, const void* key,
+    const void* value, bool assign_existing) {
+  return raw_hash_insert_prehashed_impl(out_result, raw, key, value,
+                                        assign_existing, raw.hash(key));
+}
 hyle_status hyle_container_hash_map_insert(
     hyle_container_insert_result* out_result,
     hyle_container_hash_map* map, const void* key, const void* value) {
@@ -1852,6 +1901,211 @@ int hyle_container_hash_map_visit(
       if (!keep_going) break;
     }
   return keep_going ? 1 : 0;
+}
+
+hyle_status hyle_container_concurrent_hash_map_create(
+    hyle_container_concurrent_hash_map** out,
+    const hyle_container_hash_map_options* options, size_t shard_count) {
+  if (out == nullptr)
+    return hyle_status_invalid_argument(
+        "concurrent hash map output is NULL");
+  *out = nullptr;
+  if (options == nullptr ||
+      options->struct_size < sizeof(hyle_container_hash_map_options) ||
+      options->value_size == 0 || !valid_backing(options->backing) ||
+      shard_count == 0 || !is_power_of_two(shard_count) ||
+      !valid_hash_slot_layout(options->key_size, options->key_alignment,
+                              options->value_size,
+                              options->value_alignment)) {
+    return hyle_status_invalid_argument(
+        "invalid concurrent hash map options or shard count");
+  }
+  auto* map = allocate_handle<hyle_container_concurrent_hash_map>(
+      options->backing, *options, shard_count);
+  if (map == nullptr || map->shard_count != shard_count) {
+    free_handle(map);
+    return hyle_status_resource_exhausted(
+        "concurrent hash map allocation failed");
+  }
+  *out = map;
+  return hyle_status_ok();
+}
+
+void hyle_container_concurrent_hash_map_destroy(
+    hyle_container_concurrent_hash_map* map) {
+  free_handle(map);
+}
+
+size_t hyle_container_concurrent_hash_map_shard_count(
+    const hyle_container_concurrent_hash_map* map) {
+  return map == nullptr ? 0 : map->shard_count;
+}
+
+size_t hyle_container_concurrent_hash_map_size(
+    const hyle_container_concurrent_hash_map* map) {
+  if (map == nullptr) return 0;
+  std::size_t result = 0;
+  for (std::size_t i = 0; i < map->shard_count; ++i) {
+    ConcurrentRawShard& shard = map->shards[i];
+    shard.lock.lock_shared();
+    result += shard.value.size;
+    shard.lock.unlock_shared();
+  }
+  return result;
+}
+
+size_t hyle_container_concurrent_hash_map_capacity(
+    const hyle_container_concurrent_hash_map* map) {
+  if (map == nullptr) return 0;
+  std::size_t result = 0;
+  for (std::size_t i = 0; i < map->shard_count; ++i) {
+    ConcurrentRawShard& shard = map->shards[i];
+    shard.lock.lock_shared();
+    result += shard.value.cap;
+    shard.lock.unlock_shared();
+  }
+  return result;
+}
+
+hyle_status hyle_container_concurrent_hash_map_reserve(
+    hyle_container_concurrent_hash_map* map, size_t count) {
+  if (map == nullptr)
+    return hyle_status_invalid_argument("concurrent map is NULL");
+  if (count > SIZE_MAX - (map->shard_count - 1))
+    return hyle_status_out_of_range(
+        "concurrent hash map capacity overflows address space");
+  const std::size_t per_shard =
+      (count + map->shard_count - 1) / map->shard_count;
+  for (std::size_t i = 0; i < map->shard_count; ++i) {
+    ConcurrentRawShard& shard = map->shards[i];
+    shard.lock.lock();
+    const bool reserved = shard.value.reserve(per_shard);
+    shard.lock.unlock();
+    if (!reserved)
+      return hyle_status_resource_exhausted(
+          "concurrent hash map bucket allocation failed");
+  }
+  return hyle_status_ok();
+}
+
+void hyle_container_concurrent_hash_map_clear(
+    hyle_container_concurrent_hash_map* map) {
+  if (map == nullptr) return;
+  for (std::size_t i = 0; i < map->shard_count; ++i) {
+    ConcurrentRawShard& shard = map->shards[i];
+    shard.lock.lock();
+    shard.value.clear();
+    shard.lock.unlock();
+  }
+}
+
+static hyle_status concurrent_raw_hash_insert_impl(
+    hyle_container_insert_result* out_result,
+    hyle_container_concurrent_hash_map* map, const void* key,
+    const void* value, bool assign_existing) {
+  if (out_result == nullptr || map == nullptr || key == nullptr ||
+      value == nullptr)
+    return hyle_status_invalid_argument(
+        "result, concurrent map, key, and value are required");
+  const std::uint64_t hash = map->shards[0].value.hash(key);
+  ConcurrentRawShard& shard = map->shard(hash);
+  shard.lock.lock();
+  hyle_status status = raw_hash_insert_prehashed_impl(
+      out_result, shard.value, key, value, assign_existing, hash);
+  shard.lock.unlock();
+  return status;
+}
+
+hyle_status hyle_container_concurrent_hash_map_insert(
+    hyle_container_insert_result* out_result,
+    hyle_container_concurrent_hash_map* map, const void* key,
+    const void* value) {
+  return concurrent_raw_hash_insert_impl(out_result, map, key, value, false);
+}
+
+hyle_status hyle_container_concurrent_hash_map_insert_or_assign(
+    hyle_container_insert_result* out_result,
+    hyle_container_concurrent_hash_map* map, const void* key,
+    const void* value) {
+  return concurrent_raw_hash_insert_impl(out_result, map, key, value, true);
+}
+
+int hyle_container_concurrent_hash_map_find_copy(
+    void* out_value, const hyle_container_concurrent_hash_map* map,
+    const void* key) {
+  if (out_value == nullptr || map == nullptr || key == nullptr) return 0;
+  const std::uint64_t hash = map->shards[0].value.hash(key);
+  ConcurrentRawShard& shard = map->shard(hash);
+  shard.lock.lock_shared();
+  const std::size_t slot = shard.value.find_slot(key, hash);
+  if (slot != RawMap::kNoSlot)
+    std::memcpy(out_value, shard.value.value(slot),
+                shard.value.options.value_size);
+  shard.lock.unlock_shared();
+  return slot != RawMap::kNoSlot ? 1 : 0;
+}
+
+int hyle_container_concurrent_hash_map_contains(
+    const hyle_container_concurrent_hash_map* map, const void* key) {
+  if (map == nullptr || key == nullptr) return 0;
+  const std::uint64_t hash = map->shards[0].value.hash(key);
+  ConcurrentRawShard& shard = map->shard(hash);
+  shard.lock.lock_shared();
+  const bool present =
+      shard.value.find_slot(key, hash) != RawMap::kNoSlot;
+  shard.lock.unlock_shared();
+  return present ? 1 : 0;
+}
+
+int hyle_container_concurrent_hash_map_update(
+    hyle_container_concurrent_hash_map* map, const void* key,
+    hyle_container_concurrent_hash_map_update_fn updater, void* context) {
+  if (map == nullptr || key == nullptr || updater == nullptr) return 0;
+  const std::uint64_t hash = map->shards[0].value.hash(key);
+  ConcurrentRawShard& shard = map->shard(hash);
+  shard.lock.lock();
+  const std::size_t slot = shard.value.find_slot(key, hash);
+  if (slot != RawMap::kNoSlot)
+    updater(shard.value.value(slot), context);
+  shard.lock.unlock();
+  return slot != RawMap::kNoSlot ? 1 : 0;
+}
+
+int hyle_container_concurrent_hash_map_erase(
+    hyle_container_concurrent_hash_map* map, const void* key) {
+  if (map == nullptr || key == nullptr) return 0;
+  const std::uint64_t hash = map->shards[0].value.hash(key);
+  ConcurrentRawShard& shard = map->shard(hash);
+  shard.lock.lock();
+  const std::size_t slot = shard.value.find_slot(key, hash);
+  if (slot != RawMap::kNoSlot) shard.value.erase_slot(slot);
+  shard.lock.unlock();
+  return slot != RawMap::kNoSlot ? 1 : 0;
+}
+
+int hyle_container_concurrent_hash_map_visit(
+    const hyle_container_concurrent_hash_map* map,
+    hyle_container_concurrent_hash_map_visit_fn visitor, void* context) {
+  if (map == nullptr || visitor == nullptr) return 0;
+  for (std::size_t i = 0; i < map->shard_count; ++i) {
+    ConcurrentRawShard& shard = map->shards[i];
+    shard.lock.lock_shared();
+    const RawMap& raw = shard.value;
+    bool keep_going = true;
+    for (std::size_t group = 0; keep_going && group < raw.cap;
+         group += hc::detail::kGroupWidth) {
+      for (std::uint32_t lane :
+           hc::detail::Group(raw.ctrl + group).match_full()) {
+        const std::size_t index = group + lane;
+        keep_going =
+            visitor(raw.key(index), raw.value(index), context) != 0;
+        if (!keep_going) break;
+      }
+    }
+    shard.lock.unlock_shared();
+    if (!keep_going) return 0;
+  }
+  return 1;
 }
 
 hyle_status hyle_container_hash_set_create(

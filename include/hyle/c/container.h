@@ -501,6 +501,62 @@ HYLE_CONTAINER_C_API int hyle_container_hash_map_visit(
     hyle_container_hash_map* map, hyle_container_hash_map_visit_fn visitor,
     void* context);
 
+/* Sharded concurrent POD hash map. Unlike the single-thread map, lookup never
+ * returns an unguarded pointer: find_copy copies while holding a read lock and
+ * update invokes a callback while holding the key's write lock. hash/equal and
+ * callbacks can run concurrently on different shards and must be thread-safe.
+ * Destroy requires all calls and callbacks to be quiescent. */
+typedef struct hyle_container_concurrent_hash_map_o
+    hyle_container_concurrent_hash_map;
+typedef int (*hyle_container_concurrent_hash_map_visit_fn)(
+    const void* key, const void* value, void* context);
+typedef void (*hyle_container_concurrent_hash_map_update_fn)(
+    void* value, void* context);
+HYLE_CONTAINER_C_API hyle_status hyle_container_concurrent_hash_map_create(
+    hyle_container_concurrent_hash_map** out,
+    const hyle_container_hash_map_options* options, size_t shard_count);
+HYLE_CONTAINER_C_API void hyle_container_concurrent_hash_map_destroy(
+    hyle_container_concurrent_hash_map* map);
+HYLE_CONTAINER_C_API size_t hyle_container_concurrent_hash_map_shard_count(
+    const hyle_container_concurrent_hash_map* map);
+HYLE_CONTAINER_C_API size_t hyle_container_concurrent_hash_map_size(
+    const hyle_container_concurrent_hash_map* map);
+HYLE_CONTAINER_C_API size_t hyle_container_concurrent_hash_map_capacity(
+    const hyle_container_concurrent_hash_map* map);
+HYLE_CONTAINER_C_API hyle_status hyle_container_concurrent_hash_map_reserve(
+    hyle_container_concurrent_hash_map* map, size_t count);
+HYLE_CONTAINER_C_API void hyle_container_concurrent_hash_map_clear(
+    hyle_container_concurrent_hash_map* map);
+HYLE_CONTAINER_C_API hyle_status hyle_container_concurrent_hash_map_insert(
+    hyle_container_insert_result* out_result,
+    hyle_container_concurrent_hash_map* map, const void* key,
+    const void* value);
+HYLE_CONTAINER_C_API hyle_status
+hyle_container_concurrent_hash_map_insert_or_assign(
+    hyle_container_insert_result* out_result,
+    hyle_container_concurrent_hash_map* map, const void* key,
+    const void* value);
+/* Returns 1 and writes exactly options.value_size bytes when present; otherwise
+ * returns 0 and leaves out_value unchanged. */
+HYLE_CONTAINER_C_API int hyle_container_concurrent_hash_map_find_copy(
+    void* out_value, const hyle_container_concurrent_hash_map* map,
+    const void* key);
+/* Snapshot only: another thread may erase immediately after the return. */
+HYLE_CONTAINER_C_API int hyle_container_concurrent_hash_map_contains(
+    const hyle_container_concurrent_hash_map* map, const void* key);
+/* Runs updater under exclusive ownership of this key's shard. Returns 0 when
+ * absent/invalid. updater must not re-enter the same map. */
+HYLE_CONTAINER_C_API int hyle_container_concurrent_hash_map_update(
+    hyle_container_concurrent_hash_map* map, const void* key,
+    hyle_container_concurrent_hash_map_update_fn updater, void* context);
+HYLE_CONTAINER_C_API int hyle_container_concurrent_hash_map_erase(
+    hyle_container_concurrent_hash_map* map, const void* key);
+/* Weakly consistent across shards; each visited key/value pair is stable during
+ * its callback. Returns 1 only after a complete visit. No same-map re-entry. */
+HYLE_CONTAINER_C_API int hyle_container_concurrent_hash_map_visit(
+    const hyle_container_concurrent_hash_map* map,
+    hyle_container_concurrent_hash_map_visit_fn visitor, void* context);
+
 /* Runtime-erased POD hash set. Stores one canonical key per member and does
  * not allocate a dummy mapped-value field in each flat slot. */
 typedef int (*hyle_container_hash_set_visit_fn)(const void* key,

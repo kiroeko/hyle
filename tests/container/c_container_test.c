@@ -67,6 +67,15 @@ static int stop_map_visit(const void* key, void* value, void* context) {
   ++*(int*)context;
   return 0;
 }
+static void concurrent_map_increment(void* value, void* context) {
+  *(int*)value += *(const int*)context;
+}
+static int concurrent_map_visit(const void* key, const void* value,
+                                void* context) {
+  (void)key;
+  *(uint64_t*)context += (uint64_t)*(const int*)value;
+  return 1;
+}
 static int visit_aligned_key(const void* key, void* value, void* context) {
   (void)value;
   CHECK(((uintptr_t)key % HYLE_CONTAINER_ALIGNOF(uint64_t)) == 0);
@@ -550,6 +559,59 @@ static void test_hash_set(void) {
   CHECK(tracking.allocations == tracking.frees);
 }
 
+static void test_concurrent_hash_map(void) {
+  hyle_container_hash_map_options options =
+      HYLE_CONTAINER_HASH_MAP_OPTIONS_FOR(int, int);
+  hyle_container_concurrent_hash_map* map = NULL;
+  hyle_container_concurrent_hash_map* invalid =
+      (hyle_container_concurrent_hash_map*)1;
+  int i;
+  uint64_t sum = 0;
+  CHECK(status_code(hyle_container_concurrent_hash_map_create(
+            &invalid, &options, 3)) == HYLE_STATUS_INVALID_ARGUMENT);
+  CHECK(invalid == NULL);
+  CHECK(status_ok(hyle_container_concurrent_hash_map_create(
+      &map, &options, 8)));
+  CHECK(map != NULL);
+  CHECK(hyle_container_concurrent_hash_map_shard_count(map) == 8);
+  CHECK(status_ok(hyle_container_concurrent_hash_map_reserve(map, 100)));
+  CHECK(hyle_container_concurrent_hash_map_capacity(map) >= 100);
+  for (i = 0; i < 100; ++i) {
+    hyle_container_insert_result result = HYLE_CONTAINER_ALREADY_PRESENT;
+    int value = i;
+    CHECK(status_ok(hyle_container_concurrent_hash_map_insert(
+        &result, map, &i, &value)));
+    CHECK(result == HYLE_CONTAINER_INSERTED);
+  }
+  {
+    hyle_container_insert_result result = HYLE_CONTAINER_INSERTED;
+    int key = 5;
+    int value = 5;
+    CHECK(status_ok(hyle_container_concurrent_hash_map_insert_or_assign(
+        &result, map, &key, &value)));
+    CHECK(result == HYLE_CONTAINER_ASSIGNED);
+  }
+  CHECK(hyle_container_concurrent_hash_map_size(map) == 100);
+  for (i = 0; i < 100; ++i) {
+    int value = -1;
+    const int delta = 1;
+    CHECK(hyle_container_concurrent_hash_map_contains(map, &i));
+    CHECK(hyle_container_concurrent_hash_map_update(
+        map, &i, concurrent_map_increment, (void*)&delta));
+    CHECK(hyle_container_concurrent_hash_map_find_copy(&value, map, &i));
+    CHECK(value == i + 1);
+  }
+  CHECK(hyle_container_concurrent_hash_map_visit(
+      map, concurrent_map_visit, &sum));
+  CHECK(sum == 5050);
+  i = 10;
+  CHECK(hyle_container_concurrent_hash_map_erase(map, &i));
+  CHECK(!hyle_container_concurrent_hash_map_contains(map, &i));
+  hyle_container_concurrent_hash_map_clear(map);
+  CHECK(hyle_container_concurrent_hash_map_size(map) == 0);
+  hyle_container_concurrent_hash_map_destroy(map);
+}
+
 static void test_queues_and_concurrent_vector(void) {
   int a = 1;
   int b = 2;
@@ -759,6 +821,7 @@ int main(void) {
   test_string_interner();
   test_vector_and_map();
   test_hash_set();
+  test_concurrent_hash_map();
   test_queues_and_concurrent_vector();
   test_dynamic_bitset_and_sparse_set();
   test_byte_ring();

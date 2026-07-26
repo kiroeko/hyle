@@ -21,6 +21,9 @@
 
 namespace hyle::container {
 
+template <class K, class V, class Hash, class Eq, class Alloc>
+class ConcurrentHashMap;
+
 namespace detail {
 // Type-erased storage handle for the cold path. The hot find/insert/erase stay
 // inlined in the typed shell (indirect hash/eq on every probe would wreck cheap
@@ -76,6 +79,8 @@ HYLE_CONTAINER_API void swiss_free(SwissStorage& s, std::size_t slot_size,
 template <class K, class V, class Hash = Hash<K>, class Eq = std::equal_to<>,
           class Alloc = mem::SystemAllocator>
 class SwissTable {
+  template <class, class, class, class, class>
+  friend class ConcurrentHashMap;
   static_assert(std::is_nothrow_move_constructible_v<K> &&
                     std::is_nothrow_move_constructible_v<V>,
                 "SwissTable requires nothrow move construction");
@@ -669,6 +674,18 @@ class SwissTable {
   Slot* find_slot(const Q& key) noexcept {
     if (cap_ == 0) return nullptr;
     const std::uint64_t h = hash_(key);
+    return find_slot_prehashed(key, h);
+  }
+
+  // ConcurrentHashMap computes the hash before selecting a shard. Reusing it
+  // here avoids scanning a string/blob key twice (once for the shard and once
+  // for Swiss probing). This stays private: prehashed calls are an internal
+  // composition seam, not another public API users can accidentally misuse.
+  template <class Q>
+    requires(std::is_nothrow_invocable_r_v<bool, const Eq&, const K&,
+                                           const Q&>)
+  Slot* find_slot_prehashed(const Q& key, std::uint64_t h) noexcept {
+    if (cap_ == 0) return nullptr;
     std::size_t pos = detail::h1(h) & mask_;
     std::size_t stride = 0;
     const ctrl_t want = detail::h2(h);
@@ -683,6 +700,24 @@ class SwissTable {
       stride += kGroup;
       pos = (pos + stride) & mask_;
     }
+  }
+
+  // Requires: key is absent and try_prepare_insert() has succeeded while the
+  // caller has exclusive ownership of this table. The concurrent wrapper uses
+  // this to keep OOM fallible without repeating a hash or equality probe.
+  template <class... Args>
+    requires std::is_nothrow_constructible_v<V, Args...>
+  Slot* emplace_absent_prehashed(K key, std::uint64_t h,
+                                 Args&&... args) noexcept {
+    HYLE_FATAL_ASSERT(cap_ != 0 && growth_left_ != 0);
+    const std::size_t idx = find_insert_slot(h);
+    const bool was_empty = ctrl_[idx] == detail::kEmpty;
+    set_ctrl(idx, detail::h2(h));
+    ::new (static_cast<void*>(slots_ + idx))
+        Slot(std::move(key), std::in_place, std::forward<Args>(args)...);
+    ++size_;
+    if (was_empty) --growth_left_;
+    return slots_ + idx;
   }
 
   // Recompute a slot's key hash without exposing the concrete type to the cold
