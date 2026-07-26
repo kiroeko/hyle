@@ -17,7 +17,7 @@
 | [`time.md`](./time.md) | **time 语言无关选型入口 + C++ 自然写法**：按 elapsed/墙钟/sleep/任意 deadline/同 duration timer 选择入口，并解释 single-owner、re-arm 与周期策略边界。 |
 | [`util.md`](./util.md) | **util 选型入口 + C++ 自然写法**：ScopeGuard/Ref/Rng/SpinLock/type-name/demangle 什么情况选什么，明确 core/runtime 分层、复杂度与常见坑。 |
 | [`obs.md`](./obs.md) | **obs 选型入口 + C++ 自然写法**：error/log/trace 怎么选，format/record/sink 生命周期、递归与异步桥接，以及 native trace 的零成本边界。 |
-| [`container.md`](./container.md) | **container 选型入口 + C++ 自然写法**：小序列/POD vector/flat map/字符串驻留/四类并发队列分别何时选择，明确失效、顺序和当前性能边界。 |
+| [`container.md`](./container.md) | **container 选型入口 + C++ 自然写法**：小序列/POD vector/flat map/字符串驻留/五类并发队列分别何时选择，明确失效、顺序和当前性能边界。 |
 | [`c-error.md`](./c-error.md) | **error C/FFI 精确映射**：选型沿用 error.md，只说明 `hyle_status` 的 owning 生命周期、Status/out、上下文、格式化与传播。 |
 | [`c-platform.md`](./c-platform.md) | **platform 纯 C ABI**：Parker/Thread/DynLib/VM/mapped_file/fs/cpu/numa 不透明句柄与自由函数、named enum、所有权与易用示例。 |
 | [`c-mem.md`](./c-mem.md) | **mem C/FFI 精确映射**：选型沿用 mem.md，只说明 Status/out、opaque handle、typed 宏、所有权和各入口。 |

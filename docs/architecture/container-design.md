@@ -61,6 +61,7 @@ Tier 0 dependencies: core cache geometry + error + mem allocator +
 | dynamic bitset | `DynamicBitSet` | opaque dynamic bitset | allocator-aware 值类型；canonical zero padding；set algebra/shift/popcount/set-bit iteration；长 mask runtime ISA dispatch |
 | bounded sparse IDs | `SparseSet<Id>` | opaque sparse u32 set | dense+sparse 双数组；固定 universe；insert/erase/contains/clear O(1)；dense iteration O(active)；swap erase 不保序 |
 | single-thread ring | `RingDeque<T>` / `ByteRingBuffer` | opaque byte ring | 前者是可增长/显式 bounded 的 owning 双端序列；后者为流式字节 staging 提供 copy 与至多两段 zero-copy spans；均非线程安全 |
+| bounded SPSC FIFO | `SpscQueue<T>` | opaque `void*` SPSC handle | exact usable capacity；单 producer / 单 consumer；非平凡 typed 值或 caller-owned C pointer；无 CAS/逐 slot atomic |
 | string view | `StringView`（实现名 `string_ref`） | `hyle_container_string_view` | ptr+u32 length+NUL bit；借用、不拥有 |
 | interner | `StringInterner` | opaque StringInterner | generation-tagged direct ID；内容相等才同一条目 |
 | path/text algorithms | typed view/buffer-fill | pointer/count/buffer-fill | 无 STL 所有权跨边界 |
@@ -85,17 +86,20 @@ IntrusiveList 已下沉 core，因为 error/time/sched 都需要它；它不再�
 | ordered/range associative | `BTreeMap/Set` | range query、确定性排序遍历、时间/调度索引；cache-packed unique-key B-tree，C++ typed 与 C erased POD 两面均覆盖 |
 | node/reference-stable associative | `ConcurrentNodeHashMap` 覆盖并发 registry | accessor 生命周期内引用稳定，node 地址跨 grow 稳定；单线程 node extraction/merge 仍不复制 std API |
 | concurrent associative | `ConcurrentFlatHashMap` + `ConcurrentNodeHashMap` | compact/rebuild 与 stable-reference/read-heavy 两种常用形状分开，不靠 policy flag 隐藏不同成本 |
-| 单线程 ring/deque | `RingDeque<T>` / `ByteRingBuffer` | 流式窗口、音视频/网络 staging、外部同步 SPSC 已覆盖；不让调度队列的原子/owner 合同向单线程用户征税 |
+| 单线程 ring/deque | `RingDeque<T>` / `ByteRingBuffer` | 流式窗口、音视频/网络 staging 与外部同步 ring 已覆盖；不让并发原子合同向单线程用户征税 |
+| 单 producer / 单 consumer FIFO | `SpscQueue<T>` | 独立于 MPMC/stealing：一个 acquire/release index pair，无 CAS/逐 slot atomic；覆盖线程/流水线 stage 间的常见 bounded handoff |
 | dynamic bitset / sparse set | `DynamicBitSet` / `SparseSet<Id>` | graph frontier、mask/set algebra 与稠密 ID active set 已覆盖；前者长 mask SIMD，后者以 O(1) clear + O(active) iteration 换取 2*U*Id bytes |
 | priority queue / heap owner | 由标准库覆盖 | 单线程 comparator heap 先用 `std::priority_queue`；只有并发 priority 或 decrease-key 真实需求出现才新增形状 |
 | cache/LRU policy | 不在 container | eviction 是策略，先由 util/消费者组合；不能因 Folly 有同名类型就把策略塞进 Tier 0 |
 | blocking/unbounded queue | sched 负责等待/背压 | container 保持非阻塞机制，避免另造一套 shutdown/cancel/wait 语义 |
+| strict inline-capacity sequence / sorted flat associative | 仍为候选轴 | 成熟库有真实形状，但必须由 no-allocation 或 read-mostly 消费合同驱动，不能按类型数量补齐 |
 
 因此当前结论不是“行数已经等价主流全集”，也不是按对手 LOC 补代码。dynamic bitset/
 sparse set、单线程 ring、ordered/range 与 concurrent associative 已通过 C++ 正常入口、
 C ABI、复杂度与实际 graph/active-ID/stream-staging/time-index/shared-registry workload。
-剩余负空间主要是 single-thread node extraction/merge 与 ordered multi；两者都需要真实消费者
-触发，不能用薄 wrapper 追成熟库类型数量。
+明确负空间仍是 single-thread node extraction/merge 与 ordered multi；候选能力轴还包括
+strict inline-capacity sequence、sorted flat associative 与带完整策略的并发 priority/unbounded
+机制。它们都需要真实消费者触发，不能用薄 wrapper 追成熟库类型数量。
 
 ### 有序 B-tree 的实际使用形状
 
@@ -170,7 +174,22 @@ slot，hot pop 不在每次变空时重置两个游标。后者曾令 GCC 常态
 以 partial `write/read` 提供方便 copy 路径，并以 `writable/readable` 返回至多两段 span，
 配合 `commit_write/consume` 直接接 scatter/gather I/O。reserve 会线性化并保持字节序；
 普通搬运只做至多两次 memcpy，没有逐 byte 元素生命周期税。两个类型都只负责单线程
-机制；跨线程使用必须由调用方外部同步，真正 MPMC/owner-thief 继续选择专用并发队列。
+机制；跨线程使用必须由调用方外部同步，真正 SPSC/MPMC/owner-thief 选择专用并发队列。
+
+### SpscQueue 的实际使用形状
+
+`SpscQueue<T>` 对照 Folly `ProducerConsumerQueue` 与成熟 bounded SPSC ring 的共同形状：
+producer 独占 write index，consumer 独占 read index，两个发布原子分离到 destructive
+interference cache line。每个成功操作只需读取对端 index、访问一个 slot，再 release 自己的
+index；不支付 MPMC 的 CAS、sequence number 或逐 slot atomic。requested capacity 是 exact
+usable capacity，内部只多一个 sentinel slot 来区分满/空，所以任意正数容量都不会被偷偷
+取整。push/pop 为 O(1)，构造时唯一一次 allocation 为 O(capacity)。
+
+typed 面在 producer 发布前原位构造 `T`，consumer 释放 slot 前销毁它，因此支持非平凡与
+move-only 值；不可 move-assign 的值通过 callback 消费。C 面固定承载 caller-owned `void*`，
+不冻结 element stride 或 C++ ctor/dtor callback。两个面都要求 producer/consumer 角色各自
+只有一个线程，析构前 quiesce；`size_approx` 只用于 telemetry，不是跨线程完成栅栏。
+这是一种常用并发架构能力，不是为 benchmark 保存的旁路或常态 metadata。
 
 ### DynamicBitSet / SparseSet 的实际使用形状
 
@@ -378,7 +397,7 @@ HYLE 版本、构建与 ISA 选择变化，不得持久化或作为 wire fingerp
 | erased POD flat map/set | 保留能力、形状已重塑 | map 拆分 insert/insert_or_assign；set 用独立最小 handle，共享 value_size=0 raw policy，但不暴露伪 value |
 | erased POD B-tree map/set | 保留能力、形状已审定 | C/FFI 确有 runtime ordered index；comparator+ctx、trivial cursor、range visit/erase 覆盖动态消费，不导出 node 布局或 C++ ctor/dtor callback |
 | erased POD concurrent map | 保留能力、形状已审定 | sharded Swiss storage；只返回锁内 copy 或执行 exclusive update callback，不导出无法携带锁的裸 pointer/node accessor |
-| 四类 pointer queue | 保留能力、角色已审定 | C 热路径统一 `try_*`；pointer 是跨 FFI 的 caller-owned work handle，不增加 runtime stride/copy callback；Chase-Lev 明示 owner bottom/thief top，WsFifo 明示 back/front |
+| 五类 pointer queue | 保留能力、角色已审定 | C 热路径统一 `try_*`；pointer 是跨 FFI 的 caller-owned work handle，不增加 runtime stride/copy callback；SPSC 明示唯一 producer/consumer，Chase-Lev 明示 owner bottom/thief top，WsFifo 明示 back/front |
 | concurrent pointer vector | 保留能力、形状已重塑 | 明确命名 `concurrent_ptr_vector`；reserve 预分配 stable segments；`try_get(out)` 区分越界与合法 NULL payload；不冒充 erased POD vector |
 | dynamic bitset / sparse u32 set | 保留 opaque 能力 | 两者是语言无关的 runtime-universe 数据结构；C 面覆盖 resize/algebra/iteration 与 dense active IDs，不暴露 C++ 布局 |
 
@@ -394,8 +413,8 @@ front/back 角色写进函数名。能力是否长期保留仍由真实 FFI 消�
 2026-07-26 对照本地 rigtorp/Vyukov、oneTBB、crossbeam 与 moodycamel 后，pointer
 queue 能力转为保留：work item/foreign object 本来就由调用方拥有，固定 `void*` 能让
 lock-free hot path 保持定宽搬运，不引入运行时 element stride、copy callback 或逐项
-分配。四类并非同一 benchmark 的重复品，而是 strict MPMC FIFO、sharded relaxed FIFO、
-owner-LIFO/thief-FIFO 与 owner-FIFO/batch-share 四种不同调度合同。
+分配。五类并非同一 benchmark 的重复品，而是 strict SPSC FIFO、strict MPMC FIFO、
+sharded relaxed FIFO、owner-LIFO/thief-FIFO 与 owner-FIFO/batch-share 五种不同合同。
 
 同一轮也把 typed work-stealing 面从早期算法名收束为公开合同：所有可能失败的热操作
 统一 `try_*`，方法名编码 bottom/top、back/front；pop/steal 通过 out 参数只在成功时

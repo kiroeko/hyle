@@ -22,10 +22,11 @@ container 提供性能敏感的基础数据结构、借用字符串/路径算法
 | 多线程 registry，grow 后对象地址必须稳定 | `ConcurrentNodeHashMap<K,V>` | bucket accessor；node 地址跨 rehash 稳定；每元素一次分配、间接访问 |
 | 稠密编号上的 mask、frontier、集合代数 | `DynamicBitSet` | U/8 bytes；单 bit O(1)，bulk O(U/word) 且长 mask 按 ISA 派发 |
 | 已知有界 ID，活跃项远少于 universe，频繁 clear/遍历 | `SparseSet<Id>` | 约 `2*U*sizeof(Id)`；insert/erase/clear O(1)，dense 迭代 O(active)，erase 不保序 |
-| 单线程双端队列、滑动窗口或外部同步 SPSC | `RingDeque<T>` | owning、随机访问、两段 readable spans；普通入口可增长，`*_bounded` 明确固定容量背压 |
+| 单线程双端队列、滑动窗口或外部同步 ring | `RingDeque<T>` | owning、随机访问、两段 readable spans；普通入口可增长，`*_bounded` 明确固定容量背压 |
 | 网络/文件/音视频字节 staging | `ByteRingBuffer` | partial copy API + 至多两段 zero-copy readable/writable spans；不逐 byte 构造元素 |
 | 非拥有字符串切片并使用 HYLE 搜索/路径算法 | `StringView`（实现名 `string_ref`） | ptr + u32 byte length + NUL bit；底层字节必须长寿 |
 | 内容去重并取得稳定字符串地址 | `StringInterner` | 分片线程安全；永久视图或 generation ID 两种生命周期 |
+| 恰好一个 producer 与一个 consumer 的跨线程 FIFO | `SpscQueue<T>` | exact bounded capacity；每端只写自己的 index，无 CAS/逐 slot atomic |
 | 严格容量、多生产者多消费者 | `BoundedQueue<T>` | bounded MPMC；满/空是正常控制流，不分配 |
 | 极高 MPMC 争用，可放弃全局 FIFO | `ShardedQueue<T>` | producer hint 分片；每 consumer 保留自己的 cursor |
 | 单 owner 做新任务、多个 thief 偷旧任务 | `WorkStealingDeque<T>` | owner bottom LIFO，thief top；固定容量 |
@@ -42,9 +43,12 @@ container 提供性能敏感的基础数据结构、借用字符串/路径算法
 |---|---|---|
 | 单线程 grow 后引用稳定、node extraction/merge | 暂用 `std::unordered_map` 等 node-based 容器 | HYLE node map 的公开合同是并发 accessor，不为补 std API 数量复制 extraction/merge |
 | duplicate-key ordered multi-index | 暂用 `std::multimap` / `std::multiset` | HYLE 当前只提供 unique-key index；没有真实消费者证明 multi 语义值得复制一套 API |
+| 固定最大容量且对象内存完全内嵌的 sequence | 暂用 `std::array` + size，或消费方的小 wrapper | `SmallVector` 的 inline N 仍允许 spill；需要先证明 `static_vector` 的严格 no-allocation 合同值得一套类型 |
+| 排序连续关联容器 | 暂用排序 `std::vector` 或 `BTreeMap/Set` | 查多改少时 flat sorted storage 可能更合适，但 comparator、bulk build、失效语义需要真实消费者驱动 |
+| 并发 priority / 通用 unbounded queue | 由 sched 的等待、关闭与背压策略组合 | container 不应只复制机制而遗漏 shutdown/cancel/ownership 合同 |
 
-这些是明确负空间。单线程 node extraction/merge 与 ordered multi 只有出现真实基础库需求时
-再设计，不能只因成熟库存在就复制。
+前两项是明确负空间；后三项是成熟库对账后保留的候选轴。它们只有在真实基础库需求把
+所有权、失败和并发合同说清后才会进入公开面，不能只因成熟库存在就复制。
 
 ## 连续容器
 
@@ -294,8 +298,8 @@ input.consume(parsed_bytes);
 时返回 false。capacity 会向上取 power-of-two；增长/reserve 使所有地址失效，pop 使被
 删除元素的地址失效；不增长的 push 保留既有元素地址。任何 mutation 后都应重新取得
 iterator/segments，因为逻辑 index 与分段可能改变。`T` 必须 nothrow
-move-construct/destruct。该类型不是
-线程安全容器；外部同步 SPSC 可以使用，真正并发角色用后文的队列。
+move-construct/destruct。该类型不是线程安全容器；外部同步后可以跨线程使用，但真正的
+lock-free 1P/1C 角色应选后文 `SpscQueue`。
 
 `ByteRingBuffer::write/read` 是 partial transfer：返回实际搬运 bytes，空间不足/数据不足
 不是错误。zero-copy 路径必须只在刚取得的 `writable/readable` spans 内访问，并在同一
@@ -324,8 +328,9 @@ symlink 或 Windows case rules 等价；需要真实 filesystem 行为时使用 
 
 ## 并发容器按角色选择
 
-不要把四个 queue 当作同一 benchmark 的四个候选：
+不要把五个 queue 当作同一 benchmark 的五个候选：
 
+- 恰好一个 producer、一个 consumer 的有界 FIFO：`SpscQueue`。
 - 任意 producer/consumer 且必须 hard bound：`BoundedQueue`。
 - 同一 ring 已被 cache-line 争用压住，业务允许跨 shard 重排：`ShardedQueue`。
 - scheduler 的 worker 自己 push/pop、别人 steal：`WorkStealingDeque`。
@@ -333,6 +338,13 @@ symlink 或 Windows case rules 等价；需要真实 filesystem 行为时使用 
 
 这些 queue 构造时完成 storage allocation，热 push/pop/steal 不分配。容量与
 owner/thief 角色是合同；违反单 owner 约束不是“稍慢”，而是错误。
+
+`SpscQueue<T>` 接受任意正数的 exact usable capacity；内部多一个 sentinel slot 区分
+满/空，不把用户容量偷偷向 power-of-two 取整。producer 只调用 `try_emplace/try_push`，
+consumer 只调用 `try_front/try_pop_front/try_pop/try_consume`。两端分别发布自己的 index，
+每次成功操作最多 acquire 对端一次、release 自己一次，没有 CAS 或逐 slot atomic。
+因此它可以拥有非平凡、move-only 元素；不能 move-assign 的元素通过 `try_consume` 在 live
+slot 上处理。析构前必须 join/quiesce 两端。
 
 所有可能因满、空或竞争失败的 typed 热入口也统一使用 `try_*`。Chase-Lev 使用
 `try_push_bottom`、`try_pop_bottom(out)`、`try_steal_top(out)`；最后一项返回
@@ -361,6 +373,8 @@ range，因为它对 reservation count 取快照，并不额外发布仍在构�
 - `StringView`、flat map/set find 返回值和 vector data 都是借用地址，分别受来源/grow/erase 失效。
 - flat map/set 平均 O(1) 不等于 adversarial hash 安全；业务 Hash 必须提供足够熵且与 Eq 一致。
 - `ShardedQueue` 不保证 global FIFO；work-stealing 两种队列也不提供 MPMC 的任意角色语义。
+- `SpscQueue` 的 producer/consumer 角色不能各自增加第二个线程；`size_approx()` 只是监控
+  快照，不是发布 fence，也不能代替 push/pop 成功值做控制流。
 - `RingDeque` / `ByteRingBuffer` 没有原子同步；不能用“只有一个 producer/consumer”作为
   无数据竞争的充分条件，除非外部同步也明确建立 happens-before。
 - `ConcurrentVector::size()` 不是 live publication fence；并发写时读取新 tail 需要外部

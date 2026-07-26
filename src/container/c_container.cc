@@ -16,6 +16,7 @@
 #include "hyle/container/path.h"
 #include "hyle/container/probe.h"
 #include "hyle/container/sharded_queue.h"
+#include "hyle/container/spsc_queue.h"
 #include "hyle/container/sparse_set.h"
 #include "hyle/container/string_algo.h"
 #include "hyle/container/string_interner.h"
@@ -470,6 +471,13 @@ struct hyle_container_bounded_queue_o {
                                  std::size_t capacity)
       : backing(allocator), value(to_cpp(&backing), capacity) {}
   hc::BoundedQueue<void*, hyle::mem::Allocator> value;
+};
+struct hyle_container_spsc_queue_o {
+  hyle_allocator backing;
+  hyle_container_spsc_queue_o(hyle_allocator allocator,
+                              std::size_t capacity)
+      : backing(allocator), value(to_cpp(&backing), capacity) {}
+  hc::SpscQueue<void*, hyle::mem::Allocator> value;
 };
 struct hyle_container_sharded_queue_o {
   hyle_allocator backing;
@@ -2243,6 +2251,48 @@ int hyle_container_bounded_queue_try_pop(hyle_container_bounded_queue* queue,
                                          void** out_item) {
   if (queue == nullptr || out_item == nullptr) return 0;
   return queue->value.try_pop(*out_item);
+}
+hyle_status hyle_container_spsc_queue_create(
+    hyle_container_spsc_queue** out, hyle_allocator backing,
+    size_t capacity) {
+  if (out == nullptr)
+    return hyle_status_invalid_argument("SPSC queue output is NULL");
+  *out = nullptr;
+  if (!valid_backing(backing) || capacity == 0 ||
+      capacity >= SIZE_MAX / sizeof(void*))
+    return hyle_status_invalid_argument(
+        "invalid allocator or SPSC queue capacity");
+  auto* queue = allocate_handle<hyle_container_spsc_queue>(
+      backing, backing, capacity);
+  if (queue == nullptr || !queue->value.valid()) {
+    free_handle(queue);
+    return hyle_status_resource_exhausted("SPSC queue allocation failed");
+  }
+  *out = queue;
+  return hyle_status_ok();
+}
+void hyle_container_spsc_queue_destroy(hyle_container_spsc_queue* queue) {
+  free_handle(queue);
+}
+size_t hyle_container_spsc_queue_capacity(
+    const hyle_container_spsc_queue* queue) {
+  if (queue == nullptr) return 0;
+  return queue->value.capacity();
+}
+int hyle_container_spsc_queue_try_push(hyle_container_spsc_queue* queue,
+                                       void* item) {
+  if (queue == nullptr) return 0;
+  return queue->value.try_push(item);
+}
+int hyle_container_spsc_queue_try_pop(hyle_container_spsc_queue* queue,
+                                      void** out_item) {
+  if (queue == nullptr || out_item == nullptr) return 0;
+  return queue->value.try_pop(*out_item);
+}
+size_t hyle_container_spsc_queue_size_approx(
+    const hyle_container_spsc_queue* queue) {
+  if (queue == nullptr) return 0;
+  return queue->value.size_approx();
 }
 hyle_status hyle_container_sharded_queue_create(
     hyle_container_sharded_queue** out, hyle_allocator backing,

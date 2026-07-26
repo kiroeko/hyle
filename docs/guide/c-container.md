@@ -385,6 +385,16 @@ key 的 POD、hash/equality callback、context 生命周期和地址失效规则
 owner 的 back/front。调用者若要等待，应在 sched/platform 层组合 park/wake，而不是
 把容器误解成 blocking queue。
 
+`hyle_container_spsc_queue_create`、
+`hyle_container_spsc_queue_create_system`、
+`hyle_container_spsc_queue_destroy`、
+`hyle_container_spsc_queue_try_push`、
+`hyle_container_spsc_queue_try_pop`、
+`hyle_container_spsc_queue_size_approx`、
+`hyle_container_spsc_queue_capacity` 是 exact-capacity 的单 producer / 单 consumer FIFO。
+producer 线程只能 push，consumer 线程只能 pop；各角色增加第二个调用线程是合同错误。
+`size_approx` 是可过期的监控快照，不是发布栅栏。payload 可为 NULL，HYLE 不拥有它。
+
 `hyle_container_bounded_queue_create`、
 `hyle_container_bounded_queue_create_system`、
 `hyle_container_bounded_queue_destroy`、
@@ -459,7 +469,7 @@ payload 可为 NULL，HYLE 不解释也不拥有它。
 | `FlatHashSet<K>` | `hyle_container_hash_set_*`：按 options 中的 key size/alignment 擦除 POD；独立 set slot，不用 map + dummy value |
 | `ByteRingBuffer` | `hyle_container_byte_ring_*`：opaque 单线程字节 ring，copy 与 two-span zero-copy 两条路径都可达 |
 | `RingDeque<T>` | 无直接模板 ABI；字节流用 byte ring，trivially-copyable 批量序列用 erased vector。若未来出现真实 typed deque FFI 需求，再设计 element-size/alignment 形状，不冻结 ctor/dtor callback |
-| `BoundedQueue<T>` / `ShardedQueue<T>` / `WorkStealingDeque<T>` / `WsFifoQueue<T>` | 对应 `hyle_container_*queue*` / `*_deque_*` opaque 句柄接受 `void*` payload；payload 生命周期归调用方 |
+| `SpscQueue<T>` / `BoundedQueue<T>` / `ShardedQueue<T>` / `WorkStealingDeque<T>` / `WsFifoQueue<T>` | 对应 `hyle_container_*queue*` / `*_deque_*` opaque 句柄接受 `void*` payload；payload 生命周期归调用方；SPSC 额外要求每种角色恰好一个线程 |
 | `ConcurrentVector<T>` | `hyle_container_concurrent_ptr_vector_*` append caller-owned `void*`；名称明确它不是 arbitrary POD 类型擦除 |
 | `Hash<T>` / `hash_bytes` | C 侧对实际字节调用进程内 `hyle_container_hash_bytes`，或向 flat map 注入业务 hash callback；不暴露 vendor 实现头，也不承诺持久 bit pattern |
 

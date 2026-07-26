@@ -135,6 +135,22 @@
 > mutation profile 触发，不按单条 miss 分布继续塑形。本批四项代码量：全库 261,927；
 > 自实现含测试 126,752；自实现不含测试 87,575；container 实现 12,817。
 
+> **2026-07-26 bounded SPSC 能力补全：** 成熟库能力对账确认，单线程 ring 与 MPMC/
+> stealing 之间仍缺少最常用的 1P/1C 跨线程 FIFO。新增 allocator-aware `SpscQueue<T>`：
+> 任意正数 requested capacity 都是 exact usable capacity，内部一个 sentinel slot 区分满空；
+> producer/consumer 各自独占一个 cache-line-separated index，每次成功操作只做 acquire/
+> release，不用 CAS、sequence metadata 或逐 slot atomic。typed 面支持非平凡/move-only 值
+> 和 callback consume；C 面新增 6 个动态 `hyle_container_spsc_queue_*` 符号及一个 inline
+> system-create，动态 manifest 由 226 增至 **232**，payload 仍由调用方拥有。
+> exact-capacity、arbitrary capacity、wrap、non-assignable callback、move-only/lifetime、OOM、
+> 100k/200k FIFO 并发均覆盖。Windows/WSL/M4 的 typed、纯 C、符号、头自包含四门通过；
+> GCC14 TSan（`setarch -R`）与 ASan 通过。三平台 Release n=15 对 portable Folly
+> `ProducerConsumerQueue` 同合同形状均签为统计 **TIE**。M4 双 rival worker pair 同时存活
+> 的首批结果因 P/E 核 placement bias 废弃；最终 benchmark 每次只保留一组 worker。
+> 这批修改补的是用户真实能力与更成熟的 exact-capacity 架构，不是 benchmark-only 类型。
+> 本批四项代码量：全库 262,583；自实现含测试 127,139；自实现不含测试 87,787；
+> container 实现 13,029。
+
 ## 结论
 
 本节是 2026-07-19 历史结论；按 2026-07-25 新合同，container 的既有功能、红队、C ABI

@@ -1,4 +1,4 @@
-# container: header-only templates (bounded_queue / ws_fifo / ws deque) + the
+# container: header-only templates (SPSC / bounded_queue / ws_fifo / ws deque) + the
 # compiled hash unit (container-02). hash.cc privately includes the vendored
 # xxhash + wyhash single-headers (best-of-breed byte hasher: XXH3 short-mid, wyhash
 # long); those include dirs are PRIVATE so neither leaks to consumers. string_algo.cc

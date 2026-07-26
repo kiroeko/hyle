@@ -104,10 +104,10 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 
 | 固定统计口径 | code | 说明 |
 |---|---:|---|
-| **全库代码** | **261,927** | `cloc . --vcs=git` + 本批新增文件；含 docs 与 in-tree third_party；不含未提交 README 修改 |
-| **自实现（含测试）** | **126,752** | `include/hyle + src + tests`，排除 CMake/Text |
-| **自实现（不含测试）** | **87,575** | `include/hyle + src`；库本体硬锚 |
-| **当前审查单元 container 实现** | **12,817** | `include/hyle/container` + `include/hyle/c/container.h` + `src/container`；不含测试/CMake/Text |
+| **全库代码** | **262,583** | `cloc . --vcs=git`；含 docs 与 in-tree third_party |
+| **自实现（含测试）** | **127,139** | `include/hyle + src + tests`；只计 C/C++/CUDA，不含 CMake/Text |
+| **自实现（不含测试）** | **87,787** | `include/hyle + src`；只计 C/C++/CUDA，库本体硬锚 |
+| **当前审查单元 container 实现** | **13,029** | `include/hyle/container` + `include/hyle/c/container.h` + `src/container`；不含测试/CMake/Text |
 | 再加 ggml 等大依赖足迹 | **~200–350k+** | 由 ggml 主导，不计入「自有生产」 |
 
 **生产按模块（src+include，约）：**
@@ -118,7 +118,7 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 | io | ~9.0k | ~10% |
 | compute | ~4.1k | ~5% |
 | sched | ~5.1k | ~6% |
-| container | ~12.8k（含公共 C 头） | ~15% |
+| container | ~13.0k（含公共 C 头） | ~15% |
 | platform | ~7.0k（含公共 C 头） | ~8% |
 | mem | ~5.1k | ~6% |
 | graph | ~0.6k | |

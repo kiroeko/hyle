@@ -821,6 +821,30 @@ HYLE_CONTAINER_C_API int hyle_container_bounded_queue_try_pop(
 HYLE_CONTAINER_C_API size_t hyle_container_bounded_queue_capacity(
     const hyle_container_bounded_queue* queue);
 
+/* Fixed-capacity single-producer/single-consumer queue. The producer is the
+ * only thread allowed to call try_push; the consumer is the only thread
+ * allowed to call try_pop. It performs no allocation after create. */
+typedef struct hyle_container_spsc_queue_o hyle_container_spsc_queue;
+HYLE_CONTAINER_C_API hyle_status hyle_container_spsc_queue_create(
+    hyle_container_spsc_queue** out, hyle_allocator backing,
+    size_t capacity);
+static inline hyle_status hyle_container_spsc_queue_create_system(
+    hyle_container_spsc_queue** out, size_t capacity) {
+  return hyle_container_spsc_queue_create(out, hyle_system_allocator(),
+                                           capacity);
+}
+HYLE_CONTAINER_C_API void hyle_container_spsc_queue_destroy(
+    hyle_container_spsc_queue* queue);
+HYLE_CONTAINER_C_API int hyle_container_spsc_queue_try_push(
+    hyle_container_spsc_queue* queue, void* item);
+HYLE_CONTAINER_C_API int hyle_container_spsc_queue_try_pop(
+    hyle_container_spsc_queue* queue, void** out_item);
+/* Snapshot only: concurrent progress may make it stale before return. */
+HYLE_CONTAINER_C_API size_t hyle_container_spsc_queue_size_approx(
+    const hyle_container_spsc_queue* queue);
+HYLE_CONTAINER_C_API size_t hyle_container_spsc_queue_capacity(
+    const hyle_container_spsc_queue* queue);
+
 typedef struct hyle_container_sharded_queue_o hyle_container_sharded_queue;
 HYLE_CONTAINER_C_API hyle_status hyle_container_sharded_queue_create(
     hyle_container_sharded_queue** out, hyle_allocator backing,

@@ -867,6 +867,7 @@ static void test_queues_and_concurrent_vector(void) {
   size_t cursor = 0;
   size_t index;
   hyle_container_bounded_queue* bounded = NULL;
+  hyle_container_spsc_queue* spsc = NULL;
   hyle_container_sharded_queue* sharded = NULL;
   hyle_container_work_stealing_deque* deque = NULL;
   hyle_container_ws_fifo_queue* source = NULL;
@@ -881,6 +882,7 @@ static void test_queues_and_concurrent_vector(void) {
   }
   CHECK(status_ok(
       hyle_container_bounded_queue_create_system(&bounded, 8)));
+  CHECK(status_ok(hyle_container_spsc_queue_create_system(&spsc, 8)));
   CHECK(status_ok(
       hyle_container_sharded_queue_create_system(&sharded, 2, 4)));
   CHECK(status_ok(
@@ -896,6 +898,15 @@ static void test_queues_and_concurrent_vector(void) {
   CHECK(hyle_container_bounded_queue_try_push(bounded, &a));
   CHECK(hyle_container_bounded_queue_try_pop(bounded, &output) && output == &a);
   hyle_container_bounded_queue_destroy(bounded);
+
+  CHECK(spsc != NULL && hyle_container_spsc_queue_capacity(spsc) == 8);
+  CHECK(hyle_container_spsc_queue_try_push(spsc, &a));
+  CHECK(hyle_container_spsc_queue_try_push(spsc, &b));
+  CHECK(hyle_container_spsc_queue_size_approx(spsc) == 2);
+  CHECK(hyle_container_spsc_queue_try_pop(spsc, &output) && output == &a);
+  CHECK(hyle_container_spsc_queue_try_pop(spsc, &output) && output == &b);
+  CHECK(!hyle_container_spsc_queue_try_pop(spsc, &output));
+  hyle_container_spsc_queue_destroy(spsc);
 
   CHECK(sharded != NULL);
   CHECK(hyle_container_sharded_queue_shard_count(sharded) == 2);
@@ -1127,16 +1138,21 @@ int main(void) {
   }
   {
     fail_after_allocator bounded = {hyle_system_allocator(), 1};
+    fail_after_allocator spsc = {hyle_system_allocator(), 1};
     fail_after_allocator sharded = {hyle_system_allocator(), 1};
     fail_after_allocator stealing = {hyle_system_allocator(), 1};
     fail_after_allocator sharing = {hyle_system_allocator(), 1};
     hyle_allocator a = {fail_after_alloc, fail_after_free, fail_after_realloc,
                         &bounded};
     hyle_container_sharded_queue* sharded_out = NULL;
+    hyle_container_spsc_queue* spsc_out = NULL;
     hyle_container_work_stealing_deque* stealing_out = NULL;
     hyle_container_ws_fifo_queue* sharing_out = NULL;
     CHECK(status_code(hyle_container_bounded_queue_create(
               &bounded_queue, a, 8)) == HYLE_STATUS_RESOURCE_EXHAUSTED);
+    a.state = &spsc;
+    CHECK(status_code(hyle_container_spsc_queue_create(
+              &spsc_out, a, 8)) == HYLE_STATUS_RESOURCE_EXHAUSTED);
     a.state = &sharded;
     CHECK(status_code(hyle_container_sharded_queue_create(
               &sharded_out, a, 2, 8)) == HYLE_STATUS_RESOURCE_EXHAUSTED);

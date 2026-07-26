@@ -73,6 +73,42 @@ TEST(ContainerCAbi, BoundedQueueMpmcConservesPointers) {
   hyle_container_bounded_queue_destroy(queue);
 }
 
+TEST(ContainerCAbi, SpscQueuePreservesFifoAcrossThreads) {
+  constexpr std::uintptr_t kCount = 100000;
+  hyle_container_spsc_queue* queue = nullptr;
+  hyle_status create = hyle_container_spsc_queue_create_system(&queue, 1024);
+  ASSERT_TRUE(hyle_status_is_ok(create));
+  hyle_status_free(&create);
+  ASSERT_NE(queue, nullptr);
+
+  std::atomic<bool> start{false};
+  std::uint64_t sum = 0;
+  std::thread producer([&] {
+    while (!start.load(std::memory_order_acquire)) {}
+    for (std::uintptr_t value = 1; value <= kCount; ++value) {
+      void* item = reinterpret_cast<void*>(value);
+      while (!hyle_container_spsc_queue_try_push(queue, item))
+        std::this_thread::yield();
+    }
+  });
+  std::thread consumer([&] {
+    start.store(true, std::memory_order_release);
+    for (std::uintptr_t expected = 1; expected <= kCount; ++expected) {
+      void* item = nullptr;
+      while (!hyle_container_spsc_queue_try_pop(queue, &item))
+        std::this_thread::yield();
+      EXPECT_EQ(reinterpret_cast<std::uintptr_t>(item), expected);
+      sum += reinterpret_cast<std::uintptr_t>(item);
+    }
+  });
+  producer.join();
+  consumer.join();
+
+  EXPECT_EQ(sum, kCount * (kCount + 1) / 2);
+  EXPECT_EQ(hyle_container_spsc_queue_size_approx(queue), 0u);
+  hyle_container_spsc_queue_destroy(queue);
+}
+
 TEST(ContainerCAbi, ConcurrentVectorPublishesStableIndices) {
   constexpr std::size_t kWriters = 4;
   constexpr std::size_t kPerWriter = 10000;

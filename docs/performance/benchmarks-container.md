@@ -18,6 +18,7 @@
 | **ConcurrentVector** | ✅ Windows+WSL n=15；⏳ M4 | append/range iteration 同合同 SOTA；WSL `operator[]` 是已知缺口 |
 | **DynamicBitSet / SparseSet** | ✅ **2026-07-26 三平台 n=15** | actual-use graph frontier / frame-local active IDs；M4 bitset 与 std 同档；纯 SparseSet membership 明确输 dense bitmap |
 | **RingDeque / ByteRingBuffer** | ✅ **2026-07-26 三平台 n=15** | 固定容量 FIFO 与 32KiB backlog/4KiB stream staging；WSL 与 Folly-shaped floor 同档，Win/M4 胜 floor |
+| **SpscQueue** | ✅ **2026-07-26 三平台 n=15** | 1P/1C 持续传输、1024 exact slots；三平台与 portable Folly-shaped 同合同 peer 均为统计同档 |
 | **ConcurrentFlatHashMap / ConcurrentNodeHashMap** | ✅ **2026-07-26 三平台 n=15** | 同 hash、同 accessor 合同对 oneTBB；读/混合路径三平台全胜；node rebuild 在 Win/Linux paired 统计同档，flat rebuild 6.25–7.05x |
 | **并发队列** | 见 queue / sched 文 | 不在本页展开 |
 
@@ -42,6 +43,7 @@
 | **SparseSet** | dense bitmap + `std::unordered_set` | ✅ frame clear+rebuild Win 3.29x/28.6x，WSL 3.61x/11.6x，M4 1.86x/11.4x；membership 明确输 dense |
 | **RingDeque** | Folly fixed-capacity ring shape / `std::deque` | ✅ Win/M4 快 floor 1.06x/1.15x，WSL 与 floor 同档；三平台快 std 1.28–9.20x |
 | **ByteRingBuffer** | linear byte buffer+memmove / `std::deque<byte>` | ✅ stream staging Win/WSL/M4 快 linear 1.82x/1.94x/4.26x，快 deque 约118x/48x/121x |
+| **SpscQueue** | Folly `ProducerConsumerQueue` shape | ➖ 三平台 n=15 **TIE**；同 exact-capacity sentinel / acquire-release 合同，不为测项增加 remote cache 或 power-of-two 特化 |
 | **ConcurrentFlatHashMap / ConcurrentNodeHashMap** | oneTBB `concurrent_hash_map` | ✅ protected hit、8-reader、90/10 mixed 三平台均 15/15 胜；flat rebuild 6.25–7.05x；node rebuild M4 胜、Win/Linux 统计同档 |
 | **BTreeMap / BTreeSet** | Abseil `btree_map/set` | ⚠️ 实际十轴混合：WSL 6 胜/4 平或边界 lose；Windows copy/churn/domain-miss 胜但遍历/above-max miss 输；M4 copy/遍历/set/range 胜，churn/time-expiry 输 |
 
@@ -167,6 +169,26 @@ memmove 剩余 backlog；`std::deque<byte>` 使用逐元素 API。数值按处�
 staging；zero-copy 的价值取决于真实 syscall/codec 消费者，不用一个不读写 bytes 的
 metadata benchmark 虚报无限带宽。当前证书覆盖 Windows/MSVC、WSL/GCC14 与
 M4/AppleClang；三平台 typed/C/surface/header gate 也均通过。
+
+### SpscQueue：正常 1P/1C 持续传输（三平台 Release，n=15）
+
+workload 保持一个 producer 与一个 consumer，传输 262,144 个连续 `uint64_t`，usable
+capacity 恰为 1024；线程跨轮次常驻，计时不包含 thread creation。portable peer 复现
+Folly `ProducerConsumerQueue` 的 exact-capacity sentinel、分离读写 index 与 acquire/release
+合同，不含 HYLE 特化。每个实现单独创建 worker pair，避免 macOS 大小核机器按创建顺序
+把两组同时存活的线程稳定分到不同核类。数值为 ns/item 中位数：
+
+| 平台 | HYLE `SpscQueue` | portable Folly shape | paired sign 判定 |
+|---|---:|---:|---|
+| Windows / MSVC 19.50 | 8.823 | 8.601 | **TIE**，7/15 HYLE 更快 |
+| WSL / GCC 14.2 | 9.699 | 11.428 | **TIE**，11/15 HYLE 更快 |
+| M4 / AppleClang 21 | 32.362 | 49.083 | **TIE**，12/15 HYLE 更快；p=0.035，未达项目 p&lt;0.01 门槛 |
+
+初版产品采用 power-of-two 单调 counter；这会让刚释放的 consumer slot 立即成为 producer
+写目标，并增加 subtract/mask 指令。改为成熟 sentinel 形状后既接受任意正数 exact
+capacity，也消除了多余 cache-line 追赶。它是公开合同与常态热路径的架构修正，不是
+benchmark-only metadata。M4 曾在两个 rival worker pair 同时存活时出现约 1.58x 假领先；
+该批因 P/E placement bias 已废弃，没有进入上表。三平台最终都只签为同档。
 
 ### Concurrent associative：同 accessor 合同的 shared registry（三平台 Release，n=15）
 
@@ -297,8 +319,9 @@ WSL 的逐次索引差距与 GCC 对运行时 segment 定位的代码生成有�
    key 来隐藏。
 
 6. **并发队列类**
-   调度/MPMC 性能叙事仍在 queue_sota_bench / sched；单线程 RingDeque/ByteRingBuffer
-   已在本页按实际 FIFO/staging 合同单列，不能拿其结果外推到原子队列。
+   SPSC 已在本页按 exact-capacity 1P/1C 正常合同完成三平台证书，结论是同成熟形状统计
+   同档；调度/MPMC 性能叙事仍在 queue_sota_bench / sched。单线程 RingDeque/
+   ByteRingBuffer 结果不能外推到原子队列。
 
 7. **长 hash 的平台证书**
    Windows AVX2 已证明 ≥1KiB、WSL/GCC14 已证明 ≥512B 宽 XXH3 相对 wyhash 的收益；
@@ -329,7 +352,8 @@ WSL 的逐次索引差距与 GCC 对运行时 segment 定位的代码生成有�
 共享 registry / 稳定地址    → ConcurrentNodeHashMap
 稠密 mask/frontier/集合代数 → DynamicBitSet
 有界 ID、频繁 clear/活跃遍历 → SparseSet（纯 membership 优先 dense bitmap）
-单线程双端/外部同步 SPSC    → RingDeque（固定容量使用显式 *_bounded）
+单线程双端/外部同步 ring    → RingDeque（固定容量使用显式 *_bounded）
+跨线程恰好 1P/1C FIFO      → SpscQueue（exact capacity；满/空返回 false）
 字节流 staging              → ByteRingBuffer（copy 或 two-span zero-copy）
 栈上小数组                 → SmallVector
 POD 堆动态数组             → PodVector（默认 SystemAllocator/mi）
@@ -384,6 +408,10 @@ scripts/bench-stat.py <build>/bin/hyle_container_ring_bench -n 15 \
   --pair "HYLE RingDeque bounded" "std::deque<uint64_t>" \
   --pair "HYLE RingDeque bounded" "portable bounded ring (Folly shape)" \
   --pair "HYLE ByteRingBuffer copy API" "linear byte buffer + memmove"
+
+# bounded SPSC；benchmark 内让两个 rival worker pair 分时存活，避免异构核 placement 偏差
+scripts/bench-stat.py <build>/bin/hyle_container_spsc_bench -n 15 \
+  --pair "HYLE SpscQueue" "portable Folly ProducerConsumerQueue shape"
 
 # concurrent associative vs oneTBB（其余 pair 见 benchmark 标签）
 scripts/bench-stat.py <build>/bin/hyle_container_concurrent_map_bench -n 15 \

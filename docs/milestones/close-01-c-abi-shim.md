@@ -56,7 +56,7 @@
 - [x] **util**（2026-07-19 全面复审）：`include/hyle/c/util.h` + `c_util.cc` + 纯 C smoke。RNG 用稳定 POD；Ref/ScopeGuard/Registry/SpinLock 用 opaque handle + callback/ctx 类型擦除；demangle/help 用 buffer-fill。机械覆盖 46/46 可调用入口，其中动态导出 44 个、header-inline 2 个；三平台导出及 C/C++ 测试通过。仅 `type_name<T>`/`type_hash<T>` 因依赖编译器静态类型而有意留 C++。文档：[`c-util.md`](../guide/c-util.md)，复审：[`util-module-closure.md`](./util-module-closure.md)。
 - [x] **container**（2026-07-19 收口）：`include/hyle/c/container.h` +
       `c_container.cc`，覆盖字符串/路径、StringInterner、runtime-erased POD
-      vector/flat Swiss map、四类 pointer-payload queue 和 append-only vector。
+      vector/flat Swiss map、五类 pointer-payload queue 和 append-only vector。
       纯 C 测试引用 124/124 callable names；109/109 动态符号，另 15 个
       header-inline 便利入口。allocator/OOM/alias/collision/并发均有红队。文档：
       [`c-container.md`](../guide/c-container.md)，复审：
