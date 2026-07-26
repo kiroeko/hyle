@@ -30,7 +30,7 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
 endif()
 hyle_add_module(container
   SOURCES hash.cc carray.cc string_buf.cc path.cc swiss_table.cc string_algo.cc
-          string_ref.cc dynamic_bitset.cc c_container.cc str_search_scalar.cc
+          string_ref.cc dynamic_bitset.cc c_container.cc c_btree.cc str_search_scalar.cc
           bitset_ops_scalar.cc ${_container_arch_sources}
   DEPS hyle_platform
   PUBLIC_DEPS hyle_error hyle_mem)

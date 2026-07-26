@@ -67,6 +67,25 @@ static int stop_map_visit(const void* key, void* value, void* context) {
   ++*(int*)context;
   return 0;
 }
+typedef struct ordered_range_stats {
+  int count;
+  int64_t key_sum;
+  int64_t value_sum;
+} ordered_range_stats;
+static int visit_ordered_map(const void *key, void *value, void *context) {
+  ordered_range_stats *stats = (ordered_range_stats *)context;
+  ++stats->count;
+  stats->key_sum += *(const int *)key;
+  stats->value_sum += *(const int *)value;
+  return 1;
+}
+static int visit_ordered_set(const void *key, void *context) {
+  ordered_range_stats *stats = (ordered_range_stats *)context;
+  ++stats->count;
+  stats->key_sum += *(const int *)key;
+  return 1;
+}
+
 static void concurrent_map_increment(void* value, void* context) {
   *(int*)value += *(const int*)context;
 }
@@ -559,6 +578,235 @@ static void test_hash_set(void) {
   CHECK(tracking.allocations == tracking.frees);
 }
 
+static void test_btree_map_and_set(void) {
+  hyle_container_btree_options map_options =
+      HYLE_CONTAINER_BTREE_MAP_OPTIONS_FOR(int, int,
+                                           hyle_container_compare_i32);
+  hyle_container_btree_map *map = NULL;
+  hyle_container_btree_cursor cursor = {0};
+  int i;
+
+  {
+    int32_t i32_left = -1, i32_right = 2;
+    uint32_t u32_left = 3, u32_right = 2;
+    int64_t i64_left = -4, i64_right = -4;
+    uint64_t u64_left = 9, u64_right = 10;
+    const char bytes_left[3] = {'a', 'b', 'c'};
+    const char bytes_right[3] = {'a', 'b', 'd'};
+    CHECK(hyle_container_compare_i32(&i32_left, &i32_right, sizeof(i32_left),
+                                     NULL) < 0);
+    CHECK(hyle_container_compare_u32(&u32_left, &u32_right, sizeof(u32_left),
+                                     NULL) > 0);
+    CHECK(hyle_container_compare_i64(&i64_left, &i64_right, sizeof(i64_left),
+                                     NULL) == 0);
+    CHECK(hyle_container_compare_u64(&u64_left, &u64_right, sizeof(u64_left),
+                                     NULL) < 0);
+    CHECK(hyle_container_compare_bytes(bytes_left, bytes_right, 3, NULL) < 0);
+  }
+
+  {
+    hyle_container_btree_options invalid = map_options;
+    hyle_container_btree_map *invalid_map = (hyle_container_btree_map *)1;
+    invalid.compare = NULL;
+    CHECK(status_code(hyle_container_btree_map_create(
+              &invalid_map, &invalid)) == HYLE_STATUS_INVALID_ARGUMENT);
+    CHECK(invalid_map == NULL);
+  }
+
+  CHECK(status_ok(hyle_container_btree_map_create(&map, &map_options)));
+  CHECK(map != NULL);
+  for (i = 0; i < 1000; ++i) {
+    const int key = (i * 37) % 1000;
+    const int value = key * 3;
+    hyle_container_insert_result result = HYLE_CONTAINER_ALREADY_PRESENT;
+    CHECK(
+        status_ok(hyle_container_btree_map_insert(&result, map, &key, &value)));
+    CHECK(result == HYLE_CONTAINER_INSERTED);
+  }
+  CHECK(hyle_container_btree_map_size(map) == 1000);
+  for (i = 0; i < 1000; ++i) {
+    const int *value =
+        (const int *)hyle_container_btree_map_find_const(map, &i);
+    CHECK(value != NULL && *value == i * 3);
+  }
+  {
+    int key = 42;
+    int replacement = 999;
+    hyle_container_insert_result result = HYLE_CONTAINER_INSERTED;
+    CHECK(status_ok(hyle_container_btree_map_insert_or_assign(
+        &result, map, &key, &replacement)));
+    CHECK(result == HYLE_CONTAINER_ASSIGNED);
+    CHECK(*(int *)hyle_container_btree_map_find(map, &key) == replacement);
+    CHECK(hyle_container_btree_map_contains(map, &key));
+  }
+
+  CHECK(hyle_container_btree_map_begin(map, &cursor));
+  for (i = 0; i < 1000; ++i) {
+    CHECK(hyle_container_btree_map_cursor_valid(map, &cursor));
+    CHECK(*(const int *)hyle_container_btree_map_cursor_key(map, &cursor) == i);
+    CHECK(hyle_container_btree_map_cursor_value(map, &cursor) != NULL);
+    if (i != 999)
+      CHECK(hyle_container_btree_map_cursor_next(map, &cursor));
+  }
+  CHECK(!hyle_container_btree_map_cursor_next(map, &cursor));
+  CHECK(!hyle_container_btree_map_cursor_valid(map, &cursor));
+  CHECK(hyle_container_btree_map_cursor_previous(map, &cursor));
+  CHECK(*(const int *)hyle_container_btree_map_cursor_key(map, &cursor) == 999);
+
+  {
+    int key = 333;
+    CHECK(hyle_container_btree_map_lower_bound(map, &key, &cursor));
+    CHECK(*(const int *)hyle_container_btree_map_cursor_key(map, &cursor) ==
+          333);
+    CHECK(hyle_container_btree_map_upper_bound(map, &key, &cursor));
+    CHECK(*(const int *)hyle_container_btree_map_cursor_key(map, &cursor) ==
+          334);
+  }
+  {
+    int lower = 100;
+    int upper = 200;
+    ordered_range_stats stats = {0, 0, 0};
+    CHECK(hyle_container_btree_map_visit_range(map, &lower, &upper,
+                                               visit_ordered_map, &stats));
+    CHECK(stats.count == 100);
+    CHECK(stats.key_sum == 14950);
+    CHECK(stats.value_sum == 44850);
+    CHECK(hyle_container_btree_map_erase_range(map, &lower, &upper) == 100);
+    CHECK(hyle_container_btree_map_size(map) == 900);
+    CHECK(hyle_container_btree_map_erase_range(map, &upper, &lower) == 0);
+    for (i = lower; i < upper; ++i) {
+      const int value = i * 3;
+      hyle_container_insert_result result = HYLE_CONTAINER_ALREADY_PRESENT;
+      CHECK(
+          status_ok(hyle_container_btree_map_insert(&result, map, &i, &value)));
+      CHECK(result == HYLE_CONTAINER_INSERTED);
+    }
+  }
+  for (i = 1; i < 1000; i += 2)
+    CHECK(hyle_container_btree_map_erase(map, &i));
+  CHECK(hyle_container_btree_map_size(map) == 500);
+  for (i = 0; i < 1000; ++i)
+    CHECK(hyle_container_btree_map_contains(map, &i) == ((i & 1) == 0));
+  hyle_container_btree_map_clear(map);
+  CHECK(hyle_container_btree_map_size(map) == 0);
+  hyle_container_btree_map_destroy(map);
+
+  {
+    hyle_container_btree_options set_options =
+        HYLE_CONTAINER_BTREE_SET_OPTIONS_FOR(int, hyle_container_compare_i32);
+    hyle_container_btree_set *set = NULL;
+    ordered_range_stats stats = {0, 0, 0};
+    int lower = 40;
+    int upper = 60;
+    CHECK(status_ok(hyle_container_btree_set_create(&set, &set_options)));
+    for (i = 0; i < 100; ++i) {
+      const int key = (i * 37) % 100;
+      hyle_container_insert_result result = HYLE_CONTAINER_ALREADY_PRESENT;
+      CHECK(status_ok(hyle_container_btree_set_insert(&result, set, &key)));
+      CHECK(result == HYLE_CONTAINER_INSERTED);
+    }
+    CHECK(hyle_container_btree_set_size(set) == 100);
+    CHECK(hyle_container_btree_set_visit_range(set, &lower, &upper,
+                                               visit_ordered_set, &stats));
+    CHECK(stats.count == 20);
+    CHECK(stats.key_sum == 990);
+    CHECK(hyle_container_btree_set_lower_bound(set, &lower, &cursor));
+    CHECK(hyle_container_btree_set_cursor_valid(set, &cursor));
+    CHECK(*(const int *)hyle_container_btree_set_cursor_key(set, &cursor) ==
+          40);
+    CHECK(hyle_container_btree_set_upper_bound(set, &lower, &cursor));
+    CHECK(*(const int *)hyle_container_btree_set_cursor_key(set, &cursor) ==
+          41);
+    CHECK(hyle_container_btree_set_lower_bound(set, &lower, &cursor));
+    CHECK(hyle_container_btree_set_cursor_next(set, &cursor));
+    CHECK(*(const int *)hyle_container_btree_set_cursor_key(set, &cursor) ==
+          41);
+    CHECK(hyle_container_btree_set_cursor_previous(set, &cursor));
+    CHECK(*(const int *)hyle_container_btree_set_cursor_key(set, &cursor) ==
+          40);
+    for (i = 0; i < 100; i += 2)
+      CHECK(hyle_container_btree_set_erase(set, &i));
+    for (i = 0; i < 100; ++i) {
+      const int *canonical =
+          (const int *)hyle_container_btree_set_find(set, &i);
+      CHECK((canonical != NULL) == ((i & 1) != 0));
+      CHECK(hyle_container_btree_set_contains(set, &i) == ((i & 1) != 0));
+    }
+    CHECK(hyle_container_btree_set_begin(set, &cursor));
+    CHECK(*(const int *)hyle_container_btree_set_cursor_key(set, &cursor) == 1);
+    CHECK(hyle_container_btree_set_erase_range(set, NULL, NULL) == 50);
+    CHECK(hyle_container_btree_set_size(set) == 0);
+    hyle_container_btree_set_clear(set);
+    hyle_container_btree_set_destroy(set);
+  }
+
+  /* Exercise the C ABI's actual time-index pattern: expire a key interval,
+   * then refill scattered entries. The byte table is the independent model. */
+  {
+    hyle_container_btree_map *range_map = NULL;
+    unsigned char present[1024] = {0};
+    uint32_t random_state = UINT32_C(0x8ea5e);
+    size_t expected_size = 0;
+    int operation;
+    CHECK(status_ok(hyle_container_btree_map_create(&range_map, &map_options)));
+    for (i = 0; i < 1024; ++i) {
+      const int value = i * 2;
+      hyle_container_insert_result result = HYLE_CONTAINER_ALREADY_PRESENT;
+      CHECK(status_ok(
+          hyle_container_btree_map_insert(&result, range_map, &i, &value)));
+      CHECK(result == HYLE_CONTAINER_INSERTED);
+      present[i] = 1;
+      ++expected_size;
+    }
+    for (operation = 0; operation < 500; ++operation) {
+      int lower;
+      int upper;
+      size_t expected_erased = 0;
+      int refill;
+      random_state = random_state * UINT32_C(1664525) + UINT32_C(1013904223);
+      lower = (int)(random_state % 1400u);
+      random_state = random_state * UINT32_C(1664525) + UINT32_C(1013904223);
+      upper = lower + (int)(random_state % 80u);
+      for (i = lower; i < upper && i < 1024; ++i) {
+        if (present[i]) {
+          present[i] = 0;
+          ++expected_erased;
+        }
+      }
+      CHECK(hyle_container_btree_map_erase_range(range_map, &lower, &upper) ==
+            expected_erased);
+      expected_size -= expected_erased;
+
+      for (refill = 0; refill < 5; ++refill) {
+        int key;
+        int value;
+        hyle_container_insert_result result = HYLE_CONTAINER_ALREADY_PRESENT;
+        random_state = random_state * UINT32_C(1664525) + UINT32_C(1013904223);
+        key = (int)(random_state % 1024u);
+        value = key * 2;
+        CHECK(status_ok(hyle_container_btree_map_insert_or_assign(
+            &result, range_map, &key, &value)));
+        if (!present[key]) {
+          CHECK(result == HYLE_CONTAINER_INSERTED);
+          present[key] = 1;
+          ++expected_size;
+        } else {
+          CHECK(result == HYLE_CONTAINER_ASSIGNED);
+        }
+      }
+      if ((operation % 31) == 0) {
+        CHECK(hyle_container_btree_map_size(range_map) == expected_size);
+        for (i = 0; i < 1024; ++i)
+          CHECK(hyle_container_btree_map_contains(range_map, &i) == present[i]);
+      }
+    }
+    CHECK(hyle_container_btree_map_erase_range(range_map, NULL, NULL) ==
+          expected_size);
+    CHECK(hyle_container_btree_map_size(range_map) == 0);
+    hyle_container_btree_map_destroy(range_map);
+  }
+}
+
 static void test_concurrent_hash_map(void) {
   hyle_container_hash_map_options options =
       HYLE_CONTAINER_HASH_MAP_OPTIONS_FOR(int, int);
@@ -821,6 +1069,7 @@ int main(void) {
   test_string_interner();
   test_vector_and_map();
   test_hash_set();
+  test_btree_map_and_set();
   test_concurrent_hash_map();
   test_queues_and_concurrent_vector();
   test_dynamic_bitset_and_sparse_set();
@@ -948,6 +1197,24 @@ int main(void) {
     }
     hyle_container_hash_map_destroy(map);
   }
+  {
+    hyle_container_btree_options options = HYLE_CONTAINER_BTREE_MAP_OPTIONS_FOR(
+        int, int, hyle_container_compare_i32);
+    hyle_container_btree_map *map = NULL;
+    int key = 1;
+    int value = 2;
+    hyle_container_insert_result result = HYLE_CONTAINER_ALREADY_PRESENT;
+    fail_after_allocator failing = {hyle_system_allocator(), 1};
+    hyle_allocator fail_storage = {fail_after_alloc, fail_after_free,
+                                   fail_after_realloc, &failing};
+    options.backing = fail_storage;
+    CHECK(status_ok(hyle_container_btree_map_create(&map, &options)));
+    CHECK(status_code(hyle_container_btree_map_insert(
+              &result, map, &key, &value)) == HYLE_STATUS_RESOURCE_EXHAUSTED);
+    CHECK(hyle_container_btree_map_size(map) == 0);
+    hyle_container_btree_map_destroy(map);
+  }
+
   {
     hyle_container_hash_map_options options =
         HYLE_CONTAINER_HASH_MAP_OPTIONS_FOR(int, int);

@@ -607,6 +607,199 @@ HYLE_CONTAINER_C_API int hyle_container_hash_set_visit(
     const hyle_container_hash_set* set,
     hyle_container_hash_set_visit_fn visitor, void* context);
 
+/* Mutable ordered POD indexes. The comparator must define a strict weak order
+ * and return <0 / 0 / >0. HYLE stores key/value bytes by value; pointers
+ * returned from find/cursor access and every cursor are invalidated by any
+ * successful mutation. The numeric helpers avoid alignment/aliasing hazards. */
+typedef int (*hyle_container_compare_fn)(const void *left, const void *right,
+                                         size_t key_size, void *context);
+HYLE_CONTAINER_C_API int hyle_container_compare_i32(const void *left,
+                                                    const void *right,
+                                                    size_t key_size,
+                                                    void *context);
+HYLE_CONTAINER_C_API int hyle_container_compare_u32(const void *left,
+                                                    const void *right,
+                                                    size_t key_size,
+                                                    void *context);
+HYLE_CONTAINER_C_API int hyle_container_compare_i64(const void *left,
+                                                    const void *right,
+                                                    size_t key_size,
+                                                    void *context);
+HYLE_CONTAINER_C_API int hyle_container_compare_u64(const void *left,
+                                                    const void *right,
+                                                    size_t key_size,
+                                                    void *context);
+HYLE_CONTAINER_C_API int hyle_container_compare_bytes(const void *left,
+                                                      const void *right,
+                                                      size_t key_size,
+                                                      void *context);
+
+typedef struct hyle_container_btree_options {
+  uint32_t struct_size;
+  uint32_t reserved;
+  size_t key_size;
+  size_t key_alignment;
+  size_t value_size;
+  size_t value_alignment;
+  hyle_container_compare_fn compare;
+  void *context;
+  hyle_allocator backing;
+} hyle_container_btree_options;
+#define HYLE_CONTAINER_BTREE_OPTIONS_INIT                                      \
+  {sizeof(hyle_container_btree_options),                                       \
+   0,                                                                          \
+   0,                                                                          \
+   0,                                                                          \
+   0,                                                                          \
+   0,                                                                          \
+   NULL,                                                                       \
+   NULL,                                                                       \
+   hyle_system_allocator()}
+#define HYLE_CONTAINER_BTREE_MAP_OPTIONS_FOR(key_type, value_type, compare_fn) \
+  {sizeof(hyle_container_btree_options),                                       \
+   0,                                                                          \
+   sizeof(key_type),                                                           \
+   HYLE_CONTAINER_ALIGNOF(key_type),                                           \
+   sizeof(value_type),                                                         \
+   HYLE_CONTAINER_ALIGNOF(value_type),                                         \
+   compare_fn,                                                                 \
+   NULL,                                                                       \
+   hyle_system_allocator()}
+#define HYLE_CONTAINER_BTREE_SET_OPTIONS_FOR(key_type, compare_fn)             \
+  {sizeof(hyle_container_btree_options),                                       \
+   0,                                                                          \
+   sizeof(key_type),                                                           \
+   HYLE_CONTAINER_ALIGNOF(key_type),                                           \
+   0,                                                                          \
+   1,                                                                          \
+   compare_fn,                                                                 \
+   NULL,                                                                       \
+   hyle_system_allocator()}
+
+/* Trivial cursor representation; fields are opaque. end is represented by a
+ * valid owner and a NULL node. previous(end) reaches the last element. */
+typedef struct hyle_container_btree_cursor {
+  const void *_owner;
+  const void *_node;
+  size_t _index;
+} hyle_container_btree_cursor;
+
+typedef struct hyle_container_btree_map_o hyle_container_btree_map;
+typedef int (*hyle_container_btree_map_visit_fn)(const void *key, void *value,
+                                                 void *context);
+HYLE_CONTAINER_C_API hyle_status
+hyle_container_btree_map_create(hyle_container_btree_map **out,
+                                const hyle_container_btree_options *options);
+HYLE_CONTAINER_C_API void
+hyle_container_btree_map_destroy(hyle_container_btree_map *map);
+HYLE_CONTAINER_C_API size_t
+hyle_container_btree_map_size(const hyle_container_btree_map *map);
+HYLE_CONTAINER_C_API void
+hyle_container_btree_map_clear(hyle_container_btree_map *map);
+HYLE_CONTAINER_C_API hyle_status hyle_container_btree_map_insert(
+    hyle_container_insert_result *out_result, hyle_container_btree_map *map,
+    const void *key, const void *value);
+HYLE_CONTAINER_C_API hyle_status hyle_container_btree_map_insert_or_assign(
+    hyle_container_insert_result *out_result, hyle_container_btree_map *map,
+    const void *key, const void *value);
+HYLE_CONTAINER_C_API void *
+hyle_container_btree_map_find(hyle_container_btree_map *map, const void *key);
+HYLE_CONTAINER_C_API const void *
+hyle_container_btree_map_find_const(const hyle_container_btree_map *map,
+                                    const void *key);
+HYLE_CONTAINER_C_API int
+hyle_container_btree_map_contains(const hyle_container_btree_map *map,
+                                  const void *key);
+HYLE_CONTAINER_C_API int
+hyle_container_btree_map_erase(hyle_container_btree_map *map, const void *key);
+/* Erases [lower, upper) and returns the number removed. A NULL bound is
+ * unbounded. If anything is removed, all pointers and cursors are invalid. */
+HYLE_CONTAINER_C_API size_t hyle_container_btree_map_erase_range(
+    hyle_container_btree_map *map, const void *lower, const void *upper);
+HYLE_CONTAINER_C_API int
+hyle_container_btree_map_begin(const hyle_container_btree_map *map,
+                               hyle_container_btree_cursor *out_cursor);
+HYLE_CONTAINER_C_API int
+hyle_container_btree_map_lower_bound(const hyle_container_btree_map *map,
+                                     const void *key,
+                                     hyle_container_btree_cursor *out_cursor);
+HYLE_CONTAINER_C_API int
+hyle_container_btree_map_upper_bound(const hyle_container_btree_map *map,
+                                     const void *key,
+                                     hyle_container_btree_cursor *out_cursor);
+HYLE_CONTAINER_C_API int hyle_container_btree_map_cursor_valid(
+    const hyle_container_btree_map *map,
+    const hyle_container_btree_cursor *cursor);
+HYLE_CONTAINER_C_API const void *
+hyle_container_btree_map_cursor_key(const hyle_container_btree_map *map,
+                                    const hyle_container_btree_cursor *cursor);
+HYLE_CONTAINER_C_API void *hyle_container_btree_map_cursor_value(
+    hyle_container_btree_map *map, const hyle_container_btree_cursor *cursor);
+HYLE_CONTAINER_C_API int
+hyle_container_btree_map_cursor_next(const hyle_container_btree_map *map,
+                                     hyle_container_btree_cursor *cursor);
+HYLE_CONTAINER_C_API int
+hyle_container_btree_map_cursor_previous(const hyle_container_btree_map *map,
+                                         hyle_container_btree_cursor *cursor);
+/* NULL lower/upper means unbounded. Bounds are [lower, upper). */
+HYLE_CONTAINER_C_API int hyle_container_btree_map_visit_range(
+    hyle_container_btree_map *map, const void *lower, const void *upper,
+    hyle_container_btree_map_visit_fn visitor, void *context);
+
+typedef struct hyle_container_btree_set_o hyle_container_btree_set;
+typedef int (*hyle_container_btree_set_visit_fn)(const void *key,
+                                                 void *context);
+HYLE_CONTAINER_C_API hyle_status
+hyle_container_btree_set_create(hyle_container_btree_set **out,
+                                const hyle_container_btree_options *options);
+HYLE_CONTAINER_C_API void
+hyle_container_btree_set_destroy(hyle_container_btree_set *set);
+HYLE_CONTAINER_C_API size_t
+hyle_container_btree_set_size(const hyle_container_btree_set *set);
+HYLE_CONTAINER_C_API void
+hyle_container_btree_set_clear(hyle_container_btree_set *set);
+HYLE_CONTAINER_C_API hyle_status
+hyle_container_btree_set_insert(hyle_container_insert_result *out_result,
+                                hyle_container_btree_set *set, const void *key);
+HYLE_CONTAINER_C_API const void *
+hyle_container_btree_set_find(const hyle_container_btree_set *set,
+                              const void *key);
+HYLE_CONTAINER_C_API int
+hyle_container_btree_set_contains(const hyle_container_btree_set *set,
+                                  const void *key);
+HYLE_CONTAINER_C_API int
+hyle_container_btree_set_erase(hyle_container_btree_set *set, const void *key);
+/* Erases [lower, upper) and returns the number removed. A NULL bound is
+ * unbounded. If anything is removed, all pointers and cursors are invalid. */
+HYLE_CONTAINER_C_API size_t hyle_container_btree_set_erase_range(
+    hyle_container_btree_set *set, const void *lower, const void *upper);
+HYLE_CONTAINER_C_API int
+hyle_container_btree_set_begin(const hyle_container_btree_set *set,
+                               hyle_container_btree_cursor *out_cursor);
+HYLE_CONTAINER_C_API int
+hyle_container_btree_set_lower_bound(const hyle_container_btree_set *set,
+                                     const void *key,
+                                     hyle_container_btree_cursor *out_cursor);
+HYLE_CONTAINER_C_API int
+hyle_container_btree_set_upper_bound(const hyle_container_btree_set *set,
+                                     const void *key,
+                                     hyle_container_btree_cursor *out_cursor);
+HYLE_CONTAINER_C_API int hyle_container_btree_set_cursor_valid(
+    const hyle_container_btree_set *set,
+    const hyle_container_btree_cursor *cursor);
+HYLE_CONTAINER_C_API const void *
+hyle_container_btree_set_cursor_key(const hyle_container_btree_set *set,
+                                    const hyle_container_btree_cursor *cursor);
+HYLE_CONTAINER_C_API int
+hyle_container_btree_set_cursor_next(const hyle_container_btree_set *set,
+                                     hyle_container_btree_cursor *cursor);
+HYLE_CONTAINER_C_API int
+hyle_container_btree_set_cursor_previous(const hyle_container_btree_set *set,
+                                         hyle_container_btree_cursor *cursor);
+HYLE_CONTAINER_C_API int hyle_container_btree_set_visit_range(
+    const hyle_container_btree_set *set, const void *lower, const void *upper,
+    hyle_container_btree_set_visit_fn visitor, void *context);
+
 /* Pointer payload queues: HYLE never owns or frees payload pointers. All
  * try_* operations are non-blocking; 0 means full/empty/contended as documented,
  * and an output item is written only on success. */

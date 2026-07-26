@@ -958,6 +958,11 @@ if(HYLE_BENCH_ABSL)
   target_link_libraries(hyle_absl_bench PRIVATE hyle_container nanobench
     absl::flat_hash_map absl::flat_hash_set)
   hyle_apply_warnings(hyle_absl_bench)
+  add_executable(hyle_container_btree_bench
+    container/btree_vs_absl_bench.cc)
+  target_link_libraries(hyle_container_btree_bench PRIVATE hyle_container
+    nanobench absl::btree)
+  hyle_apply_warnings(hyle_container_btree_bench)
   # absl::InlinedVector is the small-vector SOTA -> feed it to the misc bench too.
   target_compile_definitions(hyle_container_misc_bench PRIVATE HYLE_BENCH_ABSL)
   target_link_libraries(hyle_container_misc_bench PRIVATE absl::inlined_vector)
@@ -1026,7 +1031,9 @@ hyle_register_benches(container
     hyle_container_set_bench
     hyle_container_ring_bench
     hyle_hash_bench
-  hyle_absl_bench)
+    hyle_container_concurrent_map_bench
+    hyle_absl_bench
+    hyle_container_btree_bench)
 hyle_register_benches(simd
   hyle_simd_bench
   hyle_math_bench
