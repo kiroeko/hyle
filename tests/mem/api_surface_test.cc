@@ -22,6 +22,7 @@
 #include "hyle/mem/shared_pool.h"
 #include "hyle/mem/stack_allocator.h"
 #include "hyle/mem/stats.h"
+#include "hyle/mem/std_allocator.h"
 #include "hyle/mem/system_inline.h"
 #include "hyle/platform/virtual_memory.h"
 
@@ -41,6 +42,11 @@ static_assert(std::is_standard_layout_v<AllocStatsSnapshot>);
 static_assert(std::derived_from<PmrResource, std::pmr::memory_resource>);
 static_assert(
     std::derived_from<AlignedPmrResource, std::pmr::memory_resource>);
+static_assert(std::same_as<std::allocator_traits<StdAllocator<int>>::value_type,
+                           int>);
+static_assert(
+    std::same_as<std::allocator_traits<StdAllocator<int>>::rebind_alloc<double>,
+                 StdAllocator<double>>);
 
 template <class A>
 concept AllocatorSurface = requires(A a, void* p, std::size_t n) {
@@ -137,6 +143,9 @@ static_assert(requires(FiberStack stack, FiberStackPool pool) {
   { FiberStack::allocate(kFiberStackDefault) }
       -> std::same_as<hyle::Result<FiberStack>>;
   { pool.acquire() } -> std::same_as<hyle::Result<FiberStack>>;
+  { pool.capacity() } -> std::same_as<std::size_t>;
+  { pool.trim() } -> std::same_as<std::size_t>;
+  { pool.clear() } -> std::same_as<void>;
   { stack.reset() } -> std::same_as<hyle::Status>;
 });
 static_assert(requires {

@@ -36,9 +36,14 @@ inline constexpr std::size_t kSystemDefaultAlignment = kDefaultAlignment;
 
 namespace detail {
 
-inline std::size_t system_backend_checked_alignment(
+HYLE_FORCE_INLINE std::size_t system_backend_checked_alignment(
     std::size_t alignment) noexcept {
-  HYLE_FATAL_ASSERT(is_pow2(alignment));
+  // The overwhelming common case is the compile-time default. Keep it to one
+  // predictable comparison; weaker/over-aligned requests take the full
+  // contract check before selecting the backend entry.
+  if (HYLE_UNLIKELY(alignment != kSystemDefaultAlignment)) {
+    HYLE_FATAL_ASSERT(is_pow2(alignment));
+  }
   return alignment;
 }
 
@@ -86,9 +91,9 @@ struct SystemAllocator {
     }
     return pointer;
   }
-  static void deallocate(void* ptr, std::size_t /*size*/ = 0,
-                         std::size_t alignment = kSystemDefaultAlignment) noexcept {
-    (void)detail::system_backend_checked_alignment(alignment);
+  static void deallocate(
+      void* ptr, std::size_t /*size*/ = 0,
+      std::size_t /*alignment*/ = kSystemDefaultAlignment) noexcept {
     if (ptr != nullptr) {
       HYLE_TRACE_FREE_NAMED(ptr, "hyle.system");
       detail::system_backend_deallocate(ptr);

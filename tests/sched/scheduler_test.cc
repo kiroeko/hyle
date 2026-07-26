@@ -15,6 +15,7 @@
 #endif
 
 #include "hyle/mem/allocator.h"
+#include "hyle/mem/fiber_stack.h"
 #include "hyle/sched/fiber.h"
 #include "hyle/sched/scheduler.h"
 #include "hyle/sched/waker.h"
@@ -367,6 +368,18 @@ TEST(Scheduler, ManyFibersAllComplete) {
 
   EXPECT_EQ(completed.load(), kFibers);
   EXPECT_EQ(ran.load(), kFibers * kYields);  // every segment ran exactly once
+}
+
+TEST(Scheduler, ShutdownReclaimsFiberStackCaches) {
+  Scheduler sched(1, system_allocator(), 64);
+  auto* pool = sched.fiber_stack_pool(hyle::mem::kFiberStackDefault);
+  ASSERT_NE(pool, nullptr);
+  hyle::mem::FiberStack stack = pool->acquire().value();
+  pool->release(std::move(stack));
+  ASSERT_EQ(pool->cached(), 1u);
+
+  sched.shutdown();
+  EXPECT_EQ(pool->cached(), 0u);
 }
 
 // Force stealing: a single "seed" fiber, running on one worker, spawns many

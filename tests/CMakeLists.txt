@@ -127,7 +127,7 @@ hyle_add_c_test(simd simd/c_simd_test.c)
 hyle_add_test(obs SOURCES obs/log_test.cc)
 hyle_add_c_test(obs obs/c_obs_test.c)
 hyle_add_test(platform SOURCES platform/wait_test.cc platform/thread_test.cc platform/dynlib_test.cc platform/fs_test.cc platform/virtual_memory_test.cc platform/numa_test.cc platform/mapped_file_test.cc platform/cpu_test.cc platform/convenience_test.cc)
-hyle_add_test(mem SOURCES mem/api_surface_test.cc mem/allocator_test.cc mem/shared_pool_test.cc mem/pool_stack_test.cc mem/alignment_test.cc mem/pmr_test.cc mem/growable_pool_test.cc mem/fiber_stack_test.cc mem/stats_test.cc mem/hugepage_test.cc mem/numa_test.cc)
+hyle_add_test(mem SOURCES mem/api_surface_test.cc mem/allocator_test.cc mem/shared_pool_test.cc mem/pool_stack_test.cc mem/alignment_test.cc mem/pmr_test.cc mem/std_allocator_test.cc mem/growable_pool_test.cc mem/fiber_stack_test.cc mem/stats_test.cc mem/hugepage_test.cc mem/numa_test.cc)
 hyle_add_test(util SOURCES util/ref_counted_test.cc util/scope_guard_test.cc util/type_name_test.cc util/registry_test.cc util/random_test.cc util/spin_lock_test.cc util/demangle_test.cc util/c_util_concurrency_test.cc DEPS hyle_container)
 hyle_add_c_test(util util/c_util_test.c)
 hyle_add_test(time SOURCES time/header_test.cc time/clock_test.cc

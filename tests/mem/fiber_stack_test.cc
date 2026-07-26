@@ -103,6 +103,31 @@ TEST(FiberStackPool, CacheCapDropsExtra) {
   EXPECT_EQ(pool.cached(), 2u);
 }
 
+TEST(FiberStackPool, CapacityIsExactAndZeroDisablesCaching) {
+  FiberStackPool clamped(kFiberStackSmall,
+                         FiberStackPool::kMaxCacheCap + 100);
+  EXPECT_EQ(clamped.capacity(), FiberStackPool::kMaxCacheCap);
+
+  FiberStackPool disabled(kFiberStackSmall, 0);
+  EXPECT_EQ(disabled.capacity(), 0u);
+  FiberStack stack = disabled.acquire().value();
+  disabled.release(std::move(stack));
+  EXPECT_EQ(disabled.cached(), 0u);
+}
+
+TEST(FiberStackPool, TrimRetainsRequestedCountAndClearReleasesAll) {
+  FiberStackPool pool(kFiberStackSmall, 8);
+  FiberStack stacks[5];
+  for (auto& stack : stacks) stack = pool.acquire().value();
+  for (auto& stack : stacks) pool.release(std::move(stack));
+  ASSERT_EQ(pool.cached(), 5u);
+
+  EXPECT_EQ(pool.trim(2), 3u);
+  EXPECT_EQ(pool.cached(), 2u);
+  pool.clear();
+  EXPECT_EQ(pool.cached(), 0u);
+}
+
 TEST(FiberStackPool, WrongSizeNotCached) {
   FiberStackPool pool(kFiberStackDefault, /*cache_cap=*/8);
   FiberStack wrong = FiberStack::allocate(kFiberStackSmall).value();

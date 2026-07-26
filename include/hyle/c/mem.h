@@ -22,6 +22,7 @@
  * std::size_t. */
 #include <stddef.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "hyle/c/error.h"
@@ -106,6 +107,16 @@ static inline size_t hyle_default_alignment(void) {
 #endif
 }
 
+/* C convenience accepts 0 as the default. Non-zero alignment remains the same
+ * power-of-two contract as native C++; invalid values are programmer errors. */
+static inline size_t hyle_mem_checked_alignment(size_t alignment) {
+  if (alignment == 0)
+    return hyle_default_alignment();
+  if ((alignment & (alignment - 1)) != 0)
+    abort();
+  return alignment;
+}
+
 /* Process-wide mimalloc-backed system allocator (the same handle C++ uses). */
 HYLE_MEM_C_API hyle_allocator hyle_system_allocator(void);
 
@@ -115,8 +126,7 @@ static inline void *hyle_alloc(const hyle_allocator *a, size_t size,
                                size_t alignment) {
   if (a == NULL || a->alloc == NULL)
     return NULL;
-  return a->alloc(a->state, size,
-                  alignment != 0 ? alignment : hyle_default_alignment());
+  return a->alloc(a->state, size, hyle_mem_checked_alignment(alignment));
 }
 static inline void hyle_free(const hyle_allocator *a, void *ptr, size_t size,
                              size_t alignment) {
@@ -131,7 +141,7 @@ static inline void *hyle_realloc(const hyle_allocator *a, void *ptr,
   if (a == NULL || a->realloc == NULL)
     return NULL;
   return a->realloc(a->state, ptr, old_size, new_size,
-                    alignment != 0 ? alignment : hyle_default_alignment());
+                    hyle_mem_checked_alignment(alignment));
 }
 
 /* Overflow-safe zeroed array allocation over any injected allocator. This is
@@ -245,9 +255,11 @@ hyle_stats_allocator_create(hyle_stats_allocator **out,
 HYLE_MEM_C_API void hyle_stats_allocator_destroy(hyle_stats_allocator *s);
 HYLE_MEM_C_API hyle_allocator
 hyle_stats_allocator_as_allocator(hyle_stats_allocator *s);
-/* Writes a point-in-time POD snapshot. A NULL s writes zeros; a NULL out is a
- * no-op. Using an out parameter avoids platform-specific large-struct return
- * conventions in FFI generators. */
+/* Copies every atomic counter into a POD. During concurrent mutation each
+ * field is race-free, but the fields need not describe one coherent instant;
+ * after callers quiesce the allocator the snapshot is exact. A NULL s writes
+ * zeros; a NULL out is a no-op. Using an out parameter avoids
+ * platform-specific large-struct return conventions in FFI generators. */
 HYLE_MEM_C_API void
 hyle_stats_allocator_snapshot(const hyle_stats_allocator *s,
                               hyle_alloc_stats *out);

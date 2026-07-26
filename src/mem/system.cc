@@ -57,7 +57,6 @@ namespace {
 // e.g. AVX512 64B) needs mi_*_aligned.
 void *system_alloc(void * /*state*/, std::size_t size,
                    std::size_t alignment) noexcept {
-  alignment = detail::system_backend_checked_alignment(alignment);
   if (size == 0)
     return nullptr;
   // A valid default-or-weaker alignment takes plain mi_malloc; over-alignment
@@ -70,8 +69,7 @@ void *system_alloc(void * /*state*/, std::size_t size,
 }
 
 void system_free(void * /*state*/, void *ptr, std::size_t /*size*/,
-                 std::size_t alignment) noexcept {
-  (void)detail::system_backend_checked_alignment(alignment);
+                 std::size_t /*alignment*/) noexcept {
   if (ptr != nullptr) {
     HYLE_TRACE_FREE_NAMED(ptr, "hyle.system");
     detail::system_backend_deallocate(ptr);
@@ -80,7 +78,6 @@ void system_free(void * /*state*/, void *ptr, std::size_t /*size*/,
 
 void *system_realloc(void * /*state*/, void *ptr, std::size_t /*old_size*/,
                      std::size_t new_size, std::size_t alignment) noexcept {
-  alignment = detail::system_backend_checked_alignment(alignment);
   if (new_size == 0) { // realloc-to-0 == free
     if (ptr != nullptr) {
       HYLE_TRACE_FREE_NAMED(ptr, "hyle.system");

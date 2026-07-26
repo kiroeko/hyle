@@ -79,16 +79,27 @@ public:
   // mutating the handle itself (so allocating from a `const Allocator&` is
   // valid). Each forwards to the matching register-friendly entry -- no spill,
   // no dispatch branch.
-  void *allocate(std::size_t size,
-                 std::size_t alignment = kDefaultAlignment) const noexcept {
+  void *allocate(std::size_t size) const noexcept {
+    return alloc_fn_(state_, size, kDefaultAlignment);
+  }
+  void *allocate(std::size_t size, std::size_t alignment) const noexcept {
+    checked_alignment_(alignment);
     return alloc_fn_(state_, size, alignment);
   }
+  void deallocate(void *ptr, std::size_t size) const noexcept {
+    free_fn_(state_, ptr, size, kDefaultAlignment);
+  }
   void deallocate(void *ptr, std::size_t size,
-                  std::size_t alignment = kDefaultAlignment) const noexcept {
+                  std::size_t alignment) const noexcept {
     free_fn_(state_, ptr, size, alignment);
   }
+  void *reallocate(void *ptr, std::size_t old_size,
+                   std::size_t new_size) const noexcept {
+    return realloc_fn_(state_, ptr, old_size, new_size, kDefaultAlignment);
+  }
   void *reallocate(void *ptr, std::size_t old_size, std::size_t new_size,
-                   std::size_t alignment = kDefaultAlignment) const noexcept {
+                   std::size_t alignment) const noexcept {
+    checked_alignment_(alignment);
     return realloc_fn_(state_, ptr, old_size, new_size, alignment);
   }
 
@@ -197,6 +208,12 @@ public:
   }
 
 private:
+  HYLE_FORCE_INLINE static void checked_alignment_(
+      std::size_t alignment) noexcept {
+    HYLE_FATAL_ASSERT(alignment != 0 &&
+                      (alignment & (alignment - 1)) == 0);
+  }
+
   AllocFn alloc_fn_ = nullptr;
   FreeFn free_fn_ = nullptr;
   ReallocFn realloc_fn_ = nullptr;

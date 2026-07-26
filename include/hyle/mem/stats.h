@@ -219,6 +219,8 @@ class HYLE_MEM_API StatsAllocator {
   Allocator get() const noexcept;
   AllocStats& stats() noexcept;
   const AllocStats& stats() const noexcept;
+  // Per-field atomic observation during mutation; coherent after callers
+  // quiesce every allocator handle borrowing this wrapper.
   AllocStatsSnapshot snapshot() const noexcept { return stats().snapshot(); }
   bool balanced() const noexcept { return stats().balanced(); }
   // Null when constructed with track_leaks=false.

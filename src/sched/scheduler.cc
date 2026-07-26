@@ -1194,6 +1194,12 @@ struct Scheduler::Impl {
     for (auto& t : threads) {
       if (t.joinable()) t.join();
     }
+    // Every fiber has finished and no release() can race now. Return retained
+    // guarded mappings at this real owner-level reclamation point instead of
+    // keeping up to three full cache tiers until Scheduler destruction.
+    pool_small.clear();
+    pool_default.clear();
+    pool_large.clear();
     {
       std::lock_guard<std::mutex> lock(stop_mu);
       shutdown_complete = true;

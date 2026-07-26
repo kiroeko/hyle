@@ -75,15 +75,19 @@ class FiberStack {
 class FiberStackPool {
  public:
   static constexpr std::size_t kDefaultCacheCap = 64;
+  static constexpr std::size_t kMaxCacheCap = 256;
 
   explicit FiberStackPool(std::size_t usable_tier,
                           std::size_t cache_cap = kDefaultCacheCap) noexcept
       : usable_tier_(usable_tier),
-        cache_cap_(cache_cap == 0 ? 1 : cache_cap) {}
+        cache_cap_(cache_cap < kMaxCacheCap ? cache_cap : kMaxCacheCap) {}
 
   HYLE_DISABLE_COPY(FiberStackPool);
 
   std::size_t usable_tier() const noexcept { return usable_tier_; }
+  // The effective retention bound. A requested cap above the fixed inline
+  // storage is clamped; zero intentionally disables caching.
+  std::size_t capacity() const noexcept { return cache_cap_; }
   std::size_t cached() const noexcept {
     lock_.lock();
     std::size_t n = n_free_;
@@ -113,7 +117,7 @@ class FiberStackPool {
       return;
     }
     lock_.lock();
-    if (n_free_ < cache_cap_ && n_free_ < kMaxSlots) {
+    if (n_free_ < cache_cap_) {
       free_[n_free_++] = std::move(s);
       lock_.unlock();
       return;
@@ -122,14 +126,35 @@ class FiberStackPool {
     s.reset().IgnoreError();
   }
 
+  // Release cached stacks until at most `keep` remain. VM release happens
+  // outside the SpinLock; concurrent release() may refill the pool after trim
+  // observes it, so owners wanting a stable zero first quiesce their users.
+  // Returns the number of mappings released by this call.
+  std::size_t trim(std::size_t keep = 0) noexcept {
+    const std::size_t target = keep < cache_cap_ ? keep : cache_cap_;
+    std::size_t released = 0;
+    for (;;) {
+      FiberStack stack;
+      lock_.lock();
+      if (n_free_ <= target) {
+        lock_.unlock();
+        return released;
+      }
+      stack = std::move(free_[--n_free_]);
+      lock_.unlock();
+      stack.reset().IgnoreError();
+      ++released;
+    }
+  }
+
+  void clear() noexcept { (void)trim(); }
+
  private:
   // Fixed slots avoid heap in the pool itself (fiber stacks are already VM).
-  static constexpr std::size_t kMaxSlots = 256;
-
   std::size_t usable_tier_;
   std::size_t cache_cap_;
   mutable util::SpinLock lock_;
-  FiberStack free_[kMaxSlots]{};
+  FiberStack free_[kMaxCacheCap]{};
   std::size_t n_free_ = 0;
 };
 

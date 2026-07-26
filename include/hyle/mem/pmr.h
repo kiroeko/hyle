@@ -9,12 +9,9 @@
 
 // std::pmr::memory_resource backed by a HYLE Allocator. Lets any pmr-aware std
 // container (std::pmr::vector / string / unordered_map, ...) route allocations
-// through a HYLE Allocator. This is the modern C++17 replacement for two clay
-// files at once:
-//   * utils/stl_allocator<T> (196 lines, per-type) -> ONE resource serves every
-//     T (pmr erases the element type), so no rebind boilerplate.
-//   * utils/generic_allocator (62 lines) -> HYLE's Allocator value-handle ALREADY
-//     is a type-erased {fn,state} forwarder, so that file has no HYLE counterpart.
+// through a HYLE Allocator. PMR erases the element type and is preferable when
+// the consumer accepts memory_resource; StdAllocator<T> separately serves
+// legacy and third-party allocator-template APIs that PMR cannot satisfy.
 //
 // Boundary note (conventions §0/§5 sanctioned exception): do_allocate THROWS
 // std::bad_alloc on failure. That is the documented memory_resource contract --
