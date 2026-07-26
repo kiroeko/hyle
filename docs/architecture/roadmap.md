@@ -14,7 +14,7 @@
 ```text
 主调度链：error ──▶ platform ──▶ mem ──▶ container ──▶ sched ──▶ io
 时间分支：core/header ··▶ time-native；error ──▶ time ──▶ sched
-计算分支：platform ──▶ simd ──▶ compute；sched ──▶ compute
+计算分支：{error, platform} ──▶ simd ──▶ compute；sched ──▶ compute
 图分支：  container ──▶ graph；sched ──▶ graph
 util 产品：container ──▶ util-runtime
 
@@ -39,7 +39,7 @@ math ──▶ users（当前无生产下游）
 | `mem` | error、platform | mimalloc | `util::SpinLock`、obs trace hook |
 | `time` | error | — | native timer 借 `core/intrusive_list`；不链接 platform/container |
 | `container` | mem | platform | 当前无 util-core 边；ConcurrentVector 的非短写临界区使用 mutex |
-| `simd` | platform | — | 运行期 ISA 能力由 platform 提供 |
+| `simd` | error、platform | — | 统一错误契约由 error 提供；运行期 ISA 能力由 platform 提供 |
 | `util-runtime` (`hyle_util`) | container | — | registry 同时借 mem；其余 util headers 不依赖该二进制目标 |
 | `sched` | error、mem、container、platform | time | `util::SpinLock`、obs trace hook |
 | `io` | — | error、mem、container；有 fcontext 时 sched | obs trace hook |
@@ -63,8 +63,8 @@ util 能力时必须先判断属于哪一层，禁止让 util-core 反向 includ
 ### 无环结论与已知收束边
 
 实际 target graph 无环。最长基础链仍是
-`error → platform → mem → container → {sched, util-runtime}`；time、simd 分别从 error、
-platform 分叉，sched 再汇入 io/compute/graph。`math` 是当前没有生产下游的合法用户叶；它的
+`error → platform → mem → container → {sched, util-runtime}`；time 从 error 分叉，simd
+汇合 error 与 platform，sched 再汇入 io/compute/graph。`math` 是当前没有生产下游的合法用户叶；它的
 存在不应因此从完整模块图消失。
 
 部分旧 C shim（util/sched/io）仍使用模块私有 `last_error`，是 error adoption
@@ -123,7 +123,7 @@ P0–P6 只表示最早可编译的拓扑层。不在这里复制 LOC、冻结�
 |---|---|---|
 | **P0** | core、error、obs-runtime、math、util-core headers、`hyle_trace` gate | obs-runtime 只依赖同层 error；其余零 HYLE 模块上游；先冻结基础值、宏、header 合同与跨切 gate |
 | **P1** | platform、time | 两者只需 P0；time 不需等 platform |
-| **P2** | mem、simd | 都需 platform；mem 另直接需 error |
+| **P2** | mem、simd | 都直接依赖 error 与 platform |
 | **P3** | container | 公开依赖 mem，实现依赖 platform |
 | **P4** | sched、util-runtime/registry | 两者都要 container；sched 另要 time/platform/mem/error |
 | **P5** | io、compute、graph | 完整产品形状都消费 sched；compute 另消费 simd，graph/io 消费 container |

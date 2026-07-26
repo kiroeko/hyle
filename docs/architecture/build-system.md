@@ -29,7 +29,7 @@ roots: core error obs math platform time mem simd container util sched io comput
 platform -> error
 time     -> error
 mem      -> error + platform
-simd     -> platform
+simd     -> error + platform
 container-> mem + platform
 util     -> container
 sched    -> error + platform + time + mem + container
