@@ -238,6 +238,10 @@ StatsAllocator::~StatsAllocator() { destroy(); }
 void StatsAllocator::destroy() noexcept {
   if (state_ == nullptr) return;
   auto* s = reinterpret_cast<StatsState*>(state_);
+  // Allocator handles returned by get() borrow this state. Destruction (also
+  // the overwrite half of move assignment) while allocations remain live
+  // would silently leave dangling vtable state, so treat it as a contract bug.
+  HYLE_FATAL_ASSERT(s->stats.balanced());
   const Allocator metadata = s->metadata;
   s->~StatsState();
   metadata.deallocate(s, sizeof(StatsState), alignof(StatsState));

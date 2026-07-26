@@ -13,21 +13,6 @@
 #include <limits>
 
 namespace hyle::mem {
-namespace {
-
-// Round an alignment request up to something the backing accepts: a power of
-// two, at least kDefaultAlignment. A non-power-of-two request is a caller bug.
-#if !defined(HYLE_STATIC)
-std::size_t normalize_alignment(std::size_t a) noexcept {
-  if (a < kDefaultAlignment)
-    return kDefaultAlignment;
-  HYLE_FATAL_ASSERT((a & (a - 1)) == 0);
-  return a;
-}
-#endif
-
-} // namespace
-
 #if !defined(HYLE_STATIC)
 namespace detail {
 
@@ -35,7 +20,7 @@ void *system_backend_allocate(std::size_t size,
                               std::size_t alignment) noexcept {
   return alignment <= kDefaultAlignment
              ? mi_malloc(size)
-             : mi_malloc_aligned(size, normalize_alignment(alignment));
+             : mi_malloc_aligned(size, alignment);
 }
 
 void system_backend_deallocate(void *ptr) noexcept { mi_free(ptr); }
@@ -44,8 +29,7 @@ void *system_backend_reallocate(void *ptr, std::size_t new_size,
                                 std::size_t alignment) noexcept {
   return alignment <= kDefaultAlignment
              ? mi_realloc(ptr, new_size)
-             : mi_realloc_aligned(ptr, new_size,
-                                  normalize_alignment(alignment));
+             : mi_realloc_aligned(ptr, new_size, alignment);
 }
 
 } // namespace detail
@@ -73,12 +57,11 @@ namespace {
 // e.g. AVX512 64B) needs mi_*_aligned.
 void *system_alloc(void * /*state*/, std::size_t size,
                    std::size_t alignment) noexcept {
+  alignment = detail::system_backend_checked_alignment(alignment);
   if (size == 0)
     return nullptr;
-  // Common-case fast path: default (or weaker) alignment needs no normalization
-  // at all -- mi_malloc already guarantees >= 16-byte. Skip normalize_alignment
-  // (its assert + bit test) for the hot path; only over-aligned requests pay
-  // it.
+  // A valid default-or-weaker alignment takes plain mi_malloc; over-alignment
+  // alone selects the aligned backend entry.
   void *pointer = detail::system_backend_allocate(size, alignment);
   if (pointer != nullptr) {
     HYLE_TRACE_ALLOC_NAMED(pointer, size, "hyle.system");
@@ -87,7 +70,8 @@ void *system_alloc(void * /*state*/, std::size_t size,
 }
 
 void system_free(void * /*state*/, void *ptr, std::size_t /*size*/,
-                 std::size_t /*alignment*/) noexcept {
+                 std::size_t alignment) noexcept {
+  (void)detail::system_backend_checked_alignment(alignment);
   if (ptr != nullptr) {
     HYLE_TRACE_FREE_NAMED(ptr, "hyle.system");
     detail::system_backend_deallocate(ptr);
@@ -96,6 +80,7 @@ void system_free(void * /*state*/, void *ptr, std::size_t /*size*/,
 
 void *system_realloc(void * /*state*/, void *ptr, std::size_t /*old_size*/,
                      std::size_t new_size, std::size_t alignment) noexcept {
+  alignment = detail::system_backend_checked_alignment(alignment);
   if (new_size == 0) { // realloc-to-0 == free
     if (ptr != nullptr) {
       HYLE_TRACE_FREE_NAMED(ptr, "hyle.system");

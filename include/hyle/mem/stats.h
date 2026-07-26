@@ -22,7 +22,10 @@
 
 namespace hyle::mem {
 
-// Point-in-time copy (no atomics). Live_* should be 0 when every alloc is freed.
+// Plain POD copy of the atomic fields. During concurrent mutation each field is
+// individually race-free but the fields need not describe one coherent instant.
+// After callers quiesce the wrapper, the snapshot is exact and live_* should be
+// zero when every allocation has been freed.
 struct AllocStatsSnapshot {
   std::uint64_t live_count = 0;             // outstanding blocks
   std::uint64_t live_bytes = 0;             // outstanding bytes
@@ -43,10 +46,11 @@ class AllocStats {
   void record_alloc(std::size_t bytes) noexcept {
     if (bytes == 0) return;
     live_count_.fetch_add(1, std::memory_order_relaxed);
-    live_bytes_.fetch_add(bytes, std::memory_order_relaxed);
+    const std::uint64_t next =
+        live_bytes_.fetch_add(bytes, std::memory_order_relaxed) + bytes;
     total_allocs_.fetch_add(1, std::memory_order_relaxed);
     total_bytes_allocated_.fetch_add(bytes, std::memory_order_relaxed);
-    bump_peak_();
+    bump_peak_(next);
   }
 
   // Deallocate of a live block of `bytes`. size==0 / null free: no-op.
@@ -70,9 +74,11 @@ class AllocStats {
     if (old_bytes == 0) {
       if (new_bytes == 0) return;
       live_count_.fetch_add(1, std::memory_order_relaxed);
-      live_bytes_.fetch_add(new_bytes, std::memory_order_relaxed);
+      const std::uint64_t next =
+          live_bytes_.fetch_add(new_bytes, std::memory_order_relaxed) +
+          new_bytes;
       total_bytes_allocated_.fetch_add(new_bytes, std::memory_order_relaxed);
-      bump_peak_();
+      bump_peak_(next);
       return;
     }
     if (new_bytes == 0) {
@@ -83,9 +89,10 @@ class AllocStats {
     }
     if (new_bytes > old_bytes) {
       const std::size_t d = new_bytes - old_bytes;
-      live_bytes_.fetch_add(d, std::memory_order_relaxed);
+      const std::uint64_t next =
+          live_bytes_.fetch_add(d, std::memory_order_relaxed) + d;
       total_bytes_allocated_.fetch_add(d, std::memory_order_relaxed);
-      bump_peak_();
+      bump_peak_(next);
     } else if (old_bytes > new_bytes) {
       live_bytes_.fetch_sub(old_bytes - new_bytes, std::memory_order_relaxed);
     }
@@ -104,6 +111,10 @@ class AllocStats {
   }
 
   void reset() noexcept {
+    // A reset racing allocations cannot define a coherent new accounting
+    // epoch. Fail fast on the observable lifetime violation; callers must also
+    // provide external quiescence before entering this method.
+    HYLE_FATAL_ASSERT(balanced());
     live_count_.store(0, std::memory_order_relaxed);
     live_bytes_.store(0, std::memory_order_relaxed);
     total_allocs_.store(0, std::memory_order_relaxed);
@@ -119,8 +130,7 @@ class AllocStats {
   }
 
  private:
-  void bump_peak_() noexcept {
-    const std::uint64_t cur = live_bytes_.load(std::memory_order_relaxed);
+  void bump_peak_(std::uint64_t cur) noexcept {
     std::uint64_t peak = peak_live_bytes_.load(std::memory_order_relaxed);
     while (cur > peak &&
            !peak_live_bytes_.compare_exchange_weak(peak, cur,

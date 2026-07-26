@@ -5,6 +5,7 @@
 #include <cstring>
 #include <type_traits>
 
+#include "hyle/mem/alignment.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/obs/trace.h"
 
@@ -35,27 +36,25 @@ inline constexpr std::size_t kSystemDefaultAlignment = kDefaultAlignment;
 
 namespace detail {
 
-#if defined(HYLE_STATIC)
 inline std::size_t system_backend_checked_alignment(
     std::size_t alignment) noexcept {
-  HYLE_FATAL_ASSERT((alignment & (alignment - 1)) == 0);
+  HYLE_FATAL_ASSERT(is_pow2(alignment));
   return alignment;
 }
+
+#if defined(HYLE_STATIC)
 inline void* system_backend_allocate(std::size_t size,
                                      std::size_t alignment) noexcept {
   return alignment <= kSystemDefaultAlignment
              ? mi_malloc(size)
-             : mi_malloc_aligned(
-                   size, system_backend_checked_alignment(alignment));
+             : mi_malloc_aligned(size, alignment);
 }
 inline void system_backend_deallocate(void* ptr) noexcept { mi_free(ptr); }
 inline void* system_backend_reallocate(void* ptr, std::size_t new_size,
                                        std::size_t alignment) noexcept {
   return alignment <= kSystemDefaultAlignment
              ? mi_realloc(ptr, new_size)
-             : mi_realloc_aligned(
-                   ptr, new_size,
-                   system_backend_checked_alignment(alignment));
+             : mi_realloc_aligned(ptr, new_size, alignment);
 }
 #else
 // Binary implementation seams, not a second user-facing allocator. Inline
@@ -79,6 +78,7 @@ struct SystemAllocator {
   // its aligned entry.
   static void* allocate(std::size_t size,
                         std::size_t alignment = kSystemDefaultAlignment) noexcept {
+    alignment = detail::system_backend_checked_alignment(alignment);
     if (size == 0) return nullptr;
     void* pointer = detail::system_backend_allocate(size, alignment);
     if (pointer != nullptr) {
@@ -87,7 +87,8 @@ struct SystemAllocator {
     return pointer;
   }
   static void deallocate(void* ptr, std::size_t /*size*/ = 0,
-                         std::size_t /*alignment*/ = kSystemDefaultAlignment) noexcept {
+                         std::size_t alignment = kSystemDefaultAlignment) noexcept {
+    (void)detail::system_backend_checked_alignment(alignment);
     if (ptr != nullptr) {
       HYLE_TRACE_FREE_NAMED(ptr, "hyle.system");
       detail::system_backend_deallocate(ptr);
@@ -95,6 +96,7 @@ struct SystemAllocator {
   }
   static void* reallocate(void* ptr, std::size_t /*old_size*/, std::size_t new_size,
                           std::size_t alignment = kSystemDefaultAlignment) noexcept {
+    alignment = detail::system_backend_checked_alignment(alignment);
     if (new_size == 0) {
       if (ptr != nullptr) {
         HYLE_TRACE_FREE_NAMED(ptr, "hyle.system");

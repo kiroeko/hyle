@@ -290,6 +290,72 @@ TEST(StatsAllocator, ConcurrentNoLostCounts) {
   EXPECT_EQ(s.total_frees, static_cast<std::uint64_t>(kThreads * kIters));
 }
 
+TEST(StatsAllocator, ConcurrentPeakCoversQuiescentHighWater) {
+  StatsAllocator sa = StatsAllocator::create(system_allocator()).value();
+  const Allocator allocator = sa.get();
+  constexpr int kThreads = 8;
+  constexpr std::size_t kBytes = 64;
+  std::atomic<int> ready{0};
+  std::atomic<bool> allocation_failed{false};
+  std::atomic<bool> release{false};
+  std::vector<std::thread> threads;
+  threads.reserve(kThreads);
+  for (int i = 0; i < kThreads; ++i) {
+    threads.emplace_back([&] {
+      void* pointer = allocator.allocate(kBytes);
+      if (pointer == nullptr)
+        allocation_failed.store(true, std::memory_order_relaxed);
+      ready.fetch_add(1, std::memory_order_release);
+      while (!release.load(std::memory_order_acquire))
+        std::this_thread::yield();
+      if (pointer != nullptr)
+        allocator.deallocate(pointer, kBytes);
+    });
+  }
+  while (ready.load(std::memory_order_acquire) != kThreads)
+    std::this_thread::yield();
+  const auto high = sa.snapshot();
+  EXPECT_FALSE(allocation_failed.load(std::memory_order_relaxed));
+  EXPECT_EQ(high.live_bytes, kThreads * kBytes);
+  EXPECT_GE(high.peak_live_bytes, high.live_bytes);
+  release.store(true, std::memory_order_release);
+  for (auto& thread : threads) thread.join();
+  EXPECT_TRUE(sa.balanced());
+  EXPECT_GE(sa.snapshot().peak_live_bytes, kThreads * kBytes);
+}
+
+TEST(AllocStatsDeathTest, ResetWithLiveAllocationTraps) {
+  EXPECT_DEATH(
+      {
+        AllocStats stats;
+        stats.record_alloc(8);
+        stats.reset();
+      },
+      ".*");
+}
+
+TEST(StatsAllocatorDeathTest, DestroyWithLiveAllocationTraps) {
+  EXPECT_DEATH(
+      {
+        StatsAllocator stats = StatsAllocator::create(system_allocator()).value();
+        Allocator allocator = stats.get();
+        (void)allocator.allocate(8);
+      },
+      ".*");
+}
+
+TEST(StatsAllocatorDeathTest, MoveOverwriteWithLiveAllocationTraps) {
+  EXPECT_DEATH(
+      {
+        StatsAllocator target = StatsAllocator::create(system_allocator()).value();
+        Allocator allocator = target.get();
+        (void)allocator.allocate(8);
+        StatsAllocator source = StatsAllocator::create(system_allocator()).value();
+        target = std::move(source);
+      },
+      ".*");
+}
+
 TEST(LeakTracker, DetectsOutstanding) {
   StatsAllocator sa =
       StatsAllocator::create(system_allocator(), /*track_leaks=*/true).value();
