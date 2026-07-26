@@ -49,6 +49,8 @@ drift 与取消策略属于 executor/event loop；底层只提供一次性节点
 `profiling_clock` 在有 invariant TSC 的 x86 上才启用，可能受 suspend/VM migration/跨核
 偏差影响，因此名称不承诺 monotonic，并禁止用于 deadline。`coarse_realtime` 仅在系统存在
 真正 coarse 源时报告 available；否则透明回退。availability 是策略输入，不是正确性前置条件。
+TSC 频率优先读 CPUID 0x15；不可用时用倍增 sleep window 对 OS monotonic 实际 elapsed 校准，
+不靠 busy-spin 保持 core 活跃。校准只影响首次调用，热读仍是 rdtsc + fixed-point scale。
 
 相对 timeout 转绝对 deadline 必须饱和并向上取整。绝对 sleep 在 Windows 使用高分辨率
 waitable timer，在 Linux 使用绝对 `clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME)`；

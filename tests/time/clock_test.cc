@@ -1,10 +1,18 @@
 #include <gtest/gtest.h>
 
 #include <chrono>
+#include <cstdlib>
 #include <cstdint>
 #include <limits>
 #include <ratio>
 #include <time.h>
+
+#include "hyle/platform.h"
+#if defined(HYLE_OS_WINDOWS)
+#  define WIN32_LEAN_AND_MEAN
+#  define NOMINMAX
+#  include <windows.h>
+#endif
 
 #include "hyle/time/clock.h"
 
@@ -21,6 +29,49 @@ using hyle::time::saturating_add_ns;
 using hyle::time::sleep_for_ms;
 using hyle::time::sleep_for_ns;
 using hyle::time::sleep_until_ns;
+
+namespace {
+
+bool force_tsc_timing_calibration_requested() noexcept {
+#if defined(HYLE_OS_WINDOWS)
+  char value[2] = {};
+  const DWORD length = ::GetEnvironmentVariableA(
+      "HYLE_TIME_FORCE_TSC_TIMING_CALIBRATION", value,
+      static_cast<DWORD>(sizeof(value)));
+  return length == 1 && value[0] == '1';
+#else
+  const char* value =
+      std::getenv("HYLE_TIME_FORCE_TSC_TIMING_CALIBRATION");
+  return value != nullptr && value[0] == '1' && value[1] == '\0';
+#endif
+}
+
+std::uint64_t current_thread_cpu_ns() noexcept {
+#if defined(HYLE_OS_WINDOWS)
+  FILETIME created;
+  FILETIME exited;
+  FILETIME kernel;
+  FILETIME user;
+  if (!::GetThreadTimes(::GetCurrentThread(), &created, &exited, &kernel,
+                        &user)) {
+    return 0;
+  }
+  const auto ticks = [](FILETIME value) noexcept {
+    return (static_cast<std::uint64_t>(value.dwHighDateTime) << 32) |
+           value.dwLowDateTime;
+  };
+  return (ticks(kernel) + ticks(user)) * 100u;
+#elif defined(CLOCK_THREAD_CPUTIME_ID)
+  struct timespec value;
+  if (clock_gettime(CLOCK_THREAD_CPUTIME_ID, &value) != 0) return 0;
+  return static_cast<std::uint64_t>(value.tv_sec) * 1'000'000'000u +
+         static_cast<std::uint64_t>(value.tv_nsec);
+#else
+  return 0;
+#endif
+}
+
+}  // namespace
 
 TEST(Clock, MonotonicNonDecreasing) {
   std::uint64_t prev = monotonic_ns();
@@ -297,4 +348,30 @@ TEST(Clock, ProfilingClockFallbackEqualsMonotonic) {
   // Consecutive reads of the same underlying clock: within a few ms.
   std::uint64_t diff = m > f ? m - f : f - m;
   EXPECT_LT(diff, 5'000'000ull);
+}
+
+TEST(Clock, ProfilingClockTimingCalibrationIsLowCpu) {
+  if (!force_tsc_timing_calibration_requested()) {
+    GTEST_SKIP() << "fresh-process timing-fallback test only";
+  }
+
+  const std::uint64_t cpu_start = current_thread_cpu_ns();
+  const auto wall_start = std::chrono::steady_clock::now();
+  const bool available = profiling_clock_available();
+  const auto wall_stop = std::chrono::steady_clock::now();
+  const std::uint64_t cpu_stop = current_thread_cpu_ns();
+  if (!available) {
+    GTEST_SKIP() << "host has no invariant TSC";
+  }
+
+  const double wall_ms =
+      std::chrono::duration<double, std::milli>(wall_stop - wall_start).count();
+  const double cpu_ms =
+      static_cast<double>(cpu_stop - cpu_start) / 1'000'000.0;
+  RecordProperty("calibration_wall_ms", wall_ms);
+  RecordProperty("calibration_cpu_ms", cpu_ms);
+  ASSERT_GE(wall_ms, 2.0) << "forced fallback did not run two sample windows";
+  EXPECT_LT(wall_ms, 1000.0);
+  EXPECT_LT(cpu_ms, wall_ms * 0.25 + 1.0)
+      << "timing fallback must wait rather than occupy a core";
 }

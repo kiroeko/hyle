@@ -1,5 +1,9 @@
 #include "hyle/time/clock.h"
 
+#if defined(HYLE_TESTING)
+#  include <cstdlib>
+#endif
+
 #include "hyle/macros.h"
 #include "hyle/platform.h"  // HYLE_OS_* (project convention over raw _WIN32)
 
@@ -36,6 +40,22 @@ constexpr std::uint64_t scale_add_saturated(std::uint64_t whole,
   if (whole > (UINT64_MAX - frac) / scale) return UINT64_MAX;
   return whole * scale + frac;
 }
+
+#if defined(HYLE_TESTING)
+bool force_tsc_timing_calibration() noexcept {
+#  if defined(HYLE_OS_WINDOWS)
+  char value[2] = {};
+  const DWORD length = ::GetEnvironmentVariableA(
+      "HYLE_TIME_FORCE_TSC_TIMING_CALIBRATION", value,
+      static_cast<DWORD>(sizeof(value)));
+  return length == 1 && value[0] == '1';
+#  else
+  const char* value =
+      std::getenv("HYLE_TIME_FORCE_TSC_TIMING_CALIBRATION");
+  return value != nullptr && value[0] == '1' && value[1] == '\0';
+#  endif
+}
+#endif
 
 }  // namespace
 
@@ -202,7 +222,7 @@ void sleep_until_ns(std::uint64_t deadline_ns) noexcept {
 // hardware lacks an invariant TSC or on non-x86 targets.
 //
 // Calibration prefers the EXACT CPUID leaf 0x15 (TSC/crystal ratio + crystal Hz)
-// when the CPU enumerates it -- zero measurement, zero startup busy-spin, exact
+// when the CPU enumerates it -- zero measurement, zero startup wait, exact
 // (not 1%-approx) multiplier. When leaf 0x15 is masked (hypervisors: WSL/Hyper-V)
 // or absent (older CPUs), it falls back to abseil's sysinfo.cc timing approach
 // (read setup verified against the local abseil checkout): pair each TSC read with
@@ -319,11 +339,14 @@ TimeTscPair best_time_tsc_pair() noexcept {
 
 double measure_tsc_hz_once(std::uint64_t sleep_ns) noexcept {
   TimeTscPair a = best_time_tsc_pair();
-  // Busy-spin rather than sleep: keeps the core (and its TSC) live, and we don't
-  // depend on sleep granularity. The window is short (ms range).
-  std::uint64_t target = a.ns + sleep_ns;
-  while (monotonic_ns() < target) { /* spin */ }
+  // Invariant TSC keeps counting while the thread sleeps. Measure the actual OS
+  // elapsed interval after wake, so scheduler overshoot affects first-use wall
+  // latency but not the frequency estimate. This follows Abseil's
+  // MeasureTscFrequencyWithSleep shape and avoids burning an entire core during
+  // the 1/2/4/...ms convergence windows.
+  sleep_for_ns(sleep_ns);
   TimeTscPair b = best_time_tsc_pair();
+  if (b.ns <= a.ns || b.tsc <= a.tsc) return 0.0;
   double elapsed_ticks = static_cast<double>(b.tsc - a.tsc);
   double elapsed_secs = static_cast<double>(b.ns - a.ns) * 1e-9;
   return elapsed_ticks / elapsed_secs;
@@ -335,22 +358,31 @@ double measure_tsc_hz() noexcept {
   std::uint64_t window_ns = 1'000'000;  // 1 ms
   for (int i = 0; i < 8; ++i) {
     double m = measure_tsc_hz_once(window_ns);
-    if (last > 0.0 && m * 0.99 < last && last < m * 1.01) return m;
-    last = m;
+    if (m > 1.0) {
+      if (last > 0.0 && m * 0.99 < last && last < m * 1.01) return m;
+      last = m;
+    }
     window_ns *= 2;
   }
   return last;
 }
 
 // Best available TSC frequency: prefer the EXACT CPUID leaf 0x15 value (no
-// measurement, no startup busy-spin, no 1% window tolerance), fall back to the
+// measurement, no startup wait, no 1% window tolerance), fall back to the
 // timing method when the leaf is masked/absent (hypervisors, older CPUs).
 // NOTE: this runs ONCE at first-call calibration (tsc_scale() Meyers singleton),
 // NOT on the hot read path -- profiling_clock_ns() is rdtsc + one
 // multiply-shift regardless of how mult was computed. leaf 0x15 improves STARTUP
-// cost (skips the ms-scale busy-spin) and multiplier PRECISION (exact vs ~1%), it
+// cost (skips the ms-scale calibration wait) and multiplier PRECISION (exact vs
+// ~1%), it
 // does NOT change per-call read latency.
 double best_tsc_hz() noexcept {
+#if defined(HYLE_TESTING)
+  // Test-only process gate: exercise the timing fallback even on hosts whose
+  // CPUID 0x15 normally makes it unreachable. This branch is compiled out of
+  // shipped libraries and is used by a fresh-process cold-start CPU-time test.
+  if (force_tsc_timing_calibration()) return measure_tsc_hz();
+#endif
   double exact = tsc_hz_from_cpuid();
   if (exact > 1.0) return exact;
   return measure_tsc_hz();

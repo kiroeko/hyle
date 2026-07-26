@@ -37,6 +37,8 @@
 4. 相对 sleep 委托绝对 deadline，早醒后仍以 monotonic deadline 为准。
 5. coarse realtime 的 epoch 乘法饱和，POSIX clock 调用失败不再静默使用
    未初始化 timespec。
+6. TSC timing fallback 从最多累计 255ms 的 busy-spin 改为 sleep-based sampling；按实际
+   monotonic elapsed 算频率，首次校准不再占满一个 core，热读路径不变。
 
 ## 正确性边界
 

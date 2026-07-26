@@ -11,7 +11,8 @@
 - [x] integral duration 已改为精确 checked/saturating rational arithmetic（`52595a6`）；
 - [x] 旧 `fast_monotonic` / `fast_realtime` 已分别改为语义名 `profiling_clock` /
   `coarse_realtime`，未保留未发布 ABI 兼容壳；
-- [ ] TSC fallback 冷路与正常使用性能矩阵待本轮后续提交；
+- [x] TSC fallback 已改为 sleep-based calibration，并由 fresh-process test 记录 wall/thread CPU；
+- [ ] 正常使用性能矩阵待本轮后续提交；
 - [ ] 新最终形状完成三平台复证前，strict 状态继续保持打开。
 
 ## 结论先行

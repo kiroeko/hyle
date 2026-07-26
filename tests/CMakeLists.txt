@@ -133,6 +133,16 @@ hyle_add_c_test(util util/c_util_test.c)
 hyle_add_test(time SOURCES time/header_test.cc time/clock_test.cc
   time/timer_queue_test.cc time/common_timeout_queue_test.cc)
 hyle_add_c_test(time time/c_time_test.c)
+if(TARGET hyle_time_test)
+  # A fresh process is required because profiling-clock calibration is cached.
+  # The force gate is compiled only under HYLE_TESTING and cannot affect a
+  # shipped library.
+  add_test(NAME hyle_time_tsc_calibration_test
+           COMMAND hyle_time_test
+                   --gtest_filter=Clock.ProfilingClockTimingCalibrationIsLowCpu)
+  set_tests_properties(hyle_time_tsc_calibration_test PROPERTIES
+    ENVIRONMENT "HYLE_TIME_FORCE_TSC_TIMING_CALIBRATION=1")
+endif()
 hyle_add_test(io SOURCES io/proactor_test.cc)
 hyle_add_c_test(io io/c_io_test.c hyle_mem)
 if(WIN32 AND TARGET hyle_io_test)

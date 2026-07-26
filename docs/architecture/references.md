@@ -74,7 +74,7 @@
 ### time/（Tier 2 必要基质）
 | 库 | 角色 | 说明 |
 |---|---|---|
-| **abseil-cpp** | 参考 | TSC 校准算法（`sysinfo.cc`：GetTimeTscPair 取最低延迟样本抗抢占 + MeasureTscFrequency 倍增窗口到 1% 收敛）；`profiling_clock_ns` 的频率标定沿用其思路。另：abseil 默认关闭 cycle-clock 当 wall-time（唤醒可能错），正是 HYLE 只把 rdtsc 暴露为 profiling clock 的依据 |
+| **abseil-cpp** | 参考 | TSC 校准算法（`sysinfo.cc`：GetTimeTscPair 取最低延迟样本抗抢占 + `nanosleep` 后按实际 elapsed 测频 + 倍增窗口到 1% 收敛）；`profiling_clock_ns` 的 timing fallback 沿用该低 CPU 形状。另：abseil 默认关闭 cycle-clock 当 wall-time（唤醒可能错），正是 HYLE 只把 rdtsc 暴露为 profiling clock 的依据 |
 | **tracy** | 参考 | invariant-TSC 探测（`CheckHardwareSupportsInvariantTSC`：CPUID leaf1 EDX bit4 + leaf 0x80000007 EDX bit8）+ rdtsc 仅作测量用途的范式 |
 
 > 对参考库均**读设计自实现、不引入外部依赖**。time native 核只借 core 头；整个 `hyle_time` target 因 C adapter 的统一 `hyle_status` 合同依赖 error，但不链接 platform。MSVC `__msvc_chrono.hpp` steady_clock 的常见频率特判（10/24MHz→乘法）亦是 `monotonic_ns` 补特判的参考。
