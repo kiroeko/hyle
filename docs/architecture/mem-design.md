@@ -56,7 +56,7 @@ mem 不提供 pinned allocator 或单块 staging convenience。compute `Buffer` 
 
 | 成熟形状 | HYLE 处置 | 理由 |
 |---|---|---|
-| oneTBB scalable/cache-aligned allocator/resource | `SystemAllocator` + `StdAllocator<T>` + `PmrResource` / `AlignedPmrResource` | 通用堆借成熟 mimalloc；传统 allocator-template 与 PMR 两种消费都可达，高对齐 policy 不污染默认容器 |
+| oneTBB scalable/cache-aligned allocator/resource | `SystemAllocator` + `SystemStdAllocator<T>` / `StdAllocator<T>` + `system_memory_resource()` / `PmrResource` / `AlignedPmrResource` | 通用堆借成熟 mimalloc；默认静态绑定与运行时注入分型，高对齐 policy 不污染默认容器 |
 | oneTBB `memory_pool`（growable variable-size） | 不另造公共通用堆 | 与 mimalloc 的职责重叠；HYLE 只保留有不同 ownership 合同的 external `FixedPool` |
 | oneTBB `fixed_pool` | `FixedPool` | caller-owned storage、individual alloc/free/realloc、无 fallback；内部 two-level bitmap 给出 bounded fit |
 | Folly `Arena` | `Region` | owned growable bulk lifetime、size limit、usage/reserved、large-block release；clear 后同样单调走 retained blocks |
@@ -89,8 +89,8 @@ blocking borrow 不进入 `mem/` 基础池。等待策略依赖 fiber/condition/
 |---|---|---|
 | `SystemAllocator` | 编译期无状态；static/source 直调 mimalloc，shared 经 mem direct-import seam | 保留；修 typed count 乘法回绕且不向 shared consumer 泄漏 vendor 符号 |
 | `Allocator` | C++ 值句柄 `{alloc, free, realloc, state}` | 保留；内部运行时注入脊；C ABI 只在对外 shim 映射 |
-| `StdAllocator<T>` | 借用 `Allocator` 的标准 named-requirement adapter | 保留；服务 std/第三方 allocator-template API，完整 backing identity，标准边界 OOM 抛异常，不另造 shared_ptr API |
-| `PmrResource` | `Allocator` → `std::pmr::memory_resource` | 保留；构造 assert valid，equality 比较完整三函数 + state |
+| `SystemStdAllocator<T>` / `StdAllocator<T>` | 默认静态 system adapter / 借用 `Allocator` 的运行时 adapter | 分型保留；普通容器保持 empty/EBO/always-equal，策略注入才携带完整 backing identity；标准边界 OOM 抛异常 |
+| `system_memory_resource()` / `PmrResource` | 默认 system PMR singleton / `Allocator` → PMR | 分型保留；默认只付 PMR virtual + shared seam，策略注入才叠加 allocator dispatch |
 | `AlignedPmrResource` | 可选 minimum base alignment 的 PMR adapter | 保留；对应 oneTBB `cache_aligned_resource` 的用户需求，不给普通 PMR 强加 cache policy |
 | typed/RAII helpers | `allocate_n/zeroed/reallocate_n`、construct/destroy、make_unique | 保留；乘法溢出和显式 alignment 在 System/运行时两层一致 |
 

@@ -5,7 +5,7 @@
 | 范围 | `include/hyle/mem`、`include/hyle/c/mem.h`、`src/mem`、测试、guide / architecture / performance |
 | 基线 | `c1f2e394`（独立 worktree：`audit/mem-mature-gap`） |
 | 方法 | 从真实基础加速库用户的 lifetime、ownership、并发、失败和组合需求出发，对照工作区 oneTBB、Folly、marl、mimalloc；不按 benchmark 名称凑类型 |
-| 总结 | **能力面已经宽且边界合理；复审发现的 3 个 P0 契约问题、STL allocator adapter 与 fiber stack 冷回收均已落地。**没有证据支持像 container 一样再整体翻倍；重新冻结只剩 WSL sanitizer 与正式跨平台 shared 性能证书。 |
+| 总结 | **能力面已经宽且边界合理；P0 契约、standard adapter 默认静态/注入分型与 fiber stack 冷回收均已落地。**没有证据支持像 container 一样再整体翻倍；NUMA selected-node/chunk 仍是 platform-first。 |
 
 > **实现进展（2026-07-26，`implementation/mem-strict`）：**P0 alignment/stats 已在
 > `2cb1a10` 落地；`ac73fc7` 增加 `StdAllocator<T>`、FiberStackPool 精确 capacity、
@@ -15,6 +15,13 @@
 > 下通过 mem 非 death 187 项与 sched 142 项。`80afa42` 进一步统一显式 deallocate alignment 并在
 > Windows mem 4/4 复验；未为这一无并发变化的 follow-up 重跑完整 WSL。正式三平台 shared 性能证书
 > 完成后重新冻结。
+
+> **最终 standard-adapter follow-up（`ab92b49`）：**shared same-link 审核证明旧默认
+> `StdAllocator(system)` / `PmrResource(system)` 为普通 system heap 也保留运行时 state 和额外
+> dispatch。现补 `SystemStdAllocator<T>`（empty、always-equal、静态绑定）与进程寿命
+> `system_memory_resource()`；原 `StdAllocator<T>` / `PmrResource` 专注真实运行时 policy 注入。
+> Windows shared Release 单变体独立进程 n=15 已签；WSL GCC 14 shipping 构建和单轮 smoke
+> 通过，因本轮要求立即合入，WSL n=15 与 M4 正式表留作证书补录，不作为实现阻塞。
 
 本文是 2026-07-25 `mem-close-plan.md` 之后的红队补充，不复制稳定设计和点值。稳定能力仍以
 [`mem-design.md`](../architecture/mem-design.md) 为真源，用户选择以
@@ -26,7 +33,7 @@
 | 用户问题 | C++ 形状 | C 形状 | 现状 |
 |---|---|---|---|
 | 普通 host heap、注入自定义 backing | `SystemAllocator`、`Allocator` | 三函数指针 + state、system handle | 完整；默认编译期路径与运行时注入分开 |
-| PMR / allocator-template 容器、显式首地址 alignment | `PmrResource`、`AlignedPmrResource`、`StdAllocator<T>` | 不适用 | 已补传统 adapter；两种标准消费形状分开 |
+| PMR / allocator-template 容器、显式首地址 alignment | 默认 `system_memory_resource()` / `SystemStdAllocator<T>`；注入 `PmrResource` / `StdAllocator<T>`；`AlignedPmrResource` | 不适用 | 默认静态形状与 runtime policy 分开，避免普通容器无理由叠加 dispatch/state |
 | 限额、计数、泄漏 inventory | `QuotaAllocator`、`StatsAllocator`、`LeakTracker` | opaque decorator + POD/copy-out | 完整；并发 peak、snapshot 与销毁合同已修复并测试 |
 | request/phase bulk lifetime | `Region`、`FixedRegion`、`PooledRegion` | 对等 owned/value/borrowed 形状 | 完整；epoch 复杂度已收口 |
 | external variable-size bounded heap | `FixedPool` | caller-owned/in-place 或 created control | 完整；TLSF 风格 FL/SL，查找/合并 O(1) |

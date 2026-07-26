@@ -10,8 +10,8 @@ mem 是 host RAM 的基础原语层。它不替业务猜生命周期，也不把
 | 需求 | C++ 形状 | C / FFI 形状 | 关键合同 |
 |---|---|---|---|
 | 普通动态分配 / 依赖注入 | `system_allocator()` / `Allocator` | `hyle_system_allocator` / `hyle_allocator` | sized-free；free/realloc 带回原 size/alignment |
-| 接入传统 allocator-template API | `StdAllocator<T>` | 不适用：C 直接持有 allocator vtable | 借用 backing；STL OOM 转 `bad_alloc`；容器先于 backing 销毁 |
-| 接入 STL PMR | `PmrResource`；buffer base 需显式高对齐时 `AlignedPmrResource` | 不需要：C 直接持有 allocator vtable | 借用 `Allocator`；高对齐不等于逐元素隔离 |
+| 接入传统 allocator-template API | 默认 system heap 用 `SystemStdAllocator<T>`；运行时 backing 用 `StdAllocator<T>` | 不适用：C 直接持有 allocator vtable | 前者空类型/静态绑定；后者借用 backing；STL OOM 转 `bad_alloc` |
+| 接入 STL PMR | 默认 system heap 用 `system_memory_resource()`；运行时 backing 用 `PmrResource`；显式高对齐用 `AlignedPmrResource` | 不需要：C 直接持有 allocator vtable | 默认形状单层 PMR dispatch；注入形状借用 `Allocator` |
 | 任意 backing 的严格 live-byte admission | `QuotaAllocator` | `hyle_quota_allocator` | 线程安全；按 requested bytes 精确计量 |
 | opt-in allocation 计数 / 泄漏诊断 | `StatsAllocator::create(backing,track,metadata)` | `hyle_stats_allocator` | 被测 backing 与诊断 metadata 分域；计数线程安全，leak inventory 是慢路 |
 | request/frame/graph phase 临时对象 | `Region` | `hyle_region` | owned、单线程、growable、bulk `clear()` |
@@ -58,11 +58,11 @@ if (auto* grown = alloc.reallocate_n(samples, 1024, 4096, 64)) {
 }
 ```
 
-第三方或标准容器把 allocator 类型写进模板参数、无法接收 `memory_resource*` 时使用
-`StdAllocator<T>`。它按完整 `{alloc,free,realloc,state}` identity 判断相等，默认使用 system
-backing，也可显式借用任意 `Allocator`。adapter、容器与 `allocate_shared` control block 都不拥有
-backing；声明/销毁顺序必须让 backing 最后离开作用域。标准库边界按标准要求把 OOM 转为异常，
-HYLE 内部仍使用 null/`Result` 合同。
+第三方或标准容器把 allocator 类型写进模板参数、无法接收 `memory_resource*` 时，普通 system
+heap 优先用空类型、always-equal 的 `SystemStdAllocator<T>`；只有确实要在运行时注入 quota、stats、
+region 或用户 backing 时才用 `StdAllocator<T>`。后者按完整 `{alloc,free,realloc,state}` identity
+判断相等并借用 backing；adapter、容器与 `allocate_shared` control block 都必须先于 backing
+销毁。两者在标准库边界按要求把 OOM 转为异常，HYLE 内部仍使用 null/`Result` 合同。
 adapter 使用普通 `T*`（不提供 fancy pointer）；`allocate(0)` 可返回 `nullptr`，该返回值仍可用
 `deallocate(pointer, 0)` 配对。C++23 下 `!=` 由跨类型 `operator==` 的 rewritten candidate 提供。
 
@@ -79,12 +79,18 @@ hyle::mem::StatsAllocator stats =
 }
 ```
 
-`PmrResource` 只做普通 PMR 转接。若 SIMD/cache/page-sensitive 容器明确需要更高的**底层
+普通 system-backed PMR 容器直接传 `system_memory_resource()`；它是进程寿命 singleton，
+不需要用户管理 resource 对象，也不会在 PMR 虚调用后再叠一层 `Allocator` 函数指针。只有
+运行时 backing 注入才构造 `PmrResource(alloc)`。若 SIMD/cache/page-sensitive 容器明确需要更高的**底层
 buffer 起始地址**，使用 `AlignedPmrResource(alloc, alignment)`；这对应 oneTBB
 `cache_aligned_resource` 的需求形状，但 alignment 由用户选择，不把平台 cache policy 塞进
 所有容器。它不会给相邻元素自动加 padding；防 false sharing 仍需 padded/aligned element。
 
 ```cpp
+hyle::mem::SystemStdAllocator<Node> system_nodes;
+std::vector<Node, hyle::mem::SystemStdAllocator<Node>> fast_nodes(system_nodes);
+std::pmr::vector<Node> pmr_nodes(hyle::mem::system_memory_resource());
+
 hyle::mem::AlignedPmrResource cache_buffer(
     hyle::mem::system_allocator(), 64);
 std::pmr::vector<std::byte> bytes(&cache_buffer);

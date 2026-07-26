@@ -35,6 +35,30 @@ observation 栈状态移入 noinline exhaustion 冷路（MSVC shipping codegen �
 
 ## 1. 通用路径（`hyle_mem_bench`）
 
+### Shared SDK same-link standard adapter 证书（`ab92b49`）
+
+旧表把 DLL/DSO 内 HYLE mimalloc 与可执行文件内第二份 static mimalloc 放在一起，适合作为绝对
+诊断下界，却不能公平判定 shared API。section `L` 现在让正式行全部跨同一个 `hyle_mem` shared
+seam、进入同一个 mimalloc backend；每个 variant 独立进程运行，外层按正反顺序交错，避免固定
+执行顺序把 heap warmup 或频率漂移写成 adapter 差异。Windows MSVC 19.50 Release、testing=0、
+n=15 的跨进程中位数如下（raw：`mem-shared-same-link-win-ab92b49.csv`）：
+
+| 正常形状 | ns/op | 对同类直接形状 | 判定 |
+|---|---:|---:|---|
+| backend raw shared seam | 8.41 | baseline | 只作为相同链接/后端下界 |
+| `SystemAllocator` | 8.60 | raw 的 **0.978x** | TIE（默认 heap） |
+| `SystemStdAllocator<uint64_t>` | 8.74 | SystemAllocator 的 **0.984x** | TIE（默认 allocator-template） |
+| runtime `Allocator` | 8.88 | raw 的 **0.947x** | 显式 policy 注入税，仍快于单层 PMR |
+| runtime `StdAllocator<uint64_t>` | 9.11 | runtime Allocator 的 **0.975x** | TIE（注入 adapter） |
+| direct-backend PMR rival | 9.49 | baseline | 同类单层 PMR 参照 |
+| `system_memory_resource()` | 9.58 | rival 的 **0.991x** | TIE（默认 PMR） |
+| runtime `PmrResource` | 10.19 | rival 的 **0.931x** | 双动态层的显式注入成本，不冒充默认形状 |
+
+因此默认 standard-container 路径已有同链接 SOTA/TIE 证据；运行时注入路径仍诚实保留策略成本，
+不为 benchmark 增加常态 cache/metadata。可执行文件内 `raw mi_*` 继续输出但不参与 shared 判定。
+WSL GCC 14 shared shipping 构建与 section L 单轮逐项 smoke 已通过；正式 n=15 被本轮立即合入要求
+中断，M4 也未重签，所以这两平台仍是证书补录项，不能引用本表冒充三平台完成。
+
 2026-07-25 的底座依赖审计发现旧 benchmark 给可执行文件手工链接了 `mimalloc_static`，所以
 “SystemAllocator 内联”数字真实代表 **static/source 合并形状**，不能冒充 shared SDK consumer。
 shared 公开头现经 `hyle_mem` 的一次 direct-import seam 进入同一 mimalloc backend，不再要求用户
