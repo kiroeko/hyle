@@ -12,6 +12,7 @@ using hyle::mem::Allocator;
 using hyle::mem::AlignedPmrResource;
 using hyle::mem::PmrResource;
 using hyle::mem::system_allocator;
+using hyle::mem::system_memory_resource;
 
 namespace {
 struct EqualityState {
@@ -45,6 +46,18 @@ void* equality_realloc_b(void* state, void* ptr, std::size_t old_size,
 }  // namespace
 
 // A pmr container built on a HYLE-backed resource allocates through HYLE.
+TEST(SystemMemoryResource, IsProcessLifetimeAndServesPmrVector) {
+  std::pmr::memory_resource* first = system_memory_resource();
+  ASSERT_NE(first, nullptr);
+  EXPECT_EQ(first, system_memory_resource());
+  EXPECT_TRUE(first->is_equal(*system_memory_resource()));
+
+  std::pmr::vector<int> values(first);
+  for (int i = 0; i < 1000; ++i) values.push_back(i);
+  EXPECT_EQ(values.front(), 0);
+  EXPECT_EQ(values.back(), 999);
+}
+
 TEST(PmrResource, ServesPmrVector) {
   PmrResource res(system_allocator());
   std::pmr::vector<int> v(&res);

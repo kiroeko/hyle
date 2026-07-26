@@ -1,5 +1,6 @@
 #include "hyle/mem/allocator.h"
 #include "hyle/mem/hugepage.h"
+#include "hyle/mem/pmr.h"
 
 #include <mimalloc.h> // PRIVATE include -- mi_* types never leak to a header
 
@@ -11,6 +12,8 @@
 #include <cerrno>
 #include <cstdio>
 #include <limits>
+#include <memory_resource>
+#include <new>
 
 namespace hyle::mem {
 #if !defined(HYLE_STATIC)
@@ -99,10 +102,36 @@ void *system_realloc(void * /*state*/, void *ptr, std::size_t /*old_size*/,
   return result;
 }
 
+class SystemMemoryResource final : public std::pmr::memory_resource {
+  void *do_allocate(std::size_t bytes, std::size_t alignment) override {
+    void *pointer = SystemAllocator::allocate(bytes, alignment);
+    if (pointer == nullptr)
+      throw std::bad_alloc{};
+    return pointer;
+  }
+
+  void do_deallocate(void *pointer, std::size_t bytes,
+                     std::size_t alignment) override {
+    SystemAllocator::deallocate(pointer, bytes, alignment);
+  }
+
+  bool do_is_equal(
+      const std::pmr::memory_resource &other) const noexcept override {
+    // There is one process-wide instance.  Identity is therefore both the
+    // cheapest and the complete deallocation-compatibility test.
+    return this == &other;
+  }
+};
+
 } // namespace
 
 Allocator system_allocator() noexcept {
   return Allocator(&system_alloc, &system_free, &system_realloc, nullptr);
+}
+
+std::pmr::memory_resource *system_memory_resource() noexcept {
+  static SystemMemoryResource resource;
+  return &resource;
 }
 
 std::size_t system_usable_size(const void *ptr) noexcept {

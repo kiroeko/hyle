@@ -10,16 +10,24 @@
 //   * std::malloc/free       -- the OS allocator (weak baseline; shows mimalloc's win).
 // mimalloc is a hard vendored dep (third_party/mimalloc), so this needs no gate.
 
+#if defined(_MSC_VER)
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
 #include <mimalloc.h>
 #include <nanobench.h>
 
 #include <cstdint>
+#include <cstdio>
 #include <cstdlib>
 #include <memory_resource>
 #include <thread>
+#include <utility>
 #include <vector>
 
 #include "hyle/mem/allocator.h"
+#include "hyle/mem/pmr.h"
+#include "hyle/mem/std_allocator.h"
 #include "hyle/mem/system_inline.h"
 
 using hyle::mem::Allocator;
@@ -41,6 +49,14 @@ bool want_section(char id) {
   return false;
 }
 
+// Section L can run one variant per process.  Certification cycles the variants
+// between fresh processes instead of executing them in one fixed order, which
+// otherwise turns allocator warmup/thermal drift into a fake adapter delta.
+bool want_link_variant(char id) {
+  const char* variant = std::getenv("HYLE_MEM_LINK_VARIANT");
+  return variant == nullptr || variant[0] == '\0' || variant[0] == id;
+}
+
 // std::pmr::memory_resource over mimalloc -- the SAME-CLASS rival to HYLE's
 // runtime Allocator vtable. BOTH are runtime polymorphism over the same backing
 // (mimalloc), so racing them isolates the DISPATCH cost (HYLE 3-fn fn-ptr vtable
@@ -56,10 +72,138 @@ class MiResource final : public std::pmr::memory_resource {
     return this == &o;
   }
 };
+
+// A PMR reference over the exact same hyle_mem backend entry used by the
+// shared SystemAllocator.  This is deliberately not mi_malloc in the
+// executable: on a shared build that would compare an executable-local static
+// mimalloc against a DLL call and attribute the different link shape to the
+// adapter.  BackendResource and PmrResource below both cross the same import
+// seam; their delta therefore isolates HYLE's extra runtime Allocator dispatch.
+class BackendResource final : public std::pmr::memory_resource {
+  void* do_allocate(std::size_t bytes, std::size_t alignment) override {
+    if (bytes == 0) return nullptr;
+    return hyle::mem::detail::system_backend_allocate(bytes, alignment);
+  }
+  void do_deallocate(void* p, std::size_t, std::size_t) override {
+    hyle::mem::detail::system_backend_deallocate(p);
+  }
+  bool do_is_equal(const std::pmr::memory_resource& other) const noexcept override {
+    return this == &other;
+  }
+};
 }  // namespace
 
 int main() {
   Allocator a = system_allocator();  // mimalloc backing (HYLE_USE_MIMALLOC=ON)
+
+#if defined(HYLE_STATIC)
+  std::puts("HYLE_MEM_LINKAGE static (same-link section is diagnostic only)");
+#else
+  std::puts("HYLE_MEM_LINKAGE shared");
+#endif
+
+  // ---- shared-delivery, same-link certificate -----------------------------
+  // Every formal row crosses the same hyle_mem import seam and reaches the
+  // same mimalloc instance.  This is the normal SDK shape and avoids the old
+  // benchmark distortion where raw mi_* lived in the executable while HYLE's
+  // backend lived in a DLL/DSO.  The direct mi_* row remains a useful absolute
+  // lower bound, but is intentionally excluded from shared SOTA judgments.
+  if (want_section('L')) {
+    constexpr int kN = 200000;
+    auto bytes_at = [](int i) -> std::size_t {
+      return 16u + 8u * ((static_cast<std::uint32_t>(i) * 2654435761u) % 62u);
+    };
+    BackendResource backend_resource;
+    hyle::mem::PmrResource hyle_resource(a);
+    std::pmr::polymorphic_allocator<std::byte> backend_pmr(&backend_resource);
+    std::pmr::polymorphic_allocator<std::byte> system_pmr(
+        hyle::mem::system_memory_resource());
+    std::pmr::polymorphic_allocator<std::byte> hyle_pmr(&hyle_resource);
+    hyle::mem::SystemStdAllocator<std::uint64_t> system_std_allocator;
+    hyle::mem::StdAllocator<std::uint64_t> std_allocator(a);
+
+    ankerl::nanobench::Bench b;
+    b.title("shared same-link alloc/free, 200k small blocks")
+        .relative(true)
+        .batch(kN)
+        .minEpochIterations(20);
+    auto run = [&]<class Function>(char id, const char* name,
+                                  Function&& function) {
+      if (want_link_variant(id)) b.run(name, std::forward<Function>(function));
+    };
+    run('B', "backend raw seam (same-link baseline)", [&] {
+      for (int i = 0; i < kN; ++i) {
+        const std::size_t bytes = bytes_at(i);
+        void* p = hyle::mem::detail::system_backend_allocate(
+            bytes, hyle::mem::kSystemDefaultAlignment);
+        ankerl::nanobench::doNotOptimizeAway(p);
+        hyle::mem::detail::system_backend_deallocate(p);
+      }
+    });
+    run('S', "SystemAllocator (same-link direct)", [&] {
+      for (int i = 0; i < kN; ++i) {
+        const std::size_t bytes = bytes_at(i);
+        void* p = hyle::mem::SystemAllocator::allocate(bytes);
+        ankerl::nanobench::doNotOptimizeAway(p);
+        hyle::mem::SystemAllocator::deallocate(p, bytes);
+      }
+    });
+    run('A', "Allocator (same-link runtime)", [&] {
+      for (int i = 0; i < kN; ++i) {
+        const std::size_t bytes = bytes_at(i);
+        void* p = a.allocate(bytes);
+        ankerl::nanobench::doNotOptimizeAway(p);
+        a.deallocate(p, bytes);
+      }
+    });
+    run('P', "PMR direct backend (same-link rival)", [&] {
+      for (int i = 0; i < kN; ++i) {
+        const std::size_t bytes = bytes_at(i);
+        void* p = backend_pmr.allocate_bytes(bytes);
+        ankerl::nanobench::doNotOptimizeAway(p);
+        backend_pmr.deallocate_bytes(p, bytes);
+      }
+    });
+    run('M', "system_memory_resource (same-link direct)", [&] {
+      for (int i = 0; i < kN; ++i) {
+        const std::size_t bytes = bytes_at(i);
+        void* p = system_pmr.allocate_bytes(bytes);
+        ankerl::nanobench::doNotOptimizeAway(p);
+        system_pmr.deallocate_bytes(p, bytes);
+      }
+    });
+    run('R', "HYLE PmrResource (same-link runtime)", [&] {
+      for (int i = 0; i < kN; ++i) {
+        const std::size_t bytes = bytes_at(i);
+        void* p = hyle_pmr.allocate_bytes(bytes);
+        ankerl::nanobench::doNotOptimizeAway(p);
+        hyle_pmr.deallocate_bytes(p, bytes);
+      }
+    });
+    run('T', "HYLE SystemStdAllocator<uint64_t> (same-link direct)", [&] {
+      for (int i = 0; i < kN; ++i) {
+        const std::size_t count = bytes_at(i) / sizeof(std::uint64_t);
+        auto* p = system_std_allocator.allocate(count);
+        ankerl::nanobench::doNotOptimizeAway(p);
+        system_std_allocator.deallocate(p, count);
+      }
+    });
+    run('D', "HYLE StdAllocator<uint64_t> (same-link runtime)", [&] {
+      for (int i = 0; i < kN; ++i) {
+        const std::size_t count = bytes_at(i) / sizeof(std::uint64_t);
+        auto* p = std_allocator.allocate(count);
+        ankerl::nanobench::doNotOptimizeAway(p);
+        std_allocator.deallocate(p, count);
+      }
+    });
+    run('X', "raw mi_* in executable (non-symmetric lower bound)", [&] {
+      for (int i = 0; i < kN; ++i) {
+        void* p = mi_malloc(bytes_at(i));
+        ankerl::nanobench::doNotOptimizeAway(p);
+        mi_free(p);
+      }
+    });
+  }
 
   // ---- single-thread alloc/free churn ----
   if (want_section('A')) {

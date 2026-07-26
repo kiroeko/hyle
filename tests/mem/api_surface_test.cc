@@ -36,6 +36,8 @@ using namespace hyle::mem;
 static_assert(std::is_trivially_copyable_v<Allocator>);
 static_assert(sizeof(Allocator) == sizeof(void*) * 4);
 static_assert(std::is_empty_v<SystemAllocator>);
+static_assert(std::is_empty_v<SystemStdAllocator<int>>);
+static_assert(std::allocator_traits<SystemStdAllocator<int>>::is_always_equal::value);
 static_assert(std::is_standard_layout_v<RegionOptions>);
 static_assert(RegionOptions{}.max_block_size == 4u * 1024u * 1024u);
 static_assert(std::is_standard_layout_v<AllocStatsSnapshot>);
@@ -47,6 +49,11 @@ static_assert(std::same_as<std::allocator_traits<StdAllocator<int>>::value_type,
 static_assert(
     std::same_as<std::allocator_traits<StdAllocator<int>>::rebind_alloc<double>,
                  StdAllocator<double>>);
+static_assert(std::same_as<
+              std::allocator_traits<SystemStdAllocator<int>>::rebind_alloc<double>,
+              SystemStdAllocator<double>>);
+static_assert(std::same_as<decltype(system_memory_resource()),
+                           std::pmr::memory_resource*>);
 
 template <class A>
 concept AllocatorSurface = requires(A a, void* p, std::size_t n) {

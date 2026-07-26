@@ -16,6 +16,7 @@ namespace {
 using hyle::mem::Allocator;
 using hyle::mem::StatsAllocator;
 using hyle::mem::StdAllocator;
+using hyle::mem::SystemStdAllocator;
 using hyle::mem::system_allocator;
 
 void* oom_allocate(void*, std::size_t, std::size_t) noexcept { return nullptr; }
@@ -49,6 +50,34 @@ TEST(StdAllocator, DefaultUsesSystemAllocator) {
   values[3] = 17;
   EXPECT_EQ(values[3], 17);
   allocator.deallocate(values, 4);
+}
+
+TEST(SystemStdAllocator, IsEmptyAlwaysEqualAndServesVector) {
+  static_assert(std::is_empty_v<SystemStdAllocator<int>>);
+  static_assert(
+      std::allocator_traits<SystemStdAllocator<int>>::is_always_equal::value);
+  SystemStdAllocator<int> ints;
+  SystemStdAllocator<double> doubles;
+  EXPECT_EQ(ints, doubles);
+
+  std::vector<int, SystemStdAllocator<int>> values;
+  for (int i = 0; i < 1024; ++i) values.push_back(i);
+  EXPECT_EQ(values.front(), 0);
+  EXPECT_EQ(values.back(), 1023);
+}
+
+TEST(SystemStdAllocator, PreservesOverAlignmentAndStandardFailures) {
+  SystemStdAllocator<OverAligned> allocator;
+  OverAligned* values = allocator.allocate(2);
+  ASSERT_NE(values, nullptr);
+  EXPECT_EQ(reinterpret_cast<std::uintptr_t>(values) % alignof(OverAligned), 0u);
+  allocator.deallocate(values, 2);
+
+  EXPECT_THROW((void)allocator.allocate(
+                   (std::numeric_limits<std::size_t>::max)() /
+                           sizeof(OverAligned) +
+                       1),
+               std::bad_array_new_length);
 }
 
 TEST(StdAllocator, ZeroCountMayReturnNullAndCanBeDeallocated) {

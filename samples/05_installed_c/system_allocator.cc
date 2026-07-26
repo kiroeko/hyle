@@ -1,5 +1,9 @@
 #include <cstdint>
+#include <memory_resource>
+#include <vector>
 
+#include "hyle/mem/pmr.h"
+#include "hyle/mem/std_allocator.h"
 #include "hyle/mem/system_inline.h"
 
 int main() {
@@ -16,5 +20,15 @@ int main() {
   }
   const bool preserved = grown[7] == 42;
   SystemAllocator::deallocate_n(grown, 16);
-  return preserved ? 0 : 3;
+  if (!preserved) return 3;
+
+  std::vector<std::uint64_t, hyle::mem::SystemStdAllocator<std::uint64_t>>
+      direct_values;
+  direct_values.push_back(17);
+  if (direct_values.front() != 17) return 4;
+
+  std::pmr::vector<std::uint64_t> pmr_values(
+      hyle::mem::system_memory_resource());
+  pmr_values.push_back(23);
+  return pmr_values.front() == 23 ? 0 : 5;
 }

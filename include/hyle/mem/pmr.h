@@ -21,6 +21,14 @@
 
 namespace hyle::mem {
 
+// Process-wide PMR over the compile-time SystemAllocator path.  Prefer this
+// for ordinary std::pmr containers that use HYLE's default host heap: it pays
+// PMR's required virtual dispatch and the shared-library import, but does not
+// stack an additional Allocator function-pointer dispatch on top.  The
+// returned singleton is never null and has process lifetime; do not delete it.
+// Use PmrResource below when runtime backing injection is the actual need.
+HYLE_MEM_API std::pmr::memory_resource* system_memory_resource() noexcept;
+
 namespace detail {
 inline bool allocator_identity_equal(const Allocator& a,
                                      const Allocator& b) noexcept {
