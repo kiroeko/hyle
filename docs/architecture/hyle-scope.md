@@ -98,15 +98,15 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 
 > **信源**：体量以 `cloc` 实测为准；能力进度以 [`../milestones/README.md`](../milestones/README.md) 为准。
 > **口径**：生产 = `src` + `include` 的 code 列（不含 tests/bench/docs、不含 third_party）。
-> **2026-07-26 锚定**：旧投影「完成时生产 ~28–40k / 中值 34k」**已作废**——当前生产已 **87.9k**，单 simd **37.8k**。当前判断见 [`../milestones/pre-release-readiness.md`](../milestones/pre-release-readiness.md)；更早数字只作历史快照。
+> **2026-07-26 锚定**：旧投影「完成时生产 ~28–40k / 中值 34k」**已作废**——当前生产已 **90.5k**，单 simd **37.8k**。当前判断见 [`../milestones/pre-release-readiness.md`](../milestones/pre-release-readiness.md)；更早数字只作历史快照。
 
 ### 当前实测（2026-07-26）
 
 | 固定统计口径 | code | 说明 |
 |---|---:|---|
-| **全库代码** | **269,506** | `cloc . --vcs=git`；含 docs 与 in-tree third_party |
-| **自实现（含测试）** | **131,762** | `include/hyle + src + tests`；只计 C/C++/CUDA，不含 CMake/Text |
-| **自实现（不含测试）** | **90,454** | `include/hyle + src`；只计 C/C++/CUDA，库本体硬锚 |
+| **全库代码** | **270,464** | `cloc . --vcs=git`；含 docs 与 in-tree third_party |
+| **自实现（含测试）** | **131,784** | `include/hyle + src + tests`；只计 C/C++/CUDA，不含 CMake/Text |
+| **自实现（不含测试）** | **90,476** | `include/hyle + src`；只计 C/C++/CUDA，库本体硬锚 |
 | **当前审查单元 container 实现** | **14,337** | `include/hyle/container` + `include/hyle/c/container.h` + `src/container`；不含测试/CMake/Text |
 | 再加 ggml 等大依赖足迹 | **~200–350k+** | 由 ggml 主导，不计入「自有生产」 |
 
@@ -114,13 +114,13 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 
 | 模块 | code | 占生产 |
 |---|---:|---:|
-| **simd** | **~37.8k** | **~43%** |
+| **simd** | **~37.8k** | **~42%** |
 | io | ~9.0k | ~10% |
 | compute | ~4.1k | ~5% |
 | sched | ~5.1k | ~6% |
-| container | ~13.0k（含公共 C 头） | ~15% |
+| container | ~14.3k（含公共 C 头） | ~16% |
 | platform | ~7.0k（含公共 C 头） | ~8% |
-| mem | ~5.1k | ~6% |
+| mem | ~5.3k | ~6% |
 | graph | ~0.6k | |
 | error | ~1.0k（含公共 C 头） | ~1% |
 | util | ~1.3k | ~2% |
@@ -139,11 +139,11 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 **含测试粗乘**：生产 ×1.4–1.6 → A 约 **95–125k**、B 约 **120–160k**（tests only）。
 **自有工程（+bench+docs）**：A 约 **130–160k**、B 约 **160–200k**。
 
-**剩余增量直觉（相对今日 87.6k 生产，非承诺）：**
+**剩余增量直觉（相对今日 90.5k 生产，非承诺）：**
 
 | 方向 | 再长（生产） |
 |---|---:|
-| 基础模块收口复审 | 原则上小增量；mem 功能族已封闭，只剩有界 API/perf/认证任务 |
+| 基础模块收口复审 | 原则上小增量；mem 已严格收口，仅按真实触发器重开 |
 | sched/io 强收口 + C ABI | +1～4k |
 | compute 能力尾 | +2～10k（主弹性） |
 | graph-02 后两步/后续真实消费者 | +1～5k |
