@@ -8,8 +8,8 @@
 
 // Target-bound whole-range algorithms for f16/bf16 storage. These keep the
 // D-tag explicit, so a source-built kernel can inline one chosen backend
-// without exposing a target-specific vector ABI. Use the dispatched dtype/ops
-// APIs when a prebuilt unknown-CPU library boundary is required.
+// without exposing a target-specific vector ABI. Use narrow_ops.h when a
+// prebuilt unknown-CPU library boundary is required.
 
 namespace hyle::simd {
 namespace detail {

@@ -160,6 +160,26 @@ HYLE_SIMD_DECLARE_SEARCH(float, f32);
 HYLE_SIMD_DECLARE_SEARCH(double, f64);
 #undef HYLE_SIMD_DECLARE_SEARCH
 
+/* f16/bf16 whole-range products. Numeric equality follows IEEE == (-0 equals
+ * +0, NaN never matches); *_equal_bits compares all 16 representation bits.
+ * sum accumulates and returns f32. *_sorted_total uses IEEE-754 totalOrder and
+ * therefore orders signed zero and individual NaN encodings deterministically. */
+#define HYLE_SIMD_DECLARE_NARROW(T, tag) \
+  HYLE_SIMD_C_API size_t hyle_simd_count_equal_##tag( \
+      const T*, size_t, T); \
+  HYLE_SIMD_C_API size_t hyle_simd_find_equal_##tag( \
+      const T*, size_t, T); \
+  HYLE_SIMD_C_API size_t hyle_simd_count_equal_bits_##tag( \
+      const T*, size_t, T); \
+  HYLE_SIMD_C_API size_t hyle_simd_find_equal_bits_##tag( \
+      const T*, size_t, T); \
+  HYLE_SIMD_C_API float hyle_simd_sum_##tag(const T*, size_t); \
+  HYLE_SIMD_C_API int hyle_simd_is_sorted_total_##tag( \
+      const T*, size_t, hyle_simd_sort_order)
+HYLE_SIMD_DECLARE_NARROW(hyle_simd_f16, f16);
+HYLE_SIMD_DECLARE_NARROW(hyle_simd_bf16, bf16);
+#undef HYLE_SIMD_DECLARE_NARROW
+
 HYLE_SIMD_C_API void hyle_simd_f16_to_f32(const hyle_simd_f16*, float*, size_t);
 HYLE_SIMD_C_API void hyle_simd_f32_to_f16(const float*, hyle_simd_f16*, size_t);
 HYLE_SIMD_C_API void hyle_simd_bf16_to_f32(const hyle_simd_bf16*, float*, size_t);

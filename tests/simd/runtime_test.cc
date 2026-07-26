@@ -58,6 +58,10 @@ TEST(SimdRuntime, TableMetadataAndExactTierLookup) {
   EXPECT_NE(active.ops.dot_i16_i16, nullptr);
   EXPECT_NE(active.ops.dot_i8_i8, nullptr);
   EXPECT_NE(active.random.fill_u64, nullptr);
+  EXPECT_NE(active.narrow.count_equal_f16, nullptr);
+  EXPECT_NE(active.narrow.count_equal_bf16, nullptr);
+  EXPECT_NE(active.narrow.sum_f16, nullptr);
+  EXPECT_NE(active.narrow.sum_bf16, nullptr);
   EXPECT_NE(active.math.features & hs::Runtime::kFeatureMathExactLibmScalar, 0u);
   EXPECT_NE(active.dtype.features & hs::Runtime::kFeatureDtypeFp8Scalar, 0u);
   if (active.sort.isa == hs::Isa::kSve)

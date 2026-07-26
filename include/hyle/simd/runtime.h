@@ -12,7 +12,7 @@ class RandomState;
 
 struct Runtime {
   // Version of this C++ convenience table, not the stable C ABI from include/hyle/c/.
-  static constexpr std::uint32_t kTableVersion = 6;
+  static constexpr std::uint32_t kTableVersion = 7;
 
   struct Ops {
     float (*dot_f32)(const float*, const float*, std::size_t) noexcept;
@@ -62,6 +62,22 @@ struct Runtime {
 #undef HYLE_RUNTIME_SEARCH_FIELDS
   };
 
+  struct Narrow {
+#define HYLE_RUNTIME_NARROW_FIELDS(T, tag)                                    \
+    std::size_t (*count_equal_##tag)(const T*, std::size_t, T) noexcept;      \
+    std::size_t (*find_equal_##tag)(const T*, std::size_t, T) noexcept;       \
+    std::size_t (*count_equal_bits_##tag)(const T*, std::size_t, T) noexcept; \
+    std::size_t (*find_equal_bits_##tag)(const T*, std::size_t, T) noexcept;  \
+    float (*sum_##tag)(const T*, std::size_t) noexcept;                       \
+    bool (*is_sorted_total_asc_##tag)(const T*, std::size_t) noexcept;        \
+    bool (*is_sorted_total_desc_##tag)(const T*, std::size_t) noexcept;
+
+    HYLE_RUNTIME_NARROW_FIELDS(float16_t, f16)
+    HYLE_RUNTIME_NARROW_FIELDS(bfloat16_t, bf16)
+
+#undef HYLE_RUNTIME_NARROW_FIELDS
+  };
+
   // Module-wide selection metadata. Some modules choose individual implementations by precise
   // feature (for example F16C or AVX512-BF16), so `isa` is the broad tier and `features` records
   // the non-hierarchical choices. This remains a C++ diagnostic/control surface, not the C ABI.
@@ -91,6 +107,7 @@ struct Runtime {
   Ops ops;
   Random random;
   Search search;
+  Narrow narrow;
   Module ops_module;
   Module scan;
   Module dtype;

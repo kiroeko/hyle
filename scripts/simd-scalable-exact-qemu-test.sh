@@ -9,7 +9,7 @@
 set -euo pipefail
 
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
-GT="$REPO/.deps/googletest-src/googletest"
+GT="${GTEST_SOURCE_DIR:-$REPO/.deps/googletest-src/googletest}"
 KIND="${1:-}"
 OUT="${OUT_DIR:-/tmp/hyle-scalable-exact-$KIND}"
 mkdir -p "$OUT"
@@ -61,18 +61,23 @@ SCALAR_COMMON=(-std=c++23 -O2 "-march=$BASE_ARCH" -pthread
 echo "[$KIND exact] compiling one runtime table and one kernel suffix ..."
 "$CXX" "${COMMON[@]}" -c "$GT/src/gtest-all.cc" -o "$OUT/gtest-all.o"
 "$CXX" "${COMMON[@]}" -c "$GT/src/gtest_main.cc" -o "$OUT/gtest-main.o"
-for test in runtime ops search scan; do
+for test in runtime ops search scan narrow_ops; do
   "$CXX" "${COMMON[@]}" -c "$REPO/tests/simd/${test}_test.cc" -o "$OUT/${test}_test.o"
 done
 "$CXX" "${TARGET[@]}" -c "$REPO/tests/simd/native_test.cc" -o "$OUT/native_test.o"
 
 "$CXX" "${COMMON[@]}" -c "$REPO/src/simd/runtime.cc" -o "$OUT/runtime.o"
 "$CXX" "${COMMON[@]}" -c "$REPO/src/platform/cpu.cc" -o "$OUT/cpu_test_only.o"
+"$CXX" "${COMMON[@]}" -DHYLE_ERROR_BUILD -c "$REPO/src/error/status.cc" \
+  -o "$OUT/error_status.o"
 # cpu.cc's topology diagnostics use this platform entry, while exact dispatch
 # itself never probes it. Keep this standalone artifact focused on SIMD instead
 # of pulling thread.cc and the whole error/platform dependency graph.
 printf '#include "hyle/platform/thread.h"\nnamespace hyle::platform { unsigned hardware_concurrency() noexcept { return 1; } }\n' |
   "$CXX" "${COMMON[@]}" -x c++ -c - -o "$OUT/thread_test_stub.o"
+printf '#define HYLE_SIMD_VARIANT_SUFFIX %s\n#include "tests/simd/fat_kernel_fixture.h"\n' \
+  "$SUFFIX" |
+  "$CXX" "${TARGET[@]}" -x c++ -c - -o "$OUT/fat_fixture.o"
 for product in math/math_dispatch dtype/dtype_dispatch sort/sort_dispatch \
                bitpack/bitpack_dispatch; do
   "$CXX" "${COMMON[@]}" -c "$REPO/src/simd/$product.cc" \
@@ -80,7 +85,7 @@ for product in math/math_dispatch dtype/dtype_dispatch sort/sort_dispatch \
 done
 "$CXX" "${SCALAR_COMMON[@]}" -c "$REPO/src/simd/math/math_dispatch.cc" \
   -o "$OUT/product_math_dispatch_scalar_exact.o"
-for module in ops random search scan; do
+for module in ops random search scan narrow; do
   dispatch_source="${module}_dispatch.cc"
   if [ "$module" = "ops" ]; then dispatch_source="dispatch_ops.cc"; fi
   "$CXX" "${COMMON[@]}" -c "$REPO/src/simd/$module/$dispatch_source" \
@@ -112,12 +117,15 @@ fi
 
 "$CXX" "${TARGET[@]}" "$OUT/gtest-all.o" "$OUT/gtest-main.o" \
   "$OUT/runtime_test.o" "$OUT/ops_test.o" "$OUT/search_test.o" \
-  "$OUT/scan_test.o" "$OUT/native_test.o" "$OUT/runtime.o" \
+  "$OUT/scan_test.o" "$OUT/narrow_ops_test.o" "$OUT/native_test.o" "$OUT/runtime.o" \
   "$OUT/cpu_test_only.o" "$OUT/thread_test_stub.o" \
+  "$OUT/error_status.o" "$OUT/fat_fixture.o" \
   "$OUT/ops_dispatch.o" "$OUT/random_dispatch.o" \
   "$OUT/search_dispatch.o" "$OUT/scan_dispatch.o" \
+  "$OUT/narrow_dispatch.o" \
   "$OUT/ops_${SUFFIX}.o" "$OUT/random_${SUFFIX}.o" \
   "$OUT/search_${SUFFIX}.o" "$OUT/scan_${SUFFIX}.o" \
+  "$OUT/narrow_${SUFFIX}.o" \
   -static -o "$OUT/exact_gtest" -pthread
 
 for bits in "${LENGTHS[@]}"; do

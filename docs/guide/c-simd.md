@@ -55,7 +55,7 @@ exact-libm scalar、fp8 scalar、lower-tier winner、SVE capped network、logica
 
 ## 能力索引
 
-本头当前有 **246 个 C 入口**：243 个动态库符号和 3 个 typed header-inline
+本头当前有 **258 个 C 入口**：255 个动态库符号和 3 个 typed header-inline
 `hyle_simd_packed_size_{u8,u16,u32}`。以下公式是逐符号清单；花括号表示每个列出的后缀都存在一个具体函数。
 
 | 组 | 入口 |
@@ -65,6 +65,7 @@ exact-libm scalar、fp8 scalar、lower-tier winner、SVE capped network、logica
 | RNG | `hyle_simd_random_{create,destroy,fill_u64,fill_f32,fill_f64}` |
 | scan | `hyle_simd_{inclusive_scan,exclusive_scan}_{u32,i32,u64,i64,f32,f64}` |
 | search | `hyle_simd_{count_equal,find_equal,min_value,max_value,minmax_value,is_sorted}_{i8,u8,i16,u16,i32,u32,i64,u64,f32,f64}` |
+| narrow search/reduce | `hyle_simd_{count_equal,find_equal,count_equal_bits,find_equal_bits,sum,is_sorted_total}_{f16,bf16}` |
 | dtype | `hyle_simd_{f16_to_f32,f32_to_f16,bf16_to_f32,f32_to_bf16,f8e4m3_to_f32,f32_to_f8e4m3,f8e5m2_to_f32,f32_to_f8e5m2,f16_to_f8e4m3,f16_to_f8e5m2}` |
 | sort | `hyle_simd_{sort,partial_sort,select}_{u16,i16,u32,i32,u64,i64,f32,f64,u128,kv32,kv64}` |
 | radix/argsort | `hyle_simd_radix_sort_{u32,i32,u64,i64,f32}`、`hyle_simd_argsort_{u32,i32,f32}` |
@@ -84,12 +85,15 @@ exact-libm scalar、fp8 scalar、lower-tier winner、SVE capped network、logica
   `hyle_simd_{softmax_f32,log_softmax_f32}`。
 - 复数 SoA：`hyle_simd_{cexp,clog,csqrt,csin,ccos,ctan,csinh,ccosh,ctanh,cpow}_{f32,f64}_batch`。
 
-头、纯 C test 与导出表通过预处理/符号表机械核对为 **246/246 test references、
-243/243 exported symbols**；测试源是 `tests/simd/c_simd_test.c`。
+头、纯 C test 与导出表通过预处理/符号表机械核对为 **258/258 test references、
+255/255 exported symbols**；测试源是 `tests/simd/c_simd_test.c`。
 
 ## 合同
 
 - `n > 0` 时所有必需指针必须有效并覆盖相应范围；`n == 0` 通常为 no-op。
+- f16/bf16 的普通 `count/find_equal` 是 IEEE 数值相等：signed zero 相等、NaN 永不命中；
+  `*_equal_bits` 比较完整 16-bit encoding。`sum` 以 f32 累加，归约次序可随 ISA 改变。
+  `is_sorted_total` 使用完整 IEEE-754 totalOrder；descending 反转整个顺序，缺失 find 返回 `n`。
 - `hyle_simd_supports_isa` 只接受本头列出的 canonical ISA 常量；未知数值返回 0。它回答
   CPU/OS 是否支持该档，不是让普通调用方自行挑 kernel。
 - `hyle_simd_runtime_info_get` 和 `hyle_simd_random_create` 返回 owning `hyle_status`；成功和失败

@@ -114,6 +114,7 @@ hyle_add_module(simd SOURCES
   ops/dispatch_ops.cc
   random/random_dispatch.cc
   search/search_dispatch.cc
+  narrow/narrow_dispatch.cc
   scan/scan_dispatch.cc
   dtype/dtype_dispatch.cc
   dtype/cvt_scalar.cc
@@ -160,7 +161,7 @@ if(HYLE_SIMD_BUILD_RVV)
   target_compile_definitions(hyle_simd PRIVATE HYLE_SIMD_HAS_RVV_VARIANT=1)
 endif()
 
-# These four modules have mechanically identical variant TUs: each defines
+# These five modules have mechanically identical variant TUs: each defines
 # a target macro plus a symbol suffix, then includes one generic kernel body. Generate those TUs
 # from the shared build mechanism; it filters the full target list by architecture and applies the
 # exact tier flags through hyle_set_isa. Their dispatchers remain handwritten because scan's Linux
@@ -184,6 +185,11 @@ hyle_add_dispatched_kernel(
   TARGET hyle_simd
   NAME search
   IMPL "src/simd/search/kernel_impl.h"
+  TARGETS scalar sse4 avx2 avx512 neon sve rvv)
+hyle_add_dispatched_kernel(
+  TARGET hyle_simd
+  NAME narrow
+  IMPL "src/simd/narrow/kernel_impl.h"
   TARGETS scalar sse4 avx2 avx512 neon sve rvv)
 
 # Per-ISA codegen flags via the single-source hyle_set_isa (HyleModule.cmake) -- one tier

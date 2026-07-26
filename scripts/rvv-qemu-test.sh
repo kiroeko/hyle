@@ -66,6 +66,7 @@ run_tier() {
   $CXX $COMMON_FLAGS -c "$REPO/tests/simd/runtime_test.cc" -o "$OUT/runtime_test_${name}.o"
   $CXX $COMMON_FLAGS -c "$REPO/tests/simd/ops_test.cc" -o "$OUT/ops_test_${name}.o"
   $CXX $COMMON_FLAGS -c "$REPO/tests/simd/search_test.cc" -o "$OUT/search_test_${name}.o"
+  $CXX $COMMON_FLAGS -c "$REPO/tests/simd/narrow_ops_test.cc" -o "$OUT/narrow_ops_test_${name}.o"
   $CXX $COMMON_FLAGS -c "$REPO/tests/simd/scan_test.cc" -o "$OUT/scan_test_${name}.o"
   $CXX $COMMON_FLAGS -c "$REPO/tests/simd/fixed128_bitpack_reference.cc" -o "$OUT/fixed128_bitpack_reference_${name}.o"
   $CXX $FLAGS -c "$REPO/src/simd/math/transcendental_highway_scalable.cc" -o "$OUT/math_rvv_${name}.o"
@@ -91,12 +92,13 @@ run_tier() {
   $CXX $COMMON_FLAGS -c "$REPO/src/simd/ops/dispatch_ops.cc" -o "$OUT/ops_dispatch_${name}.o"
   $CXX $COMMON_FLAGS -c "$REPO/src/simd/random/random_dispatch.cc" -o "$OUT/random_dispatch_${name}.o"
   $CXX $COMMON_FLAGS -c "$REPO/src/simd/search/search_dispatch.cc" -o "$OUT/search_dispatch_${name}.o"
+  $CXX $COMMON_FLAGS -c "$REPO/src/simd/narrow/narrow_dispatch.cc" -o "$OUT/narrow_dispatch_${name}.o"
   $CXX $COMMON_FLAGS -c "$REPO/src/simd/scan/scan_dispatch.cc" -o "$OUT/scan_dispatch_${name}.o"
   $CXX $COMMON_FLAGS -c "$REPO/src/simd/sort/sort_dispatch.cc" -o "$OUT/sort_dispatch_${name}.o"
   $CXX $COMMON_FLAGS -c "$REPO/src/simd/sort/vqsort_scalar.cc" -o "$OUT/sort_scalar_${name}.o"
   $CXX $COMMON_FLAGS -c "$REPO/src/simd/sort/radix_sort.cc" -o "$OUT/radix_sort_${name}.o"
   $CXX $COMMON_FLAGS -c "$REPO/src/simd/sort/stream_topk.cc" -o "$OUT/stream_topk_${name}.o"
-  for module in ops random scan search; do
+  for module in ops random scan search narrow; do
     printf '#define HYLE_SIMD_VARIANT_SUFFIX scalar\n#include "src/simd/%s/kernel_impl.h"\n' "$module" |
       $CXX $COMMON_FLAGS -x c++ -c - -o "$OUT/${module}_scalar_${name}.o"
     printf '#define HYLE_SIMD_VARIANT_SUFFIX rvv\n#include "src/simd/%s/kernel_impl.h"\n' "$module" |
@@ -112,6 +114,7 @@ run_tier() {
     "$OUT/runtime_test_${name}.o" \
     "$OUT/ops_test_${name}.o" \
     "$OUT/search_test_${name}.o" \
+    "$OUT/narrow_ops_test_${name}.o" \
     "$OUT/scan_test_${name}.o" \
     "$OUT/fixed128_bitpack_reference_${name}.o" \
     "$OUT/math_rvv_${name}.o" "$OUT/math_scalar_${name}.o" "$OUT/math_dispatch_${name}.o" \
@@ -125,6 +128,7 @@ run_tier() {
     "$OUT/ops_scalar_${name}.o" "$OUT/ops_rvv_${name}.o" "$OUT/ops_dispatch_${name}.o" \
     "$OUT/random_scalar_${name}.o" "$OUT/random_rvv_${name}.o" "$OUT/random_dispatch_${name}.o" \
     "$OUT/search_scalar_${name}.o" "$OUT/search_rvv_${name}.o" "$OUT/search_dispatch_${name}.o" \
+    "$OUT/narrow_scalar_${name}.o" "$OUT/narrow_rvv_${name}.o" "$OUT/narrow_dispatch_${name}.o" \
     "$OUT/gtest-all_${name}.o" "$OUT/gtest-main_${name}.o" \
     -static -o "$bin" -pthread
 

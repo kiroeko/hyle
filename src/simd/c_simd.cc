@@ -7,6 +7,7 @@
 #include "hyle/simd/bitpack.h"
 #include "hyle/simd/dtype_ops.h"
 #include "hyle/simd/math.h"
+#include "hyle/simd/narrow_ops.h"
 #include "hyle/simd/ops.h"
 #include "hyle/simd/random.h"
 #include "hyle/simd/runtime.h"
@@ -241,6 +242,33 @@ HYLE_C_SEARCH(uint64_t, u64)
 HYLE_C_SEARCH(float, f32)
 HYLE_C_SEARCH(double, f64)
 #undef HYLE_C_SEARCH
+
+#define HYLE_C_NARROW(T, tag) \
+  size_t hyle_simd_count_equal_##tag(const T* data, size_t n, T value) { \
+    return hyle::simd::count_equal(data, n, value); \
+  } \
+  size_t hyle_simd_find_equal_##tag(const T* data, size_t n, T value) { \
+    return hyle::simd::find_equal(data, n, value); \
+  } \
+  size_t hyle_simd_count_equal_bits_##tag( \
+      const T* data, size_t n, T value) { \
+    return hyle::simd::count_equal_bits(data, n, value); \
+  } \
+  size_t hyle_simd_find_equal_bits_##tag( \
+      const T* data, size_t n, T value) { \
+    return hyle::simd::find_equal_bits(data, n, value); \
+  } \
+  float hyle_simd_sum_##tag(const T* data, size_t n) { \
+    return hyle::simd::sum(data, n); \
+  } \
+  int hyle_simd_is_sorted_total_##tag( \
+      const T* data, size_t n, hyle_simd_sort_order order) { \
+    return hyle::simd::is_sorted_total( \
+        data, n, cpp_order(order) == hyle::simd::SortOrder::kAscending) ? 1 : 0; \
+  }
+HYLE_C_NARROW(hyle_simd_f16, f16)
+HYLE_C_NARROW(hyle_simd_bf16, bf16)
+#undef HYLE_C_NARROW
 
 #define HYLE_C_DTYPE(Src, Dst, c_name, cpp_name) \
   void hyle_simd_##c_name(const Src* src, Dst* dst, size_t n) { \

@@ -226,7 +226,7 @@ if(TARGET hyle_simd)
 hyle_add_test(simd SOURCES simd/dispatch_test.cc simd/vec_test.cc simd/native_test.cc
               simd/runtime_test.cc simd/ops_test.cc simd/search_test.cc simd/scan_test.cc simd/dtype_test.cc
               simd/math_test.cc simd/sort_test.cc simd/radix_sort_test.cc simd/bitpack_test.cc
-              simd/narrow_float_test.cc)
+              simd/narrow_float_test.cc simd/narrow_ops_test.cc)
 target_include_directories(hyle_simd_test PRIVATE "${PROJECT_SOURCE_DIR}")
 hyle_add_fat_kernel(
   TARGET hyle_simd_test

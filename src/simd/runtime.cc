@@ -2,6 +2,7 @@
 
 #include "hyle/platform.h"
 #include "src/simd/dispatch_internal.h"
+#include "src/simd/narrow/kernels.h"
 #include "src/simd/ops/kernels.h"
 #include "src/simd/random/kernels.h"
 #include "src/simd/search/kernels.h"
@@ -28,6 +29,18 @@ namespace {
    HYLE_SEARCH_RUNTIME_ONE(float, f32, suffix)                                    \
    HYLE_SEARCH_RUNTIME_ONE(double, f64, suffix)}
 
+#define HYLE_NARROW_RUNTIME_ONE(tag, suffix)                                    \
+  &detail::narrow_count_equal_##tag##_##suffix,                                \
+      &detail::narrow_find_equal_##tag##_##suffix,                             \
+      &detail::narrow_count_equal_bits_##tag##_##suffix,                       \
+      &detail::narrow_find_equal_bits_##tag##_##suffix,                        \
+      &detail::narrow_sum_##tag##_##suffix,                                    \
+      &detail::narrow_is_sorted_total_asc_##tag##_##suffix,                    \
+      &detail::narrow_is_sorted_total_desc_##tag##_##suffix,
+
+#define HYLE_NARROW_RUNTIME(suffix)                                            \
+  {HYLE_NARROW_RUNTIME_ONE(f16, suffix) HYLE_NARROW_RUNTIME_ONE(bf16, suffix)}
+
 #define HYLE_RUNTIME_TABLE(name, tier, suffix)                                      \
   const Runtime name = [] {                                                         \
     Runtime value = {                                                               \
@@ -41,6 +54,7 @@ namespace {
         {&detail::random_fill_u64_##suffix, &detail::random_fill_f32_##suffix,      \
          &detail::random_fill_f64_##suffix},                                        \
         HYLE_SEARCH_RUNTIME(suffix),                                                \
+        HYLE_NARROW_RUNTIME(suffix),                                                \
         {tier, 0},                                                                  \
         {tier, 0},                                                                  \
         {tier, Runtime::kFeatureDtypeFp8Scalar},                                    \
@@ -70,6 +84,8 @@ HYLE_SIMD_FOR_EACH_COMPILED_TARGET(HYLE_DEFINE_RUNTIME)
 #undef HYLE_DEFINE_RUNTIME
 
 #undef HYLE_RUNTIME_TABLE
+#undef HYLE_NARROW_RUNTIME
+#undef HYLE_NARROW_RUNTIME_ONE
 #undef HYLE_SEARCH_RUNTIME
 #undef HYLE_SEARCH_RUNTIME_ONE
 

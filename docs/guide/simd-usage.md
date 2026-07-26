@@ -175,16 +175,30 @@ positive sNaN < positive qNaN。这是 bitwise deterministic order，不是“Na
 
 选择原则：
 
-- 只搬运/转换整个数组：优先 `dtype_ops.h` 的 batch API，它处理 dispatch 和 tail；
+- 只搬运/转换整个数组：优先 `dtype_ops.h` 的 batch API；整段 narrow search/reduction
+  优先 `narrow_ops.h`；两者都处理 dispatch 和 tail；
 - 写 target-bound 自定义计算循环：使用 narrow tag，x86 AVX2/AVX-512 f16 自动走 F16C，其他
   baseline 使用同语义 vector 位运算，不要求 SVE/RVV 的可选 half 扩展；
 - carrier 的真实寄存器类型是后端 u16。不要对 `auto` 结果调用无 tag 的 `Add/Mul`，那是整数位
   carrier 语义；窄浮点操作必须使用带 `Narrow` 的名字；
 - finite f32→f16 逐位一致；硬件 F16C 可以选择不同的 NaN payload，因此 NaN 只保证仍为 NaN。
 
-这层是 C++ target-TU 接口，不把目标相关 vector ABI 暴露给 C。C/FFI 整段 narrow
-search/reduction 还没有冻结 pointer/count 入口；当前只有 dtype convert/mixed dot 的 C ABI。
-narrow sort 也尚未实施，不要拿 carrier 的 unsigned 顺序替代 total-order 语义。
+预构建库、未知 CPU 或不想手写 tail 时包含 `narrow_ops.h`，它以同一语义提供 runtime
+dispatch 的 pointer/count C++ 重载：
+
+```cpp
+#include "hyle/simd/narrow_ops.h"
+
+std::size_t numeric = hs::count_equal(values, n, needle);
+std::size_t exact = hs::find_equal_bits(values, n, needle);
+float total = hs::sum(values, n);  // f32 accumulation
+bool ordered = hs::is_sorted_total(values, n);
+```
+
+C/FFI 对应 `hyle_simd_{count_equal,find_equal,count_equal_bits,find_equal_bits,
+sum,is_sorted_total}_{f16,bf16}`。这些调用在 whole-buffer 边界进入已选 scalar/SSE4/AVX2/
+AVX-512/NEON/SVE/RVV kernel，目标相关 vector ABI 不离开实现 TU。narrow sort 尚未实施；
+不要拿 carrier 的 unsigned 顺序替代 total-order 语义。
 
 ```c
 hyle_simd_exp_f32_batch(src, dst, n);

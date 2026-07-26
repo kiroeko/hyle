@@ -140,6 +140,55 @@ int main(void) {
   TEST_SEARCH(int64_t, i64); TEST_SEARCH(uint64_t, u64);
   TEST_SEARCH(float, f32); TEST_SEARCH(double, f64);
 
+  {
+    const hyle_simd_f16 zero = {0x0000u};
+    const hyle_simd_f16 nan = {0x7E11u};
+    const hyle_simd_f16 values[5] = {
+        {0x8000u}, {0x0000u}, {0x4000u}, {0x7E11u}, {0x4000u}};
+    const hyle_simd_f16 finite[3] = {{0x3C00u}, {0x4000u}, {0x4200u}};
+    const hyle_simd_f16 asc[7] = {
+        {0xFE00u}, {0xC000u}, {0x8000u}, {0x0000u},
+        {0x4000u}, {0x7C00u}, {0x7E00u}};
+    const hyle_simd_f16 desc[7] = {
+        {0x7E00u}, {0x7C00u}, {0x4000u}, {0x0000u},
+        {0x8000u}, {0xC000u}, {0xFE00u}};
+    CHECK(hyle_simd_count_equal_f16(values, 5, zero) == 2);
+    CHECK(hyle_simd_find_equal_f16(values, 5, zero) == 0);
+    CHECK(hyle_simd_count_equal_bits_f16(values, 5, zero) == 1);
+    CHECK(hyle_simd_find_equal_bits_f16(values, 5, zero) == 1);
+    CHECK(hyle_simd_count_equal_f16(values, 5, nan) == 0);
+    CHECK(hyle_simd_find_equal_f16(values, 5, nan) == 5);
+    CHECK(hyle_simd_sum_f16(finite, 3) == 6.0f);
+    CHECK(hyle_simd_is_sorted_total_f16(
+        asc, 7, HYLE_SIMD_SORT_ASCENDING));
+    CHECK(hyle_simd_is_sorted_total_f16(
+        desc, 7, HYLE_SIMD_SORT_DESCENDING));
+  }
+  {
+    const hyle_simd_bf16 zero = {0x0000u};
+    const hyle_simd_bf16 nan = {0x7FC1u};
+    const hyle_simd_bf16 values[5] = {
+        {0x8000u}, {0x0000u}, {0x4000u}, {0x7FC1u}, {0x4000u}};
+    const hyle_simd_bf16 finite[3] = {{0x3F80u}, {0x4000u}, {0x4040u}};
+    const hyle_simd_bf16 asc[7] = {
+        {0xFFC0u}, {0xC000u}, {0x8000u}, {0x0000u},
+        {0x4000u}, {0x7F80u}, {0x7FC0u}};
+    const hyle_simd_bf16 desc[7] = {
+        {0x7FC0u}, {0x7F80u}, {0x4000u}, {0x0000u},
+        {0x8000u}, {0xC000u}, {0xFFC0u}};
+    CHECK(hyle_simd_count_equal_bf16(values, 5, zero) == 2);
+    CHECK(hyle_simd_find_equal_bf16(values, 5, zero) == 0);
+    CHECK(hyle_simd_count_equal_bits_bf16(values, 5, zero) == 1);
+    CHECK(hyle_simd_find_equal_bits_bf16(values, 5, zero) == 1);
+    CHECK(hyle_simd_count_equal_bf16(values, 5, nan) == 0);
+    CHECK(hyle_simd_find_equal_bf16(values, 5, nan) == 5);
+    CHECK(hyle_simd_sum_bf16(finite, 3) == 6.0f);
+    CHECK(hyle_simd_is_sorted_total_bf16(
+        asc, 7, HYLE_SIMD_SORT_ASCENDING));
+    CHECK(hyle_simd_is_sorted_total_bf16(
+        desc, 7, HYLE_SIMD_SORT_DESCENDING));
+  }
+
 #define U32(name) CALL_UNARY(float, hyle_simd_##name)
   CALL_ALL_F32_UNARY(U32);
 #undef U32
