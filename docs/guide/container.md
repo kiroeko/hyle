@@ -13,6 +13,7 @@ container 提供性能敏感的基础数据结构、借用字符串/路径算法
 | 需求 | 首选形状 | 不变量与代价 |
 |---|---|---|
 | 元素通常很少，希望避免首个 heap allocation | `SmallVector<T,N>` | owning、连续、支持非平凡/ move-only T；超过 N 后整体迁移 |
+| 最大容量是协议/实时合同，整个生命周期禁止分配 | `StaticVector<T,N>`（别名 `InplaceVector`） | storage 全在对象内，data 地址不变；满时 `try_*` 返回 false，普通入口 fail-fast |
 | trivially-copyable 数据、C-friendly layout | `PodVector<T>` | 只做字节 relocation；默认 system allocator，也可注入运行时 allocator |
 | 普通长寿命非平凡动态序列 | `std::vector` + 可选 mem PMR adapter | HYLE 不造第二个通用 vector |
 | 高频 key→value lookup | `FlatHashMap<K,V>`（实现名 `SwissTable`） | flat slot、expected O(1)、引用在 grow/erase 后失效 |
@@ -43,11 +44,10 @@ container 提供性能敏感的基础数据结构、借用字符串/路径算法
 |---|---|---|
 | 单线程 grow 后引用稳定、node extraction/merge | 暂用 `std::unordered_map` 等 node-based 容器 | HYLE node map 的公开合同是并发 accessor，不为补 std API 数量复制 extraction/merge |
 | duplicate-key ordered multi-index | 暂用 `std::multimap` / `std::multiset` | HYLE 当前只提供 unique-key index；没有真实消费者证明 multi 语义值得复制一套 API |
-| 固定最大容量且对象内存完全内嵌的 sequence | 暂用 `std::array` + size，或消费方的小 wrapper | `SmallVector` 的 inline N 仍允许 spill；需要先证明 `static_vector` 的严格 no-allocation 合同值得一套类型 |
 | 排序连续关联容器 | 暂用排序 `std::vector` 或 `BTreeMap/Set` | 查多改少时 flat sorted storage 可能更合适，但 comparator、bulk build、失效语义需要真实消费者驱动 |
 | 并发 priority / 通用 unbounded queue | 由 sched 的等待、关闭与背压策略组合 | container 不应只复制机制而遗漏 shutdown/cancel/ownership 合同 |
 
-前两项是明确负空间；后三项是成熟库对账后保留的候选轴。它们只有在真实基础库需求把
+前两项是明确负空间；后两项是成熟库对账后保留的候选轴。它们只有在真实基础库需求把
 所有权、失败和并发合同说清后才会进入公开面，不能只因成熟库存在就复制。
 
 ## 连续容器
@@ -75,6 +75,39 @@ nothrow move-construct/destruct；POD 仍走 memcpy relocation。`try_reserve`�
 无 `try_` 的熟悉入口以及 count/range mutation 把 OOM 当 fatal。当前不提供 `at()`：
 项目还没有选择跨异常/无异常构建一致的越界返回策略；需要检查时先比较 `size()`。
 若序列经常远超 N，inline bytes 只会放大每个 owner，对它使用普通 `std::vector`。
+
+### 严格不分配的小序列用 StaticVector
+
+```cpp
+#include "hyle/container/static_vector.h"
+
+hyle::container::StaticVector<Packet, 32> batch;
+if (!batch.try_emplace_back(header, payload)) {
+  flush(batch);                         // 满是正常背压，不是 OOM
+  batch.clear();
+}
+```
+
+`StaticVector<T,N>` 对应 C++26 `std::inplace_vector`、CCCL `cuda::std::inplace_vector`
+和成熟 `static_vector` 的实际合同：capacity 是类型的一部分，元素 storage 完全嵌在对象内，
+任何操作都不会访问 heap，`data()` 在对象生命周期内不会改变。它适合 packet batch、固定
+协议字段、实时/嵌入式 scratch、小型 command list，以及“超过 N 必须背压/拒绝”而不是
+自动增长的边界。只想减少通常的小序列 allocation、但合法输入可能超过 N 时仍用
+`SmallVector`；动态上限或巨大 N 不应搬进 stack/object，改用 reserve 后的动态容器。
+
+公开面包括 count/range/initializer-list 和 copy/move 值语义、连续及反向迭代、resize/
+assign、任意位置 emplace/insert/erase、swap 和比较；支持 non-trivial、move-only、无
+move-assignment 的元素，trivially-copyable 后缀走 `memmove`。`N==0` 是可正常传递的空
+容器。普通 std-shaped 入口在容量溢出时沿用 HYLE fail-fast；`try_emplace_back`、
+`try_push_back`、`try_emplace`、`try_insert`、`try_resize`、`try_assign` 在容量不足时返回
+false 且原值不变。range try 操作会先在对象内临时 materialize 输入，以同时保证
+single-pass、self-range 和失败不改值；因此很大的 N 也会带来相应的 stack/object 成本。
+
+尾部 push/pop 为 O(1)，位置 insert/erase 为 O(受影响后缀+插入数)，没有比连续存储更低的
+渐进复杂度。push 不使任何 pointer/reference 失效；位置 mutation 前方的引用与地址保持，
+从 mutation 点开始的元素身份/值发生移动，应视为失效。和 `SmallVector` 一样不机械提供
+异常 `at()`；先检查 `size()`。`InplaceVector<T,N>` 只是同一实现的熟悉别名。模板的元素
+生命周期与 N 无法形成有意义的稳定 erased C ABI，因此 C 面不复制这一类型。
 
 ### POD 与通用 vector 不要混用
 

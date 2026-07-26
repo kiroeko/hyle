@@ -162,6 +162,18 @@
 > 开关、每 entry metadata 或 benchmark API。本批四项代码量：全库 263,615；自实现含测试
 > 127,494；自实现不含测试 87,977；container 实现 13,062。
 
+> **2026-07-26 strict fixed-capacity sequence 能力补全：** `SmallVector` 的 inline N
+> 仍允许 spill，无法表达 packet batch、实时 scratch 和协议上限的“整个生命周期绝不分配”
+> 合同。新增唯一实现 `StaticVector<T,N>`，`InplaceVector` 仅为 alias：对象内 T-aligned
+> storage、capacity-sized 紧凑 size metadata、N=0；没有 allocator、heap fallback 或
+> benchmark policy。接口覆盖 count/range/init/copy/move、正反迭代、push/emplace 及 fallible
+> 版本、resize/assign、位置 insert/erase、swap/comparison；支持 non-trivial、move-only 和
+> 无 move-assignment 值，trivial relocation 走 memcpy/memmove。容量不足的 `try_*` 不修改
+> 原值，普通入口 fail-fast；self range 与 single-pass input 先 materialize，data 地址始终不变。
+> 真实测试覆盖对象内 storage、边界死亡合同、alias/self/input range、lifetime、move-only、
+> N=0 与只移动后缀的复杂度/失效合同。模板没有新增 C ABI；C 动态需求继续使用 erased POD
+> vector，避免冻结 T/N 生命周期布局。
+
 ## 结论
 
 本节是 2026-07-19 历史结论；按 2026-07-25 新合同，container 的既有功能、红队、C ABI

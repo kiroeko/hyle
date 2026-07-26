@@ -21,7 +21,8 @@ C ABI 类型擦除层
           |                       |
           v                       v
 C++ typed / source surface      compiled cold cores
-  PodVector<T> / SmallVector    hash_bytes, carray grow,
+  PodVector<T> / SmallVector /  hash_bytes, carray grow,
+  StaticVector<T,N>
   FlatHashMap<K,V> /            Swiss resize/free,
   FlatHashSet<K>
   BTreeMap<K,V> / BTreeSet<K>   erased ordered POD B-tree
@@ -58,6 +59,7 @@ Tier 0 dependencies: core cache geometry + error + mem allocator +
 | concurrent node map | `ConcurrentNodeHashMap<K,V>` | 不机械导出 node 指针 | bucket RW accessor；node 地址跨 rehash 稳定；表增长保留旧 bucket array，销毁前要求 quiescent |
 | POD dynamic array | `PodVector<T>` | erased POD vector | 默认可用或注入 allocator；copy/move 值语义；header-before-data；allocator/alignment 随 allocation 记录 |
 | inline array | `SmallVector<T,N>` | 不单独导出 | 通用 owning value semantics；POD 保留 memcpy relocation；N 是编译期类型，C 动态需求由 erased vector 覆盖 |
+| strict fixed-capacity sequence | `StaticVector<T,N>`（`InplaceVector` alias） | 不导出 | storage 全内嵌、永不分配、data 地址固定；容量失败可恢复；N=0 可用；紧凑 size metadata |
 | dynamic bitset | `DynamicBitSet` | opaque dynamic bitset | allocator-aware 值类型；canonical zero padding；set algebra/shift/popcount/set-bit iteration；长 mask runtime ISA dispatch |
 | bounded sparse IDs | `SparseSet<Id>` | opaque sparse u32 set | dense+sparse 双数组；固定 universe；insert/erase/contains/clear O(1)；dense iteration O(active)；swap erase 不保序 |
 | single-thread ring | `RingDeque<T>` / `ByteRingBuffer` | opaque byte ring | 前者是可增长/显式 bounded 的 owning 双端序列；后者为流式字节 staging 提供 copy 与至多两段 zero-copy spans；均非线程安全 |
@@ -81,7 +83,7 @@ IntrusiveList 已下沉 core，因为 error/time/sched 都需要它；它不再�
 
 | 数据结构轴 | 当前 | 常用场景与判断 |
 |---|---|---|
-| 连续 sequence / inline sequence | `PodVector`、`SmallVector` | 已覆盖性能敏感 POD 与小 owning sequence；普通非平凡长序列继续用 `std::vector` |
+| 连续 sequence / inline sequence | `PodVector`、`SmallVector`、`StaticVector` | 分开覆盖 POD dynamic、可 spill 小 owning sequence 与严格 no-allocation fixed-capacity；普通非平凡长序列继续用 `std::vector` |
 | flat associative | `FlatHashMap/Set` | 已覆盖缓存友好的通用 lookup/membership |
 | ordered/range associative | `BTreeMap/Set` | range query、确定性排序遍历、时间/调度索引；cache-packed unique-key B-tree，C++ typed 与 C erased POD 两面均覆盖 |
 | node/reference-stable associative | `ConcurrentNodeHashMap` 覆盖并发 registry | accessor 生命周期内引用稳定，node 地址跨 grow 稳定；单线程 node extraction/merge 仍不复制 std API |
@@ -92,14 +94,36 @@ IntrusiveList 已下沉 core，因为 error/time/sched 都需要它；它不再�
 | priority queue / heap owner | 由标准库覆盖 | 单线程 comparator heap 先用 `std::priority_queue`；只有并发 priority 或 decrease-key 真实需求出现才新增形状 |
 | cache/LRU policy | 不在 container | eviction 是策略，先由 util/消费者组合；不能因 Folly 有同名类型就把策略塞进 Tier 0 |
 | blocking/unbounded queue | sched 负责等待/背压 | container 保持非阻塞机制，避免另造一套 shutdown/cancel/wait 语义 |
-| strict inline-capacity sequence / sorted flat associative | 仍为候选轴 | 成熟库有真实形状，但必须由 no-allocation 或 read-mostly 消费合同驱动，不能按类型数量补齐 |
+| sorted flat associative | 仍为候选轴 | read-mostly storage 有真实形状，但 comparator、bulk build 与失效合同仍需消费方驱动 |
 
 因此当前结论不是“行数已经等价主流全集”，也不是按对手 LOC 补代码。dynamic bitset/
 sparse set、单线程 ring、ordered/range 与 concurrent associative 已通过 C++ 正常入口、
 C ABI、复杂度与实际 graph/active-ID/stream-staging/time-index/shared-registry workload。
 明确负空间仍是 single-thread node extraction/merge 与 ordered multi；候选能力轴还包括
-strict inline-capacity sequence、sorted flat associative 与带完整策略的并发 priority/unbounded
+sorted flat associative 与带完整策略的并发 priority/unbounded
 机制。它们都需要真实消费者触发，不能用薄 wrapper 追成熟库类型数量。
+
+### StaticVector 的严格容量形状
+
+`StaticVector<T,N>` 补的是 `SmallVector` 无法表达的协议/实时合同，不是另一个小 N push
+benchmark fixture。设计对照本地 CCCL `cuda::std::inplace_vector` 的 capacity-sized
+metadata 与成熟 static-vector 共同面：一个紧凑整数记录 size，T-aligned raw storage
+直接位于对象内；没有 allocator、capacity pointer 或 heap fallback。`N==0` 返回空/null
+range；raw storage 不做按 capacity 清零，故默认构造保持 O(1)，而不是随 N 扫描整块对象。
+generic code 不需要为零上限另造 wrapper。`InplaceVector` 只是 alias，避免两套
+实现和两个语义相近的公开类型漂移。
+
+普通入口容量越界 fail-fast；所有 `try_*` 先验证容量，在 false 路径不构造参数、不移动
+现有元素。input/self range 的 try assign/insert 先在第二个 fixed-capacity 临时对象中单遍
+materialize，才能同时满足 single-pass、alias-safe 和“失败不改原值”；这是冷 bulk mutation
+的明确成本，不向常态元素增加 metadata。非平凡位置 mutation 只用 nothrow move construction
+和 destruction，不额外要求 move assignment；POD copy/move 和 suffix relocation 分别走
+`memcpy`/`memmove`。push/pop O(1)，insert/erase O(suffix+inserted)，已经是连续 storage 的
+下界。data 本身永不迁移；位置 mutation 前的地址保持，从位置起的元素 identity 视为失效。
+
+该类型不进入 C ABI：N、T 构造/析构和对象内布局本来就是 C++ source contract。若 C/FFI
+需要动态 element size/capacity，应使用 erased POD vector；若需要 C 固定 buffer，则由调用方
+直接拥有 pointer/count/capacity，导出模板生命周期 callback 只会冻结错误的 ABI。
 
 ### 有序 B-tree 的实际使用形状
 
