@@ -24,6 +24,8 @@ C++ typed / source surface      compiled cold cores
   PodVector<T> / SmallVector    hash_bytes, carray grow,
   FlatHashMap<K,V> /            Swiss resize/free,
   FlatHashSet<K>
+  ConcurrentFlatHashMap /
+  ConcurrentNodeHashMap
   DynamicBitSet / SparseSet    bitset bulk ISA kernels
   RingDeque<T> / ByteRingBuffer
   string_ref / StringInterner   StringInterner/path/string algorithms
@@ -32,7 +34,8 @@ C++ typed / source surface      compiled cold cores
           +-----------+-----------+
                       |
                       v
-Tier 0 dependencies: mem allocator + platform CPU discovery
+Tier 0 dependencies: core cache geometry + error + mem allocator +
+                     platform CPU discovery
 ```
 
 - `container -> {error, mem, platform}` 是允许的基础依赖；error 是 C ABI 冷失败
@@ -49,6 +52,8 @@ Tier 0 dependencies: mem allocator + platform CPU discovery
 |---|---|---|---|
 | flat map | `FlatHashMap<K,V>`（实现名 `SwissTable`） | erased POD hash map | C++ 支持 non-trivial ownership 与异构查找；C 面按字节存 POD；ctrl+连续 slots；SIMD group probe |
 | flat set | `FlatHashSet<K>` | erased POD hash set | 真 set API/slot；canonical-key find；只读 key 迭代；C 面不要求 dummy mapped value |
+| concurrent flat map | `ConcurrentFlatHashMap<K,V>`（短名 `ConcurrentHashMap`） | sharded erased POD concurrent map | 独立 cache-line shard + Swiss table；shared/exclusive accessor；紧凑、高吞吐；rehash 后地址不稳定 |
+| concurrent node map | `ConcurrentNodeHashMap<K,V>` | 不机械导出 node 指针 | bucket RW accessor；node 地址跨 rehash 稳定；表增长保留旧 bucket array，销毁前要求 quiescent |
 | POD dynamic array | `PodVector<T>` | erased POD vector | 默认可用或注入 allocator；copy/move 值语义；header-before-data；allocator/alignment 随 allocation 记录 |
 | inline array | `SmallVector<T,N>` | 不单独导出 | 通用 owning value semantics；POD 保留 memcpy relocation；N 是编译期类型，C 动态需求由 erased vector 覆盖 |
 | dynamic bitset | `DynamicBitSet` | opaque dynamic bitset | allocator-aware 值类型；canonical zero padding；set algebra/shift/popcount/set-bit iteration；长 mask runtime ISA dispatch |
@@ -75,9 +80,9 @@ IntrusiveList 已下沉 core，因为 error/time/sched 都需要它；它不再�
 |---|---|---|
 | 连续 sequence / inline sequence | `PodVector`、`SmallVector` | 已覆盖性能敏感 POD 与小 owning sequence；普通非平凡长序列继续用 `std::vector` |
 | flat associative | `FlatHashMap/Set` | 已覆盖缓存友好的通用 lookup/membership |
-| ordered/range associative | 缺 | range query、稳定排序遍历、调度索引常见；Abseil B-tree 是更贴近现代 cache 的参考，属于高优先候选 |
-| node/reference-stable associative | 缺 | 需要 grow 后地址稳定或 node extraction；与 flat 表合同不同，不能伪装成一个 policy flag |
-| concurrent associative | 缺 | 多线程 registry、memo/cache、共享状态表是基础库真实场景；参考 oneTBB concurrent hash/unordered 与 Folly concurrent map，属高优先候选 |
+| ordered/range associative | 缺 | range query、稳定排序遍历、调度索引常见；Abseil B-tree 是更贴近现代 cache 的参考，属于下一高优先候选 |
+| node/reference-stable associative | `ConcurrentNodeHashMap` 覆盖并发 registry | accessor 生命周期内引用稳定，node 地址跨 grow 稳定；单线程 node extraction/merge 仍不复制 std API |
+| concurrent associative | `ConcurrentFlatHashMap` + `ConcurrentNodeHashMap` | compact/rebuild 与 stable-reference/read-heavy 两种常用形状分开，不靠 policy flag 隐藏不同成本 |
 | 单线程 ring/deque | `RingDeque<T>` / `ByteRingBuffer` | 流式窗口、音视频/网络 staging、外部同步 SPSC 已覆盖；不让调度队列的原子/owner 合同向单线程用户征税 |
 | dynamic bitset / sparse set | `DynamicBitSet` / `SparseSet<Id>` | graph frontier、mask/set algebra 与稠密 ID active set 已覆盖；前者长 mask SIMD，后者以 O(1) clear + O(active) iteration 换取 2*U*Id bytes |
 | priority queue / heap owner | 由标准库覆盖 | 单线程 comparator heap 先用 `std::priority_queue`；只有并发 priority 或 decrease-key 真实需求出现才新增形状 |
@@ -85,10 +90,41 @@ IntrusiveList 已下沉 core，因为 error/time/sched 都需要它；它不再�
 | blocking/unbounded queue | sched 负责等待/背压 | container 保持非阻塞机制，避免另造一套 shutdown/cancel/wait 语义 |
 
 因此当前结论不是“行数已经等价主流全集”，也不是按对手 LOC 补代码。dynamic bitset/
-sparse set 与单线程 ring 已通过 C++ 正常入口、C ABI、复杂度与实际 graph/active-ID/
-stream-staging workload；收口队列下一批是 concurrent associative，再决定 ordered
-B-tree。每项仍必须先有
+sparse set、单线程 ring 与 concurrent associative 已通过 C++ 正常入口、C ABI、复杂度与
+实际 graph/active-ID/stream-staging/shared-registry workload；剩余主要结构轴是
+ordered/range associative，下一批先验证 B-tree 的公开需求与节点 SIMD 搜索价值。每项仍必须先有
 真实合同，不能用薄 wrapper 追成熟库类型数量。
+
+### 两种并发关联容器的实际使用形状
+
+并发 map 没有一个同时最优的 storage 形状。`ConcurrentFlatHashMap` 以 power-of-two
+shard 把 key 分流到独立 cache-line-aligned RW lock 与 Swiss table：适合 memo、cache、
+计数/状态表和 clear 后并行重建。单 key 只 hash 一次，先用高位选 shard，再把同一个
+hash 送入 Swiss H1/H2 probe；不会因长 key 在 wrapper 和 table 各扫一次。查找/插入/删除
+expected O(1)，`size/reserve/clear/for_each` 为 O(shards) 加实际表工作。accessor 持有整个
+shard 的读锁或写锁，因此其引用不会在 accessor 活着时被 erase/rehash，但释放后没有
+地址稳定承诺。
+
+`ConcurrentNodeHashMap` 面向 read-heavy registry、需要较长 accessor 或 grow 后对象 identity
+稳定的场景。每个 bucket 有独立 RW lock，node 单独由注入 allocator 分配；rehash 只 relink
+node，不移动 key/value。普通查找/插入/删除 expected O(1)，`size()` 是 O(1) atomic，rehash
+为 O(N+B)。增长是冷 stop-the-table 阶段：按固定顺序排空旧 bucket locks、发布新 table，
+旧 bucket arrays 退休到容器销毁；几何增长使退休 bucket 总量小于当前 bucket 数，换取 hot
+lookup 不写全局 hazard/refcount。已存在 key 的 insert/assign 在判断命中后直接返回，不会
+仅因装载率触发无意义 rehash。
+
+两者共享一个 compact、writer-preferring adaptive RW lock。状态布局参考 oneTBB
+`spin_rw_mutex`，短竞争 bounded spin，flat rehash 等长等待则用 C++20 `atomic::wait` park。
+reader-waiting hint 只在真 waiter 存在时 notify，避免 libstdc++ shared waiter pool 把互不
+相关的 shard 串成全局热点。这是正常并发使用的机制，不是 benchmark-only metadata。
+
+accessor 是并发安全合同本身：`ConstAccessor` 持共享锁，`Accessor` 持独占锁；复用同一
+accessor 前 find/insert 会先 release 旧绑定。每线程对同一 map 最多保留一个 accessor；
+flat 调用 `size/reserve/clear/for_each`、node 调用 `reserve/clear/for_each` 前也必须释放它，
+callback 不得 re-enter 同一 map。Hash/Eq/allocator 必须能被
+多线程安全调用，析构必须等待所有调用和 accessor quiescent。C ABI 不返回无法携带 RAII
+锁的裸 value pointer，而提供锁内 `find_copy` 与 `update(callback)`；这完整覆盖安全的 POD
+读写，同时不冻结 C++ node/accessor 布局。
 
 ### RingDeque / ByteRingBuffer 的实际使用形状
 
@@ -314,6 +350,7 @@ HYLE 版本、构建与 ISA 选择变化，不得持久化或作为 wire fingerp
 | StringInterner | 保留 opaque 能力 | permanent 与 refcounted lifecycle 都有真实跨语言用途；batch/result 形状已按实际分片重审 |
 | erased POD vector | 保留能力 | C 没有模板，size/alignment + allocator 是合理动态形状；不加入 C++ ctor/dtor callback |
 | erased POD flat map/set | 保留能力、形状已重塑 | map 拆分 insert/insert_or_assign；set 用独立最小 handle，共享 value_size=0 raw policy，但不暴露伪 value |
+| erased POD concurrent map | 保留能力、形状已审定 | sharded Swiss storage；只返回锁内 copy 或执行 exclusive update callback，不导出无法携带锁的裸 pointer/node accessor |
 | 四类 pointer queue | 保留能力、角色已审定 | C 热路径统一 `try_*`；pointer 是跨 FFI 的 caller-owned work handle，不增加 runtime stride/copy callback；Chase-Lev 明示 owner bottom/thief top，WsFifo 明示 back/front |
 | concurrent pointer vector | 保留能力、形状已重塑 | 明确命名 `concurrent_ptr_vector`；reserve 预分配 stable segments；`try_get(out)` 区分越界与合法 NULL payload；不冒充 erased POD vector |
 | dynamic bitset / sparse u32 set | 保留 opaque 能力 | 两者是语言无关的 runtime-universe 数据结构；C 面覆盖 resize/algebra/iteration 与 dense active IDs，不暴露 C++ 布局 |
@@ -371,7 +408,8 @@ pointer/count 的 `try_append/try_insert/try_resize/erase/try_shrink_to_fit` 覆
   OOM/越界不修改旧 size/data/capacity。
 - C flat map 与 typed mutation 语义一致：insert 不覆盖，insert_or_assign 才覆盖；
   三态结果明确区分 inserted/already-present/assigned。
-- 并发容器的稳定最小共同面使用 pointer payload。
+- 并发 queue/vector 的稳定最小共同面使用 pointer payload；并发 map 则按 options 擦除
+  POD key/value，并用 `find_copy/update` 保住锁的生命周期。
 
 完整使用和失效规则见 [`c-container.md`](../guide/c-container.md)；收口证据见
 [`container-module-closure.md`](../milestones/container-module-closure.md)。

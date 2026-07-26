@@ -99,6 +99,24 @@
 > 本批四项代码量：全库 255,662；自实现含测试 121,462；自实现不含测试 83,403；
 > container 实现 8,645。
 
+> **2026-07-26 concurrent associative 能力补全：** 没有用一把 mutex 包住现有 map，
+> 而是按成熟库的两类真实合同新增 allocator-aware `ConcurrentFlatHashMap`（兼容短名
+> `ConcurrentHashMap`）与 `ConcurrentNodeHashMap`。flat 为 cache-line-aligned sharded
+> Swiss storage，适合 compact cache/memo 与并行重建；node 采用 bucket RW accessor、稳定
+> node identity 与冷 stop-the-table relink，适合 read-heavy registry。两者单 key 只 hash
+> 一次，已存在 key 不因高 load 触发无意义 grow；adaptive RW lock 参考 oneTBB 状态布局，
+> bounded spin 后 park，并以 reader-waiter hint 避免 Linux shared waiter pool 全局热点。
+> C ABI 新增 14 个 `hyle_container_concurrent_hash_map_*` 入口，动态 C 面由 170 增至
+> **184** 个声明；不返回跨 ABI 无保护 pointer，以 `find_copy` / exclusive `update`
+> 完整覆盖安全 POD 读写。Windows、GCC14、GCC14 UBSan、M4 的 typed/纯 C/符号/头自包含
+> 四门均通过；WSL TSan 在 `setarch -R` 下 13 个并发 map/C ABI 用例无 race。三平台 n=15
+> 同 hash、同 accessor 对 oneTBB：protected hit/8-reader/90:10 mixed 均 15/15 胜；flat
+> clear+8W rebuild 快 6.25–7.05x；node rebuild 仅 M4 sign WIN，Windows/Linux 统计同档，
+> 没有把中位数领先伪写成三平台全胜。container 仍未获最终证书，剩余主要能力轴是
+> ordered/range associative 的需求与 B-tree 形状审查。
+> 本批四项代码量：全库 257,945；自实现含测试 123,262；自实现不含测试 84,693；
+> container 实现 9,935。
+
 ## 结论
 
 本节是 2026-07-19 历史结论；按 2026-07-25 新合同，container 的既有功能、红队、C ABI

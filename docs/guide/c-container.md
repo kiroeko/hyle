@@ -255,6 +255,56 @@ push/append/resize fill/insert 的输入都可来自当前 vector 的 live data�
 `visit` 的 visitor 返回 0 可提前停止；此时 `visit` 也返回 0，完整遍历返回 1。
 遍历期间不得修改 map。
 
+## 运行时擦除 concurrent hash map
+
+多个线程共享 POD key/value 时，用 `hyle_container_concurrent_hash_map_*`，不要给单线程
+`hyle_container_hash_map` 外包一把全局 mutex。它复用相同的
+`hyle_container_hash_map_options`、insert result 与 Swiss probing，但把 key 分到
+power-of-two 个独立 shard。options 宏已经带 system allocator，所以没有重复的
+`create_system`；自定义 allocator/hash/equal/context 的生命周期与单线程 map 相同，且
+这些 callback 必须允许多线程并发调用。
+
+```c
+static void increment(void* value, void* context) {
+  *(uint64_t*)value += *(const uint64_t*)context;
+}
+
+hyle_container_hash_map_options opt =
+    HYLE_CONTAINER_HASH_MAP_OPTIONS_FOR(uint64_t, uint64_t);
+hyle_container_concurrent_hash_map* counts = NULL;
+hyle_status st =
+    hyle_container_concurrent_hash_map_create(&counts, &opt, 64);
+if (!hyle_status_is_ok(st)) { hyle_status_free(&st); return 1; }
+hyle_status_free(&st);
+
+uint64_t key = 7, value = 0, one = 1;
+hyle_container_insert_result inserted;
+st = hyle_container_concurrent_hash_map_insert(
+    &inserted, counts, &key, &value);
+if (!hyle_status_is_ok(st)) {
+  hyle_status_free(&st);
+  hyle_container_concurrent_hash_map_destroy(counts);
+  return 1;
+}
+hyle_status_free(&st);
+hyle_container_concurrent_hash_map_update(counts, &key, increment, &one);
+hyle_container_concurrent_hash_map_find_copy(&value, counts, &key);
+hyle_container_concurrent_hash_map_destroy(counts);
+```
+
+并发面刻意不返回 value pointer：跨 C ABI 无法让裸指针携带 RAII read lock，返回后另一个
+线程就可能 erase/rehash。`find_copy` 在 shared lock 内复制恰好 `value_size` bytes；未找到
+时返回 0 且保持 out 不变。原子 read-modify-write 用 `update`，callback 在目标 shard 的
+exclusive lock 内执行；不得 re-enter 同一 map，也不应做长时间 blocking I/O。`contains`
+只是瞬时快照。`visit` 对每个 shard 分别持 shared lock，跨 shard weakly consistent；callback
+期间当前 key/value 稳定，但不能把地址保存到返回之后。
+
+`insert`/`insert_or_assign` 与单线程 map 一样可能 grow 并通过 Status 报 OOM；已知规模先
+`reserve(final_size)`。`size/capacity/clear/visit/reserve` 都逐 shard 工作，不是全表原子
+snapshot；不要在这些管理操作的 callback 中重入。shard count 必须是非零 power-of-two，
+默认从 64 开始通常合理；争用高且 key 分布均匀时再增加，过大只会增加空表和管理成本。
+destroy 前必须让所有线程与 callback quiescent。
+
 ## 运行时擦除 flat hash set
 
 只做 membership、去重或需要取得 canonical key 时，用
@@ -278,7 +328,7 @@ key 的 POD、hash/equality callback、context 生命周期和地址失效规则
 
 ## 并发容器
 
-所有 `try_*` 都是无分配、非阻塞热路径：返回 0 表示该次操作未取得元素/空间，out item
+下列 queue 的所有 `try_*` 都是无分配、非阻塞热路径：返回 0 表示该次操作未取得元素/空间，out item
 仅在返回成功时写入。名称刻意不再使用早期含糊的 `push/pop`：bounded/sharded 明示
 “可能因满/空失败”，work-stealing 明示 owner 的 bottom 与 thief 的 top，WsFifo 明示
 owner 的 back/front。调用者若要等待，应在 sched/platform 层组合 park/wake，而不是
@@ -340,8 +390,9 @@ create 的 `first_segment_capacity` 只选择首段及后续倍增粒度，不�
 `try_get` 以返回值表示 index 是否存在，并通过 out 写 payload；因此合法 NULL payload
 不会再和越界混淆，失败时 out 保持不变。
 
-所有并发容器的 `create` 都是 Status + out；创建完成后，满/空/竞争仍走原来的
-无分配热路径返回值。`void*` payload 可为 NULL，HYLE 不解释也不拥有它。
+所有并发 handle 的 `create` 都是 Status + out。queue 创建完成后，满/空/竞争走无分配
+热路径返回值；concurrent map 的 insert/grow 仍用 Status 报 OOM。queue 的 `void*`
+payload 可为 NULL，HYLE 不解释也不拥有它。
 
 ## C++ 形状在 C 中怎么取得
 
@@ -351,6 +402,8 @@ create 的 `first_segment_capacity` 只选择首段及后续倍增粒度，不�
 |---|---|
 | `SmallVector<T,N>` / `PodVector<T>` | `hyle_container_vector_*`：options 传 `item_size`/`item_alignment`（通常用 `HYLE_CONTAINER_VECTOR_OPTIONS_FOR`），按值存储 trivially-copyable 元素。C ABI 不接收 C++ ctor/dtor callback；inline `N` 也不是稳定跨 ABI 属性 |
 | `FlatHashMap<K,V>` | `hyle_container_hash_map_*`：C++ map 可拥有 non-trivial 值；C/FFI map 则按 options 中的 size/alignment 擦除 POD，hash/equality 由 callback+ctx 注入 |
+| `ConcurrentFlatHashMap<K,V>` | `hyle_container_concurrent_hash_map_*`：sharded erased POD map；`find_copy`/`update` 保证锁内访问，不跨 ABI 泄漏无保护 pointer |
+| `ConcurrentNodeHashMap<K,V>` | 并发 POD 读写仍走上述 concurrent map；C 不暴露 node/accessor 布局。若必须长期持有 identity，保存 caller-owned pointer/handle 作为 value，并由业务管理其生命周期 |
 | `FlatHashSet<K>` | `hyle_container_hash_set_*`：按 options 中的 key size/alignment 擦除 POD；独立 set slot，不用 map + dummy value |
 | `ByteRingBuffer` | `hyle_container_byte_ring_*`：opaque 单线程字节 ring，copy 与 two-span zero-copy 两条路径都可达 |
 | `RingDeque<T>` | 无直接模板 ABI；字节流用 byte ring，trivially-copyable 批量序列用 erased vector。若未来出现真实 typed deque FFI 需求，再设计 element-size/alignment 形状，不冻结 ctor/dtor callback |

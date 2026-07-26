@@ -17,6 +17,8 @@ container 提供性能敏感的基础数据结构、借用字符串/路径算法
 | 普通长寿命非平凡动态序列 | `std::vector` + 可选 mem PMR adapter | HYLE 不造第二个通用 vector |
 | 高频 key→value lookup | `FlatHashMap<K,V>`（实现名 `SwissTable`） | flat slot、expected O(1)、引用在 grow/erase 后失效 |
 | 高频 membership / 去重 | `FlatHashSet<K>` | 真正 set slot，不为 empty mapped value 付空间；expected O(1) |
+| 多线程共享 map，优先紧凑 storage/重建吞吐 | `ConcurrentFlatHashMap<K,V>` | 分片 Swiss table；accessor 锁住 shard；释放后引用可因 grow/erase 失效 |
+| 多线程 registry，grow 后对象地址必须稳定 | `ConcurrentNodeHashMap<K,V>` | bucket accessor；node 地址跨 rehash 稳定；每元素一次分配、间接访问 |
 | 稠密编号上的 mask、frontier、集合代数 | `DynamicBitSet` | U/8 bytes；单 bit O(1)，bulk O(U/word) 且长 mask 按 ISA 派发 |
 | 已知有界 ID，活跃项远少于 universe，频繁 clear/遍历 | `SparseSet<Id>` | 约 `2*U*sizeof(Id)`；insert/erase/clear O(1)，dense 迭代 O(active)，erase 不保序 |
 | 单线程双端队列、滑动窗口或外部同步 SPSC | `RingDeque<T>` | owning、随机访问、两段 readable spans；普通入口可增长，`*_bounded` 明确固定容量背压 |
@@ -38,12 +40,10 @@ container 提供性能敏感的基础数据结构、借用字符串/路径算法
 | 需求 | 当前选择 | 原因/后续 |
 |---|---|---|
 | 有序查找、range query | 暂用 `std::map` 或业务已有 B-tree | `FlatHashMap` 不保序；HYLE 的 cache-friendly B-tree 尚在设计 |
-| grow 后引用/地址稳定的 map | 暂用 node-based 容器 | flat slots 在 rehash 时搬移；未来 node-stable 类型必须显式命名 |
-| 多线程共享 map | 外部 shard+lock 包装 `FlatHashMap`，或成熟 concurrent map | HYLE 尚无 concurrent associative；不要无锁并发访问 flat map |
+| 单线程 grow 后引用稳定、node extraction/merge | 暂用 `std::unordered_map` 等 node-based 容器 | HYLE node map 的公开合同是并发 accessor，不为补 std API 数量复制 extraction/merge |
 
-这些是当前真实功能缺口，不是文档藏起来的“负空间”。下一批优先处理 concurrent
-associative；ordered/node-stable 类型必须先证明基础加速库中的真实需求，
-不能只因成熟库存在就复制。
+这是当前真实功能缺口，不是文档藏起来的“负空间”。下一批验证 ordered/range B-tree；
+单线程 node extraction/merge 只有出现真实基础库需求时再设计，不能只因成熟库存在就复制。
 
 ## 连续容器
 
@@ -131,6 +131,52 @@ range 或 initializer-list 构造/批量 insert，并支持 `swap` 与忽略迭�
 forward range 会先 reserve 一次；input iterator 只读取一次。move-only value 的 map
 自然仍不可复制，但 move、lookup、insert/erase 不受影响。批量插入遇到重复 key 沿用
 单项 `insert` 语义：保留先到的 mapped value，不暗中覆盖。
+
+## ConcurrentFlatHashMap 与 ConcurrentNodeHashMap
+
+先按引用稳定性和内存形状选，不按一条吞吐数字选：
+
+- cache、memo、共享计数/状态表，值短小且允许释放 accessor 后地址变化：优先
+  `ConcurrentFlatHashMap`。它是 `ConcurrentHashMap` 的显式别名；新代码在需要和 node
+  版区分时优先写长名。
+- service/device/graph object registry，调用期间要持有稳定引用，或 reserve/自动 grow 后
+  object identity 仍必须稳定：用 `ConcurrentNodeHashMap`。代价是每 node 一次 allocation、
+  pointer chase 和退休 bucket arrays。
+- 根本不需要并发：仍用 `FlatHashMap`；并发类型的锁和 accessor 不是免费保险。
+
+```cpp
+#include "hyle/container/concurrent_hash_map.h"
+#include "hyle/container/concurrent_node_hash_map.h"
+
+using Counters =
+    hyle::container::ConcurrentFlatHashMap<std::uint64_t, std::uint64_t>;
+Counters counters(256);  // power-of-two shards；高争用服务可显式调大
+Counters::Accessor counter;
+counters.try_emplace(counter, request_id, 0);
+++*counter;              // 独占保护这个 shard
+counter.release();       // 尽早释放，缩短同 shard 阻塞
+
+using Registry =
+    hyle::container::ConcurrentNodeHashMap<std::uint64_t, DeviceState>;
+Registry devices(256);   // 初始 bucket 数；可先 reserve 已知规模
+Registry::ConstAccessor device;
+if (devices.find(device, device_id)) use(*device);  // 引用在 accessor 内稳定
+device.release();
+```
+
+`ConstAccessor` 持共享锁，`Accessor` 持独占锁；同一 accessor 传入下一次 find/insert 前会自动
+release 旧绑定，但显式尽早 `release()` 更容易看出临界区。每线程对同一 map 最多保留一个
+live accessor；不要拿着一个 accessor 再用另一个访问同 map。flat 的 `size/reserve/clear/
+for_each` 与 node 的 `reserve/clear/for_each` 也要求先 release；不要从 callback re-enter 同一
+map，否则会等待自己。析构前必须 join/quiesce 所有调用者；自定义 Hash/Eq 与 allocator
+也必须允许不同线程并发调用。
+
+两者的 `contains()` 只是瞬时快照：返回后其他线程可以立即 erase。需要读出并继续使用值，
+应持有 `ConstAccessor`；需要 read-modify-write，直接用 `Accessor`，不要先 contains 再 find。
+自动增长或 `reserve` 可能 OOM：可恢复路径使用返回 `InsertResult::kOutOfMemory` 的 `try_*`，
+普通 `emplace/insert_or_assign` 沿用 HYLE fail-fast OOM 合同。flat 的 `size()` 要逐 shard 取
+快照，node 的 `size()` 是 O(1) atomic；两者都不是跨 key 的事务快照。已知最终规模时先
+reserve，既把 cold allocation 移出服务热路径，也缩短写锁持有时间。
 
 ## DynamicBitSet、SparseSet 与 FlatHashSet 怎么选
 

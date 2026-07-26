@@ -3,7 +3,7 @@
 > 本页是 [performance 总账](./README.md) 的 **container 模块**入口。  
 > **详表与优化史**（长）：[benchmarks-mem-container.md](./benchmarks-mem-container.md)（mem 已迁出，该文件以 container 为主）。  
 > **模块收口**（正确性/C ABI，非性能全表）：[../milestones/container-module-closure.md](../milestones/container-module-closure.md)（2026-07-19）。  
-> 队列/并发容器的 SOTA 对标多在 sched 消费路径 + `queue_sota_bench`；本页聚焦 hash / map / vec / str / path。IntrusiveList 已归 core，见 [`benchmarks-core`](./benchmarks-core.md)。
+> 调度队列的 SOTA 对标多在 sched 消费路径 + `queue_sota_bench`；并发关联容器已在本页按 shared-registry 正常合同单列。IntrusiveList 已归 core，见 [`benchmarks-core`](./benchmarks-core.md)。
 
 ## 0. 数据新鲜度（先看这个）
 
@@ -17,6 +17,7 @@
 | **ConcurrentVector** | ✅ Windows+WSL n=15；⏳ M4 | append/range iteration 同合同 SOTA；WSL `operator[]` 是已知缺口 |
 | **DynamicBitSet / SparseSet** | ✅ **2026-07-26 三平台 n=15** | actual-use graph frontier / frame-local active IDs；M4 bitset 与 std 同档；纯 SparseSet membership 明确输 dense bitmap |
 | **RingDeque / ByteRingBuffer** | ✅ **2026-07-26 三平台 n=15** | 固定容量 FIFO 与 32KiB backlog/4KiB stream staging；WSL 与 Folly-shaped floor 同档，Win/M4 胜 floor |
+| **ConcurrentFlatHashMap / ConcurrentNodeHashMap** | ✅ **2026-07-26 三平台 n=15** | 同 hash、同 accessor 合同对 oneTBB；读/混合路径三平台全胜；node rebuild 在 Win/Linux paired 统计同档，flat rebuild 6.25–7.05x |
 | **并发队列** | 见 queue / sched 文 | 不在本页展开 |
 
 **读法**：标 ✅ 的可当当前产品结论；标 ⚠️ 的方向大体可信，但**不要**当 2026-07-20 式三平台 sign 证书去对外硬报绝对 ns。
@@ -40,6 +41,7 @@
 | **SparseSet** | dense bitmap + `std::unordered_set` | ✅ frame clear+rebuild Win 3.29x/28.6x，WSL 3.61x/11.6x，M4 1.86x/11.4x；membership 明确输 dense |
 | **RingDeque** | Folly fixed-capacity ring shape / `std::deque` | ✅ Win/M4 快 floor 1.06x/1.15x，WSL 与 floor 同档；三平台快 std 1.28–9.20x |
 | **ByteRingBuffer** | linear byte buffer+memmove / `std::deque<byte>` | ✅ stream staging Win/WSL/M4 快 linear 1.82x/1.94x/4.26x，快 deque 约118x/48x/121x |
+| **ConcurrentFlatHashMap / ConcurrentNodeHashMap** | oneTBB `concurrent_hash_map` | ✅ protected hit、8-reader、90/10 mixed 三平台均 15/15 胜；flat rebuild 6.25–7.05x；node rebuild M4 胜、Win/Linux 统计同档 |
 
 ### DynamicBitSet / SparseSet：按实际生命周期验收（三平台 Release，n=15）
 
@@ -93,7 +95,7 @@ ID。不得为赢 membership benchmark 给常态对象再塞一份 bitmap，否�
 与 M4/AppleClang NEON；本地没有可编译的 Boost dynamic_bitset peer，因此只把
 `std::bitset` 写作当前成熟同接口证据，不外推成“所有对手 SOTA”。
 
-### RingDeque / ByteRingBuffer：单线程常态形状（Windows/WSL Release，n=15）
+### RingDeque / ByteRingBuffer：单线程常态形状（三平台 Release，n=15）
 
 FIFO workload 先预留 4096 个 `uint64_t` slot 并保持半满，每轮做 65536 次正常
 `try_push_back_bounded + front + pop_front`。`std::deque` 是熟悉通用 peer；portable
@@ -127,6 +129,43 @@ memmove 剩余 backlog；`std::deque<byte>` 使用逐元素 API。数值按处�
 staging；zero-copy 的价值取决于真实 syscall/codec 消费者，不用一个不读写 bytes 的
 metadata benchmark 虚报无限带宽。当前证书覆盖 Windows/MSVC、WSL/GCC14 与
 M4/AppleClang；三平台 typed/C/surface/header gate 也均通过。
+
+### Concurrent associative：同 accessor 合同的 shared registry（三平台 Release，n=15）
+
+workload 使用 32K 个 `uint64_t` key/value 与同一 HYLE hash，三种实现都在查找期间持有
+read/write accessor，避免拿无锁裸 pointer lookup 对比受保护引用。四个真实路径分别是：
+单线程 protected hit、8 readers 查既有 key、8 threads 90% read/10% exclusive update，
+以及 clear 后 8 个 disjoint writers 重建 registry。node/HYLE 与 oneTBB 都预留 2x bucket；
+flat 使用 256 shards 并按总规模 reserve。表内均为 ns/op 中位数：
+
+| 平台 / workload | HYLE node | HYLE flat | oneTBB | paired HYLE/oneTBB throughput |
+|---|---:|---:|---:|---|
+| Windows protected hit | **10.239** | 10.926 | 16.617 | node 1.615x；flat 1.540x；均 15/15 |
+| Windows 8 readers | **3.379** | 3.746 | 7.048 | node 2.087x；flat 1.882x；均 15/15 |
+| Windows 90/10 mixed | **4.609** | 5.515 | 7.120 | node 1.564x；flat 1.290x；均 15/15 |
+| Windows 8-writer rebuild | 76.309 | **12.115** | 90.416 | node median 1.174x、9/15（TIE）；flat 6.250x、15/15 |
+| WSL protected hit | 8.910 | **8.327** | 15.749 | node 1.765x；flat 1.893x；均 15/15 |
+| WSL 8 readers | **3.133** | 3.528 | 5.857 | node 1.898x；flat 1.639x；均 15/15 |
+| WSL 90/10 mixed | **4.258** | 5.054 | 6.434 | node 1.507x；flat 1.255x；均 15/15 |
+| WSL 8-writer rebuild | 62.862 | **10.624** | 76.056 | node median 1.210x、12/15（TIE）；flat 7.052x、15/15 |
+| M4 protected hit | 7.229 | **5.381** | 10.616 | node 1.451x；flat 1.959x；均 15/15 |
+| M4 8 readers | **5.347** | 6.669 | 11.834 | node 2.218x；flat 1.777x；均 15/15 |
+| M4 90/10 mixed | **5.576** | 7.034 | 10.165 | node 1.825x；flat 1.443x；均 15/15 |
+| M4 8-writer rebuild | 61.529 | **12.690** | 79.669 | node 1.298x；flat 6.275x；均 15/15 |
+
+node 在 read-heavy/accessor workload 更合适，并提供 rehash 后稳定 node address；flat 以
+连续 Swiss storage 与 shard-local rehash 换来 compact/rebuild 吞吐。不能因 flat 重建数字
+更高就删除 node，也不能把 node 的稳定地址成本塞给所有 cache 用户。Windows/Linux 的
+node rebuild 绝对中位数领先，但 paired sign test 未达 p<0.01，因此明确记为 TIE，不写成
+三平台全胜。
+
+首版 adaptive RW lock 在每个“最后 reader”释放时都调用 `atomic::notify_all`，即使没有
+waiter；libstdc++ 由此把独立 shard 汇入共享 waiter pool，Linux flat read 一度只有约
+oneTBB 的 0.22x。当前状态增加 reader-waiting hint，只在真实 waiter/pending writer 存在时
+通知；同时 writer unlock 保留竞争 reader 的瞬时计数，park 使用 acquisition loop 观察到
+的旧 state，避免 missed transition。这些是锁正确性与常态多 shard 使用所需的机制修复，
+没有增添 benchmark API 或每 entry metadata。GCC 14 UBSan 全绿；WSL 新内核下 TSan 需
+`setarch -R` 避开 runtime shadow mapping 冲突，13 个 concurrent map/C ABI 用例无 race。
 
 ### FlatHashMap / FlatHashSet：真实 typed 形状（Windows/WSL Release，n=15）
 
@@ -235,6 +274,11 @@ WSL 的逐次索引差距与 GCC 对运行时 segment 定位的代码生成有�
    SparseSet 当前已有三平台 n=15；本地缺 Boost dynamic_bitset 可编译 peer，后续只在
    参考树具备同合同实现后补，不以网络临时 clone 改变参考集。
 
+9. **ConcurrentNodeHashMap 并发重建**
+   Windows/Linux 中位数分别快 oneTBB 1.174x/1.210x，但只有 9/15、12/15 同侧，未达到
+   paired sign 门槛；按统计同档。稳定 node identity 是该类型的选择理由，纯 clear+rebuild
+   优先 `ConcurrentFlatHashMap`，不为追单项数字扭曲 node storage。
+
 ## 3. 选型（不同场景不同 container 组成）
 
 ```text
@@ -242,6 +286,8 @@ WSL 的逐次索引差距与 GCC 对运行时 segment 定位的代码生成有�
 长字节哈希                 → hash_bytes（自动按发布平台/ISA 选择 wyhash 或宽 XXH3）
 通用 hash map              → FlatHashMap
 高频 membership / 去重     → FlatHashSet
+共享 compact map / 高频重建 → ConcurrentFlatHashMap
+共享 registry / 稳定地址    → ConcurrentNodeHashMap
 稠密 mask/frontier/集合代数 → DynamicBitSet
 有界 ID、频繁 clear/活跃遍历 → SparseSet（纯 membership 优先 dense bitmap）
 单线程双端/外部同步 SPSC    → RingDeque（固定容量使用显式 *_bounded）
@@ -294,6 +340,13 @@ scripts/bench-stat.py <build>/bin/hyle_container_ring_bench -n 15 \
   --pair "HYLE RingDeque bounded" "std::deque<uint64_t>" \
   --pair "HYLE RingDeque bounded" "portable bounded ring (Folly shape)" \
   --pair "HYLE ByteRingBuffer copy API" "linear byte buffer + memmove"
+
+# concurrent associative vs oneTBB（其余 pair 见 benchmark 标签）
+scripts/bench-stat.py <build>/bin/hyle_container_concurrent_map_bench -n 15 \
+  --pair "oneTBB concurrent_hash_map 8R" "HYLE ConcurrentNodeHashMap 8R" \
+  --pair "oneTBB concurrent_hash_map 8R" "HYLE ConcurrentFlatHashMap 8R" \
+  --pair "oneTBB concurrent_hash_map mixed" "HYLE ConcurrentNodeHashMap mixed" \
+  --pair "oneTBB concurrent_hash_map mixed" "HYLE ConcurrentFlatHashMap mixed"
 ```
 
 定位单项时可再设 `HYLE_QUEUE_BENCH_VARIANT=hyle|tbb` 与

@@ -18,7 +18,7 @@
 | `error/` | `hyle/error/{status,result}.h` | Status/Result 与分层错误上下文；选型见 [`error.md`](./error.md) |
 | `mem/` | `hyle/mem/{allocator,region,shared_pool,fixed_pool}.h` | allocator、region/pool、诊断与 NUMA/大页；选型见 [`mem.md`](./mem.md) |
 | `platform/` | `hyle/platform/{thread,wait,fs,virtual_memory,numa,mapped_file,cpu}.h` | OS 线程、等待、文件系统、VM 与拓扑 |
-| `container/` | `hyle/container/{swiss_table,carray,small_vector,string_ref}.h` | flat map、连续/内联容器、字符串和并发队列 |
+| `container/` | `hyle/container/{swiss_table,small_vector,concurrent_hash_map,concurrent_node_hash_map}.h` | flat/node 并发 map、连续/内联容器、bit/ring、字符串和调度队列；选型见 [`container.md`](./container.md) |
 | `time/` | `hyle/time/{clock,timer_queue,common_timeout_queue}.h` | 时钟、deadline、线程 sleep 与两类 timer；选型见 [`time.md`](./time.md) |
 | `util/` | `hyle/util/{ref_counted,registry,scope_guard,random}.h` | 引用所有权、registry、scope guard 与 RNG |
 | `obs/` | `hyle/obs/{log,trace}.h` | 结构化日志与可选 trace |
