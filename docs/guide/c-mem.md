@@ -77,6 +77,8 @@ typedef struct hyle_allocator {
 
 C/C++ 两面通过 trampoline 显式构造，不 reinterpret 布局。
 `hyle_alloc/free/realloc(..., alignment=0)` 在头内直接折叠默认对齐，不再先跨 DLL 查询。
+0 是这三个 C convenience 的专用默认值；非零 alignment 必须是 2 次幂，alloc/realloc 的非法值
+会 fail-fast。直接手调 vtable function pointer 属低层路径，调用方必须先满足同一合同。
 这些是纯 C header helper，所以使用标准 C 的 `<stddef.h>/<stdint.h>/<string.h>`；HYLE 的
 C++ 实现文件继续用 `<cstddef>/<cstdint>/<cstring>`，两侧不混写语言头。
 
@@ -95,10 +97,14 @@ reserve 的严格预算，不是 backing 的物理空闲字节。
 
 `hyle_stats_allocator_as_allocator()` 返回借用 wrapper 的 allocator；成功 alloc/free/realloc
 更新 64-bit 并发计数。`hyle_stats_allocator_snapshot(s, &out)` 用出参返回 POD，避免 FFI
-绑定大型 struct-return ABI。`track_leaks!=0` 额外维护带锁的 pointer→size map，并可用
+绑定大型 struct-return ABI。并发更新期间每个字段都是 race-free observation，但多个 relaxed
+load 不形成一个共同瞬间；quiesce 全部借用 allocator 后 snapshot 才是跨字段一致的精确结论。
+并发 peak 使用 allocation/grow 的原子 add 结果更新，不漏掉随后被其他线程 free 的高水位。
+`track_leaks!=0` 额外维护带锁的 pointer→size map，并可用
 `copy_leaks(&total,...)` 分页/截断读取并返回 Status（复制时会从 metadata 取得临时数组）；
 这是诊断慢路，生产热路只开 counters 或直接不用 wrapper。
-`reset` 要求没有 live allocation，并同时清空 leak inventory。
+`reset` 要求没有 live allocation，并同时清空 leak inventory。destroy 与 move 覆盖同样要求
+quiescent/balanced；违反时 fail-fast，避免已借出的 allocator 静默变成悬空 state。
 
 若记录某次 allocation 时 metadata OOM，用户 allocation 仍成功、计数仍精确，但
 `hyle_stats_allocator_leak_records_dropped()!=0` 且 `leaks_complete()==0`。`copy_leaks` 仍复制

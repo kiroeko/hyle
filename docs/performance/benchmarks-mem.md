@@ -57,6 +57,14 @@ static/source direct 路径平 mimalloc；shared 默认路径保持编译期 dir
 库边界，不能再拿 benchmark-only vendor 补链消掉它。需要运行时注入的 vtable 路径对裸 mi 有
 可测税，但仍平或赢同为多态封装的 pmr。
 
+2026-07-26 strict-alignment 实现把验证放在**显式 alignment 的 C++ overload / C convenience**；
+`Allocator::allocate(size)`、默认 `reallocate` 和编译期 `SystemAllocator` 默认参数的 shipping
+汇编不含 alignment 分支，动态显式请求才付一次 fail-fast 检查。Windows shared implementation
+smoke（MSVC 19.50，section A，`n=15`，未作为正式 clean 证书替换上表）为：shared
+`SystemAllocator/raw mi=0.913`、runtime vtable/raw mi=0.904、runtime vtable/同类 PMR=0.982；
+三者 paired sign 均在 lose 侧、absolute spread 判 TIE。它确认 strict check 没污染默认 runtime
+热路，也再次说明 shared/vtable seam 尚不能宣称 SOTA；正式结论仍待同链接模型三平台重签。
+
 ## 2. Bump 与单线程定长对象
 
 ### PooledRegion / StackAllocator
@@ -380,6 +388,11 @@ Linux/utility 的尾延迟收益小于 p50，但 p95/p99 仍稳定同侧；这�
 MSVC 19.50 用当前 benchmark 形状做 100-sample smoke：scheduler pool p50/p95/p99
 **7.3/8.1/14.4 µs**，direct VM **155.0/196.1/230.7 µs**。与上表旧正式证书处于同一带，
 没有观察到 Result 成功态回退；样本数不足以替换 n=15 正式表，只作为迁移哨兵。
+
+2026-07-26 新增的 `capacity/trim/clear` 不进入 acquire/release 成功热路：capacity 是 immutable
+query，trim 在显式 cold 控制点逐个把 VM release 放到 SpinLock 外。Scheduler shutdown 在 worker
+join 后 clear 三档 cache。原有真实 scheduler hot-reuse 表继续有效；reclaim 的验收是 cached 从 N
+降到 keep/0 且 shutdown 后为 0，不用一个孤立纳秒数字把冷 VM unmap 冒充性能能力。
 
 ## 6. 选型
 

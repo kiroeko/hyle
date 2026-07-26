@@ -40,7 +40,7 @@ mem 不提供 pinned allocator 或单块 staging convenience。compute `Buffer` 
 
 来自 oneTBB、mimalloc、Folly、marl、ggml 的公开 API、测试和真实调用：
 
-1. aligned 通用 C allocator；C 返回空，C++ typed/PMR/RAII 适配边界可抛 `bad_alloc`。
+1. aligned 通用 C allocator；C 返回空，C++ typed/PMR/allocator-template/RAII 适配边界可抛 `bad_alloc`。
 2. remote free：分配线程与释放线程不同，不能假设 thread-affine。
 3. owned request/frame region：大量小对象，individual free 无效，clear/destroy 整批释放；Folly `Arena` 的 min-block growth、usage 与 hard size limit 是直接参考，HYLE graph evaluation 已提供内部 workload。
 4. 固定容量共享池：耗尽必须可观察；hard quota 与 thread-cache soft limit 必须是不同类型/名称。
@@ -56,7 +56,7 @@ mem 不提供 pinned allocator 或单块 staging convenience。compute `Buffer` 
 
 | 成熟形状 | HYLE 处置 | 理由 |
 |---|---|---|
-| oneTBB scalable/cache-aligned allocator/resource | `SystemAllocator` + `PmrResource` / `AlignedPmrResource` | 通用堆借成熟 mimalloc；高对齐是显式 PMR policy，不污染默认容器 |
+| oneTBB scalable/cache-aligned allocator/resource | `SystemAllocator` + `StdAllocator<T>` + `PmrResource` / `AlignedPmrResource` | 通用堆借成熟 mimalloc；传统 allocator-template 与 PMR 两种消费都可达，高对齐 policy 不污染默认容器 |
 | oneTBB `memory_pool`（growable variable-size） | 不另造公共通用堆 | 与 mimalloc 的职责重叠；HYLE 只保留有不同 ownership 合同的 external `FixedPool` |
 | oneTBB `fixed_pool` | `FixedPool` | caller-owned storage、individual alloc/free/realloc、无 fallback；内部 two-level bitmap 给出 bounded fit |
 | Folly `Arena` | `Region` | owned growable bulk lifetime、size limit、usage/reserved、large-block release；clear 后同样单调走 retained blocks |
@@ -89,11 +89,12 @@ blocking borrow 不进入 `mem/` 基础池。等待策略依赖 fiber/condition/
 |---|---|---|
 | `SystemAllocator` | 编译期无状态；static/source 直调 mimalloc，shared 经 mem direct-import seam | 保留；修 typed count 乘法回绕且不向 shared consumer 泄漏 vendor 符号 |
 | `Allocator` | C++ 值句柄 `{alloc, free, realloc, state}` | 保留；内部运行时注入脊；C ABI 只在对外 shim 映射 |
+| `StdAllocator<T>` | 借用 `Allocator` 的标准 named-requirement adapter | 保留；服务 std/第三方 allocator-template API，完整 backing identity，标准边界 OOM 抛异常，不另造 shared_ptr API |
 | `PmrResource` | `Allocator` → `std::pmr::memory_resource` | 保留；构造 assert valid，equality 比较完整三函数 + state |
 | `AlignedPmrResource` | 可选 minimum base alignment 的 PMR adapter | 保留；对应 oneTBB `cache_aligned_resource` 的用户需求，不给普通 PMR 强加 cache policy |
 | typed/RAII helpers | `allocate_n/zeroed/reallocate_n`、construct/destroy、make_unique | 保留；乘法溢出和显式 alignment 在 System/运行时两层一致 |
 
-通用 malloc 借 mimalloc，不自造任意大小通用堆。sized-free 必须带回原请求的 size/alignment；backing identity 与 ownership 不能丢失。
+通用 malloc 借 mimalloc，不自造任意大小通用堆。sized-free 必须带回原请求的 size/alignment；backing identity 与 ownership 不能丢失。C++ 默认 alignment overload 保持零验证分支；显式动态 alignment 在 dispatch 前验证非零 2 次幂。C convenience 单独把 0 归一为默认值。
 
 ### 4.1 C/FFI 产品面
 
@@ -224,7 +225,9 @@ external 能力按 allocation model 分成两个类型：
 - `reserve_huge_1g_pages` 是进程启动期冷控制面，原生 C++ 返回 `Status`，C ABI 原样转移同一
   representation；不得在 C 层把 bool 重新猜成错误原因。mimalloc 当前只暴露 ENOMEM，映射
   `ResourceExhausted` 并在 message 保留 native value，非法 node/溢出为 `OutOfRange`。
-- `FiberStackPool` 保留且是当前内部刚需。
+- `FiberStackPool` 保留且是当前内部刚需；capacity 是真实 clamp 后的 retention 上限，0 禁用
+  cache，`trim/clear` 是冷回收。Scheduler 在全部 fiber drain、worker join 后 clear 三个 tier，
+  这是不会与 release 竞争的 owner-level 回收点；不在普通 idle 热路周期扫描。
 - graph 当前可直接消费通用 owned Region；`GraphArena::measure/reserve/allocate` 这类 graph-aware worst-case/liveness 策略等到对应消费者落地，归 `graph/`。
 - `Buffer(kHostPinned)` 的 native-handle/mapped-pointer 合同先在 P0 纠正；`StagingRing` 等到至少两个异步传输在途、slot 复用受 Event 约束时再落地，归 `compute/`。
 - io provided-buffer ring 归 `io/`。
@@ -235,6 +238,7 @@ external 能力按 allocation model 分成两个类型：
 | 用户形状 | C++ 原生产品面 | C/FFI 产品面 | 合同 |
 |---|---|---|---|
 | 默认/注入分配 | `SystemAllocator`、`Allocator`、typed helpers | `hyle_system_allocator`、`hyle_allocator`、inline alloc/free/realloc | 默认 direct path；运行时注入保留 backing identity |
+| allocator-template adapter | `StdAllocator<T>` | 不适用 | std/第三方容器 rebind、完整 backing equality、借用生命周期、标准 OOM exception boundary |
 | heap size/pressure | `system_good_size/usable_size/collect` | 同名 `hyle_system_*` | 显式查询与回收，不隐藏周期线程 |
 | byte admission | `QuotaAllocator` | `hyle_quota_allocator_*` | strict live requested-byte budget |
 | 统计/泄漏诊断 | `StatsAllocator::create(backing,track,metadata)`、`LeakTracker::create(metadata)` | `hyle_stats_allocator_*` + POD snapshot/bounded copy | opt-in；被测/诊断域分离；metadata OOM 的 dropped/complete 可观察；默认 system 热路零统计税 |
@@ -247,7 +251,7 @@ external 能力按 allocation model 分成两个类型：
 | growable owner-local slots | `GrowablePool<T>` | runtime size/alignment `hyle_growable_pool_*` | 单线程、几何增长、Reconstruct |
 | preserve/RAII loan | `PreservingObjectPool<T>`、`PoolLoan` | raw slot acquire/release，由调用方管理 init/cleanup | 能力可组合；C 不伪造 ctor/dtor/RAII |
 | PMR | `PmrResource` / `AlignedPmrResource` | 不适用 | C++ 标准库适配；后者只提高 container buffer 的 base alignment，不保证 element 间隔 |
-| guarded fiber stack | `FiberStack`、`FiberStackPool` | sched C ABI 内部消费 | scheduler-owned runtime specialization，不暴露危险 raw stack control |
+| guarded fiber stack | `FiberStack`、`FiberStackPool` | sched C ABI 内部消费 | scheduler-owned runtime specialization；有界 retention + cold trim；shutdown 自动归还，不暴露危险 raw stack control |
 | THP/NUMA span | `HugeRegion` + policy、`reserve_huge_1g_pages` | `hyle_huge_region_*` + policy | 显式请求、可观察 accepted/applied 状态；冷预留失败返回同一 Status |
 
 C ABI 的“完整”按用户能力可达判断，不按 C++ 符号 1:1 判断。模板 ctor/dtor、RAII 和 PMR
@@ -261,6 +265,7 @@ runtime `slot_stride` 均不要求用户重演内部布局。
 通用 host RAM / 默认容器             → SystemAllocator
 运行时注入、FFI、mock                → Allocator
 std::pmr 容器                         → PmrResource
+传统 std/第三方 allocator 模板参数    → StdAllocator<T>
 PMR buffer 需要显式 cache/page 对齐   → AlignedPmrResource
 request/frame 整批释放                → Region
 调用方外部 buffer 的 bulk scratch     → FixedRegion

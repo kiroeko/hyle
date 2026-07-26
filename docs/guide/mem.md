@@ -10,6 +10,7 @@ mem 是 host RAM 的基础原语层。它不替业务猜生命周期，也不把
 | 需求 | C++ 形状 | C / FFI 形状 | 关键合同 |
 |---|---|---|---|
 | 普通动态分配 / 依赖注入 | `system_allocator()` / `Allocator` | `hyle_system_allocator` / `hyle_allocator` | sized-free；free/realloc 带回原 size/alignment |
+| 接入传统 allocator-template API | `StdAllocator<T>` | 不适用：C 直接持有 allocator vtable | 借用 backing；STL OOM 转 `bad_alloc`；容器先于 backing 销毁 |
 | 接入 STL PMR | `PmrResource`；buffer base 需显式高对齐时 `AlignedPmrResource` | 不需要：C 直接持有 allocator vtable | 借用 `Allocator`；高对齐不等于逐元素隔离 |
 | 任意 backing 的严格 live-byte admission | `QuotaAllocator` | `hyle_quota_allocator` | 线程安全；按 requested bytes 精确计量 |
 | opt-in allocation 计数 / 泄漏诊断 | `StatsAllocator::create(backing,track,metadata)` | `hyle_stats_allocator` | 被测 backing 与诊断 metadata 分域；计数线程安全，leak inventory 是慢路 |
@@ -25,7 +26,7 @@ mem 是 host RAM 的基础原语层。它不替业务猜生命周期，也不把
 | 单线程 typed 对象、容量可增长 | `GrowablePool<T>` | `hyle_growable_pool` / typed 宏 | 指针稳定，按需增加 chunks |
 | 自动归还 pooled object | `PoolLoan<T, Owner>` / `try_loan()` | 手动 acquire/release | owner 必须比 loan/slot 长寿 |
 | 大块、THP/NUMA placement | `HugeRegion` | `hyle_huge_region` | requested 与 accepted policy 可分别查询 |
-| fiber stack | `FiberStack` / `FiberStackPool` | 不独立导出；由 sched C ABI 管理 | guard page + runtime 专用缓存 |
+| fiber stack | `FiberStack` / `FiberStackPool` | 不独立导出；由 sched C ABI 管理 | guard page + 有界 runtime 缓存；shutdown/trim 可归还 VM |
 
 GPU staging、submission/completion lifetime 属于 `compute/transfer`，不由 mem 用“通用
 pinned pool”猜测。graph tensor liveness planner 属于 graph；mem 只提供它消费的 Region。
@@ -34,13 +35,15 @@ pinned pool”猜测。graph tensor liveness planner 属于 graph；mem 只提�
 返回 `Status`：非法 node/尺寸是 `OutOfRange`，mimalloc 无法取得连续 host RAM 是
 `ResourceExhausted`；失败后仍可继续使用普通页。不要在请求热路反复调用。
 
-## 通用 allocator、typed array 与 PMR
+## 通用 allocator、typed array、标准 adapter 与 PMR
 
 `Allocator` 是 HYLE 内部和 C++ 用户的按值注入句柄；模块之间直接传这个 C++ 类型，不经
 C ABI。`allocate_n<T>` / `allocate_zeroed<T>` / `reallocate_n<T>` 会检查 count 乘法溢出，
 并允许显式 alignment；用同一个 alignment 调 `deallocate_n`。`reallocate_n` 失败或溢出时
 旧 allocation 仍然有效；因为底层 resize 可能按字节搬移，它只接受 trivially-copyable `T`，
 带构析/自引用状态的对象应新建 storage 后逐对象 move/销毁。
+原生 C++ allocate/reallocate 的 alignment 必须是非零 2 次幂；非法值 fail-fast。纯 C
+`hyle_alloc/hyle_realloc(..., alignment=0)` 是单独的 convenience 合同，会在头内折叠成默认对齐。
 
 ```cpp
 hyle::mem::Allocator alloc = hyle::mem::system_allocator();
@@ -51,6 +54,25 @@ if (auto* grown = alloc.reallocate_n(samples, 1024, 4096, 64)) {
   alloc.deallocate_n(samples, 4096, 64);
 } else {
   alloc.deallocate_n(samples, 1024, 64);  // realloc failure preserved it
+}
+```
+
+第三方或标准容器把 allocator 类型写进模板参数、无法接收 `memory_resource*` 时使用
+`StdAllocator<T>`。它按完整 `{alloc,free,realloc,state}` identity 判断相等，默认使用 system
+backing，也可显式借用任意 `Allocator`。adapter、容器与 `allocate_shared` control block 都不拥有
+backing；声明/销毁顺序必须让 backing 最后离开作用域。标准库边界按标准要求把 OOM 转为异常，
+HYLE 内部仍使用 null/`Result` 合同。
+
+```cpp
+#include "hyle/mem/std_allocator.h"
+
+hyle::mem::StatsAllocator stats =
+    hyle::mem::StatsAllocator::create(hyle::mem::system_allocator()).value();
+{
+  hyle::mem::StdAllocator<Node> alloc(stats.get());
+  std::vector<Node, hyle::mem::StdAllocator<Node>> nodes(alloc);
+  auto root = std::allocate_shared<Node>(alloc, initial_value);
+  // root 和 nodes 都在 stats 前销毁。
 }
 ```
 
@@ -65,6 +87,19 @@ hyle::mem::AlignedPmrResource cache_buffer(
 std::pmr::vector<std::byte> bytes(&cache_buffer);
 bytes.resize(4096);  // bytes.data() 至少 64-byte aligned
 ```
+
+需要“变长 allocation + individual free + 一次 bulk release”而消费方接受 PMR 时，不另造
+HYLE 通用 heap；组合标准 pool resource：
+
+```cpp
+hyle::mem::PmrResource upstream(hyle::mem::system_allocator());
+std::pmr::unsynchronized_pool_resource local_pool(&upstream); // 单 owner
+std::pmr::vector<Record> records(&local_pool);
+// records 先销毁；local_pool.release() 可提前归还全部 pooled blocks。
+```
+
+跨线程并发分配改用 `std::pmr::synchronized_pool_resource`；它们仍借用 upstream，不能比
+`PmrResource` 长寿。
 
 ## Region 家族
 
@@ -210,6 +245,10 @@ loan 等调用合同错误允许 fail-fast。`StatsAllocator`/`LeakTracker` 可�
 仍精确，`leaks()->dropped_records()` 增加且 `complete()==false`；已知 inventory 仍可读取，
 但不能宣称它穷尽了全部 leak。确认没有 live allocation 后 `clear()`/Stats reset 才会恢复
 complete。只要计数、不需要逐指针报告时不要启用 leak tracking。
+并发调用期间 `snapshot()` 的每个字段都是 race-free atomic observation，但多个字段不是一个
+加锁/序列锁保护的共同瞬间；调用方 quiesce 所有借用 allocator 后，整份 snapshot 才可作为一致
+结论。并发 peak 使用本次 `fetch_add` 的线性化结果更新，不会因另一线程随后 free 而漏掉高水位。
+`reset`、销毁或 move 覆盖目标都要求 quiescent 且 balanced，违反时 fail-fast。
 
 ## 三份最短组合
 
@@ -262,6 +301,11 @@ bind 与 interleave 互斥；interleave 必须搭配 `kNumaAny`，不能传给 `
 能保留原生 VM 失败原因；可信固定配置仍可用 `Fiber` 便利构造，用户输入应走
 `Fiber::create` 的可恢复接口。
 
+`FiberStackPool::capacity()` 返回真实 retention 上限：请求超过固定 256 slots 时 clamp，传 0
+明确禁用缓存。长寿 runtime 在已 quiesce 的 memory-pressure/idle 控制点可用 `trim(keep)` 或
+`clear()` 主动释放 guarded VM；并发 release 允许在 trim 之后重新填充。Scheduler 的确定安全
+回收点是 shutdown：全部 fiber 完成且 worker join 后自动 clear 三个标准 tier，不等对象析构。
+
 ## 如何看性能
 
 benchmark 以场景和合同分组，入口是 `hyle_mem_scenarios_bench`；用
@@ -271,4 +315,6 @@ Region retained-block scaling。正式性能表只维护在
 win/loss 或待补证据。性能结果用来帮助选型，不改变前述 ownership/capacity 合同。
 
 当前设计边界见 [`../architecture/mem-design.md`](../architecture/mem-design.md)；预发布冻结的
-验收记录见 [`../milestones/mem-close-plan.md`](../milestones/mem-close-plan.md)。
+验收记录见 [`../milestones/mem-close-plan.md`](../milestones/mem-close-plan.md)，2026-07-26
+成熟库缺口重开与处置见
+[`../milestones/mem-mature-gap-audit.md`](../milestones/mem-mature-gap-audit.md)。

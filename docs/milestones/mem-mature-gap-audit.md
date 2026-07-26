@@ -5,7 +5,13 @@
 | 范围 | `include/hyle/mem`、`include/hyle/c/mem.h`、`src/mem`、测试、guide / architecture / performance |
 | 基线 | `c1f2e394`（独立 worktree：`audit/mem-mature-gap`） |
 | 方法 | 从真实基础加速库用户的 lifetime、ownership、并发、失败和组合需求出发，对照工作区 oneTBB、Folly、marl、mimalloc；不按 benchmark 名称凑类型 |
-| 总结 | **能力面已经宽且边界基本合理，但不能维持“彻底冻结”表述。先修 3 个 P0 契约问题；再裁决/补齐 STL allocator adapter 与 fiber stack 冷回收。**没有证据支持像 container 一样再整体翻倍。 |
+| 总结 | **能力面已经宽且边界合理；复审发现的 3 个 P0 契约问题、STL allocator adapter 与 fiber stack 冷回收均已落地。**没有证据支持像 container 一样再整体翻倍；重新冻结只剩 WSL sanitizer 与正式跨平台 shared 性能证书。 |
+
+> **实现进展（2026-07-26，`implementation/mem-strict`）：**P0 alignment/stats 已在
+> `2cb1a10` 落地；`ac73fc7` 增加 `StdAllocator<T>`、FiberStackPool 精确 capacity、
+> `trim/clear` 与 Scheduler shutdown owner-level 回收。Windows shared/static correctness 各 6/6，
+> Windows ASan 6/6；原生 `HYLE_SANITIZER=asan` 尚有 gtest flag 未传播的构建系统缺口，本次用同构
+> 全局 sanitizer flag 完成验证。WSL correctness/TSan 与正式三平台 shared 性能证书完成后重新冻结。
 
 本文是 2026-07-25 `mem-close-plan.md` 之后的红队补充，不复制稳定设计和点值。稳定能力仍以
 [`mem-design.md`](../architecture/mem-design.md) 为真源，用户选择以
@@ -17,8 +23,8 @@
 | 用户问题 | C++ 形状 | C 形状 | 现状 |
 |---|---|---|---|
 | 普通 host heap、注入自定义 backing | `SystemAllocator`、`Allocator` | 三函数指针 + state、system handle | 完整；默认编译期路径与运行时注入分开 |
-| PMR 容器、显式首地址 alignment | `PmrResource`、`AlignedPmrResource` | 不适用 | 完整；但缺传统 allocator-template adapter |
-| 限额、计数、泄漏 inventory | `QuotaAllocator`、`StatsAllocator`、`LeakTracker` | opaque decorator + POD/copy-out | 功能完整；并发 peak/snapshot 与销毁合同有 P0 |
+| PMR / allocator-template 容器、显式首地址 alignment | `PmrResource`、`AlignedPmrResource`、`StdAllocator<T>` | 不适用 | 已补传统 adapter；两种标准消费形状分开 |
+| 限额、计数、泄漏 inventory | `QuotaAllocator`、`StatsAllocator`、`LeakTracker` | opaque decorator + POD/copy-out | 完整；并发 peak、snapshot 与销毁合同已修复并测试 |
 | request/phase bulk lifetime | `Region`、`FixedRegion`、`PooledRegion` | 对等 owned/value/borrowed 形状 | 完整；epoch 复杂度已收口 |
 | external variable-size bounded heap | `FixedPool` | caller-owned/in-place 或 created control | 完整；TLSF 风格 FL/SL，查找/合并 O(1) |
 | hard fixed-block capacity | `SharedPool` | opaque handle | 完整；completed free 全局可见 |
@@ -27,7 +33,7 @@
 | 单线程按需增长的固定 slot | `GrowablePool<T>` | runtime slot core | 完整 |
 | LIFO scratch | `StackAllocator` | opaque handle | 完整 |
 | 大页、NUMA host RAM | `HugeRegion` + placement policy | opaque handle + policy | 常用 all-node/local/preferred 能力完整；选 node 集/chunk 策略待 platform 先裁决 |
-| guard-page fiber stack/cache | `FiberStack`、`FiberStackPool` | 有意不暴露 raw C mem API | 分层正确；长寿 runtime 缺主动 trim |
+| guard-page fiber stack/cache | `FiberStack`、`FiberStackPool` | 有意不暴露 raw C mem API | 已补真实 capacity/trim/clear；Scheduler shutdown 自动回收 |
 
 生产消费也支持这些形状并非只为 benchmark 存在：allocator 被 container、graph、sched、I/O、
 compute bridge 广泛使用；`Region` 被 graph/HTTP request 使用；`FiberStackPool` 被 scheduler 使用。
@@ -36,6 +42,10 @@ compute bridge 广泛使用；`Region` 被 graph/HTTP request 使用；`FiberSta
 ## 2. 成熟库对照后的缺口矩阵
 
 ### P0：冻结前必须修
+
+实现状态：**3/3 已完成**。alignment 验证位于真正消费请求的 C++ 显式 overload / C convenience，
+默认 overload 无热路分支；Stats peak 使用原子 add 的返回值；snapshot 选择 per-field observation +
+quiescent coherence；destroy/reset/move overwrite 执行 balanced fail-fast。
 
 | 问题 | 证据 | 影响 | 验收 |
 |---|---|---|---|
@@ -48,10 +58,13 @@ compute bridge 广泛使用；`Region` 被 graph/HTTP request 使用；`FiberSta
 
 ### P1：真实常用能力，冻结前应裁决
 
+实现状态：`StdAllocator<T>` 与 FiberStackPool 回收 **已完成**；selected-node/chunk NUMA 保持
+platform-first 待办，不在本轮 mem-only 猜测跨平台合同。
+
 | 候选 | 成熟形状 | HYLE 建议 | C ABI |
 |---|---|---|---|
-| 传统 C++ Allocator named-requirement adapter | oneTBB `memory_pool_allocator<T>` / `cache_aligned_allocator<T>`；Folly `CxxAllocatorAdaptor<T,Inner>`；marl `StlAllocator<T>` | 增加一个借用 `mem::Allocator` 的 `AllocatorAdaptor<T>`（名字最终审），含 rebind/equality/propagation，STL 边界 OOM 转 `std::bad_alloc`。它服务 `std::vector<T,A>`、`allocate_shared` 和第三方 allocator-aware 类型；PMR 不是这些模板接口的替代品 | 无；模板天然只属于 C++ |
-| `FiberStackPool` 主动冷回收 | 当前 `fiber_stack.h:75-133` 默认每 tier 缓存 64，内部固定 256 slots，只有析构释放；传入 cap>256 又静默截断实际行为 | 增加准确 `capacity()`，构造时 clamp/校验；增加 `trim(keep=0)` / `clear()`，锁内摘取、锁外释放 VM。scheduler 可在 idle/memory-pressure 控制点调用 | mem C 无需导出；若 runtime 用户需要，放 sched 控制面 |
+| 传统 C++ Allocator named-requirement adapter | oneTBB `memory_pool_allocator<T>` / `cache_aligned_allocator<T>`；Folly `CxxAllocatorAdaptor<T,Inner>`；marl `StlAllocator<T>` | 已实现 `StdAllocator<T>`：借用 `mem::Allocator`，含 rebind/完整 backing equality/非传播 traits，STL 边界 OOM 转 `std::bad_alloc`；覆盖 `vector`、`allocate_shared`、over-alignment 与失败路径 | 无；模板天然只属于 C++ |
+| `FiberStackPool` 主动冷回收 | 原实现默认每 tier 缓存 64、内部固定 256 slots，只有析构释放；传入 cap>256 的有效上限不可见 | 已增加准确 `capacity()`、0-disable、cap clamp、`trim(keep=0)` / `clear()`；锁内摘取、锁外释放 VM，scheduler 在 worker join 后回收三档 cache | mem C 无需导出；scheduler C 用户由 runtime 自动管理 |
 | 选择 NUMA nodes + interleave chunk | oneTBB `numa_allocation.h:40-48` 接收 node vector 与 `bytes_per_chunk` | 先由 platform 定义 cpuset/Windows/Linux/macOS 可诚实实现的统一合同，再扩 `HugeRegion`；不能只在 mem 猜一个 Linux-only policy | platform C 与 HugeRegion options 应同时补，不能只补 C++ |
 
 传统 allocator adapter 是本轮最明确的功能缺口：它在 oneTBB、Folly、marl、mimalloc C++ facade
@@ -87,8 +100,8 @@ construct/destroy/unique-array 便利性可以随 adapter 一并审，但不应�
 ## 4. API、依赖和文档结论
 
 **C++ API。** ownership 类型总体清楚，默认静态 `SystemAllocator` 与显式动态 `Allocator` 分层正确；
-最大的易用性洞是无法自然接入传统 allocator-template API。typed helper 的命名/对称性宜与新 adapter
-一起收，不要再散落 convenience。
+传统 allocator-template API 已由 `StdAllocator<T>` 补齐；PMR 与 named-requirement adapter 各自服务
+对应的标准消费形状，typed helper 保持在现有对称集合中，不再散落 convenience。
 
 **C ABI。** 107 项当前已覆盖 allocator、诊断、region、variable/fixed/growable pool、stack 与
 HugeRegion。PMR、RAII loan、模板构造析构和 raw fiber stack 是合理的 C++ only。上述 P0 不增加符号；
@@ -100,7 +113,7 @@ allocator adapter/stack trim 也不要求 mem C ABI。只有选-node NUMA 真落
 `mem -> error + platform` 没错，但 [`pre-release-readiness.md`](pre-release-readiness.md) 的合法
 header-only edge 说明应显式记录这条 util-core 边，避免施工顺序文档与实际 include 图不一致。
 
-**guide / performance。** 修 P0 时同步：
+**guide / performance。** 本轮已同步：
 
 - C/C++ guide 解释 snapshot 是并发时 per-field 观察、quiescence 后才可作一致结论；记录 Stats
   destroy 与 reset 的 quiescence 合同。
@@ -113,11 +126,11 @@ header-only edge 说明应显式记录这条 util-core 边，避免施工顺序�
 
 ## 5. 推荐收口顺序与退出条件
 
-1. 修 3 个 P0，补静态/shared/runtime 与并发合同测试，更新 C/C++ guide。
-2. 实现传统 allocator adapter；补 std 容器、`allocate_shared`、over-alignment、equality/lifetime、OOM
-   测试。只对比同合同 peer，不为它另造孤立 benchmark。
-3. 给 FiberStackPool 补 capacity + trim，接 scheduler 的真实 idle/reclaim 控制点；以 retained VM/RSS
-   与恢复延迟验收。
+1. [x] 修 3 个 P0，补静态/shared/runtime 与并发合同测试，更新 C/C++ guide。
+2. [x] 实现传统 allocator adapter；补 std 容器、`allocate_shared`、over-alignment、equality/lifetime、
+   OOM 测试。只对比同合同 peer，不为它另造孤立 benchmark。
+3. [x] 给 FiberStackPool 补 capacity + trim，接 scheduler 的真实 shutdown reclaim 控制点；VM release
+   位于锁外，shutdown 回收在 worker join 后执行。
 4. platform 先裁决 selected-node/chunk NUMA；若三平台合同不诚实则明确保持 non-goal。
 5. 完成 shared-distribution 三平台同链接模型证书，并复跑现有 correctness/sanitizer/surface gates。
 
