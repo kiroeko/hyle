@@ -18,7 +18,8 @@ container 提供性能敏感的基础数据结构、借用字符串/路径算法
 | 普通长寿命非平凡动态序列 | `std::vector` + 可选 mem PMR adapter | HYLE 不造第二个通用 vector |
 | 高频 key→value lookup | `FlatHashMap<K,V>`（实现名 `SwissTable`） | flat slot、expected O(1)、引用在 grow/erase 后失效 |
 | 高频 membership / 去重 | `FlatHashSet<K>` | 真正 set slot，不为 empty mapped value 付空间；expected O(1) |
-| 有序索引、range query、确定性遍历 | `BTreeMap<K,V>` / `BTreeSet<K>` | cache-packed B-tree；查找 O(log N)，成功 mutation 后 iterator/reference 失效 |
+| 查多改少、批量装载后要有序点查/遍历 | `FlatMap<K,V>` / `FlatSet<K>` | 排序连续 storage；查找 O(log N)、遍历 cache-friendly，位置 mutation O(N) |
+| 持续 mutation 的有序索引、range query | `BTreeMap<K,V>` / `BTreeSet<K>` | cache-packed B-tree；查找/mutation O(log N)，成功 mutation 后 iterator/reference 失效 |
 | 多线程共享 map，优先紧凑 storage/重建吞吐 | `ConcurrentFlatHashMap<K,V>` | 分片 Swiss table；accessor 锁住 shard；释放后引用可因 grow/erase 失效 |
 | 多线程 registry，grow 后对象地址必须稳定 | `ConcurrentNodeHashMap<K,V>` | bucket accessor；node 地址跨 rehash 稳定；每元素一次分配、间接访问 |
 | 稠密编号上的 mask、frontier、集合代数 | `DynamicBitSet` | U/8 bytes；单 bit O(1)，bulk O(U/word) 且长 mask 按 ISA 派发 |
@@ -44,11 +45,10 @@ container 提供性能敏感的基础数据结构、借用字符串/路径算法
 |---|---|---|
 | 单线程 grow 后引用稳定、node extraction/merge | 暂用 `std::unordered_map` 等 node-based 容器 | HYLE node map 的公开合同是并发 accessor，不为补 std API 数量复制 extraction/merge |
 | duplicate-key ordered multi-index | 暂用 `std::multimap` / `std::multiset` | HYLE 当前只提供 unique-key index；没有真实消费者证明 multi 语义值得复制一套 API |
-| 排序连续关联容器 | 暂用排序 `std::vector` 或 `BTreeMap/Set` | 查多改少时 flat sorted storage 可能更合适，但 comparator、bulk build、失效语义需要真实消费者驱动 |
 | 并发 priority / 通用 unbounded queue | 由 sched 的等待、关闭与背压策略组合 | container 不应只复制机制而遗漏 shutdown/cancel/ownership 合同 |
 
-前两项是明确负空间；后两项是成熟库对账后保留的候选轴。它们只有在真实基础库需求把
-所有权、失败和并发合同说清后才会进入公开面，不能只因成熟库存在就复制。
+前两项是明确负空间；并发 priority/unbounded 仍是候选轴。它只有在真实基础库需求把
+所有权、失败、等待和关闭合同说清后才会进入公开面，不能只因成熟库存在就复制。
 
 ## 连续容器
 
@@ -174,6 +174,45 @@ range 或 initializer-list 构造/批量 insert，并支持 `swap` 与忽略迭�
 forward range 会先 reserve 一次；input iterator 只读取一次。move-only value 的 map
 自然仍不可复制，但 move、lookup、insert/erase 不受影响。批量插入遇到重复 key 沿用
 单项 `insert` 语义：保留先到的 mapped value，不暗中覆盖。
+
+## FlatMap 与 FlatSet
+
+查多改少、数据能按 key 批量生成，且需要确定性顺序或 binary-search range 时，使用
+`FlatMap` / `FlatSet`。它们不是 `FlatHash*` 的改名：storage 始终按 comparator 排序，点查
+为 O(log N)，完整遍历连续，位置 insert/erase 则要移动后缀 O(N)。长期不断插入、按时间
+淘汰或维护大范围索引时应改用 `BTreeMap/Set`。
+
+```cpp
+#include "hyle/container/flat_sorted.h"
+
+std::vector<std::pair<std::uint64_t, Route>> rows = load_sorted_routes();
+hyle::container::FlatMap<std::uint64_t, Route> routes(
+    hyle::container::sorted_unique, rows.begin(), rows.end());
+
+if (auto it = routes.find(route_id); it != routes.end())
+  dispatch(it->value());
+for (auto it = routes.lower_bound(first); it != routes.upper_bound(last); ++it)
+  visit(it->key(), it->value());
+```
+
+两个类型为 allocator-aware、owning、unique-key 容器，共享一个排序连续 engine；底层复用
+`SmallVector<Entry,1>`，singleton 不分配，也没有另造第二个通用 vector。公开面包括
+异构 `find/contains/count/lower_bound/upper_bound/equal_range`、insert/erase、map 的
+`try_emplace`/`insert_or_assign`/`operator[]`、reserve/shrink、copy/move 和有序迭代；map
+iterator 的 key 只读、value 可写，set iterator 始终只读。`sorted_unique` 构造/assign 是
+O(N) bulk 路径；tag 是调用方对“严格有序且无等价 key”的承诺，库不会再逐项验证或偷偷
+排序。普通无 tag range 按 unique insert 处理，复杂度最坏 O(N²)。
+
+`try_emplace` 中的 `try` 沿用标准容器含义：命中时不构造 mapped value，**不表示 OOM
+可恢复**。需要恢复 allocation failure 时用返回 `FlatInsertResult` 的 `try_insert` /
+`try_insert_or_assign`，或先 `try_reserve`；`try_assign(sorted_unique, ...)` 会在独立
+replacement 中构造，失败时保持原容器。普通入口把 OOM 视为 fail-fast。成功插入/删除使
+mutation 点及其后的 iterator/reference 失效；若发生 reallocation 则全部失效。mapped value
+原地赋值不改变排序，也不使 iterator 失效。
+
+这两个 typed 模板不新增 C ABI：C 面已有 erased POD B-tree 覆盖动态 comparator/range
+需求，也可由调用方管理排序 POD buffer。为 flat sorted 再冻结一套 runtime entry layout、
+iterator 与 bulk-tag ABI，只会复制能力而不能表达非平凡 C++ 生命周期。
 
 ## BTreeMap 与 BTreeSet
 

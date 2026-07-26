@@ -176,6 +176,23 @@
 > N=0 与只移动后缀的复杂度/失效合同。模板没有新增 C ABI；C 动态需求继续使用 erased POD
 > vector，避免冻结 T/N 生命周期布局。
 
+> **2026-07-26 sorted-flat associative 能力补全：** lookup-heavy、mutation-light 的
+> immutable registry/config/routing index 不应继续在 B-tree 与用户手写排序 vector 之间
+> 二选一。新增 allocator-aware `FlatMap/FlatSet`，两个薄 facade 共享唯一
+> `FlatSortedStorage` engine：unique key、异构 find/lower/upper/equal-range、连续有序迭代、
+> 熟悉 insert/erase/map mutation，以及信任调用方前提的 `sorted_unique` O(N) 构造/assign。
+> map key 只读/value 可写；没有 node extraction、multi、benchmark knob 或常态 metadata。
+> 底层复用已审查的 `SmallVector<Entry,1>`，没有另造通用 vector，也不引入零容量 raw
+> sentinel 的 pointer arithmetic/object-model 风险；singleton 不分配，SBO 大小不是公开
+> knob。allocator OOM、随机 std::map/set differential、alias、move-only/lifetime 与异常保持
+> 均覆盖，Windows Release container 286/286 通过。
+> normal-use n=15 对同布局 sorted-std::vector peer：32Ki hit/miss/iteration 为
+> 0.963x/0.984x/0.983x，set membership 1.032x，64 erase+append 1.437x；但从 pair range 的
+> sorted bulk build 仅 0.309x（绝对约 0.99ns/entry），明确登记为转换常数缺口，不为它改坏
+> key-const 公开 entry。Boost.Container 子模块在本地 reference clone 中为空，本轮未伪写
+> Boost 对比；GCC/UBSan 与 M4 仍待 main 合入后补证。typed 模板有意不新增 C ABI：现有
+> erased POD B-tree/runtime comparator 与调用方排序 buffer 已覆盖动态 C 需求。
+
 ## 结论
 
 本节是 2026-07-19 历史结论；按 2026-07-25 新合同，container 的既有功能、红队、C ABI

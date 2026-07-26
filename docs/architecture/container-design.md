@@ -25,6 +25,7 @@ C++ typed / source surface      compiled cold cores
   StaticVector<T,N>
   FlatHashMap<K,V> /            Swiss resize/free,
   FlatHashSet<K>
+  FlatMap<K,V> / FlatSet<K>
   BTreeMap<K,V> / BTreeSet<K>   erased ordered POD B-tree
   ConcurrentFlatHashMap /
   ConcurrentNodeHashMap
@@ -54,6 +55,7 @@ Tier 0 dependencies: core cache geometry + error + mem allocator +
 |---|---|---|---|
 | flat map | `FlatHashMap<K,V>`（实现名 `SwissTable`） | erased POD hash map | C++ 支持 non-trivial ownership 与异构查找；C 面按字节存 POD；ctrl+连续 slots；SIMD group probe |
 | flat set | `FlatHashSet<K>` | erased POD hash set | 真 set API/slot；canonical-key find；只读 key 迭代；C 面不要求 dummy mapped value |
+| sorted flat map / set | `FlatMap<K,V>` / `FlatSet<K>` | 不机械新增 | lookup-heavy/mutation-light；unique-key；连续有序迭代；`sorted_unique` O(N) bulk；位置 mutation O(N) |
 | ordered map / set | `BTreeMap<K,V>` / `BTreeSet<K>` | erased POD B-tree map/set | unique-key；双向有序迭代；lower/upper/range visit/range erase；成功 mutation 后引用与 iterator 失效 |
 | concurrent flat map | `ConcurrentFlatHashMap<K,V>`（短名 `ConcurrentHashMap`） | sharded erased POD concurrent map | 独立 cache-line shard + Swiss table；shared/exclusive accessor；紧凑、高吞吐；rehash 后地址不稳定 |
 | concurrent node map | `ConcurrentNodeHashMap<K,V>` | 不机械导出 node 指针 | bucket RW accessor；node 地址跨 rehash 稳定；表增长保留旧 bucket array，销毁前要求 quiescent |
@@ -85,7 +87,7 @@ IntrusiveList 已下沉 core，因为 error/time/sched 都需要它；它不再�
 |---|---|---|
 | 连续 sequence / inline sequence | `PodVector`、`SmallVector`、`StaticVector` | 分开覆盖 POD dynamic、可 spill 小 owning sequence 与严格 no-allocation fixed-capacity；普通非平凡长序列继续用 `std::vector` |
 | flat associative | `FlatHashMap/Set` | 已覆盖缓存友好的通用 lookup/membership |
-| ordered/range associative | `BTreeMap/Set` | range query、确定性排序遍历、时间/调度索引；cache-packed unique-key B-tree，C++ typed 与 C erased POD 两面均覆盖 |
+| ordered/range associative | `FlatMap/Set` + `BTreeMap/Set` | 前者覆盖批量装载后的 read-mostly 连续索引，后者覆盖持续 mutation、时间/调度索引；均为 unique-key |
 | node/reference-stable associative | `ConcurrentNodeHashMap` 覆盖并发 registry | accessor 生命周期内引用稳定，node 地址跨 grow 稳定；单线程 node extraction/merge 仍不复制 std API |
 | concurrent associative | `ConcurrentFlatHashMap` + `ConcurrentNodeHashMap` | compact/rebuild 与 stable-reference/read-heavy 两种常用形状分开，不靠 policy flag 隐藏不同成本 |
 | 单线程 ring/deque | `RingDeque<T>` / `ByteRingBuffer` | 流式窗口、音视频/网络 staging 与外部同步 ring 已覆盖；不让并发原子合同向单线程用户征税 |
@@ -94,13 +96,12 @@ IntrusiveList 已下沉 core，因为 error/time/sched 都需要它；它不再�
 | priority queue / heap owner | 由标准库覆盖 | 单线程 comparator heap 先用 `std::priority_queue`；只有并发 priority 或 decrease-key 真实需求出现才新增形状 |
 | cache/LRU policy | 不在 container | eviction 是策略，先由 util/消费者组合；不能因 Folly 有同名类型就把策略塞进 Tier 0 |
 | blocking/unbounded queue | sched 负责等待/背压 | container 保持非阻塞机制，避免另造一套 shutdown/cancel/wait 语义 |
-| sorted flat associative | 仍为候选轴 | read-mostly storage 有真实形状，但 comparator、bulk build 与失效合同仍需消费方驱动 |
 
 因此当前结论不是“行数已经等价主流全集”，也不是按对手 LOC 补代码。dynamic bitset/
 sparse set、单线程 ring、ordered/range 与 concurrent associative 已通过 C++ 正常入口、
 C ABI、复杂度与实际 graph/active-ID/stream-staging/time-index/shared-registry workload。
 明确负空间仍是 single-thread node extraction/merge 与 ordered multi；候选能力轴还包括
-sorted flat associative 与带完整策略的并发 priority/unbounded
+带完整策略的并发 priority/unbounded
 机制。它们都需要真实消费者触发，不能用薄 wrapper 追成熟库类型数量。
 
 ### StaticVector 的严格容量形状
@@ -128,6 +129,30 @@ construction。整容器 throwing move 提供 basic guarantee，构造失败会�
 该类型不进入 C ABI：N、T 构造/析构和对象内布局本来就是 C++ source contract。若 C/FFI
 需要动态 element size/capacity，应使用 erased POD vector；若需要 C 固定 buffer，则由调用方
 直接拥有 pointer/count/capacity，导出模板生命周期 callback 只会冻结错误的 ABI。
+
+### 排序连续关联容器的实际使用形状
+
+`FlatMap/Set` 对照 Boost.Container flat associative、C++23 flat_map/set 与 LLVM/Folly
+read-mostly sorted-vector 的共同形状：unique key/entry 连续存储，binary search 点查，
+不为 node、rank/finger 或 benchmark 保存常态 metadata。两个公开 facade 共享一个
+`FlatSortedStorage` engine；map entry 延续 Swiss/B-tree 的 `key()` 只读、`value()` 可写，
+set 迭代只暴露 `const K&`。异构 lookup 只要求 comparator 能对 K/Q 双向 noexcept 比较。
+
+底层没有另造第二个 `std::vector`，而是复用已经审查过的
+`SmallVector<Entry,1>` allocator-aware sequence engine。一个 inline entry 让空/singleton
+registry 不分配，并保持 SmallVector 已有的合法非零 inline-array iterator 模型；它是固定的
+产品形状，不暴露可调 SBO/benchmark knob。大 entry 或已知大表可先 reserve，分配与释放仍
+走 mem 的 sized-free/alignment 合同。
+
+普通 lookup O(log N)，iteration O(N)，位置 insert/erase O(N)。`sorted_unique` bulk
+construction/assign 信任调用方“严格有序、无等价 key”的显式前提，预留一次后单遍构造，
+所以为 O(N)；库不再做一遍 comparator validation。allocation-recoverable mutation 使用
+`FlatInsertResult` / `try_reserve` / `try_assign`，standard-shaped `try_emplace` 只承诺命中
+不构造 mapped value。成功位置 mutation 从该点起失效，reallocation 全失效。
+
+C ABI 有意不增加：现有 erased POD B-tree 已覆盖 runtime comparator/range，纯 C 也能直接
+管理排序 POD buffer；新增 flat-sorted handle 会复制动态能力，却仍无法表达任意 C++ K/V
+构造析构。typed shape 保持 source surface，内部 allocator 继续遵守 mem 契约。
 
 ### 有序 B-tree 的实际使用形状
 

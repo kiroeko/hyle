@@ -488,6 +488,9 @@ hyle_apply_warnings(hyle_container_spsc_bench)
 add_executable(hyle_container_concurrent_map_bench container/concurrent_map_bench.cc)
 target_link_libraries(hyle_container_concurrent_map_bench PRIVATE hyle_container nanobench)
 hyle_apply_warnings(hyle_container_concurrent_map_bench)
+add_executable(hyle_container_flat_sorted_bench container/flat_sorted_bench.cc)
+target_link_libraries(hyle_container_flat_sorted_bench PRIVATE hyle_container nanobench)
+hyle_apply_warnings(hyle_container_flat_sorted_bench)
 endif()
 
 # core's allocation-free intrusive primitive: normal FIFO batching, arbitrary
