@@ -143,6 +143,20 @@ constexpr std::uint64_t saturating_add_ns(std::uint64_t base,
 
 namespace detail {
 
+template <class Rep>
+struct UnsignedDurationRep {
+  using type = std::make_unsigned_t<Rep>;
+};
+
+// std::chrono::duration<bool, Period> is a valid standard duration, while
+// std::make_unsigned<bool> is intentionally ill-formed. Treat its one-bit
+// count as the natural unsigned 0/1 representation instead of letting a
+// documented "any standard duration" entry fail during template expansion.
+template <>
+struct UnsignedDurationRep<bool> {
+  using type = unsigned char;
+};
+
 struct WideProduct {
   std::uint64_t high;
   std::uint64_t low;
@@ -207,10 +221,10 @@ constexpr WideDivision multiply_divide(std::uint64_t value,
 }
 
 template <class Rep, class Period>
-constexpr std::uint64_t integral_duration_ns_saturated(
+HYLE_FORCE_INLINE constexpr std::uint64_t integral_duration_ns_saturated(
     std::chrono::duration<Rep, Period> duration) noexcept {
   static_assert(std::is_integral_v<Rep>);
-  using UnsignedRep = std::make_unsigned_t<Rep>;
+  using UnsignedRep = typename UnsignedDurationRep<Rep>::type;
   static_assert(std::numeric_limits<UnsignedRep>::digits <= 64,
                 "duration reps wider than uint64_t are not supported");
   const Rep raw = duration.count();
@@ -283,7 +297,7 @@ constexpr std::uint64_t integral_duration_ns_saturated(
 // requested wait/deadline never becomes shorter during unit conversion.
 // Non-positive/NaN values become zero; huge/infinite values saturate.
 template <class Rep, class Period>
-std::uint64_t duration_ns_saturated(
+HYLE_FORCE_INLINE std::uint64_t duration_ns_saturated(
     std::chrono::duration<Rep, Period> duration) noexcept {
   if constexpr (std::is_integral_v<Rep>) {
     return detail::integral_duration_ns_saturated(duration);
@@ -298,7 +312,8 @@ std::uint64_t duration_ns_saturated(
   }
 }
 
-inline std::uint64_t to_monotonic_ns(MonotonicTimePoint point) noexcept {
+HYLE_FORCE_INLINE std::uint64_t to_monotonic_ns(
+    MonotonicTimePoint point) noexcept {
   const auto value = point.time_since_epoch().count();
   return value > 0 ? static_cast<std::uint64_t>(value) : 0;
 }
@@ -308,7 +323,7 @@ inline std::uint64_t to_realtime_ns(RealtimeTimePoint point) noexcept {
   return value > 0 ? static_cast<std::uint64_t>(value) : 0;
 }
 
-inline MonotonicTimePoint monotonic_time_point(
+HYLE_FORCE_INLINE MonotonicTimePoint monotonic_time_point(
     std::uint64_t value_ns) noexcept {
   constexpr auto max = static_cast<std::uint64_t>(Duration::max().count());
   const auto clamped = value_ns > max ? Duration::max().count()

@@ -303,6 +303,13 @@ TEST(Clock, IntegralDurationConversionRoundsFractionalNanosecondsUpExactly) {
             1'500'000'000u);
 }
 
+TEST(Clock, IntegralDurationConversionAcceptsBooleanRep) {
+  using BooleanThirdSecond = std::chrono::duration<bool, std::ratio<1, 3>>;
+  EXPECT_EQ(hyle::time::duration_ns_saturated(BooleanThirdSecond(false)), 0u);
+  EXPECT_EQ(hyle::time::duration_ns_saturated(BooleanThirdSecond(true)),
+            333'333'334u);
+}
+
 TEST(Clock, InstantDifferenceIsTypedAndSigned) {
   using namespace std::chrono_literals;
   const Instant earlier{MonotonicTimePoint(10ns)};

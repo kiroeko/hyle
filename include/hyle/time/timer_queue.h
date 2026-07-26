@@ -73,9 +73,9 @@ class TimerQueue {
   }
 
   template <class Rep, class Period>
-  void schedule_after(TimerEntry* entry,
-                      std::chrono::duration<Rep, Period> timeout,
-                      MonotonicTimePoint now = monotonic_now()) noexcept {
+  HYLE_FORCE_INLINE void schedule_after(
+      TimerEntry* entry, std::chrono::duration<Rep, Period> timeout,
+      MonotonicTimePoint now = monotonic_now()) noexcept {
     schedule(entry, saturating_add_ns(to_monotonic_ns(now),
                                      duration_ns_saturated(timeout)));
   }
