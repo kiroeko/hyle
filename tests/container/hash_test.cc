@@ -83,11 +83,11 @@ TEST(Hash, StringViewNoCollisionsOn10k) {
   EXPECT_EQ(seen.size(), 10000u);  // 64-bit XXH3: zero collisions expected
 }
 
-// LONG strings (> kWyhashThreshold=128B) take the wyhash branch of hash_bytes
-// (best-of-breed by length). Verify that branch: deterministic, seed-sensitive,
-// and collision-free over 10k distinct long strings. The short test above only
-// exercises the XXH3 branch, so without this the wyhash path is untested.
-TEST(Hash, LongStringWyhashPathNoCollisions) {
+// LONG strings take the runtime best-of branch (wyhash, or AVX2 XXH3 past the
+// shipping platform's measured crossover).
+// Verify its public contract rather than pinning an implementation-specific value:
+// process-local repeatability, seed sensitivity, and quality over distinct inputs.
+TEST(Hash, LongStringRuntimePathNoCollisions) {
   std::unordered_set<std::uint64_t> seen;
   std::vector<std::string> keep;
   keep.reserve(10000);
@@ -102,6 +102,13 @@ TEST(Hash, LongStringWyhashPathNoCollisions) {
   const std::size_t n = keep[0].size();
   EXPECT_EQ(hyle::container::hash_bytes(s, n, 0), hyle::container::hash_bytes(s, n, 0));
   EXPECT_NE(hyle::container::hash_bytes(s, n, 0), hyle::container::hash_bytes(s, n, 1));
+}
+
+TEST(Hash, WideRuntimePathIsRepeatableAndSeedSensitive) {
+  const std::string input(4096, 'w');
+  const auto first = hash_bytes(input.data(), input.size(), 0);
+  EXPECT_EQ(first, hash_bytes(input.data(), input.size(), 0));
+  EXPECT_NE(first, hash_bytes(input.data(), input.size(), 1));
 }
 
 // The XXH3<->wyhash crossover at kWyhashThreshold must not break determinism: both

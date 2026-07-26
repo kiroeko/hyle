@@ -24,8 +24,24 @@ container 提供性能敏感的基础数据结构、借用字符串/路径算法
 | 单 owner 做新任务、多个 thief 偷旧任务 | `WorkStealingDeque<T>` | owner bottom LIFO，thief top；固定容量 |
 | owner 需要 FIFO，thief 批量接走约一半 | `WsFifoQueue<T>` | 调度专用；两个队列必须容量相同 |
 | 多 writer append，quiesce 后按索引遍历 | `ConcurrentVector<T>` | 分段稳定地址；append 并行，实时 `size()` 不是元素完成栅栏 |
-| 字节 hash | `hash_bytes` / `Hash<T>` | 小 typed key 内联；字节范围统一走稳定库入口 |
+| 进程内 table hash | `hash_bytes` / `Hash<T>` | 小 typed key 内联；长输入可按 CPU 派发；值不可持久化/上 wire |
 | 词法路径切分/拼接/归一化 | `path.h` view/buffer API | 不访问文件系统，不解析 symlink/case/权限 |
+
+### 当前没有提供的形状
+
+不要把现有并发队列或 flat hash 硬拗成另一种合同：
+
+| 需求 | 当前选择 | 原因/后续 |
+|---|---|---|
+| 有序查找、range query | 暂用 `std::map` 或业务已有 B-tree | `FlatHashMap` 不保序；HYLE 的 cache-friendly B-tree 尚在设计 |
+| grow 后引用/地址稳定的 map | 暂用 node-based 容器 | flat slots 在 rehash 时搬移；未来 node-stable 类型必须显式命名 |
+| 多线程共享 map | 外部 shard+lock 包装 `FlatHashMap`，或成熟 concurrent map | HYLE 尚无 concurrent associative；不要无锁并发访问 flat map |
+| 单线程/SPSC ring | 暂用业务 ring/成熟库 | `BoundedQueue` 是 MPMC 原子结构，功能虽可用但会付不必要同步税 |
+| 动态 bitset / dense ID set algebra | 暂用成熟 dynamic bitset 或 word array | container 尚缺此类型；它也是后续最自然的 SIMD 能力面 |
+
+这些是当前真实功能缺口，不是文档藏起来的“负空间”。其中 dynamic bitset/sparse set、
+单线程 ring、concurrent associative 已进入严格复审候选；接口和复杂度证据完成前不先
+发布半成品。
 
 ## 连续容器
 
@@ -174,7 +190,10 @@ range，因为它对 reservation count 取快照，并不额外发布仍在构�
 - `ShardedQueue` 不保证 global FIFO；work-stealing 两种队列也不提供 MPMC 的任意角色语义。
 - `ConcurrentVector::size()` 不是 live publication fence；并发写时读取新 tail 需要外部
   完成同步，或让 `T` 自己承载 atomic/future 状态。
-- `hash_bytes` 的 >16B 路径会跨库调用。若它确实成为极端热点，应先批处理或让上层缓存
-  hash；HYLE 不公开依赖私有 vendor 头、且只适用于部分交付形状的 inline 旁路。
+- `hash_bytes` 的 >16B 路径会跨库调用；足够长的输入在 x86 AVX2 机器会按发布平台
+  实测交叉点自动进入宽 XXH3。
+  它是进程内 table hash，不承诺跨版本/构建/CPU bit-identical；持久化 fingerprint、文件
+  格式、网络协议和安全 MAC 都不能用它。极端热点仍优先缓存 hash 或批处理；HYLE 不公开
+  依赖私有 vendor 头、且只适用于部分交付形状的 inline 旁路。
 - 性能数字、平台、对手合同和仍未 SOTA 的条目只见
   [`benchmarks-container.md`](../performance/benchmarks-container.md)，本文不复制点值。

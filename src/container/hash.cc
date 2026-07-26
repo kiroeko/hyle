@@ -1,5 +1,7 @@
 #include "hyle/container/hash.h"
 
+#include "hyle/platform/cpu.h"
+
 // XXH3 lives entirely here: XXH_INLINE_ALL pulls the whole (header-only) xxHash
 // implementation into this one translation unit, so the 7490-line header never
 // reaches a public HYLE header or a consumer TU.
@@ -11,6 +13,11 @@
 #include "wyhash.h"
 
 namespace hyle::container::detail {
+
+#if defined(_M_X64) || defined(__x86_64__)
+std::uint64_t hash_bytes_xxh3_avx2(const void* data, std::size_t len,
+                                   std::uint64_t seed) noexcept;
+#endif
 
 // XXH3 core for 17..kWyhashThreshold bytes. Small inputs (<=16B) are handled inline
 // in hash.h; long inputs (> kWyhashThreshold) go to wyhash below. XXH3 is fastest in
@@ -29,6 +36,21 @@ std::uint64_t hash_bytes_xxh3(const void* data, std::size_t len,
 std::uint64_t hash_bytes_wyhash(const void* data, std::size_t len,
                                 std::uint64_t seed) noexcept {
   return wyhash(data, len, seed, _wyp);
+}
+
+std::uint64_t hash_bytes_long(const void* data, std::size_t len,
+                              std::uint64_t seed) noexcept {
+#if defined(_M_X64) || defined(__x86_64__)
+  // The detector is compiled at baseline ISA in platform/cpu.cc. Cache the result
+  // once; the branch and out-of-line call are amortized by the platform-tuned
+  // long-input crossover.
+  static const bool has_avx2 =
+      platform::supports(platform::Isa::kAvx2);
+  if (len >= kWideHashThreshold && has_avx2) {
+    return hash_bytes_xxh3_avx2(data, len, seed);
+  }
+#endif
+  return hash_bytes_wyhash(data, len, seed);
 }
 
 }  // namespace hyle::container::detail

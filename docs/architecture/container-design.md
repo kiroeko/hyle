@@ -59,6 +59,30 @@ Tier 0 dependencies: mem allocator + platform CPU discovery
 IntrusiveList 已下沉 core，因为 error/time/sched 都需要它；它不再属于 container
 库或 container C ABI。
 
+### 成熟库能力对账：当前不是“容器全集”
+
+实现行数只能反映维护成本，不能证明能力完整。当前 container 约 6.8k 生产实现已经包含
+多套非平凡并发算法，但同本地 Abseil、Folly、oneTBB、Boost 的公开能力轴对账后，覆盖面
+仍明显偏窄。现状与真实场景如下；“缺”不是立即复制一个类型，而是收口前必须设计或明确
+负空间：
+
+| 数据结构轴 | 当前 | 常用场景与判断 |
+|---|---|---|
+| 连续 sequence / inline sequence | `PodVector`、`SmallVector` | 已覆盖性能敏感 POD 与小 owning sequence；普通非平凡长序列继续用 `std::vector` |
+| flat associative | `FlatHashMap/Set` | 已覆盖缓存友好的通用 lookup/membership |
+| ordered/range associative | 缺 | range query、稳定排序遍历、调度索引常见；Abseil B-tree 是更贴近现代 cache 的参考，属于高优先候选 |
+| node/reference-stable associative | 缺 | 需要 grow 后地址稳定或 node extraction；与 flat 表合同不同，不能伪装成一个 policy flag |
+| concurrent associative | 缺 | 多线程 registry、memo/cache、共享状态表是基础库真实场景；参考 oneTBB concurrent hash/unordered 与 Folly concurrent map，属高优先候选 |
+| 单线程 ring/deque | 缺 | 流式窗口、音视频/网络 staging、外部同步 SPSC；现有调度队列的原子/owner 合同不是替代品 |
+| dynamic bitset / sparse set | 缺 | graph frontier、mask/set algebra、稠密 ID membership；这是最自然的批量 SIMD 新能力候选 |
+| priority queue / heap owner | 由标准库覆盖 | 单线程 comparator heap 先用 `std::priority_queue`；只有并发 priority 或 decrease-key 真实需求出现才新增形状 |
+| cache/LRU policy | 不在 container | eviction 是策略，先由 util/消费者组合；不能因 Folly 有同名类型就把策略塞进 Tier 0 |
+| blocking/unbounded queue | sched 负责等待/背压 | container 保持非阻塞机制，避免另造一套 shutdown/cancel/wait 语义 |
+
+因此当前结论不是“6.8k 行已经等价主流全集”，也不是按对手 LOC 补代码。收口队列应先做
+`dynamic bitset/sparse set`、单线程 ring、concurrent associative 的真实合同设计，再决定
+ordered B-tree；每项都要有 C++ 正常入口、复杂度/peer 证据和明确 C ABI 判断。
+
 ### SmallVector 的成熟形状门
 
 SmallVector 的接口不再由“小 N push benchmark”定义。本轮同时对照本地
@@ -209,6 +233,24 @@ UTF-8 validate/count 使用内化的 simdutf source，并由 simdutf 自己派�
 container 对外依赖。hex encode/decode 当前是无查表分支的标量/编译器向量化实现，
 只证明胜过等契约 scalar reference，未宣称战胜专门 SIMD codec。
 
+SIMD 只进入可批量处理的字节/lane 工作，不按模块名强套：
+
+| 路径 | 当前向量化 | 决策 |
+|---|---|---|
+| Swiss control-byte probe | x86 SSE2 16 lanes；AArch64 NEON 8 lanes | 已是成熟 Swiss 基线形状；每次 probe 再动态派发 AVX2 的固定税通常不值 |
+| count/rfind/ASCII case | SSE4/AVX2/AVX512/NEON runtime dispatch | 已进入产品；长串摊薄 dispatcher，短串走标量 |
+| UTF-8 validate/count | simdutf 自派发 | 借成熟核，不重写 |
+| 长字节 table hash | x86 AVX2 XXH3 / baseline wyhash | varied-input 证据后进入产品；Windows/MSVC 从 1KiB、Linux/GCC14 从 512B，CPU/OS gate 在 platform，非 x86 不退化 |
+| vector relocation | compiler/libc `memcpy/memmove` | 不重复实现平台已有宽拷贝与 non-temporal 策略 |
+| lock-free queue / atomics | 不做 | 瓶颈是依赖链、cache line ownership 和 CAS，不是 lane arithmetic |
+| dynamic bitset/sparse set | 尚缺类型 | word-wise AND/OR/XOR/popcount/scan 是下一批最有价值的容器 SIMD 面 |
+
+长 hash 的宽核放在独立 AVX2 TU，baseline dispatcher 只有在 CPUID+XGETBV 安全门通过后
+调用；varied-input sweep 分别给出 Windows/MSVC 1KiB 与 Linux/GCC14 512B 的保守交叉点。
+`hash_bytes` 是进程内 table hash，值可随
+HYLE 版本、构建与 ISA 选择变化，不得持久化或作为 wire fingerprint。若用户需要稳定内容
+指纹，应由独立命名/独立合同提供，不能暗中冻结 table hasher 的当前 bit pattern。
+
 ## C ABI 边界
 
 `include/hyle/c/container.h` 当前遵守统一 C ABI 机械合同，但它仍包含早期按实现逐项
@@ -287,8 +329,8 @@ pointer/count 的 `try_append/try_insert/try_resize/erase/try_shrink_to_fit` 覆
 - sched 使用 ShardedQueue、WsFifoQueue、WorkStealingDeque 等调度原语。
 - graph/sched 使用 ConcurrentVector 类 append-only 发布结构。
 - error/time 等共享 intrusive 基础设施已归 core，不制造反向 container 依赖。
-- 其他模块可使用 `hash_bytes`，但 hash 模块不依赖 SIMD runtime；≤16B typed key
-  走 inline mix，较长字节串走库内 XXH3/wyhash kernel。公开头不暴露 vendor 实现头；
+- 其他模块可使用 `hash_bytes`，但 hash 模块不依赖 `hyle_simd` runtime；≤16B typed key
+  走 inline mix，较长字节串走库内 XXH3/wyhash 与 platform-gated AVX2 kernel。公开头不暴露 vendor 实现头；
   共享库调用 seam 是交付合同的一部分，不再为微基准提供 source-only inline 旁路。
 
 ## 性能验收边界

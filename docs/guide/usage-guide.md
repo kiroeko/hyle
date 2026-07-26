@@ -339,7 +339,8 @@ MPMC、sharded、owner-LIFO stealing、owner-FIFO sharing 的角色选择，不�
 完整选择表和坑点见 [`container.md`](./container.md)。
 
 **哈希器（`hyle/container/hash.h`）**：默认 `Hash<T>` / `hash_bytes` 让整数、指针和
-≤16B POD 走内联 mix，较长字节串按长度选择库内 XXH3 或 wyhash。公开 API 不再提供
+≤16B POD 走内联 mix，较长字节串按长度和安全 ISA 选择库内 XXH3 或 wyhash。它是
+进程内 table hash，不是跨版本/构建/CPU 稳定的 fingerprint。公开 API 不再提供
 把私有 vendor 头拉入用户 TU 的 `hash_bytes_inline`：它只改善一个微基准调用 seam，
 却破坏 header/static/shared/source 三种交付的一致性。真实热点优先缓存 hash 或批处理。
 

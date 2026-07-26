@@ -8,7 +8,7 @@
 ## container·hash —— `hash_bytes` / `mix64` / `Hash&lt;T&gt;`（`hash_bench.cc`）
 
 > 归属：`include/hyle/container/hash.h` + `src/container/hash.cc`。  
-> 环境:Win MSVC19.50 Release,nanobench,15 遍中位数（**⏳ 非 2026-07-20 三平台口径，待本轮 container 刷新**）。三组:HYLE / 裸 XXH3+wyhash(SOTA) / std::hash。XXH3 vendored 无条件,wyhash gated `-DHYLE_BENCH_WYHASH`。
+> 环境:Win MSVC19.50 shared Release + WSL GCC14 static Release,nanobench,各 15 遍中位数。三组:HYLE / 裸 XXH3+wyhash(SOTA) / std::hash。XXH3 vendored 无条件,wyhash gated `-DHYLE_BENCH_WYHASH`。2026-07-26 已刷新 256B..64KiB varied-input 长 hash；M4 仍待同合同刷新。
 
 > **⚠️ bench 公平性更正(2026-07,红队 hash)**:旧 bench/ledger 有三处误导,已修:① **≤16B 行标签 "XXH3 wrapper" 错**——`hash_bytes(len≤16)` 是 `HYLE_FORCE_INLINE` 且短路走 **inline mix(mix64 折叠)根本不调 XXH3、不跨导出 seam**;所以 8B/16B 是 HYLE-inline-mix vs **完整 XXH3**(两个不同算法),旧结论"输裸 XXH3 0.86x/0.67x"是拿 inline-mix 比 XXH3-small,非真输。**真正的 seam/wrapper 税只在 64B/256B**(那里才是同算法 XXH3 vs XXH3)。② 旧 bench **单固定串重复 hash 百万次**→数据常驻 L1、长度分派分支完美预测,小串读出亚周期(0.03ns 假地板);已改**每长度轮转 256 个随机串**(smhasher 式),8B 从假地板 0.03→真实 0.23ns。③ `batch(len)`=ns/byte,小串固定开销主导,per-byte 低≠算法快。
 
@@ -17,7 +17,23 @@
 | 8B | 0.23 | 0.21 | 0.30 | 0.29 | **inline mix**(非 XXH3):赢 wyhash-small、近平 XXH3-small |
 | 16B | 0.15 | 0.12 | 0.15 | 0.35 | **inline mix**(非 XXH3):平 wyhash、近平 XXH3-small |
 | 64B | 0.055 | 0.043 | 0.052 | 0.45 | **真 XXH3 wrapper**:同算法 vs 裸 XXH3 ~1.28x 接缝税(出线核不可内联) |
-| 256B | 0.082 | 0.075 | **0.029** | 0.63 | 平裸 XXH3(接缝);**wyhash 碾 XXH3 2.6x=SOTA 观察** |
+| 256B | 0.032 | 0.077 | **0.029** | 0.642 | 产品仍走 wyhash；raw wyhash 15/15 快约 7% 是 DLL seam，AVX2 XXH3 此长度明确输 |
+| 512B | 0.027 | 0.045 | **0.026** | 0.687 | 产品仍走 wyhash；AVX2 XXH3 比 wyhash 慢约 17% |
+| 768B | 0.026 | 0.040 | **0.025** | 0.705 | AVX2 XXH3 与 wyhash tie，保守不派发 |
+| 1024B | **0.022 (45.0 GB/s)** | 0.038 | 0.025 | 0.712 | 产品→AVX2 XXH3；对 raw wyhash 15/15 赢，中位约 1.13x；与 forced AVX2 peer 同档 |
+| 4096B | **0.017 (58.5 GB/s)** | 0.030 | 0.028 | 0.739 | 产品→AVX2 XXH3；raw AVX2 比 wyhash 1.68x，产品只付共享库 seam |
+| 65536B | **0.028 (36.1 GB/s)** | 0.043 | 0.045 | 0.747 | 产品→AVX2 XXH3；对 wyhash 15/15 赢、绝对带宽受 cache/memory 方差影响大 |
+
+上表点值是 Windows shared。WSL/GCC14 的 AVX2 crossover 更早，因此 shipping 选择
+512B；同一 256-string pool、n=15 的 Linux 产品结果为：
+
+| WSL 长度 | HYLE 产品 | forced AVX2 XXH3 | raw wyhash | paired 判定 |
+|---|---:|---:|---:|---|
+| 256B | 35.46 GB/s | 31.69 GB/s | **37.83 GB/s** | 保留 wyhash；raw wyhash 13/15 赢，产品差约 6% 调用/分派税 |
+| 512B | **45.12 GB/s** | 44.71 GB/s | 39.83 GB/s | 产品与 forced peer 同档；对 wyhash 15/15 赢约 1.13x |
+| 768B | **53.71 GB/s** | 52.21 GB/s | 40.76 GB/s | 产品与 forced peer 同档；对 wyhash 15/15 赢约 1.32x |
+| 1024B | **57.28 GB/s** | 56.89 GB/s | 41.50 GB/s | 产品与 forced peer 同档；对 wyhash 15/15 赢约 1.38x |
+| 4096B | **61.64 GB/s** | 66.14 GB/s | 38.77 GB/s | 产品对 wyhash 15/15 赢约 1.59x；约 7% 分派/调用差不伪装成 raw 同速 |
 
 | 整数哈希(4096 key) | HYLE mix64 | wyhash64 | std::hash | 结论 |
 |---|---|---|---|---|
@@ -27,7 +43,7 @@
 |---|---|---|---|
 | ns/op(改 mix64_2 前→后) | 0.595 **→ 0.43** | 0.94 | ✅ **改 abseil 单乘后 1.38x,vs wyhash 从 1.6x→2.2x** |
 
-**结论(历史快照摘要)**:① 9-16B 改 abseil 单乘 `mix64_2` 热路径 1.38x；② ≤16B “输 XXH3”是伪命题；真 seam 税在 &gt;16B 出线核；③ mix64 整数哈希已 SOTA；④ best-of-breed 按长度 XXH3/wyhash。历史上的 opt-in `hash_inline.h` 后续因只服务微基准且破坏三种交付形状一致性而删除。完整推演见 git 历史中旧 `benchmarks-error-hash.md` 长注；**刷新时以三平台 bench-stat 重写本表**。
+**结论**:① 9-16B 改 abseil 单乘 `mix64_2` 热路径；② ≤16B “输 XXH3”是伪命题；真 seam 税在 &gt;16B 出线核；③ mix64 整数哈希已 SOTA 同形；④ 正常 varied-input 证明 Windows AVX2 从 1KiB、Linux/GCC14 从 512B 起宽 XXH3 明显优于 wyhash，因此产品在隔离 TU 中 runtime dispatch，各 shipping toolchain 用自己的保守 crossover；⑤ `hash_bytes` 是进程内 table hash，ISA 可改变 bit pattern，不能持久化。历史 opt-in `hash_inline.h` 因只服务微基准且破坏三种交付形状一致性而删除。M4 刷新前不写三平台 SOTA。
 
 ## container·map —— SwissTable（`swiss_table_bench.cc` / `swiss_vs_absl_bench.cc`）
 

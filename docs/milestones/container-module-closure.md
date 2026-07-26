@@ -48,10 +48,28 @@
 > 本轮四项代码量：全库 252,496；自实现含测试 119,089；自实现不含测试 81,553；
 > container 实现 6,795。
 
+> **2026-07-26 能力广度/SIMD 复审：** 6.8k 行不是完整度证据。与本地
+> Abseil/Folly/oneTBB/Boost 按数据结构轴对账后，确认 ordered/node-stable/concurrent
+> associative、单线程 ring、dynamic bitset/sparse set 仍是公开能力缺口；优先级和临时
+> 选型已进入 architecture/guide，而不是靠现有 queue/map 冒充。现有 SIMD 面也逐路径
+> 审计：Swiss probe、字符串和 UTF-8 已向量化，vector relocation 应交给 libc/compiler，
+> CAS queue 不适合 SIMD；唯一立即可证的新产品机会是长 hash。256 个 varied input、n=15
+> 证明 Windows AVX2 XXH3 在 1KiB/4KiB 相对 wyhash 约 1.13x/1.64x，因此新增隔离 AVX2 TU
+> 与 platform CPU/OS gate，Windows 保守从 1KiB 派发。WSL/GCC14 同合同又证明 512B 起
+> 14/15 或 15/15 胜、1KiB/4KiB 约 1.35x/1.65x，故 Linux shipping 阈值为 512B；不同
+> toolchain 不互相缴纳错误 crossover。Windows 产品 1KiB/4KiB
+> 为 45.0/58.5 GB/s，WSL 产品 512B/1KiB/4KiB 为 45.1/57.3/61.6 GB/s，均在产品阈值后
+> 对 wyhash 15/15 赢。`hash_bytes` 合同明确为不可持久化的进程内
+> table hash。Windows 与 WSL typed/C/header/surface 各 4/4 通过；M4 性能仍待刷新，所以
+> container 仍未取得严格最终证书。
+> 本轮最终四项代码量：全库 252,715；自实现含测试 119,130；自实现不含测试 81,588；
+> container 实现 6,830。
+
 ## 结论
 
-container 的功能、红队、稳定 C ABI、使用文档和既有性能面已收口。Windows x64、
-Linux x64 和 macOS arm64 的最终验证命令与结果记录在本文末尾。这里的“收口”不
+本节是 2026-07-19 历史结论；按 2026-07-25 新合同，container 的既有功能、红队、C ABI
+和性能证据可作为输入，但能力广度与三平台新证书仍在复审。Windows x64、
+Linux x64 和 macOS arm64 的当轮验证命令与结果记录在本文末尾。这里的“收口”不
 表示每个 API 都比每个平台的标准库快；它表示能力边界明确、真实落后项如实记录、
 发布面可用，且没有已知 correctness/ABI P0/P1。
 

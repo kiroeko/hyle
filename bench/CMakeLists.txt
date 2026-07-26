@@ -511,9 +511,17 @@ if(TARGET hyle_container)
 # task #23: hash cluster. HYLE hash_bytes(XXH3)/mix64 vs raw XXH3 (vendored, always)
 # + std::hash. wyhash is a sibling clone -> opt-in -DHYLE_BENCH_WYHASH=ON (header-only).
 add_executable(hyle_hash_bench container/hash_bench.cc)
-target_link_libraries(hyle_hash_bench PRIVATE hyle_container nanobench)
+target_link_libraries(hyle_hash_bench PRIVATE hyle_container hyle_platform nanobench)
 target_include_directories(hyle_hash_bench SYSTEM PRIVATE "${PROJECT_SOURCE_DIR}/third_party/xxhash")
 hyle_apply_warnings(hyle_hash_bench)
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+  target_sources(hyle_hash_bench PRIVATE
+    container/hash_xxh3_avx2_peer.cc container/hash_xxh3_avx512_peer.cc)
+  target_compile_definitions(hyle_hash_bench PRIVATE
+    HYLE_HASH_PEER_AVX2 HYLE_HASH_PEER_AVX512)
+  hyle_set_isa(container/hash_xxh3_avx2_peer.cc AVX2)
+  hyle_set_isa(container/hash_xxh3_avx512_peer.cc AVX512)
+endif()
 option(HYLE_BENCH_WYHASH "build hash bench vs wyhash" OFF)
 if(HYLE_BENCH_WYHASH)
   set(HYLE_WYHASH_DIR "${PROJECT_SOURCE_DIR}/../wyhash" CACHE PATH "cloned wyhash")

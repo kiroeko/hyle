@@ -146,7 +146,10 @@ inline std::size_t c_escape(string_ref s, char* out, std::size_t cap) noexcept {
     const char e = esc(static_cast<char>(byte));
     const bool printable = byte >= 0x20 && byte <= 0x7e;
     const std::size_t add = e ? 2 : printable ? 1 : 4;
-    if (writing && cap != 0 && add <= cap - 1 - w) {
+    // `add < cap - w` reserves one byte for NUL without the unsigned
+    // `cap - 1 - w` shape that can underflow if this invariant is refactored.
+    const bool fits = writing && w < cap && add < cap - w;
+    if (fits) {
       if (e) {
         out[w++] = '\\';
         out[w++] = e;

@@ -88,6 +88,9 @@ static inline int hyle_container_path_is_separator(char c) {
  * - borrowed views require size == 0 || data != NULL.
  * There is deliberately no module-private TLS last-error channel. */
 
+/* Process-local non-cryptographic table hash. Repeatable inside this process,
+ * but the value may change across HYLE versions, builds, or CPU ISA. Do not use
+ * it as a persistent fingerprint, wire value, or adversarial-input MAC. */
 HYLE_CONTAINER_C_API uint64_t hyle_container_hash_bytes(
     const void* data, size_t size, uint64_t seed);
 

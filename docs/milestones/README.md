@@ -22,18 +22,18 @@
 
 ## 预测 vs 真实 LOC（防玩具化）
 
-### 整体进度与体量（诚实，2026-07-25 锚定）——分母别混
+### 整体进度与体量（诚实，2026-07-26 锚定）——分母别混
 
 > **生产 = `cloc src include` 的 code 列**（header+C++/CUDA 等，不含 tests/bench/docs/third_party）。
-> **旧投影「完成时生产 ~28–40k / 中值 34k」已作废**：当前生产已 **~80.2k**，单 **simd ~37.5k**。
+> **旧投影「完成时生产 ~28–40k / 中值 34k」已作废**：当前生产已 **~81.6k**，单 **simd ~37.5k**。
 > 权威规模节：[`../architecture/hyle-scope.md`](../architecture/hyle-scope.md)。中期报告：[`midterm-report-2026-07-scale-positioning.md`](./midterm-report-2026-07-scale-positioning.md)。SIMD 当前补缺账本：[`simd-capability-fill-list.md`](./simd-capability-fill-list.md)。
 
 | 固定统计口径 | 当前 | 命令/说明 |
 |---|---|---|
-| **全库代码** | **249,281** | `cloc . --vcs=git`；含 docs/third_party，**≠ 自写** |
-| **自实现（含测试）** | **116,752** | `cloc include/hyle src tests --exclude-lang=CMake,Text` |
-| **自实现（不含测试）** | **80,252** | `cloc include/hyle src --exclude-lang=CMake,Text`；库本体硬锚 |
-| **当前审查单元 obs 实现** | **1,018** | `include/hyle/obs` + `include/hyle/c/obs.h` + `src/obs`；不含测试/CMake/Text |
+| **全库代码** | **252,715** | `cloc . --vcs=git`；含 docs/third_party，**≠ 自写** |
+| **自实现（含测试）** | **119,130** | `cloc include/hyle src tests`，只计 C++/Header/C/CUDA |
+| **自实现（不含测试）** | **81,588** | `cloc include/hyle src`，只计 C++/Header/C/CUDA；库本体硬锚 |
+| **当前审查单元 container 实现** | **6,830** | `include/hyle/container` + `include/hyle/c/container.h` + `src/container`；不含测试/CMake/Text |
 | **终态生产（纪律收口 A）** | **~75–90k** | 主预期 |
 | **终态生产（做满守界 B）** | **~85–105k** | compute/graph/发布面收口更满 |
 | 失控上限 C | 120k+ 生产 | 应避免 |
@@ -41,12 +41,12 @@
 | 进度口径 | 怎么读 | 当前判断 |
 |---|---|---|
 | **里程碑计数** | 颗粒不等重 | **勿当完成度**（小 util 与大 compute 各记 1） |
-| **生产 LOC ÷ 终态 A 中值 ~82.5k** | 代码量进度 | **~97%**；SIMD 体量放大该数，**≠ 能力完成度** |
-| **生产 LOC ÷ 终态 B 中值 ~95k** | 做满剧本 | **~84%** |
+| **生产 LOC ÷ 终态 A 中值 ~82.5k** | 代码量进度 | **~99%**；SIMD 体量放大该数，**≠ 能力完成度** |
+| **生产 LOC ÷ 终态 B 中值 ~95k** | 做满剧本 | **~86%** |
 | **对完整愿景的功能完成度** | 能力清单 + 头牌缺口 | 除 compute/graph 能力尾外主体大多已实现；当前严格证书为 error/platform/mem/time/core/util-core/obs 与 build/package，其余按队列复审 |
 
 **模块生产粗表（2026-07-25）**：simd ~37.5k · io ~9.0k · platform **7,020**
-（含公共 C 头）· container ~4.9k · compute ~4.1k · sched ~5.1k · mem ~5.1k ·
+（含公共 C 头）· container **6.8k** · compute ~4.1k · sched ~5.1k · mem ~5.1k ·
 util ~1.3k · error **984** · time ~0.9k · obs **1,018** · graph ~0.6–0.8k。
 
 预发布严格收口合同、重开触发器和唯一下一模块见

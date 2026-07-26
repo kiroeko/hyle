@@ -12,7 +12,7 @@
 | **StringInterner / string 收口表** | ✅ **2026-07-19 三平台** | Win / WSL / M4；lifecycle 落后已诚实登记；2026-07-26 batch 分片锁改动待刷新 |
 | **path** | ✅ 双平台 n=15 | Win+Lin；算法基线 + filesystem 分离 |
 | **FlatHashMap / FlatHashSet** | ✅ Windows+WSL n=15；⏳ M4 | 同合同 Abseil；WSL map/set miss 是已登记小缺口 |
-| **hash / mix64 / Hash&lt;T&gt;** | ⚠️ 历史 + 红队公平性更正 | ⏳ 待三平台 `bench-stat -n15` 重写表 |
+| **hash / mix64 / Hash&lt;T&gt;** | ✅ Windows/WSL n=15 长 hash SIMD；⏳ M4 | Win ≥1KiB、Linux ≥512B 产品派发；其余历史表待三平台统一刷新 |
 | **SmallVector / PodVector** | ⚠️ 主 Win + 部分补测 | owning vector 形状待本轮统一三平台刷新 |
 | **ConcurrentVector** | ✅ Windows+WSL n=15；⏳ M4 | append/range iteration 同合同 SOTA；WSL `operator[]` 是已知缺口 |
 | **并发队列** | 见 queue / sched 文 | 不在本页展开 |
@@ -25,7 +25,7 @@
 |---|---|---|
 | **mix64 / Hash&lt;T&gt; 小 POD** | wyhash / abseil 形 | ✅ 赢或 SOTA 同款（整数 / 16B POD） |
 | **hash_bytes ≤16B** | XXH3-small / wyhash | ➖ **inline mix**（不同算法）；非「输 XXH3 wrapper」 |
-| **hash_bytes 中长串** | 裸 XXH3 / wyhash | ➖ 默认出线核有 seam；&gt;128B 选择 wyhash |
+| **hash_bytes 中长串** | 裸 XXH3 / wyhash | ✅ Win：≥1KiB AVX2；WSL：≥512B AVX2；⏳ M4 |
 | **FlatHashMap** | absl::flat_hash_map / Folly F14 | ✅ Win 五项胜；WSL 四项胜、miss 0.97x；⏳ M4 |
 | **FlatHashSet** | absl::flat_hash_set / Folly F14 | ✅ 真 set slot/API；Win 四项胜；WSL hit 平、miss 0.94x、insert/iterate 胜；⏳ M4 |
 | **SmallVector** | absl::InlinedVector | ✅ 小 N churn **赢** 同款 SOTA |
@@ -129,11 +129,16 @@ WSL 的逐次索引差距与 GCC 对运行时 segment 定位的代码生成有�
 6. **队列类**  
    能力已收口；性能叙事分散在 queue_sota_bench / sched——需要时单开，勿与 Swiss 表混谈。
 
+7. **长 hash 的平台证书**
+   Windows AVX2 已证明 ≥1KiB、WSL/GCC14 已证明 ≥512B 宽 XXH3 相对 wyhash 的收益；
+   两个 shipping compiler 使用各自保守交叉点。M4 NEON 尚未按同一 varied-input 合同
+   刷新；非 AVX2 产品保持 wyhash，不把 x86 结论外推成三平台 SOTA。
+
 ## 3. 选型（不同场景不同 container 组成）
 
 ```text
 整数 / 小 POD key 哈希     → Hash<T> / mix64（热路径）
-长字节哈希                 → hash_bytes（>128B best-of wyhash）
+长字节哈希                 → hash_bytes（自动按发布平台/ISA 选择 wyhash 或宽 XXH3）
 通用 hash map              → FlatHashMap
 高频 membership / 去重     → FlatHashSet
 栈上小数组                 → SmallVector

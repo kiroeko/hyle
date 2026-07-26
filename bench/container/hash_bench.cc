@@ -14,9 +14,17 @@
 #include "xxhash.h"
 
 #if defined(HYLE_BENCH_WYHASH)
+// Upstream wyhash's rarely-used make_secret helpers are non-inline globals in
+// the header. The product TU also includes that header, so give benchmark-local
+// copies distinct names (ELF rejects the duplicate that COFF happens to fold).
+#  define sprp hyle_bench_wyhash_sprp
+#  define is_prime hyle_bench_wyhash_is_prime
 #  include "wyhash.h"
+#  undef is_prime
+#  undef sprp
 #endif
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
@@ -26,6 +34,16 @@
 #include <vector>
 
 #include "hyle/container/hash.h"
+#include "hyle/platform/cpu.h"
+
+#if defined(HYLE_HASH_PEER_AVX2)
+std::uint64_t hyle_bench_xxh3_avx2(const void*, std::size_t,
+                                   std::uint64_t) noexcept;
+#endif
+#if defined(HYLE_HASH_PEER_AVX512)
+std::uint64_t hyle_bench_xxh3_avx512(const void*, std::size_t,
+                                     std::uint64_t) noexcept;
+#endif
 
 namespace {
 namespace nb = ankerl::nanobench;
@@ -45,13 +63,32 @@ std::string random_string(std::size_t len, std::uint64_t seed) {
 }  // namespace
 
 int main() {
+#if defined(HYLE_HASH_PEER_AVX2)
+  // Forced vector TUs must preserve XXH3's algorithm output. Keep this correctness
+  // gate next to the benchmark that justifies product dispatch.
+  if (hyle::platform::supports(hyle::platform::Isa::kAvx2)) {
+    const std::string probe = random_string(4096, 0xA5A5A5A5u);
+    if (hyle_bench_xxh3_avx2(probe.data(), probe.size(), 17) !=
+        XXH3_64bits_withSeed(probe.data(), probe.size(), 17))
+      return 2;
+  }
+#endif
+#if defined(HYLE_HASH_PEER_AVX512)
+  if (hyle::platform::supports(hyle::platform::Isa::kAvx512)) {
+    const std::string probe = random_string(4096, 0x5A5A5A5Au);
+    if (hyle_bench_xxh3_avx512(probe.data(), probe.size(), 17) !=
+        XXH3_64bits_withSeed(probe.data(), probe.size(), 17))
+      return 3;
+  }
+#endif
   // ---- byte/string hashing across lengths (XXH3 is a byte hasher) ----
   // Rotate through a POOL of distinct random strings per length (not one fixed
   // string): a single repeated input sits in L1 + trains the length-dispatch branch
   // perfectly, making tiny inputs read sub-cycle (unrealistic). smhasher-style varied
   // content keeps the measurement honest. We index the pool by a running counter.
   constexpr std::size_t kPool = 256;
-  for (std::size_t len : {8u, 16u, 64u, 256u}) {
+  for (std::size_t len : {8u, 16u, 64u, 256u, 512u, 768u, 1024u, 4096u,
+                          65536u}) {
     std::vector<std::string> pool;
     pool.reserve(kPool);
     for (std::size_t i = 0; i < kPool; ++i)
@@ -63,15 +100,16 @@ int main() {
         .batch(len)  // ns/op per byte; throughput visible. NOTE: multiply by `len`
                      // for per-hash cost -- small-input rows are fixed-overhead-bound,
                      // so per-byte is LOW there without meaning the algorithm is faster.
-        .minEpochIterations(2000);
+        .minEpochIterations(std::max<std::uint64_t>(
+            4, 512000 / static_cast<std::uint64_t>(len)));
 
-    // HYLE hash_bytes is BEST-OF-BREED by length: <=16B inline mix (NOT XXH3);
-    // 17..128B XXH3; >128B wyhash. So each row compares HYLE's CHOSEN hasher at that
-    // length against raw XXH3 + wyhash. Expect HYLE to track whichever of XXH3/wyhash
-    // wins that length (64B->XXH3, 256B->wyhash), minus the out-of-line seam (~1ns).
+    // HYLE hash_bytes is best-of-breed by length: <=16B inline mix; 17..128B
+    // baseline XXH3; longer inputs use wyhash or the shipping platform's measured
+    // AVX2 XXH3 crossover.
     const char* hyle_label =
         len <= 16 ? "HYLE hash_bytes (inline mix)"
-                  : (len <= 128 ? "HYLE hash_bytes (->XXH3)" : "HYLE hash_bytes (->wyhash)");
+                  : (len <= 128 ? "HYLE hash_bytes (->XXH3)"
+                                : "HYLE hash_bytes (runtime long best-of)");
     b.run(hyle_label, [&] {
       const auto& s = pool[it++ & (kPool - 1)];
       nb::doNotOptimizeAway(hyle::container::hash_bytes(s.data(), s.size()));
@@ -80,6 +118,24 @@ int main() {
       const auto& s = pool[it++ & (kPool - 1)];
       nb::doNotOptimizeAway(XXH3_64bits(s.data(), s.size()));
     });
+#if defined(HYLE_HASH_PEER_AVX2)
+    if (len > 240 && hyle::platform::supports(hyle::platform::Isa::kAvx2)) {
+      b.run("raw XXH3 AVX2 (runtime-safe peer)", [&] {
+        const auto& s = pool[it++ & (kPool - 1)];
+        nb::doNotOptimizeAway(
+            hyle_bench_xxh3_avx2(s.data(), s.size(), 0));
+      });
+    }
+#endif
+#if defined(HYLE_HASH_PEER_AVX512)
+    if (len > 240 && hyle::platform::supports(hyle::platform::Isa::kAvx512)) {
+      b.run("raw XXH3 AVX-512 (runtime-safe peer)", [&] {
+        const auto& s = pool[it++ & (kPool - 1)];
+        nb::doNotOptimizeAway(
+            hyle_bench_xxh3_avx512(s.data(), s.size(), 0));
+      });
+    }
+#endif
 #if defined(HYLE_BENCH_WYHASH)
     b.run("wyhash (SOTA rival)", [&] {
       const auto& s = pool[it++ & (kPool - 1)];

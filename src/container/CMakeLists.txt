@@ -20,7 +20,7 @@ set(_container_arch_sources "")
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   set(HYLE_CONTAINER_X64 TRUE)
   list(APPEND _container_arch_sources
-    str_search_sse4.cc str_search_avx2.cc str_search_avx512.cc)
+    hash_xxh3_avx2.cc str_search_sse4.cc str_search_avx2.cc str_search_avx512.cc)
 elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   set(HYLE_CONTAINER_ARM64 TRUE)
   list(APPEND _container_arch_sources str_search_neon.cc)
@@ -39,6 +39,7 @@ target_include_directories(hyle_container PRIVATE
 # dispatcher (string_ref.cc) stays baseline so it never emits a wide instruction on the
 # always-taken path. Gated by arch (the wide TUs only exist in the matching build).
 if(HYLE_CONTAINER_X64)
+  hyle_set_isa(hash_xxh3_avx2.cc AVX2)
   hyle_set_isa(str_search_sse4.cc SSE42)
   hyle_set_isa(str_search_avx2.cc AVX2)
   hyle_set_isa(str_search_avx512.cc AVX512)

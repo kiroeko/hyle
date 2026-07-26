@@ -89,6 +89,10 @@ ASCII 单字节便利函数全部 header-inline：
 内嵌 NUL）使用固定三位八进制转义；它处理任意 byte string，不会把输出提前截断成
 伪 C 字符串。
 
+`hyle_container_hash_bytes` 是非加密、进程内 table hash：同一进程内对同一输入/seed
+可重复，但值可随 HYLE 版本、构建或 CPU ISA 变化。它适合 C erased map callback 和
+临时 lookup，不适合作为落盘 fingerprint、协议字段或不可信输入的 MAC。
+
 路径视图与 buffer-fill：
 `hyle_container_path_extension`、`hyle_container_path_strip_extension`、
 `hyle_container_path_base`、`hyle_container_path_directory`、
@@ -279,7 +283,7 @@ create 的 `first_segment_capacity` 只选择首段及后续倍增粒度，不�
 | `FlatHashSet<K>` | `hyle_container_hash_set_*`：按 options 中的 key size/alignment 擦除 POD；独立 set slot，不用 map + dummy value |
 | `BoundedQueue<T>` / `ShardedQueue<T>` / `WorkStealingDeque<T>` / `WsFifoQueue<T>` | 对应 `hyle_container_*queue*` / `*_deque_*` opaque 句柄接受 `void*` payload；payload 生命周期归调用方 |
 | `ConcurrentVector<T>` | `hyle_container_concurrent_ptr_vector_*` append caller-owned `void*`；名称明确它不是 arbitrary POD 类型擦除 |
-| `Hash<T>` / `hash_bytes` | C 侧对实际字节调用 `hyle_container_hash_bytes`，或向 flat map 注入业务 hash callback；不暴露 vendor 实现头 |
+| `Hash<T>` / `hash_bytes` | C 侧对实际字节调用进程内 `hyle_container_hash_bytes`，或向 flat map 注入业务 hash callback；不暴露 vendor 实现头，也不承诺持久 bit pattern |
 
 这张表表达的是“C++ 静态形状不跨 ABI、运行时能力仍可达”。如果未来需要
 按值 POD queue，应该新增 `element_size`/`alignment` 的类型擦除接口，而不是

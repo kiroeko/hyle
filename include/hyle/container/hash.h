@@ -37,6 +37,12 @@ HYLE_CONTAINER_API std::uint64_t hash_bytes_xxh3(const void* data, std::size_t l
 // strings, wyhash wins long ones -- hash_bytes() picks by length (see below).
 HYLE_CONTAINER_API std::uint64_t hash_bytes_wyhash(const void* data, std::size_t len,
                                                    std::uint64_t seed) noexcept;
+// Process-local long-input dispatcher. On x86 it may select an AVX2 XXH3 TU for
+// sufficiently large inputs; other CPUs retain the scalar/baseline best-of path.
+// This is intentionally an implementation seam rather than a user-selectable ISA
+// API: callers describe bytes, platform owns safe feature selection.
+HYLE_CONTAINER_API std::uint64_t hash_bytes_long(const void* data, std::size_t len,
+                                                 std::uint64_t seed) noexcept;
 
 // Length crossover between the two out-of-line hashers, from the length sweep
 // (bench/container/hash_bench.cc, 15-run medians): XXH3 is fastest for 17..~128B
@@ -44,6 +50,15 @@ HYLE_CONTAINER_API std::uint64_t hash_bytes_wyhash(const void* data, std::size_t
 // a midsize-path pessimum near 256B). 128 is the conservative split -- the tie
 // point sits on the XXH3 side, so wyhash only takes over where it clearly wins.
 inline constexpr std::size_t kWyhashThreshold = 128;
+// Varied-input sweeps put AVX2 XXH3's repeatable crossover at different points
+// for the two shipping toolchains: 1KiB on Windows/MSVC, 512B on Linux/GCC 14.
+// Keep the product thresholds at their first 14/15-or-better win rather than
+// making one platform pay another compiler's code-generation tradeoff.
+#if defined(__linux__)
+inline constexpr std::size_t kWideHashThreshold = 512;
+#else
+inline constexpr std::size_t kWideHashThreshold = 1024;
+#endif
 }  // namespace detail
 
 namespace detail {
@@ -134,9 +149,10 @@ HYLE_FORCE_INLINE std::uint64_t hash_small(const void* p, std::size_t n) noexcep
 // 8B), and that whole cost is the wrapper, not the algorithm. LARGER inputs go to
 // the out-of-line XXH3 core (detail::hash_bytes_xxh3), where the bytes dominate so
 // the one call amortizes and xxhash.h stays hidden from this header. Output is NOT
-// bit-identical to pure XXH3 for <= 16B (HYLE's contract is "good 64-bit hash +
-// seed-sensitive + deterministic-within-build", not XXH3 byte-compat); nothing
-// persists a hash across builds, so this is safe. >16B is unchanged (real XXH3).
+// bit-identical to pure XXH3 for <= 16B. This is a PROCESS-LOCAL table hash, like
+// absl::Hash: seed-sensitive and repeatable inside one process, but not a persisted
+// fingerprint. Its output may change across HYLE versions, builds, or CPU ISA as
+// the runtime selects a faster long-input kernel. Never store it or put it on wire.
 HYLE_FORCE_INLINE std::uint64_t hash_bytes(const void* data, std::size_t len,
                                            std::uint64_t seed = 0) noexcept {
   HYLE_FATAL_ASSERT(data != nullptr || len == 0);
@@ -157,12 +173,11 @@ HYLE_FORCE_INLINE std::uint64_t hash_bytes(const void* data, std::size_t len,
     }
     return detail::mix64(s);
   }
-  // >16B: best-of-breed by length (runtime `len`). XXH3 for short-mid, wyhash for
-  // long -- a single predictable branch; both are out-of-line (their impl headers
-  // stay hidden). Both are SMHasher-quality; switching by length is deterministic
-  // per input and hashes never persist across processes, so it's safe.
+  // >16B: best-of-breed by length (runtime `len`). XXH3 for short-mid; the long
+  // dispatcher chooses wyhash or a runtime-safe wide XXH3 kernel. All vendor
+  // headers stay hidden and hashes remain repeatable for this process.
   if (len <= detail::kWyhashThreshold) return detail::hash_bytes_xxh3(data, len, seed);
-  return detail::hash_bytes_wyhash(data, len, seed);
+  return detail::hash_bytes_long(data, len, seed);
 }
 
 // Default hasher. Specialized for the common cheap cases. For SMALL trivially-copyable T
@@ -182,7 +197,7 @@ struct Hash {
     } else if constexpr (sizeof(T) <= detail::kWyhashThreshold) {
       return detail::hash_bytes_xxh3(&v, sizeof(T), 0);   // short-mid: XXH3 fastest
     } else {
-      return detail::hash_bytes_wyhash(&v, sizeof(T), 0); // long: wyhash fastest
+      return detail::hash_bytes_long(&v, sizeof(T), 0);   // long: runtime best-of
     }
   }
 };
