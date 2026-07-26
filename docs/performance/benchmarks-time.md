@@ -2,8 +2,8 @@
 
 > 本页是 time 性能数字的唯一信源。实现与选择理由分别见
 > [`time-design`](../architecture/time-design.md) 和 [`guide/time`](../guide/time.md)。
-> 当前最终实现形状固定在 `9129001`：Windows MSVC 19.50 Release 已完成 n=15；WSL/native
-> Linux 与 Apple M4 必须在机器空闲时顺序复证，当前明确标为 pending。每个样本是独立进程，
+> 当前最终实现形状固定在 `9129001`：Windows MSVC 19.50 与 WSL GCC 14.2 native-ext4
+> Release 已完成 n=15；Apple M4 待独立真机复证。每个样本是独立进程，
 > 判定以 `bench-stat.py` paired sign test（p < 0.01，且中位差 >1%）为主。
 > TimerQueue 算法表采于 `bd29d57`；其后的 `9129001` 只补 bool duration 与 typed facade
 > inline，不改变算法表使用的 raw queue 路径。normal-use 表已在 `9129001` 重采。
@@ -58,6 +58,21 @@ N=1 indexed heap 的固定成本更低，这是真边界，不隐藏。HYLE 从 
 均胜同复杂度 Seastar 形状；这支持 per-worker 多 timeout 的 radix 默认，不支持为了单 timer
 微测增加第二套常态 metadata 或扭曲公开 API。
 
+WSL GCC 14.2 n=15：
+
+| 操作 | N | H / S / heap | H vs S | H vs heap |
+|---|---:|---:|---:|---:|
+| arm+cancel | 1 | 2.977 / 3.860 / 1.312 | 1.292× WIN | 0.439× LOSE |
+| arm+cancel | 8 | 2.386 / 2.282 / 4.180 | 0.976× TIE | 1.794× WIN |
+| arm+cancel | 64 | 2.547 / 2.645 / 6.314 | 1.033× WIN（sign） | 2.465× WIN |
+| arm+expire | 1 | 6.278 / 19.103 / 1.839 | 3.044× WIN | 0.296× LOSE |
+| arm+expire | 8 | 5.258 / 9.144 / 3.722 | 1.731× WIN | 0.716× LOSE |
+| arm+expire | 64 | 3.769 / 6.205 / 6.302 | 1.644× WIN | 1.656× WIN |
+
+所以“从 N=8 起均胜 heap”只在 Windows 成立；GCC 的 N=8 expire 仍由 heap 胜。更稳定的架构
+结论是：radix 在 N=1 固定成本高，在几十个及大批可取消 timer 上占优；它不保证每个小 N 行
+都赢，也不需要为这些交叉点新增公开类型。
+
 ## 3. TimerQueue：N=4096 算法门
 
 Windows n=15，单位 ns/node：
@@ -68,39 +83,50 @@ Windows n=15，单位 ns/node：
 | arm+expire | 4.846 | 5.479 | 46.745 | H/S 1.141×，14/15 WIN；H/heap 9.642× |
 | churn，70% cancel | 5.590 | 6.333 | 19.743 | H/S 1.132×；H/heap 3.556×，15/15 WIN |
 
-上一轮 `14ee67e` 的 WSL/Apple 数字仍说明算法方向跨平台成立，但不再作为最终实现证书：WSL
-normal arm/cancel 与 expire 胜、normal churn 统计平、reverse churn 约慢 7%；M4 两种 QoS 下
-HYLE 对 Seastar 总体胜。新的 WSL/Apple 点值 pending。
+WSL native-ext4 n=15，单位 ns/node：
+
+| 操作 | HYLE | Seastar radix | indexed heap | 结论 |
+|---|---:|---:|---:|---|
+| arm+cancel | 2.623 | 3.372 | 6.540 | H/S 1.287×；H/heap 2.442×，15/15 WIN |
+| arm+expire | 4.152 | 5.139 | 40.231 | H/S 1.238×，14/15 WIN；H/heap 9.549× |
+| churn，70% cancel | 5.553 | 5.499 | 15.422 | H/S TIE；H/heap 2.823× WIN |
+| reverse churn | 5.364 | 5.059 | — | H/S 0.937×，LOSE 15/15 |
+
+WSL 复现了旧证书的 code-layout 边界：normal churn 平，reverse churn HYLE 慢约 6.3%。这不
+支持给所有节点增加常态 metadata。上一轮 `14ee67e` 的 M4 两档 QoS 仅作方向参照；最终 M4
+点值 pending。
 
 ## 4. 正常 event-loop 与 schedule_after
 
-Windows n=15，单位 ns/step 或 ns/op：
+单位 ns/step 或 ns/op，均 n=15：
 
-| 场景 | 中位数 | 评价 |
-|---|---:|---|
-| 64-step incremental，连续节点 | 12.637 | — |
-| 64-step incremental，对象内嵌散布节点 | 12.620 | 与连续布局统计 TIE |
-| absolute schedule + cancel | 3.618 | queue primitive |
-| raw schedule_after，预采 now | 3.779 | 精确饱和转换无可见退化 |
-| chrono schedule_after，预采 now | 3.745 | 与 raw 约同档 |
-| raw schedule_after，真实读 monotonic | 18.037 | 正常端到端路径 |
-| chrono schedule_after，真实读 clock | 18.055 | 与 raw 统计 TIE |
+| 场景 | Windows | WSL | 评价 |
+|---|---:|---:|---|
+| 64-step incremental，连续节点 | 12.637 | 10.542 | — |
+| 64-step incremental，对象内嵌散布节点 | 12.620 | 10.687 | 两平台与连续布局 TIE |
+| absolute schedule + cancel | 3.618 | 3.293 | queue primitive |
+| raw schedule_after，预采 now | 3.779 | 3.034 | queue primitive + saturating add |
+| chrono schedule_after，预采 now | 3.745 | 4.079 | Windows TIE；WSL 0.738× LOSE |
+| raw schedule_after，真实读 monotonic | 18.037 | 19.761 | 正常端到端路径 |
+| chrono schedule_after，真实读 clock | 18.055 | 19.718 | 两平台与 raw TIE |
 
-真实 `schedule_after` 约 18ns 的大头是读钟，不是 3–4ns queue primitive。散布 stable-address
-节点没有系统性退化；因此连续 N=4096 数字不是靠 benchmark-only layout 得到的。
+真实 `schedule_after` 的大头是读钟，不是 3–4ns queue primitive。GCC 的显式预采样 typed
+路径多约 1ns；反汇编确认最终代码已完整 inline，差异来自 signed time-point clamp/代码放置，
+而默认真实读钟路径统计平。不能为这条微路径删除负 time-point 的正确 clamp。散布
+stable-address 节点没有系统性退化；因此连续 N=4096 数字不是靠 benchmark-only layout 得到的。
 
 ## 5. C ABI 成本
 
-Windows n=15；C ABI 经真实 DLL、opaque handle 和共享 `hyle_status` 合同：
+经真实 shared library、opaque handle 和共享 `hyle_status` 合同，均 n=15：
 
-| 场景 | 中位数 |
-|---|---:|
-| C++ schedule+cancel | 3.618 ns |
-| C ABI schedule+cancel+Status | 11.996 ns |
-| C ABI schedule_after clock+cancel+Status | 20.234 ns |
-| C ABI schedule+advance+visitor，fire one | 16.450 ns |
-| C++ new/delete `TimerEntry` | 21.349 ns |
-| C opaque timer create/destroy+Status | 26.005 ns |
+| 场景 | Windows | WSL |
+|---|---:|---:|
+| C++ schedule+cancel | 3.618 ns | 3.144 ns |
+| C ABI schedule+cancel+Status | 11.996 ns | 11.024 ns |
+| C ABI schedule_after clock+cancel+Status | 20.234 ns | 20.964 ns |
+| C ABI schedule+advance+visitor，fire one | 16.450 ns | — |
+| C++ new/delete `TimerEntry` | 21.349 ns | 7.349 ns |
+| C opaque timer create/destroy+Status | 26.005 ns | 15.663 ns |
 
 这不是“零成本 C wrapper”：可恢复错误、DLL 接缝和 opaque 生命周期有真实常数税。但 queue
 操作仍 O(1)、无分配，opaque timer 只在创建/销毁时分配。没有大规模 C timer consumer 前，
@@ -116,8 +142,16 @@ Windows n=15；每进程 warm 采样，表中是跨进程分位数的中位数�
 | 1 ms | 0.517 / 0.632 / 0.912 | 14.523 / 15.095 / 15.504 | 同上 |
 | 10 ms | 0.256 / 0.578 / 0.578 | 5.514 / 11.869 / 11.869 | 同上 |
 
-这里衡量 OS thread blocking wake quality，不是 scheduler/fiber timer；接口保证不主动早醒，
-不承诺实时调度。Linux/Apple overshoot 分布 pending。
+WSL native Linux 的 HYLE/std overshoot（ms）同档：
+
+| request | HYLE p50 / p95 / p99 | `std::sleep_for` p50 / p95 / p99 |
+|---|---:|---:|
+| 100 us | 0.058 / 0.076 / 0.106 | 0.058 / 0.071 / 0.100 |
+| 1 ms | 0.065 / 0.103 / 0.138 | 0.063 / 0.102 / 0.139 |
+| 10 ms | 0.076 / 0.126 / 0.126 | 0.077 / 0.129 / 0.129 |
+
+两平台所有样本 early=0。这里衡量 OS thread blocking wake quality，不是 scheduler/fiber timer；
+接口保证不主动早醒，不承诺实时调度。Apple overshoot 分布 pending。
 
 ## 7. CommonTimeoutQueue
 
@@ -130,13 +164,13 @@ fixed-idle-timeout consumer，接入时仍需 application-level 证书。最终�
 
 | 项 | 状态 |
 |---|---|
-| exact duration conversion | 整数路径精确饱和；Windows/WSL 正确性门已通过 |
-| 默认/opt-in clock | 语义形状已定；旧热读证据强，最终点值待 WSL/Apple 复跑 |
-| TimerQueue 算法 | SOTA-class radix、O(1) arm/cancel；Windows 小 N 和 N=4096 已复证 |
-| 正常 event-loop | Windows 连续/散布同档；真实 clock 成本已单列 |
+| exact duration conversion | 整数路径精确饱和并覆盖 bool Rep；Windows/WSL 正确性门已通过 |
+| 默认/opt-in clock | 语义形状已定；旧热读证据强，最终点值待 Apple 复跑 |
+| TimerQueue 算法 | SOTA-class radix、O(1) arm/cancel；Windows/WSL 小 N 和 N=4096 已复证 |
+| 正常 event-loop | Windows/WSL 连续/散布同档；真实 clock 成本已单列 |
 | C ABI | 能力覆盖完整，正常操作常数税已公开；不把 DLL/Status 成本伪装为零 |
-| thread sleep | Windows 高分辨率路径明显优于 std；Linux/Apple pending |
-| strict 性能收口 | **未最终关闭**：还欠 WSL native-ext4 与 Apple M4 在固定提交上的顺序复证 |
+| thread sleep | Windows 高分辨率路径明显优于 std；Linux 与 std 同档；Apple pending |
+| strict 性能收口 | **未最终关闭**：只欠 Apple M4 在固定提交上的独立复证 |
 
 ## 9. 复跑
 

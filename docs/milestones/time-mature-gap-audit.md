@@ -14,7 +14,7 @@
 - [x] TSC fallback 已改为 sleep-based calibration，并由 fresh-process test 记录 wall/thread CPU；
 - [x] 正常使用性能矩阵已加入（`bd29d57`），Windows n=15 已记录；
 - [x] 合法的 `duration<bool, Period>` 已覆盖，typed facade hot helper 显式 inline（`9129001`）；
-- [ ] 新最终形状完成三平台复证前，strict 状态继续保持打开。
+- [ ] Windows/WSL 最终形状已复证；Apple 完成前 strict 状态继续保持打开。
 
 ## 结论先行
 
@@ -35,7 +35,7 @@ C ABI 也覆盖了现有语言无关能力。`sched`/`io` 对 time 的消费方�
    timer workload 只覆盖连续内存的 N=4096 批处理，没有证明正常入口、小 N、散布节点和 C ABI。
 
 三个实现/仪器缺口现已修复；Windows 最终形状已复证。**功能骨架完整，算法选择正确，
-正确性和 API 语义已修；strict 只剩 WSL/Apple 顺序复证，不应提前打勾。**
+正确性和 API 语义已修；strict 只剩 Apple 真机复证，不应提前打勾。**
 日历/时区、通用格式语言、执行器、带锁跨线程 timer queue 仍不应进入 time core。
 
 ## 1. 当前实现清单与真实用户形状
@@ -222,7 +222,7 @@ architecture 也正确区分 time 数据结构和 sched/io executor。
 
 1. [x] 精确修复 integral duration conversion，补边界测试；
 2. [x] 把两个 `fast_*` API 改为真实语义名，整套更新 C++/C/docs/surface；
-3. [x] 扩展正常使用性能矩阵；[ ] 最终形状顺序重跑 WSL/Apple 证书；
+3. [x] 扩展正常使用性能矩阵并重跑 Windows/WSL；[ ] 最终形状 Apple 证书；
 4. [x] 同步 time architecture/guide/performance/milestone；全局 readiness 留给主任务统一更新。
 
 ### P1：需要 consumer 或独立设计批准
@@ -270,4 +270,4 @@ consumer 决定，避免 time 再次为了 benchmark 或“能力数量”无边
 - 最终实现基点：`9129001`，MSVC 19.50，Release shared，`HYLE_COMPONENTS=time`；
 - Windows `hyle_time_test`、纯 C、C surface、header 与 fresh calibration：5/5 通过；
 - Windows timer/normal-use benchmark n=15 已记录到 performance；
-- WSL correctness、native-ext4 n=15 与 Apple 真机待顺序执行，未完成前 strict 保持打开。
+- WSL correctness 5/5 与 native-ext4 timer/normal n=15 已完成；Apple 真机未完成前 strict 保持打开。

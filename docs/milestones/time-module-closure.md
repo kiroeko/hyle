@@ -11,7 +11,7 @@
 - [x] C++ typed API 与紧凑热路径并存，C ABI 覆盖全部语言无关能力；
 - [x] arbitrary timer 达到成熟库 SOTA 算法与 O(1) arm/cancel；
 - [x] sched/io 消费统一，旧 API 和 open-coded deadline 清零；
-- [ ] 2026-07-26 最终形状的 Windows、WSL、Apple 真机正确性/性能与 ASan/UBSan；Windows 已完成，WSL/Apple pending；
+- [ ] 2026-07-26 最终形状的 Windows、WSL、Apple 真机正确性/性能与 ASan/UBSan；Windows/WSL Release 已完成，Apple 与 sanitizer 尾 pending；
 - [x] architecture / guide / performance / milestone 文档各归其位，pending 证据不冒充完成。
 
 ## 本轮变更
@@ -65,7 +65,7 @@ libevent common timeout、folly TimeoutQueue/HHWheelTimer。
 - 两组 million-operation randomized oracle、完整 uint64 deadline、wrong-owner、death/lifecycle；
 - 纯 C consumer 覆盖全部 handle、跨 source Status、顺序拒绝、visitor re-arm、NULL 默认；
 - 37/37 动态符号 surface manifest，C11/C++23 自包含头；
-- Windows Release 最终 time 五门通过；WSL GCC14 / AppleClang 最终形状与消费回归 pending；
+- Windows Release、WSL GCC14 native-ext4 最终 time 五门均通过；AppleClang 最终形状与消费回归 pending；
 - 上轮 WSL GCC14 ASan/UBSan 的 time/container/sched/io timeout 7/7 仅作回归参照，最终形状待重跑。
 
 ASan 默认 ODR 检查会发现既有 mimalloc 同时静态进入测试程序和 `libhyle_mem.so`；这不是
@@ -82,7 +82,8 @@ Windows scheduler 全组曾有一次既有 `Blocking.RetiredThreadHandlesStayBou
 - 最终形状 Windows 已证：对同算法 radix 在 N=1/8/64 与 N=4096 均胜；对 indexed heap 只有
   N=1 输，从 N=8 起胜；连续/散布 incremental event-loop 统计平；
 - Windows C ABI、真实读钟 schedule_after 和 sleep overshoot 已单列合同税/OS 行为；
-- WSL/Apple 最终形状 pending，因此本 milestone 暂不重新宣布三平台 strict 性能完成。
+- WSL 最终形状复现 normal churn TIE / reverse churn LOSE 边界；真实 typed/raw schedule_after
+  TIE，显式预采样 typed 有约 1ns signed clamp 税；Apple pending，因此暂不重新宣布三平台完成。
 
 因此“性能收口”含义是：选用成熟的 SOTA 算法、复杂度不落后、正常跨平台证据完整，并诚实
 保留编译器/合同差异；不等于要求每个 microbenchmark 在每个注册顺序都必须数值第一。
