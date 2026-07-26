@@ -152,7 +152,7 @@ macOS 真机通过，确认 `os_sync_wait_on_address_with_timeout` 当前参数�
 - C ABI 同步覆盖四个 mapped advice/residency 操作；platform surface 机械清单增至 118 个，
   C++/C 独立头与 Windows/WSL/M4 定向测试通过。
 - Linux NUMA policy mask 覆盖实际稀疏 node id（固定 4096-bit 上限），非法 node/range 明确失败；
-  topology 查询与 membership 分别缓存为 O(1) count 和 O(log N) lookup。
+  topology 查询与 membership 分别缓存为 O(1) count 和 O(1) 位图 lookup。
 - ErrorRecord 析构自动恢复、重复 install 幂等；空 format/无效 handler
   不再崩溃。
 
@@ -164,7 +164,8 @@ macOS 真机通过，确认 `os_sync_wait_on_address_with_timeout` 当前参数�
   unknown/homogeneous fallback。
 - selected-node set + `bytes_per_chunk` 已在 2026-07-26 定向复开：公共合同是实际 node id +
   runtime capability + structured Status，不要求每个 OS 伪装相同 primitive；Linux/Windows
-  多节点安装条带 policy，macOS 单节点返回 NotNeeded。只有 Linux bind 是严格节点集合；
+  多节点安装条带 policy，重复 id 表达 weighted placement，macOS 单节点返回 NotNeeded。Linux
+  极细自定义布局使用固定批次 first-touch/move 限制 VMA policy 数。只有 Linux bind 是严格节点集合；
   Windows preferred commit 与 Linux interleave 都可能在内存压力下回退，`Applied` 不是逐页
   residency 证明。raw/RAII 与 C ABI 均覆盖，selected region 禁止 decommit/recommit，防止
   policy 被静默丢失。

@@ -130,12 +130,15 @@ topology、preferred reserve、existing-range bind/interleave 和 selected inter
 系统实现。
 
 `vm_allocate_numa_interleaved(size,nodes,bytes_per_chunk)` 拥有一段连续、已提交的 RW 地址区：
-空 node span 表示全部可用节点；显式 id 必须可用且唯一；0 chunk 表示一页，条带遵循调用方给定
-顺序。Linux 在 first-touch 前安装 `mbind` policy：单 node 与普通逐页递增条带只需一个 syscall，
-自定义 chunk/order 每条带一个 policy range，不采用 oneTBB 的先触页、再构造 page 数组、最后
-`move_pages`。Windows 先保留一个连续地址区，再按条带用 NUMA-aware commit，仍可从原始 base
-一次 release。两者的普通内存访问都没有 HYLE metadata/dispatch；validation 为 O(nodes)，必须逐
-条带表达的系统 setup 为 O(size/chunk)。
+空 node span 表示全部可用节点；显式 id 必须可用，可以重复，重复项像 oneTBB 一样表达 weighted
+placement；0 chunk 表示一页，条带遵循调用方给定顺序。拓扑缓存同时保存 id 列表与 membership
+位图，因此节点查询 O(1)、输入验证 O(nodes)。Linux 的单 node 与普通逐页递增条带只需一个惰性
+`mbind`。自定义 chunk/order 在条带数不大时仍保留惰性 range policy；条带数过大时改用固定批次
+first-touch + `move_pages`，以 O(pages) 一次性工作换掉无界 O(stripes) 持久
+VMA policy；syscall 为 O(pages/batch)，scratch 为常量。它优于 oneTBB 为全部 page 分配
+page/node/status 数组再一次 `move_pages` 的 O(pages) 临时空间。Windows 先保留一个连续地址区，
+再按条带 NUMA-aware commit；
+同一 node 的 weighted 退化会合并成一个 commit。两边普通内存访问都没有 HYLE metadata/dispatch。
 
 没有多节点 primitive 的平台不伪造成功：多节点放置请求返回 `Unimplemented`。macOS 当前只暴露
 逻辑 node 0，因此同一 API 正常返回 `NotNeeded` 的普通 allocation。selected allocation 不允许

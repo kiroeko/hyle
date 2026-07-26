@@ -184,6 +184,21 @@ long sys_mbind(void* start, unsigned long len, unsigned long mode,
 #  endif
 }
 
+long sys_move_pages(unsigned long count, void** pages, const int* nodes,
+                    int* status, int flags) {
+#  if defined(SYS_move_pages)
+  return ::syscall(SYS_move_pages, 0, count, pages, nodes, status, flags);
+#  else
+  (void)count;
+  (void)pages;
+  (void)nodes;
+  (void)status;
+  (void)flags;
+  errno = ENOSYS;
+  return -1;
+#  endif
+}
+
 bool path_exists(const char* path) { return ::access(path, R_OK) == 0; }
 
 #endif
@@ -193,6 +208,11 @@ bool path_exists(const char* path) { return ::access(path, R_OK) == 0; }
 // platform-bottom topology path.
 inline constexpr std::size_t kMaxNumaNodes = 4096;
 
+inline constexpr unsigned kTopologyWordBits = sizeof(std::uint64_t) * 8u;
+using NumaTopologyMask =
+    std::array<std::uint64_t,
+               (kMaxNumaNodes + kTopologyWordBits - 1u) / kTopologyWordBits>;
+
 #if defined(HYLE_OS_LINUX)
 inline constexpr unsigned kMaskBits = sizeof(unsigned long) * 8u;
 using NumaMask =
@@ -201,13 +221,17 @@ using NumaMask =
 
 struct NumaTopology {
   std::array<unsigned, kMaxNumaNodes> ids{};
+  NumaTopologyMask present{};
   std::size_t count = 0;
   bool native = false;
 };
 
 void append_node(NumaTopology& topology, unsigned node) noexcept {
   if (node >= kMaxNumaNodes || topology.count >= topology.ids.size()) return;
-  if (topology.count != 0 && topology.ids[topology.count - 1] == node) return;
+  const std::uint64_t bit = std::uint64_t{1} << (node % kTopologyWordBits);
+  std::uint64_t& word = topology.present[node / kTopologyWordBits];
+  if ((word & bit) != 0) return;
+  word |= bit;
   topology.ids[topology.count++] = node;
 }
 
@@ -313,13 +337,13 @@ NumaTopology discover_topology() noexcept {
   // a system node that the process cannot legally target inside a container.
   topology.native = read_linux_allowed_nodes(topology);
   if (!topology.native) {
-    topology.count = 0;
+    topology = NumaTopology{};
     topology.native = read_linux_online_nodes(topology);
   }
   if (!topology.native) {
     // A malformed/truncated online list may have appended a valid prefix.
     // Discard it before the independent directory-scan fallback.
-    topology.count = 0;
+    topology = NumaTopology{};
     // Conservative fallback for restricted containers without the `online`
     // file. Do not stop at the first hole: NUMA IDs need not be dense.
     for (unsigned node = 0; node < kMaxNumaNodes; ++node) {
@@ -342,17 +366,9 @@ const NumaTopology& topology() noexcept {
 
 bool topology_has_node(unsigned node) noexcept {
   const auto& value = topology();
-  std::size_t first = 0;
-  std::size_t last = value.count;
-  while (first < last) {
-    const std::size_t middle = first + (last - first) / 2;
-    if (value.ids[middle] < node) {
-      first = middle + 1;
-    } else {
-      last = middle;
-    }
-  }
-  return first < value.count && value.ids[first] == node;
+  if (node >= kMaxNumaNodes) return false;
+  return (value.present[node / kTopologyWordBits] &
+          (std::uint64_t{1} << (node % kTopologyWordBits))) != 0;
 }
 
 #if defined(HYLE_OS_LINUX)
@@ -652,22 +668,19 @@ vm_allocate_numa_interleaved(std::size_t size,
     return std::unexpected(Status::InvalidArgument(
         "vm allocate NUMA interleaved: node set is empty or too large"));
   }
-  std::array<unsigned long, (kMaxNumaNodes + sizeof(unsigned long) * 8u - 1u) /
-                                (sizeof(unsigned long) * 8u)>
-      seen{};
-  constexpr unsigned kSeenBits = sizeof(unsigned long) * 8u;
   for (unsigned node : selected) {
     if (!numa_node_available(node)) {
       return std::unexpected(Status::OutOfRange(
           "vm allocate NUMA interleaved: node ID is unavailable"));
     }
-    const unsigned long bit = 1UL << (node % kSeenBits);
-    unsigned long& word = seen[node / kSeenBits];
-    if ((word & bit) != 0) {
-      return std::unexpected(Status::InvalidArgument(
-          "vm allocate NUMA interleaved: duplicate node ID"));
-    }
-    word |= bit;
+  }
+
+  bool all_same = true;
+  bool strictly_increasing = true;
+  for (std::size_t i = 1; i < selected.size(); ++i) {
+    all_same = all_same && selected[i - 1] == selected[i];
+    strictly_increasing =
+        strictly_increasing && selected[i - 1] < selected[i];
   }
 
   // No placement machinery is needed when every usable page has the same
@@ -688,19 +701,13 @@ vm_allocate_numa_interleaved(std::size_t size,
   HYLE_ASSIGN_OR_RETURN(void* data, vm_allocate_rw(aligned));
 
   // Linux can install one lazy whole-range policy for the common page stripe
-  // over increasing node IDs. It is O(1) in allocation size and faults pages
-  // directly on their target nodes. Non-default chunks/order require one
-  // policy range per stripe, still before first touch (no move_pages pass).
-  bool increasing = true;
-  for (std::size_t i = 1; i < selected.size(); ++i) {
-    if (selected[i - 1] >= selected[i]) {
-      increasing = false;
-      break;
-    }
-  }
-  if (selected.size() == 1u) {
+  // over increasing node IDs. A repeated single node is the same one-range
+  // bind; allowing repeats lets callers express weighted sequences without
+  // penalizing this degenerate case.
+  if (all_same) {
     NumaMask mask{};
-    auto max_node = make_numa_mask(selected, mask);
+    const std::array<unsigned, 1> one_node{selected.front()};
+    auto max_node = make_numa_mask(one_node, mask);
     if (!max_node || sys_mbind(data, aligned, MPOL_BIND, mask.data(),
                                max_node ? *max_node : 0u, 0) != 0) {
       Status error = max_node ? numa_native_status("mbind(MPOL_BIND)", errno)
@@ -708,7 +715,7 @@ vm_allocate_numa_interleaved(std::size_t size,
       (void)vm_release(data, aligned);
       return std::unexpected(std::move(error));
     }
-  } else if (chunk == page && increasing) {
+  } else if (chunk == page && strictly_increasing) {
     NumaMask mask{};
     auto max_node = make_numa_mask(selected, mask);
     if (!max_node) {
@@ -722,23 +729,92 @@ vm_allocate_numa_interleaved(std::size_t size,
       return std::unexpected(std::move(error));
     }
   } else {
+    // Arbitrary order, repeated nodes (weighted placement), and custom chunks
+    // cannot be represented by one Linux VMA policy. Keep a bounded number of
+    // lazy policy ranges because this preserves demand paging for the normal
+    // large-chunk case. Above the bound, first-touch and move pages in fixed
+    // batches. This is the Pareto boundary for the kernel API: O(K) retained
+    // policy segments or O(P) placement work. Batching keeps scratch O(1)
+    // instead of oneTBB's page/node/status arrays that grow with the mapping.
+    constexpr std::size_t kMaxLazyPolicyStripes = 1024;
+    const std::size_t stripes =
+        aligned / chunk + static_cast<std::size_t>(aligned % chunk != 0);
+    const bool eager_bounded_policy = stripes > kMaxLazyPolicyStripes;
+
+#  if defined(MADV_NOHUGEPAGE)
+    if (eager_bounded_policy &&
+        ::madvise(data, aligned, MADV_NOHUGEPAGE) != 0) {
+      Status error = numa_native_status("madvise(MADV_NOHUGEPAGE)", errno);
+      (void)vm_release(data, aligned);
+      return std::unexpected(std::move(error));
+    }
+#  endif
+
     auto* base = static_cast<std::byte*>(data);
-    for (std::size_t offset = 0, stripe = 0; offset < aligned; ++stripe) {
-      const std::size_t length =
-          chunk < aligned - offset ? chunk : aligned - offset;
-      const unsigned node = selected[stripe % selected.size()];
+    if (!eager_bounded_policy) {
       NumaMask mask{};
-      const std::array<unsigned, 1> one_node{node};
-      auto max_node = make_numa_mask(one_node, mask);
-      if (!max_node || sys_mbind(base + offset, length, MPOL_BIND, mask.data(),
-                                 max_node ? *max_node : 0u, 0) != 0) {
-        Status error =
-            max_node ? numa_native_status("mbind(MPOL_BIND stripe)", errno)
-                     : std::move(max_node).error();
-        (void)vm_release(data, aligned);
-        return std::unexpected(std::move(error));
+      unsigned masked_node = kMaxNumaNodes;
+      for (std::size_t offset = 0, stripe = 0; offset < aligned; ++stripe) {
+        const std::size_t length =
+            chunk < aligned - offset ? chunk : aligned - offset;
+        const unsigned node = selected[stripe % selected.size()];
+        if (masked_node != node) {
+          if (masked_node < kMaxNumaNodes) {
+            mask[masked_node / kMaskBits] &=
+                ~(1UL << (masked_node % kMaskBits));
+          }
+          mask[node / kMaskBits] |= 1UL << (node % kMaskBits);
+          masked_node = node;
+        }
+        if (sys_mbind(base + offset, length, MPOL_BIND, mask.data(), node + 1u,
+                      0) != 0) {
+          Status error = numa_native_status("mbind(MPOL_BIND stripe)", errno);
+          (void)vm_release(data, aligned);
+          return std::unexpected(std::move(error));
+        }
+        offset += length;
       }
-      offset += length;
+    } else {
+      constexpr std::size_t kMoveBatchPages = 256;
+      std::array<void*, kMoveBatchPages> pages{};
+      std::array<int, kMoveBatchPages> target_nodes{};
+      std::array<int, kMoveBatchPages> statuses{};
+      auto* bytes = reinterpret_cast<volatile unsigned char*>(base);
+      for (std::size_t offset = 0; offset < aligned;) {
+        const std::size_t remaining_pages = (aligned - offset) / page;
+        const std::size_t count = remaining_pages < kMoveBatchPages
+                                      ? remaining_pages
+                                      : kMoveBatchPages;
+        for (std::size_t i = 0; i < count; ++i) {
+          const std::size_t page_offset = offset + i * page;
+          bytes[page_offset] = 0;
+          pages[i] = base + page_offset;
+          target_nodes[i] = static_cast<int>(
+              selected[(page_offset / chunk) % selected.size()]);
+        }
+        const long rc = sys_move_pages(static_cast<unsigned long>(count),
+                                       pages.data(), target_nodes.data(),
+                                       statuses.data(), 0);
+        if (rc < 0) {
+          Status error = numa_native_status("move_pages(NUMA batch)", errno);
+          (void)vm_release(data, aligned);
+          return std::unexpected(std::move(error));
+        }
+        for (std::size_t i = 0; i < count; ++i) {
+          if (statuses[i] < 0) {
+            Status error = numa_native_status("move_pages(NUMA page)",
+                                              -statuses[i]);
+            (void)vm_release(data, aligned);
+            return std::unexpected(std::move(error));
+          }
+        }
+        if (rc != 0) {
+          (void)vm_release(data, aligned);
+          return std::unexpected(Status::Unavailable(
+              "move_pages left NUMA pages on unintended nodes"));
+        }
+        offset += count * page;
+      }
     }
   }
   return NumaAllocation{data, aligned, NumaPlacement::kApplied};
@@ -766,9 +842,11 @@ vm_allocate_numa_interleaved(std::size_t size,
   }
 
   auto* base = static_cast<std::byte*>(data);
+  const std::size_t placement_chunk = all_same ? aligned : chunk;
   for (std::size_t offset = 0, stripe = 0; offset < aligned; ++stripe) {
-    const std::size_t length =
-        chunk < aligned - offset ? chunk : aligned - offset;
+    const std::size_t length = placement_chunk < aligned - offset
+                                   ? placement_chunk
+                                   : aligned - offset;
     const DWORD node = static_cast<DWORD>(selected[stripe % selected.size()]);
     void* committed = nullptr;
     if (!use_placeholders) {

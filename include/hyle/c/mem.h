@@ -711,10 +711,10 @@ hyle_huge_region_open_local(hyle_huge_region **out, size_t bytes,
 HYLE_MEM_C_API hyle_status
 hyle_huge_region_open_interleaved(hyle_huge_region **out, size_t bytes);
 /* Interleave over an explicit node set. NULL/0 selects all nodes. Stripes
- * follow array order; IDs must be available and unique. bytes_per_chunk==0
- * means one OS page. Unlike the convenience function above, flags are
- * explicit; use HYLE_HUGE_NONE when preserving stripe-policy granularity
- * matters more than THP. */
+ * follow array order; IDs must be available and repeats express weighted
+ * placement. bytes_per_chunk==0 means one OS page. Unlike the convenience
+ * function above, flags are explicit; use HYLE_HUGE_NONE when preserving
+ * stripe-policy granularity matters more than THP. */
 HYLE_MEM_C_API hyle_status hyle_huge_region_open_interleaved_nodes(
     hyle_huge_region **out, size_t bytes, uint32_t flags,
     const unsigned *nodes, size_t node_count, size_t bytes_per_chunk);

@@ -147,13 +147,15 @@ soft 建议，绝不影响正确性。Linux 用 madvise；Windows/macOS 匿名�
 | `hyle_vm_bind_numa(out_placement, ptr, size, node, policy)` | 返回 Status；placement 出参可 NULL；Linux BIND 是严格集合，INTERLEAVE 是 placement policy |
 | `hyle_vm_bind_numa_interleave(out_placement, ptr, size)` | 全节点条带（INTERLEAVE 别名） |
 | `hyle_vm_reserve_numa(out, out_placement, size, node)` | Status+out；preferred 失败仍可成功分配并报告 `UNAVAILABLE` |
-| `hyle_vm_alloc_numa_interleaved(...)` | `nodes==NULL,count==0` 选择全部；显式 id 必须可用、唯一且按条带顺序；`chunk==0` 表示一页 |
+| `hyle_vm_alloc_numa_interleaved(...)` | `nodes==NULL,count==0` 选择全部；显式 id 必须可用并按条带顺序，重复 id 表达权重；`chunk==0` 表示一页 |
 
 capability 是启动期可发现性，操作的 `hyle_status` 才是权限、配额和实时 OS 状态的最终裁决。
 单节点机器上 selected allocation 正常成功并报告 `NOT_NEEDED`；Linux/Windows 多节点会安装
 条带 policy，但目标节点压力下可回退，因此 `APPLIED` 不是逐页 residency 证明；macOS 当前公开
 逻辑 node 0。裸 selected allocation 只允许整段 release；需要自动所有权和防误用
 decommit 时用 `hyle_vm_region_alloc_numa_interleaved`。
+Linux 普通布局保持 demand paging；极细自定义布局会在构造期首次触页，以免为每页永久占一个
+VMA policy。需要严格控制首次触页时机时使用较粗 chunk 或单次 whole-range policy。
 
 ### 3.5 fs / env（DLL）
 

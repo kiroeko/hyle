@@ -217,13 +217,14 @@ TEST(Numa, SelectedInterleaveManagedRegionUsesAllAvailableNodes) {
   EXPECT_TRUE(decommit.IsFailedPrecondition());
 }
 
-TEST(Numa, SelectedInterleaveRejectsInvalidShape) {
+TEST(Numa, SelectedInterleaveValidatesShapeAndAcceptsWeights) {
   const std::size_t p = page_size();
   const unsigned node = numa_nodes().front();
-  const std::array<unsigned, 2> duplicate{node, node};
-  auto duplicate_result = vm_allocate_numa_interleaved(p, duplicate, p);
-  ASSERT_FALSE(duplicate_result);
-  EXPECT_TRUE(duplicate_result.error().IsInvalidArgument());
+  const std::array<unsigned, 2> weighted{node, node};
+  auto weighted_result = vm_allocate_numa_interleaved(p, weighted, p);
+  ASSERT_TRUE(weighted_result);
+  EXPECT_NE(weighted_result->data, nullptr);
+  EXPECT_TRUE(vm_release(weighted_result->data, weighted_result->size).ok());
 
   const std::array<unsigned, 1> invalid{numa_nodes().back() + 10u};
   auto invalid_result = vm_allocate_numa_interleaved(p, invalid, p);

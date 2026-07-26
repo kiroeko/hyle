@@ -345,7 +345,9 @@ assert(region.interleave_chunk_size() == 2u * kMiB);
 ```
 
 只在 `available.size()>1` 时构造上面的两端列表；单节点直接传空 span 或一个 node。空 span
-选择所有节点，id 可以稀疏且不能用 `[0,count)` 猜，列表必须唯一并按期望条带顺序排列。
+选择所有节点，id 可以稀疏且不能用 `[0,count)` 猜；列表按期望条带顺序排列，重复 id 可表达
+权重（例如 `{n0,n0,n1}`）。Linux 普通大 chunk 保持惰性 first-touch；极细布局为限制 VMA
+policy 数可能在构造期触页，调用方不能把未传 `kPrefault` 当作绝对惰性保证。
 selected overload 的 flags 默认 `kNone`：精确小条带与 THP 粒度可能冲突；只有确认 workload
 接受大页合并时才显式叠加 `kThpHint`。底层能力与失败语义见 [`platform.md`](./platform.md)。
 

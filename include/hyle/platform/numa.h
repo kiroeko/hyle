@@ -134,19 +134,22 @@ HYLE_PLATFORM_API Result<NumaReservation> vm_reserve_numa(
     std::size_t size, int node) noexcept;
 
 // Allocate one contiguous, committed RW span striped over selected NUMA nodes.
-// An empty `nodes` span selects all nodes. Node IDs must be available and
-// unique; stripes follow the supplied order. bytes_per_chunk is 0 for one OS
-// page, otherwise it must be a page-size multiple. Setup is O(nodes) plus
-// O(size/bytes_per_chunk) where the OS lacks a whole-range policy (a single
-// node and Linux's ordinary page stripe are O(1) in allocation size). Ordinary
-// memory access has no HYLE dispatch or metadata cost.
+// An empty `nodes` span selects all nodes. Node IDs must be available; stripes
+// follow the supplied order and repeated IDs express weighted placement.
+// bytes_per_chunk is 0 for one OS page, otherwise it must be a page-size
+// multiple. Validation is O(nodes). Setup is O(size/bytes_per_chunk) where the
+// OS lacks a whole-range policy (a single node and Linux's ordinary page stripe
+// are O(1) in allocation size). Ordinary memory access has no HYLE dispatch or
+// metadata cost.
 //
-// Linux applies mbind policies before first touch. Windows reserves one address
-// range and commits each stripe with a preferred node. Interleave/preference is
-// a placement policy, not a physical-residency proof; the OS may fall back
-// under pressure. A platform without a multi-node primitive returns
-// Unimplemented rather than silently omitting the policy. Single-node
-// placement is a normal allocation with kNotNeeded.
+// Linux normally applies lazy mbind policies before first touch. For a very
+// fine custom pattern, retaining one VMA policy per stripe is unsafe; HYLE
+// instead performs O(pages) placement with fixed-size move batches.
+// Windows reserves one address range and commits each stripe with a preferred
+// node. Interleave/preference is a placement policy, not a physical-residency
+// proof; the OS may fall back under pressure. A platform without a multi-node
+// primitive returns Unimplemented rather than silently omitting the policy.
+// Single-node placement is a normal allocation with kNotNeeded.
 HYLE_PLATFORM_API Result<NumaAllocation> vm_allocate_numa_interleaved(
     std::size_t size, std::span<const unsigned> nodes = {},
     std::size_t bytes_per_chunk = 0) noexcept;

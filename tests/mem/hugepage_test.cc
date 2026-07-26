@@ -133,13 +133,14 @@ TEST(HugeRegion, SelectedNodesAndChunkAreWritableAndObservable) {
             0x4A);
 }
 
-TEST(HugeRegion, SelectedNodesRejectDuplicates) {
+TEST(HugeRegion, SelectedNodesAcceptWeightedPlacement) {
   const unsigned node = hyle::platform::numa_nodes().front();
-  const std::array<unsigned, 2> duplicate{node, node};
+  const std::array<unsigned, 2> weighted{node, node};
   auto result = HugeRegion::allocate_interleaved(
-      page_size(), duplicate, page_size(), HugeFlags::kNone);
-  ASSERT_FALSE(result);
-  EXPECT_TRUE(result.error().IsInvalidArgument());
+      page_size(), weighted, page_size(), HugeFlags::kNone);
+  ASSERT_TRUE(result);
+  EXPECT_TRUE(result->valid());
+  EXPECT_EQ(result->interleave_chunk_size(), page_size());
 }
 
 TEST(HugeRegion, AdviseHugepageRangeHelper) {

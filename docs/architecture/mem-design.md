@@ -233,10 +233,12 @@ variable-size pool 对象，这是有意的产品边界，不是“没有可变�
   只能搭配 NUMA-any 且不能走 local factory；策略失败是可观察的降级或错误，不保证自动 NUMA 最优。
 - selected-node set + `bytes_per_chunk` 由 platform 统一拥有跨 OS 机制，mem 只以
   `HugeRegion::allocate_interleaved(bytes,nodes,chunk,flags)` 提供大块 owner 形状。空 node span
-  表示全部可用节点；顺序、唯一性、page 粒度和能力失败沿用 platform 合同；C 用
+  表示全部可用节点；顺序、重复 id 的 weighted placement、page 粒度和能力失败沿用 platform
+  合同；C 用
   `hyle_huge_region_open_interleaved_nodes` 达到同一能力。`interleave_chunk_size()` 可观察实际条带。
   要保持自定义条带 policy 粒度时默认不请求 THP；显式叠加 THP 仍只是 advice，物理大页粒度
-  可能覆盖更小条带。
+  可能覆盖更小条带。Linux 极细自定义布局会在构造期 first-touch，以常量 scratch 和有界 VMA
+  policy 换掉无界 kernel metadata；普通大 chunk 仍保留 demand paging。
 - `reserve_huge_1g_pages` 是进程启动期冷控制面，原生 C++ 返回 `Status`，C ABI 原样转移同一
   representation；不得在 C 层把 bool 重新猜成错误原因。mimalloc 当前只暴露 ENOMEM，映射
   `ResourceExhausted` 并在 message 保留 native value，非法 node/溢出为 `OutOfRange`。

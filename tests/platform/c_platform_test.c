@@ -756,9 +756,18 @@ int main(void) {
               &striped, NULL, pg, NULL, 1, pg)) ==
           HYLE_STATUS_INVALID_ARGUMENT);
     unsigned duplicate[2] = {node_ids[0], node_ids[0]};
-    CHECK(status_code(hyle_vm_alloc_numa_interleaved(
-              &striped, NULL, pg, duplicate, 2, pg)) ==
-          HYLE_STATUS_INVALID_ARGUMENT);
+    hyle_status weighted_status = hyle_vm_alloc_numa_interleaved(
+        &striped, NULL, pg, duplicate, 2, pg);
+    if (selected_available) {
+      CHECK(status_ok(weighted_status));
+      CHECK(striped != NULL);
+      CHECK(status_ok(hyle_vm_release(striped, pg)));
+      striped = NULL;
+    } else {
+      CHECK(hyle_status_is_unimplemented(weighted_status));
+      CHECK(striped == NULL);
+    }
+    hyle_status_free(&weighted_status);
 
     hyle_vm_region_o* striped_region = NULL;
     hyle_status region_status = hyle_vm_region_alloc_numa_interleaved(

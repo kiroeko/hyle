@@ -39,7 +39,10 @@ PLT。现在外部 `SystemAllocator` 仍走公开 seam，库内 adapter 走同�
 allocation + first-touch + release 对 oneTBB 的同合同数据统一记在
 [`benchmarks-platform.md`](./benchmarks-platform.md#2026-07-26-selected-nodechunk-numa)。当前 Windows/WSL
 单节点 n=15 均为 TIE；真正多 socket placement/bandwidth 尚待对应硬件签证，不能由单节点结果
-外推。HugeRegion 不增加每次内存访问的 metadata 或 dispatch。
+外推。后续复杂度复审又补齐 weighted node sequence，并把 Linux 极细自定义布局从无界 O(K)
+持久 policy 改为 O(P) 固定批次首次放置、常量 scratch、有界 policy；普通大 chunk 保持惰性，既有
+16 MiB/2 MiB 场景走同一路径，数值证书不失效。HugeRegion 不增加每次内存访问的 metadata
+或 dispatch。
 
 `1de939d` 还关闭了两个正常路径结构问题：SharedPool 将约 2 KiB 的 O(shards) stable-empty
 observation 栈状态移入 noinline exhaustion 冷路（MSVC shipping codegen 的成功入口只保留

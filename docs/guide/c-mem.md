@@ -280,7 +280,7 @@ typed 宏为 `HYLE_GROWABLE_POOL_CREATE/ACQUIRE/RELEASE`。需要 ctor/dtor 的 
 | `hyle_huge_region_open(&out, bytes, flags, numa_node)` | reserve+commit，按 flags/node 放置；直接返回 VM/NUMA 的结构化 Status |
 | `hyle_huge_region_open_local` | 偏好调用线程 home node |
 | `hyle_huge_region_open_interleaved` | 跨节点条带 + THP |
-| `hyle_huge_region_open_interleaved_nodes(&out, bytes, flags, nodes, count, chunk)` | selected-node/chunk 条带；NULL/0 选择全部，显式 id 唯一且顺序有意义；保持条带 policy 粒度通常用 `HYLE_HUGE_NONE` |
+| `hyle_huge_region_open_interleaved_nodes(&out, bytes, flags, nodes, count, chunk)` | selected-node/chunk 条带；NULL/0 选择全部，顺序有意义，重复 id 表达权重；保持条带 policy 粒度通常用 `HYLE_HUGE_NONE` |
 | `hyle_huge_region_destroy` / `data` / `size` | 生命周期与查询；`open*` 成功只交付有效 handle，因此不导出恒真的 `valid` 镜像 |
 | `hyle_huge_region_requested_flags` / `accepted_flags` | 区分请求策略与 OS-facing call 已接受策略 |
 | `hyle_huge_region_requested_numa_node` / `numa_placement_applied` | NUMA 请求与 policy 是否被 OS 接受；不是逐页 residency 证明 |
@@ -298,7 +298,8 @@ selected-node 调用前用 platform 的 `hyle_numa_nodes` 取得实际 id，不�
 压力下 OS 可以回退。`count==0` 选择全部节点，
 `chunk==0` 表示一页。`open_interleaved` 是“全部节点 + THP”的便利形状；需要自定义集合或条带
 时用 `open_interleaved_nodes`。THP 可能把物理粒度扩大；需保持请求的条带 policy 粒度时传
-`HYLE_HUGE_NONE`，仅在 workload 接受时显式叠加 THP/PREFAULT。
+`HYLE_HUGE_NONE`，仅在 workload 接受时显式叠加 THP/PREFAULT。Linux 极细自定义布局为限制
+VMA policy 数可能在 open 内首次触页；需要严格惰性时选择较粗 chunk 或 whole-range policy。
 
 ## 8. 常用写法
 

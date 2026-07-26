@@ -51,10 +51,14 @@ oneTBB **3,280,194 ns**，中位 **0.993**（范围 0.913–1.058，sign 6/15）
 
 这两台机器只暴露一个 node，所以数字证明当前公共形状、结构化结果和 owner/release 相对成熟
 peer 没有 material overhead，**不证明多 socket 物理落点或带宽**。多节点实现的渐近复杂度先由
-源码审计约束：validation O(nodes)；Linux 单 node / 普通逐页递增条带为一次 `mbind`，自定义
-chunk/order 为 O(size/chunk) 个 pre-touch policy range，避免 oneTBB 的 O(size/page) touch、
-page/node/status 数组和 `move_pages`；Windows 每个条带一次 NUMA commit，为表达自定义 node
-顺序所需的 O(size/chunk)。实际多 socket placement、local/remote bandwidth 与并发 first-touch
+源码审计约束。记 S=node 输入项、K=ceil(size/chunk)、P=ceil(size/page)：拓扑 membership 为
+缓存位图 O(1)，validation O(S)；Linux 单 node / 普通逐页递增条带为一次惰性 `mbind`。自定义
+布局 K≤1024 时为 O(K) 惰性 policy；K>1024 时为 O(P) 固定批次 first-touch/move、
+O(P/256) syscall 与常量 scratch，避免无界持久 VMA policy，也优于 oneTBB 的 O(P)
+page/node/status 临时数组。这个分叉不是
+benchmark threshold：它解决的是超细布局的 kernel resource complexity。Windows 为 O(K) NUMA
+commit；重复 node 支持 weighted placement，同 node 退化合并为一次。普通访问始终 O(1)、无 HYLE
+metadata/dispatch。实际多 socket placement、local/remote bandwidth 与并发 first-touch
 仍需在真实多 NUMA node 主机上签证，未取得硬件前状态明确为“实现完成、真机性能待证”。
 
 ### 2026-07-23 `Result<MappedFile>` 成功路径复证

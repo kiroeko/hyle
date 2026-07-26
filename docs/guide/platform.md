@@ -13,7 +13,7 @@ platform 是 HYLE 的跨 OS 原语层。它服务两类调用者：HYLE 内部�
 | 先占地址、以后分段提交 | `VmRegion::reserve` + `commit/decommit` | 普通 heap 分配 | 页粒度；地址空间与物理提交分离 |
 | 有越界保护的 fiber/线程栈 | `VmRegion::reserve_guarded` | 手写 magic padding | 低一页 no-access；`usable()` 才可写 |
 | 大块页内存偏好某 NUMA node | `reserve_numa` / `vm_bind_numa` | 把 soft preferred 当硬保证 | 检查 `NumaPlacement` |
-| 连续地址按选定 NUMA nodes/chunk 条带 | `VmRegion::allocate_numa_interleaved` | 分配后才 move pages | 已提交；node id 可稀疏；整段 release，不 decommit |
+| 连续地址按选定 NUMA nodes/chunk 条带 | `VmRegion::allocate_numa_interleaved` | 调用方逐页手写迁移 | 已提交；node id 可稀疏/可重复加权；整段 release，不 decommit |
 | 普通小对象、容器 backing | mem 的 `Allocator` / `Region` | platform VM | platform 不替代 malloc |
 | 顺序读写普通文件 | `FileHandle` | `MappedFile` | move-only；短读/短写正常；显式 close 可观察错误 |
 | 原子创建临时文件 | `create_temp_file` | 先生成名字再 open | 返回已打开 handle，避免 TOCTOU |
@@ -261,10 +261,12 @@ if (available.size() > 1 &&
 }
 ```
 
-空 node span 选择所有可用节点；显式列表必须是可用且唯一的实际 id，条带 policy 按输入顺序；
-`bytes_per_chunk==0` 表示一页，否则必须是页大小的整数倍。单节点机器返回正常 allocation 和
-`NumaPlacement::kNotNeeded`。Linux 在 first-touch 前设置 policy；Windows 在一个连续 reserve
-中按条带 preferred-node NUMA commit；macOS 当前只有逻辑 node 0。policy 成功不是物理页
+空 node span 选择所有可用节点；显式列表必须是可用的实际 id，条带 policy 按输入顺序；重复 id
+表达权重，例如 `{n0,n0,n1}` 每轮给 n0 两个 chunk、n1 一个。`bytes_per_chunk==0` 表示一页，否则
+必须是页大小的整数倍。单节点机器返回正常 allocation 和 `NumaPlacement::kNotNeeded`。Linux 的
+普通布局在 first-touch 前惰性设置 policy；极细自定义布局为避免每页一个 VMA policy，可能在
+allocate 内完成 first-touch，因此大分配不要把“未传 prefault flag”当作惰性承诺。Windows 在一个
+连续 reserve 中按条带 preferred-node NUMA commit；macOS 当前只有逻辑 node 0。policy 成功不是物理页
 永久驻留证明；需要托管生命周期时优先 `VmRegion`；裸
 `vm_allocate_numa_interleaved` 返回 page-rounded size，只与整段 `vm_release` 配对。selected
 region 的 `decommit` 会以 `FailedPrecondition` 拒绝，防止 recommit 静默丢掉 placement。

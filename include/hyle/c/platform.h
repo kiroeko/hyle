@@ -326,11 +326,11 @@ HYLE_PLATFORM_C_API hyle_status hyle_vm_bind_numa_interleave(
 HYLE_PLATFORM_C_API hyle_status hyle_vm_reserve_numa(
     void** out, hyle_numa_placement* out_placement, size_t size, int node);
 /* Allocate a committed contiguous RW span with a selected-node stripe policy.
- * NULL/0 selects every node. Node IDs must be unique. `bytes_per_chunk==0`
- * means one OS page; otherwise it must be page-granular. Applied means the OS
- * accepted the policy, not that pressure can never cause fallback. Release
- * with hyle_vm_release; do not decommit/recommit subranges because that loses
- * the policy. */
+ * NULL/0 selects every node. Repeated node IDs express weighted placement.
+ * `bytes_per_chunk==0` means one OS page; otherwise it must be page-granular.
+ * Applied means the OS accepted the policy, not that pressure can never cause
+ * fallback. Release with hyle_vm_release; do not decommit/recommit subranges
+ * because that loses the policy. */
 HYLE_PLATFORM_C_API hyle_status hyle_vm_alloc_numa_interleaved(
     void** out, hyle_numa_placement* out_placement, size_t size,
     const unsigned* nodes, size_t node_count, size_t bytes_per_chunk);

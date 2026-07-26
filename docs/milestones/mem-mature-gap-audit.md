@@ -5,7 +5,7 @@
 | 范围 | `include/hyle/mem`、`include/hyle/c/mem.h`、`src/mem`、测试、guide / architecture / performance |
 | 基线 | `c1f2e394`（独立 worktree：`audit/mem-mature-gap`） |
 | 方法 | 从真实基础加速库用户的 lifetime、ownership、并发、失败和组合需求出发，对照工作区 oneTBB、Folly、marl、mimalloc；不按 benchmark 名称凑类型 |
-| 总结 | ✅ **严格收口后定向复开 NUMA。**能力面宽且边界合理；P0 契约、standard adapter 默认静态/注入分型、fiber stack 冷回收与 shared distribution 三平台证书均已落地。对照 oneTBB 实现后推翻旧 non-goal：selected-node/chunk 已由 platform 机制层和 mem HugeRegion 的 C++/C owner 面完整提供。 |
+| 总结 | ✅ **彻底收口。**能力面宽且边界合理；P0 契约、standard adapter 默认静态/注入分型、fiber stack 冷回收与 shared distribution 三平台证书均已落地。对照 oneTBB 实现后推翻旧 non-goal：selected-node/chunk 与 weighted placement 已由 platform 机制层和 mem HugeRegion 的 C++/C owner 面完整提供，Linux 极细布局也已关闭 VMA 资源复杂度风险。 |
 
 > **实现进展（2026-07-26，`implementation/mem-strict`）：**P0 alignment/stats 已在
 > `2cb1a10` 落地；`ac73fc7` 增加 `StdAllocator<T>`、FiberStackPool 精确 capacity、
@@ -29,6 +29,14 @@
 > material LOSE；Windows runtime `PmrResource` 的双动态层约 8.5% 是显式 policy 成本，不冒充
 > 默认形状。Windows mem 4/4；WSL mem 非 death 191/191 + sched 142/142、纯 C、107/107 surface，
 > GCC14 TSan 同组零报告；M4 完整 6/6 + 107/107 surface。mem 恢复严格证书并退出主动重构队列。
+
+> **NUMA 最终复杂度复审（本轮候选）：**实际 node membership 改为缓存位图，查询 O(1)、输入
+> validation O(S)；重复 node 不再误判非法，而是与 oneTBB 一致表达 weighted placement。Linux
+> 单 node / 递增逐页普通形状保持一次惰性 `mbind`；自定义条带在 K≤1024 时保留 O(K) 惰性
+> policy，K>1024 时改为 O(P) 固定批次 first-touch/move、O(P/256) syscall、常量 scratch 和
+> 有界 policy，消除 page-sized arbitrary order 对 `vm.max_map_count` 的架构风险。Windows/WSL
+> 普通构建与纯 C 全绿，
+> WSL UBSan NUMA/VM/大页全绿；C surface 保持 platform 120/120、mem 109/109，无 ABI 增长。
 
 本文是 2026-07-25 `mem-close-plan.md` 之后的红队补充，不复制稳定设计和点值。稳定能力仍以
 [`mem-design.md`](../architecture/mem-design.md) 为真源，用户选择以
@@ -154,14 +162,16 @@ header-only edge 说明应显式记录这条 util-core 边，避免施工顺序�
 3. [x] 给 FiberStackPool 补 capacity + trim，接 scheduler 的真实 shutdown reclaim 控制点；VM release
    位于锁外，shutdown 回收在 worker join 后执行。
 4. [x] selected-node/chunk NUMA 定向复开并完成：OS 差异由 runtime capability + Status 表达，
-   platform 拥有机制，mem/C ABI 提供对应 owner 形状；没有把 unsupported 冒充 applied。
+   platform 拥有机制，mem/C ABI 提供对应 owner 形状；weighted placement 与 Linux 有界 VMA
+   策略完成，没有把 unsupported 冒充 applied。
 5. [x] 完成 shared-distribution 三平台同链接模型证书，并复跑 correctness/sanitizer/surface gates。
 
 退出条件不是“类型数量追平成熟库”，而是：P0 为零；P1 每项有实现或有证据的拒绝；C++ 常见消费无需
 绕路；C ABI 没有可表达能力的缺口；默认与常用组合在同合同、同链接模型、三平台下无 material LOSE；
 architecture / guide / performance / milestone 不互相冒充真源。达到这些条件后，mem 才能再次标记
-**彻底收口**。原 5 项与退出条件已在 clean `c640072` 满足；本次 NUMA 复开又补齐 selected
-nodes/chunk、C++/C guide 与 platform 同合同性能证据，未改变其它 allocator/pool 证书；后续只按
+**彻底收口**。原 5 项与退出条件已在 clean `c640072` 满足；NUMA 复开又补齐 selected
+nodes/chunk、weighted placement、有界 kernel resource complexity、C++/C guide 与 platform
+同合同性能证据，未改变其它 allocator/pool 证书；后续只按
 [`mem-design.md`](../architecture/mem-design.md) 的明确触发器重开。
 
 ## 6. 对照源码定位

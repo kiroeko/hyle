@@ -205,9 +205,10 @@ public:
                     platform::kNumaAny);
   }
 
-  // Interleave over an explicit node set. Stripes follow `nodes` order;
-  // an empty span means every available node. bytes_per_chunk==0 means one OS
-  // page. The returned region is already committed and writable.
+  // Interleave over an explicit node set. Stripes follow `nodes` order and
+  // repeated IDs express weighted placement; an empty span means every
+  // available node. bytes_per_chunk==0 means one OS page. The returned region
+  // is already committed and writable.
   static Result<HugeRegion> allocate_interleaved(
       std::size_t bytes, std::span<const unsigned> nodes,
       std::size_t bytes_per_chunk = 0,
