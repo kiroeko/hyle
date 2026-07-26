@@ -11,7 +11,10 @@
 > `2cb1a10` 落地；`ac73fc7` 增加 `StdAllocator<T>`、FiberStackPool 精确 capacity、
 > `trim/clear` 与 Scheduler shutdown owner-level 回收。Windows shared/static correctness 各 6/6，
 > Windows ASan 6/6；原生 `HYLE_SANITIZER=asan` 尚有 gtest flag 未传播的构建系统缺口，本次用同构
-> 全局 sanitizer flag 完成验证。WSL correctness/TSan 与正式三平台 shared 性能证书完成后重新冻结。
+> 全局 sanitizer flag 完成验证。WSL normal mem 4/4 + sched 2/2；GCC 14 TSan 在 `setarch -R`
+> 下通过 mem 非 death 187 项与 sched 142 项。`80afa42` 进一步统一显式 deallocate alignment 并在
+> Windows mem 4/4 复验；未为这一无并发变化的 follow-up 重跑完整 WSL。正式三平台 shared 性能证书
+> 完成后重新冻结。
 
 本文是 2026-07-25 `mem-close-plan.md` 之后的红队补充，不复制稳定设计和点值。稳定能力仍以
 [`mem-design.md`](../architecture/mem-design.md) 为真源，用户选择以
