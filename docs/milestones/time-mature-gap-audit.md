@@ -13,6 +13,7 @@
   `coarse_realtime`，未保留未发布 ABI 兼容壳；
 - [x] TSC fallback 已改为 sleep-based calibration，并由 fresh-process test 记录 wall/thread CPU；
 - [x] 正常使用性能矩阵已加入（`bd29d57`），Windows n=15 已记录；
+- [x] 合法的 `duration<bool, Period>` 已覆盖，typed facade hot helper 显式 inline（`9129001`）；
 - [ ] 新最终形状完成三平台复证前，strict 状态继续保持打开。
 
 ## 结论先行
@@ -266,7 +267,7 @@ consumer 决定，避免 time 再次为了 benchmark 或“能力数量”无边
 
 ## 9. 实施验证
 
-- 最终实现基点：`bd29d57`，MSVC 19.50，Release shared，`HYLE_COMPONENTS=time`；
+- 最终实现基点：`9129001`，MSVC 19.50，Release shared，`HYLE_COMPONENTS=time`；
 - Windows `hyle_time_test`、纯 C、C surface、header 与 fresh calibration：5/5 通过；
 - Windows timer/normal-use benchmark n=15 已记录到 performance；
 - WSL correctness、native-ext4 n=15 与 Apple 真机待顺序执行，未完成前 strict 保持打开。

@@ -2,9 +2,11 @@
 
 > 本页是 time 性能数字的唯一信源。实现与选择理由分别见
 > [`time-design`](../architecture/time-design.md) 和 [`guide/time`](../guide/time.md)。
-> 当前最终实现形状固定在 `bd29d57`：Windows MSVC 19.50 Release 已完成 n=15；WSL/native
+> 当前最终实现形状固定在 `9129001`：Windows MSVC 19.50 Release 已完成 n=15；WSL/native
 > Linux 与 Apple M4 必须在机器空闲时顺序复证，当前明确标为 pending。每个样本是独立进程，
 > 判定以 `bench-stat.py` paired sign test（p < 0.01，且中位差 >1%）为主。
+> TimerQueue 算法表采于 `bd29d57`；其后的 `9129001` 只补 bool duration 与 typed facade
+> inline，不改变算法表使用的 raw queue 路径。normal-use 表已在 `9129001` 重采。
 
 ## 仪器与对手
 
@@ -76,13 +78,13 @@ Windows n=15，单位 ns/step 或 ns/op：
 
 | 场景 | 中位数 | 评价 |
 |---|---:|---|
-| 64-step incremental，连续节点 | 12.988 | — |
-| 64-step incremental，对象内嵌散布节点 | 13.044 | 与连续布局统计 TIE |
-| absolute schedule + cancel | 3.736 | queue primitive |
-| raw schedule_after，预采 now | 3.851 | 精确饱和转换无可见退化 |
-| chrono schedule_after，预采 now | 3.727 | 与 raw 约同档 |
-| raw schedule_after，真实读 monotonic | 18.529 | 正常端到端路径 |
-| chrono schedule_after，真实读 clock | 18.053 | 与 raw 约同档 |
+| 64-step incremental，连续节点 | 12.637 | — |
+| 64-step incremental，对象内嵌散布节点 | 12.620 | 与连续布局统计 TIE |
+| absolute schedule + cancel | 3.618 | queue primitive |
+| raw schedule_after，预采 now | 3.779 | 精确饱和转换无可见退化 |
+| chrono schedule_after，预采 now | 3.745 | 与 raw 约同档 |
+| raw schedule_after，真实读 monotonic | 18.037 | 正常端到端路径 |
+| chrono schedule_after，真实读 clock | 18.055 | 与 raw 统计 TIE |
 
 真实 `schedule_after` 约 18ns 的大头是读钟，不是 3–4ns queue primitive。散布 stable-address
 节点没有系统性退化；因此连续 N=4096 数字不是靠 benchmark-only layout 得到的。
@@ -93,12 +95,12 @@ Windows n=15；C ABI 经真实 DLL、opaque handle 和共享 `hyle_status` 合�
 
 | 场景 | 中位数 |
 |---|---:|
-| C++ schedule+cancel | 3.727 ns |
-| C ABI schedule+cancel+Status | 12.102 ns |
-| C ABI schedule_after clock+cancel+Status | 20.359 ns |
+| C++ schedule+cancel | 3.618 ns |
+| C ABI schedule+cancel+Status | 11.996 ns |
+| C ABI schedule_after clock+cancel+Status | 20.234 ns |
 | C ABI schedule+advance+visitor，fire one | 16.450 ns |
-| C++ new/delete `TimerEntry` | 21.557 ns |
-| C opaque timer create/destroy+Status | 48.165 ns |
+| C++ new/delete `TimerEntry` | 21.349 ns |
+| C opaque timer create/destroy+Status | 26.005 ns |
 
 这不是“零成本 C wrapper”：可恢复错误、DLL 接缝和 opaque 生命周期有真实常数税。但 queue
 操作仍 O(1)、无分配，opaque timer 只在创建/销毁时分配。没有大规模 C timer consumer 前，
@@ -110,9 +112,9 @@ Windows n=15；每进程 warm 采样，表中是跨进程分位数的中位数�
 
 | request | HYLE p50 / p95 / p99 | `std::sleep_for` p50 / p95 / p99 | 结论 |
 |---|---:|---:|---|
-| 100 us | 0.409 / 0.438 / 0.488 | 15.426 / 15.973 / 16.191 | HYLE 高分辨率 waitable timer 明显更准 |
-| 1 ms | 0.512 / 0.628 / 0.760 | 14.518 / 15.062 / 15.473 | 同上 |
-| 10 ms | 0.330 / 0.597 / 0.597 | 5.526 / 11.194 / — | 同上 |
+| 100 us | 0.413 / 0.463 / 0.612 | 15.426 / 16.008 / 16.394 | HYLE 高分辨率 waitable timer 明显更准 |
+| 1 ms | 0.517 / 0.632 / 0.912 | 14.523 / 15.095 / 15.504 | 同上 |
+| 10 ms | 0.256 / 0.578 / 0.578 | 5.514 / 11.869 / 11.869 | 同上 |
 
 这里衡量 OS thread blocking wake quality，不是 scheduler/fiber timer；接口保证不主动早醒，
 不承诺实时调度。Linux/Apple overshoot 分布 pending。

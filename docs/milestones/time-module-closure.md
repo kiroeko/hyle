@@ -43,6 +43,7 @@
 - `5af0fe9 time: name opt-in clocks by semantics`
 - `0423671 time: calibrate profiling clock without busy spin`
 - `bd29d57 bench(time): cover normal timer usage shapes`
+- `9129001 time: complete and inline integral duration facade`
 
 ## 功能审计结论
 
@@ -60,7 +61,7 @@ libevent common timeout、folly TimeoutQueue/HHWheelTimer。
 
 ## 正确性与 ABI 验收
 
-- C++ time：24 clock + 23 TimerQueue + 16 CommonTimeoutQueue + 1 header test；
+- C++ time：25 clock + 23 TimerQueue + 16 CommonTimeoutQueue + 1 header test；
 - 两组 million-operation randomized oracle、完整 uint64 deadline、wrong-owner、death/lifecycle；
 - 纯 C consumer 覆盖全部 handle、跨 source Status、顺序拒绝、visitor re-arm、NULL 默认；
 - 37/37 动态符号 surface manifest，C11/C++23 自包含头；

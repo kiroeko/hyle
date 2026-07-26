@@ -51,9 +51,9 @@
 
 ## 验收
 
-- 24 个 clock 测试：单调性、epoch、typed facade、sleep 下限、coarse/TSC availability、
+- 25 个 clock 测试：单调性、epoch、typed facade、sleep 下限、coarse/TSC availability、
   deadline 饱和、2^53±/signed/unsigned/非整 ns 精确转换、过去/未来 sleep-until、
-  signed Instant subtraction 与 fresh-process 低 CPU 校准。
+  bool duration、signed Instant subtraction 与 fresh-process 低 CPU 校准。
 - 纯 C smoke 覆盖每个时钟与便利入口。
 - sched/io 已改用 `deadline_after_ns`/`remaining_ns`，不再各自手写易溢出算术。
 - clock benchmark 与 `std::chrono` 比较完全相同的“转换为非负 uint64 ns”
