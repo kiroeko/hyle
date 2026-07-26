@@ -92,16 +92,16 @@
 
 | 里程碑 | 状态 | 待决 |
 |---|---|---|
-| close-01 C-ABI shim | 🔶 多模块已有 surface | error/platform/time/obs 已随严格复审认证；mem 的 C 能力/API 已审而模块尚余分发性能补证；simd/util-runtime/container/sched/io 的既有 C 面随各模块重新核覆盖和 error 形状；compute/graph + install/export/FFI 待做 |
+| close-01 C-ABI shim | 🔶 多模块已有 surface | error/platform/mem/time/obs 已随严格复审认证；mem 107/107 与 shared distribution 已复证；simd/util-runtime/container/sched/io 的既有 C 面随各模块重新核覆盖和 error 形状；compute/graph + install/export/FFI 待做 |
 | close-02 serialize | ❓ scope 待澄清 | 借 flatbuffers/capnproto builder+reader 当原语 vs 全推 L1?JSON 借 simdjson 已定 |
 | close-03 FFI 绑定 | 占位 | 依赖 close-01 |
 | graph-02 数据并行层 | ✅ **归属已定(2026-07-10)** | **归 graph**(graph-design.md §2):compute 铁律把铺多核推给 graph-02 fork-join,归 compute 会破其"不起线程池"边界;消费者与 graph-01 同源。序列化(close-02)仍待 scope 复核 |
 
 ## 六、一句话排期建议
 
-**2026-07-25 当前顺序**只见
-[`pre-release-readiness.md`](./pre-release-readiness.md)：严格基线为 error/platform/time/core、
-build/package、util-core 与 obs；mem 的实现/API 已修而 shared adapter WSL/M4 性能表待补。当前
+**2026-07-26 当前顺序**只见
+[`pre-release-readiness.md`](./pre-release-readiness.md)：严格基线为 error/platform/mem/time/core、
+build/package、util-core 与 obs；mem 的 clean `c640072` 三平台分发证书已完成。当前
 审查单元是 container，随后沿 util-runtime → sched → io，之后先做
 math↔simd 边界裁决再收 simd。compute/graph 主干不是 0 行，但二者仍先补北极星能力尾再收口；最终做
 install/export、跨编译器和 FFI 冒烟。旧绿色 closure 保留为证据，不再当新证书。

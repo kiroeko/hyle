@@ -285,8 +285,8 @@ WebSocket、gRPC（依赖 protobuf/IDL，更靠 L1）仍后置于范围外。
 路线图见 [`roadmap.md`](./roadmap.md)；逐里程碑实时状态见
 [`milestones/README.md`](../milestones/README.md)。当前除 compute/graph 仍有产品能力尾外，
 其余模块主体基本实现；按当前实际使用导向合同，严格证书已有
-error/platform/time/core、build/package、util-core 与 obs；mem 的功能/API/P0 已修，仍待
-shared standard-adapter 的 WSL/M4 正式性能补表。旧 container/simd/sched/io
+error/platform/mem/time/core、build/package、util-core 与 obs；mem 已由 clean `c640072`
+关闭 shared standard-adapter/realloc 的三平台性能补表。旧 container/simd/sched/io
 closure 以及 util-runtime 的既有结果仍只是复审输入证据，
 不能替代本轮功能、复杂度、C/C++ 易用性、依赖采用和双 guide 认证。当前队列见
 [`pre-release-readiness.md`](../milestones/pre-release-readiness.md)。

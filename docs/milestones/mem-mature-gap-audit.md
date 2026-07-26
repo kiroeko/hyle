@@ -5,7 +5,7 @@
 | 范围 | `include/hyle/mem`、`include/hyle/c/mem.h`、`src/mem`、测试、guide / architecture / performance |
 | 基线 | `c1f2e394`（独立 worktree：`audit/mem-mature-gap`） |
 | 方法 | 从真实基础加速库用户的 lifetime、ownership、并发、失败和组合需求出发，对照工作区 oneTBB、Folly、marl、mimalloc；不按 benchmark 名称凑类型 |
-| 总结 | **能力面已经宽且边界合理；P0 契约、standard adapter 默认静态/注入分型与 fiber stack 冷回收均已落地。**没有证据支持像 container 一样再整体翻倍；NUMA selected-node/chunk 仍是 platform-first。 |
+| 总结 | ✅ **严格收口。**能力面宽且边界合理；P0 契约、standard adapter 默认静态/注入分型、fiber stack 冷回收与 shared distribution 三平台证书均已落地。没有证据支持像 container 一样再整体翻倍；NUMA selected-node/chunk 已裁决为当前跨平台 non-goal。 |
 
 > **实现进展（2026-07-26，`implementation/mem-strict`）：**P0 alignment/stats 已在
 > `2cb1a10` 落地；`ac73fc7` 增加 `StdAllocator<T>`、FiberStackPool 精确 capacity、
@@ -13,15 +13,22 @@
 > Windows ASan 6/6；原生 `HYLE_SANITIZER=asan` 尚有 gtest flag 未传播的构建系统缺口，本次用同构
 > 全局 sanitizer flag 完成验证。WSL normal mem 4/4 + sched 2/2；GCC 14 TSan 在 `setarch -R`
 > 下通过 mem 非 death 187 项与 sched 142 项。`80afa42` 进一步统一显式 deallocate alignment 并在
-> Windows mem 4/4 复验；未为这一无并发变化的 follow-up 重跑完整 WSL。正式三平台 shared 性能证书
-> 完成后重新冻结。
+> Windows mem 4/4 复验；随后由下面的最终证书在当前产品 commit 上完整接住。
 
 > **最终 standard-adapter follow-up（`ab92b49`）：**shared same-link 审核证明旧默认
 > `StdAllocator(system)` / `PmrResource(system)` 为普通 system heap 也保留运行时 state 和额外
 > dispatch。现补 `SystemStdAllocator<T>`（empty、always-equal、静态绑定）与进程寿命
 > `system_memory_resource()`；原 `StdAllocator<T>` / `PmrResource` 专注真实运行时 policy 注入。
-> Windows shared Release 单变体独立进程 n=15 已签；WSL GCC 14 shipping 构建和单轮 smoke
-> 通过，因本轮要求立即合入，WSL n=15 与 M4 正式表留作证书补录，不作为实现阻塞。
+> 该提交的 Windows 先行表现已被下面 clean `c640072` 的三平台最终证书取代。
+
+> **最终证书（2026-07-26，`c640072`）：**section L 扩展到 ordinary alloc/free、默认/运行时
+> standard adapter 与 direct/runtime realloc；每 variant 独立新进程、正反交替，Win/WSL/M4
+> interactive+utility 均 n=15、shared shipping、dirty=0。证书发现并修复 DSO 内部再次调用
+> exported backend seam 的 ELF PLT 真成本；库内 runtime/PMR 现走 private helper，外部
+> `SystemAllocator` 仍走公开 seam。默认 heap、SystemStd、system PMR 与 realloc 三平台无
+> material LOSE；Windows runtime `PmrResource` 的双动态层约 8.5% 是显式 policy 成本，不冒充
+> 默认形状。Windows mem 4/4；WSL mem 非 death 191/191 + sched 142/142、纯 C、107/107 surface，
+> GCC14 TSan 同组零报告；M4 完整 6/6 + 107/107 surface。mem 恢复严格证书并退出主动重构队列。
 
 本文是 2026-07-25 `mem-close-plan.md` 之后的红队补充，不复制稳定设计和点值。稳定能力仍以
 [`mem-design.md`](../architecture/mem-design.md) 为真源，用户选择以
@@ -42,7 +49,7 @@
 | typed object lifetime / preserving return / loan | `ObjectPool<T>`、cache、`PreservingObjectPool<T>`、`PoolLoan` | raw slot + typed macros | C++ 自然；C 不伪造构造析构 |
 | 单线程按需增长的固定 slot | `GrowablePool<T>` | runtime slot core | 完整 |
 | LIFO scratch | `StackAllocator` | opaque handle | 完整 |
-| 大页、NUMA host RAM | `HugeRegion` + placement policy | opaque handle + policy | 常用 all-node/local/preferred 能力完整；选 node 集/chunk 策略待 platform 先裁决 |
+| 大页、NUMA host RAM | `HugeRegion` + placement policy | opaque handle + policy | 常用 all-node/local/preferred 能力完整；选 node 集/chunk 已裁为缺少诚实三平台合同的 non-goal |
 | guard-page fiber stack/cache | `FiberStack`、`FiberStackPool` | 有意不暴露 raw C mem API | 已补真实 capacity/trim/clear；Scheduler shutdown 自动回收 |
 
 生产消费也支持这些形状并非只为 benchmark 存在：allocator 被 container、graph、sched、I/O、
@@ -135,9 +142,9 @@ header-only edge 说明应显式记录这条 util-core 边，避免施工顺序�
 - C++ guide 已增加标准 PMR pool-resource 组合，并给默认静态/运行时注入的 `std::vector`、
   `allocate_shared` 最短 recipe；C guide 明确 FixedPool 已是 external bounded variable-size 池。
 - guide 说明 FiberStackPool 的 retention 上限、实际 capacity 与 trim 控制点。
-- performance 不能把 static/source direct 数字冒充 shared SDK：当前 Windows shared direct-import
-  对 exe 内 raw mimalloc 约 0.943 churn / 0.957 realloc，WSL/M4 尚待同链接模型重签。这是未完成的
-  分发形状证书，不足以证明算法缺陷，也不足以宣称 shared SOTA。
+- performance 已把 static/source 与 shared SDK 分表；clean `c640072` 的四张 raw 让同一 DSO
+  backend seam 对拍默认/运行时 allocator、standard adapter 与 realloc。默认形状三平台无
+  material LOSE，显式双动态层成本单列，不再遗留“待补录”或拿 exe 内第二份 mimalloc 冒充对手。
 
 ## 5. 推荐收口顺序与退出条件
 
@@ -148,12 +155,13 @@ header-only edge 说明应显式记录这条 util-core 边，避免施工顺序�
    位于锁外，shutdown 回收在 worker join 后执行。
 4. [x] platform 已裁决 selected-node/chunk NUMA：三平台合同不诚实，明确保持 non-goal；现有
    single-node 与 all-node interleave 不变。
-5. 完成 shared-distribution 三平台同链接模型证书，并复跑现有 correctness/sanitizer/surface gates。
+5. [x] 完成 shared-distribution 三平台同链接模型证书，并复跑 correctness/sanitizer/surface gates。
 
 退出条件不是“类型数量追平成熟库”，而是：P0 为零；P1 每项有实现或有证据的拒绝；C++ 常见消费无需
 绕路；C ABI 没有可表达能力的缺口；默认与常用组合在同合同、同链接模型、三平台下无 material LOSE；
 architecture / guide / performance / milestone 不互相冒充真源。达到这些条件后，mem 才能再次标记
-**彻底收口**。
+**彻底收口**。上述 5 项与退出条件已在 clean `c640072` 全部满足；后续只按
+[`mem-design.md`](../architecture/mem-design.md) 的明确触发器重开。
 
 ## 6. 对照源码定位
 

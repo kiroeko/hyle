@@ -143,7 +143,7 @@ simd 不进 sched 链，只在 compute 汇合。obs-runtime 是用户产品根�
 
 | 波次 | 审查单元 | 排序理由 |
 |---|---|---|
-| **R0 基线** | error、platform、time；mem 实现/API 基线 | error/platform/time 已按当前实际使用标准形成严格证书；mem 的 P0/API 已修，待 WSL/M4 shared adapter 性能补表后恢复严格证书 |
+| **R0 基线** | error、platform、mem、time | 四模块已按当前实际使用标准形成严格证书；mem 以 clean `c640072` 关闭 shared adapter/realloc 三平台性能尾并恢复冻结 |
 | **R1 根、构建与接缝** | core ✅ → build/package system ✅ → util-core seam ✅ → obs ✅ | 根、装配、低层 util 头与可观测横切 seam 已按当前合同冻结；下一单元进入 container |
 | **R2 容器层** | container → util-runtime/完整 util | container 是 sched/io/graph 和 Registry 的地基；先稳表/字符串/并发容器，再冻结依赖它的 Registry/C ABI |
 | **R3 运行时链** | sched → io | sched 汇合 mem/time/container/platform，io 再消费 sched；反序会反复改 timeout/cancel/completion 形状 |

@@ -2,7 +2,7 @@
 
 > 本页是 [performance 总账](./README.md) 的 **mem 模块**详节。
 > 源：`bench/mem/allocator_bench.cc`、`bench/mem/scenario_bench.cc`、`bench/mem/fiber_stack_bench.cc`。
-> 通用 churn、request closure、FixedPool、latency、fragmentation 和 footprint 按各节所列 commit。2026-07-25 的 `6213115` 把长寿命 Region 从 restart-from-head 收口为每 epoch 单调遍历，并在三平台 shipping 构建上重签正常 request 与 32→2048 retained-block scaling；此前 `2cbc307`、`1de939d`、`20f3676` 分别签署 bump/system-realloc/fiber、SharedPool/cache 和 O(1) FixedPool。同契约性能判定信任配对 **[sign]**；旧 raw/result 继续诚实绑定实际采样 commit，不把历史数据伪改成 HEAD。
+> 通用 churn、request closure、FixedPool、latency、fragmentation 和 footprint 按各节所列 commit。2026-07-26 的 clean `c640072` 最终签署 shared SDK 的 allocator/standard-adapter/realloc 形状；`6213115` 签署长寿命 Region 与正常 request；此前 `2cbc307`、`1de939d`、`20f3676` 分别签署 bump/system-realloc/fiber、SharedPool/cache 和 O(1) FixedPool。同契约性能判定同时看配对 **[sign]**、差距大小与绝对 spread；旧 raw/result 继续诚实绑定实际采样 commit，不把历史数据伪改成 HEAD。
 
 ## 当前性能封口状态
 
@@ -28,6 +28,12 @@ core 仍报告绝对成本和较弱合同参照。
 当前 scenario benchmark 还会输出 `HYLE_MEM_CERT build testing=0/1`，四个证书脚本在看到
 `testing=1` 或缺失 build marker 时直接拒绝采样，避免以后再次把诊断成本签进产品表。
 
+`c640072` 又关闭了 shared distribution 最后一条真实热路缺口：库内 runtime allocator 与 PMR
+曾再次调用面向外部 consumer 的 exported backend seam；ELF 符号可抢占使其在 DSO 内多走一层
+PLT。现在外部 `SystemAllocator` 仍走公开 seam，库内 adapter 走同一 backend 的 private helper。
+这不是为 benchmark 增加 cache/metadata，而是删除错误的内部动态链接边界；WSL
+`system_memory_resource()` 对 direct-backend PMR 从上一候选的 0.946x 恢复为 1.039x。
+
 `1de939d` 还关闭了两个正常路径结构问题：SharedPool 将约 2 KiB 的 O(shards) stable-empty
 observation 栈状态移入 noinline exhaustion 冷路（MSVC shipping codegen 的成功入口只保留
 32B 栈帧）；FixedPool 将 retained-span/后一空闲邻块 grow 内联，搬移+copy 独立为 noinline
@@ -35,59 +41,80 @@ observation 栈状态移入 noinline exhaustion 冷路（MSVC shipping codegen �
 
 ## 1. 通用路径（`hyle_mem_bench`）
 
-### Shared SDK same-link standard adapter 证书（`ab92b49`）
+### Shared SDK same-link allocator / standard adapter 证书（`c640072`）
 
 旧表把 DLL/DSO 内 HYLE mimalloc 与可执行文件内第二份 static mimalloc 放在一起，适合作为绝对
-诊断下界，却不能公平判定 shared API。section `L` 现在让正式行全部跨同一个 `hyle_mem` shared
-seam、进入同一个 mimalloc backend；每个 variant 独立进程运行，外层按正反顺序交错，避免固定
-执行顺序把 heap warmup 或频率漂移写成 adapter 差异。Windows MSVC 19.50 Release、testing=0、
-n=15 的跨进程中位数如下（raw：`mem-shared-same-link-win-ab92b49.csv`）：
+诊断下界，却不能公平判定 shared API。section `L` 让正式行全部进入同一个 `hyle_mem` shared
+backend；每个 variant 独立新进程，外层逐 run 正反交错。shipping 配置为
+`HYLE_STATIC=OFF`、`HYLE_BUILD_TESTS=OFF`，三平台各 n=15；WSL 固定 guest CPU 2，M4 明确申请
+interactive / utility QoS，但不冒充硬 P/E core affinity。raw：
+[Windows](./mem-shared-same-link-win-c640072.csv)、
+[WSL](./mem-shared-same-link-wsl-c640072.csv)、
+[M4 interactive](./mem-shared-same-link-m4-interactive-c640072.csv)、
+[M4 utility](./mem-shared-same-link-m4-utility-c640072.csv)。四张均记录
+`commit=c640072...`、`dirty=0`、`linkage=shared`。
 
-| 正常形状 | ns/op | 对同类直接形状 | 判定 |
-|---|---:|---:|---|
-| backend raw shared seam | 8.41 | baseline | 只作为相同链接/后端下界 |
-| `SystemAllocator` | 8.60 | raw 的 **0.978x** | TIE（默认 heap） |
-| `SystemStdAllocator<uint64_t>` | 8.74 | SystemAllocator 的 **0.984x** | TIE（默认 allocator-template） |
-| runtime `Allocator` | 8.88 | raw 的 **0.947x** | 显式 policy 注入税，仍快于单层 PMR |
-| runtime `StdAllocator<uint64_t>` | 9.11 | runtime Allocator 的 **0.975x** | TIE（注入 adapter） |
-| direct-backend PMR rival | 9.49 | baseline | 同类单层 PMR 参照 |
-| `system_memory_resource()` | 9.58 | rival 的 **0.991x** | TIE（默认 PMR） |
-| runtime `PmrResource` | 10.19 | rival 的 **0.931x** | 双动态层的显式注入成本，不冒充默认形状 |
+| 正常形状，ns/op | Win / MSVC 19.50 | WSL / GCC 14.2 | M4 interactive | M4 utility |
+|---|---:|---:|---:|---:|
+| backend raw shared seam | 8.03 | 7.84 | 7.95 | 11.22 |
+| `SystemAllocator` | 8.17 | 7.81 | 7.98 | 11.24 |
+| `SystemStdAllocator<uint64_t>` | 8.18 | 7.86 | 7.98 | 11.21 |
+| runtime `Allocator` | 8.35 | 7.90 | 7.64 | 10.76 |
+| runtime `StdAllocator<uint64_t>` | 8.53 | 7.95 | 7.64 | 10.77 |
+| direct-backend PMR | 8.65 | 8.47 | 8.48 | 11.99 |
+| `system_memory_resource()` | 8.62 | 8.15 | 7.82 | 11.05 |
+| runtime `PmrResource` | 9.43 | 8.54 | 8.16 | 11.53 |
+| backend realloc seam，16→1024B chain | 71.14 | 67.84 | 81.91 | 115.48 |
+| `SystemAllocator::reallocate` | 72.77 | 68.23 | 82.07 | 118.05 |
+| runtime `Allocator::reallocate` | 73.79 | 66.47 | 79.48 | 112.87 |
 
-因此默认 standard-container 路径已有同链接 SOTA/TIE 证据；运行时注入路径仍诚实保留策略成本，
-不为 benchmark 增加常态 cache/metadata。可执行文件内 `raw mi_*` 继续输出但不参与 shared 判定。
-WSL GCC 14 shared shipping 构建与 section L 单轮逐项 smoke 已通过；正式 n=15 被本轮立即合入要求
-中断，M4 也未重签，所以这两平台仍是证书补录项，不能引用本表冒充三平台完成。
+下表是逐 run 配对的 `reference_ns / candidate_ns` 中位数；大于 1 表示 HYLE 更快。默认路径
+必须对同合同地板没有 material LOSE；运行时注入另列，不拿更强合同冒充 direct binding。
+
+| candidate / reference | Win | WSL | M4 interactive / utility | 结论 |
+|---|---:|---:|---:|---|
+| `SystemAllocator` / backend seam | 0.980 | 1.009 | 0.996 / 0.996 | 默认 heap 三平台同档；Win 的约 2% 是 null/OOM/trace-ready 合同相对 raw seam 的薄封装差，不是第二份 backend |
+| `SystemStdAllocator` / `SystemAllocator` | 0.995 | 1.000 | 1.000 / 1.004 | allocator-template adapter 零 material 税 |
+| runtime `Allocator` / backend seam | 0.964 | 0.999 | 1.039 / 1.042 | 显式 policy 注入：Win 约 3.6%，其余 TIE/WIN |
+| runtime `StdAllocator` / runtime `Allocator` | 0.975 | 1.001 | 0.997 / 1.000 | adapter 本身零 material 税 |
+| `system_memory_resource()` / direct PMR | 1.004 | 1.039 | 1.083 / 1.086 | 默认 PMR 三平台 TIE/WIN |
+| runtime `PmrResource` / direct PMR | 0.915 | 0.980 | 1.040 / 1.042 | Windows 显式双动态层约 8.5% 成本；这是 runtime backing 能力，不冒充默认 PMR |
+| `SystemAllocator::reallocate` / backend realloc | 0.974 | 0.997 | 1.003 / 0.983 | 默认 realloc 最大约 2.6%，无 material LOSE |
+| runtime `Allocator::reallocate` / backend realloc | 0.965 | 1.018 | 1.023 / 1.037 | Win 约 3.5%，WSL/M4 WIN；动态策略成本有界 |
+
+因此默认 heap、allocator-template、PMR 与 realloc 在三平台 shared shipping 形状下均无
+material LOSE；standard adapter 已达到同类 direct shape 的 SOTA 档。`PmrResource` 在 Windows
+保留可见的双动态层成本，用户只有在确实需要运行时 backing 注入时才选择它；这不是应藏进默认
+对象的 state/dispatch，也不值得为微基准增加常态 cache/metadata。
 
 2026-07-25 的底座依赖审计发现旧 benchmark 给可执行文件手工链接了 `mimalloc_static`，所以
 “SystemAllocator 内联”数字真实代表 **static/source 合并形状**，不能冒充 shared SDK consumer。
 shared 公开头现经 `hyle_mem` 的一次 direct-import seam 进入同一 mimalloc backend，不再要求用户
 链接或加载第二份 vendor 实现。Windows shipping 诊断为 churn 8.22 ns vs executable 内 raw mi
 7.75 ns（0.943x，约 6% DSO 边界上界），realloc 70.66 vs 67.64 ns（0.957x）；同轮 vtable 为
-8.08/72.45 ns。这个单机诊断用于诚实揭示交付形状，不是三平台 sign 证书，也不是同为 shared
-mimalloc 的对称对手；补齐三平台 shared-vs-shared 证书前，不宣称 shared 行已平 mi SOTA。
+8.08/72.45 ns。这个单机诊断用于诚实揭示旧测量错配，不是三平台 sign 证书，也不是同为 shared
+mimalloc 的对称对手；当时不宣称 shared 行已平 SOTA，现由上面的 same-link 正式证书取代。
 
 | 场景 | Win | WSL | M4 | 判定 |
 |---|---|---|---|---|
 | **SystemAllocator static/source direct** vs 裸 mi churn | 7.93 / 7.86 → **0.996 TIE** | 8.04 / 8.04 → **0.99 TIE** | 7.77 / 7.91 → **1.00 TIE** | ➖ 合并形状三平台平 mimalloc |
-| **SystemAllocator shared direct-import** vs exe 内裸 mi churn | 8.22 / 7.75 → **0.943** | 待重签 | 待重签 | ⚠️ Windows 诊断：约 6% DSO seam 上界；待同链接模型三平台证书 |
-| **vtable** vs 裸 mi churn | 8.67 / 7.86 → **0.91 LOSE sign** | 8.67 / 8.04 → **0.94 LOSE sign** | 7.93 / 7.91 → **1.00 TIE** | Win/WSL 有约 6–9% 多态税 |
-| **vtable** vs pmr(over mi) churn | 8.67 / 8.67 → **TIE** | 8.67 / 10.27 → **1.22 WIN sign** | 7.93 / 9.98 → **1.26 WIN** | 同类多态对照平或赢 pmr |
+| **SystemAllocator shared direct-import** vs same-link backend seam | 8.17 / 8.03 → **0.980** | 7.81 / 7.84 → **1.009** | 7.98 / 7.95 → **0.996**（utility 0.996） | ➖ clean `c640072`：三平台默认 shared 形状无 material LOSE |
+| runtime **Allocator** vs same-link backend seam | 8.35 / 8.03 → **0.964** | 7.90 / 7.84 → **0.999** | 7.64 / 7.95 → **1.039**（utility 1.042） | 显式 policy 注入：Win 约 3.6%，WSL TIE、M4 WIN |
 | static/source direct **SystemAllocator reallocate** / raw `mi_realloc` | 66.979 / 67.691 → **1.005 TIE** | 79.279 / 78.995 → **0.989 TIE** | 81.643 / 83.577 → **1.018 WIN sign** | 合并形状三平台同档 |
-| shared direct-import **SystemAllocator reallocate** / exe 内 raw `mi_realloc` | 70.66 / 67.64 → **0.957** | 待重签 | 待重签 | ⚠️ Windows 诊断：约 4.5% DSO seam 上界 |
-| runtime **Allocator vtable reallocate** / raw `mi_realloc` | 74.922 / 67.691 → **0.906 LOSE sign** | 86.344 / 78.995 → **0.921 LOSE sign** | 81.329 / 83.577 → **1.020 WIN sign** | x86 有约 8–9% 动态多态税；M4 无税 |
+| shared direct-import **SystemAllocator reallocate** / same-link backend realloc | 72.77 / 71.14 → **0.974** | 68.23 / 67.84 → **0.997** | 82.07 / 81.91 → **1.003**（utility 0.983） | ➖ clean `c640072`：三平台最大约 2.6%，无 material LOSE |
+| runtime **Allocator reallocate** / same-link backend realloc | 73.79 / 71.14 → **0.965** | 66.47 / 67.84 → **1.018** | 79.48 / 81.91 → **1.023**（utility 1.037） | Win 约 3.5%，WSL/M4 WIN；动态策略成本有界 |
 
-static/source direct 路径平 mimalloc；shared 默认路径保持编译期 direct binding，但必须支付一次
-库边界，不能再拿 benchmark-only vendor 补链消掉它。需要运行时注入的 vtable 路径对裸 mi 有
-可测税，但仍平或赢同为多态封装的 pmr。
+static/source direct 路径平 mimalloc；shared 默认路径保持编译期 direct binding，并由上面的
+same-link 三平台正式证书接住。需要运行时注入的 vtable/PMR 路径保留明确策略成本，不混入默认
+路径结论。
 
 2026-07-26 strict-alignment 实现把验证放在**显式 alignment 的 C++ overload / C convenience**；
 `Allocator::allocate(size)`、默认 `reallocate` 和编译期 `SystemAllocator` 默认参数的 shipping
 汇编不含 alignment 分支，动态显式 allocate/free/reallocate 请求才付一次 fail-fast 检查。Windows shared implementation
 smoke（MSVC 19.50，section A，`n=15`，未作为正式 clean 证书替换上表）为：shared
 `SystemAllocator/raw mi=0.913`、runtime vtable/raw mi=0.904、runtime vtable/同类 PMR=0.982；
-三者 paired sign 均在 lose 侧、absolute spread 判 TIE。它确认 strict check 没污染默认 runtime
-热路，也再次说明 shared/vtable seam 尚不能宣称 SOTA；正式结论仍待同链接模型三平台重签。
+三者 paired sign 均在 lose 侧、absolute spread 判 TIE。它只保留为 alignment 修复当时的
+回归诊断；当前 shared 结论已由上面的 clean `c640072` 三平台同链接证书取代。
 
 ## 2. Bump 与单线程定长对象
 

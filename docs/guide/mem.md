@@ -351,5 +351,5 @@ win/loss 或待补证据。性能结果用来帮助选型，不改变前述 owne
 
 当前设计边界见 [`../architecture/mem-design.md`](../architecture/mem-design.md)；上一轮预发布冻结的
 验收记录见 [`../milestones/mem-close-plan.md`](../milestones/mem-close-plan.md)，2026-07-26
-成熟库复审、已完成修复与剩余分发性能补证见
+成熟库复审、已完成修复与最终分发证书见
 [`../milestones/mem-mature-gap-audit.md`](../milestones/mem-mature-gap-audit.md)。

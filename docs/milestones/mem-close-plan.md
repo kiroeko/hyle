@@ -2,7 +2,7 @@
 
 | 字段 | 值 |
 |---|---|
-| **状态** | ✅ 完成；2026-07-25 依赖/成熟库回审后重新冻结 |
+| **状态** | ✅ 完成；2026-07-26 clean `c640072` 严格复证后重新冻结 |
 | **起始基线** | `024f379`（2026-07-23） |
 | **范围** | 只补 API parity、性能证据和最终认证；不新增 allocator 类型 |
 | **设计真源** | [`../architecture/mem-design.md`](../architecture/mem-design.md) |
@@ -12,8 +12,9 @@
 > **2026-07-26 后续状态：**本页保留上一轮 final 的历史验收；当前状态由
 > [`mem-mature-gap-audit.md`](./mem-mature-gap-audit.md) 覆盖。成熟库红队发现的 alignment、并发
 > peak、snapshot/lifetime P0 已修，随后补齐 `SystemStdAllocator<T>` 与
-> `system_memory_resource()` 默认静态 adapter；Windows shared same-link 已签，WSL/M4 正式表仍待
-> 补录。`FixedPool` 已经提供 external fixed-capacity 的 variable-size alloc/free/realloc + bulk
+> `system_memory_resource()` 默认静态 adapter；clean `c640072` 已完成 Win/WSL/M4 双 QoS shared
+> same-link allocator/adapter/realloc n=15 与受影响正确性/ABI/sanitizer 复签。`FixedPool` 已经提供
+> external fixed-capacity 的 variable-size alloc/free/realloc + bulk
 > reset；未上架的只是 HYLE-owned growable 版本，不得把它写成一般“可变大小内存”缺口。
 
 > **当前替代（2026-07-25）：**下文 105 项是候选 `551be0b` 的历史证书；共享 error
@@ -119,6 +120,18 @@
 | Windows x64 / MSVC 19.50 | 197/197 + PASS | DLL 107/107 | 16 C++ + 1 C | MSVC ASan 198/198 + C PASS |
 | Linux x64 / GCC 14.2 | 197/197 + PASS | ELF 107/107 | 16 C++ + 1 C | GCC TSan 33 relevant + C PASS |
 | macOS arm64 / AppleClang 21 | 197/197 + PASS | Mach-O 107/107 | 16 C++ + 1 C | —；ASan/TSan 由 Win/Linux 当前源码覆盖 |
+
+严格 follow-up 认证（产品 commit `c640072`）：
+
+| 平台 / 工具链 | 受影响正确性 | 动态 C surface | sanitizer / 性能 |
+|---|---|---|---|
+| Windows x64 / MSVC 19.50 | mem 4/4（含 header 与纯 C） | DLL 107/107 | shared same-link n=15；默认形状无 material LOSE |
+| WSL / GCC 14.2 | mem 非 death 191/191 + sched 142/142 + 两项纯 C | ELF 107/107 | GCC TSan 同组零报告；CPU 2 same-link n=15 |
+| macOS arm64 / AppleClang 21 | mem/sched 完整 6/6（death test 由本组覆盖） | Mach-O 107/107 | interactive + utility 各 n=15；无硬 P/E affinity 宣称 |
+
+本 follow-up 只改 shared backend 的库内/库外调用边界和证书 harness；`6213115` 的完整
+197-test/独立头/ASan 基线仍有效。新证书额外发现并修复 ELF DSO 内二次 exported-seam PLT，
+不是为了 benchmark 增加 allocator 类型或常态 metadata。
 
 历史 performance raw 不重写；各节继续绑定实际产生数据的 commit。FixedPool 的新 raw 另以
 `20f3676` 后缀保存：Windows 行是 clean 权威 checkout，WSL/M4 行如实保留副本旧 HEAD 与

@@ -107,7 +107,7 @@ recipe。当前入口如下：
 |---|---|---|---|
 | error | `Result<T>`→`hyle_status` + 分支/return-if-error；作用域 handler→push/pop token | `c-error` §4.6/§5 | 完整 |
 | platform | RAII resource→opaque create/destroy；typed symbol→`void*` + caller cast；遍历模板→visitor | `c-platform` §3.8/§4 | 完整 |
-| mem | typed pool→runtime size/align + typed 宏；RAII allocator→vtable + 显式 free；debug-only tracker 不作为稳定产品能力 | `c-mem` §3.9/§4 | 完整；若将 stats/leak tracker 升为用户产品能力必须另导出 POD snapshot/visitor |
+| mem | typed pool→runtime size/align + typed 宏；RAII allocator→vtable + 显式 free；stats/leak→opaque decorator + POD snapshot/copy-out inventory | `c-mem` §3.9/§4 | ✅ 严格复证；107/107 声明、纯 C 引用与动态导出一致，C++-only 只剩模板/RAII/raw fiber stack 等语言专属形状 |
 | time | `Instant`→`uint64_t`；侵入节点/source concept→opaque timer/source + visitor | `c-time` §2–§6 | 完整 |
 | simd | ISA-dependent vector/D-tag 不冻结；普通用户能力由 whole-buffer pointer/count API 动态派发 | `c-simd` 全文 + `simd-usage` | 完整 |
 | util | `Ref<T>`/scope RAII→type-erased ref/guard；静态 type metadata 无运行时等价物 | `c-util` 对应各节 | 完整 |
