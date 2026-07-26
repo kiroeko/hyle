@@ -201,7 +201,7 @@ if(HYLE_COMPUTE_VULKAN_ENABLED)
                        ENVIRONMENT "HYLE_VK_PIPELINE_CACHE=${CMAKE_CURRENT_BINARY_DIR}/hyle_vk_缓存.bin"
                        FIXTURES_REQUIRED VK_PIPE_CACHE)
 endif()
-hyle_add_test(container SOURCES container/bounded_queue_test.cc container/sharded_queue_test.cc container/work_stealing_deque_test.cc container/ws_fifo_queue_test.cc container/hash_test.cc container/carray_test.cc container/c_container_concurrency_test.cc container/small_vector_test.cc container/probe_test.cc container/swiss_table_test.cc container/string_ref_test.cc container/string_buf_test.cc container/concurrent_vector_test.cc container/string_algo_test.cc container/path_test.cc container/dynamic_bitset_test.cc container/sparse_set_test.cc DEPS hyle_platform)
+hyle_add_test(container SOURCES container/bounded_queue_test.cc container/sharded_queue_test.cc container/work_stealing_deque_test.cc container/ws_fifo_queue_test.cc container/hash_test.cc container/carray_test.cc container/c_container_concurrency_test.cc container/small_vector_test.cc container/probe_test.cc container/swiss_table_test.cc container/string_ref_test.cc container/string_buf_test.cc container/concurrent_vector_test.cc container/string_algo_test.cc container/path_test.cc container/dynamic_bitset_test.cc container/sparse_set_test.cc container/ring_deque_test.cc container/byte_ring_buffer_test.cc DEPS hyle_platform)
 hyle_add_c_test(container container/c_container_test.c)
 # graph-01 (step-1): task-dependency DAG incremental recompute. Pure CPU, serial evaluate
 # -- no sched dep yet (parallel node execution is step-2).

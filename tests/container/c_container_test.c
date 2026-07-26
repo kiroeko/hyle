@@ -713,6 +713,43 @@ static void test_dynamic_bitset_and_sparse_set(void) {
   hyle_container_sparse_u32_set_destroy(sparse);
 }
 
+static void test_byte_ring(void) {
+  hyle_container_byte_ring* ring = NULL;
+  hyle_container_const_byte_span readable[2];
+  hyle_container_mutable_byte_span writable[2];
+  char output[8] = {0};
+  size_t span_count;
+
+  CHECK(status_ok(hyle_container_byte_ring_create_system(&ring, 8)));
+  CHECK(hyle_container_byte_ring_capacity(ring) == 8);
+  CHECK(hyle_container_byte_ring_free_space(ring) == 8);
+  CHECK(hyle_container_byte_ring_write(ring, "abcdef", 6) == 6);
+  CHECK(hyle_container_byte_ring_read(ring, output, 4) == 4);
+  CHECK(memcmp(output, "abcd", 4) == 0);
+  CHECK(hyle_container_byte_ring_write(ring, "ghijkl", 6) == 6);
+  CHECK(hyle_container_byte_ring_size(ring) == 8);
+  span_count = hyle_container_byte_ring_readable(ring, readable);
+  CHECK(span_count == 2);
+  CHECK(readable[0].size + readable[1].size == 8);
+  CHECK(!hyle_container_byte_ring_consume(ring, 9));
+  CHECK(hyle_container_byte_ring_consume(ring, 8));
+  CHECK(hyle_container_byte_ring_size(ring) == 0);
+
+  span_count = hyle_container_byte_ring_writable(ring, writable);
+  CHECK(span_count == 1);
+  CHECK(writable[0].size == 8);
+  memcpy(writable[0].data, "12345", 5);
+  CHECK(!hyle_container_byte_ring_commit_write(ring, 9));
+  CHECK(hyle_container_byte_ring_commit_write(ring, 5));
+  CHECK(hyle_container_byte_ring_readable(ring, readable) == 1);
+  CHECK(readable[0].size == 5);
+  CHECK(memcmp(readable[0].data, "12345", 5) == 0);
+  hyle_container_byte_ring_clear(ring);
+  CHECK(status_ok(hyle_container_byte_ring_reserve(ring, 17)));
+  CHECK(hyle_container_byte_ring_capacity(ring) >= 17);
+  hyle_container_byte_ring_destroy(ring);
+}
+
 int main(void) {
   hyle_allocator invalid_backing = {0};
   hyle_allocator failing_backing = {fail_alloc, fail_free, fail_realloc, NULL};
@@ -724,6 +761,7 @@ int main(void) {
   test_hash_set();
   test_queues_and_concurrent_vector();
   test_dynamic_bitset_and_sparse_set();
+  test_byte_ring();
   CHECK(status_code(hyle_container_bounded_queue_create(
             &bounded_queue, invalid_backing, 8)) ==
         HYLE_STATUS_INVALID_ARGUMENT);
@@ -736,6 +774,7 @@ int main(void) {
   {
     hyle_container_dynamic_bitset* bits = NULL;
     hyle_container_sparse_u32_set* sparse = NULL;
+    hyle_container_byte_ring* ring = NULL;
     CHECK(status_code(hyle_container_dynamic_bitset_create(
               &bits, 1024, 0, failing_backing)) ==
           HYLE_STATUS_RESOURCE_EXHAUSTED);
@@ -744,6 +783,19 @@ int main(void) {
               &sparse, 1024, failing_backing)) ==
           HYLE_STATUS_RESOURCE_EXHAUSTED);
     CHECK(sparse == NULL);
+    CHECK(status_code(hyle_container_byte_ring_create(
+              &ring, 1024, failing_backing)) ==
+          HYLE_STATUS_RESOURCE_EXHAUSTED);
+    CHECK(ring == NULL);
+  }
+  {
+    hyle_container_byte_ring* ring = NULL;
+    fail_after_allocator failing = {hyle_system_allocator(), 1};
+    hyle_allocator fail_storage = {fail_after_alloc, fail_after_free,
+                                   fail_after_realloc, &failing};
+    CHECK(status_code(hyle_container_byte_ring_create(
+              &ring, 1024, fail_storage)) == HYLE_STATUS_RESOURCE_EXHAUSTED);
+    CHECK(ring == NULL);
   }
   {
     /* C handle, C++ implementation, then runtime-sized shard storage. */

@@ -8,6 +8,7 @@
 #include <utility>
 
 #include "hyle/container/bounded_queue.h"
+#include "hyle/container/byte_ring_buffer.h"
 #include "hyle/container/carray.h"
 #include "hyle/container/concurrent_vector.h"
 #include "hyle/container/dynamic_bitset.h"
@@ -391,13 +392,19 @@ struct hyle_container_sparse_u32_set_o {
   hc::SparseSet<std::uint32_t> value;
 };
 
+struct hyle_container_byte_ring_o {
+  hyle_allocator backing;
+  explicit hyle_container_byte_ring_o(hyle_allocator allocator)
+      : backing(allocator), value(to_cpp(&backing)) {}
+  hc::ByteRingBuffer value;
+};
+
 struct hyle_container_vector_o {
   hyle_allocator backing{};
   void* data = nullptr;
   std::size_t item_size = 0;
   std::size_t item_alignment = 0;
 };
-
 struct hyle_container_hash_map_o {
   hyle_allocator backing;
   explicit hyle_container_hash_map_o(
@@ -1274,6 +1281,126 @@ int hyle_container_sparse_u32_set_erase(hyle_container_sparse_u32_set* set,
 
 void hyle_container_sparse_u32_set_clear(hyle_container_sparse_u32_set* set) {
   if (set != nullptr) set->value.clear();
+}
+
+hyle_status hyle_container_byte_ring_create(hyle_container_byte_ring** out,
+                                            size_t capacity,
+                                            hyle_allocator backing) {
+  if (out == nullptr)
+    return hyle_status_invalid_argument("byte ring output is NULL");
+  * out = nullptr;
+  if (!valid_backing(backing))
+    return hyle_status_invalid_argument("invalid byte ring allocator");
+  if (capacity > SIZE_MAX / 2 + 1)
+    return hyle_status_out_of_range(
+        "byte ring capacity cannot round to a power of two");
+  auto* ring = allocate_handle<hyle_container_byte_ring>(backing, backing);
+  if (ring == nullptr)
+    return hyle_status_resource_exhausted("byte ring handle allocation failed");
+  if (!ring->value.try_reserve(capacity)) {
+    free_handle(ring);
+    return hyle_status_resource_exhausted(
+        "byte ring storage allocation failed");
+  }
+  * out = ring;
+  return hyle_status_ok();
+}
+
+void hyle_container_byte_ring_destroy(hyle_container_byte_ring* ring) {
+  free_handle(ring);
+}
+
+hyle_status hyle_container_byte_ring_reserve(hyle_container_byte_ring* ring,
+                                             size_t capacity) {
+  if (ring == nullptr)
+    return hyle_status_invalid_argument("byte ring is NULL");
+  if (capacity > SIZE_MAX / 2 + 1)
+    return hyle_status_out_of_range(
+        "byte ring capacity cannot round to a power of two");
+  if (!ring->value.try_reserve(capacity))
+    return hyle_status_resource_exhausted(
+        "byte ring storage allocation failed");
+  return hyle_status_ok();
+}
+
+size_t hyle_container_byte_ring_size(const hyle_container_byte_ring* ring) {
+  return ring == nullptr ? 0 : ring->value.size();
+}
+
+size_t hyle_container_byte_ring_capacity(const hyle_container_byte_ring* ring) {
+  return ring == nullptr ? 0 : ring->value.capacity();
+}
+
+size_t
+hyle_container_byte_ring_free_space(const hyle_container_byte_ring* ring) {
+  return ring == nullptr ? 0 : ring->value.free_space();
+}
+
+size_t hyle_container_byte_ring_write(hyle_container_byte_ring* ring,
+                                      const void* data, size_t size) {
+  if (ring == nullptr || !valid_range(data, size, "invalid byte input"))
+    return 0;
+  return ring->value.write({static_cast<const std::byte*>(data), size});
+}
+
+size_t hyle_container_byte_ring_read(hyle_container_byte_ring* ring,
+                                     void* output, size_t capacity) {
+  if (ring == nullptr || !valid_output(output, capacity))
+    return 0;
+  return ring->value.read({static_cast<std::byte*>(output), capacity});
+}
+
+size_t
+hyle_container_byte_ring_readable(const hyle_container_byte_ring* ring,
+                                  hyle_container_const_byte_span out_spans[2]) {
+  if (out_spans == nullptr)
+    return 0;
+  out_spans[0] = {nullptr, 0};
+  out_spans[1] = {nullptr, 0};
+  if (ring == nullptr)
+    return 0;
+  const auto spans = ring->value.readable();
+  out_spans[0] = {spans.first.data(), spans.first.size()};
+  out_spans[1] = {spans.second.data(), spans.second.size()};
+  return static_cast<size_t>(!spans.first.empty()) +
+         static_cast<size_t>(!spans.second.empty());
+}
+
+size_t hyle_container_byte_ring_writable(
+    hyle_container_byte_ring* ring,
+    hyle_container_mutable_byte_span out_spans[2]) {
+  if (out_spans == nullptr)
+    return 0;
+  out_spans[0] = {nullptr, 0};
+  out_spans[1] = {nullptr, 0};
+  if (ring == nullptr)
+    return 0;
+  const auto spans = ring->value.writable();
+  out_spans[0] = {spans.first.data(), spans.first.size()};
+  out_spans[1] = {spans.second.data(), spans.second.size()};
+  return static_cast<size_t>(!spans.first.empty()) +
+         static_cast<size_t>(!spans.second.empty());
+}
+
+int hyle_container_byte_ring_commit_write(hyle_container_byte_ring* ring,
+                                          size_t count) {
+  if (ring == nullptr || count > ring->value.free_space())
+    return 0;
+  ring->value.commit_write(count);
+  return 1;
+}
+
+int hyle_container_byte_ring_consume(hyle_container_byte_ring* ring,
+                                     size_t count) {
+  if (ring == nullptr || count > ring->value.size())
+    return 0;
+  ring->value.consume(count);
+  return 1;
+}
+
+void hyle_container_byte_ring_clear(hyle_container_byte_ring* ring) {
+  if (ring != nullptr)
+    ring->value.clear();
 }
 
 hyle_status hyle_container_vector_create(

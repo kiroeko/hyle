@@ -166,6 +166,36 @@ sparse set 用 `hyle_container_sparse_u32_set_create[_system]` 创建；`reset_u
 每轮清空整个 universe，dense byte bitmap 的单次查询更快；若 ID 没有合理上界，用 erased
 flat hash set，不要为巨大 universe 预留 sparse set。
 
+## 字节 RingBuffer
+
+`hyle_container_byte_ring_*` 是单线程流式 staging 容器，不是原子 SPSC/MPMC queue。
+create/reserve 使用调用方 allocator，capacity 向上取 power-of-two；`write/read` 可部分
+完成并返回实际 byte 数，满/空返回 0 是正常背压，不通过 Status 报错。
+
+```c
+hyle_container_byte_ring* ring = NULL;
+hyle_status st = hyle_container_byte_ring_create_system(&ring, 65536);
+if (!hyle_status_is_ok(st)) return st;
+
+hyle_container_mutable_byte_span dst[2];
+size_t span_count = hyle_container_byte_ring_writable(ring, dst);
+size_t n = recv_scatter(dst, span_count);
+if (!hyle_container_byte_ring_commit_write(ring, n)) abort();
+
+hyle_container_const_byte_span src[2];
+span_count = hyle_container_byte_ring_readable(ring, src);
+size_t used = parse_scatter(src, span_count);
+if (!hyle_container_byte_ring_consume(ring, used)) abort();
+hyle_container_byte_ring_destroy(ring);
+```
+
+`readable/writable` 的 out array 必须容纳两个 span，返回非空 span 数。span pointer 由
+ring 借出，不得 free；reserve/destroy 会使地址失效，任何 write/read/commit/consume/
+clear 后逻辑范围都改变，应重新查询。`commit_write` 不得超过当前 free space，`consume`
+不得超过当前 size；C 面越界返回 0 且不修改状态。copy API 的非零 size 要求 input/output
+非 NULL。需要拥有 typed 元素、双端操作或随机访问时用 C++ `RingDeque<T>`；C ABI 不
+机械导出任意 C++ 构造/析构 callback，字节 staging 才是稳定且完整的动态能力。
+
 ## 运行时擦除 vector
 
 用 `HYLE_CONTAINER_VECTOR_OPTIONS_INIT` 或
@@ -322,6 +352,8 @@ create 的 `first_segment_capacity` 只选择首段及后续倍增粒度，不�
 | `SmallVector<T,N>` / `PodVector<T>` | `hyle_container_vector_*`：options 传 `item_size`/`item_alignment`（通常用 `HYLE_CONTAINER_VECTOR_OPTIONS_FOR`），按值存储 trivially-copyable 元素。C ABI 不接收 C++ ctor/dtor callback；inline `N` 也不是稳定跨 ABI 属性 |
 | `FlatHashMap<K,V>` | `hyle_container_hash_map_*`：C++ map 可拥有 non-trivial 值；C/FFI map 则按 options 中的 size/alignment 擦除 POD，hash/equality 由 callback+ctx 注入 |
 | `FlatHashSet<K>` | `hyle_container_hash_set_*`：按 options 中的 key size/alignment 擦除 POD；独立 set slot，不用 map + dummy value |
+| `ByteRingBuffer` | `hyle_container_byte_ring_*`：opaque 单线程字节 ring，copy 与 two-span zero-copy 两条路径都可达 |
+| `RingDeque<T>` | 无直接模板 ABI；字节流用 byte ring，trivially-copyable 批量序列用 erased vector。若未来出现真实 typed deque FFI 需求，再设计 element-size/alignment 形状，不冻结 ctor/dtor callback |
 | `BoundedQueue<T>` / `ShardedQueue<T>` / `WorkStealingDeque<T>` / `WsFifoQueue<T>` | 对应 `hyle_container_*queue*` / `*_deque_*` opaque 句柄接受 `void*` payload；payload 生命周期归调用方 |
 | `ConcurrentVector<T>` | `hyle_container_concurrent_ptr_vector_*` append caller-owned `void*`；名称明确它不是 arbitrary POD 类型擦除 |
 | `Hash<T>` / `hash_bytes` | C 侧对实际字节调用进程内 `hyle_container_hash_bytes`，或向 flat map 注入业务 hash callback；不暴露 vendor 实现头，也不承诺持久 bit pattern |

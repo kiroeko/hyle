@@ -25,6 +25,7 @@ C++ typed / source surface      compiled cold cores
   FlatHashMap<K,V> /            Swiss resize/free,
   FlatHashSet<K>
   DynamicBitSet / SparseSet    bitset bulk ISA kernels
+  RingDeque<T> / ByteRingBuffer
   string_ref / StringInterner   StringInterner/path/string algorithms
   typed queues                  runtime ISA dispatcher
           |                       |
@@ -52,6 +53,7 @@ Tier 0 dependencies: mem allocator + platform CPU discovery
 | inline array | `SmallVector<T,N>` | 不单独导出 | 通用 owning value semantics；POD 保留 memcpy relocation；N 是编译期类型，C 动态需求由 erased vector 覆盖 |
 | dynamic bitset | `DynamicBitSet` | opaque dynamic bitset | allocator-aware 值类型；canonical zero padding；set algebra/shift/popcount/set-bit iteration；长 mask runtime ISA dispatch |
 | bounded sparse IDs | `SparseSet<Id>` | opaque sparse u32 set | dense+sparse 双数组；固定 universe；insert/erase/contains/clear O(1)；dense iteration O(active)；swap erase 不保序 |
+| single-thread ring | `RingDeque<T>` / `ByteRingBuffer` | opaque byte ring | 前者是可增长/显式 bounded 的 owning 双端序列；后者为流式字节 staging 提供 copy 与至多两段 zero-copy spans；均非线程安全 |
 | string view | `StringView`（实现名 `string_ref`） | `hyle_container_string_view` | ptr+u32 length+NUL bit；借用、不拥有 |
 | interner | `StringInterner` | opaque StringInterner | generation-tagged direct ID；内容相等才同一条目 |
 | path/text algorithms | typed view/buffer-fill | pointer/count/buffer-fill | 无 STL 所有权跨边界 |
@@ -76,16 +78,38 @@ IntrusiveList 已下沉 core，因为 error/time/sched 都需要它；它不再�
 | ordered/range associative | 缺 | range query、稳定排序遍历、调度索引常见；Abseil B-tree 是更贴近现代 cache 的参考，属于高优先候选 |
 | node/reference-stable associative | 缺 | 需要 grow 后地址稳定或 node extraction；与 flat 表合同不同，不能伪装成一个 policy flag |
 | concurrent associative | 缺 | 多线程 registry、memo/cache、共享状态表是基础库真实场景；参考 oneTBB concurrent hash/unordered 与 Folly concurrent map，属高优先候选 |
-| 单线程 ring/deque | 缺 | 流式窗口、音视频/网络 staging、外部同步 SPSC；现有调度队列的原子/owner 合同不是替代品 |
+| 单线程 ring/deque | `RingDeque<T>` / `ByteRingBuffer` | 流式窗口、音视频/网络 staging、外部同步 SPSC 已覆盖；不让调度队列的原子/owner 合同向单线程用户征税 |
 | dynamic bitset / sparse set | `DynamicBitSet` / `SparseSet<Id>` | graph frontier、mask/set algebra 与稠密 ID active set 已覆盖；前者长 mask SIMD，后者以 O(1) clear + O(active) iteration 换取 2*U*Id bytes |
 | priority queue / heap owner | 由标准库覆盖 | 单线程 comparator heap 先用 `std::priority_queue`；只有并发 priority 或 decrease-key 真实需求出现才新增形状 |
 | cache/LRU policy | 不在 container | eviction 是策略，先由 util/消费者组合；不能因 Folly 有同名类型就把策略塞进 Tier 0 |
 | blocking/unbounded queue | sched 负责等待/背压 | container 保持非阻塞机制，避免另造一套 shutdown/cancel/wait 语义 |
 
 因此当前结论不是“行数已经等价主流全集”，也不是按对手 LOC 补代码。dynamic bitset/
-sparse set 已通过 C++ 正常入口、C ABI、复杂度与实际 graph/active-ID workload；收口队列
-下一批是单线程 ring 与 concurrent associative，再决定 ordered B-tree。每项仍必须先有
+sparse set 与单线程 ring 已通过 C++ 正常入口、C ABI、复杂度与实际 graph/active-ID/
+stream-staging workload；收口队列下一批是 concurrent associative，再决定 ordered
+B-tree。每项仍必须先有
 真实合同，不能用薄 wrapper 追成熟库类型数量。
+
+### RingDeque / ByteRingBuffer 的实际使用形状
+
+`RingDeque<T>` 对照 Folly `DynamicRingQueue` / `FixedCapacityRingQueue` 的单调无符号
+head/tail 与 power-of-two storage 形状，同时补上基础库用户真正需要的 owning 值语义、
+双端 mutation、随机访问 iterator 和逻辑顺序的至多两段 readable spans。普通
+`try_emplace/push_*` 满时增长并报告 OOM；显式 `try_*_bounded` 在 reserve 后永不分配，
+满就是 backpressure。两者是同一个清楚的容器合同，而不是为 benchmark 复制一个简化
+queue。元素要求 nothrow move construction/destruction，使增长失败能保持原状态。
+
+head/tail 按成熟 ring 形状单调推进；无符号差值给出 size，power-of-two mask 给出物理
+slot，hot pop 不在每次变空时重置两个游标。后者曾令 GCC 常态 FIFO 多一条分支和双写；
+删除冗余后与 portable Folly-shaped floor 在 WSL 统计同档，并在 Windows 快约 6%，而
+不是增加常态 metadata 或专用 benchmark API。push/pop 两端与随机访问均为 O(1)，增长
+为 O(N)，已达到该 storage 形状的渐进下界。
+
+`ByteRingBuffer` 不是 `RingDeque<std::byte>` 的别名：它面向 socket/file/audio staging，
+以 partial `write/read` 提供方便 copy 路径，并以 `writable/readable` 返回至多两段 span，
+配合 `commit_write/consume` 直接接 scatter/gather I/O。reserve 会线性化并保持字节序；
+普通搬运只做至多两次 memcpy，没有逐 byte 元素生命周期税。两个类型都只负责单线程
+机制；跨线程使用必须由调用方外部同步，真正 MPMC/owner-thief 继续选择专用并发队列。
 
 ### DynamicBitSet / SparseSet 的实际使用形状
 

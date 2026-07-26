@@ -476,6 +476,9 @@ hyle_apply_warnings(hyle_container_misc_bench)
 add_executable(hyle_container_set_bench container/set_bench.cc)
 target_link_libraries(hyle_container_set_bench PRIVATE hyle_container nanobench)
 hyle_apply_warnings(hyle_container_set_bench)
+add_executable(hyle_container_ring_bench container/ring_bench.cc)
+target_link_libraries(hyle_container_ring_bench PRIVATE hyle_container nanobench)
+hyle_apply_warnings(hyle_container_ring_bench)
 endif()
 
 # core's allocation-free intrusive primitive: normal FIFO batching, arbitrary
@@ -1016,6 +1019,7 @@ hyle_register_benches(container
     hyle_queue_sota_bench
     hyle_container_misc_bench
     hyle_container_set_bench
+    hyle_container_ring_bench
     hyle_hash_bench
   hyle_absl_bench)
 hyle_register_benches(simd

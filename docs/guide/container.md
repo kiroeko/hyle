@@ -19,6 +19,8 @@ container 提供性能敏感的基础数据结构、借用字符串/路径算法
 | 高频 membership / 去重 | `FlatHashSet<K>` | 真正 set slot，不为 empty mapped value 付空间；expected O(1) |
 | 稠密编号上的 mask、frontier、集合代数 | `DynamicBitSet` | U/8 bytes；单 bit O(1)，bulk O(U/word) 且长 mask 按 ISA 派发 |
 | 已知有界 ID，活跃项远少于 universe，频繁 clear/遍历 | `SparseSet<Id>` | 约 `2*U*sizeof(Id)`；insert/erase/clear O(1)，dense 迭代 O(active)，erase 不保序 |
+| 单线程双端队列、滑动窗口或外部同步 SPSC | `RingDeque<T>` | owning、随机访问、两段 readable spans；普通入口可增长，`*_bounded` 明确固定容量背压 |
+| 网络/文件/音视频字节 staging | `ByteRingBuffer` | partial copy API + 至多两段 zero-copy readable/writable spans；不逐 byte 构造元素 |
 | 非拥有字符串切片并使用 HYLE 搜索/路径算法 | `StringView`（实现名 `string_ref`） | ptr + u32 byte length + NUL bit；底层字节必须长寿 |
 | 内容去重并取得稳定字符串地址 | `StringInterner` | 分片线程安全；永久视图或 generation ID 两种生命周期 |
 | 严格容量、多生产者多消费者 | `BoundedQueue<T>` | bounded MPMC；满/空是正常控制流，不分配 |
@@ -38,10 +40,9 @@ container 提供性能敏感的基础数据结构、借用字符串/路径算法
 | 有序查找、range query | 暂用 `std::map` 或业务已有 B-tree | `FlatHashMap` 不保序；HYLE 的 cache-friendly B-tree 尚在设计 |
 | grow 后引用/地址稳定的 map | 暂用 node-based 容器 | flat slots 在 rehash 时搬移；未来 node-stable 类型必须显式命名 |
 | 多线程共享 map | 外部 shard+lock 包装 `FlatHashMap`，或成熟 concurrent map | HYLE 尚无 concurrent associative；不要无锁并发访问 flat map |
-| 单线程/SPSC ring | 暂用业务 ring/成熟库 | `BoundedQueue` 是 MPMC 原子结构，功能虽可用但会付不必要同步税 |
 
-这些是当前真实功能缺口，不是文档藏起来的“负空间”。下一批优先处理单线程 ring 与
-concurrent associative；ordered/node-stable 类型必须先证明基础加速库中的真实需求，
+这些是当前真实功能缺口，不是文档藏起来的“负空间”。下一批优先处理 concurrent
+associative；ordered/node-stable 类型必须先证明基础加速库中的真实需求，
 不能只因成熟库存在就复制。
 
 ## 连续容器
@@ -174,6 +175,45 @@ iterator/reference 与迭代顺序都不稳定。只做 membership 且愿意付 
 dense bitmap 会有更少的 load；SparseSet 的价值在 O(1) clear、O(active) 迭代和同时保存
 active IDs。性能表明确保留了这个 trade-off。
 
+## 单线程 RingDeque 与字节 staging
+
+需要拥有任意 `T`、从两端增删、随机访问或窗口遍历时用 `RingDeque<T>`；需要把 socket、
+文件、codec 的 bytes 直接填入/取出 ring 时用 `ByteRingBuffer`。不要因为元素恰好是 byte
+就机械选 `RingDeque<std::byte>`：后者仍逐元素表达生命周期，前者提供批量 memcpy 和
+scatter/gather spans。
+
+```cpp
+#include "hyle/container/byte_ring_buffer.h"
+#include "hyle/container/ring_deque.h"
+
+hyle::container::RingDeque<Job> pending;
+pending.reserve(1024);
+if (!pending.try_push_back_bounded(make_job())) apply_backpressure();
+consume(pending.front());
+pending.pop_front();
+
+hyle::container::ByteRingBuffer input(64 * 1024);
+auto writable = input.writable();
+std::size_t received = recv_into(writable.first, writable.second);
+input.commit_write(received);  // received 不得超过刚才两段的总长度
+parse(input.readable().first, input.readable().second);
+input.consume(parsed_bytes);
+```
+
+`RingDeque` 的普通 `try_emplace/push_front/back` 在满时增长，OOM 返回 false；熟悉的
+`emplace/push_*` 把 OOM 当 fatal。只有显式 `try_*_bounded` 保证 hot path 不分配，并在满
+时返回 false。capacity 会向上取 power-of-two；增长/reserve 使所有地址失效，pop 使被
+删除元素的地址失效；不增长的 push 保留既有元素地址。任何 mutation 后都应重新取得
+iterator/segments，因为逻辑 index 与分段可能改变。`T` 必须 nothrow
+move-construct/destruct。该类型不是
+线程安全容器；外部同步 SPSC 可以使用，真正并发角色用后文的队列。
+
+`ByteRingBuffer::write/read` 是 partial transfer：返回实际搬运 bytes，空间不足/数据不足
+不是错误。zero-copy 路径必须只在刚取得的 `writable/readable` spans 内访问，并在同一
+逻辑步骤用不超过可用量的 `commit_write/consume`；reserve 或任何后续 mutation 后重新
+取得 spans。reserve 会保留顺序并线性化已有数据。它不会自行增长 write：先 reserve 是
+调用方明确的容量/背压决定。
+
 ## 字符串、驻留与路径
 
 `StringView` 不拥有字节。`null_terminated` 只说明 `data[size]` 确实可读且为 NUL，不能
@@ -232,6 +272,8 @@ range，因为它对 reservation count 取快照，并不额外发布仍在构�
 - `StringView`、flat map/set find 返回值和 vector data 都是借用地址，分别受来源/grow/erase 失效。
 - flat map/set 平均 O(1) 不等于 adversarial hash 安全；业务 Hash 必须提供足够熵且与 Eq 一致。
 - `ShardedQueue` 不保证 global FIFO；work-stealing 两种队列也不提供 MPMC 的任意角色语义。
+- `RingDeque` / `ByteRingBuffer` 没有原子同步；不能用“只有一个 producer/consumer”作为
+  无数据竞争的充分条件，除非外部同步也明确建立 happens-before。
 - `ConcurrentVector::size()` 不是 live publication fence；并发写时读取新 tail 需要外部
   完成同步，或让 `T` 自己承载 atomic/future 状态。
 - `hash_bytes` 的 >16B 路径会跨库调用；足够长的输入在 x86 AVX2 机器会按发布平台

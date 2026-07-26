@@ -16,6 +16,7 @@
 | **SmallVector / PodVector** | ⚠️ 主 Win + 部分补测 | owning vector 形状待本轮统一三平台刷新 |
 | **ConcurrentVector** | ✅ Windows+WSL n=15；⏳ M4 | append/range iteration 同合同 SOTA；WSL `operator[]` 是已知缺口 |
 | **DynamicBitSet / SparseSet** | ✅ **2026-07-26 三平台 n=15** | actual-use graph frontier / frame-local active IDs；M4 bitset 与 std 同档；纯 SparseSet membership 明确输 dense bitmap |
+| **RingDeque / ByteRingBuffer** | ✅ Windows+WSL n=15；⏳ M4 | 固定容量 FIFO 与 32KiB backlog/4KiB stream staging；WSL 与 Folly-shaped floor 同档 |
 | **并发队列** | 见 queue / sched 文 | 不在本页展开 |
 
 **读法**：标 ✅ 的可当当前产品结论；标 ⚠️ 的方向大体可信，但**不要**当 2026-07-20 式三平台 sign 证书去对外硬报绝对 ns。
@@ -37,6 +38,8 @@
 | **ConcurrentVector** | oneTBB `concurrent_vector` | ✅ Win/WSL：append、range iteration、并发 prefix 读同档或赢；⚠️ WSL `operator[]` 顺扫约 0.51x |
 | **DynamicBitSet** | `std::bitset` + portable dynamic blocks | ✅ Win 1M-bit OR+count 1.40x；WSL 5.18x；M4 与 std 同档；⚠️ M4 单循环 fused floor 快 1.53x；⏳ Boost |
 | **SparseSet** | dense bitmap + `std::unordered_set` | ✅ frame clear+rebuild Win 3.29x/28.6x，WSL 3.61x/11.6x，M4 1.86x/11.4x；membership 明确输 dense |
+| **RingDeque** | Folly fixed-capacity ring shape / `std::deque` | ✅ Win 快 floor 1.06x、快 std 1.61x；WSL 与 floor 同档、快 std 1.28x；⏳ M4 |
+| **ByteRingBuffer** | linear byte buffer+memmove / `std::deque<byte>` | ✅ stream staging Win 1.82x/约118x，WSL 1.94x/48x；⏳ M4 |
 
 ### DynamicBitSet / SparseSet：按实际生命周期验收（三平台 Release，n=15）
 
@@ -89,6 +92,38 @@ ID。不得为赢 membership benchmark 给常态对象再塞一份 bitmap，否�
 内存/生命周期选择扭曲成三数组容器。当前证书覆盖 Windows/MSVC、WSL/GCC14 AVX2
 与 M4/AppleClang NEON；本地没有可编译的 Boost dynamic_bitset peer，因此只把
 `std::bitset` 写作当前成熟同接口证据，不外推成“所有对手 SOTA”。
+
+### RingDeque / ByteRingBuffer：单线程常态形状（Windows/WSL Release，n=15）
+
+FIFO workload 先预留 4096 个 `uint64_t` slot 并保持半满，每轮做 65536 次正常
+`try_push_back_bounded + front + pop_front`。`std::deque` 是熟悉通用 peer；portable
+bounded ring 完整执行满检查、单调 head/tail 与 power-of-two mask，复现本地 Folly
+`FixedCapacityRingQueue` 的算法形状，但不借 glog/build 依赖。它是最小 queue floor，
+没有 HYLE 的 allocator、双端、非平凡生命周期、iterator 与 span 合同，不能单独当产品。
+
+| 固定容量 FIFO | HYLE RingDeque | `std::deque<uint64_t>` | portable Folly shape | paired 判定 |
+|---|---:|---:|---:|---|
+| Windows / MSVC 19.50 | **1.307 ns/op** | 2.101 | 1.390 | HYLE 快 std **1.61x**、快 floor **1.06x**；两组 15/15 |
+| WSL / GCC 14.2 | **0.610 ns/op** | 0.783 | 0.622 | HYLE 快 std **1.28x**（15/15）；与 floor 统计同档（10/15 HYLE） |
+
+第一版在每次 pop 后检查 empty 并把两个游标重置为零，GCC 下慢 portable floor 约
+12–20%。无符号单调游标本就允许 wrap；Folly 成熟实现也不在 hot pop 归零。删除这条
+多余分支/双写后得到上表，不增加 metadata、特化 capacity 或 benchmark-only API。
+两端 push/pop 与随机访问仍为 O(1)，只有 grow/reserve 为 O(N)。
+
+Byte workload 模拟 parser/codec staging：保持 32KiB backlog，每轮写入并读出 4KiB，
+共 64 轮。HYLE 使用公开 copy API（内部至多两次 memcpy）；linear peer 每轮 append 后
+memmove 剩余 backlog；`std::deque<byte>` 使用逐元素 API。数值按处理 byte 归一：
+
+| 32KiB backlog / 4KiB write+read | HYLE ByteRing | linear+memmove | `std::deque<byte>` | paired 判定 |
+|---|---:|---:|---:|---|
+| Windows / MSVC 19.50 | **0.009 ns/B（115.60 GB/s）** | 0.016（63.35） | 1.024（0.98） | HYLE **1.82x / 约118x**；均 15/15 |
+| WSL / GCC 14.2 | **0.009 ns/B（115.14 GB/s）** | 0.017（59.48） | 0.419（2.39） | HYLE **1.94x / 48.2x**；均 15/15 |
+
+这不是“逐 byte deque”微基准塑形：公开类型同时提供 partial copy 与 two-span zero-copy，
+正常网络/file/audio 用户可直接把 spans 接 scatter/gather I/O。当前数字只证明 copy
+staging；zero-copy 的价值取决于真实 syscall/codec 消费者，不用一个不读写 bytes 的
+metadata benchmark 虚报无限带宽。M4 尚未刷新，所以本节不写三平台最终证书。
 
 ### FlatHashMap / FlatHashSet：真实 typed 形状（Windows/WSL Release，n=15）
 
@@ -181,8 +216,9 @@ WSL 的逐次索引差距与 GCC 对运行时 segment 定位的代码生成有�
    map/set 的 M4 n=15 尚未刷新。这个差距没有通过增加常态 metadata 或特化 benchmark
    key 来隐藏。
 
-6. **队列类**  
-   能力已收口；性能叙事分散在 queue_sota_bench / sched——需要时单开，勿与 Swiss 表混谈。
+6. **并发队列类**
+   调度/MPMC 性能叙事仍在 queue_sota_bench / sched；单线程 RingDeque/ByteRingBuffer
+   已在本页按实际 FIFO/staging 合同单列，不能拿其结果外推到原子队列。
 
 7. **长 hash 的平台证书**
    Windows AVX2 已证明 ≥1KiB、WSL/GCC14 已证明 ≥512B 宽 XXH3 相对 wyhash 的收益；
@@ -205,6 +241,8 @@ WSL 的逐次索引差距与 GCC 对运行时 segment 定位的代码生成有�
 高频 membership / 去重     → FlatHashSet
 稠密 mask/frontier/集合代数 → DynamicBitSet
 有界 ID、频繁 clear/活跃遍历 → SparseSet（纯 membership 优先 dense bitmap）
+单线程双端/外部同步 SPSC    → RingDeque（固定容量使用显式 *_bounded）
+字节流 staging              → ByteRingBuffer（copy 或 two-span zero-copy）
 栈上小数组                 → SmallVector
 POD 堆动态数组             → PodVector（默认 SystemAllocator/mi）
 只读字符串视图 + 搜索      → string_ref（子串族借 std）
@@ -247,6 +285,12 @@ HYLE_QUEUE_BENCH_FILTER=concurrent-vector \
 scripts/bench-stat.py <build>/bin/hyle_container_set_bench -n 15 \
   --pair "HYLE DynamicBitSet (runtime ISA)" "std::bitset<1M> (fixed-size peer)" \
   --pair "HYLE SparseSet<uint32_t>" "dense byte membership"
+
+# single-thread ring + byte staging
+scripts/bench-stat.py <build>/bin/hyle_container_ring_bench -n 15 \
+  --pair "HYLE RingDeque bounded" "std::deque<uint64_t>" \
+  --pair "HYLE RingDeque bounded" "portable bounded ring (Folly shape)" \
+  --pair "HYLE ByteRingBuffer copy API" "linear byte buffer + memmove"
 ```
 
 定位单项时可再设 `HYLE_QUEUE_BENCH_VARIANT=hyle|tbb` 与

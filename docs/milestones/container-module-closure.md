@@ -82,6 +82,22 @@
 > 本轮四项代码量：全库 254,369；自实现含测试 120,448；自实现不含测试 82,678；
 > container 实现 7,920。
 
+> **2026-07-26 单线程 ring 能力补全：** 新增 allocator-aware `RingDeque<T>` 与
+> `ByteRingBuffer`。前者是 owning 双端/随机访问容器，普通入口可增长，显式
+> `*_bounded` 在 reserve 后提供不分配的固定容量背压；后者为网络/file/audio staging
+> 同时提供 partial copy 与 two-span zero-copy。C ABI 只导出稳定的 opaque byte ring，
+> 动态 C 面由 157 增至 **170** 个声明，不为任意 C++ ctor/dtor 冻结模板 deque ABI。
+> 随机操作分别对拍 `std::deque` 与 byte queue model，OOM、alias growth、span wrap、
+> object lifetime 与 C storage failure 均覆盖。性能红队从 GCC 生成代码发现 empty pop
+> 的多余游标归零；按 Folly 单调无符号 head/tail 形状删除后，Windows 固定 FIFO 快
+> `std::deque` 1.61x、快 portable Folly-shaped floor 1.06x，WSL 快 std 1.28x、与 floor
+> 统计同档。32KiB backlog/4KiB stream staging 两平台快 linear+memmove 1.82x/1.94x。
+> Windows/WSL typed、纯 C、符号、头自包含四门与 GCC14 UBSan 均通过；M4 在
+> implementation commit 推送后补签。本批仍不是整个 container 最终证书，下一项为
+> concurrent associative。
+> 本批四项代码量：全库 255,658；自实现含测试 121,462；自实现不含测试 83,403；
+> container 实现 8,645。
+
 ## 结论
 
 本节是 2026-07-19 历史结论；按 2026-07-25 新合同，container 的既有功能、红队、C ABI

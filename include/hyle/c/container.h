@@ -327,6 +327,59 @@ HYLE_CONTAINER_C_API int hyle_container_sparse_u32_set_erase(
 HYLE_CONTAINER_C_API void hyle_container_sparse_u32_set_clear(
     hyle_container_sparse_u32_set* set);
 
+/* Single-thread byte ring for stream/network staging. Capacity is rounded up
+ * to a power of two. readable/writable return at most two spans; their pointers
+ * are invalidated by reserve or destroy, and their logical availability changes
+ * after any write/read/commit/consume/clear operation. */
+typedef struct hyle_container_byte_ring_o hyle_container_byte_ring;
+typedef struct hyle_container_const_byte_span {
+  const void* data;
+  size_t size;
+} hyle_container_const_byte_span;
+typedef struct hyle_container_mutable_byte_span {
+  void* data;
+  size_t size;
+} hyle_container_mutable_byte_span;
+HYLE_CONTAINER_C_API hyle_status hyle_container_byte_ring_create(
+    hyle_container_byte_ring** out, size_t capacity, hyle_allocator backing);
+static inline hyle_status
+hyle_container_byte_ring_create_system(hyle_container_byte_ring** out,
+                                       size_t capacity) {
+  return hyle_container_byte_ring_create(out, capacity,
+                                         hyle_system_allocator());
+}
+HYLE_CONTAINER_C_API void
+hyle_container_byte_ring_destroy(hyle_container_byte_ring* ring);
+HYLE_CONTAINER_C_API hyle_status hyle_container_byte_ring_reserve(
+    hyle_container_byte_ring* ring, size_t capacity);
+HYLE_CONTAINER_C_API size_t
+hyle_container_byte_ring_size(const hyle_container_byte_ring* ring);
+HYLE_CONTAINER_C_API size_t
+hyle_container_byte_ring_capacity(const hyle_container_byte_ring* ring);
+HYLE_CONTAINER_C_API size_t
+hyle_container_byte_ring_free_space(const hyle_container_byte_ring* ring);
+/* Copy APIs may complete partially and return the byte count transferred. */
+HYLE_CONTAINER_C_API size_t hyle_container_byte_ring_write(
+    hyle_container_byte_ring* ring, const void* data, size_t size);
+HYLE_CONTAINER_C_API size_t hyle_container_byte_ring_read(
+    hyle_container_byte_ring* ring, void* output, size_t capacity);
+/* out_spans must point to two entries. Returns the number of non-empty spans. */
+HYLE_CONTAINER_C_API size_t
+hyle_container_byte_ring_readable(const hyle_container_byte_ring* ring,
+                                  hyle_container_const_byte_span out_spans[2]);
+HYLE_CONTAINER_C_API size_t hyle_container_byte_ring_writable(
+    hyle_container_byte_ring* ring,
+    hyle_container_mutable_byte_span out_spans[2]);
+/* Return zero without mutation when count exceeds current readable/writable
+ * availability. */
+HYLE_CONTAINER_C_API int
+hyle_container_byte_ring_commit_write(hyle_container_byte_ring* ring,
+                                      size_t count);
+HYLE_CONTAINER_C_API int
+hyle_container_byte_ring_consume(hyle_container_byte_ring* ring, size_t count);
+HYLE_CONTAINER_C_API void
+hyle_container_byte_ring_clear(hyle_container_byte_ring* ring);
+
 /* Runtime-erased trivially-copyable vector (the PodVector capability). */
 typedef struct hyle_container_vector_o hyle_container_vector;
 typedef struct hyle_container_vector_options {
