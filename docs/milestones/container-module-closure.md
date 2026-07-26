@@ -3,7 +3,7 @@
 > **2026-07-25 严格复审说明：** 本页保留 2026-07-19 的施工证据与当时点值，
 > 不再代表当前接口或“实际使用导向”的最终证书。严格复审已经把 C++ 值容器从
 > POD/显式 allocator 形状改为默认可用的 `SmallVector`、`FlatHashMap`，并把 C ABI
-> 从私有 TLS last-error 改为共享 `hyle_status + out`；当前动态 C 面为 122 个声明。
+> 从私有 TLS last-error 改为共享 `hyle_status + out`；当轮动态 C 面为 122 个声明。
 > 新增的 [`container.md`](../guide/container.md) 负责告诉用户什么场景选择什么。
 > `ConcurrentVector` 已按 oneTBB 实际合同改为并行 writer；Windows/WSL n=15 的
 > 单 writer、range iteration 与读旧 prefix+写 tail 均领先，8 writer 同档；WSL 逐次
@@ -49,9 +49,10 @@
 > container 实现 6,795。
 
 > **2026-07-26 能力广度/SIMD 复审：** 6.8k 行不是完整度证据。与本地
-> Abseil/Folly/oneTBB/Boost 按数据结构轴对账后，确认 ordered/node-stable/concurrent
-> associative、单线程 ring、dynamic bitset/sparse set 仍是公开能力缺口；优先级和临时
-> 选型已进入 architecture/guide，而不是靠现有 queue/map 冒充。现有 SIMD 面也逐路径
+> Abseil/Folly/oneTBB/Boost 按数据结构轴对账后，当时确认 ordered/node-stable/concurrent
+> associative、单线程 ring、dynamic bitset/sparse set 是公开能力缺口；其中 runtime
+> set 一族已在下方同日批次补齐，其余候选与临时选型进入 architecture/guide，而不是靠
+> 现有 queue/map 冒充。现有 SIMD 面也逐路径
 > 审计：Swiss probe、字符串和 UTF-8 已向量化，vector relocation 应交给 libc/compiler，
 > CAS queue 不适合 SIMD；唯一立即可证的新产品机会是长 hash。256 个 varied input、n=15
 > 证明 Windows AVX2 XXH3 在 1KiB/4KiB 相对 wyhash 约 1.13x/1.64x，因此新增隔离 AVX2 TU
@@ -64,6 +65,20 @@
 > container 仍未取得严格最终证书。
 > 本轮最终四项代码量：全库 252,715；自实现含测试 119,130；自实现不含测试 81,588；
 > container 实现 6,830。
+
+> **2026-07-26 runtime set 能力补全：** 按实际 graph frontier、mask algebra 和
+> frame-local active-ID 生命周期补入 allocator-aware `DynamicBitSet` 与
+> `SparseSet<Id>`，并提供 opaque dynamic-bitset / sparse-u32 C ABI；动态 C 面现为
+> 157 个声明。长位集 AND/OR/XOR/and-not/NOT/count 复用 header-only vec DSL，按
+> platform runtime ISA 选择 SSE4/AVX2/AVX512/NEON 独立 TU，不制造 container→simd
+> 运行时依赖。SparseSet 采用成熟 dense+sparse 形状：insert/erase/contains/clear O(1)，
+> active iteration O(active)，且明确保留纯 membership 输 dense byte bitmap 的选型边界。
+> Windows/WSL 的 typed、纯 C、符号与头自包含四道门均通过，GCC 14 UBSan 也通过；
+> Windows/WSL n=15 实际 workload 已进入 performance 文档。M4/NEON 尚待本轮提交后
+> 在远程副本刷新，因此这仍是 container 严格复审的一批，不是整个模块最终证书；后续
+> 仍按单线程 ring、concurrent associative、ordered/range associative 的真实合同推进。
+> 本轮四项代码量：全库 254,308；自实现含测试 120,403；自实现不含测试 82,633；
+> container 实现 7,875。
 
 ## 结论
 
@@ -136,7 +151,7 @@ Linux x64 和 macOS arm64 的当轮验证命令与结果记录在本文末尾。
 
 ## C ABI
 
-> 本节是 2026-07-19 历史验收，不代表未发布 ABI 已冻结。当前 122 个动态声明正在按
+> 本节是 2026-07-19 历史验收，不代表未发布 ABI 已冻结。当轮 122 个动态声明正在按
 > 真实 C/FFI 场景重审；独立 POD set 是去重/membership 的动态能力，不是把 typed
 > 成员函数机械复制一遍。
 

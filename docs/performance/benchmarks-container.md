@@ -15,6 +15,7 @@
 | **hash / mix64 / Hash&lt;T&gt;** | ✅ Windows/WSL n=15 长 hash SIMD；⏳ M4 | Win ≥1KiB、Linux ≥512B 产品派发；其余历史表待三平台统一刷新 |
 | **SmallVector / PodVector** | ⚠️ 主 Win + 部分补测 | owning vector 形状待本轮统一三平台刷新 |
 | **ConcurrentVector** | ✅ Windows+WSL n=15；⏳ M4 | append/range iteration 同合同 SOTA；WSL `operator[]` 是已知缺口 |
+| **DynamicBitSet / SparseSet** | ✅ Windows+WSL n=15；⏳ M4 | actual-use graph frontier / frame-local active IDs；纯 SparseSet membership 明确输 dense bitmap |
 | **并发队列** | 见 queue / sched 文 | 不在本页展开 |
 
 **读法**：标 ✅ 的可当当前产品结论；标 ⚠️ 的方向大体可信，但**不要**当 2026-07-20 式三平台 sign 证书去对外硬报绝对 ns。
@@ -34,6 +35,46 @@
 | **StringInterner** | map+mutex / Absl 分片 peer | ⚠️ **Win 多平**；WSL/M4 lifecycle **输**；growth 赢；8t 距 Absl ~5% |
 | **path 词法** | string_view 扫 / filesystem | ✅ 平算法基线；**碾** filesystem（零分配结构差） |
 | **ConcurrentVector** | oneTBB `concurrent_vector` | ✅ Win/WSL：append、range iteration、并发 prefix 读同档或赢；⚠️ WSL `operator[]` 顺扫约 0.51x |
+| **DynamicBitSet** | `std::bitset` + portable dynamic blocks | ✅ Win 1M-bit OR+count 1.40x / 5.21x；WSL 5.18x / 4.52x；⏳ Boost/M4 |
+| **SparseSet** | dense bitmap + `std::unordered_set` | ✅ frame clear+rebuild Win 3.29x/28.6x，WSL 3.61x/11.6x；membership 明确输 dense |
+
+### DynamicBitSet / SparseSet：按实际生命周期验收（Windows/WSL Release，n=15）
+
+bitset workload 不是单条 intrinsic：预建两个 1M-bit graph frontier，每轮执行正常公开
+`operator|=` 再 `count()`。`std::bitset<1M>` 是成熟固定尺寸 peer；portable `uint64_t`
+dynamic blocks 是常见动态 bitset word loop floor。表中 ns/op 按 bit batch 归一，括号为
+每秒处理 bits：
+
+| 1M-bit OR + count | median | paired 判定 |
+|---|---:|---|
+| HYLE DynamicBitSet（runtime ISA） | **0.004 ns/bit（279.79G bit/s）** | 基线 |
+| `std::bitset<1M>` | 0.005 ns/bit（199.75G bit/s） | HYLE **1.40x**；HYLE 15/15 |
+| portable `uint64_t` dynamic blocks | 0.019 ns/bit（53.64G bit/s） | HYLE **5.21x**；HYLE 15/15 |
+
+WSL / GCC 14.2 同一合同：HYLE 0.003 ns/bit（286.61G bit/s）；`std::bitset` 0.018
+ns/bit（55.06G，HYLE **5.18x**），portable blocks 0.016 ns/bit（63.87G，HYLE
+**4.52x**），两组均 HYLE 15/15。Windows 的 std::bitset codegen 更强，所以对固定 peer
+领先较小；产品 AVX2 path 在两个 shipping compiler 都成立。
+
+SparseSet workload 模拟每帧 active IDs：universe=1M，每轮 O(1) clear 后插入 4096 个 ID；
+另以 64K mixed queries 单独测 membership。dense byte bitmap 是稠密 ID 查询的强 peer，
+但每帧必须 O(U) 清零；`std::unordered_set<uint32_t>` 是没有 universe 约束的通用 peer。
+
+| 操作 | HYLE SparseSet | dense byte bitmap | unordered_set | 判定（15/15） |
+|---|---:|---:|---:|---|
+| clear + insert 4096 | **1.145 ns/ID** | 3.705 ns/ID | 32.439 ns/ID | HYLE **3.29x / 28.6x** |
+| 64K mixed membership | 1.380 ns/query | **0.363 ns/query** | 5.560 ns/query | dense **3.77x HYLE**；HYLE **4.03x hash** |
+
+WSL / GCC 14.2：frame clear+insert 为 HYLE 0.959、dense 3.454、unordered 10.814
+ns/ID（HYLE **3.61x/11.6x**，均 15/15）；membership 为 HYLE 1.327、dense 0.275、
+unordered 2.895 ns/query（dense **4.74x HYLE**，HYLE **2.17x hash**，均 15/15）。
+WSL absolute spread 较大，但 paired sign test 六组均同侧 15/15。
+
+这个 lose 是结构事实：dense bitmap 一次 indexed byte load，SparseSet 要读 sparse position
+再反查 dense；SparseSet 的收益来自不清 U bytes、直接 O(active) 迭代和同时保存 active
+ID。不得为赢 membership benchmark 给常态对象再塞一份 bitmap，否则会把本来明确的
+内存/生命周期选择扭曲成三数组容器。当前证书覆盖 Windows/MSVC 与 WSL/GCC14 的 AVX2
+机器；M4 及真实 Boost dynamic_bitset peer 未刷新前，不写“三平台/所有对手 SOTA”。
 
 ### FlatHashMap / FlatHashSet：真实 typed 形状（Windows/WSL Release，n=15）
 
@@ -134,6 +175,11 @@ WSL 的逐次索引差距与 GCC 对运行时 segment 定位的代码生成有�
    两个 shipping compiler 使用各自保守交叉点。M4 NEON 尚未按同一 varied-input 合同
    刷新；非 AVX2 产品保持 wyhash，不把 x86 结论外推成三平台 SOTA。
 
+8. **SparseSet 纯 membership / 新集合类型平台证书**
+   SparseSet 的 mixed membership 是 dense byte bitmap 的约 0.27x，这是选择条件，不是待
+   隐藏的小缺口；频繁 O(1) clear/O(active) iteration 才选择 SparseSet。DynamicBitSet /
+   SparseSet 当前已有 Windows/WSL n=15，M4 与 Boost/Folly 可编译 peer 待刷新。
+
 ## 3. 选型（不同场景不同 container 组成）
 
 ```text
@@ -141,6 +187,8 @@ WSL 的逐次索引差距与 GCC 对运行时 segment 定位的代码生成有�
 长字节哈希                 → hash_bytes（自动按发布平台/ISA 选择 wyhash 或宽 XXH3）
 通用 hash map              → FlatHashMap
 高频 membership / 去重     → FlatHashSet
+稠密 mask/frontier/集合代数 → DynamicBitSet
+有界 ID、频繁 clear/活跃遍历 → SparseSet（纯 membership 优先 dense bitmap）
 栈上小数组                 → SmallVector
 POD 堆动态数组             → PodVector（默认 SystemAllocator/mi）
 只读字符串视图 + 搜索      → string_ref（子串族借 std）
@@ -178,6 +226,11 @@ scripts/bench-stat.py <build>/bin/hyle_path_bench -n 15 ...
 HYLE_QUEUE_BENCH_FILTER=concurrent-vector \
   scripts/bench-stat.py <build>/bin/hyle_queue_sota_bench -n 15 \
   --pair "HYLE ConcurrentVector" "tbb concurrent_vector"
+
+# DynamicBitSet + SparseSet actual-use workloads
+scripts/bench-stat.py <build>/bin/hyle_container_set_bench -n 15 \
+  --pair "HYLE DynamicBitSet (runtime ISA)" "std::bitset<1M> (fixed-size peer)" \
+  --pair "HYLE SparseSet<uint32_t>" "dense byte membership"
 ```
 
 定位单项时可再设 `HYLE_QUEUE_BENCH_VARIANT=hyle|tbb` 与

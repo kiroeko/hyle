@@ -8,9 +8,11 @@
 # simd/vec.h (2026-07): kernels live in str_search_{scalar,sse4,avx2,avx512,neon}.cc (shared
 # body str_search_impl.h, written against the D-tag abstraction), and string_ref.cc picks the
 # widest by best_isa() through a cached fn ptr -- same variant-TU + runtime-dispatch model as
-# simd/ops. REPLACED the old hand-rolled string_ref_avx2.cc (256b, x86-only) + inline SSE2;
-# now every ISA incl. aarch64 NEON + AVX-512 is covered from one source (arm64 previously fell
-# to scalar). Each variant TU is its own -march, entered only when best_isa() confirms the ISA.
+# simd/ops. DynamicBitSet uses the same isolation for AND/OR/XOR/and-not/not/popcount in
+# bitset_ops_{scalar,sse4,avx2,avx512,neon}.cc. REPLACED the old hand-rolled
+# string_ref_avx2.cc (256b, x86-only) + inline SSE2; now every ISA incl. aarch64 NEON +
+# AVX-512 is covered from one source (arm64 previously fell to scalar). Each variant TU is
+# its own -march, entered only when best_isa() confirms the ISA.
 #
 # ARCH SPLIT (Apple-Silicon 真机纪律): wide variant TUs gated by CMAKE_SYSTEM_PROCESSOR --
 # x86 ships scalar+sse4+avx2+avx512, aarch64 ships scalar+neon. Feeding -mavx2 to arm64 (or the
@@ -20,14 +22,16 @@ set(_container_arch_sources "")
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   set(HYLE_CONTAINER_X64 TRUE)
   list(APPEND _container_arch_sources
-    hash_xxh3_avx2.cc str_search_sse4.cc str_search_avx2.cc str_search_avx512.cc)
+    hash_xxh3_avx2.cc str_search_sse4.cc str_search_avx2.cc str_search_avx512.cc
+    bitset_ops_sse4.cc bitset_ops_avx2.cc bitset_ops_avx512.cc)
 elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   set(HYLE_CONTAINER_ARM64 TRUE)
-  list(APPEND _container_arch_sources str_search_neon.cc)
+  list(APPEND _container_arch_sources str_search_neon.cc bitset_ops_neon.cc)
 endif()
 hyle_add_module(container
   SOURCES hash.cc carray.cc string_buf.cc path.cc swiss_table.cc string_algo.cc
-          string_ref.cc c_container.cc str_search_scalar.cc ${_container_arch_sources}
+          string_ref.cc dynamic_bitset.cc c_container.cc str_search_scalar.cc
+          bitset_ops_scalar.cc ${_container_arch_sources}
   DEPS hyle_platform
   PUBLIC_DEPS hyle_error hyle_mem)
 target_include_directories(hyle_container PRIVATE
@@ -43,8 +47,12 @@ if(HYLE_CONTAINER_X64)
   hyle_set_isa(str_search_sse4.cc SSE42)
   hyle_set_isa(str_search_avx2.cc AVX2)
   hyle_set_isa(str_search_avx512.cc AVX512)
+  hyle_set_isa(bitset_ops_sse4.cc SSE42)
+  hyle_set_isa(bitset_ops_avx2.cc AVX2)
+  hyle_set_isa(bitset_ops_avx512.cc AVX512)
 elseif(HYLE_CONTAINER_ARM64)
   hyle_set_isa(str_search_neon.cc NEON)
+  hyle_set_isa(bitset_ops_neon.cc NEON)
 endif()
 # Keep IPO/LTO off for the module so a future global -flto can't inline a variant TU's
 # wider codegen into the baseline dispatcher (same isolation rule as simd/, conventions §10).

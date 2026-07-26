@@ -10,9 +10,11 @@
 #include "hyle/container/bounded_queue.h"
 #include "hyle/container/carray.h"
 #include "hyle/container/concurrent_vector.h"
+#include "hyle/container/dynamic_bitset.h"
 #include "hyle/container/path.h"
 #include "hyle/container/probe.h"
 #include "hyle/container/sharded_queue.h"
+#include "hyle/container/sparse_set.h"
 #include "hyle/container/string_algo.h"
 #include "hyle/container/string_interner.h"
 #include "hyle/container/swiss_table.h"
@@ -373,6 +375,20 @@ struct hyle_container_string_interner_o {
   hc::StringInterner value;
   explicit hyle_container_string_interner_o(hyle_allocator allocator)
       : backing(allocator), value(to_cpp(&backing)) {}
+};
+
+struct hyle_container_dynamic_bitset_o {
+  hyle_allocator backing;
+  explicit hyle_container_dynamic_bitset_o(hyle_allocator allocator)
+      : backing(allocator), value(to_cpp(&backing)) {}
+  hc::DynamicBitSet value;
+};
+
+struct hyle_container_sparse_u32_set_o {
+  hyle_allocator backing;
+  explicit hyle_container_sparse_u32_set_o(hyle_allocator allocator)
+      : backing(allocator), value(to_cpp(&backing)) {}
+  hc::SparseSet<std::uint32_t> value;
 };
 
 struct hyle_container_vector_o {
@@ -1015,6 +1031,249 @@ uint32_t hyle_container_string_interner_size(
     const hyle_container_string_interner* interner) {
   if (interner == nullptr) return 0;
   return interner->value.size();
+}
+
+hyle_status hyle_container_dynamic_bitset_create(
+    hyle_container_dynamic_bitset** out, size_t bit_count, int initial_value,
+    hyle_allocator backing) {
+  if (out == nullptr)
+    return hyle_status_invalid_argument("dynamic bitset output is NULL");
+  *out = nullptr;
+  if (!valid_backing(backing))
+    return hyle_status_invalid_argument("invalid dynamic bitset allocator");
+  auto* set = allocate_handle<hyle_container_dynamic_bitset>(backing, backing);
+  if (set == nullptr)
+    return hyle_status_resource_exhausted(
+        "dynamic bitset handle allocation failed");
+  if (!set->value.try_resize(bit_count, initial_value != 0)) {
+    free_handle(set);
+    return hyle_status_resource_exhausted(
+        "dynamic bitset storage allocation failed");
+  }
+  *out = set;
+  return hyle_status_ok();
+}
+
+void hyle_container_dynamic_bitset_destroy(
+    hyle_container_dynamic_bitset* set) {
+  free_handle(set);
+}
+
+hyle_status hyle_container_dynamic_bitset_reserve(
+    hyle_container_dynamic_bitset* set, size_t bit_count) {
+  if (set == nullptr)
+    return hyle_status_invalid_argument("dynamic bitset is NULL");
+  if (!set->value.try_reserve(bit_count))
+    return hyle_status_resource_exhausted(
+        "dynamic bitset storage allocation failed");
+  return hyle_status_ok();
+}
+
+hyle_status hyle_container_dynamic_bitset_resize(
+    hyle_container_dynamic_bitset* set, size_t bit_count, int value) {
+  if (set == nullptr)
+    return hyle_status_invalid_argument("dynamic bitset is NULL");
+  if (!set->value.try_resize(bit_count, value != 0))
+    return hyle_status_resource_exhausted(
+        "dynamic bitset storage allocation failed");
+  return hyle_status_ok();
+}
+
+size_t hyle_container_dynamic_bitset_size(
+    const hyle_container_dynamic_bitset* set) {
+  return set == nullptr ? 0 : set->value.size();
+}
+
+size_t hyle_container_dynamic_bitset_capacity(
+    const hyle_container_dynamic_bitset* set) {
+  return set == nullptr ? 0 : set->value.capacity();
+}
+
+int hyle_container_dynamic_bitset_test(
+    const hyle_container_dynamic_bitset* set, size_t index) {
+  return set != nullptr && index < set->value.size() && set->value[index];
+}
+
+int hyle_container_dynamic_bitset_set(hyle_container_dynamic_bitset* set,
+                                      size_t index, int value) {
+  if (set == nullptr || index >= set->value.size()) return 0;
+  set->value.set(index, value != 0);
+  return 1;
+}
+
+int hyle_container_dynamic_bitset_flip(hyle_container_dynamic_bitset* set,
+                                       size_t index) {
+  if (set == nullptr || index >= set->value.size()) return 0;
+  set->value.flip(index);
+  return 1;
+}
+
+void hyle_container_dynamic_bitset_set_all(
+    hyle_container_dynamic_bitset* set) {
+  if (set != nullptr) set->value.set();
+}
+
+void hyle_container_dynamic_bitset_reset_all(
+    hyle_container_dynamic_bitset* set) {
+  if (set != nullptr) set->value.reset();
+}
+
+void hyle_container_dynamic_bitset_flip_all(
+    hyle_container_dynamic_bitset* set) {
+  if (set != nullptr) set->value.flip();
+}
+
+void hyle_container_dynamic_bitset_shift_left(
+    hyle_container_dynamic_bitset* set, size_t shift) {
+  if (set != nullptr) set->value <<= shift;
+}
+
+void hyle_container_dynamic_bitset_shift_right(
+    hyle_container_dynamic_bitset* set, size_t shift) {
+  if (set != nullptr) set->value >>= shift;
+}
+
+size_t hyle_container_dynamic_bitset_count(
+    const hyle_container_dynamic_bitset* set) {
+  return set == nullptr ? 0 : set->value.count();
+}
+
+int hyle_container_dynamic_bitset_any(
+    const hyle_container_dynamic_bitset* set) {
+  return set != nullptr && set->value.any();
+}
+
+int hyle_container_dynamic_bitset_all(
+    const hyle_container_dynamic_bitset* set) {
+  return set != nullptr && set->value.all();
+}
+
+size_t hyle_container_dynamic_bitset_find_first(
+    const hyle_container_dynamic_bitset* set) {
+  return set == nullptr ? HYLE_CONTAINER_BITSET_NPOS
+                        : set->value.find_first();
+}
+
+size_t hyle_container_dynamic_bitset_find_next(
+    const hyle_container_dynamic_bitset* set, size_t index) {
+  return set == nullptr ? HYLE_CONTAINER_BITSET_NPOS
+                        : set->value.find_next(index);
+}
+
+#define HYLE_BITSET_BINARY_C(name, operation)                                 \
+  hyle_status name(hyle_container_dynamic_bitset* destination,               \
+                   const hyle_container_dynamic_bitset* source) {            \
+    if (destination == nullptr || source == nullptr)                         \
+      return hyle_status_invalid_argument("dynamic bitset is NULL");        \
+    if (destination->value.size() != source->value.size())                   \
+      return hyle_status_invalid_argument("dynamic bitset sizes differ");   \
+    destination->value operation source->value;                              \
+    return hyle_status_ok();                                                  \
+  }
+HYLE_BITSET_BINARY_C(hyle_container_dynamic_bitset_and, &=)
+HYLE_BITSET_BINARY_C(hyle_container_dynamic_bitset_or, |=)
+HYLE_BITSET_BINARY_C(hyle_container_dynamic_bitset_xor, ^=)
+#undef HYLE_BITSET_BINARY_C
+
+hyle_status hyle_container_dynamic_bitset_and_not(
+    hyle_container_dynamic_bitset* destination,
+    const hyle_container_dynamic_bitset* source) {
+  if (destination == nullptr || source == nullptr)
+    return hyle_status_invalid_argument("dynamic bitset is NULL");
+  if (destination->value.size() != source->value.size())
+    return hyle_status_invalid_argument("dynamic bitset sizes differ");
+  destination->value.and_not(source->value);
+  return hyle_status_ok();
+}
+
+int hyle_container_dynamic_bitset_intersects(
+    const hyle_container_dynamic_bitset* left,
+    const hyle_container_dynamic_bitset* right) {
+  return left != nullptr && right != nullptr &&
+         left->value.size() == right->value.size() &&
+         left->value.intersects(right->value);
+}
+
+int hyle_container_dynamic_bitset_is_subset(
+    const hyle_container_dynamic_bitset* subset,
+    const hyle_container_dynamic_bitset* superset) {
+  return subset != nullptr && superset != nullptr &&
+         subset->value.size() == superset->value.size() &&
+         subset->value.is_subset_of(superset->value);
+}
+
+hyle_status hyle_container_sparse_u32_set_create(
+    hyle_container_sparse_u32_set** out, size_t universe_size,
+    hyle_allocator backing) {
+  if (out == nullptr)
+    return hyle_status_invalid_argument("sparse set output is NULL");
+  *out = nullptr;
+  if (!valid_backing(backing) ||
+      universe_size > static_cast<std::uint64_t>(UINT32_MAX) + 1)
+    return hyle_status_invalid_argument("invalid sparse set options");
+  auto* set =
+      allocate_handle<hyle_container_sparse_u32_set>(backing, backing);
+  if (set == nullptr)
+    return hyle_status_resource_exhausted(
+        "sparse set handle allocation failed");
+  if (!set->value.try_reset_universe(universe_size)) {
+    free_handle(set);
+    return hyle_status_resource_exhausted(
+        "sparse set storage allocation failed");
+  }
+  *out = set;
+  return hyle_status_ok();
+}
+
+void hyle_container_sparse_u32_set_destroy(
+    hyle_container_sparse_u32_set* set) {
+  free_handle(set);
+}
+
+hyle_status hyle_container_sparse_u32_set_reset_universe(
+    hyle_container_sparse_u32_set* set, size_t universe_size) {
+  if (set == nullptr ||
+      universe_size > static_cast<std::uint64_t>(UINT32_MAX) + 1)
+    return hyle_status_invalid_argument("invalid sparse set universe");
+  if (!set->value.try_reset_universe(universe_size))
+    return hyle_status_resource_exhausted(
+        "sparse set storage allocation failed");
+  return hyle_status_ok();
+}
+
+size_t hyle_container_sparse_u32_set_universe_size(
+    const hyle_container_sparse_u32_set* set) {
+  return set == nullptr ? 0 : set->value.universe_size();
+}
+
+size_t hyle_container_sparse_u32_set_size(
+    const hyle_container_sparse_u32_set* set) {
+  return set == nullptr ? 0 : set->value.size();
+}
+
+const uint32_t* hyle_container_sparse_u32_set_data(
+    const hyle_container_sparse_u32_set* set) {
+  return set == nullptr ? nullptr : set->value.data();
+}
+
+int hyle_container_sparse_u32_set_contains(
+    const hyle_container_sparse_u32_set* set, uint32_t id) {
+  return set != nullptr && set->value.contains(id);
+}
+
+int hyle_container_sparse_u32_set_insert(hyle_container_sparse_u32_set* set,
+                                         uint32_t id) {
+  return set != nullptr && id < set->value.universe_size() &&
+         set->value.insert(id);
+}
+
+int hyle_container_sparse_u32_set_erase(hyle_container_sparse_u32_set* set,
+                                        uint32_t id) {
+  return set != nullptr && set->value.erase(id);
+}
+
+void hyle_container_sparse_u32_set_clear(hyle_container_sparse_u32_set* set) {
+  if (set != nullptr) set->value.clear();
 }
 
 hyle_status hyle_container_vector_create(

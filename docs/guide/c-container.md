@@ -125,6 +125,47 @@ ASCII 单字节便利函数全部 header-inline：
 - `hyle_container_string_interner_size` 返回当前不同字符串数。所有返回视图都由池拥有，
   不得释放。
 
+## DynamicBitSet 与 sparse u32 set
+
+两者都是 opaque allocator-owning handle，但服务不同的数据形状：
+
+- `hyle_container_dynamic_bitset` 用于 graph frontier、mask 和按 bit 的集合代数，空间约
+  为 universe/8；大块 AND/OR/XOR/and-not/count 会按 CPU ISA 派发。
+- `hyle_container_sparse_u32_set` 用于有界 `uint32_t` ID 的稀疏 active 集合，空间约
+  为 8*universe bytes；构造时预分配，之后 insert/erase/contains/clear 都不分配，clear
+  是 O(1)，遍历 `data()[0..size)` 是 O(active)。erase 使用 swap-remove，不保序。
+
+bitset 用 `hyle_container_dynamic_bitset_create[_system]` 创建，用 `destroy` 销毁；
+`reserve/resize` 是可能 OOM 的 Status 冷路径。单 bit `test/set/flip` 对 NULL 或越界返回 0，
+其中 `set/flip` 返回 1 表示 index 有效，不表示值发生了变化。`set_all/reset_all/flip_all`、
+`shift_left/shift_right` 原地操作；`count/any/all` 查询。按 set bit 遍历时从 `find_first`
+开始，反复调用 `find_next`，结束哨兵是 `HYLE_CONTAINER_BITSET_NPOS`。二元
+`and/or/xor/and_not` 要求尺寸相同；NULL/尺寸不同返回 `INVALID_ARGUMENT` 且不修改目标。
+`intersects/is_subset` 对非法或不同尺寸输入返回 0。
+
+```c
+hyle_container_dynamic_bitset* ready = NULL;
+hyle_status st =
+    hyle_container_dynamic_bitset_create_system(&ready, node_count, 0);
+if (!hyle_status_is_ok(st)) { hyle_status_free(&st); return 1; }
+hyle_status_free(&st);
+hyle_container_dynamic_bitset_set(ready, 3, 1);
+for (size_t i = hyle_container_dynamic_bitset_find_first(ready);
+     i != HYLE_CONTAINER_BITSET_NPOS;
+     i = hyle_container_dynamic_bitset_find_next(ready, i)) {
+  schedule_node(i);
+}
+hyle_container_dynamic_bitset_destroy(ready);
+```
+
+sparse set 用 `hyle_container_sparse_u32_set_create[_system]` 创建；`reset_universe` 会清空
+集合并以 strong guarantee 更换 universe，失败保持旧集合。`insert` 仅在新 ID 成功加入时
+返回 1；重复、越界或 NULL 返回 0。`erase` 仅在原来存在时返回 1；`contains` 是普通查询。
+`data` 是借用的 contiguous active-ID 数组，在下一次 insert/erase/clear/reset/destroy 后
+不得继续依赖内容或顺序。若只做 membership、不需要 O(1) clear/O(active) 遍历，且可接受
+每轮清空整个 universe，dense byte bitmap 的单次查询更快；若 ID 没有合理上界，用 erased
+flat hash set，不要为巨大 universe 预留 sparse set。
+
 ## 运行时擦除 vector
 
 用 `HYLE_CONTAINER_VECTOR_OPTIONS_INIT` 或

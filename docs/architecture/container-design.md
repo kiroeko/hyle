@@ -24,6 +24,7 @@ C++ typed / source surface      compiled cold cores
   PodVector<T> / SmallVector    hash_bytes, carray grow,
   FlatHashMap<K,V> /            Swiss resize/free,
   FlatHashSet<K>
+  DynamicBitSet / SparseSet    bitset bulk ISA kernels
   string_ref / StringInterner   StringInterner/path/string algorithms
   typed queues                  runtime ISA dispatcher
           |                       |
@@ -49,6 +50,8 @@ Tier 0 dependencies: mem allocator + platform CPU discovery
 | flat set | `FlatHashSet<K>` | erased POD hash set | 真 set API/slot；canonical-key find；只读 key 迭代；C 面不要求 dummy mapped value |
 | POD dynamic array | `PodVector<T>` | erased POD vector | 默认可用或注入 allocator；copy/move 值语义；header-before-data；allocator/alignment 随 allocation 记录 |
 | inline array | `SmallVector<T,N>` | 不单独导出 | 通用 owning value semantics；POD 保留 memcpy relocation；N 是编译期类型，C 动态需求由 erased vector 覆盖 |
+| dynamic bitset | `DynamicBitSet` | opaque dynamic bitset | allocator-aware 值类型；canonical zero padding；set algebra/shift/popcount/set-bit iteration；长 mask runtime ISA dispatch |
+| bounded sparse IDs | `SparseSet<Id>` | opaque sparse u32 set | dense+sparse 双数组；固定 universe；insert/erase/contains/clear O(1)；dense iteration O(active)；swap erase 不保序 |
 | string view | `StringView`（实现名 `string_ref`） | `hyle_container_string_view` | ptr+u32 length+NUL bit；借用、不拥有 |
 | interner | `StringInterner` | opaque StringInterner | generation-tagged direct ID；内容相等才同一条目 |
 | path/text algorithms | typed view/buffer-fill | pointer/count/buffer-fill | 无 STL 所有权跨边界 |
@@ -59,9 +62,9 @@ Tier 0 dependencies: mem allocator + platform CPU discovery
 IntrusiveList 已下沉 core，因为 error/time/sched 都需要它；它不再属于 container
 库或 container C ABI。
 
-### 成熟库能力对账：当前不是“容器全集”
+### 成熟库能力对账：仍不冒充“容器全集”
 
-实现行数只能反映维护成本，不能证明能力完整。当前 container 约 6.8k 生产实现已经包含
+实现行数只能反映维护成本，不能证明能力完整。container 已包含
 多套非平凡并发算法，但同本地 Abseil、Folly、oneTBB、Boost 的公开能力轴对账后，覆盖面
 仍明显偏窄。现状与真实场景如下；“缺”不是立即复制一个类型，而是收口前必须设计或明确
 负空间：
@@ -74,14 +77,38 @@ IntrusiveList 已下沉 core，因为 error/time/sched 都需要它；它不再�
 | node/reference-stable associative | 缺 | 需要 grow 后地址稳定或 node extraction；与 flat 表合同不同，不能伪装成一个 policy flag |
 | concurrent associative | 缺 | 多线程 registry、memo/cache、共享状态表是基础库真实场景；参考 oneTBB concurrent hash/unordered 与 Folly concurrent map，属高优先候选 |
 | 单线程 ring/deque | 缺 | 流式窗口、音视频/网络 staging、外部同步 SPSC；现有调度队列的原子/owner 合同不是替代品 |
-| dynamic bitset / sparse set | 缺 | graph frontier、mask/set algebra、稠密 ID membership；这是最自然的批量 SIMD 新能力候选 |
+| dynamic bitset / sparse set | `DynamicBitSet` / `SparseSet<Id>` | graph frontier、mask/set algebra 与稠密 ID active set 已覆盖；前者长 mask SIMD，后者以 O(1) clear + O(active) iteration 换取 2*U*Id bytes |
 | priority queue / heap owner | 由标准库覆盖 | 单线程 comparator heap 先用 `std::priority_queue`；只有并发 priority 或 decrease-key 真实需求出现才新增形状 |
 | cache/LRU policy | 不在 container | eviction 是策略，先由 util/消费者组合；不能因 Folly 有同名类型就把策略塞进 Tier 0 |
 | blocking/unbounded queue | sched 负责等待/背压 | container 保持非阻塞机制，避免另造一套 shutdown/cancel/wait 语义 |
 
-因此当前结论不是“6.8k 行已经等价主流全集”，也不是按对手 LOC 补代码。收口队列应先做
-`dynamic bitset/sparse set`、单线程 ring、concurrent associative 的真实合同设计，再决定
-ordered B-tree；每项都要有 C++ 正常入口、复杂度/peer 证据和明确 C ABI 判断。
+因此当前结论不是“行数已经等价主流全集”，也不是按对手 LOC 补代码。dynamic bitset/
+sparse set 已通过 C++ 正常入口、C ABI、复杂度与实际 graph/active-ID workload；收口队列
+下一批是单线程 ring 与 concurrent associative，再决定 ordered B-tree。每项仍必须先有
+真实合同，不能用薄 wrapper 追成熟库类型数量。
+
+### DynamicBitSet / SparseSet 的实际使用形状
+
+`DynamicBitSet` 对照 Boost dynamic_bitset 的常用面与 Folly 内部 frontier bitset 形状，保留
+runtime size、resize/reserve、单 bit mutation、bulk set/reset/flip、AND/OR/XOR/difference、
+shift、count/any/all、find-first/find-next 和 set-bit range。没有照抄 string conversion、
+stream operator 等非基础加速职责。storage 是 allocator-owned `uint64_t` blocks；最后一块
+的非逻辑 bit 永远清零，所有 bulk kernel 因此不需要额外 mask 每个 lane，只在 mutation
+结束 sanitize 一次。大块集合运算通过 platform `best_isa()` 选独立 variant TU，container
+仍只链接 platform/mem/error，不依赖 `hyle_simd` runtime。
+
+`SparseSet<Id>` 采用 Folly `SparseByteSet` 与经典 dense+sparse set 的共同算法：sparse[id]
+记录 dense position，membership 再验证 `dense[position] == id`，因此 `clear()` 只需 size=0，
+旧 sparse 值不会产生 false positive；erase 以 dense 尾项回填并修复其 sparse position。
+HYLE 的通用 allocator-backed 版本在 universe 建立时初始化 sparse 数组，不读取 C++
+indeterminate storage；这比 Folly 的 byte-only 栈上特化多一次冷 O(U) 初始化，但避免依赖
+MSan suppression/未初始化 byte 语义。两个数组在 reset 时一次性预留完整 universe，换取
+hot insert 不分配且为严格 O(1)，而不是 amortized O(1)。
+
+两个类型不能互相替代：DynamicBitSet 为 U/8 内存并擅长全 universe 集合代数；SparseSet
+约为 `2*U*sizeof(Id)`，但 clear 是 O(1)、iteration 是 O(active) 且直接给出 ID。纯
+membership 的 dense byte array 只需一次 indexed load，预期快于 SparseSet 的反查；性能
+证书必须保留这个 lose，不能为 benchmark 给 SparseSet 增加另一条 bitmap 旁路。
 
 ### SmallVector 的成熟形状门
 
@@ -243,7 +270,7 @@ SIMD 只进入可批量处理的字节/lane 工作，不按模块名强套：
 | 长字节 table hash | x86 AVX2 XXH3 / baseline wyhash | varied-input 证据后进入产品；Windows/MSVC 从 1KiB、Linux/GCC14 从 512B，CPU/OS gate 在 platform，非 x86 不退化 |
 | vector relocation | compiler/libc `memcpy/memmove` | 不重复实现平台已有宽拷贝与 non-temporal 策略 |
 | lock-free queue / atomics | 不做 | 瓶颈是依赖链、cache line ownership 和 CAS，不是 lane arithmetic |
-| dynamic bitset/sparse set | 尚缺类型 | word-wise AND/OR/XOR/popcount/scan 是下一批最有价值的容器 SIMD 面 |
+| DynamicBitSet | SSE4/AVX2/AVX512/NEON runtime dispatch | AND/OR/XOR/and-not/count 复用 header-only vec DSL；小于 8/16 words 分别走本地 scalar，避免 dispatcher 税 |
 
 长 hash 的宽核放在独立 AVX2 TU，baseline dispatcher 只有在 CPUID+XGETBV 安全门通过后
 调用；varied-input sweep 分别给出 Windows/MSVC 1KiB 与 Linux/GCC14 512B 的保守交叉点。
@@ -265,6 +292,7 @@ HYLE 版本、构建与 ISA 选择变化，不得持久化或作为 wire fingerp
 | erased POD flat map/set | 保留能力、形状已重塑 | map 拆分 insert/insert_or_assign；set 用独立最小 handle，共享 value_size=0 raw policy，但不暴露伪 value |
 | 四类 pointer queue | 保留能力、角色已审定 | C 热路径统一 `try_*`；pointer 是跨 FFI 的 caller-owned work handle，不增加 runtime stride/copy callback；Chase-Lev 明示 owner bottom/thief top，WsFifo 明示 back/front |
 | concurrent pointer vector | 保留能力、形状已重塑 | 明确命名 `concurrent_ptr_vector`；reserve 预分配 stable segments；`try_get(out)` 区分越界与合法 NULL payload；不冒充 erased POD vector |
+| dynamic bitset / sparse u32 set | 保留 opaque 能力 | 两者是语言无关的 runtime-universe 数据结构；C 面覆盖 resize/algebra/iteration 与 dense active IDs，不暴露 C++ 布局 |
 
 “保留能力”不等于冻结当前函数列表；“暂定”也不等于为了缩 ABI 直接删。最终 C 面只为
 跨边界仍成立的动态能力服务，HYLE 内部 C++ 模块继续直接使用 typed API。

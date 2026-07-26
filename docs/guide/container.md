@@ -17,6 +17,8 @@ container 提供性能敏感的基础数据结构、借用字符串/路径算法
 | 普通长寿命非平凡动态序列 | `std::vector` + 可选 mem PMR adapter | HYLE 不造第二个通用 vector |
 | 高频 key→value lookup | `FlatHashMap<K,V>`（实现名 `SwissTable`） | flat slot、expected O(1)、引用在 grow/erase 后失效 |
 | 高频 membership / 去重 | `FlatHashSet<K>` | 真正 set slot，不为 empty mapped value 付空间；expected O(1) |
+| 稠密编号上的 mask、frontier、集合代数 | `DynamicBitSet` | U/8 bytes；单 bit O(1)，bulk O(U/word) 且长 mask 按 ISA 派发 |
+| 已知有界 ID，活跃项远少于 universe，频繁 clear/遍历 | `SparseSet<Id>` | 约 `2*U*sizeof(Id)`；insert/erase/clear O(1)，dense 迭代 O(active)，erase 不保序 |
 | 非拥有字符串切片并使用 HYLE 搜索/路径算法 | `StringView`（实现名 `string_ref`） | ptr + u32 byte length + NUL bit；底层字节必须长寿 |
 | 内容去重并取得稳定字符串地址 | `StringInterner` | 分片线程安全；永久视图或 generation ID 两种生命周期 |
 | 严格容量、多生产者多消费者 | `BoundedQueue<T>` | bounded MPMC；满/空是正常控制流，不分配 |
@@ -37,11 +39,10 @@ container 提供性能敏感的基础数据结构、借用字符串/路径算法
 | grow 后引用/地址稳定的 map | 暂用 node-based 容器 | flat slots 在 rehash 时搬移；未来 node-stable 类型必须显式命名 |
 | 多线程共享 map | 外部 shard+lock 包装 `FlatHashMap`，或成熟 concurrent map | HYLE 尚无 concurrent associative；不要无锁并发访问 flat map |
 | 单线程/SPSC ring | 暂用业务 ring/成熟库 | `BoundedQueue` 是 MPMC 原子结构，功能虽可用但会付不必要同步税 |
-| 动态 bitset / dense ID set algebra | 暂用成熟 dynamic bitset 或 word array | container 尚缺此类型；它也是后续最自然的 SIMD 能力面 |
 
-这些是当前真实功能缺口，不是文档藏起来的“负空间”。其中 dynamic bitset/sparse set、
-单线程 ring、concurrent associative 已进入严格复审候选；接口和复杂度证据完成前不先
-发布半成品。
+这些是当前真实功能缺口，不是文档藏起来的“负空间”。下一批优先处理单线程 ring 与
+concurrent associative；ordered/node-stable 类型必须先证明基础加速库中的真实需求，
+不能只因成熟库存在就复制。
 
 ## 连续容器
 
@@ -129,6 +130,49 @@ range 或 initializer-list 构造/批量 insert，并支持 `swap` 与忽略迭�
 forward range 会先 reserve 一次；input iterator 只读取一次。move-only value 的 map
 自然仍不可复制，但 move、lookup、insert/erase 不受影响。批量插入遇到重复 key 沿用
 单项 `insert` 语义：保留先到的 mapped value，不暗中覆盖。
+
+## DynamicBitSet、SparseSet 与 FlatHashSet 怎么选
+
+这三个类型都能回答 membership，但成本模型完全不同：
+
+- universe 稠密、需要 AND/OR/XOR/difference、popcount、shift 或按 set bit 扫描时，用
+  `DynamicBitSet`。典型是 graph frontier、feature mask、资源槽位和批量过滤。
+- ID 有已知上界、active 集合稀疏、每帧/每轮频繁 `clear()` 后重建并遍历 active ID 时，
+  用 `SparseSet<Id>`。典型是 ECS/graph visited worklist、稠密 handle membership。
+- key 没有小而稳定的 universe，或 universe 很大但 active 极少、不能接受按 universe
+  预留内存时，用 `FlatHashSet`。
+
+```cpp
+#include "hyle/container/dynamic_bitset.h"
+#include "hyle/container/sparse_set.h"
+
+hyle::container::DynamicBitSet ready(node_count);
+hyle::container::DynamicBitSet allowed(node_count, true);
+ready.set(3).set(80);
+ready &= allowed;
+for (std::size_t node : ready.set_bits()) schedule(node);
+
+hyle::container::SparseSet<std::uint32_t> dirty(node_count);
+dirty.insert(3);
+dirty.insert(80);
+for (std::uint32_t node : dirty) rebuild(node);
+dirty.clear();  // O(1)，适合下一帧复用
+```
+
+`DynamicBitSet` 的普通 constructor/resize/reserve/push 把 OOM 当 fatal；可恢复路径使用
+`try_resize`、`try_reserve`、`try_push_back`。`test/set/reset/flip` 的越界 index 和二元
+运算尺寸不匹配是调用者 bug，C++ 面会 fatal；性能敏感的 `operator[]` 与 vector 一样要求
+调用者先保证 index 有效。C ABI 会返回中性值或 `INVALID_ARGUMENT`。padding bit 始终为零，因此
+`count/all/set_bits` 不会把尾部垃圾当成员。大 mask 的 AND/OR/XOR/and-not/count 使用
+container 自己的 SSE4/AVX2/AVX512/NEON dispatcher；小 mask 避免间接调用税。它仍是普通
+值类型，支持 copy/move、resize、push/pop、shift 和同尺寸集合代数。
+
+`SparseSet` 构造/`reset_universe` 一次性分配 dense+sparse 两个数组；之后 insert/erase/
+contains/clear 都不分配。`clear()` 只把 active size 归零，不擦整个 universe；contains
+通过 dense 反查验证旧 sparse slot，因此复用安全。erase 用最后一项覆盖被删位置，所以
+iterator/reference 与迭代顺序都不稳定。只做 membership 且愿意付 O(U) clear 时，单字节
+dense bitmap 会有更少的 load；SparseSet 的价值在 O(1) clear、O(active) 迭代和同时保存
+active IDs。性能表明确保留了这个 trade-off。
 
 ## 字符串、驻留与路径
 

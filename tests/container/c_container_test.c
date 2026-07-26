@@ -640,6 +640,79 @@ static void test_queues_and_concurrent_vector(void) {
   hyle_container_concurrent_ptr_vector_destroy(vector);
 }
 
+static void test_dynamic_bitset_and_sparse_set(void) {
+  hyle_container_dynamic_bitset* left = NULL;
+  hyle_container_dynamic_bitset* right = NULL;
+  hyle_container_sparse_u32_set* sparse = NULL;
+  size_t index;
+  size_t visited = 0;
+
+  CHECK(status_ok(hyle_container_dynamic_bitset_create_system(
+      &left, 130, 0)));
+  CHECK(status_ok(hyle_container_dynamic_bitset_create_system(
+      &right, 130, 0)));
+  CHECK(hyle_container_dynamic_bitset_size(left) == 130);
+  CHECK(hyle_container_dynamic_bitset_capacity(left) >= 130);
+  CHECK(status_ok(hyle_container_dynamic_bitset_reserve(left, 512)));
+  hyle_container_dynamic_bitset_set_all(left);
+  CHECK(hyle_container_dynamic_bitset_all(left));
+  hyle_container_dynamic_bitset_reset_all(left);
+  CHECK(!hyle_container_dynamic_bitset_any(left));
+  hyle_container_dynamic_bitset_flip_all(left);
+  CHECK(hyle_container_dynamic_bitset_all(left));
+  hyle_container_dynamic_bitset_reset_all(left);
+  CHECK(hyle_container_dynamic_bitset_set(left, 1, 1));
+  CHECK(hyle_container_dynamic_bitset_set(left, 65, 1));
+  CHECK(hyle_container_dynamic_bitset_set(left, 129, 1));
+  CHECK(!hyle_container_dynamic_bitset_set(left, 130, 1));
+  CHECK(hyle_container_dynamic_bitset_flip(left, 1));
+  CHECK(!hyle_container_dynamic_bitset_test(left, 1));
+  CHECK(hyle_container_dynamic_bitset_flip(left, 1));
+  CHECK(hyle_container_dynamic_bitset_set(right, 65, 1));
+  CHECK(hyle_container_dynamic_bitset_set(right, 66, 1));
+  CHECK(hyle_container_dynamic_bitset_count(left) == 3);
+  hyle_container_dynamic_bitset_shift_left(left, 1);
+  CHECK(hyle_container_dynamic_bitset_test(left, 2));
+  CHECK(hyle_container_dynamic_bitset_test(left, 66));
+  hyle_container_dynamic_bitset_shift_right(left, 1);
+  CHECK(hyle_container_dynamic_bitset_intersects(left, right));
+  CHECK(status_ok(hyle_container_dynamic_bitset_and(left, right)));
+  CHECK(hyle_container_dynamic_bitset_count(left) == 1);
+  CHECK(hyle_container_dynamic_bitset_test(left, 65));
+  CHECK(hyle_container_dynamic_bitset_is_subset(left, right));
+  CHECK(status_ok(hyle_container_dynamic_bitset_xor(right, left)));
+  CHECK(status_ok(hyle_container_dynamic_bitset_xor(right, left)));
+  CHECK(status_ok(hyle_container_dynamic_bitset_and_not(right, left)));
+  CHECK(!hyle_container_dynamic_bitset_test(right, 65));
+  for (index = hyle_container_dynamic_bitset_find_first(right);
+       index != HYLE_CONTAINER_BITSET_NPOS;
+       index = hyle_container_dynamic_bitset_find_next(right, index)) {
+    ++visited;
+  }
+  CHECK(visited == 1);
+  CHECK(status_ok(hyle_container_dynamic_bitset_resize(left, 64, 0)));
+  CHECK(status_code(hyle_container_dynamic_bitset_or(left, right)) ==
+        HYLE_STATUS_INVALID_ARGUMENT);
+  hyle_container_dynamic_bitset_destroy(right);
+  hyle_container_dynamic_bitset_destroy(left);
+
+  CHECK(status_ok(hyle_container_sparse_u32_set_create_system(&sparse, 100)));
+  CHECK(hyle_container_sparse_u32_set_universe_size(sparse) == 100);
+  CHECK(hyle_container_sparse_u32_set_insert(sparse, 7));
+  CHECK(hyle_container_sparse_u32_set_insert(sparse, 90));
+  CHECK(!hyle_container_sparse_u32_set_insert(sparse, 7));
+  CHECK(!hyle_container_sparse_u32_set_insert(sparse, 100));
+  CHECK(hyle_container_sparse_u32_set_contains(sparse, 90));
+  CHECK(hyle_container_sparse_u32_set_erase(sparse, 7));
+  CHECK(hyle_container_sparse_u32_set_size(sparse) == 1);
+  CHECK(hyle_container_sparse_u32_set_data(sparse)[0] == 90);
+  hyle_container_sparse_u32_set_clear(sparse);
+  CHECK(hyle_container_sparse_u32_set_size(sparse) == 0);
+  CHECK(status_ok(hyle_container_sparse_u32_set_reset_universe(sparse, 20)));
+  CHECK(hyle_container_sparse_u32_set_universe_size(sparse) == 20);
+  hyle_container_sparse_u32_set_destroy(sparse);
+}
+
 int main(void) {
   hyle_allocator invalid_backing = {0};
   hyle_allocator failing_backing = {fail_alloc, fail_free, fail_realloc, NULL};
@@ -650,6 +723,7 @@ int main(void) {
   test_vector_and_map();
   test_hash_set();
   test_queues_and_concurrent_vector();
+  test_dynamic_bitset_and_sparse_set();
   CHECK(status_code(hyle_container_bounded_queue_create(
             &bounded_queue, invalid_backing, 8)) ==
         HYLE_STATUS_INVALID_ARGUMENT);
@@ -659,6 +733,18 @@ int main(void) {
         HYLE_STATUS_RESOURCE_EXHAUSTED);
   CHECK(status_code(hyle_container_string_interner_create(
             &string_interner, failing_backing)) == HYLE_STATUS_RESOURCE_EXHAUSTED);
+  {
+    hyle_container_dynamic_bitset* bits = NULL;
+    hyle_container_sparse_u32_set* sparse = NULL;
+    CHECK(status_code(hyle_container_dynamic_bitset_create(
+              &bits, 1024, 0, failing_backing)) ==
+          HYLE_STATUS_RESOURCE_EXHAUSTED);
+    CHECK(bits == NULL);
+    CHECK(status_code(hyle_container_sparse_u32_set_create(
+              &sparse, 1024, failing_backing)) ==
+          HYLE_STATUS_RESOURCE_EXHAUSTED);
+    CHECK(sparse == NULL);
+  }
   {
     /* C handle, C++ implementation, then runtime-sized shard storage. */
     fail_after_allocator failing = {hyle_system_allocator(), 3};

@@ -227,6 +227,106 @@ HYLE_CONTAINER_C_API hyle_status hyle_container_string_interner_intern_many(
 HYLE_CONTAINER_C_API uint32_t hyle_container_string_interner_size(
     const hyle_container_string_interner* interner);
 
+/* Runtime-sized dense bit set. Bulk algebra is SIMD-dispatched for large
+ * masks; find_first/find_next support allocation-free set-bit iteration.
+ * Index mutators return zero for NULL/out-of-range input. */
+#define HYLE_CONTAINER_BITSET_NPOS SIZE_MAX
+typedef struct hyle_container_dynamic_bitset_o hyle_container_dynamic_bitset;
+HYLE_CONTAINER_C_API hyle_status hyle_container_dynamic_bitset_create(
+    hyle_container_dynamic_bitset** out, size_t bit_count, int initial_value,
+    hyle_allocator backing);
+static inline hyle_status hyle_container_dynamic_bitset_create_system(
+    hyle_container_dynamic_bitset** out, size_t bit_count, int initial_value) {
+  return hyle_container_dynamic_bitset_create(
+      out, bit_count, initial_value, hyle_system_allocator());
+}
+HYLE_CONTAINER_C_API void hyle_container_dynamic_bitset_destroy(
+    hyle_container_dynamic_bitset* set);
+HYLE_CONTAINER_C_API hyle_status hyle_container_dynamic_bitset_reserve(
+    hyle_container_dynamic_bitset* set, size_t bit_count);
+HYLE_CONTAINER_C_API hyle_status hyle_container_dynamic_bitset_resize(
+    hyle_container_dynamic_bitset* set, size_t bit_count, int value);
+HYLE_CONTAINER_C_API size_t hyle_container_dynamic_bitset_size(
+    const hyle_container_dynamic_bitset* set);
+HYLE_CONTAINER_C_API size_t hyle_container_dynamic_bitset_capacity(
+    const hyle_container_dynamic_bitset* set);
+HYLE_CONTAINER_C_API int hyle_container_dynamic_bitset_test(
+    const hyle_container_dynamic_bitset* set, size_t index);
+HYLE_CONTAINER_C_API int hyle_container_dynamic_bitset_set(
+    hyle_container_dynamic_bitset* set, size_t index, int value);
+HYLE_CONTAINER_C_API int hyle_container_dynamic_bitset_flip(
+    hyle_container_dynamic_bitset* set, size_t index);
+HYLE_CONTAINER_C_API void hyle_container_dynamic_bitset_set_all(
+    hyle_container_dynamic_bitset* set);
+HYLE_CONTAINER_C_API void hyle_container_dynamic_bitset_reset_all(
+    hyle_container_dynamic_bitset* set);
+HYLE_CONTAINER_C_API void hyle_container_dynamic_bitset_flip_all(
+    hyle_container_dynamic_bitset* set);
+HYLE_CONTAINER_C_API void hyle_container_dynamic_bitset_shift_left(
+    hyle_container_dynamic_bitset* set, size_t shift);
+HYLE_CONTAINER_C_API void hyle_container_dynamic_bitset_shift_right(
+    hyle_container_dynamic_bitset* set, size_t shift);
+HYLE_CONTAINER_C_API size_t hyle_container_dynamic_bitset_count(
+    const hyle_container_dynamic_bitset* set);
+HYLE_CONTAINER_C_API int hyle_container_dynamic_bitset_any(
+    const hyle_container_dynamic_bitset* set);
+HYLE_CONTAINER_C_API int hyle_container_dynamic_bitset_all(
+    const hyle_container_dynamic_bitset* set);
+HYLE_CONTAINER_C_API size_t hyle_container_dynamic_bitset_find_first(
+    const hyle_container_dynamic_bitset* set);
+HYLE_CONTAINER_C_API size_t hyle_container_dynamic_bitset_find_next(
+    const hyle_container_dynamic_bitset* set, size_t index);
+HYLE_CONTAINER_C_API hyle_status hyle_container_dynamic_bitset_and(
+    hyle_container_dynamic_bitset* destination,
+    const hyle_container_dynamic_bitset* source);
+HYLE_CONTAINER_C_API hyle_status hyle_container_dynamic_bitset_or(
+    hyle_container_dynamic_bitset* destination,
+    const hyle_container_dynamic_bitset* source);
+HYLE_CONTAINER_C_API hyle_status hyle_container_dynamic_bitset_xor(
+    hyle_container_dynamic_bitset* destination,
+    const hyle_container_dynamic_bitset* source);
+HYLE_CONTAINER_C_API hyle_status hyle_container_dynamic_bitset_and_not(
+    hyle_container_dynamic_bitset* destination,
+    const hyle_container_dynamic_bitset* source);
+HYLE_CONTAINER_C_API int hyle_container_dynamic_bitset_intersects(
+    const hyle_container_dynamic_bitset* left,
+    const hyle_container_dynamic_bitset* right);
+HYLE_CONTAINER_C_API int hyle_container_dynamic_bitset_is_subset(
+    const hyle_container_dynamic_bitset* subset,
+    const hyle_container_dynamic_bitset* superset);
+
+/* uint32 dense/sparse ID set. The universe is fixed between reset calls;
+ * insert/erase/contains/clear are O(1), insert does not allocate, and erase
+ * uses swap-remove (iteration order is not stable). */
+typedef struct hyle_container_sparse_u32_set_o hyle_container_sparse_u32_set;
+HYLE_CONTAINER_C_API hyle_status hyle_container_sparse_u32_set_create(
+    hyle_container_sparse_u32_set** out, size_t universe_size,
+    hyle_allocator backing);
+static inline hyle_status hyle_container_sparse_u32_set_create_system(
+    hyle_container_sparse_u32_set** out, size_t universe_size) {
+  return hyle_container_sparse_u32_set_create(
+      out, universe_size, hyle_system_allocator());
+}
+HYLE_CONTAINER_C_API void hyle_container_sparse_u32_set_destroy(
+    hyle_container_sparse_u32_set* set);
+HYLE_CONTAINER_C_API hyle_status hyle_container_sparse_u32_set_reset_universe(
+    hyle_container_sparse_u32_set* set, size_t universe_size);
+HYLE_CONTAINER_C_API size_t hyle_container_sparse_u32_set_universe_size(
+    const hyle_container_sparse_u32_set* set);
+HYLE_CONTAINER_C_API size_t hyle_container_sparse_u32_set_size(
+    const hyle_container_sparse_u32_set* set);
+HYLE_CONTAINER_C_API const uint32_t* hyle_container_sparse_u32_set_data(
+    const hyle_container_sparse_u32_set* set);
+HYLE_CONTAINER_C_API int hyle_container_sparse_u32_set_contains(
+    const hyle_container_sparse_u32_set* set, uint32_t id);
+/* Returns 1 only when inserted; returns 0 for duplicate, NULL, or out-of-range. */
+HYLE_CONTAINER_C_API int hyle_container_sparse_u32_set_insert(
+    hyle_container_sparse_u32_set* set, uint32_t id);
+HYLE_CONTAINER_C_API int hyle_container_sparse_u32_set_erase(
+    hyle_container_sparse_u32_set* set, uint32_t id);
+HYLE_CONTAINER_C_API void hyle_container_sparse_u32_set_clear(
+    hyle_container_sparse_u32_set* set);
+
 /* Runtime-erased trivially-copyable vector (the PodVector capability). */
 typedef struct hyle_container_vector_o hyle_container_vector;
 typedef struct hyle_container_vector_options {
