@@ -124,6 +124,46 @@ hyle_simd_f32_to_f16(values, packed, 4096);
 hyle_simd_f16_to_f32(packed, values, 4096);
 ```
 
+如果是自己编译到固定 target TU 的 C++ kernel，并且数据要保持 f16/bf16 存储、在寄存器中以
+f32 计算，使用 `narrow_float.h` 的显式格式 tag：
+
+```cpp
+#include "hyle/simd/narrow_float.h"
+
+namespace hs = hyle::simd;
+using DF = hs::ScalableTag<float>;
+const DF df;
+const hs::F16Tag<DF> dh;
+
+const std::size_t lanes = hs::Lanes(dh);
+std::size_t i = 0;
+for (; i + lanes <= n; i += lanes) {
+  auto a = hs::LoadNarrowU(dh, left + i);
+  auto b = hs::LoadNarrowU(dh, right + i);
+  auto y = hs::MulNarrow(dh, a, b);  // promote f16 -> f32, multiply, round once to f16
+  hs::StoreNarrowU(y, dh, output + i);
+}
+if (i != n) {
+  auto a = hs::LoadNarrowN(dh, left + i, n - i);
+  auto b = hs::LoadNarrowN(dh, right + i, n - i);
+  hs::StoreNarrowN(hs::MulNarrow(dh, a, b), dh, output + i, n - i);
+}
+```
+
+`BF16Tag<DF>` 同形。还可用 `PromoteNarrowTo(df, dh, v)`、`DemoteNarrowTo(dh, v)`、
+`AddNarrow/SubNarrow/DivNarrow/MulAddNarrow`。选择原则：
+
+- 只搬运/转换整个数组：优先 `dtype_ops.h` 的 batch API，它处理 dispatch 和 tail；
+- 写 target-bound 自定义计算循环：使用 narrow tag，x86 AVX2/AVX-512 f16 自动走 F16C，其他
+  baseline 使用同语义 vector 位运算，不要求 SVE/RVV 的可选 half 扩展；
+- carrier 的真实寄存器类型是后端 u16。不要对 `auto` 结果调用无 tag 的 `Add/Mul`，那是整数位
+  carrier 语义；窄浮点操作必须使用带 `Narrow` 的名字；
+- finite f32→f16 逐位一致；硬件 F16C 可以选择不同的 NaN payload，因此 NaN 只保证仍为 NaN。
+
+这层是 C++ target-TU 接口，不把目标相关 vector ABI 暴露给 C。C/FFI 继续使用具名 pointer/count
+入口。当前窄浮点 sort/search/reduction 另有具名 whole-range 接口施工项，不要拿 carrier 的 unsigned
+顺序替代数值/total-order 语义。
+
 ```c
 hyle_simd_exp_f32_batch(src, dst, n);
 hyle_simd_gelu_f32_batch(src, dst, n);

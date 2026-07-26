@@ -117,12 +117,22 @@ clay 是编译期固定指令集且只到 SSE2——**跑在 AVX512 机器上只
 
 | 类型 | 硬件路径 | fallback | 状态 |
 |---|---|---|---|
-| fp16 | F16C（`_mm_cvtph_ps`）/ AVX512-FP16 | 软件查表（继承 clay half）| ✅ simd-05 |
-| bf16 | AVX512-BF16 / 截断转换 | 移位截断（bf16 就是 fp32 高 16 位）| ✅ simd-05 |
+| fp16 | F16C（`_mm_cvtph_ps`）/ AVX512-FP16 | IEEE 位运算（非 clay 查表）| ✅ batch + 一等 narrow tag |
+| bf16 | AVX512-BF16 / RNE 转换 | RNE bias + 移位（bf16 是 fp32 高 16 位）| ✅ batch + 一等 narrow tag |
 | fp8 E4M3/E5M2 | AVX10.2 / GPU tensor core（本代 CPU 均无）| **标量位运算（即完整实现）** | ✅ simd-09 |
 | int8 | AVX512-VNNI（int8 点积）| 标量 | int8 lane 已有，VNNI 点积按消费 |
 
 bf16 尤其重要（AI 训练/推理主力格式）；clay 完全没有。
+
+**f16/bf16 register lane（strict round 2B）**：`narrow_float.h` 提供从任意 f32 D-tag
+重绑的 `F16Tag/BF16Tag`，以及 exact-byte load/store、set/zero、显式 promote/demote 和
+Add/Sub/Mul/Div/MulAdd 最小计算闭环。值复用各后端的 u16 carrier，但格式不靠 native value
+反推：所有数值操作都必须携带 narrow tag。这个选择解决了 SVE/RVV 的类型擦除——base RVV 的
+`vuint16m1_t` 无法区分 f16、bf16、u16，也不能为了类型好看把最低要求抬到 Zvfh/Zvfbfmin。
+f32 tag 与 narrow tag 保持相同逻辑 lane 数；定宽后端使用半宽 XMM/D-register，SVE/RVV 由
+`Rebind` 的负 `kPow2` 保持 active lanes。AVX2/AVX-512 f16 promote/demote 使用 F16C；SSE4、
+NEON baseline、SVE、RVV 用向量位运算，bf16 全部使用 RNE 位运算。whole-array 转换仍优先 batch
+dispatcher；register facade 是 target-bound C++ kernel 的形状，不进入 C vector ABI。
 
 **fp8（simd-09 补，推理常见精度）**：OCP 两格式 **E4M3FN**（bias 7/3 尾数/无 inf/唯一 NaN=0x7F/max 448，权重激活）与 **E5M2**（bias 15/2 尾数/IEEE inf-NaN/max 57344，梯度）。编码 transcribe 自权威 **CUDA `cuda_fp8.hpp`**（ggml/Highway 均无 host fp8→**自实现**，同 fp16/bf16 抄 Highway 的做法）。saturate-to-max-normal（OCP SATFINITE）；E5M2 真 inf 输入保留 inf，仅 finite 溢出 saturate。**关键：无 CPU 硬件 fp8-convert**——硬件 fp8 转换是 AVX10.2 / GPU tensor core 专属，本代 AVX2/AVX-512 CPU 全无，Intel SDE 也不模拟 AVX10.2 fp8 convert。故 **scalar 位运算就是当前完整实现**（非缓做/非半成品）；有 AVX10.2 硬件时按 `cvt_avx512bf16.cc` 先例接原生核。验证：known values 锚 OCP 谱 + **全 256 值 exhaustive round-trip**（fp8 仅 256 值→完备，强于 fp16 的抽样）+ 三平台（MSVC/WSL GCC/arm64 qemu 512-check bad=0）。
 

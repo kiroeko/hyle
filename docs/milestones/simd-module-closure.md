@@ -60,7 +60,8 @@ GCC ASan AVX2 全目标因大型 VQSort TU 在低并行度下两段构建仍未�
 
 - [x] MSVC/GCC fixed-width 与 SVE/RVV 多宽度 QEMU 对新模板层的正确性。
 - [ ] Clang、ASan/UBSan 与 NEON 真机验证（本轮 ASan 低并行构建超时，不能记通过）。
-- [ ] f16/bf16 一等 vector lane 与窄浮点算法合同。
+- [x] f16/bf16 显式 narrow tag、七后端 storage/promote/demote/基础算术闭环。
+- [ ] 窄浮点 reduction/search/sort 与 NaN/signed-zero total-order 合同。
 - [x] SIMD 私有 TLS error seam 已删除；runtime-info/RNG-create 返回共享 owning `hyle_status`。
 - [ ] SVE/RVV 真机 workload 性能证书；SVE2/RVV feature routing 按证据补。
 - [ ] C ABI 声明/纯 C 引用/导出表和三种交付形状最终机械复查。
@@ -79,11 +80,25 @@ GCC ASan AVX2 全目标因大型 VQSort TU 在低并行度下两段构建仍未�
 预处理引用 246/246、ELF 动态导出 243/243。成功、过小 runtime snapshot、NULL runtime output、
 RNG 成功创建和 NULL RNG output 均执行 owning status 的查询与释放。
 
+## Round 2B：f16/bf16 register lane 基础
+
+新增 `narrow_float.h`。`F16Tag<DF>` / `BF16Tag<DF>` 从 f32 tag 取得相同逻辑 lane 数，复用
+u16 native carrier，但 load/store、promote/demote 与 Add/Sub/Mul/Div/MulAdd 都要求显式格式
+入口，避免 SVE/RVV 的 carrier 类型擦除后误做整数算术。AVX2/AVX-512 f16 full-width 使用
+F16C；其余 baseline 使用统一 vector 位运算，不要求 ARM/RISC-V 可选 half 扩展。C ABI 不承载
+target-specific vector 值，已有 dtype pointer/count API 保持正确 owner。
+
+验证：Windows MSVC 19.50 Release 的 scalar/SSE4/AVX2 全 SIMD 目标 3/3 通过，AVX-512 目标
+编译通过；窄浮点专项在 scalar/SSE4/AVX2 实际执行 3/3，遍历全部 65,536 个
+f16/bf16 编码并对 f32 全编码空间做 65,536 点确定性抽样。AArch64 QEMU 的 NEON 3/3，SVE
+同一 binary 在 VL 128/256/384/512/2048 各 3/3；RVV 同一 binary 在 VLEN
+128/256/512/1024 各 3/3。QEMU 只计正确性，SVE/RVV 真硅性能仍未签字。
+
 ## 本轮四项 LOC
 
 | 固定口径 | `cloc` code |
 |---|---:|
-| 全库代码（含 docs/third-party，计入本轮新文件） | 263,554 |
-| 自实现含测试（`include/hyle + src + tests`） | 127,426 |
-| 自实现不含测试（`include/hyle + src`） | 87,946 |
-| 当前审查模块实现（`include/hyle/simd + include/hyle/c/simd.h + src/simd`） | 37,758 |
+| 全库代码（含 docs/third-party，计入本轮新文件） | 264,074 |
+| 自实现含测试（`include/hyle + src + tests`） | 127,884 |
+| 自实现不含测试（`include/hyle + src`） | 88,232 |
+| 当前审查模块实现（`include/hyle/simd + include/hyle/c/simd.h + src/simd`） | 38,044 |

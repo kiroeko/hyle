@@ -59,6 +59,7 @@ run_tier() {
   $CXX $FLAGS -c "$REPO/tests/simd/scalable_math_compile.cc" -o "$OUT/scalable_math_compile_${name}.o"
   $CXX $FLAGS -c "$REPO/tests/simd/scalable_math_product_test.cc" -o "$OUT/scalable_math_product_test_${name}.o"
   $CXX $FLAGS -c "$REPO/tests/simd/scalable_dtype_product_test.cc" -o "$OUT/scalable_dtype_product_test_${name}.o"
+  $CXX $FLAGS -c "$REPO/tests/simd/narrow_float_test.cc" -o "$OUT/narrow_float_test_${name}.o"
   $CXX $FLAGS -c "$REPO/tests/simd/scalable_bitpack_product_test.cc" -o "$OUT/scalable_bitpack_product_test_${name}.o"
   $CXX $FLAGS -c "$REPO/tests/simd/scalable_sort_product_test.cc" -o "$OUT/scalable_sort_product_test_${name}.o"
   $CXX $COMMON_FLAGS -c "$REPO/tests/simd/dispatch_test.cc" -o "$OUT/dispatch_test_${name}.o"
@@ -104,6 +105,7 @@ run_tier() {
   $CXX $FLAGS "$OUT/rvv_test_${name}.o" "$OUT/scalable_math_compile_${name}.o" \
     "$OUT/scalable_math_product_test_${name}.o" "$OUT/scalable_math_dispatch_test_${name}.o" \
     "$OUT/scalable_dtype_product_test_${name}.o" \
+    "$OUT/narrow_float_test_${name}.o" \
     "$OUT/scalable_bitpack_product_test_${name}.o" \
     "$OUT/scalable_sort_product_test_${name}.o" \
     "$OUT/dispatch_test_${name}.o" \
