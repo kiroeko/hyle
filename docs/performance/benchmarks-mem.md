@@ -59,7 +59,7 @@ static/source direct 路径平 mimalloc；shared 默认路径保持编译期 dir
 
 2026-07-26 strict-alignment 实现把验证放在**显式 alignment 的 C++ overload / C convenience**；
 `Allocator::allocate(size)`、默认 `reallocate` 和编译期 `SystemAllocator` 默认参数的 shipping
-汇编不含 alignment 分支，动态显式请求才付一次 fail-fast 检查。Windows shared implementation
+汇编不含 alignment 分支，动态显式 allocate/free/reallocate 请求才付一次 fail-fast 检查。Windows shared implementation
 smoke（MSVC 19.50，section A，`n=15`，未作为正式 clean 证书替换上表）为：shared
 `SystemAllocator/raw mi=0.913`、runtime vtable/raw mi=0.904、runtime vtable/同类 PMR=0.982；
 三者 paired sign 均在 lose 侧、absolute spread 判 TIE。它确认 strict check 没污染默认 runtime

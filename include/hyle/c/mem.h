@@ -132,8 +132,7 @@ static inline void hyle_free(const hyle_allocator *a, void *ptr, size_t size,
                              size_t alignment) {
   if (a == NULL || a->free == NULL)
     return;
-  a->free(a->state, ptr, size,
-          alignment != 0 ? alignment : hyle_default_alignment());
+  a->free(a->state, ptr, size, hyle_mem_checked_alignment(alignment));
 }
 static inline void *hyle_realloc(const hyle_allocator *a, void *ptr,
                                  size_t old_size, size_t new_size,

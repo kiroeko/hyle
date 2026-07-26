@@ -51,6 +51,15 @@ TEST(StdAllocator, DefaultUsesSystemAllocator) {
   allocator.deallocate(values, 4);
 }
 
+TEST(StdAllocator, ZeroCountMayReturnNullAndCanBeDeallocated) {
+  StatsAllocator stats = StatsAllocator::create(system_allocator()).value();
+  StdAllocator<int> allocator(stats.get());
+  int* pointer = allocator.allocate(0);
+  EXPECT_EQ(pointer, nullptr);
+  allocator.deallocate(pointer, 0);
+  EXPECT_TRUE(stats.balanced());
+}
+
 TEST(StdAllocator, VectorUsesInjectedBackingAndRespectsLifetimeOrder) {
   StatsAllocator stats = StatsAllocator::create(system_allocator()).value();
   {

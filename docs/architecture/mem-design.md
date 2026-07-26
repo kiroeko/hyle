@@ -94,7 +94,7 @@ blocking borrow 不进入 `mem/` 基础池。等待策略依赖 fiber/condition/
 | `AlignedPmrResource` | 可选 minimum base alignment 的 PMR adapter | 保留；对应 oneTBB `cache_aligned_resource` 的用户需求，不给普通 PMR 强加 cache policy |
 | typed/RAII helpers | `allocate_n/zeroed/reallocate_n`、construct/destroy、make_unique | 保留；乘法溢出和显式 alignment 在 System/运行时两层一致 |
 
-通用 malloc 借 mimalloc，不自造任意大小通用堆。sized-free 必须带回原请求的 size/alignment；backing identity 与 ownership 不能丢失。C++ 默认 alignment overload 保持零验证分支；显式动态 alignment 在 dispatch 前验证非零 2 次幂。C convenience 单独把 0 归一为默认值。
+通用 malloc 借 mimalloc，不自造任意大小通用堆。sized-free 必须带回原请求的 size/alignment；backing identity 与 ownership 不能丢失。C++ 默认 alignment overload 保持零验证分支；显式动态 allocate/deallocate/reallocate 在 dispatch 前验证非零 2 次幂。C convenience 单独把 0 归一为默认值。
 
 ### 4.1 C/FFI 产品面
 

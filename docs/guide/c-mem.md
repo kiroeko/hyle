@@ -77,8 +77,8 @@ typedef struct hyle_allocator {
 
 C/C++ 两面通过 trampoline 显式构造，不 reinterpret 布局。
 `hyle_alloc/free/realloc(..., alignment=0)` 在头内直接折叠默认对齐，不再先跨 DLL 查询。
-0 是这三个 C convenience 的专用默认值；非零 alignment 必须是 2 次幂，alloc/realloc 的非法值
-会 fail-fast。直接手调 vtable function pointer 属低层路径，调用方必须先满足同一合同。
+0 是这三个 C convenience 的专用默认值；非零 alignment 必须是 2 次幂，alloc/free/realloc 的
+非法值会 fail-fast。直接手调 vtable function pointer 属低层路径，调用方必须先满足同一合同。
 这些是纯 C header helper，所以使用标准 C 的 `<stddef.h>/<stdint.h>/<string.h>`；HYLE 的
 C++ 实现文件继续用 `<cstddef>/<cstdint>/<cstring>`，两侧不混写语言头。
 

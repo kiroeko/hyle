@@ -42,8 +42,9 @@ C ABI。`allocate_n<T>` / `allocate_zeroed<T>` / `reallocate_n<T>` 会检查 cou
 并允许显式 alignment；用同一个 alignment 调 `deallocate_n`。`reallocate_n` 失败或溢出时
 旧 allocation 仍然有效；因为底层 resize 可能按字节搬移，它只接受 trivially-copyable `T`，
 带构析/自引用状态的对象应新建 storage 后逐对象 move/销毁。
-原生 C++ allocate/reallocate 的 alignment 必须是非零 2 次幂；非法值 fail-fast。纯 C
-`hyle_alloc/hyle_realloc(..., alignment=0)` 是单独的 convenience 合同，会在头内折叠成默认对齐。
+原生 C++ allocate/deallocate/reallocate 的 alignment 必须是非零 2 次幂；显式 overload 的非法值
+fail-fast，省略 alignment 的常用 overload 没有验证分支。纯 C convenience 把 `alignment=0` 在头内
+折叠成默认对齐，非零值同样必须是 2 次幂。
 
 ```cpp
 hyle::mem::Allocator alloc = hyle::mem::system_allocator();
@@ -62,6 +63,8 @@ if (auto* grown = alloc.reallocate_n(samples, 1024, 4096, 64)) {
 backing，也可显式借用任意 `Allocator`。adapter、容器与 `allocate_shared` control block 都不拥有
 backing；声明/销毁顺序必须让 backing 最后离开作用域。标准库边界按标准要求把 OOM 转为异常，
 HYLE 内部仍使用 null/`Result` 合同。
+adapter 使用普通 `T*`（不提供 fancy pointer）；`allocate(0)` 可返回 `nullptr`，该返回值仍可用
+`deallocate(pointer, 0)` 配对。C++23 下 `!=` 由跨类型 `operator==` 的 rewritten candidate 提供。
 
 ```cpp
 #include "hyle/mem/std_allocator.h"

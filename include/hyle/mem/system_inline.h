@@ -93,7 +93,8 @@ struct SystemAllocator {
   }
   static void deallocate(
       void* ptr, std::size_t /*size*/ = 0,
-      std::size_t /*alignment*/ = kSystemDefaultAlignment) noexcept {
+      std::size_t alignment = kSystemDefaultAlignment) noexcept {
+    (void)detail::system_backend_checked_alignment(alignment);
     if (ptr != nullptr) {
       HYLE_TRACE_FREE_NAMED(ptr, "hyle.system");
       detail::system_backend_deallocate(ptr);

@@ -91,6 +91,7 @@ public:
   }
   void deallocate(void *ptr, std::size_t size,
                   std::size_t alignment) const noexcept {
+    checked_alignment_(alignment);
     free_fn_(state_, ptr, size, alignment);
   }
   void *reallocate(void *ptr, std::size_t old_size,

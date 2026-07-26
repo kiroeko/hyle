@@ -8,6 +8,7 @@
 #include <thread>
 #include <vector>
 
+#include "hyle/c/mem.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/mem/pmr.h"
 #include "hyle/mem/quota_allocator.h"
@@ -113,6 +114,7 @@ TEST(SystemAllocatorAlignmentDeathTest, StaticBindingRejectsZeroAndNonPowerOfTwo
   EXPECT_DEATH((void)SystemAllocator::allocate(8, 0), ".*");
   EXPECT_DEATH((void)SystemAllocator::allocate(8, 3), ".*");
   EXPECT_DEATH((void)SystemAllocator::reallocate(nullptr, 0, 8, 6), ".*");
+  EXPECT_DEATH(SystemAllocator::deallocate(nullptr, 0, 3), ".*");
 }
 
 TEST(SystemAllocatorAlignmentDeathTest, RuntimeHandleRejectsZeroAndNonPowerOfTwo) {
@@ -120,6 +122,12 @@ TEST(SystemAllocatorAlignmentDeathTest, RuntimeHandleRejectsZeroAndNonPowerOfTwo
   EXPECT_DEATH((void)allocator.allocate(8, 0), ".*");
   EXPECT_DEATH((void)allocator.allocate(8, 3), ".*");
   EXPECT_DEATH((void)allocator.reallocate(nullptr, 0, 8, 6), ".*");
+  EXPECT_DEATH(allocator.deallocate(nullptr, 0, 3), ".*");
+}
+
+TEST(SystemAllocatorAlignmentDeathTest, CConvenienceFreeRejectsNonPowerOfTwo) {
+  hyle_allocator allocator = hyle_system_allocator();
+  EXPECT_DEATH(hyle_free(&allocator, nullptr, 0, 3), ".*");
 }
 
 #if defined(HYLE_MEM_TEST_ASAN)
