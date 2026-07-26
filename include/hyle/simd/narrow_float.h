@@ -44,6 +44,9 @@ struct NarrowTag {
   // name the same physical half-width XMM/D-register value because their N is identical.
   using StorageTag = Simd<std::uint16_t, FloatD::kMaxLanes, 0>;
 #endif
+  // Access the POD array through its object representation. Unlike treating Narrow[] as a
+  // uint16_t[], unsigned-char access is alias-safe and its 2x lane count covers the same bytes.
+  using ByteTag = Repartition<unsigned char, StorageTag>;
 
   constexpr NarrowTag() = default;
 };
@@ -75,17 +78,17 @@ constexpr std::size_t MaxLanes(DN) noexcept
 namespace detail {
 
 template <class DN>
-HYLE_FORCE_INLINE const std::uint16_t* narrow_bits(const typename DN::T* p) noexcept {
+HYLE_FORCE_INLINE const unsigned char* narrow_bytes(const typename DN::T* p) noexcept {
   static_assert(sizeof(typename DN::T) == sizeof(std::uint16_t));
   static_assert(std::is_trivially_copyable_v<typename DN::T>);
-  return reinterpret_cast<const std::uint16_t*>(p);
+  return reinterpret_cast<const unsigned char*>(p);
 }
 
 template <class DN>
-HYLE_FORCE_INLINE std::uint16_t* narrow_bits(typename DN::T* p) noexcept {
+HYLE_FORCE_INLINE unsigned char* narrow_bytes(typename DN::T* p) noexcept {
   static_assert(sizeof(typename DN::T) == sizeof(std::uint16_t));
   static_assert(std::is_trivially_copyable_v<typename DN::T>);
-  return reinterpret_cast<std::uint16_t*>(p);
+  return reinterpret_cast<unsigned char*>(p);
 }
 
 template <class DF, class V>
@@ -255,30 +258,37 @@ HYLE_FORCE_INLINE VFromNarrowD<DN> demote_bf16(DN, V value) noexcept {
 // carrier tag's alignment contract.
 template <class DN>
 HYLE_FORCE_INLINE VFromNarrowD<DN> LoadNarrowU(DN, const typename DN::T* p) noexcept {
-  return LoadU(typename DN::StorageTag{}, detail::narrow_bits<DN>(p));
+  const typename DN::ByteTag d8;
+  return BitCast(typename DN::StorageTag{}, LoadU(d8, detail::narrow_bytes<DN>(p)));
 }
 template <class DN>
 HYLE_FORCE_INLINE VFromNarrowD<DN> LoadNarrow(DN, const typename DN::T* p) noexcept {
-  return Load(typename DN::StorageTag{}, detail::narrow_bits<DN>(p));
+  const typename DN::ByteTag d8;
+  return BitCast(typename DN::StorageTag{}, Load(d8, detail::narrow_bytes<DN>(p)));
 }
 template <class DN>
 HYLE_FORCE_INLINE void StoreNarrowU(VFromNarrowD<DN> v, DN, typename DN::T* p) noexcept {
-  StoreU(v, typename DN::StorageTag{}, detail::narrow_bits<DN>(p));
+  const typename DN::ByteTag d8;
+  StoreU(BitCast(d8, v), d8, detail::narrow_bytes<DN>(p));
 }
 template <class DN>
 HYLE_FORCE_INLINE void StoreNarrow(VFromNarrowD<DN> v, DN, typename DN::T* p) noexcept {
-  Store(v, typename DN::StorageTag{}, detail::narrow_bits<DN>(p));
+  const typename DN::ByteTag d8;
+  Store(BitCast(d8, v), d8, detail::narrow_bytes<DN>(p));
 }
 template <class DN>
 HYLE_FORCE_INLINE VFromNarrowD<DN> LoadNarrowN(
     DN, const typename DN::T* p, std::size_t max_lanes) noexcept {
-  return LoadN(typename DN::StorageTag{}, detail::narrow_bits<DN>(p), max_lanes);
+  const typename DN::ByteTag d8;
+  return BitCast(typename DN::StorageTag{},
+                 LoadN(d8, detail::narrow_bytes<DN>(p), 2 * max_lanes));
 }
 template <class DN>
 HYLE_FORCE_INLINE void StoreNarrowN(VFromNarrowD<DN> v, DN,
                                     typename DN::T* p,
                                     std::size_t max_lanes) noexcept {
-  StoreN(v, typename DN::StorageTag{}, detail::narrow_bits<DN>(p), max_lanes);
+  const typename DN::ByteTag d8;
+  StoreN(BitCast(d8, v), d8, detail::narrow_bytes<DN>(p), 2 * max_lanes);
 }
 template <class DN>
 HYLE_FORCE_INLINE VFromNarrowD<DN> ZeroNarrow(DN) noexcept {

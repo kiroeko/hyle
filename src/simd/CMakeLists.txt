@@ -127,7 +127,7 @@ hyle_add_module(simd SOURCES
   bitpack/bitpack_dispatch.cc
   bitpack/bitpack_scalar.cc
   ${_simd_arch_sources}
-  PUBLIC_DEPS hyle_platform)
+  PUBLIC_DEPS hyle_error hyle_platform)
 
 if(MSVC AND
    (_simd_exact_target STREQUAL "SCALAR" OR
