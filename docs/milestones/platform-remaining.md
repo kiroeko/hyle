@@ -18,6 +18,10 @@
 > 形状已补齐 Linux/M4 统计证书，详见 performance 文档。platform 进入预发布冻结；只有真实
 > 消费者缺口、支持平台变化、正确性 bug 或当前同合同性能回退才能重开。
 
+> **NUMA 定向复开（2026-07-26）：**对照 oneTBB 后补 actual sparse node IDs、runtime capability、
+> selected-node/chunk allocation 与 raw/RAII/C ABI；当前 surface 为 **120/120**。旧 118 项证书是
+> 复开前历史基线，不再代表 HEAD 数量；本轮 Windows/WSL 验证与单节点 peer 数据见 guide/performance。
+
 > **SOTA 性能回审（2026-07-24）：**`504d671` / `75f3a45` 把 zero-timeout 从 OS wait
 > 收回单 consumer 用户态 load，Win/WSL/M4 n=15 为 **1.690/0.564/1.346 ns**，platform 与
 > sched C/C++ 三平台回归全绿。`3997964` 将 MappedFile raw 对照补成同等 UTF/path、文件大小
@@ -147,7 +151,8 @@ macOS 真机通过，确认 `os_sync_wait_on_address_with_timeout` 当前参数�
   canonical taxonomy；操作特定 override 仍留在 owner。
 - C ABI 同步覆盖四个 mapped advice/residency 操作；platform surface 机械清单增至 118 个，
   C++/C 独立头与 Windows/WSL/M4 定向测试通过。
-- Linux NUMA policy mask 覆盖 256 nodes，非法 node/range 明确失败。
+- Linux NUMA policy mask 覆盖实际稀疏 node id（固定 4096-bit 上限），非法 node/range 明确失败；
+  topology 查询与 membership 分别缓存为 O(1) count 和 O(log N) lookup。
 - ErrorRecord 析构自动恢复、重复 install 幂等；空 format/无效 handler
   不再崩溃。
 
@@ -157,8 +162,12 @@ macOS 真机通过，确认 `os_sync_wait_on_address_with_timeout` 当前参数�
   系统 P/E 聚合和独立的进程可用 CPU 能力；不从聚合值猜 worker 数或单核类型。
 - Linux 不依据 cpufreq 猜 P/E；若内核不导出 scheduler capacity，则保持
   unknown/homogeneous fallback。
-- selected-node set + `bytes_per_chunk` NUMA 保持 non-goal：Linux mask、Windows single-node
-  `VirtualAlloc2` 与 macOS 无公开 NUMA API 不具备共同合同；没有真实 topology owner 前不扩面。
+- selected-node set + `bytes_per_chunk` 已在 2026-07-26 定向复开：公共合同是实际 node id +
+  runtime capability + structured Status，不要求每个 OS 伪装相同 primitive；Linux/Windows
+  多节点安装条带 policy，macOS 单节点返回 NotNeeded。只有 Linux bind 是严格节点集合；
+  Windows preferred commit 与 Linux interleave 都可能在内存压力下回退，`Applied` 不是逐页
+  residency 证明。raw/RAII 与 C ABI 均覆盖，selected region 禁止 decommit/recommit，防止
+  policy 被静默丢失。
 - platform C ABI 已覆盖 wait/Parker、Thread、DynLib、VM/VmRegion、
   hugepage/NUMA、完整 fs/env/fd、MappedFile、CPU/cache/topology。2026-07-19
   复审又补了 thread opts `struct_size`、具名权限/open flags 与逐符号纯 C 验收；后续

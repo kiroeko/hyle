@@ -65,9 +65,11 @@ hyle_mapped_file_open
 hyle_mapped_file_size
 hyle_mapped_file_unlock
 hyle_mapped_file_valid
+hyle_numa_capabilities
 hyle_numa_current_node
 hyle_numa_node_count
 hyle_numa_node_of_cpu
+hyle_numa_nodes
 hyle_page_size
 hyle_parker_create
 hyle_parker_destroy
@@ -86,6 +88,7 @@ hyle_thread_spawn
 hyle_thread_spawn_opts
 hyle_vm_advise_hugepage
 hyle_vm_advise_no_hugepage
+hyle_vm_alloc_numa_interleaved
 hyle_vm_alloc_rw
 hyle_vm_bind_numa
 hyle_vm_bind_numa_interleave
@@ -94,12 +97,14 @@ hyle_vm_decommit
 hyle_vm_free_rw
 hyle_vm_protect
 hyle_vm_region_adopt
+hyle_vm_region_alloc_numa_interleaved
 hyle_vm_region_commit
 hyle_vm_region_commit_usable
 hyle_vm_region_data
 hyle_vm_region_decommit
 hyle_vm_region_destroy
 hyle_vm_region_has_guard
+hyle_vm_region_is_numa_interleaved
 hyle_vm_region_numa_placement
 hyle_vm_region_protect
 hyle_vm_region_reserve

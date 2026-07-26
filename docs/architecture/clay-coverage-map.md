@@ -193,4 +193,4 @@ clay 各组件落到 HYLE 依赖层(P0-P6):
 - clay **parallel/** → **P4 被 work-stealing 调度器重写取代**(thread_pool,已 sched-03✅)+ **P5 初收掉 async_value**(→ completion 脊)。
 - clay **math/** → half 在 **P3 由硬件 fp16 取代**(只留接口);utils+consts 排后期 math 簇。
 - **一句话:盯 `P3 末`(container-02..06 + mem 全部 + 01b/03b)——跑完且每文件 diff 过 clay,clay 主体即吸纳完毕;`P5 初` 补完 async_value 为完整收口。** P6(graph/C-ABI/FFI)是 HYLE 净新增,与 clay 吸纳无关。
-- **当前位置(2026-06-29 重核,纠旧"刚起步"陈述):clay 地基吸纳基本收口。** sys/utils/container 主体已 ✅(allocator 家族 + arena/pool/stack + 全部容器 + string/hashmap/registry/ref-counted/类型设施 + path/fs/log/time/random),container-02..06 全簇 + mem-01..04/07 + platform-02/03 + time-01 + util-01..06 均完成。剩余 clay 行(4 🔶 + 5 📋)经逐文件判定**基本是终态(std/硬件取代)或归别处(compute/P5 sched)**,真·clay 吸纳欠账 ≈ 零。**未到完全 ✅ 的尾巴**:`decls.h` include 纪律坐实、NUMA(净新增非 clay)、async_value/barrier(P5 sched)。**结论:clay 吸纳从"刚起步"修正为"主体收口、尾巴是净新增/别模块",剩下的工程量是 io/compute/graph 三大净新增支柱,与 clay 无关。**
+- **当前位置（2026-07-26 追记）：clay 地基吸纳已收口。** 2026-06-29 盘点所列的净新增尾项中，NUMA 已补齐实际稀疏 node id、runtime capability、selected-node/chunk 及 C/C++ owner；async_value/barrier 对应的 sched completion 地基也已完成。表内仍非 ✅ 的行是 std/硬件取代、归属 compute/graph 等其它模块或有意边界，不再是 clay 吸纳欠账。

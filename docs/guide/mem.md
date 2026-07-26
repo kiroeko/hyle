@@ -323,14 +323,31 @@ if (p != nullptr) bounded.deallocate(p, 4096, 64);
 ## HugeRegion：请求不等于承诺
 
 `HugeRegion::requested_flags()` 记录调用者策略；`accepted_flags()` 记录 OS-facing 调用已
-接受的 THP/prefault/strict placement。THP advice 被接受不代表每一物理页已经提升。
+接受的 THP/prefault/placement policy。THP advice 被接受不代表每一物理页已经提升；同样，
+interleave policy 被接受也不是每页永久驻留目标节点的证明。
 `numa_placement_applied()` 单独说明 placement 调用结果。`allocate*` 返回
-`Result<HugeRegion>`：hard bind/interleave 不能满足时返回带原因的 Status；preferred
+`Result<HugeRegion>`：hard bind 或 interleave policy 无法安装时返回带原因的 Status；preferred
 可以返回可用 region 但 `numa_placement_applied()==false`，THP 仍是 best-effort。
 bind 与 interleave 互斥；interleave 必须搭配 `kNumaAny`，不能传给 `allocate_local`。
-当前不提供“选定多个 nodes + 自定义 interleave chunk”入口：三平台没有同形 OS 合同，基础
-mem 不把 Linux-only mask 包成可移植 API。需要非均匀分片时，由掌握拓扑和任务归属的上层显式
-组合多个 region；真实公共消费者出现后再重开该边界。
+
+需要一个连续的大块 owner、但只在选定节点间按自定义 chunk 条带时，使用 selected overload：
+
+```cpp
+constexpr std::size_t kMiB = 1024u * 1024u;
+const auto available = hyle::platform::numa_nodes();
+const unsigned chosen[] = {available.front(), available.back()};
+HYLE_ASSIGN_OR_RETURN(
+    hyle::mem::HugeRegion region,
+    hyle::mem::HugeRegion::allocate_interleaved(
+        256u * kMiB, chosen, 2u * kMiB,
+        hyle::mem::HugeFlags::kPrefault));
+assert(region.interleave_chunk_size() == 2u * kMiB);
+```
+
+只在 `available.size()>1` 时构造上面的两端列表；单节点直接传空 span 或一个 node。空 span
+选择所有节点，id 可以稀疏且不能用 `[0,count)` 猜，列表必须唯一并按期望条带顺序排列。
+selected overload 的 flags 默认 `kNone`：精确小条带与 THP 粒度可能冲突；只有确认 workload
+接受大页合并时才显式叠加 `kThpHint`。底层能力与失败语义见 [`platform.md`](./platform.md)。
 
 `FiberStack::allocate` 与 `FiberStackPool::acquire` 同样返回 `Result<FiberStack>`，使 sched
 能保留原生 VM 失败原因；可信固定配置仍可用 `Fiber` 便利构造，用户输入应走

@@ -1,7 +1,9 @@
 #include <gtest/gtest.h>
 
+#include <array>
 #include <climits>
 #include <cstring>
+#include <utility>
 
 #include "hyle/mem/hugepage.h"
 #include "hyle/platform/numa.h"
@@ -85,7 +87,8 @@ TEST(HugeRegion, RejectsUnknownAndContradictoryPlacementFlags) {
   EXPECT_TRUE(conflict.error().IsInvalidArgument());
 
   auto named_node_interleave = HugeRegion::allocate(
-      page_size(), HugeFlags::kNumaInterleave, 0);
+      page_size(), HugeFlags::kNumaInterleave,
+      static_cast<int>(hyle::platform::numa_nodes().front()));
   ASSERT_FALSE(named_node_interleave);
   EXPECT_TRUE(named_node_interleave.error().IsInvalidArgument());
 
@@ -96,14 +99,47 @@ TEST(HugeRegion, RejectsUnknownAndContradictoryPlacementFlags) {
 }
 
 TEST(HugeRegion, HardBindRejectsInvalidNode) {
-  const unsigned count = hyle::platform::numa_node_count();
-  ASSERT_LE(count, static_cast<unsigned>(INT_MAX - 100));
-  const int invalid = static_cast<int>(count) + 100;
+  const unsigned highest = hyle::platform::numa_nodes().back();
+  ASSERT_LE(highest, static_cast<unsigned>(INT_MAX - 100));
+  const int invalid = static_cast<int>(highest) + 100;
   ASSERT_NE(invalid, hyle::platform::kNumaAny);
-  ASSERT_GE(static_cast<unsigned>(invalid), count);
   auto r = HugeRegion::allocate(page_size(), HugeFlags::kNumaBind, invalid);
   ASSERT_FALSE(r);
   EXPECT_TRUE(r.error().IsOutOfRange());
+}
+
+TEST(HugeRegion, SelectedNodesAndChunkAreWritableAndObservable) {
+  const std::size_t p = page_size();
+  const std::array<unsigned, 1> selected{
+      hyle::platform::numa_nodes().front()};
+  auto result = HugeRegion::allocate_interleaved(
+      p * 8, selected, p * 2, HugeFlags::kPrefault);
+  if (hyle::platform::numa_nodes().size() > 1u &&
+      !hyle::platform::has_numa_capability(
+          hyle::platform::numa_capabilities(),
+          hyle::platform::NumaCapability::kSelectedInterleave)) {
+    ASSERT_FALSE(result);
+    EXPECT_TRUE(result.error().IsUnimplemented());
+    return;
+  }
+  ASSERT_TRUE(result);
+  HugeRegion region = *std::move(result);
+  EXPECT_EQ(region.interleave_chunk_size(), p * 2);
+  EXPECT_TRUE(any(region.requested_flags() & HugeFlags::kNumaInterleave));
+  EXPECT_TRUE(any(region.accepted_flags() & HugeFlags::kNumaInterleave));
+  EXPECT_TRUE(any(region.accepted_flags() & HugeFlags::kPrefault));
+  std::memset(region.data(), 0x4A, region.size());
+  EXPECT_EQ(static_cast<unsigned char*>(region.data())[region.size() - 1],
+            0x4A);
+}
+
+TEST(HugeRegion, SelectedNodesRejectDuplicates) {
+  const unsigned node = hyle::platform::numa_nodes().front();
+  const std::array<unsigned, 2> duplicate{node, node};
+  auto result = HugeRegion::allocate_interleaved(
+      page_size(), duplicate, page_size(), HugeFlags::kNone);
+  ASSERT_FALSE(result);
+  EXPECT_TRUE(result.error().IsInvalidArgument());
 }
 
 TEST(HugeRegion, AdviseHugepageRangeHelper) {

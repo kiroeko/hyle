@@ -208,9 +208,9 @@ Status reserve_huge_1g_pages(std::size_t pages, int numa_node,
   }
   if (numa_node != platform::kNumaAny &&
       (numa_node < 0 ||
-       static_cast<unsigned>(numa_node) >= platform::numa_node_count())) {
+       !platform::numa_node_available(static_cast<unsigned>(numa_node)))) {
     return Status::OutOfRange(
-        "reserve_huge_1g_pages: NUMA node index is out of range");
+        "reserve_huge_1g_pages: NUMA node ID is unavailable");
   }
   // mimalloc: 0 success, non-zero error. timeout 0 → use a short default so a
   // fragmented box does not hang the process for minutes.

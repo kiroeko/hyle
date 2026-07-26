@@ -38,6 +38,24 @@
 | **持久 MappedFile 随机页访问** vs ifstream seek/read | 2.309 / 2585.654 → **WIN 1125x** | 2.532 / 420.476 → **WIN 168x** | 0.647 / 1527.861 → **WIN 2355x** | ✅ 16 MiB warm page-cache、1024 个非顺序 page probe；真实 mapping 甜点 |
 | **park_timeout token 快路径** | 9.215 ns | 9.818 ns | 1.850 ns | ➖ token consume 的 acquire RMW 绝对值 |
 | **park_timeout(0) 无 token 轮询** | **1.690 ns** | **0.564 ns** | **1.346 ns** | ✅ 纯用户态 load；旧 3.7 µs / 59 µs / 3.7 ns 全部作废 |
+| **selected NUMA alloc + first touch + release** vs oneTBB | 1.737 / 1.761 ms → **TIE 1.008x**（n=15） | 3.302 / 3.280 ms → **TIE 0.993x**（n=15） | 未采样 | ➖ 当前 Win/WSL 都是单节点，只签 wrapper/setup floor，不冒充跨 socket 证书 |
+
+### 2026-07-26 selected-node/chunk NUMA
+
+新增 `numa-alloc` 场景使用 16 MiB 连续 span、2 MiB 条带，测量“allocate + 每页 first touch +
+release”。这避免 Linux HYLE 的 lazy first-touch policy 与 oneTBB 自定义 chunk 可能在 allocation
+内部 touch/move pages 之间产生合同错位。Windows MSVC 19.50 shared Release n=15：HYLE
+**1,737,438 ns**，oneTBB **1,760,966 ns**，逐 run throughput 比中位 **1.008**（范围
+0.990–1.025，sign 9/15）；WSL GCC 14 shared Release n=15：HYLE **3,301,965 ns**，
+oneTBB **3,280,194 ns**，中位 **0.993**（范围 0.913–1.058，sign 6/15）。两边均判 TIE。
+
+这两台机器只暴露一个 node，所以数字证明当前公共形状、结构化结果和 owner/release 相对成熟
+peer 没有 material overhead，**不证明多 socket 物理落点或带宽**。多节点实现的渐近复杂度先由
+源码审计约束：validation O(nodes)；Linux 单 node / 普通逐页递增条带为一次 `mbind`，自定义
+chunk/order 为 O(size/chunk) 个 pre-touch policy range，避免 oneTBB 的 O(size/page) touch、
+page/node/status 数组和 `move_pages`；Windows 每个条带一次 NUMA commit，为表达自定义 node
+顺序所需的 O(size/chunk)。实际多 socket placement、local/remote bandwidth 与并发 first-touch
+仍需在真实多 NUMA node 主机上签证，未取得硬件前状态明确为“实现完成、真机性能待证”。
 
 ### 2026-07-23 `Result<MappedFile>` 成功路径复证
 

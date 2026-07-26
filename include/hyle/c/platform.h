@@ -280,16 +280,37 @@ typedef enum hyle_numa_policy {
 } hyle_numa_policy;
 
 typedef enum hyle_numa_placement {
+  /* OS accepted the policy; not proof of physical residency under pressure. */
   HYLE_NUMA_PLACEMENT_APPLIED = 0,
   HYLE_NUMA_PLACEMENT_NOT_NEEDED = 1,
   HYLE_NUMA_PLACEMENT_UNAVAILABLE = 2
 } hyle_numa_placement;
 
-/* Node count (>=1) and the calling thread's home node (< count). */
+/* Runtime NUMA feature bits. Prefer this over compiling user code around
+ * HYLE_OS_*: one binary can report primitives available on the running OS. */
+typedef enum hyle_numa_capability {
+  HYLE_NUMA_CAP_NONE = 0,
+  HYLE_NUMA_CAP_TOPOLOGY = 1u << 0,
+  HYLE_NUMA_CAP_PREFERRED_RESERVATION = 1u << 1,
+  HYLE_NUMA_CAP_BIND_EXISTING = 1u << 2,
+  HYLE_NUMA_CAP_INTERLEAVE_EXISTING = 1u << 3,
+  HYLE_NUMA_CAP_SELECTED_INTERLEAVE = 1u << 4
+} hyle_numa_capability;
+
+HYLE_PLATFORM_C_API uint32_t hyle_numa_capabilities(void);
+
+/* Actual node IDs need not be dense. `hyle_numa_nodes(NULL,0)` returns the
+ * required count; otherwise up to `capacity` IDs are copied and the same total
+ * is returned. Unsupported hosts expose logical node 0; a native single-node
+ * process may expose a different actual ID because of its cpuset. */
+HYLE_PLATFORM_C_API size_t hyle_numa_nodes(unsigned* out_nodes,
+                                           size_t capacity);
+/* Node count (>=1) and the calling thread's home node (one of numa_nodes). */
 HYLE_PLATFORM_C_API unsigned hyle_numa_node_count(void);
 HYLE_PLATFORM_C_API unsigned hyle_numa_current_node(void);
 
-/* NUMA node owning logical CPU `cpu` (0 on failure / single-node / out-of-range). */
+/* NUMA node owning logical CPU `cpu` (first available node ID on failure,
+ * single-node, or out-of-range). */
 HYLE_PLATFORM_C_API unsigned hyle_numa_node_of_cpu(unsigned cpu);
 
 /* Bind an existing page-aligned mapping. `out_placement` may be NULL when the
@@ -304,6 +325,15 @@ HYLE_PLATFORM_C_API hyle_status hyle_vm_bind_numa_interleave(
  * reserve). `out_placement` may be NULL. */
 HYLE_PLATFORM_C_API hyle_status hyle_vm_reserve_numa(
     void** out, hyle_numa_placement* out_placement, size_t size, int node);
+/* Allocate a committed contiguous RW span with a selected-node stripe policy.
+ * NULL/0 selects every node. Node IDs must be unique. `bytes_per_chunk==0`
+ * means one OS page; otherwise it must be page-granular. Applied means the OS
+ * accepted the policy, not that pressure can never cause fallback. Release
+ * with hyle_vm_release; do not decommit/recommit subranges because that loses
+ * the policy. */
+HYLE_PLATFORM_C_API hyle_status hyle_vm_alloc_numa_interleaved(
+    void** out, hyle_numa_placement* out_placement, size_t size,
+    const unsigned* nodes, size_t node_count, size_t bytes_per_chunk);
 
 /* RAII region (opaque). destroy releases the reservation. */
 typedef struct hyle_vm_region_o hyle_vm_region_o;
@@ -315,6 +345,10 @@ HYLE_PLATFORM_C_API hyle_status hyle_vm_region_reserve_guarded(
  * region handle. Returns Status and writes `*out` on success. */
 HYLE_PLATFORM_C_API hyle_status hyle_vm_region_reserve_numa(
     hyle_vm_region_o** out, size_t size, int node);
+/* Managed form of hyle_vm_alloc_numa_interleaved; destroy releases it. */
+HYLE_PLATFORM_C_API hyle_status hyle_vm_region_alloc_numa_interleaved(
+    hyle_vm_region_o** out, size_t size, const unsigned* nodes,
+    size_t node_count, size_t bytes_per_chunk);
 /* Adopt an existing page-aligned reservation from hyle_vm_reserve* into a region
  * handle (destroy releases it). `size` must be the rounded size that pairs with
  * release. Ownership transfers only after Status success. */
@@ -327,6 +361,8 @@ HYLE_PLATFORM_C_API size_t hyle_vm_region_size(const hyle_vm_region_o* r);
 HYLE_PLATFORM_C_API void* hyle_vm_region_usable(hyle_vm_region_o* r);
 HYLE_PLATFORM_C_API size_t hyle_vm_region_usable_size(const hyle_vm_region_o* r);
 HYLE_PLATFORM_C_API int hyle_vm_region_has_guard(const hyle_vm_region_o* r);
+HYLE_PLATFORM_C_API int hyle_vm_region_is_numa_interleaved(
+    const hyle_vm_region_o* r);
 HYLE_PLATFORM_C_API hyle_numa_placement hyle_vm_region_numa_placement(
     const hyle_vm_region_o* r);
 HYLE_PLATFORM_C_API hyle_status hyle_vm_region_commit(

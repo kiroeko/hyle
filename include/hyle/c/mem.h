@@ -680,9 +680,10 @@ static inline hyle_status hyle_growable_pool_create_default(
 /* HugeRegion — huge-page / NUMA-placed span */
 /* ========================================================================== */
 
-/* HugeFlags bits. THP is a soft hint; bind/interleave are strict placement
- * requests and are mutually exclusive. Named enum so cross-language FFI tools
- * surface the flags as typed constants. */
+/* HugeFlags bits. THP is a soft hint; Linux bind is strict, while interleave
+ * installs an OS placement policy that may fall back under memory pressure.
+ * Bind/interleave are mutually exclusive. Named enum so cross-language FFI
+ * tools surface the flags as typed constants. */
 typedef enum hyle_huge_flags {
   HYLE_HUGE_NONE = 0,
   HYLE_HUGE_THP_HINT = 1u << 0,  /* MADV_HUGEPAGE hint (Linux) */
@@ -709,6 +710,14 @@ hyle_huge_region_open_local(hyle_huge_region **out, size_t bytes,
 /* Interleave across all nodes + THP (shared multi-MB arena). */
 HYLE_MEM_C_API hyle_status
 hyle_huge_region_open_interleaved(hyle_huge_region **out, size_t bytes);
+/* Interleave over an explicit node set. NULL/0 selects all nodes. Stripes
+ * follow array order; IDs must be available and unique. bytes_per_chunk==0
+ * means one OS page. Unlike the convenience function above, flags are
+ * explicit; use HYLE_HUGE_NONE when preserving stripe-policy granularity
+ * matters more than THP. */
+HYLE_MEM_C_API hyle_status hyle_huge_region_open_interleaved_nodes(
+    hyle_huge_region **out, size_t bytes, uint32_t flags,
+    const unsigned *nodes, size_t node_count, size_t bytes_per_chunk);
 HYLE_MEM_C_API void hyle_huge_region_destroy(hyle_huge_region *r);
 HYLE_MEM_C_API void *hyle_huge_region_data(hyle_huge_region *r);
 HYLE_MEM_C_API size_t hyle_huge_region_size(const hyle_huge_region *r);
@@ -723,6 +732,9 @@ HYLE_MEM_C_API int
 hyle_huge_region_requested_numa_node(const hyle_huge_region *r);
 HYLE_MEM_C_API int
 hyle_huge_region_numa_placement_applied(const hyle_huge_region *r);
+/* Effective stripe size for an interleaved region, otherwise 0. */
+HYLE_MEM_C_API size_t
+hyle_huge_region_interleave_chunk_size(const hyle_huge_region *r);
 
 /* ========================================================================== */
 /* Process-wide mimalloc policy (free functions) */

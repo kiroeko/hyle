@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <span>
 
 #include "hyle/error/result.h"
 #include "hyle/macros.h"
@@ -122,6 +123,12 @@ class VmRegion {
   HYLE_PLATFORM_API static Result<VmRegion> reserve_numa(
       std::size_t size, int node) noexcept;
 
+  // Allocate a committed RW span striped over all or selected NUMA nodes.
+  // See numa.h for node/chunk validation and platform capability semantics.
+  HYLE_PLATFORM_API static Result<VmRegion> allocate_numa_interleaved(
+      std::size_t size, std::span<const unsigned> nodes = {},
+      std::size_t bytes_per_chunk = 0) noexcept;
+
   // Take ownership of an existing page-aligned reservation from vm_reserve*.
   // `size` must be the rounded size used with release. Invalid input is
   // returned as a structured error and ownership remains with the caller.
@@ -157,8 +164,11 @@ class VmRegion {
   }
   bool has_guard() const noexcept { return guarded_; }
   NumaPlacement numa_placement() const noexcept { return numa_placement_; }
+  bool numa_interleaved() const noexcept { return numa_interleaved_; }
 
-  // Commit / decommit / protect a subrange by byte offset from data().
+  // Commit / decommit / protect a subrange by byte offset from data(). A
+  // selected-NUMA allocation is already committed; decommit is rejected because
+  // recommitting could lose its placement. Release the whole region instead.
   // offset+len are rounded (offset down / end up) only via the free functions'
   // size round-up; offset must be page-aligned when len>0.
   HYLE_PLATFORM_API Status commit(std::size_t offset,
@@ -178,6 +188,7 @@ class VmRegion {
   void* base_ = nullptr;
   std::size_t size_ = 0;
   bool guarded_ = false;
+  bool numa_interleaved_ = false;
   NumaPlacement numa_placement_ = NumaPlacement::kNotNeeded;
 };
 

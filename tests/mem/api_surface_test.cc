@@ -157,6 +157,9 @@ static_assert(requires(FiberStack stack, FiberStackPool pool) {
 });
 static_assert(requires {
   { reserve_huge_1g_pages(0) } -> std::same_as<hyle::Status>;
+  { HugeRegion::allocate_interleaved(
+        4096, std::span<const unsigned>{}, 0, HugeFlags::kNone) }
+      -> std::same_as<hyle::Result<HugeRegion>>;
 });
 
 TEST(MemApiSurface, PublicCapabilityFamiliesCompileTogether) {

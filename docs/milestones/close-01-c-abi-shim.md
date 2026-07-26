@@ -45,7 +45,7 @@
   [`c-error.md`](../guide/c-error.md)。Status 全码、所有权、上下文、buffer 格式化与传播均可达。
   早期诊断 handler 已在 reclosure 中删除：日志归 `obs`，合同失败归 fail-fast，不再混入
   可恢复错误 C ABI。
-- [x] **样板 platform**（2026-07-17，2026-07-25 最终复审）：`include/hyle/c/platform.h` + `c_platform.cc` + 纯 C `hyle_platform_c_test`。覆盖 wait/Parker、Thread、DynLib、VM/VmRegion、hugepage/NUMA、完整 fs/env/fd、MappedFile（含 advice/residency）、CPU/cache/topology/per-CPU 能力；私有 `hyle_platform_last_error` 已删除并统一共享 Status。当前 **118/118** 动态声明、纯 C 引用与三平台导出机械对齐。文档：[`c-platform.md`](../guide/c-platform.md)。
+- [x] **样板 platform**（2026-07-17，2026-07-26 NUMA 复开）：`include/hyle/c/platform.h` + `c_platform.cc` + 纯 C `hyle_platform_c_test`。覆盖 wait/Parker、Thread、DynLib、VM/VmRegion、hugepage/NUMA（actual nodes/capability/selected interleave）、完整 fs/env/fd、MappedFile（含 advice/residency）、CPU/cache/topology/per-CPU 能力；私有 `hyle_platform_last_error` 已删除并统一共享 Status。当前 **120/120** 动态声明、纯 C 引用与导出机械对齐。文档：[`c-platform.md`](../guide/c-platform.md)。
 - [x] **样板 mem**（2026-07-23 重审）：`include/hyle/c/mem.h` + `c_mem.cc` + 纯 C
   `hyle_mem_c_test`。覆盖 system allocator/collect、Quota/Stats、Region/FixedRegion/FixedPool、
   hard `SharedPool` + 显式 `SharedPoolCache`、Stack/PooledRegion/GrowablePool、HugeRegion 与
@@ -107,7 +107,7 @@ recipe。当前入口如下：
 |---|---|---|---|
 | error | `Result<T>`→`hyle_status` + 分支/return-if-error；作用域 handler→push/pop token | `c-error` §4.6/§5 | 完整 |
 | platform | RAII resource→opaque create/destroy；typed symbol→`void*` + caller cast；遍历模板→visitor | `c-platform` §3.8/§4 | 完整 |
-| mem | typed pool→runtime size/align + typed 宏；RAII allocator→vtable + 显式 free；stats/leak→opaque decorator + POD snapshot/copy-out inventory | `c-mem` §3.9/§4 | ✅ 严格复证；107/107 声明、纯 C 引用与动态导出一致，C++-only 只剩模板/RAII/raw fiber stack 等语言专属形状 |
+| mem | typed pool→runtime size/align + typed 宏；RAII allocator→vtable + 显式 free；stats/leak→opaque decorator + POD snapshot/copy-out inventory；selected NUMA→pointer/count/chunk owner | `c-mem` §3.9/§4 | ✅ 严格复证；109/109 声明、纯 C 引用与动态导出一致，C++-only 只剩模板/RAII/raw fiber stack 等语言专属形状 |
 | time | `Instant`→`uint64_t`；侵入节点/source concept→opaque timer/source + visitor | `c-time` §2–§6 | 完整 |
 | simd | ISA-dependent vector/D-tag 不冻结；普通用户能力由 whole-buffer pointer/count API 动态派发 | `c-simd` 全文 + `simd-usage` | 完整 |
 | util | `Ref<T>`/scope RAII→type-erased ref/guard；静态 type metadata 无运行时等价物 | `c-util` 对应各节 | 完整 |

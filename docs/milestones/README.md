@@ -25,15 +25,15 @@
 ### 整体进度与体量（诚实，2026-07-26 锚定）——分母别混
 
 > **生产 = `cloc src include` 的 code 列**（header+C++/CUDA 等，不含 tests/bench/docs/third_party）。
-> **旧投影「完成时生产 ~28–40k / 中值 34k」已作废**：当前生产已 **~90.5k**，单 **simd ~37.8k**。
+> **旧投影「完成时生产 ~28–40k / 中值 34k」已作废**：当前生产已 **~91.0k**，单 **simd ~37.8k**。
 > 权威规模节：[`../architecture/hyle-scope.md`](../architecture/hyle-scope.md)。中期报告：[`midterm-report-2026-07-scale-positioning.md`](./midterm-report-2026-07-scale-positioning.md)。SIMD 当前补缺账本：[`simd-capability-fill-list.md`](./simd-capability-fill-list.md)。
 
 | 固定统计口径 | 当前 | 命令/说明 |
 |---|---|---|
-| **全库代码** | **270,464** | `cloc . --vcs=git`；含 docs/third_party，**≠ 自写** |
-| **自实现（含测试）** | **131,784** | `cloc include/hyle src tests`，只计 C++/Header/C/CUDA |
-| **自实现（不含测试）** | **90,476** | `cloc include/hyle src`，只计 C++/Header/C/CUDA；库本体硬锚 |
-| **当前审查单元 container 实现** | **14,337** | `include/hyle/container` + `include/hyle/c/container.h` + `src/container`；不含测试/CMake/Text |
+| **全库代码** | **271,438** | `cloc . --vcs=git`；含 docs/third_party，**≠ 自写** |
+| **自实现（含测试）** | **132,580** | `cloc include/hyle src tests`，只计 C++/Header/C/CUDA |
+| **自实现（不含测试）** | **91,049** | `cloc include/hyle src`，只计 C++/Header/C/CUDA；库本体硬锚 |
+| **当前 NUMA 收口涉及模块实现** | **12,907** | platform **7,498** + mem **5,409**；各含公共 C 头，不含测试/CMake/Text |
 | **终态生产（纪律收口 A）** | **~75–90k** | 主预期 |
 | **终态生产（做满守界 B）** | **~85–105k** | compute/graph/发布面收口更满 |
 | 失控上限 C | 120k+ 生产 | 应避免 |
@@ -45,8 +45,8 @@
 | **生产 LOC ÷ 终态 B 中值 ~95k** | 做满剧本 | **~95%** |
 | **对完整愿景的功能完成度** | 能力清单 + 头牌缺口 | 除 compute/graph 能力尾外主体大多已实现；mem/time 已按新标准重收；其余按队列复审 |
 
-**模块生产粗表（2026-07-26）**：simd ~37.8k · io ~9.0k · platform **7,020**
-（含公共 C 头）· container **14.3k**（含公共 C 头）· compute ~4.1k · sched ~5.1k · mem **5.3k** ·
+**模块生产粗表（2026-07-26）**：simd ~37.8k · io ~9.0k · platform **7,498**
+（含公共 C 头）· container **14.3k**（含公共 C 头）· compute ~4.1k · sched ~5.1k · mem **5,409** ·
 util ~1.3k · error **984** · time ~0.9k · obs **1,018** · graph ~0.6–0.8k。
 
 预发布严格收口合同、重开触发器和唯一下一模块见
@@ -112,7 +112,7 @@ util ~1.3k · error **984** · time ~0.9k · obs **1,018** · graph ~0.6–0.8k�
 | [mem-06c](./mem-06c-numa.md) | P2 | mem | NUMA：query + preferred bind + HugeRegion node + mi use_numa | platform-02b,mem-02 | 0.4-0.8k | numa.h/cc | ✅ 完成(2026-07-17)。soft preferred；单 node 平凡正确；无 libnuma |
 | mem-07 | P2 | mem | GrowablePool(growable/单线程池) + PmrResource(std::pmr 适配) | mem-03 | 1-2k | 145 (+116 测试) | ✅ 完成(吸纳 clay memory_pool/stl_allocator/generic_allocator;修 clay move-assign bug;generic_allocator⛔=Allocator 已是它) |
 | [mem-08](./mem-08-fiber-stack.md) | P2 | mem | fiber_stack：guard + 分级 + FiberStackPool + Fiber 接线 | platform-02b,sched-01 | 0.5-1k | ~518 code(头+接线+测) | ✅ 完成(2026-07-17)。`FiberStack`=`reserve_guarded`;Small/Default/Large;池回收;`Fiber` 默认 guarded。Win+WSL mem 56/56、sched 108/108 |
-| [mem-final](./mem-close-plan.md) | close | mem | 功能/API/性能收口与 release-candidate certification | mem-01..08 | — | 见任务单 | ✅ **2026-07-26 严格收口**：mature-gap P0、default/injected adapter、fiber 回收与 NUMA non-goal 均裁决；clean `c640072` Win/WSL/M4 shared same-link、正确性/C ABI/TSan 全签；FixedPool 覆盖 external variable-size + individual free/realloc + reset |
+| [mem-final](./mem-close-plan.md) | close | mem | 功能/API/性能收口与 release-candidate certification | mem-01..08 | — | 见任务单 | ✅ **2026-07-26 严格收口 + NUMA 定向复开完成**：mature-gap P0、default/injected adapter、fiber 回收均收；selected-node/chunk 后续按 platform-first 落地，当前 mem 109/109 C surface；clean `c640072` 的 Win/WSL/M4 allocator shared same-link/TSan 证书继续有效 |
 | [time-01](./time-01-clock.md) | P2 | time | typed 单调/墙钟、deadline、thread sleep | core | — | 见里程碑 | ✅ **2026-07-25 复审收口**：chrono/native 双面；TSC/coarse opt-in；饱和 deadline；高分辨率 absolute sleep；20 clock tests + 三平台/ASan/UBSan |
 | [time-02](./time-02-timer-wheel.md) | P2 | time | exact-ns TimerQueue + CommonTimeoutQueue | time-01,core,error(C ABI) | — | 见里程碑 | ✅ 2026-07-26 [`mature-gap audit`](./time-mature-gap-audit.md) 已修 duration 精度/clock 语义并完成三平台 correctness、正常使用性能与 WSL sanitizer 复证 |
 | container-01 | P3 | container | vendor 有界 ring(Vyukov/rigtorp,骨架用) | mem-01 | 1-2k | 220 | ✅ 完成 |

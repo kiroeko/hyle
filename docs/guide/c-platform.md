@@ -111,11 +111,13 @@ last-error；C 与 C++ 共用 error 的 code、message 和所有权规则。
 | `hyle_vm_reserve(out, size)` / `commit` / `decommit` / `release` / `protect` | 全部返回 `hyle_status`；reserve 成功写 `*out` |
 | `hyle_vm_alloc_rw(out, size)` | 一次 OS 操作得到可立即使用的 RW mapping（size 上取整）；返回 Status |
 | `hyle_vm_free_rw(p, size)` | 释放 `alloc_rw` 的块（size 为原始请求）；返回 Status |
+| `hyle_vm_alloc_numa_interleaved(out, placement, size, nodes, count, chunk)` | 已提交的 selected-node/chunk 连续 RW span；整段 `hyle_vm_release`，不能 decommit/recommit |
 | `hyle_vm_region_reserve(out, size)` / `reserve_guarded` | Status+out；guarded 低 1 页 NOACCESS |
 | `hyle_vm_region_reserve_numa(out, size, node)` | 偏好 NUMA `node`（`HYLE_NUMA_ANY`==普通 reserve）的托管 region |
+| `hyle_vm_region_alloc_numa_interleaved(out, size, nodes, count, chunk)` | 上述 selected allocation 的 opaque owner；destroy 释放，decommit 返回 `FAILED_PRECONDITION` |
 | `hyle_vm_region_adopt(out, base, size)` | 收编裸预留；只有成功后才转移所有权，wrapper OOM/参数错误时调用方仍拥有 base |
 | `hyle_vm_region_destroy` | |
-| `hyle_vm_region_valid` / `data` / `size` / `usable` / `usable_size` / `has_guard` / `numa_placement` | 查询 |
+| `hyle_vm_region_valid` / `data` / `size` / `usable` / `usable_size` / `has_guard` / `is_numa_interleaved` / `numa_placement` | 查询 |
 | `hyle_vm_region_commit` / `commit_usable` / `decommit` / `protect` | 子区间，返回 Status |
 
 ### 3.4b Hugepage / THP（DLL + inline，v3）
@@ -136,13 +138,22 @@ soft 建议，绝不影响正确性。Linux 用 madvise；Windows/macOS 匿名�
 |---|---|
 | `hyle_numa_node`：`HYLE_NUMA_ANY` | 具名 enum；`(-1)` 无 NUMA 约束 |
 | `hyle_numa_policy` | `PREFERRED`(软) / `BIND`(硬,Linux) / `INTERLEAVE`(全节点条带) |
-| `hyle_numa_placement` | `APPLIED` / `NOT_NEEDED` / `UNAVAILABLE`（软 preferred 降级） |
-| `hyle_numa_node_count` | 节点数 ≥1 |
-| `hyle_numa_current_node` | 调用线程 home 节点（< count） |
-| `hyle_numa_node_of_cpu(cpu)` | 逻辑 CPU 所属节点（< count；越界/单节点/失败→0）；配单 CPU affinity 把 worker 的 arena 放到其核所在节点 |
-| `hyle_vm_bind_numa(out_placement, ptr, size, node, policy)` | 返回 Status；placement 出参可 NULL；硬绑定/交错无法满足是错误 |
+| `hyle_numa_placement` | `APPLIED`（OS 已接受 policy，不是物理驻留证明）/ `NOT_NEEDED` / `UNAVAILABLE`（软 preferred 降级） |
+| `hyle_numa_capabilities` | runtime feature bitset；用户不要围绕 `HYLE_OS_*` 编译分叉 |
+| `hyle_numa_nodes(NULL,0)` / `(dst,cap)` | 查询总数/复制实际 node id；id 可稀疏，稳定到进程结束 |
+| `hyle_numa_node_count` | `hyle_numa_nodes` 的数量，≥1；不能据此推导 id |
+| `hyle_numa_current_node` | 调用线程 home 节点；失败时回退 nodes 列表首项 |
+| `hyle_numa_node_of_cpu(cpu)` | 逻辑 CPU 所属节点；越界/失败时回退 nodes 列表首项；配单 CPU affinity 放置 worker arena |
+| `hyle_vm_bind_numa(out_placement, ptr, size, node, policy)` | 返回 Status；placement 出参可 NULL；Linux BIND 是严格集合，INTERLEAVE 是 placement policy |
 | `hyle_vm_bind_numa_interleave(out_placement, ptr, size)` | 全节点条带（INTERLEAVE 别名） |
 | `hyle_vm_reserve_numa(out, out_placement, size, node)` | Status+out；preferred 失败仍可成功分配并报告 `UNAVAILABLE` |
+| `hyle_vm_alloc_numa_interleaved(...)` | `nodes==NULL,count==0` 选择全部；显式 id 必须可用、唯一且按条带顺序；`chunk==0` 表示一页 |
+
+capability 是启动期可发现性，操作的 `hyle_status` 才是权限、配额和实时 OS 状态的最终裁决。
+单节点机器上 selected allocation 正常成功并报告 `NOT_NEEDED`；Linux/Windows 多节点会安装
+条带 policy，但目标节点压力下可回退，因此 `APPLIED` 不是逐页 residency 证明；macOS 当前公开
+逻辑 node 0。裸 selected allocation 只允许整段 release；需要自动所有权和防误用
+decommit 时用 `hyle_vm_region_alloc_numa_interleaved`。
 
 ### 3.5 fs / env（DLL）
 
@@ -425,7 +436,7 @@ cwd/home/env/symlink 和 CPU ids/info 使用同一模式；数组的 `cap` 是�
 
 HYLE 未发布，C ABI 面无版本门/协商——发布前按需自由演进，追求干净正确。发布后如何冻结 ABI 见 [`../architecture/c-abi-design.md`](../architecture/c-abi-design.md) §3。
 
-导出面覆盖：wait/Parker、Thread（priority 5 档）、DynLib、VM 自由函数 + VmRegion（含 `reserve_numa`/`adopt`）、hugepage·THP、NUMA（node 查询 + preferred/bind/interleave + `reserve_numa`）、fs/env（权限/符号链接/硬链接/原子临时文件/env 写）、MappedFile（RO/RW/COW + advice/residency）、cpu 全字段。
+导出面覆盖：wait/Parker、Thread（priority 5 档）、DynLib、VM 自由函数 + VmRegion（含 `reserve_numa`/selected interleave/`adopt`）、hugepage·THP、NUMA（实际 node 列表 + runtime capability + preferred/bind/all/selected interleave）、fs/env（权限/符号链接/硬链接/原子临时文件/env 写）、MappedFile（RO/RW/COW + advice/residency）、cpu 全字段。
 
 > mem 的 `StatsAllocator` / `LeakTracker` 不属于 platform 导出面；其 C ABI
 > 位于 [`c-mem.md`](./c-mem.md) §2.2。

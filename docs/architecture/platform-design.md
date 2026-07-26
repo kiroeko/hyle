@@ -43,7 +43,7 @@ deadline 的时间语义仍归 time/sched；不能因为 OS 同时实现二者�
 | OS thread | `Thread`、`ThreadOpts`、`CpuAffinity`、`this_thread::*` | runtime worker、长寿命服务线程、必须控制栈或归属的线程 | move-only；默认 best-effort，required 在 entry 前报告配置失败 |
 | 地址等待 | `detail::wait_on_address*`、`Parker`、`Unparker` | mutex/worker parking/waker 地基 | 裸等待允许伪唤醒；Parker 保存一个 token，解决 unpark-before-park |
 | 虚拟内存 | `VmRegion` 与 `vm_*` | staged commit、guard page、大块地址保留、自定义 owner | 页粒度；reserve 与 commit 分离；RAII 优先，裸函数供底层组合 |
-| NUMA/大页 | `NumaPlacement`、`vm_bind_numa*`、huge-page advice | 大块 arena、per-node backing、THP 提示 | preferred 是软结果；bind/interleave 是硬合同；建议失败不破坏 mapping |
+| NUMA/大页 | `numa_nodes/capabilities`、`vm_*numa*`、huge-page advice | 大块 arena、per-node/selected-node backing、THP 提示 | node id 可稀疏；只有 Linux bind 是严格节点集合；interleave/preferred 是 OS placement policy；建议失败不破坏 mapping |
 | 文件系统与环境 | `FileInfo`、`FileHandle`、无分配 visitor、buffer-fill 查询 | 配置、资源、目录扫描、临时文件、部署环境 | UTF-8 路径；短读写正常；打开 owner 不阻塞原子替换路径 |
 | 文件映射 | `MappedFile` + `Advice`/`prefetch`/`lock` | 大文件随机访问、权重/数据集、COW、显式 warm-up/驻留 | RO/RW/COW；任意 offset；hint 与 residency 不隐式发生 |
 | 动态库 | `DynLib` | 插件、用户 backend、FFI 宿主符号 | open/get/current 语义分开；符号签名由调用方承担 |
@@ -119,15 +119,28 @@ mapping。device VRAM、pinned host memory、coherence 与 GPU completion 归 `c
 residency 使用 `VirtualLock`。unsupported hint 不影响 mapping 的正确性。
 
 NUMA preferred 与 huge-page advice 是策略提示，返回值必须让用户看见是否 applied、not
-needed 或 unavailable。依赖精确放置时使用 bind/interleave 的硬合同并处理失败；软降级后
-mapping 仍然有效。
+needed 或 unavailable。Linux bind 是严格节点集合；interleave/selected interleave 表示 OS 已
+接受条带 policy，Windows 和 Linux 都可能在目标节点内存压力下回退，不能把它宣传成物理页
+驻留证明。软 preferred 降级后 mapping 仍然有效。
 
-当前公共 NUMA 面有意止于 single-node preferred/bind 与 all-available-node interleave，不提供
-oneTBB 风格的 selected-node set + `bytes_per_chunk`。Linux `mbind` 能表达 node mask，却没有同形
-chunk 合同；Windows `VirtualAlloc2` 的公开 NUMA 参数只选择单个 node；macOS 没有对应公开 NUMA
-placement API。为一个 Linux-only benchmark 暴露跨平台名会制造虚假可移植性。真实消费者若需要
-非均匀条带，应先由拥有拓扑与分片生命周期的 sched/graph/应用层给出连续性、fallback 和迁移合同，
-再决定是扩 platform VM 原语还是在上层组合多个 region。
+公共 NUMA 面同时提供拓扑、运行期能力与分配机制：`numa_nodes()` 返回稳定的实际 node id
+列表，id 可能稀疏，不能从 `numa_node_count()` 推导 `[0,count)`；`numa_capabilities()` 区分
+topology、preferred reserve、existing-range bind/interleave 和 selected interleave。用户代码应按
+能力或操作返回的 `Status` 决策，不直接围绕 `HYLE_OS_*` 编译分叉；后者只用于 platform 内部选择
+系统实现。
+
+`vm_allocate_numa_interleaved(size,nodes,bytes_per_chunk)` 拥有一段连续、已提交的 RW 地址区：
+空 node span 表示全部可用节点；显式 id 必须可用且唯一；0 chunk 表示一页，条带遵循调用方给定
+顺序。Linux 在 first-touch 前安装 `mbind` policy：单 node 与普通逐页递增条带只需一个 syscall，
+自定义 chunk/order 每条带一个 policy range，不采用 oneTBB 的先触页、再构造 page 数组、最后
+`move_pages`。Windows 先保留一个连续地址区，再按条带用 NUMA-aware commit，仍可从原始 base
+一次 release。两者的普通内存访问都没有 HYLE metadata/dispatch；validation 为 O(nodes)，必须逐
+条带表达的系统 setup 为 O(size/chunk)。
+
+没有多节点 primitive 的平台不伪造成功：多节点放置请求返回 `Unimplemented`。macOS 当前只暴露
+逻辑 node 0，因此同一 API 正常返回 `NotNeeded` 的普通 allocation。selected allocation 不允许
+decommit/recommit 子区间，因为 Windows 重新提交会丢失 placement；使用 `VmRegion` 时会返回
+`FailedPrecondition`，裸 API 只与整段 `vm_release` 配对。
 
 ## 7. 文件系统只提供跨平台基础资源
 

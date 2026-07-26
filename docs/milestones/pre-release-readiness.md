@@ -113,8 +113,8 @@ math 的处理相反：它当前不是经过独立需求设计的产品，而是
 | 模块 | 实现状态 | 当前严格证书 |
 |---|---|---|
 | error | 功能主体完成 | ✅ 严格收口；全库 adoption 随各消费者复审继续 |
-| platform | 功能主体完成 | ✅ 严格收口 |
-| mem | 功能/API/P0/分发性能已完成 | ✅ 严格收口；clean `c640072` 三平台 shared same-link n=15，107/107 C surface，WSL TSan；selected-node/chunk 明确 non-goal |
+| platform | 功能主体完成 | ✅ 严格收口；NUMA 定向复开补 actual sparse IDs、runtime capability、selected-node/chunk raw/RAII/C 面与明确 OS 差异；当前 120/120 C surface |
+| mem | 功能/API/P0/分发性能已完成 | ✅ 严格收口；clean `c640072` 保留 allocator 三平台 shared same-link n=15 与 WSL TSan；当前 109/109 C surface，HugeRegion selected-node/chunk C++/C 已补齐 |
 | time | 功能主体完成 | ✅ 严格收口；duration/clock API 已修，三平台 correctness/正常使用性能与 WSL sanitizer 已复证 |
 | core | 功能主体存在 | ✅ 严格收口；最终实现 `71dabf7`，三平台同合同无 LOSE |
 | build/package system | 组织与三种交付形状完成 | ✅ 严格收口；最终发布矩阵与触发器见任务页 |

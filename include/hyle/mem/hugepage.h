@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <span>
 #include <utility>
 
 #include "hyle/error/result.h"
@@ -122,35 +123,27 @@ public:
     }
     if (!interleave && numa_node != platform::kNumaAny &&
         (numa_node < 0 ||
-         static_cast<unsigned>(numa_node) >= platform::numa_node_count())) {
+         !platform::numa_node_available(static_cast<unsigned>(numa_node)))) {
       return std::unexpected(Status::OutOfRange(
-          "HugeRegion allocate: NUMA node index is out of range"));
+          "HugeRegion allocate: NUMA node ID is unavailable"));
     }
     if (interleave) {
-      HYLE_ASSIGN_OR_RETURN(r.region_, platform::VmRegion::reserve(aligned));
+      HYLE_ASSIGN_OR_RETURN(
+          r.region_,
+          platform::VmRegion::allocate_numa_interleaved(aligned));
+      r.interleave_chunk_size_ = platform::page_size();
     } else {
       HYLE_ASSIGN_OR_RETURN(r.region_,
                             platform::VmRegion::reserve_numa(aligned, numa_node));
-    }
-    Status status = r.region_.commit(0, r.region_.size());
-    if (!status.ok()) {
-      r.region_.release().IgnoreError();
-      return std::unexpected(
-          std::move(status).WithContext("HugeRegion allocate commit"));
+      Status status = r.region_.commit(0, r.region_.size());
+      if (!status.ok()) {
+        r.region_.release().IgnoreError();
+        return std::unexpected(
+            std::move(status).WithContext("HugeRegion allocate commit"));
+      }
     }
     platform::NumaPlacement placement = r.region_.numa_placement();
     if (interleave) {
-      // Interleave and hard bind are requested guarantees, unlike preferred
-      // placement. Do not return a valid region while silently violating them.
-      auto placed = platform::vm_bind_numa_interleave(r.region_.data(),
-                                                       r.region_.size());
-      if (!placed) {
-        Status error = std::move(placed).error();
-        r.region_.release().IgnoreError();
-        return std::unexpected(
-            std::move(error).WithContext("HugeRegion allocate interleave"));
-      }
-      placement = *placed;
       r.accepted_flags_ = r.accepted_flags_ | HugeFlags::kNumaInterleave;
     } else if (numa_node != platform::kNumaAny) {
       const auto pol = any(flags & HugeFlags::kNumaBind)
@@ -177,7 +170,8 @@ public:
     r.numa_placement_applied_ =
         placement == platform::NumaPlacement::kApplied;
     if (any(flags & HugeFlags::kThpHint)) {
-      status = platform::vm_advise_hugepage(r.region_.data(), r.region_.size());
+      Status status =
+          platform::vm_advise_hugepage(r.region_.data(), r.region_.size());
       if (status.ok())
         r.accepted_flags_ = r.accepted_flags_ | HugeFlags::kThpHint;
     }
@@ -211,14 +205,68 @@ public:
                     platform::kNumaAny);
   }
 
+  // Interleave over an explicit node set. Stripes follow `nodes` order;
+  // an empty span means every available node. bytes_per_chunk==0 means one OS
+  // page. The returned region is already committed and writable.
+  static Result<HugeRegion> allocate_interleaved(
+      std::size_t bytes, std::span<const unsigned> nodes,
+      std::size_t bytes_per_chunk = 0,
+      HugeFlags flags = HugeFlags::kNone) noexcept {
+    flags = flags | HugeFlags::kNumaInterleave;
+    if (!valid_huge_flags(flags)) {
+      return std::unexpected(Status::InvalidArgument(
+          "HugeRegion allocate interleaved: unknown or conflicting flags"));
+    }
+    if (bytes == 0) {
+      return std::unexpected(Status::InvalidArgument(
+          "HugeRegion allocate interleaved: size is zero"));
+    }
+    const std::size_t aligned = platform::large_page_align_up(bytes);
+    if (aligned == 0) {
+      return std::unexpected(
+          Status::OutOfRange("HugeRegion allocate interleaved: size overflow"));
+    }
+
+    HugeRegion r;
+    r.requested_flags_ = flags;
+    r.requested_numa_node_ = platform::kNumaAny;
+    HYLE_ASSIGN_OR_RETURN(
+        r.region_, platform::VmRegion::allocate_numa_interleaved(
+                       aligned, nodes, bytes_per_chunk));
+    r.interleave_chunk_size_ =
+        bytes_per_chunk == 0 ? platform::page_size() : bytes_per_chunk;
+    r.accepted_flags_ = r.accepted_flags_ | HugeFlags::kNumaInterleave;
+    r.numa_placement_applied_ =
+        r.region_.numa_placement() == platform::NumaPlacement::kApplied;
+
+    if (any(flags & HugeFlags::kThpHint)) {
+      Status status =
+          platform::vm_advise_hugepage(r.region_.data(), r.region_.size());
+      if (status.ok()) {
+        r.accepted_flags_ = r.accepted_flags_ | HugeFlags::kThpHint;
+      }
+    }
+    if (any(flags & HugeFlags::kPrefault)) {
+      auto* p = static_cast<volatile char*>(r.region_.data());
+      const std::size_t step = platform::page_size();
+      for (std::size_t off = 0; off < r.region_.size(); off += step) {
+        p[off] = p[off];
+      }
+      r.accepted_flags_ = r.accepted_flags_ | HugeFlags::kPrefault;
+    }
+    return r;
+  }
+
   HugeRegion(HugeRegion &&o) noexcept
       : region_(std::move(o.region_)), requested_flags_(o.requested_flags_),
         accepted_flags_(o.accepted_flags_),
         requested_numa_node_(o.requested_numa_node_),
+        interleave_chunk_size_(o.interleave_chunk_size_),
         numa_placement_applied_(o.numa_placement_applied_) {
     o.accepted_flags_ = HugeFlags::kNone;
     o.requested_flags_ = HugeFlags::kNone;
     o.requested_numa_node_ = platform::kNumaAny;
+    o.interleave_chunk_size_ = 0;
     o.numa_placement_applied_ = false;
   }
   HugeRegion &operator=(HugeRegion &&o) noexcept {
@@ -227,10 +275,12 @@ public:
       requested_flags_ = o.requested_flags_;
       accepted_flags_ = o.accepted_flags_;
       requested_numa_node_ = o.requested_numa_node_;
+      interleave_chunk_size_ = o.interleave_chunk_size_;
       numa_placement_applied_ = o.numa_placement_applied_;
       o.accepted_flags_ = HugeFlags::kNone;
       o.requested_flags_ = HugeFlags::kNone;
       o.requested_numa_node_ = platform::kNumaAny;
+      o.interleave_chunk_size_ = 0;
       o.numa_placement_applied_ = false;
     }
     return *this;
@@ -249,6 +299,10 @@ public:
   // page.
   HugeFlags accepted_flags() const noexcept { return accepted_flags_; }
   int requested_numa_node() const noexcept { return requested_numa_node_; }
+  // Effective stripe size for an interleaved region; 0 otherwise.
+  std::size_t interleave_chunk_size() const noexcept {
+    return interleave_chunk_size_;
+  }
   bool numa_placement_applied() const noexcept {
     return numa_placement_applied_;
   }
@@ -257,6 +311,7 @@ public:
     Status status = region_.release();
     if (!status.ok()) return status;
     accepted_flags_ = HugeFlags::kNone;
+    interleave_chunk_size_ = 0;
     numa_placement_applied_ = false;
     return Status::Ok();
   }
@@ -277,6 +332,7 @@ private:
   HugeFlags requested_flags_ = HugeFlags::kNone;
   HugeFlags accepted_flags_ = HugeFlags::kNone;
   int requested_numa_node_ = platform::kNumaAny;
+  std::size_t interleave_chunk_size_ = 0;
   bool numa_placement_applied_ = false;
 };
 

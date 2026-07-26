@@ -21,6 +21,7 @@
 #include <cstring>
 #include <new>
 #include <optional>
+#include <span>
 #include <type_traits>
 #include <utility>
 
@@ -1136,6 +1137,41 @@ hyle_status hyle_huge_region_open_interleaved(hyle_huge_region_o **out,
   return steal_status(hyle::Status());
 }
 
+hyle_status hyle_huge_region_open_interleaved_nodes(
+    hyle_huge_region_o **out, size_t bytes, uint32_t flags,
+    const unsigned *nodes, size_t node_count, size_t bytes_per_chunk) {
+  constexpr uint32_t kKnownFlags = HYLE_HUGE_THP_HINT | HYLE_HUGE_PREFAULT |
+                                   HYLE_HUGE_NUMA_BIND |
+                                   HYLE_HUGE_NUMA_INTERLEAVE;
+  if (out == nullptr) {
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_huge_region_open_interleaved_nodes: out is NULL"));
+  }
+  *out = nullptr;
+  if (bytes == 0 || (flags & ~kKnownFlags) != 0 ||
+      (flags & HYLE_HUGE_NUMA_BIND) != 0) {
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_huge_region_open_interleaved_nodes: invalid size or flags"));
+  }
+  if (nodes == nullptr && node_count != 0) {
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_huge_region_open_interleaved_nodes: nodes is NULL with nonzero count"));
+  }
+  auto r = hyle::mem::HugeRegion::allocate_interleaved(
+      bytes, std::span<const unsigned>(nodes, node_count), bytes_per_chunk,
+      to_huge_flags(flags));
+  if (!r) return steal_status(std::move(r).error());
+  const hyle_allocator backing = system_backing();
+  auto *handle =
+      allocate_handle<hyle_huge_region_o>(backing, *std::move(r));
+  if (handle == nullptr) {
+    return steal_status(hyle::Status::ResourceExhausted(
+        "hyle_huge_region_open_interleaved_nodes: control allocation failed (out of memory)"));
+  }
+  *out = handle;
+  return steal_status(hyle::Status());
+}
+
 void hyle_huge_region_destroy(hyle_huge_region_o *r) { free_handle(r); }
 
 void *hyle_huge_region_data(hyle_huge_region_o *r) {
@@ -1160,6 +1196,11 @@ int hyle_huge_region_requested_numa_node(const hyle_huge_region_o *r) {
 
 int hyle_huge_region_numa_placement_applied(const hyle_huge_region_o *r) {
   return r && r->region.numa_placement_applied() ? 1 : 0;
+}
+
+size_t hyle_huge_region_interleave_chunk_size(
+    const hyle_huge_region_o *r) {
+  return r ? r->region.interleave_chunk_size() : 0;
 }
 
 /* ---- process-wide policy ---------------------------------------------------

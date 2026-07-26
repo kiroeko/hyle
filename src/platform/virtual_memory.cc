@@ -417,6 +417,21 @@ Result<VmRegion> VmRegion::reserve_numa(std::size_t size, int node) noexcept {
   return r;
 }
 
+Result<VmRegion> VmRegion::allocate_numa_interleaved(
+    std::size_t size, std::span<const unsigned> nodes,
+    std::size_t bytes_per_chunk) noexcept {
+  HYLE_ASSIGN_OR_RETURN(
+      NumaAllocation allocation,
+      vm_allocate_numa_interleaved(size, nodes, bytes_per_chunk));
+  VmRegion region;
+  region.base_ = allocation.data;
+  region.size_ = allocation.size;
+  region.guarded_ = false;
+  region.numa_interleaved_ = true;
+  region.numa_placement_ = allocation.placement;
+  return region;
+}
+
 Result<VmRegion> VmRegion::adopt(void* base, std::size_t size) noexcept {
   VmRegion r;
   if (base == nullptr || size == 0) {
@@ -475,10 +490,12 @@ VmRegion::VmRegion(VmRegion&& o) noexcept
     : base_(o.base_),
       size_(o.size_),
       guarded_(o.guarded_),
+      numa_interleaved_(o.numa_interleaved_),
       numa_placement_(o.numa_placement_) {
   o.base_ = nullptr;
   o.size_ = 0;
   o.guarded_ = false;
+  o.numa_interleaved_ = false;
   o.numa_placement_ = NumaPlacement::kNotNeeded;
 }
 
@@ -488,10 +505,12 @@ VmRegion& VmRegion::operator=(VmRegion&& o) noexcept {
     base_ = o.base_;
     size_ = o.size_;
     guarded_ = o.guarded_;
+    numa_interleaved_ = o.numa_interleaved_;
     numa_placement_ = o.numa_placement_;
     o.base_ = nullptr;
     o.size_ = 0;
     o.guarded_ = false;
+    o.numa_interleaved_ = false;
     o.numa_placement_ = NumaPlacement::kNotNeeded;
   }
   return *this;
@@ -513,6 +532,10 @@ Status VmRegion::decommit(std::size_t offset, std::size_t len) noexcept {
                : Status::FailedPrecondition("VmRegion decommit: region is empty");
   }
   if (len == 0) return Status::Ok();
+  if (numa_interleaved_) {
+    return Status::FailedPrecondition(
+        "VmRegion decommit: selected NUMA placement would be lost; release the region instead");
+  }
   return vm_decommit(static_cast<std::byte*>(base_) + offset, len);
 }
 
@@ -544,6 +567,7 @@ Status VmRegion::release() noexcept {
   base_ = nullptr;
   size_ = 0;
   guarded_ = false;
+  numa_interleaved_ = false;
   numa_placement_ = NumaPlacement::kNotNeeded;
   return Status::Ok();
 }

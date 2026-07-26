@@ -280,9 +280,11 @@ typed 宏为 `HYLE_GROWABLE_POOL_CREATE/ACQUIRE/RELEASE`。需要 ctor/dtor 的 
 | `hyle_huge_region_open(&out, bytes, flags, numa_node)` | reserve+commit，按 flags/node 放置；直接返回 VM/NUMA 的结构化 Status |
 | `hyle_huge_region_open_local` | 偏好调用线程 home node |
 | `hyle_huge_region_open_interleaved` | 跨节点条带 + THP |
+| `hyle_huge_region_open_interleaved_nodes(&out, bytes, flags, nodes, count, chunk)` | selected-node/chunk 条带；NULL/0 选择全部，显式 id 唯一且顺序有意义；保持条带 policy 粒度通常用 `HYLE_HUGE_NONE` |
 | `hyle_huge_region_destroy` / `data` / `size` | 生命周期与查询；`open*` 成功只交付有效 handle，因此不导出恒真的 `valid` 镜像 |
 | `hyle_huge_region_requested_flags` / `accepted_flags` | 区分请求策略与 OS-facing call 已接受策略 |
-| `hyle_huge_region_requested_numa_node` / `numa_placement_applied` | NUMA 请求与实际 placement 结果 |
+| `hyle_huge_region_requested_numa_node` / `numa_placement_applied` | NUMA 请求与 policy 是否被 OS 接受；不是逐页 residency 证明 |
+| `hyle_huge_region_interleave_chunk_size` | interleaved region 的实际条带大小；其它 region 为 0 |
 | `hyle_enable_allocator_hugepages` | 启用 mimalloc THP / large OS page 策略 |
 | `hyle_enable_allocator_numa` | 配置 mimalloc NUMA node 数 |
 | `hyle_reserve_huge_1g_pages` | 预留 1GiB 大页；非法 node/溢出返回 OUT_OF_RANGE，mimalloc 无法取得连续 host RAM 时返回 RESOURCE_EXHAUSTED，并保留 native error |
@@ -291,9 +293,12 @@ mem 不再维护私有 TLS error code/string。冷路径与全库共用 `hyle_st
 零值、零分配，错误消息分配失败时仍保留 code。热分配路径则完全不构造 Status。
 
 flags：`HYLE_HUGE_THP_HINT`、`HYLE_HUGE_PREFAULT`、`HYLE_HUGE_NUMA_BIND`、`HYLE_HUGE_NUMA_INTERLEAVE`；bind/interleave 互斥，interleave 只能搭配 `HYLE_MEM_NUMA_ANY`，也不能传给 `open_local`。无 NUMA 约束用 `HYLE_MEM_NUMA_ANY`。
-当前 C 面同样不提供 selected-node set / `bytes_per_chunk`：Linux、Windows、macOS 没有可诚实
-映射的共同合同。需要拓扑感知非均匀分片的调用方应显式创建多个 region，并在拥有调度/图
-生命周期的上层分配工作；不要假设 `open_interleaved` 支持自定义 node 子集。
+selected-node 调用前用 platform 的 `hyle_numa_nodes` 取得实际 id，不要从 count 猜 `[0,count)`；
+用 `hyle_numa_capabilities` 可预检，多节点 policy 是否成功安装仍以返回 Status 为准；目标节点
+压力下 OS 可以回退。`count==0` 选择全部节点，
+`chunk==0` 表示一页。`open_interleaved` 是“全部节点 + THP”的便利形状；需要自定义集合或条带
+时用 `open_interleaved_nodes`。THP 可能把物理粒度扩大；需保持请求的条带 policy 粒度时传
+`HYLE_HUGE_NONE`，仅在 workload 接受时显式叠加 THP/PREFAULT。
 
 ## 8. 常用写法
 

@@ -231,9 +231,12 @@ variable-size pool 对象，这是有意的产品边界，不是“没有可变�
 
 - `HugeRegion`、显式 NUMA bind/interleave、THP/prefault 保留；bind/interleave 互斥，interleave
   只能搭配 NUMA-any 且不能走 local factory；策略失败是可观察的降级或错误，不保证自动 NUMA 最优。
-- selected-node set + `bytes_per_chunk` 明确保持 non-goal：Linux mask、Windows single-node
-  `VirtualAlloc2` 与 macOS 无公开 NUMA API 无法形成诚实三平台合同；现有 single-node 与 all-node
-  interleave 覆盖基础 VM 原语。真实分片消费者出现后，由 platform 与拥有拓扑生命周期的上层共同重开。
+- selected-node set + `bytes_per_chunk` 由 platform 统一拥有跨 OS 机制，mem 只以
+  `HugeRegion::allocate_interleaved(bytes,nodes,chunk,flags)` 提供大块 owner 形状。空 node span
+  表示全部可用节点；顺序、唯一性、page 粒度和能力失败沿用 platform 合同；C 用
+  `hyle_huge_region_open_interleaved_nodes` 达到同一能力。`interleave_chunk_size()` 可观察实际条带。
+  要保持自定义条带 policy 粒度时默认不请求 THP；显式叠加 THP 仍只是 advice，物理大页粒度
+  可能覆盖更小条带。
 - `reserve_huge_1g_pages` 是进程启动期冷控制面，原生 C++ 返回 `Status`，C ABI 原样转移同一
   representation；不得在 C 层把 bool 重新猜成错误原因。mimalloc 当前只暴露 ENOMEM，映射
   `ResourceExhausted` 并在 message 保留 native value，非法 node/溢出为 `OutOfRange`。
@@ -264,7 +267,7 @@ variable-size pool 对象，这是有意的产品边界，不是“没有可变�
 | preserve/RAII loan | `PreservingObjectPool<T>`、`PoolLoan` | raw slot acquire/release，由调用方管理 init/cleanup | 能力可组合；C 不伪造 ctor/dtor/RAII |
 | PMR | `system_memory_resource()` / `PmrResource` / `AlignedPmrResource` | 不适用 | 默认 system singleton 与运行时注入分型；后者只提高 container buffer 的 base alignment，不保证 element 间隔 |
 | guarded fiber stack | `FiberStack`、`FiberStackPool` | sched C ABI 内部消费 | scheduler-owned runtime specialization；有界 retention + cold trim；shutdown 自动归还，不暴露危险 raw stack control |
-| THP/NUMA span | `HugeRegion` + policy、`reserve_huge_1g_pages` | `hyle_huge_region_*` + policy | 显式请求、可观察 accepted/applied 状态；冷预留失败返回同一 Status |
+| THP/NUMA span | `HugeRegion` + policy/selected nodes/chunk、`reserve_huge_1g_pages` | `hyle_huge_region_*` + policy/selected nodes/chunk | 显式请求、可观察 accepted/applied/chunk 状态；冷预留失败返回同一 Status |
 
 C ABI 的“完整”按用户能力可达判断，不按 C++ 符号 1:1 判断。模板 ctor/dtor、RAII 和 PMR
 没有自然 C 对象形状；raw slot 与显式 cleanup 是 C 的惯用表达。属于 C 用户范围的标量状态

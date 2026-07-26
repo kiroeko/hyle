@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <span>
 
 #include "hyle/error/result.h"
 #include "hyle/macros.h"
@@ -22,8 +23,8 @@
 //   Bind      — hard node (Linux MPOL_BIND; may fail if node is tight)
 //   Interleave— stripe across all nodes (shared large arenas)
 //
-// Single-node machines: count==1, current==0; bind/interleave return
-// kNotNeeded. No libnuma / hwloc.
+// Single-node machines: count==1, current is the sole actual node ID;
+// bind/interleave return kNotNeeded. No libnuma / hwloc.
 
 namespace hyle::platform {
 
@@ -37,29 +38,78 @@ enum class NumaPolicy : std::uint8_t {
   kInterleave = 2,  // MPOL_INTERLEAVE all nodes (Linux)
 };
 
-// Whether a successful NUMA request changed placement. Preferred placement may
-// legitimately fall back while leaving a fully usable allocation; callers must
-// not confuse that with an applied policy.
+// Whether the OS accepted a NUMA policy request. kApplied records policy
+// installation, not a residency proof: preferred/interleave policies may use
+// another node under memory pressure. Linux kBind is the strict-node policy.
+// Preferred reservation may also fall back before installing a policy while
+// leaving a fully usable allocation.
 enum class NumaPlacement : std::uint8_t {
   kApplied = 0,
   kNotNeeded = 1,   // ANY, empty range, or a single-node machine
   kUnavailable = 2  // soft preferred fallback; allocation remains usable
 };
 
+// Native NUMA operations available to this process. A capability describes
+// the OS primitive, not whether using it is necessary on the current machine:
+// a single-node host can support an operation that returns kNotNeeded.
+enum class NumaCapability : std::uint32_t {
+  kNone = 0,
+  kTopology = 1u << 0,
+  kPreferredReservation = 1u << 1,
+  kBindExisting = 1u << 2,
+  kInterleaveExisting = 1u << 3,
+  kSelectedInterleave = 1u << 4,
+};
+
+HYLE_FORCE_INLINE constexpr NumaCapability operator|(NumaCapability a,
+                                                       NumaCapability b) noexcept {
+  return static_cast<NumaCapability>(static_cast<std::uint32_t>(a) |
+                                     static_cast<std::uint32_t>(b));
+}
+HYLE_FORCE_INLINE constexpr NumaCapability operator&(NumaCapability a,
+                                                       NumaCapability b) noexcept {
+  return static_cast<NumaCapability>(static_cast<std::uint32_t>(a) &
+                                     static_cast<std::uint32_t>(b));
+}
+HYLE_FORCE_INLINE constexpr bool has_numa_capability(
+    NumaCapability capabilities, NumaCapability capability) noexcept {
+  return static_cast<std::uint32_t>(capabilities & capability) != 0;
+}
+
 struct NumaReservation {
   void* data = nullptr;
   NumaPlacement placement = NumaPlacement::kNotNeeded;
 };
 
+// A committed read-write allocation. `size` is the page-rounded release size;
+// pair `data,size` with vm_release, or prefer VmRegion::allocate_numa_interleaved.
+// Do not decommit/recommit subranges: that can discard the requested placement.
+struct NumaAllocation {
+  void* data = nullptr;
+  std::size_t size = 0;
+  NumaPlacement placement = NumaPlacement::kNotNeeded;
+};
+
+// Native feature discovery. This is the preferred runtime boundary; public
+// callers normally should not branch on HYLE_OS_* themselves.
+HYLE_PLATFORM_API NumaCapability numa_capabilities() noexcept;
+
+// Stable process-lifetime list of actual NUMA node IDs. IDs are not required
+// to be dense. Unsupported/single-node hosts expose the logical node {0}.
+HYLE_PLATFORM_API std::span<const unsigned> numa_nodes() noexcept;
+
+// True iff `node` is present in numa_nodes().
+HYLE_PLATFORM_API bool numa_node_available(unsigned node) noexcept;
+
 // Number of NUMA nodes with memory/CPUs, always >= 1.
 HYLE_PLATFORM_API unsigned numa_node_count() noexcept;
 
-// Home node of the calling thread (0 on failure / single-node / unsupported).
-// Always < numa_node_count().
+// Home node of the calling thread. On failure/unsupported, returns the first
+// logical ID in numa_nodes(); the result is always an available node ID.
 HYLE_PLATFORM_API unsigned numa_current_node() noexcept;
 
-// NUMA node owning logical CPU `cpu` (0 on failure / single-node / unsupported /
-// out-of-range cpu). Always < numa_node_count(). Lets a caller that pinned a
+// NUMA node owning logical CPU `cpu` (first available node on failure,
+// single-node, unsupported, or out-of-range cpu). Lets a caller that pinned a
 // worker to a core (ThreadOpts::affinity) place that worker's arena on the
 // core's node via vm_reserve_numa. Not a hot path (a /sys walk on Linux).
 HYLE_PLATFORM_API unsigned numa_node_of_cpu(unsigned cpu) noexcept;
@@ -82,5 +132,23 @@ HYLE_PLATFORM_API Result<NumaPlacement> vm_bind_numa_interleave(
 // from a soft preferred fallback. Caller commits/releases `data` with vm_*.
 HYLE_PLATFORM_API Result<NumaReservation> vm_reserve_numa(
     std::size_t size, int node) noexcept;
+
+// Allocate one contiguous, committed RW span striped over selected NUMA nodes.
+// An empty `nodes` span selects all nodes. Node IDs must be available and
+// unique; stripes follow the supplied order. bytes_per_chunk is 0 for one OS
+// page, otherwise it must be a page-size multiple. Setup is O(nodes) plus
+// O(size/bytes_per_chunk) where the OS lacks a whole-range policy (a single
+// node and Linux's ordinary page stripe are O(1) in allocation size). Ordinary
+// memory access has no HYLE dispatch or metadata cost.
+//
+// Linux applies mbind policies before first touch. Windows reserves one address
+// range and commits each stripe with a preferred node. Interleave/preference is
+// a placement policy, not a physical-residency proof; the OS may fall back
+// under pressure. A platform without a multi-node primitive returns
+// Unimplemented rather than silently omitting the policy. Single-node
+// placement is a normal allocation with kNotNeeded.
+HYLE_PLATFORM_API Result<NumaAllocation> vm_allocate_numa_interleaved(
+    std::size_t size, std::span<const unsigned> nodes = {},
+    std::size_t bytes_per_chunk = 0) noexcept;
 
 }  // namespace hyle::platform

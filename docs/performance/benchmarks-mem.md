@@ -34,6 +34,13 @@ PLT。现在外部 `SystemAllocator` 仍走公开 seam，库内 adapter 走同�
 这不是为 benchmark 增加 cache/metadata，而是删除错误的内部动态链接边界；WSL
 `system_memory_resource()` 对 direct-backend PMR 从上一候选的 0.946x 恢复为 1.039x。
 
+2026-07-26 selected-node/chunk NUMA 由 platform 机制层补齐；`HugeRegion` 只是 move-only owner
+与可选 THP/prefault policy，不复制条带算法。为避免用同一实现再造一张看似独立的性能表，
+allocation + first-touch + release 对 oneTBB 的同合同数据统一记在
+[`benchmarks-platform.md`](./benchmarks-platform.md#2026-07-26-selected-nodechunk-numa)。当前 Windows/WSL
+单节点 n=15 均为 TIE；真正多 socket placement/bandwidth 尚待对应硬件签证，不能由单节点结果
+外推。HugeRegion 不增加每次内存访问的 metadata 或 dispatch。
+
 `1de939d` 还关闭了两个正常路径结构问题：SharedPool 将约 2 KiB 的 O(shards) stable-empty
 observation 栈状态移入 noinline exhaustion 冷路（MSVC shipping codegen 的成功入口只保留
 32B 栈帧）；FixedPool 将 retained-span/后一空闲邻块 grow 内联，搬移+copy 独立为 noinline

@@ -3,6 +3,7 @@
 #define _CRT_SECURE_NO_WARNINGS 1
 #endif
 #include "hyle/c/mem.h"
+#include "hyle/c/platform.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -806,6 +807,34 @@ int main(void) {
     CHECK_OK(hyle_huge_region_open_interleaved(&hi, bytes));
     CHECK(hi != NULL);
     hyle_huge_region_destroy(hi);
+
+    unsigned selected_node = 0;
+    (void)hyle_numa_nodes(&selected_node, 1);
+    hyle_status selected_status = hyle_huge_region_open_interleaved_nodes(
+        &hi, bytes, HYLE_HUGE_PREFAULT, &selected_node, 1,
+        hyle_page_size() * 2);
+    int selected_available =
+        hyle_numa_node_count() <= 1u ||
+        (hyle_numa_capabilities() & HYLE_NUMA_CAP_SELECTED_INTERLEAVE) != 0u;
+    if (selected_available) {
+      CHECK(hyle_status_is_ok(selected_status));
+      CHECK(hi != NULL);
+    } else {
+      CHECK(hyle_status_is_unimplemented(selected_status));
+      CHECK(hi == NULL);
+    }
+    hyle_status_free(&selected_status);
+    if (hi != NULL) {
+      CHECK(hyle_huge_region_interleave_chunk_size(hi) ==
+            hyle_page_size() * 2);
+      hyle_huge_region_destroy(hi);
+    }
+    unsigned duplicate_nodes[2] = {selected_node, selected_node};
+    hyle_status duplicate_status = hyle_huge_region_open_interleaved_nodes(
+        &hi, bytes, HYLE_HUGE_NONE, duplicate_nodes, 2, hyle_page_size());
+    CHECK(hyle_status_is_invalid_argument(duplicate_status));
+    CHECK(hi == NULL);
+    hyle_status_free(&duplicate_status);
 
     hyle_status status = hyle_huge_region_open(
         &hr, bytes, HYLE_HUGE_NUMA_BIND | HYLE_HUGE_NUMA_INTERLEAVE,

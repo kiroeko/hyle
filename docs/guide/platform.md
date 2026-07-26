@@ -13,6 +13,7 @@ platform 是 HYLE 的跨 OS 原语层。它服务两类调用者：HYLE 内部�
 | 先占地址、以后分段提交 | `VmRegion::reserve` + `commit/decommit` | 普通 heap 分配 | 页粒度；地址空间与物理提交分离 |
 | 有越界保护的 fiber/线程栈 | `VmRegion::reserve_guarded` | 手写 magic padding | 低一页 no-access；`usable()` 才可写 |
 | 大块页内存偏好某 NUMA node | `reserve_numa` / `vm_bind_numa` | 把 soft preferred 当硬保证 | 检查 `NumaPlacement` |
+| 连续地址按选定 NUMA nodes/chunk 条带 | `VmRegion::allocate_numa_interleaved` | 分配后才 move pages | 已提交；node id 可稀疏；整段 release，不 decommit |
 | 普通小对象、容器 backing | mem 的 `Allocator` / `Region` | platform VM | platform 不替代 malloc |
 | 顺序读写普通文件 | `FileHandle` | `MappedFile` | move-only；短读/短写正常；显式 close 可观察错误 |
 | 原子创建临时文件 | `create_temp_file` | 先生成名字再 open | 返回已打开 handle，避免 TOCTOU |
@@ -234,8 +235,39 @@ logical-id 硬绑映射，所以 per-CPU rank 明确 unknown；低延迟/强核�
 `cache_info()` 仍只是容量提示，不猜 cache sharing。NUMA/cache-aware stealing 属于 sched
 策略；platform 只提供可组合的 CPU 事实、排序与 affinity 机制。
 
-NUMA preferred 是软策略：分配成功而 placement 为 `Unavailable` 仍是一块可用内存。只有
-bind/interleave 的硬策略失败才应让依赖精确放置的工作失败。
+NUMA preferred 是软策略：分配成功而 placement 为 `Unavailable` 仍是一块可用内存。Linux
+bind 是严格节点集合；interleave/selected interleave 的 `Applied` 只说明 OS 接受 policy，
+Windows 和 Linux 都可能在目标节点内存压力下回退，不能把它当成逐页 residency 证明。
+
+先用 `numa_nodes()` 取得真实可用 id；它们可能稀疏，因此不要写
+`for (unsigned n=0; n<numa_node_count(); ++n)`。`numa_capabilities()` 适合启动期预检或 UI
+报告，实际操作返回的 `Status` 仍是最终结果。`HYLE_OS_*` 是 HYLE 实现层分派宏，不是用户
+选择 NUMA 路径的公共合同：
+
+```cpp
+using namespace hyle::platform;
+
+constexpr std::size_t kMiB = 1024u * 1024u;
+const auto available = numa_nodes();                 // stable non-owning view
+const auto capabilities = numa_capabilities();
+if (available.size() > 1 &&
+    has_numa_capability(capabilities,
+                        NumaCapability::kSelectedInterleave)) {
+  const unsigned chosen[] = {available.front(), available.back()};
+  HYLE_ASSIGN_OR_RETURN(
+      VmRegion weights,
+      VmRegion::allocate_numa_interleaved(64u * kMiB, chosen, 2u * kMiB));
+  // weights 已提交可写；析构/整段 release。不要 decommit 后再 commit。
+}
+```
+
+空 node span 选择所有可用节点；显式列表必须是可用且唯一的实际 id，条带 policy 按输入顺序；
+`bytes_per_chunk==0` 表示一页，否则必须是页大小的整数倍。单节点机器返回正常 allocation 和
+`NumaPlacement::kNotNeeded`。Linux 在 first-touch 前设置 policy；Windows 在一个连续 reserve
+中按条带 preferred-node NUMA commit；macOS 当前只有逻辑 node 0。policy 成功不是物理页
+永久驻留证明；需要托管生命周期时优先 `VmRegion`；裸
+`vm_allocate_numa_interleaved` 返回 page-rounded size，只与整段 `vm_release` 配对。selected
+region 的 `decommit` 会以 `FailedPrecondition` 拒绝，防止 recommit 静默丢掉 placement。
 
 ## 错误与所有权
 

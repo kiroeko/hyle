@@ -8,6 +8,7 @@
 
 #include <limits.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 static int g_fails = 0;
@@ -676,9 +677,26 @@ int main(void) {
   {
     unsigned nc = hyle_numa_node_count();
     CHECK(nc >= 1u);
-    CHECK(hyle_numa_current_node() < nc);
-    CHECK(hyle_numa_node_of_cpu(0) < nc);         /* CPU 0 -> a valid node */
-    CHECK(hyle_numa_node_of_cpu(1u << 20) < nc);  /* out-of-range CPU: 0 fallback */
+    size_t required_nodes = hyle_numa_nodes(NULL, 0);
+    CHECK(required_nodes == nc);
+    unsigned* node_ids = (unsigned*)malloc(required_nodes * sizeof(unsigned));
+    CHECK(node_ids != NULL);
+    if (node_ids == NULL) return 1;
+    CHECK(hyle_numa_nodes(node_ids, required_nodes) == required_nodes);
+    int current_found = 0;
+    int cpu_found = 0;
+    for (size_t i = 0; i < required_nodes; ++i) {
+      if (node_ids[i] == hyle_numa_current_node()) current_found = 1;
+      if (node_ids[i] == hyle_numa_node_of_cpu(0)) cpu_found = 1;
+      if (i != 0) CHECK(node_ids[i - 1] < node_ids[i]);
+    }
+    CHECK(current_found);
+    CHECK(cpu_found);
+    uint32_t numa_capabilities = hyle_numa_capabilities();
+    CHECK((numa_capabilities & ~((1u << 5) - 1u)) == 0u);
+    int selected_available =
+        nc <= 1u ||
+        (numa_capabilities & HYLE_NUMA_CAP_SELECTED_INTERLEAVE) != 0u;
 
     size_t pg = hyle_page_size();
     /* ANY == plain reserve; region is writable after commit. */
@@ -700,11 +718,11 @@ int main(void) {
           HYLE_STATUS_INVALID_ARGUMENT);
     /* Preferred to a valid node: soft, always OK. */
     CHECK(status_ok(hyle_vm_bind_numa(
-        &placement, rn, pg * 2, 0, HYLE_NUMA_PREFERRED)));
+        &placement, rn, pg * 2, (int)node_ids[0], HYLE_NUMA_PREFERRED)));
     /* Single-node box: hard bind / interleave degrade to no-op success. */
     if (nc <= 1u) {
       CHECK(status_ok(hyle_vm_bind_numa(
-          &placement, rn, pg * 2, 0, HYLE_NUMA_BIND)));
+          &placement, rn, pg * 2, (int)node_ids[0], HYLE_NUMA_BIND)));
       CHECK(status_ok(hyle_vm_bind_numa_interleave(
           &placement, rn, pg * 2)));
     }
@@ -716,6 +734,51 @@ int main(void) {
         &rl, &placement, pg, (int)hyle_numa_current_node())));
     CHECK(rl != NULL);
     CHECK(status_ok(hyle_vm_release(rl, pg)));
+
+    /* selected-node/chunk committed allocation; ordinary release owns it. */
+    void* striped = NULL;
+    hyle_status striped_status = hyle_vm_alloc_numa_interleaved(
+        &striped, &placement, pg * 8, node_ids, 1, pg * 2);
+    if (selected_available) {
+      CHECK(hyle_status_is_ok(striped_status));
+      CHECK(striped != NULL);
+    } else {
+      CHECK(hyle_status_is_unimplemented(striped_status));
+      CHECK(striped == NULL);
+    }
+    hyle_status_free(&striped_status);
+    if (striped != NULL) {
+      ((unsigned char*)striped)[pg * 7] = 0x7C;
+      CHECK(((unsigned char*)striped)[pg * 7] == 0x7C);
+      CHECK(status_ok(hyle_vm_release(striped, pg * 8)));
+    }
+    CHECK(status_code(hyle_vm_alloc_numa_interleaved(
+              &striped, NULL, pg, NULL, 1, pg)) ==
+          HYLE_STATUS_INVALID_ARGUMENT);
+    unsigned duplicate[2] = {node_ids[0], node_ids[0]};
+    CHECK(status_code(hyle_vm_alloc_numa_interleaved(
+              &striped, NULL, pg, duplicate, 2, pg)) ==
+          HYLE_STATUS_INVALID_ARGUMENT);
+
+    hyle_vm_region_o* striped_region = NULL;
+    hyle_status region_status = hyle_vm_region_alloc_numa_interleaved(
+        &striped_region, pg * 4, node_ids, 1, pg);
+    if (selected_available) {
+      CHECK(hyle_status_is_ok(region_status));
+      CHECK(striped_region != NULL);
+      CHECK(hyle_vm_region_is_numa_interleaved(striped_region));
+      CHECK(hyle_vm_region_numa_placement(striped_region) == placement ||
+            hyle_vm_region_numa_placement(striped_region) ==
+                HYLE_NUMA_PLACEMENT_NOT_NEEDED);
+      CHECK(status_code(hyle_vm_region_decommit(striped_region, 0, pg)) ==
+            HYLE_STATUS_FAILED_PRECONDITION);
+      hyle_vm_region_destroy(striped_region);
+    } else {
+      CHECK(hyle_status_is_unimplemented(region_status));
+      CHECK(striped_region == NULL);
+    }
+    hyle_status_free(&region_status);
+    free(node_ids);
   }
 
   /* v3: hugepage / THP hints (soft; size may be 0 on exotic arches) */

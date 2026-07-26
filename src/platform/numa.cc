@@ -1,7 +1,9 @@
 #include "hyle/platform/numa.h"
 
+#include <array>
 #include <cstdio>
 #include <cstring>
+#include <limits>
 
 #include "hyle/macros.h"
 #include "hyle/platform.h"
@@ -25,11 +27,11 @@ namespace {
 Status numa_native_status(const char* operation, DWORD code) noexcept {
   char description[160]{};
   DWORD length = ::FormatMessageA(
-      FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr,
-      code, 0, description, sizeof(description), nullptr);
-  while (length > 0 && (description[length - 1] == '\r' ||
-                        description[length - 1] == '\n' ||
-                        description[length - 1] == ' ')) {
+      FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, code,
+      0, description, sizeof(description), nullptr);
+  while (length > 0 &&
+         (description[length - 1] == '\r' || description[length - 1] == '\n' ||
+          description[length - 1] == ' ')) {
     description[--length] = '\0';
   }
   char message[288]{};
@@ -61,8 +63,8 @@ Status numa_native_status(const char* operation, int code) noexcept {
   }
 #  endif
   char message[288]{};
-  std::snprintf(message, sizeof(message), "%s failed (errno=%d): %s",
-                operation, code, text);
+  std::snprintf(message, sizeof(message), "%s failed (errno=%d): %s", operation,
+                code, text);
   return Status(status_code_from_errno(code), message);
 }
 #endif
@@ -72,9 +74,12 @@ Status numa_native_status(const char* operation, int code) noexcept {
 using PGetNumaHighestNodeNumber = BOOL(WINAPI*)(PULONG);
 using PGetCurrentProcessorNumberEx = void(WINAPI*)(PROCESSOR_NUMBER*);
 using PGetNumaProcessorNodeEx = BOOL(WINAPI*)(PPROCESSOR_NUMBER, PUSHORT);
+using PGetNumaAvailableMemoryNodeEx = BOOL(WINAPI*)(USHORT, PULONGLONG);
+using PVirtualAllocExNuma = LPVOID(WINAPI*)(HANDLE, LPVOID, SIZE_T, DWORD,
+                                            DWORD, DWORD);
 
-#pragma warning(push)
-#pragma warning(disable : 4201)
+#  pragma warning(push)
+#  pragma warning(disable : 4201)
 struct HyleMemExtendedParameter {
   struct {
     DWORD64 Type : 8;
@@ -88,9 +93,16 @@ struct HyleMemExtendedParameter {
     DWORD ULong;
   };
 };
-#pragma warning(pop)
+#  pragma warning(pop)
 
 enum { kMemExtendedParameterNumaNode = 2 };
+
+// Keep the public Windows SDK level out of HYLE's API contract. These values
+// are the documented VirtualAlloc2/VirtualFree placeholder flags and let a
+// build with an older SDK still discover the entry point at runtime.
+inline constexpr ULONG kMemReplacePlaceholder = 0x00004000UL;
+inline constexpr ULONG kMemReservePlaceholder = 0x00040000UL;
+inline constexpr DWORD kMemPreservePlaceholder = 0x00000002UL;
 
 using PVirtualAlloc2 = PVOID(WINAPI*)(HANDLE, PVOID, SIZE_T, ULONG, ULONG,
                                       HyleMemExtendedParameter*, ULONG);
@@ -99,6 +111,8 @@ struct WinNumaFns {
   PGetNumaHighestNodeNumber get_highest = nullptr;
   PGetCurrentProcessorNumberEx get_cpu_ex = nullptr;
   PGetNumaProcessorNodeEx get_node_ex = nullptr;
+  PGetNumaAvailableMemoryNodeEx get_memory_ex = nullptr;
+  PVirtualAllocExNuma virtual_alloc_ex_numa = nullptr;
   PVirtualAlloc2 virtual_alloc2 = nullptr;
 };
 
@@ -107,17 +121,26 @@ WinNumaFns& win_fns() {
     WinNumaFns x;
     HMODULE k32 = ::GetModuleHandleW(L"kernel32.dll");
     if (k32) {
-      x.get_highest = reinterpret_cast<PGetNumaHighestNodeNumber>(
-          reinterpret_cast<void*>(::GetProcAddress(k32, "GetNumaHighestNodeNumber")));
+      x.get_highest =
+          reinterpret_cast<PGetNumaHighestNodeNumber>(reinterpret_cast<void*>(
+              ::GetProcAddress(k32, "GetNumaHighestNodeNumber")));
       x.get_cpu_ex = reinterpret_cast<PGetCurrentProcessorNumberEx>(
-          reinterpret_cast<void*>(::GetProcAddress(k32, "GetCurrentProcessorNumberEx")));
-      x.get_node_ex = reinterpret_cast<PGetNumaProcessorNodeEx>(
-          reinterpret_cast<void*>(::GetProcAddress(k32, "GetNumaProcessorNodeEx")));
+          reinterpret_cast<void*>(
+              ::GetProcAddress(k32, "GetCurrentProcessorNumberEx")));
+      x.get_node_ex =
+          reinterpret_cast<PGetNumaProcessorNodeEx>(reinterpret_cast<void*>(
+              ::GetProcAddress(k32, "GetNumaProcessorNodeEx")));
+      x.get_memory_ex = reinterpret_cast<PGetNumaAvailableMemoryNodeEx>(
+          reinterpret_cast<void*>(
+              ::GetProcAddress(k32, "GetNumaAvailableMemoryNodeEx")));
+      x.virtual_alloc_ex_numa = reinterpret_cast<PVirtualAllocExNuma>(
+          reinterpret_cast<void*>(::GetProcAddress(k32, "VirtualAllocExNuma")));
       x.virtual_alloc2 = reinterpret_cast<PVirtualAlloc2>(
           reinterpret_cast<void*>(::GetProcAddress(k32, "VirtualAlloc2")));
       if (!x.virtual_alloc2) {
-        x.virtual_alloc2 = reinterpret_cast<PVirtualAlloc2>(
-            reinterpret_cast<void*>(::GetProcAddress(k32, "VirtualAlloc2FromApp")));
+        x.virtual_alloc2 =
+            reinterpret_cast<PVirtualAlloc2>(reinterpret_cast<void*>(
+                ::GetProcAddress(k32, "VirtualAlloc2FromApp")));
       }
     }
     return x;
@@ -128,25 +151,28 @@ WinNumaFns& win_fns() {
 #elif defined(HYLE_OS_LINUX)
 
 // linux/mempolicy.h constants (avoid header dependency).
-#ifndef MPOL_DEFAULT
-#  define MPOL_DEFAULT 0
-#endif
-#ifndef MPOL_PREFERRED
-#  define MPOL_PREFERRED 1
-#endif
-#ifndef MPOL_BIND
-#  define MPOL_BIND 2
-#endif
-#ifndef MPOL_INTERLEAVE
-#  define MPOL_INTERLEAVE 3
-#endif
+#  ifndef MPOL_DEFAULT
+#    define MPOL_DEFAULT 0
+#  endif
+#  ifndef MPOL_PREFERRED
+#    define MPOL_PREFERRED 1
+#  endif
+#  ifndef MPOL_BIND
+#    define MPOL_BIND 2
+#  endif
+#  ifndef MPOL_INTERLEAVE
+#    define MPOL_INTERLEAVE 3
+#  endif
+#  ifndef MPOL_F_MEMS_ALLOWED
+#    define MPOL_F_MEMS_ALLOWED (1UL << 2)
+#  endif
 
 long sys_mbind(void* start, unsigned long len, unsigned long mode,
                const unsigned long* nmask, unsigned long maxnode,
                unsigned flags) {
-#if defined(SYS_mbind)
+#  if defined(SYS_mbind)
   return ::syscall(SYS_mbind, start, len, mode, nmask, maxnode, flags);
-#else
+#  else
   (void)start;
   (void)len;
   (void)mode;
@@ -155,49 +181,233 @@ long sys_mbind(void* start, unsigned long len, unsigned long mode,
   (void)flags;
   errno = ENOSYS;
   return -1;
-#endif
+#  endif
 }
 
 bool path_exists(const char* path) { return ::access(path, R_OK) == 0; }
 
 #endif
 
-}  // namespace
+// Linux supports up to 1024 NUMA nodes in common kernel configurations;
+// reserve headroom without putting allocation or exception machinery in this
+// platform-bottom topology path.
+inline constexpr std::size_t kMaxNumaNodes = 4096;
 
-unsigned numa_node_count() noexcept {
+#if defined(HYLE_OS_LINUX)
+inline constexpr unsigned kMaskBits = sizeof(unsigned long) * 8u;
+using NumaMask =
+    std::array<unsigned long, (kMaxNumaNodes + kMaskBits - 1u) / kMaskBits>;
+#endif
+
+struct NumaTopology {
+  std::array<unsigned, kMaxNumaNodes> ids{};
+  std::size_t count = 0;
+  bool native = false;
+};
+
+void append_node(NumaTopology& topology, unsigned node) noexcept {
+  if (node >= kMaxNumaNodes || topology.count >= topology.ids.size()) return;
+  if (topology.count != 0 && topology.ids[topology.count - 1] == node) return;
+  topology.ids[topology.count++] = node;
+}
+
+#if defined(HYLE_OS_LINUX)
+bool read_linux_allowed_nodes(NumaTopology& topology) noexcept {
+#  if defined(SYS_get_mempolicy)
+  NumaMask allowed{};
+  int mode = MPOL_DEFAULT;
+  if (::syscall(SYS_get_mempolicy, &mode, allowed.data(), kMaxNumaNodes,
+                nullptr, MPOL_F_MEMS_ALLOWED) != 0) {
+    return false;
+  }
+  for (unsigned node = 0; node < kMaxNumaNodes; ++node) {
+    if ((allowed[node / kMaskBits] & (1UL << (node % kMaskBits))) != 0) {
+      append_node(topology, node);
+    }
+  }
+  return topology.count != 0;
+#  else
+  (void)topology;
+  return false;
+#  endif
+}
+
+bool read_linux_online_nodes(NumaTopology& topology) noexcept {
+  int fd = ::open("/sys/devices/system/node/online", O_RDONLY);
+  if (fd < 0) return false;
+  char text[4096]{};
+  const ssize_t length = ::read(fd, text, sizeof(text) - 1);
+  ::close(fd);
+  if (length <= 0) return false;
+
+  const char* cursor = text;
+  const char* end = text + length;
+  while (cursor < end) {
+    while (cursor < end && (*cursor == ',' || *cursor == ' ' ||
+                            *cursor == '\n' || *cursor == '\t')) {
+      ++cursor;
+    }
+    if (cursor == end) break;
+    if (*cursor < '0' || *cursor > '9') return false;
+    unsigned first = 0;
+    while (cursor < end && *cursor >= '0' && *cursor <= '9') {
+      const unsigned digit = static_cast<unsigned>(*cursor++ - '0');
+      if (first > (std::numeric_limits<unsigned>::max() - digit) / 10u) {
+        return false;
+      }
+      first = first * 10u + digit;
+    }
+    unsigned last = first;
+    if (cursor < end && *cursor == '-') {
+      ++cursor;
+      if (cursor == end || *cursor < '0' || *cursor > '9') return false;
+      last = 0;
+      while (cursor < end && *cursor >= '0' && *cursor <= '9') {
+        const unsigned digit = static_cast<unsigned>(*cursor++ - '0');
+        if (last > (std::numeric_limits<unsigned>::max() - digit) / 10u) {
+          return false;
+        }
+        last = last * 10u + digit;
+      }
+      if (last < first) return false;
+    }
+    if (last >= kMaxNumaNodes ||
+        last - first >= kMaxNumaNodes - topology.count) {
+      return false;
+    }
+    for (unsigned node = first;; ++node) {
+      append_node(topology, node);
+      if (node == last) break;
+    }
+    if (cursor < end && *cursor != ',' && *cursor != ' ' && *cursor != '\n' &&
+        *cursor != '\t') {
+      return false;
+    }
+  }
+  return topology.count != 0;
+}
+#endif
+
+NumaTopology discover_topology() noexcept {
+  NumaTopology topology;
 #if defined(HYLE_OS_WINDOWS)
   ULONG highest = 0;
   auto& f = win_fns();
   if (f.get_highest && f.get_highest(&highest)) {
-    return static_cast<unsigned>(highest) + 1u;
+    const ULONG limit =
+        highest < static_cast<ULONG>((std::numeric_limits<USHORT>::max)())
+            ? highest
+            : static_cast<ULONG>((std::numeric_limits<USHORT>::max)());
+    for (ULONG node = 0; node <= limit && topology.count < kMaxNumaNodes;
+         ++node) {
+      ULONGLONG available = 0;
+      if (!f.get_memory_ex ||
+          f.get_memory_ex(static_cast<USHORT>(node), &available)) {
+        append_node(topology, static_cast<unsigned>(node));
+      }
+    }
+    topology.native = topology.count != 0;
   }
-  return 1u;
 #elif defined(HYLE_OS_LINUX)
-  unsigned n = 0;
-  char buf[64];
-  for (; n < 256; ++n) {
-    static const char kPrefix[] = "/sys/devices/system/node/node";
-    char* w = buf;
-    for (const char* p = kPrefix; *p; ++p) *w++ = *p;
-    char digs[8];
-    unsigned v = n;
-    int nd = 0;
-    do {
-      digs[nd++] = static_cast<char>('0' + (v % 10));
-      v /= 10;
-    } while (v && nd < 8);
-    while (nd--) *w++ = digs[nd];
-    *w = '\0';
-    if (!path_exists(buf)) break;
+  // Prefer the process' current cpuset/mempolicy view. This avoids advertising
+  // a system node that the process cannot legally target inside a container.
+  topology.native = read_linux_allowed_nodes(topology);
+  if (!topology.native) {
+    topology.count = 0;
+    topology.native = read_linux_online_nodes(topology);
   }
-  return n == 0 ? 1u : n;
-#else
-  return 1u;
+  if (!topology.native) {
+    // A malformed/truncated online list may have appended a valid prefix.
+    // Discard it before the independent directory-scan fallback.
+    topology.count = 0;
+    // Conservative fallback for restricted containers without the `online`
+    // file. Do not stop at the first hole: NUMA IDs need not be dense.
+    for (unsigned node = 0; node < kMaxNumaNodes; ++node) {
+      char path[96];
+      std::snprintf(path, sizeof(path), "/sys/devices/system/node/node%u",
+                    node);
+      if (path_exists(path)) append_node(topology, node);
+    }
+    topology.native = topology.count != 0;
+  }
 #endif
+  if (topology.count == 0) append_node(topology, 0);
+  return topology;
+}
+
+const NumaTopology& topology() noexcept {
+  static const NumaTopology value = discover_topology();
+  return value;
+}
+
+bool topology_has_node(unsigned node) noexcept {
+  const auto& value = topology();
+  std::size_t first = 0;
+  std::size_t last = value.count;
+  while (first < last) {
+    const std::size_t middle = first + (last - first) / 2;
+    if (value.ids[middle] < node) {
+      first = middle + 1;
+    } else {
+      last = middle;
+    }
+  }
+  return first < value.count && value.ids[first] == node;
+}
+
+#if defined(HYLE_OS_LINUX)
+Result<unsigned> make_numa_mask(std::span<const unsigned> nodes,
+                                NumaMask& mask) noexcept {
+  unsigned max_node = 0;
+  for (unsigned node : nodes) {
+    if (node >= kMaxNumaNodes) {
+      return std::unexpected(
+          Status::OutOfRange("NUMA node exceeds policy mask capacity"));
+    }
+    mask[node / kMaskBits] |= 1UL << (node % kMaskBits);
+    if (node > max_node) max_node = node;
+  }
+  return max_node + 1u;
+}
+#endif
+
+}  // namespace
+
+NumaCapability numa_capabilities() noexcept {
+  NumaCapability capabilities = NumaCapability::kNone;
+  if (topology().native)
+    capabilities = capabilities | NumaCapability::kTopology;
+#if defined(HYLE_OS_WINDOWS)
+  auto& f = win_fns();
+  if (f.virtual_alloc2 || f.virtual_alloc_ex_numa) {
+    capabilities = capabilities | NumaCapability::kPreferredReservation |
+                   NumaCapability::kSelectedInterleave;
+  }
+#elif defined(HYLE_OS_LINUX) && defined(SYS_mbind)
+  capabilities = capabilities | NumaCapability::kPreferredReservation |
+                 NumaCapability::kBindExisting |
+                 NumaCapability::kInterleaveExisting |
+                 NumaCapability::kSelectedInterleave;
+#endif
+  return capabilities;
+}
+
+std::span<const unsigned> numa_nodes() noexcept {
+  const auto& value = topology();
+  return std::span<const unsigned>(value.ids.data(), value.count);
+}
+
+bool numa_node_available(unsigned node) noexcept {
+  return topology_has_node(node);
+}
+
+unsigned numa_node_count() noexcept {
+  return static_cast<unsigned>(topology().count);
 }
 
 unsigned numa_current_node() noexcept {
-  const unsigned count = numa_node_count();
+  const auto nodes = numa_nodes();
+  const unsigned fallback = nodes.front();
 #if defined(HYLE_OS_WINDOWS)
   auto& f = win_fns();
   if (f.get_cpu_ex && f.get_node_ex) {
@@ -206,29 +416,28 @@ unsigned numa_current_node() noexcept {
     USHORT node = 0;
     if (f.get_node_ex(&pnum, &node)) {
       unsigned n = static_cast<unsigned>(node);
-      return n < count ? n : 0u;
+      return numa_node_available(n) ? n : fallback;
     }
   }
-  return 0u;
+  return fallback;
 #elif defined(HYLE_OS_LINUX)
 #  if defined(SYS_getcpu)
   unsigned cpu = 0;
   unsigned node = 0;
   if (::syscall(SYS_getcpu, &cpu, &node, nullptr) == 0) {
-    return node < count ? node : 0u;
+    return numa_node_available(node) ? node : fallback;
   }
 #  endif
-  (void)count;
-  return 0u;
+  return fallback;
 #else
-  (void)count;
-  return 0u;
+  return fallback;
 #endif
 }
 
 unsigned numa_node_of_cpu(unsigned cpu) noexcept {
-  const unsigned count = numa_node_count();
-  if (count <= 1u) return 0u;  // single-node / unsupported: everything is node 0
+  const auto nodes = numa_nodes();
+  const unsigned fallback = nodes.front();
+  if (nodes.size() <= 1u) return fallback;
 #if defined(HYLE_OS_WINDOWS)
   auto& f = win_fns();
   if (f.get_node_ex) {
@@ -245,30 +454,30 @@ unsigned numa_node_of_cpu(unsigned cpu) noexcept {
       }
       number_in_group -= active;
     }
-    if (!found || number_in_group > 0xFFu) return 0u;
+    if (!found || number_in_group > 0xFFu) return fallback;
     PROCESSOR_NUMBER pnum{};
     pnum.Group = target_group;
     pnum.Number = static_cast<BYTE>(number_in_group);
     USHORT node = 0;
     if (f.get_node_ex(&pnum, &node)) {
-      const unsigned n = static_cast<unsigned>(node);  // 0xFFFF (no node) -> 0 below
-      return n < count ? n : 0u;
+      const unsigned n = static_cast<unsigned>(node);
+      return numa_node_available(n) ? n : fallback;
     }
   }
-  return 0u;
+  return fallback;
 #elif defined(HYLE_OS_LINUX)
-  // sysfs exposes one symlink /sys/devices/system/node/nodeN/cpuM per (node,cpu)
-  // membership; find the node whose directory contains this cpu.
-  for (unsigned nd = 0; nd < count; ++nd) {
+  // sysfs exposes one symlink /sys/devices/system/node/nodeN/cpuM per
+  // (node,cpu) membership; find the node whose directory contains this cpu.
+  for (unsigned nd : nodes) {
     char buf[96];
     std::snprintf(buf, sizeof(buf), "/sys/devices/system/node/node%u/cpu%u", nd,
                   cpu);
     if (path_exists(buf)) return nd;
   }
-  return 0u;
+  return fallback;
 #else
   (void)cpu;
-  return 0u;
+  return fallback;
 #endif
 }
 
@@ -293,25 +502,20 @@ Result<NumaPlacement> vm_bind_numa(void* ptr, std::size_t size, int node,
     return std::unexpected(Status::OutOfRange("vm bind NUMA: size overflow"));
   }
 
-  const unsigned nodes = numa_node_count();
+  const auto available_nodes = numa_nodes();
 
   if (policy == NumaPolicy::kInterleave) {
     // Interleave is a genuine no-op on a single-node machine. Linux rejects
     // MPOL_INTERLEAVE with a one-bit nodemask on some kernels.
-    if (nodes <= 1u) return NumaPlacement::kNotNeeded;
+    if (available_nodes.size() <= 1u) return NumaPlacement::kNotNeeded;
 #if defined(HYLE_OS_LINUX)
-    constexpr unsigned kBits = sizeof(unsigned long) * 8u;
-    unsigned long mask[4]{};
-    if (nodes > kBits * 4u) {
-      return std::unexpected(Status::OutOfRange(
-          "vm bind NUMA interleave: too many nodes for policy mask"));
-    }
-    for (unsigned nd = 0; nd < nodes; ++nd) {
-      mask[nd / kBits] |= 1UL << (nd % kBits);
-    }
-    long rc = sys_mbind(ptr, size, MPOL_INTERLEAVE, mask, kBits * 4u, 0);
+    NumaMask mask{};
+    HYLE_ASSIGN_OR_RETURN(unsigned max_node,
+                          make_numa_mask(available_nodes, mask));
+    long rc = sys_mbind(ptr, size, MPOL_INTERLEAVE, mask.data(), max_node, 0);
     if (rc != 0) {
-      return std::unexpected(numa_native_status("mbind(MPOL_INTERLEAVE)", errno));
+      return std::unexpected(
+          numa_native_status("mbind(MPOL_INTERLEAVE)", errno));
     }
     return NumaPlacement::kApplied;
 #else
@@ -321,31 +525,27 @@ Result<NumaPlacement> vm_bind_numa(void* ptr, std::size_t size, int node,
   }
 
   if (node == kNumaAny) return NumaPlacement::kNotNeeded;
-  if (node < 0 || static_cast<unsigned>(node) >= nodes) {
+  if (node < 0 || !numa_node_available(static_cast<unsigned>(node))) {
     return std::unexpected(
-        Status::OutOfRange("vm bind NUMA: node index out of range"));
+        Status::OutOfRange("vm bind NUMA: node ID is unavailable"));
   }
 
   // A valid per-node policy is a genuine no-op on a single-node machine.
-  if (nodes <= 1u) return NumaPlacement::kNotNeeded;
+  if (available_nodes.size() <= 1u) return NumaPlacement::kNotNeeded;
 
 #if defined(HYLE_OS_LINUX)
-  constexpr unsigned kBits = sizeof(unsigned long) * 8u;
-  unsigned long mask[4]{};
   const unsigned nd = static_cast<unsigned>(node);
-  if (nd >= kBits * 4u) {
-    return std::unexpected(
-        Status::OutOfRange("vm bind NUMA: node exceeds policy mask"));
-  }
-  mask[nd / kBits] = 1UL << (nd % kBits);
+  NumaMask mask{};
+  const std::array<unsigned, 1> selected{nd};
+  HYLE_ASSIGN_OR_RETURN(unsigned max_node, make_numa_mask(selected, mask));
   const unsigned long mode =
       (policy == NumaPolicy::kBind) ? MPOL_BIND : MPOL_PREFERRED;
-  long rc = sys_mbind(ptr, size, mode, mask, kBits * 4u, 0);
+  long rc = sys_mbind(ptr, size, mode, mask.data(), max_node, 0);
   if (rc != 0) {
-    return std::unexpected(numa_native_status(
-        policy == NumaPolicy::kBind ? "mbind(MPOL_BIND)"
-                                    : "mbind(MPOL_PREFERRED)",
-        errno));
+    return std::unexpected(numa_native_status(policy == NumaPolicy::kBind
+                                                  ? "mbind(MPOL_BIND)"
+                                                  : "mbind(MPOL_PREFERRED)",
+                                              errno));
   }
   return NumaPlacement::kApplied;
 #elif defined(HYLE_OS_WINDOWS)
@@ -371,7 +571,7 @@ Result<NumaPlacement> vm_bind_numa(void* ptr, std::size_t size, int node,
 }
 
 Result<NumaPlacement> vm_bind_numa_interleave(void* ptr,
-                                               std::size_t size) noexcept {
+                                              std::size_t size) noexcept {
   return vm_bind_numa(ptr, size, kNumaAny, NumaPolicy::kInterleave);
 }
 
@@ -380,9 +580,9 @@ Result<NumaReservation> vm_reserve_numa(std::size_t size, int node) noexcept {
     HYLE_ASSIGN_OR_RETURN(void* data, vm_reserve(size));
     return NumaReservation{data, NumaPlacement::kNotNeeded};
   }
-  if (node < 0 || static_cast<unsigned>(node) >= numa_node_count()) {
+  if (node < 0 || !numa_node_available(static_cast<unsigned>(node))) {
     return std::unexpected(
-        Status::OutOfRange("vm reserve NUMA: node index out of range"));
+        Status::OutOfRange("vm reserve NUMA: node ID is unavailable"));
   }
   size = page_align_up(size);
   if (size == 0) {
@@ -407,6 +607,12 @@ Result<NumaReservation> vm_reserve_numa(std::size_t size, int node) noexcept {
     // Preferred placement is soft. Preserve a usable allocation and expose
     // that the requested placement was not applied.
   }
+  if (f.virtual_alloc_ex_numa) {
+    void* p =
+        f.virtual_alloc_ex_numa(GetCurrentProcess(), nullptr, size, MEM_RESERVE,
+                                PAGE_NOACCESS, static_cast<DWORD>(node));
+    if (p != nullptr) return NumaReservation{p, NumaPlacement::kApplied};
+  }
   HYLE_ASSIGN_OR_RETURN(void* data, vm_reserve(size));
   return NumaReservation{data, NumaPlacement::kUnavailable};
 #elif defined(HYLE_OS_LINUX)
@@ -414,11 +620,194 @@ Result<NumaReservation> vm_reserve_numa(std::size_t size, int node) noexcept {
   // Soft preferred placement: a bind failure must NOT drop the reservation.
   // The placement result records the fallback without inventing a side channel.
   auto placement = vm_bind_numa(data, size, node, NumaPolicy::kPreferred);
-  return NumaReservation{
-      data, placement ? *placement : NumaPlacement::kUnavailable};
+  return NumaReservation{data,
+                         placement ? *placement : NumaPlacement::kUnavailable};
 #else
   HYLE_ASSIGN_OR_RETURN(void* data, vm_reserve(size));
   return NumaReservation{data, NumaPlacement::kUnavailable};
+#endif
+}
+
+Result<NumaAllocation>
+vm_allocate_numa_interleaved(std::size_t size,
+                             std::span<const unsigned> requested_nodes,
+                             std::size_t bytes_per_chunk) noexcept {
+  const std::size_t aligned = page_align_up(size);
+  if (aligned == 0) {
+    return std::unexpected(
+        Status::InvalidArgument("vm allocate NUMA interleaved: size is zero or "
+                                "overflows page alignment"));
+  }
+
+  const std::size_t page = page_size();
+  const std::size_t chunk = bytes_per_chunk == 0 ? page : bytes_per_chunk;
+  if (chunk % page != 0) {
+    return std::unexpected(Status::InvalidArgument(
+        "vm allocate NUMA interleaved: chunk must be a page-size multiple"));
+  }
+
+  const std::span<const unsigned> selected =
+      requested_nodes.empty() ? numa_nodes() : requested_nodes;
+  if (selected.empty() || selected.size() > kMaxNumaNodes) {
+    return std::unexpected(Status::InvalidArgument(
+        "vm allocate NUMA interleaved: node set is empty or too large"));
+  }
+  std::array<unsigned long, (kMaxNumaNodes + sizeof(unsigned long) * 8u - 1u) /
+                                (sizeof(unsigned long) * 8u)>
+      seen{};
+  constexpr unsigned kSeenBits = sizeof(unsigned long) * 8u;
+  for (unsigned node : selected) {
+    if (!numa_node_available(node)) {
+      return std::unexpected(Status::OutOfRange(
+          "vm allocate NUMA interleaved: node ID is unavailable"));
+    }
+    const unsigned long bit = 1UL << (node % kSeenBits);
+    unsigned long& word = seen[node / kSeenBits];
+    if ((word & bit) != 0) {
+      return std::unexpected(Status::InvalidArgument(
+          "vm allocate NUMA interleaved: duplicate node ID"));
+    }
+    word |= bit;
+  }
+
+  // No placement machinery is needed when every usable page has the same
+  // logical home. Preserve the same fully writable allocation contract.
+  if (numa_nodes().size() <= 1u) {
+    HYLE_ASSIGN_OR_RETURN(void* data, vm_allocate_rw(aligned));
+    return NumaAllocation{data, aligned, NumaPlacement::kNotNeeded};
+  }
+
+  if (!has_numa_capability(numa_capabilities(),
+                           NumaCapability::kSelectedInterleave)) {
+    return std::unexpected(
+        Status::Unimplemented("selected-node NUMA interleaved allocation is "
+                              "unavailable on this platform"));
+  }
+
+#if defined(HYLE_OS_LINUX)
+  HYLE_ASSIGN_OR_RETURN(void* data, vm_allocate_rw(aligned));
+
+  // Linux can install one lazy whole-range policy for the common page stripe
+  // over increasing node IDs. It is O(1) in allocation size and faults pages
+  // directly on their target nodes. Non-default chunks/order require one
+  // policy range per stripe, still before first touch (no move_pages pass).
+  bool increasing = true;
+  for (std::size_t i = 1; i < selected.size(); ++i) {
+    if (selected[i - 1] >= selected[i]) {
+      increasing = false;
+      break;
+    }
+  }
+  if (selected.size() == 1u) {
+    NumaMask mask{};
+    auto max_node = make_numa_mask(selected, mask);
+    if (!max_node || sys_mbind(data, aligned, MPOL_BIND, mask.data(),
+                               max_node ? *max_node : 0u, 0) != 0) {
+      Status error = max_node ? numa_native_status("mbind(MPOL_BIND)", errno)
+                              : std::move(max_node).error();
+      (void)vm_release(data, aligned);
+      return std::unexpected(std::move(error));
+    }
+  } else if (chunk == page && increasing) {
+    NumaMask mask{};
+    auto max_node = make_numa_mask(selected, mask);
+    if (!max_node) {
+      (void)vm_release(data, aligned);
+      return std::unexpected(std::move(max_node).error());
+    }
+    if (sys_mbind(data, aligned, MPOL_INTERLEAVE, mask.data(), *max_node, 0) !=
+        0) {
+      Status error = numa_native_status("mbind(MPOL_INTERLEAVE)", errno);
+      (void)vm_release(data, aligned);
+      return std::unexpected(std::move(error));
+    }
+  } else {
+    auto* base = static_cast<std::byte*>(data);
+    for (std::size_t offset = 0, stripe = 0; offset < aligned; ++stripe) {
+      const std::size_t length =
+          chunk < aligned - offset ? chunk : aligned - offset;
+      const unsigned node = selected[stripe % selected.size()];
+      NumaMask mask{};
+      const std::array<unsigned, 1> one_node{node};
+      auto max_node = make_numa_mask(one_node, mask);
+      if (!max_node || sys_mbind(base + offset, length, MPOL_BIND, mask.data(),
+                                 max_node ? *max_node : 0u, 0) != 0) {
+        Status error =
+            max_node ? numa_native_status("mbind(MPOL_BIND stripe)", errno)
+                     : std::move(max_node).error();
+        (void)vm_release(data, aligned);
+        return std::unexpected(std::move(error));
+      }
+      offset += length;
+    }
+  }
+  return NumaAllocation{data, aligned, NumaPlacement::kApplied};
+
+#elif defined(HYLE_OS_WINDOWS)
+  auto& f = win_fns();
+  // VirtualAllocExNuma can commit a stripe inside one ordinary reservation.
+  // If only VirtualAlloc2 is available, its documented replacement protocol
+  // requires a placeholder reservation that is split before each stripe is
+  // replaced. A plain MEM_COMMIT into a normal reservation is not an
+  // equivalent fallback.
+  const bool use_placeholders = !f.virtual_alloc_ex_numa && f.virtual_alloc2;
+  void* data = use_placeholders
+                   ? f.virtual_alloc2(
+                         GetCurrentProcess(), nullptr, aligned,
+                         MEM_RESERVE | kMemReservePlaceholder, PAGE_NOACCESS,
+                         nullptr, 0)
+                   : ::VirtualAlloc(nullptr, aligned, MEM_RESERVE,
+                                    PAGE_NOACCESS);
+  if (data == nullptr) {
+    return std::unexpected(numa_native_status(
+        use_placeholders ? "VirtualAlloc2(MEM_RESERVE_PLACEHOLDER)"
+                         : "VirtualAlloc(MEM_RESERVE NUMA interleave)",
+        ::GetLastError()));
+  }
+
+  auto* base = static_cast<std::byte*>(data);
+  for (std::size_t offset = 0, stripe = 0; offset < aligned; ++stripe) {
+    const std::size_t length =
+        chunk < aligned - offset ? chunk : aligned - offset;
+    const DWORD node = static_cast<DWORD>(selected[stripe % selected.size()]);
+    void* committed = nullptr;
+    if (!use_placeholders) {
+      committed =
+          f.virtual_alloc_ex_numa(GetCurrentProcess(), base + offset, length,
+                                  MEM_COMMIT, PAGE_READWRITE, node);
+    } else {
+      if (offset + length < aligned &&
+          !::VirtualFree(base + offset, length,
+                         MEM_RELEASE | kMemPreservePlaceholder)) {
+        const DWORD code = ::GetLastError();
+        (void)vm_release(data, aligned);
+        return std::unexpected(numa_native_status(
+            "VirtualFree(MEM_PRESERVE_PLACEHOLDER)", code));
+      }
+      HyleMemExtendedParameter param{};
+      param.Type = kMemExtendedParameterNumaNode;
+      param.ULong = node;
+      committed = f.virtual_alloc2(GetCurrentProcess(), base + offset, length,
+                                   MEM_RESERVE | MEM_COMMIT |
+                                       kMemReplacePlaceholder,
+                                   PAGE_READWRITE, &param, 1);
+    }
+    if (committed != base + offset) {
+      const DWORD code = ::GetLastError();
+      (void)vm_release(data, aligned);
+      return std::unexpected(numa_native_status(
+          "NUMA stripe commit",
+          code != ERROR_SUCCESS ? code : ERROR_INVALID_ADDRESS));
+    }
+    offset += length;
+  }
+  return NumaAllocation{data, aligned, NumaPlacement::kApplied};
+#else
+  (void)selected;
+  (void)chunk;
+  return std::unexpected(
+      Status::Unimplemented("selected-node NUMA interleaved allocation is "
+                            "unavailable on this platform"));
 #endif
 }
 

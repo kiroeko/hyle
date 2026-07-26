@@ -33,6 +33,7 @@
 #include <atomic>
 #include <cerrno>
 #include <condition_variable>
+#include <cstdio>
 #include <cstdlib>
 #include <cstdint>
 #include <cstring>
@@ -45,9 +46,14 @@
 
 #include "hyle/platform/fs.h"
 #include "hyle/platform/mapped_file.h"
+#include "hyle/platform/numa.h"
 #include "hyle/platform/thread.h"
 #include "hyle/platform/virtual_memory.h"
 #include "hyle/platform/wait.h"
+
+#if defined(HYLE_BENCH_TBB)
+#  include <oneapi/tbb/numa_allocation.h>
+#endif
 
 #if defined(_WIN32)
 #  define WIN32_LEAN_AND_MEAN
@@ -65,6 +71,7 @@ using hyle::platform::page_size;
 using hyle::platform::Protect;
 using hyle::platform::Thread;
 using hyle::platform::ThreadOpts;
+using hyle::platform::vm_allocate_numa_interleaved;
 using hyle::platform::vm_allocate_rw;
 using hyle::platform::vm_commit;
 using hyle::platform::vm_protect;
@@ -296,6 +303,64 @@ int main() {
         nb::doNotOptimizeAway(p);
       }
     });
+  }
+
+  // ---- 6b. NUMA selected-node/chunk allocation -----------------------------
+  // This is allocation + first touch + release: Linux placement is installed
+  // lazily before faults, whereas oneTBB may touch/move pages while allocating
+  // a non-default chunk. Measuring only the function call would therefore be a
+  // contract mismatch. On a single-node host this remains a useful wrapper-floor
+  // regression, but it is not evidence about cross-socket placement quality.
+  if (enabled("numa-alloc")) {
+    constexpr std::size_t kSpan = 16u * 1024u * 1024u;
+    constexpr std::size_t kChunk = 2u * 1024u * 1024u;
+    const std::size_t page = page_size();
+    const auto available = hyle::platform::numa_nodes();
+    auto probe = vm_allocate_numa_interleaved(kSpan, available, kChunk);
+    if (!probe) {
+      std::fprintf(stderr, "numa-alloc skipped: %.*s\n",
+                   static_cast<int>(probe.error().message().size()),
+                   probe.error().message().data());
+    } else {
+      if (!vm_release(probe->data, probe->size).ok()) std::abort();
+      nb::Bench b;
+      b.title("NUMA selected nodes, 2MiB stripe: alloc+first-touch+release")
+          .relative(true)
+          .minEpochIterations(3);
+      b.run("HYLE vm_allocate_numa_interleaved", [&] {
+        auto allocation =
+            vm_allocate_numa_interleaved(kSpan, available, kChunk);
+        if (!allocation) std::abort();
+        auto* bytes = static_cast<volatile std::uint8_t*>(allocation->data);
+        std::uint64_t checksum = 0;
+        for (std::size_t offset = 0; offset < allocation->size;
+             offset += page) {
+          bytes[offset] = static_cast<std::uint8_t>(offset / page);
+          checksum += bytes[offset];
+        }
+        nb::doNotOptimizeAway(checksum);
+        if (!vm_release(allocation->data, allocation->size).ok()) std::abort();
+        nb::doNotOptimizeAway(allocation.has_value());
+      });
+#if defined(HYLE_BENCH_TBB)
+      std::vector<tbb::numa_node_id> tbb_nodes(available.begin(),
+                                               available.end());
+      b.run("oneTBB allocate_numa_interleaved", [&] {
+        void* allocation = oneapi::tbb::allocate_numa_interleaved(
+            kSpan, tbb_nodes, kChunk);
+        if (allocation == nullptr) std::abort();
+        auto* bytes = static_cast<volatile std::uint8_t*>(allocation);
+        std::uint64_t checksum = 0;
+        for (std::size_t offset = 0; offset < kSpan; offset += page) {
+          bytes[offset] = static_cast<std::uint8_t>(offset / page);
+          checksum += bytes[offset];
+        }
+        nb::doNotOptimizeAway(checksum);
+        oneapi::tbb::deallocate_numa_interleaved(allocation, kSpan);
+        nb::doNotOptimizeAway(allocation);
+      });
+#endif
+    }
   }
 
   // ---- 7. Parker round-trip vs the RAW futex/WaitOnAddress floor -------------

@@ -564,40 +564,6 @@ if(HYLE_BENCH_MOODYCAMEL)
   target_include_directories(hyle_queue_sota_bench SYSTEM PRIVATE "${HYLE_MOODYCAMEL_DIR}")
 endif()
 
-# Optional: oneTBB concurrent_bounded_queue + concurrent_vector (the apples-to-
-# apples bounded-MPMC and concurrent-vector rivals; same try_push/try_pop/push_back
-# API). Heavy external build -> add_subdirectory the local oneTBB source snapshot.
-# Enable with -DHYLE_BENCH_TBB=ON; point HYLE_TBB_DIR at that snapshot (sibling
-# by default).
-option(HYLE_BENCH_TBB "build queue/vector bench vs oneTBB" OFF)
-if(HYLE_BENCH_TBB)
-  set(HYLE_TBB_DIR "${PROJECT_SOURCE_DIR}/../oneTBB" CACHE PATH
-      "local oneTBB source snapshot")
-  if(NOT EXISTS "${HYLE_TBB_DIR}/CMakeLists.txt")
-    message(FATAL_ERROR "HYLE_BENCH_TBB=ON but no oneTBB at ${HYLE_TBB_DIR}")
-  endif()
-  set(TBB_TEST OFF CACHE BOOL "" FORCE)
-  set(TBBMALLOC_BUILD ON CACHE BOOL "" FORCE)  # need tbbmalloc for scalable_allocator (arena bench)
-  set(TBB_EXAMPLES OFF CACHE BOOL "" FORCE)
-  add_subdirectory("${HYLE_TBB_DIR}" "${CMAKE_BINARY_DIR}/onetbb" EXCLUDE_FROM_ALL)
-  target_compile_definitions(hyle_queue_sota_bench PRIVATE HYLE_BENCH_TBB)
-  target_link_libraries(hyle_queue_sota_bench PRIVATE TBB::tbb)
-  target_compile_definitions(hyle_container_concurrent_map_bench PRIVATE HYLE_BENCH_TBB)
-  target_link_libraries(hyle_container_concurrent_map_bench PRIVATE TBB::tbb)
-  if(TARGET hyle_util_core_bench)
-    target_compile_definitions(hyle_util_core_bench PRIVATE HYLE_BENCH_TBB)
-    target_link_libraries(hyle_util_core_bench PRIVATE TBB::tbb)
-  endif()
-  # mem_scenarios_bench: oneTBB fixed_pool is the mature fixed-buffer throughput
-  # reference (its tbbmalloc frontend has implicit thread-local ownership, so it
-  # is not the same immediate-visibility contract as SharedPool);
-  # scalable_allocator remains a growable throughput reference. memory_pool.h
-  # is a oneTBB preview header and requires TBB_PREVIEW_MEMORY_POOL=1.
-  target_compile_definitions(hyle_mem_scenarios_bench PRIVATE
-                             HYLE_BENCH_TBB TBB_PREVIEW_MEMORY_POOL=1)
-  target_link_libraries(hyle_mem_scenarios_bench PRIVATE TBB::tbbmalloc TBB::tbb)
-endif()
-
 # Optional: rigtorp::mpmc::Queue -- the SAME-CONTRACT rival to BoundedQueue (strict-
 # bounded single-ring MPMC, the canonical SOTA for exactly that contract). Single
 # header -> just an include path. Enable with -DHYLE_BENCH_RIGTORP=ON; point
@@ -612,6 +578,46 @@ if(HYLE_BENCH_RIGTORP)
   target_include_directories(hyle_queue_sota_bench SYSTEM PRIVATE "${HYLE_RIGTORP_DIR}/include")
 endif()
 endif() # TARGET hyle_container
+
+# Optional oneTBB rivals. Keep discovery outside any product-component guard:
+# platform-only builds need NUMA allocation, while container/mem builds attach
+# their own peers only when those benchmark targets exist.
+option(HYLE_BENCH_TBB "build relevant benchmarks vs oneTBB" OFF)
+if(HYLE_BENCH_TBB)
+  set(HYLE_TBB_DIR "${PROJECT_SOURCE_DIR}/../oneTBB" CACHE PATH
+      "local oneTBB source snapshot")
+  if(NOT EXISTS "${HYLE_TBB_DIR}/CMakeLists.txt")
+    message(FATAL_ERROR "HYLE_BENCH_TBB=ON but no oneTBB at ${HYLE_TBB_DIR}")
+  endif()
+  set(TBB_TEST OFF CACHE BOOL "" FORCE)
+  set(TBBMALLOC_BUILD ON CACHE BOOL "" FORCE)
+  set(TBB_EXAMPLES OFF CACHE BOOL "" FORCE)
+  add_subdirectory("${HYLE_TBB_DIR}" "${CMAKE_BINARY_DIR}/onetbb" EXCLUDE_FROM_ALL)
+  if(TARGET hyle_queue_sota_bench)
+    target_compile_definitions(hyle_queue_sota_bench PRIVATE HYLE_BENCH_TBB)
+    target_link_libraries(hyle_queue_sota_bench PRIVATE TBB::tbb)
+  endif()
+  if(TARGET hyle_container_concurrent_map_bench)
+    target_compile_definitions(hyle_container_concurrent_map_bench PRIVATE
+                               HYLE_BENCH_TBB)
+    target_link_libraries(hyle_container_concurrent_map_bench PRIVATE TBB::tbb)
+  endif()
+  if(TARGET hyle_platform_bench)
+    target_compile_definitions(hyle_platform_bench PRIVATE
+                               HYLE_BENCH_TBB TBB_PREVIEW_NUMA_ALLOCATION=1)
+    target_link_libraries(hyle_platform_bench PRIVATE TBB::tbb)
+  endif()
+  if(TARGET hyle_util_core_bench)
+    target_compile_definitions(hyle_util_core_bench PRIVATE HYLE_BENCH_TBB)
+    target_link_libraries(hyle_util_core_bench PRIVATE TBB::tbb)
+  endif()
+  if(TARGET hyle_mem_scenarios_bench)
+    target_compile_definitions(hyle_mem_scenarios_bench PRIVATE
+                               HYLE_BENCH_TBB TBB_PREVIEW_MEMORY_POOL=1)
+    target_link_libraries(hyle_mem_scenarios_bench PRIVATE TBB::tbbmalloc
+                                                          TBB::tbb)
+  endif()
+endif()
 
 # simd bench: dot/saxpy raced across scalar-autovec / HYLE sse4 / HYLE avx2 (+ Highway if
 # enabled). Each kernel TU is compiled with ITS OWN -march so the per-ISA codegen is real

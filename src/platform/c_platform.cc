@@ -4,6 +4,7 @@
 
 #include <atomic>
 #include <new>
+#include <span>
 #include <type_traits>
 #include <utility>
 
@@ -51,6 +52,12 @@ static_assert(HYLE_NUMA_PLACEMENT_APPLIED ==
               static_cast<int>(hyle::platform::NumaPlacement::kApplied));
 static_assert(HYLE_NUMA_PLACEMENT_UNAVAILABLE ==
               static_cast<int>(hyle::platform::NumaPlacement::kUnavailable));
+static_assert(HYLE_NUMA_CAP_TOPOLOGY ==
+              static_cast<uint32_t>(
+                  hyle::platform::NumaCapability::kTopology));
+static_assert(HYLE_NUMA_CAP_SELECTED_INTERLEAVE ==
+              static_cast<uint32_t>(
+                  hyle::platform::NumaCapability::kSelectedInterleave));
 static_assert(HYLE_MAP_READ_ONLY ==
               static_cast<int>(hyle::platform::MappedFile::Mode::kReadOnly));
 static_assert(HYLE_MAP_COPY_ON_WRITE ==
@@ -509,9 +516,22 @@ hyle_status hyle_vm_region_reserve_guarded(hyle_vm_region_o** out,
 }
 
 hyle_status hyle_vm_region_reserve_numa(hyle_vm_region_o** out, size_t size,
-                                        int node) {
+                                         int node) {
   return wrap_vm_region(out,
                         hyle::platform::VmRegion::reserve_numa(size, node));
+}
+
+hyle_status hyle_vm_region_alloc_numa_interleaved(
+    hyle_vm_region_o** out, size_t size, const unsigned* nodes,
+    size_t node_count, size_t bytes_per_chunk) {
+  if (nodes == nullptr && node_count != 0) {
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_vm_region_alloc_numa_interleaved: nodes is NULL with nonzero count"));
+  }
+  return wrap_vm_region(
+      out, hyle::platform::VmRegion::allocate_numa_interleaved(
+               size, std::span<const unsigned>(nodes, node_count),
+               bytes_per_chunk));
 }
 
 hyle_status hyle_vm_region_adopt(hyle_vm_region_o** out, void* base,
@@ -557,6 +577,9 @@ size_t hyle_vm_region_usable_size(const hyle_vm_region_o* r) {
 }
 int hyle_vm_region_has_guard(const hyle_vm_region_o* r) {
   return r && r->region.has_guard() ? 1 : 0;
+}
+int hyle_vm_region_is_numa_interleaved(const hyle_vm_region_o* r) {
+  return r && r->region.numa_interleaved() ? 1 : 0;
 }
 hyle_numa_placement hyle_vm_region_numa_placement(
     const hyle_vm_region_o* r) {
@@ -916,6 +939,19 @@ hyle_status hyle_vm_advise_no_hugepage(void* ptr, size_t size) {
   return steal_status(hyle::platform::vm_advise_no_hugepage(ptr, size));
 }
 
+uint32_t hyle_numa_capabilities(void) {
+  return static_cast<uint32_t>(hyle::platform::numa_capabilities());
+}
+
+size_t hyle_numa_nodes(unsigned* out_nodes, size_t capacity) {
+  const auto nodes = hyle::platform::numa_nodes();
+  if (out_nodes != nullptr) {
+    const size_t copied = capacity < nodes.size() ? capacity : nodes.size();
+    for (size_t i = 0; i < copied; ++i) out_nodes[i] = nodes[i];
+  }
+  return nodes.size();
+}
+
 unsigned hyle_numa_node_count(void) { return hyle::platform::numa_node_count(); }
 
 unsigned hyle_numa_current_node(void) {
@@ -961,6 +997,28 @@ hyle_status hyle_vm_reserve_numa(void** out,
   }
   *out = nullptr;
   auto result = hyle::platform::vm_reserve_numa(size, node);
+  if (!result) return steal_status(std::move(result).error());
+  *out = result->data;
+  if (out_placement != nullptr) {
+    *out_placement = to_c_numa_placement(result->placement);
+  }
+  return steal_status(hyle::Status::Ok());
+}
+
+hyle_status hyle_vm_alloc_numa_interleaved(
+    void** out, hyle_numa_placement* out_placement, size_t size,
+    const unsigned* nodes, size_t node_count, size_t bytes_per_chunk) {
+  if (out == nullptr) {
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_vm_alloc_numa_interleaved: out is NULL"));
+  }
+  *out = nullptr;
+  if (nodes == nullptr && node_count != 0) {
+    return steal_status(hyle::Status::InvalidArgument(
+        "hyle_vm_alloc_numa_interleaved: nodes is NULL with nonzero count"));
+  }
+  auto result = hyle::platform::vm_allocate_numa_interleaved(
+      size, std::span<const unsigned>(nodes, node_count), bytes_per_chunk);
   if (!result) return steal_status(std::move(result).error());
   *out = result->data;
   if (out_placement != nullptr) {

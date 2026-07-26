@@ -5,7 +5,7 @@
 | 范围 | `include/hyle/mem`、`include/hyle/c/mem.h`、`src/mem`、测试、guide / architecture / performance |
 | 基线 | `c1f2e394`（独立 worktree：`audit/mem-mature-gap`） |
 | 方法 | 从真实基础加速库用户的 lifetime、ownership、并发、失败和组合需求出发，对照工作区 oneTBB、Folly、marl、mimalloc；不按 benchmark 名称凑类型 |
-| 总结 | ✅ **严格收口。**能力面宽且边界合理；P0 契约、standard adapter 默认静态/注入分型、fiber stack 冷回收与 shared distribution 三平台证书均已落地。没有证据支持像 container 一样再整体翻倍；NUMA selected-node/chunk 已裁决为当前跨平台 non-goal。 |
+| 总结 | ✅ **严格收口后定向复开 NUMA。**能力面宽且边界合理；P0 契约、standard adapter 默认静态/注入分型、fiber stack 冷回收与 shared distribution 三平台证书均已落地。对照 oneTBB 实现后推翻旧 non-goal：selected-node/chunk 已由 platform 机制层和 mem HugeRegion 的 C++/C owner 面完整提供。 |
 
 > **实现进展（2026-07-26，`implementation/mem-strict`）：**P0 alignment/stats 已在
 > `2cb1a10` 落地；`ac73fc7` 增加 `StdAllocator<T>`、FiberStackPool 精确 capacity、
@@ -49,7 +49,7 @@
 | typed object lifetime / preserving return / loan | `ObjectPool<T>`、cache、`PreservingObjectPool<T>`、`PoolLoan` | raw slot + typed macros | C++ 自然；C 不伪造构造析构 |
 | 单线程按需增长的固定 slot | `GrowablePool<T>` | runtime slot core | 完整 |
 | LIFO scratch | `StackAllocator` | opaque handle | 完整 |
-| 大页、NUMA host RAM | `HugeRegion` + placement policy | opaque handle + policy | 常用 all-node/local/preferred 能力完整；选 node 集/chunk 已裁为缺少诚实三平台合同的 non-goal |
+| 大页、NUMA host RAM | `HugeRegion` + placement policy / selected nodes + chunk | opaque handle + 同能力 | all-node/local/preferred/selected-node 能力完整；runtime capability 与结构化失败避免伪可移植 |
 | guard-page fiber stack/cache | `FiberStack`、`FiberStackPool` | 有意不暴露 raw C mem API | 已补真实 capacity/trim/clear；Scheduler shutdown 自动回收 |
 
 生产消费也支持这些形状并非只为 benchmark 存在：allocator 被 container、graph、sched、I/O、
@@ -76,14 +76,14 @@ quiescent coherence；destroy/reset/move overwrite 执行 balanced fail-fast。
 ### P1：真实常用能力，冻结前应裁决
 
 实现状态：`SystemStdAllocator<T>` / `StdAllocator<T>`、`system_memory_resource()` / `PmrResource`
-的默认/注入分型与 FiberStackPool 回收 **已完成**；selected-node/chunk NUMA 保持
-platform-first 待办，不在本轮 mem-only 猜测跨平台合同。
+的默认/注入分型与 FiberStackPool 回收 **已完成**；selected-node/chunk NUMA 随后按
+platform-first 原则完成，mem 只承载 HugeRegion owner，不复制系统实现。
 
 | 候选 | 成熟形状 | HYLE 建议 | C ABI |
 |---|---|---|---|
 | 传统 C++ Allocator named-requirement adapter | oneTBB `memory_pool_allocator<T>` / `cache_aligned_allocator<T>`；Folly `CxxAllocatorAdaptor<T,Inner>`；marl `StlAllocator<T>` | 默认 system heap 用 empty/always-equal 的 `SystemStdAllocator<T>`；运行时 backing 用 `StdAllocator<T>`，含 rebind/完整 backing equality/非传播 traits；覆盖 `vector`、`allocate_shared`、over-alignment 与失败路径 | 无；模板天然只属于 C++ |
 | `FiberStackPool` 主动冷回收 | 原实现默认每 tier 缓存 64、内部固定 256 slots，只有析构释放；传入 cap>256 的有效上限不可见 | 已增加准确 `capacity()`、0-disable、cap clamp、`trim(keep=0)` / `clear()`；锁内摘取、锁外释放 VM，scheduler 在 worker join 后回收三档 cache | mem C 无需导出；scheduler C 用户由 runtime 自动管理 |
-| 选择 NUMA nodes + interleave chunk | oneTBB `numa_allocation.h:40-48` 接收 node vector 与 `bytes_per_chunk` | **已裁决 non-goal**：Linux mask、Windows single-node `VirtualAlloc2`、macOS 无公开 NUMA API 不能形成同形三平台合同；现有 single-node preferred/bind + all-node interleave 保留。真实 topology owner 出现后才共同重开 platform/mem | 不增加；避免一个大部分平台只能拒绝的伪可移植 C options |
+| 选择 NUMA nodes + interleave chunk | oneTBB `numa_allocation.h:40-48` 接收 node vector 与 `bytes_per_chunk` | **已实现**：platform 暴露实际稀疏 id、runtime capability 与连续 committed allocation；Linux first-touch 前 mbind，Windows 单 reserve 分条带 NUMA commit，macOS 单节点正常 no-op；mem 仅包装为 HugeRegion | platform raw/managed + mem HugeRegion 同步导出；C pointer/count/Status 合同与 C++ 等价 |
 
 传统 allocator adapter 是本轮最明确的功能缺口：它在 oneTBB、Folly、marl、mimalloc C++ facade
 中反复出现，解决的是常见第三方/标准容器消费，不是为 benchmark 增加一种 allocator。实现时优先让
@@ -125,10 +125,10 @@ construct/destroy/unique-array 便利性可以随 adapter 一并审，但不应�
 `system_memory_resource()` / `PmrResource` 分开承载默认和注入形状；typed helper 保持在现有
 对称集合中，不再散落 convenience。
 
-**C ABI。** 107 项当前已覆盖 allocator、诊断、region、variable/fixed/growable pool、stack 与
+**C ABI。** 109 项当前已覆盖 allocator、诊断、region、variable/fixed/growable pool、stack 与
 HugeRegion。PMR、RAII loan、模板构造析构和 raw fiber stack 是合理的 C++ only。上述 P0 不增加符号；
-allocator adapter/stack trim 也不要求 mem C ABI。只有选-node NUMA 真落地时才需要同步扩展 platform C
-与 HugeRegion options。HYLE C++ 内部继续使用原生 `Status` / `Result` / `Allocator`，不绕 C ABI。
+allocator adapter/stack trim 也不要求 mem C ABI。选-node NUMA 已同步扩展 platform C 与
+HugeRegion options/chunk query。HYLE C++ 内部继续使用原生 `Status` / `Result` / `Allocator`，不绕 C ABI。
 
 **error / platform。** VM/NUMA/fiber 冷路径使用共享 error；platform 负责 page/VM/NUMA，归属正确。
 公开 header 仍有 `fiber_stack.h -> hyle/util/spin_lock.h` 边。构建 target 的 binary 图写成
@@ -153,14 +153,15 @@ header-only edge 说明应显式记录这条 util-core 边，避免施工顺序�
    OOM 测试。只对比同合同 peer，不为它另造孤立 benchmark。
 3. [x] 给 FiberStackPool 补 capacity + trim，接 scheduler 的真实 shutdown reclaim 控制点；VM release
    位于锁外，shutdown 回收在 worker join 后执行。
-4. [x] platform 已裁决 selected-node/chunk NUMA：三平台合同不诚实，明确保持 non-goal；现有
-   single-node 与 all-node interleave 不变。
+4. [x] selected-node/chunk NUMA 定向复开并完成：OS 差异由 runtime capability + Status 表达，
+   platform 拥有机制，mem/C ABI 提供对应 owner 形状；没有把 unsupported 冒充 applied。
 5. [x] 完成 shared-distribution 三平台同链接模型证书，并复跑 correctness/sanitizer/surface gates。
 
 退出条件不是“类型数量追平成熟库”，而是：P0 为零；P1 每项有实现或有证据的拒绝；C++ 常见消费无需
 绕路；C ABI 没有可表达能力的缺口；默认与常用组合在同合同、同链接模型、三平台下无 material LOSE；
 architecture / guide / performance / milestone 不互相冒充真源。达到这些条件后，mem 才能再次标记
-**彻底收口**。上述 5 项与退出条件已在 clean `c640072` 全部满足；后续只按
+**彻底收口**。原 5 项与退出条件已在 clean `c640072` 满足；本次 NUMA 复开又补齐 selected
+nodes/chunk、C++/C guide 与 platform 同合同性能证据，未改变其它 allocator/pool 证书；后续只按
 [`mem-design.md`](../architecture/mem-design.md) 的明确触发器重开。
 
 ## 6. 对照源码定位
