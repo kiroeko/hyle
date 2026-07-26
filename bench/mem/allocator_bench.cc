@@ -17,6 +17,7 @@
 #include <mimalloc.h>
 #include <nanobench.h>
 
+#include <array>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
@@ -222,6 +223,44 @@ int main() {
         auto* p = std_allocator.allocate(count);
         ankerl::nanobench::doNotOptimizeAway(p);
         std_allocator.deallocate(p, count);
+      }
+    });
+    // Reallocation is a colder but still ordinary SDK operation (container
+    // growth, byte buffers).  Keep it in the same-link certificate instead of
+    // comparing the DLL/DSO path with a second mimalloc instance in the exe.
+    constexpr std::array<std::size_t, 7> kReallocSizes = {
+        16, 32, 64, 128, 256, 512, 1024};
+    run('E', "backend realloc seam (same-link baseline)", [&] {
+      for (int i = 0; i < kN; ++i) {
+        void* p = hyle::mem::detail::system_backend_allocate(
+            kReallocSizes[0], hyle::mem::kSystemDefaultAlignment);
+        for (std::size_t index = 1; index < kReallocSizes.size(); ++index) {
+          p = hyle::mem::detail::system_backend_reallocate(
+              p, kReallocSizes[index], hyle::mem::kSystemDefaultAlignment);
+        }
+        ankerl::nanobench::doNotOptimizeAway(p);
+        hyle::mem::detail::system_backend_deallocate(p);
+      }
+    });
+    run('F', "SystemAllocator realloc (same-link direct)", [&] {
+      for (int i = 0; i < kN; ++i) {
+        void* p = hyle::mem::SystemAllocator::allocate(kReallocSizes[0]);
+        for (std::size_t index = 1; index < kReallocSizes.size(); ++index) {
+          p = hyle::mem::SystemAllocator::reallocate(
+              p, kReallocSizes[index - 1], kReallocSizes[index]);
+        }
+        ankerl::nanobench::doNotOptimizeAway(p);
+        hyle::mem::SystemAllocator::deallocate(p, kReallocSizes.back());
+      }
+    });
+    run('G', "Allocator realloc (same-link runtime)", [&] {
+      for (int i = 0; i < kN; ++i) {
+        void* p = a.allocate(kReallocSizes[0]);
+        for (std::size_t index = 1; index < kReallocSizes.size(); ++index) {
+          p = a.reallocate(p, kReallocSizes[index - 1], kReallocSizes[index]);
+        }
+        ankerl::nanobench::doNotOptimizeAway(p);
+        a.deallocate(p, kReallocSizes.back());
       }
     });
     run('X', "raw mi_* in executable (non-symmetric lower bound)", [&] {

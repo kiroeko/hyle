@@ -203,8 +203,9 @@ for each macOS QoS. See `docs/performance/benchmarks-mem.md` §5.
 ## `mem-shared-link-stat.py` — mem shared standard-adapter certificate
 
 Runs section `L` of `hyle_mem_bench` with one variant per fresh process, alternating
-forward/reverse order, and writes the raw CSV used by the mem same-link table. The benchmark
-must come from `HYLE_STATIC=OFF`, `HYLE_BUILD_TESTS=OFF` shipping configuration.
+forward/reverse order, and writes the raw CSV used by the mem same-link table. It covers
+ordinary alloc/free standard adapters plus direct/runtime realloc growth. The benchmark must
+come from `HYLE_STATIC=OFF`, `HYLE_BUILD_TESTS=OFF` shipping configuration.
 
 ```bash
 python3 scripts/mem-shared-link-stat.py build-bench/bin/hyle_mem_bench \

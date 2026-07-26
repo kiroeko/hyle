@@ -27,6 +27,9 @@ VARIANTS = (
     ("R", "pmr_resource_runtime"),
     ("T", "system_std_allocator"),
     ("D", "std_allocator_runtime"),
+    ("E", "backend_reallocate_same_link"),
+    ("F", "system_allocator_reallocate"),
+    ("G", "allocator_runtime_reallocate"),
 )
 
 COMPARISONS = (
@@ -36,6 +39,8 @@ COMPARISONS = (
     ("std_allocator_runtime", "allocator_runtime"),
     ("system_memory_resource", "pmr_direct_backend"),
     ("pmr_resource_runtime", "pmr_direct_backend"),
+    ("system_allocator_reallocate", "backend_reallocate_same_link"),
+    ("allocator_runtime_reallocate", "backend_reallocate_same_link"),
 )
 
 ROW_RE = re.compile(r"^\|\s+[0-9.]+%\s+\|\s+([0-9,.]+)\s+\|", re.MULTILINE)
