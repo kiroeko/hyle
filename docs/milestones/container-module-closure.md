@@ -74,11 +74,13 @@
 > 运行时依赖。SparseSet 采用成熟 dense+sparse 形状：insert/erase/contains/clear O(1)，
 > active iteration O(active)，且明确保留纯 membership 输 dense byte bitmap 的选型边界。
 > Windows/WSL 的 typed、纯 C、符号与头自包含四道门均通过，GCC 14 UBSan 也通过；
-> Windows/WSL n=15 实际 workload 已进入 performance 文档。M4/NEON 尚待本轮提交后
-> 在远程副本刷新，因此这仍是 container 严格复审的一批，不是整个模块最终证书；后续
+> Windows/WSL n=15 实际 workload 已进入 performance 文档。远程 M4 随后通过同样四道门；
+> 初版 NEON count 15/15 慢 std 约 12.3%，改为 byte CNT + 四路 UDOT 后，公开
+> `operator|=`+`count()` 与 std 统计同档，且诚实保留 fused 单循环 floor 快 1.53x。
+> 因此这仍是 container 严格复审的一批，不是整个模块最终证书；后续
 > 仍按单线程 ring、concurrent associative、ordered/range associative 的真实合同推进。
-> 本轮四项代码量：全库 254,308；自实现含测试 120,403；自实现不含测试 82,633；
-> container 实现 7,875。
+> 本轮四项代码量：全库 254,369；自实现含测试 120,448；自实现不含测试 82,678；
+> container 实现 7,920。
 
 ## 结论
 

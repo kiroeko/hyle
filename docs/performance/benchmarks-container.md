@@ -15,7 +15,7 @@
 | **hash / mix64 / Hash&lt;T&gt;** | ✅ Windows/WSL n=15 长 hash SIMD；⏳ M4 | Win ≥1KiB、Linux ≥512B 产品派发；其余历史表待三平台统一刷新 |
 | **SmallVector / PodVector** | ⚠️ 主 Win + 部分补测 | owning vector 形状待本轮统一三平台刷新 |
 | **ConcurrentVector** | ✅ Windows+WSL n=15；⏳ M4 | append/range iteration 同合同 SOTA；WSL `operator[]` 是已知缺口 |
-| **DynamicBitSet / SparseSet** | ✅ Windows+WSL n=15；⏳ M4 | actual-use graph frontier / frame-local active IDs；纯 SparseSet membership 明确输 dense bitmap |
+| **DynamicBitSet / SparseSet** | ✅ **2026-07-26 三平台 n=15** | actual-use graph frontier / frame-local active IDs；M4 bitset 与 std 同档；纯 SparseSet membership 明确输 dense bitmap |
 | **并发队列** | 见 queue / sched 文 | 不在本页展开 |
 
 **读法**：标 ✅ 的可当当前产品结论；标 ⚠️ 的方向大体可信，但**不要**当 2026-07-20 式三平台 sign 证书去对外硬报绝对 ns。
@@ -35,15 +35,15 @@
 | **StringInterner** | map+mutex / Absl 分片 peer | ⚠️ **Win 多平**；WSL/M4 lifecycle **输**；growth 赢；8t 距 Absl ~5% |
 | **path 词法** | string_view 扫 / filesystem | ✅ 平算法基线；**碾** filesystem（零分配结构差） |
 | **ConcurrentVector** | oneTBB `concurrent_vector` | ✅ Win/WSL：append、range iteration、并发 prefix 读同档或赢；⚠️ WSL `operator[]` 顺扫约 0.51x |
-| **DynamicBitSet** | `std::bitset` + portable dynamic blocks | ✅ Win 1M-bit OR+count 1.40x / 5.21x；WSL 5.18x / 4.52x；⏳ Boost/M4 |
-| **SparseSet** | dense bitmap + `std::unordered_set` | ✅ frame clear+rebuild Win 3.29x/28.6x，WSL 3.61x/11.6x；membership 明确输 dense |
+| **DynamicBitSet** | `std::bitset` + portable dynamic blocks | ✅ Win 1M-bit OR+count 1.40x；WSL 5.18x；M4 与 std 同档；⚠️ M4 单循环 fused floor 快 1.53x；⏳ Boost |
+| **SparseSet** | dense bitmap + `std::unordered_set` | ✅ frame clear+rebuild Win 3.29x/28.6x，WSL 3.61x/11.6x，M4 1.86x/11.4x；membership 明确输 dense |
 
-### DynamicBitSet / SparseSet：按实际生命周期验收（Windows/WSL Release，n=15）
+### DynamicBitSet / SparseSet：按实际生命周期验收（三平台 Release，n=15）
 
 bitset workload 不是单条 intrinsic：预建两个 1M-bit graph frontier，每轮执行正常公开
-`operator|=` 再 `count()`。`std::bitset<1M>` 是成熟固定尺寸 peer；portable `uint64_t`
-dynamic blocks 是常见动态 bitset word loop floor。表中 ns/op 按 bit batch 归一，括号为
-每秒处理 bits：
+`operator|=` 再 `count()`。`std::bitset<1M>` 是成熟固定尺寸同接口 peer；portable
+`uint64_t` blocks 把 OR 与 popcount 融成一个手写循环，只是可达到的一遍扫描 floor，
+不是同接口 peer。表中 ns/op 按 bit batch 归一，括号为每秒处理 bits：
 
 | 1M-bit OR + count | median | paired 判定 |
 |---|---:|---|
@@ -55,6 +55,14 @@ WSL / GCC 14.2 同一合同：HYLE 0.003 ns/bit（286.61G bit/s）；`std::bitse
 ns/bit（55.06G，HYLE **5.18x**），portable blocks 0.016 ns/bit（63.87G，HYLE
 **4.52x**），两组均 HYLE 15/15。Windows 的 std::bitset codegen 更强，所以对固定 peer
 领先较小；产品 AVX2 path 在两个 shipping compiler 都成立。
+
+M4 / AppleClang 21：HYLE 0.004 ns/bit（253.78G bit/s），`std::bitset` 0.004
+ns/bit（253.97G），paired ratio 统计同档（std 10/15，median 1.008x）；fused portable
+loop 0.003 ns/bit（389.42G），快 HYLE **1.53x**。第一版通用 u64-lane popcount 曾以
+15/15 慢 std 约 12.3%；NEON count 改为 byte `CNT` + 四路 `UDOT` 累加后追平。
+这个优化只改 backend，不增加常态 metadata 或 benchmark-only API。fused floor 的收益
+来自一次访存同时 OR+count；在用户确有可复用的融合合同前，不把成熟库普遍分开的
+`operator|=`/`count()` 扭成只服务这一测项的接口。
 
 SparseSet workload 模拟每帧 active IDs：universe=1M，每轮 O(1) clear 后插入 4096 个 ID；
 另以 64K mixed queries 单独测 membership。dense byte bitmap 是稠密 ID 查询的强 peer，
@@ -70,11 +78,17 @@ ns/ID（HYLE **3.61x/11.6x**，均 15/15）；membership 为 HYLE 1.327、dense 
 unordered 2.895 ns/query（dense **4.74x HYLE**，HYLE **2.17x hash**，均 15/15）。
 WSL absolute spread 较大，但 paired sign test 六组均同侧 15/15。
 
+M4 / AppleClang 21：frame clear+insert 为 HYLE 1.402、dense 2.604、unordered 16.039
+ns/ID（HYLE **1.86x/11.4x**；对 dense 15/15）；membership 为 HYLE 0.693、dense
+0.477、unordered 0.945 ns/query（dense **1.45x HYLE**，HYLE **1.36x hash**；对
+dense 15/15）。
+
 这个 lose 是结构事实：dense bitmap 一次 indexed byte load，SparseSet 要读 sparse position
 再反查 dense；SparseSet 的收益来自不清 U bytes、直接 O(active) 迭代和同时保存 active
 ID。不得为赢 membership benchmark 给常态对象再塞一份 bitmap，否则会把本来明确的
-内存/生命周期选择扭曲成三数组容器。当前证书覆盖 Windows/MSVC 与 WSL/GCC14 的 AVX2
-机器；M4 及真实 Boost dynamic_bitset peer 未刷新前，不写“三平台/所有对手 SOTA”。
+内存/生命周期选择扭曲成三数组容器。当前证书覆盖 Windows/MSVC、WSL/GCC14 AVX2
+与 M4/AppleClang NEON；本地没有可编译的 Boost dynamic_bitset peer，因此只把
+`std::bitset` 写作当前成熟同接口证据，不外推成“所有对手 SOTA”。
 
 ### FlatHashMap / FlatHashSet：真实 typed 形状（Windows/WSL Release，n=15）
 
@@ -176,9 +190,11 @@ WSL 的逐次索引差距与 GCC 对运行时 segment 定位的代码生成有�
    刷新；非 AVX2 产品保持 wyhash，不把 x86 结论外推成三平台 SOTA。
 
 8. **SparseSet 纯 membership / 新集合类型平台证书**
-   SparseSet 的 mixed membership 是 dense byte bitmap 的约 0.27x，这是选择条件，不是待
+   SparseSet 的 mixed membership 在 Win/WSL/M4 分别是 dense byte bitmap 的约
+   0.27x/0.21x/0.69x，这是选择条件，不是待
    隐藏的小缺口；频繁 O(1) clear/O(active) iteration 才选择 SparseSet。DynamicBitSet /
-   SparseSet 当前已有 Windows/WSL n=15，M4 与 Boost/Folly 可编译 peer 待刷新。
+   SparseSet 当前已有三平台 n=15；本地缺 Boost dynamic_bitset 可编译 peer，后续只在
+   参考树具备同合同实现后补，不以网络临时 clone 改变参考集。
 
 ## 3. 选型（不同场景不同 container 组成）
 

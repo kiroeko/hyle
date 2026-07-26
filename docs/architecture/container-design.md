@@ -270,7 +270,7 @@ SIMD 只进入可批量处理的字节/lane 工作，不按模块名强套：
 | 长字节 table hash | x86 AVX2 XXH3 / baseline wyhash | varied-input 证据后进入产品；Windows/MSVC 从 1KiB、Linux/GCC14 从 512B，CPU/OS gate 在 platform，非 x86 不退化 |
 | vector relocation | compiler/libc `memcpy/memmove` | 不重复实现平台已有宽拷贝与 non-temporal 策略 |
 | lock-free queue / atomics | 不做 | 瓶颈是依赖链、cache line ownership 和 CAS，不是 lane arithmetic |
-| DynamicBitSet | SSE4/AVX2/AVX512/NEON runtime dispatch | AND/OR/XOR/and-not/count 复用 header-only vec DSL；小于 8/16 words 分别走本地 scalar，避免 dispatcher 税 |
+| DynamicBitSet | SSE4/AVX2/AVX512/NEON runtime dispatch | 位运算与 x86 count 复用 header-only vec DSL；NEON count 用 byte CNT+四路 UDOT，修复 M4 通用 u64-lane reduction 的 12% 缺口；小于 8/16 words 分别走本地 scalar |
 
 长 hash 的宽核放在独立 AVX2 TU，baseline dispatcher 只有在 CPUID+XGETBV 安全门通过后
 调用；varied-input sweep 分别给出 Windows/MSVC 1KiB 与 Linux/GCC14 512B 的保守交叉点。
