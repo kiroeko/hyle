@@ -353,6 +353,67 @@ TEST(BTreeMap, RandomRangeExpiryMatchesStdMap) {
   expect_same_map(actual, expected);
 }
 
+TEST(BTreeMap, RepeatedFrontExpiryAndRefillMatchesStdMap) {
+  BTreeMap<int, int> actual;
+  std::map<int, int> expected;
+  constexpr int kLive = 4'096;
+  constexpr int kExpire = 17;
+  for (int key = 0; key < kLive; ++key) {
+    actual.insert(key, key * 2);
+    expected.emplace(key, key * 2);
+  }
+
+  int next = kLive;
+  for (int round = 0; round < 1'000; ++round) {
+    const int cutoff = actual.begin()->key() + kExpire;
+    const auto actual_next = actual.erase(actual.begin(),
+                                          actual.lower_bound(cutoff));
+    const auto expected_next = expected.erase(expected.begin(),
+                                              expected.lower_bound(cutoff));
+    ASSERT_NE(actual_next, actual.end());
+    ASSERT_NE(expected_next, expected.end());
+    EXPECT_EQ(actual_next->key(), expected_next->first);
+
+    for (int index = 0; index < kExpire; ++index, ++next) {
+      actual.insert(next, next * 2);
+      expected.emplace(next, next * 2);
+    }
+    if ((round % 31) == 0)
+      expect_same_map(actual, expected);
+  }
+  expect_same_map(actual, expected);
+}
+
+TEST(BTreeMap, RepeatedBackExpiryAndRefillMatchesStdMap) {
+  BTreeMap<int, int> actual;
+  std::map<int, int> expected;
+  constexpr int kLive = 4'096;
+  constexpr int kExpire = 17;
+  for (int key = kLive - 1; key >= 0; --key) {
+    actual.insert(key, key * 2);
+    expected.emplace(key, key * 2);
+  }
+
+  int next = -1;
+  for (int round = 0; round < 1'000; ++round) {
+    const int cutoff = std::prev(actual.end())->key() - kExpire + 1;
+    const auto actual_next = actual.erase(actual.lower_bound(cutoff),
+                                          actual.end());
+    const auto expected_next = expected.erase(expected.lower_bound(cutoff),
+                                              expected.end());
+    EXPECT_EQ(actual_next, actual.end());
+    EXPECT_EQ(expected_next, expected.end());
+
+    for (int index = 0; index < kExpire; ++index, --next) {
+      actual.insert(next, next * 2);
+      expected.emplace(next, next * 2);
+    }
+    if ((round % 31) == 0)
+      expect_same_map(actual, expected);
+  }
+  expect_same_map(actual, expected);
+}
+
 TEST(BTreeMap, DuplicateTryEmplaceDoesNotConstructMappedValue) {
   ConstructionCounted::constructions = 0;
   BTreeMap<int, ConstructionCounted> map;

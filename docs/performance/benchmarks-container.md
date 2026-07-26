@@ -12,7 +12,7 @@
 | **StringInterner / string 收口表** | ✅ **2026-07-19 三平台** | Win / WSL / M4；lifecycle 落后已诚实登记；2026-07-26 batch 分片锁改动待刷新 |
 | **path** | ✅ 双平台 n=15 | Win+Lin；算法基线 + filesystem 分离 |
 | **FlatHashMap / FlatHashSet** | ✅ Windows+WSL n=15；⏳ M4 | 同合同 Abseil；WSL map/set miss 是已登记小缺口 |
-| **BTreeMap / BTreeSet** | ✅ **2026-07-26 三平台 n=15** | Abseil B-tree 同类；按 ordered index、range scan、build/copy/churn、time expiry 十轴验收；M4 mutation 缺口与 x86 above-max miss 明示 |
+| **BTreeMap / BTreeSet** | ✅ **2026-07-26 三平台 n=15** | Abseil B-tree 同类；按 ordered index、range scan、build/copy/churn、time expiry 十轴验收；边界偏置 split/delete 已消除主要 mutation 缺口，剩余逐平台边界明示 |
 | **hash / mix64 / Hash&lt;T&gt;** | ✅ Windows/WSL n=15 长 hash SIMD；⏳ M4 | Win ≥1KiB、Linux ≥512B 产品派发；其余历史表待三平台统一刷新 |
 | **SmallVector / PodVector** | ⚠️ 主 Win + 部分补测 | owning vector 形状待本轮统一三平台刷新 |
 | **ConcurrentVector** | ✅ Windows+WSL n=15；⏳ M4 | append/range iteration 同合同 SOTA；WSL `operator[]` 是已知缺口 |
@@ -45,7 +45,7 @@
 | **ByteRingBuffer** | linear byte buffer+memmove / `std::deque<byte>` | ✅ stream staging Win/WSL/M4 快 linear 1.82x/1.94x/4.26x，快 deque 约118x/48x/121x |
 | **SpscQueue** | Folly `ProducerConsumerQueue` shape | ➖ 三平台 n=15 **TIE**；同 exact-capacity sentinel / acquire-release 合同，不为测项增加 remote cache 或 power-of-two 特化 |
 | **ConcurrentFlatHashMap / ConcurrentNodeHashMap** | oneTBB `concurrent_hash_map` | ✅ protected hit、8-reader、90/10 mixed 三平台均 15/15 胜；flat rebuild 6.25–7.05x；node rebuild M4 胜、Win/Linux 统计同档 |
-| **BTreeMap / BTreeSet** | Abseil `btree_map/set` | ⚠️ 实际十轴混合：WSL 6 胜/4 平或边界 lose；Windows copy/churn/domain-miss 胜但遍历/above-max miss 输；M4 copy/遍历/set/range 胜，churn/time-expiry 输 |
+| **BTreeMap / BTreeSet** | Abseil `btree_map/set` | ⚠️ 实际十轴混合：Windows 7 胜/1 平/2 负，WSL 6 胜/2 平/2 负，M4 6 胜/1 平/3 负；主要 time-index mutation 缺口已消除，但不宣称逐平台全轴 SOTA |
 
 ### BTreeMap / BTreeSet：有序索引真实矩阵（三平台 Release，n=15）
 
@@ -57,16 +57,16 @@
 
 | workload | Windows HYLE / Absl ns | ratio/判定 | WSL HYLE / Absl ns | ratio/判定 | M4 HYLE / Absl ns | ratio/判定 |
 |---|---:|---|---:|---|---:|---|
-| find hit | 50.268 / 49.762 | 0.985x LOSE（小幅但 13/15 同侧） | **44.461 / 47.301** | **1.054x WIN** | 43.389 / 41.289 | 0.958x TIE |
-| in-domain miss | **46.917 / 49.504** | **1.048x WIN** | **45.813 / 48.134** | **1.056x WIN** | 45.691 / 45.360 | 0.953x TIE |
-| above-maximum miss（边界探针） | 20.014 / **14.364** | **0.726x LOSE** | 18.201 / **15.454** | **0.851x LOSE** | **17.951 / 18.286** | **1.028x WIN** |
-| ordered set membership | 48.572 / 48.065 | 0.999x TIE | 43.737 / 43.604 | 1.005x TIE | **35.834 / 38.737** | **1.072x WIN** |
-| lower_bound + scan 16 | 74.487 / 74.832 | 1.012x TIE | **65.426 / 69.499** | **1.059x WIN** | **58.363 / 62.252** | **1.093x WIN** |
-| deterministic iteration | 1.143 / **1.025** | **0.888x LOSE** | 0.929 / 0.953 | 1.004x TIE | **0.791 / 1.065** | **1.339x WIN** |
-| build from shuffled events | 68.540 / 74.450 | 1.074x TIE（12/15） | **56.422 / 63.969** | **1.136x WIN** | 58.994 / 57.662 | 0.973x TIE |
-| copy existing index | **3.064 / 11.883** | **4.048x WIN** | **2.723 / 4.195** | **1.565x WIN** | **1.325 / 4.517** | **3.439x WIN** |
-| erase + insert churn | **47.947 / 57.810** | **1.180x WIN** | **43.602 / 46.161** | **1.064x WIN** | 47.148 / **43.079** | **0.916x LOSE** |
-| time expiry range + refill | 30.143 / 32.561 | 1.069x TIE | 30.214 / 29.651 | 0.981x TIE | 30.050 / **26.142** | **0.872x LOSE** |
+| find hit | **44.906 / 49.989** | **1.107x WIN** | **47.329 / 51.633** | **1.092x WIN** | **41.585 / 44.820** | **1.108x WIN** |
+| in-domain miss | **46.298 / 49.782** | **1.078x WIN** | **49.539 / 53.048** | **1.065x WIN** | 45.730 / **41.348** | **0.887x LOSE** |
+| above-maximum miss（边界探针） | **15.562 / 21.379** | **1.380x WIN** | 18.164 / **16.996** | **0.932x LOSE** | **17.067 / 19.426** | **1.137x WIN** |
+| ordered set membership | 47.085 / 48.095 | 1.011x TIE | 47.503 / 47.444 | 0.994x TIE | **36.360 / 39.370** | **1.073x WIN** |
+| lower_bound + scan 16 | 74.341 / **70.934** | **0.956x LOSE** | **69.977 / 74.755** | **1.079x WIN** | 60.342 / 62.839 | 1.029x TIE |
+| deterministic iteration | 1.151 / **1.020** | **0.890x LOSE** | 1.021 / 1.021 | 0.995x TIE | **0.820 / 1.055** | **1.287x WIN** |
+| build from shuffled events | **65.937 / 73.561** | **1.120x WIN** | **64.511 / 69.103** | **1.062x WIN** | 59.660 / **56.916** | **0.941x LOSE** |
+| copy existing index | **2.936 / 11.715** | **3.927x WIN** | **2.803 / 4.330** | **1.523x WIN** | **1.305 / 4.563** | **3.490x WIN** |
+| erase + insert churn | **48.064 / 55.442** | **1.159x WIN** | **45.455 / 49.487** | **1.096x WIN** | 41.890 / **41.196** | **0.983x LOSE** |
+| time expiry range + refill | **31.641 / 33.293** | **1.051x WIN** | 32.198 / **31.497** | **0.978x LOSE** | **25.463 / 26.107** | **1.027x WIN** |
 
 Windows 的 build/mutation absolute spread 较大，判定采用同进程成对 sign test；Windows
 与 WSL 曾被误并行跑在同一物理 CPU 上的一批数据已废弃，没有进入本表。M4 为远程真机。
@@ -74,14 +74,17 @@ Windows 的 build/mutation absolute spread 较大，判定采用同进程成对 
 实现形状来自消费合同：约 256-byte leaf、entry 同时位于 leaf/internal node、unique-key、
 双向 iterator 与 `[lower,upper)` range。copy 由逐项重插改为 O(N) 树形克隆后，三平台均
 明确领先；范围删除按 leaf run 批量搬移并可直接卸下完全过期页；POD slot 用 memmove。
-这些也是普通 ordered index 的复杂度/搬移优化，没有公开 node 容量、subtree rank 或
-benchmark 专用入口。
+2026-07-26 profile 又定位出真实 time-index 瓶颈在单调 refill：满页 50/50 split 会让有序
+流反复分配半空页，边界 deletion 也会把即将过期的 entry 借来再删。实现现与成熟 Abseil
+形状一致地按插入位置偏置 split/rebalance，并在连续 begin/end 删除时延迟非必要 borrow。
+这同时改善 append/prepend、churn 与 expiry，没有公开 node 容量、subtree rank、常态 metadata
+或 benchmark 专用入口。
 
-仍不能写“B-tree 全轴 SOTA”：x86 above-max miss、Windows full iteration、M4 churn 与
-time-expiry 是已确认边界。above-max 只代表 query 分布全部落在表右侧，不能取代域内 miss；
-若为了它在常态节点加入边界 cache，就会被一条测试扭曲。M4 mutation 更值得后续用 profile
-检查 split/merge 和 allocator/cache 行为，但在有跨 workload 收益的架构证据前不继续调
-node capacity，也不添加 per-entry metadata。
+仍不能写“B-tree 全轴 SOTA”：Windows full iteration/lower-bound scan、WSL above-max miss/
+expiry，以及 M4 domain miss/shuffled build/churn 是当前边界；其中 mutation 剩余差距只有
+约 1.7–2.2%，但 paired sign test 仍如实记为 lose。不同平台的赢负方向并不一致，继续为
+单条 miss 分布增加边界 cache 或调 node capacity 会扭曲普通用户形状；后续只由跨 workload
+profile 证据重开。
 
 ### DynamicBitSet / SparseSet：按实际生命周期验收（三平台 Release，n=15）
 

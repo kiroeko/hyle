@@ -105,15 +105,18 @@ strict inline-capacity sequence、sorted flat associative 与带完整策略的�
 
 `BTreeMap/Set` 服务 flat hash 无法表达的 lower/upper bound、确定性遍历、时间窗口与范围
 淘汰。设计对照本地 Abseil B-tree 的 cache-packed family shape：entry 同时位于 leaf 和
-internal node，separator 不重复存 key；leaf 目标约 256 bytes，非 root node 至少半满，
-不为单条测项保存 subtree size、rank、finger 或预取 metadata。短数值 key 在 node 内线性
-搜索；自定义 comparator 走二分。该选择由小节点 cache locality 决定，不向用户公开节点
-容量或搜索 policy。
+internal node，separator 不重复存 key；leaf 目标约 256 bytes。普通 interior mutation
+保持密集节点；单调 append/prepend 的满页分裂按插入位置偏置，避免每次只留下半页；连续
+边界删除允许最外侧非空页短暂低于半满，避免把马上要过期的 entry 从兄弟页搬来再删除。
+空页仍立即 merge/unlink，树高和单项操作仍为 O(log N)。实现不为单条测项保存 subtree
+size、rank、finger 或预取 metadata。短数值 key 在 node 内线性搜索；自定义 comparator
+走二分。该选择由小节点 cache locality 决定，不向用户公开节点容量或搜索 policy。
 
 单项 find/insert/erase 为 O(log N)，有序遍历为 O(N)。copy 递归克隆现有树形，O(N) 且
 不调用 comparator；它不是逐项重新 insert 的 O(N log N)。iterator range erase 对 leaf 中
 连续 run 做一次后缀搬移；完全落在删除范围内的 page 可直接卸下，避免先 merge 整页再逐项
-销毁。分裂前会预留必要 sibling/root，OOM 时结构保持不变。trivially-copyable entry 使用
+销毁。满页先尝试把 entry 向有余量的兄弟页平衡；边界写入会填满旧页、把新页留给后续有序
+数据。分裂前会预留必要 sibling/root，OOM 时结构保持不变。trivially-copyable entry 使用
 `memmove`，非平凡 entry 执行 nothrow move construction/destruction；两条路径共享同一公开
 合同，不是 benchmark 特化。
 
@@ -477,10 +480,10 @@ pointer/count 的 `try_append/try_insert/try_resize/erase/try_shrink_to_fit` 覆
 
 - flat Swiss map 的 Windows 已测核心操作领先 Abseil；WSL 除 miss 约慢 3% 外领先，
   set miss 约慢 6%，不作无条件 SOTA 宣称；
-- ordered B-tree 对 Abseil 的三平台实际矩阵中，copy/范围/构建/点查整体同档或领先；
-  M4 单项 erase+insert churn 与 time-index expire/refill 仍分别慢约 8%/13%，Windows/WSL
-  的 above-maximum miss 也会慢约 18%/38%。这些是公开边界，不用 miss 分布特化、常态
-  元数据或 benchmark API 隐藏；
+- ordered B-tree 对 Abseil 的三平台实际矩阵中，copy/点查/构建/mutation 整体同档或领先；
+  边界偏置 split/delete 已把原 M4 time-index 0.872x 提升到 1.027x。剩余 Windows full
+  iteration/range、WSL above-max/expiry 与 M4 domain-miss/build/churn 仍公开登记，不用
+  miss 分布特化、常态元数据或 benchmark API 隐藏；
 - PodVector/SmallVector/队列按各自对等形状判断；
 - 路径的大倍数主要来自零分配结构，对同形 string-view 扫描通常是平局；
 - StringInterner 长串增长、重复 churn、并发分片和 batch 分别验收；单调用仍有 DLL seam；

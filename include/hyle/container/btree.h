@@ -99,8 +99,10 @@ template <class K> struct BTreeSetPolicy {
 // nodes (the Abseil family shape), avoiding duplicate separator keys and making
 // move-only keys possible. Leaf storage targets 256 bytes; internal nodes add
 // their child-pointer array. Capacity is forced to 2*t-1 so ordinary CLRS
-// borrow/merge deletion keeps O(log N) height and at least half-full non-root
-// nodes without per-entry metadata.
+// borrow/merge deletion keeps O(log N) height. As in Abseil's mature B-tree
+// shape, repeated deletion at an outer node boundary may leave a non-empty
+// node temporarily below half full: eagerly borrowing values that the same
+// expiry/window walk will immediately delete creates avoidable page traffic.
 template <class Policy, class Compare, class Alloc> class BTreeCore {
 protected:
   using Entry = typename Policy::entry_type;
@@ -135,7 +137,6 @@ private:
   static constexpr std::size_t kCapacity =
       (kAtLeastFive & 1) != 0 ? kAtLeastFive : kAtLeastFive - 1;
   static constexpr std::size_t kMinKeys = kCapacity / 2;
-  static constexpr std::size_t kMinDegree = kMinKeys + 1;
   static constexpr std::size_t kNodeAlignment =
       std::max({alignof(Node), alignof(Entry), alignof(Node *)});
 
@@ -667,10 +668,11 @@ private:
   template <class Q>
   std::uint16_t node_lower_bound(const Node *node,
                                  const Q &key) const noexcept {
+    const Entry *values = entry(node, 0);
     if constexpr (kLinearNodeSearch) {
       std::uint16_t index = 0;
       while (index < node->count &&
-             compare_(Policy::key(*entry(node, index)), key))
+             compare_(Policy::key(values[index]), key))
         ++index;
       return index;
     } else {
@@ -679,7 +681,7 @@ private:
       while (first != last) {
         const std::uint16_t middle =
             static_cast<std::uint16_t>((first + last) / 2);
-        if (compare_(Policy::key(*entry(node, middle)), key))
+        if (compare_(Policy::key(values[middle]), key))
           first = static_cast<std::uint16_t>(middle + 1);
         else
           last = middle;
@@ -691,10 +693,11 @@ private:
   template <class Q>
   std::uint16_t node_upper_bound(const Node *node,
                                  const Q &key) const noexcept {
+    const Entry *values = entry(node, 0);
     if constexpr (kLinearNodeSearch) {
       std::uint16_t index = 0;
       while (index < node->count &&
-             !compare_(key, Policy::key(*entry(node, index))))
+             !compare_(key, Policy::key(values[index])))
         ++index;
       return index;
     } else {
@@ -703,7 +706,7 @@ private:
       while (first != last) {
         const std::uint16_t middle =
             static_cast<std::uint16_t>((first + last) / 2);
-        if (!compare_(key, Policy::key(*entry(node, middle))))
+        if (!compare_(key, Policy::key(values[middle])))
           first = static_cast<std::uint16_t>(middle + 1);
         else
           last = middle;
@@ -723,8 +726,8 @@ private:
                   (std::is_same_v<Compare, std::less<Key>> ||
                    std::is_same_v<Compare, std::less<>>)) {
       std::uint16_t index = 0;
+      const Entry *values = entry(node, 0);
       if constexpr (Policy::kIsSet) {
-        const Entry *values = entry(node, 0);
         while (index < node->count) {
           const Key &candidate = Policy::key(values[index]);
           if (candidate >= key)
@@ -733,7 +736,7 @@ private:
         }
       } else {
         while (index < node->count) {
-          const Key &candidate = Policy::key(*entry(node, index));
+          const Key &candidate = Policy::key(values[index]);
           if (candidate >= key)
             return {index, candidate == key};
           ++index;
@@ -745,8 +748,8 @@ private:
                          (std::is_same_v<Compare, std::greater<Key>> ||
                           std::is_same_v<Compare, std::greater<>>)) {
       std::uint16_t index = 0;
+      const Entry *values = entry(node, 0);
       if constexpr (Policy::kIsSet) {
-        const Entry *values = entry(node, 0);
         while (index < node->count) {
           const Key &candidate = Policy::key(values[index]);
           if (candidate <= key)
@@ -755,7 +758,7 @@ private:
         }
       } else {
         while (index < node->count) {
-          const Key &candidate = Policy::key(*entry(node, index));
+          const Key &candidate = Policy::key(values[index]);
           if (candidate <= key)
             return {index, candidate == key};
           ++index;
@@ -970,10 +973,11 @@ private:
   }
 
   static void split_child(Node *parent, std::uint16_t child_index,
-                          Node *sibling) noexcept {
+                          Node *sibling, std::uint16_t insert_index) noexcept {
     Node *source = child(parent, child_index);
     HYLE_FATAL_ASSERT(parent->count < kCapacity && source->count == kCapacity &&
-                      sibling->leaf == source->leaf);
+                      sibling->leaf == source->leaf &&
+                      insert_index <= kCapacity);
     const std::uint16_t old_parent_count = parent->count;
 
     for (std::size_t i = old_parent_count + 1;
@@ -981,20 +985,32 @@ private:
       child(parent, i) = child(parent, i - 1);
     child(parent, child_index + 1) = sibling;
 
-    for (std::size_t i = 0; i < kMinKeys; ++i) {
-      construct_entry(sibling, i, std::move(*entry(source, kMinDegree + i)));
-      destroy_entry(source, kMinDegree + i);
+    // Bias an edge split toward the incoming key. Monotonic event streams then
+    // leave the old page full and the new page empty instead of allocating a
+    // half-empty page after every kCapacity/2 appends. Interior insertion keeps
+    // the conventional even split.
+    const std::uint16_t right_count =
+        insert_index == 0
+            ? static_cast<std::uint16_t>(kCapacity - 1)
+            : (insert_index == kCapacity ? 0
+                                         : static_cast<std::uint16_t>(kMinKeys));
+    const std::uint16_t left_count = static_cast<std::uint16_t>(
+        kCapacity - static_cast<std::size_t>(right_count) - 1);
+    for (std::size_t i = 0; i < right_count; ++i) {
+      construct_entry(sibling, i,
+                      std::move(*entry(source, left_count + 1 + i)));
+      destroy_entry(source, left_count + 1 + i);
     }
-    sibling->count = static_cast<std::uint16_t>(kMinKeys);
+    sibling->count = right_count;
 
-    Entry median(std::move(*entry(source, kMinKeys)));
-    destroy_entry(source, kMinKeys);
-    source->count = static_cast<std::uint16_t>(kMinKeys);
+    Entry median(std::move(*entry(source, left_count)));
+    destroy_entry(source, left_count);
+    source->count = left_count;
     insert_entry(parent, child_index, std::move(median));
 
     if (!source->leaf) {
-      for (std::size_t i = 0; i <= kMinKeys; ++i)
-        child(sibling, i) = child(source, kMinDegree + i);
+      for (std::size_t i = 0; i <= right_count; ++i)
+        child(sibling, i) = child(source, left_count + 1 + i);
       update_child_positions(sibling, 0);
     }
     update_child_positions(parent, child_index);
@@ -1023,7 +1039,9 @@ private:
       const auto rebalance_into_left = [&]() noexcept {
         const std::uint16_t old_left_count = left->count;
         const std::uint16_t moves = static_cast<std::uint16_t>(std::max(
-            std::size_t{1}, (kCapacity - left->count) / std::size_t{2}));
+            std::size_t{1},
+            (kCapacity - left->count) /
+                (std::size_t{1} + (index < kCapacity ? 1u : 0u))));
         borrow_from_right_n(parent, static_cast<std::uint16_t>(position - 1),
                             moves);
         if (moves > index) {
@@ -1036,7 +1054,9 @@ private:
       const auto rebalance_into_right = [&]() noexcept {
         const std::uint16_t old_count = node->count;
         const std::uint16_t moves = static_cast<std::uint16_t>(std::max(
-            std::size_t{1}, (kCapacity - right->count) / std::size_t{2}));
+            std::size_t{1},
+            (kCapacity - right->count) /
+                (std::size_t{1} + (index > 0 ? 1u : 0u))));
         borrow_from_left_n(parent, static_cast<std::uint16_t>(position + 1),
                            moves);
         const std::uint16_t remaining =
@@ -1070,11 +1090,12 @@ private:
       child(new_root, 0) = node;
       node->parent = new_root;
       node->position = 0;
-      split_child(new_root, 0, sibling);
+      split_child(new_root, 0, sibling, index);
       root_ = new_root;
-      if (index > kMinKeys) {
+      const std::uint16_t left_count = node->count;
+      if (index > left_count) {
         node = sibling;
-        index = static_cast<std::uint16_t>(index - kMinDegree);
+        index = static_cast<std::uint16_t>(index - left_count - 1);
       }
       return true;
     }
@@ -1093,10 +1114,11 @@ private:
     }
 
     parent = node->parent;
-    split_child(parent, node->position, sibling);
-    if (index > kMinKeys) {
+    split_child(parent, node->position, sibling, index);
+    const std::uint16_t left_count = node->count;
+    if (index > left_count) {
       node = sibling;
-      index = static_cast<std::uint16_t>(index - kMinDegree);
+      index = static_cast<std::uint16_t>(index - left_count - 1);
     }
     return true;
   }
@@ -1267,31 +1289,15 @@ private:
     while (node != root_ && node->count < kMinKeys) {
       Node *parent = node->parent;
       const std::uint16_t position = node->position;
-      if (position != 0 && child(parent, position - 1)->count > kMinKeys) {
-        Node *left = child(parent, position - 1);
-        const std::uint16_t moves = static_cast<std::uint16_t>(
-            std::min(static_cast<std::size_t>(kMinKeys - node->count),
-                     static_cast<std::size_t>(left->count - kMinKeys)));
-        borrow_from_left_n(parent, position, moves);
-        if (cursor_node != nullptr && *cursor_node == node)
-          *cursor_index = static_cast<std::uint16_t>(*cursor_index + moves);
-        if (node->count >= kMinKeys)
-          break;
-      }
-      if (position < parent->count &&
-          child(parent, position + 1)->count > kMinKeys) {
-        Node *right = child(parent, position + 1);
-        const std::uint16_t moves = static_cast<std::uint16_t>(
-            std::min(static_cast<std::size_t>(kMinKeys - node->count),
-                     static_cast<std::size_t>(right->count - kMinKeys)));
-        borrow_from_right_n(parent, position, moves);
-        if (node->count >= kMinKeys)
-          break;
-      }
-      if (position < parent->count) {
-        merge_children(parent, position);
-      } else {
-        Node *left = child(parent, position - 1);
+      Node *left = position == 0 ? nullptr : child(parent, position - 1);
+      Node *right =
+          position == parent->count ? nullptr : child(parent, position + 1);
+
+      // Prefer removing a node before moving values between siblings. Apart
+      // from doing less work, this preserves density under long-lived churn.
+      if (left != nullptr &&
+          static_cast<std::size_t>(left->count) + 1 + node->count <=
+              kCapacity) {
         const std::uint16_t left_old_count = left->count;
         if (cursor_node != nullptr && *cursor_node == node) {
           *cursor_node = left;
@@ -1299,8 +1305,50 @@ private:
               static_cast<std::uint16_t>(left_old_count + 1 + *cursor_index);
         }
         merge_children(parent, static_cast<std::uint16_t>(position - 1));
+        node = parent;
+        continue;
       }
-      node = parent;
+      if (right != nullptr &&
+          static_cast<std::size_t>(node->count) + 1 + right->count <=
+              kCapacity) {
+        merge_children(parent, position);
+        node = parent;
+        continue;
+      }
+
+      const bool cursor_is_here =
+          cursor_node != nullptr && cursor_index != nullptr &&
+          *cursor_node == node;
+      const bool deleted_at_front =
+          cursor_is_here && node->count != 0 && *cursor_index == 0;
+      const bool deleted_at_back =
+          cursor_is_here && node->count != 0 && *cursor_index == node->count;
+
+      // Repeated erase(begin())/front-expiry should not pull values from the
+      // right only to erase them next. Symmetrically preserve a sparse right
+      // edge while deleting from the back. A later interior deletion, insert,
+      // or empty-node removal restores ordinary density.
+      if (right != nullptr && right->count > kMinKeys &&
+          !deleted_at_front) {
+        std::uint16_t moves = static_cast<std::uint16_t>(
+            (right->count - node->count) / 2);
+        moves = std::min<std::uint16_t>(
+            moves, static_cast<std::uint16_t>(right->count - 1));
+        HYLE_FATAL_ASSERT(moves != 0);
+        borrow_from_right_n(parent, position, moves);
+        break;
+      }
+      if (left != nullptr && left->count > kMinKeys && !deleted_at_back) {
+        std::uint16_t moves = static_cast<std::uint16_t>(
+            (left->count - node->count) / 2);
+        moves = std::min<std::uint16_t>(
+            moves, static_cast<std::uint16_t>(left->count - 1));
+        HYLE_FATAL_ASSERT(moves != 0);
+        borrow_from_left_n(parent, position, moves);
+        if (cursor_is_here)
+          *cursor_index = static_cast<std::uint16_t>(*cursor_index + moves);
+      }
+      break;
     }
     collapse_empty_root(cursor_node, cursor_index);
   }

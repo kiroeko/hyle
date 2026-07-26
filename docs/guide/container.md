@@ -166,8 +166,10 @@ copy/move。copy 直接克隆树形，复杂度 O(N)，不会按元素重新比�
 
 节点以约 256-byte leaf 为目标，值同时存于 leaf/internal node；普通查找、插入和删除
 为 O(log N)，完整遍历为 O(N)。范围删除按 leaf run 批量搬移，并能直接卸下完全过期页，
-适合 time index、prefix eviction 和窗口淘汰，但仍按实际删掉的节点工作。它没有为测项
-保留常态 rank、subtree-size、finger 或预取元数据。
+适合 time index、prefix eviction 和窗口淘汰，但仍按实际删掉的节点工作。单调 append/
+prepend 会按插入边界偏置分裂；连续从 begin/end 淘汰时不会先从兄弟页搬入马上又要删除的
+entry。这些是日志/时间索引的常用结构优化，不改变 API，也没有为测项保留常态 rank、
+subtree-size、finger 或预取元数据。
 
 成功 mutation 可能在同一节点内搬移多个 slot，因此所有既有 iterator、pointer 和
 reference 都视为失效；如果 grow 后对象地址必须稳定，单线程用 `std::map`，共享 registry

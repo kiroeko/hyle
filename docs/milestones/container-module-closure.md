@@ -151,6 +151,17 @@
 > 本批四项代码量：全库 262,583；自实现含测试 127,139；自实现不含测试 87,787；
 > container 实现 13,029。
 
+> **2026-07-26 B-tree 实际 mutation 重开：** M4 profile 把原 time-expiry 0.872x 的根因
+> 定位到单调 refill，而不是 range erase：HYLE 批量删除本身快于 Abseil，但满页机械
+> 50/50 split 与删除后立即 borrow 会反复制造半空页、搬入马上又要删的 entry。实现改为
+> 成熟 B-tree 的位置偏置 split/rebalance；连续 begin/end 删除允许外侧非空页短暂低于半满，
+> 空页仍立即 merge/unlink，复杂度与公开 API 不变。新增 1,000 轮前/后端 expiry+refill
+> differential。Windows 264 项、M4 262 项及 WSL BTree 子集通过。对 Abseil 三平台 n=15：
+> Windows churn/expiry 1.159x/1.051x，WSL 1.096x/0.978x，M4 0.983x/1.027x；原主要
+> M4 expiry 缺口消除，剩余 1.7–2.2% mutation 边界仍登记为 lose。没有 node-capacity
+> 开关、每 entry metadata 或 benchmark API。本批四项代码量：全库 263,615；自实现含测试
+> 127,494；自实现不含测试 87,977；container 实现 13,062。
+
 ## 结论
 
 本节是 2026-07-19 历史结论；按 2026-07-25 新合同，container 的既有功能、红队、C ABI
