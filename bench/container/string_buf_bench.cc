@@ -1,4 +1,4 @@
-// StringBuf interning vs the naive std way (std::unordered_map<std::string,id>
+// StringInterner interning vs the naive std way (std::unordered_map<std::string,id>
 // + a vector to keep the strings). Measures interning a stream with heavy
 // duplication (the real interning workload: many repeats collapse to one
 // store).
@@ -19,12 +19,12 @@
 #  include <absl/container/flat_hash_set.h>
 #endif
 
-#include "hyle/container/string_buf.h"
+#include "hyle/container/string_interner.h"
 #include "hyle/container/string_ref.h"
 #include "hyle/mem/allocator.h"
 
 using hyle::container::string_ref;
-using hyle::container::StringBuf;
+using hyle::container::StringInterner;
 using hyle::mem::system_allocator;
 
 namespace {
@@ -93,8 +93,8 @@ int bench_string_buf() {
   ankerl::nanobench::Bench b;
   b.title("intern 100k-stream / 2k-unique").relative(true).batch(kStream);
 
-  // Floor reference: a NON-thread-safe std interner (no lock). NOT StringBuf's
-  // apples-to-apples peer -- StringBuf is thread-safe (takes a mutex per
+  // Floor reference: a NON-thread-safe std interner (no lock). NOT StringInterner's
+  // apples-to-apples peer -- StringInterner is thread-safe (takes a mutex per
   // intern), so racing it against an unlocked map measures "thread-safe vs
   // not", not the interner cores. Kept as the single-thread floor.
   b.run("std::unordered_map interner (NO lock, floor)", [&] {
@@ -109,9 +109,9 @@ int bench_string_buf() {
   });
 
   // Apples-to-apples peer: a THREAD-SAFE std interner (unordered_map +
-  // std::mutex), same thread-safety contract as StringBuf. Both pay one
+  // std::mutex), same thread-safety contract as StringInterner. Both pay one
   // uncontended lock/op; the honest question is whose interner CORE is faster
-  // (StringBuf uses SwissTable, which beats unordered_map ~2.4x on find).
+  // (StringInterner uses SwissTable, which beats unordered_map ~2.4x on find).
   b.run("std::unordered_map + mutex interner (thread-safe peer)", [&] {
     std::unordered_map<std::string, std::uint32_t> pool;
     std::mutex mu;
@@ -125,8 +125,8 @@ int bench_string_buf() {
     ankerl::nanobench::doNotOptimizeAway(pool.size());
   });
 
-  b.run("HYLE StringBuf (thread-safe, SwissTable core)", [&] {
-    StringBuf buf(system_allocator());
+  b.run("HYLE StringInterner (thread-safe, SwissTable core)", [&] {
+    StringInterner buf(system_allocator());
     const char* last = nullptr;
     for (const auto& s : stream) {
       string_ref r = buf.intern(string_ref{s.data(), static_cast<std::uint32_t>(s.size())});
@@ -136,15 +136,15 @@ int bench_string_buf() {
     ankerl::nanobench::doNotOptimizeAway(buf.size());
   });
 
-  b.run("HYLE StringBuf intern_many (one lock set / batch)", [&] {
-    StringBuf buf(system_allocator());
+  b.run("HYLE StringInterner intern_many (involved shards / chunks)", [&] {
+    StringInterner buf(system_allocator());
     const std::size_t done = buf.intern_many(stream_views.data(), nullptr, stream_views.size());
     ankerl::nanobench::doNotOptimizeAway(done);
     ankerl::nanobench::doNotOptimizeAway(buf.size());
   });
 
   // Long unique strings are the complexity adversary: an uncached hash scans
-  // every resident key again on each table growth. StringBuf stores the hash in
+  // every resident key again on each table growth. StringInterner stores the hash in
   // the key, so each input is byte-hashed once and growth only moves fixed-size
   // slots. This benchmark keeps the bytes large enough to make regressions
   // loud.
@@ -171,8 +171,8 @@ int bench_string_buf() {
       for (const auto& text : long_strings) values.emplace(text);
       ankerl::nanobench::doNotOptimizeAway(values.size());
     });
-    growth.run("HYLE StringBuf intern_many (cached hash)", [&] {
-      StringBuf buf(system_allocator());
+    growth.run("HYLE StringInterner intern_many (cached hash)", [&] {
+      StringInterner buf(system_allocator());
       const std::size_t done = buf.intern_many(long_views.data(), nullptr, long_views.size());
       ankerl::nanobench::doNotOptimizeAway(done);
       ankerl::nanobench::doNotOptimizeAway(buf.size());
@@ -208,8 +208,8 @@ int bench_string_buf() {
       for (auto& thread : threads) thread.join();
       ankerl::nanobench::doNotOptimizeAway(peer.size());
     });
-    concurrent.run("HYLE StringBuf adaptive shards", [&] {
-      StringBuf buf(system_allocator());
+    concurrent.run("HYLE StringInterner adaptive shards", [&] {
+      StringInterner buf(system_allocator());
       std::array<std::thread, kThreads> threads;
       for (int t = 0; t < kThreads; ++t)
         threads[t] = std::thread([&, t] {
@@ -232,12 +232,12 @@ int bench_string_buf() {
 #endif
   }
 
-  // ---- add/retain/remove refcount churn (the lifecycle intern never hits)
+  // ---- acquire/retain/release refcount churn (the lifecycle intern never hits)
   // ---- intern() above is steady-state insert (2000 uniques, never freed). The
-  // refcount lifecycle -- add (intern + bump), retain (bump by hash), remove
+  // refcount lifecycle -- acquire (intern + bump), retain (bump by ID), release
   // (drop; on the last ref, SwissTable::erase + alloc.deallocate) -- exercises
-  // a DIFFERENT path: the erase + free churn. Workload: add each unique, retain
-  // it, then remove it twice (drives the count to zero -> storage reclaimed).
+  // a DIFFERENT path: the erase + free churn. Workload: acquire each unique,
+  // retain it, then release it twice (drives the count to zero -> reclaimed).
   // Rival: a std:: unordered_map<string,refcount> doing the same
   // add/retain/remove (erase on zero).
   {
@@ -252,7 +252,7 @@ int bench_string_buf() {
         .relative(true)
         .batch(static_cast<std::uint64_t>(kUnique) * 4); // add+retain+2x remove
     std::vector<string_ref> lifecycle_views;
-    std::vector<hyle::container::InternId> lifecycle_ids(uniques.size());
+    std::vector<hyle::container::StringId> lifecycle_ids(uniques.size());
     lifecycle_views.reserve(uniques.size());
     for (const auto& text : uniques)
       lifecycle_views.emplace_back(text.data(), static_cast<std::uint32_t>(text.size()));
@@ -272,7 +272,7 @@ int bench_string_buf() {
     // Same handle contract: add resolves bytes -> id, while retain/remove use
     // the id directly. The map owns the string exactly once and its node
     // address stays stable across unordered_map rehashes; the slot vector is
-    // the std Same generation-tagged direct-index shape as StringBuf, so this
+    // the std Same generation-tagged direct-index shape as StringInterner, so this
     // peer does not pay a second key hash merely because its public handle is
     // opaque.
     b2.run("std::unordered_map + direct-id slots + mutex (same contract)", [&] {
@@ -313,24 +313,24 @@ int bench_string_buf() {
       ankerl::nanobench::doNotOptimizeAway(pool.size());
     });
 
-    b2.run("HYLE StringBuf add/retain/remove (direct ID)", [&] {
-      StringBuf buf(system_allocator());
+    b2.run("HYLE StringInterner acquire/retain/release (direct ID)", [&] {
+      StringInterner buf(system_allocator());
       for (const auto& s : uniques) {
-        auto h = buf.add(string_ref{s.data(), static_cast<std::uint32_t>(s.size())});
+        auto h = buf.acquire(string_ref{s.data(), static_cast<std::uint32_t>(s.size())});
         buf.retain(h);
-        buf.remove(h); // drop the retain
-        buf.remove(h); // drop the add -> count zero -> erase + deallocate
+        buf.release(h); // drop the retain
+        buf.release(h); // drop the acquire -> count zero -> erase + deallocate
       }
       ankerl::nanobench::doNotOptimizeAway(buf.size());
     });
 
-    b2.run("HYLE StringBuf batch lifecycle", [&] {
-      StringBuf buf(system_allocator());
+    b2.run("HYLE StringInterner batch lifecycle", [&] {
+      StringInterner buf(system_allocator());
       const std::size_t added =
-          buf.add_many(lifecycle_views.data(), lifecycle_ids.data(), lifecycle_ids.size());
+          buf.acquire_many(lifecycle_views.data(), lifecycle_ids.data(), lifecycle_ids.size());
       const std::size_t retained = buf.retain_many(lifecycle_ids.data(), lifecycle_ids.size());
-      const std::size_t removed1 = buf.remove_many(lifecycle_ids.data(), lifecycle_ids.size());
-      const std::size_t removed2 = buf.remove_many(lifecycle_ids.data(), lifecycle_ids.size());
+      const std::size_t removed1 = buf.release_many(lifecycle_ids.data(), lifecycle_ids.size());
+      const std::size_t removed2 = buf.release_many(lifecycle_ids.data(), lifecycle_ids.size());
       ankerl::nanobench::doNotOptimizeAway(added);
       ankerl::nanobench::doNotOptimizeAway(retained);
       ankerl::nanobench::doNotOptimizeAway(removed1);
@@ -339,7 +339,7 @@ int bench_string_buf() {
     });
 
     // Repeated churn is where a lifetime pool should differ from a node map:
-    // StringBuf reuses its short-entry slabs and ID slots at the high-water
+    // StringInterner reuses its short-entry slabs and ID slots at the high-water
     // mark; the peer retains buckets/slot capacity but still allocates map
     // nodes.
     constexpr int kCycles = 16;
@@ -387,14 +387,14 @@ int bench_string_buf() {
       }
       ankerl::nanobench::doNotOptimizeAway(pool.size());
     });
-    reuse.run("HYLE StringBuf (slab + slot reuse)", [&] {
-      StringBuf buf(system_allocator());
+    reuse.run("HYLE StringInterner (slab + slot reuse)", [&] {
+      StringInterner buf(system_allocator());
       for (int cycle = 0; cycle < kCycles; ++cycle) {
         for (const auto& text : uniques) {
-          const auto id = buf.add(text);
+          const auto id = buf.acquire(text);
           buf.retain(id);
-          buf.remove(id);
-          buf.remove(id);
+          buf.release(id);
+          buf.release(id);
         }
       }
       ankerl::nanobench::doNotOptimizeAway(buf.size());

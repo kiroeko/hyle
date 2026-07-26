@@ -1,11 +1,11 @@
-#include "hyle/container/string_buf.h"
+#include "hyle/container/string_interner.h"
 
+#include <algorithm>
 #include <array>
 #include <cstring>
 #include <limits>
 #include <mutex>
 #include <new>
-#include <optional>
 
 #include "hyle/container/pod_vector.h"
 #include "hyle/container/swiss_table.h"
@@ -49,7 +49,7 @@ struct Entry {
   std::uint64_t hash;
   std::uint32_t size;
   std::uint32_t refs;
-  InternId id;
+  StringId id;
   bool permanent;
 };
 
@@ -127,13 +127,13 @@ HYLE_FORCE_INLINE HashedText prepare(string_ref text, std::uint32_t shard_bits) 
                     static_cast<std::uint32_t>(content_hash >> 32) & ((1u << shard_bits) - 1)};
 }
 
-HYLE_FORCE_INLINE InternId make_id(std::uint32_t shard, std::uint32_t slot,
+HYLE_FORCE_INLINE StringId make_id(std::uint32_t shard, std::uint32_t slot,
                                    std::uint32_t generation) noexcept {
   const std::uint32_t low = (shard << kSlotBits) | (slot + 1);
-  return InternId{(static_cast<std::uint64_t>(generation) << 32) | low};
+  return StringId{(static_cast<std::uint64_t>(generation) << 32) | low};
 }
 
-HYLE_FORCE_INLINE std::uint32_t id_shard(InternId id) noexcept {
+HYLE_FORCE_INLINE std::uint32_t id_shard(StringId id) noexcept {
   return static_cast<std::uint32_t>(id.value) >> kSlotBits;
 }
 
@@ -190,12 +190,14 @@ void release_slabs(Shard& shard, mem::Allocator alloc) noexcept {
   }
 }
 
-template <class Impl> Entry* find_id_locked(Impl& impl, InternId id) noexcept {
+template <class Impl> Entry* find_id_locked(Impl& impl, StringId id) noexcept {
   const std::uint32_t low = static_cast<std::uint32_t>(id.value);
   const std::uint32_t encoded_slot = low & kSlotMask;
   const std::uint32_t generation = static_cast<std::uint32_t>(id.value >> 32);
   if (encoded_slot == 0 || generation == 0) return nullptr;
-  Shard& shard = *impl.shards[id_shard(id)];
+  const std::uint32_t shard_index = id_shard(id);
+  if (shard_index >= impl.shard_count) return nullptr;
+  Shard& shard = impl.shards[shard_index];
   if (encoded_slot > shard.by_id.size()) return nullptr;
   IdSlot& slot = shard.by_id[encoded_slot - 1];
   return slot.generation == generation ? slot.entry : nullptr;
@@ -232,7 +234,7 @@ bool assign_id_locked(Impl& impl, Shard& shard, std::uint32_t shard_index, Entry
 template <class Impl>
 Entry* find_or_add_locked(Impl& impl, mem::Allocator alloc, const HashedText& input,
                           bool permanent) noexcept {
-  Shard& shard = *impl.shards[input.shard];
+  Shard& shard = impl.shards[input.shard];
   const InternKey query{input.text, input.table_hash};
   if (Entry** found = shard.by_string.find(query)) {
     Entry* entry = *found;
@@ -240,7 +242,7 @@ Entry* find_or_add_locked(Impl& impl, mem::Allocator alloc, const HashedText& in
       entry->permanent = true;
     } else {
       // Permanent-only intern() entries do not pay for an ID slot. Materialize
-      // the reverse index lazily on the first add() that actually exposes one.
+      // the reverse index lazily on the first acquire() that exposes one.
       if (!assign_id_locked(impl, shard, input.shard, entry)) return nullptr;
       if (entry->refs == UINT32_MAX) return nullptr;
       ++entry->refs;
@@ -254,7 +256,7 @@ Entry* find_or_add_locked(Impl& impl, mem::Allocator alloc, const HashedText& in
     // report in the resize path. Growth/tombstone cleanup is logarithmically
     // rare, so give those cold copies an explicit happens-before relation.
     // try_prepare_insert also makes the following insert allocation-free, which
-    // preserves StringBuf's recoverable-OOM contract.
+    // preserves StringInterner's recoverable-OOM contract.
     std::lock_guard<std::mutex> growth_lock(impl.growth_mu);
     if (!shard.by_string.try_prepare_insert()) return nullptr;
   }
@@ -269,7 +271,7 @@ Entry* find_or_add_locked(Impl& impl, mem::Allocator alloc, const HashedText& in
 
   const string_ref owned{data, input.text.size, true};
   *entry =
-      Entry{data, input.table_hash, input.text.size, permanent ? 0u : 1u, InternId{0}, permanent};
+      Entry{data, input.table_hash, input.text.size, permanent ? 0u : 1u, StringId{0}, permanent};
   if (!permanent && !assign_id_locked(impl, shard, input.shard, entry)) {
     release_entry(shard, alloc, entry, true);
     return nullptr;
@@ -279,20 +281,20 @@ Entry* find_or_add_locked(Impl& impl, mem::Allocator alloc, const HashedText& in
   return entry;
 }
 
-template <class Impl> bool retain_locked(Impl& impl, InternId id) noexcept {
+template <class Impl> bool retain_locked(Impl& impl, StringId id) noexcept {
   Entry* entry = find_id_locked(impl, id);
   if (entry == nullptr || entry->refs == UINT32_MAX) return false;
   ++entry->refs;
   return true;
 }
 
-template <class Impl> bool remove_locked(Impl& impl, mem::Allocator alloc, InternId id) noexcept {
+template <class Impl> bool release_locked(Impl& impl, mem::Allocator alloc, StringId id) noexcept {
   Entry* entry = find_id_locked(impl, id);
   if (entry == nullptr || entry->refs == 0) return false;
   --entry->refs;
   if (entry->refs != 0 || entry->permanent) return true;
 
-  Shard& shard = *impl.shards[id_shard(id)];
+  Shard& shard = impl.shards[id_shard(id)];
   const std::uint32_t slot_index = (static_cast<std::uint32_t>(id.value) & kSlotMask) - 1;
   IdSlot& slot = shard.by_id[slot_index];
   slot.entry = nullptr;
@@ -312,28 +314,47 @@ template <class Impl> bool remove_locked(Impl& impl, mem::Allocator alloc, Inter
 
 } // namespace
 
-struct StringBuf::Impl {
-  explicit Impl(mem::Allocator alloc) noexcept {
+struct StringInterner::Impl {
+  explicit Impl(mem::Allocator allocator) noexcept : alloc(allocator) {
     auto available = platform::available_cpu_count();
     const std::size_t workers = available && *available != 0 ? *available : 8;
     shard_bits = workers > 32 ? 6u : workers > 8 ? 5u : 4u;
     shard_count = 1u << shard_bits;
-    for (auto& shard : shards) shard.emplace(alloc);
+    void* storage = alloc.allocate(sizeof(Shard) * shard_count, alignof(Shard));
+    if (storage == nullptr) return;
+    shards = static_cast<Shard*>(storage);
+    for (std::uint32_t i = 0; i < shard_count; ++i)
+      ::new (shards + i) Shard(alloc);
   }
 
-  std::array<std::optional<Shard>, kMaxShardCount> shards;
+  ~Impl() {
+    if (shards == nullptr) return;
+    for (std::uint32_t i = 0; i < shard_count; ++i) shards[i].~Shard();
+    alloc.deallocate(shards, sizeof(Shard) * shard_count, alignof(Shard));
+  }
+
+  bool valid() const noexcept { return shards != nullptr; }
+
+  mem::Allocator alloc;
+  Shard* shards = nullptr;
   std::uint32_t shard_bits = 4;
   std::uint32_t shard_count = 16;
   std::mutex growth_mu;
 };
 
-StringBuf::StringBuf(mem::Allocator alloc) : alloc_(alloc), impl_(alloc.construct<Impl>(alloc)) {}
+StringInterner::StringInterner(mem::Allocator alloc)
+    : alloc_(alloc), impl_(alloc.construct<Impl>(alloc)) {
+  if (impl_ != nullptr && !impl_->valid()) {
+    alloc_.destroy(impl_);
+    impl_ = nullptr;
+  }
+}
 
-StringBuf::~StringBuf() {
+StringInterner::~StringInterner() {
   if (impl_ == nullptr) return;
   // Destruction requires external quiescence, like every container destructor.
-  for (auto& optional_shard : impl_->shards) {
-    Shard& shard = *optional_shard;
+  for (std::uint32_t i = 0; i < impl_->shard_count; ++i) {
+    Shard& shard = impl_->shards[i];
     shard.by_string.for_each([&](const InternKey&, Entry*& entry) {
       // Small entries belong to slabs; large entries remain direct allocations.
       release_entry(shard, alloc_, entry, false);
@@ -345,140 +366,205 @@ StringBuf::~StringBuf() {
 
 namespace {
 
-template <class Impl> auto lock_all(Impl& impl) {
+template <class Impl> auto lock_shards(Impl& impl, std::uint64_t shard_mask) {
   std::array<std::unique_lock<std::mutex>, kMaxShardCount> locks;
-  for (std::uint32_t i = 0; i < impl.shard_count; ++i)
-    locks[i] = std::unique_lock<std::mutex>(impl.shards[i]->mu);
+  for (std::uint32_t i = 0; i < impl.shard_count; ++i) {
+    if ((shard_mask & (std::uint64_t{1} << i)) != 0)
+      locks[i] = std::unique_lock<std::mutex>(impl.shards[i].mu);
+  }
   return locks;
+}
+
+template <class Impl> auto lock_all(Impl& impl) {
+  const std::uint64_t mask =
+      impl.shard_count == 64 ? UINT64_MAX : (std::uint64_t{1} << impl.shard_count) - 1;
+  return lock_shards(impl, mask);
+}
+
+// Large enough to amortize lock acquisition for broad batches, yet bounded so
+// a batch touching every shard periodically yields to unrelated callers. The
+// HashedText scratch is about 24 KiB on 64-bit targets and hashes every input
+// exactly once.
+constexpr std::size_t kBatchChunk = 1024;
+
+template <class Impl, class Operation>
+std::size_t update_many(Impl& impl, const StringId* ids, std::size_t count,
+                        Operation&& operation) noexcept {
+  std::size_t completed = 0;
+  while (completed < count) {
+    const std::size_t chunk = std::min(kBatchChunk, count - completed);
+    std::size_t usable = chunk;
+    std::uint64_t shard_mask = 0;
+    for (std::size_t i = 0; i < chunk; ++i) {
+      const StringId id = ids[completed + i];
+      if (id.value == 0) continue;
+      const std::uint32_t shard = id_shard(id);
+      if (shard >= impl.shard_count) {
+        usable = i;
+        break;
+      }
+      shard_mask |= std::uint64_t{1} << shard;
+    }
+
+    auto locks = lock_shards(impl, shard_mask);
+    for (std::size_t i = 0; i < usable; ++i) {
+      const StringId id = ids[completed + i];
+      if (id.value != 0 && !operation(id)) return completed + i;
+    }
+    completed += usable;
+    if (usable != chunk) return completed;
+  }
+  return completed;
 }
 
 } // namespace
 
-InternId StringBuf::add(string_ref text) noexcept {
-  if (text.size == 0) return InternId{0};
-  if (impl_ == nullptr) return InternId{0};
+StringId StringInterner::acquire(string_ref text) noexcept {
+  if (text.size == 0) return StringId{0};
+  if (impl_ == nullptr) return StringId{0};
   const HashedText input = prepare(text, impl_->shard_bits);
-  std::lock_guard<std::mutex> lock(impl_->shards[input.shard]->mu);
+  std::lock_guard<std::mutex> lock(impl_->shards[input.shard].mu);
   Entry* entry = find_or_add_locked(*impl_, alloc_, input, false);
-  return entry == nullptr ? InternId{0} : entry->id;
+  return entry == nullptr ? StringId{0} : entry->id;
 }
 
-std::size_t StringBuf::add_many(const string_ref* input, InternId* output,
-                                std::size_t count) noexcept {
+std::size_t StringInterner::acquire_many(const string_ref* input, StringId* output,
+                                         std::size_t count) noexcept {
   if (count == 0) return 0;
   HYLE_FATAL_ASSERT(input != nullptr && output != nullptr);
   if (impl_ == nullptr) return 0;
-  auto locks = lock_all(*impl_);
-  for (std::size_t i = 0; i < count; ++i) {
-    if (input[i].size == 0) {
-      output[i] = InternId{0};
-      continue;
+  std::size_t completed = 0;
+  HashedText prepared[kBatchChunk]{};
+  while (completed < count) {
+    const std::size_t chunk = std::min(kBatchChunk, count - completed);
+    std::uint64_t shard_mask = 0;
+    for (std::size_t i = 0; i < chunk; ++i) {
+      if (input[completed + i].size == 0) continue;
+      prepared[i] = prepare(input[completed + i], impl_->shard_bits);
+      shard_mask |= std::uint64_t{1} << prepared[i].shard;
     }
-    Entry* entry = find_or_add_locked(*impl_, alloc_, prepare(input[i], impl_->shard_bits), false);
-    if (entry == nullptr) return i;
-    output[i] = entry->id;
+    auto locks = lock_shards(*impl_, shard_mask);
+    for (std::size_t i = 0; i < chunk; ++i) {
+      if (input[completed + i].size == 0) {
+        output[completed + i] = StringId{0};
+        continue;
+      }
+      Entry* entry = find_or_add_locked(*impl_, alloc_, prepared[i], false);
+      if (entry == nullptr) return completed + i;
+      output[completed + i] = entry->id;
+    }
+    completed += chunk;
   }
-  return count;
+  return completed;
 }
 
-bool StringBuf::retain(InternId id) noexcept {
+bool StringInterner::retain(StringId id) noexcept {
   if (id.value == 0) return true;
-  if (impl_ == nullptr) return false;
-  std::lock_guard<std::mutex> lock(impl_->shards[id_shard(id)]->mu);
+  if (impl_ == nullptr || id_shard(id) >= impl_->shard_count) return false;
+  std::lock_guard<std::mutex> lock(impl_->shards[id_shard(id)].mu);
   return retain_locked(*impl_, id);
 }
 
-std::size_t StringBuf::retain_many(const InternId* ids, std::size_t count) noexcept {
+std::size_t StringInterner::retain_many(const StringId* ids,
+                                        std::size_t count) noexcept {
   if (count == 0) return 0;
   HYLE_FATAL_ASSERT(ids != nullptr);
   if (impl_ == nullptr) return 0;
-  auto locks = lock_all(*impl_);
-  for (std::size_t i = 0; i < count; ++i) {
-    if (ids[i].value != 0 && !retain_locked(*impl_, ids[i])) return i;
-  }
-  return count;
+  return update_many(*impl_, ids, count,
+                     [&](StringId id) { return retain_locked(*impl_, id); });
 }
 
-bool StringBuf::remove(InternId id) noexcept {
+bool StringInterner::release(StringId id) noexcept {
   if (id.value == 0) return true;
-  if (impl_ == nullptr) return false;
-  std::lock_guard<std::mutex> lock(impl_->shards[id_shard(id)]->mu);
-  return remove_locked(*impl_, alloc_, id);
+  if (impl_ == nullptr || id_shard(id) >= impl_->shard_count) return false;
+  std::lock_guard<std::mutex> lock(impl_->shards[id_shard(id)].mu);
+  return release_locked(*impl_, alloc_, id);
 }
 
-std::size_t StringBuf::remove_many(const InternId* ids, std::size_t count) noexcept {
+std::size_t StringInterner::release_many(const StringId* ids,
+                                         std::size_t count) noexcept {
   if (count == 0) return 0;
   HYLE_FATAL_ASSERT(ids != nullptr);
   if (impl_ == nullptr) return 0;
-  auto locks = lock_all(*impl_);
-  for (std::size_t i = 0; i < count; ++i) {
-    if (ids[i].value != 0 && !remove_locked(*impl_, alloc_, ids[i])) return i;
-  }
-  return count;
+  return update_many(*impl_, ids, count, [&](StringId id) {
+    return release_locked(*impl_, alloc_, id);
+  });
 }
 
-string_ref StringBuf::lookup(InternId id) noexcept {
+string_ref StringInterner::lookup(StringId id) noexcept {
   if (id.value == 0) return string_ref{"", 0, true};
-  if (impl_ == nullptr) return string_ref{};
-  std::lock_guard<std::mutex> lock(impl_->shards[id_shard(id)]->mu);
+  if (impl_ == nullptr || id_shard(id) >= impl_->shard_count) return string_ref{};
+  std::lock_guard<std::mutex> lock(impl_->shards[id_shard(id)].mu);
   if (const Entry* entry = find_id_locked(*impl_, id))
     return string_ref{entry->data, entry->size, true};
   return string_ref{};
 }
 
-string_ref StringBuf::intern(string_ref text) noexcept {
+string_ref StringInterner::intern(string_ref text) noexcept {
   if (text.size == 0) return string_ref{"", 0, true};
   if (impl_ == nullptr) return string_ref{};
   const HashedText input = prepare(text, impl_->shard_bits);
-  std::lock_guard<std::mutex> lock(impl_->shards[input.shard]->mu);
+  std::lock_guard<std::mutex> lock(impl_->shards[input.shard].mu);
   Entry* entry = find_or_add_locked(*impl_, alloc_, input, true);
   return entry == nullptr ? string_ref{} : string_ref{entry->data, entry->size, true};
 }
 
-std::size_t StringBuf::intern_many(const string_ref* input, string_ref* output,
-                                   std::size_t count) noexcept {
+std::size_t StringInterner::intern_many(const string_ref* input, string_ref* output,
+                                        std::size_t count) noexcept {
   if (count == 0) return 0;
   HYLE_FATAL_ASSERT(input != nullptr);
   if (impl_ == nullptr) return 0;
-  auto locks = lock_all(*impl_);
-  for (std::size_t i = 0; i < count; ++i) {
-    string_ref result;
-    if (input[i].size == 0) {
-      result = string_ref{"", 0, true};
-    } else {
-      Entry* entry = find_or_add_locked(*impl_, alloc_, prepare(input[i], impl_->shard_bits), true);
-      if (entry == nullptr) return i;
-      result = string_ref{entry->data, entry->size, true};
+  std::size_t completed = 0;
+  HashedText prepared[kBatchChunk]{};
+  while (completed < count) {
+    const std::size_t chunk = std::min(kBatchChunk, count - completed);
+    std::uint64_t shard_mask = 0;
+    for (std::size_t i = 0; i < chunk; ++i) {
+      if (input[completed + i].size == 0) continue;
+      prepared[i] = prepare(input[completed + i], impl_->shard_bits);
+      shard_mask |= std::uint64_t{1} << prepared[i].shard;
     }
-    if (output != nullptr) output[i] = result;
+    auto locks = lock_shards(*impl_, shard_mask);
+    for (std::size_t i = 0; i < chunk; ++i) {
+      string_ref result;
+      if (input[completed + i].size == 0) {
+        result = string_ref{"", 0, true};
+      } else {
+        Entry* entry = find_or_add_locked(*impl_, alloc_, prepared[i], true);
+        if (entry == nullptr) return completed + i;
+        result = string_ref{entry->data, entry->size, true};
+      }
+      if (output != nullptr) output[completed + i] = result;
+    }
+    completed += chunk;
   }
-  return count;
+  return completed;
 }
 
-std::uint32_t StringBuf::size() const noexcept {
+std::uint32_t StringInterner::size() const noexcept {
   if (impl_ == nullptr) return 0;
   auto locks = lock_all(*impl_);
   std::uint32_t total = 0;
   for (std::uint32_t i = 0; i < impl_->shard_count; ++i) {
-    HYLE_FATAL_ASSERT(total <= UINT32_MAX - impl_->shards[i]->live_size);
-    total += impl_->shards[i]->live_size;
+    HYLE_FATAL_ASSERT(total <= UINT32_MAX - impl_->shards[i].live_size);
+    total += impl_->shards[i].live_size;
   }
   return total;
 }
 
-StringBuf* make_string_buf(mem::Allocator alloc) {
-  StringBuf* buffer = alloc.construct<StringBuf>(alloc);
-  if (buffer != nullptr && !buffer->valid()) {
-    alloc.destroy(buffer);
+StringInterner* make_string_interner(mem::Allocator alloc) {
+  StringInterner* interner = alloc.construct<StringInterner>(alloc);
+  if (interner != nullptr && !interner->valid()) {
+    alloc.destroy(interner);
     return nullptr;
   }
-  return buffer;
+  return interner;
 }
 
-void destroy_string_buf(StringBuf* buf) noexcept {
-  if (buf == nullptr) return;
-  mem::Allocator alloc = buf->allocator();
-  alloc.destroy(buf);
+void destroy_string_interner(StringInterner* interner) noexcept {
+  if (interner == nullptr) return;
+  mem::Allocator alloc = interner->allocator();
+  alloc.destroy(interner);
 }
 
 } // namespace hyle::container

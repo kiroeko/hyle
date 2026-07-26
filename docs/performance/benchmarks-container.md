@@ -9,7 +9,7 @@
 
 | 面 | 证书状态 | 说明 |
 |---|---|---|
-| **StringBuf / string 收口表** | ✅ **2026-07-19 三平台** | Win / WSL / M4；lifecycle 落后已诚实登记 |
+| **StringInterner / string 收口表** | ✅ **2026-07-19 三平台** | Win / WSL / M4；lifecycle 落后已诚实登记；2026-07-26 batch 分片锁改动待刷新 |
 | **path** | ✅ 双平台 n=15 | Win+Lin；算法基线 + filesystem 分离 |
 | **FlatHashMap / FlatHashSet** | ✅ Windows+WSL n=15；⏳ M4 | 同合同 Abseil；WSL map/set miss 是已登记小缺口 |
 | **hash / mix64 / Hash&lt;T&gt;** | ⚠️ 历史 + 红队公平性更正 | ⏳ 待三平台 `bench-stat -n15` 重写表 |
@@ -31,7 +31,7 @@
 | **SmallVector** | absl::InlinedVector | ✅ 小 N churn **赢** 同款 SOTA |
 | **PodVector** | std::vector | ✅ growth 赢（mimalloc 质量）；read 平 |
 | **string_ref 搜索** | string_view / libc | ➖ 自研 SIMD 项平；子串/字符集 **转发 std**（刻意） |
-| **StringBuf** | map+mutex / Absl 分片 peer | ⚠️ **Win 多平**；WSL/M4 lifecycle **输**；growth 赢；8t 距 Absl ~5% |
+| **StringInterner** | map+mutex / Absl 分片 peer | ⚠️ **Win 多平**；WSL/M4 lifecycle **输**；growth 赢；8t 距 Absl ~5% |
 | **path 词法** | string_view 扫 / filesystem | ✅ 平算法基线；**碾** filesystem（零分配结构差） |
 | **ConcurrentVector** | oneTBB `concurrent_vector` | ✅ Win/WSL：append、range iteration、并发 prefix 读同档或赢；⚠️ WSL `operator[]` 顺扫约 0.51x |
 
@@ -106,11 +106,11 @@ WSL 的逐次索引差距与 GCC 对运行时 segment 定位的代码生成有�
 
 ## 2. 非 SOTA / 冻结边界（诚实清单）
 
-1. **StringBuf lifecycle（WSL/M4）**  
-   intern / add-retain-remove / churn 相对同契约 peer 约 **0.73–0.86x**。  
+1. **StringInterner lifecycle（WSL/M4）**
+   intern / acquire-retain-release / churn 相对同契约 peer 约 **0.73–0.86x**。
    产品价值在 cached-hash growth、稳定 identity、并发接近强 peer、batch——**不是**「全生命周期常数三平台无条件赢」。旧 1.24x churn 证书已撤回。
 
-2. **StringBuf 8-thread**  
+2. **StringInterner 8-thread**
    距 sharded Absl+mutex 约 **4–5%**（~0.95x），接近但非碾压。
 
 3. **hash_bytes 默认 DLL 出线核**  
@@ -139,7 +139,7 @@ WSL 的逐次索引差距与 GCC 对运行时 segment 定位的代码生成有�
 栈上小数组                 → SmallVector
 POD 堆动态数组             → PodVector（默认 SystemAllocator/mi）
 只读字符串视图 + 搜索      → string_ref（子串族借 std）
-驻留串 / intern            → StringBuf（接受跨平台 lifecycle 税；要 growth/并发）
+驻留串 / intern            → StringInterner（接受跨平台 lifecycle 税；要 growth/并发）
 路径词法（无 syscall）     → path（零分配；勿用 filesystem 当算法对手）
 MPMC / stealing 队列       → bounded / sharded / WS deque（见 queue 文档）
 ```
@@ -147,7 +147,7 @@ MPMC / stealing 队列       → bounded / sharded / WS deque（见 queue 文档
 ## 4. 与 mem 的边界
 
 - 容器**默认** `SystemAllocator`（平 mi）；注入 vtable 付多态税 → [benchmarks-mem.md](./benchmarks-mem.md)。  
-- Swiss / StringBuf 内部用自有表与 slab，**不要**拿 `SharedPool` / `SharedPoolCache` 当通用 map 分配器。
+- Swiss / StringInterner 内部用自有表与 slab，**不要**拿 `SharedPool` / `SharedPoolCache` 当通用 map 分配器。
 
 ## 5. 复跑（刷新 ⏳ 项时）
 
@@ -162,7 +162,7 @@ HYLE_ABSL_BENCH_FILTER=set scripts/bench-stat.py <build>/bin/hyle_absl_bench -n 
 # vec
 scripts/bench-stat.py <build>/bin/hyle_container_misc_bench -n 15 ...
 
-# string / StringBuf
+# string / StringInterner
 scripts/bench-stat.py <build>/bin/hyle_string_ref_bench -n 15 ...
 scripts/bench-stat.py <build>/bin/hyle_string_buf_bench -n 15 ...
 
@@ -187,6 +187,6 @@ HYLE_QUEUE_BENCH_FILTER=concurrent-vector \
 | hash 公平性更正 + 长度表 | mem-container §container·hash |
 | SwissTable vs absl | mem-container §container·map + README 总账 |
 | SmallVector / PodVector | mem-container §container·vec |
-| string_ref / StringBuf 三平台收口 | mem-container §container·str |
+| string_ref / StringInterner 三平台收口 | mem-container §container·str |
 | path | mem-container §container·path |
 | util/obs 夹带 | 应看 util/obs 收口；mem-container「次要模块」勿当 container 主证书 |

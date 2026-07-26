@@ -18,7 +18,7 @@ container 提供性能敏感的基础数据结构、借用字符串/路径算法
 | 高频 key→value lookup | `FlatHashMap<K,V>`（实现名 `SwissTable`） | flat slot、expected O(1)、引用在 grow/erase 后失效 |
 | 高频 membership / 去重 | `FlatHashSet<K>` | 真正 set slot，不为 empty mapped value 付空间；expected O(1) |
 | 非拥有字符串切片并使用 HYLE 搜索/路径算法 | `StringView`（实现名 `string_ref`） | ptr + u32 byte length + NUL bit；底层字节必须长寿 |
-| 内容去重并取得稳定字符串地址 | `StringInterner`（实现名 `StringBuf`） | 分片线程安全；永久视图或 generation ID 两种生命周期 |
+| 内容去重并取得稳定字符串地址 | `StringInterner` | 分片线程安全；永久视图或 generation ID 两种生命周期 |
 | 严格容量、多生产者多消费者 | `BoundedQueue<T>` | bounded MPMC；满/空是正常控制流，不分配 |
 | 极高 MPMC 争用，可放弃全局 FIFO | `ShardedQueue<T>` | producer hint 分片；每 consumer 保留自己的 cursor |
 | 单 owner 做新任务、多个 thief 偷旧任务 | `WorkStealingDeque<T>` | owner bottom LIFO，thief top；固定容量 |
@@ -123,11 +123,12 @@ forward range 会先 reserve 一次；input iterator 只读取一次。move-only
 `StringInterner` 有两种不要混用的生命周期：
 
 - `intern` / `intern_many` 返回稳定借用 view，活到 interner 销毁；适合进程/模型/图级符号。
-- `add` 返回 generation-tagged `StringId`，用 retain/remove 管引用；最后一份删除后内容可
+- `acquire` 返回 generation-tagged `StringId`，用 `retain`/`release` 管引用；最后一份释放后内容可
   回收，旧 ID 不会命中新复用的 slot。
 
-高吞吐导入优先 batch；它一次获取 shard lock set。返回 view 都由 interner 拥有，不得
-free。interner 必须比 view/ID 的所有使用者长寿。
+高吞吐导入优先 `acquire_many` / `intern_many`；实现按有界块只锁该块实际涉及的
+shard，并按 shard 序加锁，不会因单 shard 批量工作冻结整个 interner。返回 view 都由
+interner 拥有，不得 free。interner 必须比 view/ID 的所有使用者长寿。
 
 `path.h` 只做词法操作。`normalize("a/../b")` 不查询磁盘，所以不能证明结果与真实文件、
 symlink 或 Windows case rules 等价；需要真实 filesystem 行为时使用 platform 模块。

@@ -119,11 +119,11 @@
 | **container·vec** SmallVector 小 N | 0.41 | std::vector | 16.8 | 41x | absl::InlinedVector | 0.84–1.0 | 2.0–2.4x | ✅赢同款 small-vector SOTA(absl 侧 spread 大取范围) |
 | **container·vec** SmallVector 溢出(64>内联16) | 0.88 | std::vector | 4.70 | 5.3x | absl::InlinedVector | 2.40 | 2.7x | ✅赢同款(堆溢出/增长路径) |
 | **container·vec** PodVector growth/read | 0.51/0.18 | std::vector(即 SOTA) | 0.75/0.18 | 1.48x/1.0x | std::vector(同 std,本身即 SOTA) | 0.75/0.18 | 1.48x/1.0x | ✅赢 growth(2026-07 grow 真改 reallocate;赢因 mimalloc 分配器质量非"原地无copy",详节纠错)/ ➖平 read |
-| **container·str** StringBuf intern(100k/2k 唯一) | 28.86(Win) | 无锁 map floor | 19.78 | 0.685x | thread-safe peer(map+mutex) | 28.70 | **0.994x 平** | Win 平；WSL 0.772x、M4 0.934x，旧 1.17x 证书撤回 |
-| **container·str** StringBuf `intern_many` | 19.97(Win) | 无锁 map floor | 19.78 | **0.990x 平** | 同左 | 19.78 | 0.990x | M4 1.045x；WSL 0.732x，非全平台无条件赢 |
-| **container·str** StringBuf 1KiB unique growth | 101.58(Win) | std::unordered_set | 1813.93 | 17.86x | absl::flat_hash_set | 544.05 | **5.36x** | ✅ cached resident hash；WSL vs Absl 1.71x，M4 vs std 1.67x |
-| **container·str** StringBuf 8-thread adaptive shards | 23.56(Win) | sharded std+mutex | 56.96 | 2.42x | sharded Absl+mutex | 22.33 | **0.948x** | 距 Absl 约 5%；WSL 0.958x，M4 vs std 0.956x |
-| **container·str** StringBuf add/retain/remove churn | 18.62(Win) | direct-ID+mutex 同契约 peer | 18.44 | **0.990x 平** | 同左 | 18.44 | 0.990x | Win 平；WSL 0.813x、M4 0.785x |
+| **container·str** StringInterner intern(100k/2k 唯一) | 28.86(Win) | 无锁 map floor | 19.78 | 0.685x | thread-safe peer(map+mutex) | 28.70 | **0.994x 平** | Win 平；WSL 0.772x、M4 0.934x，旧 1.17x 证书撤回 |
+| **container·str** StringInterner `intern_many` | 19.97(Win) | 无锁 map floor | 19.78 | **0.990x 平** | 同左 | 19.78 | 0.990x | M4 1.045x；WSL 0.732x，非全平台无条件赢 |
+| **container·str** StringInterner 1KiB unique growth | 101.58(Win) | std::unordered_set | 1813.93 | 17.86x | absl::flat_hash_set | 544.05 | **5.36x** | ✅ cached resident hash；WSL vs Absl 1.71x，M4 vs std 1.67x |
+| **container·str** StringInterner 8-thread adaptive shards | 23.56(Win) | sharded std+mutex | 56.96 | 2.42x | sharded Absl+mutex | 22.33 | **0.948x** | 距 Absl 约 5%；WSL 0.958x，M4 vs std 0.956x |
+| **container·str** StringInterner acquire/retain/release churn | 18.62(Win) | direct-ID+mutex 同契约 peer | 18.44 | **0.990x 平** | 同左 | 18.44 | 0.990x | Win 平；WSL 0.813x、M4 0.785x |
 | **container·str** find(char) 全扫 miss(4KB) | 0.02/B | std::string_view::find | 0.01 | ~1.0x | string_view(即 SOTA,libc memchr) | 0.01 | ~1.0x | ➖平(切 memchr;原 scalar 输 ~20x) |
 | **container·str** find(needle) 6B 子串 | 0.08/B | std::string_view::find | 0.08 | ~1.0x | string_view(即 SOTA,two-way 向量化) | 0.08 | ~1.0x | ➖平(转发 std;自研 memchr 候选曾输 2.5x) |
 | **container·str** find_first_of(4 字符集) | 0.05/B | std::string_view | 0.05 | ~1.0x | string_view(即 SOTA) | 0.05 | ~1.0x | ➖平(转发 std;自研 memchr-min 曾 0.62x) |
@@ -178,7 +178,7 @@
 **历史总账小结（2026-06-30 快照，不作为当前证书）**：当时按两把标尺统计约
 36 win / 16 tie，并推动了 allocator、hashmap、SIMD、queue、string-ref 等多轮
 优化。此后接口、对手和三平台仪器都已升级，不能继续用这组数量证明当前
-“全线赢”。尤其 StringBuf 的旧 1.17–1.24x 证书已被本页当前 direct-ID peer
+“全线赢”。尤其 StringInterner 的旧 1.17–1.24x 证书已被本页当前 direct-ID peer
 三平台表替代。发布判断以各模块最新 closure 文档和本页逐行当前数据为准，不再
 维护一个会把不同日期、不同合同混在一起的总 win 数。
 

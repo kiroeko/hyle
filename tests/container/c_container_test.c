@@ -267,45 +267,45 @@ static void test_strings_and_paths(void) {
   CHECK(strcmp(output, "a/c") == 0);
 }
 
-static void test_string_buf(void) {
-  hyle_container_string_buf* buffer = NULL;
-  hyle_container_intern_id id;
+static void test_string_interner(void) {
+  hyle_container_string_interner* buffer = NULL;
+  hyle_container_string_id id;
   hyle_container_string_view value;
   size_t completed;
-  CHECK(status_ok(hyle_container_string_buf_create_system(&buffer)));
+  CHECK(status_ok(hyle_container_string_interner_create_system(&buffer)));
   CHECK(buffer != NULL);
-  CHECK(status_ok(hyle_container_string_buf_add(&id, buffer, sv("alpha"))));
+  CHECK(status_ok(hyle_container_string_interner_acquire(&id, buffer, sv("alpha"))));
   CHECK(id != 0);
-  CHECK(hyle_container_string_buf_size(buffer) == 1);
-  value = hyle_container_string_buf_lookup(buffer, id);
+  CHECK(hyle_container_string_interner_size(buffer) == 1);
+  value = hyle_container_string_interner_lookup(buffer, id);
   CHECK(value.size == 5 && value.null_terminated);
-  CHECK(hyle_container_string_buf_retain(buffer, id));
-  CHECK(hyle_container_string_buf_remove(buffer, id));
+  CHECK(hyle_container_string_interner_retain(buffer, id));
+  CHECK(hyle_container_string_interner_release(buffer, id));
   CHECK(status_ok(
-      hyle_container_string_buf_intern(&value, buffer, sv("alpha"))));
+      hyle_container_string_interner_intern(&value, buffer, sv("alpha"))));
   CHECK(value.size == 5);
-  CHECK(hyle_container_string_buf_remove(buffer, id));
-  CHECK(!hyle_container_string_buf_remove(buffer, id));
+  CHECK(hyle_container_string_interner_release(buffer, id));
+  CHECK(!hyle_container_string_interner_release(buffer, id));
   {
     hyle_container_string_view input[] = {sv("one"), sv("two"), sv("one")};
     hyle_container_string_view output[3];
-    CHECK(status_ok(hyle_container_string_buf_intern_many(
+    CHECK(status_ok(hyle_container_string_interner_intern_many(
         &completed, buffer, input, output, 3)) && completed == 3);
     CHECK(output[0].data == output[2].data);
-    CHECK(status_ok(hyle_container_string_buf_intern_many(
+    CHECK(status_ok(hyle_container_string_interner_intern_many(
         &completed, buffer, input, NULL, 3)) && completed == 3);
   }
   {
     hyle_container_string_view input[] = {sv("batch-a"), sv("batch-b")};
-    hyle_container_intern_id ids[2];
-    CHECK(status_ok(hyle_container_string_buf_add_many(
+    hyle_container_string_id ids[2];
+    CHECK(status_ok(hyle_container_string_interner_acquire_many(
         &completed, buffer, input, ids, 2)) && completed == 2);
     CHECK(ids[0] != 0 && ids[1] != 0);
-    CHECK(hyle_container_string_buf_retain_many(buffer, ids, 2) == 2);
-    CHECK(hyle_container_string_buf_remove_many(buffer, ids, 2) == 2);
-    CHECK(hyle_container_string_buf_remove_many(buffer, ids, 2) == 2);
+    CHECK(hyle_container_string_interner_retain_many(buffer, ids, 2) == 2);
+    CHECK(hyle_container_string_interner_release_many(buffer, ids, 2) == 2);
+    CHECK(hyle_container_string_interner_release_many(buffer, ids, 2) == 2);
   }
-  hyle_container_string_buf_destroy(buffer);
+  hyle_container_string_interner_destroy(buffer);
 }
 
 static void test_vector_and_map(void) {
@@ -644,9 +644,9 @@ int main(void) {
   hyle_allocator invalid_backing = {0};
   hyle_allocator failing_backing = {fail_alloc, fail_free, fail_realloc, NULL};
   hyle_container_bounded_queue* bounded_queue = NULL;
-  hyle_container_string_buf* string_buffer = NULL;
+  hyle_container_string_interner* string_interner = NULL;
   test_strings_and_paths();
-  test_string_buf();
+  test_string_interner();
   test_vector_and_map();
   test_hash_set();
   test_queues_and_concurrent_vector();
@@ -657,23 +657,23 @@ int main(void) {
   CHECK(status_code(hyle_container_bounded_queue_create(
             &bounded_queue, failing_backing, 8)) ==
         HYLE_STATUS_RESOURCE_EXHAUSTED);
-  CHECK(status_code(hyle_container_string_buf_create(
-            &string_buffer, failing_backing)) == HYLE_STATUS_RESOURCE_EXHAUSTED);
+  CHECK(status_code(hyle_container_string_interner_create(
+            &string_interner, failing_backing)) == HYLE_STATUS_RESOURCE_EXHAUSTED);
   {
-    /* One allocation for the C handle and one for StringBuf::Impl. */
-    fail_after_allocator failing = {hyle_system_allocator(), 2};
+    /* C handle, C++ implementation, then runtime-sized shard storage. */
+    fail_after_allocator failing = {hyle_system_allocator(), 3};
     hyle_allocator fail_storage = {fail_after_alloc, fail_after_free,
                                    fail_after_realloc, &failing};
-    hyle_container_string_buf* strings = NULL;
+    hyle_container_string_interner* strings = NULL;
     hyle_container_string_view interned;
     CHECK(status_ok(
-        hyle_container_string_buf_create(&strings, fail_storage)));
+        hyle_container_string_interner_create(&strings, fail_storage)));
     CHECK(strings != NULL);
-    CHECK(status_code(hyle_container_string_buf_intern(
+    CHECK(status_code(hyle_container_string_interner_intern(
               &interned, strings, sv("allocation"))) ==
           HYLE_STATUS_RESOURCE_EXHAUSTED);
     CHECK(interned.data == NULL);
-    hyle_container_string_buf_destroy(strings);
+    hyle_container_string_interner_destroy(strings);
   }
   {
     fail_after_allocator bounded = {hyle_system_allocator(), 1};

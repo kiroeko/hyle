@@ -14,7 +14,7 @@
 #include "hyle/container/probe.h"
 #include "hyle/container/sharded_queue.h"
 #include "hyle/container/string_algo.h"
-#include "hyle/container/string_buf.h"
+#include "hyle/container/string_interner.h"
 #include "hyle/container/swiss_table.h"
 #include "hyle/container/work_stealing_deque.h"
 #include "hyle/container/ws_fifo_queue.h"
@@ -368,10 +368,10 @@ void free_handle(T* handle) noexcept {
 
 }  // namespace
 
-struct hyle_container_string_buf_o {
+struct hyle_container_string_interner_o {
   hyle_allocator backing;
-  hc::StringBuf value;
-  explicit hyle_container_string_buf_o(hyle_allocator allocator)
+  hc::StringInterner value;
+  explicit hyle_container_string_interner_o(hyle_allocator allocator)
       : backing(allocator), value(to_cpp(&backing)) {}
 };
 
@@ -836,50 +836,50 @@ uint32_t hyle_container_path_normalize(char* path) {
   return hc::normalize(path);
 }
 
-hyle_status hyle_container_string_buf_create(
-    hyle_container_string_buf** out, hyle_allocator backing) {
+hyle_status hyle_container_string_interner_create(
+    hyle_container_string_interner** out, hyle_allocator backing) {
   if (out == nullptr)
-    return hyle_status_invalid_argument("string buffer output is NULL");
+    return hyle_status_invalid_argument("string interner output is NULL");
   *out = nullptr;
   if (!valid_backing(backing)) {
-    return hyle_status_invalid_argument("invalid string buffer allocator");
+    return hyle_status_invalid_argument("invalid string interner allocator");
   }
   auto* value =
-      allocate_handle<hyle_container_string_buf>(backing, backing);
+      allocate_handle<hyle_container_string_interner>(backing, backing);
   if (value == nullptr || !value->value.valid()) {
     free_handle(value);
-    return hyle_status_resource_exhausted("string buffer allocation failed");
+    return hyle_status_resource_exhausted("string interner allocation failed");
   }
   *out = value;
   return hyle_status_ok();
 }
-void hyle_container_string_buf_destroy(hyle_container_string_buf* buffer) {
-  free_handle(buffer);
+void hyle_container_string_interner_destroy(hyle_container_string_interner* interner) {
+  free_handle(interner);
 }
-hyle_status hyle_container_string_buf_add(
-    hyle_container_intern_id* out, hyle_container_string_buf* buffer,
+hyle_status hyle_container_string_interner_acquire(
+    hyle_container_string_id* out, hyle_container_string_interner* interner,
     hyle_container_string_view text) {
-  if (out == nullptr || buffer == nullptr ||
+  if (out == nullptr || interner == nullptr ||
       !valid_range(text.data, text.size, "invalid text view"))
     return hyle_status_invalid_argument(
-        "output, string buffer, and valid text are required");
+        "output, string interner, and valid text are required");
   *out = 0;
-  const hyle_container_intern_id id = buffer->value.add(to_cpp(text)).value;
+  const hyle_container_string_id id = interner->value.acquire(to_cpp(text)).value;
   if (text.size != 0 && id == 0)
-    return hyle_status_resource_exhausted("string buffer allocation failed");
+    return hyle_status_resource_exhausted("string interner allocation failed");
   *out = id;
   return hyle_status_ok();
 }
-hyle_status hyle_container_string_buf_add_many(
+hyle_status hyle_container_string_interner_acquire_many(
     size_t* out_completed,
-    hyle_container_string_buf* buffer,
+    hyle_container_string_interner* interner,
     const hyle_container_string_view* input,
-    hyle_container_intern_id* output, size_t count) {
-  if (out_completed == nullptr || buffer == nullptr ||
+    hyle_container_string_id* output, size_t count) {
+  if (out_completed == nullptr || interner == nullptr ||
       !valid_range(input, count, "non-zero count requires input") ||
       !valid_range(output, count, "non-zero count requires output"))
     return hyle_status_invalid_argument(
-        "completed output, buffer, input, and output are required");
+        "completed output, interner, input, and output are required");
   *out_completed = 0;
   for (size_t i = 0; i < count; ++i)
     if (!valid_range(input[i].data, input[i].size, "invalid text view"))
@@ -887,103 +887,102 @@ hyle_status hyle_container_string_buf_add_many(
 
   constexpr size_t kChunk = 64;
   hc::string_ref cpp_input[kChunk];
-  hc::InternId cpp_output[kChunk];
+  hc::StringId cpp_output[kChunk];
   size_t completed = 0;
   while (completed < count) {
     const size_t chunk = std::min(kChunk, count - completed);
     for (size_t i = 0; i < chunk; ++i)
       cpp_input[i] = to_cpp(input[completed + i]);
     const size_t done =
-        buffer->value.add_many(cpp_input, cpp_output, chunk);
+        interner->value.acquire_many(cpp_input, cpp_output, chunk);
     for (size_t i = 0; i < done; ++i)
       output[completed + i] = cpp_output[i].value;
     completed += done;
     if (done != chunk) {
       *out_completed = completed;
-      return hyle_status_resource_exhausted("string buffer allocation failed");
+      return hyle_status_resource_exhausted("string interner allocation failed");
     }
   }
   *out_completed = completed;
   return hyle_status_ok();
 }
-int hyle_container_string_buf_retain(hyle_container_string_buf* buffer,
-                                     hyle_container_intern_id id) {
-  if (buffer == nullptr) return 0;
-  const bool retained = buffer->value.retain(hc::InternId{id});
+int hyle_container_string_interner_retain(hyle_container_string_interner* interner,
+                                          hyle_container_string_id id) {
+  if (interner == nullptr) return 0;
+  const bool retained = interner->value.retain(hc::StringId{id});
   return retained;
 }
-size_t hyle_container_string_buf_retain_many(
-    hyle_container_string_buf* buffer,
-    const hyle_container_intern_id* ids, size_t count) {
-  if (buffer == nullptr ||
+size_t hyle_container_string_interner_retain_many(
+    hyle_container_string_interner* interner,
+    const hyle_container_string_id* ids, size_t count) {
+  if (interner == nullptr ||
       !valid_range(ids, count, "non-zero count requires ids"))
     return 0;
   constexpr size_t kChunk = 64;
-  hc::InternId cpp_ids[kChunk];
+  hc::StringId cpp_ids[kChunk];
   size_t completed = 0;
   while (completed < count) {
     const size_t chunk = std::min(kChunk, count - completed);
     for (size_t i = 0; i < chunk; ++i)
-      cpp_ids[i] = hc::InternId{ids[completed + i]};
-    const size_t done = buffer->value.retain_many(cpp_ids, chunk);
+      cpp_ids[i] = hc::StringId{ids[completed + i]};
+    const size_t done = interner->value.retain_many(cpp_ids, chunk);
     completed += done;
     if (done != chunk) return completed;
   }
   return completed;
 }
-int hyle_container_string_buf_remove(hyle_container_string_buf* buffer,
-                                     hyle_container_intern_id id) {
-  if (buffer == nullptr) return 0;
-  const bool removed = buffer->value.remove(hc::InternId{id});
-  return removed;
+int hyle_container_string_interner_release(hyle_container_string_interner* interner,
+                                           hyle_container_string_id id) {
+  if (interner == nullptr) return 0;
+  return interner->value.release(hc::StringId{id});
 }
-size_t hyle_container_string_buf_remove_many(
-    hyle_container_string_buf* buffer,
-    const hyle_container_intern_id* ids, size_t count) {
-  if (buffer == nullptr ||
+size_t hyle_container_string_interner_release_many(
+    hyle_container_string_interner* interner,
+    const hyle_container_string_id* ids, size_t count) {
+  if (interner == nullptr ||
       !valid_range(ids, count, "non-zero count requires ids"))
     return 0;
   constexpr size_t kChunk = 64;
-  hc::InternId cpp_ids[kChunk];
+  hc::StringId cpp_ids[kChunk];
   size_t completed = 0;
   while (completed < count) {
     const size_t chunk = std::min(kChunk, count - completed);
     for (size_t i = 0; i < chunk; ++i)
-      cpp_ids[i] = hc::InternId{ids[completed + i]};
-    const size_t done = buffer->value.remove_many(cpp_ids, chunk);
+      cpp_ids[i] = hc::StringId{ids[completed + i]};
+    const size_t done = interner->value.release_many(cpp_ids, chunk);
     completed += done;
     if (done != chunk) return completed;
   }
   return completed;
 }
-hyle_container_string_view hyle_container_string_buf_lookup(
-    hyle_container_string_buf* buffer, hyle_container_intern_id id) {
-  if (buffer == nullptr) return {};
-  return from_cpp(buffer->value.lookup(hc::InternId{id}));
+hyle_container_string_view hyle_container_string_interner_lookup(
+    hyle_container_string_interner* interner, hyle_container_string_id id) {
+  if (interner == nullptr) return {};
+  return from_cpp(interner->value.lookup(hc::StringId{id}));
 }
-hyle_status hyle_container_string_buf_intern(
-    hyle_container_string_view* out, hyle_container_string_buf* buffer,
+hyle_status hyle_container_string_interner_intern(
+    hyle_container_string_view* out, hyle_container_string_interner* interner,
     hyle_container_string_view text) {
-  if (out == nullptr || buffer == nullptr ||
+  if (out == nullptr || interner == nullptr ||
       !valid_range(text.data, text.size, "invalid text view"))
     return hyle_status_invalid_argument(
-        "output, string buffer, and valid text are required");
+        "output, string interner, and valid text are required");
   *out = {};
-  const hc::string_ref result = buffer->value.intern(to_cpp(text));
+  const hc::string_ref result = interner->value.intern(to_cpp(text));
   if (text.size != 0 && result.data == nullptr)
-    return hyle_status_resource_exhausted("string buffer allocation failed");
+    return hyle_status_resource_exhausted("string interner allocation failed");
   *out = from_cpp(result);
   return hyle_status_ok();
 }
-hyle_status hyle_container_string_buf_intern_many(
+hyle_status hyle_container_string_interner_intern_many(
     size_t* out_completed,
-    hyle_container_string_buf* buffer,
+    hyle_container_string_interner* interner,
     const hyle_container_string_view* input,
     hyle_container_string_view* output, size_t count) {
-  if (out_completed == nullptr || buffer == nullptr ||
+  if (out_completed == nullptr || interner == nullptr ||
       !valid_range(input, count, "non-zero count requires input")) {
     return hyle_status_invalid_argument(
-        "completed output, buffer, and input are required");
+        "completed output, interner, and input are required");
   }
   *out_completed = 0;
   for (size_t i = 0; i < count; ++i)
@@ -998,7 +997,7 @@ hyle_status hyle_container_string_buf_intern_many(
     const size_t chunk = std::min(kChunk, count - completed);
     for (size_t i = 0; i < chunk; ++i)
       cpp_input[i] = to_cpp(input[completed + i]);
-    const size_t done = buffer->value.intern_many(
+    const size_t done = interner->value.intern_many(
         cpp_input, output == nullptr ? nullptr : cpp_output, chunk);
     if (output != nullptr)
       for (size_t i = 0; i < done; ++i)
@@ -1006,16 +1005,16 @@ hyle_status hyle_container_string_buf_intern_many(
     completed += done;
     if (done != chunk) {
       *out_completed = completed;
-      return hyle_status_resource_exhausted("string buffer allocation failed");
+      return hyle_status_resource_exhausted("string interner allocation failed");
     }
   }
   *out_completed = completed;
   return hyle_status_ok();
 }
-uint32_t hyle_container_string_buf_size(
-    const hyle_container_string_buf* buffer) {
-  if (buffer == nullptr) return 0;
-  return buffer->value.size();
+uint32_t hyle_container_string_interner_size(
+    const hyle_container_string_interner* interner) {
+  if (interner == nullptr) return 0;
+  return interner->value.size();
 }
 
 hyle_status hyle_container_vector_create(

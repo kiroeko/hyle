@@ -24,7 +24,7 @@ mem 不提供 pinned allocator 或单块 staging convenience。compute `Buffer` 
 
 | 能力 | 当前生产消费者 | 真实合同 |
 |---|---|---|
-| `Allocator` / `system_allocator()` | sched 队列与 driver、HTTP/2 session/stream、IO pending 表、StringBuf、graph 临时容器、ggml bridge job/frame | 按值注入、alignment、sized-free、backing 生命周期；allocator 本身以 NULL 报资源失败，消费者当前混用 Status/失败 handle/fail-fast（graph parallel 临时数组仍 fail-fast），不能伪称已有统一 OOM 策略 |
+| `Allocator` / `system_allocator()` | sched 队列与 driver、HTTP/2 session/stream、IO pending 表、StringInterner、graph 临时容器、ggml bridge job/frame | 按值注入、alignment、sized-free、backing 生命周期；allocator 本身以 NULL 报资源失败，消费者当前混用 Status/失败 handle/fail-fast（graph parallel 临时数组仍 fail-fast），不能伪称已有统一 OOM 策略 |
 | `SystemAllocator` 类型 | HYLE containers 的默认模板参数 | 外部默认容器零 vtable；内部关键路径多显式用 `Allocator` |
 | `FiberStackPool` | sched worker/fiber | guarded stack、三档尺寸、跨 worker release、Scheduler 覆盖全部 fiber 生命周期 |
 | `HugeRegion` | 显式大块内存调用方 | THP/NUMA 是显式策略，不由 pool 根据 allocator identity 偷换 backing |

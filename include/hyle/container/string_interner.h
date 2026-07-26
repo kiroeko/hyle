@@ -10,9 +10,9 @@
 
 namespace hyle::container {
 
-// Reference-counted string interning pool (clay string_buf). Stores each unique
+// Thread-safe string interning pool. Stores each unique
 // string ONCE and hands back a stable pointer that lives until the matching
-// number of remove()s. Two interns of equal content return the same pointer, so
+// number of release()s. Two interns of equal content return the same pointer, so
 // downstream code can compare interned strings by pointer identity and a hashmap
 // keyed on them needs no per-lookup string hashing.
 //
@@ -29,62 +29,64 @@ namespace hyle::container {
 // mem::Allocator (a header-only, non-exported type), so exporting the class
 // whole would trip MSVC C4251. Methods that cross the DLL carry the macro; the
 // layout is instantiated client-side (conventions §3.5).
-// Opaque handle to an interned string, returned by StringBuf::add and consumed by
-// retain/remove/lookup. It is a pool-local generation-tagged slot id, not a
-// content hash: hash values are not identities and may collide. A removed
-// handle never aliases a later string even when its slot is reused. add() is the
-// only sanctioned way to mint one. Trivially copyable; zero is the empty string.
-struct InternId {
+// Opaque handle to an interned string, returned by StringInterner::acquire and
+// consumed by retain/release/lookup. It is a pool-local generation-tagged slot
+// id, not a content hash: hash values are not identities and may collide. A
+// released handle never aliases a later string even when its slot is reused.
+// acquire() is the only sanctioned way to mint one. Trivially copyable; zero is
+// the empty string.
+struct StringId {
   std::uint64_t value = 0;
-  friend bool operator==(InternId, InternId) noexcept = default;
+  friend bool operator==(StringId, StringId) noexcept = default;
   bool empty() const noexcept { return value == 0; }
 };
 
-class StringBuf {
+class StringInterner {
  public:
-  HYLE_CONTAINER_API explicit StringBuf(
+  HYLE_CONTAINER_API explicit StringInterner(
       mem::Allocator alloc = mem::system_allocator());
-  HYLE_CONTAINER_API ~StringBuf();
-  HYLE_DISABLE_COPY_AND_MOVE(StringBuf);
+  HYLE_CONTAINER_API ~StringInterner();
+  HYLE_DISABLE_COPY_AND_MOVE(StringInterner);
 
-  // Adds `s` (bumping its refcount if already present). Returns its InternId
-  // handle for lookup()/retain()/remove(). The empty string always maps to the
-  // empty InternId (value 0) and is never stored.
-  HYLE_CONTAINER_API InternId add(string_ref s) noexcept;
+  // Acquires one reference to `s` (bumping its refcount if already present).
+  // Returns its StringId for lookup()/retain()/release(). The empty string maps
+  // to StringId{0}; for non-empty input StringId{0} reports allocation failure.
+  HYLE_CONTAINER_API StringId acquire(string_ref s) noexcept;
 
-  // Batch add. `output` must have `count` slots. Returns the completed prefix;
-  // a short result reports allocation failure. The implementation acquires the
-  // shard locks once, amortizing synchronization for lifecycle-heavy callers.
-  HYLE_CONTAINER_API std::size_t add_many(const string_ref* input,
-                                          InternId* output,
-                                          std::size_t count) noexcept;
+  // Batch acquire. `output` must have `count` slots. Returns the completed
+  // prefix; a short result reports allocation failure. Bounded chunks hash each
+  // input once and lock only the shards actually touched by that chunk.
+  HYLE_CONTAINER_API std::size_t acquire_many(const string_ref* input,
+                                              StringId* output,
+                                              std::size_t count) noexcept;
 
-  // Bumps the refcount of an already-interned string by its handle (== add of the
-  // same content, without needing the bytes again).
-  HYLE_CONTAINER_API bool retain(InternId id) noexcept;
+  // Bumps the refcount of an already-interned string by its handle (== acquire
+  // of the same content, without needing the bytes again).
+  HYLE_CONTAINER_API bool retain(StringId id) noexcept;
 
-  // Batch retain/remove return the completed prefix. A short result means the
+  // Batch retain/release return the completed prefix. A short result means the
   // next handle was stale, absent, or could not be retained.
-  HYLE_CONTAINER_API std::size_t retain_many(const InternId* ids,
+  HYLE_CONTAINER_API std::size_t retain_many(const StringId* ids,
                                              std::size_t count) noexcept;
 
-  // Drops one reference. When the count reaches zero, the string's storage is
+  // Releases one reference. When the count reaches zero, the string's storage is
   // reclaimed and its pointer becomes invalid unless it was permanently
   // interned.
-  HYLE_CONTAINER_API bool remove(InternId id) noexcept;
-  HYLE_CONTAINER_API std::size_t remove_many(const InternId* ids,
-                                             std::size_t count) noexcept;
+  HYLE_CONTAINER_API bool release(StringId id) noexcept;
+  HYLE_CONTAINER_API std::size_t release_many(const StringId* ids,
+                                              std::size_t count) noexcept;
 
   // String for `id`, or empty if absent. The result is always null-terminated.
-  HYLE_CONTAINER_API string_ref lookup(InternId id) noexcept;
+  HYLE_CONTAINER_API string_ref lookup(StringId id) noexcept;
 
   // Permanently interns `s` until pool destruction and returns its stable,
   // null-terminated view. Repeated calls do not grow a hidden refcount. Use
-  // add()/remove() instead when individual lifetime reclamation is required.
+  // acquire()/release() instead when individual lifetime reclamation is
+  // required.
   HYLE_CONTAINER_API string_ref intern(string_ref s) noexcept;
 
-  // Permanently intern a batch while acquiring each shard lock once. `output`
-  // may be null when the caller only wants to prewarm the pool. Returns the
+  // Permanently intern a batch. Bounded chunks lock only involved shards.
+  // `output` may be null when the caller only wants to prewarm the pool. Returns the
   // processed count; a short result reports allocation failure after preserving
   // the completed prefix.
   HYLE_CONTAINER_API std::size_t intern_many(const string_ref* input,
@@ -96,7 +98,7 @@ class StringBuf {
   bool valid() const noexcept { return impl_ != nullptr; }
 
   // The injected allocator (also used to free interned strings and the pool).
-  // Inline (no DLL hop), so destroy_string_buf reaches it without a friend.
+  // Inline (no DLL hop), so destroy_string_interner reaches it without a friend.
   mem::Allocator allocator() const noexcept { return alloc_; }
 
  private:
@@ -105,18 +107,13 @@ class StringBuf {
   Impl* impl_;
 };
 
-// Application-facing names describe the capability rather than the historical
-// clay buffer implementation.
-using StringId = InternId;
-using StringInterner = StringBuf;
-
 // make/destroy factory (conventions §4): allocation responsibility stays inside
 // the DLL so a client built against a different CRT can't free DLL-owned memory.
-// Equivalent to `alloc.construct<StringBuf>(alloc)` / `alloc.destroy(p)`; offered
-// for clay API parity and cross-DLL handoff. The pool remembers its allocator,
-// so destroy_string_buf needs only the pointer.
-HYLE_CONTAINER_API StringBuf* make_string_buf(
+// Equivalent to `alloc.construct<StringInterner>(alloc)` / `alloc.destroy(p)`.
+// The pool remembers its allocator, so destroy_string_interner needs only the
+// pointer.
+HYLE_CONTAINER_API StringInterner* make_string_interner(
     mem::Allocator alloc = mem::system_allocator());
-HYLE_CONTAINER_API void destroy_string_buf(StringBuf* buf) noexcept;
+HYLE_CONTAINER_API void destroy_string_interner(StringInterner* interner) noexcept;
 
 }  // namespace hyle::container

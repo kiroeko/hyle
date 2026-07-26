@@ -29,7 +29,7 @@
 | `sys/memory_arena.h` + `.cc` | 65+258 | mem-03 + mem-03b | ✅ | clay `MemoryArena` 能力现由 **硬容量 `SharedPool`**（completed free 立即共享、稳定双快照、tag 饱和永久 serialized）与显式 owner-local **`SharedPoolCache`**（可配 capacity/batch + publish）覆盖；`PooledRegion` 只借硬池的一块做无原子 bump，并提供 `as_allocator()` |
 | `sys/carray.h` + `.cc` | 436+65 | container-03 | ✅ | header-before-data POD 数组 + type-erased 核 + RAII 壳 `PodVector<T>`；**改进:over-align 元素(clay 固定 max_align_t 会错位)** |
 | `sys/cstring.h` + `.cc` | 1033+374 | container-06 | ✅ | string_ref(ptr+len+null 位)+零拷贝算法(find/rfind/find_first/last_of/not_of/substr/trim/starts/ends_with/contains/count/split/rsplit/slice/concat/dup/c_str/equal_ignore_case)+ operator<=> + Hash<string_ref> + `_sr` 字面量。**类型核心 API diff 过 clay**;clay `capitalize`/UTF-8/hex/escape 真实现归 `string_algo.h`(container-06b✅);`score_similarity`/`format_si` 等 **clay 只声明无实现**→container-06c(净新) |
-| `sys/string_buf.h` + `.cc` | 141+363 | container-06 | ✅ | 引用计数驻留池 `StringBuf`(pimpl 藏 SwissTable 内容索引+mutex)+ make/destroy 工厂；每唯一串单独分配(地址稳定)。**改进**：内容 equality 是最终身份；对外 ID 是 generation-tagged direct slot，hash collision 不别名、stale ID 不命中新串；永久 `intern/intern_many` 与可回收 `add/retain/remove` 分离。全局可变单例有意不做。 |
+| `sys/string_buf.h` + `.cc` | 141+363 | container-06 | ✅ | 引用计数驻留池 `StringInterner`(pimpl 藏 SwissTable 内容索引+mutex)+ make/destroy 工厂；每唯一串单独分配(地址稳定)。**改进**：内容 equality 是最终身份；对外 ID 是 generation-tagged direct slot，hash collision 不别名、stale ID 不命中新串；永久 `intern/intern_many` 与可回收 `acquire/retain/release` 分离。全局可变单例有意不做。 |
 | `sys/hashmap.h` | 809 | container-04 + container-04b | ✅ | concept 模板重写 + **实现 clay 只 TODO 的 SwissTable**(控制字节+SIMD探测+三角探测+tombstone)；**type-erased 冷核(resize/free 进 DLL,防 per-T 膨胀)+ erase abseil reclaim-to-empty + NEON group(aarch64 编过未跑)已补(container-04b✅)** |
 | `sys/murmur_hash.h` | 294 | container-02 | 🔶 | **运行期哈希→XXH3 已接(container-02✅,借 xxHash 替 murmur)**;编译期 type 哈希→**FNV-1a constexpr 已做(util-02 type_hash)**;murmur 本体未移植(无剩余用途) |
 | `sys/error.h` + `.cc` | 222+143 | **error-02（历史）** | ♻️ | clay 的全局 error handler/soft assert 曾被移植，实际产品调用为零且与 obs 重叠，发布前已删除；保留的资产只有 8B `Status` 思路，现由 `error-design.md` 的 Status/Result/context 边界取代 |
@@ -103,7 +103,7 @@
 - **mem-03b**：`Arena` bump 分配器 + `ArenaAllocator` 适配 + `make_arena_allocator`。
 - **error-02**：当时实现 error_handler vtable；现已由 Status 返回值 + obs 日志双通道
   取代并退役。
-- **container-06b**：`string_utils` 高层字符串工具(score_similarity/path_match/format_si/capitalize/replace/find_path_matches)+ `StringBuf` 全局单例 intern/usprintf。container-06 只做 string_ref 类型核心 + StringBuf 实例,这些高层/全局便利层显式登记待补,**非略过**。
+- **container-06b**：`string_utils` 高层字符串工具(score_similarity/path_match/format_si/capitalize/replace/find_path_matches)+ `StringInterner` 全局单例 intern/usprintf。container-06 只做 string_ref 类型核心 + StringInterner 实例,这些高层/全局便利层显式登记待补,**非略过**。
 
 ## "clay 完全吸纳"在 P 几（见本文件末尾结论由 milestones/README 给出）
 

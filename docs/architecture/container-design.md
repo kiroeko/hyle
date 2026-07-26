@@ -24,7 +24,7 @@ C++ typed / source surface      compiled cold cores
   PodVector<T> / SmallVector    hash_bytes, carray grow,
   FlatHashMap<K,V> /            Swiss resize/free,
   FlatHashSet<K>
-  string_ref / StringBuf        StringBuf/path/string algorithms
+  string_ref / StringInterner   StringInterner/path/string algorithms
   typed queues                  runtime ISA dispatcher
           |                       |
           +-----------+-----------+
@@ -50,7 +50,7 @@ Tier 0 dependencies: mem allocator + platform CPU discovery
 | POD dynamic array | `PodVector<T>` | erased POD vector | 默认可用或注入 allocator；copy/move 值语义；header-before-data；allocator/alignment 随 allocation 记录 |
 | inline array | `SmallVector<T,N>` | 不单独导出 | 通用 owning value semantics；POD 保留 memcpy relocation；N 是编译期类型，C 动态需求由 erased vector 覆盖 |
 | string view | `StringView`（实现名 `string_ref`） | `hyle_container_string_view` | ptr+u32 length+NUL bit；借用、不拥有 |
-| interner | `StringInterner`（实现名 `StringBuf`） | opaque StringBuf | generation-tagged direct ID；内容相等才同一条目 |
+| interner | `StringInterner` | opaque StringInterner | generation-tagged direct ID；内容相等才同一条目 |
 | path/text algorithms | typed view/buffer-fill | pointer/count/buffer-fill | 无 STL 所有权跨边界 |
 | bounded/sharded queues | typed payload | `void*` payload opaque handle | HYLE 不拥有 payload |
 | work steal/share | typed payload | `void*` payload opaque handle | owner/thief 契约不同，不能混用 |
@@ -141,13 +141,13 @@ probe 的指令路径。
 - insert 输入若别名当前 slots，增长前复制到 allocator-backed scratch。
 - C callback 不得抛异常或在遍历中修改同一 map。
 
-## StringBuf 身份与生命周期
+## StringInterner 身份与生命周期
 
-StringBuf 有两个正交用法：
+StringInterner 有两个正交用法：
 
 ```text
-add/add_many -> InternId(generation, shard, slot) -> retain/remove -> refs=0 时释放
-intern / intern_many             -> permanent until pool destruction
+acquire/acquire_many -> StringId(generation, shard, slot) -> retain/release -> refs=0 时释放
+intern / intern_many                -> permanent until interner destruction
 ```
 
 内容 hash 只负责定位，不是身份。`by_string` 继续做完整内容 equality；ID 编码
@@ -155,32 +155,33 @@ intern / intern_many             -> permanent until pool destruction
 构造时按硬件并行度一次选择 16/32/64 shard，单次调用只锁内容或 ID 对应的 shard。
 shard 取 hash 中间位，SwissTable 仍直接使用原 hash 的低位 H1 与高位 H2，避免
 固定 index/tag 熵或每次 lookup 再做一次 remix。永久 `intern` 默认不创建外部不可见
-的 ID slot；第一次 `add` 同内容时才 lazy materialize。
+的 ID slot；第一次 `acquire` 同内容时才 lazy materialize。
 
 Entry 缓存 table hash：新输入不可避免地是 Ω(L) 读字节，但 Swiss 扩容只移动
 定长 key、删除按缓存 hash 定位，不再反复扫描已驻留长串。≤256B 的 Entry+字符使用
-每 shard 小块 slab，remove 后回到池内复用；大字符串立即归还注入 allocator，全部
-slab 在 StringBuf 销毁时归还。地址在有效生命周期内稳定。
+每 shard 小块 slab，release 后回到池内复用；大字符串立即归还注入 allocator，全部
+slab 在 StringInterner 销毁时归还。地址在有效生命周期内稳定。
 
 SwissTable 的 `reserve(final-size)` 会同时处理正常 grow 与 tombstone 耗尽的 growth
 budget：容量足够时做同容量 rehash，而不是虚假返回成功。`try_prepare_insert()` 由此
 合同推导下一项所需 final-size，先把可能失败的 allocation 做完，随后 `insert()` 才是
-allocation-free；StringBuf 因而能在 noexcept/batch API 中返回短前缀，而不是让冷路径
+allocation-free；StringInterner 因而能在 noexcept/batch API 中返回短前缀，而不是让冷路径
 OOM 落进 fatal assert。
 
 | 操作 | 当前预期复杂度 | 下界/相对旧形状 |
 |---|---:|---|
-| 新内容 `intern/add` | O(L) amortized | 必须读输入，达到 Ω(L) 下界 |
+| 新内容 `intern/acquire` | O(L) amortized | 必须读输入，达到 Ω(L) 下界 |
 | 已驻留内容命中 | O(L) expected | 必须确认调用方字节；hash 只算一次 |
-| `lookup/retain/remove(id)` | O(1) expected | direct generation slot，达到 Ω(1) 下界 |
+| `lookup/retain/release(id)` | O(1) expected | direct generation slot，达到 Ω(1) 下界 |
 | table rehash | O(N) | 只搬定宽 slot；旧形状会重扫 resident bytes，最坏 O(ΣL) |
 | 最后一份 ID 删除 | O(1) expected | cached hash + pointer-equality erase，不重扫字符串 |
-| batch | O(ΣL + N + S) expected | S 为构造期 shard 数且 `S <= 64` |
+| batch | O(ΣL + N + U) expected | 每块 `U` 为实际涉及的 shard 数，`U <= min(N,64)` |
 | `size()` | O(S)，硬上界 O(1) | 不扫描条目 |
 | 短串重复 churn | O(N) | 达到高水位后 slab/ID slot 复用，无逐条 allocator 调用 |
 
-吞吐/生命周期用户应使用 `intern_many`、`add_many`、`retain_many`、
-`remove_many`，它们只获取一次 shard lock set。性能结论见
+吞吐/生命周期用户应使用 `intern_many`、`acquire_many`、`retain_many`、
+`release_many`。每个有界块先算一次 hash，只按升序获取实际涉及的 shard lock；
+既避免全池冻结也避免重复 hash。性能结论见
 [`benchmarks-mem-container.md`](../performance/benchmarks-mem-container.md)。
 
 ## 字符串 SIMD 策略
@@ -217,7 +218,7 @@ container 对外依赖。hex encode/decode 当前是无查表分支的标量/编
 | C ABI 能力组 | 当前判定 | 重审方向 |
 |---|---|---|
 | string view/hash/search/path buffer-fill | 保留能力 | 都是 FFI-native POD/无状态入口；合并重复命名与错误哨兵，不按 C++ 每个成员机械导出 |
-| StringBuf | 保留 opaque 能力 | permanent 与 refcounted lifecycle 都有真实跨语言用途；检查 batch/result 形状 |
+| StringInterner | 保留 opaque 能力 | permanent 与 refcounted lifecycle 都有真实跨语言用途；batch/result 形状已按实际分片重审 |
 | erased POD vector | 保留能力 | C 没有模板，size/alignment + allocator 是合理动态形状；不加入 C++ ctor/dtor callback |
 | erased POD flat map/set | 保留能力、形状已重塑 | map 拆分 insert/insert_or_assign；set 用独立最小 handle，共享 value_size=0 raw policy，但不暴露伪 value |
 | 四类 pointer queue | 保留能力、角色已审定 | C 热路径统一 `try_*`；pointer 是跨 FFI 的 caller-owned work handle，不增加 runtime stride/copy callback；Chase-Lev 明示 owner bottom/thief top，WsFifo 明示 back/front |
@@ -298,7 +299,7 @@ pointer/count 的 `try_append/try_insert/try_resize/erase/try_shrink_to_fit` 覆
   set miss 约慢 6%，不作无条件 SOTA 宣称；
 - PodVector/SmallVector/队列按各自对等形状判断；
 - 路径的大倍数主要来自零分配结构，对同形 string-view 扫描通常是平局；
-- StringBuf 长串增长、重复 churn、并发分片和 batch 分别验收；单调用仍有 DLL seam；
+- StringInterner 长串增长、重复 churn、并发分片和 batch 分别验收；单调用仍有 DLL seam；
 - 4KB 字符扫描的 0.8x–0.95x 点值应结合 64KB/1MB、方差和调用形状，不包装成赢。
 
 测试矩阵包括 typed 单测、纯 C 调用覆盖、C++ C-ABI 并发测试、allocator

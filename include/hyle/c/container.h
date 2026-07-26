@@ -182,47 +182,47 @@ HYLE_CONTAINER_C_API size_t hyle_container_path_replace_extension(
     char* out, size_t capacity);
 HYLE_CONTAINER_C_API uint32_t hyle_container_path_normalize(char* path);
 
-typedef struct hyle_container_string_buf_o hyle_container_string_buf;
-typedef uint64_t hyle_container_intern_id;
-HYLE_CONTAINER_C_API hyle_status hyle_container_string_buf_create(
-    hyle_container_string_buf** out, hyle_allocator backing);
-static inline hyle_status hyle_container_string_buf_create_system(
-    hyle_container_string_buf** out) {
-  return hyle_container_string_buf_create(out, hyle_system_allocator());
+typedef struct hyle_container_string_interner_o hyle_container_string_interner;
+typedef uint64_t hyle_container_string_id;
+HYLE_CONTAINER_C_API hyle_status hyle_container_string_interner_create(
+    hyle_container_string_interner** out, hyle_allocator backing);
+static inline hyle_status hyle_container_string_interner_create_system(
+    hyle_container_string_interner** out) {
+  return hyle_container_string_interner_create(out, hyle_system_allocator());
 }
-HYLE_CONTAINER_C_API void hyle_container_string_buf_destroy(
-    hyle_container_string_buf* buffer);
-HYLE_CONTAINER_C_API hyle_status hyle_container_string_buf_add(
-    hyle_container_intern_id* out, hyle_container_string_buf* buffer,
+HYLE_CONTAINER_C_API void hyle_container_string_interner_destroy(
+    hyle_container_string_interner* interner);
+HYLE_CONTAINER_C_API hyle_status hyle_container_string_interner_acquire(
+    hyle_container_string_id* out, hyle_container_string_interner* interner,
     hyle_container_string_view text);
-HYLE_CONTAINER_C_API hyle_status hyle_container_string_buf_add_many(
+HYLE_CONTAINER_C_API hyle_status hyle_container_string_interner_acquire_many(
     size_t* out_completed,
-    hyle_container_string_buf* buffer,
+    hyle_container_string_interner* interner,
     const hyle_container_string_view* input,
-    hyle_container_intern_id* output, size_t count);
-HYLE_CONTAINER_C_API int hyle_container_string_buf_retain(
-    hyle_container_string_buf* buffer, hyle_container_intern_id id);
-HYLE_CONTAINER_C_API size_t hyle_container_string_buf_retain_many(
-    hyle_container_string_buf* buffer,
-    const hyle_container_intern_id* ids, size_t count);
-HYLE_CONTAINER_C_API int hyle_container_string_buf_remove(
-    hyle_container_string_buf* buffer, hyle_container_intern_id id);
-HYLE_CONTAINER_C_API size_t hyle_container_string_buf_remove_many(
-    hyle_container_string_buf* buffer,
-    const hyle_container_intern_id* ids, size_t count);
+    hyle_container_string_id* output, size_t count);
+HYLE_CONTAINER_C_API int hyle_container_string_interner_retain(
+    hyle_container_string_interner* interner, hyle_container_string_id id);
+HYLE_CONTAINER_C_API size_t hyle_container_string_interner_retain_many(
+    hyle_container_string_interner* interner,
+    const hyle_container_string_id* ids, size_t count);
+HYLE_CONTAINER_C_API int hyle_container_string_interner_release(
+    hyle_container_string_interner* interner, hyle_container_string_id id);
+HYLE_CONTAINER_C_API size_t hyle_container_string_interner_release_many(
+    hyle_container_string_interner* interner,
+    const hyle_container_string_id* ids, size_t count);
 HYLE_CONTAINER_C_API hyle_container_string_view
-hyle_container_string_buf_lookup(hyle_container_string_buf* buffer,
-                                 hyle_container_intern_id id);
-HYLE_CONTAINER_C_API hyle_status hyle_container_string_buf_intern(
-    hyle_container_string_view* out, hyle_container_string_buf* buffer,
+hyle_container_string_interner_lookup(hyle_container_string_interner* interner,
+                                      hyle_container_string_id id);
+HYLE_CONTAINER_C_API hyle_status hyle_container_string_interner_intern(
+    hyle_container_string_view* out, hyle_container_string_interner* interner,
     hyle_container_string_view text);
-HYLE_CONTAINER_C_API hyle_status hyle_container_string_buf_intern_many(
+HYLE_CONTAINER_C_API hyle_status hyle_container_string_interner_intern_many(
     size_t* out_completed,
-    hyle_container_string_buf* buffer,
+    hyle_container_string_interner* interner,
     const hyle_container_string_view* input,
     hyle_container_string_view* output, size_t count);
-HYLE_CONTAINER_C_API uint32_t hyle_container_string_buf_size(
-    const hyle_container_string_buf* buffer);
+HYLE_CONTAINER_C_API uint32_t hyle_container_string_interner_size(
+    const hyle_container_string_interner* interner);
 
 /* Runtime-erased trivially-copyable vector (the PodVector capability). */
 typedef struct hyle_container_vector_o hyle_container_vector;

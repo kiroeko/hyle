@@ -21,7 +21,6 @@ using hyle::container::hex_encode;
 using hyle::container::hex_decode;
 using hyle::container::string_ref;
 using hyle::container::to_lower;
-using hyle::container::utf8_icmp;
 using hyle::container::utf8_length;
 
 namespace {
@@ -93,20 +92,6 @@ int bench_string_algo() {
 #endif
     b.run("HYLE utf8_length>=0 (dispatched validate+count)", [&] {
       nb::doNotOptimizeAway(utf8_length(sr) >= 0);
-    });
-  }
-
-  // ---- utf8_icmp: case-insensitive compare two copies (whole-string scan) -----
-  // No simdutf equivalent (it's a case-fold compare, not transcode); raced
-  // against itself on equal inputs to measure the decode+fold loop throughput.
-  {
-    nb::Bench b;
-    b.title("utf8_icmp equal ~2KB (decode+fold loop)")
-        .relative(true)
-        .batch(u8.size())
-        .minEpochIterations(20000);
-    b.run("HYLE utf8_icmp", [&] {
-      nb::doNotOptimizeAway(utf8_icmp(sr, sr));
     });
   }
 

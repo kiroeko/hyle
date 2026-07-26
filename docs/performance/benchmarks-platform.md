@@ -115,7 +115,7 @@ API，fallback 的 AppleClang/arm64 构建、CPU invariant 与纯 C 路径已在
 mask 变化测试按合同跳过，不把“不支持硬绑核”伪装成已验证能力。
 
 依赖方回审采用同一进程视图：sched C 默认 worker 数、mem `SharedPool` 默认 shard 数和
-container `StringBuf` 的 shard 档位都已从整机 `hardware_concurrency` 切换；显式用户配置不变。
+container `StringInterner` 的 shard 档位都已从整机 `hardware_concurrency` 切换；显式用户配置不变。
 Windows/Linux 约束到单 CPU 的测试分别断言 scheduler 默认 1 worker、SharedPool 默认 1 shard，
 避免“platform API 正确但 HYLE 自己仍过度并发”的纸面收口。
 

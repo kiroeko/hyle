@@ -100,25 +100,25 @@ ASCII 单字节便利函数全部 header-inline：
 `hyle_container_path_normalize`。`split_all` 返回完整分量数，即使输出数组较小；
 分量仍只是原输入的借用视图。
 
-## StringBuf
+## StringInterner
 
-`hyle_container_string_buf_create` /
-`hyle_container_string_buf_create_system` 通过 Status + out 创建线程安全驻留池，
-`hyle_container_string_buf_destroy` 销毁。
+`hyle_container_string_interner_create` /
+`hyle_container_string_interner_create_system` 通过 Status + out 创建线程安全驻留池，
+`hyle_container_string_interner_destroy` 销毁。
 
-- 可回收生命周期：`hyle_container_string_buf_add` 把 pool-local、带 generation
-  的 `hyle_container_intern_id` 写入 out；用 `hyle_container_string_buf_retain`、
-  `hyle_container_string_buf_remove`、`hyle_container_string_buf_lookup` 管理。
+- 可回收生命周期：`hyle_container_string_interner_acquire` 把 pool-local、带 generation
+  的 `hyle_container_string_id` 写入 out；用 `hyle_container_string_interner_retain`、
+  `hyle_container_string_interner_release`、`hyle_container_string_interner_lookup` 管理。
   删除后的旧 ID 永远不会指向后来复用该 slot 的字符串。
-- 批量生命周期：`hyle_container_string_buf_add_many`、
-  `hyle_container_string_buf_retain_many`、
-  `hyle_container_string_buf_remove_many` 处理批量生命周期。分配型 batch 通过
-  `out_completed` 保留已完成前缀；C shim 以最多 64 项为一块，把 shard 锁和动态
-  ABI 接缝摊薄。非零 count 要求输入/输出数组有效。
-- 永久驻留：`hyle_container_string_buf_intern` 和
-  `hyle_container_string_buf_intern_many` 返回稳定、带尾零的借用视图，存活到池
-  销毁。吞吐场景优先 batch，它只获取一次 shard lock set。
-- `hyle_container_string_buf_size` 返回当前不同字符串数。所有返回视图都由池拥有，
+- 批量生命周期：`hyle_container_string_interner_acquire_many`、
+  `hyle_container_string_interner_retain_many`、
+  `hyle_container_string_interner_release_many` 处理批量生命周期。分配型 batch 通过
+  `out_completed` 保留已完成前缀；每 64 项只锁实际涉及的 shard。非零 count 要求
+  输入/输出数组有效。
+- 永久驻留：`hyle_container_string_interner_intern` 和
+  `hyle_container_string_interner_intern_many` 返回稳定、带尾零的借用视图，存活到池
+  销毁。吞吐场景优先 batch。
+- `hyle_container_string_interner_size` 返回当前不同字符串数。所有返回视图都由池拥有，
   不得释放。
 
 ## 运行时擦除 vector

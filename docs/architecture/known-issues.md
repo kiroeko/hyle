@@ -21,7 +21,7 @@
 
 ## KI-2 [环境/工具限制]：mimalloc-linked 测试在 TSan 构建下 mi_out_default 断言
 
-> **现象**：`build-tsan` 里凡链 mimalloc 的测试 exe(`hyle_container_test`/`hyle_mem_test`)一跑就 `mimalloc: assertion failed ... options.c:410 mi_add_stderr_output "mi_out_default == NULL"`,连最简单的单测(`StringBuf.AddAndLookup`)也中招——**与被测逻辑无关,是 exe 起来 mimalloc 初始化那一下**。
+> **现象**：`build-tsan` 里凡链 mimalloc 的测试 exe(`hyle_container_test`/`hyle_mem_test`)一跑就 `mimalloc: assertion failed ... options.c:410 mi_add_stderr_output "mi_out_default == NULL"`,连最简单的单测(`StringInterner.AcquireAndLookup`)也中招——**与被测逻辑无关,是 exe 起来 mimalloc 初始化那一下**。
 > **已验证**:非本会话接口改动引入——parent commit(改动前)同样复现;是 mimalloc `MI_DEBUG` 断言 + TSan 拦截 `mi_add_stderr_output` 的**跨工具交互**,TSan 构建独有。
 > **影响**:**仅 TSan 构建**——Release 构建 container/mem 全绿(Win 13/13+19/19、WSL 20/20+19/19),生产零影响。只是"mimalloc-linked 件过不了 WSL TSan 闸门"这条验证路径暂堵(container/mem 的 data-race 验证要靠 Release + 逻辑审查 + 非 mimalloc TSan 件旁证)。
 > **下一步(未做)**:TSan 构建给 mimalloc 关 `MI_DEBUG`(`-DMI_DEBUG=0`)或用 `MIMALLOC_VERBOSE=0`/换 system allocator 跑 TSan;择机验证是否消除。低优先(非缺陷、非阻塞发布)。

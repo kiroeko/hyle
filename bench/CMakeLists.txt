@@ -942,7 +942,7 @@ if(HYLE_BENCH_ABSL)
   # absl::InlinedVector is the small-vector SOTA -> feed it to the misc bench too.
   target_compile_definitions(hyle_container_misc_bench PRIVATE HYLE_BENCH_ABSL)
   target_link_libraries(hyle_container_misc_bench PRIVATE absl::inlined_vector)
-  # StringBuf's strongest same-contract peer is a sharded, locked
+  # StringInterner's strongest same-contract peer is a sharded, locked
   # absl::flat_hash_set interner (not an unlocked std map floor).
   target_compile_definitions(hyle_container_bench PRIVATE HYLE_BENCH_ABSL)
   target_link_libraries(hyle_container_bench PRIVATE absl::flat_hash_set)

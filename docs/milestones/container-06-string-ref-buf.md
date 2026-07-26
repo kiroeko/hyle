@@ -7,10 +7,10 @@
 | **Tier** | 0 |
 | **LOC 估** | 1-2k |
 | **骨架?** | 否（类型核心完整，高层工具显式拆 container-06b） |
-| **状态** | ✅ 完成（Win x64 MSVC + Linux x64 GCC14.2 双平台 + WSL TSan；container 93→95 case，新增 StringRef×20 + StringBuf×13）|
+| **状态** | ✅ 完成（Win x64 MSVC + Linux x64 GCC14.2 双平台 + WSL TSan；container 93→95 case，新增 StringRef×20 + StringInterner×13）|
 
-> **cloc 留档**：**生产 363 行** = string_ref.h 269+string_buf.h(头计入) / string_buf.cc 83 / swiss_table.h for_each +11；**测试 341 行**。
-> **预测 1-2k vs 真实 363**：不是 stub，是**精瘦 + 复用红利**——① string_ref 是 ptr+len+null 位的 16B POD 视图，算法都是字节扫描，本就不该膨胀；② StringBuf 复用 container-04 的 SwissTable 做反查，.cc 仅 83 行（clay 是 363 行虚函数抽象类+自带哈希）；③ clay cstring.h 1033 行的大头是**高层字符串工具**（score_similarity/path_match/format_si/find_path_matches），属 `string_utils` 层，显式登记 container-06b，**非略过**。
+> **当时的 cloc 留档**：**生产 363 行** = string_ref.h 269+当时的 string_buf.h / string_buf.cc 83 / swiss_table.h for_each +11；**测试 341 行**。当前公开头已改为 `string_interner.h`。
+> **预测 1-2k vs 真实 363**：不是 stub，是**精瘦 + 复用红利**——① string_ref 是 ptr+len+null 位的 16B POD 视图，算法都是字节扫描，本就不该膨胀；② StringInterner 复用 container-04 的 SwissTable 做反查，.cc 仅 83 行（clay 是 363 行虚函数抽象类+自带哈希）；③ clay cstring.h 1033 行的大头是**高层字符串工具**（score_similarity/path_match/format_si/find_path_matches），属 `string_utils` 层，显式登记 container-06b，**非略过**。
 
 ## clay API diff（cstring.h + string_buf.h）
 
@@ -19,7 +19,7 @@
 - **string_ref（cstring.h）全覆盖**：构造(ptr+size+nt / const char* / 泛型 char range) · `[]`/front/back/begin/end/empty/c_str · substr · find(char/ref)/rfind(char/ref) · find_first_of/find_last_of/find_first_not_of/find_last_not_of · starts_with/ends_with/contains/count · trim · copy_to · `operator==`/`<=>` · equal_ignore_case · 自由函数 c_str(alloc)/dup/concat/slice/split/rsplit · `_sr` 字面量 · `Hash<string_ref>`。
   - **对抗自审补漏（本里程碑内修）**：首版漏了 `rfind(string_ref)`/`find_last_of`/`count`/`rsplit`——diff clay 时发现，**当场补全并加测**，未留到下个里程碑。
   - **相对 clay 的现代化**：① 不委托 `std::string_view` 实现 find 族（clay 全委托），自己写 constexpr 字节扫描——string_ref **就是** std 视图的替代，公开头委托回 std 不干净；② 公开头不 include `<string>`/`<string_view>`/`<iostream>`；③ `operator<=>` 替 clay 6 个比较运算符；④ `_sr` 字面量替 `CLAY_STR` 宏。
-- **string_buf.h**：`StringBuf` 类(add/retain/remove/lookup/intern/size) + make/destroy 工厂全覆盖。
+- **当前 `string_interner.h`**：`StringInterner` 类(acquire/retain/release/lookup/intern/size) + make/destroy 工厂全覆盖。
   - **改进**：clay 是 `virtual` 抽象类 string_buf_t；HYLE 用具体类 + pimpl（SwissTable+mutex 藏 .cc，无 C4251，无 `<mutex>` 泄进公开头）。hash 命中时 **memcmp 校验内容**——XXH3 碰撞（天文数字级）走 fail-fast 而非像 clay 那样信任哈希静默别名。
   - **登记待补（container-06b）**：clay 的**全局单例** `intern()`/`usprintf()`/`lookup(hash)`（进程级字符串池）未做。
 
@@ -36,12 +36,12 @@
 
 - **Win x64 MSVC 19.50**：container 95 case 全过，零 warning（/W4，含修掉的 C4251/C4273/LNK2019——首版构造/析构漏标导出宏 + friend 链接不一致，改为方法级导出 + inline `allocator()` 去 friend）。
 - **Linux x64 GCC14.2 Release**：95 case 全过，零 warning。
-- **WSL TSan（setarch -R）**：StringBuf 13 case（含 8 线程并发 intern 同/异内容）零 data race——锁路径真验证（Windows 跑不了的闸门）。
+- **WSL TSan（setarch -R）**：StringInterner 13 case（含 8 线程并发 intern 同/异内容）零 data race——锁路径真验证（Windows 跑不了的闸门）。
 
 ## 交付物
 
 - `include/hyle/container/string_ref.h`（视图类型 + 零拷贝算法 + Hash 特化 + `_sr` 字面量）
-- `include/hyle/container/string_buf.h` + `src/container/string_buf.cc`（引用计数驻留池，pimpl）
+- `include/hyle/container/string_interner.h` + `src/container/string_buf.cc`（引用计数驻留池，pimpl）
 - `include/hyle/container/swiss_table.h` 的 `for_each`（填 container-04 缺口：持有自有指针 value 的表需迭代释放）
 - `tests/container/string_ref_test.cc`（20）+ `string_buf_test.cc`（13）
 
