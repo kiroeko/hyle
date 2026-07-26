@@ -16,6 +16,9 @@
 
 **唯一的存在理由是把性能做到业界顶尖（SOTA）**：回到 C、贴硬件、混合异构，把性能做到极致（时间与空间复杂度冲突时优先时间）。标尺是各领域参考库（hashmap→absl/F14、分配器→mimalloc、队列→moodycamel/tokio、SIMD→Highway/xsimd、调度→tokio/Seastar），不是 std——赢 std 只是最低门槛。每个性能件都有对标 SOTA 的真实 benchmark，赢多少、输多少都诚实登记为优化目标。对标数字见 [`docs/performance/`](./docs/performance/README.md)，逐里程碑实现进度见 [`docs/milestones/README.md`](./docs/milestones/README.md)。
 
+HYLE 专注于**高性能计算**和性能优化，尤其是时间复杂度上，尽量覆盖计算优化的主要象限：硬件加速、算法与数据结构、系统调用优化 和 并发。为常用的需要计算加速的场景提供合适的工具。
+用户需要一个加速框架，他们不希望在写逻辑的时候要自己从头实现和操作系统/硬件平台/分布式网络的交互细节；他们希望一个库，可以帮他们准备好针对五花八门硬件和各种工况的优化/调试/容器等工具。
+
 ## 上手
 
 **想把 HYLE 当依赖用？先看 [使用指南 `docs/guide/usage-guide.md`](./docs/guide/usage-guide.md)**——构建选项、各模块最小用法、SIMD 编译变体模型、C-ABI 边界（面向库使用者）。可运行的示例工程见最外层 [`samples/`](./samples/)。
