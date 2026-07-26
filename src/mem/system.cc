@@ -16,23 +16,46 @@
 #include <new>
 
 namespace hyle::mem {
-#if !defined(HYLE_STATIC)
-namespace detail {
+namespace {
 
-void *system_backend_allocate(std::size_t size,
-                              std::size_t alignment) noexcept {
+// Calls originating inside hyle_mem must not bounce through the exported
+// shared-consumer seam.  On ELF that symbol is preemptible and therefore uses
+// the PLT even from this DSO, adding a second library boundary to runtime and
+// PMR adapters.  External SystemAllocator callers still use detail::* below;
+// both routes reach these same private backend helpers.
+void *system_backend_allocate_local(std::size_t size,
+                                    std::size_t alignment) noexcept {
   return alignment <= kDefaultAlignment
              ? mi_malloc(size)
              : mi_malloc_aligned(size, alignment);
 }
 
-void system_backend_deallocate(void *ptr) noexcept { mi_free(ptr); }
+void system_backend_deallocate_local(void *ptr) noexcept { mi_free(ptr); }
 
-void *system_backend_reallocate(void *ptr, std::size_t new_size,
-                                std::size_t alignment) noexcept {
+void *system_backend_reallocate_local(void *ptr, std::size_t new_size,
+                                      std::size_t alignment) noexcept {
   return alignment <= kDefaultAlignment
              ? mi_realloc(ptr, new_size)
              : mi_realloc_aligned(ptr, new_size, alignment);
+}
+
+} // namespace
+
+#if !defined(HYLE_STATIC)
+namespace detail {
+
+void *system_backend_allocate(std::size_t size,
+                              std::size_t alignment) noexcept {
+  return system_backend_allocate_local(size, alignment);
+}
+
+void system_backend_deallocate(void *ptr) noexcept {
+  system_backend_deallocate_local(ptr);
+}
+
+void *system_backend_reallocate(void *ptr, std::size_t new_size,
+                                std::size_t alignment) noexcept {
+  return system_backend_reallocate_local(ptr, new_size, alignment);
 }
 
 } // namespace detail
@@ -64,7 +87,7 @@ void *system_alloc(void * /*state*/, std::size_t size,
     return nullptr;
   // A valid default-or-weaker alignment takes plain mi_malloc; over-alignment
   // alone selects the aligned backend entry.
-  void *pointer = detail::system_backend_allocate(size, alignment);
+  void *pointer = system_backend_allocate_local(size, alignment);
   if (pointer != nullptr) {
     HYLE_TRACE_ALLOC_NAMED(pointer, size, "hyle.system");
   }
@@ -75,7 +98,7 @@ void system_free(void * /*state*/, void *ptr, std::size_t /*size*/,
                  std::size_t /*alignment*/) noexcept {
   if (ptr != nullptr) {
     HYLE_TRACE_FREE_NAMED(ptr, "hyle.system");
-    detail::system_backend_deallocate(ptr);
+    system_backend_deallocate_local(ptr);
   }
 }
 
@@ -84,7 +107,7 @@ void *system_realloc(void * /*state*/, void *ptr, std::size_t /*old_size*/,
   if (new_size == 0) { // realloc-to-0 == free
     if (ptr != nullptr) {
       HYLE_TRACE_FREE_NAMED(ptr, "hyle.system");
-      detail::system_backend_deallocate(ptr);
+      system_backend_deallocate_local(ptr);
     }
     return nullptr;
   }
@@ -93,7 +116,7 @@ void *system_realloc(void * /*state*/, void *ptr, std::size_t /*old_size*/,
   // Both forms accept nullptr as allocate; the default-aligned path therefore
   // needs neither alignment normalization nor a separate pointer branch.
   void *result =
-      detail::system_backend_reallocate(ptr, new_size, alignment);
+      system_backend_reallocate_local(ptr, new_size, alignment);
   if (result != nullptr) {
     if (ptr != nullptr)
       HYLE_TRACE_FREE_NAMED(ptr, "hyle.system");
@@ -104,15 +127,24 @@ void *system_realloc(void * /*state*/, void *ptr, std::size_t /*old_size*/,
 
 class SystemMemoryResource final : public std::pmr::memory_resource {
   void *do_allocate(std::size_t bytes, std::size_t alignment) override {
-    void *pointer = SystemAllocator::allocate(bytes, alignment);
+    alignment = detail::system_backend_checked_alignment(alignment);
+    void *pointer = bytes == 0
+                        ? nullptr
+                        : system_backend_allocate_local(bytes, alignment);
     if (pointer == nullptr)
       throw std::bad_alloc{};
+    HYLE_TRACE_ALLOC_NAMED(pointer, bytes, "hyle.system");
     return pointer;
   }
 
   void do_deallocate(void *pointer, std::size_t bytes,
                      std::size_t alignment) override {
-    SystemAllocator::deallocate(pointer, bytes, alignment);
+    (void)bytes;
+    (void)detail::system_backend_checked_alignment(alignment);
+    if (pointer != nullptr) {
+      HYLE_TRACE_FREE_NAMED(pointer, "hyle.system");
+      system_backend_deallocate_local(pointer);
+    }
   }
 
   bool do_is_equal(
