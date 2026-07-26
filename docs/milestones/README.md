@@ -25,14 +25,14 @@
 ### 整体进度与体量（诚实，2026-07-26 锚定）——分母别混
 
 > **生产 = `cloc src include` 的 code 列**（header+C++/CUDA 等，不含 tests/bench/docs/third_party）。
-> **旧投影「完成时生产 ~28–40k / 中值 34k」已作废**：当前生产已 **~87.8k**，单 **simd ~37.5k**。
+> **旧投影「完成时生产 ~28–40k / 中值 34k」已作废**：当前生产已 **~87.9k**，单 **simd ~37.8k**。
 > 权威规模节：[`../architecture/hyle-scope.md`](../architecture/hyle-scope.md)。中期报告：[`midterm-report-2026-07-scale-positioning.md`](./midterm-report-2026-07-scale-positioning.md)。SIMD 当前补缺账本：[`simd-capability-fill-list.md`](./simd-capability-fill-list.md)。
 
 | 固定统计口径 | 当前 | 命令/说明 |
 |---|---|---|
-| **全库代码** | **262,909** | `cloc . --vcs=git`；含 docs/third_party，**≠ 自写** |
-| **自实现（含测试）** | **127,139** | `cloc include/hyle src tests`，只计 C++/Header/C/CUDA |
-| **自实现（不含测试）** | **87,787** | `cloc include/hyle src`，只计 C++/Header/C/CUDA；库本体硬锚 |
+| **全库代码** | **263,509** | `cloc . --vcs=git`；含 docs/third_party，**≠ 自写** |
+| **自实现（含测试）** | **127,406** | `cloc include/hyle src tests`，只计 C++/Header/C/CUDA |
+| **自实现（不含测试）** | **87,944** | `cloc include/hyle src`，只计 C++/Header/C/CUDA；库本体硬锚 |
 | **当前审查单元 container 实现** | **13,029** | `include/hyle/container` + `include/hyle/c/container.h` + `src/container`；不含测试/CMake/Text |
 | **终态生产（纪律收口 A）** | **~75–90k** | 主预期 |
 | **终态生产（做满守界 B）** | **~85–105k** | compute/graph/发布面收口更满 |
@@ -41,11 +41,11 @@
 | 进度口径 | 怎么读 | 当前判断 |
 |---|---|---|
 | **里程碑计数** | 颗粒不等重 | **勿当完成度**（小 util 与大 compute 各记 1） |
-| **生产 LOC ÷ 终态 A 中值 ~82.5k** | 代码量进度 | **~106%**；SIMD 体量放大该数，**≠ 能力完成度** |
-| **生产 LOC ÷ 终态 B 中值 ~95k** | 做满剧本 | **~92%** |
+| **生产 LOC ÷ 终态 A 中值 ~82.5k** | 代码量进度 | **~107%**；SIMD 体量放大该数，**≠ 能力完成度** |
+| **生产 LOC ÷ 终态 B 中值 ~95k** | 做满剧本 | **~93%** |
 | **对完整愿景的功能完成度** | 能力清单 + 头牌缺口 | 除 compute/graph 能力尾外主体大多已实现；mem/time 已因 mature-gap P0 重开；其余按队列复审 |
 
-**模块生产粗表（2026-07-25）**：simd ~37.5k · io ~9.0k · platform **7,020**
+**模块生产粗表（2026-07-26）**：simd ~37.8k · io ~9.0k · platform **7,020**
 （含公共 C 头）· container **13.0k**（含公共 C 头）· compute ~4.1k · sched ~5.1k · mem ~5.1k ·
 util ~1.3k · error **984** · time ~0.9k · obs **1,018** · graph ~0.6–0.8k。
 
@@ -161,6 +161,7 @@ util ~1.3k · error **984** · time ~0.9k · obs **1,018** · graph ~0.6–0.8k�
 | [simd-23](./simd-23-cxx-facade-and-perf-closure.md) | P3 | simd + bench | C++ span 易用性外观 + SIMD 原生 op / container hash 性能证据收口 | simd-22 | — | 计划中 | 📋 不把 381 op 逐个动态化；synthetic/alias 不进 op benchmark，约 14 个真原生缺口 + Stream 带宽；hash/hashmap 保持不依赖 simd，分别补 XXH3/wyhash 与 absl/F14 证据 |
 | [simd-24](./simd-24-foundation-completion.md) | P3 | simd | vqsort + search/reduction + mixed dot + mul_hi/hilo + sort types + complex 收口 | simd-22/23 | — | 见里程碑 | ✅ 能力面已收口；NEON KV64 已于 2026-07-19 在 Apple 真机追平 Highway。仅 scalable 真机性能证据归 simd-25 挂起 |
 | [simd-25](./simd-25-scalable-product-parity.md) | P3 | simd | SVE/RVV 语义、产品 kernel、派发与性能证据追平 | simd-22/24 | — | 见里程碑 | 🚧 **无硅施工已收口**：portable/fixed-model/extension backlog 归零；四类产品 TU、SVE full-VL partition、exact nextafter、保格式 full-VL bitpack 候选、SVE2-AES/RVV Zvkned 静态快路与公开 Runtime/exact 门已落。SVE 102×5，RVV base/Zvkned 97×4；仅余真机性能、bitpack 候选生产裁决与 RVV optional probe 正向签字 |
+| [simd-strict](./simd-module-closure.md) | close | simd | 实际使用导向严格复审 | simd-22..25 | — | 见任务单 | 🟡 Round 1 已补 native range 算法并完成 Highway/RVV 能力账本；f16/bf16 lanes、共享 error seam、scalable 真硅性能和最终 C ABI/package/依赖审计仍是 P0 |
 | [sched-01](./sched-01-fcontext-fiber.md) | P4 | sched | fcontext 6 平台 + 栈池(骨架:单 worker 单队列跑一 fiber) | container-01,mem-01,platform-01 | 2-3k | 226 (+737 vendored asm) | ✅ 完成(仅证切换,队列/worker 留 sched-02) |
 | [sched-02](./sched-02-runqueue-worker.md) | P4 | sched | per-core 有界 run-queue + LIFO slot | sched-01,container-01 | 2-3k | 205 | ✅ 完成(单worker驱动,steal留sched-03。**注:此 RunQueue 的 LIFO slot 当时未进多线程生产 scheduler——迁 WsFifoQueue 时丢了,2026-07-05 由 sched-03 复杂度优化加回**) |
 | [sched-03](./sched-03-work-stealing.md) | P4 | sched | work-stealing + spin-then-park + unpark 接力 | sched-02,container-08 | 2-3k | 340 (+195 三优化) | ✅ 完成(多worker偷取+park;§2.3②③防惊群当时诚实延迟,**后于 sched-05 以 conditional-notify 落地**)。**三复杂度优化(2026-07-05,借调研 tokio worker.rs/idle.rs)**:① **LIFO fast-slot**——同 worker 唤醒(reinject on worker)投本 worker 单槽 cache-hot 立即恢复,跳过 global CAS+notify futex,ping-pong Win −32%/Lin −35%(kMaxLifoPolls=3 反饥饿);② **remove_sleeper O(1)**——per-worker position 索引 swap-remove 消每次 park 退出的 O(worker数)扫描;③ **global-queue 周期检查**(tick%61)——修真饥饿 bug(探针实证本地 firehose 饿死全局注入,回归测试双向验证)。Win 103/103 + WSL setarch TSan 103/103 零 race。详见 benchmarks-sched LIFO 节 + sched-design §2.2/§2.3 |

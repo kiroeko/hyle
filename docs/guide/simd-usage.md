@@ -190,8 +190,9 @@ void bias_relu(float* values, std::size_t n, float bias) {
 
 这一层还提供 `generate`、二/三输入 `transform`、`replace[_if]`、`find_if`、`count_if` 和
 stable `copy_if`。输入输出可 exact 同址（`copy_if` 也支持原地稳定压实），带偏移 overlap 不受支持。
-不足一个 vector 的最后一次调用会给 inactive lane 零值，但只写/统计 active lane；lambda 不应把
-inactive lane 当作可观察副作用。`generate` 的 index lane 与输出 lane 等宽，窄整数自然按其位宽回绕。
+不足一个 vector 时，transform/predicate 的 inactive input lane 为零，`generate` 的 index lane
+继续递增；两者都只写/统计 active lane，lambda 不应把 inactive lane 当作可观察副作用。
+`generate` 的 index lane 与输出 lane 等宽，窄整数自然按其位宽回绕。
 
 要把自己的 pointer/count kernel 随 HYLE 一起多版本编译，则让 impl header 根据
 `HYLE_SIMD_VARIANT_SUFFIX` 导出 suffixed entry，再用：

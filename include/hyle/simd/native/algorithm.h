@@ -10,10 +10,10 @@
 // unknown CPU, put the call in a hyle_add_fat_kernel implementation header.
 //
 // Every helper owns the unaligned whole-vector loop and the final partial
-// vector. Func is also invoked once for a zero-filled final vector when n is not
-// a multiple of Lanes(d); StoreN / the explicit tail mask ensure that inactive
-// lanes are never observed in memory or counted. Func must therefore be pure
-// with respect to inactive lanes.
+// vector. For transforms and predicates, partial loads zero-fill inactive
+// lanes; generate keeps incrementing its index lanes. StoreN / the explicit
+// tail mask ensure that inactive results are never observed in memory or
+// counted. Func must therefore be pure with respect to inactive lanes.
 
 namespace hyle::simd::native {
 

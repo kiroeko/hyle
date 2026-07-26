@@ -120,7 +120,8 @@ math 的处理相反：它当前不是经过独立需求设计的产品，而是
 | build/package system | 组织与三种交付形状完成 | ✅ 严格收口；最终发布矩阵与触发器见任务页 |
 | util-core | 低层公开头能力完成 | ✅ 严格收口；实际使用形状、依赖边、三平台正确性/TSan/性能已签证 |
 | obs | 功能主体完成 | ✅ 严格收口；同步 structured producer + compile-time trace seam，三平台 n=15/并发/sanitizer/C surface 已签证 |
-| util-runtime、math、container、sched、io、simd | 功能主体基本完成 | 待按新合同认证；旧 closure 是输入证据，不是自动通行证 |
+| util-runtime、math、container、sched、io | 功能主体基本完成 | 待按新合同认证；旧 closure 是输入证据，不是自动通行证 |
+| simd | 功能主体基本完成 | 🟡 strict Round 1 完成；f16/bf16 lanes、共享 error、scalable 真硅性能与最终发布面仍为 P0 |
 | compute、graph | 主干存在、不是 stub | 仍有能力尾；完成能力后按同合同认证 |
 
 ## 停止与重开规则
