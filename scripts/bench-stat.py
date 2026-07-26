@@ -88,6 +88,33 @@ def parse_run(text):
     return out
 
 
+def parse_sleep_telemetry(text):
+    """Parse optional time normal-bench distribution rows.
+
+    The executable measures one warm sleep distribution per process and emits
+    stable key=value telemetry outside the nanobench tables. Keeping the raw
+    sampler in C++ avoids process-launch overhead in each observation; this
+    aggregator then reports medians across independent processes.
+    """
+    out = {}
+    for line in text.splitlines():
+        if not line.startswith("# HYLE_SLEEP "):
+            continue
+        fields = {}
+        for token in line.split()[2:]:
+            if "=" not in token:
+                continue
+            key, value = token.split("=", 1)
+            fields[key] = value
+        required = ("source", "request_ns", "n", "p50_over_ns",
+                    "p95_over_ns", "p99_over_ns", "max_over_ns", "early")
+        if any(key not in fields for key in required):
+            continue
+        key = (fields["source"], int(fields["request_ns"]))
+        out[key] = {name: int(fields[name]) for name in required[2:]}
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser(description="aggregate a nanobench exe across N runs")
     ap.add_argument("exe", help="path to the nanobench executable")
@@ -103,11 +130,14 @@ def main():
     exe = os.path.abspath(args.exe)
     cmd = (["setarch", "-R"] if args.setarch else []) + [exe]
     runs = []
+    sleep_runs = []
     for _ in range(args.runs):
         r = subprocess.run(cmd, capture_output=True, text=True)
         if r.returncode != 0:
             sys.exit(f"bench exited {r.returncode}: {r.stderr[:400]}")
-        runs.append(parse_run(r.stdout + r.stderr))
+        output = r.stdout + r.stderr
+        runs.append(parse_run(output))
+        sleep_runs.append(parse_sleep_telemetry(output))
 
     keys = sorted({k for r in runs for k in r})
     if not keys:
@@ -170,6 +200,22 @@ def main():
                   f"  [spread]{spread_v} [sign]{sign_v} ({above}/{eff}>1, p={p:.1e}){flag}")
         if not any_hit:
             print(f"  (no rows matched pair: {base!r} / {rival!r})")
+
+    sleep_keys = sorted({key for run in sleep_runs for key in run})
+    if sleep_keys:
+        print("\n=== sleep overshoot distributions (median across processes) ===")
+    for key in sleep_keys:
+        samples = [run[key] for run in sleep_runs if key in run]
+        source, request_ns = key
+        med = lambda field: statistics.median(sample[field] for sample in samples)
+        early = sum(sample["early"] for sample in samples)
+        observations = sum(sample["n"] for sample in samples)
+        print(f"  {source:5s} request {request_ns:9d} ns  "
+              f"p50_over {med('p50_over_ns'):9.0f}  "
+              f"p95_over {med('p95_over_ns'):9.0f}  "
+              f"p99_over {med('p99_over_ns'):9.0f}  "
+              f"max_over {med('max_over_ns'):9.0f}  "
+              f"early {early}/{observations}")
 
 
 if __name__ == "__main__":

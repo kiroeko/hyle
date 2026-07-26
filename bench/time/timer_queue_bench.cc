@@ -23,6 +23,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <limits>
+#include <string>
 #include <vector>
 
 #if defined(__APPLE__)
@@ -331,12 +332,12 @@ struct RadixTimerSet {
     void append(Bucket& source) noexcept {
       if (source.empty()) return;
       Link* first = source.root.next;
-      Link* last = source.root.prev;
+      Link* last_hook = source.root.prev;
       Link* dst_last = root.prev;
       dst_last->next = first;
       first->prev = dst_last;
-      last->next = &root;
-      root.prev = last;
+      last_hook->next = &root;
+      root.prev = last_hook;
       count += source.count;
       source.root.prev = &source.root;
       source.root.next = &source.root;
@@ -448,6 +449,89 @@ struct RadixTimerSet {
 
 static_assert(sizeof(RadixTimerSet::Node) == sizeof(TimerEntry),
               "same-class radix baseline must retain public node metadata");
+
+template <std::size_t N>
+void benchmark_small_cardinality() {
+  static_assert(N != 0);
+  constexpr std::uint64_t kEpochIterations =
+      8192 / N > 200 ? 8192 / N : 200;
+  const std::string cardinality = " N=" + std::to_string(N);
+
+  {
+    nb::Bench b;
+    b.title("normal cardinality arm+cancel (N=" + std::to_string(N) + ")")
+        .relative(true)
+        .batch(N)
+        .minEpochIterations(kEpochIterations);
+    IndexedHeapTimer heap(N);
+    RadixTimerSet radix(N);
+    TimerQueue queue(0);
+    std::array<TimerEntry, N> entries;
+    b.run("indexed heap" + cardinality, [&] {
+      for (std::size_t i = 0; i < N; ++i) {
+        heap.schedule(i, (i + 1) * kMs);
+      }
+      for (std::size_t i = 0; i < N; ++i) heap.cancel(i);
+      nb::doNotOptimizeAway(heap.live);
+    });
+    b.run("Seastar-shape radix" + cardinality, [&] {
+      for (std::size_t i = 0; i < N; ++i) {
+        radix.schedule(i, (i + 1) * kMs);
+      }
+      for (std::size_t i = 0; i < N; ++i) radix.cancel(i);
+      nb::doNotOptimizeAway(radix.empty());
+    });
+    b.run("HYLE radix" + cardinality, [&] {
+      for (std::size_t i = 0; i < N; ++i) {
+        queue.schedule(&entries[i], (i + 1) * kMs);
+      }
+      for (TimerEntry& entry : entries) queue.cancel(&entry);
+      nb::doNotOptimizeAway(queue.size());
+    });
+  }
+
+  {
+    nb::Bench b;
+    b.title("normal cardinality arm+expire (N=" + std::to_string(N) + ")")
+        .relative(true)
+        .batch(N)
+        .minEpochIterations(kEpochIterations);
+    IndexedHeapTimer heap(N);
+    RadixTimerSet radix(N);
+    TimerQueue queue(0);
+    std::array<TimerEntry, N> entries;
+    std::uint64_t radix_base = 0;
+    std::uint64_t queue_base = 0;
+    b.run("indexed heap expire" + cardinality, [&] {
+      for (std::size_t i = 0; i < N; ++i) {
+        heap.schedule(i, (i + 1) * kMs);
+      }
+      std::uint64_t fired = 0;
+      heap.expire((N + 1) * kMs, fired);
+      nb::doNotOptimizeAway(fired);
+    });
+    b.run("Seastar-shape radix expire" + cardinality, [&] {
+      for (std::size_t i = 0; i < N; ++i) {
+        radix.schedule(i, radix_base + (i + 1) * kMs);
+      }
+      std::uint64_t fired = 0;
+      radix.expire(radix_base + (N + 1) * kMs, fired);
+      radix_base += (N + 1) * kMs;
+      nb::doNotOptimizeAway(fired);
+    });
+    b.run("HYLE radix expire" + cardinality, [&] {
+      for (std::size_t i = 0; i < N; ++i) {
+        queue.schedule(&entries[i], queue_base + (i + 1) * kMs);
+      }
+      TimerQueue::EntryList out;
+      queue.advance(queue_base + (N + 1) * kMs, out);
+      queue_base += (N + 1) * kMs;
+      std::uint64_t fired = 0;
+      out.consume_all([&](TimerEntry*) noexcept { ++fired; });
+      nb::doNotOptimizeAway(fired);
+    });
+  }
+}
 
 }  // namespace
 
@@ -833,6 +917,13 @@ int main() {
       nb::doNotOptimizeAway(tailq.count);
     });
   }
+
+  // The old certificate only exercised the N=4096 batch shape. These rows
+  // expose normal small queues where fixed object overhead and branch count can
+  // dominate, and where an indexed heap may honestly be the better constant.
+  benchmark_small_cardinality<1>();
+  benchmark_small_cardinality<8>();
+  benchmark_small_cardinality<64>();
 
   return 0;
 }
