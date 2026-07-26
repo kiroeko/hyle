@@ -32,6 +32,17 @@ using hyle::time::TimerQueue;
 constexpr std::size_t kIncrementalTimers = 64;
 constexpr std::uint64_t kTickNs = 100'000;
 
+nb::Bench make_bench() {
+  nb::Bench bench;
+#if defined(__APPLE__)
+  // QoS is a soft scheduling contract, not affinity. A longer epoch averages
+  // over macOS millisecond scheduler bursts instead of letting them decide a
+  // 3ns queue comparison. Windows/Linux keep their existing epoch behavior.
+  bench.minEpochTime(std::chrono::milliseconds(8));
+#endif
+  return bench;
+}
+
 // Darwin has no public hard P/E-core affinity. Give SSH-launched normal-use
 // samples the same explicit QoS contract as the algorithm benchmark, and emit
 // the requested state instead of presenting a scheduler accident as M4 data.
@@ -157,7 +168,7 @@ int main() {
   }
 
   {
-    nb::Bench bench;
+    nb::Bench bench = make_bench();
     bench.title("incremental event-loop timer lifecycle (64 steps)")
         .relative(true)
         .batch(kIncrementalTimers)
@@ -175,7 +186,7 @@ int main() {
   }
 
   {
-    nb::Bench bench;
+    nb::Bench bench = make_bench();
     bench.title("normal schedule entry cost")
         .relative(true)
         .batch(1)
@@ -223,7 +234,7 @@ int main() {
   }
 
   {
-    nb::Bench bench;
+    nb::Bench bench = make_bench();
     bench.title("C ABI normal timer operations")
         .relative(true)
         .batch(1)
@@ -256,7 +267,7 @@ int main() {
   }
 
   {
-    nb::Bench bench;
+    nb::Bench bench = make_bench();
     bench.title("C ABI schedule+advance+visitor")
         .relative(false)
         .batch(1)
@@ -281,7 +292,7 @@ int main() {
   }
 
   {
-    nb::Bench bench;
+    nb::Bench bench = make_bench();
     bench.title("timer object creation")
         .relative(true)
         .batch(1)

@@ -17,6 +17,7 @@
 #include <array>
 #include <bit>
 #include <bitset>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
@@ -40,6 +41,18 @@ using hyle::time::TimerEntry;
 using hyle::time::TimerQueue;
 
 constexpr std::uint64_t kMs = 100'000;
+
+nb::Bench make_bench() {
+  nb::Bench bench;
+#if defined(__APPLE__)
+  // macOS has no hard affinity and exhibits millisecond scheduler bursts even
+  // under an explicit QoS. Keep each measured epoch long enough that one burst
+  // cannot dominate a 2--7ns timer primitive. Other platforms retain the
+  // existing harness exactly.
+  bench.minEpochTime(std::chrono::milliseconds(8));
+#endif
+  return bench;
+}
 
 // Darwin has no supported hard P/E-core affinity API. Pin the benchmark thread
 // to an application QoS class so an SSH-launched process does not inherit an
@@ -458,7 +471,7 @@ void benchmark_small_cardinality() {
   const std::string cardinality = " N=" + std::to_string(N);
 
   {
-    nb::Bench b;
+    nb::Bench b = make_bench();
     b.title("normal cardinality arm+cancel (N=" + std::to_string(N) + ")")
         .relative(true)
         .batch(N)
@@ -491,7 +504,7 @@ void benchmark_small_cardinality() {
   }
 
   {
-    nb::Bench b;
+    nb::Bench b = make_bench();
     b.title("normal cardinality arm+expire (N=" + std::to_string(N) + ")")
         .relative(true)
         .batch(N)
@@ -546,7 +559,7 @@ int main() {
   // Every timer armed then immediately cancelled -- the "response beat the
   // timeout" case that the doc says dominates. Measures add+cancel cost.
   {
-    nb::Bench b;
+    nb::Bench b = make_bench();
     b.title("timer arm+cancel (N=4096, all cancelled)")
         .relative(true)
         .batch(kN)
@@ -586,7 +599,7 @@ int main() {
   // normal block above runs the mature rival before HYLE; this block reverses
   // that order with the same lifecycle and persistent node metadata.
   {
-    nb::Bench b;
+    nb::Bench b = make_bench();
     b.title("timer arm+cancel ORDER-SWAP (N=4096)")
         .relative(true)
         .batch(kN)
@@ -619,7 +632,7 @@ int main() {
   // No cancels: arm N, advance past all deadlines, drain. Measures add + the
   // cascade/expiry path vs heap pop-all.
   {
-    nb::Bench b;
+    nb::Bench b = make_bench();
     b.title("timer arm+expire (N=4096, all fire)")
         .relative(true)
         .batch(kN)
@@ -668,7 +681,7 @@ int main() {
   // distinguishes a compiler/data-structure gap from fixed registration-order
   // frequency bias on Linux guests and Apple Silicon.
   {
-    nb::Bench b;
+    nb::Bench b = make_bench();
     b.title("timer churn ORDER-SWAP (N=4096, 70% cancelled)")
         .relative(true)
         .batch(kN)
@@ -713,7 +726,7 @@ int main() {
   // The full agent picture. Both structures eagerly remove cancellations; the
   // comparison is O(1) radix unlink vs O(log n) indexed-heap erase.
   {
-    nb::Bench b;
+    nb::Bench b = make_bench();
     b.title("timer churn (N=4096, 70% cancelled then expire)")
         .relative(true)
         .batch(kN)
@@ -776,7 +789,7 @@ int main() {
   // arbitrary durations the common queue cannot; this is the narrow
   // slice where the queue's specialization pays.
   {
-    nb::Bench b;
+    nb::Bench b = make_bench();
     b.title("fixed-duration arm+expire (N=4096, same timeout)")
         .relative(true)
         .batch(kN)
@@ -843,7 +856,7 @@ int main() {
   // sequence can otherwise reward the later variant. Keep this as a permanent
   // instrument guard, not a one-off investigation.
   {
-    nb::Bench b;
+    nb::Bench b = make_bench();
     b.title("fixed-duration arm+expire ORDER-SWAP (N=4096)")
         .relative(true)
         .batch(kN)
@@ -877,7 +890,7 @@ int main() {
   // duration. Both cancel through O(1) intrusive unlink; this shows the cost
   // saved when the fixed-duration invariant removes radix bucket work.
   {
-    nb::Bench b;
+    nb::Bench b = make_bench();
     b.title("fixed-duration arm+cancel (N=4096, same timeout, all cancelled)")
         .relative(true)
         .batch(kN)
