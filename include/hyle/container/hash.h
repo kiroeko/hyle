@@ -130,7 +130,17 @@ HYLE_FORCE_INLINE std::uint64_t mix64_2(std::uint64_t a, std::uint64_t b) noexce
 HYLE_FORCE_INLINE std::uint64_t hash_small(const void* p, std::size_t n) noexcept {
   std::uint64_t lo = 0, hi = 0;
   std::memcpy(&lo, p, n < 8 ? n : 8);
-  if (n > 8) std::memcpy(&hi, static_cast<const char*>(p) + 8, n - 8);
+  if (n > 8) {
+    // Keep the destination bound explicit even though every production caller
+    // instantiates this helper with sizeof(T) <= 16. Besides making the helper
+    // robust in isolation, this prevents GCC's inliner from diagnosing an
+    // impossible oversized memcpy while cloning Hash<T> for larger T.
+    const std::size_t hi_bytes =
+        n <= 8 ? 0 : (n < 16 ? n - 8 : 8);
+    const auto* bytes = static_cast<const char*>(p);
+    const auto* hi_source = n <= 8 ? bytes : bytes + 8;
+    std::memcpy(&hi, hi_source, hi_bytes);
+  }
   if (n > 8) {
     // 9..16B: fold both words in ONE 128-bit multiply (abseil's Mix), not two serial
     // mix64 calls. XOR distinct high-entropy constants into each operand so neither is
@@ -163,7 +173,13 @@ HYLE_FORCE_INLINE std::uint64_t hash_bytes(const void* data, std::size_t len,
     std::uint64_t lo = 0, hi = 0;
     if (len != 0) {  // memcpy(_,nullptr,0) is UB; len==0 -> pure seed/len mix
       std::memcpy(&lo, data, len < 8 ? len : 8);
-      if (len > 8) std::memcpy(&hi, static_cast<const char*>(data) + 8, len - 8);
+      if (len > 8) {
+        const std::size_t hi_bytes =
+            len <= 8 ? 0 : (len < 16 ? len - 8 : 8);
+        const auto* bytes = static_cast<const char*>(data);
+        const auto* hi_source = len <= 8 ? bytes : bytes + 8;
+        std::memcpy(&hi, hi_source, hi_bytes);
+      }
     }
     const std::uint64_t s = lo ^ seed ^ (len * 0x9e3779b97f4a7c15ull);
     if (len > 8) {

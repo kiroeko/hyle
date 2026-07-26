@@ -178,9 +178,10 @@ int main() {
   }
 
   // ---- small POD key (16B struct): typed Hash<T> inline path vs the old hash_bytes call.
-  // This is the real map-key hot path. Hash<T> now inlines a mix for <=16B (absl/F14 style)
-  // instead of calling the out-of-line XXH3 -- the row "HYLE Hash<Key16> (inline)" should
-  // beat "explicit hash_bytes(&k,16)" (what the generic used to do).
+  // This is the real map-key hot path. Hash<T> and a compile-time-sized
+  // hash_bytes call both inline the <=16B mix (absl/F14 style). Their rows are
+  // a facade-parity check: neither should retain the historical out-of-line
+  // XXH3 seam, and neither is expected to beat the other materially.
   {
     struct Key16 { std::uint64_t a, b; };
     std::mt19937_64 rng(7);
@@ -194,7 +195,7 @@ int main() {
       for (const auto& k : keys) acc ^= h(k);
       nb::doNotOptimizeAway(acc);
     });
-    b.run("explicit hash_bytes(&k,16) (old path, XXH3 call)", [&] {
+    b.run("explicit hash_bytes(&k,16) (inline parity)", [&] {
       std::uint64_t acc = 0;
       for (const auto& k : keys) acc ^= hyle::container::hash_bytes(&k, sizeof(k));
       nb::doNotOptimizeAway(acc);
