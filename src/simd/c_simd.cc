@@ -20,8 +20,6 @@ struct hyle_simd_random_o {
 };
 
 namespace {
-thread_local const char* g_last_error = "";
-
 hyle::simd::SortOrder cpp_order(hyle_simd_sort_order order) noexcept {
   switch (order) {
     case HYLE_SIMD_SORT_ASCENDING: return hyle::simd::SortOrder::kAscending;
@@ -119,11 +117,11 @@ int hyle_simd_supports_isa(hyle_simd_isa isa) {
   return hyle::simd::supports(cpp_isa(isa)) ? 1 : 0;
 }
 
-int hyle_simd_runtime_info_get(hyle_simd_runtime_info* out) {
-  if (out == nullptr || out->struct_size < HYLE_SIMD_RUNTIME_INFO_V1_SIZE) {
-    g_last_error = "runtime info is null or struct_size is too small";
-    return 0;
-  }
+hyle_status hyle_simd_runtime_info_get(hyle_simd_runtime_info* out) {
+  if (out == nullptr)
+    return hyle_status_invalid_argument("runtime info output is null");
+  if (out->struct_size < HYLE_SIMD_RUNTIME_INFO_V1_SIZE)
+    return hyle_status_invalid_argument("runtime info struct_size is too small");
   const auto& runtime = hyle::simd::runtime();
   out->isa = static_cast<hyle_simd_isa>(
       static_cast<std::uint32_t>(runtime.isa));
@@ -133,11 +131,8 @@ int hyle_simd_runtime_info_get(hyle_simd_runtime_info* out) {
   out->math = c_module(runtime.math);
   out->sort = c_module(runtime.sort);
   out->bitpack = c_module(runtime.bitpack);
-  g_last_error = "";
-  return 1;
+  return hyle_status_ok();
 }
-
-const char* hyle_simd_last_error(void) { return g_last_error; }
 
 float hyle_simd_dot_f32(const float* x, const float* y, size_t n) {
   return hyle::simd::dot(x, y, n);
@@ -176,10 +171,13 @@ void hyle_simd_add_f64(const double* x, const double* y, double* out, size_t n) 
   hyle::simd::add(x, y, out, n);
 }
 
-hyle_simd_random_o* hyle_simd_random_create(uint64_t seed) {
-  auto* state = new (std::nothrow) hyle_simd_random_o(seed);
-  g_last_error = state != nullptr ? "" : "random state allocation failed";
-  return state;
+hyle_status hyle_simd_random_create(hyle_simd_random_o** out, uint64_t seed) {
+  if (out == nullptr)
+    return hyle_status_invalid_argument("random state output is null");
+  *out = new (std::nothrow) hyle_simd_random_o(seed);
+  if (*out == nullptr)
+    return hyle_status_resource_exhausted("random state allocation failed");
+  return hyle_status_ok();
 }
 void hyle_simd_random_destroy(hyle_simd_random_o* state) { delete state; }
 void hyle_simd_random_fill_u64(hyle_simd_random_o* state, uint64_t* dst,

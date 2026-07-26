@@ -61,18 +61,29 @@ GCC ASan AVX2 全目标因大型 VQSort TU 在低并行度下两段构建仍未�
 - [x] MSVC/GCC fixed-width 与 SVE/RVV 多宽度 QEMU 对新模板层的正确性。
 - [ ] Clang、ASan/UBSan 与 NEON 真机验证（本轮 ASan 低并行构建超时，不能记通过）。
 - [ ] f16/bf16 一等 vector lane 与窄浮点算法合同。
-- [ ] SIMD 私有 TLS error seam 迁移到共享 error 体系。
+- [x] SIMD 私有 TLS error seam 已删除；runtime-info/RNG-create 返回共享 owning `hyle_status`。
 - [ ] SVE/RVV 真机 workload 性能证书；SVE2/RVV feature routing 按证据补。
 - [ ] C ABI 声明/纯 C 引用/导出表和三种交付形状最终机械复查。
 - [ ] 反向审计其他模块的 SIMD 使用与 math/simd owner 边界。
 
 因此本轮是可独立审查的能力补齐，不是 SIMD closure 签字。
 
+## Round 2A：共享 error seam
+
+`hyle_simd_runtime_info_get` 改为直接返回 owning `hyle_status`；RNG create 改为 status + out-handle。
+空 output、过小 snapshot 与分配失败分别保留可拥有、可传播的 code/message，删除
+`hyle_simd_last_error` 及其 thread-local 状态。纯 C 端每个成功/失败 status 都显式 free；机械 API
+账由 247/244（含 inline/导出）收成 246/243，移除的唯一符号就是私有 last-error。
+
+验证：Windows MSVC 19.50 shared 的纯 C test 通过；WSL GCC 14.2 shared 的纯 C test 通过，
+预处理引用 246/246、ELF 动态导出 243/243。成功、过小 runtime snapshot、NULL runtime output、
+RNG 成功创建和 NULL RNG output 均执行 owning status 的查询与释放。
+
 ## 本轮四项 LOC
 
 | 固定口径 | `cloc` code |
 |---|---:|
-| 全库代码（含 docs/third-party，计入本轮新文件） | 262,529 |
-| 自实现含测试（`include/hyle + src + tests`） | 127,019 |
-| 自实现不含测试（`include/hyle + src`） | 87,732 |
-| 当前审查模块实现（`include/hyle/simd + include/hyle/c/simd.h + src/simd`） | 37,756 |
+| 全库代码（含 docs/third-party，计入本轮新文件） | 263,554 |
+| 自实现含测试（`include/hyle + src + tests`） | 127,426 |
+| 自实现不含测试（`include/hyle + src`） | 87,946 |
+| 当前审查模块实现（`include/hyle/simd + include/hyle/c/simd.h + src/simd`） | 37,758 |

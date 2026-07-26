@@ -60,7 +60,9 @@ static int failures;
 
 int main(void) {
   hyle_simd_runtime_info info = HYLE_SIMD_RUNTIME_INFO_INIT;
-  CHECK(hyle_simd_runtime_info_get(&info));
+  hyle_status status = hyle_simd_runtime_info_get(&info);
+  CHECK(hyle_status_is_ok(status));
+  hyle_status_free(&status);
   CHECK(info.isa == hyle_simd_active_isa());
   CHECK(hyle_simd_supports_isa(HYLE_SIMD_ISA_SCALAR));
   CHECK(!hyle_simd_supports_isa(13));
@@ -68,10 +70,17 @@ int main(void) {
   CHECK((info.math.features & HYLE_SIMD_FEATURE_MATH_EXACT_LIBM_SCALAR) != 0);
   CHECK((info.dtype.features & HYLE_SIMD_FEATURE_DTYPE_FP8_SCALAR) != 0);
   info.struct_size = HYLE_SIMD_RUNTIME_INFO_V1_SIZE;
-  CHECK(hyle_simd_runtime_info_get(&info));
+  status = hyle_simd_runtime_info_get(&info);
+  CHECK(hyle_status_is_ok(status));
+  hyle_status_free(&status);
   info.struct_size = 0;
-  CHECK(!hyle_simd_runtime_info_get(&info));
-  CHECK(strlen(hyle_simd_last_error()) != 0);
+  status = hyle_simd_runtime_info_get(&info);
+  CHECK(hyle_status_is_invalid_argument(status));
+  CHECK(strlen(hyle_status_message_cstr(status)) != 0);
+  hyle_status_free(&status);
+  status = hyle_simd_runtime_info_get(NULL);
+  CHECK(hyle_status_is_invalid_argument(status));
+  hyle_status_free(&status);
 
   {
     float x[3] = {1, 2, 3}, y[3] = {4, 5, 6}, z[3];
@@ -99,9 +108,15 @@ int main(void) {
     CHECK(hyle_simd_dot_f32_bf16(x, bf16, 3) > 5);
   }
   {
-    hyle_simd_random_o* a = hyle_simd_random_create(123);
-    hyle_simd_random_o* b = hyle_simd_random_create(123);
+    hyle_simd_random_o* a = NULL;
+    hyle_simd_random_o* b = NULL;
     uint64_t ua[8], ub[8]; float f[8]; double d[8];
+    status = hyle_simd_random_create(&a, 123);
+    CHECK(hyle_status_is_ok(status));
+    hyle_status_free(&status);
+    status = hyle_simd_random_create(&b, 123);
+    CHECK(hyle_status_is_ok(status));
+    hyle_status_free(&status);
     CHECK(a && b);
     hyle_simd_random_fill_u64(a, ua, 8); hyle_simd_random_fill_u64(b, ub, 8);
     CHECK(memcmp(ua, ub, sizeof ua) == 0);
@@ -111,6 +126,9 @@ int main(void) {
     hyle_simd_random_fill_f32(NULL, f, 8);
     hyle_simd_random_fill_f64(NULL, d, 8);
     hyle_simd_random_destroy(NULL);
+    status = hyle_simd_random_create(NULL, 123);
+    CHECK(hyle_status_is_invalid_argument(status));
+    hyle_status_free(&status);
   }
 
   TEST_SCAN(uint32_t, u32); TEST_SCAN(int32_t, i32);

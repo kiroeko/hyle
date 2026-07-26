@@ -45,7 +45,7 @@ fat 与 exact 的 generated TU、手写产品 TU、Runtime table 和 exact suffi
 
 | 层 | 当前规模（2026-07-16） | 面向谁 | 稳定边界 |
 |---|---:|---|---|
-| 稳定 C ABI | 247 个入口（244 导出 + 3 个 typed header-inline） | 普通应用、FFI、跨编译器 | pointer/count、共享 POD、opaque RNG |
+| 稳定 C ABI | 246 个入口（243 导出 + 3 个 typed header-inline） | 普通应用、FFI、跨编译器 | pointer/count、共享 POD、opaque RNG、owning `hyle_status` |
 | C++ batch core（开发期） | 公开 whole-buffer overload | HYLE 内部/同工具链测试 | 进入同一 dispatcher；不是发布 ABI |
 | `native::` whole-buffer kernel | ops/random/scan/search | 固定 ISA、需要跨调用内联的源码用户 | target-bound C++，不承诺跨 ISA 类型稳定 |
 | `vec.h` 寄存器 DSL | 387 个去重公开/selector 名 | 编写自定义 SIMD kernel 的高级用户 | target-bound vector/mask；只在 TU 内编译期实例化 |

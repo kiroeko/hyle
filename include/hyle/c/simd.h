@@ -6,6 +6,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "hyle/c/error.h"
 #include "hyle/c/simd_types.h"
 
 #ifdef __cplusplus
@@ -86,8 +87,10 @@ typedef struct hyle_simd_runtime_info {
 
 HYLE_SIMD_C_API hyle_simd_isa hyle_simd_active_isa(void);
 HYLE_SIMD_C_API int hyle_simd_supports_isa(hyle_simd_isa isa);
-HYLE_SIMD_C_API int hyle_simd_runtime_info_get(hyle_simd_runtime_info* out);
-HYLE_SIMD_C_API const char* hyle_simd_last_error(void);
+/* Returns an owning status. `out` must use HYLE_SIMD_RUNTIME_INFO_INIT (or set
+ * a supported struct_size) before the call. */
+HYLE_SIMD_C_API hyle_status hyle_simd_runtime_info_get(
+    hyle_simd_runtime_info* out);
 
 /* Numeric ops. Integer dots accumulate modulo 2^64. */
 HYLE_SIMD_C_API float hyle_simd_dot_f32(const float* x, const float* y, size_t n);
@@ -113,7 +116,10 @@ HYLE_SIMD_C_API void hyle_simd_add_f64(const double* x, const double* y, double*
 
 /* Opaque deterministic xoshiro state. Not cryptographically secure. */
 typedef struct hyle_simd_random_o hyle_simd_random_o;
-HYLE_SIMD_C_API hyle_simd_random_o* hyle_simd_random_create(uint64_t seed);
+/* Returns an owning status and writes a new handle to `out`; a valid out is
+ * cleared to NULL before allocation, so failure never publishes a handle. */
+HYLE_SIMD_C_API hyle_status hyle_simd_random_create(
+    hyle_simd_random_o** out, uint64_t seed);
 HYLE_SIMD_C_API void hyle_simd_random_destroy(hyle_simd_random_o* state);
 HYLE_SIMD_C_API void hyle_simd_random_fill_u64(hyle_simd_random_o* state,
                                                uint64_t* dst, size_t count);

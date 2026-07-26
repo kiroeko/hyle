@@ -160,8 +160,9 @@ simd-19 已落完(helper 层按路线 2 的修正暂不建,类型轴到来时再
 
 ### C ABI 易用性
 
-稳定 C 面覆盖全部上述 whole-buffer 能力：244 个导出符号 + 3 个 header-inline packed-size helper，
-数组由调用方拥有，窄类型/KV/u128 用固定 POD，RNG 用 opaque handle，诊断用 `struct_size` snapshot。
+稳定 C 面覆盖全部上述 whole-buffer 能力：243 个导出符号 + 3 个 header-inline packed-size helper，
+数组由调用方拥有，窄类型/KV/u128 用固定 POD，RNG 用 opaque handle，诊断用 `struct_size` snapshot；
+可恢复失败统一返回共享 owning `hyle_status`，不保留 SIMD 私有 TLS error slot。
 本轮补上 feature 常量和 snapshot 前向演进后，没有要求 C#/Java/Rust 理解 C++ Runtime、STL 或
 target vector。语言绑定只需把本语言数组 pin/borrow 成 pointer/count；容器 facade 应留在绑定层，
 不在核心库再造一套 `std::vector` 产品 ABI。
@@ -171,7 +172,8 @@ target vector。语言绑定只需把本语言数组 pin/borrow 成 pointer/coun
 - Windows MSVC fat 与 exact-AVX2：各 369 项，368 通过、1 个宿主无 AVX512-BF16 的预期跳过；
   两种构建都执行真实自定义 pointer/count kernel，exact artifact 门确认只含 AVX2。
 - WSL `/root/hyle-simd-review` GCC 14：369 项同结果；纯 C 用例通过；机械覆盖
-  247/247，ELF 导出 244/244。
+  当时 247/247、ELF 导出 244/244；strict round 2 删除私有 last-error 后当前机械账为
+  246/246、动态导出 243/243。
 - Apple Silicon AppleClang fat 与 exact-NEON：各 366 项，365 通过、1 个非 x86 预期跳过；
   exact artifact 门确认只含 NEON。fat 首轮真实抓出并修复“未生成 SVE symbol 仍被引用”的漏洞。
 

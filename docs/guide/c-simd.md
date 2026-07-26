@@ -2,7 +2,8 @@
 
 `include/hyle/c/simd.h` 是 SIMD 模块给外部程序、其他编译器和 FFI 的稳定入口。它只有
 `extern "C"` 自由函数、pointer/count、固定布局 POD 和一个 RNG opaque handle；不暴露
-C++ `Runtime`、STL、模板、D-tag 或 ISA 相关向量类型。
+C++ `Runtime`、STL、模板、D-tag 或 ISA 相关向量类型。可恢复失败使用
+`hyle/c/error.h` 的 owning `hyle_status`，SIMD 不维护私有 thread-local 错误字符串。
 
 ## 最小例子
 
@@ -21,8 +22,10 @@ hyle_simd_exp_f32_batch(out, out, 1024);
 
 ```c
 hyle_simd_runtime_info info = HYLE_SIMD_RUNTIME_INFO_INIT;
-if (!hyle_simd_runtime_info_get(&info))
-  fprintf(stderr, "%s\n", hyle_simd_last_error());
+hyle_status status = hyle_simd_runtime_info_get(&info);
+if (!hyle_status_is_ok(status))
+  fprintf(stderr, "%s\n", hyle_status_message_cstr(status));
+hyle_status_free(&status);
 ```
 
 `info.isa` 是整张 Runtime 的 broad tier；各 `info.math`、`info.dtype` 等字段是模块主
@@ -44,20 +47,20 @@ exact-libm scalar、fp8 scalar、lower-tier winner、SVE capped network、logica
 - `hyle_simd_u128` 是按 `(hi, lo)` 排序的 16 字节、16 对齐 unsigned key。
 - `hyle_simd_kv32` / `hyle_simd_kv64` 布局为 `{value, key}`，按 key 排序。
 - 数组始终由调用者拥有；HYLE 不接管、不返回 `std::vector`，也不要求专用 allocator。
-- `hyle_simd_random_create` 返回的 `hyle_simd_random_o*` 由
-  `hyle_simd_random_destroy` 释放；destroy 和三个 fill 都接受 NULL 句柄（no-op）。
-  分配失败返回 NULL，并可从 `hyle_simd_last_error` 取线程局部诊断。
+- `hyle_simd_random_create(&out, seed)` 用 out 参数返回 handle，status 报告空 out 或分配失败；
+  成功的 `hyle_simd_random_o*` 由 `hyle_simd_random_destroy` 释放。destroy 和三个 fill
+  都接受 NULL 句柄（no-op）。每个返回 status 无论成功失败都由调用者 `hyle_status_free`。
 - C#、Rust、Java 等绑定把自己的数组 pin/borrow 后传 pointer/count；容器 facade 属于
   各语言绑定，不形成第二套 HYLE ABI。
 
 ## 能力索引
 
-本头当前有 **247 个 C 入口**：244 个动态库符号和 3 个 typed header-inline
+本头当前有 **246 个 C 入口**：243 个动态库符号和 3 个 typed header-inline
 `hyle_simd_packed_size_{u8,u16,u32}`。以下公式是逐符号清单；花括号表示每个列出的后缀都存在一个具体函数。
 
 | 组 | 入口 |
 |---|---|
-| 诊断 | `hyle_simd_active_isa`、`hyle_simd_supports_isa`、`hyle_simd_runtime_info_get`、`hyle_simd_last_error` |
+| runtime/ISA | `hyle_simd_active_isa`、`hyle_simd_supports_isa`、返回 owning status 的 `hyle_simd_runtime_info_get` |
 | 基础 ops | `hyle_simd_{dot_f32,dot_f64,dot_bf16,dot_f32_bf16,dot_f16,dot_i16,dot_i8,saxpy_f32,saxpy_f64,add_f32,add_f64}` |
 | RNG | `hyle_simd_random_{create,destroy,fill_u64,fill_f32,fill_f64}` |
 | scan | `hyle_simd_{inclusive_scan,exclusive_scan}_{u32,i32,u64,i64,f32,f64}` |
@@ -81,14 +84,16 @@ exact-libm scalar、fp8 scalar、lower-tier winner、SVE capped network、logica
   `hyle_simd_{softmax_f32,log_softmax_f32}`。
 - 复数 SoA：`hyle_simd_{cexp,clog,csqrt,csin,ccos,ctan,csinh,ccosh,ctanh,cpow}_{f32,f64}_batch`。
 
-头、纯 C test 与导出表通过预处理/符号表机械核对为 **247/247 test references、
-244/244 exported symbols**；测试源是 `tests/simd/c_simd_test.c`。
+头、纯 C test 与导出表通过预处理/符号表机械核对为 **246/246 test references、
+243/243 exported symbols**；测试源是 `tests/simd/c_simd_test.c`。
 
 ## 合同
 
 - `n > 0` 时所有必需指针必须有效并覆盖相应范围；`n == 0` 通常为 no-op。
 - `hyle_simd_supports_isa` 只接受本头列出的 canonical ISA 常量；未知数值返回 0。它回答
   CPU/OS 是否支持该档，不是让普通调用方自行挑 kernel。
+- `hyle_simd_runtime_info_get` 和 `hyle_simd_random_create` 返回 owning `hyle_status`；成功和失败
+  都调用 `hyle_status_free`。create 先把有效 out 清为 NULL，失败不会留下半构造 handle。
 - 除明确支持 exact in-place 的接口外，输入输出不得重叠；带偏移 overlap 不受支持。
 - `select` 要求 `k < n`，`partial_sort` 要求 `k <= n`；非法 sort enum fail-fast。
 - bitpack 的 `bits` 必须在元素位宽内，packed bytes 是同一 tier 的内存格式，不是长期 wire format。

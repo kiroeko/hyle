@@ -95,7 +95,14 @@ float half_dot = hyle_simd_dot_f16(left, right, 4096);
 或 SVE dot；默认 AVX2/AVX512 基线本身不要求这些可选扩展。
 
 ```c
-hyle_simd_random_o* state = hyle_simd_random_create(12345);
+hyle_simd_random_o* state = NULL;
+hyle_status status = hyle_simd_random_create(&state, 12345);
+if (!hyle_status_is_ok(status)) {
+  fprintf(stderr, "%s\n", hyle_status_message_cstr(status));
+  hyle_status_free(&status);
+  return;
+}
+hyle_status_free(&status);
 float unit[4096];
 hyle_simd_random_fill_f32(state, unit, 4096);  // [0, 1)
 hyle_simd_random_destroy(state);

@@ -9,10 +9,14 @@ int main(void) {
   float out[8];
   hyle_simd_runtime_info runtime = HYLE_SIMD_RUNTIME_INFO_INIT;
 
-  if (!hyle_simd_runtime_info_get(&runtime)) {
-    fprintf(stderr, "SIMD runtime query failed: %s\n", hyle_simd_last_error());
+  hyle_status status = hyle_simd_runtime_info_get(&runtime);
+  if (!hyle_status_is_ok(status)) {
+    fprintf(stderr, "SIMD runtime query failed: %s\n",
+            hyle_status_message_cstr(status));
+    hyle_status_free(&status);
     return 1;
   }
+  hyle_status_free(&status);
   hyle_simd_add_f32(x, y, out, 8);
   printf("active ISA=%u, dot=%.1f, out[0]=%.1f\n",
          (unsigned)runtime.isa, hyle_simd_dot_f32(x, y, 8), out[0]);

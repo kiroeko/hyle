@@ -72,8 +72,9 @@ CMake 为 ops/random/scan/search 从同一 `kernel_impl.h` 生成 scalar/SSE4/AV
 因为 feature gate、per-op winner 和算法阈值属于模块语义；同一 manifest 仍过滤它们的 source、Runtime
 table 和 exact suffix，防止手写策略退回 fat 符号依赖。`Runtime::Module::isa` 表示主产品 tier，v6
 feature bits 明示 AVX-VNNI/AVX512-VNNI、exact-libm/fp8 scalar、lower-tier winner、capped network 与
-logical-128 bitpack。稳定 C ABI 在 `include/hyle/c/simd.h`，244 个导出符号只转发 whole-buffer
-产品，不把寄存器向量放进 Runtime 或 C 边界。
+logical-128 bitpack。稳定 C ABI 在 `include/hyle/c/simd.h`，243 个导出符号只转发 whole-buffer
+产品，不把寄存器向量放进 Runtime 或 C 边界；可恢复 runtime-info/RNG-create 失败返回共享
+owning `hyle_status`，没有模块私有 TLS 错误槽。
 完整 ASCII 图和维护规则见
 [`simd-dispatch-guide.md`](./simd-dispatch-guide.md)。
 

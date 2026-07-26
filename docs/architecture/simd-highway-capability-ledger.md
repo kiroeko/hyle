@@ -45,7 +45,7 @@ CPU/编译器平台矩阵、SSE2/SSSE3/SSE4 等细粒度 target、宏展开的�
 | bitpack | contrib bit pack | u8/u16/u32 batch，固定 logical block 合同 | 同类能力已覆盖 |
 | crypto primitive | AES/CLMul 等 register ops | AES/CLMul register ops，按 feature gate | 原语级覆盖；不承诺完整密码产品 |
 | runtime dispatch / multitarget | foreach-target + dynamic/static target | Runtime / exact / native + fat-kernel | 两者都覆盖；HYLE 的交付编译器矩阵较窄 |
-| C ABI | Highway 不是其主要产品形状 | 247 个 pointer/count/POD 入口（244 动态符号） | HYLE 优势，但错误 seam 尚未统一 |
+| C ABI | Highway 不是其主要产品形状 | 246 个 pointer/count/POD/status 入口（243 动态符号） | HYLE 优势；可恢复失败已统一共享 error seam |
 
 ### RVV 是既有后端，不是缺口
 
@@ -83,11 +83,9 @@ CPU/编译器平台矩阵、SSE2/SSSE3/SSE4 等细粒度 target、宏展开的�
    arithmetic、compare、load/store、promote/demote 的可用子集；不能只上一个后端或只补名字。
 2. **窄浮点算法闭环。** 至少补真实消费者需要的 sort/search/reduction；f16 排序必须先写清
    NaN、`-0/+0` 和 total-order。bf16 是否同批进入由消费者证据决定。
-3. **C 错误边界统一。** `hyle_simd_runtime_info_get` 和 RNG create 当前仍使用模块私有 TLS
-   `hyle_simd_last_error`；应按已冻结 error 模块的 `hyle_status`/owned diagnostic 规则重审。
-4. **scalable 真机证书。** SVE 与 RVV 已有正式实现和多 VL/VLEN QEMU correctness，仍缺真实
+3. **scalable 真机证书。** SVE 与 RVV 已有正式实现和多 VL/VLEN QEMU correctness，仍缺真实
    SVE/RVV 硅上的代表性 workload 性能；SVE2/RVV 可选扩展只在真实收益成立时升级产品 routing。
-5. **完整 closure 验证。** 新 range 层已过 MSVC/GCC fixed-width 及 SVE/RVV 多宽度 QEMU；仍需
+4. **完整 closure 验证。** 新 range 层已过 MSVC/GCC fixed-width 及 SVE/RVV 多宽度 QEMU；仍需
    Clang、sanitizer、NEON 真机，C ABI 符号机械闸和安装包消费也须在最终轮重跑。
 
 ### P1：有消费证据后补
@@ -111,4 +109,4 @@ CPU/编译器平台矩阵、SSE2/SSSE3/SSE4 等细粒度 target、宏展开的�
 HYLE SIMD 不是 Highway 的小型拷贝：它把大量能力收成预编译 batch API 和稳定 C ABI，也额外覆盖
 AI dtype/激活/复数数学；Highway 则在平台、编译器、special-float lane 和通用 source-algorithm
 层更成熟。第一轮补 range algorithm 是真实架构缺口，不是 LOC 驱动。SIMD **尚未严格收口**：
-f16/bf16 lane、共享 error seam、scalable 真机性能和最终多平台证书仍是明确的 P0。
+f16/bf16 lane、scalable 真机性能和最终多平台证书仍是明确的 P0。
