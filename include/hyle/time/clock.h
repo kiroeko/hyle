@@ -2,6 +2,8 @@
 
 #include <chrono>
 #include <cstdint>
+#include <limits>
+#include <type_traits>
 
 #include "hyle/macros.h"
 #include "hyle/visibility.h"
@@ -136,8 +138,147 @@ HYLE_TIME_API void sleep_until_ns(std::uint64_t deadline_ns) noexcept;
 // and accidentally wrapping a very large duration into the past.
 constexpr std::uint64_t saturating_add_ns(std::uint64_t base,
                                           std::uint64_t delta) noexcept {
-  return delta > UINT64_MAX - base ? UINT64_MAX : base + delta;
+  if (delta > UINT64_MAX - base) return UINT64_MAX;
+  return base + delta;
 }
+
+namespace detail {
+
+struct WideProduct {
+  std::uint64_t high;
+  std::uint64_t low;
+};
+
+// Portable 64x64 -> 128 multiply. Keeping this in four 32-bit limbs avoids
+// making the public header depend on compiler-specific __int128/_umul128
+// support (notably MSVC ARM64), while common duration periods are folded by the
+// compiler to the same short integer path.
+constexpr WideProduct multiply_wide(std::uint64_t lhs,
+                                    std::uint64_t rhs) noexcept {
+  constexpr std::uint64_t kLowMask = UINT32_MAX;
+  const std::uint64_t lhs_low = lhs & kLowMask;
+  const std::uint64_t lhs_high = lhs >> 32;
+  const std::uint64_t rhs_low = rhs & kLowMask;
+  const std::uint64_t rhs_high = rhs >> 32;
+
+  const std::uint64_t low_low = lhs_low * rhs_low;
+  const std::uint64_t low_high = lhs_low * rhs_high;
+  const std::uint64_t high_low = lhs_high * rhs_low;
+  const std::uint64_t high_high = lhs_high * rhs_high;
+  const std::uint64_t middle =
+      (low_low >> 32) + (low_high & kLowMask) + (high_low & kLowMask);
+  return WideProduct{
+      high_high + (low_high >> 32) + (high_low >> 32) + (middle >> 32),
+      (middle << 32) | (low_low & kLowMask)};
+}
+
+struct WideDivision {
+  std::uint64_t quotient;
+  std::uint64_t remainder;
+  bool overflow;
+};
+
+// Divide an unsigned 128-bit pair by one u64. A quotient wider than u64 is
+// reported instead of truncated. The fixed 64-step loop is the cold generic
+// fallback; compile-time periods whose product fits u64 take the branch below.
+constexpr WideDivision divide_wide(WideProduct numerator,
+                                   std::uint64_t denominator) noexcept {
+  if (numerator.high >= denominator) return {UINT64_MAX, 0, true};
+  std::uint64_t quotient = 0;
+  std::uint64_t remainder = numerator.high;
+  for (int bit = 63; bit >= 0; --bit) {
+    const bool carry = (remainder >> 63) != 0;
+    remainder = (remainder << 1) | ((numerator.low >> bit) & 1u);
+    if (carry || remainder >= denominator) {
+      remainder -= denominator;
+      quotient |= std::uint64_t{1} << bit;
+    }
+  }
+  return {quotient, remainder, false};
+}
+
+constexpr WideDivision multiply_divide(std::uint64_t value,
+                                       std::uint64_t multiplier,
+                                       std::uint64_t denominator) noexcept {
+  if (multiplier == 0 || value <= UINT64_MAX / multiplier) {
+    const std::uint64_t product = value * multiplier;
+    return {product / denominator, product % denominator, false};
+  }
+  return divide_wide(multiply_wide(value, multiplier), denominator);
+}
+
+template <class Rep, class Period>
+constexpr std::uint64_t integral_duration_ns_saturated(
+    std::chrono::duration<Rep, Period> duration) noexcept {
+  static_assert(std::is_integral_v<Rep>);
+  using UnsignedRep = std::make_unsigned_t<Rep>;
+  static_assert(std::numeric_limits<UnsignedRep>::digits <= 64,
+                "duration reps wider than uint64_t are not supported");
+  const Rep raw = duration.count();
+  if constexpr (std::is_signed_v<Rep>) {
+    if (raw <= 0) return 0;
+  } else {
+    if (raw == 0) return 0;
+  }
+  const std::uint64_t count = static_cast<std::uint64_t>(
+      static_cast<UnsignedRep>(raw));
+  constexpr std::uint64_t kNanosecondsPerSecond = 1'000'000'000u;
+  constexpr std::uint64_t kPeriodNumerator =
+      static_cast<std::uint64_t>(Period::num);
+  constexpr std::uint64_t kPeriodDenominator =
+      static_cast<std::uint64_t>(Period::den);
+
+  const auto convert_generic = [count]() constexpr noexcept {
+    // First split count * period into whole/fractional seconds. Both period
+    // members fit intmax_t, so the only wide product is exactly 128 bits. Then
+    // convert the remainder to ns and round it upward. This is algebraically
+    // ceil(count * Period::num * 1e9 / Period::den) without a floating detour.
+    const WideDivision seconds =
+        multiply_divide(count, kPeriodNumerator, kPeriodDenominator);
+    if (seconds.overflow ||
+        seconds.quotient > UINT64_MAX / kNanosecondsPerSecond) {
+      return UINT64_MAX;
+    }
+    const std::uint64_t whole_ns =
+        seconds.quotient * kNanosecondsPerSecond;
+    const WideDivision fractional = multiply_divide(
+        seconds.remainder, kNanosecondsPerSecond, kPeriodDenominator);
+    const std::uint64_t fractional_ns =
+        fractional.quotient + (fractional.remainder != 0 ? 1u : 0u);
+    return saturating_add_ns(whole_ns, fractional_ns);
+  };
+
+  // Every standard whole-nanosecond unit (ns/us/ms/s/min/h) reduces to one
+  // saturating multiply. This is the normal schedule_after hot path; keep the
+  // fully generic rational machinery out of it.
+  if constexpr (kNanosecondsPerSecond % kPeriodDenominator == 0) {
+    constexpr std::uint64_t kDenominatorScale =
+        kNanosecondsPerSecond / kPeriodDenominator;
+    if constexpr (kPeriodNumerator <=
+                  UINT64_MAX / kDenominatorScale) {
+      constexpr std::uint64_t kMultiplier =
+          kPeriodNumerator * kDenominatorScale;
+      return count > UINT64_MAX / kMultiplier ? UINT64_MAX
+                                               : count * kMultiplier;
+    } else {
+      return convert_generic();
+    }
+  } else if constexpr (kPeriodDenominator % kNanosecondsPerSecond == 0) {
+    // Standard sub-nanosecond units reduce to ceil(count * numerator / divisor)
+    // and retain exact upward rounding without visiting the seconds split.
+    constexpr std::uint64_t kDivisor =
+        kPeriodDenominator / kNanosecondsPerSecond;
+    const WideDivision nanoseconds =
+        multiply_divide(count, kPeriodNumerator, kDivisor);
+    if (nanoseconds.overflow) return UINT64_MAX;
+    return nanoseconds.quotient +
+           (nanoseconds.remainder != 0 ? 1u : 0u);
+  } else {
+    return convert_generic();
+  }
+}
+
+}  // namespace detail
 
 // Convert any standard duration to positive nanoseconds, rounding upward so a
 // requested wait/deadline never becomes shorter during unit conversion.
@@ -145,13 +286,17 @@ constexpr std::uint64_t saturating_add_ns(std::uint64_t base,
 template <class Rep, class Period>
 std::uint64_t duration_ns_saturated(
     std::chrono::duration<Rep, Period> duration) noexcept {
-  using FloatNs = std::chrono::duration<long double, std::nano>;
-  const long double ns = FloatNs(duration).count();
-  if (!(ns > 0.0L)) return 0;
-  const long double max = static_cast<long double>(UINT64_MAX);
-  if (ns >= max) return UINT64_MAX;
-  const auto whole = static_cast<std::uint64_t>(ns);
-  return static_cast<long double>(whole) < ns ? whole + 1 : whole;
+  if constexpr (std::is_integral_v<Rep>) {
+    return detail::integral_duration_ns_saturated(duration);
+  } else {
+    using FloatNs = std::chrono::duration<long double, std::nano>;
+    const long double ns = FloatNs(duration).count();
+    if (!(ns > 0.0L)) return 0;
+    const long double max = static_cast<long double>(UINT64_MAX);
+    if (ns >= max) return UINT64_MAX;
+    const auto whole = static_cast<std::uint64_t>(ns);
+    return static_cast<long double>(whole) < ns ? whole + 1 : whole;
+  }
 }
 
 inline std::uint64_t to_monotonic_ns(MonotonicTimePoint point) noexcept {

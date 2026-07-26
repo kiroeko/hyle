@@ -3,6 +3,7 @@
 #include <chrono>
 #include <cstdint>
 #include <limits>
+#include <ratio>
 #include <time.h>
 
 #include "hyle/time/clock.h"
@@ -167,6 +168,88 @@ TEST(Clock, ChronoFacadePreservesUnitsAndRoundsUp) {
   EXPECT_EQ(hyle::time::realtime_time_point(hyle::time::to_realtime_ns(wall)),
             wall);
   EXPECT_GE(hyle::time::deadline_after(1ms), start);
+}
+
+TEST(Clock, IntegralDurationConversionStaysExactAcrossDoubleBoundary) {
+  using SignedNs = std::chrono::duration<std::int64_t, std::nano>;
+  using UnsignedNs = std::chrono::duration<std::uint64_t, std::nano>;
+  constexpr std::uint64_t kDoubleIntegerBoundary = std::uint64_t{1} << 53;
+
+  EXPECT_EQ(hyle::time::duration_ns_saturated(
+                UnsignedNs(kDoubleIntegerBoundary - 1)),
+            kDoubleIntegerBoundary - 1);
+  EXPECT_EQ(hyle::time::duration_ns_saturated(
+                UnsignedNs(kDoubleIntegerBoundary)),
+            kDoubleIntegerBoundary);
+  EXPECT_EQ(hyle::time::duration_ns_saturated(
+                UnsignedNs(kDoubleIntegerBoundary + 1)),
+            kDoubleIntegerBoundary + 1);
+  EXPECT_EQ(hyle::time::duration_ns_saturated(
+                SignedNs(static_cast<std::int64_t>(kDoubleIntegerBoundary + 1))),
+            kDoubleIntegerBoundary + 1);
+}
+
+TEST(Clock, IntegralDurationConversionHandlesSignedAndUnsignedLimits) {
+  using SignedNs = std::chrono::duration<std::int64_t, std::nano>;
+  using UnsignedNs = std::chrono::duration<std::uint64_t, std::nano>;
+  using UnsignedMs = std::chrono::duration<std::uint64_t, std::milli>;
+  using UnsignedFemto =
+      std::chrono::duration<std::uint64_t, std::femto>;
+
+  EXPECT_EQ(hyle::time::duration_ns_saturated(
+                SignedNs(std::numeric_limits<std::int64_t>::min())),
+            0u);
+  EXPECT_EQ(hyle::time::duration_ns_saturated(
+                SignedNs(std::numeric_limits<std::int64_t>::max())),
+            static_cast<std::uint64_t>(
+                std::numeric_limits<std::int64_t>::max()));
+  EXPECT_EQ(hyle::time::duration_ns_saturated(
+                UnsignedNs(std::numeric_limits<std::uint64_t>::max())),
+            std::numeric_limits<std::uint64_t>::max());
+  EXPECT_EQ(hyle::time::duration_ns_saturated(
+                UnsignedMs(std::numeric_limits<std::uint64_t>::max())),
+            std::numeric_limits<std::uint64_t>::max());
+
+  constexpr std::uint64_t kScale = 1'000'000;
+  constexpr std::uint64_t kMax =
+      std::numeric_limits<std::uint64_t>::max();
+  constexpr std::uint64_t kCeilMaxDivScale =
+      kMax / kScale + (kMax % kScale != 0 ? 1u : 0u);
+  EXPECT_EQ(hyle::time::duration_ns_saturated(UnsignedFemto(kMax)),
+            kCeilMaxDivScale);
+}
+
+TEST(Clock, IntegralDurationConversionRoundsFractionalNanosecondsUpExactly) {
+  using ThirdSeconds =
+      std::chrono::duration<std::uint64_t, std::ratio<1, 3>>;
+  using Picoseconds =
+      std::chrono::duration<std::int64_t, std::pico>;
+  using AlmostOneSecond = std::chrono::duration<
+      std::uint64_t,
+      std::ratio<std::numeric_limits<std::intmax_t>::max(),
+                 std::numeric_limits<std::intmax_t>::max() - 1>>;
+
+  EXPECT_EQ(hyle::time::duration_ns_saturated(ThirdSeconds(1)),
+            333'333'334u);
+  EXPECT_EQ(hyle::time::duration_ns_saturated(ThirdSeconds(2)),
+            666'666'667u);
+  EXPECT_EQ(hyle::time::duration_ns_saturated(ThirdSeconds(3)),
+            1'000'000'000u);
+  EXPECT_EQ(hyle::time::duration_ns_saturated(Picoseconds(1)), 1u);
+  EXPECT_EQ(hyle::time::duration_ns_saturated(Picoseconds(1000)), 1u);
+  EXPECT_EQ(hyle::time::duration_ns_saturated(Picoseconds(1001)), 2u);
+  EXPECT_EQ(hyle::time::duration_ns_saturated(AlmostOneSecond(1)),
+            1'000'000'001u);
+  // Exercises both portable wide paths: the first multiplication overflows
+  // u64, while the second has a fractional remainder whose *1e9 overflows u64.
+  EXPECT_EQ(hyle::time::duration_ns_saturated(AlmostOneSecond(3)),
+            3'000'000'001u);
+  constexpr std::intmax_t kMax =
+      std::numeric_limits<std::intmax_t>::max();
+  using AlmostHalfSecond = std::chrono::duration<
+      std::uint64_t, std::ratio<(kMax - 1) / 2, kMax>>;
+  EXPECT_EQ(hyle::time::duration_ns_saturated(AlmostHalfSecond(3)),
+            1'500'000'000u);
 }
 
 TEST(Clock, InstantDifferenceIsTypedAndSigned) {
