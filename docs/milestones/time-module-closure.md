@@ -11,8 +11,8 @@
 - [x] C++ typed API 与紧凑热路径并存，C ABI 覆盖全部语言无关能力；
 - [x] arbitrary timer 达到成熟库 SOTA 算法与 O(1) arm/cancel；
 - [x] sched/io 消费统一，旧 API 和 open-coded deadline 清零；
-- [x] Windows、WSL、Apple 真机正确性/性能，ASan/UBSan；
-- [x] architecture / guide / performance / milestone 文档各归其位。
+- [ ] 2026-07-26 最终形状的 Windows、WSL、Apple 真机正确性/性能与 ASan/UBSan；Windows 已完成，WSL/Apple pending；
+- [x] architecture / guide / performance / milestone 文档各归其位，pending 证据不冒充完成。
 
 ## 本轮变更
 
@@ -29,12 +29,20 @@
 6. sched 的 fiber sleep/timed I/O 迁到 per-worker `TimerQueue`；deadline 统一走 time 饱和算术。
 7. benchmark 新增 faithful Seastar radix、真实 indexed eager heap、checked/naked TAILQ、
    两组 order-swap 与 Apple QoS 报告；纠正早期缩小 rival 节点/链形的失真。
+8. 2026-07-26 strict 重审把 integral duration 转换改为 exact integer ratio，两个 opt-in clock
+   改为 `profiling_clock` / `coarse_realtime` 语义名，TSC fallback 改为 sleep-based calibration。
+9. 正常使用性能面新增 N=1/8/64、散布节点、incremental event loop、真实 schedule_after、
+   C ABI lifecycle/Status 与 warm sleep overshoot；没有为 benchmark 增加产品 metadata。
 
 提交：
 
 - `ffff65f time: replace fixed wheel with radix timer queue`
 - `2c1bab2 time: tighten intrusive timer hot paths`
 - `14ee67e time: certify timer queues against faithful peers`
+- `52595a6 time: make integral duration conversion exact`
+- `5af0fe9 time: name opt-in clocks by semantics`
+- `0423671 time: calibrate profiling clock without busy spin`
+- `bd29d57 bench(time): cover normal timer usage shapes`
 
 ## 功能审计结论
 
@@ -52,12 +60,12 @@ libevent common timeout、folly TimeoutQueue/HHWheelTimer。
 
 ## 正确性与 ABI 验收
 
-- C++ time：20 clock + 23 TimerQueue + 16 CommonTimeoutQueue + 1 header test；
+- C++ time：24 clock + 23 TimerQueue + 16 CommonTimeoutQueue + 1 header test；
 - 两组 million-operation randomized oracle、完整 uint64 deadline、wrong-owner、death/lifecycle；
 - 纯 C consumer 覆盖全部 handle、跨 source Status、顺序拒绝、visitor re-arm、NULL 默认；
 - 37/37 动态符号 surface manifest，C11/C++23 自包含头；
-- Windows Release 相关 7 门、WSL GCC14 Release 相关 7 门、AppleClang Release 相关 7 门；
-- WSL GCC14 ASan/UBSan：time C++、C、C surface、header、container、sched、io timeout 共 7/7。
+- Windows Release 最终 time 五门通过；WSL GCC14 / AppleClang 最终形状与消费回归 pending；
+- 上轮 WSL GCC14 ASan/UBSan 的 time/container/sched/io timeout 7/7 仅作回归参照，最终形状待重跑。
 
 ASan 默认 ODR 检查会发现既有 mimalloc 同时静态进入测试程序和 `libhyle_mem.so`；这不是
 time 缺陷。以 `ASAN_OPTIONS=detect_odr_violation=0` 关闭该已知构建形状噪声后，7/7 通过。
@@ -69,11 +77,11 @@ Windows scheduler 全组曾有一次既有 `Blocking.RetiredThreadHandlesStayBou
 
 详细表不在 milestone 复制。摘要：
 
-- 默认 clocks 三平台与同工作量 `std::chrono` 同档；x86 fast paths 有收益，M4 正确回退；
-- TimerQueue 对 indexed heap 三平台显著胜；对同算法 faithful Seastar，Windows/M4 胜，WSL
-  arm/expire 胜，churn 对注册顺序敏感且反序负载仍输，具体幅度只在 performance 登记；
-- Common 对 checked 同合同链三平台不输；M4 naked expire 下界仍更快，具体安全税只在 performance 登记；
-- M4 interactive/utility 两档结论一致，不能归因于大小核或 SSH background policy。
+- 上轮默认 clocks 三平台与同工作量 `std::chrono` 同档；x86 opt-in paths 有收益，M4 正确回退；
+- 最终形状 Windows 已证：对同算法 radix 在 N=1/8/64 与 N=4096 均胜；对 indexed heap 只有
+  N=1 输，从 N=8 起胜；连续/散布 incremental event-loop 统计平；
+- Windows C ABI、真实读钟 schedule_after 和 sleep overshoot 已单列合同税/OS 行为；
+- WSL/Apple 最终形状 pending，因此本 milestone 暂不重新宣布三平台 strict 性能完成。
 
 因此“性能收口”含义是：选用成熟的 SOTA 算法、复杂度不落后、正常跨平台证据完整，并诚实
 保留编译器/合同差异；不等于要求每个 microbenchmark 在每个注册顺序都必须数值第一。

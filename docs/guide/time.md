@@ -43,8 +43,9 @@ const std::uint64_t deadline = hyle::time::deadline_after_ns(timeout_ns);
 const std::uint64_t left = hyle::time::remaining_ns(deadline);
 ```
 
-不要写 `monotonic_ns() + timeout_ns`，因为大 timeout 会 wrap 到过去。chrono 浮点 duration 的
-NaN/非正数转 0，正值向上取整到 ns，超范围饱和。`Instant` 的 `elapsed()`/`until()` 是非负
+不要写 `monotonic_ns() + timeout_ns`，因为大 timeout 会 wrap 到过去。chrono integral duration
+用精确 ratio 算术转换，包含 2^53 以上的 ns；浮点 duration 的 NaN/非正数转 0，正值向上取整到
+ns，超范围饱和。`Instant` 的 `elapsed()`/`until()` 是非负
 便利入口；`later - earlier` 与 `std::chrono` 一样保留方向，可能为负。
 
 `profiling_clock_ns` 只适合同一 pinned/近邻热路径的 profiling。它返回缩放到 ns 的 TSC
@@ -89,6 +90,10 @@ cancel 才能销毁，delivery list 中的 entry 必须活到 list 被 drain 或
 `next_deadline()` 返回 optional chrono time point，适合正常 C++ event loop；紧凑系统边界可用
 `next_deadline_ns()`，空时为 `UINT64_MAX`。取消当前 minimum 后 next 允许保守地早醒一次，
 这是用一次无害 early wake 换取 cancel O(1)，不是漏发。跨 bucket 的 delivery 不保证总序。
+
+极小队列不必期待 radix 永远是最快常数：单 timer 时 indexed heap 可以更快；正常 per-worker
+多 timeout 形状才会摊薄 radix 固定成本并体现 O(1) arm/cancel。HYLE 不为单 timer benchmark
+给每个节点增加第二套索引元数据；具体 cardinality 边界只看性能证书。
 
 ## 单一 duration：CommonTimeoutQueue
 

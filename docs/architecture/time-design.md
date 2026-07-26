@@ -36,7 +36,8 @@ native time ──────────────────────�
 | arbitrary timers | `TimerEntry` + `TimerQueue` | 大量 arm/cancel、混合 deadline、无分配、精确 ns |
 | one-duration timers | `CommonTimeoutQueue` | 相同 duration 天然按 deadline 递增，用侵入链省去无意义排序 |
 
-日历、时区、格式化与解析交给 C++ 标准库/专用库。周期 timer 的 missed-tick、catch-up、
+日历、时区、格式化与解析交给 C++ 标准库/专用库；支持工具链的 chrono parse 能力并不一致，
+协议入口不得假定标准库均可解析。周期 timer 的 missed-tick、catch-up、
 drift 与取消策略属于 executor/event loop；底层只提供一次性节点和安全 re-arm，不能替用户
 猜策略。
 
@@ -52,7 +53,9 @@ drift 与取消策略属于 executor/event loop；底层只提供一次性节点
 TSC 频率优先读 CPUID 0x15；不可用时用倍增 sleep window 对 OS monotonic 实际 elapsed 校准，
 不靠 busy-spin 保持 core 活跃。校准只影响首次调用，热读仍是 rdtsc + fixed-point scale。
 
-相对 timeout 转绝对 deadline 必须饱和并向上取整。绝对 sleep 在 Windows 使用高分辨率
+相对 timeout 转绝对 deadline 必须饱和并向上取整。integral duration 使用精确整数 ratio
+算术，不能经浮点而在 2^53 以上丢失 ns；floating duration 单独处理 NaN、无穷和 ceil。
+绝对 sleep 在 Windows 使用高分辨率
 waitable timer，在 Linux 使用绝对 `clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME)`；
 `EINTR` 才重试。零时长是 no-op，yield 属于调度 API。
 
@@ -114,9 +117,10 @@ C visitor 调用前 timer 已离开 queue，所以 callback 内 re-arm 合法。
 
 ## 修改门禁
 
-- clock：Windows/WSL/macOS 与同工作量 `std::chrono` 对照；fast 路必须单独报告 availability；
+- clock：Windows/WSL/macOS 与同工作量 `std::chrono` 对照；opt-in 路必须单独报告 availability；
 - timer：随机 oracle、完整 `uint64_t` 边界、wrong-owner、输出链生命周期、回调 re-arm；
 - 性能：预分配相同节点；同时对 indexed heap 和 faithful Seastar radix；固定顺序与反序注册；
+  另测 N=1/8/64、散布节点、增量 event-loop、真实读钟的 schedule_after、C ABI 与 sleep overshoot；
 - C ABI：纯 C 编译、surface manifest、自包含头、导出符号、Status 所有权；
 - 消费回归：`time`、`container`、`sched`、`io_timeout`，并跑 ASan/UBSan；
 - 任何性能结论只进入 performance 文档，架构与 guide 不复制易腐点值。

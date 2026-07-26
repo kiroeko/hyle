@@ -5,7 +5,7 @@
 | 阶段 | P2 |
 | 模块 | time/ |
 | 依赖 | core 宏/头；无编译期 HYLE 模块依赖 |
-| 状态 | ✅ 2026-07-25 随 time 全面复审重新验收；Windows MSVC + WSL GCC14 + Apple M4 Clang 真测 |
+| 状态 | 🟡 2026-07-26 strict 重审实现完成；Windows 已复证，WSL/Apple 最终形状待顺序复证 |
 
 ## 交付能力
 
@@ -31,7 +31,8 @@
    libc/libstdc++，Linux 15-run 配对测出约 6–7.5% 真接缝损失；内联后只剩
    标准钟本身的一跳。C ABI 仍由 DLL 导出稳定 wrapper。
 2. deadline 与单位乘法全部饱和；`Instant::elapsed_ns` 不再在未来 instant
-   上无符号下溢。
+   上无符号下溢。integral chrono duration 改为精确 ratio 算术，不再经 MSVC
+   double-precision `long double` 而在 2^53 以上丢 ns；浮点路径仍单独 ceil/saturate。
 3. Windows sleep 使用高分辨率 waitable timer；Linux absolute sleep 使用
    `clock_nanosleep(CLOCK_MONOTONIC,TIMER_ABSTIME)`，只对 `EINTR` 重试。
 4. 相对 sleep 委托绝对 deadline，早醒后仍以 monotonic deadline 为准。
@@ -50,8 +51,9 @@
 
 ## 验收
 
-- 20 个 clock 测试：单调性、epoch、typed facade、sleep 下限、coarse/TSC
-  availability、deadline 饱和、过去/未来 sleep-until、signed Instant subtraction。
+- 24 个 clock 测试：单调性、epoch、typed facade、sleep 下限、coarse/TSC availability、
+  deadline 饱和、2^53±/signed/unsigned/非整 ns 精确转换、过去/未来 sleep-until、
+  signed Instant subtraction 与 fresh-process 低 CPU 校准。
 - 纯 C smoke 覆盖每个时钟与便利入口。
 - sched/io 已改用 `deadline_after_ns`/`remaining_ns`，不再各自手写易溢出算术。
 - clock benchmark 与 `std::chrono` 比较完全相同的“转换为非负 uint64 ns”

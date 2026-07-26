@@ -32,6 +32,8 @@ while (hyle_time_remaining_ns(deadline) != 0) {
 ## 任意 deadline：hyle_time_queue
 
 timer 和 queue 都是 opaque handle。timer 创建时分配一次；之后的 arm/cancel/advance 不分配。
+跨 DLL 调用与每次返回可恢复 `hyle_status` 有真实常数成本，因此 HYLE 自己的 C++ 模块直接用
+C++ API。C/FFI 消费者应长期复用 timer/queue，不要在每次 timeout 前 create/destroy。
 
 ```c
 static void on_due(hyle_time_timer* timer, void* ctx) {
@@ -131,6 +133,10 @@ hyle_status_free(&st);
 `cancel_all` 是 shutdown/错误回滚入口：它 detach 全部 timer，并可经同步 visitor 把节点归还
 业务 owner。`UINT64_MAX` 同时可是真实远期 deadline 和 empty sentinel；需要区分时调用
 `*_empty()`。queue 是 single-owner；跨线程 arm/cancel 必须串行投递到 owner event loop。
+
+性能证书单列 C ABI 正常路径：arm/cancel/advance 都保持 O(1) 且无分配，但不宣称 wrapper
+零成本。若未来出现海量 C timer consumer，再按真实 allocator/bulk 需求扩展；当前不为
+benchmark 削弱 Status 或泄漏 C++ 节点布局。
 
 完整动态 surface 由 `tests/time/c_surface_symbols.txt` 机械冻结；C 头自包含门同时用 C11 与
 C++23 编译。性能与平台证据只维护在

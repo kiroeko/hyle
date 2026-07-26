@@ -12,7 +12,7 @@
 - [x] 旧 `fast_monotonic` / `fast_realtime` 已分别改为语义名 `profiling_clock` /
   `coarse_realtime`，未保留未发布 ABI 兼容壳；
 - [x] TSC fallback 已改为 sleep-based calibration，并由 fresh-process test 记录 wall/thread CPU；
-- [ ] 正常使用性能矩阵待本轮后续提交；
+- [x] 正常使用性能矩阵已加入（`bd29d57`），Windows n=15 已记录；
 - [ ] 新最终形状完成三平台复证前，strict 状态继续保持打开。
 
 ## 结论先行
@@ -23,8 +23,8 @@ duration 使用 ordered intrusive queue；两者 single-owner、热路无分配�
 C ABI 也覆盖了现有语言无关能力。`sched`/`io` 对 time 的消费方向正确，time 对 error/platform
 的依赖没有倒置。
 
-但当前不能继续标为“彻底 strict 收口”，原因不是要机械补齐 Abseil/Folly/Tokio 的所有
-功能，而是有三个发布前 P0：
+审计当时不能继续标为“彻底 strict 收口”，原因不是要机械补齐 Abseil/Folly/Tokio 的所有
+功能，而是发现了三个发布前 P0：
 
 1. `duration_ns_saturated` 在 MSVC 上会让大于 2^53 的 integral ns 丢失 1 ns，违反“正数向上
    取整、等待不变短”的公开合同；
@@ -33,7 +33,8 @@ C ABI 也覆盖了现有语言无关能力。`sched`/`io` 对 time 的消费方�
 3. time 性能证书固定在 `14ee67e`，之后直接热路依赖 `core/intrusive_list.h` 已连续改变，且现有
    timer workload 只覆盖连续内存的 N=4096 批处理，没有证明正常入口、小 N、散布节点和 C ABI。
 
-因此：**功能骨架完整，算法选择正确；正确性、API 语义和性能证据仍需一轮短而严肃的重开。**
+三个实现/仪器缺口现已修复；Windows 最终形状已复证。**功能骨架完整，算法选择正确，
+正确性和 API 语义已修；strict 只剩 WSL/Apple 顺序复证，不应提前打勾。**
 日历/时区、通用格式语言、执行器、带锁跨线程 timer queue 仍不应进入 time core。
 
 ## 1. 当前实现清单与真实用户形状
@@ -42,8 +43,8 @@ C ABI 也覆盖了现有语言无关能力。`sched`/`io` 对 time 的消费方�
 |---|---|---|---|
 | typed clock | `Duration`、steady/system time point、`*_now()` | 普通 C++ deadline、elapsed、墙钟记录 | 合理，优先推荐 |
 | compact clock | `monotonic_ns`、`realtime_ns` | syscall/C ABI/运行时热路的统一 ns 表示 | 合理 |
-| opt-in clock | TSC profiling clock、OS coarse wall clock | 高频 profiling、日志/trace 打点 | 能力合理，命名不合理 |
-| deadline arithmetic | 饱和 add、duration 转 ns、after/remaining | sched/io timeout 与 FFI 边界 | 必需；integral 转换有 P0 bug |
+| opt-in clock | TSC `profiling_clock`、OS `coarse_realtime` | 高频 profiling、日志/trace 打点 | 能力与语义名已对齐 |
+| deadline arithmetic | 饱和 add、duration 转 ns、after/remaining | sched/io timeout 与 FFI 边界 | integral 路径已精确修复 |
 | blocking sleep | relative/absolute、chrono/整数 | 普通 OS 线程；不用于 fiber worker | 能力完整 |
 | elapsed snapshot | `Instant` | stopwatch/阶段耗时 | oneTBB 式小便利，保留 |
 | arbitrary timers | `TimerEntry` + `TimerQueue` | 每 worker 大量 timeout，常 arm/cancel | 核心算法/复杂度正确 |
@@ -70,8 +71,8 @@ C ABI 也覆盖了现有语言无关能力。`sched`/`io` 对 time 的消费方�
 |---|---|---|---|
 | `std::chrono` typed duration/time point | 已有 | 足够，不自造 Duration 类 | time 保持 |
 | oneTBB `tick_count`/interval | `Instant` + chrono 差值 | 足够 | time 保持 |
-| Abseil cycle clock | 名为 `fast_monotonic` 的 TSC profiler | 语义冲突 | **P0 改名/重定位** |
-| Linux/Seastar low-resolution clock | `fast_realtime` 是 coarse wall；无 cached steady | 不能混为一谈 | coarse wall 改语义名；cached steady 由 sched profile 驱动 |
+| Abseil cycle clock | `profiling_clock` TSC profiler | 语义已对齐 | time 保持 |
+| Linux/Seastar low-resolution clock | `coarse_realtime` 是 coarse wall；无 cached steady | 不能混为一谈 | coarse wall 已正名；cached steady 由 sched profile 驱动 |
 | Seastar radix `timer_set` | 65 桶 exact-ns radix | 同算法/复杂度档 | 保持，重证性能 |
 | libevent common timeout | `CommonTimeoutQueue` | 能力覆盖 | 消费接入时补应用证书 |
 | Folly owning `TimeoutQueue`/HHWheelTimer | 只有 intrusive delivery primitive | 不是底层缺口 | 易用 owning 层放 sched/executor |
@@ -99,33 +100,31 @@ RFC3339 与必要的 RFC1123 parse/format，加明确的 offset/leap-second/erro
 locale format DSL、civil calendar 或自带 timezone database；未出现 consumer 前保持 P1 提案，
 不立即加代码。
 
-## 3. P0：正确性与 API 语义
+## 3. 已修 P0：正确性与 API 语义
 
-### 3.1 integral duration 经浮点导致 deadline 提前
+### 3.1 integral duration 经浮点导致 deadline 提前（已修）
 
 `include/hyle/time/clock.h` 的 `duration_ns_saturated` 无条件先转
 `std::chrono::duration<long double, std::nano>`。MSVC 的 `long double` 与 `double` 同精度；
 例如 `9007199254740993ns`（2^53+1，约 104.25 天）会变成 `9007199254740992`，结果提前 1ns。
 这不是理论上的超大数：长租约、缓存期限、进程 keepalive 都能跨过该边界。
 
-修复要求：
+实现结果：
 
 - integral `Rep` 走精确的 checked/saturating ratio arithmetic，不经过浮点；
 - floating `Rep` 单列路径，保留 non-positive/NaN -> 0、正数向上取整、infinity/overflow -> max；
 - 三平台增加 2^53±边界、`int64_t` max/min、非整 ns 比例、窄/宽有符号与无符号 Rep；
 - `deadline_after`、`TimerQueue::schedule_after`、`CommonTimeoutQueue` chrono 构造都由同一门覆盖。
 
-### 3.2 `fast_*` 是性能形容词，不是稳定语义
+### 3.2 `fast_*` 是性能形容词，不是稳定语义（已修）
 
 公开注释明确说 `fast_monotonic_ns` 可能跨核回退、resume/VM migration 后跳变，且“NOT
 STRICTLY MONOTONIC”。这与函数名的 monotonic 合同冲突；成熟库通常把这类值命名为 cycle
 clock/profiling clock，不让用户误接 timeout。`fast_realtime_ns` 实际合同则是 OS coarse wall
 clock，粗粒度才是稳定语义，是否更快是平台证据。
 
-HYLE 尚未发布且 C ABI 未冻结，建议在同一轮同时改 C++/C 名称、availability、surface manifest、
-tests 和两份 guide。候选语义是 `profiling_clock_ns`/`cycle_clock_ns` 与
-`coarse_realtime_ns`；最终名称应在主线变更时选定。不要保留一个看似 monotonic 的 timeout
-陷阱，也不要让 API 永久承诺“fast”。
+HYLE 尚未发布且 C ABI 未冻结，本轮已同时改 C++/C 名称、availability、surface manifest、
+tests 和两份 guide，最终采用 `profiling_clock_ns` 与 `coarse_realtime_ns`，没有保留兼容壳。
 
 ## 4. 复杂度与性能证据
 
@@ -142,15 +141,15 @@ tests 和两份 guide。候选语义是 `profiling_clock_ns`/`cycle_clock_ns` �
 不需要因为成熟库另有 heap/wheel 就新增第三个通用 timer：heap 的 eager cancel 是 O(log n)，
 固定 tick wheel 会引入量化与更多 bucket heads；现 radix 是 mixed exact deadline 的更好默认。
 
-### 4.2 当前性能证书已经过期
+### 4.2 正常使用性能证书扩展（Windows 已完成，WSL/Apple pending）
 
-`benchmarks-time.md` 的证书钉在 `14ee67e`。其后直接 primitive
+审计发现 `benchmarks-time.md` 的旧证书钉在 `14ee67e`。其后直接 primitive
 `include/hyle/core/intrusive_list.h` 在 `0f78eb5`、`5c3ad28`、`ed9988c`、`71dabf7` 中改变了
 hook unlink、push/remove/clear 和 checked/unchecked 热路合同，time headers 也有调整。即使 core
 自己的测试和 microbench 已通过，也不能替代 timer 组合路径的三平台复证。
 
-此外，现 `timer_queue_bench.cc` 全部是 N=4096、`std::vector<TimerEntry>`、预计算 deadline 的
-warm batch。它严格比较了数据结构机制，却还不能代表正常公开用法：
+原 `timer_queue_bench.cc` 全部是 N=4096、`std::vector<TimerEntry>`、预计算 deadline 的 warm
+batch。`bd29d57` 保留该算法门，并新增：
 
 - 常见小 N：1/8/64 与 N sweep；
 - heap/对象内嵌的散布节点，而非只测连续 vector；
@@ -162,21 +161,22 @@ warm batch。它严格比较了数据结构机制，却还不能代表正常公�
 - sub-ms thread sleep 的 overshoot/分位数，尤其 Windows high-resolution waitable timer；
 - Common 接入真实 fixed idle timeout router 后的 application-level 证书。
 
-复证应在正确性/API 修改后按 Windows -> WSL/native Linux -> Apple 真机顺序执行，避免多个
-agent 同机同时跑 benchmark 污染样本；保留现有 N=4096/rival/order-swap 作为算法回归门，再加
-上述正常使用矩阵。SOTA 的合格含义仍是算法/复杂度不落后、同合同正常使用无系统性退化，
-不是让每个 microbenchmark 行都必须绿色。
+Windows n=15 已完成；N=1 时 indexed heap 确实更快，N=8 起 HYLE 胜，HYLE 对同算法
+Seastar-shape 在 N=1/8/64 均胜。散布/连续 incremental path 统计平；真实 schedule_after、
+C ABI 常数税与 sleep overshoot 均公开记录。WSL/native Linux 与 Apple 仍须机器空闲时顺序执行。
+SOTA 的合格含义仍是算法/复杂度不落后、同合同正常使用无系统性退化，不是让每个
+microbenchmark 行都必须绿色。
 
-### 4.3 calibration 冷路的 P1 性能/功耗问题
+### 4.3 calibration 冷路的 P1 性能/功耗问题（已修）
 
 当 CPUID 0x15 不可用时，`measure_tsc_hz()` 以 1/2/4/.../128ms 窗口 busy-spin，最坏累计
 255ms；`fast_monotonic_available()` 也会触发它。头注释却称为“few-ms”。本地 Abseil
 `absl/base/internal/sysinfo.cc` 的对应 fallback 在采样间使用 `nanosleep`，并不 busy-spin。
 invariant TSC 无需靠占满 core 才继续计数。
 
-建议保留 exact CPUID 快路，把 fallback 改为 sleep-based 抗抢占采样，或提供显式/异步校准；
-同时测 first-call latency、CPU time 和估计误差。这个问题不影响已校准后的 rdtsc 热路，但会
-制造不必要的启动延迟、风扇和功耗，因此列为 P1 实现项。
+本轮保留 exact CPUID 快路，把 fallback 改为 sleep-based 抗抢占采样，并用 test-only
+fresh-process gate 测 first-call wall/thread CPU。Windows wall median 3.703ms；WSL wall/CPU
+median 3.118/0.030ms。release binary 不含 test env gate，已校准后的 rdtsc 热路不变。
 
 ## 5. C++、C ABI 与错误系统
 
@@ -208,28 +208,25 @@ invariant TSC 无需靠占满 core 才继续计数。
 profiling/coarse 的风险、thread sleep vs fiber sleep、general vs common queue、生命周期与 C Status。
 architecture 也正确区分 time 数据结构和 sched/io executor。
 
-需要修正：
+本轮修正状态：
 
-1. `docs/architecture/references.md` 把 `time/` 标为 Tier 0，而
-   `docs/architecture/hyle-scope.md` 明确是 Tier 2 必要基质；统一为 Tier 2；
-2. guide/architecture 不应暗示标准库在全部支持工具链上都可 parse，明确 C++23 实现差异与
-   专用 parser 的责任；
-3. `fast_*` 改名后同步 architecture、两份 guide、C header/surface、tests 与 performance；
-4. `time-module-closure.md` 与 `pre-release-readiness.md` 在 P0 修复和三平台复证前重新打开 strict
-   状态；完成后只记录验收，不把易腐性能数字复制回 milestone。
+1. architecture 已统一 Tier 2，guide 明确不同工具链 chrono parse 能力不一致；
+2. 语义改名已同步 architecture、两份 guide、C header/surface、tests 与 performance；
+3. time milestone 已重新打开 strict；全局 readiness 由主任务在三平台证据齐全后统一维护；
+4. performance 只在专页维护点值，milestone 只留验收摘要。
 
 ## 7. 优先级与明确不做项
 
 ### P0：time 重新 strict 收口前必须完成
 
-1. 精确修复 integral duration conversion，补三平台边界测试；
-2. 把两个 `fast_*` API 改为真实语义名，整套更新 C++/C/docs/surface；
-3. 扩展正常使用性能矩阵，并在所有直接热路依赖修改完成后顺序重跑三平台证书；
-4. 同步 architecture/guide/performance/milestone/readiness，纠正 Tier 标记。
+1. [x] 精确修复 integral duration conversion，补边界测试；
+2. [x] 把两个 `fast_*` API 改为真实语义名，整套更新 C++/C/docs/surface；
+3. [x] 扩展正常使用性能矩阵；[ ] 最终形状顺序重跑 WSL/Apple 证书；
+4. [x] 同步 time architecture/guide/performance/milestone；全局 readiness 留给主任务统一更新。
 
 ### P1：需要 consumer 或独立设计批准
 
-1. TSC fallback 改 sleep-based/显式校准，测冷启动 CPU time 与延迟；
+1. [x] TSC fallback 改 sleep-based，测冷启动 CPU time 与延迟；
 2. time/sched 可注入 clock seam，用于 deterministic scheduler timeout 测试；
 3. sched owning one-shot/periodic timer，periodic 必须显式 missed-tick policy；
 4. 有 HTTP/obs consumer 后评估窄 UTC RFC3339/RFC1123 interchange；
@@ -267,10 +264,9 @@ consumer-driven proposals
 这条顺序先修合同，再测最终形状；把 runtime policy 留到 sched，把协议/FFI 的可选层留给真实
 consumer 决定，避免 time 再次为了 benchmark 或“能力数量”无边界增长。
 
-## 9. 本轮只读验证
+## 9. 实施验证
 
-- 基线：`c1f2e39`，MSVC 19.50，Release shared，`HYLE_COMPONENTS=time`；
-- `hyle_time_test`、`hyle_time_c_test`、`hyle_time_c_surface_test`、
-  `hyle_time_header_self_contained_test`：4/4 通过；
-- 本轮没有改实现，也没有在 container 并行施工期间运行性能 benchmark；性能结论只审计已有
-  证书的覆盖面和 freshness，最终点值必须在 P0 实现稳定后重新采样。
+- 最终实现基点：`bd29d57`，MSVC 19.50，Release shared，`HYLE_COMPONENTS=time`；
+- Windows `hyle_time_test`、纯 C、C surface、header 与 fresh calibration：5/5 通过；
+- Windows timer/normal-use benchmark n=15 已记录到 performance；
+- WSL correctness、native-ext4 n=15 与 Apple 真机待顺序执行，未完成前 strict 保持打开。

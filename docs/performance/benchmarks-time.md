@@ -2,121 +2,155 @@
 
 > 本页是 time 性能数字的唯一信源。实现与选择理由分别见
 > [`time-design`](../architecture/time-design.md) 和 [`guide/time`](../guide/time.md)。
-> 当前证书：2026-07-25，提交 `14ee67e`；Windows/Apple n=15，WSL timer n=31，
-> 每个样本是独立进程，判定以 `bench-stat.py` paired sign test（p < 0.01）为主。
+> 当前最终实现形状固定在 `bd29d57`：Windows MSVC 19.50 Release 已完成 n=15；WSL/native
+> Linux 与 Apple M4 必须在机器空闲时顺序复证，当前明确标为 pending。每个样本是独立进程，
+> 判定以 `bench-stat.py` paired sign test（p < 0.01，且中位差 >1%）为主。
 
 ## 仪器与对手
 
 | 被测面 | 实际入口 | 对手 / 防伪 |
 |---|---|---|
 | clock read | `bench/misc/misc_bench.cc` | 同工作量 `std::chrono`，不是空函数 |
-| arbitrary timer | `bench/time/timer_queue_bench.cc` | faithful Seastar `timer_set` radix；另列 indexed eager-erase heap |
-| one-duration timer | 同上 | libevent-shaped intrusive TAILQ；另列 owner/order/link 同合同版本 |
+| arbitrary timer 算法 | `bench/time/timer_queue_bench.cc` | faithful Seastar `timer_set` radix；另列 indexed eager-erase heap |
+| 正常公开入口 | `bench/time/normal_usage_bench.cc` | 小 N、散布节点、增量循环、真实读钟、C ABI、对象生命周期 |
+| thread sleep | 同上 | HYLE 与 `std::this_thread::sleep_for` 的 warm overshoot 分布 |
+| one-duration timer | `timer_queue_bench.cc` | libevent-shaped intrusive TAILQ；另列 owner/order/link 同合同版本 |
 
-所有 timer 节点在 epoch 外预分配，双方都携带 48-byte 的 link/deadline/data/callback/owner
-持久状态。Seastar 线按本地成熟库源码使用 circular sentinel 和 Boost intrusive 默认
-`constant_time_size=true`，不是早期错误的 null-ended 缩小版。两侧都完成 arm、取消或交付、
-清 owner、drain ready list 的完整生命周期。
+timer 节点在 epoch 外预分配。Seastar 线按成熟库形状使用 circular sentinel 和
+`constant_time_size=true`；indexed heap 维护真实 id→index 并 eager erase，不是 tombstone 假对手。
+所有对手都完成 arm、取消或交付、清 owner 和 drain ready list 的完整生命周期。
 
-每个通用 timer 负载还注册一组 HYLE-first/rival-second 的 order-swap。Apple 无公开 P/E
-硬绑核 API，因此正式跑显式设为 user-interactive QoS，并用 utility QoS 复核；两者都只表示
-调度策略，不冒充物理 core pinning。
+## 1. Clock 与校准冷路
 
-## 1. Clock
+默认 clock header-inline 到与标准库相同的 OS primitive；目标是没有抽象退化，不是声称比同一个
+primitive 更快。上一轮三平台证书（`14ee67e`）记录：默认 monotonic/realtime 与对应 chrono
+同档；x86 profiling TSC 在 Windows/WSL 分别约 1.77×/1.84× throughput；Windows/Linux coarse
+wall 分别约 5.19×/3.32×；M4 两个 opt-in availability 均为 false 并正确回退。名称重构没有
+改变热读实现，但这组旧提交数字只作回归参照，最终三平台复证完成前不冒充当前点值。
 
-单位 ns/read，数值为中位数。
+TSC 无 exact CPUID frequency 时，fallback 现在用 1/2/4/... ms sleep-based sampling，不再
+busy-spin。fresh-process 强制 fallback 的 15 次结果：
 
-| 操作 | Windows x64 | WSL GCC 14.2 | Apple M4 | 结论 |
+| 平台 | 首次调用 wall median（min–max） | thread CPU median（min–max） | 结论 |
+|---|---:|---:|---|
+| Windows | 3.703 ms（3.150–4.041） | 计时粒度下为 0 | 不再占满 CPU |
+| WSL GCC 14.2 | 3.118 ms（3.084–3.215） | 0.030 ms（0.023–0.050） | CPU / wall 约 1% |
+
+该测试只验证冷启动延迟/CPU 合同；已校准后的 profiling read 仍是独立热路。
+
+## 2. TimerQueue：正常 cardinality
+
+单位 ns/node，Windows n=15。H/S/heap 分别是 HYLE radix、同算法 Seastar-shape radix 和
+indexed eager-erase heap；speedup 是 HYLE throughput / 对手 throughput。
+
+| 操作 | N | H / S / heap | H vs S | H vs heap |
+|---|---:|---:|---:|---:|
+| arm+cancel | 1 | 3.141 / 4.195 / 2.286 | 1.336× WIN | 0.723× LOSE |
+| arm+cancel | 8 | 4.165 / 4.501 / 5.675 | 1.074× WIN | 1.370× WIN |
+| arm+cancel | 64 | 3.325 / 4.762 / 10.205 | 1.461× WIN | 3.083× WIN |
+| arm+expire | 1 | 8.885 / 21.977 / 4.200 | 2.465× WIN | 0.475× LOSE |
+| arm+expire | 8 | 4.740 / 9.095 / 9.755 | 1.921× WIN | 2.065× WIN |
+| arm+expire | 64 | 4.818 / 6.757 / 11.351 | 1.402× WIN | 2.323× WIN |
+
+N=1 indexed heap 的固定成本更低，这是真边界，不隐藏。HYLE 从 N=8 起胜出，且 N=1/8/64
+均胜同复杂度 Seastar 形状；这支持 per-worker 多 timeout 的 radix 默认，不支持为了单 timer
+微测增加第二套常态 metadata 或扭曲公开 API。
+
+## 3. TimerQueue：N=4096 算法门
+
+Windows n=15，单位 ns/node：
+
+| 操作 | HYLE | Seastar radix | indexed heap | 结论 |
 |---|---:|---:|---:|---|
-| monotonic / `steady_clock` | 约同档（ratio 1.002） | 12.574 / 12.627 | 14.118 / 14.151 | 三平台统计平；默认路径达到 OS/标准库同档 |
-| profiling clock / default | 约 1.77× throughput | 6.813 / 12.574（1.84×） | 13.789 / 14.118 | x86 TSC 可赢；M4 availability=false，仅回退 |
-| realtime / `system_clock` | 统计平 | 12.697 / 12.624 | 14.714 / 14.667 | 三平台同档 |
-| coarse realtime / default | 约 5.19× throughput | 3.821 / 12.697（3.32×） | 14.119 / 14.714 | Win/Linux coarse 可赢；mac availability=false |
+| arm+cancel | 3.401 | 5.037 | 15.395 | H/S 1.463×；H/heap 4.541×，15/15 WIN |
+| arm+expire | 4.846 | 5.479 | 46.745 | H/S 1.141×，14/15 WIN；H/heap 9.642× |
+| churn，70% cancel | 5.590 | 6.333 | 19.743 | H/S 1.132×；H/heap 3.556×，15/15 WIN |
 
-默认钟本来就复用标准库/OS 原语，因此目标是“不因 HYLE 抽象退化”，不是声称比同一个
-primitive 更快。M4 fallback 即设计成功，不能把约 1.02–1.04 的同函数采样差写成 fast path。
+上一轮 `14ee67e` 的 WSL/Apple 数字仍说明算法方向跨平台成立，但不再作为最终实现证书：WSL
+normal arm/cancel 与 expire 胜、normal churn 统计平、reverse churn 约慢 7%；M4 两种 QoS 下
+HYLE 对 Seastar 总体胜。新的 WSL/Apple 点值 pending。
 
-## 2. TimerQueue 对同算法 radix
+## 4. 正常 event-loop 与 schedule_after
 
-N=4096；单位 ns/node。`arm+expire` 与 churn 的 run-to-run 绝对 spread 较大，所以表中
-WIN/TIE/LOSE 使用同进程成对符号检验，而不是只看两个独立中位数。
+Windows n=15，单位 ns/step 或 ns/op：
 
-| 平台 / 注册顺序 | arm+cancel H / Seastar | arm+expire H / Seastar | churn 70% cancel H / Seastar |
-|---|---:|---:|---:|
-| Windows，正常 | 4.035 / 4.755（WIN 15/15） | 4.836 / 5.532（WIN 14/15） | 5.728 / 6.324（WIN 15/15） |
-| Windows，反序 | 4.104 / 5.007（WIN 15/15） | — | 5.883 / 6.264（WIN 15/15） |
-| WSL，正常 | 2.597 / 3.308（WIN 31/31） | 4.358 / 5.254（WIN 26/31） | 5.345 / 5.355（TIE，22/31，p=.029） |
-| WSL，反序 | 2.585 / 3.300（WIN 31/31） | — | 5.428 / 5.053（LOSE 0/31） |
-| M4 interactive，正常 | 3.729 / 4.162（WIN 14/15） | 5.036 / 7.348（WIN 15/15） | 4.057 / 4.759（WIN 15/15） |
-| M4 interactive，反序 | 3.754 / 4.218（WIN 15/15） | — | 3.779 / 4.776（WIN 15/15） |
+| 场景 | 中位数 | 评价 |
+|---|---:|---|
+| 64-step incremental，连续节点 | 12.988 | — |
+| 64-step incremental，对象内嵌散布节点 | 13.044 | 与连续布局统计 TIE |
+| absolute schedule + cancel | 3.736 | queue primitive |
+| raw schedule_after，预采 now | 3.851 | 精确饱和转换无可见退化 |
+| chrono schedule_after，预采 now | 3.727 | 与 raw 约同档 |
+| raw schedule_after，真实读 monotonic | 18.529 | 正常端到端路径 |
+| chrono schedule_after，真实读 clock | 18.053 | 与 raw 约同档 |
 
-M4 utility 复核仍同向：normal arm/cancel 3.777/4.147、expire 5.180/7.412、churn
-3.777/4.766；反序 arm/cancel 3.764/4.151 为统计 TIE，反序 churn 3.785/4.797 为 WIN。
-因此先前担心的“大/小核或 SSH background QoS 导致 M4 假胜”没有出现。
+真实 `schedule_after` 约 18ns 的大头是读钟，不是 3–4ns queue primitive。散布 stable-address
+节点没有系统性退化；因此连续 N=4096 数字不是靠 benchmark-only layout 得到的。
 
-诚实结论：HYLE 与 Seastar 处于同一 SOTA radix 算法与复杂度档；Windows/M4 稳定更快，WSL
-arm/cancel 与 expire 更快，但 churn 对代码/注册布局敏感——正常顺序平，反序 HYLE 慢约
-7%。这不是可以宣称“三平台所有形状全赢”的结果，也没有证据支持为了这一处 GCC
-code-layout 差异增加常态 metadata 或改变 API。性能门应继续保留双顺序。
+## 5. C ABI 成本
 
-## 3. TimerQueue 对 indexed heap
+Windows n=15；C ABI 经真实 DLL、opaque handle 和共享 `hyle_status` 合同：
 
-indexed heap 使用真实 id→index 和 eager erase，不使用 tombstone 假对手。它代表
-libevent/libuv/Go 一类另一算法路线；cancel 为 O(log n)，radix 为 O(1)。
+| 场景 | 中位数 |
+|---|---:|
+| C++ schedule+cancel | 3.727 ns |
+| C ABI schedule+cancel+Status | 12.102 ns |
+| C ABI schedule_after clock+cancel+Status | 20.359 ns |
+| C ABI schedule+advance+visitor，fire one | 16.450 ns |
+| C++ new/delete `TimerEntry` | 21.557 ns |
+| C opaque timer create/destroy+Status | 48.165 ns |
 
-| 平台 | arm+cancel speedup | arm+expire speedup | churn speedup |
-|---|---:|---:|---:|
-| Windows n=15 | 2.31× | 9.83× | 3.33× |
-| WSL n=31 | 约 2.50× | 约 9.14× | 约 2.80× |
-| Apple M4 n=15 | 约 2.25× | 约 4.68× | 约 2.76× |
+这不是“零成本 C wrapper”：可恢复错误、DLL 接缝和 opaque 生命周期有真实常数税。但 queue
+操作仍 O(1)、无分配，opaque timer 只在创建/销毁时分配。没有大规模 C timer consumer 前，
+不为表变绿削弱 Status 合同，也不凭空加入 allocator/bulk API；有消费证据时再评估该 P1。
 
-这里证明的是大量可取消 timer 的服务器形状。小 N、极少 cancel、必须全序交付的 workload
-仍可能偏好 heap；HYLE 没有为了 benchmark 把 general API 锁死成 heap 或 wheel。
+## 6. Thread sleep overshoot
 
-## 4. CommonTimeoutQueue
+Windows n=15；每进程 warm 采样，表中是跨进程分位数的中位数，单位 ms；early 为 0。
 
-单位 ns/node。checked TAILQ 是相同安全合同的主基线；naked TAILQ 是去掉 owner/order/link
-验证后的性能下界，不是可互换产品。
+| request | HYLE p50 / p95 / p99 | `std::sleep_for` p50 / p95 / p99 | 结论 |
+|---|---:|---:|---|
+| 100 us | 0.409 / 0.438 / 0.488 | 15.426 / 15.973 / 16.191 | HYLE 高分辨率 waitable timer 明显更准 |
+| 1 ms | 0.512 / 0.628 / 0.760 | 14.518 / 15.062 / 15.473 | 同上 |
+| 10 ms | 0.330 / 0.597 / 0.597 | 5.526 / 11.194 / — | 同上 |
 
-| 平台 | arm+cancel H / naked | arm+expire H / naked | arm+expire H / checked |
-|---|---:|---:|---:|
-| Windows n=15 | 2.468 / 3.059（WIN） | 3.174 / 4.108（WIN） | 3.174 / 3.616（WIN） |
-| WSL | 约 1.835 / 2.569（WIN） | 约 2.989 / 3.960（WIN） | 约 2.989 / 3.110（同档） |
-| M4 interactive | 3.034 / 3.118（TIE） | 3.531 / 2.836（LOSE） | 3.531 / 4.279（WIN） |
+这里衡量 OS thread blocking wake quality，不是 scheduler/fiber timer；接口保证不主动早醒，
+不承诺实时调度。Linux/Apple overshoot 分布 pending。
 
-Windows 的 naked-first order-swap 仍为 3.177 / 4.044（HYLE WIN）。M4 utility 与
-interactive 结论一致：对 checked 合同赢，对 naked expire 下界约慢 22%。这部分差异是
-可检查 ownership、deadline 顺序、可恢复 C Status 和输出生命周期的合同税；删掉合同只为
-数字变绿不属于优化。Common queue 尚无生产 consumer，接入真实 fixed-idle-timeout 路由时
-必须补 application-level 证书。
+## 7. CommonTimeoutQueue
 
-## 5. 当前性能边界
+最终实现未改 Common 核；上一轮 `14ee67e` 的三平台结构证据是：Windows 对 checked/naked
+TAILQ 均胜；WSL 对 checked 同档、对 naked 胜；M4 对 checked 胜，但 naked expire 下界快约
+22%。owner/order/link 检查与可恢复 C Status 是合同，不为裸链下界删除。该结构尚无生产
+fixed-idle-timeout consumer，接入时仍需 application-level 证书。最终形状的三平台复跑 pending。
+
+## 8. 当前结论与未完成证据
 
 | 项 | 状态 |
 |---|---|
-| 默认 clock | SOTA 同档：与 `std::chrono` 同 primitive，无额外抽象损耗 |
-| opt-in profiling/coarse clocks | x86/支持 coarse 的平台有真实收益；只能用于合同允许的路径 |
-| TimerQueue 算法 | SOTA radix，同 Seastar 复杂度；跨平台总体强，WSL reverse churn 约 7% 缺口公开保留 |
-| Common vs 同合同链 | 三平台不输；M4 对 naked expire 下界有约 22% 安全税 |
-| timer 精度 | exact ns key；实际唤醒延迟仍受 OS/event-loop 调度影响 |
-| cross-thread queue | 不提供；single-owner 是消除热路锁的架构合同 |
-| C ABI | arm/cancel/advance 无分配；尚未单列 wrapper-overhead benchmark，因为正常使用在队列批处理层 |
+| exact duration conversion | 整数路径精确饱和；Windows/WSL 正确性门已通过 |
+| 默认/opt-in clock | 语义形状已定；旧热读证据强，最终点值待 WSL/Apple 复跑 |
+| TimerQueue 算法 | SOTA-class radix、O(1) arm/cancel；Windows 小 N 和 N=4096 已复证 |
+| 正常 event-loop | Windows 连续/散布同档；真实 clock 成本已单列 |
+| C ABI | 能力覆盖完整，正常操作常数税已公开；不把 DLL/Status 成本伪装为零 |
+| thread sleep | Windows 高分辨率路径明显优于 std；Linux/Apple pending |
+| strict 性能收口 | **未最终关闭**：还欠 WSL native-ext4 与 Apple M4 在固定提交上的顺序复证 |
 
-## 6. 复跑
+## 9. 复跑
 
 ```bash
-scripts/bench-stat.py <build>/bin/hyle_misc_bench -n 15 \
-  --pair "std::chrono::steady_clock::now" "HYLE monotonic_ns" \
-  --pair "HYLE monotonic_ns" "HYLE profiling_clock_ns (rdtsc)" \
-  --pair "std::chrono::system_clock::now" "HYLE realtime_ns"
-
 scripts/bench-stat.py <build>/bin/hyle_timer_queue_bench -n 15 \
-  --pair "indexed min-heap (libevent/libuv)" "HYLE TimerQueue (radix)" \
+  --pair "Seastar-shape radix N=1" "HYLE radix N=1" \
+  --pair "indexed heap N=1" "HYLE radix N=1" \
   --pair "radix timer_set (Seastar shape)" "HYLE TimerQueue (radix)" \
-  --pair "radix timer_set second" "HYLE TimerQueue first" \
-  --pair "radix timer_set churn second" "HYLE TimerQueue churn first" \
-  --pair "checked intrusive TAILQ (HYLE contracts)" "HYLE CommonTimeoutQueue"
+  --pair "indexed min-heap (libevent/libuv)" "HYLE TimerQueue (radix)"
+
+scripts/bench-stat.py <build>/bin/hyle_time_normal_bench -n 15 \
+  --pair "HYLE contiguous TimerEntry" "HYLE heap-embedded scattered TimerEntry" \
+  --pair "schedule_after presampled + cancel" "chrono schedule_after presampled + cancel" \
+  --pair "C++ schedule+cancel" "C ABI schedule+cancel+Status" \
+  --pair "C++ new/delete TimerEntry" "C opaque timer create/destroy+Status"
 ```
 
-Apple 低优先级复核在命令前设置 `HYLE_BENCH_APPLE_QOS=utility`；默认是
-user-interactive。Linux 正式性能必须在原生 ext4 worktree 跑，不能用 `/mnt/c` 9p。
+Linux 正式性能必须在原生 ext4 worktree 跑，不能用 `/mnt/c` 9p。Windows、WSL 同物理机必须
+错开。Apple 默认 user-interactive QoS，并用 `HYLE_BENCH_APPLE_QOS=utility` 做低优先级复核。
