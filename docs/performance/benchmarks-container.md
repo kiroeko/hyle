@@ -299,6 +299,14 @@ WSL 的逐次索引差距与 GCC 对运行时 segment 定位的代码生成有�
 在两平台都领先；`operator[]` 继续作为真正随机索引的独立证据与后续优化项。M4 尚未
 刷新，不能把本表外推为三平台证书。
 
+2026-07-26 又验证并**拒绝**了一版把 global index 加 first-capacity 后直接 `bit_width`
+的 biased mapping。它把 Windows 索引降到 0.605 ns（oneTBB 1.256 ns），但同一
+WSL/GCC14 原生 ext4 构建从旧 mapping 的 15-run median 0.85 ns 恶化到
+2.27–2.33 ns（oneTBB 0.43–0.45 ns）。GCC 生成的 `lzcnt -> variable shift -> pointer`
+形成更长的串行依赖；两个版本都不能自动向量化动态 segment lookup。因而产品保留旧
+mapping：单平台点值改善不足以证明架构更好，也没有为顺扫 benchmark 增加 TLS cache、
+每对象游标或常态 metadata。
+
 ## 2. 非 SOTA / 冻结边界（诚实清单）
 
 1. **StringInterner lifecycle（WSL/M4）**
