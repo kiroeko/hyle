@@ -107,8 +107,10 @@ sorted flat associative 与带完整策略的并发 priority/unbounded
 
 `StaticVector<T,N>` 补的是 `SmallVector` 无法表达的协议/实时合同，不是另一个小 N push
 benchmark fixture。设计对照本地 CCCL `cuda::std::inplace_vector` 的 capacity-sized
-metadata 与成熟 static-vector 共同面：一个紧凑整数记录 size，T-aligned raw storage
-直接位于对象内；没有 allocator、capacity pointer 或 heap fallback。`N==0` 返回空/null
+metadata 与成熟 static-vector 共同面：一个紧凑整数记录 size，T-aligned storage
+直接位于对象内；inactive union 的真实 `T[N]` 成员保留合法 array pointer 边界，逐项
+placement construction 启停 lifetime，空 data 不对尚不存在的 T 使用 `launder`。没有
+allocator、capacity pointer 或 heap fallback。`N==0` 返回空/null
 range；raw storage 不做按 capacity 清零，故默认构造保持 O(1)，而不是随 N 扫描整块对象。
 generic code 不需要为零上限另造 wrapper。`InplaceVector` 只是 alias，避免两套
 实现和两个语义相近的公开类型漂移。
@@ -116,8 +118,10 @@ generic code 不需要为零上限另造 wrapper。`InplaceVector` 只是 alias�
 普通入口容量越界 fail-fast；所有 `try_*` 先验证容量，在 false 路径不构造参数、不移动
 现有元素。input/self range 的 try assign/insert 先在第二个 fixed-capacity 临时对象中单遍
 materialize，才能同时满足 single-pass、alias-safe 和“失败不改原值”；这是冷 bulk mutation
-的明确成本，不向常态元素增加 metadata。非平凡位置 mutation 只用 nothrow move construction
-和 destruction，不额外要求 move assignment；POD copy/move 和 suffix relocation 分别走
+的明确成本，不向常态元素增加 metadata。没有 class-wide movable 约束：不可移动 T 仍可
+原位 emplace_back/pop/clear；只有必须 relocation 的位置 insert/erase 要求 nothrow move
+construction。整容器 throwing move 提供 basic guarantee，构造失败会销毁完成的目标前缀。
+非平凡位置 mutation 不额外要求 move assignment；POD copy/move 和 suffix relocation 分别走
 `memcpy`/`memmove`。push/pop O(1)，insert/erase O(suffix+inserted)，已经是连续 storage 的
 下界。data 本身永不迁移；位置 mutation 前的地址保持，从位置起的元素 identity 视为失效。
 

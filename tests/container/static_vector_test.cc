@@ -65,6 +65,55 @@ struct alignas(64) OverAlignedValue {
   int value = 0;
 };
 
+struct PinnedValue {
+  explicit PinnedValue(int input) noexcept : value(input) {}
+  PinnedValue(const PinnedValue &) = delete;
+  PinnedValue(PinnedValue &&) = delete;
+  PinnedValue &operator=(const PinnedValue &) = delete;
+  PinnedValue &operator=(PinnedValue &&) = delete;
+  ~PinnedValue() noexcept = default;
+
+  int value;
+};
+
+struct CopyOnlyValue {
+  explicit CopyOnlyValue(int input) noexcept : value(input) {}
+  CopyOnlyValue(const CopyOnlyValue &other) noexcept : value(other.value) {}
+  CopyOnlyValue(CopyOnlyValue &&) = delete;
+  CopyOnlyValue &operator=(const CopyOnlyValue &) = delete;
+  CopyOnlyValue &operator=(CopyOnlyValue &&) = delete;
+  ~CopyOnlyValue() noexcept = default;
+
+  int value;
+};
+
+struct ThrowingMoveValue {
+  explicit ThrowingMoveValue(int input) noexcept : value(input) { ++alive; }
+  ThrowingMoveValue(const ThrowingMoveValue &) = delete;
+  ThrowingMoveValue(ThrowingMoveValue &&other) : value(other.value) {
+    if (moves_before_throw == 0)
+      throw std::runtime_error("move failed");
+    --moves_before_throw;
+    other.value = -1;
+    ++alive;
+  }
+  ThrowingMoveValue &operator=(const ThrowingMoveValue &) = delete;
+  ThrowingMoveValue &operator=(ThrowingMoveValue &&) = delete;
+  ~ThrowingMoveValue() noexcept { --alive; }
+
+  static inline int alive = 0;
+  static inline int moves_before_throw = 0;
+  int value;
+};
+
+template <class Vector>
+concept HasIntegerPositionalEmplace =
+    requires(Vector &values) { values.emplace(values.begin(), 1); };
+
+template <class Vector>
+concept HasIntegerBackEmplace =
+    requires(Vector &values) { values.emplace_back(1); };
+
 } // namespace
 
 static_assert(std::same_as<InplaceVector<int, 4>, StaticVector<int, 4>>);
@@ -73,6 +122,10 @@ static_assert(sizeof(StaticVector<std::uint8_t, 255>) == 256,
               "capacity-sized metadata should use one byte when possible");
 static_assert(sizeof(StaticVector<OverAlignedValue, 0>) == 1,
               "zero capacity should not retain dummy aligned storage");
+static_assert(HasIntegerBackEmplace<StaticVector<PinnedValue, 2>>);
+static_assert(!HasIntegerPositionalEmplace<StaticVector<PinnedValue, 2>>);
+static_assert(HasIntegerBackEmplace<StaticVector<ThrowingMoveValue, 2>>);
+static_assert(!HasIntegerPositionalEmplace<StaticVector<ThrowingMoveValue, 2>>);
 
 TEST(StaticVector, StorageIsAlwaysInsideObjectAndNeverRelocates) {
   StaticVector<std::string, 4> values;
@@ -81,6 +134,8 @@ TEST(StaticVector, StorageIsAlwaysInsideObjectAndNeverRelocates) {
   const auto storage = reinterpret_cast<std::uintptr_t>(values.data());
   ASSERT_GE(storage, object_begin);
   ASSERT_LT(storage, object_end);
+  ASSERT_NE(values.data(), nullptr);
+  ASSERT_EQ(values.begin(), values.end());
 
   auto *const original_data = values.data();
   values.emplace_back("alpha");
@@ -93,6 +148,20 @@ TEST(StaticVector, StorageIsAlwaysInsideObjectAndNeverRelocates) {
 
   StaticVector<OverAlignedValue, 1> aligned;
   EXPECT_EQ(reinterpret_cast<std::uintptr_t>(aligned.data()) % 64, 0u);
+}
+
+TEST(StaticVector, RepeatedSlotLifetimeRestartKeepsTheArrayAddress) {
+  LifetimeValue::alive = 0;
+  StaticVector<LifetimeValue, 2> values;
+  auto *const storage = values.data();
+  for (int cycle = 0; cycle < 1000; ++cycle) {
+    values.emplace_back(cycle);
+    values.emplace_back(cycle + 1);
+    EXPECT_EQ(values.data(), storage);
+    values.clear();
+    EXPECT_EQ(LifetimeValue::alive, 0);
+    EXPECT_EQ(values.data(), storage);
+  }
 }
 
 TEST(StaticVector, CountRangeInitializerCopyAndMoveHaveValueSemantics) {
@@ -216,6 +285,83 @@ TEST(StaticVector, SupportsMoveOnlyValuesAndExactLifetime) {
     EXPECT_EQ(LifetimeValue::alive, 0);
   }
   EXPECT_EQ(LifetimeValue::alive, 0);
+}
+
+TEST(StaticVector, ImmovableValuesCanUseInPlaceBackOperations) {
+  StaticVector<PinnedValue, 2> values;
+  ASSERT_TRUE(values.try_emplace_back(1));
+  ASSERT_TRUE(values.try_emplace_back(2));
+  EXPECT_FALSE(values.try_emplace_back(3));
+  EXPECT_EQ(values.front().value, 1);
+  EXPECT_EQ(values.back().value, 2);
+  values.pop_back();
+  EXPECT_EQ(values.back().value, 1);
+  values.clear();
+  EXPECT_TRUE(values.empty());
+}
+
+TEST(StaticVector, CopyOnlyValuesRetainCopyAndAssignOperations) {
+  CopyOnlyValue first(1);
+  CopyOnlyValue second(2);
+  const std::array<CopyOnlyValue, 2> input = {first, second};
+  StaticVector<CopyOnlyValue, 3> source(input.begin(), input.end());
+  StaticVector<CopyOnlyValue, 3> copied(source);
+  ASSERT_EQ(copied.size(), 2u);
+  EXPECT_EQ(copied[1].value, 2);
+
+  StaticVector<CopyOnlyValue, 3> assigned;
+  assigned = source;
+  ASSERT_EQ(assigned.size(), 2u);
+  EXPECT_EQ(assigned[0].value, 1);
+  assigned.assign(3, first);
+  EXPECT_EQ(assigned.size(), 3u);
+  EXPECT_EQ(assigned.back().value, 1);
+}
+
+TEST(StaticVector, ThrowingMoveConstructionCleansDestinationPrefix) {
+  ThrowingMoveValue::alive = 0;
+  {
+    StaticVector<ThrowingMoveValue, 4> source;
+    source.emplace_back(1);
+    source.emplace_back(2);
+    source.emplace_back(3);
+    EXPECT_EQ(ThrowingMoveValue::alive, 3);
+
+    ThrowingMoveValue::moves_before_throw = 1;
+    EXPECT_THROW(([](auto &input) {
+                   StaticVector<ThrowingMoveValue, 4> failed(std::move(input));
+                   (void)failed;
+                 }(source)),
+                 std::runtime_error);
+    EXPECT_EQ(ThrowingMoveValue::alive, 3);
+    EXPECT_EQ(source.size(), 3u);
+
+    ThrowingMoveValue::moves_before_throw = 4;
+    StaticVector<ThrowingMoveValue, 4> moved(std::move(source));
+    EXPECT_TRUE(source.empty());
+    EXPECT_EQ(moved.size(), 3u);
+    EXPECT_EQ(ThrowingMoveValue::alive, 3);
+  }
+  EXPECT_EQ(ThrowingMoveValue::alive, 0);
+}
+
+TEST(StaticVector, ThrowingMoveAssignmentKeepsBothVectorsDestructible) {
+  ThrowingMoveValue::alive = 0;
+  {
+    StaticVector<ThrowingMoveValue, 4> source;
+    source.emplace_back(1);
+    source.emplace_back(2);
+    source.emplace_back(3);
+    StaticVector<ThrowingMoveValue, 4> destination;
+    destination.emplace_back(9);
+
+    ThrowingMoveValue::moves_before_throw = 1;
+    EXPECT_THROW(destination = std::move(source), std::runtime_error);
+    EXPECT_EQ(destination.size(), 1u);
+    EXPECT_EQ(source.size(), 3u);
+    EXPECT_EQ(ThrowingMoveValue::alive, 4);
+  }
+  EXPECT_EQ(ThrowingMoveValue::alive, 0);
 }
 
 TEST(StaticVector, ThrowingGrowthRollsBackCompletedSuffix) {

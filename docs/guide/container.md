@@ -96,12 +96,17 @@ if (!batch.try_emplace_back(header, payload)) {
 `SmallVector`；动态上限或巨大 N 不应搬进 stack/object，改用 reserve 后的动态容器。
 
 公开面包括 count/range/initializer-list 和 copy/move 值语义、连续及反向迭代、resize/
-assign、任意位置 emplace/insert/erase、swap 和比较；支持 non-trivial、move-only、无
-move-assignment 的元素，trivially-copyable 后缀走 `memmove`。`N==0` 是可正常传递的空
+assign、任意位置 emplace/insert/erase、swap 和比较。类型本身没有 class-wide move
+约束：不可移动的 mutex/handle 一类值仍可用尾部原位 emplace、pop/clear 与访问；会搬动
+后缀的位置 insert/erase 要求 nothrow move construction，throwing-move 的整容器 move/swap
+则给 basic exception guarantee。常见 non-trivial、move-only、无 move-assignment 元素可用，
+trivially-copyable 后缀走 `memmove`。`N==0` 是可正常传递的空
 容器。普通 std-shaped 入口在容量溢出时沿用 HYLE fail-fast；`try_emplace_back`、
 `try_push_back`、`try_emplace`、`try_insert`、`try_resize`、`try_assign` 在容量不足时返回
 false 且原值不变。range try 操作会先在对象内临时 materialize 输入，以同时保证
 single-pass、self-range 和失败不改值；因此很大的 N 也会带来相应的 stack/object 成本。
+这里的“不改值”指容量不足返回 false；若 T 自己的 copy/move construction 抛异常，尾部
+emplace/resize 会回滚未完成后缀，整容器 assignment/move 保持可析构的 basic guarantee。
 
 尾部 push/pop 为 O(1)，位置 insert/erase 为 O(受影响后缀+插入数)，没有比连续存储更低的
 渐进复杂度。push 不使任何 pointer/reference 失效；位置 mutation 前方的引用与地址保持，

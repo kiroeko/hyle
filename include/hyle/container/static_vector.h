@@ -28,9 +28,20 @@ using static_vector_size_t = std::conditional_t<
                             std::numeric_limits<std::uint32_t>::max()),
                            std::uint32_t, std::size_t>>>;
 
+// The inactive union retains a real T[Capacity] array boundary without
+// constructing any T. StaticVector starts/ends individual element lifetimes
+// explicitly. data() can therefore form the array member address while empty;
+// it must not launder a raw-byte pointer when no live T exists yet.
+template <class T, std::size_t Capacity> union StaticVectorElements {
+  constexpr StaticVectorElements() noexcept {}
+  ~StaticVectorElements() noexcept {}
+
+  T values[Capacity];
+};
+
 template <class T, std::size_t Capacity, bool = (Capacity == 0)>
 struct StaticVectorStorage {
-  alignas(T) std::byte elements[Capacity * sizeof(T)];
+  StaticVectorElements<T, Capacity> elements;
   static_vector_size_t<Capacity> size = 0;
 };
 
@@ -50,8 +61,6 @@ struct StaticVectorStorage<T, Capacity, true> {};
 // T may still throw; nothrow move construction/destruction makes relocation
 // during positional mutation recoverable without move assignment.
 template <class T, std::size_t N> class StaticVector {
-  static_assert(std::is_nothrow_move_constructible_v<T>,
-                "StaticVector requires nothrow move construction");
   static_assert(std::is_nothrow_destructible_v<T>,
                 "StaticVector requires nothrow destruction");
   static_assert(N <= std::numeric_limits<std::size_t>::max() / sizeof(T),
@@ -102,7 +111,16 @@ public:
     construct_with_cleanup([&] { append_range(other.begin(), other.end()); });
   }
 
-  StaticVector(StaticVector &&other) noexcept { move_from(other); }
+  StaticVector(StaticVector &&other) noexcept(
+      std::is_nothrow_move_constructible_v<T>)
+    requires std::is_move_constructible_v<T>
+  {
+    if constexpr (std::is_nothrow_move_constructible_v<T>) {
+      move_from(other);
+    } else {
+      construct_with_cleanup([&] { move_from(other); });
+    }
+  }
 
   StaticVector &operator=(const StaticVector &other)
     requires std::is_copy_constructible_v<T>
@@ -114,7 +132,10 @@ public:
     return *this;
   }
 
-  StaticVector &operator=(StaticVector &&other) noexcept {
+  StaticVector &operator=(StaticVector &&other) noexcept(
+      std::is_nothrow_move_constructible_v<T>)
+    requires std::is_move_constructible_v<T>
+  {
     if (this == &other)
       return *this;
     clear();
@@ -147,14 +168,14 @@ public:
     if constexpr (N == 0) {
       return nullptr;
     } else {
-      return std::launder(reinterpret_cast<pointer>(storage_.elements));
+      return storage_.elements.values;
     }
   }
   const_pointer data() const noexcept {
     if constexpr (N == 0) {
       return nullptr;
     } else {
-      return std::launder(reinterpret_cast<const_pointer>(storage_.elements));
+      return storage_.elements.values;
     }
   }
 
@@ -241,6 +262,7 @@ public:
   }
 
   template <class... Args>
+    requires std::is_nothrow_move_constructible_v<T>
   bool try_emplace(const_iterator position, Args &&...args) {
     const size_type index = position_index(position, true);
     if (full())
@@ -255,6 +277,7 @@ public:
   }
 
   template <class... Args>
+    requires std::is_nothrow_move_constructible_v<T>
   iterator emplace(const_iterator position, Args &&...args) {
     const size_type index = position_index(position, true);
     HYLE_FATAL_ASSERT(
@@ -263,24 +286,31 @@ public:
   }
 
   bool try_insert(const_iterator position, const T &value)
-    requires std::is_copy_constructible_v<T>
+    requires std::is_copy_constructible_v<T> &&
+             std::is_nothrow_move_constructible_v<T>
   {
     return try_emplace(position, value);
   }
-  bool try_insert(const_iterator position, T &&value) {
+  bool try_insert(const_iterator position, T &&value)
+    requires std::is_nothrow_move_constructible_v<T>
+  {
     return try_emplace(position, std::move(value));
   }
   iterator insert(const_iterator position, const T &value)
-    requires std::is_copy_constructible_v<T>
+    requires std::is_copy_constructible_v<T> &&
+             std::is_nothrow_move_constructible_v<T>
   {
     return emplace(position, value);
   }
-  iterator insert(const_iterator position, T &&value) {
+  iterator insert(const_iterator position, T &&value)
+    requires std::is_nothrow_move_constructible_v<T>
+  {
     return emplace(position, std::move(value));
   }
 
   bool try_insert(const_iterator position, size_type count, const T &value)
-    requires std::is_copy_constructible_v<T>
+    requires std::is_copy_constructible_v<T> &&
+             std::is_nothrow_move_constructible_v<T>
   {
     const size_type index = position_index(position, true);
     if (count > N - size())
@@ -291,7 +321,8 @@ public:
   }
 
   iterator insert(const_iterator position, size_type count, const T &value)
-    requires std::is_copy_constructible_v<T>
+    requires std::is_copy_constructible_v<T> &&
+             std::is_nothrow_move_constructible_v<T>
   {
     const size_type index = position_index(position, true);
     HYLE_FATAL_ASSERT(try_insert(pointer_at(index), count, value));
@@ -299,7 +330,8 @@ public:
   }
 
   template <std::input_iterator It, std::sentinel_for<It> Sentinel>
-    requires std::constructible_from<T, std::iter_reference_t<It>>
+    requires std::constructible_from<T, std::iter_reference_t<It>> &&
+             std::is_nothrow_move_constructible_v<T>
   bool try_insert(const_iterator position, It first, Sentinel last) {
     const size_type index = position_index(position, true);
     StaticVector inserted;
@@ -312,7 +344,8 @@ public:
   }
 
   template <std::input_iterator It, std::sentinel_for<It> Sentinel>
-    requires std::constructible_from<T, std::iter_reference_t<It>>
+    requires std::constructible_from<T, std::iter_reference_t<It>> &&
+             std::is_nothrow_move_constructible_v<T>
   iterator insert(const_iterator position, It first, Sentinel last) {
     const size_type index = position_index(position, true);
     HYLE_FATAL_ASSERT(
@@ -321,12 +354,14 @@ public:
   }
 
   bool try_insert(const_iterator position, std::initializer_list<T> init)
-    requires std::is_copy_constructible_v<T>
+    requires std::is_copy_constructible_v<T> &&
+             std::is_nothrow_move_constructible_v<T>
   {
     return try_insert(position, init.begin(), init.end());
   }
   iterator insert(const_iterator position, std::initializer_list<T> init)
-    requires std::is_copy_constructible_v<T>
+    requires std::is_copy_constructible_v<T> &&
+             std::is_nothrow_move_constructible_v<T>
   {
     return insert(position, init.begin(), init.end());
   }
@@ -342,7 +377,9 @@ public:
   }
 
   template <std::input_iterator It, std::sentinel_for<It> Sentinel>
-    requires std::constructible_from<T, std::iter_reference_t<It>>
+    requires std::constructible_from<T, std::iter_reference_t<It>> &&
+             (std::is_move_constructible_v<T> ||
+              std::is_copy_constructible_v<T>)
   bool try_assign(It first, Sentinel last) {
     StaticVector replacement;
     if (!replacement.try_append_range(first, last))
@@ -363,7 +400,9 @@ public:
     HYLE_FATAL_ASSERT(try_assign(count, value));
   }
   template <std::input_iterator It, std::sentinel_for<It> Sentinel>
-    requires std::constructible_from<T, std::iter_reference_t<It>>
+    requires std::constructible_from<T, std::iter_reference_t<It>> &&
+             (std::is_move_constructible_v<T> ||
+              std::is_copy_constructible_v<T>)
   void assign(It first, Sentinel last) {
     HYLE_FATAL_ASSERT(try_assign(first, last));
   }
@@ -441,12 +480,16 @@ public:
     set_size(0);
   }
 
-  iterator erase(const_iterator position) noexcept {
+  iterator erase(const_iterator position) noexcept
+    requires std::is_nothrow_move_constructible_v<T>
+  {
     const size_type index = position_index(position, false);
     return erase(pointer_at(index), pointer_at(index + 1));
   }
 
-  iterator erase(const_iterator first, const_iterator last) noexcept {
+  iterator erase(const_iterator first, const_iterator last) noexcept
+    requires std::is_nothrow_move_constructible_v<T>
+  {
     const size_type first_index = position_index(first, true);
     const size_type last_index = position_index(last, true);
     HYLE_FATAL_ASSERT(first_index <= last_index);
@@ -468,7 +511,10 @@ public:
     return pointer_at(first_index);
   }
 
-  void swap(StaticVector &other) noexcept {
+  void
+  swap(StaticVector &other) noexcept(std::is_nothrow_move_constructible_v<T>)
+    requires std::is_move_constructible_v<T>
+  {
     if (this == &other)
       return;
     StaticVector temporary(std::move(*this));
@@ -476,7 +522,11 @@ public:
     other.move_from(temporary);
   }
 
-  friend void swap(StaticVector &left, StaticVector &right) noexcept {
+  friend void
+  swap(StaticVector &left,
+       StaticVector &right) noexcept(std::is_nothrow_move_constructible_v<T>)
+    requires std::is_move_constructible_v<T>
+  {
     left.swap(right);
   }
 
@@ -607,7 +657,10 @@ private:
     set_size(size() + count);
   }
 
-  void move_from(StaticVector &other) noexcept {
+  void move_from(StaticVector &other) noexcept(
+      std::is_nothrow_move_constructible_v<T>)
+    requires std::is_move_constructible_v<T>
+  {
     HYLE_FATAL_ASSERT(empty());
     if constexpr (std::is_trivially_copyable_v<T>) {
       if (!other.empty())
@@ -623,9 +676,13 @@ private:
     }
   }
 
-  void replace_with(StaticVector &replacement) noexcept {
+  void replace_with(StaticVector &replacement) {
     clear();
-    move_from(replacement);
+    if constexpr (std::is_move_constructible_v<T>) {
+      move_from(replacement);
+    } else {
+      append_range(replacement.begin(), replacement.end());
+    }
   }
 
   // Element bytes are deliberately uninitialized: default construction is
