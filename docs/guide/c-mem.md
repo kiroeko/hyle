@@ -291,6 +291,9 @@ mem 不再维护私有 TLS error code/string。冷路径与全库共用 `hyle_st
 零值、零分配，错误消息分配失败时仍保留 code。热分配路径则完全不构造 Status。
 
 flags：`HYLE_HUGE_THP_HINT`、`HYLE_HUGE_PREFAULT`、`HYLE_HUGE_NUMA_BIND`、`HYLE_HUGE_NUMA_INTERLEAVE`；bind/interleave 互斥，interleave 只能搭配 `HYLE_MEM_NUMA_ANY`，也不能传给 `open_local`。无 NUMA 约束用 `HYLE_MEM_NUMA_ANY`。
+当前 C 面同样不提供 selected-node set / `bytes_per_chunk`：Linux、Windows、macOS 没有可诚实
+映射的共同合同。需要拓扑感知非均匀分片的调用方应显式创建多个 region，并在拥有调度/图
+生命周期的上层分配工作；不要假设 `open_interleaved` 支持自定义 node 子集。
 
 ## 8. 常用写法
 

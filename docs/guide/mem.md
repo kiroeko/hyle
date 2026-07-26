@@ -328,6 +328,9 @@ if (p != nullptr) bounded.deallocate(p, 4096, 64);
 `Result<HugeRegion>`：hard bind/interleave 不能满足时返回带原因的 Status；preferred
 可以返回可用 region 但 `numa_placement_applied()==false`，THP 仍是 best-effort。
 bind 与 interleave 互斥；interleave 必须搭配 `kNumaAny`，不能传给 `allocate_local`。
+当前不提供“选定多个 nodes + 自定义 interleave chunk”入口：三平台没有同形 OS 合同，基础
+mem 不把 Linux-only mask 包成可移植 API。需要非均匀分片时，由掌握拓扑和任务归属的上层显式
+组合多个 region；真实公共消费者出现后再重开该边界。
 
 `FiberStack::allocate` 与 `FiberStackPool::acquire` 同样返回 `Result<FiberStack>`，使 sched
 能保留原生 VM 失败原因；可信固定配置仍可用 `Fiber` 便利构造，用户输入应走

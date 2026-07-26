@@ -122,6 +122,13 @@ NUMA preferred 与 huge-page advice 是策略提示，返回值必须让用户�
 needed 或 unavailable。依赖精确放置时使用 bind/interleave 的硬合同并处理失败；软降级后
 mapping 仍然有效。
 
+当前公共 NUMA 面有意止于 single-node preferred/bind 与 all-available-node interleave，不提供
+oneTBB 风格的 selected-node set + `bytes_per_chunk`。Linux `mbind` 能表达 node mask，却没有同形
+chunk 合同；Windows `VirtualAlloc2` 的公开 NUMA 参数只选择单个 node；macOS 没有对应公开 NUMA
+placement API。为一个 Linux-only benchmark 暴露跨平台名会制造虚假可移植性。真实消费者若需要
+非均匀条带，应先由拥有拓扑与分片生命周期的 sched/graph/应用层给出连续性、fallback 和迁移合同，
+再决定是扩 platform VM 原语还是在上层组合多个 region。
+
 ## 7. 文件系统只提供跨平台基础资源
 
 platform 文件面覆盖真实基础库常用需求：stat/存在性、目录与文件变更、权限的可移植子集、

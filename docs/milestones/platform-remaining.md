@@ -157,6 +157,8 @@ macOS 真机通过，确认 `os_sync_wait_on_address_with_timeout` 当前参数�
   系统 P/E 聚合和独立的进程可用 CPU 能力；不从聚合值猜 worker 数或单核类型。
 - Linux 不依据 cpufreq 猜 P/E；若内核不导出 scheduler capacity，则保持
   unknown/homogeneous fallback。
+- selected-node set + `bytes_per_chunk` NUMA 保持 non-goal：Linux mask、Windows single-node
+  `VirtualAlloc2` 与 macOS 无公开 NUMA API 不具备共同合同；没有真实 topology owner 前不扩面。
 - platform C ABI 已覆盖 wait/Parker、Thread、DynLib、VM/VmRegion、
   hugepage/NUMA、完整 fs/env/fd、MappedFile、CPU/cache/topology。2026-07-19
   复审又补了 thread opts `struct_size`、具名权限/open flags 与逐符号纯 C 验收；后续

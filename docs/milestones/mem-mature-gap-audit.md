@@ -76,7 +76,7 @@ platform-first 待办，不在本轮 mem-only 猜测跨平台合同。
 |---|---|---|---|
 | 传统 C++ Allocator named-requirement adapter | oneTBB `memory_pool_allocator<T>` / `cache_aligned_allocator<T>`；Folly `CxxAllocatorAdaptor<T,Inner>`；marl `StlAllocator<T>` | 默认 system heap 用 empty/always-equal 的 `SystemStdAllocator<T>`；运行时 backing 用 `StdAllocator<T>`，含 rebind/完整 backing equality/非传播 traits；覆盖 `vector`、`allocate_shared`、over-alignment 与失败路径 | 无；模板天然只属于 C++ |
 | `FiberStackPool` 主动冷回收 | 原实现默认每 tier 缓存 64、内部固定 256 slots，只有析构释放；传入 cap>256 的有效上限不可见 | 已增加准确 `capacity()`、0-disable、cap clamp、`trim(keep=0)` / `clear()`；锁内摘取、锁外释放 VM，scheduler 在 worker join 后回收三档 cache | mem C 无需导出；scheduler C 用户由 runtime 自动管理 |
-| 选择 NUMA nodes + interleave chunk | oneTBB `numa_allocation.h:40-48` 接收 node vector 与 `bytes_per_chunk` | 先由 platform 定义 cpuset/Windows/Linux/macOS 可诚实实现的统一合同，再扩 `HugeRegion`；不能只在 mem 猜一个 Linux-only policy | platform C 与 HugeRegion options 应同时补，不能只补 C++ |
+| 选择 NUMA nodes + interleave chunk | oneTBB `numa_allocation.h:40-48` 接收 node vector 与 `bytes_per_chunk` | **已裁决 non-goal**：Linux mask、Windows single-node `VirtualAlloc2`、macOS 无公开 NUMA API 不能形成同形三平台合同；现有 single-node preferred/bind + all-node interleave 保留。真实 topology owner 出现后才共同重开 platform/mem | 不增加；避免一个大部分平台只能拒绝的伪可移植 C options |
 
 传统 allocator adapter 是本轮最明确的功能缺口：它在 oneTBB、Folly、marl、mimalloc C++ facade
 中反复出现，解决的是常见第三方/标准容器消费，不是为 benchmark 增加一种 allocator。实现时优先让
@@ -146,7 +146,8 @@ header-only edge 说明应显式记录这条 util-core 边，避免施工顺序�
    OOM 测试。只对比同合同 peer，不为它另造孤立 benchmark。
 3. [x] 给 FiberStackPool 补 capacity + trim，接 scheduler 的真实 shutdown reclaim 控制点；VM release
    位于锁外，shutdown 回收在 worker join 后执行。
-4. platform 先裁决 selected-node/chunk NUMA；若三平台合同不诚实则明确保持 non-goal。
+4. [x] platform 已裁决 selected-node/chunk NUMA：三平台合同不诚实，明确保持 non-goal；现有
+   single-node 与 all-node interleave 不变。
 5. 完成 shared-distribution 三平台同链接模型证书，并复跑现有 correctness/sanitizer/surface gates。
 
 退出条件不是“类型数量追平成熟库”，而是：P0 为零；P1 每项有实现或有证据的拒绝；C++ 常见消费无需

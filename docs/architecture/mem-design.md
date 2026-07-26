@@ -231,6 +231,9 @@ variable-size pool 对象，这是有意的产品边界，不是“没有可变�
 
 - `HugeRegion`、显式 NUMA bind/interleave、THP/prefault 保留；bind/interleave 互斥，interleave
   只能搭配 NUMA-any 且不能走 local factory；策略失败是可观察的降级或错误，不保证自动 NUMA 最优。
+- selected-node set + `bytes_per_chunk` 明确保持 non-goal：Linux mask、Windows single-node
+  `VirtualAlloc2` 与 macOS 无公开 NUMA API 无法形成诚实三平台合同；现有 single-node 与 all-node
+  interleave 覆盖基础 VM 原语。真实分片消费者出现后，由 platform 与拥有拓扑生命周期的上层共同重开。
 - `reserve_huge_1g_pages` 是进程启动期冷控制面，原生 C++ 返回 `Status`，C ABI 原样转移同一
   representation；不得在 C 层把 bool 重新猜成错误原因。mimalloc 当前只暴露 ENOMEM，映射
   `ResourceExhausted` 并在 message 保留 native value，非法 node/溢出为 `OutOfRange`。

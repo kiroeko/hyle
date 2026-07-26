@@ -199,3 +199,20 @@ VM reserve/release. It records commit, dirty state, compiler/platform, Linux CPU
 binding and Apple QoS; dirty runs or a failed macOS QoS request are not release
 evidence. Formal runs use `-n 15 --samples 2048` on Windows/Linux and `-n 31`
 for each macOS QoS. See `docs/performance/benchmarks-mem.md` §5.
+
+## `mem-shared-link-stat.py` — mem shared standard-adapter certificate
+
+Runs section `L` of `hyle_mem_bench` with one variant per fresh process, alternating
+forward/reverse order, and writes the raw CSV used by the mem same-link table. The benchmark
+must come from `HYLE_STATIC=OFF`, `HYLE_BUILD_TESTS=OFF` shipping configuration.
+
+```bash
+python3 scripts/mem-shared-link-stat.py build-bench/bin/hyle_mem_bench \
+  --runs 15 --platform linux --compiler gcc-14.2 \
+  --cpu 2 --raw docs/performance/mem-shared-same-link-linux.csv
+```
+
+On macOS omit `--cpu` and pass `--apple-qos interactive` or `--apple-qos utility`; the benchmark
+applies and reports that QoS itself, and the driver rejects a failed request. Use repeated `--prefix`
+only when another external launcher is part of the recorded contract. The script rejects static
+linkage and records commit/dirty/QoS state in every row.

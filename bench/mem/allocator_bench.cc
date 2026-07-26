@@ -20,10 +20,15 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <memory_resource>
 #include <thread>
 #include <utility>
 #include <vector>
+
+#if defined(__APPLE__) && defined(__MACH__)
+#include <pthread/qos.h>
+#endif
 
 #include "hyle/mem/allocator.h"
 #include "hyle/mem/pmr.h"
@@ -55,6 +60,28 @@ bool want_section(char id) {
 bool want_link_variant(char id) {
   const char* variant = std::getenv("HYLE_MEM_LINK_VARIANT");
   return variant == nullptr || variant[0] == '\0' || variant[0] == id;
+}
+
+bool configure_apple_qos() {
+#if defined(__APPLE__) && defined(__MACH__)
+  const char* requested = std::getenv("HYLE_BENCH_APPLE_QOS");
+  if (requested == nullptr || requested[0] == '\0') requested = "interactive";
+  qos_class_t qos = QOS_CLASS_USER_INTERACTIVE;
+  if (std::strcmp(requested, "utility") == 0) {
+    qos = QOS_CLASS_UTILITY;
+  } else if (std::strcmp(requested, "interactive") != 0) {
+    std::fprintf(stderr,
+                 "hyle_mem_bench: HYLE_BENCH_APPLE_QOS must be interactive "
+                 "or utility\n");
+    return false;
+  }
+  const int rc = pthread_set_qos_class_self_np(qos, 0);
+  std::printf("HYLE_MEM_LINK_QOS requested=%s qos_ok=%d affinity=unsupported\n",
+              requested, rc == 0 ? 1 : 0);
+  return rc == 0;
+#else
+  return true;
+#endif
 }
 
 // std::pmr::memory_resource over mimalloc -- the SAME-CLASS rival to HYLE's
@@ -94,6 +121,7 @@ class BackendResource final : public std::pmr::memory_resource {
 }  // namespace
 
 int main() {
+  if (!configure_apple_qos()) return 2;
   Allocator a = system_allocator();  // mimalloc backing (HYLE_USE_MIMALLOC=ON)
 
 #if defined(HYLE_STATIC)
