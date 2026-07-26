@@ -11,7 +11,7 @@
 #  include <time.h>
 #endif
 
-// x86-64 fast path (fast_monotonic_ns) reads the TSC directly. Pull in the
+// x86-64 profiling path reads the TSC directly. Pull in the
 // CPUID + rdtsc intrinsics; on MSVC they live in <intrin.h>, on GCC/Clang in
 // <x86intrin.h>/<cpuid.h>. Guarded so non-x86 builds don't reference them.
 #if defined(__x86_64__) || defined(_M_X64)
@@ -41,7 +41,7 @@ constexpr std::uint64_t scale_add_saturated(std::uint64_t whole,
 
 #if defined(HYLE_OS_WINDOWS)
 
-std::uint64_t fast_realtime_ns() noexcept {
+std::uint64_t coarse_realtime_ns() noexcept {
   // Coarse: reads KUSER_SHARED_DATA without the precise-clock path, at the cost
   // of OS-tick resolution. Platform/build point values live in the perf ledger.
   FILETIME ft;
@@ -134,7 +134,7 @@ void sleep_for_ns(std::uint64_t ns) noexcept {
 
 #else  // POSIX (Linux / macOS)
 
-std::uint64_t fast_realtime_ns() noexcept {
+std::uint64_t coarse_realtime_ns() noexcept {
   // Linux CLOCK_REALTIME_COARSE is a vDSO read with kernel-tick resolution.
   // macOS/other POSIX lacking it fall back to CLOCK_REALTIME (still correct,
   // just not faster there). Point values live in the perf ledger.
@@ -165,7 +165,7 @@ void sleep_for_ns(std::uint64_t ns) noexcept {
 
 #endif
 
-bool fast_realtime_available() noexcept {
+bool coarse_realtime_available() noexcept {
 #if defined(HYLE_OS_WINDOWS) || defined(CLOCK_REALTIME_COARSE)
   return true;
 #else
@@ -196,7 +196,7 @@ void sleep_until_ns(std::uint64_t deadline_ns) noexcept {
 }
 
 // ---------------------------------------------------------------------------
-// fast_monotonic_ns: TSC-backed fast path (x86-64), shared by Windows + POSIX.
+// profiling_clock_ns: TSC-backed profiling path (x86-64), Windows + POSIX.
 // Reads rdtsc directly and scales cycles->ns with a precomputed fixed-point
 // multiplier, skipping the OS clock call. Falls back to monotonic_ns() when the
 // hardware lacks an invariant TSC or on non-x86 targets.
@@ -346,7 +346,7 @@ double measure_tsc_hz() noexcept {
 // measurement, no startup busy-spin, no 1% window tolerance), fall back to the
 // timing method when the leaf is masked/absent (hypervisors, older CPUs).
 // NOTE: this runs ONCE at first-call calibration (tsc_scale() Meyers singleton),
-// NOT on the hot read path -- fast_monotonic_ns() is always rdtsc + one
+// NOT on the hot read path -- profiling_clock_ns() is rdtsc + one
 // multiply-shift regardless of how mult was computed. leaf 0x15 improves STARTUP
 // cost (skips the ms-scale busy-spin) and multiplier PRECISION (exact vs ~1%), it
 // does NOT change per-call read latency.
@@ -392,7 +392,7 @@ inline std::uint64_t scale_tsc_to_ns(std::uint64_t tsc, std::uint64_t mult) noex
 
 }  // namespace
 
-bool fast_monotonic_available() noexcept {
+bool profiling_clock_available() noexcept {
 #if HYLE_TIME_HAS_TSC
   return tsc_scale().available;
 #else
@@ -400,7 +400,7 @@ bool fast_monotonic_available() noexcept {
 #endif
 }
 
-std::uint64_t fast_monotonic_ns() noexcept {
+std::uint64_t profiling_clock_ns() noexcept {
 #if HYLE_TIME_HAS_TSC
   const TscScale& s = tsc_scale();
   if (s.available) return scale_tsc_to_ns(read_tsc(), s.mult);

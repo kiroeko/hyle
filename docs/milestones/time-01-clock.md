@@ -11,9 +11,9 @@
 
 - `monotonic_ns()`：唯一可用于 elapsed/deadline/timeout 的稳态时钟。
 - `realtime_ns()`：Unix epoch ns 墙钟，只用于日志/时间戳。
-- `fast_monotonic_ns()` + `fast_monotonic_available()`：x86 invariant-TSC
+- `profiling_clock_ns()` + `profiling_clock_available()`：x86 invariant-TSC
   profiling 快路径；不支持时回退，绝不用于 deadline。
-- `fast_realtime_ns()`：Windows shared-data / Linux
+- `coarse_realtime_ns()`：Windows shared-data / Linux
   `CLOCK_REALTIME_COARSE` 的低分辨率日志时间戳。
 - `sleep_for_ns/us/ms()`、`sleep_until_ns()`。
 - `saturating_add_ns()`、`deadline_after_ns()`、`remaining_ns()`：统一消除
@@ -35,14 +35,14 @@
 3. Windows sleep 使用高分辨率 waitable timer；Linux absolute sleep 使用
    `clock_nanosleep(CLOCK_MONOTONIC,TIMER_ABSTIME)`，只对 `EINTR` 重试。
 4. 相对 sleep 委托绝对 deadline，早醒后仍以 monotonic deadline 为准。
-5. fast realtime 的 epoch 乘法饱和，POSIX clock 调用失败不再静默使用
+5. coarse realtime 的 epoch 乘法饱和，POSIX clock 调用失败不再静默使用
    未初始化 timespec。
 
 ## 正确性边界
 
-- `fast_monotonic_ns` 无全局 max 钳制，跨核/恢复/VM 迁移可能产生毛刺；
+- `profiling_clock_ns` 无全局 max 钳制，跨核/恢复/VM 迁移可能产生毛刺；
   它的价值是高频 profiling，而不是“更快的 deadline 时钟”。
-- `fast_realtime_ns` 值的单位仍是 ns，但分辨率通常只有 1–15ms。
+- `coarse_realtime_ns` 值的单位仍是 ns，但分辨率通常只有 1–15ms。
 - OS 调度器仍可能让线程晚醒；接口保证不主动向下取整、不早返回，不承诺实时调度。
 - 所有 deadline 均使用 absolute monotonic ns；墙钟跳变不得进入调度路径。
 

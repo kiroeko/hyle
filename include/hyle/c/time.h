@@ -31,13 +31,13 @@ extern "C" {
 #endif
 
 /* Clock values are nanoseconds. Deadlines/elapsed time use monotonic, never
- * realtime. fast_monotonic is profiling-only; query availability first. */
+ * realtime. profiling_clock is local-span sampling only; query availability. */
 HYLE_TIME_C_API uint64_t hyle_time_monotonic_ns(void);
-HYLE_TIME_C_API uint64_t hyle_time_fast_monotonic_ns(void);
-HYLE_TIME_C_API int hyle_time_fast_monotonic_available(void);
+HYLE_TIME_C_API uint64_t hyle_time_profiling_clock_ns(void);
+HYLE_TIME_C_API int hyle_time_profiling_clock_available(void);
 HYLE_TIME_C_API uint64_t hyle_time_realtime_ns(void);
-HYLE_TIME_C_API uint64_t hyle_time_fast_realtime_ns(void);
-HYLE_TIME_C_API int hyle_time_fast_realtime_available(void);
+HYLE_TIME_C_API uint64_t hyle_time_coarse_realtime_ns(void);
+HYLE_TIME_C_API int hyle_time_coarse_realtime_available(void);
 HYLE_TIME_C_API void hyle_time_sleep_for_ns(uint64_t ns);
 HYLE_TIME_C_API void hyle_time_sleep_until_ns(uint64_t deadline_ns);
 HYLE_TIME_C_API uint64_t hyle_time_deadline_after_ns(uint64_t timeout_ns);

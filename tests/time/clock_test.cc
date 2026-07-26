@@ -8,13 +8,13 @@
 
 #include "hyle/time/clock.h"
 
-using hyle::time::fast_monotonic_available;
-using hyle::time::fast_monotonic_ns;
-using hyle::time::fast_realtime_ns;
-using hyle::time::fast_realtime_available;
+using hyle::time::coarse_realtime_available;
+using hyle::time::coarse_realtime_ns;
 using hyle::time::Instant;
 using hyle::time::MonotonicTimePoint;
 using hyle::time::monotonic_ns;
+using hyle::time::profiling_clock_available;
+using hyle::time::profiling_clock_ns;
 using hyle::time::realtime_ns;
 using hyle::time::remaining_ns;
 using hyle::time::saturating_add_ns;
@@ -57,32 +57,32 @@ TEST(Clock, RealtimeAdvances) {
   EXPECT_GT(b, a);
 }
 
-TEST(Clock, FastRealtimeIsPlausiblyNow) {
+TEST(Clock, CoarseRealtimeIsPlausiblyNow) {
   // Same epoch sanity as realtime_ns -- catches a wrong 1601/1970 offset or a
   // unit error in the coarse path. Must land in [2020, 2100).
-  std::uint64_t now = fast_realtime_ns();
+  std::uint64_t now = coarse_realtime_ns();
   constexpr std::uint64_t k2020 = 1'577'836'800'000'000'000ull;
   constexpr std::uint64_t k2100 = 4'102'444'800'000'000'000ull;
   EXPECT_GT(now, k2020);
   EXPECT_LT(now, k2100);
 }
 
-TEST(Clock, FastRealtimeTracksRealtime) {
+TEST(Clock, CoarseRealtimeTracksRealtime) {
   // The coarse clock must agree with realtime_ns to within its resolution (~1-15
   // ms tick) + slack. A wrong scale/epoch would drift far more than that. Compare
   // the two taken back-to-back: |fast - precise| should be under one coarse tick
   // plus a generous margin (50 ms covers any tick granularity + scheduling).
   std::uint64_t p = realtime_ns();
-  std::uint64_t f = fast_realtime_ns();
+  std::uint64_t f = coarse_realtime_ns();
   std::uint64_t diff = p > f ? p - f : f - p;
   EXPECT_LT(diff, 50'000'000ull) << "precise=" << p << " coarse=" << f;
 }
 
-TEST(Clock, FastRealtimeAvailabilityMatchesFallbackContract) {
+TEST(Clock, CoarseRealtimeAvailabilityMatchesFallbackContract) {
 #if defined(_WIN32) || defined(CLOCK_REALTIME_COARSE)
-  EXPECT_TRUE(fast_realtime_available());
+  EXPECT_TRUE(coarse_realtime_available());
 #else
-  EXPECT_FALSE(fast_realtime_available());
+  EXPECT_FALSE(coarse_realtime_available());
 #endif
 }
 
@@ -268,14 +268,14 @@ TEST(Clock, ChronoSleepUntilDoesNotReturnEarly) {
   EXPECT_GE(hyle::time::monotonic_now(), deadline);
 }
 
-TEST(Clock, FastMonotonicTracksMonotonicOverSleep) {
-  // The fast clock's elapsed must agree with the OS monotonic clock's elapsed
+TEST(Clock, ProfilingClockTracksMonotonicOverSleep) {
+  // The profiling clock's elapsed must agree with the OS clock's elapsed
   // over the same interval -- this is what proves the TSC calibration is right
   // (a wrong tsc_hz would make the fast delta drift from the real one).
-  std::uint64_t f0 = fast_monotonic_ns();
+  std::uint64_t f0 = profiling_clock_ns();
   std::uint64_t m0 = monotonic_ns();
   sleep_for_ms(50);
-  std::uint64_t f1 = fast_monotonic_ns();
+  std::uint64_t f1 = profiling_clock_ns();
   std::uint64_t m1 = monotonic_ns();
   double fast_delta = static_cast<double>(f1 - f0);
   double mono_delta = static_cast<double>(m1 - m0);
@@ -286,13 +286,13 @@ TEST(Clock, FastMonotonicTracksMonotonicOverSleep) {
   EXPECT_LT(rel_err, 0.02) << "fast=" << fast_delta << " mono=" << mono_delta;
 }
 
-TEST(Clock, FastMonotonicFallbackEqualsMonotonic) {
-  // When the hardware fast path is unavailable, fast_monotonic_ns must BE the
+TEST(Clock, ProfilingClockFallbackEqualsMonotonic) {
+  // When the hardware path is unavailable, profiling_clock_ns must BE the
   // safe clock (a plain forward), so the two read essentially the same value.
-  if (fast_monotonic_available()) {
+  if (profiling_clock_available()) {
     GTEST_SKIP() << "invariant TSC present; fast path active, not fallback";
   }
-  std::uint64_t f = fast_monotonic_ns();
+  std::uint64_t f = profiling_clock_ns();
   std::uint64_t m = monotonic_ns();
   // Consecutive reads of the same underlying clock: within a few ms.
   std::uint64_t diff = m > f ? m - f : f - m;

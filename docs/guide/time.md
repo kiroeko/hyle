@@ -11,9 +11,9 @@ callback，也不替业务决定周期 timer 的补发策略。纯 C/FFI 用户�
 | elapsed、timeout、deadline | `monotonic_now()` / `monotonic_ns()` | realtime | 单调、零点无意义 |
 | 日志、协议、Unix epoch | `realtime_now()` / `realtime_ns()` | monotonic 当日期 | 可因校时跳变 |
 | 普通 C++ duration/deadline | chrono typed 入口 | 手写 ns 乘法与加法 | 转换向上取整并饱和 |
-| 简单作用域耗时 | `Instant::now()` + `elapsed()` | fast clock 默认化 | 类型安全、差值可为负 |
-| 高频同核 profiling | `fast_monotonic_ns()` | timeout | 先查 availability；x86 TSC 才可能更快 |
-| 高频粗粒度日志时间戳 | `fast_realtime_ns()` | 精确事件排序 | coarse 源可能一个 tick 内不变 |
+| 简单作用域耗时 | `Instant::now()` + `elapsed()` | profiling clock 默认化 | 类型安全、差值可为负 |
+| 高频同核 profiling | `profiling_clock_ns()` | timeout | 先查 availability；x86 TSC 才可能更快 |
+| 高频粗粒度日志时间戳 | `coarse_realtime_ns()` | 精确事件排序 | coarse 源可能一个 tick 内不变 |
 | 阻塞当前 OS 线程 | `sleep_for` / `sleep_until` | sched worker 上调用 | 至少睡到 deadline；0 是 no-op |
 | 挂起 HYLE fiber | `hyle::sched::sleep_*` | `time::sleep_*` | 不阻塞 worker |
 | 混合/任意 deadline，大量 cancel | `TimerQueue` | heap / common queue | O(1) arm/cancel；single-owner |
@@ -47,9 +47,10 @@ const std::uint64_t left = hyle::time::remaining_ns(deadline);
 NaN/非正数转 0，正值向上取整到 ns，超范围饱和。`Instant` 的 `elapsed()`/`until()` 是非负
 便利入口；`later - earlier` 与 `std::chrono` 一样保留方向，可能为负。
 
-`fast_monotonic_ns` 只适合同一 pinned/近邻热路径的 profiling。跨核迁移、suspend 或 VM
-migration 可能破坏它作为 deadline 钟的假设。availability 为 false 时会安全回退，但这不等于
-应该把它写进 timeout 代码。`fast_realtime_ns` 同理是日志吞吐选项，不是精确钟。
+`profiling_clock_ns` 只适合同一 pinned/近邻热路径的 profiling。它返回缩放到 ns 的 TSC
+采样，但名称和合同都不承诺 monotonic：跨核迁移、suspend 或 VM migration 可能让差值失真。
+availability 为 false 时会安全回退，但这不等于应该把它写进 timeout。`coarse_realtime_ns`
+是粗粒度日志时间戳；coarse 是稳定语义，是否更快只由当前平台性能证书说明。
 
 ## sleep：先问“谁在睡”
 

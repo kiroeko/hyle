@@ -29,9 +29,9 @@
 | 操作 | Windows x64 | WSL GCC 14.2 | Apple M4 | 结论 |
 |---|---:|---:|---:|---|
 | monotonic / `steady_clock` | 约同档（ratio 1.002） | 12.574 / 12.627 | 14.118 / 14.151 | 三平台统计平；默认路径达到 OS/标准库同档 |
-| fast monotonic / default | 约 1.77× throughput | 6.813 / 12.574（1.84×） | 13.789 / 14.118 | x86 可赢；M4 availability=false，仅回退 |
+| profiling clock / default | 约 1.77× throughput | 6.813 / 12.574（1.84×） | 13.789 / 14.118 | x86 TSC 可赢；M4 availability=false，仅回退 |
 | realtime / `system_clock` | 统计平 | 12.697 / 12.624 | 14.714 / 14.667 | 三平台同档 |
-| fast realtime / default | 约 5.19× throughput | 3.821 / 12.697（3.32×） | 14.119 / 14.714 | Win/Linux coarse 可赢；mac availability=false |
+| coarse realtime / default | 约 5.19× throughput | 3.821 / 12.697（3.32×） | 14.119 / 14.714 | Win/Linux coarse 可赢；mac availability=false |
 
 默认钟本来就复用标准库/OS 原语，因此目标是“不因 HYLE 抽象退化”，不是声称比同一个
 primitive 更快。M4 fallback 即设计成功，不能把约 1.02–1.04 的同函数采样差写成 fast path。
@@ -95,7 +95,7 @@ interactive 结论一致：对 checked 合同赢，对 naked expire 下界约慢
 | 项 | 状态 |
 |---|---|
 | 默认 clock | SOTA 同档：与 `std::chrono` 同 primitive，无额外抽象损耗 |
-| x86 opt-in fast clocks | 有真实收益；只能用于允许相应精度/稳定性 trade-off 的路径 |
+| opt-in profiling/coarse clocks | x86/支持 coarse 的平台有真实收益；只能用于合同允许的路径 |
 | TimerQueue 算法 | SOTA radix，同 Seastar 复杂度；跨平台总体强，WSL reverse churn 约 7% 缺口公开保留 |
 | Common vs 同合同链 | 三平台不输；M4 对 naked expire 下界有约 22% 安全税 |
 | timer 精度 | exact ns key；实际唤醒延迟仍受 OS/event-loop 调度影响 |
@@ -107,7 +107,7 @@ interactive 结论一致：对 checked 合同赢，对 naked expire 下界约慢
 ```bash
 scripts/bench-stat.py <build>/bin/hyle_misc_bench -n 15 \
   --pair "std::chrono::steady_clock::now" "HYLE monotonic_ns" \
-  --pair "HYLE monotonic_ns" "HYLE fast_monotonic_ns (rdtsc)" \
+  --pair "HYLE monotonic_ns" "HYLE profiling_clock_ns (rdtsc)" \
   --pair "std::chrono::system_clock::now" "HYLE realtime_ns"
 
 scripts/bench-stat.py <build>/bin/hyle_timer_queue_bench -n 15 \

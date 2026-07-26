@@ -29,7 +29,7 @@ native time ──────────────────────�
 |---|---|---|
 | typed clock | `monotonic_now`、`realtime_now`、`Duration`、time point | C++ 正常代码避免把墙钟、duration、deadline 混成整数 |
 | compact clock | `monotonic_ns`、`realtime_ns` | 热路径、系统边界和 C ABI 使用一个明确的 ns 表示 |
-| opt-in clock | `fast_monotonic_ns`、`fast_realtime_ns` + availability | profiling/coarse timestamp 可换取读成本；绝不偷偷改变默认钟 |
+| opt-in clock | `profiling_clock_ns`、`coarse_realtime_ns` + availability | 名称表达 profiling/coarse 语义；绝不偷偷改变默认钟 |
 | arithmetic | 饱和 duration 转换、`deadline_after`、`remaining` | 消除 `now + timeout` 溢出和向下舍入导致的提前超时 |
 | blocking sleep | 相对/绝对、整数/chrono | OS 线程休眠；fiber 必须使用 `sched`，不能阻塞 worker |
 | elapsed | `Instant` | oneTBB `tick_count` / `std::chrono` 形状；差值有符号，便利方法显式 clamp |
@@ -46,9 +46,9 @@ drift 与取消策略属于 executor/event loop；底层只提供一次性节点
 日志、协议和文件时间。两者不能相减或互换。
 
 默认 C++ 钟 header-inline 到 `std::chrono`，避免无意义的 DLL 跳转。C ABI 是导出 wrapper。
-`fast_monotonic` 在有 invariant TSC 的 x86 上才启用，可能受 suspend/VM migration/跨核
-偏差影响，因此禁止用于 deadline。`fast_realtime` 仅在系统存在真正 coarse 源时报告
-available；否则透明回退。availability 是策略输入，不是正确性前置条件。
+`profiling_clock` 在有 invariant TSC 的 x86 上才启用，可能受 suspend/VM migration/跨核
+偏差影响，因此名称不承诺 monotonic，并禁止用于 deadline。`coarse_realtime` 仅在系统存在
+真正 coarse 源时报告 available；否则透明回退。availability 是策略输入，不是正确性前置条件。
 
 相对 timeout 转绝对 deadline 必须饱和并向上取整。绝对 sleep 在 Windows 使用高分辨率
 waitable timer，在 Linux 使用绝对 `clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME)`；

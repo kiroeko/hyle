@@ -54,15 +54,16 @@ HYLE_FORCE_INLINE std::uint64_t monotonic_ns() noexcept {
   return value > 0 ? static_cast<std::uint64_t>(value) : 0;
 }
 
-// Fast monotonic counter in ns, read straight from the CPU timestamp counter
-// (rdtsc) instead of going through the OS primitive. It can be materially
-// cheaper because it skips the QPC/clock_gettime call shell; platform/build
-// point values live in the performance ledger. Opt-in: you pick it at the call
-// site, and the default monotonic_ns() pays nothing for its existence.
+// Profiling clock in scaled ns, read straight from the CPU timestamp counter
+// (rdtsc) instead of going through the OS primitive. Its unit makes local span
+// samples convenient; its name deliberately does NOT promise a monotonic
+// deadline clock. It can be materially cheaper because it skips the
+// QPC/clock_gettime call shell; platform/build point values live in the
+// performance ledger. Opt-in: the default monotonic_ns() pays nothing for it.
 //
 // TRADEOFFS (read before using -- this is why it is NOT the default):
 //   - Requires an invariant TSC (constant rate, synced across cores). Probed via
-//     CPUID; call fast_monotonic_available() to check. On hardware without it
+//     CPUID; call profiling_clock_available() to check. On hardware without it
 //     (or non-x86), this transparently FALLS BACK to monotonic_ns() -- always
 //     safe, just not faster there.
 //   - MAY JUMP after the machine wakes from sleep/suspend or on VM migration:
@@ -83,13 +84,13 @@ HYLE_FORCE_INLINE std::uint64_t monotonic_ns() noexcept {
 // USE IT FOR: high-frequency elapsed-time sampling / profiling hot-path spans
 // where you want the lowest possible read cost and a rare post-resume glitch is
 // tolerable. When in doubt, use monotonic_ns().
-HYLE_TIME_API std::uint64_t fast_monotonic_ns() noexcept;
+HYLE_TIME_API std::uint64_t profiling_clock_ns() noexcept;
 
-// True iff fast_monotonic_ns() uses the hardware TSC fast path on this machine
-// (invariant TSC present and calibrated). When false, fast_monotonic_ns() is
+// True iff profiling_clock_ns() uses the hardware TSC path on this machine
+// (invariant TSC present and calibrated). When false, profiling_clock_ns() is
 // just a forwarder to monotonic_ns() and offers no speedup. Result is cached;
 // the first call triggers CPUID probing + calibration.
-HYLE_TIME_API bool fast_monotonic_available() noexcept;
+HYLE_TIME_API bool profiling_clock_available() noexcept;
 
 // Wall-clock ns since 1970-01-01T00:00:00Z (UTC), not counting leap seconds.
 // Header-inline for the same one-hop reason as monotonic_ns(). May jump if the
@@ -99,30 +100,28 @@ HYLE_FORCE_INLINE std::uint64_t realtime_ns() noexcept {
   return value > 0 ? static_cast<std::uint64_t>(value) : 0;
 }
 
-// Fast wall-clock ns -- the realtime counterpart of fast_monotonic_ns(). Reads the
-// OS's COARSE time source (Windows GetSystemTimeAsFileTime = KUSER_SHARED_DATA
-// read; Linux CLOCK_REALTIME_COARSE = vDSO), skipping the high-precision path
-// realtime_ns() uses. It is materially cheaper on systems where that coarse
-// source exists; exact ratios are platform/build dependent and live in the
-// benchmark ledger rather than the API contract.
+// Coarse wall-clock ns. Reads the OS's coarse source (Windows
+// GetSystemTimeAsFileTime = KUSER_SHARED_DATA; Linux CLOCK_REALTIME_COARSE =
+// vDSO), skipping the high-precision path realtime_ns() uses. Coarse resolution
+// is the stable contract; any speedup is platform evidence rather than API.
 //
 // TRADEOFF (why it is NOT the default): when a native coarse clock is available,
 // its RESOLUTION is an OS tick rather than one nanosecond. The value is still a
 // wall-clock ns count since the epoch, but it may update only once per tick, so
 // nearby calls can return the same value. On systems without a coarse source this
-// entry falls back to realtime_ns(); query fast_realtime_available() when the
+// entry falls back to realtime_ns(); query coarse_realtime_available() when the
 // distinction affects policy. The same jump-on-adjust caveat as realtime_ns()
 // applies (never use it for elapsed/deadlines -- use monotonic_ns()).
 //
 // USE IT FOR: high-frequency wall-clock TIMESTAMPS where ms resolution is fine and
 // read cost matters -- log record stamps, trace events, sampling. When you need
 // true sub-ms wall-clock precision (rare), use realtime_ns().
-HYLE_TIME_API std::uint64_t fast_realtime_ns() noexcept;
+HYLE_TIME_API std::uint64_t coarse_realtime_ns() noexcept;
 
-// True only when fast_realtime_ns() uses a genuinely coarser/faster native
-// source. It is false on platforms where that entry transparently falls back
-// to realtime_ns(), allowing a logging pipeline to make an informed choice.
-HYLE_TIME_API bool fast_realtime_available() noexcept;
+// True only when coarse_realtime_ns() uses a genuinely coarse native source.
+// It is false on platforms where that entry transparently falls back to
+// realtime_ns(), allowing a logging pipeline to make an informed choice.
+HYLE_TIME_API bool coarse_realtime_available() noexcept;
 
 // Sleep at least `ns` (the OS may round up / wake late). 0 is an immediate
 // no-op; yielding is deliberately left to the scheduling API.

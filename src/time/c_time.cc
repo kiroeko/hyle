@@ -84,20 +84,20 @@ extern "C" {
 uint64_t hyle_time_monotonic_ns(void) {
   return hyle::time::monotonic_ns();
 }
-uint64_t hyle_time_fast_monotonic_ns(void) {
-  return hyle::time::fast_monotonic_ns();
+uint64_t hyle_time_profiling_clock_ns(void) {
+  return hyle::time::profiling_clock_ns();
 }
-int hyle_time_fast_monotonic_available(void) {
-  return hyle::time::fast_monotonic_available() ? 1 : 0;
+int hyle_time_profiling_clock_available(void) {
+  return hyle::time::profiling_clock_available() ? 1 : 0;
 }
 uint64_t hyle_time_realtime_ns(void) {
   return hyle::time::realtime_ns();
 }
-uint64_t hyle_time_fast_realtime_ns(void) {
-  return hyle::time::fast_realtime_ns();
+uint64_t hyle_time_coarse_realtime_ns(void) {
+  return hyle::time::coarse_realtime_ns();
 }
-int hyle_time_fast_realtime_available(void) {
-  return hyle::time::fast_realtime_available() ? 1 : 0;
+int hyle_time_coarse_realtime_available(void) {
+  return hyle::time::coarse_realtime_available() ? 1 : 0;
 }
 void hyle_time_sleep_for_ns(uint64_t ns) {
   hyle::time::sleep_for_ns(ns);

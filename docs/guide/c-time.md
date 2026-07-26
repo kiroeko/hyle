@@ -13,8 +13,8 @@
 |---|---|---|
 | timeout / elapsed | `hyle_time_monotonic_ns` | 唯一可用于 deadline 的钟 |
 | 日志 / 协议时间戳 | `hyle_time_realtime_ns` | Unix epoch；会受校时影响 |
-| 高频 profiling | `hyle_time_fast_monotonic_ns` | 先查 available；禁止用于 deadline |
-| 粗粒度高频日志 | `hyle_time_fast_realtime_ns` | 先查 available；可能多次返回同值 |
+| 高频 profiling | `hyle_time_profiling_clock_ns` | 先查 available；禁止用于 deadline |
+| 粗粒度高频日志 | `hyle_time_coarse_realtime_ns` | 先查 available；可能多次返回同值 |
 | 相对 timeout → deadline | `hyle_time_deadline_after_ns` | 饱和，不会 wrap 到过去 |
 | deadline → 剩余时间 | `hyle_time_remaining_ns` | 已到期返回 0 |
 | 阻塞 OS 线程 | `sleep_for_ns/us/ms`、`sleep_until_ns` | fiber 请用 sched；0 不等于 yield |
@@ -107,7 +107,7 @@ hyle_status_free(&st);
 
 | 分组 | 动态入口 | header-inline |
 |---|---|---|
-| clocks/deadline/sleep | `monotonic_ns`、`fast_monotonic_ns/available`、`realtime_ns`、`fast_realtime_ns/available`、`sleep_for_ns`、`sleep_until_ns`、`deadline_after_ns`、`remaining_ns` | `sleep_for_us/ms` |
+| clocks/deadline/sleep | `monotonic_ns`、`profiling_clock_ns/available`、`realtime_ns`、`coarse_realtime_ns/available`、`sleep_for_ns`、`sleep_until_ns`、`deadline_after_ns`、`remaining_ns` | `sleep_for_us/ms` |
 | timer node | `timer_create/destroy`、`timer_user_data/set_user_data`、`timer_deadline_ns`、`timer_is_scheduled` | — |
 | general queue | `queue_create/create_at/destroy`、`queue_schedule/cancel/advance/cancel_all`、`queue_next_deadline_ns/size/empty` | `queue_schedule_after` |
 | common queue | `common_queue_create/destroy`、`common_queue_schedule/schedule_after/cancel/advance/cancel_all`、`common_queue_next_deadline_ns/size/empty/duration_ns` | `common_queue_schedule_now` |

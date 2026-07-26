@@ -58,12 +58,12 @@ int main(void) {
   uint64_t r0 = hyle_time_realtime_ns();
   CHECK(m0 != 0);
   CHECK(r0 > UINT64_C(1577836800000000000)); /* 2020-01-01 */
-  CHECK(hyle_time_fast_monotonic_ns() != 0);
-  CHECK(hyle_time_fast_realtime_ns() != 0);
-  CHECK(hyle_time_fast_monotonic_available() == 0 ||
-        hyle_time_fast_monotonic_available() == 1);
-  CHECK(hyle_time_fast_realtime_available() == 0 ||
-        hyle_time_fast_realtime_available() == 1);
+  CHECK(hyle_time_profiling_clock_ns() != 0);
+  CHECK(hyle_time_coarse_realtime_ns() != 0);
+  CHECK(hyle_time_profiling_clock_available() == 0 ||
+        hyle_time_profiling_clock_available() == 1);
+  CHECK(hyle_time_coarse_realtime_available() == 0 ||
+        hyle_time_coarse_realtime_available() == 1);
   CHECK(hyle_time_deadline_after_ns(UINT64_MAX) == UINT64_MAX);
   CHECK(hyle_time_remaining_ns(0) == 0);
   hyle_time_sleep_for_ns(0);

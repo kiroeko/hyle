@@ -6,6 +6,14 @@
 > [`benchmarks-time`](../performance/benchmarks-time.md)。本轮只回答：既有 strict closure
 > 是否仍成立、成熟库还提示了哪些真实需求、哪些能力应留在相邻模块。
 
+实施状态（2026-07-26）：
+
+- [x] integral duration 已改为精确 checked/saturating rational arithmetic（`52595a6`）；
+- [x] 旧 `fast_monotonic` / `fast_realtime` 已分别改为语义名 `profiling_clock` /
+  `coarse_realtime`，未保留未发布 ABI 兼容壳；
+- [ ] TSC fallback 冷路与正常使用性能矩阵待本轮后续提交；
+- [ ] 新最终形状完成三平台复证前，strict 状态继续保持打开。
+
 ## 结论先行
 
 `time` 的 timer 数据结构与模块边界是强的：任意 deadline 使用 exact-ns radix queue，固定
