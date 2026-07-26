@@ -117,6 +117,24 @@
 > 本批四项代码量：全库 257,945；自实现含测试 123,262；自实现不含测试 84,693；
 > container 实现 9,935。
 
+> **2026-07-26 ordered/range associative 能力补全：** 由 range query、确定性遍历、
+> 时间索引与范围淘汰的真实需求新增 allocator-aware `BTreeMap/Set`，没有按 benchmark
+> 暴露 node capacity、rank/finger 或常态测项 metadata。C++ 面为 unique-key owning
+> 双向容器，覆盖 find/lower/upper/equal-range、熟悉 mutation、range erase、copy/move；
+> map key 只读/value 可写。约 256-byte leaf、值驻 leaf/internal node；copy 由逐项重插
+> 收束为 O(N) 树形克隆，范围删除按 leaf run 搬移并可直接卸下完全过期页，POD slot 走
+> memmove，OOM 在结构 mutation 前完成必要分配。C ABI 新增 runtime size/alignment/
+> comparator/allocator 的 POD map/set、trivial cursor、range visit/erase 和安全的数值
+> comparator；动态声明由 184 增至 **226**，pure-C callable manifest 同步为 **226**。
+> 随机 differential 对拍 std::map/set、move-only、alias、copy-comparator、OOM 和 C 随机
+> expiry/refill 均覆盖；Windows、GCC14 ASan/UBSan 与 M4 typed/C 门通过。
+> 三平台 n=15 对 Abseil B-tree 的十个实际 workload 已进入 performance 总账：O(N) copy
+> 三平台 1.565–4.048x；WSL build/churn/domain miss/range 领先；M4 range/iteration/set 领先，
+> 但 M4 churn/time-expiry throughput 仍为 0.916x/0.872x，x86 above-max miss 也明确落后。
+> 因而 ordered 能力轴完成，但不把整个 B-tree 写成全轴 SOTA；下一次性能重开由真实 M4
+> mutation profile 触发，不按单条 miss 分布继续塑形。本批四项代码量：全库 261,927；
+> 自实现含测试 126,752；自实现不含测试 87,575；container 实现 12,817。
+
 ## 结论
 
 本节是 2026-07-19 历史结论；按 2026-07-25 新合同，container 的既有功能、红队、C ABI

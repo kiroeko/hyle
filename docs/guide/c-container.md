@@ -255,6 +255,57 @@ push/append/resize fill/insert 的输入都可来自当前 vector 的 live data�
 `visit` 的 visitor 返回 0 可提前停止；此时 `visit` 也返回 0，完整遍历返回 1。
 遍历期间不得修改 map。
 
+## 运行时擦除有序 B-tree map / set
+
+需要 lower/upper bound、按 key 顺序遍历、范围访问或时间窗口淘汰时，使用
+`hyle_container_btree_map_*` / `hyle_container_btree_set_*`。只有点查且不要求顺序时，
+flat hash 的 expected O(1) 更合适。C 面按值保存 trivially-copyable key/value；options
+记录 size/alignment、comparator/context 和 allocator，不暴露 C++ 模板或 node 布局。
+
+```c
+typedef struct job_record {
+  uint64_t id;
+} job_record;
+
+hyle_container_btree_options opt = HYLE_CONTAINER_BTREE_MAP_OPTIONS_FOR(
+    uint64_t, job_record, hyle_container_compare_u64);
+hyle_container_btree_map* deadlines = NULL;
+hyle_status st = hyle_container_btree_map_create(&deadlines, &opt);
+if (!hyle_status_is_ok(st)) { hyle_status_free(&st); return 1; }
+hyle_status_free(&st);
+
+uint64_t deadline = 100;
+job_record job = {0};
+hyle_container_insert_result result;
+st = hyle_container_btree_map_insert(&result, deadlines, &deadline, &job);
+if (!hyle_status_is_ok(st)) { hyle_status_free(&st); return 1; }
+hyle_status_free(&st);
+
+uint64_t now = 101;
+(void)hyle_container_btree_map_erase_range(deadlines, NULL, &now);
+hyle_container_btree_map_destroy(deadlines);
+```
+
+内置 comparator 有 i32/u32/i64/u64 和逐字节顺序；它们通过 memcpy 读取数值，不要求调用
+方传入地址天然对齐。结构体 key、字符串内容或业务排序应提供返回 `<0 / 0 / >0` 的 strict
+weak-order callback；context 必须活到 handle 销毁，callback 不得修改同一容器。
+
+map 的 insert 不覆盖已有值，`insert_or_assign` 才覆盖；两者都用共享
+`hyle_container_insert_result` 区分 inserted/already-present/assigned，并用 Status 报 OOM。
+set 只存 key，不需要 dummy value。find 返回容器拥有的借用地址；contains/erase 是普通控制
+流。成功 mutation 会使此前所有 find pointer 和 cursor 失效，失败或未命中的操作不失效。
+
+`begin/lower_bound/upper_bound` 写出 trivial opaque cursor；`cursor_key/value` 取得当前元素，
+`cursor_next/previous` 双向移动，其中 previous(end) 可到最后一个元素。cursor 只能交回创建
+它的同一个 map/set，并应先用 `cursor_valid` 检查。`visit_range(lower, upper, ...)` 与
+`erase_range(lower, upper)` 都使用半开区间 `[lower, upper)`；任一 bound 为 NULL 表示该侧
+无界。visitor 返回 0 可提前停止，遍历期间不得修改容器或保留借用地址。
+
+查找/插入/删除为 O(log N)，有序全遍历为 O(N)；长范围删除会按 node 中连续 run 批量搬移，
+不是反复从 root 对每个 key 做一次全查找。它是单线程 unique-key index，不提供 multi、
+node extraction/merge、稳定引用或并发锁。共享有序索引应由上层确定锁/快照合同，不能把
+单线程 cursor 当成并发 accessor。
+
 ## 运行时擦除 concurrent hash map
 
 多个线程共享 POD key/value 时，用 `hyle_container_concurrent_hash_map_*`，不要给单线程
@@ -402,6 +453,7 @@ payload 可为 NULL，HYLE 不解释也不拥有它。
 |---|---|
 | `SmallVector<T,N>` / `PodVector<T>` | `hyle_container_vector_*`：options 传 `item_size`/`item_alignment`（通常用 `HYLE_CONTAINER_VECTOR_OPTIONS_FOR`），按值存储 trivially-copyable 元素。C ABI 不接收 C++ ctor/dtor callback；inline `N` 也不是稳定跨 ABI 属性 |
 | `FlatHashMap<K,V>` | `hyle_container_hash_map_*`：C++ map 可拥有 non-trivial 值；C/FFI map 则按 options 中的 size/alignment 擦除 POD，hash/equality 由 callback+ctx 注入 |
+| `BTreeMap<K,V>` / `BTreeSet<K>` | `hyle_container_btree_map_*` / `hyle_container_btree_set_*`：按值 POD ordered index；comparator+ctx 决定顺序，cursor/range visit/range erase 完整覆盖动态有序消费 |
 | `ConcurrentFlatHashMap<K,V>` | `hyle_container_concurrent_hash_map_*`：sharded erased POD map；`find_copy`/`update` 保证锁内访问，不跨 ABI 泄漏无保护 pointer |
 | `ConcurrentNodeHashMap<K,V>` | 并发 POD 读写仍走上述 concurrent map；C 不暴露 node/accessor 布局。若必须长期持有 identity，保存 caller-owned pointer/handle 作为 value，并由业务管理其生命周期 |
 | `FlatHashSet<K>` | `hyle_container_hash_set_*`：按 options 中的 key size/alignment 擦除 POD；独立 set slot，不用 map + dummy value |

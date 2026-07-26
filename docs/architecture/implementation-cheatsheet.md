@@ -15,8 +15,9 @@
 - **全库禁 std 流**:`<iostream>`/`cout`/`cerr`/`endl`/`<sstream>`/`ostream`。诊断走 `std::fprintf(stderr,...)` / obs log;格式化用 `std::format`(值语义)不用 `<<`。
 - **已有同合同 HYLE 类型时禁较弱 std 热路径替代品**：`unordered_map/set`/`std::hash` →
   `FlatHashMap/FlatHashSet` / `Hash<T>`；连续/字符串用 `PodVector`/`SmallVector` /
-  `StringView`/`StringInterner`。ordered/node-stable associative 尚缺，需要其语义时可暂用
-  标准/成熟库，不能为了守规则错误替成不保序且会搬地址的 flat map。
+  `StringView`/`StringInterner`。有序/range 语义用 `BTreeMap/BTreeSet`；单线程
+  node-stable/extract/merge 尚缺，需要该语义时可用标准/成熟库，不能错误替成会搬地址的
+  flat/B-tree。
 - **内部实现可自由用 std**(非导出、非热路径);`std::expected` 是钦定错误模型。
 - **std 取代是否伤 SOTA?已逐条裁决**(coverage-map ①′):intrinsic 背书(`<bit>`→popcnt 等,objdump 证)/编译期零运行时/已实测赢/冷路径——无一落热路径。**新用 std 顶替热路径件前,先查该裁决或实测。**
 

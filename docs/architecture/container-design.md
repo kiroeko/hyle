@@ -13,7 +13,7 @@ container 是 Tier 0 数据结构层：提供平坦 hash、连续数组、字符
                       |
                       v
 C ABI 类型擦除层
-  src/container/c_container.cc
+  src/container/c_container.cc + c_btree.cc
     vector/map erased metadata, allocator-preserving handles,
     pointer-payload concurrent facades, shared hyle_status cold failures
                       |
@@ -24,6 +24,7 @@ C++ typed / source surface      compiled cold cores
   PodVector<T> / SmallVector    hash_bytes, carray grow,
   FlatHashMap<K,V> /            Swiss resize/free,
   FlatHashSet<K>
+  BTreeMap<K,V> / BTreeSet<K>   erased ordered POD B-tree
   ConcurrentFlatHashMap /
   ConcurrentNodeHashMap
   DynamicBitSet / SparseSet    bitset bulk ISA kernels
@@ -52,6 +53,7 @@ Tier 0 dependencies: core cache geometry + error + mem allocator +
 |---|---|---|---|
 | flat map | `FlatHashMap<K,V>`（实现名 `SwissTable`） | erased POD hash map | C++ 支持 non-trivial ownership 与异构查找；C 面按字节存 POD；ctrl+连续 slots；SIMD group probe |
 | flat set | `FlatHashSet<K>` | erased POD hash set | 真 set API/slot；canonical-key find；只读 key 迭代；C 面不要求 dummy mapped value |
+| ordered map / set | `BTreeMap<K,V>` / `BTreeSet<K>` | erased POD B-tree map/set | unique-key；双向有序迭代；lower/upper/range visit/range erase；成功 mutation 后引用与 iterator 失效 |
 | concurrent flat map | `ConcurrentFlatHashMap<K,V>`（短名 `ConcurrentHashMap`） | sharded erased POD concurrent map | 独立 cache-line shard + Swiss table；shared/exclusive accessor；紧凑、高吞吐；rehash 后地址不稳定 |
 | concurrent node map | `ConcurrentNodeHashMap<K,V>` | 不机械导出 node 指针 | bucket RW accessor；node 地址跨 rehash 稳定；表增长保留旧 bucket array，销毁前要求 quiescent |
 | POD dynamic array | `PodVector<T>` | erased POD vector | 默认可用或注入 allocator；copy/move 值语义；header-before-data；allocator/alignment 随 allocation 记录 |
@@ -80,7 +82,7 @@ IntrusiveList 已下沉 core，因为 error/time/sched 都需要它；它不再�
 |---|---|---|
 | 连续 sequence / inline sequence | `PodVector`、`SmallVector` | 已覆盖性能敏感 POD 与小 owning sequence；普通非平凡长序列继续用 `std::vector` |
 | flat associative | `FlatHashMap/Set` | 已覆盖缓存友好的通用 lookup/membership |
-| ordered/range associative | 缺 | range query、稳定排序遍历、调度索引常见；Abseil B-tree 是更贴近现代 cache 的参考，属于下一高优先候选 |
+| ordered/range associative | `BTreeMap/Set` | range query、确定性排序遍历、时间/调度索引；cache-packed unique-key B-tree，C++ typed 与 C erased POD 两面均覆盖 |
 | node/reference-stable associative | `ConcurrentNodeHashMap` 覆盖并发 registry | accessor 生命周期内引用稳定，node 地址跨 grow 稳定；单线程 node extraction/merge 仍不复制 std API |
 | concurrent associative | `ConcurrentFlatHashMap` + `ConcurrentNodeHashMap` | compact/rebuild 与 stable-reference/read-heavy 两种常用形状分开，不靠 policy flag 隐藏不同成本 |
 | 单线程 ring/deque | `RingDeque<T>` / `ByteRingBuffer` | 流式窗口、音视频/网络 staging、外部同步 SPSC 已覆盖；不让调度队列的原子/owner 合同向单线程用户征税 |
@@ -90,10 +92,33 @@ IntrusiveList 已下沉 core，因为 error/time/sched 都需要它；它不再�
 | blocking/unbounded queue | sched 负责等待/背压 | container 保持非阻塞机制，避免另造一套 shutdown/cancel/wait 语义 |
 
 因此当前结论不是“行数已经等价主流全集”，也不是按对手 LOC 补代码。dynamic bitset/
-sparse set、单线程 ring 与 concurrent associative 已通过 C++ 正常入口、C ABI、复杂度与
-实际 graph/active-ID/stream-staging/shared-registry workload；剩余主要结构轴是
-ordered/range associative，下一批先验证 B-tree 的公开需求与节点 SIMD 搜索价值。每项仍必须先有
-真实合同，不能用薄 wrapper 追成熟库类型数量。
+sparse set、单线程 ring、ordered/range 与 concurrent associative 已通过 C++ 正常入口、
+C ABI、复杂度与实际 graph/active-ID/stream-staging/time-index/shared-registry workload。
+剩余负空间主要是 single-thread node extraction/merge 与 ordered multi；两者都需要真实消费者
+触发，不能用薄 wrapper 追成熟库类型数量。
+
+### 有序 B-tree 的实际使用形状
+
+`BTreeMap/Set` 服务 flat hash 无法表达的 lower/upper bound、确定性遍历、时间窗口与范围
+淘汰。设计对照本地 Abseil B-tree 的 cache-packed family shape：entry 同时位于 leaf 和
+internal node，separator 不重复存 key；leaf 目标约 256 bytes，非 root node 至少半满，
+不为单条测项保存 subtree size、rank、finger 或预取 metadata。短数值 key 在 node 内线性
+搜索；自定义 comparator 走二分。该选择由小节点 cache locality 决定，不向用户公开节点
+容量或搜索 policy。
+
+单项 find/insert/erase 为 O(log N)，有序遍历为 O(N)。copy 递归克隆现有树形，O(N) 且
+不调用 comparator；它不是逐项重新 insert 的 O(N log N)。iterator range erase 对 leaf 中
+连续 run 做一次后缀搬移；完全落在删除范围内的 page 可直接卸下，避免先 merge 整页再逐项
+销毁。分裂前会预留必要 sibling/root，OOM 时结构保持不变。trivially-copyable entry 使用
+`memmove`，非平凡 entry 执行 nothrow move construction/destruction；两条路径共享同一公开
+合同，不是 benchmark 特化。
+
+成功 mutation 可能搬移一个 node 内的 slot，因而统一失效既有 iterator/reference/pointer。
+这是 cache-packed storage 的必要代价；需要 grow 后稳定地址的用户选 node-based 结构。
+map iterator 保持 key 只读、value 可写，set iterator 为 `const K&`。公开面只做 unique-key；
+multimap/multiset、node handle、extract/merge、stable reference 与 rank/select 都是明确负空间。
+C ABI 用 runtime size/alignment/comparator/allocator 擦除 POD，并提供 trivial cursor、range
+visitor 与 `[lower,upper)` erase；不冻结 typed C++ node 布局。
 
 ### 两种并发关联容器的实际使用形状
 
@@ -331,6 +356,7 @@ SIMD 只进入可批量处理的字节/lane 工作，不按模块名强套：
 | vector relocation | compiler/libc `memcpy/memmove` | 不重复实现平台已有宽拷贝与 non-temporal 策略 |
 | lock-free queue / atomics | 不做 | 瓶颈是依赖链、cache line ownership 和 CAS，不是 lane arithmetic |
 | DynamicBitSet | SSE4/AVX2/AVX512/NEON runtime dispatch | 位运算与 x86 count 复用 header-only vec DSL；NEON count 用 byte CNT+四路 UDOT，修复 M4 通用 u64-lane reduction 的 12% 缺口；小于 8/16 words 分别走本地 scalar |
+| BTree node search | 数值 key 线性比较；通用 comparator 二分 | 典型 node 很小且 comparator/entry layout 泛型；当前三平台实际 workload 不支持为每个 node 增加 SIMD metadata 或动态派发税 |
 
 长 hash 的宽核放在独立 AVX2 TU，baseline dispatcher 只有在 CPUID+XGETBV 安全门通过后
 调用；varied-input sweep 分别给出 Windows/MSVC 1KiB 与 Linux/GCC14 512B 的保守交叉点。
@@ -350,6 +376,7 @@ HYLE 版本、构建与 ISA 选择变化，不得持久化或作为 wire fingerp
 | StringInterner | 保留 opaque 能力 | permanent 与 refcounted lifecycle 都有真实跨语言用途；batch/result 形状已按实际分片重审 |
 | erased POD vector | 保留能力 | C 没有模板，size/alignment + allocator 是合理动态形状；不加入 C++ ctor/dtor callback |
 | erased POD flat map/set | 保留能力、形状已重塑 | map 拆分 insert/insert_or_assign；set 用独立最小 handle，共享 value_size=0 raw policy，但不暴露伪 value |
+| erased POD B-tree map/set | 保留能力、形状已审定 | C/FFI 确有 runtime ordered index；comparator+ctx、trivial cursor、range visit/erase 覆盖动态消费，不导出 node 布局或 C++ ctor/dtor callback |
 | erased POD concurrent map | 保留能力、形状已审定 | sharded Swiss storage；只返回锁内 copy 或执行 exclusive update callback，不导出无法携带锁的裸 pointer/node accessor |
 | 四类 pointer queue | 保留能力、角色已审定 | C 热路径统一 `try_*`；pointer 是跨 FFI 的 caller-owned work handle，不增加 runtime stride/copy callback；Chase-Lev 明示 owner bottom/thief top，WsFifo 明示 back/front |
 | concurrent pointer vector | 保留能力、形状已重塑 | 明确命名 `concurrent_ptr_vector`；reserve 预分配 stable segments；`try_get(out)` 区分越界与合法 NULL payload；不冒充 erased POD vector |
@@ -408,6 +435,8 @@ pointer/count 的 `try_append/try_insert/try_resize/erase/try_shrink_to_fit` 覆
   OOM/越界不修改旧 size/data/capacity。
 - C flat map 与 typed mutation 语义一致：insert 不覆盖，insert_or_assign 才覆盖；
   三态结果明确区分 inserted/already-present/assigned。
+- C B-tree 与 typed unique-key/range 语义一致；NULL bound 表示无界，成功 mutation 统一
+  使 cursor/pointer 失效，OOM 不改变旧结构。
 - 并发 queue/vector 的稳定最小共同面使用 pointer payload；并发 map 则按 options 擦除
   POD key/value，并用 `find_copy/update` 保住锁的生命周期。
 
@@ -429,6 +458,10 @@ pointer/count 的 `try_append/try_insert/try_resize/erase/try_shrink_to_fit` 覆
 
 - flat Swiss map 的 Windows 已测核心操作领先 Abseil；WSL 除 miss 约慢 3% 外领先，
   set miss 约慢 6%，不作无条件 SOTA 宣称；
+- ordered B-tree 对 Abseil 的三平台实际矩阵中，copy/范围/构建/点查整体同档或领先；
+  M4 单项 erase+insert churn 与 time-index expire/refill 仍分别慢约 8%/13%，Windows/WSL
+  的 above-maximum miss 也会慢约 18%/38%。这些是公开边界，不用 miss 分布特化、常态
+  元数据或 benchmark API 隐藏；
 - PodVector/SmallVector/队列按各自对等形状判断；
 - 路径的大倍数主要来自零分配结构，对同形 string-view 扫描通常是平局；
 - StringInterner 长串增长、重复 churn、并发分片和 batch 分别验收；单调用仍有 DLL seam；
@@ -451,5 +484,6 @@ pointer/count 的 `try_append/try_insert/try_resize/erase/try_shrink_to_fit` 覆
 
 - [abseil Swiss Tables design](https://abseil.io/about/design/swisstables)
 - [SwissTable control-byte overview](https://faultlore.com/blah/hashbrown-tldr)
+- 本地 `abseil-cpp/absl/container/internal/btree.h`（cache-packed B-tree 对照）
 - [C ABI design](./c-abi-design.md)
 - [C ABI authoring guide](./c-abi-authoring-guide.md)

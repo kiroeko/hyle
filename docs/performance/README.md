@@ -118,6 +118,16 @@
 | **container·set** find-miss(100k, Win) | 4.419 | （无当前 std 证书） | — | — | absl flat_hash_set | 5.951 | 1.35x | ✅ Win 15/15；⚠️ WSL **0.94x**，Absl 14/15 |
 | **container·set** insert(100k fresh, Win) | 10.159 | （无当前 std 证书） | — | — | absl flat_hash_set | 19.475 | 1.92x | ✅ Win/WSL 15/15；WSL 1.13x |
 | **container·set** iterate(100k visit, Win) | 1.004 | （无当前 std 证书） | — | — | absl flat_hash_set | 1.916 | 1.91x | ✅ 真 set slot + group iterator；WSL 2.20x |
+| **container·btree** find-hit 64Ki(Win/Lin/M4) | 50.268/44.461/43.389 | （无 std 当前证书） | — | — | absl::btree_map | 49.762/47.301/41.289 | 0.985/1.054/0.958x | ⚠️ Win 小幅 sign-lose；Lin WIN；M4 TIE |
+| **container·btree** in-domain miss(Win/Lin/M4) | **46.917/45.813**/45.691 | （无 std 当前证书） | — | — | absl::btree_map | 49.504/48.134/45.360 | **1.048/1.056x**/TIE | ✅ Win/Lin WIN，M4 TIE；真实 sparse-key 域内 miss |
+| **container·btree** above-max miss 边界(Win/Lin/M4) | 20.014/18.201/**17.951** | （边界分布） | — | — | absl::btree_map | **14.364/15.454**/18.286 | **0.726/0.851x**/1.028x | ⚠️ x86 明确输；不能用此单一分布塑形整个类型 |
+| **container·btree-set** membership(Win/Lin/M4) | 48.572/43.737/**35.834** | （无 std 当前证书） | — | — | absl::btree_set | 48.065/43.604/38.737 | TIE/TIE/**1.072x** | ✅ x86 同档，M4 WIN |
+| **container·btree** lower_bound+scan16(Win/Lin/M4) | 74.487/**65.426/58.363** | （无 std 当前证书） | — | — | absl::btree_map | 74.832/69.499/62.252 | TIE/**1.059/1.093x** | ✅ range 正常入口三平台不落后 |
+| **container·btree** deterministic iteration(Win/Lin/M4) | 1.143/0.929/**0.791** | （无 std 当前证书） | — | — | absl::btree_map | **1.025**/0.953/1.065 | **0.888x**/TIE/**1.339x** | ⚠️ Windows LOSE，Linux TIE，M4 WIN |
+| **container·btree** shuffled build(Win/Lin/M4) | 68.540/**56.422**/58.994 | （无 std 当前证书） | — | — | absl::btree_map | 74.450/63.969/57.662 | TIE/**1.136x**/TIE | ✅ Linux WIN，Win/M4 TIE |
+| **container·btree** O(N) copy(Win/Lin/M4) | **3.064/2.723/1.325** | （无 std 当前证书） | — | — | absl::btree_map | 11.883/4.195/4.517 | **4.048/1.565/3.439x** | ✅ 三平台 WIN；树形克隆，无 comparator |
+| **container·btree** erase+insert churn(Win/Lin/M4) | **47.947/43.602**/47.148 | （无 std 当前证书） | — | — | absl::btree_map | 57.810/46.161/**43.079** | **1.180/1.064x**/**0.916x** | ⚠️ x86 WIN，M4 LOSE |
+| **container·btree** time expiry+refill(Win/Lin/M4) | 30.143/30.214/30.050 | （无 std 当前证书） | — | — | absl::btree_map | 32.561/29.651/**26.142** | TIE/TIE/**0.872x** | ⚠️ M4 LOSE；范围页批删已落地，继续 profile 不加测项元数据 |
 | **container·concurrent-node** protected/8R/mixed（Win/Lin/M4） | 10.239·3.379·4.609 / 8.910·3.133·4.258 / 7.229·5.347·5.576 | （无 std concurrent map） | n/a | n/a | oneTBB concurrent_hash_map 同 accessor | 16.617·7.048·7.120 / 15.749·5.857·6.434 / 10.616·11.834·10.165 | **1.45–2.22x** | ✅ 三平台三路径均 15/15；稳定 node address |
 | **container·concurrent-node** clear+8W rebuild（Win/Lin/M4） | 76.309/62.862/**61.529** | （无 std concurrent map） | n/a | n/a | oneTBB concurrent_hash_map | 90.416/76.056/79.669 | 1.174/1.210/**1.298x** | ⚠️ Win/Linux paired TIE（9/15、12/15）；M4 15/15 WIN |
 | **container·concurrent-flat** protected/8R/mixed（Win/Lin/M4） | 10.926·3.746·5.515 / 8.327·3.528·5.054 / 5.381·6.669·7.034 | （无 std concurrent map） | n/a | n/a | oneTBB concurrent_hash_map 同 accessor | 16.617·7.048·7.120 / 15.749·5.857·6.434 / 10.616·11.834·10.165 | **1.25–1.96x** | ✅ 三平台三路径均 15/15；compact Swiss shards |

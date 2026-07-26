@@ -12,6 +12,7 @@
 | **StringInterner / string 收口表** | ✅ **2026-07-19 三平台** | Win / WSL / M4；lifecycle 落后已诚实登记；2026-07-26 batch 分片锁改动待刷新 |
 | **path** | ✅ 双平台 n=15 | Win+Lin；算法基线 + filesystem 分离 |
 | **FlatHashMap / FlatHashSet** | ✅ Windows+WSL n=15；⏳ M4 | 同合同 Abseil；WSL map/set miss 是已登记小缺口 |
+| **BTreeMap / BTreeSet** | ✅ **2026-07-26 三平台 n=15** | Abseil B-tree 同类；按 ordered index、range scan、build/copy/churn、time expiry 十轴验收；M4 mutation 缺口与 x86 above-max miss 明示 |
 | **hash / mix64 / Hash&lt;T&gt;** | ✅ Windows/WSL n=15 长 hash SIMD；⏳ M4 | Win ≥1KiB、Linux ≥512B 产品派发；其余历史表待三平台统一刷新 |
 | **SmallVector / PodVector** | ⚠️ 主 Win + 部分补测 | owning vector 形状待本轮统一三平台刷新 |
 | **ConcurrentVector** | ✅ Windows+WSL n=15；⏳ M4 | append/range iteration 同合同 SOTA；WSL `operator[]` 是已知缺口 |
@@ -42,6 +43,43 @@
 | **RingDeque** | Folly fixed-capacity ring shape / `std::deque` | ✅ Win/M4 快 floor 1.06x/1.15x，WSL 与 floor 同档；三平台快 std 1.28–9.20x |
 | **ByteRingBuffer** | linear byte buffer+memmove / `std::deque<byte>` | ✅ stream staging Win/WSL/M4 快 linear 1.82x/1.94x/4.26x，快 deque 约118x/48x/121x |
 | **ConcurrentFlatHashMap / ConcurrentNodeHashMap** | oneTBB `concurrent_hash_map` | ✅ protected hit、8-reader、90/10 mixed 三平台均 15/15 胜；flat rebuild 6.25–7.05x；node rebuild M4 胜、Win/Linux 统计同档 |
+| **BTreeMap / BTreeSet** | Abseil `btree_map/set` | ⚠️ 实际十轴混合：WSL 6 胜/4 平或边界 lose；Windows copy/churn/domain-miss 胜但遍历/above-max miss 输；M4 copy/遍历/set/range 胜，churn/time-expiry 输 |
+
+### BTreeMap / BTreeSet：有序索引真实矩阵（三平台 Release，n=15）
+
+对手是本地 Abseil `btree_map/set`，key/value 均为 `uint64_t`，规模 64Ki entries。
+矩阵不是只挑一条 find-hit：点查询同时包含 hit、稀疏 key 域内 miss 与“所有 query 大于
+最大 key”的边界 miss；正常消费还覆盖 ordered set membership、lower_bound 后扫描 16 项、
+确定性全遍历、乱序事件建索引、复制既有索引、单项 erase+insert churn，以及时间索引
+`erase(begin, lower_bound(cutoff))` 后 refill。比值为 HYLE/Abseil throughput，`>`1 更快：
+
+| workload | Windows HYLE / Absl ns | ratio/判定 | WSL HYLE / Absl ns | ratio/判定 | M4 HYLE / Absl ns | ratio/判定 |
+|---|---:|---|---:|---|---:|---|
+| find hit | 50.268 / 49.762 | 0.985x LOSE（小幅但 13/15 同侧） | **44.461 / 47.301** | **1.054x WIN** | 43.389 / 41.289 | 0.958x TIE |
+| in-domain miss | **46.917 / 49.504** | **1.048x WIN** | **45.813 / 48.134** | **1.056x WIN** | 45.691 / 45.360 | 0.953x TIE |
+| above-maximum miss（边界探针） | 20.014 / **14.364** | **0.726x LOSE** | 18.201 / **15.454** | **0.851x LOSE** | **17.951 / 18.286** | **1.028x WIN** |
+| ordered set membership | 48.572 / 48.065 | 0.999x TIE | 43.737 / 43.604 | 1.005x TIE | **35.834 / 38.737** | **1.072x WIN** |
+| lower_bound + scan 16 | 74.487 / 74.832 | 1.012x TIE | **65.426 / 69.499** | **1.059x WIN** | **58.363 / 62.252** | **1.093x WIN** |
+| deterministic iteration | 1.143 / **1.025** | **0.888x LOSE** | 0.929 / 0.953 | 1.004x TIE | **0.791 / 1.065** | **1.339x WIN** |
+| build from shuffled events | 68.540 / 74.450 | 1.074x TIE（12/15） | **56.422 / 63.969** | **1.136x WIN** | 58.994 / 57.662 | 0.973x TIE |
+| copy existing index | **3.064 / 11.883** | **4.048x WIN** | **2.723 / 4.195** | **1.565x WIN** | **1.325 / 4.517** | **3.439x WIN** |
+| erase + insert churn | **47.947 / 57.810** | **1.180x WIN** | **43.602 / 46.161** | **1.064x WIN** | 47.148 / **43.079** | **0.916x LOSE** |
+| time expiry range + refill | 30.143 / 32.561 | 1.069x TIE | 30.214 / 29.651 | 0.981x TIE | 30.050 / **26.142** | **0.872x LOSE** |
+
+Windows 的 build/mutation absolute spread 较大，判定采用同进程成对 sign test；Windows
+与 WSL 曾被误并行跑在同一物理 CPU 上的一批数据已废弃，没有进入本表。M4 为远程真机。
+
+实现形状来自消费合同：约 256-byte leaf、entry 同时位于 leaf/internal node、unique-key、
+双向 iterator 与 `[lower,upper)` range。copy 由逐项重插改为 O(N) 树形克隆后，三平台均
+明确领先；范围删除按 leaf run 批量搬移并可直接卸下完全过期页；POD slot 用 memmove。
+这些也是普通 ordered index 的复杂度/搬移优化，没有公开 node 容量、subtree rank 或
+benchmark 专用入口。
+
+仍不能写“B-tree 全轴 SOTA”：x86 above-max miss、Windows full iteration、M4 churn 与
+time-expiry 是已确认边界。above-max 只代表 query 分布全部落在表右侧，不能取代域内 miss；
+若为了它在常态节点加入边界 cache，就会被一条测试扭曲。M4 mutation 更值得后续用 profile
+检查 split/merge 和 allocator/cache 行为，但在有跨 workload 收益的架构证据前不继续调
+node capacity，也不添加 per-entry metadata。
 
 ### DynamicBitSet / SparseSet：按实际生命周期验收（三平台 Release，n=15）
 
@@ -286,6 +324,7 @@ WSL 的逐次索引差距与 GCC 对运行时 segment 定位的代码生成有�
 长字节哈希                 → hash_bytes（自动按发布平台/ISA 选择 wyhash 或宽 XXH3）
 通用 hash map              → FlatHashMap
 高频 membership / 去重     → FlatHashSet
+有序索引 / range / 时间窗口 → BTreeMap / BTreeSet
 共享 compact map / 高频重建 → ConcurrentFlatHashMap
 共享 registry / 稳定地址    → ConcurrentNodeHashMap
 稠密 mask/frontier/集合代数 → DynamicBitSet
@@ -314,6 +353,11 @@ scripts/bench-stat.py <build>/bin/hyle_hash_bench -n 15 ...
 # map/set vs absl（需 -DHYLE_BENCH_ABSL；分别复跑）
 HYLE_ABSL_BENCH_FILTER=map scripts/bench-stat.py <build>/bin/hyle_absl_bench -n 15 ...
 HYLE_ABSL_BENCH_FILTER=set scripts/bench-stat.py <build>/bin/hyle_absl_bench -n 15 ...
+
+# ordered map/set actual-use matrix vs Abseil B-tree
+scripts/bench-stat.py <build>/bin/hyle_container_btree_bench -n 15 \
+  --pair "absl::btree_map" "HYLE BTreeMap" \
+  --pair "absl::btree_set" "HYLE BTreeSet"
 
 # vec
 scripts/bench-stat.py <build>/bin/hyle_container_misc_bench -n 15 ...
@@ -360,6 +404,7 @@ scripts/bench-stat.py <build>/bin/hyle_container_concurrent_map_bench -n 15 \
 |---|---|
 | hash 公平性更正 + 长度表 | mem-container §container·hash |
 | SwissTable vs absl | mem-container §container·map + README 总账 |
+| BTreeMap/Set vs Abseil | 本页 §BTreeMap/BTreeSet + README 总账 |
 | SmallVector / PodVector | mem-container §container·vec |
 | string_ref / StringInterner 三平台收口 | mem-container §container·str |
 | path | mem-container §container·path |

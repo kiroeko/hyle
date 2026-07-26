@@ -17,6 +17,7 @@ container 提供性能敏感的基础数据结构、借用字符串/路径算法
 | 普通长寿命非平凡动态序列 | `std::vector` + 可选 mem PMR adapter | HYLE 不造第二个通用 vector |
 | 高频 key→value lookup | `FlatHashMap<K,V>`（实现名 `SwissTable`） | flat slot、expected O(1)、引用在 grow/erase 后失效 |
 | 高频 membership / 去重 | `FlatHashSet<K>` | 真正 set slot，不为 empty mapped value 付空间；expected O(1) |
+| 有序索引、range query、确定性遍历 | `BTreeMap<K,V>` / `BTreeSet<K>` | cache-packed B-tree；查找 O(log N)，成功 mutation 后 iterator/reference 失效 |
 | 多线程共享 map，优先紧凑 storage/重建吞吐 | `ConcurrentFlatHashMap<K,V>` | 分片 Swiss table；accessor 锁住 shard；释放后引用可因 grow/erase 失效 |
 | 多线程 registry，grow 后对象地址必须稳定 | `ConcurrentNodeHashMap<K,V>` | bucket accessor；node 地址跨 rehash 稳定；每元素一次分配、间接访问 |
 | 稠密编号上的 mask、frontier、集合代数 | `DynamicBitSet` | U/8 bytes；单 bit O(1)，bulk O(U/word) 且长 mask 按 ISA 派发 |
@@ -39,11 +40,11 @@ container 提供性能敏感的基础数据结构、借用字符串/路径算法
 
 | 需求 | 当前选择 | 原因/后续 |
 |---|---|---|
-| 有序查找、range query | 暂用 `std::map` 或业务已有 B-tree | `FlatHashMap` 不保序；HYLE 的 cache-friendly B-tree 尚在设计 |
 | 单线程 grow 后引用稳定、node extraction/merge | 暂用 `std::unordered_map` 等 node-based 容器 | HYLE node map 的公开合同是并发 accessor，不为补 std API 数量复制 extraction/merge |
+| duplicate-key ordered multi-index | 暂用 `std::multimap` / `std::multiset` | HYLE 当前只提供 unique-key index；没有真实消费者证明 multi 语义值得复制一套 API |
 
-这是当前真实功能缺口，不是文档藏起来的“负空间”。下一批验证 ordered/range B-tree；
-单线程 node extraction/merge 只有出现真实基础库需求时再设计，不能只因成熟库存在就复制。
+这些是明确负空间。单线程 node extraction/merge 与 ordered multi 只有出现真实基础库需求时
+再设计，不能只因成熟库存在就复制。
 
 ## 连续容器
 
@@ -131,6 +132,48 @@ range 或 initializer-list 构造/批量 insert，并支持 `swap` 与忽略迭�
 forward range 会先 reserve 一次；input iterator 只读取一次。move-only value 的 map
 自然仍不可复制，但 move、lookup、insert/erase 不受影响。批量插入遇到重复 key 沿用
 单项 `insert` 语义：保留先到的 mapped value，不暗中覆盖。
+
+## BTreeMap 与 BTreeSet
+
+当用户需要 `lower_bound`、有序范围、确定性遍历，或按时间/序号删除一段索引时，用
+`BTreeMap` / `BTreeSet`；只有点查且不要求顺序时仍优先 `FlatHashMap` / `FlatHashSet`。
+这不是为了赢某条有序查找 benchmark 新增的别名：flat hash 根本无法表达 range query，
+而 `std::map` 的每元素 node 形状会为短 key/value 支付更多 allocation 与 pointer chase。
+
+```cpp
+#include "hyle/container/btree.h"
+
+hyle::container::BTreeMap<std::uint64_t, Job> deadline_index;
+deadline_index.try_emplace(deadline_ns, Job{id});
+
+const std::uint64_t now = monotonic_now();
+for (auto it = deadline_index.begin();
+     it != deadline_index.lower_bound(now);) {
+  run(it->value());
+  it = deadline_index.erase(it);
+}
+```
+
+map iterator 暴露只读 `entry.key()` 与可写 `entry.value()`；set iterator 只暴露
+`const K&`。两个类型都是 unique-key、owning、双向有序容器，提供熟悉的
+find/contains/count、lower/upper/equal_range、insert/try_emplace/insert_or_assign、
+`operator[]`（map）、iterator/range erase、clear/swap、range/initializer-list 构造和
+copy/move。copy 直接克隆树形，复杂度 O(N)，不会按元素重新比较成 O(N log N)。
+
+节点以约 256-byte leaf 为目标，值同时存于 leaf/internal node；普通查找、插入和删除
+为 O(log N)，完整遍历为 O(N)。范围删除按 leaf run 批量搬移，并能直接卸下完全过期页，
+适合 time index、prefix eviction 和窗口淘汰，但仍按实际删掉的节点工作。它没有为测项
+保留常态 rank、subtree-size、finger 或预取元数据。
+
+成功 mutation 可能在同一节点内搬移多个 slot，因此所有既有 iterator、pointer 和
+reference 都视为失效；如果 grow 后对象地址必须稳定，单线程用 `std::map`，共享 registry
+则考虑 `ConcurrentNodeHashMap`。类型非线程安全。默认走 system allocator，也可注入 HYLE
+allocator；需要从 OOM 恢复时用返回 `InsertResult::kOutOfMemory` 的
+`try_insert` / `try_insert_or_assign`；标准语义的 `try_emplace` 只表示“命中时不构造 value”，
+和普通 insert 一样沿用 fail-fast OOM 合同。key/entry 必须 nothrow move/destruct，
+comparator 必须 noexcept。
+当前不提供 multimap/multiset、node handle、extract/merge、稳定引用或 rank/select；这些
+能力不能只为追 API 数量塞进基础类型。
 
 ## ConcurrentFlatHashMap 与 ConcurrentNodeHashMap
 
