@@ -11,10 +11,15 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <memory>
 #include <thread>
 #include <utility>
 #include <vector>
+
+#if defined(__APPLE__)
+#include <pthread.h>
+#endif
 
 #include "hyle/c/time.h"
 #include "hyle/time/timer_queue.h"
@@ -26,6 +31,34 @@ using hyle::time::TimerQueue;
 
 constexpr std::size_t kIncrementalTimers = 64;
 constexpr std::uint64_t kTickNs = 100'000;
+
+// Darwin has no public hard P/E-core affinity. Give SSH-launched normal-use
+// samples the same explicit QoS contract as the algorithm benchmark, and emit
+// the requested state instead of presenting a scheduler accident as M4 data.
+void configure_main_benchmark_thread() {
+#if defined(__APPLE__)
+  const char* requested = std::getenv("HYLE_BENCH_APPLE_QOS");
+  qos_class_t qos = QOS_CLASS_USER_INTERACTIVE;
+  const char* name = "user-interactive";
+  if (requested != nullptr && std::strcmp(requested, "utility") == 0) {
+    qos = QOS_CLASS_UTILITY;
+    name = "utility";
+  } else if (requested != nullptr &&
+             std::strcmp(requested, "interactive") != 0) {
+    std::fprintf(stderr,
+                 "hyle_time_normal_bench: HYLE_BENCH_APPLE_QOS must be "
+                 "interactive or utility (got %s)\n",
+                 requested);
+    std::abort();
+  }
+  const int rc = pthread_set_qos_class_self_np(qos, 0);
+  std::fprintf(stderr,
+               "# HYLE_TIME_NORMAL_BENCH apple_main_qos=%s qos_ok=%d "
+               "affinity=unsupported\n",
+               name, rc == 0 ? 1 : 0);
+  if (rc != 0) std::abort();
+#endif
+}
 
 struct alignas(64) TimerOwner {
   std::array<std::byte, 192> request_state{};
@@ -100,6 +133,8 @@ void report_sleep_distribution(const char* name, std::uint64_t request_ns,
 }  // namespace
 
 int main() {
+  configure_main_benchmark_thread();
+
   // Heap-embedded objects are individually allocated and traversed in a
   // coprime permutation, avoiding the vector-only locality of the old bench.
   std::array<TimerEntry, kIncrementalTimers> contiguous_entries;
