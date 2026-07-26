@@ -115,7 +115,7 @@ math 的处理相反：它当前不是经过独立需求设计的产品，而是
 | error | 功能主体完成 | ✅ 严格收口；全库 adoption 随各消费者复审继续 |
 | platform | 功能主体完成 | ✅ 严格收口；NUMA 定向复开补 actual sparse IDs、runtime capability、selected-node/chunk/weighted raw/RAII/C 面与明确 OS 差异，极细 Linux 条带使用固定批次 placement；当前 120/120 C surface |
 | mem | 功能/API/P0/分发性能已完成 | ✅ 彻底收口；clean `c640072` 保留 allocator 三平台 shared same-link n=15 与 WSL TSan；当前 109/109 C surface，HugeRegion selected-node/chunk/weighted C++/C 已补齐，Linux 极细条带使用固定批次 placement |
-| time | 功能主体完成 | ✅ 严格收口；duration/clock API 已修，三平台 correctness/正常使用性能与 WSL sanitizer 已复证 |
+| time | 功能主体完成 | ✅ 严格收口；duration/clock API 已修，C caller-storage timer 关闭逐对象分配缺口且 41/41 surface；三平台原 correctness/正常使用证书与本轮 Win/WSL、ASan/UBSan 复证完成 |
 | core | 功能主体存在 | ✅ 严格收口；最终实现 `71dabf7`，三平台同合同无 LOSE |
 | build/package system | 组织与三种交付形状完成 | ✅ 严格收口；最终发布矩阵与触发器见任务页 |
 | util-core | 低层公开头能力完成 | ✅ 严格收口；实际使用形状、依赖边、三平台正确性/TSan/性能已签证 |

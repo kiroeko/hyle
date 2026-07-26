@@ -25,7 +25,7 @@
    代码。补 `cancel_all`、chrono overload、typed next deadline 和完整生命周期门。
 4. clock 补 typed chrono facade、signed `Instant` subtraction、absolute sleep；Windows 使用
    high-resolution waitable timer，Linux 使用 absolute monotonic sleep。
-5. C ABI 从未经产品审查的旧 wheel 面重做为 37 个动态符号 + 4 个 header-inline convenience：
+5. C ABI 从未经产品审查的旧 wheel 面重做为 41 个动态符号 + 4 个 header-inline convenience：
    opaque timer/general/common queue、Status、同步 visitor、callback re-arm、完整 shutdown。
 6. sched 的 fiber sleep/timed I/O 迁到 per-worker `TimerQueue`；deadline 统一走 time 饱和算术。
 7. benchmark 新增 faithful Seastar radix、真实 indexed eager heap、checked/naked TAILQ、
@@ -34,6 +34,10 @@
    改为 `profiling_clock` / `coarse_realtime` 语义名，TSC fallback 改为 sleep-based calibration。
 9. 正常使用性能面新增 N=1/8/64、散布节点、incremental event loop、真实 schedule_after、
    C ABI lifecycle/Status 与 warm sleep overshoot；没有为 benchmark 增加产品 metadata。
+10. C caller-storage timer 参考 libevent `event_get_struct_event_size + event_assign` 落地：runtime
+    size/alignment + init/deinit 允许一个 arena/slab 承载海量 opaque controls，不增加 TimerEntry
+    或 wrapper 大小、不引入 time→mem 依赖。single-timer fast slot 因伤害默认 N=8/4096 workload
+    被实验后撤回。
 
 提交：
 
@@ -68,7 +72,7 @@ libevent common timeout、folly TimeoutQueue/HHWheelTimer。
 - C++ time：25 clock + 23 TimerQueue + 16 CommonTimeoutQueue + 1 header test；
 - 两组 million-operation randomized oracle、完整 uint64 deadline、wrong-owner、death/lifecycle；
 - 纯 C consumer 覆盖全部 handle、跨 source Status、顺序拒绝、visitor re-arm、NULL 默认；
-- 37/37 动态符号 surface manifest，C11/C++23 自包含头；
+- 41/41 动态符号 surface manifest，C11/C++23 自包含头；
 - Windows Release、WSL GCC14 native-ext4、AppleClang 21 最终 time 五门均通过；
 - 最终 `16c91b4` 上 WSL GCC14 ASan 五门 5/5、UBSan 五门 5/5；time-only 构建不需要
   mimalloc ODR workaround，分别使用 `detect_leaks=1:halt_on_error=1` 与
@@ -85,6 +89,8 @@ Windows scheduler 全组曾有一次既有 `Blocking.RetiredThreadHandlesStayBou
 - 最终形状 Windows 已证：对同算法 radix 在 N=1/8/64 与 N=4096 均胜；对 indexed heap 只有
   N=1 输，从 N=8 起胜；连续/散布 incremental event-loop 统计平；
 - Windows C ABI、真实读钟 schedule_after 和 sleep overshoot 已单列合同税/OS 行为；
+- caller-storage init/deinit 对默认 create/destroy n=15 为 Windows 2.925×、WSL 4.532× WIN，hot
+  queue Status 合同不变；
 - WSL 最终形状复现 normal churn TIE / reverse churn LOSE 边界；M4 N=8 arm+cancel 对
   Seastar 慢 7–12%，但大 N 两档 QoS 均胜；真实 typed/raw schedule_after 三平台 TIE，显式
   预采样 typed 在 GCC/M4 有 signed clamp 税。三平台性能证据闭环，不把真实 LOSE 改绿。

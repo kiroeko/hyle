@@ -2,6 +2,7 @@
 #include "hyle/c/time.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 static int g_fails = 0;
@@ -87,6 +88,90 @@ int main(void) {
   CHECK_OK(hyle_time_timer_create(&three, (void*)(uintptr_t)3));
   CHECK(queue != NULL && common != NULL);
   CHECK(one != NULL && two != NULL && three != NULL);
+
+  /* Libevent-shaped caller storage: one arena can hold many opaque timers
+   * without one allocation per control and without exposing the C++ layout. */
+  {
+    const size_t timer_size = hyle_time_timer_storage_size();
+    const size_t timer_alignment = hyle_time_timer_storage_alignment();
+    const size_t timer_count = 3;
+    unsigned char* raw = NULL;
+    unsigned char* storage = NULL;
+    hyle_time_timer* timers[3] = {NULL, NULL, NULL};
+    CHECK(timer_size != 0);
+    CHECK(timer_alignment != 0 &&
+          (timer_alignment & (timer_alignment - 1)) == 0);
+    CHECK(timer_size % timer_alignment == 0);
+    raw = (unsigned char*)malloc(timer_size * timer_count +
+                                 timer_alignment - 1);
+    CHECK(raw != NULL);
+    if (raw != NULL) {
+      uintptr_t address = (uintptr_t)raw;
+      address = (address + timer_alignment - 1) &
+                ~(uintptr_t)(timer_alignment - 1);
+      storage = (unsigned char*)address;
+      for (size_t i = 0; i < timer_count; ++i) {
+        CHECK_OK(hyle_time_timer_init(
+            &timers[i], storage + i * timer_size, timer_size,
+            (void*)(uintptr_t)(10 + i)));
+        CHECK(timers[i] != NULL);
+        CHECK_OK(hyle_time_queue_schedule(queue, timers[i], 100 + i));
+      }
+      {
+        hyle_status status = hyle_time_timer_deinit(timers[0]);
+        CHECK(hyle_status_is_failed_precondition(status));
+        hyle_status_free(&status);
+      }
+      {
+        struct visit_state bulk_state = {0, 0};
+        size_t cancelled = 0;
+        CHECK_OK(hyle_time_queue_cancel_all(&cancelled, queue, collect_timer,
+                                            &bulk_state));
+        CHECK(cancelled == timer_count);
+        CHECK(bulk_state.count == timer_count);
+        CHECK(bulk_state.sum == 33);
+      }
+      {
+        hyle_status status = hyle_time_timer_destroy(timers[0]);
+        CHECK(hyle_status_is_failed_precondition(status));
+        hyle_status_free(&status);
+      }
+      for (size_t i = 0; i < timer_count; ++i) {
+        CHECK_OK(hyle_time_timer_deinit(timers[i]));
+      }
+      CHECK_OK(hyle_time_timer_init(&timers[0], storage, timer_size,
+                                    (void*)(uintptr_t)99));
+      CHECK((uintptr_t)hyle_time_timer_user_data(timers[0]) == 99);
+      CHECK_OK(hyle_time_timer_deinit(timers[0]));
+    }
+    {
+      hyle_time_timer* invalid = (hyle_time_timer*)(uintptr_t)1;
+      hyle_status status = hyle_time_timer_init(
+          NULL, storage, timer_size, NULL);
+      CHECK(hyle_status_is_invalid_argument(status));
+      hyle_status_free(&status);
+      status = hyle_time_timer_init(&invalid, NULL, timer_size, NULL);
+      CHECK(hyle_status_is_invalid_argument(status));
+      CHECK(invalid == NULL);
+      hyle_status_free(&status);
+      status = hyle_time_timer_init(&invalid, storage, timer_size - 1, NULL);
+      CHECK(hyle_status_is_invalid_argument(status));
+      CHECK(invalid == NULL);
+      hyle_status_free(&status);
+      if (storage != NULL && timer_alignment > 1) {
+        status = hyle_time_timer_init(&invalid, storage + 1, timer_size, NULL);
+        CHECK(hyle_status_is_invalid_argument(status));
+        CHECK(invalid == NULL);
+        hyle_status_free(&status);
+      }
+    }
+    {
+      hyle_status status = hyle_time_timer_deinit(one);
+      CHECK(hyle_status_is_failed_precondition(status));
+      hyle_status_free(&status);
+    }
+    free(raw);
+  }
 
   CHECK(hyle_time_queue_empty(queue));
   CHECK_OK(hyle_time_queue_schedule(queue, one, UINT64_C(500000)));
@@ -226,6 +311,7 @@ int main(void) {
   CHECK_OK(hyle_time_common_queue_destroy(NULL));
   CHECK_OK(hyle_time_queue_destroy(NULL));
   CHECK_OK(hyle_time_timer_destroy(NULL));
+  CHECK_OK(hyle_time_timer_deinit(NULL));
 
   if (g_fails) {
     fprintf(stderr, "c_time_test: %d failed\n", g_fails);

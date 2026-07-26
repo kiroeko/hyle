@@ -31,7 +31,8 @@ while (hyle_time_remaining_ns(deadline) != 0) {
 
 ## 任意 deadline：hyle_time_queue
 
-timer 和 queue 都是 opaque handle。timer 创建时分配一次；之后的 arm/cancel/advance 不分配。
+timer 和 queue 都是 opaque handle。默认 `timer_create` 创建时分配一次；之后的
+arm/cancel/advance 不分配。
 跨 DLL 调用与每次返回可恢复 `hyle_status` 有真实常数成本，因此 HYLE 自己的 C++ 模块直接用
 C++ API。C/FFI 消费者应长期复用 timer/queue，不要在每次 timeout 前 create/destroy。
 
@@ -78,6 +79,30 @@ st = hyle_time_queue_destroy(queue); hyle_status_free(&st);
 已经 unarm，因此 visitor 内可以 re-arm。visitor 为 NULL 仍会消费到期 timer。不同 radix
 bucket 的交付顺序不保证全序。
 
+### 海量 C timer：调用方 storage
+
+每连接/请求一个 timer 时，不必接受每个 opaque control 一次 heap allocation。先在运行时查询
+`hyle_time_timer_storage_size()` 与 `hyle_time_timer_storage_alignment()`，从自己的 arena/slab
+取得对齐 storage，再用 `hyle_time_timer_init/deinit`：
+
+```c
+size_t stride = hyle_time_timer_storage_size();
+size_t alignment = hyle_time_timer_storage_alignment();
+void* arena = app_aligned_alloc(alignment, stride * connection_count);
+
+for (size_t i = 0; i < connection_count; ++i) {
+  hyle_time_timer* timer = NULL;
+  hyle_status st = hyle_time_timer_init(
+      &timer, (unsigned char*)arena + i * stride, stride, &connections[i]);
+  /* check/free st; retain timer */
+}
+```
+
+返回的 `stride` 已是 alignment 的整数倍，因此连续 controls 保持对齐。每段 storage 必须是尚未
+初始化或已 `deinit`；从 init 到 deinit 必须保持存活。`init` 只配 `deinit`，`create` 只配
+`destroy`，错配返回 `FAILED_PRECONDITION`。scheduled timer 必须先 cancel/cancel_all。这个入口
+不依赖 mem；arena 可以来自 HYLE mem、调用方 allocator、共享区或固定缓冲。
+
 ## 同一 duration：hyle_time_common_queue
 
 大量连接共享一个固定 idle timeout 时，建立一个 common queue：
@@ -110,11 +135,11 @@ hyle_status_free(&st);
 | 分组 | 动态入口 | header-inline |
 |---|---|---|
 | clocks/deadline/sleep | `monotonic_ns`、`profiling_clock_ns/available`、`realtime_ns`、`coarse_realtime_ns/available`、`sleep_for_ns`、`sleep_until_ns`、`deadline_after_ns`、`remaining_ns` | `sleep_for_us/ms` |
-| timer node | `timer_create/destroy`、`timer_user_data/set_user_data`、`timer_deadline_ns`、`timer_is_scheduled` | — |
+| timer node | `timer_create/destroy`、`timer_storage_size/alignment`、`timer_init/deinit`、`timer_user_data/set_user_data`、`timer_deadline_ns`、`timer_is_scheduled` | — |
 | general queue | `queue_create/create_at/destroy`、`queue_schedule/cancel/advance/cancel_all`、`queue_next_deadline_ns/size/empty` | `queue_schedule_after` |
 | common queue | `common_queue_create/destroy`、`common_queue_schedule/schedule_after/cancel/advance/cancel_all`、`common_queue_next_deadline_ns/size/empty/duration_ns` | `common_queue_schedule_now` |
 
-表中短名都以 `hyle_time_` 为前缀。动态入口共 37 个，inline convenience 共 4 个；inline
+表中短名都以 `hyle_time_` 为前缀。动态入口共 41 个，inline convenience 共 4 个；inline
 仍只调用动态 ABI，不暴露 C++ layout。
 
 ## Status 与生命周期
@@ -129,14 +154,16 @@ hyle_status_free(&st);
 | common deadline 破坏非递减顺序 | `INVALID_ARGUMENT` |
 | destroy 仍 scheduled 的 timer / 非空 queue | `FAILED_PRECONDITION` |
 | opaque control 分配失败 | `RESOURCE_EXHAUSTED` |
+| caller storage 为空、过小或未对齐 | `INVALID_ARGUMENT` |
+| `create/destroy` 与 `init/deinit` 错配 | `FAILED_PRECONDITION` |
 
 `cancel_all` 是 shutdown/错误回滚入口：它 detach 全部 timer，并可经同步 visitor 把节点归还
 业务 owner。`UINT64_MAX` 同时可是真实远期 deadline 和 empty sentinel；需要区分时调用
 `*_empty()`。queue 是 single-owner；跨线程 arm/cancel 必须串行投递到 owner event loop。
 
 性能证书单列 C ABI 正常路径：arm/cancel/advance 都保持 O(1) 且无分配，但不宣称 wrapper
-零成本。若未来出现海量 C timer consumer，再按真实 allocator/bulk 需求扩展；当前不为
-benchmark 削弱 Status 或泄漏 C++ 节点布局。
+零成本。caller-storage 已消除海量 timer 的逐对象 allocation，同时保留 Status 与 opaque
+layout；不要为了微测绕过这两个边界。
 
 完整动态 surface 由 `tests/time/c_surface_symbols.txt` 机械冻结；C 头自包含门同时用 C11 与
 C++23 编译。性能与平台证据只维护在

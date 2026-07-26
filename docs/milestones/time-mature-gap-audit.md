@@ -16,6 +16,8 @@
 - [x] 合法的 `duration<bool, Period>` 已覆盖，typed facade hot helper 显式 inline（`9129001`）；
 - [x] Windows/WSL/Apple 最终形状 correctness 与 normal-use 性能已复证；WSL GCC14
   ASan/UBSan 最终形状五门均为 5/5。
+- [x] C caller-storage timer 已按 libevent `event_assign` 形状落地，去掉逐 timer 强制分配且不扩大
+  control；n=15 对默认 create/destroy 为 Windows 2.925×、WSL 4.532× WIN。
 
 ## 结论先行
 
@@ -84,7 +86,7 @@ C ABI 也覆盖了现有语言无关能力。`sched`/`io` 对 time 的消费方�
 | Asio waitable timer async wait/cancel | time 不拥有 executor | 边界正确 | sched/io 提供异步等待 |
 | Abseil CivilTime/TimeZone/Format/Parse | 无 | 不应整包复制 | 见 UTC interchange 决策 |
 | time_t/timespec/timeval conversions | 仅原生 chrono/raw ns | C/OS 边界可能常用 | **P1，随实际协议/OS consumer 评估** |
-| C 自定义 allocator / in-place timer | 每 timer 创建时 global `new` 一次 | 大规模 C consumer 有成本/策略缺口 | **P1，保持热路和布局 opaque** |
+| C 自定义 allocator / in-place timer | 默认 create + runtime-sized caller storage 双形状 | 已补齐 | **完成；不引入 time→mem** |
 
 完整 Abseil time 连同 cctz 在本地约 17.8k code lines。复制 calendar/time-zone 数据库既会让
 Tier 2 模块体积和维护面失控，也没有 HYLE 内部 consumer，不能把“成熟库提供”误写成“基础库
@@ -194,15 +196,15 @@ median 3.118/0.030ms。release binary 不含 test env gate，已校准后的 rdt
 
 ### C ABI
 
-- 37 个动态符号 + 4 个 inline convenience 覆盖当前 clock/deadline/sleep/general/common 能力；
+- 41 个动态符号 + 4 个 inline convenience 覆盖当前 clock/deadline/sleep/general/common 能力；
 - opaque handle 隔离 C++ intrusive layout，Status 覆盖 recoverable misuse，visitor 前已摘队列且可
   re-arm，形状正确；
 - 内部 C++ 消费者不绕 C ABI；`src/time/c_time.cc` 统一使用 error 的 `hyle::Status` /
   `hyle_status`，没有私造 TLS 错误；
-- 对海量 C timer，每个 opaque timer 必须单独 global `new`，无法选择 allocator 或 bulk/in-place
-  storage。这不是现有能力“无法表达”，但可能是 C 使用的 P1 性能/部署缺口。可评估 allocator
-  callbacks、pool/bulk factory 或带 size/alignment 查询的 caller storage，同时保持 ABI opaque；
-  不要为了它制造 time -> mem 硬依赖。
+- 对海量 C timer，`timer_storage_size/alignment + timer_init/deinit` 允许调用方一次分配 arena/slab
+  后逐 control placement。默认 create/destroy 保持最易用形状；caller storage 不泄漏 C++ layout，
+  不引入 allocator callback 常驻元数据，也不制造 time -> mem 硬依赖。C adapter 直接读取 native
+  owner seam，删除重复 `c_owner` 指针；storage-kind 落在原 wrapper padding，control 大小不增加。
 
 ## 6. 文档审计
 
@@ -232,7 +234,7 @@ architecture 也正确区分 time 数据结构和 sched/io executor。
 2. time/sched 可注入 clock seam，用于 deterministic scheduler timeout 测试；
 3. sched owning one-shot/periodic timer，periodic 必须显式 missed-tick policy；
 4. 有 HTTP/obs consumer 后评估窄 UTC RFC3339/RFC1123 interchange；
-5. 有大规模 C timer consumer 后评估 allocator/bulk/in-place 入口与 C ABI overhead。
+5. [x] C timer caller-storage/bulk 入口与 C ABI overhead 已完成；allocator callback 不再需要。
 
 ### 明确不加入 time core
 
@@ -260,7 +262,7 @@ sched review (separate module)
 
 consumer-driven proposals
   -> UTC interchange (io/obs proves demand)
-  -> C timer allocator/bulk shape (FFI workload proves demand)
+  -> protocol-specific parse/format only after a real consumer
 ```
 
 这条顺序先修合同，再测最终形状；把 runtime policy 留到 sched，把协议/FFI 的可选层留给真实

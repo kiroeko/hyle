@@ -109,7 +109,11 @@ exactly one queue owns the linked node
 
 C++ 内部和同工具链用户直接使用 typed chrono 与侵入节点，不经过 C ABI。纯 C 面只暴露
 `uint64_t`、`size_t`、同步 visitor、`hyle_status` 和 opaque handle；C timer 创建时分配一次，
-arm/cancel/advance 不分配。C 头使用 `<stddef.h>/<stdint.h>`，C++ 实现头使用
+arm/cancel/advance 不分配。海量 C timer 可查询 opaque control 的 runtime size/alignment，并以
+`timer_init/deinit` 放进调用方 arena/slab；默认 `timer_create/destroy` 仍负责单个分配。该形状参考
+libevent 的 `event_get_struct_event_size + event_assign`，既不公开 C++ layout，也不引入
+`time -> mem` 反向依赖。两种生命周期不可混配；实现以不扩大 opaque timer 为门，caller-storage
+标记复用原 wrapper padding。C 头使用 `<stddef.h>/<stdint.h>`，C++ 实现头使用
 `<cstddef>/<cstdint>`。
 
 C visitor 调用前 timer 已离开 queue，所以 callback 内 re-arm 合法。destroy scheduled timer

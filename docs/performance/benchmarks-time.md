@@ -8,7 +8,8 @@
 > 判定以 `bench-stat.py` paired sign test（p < 0.01，且中位差 >1%）为主。
 > Windows/WSL TimerQueue 算法表采于 `bd29d57`；其后的产品提交只补 bool duration、typed
 > facade inline 与非 TSC 编译门，不改变算法表使用的 raw queue 路径。normal-use 表已在
-> `9129001` 重采；M4 两表使用最终 Apple 仪器 `ba61eb5`。
+> `9129001` 重采；M4 两表使用最终 Apple 仪器 `ba61eb5`。caller-storage 行是本轮最终候选在
+> 同一 Windows 工具链上的新增 n=15；未改写其它平台的历史列。
 
 ## 仪器与对手
 
@@ -158,10 +159,18 @@ M4 的 scattered 对象反而更快，说明真实 object-embedded layout 不是
 | C ABI schedule+advance+visitor，fire one | 16.450 ns | — | — |
 | C++ new/delete `TimerEntry` | 21.349 ns | 7.349 ns | 15.449 ns |
 | C opaque timer create/destroy+Status | 26.005 ns | 15.663 ns | 18.999 ns |
+| C caller-storage timer init/deinit+Status | **9.156 ns** | **3.314 ns** | — |
 
 这不是“零成本 C wrapper”：可恢复错误、DLL 接缝和 opaque 生命周期有真实常数税。但 queue
-操作仍 O(1)、无分配，opaque timer 只在创建/销毁时分配。没有大规模 C timer consumer 前，
-不为表变绿削弱 Status 合同，也不凭空加入 allocator/bulk API；有消费证据时再评估该 P1。
+操作仍 O(1)、无分配。默认 opaque timer 只在创建/销毁时分配；新增的 caller-storage 形状参考
+libevent `event_assign`，让 arena/slab 用户保持布局 opaque 而不逐 timer 分配。相对默认
+create/destroy，Windows 同机 n=15 为 **2.925× WIN**（15/15，范围 2.733–3.051），WSL GCC14
+native-ext4 为 **4.532× WIN**（15/15，范围 4.328–4.827）；这不是删掉 Status 得到的 benchmark
+特供入口，两条路径有相同的生命周期错误合同。
+
+本轮还试做过 queue-level single-timer fast slot。它能消除 N=1 radix 固定成本，但同一最终二进制
+让 N=8 与 N=4096 churn 相对 Seastar 的主 workload 退化，故实现已撤回。N=1 对 heap 的 LOSE
+继续作为算法交叉点保留，不为一行表格牺牲默认 server workload。
 
 ## 6. Thread sleep overshoot
 
@@ -231,7 +240,8 @@ scripts/bench-stat.py <build>/bin/hyle_time_normal_bench -n 15 \
   --pair "HYLE contiguous TimerEntry" "HYLE heap-embedded scattered TimerEntry" \
   --pair "schedule_after presampled + cancel" "chrono schedule_after presampled + cancel" \
   --pair "C++ schedule+cancel" "C ABI schedule+cancel+Status" \
-  --pair "C++ new/delete TimerEntry" "C opaque timer create/destroy+Status"
+  --pair "C++ new/delete TimerEntry" "C opaque timer create/destroy+Status" \
+  --pair "C opaque timer create/destroy+Status" "C caller-storage timer init/deinit+Status"
 ```
 
 Linux 正式性能必须在原生 ext4 worktree 跑，不能用 `/mnt/c` 9p。Windows、WSL 同物理机必须

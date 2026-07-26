@@ -9,6 +9,7 @@
 namespace hyle::time {
 
 namespace detail {
+struct TimerEntryAccess;
 struct TimerEntryListAccess;
 }
 
@@ -54,6 +55,7 @@ class TimerEntry {
  private:
   friend class TimerQueue;
   friend class CommonTimeoutQueue;
+  friend struct detail::TimerEntryAccess;
   friend struct detail::TimerEntryListAccess;
 
   [[nodiscard]] bool owned_by(const void* source) const noexcept {
@@ -71,6 +73,16 @@ class TimerEntry {
 static_assert(std::is_standard_layout_v<TimerEntry>);
 
 namespace detail {
+// Narrow adapter seam for the C ABI. The native public API deliberately does
+// not expose an owner token, while the recoverable C boundary must distinguish
+// "idle/on this source" from "owned by another source" without duplicating an
+// owner pointer in every opaque timer.
+struct TimerEntryAccess {
+  static bool owned_by(const TimerEntry& entry, const void* source) noexcept {
+    return entry.owned_by(source);
+  }
+};
+
 struct TimerEntryListAccess {
   using Type = core::IntrusiveList<TimerEntry, &TimerEntry::hook_>;
 };

@@ -1,6 +1,9 @@
 #include "hyle/c/time.h"
 
+#include <cstdint>
+#include <memory>
 #include <new>
+#include <type_traits>
 #include <utility>
 
 #include "hyle/error/status.h"
@@ -12,11 +15,18 @@
 struct hyle_time_timer_o {
   hyle::time::TimerEntry entry;
   void* user_data = nullptr;
-  const void* c_owner = nullptr;
+  bool caller_storage = false;
 
-  explicit hyle_time_timer_o(void* data) noexcept
-      : entry(this), user_data(data) {}
+  explicit hyle_time_timer_o(void* data, bool in_place = false) noexcept
+      : entry(this), user_data(data), caller_storage(in_place) {}
 };
+
+static_assert(std::is_standard_layout_v<hyle_time_timer_o>);
+static_assert(sizeof(hyle_time_timer_o) % alignof(hyle_time_timer_o) == 0);
+// Replacing the duplicate C owner pointer with a storage-kind byte must not
+// make every timer larger. The native TimerEntry remains unchanged.
+static_assert(sizeof(hyle_time_timer_o) <=
+              sizeof(hyle::time::TimerEntry) + 2 * sizeof(void*));
 
 struct hyle_time_queue_o {
   hyle::time::TimerQueue queue;
@@ -41,7 +51,8 @@ hyle::Status validate_pair(const void* source,
     return hyle::Status::InvalidArgument(
         "time source and timer must be non-null");
   }
-  if (timer->c_owner != nullptr && timer->c_owner != source) {
+  if (timer->entry.scheduled() &&
+      !hyle::time::detail::TimerEntryAccess::owned_by(timer->entry, source)) {
     return hyle::Status::FailedPrecondition(
         "timer is already scheduled on another source");
   }
@@ -54,7 +65,6 @@ size_t visit_list(hyle::time::TimerList& entries,
   entries.consume_all([&](hyle::time::TimerEntry* entry) noexcept {
     auto* timer = static_cast<hyle_time_timer*>(entry->data());
     HYLE_FATAL_ASSERT(timer != nullptr);
-    timer->c_owner = nullptr;
     ++count;
     if (visit != nullptr) visit(timer, ctx);
   });
@@ -129,11 +139,55 @@ hyle_status hyle_time_timer_create(hyle_time_timer** out, void* user_data) {
 
 hyle_status hyle_time_timer_destroy(hyle_time_timer* timer) {
   if (timer == nullptr) return steal_status(hyle::Status{});
-  if (timer->c_owner != nullptr || timer->entry.scheduled()) {
+  if (timer->entry.scheduled()) {
     return steal_status(hyle::Status::FailedPrecondition(
         "scheduled timer must be cancelled before destroy"));
   }
+  if (timer->caller_storage) {
+    return steal_status(hyle::Status::FailedPrecondition(
+        "caller-storage timer must be released with timer_deinit"));
+  }
   delete timer;
+  return steal_status(hyle::Status{});
+}
+
+size_t hyle_time_timer_storage_size(void) { return sizeof(hyle_time_timer); }
+
+size_t hyle_time_timer_storage_alignment(void) {
+  return alignof(hyle_time_timer);
+}
+
+hyle_status hyle_time_timer_init(hyle_time_timer** out, void* storage,
+                                 size_t storage_size, void* user_data) {
+  if (out == nullptr) {
+    return steal_status(hyle::Status::InvalidArgument(
+        "timer output must be non-null"));
+  }
+  *out = nullptr;
+  if (storage == nullptr || storage_size < sizeof(hyle_time_timer)) {
+    return steal_status(hyle::Status::InvalidArgument(
+        "timer storage is null or smaller than timer_storage_size"));
+  }
+  if (reinterpret_cast<std::uintptr_t>(storage) % alignof(hyle_time_timer) !=
+      0) {
+    return steal_status(hyle::Status::InvalidArgument(
+        "timer storage does not satisfy timer_storage_alignment"));
+  }
+  *out = ::new (storage) hyle_time_timer(user_data, true);
+  return steal_status(hyle::Status{});
+}
+
+hyle_status hyle_time_timer_deinit(hyle_time_timer* timer) {
+  if (timer == nullptr) return steal_status(hyle::Status{});
+  if (timer->entry.scheduled()) {
+    return steal_status(hyle::Status::FailedPrecondition(
+        "scheduled timer must be cancelled before deinit"));
+  }
+  if (!timer->caller_storage) {
+    return steal_status(hyle::Status::FailedPrecondition(
+        "created timer must be released with timer_destroy"));
+  }
+  std::destroy_at(timer);
   return steal_status(hyle::Status{});
 }
 
@@ -189,7 +243,6 @@ hyle_status hyle_time_queue_schedule(hyle_time_queue* queue,
   hyle::Status status = validate_pair(queue, timer);
   if (!status.ok()) return steal_status(std::move(status));
   queue->queue.schedule(&timer->entry, deadline_ns);
-  timer->c_owner = queue;
   return steal_status(hyle::Status{});
 }
 
@@ -199,7 +252,6 @@ hyle_status hyle_time_queue_cancel(int* out_cancelled,
   hyle::Status status = validate_pair(queue, timer);
   if (!status.ok()) return steal_status(std::move(status));
   const bool cancelled = queue->queue.cancel(&timer->entry);
-  timer->c_owner = nullptr;
   if (out_cancelled != nullptr) *out_cancelled = cancelled ? 1 : 0;
   return steal_status(hyle::Status{});
 }
@@ -273,8 +325,6 @@ hyle_status hyle_time_common_queue_schedule(hyle_time_common_queue* queue,
   hyle::Status status = validate_pair(queue, timer);
   if (!status.ok()) return steal_status(std::move(status));
   const bool ok = queue->queue.try_schedule(&timer->entry, deadline_ns);
-  timer->c_owner =
-      timer->entry.scheduled() ? static_cast<const void*>(queue) : nullptr;
   if (!ok) {
     return steal_status(hyle::Status::InvalidArgument(
         "common timeout deadlines must be non-decreasing"));
@@ -287,8 +337,6 @@ hyle_status hyle_time_common_queue_schedule_after(
   hyle::Status status = validate_pair(queue, timer);
   if (!status.ok()) return steal_status(std::move(status));
   const bool ok = queue->queue.try_schedule_after(&timer->entry, now_ns);
-  timer->c_owner =
-      timer->entry.scheduled() ? static_cast<const void*>(queue) : nullptr;
   if (!ok) {
     return steal_status(hyle::Status::InvalidArgument(
         "common timeout deadlines must be non-decreasing"));
@@ -302,7 +350,6 @@ hyle_status hyle_time_common_queue_cancel(int* out_cancelled,
   hyle::Status status = validate_pair(queue, timer);
   if (!status.ok()) return steal_status(std::move(status));
   const bool cancelled = queue->queue.cancel(&timer->entry);
-  timer->c_owner = nullptr;
   if (out_cancelled != nullptr) *out_cancelled = cancelled ? 1 : 0;
   return steal_status(hyle::Status{});
 }

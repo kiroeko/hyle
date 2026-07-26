@@ -308,6 +308,23 @@ int main() {
       nb::doNotOptimizeAway(timer);
       require_ok(hyle_time_timer_destroy(timer));
     });
+    const std::size_t storage_size = hyle_time_timer_storage_size();
+    const std::size_t storage_alignment =
+        hyle_time_timer_storage_alignment();
+    std::vector<std::byte> storage(storage_size + storage_alignment - 1);
+    void* storage_ptr = storage.data();
+    std::size_t storage_space = storage.size();
+    if (std::align(storage_alignment, storage_size, storage_ptr,
+                   storage_space) == nullptr) {
+      std::abort();
+    }
+    bench.run("C caller-storage timer init/deinit+Status", [&] {
+      hyle_time_timer* timer = nullptr;
+      require_ok(hyle_time_timer_init(&timer, storage_ptr, storage_size,
+                                      nullptr));
+      nb::doNotOptimizeAway(timer);
+      require_ok(hyle_time_timer_deinit(timer));
+    });
   }
 
   // Warm the per-thread sleep primitive before distribution sampling; this

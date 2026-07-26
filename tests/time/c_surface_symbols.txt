@@ -34,7 +34,11 @@ hyle_time_sleep_for_ns
 hyle_time_sleep_until_ns
 hyle_time_timer_create
 hyle_time_timer_deadline_ns
+hyle_time_timer_deinit
 hyle_time_timer_destroy
+hyle_time_timer_init
 hyle_time_timer_is_scheduled
 hyle_time_timer_set_user_data
+hyle_time_timer_storage_alignment
+hyle_time_timer_storage_size
 hyle_time_timer_user_data
