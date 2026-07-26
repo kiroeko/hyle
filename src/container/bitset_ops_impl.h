@@ -79,6 +79,7 @@ void BITSET_NOT_FN(std::uint64_t* words, std::size_t count) noexcept {
   for (; i < count; ++i) words[i] = ~words[i];
 }
 
+#if !defined(HYLE_BITSET_CUSTOM_COUNT)
 std::size_t BITSET_COUNT_FN(const std::uint64_t* words,
                             std::size_t count) noexcept {
   const hs::ScalableTag<std::uint64_t> d;
@@ -105,6 +106,7 @@ std::size_t BITSET_COUNT_FN(const std::uint64_t* words,
   for (; i < count; ++i) result += std::popcount(words[i]);
   return static_cast<std::size_t>(result);
 }
+#endif
 
 }  // namespace hyle::container::detail
 
