@@ -1,5 +1,10 @@
 # mem 模块审查处置清单 (followup)
 
+> **历史任务记录。**当前能力、选型、C 映射、性能与剩余补证分别以
+> [`mem-design`](../architecture/mem-design.md)、[`guide/mem`](../guide/mem.md)、
+> [`guide/c-mem`](../guide/c-mem.md)、[`benchmarks-mem`](../performance/benchmarks-mem.md) 和
+> [`mem-mature-gap-audit`](./mem-mature-gap-audit.md) 为准；下文保留当轮处置语境。
+
 > **后续替代（2026-07-22）：**本文保留审计当时名称；当前固定块池 API 是 `SharedPool` hard core + 显式 `SharedPoolCache`，typed 层同样是 core/cache 组合。
 
 > **错误接口追记（2026-07-23）：**本文所述 VM TLS 转发已删除；当前 VM/NUMA、

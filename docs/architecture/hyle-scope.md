@@ -104,7 +104,7 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 
 | 固定统计口径 | code | 说明 |
 |---|---:|---|
-| **全库代码** | **269,403** | `cloc . --vcs=git`；含 docs 与 in-tree third_party |
+| **全库代码** | **269,506** | `cloc . --vcs=git`；含 docs 与 in-tree third_party |
 | **自实现（含测试）** | **131,762** | `include/hyle + src + tests`；只计 C/C++/CUDA，不含 CMake/Text |
 | **自实现（不含测试）** | **90,454** | `include/hyle + src`；只计 C/C++/CUDA，库本体硬锚 |
 | **当前审查单元 container 实现** | **14,337** | `include/hyle/container` + `include/hyle/c/container.h` + `src/container`；不含测试/CMake/Text |
@@ -284,8 +284,9 @@ WebSocket、gRPC（依赖 protobuf/IDL，更靠 L1）仍后置于范围外。
 
 路线图见 [`roadmap.md`](./roadmap.md)；逐里程碑实时状态见
 [`milestones/README.md`](../milestones/README.md)。当前除 compute/graph 仍有产品能力尾外，
-其余模块主体基本实现；但按 2026-07-25 的实际使用导向合同，严格证书已有
-error/platform/mem/time/core、build/package、util-core 与 obs。旧 container/simd/sched/io
+其余模块主体基本实现；按当前实际使用导向合同，严格证书已有
+error/platform/time/core、build/package、util-core 与 obs；mem 的功能/API/P0 已修，仍待
+shared standard-adapter 的 WSL/M4 正式性能补表。旧 container/simd/sched/io
 closure 以及 util-runtime 的既有结果仍只是复审输入证据，
 不能替代本轮功能、复杂度、C/C++ 易用性、依赖采用和双 guide 认证。当前队列见
 [`pre-release-readiness.md`](../milestones/pre-release-readiness.md)。

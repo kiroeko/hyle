@@ -18,7 +18,8 @@ mem 是 host RAM 的基础原语层。它不替业务猜生命周期，也不把
 | 调用方 buffer 中的临时对象 | `FixedRegion` | `hyle_fixed_region` 值对象 | external、单线程、bump、无 fallback |
 | 从共享硬池借一个 scratch block | `PooledRegion` | `hyle_pooled_region` | 单线程、固定容量、整体归还 |
 | LIFO checkpoint/rewind scratch | `StackAllocator` | `hyle_stack_allocator` | owned fixed slab、单线程 |
-| 外部 buffer 内变长 alloc/free | `FixedPool` | `hyle_fixed_pool` | 单线程、O(1) indexed fit/merge、individual free、无 fallback；约 4 KiB control |
+| 外部 buffer 内变长 alloc/free/realloc + 整池 reset | `FixedPool` | `hyle_fixed_pool` | 单线程、O(1) indexed fit/merge、无 fallback；约 4 KiB control；fixed 指 backing 容量固定 |
+| 自己增长 backing 的变长 alloc/free + bulk release | `std::pmr::unsynchronized_pool_resource(system_memory_resource())`；并发用 synchronized 版本 | 暂无单个同形 C 对象；见下文组合边界 | C++ 复用标准池；运行时 upstream 才包 `PmrResource` |
 | 多线程固定块、严格容量 | `SharedPool` | `hyle_shared_pool` | hard capacity；free 完成后立即全局可见 |
 | worker-local 热点固定块复用 | `SharedPoolCache` over `SharedPool` | `hyle_shared_pool_cache` | 显式 owner/capacity/batch；可见性是 soft，需 publish |
 | 固定数量 typed 对象，每次重建 | `ObjectPool<T>` | `HYLE_OBJECT_POOL_*` 裸槽宏 | C 自行 init/cleanup；C++ 跑 ctor/dtor |
@@ -97,18 +98,23 @@ std::pmr::vector<std::byte> bytes(&cache_buffer);
 bytes.resize(4096);  // bytes.data() 至少 64-byte aligned
 ```
 
-需要“变长 allocation + individual free + 一次 bulk release”而消费方接受 PMR 时，不另造
-HYLE 通用 heap；组合标准 pool resource：
+HYLE **并不缺可变大小内存**：通用 allocator 接受任意请求大小，Region 接受变长请求并 bulk
+clear/release，`FixedPool` 则在调用方固定容量 buffer 内提供变长 allocate/free/reallocate + bulk
+`reset()`。这里唯一没有单独上架的，是“由 HYLE 自己拥有并自动增长 backing”的又一个通用 heap。
+
+需要 owned growable、individual free + 一次 bulk release 且消费方接受 PMR 时，组合标准 pool
+resource。默认 system upstream 直接使用静态 singleton：
 
 ```cpp
-hyle::mem::PmrResource upstream(hyle::mem::system_allocator());
-std::pmr::unsynchronized_pool_resource local_pool(&upstream); // 单 owner
+std::pmr::unsynchronized_pool_resource local_pool(
+    hyle::mem::system_memory_resource()); // 单 owner
 std::pmr::vector<Record> records(&local_pool);
 // records 先销毁；local_pool.release() 可提前归还全部 pooled blocks。
 ```
 
-跨线程并发分配改用 `std::pmr::synchronized_pool_resource`；它们仍借用 upstream，不能比
-`PmrResource` 长寿。
+跨线程并发分配改用 `std::pmr::synchronized_pool_resource`。只有需要 quota、stats、region 或
+用户 backing 时才创建 `PmrResource upstream(alloc)` 并把 `&upstream` 传给标准 pool；此时 pool
+及其所有 allocation 不能比 upstream/backing 长寿。
 
 ## Region 家族
 
@@ -207,6 +213,23 @@ if (auto context = contexts.try_loan()) {
 池构造/析构时各执行一次对象构造/析构。两者都要求 pool 比所有 loan 长寿。
 
 ### External variable-size pool
+
+`FixedPool` 已经是 **variable-size + individual free/reallocate + bulk reset**；名称中的 fixed
+只指调用方提供的 payload backing 地址和容量固定，不是只能分配固定大小对象。
+
+```cpp
+alignas(64) std::array<std::byte, 64 * 1024> storage{};
+hyle::mem::FixedPool pool(storage);
+void* header = pool.allocate(96, 32);
+void* payload = pool.allocate(1536, 64);  // 同一池可同时服务不同大小
+if (payload != nullptr) {
+  if (void* grown = pool.reallocate(payload, 1536, 4096, 64)) payload = grown;
+}
+// 任一返回 nullptr 都表示 bounded capacity exhausted；reallocate 失败保留旧 allocation。
+pool.deallocate(header);
+pool.deallocate(payload);
+pool.reset();  // 此时无 live allocation；整池恢复
+```
 
 `FixedPool` 把 block/allocation metadata 放进调用方 storage；two-level segregated free lists、
 两层 bitmap、边界和统计属于 `FixedPool` 控制对象（C surface 可由 caller-owned control 原地
@@ -323,7 +346,7 @@ Region retained-block scaling。正式性能表只维护在
 [`../performance/benchmarks-mem.md`](../performance/benchmarks-mem.md)，本指南不复制点值、
 win/loss 或待补证据。性能结果用来帮助选型，不改变前述 ownership/capacity 合同。
 
-当前设计边界见 [`../architecture/mem-design.md`](../architecture/mem-design.md)；预发布冻结的
+当前设计边界见 [`../architecture/mem-design.md`](../architecture/mem-design.md)；上一轮预发布冻结的
 验收记录见 [`../milestones/mem-close-plan.md`](../milestones/mem-close-plan.md)，2026-07-26
-成熟库缺口重开与处置见
+成熟库复审、已完成修复与剩余分发性能补证见
 [`../milestones/mem-mature-gap-audit.md`](../milestones/mem-mature-gap-audit.md)。

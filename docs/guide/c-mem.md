@@ -41,7 +41,7 @@ FixedPool 同时提供 caller-owned `*_storage + *_init`（control/payload 都�
 | StatsAllocator | `hyle_stats_allocator_create(&out,backing,metadata,track)` → `destroy` | 测量 backing；control/诊断状态服从 metadata；可选慢速 leak inventory |
 | Region | `hyle_region_create(&out,...)` → `destroy` | owned growable bump；clear 保留普通 blocks |
 | FixedRegion | `hyle_fixed_region_init(&region, storage, size)` | 返回 Status；按值 external bump；无 create/destroy、严格 no-heap |
-| FixedPool | `hyle_fixed_pool_init(&pool,control,control_bytes,storage,size)` 或 `create(&pool,control_allocator,...)` → `destroy` | external variable-size alloc/free；O(1) two-level fit/merge；init 严格 no-heap；约 4 KiB control |
+| FixedPool | `hyle_fixed_pool_init(&pool,control,control_bytes,storage,size)` 或 `create(&pool,control_allocator,...)` → `destroy` | external variable-size alloc/free/realloc + bulk reset；O(1) two-level fit/merge；init 严格 no-heap；约 4 KiB control |
 | SharedPool | `hyle_shared_pool_create(&out,...)` → `destroy` | **硬容量**；completed free 立即对所有线程可见 |
 | SharedPoolCache | `hyle_shared_pool_cache_create(&out,pool,...)` → `destroy` | **软视图**；显式 owner/capacity/batch，publish 后回 hard core |
 | StackAllocator | `hyle_stack_allocator_create(&out,...)` → `destroy` | 自有 slab，单线程 LIFO bump |
@@ -120,6 +120,12 @@ quiescent/balanced；违反时 fail-fast，避免已借出的 allocator 静默�
 
 ### 2.3 Region、FixedRegion 与 FixedPool
 
+C surface 也**不是没有可变大小内存**：`hyle_allocator` 接受任意请求大小，`hyle_region` 是
+owned growable 的变长请求 + bulk release，`hyle_fixed_pool` 是 external bounded 的变长
+allocate/free/reallocate + bulk reset。当前没有的是 HYLE-owned、自动增长、同时 individual free
+和 bulk release 的单个 C pool handle；没有真实 C/FFI 消费者前，不复制一套与通用 heap 重叠的
+所有权协议。需要硬 buffer 边界选 FixedPool，需要 owned phase lifetime 选 Region。
+
 - `hyle_region_create(&out,...)` 的 options 以 `HYLE_REGION_OPTIONS_INIT` 初始化，并带
   `struct_size`。`clear` 保留普通 blocks、释放 dedicated large blocks；`release` 归还全部。
 - `hyle_fixed_region_init(&region,storage,size)` 直接初始化 3-word 值对象，是严格 no-heap
@@ -129,7 +135,10 @@ quiescent/balanced；违反时 fail-fast，避免已借出的 allocator 静默�
   `create_default` 才选择 system allocator。两者都支持 individual allocate/free/realloc；realloc
   可 O(1) 原地利用当前 span/后一空闲邻块，shrink 保留 span 让后续 regrow 仍为 O(1)。reset 前必须
   无 live allocation；foreign/double return 是合同错误并 fail-fast。两级 bitmap 索引使
-  allocate/free/邻块合并的查找工作为 O(1)，不会随空闲块数量增长。
+   allocate/free/邻块合并的查找工作为 O(1)，不会随空闲块数量增长。
+
+`FixedPool` 名称中的 fixed 指 payload backing 的地址与容量固定，不是 allocation 大小固定。
+`create` 只拥有 control；payload 仍完全来自调用方 storage，所以两种构造都不自动增长也不 fallback。
 
 `hyle_fixed_pool_storage` 保证 4096 bytes/alignment 足以容纳当前实现：把它嵌入拥有 payload 的
 长寿命 owner、放在 static storage，或用 `create` 从合适的 control allocator 分配一次。动态
@@ -146,15 +155,28 @@ FixedRegion 则在值对象或 payload storage 失效后失效。
 不会把历史峰值伪装成零。
 
 ```c
-unsigned char payload[4096];
+unsigned char payload[16 * 1024];
 hyle_fixed_pool_storage control;
 hyle_fixed_pool *pool = NULL;
 hyle_status status =
     hyle_fixed_pool_init(&pool, &control, sizeof control,
                          payload, sizeof payload);
-if (!hyle_status_is_ok(status)) { /* inspect/propagate status */ }
+if (!hyle_status_is_ok(status)) {
+  /* inspect/propagate status */
+  hyle_status_free(&status);
+  return;
+}
 hyle_status_free(&status);
-/* allocate/free ... */
+void *header = hyle_fixed_pool_allocate(pool, 96, 32);
+void *payload_ptr = hyle_fixed_pool_allocate(pool, 1536, 64); /* 大小可不同 */
+if (payload_ptr != NULL) {
+  void *grown = hyle_fixed_pool_reallocate(pool, payload_ptr, 1536, 4096, 64);
+  if (grown != NULL) payload_ptr = grown; /* 失败时旧 allocation 仍有效 */
+}
+/* 任一 allocate 返回 NULL 都表示 bounded capacity exhausted。 */
+hyle_fixed_pool_deallocate(pool, header);
+hyle_fixed_pool_deallocate(pool, payload_ptr);
+hyle_fixed_pool_reset(pool); /* 已无 live allocation；整池恢复 */
 hyle_fixed_pool_destroy(pool); /* 不释放 control 或 payload */
 ```
 

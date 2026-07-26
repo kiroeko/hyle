@@ -1,5 +1,9 @@
 # mem-03：MemoryArena 无锁定长块池（clay 最亮资产，packed tagged CAS）
 
+> **历史任务记录。**当前 pool 家族、hard/soft capacity 与选型只见
+> [`mem-design`](../architecture/mem-design.md) / [`guide/mem`](../guide/mem.md)；下文保留旧
+> `MemoryArena` 实现与验收过程。
+
 > **后续替代（2026-07-22）：**本文记录旧 `MemoryArena` 阶段；当前为 `SharedPool` hard core + 显式 `SharedPoolCache`，C 面为 `hyle_shared_pool_*` / `hyle_shared_pool_cache_*`。
 
 | 字段 | 值 |

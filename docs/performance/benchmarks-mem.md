@@ -328,6 +328,12 @@ utility request 比 interactive 快，说明无公开硬亲和 API 时绝对数�
 
 ## 4. 外部固定 buffer 的变长分配
 
+本节就是 HYLE 的 variable-size pool 证书：`FixedPool` 的 fixed 指 caller-owned backing 地址与
+容量固定，不是 allocation size 固定。它支持 individual allocate/free/reallocate，且在无 live
+allocation 时可 bulk `reset()`；因此不能把 “variable-size + individual free + bulk reset” 登记为
+未实现。尚未上架的只是自己拥有并自动增长 backing 的 HYLE-native 通用池，C++ 默认由标准 PMR
+pool resource over `system_memory_resource()` 组合，不需要拿另一套微基准证明重复 heap 的存在价值。
+
 2026-07-24 产品提交 `20f3676`：Windows 权威 checkout 为 clean `n=15`；WSL 与 M4 是该
 Windows 树的工作副本，`fixed_pool.h` 内容 SHA-256 同为
 `9fdbd27001b5b109804f03804a212d570a4a796f19e8e4053198120071bd60d6`。镜像仓库保留长期

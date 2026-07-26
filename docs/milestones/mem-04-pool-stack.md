@@ -1,5 +1,9 @@
 # mem-04：ObjectPool + StackAllocator（推倒重写，修 clay bug #3/#4）
 
+> **历史任务记录。**当前 object/fixed/growable pool 类型矩阵与用户写法见
+> [`mem-design`](../architecture/mem-design.md) / [`guide/mem`](../guide/mem.md)；下文保留当轮名称、
+> 代码量与修复过程。
+
 > **后续替代（2026-07-22）：**当前为 `SharedPool` / 显式 `SharedPoolCache`；typed 层为 `ObjectPool<T>` / 附着式 `ObjectPoolCache<T>`。本文后文保留历史阶段名称。
 
 | 字段 | 值 |

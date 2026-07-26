@@ -1,5 +1,9 @@
 # mem-06b：大页 / THP hint（大 arena · 张量 TLB）
 
+> **历史任务记录。**当前 HugeRegion/NUMA/THP 能力与 platform 边界见
+> [`mem-design`](../architecture/mem-design.md) 和 [`guide/mem`](../guide/mem.md)；下文保留该切片
+> 当时的平台范围与验收数字。
+
 | 字段 | 值 |
 |---|---|
 | **阶段** | P2 / mem-06 切片 |

@@ -1,5 +1,9 @@
 # mem-06a：分配 stats + 泄漏追踪（debug 装饰器）
 
+> **历史任务记录。**当前 Stats/LeakTracker 的 metadata 分域、并发 snapshot、dropped/complete
+> 与 C ABI 合同见 [`mem-design`](../architecture/mem-design.md) 和
+> [`guide/c-mem`](../guide/c-mem.md)；下文保留最初切片的设计语境。
+
 | 字段 | 值 |
 |---|---|
 | **阶段** | P2 / mem-06 切片 |

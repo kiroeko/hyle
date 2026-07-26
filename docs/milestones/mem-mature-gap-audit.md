@@ -68,12 +68,13 @@ quiescent coherence；destroy/reset/move overwrite 执行 balanced fail-fast。
 
 ### P1：真实常用能力，冻结前应裁决
 
-实现状态：`StdAllocator<T>` 与 FiberStackPool 回收 **已完成**；selected-node/chunk NUMA 保持
+实现状态：`SystemStdAllocator<T>` / `StdAllocator<T>`、`system_memory_resource()` / `PmrResource`
+的默认/注入分型与 FiberStackPool 回收 **已完成**；selected-node/chunk NUMA 保持
 platform-first 待办，不在本轮 mem-only 猜测跨平台合同。
 
 | 候选 | 成熟形状 | HYLE 建议 | C ABI |
 |---|---|---|---|
-| 传统 C++ Allocator named-requirement adapter | oneTBB `memory_pool_allocator<T>` / `cache_aligned_allocator<T>`；Folly `CxxAllocatorAdaptor<T,Inner>`；marl `StlAllocator<T>` | 已实现 `StdAllocator<T>`：借用 `mem::Allocator`，含 rebind/完整 backing equality/非传播 traits，STL 边界 OOM 转 `std::bad_alloc`；覆盖 `vector`、`allocate_shared`、over-alignment 与失败路径 | 无；模板天然只属于 C++ |
+| 传统 C++ Allocator named-requirement adapter | oneTBB `memory_pool_allocator<T>` / `cache_aligned_allocator<T>`；Folly `CxxAllocatorAdaptor<T,Inner>`；marl `StlAllocator<T>` | 默认 system heap 用 empty/always-equal 的 `SystemStdAllocator<T>`；运行时 backing 用 `StdAllocator<T>`，含 rebind/完整 backing equality/非传播 traits；覆盖 `vector`、`allocate_shared`、over-alignment 与失败路径 | 无；模板天然只属于 C++ |
 | `FiberStackPool` 主动冷回收 | 原实现默认每 tier 缓存 64、内部固定 256 slots，只有析构释放；传入 cap>256 的有效上限不可见 | 已增加准确 `capacity()`、0-disable、cap clamp、`trim(keep=0)` / `clear()`；锁内摘取、锁外释放 VM，scheduler 在 worker join 后回收三档 cache | mem C 无需导出；scheduler C 用户由 runtime 自动管理 |
 | 选择 NUMA nodes + interleave chunk | oneTBB `numa_allocation.h:40-48` 接收 node vector 与 `bytes_per_chunk` | 先由 platform 定义 cpuset/Windows/Linux/macOS 可诚实实现的统一合同，再扩 `HugeRegion`；不能只在 mem 猜一个 Linux-only policy | platform C 与 HugeRegion options 应同时补，不能只补 C++ |
 
@@ -84,11 +85,14 @@ construct/destroy/unique-array 便利性可以随 adapter 一并审，但不应�
 
 ### P2：先组合、测真实消费者，再决定是否上架
 
-1. **variable-size pool + individual free + bulk release。** oneTBB `memory_pool` 和 mimalloc
-   first-class heap 都有这个组合；HYLE 的 `Region`、`SystemAllocator`、external `FixedPool` 各覆盖
-   其中不同 ownership 合同。C++ 用户已经可以把 `PmrResource` 作为 upstream 交给
-   `std::pmr::unsynchronized_pool_resource` / `synchronized_pool_resource` 并 `release()`。先把这条
-   recipe 写进 guide；只有出现不能由 PMR/mimalloc 满足的 C/FFI 消费者，才设计新 opaque heap。
+1. **HYLE-owned growable variable-size pool。** 这里不能再写成笼统的 “variable-size pool” 缺口：
+   `FixedPool` 已在 external fixed-capacity backing 上完整提供 variable-size individual
+   allocate/free/reallocate + bulk `reset()`，而 `SystemAllocator` 接受任意大小、`Region` 提供 owned
+   growable + bulk lifetime。尚未上架的仅是 oneTBB `memory_pool` 那种“产品自己取得/增长 backing，
+   同时 individual free 与 bulk release”的 HYLE-native 类型。C++ 默认已经能把
+   `system_memory_resource()` 交给 `std::pmr::unsynchronized_pool_resource` / synchronized 版本；
+   运行时 quota/stats/custom backing 才使用 `PmrResource`。只有出现 PMR/mimalloc 无法满足的真实
+   C/FFI 或专用 ownership 消费者，才设计新 opaque heap，不能把现有 FixedPool 能力误报成缺失。
 2. **preserving object 的 owner-local cache。** 当前 preserving pool 每次走 hard core CAS。对昂贵
    codec/context 对象可能值得，但对象工作通常淹没 CAS；先在真实 consumer 测量，不凭微基准加类型。
 3. **Arena merge / hidden TLS arena。** Folly `Arena::merge` 主要服务
@@ -110,8 +114,9 @@ construct/destroy/unique-array 便利性可以随 adapter 一并审，但不应�
 ## 4. API、依赖和文档结论
 
 **C++ API。** ownership 类型总体清楚，默认静态 `SystemAllocator` 与显式动态 `Allocator` 分层正确；
-传统 allocator-template API 已由 `StdAllocator<T>` 补齐；PMR 与 named-requirement adapter 各自服务
-对应的标准消费形状，typed helper 保持在现有对称集合中，不再散落 convenience。
+传统 allocator-template API 由 `SystemStdAllocator<T>` / `StdAllocator<T>` 补齐，PMR 由
+`system_memory_resource()` / `PmrResource` 分开承载默认和注入形状；typed helper 保持在现有
+对称集合中，不再散落 convenience。
 
 **C ABI。** 107 项当前已覆盖 allocator、诊断、region、variable/fixed/growable pool、stack 与
 HugeRegion。PMR、RAII loan、模板构造析构和 raw fiber stack 是合理的 C++ only。上述 P0 不增加符号；
@@ -127,8 +132,8 @@ header-only edge 说明应显式记录这条 util-core 边，避免施工顺序�
 
 - C/C++ guide 解释 snapshot 是并发时 per-field 观察、quiescence 后才可作一致结论；记录 Stats
   destroy 与 reset 的 quiescence 合同。
-- C++ guide 增加标准 PMR pool-resource 组合；若 adapter 落地，给 `std::vector` 和
-  `allocate_shared` 最短 recipe。
+- C++ guide 已增加标准 PMR pool-resource 组合，并给默认静态/运行时注入的 `std::vector`、
+  `allocate_shared` 最短 recipe；C guide 明确 FixedPool 已是 external bounded variable-size 池。
 - guide 说明 FiberStackPool 的 retention 上限、实际 capacity 与 trim 控制点。
 - performance 不能把 static/source direct 数字冒充 shared SDK：当前 Windows shared direct-import
   对 exe 内 raw mimalloc 约 0.943 churn / 0.957 realloc，WSL/M4 尚待同链接模型重签。这是未完成的

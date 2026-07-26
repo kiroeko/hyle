@@ -9,6 +9,12 @@
 > **范围**：吸纳 clay `utils/memory_pool.h`(170) + `utils/stl_allocator.h`(196) + `utils/generic_allocator.h`(62)。
 > **cloc**：**生产 145 行**(pmr.h + growable_pool.h) + **测试 116 行**。
 
+> **后续替代说明（2026-07-26）：**本页记录 mem-07 当时的选择，不再是完整标准 adapter 真源。
+> 当前产品另外提供 empty/always-equal 的 `SystemStdAllocator<T>` 与运行时注入的
+> `StdAllocator<T>`，PMR 也分为默认 `system_memory_resource()` 和注入 `PmrResource`；见
+> [`mem-design`](../architecture/mem-design.md) 与 [`guide/mem`](../guide/mem.md)。本页的
+> `GrowablePool<T>` 是**固定大小 typed slot** 的 growable pool，不是 arbitrary-size heap。
+
 ## clay 三文件 → HYLE 去向(逐项)
 
 | clay 文件 | 行 | HYLE 去向 |

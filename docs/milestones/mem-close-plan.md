@@ -9,6 +9,13 @@
 | **性能真源** | [`../performance/benchmarks-mem.md`](../performance/benchmarks-mem.md) |
 | **用户入口** | [`../guide/mem.md`](../guide/mem.md)、[`../guide/c-mem.md`](../guide/c-mem.md) |
 
+> **2026-07-26 后续状态：**本页保留上一轮 final 的历史验收；当前状态由
+> [`mem-mature-gap-audit.md`](./mem-mature-gap-audit.md) 覆盖。成熟库红队发现的 alignment、并发
+> peak、snapshot/lifetime P0 已修，随后补齐 `SystemStdAllocator<T>` 与
+> `system_memory_resource()` 默认静态 adapter；Windows shared same-link 已签，WSL/M4 正式表仍待
+> 补录。`FixedPool` 已经提供 external fixed-capacity 的 variable-size alloc/free/realloc + bulk
+> reset；未上架的只是 HYLE-owned growable 版本，不得把它写成一般“可变大小内存”缺口。
+
 > **当前替代（2026-07-25）：**下文 105 项是候选 `551be0b` 的历史证书；共享 error
 > 收敛曾把产品面降为 103 项，当前 `6213115` 在成熟库/API/复杂度回审后为 **107/107**。
 > 新增的是 FixedPool runtime control layout 与 LeakTracker incomplete-inventory 观察量，不是

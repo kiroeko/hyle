@@ -1,5 +1,9 @@
 # mem-02：system_allocator backing = mimalloc
 
+> **历史任务记录。**当前通用 heap、shared/static 交付边界与性能证书分别见
+> [`mem-design`](../architecture/mem-design.md) 和
+> [`benchmarks-mem`](../performance/benchmarks-mem.md)；下文版本、开关与数字只属于该轮施工。
+
 | 字段 | 值 |
 |---|---|
 | **阶段** | P2 |

@@ -30,7 +30,7 @@
 
 | 固定统计口径 | 当前 | 命令/说明 |
 |---|---|---|
-| **全库代码** | **269,403** | `cloc . --vcs=git`；含 docs/third_party，**≠ 自写** |
+| **全库代码** | **269,506** | `cloc . --vcs=git`；含 docs/third_party，**≠ 自写** |
 | **自实现（含测试）** | **131,762** | `cloc include/hyle src tests`，只计 C++/Header/C/CUDA |
 | **自实现（不含测试）** | **90,454** | `cloc include/hyle src`，只计 C++/Header/C/CUDA；库本体硬锚 |
 | **当前审查单元 container 实现** | **14,337** | `include/hyle/container` + `include/hyle/c/container.h` + `src/container`；不含测试/CMake/Text |
@@ -43,10 +43,10 @@
 | **里程碑计数** | 颗粒不等重 | **勿当完成度**（小 util 与大 compute 各记 1） |
 | **生产 LOC ÷ 终态 A 中值 ~82.5k** | 代码量进度 | **~110%**；SIMD 体量放大该数，**≠ 能力完成度** |
 | **生产 LOC ÷ 终态 B 中值 ~95k** | 做满剧本 | **~95%** |
-| **对完整愿景的功能完成度** | 能力清单 + 头牌缺口 | 除 compute/graph 能力尾外主体大多已实现；mem/time 已因 mature-gap P0 重开；其余按队列复审 |
+| **对完整愿景的功能完成度** | 能力清单 + 头牌缺口 | 除 compute/graph 能力尾外主体大多已实现；time 已重收，mem P0/API 已修而分发性能补证中；其余按队列复审 |
 
 **模块生产粗表（2026-07-26）**：simd ~37.8k · io ~9.0k · platform **7,020**
-（含公共 C 头）· container **13.0k**（含公共 C 头）· compute ~4.1k · sched ~5.1k · mem ~5.1k ·
+（含公共 C 头）· container **14.3k**（含公共 C 头）· compute ~4.1k · sched ~5.1k · mem **5.3k** ·
 util ~1.3k · error **984** · time ~0.9k · obs **1,018** · graph ~0.6–0.8k。
 
 预发布严格收口合同、重开触发器和唯一下一模块见
@@ -76,7 +76,8 @@ util ~1.3k · error **984** · time ~0.9k · obs **1,018** · graph ~0.6–0.8k�
 > “主干可用”误读成 capability closure 已清零。
 >
 > **2026-07-25 证书口径升级**：下表的 ✅/“冻结”只说明对应历史 work item 已完成，
-> 不自动取得当前实际使用导向的严格证书。当前 error/platform/mem/time/core 通过；
+> 不自动取得当前实际使用导向的严格证书。当前 error/platform/time/core 通过；mem 的实现/API
+> 已修而 shared adapter WSL/M4 性能表待补；
 > build/package system、util-core seam 与 obs 已严格收口；当前进入 container，其余顺序只见 [`pre-release-readiness.md`](./pre-release-readiness.md)。
 
 | ID | 阶段 | 模块 | 目的(一行) | 前置 | 预测LOC | 真实LOC | 状态 |
@@ -111,9 +112,9 @@ util ~1.3k · error **984** · time ~0.9k · obs **1,018** · graph ~0.6–0.8k�
 | [mem-06c](./mem-06c-numa.md) | P2 | mem | NUMA：query + preferred bind + HugeRegion node + mi use_numa | platform-02b,mem-02 | 0.4-0.8k | numa.h/cc | ✅ 完成(2026-07-17)。soft preferred；单 node 平凡正确；无 libnuma |
 | mem-07 | P2 | mem | GrowablePool(growable/单线程池) + PmrResource(std::pmr 适配) | mem-03 | 1-2k | 145 (+116 测试) | ✅ 完成(吸纳 clay memory_pool/stl_allocator/generic_allocator;修 clay move-assign bug;generic_allocator⛔=Allocator 已是它) |
 | [mem-08](./mem-08-fiber-stack.md) | P2 | mem | fiber_stack：guard + 分级 + FiberStackPool + Fiber 接线 | platform-02b,sched-01 | 0.5-1k | ~518 code(头+接线+测) | ✅ 完成(2026-07-17)。`FiberStack`=`reserve_guarded`;Small/Default/Large;池回收;`Fiber` 默认 guarded。Win+WSL mem 56/56、sched 108/108 |
-| [mem-final](./mem-close-plan.md) | close | mem | 功能/API/性能收口与 release-candidate certification | mem-01..08 | — | 见任务单 | 🟡 旧冻结证书仍作施工输入；2026-07-26 [`mature-gap audit`](./mem-mature-gap-audit.md) 发现 alignment、并发 peak、snapshot/lifetime 三个 P0，修复后重签 |
+| [mem-final](./mem-close-plan.md) | close | mem | 功能/API/性能收口与 release-candidate certification | mem-01..08 | — | 见任务单 | 🟡 mature-gap 的 P0、default/injected standard adapter 与 fiber 回收已实现；Windows same-link 已签，WSL/M4 正式表待补；FixedPool 已覆盖 external variable-size + individual free/realloc + reset |
 | [time-01](./time-01-clock.md) | P2 | time | typed 单调/墙钟、deadline、thread sleep | core | — | 见里程碑 | ✅ **2026-07-25 复审收口**：chrono/native 双面；TSC/coarse opt-in；饱和 deadline；高分辨率 absolute sleep；20 clock tests + 三平台/ASan/UBSan |
-| [time-02](./time-02-timer-wheel.md) | P2 | time | exact-ns TimerQueue + CommonTimeoutQueue | time-01,core,error(C ABI) | — | 见里程碑 | 🟡 算法能力完成并解锁 sched/io；2026-07-26 [`mature-gap audit`](./time-mature-gap-audit.md) 因 duration 精度、`fast_*` 语义与证书 freshness 重开 strict 状态 |
+| [time-02](./time-02-timer-wheel.md) | P2 | time | exact-ns TimerQueue + CommonTimeoutQueue | time-01,core,error(C ABI) | — | 见里程碑 | ✅ 2026-07-26 [`mature-gap audit`](./time-mature-gap-audit.md) 已修 duration 精度/clock 语义并完成三平台 correctness、正常使用性能与 WSL sanitizer 复证 |
 | container-01 | P3 | container | vendor 有界 ring(Vyukov/rigtorp,骨架用) | mem-01 | 1-2k | 220 | ✅ 完成 |
 | container-02 | P3 | container | XXH3 接入(默认 hasher) | 00 | 1k | 133 | ✅ 完成(XXH3 封 .cc 不泄;小键内联) |
 | container-03 | P3 | container | carray header-before-data + RAII 壳 | mem-02 | 1-2k | 224 | ✅ 完成(type-erased核;修over-align) |

@@ -1,5 +1,9 @@
 # mem-01：Allocator vtable + 修 alignment
 
+> **历史任务记录。**当前 allocator 合同与默认/注入 standard adapter 见
+> [`mem-design`](../architecture/mem-design.md) 和 [`guide/mem`](../guide/mem.md)；本页保留骨架阶段的
+> backing、测试数与 LOC，不代表现行完整产品面。
+
 | 字段 | 值 |
 |---|---|
 | **阶段** | P2 |

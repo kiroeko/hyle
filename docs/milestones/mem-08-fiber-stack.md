@@ -1,5 +1,9 @@
 # mem-08：fiber_stack（guard + 分级 + 池化）
 
+> **历史任务记录。**当前 FiberStackPool 的 capacity、trim/clear、scheduler-owned 生命周期与
+> 性能证书见 [`mem-design`](../architecture/mem-design.md)、[`guide/mem`](../guide/mem.md) 和
+> [`benchmarks-mem`](../performance/benchmarks-mem.md)；下文保留初次接线记录。
+
 | 字段 | 值 |
 |---|---|
 | **阶段** | P2 / mem P0 收口 |

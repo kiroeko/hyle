@@ -3,15 +3,15 @@
 ## 结论
 
 HYLE 的“实现进度”与“当前标准的收口证书”必须分开读：除 compute/graph 仍有产品能力尾，
-其余模块的主体实现基本存在；当前仍持有严格证书的是
-**error、platform、core、util-core、obs**。mem/time 在 2026-07-26 成熟库红队中发现发布前
-P0，已经按重开规则撤回“彻底冻结”表述。早期标成 closure/frozen 的任务仍是有效施工证据，
-不自动等于新标准认证。
+其余模块的主体实现基本存在；当前持有严格证书的是
+**error、platform、time、core、util-core、obs**。mem 在 2026-07-26 成熟库红队中发现的发布前
+P0、API 缺口均已修复；当前只因 shared standard-adapter 的 WSL/M4 正式性能表尚未补录而保持
+性能补证状态。早期标成 closure/frozen 的任务仍是有效施工证据，不自动等于新标准认证。
 
 | 层次 | 当前判断 | 下一动作 |
 |---|---|---|
-| 严格认证基线 | error、platform、core、util-core、obs；build/package system | 只因明确触发器或依赖受影响项局部回验 |
-| 红队后重开 | mem、time | 按 mature-gap audit 修 P0、更新 API/guide，并重签受影响三平台性能 |
+| 严格认证基线 | error、platform、time、core、util-core、obs；build/package system | 只因明确触发器或依赖受影响项局部回验 |
+| 性能补证中 | mem | P0/API 已修；补 WSL/M4 shared same-link standard-adapter 正式样本，平台先裁决 selected-node/chunk NUMA |
 | 已实现、待新标准复审 | math、util-runtime、container、sched、io、simd | 按本文队列逐模块收口，不按旧 benchmark 形状默认通过 |
 | 仍有能力尾 | compute、graph | 先用真实北极星补能力，再执行同一严格合同 |
 | 整库发布面 | build/package 基线完成 | 模块内 C ABI 随模块收；最后只做跨编译器 ABI/FFI/bundle 总验收 |
@@ -63,7 +63,8 @@ static mem 闭包在 `-Werror` 下干净构建；AppleClang shared 20/20。三�
 
 这里关闭的是五模块之间的依赖方向，不是再次冻结每个模块的全部产品合同。后续成熟库
 能力红队分别发现了 mem 的 alignment/并发统计/lifetime P0 与 time 的 integral duration/
-时钟命名/证书 freshness P0；修复顺序见
+时钟命名/证书 freshness P0；这些实现缺口均已修复，time 已完成三平台复证，mem 尚余上述
+shared adapter 分发形状补表。过程与证据见
 [`mem-mature-gap-audit.md`](./mem-mature-gap-audit.md) 与
 [`time-mature-gap-audit.md`](./time-mature-gap-audit.md)。这些问题不推翻上面的依赖图。
 
@@ -114,8 +115,8 @@ math 的处理相反：它当前不是经过独立需求设计的产品，而是
 |---|---|---|
 | error | 功能主体完成 | ✅ 严格收口；全库 adoption 随各消费者复审继续 |
 | platform | 功能主体完成 | ✅ 严格收口 |
-| mem | 功能主体完成 | 🟡 成熟库红队后重开；3 个 P0 与 allocator adapter/fiber trim 裁决见 mature-gap audit |
-| time | 功能主体完成 | 🟡 成熟库红队后重开；duration 精度、时钟语义名与正常使用性能复证为 P0 |
+| mem | 功能/API/P0 已完成 | 🟡 Windows shared adapter 已签；WSL/M4 same-link 正式表与 selected-node/chunk platform 决策仍待完成 |
+| time | 功能主体完成 | ✅ 严格收口；duration/clock API 已修，三平台 correctness/正常使用性能与 WSL sanitizer 已复证 |
 | core | 功能主体存在 | ✅ 严格收口；最终实现 `71dabf7`，三平台同合同无 LOSE |
 | build/package system | 组织与三种交付形状完成 | ✅ 严格收口；最终发布矩阵与触发器见任务页 |
 | util-core | 低层公开头能力完成 | ✅ 严格收口；实际使用形状、依赖边、三平台正确性/TSan/性能已签证 |
@@ -142,4 +143,4 @@ math 的处理相反：它当前不是经过独立需求设计的产品，而是
 - 构建拓扑和慢变顺序：[`../architecture/roadmap.md`](../architecture/roadmap.md)；参考库角色：[`../architecture/references.md`](../architecture/references.md)。
 - 当前任务与 LOC：[`README.md`](./README.md)；每个旧 closure 文件只是该轮施工证据。
 - 稳定设计：[`../architecture/`](../architecture/README.md)；性能：[`../performance/`](../performance/README.md)；用户入口：[`../guide/`](../guide/README.md)。
-- 已严格认证模块/系统：[`error-module-reclosure.md`](./error-module-reclosure.md)、[`platform-remaining.md`](./platform-remaining.md)、[`core-module-closure.md`](./core-module-closure.md)、[`build-package-system-closure.md`](./build-package-system-closure.md)、[`util-module-closure.md`](./util-module-closure.md)。mem/time 的旧证书仍是施工输入，但当前状态由 [`mem-mature-gap-audit.md`](./mem-mature-gap-audit.md) 与 [`time-mature-gap-audit.md`](./time-mature-gap-audit.md) 覆盖。
+- 已严格认证模块/系统：[`error-module-reclosure.md`](./error-module-reclosure.md)、[`platform-remaining.md`](./platform-remaining.md)、[`time-mature-gap-audit.md`](./time-mature-gap-audit.md)、[`core-module-closure.md`](./core-module-closure.md)、[`build-package-system-closure.md`](./build-package-system-closure.md)、[`util-module-closure.md`](./util-module-closure.md)。mem 的旧证书仍是施工输入，当前状态由 [`mem-mature-gap-audit.md`](./mem-mature-gap-audit.md) 覆盖。

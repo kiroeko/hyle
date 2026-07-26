@@ -2,8 +2,9 @@
 
 > Tier 0 host-RAM 基础设施。本页是 mem 当前边界、公共能力形状和长期合同的设计真源。
 > 用户写法见 [`../guide/mem.md`](../guide/mem.md) 与 [`../guide/c-mem.md`](../guide/c-mem.md)，
-> 实测只见 [`../performance/benchmarks-mem.md`](../performance/benchmarks-mem.md)，当前收口任务只见
-> [`../milestones/mem-close-plan.md`](../milestones/mem-close-plan.md)。
+> 实测只见 [`../performance/benchmarks-mem.md`](../performance/benchmarks-mem.md)，当前复审状态只见
+> [`../milestones/mem-mature-gap-audit.md`](../milestones/mem-mature-gap-audit.md)；
+> [`mem-close-plan.md`](../milestones/mem-close-plan.md) 是上一轮冻结证书。
 
 ## 1. 边界
 
@@ -57,7 +58,7 @@ mem 不提供 pinned allocator 或单块 staging convenience。compute `Buffer` 
 | 成熟形状 | HYLE 处置 | 理由 |
 |---|---|---|
 | oneTBB scalable/cache-aligned allocator/resource | `SystemAllocator` + `SystemStdAllocator<T>` / `StdAllocator<T>` + `system_memory_resource()` / `PmrResource` / `AlignedPmrResource` | 通用堆借成熟 mimalloc；默认静态绑定与运行时注入分型，高对齐 policy 不污染默认容器 |
-| oneTBB `memory_pool`（growable variable-size） | 不另造公共通用堆 | 与 mimalloc 的职责重叠；HYLE 只保留有不同 ownership 合同的 external `FixedPool` |
+| oneTBB `memory_pool`（owned growable variable-size） | 默认组合 `system_memory_resource()` + 标准 PMR pool；运行时 backing 用 `PmrResource` | `FixedPool` 已覆盖 external bounded 版本；没有真实消费者前，不再复制一个与 mimalloc/标准 PMR 重叠的 HYLE-owned growable heap |
 | oneTBB `fixed_pool` | `FixedPool` | caller-owned storage、individual alloc/free/realloc、无 fallback；内部 two-level bitmap 给出 bounded fit |
 | Folly `Arena` | `Region` | owned growable bulk lifetime、size limit、usage/reserved、large-block release；clear 后同样单调走 retained blocks |
 | Folly `ThreadCachedArena` | 不内建隐藏 TLS registry | 用户可按 worker/thread 持有 `Region`；线程退出合并/全局销毁属于 runtime owner（如 sched），基础 mem 不猜 TLS lifetime |
@@ -215,8 +216,16 @@ external 能力按 allocation model 分成两个类型：
    metadata 使插入、删除与邻块合并也是 O(1)。一个 recent-free cursor 只作为时间局部性快路，
    未命中后至多取得一个 bitmap-selected list head。realloc 优先复用 retained span 或后一空闲
    邻块，常见 shrink/regrow 与 adjacent grow 均为 O(1)；只有必须搬移时复制
-   O(min(old,new))，并留在 noinline 冷路。它单线程、无 fallback；约 4 KiB 的显式 control
+   O(min(old,new))，并留在 noinline 冷路。`reset()` 在无 live allocation 时一次失效全部旧指针，
+   因而这已经是 **variable-size + individual free/realloc + bulk reset**。它单线程、无 fallback；约 4 KiB 的显式 control
    是长寿命通用固定堆为 bounded lookup 支付的常量成本，不适合作为每个 request 的临时对象。
+
+这里 `FixedPool` 的 “fixed” 指 **payload backing 的地址与容量固定**，不是 allocation 大小固定。
+如果用户需要池自己取得并增长 backing，C++ 默认组合
+`std::pmr::unsynchronized_pool_resource(system_memory_resource())`，跨线程则用 synchronized 版本；
+需要 quota/stats/region 等运行时 upstream 才构造 `PmrResource`。纯 C 当前没有 HYLE-owned growable
+variable-size pool 对象，这是有意的产品边界，不是“没有可变大小内存”：C 已能用任意大小
+`hyle_allocator`、growable bulk `hyle_region` 和 external bounded `hyle_fixed_pool`。
 
 ## 9. NUMA、大页与专用模块
 
@@ -238,19 +247,19 @@ external 能力按 allocation model 分成两个类型：
 | 用户形状 | C++ 原生产品面 | C/FFI 产品面 | 合同 |
 |---|---|---|---|
 | 默认/注入分配 | `SystemAllocator`、`Allocator`、typed helpers | `hyle_system_allocator`、`hyle_allocator`、inline alloc/free/realloc | 默认 direct path；运行时注入保留 backing identity |
-| allocator-template adapter | `StdAllocator<T>` | 不适用 | std/第三方容器 rebind、完整 backing equality、借用生命周期、标准 OOM exception boundary |
+| allocator-template adapter | `SystemStdAllocator<T>` / `StdAllocator<T>` | 不适用 | 默认 empty/always-equal 静态 system 形状；注入形状支持 rebind、完整 backing equality、借用生命周期；标准 OOM exception boundary |
 | heap size/pressure | `system_good_size/usable_size/collect` | 同名 `hyle_system_*` | 显式查询与回收，不隐藏周期线程 |
 | byte admission | `QuotaAllocator` | `hyle_quota_allocator_*` | strict live requested-byte budget |
 | 统计/泄漏诊断 | `StatsAllocator::create(backing,track,metadata)`、`LeakTracker::create(metadata)` | `hyle_stats_allocator_*` + POD snapshot/bounded copy | opt-in；被测/诊断域分离；metadata OOM 的 dropped/complete 可观察；默认 system 热路零统计税 |
 | owned request scratch | `Region` | `hyle_region_*` + options | growable、bulk clear、可设 reserved-byte hard limit |
 | caller-buffer scratch | `FixedRegion` | 三字按值 `hyle_fixed_region` | no heap、no fallback、bulk reset |
 | borrowed/LIFO scratch | `PooledRegion`、`StackAllocator` | 对应 opaque handle | 单线程；borrowed block 或 owned slab |
-| external variable heap | `FixedPool` | in-place control 或显式 control allocator | caller storage、individual free/realloc、two-level bitmap O(1) fit/merge、no fallback；约 4 KiB 长寿命 control |
+| external variable heap | `FixedPool` | in-place control 或显式 control allocator | caller storage、individual free/realloc + bulk reset、two-level bitmap O(1) fit/merge、no fallback；约 4 KiB 长寿命 control |
 | hard shared slots | `SharedPool`、`ObjectPool<T>` | `hyle_shared_pool_*` + typed raw-slot 宏 | remote free 立即可见、精确 hard capacity |
 | owner-local soft cache | `SharedPoolCache`、`ObjectPoolCache<T>` | `hyle_shared_pool_cache_*` + typed raw-slot 宏 | 显式 owner/cache/publish，容量是 soft visibility window |
 | growable owner-local slots | `GrowablePool<T>` | runtime size/alignment `hyle_growable_pool_*` | 单线程、几何增长、Reconstruct |
 | preserve/RAII loan | `PreservingObjectPool<T>`、`PoolLoan` | raw slot acquire/release，由调用方管理 init/cleanup | 能力可组合；C 不伪造 ctor/dtor/RAII |
-| PMR | `PmrResource` / `AlignedPmrResource` | 不适用 | C++ 标准库适配；后者只提高 container buffer 的 base alignment，不保证 element 间隔 |
+| PMR | `system_memory_resource()` / `PmrResource` / `AlignedPmrResource` | 不适用 | 默认 system singleton 与运行时注入分型；后者只提高 container buffer 的 base alignment，不保证 element 间隔 |
 | guarded fiber stack | `FiberStack`、`FiberStackPool` | sched C ABI 内部消费 | scheduler-owned runtime specialization；有界 retention + cold trim；shutdown 自动归还，不暴露危险 raw stack control |
 | THP/NUMA span | `HugeRegion` + policy、`reserve_huge_1g_pages` | `hyle_huge_region_*` + policy | 显式请求、可观察 accepted/applied 状态；冷预留失败返回同一 Status |
 
@@ -262,14 +271,17 @@ runtime `slot_stride` 均不要求用户重演内部布局。
 ## 11. 用户选型
 
 ```text
-通用 host RAM / 默认容器             → SystemAllocator
+通用 host RAM                         → SystemAllocator
 运行时注入、FFI、mock                → Allocator
-std::pmr 容器                         → PmrResource
-传统 std/第三方 allocator 模板参数    → StdAllocator<T>
+默认 system 的 std::pmr 容器          → system_memory_resource()
+运行时 backing 的 std::pmr 容器       → PmrResource
+默认 system 的 allocator 模板参数     → SystemStdAllocator<T>
+运行时 backing 的 allocator 模板参数  → StdAllocator<T>
 PMR buffer 需要显式 cache/page 对齐   → AlignedPmrResource
 request/frame 整批释放                → Region
 调用方外部 buffer 的 bulk scratch     → FixedRegion
-调用方外部 buffer 的变长 alloc/free   → FixedPool
+调用方外部 buffer 的变长 alloc/free/reset → FixedPool
+自增长 backing 的变长 alloc/free/release  → std::pmr pool_resource over system_memory_resource()
 固定 slab 上 LIFO scratch             → StackAllocator
 单线程同尺寸对象、按需增长            → GrowablePool<T>
 多线程固定 block/object、严格容量      → SharedPool / ObjectPool<T>
