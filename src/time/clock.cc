@@ -41,7 +41,7 @@ constexpr std::uint64_t scale_add_saturated(std::uint64_t whole,
   return whole * scale + frac;
 }
 
-#if defined(HYLE_TESTING)
+#if defined(HYLE_TESTING) && HYLE_TIME_HAS_TSC
 bool force_tsc_timing_calibration() noexcept {
 #  if defined(HYLE_OS_WINDOWS)
   char value[2] = {};
