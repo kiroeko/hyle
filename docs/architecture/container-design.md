@@ -101,8 +101,8 @@ queue。元素要求 nothrow move construction/destruction，使增长失败能�
 
 head/tail 按成熟 ring 形状单调推进；无符号差值给出 size，power-of-two mask 给出物理
 slot，hot pop 不在每次变空时重置两个游标。后者曾令 GCC 常态 FIFO 多一条分支和双写；
-删除冗余后与 portable Folly-shaped floor 在 WSL 统计同档，并在 Windows 快约 6%，而
-不是增加常态 metadata 或专用 benchmark API。push/pop 两端与随机访问均为 O(1)，增长
+删除冗余后与 portable Folly-shaped floor 在 WSL 统计同档，并在 Windows/M4 快约
+6%/15%，而不是增加常态 metadata 或专用 benchmark API。push/pop 两端与随机访问均为 O(1)，增长
 为 O(N)，已达到该 storage 形状的渐进下界。
 
 `ByteRingBuffer` 不是 `RingDeque<std::byte>` 的别名：它面向 socket/file/audio staging，

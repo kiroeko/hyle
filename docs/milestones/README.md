@@ -30,7 +30,7 @@
 
 | 固定统计口径 | 当前 | 命令/说明 |
 |---|---|---|
-| **全库代码** | **255,658** | `cloc . --vcs=git`；含 docs/third_party，**≠ 自写**；不含未提交 README 修改 |
+| **全库代码** | **255,662** | `cloc . --vcs=git`；含 docs/third_party，**≠ 自写**；不含未提交 README 修改 |
 | **自实现（含测试）** | **121,462** | `cloc include/hyle src tests`，只计 C++/Header/C/CUDA |
 | **自实现（不含测试）** | **83,403** | `cloc include/hyle src`，只计 C++/Header/C/CUDA；库本体硬锚 |
 | **当前审查单元 container 实现** | **8,645** | `include/hyle/container` + `include/hyle/c/container.h` + `src/container`；不含测试/CMake/Text |

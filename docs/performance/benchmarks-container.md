@@ -16,7 +16,7 @@
 | **SmallVector / PodVector** | ⚠️ 主 Win + 部分补测 | owning vector 形状待本轮统一三平台刷新 |
 | **ConcurrentVector** | ✅ Windows+WSL n=15；⏳ M4 | append/range iteration 同合同 SOTA；WSL `operator[]` 是已知缺口 |
 | **DynamicBitSet / SparseSet** | ✅ **2026-07-26 三平台 n=15** | actual-use graph frontier / frame-local active IDs；M4 bitset 与 std 同档；纯 SparseSet membership 明确输 dense bitmap |
-| **RingDeque / ByteRingBuffer** | ✅ Windows+WSL n=15；⏳ M4 | 固定容量 FIFO 与 32KiB backlog/4KiB stream staging；WSL 与 Folly-shaped floor 同档 |
+| **RingDeque / ByteRingBuffer** | ✅ **2026-07-26 三平台 n=15** | 固定容量 FIFO 与 32KiB backlog/4KiB stream staging；WSL 与 Folly-shaped floor 同档，Win/M4 胜 floor |
 | **并发队列** | 见 queue / sched 文 | 不在本页展开 |
 
 **读法**：标 ✅ 的可当当前产品结论；标 ⚠️ 的方向大体可信，但**不要**当 2026-07-20 式三平台 sign 证书去对外硬报绝对 ns。
@@ -38,8 +38,8 @@
 | **ConcurrentVector** | oneTBB `concurrent_vector` | ✅ Win/WSL：append、range iteration、并发 prefix 读同档或赢；⚠️ WSL `operator[]` 顺扫约 0.51x |
 | **DynamicBitSet** | `std::bitset` + portable dynamic blocks | ✅ Win 1M-bit OR+count 1.40x；WSL 5.18x；M4 与 std 同档；⚠️ M4 单循环 fused floor 快 1.53x；⏳ Boost |
 | **SparseSet** | dense bitmap + `std::unordered_set` | ✅ frame clear+rebuild Win 3.29x/28.6x，WSL 3.61x/11.6x，M4 1.86x/11.4x；membership 明确输 dense |
-| **RingDeque** | Folly fixed-capacity ring shape / `std::deque` | ✅ Win 快 floor 1.06x、快 std 1.61x；WSL 与 floor 同档、快 std 1.28x；⏳ M4 |
-| **ByteRingBuffer** | linear byte buffer+memmove / `std::deque<byte>` | ✅ stream staging Win 1.82x/约118x，WSL 1.94x/48x；⏳ M4 |
+| **RingDeque** | Folly fixed-capacity ring shape / `std::deque` | ✅ Win/M4 快 floor 1.06x/1.15x，WSL 与 floor 同档；三平台快 std 1.28–9.20x |
+| **ByteRingBuffer** | linear byte buffer+memmove / `std::deque<byte>` | ✅ stream staging Win/WSL/M4 快 linear 1.82x/1.94x/4.26x，快 deque 约118x/48x/121x |
 
 ### DynamicBitSet / SparseSet：按实际生命周期验收（三平台 Release，n=15）
 
@@ -105,6 +105,7 @@ bounded ring 完整执行满检查、单调 head/tail 与 power-of-two mask，�
 |---|---:|---:|---:|---|
 | Windows / MSVC 19.50 | **1.307 ns/op** | 2.101 | 1.390 | HYLE 快 std **1.61x**、快 floor **1.06x**；两组 15/15 |
 | WSL / GCC 14.2 | **0.610 ns/op** | 0.783 | 0.622 | HYLE 快 std **1.28x**（15/15）；与 floor 统计同档（10/15 HYLE） |
+| M4 / AppleClang 21 | **0.524 ns/op** | 4.823 | 0.600 | HYLE 快 std **9.20x**、快 floor **1.15x**；两组 15/15 |
 
 第一版在每次 pop 后检查 empty 并把两个游标重置为零，GCC 下慢 portable floor 约
 12–20%。无符号单调游标本就允许 wrap；Folly 成熟实现也不在 hot pop 归零。删除这条
@@ -119,11 +120,13 @@ memmove 剩余 backlog；`std::deque<byte>` 使用逐元素 API。数值按处�
 |---|---:|---:|---:|---|
 | Windows / MSVC 19.50 | **0.009 ns/B（115.60 GB/s）** | 0.016（63.35） | 1.024（0.98） | HYLE **1.82x / 约118x**；均 15/15 |
 | WSL / GCC 14.2 | **0.009 ns/B（115.14 GB/s）** | 0.017（59.48） | 0.419（2.39） | HYLE **1.94x / 48.2x**；均 15/15 |
+| M4 / AppleClang 21 | **0.010 ns/B（99.35 GB/s）** | 0.043（23.33） | 1.216（0.82） | HYLE **4.26x / 约121x**；均 15/15 |
 
 这不是“逐 byte deque”微基准塑形：公开类型同时提供 partial copy 与 two-span zero-copy，
 正常网络/file/audio 用户可直接把 spans 接 scatter/gather I/O。当前数字只证明 copy
 staging；zero-copy 的价值取决于真实 syscall/codec 消费者，不用一个不读写 bytes 的
-metadata benchmark 虚报无限带宽。M4 尚未刷新，所以本节不写三平台最终证书。
+metadata benchmark 虚报无限带宽。当前证书覆盖 Windows/MSVC、WSL/GCC14 与
+M4/AppleClang；三平台 typed/C/surface/header gate 也均通过。
 
 ### FlatHashMap / FlatHashSet：真实 typed 形状（Windows/WSL Release，n=15）
 

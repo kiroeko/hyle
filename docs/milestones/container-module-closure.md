@@ -92,10 +92,11 @@
 > 的多余游标归零；按 Folly 单调无符号 head/tail 形状删除后，Windows 固定 FIFO 快
 > `std::deque` 1.61x、快 portable Folly-shaped floor 1.06x，WSL 快 std 1.28x、与 floor
 > 统计同档。32KiB backlog/4KiB stream staging 两平台快 linear+memmove 1.82x/1.94x。
-> Windows/WSL typed、纯 C、符号、头自包含四门与 GCC14 UBSan 均通过；M4 在
-> implementation commit 推送后补签。本批仍不是整个 container 最终证书，下一项为
+> Windows/WSL typed、纯 C、符号、头自包含四门与 GCC14 UBSan 均通过；`cc7d958`
+> 推送后 M4/AppleClang 四门也全过，n=15 固定 FIFO 快 std 9.20x、快 floor 1.15x，
+> byte staging 快 linear 4.26x。三平台证书完成。本批仍不是整个 container 最终证书，下一项为
 > concurrent associative。
-> 本批四项代码量：全库 255,658；自实现含测试 121,462；自实现不含测试 83,403；
+> 本批四项代码量：全库 255,662；自实现含测试 121,462；自实现不含测试 83,403；
 > container 实现 8,645。
 
 ## 结论
