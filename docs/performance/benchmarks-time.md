@@ -2,11 +2,13 @@
 
 > 本页是 time 性能数字的唯一信源。实现与选择理由分别见
 > [`time-design`](../architecture/time-design.md) 和 [`guide/time`](../guide/time.md)。
-> 当前最终实现形状固定在 `9129001`：Windows MSVC 19.50 与 WSL GCC 14.2 native-ext4
-> Release 已完成 n=15；Apple M4 待独立真机复证。每个样本是独立进程，
+> 当前产品实现固定在 `16c91b4`，Apple-only benchmark 仪器固定在 `ba61eb5`：Windows
+> MSVC 19.50、WSL GCC 14.2 native-ext4、Apple M4 AppleClang 21 Release 均完成 n=15。
+> M4 同时跑 user-interactive 与 utility QoS；每个样本是独立进程，
 > 判定以 `bench-stat.py` paired sign test（p < 0.01，且中位差 >1%）为主。
-> TimerQueue 算法表采于 `bd29d57`；其后的 `9129001` 只补 bool duration 与 typed facade
-> inline，不改变算法表使用的 raw queue 路径。normal-use 表已在 `9129001` 重采。
+> Windows/WSL TimerQueue 算法表采于 `bd29d57`；其后的产品提交只补 bool duration、typed
+> facade inline 与非 TSC 编译门，不改变算法表使用的 raw queue 路径。normal-use 表已在
+> `9129001` 重采；M4 两表使用最终 Apple 仪器 `ba61eb5`。
 
 ## 仪器与对手
 
@@ -73,6 +75,21 @@ WSL GCC 14.2 n=15：
 结论是：radix 在 N=1 固定成本高，在几十个及大批可取消 timer 上占优；它不保证每个小 N 行
 都赢，也不需要为这些交叉点新增公开类型。
 
+Apple M4 user-interactive n=15：
+
+| 操作 | N | H / S / heap | H vs S | H vs heap |
+|---|---:|---:|---:|---:|
+| arm+cancel | 1 | 3.267 / 3.329 / 3.648 | TIE | TIE |
+| arm+cancel | 8 | 2.695 / 2.352 / 7.550 | 0.878× LOSE | 2.798× WIN |
+| arm+cancel | 64 | 2.577 / 3.075 / 12.261 | 1.188× WIN（sign） | 4.671× WIN |
+| arm+expire | 1 | 7.014 / 12.859 / 3.826 | 1.844× WIN | 0.545× LOSE |
+| arm+expire | 8 | 3.426 / 5.811 / 6.443 | 1.686× WIN | 1.855× WIN |
+| arm+expire | 64 | 3.228 / 6.342 / 11.464 | 1.957× WIN | 3.540× WIN |
+
+utility 的关键交叉点同向：N=8 arm+cancel 为 2.699 / 2.501 / 7.483，HYLE 对 Seastar
+0.928× LOSE、对 heap 2.771× WIN。N=1 的进程间 spread 仍大，故只判 TIE；不把 QoS 或可能的
+P/E 调度当作物理 affinity。
+
 ## 3. TimerQueue：N=4096 算法门
 
 Windows n=15，单位 ns/node：
@@ -93,40 +110,54 @@ WSL native-ext4 n=15，单位 ns/node：
 | reverse churn | 5.364 | 5.059 | — | H/S 0.937×，LOSE 15/15 |
 
 WSL 复现了旧证书的 code-layout 边界：normal churn 平，reverse churn HYLE 慢约 6.3%。这不
-支持给所有节点增加常态 metadata。上一轮 `14ee67e` 的 M4 两档 QoS 仅作方向参照；最终 M4
-点值 pending。
+支持给所有节点增加常态 metadata。
+
+Apple M4 两档 QoS，单位 ns/node：
+
+| QoS / 操作 | HYLE | Seastar radix | indexed heap | 结论 |
+|---|---:|---:|---:|---|
+| interactive arm+cancel | 3.771 | 4.170 | 8.336 | H/S 1.096× WIN；H/heap 2.199× WIN |
+| interactive arm+expire | 5.229 | 7.400 | 23.419 | H/S 1.430×；H/heap 4.479× WIN |
+| interactive churn | 4.049 | 4.710 | 10.998 | H/S 1.158×；H/heap 2.724× WIN |
+| interactive reverse churn | 4.107 | 4.683 | — | H/S 1.153× WIN |
+| utility arm+cancel | 4.150 | 4.378 | 8.339 | H/S 1.065× WIN；H/heap 2.012× WIN |
+| utility arm+expire | 5.212 | 7.362 | 23.765 | H/S 1.412×；H/heap 4.509× WIN |
+| utility churn | 3.778 | 4.717 | 11.250 | H/S 1.239×；H/heap 2.885× WIN |
+| utility reverse churn | 3.796 | 4.780 | — | H/S 1.260× WIN |
 
 ## 4. 正常 event-loop 与 schedule_after
 
 单位 ns/step 或 ns/op，均 n=15：
 
-| 场景 | Windows | WSL | 评价 |
-|---|---:|---:|---|
-| 64-step incremental，连续节点 | 12.637 | 10.542 | — |
-| 64-step incremental，对象内嵌散布节点 | 12.620 | 10.687 | 两平台与连续布局 TIE |
-| absolute schedule + cancel | 3.618 | 3.293 | queue primitive |
-| raw schedule_after，预采 now | 3.779 | 3.034 | queue primitive + saturating add |
-| chrono schedule_after，预采 now | 3.745 | 4.079 | Windows TIE；WSL 0.738× LOSE |
-| raw schedule_after，真实读 monotonic | 18.037 | 19.761 | 正常端到端路径 |
-| chrono schedule_after，真实读 clock | 18.055 | 19.718 | 两平台与 raw TIE |
+| 场景 | Windows | WSL | M4 interactive | 评价 |
+|---|---:|---:|---:|---|
+| 64-step incremental，连续节点 | 12.637 | 10.542 | 15.389 | — |
+| 64-step incremental，对象内嵌散布节点 | 12.620 | 10.687 | 9.405 | x86 TIE；M4 scattered 1.629× WIN |
+| absolute schedule + cancel | 3.618 | 3.293 | 3.290 | queue primitive |
+| raw schedule_after，预采 now | 3.779 | 3.034 | 3.119 | queue primitive + saturating add |
+| chrono schedule_after，预采 now | 3.745 | 4.079 | 4.579 | Win TIE；WSL/M4 0.738×/0.690× LOSE |
+| raw schedule_after，真实读 monotonic | 18.037 | 19.761 | 22.971 | 正常端到端路径 |
+| chrono schedule_after，真实读 clock | 18.055 | 19.718 | 23.398 | 三平台与 raw TIE |
 
 真实 `schedule_after` 的大头是读钟，不是 3–4ns queue primitive。GCC 的显式预采样 typed
 路径多约 1ns；反汇编确认最终代码已完整 inline，差异来自 signed time-point clamp/代码放置，
 而默认真实读钟路径统计平。不能为这条微路径删除负 time-point 的正确 clamp。散布
 stable-address 节点没有系统性退化；因此连续 N=4096 数字不是靠 benchmark-only layout 得到的。
+M4 的 scattered 对象反而更快，说明真实 object-embedded layout 不是弱项；packed 48-byte entry
+跨 128-byte cache-line 的布局才是其边界。utility 复核仍为 15.390 / 9.479，同向。
 
 ## 5. C ABI 成本
 
 经真实 shared library、opaque handle 和共享 `hyle_status` 合同，均 n=15：
 
-| 场景 | Windows | WSL |
-|---|---:|---:|
-| C++ schedule+cancel | 3.618 ns | 3.144 ns |
-| C ABI schedule+cancel+Status | 11.996 ns | 11.024 ns |
-| C ABI schedule_after clock+cancel+Status | 20.234 ns | 20.964 ns |
-| C ABI schedule+advance+visitor，fire one | 16.450 ns | — |
-| C++ new/delete `TimerEntry` | 21.349 ns | 7.349 ns |
-| C opaque timer create/destroy+Status | 26.005 ns | 15.663 ns |
+| 场景 | Windows | WSL | M4 interactive |
+|---|---:|---:|---:|
+| C++ schedule+cancel | 3.618 ns | 3.144 ns | 3.263 ns |
+| C ABI schedule+cancel+Status | 11.996 ns | 11.024 ns | 7.915 ns |
+| C ABI schedule_after clock+cancel+Status | 20.234 ns | 20.964 ns | 22.624 ns |
+| C ABI schedule+advance+visitor，fire one | 16.450 ns | — | — |
+| C++ new/delete `TimerEntry` | 21.349 ns | 7.349 ns | 15.449 ns |
+| C opaque timer create/destroy+Status | 26.005 ns | 15.663 ns | 18.999 ns |
 
 这不是“零成本 C wrapper”：可恢复错误、DLL 接缝和 opaque 生命周期有真实常数税。但 queue
 操作仍 O(1)、无分配，opaque timer 只在创建/销毁时分配。没有大规模 C timer consumer 前，
@@ -151,26 +182,41 @@ WSL native Linux 的 HYLE/std overshoot（ms）同档：
 | 10 ms | 0.076 / 0.126 / 0.126 | 0.077 / 0.129 / 0.129 |
 
 两平台所有样本 early=0。这里衡量 OS thread blocking wake quality，不是 scheduler/fiber timer；
-接口保证不主动早醒，不承诺实时调度。Apple overshoot 分布 pending。
+接口保证不主动早醒，不承诺实时调度。
+
+M4 overshoot（ms），两档 QoS 均 early=0：
+
+| QoS / request | HYLE p50 / p95 / p99 | `std::sleep_for` p50 / p95 / p99 | 结论 |
+|---|---:|---:|---|
+| interactive 100 us | 0.052 / 0.056 / 0.058 | 0.052 / 0.055 / 0.058 | TIE |
+| interactive 1 ms | 0.515 / 0.519 / 0.521 | 0.515 / 0.521 / 0.539 | TIE |
+| interactive 10 ms | 5.031 / 5.041 / 5.041 | 5.033 / 5.043 / 5.043 | TIE |
+| utility 100 us | 0.810 / 0.818 / 0.820 | 0.812 / 0.817 / 0.825 | TIE |
+| utility 1 ms | 8.017 / 8.041 / 8.046 | 8.016 / 8.040 / 8.046 | TIE |
+| utility 10 ms | 70.259 / 80.042 / 80.042 | 74.286 / 80.041 / 80.041 | TIE |
+
+utility 的强 coalescing 是 macOS 低优先级节能策略，HYLE 与 std 同行为；需要低延迟 blocking
+sleep 的线程应选择交互/高优先级策略，fiber 仍应使用 sched 而不是阻塞 worker。
 
 ## 7. CommonTimeoutQueue
 
-最终实现未改 Common 核；上一轮 `14ee67e` 的三平台结构证据是：Windows 对 checked/naked
-TAILQ 均胜；WSL 对 checked 同档、对 naked 胜；M4 对 checked 胜，但 naked expire 下界快约
-22%。owner/order/link 检查与可恢复 C Status 是合同，不为裸链下界删除。该结构尚无生产
-fixed-idle-timeout consumer，接入时仍需 application-level 证书。最终形状的三平台复跑 pending。
+最终实现未改 Common 核；Windows 对 checked/naked TAILQ 均胜，WSL 对 checked 同档、对
+naked 胜。M4 interactive 为 3.473ns，对 checked 4.287ns 为 1.236× WIN，对 naked 2.804ns
+则约慢 24%；utility 为 3.515 / 4.293 / 2.822，同向。owner/order/link 检查与可恢复 C Status
+是合同，不为裸链下界删除。该结构尚无生产 fixed-idle-timeout consumer，接入时仍需
+application-level 证书。
 
-## 8. 当前结论与未完成证据
+## 8. 当前结论与证据边界
 
 | 项 | 状态 |
 |---|---|
-| exact duration conversion | 整数路径精确饱和并覆盖 bool Rep；Windows/WSL 正确性门已通过 |
-| 默认/opt-in clock | 语义形状已定；旧热读证据强，最终点值待 Apple 复跑 |
-| TimerQueue 算法 | SOTA-class radix、O(1) arm/cancel；Windows/WSL 小 N 和 N=4096 已复证 |
-| 正常 event-loop | Windows/WSL 连续/散布同档；真实 clock 成本已单列 |
+| exact duration conversion | 整数路径精确饱和并覆盖 bool Rep；Windows/WSL/Apple 正确性门已通过 |
+| 默认/opt-in clock | 语义形状已定；默认路径同 OS primitive，opt-in availability 合同不变 |
+| TimerQueue 算法 | SOTA-class radix、O(1) arm/cancel；三平台小 N 和 N=4096 已复证 |
+| 正常 event-loop | 三平台真实 clock 成本已单列；M4 scattered 优于 packed contiguous |
 | C ABI | 能力覆盖完整，正常操作常数税已公开；不把 DLL/Status 成本伪装为零 |
-| thread sleep | Windows 高分辨率路径明显优于 std；Linux 与 std 同档；Apple pending |
-| strict 性能收口 | **未最终关闭**：只欠 Apple M4 在固定提交上的独立复证 |
+| thread sleep | Windows 高分辨率路径明显优于 std；Linux/M4 与 std 同档；三平台 early=0 |
+| strict 性能收口 | 三平台 Release 证据齐全；保留 WSL reverse churn、M4 N=8 cancel 等真实 LOSE |
 
 ## 9. 复跑
 

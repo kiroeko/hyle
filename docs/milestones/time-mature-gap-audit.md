@@ -14,7 +14,8 @@
 - [x] TSC fallback 已改为 sleep-based calibration，并由 fresh-process test 记录 wall/thread CPU；
 - [x] 正常使用性能矩阵已加入（`bd29d57`），Windows n=15 已记录；
 - [x] 合法的 `duration<bool, Period>` 已覆盖，typed facade hot helper 显式 inline（`9129001`）；
-- [ ] Windows/WSL 最终形状已复证；Apple 完成前 strict 状态继续保持打开。
+- [x] Windows/WSL/Apple 最终形状 correctness 与 normal-use 性能已复证；WSL GCC14
+  ASan/UBSan 最终形状五门均为 5/5。
 
 ## 结论先行
 
@@ -34,8 +35,8 @@ C ABI 也覆盖了现有语言无关能力。`sched`/`io` 对 time 的消费方�
 3. time 性能证书固定在 `14ee67e`，之后直接热路依赖 `core/intrusive_list.h` 已连续改变，且现有
    timer workload 只覆盖连续内存的 N=4096 批处理，没有证明正常入口、小 N、散布节点和 C ABI。
 
-三个实现/仪器缺口现已修复；Windows 最终形状已复证。**功能骨架完整，算法选择正确，
-正确性和 API 语义已修；strict 只剩 Apple 真机复证，不应提前打勾。**
+三个实现/仪器缺口现已修复。**功能骨架完整，算法选择正确，正确性和 API 语义已修，
+三平台 Release/性能与 WSL ASan/UBSan 也已复证。**
 日历/时区、通用格式语言、执行器、带锁跨线程 timer queue 仍不应进入 time core。
 
 ## 1. 当前实现清单与真实用户形状
@@ -142,7 +143,7 @@ tests 和两份 guide，最终采用 `profiling_clock_ns` 与 `coarse_realtime_n
 不需要因为成熟库另有 heap/wheel 就新增第三个通用 timer：heap 的 eager cancel 是 O(log n)，
 固定 tick wheel 会引入量化与更多 bucket heads；现 radix 是 mixed exact deadline 的更好默认。
 
-### 4.2 正常使用性能证书扩展（Windows 已完成，WSL/Apple pending）
+### 4.2 正常使用性能证书扩展（三平台已完成）
 
 审计发现 `benchmarks-time.md` 的旧证书钉在 `14ee67e`。其后直接 primitive
 `include/hyle/core/intrusive_list.h` 在 `0f78eb5`、`5c3ad28`、`ed9988c`、`71dabf7` 中改变了
@@ -162,11 +163,11 @@ batch。`bd29d57` 保留该算法门，并新增：
 - sub-ms thread sleep 的 overshoot/分位数，尤其 Windows high-resolution waitable timer；
 - Common 接入真实 fixed idle timeout router 后的 application-level 证书。
 
-Windows n=15 已完成；N=1 时 indexed heap 确实更快，N=8 起 HYLE 胜，HYLE 对同算法
-Seastar-shape 在 N=1/8/64 均胜。散布/连续 incremental path 统计平；真实 schedule_after、
-C ABI 常数税与 sleep overshoot 均公开记录。WSL/native Linux 与 Apple 仍须机器空闲时顺序执行。
-SOTA 的合格含义仍是算法/复杂度不落后、同合同正常使用无系统性退化，不是让每个
-microbenchmark 行都必须绿色。
+Windows、WSL/native Linux 与 Apple 两档 QoS 的 n=15 已在机器空闲时顺序完成。N=1 时
+indexed heap 确实更快，N=8 起 HYLE 总体进入胜区；M4 N=8 arm+cancel 对 Seastar-shape
+仍慢 7--12%，WSL reverse churn 慢约 6.3%。散布/连续 incremental path、真实
+schedule_after、C ABI 常数税与 sleep overshoot 均公开记录。SOTA 的合格含义仍是算法/复杂度
+不落后、同合同正常使用无系统性退化，不是让每个 microbenchmark 行都必须绿色。
 
 ### 4.3 calibration 冷路的 P1 性能/功耗问题（已修）
 
@@ -222,7 +223,7 @@ architecture 也正确区分 time 数据结构和 sched/io executor。
 
 1. [x] 精确修复 integral duration conversion，补边界测试；
 2. [x] 把两个 `fast_*` API 改为真实语义名，整套更新 C++/C/docs/surface；
-3. [x] 扩展正常使用性能矩阵并重跑 Windows/WSL；[ ] 最终形状 Apple 证书；
+3. [x] 扩展正常使用性能矩阵并重跑 Windows/WSL/Apple 两档 QoS；
 4. [x] 同步 time architecture/guide/performance/milestone；全局 readiness 留给主任务统一更新。
 
 ### P1：需要 consumer 或独立设计批准
@@ -267,7 +268,9 @@ consumer 决定，避免 time 再次为了 benchmark 或“能力数量”无边
 
 ## 9. 实施验证
 
-- 最终实现基点：`9129001`，MSVC 19.50，Release shared，`HYLE_COMPONENTS=time`；
+- 最终产品实现基点：`16c91b4`，最终 Apple 仪器：`ba61eb5`，Release shared，`HYLE_COMPONENTS=time`；
 - Windows `hyle_time_test`、纯 C、C surface、header 与 fresh calibration：5/5 通过；
 - Windows timer/normal-use benchmark n=15 已记录到 performance；
-- WSL correctness 5/5 与 native-ext4 timer/normal n=15 已完成；Apple 真机未完成前 strict 保持打开。
+- WSL correctness 5/5 与 native-ext4 timer/normal n=15 已完成；Apple 最终 commit 五门 5/5，
+  timer/normal interactive + utility 各 n=15 已完成；
+- WSL GCC14 最终 `16c91b4`：ASan 五门 5/5，UBSan 五门 5/5。

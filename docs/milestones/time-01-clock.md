@@ -5,7 +5,7 @@
 | 阶段 | P2 |
 | 模块 | time/ |
 | 依赖 | core 宏/头；无编译期 HYLE 模块依赖 |
-| 状态 | 🟡 2026-07-26 strict 重审实现完成；Windows/WSL 已复证，Apple 最终形状待真机复证 |
+| 状态 | ✅ 2026-07-26 strict 重审实现完成；Windows/WSL/Apple 最终形状五门通过 |
 
 ## 交付能力
 
