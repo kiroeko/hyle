@@ -30,10 +30,10 @@
 
 | 固定统计口径 | 当前 | 命令/说明 |
 |---|---|---|
-| **全库代码** | **267,195** | `cloc . --vcs=git`；含 docs/third_party，**≠ 自写** |
-| **自实现（含测试）** | **130,212** | `cloc include/hyle src tests`，只计 C++/Header/C/CUDA |
-| **自实现（不含测试）** | **89,503** | `cloc include/hyle src`，只计 C++/Header/C/CUDA；库本体硬锚 |
-| **当前审查单元 container 实现** | **13,681** | `include/hyle/container` + `include/hyle/c/container.h` + `src/container`；不含测试/CMake/Text |
+| **全库代码** | **269,403** | `cloc . --vcs=git`；含 docs/third_party，**≠ 自写** |
+| **自实现（含测试）** | **131,762** | `cloc include/hyle src tests`，只计 C++/Header/C/CUDA |
+| **自实现（不含测试）** | **90,454** | `cloc include/hyle src`，只计 C++/Header/C/CUDA；库本体硬锚 |
+| **当前审查单元 container 实现** | **14,337** | `include/hyle/container` + `include/hyle/c/container.h` + `src/container`；不含测试/CMake/Text |
 | **终态生产（纪律收口 A）** | **~75–90k** | 主预期 |
 | **终态生产（做满守界 B）** | **~85–105k** | compute/graph/发布面收口更满 |
 | 失控上限 C | 120k+ 生产 | 应避免 |
@@ -41,8 +41,8 @@
 | 进度口径 | 怎么读 | 当前判断 |
 |---|---|---|
 | **里程碑计数** | 颗粒不等重 | **勿当完成度**（小 util 与大 compute 各记 1） |
-| **生产 LOC ÷ 终态 A 中值 ~82.5k** | 代码量进度 | **~107%**；SIMD 体量放大该数，**≠ 能力完成度** |
-| **生产 LOC ÷ 终态 B 中值 ~95k** | 做满剧本 | **~93%** |
+| **生产 LOC ÷ 终态 A 中值 ~82.5k** | 代码量进度 | **~110%**；SIMD 体量放大该数，**≠ 能力完成度** |
+| **生产 LOC ÷ 终态 B 中值 ~95k** | 做满剧本 | **~95%** |
 | **对完整愿景的功能完成度** | 能力清单 + 头牌缺口 | 除 compute/graph 能力尾外主体大多已实现；mem/time 已因 mature-gap P0 重开；其余按队列复审 |
 
 **模块生产粗表（2026-07-26）**：simd ~37.8k · io ~9.0k · platform **7,020**

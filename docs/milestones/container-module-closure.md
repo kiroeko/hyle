@@ -186,11 +186,11 @@
 > sentinel 的 pointer arithmetic/object-model 风险；singleton 不分配，SBO 大小不是公开
 > knob。allocator OOM、随机 std::map/set differential、alias、move-only/lifetime 与异常保持
 > 均覆盖，Windows Release container 286/286 通过。
-> normal-use n=15 对同布局 sorted-std::vector peer：32Ki hit/miss/iteration 为
-> 0.963x/0.984x/0.983x，set membership 1.032x，64 erase+append 1.437x；但从 pair range 的
-> sorted bulk build 仅 0.309x（绝对约 0.99ns/entry），明确登记为转换常数缺口，不为它改坏
-> key-const 公开 entry。Boost.Container 子模块在本地 reference clone 中为空，本轮未伪写
-> Boost 对比；GCC/UBSan 与 M4 仍待 main 合入后补证。typed 模板有意不新增 C ABI：现有
+> normal-use 性能结果统一登记在
+> [`benchmarks-container.md`](../performance/benchmarks-container.md#flatmap--flatset查多改少的排序连续索引windows-releasen15)：
+> lookup/iteration 与低频 mutation 已正常，pair-range sorted bulk build 仍有转换常数缺口，
+> 不为它改坏 key-const 公开 entry。Boost.Container 子模块在本地 reference clone 中为空，
+> 本轮未伪写 Boost 对比；GCC/UBSan 与 M4 仍待 main 合入后补证。typed 模板有意不新增 C ABI：现有
 > erased POD B-tree/runtime comparator 与调用方排序 buffer 已覆盖动态 C 需求。
 
 ## 结论

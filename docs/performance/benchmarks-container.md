@@ -46,6 +46,7 @@
 | **SpscQueue** | Folly `ProducerConsumerQueue` shape | ➖ 三平台 n=15 **TIE**；同 exact-capacity sentinel / acquire-release 合同，不为测项增加 remote cache 或 power-of-two 特化 |
 | **ConcurrentFlatHashMap / ConcurrentNodeHashMap** | oneTBB `concurrent_hash_map` | ✅ protected hit、8-reader、90/10 mixed 三平台均 15/15 胜；flat rebuild 6.25–7.05x；node rebuild M4 胜、Win/Linux 统计同档 |
 | **BTreeMap / BTreeSet** | Abseil `btree_map/set` | ⚠️ 实际十轴混合：Windows 7 胜/1 平/2 负，WSL 6 胜/2 平/2 负，M4 6 胜/1 平/3 负；主要 time-index mutation 缺口已消除，但不宣称逐平台全轴 SOTA |
+| **FlatMap / FlatSet** | sorted `std::vector` peer；⏳ std/Boost | ⚠️ Windows lookup/iteration TIE、低 mutation WIN；`sorted_unique` trivial-pair bulk 0.309x LOSE；WSL/M4 未签 |
 
 ### BTreeMap / BTreeSet：有序索引真实矩阵（三平台 Release，n=15）
 
@@ -85,6 +86,26 @@ expiry，以及 M4 domain miss/shuffled build/churn 是当前边界；其中 mut
 约 1.7–2.2%，但 paired sign test 仍如实记为 lose。不同平台的赢负方向并不一致，继续为
 单条 miss 分布增加边界 cache 或调 node capacity 会扭曲普通用户形状；后续只由跨 workload
 profile 证据重开。
+
+### FlatMap / FlatSet：查多改少的排序连续索引（Windows Release，n=15）
+
+`hyle_container_flat_sorted_bench` 对称比较相同 `uint64_t` key/value、32 Ki entries 的
+HYLE sorted-contiguous storage 与排序 `std::vector` peer；本机标准库尚无 C++23
+`std::flat_map/set`，所以这里不冒充 Boost 或标准库证书。每个 workload 由 nanobench 做
+15 个稳定 epoch，数值为 HYLE throughput / peer throughput：
+
+| 正常用法 | HYLE / peer | 判定 |
+|---|---:|---|
+| lookup hit | 0.963x | TIE |
+| in-domain miss | 0.984x | TIE |
+| full ordered iteration | 0.983x | TIE |
+| set membership | 1.032x | TIE |
+| 64 erase + ordered append | 1.437x | WIN |
+| `sorted_unique` pair-range bulk build | 0.309x | **LOSE**；约 0.99 ns/entry，但 trivial pair peer 可直接复制，仍是转换常数缺口 |
+
+因此当前证书只支持“lookup/iteration/低频 mutation 正常，bulk build 尚非 SOTA”。没有为
+bulk 表格给 entry 增加常态 metadata，也没有破坏 map key 只读合同。Boost.Container、本地
+GCC/UBSan 与 M4 仍待补证；在这些完成前不得把 Windows sorted-vector 结果外推为三平台结论。
 
 ### DynamicBitSet / SparseSet：按实际生命周期验收（三平台 Release，n=15）
 
@@ -358,7 +379,8 @@ mapping：单平台点值改善不足以证明架构更好，也没有为顺扫 
 长字节哈希                 → hash_bytes（自动按发布平台/ISA 选择 wyhash 或宽 XXH3）
 通用 hash map              → FlatHashMap
 高频 membership / 去重     → FlatHashSet
-有序索引 / range / 时间窗口 → BTreeMap / BTreeSet
+查多改少的连续有序索引     → FlatMap / FlatSet
+持续变更的 range / 时间窗口 → BTreeMap / BTreeSet
 共享 compact map / 高频重建 → ConcurrentFlatHashMap
 共享 registry / 稳定地址    → ConcurrentNodeHashMap
 稠密 mask/frontier/集合代数 → DynamicBitSet
@@ -393,6 +415,10 @@ HYLE_ABSL_BENCH_FILTER=set scripts/bench-stat.py <build>/bin/hyle_absl_bench -n 
 scripts/bench-stat.py <build>/bin/hyle_container_btree_bench -n 15 \
   --pair "absl::btree_map" "HYLE BTreeMap" \
   --pair "absl::btree_set" "HYLE BTreeSet"
+
+# sorted-contiguous map/set；无 std::flat_* 时对称 peer 是同布局排序 vector
+scripts/bench-stat.py <build>/bin/hyle_container_flat_sorted_bench -n 15 \
+  --pair "sorted std::vector peer" "HYLE FlatMap"
 
 # vec
 scripts/bench-stat.py <build>/bin/hyle_container_misc_bench -n 15 ...
@@ -444,6 +470,7 @@ scripts/bench-stat.py <build>/bin/hyle_container_concurrent_map_bench -n 15 \
 | hash 公平性更正 + 长度表 | mem-container §container·hash |
 | SwissTable vs absl | mem-container §container·map + README 总账 |
 | BTreeMap/Set vs Abseil | 本页 §BTreeMap/BTreeSet + README 总账 |
+| FlatMap/Set vs sorted-contiguous peer | 本页 §FlatMap/FlatSet |
 | SmallVector / PodVector | mem-container §container·vec |
 | string_ref / StringInterner 三平台收口 | mem-container §container·str |
 | path | mem-container §container·path |
