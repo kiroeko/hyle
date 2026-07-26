@@ -322,6 +322,23 @@ Windows/WSL/Apple 的 public/direct 都落在 candidate direct 附近，未见 d
 - **纯 passthrough(~34)**:AES/CLMul(单指令)、And/Or/Xor/Not(mask 域)、Le/IfThenElse* 等——同一 intrinsic,抽样已验打平。
 - **需内存/mask harness的剩余项**:LoadInterleaved2/3/4+Store(引用参数)、Gather/Scatter/CompressStore/MaskedLoad(内存+mask)、SetAtOr*/FindKnown*(mask域)、TruncateTo/U8FromU32(变宽,与已测Promote/Demote同族=原生cvt)。P3的24个Masked*已逐项补进full sweep；GetExponent已换原生指数域实现，MulByPow2按ISA分档且与Highway同类，不再列为疑似输家。
 
+## Native whole-range algorithms（2026-07-26）
+
+严格收口 round 1 新增 target-bound `generate/transform/replace/find/count/copy_if`。基准在同一 MSVC
+19.50 AVX2 TU 中编译 HYLE 和 pinned Highway，输入为 1M u32；`scripts/bench-stat.py -n 15`
+按 15 个独立进程做配对统计。比值是 HYLE/Highway throughput，`>1` 表示 HYLE 更快。
+
+| workload | HYLE ns/element | Highway ns/element | throughput ratio median | 结论 |
+|---|---:|---:|---:|---|
+| unary transform | 0.075 | 0.075 | 1.004 | TIE |
+| count_if（约 1/8 命中） | 0.065 | 0.064 | 0.954 | TIE；4/15 `>1`，p=0.12 |
+| find_if（不存在） | 0.064 | 0.064 | 1.002 | TIE |
+| copy_if（约 1/8 保留） | 0.085 | 0.099 | 1.165 | WIN；15/15，p=6.1e-5 |
+
+这里证明的是新循环/tail 抽象没有结构性包装税。亚纳秒值受频率和计时噪声影响，故 `count_if`
+只能记 TIE，不能按点估计写成 LOSE。Windows AVX2 也不能替代 Linux、NEON 或 scalable 真机证书。
+对应目标为 `hyle_native_algorithm_bench`。
+
 ### bench 覆盖补齐（directive3,2026-07-12）
 覆盖审计揪出的零-bench 能力面已补，全部进 CI bench 目标:
 - **f64 全 14 超越进 `math_bench`**:最高风险(f64 winner 与 f32 大面积翻转但无留档 bench)。HYLE 借核 ≥ xsimd/Highway 每 op → dispatch 选核正确,现有回归 bench。

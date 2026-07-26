@@ -11,6 +11,7 @@
 #include <gtest/gtest.h>
 
 #include "hyle/simd/vec.h"
+#include "tests/simd/scalable_native_algorithm_test.h"
 
 #include <bit>
 #include <cmath>
@@ -35,6 +36,11 @@ TEST(Sve, RuntimeVectorLengthMatchesGate) {
   ASSERT_NE(configured, -1);
   EXPECT_EQ(static_cast<std::size_t>(configured & PR_SVE_VL_LEN_MASK) * 8, expected_bits);
   EXPECT_EQ(hs::Lanes(hs::ScalableTag<std::uint8_t>{}) * 8, expected_bits);
+}
+
+TEST(Sve, NativeRangeAlgorithmsOwnScalableTail) {
+  alignas(64) std::uint32_t values[kBuf]{};
+  hs::test::CheckNativeRangeAlgorithms(values, kBuf);
 }
 
 // ---- Phase A: Set / Zero / Load / Store + runtime Lanes -----------------------------

@@ -204,13 +204,18 @@ A3/B5 与 B7 的生产切换决策挂起到取得对应硅；D4/D8 只在出现�
 | 优先级 | 能力 | 建议 |
 |---|---|---|
 | ✅ | NEON KV64 性能 | **A1 已收口** |
+| P0 | fixed-target whole-range helper | **已由 strict closure round 1 补 `native::generate/transform/replace/find/count/copy_if`**；它是 target-TU 内联层，不是 C callback |
+| P0 | f16/bf16 一等 lane + f16 算法合同 | Highway 对照确认是真缺口，必须跨七后端整体设计，见 architecture capability ledger |
+| P0 | 统一 C error seam | SIMD 仍有私有 TLS `last_error`，需接已冻结 `error` 模块 |
 | P0 | 变宽真机证据 | **A3** |
 | P1 | sort key 面 / mul_hilo / complex | **C2 / C1 / C3** |
 | P2 | GFNI / 可选扩展产品 TU | **D4 / B9**（VNNI D3 已完成） |
 
 ### G.3 刻意不在 simd 补
 
-thread_pool → sched；matvec → compute；hash → container；image / 万能 Transform / 无优势 Copy·Fill。
+thread_pool → sched；matvec → compute；hash → container；image 属消费/compute 层；无优势 Copy·Fill 不补。
+“万能 Transform”只拒绝逐元素 C callback；固定 target C++ range helper 已证明是多个真实 kernel 共用的
+合理形状并补入 `native` expert tier。
 
 ### G.4 应保持的优势
 

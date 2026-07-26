@@ -53,6 +53,7 @@ Highway parity。应用通常只应调用处理整段连续数据的语义接口
 | `math.h` | 实数/复数数学、激活函数、softmax | 数值计算、统计和 AI 热路径 |
 | `sort.h` | sort、partial sort、select、radix、argsort | 排序、top-k、nth element、稳定整数/浮点 radix |
 | `bitpack.h` | `pack`、`unpack`、`packed_size` | 同机内存中的定宽整数压缩 |
+| `native/algorithm.h` | generate/transform/replace/find/count/copy-if | 自定义固定目标 kernel；expert source surface |
 
 ### 数学接口分组
 
@@ -173,6 +174,25 @@ AVX2 symbol。未知客户 CPU 的发布包应使用默认 fat build。
 动态库 ABI 或持久化格式中。直接使用 `vec.h` 也遵循同样边界，它是写 kernel 的 DSL，不是 387 个
 普通用户 API 的集合。
 
+多数自定义 kernel 不必自己重复写整向量循环和最后一个 partial vector。`native/algorithm.h` 接管
+循环、tail 和 mask，lambda 只写寄存器表达式：
+
+```cpp
+#include "hyle/simd/native.h"
+
+void bias_relu(float* values, std::size_t n, float bias) {
+  hyle::simd::native::transform(values, n, [bias](auto d, auto v) {
+    return hyle::simd::Max(hyle::simd::Add(v, hyle::simd::Set(d, bias)),
+                           hyle::simd::Zero(d));
+  });
+}
+```
+
+这一层还提供 `generate`、二/三输入 `transform`、`replace[_if]`、`find_if`、`count_if` 和
+stable `copy_if`。输入输出可 exact 同址（`copy_if` 也支持原地稳定压实），带偏移 overlap 不受支持。
+不足一个 vector 的最后一次调用会给 inactive lane 零值，但只写/统计 active lane；lambda 不应把
+inactive lane 当作可观察副作用。`generate` 的 index lane 与输出 lane 等宽，窄整数自然按其位宽回绕。
+
 要把自己的 pointer/count kernel 随 HYLE 一起多版本编译，则让 impl header 根据
 `HYLE_SIMD_VARIANT_SUFFIX` 导出 suffixed entry，再用：
 
@@ -186,6 +206,10 @@ baseline 调用点用 `HYLE_SIMD_SELECT_FAT_KERNEL(...)` 选择并缓存入口�
 vector/mask 出现在 entry 签名中。这个选择宏在默认 fat 构建中走一次平台探测，在
 `HYLE_SIMD_EXACT_TARGET` 构建中只引用唯一生成的 exact symbol；在 macOS ARM64 上也不会引用未生成的
 SVE symbol。fat `TARGETS` 必须列出本平台完整 canonical tier，CMake 会在配置期检查。
+
+`native::transform` 不提供通用 C callback 版本：逐 lane function pointer 阻断内联和向量化，恰好破坏
+这个 API 的目的。跨语言用户应调用已有具名 batch 产品；需要自定义语义时，在 fat-kernel impl 中
+使用上面的 C++ helper，再导出自己的 pointer/count C entry。
 
 ## C++ source surface
 

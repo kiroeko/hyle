@@ -45,7 +45,7 @@ simd/
 │  ├─ neon.h   sve.h                 (arm64)
 │  ├─ rvv.h                          (riscv64)
 │  └─ scalar.h                       (portable fallback)
-├─ native/        ops/random/scan/search 的唯一 D-tag kernel body（固定目标、可内联）
+├─ native/        algorithm/ops/random/scan/search 的唯一 D-tag kernel body（固定目标、可内联）
 ├─ runtime.h      版本/大小/ISA + ops/random 函数表 + module ISA/features
 ├─ target.h       当前 exact target 常量
 ├─ fat_kernel.h   用户 whole-buffer kernel 的稳定入口选择器

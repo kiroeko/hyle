@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "hyle/simd/vec.h"
+#include "hyle/simd/native/algorithm.h"
 
 #define HYLE_TEST_FAT_CAT_I(a, b) a##b
 #define HYLE_TEST_FAT_CAT(a, b) HYLE_TEST_FAT_CAT_I(a, b)
@@ -28,15 +28,9 @@ void HYLE_TEST_FAT_CAT(hyle_test_fat_add_one_,
                        HYLE_SIMD_VARIANT_SUFFIX)(
     const float* src, float* dst, std::size_t n,
     std::uint32_t* selected_tier) noexcept {
-  const hyle::simd::ScalableTag<float> d;
-  const std::size_t lanes = hyle::simd::Lanes(d);
-  const auto one = hyle::simd::Set(d, 1.0f);
-  std::size_t i = 0;
-  for (; i + lanes <= n; i += lanes) {
-    hyle::simd::StoreU(
-        hyle::simd::Add(hyle::simd::LoadU(d, src + i), one), d, dst + i);
-  }
-  for (; i < n; ++i) dst[i] = src[i] + 1.0f;
+  hyle::simd::native::transform(src, dst, n, [](auto d, auto v) {
+    return hyle::simd::Add(v, hyle::simd::Set(d, 1.0f));
+  });
   *selected_tier = HYLE_TEST_FAT_TIER;
 }
 

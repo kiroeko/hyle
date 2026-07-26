@@ -710,6 +710,26 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
 endif()
 hyle_apply_warnings(hyle_search_bench)
 
+# Target-bound range algorithms: same TU, same ISA, same pointer/count and
+# predicate contracts as Highway contrib/algo. This measures the loop/tail
+# helper itself rather than a runtime dispatcher.
+add_executable(hyle_native_algorithm_bench simd/native_algorithm_bench.cc)
+target_link_libraries(hyle_native_algorithm_bench PRIVATE nanobench)
+target_include_directories(hyle_native_algorithm_bench PRIVATE
+  "${PROJECT_SOURCE_DIR}/include")
+target_include_directories(hyle_native_algorithm_bench SYSTEM PRIVATE
+  "${_hyle_bench_highway_dir}")
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+  target_compile_definitions(hyle_native_algorithm_bench PRIVATE
+    HYLE_SIMD_TARGET_AVX2)
+  hyle_set_highway_isa(simd/native_algorithm_bench.cc)
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
+  target_compile_definitions(hyle_native_algorithm_bench PRIVATE
+    HYLE_SIMD_TARGET_NEON)
+  hyle_set_isa(simd/native_algorithm_bench.cc NEON)
+endif()
+hyle_apply_warnings(hyle_native_algorithm_bench)
+
 add_executable(hyle_mixed_dot_bench simd/mixed_dot_bench.cc)
 target_link_libraries(hyle_mixed_dot_bench PRIVATE hyle_simd nanobench)
 target_include_directories(hyle_mixed_dot_bench SYSTEM PRIVATE
@@ -1045,6 +1065,7 @@ hyle_register_benches(simd
   hyle_activation_bench
   hyle_scan_bench
   hyle_search_bench
+  hyle_native_algorithm_bench
   hyle_mixed_dot_bench
   hyle_sort_bench
   hyle_radix_sort_bench

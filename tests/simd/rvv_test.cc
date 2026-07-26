@@ -9,6 +9,7 @@
 #include <gtest/gtest.h>
 
 #include "hyle/simd/vec.h"
+#include "tests/simd/scalable_native_algorithm_test.h"
 
 #include <bit>
 #include <cmath>
@@ -47,6 +48,11 @@ TEST(Rvv, LoadStoreAllTypes) {
   CheckLoadStore<std::uint32_t>();
   CheckLoadStore<std::int64_t>();
   CheckLoadStore<std::uint64_t>();
+}
+
+TEST(Rvv, NativeRangeAlgorithmsOwnScalableTail) {
+  alignas(64) std::uint32_t values[kBuf]{};
+  hs::test::CheckNativeRangeAlgorithms(values, kBuf);
 }
 
 TEST(Rvv, Block128Ops) {

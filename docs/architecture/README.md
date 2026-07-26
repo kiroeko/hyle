@@ -71,6 +71,7 @@ HYLE infra（通用、不特化、贴硬件）
 | [`compute-design.md`](./compute-design.md) | 异构计算选型：device/stream/kernel 两层抽象 + 借上游 ggml（adapter 隔离）+ shader 一等公民 + GPU completion 接 sched |
 | [`borrowing-ggml-memory-model.md`](./borrowing-ggml-memory-model.md) | **借 ggml 的显存归属边界**：host 归 HYLE（mem 喂入/取出）、device 归 ggml（gallocr 自管），就像 llama.cpp——CUDA 结构性否决外部显存注入（gdb 坐实），HYLE 显存自管是 compute-04/06 自造 kernel 的领域 |
 | [`simd-design.md`](./simd-design.md) | SIMD 总设计：D-tag/七后端、自有 math/dtype/算法核、Runtime/native/exact 双轨及历史决策 |
+| [`simd-highway-capability-ledger.md`](./simd-highway-capability-ledger.md) | SIMD × Highway 实际能力账本：类型/内存/算法/数学/dispatch、LOC 差因、P0/P1 与明确不做项 |
 | [`simd-dispatch-guide.md`](./simd-dispatch-guide.md) | SIMD 当前部署与维护规范：ASCII 架构图、未知 CPU Runtime、整库 exact、用户 TU native、自定义 fat-kernel 与 C ABI 边界 |
 | [`time-design.md`](./time-design.md) | time 依赖位置、时钟/算术/sleep 分层、radix/common queues、所有权数据流、C++/C ABI 双面与维护硬门 |
 | [`obs-design.md`](./obs-design.md) | obs 双通路：同步结构化日志的 quiescent sink 生命周期、C ABI trampoline，以及默认零成本/开启时单 Tracy client 的 trace 架构 |

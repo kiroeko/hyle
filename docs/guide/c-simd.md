@@ -97,3 +97,8 @@ exact-libm scalar、fp8 scalar、lower-tier winner、SVE capped network、logica
 
 需要固定整库 ISA 或在源码 TU 中直接写寄存器 kernel 时，见
 [`simd-usage.md`](./simd-usage.md)；那两条是 expert/source deployment，不改变本页 C ABI。
+
+`native::generate/transform/replace/find/count/copy_if` 没有逐元素 C function-pointer 镜像，这不是
+C ABI 能力遗漏：callback 会阻断目标 TU 的内联和向量化。FFI 用户应选上表的具名 whole-buffer
+入口；确有专用 kernel 时，用 C++ `hyle_add_fat_kernel` 实现并在最外层导出自己的 pointer/count
+C 函数。不要把 ISA 相关 vector/mask 类型放进 C 结构或函数签名。
