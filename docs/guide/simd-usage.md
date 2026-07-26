@@ -151,7 +151,29 @@ if (i != n) {
 ```
 
 `BF16Tag<DF>` 同形。还可用 `PromoteNarrowTo(df, dh, v)`、`DemoteNarrowTo(dh, v)`、
-`AddNarrow/SubNarrow/DivNarrow/MulAddNarrow`。选择原则：
+`AddNarrow/SubNarrow/DivNarrow/MulAddNarrow`。`Eq/Lt/Le/Gt/GeNarrow` 是 IEEE 数值比较：
+NaN 无序，`-0 == +0`。`ReduceSumNarrow` 返回 f32；`ReduceMin/MaxNarrow` 遇任意
+NaN 传播 canonical qNaN，`ReduceMin/MaxNumberNarrow` 忽略 NaN（全 NaN 时返回
+canonical qNaN），并分别保留 `-0/+0`。
+
+要处理 target-bound 整段数组，包含 `narrow_algorithm.h`：
+
+```cpp
+#include "hyle/simd/narrow_algorithm.h"
+
+float sum = hs::SumNarrow(dh, values, n);
+std::size_t first = hs::FindEqualNarrow(dh, values, n, needle); // IEEE ==
+std::size_t exact = hs::FindBitsNarrow(dh, values, n, needle);  // exact 16-bit encoding
+bool ordered = hs::IsSortedTotalOrderNarrow(dh, values, n);
+```
+
+`CountEqualNarrow/FindEqualNarrow` 把 signed zero 视为相等、NaN 永不匹配；
+`CountBitsNarrow/FindBitsNarrow` 则区分 signed zero 和每个 NaN payload。
+`narrow_total_order_key` / `TotalOrderKeyNarrow` 是可逆的 IEEE-754 `totalOrder`
+key：negative qNaN < negative sNaN < -inf < ... < -0 < +0 < ... < +inf <
+positive sNaN < positive qNaN。这是 bitwise deterministic order，不是“NaN 都相等”。
+
+选择原则：
 
 - 只搬运/转换整个数组：优先 `dtype_ops.h` 的 batch API，它处理 dispatch 和 tail；
 - 写 target-bound 自定义计算循环：使用 narrow tag，x86 AVX2/AVX-512 f16 自动走 F16C，其他
@@ -160,9 +182,9 @@ if (i != n) {
   carrier 语义；窄浮点操作必须使用带 `Narrow` 的名字；
 - finite f32→f16 逐位一致；硬件 F16C 可以选择不同的 NaN payload，因此 NaN 只保证仍为 NaN。
 
-这层是 C++ target-TU 接口，不把目标相关 vector ABI 暴露给 C。C/FFI 继续使用具名 pointer/count
-入口。当前窄浮点 sort/search/reduction 另有具名 whole-range 接口施工项，不要拿 carrier 的 unsigned
-顺序替代数值/total-order 语义。
+这层是 C++ target-TU 接口，不把目标相关 vector ABI 暴露给 C。C/FFI 整段 narrow
+search/reduction 还没有冻结 pointer/count 入口；当前只有 dtype convert/mixed dot 的 C ABI。
+narrow sort 也尚未实施，不要拿 carrier 的 unsigned 顺序替代 total-order 语义。
 
 ```c
 hyle_simd_exp_f32_batch(src, dst, n);

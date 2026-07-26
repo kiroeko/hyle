@@ -28,7 +28,7 @@ CPU/编译器平台矩阵、SSE2/SSSE3/SSE4 等细粒度 target、宏展开的�
 | 能力轴 | Highway | HYLE 当前 | 判断 |
 |---|---|---|---|
 | i/u8/16/32/64、f32/f64 lane | 一等 D-tag/vector | 一等 D-tag/vector | 主力齐平 |
-| f16/bf16 lane | 一等 special-float vector，按 target gate | 显式 narrow tag + native u16 carrier；七后端 load/store、promote/demote、基础算术闭环 | lane 基础已补；算法合同仍是 P0 |
+| f16/bf16 lane | 一等 special-float vector，按 target gate | 显式 narrow tag + native u16 carrier；七后端 load/store/promote/demote/算术/比较/reduce 同形 | lane 与 register 计算面已补 |
 | fp8 | 无统一同形产品面 | e4m3/e5m2 carrier + batch convert | HYLE 产品面更宽，但当前转换多为标量级收益 |
 | fixed/scalable vector | x86/NEON/SVE/RVV，另有更多平台 | x86/NEON/SVE/RVV；SVE/RVV 为真实 scalable tag | 主部署面齐；变宽真机性能欠证 |
 | SVE2/RVV 扩展 | target/feature 分层广 | SVE2、SVE AES/i8mm/bf16 与 RVV Zvbb/Zvbc/Zvkned/Zvfh 已探测，部分有快路 | 不应把扩展探测冒充完整产品 tier；随真实 kernel 补 |
@@ -36,10 +36,10 @@ CPU/编译器平台矩阵、SSE2/SSSE3/SSE4 等细粒度 target、宏展开的�
 | gather/scatter/interleave | 完整 | 完整；部分 ISA 有硬件墙或更强精确写合同 | 齐平，按合同解释差异 |
 | lane/mask/shuffle/compress/expand | 完整 | 七后端主力面完整，机械 coverage + 对拍 | 主力齐平；不追名字数量 |
 | conversion/widen/narrow/saturating | 含 special float | base lane + narrow tag + dtype batch API | 主部署面齐；可选 native half 扩展按收益上 |
-| register reduction | 完整 | 完整 | 齐平 |
+| register reduction | 完整 | base lane 完整；narrow 有 f32 sum、NaN-propagating/Number/IEEE-totalOrder min/max | 主使用形状齐平 |
 | whole-range 通用算法 | Generate/Transform/Replace/FindIf/CountIf/CopyIf 等 | **本轮新增** native target-bound 同形层 | 已补最常见 kernel 拼装缺口 |
-| scan/search | contrib 基础算法 | 预编译 Runtime + native kernel，类型面较宽 | HYLE 产品面完整 |
-| sort | VQSort/VQSelect，含部分 f16 | sort/partial/select/radix/argsort，key 产品更宽 | HYLE 广度强；f16 total-order 是缺口 |
+| scan/search | contrib 基础算法 | 预编译 base Runtime；narrow target-bound 数值/bit-exact find/count 与 total-order sorted check | narrow 的 prebuilt C ABI 仍是 P0 |
+| sort | VQSort/VQSelect；f16 仅在 native half target，bf16 尚 TODO | base 有 sort/partial/select/radix/argsort；narrow 未实施 | narrow 设计已审定，不为 benchmark 先造产品面 |
 | math | vector math + contrib foundation | 批量实数/复数/激活/softmax，择优自有/xsimd/Highway 算法思想 | HYLE 产品面更宽；逐函数证据见性能文档 |
 | random | vector RNG | 标量状态 + batch fill、跨 ISA 可复现 | 同类能力已覆盖 |
 | bitpack | contrib bit pack | u8/u16/u32 batch，固定 logical block 合同 | 同类能力已覆盖 |
@@ -82,11 +82,17 @@ CPU/编译器平台矩阵、SSE2/SSSE3/SSE4 等细粒度 target、宏展开的�
 1. ✅ **f16/bf16 一等 lane 基础。** `NarrowTag` 一次覆盖 scalar、SSE4、AVX2、AVX-512、
    NEON、SVE、RVV；load/store、promote/demote 与基础算术使用显式格式，未把 RVV baseline
    抬到可选 half 扩展。普通 u16 carrier 操作不冒充窄浮点 compare。
-2. **窄浮点算法闭环。** 至少补真实消费者需要的 sort/search/reduction；f16 排序必须先写清
-   NaN、`-0/+0` 和 total-order。bf16 是否同批进入由消费者证据决定。
-3. **scalable 真机证书。** SVE 与 RVV 已有正式实现和多 VL/VLEN QEMU correctness，仍缺真实
+2. ✅ **narrow reduction/search C++ 核心。** IEEE 数值比较与 exact-bit 查找分开；
+   register reduction 明确 propagate/Number/totalOrder；whole-range find/count/sum/sorted 是 O(n)
+   target-bound 向量循环，不增加 callback ABI。
+3. **narrow prebuilt API 与 sort。** C/FFI pointer-count 面仍待审定。sort 已审计 Highway：
+   f16 依赖 native-half target 且 NaN 等价放末尾，bf16 明确 TODO。HYLE 的候选实现是
+   就地可逆 IEEE-totalOrder key transform → 现有 u16 sort/select → inverse，无常驻元数据、
+   无可选 half ISA 依赖；未获得真实 consumer/API 决策前不为 benchmark 落地。
+4. **scalable 真机证书。** SVE 与 RVV 已有正式实现和多 VL/VLEN QEMU correctness，仍缺真实
    SVE/RVV 硅上的代表性 workload 性能；SVE2/RVV 可选扩展只在真实收益成立时升级产品 routing。
-4. **完整 closure 验证。** 新 range 层已过 MSVC/GCC fixed-width 及 SVE/RVV 多宽度 QEMU；仍需
+5. **完整 closure 验证。** 新 range 层已过 MSVC/GCC fixed-width 及 SVE/RVV 多宽度 QEMU；本轮
+   narrow reduction/search 暂只重跑 Windows fixed-width，仍需 scalable QEMU，另需
    Clang、sanitizer、NEON 真机，C ABI 符号机械闸和安装包消费也须在最终轮重跑。
 
 ### P1：有消费证据后补
@@ -110,5 +116,5 @@ CPU/编译器平台矩阵、SSE2/SSSE3/SSE4 等细粒度 target、宏展开的�
 HYLE SIMD 不是 Highway 的小型拷贝：它把大量能力收成预编译 batch API 和稳定 C ABI，也额外覆盖
 AI dtype/激活/复数数学；Highway 则在平台、编译器、special-float lane 和通用 source-algorithm
 层更成熟。range algorithm 与 narrow tag 都是实际 kernel 形状，不是 LOC 驱动。SIMD **尚未
-严格收口**：窄浮点 reduction/search/sort 的 total-order 合同、scalable 真机性能和最终多平台
-证书仍是明确的 P0。
+严格收口**：narrow prebuilt C ABI/sort 产品决策、本轮算法的 scalable 重验、
+scalable 真机性能和最终多平台证书仍是明确的 P0。

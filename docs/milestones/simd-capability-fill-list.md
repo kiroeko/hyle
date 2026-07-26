@@ -205,7 +205,7 @@ A3/B5 与 B7 的生产切换决策挂起到取得对应硅；D4/D8 只在出现�
 |---|---|---|
 | ✅ | NEON KV64 性能 | **A1 已收口** |
 | P0 | fixed-target whole-range helper | **已由 strict closure round 1 补 `native::generate/transform/replace/find/count/copy_if`**；它是 target-TU 内联层，不是 C callback |
-| P0 | f16/bf16 lane 后续算法合同 | ✅ narrow tag/load-store/promote-demote/基础算术已跨七后端；下一批是 reduction/search/sort total-order，见 architecture capability ledger |
+| P0 | f16/bf16 lane 后续算法合同 | ✅ register reduction + target-bound search 与 IEEE/bitwise total-order 已实现；剩 narrow C ABI、scalable 重验与 sort 产品决策，见 architecture capability ledger |
 | ✅ | 统一 C error seam | strict round 2 删除私有 TLS；runtime-info/RNG-create 返回共享 owning `hyle_status` |
 | P0 | 变宽真机证据 | **A3** |
 | P1 | sort key 面 / mul_hilo / complex | **C2 / C1 / C3** |

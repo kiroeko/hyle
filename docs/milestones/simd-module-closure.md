@@ -61,7 +61,8 @@ GCC ASan AVX2 全目标因大型 VQSort TU 在低并行度下两段构建仍未�
 - [x] MSVC/GCC fixed-width 与 SVE/RVV 多宽度 QEMU 对新模板层的正确性。
 - [ ] Clang、ASan/UBSan 与 NEON 真机验证（本轮 ASan 低并行构建超时，不能记通过）。
 - [x] f16/bf16 显式 narrow tag、七后端 storage/promote/demote/基础算术闭环。
-- [ ] 窄浮点 reduction/search/sort 与 NaN/signed-zero total-order 合同。
+- [x] 窄浮点 register reduction、target-bound search 与 IEEE/bitwise total-order 合同。
+- [ ] 窄浮点 prebuilt C ABI、scalable 重验与 sort 产品决策/实现。
 - [x] SIMD 私有 TLS error seam 已删除；runtime-info/RNG-create 返回共享 owning `hyle_status`。
 - [ ] SVE/RVV 真机 workload 性能证书；SVE2/RVV feature routing 按证据补。
 - [ ] C ABI 声明/纯 C 引用/导出表和三种交付形状最终机械复查。
@@ -94,11 +95,29 @@ f16/bf16 编码并对 f32 全编码空间做 65,536 点确定性抽样。AArch64
 同一 binary 在 VL 128/256/384/512/2048 各 3/3；RVV 同一 binary 在 VLEN
 128/256/512/1024 各 3/3。QEMU 只计正确性，SVE/RVV 真硅性能仍未签字。
 
+## Round 2C：narrow reduction/search 与 total-order
+
+`narrow_float.h` 增加 IEEE 数值比较、exact-bit 比较、可逆 IEEE-754 `totalOrder`
+key，以及 f32 sum、NaN-propagating/Number/total-order min/max。`-0/+0`、NaN
+sign/kind/payload 都有机械合同。`narrow_algorithm.h` 在 target-bound C++ 层提供
+O(n) 四路 sum、IEEE 数值 find/count、exact-bit find/count 和 total-order sorted check。
+它们是用户 kernel 的 pointer/count 形状，没有为 benchmark 增加元数据或 callback ABI。
+
+sort 本轮只审计/设计。Highway VQSort 的 f16 仅在 native-half target 开启，NaN
+统一等价放末尾，bf16 仍有明确 TODO。HYLE 候选是“就地可逆 total-order key
+transform → 现有 u16 sort/partial/select → inverse”：O(n) 转换、无分配、无常驻
+元数据、无 optional-half ISA 依赖。但在 prebuilt/C ABI 产品合同审定前不落地。
+
+验证：Windows MSVC 19.50 Release scalar/SSE4/AVX2 的窄浮点专项各 6/6，
+包括全 65,536 编码的 total-order inverse/landmark、NaN 与 signed-zero 语义、
+full/tail range；三个全 SIMD 目标 3/3，AVX-512 编译通过。本轮遵守资源协调
+未占用 WSL，所以 SVE/RVV 新算法重验仍是未完成项。
+
 ## 本轮四项 LOC
 
 | 固定口径 | `cloc` code |
 |---|---:|
-| 全库代码（含 docs/third-party，计入本轮新文件） | 264,074 |
-| 自实现含测试（`include/hyle + src + tests`） | 127,884 |
-| 自实现不含测试（`include/hyle + src`） | 88,232 |
-| 当前审查模块实现（`include/hyle/simd + include/hyle/c/simd.h + src/simd`） | 38,044 |
+| 全库代码（含 docs/third-party，计入本轮新文件） | 264,682 |
+| 自实现含测试（`include/hyle + src + tests`） | 128,439 |
+| 自实现不含测试（`include/hyle + src`） | 88,596 |
+| 当前审查模块实现（`include/hyle/simd + include/hyle/c/simd.h + src/simd`） | 38,408 |

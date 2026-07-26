@@ -133,6 +133,16 @@ f32 tag 与 narrow tag 保持相同逻辑 lane 数；定宽后端使用半宽 XM
 `Rebind` 的负 `kPow2` 保持 active lanes。AVX2/AVX-512 f16 promote/demote 使用 F16C；SSE4、
 NEON baseline、SVE、RVV 用向量位运算，bf16 全部使用 RNE 位运算。whole-array 转换仍优先 batch
 dispatcher；register facade 是 target-bound C++ kernel 的形状，不进入 C vector ABI。
+存储 seam 通过 `unsigned char` object representation load/store 后 bitcast；不把
+`float16_t[]/bfloat16_t[]` 强解成 `uint16_t[]`，因为 standard-layout 首成员的
+pointer-interconvertible 保证不覆盖跨 wrapper-array 元素的 u16 指针算术。
+
+**narrow compare/reduction/search（strict round 2C）**：数值比较按 IEEE（NaN 无序、
+signed zero 相等），exact-bit 搜索另给具名入口。可逆 16-bit key 实现 IEEE-754
+`totalOrder`，所有 NaN sign/kind/payload 与 `-0/+0` 都有确定位置。register 层提供
+f32 sum、NaN-propagating min/max、Min/MaxNumber 和 total-order extrema；
+`narrow_algorithm.h` 提供 O(n) 的 target-bound sum、数值/bit-exact find/count 与
+total-order sorted check。不增加逐元素 callback。
 
 **fp8（simd-09 补，推理常见精度）**：OCP 两格式 **E4M3FN**（bias 7/3 尾数/无 inf/唯一 NaN=0x7F/max 448，权重激活）与 **E5M2**（bias 15/2 尾数/IEEE inf-NaN/max 57344，梯度）。编码 transcribe 自权威 **CUDA `cuda_fp8.hpp`**（ggml/Highway 均无 host fp8→**自实现**，同 fp16/bf16 抄 Highway 的做法）。saturate-to-max-normal（OCP SATFINITE）；E5M2 真 inf 输入保留 inf，仅 finite 溢出 saturate。**关键：无 CPU 硬件 fp8-convert**——硬件 fp8 转换是 AVX10.2 / GPU tensor core 专属，本代 AVX2/AVX-512 CPU 全无，Intel SDE 也不模拟 AVX10.2 fp8 convert。故 **scalar 位运算就是当前完整实现**（非缓做/非半成品）；有 AVX10.2 硬件时按 `cvt_avx512bf16.cc` 先例接原生核。验证：known values 锚 OCP 谱 + **全 256 值 exhaustive round-trip**（fp8 仅 256 值→完备，强于 fp16 的抽样）+ 三平台（MSVC/WSL GCC/arm64 qemu 512-check bad=0）。
 
