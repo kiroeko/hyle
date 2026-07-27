@@ -132,17 +132,18 @@ construction。整容器 throwing move 提供 basic guarantee，构造失败会�
 
 ### 排序连续关联容器的实际使用形状
 
-`FlatMap/Set` 对照 Boost.Container flat associative、C++23 flat_map/set 与 LLVM/Folly
-read-mostly sorted-vector 的共同形状：unique key/entry 连续存储，binary search 点查，
-不为 node、rank/finger 或 benchmark 保存常态 metadata。两个公开 facade 共享一个
-`FlatSortedStorage` engine；map entry 延续 Swiss/B-tree 的 `key()` 只读、`value()` 可写，
-set 迭代只暴露 `const K&`。异构 lookup 只要求 comparator 能对 K/Q 双向 noexcept 比较。
+`FlatMap/Set` 对照 Boost.Container 与 C++23 flat associative 的共同形状：unique key、
+binary search 点查，不为 node、rank/finger 或 benchmark 保存常态 metadata。`FlatMap`
+采用成熟的 split storage（连续 keys + 连续 values），只查 key 或只扫 mapped value 时不会
+把另一列拖进 cache；`FlatSet` 使用独立的单数组 core，不为 map proxy/values 支付结构税。
+异构 lookup 只要求 comparator 能对 K/Q 双向 noexcept 比较。
 
-底层没有另造第二个 `std::vector`，而是复用已经审查过的
-`SmallVector<Entry,1>` allocator-aware sequence engine。一个 inline entry 让空/singleton
-registry 不分配，并保持 SmallVector 已有的合法非零 inline-array iterator 模型；它是固定的
-产品形状，不暴露可调 SBO/benchmark knob。大 entry 或已知大表可先 reserve，分配与释放仍
-走 mem 的 sized-free/alignment 合同。
+两列都复用已审查的 `SmallVector<...,1>` allocator-aware sequence engine；singleton 不分配，
+SBO 大小不是公开 knob。map iterator 是 random-access proxy，提供标准 `.first/.second`，
+同时保留 `key()/value()` 便利访问；key 只读、value 可写。`keys()` 与 `values()` 暴露各自
+真正连续的 span，但 map 的 `value_type` 逻辑上仍是 `pair<K,V>`，不能把 iterator 当成
+contiguous pair pointer。已知大表可先 reserve，分配与释放仍走 mem 的 sized-free/alignment
+合同。
 
 普通 lookup O(log N)，iteration O(N)，位置 insert/erase O(N)。`sorted_unique` bulk
 construction/assign 信任调用方“严格有序、无等价 key”的显式前提，预留一次后单遍构造，
@@ -150,11 +151,11 @@ construction/assign 信任调用方“严格有序、无等价 key”的显式�
 `FlatInsertResult` / `try_reserve` / `try_assign`，standard-shaped `try_emplace` 只承诺命中
 不构造 mapped value。成功位置 mutation 从该点起失效，reallocation 全失效。
 
-bulk 不经公开的逐项 `try_emplace_back`：`FlatSortedStorage` 通过窄 internal access seam 让
-fresh `SmallVector` 对 sized range O(1) 取长度、一次 reserve、在未初始化尾部原位构造，整批
-完成后一次发布 size；异常/OOM 销毁已完成前缀。这个 seam 不进入 SmallVector 公共 API，
-也不允许任意用户修改 size/uninitialized storage。map 的成熟 STL binary-search 形状与 set
-的 projection-free index loop 分开，避免让直接存 K 的 set 缴 map Entry projection 税。
+bulk 不经公开的逐项 `try_emplace_back`：窄 internal access seam 让 fresh key/value vectors
+对 sized range O(1) 取长度、一次 reserve、在未初始化尾部原位构造，整批完成后一次发布
+size；任一列异常/OOM 都销毁已完成前缀。这个 seam 不进入 SmallVector 公共 API，也不允许
+用户任意修改 size/uninitialized storage。map 与 set 的 binary-search core 分开，避免让
+直接存 K 的 set 缴 map proxy/projection 税。
 
 C ABI 有意不增加：现有 erased POD B-tree 已覆盖 runtime comparator/range，纯 C 也能直接
 管理排序 POD buffer；新增 flat-sorted handle 会复制动态能力，却仍无法表达任意 C++ K/V
@@ -375,9 +376,16 @@ shard 取 hash 中间位，SwissTable 仍直接使用原 hash 的低位 H1 与�
 的 ID slot；第一次 `acquire` 同内容时才 lazy materialize。
 
 Entry 缓存 table hash：新输入不可避免地是 Ω(L) 读字节，但 Swiss 扩容只移动
-定长 key、删除按缓存 hash 定位，不再反复扫描已驻留长串。≤256B 的 Entry+字符使用
+16-byte `{Entry*, hash}` 索引槽、删除按缓存 hash 定位，不再反复扫描已驻留长串。索引
+不再重复保存 `string_ref + Entry*`；字符地址恒为 `Entry+1`，Entry 本身也不保存冗余 data
+pointer。≤256B 的 Entry+字符使用
 每 shard 小块 slab，release 后回到池内复用；大字符串立即归还注入 allocator，全部
 slab 在 StringInterner 销毁时归还。地址在有效生命周期内稳定。
+
+每个 shard 的短临界区使用 `AdaptiveMutex`：无竞争是 `atomic_flag` fast path，有限自旋后
+用 `atomic::wait` park，waiter count 避免无竞争 unlock 的通知和 lost wakeup；表增长仍由
+冷 `growth_mu` 串行化 allocator copy。它不是无界 spin lock，分配/rehash 阻塞时不会持续
+烧核。
 
 SwissTable 的 `reserve(final-size)` 会同时处理正常 grow 与 tombstone 耗尽的 growth
 budget：容量足够时做同容量 rehash，而不是虚假返回成功。`try_prepare_insert()` 由此
@@ -399,7 +407,7 @@ OOM 落进 fatal assert。
 吞吐/生命周期用户应使用 `intern_many`、`acquire_many`、`retain_many`、
 `release_many`。每个有界块先算一次 hash，只按升序获取实际涉及的 shard lock；
 既避免全池冻结也避免重复 hash。性能结论见
-[`benchmarks-mem-container.md`](../performance/benchmarks-mem-container.md)。
+[`benchmarks-container.md`](../performance/benchmarks-container.md)。
 
 ## 字符串 SIMD 策略
 
@@ -433,23 +441,26 @@ SIMD 只进入可批量处理的字节/lane 工作，不按模块名强套：
 | Swiss control-byte probe | x86 SSE2 16 lanes；AArch64 NEON 8 lanes | 已是成熟 Swiss 基线形状；每次 probe 再动态派发 AVX2 的固定税通常不值 |
 | count/rfind/ASCII case | SSE4/AVX2/AVX512/NEON runtime dispatch | 已进入产品；长串摊薄 dispatcher，短串走标量 |
 | UTF-8 validate/count | simdutf 自派发 | 借成熟核，不重写 |
-| 长字节 table hash | x86 AVX2 XXH3 / baseline wyhash | varied-input 证据后进入产品；Windows/MSVC 从 1KiB、Linux/GCC14 从 512B，CPU/OS gate 在 platform，非 x86 不退化 |
+| table hash | 17–128B inline multiply stream；x86 AVX2 / AArch64 NEON XXH3；baseline wyhash | varied-input 产品 API 证据后进入产品；Windows/M4 从 1KiB、Linux/GCC14 从 512B，CPU/OS gate 在 platform |
 | vector relocation | compiler/libc `memcpy/memmove` | 不重复实现平台已有宽拷贝与 non-temporal 策略 |
 | lock-free queue / atomics | 不做 | 瓶颈是依赖链、cache line ownership 和 CAS，不是 lane arithmetic |
 | DynamicBitSet | SSE4/AVX2/AVX512/NEON runtime dispatch | 位运算与 x86 count 复用 header-only vec DSL；NEON count 用 byte CNT+四路 UDOT，修复 M4 通用 u64-lane reduction 的 12% 缺口；小于 8/16 words 分别走本地 scalar |
 | BTree node search | 数值 key 线性比较；通用 comparator 二分 | 典型 node 很小且 comparator/entry layout 泛型；当前三平台实际 workload 不支持为每个 node 增加 SIMD metadata 或动态派发税 |
 
-长 hash 的宽核放在独立 AVX2 TU，baseline dispatcher 只有在 CPUID+XGETBV 安全门通过后
-调用；varied-input sweep 分别给出 Windows/MSVC 1KiB 与 Linux/GCC14 512B 的保守交叉点。
+长 hash 的 x86 宽核放在独立 AVX2 TU，baseline dispatcher 只有在 CPUID+XGETBV 安全门
+通过后调用；AArch64 使用 baseline NEON XXH3。varied-input 产品 sweep 分别给出
+Windows/MSVC 与 M4/AppleClang 1KiB、Linux/GCC14 512B 的保守交叉点。
 `hash_bytes` 是进程内 table hash，值可随
 HYLE 版本、构建与 ISA 选择变化，不得持久化或作为 wire fingerprint。若用户需要稳定内容
 指纹，应由独立命名/独立合同提供，不能暗中冻结 table hasher 的当前 bit pattern。
 
 ## C ABI 边界
 
-`include/hyle/c/container.h` 当前遵守统一 C ABI 机械合同，但它仍包含早期按实现逐项
-导出的宽接口；HYLE 尚未发布、C ABI 尚未冻结。typed 容器能力稳定后将从真实 FFI
-场景重新审查保留、合并或删除哪些入口，而不是为了兼容继续扩张。当前原则是：
+`include/hyle/c/container.h` 当前遵守统一 C ABI 机械合同。HYLE 尚未发布、C ABI 尚未
+冻结，因此本轮没有为兼容保留错误名字；动态面已按真实 C/FFI 能力复审为 232 个声明，
+并由符号 manifest、纯 C17 调用覆盖和 header-self-contained 门逐项守住。它不是把每个
+C++ 成员机械导出：模板编译期属性、非平凡对象生命周期和跨锁裸指针有意不进入 C ABI。
+当前原则是：
 
 | C ABI 能力组 | 当前判定 | 重审方向 |
 |---|---|---|
@@ -463,8 +474,8 @@ HYLE 版本、构建与 ISA 选择变化，不得持久化或作为 wire fingerp
 | concurrent pointer vector | 保留能力、形状已重塑 | 明确命名 `concurrent_ptr_vector`；reserve 预分配 stable segments；`try_get(out)` 区分越界与合法 NULL payload；不冒充 erased POD vector |
 | dynamic bitset / sparse u32 set | 保留 opaque 能力 | 两者是语言无关的 runtime-universe 数据结构；C 面覆盖 resize/algebra/iteration 与 dense active IDs，不暴露 C++ 布局 |
 
-“保留能力”不等于冻结当前函数列表；“暂定”也不等于为了缩 ABI 直接删。最终 C 面只为
-跨边界仍成立的动态能力服务，HYLE 内部 C++ 模块继续直接使用 typed API。
+“保留能力”不等于冻结当前函数列表；未发布阶段仍可在真实消费证据出现时修正。当前 C
+面已经覆盖全部跨边界仍成立的动态能力，HYLE 内部 C++ 模块继续直接使用 typed API。
 
 2026-07-25 的消费审计确认：仓内生产代码只直接使用 typed queue（sched），没有任何
 模块通过 container C queue/ConcurrentVector facade 回调自己。因而早期含糊的
@@ -530,8 +541,9 @@ pointer/count 的 `try_append/try_insert/try_resize/erase/try_shrink_to_fit` 覆
 - graph/sched 使用 ConcurrentVector 类 append-only 发布结构。
 - error/time 等共享 intrusive 基础设施已归 core，不制造反向 container 依赖。
 - 其他模块可使用 `hash_bytes`，但 hash 模块不依赖 `hyle_simd` runtime；≤16B typed key
-  走 inline mix，较长字节串走库内 XXH3/wyhash 与 platform-gated AVX2 kernel。公开头不暴露 vendor 实现头；
-  共享库调用 seam 是交付合同的一部分，不再为微基准提供 source-only inline 旁路。
+  走 inline mix，17–128B 使用公开头内的紧凑 multiply stream，较长字节串走库内
+  wyhash 与 platform-gated 宽 XXH3。公开头不暴露 vendor 实现头；中等输入内联是产品
+  C++ API 的固定形状，不是 source-only benchmark 旁路。
 
 ## 性能验收边界
 
@@ -545,7 +557,8 @@ pointer/count 的 `try_append/try_insert/try_resize/erase/try_shrink_to_fit` 覆
   miss 分布特化、常态元数据或 benchmark API 隐藏；
 - PodVector/SmallVector/队列按各自对等形状判断；
 - 路径的大倍数主要来自零分配结构，对同形 string-view 扫描通常是平局；
-- StringInterner 长串增长、重复 churn、并发分片和 batch 分别验收；单调用仍有 DLL seam；
+- StringInterner 长串增长、重复 churn、并发分片和 batch 分别验收；Linux 单条 `intern`
+  仍保留自适应分片的局部性常数边界，高吞吐导入优先 batch；
 - 4KB 字符扫描的 0.8x–0.95x 点值应结合 64KB/1MB、方差和调用形状，不包装成赢。
 
 测试矩阵包括 typed 单测、纯 C 调用覆盖、C++ C-ABI 并发测试、allocator

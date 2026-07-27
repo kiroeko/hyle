@@ -1,4 +1,36 @@
-# container 模块收口（2026-07-19）
+# container 模块严格收口（最终证书：2026-07-27）
+
+> **2026-07-27 最终结论：✅ 按当前实际使用标准严格收口。** container 已从早期
+> Swiss/queue benchmark 集合重塑为按 ownership、稳定性、有序性、并发角色和容量合同
+> 选择的数据结构层。公开面覆盖 small/fixed/POD sequence、flat hash、sorted flat、B-tree、
+> compact/stable-node concurrent map、bitset/sparse set、single-thread byte/object ring、SPSC/
+> MPMC/sharded/stealing queues、concurrent append vector、borrowed string/path 和线程安全
+> StringInterner。单线程 node extraction/merge、ordered multi、并发 priority/unbounded queue
+> 是有理由的负空间，不由错误薄壳冒充。
+>
+> C++ API 均有默认 system allocator、typed RAII、标准 iterator/value 习惯和显式 fallible
+> 路径；HYLE 内部直接使用 C++ 面。C ABI 为 232/232 动态声明/符号 manifest，纯 C17、所有
+> public C/C++ header 自包含、Status/out、opaque owner 与 callback 生命周期均机械覆盖；
+> 编译期模板属性、非平凡 C++ 生命周期和跨锁裸指针不机械导出，但对应语言无关动态能力
+> 没有空洞。container 的冷失败统一使用 error `hyle_status`，分配统一使用 mem allocator，
+> ISA/OS gate 统一使用 platform，没有反向依赖 simd/util-runtime，也没有内部绕 C ABI。
+>
+> 性能结论只逐合同成立：hash 17–128B 已为产品 inline stream，长输入按 Win/Linux/M4 产品
+> crossover 派发；FlatHash 对 Abseil、B-tree 对 Abseil、并发 map/vector 对 oneTBB、
+> SmallVector 对 Abseil、FlatMap 对 C++23 std、StringInterner 对同生命周期/分片 peer 均有
+> 三平台 n=15 证书。冻结边界仍公开：WSL flat-hash miss 约 0.97x/0.94x、WSL
+> StringInterner 单条入口 0.894x、WSL ConcurrentVector `operator[]` 约 0.51x、SparseSet 纯
+> membership 输 dense bitmap，以及 x86 split-storage FlatMap bulk 输 raw AoS copy floor。
+> 这些是平台/选型/布局边界，不用 benchmark API、特化 key 或常态 metadata 隐藏。
+>
+> 最终 correctness 门：Windows/MSVC 19.50 container 4/4；WSL/GCC14 Release 4/4；WSL
+> ASan、UBSan、TSan 各自 4/4；Apple M4/AppleClang Release 4/4。完整当前设计见
+> [`container-design.md`](../architecture/container-design.md)，用户选型见
+> [`container.md`](../guide/container.md)，C 映射见 [`c-container.md`](../guide/c-container.md)，
+> 性能真相见 [`benchmarks-container.md`](../performance/benchmarks-container.md)。下文保留
+> 7 月 19–27 日施工演进，旧点值/exports/“尚未收口”只作 Jira 式历史记录。
+> 最终四项代码量：全库 **272,475**；自实现含测试 **133,483**；自实现不含测试
+> **91,727**；container 实现 **14,896**。
 
 > **2026-07-25 严格复审说明：** 本页保留 2026-07-19 的施工证据与当时点值，
 > 不再代表当前接口或“实际使用导向”的最终证书。严格复审已经把 C++ 值容器从
@@ -340,7 +372,7 @@ count/rfind 回到 1.0–1.14x；这说明短输入 DLL/dispatcher seam 与仪�
 动态 kernel 摊薄。
 
 更完整历史矩阵和 SOTA 对手见
-[`benchmarks-mem-container.md`](../performance/benchmarks-mem-container.md)。
+[`benchmarks-container.md`](../performance/benchmarks-container.md)。
 
 ## 有意边界与后续触发器
 

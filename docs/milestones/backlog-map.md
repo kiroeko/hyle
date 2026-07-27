@@ -99,9 +99,9 @@
 
 ## 六、一句话排期建议
 
-**2026-07-26 当前顺序**只见
+**2026-07-27 当前顺序**只见
 [`pre-release-readiness.md`](./pre-release-readiness.md)：严格基线为 error/platform/mem/time/core、
-build/package、util-core 与 obs；mem 的 clean `c640072` 三平台分发证书已完成。当前
-审查单元是 container，随后沿 util-runtime → sched → io，之后先做
+build/package、util-core、obs 与 container；mem 的 clean `c640072` 三平台分发证书已完成。
+当前审查单元是 util-runtime / 完整 util，随后沿 sched → io，之后先做
 math↔simd 边界裁决再收 simd。compute/graph 主干不是 0 行，但二者仍先补北极星能力尾再收口；最终做
 install/export、跨编译器和 FFI 冒烟。旧绿色 closure 保留为证据，不再当新证书。

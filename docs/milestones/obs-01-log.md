@@ -52,4 +52,4 @@ trace/counter 属于 obs-02，当前也已收口并接入 mem/sched/io/compute�
 - Windows MSVC、WSL GCC14、Apple M4 AppleClang 通过；
 - WSL ASan、UBSan、TSan 通过；
 - gated/preformatted/formatted 三层基准进入 `hyle_misc_bench`，结果见
-  [`../performance/benchmarks-mem-container.md`](../performance/benchmarks-mem-container.md)。
+  [`../performance/README.md`](../performance/README.md) 的 obs 当前行。

@@ -1,26 +1,25 @@
 # container 实测铁证（导航 + 当前真相）
 
 > 本页是 [performance 总账](./README.md) 的 **container 模块**入口。  
-> **详表与优化史**（长）：[benchmarks-mem-container.md](./benchmarks-mem-container.md)（mem 已迁出，该文件以 container 为主）。  
-> **模块收口**（正确性/C ABI，非性能全表）：[../milestones/container-module-closure.md](../milestones/container-module-closure.md)（2026-07-19）。  
+> **模块收口**（正确性/C ABI，非性能全表）：[../milestones/container-module-closure.md](../milestones/container-module-closure.md)（最终证书 2026-07-27）。
 > 调度队列的 SOTA 对标多在 sched 消费路径 + `queue_sota_bench`；并发关联容器已在本页按 shared-registry 正常合同单列。IntrusiveList 已归 core，见 [`benchmarks-core`](./benchmarks-core.md)。
 
 ## 0. 数据新鲜度（先看这个）
 
 | 面 | 证书状态 | 说明 |
 |---|---|---|
-| **StringInterner / string 收口表** | ✅ **2026-07-19 三平台** | Win / WSL / M4；lifecycle 落后已诚实登记；2026-07-26 batch 分片锁改动待刷新 |
+| **StringInterner / string 收口表** | ✅ **2026-07-27 三平台 n=15** | adaptive mutex + 16B cached-hash pointer index；batch/8t/growth/lifecycle 已刷新；仅 WSL 单条入口保留边界 |
 | **path** | ✅ 双平台 n=15 | Win+Lin；算法基线 + filesystem 分离 |
-| **FlatHashMap / FlatHashSet** | ✅ Windows+WSL n=15；⏳ M4 | 同合同 Abseil；WSL map/set miss 是已登记小缺口 |
+| **FlatHashMap / FlatHashSet** | ✅ **三平台 n=15** | 同合同 Abseil；WSL map/set miss 是已登记小缺口，M4 查找/删除/迭代赢，fresh insert 同档 |
 | **BTreeMap / BTreeSet** | ✅ **2026-07-26 三平台 n=15** | Abseil B-tree 同类；按 ordered index、range scan、build/copy/churn、time expiry 十轴验收；边界偏置 split/delete 已消除主要 mutation 缺口，剩余逐平台边界明示 |
-| **hash / mix64 / Hash&lt;T&gt;** | ✅ Windows/WSL n=15 长 hash SIMD；⏳ M4 | Win ≥1KiB、Linux ≥512B 产品派发；其余历史表待三平台统一刷新 |
-| **SmallVector / PodVector** | ⚠️ 主 Win + 部分补测 | owning vector 形状待本轮统一三平台刷新 |
-| **ConcurrentVector** | ✅ Windows+WSL n=15；⏳ M4 | append/range iteration 同合同 SOTA；WSL `operator[]` 是已知缺口 |
+| **hash / mix64 / Hash&lt;T&gt;** | ✅ **三平台 n=15** | 17–128B 产品 inline multiply stream；Win ≥1KiB、Linux ≥512B、M4 ≥1KiB 产品级宽核 crossover |
+| **SmallVector / PodVector** | ✅ **三平台 n=15** | build+consume 防 DCE；SmallVector WSL inline 与 Absl 同档、spill 赢，Win/M4 赢；Pod read 同档、growth 同档或赢 |
+| **ConcurrentVector** | ✅ **三平台 n=15** | append/range/旧 prefix+writer 同合同 SOTA；WSL `operator[]` 是已知随机访问边界，M4 全矩阵同档或赢 |
 | **DynamicBitSet / SparseSet** | ✅ **2026-07-26 三平台 n=15** | actual-use graph frontier / frame-local active IDs；M4 bitset 与 std 同档；纯 SparseSet membership 明确输 dense bitmap |
 | **RingDeque / ByteRingBuffer** | ✅ **2026-07-26 三平台 n=15** | 固定容量 FIFO 与 32KiB backlog/4KiB stream staging；WSL 与 Folly-shaped floor 同档，Win/M4 胜 floor |
 | **SpscQueue** | ✅ **2026-07-26 三平台 n=15** | 1P/1C 持续传输、1024 exact slots；三平台与 portable Folly-shaped 同合同 peer 均为统计同档 |
 | **ConcurrentFlatHashMap / ConcurrentNodeHashMap** | ✅ **2026-07-26 三平台 n=15** | 同 hash、同 accessor 合同对 oneTBB；读/混合路径三平台全胜；node rebuild 在 Win/Linux paired 统计同档，flat rebuild 6.25–7.05x |
-| **FlatMap / FlatSet** | ✅ Windows+WSL n=15；⏳ M4 | sorted-contiguous 正常合同；bulk 核已重写，WSL 与 raw-copy floor TIE，Windows 保留 key-const 转换税 |
+| **FlatMap / FlatSet** | ✅ **三平台 n=15** | map 为 split key/value storage，set 为独立单数组；M4 对 C++23 `std::flat_map/set` 全轴同档或赢 |
 | **并发队列** | 见 queue / sched 文 | 不在本页展开 |
 
 **读法**：标 ✅ 的可当当前产品结论；标 ⚠️ 的方向大体可信，但**不要**当 2026-07-20 式三平台 sign 证书去对外硬报绝对 ns。
@@ -31,13 +30,13 @@
 |---|---|---|
 | **mix64 / Hash&lt;T&gt; 小 POD** | wyhash / abseil 形 | ✅ 赢或 SOTA 同款（整数 / 16B POD） |
 | **hash_bytes ≤16B** | XXH3-small / wyhash | ➖ **inline mix**（不同算法）；非「输 XXH3 wrapper」 |
-| **hash_bytes 中长串** | 裸 XXH3 / wyhash | ✅ Win：≥1KiB AVX2；WSL：≥512B AVX2；⏳ M4 |
-| **FlatHashMap** | absl::flat_hash_map / Folly F14 | ✅ Win 五项胜；WSL 四项胜、miss 0.97x；⏳ M4 |
-| **FlatHashSet** | absl::flat_hash_set / Folly F14 | ✅ 真 set slot/API；Win 四项胜；WSL hit 平、miss 0.94x、insert/iterate 胜；⏳ M4 |
-| **SmallVector** | absl::InlinedVector | ✅ 小 N churn **赢** 同款 SOTA |
-| **PodVector** | std::vector | ✅ growth 赢（mimalloc 质量）；read 平 |
+| **hash_bytes 中长串** | 裸 XXH3 / wyhash | ✅ 17–128B 三平台同档或赢；宽输入按产品 crossover，三平台已签 |
+| **FlatHashMap** | absl::flat_hash_map / Folly F14 | ✅ Win 五项胜；WSL 四项胜、miss 0.97x；M4 hit/miss/erase/iterate 赢、insert 同档 |
+| **FlatHashSet** | absl::flat_hash_set / Folly F14 | ✅ 真 set slot/API；Win 四项胜；WSL hit 平、miss 0.94x、insert/iterate 胜；M4 hit/miss/iterate 赢、insert 同档 |
+| **SmallVector** | absl::InlinedVector | ✅ Win/M4 赢；WSL build+consume inline 绝对 0.81x 但合并 spread 内同档，spill 1.22x 赢 |
+| **PodVector** | std::vector | ➖ read 三平台平；growth Win/M4 赢，WSL 0.90x 但合并 spread 内同档 |
 | **string_ref 搜索** | string_view / libc | ➖ 自研 SIMD 项平；子串/字符集 **转发 std**（刻意） |
-| **StringInterner** | map+mutex / Absl 分片 peer | ⚠️ **Win 多平**；WSL/M4 lifecycle **输**；growth 赢；8t 距 Absl ~5% |
+| **StringInterner** | map+mutex / Absl 分片 peer | ✅ 8t/growth/lifecycle 三平台赢；single Win/M4 赢；⚠️ WSL 单条 0.894x，batch 赢 |
 | **path 词法** | string_view 扫 / filesystem | ✅ 平算法基线；**碾** filesystem（零分配结构差） |
 | **ConcurrentVector** | oneTBB `concurrent_vector` | ✅ Win/WSL：append、range iteration、并发 prefix 读同档或赢；⚠️ WSL `operator[]` 顺扫约 0.51x |
 | **DynamicBitSet** | `std::bitset` + portable dynamic blocks | ✅ Win 1M-bit OR+count 1.40x；WSL 5.18x；M4 与 std 同档；⚠️ M4 单循环 fused floor 快 1.53x；⏳ Boost |
@@ -47,7 +46,7 @@
 | **SpscQueue** | Folly `ProducerConsumerQueue` shape | ➖ 三平台 n=15 **TIE**；同 exact-capacity sentinel / acquire-release 合同，不为测项增加 remote cache 或 power-of-two 特化 |
 | **ConcurrentFlatHashMap / ConcurrentNodeHashMap** | oneTBB `concurrent_hash_map` | ✅ protected hit、8-reader、90/10 mixed 三平台均 15/15 胜；flat rebuild 6.25–7.05x；node rebuild M4 胜、Win/Linux 统计同档 |
 | **BTreeMap / BTreeSet** | Abseil `btree_map/set` | ⚠️ 实际十轴混合：Windows 7 胜/1 平/2 负，WSL 6 胜/2 平/2 负，M4 6 胜/1 平/3 负；主要 time-index mutation 缺口已消除，但不宣称逐平台全轴 SOTA |
-| **FlatMap / FlatSet** | sorted `std::vector` floor；⏳ std/Boost | ✅ Win hit/iterate TIE、miss/set/mutation WIN；WSL 除 miss 0.969x 外 TIE；bulk 从旧 0.309x 修到 Win 0.768x、WSL TIE；⏳ M4 |
+| **FlatMap / FlatSet** | C++23 `std::flat_map/set`（M4）/ sorted vector floor（x86） | ✅ M4 七轴同档或赢；x86 lookup/scan/mutation 同档或赢；AoS raw-copy bulk 只作跨布局下界 |
 
 ### BTreeMap / BTreeSet：有序索引真实矩阵（三平台 Release，n=15）
 
@@ -88,31 +87,28 @@ expiry，以及 M4 domain miss/shuffled build/churn 是当前边界；其中 mut
 单条 miss 分布增加边界 cache 或调 node capacity 会扭曲普通用户形状；后续只由跨 workload
 profile 证据重开。
 
-### FlatMap / FlatSet：查多改少的排序连续索引（Windows/WSL Release，n=15）
+### FlatMap / FlatSet：查多改少的排序连续索引（三平台 Release，n=15）
 
-`hyle_container_flat_sorted_bench` 对称比较相同 `uint64_t` key/value、32 Ki entries 的
-HYLE sorted-contiguous storage 与排序 `std::vector` floor；两个 shipping 标准库都尚无
-C++23 `std::flat_map/set`，本地 Boost.Container 子模块也为空，所以这里不冒充 Boost 或
-标准库证书。floor 的公开 wrapper 提供同样的 lookup/mutation，但 bulk 可以直接复制
-trivial `pair`，因此是 HYLE key-const Entry 转换前的内存下界，而不是更完整的对手。
-数值为同机 paired n=15 的 HYLE/peer throughput：
+最终实现不再保存 AoS `Entry{key,value}`，而采用 C++23 `std::flat_map` 的 split storage：
+keys 与 values 各自连续；FlatSet 则是独立单数组 core。这样 key lookup、只扫 mapped value
+和 set 都不会装载无关字段。Windows/WSL 的标准库尚无 `std::flat_map`，因此用公开
+sorted-vector wrapper 作为算法 floor；AppleClang 21 已提供真正 C++23 peer。
 
-| 正常用法 | Windows MSVC 19.50 | WSL GCC 14.2 |
-|---|---:|---:|
-| lookup hit | 1.007x TIE | 1.007x TIE |
-| in-domain miss | **1.042x WIN** | **0.969x LOSE** |
-| full ordered iteration | 1.000x TIE | 1.002x TIE |
-| set membership | **1.039x WIN** | 1.023x TIE |
-| 64 erase + ordered append | **1.450x WIN** | 0.994x TIE |
-| `sorted_unique` pair-range bulk build | **0.768x LOSE**（0.389/0.306 ns） | **0.989x TIE**（0.213/0.211 ns） |
+| 正常用法 | Windows / sorted vector | WSL / sorted vector | M4 / `std::flat_map/set` |
+|---|---:|---:|---:|
+| lookup hit | **61.234/65.159 ns，1.064x WIN** | **60.680/64.243，1.059x WIN** | **20.570/22.956，1.116x WIN** |
+| in-domain miss | **59.513/63.747，1.071x WIN** | **59.834/63.817，1.067x WIN** | **19.827/22.835，1.151x WIN** |
+| full key+value scan | 0.243/0.247，TIE | **0.128/0.150，1.17x WIN** | 0.132/0.132，TIE |
+| mapped-only scan | 0.184/0.187，TIE | **0.093/0.187，2.01x WIN** | 0.070/0.069，TIE |
+| set membership | **59.314/62.895，1.060x WIN** | **58.567/63.365，1.082x WIN** | **23.439/25.086，1.070x WIN** |
+| 64 erase + ordered append | **3.122/4.536 us，1.453x WIN** | 3.062/3.054 us，TIE | 3.988/3.975 us，TIE |
+| `sorted_unique` bulk | 0.476/0.287 ns，0.603x AoS floor | 0.289/0.213，0.737x AoS floor | **0.408/3.334，8.17x WIN** |
 
-旧实现虽然先 reserve，仍逐项走容量分支、重复发布 size，并对 sized iterator 做线性计数，
-Windows 只有 0.309x。当前 `SmallVector` 内部 bulk seam 对 sized range O(1) 取长度、一次
-reserve、原位构造整批后一次发布 size；异常/OOM 销毁完成前缀，move-only pair-range 也走
-同一入口。它没有公开 uninitialized storage、增加 entry metadata 或破坏只读 key。结果是
-Windows 提升约 **2.49x**，WSL 已到 raw-copy floor 同档。Windows 剩余 23.2% 是 pair→
-key-const Entry 转换与直接 memcpy 的合同下界差；在拿到真正 `std::flat_map`/Boost peer 前，
-不以跨类型 memcpy 或 mutable key 消掉它。M4 仍待签，不能把双平台结果写成三平台证书。
+x86 bulk 对手可对 trivial AoS pair 直接 memcpy，而 split storage 必须拆成两列，因此该行是
+跨布局 copy 下界，不是同合同完整 flat-map；它也与查找/单列扫描的收益互为取舍。真正
+split-storage 的 M4 `std::flat_map` 同合同中，HYLE bulk 反而明显领先。实现通过 fresh
+key/value vectors 一次 reserve、原位构造后一次发布 size；异常/OOM 回滚两列完成前缀，
+不公开 uninitialized storage、不允许 mutable key，也不添加常态 benchmark metadata。
 
 ### DynamicBitSet / SparseSet：按实际生命周期验收（三平台 Release，n=15）
 
@@ -258,7 +254,7 @@ oneTBB 的 0.22x。当前状态增加 reader-waiting hint，只在真实 waiter/
 没有增添 benchmark API 或每 entry metadata。GCC 14 UBSan 全绿；WSL 新内核下 TSan 需
 `setarch -R` 避开 runtime shadow mapping 冲突，13 个 concurrent map/C ABI 用例无 race。
 
-### FlatHashMap / FlatHashSet：真实 typed 形状（Windows/WSL Release，n=15）
+### FlatHashMap / FlatHashSet：真实 typed 形状（三平台 Release，n=15）
 
 对手是本地 Abseil flat hash，不是较弱的 `std::unordered_*`。key 为 100k 个固定随机
 `uint64_t`；hit/miss/iteration 使用预填表，insert 使用 fresh table，map erase 包含建表
@@ -285,13 +281,22 @@ WSL / GCC 14.2：
 | iterate | **0.736 ns** | 1.698 ns | **0.834 ns** | 1.835 ns | HYLE 2.30x / 2.20x；均 15/15 |
 | build+erase | **16.668 ns** | 22.900 ns | — | — | HYLE 1.37x；15/15 |
 
+Apple M4 / AppleClang 21：
+
+| 操作 | HYLE map | Abseil map | HYLE set | Abseil set | n=15 判定 |
+|---|---:|---:|---:|---:|---|
+| hit | **1.613 ns** | 1.699 ns | **1.505 ns** | 1.634 ns | HYLE 1.05x / 1.09x |
+| miss | **4.545 ns** | 4.822 ns | **4.437 ns** | 4.749 ns | HYLE 1.06x / 1.07x |
+| fresh insert | 8.930 ns | **8.711 ns** | 8.390 ns | **8.187 ns** | 0.975x / 0.976x；统计同档 |
+| iterate | **0.661 ns** | 1.500 ns | **0.527 ns** | 1.416 ns | HYLE 2.27x / 2.69x |
+| build+erase | **15.166 ns** | 18.065 ns | — | — | HYLE 1.19x |
+
 迭代器不是为 benchmark 另设的旁路：map/set 都提供标准 forward range，内部持有当前
 control group 的 occupied mask，用户的正常 range-for 与测试走同一实现。set 共享 map
-的 Swiss probe/resize 核心，但 empty mapped policy 不占 slot bytes。Windows 全胜、WSL
-四个主要方向领先并不能抹掉 WSL map/set miss 的约 3%/6% 差距；M4 未刷，所以这里
-不写“三平台 SOTA”。
+的 Swiss probe/resize 核心，但 empty mapped policy 不占 slot bytes。Windows 全胜；WSL
+map/set miss 仍落后约 3%/6%；M4 查找、删除、迭代赢，fresh insert 与 Abseil 同档。
 
-### ConcurrentVector：先校正合同，再谈速度（Windows/WSL Release，n=15）
+### ConcurrentVector：先校正合同，再谈速度（三平台 Release，n=15）
 
 旧实现把所有 writer 的元素构造放进一个 mutex；第一版并行改造又为“实时 size 只含
 完成连续前缀”增加全局 ordered commit，8 writer 仅为 oneTBB 的 0.17x。该 reader
@@ -322,10 +327,20 @@ WSL / GCC 14.2：
 | quiesce 后逐次 `operator[]` 顺扫 | 0.840 ns | **0.427 ns** | **oneTBB 1.97x；15/15，未收口** |
 | 4 readers 读既有 prefix + 1 writer | **0.468 ns** | 0.866 ns | HYLE 1.85x；15/15 |
 
+Apple M4 / AppleClang 21：
+
+| 正常用法 | HYLE / oneTBB 比值 | n=15 判定 |
+|---|---:|---|
+| 单 writer push 100k | **1.093x** | HYLE 15/15 |
+| 8 writer，预留后 append 200k | **0.997x** | 统计同档 |
+| quiesce 后 range iteration | **1.373x** | HYLE 赢 |
+| quiesce 后逐次 `operator[]` 顺扫 | **1.522x** | HYLE 赢 |
+| 4 readers 读既有 prefix + 1 writer | **1.270x** | HYLE 赢 |
+
 WSL 的逐次索引差距与 GCC 对运行时 segment 定位的代码生成有关；它没有被包装成赢。
 成熟容器的随机访问 iterator/range 形状已补齐：`++` 缓存 segment，因此正常顺序遍历
-在两平台都领先；`operator[]` 继续作为真正随机索引的独立证据与后续优化项。M4 尚未
-刷新，不能把本表外推为三平台证书。
+在三平台都领先；`operator[]` 继续作为真正随机索引的独立证据，且仅 WSL/GCC14 保留
+约 0.51x 的平台代码生成边界。
 
 2026-07-26 又验证并**拒绝**了一版把 global index 加 first-capacity 后直接 `bit_width`
 的 biased mapping。它把 Windows 索引降到 0.605 ns（oneTBB 1.256 ns），但同一
@@ -335,55 +350,80 @@ WSL/GCC14 原生 ext4 构建从旧 mapping 的 15-run median 0.85 ns 恶化到
 mapping：单平台点值改善不足以证明架构更好，也没有为顺扫 benchmark 增加 TLS cache、
 每对象游标或常态 metadata。
 
+### StringInterner：稳定 identity、回收与并发驻留（三平台 Release，n=15）
+
+当前索引 slot 是 16B `{Entry*, cached_hash}`，字符串 bytes 只存一份，entry data 直接位于
+header 后；growth/erase 不重扫 resident 字符串。对手按合同拆分：单条和生命周期使用
+带 mutex、generation/direct-ID 的 peer；8-thread 使用同样自适应分片的 Abseil peer；
+growth 的 Abseil 表是故意更弱的无锁 floor，因此只证明 cached-hash/稳定存储的结构收益。
+
+| 正常用法 | Windows | WSL GCC 14 | Apple M4 | 判定 |
+|---|---:|---:|---:|---|
+| 单条 intern / 同合同 mutex peer | **1.273x** | **0.894x** | **1.533x** | 仅 WSL 单条边界 |
+| batch intern / 同合同 mutex peer | **1.545x** | **1.360x** | — | Win/WSL 赢；M4 单条已赢 |
+| 8-thread / sharded Abseil peer | **1.782x** | **1.428x** | **1.427x** | 三平台赢 |
+| 1KiB unique growth / Abseil floor | **5.934x** | **1.543x** | **1.290x** | 三平台赢 |
+| acquire/retain/release / direct-ID peer | **1.559x** | **1.273x** | **1.608x** | 三平台赢 |
+| repeated lifecycle / retained peer | **1.626x** | **1.343x** | **1.649x** | 三平台赢 |
+
+WSL 单条入口的成本来自 16/32/64 shard 的随机 table locality，而单锁 peer 只访问一个表；
+把产品退回单锁会牺牲正常 batch/并发路径，或另加 TLS/调用模式元数据。静态链接复测仍为
+0.867x，已排除 DSO seam，因此该点作为架构边界冻结，而不是继续按 microbenchmark 调参。
+
+### SmallVector / PodVector：真实构建并消费（三平台 Release，n=15）
+
+旧 benchmark 只观察 `data()`，GCC 能删掉 Abseil 的元素存储，曾制造约 4x 假差；当前每轮
+都构建、遍历消费 checksum，并使 inline object 可观察。Windows 的 SmallVector inline/
+spill 分别快 Abseil **1.225x/2.124x**；WSL inline 的绝对比值 0.803x，但 combined spread
+46.1%，判为同档，spill 赢 1.218x；M4 inline/spill 赢 2.49x/2.67x。PodVector growth 在
+Windows/M4 赢 1.545x/1.06x、WSL 与 std 同档；三平台 sequential read 均同档。
+
 ## 2. 非 SOTA / 冻结边界（诚实清单）
 
-1. **StringInterner lifecycle（WSL/M4）**
-   intern / acquire-retain-release / churn 相对同契约 peer 约 **0.73–0.86x**。
-   产品价值在 cached-hash growth、稳定 identity、并发接近强 peer、batch——**不是**「全生命周期常数三平台无条件赢」。旧 1.24x churn 证书已撤回。
+1. **StringInterner WSL 单条入口**
+   相对同合同 single-mutex peer 为 **0.894x**；batch、8-thread、growth 与两种 lifecycle
+   均赢。静态链接未改变结论，故不以破坏分片架构来追这个点。
 
-2. **StringInterner 8-thread**
-   距 sharded Absl+mutex 约 **4–5%**（~0.95x），接近但非碾压。
+2. **hash_bytes 17–128B 与长输入 crossover**
+   17–128B 已改为产品 header-inline multiply stream，三平台对 raw wyhash/XXH3 属 SOTA
+   同档或赢；>128B 才进入产品 dispatcher。Win/M4 从 1KiB、Linux 从 512B 选择宽 XXH3，
+   阈值来自产品 API varied-input crossover，而非裸算法 microbenchmark。
 
-3. **hash_bytes 默认 DLL 出线核**  
-   与裸 XXH3 同算法时有固定 seam；小 typed key 走 `Hash&lt;T&gt;` inline mix。旧
-   `hash_bytes_inline` 只服务微基准且泄漏私有 vendor 头，已从公开面删除；较长字节串
-   接受动态库边界，真实热点应缓存 hash 或批处理。
-
-4. **string_ref 短输入 split/rfind/count**  
+3. **string_ref 短输入 split/rfind/count**
    4KB 点值可有 **0.83–0.96x**（DLL/dispatcher）；长输入摊平。
 
-5. **FlatHashMap/Set WSL miss 与 M4 证书**
+4. **FlatHashMap/Set 平台边界**
    WSL map/set miss 分别约 **0.97x/0.94x Abseil**，其余 map 项领先、set hit 同档；
-   map/set 的 M4 n=15 尚未刷新。这个差距没有通过增加常态 metadata 或特化 benchmark
-   key 来隐藏。
+   M4 fresh insert 约 0.975x/0.976x，统计同档，查找/删除/迭代领先。没有通过特化
+   benchmark key 或增加常态 metadata 隐藏 WSL miss。
 
-6. **并发队列类**
+5. **并发队列类**
    SPSC 已在本页按 exact-capacity 1P/1C 正常合同完成三平台证书，结论是同成熟形状统计
    同档；调度/MPMC 性能叙事仍在 queue_sota_bench / sched。单线程 RingDeque/
    ByteRingBuffer 结果不能外推到原子队列。
 
-7. **长 hash 的平台证书**
-   Windows AVX2 已证明 ≥1KiB、WSL/GCC14 已证明 ≥512B 宽 XXH3 相对 wyhash 的收益；
-   两个 shipping compiler 使用各自保守交叉点。M4 NEON 尚未按同一 varied-input 合同
-   刷新；非 AVX2 产品保持 wyhash，不把 x86 结论外推成三平台 SOTA。
+6. **hash 的算法身份**
+   `hash_bytes` 是不可持久化的进程内 table hash，不承诺与 XXH3/wyhash bit-identical；
+   这允许按长度、ISA 和 shipping toolchain 选择最快产品核。需要稳定 fingerprint 的用户
+   必须选择 codec/crypto 层的明确算法。
 
-8. **SparseSet 纯 membership / 新集合类型平台证书**
+7. **SparseSet 纯 membership / 新集合类型平台证书**
    SparseSet 的 mixed membership 在 Win/WSL/M4 分别是 dense byte bitmap 的约
    0.27x/0.21x/0.69x，这是选择条件，不是待
    隐藏的小缺口；频繁 O(1) clear/O(active) iteration 才选择 SparseSet。DynamicBitSet /
    SparseSet 当前已有三平台 n=15；本地缺 Boost dynamic_bitset 可编译 peer，后续只在
    参考树具备同合同实现后补，不以网络临时 clone 改变参考集。
 
-9. **ConcurrentNodeHashMap 并发重建**
+8. **ConcurrentNodeHashMap 并发重建**
    Windows/Linux 中位数分别快 oneTBB 1.174x/1.210x，但只有 9/15、12/15 同侧，未达到
    paired sign 门槛；按统计同档。稳定 node identity 是该类型的选择理由，纯 clear+rebuild
    优先 `ConcurrentFlatHashMap`，不为追单项数字扭曲 node storage。
 
-10. **FlatMap/FlatSet 的剩余边界**
-    Windows `sorted_unique` 从 0.309x 修到 0.768x，但对 raw trivial-pair copy floor 仍是
-    LOSE；WSL 已 TIE。反向边界是 WSL in-domain miss 0.969x。floor 不是完整 flat-map
-    实现，M4/真正 std 或 Boost peer 尚缺，因此既不宣称全轴 SOTA，也不为它泄漏 mutable
-    key、跨类型 memcpy 或增加常态 metadata。
+9. **FlatMap/FlatSet 的剩余边界**
+    M4 对真正 C++23 `std::flat_map/set` 七轴同档或赢。x86 的 `sorted_unique` bulk build
+    对 raw AoS `vector<pair>` copy floor 分别为 0.603x/0.737x；这是 split key/value layout
+    与跨布局 memcpy 的下界，不是完整 flat-map 对手。作为回报，mapped-only scan 在 WSL
+    快 2.01x，查找/scan/mutation 同档或赢；不为单个 bulk floor 放弃 split storage。
 
 ## 3. 选型（不同场景不同 container 组成）
 
@@ -404,7 +444,7 @@ mapping：单平台点值改善不足以证明架构更好，也没有为顺扫 
 栈上小数组                 → SmallVector
 POD 堆动态数组             → PodVector（默认 SystemAllocator/mi）
 只读字符串视图 + 搜索      → string_ref（子串族借 std）
-驻留串 / intern            → StringInterner（接受跨平台 lifecycle 税；要 growth/并发）
+驻留串 / intern            → StringInterner（WSL 单条极限优先时先批处理；growth/并发/生命周期赢）
 路径词法（无 syscall）     → path（零分配；勿用 filesystem 当算法对手）
 MPMC / stealing 队列       → bounded / sharded / WS deque（见 queue 文档）
 ```
@@ -474,17 +514,16 @@ scripts/bench-stat.py <build>/bin/hyle_container_concurrent_map_bench -n 15 \
 定位单项时可再设 `HYLE_QUEUE_BENCH_VARIANT=hyle|tbb` 与
 `HYLE_QUEUE_BENCH_CV_CASE=push|writers|index|iterate|read-write`；正式对比不设这两项。
 
-刷新后：改本页 §0 新鲜度 + 总账对应行；详表回填 [benchmarks-mem-container.md](./benchmarks-mem-container.md)。
+刷新后：改本页 §0 新鲜度与对应表行；不要再建立第二份 container 当前性能表。
 
-## 6. 详表索引
+## 6. 当前表索引
 
 | 主题 | 详节位置 |
 |---|---|
-| hash 公平性更正 + 长度表 | mem-container §container·hash |
-| SwissTable vs absl | mem-container §container·map + README 总账 |
+| hash 公平性更正 + 长度表 | 本页 §hash / README 总账 |
+| SwissTable vs absl | 本页 §FlatHashMap/FlatHashSet + README 总账 |
 | BTreeMap/Set vs Abseil | 本页 §BTreeMap/BTreeSet + README 总账 |
 | FlatMap/Set vs sorted-contiguous peer | 本页 §FlatMap/FlatSet |
-| SmallVector / PodVector | mem-container §container·vec |
-| string_ref / StringInterner 三平台收口 | mem-container §container·str |
-| path | mem-container §container·path |
-| util/obs 夹带 | 应看 util/obs 收口；mem-container「次要模块」勿当 container 主证书 |
+| SmallVector / PodVector | 本页 §SmallVector/PodVector |
+| string_ref / StringInterner 三平台收口 | 本页 §StringInterner + README 总账 |
+| path/string-ref | README 总账；下一次刷新直接扩本页，不建立第二份当前表 |

@@ -25,17 +25,9 @@
 
 namespace hyle::container {
 
-// XXH3 core for LONGER byte ranges (len > 16). Defined in hash.cc so the 7490-line
-// xxhash.h stays out of this header (ABI-clean + no compile-time bloat in every
-// consumer). Small inputs (<= 16B) DON'T come here -- hash_bytes() short-circuits
-// them to an inline mix below (no call), so the common small-key case pays zero
-// seam cost. This is HYLE's default RUNTIME byte hasher.
 namespace detail {
-HYLE_CONTAINER_API std::uint64_t hash_bytes_xxh3(const void* data, std::size_t len,
-                                                 std::uint64_t seed) noexcept;
-// wyhash core for LONG byte ranges (len > kWyhashThreshold). Also out-of-line in
-// hash.cc (wyhash.h kept out of this header). Best-of-breed: XXH3 wins short-mid
-// strings, wyhash wins long ones -- hash_bytes() picks by length (see below).
+// Baseline scalar core for LONG byte ranges. Kept out of line so wyhash.h does
+// not leak into every consumer translation unit.
 HYLE_CONTAINER_API std::uint64_t hash_bytes_wyhash(const void* data, std::size_t len,
                                                    std::uint64_t seed) noexcept;
 // Process-local long-input dispatcher. On x86 it may select an AVX2 XXH3 TU for
@@ -46,11 +38,9 @@ HYLE_CONTAINER_API std::uint64_t hash_bytes_wyhash(const void* data, std::size_t
 HYLE_CONTAINER_API std::uint64_t hash_bytes_long(const void* data, std::size_t len,
                                                  std::uint64_t seed) noexcept;
 
-// Length crossover between the two out-of-line hashers, from the length sweep
-// (bench/container/hash_bench.cc, 15-run medians): XXH3 is fastest for 17..~128B
-// (wins wyhash 1.1-1.26x), wyhash is fastest for >=~192B (wins 1.45-2.6x; XXH3 has
-// a midsize-path pessimum near 256B). 128 is the conservative split -- the tie
-// point sits on the XXH3 side, so wyhash only takes over where it clearly wins.
+// Upper bound of the inline medium-input kernel. Above it the bytes amortize the
+// out-of-line product dispatcher; at and below it avoiding that seam wins in
+// normal string/table workloads on all three shipping architectures.
 inline constexpr std::size_t kWyhashThreshold = 128;
 // Varied-input sweeps put wide XXH3's repeatable *product API* crossover at
 // different points for the shipping toolchains: 512B on Linux/GCC 14, but 1KiB
@@ -261,12 +251,10 @@ HYLE_FORCE_INLINE std::uint64_t hash_small(const void* p, std::size_t n) noexcep
 }  // namespace detail
 
 // Hash an arbitrary byte range. SMALL inputs (len <= 16 -- the common map-key /
-// short-string case) take an INLINE mix here (seed + len folded in, no call): the
-// non-inlinable XXH3 call's fixed cost dominated tiny inputs (measured ~1.85x at
-// 8B), and that whole cost is the wrapper, not the algorithm. LARGER inputs go to
-// the out-of-line XXH3 core (detail::hash_bytes_xxh3), where the bytes dominate so
-// the one call amortizes and xxhash.h stays hidden from this header. Output is NOT
-// bit-identical to pure XXH3 for <= 16B. This is a PROCESS-LOCAL table hash, like
+// short-string case) take an inline fixed-size mix; 17..128B use an inline
+// multiply stream so a DLL seam cannot dominate symbol/path-sized strings; only
+// longer inputs enter the out-of-line product dispatcher. Output is not
+// bit-identical to a named vendor algorithm. This is a PROCESS-LOCAL table hash, like
 // absl::Hash: seed-sensitive and repeatable inside one process, but not a persisted
 // fingerprint. Its output may change across HYLE versions, builds, or CPU ISA as
 // the runtime selects a faster long-input kernel. Never store it or put it on wire.
@@ -312,9 +300,8 @@ HYLE_FORCE_INLINE std::uint64_t hash_bytes(const void* data, std::size_t len,
   return detail::hash_bytes_long(data, len, seed);
 }
 
-// Default hasher. Specialized for the common cheap cases. For SMALL trivially-copyable T
-// (<= 16 bytes -- the typical map key) it uses an inline mix (no XXH3 call); larger blobs
-// fall back to XXH3 via hash_bytes (where the bytes dominate and the call is amortized).
+// Default hasher. Specialized for the common cheap cases. Trivially-copyable T up
+// to 128 bytes stays inline; larger blobs use the product long-input dispatcher.
 // Users may specialize Hash<T> for their own types.
 template <class T, class = void>
 struct Hash {
@@ -340,7 +327,7 @@ struct Hash {
   }
 };
 
-// Integral / enum: inline mix, no XXH3 call.
+// Integral / enum: inline mix, no out-of-line call.
 template <class T>
 struct Hash<T, std::enable_if_t<std::is_integral_v<T> || std::is_enum_v<T>>> {
   std::uint64_t operator()(T v) const noexcept {
@@ -356,7 +343,7 @@ struct Hash<T*> {
   }
 };
 
-// Strings / byte views: XXH3 over the bytes.
+// Strings / byte views: the length-adaptive process-local byte hash above.
 template <>
 struct Hash<std::string_view> {
   std::uint64_t operator()(std::string_view s) const noexcept {

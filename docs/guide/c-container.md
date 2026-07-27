@@ -125,6 +125,11 @@ ASCII 单字节便利函数全部 header-inline：
 - `hyle_container_string_interner_size` 返回当前不同字符串数。所有返回视图都由池拥有，
   不得释放。
 
+大批符号/模型导入应直接使用 `*_many`，不要在 FFI 循环里逐项跨 ABI：batch 会在每个
+有界块内只取得实际涉及的 shard lock。当前三平台性能证书中 batch、并发、长串增长与
+生命周期均同档或领先；Linux/GCC 逐条 `intern` 相对单全局表+mutex peer 有约 12% 的
+局部性边界，这是分片并发合同的成本，不应通过退回全局锁隐藏。
+
 ## DynamicBitSet 与 sparse u32 set
 
 两者都是 opaque allocator-owning handle，但服务不同的数据形状：
@@ -476,3 +481,8 @@ payload 可为 NULL，HYLE 不解释也不拥有它。
 这张表表达的是“C++ 静态形状不跨 ABI、运行时能力仍可达”。如果未来需要
 按值 POD queue，应该新增 `element_size`/`alignment` 的类型擦除接口，而不是
 导出某个模板实例；按值 vector 已由 `hyle_container_vector_*` 覆盖。
+
+当前动态 C 面由 232 个 `HYLE_CONTAINER_C_API` 声明组成；纯 C callable manifest、DLL/
+SO 导出检查和 C17 测试机械覆盖同一集合。模板参数、非平凡 C++ 生命周期或 iterator
+布局无法稳定类型擦除时，上表给出等价动态能力或明确负空间，而不是假装 C ABI 能导出
+任意 C++ 模板实例。

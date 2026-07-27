@@ -190,16 +190,19 @@ hyle::container::FlatMap<std::uint64_t, Route> routes(
     hyle::container::sorted_unique, rows.begin(), rows.end());
 
 if (auto it = routes.find(route_id); it != routes.end())
-  dispatch(it->value());
+  dispatch(it->second);
 for (auto it = routes.lower_bound(first); it != routes.upper_bound(last); ++it)
-  visit(it->key(), it->value());
+  visit(it->first, it->second);
 ```
 
-两个类型为 allocator-aware、owning、unique-key 容器，共享一个排序连续 engine；底层复用
-`SmallVector<Entry,1>`，singleton 不分配，也没有另造第二个通用 vector。公开面包括
+两个类型为 allocator-aware、owning、unique-key 容器。`FlatMap` 采用 C++23 同类的
+split storage：key 与 mapped value 各自连续；`keys()`/`values()` 可在只需一列时避免读入
+另一列。`FlatSet` 是独立单数组 core。两者复用 `SmallVector<...,1>`，singleton 不分配，
+也没有另造第二个通用 vector。公开面包括
 异构 `find/contains/count/lower_bound/upper_bound/equal_range`、insert/erase、map 的
 `try_emplace`/`insert_or_assign`/`operator[]`、reserve/shrink、copy/move 和有序迭代；map
-iterator 的 key 只读、value 可写，set iterator 始终只读。`sorted_unique` 构造/assign 是
+iterator 是 random-access proxy，标准 `.first` key 只读、`.second` value 可写，亦可用
+`key()/value()`；它不是 contiguous `pair*`。set iterator 始终只读。`sorted_unique` 构造/assign 是
 O(N) bulk 路径；tag 是调用方对“严格有序且无等价 key”的承诺，库不会再逐项验证或偷偷
 排序。sized range 只计算一次长度并 reserve 一次，随后直接构造连续尾部；失败会销毁完成
 前缀且保持原容器。普通无 tag range 按 unique insert 处理，复杂度最坏 O(N²)。
@@ -403,6 +406,12 @@ lock-free 1P/1C 角色应选后文 `SpscQueue`。
 shard，并按 shard 序加锁，不会因单 shard 批量工作冻结整个 interner。返回 view 都由
 interner 拥有，不得 free。interner 必须比 view/ID 的所有使用者长寿。
 
+性能选择也与合同一致：三平台的 batch、并发、长串增长和可回收生命周期均已与成熟
+同合同 peer 同档或领先；Linux/GCC 的逐条 `intern` 因 16/32/64 自适应分片带来的随机
+shard/table 局部性，当前约慢单全局 `unordered_map+mutex` peer 12%。不要为这一个平台
+把共享 interner 降级为全局锁；单线程一次性导入用 `intern_many`，完全不需要跨线程共享时
+则直接用普通 flat set/map。Windows 与 M4 的逐条入口本身领先同合同 peer。
+
 `path.h` 只做词法操作。`normalize("a/../b")` 不查询磁盘，所以不能证明结果与真实文件、
 symlink 或 Windows case rules 等价；需要真实 filesystem 行为时使用 platform 模块。
 
@@ -459,8 +468,8 @@ range，因为它对 reservation count 取快照，并不额外发布仍在构�
   无数据竞争的充分条件，除非外部同步也明确建立 happens-before。
 - `ConcurrentVector::size()` 不是 live publication fence；并发写时读取新 tail 需要外部
   完成同步，或让 `T` 自己承载 atomic/future 状态。
-- `hash_bytes` 的 >16B 路径会跨库调用；足够长的输入在 x86 AVX2 机器会按发布平台
-  实测交叉点自动进入宽 XXH3。
+- `hash_bytes` 的 17–128B 路径仍在公开头内内联；只有 >128B 才跨库进入长输入
+  dispatcher。足够长的输入会按 shipping 平台的产品 API 交叉点自动进入宽 XXH3。
   它是进程内 table hash，不承诺跨版本/构建/CPU bit-identical；持久化 fingerprint、文件
   格式、网络协议和安全 MAC 都不能用它。极端热点仍优先缓存 hash 或批处理；HYLE 不公开
   依赖私有 vendor 头、且只适用于部分交付形状的 inline 旁路。

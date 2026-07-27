@@ -16,8 +16,7 @@
 | [mem 实测](./benchmarks-mem.md) | **mem 严格证书**：既有三平台 Region/FixedPool/pool 证书有效；clean `c640072` 已补齐 shared allocator/standard-adapter/realloc 的 Win/WSL/M4 双 QoS n=15，同合同默认路径无 material LOSE |
 | [util-core 实测](./benchmarks-util.md) | **util-core 2026-07-25 三平台 n=15 证书**：Rng/Ref/SpinLock 实际形状；oneTBB 正反序；mutex 反例与适用边界 |
 | [obs 实测](./benchmarks-obs.md) | **obs 2026-07-25 三平台 n=15 证书**：gate、immutable sink snapshot、structured/C ABI、fan-out 与多 producer；成熟库只作同机制对照，不作跨合同倍数宣称 |
-| [container 实测](./benchmarks-container.md) | **container 导航证书**：新鲜度、非 SOTA、选型；详表 → [benchmarks-mem-container.md](./benchmarks-mem-container.md) |
-| [container 详表](./benchmarks-mem-container.md) | hash/map/vec/str/path 长表 + 历史；fuzzy 旧实验已移出产品面；**入口见上** |
+| [container 实测](./benchmarks-container.md) | **container 唯一当前证书**：三平台详表、新鲜度、非 SOTA、选型与复跑命令 |
 | [simd 产品 kernel](./benchmarks-simd.md) | dot/saxpy、math、dtype、gather、vendor 竞争…；**op 全量不在此** |
 | [simd op 对拍证书](./benchmarks-simd-ops.md) | **逐 op vs Highway**：三平台 LOSE=0 摘要 + 覆盖树；全表 → [orderswap 矩阵](../milestones/simd-orderswap-matrix.md)（最新最全） |
 | [simd op 对拍方法论](./simd-op-benchmark-methodology.md) | op_parity 规程：形状、双序、锚点闸门、LOSE 证据阶梯 |
@@ -108,19 +107,19 @@
 | **container·hash** mix64 整数 | 0.44 | std::hash | 1.50 | 3.4x | wyhash64 | 0.57 | 1.27x | ✅赢(已 SOTA=abseil 同款单乘折叠) |
 | **container·hash** hash_bytes 8B(inline mix,非 XXH3) | 0.23/B | std::hash&lt;string&gt; | 0.29 | 1.3x | 裸 XXH3-small / wyhash | 0.21/0.30 | ~平/赢 wyhash | ➖**≤16B 走 inline mix 非 XXH3**(两算法比,非"输 XXH3");赢 wyhash-small、近平 XXH3-small |
 | **container·hash** hash_bytes 16B(inline mix,非 XXH3) | 0.15/B | std::hash&lt;string&gt; | 0.35 | 2.3x | 裸 XXH3-small / wyhash | 0.12/0.15 | ~平 wyhash | ➖同上(inline mix vs XXH3-small,不同算法;热路径 Hash&lt;T&gt; 见上行赢 wyhash 2.2x) |
-| **container·hash** hash_bytes 64B | 0.055/B | std::hash&lt;string&gt; | 0.45 | 8x | 裸 XXH3(同 hasher) | 0.043 | **不同链接模型，不签 SOTA** | ⚠️ HYLE 默认出线核、裸 XXH3 全内联；约 1ns 是共享库 seam 而非算法差异。≤16B typed key 已走 inline mix；旧 `hash_bytes_inline` 因泄漏私有 vendor 头且无法保证 header/static/shared/source 一致交付而删除。较长输入须按相同链接形状重测，热点优先缓存 hash/批处理 |
-| **container·hash** hash_bytes 256B(runtime long→wyhash) | 0.032/B | std::hash&lt;string&gt; | 0.642 | 20x | 裸 XXH3 / wyhash | 0.077/0.029 | **XXH3 2.4x / 近 wyhash** | ✅ 1KiB 以下保留 wyhash；raw 约快 7% 为 DLL seam，不为 SIMD 退化 |
-| **container·hash** hash_bytes 1KiB(x86 AVX2→XXH3, Win/Lin) | **45.0/57.3 GB/s** | std::hash&lt;string&gt; | 1.40/10.9 GB/s | 32x/5.3x | raw AVX2 XXH3 / wyhash | Win 46.1/40.3；Lin 56.9/41.5 GB/s | **同档 / 1.13x·1.38x** | ✅ Win/Lin n=15：对 wyhash 均 15/15 赢；runtime CPU+OS gate，M4 待签 |
-| **container·hash** hash_bytes 4KiB(x86 AVX2→XXH3, Win/Lin) | **58.5/61.6 GB/s** | std::hash&lt;string&gt; | 1.35/10.5 GB/s | 43x/5.9x | raw AVX2 XXH3 / wyhash | Win 61.3/35.7；Lin 66.1/38.8 GB/s | **同档 / 1.64x·1.59x** | ✅ Win/Lin n=15；产品分派/共享边界内仍实质领先 wyhash，M4 待签 |
-| **container·map** find-hit(100k u64, Win) | 2.464 | std::unordered_map（历史） | 10.47 | 4.25x | absl flat_hash_map | 3.010 | 1.21x | ✅ Win 15/15；WSL 1.15x 15/15 |
-| **container·map** find-miss(100k, Win) | 4.499 | std::unordered_map（历史） | 11.57 | 2.57x | absl flat_hash_map | 4.801 | 1.07x | ✅ Win 15/15；⚠️ WSL **0.97x**，Absl 13/15 |
-| **container·map** insert(100k fresh, Win) | 11.742 | std::unordered_map（历史） | 80.07 | 6.82x | absl flat_hash_map | 24.672 | 2.07x | ✅ Win/WSL 15/15；WSL 1.39x |
-| **container·map** erase(100k build+erase, Win) | 19.396 | std::unordered_map（历史） | 93.10 | 4.80x | absl flat_hash_map | 34.748 | 1.80x | ✅ Win/WSL 15/15；WSL 1.37x |
-| **container·map** iterate(100k visit, Win) | 0.980 | std::unordered_map（历史） | 8.37 | 8.54x | absl flat_hash_map | 1.857 | 1.90x | ✅ match_full 组扫；WSL 2.30x |
-| **container·set** find-hit(100k u64, Win) | 1.891 | （无当前 std 证书） | — | — | absl flat_hash_set | 3.136 | 1.66x | ✅ Win 15/15；WSL TIE 8/15 |
-| **container·set** find-miss(100k, Win) | 4.419 | （无当前 std 证书） | — | — | absl flat_hash_set | 5.951 | 1.35x | ✅ Win 15/15；⚠️ WSL **0.94x**，Absl 14/15 |
-| **container·set** insert(100k fresh, Win) | 10.159 | （无当前 std 证书） | — | — | absl flat_hash_set | 19.475 | 1.92x | ✅ Win/WSL 15/15；WSL 1.13x |
-| **container·set** iterate(100k visit, Win) | 1.004 | （无当前 std 证书） | — | — | absl flat_hash_set | 1.916 | 1.91x | ✅ 真 set slot + group iterator；WSL 2.20x |
+| **container·hash** hash_bytes 64B(Win/Lin/M4) | **21.94/26.71/29.03 GB/s** | std::hash&lt;string&gt; | 明显较慢 | — | raw XXH3/wyhash 最快者 | 24.21/26.46/31.21 GB/s | **三平台同档** | ➖ 17–128B 已是公开头内产品 multiply stream；combined spread 内同档，不再有旧 DLL seam |
+| **container·hash** hash_bytes 256B(M4) | **40.06 GB/s** | std::hash&lt;string&gt; | 明显较慢 | — | raw wyhash | 43.77 GB/s | 0.915x | ⚠️ 小型 long-input product seam；没有为一个长度扩大 public header streaming core |
+| **container·hash** hash_bytes 1KiB(Win/Lin/M4) | **45.70/61.09/40.92 GB/s** | std::hash&lt;string&gt; | 明显较慢 | — | raw 最快 vendor core | 47.43/58.59/42.72 GB/s | **同档/赢/同档** | ✅ 三平台 n=15；Win/M4 1KiB、Linux 512B 是产品 API crossover，不取裸算法交叉点 |
+| **container·hash** hash_bytes 4KiB(Win/Lin/M4) | **63.78/68.93/47.13 GB/s** | std::hash&lt;string&gt; | 明显较慢 | — | raw 最快 vendor core | 63.29/68.66/47.35 GB/s | **三平台同档** | ✅ runtime CPU+OS gate；M4 NEON 证书已完成 |
+| **container·map** find-hit(100k u64, Win) | 2.464 | std::unordered_map（历史） | 10.47 | 4.25x | absl flat_hash_map | 3.010 | 1.21x | ✅ Win/WSL/M4 分别 1.21/1.15/1.05x |
+| **container·map** find-miss(100k, Win) | 4.499 | std::unordered_map（历史） | 11.57 | 2.57x | absl flat_hash_map | 4.801 | 1.07x | ⚠️ Win/M4 赢；WSL **0.97x**，Absl 13/15 |
+| **container·map** insert(100k fresh, Win) | 11.742 | std::unordered_map（历史） | 80.07 | 6.82x | absl flat_hash_map | 24.672 | 2.07x | ✅ Win/WSL 赢；M4 0.975x，统计同档 |
+| **container·map** erase(100k build+erase, Win) | 19.396 | std::unordered_map（历史） | 93.10 | 4.80x | absl flat_hash_map | 34.748 | 1.80x | ✅ Win/WSL/M4 分别 1.80/1.37/1.19x |
+| **container·map** iterate(100k visit, Win) | 0.980 | std::unordered_map（历史） | 8.37 | 8.54x | absl flat_hash_map | 1.857 | 1.90x | ✅ Win/WSL/M4 分别 1.90/2.30/2.27x |
+| **container·set** find-hit(100k u64, Win) | 1.891 | （无当前 std 证书） | — | — | absl flat_hash_set | 3.136 | 1.66x | ✅ Win/M4 赢；WSL TIE 8/15 |
+| **container·set** find-miss(100k, Win) | 4.419 | （无当前 std 证书） | — | — | absl flat_hash_set | 5.951 | 1.35x | ⚠️ Win/M4 赢；WSL **0.94x**，Absl 14/15 |
+| **container·set** insert(100k fresh, Win) | 10.159 | （无当前 std 证书） | — | — | absl flat_hash_set | 19.475 | 1.92x | ✅ Win/WSL 赢；M4 0.976x，统计同档 |
+| **container·set** iterate(100k visit, Win) | 1.004 | （无当前 std 证书） | — | — | absl flat_hash_set | 1.916 | 1.91x | ✅ Win/WSL/M4 分别 1.91/2.20/2.69x |
 | **container·btree** find-hit 64Ki(Win/Lin/M4) | **44.906/47.329/41.585** | （无 std 当前证书） | — | — | absl::btree_map | 49.989/51.633/44.820 | **1.107/1.092/1.108x** | ✅ 三平台 paired WIN |
 | **container·btree** in-domain miss(Win/Lin/M4) | **46.298/49.539**/45.730 | （无 std 当前证书） | — | — | absl::btree_map | 49.782/53.048/**41.348** | **1.078/1.065x**/**0.887x** | ⚠️ x86 WIN，M4 LOSE；真实 sparse-key 域内 miss |
 | **container·btree** above-max miss 边界(Win/Lin/M4) | **15.562**/18.164/**17.067** | （边界分布） | — | — | absl::btree_map | 21.379/**16.996**/19.426 | **1.380x**/**0.932x**/**1.137x** | ⚠️ Win/M4 WIN，Linux LOSE；不能用单一分布塑形整个类型 |
@@ -140,14 +139,13 @@
 | **container·sparse-set** mixed membership(Win/Lin/M4) | 1.380/1.327/0.693 per query | dense byte bitmap | **0.363/0.275/0.477** | **0.264x/0.211x/0.688x** | std::unordered_set | 5.560/2.895/0.945 | 4.03x/2.17x/1.36x | ⚠️ dense 一次 load 胜 3.77x/4.74x/1.45x；这是选型边界，不加 bitmap 元数据隐藏 |
 | **container·ring** fixed-capacity FIFO(Win/Lin/M4) | **1.307/0.610/0.524** | std::deque | 2.101/0.783/4.823 | **1.61x/1.28x/9.20x** | portable Folly fixed-ring shape | 1.390/0.622/0.600 | **1.06x/TIE/1.15x** | ✅ 三平台 n=15；Win/M4 胜 floor，Linux 同档，均胜 std |
 | **container·byte-ring** 32KiB backlog/4KiB staging(Win/Lin/M4) | **0.009/0.009/0.010 per B** | std::deque&lt;byte&gt; | 1.024/0.419/1.216 | **约118x/48.2x/121x** | linear buffer+memmove | 0.016/0.017/0.043 | **1.82x/1.94x/4.26x** | ✅ copy API 三平台 15/15；另有 two-span zero-copy 正常入口 |
-| **container·vec** SmallVector 小 N | 0.41 | std::vector | 16.8 | 41x | absl::InlinedVector | 0.84–1.0 | 2.0–2.4x | ✅赢同款 small-vector SOTA(absl 侧 spread 大取范围) |
-| **container·vec** SmallVector 溢出(64>内联16) | 0.88 | std::vector | 4.70 | 5.3x | absl::InlinedVector | 2.40 | 2.7x | ✅赢同款(堆溢出/增长路径) |
-| **container·vec** PodVector growth/read | 0.51/0.18 | std::vector(即 SOTA) | 0.75/0.18 | 1.48x/1.0x | std::vector(同 std,本身即 SOTA) | 0.75/0.18 | 1.48x/1.0x | ✅赢 growth(2026-07 grow 真改 reallocate;赢因 mimalloc 分配器质量非"原地无copy",详节纠错)/ ➖平 read |
-| **container·str** StringInterner intern(100k/2k 唯一) | 28.86(Win) | 无锁 map floor | 19.78 | 0.685x | thread-safe peer(map+mutex) | 28.70 | **0.994x 平** | Win 平；WSL 0.772x、M4 0.934x，旧 1.17x 证书撤回 |
-| **container·str** StringInterner `intern_many` | 19.97(Win) | 无锁 map floor | 19.78 | **0.990x 平** | 同左 | 19.78 | 0.990x | M4 1.045x；WSL 0.732x，非全平台无条件赢 |
-| **container·str** StringInterner 1KiB unique growth | 101.58(Win) | std::unordered_set | 1813.93 | 17.86x | absl::flat_hash_set | 544.05 | **5.36x** | ✅ cached resident hash；WSL vs Absl 1.71x，M4 vs std 1.67x |
-| **container·str** StringInterner 8-thread adaptive shards | 23.56(Win) | sharded std+mutex | 56.96 | 2.42x | sharded Absl+mutex | 22.33 | **0.948x** | 距 Absl 约 5%；WSL 0.958x，M4 vs std 0.956x |
-| **container·str** StringInterner acquire/retain/release churn | 18.62(Win) | direct-ID+mutex 同契约 peer | 18.44 | **0.990x 平** | 同左 | 18.44 | 0.990x | Win 平；WSL 0.813x、M4 0.785x |
+| **container·vec** SmallVector 小 N build+consume(Win/Lin/M4) | 0.982/0.868/0.702 | std::vector | 16.698/3.939/— | 大幅赢 | absl::InlinedVector | 1.237/0.697/1.747 | **1.225x/0.803x/2.49x** | ✅ Win/M4 WIN；Linux combined spread 46.1%，TIE；旧 data-only DCE 测项作废 |
+| **container·vec** SmallVector spill build+consume(Win/Lin/M4) | 1.320/0.632/0.609 | std::vector | 4.825/—/— | 赢 | absl::InlinedVector | 2.795/0.770/1.626 | **2.124/1.218/2.67x** | ✅ 三平台赢 |
+| **container·vec** PodVector growth/read(Win/Lin/M4) | 0.509/0.184；0.277/0.091；0.342/0.035 | std::vector(即 SOTA) | 0.787/0.184；0.249/0.091；0.362/0.035 | Win 1.545x；Lin TIE；M4 1.06x | 同 std | 同左 | 同左 | ✅ growth 同档或赢；read 三平台同档 |
+| **container·str** StringInterner intern(Win/Lin/M4) | 21.413/21.149/11.302 | （无锁 floor 仅诊断） | — | — | thread-safe map+mutex peer | 27.265/18.909/17.325 | **1.273/0.894/1.533x** | ⚠️ 仅 WSL 单条入口落后；batch 赢 1.36x |
+| **container·str** StringInterner 1KiB unique growth(Win/Lin/M4) | 95.852/96.568/76.656 | （无锁） | — | — | absl::flat_hash_set floor | 579.192/149.046/98.901 | **5.934/1.543/1.290x** | ✅ cached resident hash；三平台赢 |
+| **container·str** StringInterner 8-thread adaptive shards(Win/Lin/M4) | 12.837/14.821/14.153 | sharded std+mutex | 55.722/—/— | Win 4.34x | sharded Absl+mutex | 22.661/21.167/20.191 | **1.782/1.428/1.427x** | ✅ 三平台赢 |
+| **container·str** StringInterner acquire/retain/release(Win/Lin/M4) | 11.897/9.637/7.678 | direct-ID+mutex 同契约 peer | 18.463/12.267/12.345 | **1.559/1.273/1.608x** | 同左 | 同左 | 同左 | ✅ 三平台赢 |
 | **container·str** find(char) 全扫 miss(4KB) | 0.02/B | std::string_view::find | 0.01 | ~1.0x | string_view(即 SOTA,libc memchr) | 0.01 | ~1.0x | ➖平(切 memchr;原 scalar 输 ~20x) |
 | **container·str** find(needle) 6B 子串 | 0.08/B | std::string_view::find | 0.08 | ~1.0x | string_view(即 SOTA,two-way 向量化) | 0.08 | ~1.0x | ➖平(转发 std;自研 memchr 候选曾输 2.5x) |
 | **container·str** find_first_of(4 字符集) | 0.05/B | std::string_view | 0.05 | ~1.0x | string_view(即 SOTA) | 0.05 | ~1.0x | ➖平(转发 std;自研 memchr-min 曾 0.62x) |
