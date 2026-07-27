@@ -38,7 +38,8 @@ HYLE_CONTAINER_API std::uint64_t hash_bytes_xxh3(const void* data, std::size_t l
 HYLE_CONTAINER_API std::uint64_t hash_bytes_wyhash(const void* data, std::size_t len,
                                                    std::uint64_t seed) noexcept;
 // Process-local long-input dispatcher. On x86 it may select an AVX2 XXH3 TU for
-// sufficiently large inputs; other CPUs retain the scalar/baseline best-of path.
+// sufficiently large inputs; AArch64 uses its baseline NEON XXH3 path after the
+// measured crossover. Other CPUs retain the scalar/baseline best-of path.
 // This is intentionally an implementation seam rather than a user-selectable ISA
 // API: callers describe bytes, platform owns safe feature selection.
 HYLE_CONTAINER_API std::uint64_t hash_bytes_long(const void* data, std::size_t len,
@@ -54,7 +55,7 @@ inline constexpr std::size_t kWyhashThreshold = 128;
 // for the two shipping toolchains: 1KiB on Windows/MSVC, 512B on Linux/GCC 14.
 // Keep the product thresholds at their first 14/15-or-better win rather than
 // making one platform pay another compiler's code-generation tradeoff.
-#if defined(__linux__)
+#if defined(HYLE_ARCH_ARM64) || defined(__linux__)
 inline constexpr std::size_t kWideHashThreshold = 512;
 #else
 inline constexpr std::size_t kWideHashThreshold = 1024;

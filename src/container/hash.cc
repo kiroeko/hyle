@@ -49,6 +49,13 @@ std::uint64_t hash_bytes_long(const void* data, std::size_t len,
   if (len >= kWideHashThreshold && has_avx2) {
     return hash_bytes_xxh3_avx2(data, len, seed);
   }
+#elif defined(HYLE_ARCH_ARM64)
+  // NEON is part of the AArch64 baseline, so the XXH3 TU already contains its
+  // wide product path and needs no runtime feature branch. Varied-input M4
+  // sweeps put the first durable crossover at 512B; below it wyhash remains the
+  // better long-range choice.
+  if (len >= kWideHashThreshold)
+    return hash_bytes_xxh3(data, len, seed);
 #endif
   return hash_bytes_wyhash(data, len, seed);
 }
