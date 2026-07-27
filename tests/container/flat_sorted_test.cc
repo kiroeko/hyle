@@ -274,8 +274,9 @@ TEST(FlatMap, RandomDifferentialMatchesStdMap) {
       const auto left = actual.find(key);
       const auto right = expected.find(key);
       EXPECT_EQ(left == actual.end(), right == expected.end());
-      if (right != expected.end())
+      if (right != expected.end()) {
         EXPECT_EQ(left->value(), right->second);
+      }
       break;
     }
     case 5:
@@ -295,8 +296,9 @@ TEST(FlatMap, RandomDifferentialMatchesStdMap) {
       }
       break;
     }
-    if ((operation & 255) == 0)
+    if ((operation & 255) == 0) {
       expect_same_map(actual, expected);
+    }
   }
   expect_same_map(actual, expected);
 }
@@ -309,13 +311,15 @@ TEST(FlatSet, RandomDifferentialMatchesStdSet) {
 
   for (int operation = 0; operation < 35'000; ++operation) {
     const int key = keys(generator);
-    if ((generator() & 1) == 0)
+    if ((generator() & 1) == 0) {
       EXPECT_EQ(actual.insert(key).second, expected.insert(key).second);
-    else
+    } else {
       EXPECT_EQ(actual.erase(key), expected.erase(key) != 0);
-    if ((operation & 255) == 0)
+    }
+    if ((operation & 255) == 0) {
       EXPECT_TRUE(std::equal(actual.begin(), actual.end(), expected.begin(),
                              expected.end()));
+    }
   }
   EXPECT_TRUE(std::equal(actual.begin(), actual.end(), expected.begin(),
                          expected.end()));

@@ -87,8 +87,8 @@ int main() {
   // perfectly, making tiny inputs read sub-cycle (unrealistic). smhasher-style varied
   // content keeps the measurement honest. We index the pool by a running counter.
   constexpr std::size_t kPool = 256;
-  for (std::size_t len : {8u, 16u, 64u, 256u, 512u, 768u, 1024u, 4096u,
-                          65536u}) {
+  for (std::size_t len : {8u, 16u, 24u, 32u, 48u, 64u, 96u, 128u, 256u,
+                          512u, 768u, 1024u, 4096u, 65536u}) {
     std::vector<std::string> pool;
     pool.reserve(kPool);
     for (std::size_t i = 0; i < kPool; ++i)
@@ -103,12 +103,12 @@ int main() {
         .minEpochIterations(std::max<std::uint64_t>(
             4, 512000 / static_cast<std::uint64_t>(len)));
 
-    // HYLE hash_bytes is best-of-breed by length: <=16B inline mix; 17..128B
-    // baseline XXH3; longer inputs use wyhash or the shipping platform's measured
-    // AVX2 XXH3 crossover.
+    // HYLE hash_bytes is best-of-breed by length: <=16B inline mix; medium
+    // inputs use the shipping architecture's measured choice; longer inputs use
+    // wyhash or the shipping platform's measured wide XXH3 crossover.
     const char* hyle_label =
         len <= 16 ? "HYLE hash_bytes (inline mix)"
-                  : (len <= 128 ? "HYLE hash_bytes (->XXH3)"
+                  : (len <= 128 ? "HYLE hash_bytes (runtime medium)"
                                 : "HYLE hash_bytes (runtime long best-of)");
     b.run(hyle_label, [&] {
       const auto& s = pool[it++ & (kPool - 1)];
