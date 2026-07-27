@@ -22,36 +22,69 @@ constexpr std::uint32_t kSlotBits = 32 - kMaxShardBits;
 constexpr std::uint32_t kSlotMask = (1u << kSlotBits) - 1;
 constexpr std::uint32_t kNoSlot = UINT32_MAX;
 
-struct InternKey {
-  string_ref text;
-  std::uint64_t hash;
-};
-
-struct InternHash {
-  HYLE_FORCE_INLINE std::uint64_t operator()(const InternKey& key) const noexcept {
-    return key.hash;
-  }
-};
-
-struct InternEq {
-  HYLE_FORCE_INLINE bool operator()(const InternKey& left, const InternKey& right) const noexcept {
-    if (left.hash != right.hash || left.text.size != right.text.size) return false;
-    if (left.text.data == right.text.data) return true;
-    return left.text.size == 0 || std::memcmp(left.text.data, right.text.data, left.text.size) == 0;
-  }
-};
-
 // One owned, NUL-terminated storage record per unique string + its live ref
 // count. Short records live in stable slab blocks; long records are direct
 // allocations. The cached table hash makes table growth and erase O(1) in
 // resident string bytes.
 struct Entry {
-  char* data;
   std::uint64_t hash;
   std::uint32_t size;
   std::uint32_t refs;
   StringId id;
   bool permanent;
+};
+
+HYLE_FORCE_INLINE char* entry_data(Entry* entry) noexcept {
+  return reinterpret_cast<char*>(entry + 1);
+}
+
+HYLE_FORCE_INLINE const char* entry_data(const Entry* entry) noexcept {
+  return reinterpret_cast<const char*>(entry + 1);
+}
+
+struct InternKey {
+  Entry* entry;
+  std::uint64_t hash;
+};
+
+struct InternLookup {
+  string_ref text;
+  std::uint64_t hash;
+};
+
+// Keep only a stable Entry address and its hash in each Swiss slot. The old
+// key+mapped layout duplicated a 16-byte string_ref and the Entry address (32B
+// per slot); a pointer-only set made every probe depend on loading Entry before
+// hashing. This 16-byte index keeps probe hashes inline and dereferences Entry
+// only for the H2 candidates. Heterogeneous lookup still borrows caller bytes.
+struct InternHash {
+  HYLE_FORCE_INLINE std::uint64_t operator()(const InternKey& key) const noexcept {
+    return key.hash;
+  }
+  HYLE_FORCE_INLINE std::uint64_t operator()(const InternLookup& key) const noexcept {
+    return key.hash;
+  }
+};
+
+struct InternEq {
+  HYLE_FORCE_INLINE bool operator()(const InternKey& left,
+                                    const InternKey& right) const noexcept {
+    return equal(left, string_ref{entry_data(right.entry), right.entry->size, true},
+                 right.hash);
+  }
+  HYLE_FORCE_INLINE bool operator()(const InternKey& left,
+                                    const InternLookup& right) const noexcept {
+    return equal(left, right.text, right.hash);
+  }
+
+ private:
+  HYLE_FORCE_INLINE static bool equal(const InternKey& left, string_ref right,
+                                      std::uint64_t right_hash) noexcept {
+    if (left.hash != right_hash || left.entry->size != right.size) return false;
+    const char* data = entry_data(left.entry);
+    if (data == right.data) return true;
+    return right.size == 0 || std::memcmp(data, right.data, right.size) == 0;
+  }
 };
 
 struct IdSlot {
@@ -87,7 +120,7 @@ struct alignas(64) Shard {
   // std::mutex entered the Darwin kernel frequently under many lightly
   // contended shards; an unbounded spin lock would be wrong for the cold paths.
   detail::AdaptiveMutex mu;
-  SwissTable<InternKey, Entry*, InternHash, InternEq, mem::Allocator> by_string;
+  FlatHashSet<InternKey, InternHash, InternEq, mem::Allocator> by_string;
   PodVector<IdSlot> by_id;
   std::uint32_t free_head = kNoSlot;
   std::uint32_t live_size = 0;
@@ -222,9 +255,9 @@ template <class Impl>
 Entry* find_or_add_locked(Impl& impl, mem::Allocator alloc, const HashedText& input,
                           bool permanent) noexcept {
   Shard& shard = impl.shards[input.shard];
-  const InternKey query{input.text, input.table_hash};
-  if (Entry** found = shard.by_string.find(query)) {
-    Entry* entry = *found;
+  const InternLookup query{input.text, input.table_hash};
+  if (const InternKey* found = shard.by_string.find(query)) {
+    Entry* entry = found->entry;
     if (permanent) {
       // Permanent intern is overwhelmingly a lookup-after-first-insert path.
       // Do not dirty the stable entry cache line on every hit; only the rare
@@ -256,18 +289,17 @@ Entry* find_or_add_locked(Impl& impl, mem::Allocator alloc, const HashedText& in
   Entry* entry = allocate_entry(shard, alloc, bytes);
   if (entry == nullptr) return nullptr;
   ::new (entry) Entry{};
-  char* data = reinterpret_cast<char*>(entry + 1);
+  char* data = entry_data(entry);
   std::memcpy(data, input.text.data, input.text.size);
   data[input.text.size] = '\0';
 
-  const string_ref owned{data, input.text.size, true};
   *entry =
-      Entry{data, input.table_hash, input.text.size, permanent ? 0u : 1u, StringId{0}, permanent};
+      Entry{input.table_hash, input.text.size, permanent ? 0u : 1u, StringId{0}, permanent};
   if (!permanent && !assign_id_locked(impl, shard, input.shard, entry)) {
     release_entry(shard, alloc, entry, true);
     return nullptr;
   }
-  shard.by_string.insert_or_assign(InternKey{owned, input.table_hash}, entry);
+  HYLE_FATAL_ASSERT(shard.by_string.insert(InternKey{entry, input.table_hash}));
   ++shard.live_size;
   return entry;
 }
@@ -295,8 +327,7 @@ template <class Impl> bool release_locked(Impl& impl, mem::Allocator alloc, Stri
     shard.free_head = slot_index;
   }
 
-  const InternKey owned{string_ref{entry->data, entry->size, true}, entry->hash};
-  HYLE_FATAL_ASSERT(shard.by_string.erase(owned));
+  HYLE_FATAL_ASSERT(shard.by_string.erase(InternKey{entry, entry->hash}));
   release_entry(shard, alloc, entry, true);
   HYLE_FATAL_ASSERT(shard.live_size != 0);
   --shard.live_size;
@@ -346,9 +377,9 @@ StringInterner::~StringInterner() {
   // Destruction requires external quiescence, like every container destructor.
   for (std::uint32_t i = 0; i < impl_->shard_count; ++i) {
     Shard& shard = impl_->shards[i];
-    shard.by_string.for_each([&](const InternKey&, Entry*& entry) {
+    shard.by_string.for_each([&](const InternKey& key) {
       // Small entries belong to slabs; large entries remain direct allocations.
-      release_entry(shard, alloc_, entry, false);
+      release_entry(shard, alloc_, key.entry, false);
     });
     release_slabs(shard, alloc_);
   }
@@ -487,7 +518,7 @@ string_ref StringInterner::lookup(StringId id) noexcept {
   if (impl_ == nullptr || id_shard(id) >= impl_->shard_count) return string_ref{};
   std::lock_guard lock(impl_->shards[id_shard(id)].mu);
   if (const Entry* entry = find_id_locked(*impl_, id))
-    return string_ref{entry->data, entry->size, true};
+    return string_ref{entry_data(entry), entry->size, true};
   return string_ref{};
 }
 
@@ -497,7 +528,8 @@ string_ref StringInterner::intern(string_ref text) noexcept {
   const HashedText input = prepare(text, impl_->shard_bits);
   std::lock_guard lock(impl_->shards[input.shard].mu);
   Entry* entry = find_or_add_locked(*impl_, alloc_, input, true);
-  return entry == nullptr ? string_ref{} : string_ref{entry->data, entry->size, true};
+  return entry == nullptr ? string_ref{}
+                          : string_ref{entry_data(entry), entry->size, true};
 }
 
 std::size_t StringInterner::intern_many(const string_ref* input, string_ref* output,
@@ -523,7 +555,7 @@ std::size_t StringInterner::intern_many(const string_ref* input, string_ref* out
       } else {
         Entry* entry = find_or_add_locked(*impl_, alloc_, prepared[i], true);
         if (entry == nullptr) return completed + i;
-        result = string_ref{entry->data, entry->size, true};
+        result = string_ref{entry_data(entry), entry->size, true};
       }
       if (output != nullptr) output[completed + i] = result;
     }

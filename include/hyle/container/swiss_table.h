@@ -994,6 +994,9 @@ class FlatHashSet {
   std::size_t capacity() const noexcept { return table_.capacity(); }
   bool empty() const noexcept { return table_.empty(); }
   bool reserve(std::size_t count) { return table_.reserve(count); }
+  bool needs_prepare_insert() const noexcept {
+    return table_.needs_prepare_insert();
+  }
   bool try_prepare_insert() { return table_.try_prepare_insert(); }
   void clear() noexcept { table_.clear(); }
 
