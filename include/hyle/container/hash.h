@@ -122,6 +122,78 @@ HYLE_FORCE_INLINE std::uint64_t mix64_2(std::uint64_t a, std::uint64_t b) noexce
 #endif
 }
 
+#if defined(HYLE_ARCH_ARM64)
+struct Mul128Parts {
+  std::uint64_t lo;
+  std::uint64_t hi;
+};
+
+HYLE_FORCE_INLINE Mul128Parts mul128_parts(std::uint64_t a,
+                                           std::uint64_t b) noexcept {
+#  if defined(__GNUC__) || defined(__clang__)
+  __extension__ using u128 = unsigned __int128;
+  const u128 product = static_cast<u128>(a) * b;
+  return {static_cast<std::uint64_t>(product),
+          static_cast<std::uint64_t>(product >> 64)};
+#  elif defined(_MSC_VER)
+  std::uint64_t hi;
+  const std::uint64_t lo = a * b;
+  hi = __umulh(a, b);
+  return {lo, hi};
+#  endif
+}
+
+HYLE_FORCE_INLINE std::uint64_t load64(const std::uint8_t* data) noexcept {
+  std::uint64_t value;
+  std::memcpy(&value, data, sizeof(value));
+  return value;
+}
+
+// AArch64's measured 17..128B winner is wyhash's compact multiply stream, not
+// XXH3. Keep this medium-only core inline: at these lengths a shared-library
+// call is still a material fraction of the work. The >=48B loop is the published
+// wyhash shape (three independent accumulators); long ranges remain out of line
+// so ordinary call sites do not inherit a full streaming hasher.
+HYLE_FORCE_INLINE std::uint64_t hash_bytes_medium_arm(
+    const void* input, std::size_t len, std::uint64_t seed) noexcept {
+  constexpr std::uint64_t secret[4] = {
+      0x2d358dccaa6c78a5ull, 0x8bb84b93962eacc9ull,
+      0x4b33a62ed433d4a3ull, 0x4d5a2da51de1aa47ull};
+  const auto mix = [](std::uint64_t left, std::uint64_t right) noexcept {
+    const Mul128Parts product = mul128_parts(left, right);
+    return product.lo ^ product.hi;
+  };
+
+  const auto* bytes = static_cast<const std::uint8_t*>(input);
+  seed ^= mix(seed ^ secret[0], secret[1]);
+  std::size_t remaining = len;
+  if (remaining >= 48) {
+    std::uint64_t second = seed;
+    std::uint64_t third = seed;
+    do {
+      seed = mix(load64(bytes) ^ secret[1], load64(bytes + 8) ^ seed);
+      second = mix(load64(bytes + 16) ^ secret[2],
+                   load64(bytes + 24) ^ second);
+      third = mix(load64(bytes + 32) ^ secret[3],
+                  load64(bytes + 40) ^ third);
+      bytes += 48;
+      remaining -= 48;
+    } while (remaining >= 48);
+    seed ^= second ^ third;
+  }
+  while (remaining > 16) {
+    seed = mix(load64(bytes) ^ secret[1], load64(bytes + 8) ^ seed);
+    bytes += 16;
+    remaining -= 16;
+  }
+
+  std::uint64_t left = load64(bytes + remaining - 16) ^ secret[1];
+  std::uint64_t right = load64(bytes + remaining - 8) ^ seed;
+  const Mul128Parts folded = mul128_parts(left, right);
+  return mix(folded.lo ^ secret[0] ^ len, folded.hi ^ secret[1]);
+}
+#endif
+
 // Inline hash for a SMALL fixed-size byte blob (n <= 16) -- the common map-key case
 // (PODs/small structs). absl/F14 do the same: small keys get an inline integer mix, NOT a
 // call into the general byte hasher. This avoids the non-inlinable hash_bytes (XXH3) call
@@ -190,10 +262,17 @@ HYLE_FORCE_INLINE std::uint64_t hash_bytes(const void* data, std::size_t len,
     }
     return detail::mix64(s);
   }
-  // >16B: best-of-breed by length (runtime `len`). XXH3 for short-mid; the long
-  // dispatcher chooses wyhash or a runtime-safe wide XXH3 kernel. All vendor
-  // headers stay hidden and hashes remain repeatable for this process.
-  if (len <= detail::kWyhashThreshold) return detail::hash_bytes_xxh3(data, len, seed);
+  // >16B: best-of-breed by length (runtime `len`). AArch64 keeps its measured
+  // medium winner inline; x86 uses XXH3. The long dispatcher chooses wyhash or
+  // a runtime-safe wide XXH3 kernel. Vendor headers stay hidden and hashes
+  // remain repeatable for this process.
+  if (len <= detail::kWyhashThreshold) {
+#if defined(HYLE_ARCH_ARM64)
+    return detail::hash_bytes_medium_arm(data, len, seed);
+#else
+    return detail::hash_bytes_xxh3(data, len, seed);
+#endif
+  }
   return detail::hash_bytes_long(data, len, seed);
 }
 
