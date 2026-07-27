@@ -20,7 +20,7 @@
 // GroupPortable (SWAR, 8-wide) is ALWAYS compiled, so it is testable on every platform
 // (including x64). GroupSse2 (16-wide) is compiled + aliased as `Group` on x86-64; GroupNeon
 // (8-wide) on aarch64 (real-hardware validated on Apple Silicon -- swiss_table_test green).
-// `Group`/`kGroupWidth` alias the best available pick.
+// `Group`/`GroupMask`/`kGroupWidth` alias the best available pick.
 //
 // Control byte values are the abseil-chosen ones (do NOT change -- picked for
 // SIMD): empty=0x80, deleted=0xFE, sentinel=0xFF, full=0hhhhhhh (top bit 0,
@@ -103,6 +103,7 @@ class BitMask {
 // abseil GroupPortableImpl: operate on a uint64 of 8 ctrl bytes.
 class GroupPortable {
  public:
+  using Mask = BitMask;
   static constexpr std::size_t kWidth = 8;
   explicit GroupPortable(const ctrl_t* pos) noexcept {
     std::memcpy(&ctrl_, pos, sizeof(ctrl_));
@@ -150,6 +151,7 @@ namespace hyle::container::detail {
 // ---- x86-64 SSE2 group (16-wide) --------------------------------------------
 class GroupSse2 {
  public:
+  using Mask = BitMask;
   static constexpr std::size_t kWidth = 16;
   explicit GroupSse2(const ctrl_t* pos) noexcept
       : ctrl_(_mm_loadu_si128(reinterpret_cast<const __m128i*>(pos))) {}
@@ -193,51 +195,64 @@ using Group = GroupSse2;
 namespace hyle::container::detail {
 // ---- ARM64 NEON group (8-wide) ----------------------------------------------
 // Real-hardware validated on Apple Silicon (swiss_table_test + probe_test green).
-// Produces a 1-bit-per-lane mask (a matched lane's compare result 0xFF has its top
-// bit set), so it satisfies the SAME shared BitMask contract as GroupSse2/
-// GroupPortable -- iteration, lowest(), leading/trailing_zeros all work unchanged.
-// vs abseil's GroupAArch64Impl: abseil keeps the vceq result as a uint64 byte-mask and
-// iterates it with a Shift=3 BitMask (bit position >> 3 = lane). HYLE folds to a
-// 1-bit-per-lane mask so ONE 32-bit BitMask type serves all ISAs -- but the fold is
-// VECTORIZED (pack() below: AND per-lane weights + one vaddv_u8), 2 SIMD ops, not the
-// old 8-iteration scalar loop that cost per-match in the probe hot path. Measured on
-// Apple Silicon: ~4-6x faster match than the scalar fold, output bit-identical.
-class GroupNeon {
+// AArch64 has no movemask. Keep the comparison result's high bit in each byte and
+// iterate it with a shift-3 mask, matching mature Swiss-table implementations.
+// This avoids a horizontal NEON reduction on every match/empty query; the public
+// group contract still reports ordinary lane indices.
+class NeonBitMask {
  public:
-  static constexpr std::size_t kWidth = 8;
-  explicit GroupNeon(const ctrl_t* pos) noexcept
-      : ctrl_(vld1_u8(reinterpret_cast<const std::uint8_t*>(pos))) {}
-  BitMask match(ctrl_t h) const noexcept {
-    uint8x8_t eq = vceq_u8(ctrl_, vdup_n_u8(static_cast<std::uint8_t>(h)));
-    return BitMask(pack(eq));
+  explicit NeonBitMask(std::uint64_t mask) noexcept : mask_(mask) {}
+  explicit operator bool() const noexcept { return mask_ != 0; }
+  std::uint32_t lowest() const noexcept {
+    return static_cast<std::uint32_t>(__builtin_ctzll(mask_) >> 3);
   }
-  BitMask match_empty() const noexcept {
-    // kEmpty=0x80 is the only ctrl == 0x80.
-    uint8x8_t eq = vceq_u8(ctrl_, vdup_n_u8(0x80));
-    return BitMask(pack(eq));
+  std::uint32_t trailing_zeros() const noexcept { return lowest(); }
+  std::uint32_t leading_zeros(unsigned width) const noexcept {
+    (void)width;
+    return static_cast<std::uint32_t>(__builtin_clzll(mask_) >> 3);
   }
-  BitMask match_empty_or_deleted() const noexcept {
-    // empty/deleted/sentinel all have the top bit set; full does not.
-    uint8x8_t hi = vtst_u8(ctrl_, vdup_n_u8(0x80));  // 0xFF where top bit set
-    return BitMask(pack(hi));
-  }
-  // Full (occupied) lanes = complement of empty/deleted within the 8-lane group.
-  BitMask match_full() const noexcept {
-    uint8x8_t hi = vtst_u8(ctrl_, vdup_n_u8(0x80));
-    return BitMask((pack(hi) ^ 0xFFu) & 0xFFu);
+  NeonBitMask begin() const noexcept { return *this; }
+  NeonBitMask end() const noexcept { return NeonBitMask(0); }
+  std::uint32_t operator*() const noexcept { return lowest(); }
+  void operator++() noexcept { mask_ &= mask_ - 1; }
+  bool operator!=(const NeonBitMask &other) const noexcept {
+    return mask_ != other.mask_;
   }
 
  private:
-  // Each lane of `m` is 0xFF (match) or 0x00; fold to bit i <- lane i. NEON has no movemask,
-  // so use the vectorized idiom (same as hyle/simd/backend/neon.h mask_bits): AND each lane
-  // with a disjoint power-of-two weight {1,2,4,...,128}, then ONE horizontal add (vaddv_u8) --
-  // the sum's bits ARE the lane bitmask (weights are disjoint, each lane adds its weight or 0).
-  // Replaces the old 8-iteration scalar fold that ran per match() in the probe hot path
-  // (abseil's GroupAArch64Impl instead keeps a byte-mask + Shift=3 BitMask; this keeps HYLE's
-  // single 1-bit-per-lane BitMask across all ISAs but pays only 2 SIMD ops, not a scalar loop).
-  static std::uint32_t pack(uint8x8_t m) noexcept {
-    const uint8x8_t w = {1u, 2u, 4u, 8u, 16u, 32u, 64u, 128u};
-    return static_cast<std::uint32_t>(vaddv_u8(vand_u8(m, w)));
+  std::uint64_t mask_;
+};
+
+class GroupNeon {
+ public:
+  using Mask = NeonBitMask;
+  static constexpr std::size_t kWidth = 8;
+  explicit GroupNeon(const ctrl_t* pos) noexcept
+      : ctrl_(vld1_u8(reinterpret_cast<const std::uint8_t*>(pos))) {}
+  Mask match(ctrl_t h) const noexcept {
+    uint8x8_t eq = vceq_u8(ctrl_, vdup_n_u8(static_cast<std::uint8_t>(h)));
+    return Mask(high_bits(eq));
+  }
+  Mask match_empty() const noexcept {
+    // kEmpty=0x80 is the only ctrl == 0x80.
+    uint8x8_t eq = vceq_u8(ctrl_, vdup_n_u8(0x80));
+    return Mask(high_bits(eq));
+  }
+  Mask match_empty_or_deleted() const noexcept {
+    // empty/deleted/sentinel all have the top bit set; full does not.
+    uint8x8_t hi = vtst_u8(ctrl_, vdup_n_u8(0x80));  // 0xFF where top bit set
+    return Mask(high_bits(hi));
+  }
+  // Full (occupied) lanes = complement of empty/deleted within the 8-lane group.
+  Mask match_full() const noexcept {
+    uint8x8_t hi = vtst_u8(ctrl_, vdup_n_u8(0x80));
+    return Mask((~high_bits(hi)) & 0x8080808080808080ull);
+  }
+
+ private:
+  static std::uint64_t high_bits(uint8x8_t mask) noexcept {
+    return vget_lane_u64(vreinterpret_u64_u8(mask), 0) &
+           0x8080808080808080ull;
   }
   uint8x8_t ctrl_;
 };
@@ -250,5 +265,6 @@ using Group = GroupPortable;
 #endif
 
 namespace hyle::container::detail {
+using GroupMask = typename Group::Mask;
 inline constexpr std::size_t kGroupWidth = Group::kWidth;
 }

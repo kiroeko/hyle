@@ -198,7 +198,7 @@ class SwissTable {
     Owner* owner_ = nullptr;
     std::size_t index_ = 0;
     std::size_t group_ = 0;
-    detail::BitMask remaining_{0};
+    detail::GroupMask remaining_{0};
   };
 
   using iterator = BasicIterator<false>;
@@ -756,8 +756,10 @@ class SwissTable {
   // it can go back to empty (restoring growth). Otherwise leave a tombstone.
   void erase_at(std::size_t idx) noexcept {
     std::size_t before = (idx - kGroup) & mask_;
-    detail::BitMask empty_after = detail::Group(ctrl_ + idx).match_empty();
-    detail::BitMask empty_before = detail::Group(ctrl_ + before).match_empty();
+    detail::GroupMask empty_after =
+        detail::Group(ctrl_ + idx).match_empty();
+    detail::GroupMask empty_before =
+        detail::Group(ctrl_ + before).match_empty();
     bool never_full =
         empty_before && empty_after &&
         (empty_after.trailing_zeros() + empty_before.leading_zeros(kGroup) <
@@ -777,7 +779,7 @@ class SwissTable {
     std::size_t stride = 0;
     for (;;) {
       detail::Group g(ctrl_ + pos);
-      if (detail::BitMask m = g.match_empty_or_deleted()) {
+      if (detail::GroupMask m = g.match_empty_or_deleted()) {
         return (pos + m.lowest()) & mask_;
       }
       stride += kGroup;
@@ -808,7 +810,7 @@ class SwissTable {
       }
       // Remember the first reusable (empty/deleted) slot on the path, once.
       if (insert_at == kNoSlot) {
-        if (detail::BitMask m = g.match_empty_or_deleted())
+        if (detail::GroupMask m = g.match_empty_or_deleted())
           insert_at = (pos + m.lowest()) & mask_;
       }
       if (g.match_empty()) {  // an empty lane ends the probe: key is absent

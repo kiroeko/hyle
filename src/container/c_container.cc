@@ -224,7 +224,7 @@ struct RawMap {
     std::size_t stride = 0;
     for (;;) {
       hc::detail::Group group(ctrl + position);
-      if (hc::detail::BitMask reusable = group.match_empty_or_deleted())
+      if (hc::detail::GroupMask reusable = group.match_empty_or_deleted())
         return (position + reusable.lowest()) & mask;
       stride += hc::detail::kGroupWidth;
       position = (position + stride) & mask;
@@ -236,9 +236,9 @@ struct RawMap {
   }
   void erase_slot(std::size_t index) noexcept {
     const std::size_t before = (index - hc::detail::kGroupWidth) & mask;
-    const hc::detail::BitMask empty_after =
+    const hc::detail::GroupMask empty_after =
         hc::detail::Group(ctrl + index).match_empty();
-    const hc::detail::BitMask empty_before =
+    const hc::detail::GroupMask empty_before =
         hc::detail::Group(ctrl + before).match_empty();
     const bool never_full =
         empty_before && empty_after &&

@@ -24,7 +24,8 @@ std::size_t core_find_insert_slot(const ctrl_t* ctrl, std::size_t mask,
   std::size_t stride = 0;
   for (;;) {
     Group g(ctrl + pos);
-    if (BitMask m = g.match_empty_or_deleted()) return (pos + m.lowest()) & mask;
+    if (GroupMask m = g.match_empty_or_deleted())
+      return (pos + m.lowest()) & mask;
     stride += kGroupWidth;
     pos = (pos + stride) & mask;
   }
