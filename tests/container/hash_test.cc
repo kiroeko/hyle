@@ -83,6 +83,37 @@ TEST(Hash, StringViewNoCollisionsOn10k) {
   EXPECT_EQ(seen.size(), 10000u);  // 64-bit XXH3: zero collisions expected
 }
 
+TEST(Hash, MediumBytePathsAreSeededAndWellDistributed) {
+  for (std::size_t length : {17u, 24u, 32u, 48u, 96u, 128u}) {
+    std::unordered_set<std::uint64_t> seen;
+    for (int i = 0; i < 10000; ++i) {
+      std::string value(length, static_cast<char>('a' + i % 23));
+      const std::string suffix = std::to_string(i);
+      std::copy(suffix.begin(), suffix.end(), value.end() - suffix.size());
+      seen.insert(hash_bytes(value.data(), value.size()));
+    }
+    EXPECT_EQ(seen.size(), 10000u) << "length " << length;
+
+    std::string probe(length, 'm');
+    EXPECT_NE(hash_bytes(probe.data(), probe.size(), 0),
+              hash_bytes(probe.data(), probe.size(), 1));
+  }
+}
+
+TEST(Hash, Medium17To32PathAvalanchesEveryInputBit) {
+  std::string input(24, 'h');
+  const std::uint64_t baseline = hash_bytes(input.data(), input.size());
+  for (std::size_t byte = 0; byte < input.size(); ++byte) {
+    for (int bit = 0; bit < 8; ++bit) {
+      input[byte] ^= static_cast<char>(1u << bit);
+      const int changed = std::popcount(
+          baseline ^ hash_bytes(input.data(), input.size()));
+      EXPECT_GE(changed, 12) << "byte " << byte << ", bit " << bit;
+      input[byte] ^= static_cast<char>(1u << bit);
+    }
+  }
+}
+
 // LONG strings take the runtime best-of branch (wyhash, or AVX2 XXH3 past the
 // shipping platform's measured crossover).
 // Verify its public contract rather than pinning an implementation-specific value:
@@ -112,9 +143,10 @@ TEST(Hash, WideRuntimePathIsRepeatableAndSeedSensitive) {
 }
 
 // The XXH3<->wyhash crossover at kWyhashThreshold must not break determinism: both
-// sides of the boundary (128B XXH3, 129B wyhash) hash consistently to themselves.
+// sides of the boundary (128B medium path, 129B long dispatcher) hash consistently
+// to themselves.
 TEST(Hash, LengthDispatchBoundaryDeterministic) {
-  std::string a(128, 'a'), b(129, 'b');  // 128 -> XXH3, 129 -> wyhash
+  std::string a(128, 'a'), b(129, 'b');
   EXPECT_EQ(hyle::container::hash_bytes(a.data(), 128), hyle::container::hash_bytes(a.data(), 128));
   EXPECT_EQ(hyle::container::hash_bytes(b.data(), 129), hyle::container::hash_bytes(b.data(), 129));
   EXPECT_NE(hyle::container::hash_bytes(a.data(), 128), hyle::container::hash_bytes(b.data(), 129));
