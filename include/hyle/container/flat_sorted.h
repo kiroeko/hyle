@@ -9,6 +9,7 @@
 #include <initializer_list>
 #include <iterator>
 #include <limits>
+#include <span>
 #include <type_traits>
 #include <utility>
 
@@ -26,38 +27,6 @@ struct sorted_unique_t {
 };
 inline constexpr sorted_unique_t sorted_unique{};
 
-// Public map element. The key has no mutable accessor, so contiguous iterators
-// cannot silently break ordering; the mapped value remains normally mutable.
-template <class K, class V> class FlatMapEntry {
-public:
-  template <class KeyArg, class... Args>
-    requires std::constructible_from<K, KeyArg>
-  FlatMapEntry(KeyArg &&key, std::in_place_t, Args &&...args) noexcept(
-      std::is_nothrow_constructible_v<K, KeyArg> &&
-      std::is_nothrow_constructible_v<V, Args...>)
-      : key_(std::forward<KeyArg>(key)),
-        value_(std::forward<Args>(args)...) {}
-
-  FlatMapEntry(const FlatMapEntry &) = default;
-  FlatMapEntry &operator=(const FlatMapEntry &) = delete;
-  FlatMapEntry(FlatMapEntry &&) noexcept(
-      std::is_nothrow_move_constructible_v<K> &&
-      std::is_nothrow_move_constructible_v<V>) = default;
-  FlatMapEntry &operator=(FlatMapEntry &&) = delete;
-
-  const K &key() const noexcept { return key_; }
-  V &value() noexcept { return value_; }
-  const V &value() const noexcept { return value_; }
-
-  friend bool operator==(const FlatMapEntry &, const FlatMapEntry &)
-    requires(std::equality_comparable<K> && std::equality_comparable<V>)
-  = default;
-
-private:
-  K key_;
-  HYLE_NO_UNIQUE_ADDRESS V value_;
-};
-
 enum class FlatInsertResult : std::uint8_t {
   kInserted,
   kAlreadyPresent,
@@ -66,6 +35,137 @@ enum class FlatInsertResult : std::uint8_t {
 };
 
 namespace detail {
+
+// A flat map stores keys and mapped values in separate contiguous arrays, as
+// C++23 flat_map and Boost.Container do. Iteration therefore needs a lightweight
+// pair-of-references proxy rather than pretending that an Entry object exists.
+// The standard .first/.second spelling is primary; key()/value() remain useful
+// named accessors when generic pair syntax would be less readable.
+template <class K, class V, bool Const>
+struct FlatMapReference {
+  using mapped_reference =
+      std::conditional_t<Const, const V &, V &>;
+
+  const K &first;
+  mapped_reference second;
+
+  const K &key() const noexcept { return first; }
+  mapped_reference value() const noexcept { return second; }
+
+  operator std::pair<K, V>() const
+    requires(std::copy_constructible<K> && std::copy_constructible<V>)
+  {
+    return {first, second};
+  }
+
+  template <bool OtherConst>
+  bool operator==(const FlatMapReference<K, V, OtherConst> &other) const
+    requires(std::equality_comparable<K> && std::equality_comparable<V>)
+  {
+    return first == other.first && second == other.second;
+  }
+};
+
+template <class Reference>
+struct FlatMapArrow {
+  Reference reference;
+  const Reference *operator->() const noexcept { return &reference; }
+};
+
+template <class K, class V, bool Const>
+class FlatMapIterator {
+  template <class, class, bool> friend class FlatMapIterator;
+
+  using mapped_pointer = std::conditional_t<Const, const V *, V *>;
+
+public:
+  using iterator_concept = std::random_access_iterator_tag;
+  using iterator_category = std::random_access_iterator_tag;
+  using value_type = std::pair<K, V>;
+  using difference_type = std::ptrdiff_t;
+  using reference = FlatMapReference<K, V, Const>;
+  using pointer = FlatMapArrow<reference>;
+
+  FlatMapIterator() = default;
+  FlatMapIterator(const K *key, mapped_pointer value) noexcept
+      : key_(key), value_(value) {}
+
+  template <bool OtherConst>
+    requires(Const && !OtherConst)
+  FlatMapIterator(const FlatMapIterator<K, V, OtherConst> &other) noexcept
+      : key_(other.key_), value_(other.value_) {}
+
+  reference operator*() const noexcept { return {*key_, *value_}; }
+  pointer operator->() const noexcept { return pointer{**this}; }
+  reference operator[](difference_type offset) const noexcept {
+    return {key_[offset], value_[offset]};
+  }
+
+  FlatMapIterator &operator++() noexcept {
+    ++key_;
+    ++value_;
+    return *this;
+  }
+  FlatMapIterator operator++(int) noexcept {
+    FlatMapIterator copy = *this;
+    ++*this;
+    return copy;
+  }
+  FlatMapIterator &operator--() noexcept {
+    --key_;
+    --value_;
+    return *this;
+  }
+  FlatMapIterator operator--(int) noexcept {
+    FlatMapIterator copy = *this;
+    --*this;
+    return copy;
+  }
+  FlatMapIterator &operator+=(difference_type offset) noexcept {
+    key_ += offset;
+    value_ += offset;
+    return *this;
+  }
+  FlatMapIterator &operator-=(difference_type offset) noexcept {
+    return *this += -offset;
+  }
+
+  friend FlatMapIterator operator+(FlatMapIterator iterator,
+                                   difference_type offset) noexcept {
+    iterator += offset;
+    return iterator;
+  }
+  friend FlatMapIterator operator+(difference_type offset,
+                                   FlatMapIterator iterator) noexcept {
+    iterator += offset;
+    return iterator;
+  }
+  friend FlatMapIterator operator-(FlatMapIterator iterator,
+                                   difference_type offset) noexcept {
+    iterator -= offset;
+    return iterator;
+  }
+
+  template <bool OtherConst>
+  difference_type
+  operator-(const FlatMapIterator<K, V, OtherConst> &other) const noexcept {
+    return key_ - other.key_;
+  }
+  template <bool OtherConst>
+  bool operator==(
+      const FlatMapIterator<K, V, OtherConst> &other) const noexcept {
+    return key_ == other.key_;
+  }
+  template <bool OtherConst>
+  auto operator<=>(
+      const FlatMapIterator<K, V, OtherConst> &other) const noexcept {
+    return key_ <=> other.key_;
+  }
+
+private:
+  const K *key_ = nullptr;
+  mapped_pointer value_ = nullptr;
+};
 
 template <class Compare, class K, class Q>
 concept FlatComparable =
@@ -274,10 +374,197 @@ private:
   HYLE_NO_UNIQUE_ADDRESS Compare compare_{};
 };
 
-template <class K, class V> struct FlatMapKeyOf {
-  const K &operator()(const FlatMapEntry<K, V> &entry) const noexcept {
-    return entry.key();
+template <class K, class V, class Compare, class Alloc>
+class FlatMapStorage {
+  using Keys = SmallVector<K, 1, Alloc>;
+  using Values = SmallVector<V, 1, Alloc>;
+
+  static_assert(std::is_nothrow_move_constructible_v<K> &&
+                    std::is_nothrow_destructible_v<K>,
+                "flat ordered keys require nothrow move/destruction");
+  static_assert(std::is_nothrow_move_constructible_v<V> &&
+                    std::is_nothrow_destructible_v<V>,
+                "flat ordered mapped values require nothrow move/destruction");
+  static_assert(std::copy_constructible<Alloc>,
+                "flat map needs one allocator copy for each SoA array");
+  static_assert(std::is_nothrow_move_constructible_v<Compare> &&
+                    std::is_nothrow_move_assignable_v<Compare> &&
+                    std::is_nothrow_swappable_v<Compare>,
+                "flat ordered comparator movement/swap must be noexcept");
+
+public:
+  using size_type = std::size_t;
+
+  FlatMapStorage() = default;
+  explicit FlatMapStorage(Compare compare, Alloc alloc = Alloc{})
+      : keys_(alloc), values_(std::move(alloc)),
+        compare_(std::move(compare)) {}
+
+  FlatMapStorage(const FlatMapStorage &) = default;
+  FlatMapStorage &operator=(const FlatMapStorage &other) {
+    if (this == &other)
+      return *this;
+    FlatMapStorage replacement(other);
+    swap(replacement);
+    return *this;
   }
+  FlatMapStorage(FlatMapStorage &&) noexcept = default;
+  FlatMapStorage &operator=(FlatMapStorage &&) noexcept = default;
+
+  size_type size() const noexcept {
+    HYLE_FATAL_ASSERT(keys_.size() == values_.size());
+    return keys_.size();
+  }
+  size_type capacity() const noexcept {
+    return std::min(keys_.capacity(), values_.capacity());
+  }
+  bool empty() const noexcept { return size() == 0; }
+  K *keys_data() noexcept { return keys_.data(); }
+  const K *keys_data() const noexcept { return keys_.data(); }
+  V *values_data() noexcept { return values_.data(); }
+  const V *values_data() const noexcept { return values_.data(); }
+  V &mapped_at(size_type index) noexcept { return values_[index]; }
+  const V &mapped_at(size_type index) const noexcept { return values_[index]; }
+  const Compare &key_comp() const noexcept { return compare_; }
+  const Alloc &allocator() const noexcept { return keys_.allocator(); }
+
+  bool try_reserve(size_type count) noexcept {
+    if (count > std::numeric_limits<size_type>::max() / sizeof(K) ||
+        count > std::numeric_limits<size_type>::max() / sizeof(V))
+      return false;
+    // One successful reserve followed by one failure merely leaves spare
+    // capacity in one array; the paired logical size and contents stay intact.
+    return keys_.try_reserve(count) && values_.try_reserve(count);
+  }
+  void reserve(size_type count) { HYLE_FATAL_ASSERT(try_reserve(count)); }
+  bool try_shrink_to_fit() noexcept {
+    const bool keys_ok = keys_.try_shrink_to_fit();
+    const bool values_ok = values_.try_shrink_to_fit();
+    return keys_ok && values_ok;
+  }
+  void shrink_to_fit() { HYLE_FATAL_ASSERT(try_shrink_to_fit()); }
+  void clear() noexcept {
+    keys_.clear();
+    values_.clear();
+  }
+
+  template <class Q>
+    requires FlatComparable<Compare, K, Q>
+  size_type lower_bound_index(const Q &key) const {
+    size_type first = 0;
+    size_type count = keys_.size();
+    while (count != 0) {
+      const size_type step = count / 2;
+      const size_type middle = first + step;
+      if (compare_(keys_[middle], key)) {
+        first = middle + 1;
+        count -= step + 1;
+      } else {
+        count = step;
+      }
+    }
+    return first;
+  }
+
+  template <class Q>
+    requires FlatComparable<Compare, K, Q>
+  size_type upper_bound_index(const Q &key) const {
+    size_type first = 0;
+    size_type count = keys_.size();
+    while (count != 0) {
+      const size_type step = count / 2;
+      const size_type middle = first + step;
+      if (!compare_(key, keys_[middle])) {
+        first = middle + 1;
+        count -= step + 1;
+      } else {
+        count = step;
+      }
+    }
+    return first;
+  }
+
+  template <class Q>
+    requires FlatComparable<Compare, K, Q>
+  bool equivalent_at(size_type index, const Q &key) const {
+    return index != size() && !compare_(key, keys_[index]);
+  }
+
+  bool try_insert_at(size_type index, K key, V value) {
+    HYLE_FATAL_ASSERT(index <= size());
+    if (size() == std::numeric_limits<size_type>::max() ||
+        !try_reserve(size() + 1))
+      return false;
+    keys_.emplace(keys_.begin() + index, std::move(key));
+    values_.emplace(values_.begin() + index, std::move(value));
+    return true;
+  }
+
+  template <std::input_iterator It, std::sentinel_for<It> Sentinel>
+  bool try_append_sorted(It first, Sentinel last) {
+    if constexpr (std::forward_iterator<It>) {
+      // Replaying a forward range lets each contiguous array use the established
+      // one-reserve/uninitialized bulk seam. A move iterator moves the key on
+      // pass one and the mapped value on pass two; the pair remains dereferenceable.
+      const It values_first = first;
+      if (!SmallVectorAccess::try_append_construct_unaliased(
+              keys_, first, last,
+              [](void *storage, auto &&item) noexcept(noexcept(K(
+                  flat_range_key(std::forward<decltype(item)>(item))))) {
+                ::new (storage) K(flat_range_key(
+                    std::forward<decltype(item)>(item)));
+              }))
+        return false;
+      if (!SmallVectorAccess::try_append_construct_unaliased(
+              values_, values_first, last,
+              [](void *storage, auto &&item) noexcept(noexcept(V(
+                  flat_range_value(std::forward<decltype(item)>(item))))) {
+                ::new (storage) V(flat_range_value(
+                    std::forward<decltype(item)>(item)));
+              }))
+        return false;
+      return true;
+    } else {
+      for (; first != last; ++first) {
+        auto &&item = *first;
+        K key(flat_range_key(std::forward<decltype(item)>(item)));
+        V value(flat_range_value(std::forward<decltype(item)>(item)));
+        if (!try_insert_at(size(), std::move(key), std::move(value)))
+          return false;
+      }
+      return true;
+    }
+  }
+
+  void erase_index(size_type index) noexcept {
+    HYLE_FATAL_ASSERT(index < size());
+    keys_.erase(keys_.begin() + index);
+    values_.erase(values_.begin() + index);
+  }
+  void erase_indices(size_type first, size_type last) noexcept {
+    HYLE_FATAL_ASSERT(first <= last && last <= size());
+    keys_.erase(keys_.begin() + first, keys_.begin() + last);
+    values_.erase(values_.begin() + first, values_.begin() + last);
+  }
+
+  void swap(FlatMapStorage &other) noexcept {
+    using std::swap;
+    swap(compare_, other.compare_);
+    keys_.swap(other.keys_);
+    values_.swap(other.values_);
+  }
+
+  friend bool operator==(const FlatMapStorage &left,
+                         const FlatMapStorage &right)
+    requires(std::equality_comparable<K> && std::equality_comparable<V>)
+  {
+    return left.keys_ == right.keys_ && left.values_ == right.values_;
+  }
+
+private:
+  Keys keys_{};
+  Values values_{};
+  HYLE_NO_UNIQUE_ADDRESS Compare compare_{};
 };
 
 template <class K> struct FlatSetKeyOf {
@@ -286,10 +573,13 @@ template <class K> struct FlatSetKeyOf {
 
 } // namespace detail
 
-// Sorted contiguous unique-key map for lookup-heavy, mutation-light data:
-// immutable registries, compact configuration tables, frozen indexes and
-// batch-built routing tables. Lookup is O(log N), ordered iteration is O(N),
-// sorted_unique construction/assign is O(N), and positional insert/erase is
+// Sorted unique-key map for lookup-heavy, mutation-light data: immutable
+// registries, compact configuration tables, frozen indexes and batch-built
+// routing tables. Keys and mapped values occupy separate contiguous arrays;
+// lookup touches only keys, while keys()/values() expose explicit bulk views.
+// The familiar random-access iterator returns a pair-of-references proxy with
+// const .first and mutable .second. Lookup is O(log N), ordered iteration and
+// sorted_unique construction/assign are O(N), and positional insert/erase is
 // O(N). Use BTreeMap when steady-state insertion/expiry is common and
 // FlatHashMap when ordering/range queries are unnecessary.
 //
@@ -299,24 +589,21 @@ template <class K> struct FlatSetKeyOf {
 template <class K, class V, class Compare = std::less<>,
           class Alloc = mem::SystemAllocator>
 class FlatMap {
-  using Entry = FlatMapEntry<K, V>;
-  using Core = detail::FlatSortedStorage<Entry, K,
-                                         detail::FlatMapKeyOf<K, V>, Compare,
-                                         Alloc>;
+  using Core = detail::FlatMapStorage<K, V, Compare, Alloc>;
 
 public:
   using key_type = K;
   using mapped_type = V;
-  using value_type = Entry;
+  using value_type = std::pair<K, V>;
   using allocator_type = Alloc;
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
-  using reference = Entry &;
-  using const_reference = const Entry &;
-  using pointer = Entry *;
-  using const_pointer = const Entry *;
-  using iterator = Entry *;
-  using const_iterator = const Entry *;
+  using reference = detail::FlatMapReference<K, V, false>;
+  using const_reference = detail::FlatMapReference<K, V, true>;
+  using iterator = detail::FlatMapIterator<K, V, false>;
+  using const_iterator = detail::FlatMapIterator<K, V, true>;
+  using pointer = typename iterator::pointer;
+  using const_pointer = typename const_iterator::pointer;
   using reverse_iterator = std::reverse_iterator<iterator>;
   using const_reverse_iterator = std::reverse_iterator<const_iterator>;
   using InsertResult = FlatInsertResult;
@@ -369,17 +656,22 @@ public:
   size_type size() const noexcept { return core_.size(); }
   size_type capacity() const noexcept { return core_.capacity(); }
   bool empty() const noexcept { return core_.empty(); }
-  pointer data() noexcept { return core_.data(); }
-  const_pointer data() const noexcept { return core_.data(); }
+  std::span<const K> keys() const noexcept {
+    return {core_.keys_data(), size()};
+  }
+  std::span<V> values() noexcept { return {core_.values_data(), size()}; }
+  std::span<const V> values() const noexcept {
+    return {core_.values_data(), size()};
+  }
   const Compare &key_comp() const noexcept { return core_.key_comp(); }
   const Alloc &allocator() const noexcept { return core_.allocator(); }
 
-  iterator begin() noexcept { return core_.iterator_at(0); }
-  const_iterator begin() const noexcept { return core_.iterator_at(0); }
-  const_iterator cbegin() const noexcept { return core_.iterator_at(0); }
-  iterator end() noexcept { return core_.iterator_at(size()); }
-  const_iterator end() const noexcept { return core_.iterator_at(size()); }
-  const_iterator cend() const noexcept { return core_.iterator_at(size()); }
+  iterator begin() noexcept { return iterator_at(0); }
+  const_iterator begin() const noexcept { return iterator_at(0); }
+  const_iterator cbegin() const noexcept { return iterator_at(0); }
+  iterator end() noexcept { return iterator_at(size()); }
+  const_iterator end() const noexcept { return iterator_at(size()); }
+  const_iterator cend() const noexcept { return iterator_at(size()); }
   reverse_iterator rbegin() noexcept { return reverse_iterator(end()); }
   const_reverse_iterator rbegin() const noexcept {
     return const_reverse_iterator(end());
@@ -400,34 +692,34 @@ public:
   template <class Q>
     requires detail::FlatComparable<Compare, K, Q>
   iterator lower_bound(const Q &key) {
-    return core_.iterator_at(core_.lower_bound_index(key));
+    return iterator_at(core_.lower_bound_index(key));
   }
   template <class Q>
     requires detail::FlatComparable<Compare, K, Q>
   const_iterator lower_bound(const Q &key) const {
-    return core_.iterator_at(core_.lower_bound_index(key));
+    return iterator_at(core_.lower_bound_index(key));
   }
   template <class Q>
     requires detail::FlatComparable<Compare, K, Q>
   iterator upper_bound(const Q &key) {
-    return core_.iterator_at(core_.upper_bound_index(key));
+    return iterator_at(core_.upper_bound_index(key));
   }
   template <class Q>
     requires detail::FlatComparable<Compare, K, Q>
   const_iterator upper_bound(const Q &key) const {
-    return core_.iterator_at(core_.upper_bound_index(key));
+    return iterator_at(core_.upper_bound_index(key));
   }
   template <class Q>
     requires detail::FlatComparable<Compare, K, Q>
   iterator find(const Q &key) {
     const size_type index = core_.lower_bound_index(key);
-    return core_.equivalent_at(index, key) ? core_.iterator_at(index) : end();
+    return core_.equivalent_at(index, key) ? iterator_at(index) : end();
   }
   template <class Q>
     requires detail::FlatComparable<Compare, K, Q>
   const_iterator find(const Q &key) const {
     const size_type index = core_.lower_bound_index(key);
-    return core_.equivalent_at(index, key) ? core_.iterator_at(index) : end();
+    return core_.equivalent_at(index, key) ? iterator_at(index) : end();
   }
   template <class Q>
     requires detail::FlatComparable<Compare, K, Q>
@@ -448,38 +740,49 @@ public:
   }
 
   InsertResult try_insert(K key, V value) {
-    return core_
-        .try_insert_unique(
-            Entry(std::move(key), std::in_place, std::move(value)))
-        .second;
+    const size_type index = core_.lower_bound_index(key);
+    if (core_.equivalent_at(index, key))
+      return InsertResult::kAlreadyPresent;
+    return core_.try_insert_at(index, std::move(key), std::move(value))
+               ? InsertResult::kInserted
+               : InsertResult::kOutOfMemory;
+  }
+
+  InsertResult try_insert(value_type value) {
+    return try_insert(std::move(value.first), std::move(value.second));
   }
 
   std::pair<iterator, bool> insert(K key, V value) {
-    auto [index, result] = core_.try_insert_unique(
-        Entry(std::move(key), std::in_place, std::move(value)));
-    HYLE_FATAL_ASSERT(result != InsertResult::kOutOfMemory);
-    return {core_.iterator_at(index), result == InsertResult::kInserted};
+    const size_type index = core_.lower_bound_index(key);
+    if (core_.equivalent_at(index, key))
+      return {iterator_at(index), false};
+    HYLE_FATAL_ASSERT(
+        core_.try_insert_at(index, std::move(key), std::move(value)));
+    return {iterator_at(index), true};
+  }
+
+  std::pair<iterator, bool> insert(value_type value) {
+    return insert(std::move(value.first), std::move(value.second));
   }
 
   template <class... Args>
   std::pair<iterator, bool> try_emplace(K key, Args &&...args) {
     const size_type index = core_.lower_bound_index(key);
     if (core_.equivalent_at(index, key))
-      return {core_.iterator_at(index), false};
-    Entry candidate(std::move(key), std::in_place,
-                    std::forward<Args>(args)...);
-    HYLE_FATAL_ASSERT(core_.try_insert_at(index, std::move(candidate)));
-    return {core_.iterator_at(index), true};
+      return {iterator_at(index), false};
+    V candidate(std::forward<Args>(args)...);
+    HYLE_FATAL_ASSERT(
+        core_.try_insert_at(index, std::move(key), std::move(candidate)));
+    return {iterator_at(index), true};
   }
 
   InsertResult try_insert_or_assign(K key, V value) {
     const size_type index = core_.lower_bound_index(key);
     if (core_.equivalent_at(index, key)) {
-      data()[index].value() = std::move(value);
+      core_.mapped_at(index) = std::move(value);
       return InsertResult::kAssigned;
     }
-    Entry candidate(std::move(key), std::in_place, std::move(value));
-    return core_.try_insert_at(index, std::move(candidate))
+    return core_.try_insert_at(index, std::move(key), std::move(value))
                ? InsertResult::kInserted
                : InsertResult::kOutOfMemory;
   }
@@ -494,7 +797,7 @@ public:
   V &operator[](K key)
     requires std::default_initializable<V>
   {
-    return try_emplace(std::move(key)).first->value();
+    return try_emplace(std::move(key)).first->second;
   }
 
   template <std::input_iterator It, std::sentinel_for<It> Sentinel>
@@ -516,20 +819,8 @@ public:
     requires detail::FlatMapRangeValue<std::iter_reference_t<It>>
   bool try_assign(sorted_unique_t, It first, Sentinel last) {
     FlatMap replacement(core_.key_comp(), core_.allocator());
-    if (!replacement.core_.try_append_sorted(
-            std::move(first), std::move(last),
-            [](void *storage, auto &&item) noexcept(noexcept(Entry(
-                detail::flat_range_key(std::forward<decltype(item)>(item)),
-                std::in_place,
-                detail::flat_range_value(
-                    std::forward<decltype(item)>(item))))) {
-              ::new (storage) Entry(
-                  detail::flat_range_key(
-                      std::forward<decltype(item)>(item)),
-                  std::in_place,
-                  detail::flat_range_value(
-                      std::forward<decltype(item)>(item)));
-            }))
+    if (!replacement.core_.try_append_sorted(std::move(first),
+                                              std::move(last)))
       return false;
     swap(replacement);
     return true;
@@ -556,34 +847,51 @@ public:
     return true;
   }
   iterator erase(const_iterator position) noexcept {
-    const size_type index = core_.iterator_index(position, false);
+    const difference_type distance = position - cbegin();
+    HYLE_FATAL_ASSERT(distance >= 0 &&
+                      static_cast<size_type>(distance) < size());
+    const size_type index = static_cast<size_type>(distance);
     core_.erase_index(index);
-    return core_.iterator_at(index);
+    return iterator_at(index);
   }
   iterator erase(const_iterator first, const_iterator last) noexcept {
-    const size_type first_index = core_.iterator_index(first, true);
-    const size_type last_index = core_.iterator_index(last, true);
-    HYLE_FATAL_ASSERT(first_index <= last_index);
+    const difference_type first_distance = first - cbegin();
+    const difference_type last_distance = last - cbegin();
+    HYLE_FATAL_ASSERT(first_distance >= 0 &&
+                      first_distance <= last_distance &&
+                      static_cast<size_type>(last_distance) <= size());
+    const size_type first_index = static_cast<size_type>(first_distance);
+    const size_type last_index = static_cast<size_type>(last_distance);
     core_.erase_indices(first_index, last_index);
-    return core_.iterator_at(first_index);
+    return iterator_at(first_index);
   }
 
   void swap(FlatMap &other) noexcept { core_.swap(other.core_); }
   friend void swap(FlatMap &left, FlatMap &right) noexcept { left.swap(right); }
 
   friend bool operator==(const FlatMap &left, const FlatMap &right)
-    requires std::equality_comparable<Entry>
+    requires(std::equality_comparable<K> && std::equality_comparable<V>)
   {
-    return left.size() == right.size() &&
-           std::equal(left.begin(), left.end(), right.begin());
+    return left.core_ == right.core_;
   }
 
 private:
+  iterator iterator_at(size_type index) noexcept {
+    HYLE_FATAL_ASSERT(index <= size());
+    return iterator(core_.keys_data() + index,
+                    core_.values_data() + index);
+  }
+  const_iterator iterator_at(size_type index) const noexcept {
+    HYLE_FATAL_ASSERT(index <= size());
+    return const_iterator(core_.keys_data() + index,
+                          core_.values_data() + index);
+  }
+
   Core core_{};
 };
 
-// Set counterpart sharing the same storage/search/mutation engine. Iterators
-// are const even on a mutable set, preserving the sorted invariant.
+// Set counterpart. Iterators are const even on a mutable set, preserving the
+// sorted invariant; unlike FlatMap, the single key array is genuinely contiguous.
 template <class K, class Compare = std::less<>,
           class Alloc = mem::SystemAllocator>
 class FlatSet {

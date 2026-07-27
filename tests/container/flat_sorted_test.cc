@@ -158,7 +158,8 @@ void expect_same_map(const Map &actual,
 
 } // namespace
 
-static_assert(std::contiguous_iterator<FlatMap<int, int>::iterator>);
+static_assert(std::random_access_iterator<FlatMap<int, int>::iterator>);
+static_assert(!std::contiguous_iterator<FlatMap<int, int>::iterator>);
 static_assert(std::contiguous_iterator<FlatSet<int>::iterator>);
 static_assert(
     std::is_const_v<std::remove_reference_t<decltype(
@@ -168,10 +169,11 @@ static_assert(!std::is_const_v<std::remove_reference_t<decltype(
 static_assert(std::is_const_v<std::remove_reference_t<decltype(
                   *std::declval<FlatSet<int>::iterator>())>>);
 
-TEST(FlatMap, ProvidesContiguousOrderedUniqueMapOperations) {
+TEST(FlatMap, ProvidesOrderedSoaMapOperations) {
   FlatMap<std::string, int> map;
   EXPECT_TRUE(map.empty());
   EXPECT_TRUE(map.insert("gamma", 3).second);
+  EXPECT_TRUE(map.insert(std::pair<std::string, int>{"zeta", 6}).second);
   EXPECT_TRUE(map.try_emplace("alpha", 1).second);
   EXPECT_TRUE(map.try_emplace("beta", 2).second);
   EXPECT_FALSE(map.try_emplace("beta", 200).second);
@@ -182,14 +184,18 @@ TEST(FlatMap, ProvidesContiguousOrderedUniqueMapOperations) {
   EXPECT_TRUE(map.insert_or_assign("delta", 4));
   map["epsilon"] = 5;
   EXPECT_EQ(map.find("beta")->value(), 20);
+  EXPECT_EQ(map.find("beta")->first, "beta");
+  EXPECT_EQ(map.find("beta")->second, 20);
   EXPECT_TRUE(map.contains(std::string_view("delta")));
   EXPECT_EQ(map.count("absent"), 0u);
 
   std::vector<std::string> keys;
-  for (const auto &entry : map)
-    keys.push_back(entry.key());
+  for (const auto &[key, value] : map) {
+    keys.push_back(key);
+    EXPECT_EQ(value, map.find(key)->second);
+  }
   EXPECT_EQ(keys, (std::vector<std::string>{"alpha", "beta", "delta",
-                                             "epsilon", "gamma"}));
+                                             "epsilon", "gamma", "zeta"}));
   EXPECT_EQ(map.lower_bound("charlie")->key(), "delta");
   EXPECT_EQ(map.upper_bound("delta")->key(), "epsilon");
   auto [first, last] = map.equal_range(std::string_view("beta"));
@@ -200,10 +206,15 @@ TEST(FlatMap, ProvidesContiguousOrderedUniqueMapOperations) {
   EXPECT_TRUE(map.erase(std::string_view("epsilon")));
   EXPECT_FALSE(map.erase("epsilon"));
   map.erase(map.begin() + 1);
-  EXPECT_EQ(map.size(), 3u);
+  EXPECT_EQ(map.size(), 4u);
   map.erase(map.begin() + 1, map.end());
   ASSERT_EQ(map.size(), 1u);
   EXPECT_EQ(map.begin()->key(), "alpha");
+  ASSERT_EQ(map.keys().size(), map.values().size());
+  EXPECT_EQ(map.keys().front(), "alpha");
+  map.values().front() = 10;
+  EXPECT_EQ(map.begin()->second, 10);
+  EXPECT_EQ(map.rbegin()->first, "alpha");
 }
 
 TEST(FlatSet, KeepsKeysConstAndSupportsHeterogeneousRanges) {
@@ -324,7 +335,8 @@ TEST(FlatSorted, SortedUniqueBulkConstructionAndAssignAreLinear) {
       CountingLess{&map_calls});
   EXPECT_EQ(map.size(), map_values.size());
   EXPECT_LT(map_calls, map_values.size() * 2);
-  EXPECT_EQ(map.data()[2048].key(), 4096);
+  EXPECT_EQ(map.keys()[2048], 4096);
+  EXPECT_EQ(map.values()[2048], 2048);
 
   std::size_t set_calls = 0;
   FlatSet<int, CountingLess> set(sorted_unique, set_values.begin(),

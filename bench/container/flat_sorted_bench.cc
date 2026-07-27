@@ -126,7 +126,7 @@ void find_hits(const HyleMap &map,
                const std::vector<std::uint64_t> &queries) {
   std::uint64_t sum = 0;
   for (const std::uint64_t query : queries)
-    sum += map.find(query * 2)->value();
+    sum += map.find(query * 2)->second;
   nb::doNotOptimizeAway(sum);
 }
 
@@ -179,7 +179,7 @@ int main() {
 
   {
     nb::Bench bench;
-    bench.title("flat ordered deterministic full iteration")
+    bench.title("flat ordered mapped-value scan")
         .relative(true)
         .batch(kEntries)
         .minEpochIterations(15);
@@ -192,7 +192,27 @@ int main() {
     bench.run("HYLE FlatMap", [&] {
       std::uint64_t sum = 0;
       for (const auto &entry : hyle)
-        sum += entry.value();
+        sum += entry.second;
+      nb::doNotOptimizeAway(sum);
+    });
+  }
+
+  {
+    nb::Bench bench;
+    bench.title("flat ordered full key+value scan")
+        .relative(true)
+        .batch(kEntries)
+        .minEpochIterations(15);
+    bench.run(kMapPeerName, [&] {
+      std::uint64_t sum = 0;
+      for (const auto &entry : peer)
+        sum += entry.first ^ entry.second;
+      nb::doNotOptimizeAway(sum);
+    });
+    bench.run("HYLE FlatMap", [&] {
+      std::uint64_t sum = 0;
+      for (const auto &entry : hyle)
+        sum += entry.first ^ entry.second;
       nb::doNotOptimizeAway(sum);
     });
   }
