@@ -7,9 +7,9 @@
 #include <mutex>
 #include <new>
 
+#include "hyle/container/detail/adaptive_mutex.h"
 #include "hyle/container/pod_vector.h"
 #include "hyle/container/swiss_table.h"
-#include "hyle/container/detail/adaptive_rw_lock.h"
 #include "hyle/platform/cpu.h"
 
 namespace hyle::container {
@@ -86,7 +86,7 @@ struct alignas(64) Shard {
   // paths in userspace while still parking behind allocation or table growth.
   // std::mutex entered the Darwin kernel frequently under many lightly
   // contended shards; an unbounded spin lock would be wrong for the cold paths.
-  detail::AdaptiveRwLock mu;
+  detail::AdaptiveMutex mu;
   SwissTable<InternKey, Entry*, InternHash, InternEq, mem::Allocator> by_string;
   PodVector<IdSlot> by_id;
   std::uint32_t free_head = kNoSlot;
@@ -226,7 +226,11 @@ Entry* find_or_add_locked(Impl& impl, mem::Allocator alloc, const HashedText& in
   if (Entry** found = shard.by_string.find(query)) {
     Entry* entry = *found;
     if (permanent) {
-      entry->permanent = true;
+      // Permanent intern is overwhelmingly a lookup-after-first-insert path.
+      // Do not dirty the stable entry cache line on every hit; only the rare
+      // acquire-owned -> permanent promotion needs a write.
+      if (!entry->permanent)
+        entry->permanent = true;
     } else {
       // Permanent-only intern() entries do not pay for an ID slot. Materialize
       // the reverse index lazily on the first acquire() that exposes one.
@@ -354,10 +358,10 @@ StringInterner::~StringInterner() {
 namespace {
 
 template <class Impl> auto lock_shards(Impl& impl, std::uint64_t shard_mask) {
-  std::array<std::unique_lock<detail::AdaptiveRwLock>, kMaxShardCount> locks;
+  std::array<std::unique_lock<detail::AdaptiveMutex>, kMaxShardCount> locks;
   for (std::uint32_t i = 0; i < impl.shard_count; ++i) {
     if ((shard_mask & (std::uint64_t{1} << i)) != 0)
-      locks[i] = std::unique_lock<detail::AdaptiveRwLock>(impl.shards[i].mu);
+      locks[i] = std::unique_lock<detail::AdaptiveMutex>(impl.shards[i].mu);
   }
   return locks;
 }
