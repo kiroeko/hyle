@@ -51,11 +51,11 @@ HYLE_CONTAINER_API std::uint64_t hash_bytes_long(const void* data, std::size_t l
 // a midsize-path pessimum near 256B). 128 is the conservative split -- the tie
 // point sits on the XXH3 side, so wyhash only takes over where it clearly wins.
 inline constexpr std::size_t kWyhashThreshold = 128;
-// Varied-input sweeps put AVX2 XXH3's repeatable crossover at different points
-// for the two shipping toolchains: 1KiB on Windows/MSVC, 512B on Linux/GCC 14.
-// Keep the product thresholds at their first 14/15-or-better win rather than
-// making one platform pay another compiler's code-generation tradeoff.
-#if defined(HYLE_ARCH_ARM64) || defined(__linux__)
+// Varied-input sweeps put wide XXH3's repeatable *product API* crossover at
+// different points for the shipping toolchains: 512B on Linux/GCC 14, but 1KiB
+// on Windows/MSVC and macOS/Clang. The latter includes the public dispatch seam;
+// using the raw algorithm crossover would make real 512/768B callers slower.
+#if defined(__linux__) && !defined(HYLE_ARCH_ARM64)
 inline constexpr std::size_t kWideHashThreshold = 512;
 #else
 inline constexpr std::size_t kWideHashThreshold = 1024;
