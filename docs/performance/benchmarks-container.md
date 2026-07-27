@@ -20,6 +20,7 @@
 | **RingDeque / ByteRingBuffer** | ✅ **2026-07-26 三平台 n=15** | 固定容量 FIFO 与 32KiB backlog/4KiB stream staging；WSL 与 Folly-shaped floor 同档，Win/M4 胜 floor |
 | **SpscQueue** | ✅ **2026-07-26 三平台 n=15** | 1P/1C 持续传输、1024 exact slots；三平台与 portable Folly-shaped 同合同 peer 均为统计同档 |
 | **ConcurrentFlatHashMap / ConcurrentNodeHashMap** | ✅ **2026-07-26 三平台 n=15** | 同 hash、同 accessor 合同对 oneTBB；读/混合路径三平台全胜；node rebuild 在 Win/Linux paired 统计同档，flat rebuild 6.25–7.05x |
+| **FlatMap / FlatSet** | ✅ Windows+WSL n=15；⏳ M4 | sorted-contiguous 正常合同；bulk 核已重写，WSL 与 raw-copy floor TIE，Windows 保留 key-const 转换税 |
 | **并发队列** | 见 queue / sched 文 | 不在本页展开 |
 
 **读法**：标 ✅ 的可当当前产品结论；标 ⚠️ 的方向大体可信，但**不要**当 2026-07-20 式三平台 sign 证书去对外硬报绝对 ns。
@@ -46,7 +47,7 @@
 | **SpscQueue** | Folly `ProducerConsumerQueue` shape | ➖ 三平台 n=15 **TIE**；同 exact-capacity sentinel / acquire-release 合同，不为测项增加 remote cache 或 power-of-two 特化 |
 | **ConcurrentFlatHashMap / ConcurrentNodeHashMap** | oneTBB `concurrent_hash_map` | ✅ protected hit、8-reader、90/10 mixed 三平台均 15/15 胜；flat rebuild 6.25–7.05x；node rebuild M4 胜、Win/Linux 统计同档 |
 | **BTreeMap / BTreeSet** | Abseil `btree_map/set` | ⚠️ 实际十轴混合：Windows 7 胜/1 平/2 负，WSL 6 胜/2 平/2 负，M4 6 胜/1 平/3 负；主要 time-index mutation 缺口已消除，但不宣称逐平台全轴 SOTA |
-| **FlatMap / FlatSet** | sorted `std::vector` peer；⏳ std/Boost | ⚠️ Windows lookup/iteration TIE、低 mutation WIN；`sorted_unique` trivial-pair bulk 0.309x LOSE；WSL/M4 未签 |
+| **FlatMap / FlatSet** | sorted `std::vector` floor；⏳ std/Boost | ✅ Win hit/iterate TIE、miss/set/mutation WIN；WSL 除 miss 0.969x 外 TIE；bulk 从旧 0.309x 修到 Win 0.768x、WSL TIE；⏳ M4 |
 
 ### BTreeMap / BTreeSet：有序索引真实矩阵（三平台 Release，n=15）
 
@@ -87,25 +88,31 @@ expiry，以及 M4 domain miss/shuffled build/churn 是当前边界；其中 mut
 单条 miss 分布增加边界 cache 或调 node capacity 会扭曲普通用户形状；后续只由跨 workload
 profile 证据重开。
 
-### FlatMap / FlatSet：查多改少的排序连续索引（Windows Release，n=15）
+### FlatMap / FlatSet：查多改少的排序连续索引（Windows/WSL Release，n=15）
 
 `hyle_container_flat_sorted_bench` 对称比较相同 `uint64_t` key/value、32 Ki entries 的
-HYLE sorted-contiguous storage 与排序 `std::vector` peer；本机标准库尚无 C++23
-`std::flat_map/set`，所以这里不冒充 Boost 或标准库证书。每个 workload 由 nanobench 做
-15 个稳定 epoch，数值为 HYLE throughput / peer throughput：
+HYLE sorted-contiguous storage 与排序 `std::vector` floor；两个 shipping 标准库都尚无
+C++23 `std::flat_map/set`，本地 Boost.Container 子模块也为空，所以这里不冒充 Boost 或
+标准库证书。floor 的公开 wrapper 提供同样的 lookup/mutation，但 bulk 可以直接复制
+trivial `pair`，因此是 HYLE key-const Entry 转换前的内存下界，而不是更完整的对手。
+数值为同机 paired n=15 的 HYLE/peer throughput：
 
-| 正常用法 | HYLE / peer | 判定 |
-|---|---:|---|
-| lookup hit | 0.963x | TIE |
-| in-domain miss | 0.984x | TIE |
-| full ordered iteration | 0.983x | TIE |
-| set membership | 1.032x | TIE |
-| 64 erase + ordered append | 1.437x | WIN |
-| `sorted_unique` pair-range bulk build | 0.309x | **LOSE**；约 0.99 ns/entry，但 trivial pair peer 可直接复制，仍是转换常数缺口 |
+| 正常用法 | Windows MSVC 19.50 | WSL GCC 14.2 |
+|---|---:|---:|
+| lookup hit | 1.007x TIE | 1.007x TIE |
+| in-domain miss | **1.042x WIN** | **0.969x LOSE** |
+| full ordered iteration | 1.000x TIE | 1.002x TIE |
+| set membership | **1.039x WIN** | 1.023x TIE |
+| 64 erase + ordered append | **1.450x WIN** | 0.994x TIE |
+| `sorted_unique` pair-range bulk build | **0.768x LOSE**（0.389/0.306 ns） | **0.989x TIE**（0.213/0.211 ns） |
 
-因此当前证书只支持“lookup/iteration/低频 mutation 正常，bulk build 尚非 SOTA”。没有为
-bulk 表格给 entry 增加常态 metadata，也没有破坏 map key 只读合同。Boost.Container、本地
-GCC/UBSan 与 M4 仍待补证；在这些完成前不得把 Windows sorted-vector 结果外推为三平台结论。
+旧实现虽然先 reserve，仍逐项走容量分支、重复发布 size，并对 sized iterator 做线性计数，
+Windows 只有 0.309x。当前 `SmallVector` 内部 bulk seam 对 sized range O(1) 取长度、一次
+reserve、原位构造整批后一次发布 size；异常/OOM 销毁完成前缀，move-only pair-range 也走
+同一入口。它没有公开 uninitialized storage、增加 entry metadata 或破坏只读 key。结果是
+Windows 提升约 **2.49x**，WSL 已到 raw-copy floor 同档。Windows 剩余 23.2% 是 pair→
+key-const Entry 转换与直接 memcpy 的合同下界差；在拿到真正 `std::flat_map`/Boost peer 前，
+不以跨类型 memcpy 或 mutable key 消掉它。M4 仍待签，不能把双平台结果写成三平台证书。
 
 ### DynamicBitSet / SparseSet：按实际生命周期验收（三平台 Release，n=15）
 
@@ -371,6 +378,12 @@ mapping：单平台点值改善不足以证明架构更好，也没有为顺扫 
    Windows/Linux 中位数分别快 oneTBB 1.174x/1.210x，但只有 9/15、12/15 同侧，未达到
    paired sign 门槛；按统计同档。稳定 node identity 是该类型的选择理由，纯 clear+rebuild
    优先 `ConcurrentFlatHashMap`，不为追单项数字扭曲 node storage。
+
+10. **FlatMap/FlatSet 的剩余边界**
+    Windows `sorted_unique` 从 0.309x 修到 0.768x，但对 raw trivial-pair copy floor 仍是
+    LOSE；WSL 已 TIE。反向边界是 WSL in-domain miss 0.969x。floor 不是完整 flat-map
+    实现，M4/真正 std 或 Boost peer 尚缺，因此既不宣称全轴 SOTA，也不为它泄漏 mutable
+    key、跨类型 memcpy 或增加常态 metadata。
 
 ## 3. 选型（不同场景不同 container 组成）
 

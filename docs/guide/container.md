@@ -201,7 +201,8 @@ for (auto it = routes.lower_bound(first); it != routes.upper_bound(last); ++it)
 `try_emplace`/`insert_or_assign`/`operator[]`、reserve/shrink、copy/move 和有序迭代；map
 iterator 的 key 只读、value 可写，set iterator 始终只读。`sorted_unique` 构造/assign 是
 O(N) bulk 路径；tag 是调用方对“严格有序且无等价 key”的承诺，库不会再逐项验证或偷偷
-排序。普通无 tag range 按 unique insert 处理，复杂度最坏 O(N²)。
+排序。sized range 只计算一次长度并 reserve 一次，随后直接构造连续尾部；失败会销毁完成
+前缀且保持原容器。普通无 tag range 按 unique insert 处理，复杂度最坏 O(N²)。
 
 `try_emplace` 中的 `try` 沿用标准容器含义：命中时不构造 mapped value，**不表示 OOM
 可恢复**。需要恢复 allocation failure 时用返回 `FlatInsertResult` 的 `try_insert` /

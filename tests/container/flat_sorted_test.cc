@@ -332,6 +332,24 @@ TEST(FlatSorted, MoveOnlyKeysAndValuesHaveBalancedLifetime) {
     EXPECT_FALSE(set.insert(MoveOnly(8)).second);
     EXPECT_TRUE(set.contains(5));
     EXPECT_TRUE(set.erase(8));
+
+    std::vector<std::pair<MoveOnly, MoveOnly>> ordered_map;
+    ordered_map.emplace_back(MoveOnly(10), MoveOnly(100));
+    ordered_map.emplace_back(MoveOnly(20), MoveOnly(200));
+    FlatMap<MoveOnly, MoveOnly, MoveOnlyLess> bulk_map(
+        sorted_unique, std::make_move_iterator(ordered_map.begin()),
+        std::make_move_iterator(ordered_map.end()));
+    ASSERT_EQ(bulk_map.size(), 2u);
+    EXPECT_EQ(bulk_map.find(20)->value().value, 200);
+
+    std::vector<MoveOnly> ordered_set;
+    ordered_set.emplace_back(30);
+    ordered_set.emplace_back(40);
+    FlatSet<MoveOnly, MoveOnlyLess> bulk_set(
+        sorted_unique, std::make_move_iterator(ordered_set.begin()),
+        std::make_move_iterator(ordered_set.end()));
+    EXPECT_TRUE(bulk_set.contains(30));
+    EXPECT_TRUE(bulk_set.contains(40));
   }
   EXPECT_EQ(MoveOnly::alive, 0);
 }

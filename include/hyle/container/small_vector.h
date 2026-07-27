@@ -17,6 +17,10 @@
 
 namespace hyle::container {
 
+namespace detail {
+struct SmallVectorAccess;
+}
+
 // Vector with storage for the first N elements embedded in the object. It is a
 // std::vector-like owning container for genuinely small sequences, not a POD
 // benchmark fixture: non-trivial values are constructed, moved and destroyed
@@ -457,6 +461,8 @@ public:
   }
 
 private:
+  friend struct detail::SmallVectorAccess;
+
   pointer inline_ptr() noexcept { return reinterpret_cast<pointer>(inline_); }
   const_pointer inline_ptr() const noexcept {
     return reinterpret_cast<const_pointer>(inline_);
@@ -554,17 +560,78 @@ private:
 
   template <std::input_iterator It, std::sentinel_for<It> Sentinel>
   void append_range(It first, Sentinel last) {
+    HYLE_FATAL_ASSERT(try_append_construct_unaliased(
+        std::move(first), std::move(last),
+        [](void *storage, auto &&value) noexcept(
+            std::is_nothrow_constructible_v<T, decltype(value)>) {
+          ::new (storage) T(std::forward<decltype(value)>(value));
+        }));
+  }
+
+  // Internal bulk-construction seam shared by other owning container engines.
+  // The input must not alias this vector: callers use it while constructing a
+  // fresh replacement. A forward range reserves once and publishes size only
+  // after the whole batch becomes live, avoiding one capacity branch and size
+  // write per item while retaining rollback on allocation or construction
+  // failure. Construct receives (void* destination, input-reference) and must
+  // placement-construct exactly one T.
+  template <std::input_iterator It, std::sentinel_for<It> Sentinel,
+            class Construct>
+  bool try_append_construct_unaliased(It first, Sentinel last,
+                                      Construct construct) {
+    const size_type original_size = size_;
     if constexpr (std::forward_iterator<It>) {
       size_type additional = 0;
-      for (It probe = first; probe != last; ++probe) {
-        HYLE_FATAL_ASSERT(
-            additional < static_cast<size_type>(-1) / sizeof(T) - size_);
-        ++additional;
+      const size_type remaining =
+          static_cast<size_type>(-1) / sizeof(T) - size_;
+      if constexpr (std::sized_sentinel_for<Sentinel, It>) {
+        const auto distance = last - first;
+        if (distance < 0 ||
+            static_cast<std::make_unsigned_t<decltype(distance)>>(distance) >
+                remaining)
+          return false;
+        additional = static_cast<size_type>(distance);
+      } else {
+        for (It probe = first; probe != last; ++probe) {
+          if (additional == remaining)
+            return false;
+          ++additional;
+        }
       }
-      reserve(size_ + additional);
+      if (!try_reserve(size_ + additional))
+        return false;
+      size_type constructed = 0;
+      try {
+        for (; first != last; ++first) {
+          construct(static_cast<void *>(data_ + original_size + constructed),
+                    *first);
+          ++constructed;
+        }
+      } catch (...) {
+        destroy_range(data_ + original_size, constructed);
+        throw;
+      }
+      size_ = original_size + constructed;
+      return true;
+    } else {
+      try {
+        for (; first != last; ++first) {
+          if (size_ == static_cast<size_type>(-1) / sizeof(T) ||
+              (size_ == cap_ && !grow_to(next_capacity(size_ + 1)))) {
+            destroy_range(data_ + original_size, size_ - original_size);
+            size_ = original_size;
+            return false;
+          }
+          construct(static_cast<void *>(data_ + size_), *first);
+          ++size_;
+        }
+      } catch (...) {
+        destroy_range(data_ + original_size, size_ - original_size);
+        size_ = original_size;
+        throw;
+      }
+      return true;
     }
-    for (; first != last; ++first)
-      emplace_back(*first);
   }
 
   void move_from(SmallVector &other) noexcept {
@@ -605,5 +672,23 @@ private:
   size_type cap_;
   alignas(T) std::byte inline_[N * sizeof(T)];
 };
+
+namespace detail {
+
+// Narrow internal seam: FlatSortedStorage can bulk-construct a fresh sequence
+// from a projected range without exposing uninitialized storage or size
+// mutation in SmallVector's public API.
+struct SmallVectorAccess {
+  template <class T, std::size_t N, class Alloc, std::input_iterator It,
+            std::sentinel_for<It> Sentinel, class Construct>
+  static bool try_append_construct_unaliased(
+      SmallVector<T, N, Alloc> &vector, It first, Sentinel last,
+      Construct construct) {
+    return vector.try_append_construct_unaliased(
+        std::move(first), std::move(last), std::move(construct));
+  }
+};
+
+} // namespace detail
 
 } // namespace hyle::container

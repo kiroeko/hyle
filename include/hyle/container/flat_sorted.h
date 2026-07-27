@@ -30,11 +30,13 @@ inline constexpr sorted_unique_t sorted_unique{};
 // cannot silently break ordering; the mapped value remains normally mutable.
 template <class K, class V> class FlatMapEntry {
 public:
-  template <class... Args>
-  FlatMapEntry(K key, std::in_place_t, Args &&...args) noexcept(
-      std::is_nothrow_move_constructible_v<K> &&
+  template <class KeyArg, class... Args>
+    requires std::constructible_from<K, KeyArg>
+  FlatMapEntry(KeyArg &&key, std::in_place_t, Args &&...args) noexcept(
+      std::is_nothrow_constructible_v<K, KeyArg> &&
       std::is_nothrow_constructible_v<V, Args...>)
-      : key_(std::move(key)), value_(std::forward<Args>(args)...) {}
+      : key_(std::forward<KeyArg>(key)),
+        value_(std::forward<Args>(args)...) {}
 
   FlatMapEntry(const FlatMapEntry &) = default;
   FlatMapEntry &operator=(const FlatMapEntry &) = delete;
@@ -160,37 +162,58 @@ public:
   template <class Q>
     requires FlatComparable<Compare, K, Q>
   size_type lower_bound_index(const Q &key) const noexcept {
-    size_type first = 0;
-    size_type count = entries_.size();
-    while (count != 0) {
-      const size_type step = count / 2;
-      const size_type middle = first + step;
-      if (compare_(KeyOf{}(entries_[middle]), key)) {
-        first = middle + 1;
-        count -= step + 1;
-      } else {
-        count = step;
+    if constexpr (std::is_same_v<Entry, K>) {
+      // FlatSet stores K directly, so keep the projection-free index loop.
+      // Map entries use the standard algorithm below: its comparator/projector
+      // shape generates more balanced code across MSVC and GCC.
+      size_type first = 0;
+      size_type count = entries_.size();
+      while (count != 0) {
+        const size_type step = count / 2;
+        const size_type middle = first + step;
+        if (compare_(entries_[middle], key)) {
+          first = middle + 1;
+          count -= step + 1;
+        } else {
+          count = step;
+        }
       }
+      return first;
+    } else {
+      const auto position = std::lower_bound(
+          entries_.begin(), entries_.end(), key,
+          [this](const Entry &entry, const Q &candidate) noexcept {
+            return compare_(KeyOf{}(entry), candidate);
+          });
+      return static_cast<size_type>(position - entries_.begin());
     }
-    return first;
   }
 
   template <class Q>
     requires FlatComparable<Compare, K, Q>
   size_type upper_bound_index(const Q &key) const noexcept {
-    size_type first = 0;
-    size_type count = entries_.size();
-    while (count != 0) {
-      const size_type step = count / 2;
-      const size_type middle = first + step;
-      if (!compare_(key, KeyOf{}(entries_[middle]))) {
-        first = middle + 1;
-        count -= step + 1;
-      } else {
-        count = step;
+    if constexpr (std::is_same_v<Entry, K>) {
+      size_type first = 0;
+      size_type count = entries_.size();
+      while (count != 0) {
+        const size_type step = count / 2;
+        const size_type middle = first + step;
+        if (!compare_(key, entries_[middle])) {
+          first = middle + 1;
+          count -= step + 1;
+        } else {
+          count = step;
+        }
       }
+      return first;
+    } else {
+      const auto position = std::upper_bound(
+          entries_.begin(), entries_.end(), key,
+          [this](const Q &candidate, const Entry &entry) noexcept {
+            return compare_(candidate, KeyOf{}(entry));
+          });
+      return static_cast<size_type>(position - entries_.begin());
     }
-    return first;
   }
 
   template <class Q>
@@ -218,12 +241,14 @@ public:
     return true;
   }
 
-  template <class... Args>
-  bool try_emplace_sorted_back(Args &&...args) {
-    // sorted_unique_t is an explicit caller promise, as in C++23 flat_map and
-    // Boost ordered_unique_range. Revalidating every adjacent key would charge
-    // normal trusted bulk loads an avoidable second pass/comparator cost.
-    return entries_.try_emplace_back(std::forward<Args>(args)...);
+  template <std::input_iterator It, std::sentinel_for<It> Sentinel,
+            class Construct>
+  bool try_append_sorted(It first, Sentinel last, Construct construct) {
+    // This storage is a fresh replacement. SmallVector may therefore reserve
+    // once and directly construct the projected entries without alias checks
+    // or one capacity branch per element.
+    return SmallVectorAccess::try_append_construct_unaliased(
+        entries_, std::move(first), std::move(last), std::move(construct));
   }
 
   void erase_index(size_type index) noexcept {
@@ -493,26 +518,21 @@ public:
     requires detail::FlatMapRangeValue<std::iter_reference_t<It>>
   bool try_assign(sorted_unique_t, It first, Sentinel last) {
     FlatMap replacement(core_.key_comp(), core_.allocator());
-    if constexpr (std::forward_iterator<It>) {
-      size_type count = 0;
-      for (It probe = first; probe != last; ++probe) {
-        if (count == std::numeric_limits<size_type>::max())
-          return false;
-        ++count;
-      }
-      if (!replacement.try_reserve(count))
-        return false;
-    }
-    for (; first != last; ++first) {
-      auto &&item = *first;
-      if (!replacement.core_.try_emplace_sorted_back(
-              K(detail::flat_range_key(
-                  std::forward<decltype(item)>(item))),
-              std::in_place,
-              detail::flat_range_value(
-                  std::forward<decltype(item)>(item))))
-        return false;
-    }
+    if (!replacement.core_.try_append_sorted(
+            std::move(first), std::move(last),
+            [](void *storage, auto &&item) noexcept(noexcept(Entry(
+                detail::flat_range_key(std::forward<decltype(item)>(item)),
+                std::in_place,
+                detail::flat_range_value(
+                    std::forward<decltype(item)>(item))))) {
+              ::new (storage) Entry(
+                  detail::flat_range_key(
+                      std::forward<decltype(item)>(item)),
+                  std::in_place,
+                  detail::flat_range_value(
+                      std::forward<decltype(item)>(item)));
+            }))
+      return false;
     swap(replacement);
     return true;
   }
@@ -697,20 +717,13 @@ public:
   template <std::input_iterator It, std::sentinel_for<It> Sentinel>
   bool try_assign(sorted_unique_t, It first, Sentinel last) {
     FlatSet replacement(core_.key_comp(), core_.allocator());
-    if constexpr (std::forward_iterator<It>) {
-      size_type count = 0;
-      for (It probe = first; probe != last; ++probe) {
-        if (count == std::numeric_limits<size_type>::max())
-          return false;
-        ++count;
-      }
-      if (!replacement.try_reserve(count))
-        return false;
-    }
-    for (; first != last; ++first) {
-      if (!replacement.core_.try_emplace_sorted_back(*first))
-        return false;
-    }
+    if (!replacement.core_.try_append_sorted(
+            std::move(first), std::move(last),
+            [](void *storage, auto &&key) noexcept(
+                std::is_nothrow_constructible_v<K, decltype(key)>) {
+              ::new (storage) K(std::forward<decltype(key)>(key));
+            }))
+      return false;
     swap(replacement);
     return true;
   }

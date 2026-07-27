@@ -150,6 +150,12 @@ construction/assign 信任调用方“严格有序、无等价 key”的显式�
 `FlatInsertResult` / `try_reserve` / `try_assign`，standard-shaped `try_emplace` 只承诺命中
 不构造 mapped value。成功位置 mutation 从该点起失效，reallocation 全失效。
 
+bulk 不经公开的逐项 `try_emplace_back`：`FlatSortedStorage` 通过窄 internal access seam 让
+fresh `SmallVector` 对 sized range O(1) 取长度、一次 reserve、在未初始化尾部原位构造，整批
+完成后一次发布 size；异常/OOM 销毁已完成前缀。这个 seam 不进入 SmallVector 公共 API，
+也不允许任意用户修改 size/uninitialized storage。map 的成熟 STL binary-search 形状与 set
+的 projection-free index loop 分开，避免让直接存 K 的 set 缴 map Entry projection 税。
+
 C ABI 有意不增加：现有 erased POD B-tree 已覆盖 runtime comparator/range，纯 C 也能直接
 管理排序 POD buffer；新增 flat-sorted handle 会复制动态能力，却仍无法表达任意 C++ K/V
 构造析构。typed shape 保持 source surface，内部 allocator 继续遵守 mem 契约。

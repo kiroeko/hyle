@@ -233,6 +233,13 @@ public:
     return const_reverse_iterator(cbegin());
   }
 
+#if defined(_MSC_VER)
+#pragma warning(push)
+// A deliberately always-throwing test/fault-injection constructor can make
+// MSVC report the continuation of this generic function as C4702. Other T
+// reach it normally, so suppress the template-instantiation false positive.
+#pragma warning(disable : 4702)
+#endif
   template <class... Args> bool try_emplace_back(Args &&...args) {
     if (full())
       return false;
@@ -240,6 +247,9 @@ public:
     increment_size();
     return true;
   }
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
 
   template <class... Args> reference emplace_back(Args &&...args) {
     HYLE_FATAL_ASSERT(try_emplace_back(std::forward<Args>(args)...));

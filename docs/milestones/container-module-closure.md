@@ -187,11 +187,24 @@
 > knob。allocator OOM、随机 std::map/set differential、alias、move-only/lifetime 与异常保持
 > 均覆盖，Windows Release container 286/286 通过。
 > normal-use 性能结果统一登记在
-> [`benchmarks-container.md`](../performance/benchmarks-container.md#flatmap--flatset查多改少的排序连续索引windows-releasen15)：
+> [`benchmarks-container.md`](../performance/benchmarks-container.md)：
 > lookup/iteration 与低频 mutation 已正常，pair-range sorted bulk build 仍有转换常数缺口，
 > 不为它改坏 key-const 公开 entry。Boost.Container 子模块在本地 reference clone 中为空，
-> 本轮未伪写 Boost 对比；GCC/UBSan 与 M4 仍待 main 合入后补证。typed 模板有意不新增 C ABI：现有
+> 本轮未伪写 Boost 对比；该批合入时 GCC/UBSan 与 M4 尚待补证，后续结果见下一段。
+> typed 模板有意不新增 C ABI：现有
 > erased POD B-tree/runtime comparator 与调用方排序 buffer 已覆盖动态 C 需求。
+
+> **2026-07-27 sorted-flat 正确性/性能复审：** MSVC 19.50 `/WX` 先暴露
+> `StaticVector` 在 deliberately-throwing fault type 上的 C4702 模板误报，现只在该模板体
+> 局部抑制，Windows container 四门恢复 4/4。`FlatMap/Set` 的 `sorted_unique` 重做为
+> fresh `SmallVector` 的 internal bulk-construction seam：sized range O(1) 计数、一次 reserve、
+> 原位构造整批后一次发布 size，异常/OOM 回滚完成前缀；没有公开 uninitialized API、跨类型
+> memcpy、常态 metadata 或 mutable key。Windows n=15 对 raw pair-copy floor 从旧 0.309x
+> 提至 **0.768x**，WSL/GCC14 为 **0.989x TIE**；Windows hit/iteration TIE、miss/set/mutation
+> WIN，WSL 除 miss 0.969x 外均 TIE。Windows/WSL Release、GCC14 ASan/UBSan 四门均 4/4，
+> move-only sorted range/lifetime 已补测。M4 和真正 std/Boost flat-map peer 仍待，因此这是
+> container 严格复审的一批，不是整个模块最终证书。
+> 本轮四项代码量：全库 271,887；自实现含测试 132,902；自实现不含测试 91,254；container 实现 14,423。
 
 ## 结论
 

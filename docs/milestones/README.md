@@ -22,18 +22,18 @@
 
 ## 预测 vs 真实 LOC（防玩具化）
 
-### 整体进度与体量（诚实，2026-07-26 锚定）——分母别混
+### 整体进度与体量（诚实，2026-07-27 锚定）——分母别混
 
 > **生产 = `cloc src include` 的 code 列**（header+C++/CUDA 等，不含 tests/bench/docs/third_party）。
-> **旧投影「完成时生产 ~28–40k / 中值 34k」已作废**：当前生产已 **~91.2k**，单 **simd ~37.8k**。
+> **旧投影「完成时生产 ~28–40k / 中值 34k」已作废**：当前生产已 **~91.3k**，单 **simd ~37.8k**。
 > 权威规模节：[`../architecture/hyle-scope.md`](../architecture/hyle-scope.md)。中期报告：[`midterm-report-2026-07-scale-positioning.md`](./midterm-report-2026-07-scale-positioning.md)。SIMD 当前补缺账本：[`simd-capability-fill-list.md`](./simd-capability-fill-list.md)。
 
 | 固定统计口径 | 当前 | 命令/说明 |
 |---|---|---|
-| **全库代码** | **271,755** | `cloc . --vcs=git`；含 docs/third_party，**≠ 自写** |
-| **自实现（含测试）** | **132,800** | `cloc include/hyle src tests`，只计 C++/Header/C/CUDA |
-| **自实现（不含测试）** | **91,168** | `cloc include/hyle src`，只计 C++/Header/C/CUDA；库本体硬锚 |
-| **当前处理模块实现（time）** | **1,421** | `include/hyle/time` + `include/hyle/c/time.h` + `src/time`；不含测试/CMake/Text |
+| **全库代码** | **271,887** | `cloc . --vcs=git`；含 docs/third_party，**≠ 自写** |
+| **自实现（含测试）** | **132,902** | `cloc include/hyle src tests`，只计 C++/Header/C/CUDA |
+| **自实现（不含测试）** | **91,254** | `cloc include/hyle src`，只计 C++/Header/C/CUDA；库本体硬锚 |
+| **当前处理模块实现（container）** | **14,423** | `include/hyle/container` + `include/hyle/c/container.h` + `src/container`；不含测试/CMake/Text |
 | **终态生产（纪律收口 A）** | **~75–90k** | 主预期 |
 | **终态生产（做满守界 B）** | **~85–105k** | compute/graph/发布面收口更满 |
 | 失控上限 C | 120k+ 生产 | 应避免 |
@@ -45,8 +45,8 @@
 | **生产 LOC ÷ 终态 B 中值 ~95k** | 做满剧本 | **~96%** |
 | **对完整愿景的功能完成度** | 能力清单 + 头牌缺口 | 除 compute/graph 能力尾外主体大多已实现；mem/time 已按新标准重收；其余按队列复审 |
 
-**模块生产粗表（2026-07-26）**：simd ~37.8k · io ~9.0k · platform **7,564**
-（含公共 C 头）· container **14.3k**（含公共 C 头）· compute ~4.1k · sched ~5.1k · mem **5,409** ·
+**模块生产粗表（2026-07-27）**：simd ~37.8k · io ~9.0k · platform **7,564**
+（含公共 C 头）· container **14,423**（含公共 C 头）· compute ~4.1k · sched ~5.1k · mem **5,409** ·
 util ~1.3k · error **984** · time **1,421** · obs **1,018** · graph ~0.6–0.8k。
 
 预发布严格收口合同、重开触发器和唯一下一模块见
