@@ -841,84 +841,17 @@ class SwissTable {
   }
 
   bool resize_to(std::size_t new_cap) {
-    // The common small-POD map/set shape can keep hash and relocation fully
-    // inlined while rebuilding. Sending every live slot through two erased
-    // callbacks adds a visible amortized tax to ordinary unreserved growth,
-    // even though copying an implicit-lifetime Slot is just memcpy. Non-trivial
-    // entries retain the single compiled cold core to avoid duplicating their
-    // lifecycle machinery in every instantiation.
-    if constexpr (std::is_trivially_copyable_v<Slot>) {
-      return resize_trivial_to(new_cap);
-    } else {
-      detail::SwissStorage s{ctrl_, slots_, cap_, mask_, size_, growth_left_};
-      if (!detail::swiss_resize(s, new_cap, sizeof(Slot), alignof(Slot),
-                                &alloc_, &allocate_thunk, &deallocate_thunk,
-                                &hash_slot_thunk, &hash_,
-                                &relocate_slot_thunk))
-        return false;
-      ctrl_ = s.ctrl;
-      slots_ = static_cast<Slot *>(s.slots);
-      cap_ = s.cap;
-      mask_ = s.mask;
-      size_ = s.size;
-      growth_left_ = s.growth_left;
-      return true;
-    }
-  }
-
-  bool resize_trivial_to(std::size_t new_cap)
-    requires std::is_trivially_copyable_v<Slot>
-  {
-    if (new_cap > static_cast<std::size_t>(-1) - kGroup ||
-        new_cap > static_cast<std::size_t>(-1) / sizeof(Slot))
+    detail::SwissStorage s{ctrl_, slots_, cap_, mask_, size_, growth_left_};
+    if (!detail::swiss_resize(s, new_cap, sizeof(Slot), alignof(Slot), &alloc_,
+                              &allocate_thunk, &deallocate_thunk,
+                              &hash_slot_thunk, &hash_, &relocate_slot_thunk))
       return false;
-
-    auto *new_ctrl = static_cast<ctrl_t *>(
-        alloc_.allocate(new_cap + kGroup, alignof(ctrl_t)));
-    if (new_ctrl == nullptr)
-      return false;
-    auto *new_slots = static_cast<Slot *>(
-        alloc_.allocate(new_cap * sizeof(Slot), alignof(Slot)));
-    if (new_slots == nullptr) {
-      alloc_.deallocate(new_ctrl, new_cap + kGroup, alignof(ctrl_t));
-      return false;
-    }
-    std::memset(new_ctrl, static_cast<int>(detail::kEmpty),
-                new_cap + kGroup);
-
-    const std::size_t new_mask = new_cap - 1;
-    for (std::size_t old_index = 0; old_index < cap_; ++old_index) {
-      if (!detail::ctrl_is_full(ctrl_[old_index]))
-        continue;
-      const std::uint64_t hash = hash_(slots_[old_index].key_);
-      std::size_t position = detail::h1(hash) & new_mask;
-      std::size_t stride = 0;
-      for (;;) {
-        detail::Group group(new_ctrl + position);
-        if (detail::GroupMask available =
-                group.match_empty_or_deleted()) {
-          const std::size_t index =
-              (position + available.lowest()) & new_mask;
-          new_ctrl[index] = detail::h2(hash);
-          if (index < kGroup)
-            new_ctrl[new_cap + index] = detail::h2(hash);
-          std::memcpy(new_slots + index, slots_ + old_index, sizeof(Slot));
-          break;
-        }
-        stride += kGroup;
-        position = (position + stride) & new_mask;
-      }
-    }
-
-    if (ctrl_ != nullptr) {
-      alloc_.deallocate(ctrl_, cap_ + kGroup, alignof(ctrl_t));
-      alloc_.deallocate(slots_, cap_ * sizeof(Slot), alignof(Slot));
-    }
-    ctrl_ = new_ctrl;
-    slots_ = new_slots;
-    cap_ = new_cap;
-    mask_ = new_mask;
-    growth_left_ = new_cap - new_cap / 8 - size_;
+    ctrl_ = s.ctrl;
+    slots_ = static_cast<Slot*>(s.slots);
+    cap_ = s.cap;
+    mask_ = s.mask;
+    size_ = s.size;
+    growth_left_ = s.growth_left;
     return true;
   }
 
