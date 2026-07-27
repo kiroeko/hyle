@@ -12,6 +12,7 @@
 #endif
 
 #include "hyle/macros.h"
+#include "hyle/platform.h"
 #include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
