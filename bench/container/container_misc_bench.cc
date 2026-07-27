@@ -39,40 +39,55 @@ int main() {
   // the apples-to-apples rival; std::vector is the floor.
   {
     nb::Bench b;
-    b.title("small-N churn: build+fill 8 ints+destroy")
+    b.title("small-N churn: build+consume 8 ints+destroy")
         .relative(true)
         .batch(kRounds * kSmall)
         .minEpochIterations(200);
     b.run("HYLE SmallVector<int,16> (inline)", [&] {
+      std::uint64_t checksum = 0;
       for (int r = 0; r < kRounds; ++r) {
         SmallVector<int, 16> v;
         for (int i = 0; i < kSmall; ++i) v.push_back(i);
-        nb::doNotOptimizeAway(v.data());
+        for (int value : v) checksum += static_cast<std::uint64_t>(value);
+        // Make the whole inline object representation observable, not merely
+        // its data pointer. GCC can otherwise prove every stored int dead and
+        // reduce one implementation much more aggressively than the other.
+        nb::doNotOptimizeAway(v);
       }
+      nb::doNotOptimizeAway(checksum);
     });
 #if defined(HYLE_BENCH_ABSL)
     b.run("absl::InlinedVector<int,16> (SOTA)", [&] {
+      std::uint64_t checksum = 0;
       for (int r = 0; r < kRounds; ++r) {
         absl::InlinedVector<int, 16> v;
         for (int i = 0; i < kSmall; ++i) v.push_back(i);
-        nb::doNotOptimizeAway(v.data());
+        for (int value : v) checksum += static_cast<std::uint64_t>(value);
+        nb::doNotOptimizeAway(v);
       }
+      nb::doNotOptimizeAway(checksum);
     });
 #endif
     b.run("std::vector<int> (heap)", [&] {
+      std::uint64_t checksum = 0;
       for (int r = 0; r < kRounds; ++r) {
         std::vector<int> v;
         for (int i = 0; i < kSmall; ++i) v.push_back(i);
-        nb::doNotOptimizeAway(v.data());
+        for (int value : v) checksum += static_cast<std::uint64_t>(value);
+        nb::doNotOptimizeAway(v);
       }
+      nb::doNotOptimizeAway(checksum);
     });
     b.run("std::vector<int> reserve(8) (heap, 1 malloc)", [&] {
+      std::uint64_t checksum = 0;
       for (int r = 0; r < kRounds; ++r) {
         std::vector<int> v;
         v.reserve(kSmall);
         for (int i = 0; i < kSmall; ++i) v.push_back(i);
-        nb::doNotOptimizeAway(v.data());
+        for (int value : v) checksum += static_cast<std::uint64_t>(value);
+        nb::doNotOptimizeAway(v);
       }
+      nb::doNotOptimizeAway(checksum);
     });
   }
 
@@ -85,32 +100,41 @@ int main() {
   {
     constexpr int kSpill = 64;  // > 16 inline cap -> forces spill + ~2 grows
     nb::Bench b;
-    b.title("spill churn: build+fill 64 ints+destroy (>inline cap)")
+    b.title("spill churn: build+consume 64 ints+destroy (>inline cap)")
         .relative(true)
         .batch(kRounds * kSpill)
         .minEpochIterations(100);
     b.run("HYLE SmallVector<int,16> (spill->heap)", [&] {
+      std::uint64_t checksum = 0;
       for (int r = 0; r < kRounds; ++r) {
         SmallVector<int, 16> v;
         for (int i = 0; i < kSpill; ++i) v.push_back(i);
+        for (int value : v) checksum += static_cast<std::uint64_t>(value);
         nb::doNotOptimizeAway(v.data());
       }
+      nb::doNotOptimizeAway(checksum);
     });
 #if defined(HYLE_BENCH_ABSL)
     b.run("absl::InlinedVector<int,16> (SOTA, spill->heap)", [&] {
+      std::uint64_t checksum = 0;
       for (int r = 0; r < kRounds; ++r) {
         absl::InlinedVector<int, 16> v;
         for (int i = 0; i < kSpill; ++i) v.push_back(i);
+        for (int value : v) checksum += static_cast<std::uint64_t>(value);
         nb::doNotOptimizeAway(v.data());
       }
+      nb::doNotOptimizeAway(checksum);
     });
 #endif
     b.run("std::vector<int> (heap from push 1)", [&] {
+      std::uint64_t checksum = 0;
       for (int r = 0; r < kRounds; ++r) {
         std::vector<int> v;
         for (int i = 0; i < kSpill; ++i) v.push_back(i);
+        for (int value : v) checksum += static_cast<std::uint64_t>(value);
         nb::doNotOptimizeAway(v.data());
       }
+      nb::doNotOptimizeAway(checksum);
     });
   }
 
