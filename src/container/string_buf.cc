@@ -9,6 +9,7 @@
 
 #include "hyle/container/pod_vector.h"
 #include "hyle/container/swiss_table.h"
+#include "hyle/container/detail/adaptive_rw_lock.h"
 #include "hyle/platform/cpu.h"
 
 namespace hyle::container {
@@ -81,7 +82,11 @@ HYLE_FORCE_INLINE std::uint32_t slab_class(std::size_t bytes) noexcept {
 struct alignas(64) Shard {
   explicit Shard(mem::Allocator alloc) noexcept : by_string(alloc), by_id(alloc) {}
 
-  std::mutex mu;
+  // Exclusive use of the container's bounded-spin/park lock keeps short hit
+  // paths in userspace while still parking behind allocation or table growth.
+  // std::mutex entered the Darwin kernel frequently under many lightly
+  // contended shards; an unbounded spin lock would be wrong for the cold paths.
+  detail::AdaptiveRwLock mu;
   SwissTable<InternKey, Entry*, InternHash, InternEq, mem::Allocator> by_string;
   PodVector<IdSlot> by_id;
   std::uint32_t free_head = kNoSlot;
@@ -349,10 +354,10 @@ StringInterner::~StringInterner() {
 namespace {
 
 template <class Impl> auto lock_shards(Impl& impl, std::uint64_t shard_mask) {
-  std::array<std::unique_lock<std::mutex>, kMaxShardCount> locks;
+  std::array<std::unique_lock<detail::AdaptiveRwLock>, kMaxShardCount> locks;
   for (std::uint32_t i = 0; i < impl.shard_count; ++i) {
     if ((shard_mask & (std::uint64_t{1} << i)) != 0)
-      locks[i] = std::unique_lock<std::mutex>(impl.shards[i].mu);
+      locks[i] = std::unique_lock<detail::AdaptiveRwLock>(impl.shards[i].mu);
   }
   return locks;
 }
@@ -405,7 +410,7 @@ StringId StringInterner::acquire(string_ref text) noexcept {
   if (text.size == 0) return StringId{0};
   if (impl_ == nullptr) return StringId{0};
   const HashedText input = prepare(text, impl_->shard_bits);
-  std::lock_guard<std::mutex> lock(impl_->shards[input.shard].mu);
+  std::lock_guard lock(impl_->shards[input.shard].mu);
   Entry* entry = find_or_add_locked(*impl_, alloc_, input, false);
   return entry == nullptr ? StringId{0} : entry->id;
 }
@@ -443,7 +448,7 @@ std::size_t StringInterner::acquire_many(const string_ref* input, StringId* outp
 bool StringInterner::retain(StringId id) noexcept {
   if (id.value == 0) return true;
   if (impl_ == nullptr || id_shard(id) >= impl_->shard_count) return false;
-  std::lock_guard<std::mutex> lock(impl_->shards[id_shard(id)].mu);
+  std::lock_guard lock(impl_->shards[id_shard(id)].mu);
   return retain_locked(*impl_, id);
 }
 
@@ -459,7 +464,7 @@ std::size_t StringInterner::retain_many(const StringId* ids,
 bool StringInterner::release(StringId id) noexcept {
   if (id.value == 0) return true;
   if (impl_ == nullptr || id_shard(id) >= impl_->shard_count) return false;
-  std::lock_guard<std::mutex> lock(impl_->shards[id_shard(id)].mu);
+  std::lock_guard lock(impl_->shards[id_shard(id)].mu);
   return release_locked(*impl_, alloc_, id);
 }
 
@@ -476,7 +481,7 @@ std::size_t StringInterner::release_many(const StringId* ids,
 string_ref StringInterner::lookup(StringId id) noexcept {
   if (id.value == 0) return string_ref{"", 0, true};
   if (impl_ == nullptr || id_shard(id) >= impl_->shard_count) return string_ref{};
-  std::lock_guard<std::mutex> lock(impl_->shards[id_shard(id)].mu);
+  std::lock_guard lock(impl_->shards[id_shard(id)].mu);
   if (const Entry* entry = find_id_locked(*impl_, id))
     return string_ref{entry->data, entry->size, true};
   return string_ref{};
@@ -486,7 +491,7 @@ string_ref StringInterner::intern(string_ref text) noexcept {
   if (text.size == 0) return string_ref{"", 0, true};
   if (impl_ == nullptr) return string_ref{};
   const HashedText input = prepare(text, impl_->shard_bits);
-  std::lock_guard<std::mutex> lock(impl_->shards[input.shard].mu);
+  std::lock_guard lock(impl_->shards[input.shard].mu);
   Entry* entry = find_or_add_locked(*impl_, alloc_, input, true);
   return entry == nullptr ? string_ref{} : string_ref{entry->data, entry->size, true};
 }
