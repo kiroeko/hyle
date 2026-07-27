@@ -234,25 +234,28 @@ class GroupNeon {
     return Mask(high_bits(eq));
   }
   Mask match_empty() const noexcept {
-    // kEmpty=0x80 is the only ctrl == 0x80.
-    uint8x8_t eq = vceq_u8(ctrl_, vdup_n_u8(0x80));
-    return Mask(high_bits(eq));
+    // kEmpty=0x80 is the only special ctrl whose next bit is clear. Once the
+    // loaded vector reaches a GPR, the SWAR classification is cheaper than a
+    // second vector compare and another vector-to-scalar transfer.
+    const std::uint64_t raw = raw_ctrl();
+    return Mask(raw & ~(raw << 1) & 0x8080808080808080ull);
   }
   Mask match_empty_or_deleted() const noexcept {
     // empty/deleted/sentinel all have the top bit set; full does not.
-    uint8x8_t hi = vtst_u8(ctrl_, vdup_n_u8(0x80));  // 0xFF where top bit set
-    return Mask(high_bits(hi));
+    return Mask(raw_ctrl() & 0x8080808080808080ull);
   }
   // Full (occupied) lanes = complement of empty/deleted within the 8-lane group.
   Mask match_full() const noexcept {
-    uint8x8_t hi = vtst_u8(ctrl_, vdup_n_u8(0x80));
-    return Mask((~high_bits(hi)) & 0x8080808080808080ull);
+    return Mask((~raw_ctrl()) & 0x8080808080808080ull);
   }
 
  private:
   static std::uint64_t high_bits(uint8x8_t mask) noexcept {
     return vget_lane_u64(vreinterpret_u64_u8(mask), 0) &
            0x8080808080808080ull;
+  }
+  std::uint64_t raw_ctrl() const noexcept {
+    return vget_lane_u64(vreinterpret_u64_u8(ctrl_), 0);
   }
   uint8x8_t ctrl_;
 };
