@@ -199,16 +199,16 @@ concept FlatMapRangeValue =
       std::forward<Pair>(pair).second;
     });
 
-template <class Entry, class K, class KeyOf, class Compare, class Alloc>
-class FlatSortedStorage {
-  // Reuse the established non-trivial sequence engine. One inline entry keeps
+template <class K, class Compare, class Alloc>
+class FlatSetStorage {
+  // Reuse the established non-trivial sequence engine. One inline key keeps
   // the empty/singleton registry allocation-free without inventing a second
   // vector or relying on a zero-capacity raw-pointer sentinel.
-  using Sequence = SmallVector<Entry, 1, Alloc>;
+  using Sequence = SmallVector<K, 1, Alloc>;
 
-  static_assert(std::is_nothrow_move_constructible_v<Entry> &&
-                    std::is_nothrow_destructible_v<Entry>,
-                "flat ordered entries require nothrow move/destruction");
+  static_assert(std::is_nothrow_move_constructible_v<K> &&
+                    std::is_nothrow_destructible_v<K>,
+                "flat ordered keys require nothrow move/destruction");
   static_assert(std::is_nothrow_move_constructible_v<Compare> &&
                     std::is_nothrow_move_assignable_v<Compare> &&
                     std::is_nothrow_swappable_v<Compare>,
@@ -217,29 +217,29 @@ class FlatSortedStorage {
 public:
   using size_type = std::size_t;
 
-  FlatSortedStorage() = default;
-  explicit FlatSortedStorage(Compare compare, Alloc alloc = Alloc{})
+  FlatSetStorage() = default;
+  explicit FlatSetStorage(Compare compare, Alloc alloc = Alloc{})
       : entries_(std::move(alloc)), compare_(std::move(compare)) {}
 
-  FlatSortedStorage(const FlatSortedStorage &) = default;
-  FlatSortedStorage &operator=(const FlatSortedStorage &) = default;
-  FlatSortedStorage(FlatSortedStorage &&) noexcept = default;
-  FlatSortedStorage &operator=(FlatSortedStorage &&) noexcept = default;
+  FlatSetStorage(const FlatSetStorage &) = default;
+  FlatSetStorage &operator=(const FlatSetStorage &) = default;
+  FlatSetStorage(FlatSetStorage &&) noexcept = default;
+  FlatSetStorage &operator=(FlatSetStorage &&) noexcept = default;
 
   size_type size() const noexcept { return entries_.size(); }
   size_type capacity() const noexcept { return entries_.capacity(); }
   bool empty() const noexcept { return entries_.empty(); }
-  Entry *data() noexcept { return entries_.data(); }
-  const Entry *data() const noexcept { return entries_.data(); }
-  Entry *iterator_at(size_type index) noexcept {
+  K *data() noexcept { return entries_.data(); }
+  const K *data() const noexcept { return entries_.data(); }
+  K *iterator_at(size_type index) noexcept {
     HYLE_FATAL_ASSERT(index <= size());
     return index == 0 ? data() : data() + index;
   }
-  const Entry *iterator_at(size_type index) const noexcept {
+  const K *iterator_at(size_type index) const noexcept {
     HYLE_FATAL_ASSERT(index <= size());
     return index == 0 ? data() : data() + index;
   }
-  size_type iterator_index(const Entry *position,
+  size_type iterator_index(const K *position,
                            bool allow_end) const noexcept {
     HYLE_FATAL_ASSERT(position >= data() &&
                       (allow_end ? position <= data() + size()
@@ -260,76 +260,55 @@ public:
   template <class Q>
     requires FlatComparable<Compare, K, Q>
   size_type lower_bound_index(const Q &key) const {
-    if constexpr (std::is_same_v<Entry, K>) {
-      // FlatSet stores K directly, so keep the projection-free index loop.
-      // Map entries use the standard algorithm below: its comparator/projector
-      // shape generates more balanced code across MSVC and GCC.
-      size_type first = 0;
-      size_type count = entries_.size();
-      while (count != 0) {
-        const size_type step = count / 2;
-        const size_type middle = first + step;
-        if (compare_(entries_[middle], key)) {
-          first = middle + 1;
-          count -= step + 1;
-        } else {
-          count = step;
-        }
+    size_type first = 0;
+    size_type count = entries_.size();
+    while (count != 0) {
+      const size_type step = count / 2;
+      const size_type middle = first + step;
+      if (compare_(entries_[middle], key)) {
+        first = middle + 1;
+        count -= step + 1;
+      } else {
+        count = step;
       }
-      return first;
-    } else {
-      const auto position = std::lower_bound(
-          entries_.begin(), entries_.end(), key,
-          [this](const Entry &entry, const Q &candidate) {
-            return compare_(KeyOf{}(entry), candidate);
-          });
-      return static_cast<size_type>(position - entries_.begin());
     }
+    return first;
   }
 
   template <class Q>
     requires FlatComparable<Compare, K, Q>
   size_type upper_bound_index(const Q &key) const {
-    if constexpr (std::is_same_v<Entry, K>) {
-      size_type first = 0;
-      size_type count = entries_.size();
-      while (count != 0) {
-        const size_type step = count / 2;
-        const size_type middle = first + step;
-        if (!compare_(key, entries_[middle])) {
-          first = middle + 1;
-          count -= step + 1;
-        } else {
-          count = step;
-        }
+    size_type first = 0;
+    size_type count = entries_.size();
+    while (count != 0) {
+      const size_type step = count / 2;
+      const size_type middle = first + step;
+      if (!compare_(key, entries_[middle])) {
+        first = middle + 1;
+        count -= step + 1;
+      } else {
+        count = step;
       }
-      return first;
-    } else {
-      const auto position = std::upper_bound(
-          entries_.begin(), entries_.end(), key,
-          [this](const Q &candidate, const Entry &entry) {
-            return compare_(candidate, KeyOf{}(entry));
-          });
-      return static_cast<size_type>(position - entries_.begin());
     }
+    return first;
   }
 
   template <class Q>
     requires FlatComparable<Compare, K, Q>
   bool equivalent_at(size_type index, const Q &key) const {
-    return index != size() && !compare_(key, KeyOf{}(entries_[index]));
+    return index != size() && !compare_(key, entries_[index]);
   }
 
-  std::pair<size_type, FlatInsertResult> try_insert_unique(Entry candidate) {
-    const size_type index = lower_bound_index(KeyOf{}(candidate));
-    if (equivalent_at(index, KeyOf{}(candidate)))
+  std::pair<size_type, FlatInsertResult> try_insert_unique(K candidate) {
+    const size_type index = lower_bound_index(candidate);
+    if (equivalent_at(index, candidate))
       return {index, FlatInsertResult::kAlreadyPresent};
     if (!try_insert_at(index, std::move(candidate)))
       return {size(), FlatInsertResult::kOutOfMemory};
     return {index, FlatInsertResult::kInserted};
   }
 
-  bool try_insert_at(size_type index, Entry candidate) {
+  bool try_insert_at(size_type index, K candidate) {
     HYLE_FATAL_ASSERT(index <= size());
     if (size() == std::numeric_limits<size_type>::max() ||
         !entries_.try_reserve(size() + 1))
@@ -339,14 +318,17 @@ public:
     return true;
   }
 
-  template <std::input_iterator It, std::sentinel_for<It> Sentinel,
-            class Construct>
-  bool try_append_sorted(It first, Sentinel last, Construct construct) {
+  template <std::input_iterator It, std::sentinel_for<It> Sentinel>
+  bool try_append_sorted(It first, Sentinel last) {
     // This storage is a fresh replacement. SmallVector may therefore reserve
     // once and directly construct the projected entries without alias checks
     // or one capacity branch per element.
     return SmallVectorAccess::try_append_construct_unaliased(
-        entries_, std::move(first), std::move(last), std::move(construct));
+        entries_, std::move(first), std::move(last),
+        [](void *storage, auto &&key) noexcept(
+            std::is_nothrow_constructible_v<K, decltype(key)>) {
+          ::new (storage) K(std::forward<decltype(key)>(key));
+        });
   }
 
   void erase_index(size_type index) noexcept {
@@ -363,7 +345,7 @@ public:
     entries_.erase(first_position, last_position);
   }
 
-  void swap(FlatSortedStorage &other) noexcept {
+  void swap(FlatSetStorage &other) noexcept {
     using std::swap;
     swap(compare_, other.compare_);
     entries_.swap(other.entries_);
@@ -565,10 +547,6 @@ private:
   Keys keys_{};
   Values values_{};
   HYLE_NO_UNIQUE_ADDRESS Compare compare_{};
-};
-
-template <class K> struct FlatSetKeyOf {
-  const K &operator()(const K &key) const noexcept { return key; }
 };
 
 } // namespace detail
@@ -895,8 +873,7 @@ private:
 template <class K, class Compare = std::less<>,
           class Alloc = mem::SystemAllocator>
 class FlatSet {
-  using Core = detail::FlatSortedStorage<K, K, detail::FlatSetKeyOf<K>,
-                                         Compare, Alloc>;
+  using Core = detail::FlatSetStorage<K, Compare, Alloc>;
 
 public:
   using key_type = K;
@@ -1023,12 +1000,8 @@ public:
   template <std::input_iterator It, std::sentinel_for<It> Sentinel>
   bool try_assign(sorted_unique_t, It first, Sentinel last) {
     FlatSet replacement(core_.key_comp(), core_.allocator());
-    if (!replacement.core_.try_append_sorted(
-            std::move(first), std::move(last),
-            [](void *storage, auto &&key) noexcept(
-                std::is_nothrow_constructible_v<K, decltype(key)>) {
-              ::new (storage) K(std::forward<decltype(key)>(key));
-            }))
+    if (!replacement.core_.try_append_sorted(std::move(first),
+                                              std::move(last)))
       return false;
     swap(replacement);
     return true;
