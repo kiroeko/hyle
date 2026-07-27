@@ -21,6 +21,8 @@ cmake --install build-sdk-shared --config Release
 feature/component manifest、HYLE notice 和实际编入实现的第三方许可证。Windows consumer 对 executable
 调用 `hyle_stage_runtime_dependencies(target)`，即可 staging 传递 HYLE DLL。Unix 安装库用
 `$ORIGIN`/`@loader_path` 解析同一 `lib/` 内的 HYLE 传递依赖；整体移动 prefix 不需要重写它们。
+0.x 阶段每个 minor 是一个 ABI 代际：`find_package(Hyle 0.1 ...)` 不会误接受 0.2，Unix/Mach-O
+动态库也以 `0.1` 作为 SONAME/install-name。ABI 尚未冻结不等于省略版本边界。
 
 ## headers + static libraries
 
@@ -88,6 +90,14 @@ cmake -S hyle-<version>-source -B build \
 ggml、volk、Vulkan-Headers、glslang、GoogleTest 等依赖使用同一
 `FETCHCONTENT_SOURCE_DIR_<UPPERCASE_NAME>` 机制。依赖源码交付及其许可证仍是独立 closure，不能把本机
 下载缓存直接称为 HYLE 原创源码。
+
+## 非 CMake 工程
+
+C ABI 不要求应用源码使用 CMake，但 SDK 的传递依赖元数据以 `HyleConfig.cmake` 为准。优先使用
+构建系统已有的 CMake-package import；没有该能力时，用一个很薄的 CMake bridge 链接所需
+`hyle::<module>`，再把生成的本地 target/最终制品接入主工程。不要从 static SDK 手抄一串
+`.a`/`.lib`：这会漏掉 C++ linker runtime、mimalloc/nghttp2/ggml/volk 以及可选 CUDA/OpenSSL
+闭包。0.1 暂不提供只对简单 shared leaf 正确、对 static/feature 包不完整的 pkg-config 文件。
 
 ## 交付前检查
 

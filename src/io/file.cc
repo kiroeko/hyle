@@ -6,6 +6,7 @@
 
 #include "hyle/platform.h"  // HYLE_OS_*
 #include "hyle/sched/blocking.h"
+#include "hyle/time/unix_timestamp.h"
 
 #if defined(HYLE_OS_WINDOWS)
 #  define WIN32_LEAN_AND_MEAN
@@ -115,9 +116,8 @@ std::int64_t file_stat_sync(std::intptr_t fd,
   const std::uint64_t ft =
       (static_cast<std::uint64_t>(info.ftLastWriteTime.dwHighDateTime) << 32) |
       info.ftLastWriteTime.dwLowDateTime;
-  constexpr std::uint64_t kEpochDiff100ns = 116444736000000000ull;
-  out->mtime_ns =
-      ft > kEpochDiff100ns ? (ft - kEpochDiff100ns) * 100ull : 0;
+  out->modified_time =
+      time::unix_timestamp_from_windows_filetime_ticks(ft);
   out->is_dir = (info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
   return 0;
 }
@@ -202,13 +202,13 @@ std::int64_t file_stat_sync(std::intptr_t fd,
   *out = Proactor::FileStat{};
   out->size = static_cast<std::uint64_t>(st.st_size);
 #  if defined(HYLE_OS_MACOS)
-  out->mtime_ns =
-      static_cast<std::uint64_t>(st.st_mtimespec.tv_sec) * 1'000'000'000ull +
-      static_cast<std::uint64_t>(st.st_mtimespec.tv_nsec);
+  out->modified_time = time::unix_timestamp(
+      static_cast<std::int64_t>(st.st_mtimespec.tv_sec),
+      static_cast<std::uint32_t>(st.st_mtimespec.tv_nsec));
 #  else
-  out->mtime_ns =
-      static_cast<std::uint64_t>(st.st_mtim.tv_sec) * 1'000'000'000ull +
-      static_cast<std::uint64_t>(st.st_mtim.tv_nsec);
+  out->modified_time = time::unix_timestamp(
+      static_cast<std::int64_t>(st.st_mtim.tv_sec),
+      static_cast<std::uint32_t>(st.st_mtim.tv_nsec));
 #  endif
   out->mode = static_cast<std::uint32_t>(st.st_mode);
   out->is_dir = S_ISDIR(st.st_mode);

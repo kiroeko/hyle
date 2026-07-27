@@ -251,6 +251,7 @@ TEST(Status, ErrnoFactoryUsesOneNativeMessageAndContext) {
   EXPECT_TRUE(code_only.has_message());
 }
 
+#if defined(HYLE_TESTING)
 TEST(Status, ErrnoFactoryOomPreservesCanonicalCode) {
   hyle::detail::status_test_force_oom(true);
   Status missing = hyle::status_from_errno(ENOENT, "opening model");
@@ -259,6 +260,7 @@ TEST(Status, ErrnoFactoryOomPreservesCanonicalCode) {
   EXPECT_TRUE(missing.IsNotFound());
   EXPECT_FALSE(missing.has_message());
 }
+#endif
 
 // ---- Status is a small, cheap carrier ---------------------------------------
 
@@ -447,10 +449,14 @@ TEST(AssignOrReturn, ReturnsSecondError) {
 
 TEST(Status, SelfAssignmentCopyAndMove) {
   Status a = Status::Internal("self");
-  a = a;  // copy self-assign
+  // Route through an alias so Clang/GCC do not reject the deliberate
+  // self-assignment expressions themselves under -Werror.  Runtime identity
+  // remains exact and exercises both operators' self guards.
+  Status* self = &a;
+  a = *self;
   EXPECT_TRUE(a.IsInternal());
   EXPECT_EQ(a.message(), "self");
-  a = std::move(a);  // guarded by this != &o — still Internal
+  a = std::move(*self);
   EXPECT_TRUE(a.IsInternal());
   EXPECT_EQ(a.message(), "self");
 }
@@ -475,6 +481,7 @@ TEST(Status, EmptyMessageStringViewIsEmpty) {
   EXPECT_EQ(to_str(s), "Cancelled");
 }
 
+#if defined(HYLE_TESTING)
 TEST(Status, OomDegradesToInlineCodeWithoutMessage) {
   // Force status_make_heap to fail: code must survive, message dropped.
   hyle::detail::status_test_force_oom(true);
@@ -499,6 +506,7 @@ TEST(Status, WithContextOomPreservesExistingMessage) {
   EXPECT_EQ(outer.message().data(), original);
   EXPECT_TRUE(leaf.ok());
 }
+#endif
 
 TEST(Status, UnknownCodeNameFallback) {
   // Out-of-table code (not produced by factories) still names safely.

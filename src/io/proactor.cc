@@ -7,6 +7,7 @@
 #include "hyle/container/swiss_table.h"
 #include "hyle/macros.h"
 #include "hyle/platform.h"
+#include "hyle/time/unix_timestamp.h"
 
 // io proactor backend: the per-OS Impl behind proactor.h. Both platforms carry
 // real IO: Windows IOCP (ReadFile/WriteFile/WSARecv/WSASend/AcceptEx/ConnectEx
@@ -691,11 +692,12 @@ bool Proactor::submit_statx(std::intptr_t fd, FileStat* out,
   *out = FileStat{};
   out->size = (static_cast<std::uint64_t>(info.nFileSizeHigh) << 32) |
               info.nFileSizeLow;
-  // FILETIME is 100ns ticks since 1601-01-01; convert to ns since Unix epoch.
+  // FILETIME is 100ns ticks since 1601-01-01; preserve it as a canonical
+  // signed Unix seconds/nanoseconds value, including pre-epoch timestamps.
   std::uint64_t ft = (static_cast<std::uint64_t>(info.ftLastWriteTime.dwHighDateTime) << 32) |
                      info.ftLastWriteTime.dwLowDateTime;
-  constexpr std::uint64_t kEpochDiff100ns = 116444736000000000ull;  // 1601->1970
-  out->mtime_ns = (ft > kEpochDiff100ns) ? (ft - kEpochDiff100ns) * 100ull : 0;
+  out->modified_time =
+      time::unix_timestamp_from_windows_filetime_ticks(ft);
   out->is_dir = (info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
   out->mode = 0;  // no POSIX mode on Windows
   return iocp_post_meta(impl_, 0, user_data);
@@ -1660,10 +1662,9 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
       if (c.res >= 0) {
         FileStat value{};
         value.size = pending->native.stx_size;
-        value.mtime_ns =
-            static_cast<std::uint64_t>(pending->native.stx_mtime.tv_sec) *
-                1'000'000'000ull +
-            static_cast<std::uint32_t>(pending->native.stx_mtime.tv_nsec);
+        value.modified_time = time::unix_timestamp(
+            static_cast<std::int64_t>(pending->native.stx_mtime.tv_sec),
+            static_cast<std::uint32_t>(pending->native.stx_mtime.tv_nsec));
         value.mode = pending->native.stx_mode;
         value.is_dir = (pending->native.stx_mode & S_IFMT) == S_IFDIR;
         *pending->output = value;
@@ -2504,9 +2505,9 @@ bool Proactor::submit_statx(std::intptr_t fd, FileStat* out,
     if (r == 0) {
       *out = FileStat{};
       out->size = static_cast<std::uint64_t>(st.st_size);
-      out->mtime_ns =
-          static_cast<std::uint64_t>(st.st_mtim.tv_sec) * 1'000'000'000ull +
-          static_cast<std::uint64_t>(st.st_mtim.tv_nsec);
+      out->modified_time = time::unix_timestamp(
+          static_cast<std::int64_t>(st.st_mtim.tv_sec),
+          static_cast<std::uint32_t>(st.st_mtim.tv_nsec));
       out->mode = static_cast<std::uint32_t>(st.st_mode);
       out->is_dir = S_ISDIR(st.st_mode);
     }
@@ -3242,8 +3243,9 @@ bool Proactor::submit_statx(std::intptr_t fd, FileStat* out,
   if (r == 0) {
     *out = FileStat{};
     out->size = static_cast<std::uint64_t>(st.st_size);
-    out->mtime_ns = static_cast<std::uint64_t>(st.st_mtimespec.tv_sec) * 1'000'000'000ull +
-                    static_cast<std::uint64_t>(st.st_mtimespec.tv_nsec);
+    out->modified_time = time::unix_timestamp(
+        static_cast<std::int64_t>(st.st_mtimespec.tv_sec),
+        static_cast<std::uint32_t>(st.st_mtimespec.tv_nsec));
     out->mode = static_cast<std::uint32_t>(st.st_mode);
     out->is_dir = S_ISDIR(st.st_mode);
   }

@@ -104,10 +104,10 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 
 | 固定统计口径 | code | 说明 |
 |---|---:|---|
-| **全库代码** | **272,475** | `cloc . --vcs=git`；含 docs 与 in-tree third_party |
-| **自实现（含测试）** | **133,483** | `include/hyle + src + tests`；只计 C/C++/CUDA，不含 CMake/Text |
-| **自实现（不含测试）** | **91,727** | `include/hyle + src`；只计 C/C++/CUDA，库本体硬锚 |
-| **当前处理模块实现（container）** | **14,896** | `include/hyle/container` + `include/hyle/c/container.h` + `src/container`；不含测试/CMake/Text |
+| **全库代码** | **273,137** | tracked + 当前待提交文件；含 docs 与 in-tree third_party |
+| **自实现（含测试）** | **133,777** | `include/hyle + src + tests`；只计 C/C++/CUDA，不含 CMake/Text |
+| **自实现（不含测试）** | **91,888** | `include/hyle + src`；只计 C/C++/CUDA，库本体硬锚 |
+| **当前处理模块实现（build/package）** | **4,384** | 42 个自有 CMake 文件 + preset/CI + 8 个 build/fetch/setup/QEMU guard；不含测试源码/文档 |
 | 再加 ggml 等大依赖足迹 | **~200–350k+** | 由 ggml 主导，不计入「自有生产」 |
 
 **生产按模块（src+include，约）：**
@@ -285,8 +285,8 @@ WebSocket、gRPC（依赖 protobuf/IDL，更靠 L1）仍后置于范围外。
 路线图见 [`roadmap.md`](./roadmap.md)；逐里程碑实时状态见
 [`milestones/README.md`](../milestones/README.md)。当前除 compute/graph 仍有产品能力尾外，
 其余模块主体基本实现；按当前实际使用导向合同，严格证书已有
-error/platform/mem/time/core、build/package、util-core 与 obs；mem 已由 clean `c640072`
-关闭 shared standard-adapter/realloc 的三平台性能补表。旧 container/simd/sched/io
+error/platform/mem/time/core、build/package、util-core、obs 与 container；mem 已由 clean `c640072`
+关闭 shared standard-adapter/realloc 的三平台性能补表。旧 simd/sched/io
 closure 以及 util-runtime 的既有结果仍只是复审输入证据，
 不能替代本轮功能、复杂度、C/C++ 易用性、依赖采用和双 guide 认证。当前队列见
 [`pre-release-readiness.md`](../milestones/pre-release-readiness.md)。

@@ -4,22 +4,21 @@
 
 HYLE 的“实现进度”与“当前标准的收口证书”必须分开读：除 compute/graph 仍有产品能力尾，
 其余模块的主体实现基本存在；当前持有严格证书的是
-**error、platform、mem、time、core、util-core、obs、container**。mem 在 2026-07-26 成熟库红队中发现的
+**error、platform、mem、time、core、build/package、util-core、obs、container**。mem 在 2026-07-26 成熟库红队中发现的
 P0/API/分发性能缺口均已修复，并由 clean `c640072` 的三平台 shared same-link 与正确性/ABI/
 sanitizer 证书重新冻结。早期标成 closure/frozen 的任务仍是有效施工证据，不自动等于新标准认证。
 
 | 层次 | 当前判断 | 下一动作 |
 |---|---|---|
-| 严格认证基线 | error、platform、mem、time、core、util-core、obs、container；build/package system | 只因明确触发器或依赖受影响项局部回验 |
+| 严格认证基线 | error、platform、mem、time、core、build/package、util-core、obs、container | 只因明确触发器或依赖受影响项局部回验 |
 | 已实现、待新标准复审 | math、util-runtime、sched、io、simd | 按本文队列逐模块收口，不按旧 benchmark 形状默认通过 |
 | 仍有能力尾 | compute、graph | 先用真实北极星补能力，再执行同一严格合同 |
-| 整库发布面 | build/package 基线完成 | 模块内 C ABI 随模块收；最后只做跨编译器 ABI/FFI/bundle 总验收 |
+| 整库发布面 | build/package 独立模块已重签 | 最终 ABI/FFI/bundle 总验收仍在 R6，不重复打开模块设计 |
 
-build/package system 已完成严格收口：模块 target 图、可组合子集、三种交付形状、三平台
-all-component CPU SDK/外部 consumer、CI 与 AArch64 cross 已成为可执行契约。`util-core seam`
-与 obs 也已严格收口；container 于 2026-07-27 完成功能/复杂度/C++/C ABI/依赖/guide 与
-三平台证书。当前审查单元进入 **util-runtime / 完整 util**：依赖 container 的
-Registry/runtime 不能由 util-core 证书提前冻结。当前队列见“施工顺序”。
+build/package system 的模块 target 图、可组合子集、三种交付形状、三平台 all-component CPU
+SDK/外部 consumer、CI 与 AArch64 cross 仍是有效旧基线；但它本身也是正式模块，不能只在最后
+充当验证工具。2026-07-27 已按相同严格合同重签，当前审查单元转为 **util-runtime**；
+`util-core seam`、obs 与 container 的严格证书不因此作废。
 
 ## 底座五模块交叉引用复验（2026-07-25）
 
@@ -56,7 +55,8 @@ static mem 闭包在 `-Werror` 下干净构建；AppleClang shared 20/20。三�
 未声明的二进制依赖。
 
 因此这五个底座模块的**相互引用可以关闭**；util-core 对 mem 的受影响边也已回验，下一审查
-单元当时是 container；该单元现已收口，下一项是 util-runtime。性能边界另作
+单元当时是 container；该单元和随后独立复审的 build/package 均已收口，当前到
+util-runtime。性能边界另作
 诚实限定：Windows 已量到 shared direct-import 相对同进程 raw mimalloc 约 4.5–6% 的 DSO
 边界成本；三平台“同链接形状”的最终性能证书仍登记在 performance 文档，不能把本次依赖
 正确性结论扩大成性能结论。该性能尾随后由 clean `c640072` 的 Win/WSL/M4 双 QoS same-link
@@ -90,7 +90,7 @@ benchmark 宣称 SOTA。
 排序依据是**接口爆炸半径 + 消费关系**，不是目录顺序，也不是谁的 benchmark 更多：
 
 1. **core**（✅ 2026-07-25）：冻结 version、公开头与 intrusive 基础形状；对已收口 time 做受影响项回验。
-2. **build/package system**（✅ 2026-07-25）：target 图、三平台入口、static/shared/source 三种交付、模块子集、install/find_package、交叉编译与生成目录治理已收口。
+2. **build/package system**（✅ 2026-07-27）：0.x ABI/SONAME、双测试形状、三平台 package consumer 与 configure/incremental 性能重签完成。
 3. **util-core seam**（✅ 2026-07-25）：低层 header-only 能力及 include/link 边已收口；mem 的 SpinLock 消费已局部回验，Registry 未被提前冻结。
 4. **obs**（✅ 2026-07-25）：log runtime 与 trace gate 已分开审；共享 Status、immutable sink snapshot、C surface 与 mem/sched/io/compute hooks 已签证。
 5. **container**（✅ 2026-07-27）：功能负空间、复杂度、争用、allocator/error/platform、C/C++ 形状、三平台/Sanitizer 与性能证书已收口。
@@ -114,11 +114,11 @@ math 的处理相反：它当前不是经过独立需求设计的产品，而是
 | 模块 | 实现状态 | 当前严格证书 |
 |---|---|---|
 | error | 功能主体完成 | ✅ 严格收口；全库 adoption 随各消费者复审继续 |
-| platform | 功能主体完成 | ✅ 严格收口；NUMA 定向复开补 actual sparse IDs、runtime capability、selected-node/chunk/weighted raw/RAII/C 面与明确 OS 差异，极细 Linux 条带使用固定批次 placement；当前 120/120 C surface |
+| platform | 功能主体完成 | ✅ 消费边已复关；FileInfo 的 signed ns-precision Unix timestamp 已通过 Win/WSL/M4 与 WSL ASan/UBSan，NUMA 主体和既有性能证书未受影响 |
 | mem | 功能/API/P0/分发性能已完成 | ✅ 彻底收口；clean `c640072` 保留 allocator 三平台 shared same-link n=15 与 WSL TSan；当前 109/109 C surface，HugeRegion selected-node/chunk/weighted C++/C 已补齐，Linux 极细条带使用固定批次 placement |
-| time | 功能主体完成 | ✅ 严格收口；duration/clock API 已修，C caller-storage timer 关闭逐对象分配缺口且 41/41 surface；三平台原 correctness/正常使用证书与本轮 Win/WSL、ASan/UBSan 复证完成 |
+| time | 功能主体完成 | ✅ 严格收口；signed Unix/OS/chrono 互操作、42/42 C surface 与 platform/io 消费边已通过 Win/WSL/M4、WSL ASan/UBSan；timer SOTA 证书继续有效 |
 | core | 功能主体存在 | ✅ 严格收口；最终实现 `71dabf7`，三平台同合同无 LOSE |
-| build/package system | 组织与三种交付形状完成 | ✅ 严格收口；最终发布矩阵与触发器见任务页 |
+| build/package system | 组织与三种交付形状完成 | ✅ 严格收口；0.x 包兼容与 loader identity、三平台 production-shape 16/16、shared/static consumers 2/2、CI 双门及 6--110ms no-op 证书已完成；损坏 Ninja DB 与 MSVC 裸环境均有分层诊断 |
 | util-core | 低层公开头能力完成 | ✅ 严格收口；实际使用形状、依赖边、三平台正确性/TSan/性能已签证 |
 | obs | 功能主体完成 | ✅ 严格收口；同步 structured producer + compile-time trace seam，三平台 n=15/并发/sanitizer/C surface 已签证 |
 | container | 功能/API/依赖/性能证书完成 | ✅ 严格收口；232/232 C surface，Win/WSL/M4 + ASan/UBSan/TSan，逐合同性能边界见 container performance 证书 |
@@ -144,4 +144,4 @@ math 的处理相反：它当前不是经过独立需求设计的产品，而是
 - 构建拓扑和慢变顺序：[`../architecture/roadmap.md`](../architecture/roadmap.md)；参考库角色：[`../architecture/references.md`](../architecture/references.md)。
 - 当前任务与 LOC：[`README.md`](./README.md)；每个旧 closure 文件只是该轮施工证据。
 - 稳定设计：[`../architecture/`](../architecture/README.md)；性能：[`../performance/`](../performance/README.md)；用户入口：[`../guide/`](../guide/README.md)。
-- 已严格认证模块/系统：[`error-module-reclosure.md`](./error-module-reclosure.md)、[`platform-remaining.md`](./platform-remaining.md)、[`mem-mature-gap-audit.md`](./mem-mature-gap-audit.md)、[`time-mature-gap-audit.md`](./time-mature-gap-audit.md)、[`core-module-closure.md`](./core-module-closure.md)、[`build-package-system-closure.md`](./build-package-system-closure.md)、[`util-module-closure.md`](./util-module-closure.md)、[`container-module-closure.md`](./container-module-closure.md)。
+- 已认证或当前复开审计的模块/系统：[`error-module-reclosure.md`](./error-module-reclosure.md)、[`platform-remaining.md`](./platform-remaining.md)、[`mem-mature-gap-audit.md`](./mem-mature-gap-audit.md)、[`time-mature-gap-audit.md`](./time-mature-gap-audit.md)、[`core-module-closure.md`](./core-module-closure.md)、[`build-package-system-closure.md`](./build-package-system-closure.md)、[`util-module-closure.md`](./util-module-closure.md)、[`obs-module-closure.md`](./obs-module-closure.md)、[`container-module-closure.md`](./container-module-closure.md)。绿色表示当前最终形状已认证，黄色表示旧证据仍是输入但已有新触发器。

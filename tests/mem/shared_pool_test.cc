@@ -61,6 +61,7 @@ TEST(SharedPool, ExhaustionReturnsNull) {
   pool.deallocate(reused);
 }
 
+#if defined(HYLE_TESTING)
 TEST(SharedPool, DefaultShardsFollowAvailableParallelism) {
 #if defined(_WIN32)
   if (::GetActiveProcessorGroupCount() != 1) GTEST_SKIP();
@@ -101,6 +102,7 @@ TEST(SharedPool, DefaultShardsFollowAvailableParallelism) {
   GTEST_SKIP() << "platform has no process affinity API";
 #endif
 }
+#endif
 
 TEST(SharedPool, BlocksAlignedAndNonOverlapping) {
   constexpr std::size_t kAlign = 64;
@@ -316,6 +318,7 @@ TEST(SharedPoolCache, ConcurrentOwnersPreserveEveryBlock) {
     pool.deallocate(p);
 }
 
+#if defined(HYLE_TESTING)
 TEST(SharedPoolCache, SaturatedTagFallbackSupportsBatchTransfer) {
   constexpr std::uint32_t kBlocks = 256;
   SharedPool pool(system_allocator(), 64, kBlocks);
@@ -343,6 +346,7 @@ TEST(SharedPoolCache, SaturatedTagFallbackSupportsBatchTransfer) {
   for (void *p : blocks)
     pool.deallocate(p);
 }
+#endif
 
 // Lock-free correctness gate (WSL TSan). N threads each loop alloc -> write a
 // thread-unique marker -> verify it's still ours -> free. If two threads ever
@@ -496,6 +500,7 @@ TEST(SharedPool, RemoteFreeImmediatelyVisibleWhileThreadLives) {
   std::move(*free_t).join();
 }
 
+#if defined(HYLE_TESTING)
 TEST(SharedPool, EmptyScanRetriesWhenFreeMovesBehindScanner) {
   SharedPool pool(system_allocator(), 64, 2);  // exactly two one-block shards
   void* held0 = pool.testing_pop_from_shard(0);
@@ -607,6 +612,7 @@ TEST(SharedPool, SaturatedTagFallbackIsConcurrentSafe) {
   for (auto& thread : threads) thread.join();
   EXPECT_FALSE(corrupt.load(std::memory_order_relaxed));
 }
+#endif
 
 // Wrapping allocator used to prove large slabs honor their injected backing.
 struct BackingBox {

@@ -6,6 +6,7 @@
 #include <type_traits>
 
 #include "hyle/macros.h"
+#include "hyle/time/unix_timestamp.h"
 #include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
@@ -43,6 +44,10 @@ HYLE_FORCE_INLINE MonotonicTimePoint monotonic_now() noexcept {
 
 HYLE_FORCE_INLINE RealtimeTimePoint realtime_now() noexcept {
   return std::chrono::time_point_cast<Duration>(RealtimeClock::now());
+}
+
+HYLE_FORCE_INLINE UnixTimestamp realtime_timestamp() noexcept {
+  return unix_timestamp_from_time_point(realtime_now());
 }
 
 // Steady monotonic counter in ns from an unspecified zero. The native C++ path

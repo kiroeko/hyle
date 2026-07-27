@@ -1,8 +1,10 @@
+[CmdletBinding(PositionalBinding = $false)]
 param(
-    [ValidateSet('Configure', 'Build', 'Test', 'Workflow', 'PackageSmoke')]
+    [ValidateSet('Configure', 'Build', 'Test', 'Workflow', 'PackageSmoke', 'ProductShapeSmoke')]
     [string]$Action = 'Configure',
     [string]$Preset = 'windows-ninja',
     [string]$SmokeRoot,
+    [string]$GTestSource,
     [Parameter(ValueFromRemainingArguments = $true)]
     [string[]]$ExtraArgs
 )
@@ -43,7 +45,7 @@ foreach ($line in $environmentLines) {
     }
 }
 
-if ($Action -in @('Configure', 'Build', 'Workflow', 'PackageSmoke') -and
+if ($Action -in @('Configure', 'Build', 'Workflow', 'PackageSmoke', 'ProductShapeSmoke') -and
     -not (Get-Command ninja -ErrorAction SilentlyContinue)) {
     throw 'The windows-ninja preset requires Ninja on PATH.'
 }
@@ -61,6 +63,19 @@ switch ($Action) {
         $smokeScript = Join-Path $sourceDir 'cmake\HyleCiPackageSmoke.cmake'
         & cmake "-DHYLE_SOURCE_DIR=$sourceDir" "-DHYLE_SMOKE_ROOT=$SmokeRoot" `
             -DHYLE_SMOKE_GENERATOR=Ninja -P $smokeScript
+    }
+    'ProductShapeSmoke' {
+        if (-not $SmokeRoot) {
+            throw 'Action ProductShapeSmoke requires -SmokeRoot <scratch-directory>.'
+        }
+        $sourceDir = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
+        $smokeScript = Join-Path $sourceDir 'cmake\HyleCiProductShapeSmoke.cmake'
+        $gtestArg = @()
+        if ($GTestSource) {
+            $gtestArg = @("-DHYLE_GOOGLETEST_SOURCE=$GTestSource")
+        }
+        & cmake "-DHYLE_SOURCE_DIR=$sourceDir" "-DHYLE_SMOKE_ROOT=$SmokeRoot" `
+            -DHYLE_SMOKE_GENERATOR=Ninja @gtestArg @ExtraArgs -P $smokeScript
     }
 }
 if ($LASTEXITCODE -ne 0) {

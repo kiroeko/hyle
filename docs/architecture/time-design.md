@@ -22,6 +22,8 @@ native time ──────────────────────�
 
 `platform::Parker` 的 timed wait 是 OS 阻塞机制，不拥有时钟；`platform` 不能反向依赖
 `time`。`sched` 组合两者：从 timer queue 取得下一 deadline，再把剩余时长交给 Parker。
+`platform::FileInfo` 只复用 header-only/C-compatible 的 Unix 时间值形状，不链接
+`hyle_time`，也不取得 clock/deadline/timer 行为；这是公开值类型依赖，不是二进制反向边。
 
 ## 能力分层
 
@@ -30,6 +32,7 @@ native time ──────────────────────�
 | typed clock | `monotonic_now`、`realtime_now`、`Duration`、time point | C++ 正常代码避免把墙钟、duration、deadline 混成整数 |
 | compact clock | `monotonic_ns`、`realtime_ns` | 热路径、系统边界和 C ABI 使用一个明确的 ns 表示 |
 | opt-in clock | `profiling_clock_ns`、`coarse_realtime_ns` + availability | 名称表达 profiling/coarse 语义；绝不偷偷改变默认钟 |
+| Unix interchange | signed `UnixTimestamp{seconds,nanoseconds}` + checked OS/chrono conversion | 文件/FFI 保留 pre-epoch、亚秒精度和宽范围 |
 | arithmetic | 饱和 duration 转换、`deadline_after`、`remaining` | 消除 `now + timeout` 溢出和向下舍入导致的提前超时 |
 | blocking sleep | 相对/绝对、整数/chrono | OS 线程休眠；fiber 必须使用 `sched`，不能阻塞 worker |
 | elapsed | `Instant` | oneTBB `tick_count` / `std::chrono` 形状；差值有符号，便利方法显式 clamp |
@@ -108,7 +111,8 @@ exactly one queue owns the linked node
 ## C++ 与 C 边界
 
 C++ 内部和同工具链用户直接使用 typed chrono 与侵入节点，不经过 C ABI。纯 C 面只暴露
-`uint64_t`、`size_t`、同步 visitor、`hyle_status` 和 opaque handle；C timer 创建时分配一次，
+固定宽度整数/POD、`size_t`、同步 visitor、`hyle_status` 和 opaque handle；Unix 墙钟值使用
+有符号 seconds + canonical nanoseconds，而 monotonic deadline 保持 `uint64_t` ns。C timer 创建时分配一次，
 arm/cancel/advance 不分配。海量 C timer 可查询 opaque control 的 runtime size/alignment，并以
 `timer_init/deinit` 放进调用方 arena/slab；默认 `timer_create/destroy` 仍负责单个分配。该形状参考
 libevent 的 `event_get_struct_event_size + event_assign`，既不公开 C++ layout，也不引入

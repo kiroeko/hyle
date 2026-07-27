@@ -25,7 +25,7 @@
    代码。补 `cancel_all`、chrono overload、typed next deadline 和完整生命周期门。
 4. clock 补 typed chrono facade、signed `Instant` subtraction、absolute sleep；Windows 使用
    high-resolution waitable timer，Linux 使用 absolute monotonic sleep。
-5. C ABI 从未经产品审查的旧 wheel 面重做为 41 个动态符号 + 4 个 header-inline convenience：
+5. C ABI 从未经产品审查的旧 wheel 面重做为 42 个动态符号 + 4 个 header-inline convenience：
    opaque timer/general/common queue、Status、同步 visitor、callback re-arm、完整 shutdown。
 6. sched 的 fiber sleep/timed I/O 迁到 per-worker `TimerQueue`；deadline 统一走 time 饱和算术。
 7. benchmark 新增 faithful Seastar radix、真实 indexed eager heap、checked/naked TAILQ、
@@ -38,6 +38,9 @@
     size/alignment + init/deinit 允许一个 arena/slab 承载海量 opaque controls，不增加 TimerEntry
     或 wrapper 大小、不引入 time→mem 依赖。single-timer fast slot 因伤害默认 N=8/4096 workload
     被实验后撤回。
+11. platform/io 消费回审补 canonical signed Unix `{seconds,nanoseconds}` 与 chrono/time_t/
+    timespec/FILETIME checked conversion，修复 pre-epoch wrap 和 platform 丢亚秒精度；C current
+    timestamp 入口令同一值形状可由 C/FFI 直接取得。
 
 提交：
 
@@ -72,11 +75,14 @@ libevent common timeout、folly TimeoutQueue/HHWheelTimer。
 - C++ time：25 clock + 23 TimerQueue + 16 CommonTimeoutQueue + 1 header test；
 - 两组 million-operation randomized oracle、完整 uint64 deadline、wrong-owner、death/lifecycle；
 - 纯 C consumer 覆盖全部 handle、跨 source Status、顺序拒绝、visitor re-arm、NULL 默认；
-- 41/41 动态符号 surface manifest，C11/C++23 自包含头；
+- 当前 42/42 动态符号 surface manifest 在 Windows 通过，C11/C++23 自包含头通过；新增
+  timestamp/API 与 platform/io 消费边已在 Windows、WSL GCC14、Apple M4 最终复证；
 - Windows Release、WSL GCC14 native-ext4、AppleClang 21 最终 time 五门均通过；
 - 最终 `16c91b4` 上 WSL GCC14 ASan 五门 5/5、UBSan 五门 5/5；time-only 构建不需要
   mimalloc ODR workaround，分别使用 `detect_leaks=1:halt_on_error=1` 与
   `halt_on_error=1:print_stacktrace=1` 的正常严格选项。
+- 2026-07-27 timestamp 增量的 WSL ASan/UBSan time+platform 各 13/13，三平台 io file/stat
+  消费组各 3/3；pre-epoch、亚秒精度与跨 OS conversion 均在最终形状通过。
 
 Windows scheduler 全组曾有一次既有 `Blocking.RetiredThreadHandlesStayBoundedAcrossBursts`
 瞬态失败，隔离重跑 10/10 通过；与 timer 迁移无稳定关联。

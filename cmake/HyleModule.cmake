@@ -214,9 +214,9 @@ function(hyle_add_module name)
     # requirement. OFF (default) => hyle_trace carries nothing, zero cost.
     target_link_libraries(${target} PUBLIC hyle_trace)
     # HYLE_TESTING gate (same PUBLIC/ODR rationale as hyle_trace): carries the
-    # HYLE_TESTING define when HYLE_BUILD_TESTS is ON so a module's own sources, its
-    # test exe, and consumers all agree on whether test-only members exist. Empty (zero
-    # cost) in a shipped build.
+    # HYLE_TESTING define in an instrumented test build so a module's own sources,
+    # its test exe, and consumers all agree on whether test-only members exist. Empty
+    # (zero cost) in a production-shape test or shipped build.
     target_link_libraries(${target} PUBLIC hyle_testing)
     hyle_apply_warnings(${target})
     hyle_apply_sanitizer(${target})
@@ -239,6 +239,11 @@ function(hyle_add_module name)
   endif()
 
   set_target_properties(${target} PROPERTIES EXPORT_NAME "${name}")
+  if(ARG_SOURCES AND NOT HYLE_STATIC)
+    set_target_properties(${target} PROPERTIES
+      VERSION "${PROJECT_VERSION}"
+      SOVERSION "${HYLE_ABI_VERSION}")
+  endif()
   add_library(hyle::${name} ALIAS ${target})
 endfunction()
 

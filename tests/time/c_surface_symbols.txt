@@ -29,6 +29,7 @@ hyle_time_queue_next_deadline_ns
 hyle_time_queue_schedule
 hyle_time_queue_size
 hyle_time_realtime_ns
+hyle_time_realtime_timestamp
 hyle_time_remaining_ns
 hyle_time_sleep_for_ns
 hyle_time_sleep_until_ns

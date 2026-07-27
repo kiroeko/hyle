@@ -101,6 +101,68 @@ TEST(Clock, RealtimeIsPlausiblyNow) {
   EXPECT_LT(now, k2100);
 }
 
+TEST(Clock, UnixTimestampIsCanonicalAndRoundTripsChronoRange) {
+  using hyle::time::UnixTimePoint;
+  using hyle::time::unix_time_point;
+  using hyle::time::unix_timestamp;
+  using hyle::time::unix_timestamp_from_time_point;
+
+  const auto before_epoch = unix_timestamp_from_time_point(
+      UnixTimePoint(std::chrono::nanoseconds(-1)));
+  EXPECT_EQ(before_epoch.seconds, -1);
+  EXPECT_EQ(before_epoch.nanoseconds, 999'999'999u);
+  ASSERT_TRUE(unix_time_point(before_epoch).has_value());
+  EXPECT_EQ(unix_time_point(before_epoch)->time_since_epoch().count(), -1);
+
+  for (const std::int64_t count : {
+           (std::numeric_limits<std::int64_t>::min)(), std::int64_t{-1},
+           std::int64_t{0}, std::int64_t{1},
+           (std::numeric_limits<std::int64_t>::max)()}) {
+    const UnixTimePoint point{std::chrono::nanoseconds(count)};
+    ASSERT_TRUE(unix_time_point(
+                    unix_timestamp_from_time_point(point)).has_value());
+    EXPECT_EQ(*unix_time_point(unix_timestamp_from_time_point(point)), point);
+  }
+
+  EXPECT_FALSE(unix_time_point(unix_timestamp(0, 1'000'000'000u)));
+  EXPECT_FALSE(unix_time_point(unix_timestamp(
+      (std::numeric_limits<std::int64_t>::max)(), 0)));
+}
+
+TEST(Clock, UnixTimestampConvertsOsRepresentationsWithoutEpochClamp) {
+  using hyle::time::unix_timestamp_from_timespec;
+  using hyle::time::unix_timestamp_from_windows_filetime_ticks;
+  using hyle::time::unix_timestamp_to_timespec;
+
+  constexpr std::uint64_t kUnixEpochTicks = 116'444'736'000'000'000ull;
+  auto at_epoch =
+      unix_timestamp_from_windows_filetime_ticks(kUnixEpochTicks);
+  EXPECT_EQ(at_epoch.seconds, 0);
+  EXPECT_EQ(at_epoch.nanoseconds, 0u);
+  auto before_epoch =
+      unix_timestamp_from_windows_filetime_ticks(kUnixEpochTicks - 1);
+  EXPECT_EQ(before_epoch.seconds, -1);
+  EXPECT_EQ(before_epoch.nanoseconds, 999'999'900u);
+  auto after_epoch =
+      unix_timestamp_from_windows_filetime_ticks(kUnixEpochTicks + 1);
+  EXPECT_EQ(after_epoch.seconds, 0);
+  EXPECT_EQ(after_epoch.nanoseconds, 100u);
+
+  ::timespec native{};
+  native.tv_sec = -1;
+  native.tv_nsec = 250'000'000;
+  auto timestamp = unix_timestamp_from_timespec(native);
+  ASSERT_TRUE(timestamp.has_value());
+  EXPECT_EQ(timestamp->seconds, -1);
+  EXPECT_EQ(timestamp->nanoseconds, 250'000'000u);
+  ASSERT_TRUE(unix_timestamp_to_timespec(*timestamp).has_value());
+  EXPECT_EQ(unix_timestamp_to_timespec(*timestamp)->tv_sec, -1);
+  EXPECT_EQ(unix_timestamp_to_timespec(*timestamp)->tv_nsec, 250'000'000);
+
+  native.tv_nsec = -1;
+  EXPECT_FALSE(unix_timestamp_from_timespec(native));
+}
+
 TEST(Clock, RealtimeAdvances) {
   std::uint64_t a = realtime_ns();
   sleep_for_ms(5);

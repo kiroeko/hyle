@@ -116,6 +116,9 @@ cwd/temp/home/env/symlink 字符串；要自管存储时使用 `Result<size_t>` 
 `dirent` / `FindFirstFile` 已有元数据，只有 POSIX 文件系统返回 `DT_UNKNOWN` 才补一次 `lstat`。
 这是一条无分配快速原语；确实需要 size/mtime 时由调用方只对选中的 entry 调 `stat`，platform
 不制造持有字符串和分配器策略的高层 directory object。
+`modified_time` 使用共享的 `time::UnixTimestamp{seconds,nanoseconds}`，保留 1970 年前的
+有符号值和文件系统亚秒精度；它不是会 wrap 的 `uint64_t mtime_ns`。需要 chrono/time_t/
+timespec 互转时包含 `hyle/time/unix_timestamp.h`，checked 转换不会静默饱和为另一个时刻。
 
 `create_temp_file` 返回 `CreatedTempFile{file, path_size}`。handle 始终是权威资源，`path_size`
 遵循其它 buffer-fill API 的完整长度合同，因而调用方不会在 path 被截断时误拿半条路径删除。

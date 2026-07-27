@@ -43,6 +43,8 @@ struct FileResult {
   std::atomic<std::int64_t> read_back{0};
   std::atomic<std::int64_t> stat_rc{0};
   std::atomic<std::uint64_t> stat_size{0};
+  std::atomic<std::int64_t> stat_seconds{0};
+  std::atomic<std::uint32_t> stat_nanoseconds{0};
   std::atomic<std::int64_t> sync_rc{0};
   std::atomic<std::int64_t> close_rc{0};
   char got[64] = {};
@@ -78,6 +80,9 @@ Task<int> file_coro(Allocator, IoContext* io, const char* path, FileResult* r) {
   Proactor::FileStat st;
   r->stat_rc.store(co_await f.stat(&st), std::memory_order_release);
   r->stat_size.store(st.size, std::memory_order_release);
+  r->stat_seconds.store(st.modified_time.seconds, std::memory_order_release);
+  r->stat_nanoseconds.store(st.modified_time.nanoseconds,
+                            std::memory_order_release);
 
   r->close_rc.store(co_await f.close(), std::memory_order_release);
   r->done.store(true, std::memory_order_release);
@@ -147,6 +152,8 @@ TEST(IoFile, OpenWriteReadStatSyncClose) {
   EXPECT_EQ(r->sync_rc.load(), 0);
   EXPECT_EQ(r->stat_rc.load(), 0);
   EXPECT_EQ(r->stat_size.load(), static_cast<std::uint64_t>(sizeof(kMsg)));
+  EXPECT_GT(r->stat_seconds.load(), 1'577'836'800);  // after 2020-01-01
+  EXPECT_LT(r->stat_nanoseconds.load(), 1'000'000'000u);
   EXPECT_EQ(r->close_rc.load(), 0);
 }
 

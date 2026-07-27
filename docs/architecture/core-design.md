@@ -33,7 +33,8 @@ core 不依赖 error/platform/mem/time，也不创建资源，因此没有 Statu
 | compiler/fatal macros | `macros.h` / `visibility.h` | inline、branch、EBO、导出、不可恢复合同；主要供 HYLE 实现和高级用户 |
 | intrusive batch/list | `IntrusiveListHook` + `IntrusiveList<T, Hook>` | stable-address、调用方拥有节点、O(1) arm/cancel/splice；time delivery/bucket 是生产消费者 |
 
-版本定义只有一份公开宏源，`version.cc` 用 CMake project version 静态断言防止两处漂移。
+版本定义只有一份公开宏源；CMake 在 `project()` 前读取它，`version.cc` 再静态断言 runtime
+编译定义，component package、loader identity、header 与 runtime 不存在第二份手写版本。
 `version_string()` 返回字面量静态存储，不分配、不使用 guard variable。
 
 ## IntrusiveList 合同

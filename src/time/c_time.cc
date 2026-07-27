@@ -103,6 +103,9 @@ int hyle_time_profiling_clock_available(void) {
 uint64_t hyle_time_realtime_ns(void) {
   return hyle::time::realtime_ns();
 }
+void hyle_time_realtime_timestamp(hyle_unix_timestamp* out) {
+  if (out != nullptr) *out = hyle::time::realtime_timestamp();
+}
 uint64_t hyle_time_coarse_realtime_ns(void) {
   return hyle::time::coarse_realtime_ns();
 }

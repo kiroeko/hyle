@@ -161,7 +161,7 @@ VMA policy。需要严格控制首次触页时机时使用较粗 chunk 或单次
 
 | 符号 | 说明 |
 |---|---|
-| `hyle_file_type` / `hyle_file_info` | `type` / `size` / `modified_time` / `is_symlink`；stat 成功本身就表示存在，不保留可矛盾的 `exists` 字段 |
+| `hyle_file_type` / `hyle_file_info` | `type` / `size` / `modified_time` / `is_symlink`；`modified_time` 是 `hyle_unix_timestamp`，保留 pre-epoch 与纳秒；stat 成功本身就表示存在，不保留可矛盾的 `exists` 字段 |
 | `hyle_fs_stat(out, path)` | Status+out；缺失是 `NOT_FOUND`，不返回伪造的全零 stat |
 | `hyle_fs_exists(out, path)` / `hyle_fs_is_directory(out, path)` | Status+out；缺失是成功的 false，权限/I/O 失败仍是 Status |
 | `hyle_fs_file_size(out, path)` | Status+out；空文件是成功的 0，缺失与目录分别是 `NOT_FOUND` / `FAILED_PRECONDITION` |

@@ -133,7 +133,7 @@ hyle_add_c_test(util util/c_util_test.c)
 hyle_add_test(time SOURCES time/header_test.cc time/clock_test.cc
   time/timer_queue_test.cc time/common_timeout_queue_test.cc)
 hyle_add_c_test(time time/c_time_test.c)
-if(TARGET hyle_time_test)
+if(TARGET hyle_time_test AND HYLE_TEST_INSTRUMENTATION)
   # A fresh process is required because profiling-clock calibration is cached.
   # The force gate is compiled only under HYLE_TESTING and cannot affect a
   # shipped library.
@@ -179,37 +179,36 @@ if(HYLE_COMPUTE_VULKAN_ENABLED)
                   DEPS hyle_mem hyle_platform)
   endif()
   target_include_directories(hyle_compute_vulkan_test PRIVATE "${HYLE_SHADER_DIR}")
-  # Second ctest of the SAME exe with HYLE_VK_FORCE_STAGING=1 (a TEST-ONLY env hook, only
-  # honored under HYLE_TESTING): forces the non-ReBAR STAGING path so it's covered on ReBAR
-  # dev machines (RTX 4070) where the default direct-map path would otherwise hide it. Same
-  # VulkanCompute cases, exercising vk_buffer_set/get/copy through the staging double-buffer
-  # + copyBuffer barrier chain instead of the direct map.
-  add_test(NAME hyle_compute_vulkan_staging_test
-           COMMAND hyle_compute_vulkan_test --gtest_filter=VulkanCompute.*)
-  set_tests_properties(hyle_compute_vulkan_staging_test PROPERTIES
-                       ENVIRONMENT "HYLE_VK_FORCE_STAGING=1")
-  # Best-effort non-coherent HOST_CACHED variant. The test queries the selected memory type and
-  # skips honestly when the physical device exposes only coherent host-visible memory.
-  add_test(NAME hyle_compute_vulkan_noncoherent_test
-           COMMAND hyle_compute_vulkan_test
-                   --gtest_filter=VulkanCompute.NonCoherentHostBufferRoundTrip)
-  set_tests_properties(hyle_compute_vulkan_noncoherent_test PROPERTIES
-                       ENVIRONMENT "HYLE_VK_FORCE_NONCOHERENT=1")
-  # #1 pipeline cache 落盘: a variant with HYLE_VK_PIPELINE_CACHE pointing at a build-dir file
-  # (opt-in persistence, TEST-ONLY under HYLE_TESTING). Run TWICE in sequence via a fixture:
-  # the first run seeds the file from an empty cache (proving the SAVE path -- PipelineCachePersist
-  # asserts a non-empty blob); the second run loads that file at VkContext init (the LOAD+UUID
-  # path) and must still pass saxpy (a rejected/foreign cache would just be ignored, not fail).
-  add_test(NAME hyle_compute_vulkan_cache_seed_test
-           COMMAND hyle_compute_vulkan_test --gtest_filter=VulkanCompute.*)
-  set_tests_properties(hyle_compute_vulkan_cache_seed_test PROPERTIES
-                       ENVIRONMENT "HYLE_VK_PIPELINE_CACHE=${CMAKE_CURRENT_BINARY_DIR}/hyle_vk_缓存.bin"
-                       FIXTURES_SETUP VK_PIPE_CACHE)
-  add_test(NAME hyle_compute_vulkan_cache_load_test
-           COMMAND hyle_compute_vulkan_test --gtest_filter=VulkanCompute.*)
-  set_tests_properties(hyle_compute_vulkan_cache_load_test PROPERTIES
-                       ENVIRONMENT "HYLE_VK_PIPELINE_CACHE=${CMAKE_CURRENT_BINARY_DIR}/hyle_vk_缓存.bin"
-                       FIXTURES_REQUIRED VK_PIPE_CACHE)
+  if(HYLE_TEST_INSTRUMENTATION)
+    # Second ctest of the SAME exe with HYLE_VK_FORCE_STAGING=1 (a TEST-ONLY env hook,
+    # only honored under HYLE_TESTING): forces the non-ReBAR STAGING path so it's covered
+    # on ReBAR dev machines (RTX 4070) where the default direct-map path would otherwise
+    # hide it. Same VulkanCompute cases exercise vk_buffer_set/get/copy through the staging
+    # double-buffer + copyBuffer barrier chain instead of the direct map.
+    add_test(NAME hyle_compute_vulkan_staging_test
+             COMMAND hyle_compute_vulkan_test --gtest_filter=VulkanCompute.*)
+    set_tests_properties(hyle_compute_vulkan_staging_test PROPERTIES
+                         ENVIRONMENT "HYLE_VK_FORCE_STAGING=1")
+    # Best-effort non-coherent HOST_CACHED variant. The test queries the selected memory
+    # type and skips honestly when the device exposes only coherent host-visible memory.
+    add_test(NAME hyle_compute_vulkan_noncoherent_test
+             COMMAND hyle_compute_vulkan_test
+                     --gtest_filter=VulkanCompute.NonCoherentHostBufferRoundTrip)
+    set_tests_properties(hyle_compute_vulkan_noncoherent_test PROPERTIES
+                         ENVIRONMENT "HYLE_VK_FORCE_NONCOHERENT=1")
+    # #1 pipeline cache 落盘: use one build-dir file and run twice via a fixture. The
+    # first run proves save; the second loads and validates vendor/device/UUID before saxpy.
+    add_test(NAME hyle_compute_vulkan_cache_seed_test
+             COMMAND hyle_compute_vulkan_test --gtest_filter=VulkanCompute.*)
+    set_tests_properties(hyle_compute_vulkan_cache_seed_test PROPERTIES
+                         ENVIRONMENT "HYLE_VK_PIPELINE_CACHE=${CMAKE_CURRENT_BINARY_DIR}/hyle_vk_缓存.bin"
+                         FIXTURES_SETUP VK_PIPE_CACHE)
+    add_test(NAME hyle_compute_vulkan_cache_load_test
+             COMMAND hyle_compute_vulkan_test --gtest_filter=VulkanCompute.*)
+    set_tests_properties(hyle_compute_vulkan_cache_load_test PROPERTIES
+                         ENVIRONMENT "HYLE_VK_PIPELINE_CACHE=${CMAKE_CURRENT_BINARY_DIR}/hyle_vk_缓存.bin"
+                         FIXTURES_REQUIRED VK_PIPE_CACHE)
+  endif()
 endif()
 hyle_add_test(container SOURCES container/bounded_queue_test.cc container/spsc_queue_test.cc container/sharded_queue_test.cc container/work_stealing_deque_test.cc container/ws_fifo_queue_test.cc container/hash_test.cc container/carray_test.cc container/c_container_concurrency_test.cc container/small_vector_test.cc container/static_vector_test.cc container/probe_test.cc container/swiss_table_test.cc container/string_ref_test.cc container/string_buf_test.cc container/concurrent_vector_test.cc container/concurrent_hash_map_test.cc container/concurrent_node_hash_map_test.cc container/string_algo_test.cc container/path_test.cc container/dynamic_bitset_test.cc container/sparse_set_test.cc container/ring_deque_test.cc container/byte_ring_buffer_test.cc container/btree_test.cc container/flat_sorted_test.cc container/adaptive_mutex_test.cc DEPS hyle_platform)
 hyle_add_c_test(container container/c_container_test.c)

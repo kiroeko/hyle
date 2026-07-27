@@ -11,6 +11,7 @@
 | 本页（对标总账） | 全模块 win/loss ledger 一览 + 总账小结（最常看的一张表） |
 | [error 实测](./benchmarks-error.md) | **error 2026-07-25 当前接口三平台 n=15 冻结证书**（核心与正常路径分离，errno 成熟库对照已补，当前同形项无 LOSE） |
 | [core 实测](./benchmarks-core.md) | **core 当前证书**：IntrusiveList 对 Boost auto_unlink 同 ownership 的 FIFO/remove/batch-discard；cache/prefetch 只在真实消费者承重 |
+| [build/package 实测](./benchmarks-build.md) | **构建系统三平台正常路径证书**：clean/reconfigure/no-op、测试依赖获取分层、组件隔离、production-shape 测试与生成器数据库健康 |
 | [platform 实测](./benchmarks-platform.md) | **platform 2026-07-25 当前证书**（既有性能表不变；MappedFile advice/residency 按 OS-call complexity 守门） |
 | [time 实测](./benchmarks-time.md) | **time 2026-07-25 当前三平台证书**（clock / exact-ns radix TimerQueue / CommonTimeoutQueue；含 Seastar faithful baseline、order-swap 与 M4 QoS） |
 | [mem 实测](./benchmarks-mem.md) | **mem 严格证书**：既有三平台 Region/FixedPool/pool 证书有效；clean `c640072` 已补齐 shared allocator/standard-adapter/realloc 的 Win/WSL/M4 双 QoS n=15，同合同默认路径无 material LOSE |

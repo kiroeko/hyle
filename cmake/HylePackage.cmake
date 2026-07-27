@@ -280,10 +280,16 @@ function(hyle_install_package)
     "${HYLE_SOURCE_DIR}/cmake/HyleConfig.cmake.in"
     "${HYLE_BINARY_DIR}/HyleConfig.cmake"
     INSTALL_DESTINATION "${_hyle_package_dir}")
+  if(PROJECT_VERSION_MAJOR EQUAL 0)
+    set(_hyle_package_compatibility SameMinorVersion)
+  else()
+    set(_hyle_package_compatibility SameMajorVersion)
+  endif()
   write_basic_package_version_file(
     "${HYLE_BINARY_DIR}/HyleConfigVersion.cmake"
     VERSION "${PROJECT_VERSION}"
-    COMPATIBILITY SameMajorVersion)
+    COMPATIBILITY ${_hyle_package_compatibility})
+  unset(_hyle_package_compatibility)
 
   install(EXPORT HyleTargets
     FILE HyleTargets.cmake

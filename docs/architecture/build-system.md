@@ -64,6 +64,13 @@ TLS 与 CUDA 使用 `AUTO|ON|OFF` 三态：AUTO 仅供便利探测，ON 是硬�
    是本次组装的产品清单，`Hyle_AVAILABLE_FEATURES` 是 trace/TLS/CUDA/Vulkan 等能力清单。
 4. **直接预构建文件**：仅是诊断/ABI smoke 路径；缺少传递依赖建模，不是推荐发布面。
 
+0.1 不另装 pkg-config 文件。oneTBB/Abseil/libevent/mimalloc 的 `.pc` 证明它适合简单 Unix link
+closure，但 HYLE 的 static 包还要表达 C++ link driver、CMake imported archive、可选
+OpenSSL/CUDA/ggml/volk 与平台依赖；只输出 `-lhyle_<leaf>` 会让 shared 看似可用而 static/feature
+包静默缺依赖。relocatable `HyleConfig.cmake` 因而是三种交付形状的唯一机器合同；其他构建系统
+应导入 CMake package，或用一个薄 CMake bridge 产出其本地 target。若真实消费者要求 `.pc`，
+实现门是 shared/static 与 feature closure 全部 source-independent smoke，不接受半覆盖。
+
 Windows 源码嵌入时没有 rpath。consumer executable 链接共享 HYLE 后调用
 `hyle_stage_runtime_dependencies(target)`，会把其传递 DLL 放到 executable 同目录；这比让 HYLE
 篡改父工程输出目录更局部、也更容易迁移。安装包提供同名 helper；Unix build/install tree
@@ -72,8 +79,9 @@ Windows 源码嵌入时没有 rpath。consumer executable 链接共享 HYLE 后�
 这只设置在 HYLE 的 install target，源码嵌入时仍由父工程拥有其 RPATH 策略。
 
 install export 直接遍历已解析产品 target，不另造一份依赖表；build-tree alias 与 imported target
-都叫 `hyle::<module>`。`HYLE_INSTALL=ON` 只允许 `HYLE_BUILD_TESTS=OFF`，因为测试构建会有意改变
-`HYLE_TESTING` 门控布局，不能冒充可发布二进制。公开头整体安装（header-only foundation 有跨二进制
+都叫 `hyle::<module>`。`HYLE_INSTALL=ON` 只允许 `HYLE_BUILD_TESTS=OFF`。开发测试分两门：默认
+instrumented 门定义 `HYLE_TESTING` 以覆盖 fault/结构诊断；production-shape 门关闭 instrumentation，
+用与出厂库相同的 layout/热路跑其余主体测试。前者不能代替后者。公开头整体安装（header-only foundation 有跨二进制
 组件引用），可用二进制组件由 `Hyle_AVAILABLE_COMPONENTS` 和 imported targets 决定。安装布局服从
 GNUInstallDirs；bin/lib/include/data 子目录必须保持相对路径，迁移根由 `CMAKE_INSTALL_PREFIX` 决定，
 避免 export 把第一次安装机器的绝对目录烙进 consumer。
@@ -83,6 +91,13 @@ GNUInstallDirs；bin/lib/include/data 子目录必须保持相对路径，迁移
 `HYLE_STATIC=OFF` 默认让每个已选 HYLE 模块成为 SHARED target；ON 时显式成为 STATIC target。
 实现不改父工程 `BUILD_SHARED_LIBS`。`hyle_add_module` 同时传播 C++23 floor、公开 include、直接
 target 依赖、trace/testing ODR gate 和正确的 `HYLE_<MODULE>_BUILD`/`HYLE_STATIC` 可见性宏。
+
+公开 `include/hyle/core/version_defs.h` 是唯一版本源；CMake 在 `project()` 前读取它，随后让
+共享库、source archive 和 package 使用同一个项目版本，即使组件 SDK 没有构建 `hyle_core`
+也会一致。ABI 未冻结的 0.x 阶段以 `major.minor` 作为
+loader identity（例如 `libhyle_time.so.0.1`），package 也只把同 minor 版本判为兼容；到 1.0
+以后才切换为常规的 major-only SONAME / `SameMajorVersion`。package smoke 同时检查当前 full
+version exact、同 minor compatible 和下一 ABI generation rejected。
 
 C surface gate 在共享构建检查动态导出表，在静态构建检查 archive 中定义的全局 C 符号；
 二者都还要对齐 reviewed manifest、声明和 pure-C 引用，不能用“静态库没有 exports”跳过 ABI
@@ -119,7 +134,8 @@ cross compile 和三平台完整迁移矩阵的最终证书只见 build/package 
 平台 preset 只组合开发入口，不重新定义产品：Linux/macOS 不锁 generator，Windows 明分 CMake
 可直接管理的 VS 2022 与“已选择 MSVC + Ninja”两条路径；后者由 `scripts/hyle-windows.ps1` 经
 vswhere 发现现有工具链并临时导入环境。CI 对 Windows/Linux/macOS 运行 core 验证面，并在每个平台
-从空目录制作 shared/static mem SDK，再由只链接 `hyle::mem` 的 pure-C error+mem consumer 与 C++
+额外以 `HYLE_TEST_INSTRUMENTATION=OFF` 运行 error/platform/time/mem 的 shipping-layout 验证面；
+随后从空目录制作 shared/static mem SDK，再由只链接 `hyle::mem` 的 pure-C error+mem consumer 与 C++
 `SystemAllocator` consumer 真运行；shared 形状机械覆盖 `mem -> platform -> error` 的传递
 shared-object lookup，并证明公开 inline 形状不泄漏 mimalloc 符号，static 形状覆盖 mimalloc
 link-only archive 与 C++ link driver。simd、CUDA、compute/io 全矩阵不塞进每提交 smoke，仍属发布检查。

@@ -12,7 +12,8 @@
 | 需求 | 入口 | 注意 |
 |---|---|---|
 | timeout / elapsed | `hyle_time_monotonic_ns` | 唯一可用于 deadline 的钟 |
-| 日志 / 协议时间戳 | `hyle_time_realtime_ns` | Unix epoch；会受校时影响 |
+| 当前日志打点（紧凑 ns） | `hyle_time_realtime_ns` | Unix epoch；会受校时影响；不作通用持久格式 |
+| 文件/FFI/可早于 1970 的时间 | `hyle_time_realtime_timestamp` / `hyle_unix_timestamp` | 有符号 seconds + canonical nanoseconds |
 | 高频 profiling | `hyle_time_profiling_clock_ns` | 先查 available；禁止用于 deadline |
 | 粗粒度高频日志 | `hyle_time_coarse_realtime_ns` | 先查 available；可能多次返回同值 |
 | 相对 timeout → deadline | `hyle_time_deadline_after_ns` | 饱和，不会 wrap 到过去 |
@@ -28,6 +29,12 @@ while (hyle_time_remaining_ns(deadline) != 0) {
 
 不要写 `hyle_time_monotonic_ns() + timeout`；大值会溢出。不要用 realtime 做 timeout；NTP、
 管理员调时或虚拟机时钟校正都会让它跳变。
+
+`hyle_unix_timestamp` 同时被 time、platform 文件元数据和 io stat 使用。`seconds` 可为负，
+`nanoseconds` 必须小于 1,000,000,000，`reserved` 必须为 0；用
+`HYLE_UNIX_TIMESTAMP_INIT` 初始化、`hyle_unix_timestamp_is_valid` 验证。该形状避免无符号
+pre-epoch wrap，也不把范围压缩到单个 `int64_t` 纳秒。`hyle_time_realtime_timestamp(NULL)`
+是安全 no-op。
 
 ## 任意 deadline：hyle_time_queue
 
@@ -134,12 +141,12 @@ hyle_status_free(&st);
 
 | 分组 | 动态入口 | header-inline |
 |---|---|---|
-| clocks/deadline/sleep | `monotonic_ns`、`profiling_clock_ns/available`、`realtime_ns`、`coarse_realtime_ns/available`、`sleep_for_ns`、`sleep_until_ns`、`deadline_after_ns`、`remaining_ns` | `sleep_for_us/ms` |
+| clocks/deadline/sleep | `monotonic_ns`、`profiling_clock_ns/available`、`realtime_ns/realtime_timestamp`、`coarse_realtime_ns/available`、`sleep_for_ns`、`sleep_until_ns`、`deadline_after_ns`、`remaining_ns` | `sleep_for_us/ms` |
 | timer node | `timer_create/destroy`、`timer_storage_size/alignment`、`timer_init/deinit`、`timer_user_data/set_user_data`、`timer_deadline_ns`、`timer_is_scheduled` | — |
 | general queue | `queue_create/create_at/destroy`、`queue_schedule/cancel/advance/cancel_all`、`queue_next_deadline_ns/size/empty` | `queue_schedule_after` |
 | common queue | `common_queue_create/destroy`、`common_queue_schedule/schedule_after/cancel/advance/cancel_all`、`common_queue_next_deadline_ns/size/empty/duration_ns` | `common_queue_schedule_now` |
 
-表中短名都以 `hyle_time_` 为前缀。动态入口共 41 个，inline convenience 共 4 个；inline
+表中短名都以 `hyle_time_` 为前缀。动态入口共 42 个，inline convenience 共 4 个；inline
 仍只调用动态 ABI，不暴露 C++ layout。
 
 ## Status 与生命周期

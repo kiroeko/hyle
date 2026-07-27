@@ -5,11 +5,11 @@
 # drive the GpuPoller suspend->wake chain without a real GPU). Such an interface must NOT
 # ship in the product: it is compiled ONLY when tests are being built.
 #
-# HYLE_TESTING is that gate. It is DERIVED from HYLE_BUILD_TESTS (not a separate option):
-# a test-only interface is by definition needed exactly when we build tests. When a
-# consumer integrates HYLE with -DHYLE_BUILD_TESTS=OFF (usage-guide's integration recipe),
-# HYLE_TESTING is undefined and every `#if defined(HYLE_TESTING)` block vanishes -- the
-# shipped library has ZERO test hooks (same "zero-cost when off" law as HYLE_TRACE).
+# HYLE_TESTING is that gate. It requires both HYLE_BUILD_TESTS and the explicit
+# HYLE_TEST_INSTRUMENTATION option.  The default instrumented test build reaches
+# fault-injection/structural diagnostics; a second OFF build runs the ordinary
+# suite with the exact shipping layout and hot paths.  Shipping builds have
+# HYLE_BUILD_TESTS=OFF, so every block vanishes with zero product cost.
 #
 # ODR: a test-only MEMBER changes a class's layout, so the production .cc that compiles
 # the class and the test TU that includes the same header MUST agree on whether the hook
@@ -24,14 +24,16 @@
 
 # hyle_testing is an INTERFACE target every module links (PUBLIC), mirroring hyle_trace.
 # It exists unconditionally so module CMakeLists can link it with no if() at the call site;
-# it carries the HYLE_TESTING define only when HYLE_BUILD_TESTS is ON.
+# it carries the HYLE_TESTING define only for an instrumented test build.
 add_library(hyle_testing INTERFACE)
 
-if(HYLE_BUILD_TESTS)
+if(HYLE_BUILD_TESTS AND HYLE_TEST_INSTRUMENTATION)
   # Installable builds forbid HYLE_BUILD_TESTS, but keep the definition explicitly
   # build-only as a second line of defence against exporting a test ABI/layout.
   target_compile_definitions(hyle_testing INTERFACE "$<BUILD_INTERFACE:HYLE_TESTING>")
   message(STATUS "HYLE_TESTING = ON (test-only interfaces compiled; not for shipped builds)")
+elseif(HYLE_BUILD_TESTS)
+  message(STATUS "HYLE_TESTING = OFF (tests exercise the shipping layout/hot paths)")
 else()
   message(STATUS "HYLE_TESTING = OFF (test-only interfaces stripped -- zero in shipped lib)")
 endif()

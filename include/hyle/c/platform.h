@@ -15,6 +15,7 @@
 #include <stdint.h>
 
 #include "hyle/c/error.h" /* hyle_status for recoverable resource failures */
+#include "hyle/c/time_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -392,7 +393,7 @@ typedef enum hyle_file_type {
 typedef struct hyle_file_info {
   hyle_file_type type; /* target kind; stat follows symlinks */
   uint64_t size;
-  int64_t modified_time; /* seconds since epoch */
+  hyle_unix_timestamp modified_time; /* signed Unix mtime; nanosecond precision */
   int is_symlink;        /* path itself is a symbolic link (lstat semantics) */
 } hyle_file_info;
 

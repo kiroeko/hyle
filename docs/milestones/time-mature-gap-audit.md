@@ -18,6 +18,11 @@
   ASan/UBSan 最终形状五门均为 5/5。
 - [x] C caller-storage timer 已按 libevent `event_assign` 形状落地，去掉逐 timer 强制分配且不扩大
   control；n=15 对默认 create/destroy 为 Windows 2.925×、WSL 4.532× WIN。
+- [x] 2026-07-27 消费者回审发现 platform 只保留秒、io 用无符号 `mtime_ns` 会让 pre-epoch
+  wrap；已补 C/C++ 共用 signed Unix seconds/nanoseconds、chrono/time_t/timespec/FILETIME
+  checked conversion，并迁移 platform/io。
+- [x] 新的 42-symbol C surface 与 platform/io 文件时间最终形状已完成 Windows、WSL GCC14、
+  Apple M4 复证；WSL ASan/UBSan 13/13，三平台 io 文件消费边也通过。
 
 ## 结论先行
 
@@ -37,8 +42,9 @@ C ABI 也覆盖了现有语言无关能力。`sched`/`io` 对 time 的消费方�
 3. time 性能证书固定在 `14ee67e`，之后直接热路依赖 `core/intrusive_list.h` 已连续改变，且现有
    timer workload 只覆盖连续内存的 N=4096 批处理，没有证明正常入口、小 N、散布节点和 C ABI。
 
-三个实现/仪器缺口现已修复。**功能骨架完整，算法选择正确，正确性和 API 语义已修，
-三平台 Release/性能与 WSL ASan/UBSan 也已复证。**
+前三个实现/仪器缺口已修复；后续消费者回审又找到了真实 Unix 时间表示缺口并已实现修正。
+新的互操作/API 最终形状现已完成三平台和 sanitizer 复证，**time 恢复 strict 收口**；
+`sched` 的 injectable runtime clock 仍是 sched 自身的 P1 可测试性设计，不是 time 数据结构缺口。
 日历/时区、通用格式语言、执行器、带锁跨线程 timer queue 仍不应进入 time core。
 
 ## 1. 当前实现清单与真实用户形状
@@ -85,7 +91,7 @@ C ABI 也覆盖了现有语言无关能力。`sched`/`io` 对 time 的消费方�
 | Tokio pause/advance | queue 层已可 deterministic advance | 部分覆盖 | runtime virtual time 属于 sched 测试设施 |
 | Asio waitable timer async wait/cancel | time 不拥有 executor | 边界正确 | sched/io 提供异步等待 |
 | Abseil CivilTime/TimeZone/Format/Parse | 无 | 不应整包复制 | 见 UTC interchange 决策 |
-| time_t/timespec/timeval conversions | 仅原生 chrono/raw ns | C/OS 边界可能常用 | **P1，随实际协议/OS consumer 评估** |
+| signed Unix/chrono/time_t/timespec/FILETIME conversion | canonical seconds/nanoseconds + checked conversion | platform/io 已证明真实需求 | **已完成；timeval 可由微秒精度 consumer 再提** |
 | C 自定义 allocator / in-place timer | 默认 create + runtime-sized caller storage 双形状 | 已补齐 | **完成；不引入 time→mem** |
 
 完整 Abseil time 连同 cctz 在本地约 17.8k code lines。复制 calendar/time-zone 数据库既会让
@@ -196,7 +202,8 @@ median 3.118/0.030ms。release binary 不含 test env gate，已校准后的 rdt
 
 ### C ABI
 
-- 41 个动态符号 + 4 个 inline convenience 覆盖当前 clock/deadline/sleep/general/common 能力；
+- 42 个动态符号 + 4 个 inline convenience 覆盖当前 clock/deadline/sleep/general/common 与
+  signed Unix timestamp 能力；
 - opaque handle 隔离 C++ intrusive layout，Status 覆盖 recoverable misuse，visitor 前已摘队列且可
   re-arm，形状正确；
 - 内部 C++ 消费者不绕 C ABI；`src/time/c_time.cc` 统一使用 error 的 `hyle::Status` /
@@ -216,7 +223,7 @@ architecture 也正确区分 time 数据结构和 sched/io executor。
 
 1. architecture 已统一 Tier 2，guide 明确不同工具链 chrono parse 能力不一致；
 2. 语义改名已同步 architecture、两份 guide、C header/surface、tests 与 performance；
-3. time milestone 已重新打开 strict；全局 readiness 由主任务在三平台证据齐全后统一维护；
+3. time milestone 在最终三平台/sanitizer 复证完成后恢复 strict；
 4. performance 只在专页维护点值，milestone 只留验收摘要。
 
 ## 7. 优先级与明确不做项
@@ -235,6 +242,7 @@ architecture 也正确区分 time 数据结构和 sched/io executor。
 3. sched owning one-shot/periodic timer，periodic 必须显式 missed-tick policy；
 4. 有 HTTP/obs consumer 后评估窄 UTC RFC3339/RFC1123 interchange；
 5. [x] C timer caller-storage/bulk 入口与 C ABI overhead 已完成；allocator callback 不再需要。
+6. [x] platform/io consumer 驱动的 signed Unix timestamp 与 OS/chrono 互操作；不扩成 calendar。
 
 ### 明确不加入 time core
 
@@ -276,3 +284,6 @@ consumer 决定，避免 time 再次为了 benchmark 或“能力数量”无边
 - WSL correctness 5/5 与 native-ext4 timer/normal n=15 已完成；Apple 最终 commit 五门 5/5，
   timer/normal interactive + utility 各 n=15 已完成；
 - WSL GCC14 最终 `16c91b4`：ASan 五门 5/5，UBSan 五门 5/5。
+- 2026-07-27 timestamp 最终增量：Windows time/platform 9/9、io 3/3；WSL time/platform 13/13、
+  io 3/3、ASan/UBSan 各 13/13；Apple M4 time/platform 13/13、io 3/3。42/42 C surface、
+  pre-epoch 与亚秒文件时间、chrono/timespec/FILETIME 边界均在最终代码形状通过。

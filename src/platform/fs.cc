@@ -365,7 +365,7 @@ Result<FileInfo> stat(const char* path) noexcept {
   std::uint64_t t = (static_cast<std::uint64_t>(d.ftLastWriteTime.dwHighDateTime)
                      << 32) |
                     d.ftLastWriteTime.dwLowDateTime;
-  r.modified_time = static_cast<std::int64_t>(t / 10000000ull) - 11644473600ll;
+  r.modified_time = time::unix_timestamp_from_windows_filetime_ticks(t);
   return r;
 }
 
@@ -1135,7 +1135,15 @@ Result<FileInfo> stat(const char* path) noexcept {
   }
   r.type = file_type_from_mode(s.st_mode);
   r.size = r.is_regular() ? static_cast<std::uint64_t>(s.st_size) : 0;
-  r.modified_time = static_cast<std::int64_t>(s.st_mtime);
+#  if defined(HYLE_OS_MACOS)
+  r.modified_time = time::unix_timestamp(
+      static_cast<std::int64_t>(s.st_mtimespec.tv_sec),
+      static_cast<std::uint32_t>(s.st_mtimespec.tv_nsec));
+#  else
+  r.modified_time = time::unix_timestamp(
+      static_cast<std::int64_t>(s.st_mtim.tv_sec),
+      static_cast<std::uint32_t>(s.st_mtim.tv_nsec));
+#  endif
   // stat() follows symlinks; an extra lstat tells us if the path ITSELF is a link
   // (a symlink to a directory therefore has type=kDirectory + is_symlink=true).
   struct ::stat ls;

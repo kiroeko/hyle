@@ -14,6 +14,7 @@
 
 #include "hyle/c/error.h"
 #include "hyle/c/mem.h"
+#include "hyle/c/time_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -101,7 +102,7 @@ enum {
 
 typedef struct hyle_io_file_stat {
   uint64_t size;
-  uint64_t mtime_ns;
+  hyle_unix_timestamp modified_time;
   uint32_t mode;
   uint8_t is_dir;
   uint8_t reserved[3];

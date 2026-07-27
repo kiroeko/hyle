@@ -30,6 +30,39 @@
 - [x] 三平台验证 clean configure/build/test；至少覆盖整库、core-only/代表性子集、CPU-only、
   shared/static、`add_subdirectory`、install/`find_package` consumer 和一条交叉编译 configure。
 
+## 2026-07-27 独立模块复审
+
+旧证书证明三种交付和 target 图曾完整通过，不代表构建系统可以永久免审。它与代码模块同样有
+功能面、正常路径性能、用户接口和文档合同，因此本轮因底座 API 变化和日常构建异常复开：
+
+- [x] 把工具链环境、依赖获取、CMake target 图、生成器数据库和源码失效分层诊断；Windows
+  wrapper 禁止位置参数误绑定，多 target/CTest 的剩余参数原样透传；
+- [x] 公开 `version_defs.h` 成为 CMake/package/loader 唯一版本源；修正未冻结 0.x ABI 的包版本
+  语义：当前 full version exact、同 minor compatible，共享库使用 `major.minor` SONAME；
+- [x] Windows clean `time` 子集测得产品 configure 2.308s / reconfigure 0.128s / no-op build
+  0.048s；本地注入 GoogleTest 后测试图为 2.323s / 0.423s / 0.053s；
+- [x] `build/.ninja_deps` 截断导致每次重编约 100 个对象已确认为构建树损坏；重建该数据库后
+  第二次同目标 70ms 且 `no work to do`，不是 HYLE 源码依赖图持续失效；
+- [x] 消除 `HYLE_TESTING` 令普通单测库改变 public pool layout / 热路的双形状问题；严格正确性门
+  以 `HYLE_TEST_INSTRUMENTATION=OFF` 覆盖 production layout，instrumented diagnostics 是额外层；
+- [x] 在 WSL 与 Apple 对同一 clean/reconfigure/no-op/component-isolation 合同复证，并把所有
+  build 性能点值集中到 `docs/performance/benchmarks-build.md`；
+- [x] 对照 oneTBB/Abseil/libevent/mimalloc 后裁决 pkg-config：0.1 不发布只能覆盖简单 shared
+  link、却无法完整表达 static C++ link driver、imported archives、CUDA/OpenSSL feature closure 的
+  半接口；三种交付形状以 relocatable CMake package 为唯一机器合同，非 CMake 构建系统导入该
+  package 或使用薄 CMake bridge。真实消费者提出 `.pc` 时，必须以 static/shared 全闭包 smoke
+  为实现门，而不是只生成 `-lhyle_<leaf>`。
+
+复审最终证据：production-shape 的 error/platform/time/mem C++、pure-C、surface 与 header 门在
+Windows/WSL/M4 均为 16/16；shared/static mem SDK 的 C/C++ 外部 consumers 在三端均为 2/2，且
+package 将 0.1.0 判为 exact、接受 0.1、拒绝 0.2。ELF SONAME 为 `libhyle_mem.so.0.1`，Mach-O install-name 为
+`@rpath/libhyle_mem.0.1.dylib`。默认 instrumented Windows 相关组仍为 13/13，两个测试形状互补。
+
+Windows 的 `windows-ninja` 入口本来就要求 `scripts/hyle-windows.ps1` 或已初始化的 Developer
+Shell。普通 PowerShell 直接调用缓存中的 `cl.exe` 缺少 `INCLUDE/LIB`，是明确入口合同被绕过，
+不是 HYLE 丢失标准头；不过错误信息与 wrapper 易用性仍纳入本模块 guide 审核。fresh WSL/M4
+首配曾观察到 44--112s，包含 FetchContent 获取/配置，不能与上述已注入依赖的 CMake 图成本混写。
+
 ## core 收口期间已经暴露的基线问题
 
 这些是进入本轮的证据，不预设最终修法：
@@ -67,7 +100,8 @@
 - [x] compute/ggml/volk fetched 依赖打包：只编私有 PIC CPU/可选 CUDA/volk 闭包；shared 吸收、
   static 导出 link-only archives/头/依赖，许可证和 feature manifest 随包迁移。
 - [x] 平台 preset/toolchain/CI 入口：Windows/Linux/macOS 有同构 configure/build/test/workflow；
-  Windows 明分 VS generator 与 vswhere+Ninja；AArch64 走标准 toolchain file；CI 含 core 和 package smoke。
+  Windows 明分 VS generator 与 vswhere+Ninja；AArch64 走标准 toolchain file；CI 含 core、
+  production-shape 和 package smoke。
 - [x] 三平台最终发布矩阵（all-component CPU SDK、代表性 source embed、远端 CI 结果）。
 - [x] io/nghttp2 package 闭环：固定版本协议核始终为私有 PIC archive；shared io 吸收实现，static
   io 通过 export graph 传递 archive/生成头；MIT 全文和 `io_http2` feature manifest 随包迁移。
@@ -184,13 +218,14 @@
 
 | 固定口径 | code |
 |---|---:|
-| 全库（含 docs/in-tree third_party） | 247,871 |
-| 自实现（含测试） | 116,284 |
-| 自实现（不含测试） | 79,957 |
-| build/package 实现 | 4,005 |
+| 全库（含 docs/in-tree third_party） | 273,137 |
+| 自实现（含测试） | 133,777 |
+| 自实现（不含测试） | 91,888 |
+| build/package 实现 | 4,384 |
 
-最后一项固定为 40 个自有 CMake 文件 + preset/CI + 8 个 build/fetch/setup/QEMU shell/PowerShell
-guard；不含 vendored CMake、测试源码和文档。旧 3,903 是选择器漏项，不能冒充本轮增长。
+最后一项固定为 42 个自有 CMake 文件 + preset/CI + 8 个 build/fetch/setup/QEMU shell/PowerShell
+guard；不含 vendored CMake、测试源码和文档。新增两个 CMake 验收脚本分别守 package version 与
+production-shape，故相对旧 4,005 的增长属于产品构建模块，不是测试源码误计。
 
 ## 审查顺序
 

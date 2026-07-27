@@ -170,6 +170,8 @@ TEST(Proactor, NativeStatxCompletesAsynchronously) {
   EXPECT_EQ(completion.result, 0);
   EXPECT_EQ(stat.size, sizeof(kBytes));
   EXPECT_FALSE(stat.is_dir);
+  EXPECT_GT(stat.modified_time.seconds, 1'577'836'800);  // after 2020-01-01
+  EXPECT_LT(stat.modified_time.nanoseconds, 1'000'000'000u);
   ::close(fd);
 }
 #endif

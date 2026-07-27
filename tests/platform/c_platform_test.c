@@ -532,6 +532,7 @@ int main(void) {
     hyle_file_info di = {0};
     CHECK(status_ok(hyle_fs_stat(&di, path)));
     CHECK(di.type == HYLE_FILE_TYPE_DIRECTORY);
+    CHECK(hyle_unix_timestamp_is_valid(di.modified_time));
   }
   visit_count = 0;
   int completed = 0;
@@ -542,6 +543,11 @@ int main(void) {
   snprintf(file, sizeof(file), "%s/f.txt", path);
   CHECK(status_ok(hyle_fs_touch(file)));
   CHECK(status_ok(hyle_fs_exists(&path_value, file)) && path_value);
+  {
+    hyle_file_info fi = {0};
+    CHECK(status_ok(hyle_fs_stat(&fi, file)));
+    CHECK(hyle_unix_timestamp_is_valid(fi.modified_time));
+  }
   {
     uint64_t size = 1;
     CHECK(status_ok(hyle_fs_file_size(&size, file)) && size == 0u);

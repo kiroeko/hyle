@@ -65,7 +65,8 @@ HYLE 的构建开关分**产品/组装参数**与**benchmark 对照门**两个�
 | `CMAKE_BUILD_TYPE` | `Release` | `Debug`/`Release`/`RelWithDebInfo` | 性能库默认 Release(-O3)；要符号调试用 RelWithDebInfo |
 | `HYLE_COMPONENTS` | `all` | 组件名的 `;`/`,` 列表 | 只组装所需根；支持 core/error/obs/math/platform/time/mem/simd/container/util/sched/io/compute/graph，依赖自动闭包 |
 | `HYLE_STATIC` | `OFF`(SHARED) | `ON`/`OFF` | 要静态链进你的二进制（无 HYLE DLL 分发）设 ON；不改变父工程 `BUILD_SHARED_LIBS` |
-| `HYLE_BUILD_TESTS` | 顶层 `ON`、嵌入 `OFF` | `ON`/`OFF` | ON 时只创建已选组件测试，并派生 `HYLE_TESTING`；`hyle_<module>_tests` 同时构建该模块 C++/C binary |
+| `HYLE_BUILD_TESTS` | 顶层 `ON`、嵌入 `OFF` | `ON`/`OFF` | ON 时只创建已选组件测试；`hyle_<module>_tests` 同时构建该模块 C++/C binary |
+| `HYLE_TEST_INSTRUMENTATION` | `ON` | `ON`/`OFF` | 仅 tests ON 时生效；ON 定义 `HYLE_TESTING` 以测 fault/结构诊断，OFF 运行 shipping layout/hot path 主体测试 |
 | `HYLE_BUILD_BENCH` | `OFF` | `ON`/`OFF` | 只有想跑微基准才开；仅创建组件闭包内的 benchmark。构建 `hyle_<module>_benches` 或全部已选组件的 `hyle_benches` |
 | `HYLE_INSTALL` | `OFF` | `ON`/`OFF` | 显式生成 relocatable `HyleConfig.cmake`、组件 targets 和 install rules；与 `HYLE_BUILD_TESTS=ON` 互斥，避免发布 test-only ABI |
 | `HYLE_WERROR` | `OFF` | `ON`/`OFF` | CI 用 ON；本地开发 OFF |
@@ -87,7 +88,10 @@ HYLE 的构建开关分**产品/组装参数**与**benchmark 对照门**两个�
 
 有的接口**只为测试存在**：让测试够到一条生产调用方永不需要的内部路径（例：一个"可控 Event"——先报 N 次 NotReady 再 Ready，让 host 后端无需真 GPU 就能驱动 GpuPoller 的 suspend→wake 全链路）。这类接口**绝不进出厂库**，用 `HYLE_TESTING` 宏门控。
 
-- **宏来源**：`HYLE_TESTING` 由 `HYLE_BUILD_TESTS` 派生（`cmake/HyleTesting.cmake` 的 `hyle_testing` INTERFACE target，每个模块 PUBLIC 链接，同 `hyle_trace` 的 gate 模式）。`HYLE_BUILD_TESTS=ON` → 定义（生产库源码 + 测试 exe + 消费者对头文件的编译一致，无 ODR 隐患）；集成方 `-DHYLE_BUILD_TESTS=OFF` → 不定义，门控块整个消失，**出厂库零 test hook**。
+- **宏来源**：`HYLE_TESTING` 只在 `HYLE_BUILD_TESTS=ON` 且
+  `HYLE_TEST_INSTRUMENTATION=ON` 时由 `hyle_testing` INTERFACE target 统一传播，保证库与 test TU
+  无 ODR 分裂。默认开发门测难达 fault/结构路径；另用 instrumentation OFF 跑 shipping
+  layout/hot-path 主体测试。集成方 tests OFF 时门控块整个消失，**出厂库零 test hook**。
 - **写法契约**（写 test-only 接口必守）：
   1. 声明**与**定义都包在 `#if defined(HYLE_TESTING)` 里；
   2. 函数/成员注释**必须以 `TEST-ONLY:` 开头**，说明它为何不是生产 API。一个没有此标注、却只被测试调用的 raw/辅助接口 = bug（要么补此门控 + 注释，要么它其实是该删的遗留、或该补注释的公开 API）。

@@ -30,10 +30,10 @@
 
 | 固定统计口径 | 当前 | 命令/说明 |
 |---|---|---|
-| **全库代码** | **272,475** | `cloc . --vcs=git`；含 docs/third_party，**≠ 自写** |
-| **自实现（含测试）** | **133,483** | `cloc include/hyle src tests`，只计 C++/Header/C/CUDA |
-| **自实现（不含测试）** | **91,727** | `cloc include/hyle src`，只计 C++/Header/C/CUDA；库本体硬锚 |
-| **当前处理模块实现（container）** | **14,896** | `include/hyle/container` + `include/hyle/c/container.h` + `src/container`；不含测试/CMake/Text |
+| **全库代码** | **273,137** | tracked + 当前待提交文件；含 docs/third_party，**≠ 自写** |
+| **自实现（含测试）** | **133,777** | `cloc include/hyle src tests`，只计 C++/Header/C/CUDA |
+| **自实现（不含测试）** | **91,888** | `cloc include/hyle src`，只计 C++/Header/C/CUDA；库本体硬锚 |
+| **当前处理模块实现（build/package）** | **4,384** | 42 个自有 CMake 文件 + preset/CI + 8 个 build/fetch/setup/QEMU guard；不含测试源码/文档 |
 | **终态生产（纪律收口 A）** | **~75–90k** | 主预期 |
 | **终态生产（做满守界 B）** | **~85–105k** | compute/graph/发布面收口更满 |
 | 失控上限 C | 120k+ 生产 | 应避免 |
@@ -78,14 +78,15 @@ util ~1.3k · error **984** · time **1,421** · obs **1,018** · graph ~0.6–0
 > **2026-07-25 证书口径升级**：下表的 ✅/“冻结”只说明对应历史 work item 已完成，
 > 不自动取得当前实际使用导向的严格证书。当前 error/platform/mem/time/core 通过；mem 的
 > clean `c640072` shared same-link 三平台证书已关闭最后分发性能尾；
-> build/package system、util-core seam、obs 与 container 已严格收口；当前进入
-> util-runtime / 完整 util，其余顺序只见 [`pre-release-readiness.md`](./pre-release-readiness.md)。
+> build/package system 已于 2026-07-27 作为独立模块重签；util-core seam、obs 与 container
+> 仍严格收口。当前进入 util-runtime；其余顺序只见
+> [`pre-release-readiness.md`](./pre-release-readiness.md)。
 
 | ID | 阶段 | 模块 | 目的(一行) | 前置 | 预测LOC | 真实LOC | 状态 |
 |---|---|---|---|---|---|---|---|
 | **00-scaffolding** | P-1 | 构建 | CMake 多模块结构+GoogleTest/nanobench/sanitizer/CI+HYLE_宏骨架 | — | 0.6-1k | 294 | ✅ 完成 |
 | [core-reclosure](./core-module-closure.md) | P-1 | core | version/cache/macros/visibility/intrusive 严格收口 | 00 | — | 490 生产 | ✅ **2026-07-25 严格收口**：最终实现 `71dabf7`；Win/WSL/M4 相关组 18/18、最终 API delta 8/8；Boost 同形三平台无 LOSE |
-| [build/package-reclosure](./build-package-system-closure.md) | P-1 | 构建/打包 | 用 target 图表达项目组织，完成可迁移、可裁剪组装与安装消费 | core | — | 见任务页 | ✅ **2026-07-25 严格收口**：component target 图、source/shared/static 三交付形状、三平台 all-CPU SDK + consumer、CI 与 AArch64 cross 门完成 |
+| [build/package-reclosure](./build-package-system-closure.md) | P-1 | 构建/打包 | 用 target 图表达项目组织，完成可迁移、可裁剪组装与安装消费 | core | — | 见任务页 | ✅ **2026-07-27 独立模块重签**：0.x package/SONAME、三平台 production-shape 16/16、shared/static consumers、CI 双测试门与正常路径性能证书完成 |
 | error-01 | P0 | error | Status + std::expected（历史首版） | 00 | 1-2k | 456 | 🗃️ 历史完成；接口与边界后由 error reclosure 重审 |
 | error-02 | P0 | error | error_handler vtable（历史） | error-01 | 1k | 127 (+74 测试) | 🗃️ 曾完成，实际消费者审查后退役；日志归 obs、合同违反归 fatal |
 | [error-03](./error-module-reclosure.md) | P0 | error | 面向真实调用重收 Status/Result/C ABI/context | error-01,obs-01 | — | 见任务页 | ✅ **2026-07-24 自身冻结**：功能/C++/C ABI 收口；Win/GCC14/M4 正确性 + 核心/正常路径 n=15，同形项无 LOSE；全库 adoption audit 进行中，mem 冷路径已统一 Status、私有 TLS 已删 |
@@ -115,7 +116,7 @@ util ~1.3k · error **984** · time **1,421** · obs **1,018** · graph ~0.6–0
 | [mem-08](./mem-08-fiber-stack.md) | P2 | mem | fiber_stack：guard + 分级 + FiberStackPool + Fiber 接线 | platform-02b,sched-01 | 0.5-1k | ~518 code(头+接线+测) | ✅ 完成(2026-07-17)。`FiberStack`=`reserve_guarded`;Small/Default/Large;池回收;`Fiber` 默认 guarded。Win+WSL mem 56/56、sched 108/108 |
 | [mem-final](./mem-close-plan.md) | close | mem | 功能/API/性能收口与 release-candidate certification | mem-01..08 | — | 见任务单 | ✅ **2026-07-26 彻底收口**：mature-gap P0、default/injected adapter、fiber 回收均收；selected-node/chunk/weighted 按 platform-first 落地，Linux 极细条带 VMA 复杂度已封口，当前 mem 109/109 C surface；clean `c640072` 的 Win/WSL/M4 allocator shared same-link/TSan 证书继续有效 |
 | [time-01](./time-01-clock.md) | P2 | time | typed 单调/墙钟、deadline、thread sleep | core | — | 见里程碑 | ✅ **2026-07-25 复审收口**：chrono/native 双面；TSC/coarse opt-in；饱和 deadline；高分辨率 absolute sleep；20 clock tests + 三平台/ASan/UBSan |
-| [time-02](./time-02-timer-wheel.md) | P2 | time | exact-ns TimerQueue + CommonTimeoutQueue | time-01,core,error(C ABI) | — | 见里程碑 | ✅ 2026-07-26 [`mature-gap audit`](./time-mature-gap-audit.md) 已修 duration 精度/clock 语义；C caller-storage timer 关闭逐对象分配缺口，41/41 surface；三平台原证书与本轮 Win/WSL correctness、性能、ASan/UBSan 复证完成 |
+| [time-02](./time-02-timer-wheel.md) | P2 | time | exact-ns TimerQueue + CommonTimeoutQueue | time-01,core,error(C ABI) | — | 见里程碑 | ✅ **2026-07-27 再收口**：signed Unix timestamp/OS/chrono 互操作与 platform/io 消费边通过 Win/WSL/M4、WSL ASan/UBSan；42/42 C surface，旧 timer SOTA 证书继续有效 |
 | container-01 | P3 | container | vendor 有界 ring(Vyukov/rigtorp,骨架用) | mem-01 | 1-2k | 220 | ✅ 完成 |
 | container-02 | P3 | container | XXH3 接入(默认 hasher) | 00 | 1k | 133 | ✅ 完成(XXH3 封 .cc 不泄;小键内联) |
 | container-03 | P3 | container | carray header-before-data + RAII 壳 | mem-02 | 1-2k | 224 | ✅ 完成(type-erased核;修over-align) |

@@ -123,6 +123,7 @@ TEST(VulkanCompute, EventRerecordAndPendingDestructionAreSafe) {
   EXPECT_TRUE(stream->sync().ok());
 }
 
+#if defined(HYLE_TESTING)
 // #1 pipeline cache 落盘: test-only flush hook (vulkan_backend.cc, HYLE_TESTING). Returns the
 // bytes written to HYLE_VK_PIPELINE_CACHE (0 if unset/no device/empty). Declared here so the
 // test can drive persistence on demand rather than waiting for process-exit (~VkContext).
@@ -175,6 +176,7 @@ TEST(VulkanCompute, ForcedStagingIsLazyAndTransferSized) {
     EXPECT_EQ(output[i], expected) << i;
   }
 }
+#endif
 
 TEST(VulkanCompute, DevicePoolReusesFreedVkBuffer) {
   Device vk;
@@ -214,6 +216,7 @@ TEST(VulkanCompute, TransferChainSetCopyGet) {
   for (std::uint8_t byte : output) EXPECT_EQ(byte, 0x5A);
 }
 
+#if defined(HYLE_TESTING)
 TEST(VulkanCompute, MappedRangeAlignsToNonCoherentAtom) {
   Device vk;
   if (!find_vulkan(vk)) GTEST_SKIP() << "no Vulkan compute device";
@@ -235,6 +238,7 @@ TEST(VulkanCompute, MappedRangeAlignsToNonCoherentAtom) {
   EXPECT_EQ(offset, atom);
   EXPECT_EQ(size, atom * 2);
 }
+#endif
 
 // End-to-end: SPIR-V kernel + buffers + scalars through the unified launch shell.
 TEST(VulkanCompute, SaxpyEndToEnd) {
@@ -286,6 +290,7 @@ Result<Kernel> load_saxpy(const Device& dev) {
 }
 }  // namespace
 
+#if defined(HYLE_TESTING)
 TEST(VulkanCompute, NonCoherentHostBufferRoundTrip) {
   Device vk;
   if (!find_vulkan(vk)) GTEST_SKIP() << "no Vulkan compute device";
@@ -324,6 +329,7 @@ TEST(VulkanCompute, NonCoherentHostBufferRoundTrip) {
   for (std::uint32_t i = 0; i < kN; ++i)
     ASSERT_NEAR(out[i], 2.0f * x[i] + 3.0f * y[i] + 0.5f, 1e-2f) << "at " << i;
 }
+#endif
 
 // #15 batching: N saxpy dispatches (different buffer sets) in ONE launch_batch = ONE
 // Vulkan command buffer + ONE submit. Each result golden-checked. Proves the batched path
@@ -432,6 +438,7 @@ TEST(VulkanCompute, TimingMeasuresElapsed) {
 // plain variant leaves it unset -> SKIP. Proves the save path (getPipelineCacheData -> framed
 // file); the load+UUID path is exercised by the SAME variant's SECOND run seeding from this
 // file (saxpy stays green => the seeded cache was accepted, not rejected).
+#if defined(HYLE_TESTING)
 TEST(VulkanCompute, PipelineCachePersist) {
   auto path = platform::get_env_var("HYLE_VK_PIPELINE_CACHE");
   if (!path || path->empty())
@@ -468,6 +475,7 @@ TEST(VulkanCompute, PipelineCachePersist) {
       << size.error().message();
   EXPECT_GT(*size, 24u) << "cache file has no payload beyond the header";
 }
+#endif
 
 // #2/#3 specialization constants: load saxpy_spec.comp with local_size (id 0) and SCALE (id 1,
 // default 7.0) as spec constants, overriding SCALE=3.0 at build. The result must be scaled by

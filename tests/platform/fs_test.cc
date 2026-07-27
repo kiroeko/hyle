@@ -17,6 +17,8 @@
 #  define WIN32_LEAN_AND_MEAN
 #  include <windows.h>  // WriteFile to prove the temp-file handle is writable
 #else
+#  include <fcntl.h>
+#  include <sys/stat.h>
 #  include <unistd.h>   // symlink() + write() to prove the temp-file fd is writable
 #endif
 
@@ -32,6 +34,28 @@ bool write_all_fd(std::intptr_t fd, const void* data, std::size_t n) {
                    &wrote, nullptr) && wrote == n;
 #else
   return ::write(static_cast<int>(fd), data, n) == static_cast<ssize_t>(n);
+#endif
+}
+
+bool set_one_tick_before_unix_epoch(const char* path) {
+#if defined(_WIN32)
+  HANDLE file = ::CreateFileA(path, FILE_WRITE_ATTRIBUTES,
+                              FILE_SHARE_READ | FILE_SHARE_WRITE |
+                                  FILE_SHARE_DELETE,
+                              nullptr, OPEN_EXISTING,
+                              FILE_ATTRIBUTE_NORMAL, nullptr);
+  if (file == INVALID_HANDLE_VALUE) return false;
+  constexpr std::uint64_t kUnixEpochTicks =
+      116'444'736'000'000'000ull;
+  const std::uint64_t raw = kUnixEpochTicks - 1;
+  FILETIME value{static_cast<DWORD>(raw),
+                 static_cast<DWORD>(raw >> 32)};
+  const bool ok = ::SetFileTime(file, nullptr, nullptr, &value) != 0;
+  ::CloseHandle(file);
+  return ok;
+#else
+  ::timespec values[2] = {{-1, 999'999'999}, {-1, 999'999'999}};
+  return ::utimensat(AT_FDCWD, path, values, 0) == 0;
 #endif
 }
 }  // namespace
@@ -110,6 +134,21 @@ TEST_F(FsTest, StatExistsDirectoryFile) {
 
   // A missing path is an explicit NotFound, not an all-zero pseudo-stat.
   EXPECT_TRUE(stat(path("nope").c_str()).error().IsNotFound());
+}
+
+TEST_F(FsTest, StatPreservesPreEpochTimeAndSubsecondPrecision) {
+  const std::string file = path("before-epoch.txt");
+  ASSERT_TRUE(touch(file.c_str()).ok());
+  ASSERT_TRUE(set_one_tick_before_unix_epoch(file.c_str()));
+
+  const FileInfo info = stat(file.c_str()).value();
+  EXPECT_TRUE(hyle::time::unix_timestamp_valid(info.modified_time));
+  EXPECT_EQ(info.modified_time.seconds, -1);
+#if defined(_WIN32)
+  EXPECT_EQ(info.modified_time.nanoseconds, 999'999'900u);
+#else
+  EXPECT_EQ(info.modified_time.nanoseconds, 999'999'999u);
+#endif
 }
 
 TEST_F(FsTest, MakeDirectoryIdempotent) {

@@ -1,9 +1,49 @@
 cmake_minimum_required(VERSION 3.25)
 
+# The checked-in C/C++ header is the single version source, including for a
+# component package that does not build hyle_core.  Read it before project() so
+# package metadata, loader identities and runtime assertions cannot drift from
+# the public macros.
+file(STRINGS "${CMAKE_CURRENT_LIST_DIR}/include/hyle/core/version_defs.h"
+  _hyle_version_lines REGEX
+  "^#define HYLE_VERSION_(MAJOR|MINOR|PATCH) [0-9]+$")
+foreach(_hyle_version_part IN ITEMS MAJOR MINOR PATCH)
+  foreach(_hyle_version_line IN LISTS _hyle_version_lines)
+    if(_hyle_version_line MATCHES
+        "^#define HYLE_VERSION_${_hyle_version_part} ([0-9]+)$")
+      set(_hyle_version_${_hyle_version_part} "${CMAKE_MATCH_1}")
+    endif()
+  endforeach()
+  if(NOT DEFINED _hyle_version_${_hyle_version_part})
+    message(FATAL_ERROR
+      "Cannot read HYLE_VERSION_${_hyle_version_part} from version_defs.h")
+  endif()
+endforeach()
+set(_hyle_project_version
+  "${_hyle_version_MAJOR}.${_hyle_version_MINOR}.${_hyle_version_PATCH}")
+
 project(hyle
-  VERSION 0.1.0
+  VERSION "${_hyle_project_version}"
   DESCRIPTION "HYbrid LEvels - general-purpose high-performance C++ infra"
   LANGUAGES C CXX)
+
+unset(_hyle_project_version)
+unset(_hyle_version_lines)
+unset(_hyle_version_line)
+unset(_hyle_version_part)
+unset(_hyle_version_MAJOR)
+unset(_hyle_version_MINOR)
+unset(_hyle_version_PATCH)
+
+# A pre-1.0 minor release may change the C and C++ ABI.  Give each 0.x minor
+# its own loader identity instead of claiming that every 0.x package is binary
+# compatible.  Once the project reaches 1.0, the conventional major-only ABI
+# identity applies.
+if(PROJECT_VERSION_MAJOR EQUAL 0)
+  set(HYLE_ABI_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}")
+else()
+  set(HYLE_ABI_VERSION "${PROJECT_VERSION_MAJOR}")
+endif()
 
 set(HYLE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 set(HYLE_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}")
@@ -34,12 +74,14 @@ endif()
 
 # ---- global options ---------------------------------------------------------
 option(HYLE_BUILD_TESTS "build unit tests (GoogleTest)" ${PROJECT_IS_TOP_LEVEL})
+option(HYLE_TEST_INSTRUMENTATION
+  "compile test-only fault injection and structural diagnostics" ON)
 option(HYLE_BUILD_BENCH "build microbenchmarks (nanobench)" OFF)
 option(HYLE_INSTALL "generate install rules and a relocatable CMake package" OFF)
 if(HYLE_INSTALL AND HYLE_BUILD_TESTS)
   message(FATAL_ERROR
-    "HYLE_INSTALL=ON requires HYLE_BUILD_TESTS=OFF. Test builds intentionally compile "
-    "HYLE_TESTING-only layouts and must never be installed as production libraries.")
+    "HYLE_INSTALL=ON requires HYLE_BUILD_TESTS=OFF. Test configurations are validation "
+    "artifacts; the instrumented form may change layout, and neither form is an SDK.")
 endif()
 set(HYLE_INSTALL_INCLUDEDIR "include")
 if(HYLE_INSTALL)
@@ -117,7 +159,7 @@ include(HyleWarnings)
 include(HyleSanitizers)
 include(HyleModule)
 include(HyleTrace)    # obs-02: HYLE_TRACE gate + optional tracy backend (default OFF)
-include(HyleTesting)  # HYLE_TESTING gate: test-only interfaces (derived from HYLE_BUILD_TESTS)
+include(HyleTesting)  # HYLE_TESTING gate: optional test-only instrumentation
 
 # ---- optional OpenSSL (io-08 TLS) -------------------------------------------
 # AUTO preserves convenient source builds; ON makes TLS part of the requested

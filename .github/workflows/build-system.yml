@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   platform-and-package-smoke:
-    name: ${{ matrix.label }} core + package smoke
+    name: ${{ matrix.label }} core + product-shape + package smoke
     strategy:
       fail-fast: false
       matrix:
@@ -70,6 +70,22 @@ jobs:
       - name: Run core verification surface (Windows selected MSVC)
         if: runner.os == 'Windows'
         run: ./scripts/hyle-windows.ps1 -Action Test -Preset windows-ninja -R "^hyle_core_" --output-on-failure
+
+      - name: Verify production-shape tests (Unix)
+        if: runner.os != 'Windows'
+        run: >-
+          cmake -DHYLE_SOURCE_DIR=${{ github.workspace }}
+          -DHYLE_SMOKE_ROOT=${{ runner.temp }}/hyle-product-shape-smoke
+          "-DHYLE_SMOKE_GENERATOR=${{ matrix.generator }}"
+          -DHYLE_GOOGLETEST_SOURCE=${{ github.workspace }}/build-${{ matrix.preset }}/_deps/googletest-src
+          -P cmake/HyleCiProductShapeSmoke.cmake
+
+      - name: Verify production-shape tests (Windows selected MSVC)
+        if: runner.os == 'Windows'
+        run: >-
+          ./scripts/hyle-windows.ps1 -Action ProductShapeSmoke
+          -SmokeRoot ${{ runner.temp }}/hyle-product-shape-smoke
+          -GTestSource ${{ github.workspace }}/build-windows-ninja/_deps/googletest-src
 
       - name: Verify installed package consumers (Unix)
         if: runner.os != 'Windows'

@@ -11,6 +11,7 @@
 #include <stdint.h>
 
 #include "hyle/c/error.h"
+#include "hyle/c/time_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,6 +37,8 @@ HYLE_TIME_C_API uint64_t hyle_time_monotonic_ns(void);
 HYLE_TIME_C_API uint64_t hyle_time_profiling_clock_ns(void);
 HYLE_TIME_C_API int hyle_time_profiling_clock_available(void);
 HYLE_TIME_C_API uint64_t hyle_time_realtime_ns(void);
+HYLE_TIME_C_API void hyle_time_realtime_timestamp(
+    hyle_unix_timestamp* out);
 HYLE_TIME_C_API uint64_t hyle_time_coarse_realtime_ns(void);
 HYLE_TIME_C_API int hyle_time_coarse_realtime_available(void);
 HYLE_TIME_C_API void hyle_time_sleep_for_ns(uint64_t ns);

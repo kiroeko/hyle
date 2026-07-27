@@ -601,8 +601,10 @@ TEST(Region, LongLivedReuseExaminesEachRetainedBlockAtMostOncePerEpoch) {
       for (std::size_t i = 0; i < kRetainedBlocks; ++i)
         ASSERT_NE(region.allocate(64, 16), nullptr) << "epoch=" << epoch;
       EXPECT_EQ(state.calls, warmed_calls) << "epoch=" << epoch;
+#if defined(HYLE_TESTING)
       EXPECT_EQ(region.debug_reuse_candidates(), kRetainedBlocks - 1)
           << "epoch=" << epoch;
+#endif
     }
   }
   EXPECT_EQ(state.outstanding, 0u);
@@ -956,6 +958,7 @@ TEST(FixedPool, RandomizedReallocateModelPreservesDataAndAccounting) {
   EXPECT_EQ(pool.used(), 0u);
 }
 
+#if defined(HYLE_TESTING)
 TEST(FixedPool, FragmentedLookupExaminesAtMostTwoCandidates) {
   alignas(64) std::byte storage[64 * 1024];
   FixedPool pool(storage, sizeof(storage));
@@ -989,6 +992,7 @@ TEST(FixedPool, FragmentedLookupExaminesAtMostTwoCandidates) {
     pool.deallocate(barrier);
   EXPECT_EQ(pool.used(), 0u);
 }
+#endif
 
 TEST(FixedPoolDeathTest, DoubleReturnTraps) {
   EXPECT_DEATH(

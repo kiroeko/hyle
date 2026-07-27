@@ -6,6 +6,7 @@
 
 #include "hyle/error/result.h"
 #include "hyle/macros.h"
+#include "hyle/time/unix_timestamp.h"
 #include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
@@ -100,7 +101,7 @@ struct FileInfo {
   FileType type = FileType::kUnknown;  // target kind (stat follows symlinks)
   bool is_symlink = false;           // path itself is a symbolic link (lstat semantics)
   std::uint64_t size = 0;            // bytes (regular files); 0 for directories
-  std::int64_t modified_time = 0;    // seconds since the epoch (mtime)
+  time::UnixTimestamp modified_time{};  // signed Unix mtime, nanosecond precision
 
   constexpr bool is_regular() const noexcept {
     return type == FileType::kRegular;

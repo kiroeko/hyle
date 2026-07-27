@@ -9,7 +9,7 @@ callback，也不替业务决定周期 timer 的补发策略。纯 C/FFI 用户�
 | 需求 | 选择 | 不要选择 | 关键合同 |
 |---|---|---|---|
 | elapsed、timeout、deadline | `monotonic_now()` / `monotonic_ns()` | realtime | 单调、零点无意义 |
-| 日志、协议、Unix epoch | `realtime_now()` / `realtime_ns()` | monotonic 当日期 | 可因校时跳变 |
+| 日志、协议、Unix epoch | `realtime_now()` / `realtime_timestamp()` | monotonic 当日期 | 可因校时跳变；跨边界优先分离秒/纳秒 |
 | 普通 C++ duration/deadline | chrono typed 入口 | 手写 ns 乘法与加法 | 转换向上取整并饱和 |
 | 简单作用域耗时 | `Instant::now()` + `elapsed()` | profiling clock 默认化 | 类型安全、差值可为负 |
 | 高频同核 profiling | `profiling_clock_ns()` | timeout | 先查 availability；x86 TSC 才可能更快 |
@@ -52,6 +52,26 @@ ns，超范围饱和。`Instant` 的 `elapsed()`/`until()` 是非负
 采样，但名称和合同都不承诺 monotonic：跨核迁移、suspend 或 VM migration 可能让差值失真。
 availability 为 false 时会安全回退，但这不等于应该把它写进 timeout。`coarse_realtime_ns`
 是粗粒度日志时间戳；coarse 是稳定语义，是否更快只由当前平台性能证书说明。
+
+### Unix 时间与 OS/FFI 互操作
+
+持久化、文件元数据或 FFI 不要把 Unix 时间压成无符号纳秒。它会让 1970 年前的值 wrap，且
+`int64_t` 纳秒也只能覆盖约 1677--2262。HYLE 使用 canonical `UnixTimestamp{seconds,
+nanoseconds}`：seconds 有符号，nanoseconds 总在 `[0, 1e9)`，因此 `-1ns` 表示为
+`{-1, 999999999}`。
+
+```cpp
+#include "hyle/time/unix_timestamp.h"
+
+const hyle::time::UnixTimestamp stamp = hyle::time::realtime_timestamp();
+const auto chrono_value = hyle::time::unix_time_point(stamp); // 超范围为 nullopt
+const auto native = hyle::time::unix_timestamp_to_timespec(stamp);
+```
+
+提供与 `std::chrono::system_clock`、`time_t`、POSIX `timespec` 及 raw Windows FILETIME ticks
+的 checked/exact 转换。`platform::FileInfo::modified_time` 和 `io::FileStat::modified_time`
+复用同一表示，保留 pre-epoch 与亚秒精度。`realtime_ns()` 仍是当前时间的紧凑热路径入口，
+不是通用存储格式。
 
 ## sleep：先问“谁在睡”
 

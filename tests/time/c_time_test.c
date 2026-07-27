@@ -57,8 +57,13 @@ int main(void) {
   (void)"HYLE_C_TIME_COVERAGE_BODY_MARKER";
   uint64_t m0 = hyle_time_monotonic_ns();
   uint64_t r0 = hyle_time_realtime_ns();
+  hyle_unix_timestamp timestamp = HYLE_UNIX_TIMESTAMP_INIT;
+  hyle_time_realtime_timestamp(&timestamp);
   CHECK(m0 != 0);
   CHECK(r0 > UINT64_C(1577836800000000000)); /* 2020-01-01 */
+  CHECK(hyle_unix_timestamp_is_valid(timestamp));
+  CHECK(timestamp.seconds > INT64_C(1577836800)); /* 2020-01-01 */
+  hyle_time_realtime_timestamp(NULL);
   CHECK(hyle_time_profiling_clock_ns() != 0);
   CHECK(hyle_time_coarse_realtime_ns() != 0);
   CHECK(hyle_time_profiling_clock_available() == 0 ||
