@@ -144,26 +144,40 @@ class PodVector {
   }
   ~PodVector() { detail::carray_free_internal(data_, sizeof(T)); }
 
-  PodVector(PodVector&& o) noexcept : data_(o.data_), alloc_(o.alloc_) {
+  PodVector(PodVector&& o) noexcept
+      : data_(o.data_), alloc_(o.alloc_), size_(o.size_),
+        capacity_(o.capacity_) {
     o.data_ = nullptr;
+    o.size_ = 0;
+    o.capacity_ = 0;
   }
   PodVector& operator=(PodVector&& o) noexcept {
     if (this != &o) {
       detail::carray_free_internal(data_, sizeof(T));
       data_ = o.data_;
       alloc_ = o.alloc_;
+      size_ = o.size_;
+      capacity_ = o.capacity_;
       o.data_ = nullptr;
+      o.size_ = 0;
+      o.capacity_ = 0;
     }
     return *this;
   }
 
   mem::Allocator allocator() const noexcept { return alloc_; }
 
-  size_type size() const noexcept { return carray_size(data_); }
-  size_type capacity() const noexcept { return carray_capacity(data_); }
+  size_type size() const noexcept { return size_; }
+  size_type capacity() const noexcept { return capacity_; }
   bool empty() const noexcept { return size() == 0; }
-  pointer data() noexcept { return data_; }
-  const_pointer data() const noexcept { return data_; }
+  pointer data() noexcept {
+    sync_header_size();
+    return data_;
+  }
+  const_pointer data() const noexcept {
+    sync_header_size();
+    return data_;
+  }
 
   reference operator[](size_type i) noexcept { return data_[i]; }
   const_reference operator[](size_type i) const noexcept { return data_[i]; }
@@ -231,7 +245,7 @@ class PodVector {
     } else {
       copy_one(data_ + s, v);
     }
-    carray_header(data_)->size = s + 1;
+    set_size(s + 1);
     return true;
   }
 
@@ -252,7 +266,7 @@ class PodVector {
                  static_cast<const void*>(data_ + index),
                  static_cast<std::size_t>(current - index) * sizeof(T));
     fill_bytes(data_ + index, count, saved);
-    carray_header(data_)->size = requested;
+    set_size(requested);
     return data_ + index;
   }
 
@@ -294,26 +308,26 @@ class PodVector {
 
   void pop_back() noexcept {
     HYLE_FATAL_ASSERT(size() > 0);
-    carray_header(data_)->size = size() - 1;
+    set_size(size() - 1);
   }
 
   bool try_resize(size_type count)
     requires std::is_default_constructible_v<T>
   {
     if (count <= size()) {
-      if (data_ != nullptr) carray_header(data_)->size = count;
+      set_size(count);
       return true;
     }
     if (count > capacity() && !grow_to(count)) return false;
     const T value{};
     for (size_type i = size(); i < count; ++i) copy_one(data_ + i, value);
-    if (data_ != nullptr) carray_header(data_)->size = count;
+    set_size(count);
     return true;
   }
 
   bool try_resize(size_type count, const T& value) noexcept {
     if (count <= size()) {
-      if (data_ != nullptr) carray_header(data_)->size = count;
+      set_size(count);
       return true;
     }
     alignas(T) std::byte saved[sizeof(T)];
@@ -324,7 +338,7 @@ class PodVector {
     } else {
       fill_bytes(data_ + size(), count - size(), saved);
     }
-    if (data_ != nullptr) carray_header(data_)->size = count;
+    set_size(count);
     return true;
   }
 
@@ -352,12 +366,12 @@ class PodVector {
     std::memmove(static_cast<void*>(data_ + index),
                  static_cast<const void*>(data_ + index + count),
                  static_cast<std::size_t>(current - index - count) * sizeof(T));
-    carray_header(data_)->size = current - count;
+    set_size(current - count);
     return data_ + index;
   }
 
   void clear() noexcept {
-    if (data_) carray_header(data_)->size = 0;
+    set_size(0);
   }
 
   bool try_shrink_to_fit() noexcept {
@@ -365,12 +379,15 @@ class PodVector {
     if (size() == 0) {
       detail::carray_free_internal(data_, sizeof(T));
       data_ = nullptr;
+      capacity_ = 0;
       return true;
     }
+    sync_header_size();
     void* replacement = detail::carray_set_capacity_internal(
         data_, size(), sizeof(T), alignof(T), alloc_);
     if (replacement == nullptr) return false;
     data_ = static_cast<T*>(replacement);
+    capacity_ = size_;
     return true;
   }
 
@@ -380,6 +397,8 @@ class PodVector {
     using std::swap;
     swap(data_, other.data_);
     swap(alloc_, other.alloc_);
+    swap(size_, other.size_);
+    swap(capacity_, other.capacity_);
   }
 
   friend bool operator==(const PodVector& left, const PodVector& right)
@@ -453,7 +472,7 @@ class PodVector {
                  static_cast<std::size_t>(current - index) * sizeof(T));
     copy_bytes(data_ + index, inserted.data(),
                static_cast<std::size_t>(count) * sizeof(T));
-    carray_header(data_)->size = requested;
+    set_size(requested);
     return data_ + index;
   }
 
@@ -473,7 +492,7 @@ class PodVector {
       if (additional != 0) {
         copy_bytes(data_ + size(), std::to_address(first),
                    static_cast<std::size_t>(additional) * sizeof(T));
-        carray_header(data_)->size += additional;
+        set_size(size_ + additional);
       }
     } else {
       if constexpr (std::forward_iterator<It>) {
@@ -500,15 +519,29 @@ class PodVector {
   }
 
   bool grow_to(size_type cap) noexcept {
-    void* replacement = detail::carray_set_capacity_internal(
+    sync_header_size();
+    void *replacement = detail::carray_set_capacity_internal(
         data_, cap, sizeof(T), alignof(T), alloc_);
-    if (replacement == nullptr) return false;
-    data_ = static_cast<T*>(replacement);
+    if (replacement == nullptr)
+      return false;
+    data_ = static_cast<T *>(replacement);
+    capacity_ = carray_capacity(data_);
     return true;
+  }
+
+  void set_size(size_type size) noexcept {
+    size_ = size;
+  }
+
+  void sync_header_size() const noexcept {
+    if (data_ != nullptr)
+      carray_header(data_)->size = size_;
   }
 
   T* data_ = nullptr;
   mem::Allocator alloc_;
+  size_type size_ = 0;
+  size_type capacity_ = 0;
 };
 
 template <class T>

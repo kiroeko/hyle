@@ -84,6 +84,10 @@ TEST(PodVector, HeaderBeforeDataLayout) {
   // The element pointer IS the data; header sits immediately before it.
   EXPECT_EQ(a.data()[0], 7);
   EXPECT_EQ(carray_header(a.data())->size, 1u);
+  a.push_back(9);
+  EXPECT_EQ(carray_header(a.data())->size, 2u);
+  a.pop_back();
+  EXPECT_EQ(carray_header(a.data())->size, 1u);
   // data can be passed straight to a C API expecting int* -- prove it reads.
   int* raw = a.data();
   EXPECT_EQ(raw[0], 7);
