@@ -194,6 +194,13 @@ HYLE_FORCE_INLINE std::uint64_t hash_bytes_medium_inline(
 
   const auto* bytes = static_cast<const std::uint8_t*>(input);
   seed ^= mix(seed ^ secret[0], secret[1]);
+  if (len <= 32) {
+    seed = mix(load64(bytes) ^ secret[1], load64(bytes + 8) ^ seed);
+    std::uint64_t left = load64(bytes + len - 16) ^ secret[1];
+    std::uint64_t right = load64(bytes + len - 8) ^ seed;
+    const Mul128Parts folded = mul128_parts(left, right);
+    return mix(folded.lo ^ secret[0] ^ len, folded.hi ^ secret[1]);
+  }
   std::size_t remaining = len;
   if (remaining >= 48) {
     std::uint64_t second = seed;
@@ -293,7 +300,13 @@ HYLE_FORCE_INLINE std::uint64_t hash_bytes(const void* data, std::size_t len,
   // inline multiply stream so a DLL call does not dominate them. The long
   // dispatcher chooses wyhash or a runtime-safe wide XXH3 kernel. Vendor headers
   // stay hidden and hashes remain repeatable for this process.
-  if (len <= 32) return detail::hash_medium_17_32(data, len, seed);
+  if (len <= 32) {
+#if defined(HYLE_ARCH_ARM64)
+    return detail::hash_bytes_medium_inline(data, len, seed);
+#else
+    return detail::hash_medium_17_32(data, len, seed);
+#endif
+  }
   if (len <= detail::kWyhashThreshold)
     return detail::hash_bytes_medium_inline(data, len, seed);
   return detail::hash_bytes_long(data, len, seed);
@@ -314,7 +327,11 @@ struct Hash {
     if constexpr (sizeof(T) <= 16) {
       return detail::hash_small(&v, sizeof(T));           // inline mix, no call
     } else if constexpr (sizeof(T) <= 32) {
+#if defined(HYLE_ARCH_ARM64)
+      return detail::hash_bytes_medium_inline(&v, sizeof(T), 0);
+#else
       return detail::hash_medium_17_32(&v, sizeof(T), 0);
+#endif
     } else if constexpr (sizeof(T) <= detail::kWyhashThreshold) {
       return detail::hash_bytes_medium_inline(&v, sizeof(T), 0);
     } else {
