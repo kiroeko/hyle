@@ -97,24 +97,6 @@ struct HashedText {
 };
 
 HYLE_FORCE_INLINE std::uint64_t hash_intern_text(string_ref text) noexcept {
-  if (text.size <= 16) return hash_bytes(text.data, text.size);
-  if (text.size <= 32) {
-    // Symbol names commonly sit just above hash_bytes' 16B inline cutoff. An
-    // out-of-line XXH3 call is a measurable fixed cost there (especially across
-    // an Apple dylib). First+last 16B cover every byte for 17..32B; three
-    // folded 128-bit multiplies retain avalanche without a call or over-read.
-    std::uint64_t first0, first1, last0, last1;
-    std::memcpy(&first0, text.data, 8);
-    std::memcpy(&first1, text.data + 8, 8);
-    std::memcpy(&last0, text.data + text.size - 16, 8);
-    std::memcpy(&last1, text.data + text.size - 8, 8);
-    const std::uint64_t left =
-        detail::mix64_2(first0 ^ 0x9ddfea08eb382d69ull,
-                        first1 ^ (static_cast<std::uint64_t>(text.size) * 0x9e3779b97f4a7c15ull));
-    const std::uint64_t right =
-        detail::mix64_2(last0 ^ 0xff51afd7ed558ccdull, last1 ^ 0xc4ceb9fe1a85ec53ull);
-    return detail::mix64_2(left ^ 0x243f6a8885a308d3ull, right ^ 0x13198a2e03707344ull);
-  }
   return hash_bytes(text.data, text.size);
 }
 
