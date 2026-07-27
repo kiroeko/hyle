@@ -131,6 +131,15 @@ struct CountingLess {
   }
 };
 
+struct ThrowingLess {
+  bool *fail = nullptr;
+  bool operator()(int left, int right) const {
+    if (*fail)
+      throw std::runtime_error("requested comparator failure");
+    return left < right;
+  }
+};
+
 template <class Map>
 void expect_same_map(const Map &actual,
                      const std::map<int, int> &expected) {
@@ -210,6 +219,22 @@ TEST(FlatSet, KeepsKeysConstAndSupportsHeterogeneousRanges) {
   EXPECT_TRUE(set.erase(std::string_view("beta")));
   EXPECT_EQ((std::vector<std::string>(set.begin(), set.end())),
             (std::vector<std::string>{"alpha", "gamma"}));
+}
+
+TEST(FlatSorted, ComparatorExceptionsPropagateWithoutMutation) {
+  bool fail = false;
+  FlatMap<int, int, ThrowingLess> map(ThrowingLess{&fail});
+  map.insert(1, 10);
+  map.insert(3, 30);
+
+  fail = true;
+  EXPECT_THROW((void)map.contains(2), std::runtime_error);
+  EXPECT_THROW((void)map.erase(1), std::runtime_error);
+
+  fail = false;
+  ASSERT_EQ(map.size(), 2u);
+  EXPECT_EQ(map.find(1)->value(), 10);
+  EXPECT_EQ(map.find(3)->value(), 30);
 }
 
 TEST(FlatMap, RandomDifferentialMatchesStdMap) {

@@ -69,10 +69,8 @@ namespace detail {
 
 template <class Compare, class K, class Q>
 concept FlatComparable =
-    std::is_nothrow_invocable_r_v<bool, const Compare &, const K &,
-                                  const Q &> &&
-    std::is_nothrow_invocable_r_v<bool, const Compare &, const Q &,
-                                  const K &>;
+    std::predicate<const Compare &, const K &, const Q &> &&
+    std::predicate<const Compare &, const Q &, const K &>;
 
 template <class Pair>
 decltype(auto) flat_range_key(Pair &&pair) {
@@ -161,7 +159,7 @@ public:
 
   template <class Q>
     requires FlatComparable<Compare, K, Q>
-  size_type lower_bound_index(const Q &key) const noexcept {
+  size_type lower_bound_index(const Q &key) const {
     if constexpr (std::is_same_v<Entry, K>) {
       // FlatSet stores K directly, so keep the projection-free index loop.
       // Map entries use the standard algorithm below: its comparator/projector
@@ -182,7 +180,7 @@ public:
     } else {
       const auto position = std::lower_bound(
           entries_.begin(), entries_.end(), key,
-          [this](const Entry &entry, const Q &candidate) noexcept {
+          [this](const Entry &entry, const Q &candidate) {
             return compare_(KeyOf{}(entry), candidate);
           });
       return static_cast<size_type>(position - entries_.begin());
@@ -191,7 +189,7 @@ public:
 
   template <class Q>
     requires FlatComparable<Compare, K, Q>
-  size_type upper_bound_index(const Q &key) const noexcept {
+  size_type upper_bound_index(const Q &key) const {
     if constexpr (std::is_same_v<Entry, K>) {
       size_type first = 0;
       size_type count = entries_.size();
@@ -209,7 +207,7 @@ public:
     } else {
       const auto position = std::upper_bound(
           entries_.begin(), entries_.end(), key,
-          [this](const Q &candidate, const Entry &entry) noexcept {
+          [this](const Q &candidate, const Entry &entry) {
             return compare_(candidate, KeyOf{}(entry));
           });
       return static_cast<size_type>(position - entries_.begin());
@@ -218,7 +216,7 @@ public:
 
   template <class Q>
     requires FlatComparable<Compare, K, Q>
-  bool equivalent_at(size_type index, const Q &key) const noexcept {
+  bool equivalent_at(size_type index, const Q &key) const {
     return index != size() && !compare_(key, KeyOf{}(entries_[index]));
   }
 
@@ -401,51 +399,51 @@ public:
 
   template <class Q>
     requires detail::FlatComparable<Compare, K, Q>
-  iterator lower_bound(const Q &key) noexcept {
+  iterator lower_bound(const Q &key) {
     return core_.iterator_at(core_.lower_bound_index(key));
   }
   template <class Q>
     requires detail::FlatComparable<Compare, K, Q>
-  const_iterator lower_bound(const Q &key) const noexcept {
+  const_iterator lower_bound(const Q &key) const {
     return core_.iterator_at(core_.lower_bound_index(key));
   }
   template <class Q>
     requires detail::FlatComparable<Compare, K, Q>
-  iterator upper_bound(const Q &key) noexcept {
+  iterator upper_bound(const Q &key) {
     return core_.iterator_at(core_.upper_bound_index(key));
   }
   template <class Q>
     requires detail::FlatComparable<Compare, K, Q>
-  const_iterator upper_bound(const Q &key) const noexcept {
+  const_iterator upper_bound(const Q &key) const {
     return core_.iterator_at(core_.upper_bound_index(key));
   }
   template <class Q>
     requires detail::FlatComparable<Compare, K, Q>
-  iterator find(const Q &key) noexcept {
+  iterator find(const Q &key) {
     const size_type index = core_.lower_bound_index(key);
     return core_.equivalent_at(index, key) ? core_.iterator_at(index) : end();
   }
   template <class Q>
     requires detail::FlatComparable<Compare, K, Q>
-  const_iterator find(const Q &key) const noexcept {
+  const_iterator find(const Q &key) const {
     const size_type index = core_.lower_bound_index(key);
     return core_.equivalent_at(index, key) ? core_.iterator_at(index) : end();
   }
   template <class Q>
     requires detail::FlatComparable<Compare, K, Q>
-  bool contains(const Q &key) const noexcept { return find(key) != end(); }
+  bool contains(const Q &key) const { return find(key) != end(); }
   template <class Q>
     requires detail::FlatComparable<Compare, K, Q>
-  size_type count(const Q &key) const noexcept { return contains(key) ? 1 : 0; }
+  size_type count(const Q &key) const { return contains(key) ? 1 : 0; }
   template <class Q>
     requires detail::FlatComparable<Compare, K, Q>
-  std::pair<iterator, iterator> equal_range(const Q &key) noexcept {
+  std::pair<iterator, iterator> equal_range(const Q &key) {
     return {lower_bound(key), upper_bound(key)};
   }
   template <class Q>
     requires detail::FlatComparable<Compare, K, Q>
   std::pair<const_iterator, const_iterator>
-  equal_range(const Q &key) const noexcept {
+  equal_range(const Q &key) const {
     return {lower_bound(key), upper_bound(key)};
   }
 
@@ -550,7 +548,7 @@ public:
 
   template <class Q>
     requires detail::FlatComparable<Compare, K, Q>
-  bool erase(const Q &key) noexcept {
+  bool erase(const Q &key) {
     const size_type index = core_.lower_bound_index(key);
     if (!core_.equivalent_at(index, key))
       return false;
@@ -670,29 +668,29 @@ public:
 
   template <class Q>
     requires detail::FlatComparable<Compare, K, Q>
-  iterator lower_bound(const Q &key) const noexcept {
+  iterator lower_bound(const Q &key) const {
     return core_.iterator_at(core_.lower_bound_index(key));
   }
   template <class Q>
     requires detail::FlatComparable<Compare, K, Q>
-  iterator upper_bound(const Q &key) const noexcept {
+  iterator upper_bound(const Q &key) const {
     return core_.iterator_at(core_.upper_bound_index(key));
   }
   template <class Q>
     requires detail::FlatComparable<Compare, K, Q>
-  iterator find(const Q &key) const noexcept {
+  iterator find(const Q &key) const {
     const size_type index = core_.lower_bound_index(key);
     return core_.equivalent_at(index, key) ? core_.iterator_at(index) : end();
   }
   template <class Q>
     requires detail::FlatComparable<Compare, K, Q>
-  bool contains(const Q &key) const noexcept { return find(key) != end(); }
+  bool contains(const Q &key) const { return find(key) != end(); }
   template <class Q>
     requires detail::FlatComparable<Compare, K, Q>
-  size_type count(const Q &key) const noexcept { return contains(key) ? 1 : 0; }
+  size_type count(const Q &key) const { return contains(key) ? 1 : 0; }
   template <class Q>
     requires detail::FlatComparable<Compare, K, Q>
-  std::pair<iterator, iterator> equal_range(const Q &key) const noexcept {
+  std::pair<iterator, iterator> equal_range(const Q &key) const {
     return {lower_bound(key), upper_bound(key)};
   }
 
@@ -738,7 +736,7 @@ public:
 
   template <class Q>
     requires detail::FlatComparable<Compare, K, Q>
-  bool erase(const Q &key) noexcept {
+  bool erase(const Q &key) {
     const size_type index = core_.lower_bound_index(key);
     if (!core_.equivalent_at(index, key))
       return false;
