@@ -27,7 +27,7 @@
 2. **新建 `src/<mod>/c_<mod>.cc`** —— 桥接实现（见 §3）。
 3. **改 `src/<mod>/CMakeLists.txt`** —— 把 `c_<mod>.cc` 加进 `hyle_add_module(<mod> SOURCES ... c_<mod>.cc)`。导出宏 `HYLE_<MOD>_BUILD` 由 `hyle_add_module` 自动定义（`cmake/HyleModule.cmake`），无需手动。
 4. **新建 `tests/<mod>/c_<mod>_test.c`** —— 纯 C smoke（见 §4）。
-5. **改 `tests/CMakeLists.txt`** —— 仿 `hyle_mem_c_test` 加一个 C 可执行：`add_executable` + `target_link_libraries(... PRIVATE hyle_<mod>)` + `set_source_files_properties(... LANGUAGE C)` + `hyle_apply_warnings`/`hyle_apply_sanitizer` + `add_test`。
+5. **改 `tests/<mod>/CMakeLists.txt`** —— 在模块目录作用域调用 `hyle_add_c_test(<mod> c_<mod>_test.c)`，并登记 `hyle_add_c_surface_test(<mod>)` / `hyle_add_header_self_contained_test(<mod>)`；中央 `tests/CMakeLists.txt` 只拥有 helper 和逐模块装载，不接模块文件。
 6. **新建 `docs/guide/c-<mod>.md`** + 在 `docs/guide/README.md` 加索引行 —— 逐符号 1:1。
 
 ## 2. 头文件骨架（照抄 mem.h 顶部，替换 MOD/mod）

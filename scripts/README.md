@@ -7,8 +7,8 @@ depending on a hand-crafted directory layout.
 ## `hyle-windows.ps1` — select an installed MSVC environment
 
 CMake may know the VS 2022 generator but not a newer installed Visual Studio generation.
-This wrapper asks `vswhere` for the latest installation with the x64 C++ workload, imports
-its transient `VsDevCmd` environment, then invokes the `windows-ninja` presets:
+For Ninja, this wrapper asks `vswhere` for the latest installation with the x64 C++ workload,
+imports its transient `VsDevCmd` environment, then invokes the `windows-ninja` presets:
 
 ```powershell
 scripts/hyle-windows.ps1 -Action Configure -Preset windows-ninja
@@ -17,8 +17,22 @@ scripts/hyle-windows.ps1 -Action Test -Preset windows-ninja --output-on-failure
 scripts/hyle-windows.ps1 -Action Workflow -Preset windows-ninja-check
 ```
 
-It installs nothing and does not persistently change the caller's environment. Machines with a
-supported VS 2022 can instead use the `windows` presets directly, without Ninja or a dev shell.
+For an IDE solution, the same wrapper enumerates side-by-side VS 2022 MSVC toolsets and passes the
+highest installed 14.43+ version explicitly. CMake's Visual Studio generator otherwise follows the
+VS default v143 pointer, which may be older than another installed toolset:
+
+```powershell
+# Native VS 2026/v145 solution (CMake 4.2+).
+scripts/hyle-windows.ps1 -Action Configure -Preset windows-vs2026 -DHYLE_COMPONENTS=core
+
+# VS 2022 fallback; dynamically selects the highest supported v143.
+scripts/hyle-windows.ps1 -Action Configure -Preset windows -DHYLE_COMPONENTS=core
+scripts/hyle-windows.ps1 -Action Build -Preset windows --target hyle_core_tests --parallel 2
+# VS 2026: build-windows-vs2026/hyle.slnx; VS 2022: build-windows/hyle.sln
+```
+
+It installs nothing and does not persistently change the caller's environment. A direct
+`cmake --preset windows` is also valid when the VS default toolset already satisfies MSVC 19.43+.
 
 ## Build/package verification automation
 
@@ -172,8 +186,10 @@ cargo run --release --config \
 
 ## Reproducing the dual-platform workflow
 
-- **Windows (MSVC)**: `windows` uses the VS 2022 generator; `windows-ninja` uses the
-  environment selected by `hyle-windows.ps1`. Their build trees are separate.
+- **Windows (MSVC)**: `windows-vs2026` uses CMake 4.2+'s native VS 2026/v145
+  generator; `windows` is the VS 2022 fallback with the highest supported v143
+  selected by `hyle-windows.ps1`; `windows-ninja` uses the latest environment
+  selected by that wrapper. Their build trees are separate.
 - **Linux (GCC14, incl. ThreadSanitizer)**: separate build dir `build-wsl*/`,
   `CXX=g++-14 CC=gcc-14`. Lock-free code MUST pass TSan
   (`-DHYLE_SANITIZER=tsan -DCMAKE_BUILD_TYPE=RelWithDebInfo`, run under

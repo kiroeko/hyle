@@ -1,7 +1,7 @@
 # Windows 环境准备（MSVC）
 
-> 主开发平台之一。当前主机使用 **MSVC 14.50（VS18 Enterprise）** + Ninja；HYLE 的合同是
-> MSVC 19.43+，也支持 CMake 已认识的 VS 2022 generator。
+> 主开发平台之一。当前主机使用 **MSVC 14.50（VS18 Enterprise）**；HYLE 的合同是
+> MSVC 19.43+。CMake 4.2+ 可生成 VS 2026 solution；更旧 CMake 走 VS 2022 generator 回退。
 > 覆盖：构建 / 测试 / 性能测试三件事 + 依赖（OpenSSL、CUDA）。跨平台依赖总览见 [`dependencies.md`](./dependencies.md)。
 
 ## 一、硬门槛（必需，缺了 CMake 直接 FATAL_ERROR）
@@ -18,13 +18,22 @@
 
 ## 二、环境初始化（关键，每个构建 shell 都要先做）
 
-Visual Studio generator 会自行选择工具链；Ninja 必须先注入 MSVC 环境变量。推荐让仓库脚本用
-`vswhere` 选最新已安装 C++ toolchain，不写死 Edition/版本路径：
+Visual Studio generator 会选择对应 IDE 实例，但在同一 VS 内并存多套 v143 时不保证选择数值最高
+的 toolset；Ninja 则完全使用 shell 中的 `cl.exe`。推荐统一走仓库脚本：它为 Ninja 用 `vswhere`
+选最新已安装 C++ toolchain，为 VS 2022 solution 枚举并显式选择最高的 MSVC 14.43+，都不写死
+Edition/安装路径：
 
 ```powershell
 scripts/hyle-windows.ps1 -Action Configure -Preset windows-ninja
 scripts/hyle-windows.ps1 -Action Build -Preset windows-ninja --parallel 2
 scripts/hyle-windows.ps1 -Action Test -Preset windows-ninja --output-on-failure
+
+# CMake 4.2+ + VS 2026：原生 v145 solution
+scripts/hyle-windows.ps1 -Action Configure -Preset windows-vs2026 -DHYLE_COMPONENTS=core
+
+# 较旧 CMake：VS 2022 solution，脚本选择最高合格 v143
+scripts/hyle-windows.ps1 -Action Configure -Preset windows -DHYLE_COMPONENTS=core
+scripts/hyle-windows.ps1 -Action Build -Preset windows --target hyle_core_tests --parallel 2
 ```
 
 也可手工初始化：
@@ -49,8 +58,11 @@ call "C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Auxiliary\Build\
 ## 四、构建
 
 ```bat
-:: CMake 已支持且工具链达 19.43+ 的 VS 2022（无需 dev shell/Ninja）
-cmake --preset windows
+:: CMake 4.2+：原生 VS 2026 / v145 solution
+powershell -File scripts/hyle-windows.ps1 -Action Configure -Preset windows-vs2026
+
+:: 旧 CMake 回退：生成 VS 2022 solution，并显式选择最高合格 v143
+powershell -File scripts/hyle-windows.ps1 -Action Configure -Preset windows
 
 :: 或已初始化 dev shell 的 Ninja 入口
 cmake --preset windows-ninja
@@ -59,6 +71,16 @@ cmake --preset windows-ninja
 cmake --build --preset windows --target hyle_io_test --parallel 2
 cmake --build --preset windows --parallel 2
 ```
+
+VS 2026 preset 生成 `build-windows-vs2026/hyle.slnx`；VS 2022 回退生成
+`build-windows/hyle.sln`。两者都是 multi-config generator，preset 的 build/test 阶段固定选 Release。
+
+直接运行 `cmake --preset windows` 只适合 VS 默认 v143 本身已经是 14.43+ 的机器；CMake 不承诺从
+side-by-side toolset 中挑最高版本。例如 VS 2022 同时有 14.38/14.44 时，默认可能仍落到 14.38。
+包装脚本会探测后传 `-T version=14.44`（具体值随机器变化），若旧 cache 使用了另一 toolset，
+只用 `--fresh` 重建 CMake cache/生成文件，不删除源码、依赖 checkout 或编译产物。
+`Visual Studio 18 2026` generator 从 CMake 4.2 才存在；CMake 4.1 及更早版本不能通过安装 IDE 获得
+新 generator。此时 VS 2026 仍可打开 VS 2022 solution，命令行最新编译器走 Ninja 入口。
 
 - 目标名：`hyle_add_test(<mod>)` → `hyle_<mod>_test`；带 NAME 的 → `hyle_<mod>_<name>_test`（如 `hyle_compute_ggml_bridge_test`）。
 - MSVC 默认 /W4；改导出宏/类布局注意 C4251/C4273。全局已加 `/Zc:__cplusplus`（否则 C++23 feature-test 宏误触发）+ `/utf-8`（杀 C4819）。

@@ -4,13 +4,14 @@
 
 HYLE 的“实现进度”与“当前标准的收口证书”必须分开读：除 compute/graph 仍有产品能力尾，
 其余模块的主体实现基本存在；当前持有严格证书的是
-**error、platform、mem、time、core、build/package、util-core、obs、container**。mem 在 2026-07-26 成熟库红队中发现的
+**core、error、platform、mem、time、build/package、util-core、obs、container**；core 因真实
+SIMD/vqsort 消费者暴露的 compiler/cache primitive 重复实现已在 2026-07-29 完成三平台局部复证。mem 在 2026-07-26 成熟库红队中发现的
 P0/API/分发性能缺口均已修复，并由 clean `c640072` 的三平台 shared same-link 与正确性/ABI/
 sanitizer 证书重新冻结。早期标成 closure/frozen 的任务仍是有效施工证据，不自动等于新标准认证。
 
 | 层次 | 当前判断 | 下一动作 |
 |---|---|---|
-| 严格认证基线 | error、platform、mem、time、core、build/package、util-core、obs、container | 只因明确触发器或依赖受影响项局部回验 |
+| 严格认证基线 | core、error、platform、mem、time、build/package、util-core、obs、container | 只因明确触发器或依赖受影响项局部回验；core 与 StringInterner Apple cache-layout 边均已复证转绿 |
 | 已实现、待新标准复审 | math、util-runtime、sched、io、simd | 按本文队列逐模块收口，不按旧 benchmark 形状默认通过 |
 | 仍有能力尾 | compute、graph | 先用真实北极星补能力，再执行同一严格合同 |
 | 整库发布面 | build/package 独立模块已重签 | 最终 ABI/FFI/bundle 总验收仍在 R6，不重复打开模块设计 |
@@ -70,14 +71,16 @@ n=15 证书关闭；默认 heap、SystemStd、system PMR 与 realloc 无 materia
 
 ## 严格收口合同
 
-模块同时满足以下八项，才标成“当前标准严格收口”：
+完整方法、审查表和证书/重开规则以
+[`module-closure-methodology`](../architecture/module-closure-methodology.md) 为唯一稳定信源；
+下面八项只是 readiness 状态表使用的压缩门。模块同时满足后，才标成“当前标准严格收口”：
 
 1. **真实功能面**：列出外部用户与 HYLE 内部消费者的常用场景；同本地成熟库能力对账，缺项实现或写清负空间和理由。
 2. **架构与类型形状**：ownership、lifetime、concurrency、failure、组合方式贴正常调用；删除只为 benchmark 方便而存在的 API/元数据/类型。
 3. **复杂度与性能**：先争取同类 SOTA 算法复杂度，再在同合同正常 workload 对拍强 peer；微基准只能解释机制，不能决定公开形状。
 4. **正确性与平台**：所有权、OOM/overflow、并发、失效、平台差异和 feature dispatch 红队；Windows/Linux/macOS，适用时 ASan/UBSan/TSan/特殊 ISA。
-5. **C++ 易用性**：首选 source API 有清晰的默认路径、RAII/typed 入口、错误传播和组合 recipe；HYLE C++ 内部不得绕经 C ABI。
-6. **C ABI 完整性**：覆盖全部语言无关能力；共享 `hyle_status`/error 语义，纯 C 头、动态导出、所有权、callback/visitor 生命周期与 FFI 组合机械验证。
+5. **C++ 易用性**：首选 source API 的默认/高级/组合三条用户旅程有可复制 recipe；RAII/typed 入口、默认值、失效规则和错误传播不要求用户理解内部状态，HYLE C++ 内部不得绕经 C ABI。
+6. **C ABI 完整性与易用性**：覆盖全部语言无关能力；共享 `hyle_status`/error 语义，并提供所需 init/default/typed inline 便利层；纯 C 头、动态导出、所有权、callback/visitor 生命周期与 FFI 组合机械验证。
 7. **依赖收束**：向下确认正确使用已冻结 error/platform/mem/time 等能力；向上扫描直接消费者是否自造重复机制或错误调用。只重测实际受影响边。
 8. **文档归位**：architecture 管稳定设计，performance 管方法和点值，`guide/<module>.md` 管“什么情况选什么”的 C++/语言无关入口，`c-<module>.md` 只管精确 C 映射与坑，milestone 保留施工记录。
 
@@ -89,7 +92,8 @@ benchmark 宣称 SOTA。
 
 排序依据是**接口爆炸半径 + 消费关系**，不是目录顺序，也不是谁的 benchmark 更多：
 
-1. **core**（✅ 2026-07-25）：冻结 version、公开头与 intrusive 基础形状；对已收口 time 做受影响项回验。
+1. **core**（✅ 2026-07-29 局部复证完成）：旧 version/intrusive 证书保留；真实 SIMD/vqsort
+   消费的 prefetch/assume/restrict/flatten/unroll 已补齐，并完成 Windows/WSL/Apple 受影响面复证。
 2. **build/package system**（✅ 2026-07-27）：0.x ABI/SONAME、双测试形状、三平台 package consumer 与 configure/incremental 性能重签完成。
 3. **util-core seam**（✅ 2026-07-25）：低层 header-only 能力及 include/link 边已收口；mem 的 SpinLock 消费已局部回验，Registry 未被提前冻结。
 4. **obs**（✅ 2026-07-25）：log runtime 与 trace gate 已分开审；共享 Status、immutable sink snapshot、C surface 与 mem/sched/io/compute hooks 已签证。
@@ -117,11 +121,11 @@ math 的处理相反：它当前不是经过独立需求设计的产品，而是
 | platform | 功能主体完成 | ✅ 消费边已复关；FileInfo 的 signed ns-precision Unix timestamp 已通过 Win/WSL/M4 与 WSL ASan/UBSan，NUMA 主体和既有性能证书未受影响 |
 | mem | 功能/API/P0/分发性能已完成 | ✅ 彻底收口；clean `c640072` 保留 allocator 三平台 shared same-link n=15 与 WSL TSan；当前 109/109 C surface，HugeRegion selected-node/chunk/weighted C++/C 已补齐，Linux 极细条带使用固定批次 placement |
 | time | 功能主体完成 | ✅ 严格收口；signed Unix/OS/chrono 互操作、42/42 C surface 与 platform/io 消费边已通过 Win/WSL/M4、WSL ASan/UBSan；timer SOTA 证书继续有效 |
-| core | 功能主体存在 | ✅ 严格收口；最终实现 `71dabf7`，三平台同合同无 LOSE |
+| core | 功能与 compiler/cache primitive 完成 | ✅ `71dabf7` 的 IntrusiveList 证书保留；新增 prefetch/assume/restrict/flatten/unroll 已经 Win/WSL/M4 codegen、正确性和真实消费者复证后重新冻结 |
 | build/package system | 组织与三种交付形状完成 | ✅ 严格收口；0.x 包兼容与 loader identity、三平台 production-shape 16/16、shared/static consumers 2/2、CI 双门及 6--110ms no-op 证书已完成；损坏 Ninja DB 与 MSVC 裸环境均有分层诊断 |
 | util-core | 低层公开头能力完成 | ✅ 严格收口；实际使用形状、依赖边、三平台正确性/TSan/性能已签证 |
 | obs | 功能主体完成 | ✅ 严格收口；同步 structured producer + compile-time trace seam，三平台 n=15/并发/sanitizer/C surface 已签证 |
-| container | 功能/API/依赖/性能证书完成 | ✅ 严格收口；232/232 C surface，Win/WSL/M4 + ASan/UBSan/TSan，逐合同性能边界见 container performance 证书 |
+| container | 功能/API/依赖/主体性能证书完成 | ✅ 主体严格证书保留；core 语义消费者扫描将 StringInterner Apple shard spacing 64→128B，M4 correctness 与 8t normal workload 受影响项已复证 |
 | util-runtime、math、sched、io | 功能主体基本完成 | 待按新合同认证；旧 closure 是输入证据，不是自动通行证 |
 | simd | 功能主体基本完成 | 🟡 strict Round 1 完成；f16/bf16 lanes、共享 error、scalable 真硅性能与最终发布面仍为 P0 |
 | compute、graph | 主干存在、不是 stub | 仍有能力尾；完成能力后按同合同认证 |

@@ -15,7 +15,7 @@
 #include "hyle/platform/convenience.h"
 #include "hyle/platform/fs.h"
 // SPIR-V embedded as `inline constexpr SpirvBlob` by tools/hyle_shader.py (via
-// hyle_embed_shader in tests/CMakeLists). Namespace hyle_test_shaders keeps the symbols from
+// hyle_embed_shader in tests/compute/CMakeLists.txt). Namespace hyle_test_shaders keeps the symbols from
 // clashing -- the --namespace feature the tool provides. Pass the blob to Kernel::load_spirv.
 #include "saxpy.spv.h"       // hyle_test_shaders::kSaxpySpirv (saxpy.comp)
 #include "saxpy_spec.spv.h"  // hyle_test_shaders::kSaxpySpecSpirv (saxpy_spec.comp, #2/#3)

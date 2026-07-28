@@ -305,6 +305,25 @@ f64 direct-formula 试验为0.554 vs safe 0.593 ns/op，6.7% gap小于24.7%合�
 - **SoA csin/ccos最终版**：稳定`expm1`公式 + 逐lane特殊值覆盖后，Windows AVX2 random N=4096分别约1.29/1.28x胜xsimd；tiny-imag、pure-real与xsimd打平；每block一个特殊值时仍约9.0x胜全scalar。WSL GCC对xsimd统计打平；Apple NEON对xsimd统计打平、相对原生产scalar约2.2x。完整语义修正削减了早期不稳定公式的更高数字，文档只保留最终核数据。
 - **small-K sort**：整数/KV `partial_sort(k<=16)`的std核在N=16..1M最多3.4x胜Highway，最差KV64 N=1M/K16打平。KV32 N4096/K8：Windows约2.8x、WSL约2.0x、Apple NEON约4.8x胜Highway；升/降序均复测，public/std direct打平。自研有序前缀候选跨类型/重复键不稳定，未上架。
 
+#### core compiler-contract 受影响复证（2026-07-28）
+
+vqsort 把本地 prefetch/assume/noinline 收束到 core，并恢复原 Highway kernel 已有、HYLE port
+曾降为空的 restrict/unroll 合同，并恢复递归内联的 flatten。为防“整理宏却改变优化质量”，使用最终产品 `HYLE public`
+与 pinned Highway direct，在同一 AVX2 tier、同输入与错误/ownership 合同下跑
+KV32 `partial_sort(n=65536,k=32768,random,asc)`，15 个独立进程配对：
+
+| 平台 | HYLE ns/key | Highway ns/key | paired 结论 |
+|---|---:|---:|---|
+| Windows MSVC 19.50 | **5.951** | 77.277 | HYLE WIN；15/15，p=6.1e-5 |
+| WSL GCC 14.2 | 4.084 | **4.030** | TIE；8/15，p=1.0 |
+| Apple M4 AppleClang 21 | 约 11.0 | 约 11.0 | 双顺序总体 TIE；单顺序 sign 方向不稳定且 spread 最高约 16% |
+
+这只证明 core compiler seam 没让真实 sort 消费者退化，不把 Windows 的编译器特定巨大胜幅
+外推成所有类型、分布或平台的倍数。Apple port 同时恢复成熟 Highway 形状中的 `flatten`，
+并给 NEON u64 `CompressNot` 补同类 conditional-swap 实现；隔离 op 没有确认回退，但 whole-sort
+仍严格按双顺序统计 TIE。M4 正确性门还抓出 partial reduction inactive-lane 缺陷，随后对
+NEON/SSE4/AVX2/AVX512 的 active-lane 语义统一修复并加入跨 op 回归。
+
 ### simd-13：SoA `ctanh/cpow` vendor displacement（N=4096，N=15）
 
 > 对照是同 TU、同 ISA、同 `HYLE_NOINLINE` 边界下的 xsimd direct；`HYLE public`单列可见 dispatcher 税。仅当 candidate/xsimd 的 gap 大于两边 run-to-run spread 之和时标 WIN。`ctanh` 的 near-pole/axis/subnormal/极大虚部及 `cpow` 的 branch-cut/zero/subnormal 路径故意走 scalar `std::complex`，不拿它们与不满足完整 oracle 的 xsimd 时序做替换裁决。

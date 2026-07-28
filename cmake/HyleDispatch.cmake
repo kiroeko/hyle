@@ -25,6 +25,11 @@ include_guard(GLOBAL)
 #     OUT_HEADER generated_header)
 function(hyle_simd_target_manifest)
   cmake_parse_arguments(ARG "" "OUT_VARIANTS;OUT_HEADER" "" ${ARGN})
+  if(ARG_UNPARSED_ARGUMENTS OR ARG_KEYWORDS_MISSING_VALUES)
+    message(FATAL_ERROR
+      "hyle_simd_target_manifest: unknown arguments '${ARG_UNPARSED_ARGUMENTS}', "
+      "missing values '${ARG_KEYWORDS_MISSING_VALUES}'")
+  endif()
   if(NOT ARG_OUT_VARIANTS OR NOT ARG_OUT_HEADER)
     message(FATAL_ERROR
       "hyle_simd_target_manifest requires OUT_VARIANTS and OUT_HEADER")
@@ -130,6 +135,11 @@ endfunction()
 # Supported ISA names: SCALAR, SSE4, AVX2, AVX512, NEON, SVE, RVV.
 function(hyle_target_simd)
   cmake_parse_arguments(ARG "" "TARGET;ISA" "" ${ARGN})
+  if(ARG_UNPARSED_ARGUMENTS OR ARG_KEYWORDS_MISSING_VALUES)
+    message(FATAL_ERROR
+      "hyle_target_simd: unknown arguments '${ARG_UNPARSED_ARGUMENTS}', "
+      "missing values '${ARG_KEYWORDS_MISSING_VALUES}'")
+  endif()
   if(NOT ARG_TARGET OR NOT ARG_ISA)
     message(FATAL_ERROR "hyle_target_simd requires TARGET and ISA")
   endif()
@@ -199,6 +209,11 @@ endfunction()
 # macro; baseline dispatch TUs receive a compile-time selection and matching minimum-ISA flags.
 function(hyle_exact_simd_library)
   cmake_parse_arguments(ARG "" "TARGET;ISA" "" ${ARGN})
+  if(ARG_UNPARSED_ARGUMENTS OR ARG_KEYWORDS_MISSING_VALUES)
+    message(FATAL_ERROR
+      "hyle_exact_simd_library: unknown arguments '${ARG_UNPARSED_ARGUMENTS}', "
+      "missing values '${ARG_KEYWORDS_MISSING_VALUES}'")
+  endif()
   if(NOT ARG_TARGET OR NOT ARG_ISA OR NOT TARGET ${ARG_TARGET})
     message(FATAL_ERROR "hyle_exact_simd_library requires an existing TARGET and ISA")
   endif()
@@ -240,6 +255,11 @@ endfunction()
 
 function(hyle_add_dispatched_kernel)
   cmake_parse_arguments(ARG "" "TARGET;NAME;IMPL" "TARGETS" ${ARGN})
+  if(ARG_UNPARSED_ARGUMENTS OR ARG_KEYWORDS_MISSING_VALUES)
+    message(FATAL_ERROR
+      "hyle_add_dispatched_kernel: unknown arguments '${ARG_UNPARSED_ARGUMENTS}', "
+      "missing values '${ARG_KEYWORDS_MISSING_VALUES}'")
+  endif()
 
   if(NOT ARG_TARGET OR NOT ARG_NAME OR NOT ARG_IMPL OR NOT ARG_TARGETS)
     message(FATAL_ERROR "hyle_add_dispatched_kernel requires TARGET, NAME, IMPL, and TARGETS")
@@ -248,7 +268,7 @@ function(hyle_add_dispatched_kernel)
     message(FATAL_ERROR "hyle_add_dispatched_kernel: target '${ARG_TARGET}' does not exist")
   endif()
   if(NOT COMMAND hyle_set_isa)
-    message(FATAL_ERROR "hyle_add_dispatched_kernel requires hyle_set_isa from HyleModule.cmake")
+    message(FATAL_ERROR "hyle_add_dispatched_kernel requires hyle_set_isa from HyleIsa.cmake")
   endif()
   if(NOT ARG_NAME MATCHES "^[A-Za-z_][A-Za-z0-9_]*$")
     message(FATAL_ERROR "hyle_add_dispatched_kernel: NAME '${ARG_NAME}' is not an identifier")
@@ -367,6 +387,11 @@ endfunction()
 # selection macro preprocesses away references to variants that intentionally do not exist.
 function(hyle_add_fat_kernel)
   cmake_parse_arguments(ARG "" "TARGET;NAME;IMPL" "TARGETS" ${ARGN})
+  if(ARG_UNPARSED_ARGUMENTS OR ARG_KEYWORDS_MISSING_VALUES)
+    message(FATAL_ERROR
+      "hyle_add_fat_kernel: unknown arguments '${ARG_UNPARSED_ARGUMENTS}', "
+      "missing values '${ARG_KEYWORDS_MISSING_VALUES}'")
+  endif()
   if(HYLE_SIMD_EXACT_TARGET)
     string(TOLOWER "${HYLE_SIMD_EXACT_TARGET}" _exact_lower)
     list(FIND ARG_TARGETS "${_exact_lower}" _exact_index)

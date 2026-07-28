@@ -23,7 +23,7 @@
 // NATIVE FULL WIDTH (128-bit = 16 i8 / 8 i16 / 4 i32|f32 / 2 i64|f64).
 //
 // STATUS: written + REAL-HARDWARE VALIDATED on Apple Silicon (macOS aarch64, AppleClang).
-// The full vec_test suite compiles as the `neon` ISA variant (tests/CMakeLists arch-gated:
+// The full vec_test suite compiles as the `neon` ISA variant (tests/simd/CMakeLists.txt arch-gated:
 // x86 builds sse4/avx2, arm64 builds neon) and runs green on the mac; every op is paired
 // against the scalar reference. (Cross-compile + objdump was the earlier bar before the mac
 // was wired -- now superseded by real execution.)
@@ -2825,27 +2825,50 @@ HYLE_FORCE_INLINE T ReduceSum(Simd<T, N, 0>, VecNeon<T, N> v) noexcept {
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE T ReduceMin(Simd<T, N, 0>, VecNeon<T, N> v) noexcept {
-  if constexpr (std::is_same_v<T, float>) return vminvq_f32(detail::to_q(v));
-  else if constexpr (std::is_same_v<T, double>) return vgetq_lane_f64(vpminq_f64(detail::to_q(v), detail::to_q(v)), 0);
-  else if constexpr (std::is_same_v<T, std::int8_t>) return vminvq_s8(detail::to_q(v));
-  else if constexpr (std::is_same_v<T, std::uint8_t>) return vminvq_u8(detail::to_q(v));
-  else if constexpr (std::is_same_v<T, std::int16_t>) return vminvq_s16(detail::to_q(v));
-  else if constexpr (std::is_same_v<T, std::uint16_t>) return vminvq_u16(detail::to_q(v));
-  else if constexpr (std::is_same_v<T, std::int32_t>) return vminvq_s32(detail::to_q(v));
-  else if constexpr (std::is_same_v<T, std::uint32_t>) return vminvq_u32(detail::to_q(v));
-  else return detail::reduce_scalar<T, N, detail::RedOp::kMin>(v);  // i64/u64: no vminvq_64
+  // to_q() zero-extends D-band values. Zero is not a min/max identity, so a
+  // Q reduction would incorrectly include inactive high lanes. Use the native
+  // D reduction for an exact 64-bit payload and an exact-N fold below that.
+  if constexpr (N * sizeof(T) < 8 || sizeof(T) == 8) {
+    return detail::reduce_scalar<T, N, detail::RedOp::kMin>(v);
+  } else if constexpr (N * sizeof(T) == 8) {
+    if constexpr (std::is_same_v<T, float>) return vminv_f32(v.raw);
+    else if constexpr (std::is_same_v<T, std::int8_t>) return vminv_s8(v.raw);
+    else if constexpr (std::is_same_v<T, std::uint8_t>) return vminv_u8(v.raw);
+    else if constexpr (std::is_same_v<T, std::int16_t>) return vminv_s16(v.raw);
+    else if constexpr (std::is_same_v<T, std::uint16_t>) return vminv_u16(v.raw);
+    else if constexpr (std::is_same_v<T, std::int32_t>) return vminv_s32(v.raw);
+    else return vminv_u32(v.raw);
+  } else if constexpr (std::is_same_v<T, float>) return vminvq_f32(v.raw);
+  else if constexpr (std::is_same_v<T, double>)
+    return vgetq_lane_f64(vpminq_f64(v.raw, v.raw), 0);
+  else if constexpr (std::is_same_v<T, std::int8_t>) return vminvq_s8(v.raw);
+  else if constexpr (std::is_same_v<T, std::uint8_t>) return vminvq_u8(v.raw);
+  else if constexpr (std::is_same_v<T, std::int16_t>) return vminvq_s16(v.raw);
+  else if constexpr (std::is_same_v<T, std::uint16_t>) return vminvq_u16(v.raw);
+  else if constexpr (std::is_same_v<T, std::int32_t>) return vminvq_s32(v.raw);
+  else return vminvq_u32(v.raw);
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE T ReduceMax(Simd<T, N, 0>, VecNeon<T, N> v) noexcept {
-  if constexpr (std::is_same_v<T, float>) return vmaxvq_f32(detail::to_q(v));
-  else if constexpr (std::is_same_v<T, double>) return vgetq_lane_f64(vpmaxq_f64(detail::to_q(v), detail::to_q(v)), 0);
-  else if constexpr (std::is_same_v<T, std::int8_t>) return vmaxvq_s8(detail::to_q(v));
-  else if constexpr (std::is_same_v<T, std::uint8_t>) return vmaxvq_u8(detail::to_q(v));
-  else if constexpr (std::is_same_v<T, std::int16_t>) return vmaxvq_s16(detail::to_q(v));
-  else if constexpr (std::is_same_v<T, std::uint16_t>) return vmaxvq_u16(detail::to_q(v));
-  else if constexpr (std::is_same_v<T, std::int32_t>) return vmaxvq_s32(detail::to_q(v));
-  else if constexpr (std::is_same_v<T, std::uint32_t>) return vmaxvq_u32(detail::to_q(v));
-  else return detail::reduce_scalar<T, N, detail::RedOp::kMax>(v);  // i64/u64: no vmaxvq_64
+  if constexpr (N * sizeof(T) < 8 || sizeof(T) == 8) {
+    return detail::reduce_scalar<T, N, detail::RedOp::kMax>(v);
+  } else if constexpr (N * sizeof(T) == 8) {
+    if constexpr (std::is_same_v<T, float>) return vmaxv_f32(v.raw);
+    else if constexpr (std::is_same_v<T, std::int8_t>) return vmaxv_s8(v.raw);
+    else if constexpr (std::is_same_v<T, std::uint8_t>) return vmaxv_u8(v.raw);
+    else if constexpr (std::is_same_v<T, std::int16_t>) return vmaxv_s16(v.raw);
+    else if constexpr (std::is_same_v<T, std::uint16_t>) return vmaxv_u16(v.raw);
+    else if constexpr (std::is_same_v<T, std::int32_t>) return vmaxv_s32(v.raw);
+    else return vmaxv_u32(v.raw);
+  } else if constexpr (std::is_same_v<T, float>) return vmaxvq_f32(v.raw);
+  else if constexpr (std::is_same_v<T, double>)
+    return vgetq_lane_f64(vpmaxq_f64(v.raw, v.raw), 0);
+  else if constexpr (std::is_same_v<T, std::int8_t>) return vmaxvq_s8(v.raw);
+  else if constexpr (std::is_same_v<T, std::uint8_t>) return vmaxvq_u8(v.raw);
+  else if constexpr (std::is_same_v<T, std::int16_t>) return vmaxvq_s16(v.raw);
+  else if constexpr (std::is_same_v<T, std::uint16_t>) return vmaxvq_u16(v.raw);
+  else if constexpr (std::is_same_v<T, std::int32_t>) return vmaxvq_s32(v.raw);
+  else return vmaxvq_u32(v.raw);
 }
 
 // Reduction family completion: ReduceMul / ReduceAnd / ReduceOr. NEON has no horizontal
@@ -2855,7 +2878,7 @@ namespace detail {
 enum class RedOp2 { kMul, kAnd, kOr };
 template <typename T, std::size_t N, RedOp2 op>
 HYLE_FORCE_INLINE T reduce_scalar2(VecNeon<T, N> v) noexcept {
-  alignas(16) T tmp[N];
+  alignas(16) T tmp[16 / sizeof(T)];
   StoreU(v, Simd<T, N, 0>(), tmp);
   T acc = tmp[0];
   for (std::size_t i = 1; i < N; ++i) {
@@ -3266,6 +3289,30 @@ HYLE_FORCE_INLINE VecNeon<T, N> Compress(VecNeon<T, N> v, MaskNeon<T, N> m) noex
         vbslq_u8(vreinterpretq_u8_u64(vbicq_u64(mask1, mask0)), swapped, bytes)));
   }
   return out;
+}
+#if defined(HYLE_SIMD_TARGET_NEON)
+#define HYLE_SIMD_NEON_HAS_NATIVE_COMPRESS_NOT64 1
+#endif
+// Full-width 64-bit CompressNot is a hot vqsort primitive.  Express it directly
+// from the original mask, matching Highway's conditional-swap shape, so the
+// compiler does not have to materialize Not(m) before recognizing the same
+// permutation.  A one-lane D-band vector is already compressed.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> CompressNotNative(VecNeon<T, N> v,
+                                                  MaskNeon<T, N> m) noexcept {
+  static_assert(sizeof(T) == 8, "NEON CompressNotNative requires 64-bit lanes");
+  if constexpr (N == 1) {
+    return v;
+  } else {
+    static_assert(N == 2, "NEON CompressNotNative requires a native vector");
+    const uint64x2_t mask = detail::to_q(m);
+    const uint64x2_t mask0 = vdupq_n_u64(vgetq_lane_u64(mask, 0));
+    const uint64x2_t mask1 = vdupq_n_u64(vgetq_lane_u64(mask, 1));
+    const uint64x2_t swap = vbicq_u64(mask0, mask1);
+    const uint8x16_t bytes = detail::to_u8<T>(detail::to_q(v));
+    return detail::from_q<VecNeon<T, N>>(detail::from_u8<T>(
+        vbslq_u8(vreinterpretq_u8_u64(swap), vextq_u8(bytes, bytes, 8), bytes)));
+  }
 }
 template <class D>
 HYLE_FORCE_INLINE std::size_t CompressStore(detail::VN<D> v,

@@ -1,0 +1,4 @@
+hyle_add_c_surface_test(container)
+hyle_add_header_self_contained_test(container)
+hyle_add_test(container SOURCES bounded_queue_test.cc spsc_queue_test.cc sharded_queue_test.cc work_stealing_deque_test.cc ws_fifo_queue_test.cc hash_test.cc carray_test.cc c_container_concurrency_test.cc small_vector_test.cc static_vector_test.cc probe_test.cc swiss_table_test.cc string_ref_test.cc string_buf_test.cc concurrent_vector_test.cc concurrent_hash_map_test.cc concurrent_node_hash_map_test.cc string_algo_test.cc path_test.cc dynamic_bitset_test.cc sparse_set_test.cc ring_deque_test.cc byte_ring_buffer_test.cc btree_test.cc flat_sorted_test.cc adaptive_mutex_test.cc DEPS hyle_platform)
+hyle_add_c_test(container c_container_test.c)

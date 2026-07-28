@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import platform
 import re
 import subprocess
@@ -21,6 +22,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--cxx-compiler-id", required=True)
     parser.add_argument("--c-frontend", default="")
     parser.add_argument("--cxx-frontend", default="")
+    parser.add_argument("--vs-instance", default="")
+    parser.add_argument("--vs-platform", default="x64")
+    parser.add_argument("--vs-toolset-version", default="")
     args = parser.parse_args()
     if re.fullmatch(r"[a-z][a-z0-9_]*", args.module) is None:
         parser.error("--module must be a lowercase C identifier")
@@ -36,6 +40,7 @@ def compile_header(
     language: str,
     work_dir: Path,
     sysroot: str,
+    compiler_env: dict[str, str] | None,
 ) -> None:
     suffix = ".c" if language == "c" else ".cc"
     stem = header.replace("/", "_").replace(".", "_")
@@ -63,10 +68,68 @@ def compile_header(
             command.extend(["-isysroot", sysroot])
         command.append(str(source))
 
-    result = subprocess.run(command, text=True, capture_output=True, check=False)
+    result = subprocess.run(
+        command,
+        text=True,
+        capture_output=True,
+        check=False,
+        env=compiler_env,
+    )
     if result.returncode != 0:
         output = "\n".join(part for part in (result.stdout, result.stderr) if part)
         raise RuntimeError(f"{header} is not self-contained:\n{output}")
+
+
+def visual_studio_environment(
+    instance: str, platform_name: str, toolset_version: str
+) -> dict[str, str] | None:
+    """Load the selected VS generator's compiler environment once per module."""
+    if platform.system() != "Windows" or not instance:
+        return None
+
+    # CMAKE_GENERATOR_INSTANCE may append a comma-separated version selector.
+    install_dir = Path(instance.split(",", maxsplit=1)[0])
+    vsdevcmd = install_dir / "Common7" / "Tools" / "VsDevCmd.bat"
+    if not vsdevcmd.is_file():
+        raise RuntimeError(f"Visual Studio environment script not found: {vsdevcmd}")
+
+    arch = {
+        "win32": "x86",
+        "x64": "x64",
+        "arm64": "arm64",
+    }.get(platform_name.lower(), platform_name)
+    arguments = ["-no_logo", f"-arch={arch}", "-host_arch=x64"]
+    if toolset_version:
+        # VsDevCmd selects a toolset family (14.44), while CMake may report the
+        # full directory version (14.44.35207).
+        family = ".".join(toolset_version.split(".")[:2])
+        arguments.append(f"-vcvars_ver={family}")
+    # Passing a quoted batch path through `cmd /c <string>` is re-escaped by
+    # Python's Windows argv conversion. A tiny temporary batch avoids that
+    # ambiguity and lets `set` expose the initialized child environment.
+    with tempfile.TemporaryDirectory(prefix="hyle-vs-env-") as temp:
+        bootstrap = Path(temp) / "environment.cmd"
+        bootstrap.write_text(
+            f'@call "{vsdevcmd}" {" ".join(arguments)} >nul\n@set\n',
+            encoding="utf-8",
+        )
+        result = subprocess.run(
+            ["cmd.exe", "/d", "/c", str(bootstrap)],
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+    if result.returncode != 0:
+        raise RuntimeError(
+            f"could not initialize Visual Studio compiler environment:\n{result.stderr}"
+        )
+
+    compiler_env = os.environ.copy()
+    for line in result.stdout.splitlines():
+        key, separator, value = line.partition("=")
+        if separator and key:
+            compiler_env[key] = value
+    return compiler_env
 
 
 def main() -> int:
@@ -83,6 +146,9 @@ def main() -> int:
             raise RuntimeError(f"could not discover the macOS SDK: {result.stderr}")
         sysroot = result.stdout.strip()
     include_dir = args.include_dir.resolve()
+    compiler_env = visual_studio_environment(
+        args.vs_instance, args.vs_platform, args.vs_toolset_version
+    )
     module_dir = include_dir / "hyle" / args.module
     headers = [
         path.relative_to(include_dir).as_posix()
@@ -103,6 +169,7 @@ def main() -> int:
                 "c++",
                 work_dir,
                 sysroot,
+                compiler_env,
             )
         compile_header(
             args.cc,
@@ -113,6 +180,7 @@ def main() -> int:
             "c",
             work_dir,
             sysroot,
+            compiler_env,
         )
 
     print(f"{args.module} headers self-contained: {len(headers)} C++ + 1 C")

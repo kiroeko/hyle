@@ -11,7 +11,7 @@ function(hyle_install_package)
   include(GNUInstallDirs)
   include(CMakePackageConfigHelpers)
 
-  set(_hyle_export_targets hyle_trace hyle_testing)
+  set(_hyle_export_targets hyle_build_contract hyle_trace hyle_testing)
   set(_hyle_package_components "")
   foreach(_component IN LISTS HYLE_KNOWN_COMPONENTS)
     if(TARGET hyle_${_component})
@@ -168,6 +168,12 @@ function(hyle_install_package)
       COMPONENT Hyle_Runtime)
   endif()
   if(TARGET nghttp2_static)
+    get_target_property(nghttp2_SOURCE_DIR nghttp2_static HYLE_DEP_SOURCE_DIR)
+    get_target_property(nghttp2_BINARY_DIR nghttp2_static HYLE_DEP_BINARY_DIR)
+    if(NOT nghttp2_SOURCE_DIR OR NOT nghttp2_BINARY_DIR)
+      message(FATAL_ERROR
+        "nghttp2_static is missing its module-owned source/binary metadata")
+    endif()
     if(NOT EXISTS "${nghttp2_SOURCE_DIR}/COPYING")
       message(FATAL_ERROR
         "The selected nghttp2 checkout has no COPYING at "
@@ -189,6 +195,10 @@ function(hyle_install_package)
     endif()
   endif()
   if(TARGET ggml)
+    get_target_property(ggml_SOURCE_DIR ggml HYLE_DEP_SOURCE_DIR)
+    if(NOT ggml_SOURCE_DIR)
+      message(FATAL_ERROR "ggml is missing its module-owned source metadata")
+    endif()
     if(NOT EXISTS "${ggml_SOURCE_DIR}/LICENSE")
       message(FATAL_ERROR
         "The selected ggml checkout has no LICENSE at '${ggml_SOURCE_DIR}/LICENSE'; "
@@ -205,6 +215,13 @@ function(hyle_install_package)
     endif()
   endif()
   if(TARGET volk)
+    get_target_property(volk_SOURCE_DIR volk HYLE_DEP_SOURCE_DIR)
+    get_target_property(vulkan_headers_SOURCE_DIR volk
+      HYLE_VULKAN_HEADERS_SOURCE_DIR)
+    if(NOT volk_SOURCE_DIR OR NOT vulkan_headers_SOURCE_DIR)
+      message(FATAL_ERROR
+        "volk is missing its module-owned source/header metadata")
+    endif()
     foreach(_hyle_license IN ITEMS
         "${volk_SOURCE_DIR}/LICENSE.md"
         "${vulkan_headers_SOURCE_DIR}/LICENSE.md"

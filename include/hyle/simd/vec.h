@@ -819,6 +819,12 @@ template <class V, class M> HYLE_FORCE_INLINE V CompressNot(V v, M m) noexcept {
     return CompressNotNative(v, m);
 #endif
   else return Compress(v, Not(m));
+#elif defined(HYLE_SIMD_NEON_HAS_NATIVE_COMPRESS_NOT64)
+  if constexpr (sizeof(TFromD<DFromV<V>>) == 8 &&
+                sizeof(TFromD<DFromV<V>>) * DFromV<V>::kMaxLanes <= 16)
+    return CompressNotNative(v, m);
+  else
+    return Compress(v, Not(m));
 #else
   return Compress(v, Not(m));
 #endif
@@ -1613,6 +1619,8 @@ HYLE_FORCE_INLINE MFromD<D> UpperHalfOfMask(D d, MFromD<Twice<D>> m) noexcept {
 template <class DTo, class DFrom>
 HYLE_FORCE_INLINE MFromD<DTo> PromoteMaskTo(DTo d_to, DFrom d_from, MFromD<DFrom> m) noexcept {
   static_assert(sizeof(TFromD<DTo>) > sizeof(TFromD<DFrom>), "PromoteMaskTo widens the lane type");
+  (void)d_to;
+  (void)d_from;
 #if defined(HYLE_SIMD_TARGET_AVX512)
   return LoadMaskBits(d_to, BitsFromMask(d_from, m));  // k-register IS the bitfield -- optimal
 #else
@@ -1637,6 +1645,8 @@ HYLE_FORCE_INLINE MFromD<DTo> PromoteMaskTo(DTo d_to, DFrom d_from, MFromD<DFrom
 template <class DTo, class DFrom>
 HYLE_FORCE_INLINE MFromD<DTo> DemoteMaskTo(DTo d_to, DFrom d_from, MFromD<DFrom> m) noexcept {
   static_assert(sizeof(TFromD<DTo>) < sizeof(TFromD<DFrom>), "DemoteMaskTo narrows the lane type");
+  (void)d_to;
+  (void)d_from;
 #if defined(HYLE_SIMD_TARGET_AVX512)
   return LoadMaskBits(d_to, BitsFromMask(d_from, m));  // k-register IS the bitfield -- optimal
 #else
@@ -1668,6 +1678,8 @@ template <class DTo, class DFrom>
 HYLE_FORCE_INLINE MFromD<DTo> OrderedDemote2MasksTo(DTo d_to, DFrom d_from, MFromD<DFrom> a,
                                                     MFromD<DFrom> b) noexcept {
   static_assert(sizeof(TFromD<DTo>) * 2 == sizeof(TFromD<DFrom>), "OrderedDemote2MasksTo halves width");
+  (void)d_to;
+  (void)d_from;
 #if defined(HYLE_SIMD_TARGET_AVX512)
   constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(DFrom);
   const std::uint64_t bits = BitsFromMask(d_from, a) | (BitsFromMask(d_from, b) << kN);
@@ -1809,17 +1821,19 @@ HYLE_FORCE_INLINE void ScatterIndexN(VFromD<D> v, D d, TFromD<D>* base,
   constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
 #if defined(HYLE_SIMD_HAS_NATIVE_SCATTER_INDEX_N_I32)
   if constexpr (std::is_same_v<T, std::int32_t> && std::is_same_v<IdxT, std::int32_t> &&
-                N == HYLE_SIMD_MAX_LANES_D(DFromV<VI>)) {
+                 N == HYLE_SIMD_MAX_LANES_D(DFromV<VI>)) {
     detail::scatter_index_n_native_i32(v, base, index, max_lanes);
-    return;
-  }
+  } else {
+#else
+  {
 #endif
-  alignas(64) T lanes[N];
-  alignas(64) IdxT idx[N];
-  Store(v, d, lanes);
-  Store(index, DFromV<VI>(), idx);
-  const std::size_t lo = max_lanes < N ? max_lanes : N;
-  for (std::size_t i = 0; i < lo; ++i) base[static_cast<std::ptrdiff_t>(idx[i])] = lanes[i];
+    alignas(64) T lanes[N];
+    alignas(64) IdxT idx[N];
+    Store(v, d, lanes);
+    Store(index, DFromV<VI>(), idx);
+    const std::size_t lo = max_lanes < N ? max_lanes : N;
+    for (std::size_t i = 0; i < lo; ++i) base[static_cast<std::ptrdiff_t>(idx[i])] = lanes[i];
+  }
 }
 
 // Dup128VecFromValues(d, t0..t{k-1}): build ONE 128-bit block from k immediates (k = lanes per

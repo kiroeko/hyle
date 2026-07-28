@@ -145,7 +145,7 @@
 | **container·vec** PodVector growth/read(Win/Lin/M4) | 0.509/0.184；0.277/0.091；0.342/0.035 | std::vector(即 SOTA) | 0.787/0.184；0.249/0.091；0.362/0.035 | Win 1.545x；Lin TIE；M4 1.06x | 同 std | 同左 | 同左 | ✅ growth 同档或赢；read 三平台同档 |
 | **container·str** StringInterner intern(Win/Lin/M4) | 21.413/21.149/11.302 | （无锁 floor 仅诊断） | — | — | thread-safe map+mutex peer | 27.265/18.909/17.325 | **1.273/0.894/1.533x** | ⚠️ 仅 WSL 单条入口落后；batch 赢 1.36x |
 | **container·str** StringInterner 1KiB unique growth(Win/Lin/M4) | 95.852/96.568/76.656 | （无锁） | — | — | absl::flat_hash_set floor | 579.192/149.046/98.901 | **5.934/1.543/1.290x** | ✅ cached resident hash；三平台赢 |
-| **container·str** StringInterner 8-thread adaptive shards(Win/Lin/M4) | 12.837/14.821/14.153 | sharded std+mutex | 55.722/—/— | Win 4.34x | sharded Absl+mutex | 22.661/21.167/20.191 | **1.782/1.428/1.427x** | ✅ 三平台赢 |
+| **container·str** StringInterner 8-thread adaptive shards(Win/Lin/M4) | 12.837/14.821/14.678 | sharded std+mutex | 55.722/—/— | Win 4.34x | sharded Absl+mutex | 22.661/21.167/19.679 | **1.782/1.428/1.341x** | ✅ 三平台赢；M4 128B core spacing 受影响边已复证 |
 | **container·str** StringInterner acquire/retain/release(Win/Lin/M4) | 11.897/9.637/7.678 | direct-ID+mutex 同契约 peer | 18.463/12.267/12.345 | **1.559/1.273/1.608x** | 同左 | 同左 | 同左 | ✅ 三平台赢 |
 | **container·str** find(char) 全扫 miss(4KB) | 0.02/B | std::string_view::find | 0.01 | ~1.0x | string_view(即 SOTA,libc memchr) | 0.01 | ~1.0x | ➖平(切 memchr;原 scalar 输 ~20x) |
 | **container·str** find(needle) 6B 子串 | 0.08/B | std::string_view::find | 0.08 | ~1.0x | string_view(即 SOTA,two-way 向量化) | 0.08 | ~1.0x | ➖平(转发 std;自研 memchr 候选曾输 2.5x) |

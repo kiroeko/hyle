@@ -1,0 +1,150 @@
+hyle_add_bench(container SOURCES container_bench_main.cc swiss_table_bench.cc string_buf_bench.cc string_ref_bench.cc path_bench.cc string_algo_bench.cc DEPS hyle_platform)
+# string_algo utf8 bench races simdutf (the SIMD utf8 SOTA) for the comparison row.
+# simdutf is VENDORED in third_party and compiled into hyle_container (the product uses it
+# unconditionally), but those symbols are PRIVATE/non-exported across the hyle_container DLL
+# boundary -- the bench can't borrow them transitively. So compile simdutf.cpp into the bench
+# exe too: it's a SEPARATE binary from the DLL, so its own copy is NOT a duplicate symbol (the
+# DLL exports none of them). The gate just toggles the bench-side comparison row.
+option(HYLE_BENCH_SIMDUTF "build string_algo utf8 bench vs simdutf (SIMD SOTA)" OFF)
+if(HYLE_BENCH_SIMDUTF)
+  set(_simdutf "${PROJECT_SOURCE_DIR}/third_party/simdutf")
+  target_compile_definitions(hyle_container_bench PRIVATE HYLE_BENCH_SIMDUTF)
+  target_include_directories(hyle_container_bench SYSTEM PRIVATE "${_simdutf}")
+  target_sources(hyle_container_bench PRIVATE "${_simdutf}/simdutf.cpp")
+  # Same -Wall/-Werror exemption as the product build (src/container): the amalgamation's
+  # own -Wpedantic warnings would break a HYLE_WERROR=ON bench build.
+  if(MSVC)
+    set_source_files_properties("${_simdutf}/simdutf.cpp" PROPERTIES COMPILE_OPTIONS "/w")
+  else()
+    set_source_files_properties("${_simdutf}/simdutf.cpp" PROPERTIES COMPILE_OPTIONS "-w")
+  endif()
+endif()
+
+add_executable(hyle_queue_sota_bench queue_sota_bench.cc)
+# BoundedQueue/ShardedQueue default to compile-time SystemAllocator. A shared
+# build reaches the private backend through hyle_mem; a static build inherits
+# mimalloc as hyle_mem's link-only implementation dependency.
+target_link_libraries(hyle_queue_sota_bench PRIVATE hyle_container nanobench)
+hyle_apply_warnings(hyle_queue_sota_bench)
+
+# task #19 breadth + gap-fill #34/#35: the claim-bearing containers. SmallVector
+# (inline storage) and PodVector (POD dynamic array) vs std::vector. The real
+# SmallVector peer is opt-in absl::InlinedVector (-DHYLE_BENCH_ABSL, wired in
+# the absl block below). SmallVector
+# defaults to the compile-time SystemAllocator and must close through hyle_mem,
+# not a benchmark-only vendor link.
+add_executable(hyle_container_misc_bench container_misc_bench.cc)
+target_link_libraries(hyle_container_misc_bench PRIVATE hyle_container hyle_mem nanobench)
+hyle_apply_warnings(hyle_container_misc_bench)
+add_executable(hyle_container_set_bench set_bench.cc)
+target_link_libraries(hyle_container_set_bench PRIVATE hyle_container nanobench)
+hyle_apply_warnings(hyle_container_set_bench)
+add_executable(hyle_container_ring_bench ring_bench.cc)
+target_link_libraries(hyle_container_ring_bench PRIVATE hyle_container nanobench)
+hyle_apply_warnings(hyle_container_ring_bench)
+add_executable(hyle_container_spsc_bench spsc_bench.cc)
+target_link_libraries(hyle_container_spsc_bench PRIVATE hyle_container nanobench)
+hyle_apply_warnings(hyle_container_spsc_bench)
+add_executable(hyle_container_concurrent_map_bench concurrent_map_bench.cc)
+target_link_libraries(hyle_container_concurrent_map_bench PRIVATE hyle_container nanobench)
+hyle_apply_warnings(hyle_container_concurrent_map_bench)
+add_executable(hyle_container_flat_sorted_bench flat_sorted_bench.cc)
+target_link_libraries(hyle_container_flat_sorted_bench PRIVATE hyle_container nanobench)
+hyle_apply_warnings(hyle_container_flat_sorted_bench)
+
+# task #23: hash cluster. HYLE hash_bytes(XXH3)/mix64 vs raw XXH3 (vendored, always)
+# + std::hash. wyhash is a sibling clone -> opt-in -DHYLE_BENCH_WYHASH=ON (header-only).
+add_executable(hyle_hash_bench hash_bench.cc)
+target_link_libraries(hyle_hash_bench PRIVATE hyle_container hyle_platform nanobench)
+target_include_directories(hyle_hash_bench SYSTEM PRIVATE "${PROJECT_SOURCE_DIR}/third_party/xxhash")
+hyle_apply_warnings(hyle_hash_bench)
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+  target_sources(hyle_hash_bench PRIVATE
+    hash_xxh3_avx2_peer.cc hash_xxh3_avx512_peer.cc)
+  target_compile_definitions(hyle_hash_bench PRIVATE
+    HYLE_HASH_PEER_AVX2 HYLE_HASH_PEER_AVX512)
+  hyle_set_isa(hash_xxh3_avx2_peer.cc AVX2)
+  hyle_set_isa(hash_xxh3_avx512_peer.cc AVX512)
+endif()
+option(HYLE_BENCH_WYHASH "build hash bench vs wyhash" OFF)
+if(HYLE_BENCH_WYHASH)
+  set(HYLE_WYHASH_DIR "${PROJECT_SOURCE_DIR}/../wyhash" CACHE PATH "cloned wyhash")
+  if(NOT EXISTS "${HYLE_WYHASH_DIR}/wyhash.h")
+    message(FATAL_ERROR "HYLE_BENCH_WYHASH=ON but no wyhash.h at ${HYLE_WYHASH_DIR}")
+  endif()
+  target_compile_definitions(hyle_hash_bench PRIVATE HYLE_BENCH_WYHASH)
+  target_include_directories(hyle_hash_bench SYSTEM PRIVATE "${HYLE_WYHASH_DIR}")
+endif()
+
+# Optional: moodycamel::ConcurrentQueue (header-only -> just an include path).
+# Enable with -DHYLE_BENCH_MOODYCAMEL=ON; point HYLE_MOODYCAMEL_DIR at the cloned
+# repo (sibling of hyle/ by default).
+option(HYLE_BENCH_MOODYCAMEL "build queue bench vs moodycamel ConcurrentQueue" OFF)
+if(HYLE_BENCH_MOODYCAMEL)
+  set(HYLE_MOODYCAMEL_DIR "${PROJECT_SOURCE_DIR}/../moodycamel-ConcurrentQueue"
+      CACHE PATH "cloned moodycamel ConcurrentQueue")
+  if(NOT EXISTS "${HYLE_MOODYCAMEL_DIR}/concurrentqueue.h")
+    message(FATAL_ERROR "HYLE_BENCH_MOODYCAMEL=ON but no concurrentqueue.h at ${HYLE_MOODYCAMEL_DIR}")
+  endif()
+  target_compile_definitions(hyle_queue_sota_bench PRIVATE HYLE_BENCH_MOODYCAMEL)
+  target_include_directories(hyle_queue_sota_bench SYSTEM PRIVATE "${HYLE_MOODYCAMEL_DIR}")
+endif()
+
+# Optional: rigtorp::mpmc::Queue -- the SAME-CONTRACT rival to BoundedQueue (strict-
+# bounded single-ring MPMC, the canonical SOTA for exactly that contract). Single
+# header -> just an include path. Enable with -DHYLE_BENCH_RIGTORP=ON; point
+# HYLE_RIGTORP_DIR at the clone (sibling `rigtorp-MPMCQueue` by default).
+option(HYLE_BENCH_RIGTORP "build queue bench vs rigtorp MPMCQueue (same-contract SOTA)" OFF)
+if(HYLE_BENCH_RIGTORP)
+  set(HYLE_RIGTORP_DIR "${PROJECT_SOURCE_DIR}/../rigtorp-MPMCQueue" CACHE PATH "cloned rigtorp MPMCQueue")
+  if(NOT EXISTS "${HYLE_RIGTORP_DIR}/include/rigtorp/MPMCQueue.h")
+    message(FATAL_ERROR "HYLE_BENCH_RIGTORP=ON but no MPMCQueue.h at ${HYLE_RIGTORP_DIR}")
+  endif()
+  target_compile_definitions(hyle_queue_sota_bench PRIVATE HYLE_BENCH_RIGTORP)
+  target_include_directories(hyle_queue_sota_bench SYSTEM PRIVATE "${HYLE_RIGTORP_DIR}/include")
+endif()
+
+if(HYLE_BENCH_TBB)
+  if(TARGET hyle_queue_sota_bench)
+    target_compile_definitions(hyle_queue_sota_bench PRIVATE HYLE_BENCH_TBB)
+    target_link_libraries(hyle_queue_sota_bench PRIVATE TBB::tbb)
+  endif()
+  if(TARGET hyle_container_concurrent_map_bench)
+    target_compile_definitions(hyle_container_concurrent_map_bench PRIVATE
+                               HYLE_BENCH_TBB)
+    target_link_libraries(hyle_container_concurrent_map_bench PRIVATE TBB::tbb)
+  endif()
+endif()
+
+if(HYLE_BENCH_ABSL)
+  add_executable(hyle_absl_bench swiss_vs_absl_bench.cc)
+  target_link_libraries(hyle_absl_bench PRIVATE hyle_container nanobench
+    absl::flat_hash_map absl::flat_hash_set)
+  hyle_apply_warnings(hyle_absl_bench)
+  add_executable(hyle_container_btree_bench
+    btree_vs_absl_bench.cc)
+  target_link_libraries(hyle_container_btree_bench PRIVATE hyle_container
+    nanobench absl::btree)
+  hyle_apply_warnings(hyle_container_btree_bench)
+  # absl::InlinedVector is the small-vector SOTA -> feed it to the misc bench too.
+  target_compile_definitions(hyle_container_misc_bench PRIVATE HYLE_BENCH_ABSL)
+  target_link_libraries(hyle_container_misc_bench PRIVATE absl::inlined_vector)
+  # StringInterner's strongest same-contract peer is a sharded, locked
+  # absl::flat_hash_set interner (not an unlocked std map floor).
+  target_compile_definitions(hyle_container_bench PRIVATE HYLE_BENCH_ABSL)
+  target_link_libraries(hyle_container_bench PRIVATE absl::flat_hash_set)
+  hyle_register_benches(container
+    hyle_absl_bench
+    hyle_container_btree_bench)
+endif()
+
+hyle_register_benches(container
+    hyle_queue_sota_bench
+    hyle_container_misc_bench
+    hyle_container_set_bench
+    hyle_container_ring_bench
+    hyle_hash_bench
+    hyle_container_concurrent_map_bench)
+hyle_register_benches(container
+  hyle_container_spsc_bench
+  hyle_container_flat_sorted_bench)

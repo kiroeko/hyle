@@ -50,6 +50,10 @@
 6. **提交三连**:`git status --short` → commit 只写真实出现的文件 → 核对 "N files changed" == 预期。
 - **铁证信号**(任一不符=立即核对):测试数没变(14→14);commit files < git add 数。
 
+模块从“实现/旧任务完成”升级为“当前严格收口”时，以上施工闭环还不够；必须完整执行
+[`module-closure-methodology.md`](./module-closure-methodology.md)。尤其不能漏掉语义重复消费者
+扫描、复杂度表、依赖双向收束、同合同正常 workload 和 C/C++ 两条产品线。
+
 ## 7. 构建/环境(源:reference 记忆)
 > 从零建环境的完整步骤(工具链门槛 / vcpkg+OpenSSL / CUDA / ggml / 各命令)见 [`docs/setup/`](../setup/README.md)(按平台分:windows/linux-wsl/macos + dependencies);这里只留每天用的速查。
 - **Windows MSVC**:vcvars18(`Studio/18/Enterprise/...`)+ Ninja + Release(-O3);git-bash 调 `cmd //c` 易出引号/编码坑,**用 Python 写完整 bat 再跑**最稳。

@@ -23,9 +23,9 @@ target_link_libraries(your_app PRIVATE hyle::container hyle::mem)  # 按需选�
 
 | 目录 | 模块 | 演示什么 |
 |---|---|---|
-| [`01_mem_container/`](./01_mem_container/) | mem + container | 显式 `Allocator` 注入 + `SwissTable`（对标 absl 的 flat hashmap）——HYLE 的"无隐藏全局堆"范式 + 旗舰容器 |
+| [`01_mem_container/`](./01_mem_container/) | mem + container | 默认 `SystemAllocator` + 公开形状 `FlatHashMap`；运行时 allocator 只在 quota/stats/自定义 backing 时显式 opt-in |
 | [`02_simd/`](./02_simd/) | simd | 运行期 ISA 派发的 `dot`/`saxpy` + 直接用 `vec<T,N>` D-tag 写宽度无关 kernel + 打印选中的 ISA 变体 |
-| [`03_sched_fibers/`](./03_sched_fibers/) | sched | `Scheduler` + `Fiber`：spawn 多个纤程、`yield()` 协作、`shutdown()` 排空 |
+| [`03_sched_fibers/`](./03_sched_fibers/) | sched | `Scheduler::spawn_detached` 自持 guarded fiber：`yield()` 协作、stack 回收、`shutdown()` 排空 |
 | [`04_prebuilt_lib/`](./04_prebuilt_lib/) | 构建/集成 | install + `find_package(Hyle COMPONENTS simd mem)`；同一 consumer 验证 shared/static、传递依赖、mimalloc 私有后端和 Windows DLL staging |
 | [`05_installed_c/`](./05_installed_c/) | error + mem C ABI、mem C++ API | 只链接 `hyle::mem` 消费 shared/static 安装包；纯 C 验证传递模块闭包，C++ `SystemAllocator` 验证 shared 不泄漏 mimalloc 符号且 static 自动携带实现 archive |
 | [`06_installed_io_http2/`](./06_installed_io_http2/) | io C ABI + HTTP/2 | 纯 C 工程消费 shared/static io package；审计 `io_http2` feature，并证明 pinned nghttp2 闭包不依赖源码 checkout |

@@ -14,7 +14,7 @@
 # the .cc, never named in a public compute header).
 set(_compute_sources compute.cc host_backend.cc host_ops.cc)
 set(_compute_public_deps hyle_error hyle_mem)
-set(_compute_private_deps "")
+set(_compute_private_deps hyle_simd hyle_platform)
 
 if(HYLE_COMPUTE_CUDA_ENABLED)
   # cuda_backend.cu is a CUDA-language TU (compiled by nvcc, host side by the same
@@ -28,9 +28,6 @@ endif()
 # HYLE_COMPUTE_VULKAN_ENABLED (volk + Vulkan-Headers + glslang fetched, loader at runtime).
 if(HYLE_COMPUTE_VULKAN_ENABLED)
   list(APPEND _compute_sources vulkan_backend.cc)
-  # vulkan_backend.cc uses platform's UTF-8 env/FileHandle contract for the
-  # optional persistent pipeline cache, even on a target without fcontext.
-  list(APPEND _compute_private_deps hyle_platform)
 endif()
 
 if(HYLE_HAS_FCONTEXT)
@@ -40,10 +37,6 @@ if(HYLE_HAS_FCONTEXT)
   # sched/waker.h, so a consumer of that header needs sched).
   list(APPEND _compute_sources gpu_poller.cc)
   list(APPEND _compute_public_deps hyle_sched)
-  # compute.cc and gpu_poller.cc directly consume Thread/Parker. Keep the
-  # implementation dependency explicit instead of relying on mem/sched's
-  # transitive linkage to platform.
-  list(APPEND _compute_private_deps hyle_platform)
 endif()
 
 list(REMOVE_DUPLICATES _compute_private_deps)
@@ -67,11 +60,6 @@ if(HYLE_HAS_FCONTEXT)
   # the capability marker private to the module.
   target_compile_definitions(hyle_compute PRIVATE HYLE_HAS_FCONTEXT)
 endif()
-
-# compute-07: the CPU operator backend (host_ops.cc) calls hyle simd numeric cores. PRIVATE:
-# simd is used only inside host_ops.cc, never named in a public compute header (host_ops.h
-# only declares HostFn signatures). This is simd's first compute consumer.
-target_link_libraries(hyle_compute PRIVATE hyle_simd)
 
 if(HYLE_COMPUTE_VULKAN_ENABLED)
   # Link volk (the Vulkan meta-loader; dlopen's the runtime loader, no vulkan-1.lib

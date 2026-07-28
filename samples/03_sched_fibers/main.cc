@@ -8,12 +8,11 @@
 // SAFETY (usage-contract.md): a fiber body must NOT hold a thread_local-derived value
 // across yield() -- it may resume on another thread. Re-read such state after yield.
 //
-// Platform: needs x86-64 fcontext (Windows/MSVC or Linux). See CMakeLists.txt.
+// Platform: needs a supported HYLE fcontext backend. See CMakeLists.txt.
 // Build: see ../README.md.
 
 #include <atomic>
 #include <cstdio>
-#include <memory>
 #include <vector>
 
 #include "hyle/mem/allocator.h"
@@ -50,18 +49,24 @@ int main() {
   std::atomic<int> completed{0};
 
   std::vector<Work> work(kFibers, Work{kSteps, &total_steps, &completed});
-  std::vector<std::unique_ptr<Fiber>> fibers;
-  fibers.reserve(kFibers);
-
   {
     // 4 workers, system allocator, run-queue capacity 256 (power of two).
     Scheduler sched(4, system_allocator(), 256);
+    bool submitted_all = true;
     for (int i = 0; i < kFibers; ++i) {
-      fibers.push_back(std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
-                                               &fiber_body, &work[i]));
-      sched.spawn(fibers[i].get());  // scheduler does NOT own the fiber; we keep it alive
+      // Fire-and-forget callbacks that may yield use spawn_detached: the scheduler
+      // owns the Fiber and recycles its guarded FiberStack after completion. Raw
+      // Fiber construction is for callers that specifically need manual ownership.
+      if (!sched
+               .spawn_detached(&fiber_body, &work[i], kDefaultStackSize)
+               .ok()) {
+        std::printf("failed to submit fiber %d\n", i);
+        submitted_all = false;
+        break;
+      }
     }
     sched.shutdown();  // drain: wait until every fiber finishes, then join workers
+    if (!submitted_all) return 1;
   }
 
   std::printf("fibers spawned : %d\n", kFibers);

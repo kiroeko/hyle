@@ -1,0 +1,4 @@
+hyle_add_c_surface_test(obs)
+hyle_add_header_self_contained_test(obs)
+hyle_add_test(obs SOURCES log_test.cc)
+hyle_add_c_test(obs c_obs_test.c)

@@ -2,8 +2,9 @@
 
 > 本页是 core 性能结论的唯一信源。设计与使用分别见
 > [`core-design`](../architecture/core-design.md) 和 [`guide/core`](../guide/core.md)。
-> 实现证据绑定 `71dabf7`；本页记录的是该实现的最终 API，而不是中途为了定位差异保留的
-> 实验形状。
+> IntrusiveList 数字绑定 `71dabf7`。2026-07-28 真实 SIMD/vqsort 消费者触发 compiler/cache
+> primitive 局部重开；它没有改动链表实现，因此旧链表点值仍有效。新增形状已在
+> Windows/WSL/Apple 完成正确性、codegen 与真实消费者复证。
 
 ## 测什么、不测什么
 
@@ -60,9 +61,32 @@ Windows 主工作树同步。配置 core benchmark 仍触发全项目可选后�
 
 - `kVersion*`、缓存常量和 C inline list 都是编译期/header-inline，不存在 DLL 热路。
 - `version()` 是 plugin/诊断冷路；只返回常量。它不值得用纳秒 benchmark 塑造 API。
-- `prefetch_read` 与 cache spacing 的价值只能在真实消费者（SwissTable、并发队列、SharedPool、
-  scheduler）中测；单独测一条 hint 或 `alignas` 没有产品含义，结果归各消费者性能页。
+- 三种 prefetch 与 cache spacing 的价值只能在真实消费者（SwissTable、vqsort、并发队列、
+  SharedPool、scheduler）中测；单独测一条 hint 或 `alignas` 没有产品含义，结果归各消费者
+  性能页。header 必须机械确认映射为目标 intrinsic 且没有 DLL hop。
+- C++ 的 `HYLE_ASSUME/RESTRICT/FLATTEN/UNROLL` 与 C 的 `HYLE_C_*` 不拥有算法复杂度或独立 workload；
+  它们用于保留成熟 kernel 的 alias/control-flow/loop 合同。性能归采用它们的 SIMD/vqsort 或
+  外部 C kernel，core 只负责跨编译器零状态、零调用抽象。
 - C intrusive list 与 C++ 使用相同 circular-sentinel 指针算法；不为同一机器码制造第二张表。
+
+### 2026-07-28 compiler/cache primitive 受影响验证
+
+最终 header 的 Release object 已机械检查：MSVC x64 的 C/C++ local/NTA/write 分别为
+`prefetcht0/prefetchnta/prefetcht0`（MSVC 无 ET0 时 write 明确退为读 hint），GCC14 x64 为
+`prefetcht0/prefetchnta/prefetchw`；MSVC ARM64 交叉编译为
+`PLDL1KEEP/PLDL1STRM/PSTL1KEEP`。三者都在调用点内联，无 HYLE DLL hop。
+
+restrict/flatten/unroll 的正常消费者结果只在
+[`benchmarks-simd`](./benchmarks-simd.md) 维护：KV32 partial-sort 的 Windows/WSL n=15 受影响门
+分别为 WIN/TIE；Apple M4 默认与 rival-first 双顺序没有得到一致胜负，按严格 order-swap
+规则记整体 TIE。三平台没有确认的 material regression。
+
+pure-C source surface 使用同一 compiler backend。MSVC 19.50 与 GCC 14 Release 的 C test
+object 中 compiler-contract loop 都是本地向量优化代码，不引用 HYLE 或 helper 调用；GCC 的
+factor-4 hint 可见为四段 vector-body 展开。Debug 的 `HYLE_C_ASSUME(false)` 在两者均由
+death-test 验证为诊断后终止。AppleClang 21 的 C object 同样为本地向量化/展开代码；三种
+prefetch 分别生成 `prfm pldl1keep`、`prfm pldl1strm`、`prfm pstl1keep`，Release/Debug
+core 均为 4/4。
 
 ## 复跑
 

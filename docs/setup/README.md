@@ -43,14 +43,15 @@ HYLE 的依赖分三类，决定了「新机器 `cmake` 会不会失败」：
 配置 + 构建 + 跑几个测试，绿了就能开工：
 
 ```bash
-cmake --preset <windows|linux|macos>
-cmake --build --preset <windows|linux|macos> --parallel 2
-ctest --preset <windows|linux|macos>
+cmake --preset <windows-vs2026|windows|linux|macos>
+cmake --build --preset <windows-vs2026|windows|linux|macos> --parallel 2
+ctest --preset <windows-vs2026|windows|linux|macos>
 ```
 
-这三个 preset 的 CPU feature contract 相同（TLS/CUDA 显式 OFF），但不强迫 Unix 使用 Ninja。
-完整一步入口是 `cmake --workflow --preset <windows|linux|macos>-check`。Windows 若要让 Ninja 使用
-CMake 尚不认识的新一代 MSVC，改用 `scripts/hyle-windows.ps1` + `windows-ninja`。
+这些 preset 的 CPU feature contract 相同（TLS/CUDA 显式 OFF），但不强迫 Unix 使用 Ninja。
+完整一步入口是 `cmake --workflow --preset <windows-vs2026|windows|linux|macos>-check`。VS 2026
+原生入口要求 CMake 4.2+；`windows` 是 VS 2022 回退。Windows 若要让 Ninja 使用已选择的最新
+MSVC，改用 `scripts/hyle-windows.ps1` + `windows-ninja`。
 
 - 看配置日志确认可选能力状态：`io TLS <AUTO|ON|OFF>` / `compute CUDA <AUTO|ON|OFF>` / `ggml via FetchContent`。
 - lock-free 改动**必须**过 WSL TSan（[`linux-wsl.md`](./linux-wsl.md)）。

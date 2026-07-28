@@ -10,6 +10,7 @@
 #include "hyle/container/detail/adaptive_mutex.h"
 #include "hyle/container/pod_vector.h"
 #include "hyle/container/swiss_table.h"
+#include "hyle/core/cache.h"
 #include "hyle/platform/cpu.h"
 
 namespace hyle::container {
@@ -112,7 +113,7 @@ HYLE_FORCE_INLINE std::uint32_t slab_class(std::size_t bytes) noexcept {
   return kSlabClassCount;
 }
 
-struct alignas(64) Shard {
+struct alignas(core::kDestructiveInterferenceSize) Shard {
   explicit Shard(mem::Allocator alloc) noexcept : by_string(alloc), by_id(alloc) {}
 
   // Exclusive use of the container's bounded-spin/park lock keeps short hit

@@ -1,10 +1,9 @@
-// Sample 01 -- mem + container: the two patterns every HYLE consumer touches first.
+// Sample 01 -- mem + container: the default allocation path used by HYLE containers.
 //
-//  (1) EXPLICIT ALLOCATOR INJECTION. HYLE has no hidden global heap -- every allocating
-//      API takes an `Allocator` by value. system_allocator() is the process default
-//      (mimalloc-backed). You can pass an arena/pool instead to control lifetime.
-//  (2) SwissTable -- HYLE's flat hashmap (control-byte + SIMD probe), the absl-class
-//      replacement for std::unordered_map. It takes the allocator explicitly.
+// FlatHashMap is HYLE's public flat-hash-map shape (control bytes + SIMD probing).
+// Like the other header-inline containers, it defaults to the compile-time-bound,
+// stateless SystemAllocator. Normal users therefore default-construct it; a runtime
+// mem::Allocator is an explicit template-level opt-in for quota/stats/custom backing.
 //
 // Build: see ../README.md. Run: prints a tiny word-count, demonstrating insert/find.
 
@@ -12,19 +11,14 @@
 #include <cstdio>
 
 #include "hyle/container/swiss_table.h"
-#include "hyle/mem/allocator.h"
 
-using hyle::container::SwissTable;
-using hyle::mem::Allocator;
-using hyle::mem::system_allocator;
+using hyle::container::FlatHashMap;
 
 int main() {
-  // The allocator is a value handle ({fn,state}) -- pass it wherever HYLE allocates.
-  Allocator alloc = system_allocator();
-
   // A word -> count map. Keyed by uint64 id here to keep the sample dependency-free
-  // (string_ref keys work too; see usage-guide). Allocator injected at construction.
-  SwissTable<std::uint64_t, std::uint64_t> counts(alloc);
+  // (StringView keys work too; see the container guide). The default allocator is
+  // the fast SystemAllocator path, so no allocator argument is needed.
+  FlatHashMap<std::uint64_t, std::uint64_t> counts;
 
   // Simulate a stream of token ids.
   const std::uint64_t stream[] = {7, 3, 7, 7, 42, 3, 7, 42, 99};
@@ -37,7 +31,7 @@ int main() {
   }
 
   // Read back.
-  std::printf("token counts (SwissTable, %zu distinct):\n", counts.size());
+  std::printf("token counts (FlatHashMap, %zu distinct):\n", counts.size());
   for (std::uint64_t id : {3ull, 7ull, 42ull, 99ull, 123ull}) {
     std::uint64_t* c = counts.find(id);
     if (c)

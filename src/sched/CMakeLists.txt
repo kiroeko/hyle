@@ -58,7 +58,9 @@ hyle_add_module(sched
 if(MSVC)
   # The MASM files tag their PROCs with BOOST_CONTEXT_EXPORT (undefined in-file).
   # Define it to EXPORT so jump/make/ontop_fcontext become PUBLIC and link from
-  # fiber.cc. Scoped to ASM_MASM so the C++ compiler never sees it.
-  target_compile_definitions(hyle_sched PRIVATE
-    $<$<COMPILE_LANGUAGE:ASM_MASM>:BOOST_CONTEXT_EXPORT=EXPORT>)
+  # fiber.cc. Visual Studio's MASM integration consumes the target's
+  # PreprocessorDefinitions property, while generic COMPILE_OPTIONS (including
+  # a language generator expression) are not emitted into its MASM item. Keep
+  # this target-private; the same unused definition on the C++ TUs is harmless.
+  target_compile_definitions(hyle_sched PRIVATE BOOST_CONTEXT_EXPORT=EXPORT)
 endif()

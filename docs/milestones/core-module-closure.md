@@ -5,6 +5,33 @@
 > [`guide/c-core`](../guide/c-core.md)，性能数字只见
 > [`benchmarks-core`](../performance/benchmarks-core.md)。
 
+## 2026-07-28 真实消费者触发的局部重开
+
+旧证书完成了 version/cache layout/IntrusiveList，但“扫描全部直接消费者”的方法看不见没有
+include core、而是在本地复制 primitive 的代码。SIMD/vqsort 复审找到私有 `Prefetch`、
+`HWY_ASSUME/HWY_NOINLINE`，以及被降为空宏的 `HWY_RESTRICT/HWY_UNROLL`；本地 Abseil/Highway
+证明 local/NTA/for-write prefetch、assume、restrict 和 loop hint 是成熟基础形状，并且已有
+真实 kernel 消费，不是 benchmark 反推功能。
+
+- [x] C++ 与 pure-C header-inline 补 local、non-temporal、for-write 三种 prefetch；
+- [x] C++ 与 pure-C source compiler seam 补 assume/restrict/flatten/unroll，共用 backend；vqsort 删除对应
+  本地 compiler branches；
+- [x] Windows MSVC Release/Debug core C/C++、surface 与 header self-contained 4/4；
+- [x] Windows SIMD/vqsort 正确性；KV32 partial-sort n=15 对 Highway 为 WIN；
+- [x] WSL GCC14 core 4/4、SIMD/vqsort 1/1；同一 KV32 workload 对 Highway 为 TIE；
+- [x] MSVC ARM64 C/C++ 交叉编译，三种 hint 反汇编为 PLDL1KEEP/PLDL1STRM/PSTL1KEEP；
+- [x] C++ 任务入口与 C 能力映射复审；纯 C 补齐 hook/init、空/NULL、非法 splice、back/clear
+  生命周期机械覆盖，batch/遍历组合写入 guide；
+- [x] 全库硬编码 cache-layout 语义扫描：`StringInterner::Shard` 从 `alignas(64)` 迁移到 core
+  destructive-interference 常量；SIMD/entry scratch 的其余 64B 是向量/最大对象对齐，不误改；
+- [x] Apple M4 AppleClang/ARM64 最终复证：core C/C++/codegen、NEON vqsort normal workload，
+  以及采用 128B core spacing 后的 StringInterner correctness + concurrent normal workload；
+- [x] 最终文档与四项 LOC 工作树快照；
+- [x] Apple 门完成后绑定实现 commit、提交并推送。
+
+`71dabf7` 的 IntrusiveList 性能证书继续有效；2026-07-29 Apple 门完成后，core 的功能、
+正确性、C/C++ source surface、三平台 codegen 与真实消费者复证重新转绿。
+
 ## 完成定义
 
 - [x] 清点 `core/`、根级 macros/visibility、公开 C 头及全部直接消费者；
@@ -29,6 +56,24 @@
    batch splice/consume 和错误 membership 测试。
 7. 移除 `macros.h` 的无关标准头后，修复 `mem/system_inline.h` 对 `SIZE_MAX` 的隐式 include
    依赖；这是下游 header 自包含修复，不回退为根头兜底。
+8. 补独立 `hyle/c/compiler.h`：C kernel 取得 assume/restrict/flatten/unroll/default-unroll，同 C++ 共用
+   language-neutral backend；保持零导出符号，并补 pure-C 有效路径与 Debug 违约门。
+9. 对齐成熟 Highway kernel 的递归内联合同，补 C/C++ `FLATTEN`；vqsort 使用统一 core seam，
+   不再在 port 中保留另一套编译器分支。
+
+## 2026-07-29 Apple 最终门
+
+- Apple M4 / AppleClang 21：core Release 4/4、Debug 4/4；core+SIMD+container 受影响组
+  Release 11/11。
+- pure-C Release object 中 compiler-contract loop 保持本地向量化/展开；三种 prefetch 分别
+  生成 `prfm pldl1keep`、`prfm pldl1strm`、`prfm pstl1keep`，无 runtime helper/DLL hop。
+- M4 真机捕获 NEON partial `ReduceMin/ReduceMax` 把 inactive physical zero lanes 纳入结果的
+  正确性缺陷；同族审计后 SSE4/AVX2/AVX512 的部分归约也改为只折叠 active lanes，并扩展
+  sum/mul/min/max/and/or 回归。Windows SIMD 5/5、WSL core+SIMD 9/9、M4 受影响组 11/11。
+- KV32 partial-sort 的默认/对手优先双顺序结果不一致且 spread 较高，严格按 order-swap 规则
+  判整体统计 TIE，不把单顺序的 sign 结果写成稳定胜负。Apple 128B spacing 后 StringInterner
+  8-thread normal workload 为 14.678 ns/op，对同合同 sharded Abseil+mutex 19.679 ns/op，
+  15/15、1.341x WIN。
 
 ## 当前验收证据
 
@@ -52,9 +97,19 @@
 | 自实现（不含测试） | 79,955 |
 | core 实现 | 490 |
 
-core 口径为 `include/hyle/core + include/hyle/c/core.h + include/hyle/macros.h +
-include/hyle/visibility.h + src/core`，不含测试；根级 macros/visibility 是 core 的逻辑产品面，
-不能因为不在 `core/` 目录而漏计。
+core 口径为 `include/hyle/core + include/hyle/c/core.h + include/hyle/c/compiler.h +
+include/hyle/macros.h + include/hyle/visibility.h + src/core`，不含测试；根级 macros/visibility
+与独立 C compiler 头都是 core 的逻辑产品面，不能因为不在 `core/` 目录而漏计。
+
+2026-07-29 Apple 门通过后的最终工作树快照如下；它同时包含工作树中此前未提交的其他模块/
+构建系统改动，因此前三项不是“本轮 core 净增”。提交只改变 tracked 状态，不改变这些代码量。
+
+| 固定口径 | code |
+|---|---:|
+| 全库（tracked + untracked，含 docs/in-tree third_party） | 274,580 |
+| 自实现（含测试） | 134,129 |
+| 自实现（不含测试） | 92,124 |
+| core 实现 | 646 |
 
 ## 功能与负空间结论
 

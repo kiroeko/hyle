@@ -18,7 +18,7 @@
 #include "hyle/simd/native/random.h"
 
 // vec_test -- WIDTH-AGNOSTIC: this ONE source is compiled three times (scalar / sse4 /
-// avx2 targets, see tests/CMakeLists.txt) and validates whichever backend is compiled
+// avx2 targets, see tests/simd/CMakeLists.txt) and validates whichever backend is compiled
 // in. So the op tests must NOT assume a lane count: they use ScalableTag<T> + the
 // runtime Lanes(d) + a naive per-lane reference. The D-tag CONTRACT tests below are
 // pure compile-time tag math (backend-independent) and stay as-is.
@@ -852,7 +852,7 @@ TEST(Vec, TernaryBitAndSign) {
   const hs::ScalableTag<std::uint32_t> d;
   const std::size_t n = hs::Lanes(d);
   Buf<std::uint32_t> a, b, c, out;
-  for (std::size_t i = 0; i < n; ++i) { a.data[i] = 0xF0F0F0F0u + i; b.data[i] = 0x0FF00FF0u; c.data[i] = 0x33333333u; }
+  for (std::size_t i = 0; i < n; ++i) { a.data[i] = 0xF0F0F0F0u + static_cast<std::uint32_t>(i); b.data[i] = 0x0FF00FF0u; c.data[i] = 0x33333333u; }
   auto va = hs::Load(d, a.data), vb = hs::Load(d, b.data), vc = hs::Load(d, c.data);
   hs::Store(hs::Xor3(va, vb, vc), d, out.data);
   for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], a.data[i]^b.data[i]^c.data[i]) << "xor3 i=" << i;
@@ -1790,6 +1790,53 @@ TEST(Vec, ReductionsUint16) { CheckReductions<std::uint16_t>(); }
 TEST(Vec, ReductionsInt64) { CheckReductions<std::int64_t>(); }
 TEST(Vec, ReductionsUint64) { CheckReductions<std::uint64_t>(); }
 
+template <typename T, std::size_t N>
+void CheckPartialMinMaxReduction() {
+  const hs::FixedTag<T, N> d;
+  Buf<T> values;
+  for (std::size_t i = 0; i < N; ++i) {
+    if constexpr (std::is_unsigned_v<T>)
+      values.data[i] = static_cast<T>(i + 3);
+    else
+      values.data[i] = static_cast<T>(-static_cast<int>(i) - 1);
+  }
+  const auto value = hs::LoadU(d, values.data);
+  T sum = values.data[0];
+  T product = values.data[0];
+  for (std::size_t i = 1; i < N; ++i) {
+    sum = static_cast<T>(sum + values.data[i]);
+    product = static_cast<T>(product * values.data[i]);
+  }
+  EXPECT_EQ(hs::ReduceSum(d, value), sum);
+  EXPECT_EQ(hs::ReduceMul(d, value), product);
+  if constexpr (std::is_integral_v<T>) {
+    T bit_and = values.data[0];
+    T bit_or = values.data[0];
+    for (std::size_t i = 1; i < N; ++i) {
+      bit_and = static_cast<T>(bit_and & values.data[i]);
+      bit_or = static_cast<T>(bit_or | values.data[i]);
+    }
+    EXPECT_EQ(hs::ReduceAnd(d, value), bit_and);
+    EXPECT_EQ(hs::ReduceOr(d, value), bit_or);
+  }
+  if constexpr (std::is_unsigned_v<T>) {
+    EXPECT_EQ(hs::ReduceMin(d, value), static_cast<T>(3));
+    EXPECT_EQ(hs::ReduceMax(d, value), static_cast<T>(N + 2));
+  } else {
+    EXPECT_EQ(hs::ReduceMin(d, value), static_cast<T>(-static_cast<int>(N)));
+    EXPECT_EQ(hs::ReduceMax(d, value), static_cast<T>(-1));
+  }
+}
+
+TEST(Vec, PartialReductionsIgnoreInactivePhysicalLanes) {
+  CheckPartialMinMaxReduction<std::uint16_t, 4>();
+  CheckPartialMinMaxReduction<std::uint16_t, 2>();
+  CheckPartialMinMaxReduction<std::int32_t, 2>();
+  CheckPartialMinMaxReduction<std::int32_t, 1>();
+  CheckPartialMinMaxReduction<float, 2>();
+  CheckPartialMinMaxReduction<float, 1>();
+}
+
 // ReduceMul / ReduceAnd / ReduceOr (family completion) over integer lanes. Small factors
 // keep the product in range for every width; And/Or checked against a naive fold.
 template <typename T>
@@ -2310,10 +2357,13 @@ void CheckCompress() {
       EXPECT_EQ(out.data[i], expected) << "Expand bits=" << bits << " i=" << i;
     }
   };
+  // Shifting by 64 is undefined. This right-shift form is valid for every
+  // native lane count in [1, 64], including the AVX-512 i8 case.
+  const std::uint64_t all = ~std::uint64_t{0} >> (64 - n);
   if (n <= 8) {
-    for (std::uint64_t bits = 0; bits < (std::uint64_t{1} << n); ++bits) check_mask(bits);
+    const std::uint64_t combinations = all + 1;
+    for (std::uint64_t bits = 0; bits < combinations; ++bits) check_mask(bits);
   } else {
-    const std::uint64_t all = n == 64 ? ~std::uint64_t{0} : (std::uint64_t{1} << n) - 1;
     const std::uint64_t masks[] = {
         0, all, 1, std::uint64_t{1} << (n - 1), 1 | (std::uint64_t{1} << (n - 1)),
         0x0180 & all, 0xA53C & all, 0xA5A5A5A5A5A5A5A5ull & all,
@@ -3424,7 +3474,7 @@ TEST(Vec, DemoteTruncateHelpers) {
   using DN = hs::Repartition<std::uint16_t, hs::ScalableTag<std::uint32_t>>;  // 2x lanes u16
   const DN dn{};
   Buf<std::uint32_t> a, b;
-  for (std::size_t i = 0; i < nw; ++i) { a.data[i] = 0x11110000u + i; b.data[i] = 0x22220000u + i; }
+  for (std::size_t i = 0; i < nw; ++i) { a.data[i] = 0x11110000u + static_cast<std::uint32_t>(i); b.data[i] = 0x22220000u + static_cast<std::uint32_t>(i); }
   Buf<std::uint16_t> out;
   hs::Store(hs::OrderedTruncate2To(dn, hs::Load(du32, a.data), hs::Load(du32, b.data)), dn, out.data);
   for (std::size_t i = 0; i < nw; ++i) {
@@ -3436,7 +3486,7 @@ TEST(Vec, DemoteTruncateHelpers) {
   // kPow2=0 (TruncateTo takes Simd<DstT,N,0>); build it directly from the u32 lane count.
   const hs::FixedTag<std::uint8_t, hs::kNativeVectorBytes / sizeof(std::uint32_t)> dn8{};
   Buf<std::uint32_t> src;
-  for (std::size_t i = 0; i < nw; ++i) src.data[i] = 0xABCD0000u + i * 7;
+  for (std::size_t i = 0; i < nw; ++i) src.data[i] = 0xABCD0000u + static_cast<std::uint32_t>(i * 7);
   Buf<std::uint8_t> tout;
   hs::TruncateStore(hs::Load(du32, src.data), dn8, tout.data);
   for (std::size_t i = 0; i < hs::Lanes(dn8); ++i)

@@ -192,7 +192,7 @@ hyle_add_dispatched_kernel(
   IMPL "src/simd/narrow/kernel_impl.h"
   TARGETS scalar sse4 avx2 avx512 neon sve rvv)
 
-# Per-ISA codegen flags via the single-source hyle_set_isa (HyleModule.cmake) -- one tier
+# Per-ISA codegen flags via the single-source hyle_set_isa (HyleIsa.cmake) -- one tier
 # name per TU, no hand-written /arch-vs-(-m) mapping to drift. scalar TU gets none. Gated by
 # arch: the wide x86 TUs only exist in an x86 build (see the SOURCES split above), and the
 # neon TU only in an aarch64 build -- setting flags on a TU not in SOURCES would error.
@@ -253,7 +253,7 @@ if(HYLE_SIMD_EXACT_TARGET)
   add_custom_target(hyle_simd_exact_artifact_check
     COMMAND "${Python3_EXECUTABLE}"
       "${PROJECT_SOURCE_DIR}/scripts/simd-exact-artifact-check.py"
-      --build-dir "${CMAKE_BINARY_DIR}"
+      --build-dir "${HYLE_BINARY_DIR}"
       --isa "${HYLE_SIMD_EXACT_TARGET}"
       --binary "$<TARGET_FILE:hyle_simd>"
     DEPENDS hyle_simd
@@ -287,6 +287,16 @@ if(HYLE_SIMD_X64)
   if(HYLE_SIMD_BUILD_AVX512)
     hyle_set_isa(sort/vqsort_hyle_avx512.cc AVX512)
     hyle_set_isa(bitpack/bitpack_hyle_avx512.cc AVX512)
+  endif()
+  if(MSVC)
+    # MSVC 19.50 diagnoses the intentionally unreachable sides of vqsort's
+    # compile-time sorting networks after __assume/if-constexpr folding. Keep
+    # the exception local to the two ported vqsort instantiation units; all
+    # other HYLE code remains under /W4 /WX and C4702.
+    set_property(SOURCE
+      sort/vqsort_hyle_avx2.cc
+      sort/vqsort_hyle_avx512.cc
+      APPEND PROPERTY COMPILE_OPTIONS /wd4702)
   endif()
 endif()
 

@@ -98,16 +98,16 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 
 > **信源**：体量以 `cloc` 实测为准；能力进度以 [`../milestones/README.md`](../milestones/README.md) 为准。
 > **口径**：生产 = `src` + `include` 的 code 列（不含 tests/bench/docs、不含 third_party）。
-> **2026-07-27 锚定**：旧投影「完成时生产 ~28–40k / 中值 34k」**已作废**——当前生产已 **91.7k**，单 simd **37.8k**。当前判断见 [`../milestones/pre-release-readiness.md`](../milestones/pre-release-readiness.md)；更早数字只作历史快照。
+> **2026-07-29 锚定**：旧投影「完成时生产 ~28–40k / 中值 34k」**已作废**——当前生产已 **92.1k**，单 simd **37.8k**。当前判断见 [`../milestones/pre-release-readiness.md`](../milestones/pre-release-readiness.md)；更早数字只作历史快照。
 
-### 当前实测（2026-07-27）
+### 当前实测（2026-07-29）
 
 | 固定统计口径 | code | 说明 |
 |---|---:|---|
-| **全库代码** | **273,137** | tracked + 当前待提交文件；含 docs 与 in-tree third_party |
-| **自实现（含测试）** | **133,777** | `include/hyle + src + tests`；只计 C/C++/CUDA，不含 CMake/Text |
-| **自实现（不含测试）** | **91,888** | `include/hyle + src`；只计 C/C++/CUDA，库本体硬锚 |
-| **当前处理模块实现（build/package）** | **4,384** | 42 个自有 CMake 文件 + preset/CI + 8 个 build/fetch/setup/QEMU guard；不含测试源码/文档 |
+| **全库代码** | **274,580** | tracked + 当前待提交文件；含 docs 与 in-tree third_party |
+| **自实现（含测试）** | **134,129** | `include/hyle + src + tests`；只计 C/C++/CUDA，不含 CMake/Text |
+| **自实现（不含测试）** | **92,124** | `include/hyle + src`；只计 C/C++/CUDA，库本体硬锚 |
+| **当前处理模块实现（core）** | **646** | `include/hyle/core`、C core/compiler 头、根级 macros/visibility 与 `src/core`；不含测试/文档 |
 | 再加 ggml 等大依赖足迹 | **~200–350k+** | 由 ggml 主导，不计入「自有生产」 |
 
 **生产按模块（src+include，约）：**

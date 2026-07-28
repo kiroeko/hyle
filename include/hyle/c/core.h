@@ -7,11 +7,17 @@
 #ifndef HYLE_C_CORE_H_
 #define HYLE_C_CORE_H_
 
+#include "hyle/c/compiler.h"
+
 #include <stddef.h>
 #include <stdint.h>
 
 #include "hyle/core/cache_defs.h"
 #include "hyle/core/version_defs.h"
+
+#if defined(_MSC_VER)
+#  include <intrin.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,6 +37,14 @@ extern "C" {
 #  define HYLE_CORE_C_API
 #endif
 
+#if defined(_MSC_VER)
+#  define HYLE_CORE_C_INLINE static __forceinline
+#elif defined(__GNUC__) || defined(__clang__)
+#  define HYLE_CORE_C_INLINE static inline __attribute__((always_inline))
+#else
+#  define HYLE_CORE_C_INLINE static inline
+#endif
+
 /* Runtime version of the linked hyle_core. Compare with HYLE_VERSION_PACKED to
  * diagnose a header/runtime mismatch after dlopen or across an FFI boundary. */
 HYLE_CORE_C_API uint32_t hyle_version(void);
@@ -42,6 +56,51 @@ HYLE_CORE_C_API const char* hyle_version_string(void);
 static inline uint32_t hyle_version_major(uint32_t packed) { return (packed >> 16) & 0xFFu; }
 static inline uint32_t hyle_version_minor(uint32_t packed) { return (packed >> 8) & 0xFFu; }
 static inline uint32_t hyle_version_patch(uint32_t packed) { return packed & 0xFFu; }
+
+/* Cache prefetch hints. They never establish validity, ownership or memory
+ * ordering; use only after profiling a representative workload. */
+HYLE_CORE_C_INLINE void hyle_prefetch_read(const void* address) {
+#if defined(__GNUC__) || defined(__clang__)
+  __builtin_prefetch(address, 0, 3);
+#elif defined(_MSC_VER) && (defined(_M_IX86) || defined(_M_X64))
+  _mm_prefetch((const char*)address, _MM_HINT_T0);
+#elif defined(_MSC_VER) && defined(_M_ARM64)
+  __prefetch2(address, 0x0); /* PLD L1 KEEP */
+#else
+  (void)address;
+#endif
+}
+
+HYLE_CORE_C_INLINE void hyle_prefetch_read_non_temporal(const void* address) {
+#if defined(__GNUC__) || defined(__clang__)
+  __builtin_prefetch(address, 0, 0);
+#elif defined(_MSC_VER) && (defined(_M_IX86) || defined(_M_X64))
+  _mm_prefetch((const char*)address, _MM_HINT_NTA);
+#elif defined(_MSC_VER) && defined(_M_ARM64)
+  __prefetch2(address, 0x1); /* PLD L1 STRM */
+#else
+  (void)address;
+#endif
+}
+
+HYLE_CORE_C_INLINE void hyle_prefetch_write(const void* address) {
+#if (defined(__GNUC__) || defined(__clang__)) && defined(__x86_64__) && \
+    !defined(__PRFCHW__)
+  __asm__("prefetchw %0" : : "m"(*(const char*)address));
+#elif defined(__GNUC__) || defined(__clang__)
+  __builtin_prefetch(address, 1, 3);
+#elif defined(_MSC_VER) && (defined(_M_IX86) || defined(_M_X64))
+#  if defined(_MM_HINT_ET0)
+  _mm_prefetch((const char*)address, _MM_HINT_ET0);
+#  else
+  _mm_prefetch((const char*)address, _MM_HINT_T0);
+#  endif
+#elif defined(_MSC_VER) && defined(_M_ARM64)
+  __prefetch2(address, 0x10); /* PST L1 KEEP */
+#else
+  (void)address;
+#endif
+}
 
 /* Allocation-free intrusive doubly-linked list. The caller owns every node;
  * each hook may belong to at most one list and must be initialized before use.
@@ -168,5 +227,7 @@ static inline int hyle_intrusive_list_append(hyle_intrusive_list* destination,
 #ifdef __cplusplus
 }
 #endif
+
+#undef HYLE_CORE_C_INLINE
 
 #endif /* HYLE_C_CORE_H_ */

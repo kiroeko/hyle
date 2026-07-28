@@ -268,25 +268,43 @@ void run_partial(const char* type, std::size_t n, std::size_t k, bool few_unique
       nb::doNotOptimizeAway(work.data());
     });
   }
-  bench.run("Highway direct", [&] {
-    std::copy(source.begin(), source.end(), work.begin());
-    highway_partial_sort(work.data(), n, k, ascending);
-    nb::doNotOptimizeAway(work.data());
-  });
-#if defined(HYLE_OS_MACOS) && defined(HYLE_ARCH_ARM64)
-  if constexpr (IsKeyValue<T>::value) {
-    bench.run("HYLE vqsort core", [&] {
+  const auto run_highway = [&] {
+    bench.run("Highway direct", [&] {
       std::copy(source.begin(), source.end(), work.begin());
-      hyle_vqsort_core_partial(work.data(), n, k, ascending);
+      highway_partial_sort(work.data(), n, k, ascending);
       nb::doNotOptimizeAway(work.data());
     });
-  }
+  };
+#if defined(HYLE_OS_MACOS) && defined(HYLE_ARCH_ARM64)
+  const auto run_hyle_core = [&] {
+    if constexpr (IsKeyValue<T>::value) {
+      bench.run("HYLE vqsort core", [&] {
+        std::copy(source.begin(), source.end(), work.begin());
+        hyle_vqsort_core_partial(work.data(), n, k, ascending);
+        nb::doNotOptimizeAway(work.data());
+      });
+    }
+  };
+#else
+  const auto run_hyle_core = [] {};
 #endif
-  bench.run("HYLE public", [&] {
-    std::copy(source.begin(), source.end(), work.begin());
-    hyle_partial_sort(work.data(), n, k, ascending);
-    nb::doNotOptimizeAway(work.data());
-  });
+  const auto run_hyle_public = [&] {
+    bench.run("HYLE public", [&] {
+      std::copy(source.begin(), source.end(), work.begin());
+      hyle_partial_sort(work.data(), n, k, ascending);
+      nb::doNotOptimizeAway(work.data());
+    });
+  };
+
+  if (std::getenv("HYLE_BENCH_RIVAL_FIRST") != nullptr) {
+    run_highway();
+    run_hyle_core();
+    run_hyle_public();
+  } else {
+    run_hyle_core();
+    run_hyle_public();
+    run_highway();
+  }
 }
 
 // select / nth_element: only for plain numeric-key types (HYLE select has no KeyValue overload).

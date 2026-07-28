@@ -36,7 +36,7 @@ HYLE 是标准 CMake 工程，每个模块导出 `hyle::<module>` 别名 target�
 CMake 会自动加入依赖闭包，不会配置无关 GPU/IO 后端：
 
 ```cmake
-set(HYLE_COMPONENTS "container;simd" CACHE STRING "" FORCE)
+set(HYLE_COMPONENTS "container;simd")
 add_subdirectory(hyle)            # 或 FetchContent；已安装 SDK 使用 find_package
 target_link_libraries(your_app PRIVATE hyle::container hyle::mem hyle::simd)
 hyle_stage_runtime_dependencies(your_app) # Windows shared build 的传递 DLL
@@ -123,7 +123,8 @@ source embed/install consumer 必须继承的产品合同：
 
 | preset | 作用 |
 |---|---|
-| `windows` | 确定的 VS 2022 generator；要求其中 MSVC 19.43+，不要求 Ninja |
+| `windows-vs2026` | CMake 4.2+ 的原生 VS 2026/v145 solution（`.slnx`） |
+| `windows` | VS 2022 generator 回退；包装脚本显式选择最高的合格 v143 toolset |
 | `windows-ninja` / `win` | 使用已选择的 MSVC + Ninja；`scripts/hyle-windows.ps1` 用 vswhere 自动导入最新已安装环境 |
 | `linux` / `macos` | 不指定 generator；通过 CC/CXX 或 CMake 正常规则选择受支持工具链 |
 | `wsl` | `linux` 的 gcc-14/g++-14 便利形状；重压/benchmark 使用 native ext4 checkout |
@@ -429,12 +430,13 @@ OOM 时保留错误码；增加 context OOM 时保留原消息。Status 传播�
 ### 3.4 sched —— 纤程 + 调度器
 ```cpp
 #include "hyle/sched/scheduler.h"
+#include "hyle/sched/fiber.h"
 #include "hyle/sched/join.h"
 using namespace hyle::sched;
 
 Scheduler sched(8, system_allocator(), /*queue_capacity=*/1024);   // 8 worker, 队列容量须 2 的幂
 auto fast = sched.schedule(fn, arg);   // worker 栈：不可 yield/sleep/wait/block
-auto full = sched.spawn_detached(fn, arg);  // 自持 guarded fiber：可 yield/sleep/wait
+auto full = sched.spawn_detached(fn, arg, kDefaultStackSize);  // 自持 guarded fiber：可挂起
 sched.shutdown();                       // 排空后 join worker
 ```
 需要返回值/结构化组合时用

@@ -1715,8 +1715,7 @@ HYLE_FORCE_INLINE Vec256<T, N> ConcatEven(Vec256<T, N> hi, Vec256<T, N> lo) noex
     if constexpr (std::is_same_v<T, float>) r.raw = _mm256_castsi256_ps(p);
     else r.raw = p;
     return r;
-  }
-  if constexpr (sizeof(T) == 1 || sizeof(T) == 2) {
+  } else if constexpr (sizeof(T) == 1 || sizeof(T) == 2) {
     // [lo evens, hi evens]: mask off odd elements to 0, packus (unsigned narrow) drops them, permq
     // D8 undoes packus's 128-lane interleave. One mask + packus + permq, no store+reload.
     Vec256<T, N> r;
@@ -1730,11 +1729,12 @@ HYLE_FORCE_INLINE Vec256<T, N> ConcatEven(Vec256<T, N> hi, Vec256<T, N> lo) noex
       r.raw = _mm256_permute4x64_epi64(p, _MM_SHUFFLE(3, 1, 2, 0));
     }
     return r;
+  } else {
+    alignas(32) T sl[N], sh[N], dst[N];
+    Store(lo, Simd<T, N, 0>(), sl); Store(hi, Simd<T, N, 0>(), sh);
+    for (std::size_t i = 0; i < N / 2; ++i) { dst[i] = sl[2 * i]; dst[N / 2 + i] = sh[2 * i]; }
+    return Load(Simd<T, N, 0>(), dst);
   }
-  alignas(32) T sl[N], sh[N], dst[N];
-  Store(lo, Simd<T, N, 0>(), sl); Store(hi, Simd<T, N, 0>(), sh);
-  for (std::size_t i = 0; i < N / 2; ++i) { dst[i] = sl[2 * i]; dst[N / 2 + i] = sh[2 * i]; }
-  return Load(Simd<T, N, 0>(), dst);
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> ConcatOdd(Vec256<T, N> hi, Vec256<T, N> lo) noexcept {
@@ -1751,8 +1751,7 @@ HYLE_FORCE_INLINE Vec256<T, N> ConcatOdd(Vec256<T, N> hi, Vec256<T, N> lo) noexc
     if constexpr (std::is_same_v<T, float>) r.raw = _mm256_castsi256_ps(p);
     else r.raw = p;
     return r;
-  }
-  if constexpr (sizeof(T) == 1 || sizeof(T) == 2) {
+  } else if constexpr (sizeof(T) == 1 || sizeof(T) == 2) {
     // [lo odds, hi odds]: srli each element down by half its width so the odd element lands in the
     // low half, packus drops the (now-zero) upper, permq D8 fixes lane order.
     Vec256<T, N> r;
@@ -1764,11 +1763,12 @@ HYLE_FORCE_INLINE Vec256<T, N> ConcatOdd(Vec256<T, N> hi, Vec256<T, N> lo) noexc
       r.raw = _mm256_permute4x64_epi64(p, _MM_SHUFFLE(3, 1, 2, 0));
     }
     return r;
+  } else {
+    alignas(32) T sl[N], sh[N], dst[N];
+    Store(lo, Simd<T, N, 0>(), sl); Store(hi, Simd<T, N, 0>(), sh);
+    for (std::size_t i = 0; i < N / 2; ++i) { dst[i] = sl[2 * i + 1]; dst[N / 2 + i] = sh[2 * i + 1]; }
+    return Load(Simd<T, N, 0>(), dst);
   }
-  alignas(32) T sl[N], sh[N], dst[N];
-  Store(lo, Simd<T, N, 0>(), sl); Store(hi, Simd<T, N, 0>(), sh);
-  for (std::size_t i = 0; i < N / 2; ++i) { dst[i] = sl[2 * i + 1]; dst[N / 2 + i] = sh[2 * i + 1]; }
-  return Load(Simd<T, N, 0>(), dst);
 }
 // DupEven/DupOdd: within each 128-bit block, broadcast the even/odd element of each adjacent pair
 // (Highway contract). NATIVE for 32/64-bit lanes (the hot widths -- op_parity showed the old
@@ -1785,7 +1785,7 @@ HYLE_FORCE_INLINE Vec256<T, N> DupEven(Vec256<T, N> v) noexcept {
     // avoids an int<->fp bypass delay when surrounded by integer ops and MSVC schedules it better
     // (MultiRotateRight had 2x vpermilpd here where Highway has vpunpckl/hqdq -> MSVC 0.91x).
     r.raw = _mm256_unpacklo_epi64(v.raw, v.raw);
-  else return detail::swizzle_via_mem(v, [](std::size_t i) { return i & ~std::size_t{1}; });
+  else r = detail::swizzle_via_mem(v, [](std::size_t i) { return i & ~std::size_t{1}; });
   return r;
 }
 template <typename T, std::size_t N>
@@ -1796,7 +1796,7 @@ HYLE_FORCE_INLINE Vec256<T, N> DupOdd(Vec256<T, N> v) noexcept {
   else if constexpr (std::is_same_v<T, double>) r.raw = _mm256_permute_pd(v.raw, 0xF); // [1,1] per 128b
   else if constexpr (detail::kI64<T>)
     r.raw = _mm256_unpackhi_epi64(v.raw, v.raw);  // integer-domain vpunpckhqdq (= InterleaveUpper), see DupEven
-  else return detail::swizzle_via_mem(v, [](std::size_t i) { return (i & ~std::size_t{1}) | 1; });
+  else r = detail::swizzle_via_mem(v, [](std::size_t i) { return (i & ~std::size_t{1}) | 1; });
   return r;
 }
 // TableLookupLanes: runtime per-lane permute. index lanes hold integer VALUES (scalar-oracle
@@ -1970,7 +1970,6 @@ HYLE_FORCE_INLINE Mask256<T, N> IsInf(Vec256<T, N> v) noexcept {
   // is exactly +/-inf. Avoids the FP Abs(vandps)+vcmpeqps pair the Eq(Abs(v),inf) form emits, which
   // MSVC codegens ~0.93; this ties. GCC prefers the FP form (1.14x) so it keeps it (#else).
   using U = MakeUnsigned<T>;
-  const Simd<T, N, 0> d;
   const Simd<U, N, 0> du;
   const auto vu = BitCast(du, v);
   U kExp2;  // (exponent all-ones, mantissa 0) << 1 : f32 0x7F800000<<1, f64 0x7FF0..<<1
@@ -2131,12 +2130,24 @@ HYLE_FORCE_INLINE unsigned mask_bits(Mask256<T, N> m) noexcept {
 #endif
   }
 }
+
+// One bit per logical lane. Keep the N == 32 case in a discarded constexpr
+// branch: a runtime-looking conditional still makes MSVC parse `1u << 32` in
+// the other operand and diagnose C4293, even though that operand is not chosen.
+template <std::size_t N>
+HYLE_FORCE_INLINE constexpr unsigned full_lane_mask() noexcept {
+  static_assert(N > 0 && N <= 32);
+  if constexpr (N == 32) {
+    return 0xFFFFFFFFu;
+  } else {
+    return (1u << N) - 1u;
+  }
+}
 }  // namespace detail
 
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE bool AllTrue(Simd<T, N, 0>, Mask256<T, N> m) noexcept {
-  // N may be 32 (i8) -> (1u<<32) is UB; compute the full-N mask safely.
-  const unsigned full = (N >= 32) ? 0xFFFFFFFFu : ((1u << N) - 1u);
+  const unsigned full = detail::full_lane_mask<N>();
   return detail::mask_bits(m) == full;
 }
 template <typename T, std::size_t N>
@@ -2211,7 +2222,7 @@ HYLE_FORCE_INLINE std::uint64_t BitsFromMask(D, Mask256<TFromD<D>, HYLE_SIMD_MAX
   return detail::mask_bits(m);
 }
 template <class D> requires HYLE_SIMD_W(D, 16, 32)
-HYLE_FORCE_INLINE Mask256<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> LoadMaskBits(D d, std::uint64_t bits) noexcept {
+HYLE_FORCE_INLINE Mask256<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> LoadMaskBits(D, std::uint64_t bits) noexcept {
   // Rebuild: lane i true iff bit i set, via a stack array of all-ones/all-zero lanes.
   // _mm256_load_si256 reads a FULL 32 B regardless of logical lane count, so the scratch MUST be a
   // whole register wide (32 B): a partial tag (e.g. Simd<i16,8,-1> from Rebind, kN*sizeof=16 B) would
@@ -2235,8 +2246,9 @@ HYLE_FORCE_INLINE Mask256<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> LoadMaskBits(D d,
     return out;
   } else if constexpr (sizeof(T) == 2) {  // 16 lanes
     const __m256i bcast = _mm256_set1_epi16(static_cast<short>(bits));
-    const __m256i bit = _mm256_setr_epi16(1, 2, 4, 8, 16, 32, 64, 128,
-                                          256, 512, 1024, 2048, 4096, 8192, 16384, (short)32768);
+    const __m256i bit = _mm256_setr_epi16(
+        1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384,
+        std::numeric_limits<std::int16_t>::min());
     out.raw = detail::mask_from_i<T>(_mm256_cmpeq_epi16(_mm256_and_si256(bcast, bit), bit));
     return out;
   } else {  // 8-bit, 32 lanes: two 16-bit-group bit tests then a byte gather of the masks.
@@ -2251,7 +2263,7 @@ HYLE_FORCE_INLINE Mask256<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> LoadMaskBits(D d,
   }
 }
 template <class D>
-HYLE_FORCE_INLINE std::size_t StoreMaskBits(D d, Mask256<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m,
+HYLE_FORCE_INLINE std::size_t StoreMaskBits(D, Mask256<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m,
                                             std::uint8_t* p) noexcept {
   const std::uint64_t bits = detail::mask_bits(m);
   const std::size_t nbytes = (HYLE_SIMD_MAX_LANES_D(D) + 7) / 8;
@@ -2260,8 +2272,8 @@ HYLE_FORCE_INLINE std::size_t StoreMaskBits(D d, Mask256<TFromD<D>, HYLE_SIMD_MA
 }
 
 // prefix-scan masks (leading run relative to first true) -- computed on the bitfield then
-// rebuilt via LoadMaskBits. N may be 32 (i8) so the bitfield is 32-bit; the "full" mask uses
-// the (N>=32 ? 0xFFFFFFFFu : (1u<<N)-1u) guard to avoid the UB of (1u<<32).
+// rebuilt via LoadMaskBits. N may be 32 (i8), so use full_lane_mask<N>() rather
+// than ever forming the undefined expression (1u << 32).
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Mask256<T, N> SetAtOrAfterFirst(Mask256<T, N> m) noexcept;  // fwd (defined below)
 template <typename T, std::size_t N>
@@ -2276,12 +2288,14 @@ HYLE_FORCE_INLINE Mask256<T, N> SetBeforeFirst(Mask256<T, N> m) noexcept {
   if constexpr (sizeof(T) == 4) return Not(SetAtOrAfterFirst(m));
   else {
     const unsigned b = detail::mask_bits(m);
-    const unsigned before = b ? ((1u << std::countr_zero(b)) - 1u) : ((N >= 32 ? 0xFFFFFFFFu : (1u << N) - 1u));
+    const unsigned before =
+        b ? ((1u << std::countr_zero(b)) - 1u) : detail::full_lane_mask<N>();
     return LoadMaskBits(Simd<T, N, 0>(), before);
   }
 #else
   const unsigned b = detail::mask_bits(m);
-  const unsigned before = b ? ((1u << std::countr_zero(b)) - 1u) : ((N >= 32 ? 0xFFFFFFFFu : (1u << N) - 1u));
+  const unsigned before =
+      b ? ((1u << std::countr_zero(b)) - 1u) : detail::full_lane_mask<N>();
   return LoadMaskBits(Simd<T, N, 0>(), before);
 #endif
 }
@@ -2307,7 +2321,7 @@ HYLE_FORCE_INLINE Mask256<T, N> SetAtOrBeforeFirst(Mask256<T, N> m) noexcept {
     // UB (x86 masks it to 1u<<0 -> wrong result). Saturate to the all-ones mask in that case.
     const unsigned tz1 = b ? (std::countr_zero(b) + 1) : 0;
     const unsigned upto = b ? (tz1 >= 32 ? 0xFFFFFFFFu : (1u << tz1) - 1u)
-                            : ((N >= 32 ? 0xFFFFFFFFu : (1u << N) - 1u));
+                            : detail::full_lane_mask<N>();
     return LoadMaskBits(Simd<T, N, 0>(), upto);
   }
 }
@@ -2362,7 +2376,7 @@ HYLE_FORCE_INLINE Mask256<T, N> SetAtOrAfterFirst(Mask256<T, N> m) noexcept {
     return MaskFromVec(Vec256<T, N>{detail::mask_from_i<T>(v)});
   } else {  // 8/16/64-bit lanes: keep the bitfield path (sub-32b sign granularity is subtle; 64b rare).
     const unsigned b = detail::mask_bits(m);
-    const unsigned full = (N >= 32) ? 0xFFFFFFFFu : ((1u << N) - 1u);
+    const unsigned full = detail::full_lane_mask<N>();
     const unsigned before = b ? ((1u << std::countr_zero(b)) - 1u) : full;
     return LoadMaskBits(Simd<T, N, 0>(), full & ~before);
   }
@@ -2721,8 +2735,8 @@ HYLE_FORCE_INLINE T reduce256_narrow(Vec256<T, N> v) noexcept {
 // falls back for the awkward widths -- a horizontal reduce isn't the hot path.)
 template <typename T, std::size_t N, detail::RedOp op>
 HYLE_FORCE_INLINE T reduce_scalar(Vec256<T, N> v) noexcept {
-  alignas(32) T tmp[N];
-  _mm256_store_si256(reinterpret_cast<__m256i*>(tmp), v.raw);
+  alignas(32) T tmp[32 / sizeof(T)];
+  StoreU(v, Simd<T, N, 0>(), tmp);
   T acc = tmp[0];
   for (std::size_t i = 1; i < N; ++i) {
     if constexpr (op == detail::RedOp::kAdd) acc = static_cast<T>(acc + tmp[i]);
@@ -2742,7 +2756,9 @@ HYLE_FORCE_INLINE T ReduceSum(Simd<T, N, 0>, Vec256<T, N> v) noexcept {
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE T ReduceMin(Simd<T, N, 0>, Vec256<T, N> v) noexcept {
-  if constexpr (detail::kI32<T> || std::is_floating_point_v<T>)
+  if constexpr (N < 32 / sizeof(T))
+    return reduce_scalar<T, N, detail::RedOp::kMin>(v);
+  else if constexpr (detail::kI32<T> || std::is_floating_point_v<T>)
     return detail::reduce256<T, N, detail::RedOp::kMin>(v);
   else if constexpr (detail::kI16<T> || detail::kI64<T>)
     return detail::reduce256_narrow<T, N, detail::RedOp::kMin>(v);
@@ -2750,7 +2766,9 @@ HYLE_FORCE_INLINE T ReduceMin(Simd<T, N, 0>, Vec256<T, N> v) noexcept {
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE T ReduceMax(Simd<T, N, 0>, Vec256<T, N> v) noexcept {
-  if constexpr (detail::kI32<T> || std::is_floating_point_v<T>)
+  if constexpr (N < 32 / sizeof(T))
+    return reduce_scalar<T, N, detail::RedOp::kMax>(v);
+  else if constexpr (detail::kI32<T> || std::is_floating_point_v<T>)
     return detail::reduce256<T, N, detail::RedOp::kMax>(v);
   else if constexpr (detail::kI16<T> || detail::kI64<T>)
     return detail::reduce256_narrow<T, N, detail::RedOp::kMax>(v);
@@ -2833,7 +2851,7 @@ namespace detail {
 // RedOp2 defined in x86_detail.h (shared across layered x86 backends).
 template <typename T, std::size_t N, RedOp2 op>
 HYLE_FORCE_INLINE T reduce_scalar2(Vec256<T, N> v) noexcept {
-  alignas(32) T tmp[N];
+  alignas(32) T tmp[32 / sizeof(T)];
   Store(v, Simd<T, N, 0>(), tmp);
   T acc = tmp[0];
   for (std::size_t i = 1; i < N; ++i) {
@@ -2846,19 +2864,22 @@ HYLE_FORCE_INLINE T reduce_scalar2(Vec256<T, N> v) noexcept {
 }  // namespace detail
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE T ReduceMul(Simd<T, N, 0>, Vec256<T, N> v) noexcept {
-  if constexpr (detail::kI32<T>) return detail::reduce256_2<T, N, detail::RedOp2::kMul>(v);
+  if constexpr (N < 32 / sizeof(T)) return detail::reduce_scalar2<T, N, detail::RedOp2::kMul>(v);
+  else if constexpr (detail::kI32<T>) return detail::reduce256_2<T, N, detail::RedOp2::kMul>(v);
   else return detail::reduce_scalar2<T, N, detail::RedOp2::kMul>(v);
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE T ReduceAnd(Simd<T, N, 0>, Vec256<T, N> v) noexcept {
   static_assert(std::is_integral_v<T>, "ReduceAnd is integer-lane only");
-  if constexpr (detail::kI32<T>) return detail::reduce256_2<T, N, detail::RedOp2::kAnd>(v);
+  if constexpr (N < 32 / sizeof(T)) return detail::reduce_scalar2<T, N, detail::RedOp2::kAnd>(v);
+  else if constexpr (detail::kI32<T>) return detail::reduce256_2<T, N, detail::RedOp2::kAnd>(v);
   else return detail::reduce_scalar2<T, N, detail::RedOp2::kAnd>(v);
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE T ReduceOr(Simd<T, N, 0>, Vec256<T, N> v) noexcept {
   static_assert(std::is_integral_v<T>, "ReduceOr is integer-lane only");
-  if constexpr (detail::kI32<T>) return detail::reduce256_2<T, N, detail::RedOp2::kOr>(v);
+  if constexpr (N < 32 / sizeof(T)) return detail::reduce_scalar2<T, N, detail::RedOp2::kOr>(v);
+  else if constexpr (detail::kI32<T>) return detail::reduce256_2<T, N, detail::RedOp2::kOr>(v);
   else return detail::reduce_scalar2<T, N, detail::RedOp2::kOr>(v);
 }
 
@@ -2910,7 +2931,7 @@ HYLE_FORCE_INLINE Vec256<T, N> Broadcast(Vec256<T, N> v) noexcept {
   } else {  // 8/16-bit: no cheap single-insn global broadcast across both halves -> fallback.
     alignas(32) T tmp[N];
     Store(v, Simd<T, N, 0>(), tmp);
-    return Set(Simd<T, N, 0>(), tmp[kLane]);
+    r = Set(Simd<T, N, 0>(), tmp[kLane]);
   }
   return r;
 }
@@ -4133,7 +4154,7 @@ HYLE_FORCE_INLINE void Stream(detail::V256<D> v, D, TFromD<D>* aligned) noexcept
   else _mm256_stream_si256(reinterpret_cast<__m256i*>(aligned), v.raw);
 }
 template <class D> requires HYLE_SIMD_W(D, 16, 32)
-HYLE_FORCE_INLINE detail::V256<D> LoadDup128(D d, const TFromD<D>* p) noexcept {
+HYLE_FORCE_INLINE detail::V256<D> LoadDup128(D, const TFromD<D>* p) noexcept {
   using T = TFromD<D>;
   detail::V256<D> r;
   if constexpr (std::is_same_v<T, float>) r.raw = _mm256_broadcast_ps(reinterpret_cast<const __m128*>(p));
@@ -4440,21 +4461,24 @@ HYLE_FORCE_INLINE Vec256<T, N> Per4LaneBlockShuffle(Vec256<T, N> v) noexcept {
   // Identity permutation (i3,i2,i1,i0 == 3,2,1,0) is a no-op -- return v so the compiler emits
   // nothing instead of a redundant vpshufd/vpermq with an identity immediate (Highway does the
   // same via its SizeTag<0xE4> overload; without this HYLE issued an extra shuffle, ~0.88 on MSVC).
-  if constexpr (i3 == 3 && i2 == 2 && i1 == 1 && i0 == 0) return v;
-  Vec256<T, N> r;
-  if constexpr (sizeof(T) == 4) {
-    constexpr int imm = _MM_SHUFFLE(i3, i2, i1, i0);
-    if constexpr (std::is_same_v<T, float>) r.raw = _mm256_shuffle_ps(v.raw, v.raw, imm);
-    else r.raw = _mm256_shuffle_epi32(v.raw, imm);
-  } else if constexpr (sizeof(T) == 8) {
-    constexpr int imm = _MM_SHUFFLE(i3, i2, i1, i0);
-    if constexpr (std::is_same_v<T, double>) r.raw = _mm256_permute4x64_pd(v.raw, imm);
-    else r.raw = _mm256_permute4x64_epi64(v.raw, imm);
-  } else {  // 8/16-bit: per-128-block byte shuffle (vpshufb operates within each 128-bit lane)
-    static_assert(sizeof(T) == 1 || sizeof(T) == 2, "Per4LaneBlockShuffle: 1/2/4/8-byte lanes");
-    r.raw = _mm256_shuffle_epi8(v.raw, detail::per4_byte_index<i0, i1, i2, i3, T>());
+  if constexpr (i3 == 3 && i2 == 2 && i1 == 1 && i0 == 0) {
+    return v;
+  } else {
+    Vec256<T, N> r;
+    if constexpr (sizeof(T) == 4) {
+      constexpr int imm = _MM_SHUFFLE(i3, i2, i1, i0);
+      if constexpr (std::is_same_v<T, float>) r.raw = _mm256_shuffle_ps(v.raw, v.raw, imm);
+      else r.raw = _mm256_shuffle_epi32(v.raw, imm);
+    } else if constexpr (sizeof(T) == 8) {
+      constexpr int imm = _MM_SHUFFLE(i3, i2, i1, i0);
+      if constexpr (std::is_same_v<T, double>) r.raw = _mm256_permute4x64_pd(v.raw, imm);
+      else r.raw = _mm256_permute4x64_epi64(v.raw, imm);
+    } else {  // 8/16-bit: per-128-block byte shuffle (vpshufb operates within each 128-bit lane)
+      static_assert(sizeof(T) == 1 || sizeof(T) == 2, "Per4LaneBlockShuffle: 1/2/4/8-byte lanes");
+      r.raw = _mm256_shuffle_epi8(v.raw, detail::per4_byte_index<i0, i1, i2, i3, T>());
+    }
+    return r;
   }
-  return r;
 }
 // E11 TwoTablesLookupLanes: dual-source permute. avx2 has no permutex2 without AVX512VL. Ported
 // from Highway's AVX2 fallback: gather from BOTH tables with the same idx (each TableLookupLanes is

@@ -10,7 +10,7 @@
 |---|---|
 | [`usage-guide.md`](./usage-guide.md) | **怎么用**：模块入口、构建选项、SIMD 编译变体模型、最小用法和 C-ABI 边界。**集成第一站。** |
 | [`distribution.md`](./distribution.md) | **怎么交付**：headers+shared、headers+static、完整源码三种形状；授权与 artifact 正交，含可运行命令和离线依赖注入。 |
-| [`core.md`](./core.md) | **core 选型入口 + C++ 自然写法**：compile/runtime version、静态/运行时 cache line、prefetch、intrusive list 的适用场景与生命周期坑。 |
+| [`core.md`](./core.md) | **core 选型入口 + C++ 自然写法**：compile/runtime version、静态/运行时 cache line、三种 prefetch、compiler contract 与 intrusive list 的适用场景和生命周期坑。 |
 | [`error.md`](./error.md) | **error 语言无关选型入口 + C++ 自然写法**：按运营失败/空值合同/程序错误/诊断边界决定 Status、Result、值合同或 fail-fast；C 用户再去 c-error 查映射。 |
 | [`mem.md`](./mem.md) | **mem 语言无关选型入口 + C++ 自然写法**：按 ownership/concurrency/capacity/lifetime 决定什么情况用什么；C 用户再去 c-mem 查映射。 |
 | [`platform.md`](./platform.md) | **platform 语言无关选型入口 + C++ 自然写法**：按资源/生命周期选择 VM、文件、mapping、线程、等待、DynLib、CPU/NUMA；明确 OS 差异与当前拓扑边界。 |
@@ -29,7 +29,7 @@
 | [`c-sched.md`](./c-sched.md) | **sched 纯 C ABI**：worker-stack/fiber 双腿、Waker、优雅关闭、同步/消息/取消/blocking pool 的类型擦除入口、生命周期和外语绑定合同。 |
 | [`c-io.md`](./c-io.md) | **io 纯 C ABI**：proactor/completion、网络/文件提交、后端诊断、multishot/fixed-file、共享内存，以及 C 与 sched 的组合合同。 |
 | [`io.md`](./io.md) | **IO C++ 使用指南**：per-worker proactor、TCP/UDP deadline/cancel、自动文件卸载、HTTP/HTTPS transport、DNS/signal 与专属快腿。 |
-| [`c-core.md`](./c-core.md) | **core 纯 C/FFI 映射**：version 动态符号、静态 cache layout，以及零分配 intrusive list 的 header-inline 能力与显式生命周期。 |
+| [`c-core.md`](./c-core.md) | **core 纯 C/FFI 映射**：version 动态符号、纯 C compiler contract、静态 cache layout，以及零分配 intrusive list 的 header-inline 能力与显式生命周期。 |
 | [`simd-usage.md`](./simd-usage.md) | **SIMD 怎么选和怎么调**：普通动态派发、整库固定 ISA、固定 kernel、常用 batch 能力与调用合同；并标明 close-01 C ABI 迁移边界。 |
 | [`usage-contract.md`](./usage-contract.md) | **怎么调才不出 UB**：为 SOTA 性能保留的调用安全红线（fiber 勿跨 `yield()` 持有 thread_local、分配器跨线程 free、CPUID 探测的 LTO 隔离）。每条带机制+安全模式+后果。**热路径集成前必读。** |
 

@@ -26,6 +26,7 @@
 # It exists unconditionally so module CMakeLists can link it with no if() at the call site;
 # it carries the HYLE_TESTING define only for an instrumented test build.
 add_library(hyle_testing INTERFACE)
+set_target_properties(hyle_testing PROPERTIES FOLDER "hyle/foundation")
 
 if(HYLE_BUILD_TESTS AND HYLE_TEST_INSTRUMENTATION)
   # Installable builds forbid HYLE_BUILD_TESTS, but keep the definition explicitly

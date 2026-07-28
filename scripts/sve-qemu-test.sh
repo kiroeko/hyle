@@ -10,7 +10,8 @@
 # Usage: run from the repo root on a Linux box with the aarch64 cross toolchain:
 #   bash scripts/sve-qemu-test.sh
 #
-# On a REAL SVE host (Graviton3, etc.) you don't need this -- configure with -DHYLE_SIMD_SVE=ON
+# On a REAL SVE host (Graviton3, etc.) you don't need this -- configure with
+# -DHYLE_TEST_SIMD_SVE=ON
 # and `ctest -R simd_sve` runs it natively.
 set -e
 

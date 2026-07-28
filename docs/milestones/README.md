@@ -9,6 +9,9 @@
 > **排期视图**：想知道"还没做的都因为什么没做、前置齐没、能不能现在开工"，看 [`backlog-map.md`](./backlog-map.md)——按欠账原因(A 广度延期 / B 能力驱动半成品 / C 依赖序未到支柱)分类 + 依赖就绪度 + 开工顺序。**防"能力驱动"沦为"永远等"**。
 >
 > **粒度原则**：一个里程碑 = 一次"写完→编过→单测(覆盖达 Tier 标准)→基准→提交"的闭环。
+> 模块级“当前严格收口”比单个里程碑闭环更强，统一执行
+> [`../architecture/module-closure-methodology.md`](../architecture/module-closure-methodology.md)；
+> milestone 只记录该轮施工和证据，不另造一份方法。
 >
 > **生长方式（JIT）**：最先执行的 `00-scaffolding` 与 walking-skeleton 几步已写完整；其余**临到该模块开工前再补全细节**——后期里程碑依赖前面实现学到的东西，提前写=空想。索引行先占位（ID/依赖/目的/LOC），细节随推进生长。
 >
@@ -22,18 +25,18 @@
 
 ## 预测 vs 真实 LOC（防玩具化）
 
-### 整体进度与体量（诚实，2026-07-27 锚定）——分母别混
+### 整体进度与体量（诚实，2026-07-29 工作树快照）——分母别混
 
 > **生产 = `cloc src include` 的 code 列**（header+C++/CUDA 等，不含 tests/bench/docs/third_party）。
-> **旧投影「完成时生产 ~28–40k / 中值 34k」已作废**：当前生产已 **~91.7k**，单 **simd ~37.8k**。
+> **旧投影「完成时生产 ~28–40k / 中值 34k」已作废**：当前生产已 **~92.1k**，单 **simd ~37.8k**。
 > 权威规模节：[`../architecture/hyle-scope.md`](../architecture/hyle-scope.md)。中期报告：[`midterm-report-2026-07-scale-positioning.md`](./midterm-report-2026-07-scale-positioning.md)。SIMD 当前补缺账本：[`simd-capability-fill-list.md`](./simd-capability-fill-list.md)。
 
 | 固定统计口径 | 当前 | 命令/说明 |
 |---|---|---|
-| **全库代码** | **273,137** | tracked + 当前待提交文件；含 docs/third_party，**≠ 自写** |
-| **自实现（含测试）** | **133,777** | `cloc include/hyle src tests`，只计 C++/Header/C/CUDA |
-| **自实现（不含测试）** | **91,888** | `cloc include/hyle src`，只计 C++/Header/C/CUDA；库本体硬锚 |
-| **当前处理模块实现（build/package）** | **4,384** | 42 个自有 CMake 文件 + preset/CI + 8 个 build/fetch/setup/QEMU guard；不含测试源码/文档 |
+| **全库代码** | **274,580** | tracked + 当前待提交文件；含 docs/third_party，**≠ 自写** |
+| **自实现（含测试）** | **134,129** | `cloc include/hyle src tests`，只计 C++/Header/C/CUDA |
+| **自实现（不含测试）** | **92,124** | `cloc include/hyle src`，只计 C++/Header/C/CUDA；库本体硬锚 |
+| **当前处理模块实现（core）** | **646** | `include/hyle/core + include/hyle/c/core.h + include/hyle/c/compiler.h + include/hyle/macros.h + include/hyle/visibility.h + src/core`；不含测试/文档 |
 | **终态生产（纪律收口 A）** | **~75–90k** | 主预期 |
 | **终态生产（做满守界 B）** | **~85–105k** | compute/graph/发布面收口更满 |
 | 失控上限 C | 120k+ 生产 | 应避免 |
@@ -41,7 +44,7 @@
 | 进度口径 | 怎么读 | 当前判断 |
 |---|---|---|
 | **里程碑计数** | 颗粒不等重 | **勿当完成度**（小 util 与大 compute 各记 1） |
-| **生产 LOC ÷ 终态 A 中值 ~82.5k** | 代码量进度 | **~111%**；SIMD 体量放大该数，**≠ 能力完成度** |
+| **生产 LOC ÷ 终态 A 中值 ~82.5k** | 代码量进度 | **~112%**；SIMD 体量放大该数，**≠ 能力完成度** |
 | **生产 LOC ÷ 终态 B 中值 ~95k** | 做满剧本 | **~97%** |
 | **对完整愿景的功能完成度** | 能力清单 + 头牌缺口 | 除 compute/graph 能力尾外主体大多已实现；mem/time 已按新标准重收；其余按队列复审 |
 
@@ -76,16 +79,18 @@ util ~1.3k · error **984** · time **1,421** · obs **1,018** · graph ~0.6–0
 > “主干可用”误读成 capability closure 已清零。
 >
 > **2026-07-25 证书口径升级**：下表的 ✅/“冻结”只说明对应历史 work item 已完成，
-> 不自动取得当前实际使用导向的严格证书。当前 error/platform/mem/time/core 通过；mem 的
+> 不自动取得当前实际使用导向的严格证书。当前 error/platform/mem/time 通过，core 因
+> 2026-07-28 真实 SIMD/vqsort 消费者触发局部复证而暂为黄色；mem 的
 > clean `c640072` shared same-link 三平台证书已关闭最后分发性能尾；
-> build/package system 已于 2026-07-27 作为独立模块重签；util-core seam、obs 与 container
-> 仍严格收口。当前进入 util-runtime；其余顺序只见
+> build/package system 已于 2026-07-27 作为独立模块重签；util-core seam、obs 仍严格收口；
+> container 主体证书保留；StringInterner 的 Apple cache-layout 受影响边已随 core 复证转绿。
+> 当前进入 util-runtime；其余顺序只见
 > [`pre-release-readiness.md`](./pre-release-readiness.md)。
 
 | ID | 阶段 | 模块 | 目的(一行) | 前置 | 预测LOC | 真实LOC | 状态 |
 |---|---|---|---|---|---|---|---|
 | **00-scaffolding** | P-1 | 构建 | CMake 多模块结构+GoogleTest/nanobench/sanitizer/CI+HYLE_宏骨架 | — | 0.6-1k | 294 | ✅ 完成 |
-| [core-reclosure](./core-module-closure.md) | P-1 | core | version/cache/macros/visibility/intrusive 严格收口 | 00 | — | 490 生产 | ✅ **2026-07-25 严格收口**：最终实现 `71dabf7`；Win/WSL/M4 相关组 18/18、最终 API delta 8/8；Boost 同形三平台无 LOSE |
+| [core-reclosure](./core-module-closure.md) | P-1 | core | version/cache/macros/visibility/intrusive 严格收口 | 00 | — | 见任务页 | ✅ **2026-07-29 局部复证完成**：旧 `71dabf7` IntrusiveList 证书保留；真实 SIMD/vqsort 消费触发 prefetch/assume/restrict/flatten/unroll 补齐，Win/WSL/M4 正确性、codegen 与受影响消费者全过 |
 | [build/package-reclosure](./build-package-system-closure.md) | P-1 | 构建/打包 | 用 target 图表达项目组织，完成可迁移、可裁剪组装与安装消费 | core | — | 见任务页 | ✅ **2026-07-27 独立模块重签**：0.x package/SONAME、三平台 production-shape 16/16、shared/static consumers、CI 双测试门与正常路径性能证书完成 |
 | error-01 | P0 | error | Status + std::expected（历史首版） | 00 | 1-2k | 456 | 🗃️ 历史完成；接口与边界后由 error reclosure 重审 |
 | error-02 | P0 | error | error_handler vtable（历史） | error-01 | 1k | 127 (+74 测试) | 🗃️ 曾完成，实际消费者审查后退役；日志归 obs、合同违反归 fatal |
@@ -131,7 +136,7 @@ util ~1.3k · error **984** · time **1,421** · obs **1,018** · graph ~0.6–0
 | container-08 | P3 | container | 有界 work-stealing FIFO ring(tokio queue.rs:owner push免同步/pop+thief CAS packed-head/偷半) | mem-01 | 1-2k | 279 | ✅ 完成(sched-03 真前置) |
 | container-09 | P3 | container | ConcurrentVector 读优化并发向量（分段/读 lock-free/写 mutex） | mem-01 | 1-2k | 见当前实现 | ✅ 功能完成；2026-07-25 util-core 回审确认写侧会分配并执行用户构造函数，故从 SpinLock 改回 mutex；并发读写 TSan 通过，性能随 container 严格复审重签 |
 | [container-10](./container-10-sharded-queue.md) | P3 | container | ShardedQueue 分片有界 MPMC(N 个 Vyukov 子环,生产者 hash 分片消单点争用) | container-01 | 0.5-1k | 58 (+171 测试) | ✅ 完成(bench-02b 揪出单环 4P 输 moody 1.7x=单点 CAS 争用→分片根治;**双平台15遍反超 rigtorp Win3.27x/Lin5.3x**;复用 BoundedQueue placement-new 避 std 拥有型成员;保留有界弃全局 FIFO;双平台+WSL TSan 零 race。**已接入 sched global 注入**) |
-| [container-final](./container-module-closure.md) | close | container | 实际使用导向的功能/API/复杂度/C ABI/依赖/文档与三平台性能收口 | container-01..10,mem,platform,error | — | 见任务页 | ✅ **2026-07-27 严格收口**：232/232 C surface；Win/WSL/M4 correctness，ASan/UBSan/TSan；成熟库逐合同 n=15 与冻结边界均归 performance |
+| [container-final](./container-module-closure.md) | close | container | 实际使用导向的功能/API/复杂度/C ABI/依赖/文档与三平台性能收口 | container-01..10,mem,platform,error | — | 见任务页 | ✅ **主体证书与 Apple 单边复证完成**：2026-07-27 的 232/232 C surface、sanitizer 与非 StringInterner 证据不变；interner shard spacing 使用 Apple 128B core 契约，M4 correctness 与 8t normal workload 已通过 |
 | [util-core closure](./util-module-closure.md) | P3 | util-core | Ref/ScopeGuard/Rng/type-name/SpinLock 实际使用形状与 include seam | core/build | — | 见任务页 | ✅ **2026-07-25 严格收口**：零 binary dependency；成熟库对账；三平台正确性、Linux TSan 与 n=15 同合同性能；完整 C ABI 留 util-runtime |
 | util-01 | P3 | util-core | ref_counted(Ref<T> CRTP) + scope_guard(HYLE_DEFER) | 00 | 1k | 见 closure | ✅ const/兼容转换、单指针 intrusive 热路；ScopeGuard `nodiscard`/invoke/active；当前证书见总审计 |
 | util-02 | P3 | util-core | 编译期 type_name<T> + type_hash<T> | 00 | 0.5k | 44 (+50 测试) | ✅ Boost 同类 constexpr 形状；明确不作持久/跨编译器 ID |

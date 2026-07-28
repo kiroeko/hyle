@@ -16,6 +16,38 @@ if (-not (Test-Path -LiteralPath $vswhere)) {
     throw 'vswhere.exe was not found. Install Visual Studio/Build Tools with the C++ workload.'
 }
 
+function Get-LatestSupportedVs2022Toolset {
+    param([string]$VswherePath)
+
+    $vs2022 = & $VswherePath -latest -version '[17.0,18.0)' -products * `
+        -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 `
+        -property installationPath
+    if ($LASTEXITCODE -ne 0 -or -not $vs2022) {
+        throw 'The windows preset needs Visual Studio 2022 with the x64 C++ workload.'
+    }
+
+    $toolsetRoot = Join-Path $vs2022 'VC\Tools\MSVC'
+    $toolsets = @(Get-ChildItem -LiteralPath $toolsetRoot -Directory -ErrorAction SilentlyContinue |
+        ForEach-Object {
+            try {
+                [pscustomobject]@{ Name = $_.Name; Version = [version]$_.Name }
+            } catch {
+                # Ignore non-version directories owned by Visual Studio extensions.
+            }
+        } |
+        Where-Object { $_.Version -ge [version]'14.43' } |
+        Sort-Object Version -Descending)
+    if ($toolsets.Count -eq 0) {
+        throw "Visual Studio 2022 at '$vs2022' has no MSVC 14.43+ toolset."
+    }
+
+    $selected = $toolsets[0]
+    [pscustomobject]@{
+        Installation = $vs2022
+        Version = "$($selected.Version.Major).$($selected.Version.Minor)"
+    }
+}
+
 $installation = & $vswhere -latest -products * `
     -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 `
     -property installationPath
@@ -45,16 +77,58 @@ foreach ($line in $environmentLines) {
     }
 }
 
-if ($Action -in @('Configure', 'Build', 'Workflow', 'PackageSmoke', 'ProductShapeSmoke') -and
-    -not (Get-Command ninja -ErrorAction SilentlyContinue)) {
+$effectiveExtraArgs = @($ExtraArgs)
+$vs2022Toolset = $null
+if (($Action -eq 'Configure' -and $Preset -eq 'windows') -or
+    ($Action -eq 'Workflow' -and $Preset -eq 'windows-check')) {
+    $hasExplicitToolset = $effectiveExtraArgs | Where-Object {
+        $_ -eq '-T' -or $_ -eq '--toolset' -or $_ -like '-T*' -or $_ -like '--toolset=*'
+    }
+    if (-not $hasExplicitToolset) {
+        $vs2022Toolset = Get-LatestSupportedVs2022Toolset -VswherePath $vswhere
+        $toolsetArgument = "version=$($vs2022Toolset.Version)"
+        Write-Host "HYLE Visual Studio solution: VS 2022 toolset $toolsetArgument"
+
+        # CMake forbids changing a generator toolset in-place. Refresh only its
+        # generated cache when an older/default v143 cache is already present;
+        # sources, dependencies, build outputs and user files remain untouched.
+        $sourceDir = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
+        $cachePath = Join-Path $sourceDir 'build-windows\CMakeCache.txt'
+        if (Test-Path -LiteralPath $cachePath) {
+            $cachedToolset = Get-Content -LiteralPath $cachePath |
+                Where-Object { $_ -like 'CMAKE_GENERATOR_TOOLSET:INTERNAL=*' } |
+                Select-Object -First 1
+            if ($cachedToolset -ne "CMAKE_GENERATOR_TOOLSET:INTERNAL=$toolsetArgument") {
+                Write-Host 'Refreshing the Visual Studio CMake cache to select the supported toolset.'
+                $effectiveExtraArgs = @('--fresh') + $effectiveExtraArgs
+            }
+        }
+        $effectiveExtraArgs = @('-T', $toolsetArgument) + $effectiveExtraArgs
+    }
+}
+
+$needsNinja = $Action -in @('PackageSmoke', 'ProductShapeSmoke') -or
+    $Preset -in @('windows-ninja', 'windows-ninja-check', 'win', 'windows-cuda')
+if ($needsNinja -and -not (Get-Command ninja -ErrorAction SilentlyContinue)) {
     throw 'The windows-ninja preset requires Ninja on PATH.'
 }
 
 switch ($Action) {
-    'Configure' { & cmake --preset $Preset @ExtraArgs }
-    'Build'     { & cmake --build --preset $Preset @ExtraArgs }
-    'Test'      { & ctest --preset $Preset @ExtraArgs }
-    'Workflow'  { & cmake --workflow --preset $Preset @ExtraArgs }
+    'Configure' { & cmake --preset $Preset @effectiveExtraArgs }
+    'Build'     { & cmake --build --preset $Preset @effectiveExtraArgs }
+    'Test'      { & ctest --preset $Preset @effectiveExtraArgs }
+    'Workflow'  {
+        if ($Preset -eq 'windows-check' -and $vs2022Toolset) {
+            # A workflow preset cannot forward a dynamically discovered -T
+            # argument to its configure step, so spell out the same three
+            # preset-backed steps here.
+            & cmake --preset windows @effectiveExtraArgs
+            if ($LASTEXITCODE -eq 0) { & cmake --build --preset windows }
+            if ($LASTEXITCODE -eq 0) { & ctest --preset windows }
+        } else {
+            & cmake --workflow --preset $Preset @effectiveExtraArgs
+        }
+    }
     'PackageSmoke' {
         if (-not $SmokeRoot) {
             throw 'Action PackageSmoke requires -SmokeRoot <scratch-directory>.'

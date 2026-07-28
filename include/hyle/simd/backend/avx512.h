@@ -1295,11 +1295,12 @@ HYLE_FORCE_INLINE Vec512<T, N> ConcatEven(Vec512<T, N> hi, Vec512<T, N> lo) noex
     if constexpr (std::is_same_v<T, float>) r.raw = _mm512_permutex2var_ps(lo.raw, idx, hi.raw);
     else r.raw = _mm512_permutex2var_epi32(lo.raw, idx, hi.raw);
     return r;
+  } else {
+    alignas(64) T sh[N], sl[N], dst[N];
+    Store(hi, Simd<T, N, 0>(), sh); Store(lo, Simd<T, N, 0>(), sl);
+    for (std::size_t i = 0; i < N / 2; ++i) { dst[i] = sl[2 * i]; dst[N / 2 + i] = sh[2 * i]; }
+    return Load(Simd<T, N, 0>(), dst);
   }
-  alignas(64) T sh[N], sl[N], dst[N];
-  Store(hi, Simd<T, N, 0>(), sh); Store(lo, Simd<T, N, 0>(), sl);
-  for (std::size_t i = 0; i < N / 2; ++i) { dst[i] = sl[2 * i]; dst[N / 2 + i] = sh[2 * i]; }
-  return Load(Simd<T, N, 0>(), dst);
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec512<T, N> ConcatOdd(Vec512<T, N> hi, Vec512<T, N> lo) noexcept {
@@ -1309,11 +1310,12 @@ HYLE_FORCE_INLINE Vec512<T, N> ConcatOdd(Vec512<T, N> hi, Vec512<T, N> lo) noexc
     if constexpr (std::is_same_v<T, float>) r.raw = _mm512_permutex2var_ps(lo.raw, idx, hi.raw);
     else r.raw = _mm512_permutex2var_epi32(lo.raw, idx, hi.raw);
     return r;
+  } else {
+    alignas(64) T sh[N], sl[N], dst[N];
+    Store(hi, Simd<T, N, 0>(), sh); Store(lo, Simd<T, N, 0>(), sl);
+    for (std::size_t i = 0; i < N / 2; ++i) { dst[i] = sl[2 * i + 1]; dst[N / 2 + i] = sh[2 * i + 1]; }
+    return Load(Simd<T, N, 0>(), dst);
   }
-  alignas(64) T sh[N], sl[N], dst[N];
-  Store(hi, Simd<T, N, 0>(), sh); Store(lo, Simd<T, N, 0>(), sl);
-  for (std::size_t i = 0; i < N / 2; ++i) { dst[i] = sl[2 * i + 1]; dst[N / 2 + i] = sh[2 * i + 1]; }
-  return Load(Simd<T, N, 0>(), dst);
 }
 // DupEven/DupOdd: broadcast even/odd of each adjacent pair within 128-bit blocks. NATIVE for
 // 32/64-bit (op_parity: avx2 store+reload was 10x slower; same fix on 512-bit).
@@ -1325,7 +1327,7 @@ HYLE_FORCE_INLINE Vec512<T, N> DupEven(Vec512<T, N> v) noexcept {
   else if constexpr (std::is_same_v<T, double>) r.raw = _mm512_permute_pd(v.raw, 0x00);
   else if constexpr (detail::kI64<T>)
     r.raw = _mm512_castpd_si512(_mm512_permute_pd(_mm512_castsi512_pd(v.raw), 0x00));
-  else return detail::swizzle_via_mem(v, [](std::size_t i){ return i & ~std::size_t{1}; });
+  else r = detail::swizzle_via_mem(v, [](std::size_t i){ return i & ~std::size_t{1}; });
   return r;
 }
 template <typename T, std::size_t N>
@@ -1336,7 +1338,7 @@ HYLE_FORCE_INLINE Vec512<T, N> DupOdd(Vec512<T, N> v) noexcept {
   else if constexpr (std::is_same_v<T, double>) r.raw = _mm512_permute_pd(v.raw, 0xFF);
   else if constexpr (detail::kI64<T>)
     r.raw = _mm512_castpd_si512(_mm512_permute_pd(_mm512_castsi512_pd(v.raw), 0xFF));
-  else return detail::swizzle_via_mem(v, [](std::size_t i){ return (i & ~std::size_t{1}) | 1; });
+  else r = detail::swizzle_via_mem(v, [](std::size_t i){ return (i & ~std::size_t{1}) | 1; });
   return r;
 }
 template <typename T, std::size_t N>
@@ -1562,12 +1564,19 @@ template <typename T, std::size_t N>
 HYLE_FORCE_INLINE std::uint64_t kbits(Mask512<T, N> m) noexcept {
   return static_cast<std::uint64_t>(m.raw);  // __mmask8/16/32/64 already a packed bitmask
 }
+template <std::size_t N>
+HYLE_FORCE_INLINE constexpr std::uint64_t full_kmask() noexcept {
+  static_assert(N > 0 && N <= 64);
+  if constexpr (N == 64) {
+    return ~std::uint64_t{0};
+  } else {
+    return (std::uint64_t{1} << N) - 1u;
+  }
+}
 }  // namespace detail
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE bool AllTrue(Simd<T, N, 0>, Mask512<T, N> m) noexcept {
-  // N may be 64 (i8) -> (1ull<<64) is UB; compute the full-N mask safely (mirror avx2's guard).
-  const std::uint64_t full = (N >= 64) ? ~0ull : ((std::uint64_t{1} << N) - 1u);
-  return detail::kbits(m) == full;
+  return detail::kbits(m) == detail::full_kmask<N>();
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE bool AllFalse(Simd<T, N, 0>, Mask512<T, N> m) noexcept {
@@ -1613,10 +1622,6 @@ HYLE_FORCE_INLINE Mask512<T, N> mask_from_kbits(std::uint64_t bits) noexcept {
   Mask512<T, N> m;
   m.raw = static_cast<KMaskT<T>>(bits);
   return m;
-}
-template <std::size_t N>
-HYLE_FORCE_INLINE std::uint64_t full_kmask() noexcept {
-  return (N >= 64) ? ~0ull : ((std::uint64_t{1} << N) - 1ull);
 }
 }  // namespace detail
 
@@ -1901,8 +1906,8 @@ namespace detail {
 // RedOp defined in x86_detail.h (shared across layered x86 backends).
 template <typename T, std::size_t N, RedOp op>
 HYLE_FORCE_INLINE T reduce_scalar(Vec512<T, N> v) noexcept {
-  alignas(64) T tmp[N];
-  _mm512_store_si512(tmp, v.raw);
+  alignas(64) T tmp[64 / sizeof(T)];
+  StoreU(v, Simd<T, N, 0>(), tmp);
   T acc = tmp[0];
   for (std::size_t i = 1; i < N; ++i) {
     if constexpr (op == RedOp::kAdd) acc = static_cast<T>(acc + tmp[i]);
@@ -1923,7 +1928,8 @@ HYLE_FORCE_INLINE T ReduceSum(Simd<T, N, 0>, Vec512<T, N> v) noexcept {
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE T ReduceMin(Simd<T, N, 0>, Vec512<T, N> v) noexcept {
-  if constexpr (std::is_same_v<T, float>) return _mm512_reduce_min_ps(v.raw);
+  if constexpr (N < 64 / sizeof(T)) return detail::reduce_scalar<T, N, detail::RedOp::kMin>(v);
+  else if constexpr (std::is_same_v<T, float>) return _mm512_reduce_min_ps(v.raw);
   else if constexpr (std::is_same_v<T, double>) return _mm512_reduce_min_pd(v.raw);
   else if constexpr (std::is_same_v<T, std::int32_t>) return _mm512_reduce_min_epi32(v.raw);
   else if constexpr (std::is_same_v<T, std::uint32_t>) return _mm512_reduce_min_epu32(v.raw);
@@ -1933,7 +1939,8 @@ HYLE_FORCE_INLINE T ReduceMin(Simd<T, N, 0>, Vec512<T, N> v) noexcept {
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE T ReduceMax(Simd<T, N, 0>, Vec512<T, N> v) noexcept {
-  if constexpr (std::is_same_v<T, float>) return _mm512_reduce_max_ps(v.raw);
+  if constexpr (N < 64 / sizeof(T)) return detail::reduce_scalar<T, N, detail::RedOp::kMax>(v);
+  else if constexpr (std::is_same_v<T, float>) return _mm512_reduce_max_ps(v.raw);
   else if constexpr (std::is_same_v<T, double>) return _mm512_reduce_max_pd(v.raw);
   else if constexpr (std::is_same_v<T, std::int32_t>) return _mm512_reduce_max_epi32(v.raw);
   else if constexpr (std::is_same_v<T, std::uint32_t>) return _mm512_reduce_max_epu32(v.raw);
@@ -1949,7 +1956,7 @@ namespace detail {
 // RedOp2 defined in x86_detail.h (shared across layered x86 backends).
 template <typename T, std::size_t N, RedOp2 op>
 HYLE_FORCE_INLINE T reduce_scalar2(Vec512<T, N> v) noexcept {
-  alignas(64) T tmp[N];
+  alignas(64) T tmp[64 / sizeof(T)];
   _mm512_store_si512(tmp, v.raw);
   T acc = tmp[0];
   for (std::size_t i = 1; i < N; ++i) {
@@ -1962,7 +1969,8 @@ HYLE_FORCE_INLINE T reduce_scalar2(Vec512<T, N> v) noexcept {
 }  // namespace detail
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE T ReduceMul(Simd<T, N, 0>, Vec512<T, N> v) noexcept {
-  if constexpr (std::is_same_v<T, float>) return _mm512_reduce_mul_ps(v.raw);
+  if constexpr (N < 64 / sizeof(T)) return detail::reduce_scalar2<T, N, detail::RedOp2::kMul>(v);
+  else if constexpr (std::is_same_v<T, float>) return _mm512_reduce_mul_ps(v.raw);
   else if constexpr (std::is_same_v<T, double>) return _mm512_reduce_mul_pd(v.raw);
   else if constexpr (detail::kI32<T>) return static_cast<T>(_mm512_reduce_mul_epi32(v.raw));
   else if constexpr (detail::kI64<T>) return static_cast<T>(_mm512_reduce_mul_epi64(v.raw));
@@ -1971,14 +1979,16 @@ HYLE_FORCE_INLINE T ReduceMul(Simd<T, N, 0>, Vec512<T, N> v) noexcept {
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE T ReduceAnd(Simd<T, N, 0>, Vec512<T, N> v) noexcept {
   static_assert(std::is_integral_v<T>, "ReduceAnd is integer-lane only");
-  if constexpr (detail::kI32<T>) return static_cast<T>(_mm512_reduce_and_epi32(v.raw));
+  if constexpr (N < 64 / sizeof(T)) return detail::reduce_scalar2<T, N, detail::RedOp2::kAnd>(v);
+  else if constexpr (detail::kI32<T>) return static_cast<T>(_mm512_reduce_and_epi32(v.raw));
   else if constexpr (detail::kI64<T>) return static_cast<T>(_mm512_reduce_and_epi64(v.raw));
   else return detail::reduce_scalar2<T, N, detail::RedOp2::kAnd>(v);  // i8/u8/i16/u16
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE T ReduceOr(Simd<T, N, 0>, Vec512<T, N> v) noexcept {
   static_assert(std::is_integral_v<T>, "ReduceOr is integer-lane only");
-  if constexpr (detail::kI32<T>) return static_cast<T>(_mm512_reduce_or_epi32(v.raw));
+  if constexpr (N < 64 / sizeof(T)) return detail::reduce_scalar2<T, N, detail::RedOp2::kOr>(v);
+  else if constexpr (detail::kI32<T>) return static_cast<T>(_mm512_reduce_or_epi32(v.raw));
   else if constexpr (detail::kI64<T>) return static_cast<T>(_mm512_reduce_or_epi64(v.raw));
   else return detail::reduce_scalar2<T, N, detail::RedOp2::kOr>(v);  // i8/u8/i16/u16
 }
@@ -2715,7 +2725,7 @@ HYLE_FORCE_INLINE void Stream(detail::V512<D> v, D, TFromD<D>* aligned) noexcept
   else _mm512_stream_si512(reinterpret_cast<__m512i*>(aligned), v.raw);
 }
 template <class D> requires HYLE_SIMD_W(D, 32, 64)
-HYLE_FORCE_INLINE detail::V512<D> LoadDup128(D d, const TFromD<D>* p) noexcept {
+HYLE_FORCE_INLINE detail::V512<D> LoadDup128(D, const TFromD<D>* p) noexcept {
   using T = TFromD<D>;
   detail::V512<D> r;
   if constexpr (std::is_same_v<T, float>) r.raw = _mm512_broadcast_f32x4(_mm_loadu_ps(reinterpret_cast<const float*>(p)));
@@ -3059,7 +3069,7 @@ HYLE_FORCE_INLINE Vec512<T, N> InterleaveWholeLower(D d, Vec512<T, N> a, Vec512<
     alignas(64) T sa[N], sb[N], out[N];
     Store(a, d, sa); Store(b, d, sb);
     for (std::size_t i = 0; i < N / 2; ++i) { out[2 * i] = sa[i]; out[2 * i + 1] = sb[i]; }
-    return Load(d, out);
+    r = Load(d, out);
   }
   return r;
 }
@@ -3082,7 +3092,7 @@ HYLE_FORCE_INLINE Vec512<T, N> InterleaveWholeUpper(D d, Vec512<T, N> a, Vec512<
       out[2 * i] = sa[N / 2 + i];
       out[2 * i + 1] = sb[N / 2 + i];
     }
-    return Load(d, out);
+    r = Load(d, out);
   }
   return r;
 }
@@ -3107,21 +3117,24 @@ HYLE_FORCE_INLINE __m512i per4_byte_index_512() noexcept {
 }  // namespace detail
 template <int i3, int i2, int i1, int i0, typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec512<T, N> Per4LaneBlockShuffle(Vec512<T, N> v) noexcept {
-  if constexpr (i3 == 3 && i2 == 2 && i1 == 1 && i0 == 0) return v;  // identity: no-op (see avx2.h)
-  Vec512<T, N> r;
-  if constexpr (sizeof(T) == 4) {
-    constexpr int imm = _MM_SHUFFLE(i3, i2, i1, i0);
-    if constexpr (std::is_same_v<T, float>) r.raw = _mm512_shuffle_ps(v.raw, v.raw, imm);
-    else r.raw = _mm512_shuffle_epi32(v.raw, static_cast<_MM_PERM_ENUM>(imm));
-  } else if constexpr (sizeof(T) == 8) {
-    constexpr int imm = _MM_SHUFFLE(i3, i2, i1, i0);
-    if constexpr (std::is_same_v<T, double>) r.raw = _mm512_permutex_pd(v.raw, imm);
-    else r.raw = _mm512_permutex_epi64(v.raw, imm);
-  } else {  // 8/16-bit: per-128-block byte shuffle (vpshufb operates within each 128-bit lane)
-    static_assert(sizeof(T) == 1 || sizeof(T) == 2, "Per4LaneBlockShuffle: 1/2/4/8-byte lanes");
-    r.raw = _mm512_shuffle_epi8(v.raw, detail::per4_byte_index_512<i0, i1, i2, i3, T>());
+  if constexpr (i3 == 3 && i2 == 2 && i1 == 1 && i0 == 0) {
+    return v;  // identity: no-op (see avx2.h)
+  } else {
+    Vec512<T, N> r;
+    if constexpr (sizeof(T) == 4) {
+      constexpr int imm = _MM_SHUFFLE(i3, i2, i1, i0);
+      if constexpr (std::is_same_v<T, float>) r.raw = _mm512_shuffle_ps(v.raw, v.raw, imm);
+      else r.raw = _mm512_shuffle_epi32(v.raw, static_cast<_MM_PERM_ENUM>(imm));
+    } else if constexpr (sizeof(T) == 8) {
+      constexpr int imm = _MM_SHUFFLE(i3, i2, i1, i0);
+      if constexpr (std::is_same_v<T, double>) r.raw = _mm512_permutex_pd(v.raw, imm);
+      else r.raw = _mm512_permutex_epi64(v.raw, imm);
+    } else {  // 8/16-bit: per-128-block byte shuffle (vpshufb operates within each 128-bit lane)
+      static_assert(sizeof(T) == 1 || sizeof(T) == 2, "Per4LaneBlockShuffle: 1/2/4/8-byte lanes");
+      r.raw = _mm512_shuffle_epi8(v.raw, detail::per4_byte_index_512<i0, i1, i2, i3, T>());
+    }
+    return r;
   }
-  return r;
 }
 // E11 TwoTablesLookupLanes native permutex2var for 32/64; fallback for narrow.
 template <class D, typename T, std::size_t N>

@@ -1406,11 +1406,12 @@ HYLE_FORCE_INLINE Vec128<T, N> ConcatEven(Vec128<T, N> hi, Vec128<T, N> lo) noex
       r.raw = _mm_castps_si128(_mm_shuffle_ps(_mm_castsi128_ps(lo.raw), _mm_castsi128_ps(hi.raw),
                                               _MM_SHUFFLE(2, 0, 2, 0)));
     return r;
+  } else {
+    alignas(16) T sh[16 / sizeof(T)], sl[16 / sizeof(T)], dst[16 / sizeof(T)];
+    Store(hi, Simd<T, N, 0>(), sh); Store(lo, Simd<T, N, 0>(), sl);
+    for (std::size_t i = 0; i < N / 2; ++i) { dst[i] = sl[2 * i]; dst[N / 2 + i] = sh[2 * i]; }
+    return Load(Simd<T, N, 0>(), dst);
   }
-  alignas(16) T sh[16 / sizeof(T)], sl[16 / sizeof(T)], dst[16 / sizeof(T)];
-  Store(hi, Simd<T, N, 0>(), sh); Store(lo, Simd<T, N, 0>(), sl);
-  for (std::size_t i = 0; i < N / 2; ++i) { dst[i] = sl[2 * i]; dst[N / 2 + i] = sh[2 * i]; }
-  return Load(Simd<T, N, 0>(), dst);
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec128<T, N> ConcatOdd(Vec128<T, N> hi, Vec128<T, N> lo) noexcept {
@@ -1423,11 +1424,12 @@ HYLE_FORCE_INLINE Vec128<T, N> ConcatOdd(Vec128<T, N> hi, Vec128<T, N> lo) noexc
       r.raw = _mm_castps_si128(_mm_shuffle_ps(_mm_castsi128_ps(lo.raw), _mm_castsi128_ps(hi.raw),
                                               _MM_SHUFFLE(3, 1, 3, 1)));
     return r;
+  } else {
+    alignas(16) T sh[16 / sizeof(T)], sl[16 / sizeof(T)], dst[16 / sizeof(T)];
+    Store(hi, Simd<T, N, 0>(), sh); Store(lo, Simd<T, N, 0>(), sl);
+    for (std::size_t i = 0; i < N / 2; ++i) { dst[i] = sl[2 * i + 1]; dst[N / 2 + i] = sh[2 * i + 1]; }
+    return Load(Simd<T, N, 0>(), dst);
   }
-  alignas(16) T sh[16 / sizeof(T)], sl[16 / sizeof(T)], dst[16 / sizeof(T)];
-  Store(hi, Simd<T, N, 0>(), sh); Store(lo, Simd<T, N, 0>(), sl);
-  for (std::size_t i = 0; i < N / 2; ++i) { dst[i] = sl[2 * i + 1]; dst[N / 2 + i] = sh[2 * i + 1]; }
-  return Load(Simd<T, N, 0>(), dst);
 }
 // SumOfMulQuadAccumulate(di32, a_i8, b_i8, sum): sum[i] += 4-way i8 dot. PORTED from Highway generic
 // (see avx2.h): split each i8 operand into even/odd i16 halves, two WidenMulPairwiseAdd (pmaddwd)
@@ -1455,7 +1457,7 @@ HYLE_FORCE_INLINE Vec128<T, N> DupEven(Vec128<T, N> v) noexcept {
   else if constexpr (std::is_same_v<T, double>) r.raw = _mm_shuffle_pd(v.raw, v.raw, 0);  // [0,0]
   else if constexpr (detail::kI64<T>)
     r.raw = _mm_castpd_si128(_mm_shuffle_pd(_mm_castsi128_pd(v.raw), _mm_castsi128_pd(v.raw), 0));
-  else return detail::swizzle_via_mem(v, [](std::size_t i) { return i & ~std::size_t{1}; });
+  else r = detail::swizzle_via_mem(v, [](std::size_t i) { return i & ~std::size_t{1}; });
   return r;
 }
 template <typename T, std::size_t N>
@@ -1466,7 +1468,7 @@ HYLE_FORCE_INLINE Vec128<T, N> DupOdd(Vec128<T, N> v) noexcept {
   else if constexpr (std::is_same_v<T, double>) r.raw = _mm_shuffle_pd(v.raw, v.raw, 3);  // [1,1]
   else if constexpr (detail::kI64<T>)
     r.raw = _mm_castpd_si128(_mm_shuffle_pd(_mm_castsi128_pd(v.raw), _mm_castsi128_pd(v.raw), 3));
-  else return detail::swizzle_via_mem(v, [](std::size_t i) { return (i & ~std::size_t{1}) | 1; });
+  else r = detail::swizzle_via_mem(v, [](std::size_t i) { return (i & ~std::size_t{1}) | 1; });
   return r;
 }
 template <typename T, std::size_t N>
@@ -1810,7 +1812,7 @@ HYLE_FORCE_INLINE std::uint64_t BitsFromMask(D, Mask128<TFromD<D>, HYLE_SIMD_MAX
   return detail::mask_bits(m);
 }
 template <class D> requires HYLE_SIMD_W(D, 0, 16)
-HYLE_FORCE_INLINE Mask128<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> LoadMaskBits(D d, std::uint64_t bits) noexcept {
+HYLE_FORCE_INLINE Mask128<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> LoadMaskBits(D, std::uint64_t bits) noexcept {
   // Rebuild: lane i true iff bit i set. FirstN-style via an index compare against the bitset.
   // _mm_load_si128 reads a FULL 16 B regardless of logical lane count, so the scratch MUST be a
   // whole register wide (16 B): a partial tag (e.g. Simd<i16,4,-1> from Rebind, kN*sizeof=8 B) would
@@ -1828,7 +1830,7 @@ HYLE_FORCE_INLINE Mask128<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> LoadMaskBits(D d,
   return out;
 }
 template <class D>
-HYLE_FORCE_INLINE std::size_t StoreMaskBits(D d, Mask128<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m,
+HYLE_FORCE_INLINE std::size_t StoreMaskBits(D, Mask128<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m,
                                             std::uint8_t* p) noexcept {
   const std::uint64_t bits = detail::mask_bits(m);
   const std::size_t nbytes = (HYLE_SIMD_MAX_LANES_D(D) + 7) / 8;
@@ -2115,7 +2117,7 @@ template <typename T, std::size_t N, RedOp op>
 HYLE_FORCE_INLINE T reduce_scalar(Vec128<T, N> v) noexcept {
   // Full 16 B scratch: _mm_store_si128 always writes a whole register.
   alignas(16) T tmp[16 / sizeof(T)];
-  _mm_store_si128(reinterpret_cast<__m128i*>(tmp), v.raw);
+  StoreU(v, Simd<T, N, 0>(), tmp);
   T acc = tmp[0];
   for (std::size_t i = 1; i < N; ++i) {
     if constexpr (op == RedOp::kAdd) acc = static_cast<T>(acc + tmp[i]);
@@ -2134,13 +2136,17 @@ HYLE_FORCE_INLINE T ReduceSum(Simd<T, N, 0>, Vec128<T, N> v) noexcept {
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE T ReduceMin(Simd<T, N, 0>, Vec128<T, N> v) noexcept {
-  if constexpr (detail::kI32<T> || std::is_floating_point_v<T>)
+  if constexpr (N < 16 / sizeof(T))
+    return detail::reduce_scalar<T, N, detail::RedOp::kMin>(v);
+  else if constexpr (detail::kI32<T> || std::is_floating_point_v<T>)
     return detail::reduce128(v, [](Vec128<T, N> x, Vec128<T, N> y) { return Min(x, y); });
   else return detail::reduce_scalar<T, N, detail::RedOp::kMin>(v);
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE T ReduceMax(Simd<T, N, 0>, Vec128<T, N> v) noexcept {
-  if constexpr (detail::kI32<T> || std::is_floating_point_v<T>)
+  if constexpr (N < 16 / sizeof(T))
+    return detail::reduce_scalar<T, N, detail::RedOp::kMax>(v);
+  else if constexpr (detail::kI32<T> || std::is_floating_point_v<T>)
     return detail::reduce128(v, [](Vec128<T, N> x, Vec128<T, N> y) { return Max(x, y); });
   else return detail::reduce_scalar<T, N, detail::RedOp::kMax>(v);
 }
@@ -3051,35 +3057,38 @@ template <int i3, int i2, int i1, int i0, typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec128<T, N> Per4LaneBlockShuffle(Vec128<T, N> v) noexcept {
   static_assert(sizeof(T) == 1 || sizeof(T) == 2 || sizeof(T) == 4 || sizeof(T) == 8,
                 "Per4LaneBlockShuffle: 1/2/4/8-byte lanes");
-  if constexpr (i3 == 3 && i2 == 2 && i1 == 1 && i0 == 0) return v;  // identity: no-op (see avx2.h)
-  alignas(16) T s[16 / sizeof(T)], o[16 / sizeof(T)];
-  Store(v, Simd<T, N, 0>(), s);
-  if constexpr (sizeof(T) <= 2) {
-    // 8/16-bit: kLanesPer128 lanes per 128-block, in groups of 4; out[base+group*4+j]=src idx[j].
-    constexpr int sel[4] = {i0, i1, i2, i3};
-    constexpr std::size_t kLanesPer128 = 16 / sizeof(T);
-    for (std::size_t base = 0; base < N; base += kLanesPer128)
-      for (std::size_t g = 0; g < kLanesPer128 && base + g < N; g += 4)
-        for (std::size_t j = 0; j < 4 && base + g + j < N; ++j)
-          o[base + g + j] = s[base + g + static_cast<std::size_t>(sel[j])];
-  } else if constexpr (sizeof(T) == 4) {
-    constexpr int sel[4] = {i0, i1, i2, i3};
-    constexpr std::size_t blk = 4;  // 4 lanes per 128-bit block for 32-bit
-    for (std::size_t base = 0; base < N; base += blk) {
-      for (std::size_t j = 0; j < blk && base + j < N; ++j)
-        o[base + j] = s[base + static_cast<std::size_t>(sel[j])];
-    }
+  if constexpr (i3 == 3 && i2 == 2 && i1 == 1 && i0 == 0) {
+    return v;  // identity: no-op (see avx2.h)
   } else {
-    // 64-bit: 2 lanes per 128-block; map i0.. via pairs (Highway uses permute4x64 on wider)
-    constexpr int sel[4] = {i0, i1, i2, i3};
-    for (std::size_t i = 0; i < N; ++i) {
-      const std::size_t base = (i / 2) * 2;
-      const int local = static_cast<int>(i % 2);
-      // within 2-lane block, only i0/i1 matter for 128; keep simple reverse if imm asks
-      o[i] = s[base + (static_cast<std::size_t>(sel[local]) & 1u)];
+    alignas(16) T s[16 / sizeof(T)], o[16 / sizeof(T)];
+    Store(v, Simd<T, N, 0>(), s);
+    if constexpr (sizeof(T) <= 2) {
+      // 8/16-bit: kLanesPer128 lanes per 128-block, in groups of 4; out[base+group*4+j]=src idx[j].
+      constexpr int sel[4] = {i0, i1, i2, i3};
+      constexpr std::size_t kLanesPer128 = 16 / sizeof(T);
+      for (std::size_t base = 0; base < N; base += kLanesPer128)
+        for (std::size_t g = 0; g < kLanesPer128 && base + g < N; g += 4)
+          for (std::size_t j = 0; j < 4 && base + g + j < N; ++j)
+            o[base + g + j] = s[base + g + static_cast<std::size_t>(sel[j])];
+    } else if constexpr (sizeof(T) == 4) {
+      constexpr int sel[4] = {i0, i1, i2, i3};
+      constexpr std::size_t blk = 4;  // 4 lanes per 128-bit block for 32-bit
+      for (std::size_t base = 0; base < N; base += blk) {
+        for (std::size_t j = 0; j < blk && base + j < N; ++j)
+          o[base + j] = s[base + static_cast<std::size_t>(sel[j])];
+      }
+    } else {
+      // 64-bit: 2 lanes per 128-block; map i0.. via pairs (Highway uses permute4x64 on wider)
+      constexpr int sel[4] = {i0, i1, i2, i3};
+      for (std::size_t i = 0; i < N; ++i) {
+        const std::size_t base = (i / 2) * 2;
+        const int local = static_cast<int>(i % 2);
+        // within 2-lane block, only i0/i1 matter for 128; keep simple reverse if imm asks
+        o[i] = s[base + (static_cast<std::size_t>(sel[local]) & 1u)];
+      }
     }
+    return Load(Simd<T, N, 0>(), o);
   }
-  return Load(Simd<T, N, 0>(), o);
 }
 // E11 TwoTablesLookupLanes: dual-source table lookup.
 template <class D, typename T, std::size_t N>

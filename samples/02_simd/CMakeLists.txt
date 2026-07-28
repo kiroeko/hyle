@@ -5,9 +5,9 @@ option(HYLE_SAMPLE_SIMD_USE_INSTALLED "Consume an installed HYLE SIMD package" O
 if(HYLE_SAMPLE_SIMD_USE_INSTALLED)
   find_package(Hyle 0.1 REQUIRED COMPONENTS simd)
 else()
-  set(HYLE_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-  set(HYLE_BUILD_BENCH OFF CACHE BOOL "" FORCE)
-  set(HYLE_COMPONENTS simd CACHE STRING "" FORCE)
+  set(HYLE_BUILD_TESTS OFF)
+  set(HYLE_BUILD_BENCH OFF)
+  set(HYLE_COMPONENTS simd)
   add_subdirectory(../.. hyle_build)
 endif()
 

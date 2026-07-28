@@ -1,5 +1,7 @@
 #pragma once
 
+#include "hyle/core/compiler_defs.h"
+
 // Core macro skeleton. Every attribute macro has an #else fallback so unknown
 // compilers degrade to a safe empty/identity definition (never fail to compile).
 
@@ -24,6 +26,22 @@
 #else
 #  define HYLE_NOINLINE
 #endif
+
+// ---- aliasing contract ----------------------------------------------------
+// Apply to pointer declarations only when the pointed-to ranges do not alias
+// for the lifetime of the pointer. Violating this promise is undefined.
+#define HYLE_RESTRICT HYLE_DETAIL_COMPILER_RESTRICT
+
+// ---- recursive inlining hint ---------------------------------------------
+// Apply to measured, deep wrapper/template entry points. Unlike FORCE_INLINE,
+// this asks GCC/Clang to inline eligible calls throughout the function body.
+#define HYLE_FLATTEN HYLE_DETAIL_COMPILER_FLATTEN
+
+// ---- measured loop-unroll hints ------------------------------------------
+// These are best-effort compiler hints, not semantic contracts. Keep them on
+// profiled kernels: forcing unrolling can increase code size and hurt the I-cache.
+#define HYLE_UNROLL(factor) HYLE_DETAIL_COMPILER_UNROLL(factor)
+#define HYLE_DEFAULT_UNROLL HYLE_DETAIL_COMPILER_DEFAULT_UNROLL
 
 // ---- empty-member optimization (zero-size stateless members) ----
 // [[no_unique_address]] lets a zero-size member (e.g. a stateless SystemAllocator) occupy
@@ -83,3 +101,14 @@
       HYLE_TRAP();                                                           \
     }                                                                        \
   } while (0)
+
+// ---- optimizer assumption -------------------------------------------------
+// The expression must be side-effect free. Debug builds diagnose a violated
+// assumption; optimized builds make it undefined so the compiler can remove
+// impossible branches. Use HYLE_FATAL_ASSERT instead when validation must
+// survive release builds.
+#if !defined(NDEBUG)
+#  define HYLE_ASSUME(cond) HYLE_FATAL_ASSERT(cond)
+#else
+#  define HYLE_ASSUME(cond) HYLE_DETAIL_COMPILER_ASSUME(cond)
+#endif

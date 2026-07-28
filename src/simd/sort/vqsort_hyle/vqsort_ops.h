@@ -18,6 +18,7 @@
 #include <intrin.h>  // _BitScanReverse
 #endif
 
+#include "hyle/core/cache.h"
 #include "hyle/macros.h"
 #include "hyle/simd/vec.h"
 
@@ -116,13 +117,7 @@ HYLE_FORCE_INLINE void CopyBytes(const void* from, void* to, size_t bytes) noexc
 }
 
 HYLE_FORCE_INLINE void Prefetch(const void* p) noexcept {
-#if defined(_MSC_VER) && (defined(_M_X64) || defined(_M_IX86))
-  _mm_prefetch(static_cast<const char*>(p), _MM_HINT_T0);
-#elif defined(__GNUC__) || defined(__clang__)
-  __builtin_prefetch(p, 0, 3);
-#else
-  (void)p;
-#endif
+  hyle::core::prefetch_read(p);
 }
 
 // Fill `count` lanes starting at `ptr` with `value` (Highway Fill).
@@ -351,19 +346,13 @@ HYLE_FORCE_INLINE VFromD<D> SortPoisonNaN(D d) noexcept {
 #define HWY_INLINE HYLE_FORCE_INLINE
 #endif
 #ifndef HWY_API
-#define HWY_API HYLE_FORCE_INLINE
+#define HWY_API static HYLE_FORCE_INLINE HYLE_FLATTEN
 #endif
 #ifndef HWY_NOINLINE
-#if defined(_MSC_VER)
-#define HWY_NOINLINE __declspec(noinline)
-#elif defined(__GNUC__) || defined(__clang__)
-#define HWY_NOINLINE __attribute__((noinline))
-#else
-#define HWY_NOINLINE
-#endif
+#define HWY_NOINLINE HYLE_NOINLINE
 #endif
 #ifndef HWY_RESTRICT
-#define HWY_RESTRICT
+#define HWY_RESTRICT HYLE_RESTRICT
 #endif
 #ifndef HWY_DASSERT
 #define HWY_DASSERT(cond) ((void)0)
@@ -400,24 +389,13 @@ HYLE_FORCE_INLINE VFromD<D> SortPoisonNaN(D d) noexcept {
 #endif
 #endif
 #ifndef HWY_ASSUME
-#if defined(_MSC_VER)
-#define HWY_ASSUME(cond) __assume(cond)
-#elif defined(__clang__)
-#define HWY_ASSUME(cond) __builtin_assume(!!(cond))
-#elif defined(__GNUC__)
-#define HWY_ASSUME(cond)          \
-  do {                            \
-    if (!(cond)) __builtin_unreachable(); \
-  } while (0)
-#else
-#define HWY_ASSUME(cond) ((void)0)
-#endif
+#define HWY_ASSUME(cond) HYLE_ASSUME(cond)
 #endif
 #ifndef HWY_UNROLL
-#define HWY_UNROLL(n)
+#define HWY_UNROLL(n) HYLE_UNROLL(n)
 #endif
 #ifndef HWY_DEFAULT_UNROLL
-#define HWY_DEFAULT_UNROLL
+#define HWY_DEFAULT_UNROLL HYLE_DEFAULT_UNROLL
 #endif
 #ifndef HWY_IF_CONSTEXPR
 #define HWY_IF_CONSTEXPR(...) if constexpr (__VA_ARGS__)

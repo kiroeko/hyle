@@ -8,7 +8,7 @@
 
 | 面 | 证书状态 | 说明 |
 |---|---|---|
-| **StringInterner / string 收口表** | ✅ **2026-07-27 三平台 n=15** | adaptive mutex + 16B cached-hash pointer index；batch/8t/growth/lifecycle 已刷新；仅 WSL 单条入口保留边界 |
+| **StringInterner / string 收口表** | ✅ **三平台证书；M4 受影响边已复证** | adaptive mutex + 16B cached-hash pointer index；Win/WSL 64B、Apple 128B core spacing。M4 correctness 通过；8t normal workload 14.678 vs sharded Abseil+mutex 19.679 ns/op，1.341x WIN |
 | **path** | ✅ 双平台 n=15 | Win+Lin；算法基线 + filesystem 分离 |
 | **FlatHashMap / FlatHashSet** | ✅ **三平台 n=15** | 同合同 Abseil；WSL map/set miss 是已登记小缺口，M4 查找/删除/迭代赢，fresh insert 同档 |
 | **BTreeMap / BTreeSet** | ✅ **2026-07-26 三平台 n=15** | Abseil B-tree 同类；按 ordered index、range scan、build/copy/churn、time expiry 十轴验收；边界偏置 split/delete 已消除主要 mutation 缺口，剩余逐平台边界明示 |
@@ -361,7 +361,7 @@ growth 的 Abseil 表是故意更弱的无锁 floor，因此只证明 cached-has
 |---|---:|---:|---:|---|
 | 单条 intern / 同合同 mutex peer | **1.273x** | **0.894x** | **1.533x** | 仅 WSL 单条边界 |
 | batch intern / 同合同 mutex peer | **1.545x** | **1.360x** | — | Win/WSL 赢；M4 单条已赢 |
-| 8-thread / sharded Abseil peer | **1.782x** | **1.428x** | **1.427x** | 三平台赢 |
+| 8-thread / sharded Abseil peer | **1.782x** | **1.428x** | **1.341x** | 三平台赢；M4 14.678 vs 19.679 ns/op，128B spacing 复证 |
 | 1KiB unique growth / Abseil floor | **5.934x** | **1.543x** | **1.290x** | 三平台赢 |
 | acquire/retain/release / direct-ID peer | **1.559x** | **1.273x** | **1.608x** | 三平台赢 |
 | repeated lifecycle / retained peer | **1.626x** | **1.343x** | **1.649x** | 三平台赢 |

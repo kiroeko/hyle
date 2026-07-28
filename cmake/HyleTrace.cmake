@@ -28,6 +28,7 @@ set(HYLE_TRACY_DIR "" CACHE PATH "path to a tracy checkout (contains public/trac
 # empty. This target exists unconditionally so module CMakeLists can link it
 # without an if() at every call site.
 add_library(hyle_trace INTERFACE)
+set_target_properties(hyle_trace PROPERTIES FOLDER "hyle/foundation")
 
 if(HYLE_TRACE)
   if(HYLE_TRACE_BACKEND STREQUAL "tracy")
@@ -62,9 +63,9 @@ if(HYLE_TRACE)
     endif()
     # position-independent so it can link into HYLE's shared libs.
     set_target_properties(hyle_tracy_client PROPERTIES POSITION_INDEPENDENT_CODE ON)
+    set_target_properties(hyle_tracy_client PROPERTIES FOLDER "hyle/third_party")
 
     target_link_libraries(hyle_trace INTERFACE hyle_tracy_client)
-    target_include_directories(hyle_trace SYSTEM INTERFACE "${HYLE_TRACY_DIR}/public")
     # HYLE_TRACE_TRACY implies HYLE_TRACE inside trace.h; set both + tracy's own.
     target_compile_definitions(hyle_trace INTERFACE
       HYLE_TRACE HYLE_TRACE_TRACY TRACY_ENABLE TRACY_FIBERS)

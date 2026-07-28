@@ -16,10 +16,19 @@
     {
       "name": "windows",
       "displayName": "Windows VS 2022 CPU development",
-      "description": "Deterministic Visual Studio 2022 Release build. It needs MSVC 19.43+; use windows-ninja through scripts/hyle-windows.ps1 when a newer compiler is installed outside the VS 2022 generator.",
+      "description": "Visual Studio 2022 solution fallback. Use scripts/hyle-windows.ps1 so side-by-side v143 toolsets resolve to the highest installed MSVC 19.43+ version.",
       "inherits": "hyle-dev",
       "generator": "Visual Studio 17 2022",
       "binaryDir": "${sourceDir}/build-windows",
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" }
+    },
+    {
+      "name": "windows-vs2026",
+      "displayName": "Windows VS 2026 CPU development",
+      "description": "Native Visual Studio 2026 solution using v145. Requires CMake 4.2+ and VS 2026 with the C++ workload.",
+      "inherits": "hyle-dev",
+      "generator": "Visual Studio 18 2026",
+      "binaryDir": "${sourceDir}/build-windows-vs2026",
       "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" }
     },
     {
@@ -157,6 +166,7 @@
   ],
   "buildPresets": [
     { "name": "windows", "configurePreset": "windows", "configuration": "Release" },
+    { "name": "windows-vs2026", "configurePreset": "windows-vs2026", "configuration": "Release" },
     { "name": "windows-ninja", "configurePreset": "windows-ninja", "configuration": "Release" },
     { "name": "linux", "configurePreset": "linux", "configuration": "Release" },
     { "name": "macos", "configurePreset": "macos", "configuration": "Release" },
@@ -172,6 +182,7 @@
   ],
   "testPresets": [
     { "name": "windows", "configurePreset": "windows", "configuration": "Release", "output": { "outputOnFailure": true }, "execution": { "noTestsAction": "error" } },
+    { "name": "windows-vs2026", "configurePreset": "windows-vs2026", "configuration": "Release", "output": { "outputOnFailure": true }, "execution": { "noTestsAction": "error" } },
     { "name": "windows-ninja", "configurePreset": "windows-ninja", "configuration": "Release", "output": { "outputOnFailure": true }, "execution": { "noTestsAction": "error" } },
     { "name": "linux", "configurePreset": "linux", "configuration": "Release", "output": { "outputOnFailure": true }, "execution": { "noTestsAction": "error" } },
     { "name": "macos", "configurePreset": "macos", "configuration": "Release", "output": { "outputOnFailure": true }, "execution": { "noTestsAction": "error" } },
@@ -181,6 +192,7 @@
   ],
   "workflowPresets": [
     { "name": "windows-check", "steps": [ { "type": "configure", "name": "windows" }, { "type": "build", "name": "windows" }, { "type": "test", "name": "windows" } ] },
+    { "name": "windows-vs2026-check", "steps": [ { "type": "configure", "name": "windows-vs2026" }, { "type": "build", "name": "windows-vs2026" }, { "type": "test", "name": "windows-vs2026" } ] },
     { "name": "windows-ninja-check", "steps": [ { "type": "configure", "name": "windows-ninja" }, { "type": "build", "name": "windows-ninja" }, { "type": "test", "name": "windows-ninja" } ] },
     { "name": "linux-check", "steps": [ { "type": "configure", "name": "linux" }, { "type": "build", "name": "linux" }, { "type": "test", "name": "linux" } ] },
     { "name": "macos-check", "steps": [ { "type": "configure", "name": "macos" }, { "type": "build", "name": "macos" }, { "type": "test", "name": "macos" } ] }

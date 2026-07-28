@@ -152,7 +152,7 @@ HYLE_FORCE_INLINE bool AnyTrue(D d, M m) noexcept {
 // nearbyint as signed int lanes. NearestInt/RoundToInt is f32->i32 only on some backends;
 // ConvertTo(di, Round(k)) covers both f32 and f64.
 template <class D, class V>
-HYLE_FORCE_INLINE VFromD<RebindToSigned<D>> ToNearbyInt(D d, V k) noexcept {
+HYLE_FORCE_INLINE VFromD<RebindToSigned<D>> ToNearbyInt(D, V k) noexcept {
   const RebindToSigned<D> di;
   return ConvertTo(di, Round(k));
 }
@@ -459,7 +459,7 @@ HYLE_FORCE_INLINE VFromD<D> Erfc(D d, VFromD<D> x) noexcept {
 // ---- simple binary / unary --------------------------------------------------
 
 template <class D>
-HYLE_FORCE_INLINE VFromD<D> HypotInRange(D d, VFromD<D> a, VFromD<D> b) noexcept {
+HYLE_FORCE_INLINE VFromD<D> HypotInRange(D, VFromD<D> a, VFromD<D> b) noexcept {
   return Sqrt(MulAdd(a, a, Mul(b, b)));
 }
 
@@ -469,7 +469,7 @@ HYLE_FORCE_INLINE VFromD<D> Fdim(D d, VFromD<D> a, VFromD<D> b) noexcept {
 }
 
 template <class D>
-HYLE_FORCE_INLINE VFromD<D> Fmod(D d, VFromD<D> a, VFromD<D> b) noexcept {
+HYLE_FORCE_INLINE VFromD<D> Fmod(D, VFromD<D> a, VFromD<D> b) noexcept {
   // fnma(trunc(a/b), b, a)
   return NegMulAdd(Trunc(Div(a, b)), b, a);
 }

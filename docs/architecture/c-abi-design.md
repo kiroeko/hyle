@@ -120,6 +120,8 @@ C++ 用户拿原生 API，易用性靠 C++ 语言特性本身：
 - **类型安全**：强类型句柄、`Status::Is##Code()` 谓词、`Result<T>` 单子式传播（`HYLE_ASSIGN_OR_RETURN`）。
 
 C ABI 用户（第 2 层）的易用性则靠 **header-inline 便利层**（零新导出符号，不进 ABI）：
+- core：`hyle/c/compiler.h` 提供 C kernel 的 assume/restrict/flatten/unroll source contract，与 C++ 共用
+  compiler backend；它是 C 产品面但不是动态调用 ABI。
 - error：全码工厂 `hyle_status_not_found()` 等 + 谓词 `hyle_status_is_*()` + `HYLE_C_RETURN_IF_ERROR`。
 - platform：`hyle_thread_opts_set_*` + `HYLE_THREAD_OPTS_INIT` + `hyle_page_align_up` inline。
 - mem：`hyle_alloc`/`free`/`realloc` 便利转发 + `*_create_default(&out,...)` system-backing 构造 + 默认硬容量 `HYLE_OBJECT_POOL_*`、显式软容量 `HYLE_OBJECT_POOL_CACHE_*` typed 宏（构造宏返回 Status；`HYLE_ALIGNOF` 跨 C/C++ shim）。默认 alignment 在头内常量折叠，不先跨 DLL 查询。

@@ -1629,7 +1629,7 @@ HYLE_FORCE_INLINE void Stream(VFromD<D> v, D d, TFromD<D>* aligned) noexcept {
 }
 // LoadDup128: load 16 bytes and repeat into every 128-bit block of the full vector.
 template <class D>
-HYLE_FORCE_INLINE VFromD<D> LoadDup128(D d, const TFromD<D>* p) noexcept {
+HYLE_FORCE_INLINE VFromD<D> LoadDup128(D, const TFromD<D>* p) noexcept {
   using T = TFromD<D>;
   constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
   constexpr std::size_t kBL = 16 / sizeof(T);
@@ -2067,35 +2067,38 @@ template <int i3, int i2, int i1, int i0, typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec<T, N> Per4LaneBlockShuffle(Vec<T, N> v) noexcept {
   static_assert(sizeof(T) == 1 || sizeof(T) == 2 || sizeof(T) == 4 || sizeof(T) == 8,
                 "Per4LaneBlockShuffle: 1/2/4/8-byte lanes");
-  if constexpr (i3 == 3 && i2 == 2 && i1 == 1 && i0 == 0) return v;  // identity: no-op (see avx2.h)
-  alignas(16) T s[N], o[N];
-  Store(v, Simd<T, N, 0>(), s);
-  if constexpr (sizeof(T) <= 2) {
-    // 8/16-bit: kLanesPer128 lanes per 128-block, in groups of 4; out[base+group*4+j]=src idx[j].
-    constexpr int sel[4] = {i0, i1, i2, i3};
-    constexpr std::size_t kLanesPer128 = 16 / sizeof(T);
-    for (std::size_t base = 0; base < N; base += kLanesPer128)
-      for (std::size_t g = 0; g < kLanesPer128 && base + g < N; g += 4)
-        for (std::size_t j = 0; j < 4 && base + g + j < N; ++j)
-          o[base + g + j] = s[base + g + static_cast<std::size_t>(sel[j])];
-  } else if constexpr (sizeof(T) == 4) {
-    constexpr int sel[4] = {i0, i1, i2, i3};
-    constexpr std::size_t blk = 4;  // 4 lanes per 128-bit block for 32-bit
-    for (std::size_t base = 0; base < N; base += blk) {
-      for (std::size_t j = 0; j < blk && base + j < N; ++j)
-        o[base + j] = s[base + static_cast<std::size_t>(sel[j])];
-    }
+  if constexpr (i3 == 3 && i2 == 2 && i1 == 1 && i0 == 0) {
+    return v;  // identity: no-op (see avx2.h)
   } else {
-    // 64-bit: 2 lanes per 128-block; map i0.. via pairs (Highway uses permute4x64 on wider)
-    constexpr int sel[4] = {i0, i1, i2, i3};
-    for (std::size_t i = 0; i < N; ++i) {
-      const std::size_t base = (i / 2) * 2;
-      const int local = static_cast<int>(i % 2);
-      // within 2-lane block, only i0/i1 matter for 128; keep simple reverse if imm asks
-      o[i] = s[base + (static_cast<std::size_t>(sel[local]) & 1u)];
+    alignas(16) T s[N], o[N];
+    Store(v, Simd<T, N, 0>(), s);
+    if constexpr (sizeof(T) <= 2) {
+      // 8/16-bit: kLanesPer128 lanes per 128-block, in groups of 4; out[base+group*4+j]=src idx[j].
+      constexpr int sel[4] = {i0, i1, i2, i3};
+      constexpr std::size_t kLanesPer128 = 16 / sizeof(T);
+      for (std::size_t base = 0; base < N; base += kLanesPer128)
+        for (std::size_t g = 0; g < kLanesPer128 && base + g < N; g += 4)
+          for (std::size_t j = 0; j < 4 && base + g + j < N; ++j)
+            o[base + g + j] = s[base + g + static_cast<std::size_t>(sel[j])];
+    } else if constexpr (sizeof(T) == 4) {
+      constexpr int sel[4] = {i0, i1, i2, i3};
+      constexpr std::size_t blk = 4;  // 4 lanes per 128-bit block for 32-bit
+      for (std::size_t base = 0; base < N; base += blk) {
+        for (std::size_t j = 0; j < blk && base + j < N; ++j)
+          o[base + j] = s[base + static_cast<std::size_t>(sel[j])];
+      }
+    } else {
+      // 64-bit: 2 lanes per 128-block; map i0.. via pairs (Highway uses permute4x64 on wider)
+      constexpr int sel[4] = {i0, i1, i2, i3};
+      for (std::size_t i = 0; i < N; ++i) {
+        const std::size_t base = (i / 2) * 2;
+        const int local = static_cast<int>(i % 2);
+        // within 2-lane block, only i0/i1 matter for 128; keep simple reverse if imm asks
+        o[i] = s[base + (static_cast<std::size_t>(sel[local]) & 1u)];
+      }
     }
+    return Load(Simd<T, N, 0>(), o);
   }
-  return Load(Simd<T, N, 0>(), o);
 }
 // E11 TwoTablesLookupLanes: dual-source table lookup.
 template <class D, typename T, std::size_t N>

@@ -31,5 +31,5 @@ function(hyle_add_source_package)
     COMMENT
       "Packaging the clean Git-tracked HYLE source tree (license is unchanged)"
     VERBATIM)
-  set_property(TARGET hyle_source_package PROPERTY FOLDER distribution)
+  set_property(TARGET hyle_source_package PROPERTY FOLDER "hyle/distribution")
 endfunction()
