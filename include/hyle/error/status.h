@@ -55,9 +55,36 @@ enum class StatusCode : std::uint16_t {
 #undef HYLE_STATUS_ENUMERATOR
 };
 
+// Stable categories for one optional backend/OS error number. This deliberately
+// stays narrower than std::error_category or an arbitrary payload registry:
+// portable recovery uses StatusCode; backend-specific recovery may inspect this.
+enum class NativeErrorDomain : std::uint16_t {
+  None = 0,
+  PosixErrno = 1,
+  Win32 = 2,
+  Vulkan = 3,
+  CudaRuntime = 4,
+  CudaDriver = 5,
+  Nvrtc = 6,
+  Unknown = 0xffff,
+};
+
+struct NativeError {
+  NativeErrorDomain domain = NativeErrorDomain::None;
+  std::int64_t code = 0;
+
+  constexpr bool present() const noexcept {
+    return domain != NativeErrorDomain::None;
+  }
+  friend constexpr bool operator==(NativeError, NativeError) noexcept =
+      default;
+};
+
 // Stable, never-localized code name ("Ok", "NotFound", ...). Defined in the DLL
 // so the name table lives in exactly one translation unit.
 HYLE_ERROR_API std::string_view status_code_name(StatusCode code) noexcept;
+HYLE_ERROR_API std::string_view native_error_domain_name(
+    NativeErrorDomain domain) noexcept;
 
 // Map a C/POSIX errno value onto the canonical Status taxonomy. This is a
 // pure O(1) classification and returns Ok for error_number == 0. Individual
@@ -78,13 +105,33 @@ constexpr StatusCode normalize_status_code(StatusCode code) noexcept {
   return status_code_is_valid(code) ? code : StatusCode::Unknown;
 }
 
-// Heap representation lives entirely in the DLL (status.cc). These are the only
-// operations the header needs; the layout of the rep is never exposed.
+constexpr NativeErrorDomain normalize_native_error_domain(
+    NativeErrorDomain domain) noexcept {
+  switch (domain) {
+    case NativeErrorDomain::None:
+    case NativeErrorDomain::PosixErrno:
+    case NativeErrorDomain::Win32:
+    case NativeErrorDomain::Vulkan:
+    case NativeErrorDomain::CudaRuntime:
+    case NativeErrorDomain::CudaDriver:
+    case NativeErrorDomain::Nvrtc:
+    case NativeErrorDomain::Unknown: return domain;
+  }
+  return NativeErrorDomain::Unknown;
+}
+
+// Heap representation for message/detail errors lives entirely in the DLL
+// (status.cc). These are the only operations the header needs; the layout of
+// the rep is never exposed.
 HYLE_ERROR_API std::uintptr_t status_make_heap(StatusCode code, const char *msg,
                                                std::size_t len) noexcept;
+HYLE_ERROR_API std::uintptr_t status_make_native_heap(
+    StatusCode code, NativeError native, const char *msg,
+    std::size_t len) noexcept;
 HYLE_ERROR_API std::uintptr_t status_make_context(
-    StatusCode code, const char *context, std::size_t context_len,
-    const char *message, std::size_t message_len) noexcept;
+    StatusCode code, NativeError native, const char *context,
+    std::size_t context_len, const char *message,
+    std::size_t message_len) noexcept;
 // Keep the hot retain operation in consumer code, like Abseil/Folly intrusive
 // carriers do. Only this stable prefix is visible; allocation, message storage
 // and the last-release/free path remain inside the DLL.
@@ -99,9 +146,11 @@ HYLE_ERROR_API void status_release(std::uintptr_t rep) noexcept;
 HYLE_ERROR_API StatusCode status_heap_code(std::uintptr_t rep) noexcept;
 HYLE_ERROR_API std::string_view status_heap_message(
     std::uintptr_t rep) noexcept;
+HYLE_ERROR_API NativeError status_heap_native_error(
+    std::uintptr_t rep) noexcept;
 
-// Test-only: next status_make_heap fails as if malloc returned null (OOM path).
-// Shipped builds strip this (HYLE_TESTING off).
+// Test-only: while enabled, Status message/detail allocation behaves as if
+// malloc returned null. Shipped builds strip this (HYLE_TESTING off).
 #if defined(HYLE_TESTING)
 HYLE_ERROR_API void status_test_force_oom(bool enable) noexcept;
 #endif
@@ -142,6 +191,23 @@ class [[nodiscard]] Status {
                  : (static_cast<std::uintptr_t>(code) << kCodeShift) |
                        kInlineTag) {}
 
+  // Attach one machine-readable native/backend code without growing the
+  // one-word Status object. OOM preserves the canonical code and drops only
+  // optional message/detail.
+  static Status FromNative(StatusCode code, NativeError native,
+                           std::string_view message = {}) noexcept {
+    code = detail::normalize_status_code(code);
+    native.domain = detail::normalize_native_error_domain(native.domain);
+    if (code == StatusCode::Ok) return Status{};
+    if (!native.present()) return Status(code, message);
+    const std::uintptr_t heap = detail::status_make_native_heap(
+        code, native, message.data(), message.size());
+    if (heap == 0) return Status(code);
+    Status result;
+    result.rep_ = heap;
+    return result;
+  }
+
   Status(const Status &o) noexcept : rep_(o.rep_) {
     if (is_heap()) detail::status_retain(rep_);
   }
@@ -174,10 +240,14 @@ class [[nodiscard]] Status {
     return detail::status_heap_code(rep_);
   }
 
-  bool has_message() const noexcept { return is_heap(); }
+  bool has_message() const noexcept { return !message().empty(); }
   std::string_view message() const noexcept {
     return is_heap() ? detail::status_heap_message(rep_) : std::string_view();
   }
+  NativeError native_error() const noexcept {
+    return is_heap() ? detail::status_heap_native_error(rep_) : NativeError{};
+  }
+  bool has_native_error() const noexcept { return native_error().present(); }
 
   // Format into a caller buffer (snprintf-style): writes up to cap-1 bytes + a
   // NUL, returns the total length needed (so the caller can detect truncation).
@@ -227,7 +297,8 @@ class [[nodiscard]] Status {
   static Status Ok() noexcept { return Status(); }
 
   friend bool operator==(const Status &a, const Status &b) noexcept {
-    return a.code() == b.code() && a.message() == b.message();
+    return a.code() == b.code() && a.native_error() == b.native_error() &&
+           a.message() == b.message();
   }
   friend bool operator!=(const Status &a, const Status &b) noexcept {
     return !(a == b);
@@ -236,10 +307,10 @@ class [[nodiscard]] Status {
   // Keep the first failure while combining a sequence of independent
   // operations. A later error never overwrites an earlier one.
   void Update(const Status &status) noexcept {
-    if (ok() && !status.ok()) *this = status;
+    if (ok() && !status.ok()) (void)(*this = status);
   }
   void Update(Status &&status) noexcept {
-    if (ok() && !status.ok()) *this = std::move(status);
+    if (ok() && !status.ok()) (void)(*this = std::move(status));
   }
 
   // Make an intentionally discarded result visible at the call site. This is

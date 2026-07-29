@@ -43,14 +43,21 @@ Status win32_loader_error(const char* operation, DWORD code) noexcept {
                 win32_loader_error_name(code), static_cast<unsigned long>(code),
                 length == 0 ? "" : ": ", length == 0 ? "" : description);
   if (code == ERROR_MOD_NOT_FOUND || code == ERROR_PROC_NOT_FOUND) {
-    return Status::NotFound(message);
+    return Status::FromNative(StatusCode::NotFound,
+                              {NativeErrorDomain::Win32, code}, message);
   }
-  if (code == ERROR_BAD_EXE_FORMAT) return Status::InvalidArgument(message);
-  if (code == ERROR_ACCESS_DENIED) return Status::PermissionDenied(message);
+  if (code == ERROR_BAD_EXE_FORMAT)
+    return Status::FromNative(StatusCode::InvalidArgument,
+                              {NativeErrorDomain::Win32, code}, message);
+  if (code == ERROR_ACCESS_DENIED)
+    return Status::FromNative(StatusCode::PermissionDenied,
+                              {NativeErrorDomain::Win32, code}, message);
   if (code == ERROR_NOT_ENOUGH_MEMORY || code == ERROR_OUTOFMEMORY) {
-    return Status::ResourceExhausted(message);
+    return Status::FromNative(StatusCode::ResourceExhausted,
+                              {NativeErrorDomain::Win32, code}, message);
   }
-  return Status::Unavailable(message);
+  return Status::FromNative(StatusCode::Unavailable,
+                            {NativeErrorDomain::Win32, code}, message);
 }
 
 struct WideString {

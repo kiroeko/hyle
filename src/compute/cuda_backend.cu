@@ -33,7 +33,8 @@
 namespace hyle::compute {
 namespace {
 
-Status native_failure(StatusCode code, const char* domain, const char* operation,
+Status native_failure(StatusCode code, NativeErrorDomain native_domain,
+                      const char* domain, const char* operation,
                       const char* name, int value,
                       const char* description) noexcept {
   const char* op = operation != nullptr ? operation : "unknown operation";
@@ -46,7 +47,7 @@ Status native_failure(StatusCode code, const char* domain, const char* operation
     std::snprintf(message, sizeof(message), "%s %s failed: %s (%d)", domain,
                   op, error_name, value);
   }
-  return Status(code, message);
+  return Status::FromNative(code, {native_domain, value}, message);
 }
 
 // Translate a cudaError_t (external boundary failure) into a HYLE Status. Uses the
@@ -74,7 +75,8 @@ Status from_cuda(cudaError_t e, const char* what) noexcept {
     default:
       break;
   }
-  return native_failure(code, "cuda", what, cudaGetErrorName(e),
+  return native_failure(code, NativeErrorDomain::CudaRuntime, "cuda", what,
+                        cudaGetErrorName(e),
                         static_cast<int>(e), cudaGetErrorString(e));
 }
 
@@ -356,8 +358,8 @@ Status from_cu(CUresult r, const char* what) noexcept {
   if (r == CUDA_ERROR_NOT_SUPPORTED) code = StatusCode::Unimplemented;
   if (r == CUDA_ERROR_INVALID_VALUE || r == CUDA_ERROR_INVALID_DEVICE)
     code = StatusCode::InvalidArgument;
-  return native_failure(code, "cuda-driver", what, name, static_cast<int>(r),
-                        msg);
+  return native_failure(code, NativeErrorDomain::CudaDriver, "cuda-driver",
+                        what, name, static_cast<int>(r), msg);
 }
 
 // A pool is one of these two, tagged so pool_is_vmm / dispatch can tell them apart.
@@ -621,8 +623,8 @@ Status from_nvrtc(nvrtcResult r, const char* what) noexcept {
   if (r == NVRTC_ERROR_INVALID_INPUT || r == NVRTC_ERROR_INVALID_OPTION ||
       r == NVRTC_ERROR_INVALID_PROGRAM)
     code = StatusCode::InvalidArgument;
-  return native_failure(code, "nvrtc", what, nvrtcGetErrorString(r),
-                        static_cast<int>(r), nullptr);
+  return native_failure(code, NativeErrorDomain::Nvrtc, "nvrtc", what,
+                        nvrtcGetErrorString(r), static_cast<int>(r), nullptr);
 }
 
 // In-process PTX compile cache: hash(source) ^ arch -> PTX. Avoids recompiling the

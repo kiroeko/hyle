@@ -130,29 +130,40 @@ Status win32_fs_status(const char* operation, DWORD code) noexcept {
                 static_cast<unsigned long>(code), length == 0 ? "" : ": ",
                 length == 0 ? "" : description);
   if (code == ERROR_FILE_NOT_FOUND || code == ERROR_PATH_NOT_FOUND) {
-    return Status::NotFound(message);
+    return Status::FromNative(StatusCode::NotFound,
+                              {NativeErrorDomain::Win32, code}, message);
   }
   if (code == ERROR_ACCESS_DENIED || code == ERROR_PRIVILEGE_NOT_HELD ||
       code == ERROR_SHARING_VIOLATION || code == ERROR_WRITE_PROTECT) {
-    return Status::PermissionDenied(message);
+    return Status::FromNative(StatusCode::PermissionDenied,
+                              {NativeErrorDomain::Win32, code}, message);
   }
   if (code == ERROR_ALREADY_EXISTS || code == ERROR_FILE_EXISTS) {
-    return Status::AlreadyExists(message);
+    return Status::FromNative(StatusCode::AlreadyExists,
+                              {NativeErrorDomain::Win32, code}, message);
   }
   if (code == ERROR_DISK_FULL || code == ERROR_HANDLE_DISK_FULL ||
       code == ERROR_NOT_ENOUGH_MEMORY || code == ERROR_OUTOFMEMORY ||
       code == ERROR_TOO_MANY_OPEN_FILES) {
-    return Status::ResourceExhausted(message);
+    return Status::FromNative(StatusCode::ResourceExhausted,
+                              {NativeErrorDomain::Win32, code}, message);
   }
-  if (code == ERROR_INVALID_HANDLE) return Status::FailedPrecondition(message);
+  if (code == ERROR_INVALID_HANDLE)
+    return Status::FromNative(StatusCode::FailedPrecondition,
+                              {NativeErrorDomain::Win32, code}, message);
   if (code == ERROR_INVALID_PARAMETER || code == ERROR_INVALID_NAME) {
-    return Status::InvalidArgument(message);
+    return Status::FromNative(StatusCode::InvalidArgument,
+                              {NativeErrorDomain::Win32, code}, message);
   }
-  if (code == ERROR_FILENAME_EXCED_RANGE) return Status::OutOfRange(message);
+  if (code == ERROR_FILENAME_EXCED_RANGE)
+    return Status::FromNative(StatusCode::OutOfRange,
+                              {NativeErrorDomain::Win32, code}, message);
   if (code == ERROR_NOT_SUPPORTED || code == ERROR_CALL_NOT_IMPLEMENTED) {
-    return Status::Unimplemented(message);
+    return Status::FromNative(StatusCode::Unimplemented,
+                              {NativeErrorDomain::Win32, code}, message);
   }
-  return Status::Unavailable(message);
+  return Status::FromNative(StatusCode::Unavailable,
+                            {NativeErrorDomain::Win32, code}, message);
 }
 
 // UTF-8 const char* -> UTF-16, with a stack buffer and heap fallback for long
@@ -1091,11 +1102,15 @@ Status posix_fs_status(const char* operation, int code) noexcept {
                 detail == nullptr ? "" : detail);
   // The error module owns the generic errno taxonomy. Filesystem operations
   // override only the cases whose path contract is more specific.
-  if (code == ENOTDIR) return Status::NotFound(message);
+  if (code == ENOTDIR)
+    return Status::FromNative(StatusCode::NotFound,
+                              {NativeErrorDomain::PosixErrno, code}, message);
   if (code == ENAMETOOLONG || code == EFBIG || code == EOVERFLOW) {
-    return Status::OutOfRange(message);
+    return Status::FromNative(StatusCode::OutOfRange,
+                              {NativeErrorDomain::PosixErrno, code}, message);
   }
-  return Status(status_code_from_errno(code), message);
+  return Status::FromNative(status_code_from_errno(code),
+                            {NativeErrorDomain::PosixErrno, code}, message);
 }
 
 FileType file_type_from_mode(mode_t mode) noexcept {

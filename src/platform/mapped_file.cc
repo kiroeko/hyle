@@ -55,18 +55,26 @@ Status win32_mapping_error(const char* operation, DWORD code) noexcept {
                 win32_mapping_error_name(code), static_cast<unsigned long>(code),
                 length == 0 ? "" : ": ", length == 0 ? "" : description);
   if (code == ERROR_FILE_NOT_FOUND || code == ERROR_PATH_NOT_FOUND) {
-    return Status::NotFound(message);
+    return Status::FromNative(StatusCode::NotFound,
+                              {NativeErrorDomain::Win32, code}, message);
   }
   if (code == ERROR_ACCESS_DENIED || code == ERROR_PRIVILEGE_NOT_HELD) {
-    return Status::PermissionDenied(message);
+    return Status::FromNative(StatusCode::PermissionDenied,
+                              {NativeErrorDomain::Win32, code}, message);
   }
   if (code == ERROR_NOT_ENOUGH_MEMORY || code == ERROR_OUTOFMEMORY ||
       code == ERROR_WORKING_SET_QUOTA) {
-    return Status::ResourceExhausted(message);
+    return Status::FromNative(StatusCode::ResourceExhausted,
+                              {NativeErrorDomain::Win32, code}, message);
   }
-  if (code == ERROR_INVALID_PARAMETER) return Status::InvalidArgument(message);
-  if (code == ERROR_NOT_LOCKED) return Status::FailedPrecondition(message);
-  return Status::Unavailable(message);
+  if (code == ERROR_INVALID_PARAMETER)
+    return Status::FromNative(StatusCode::InvalidArgument,
+                              {NativeErrorDomain::Win32, code}, message);
+  if (code == ERROR_NOT_LOCKED)
+    return Status::FromNative(StatusCode::FailedPrecondition,
+                              {NativeErrorDomain::Win32, code}, message);
+  return Status::FromNative(StatusCode::Unavailable,
+                            {NativeErrorDomain::Win32, code}, message);
 }
 
 // UTF-8 -> UTF-16 for CreateFileW. Dynamically sized so conversion itself does
@@ -344,8 +352,11 @@ Status posix_mapping_error(const char* operation, int code) noexcept {
                 operation, posix_mapping_error_name(code), code,
                 detail == nullptr || detail[0] == '\0' ? "" : ": ",
                 detail == nullptr ? "" : detail);
-  if (code == ENOTDIR) return Status::NotFound(message);
-  return Status(status_code_from_errno(code), message);
+  if (code == ENOTDIR)
+    return Status::FromNative(StatusCode::NotFound,
+                              {NativeErrorDomain::PosixErrno, code}, message);
+  return Status::FromNative(status_code_from_errno(code),
+                            {NativeErrorDomain::PosixErrno, code}, message);
 }
 
 }  // namespace

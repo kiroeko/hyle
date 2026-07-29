@@ -7,7 +7,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
-#include <sstream>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -20,6 +19,8 @@
 
 using hyle::Result;
 using hyle::Status;
+using hyle::NativeError;
+using hyle::NativeErrorDomain;
 using hyle::status_code_name;
 using hyle::StatusCode;
 
@@ -40,6 +41,7 @@ TEST(Status, DefaultIsOk) {
   EXPECT_TRUE(s.IsOk());
   EXPECT_EQ(s.code(), StatusCode::Ok);
   EXPECT_FALSE(s.has_message());
+  EXPECT_FALSE(s.has_native_error());
   EXPECT_EQ(to_str(s), "OK");
 }
 
@@ -120,10 +122,6 @@ TEST(Status, IgnoreErrorIsExplicitNoOp) {
 TEST(Status, CppFormattingConvenience) {
   Status status = Status::DataLoss("bad block");
   EXPECT_EQ(hyle::to_string(status), "DataLoss: bad block");
-
-  std::ostringstream stream;
-  stream << status;
-  EXPECT_EQ(stream.str(), "DataLoss: bad block");
 
   std::string long_message(400, 'x');
   EXPECT_EQ(hyle::to_string(Status::Internal(long_message)),
@@ -209,6 +207,62 @@ TEST(Status, EveryCodeNameRoundTrips) {
 #undef HYLE_CHECK_NAME
 }
 
+TEST(Status, NativeErrorDomainNamesAreStable) {
+  EXPECT_EQ(hyle::native_error_domain_name(NativeErrorDomain::None), "None");
+  EXPECT_EQ(hyle::native_error_domain_name(NativeErrorDomain::PosixErrno),
+            "PosixErrno");
+  EXPECT_EQ(hyle::native_error_domain_name(NativeErrorDomain::Win32), "Win32");
+  EXPECT_EQ(hyle::native_error_domain_name(NativeErrorDomain::Vulkan), "Vulkan");
+  EXPECT_EQ(hyle::native_error_domain_name(NativeErrorDomain::CudaRuntime),
+            "CudaRuntime");
+  EXPECT_EQ(hyle::native_error_domain_name(NativeErrorDomain::CudaDriver),
+            "CudaDriver");
+  EXPECT_EQ(hyle::native_error_domain_name(NativeErrorDomain::Nvrtc), "Nvrtc");
+  EXPECT_EQ(hyle::native_error_domain_name(
+                static_cast<NativeErrorDomain>(1234)),
+            "Unknown");
+}
+
+TEST(Status, NativeErrorIsOptionalStructuredDetail) {
+  Status status = Status::FromNative(
+      StatusCode::Unavailable, {NativeErrorDomain::Vulkan, -4}, "device lost");
+  EXPECT_TRUE(status.IsUnavailable());
+  EXPECT_EQ(status.message(), "device lost");
+  EXPECT_EQ(status.native_error(),
+            (NativeError{NativeErrorDomain::Vulkan, -4}));
+  EXPECT_TRUE(status.has_native_error());
+  Status copy = status;
+  Status contextual = status.WithContext("submitting kernel");
+  EXPECT_EQ(copy.native_error(), status.native_error());
+  EXPECT_EQ(contextual.native_error(), status.native_error());
+  EXPECT_EQ(contextual.message(), "submitting kernel: device lost");
+  EXPECT_NE(Status::FromNative(StatusCode::Unavailable,
+                              {NativeErrorDomain::Vulkan, -5}, "device lost"),
+            status);
+}
+
+TEST(Status, NativeErrorDoesNotGrowTheCarrierOrFakeAMessage) {
+  Status detail_only = Status::FromNative(
+      StatusCode::Internal, {NativeErrorDomain::CudaRuntime, 700});
+  EXPECT_EQ(sizeof(detail_only), sizeof(void *));
+  EXPECT_FALSE(detail_only.has_message());
+  EXPECT_EQ(detail_only.native_error(),
+            (NativeError{NativeErrorDomain::CudaRuntime, 700}));
+  Status none = Status::FromNative(StatusCode::Internal,
+                                   {NativeErrorDomain::None, 99}, "message");
+  EXPECT_EQ(none.native_error(), NativeError{});
+  EXPECT_TRUE(Status::FromNative(StatusCode::Ok,
+                                {NativeErrorDomain::Vulkan, -1}, "ignored")
+                  .ok());
+}
+
+TEST(Status, InvalidNativeDomainNormalizesToUnknown) {
+  Status status = Status::FromNative(
+      StatusCode::Internal, {static_cast<NativeErrorDomain>(1234), 77});
+  EXPECT_EQ(status.native_error(),
+            (NativeError{NativeErrorDomain::Unknown, 77}));
+}
+
 TEST(Status, EveryFactoryAndPredicateAgree) {
   // For each code, the factory must produce a status whose matching predicate
   // is true and whose code/name line up.
@@ -245,10 +299,14 @@ TEST(Status, ErrnoFactoryUsesOneNativeMessageAndContext) {
   EXPECT_TRUE(missing.has_message());
   EXPECT_EQ(missing.message().find("opening model: "), 0u);
   EXPECT_GT(missing.message().size(), std::strlen("opening model: "));
+  EXPECT_EQ(missing.native_error(),
+            (NativeError{NativeErrorDomain::PosixErrno, ENOENT}));
 
   Status code_only = hyle::status_from_errno(ENOENT, "");
   EXPECT_TRUE(code_only.IsNotFound());
   EXPECT_TRUE(code_only.has_message());
+  EXPECT_EQ(code_only.native_error(),
+            (NativeError{NativeErrorDomain::PosixErrno, ENOENT}));
 }
 
 #if defined(HYLE_TESTING)
@@ -316,6 +374,12 @@ TEST(Result, HoldsError) {
   ASSERT_FALSE(r.has_value());
   EXPECT_TRUE(r.error().IsOutOfRange());
   EXPECT_EQ(r.error().message(), "nope");
+}
+
+TEST(Result, ControlledUnexpectedRejectsOkStatus) {
+  EXPECT_DEATH_IF_SUPPORTED(
+      { auto invalid = hyle::make_unexpected(Status::Ok()); (void)invalid; },
+      "");
 }
 
 TEST(Result, MonadicTransformOnValue) {
@@ -414,6 +478,14 @@ Result<int> top(int v) {
   HYLE_ASSIGN_OR_RETURN(int x, mid(v));
   return x + 1;
 }
+Result<std::string> copy_lvalue_result(Result<std::string> &source) {
+  HYLE_ASSIGN_OR_RETURN(std::string value, source);
+  return value;
+}
+Result<int> copy_lvalue_error(Result<int> &source) {
+  HYLE_ASSIGN_OR_RETURN(int value, source);
+  return value;
+}
 
 }  // namespace
 
@@ -443,6 +515,20 @@ TEST(AssignOrReturn, ReturnsSecondError) {
   Result<int> r = sum_two(1, -2);
   ASSERT_FALSE(r.has_value());
   EXPECT_TRUE(r.error().IsInvalidArgument());
+}
+
+TEST(AssignOrReturn, DoesNotConsumeNamedLvalueResult) {
+  Result<std::string> value = std::string("kept");
+  Result<std::string> copied = copy_lvalue_result(value);
+  ASSERT_TRUE(copied.has_value());
+  EXPECT_EQ(*copied, "kept");
+  EXPECT_EQ(*value, "kept");
+  Result<int> error = hyle::make_unexpected(Status::Internal("kept error"));
+  Result<int> propagated = copy_lvalue_error(error);
+  ASSERT_FALSE(propagated.has_value());
+  EXPECT_EQ(propagated.error().message(), "kept error");
+  ASSERT_FALSE(error.has_value());
+  EXPECT_EQ(error.error().message(), "kept error");
 }
 
 // ---- edge cases toward full coverage ----------------------------------------
@@ -505,6 +591,16 @@ TEST(Status, WithContextOomPreservesExistingMessage) {
   EXPECT_EQ(outer.message(), "device lost");
   EXPECT_EQ(outer.message().data(), original);
   EXPECT_TRUE(leaf.ok());
+}
+
+TEST(Status, NativeErrorOomPreservesCanonicalCode) {
+  hyle::detail::status_test_force_oom(true);
+  Status status = Status::FromNative(
+      StatusCode::Unavailable, {NativeErrorDomain::Vulkan, -4}, "device lost");
+  hyle::detail::status_test_force_oom(false);
+  EXPECT_TRUE(status.IsUnavailable());
+  EXPECT_FALSE(status.has_message());
+  EXPECT_FALSE(status.native_error().present());
 }
 #endif
 

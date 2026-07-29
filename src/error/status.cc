@@ -26,6 +26,20 @@ std::string_view status_code_name(StatusCode code) noexcept {
   return "Unknown";
 }
 
+std::string_view native_error_domain_name(NativeErrorDomain domain) noexcept {
+  switch (domain) {
+    case NativeErrorDomain::None: return "None";
+    case NativeErrorDomain::PosixErrno: return "PosixErrno";
+    case NativeErrorDomain::Win32: return "Win32";
+    case NativeErrorDomain::Vulkan: return "Vulkan";
+    case NativeErrorDomain::CudaRuntime: return "CudaRuntime";
+    case NativeErrorDomain::CudaDriver: return "CudaDriver";
+    case NativeErrorDomain::Nvrtc: return "Nvrtc";
+    case NativeErrorDomain::Unknown: return "Unknown";
+  }
+  return "Unknown";
+}
+
 StatusCode status_code_from_errno(int error_number) noexcept {
   // Keep this mapping aligned with Abseil's mature ErrnoToStatusCode taxonomy.
   // Guard less-portable errno constants so the same TU compiles with the MSVC
@@ -218,12 +232,15 @@ namespace {
 struct StatusRep {
   StatusRepHeader header;
   StatusCode code;
+  NativeErrorDomain native_domain;
   std::uint32_t len;
   char *msg() noexcept { return reinterpret_cast<char *>(this + 1); }
   const char *msg() const noexcept {
     return reinterpret_cast<const char *>(this + 1);
   }
 };
+static_assert(sizeof(StatusRep) == 12,
+              "native domain must consume the StatusRep's former padding");
 
 static_assert(offsetof(StatusRep, header) == 0,
               "the header-inline retain path requires a stable prefix");
@@ -232,16 +249,53 @@ StatusRep *as_rep(std::uintptr_t rep) noexcept {
   return reinterpret_cast<StatusRep *>(rep);
 }
 
+#if defined(HYLE_TESTING)
+// Test-only latch. Keeping it sticky makes a multi-allocation operation such as
+// context composition deterministic until the test explicitly disables it.
+std::atomic<bool> g_force_status_oom{false};
+#endif
+
+bool force_status_oom() noexcept {
+#if defined(HYLE_TESTING)
+  return g_force_status_oom.load(std::memory_order_relaxed);
+#else
+  return false;
+#endif
+}
+
+std::uintptr_t make_status_rep(StatusCode code, NativeError native,
+                               const char *msg, std::size_t len) noexcept {
+  if (force_status_oom()) return 0;
+  native.domain = normalize_native_error_domain(native.domain);
+  const std::size_t detail_size =
+      native.present() ? sizeof(native.code) : std::size_t{0};
+  if (len > std::numeric_limits<std::uint32_t>::max() ||
+      detail_size > std::numeric_limits<std::size_t>::max() -
+                        sizeof(StatusRep) - 1 ||
+      len > std::numeric_limits<std::size_t>::max() - sizeof(StatusRep) - 1 -
+                detail_size) {
+    return 0;
+  }
+  void *mem = std::malloc(sizeof(StatusRep) + len + 1 + detail_size);
+  if (mem == nullptr) return 0;
+  auto *rep = new (mem) StatusRep{};
+  rep->header.refcount.store(1, std::memory_order_relaxed);
+  rep->code = normalize_status_code(code);
+  rep->native_domain = native.domain;
+  rep->len = static_cast<std::uint32_t>(len);
+  if (len != 0) std::memcpy(rep->msg(), msg, len);
+  rep->msg()[len] = '\0';
+  if (native.present()) {
+    std::memcpy(rep->msg() + len + 1, &native.code, sizeof(native.code));
+  }
+  const auto bits = reinterpret_cast<std::uintptr_t>(rep);
+  HYLE_FATAL_ASSERT((bits & 3) == 0);
+  return bits;
+}
+
 }  // namespace
 
 #if defined(HYLE_TESTING)
-namespace {
-// Test-only latch: next status_make_heap behaves as malloc-failure once cleared
-// by the call (or sticky until disabled). Lets tests exercise the OOM degrade
-// path without mocking the CRT.
-std::atomic<bool> g_force_status_oom{false};
-}  // namespace
-
 void status_test_force_oom(bool enable) noexcept {
   g_force_status_oom.store(enable, std::memory_order_relaxed);
 }
@@ -249,40 +303,21 @@ void status_test_force_oom(bool enable) noexcept {
 
 std::uintptr_t status_make_heap(StatusCode code, const char *msg,
                                 std::size_t len) noexcept {
-#if defined(HYLE_TESTING)
-  if (g_force_status_oom.load(std::memory_order_relaxed)) {
-    return 0;
-  }
-#endif
-  if (len > std::numeric_limits<std::uint32_t>::max() ||
-      len > std::numeric_limits<std::size_t>::max() - sizeof(StatusRep) - 1) {
-    return 0;
-  }
-  void *mem = std::malloc(sizeof(StatusRep) + len + 1);
-  // OOM while building an error message is operational, not a bug: return 0 so
-  // the caller degrades to the message-less inline encoding (charter: OOM -> a
-  // value, never abort). The error code survives; only the message is dropped.
-  if (mem == nullptr) return 0;
-  auto *rep = new (mem) StatusRep{};
-  rep->header.refcount.store(1, std::memory_order_relaxed);
-  rep->code = code;
-  rep->len = static_cast<std::uint32_t>(len);
-  if (len != 0) std::memcpy(rep->msg(), msg, len);
-  rep->msg()[len] = '\0';
-  auto bits = reinterpret_cast<std::uintptr_t>(rep);
-  // Tag invariant: malloc must return >=8-byte aligned memory so the low 2 bits
-  // stay clear (distinguishes a heap rep from the inline-code encoding). A
-  // violation means a broken platform allocator -> fail-fast.
-  HYLE_FATAL_ASSERT((bits & 3) == 0);
-  return bits;
+  return make_status_rep(code, NativeError{}, msg, len);
 }
 
-std::uintptr_t status_make_context(StatusCode code, const char *context,
+std::uintptr_t status_make_native_heap(StatusCode code, NativeError native,
+                                       const char *msg,
+                                       std::size_t len) noexcept {
+  return make_status_rep(code, native, msg, len);
+}
+
+std::uintptr_t status_make_context(StatusCode code, NativeError native,
+                                   const char *context,
                                    std::size_t context_len, const char *message,
                                    std::size_t message_len) noexcept {
-#if defined(HYLE_TESTING)
-  if (g_force_status_oom.load(std::memory_order_relaxed)) return 0;
-#endif
+  if (force_status_oom()) return 0;
+  native.domain = normalize_native_error_domain(native.domain);
   constexpr std::size_t kSeparatorLen = 2;
   const std::size_t separator_len = message_len == 0 ? 0 : kSeparatorLen;
   if (context_len > std::numeric_limits<std::uint32_t>::max() ||
@@ -292,15 +327,21 @@ std::uintptr_t status_make_context(StatusCode code, const char *context,
     return 0;
   }
   const std::size_t total = context_len + separator_len + message_len;
-  if (total > std::numeric_limits<std::size_t>::max() - sizeof(StatusRep) - 1) {
+  const std::size_t detail_size =
+      native.present() ? sizeof(native.code) : std::size_t{0};
+  if (detail_size > std::numeric_limits<std::size_t>::max() -
+                        sizeof(StatusRep) - 1 ||
+      total > std::numeric_limits<std::size_t>::max() - sizeof(StatusRep) - 1 -
+                  detail_size) {
     return 0;
   }
 
-  void *mem = std::malloc(sizeof(StatusRep) + total + 1);
+  void *mem = std::malloc(sizeof(StatusRep) + total + 1 + detail_size);
   if (mem == nullptr) return 0;
   auto *rep = new (mem) StatusRep{};
   rep->header.refcount.store(1, std::memory_order_relaxed);
   rep->code = normalize_status_code(code);
+  rep->native_domain = native.domain;
   rep->len = static_cast<std::uint32_t>(total);
   char *out = rep->msg();
   std::memcpy(out, context, context_len);
@@ -312,6 +353,9 @@ std::uintptr_t status_make_context(StatusCode code, const char *context,
     std::memcpy(out + context_len + separator_len, message, message_len);
   }
   out[total] = '\0';
+  if (native.present()) {
+    std::memcpy(out + total + 1, &native.code, sizeof(native.code));
+  }
   const auto bits = reinterpret_cast<std::uintptr_t>(rep);
   HYLE_FATAL_ASSERT((bits & 3) == 0);
   return bits;
@@ -332,6 +376,15 @@ StatusCode status_heap_code(std::uintptr_t rep) noexcept {
 std::string_view status_heap_message(std::uintptr_t rep) noexcept {
   const StatusRep *r = as_rep(rep);
   return std::string_view(r->msg(), r->len);
+}
+
+NativeError status_heap_native_error(std::uintptr_t rep) noexcept {
+  const StatusRep *r = as_rep(rep);
+  NativeError native{r->native_domain, 0};
+  if (native.present()) {
+    std::memcpy(&native.code, r->msg() + r->len + 1, sizeof(native.code));
+  }
+  return native;
 }
 
 }  // namespace detail
@@ -376,12 +429,16 @@ Status status_from_errno(int error_number, std::string_view context) noexcept {
   description[0] = '\0';
   const std::string_view native =
       describe_errno(error_number, description, sizeof(description));
+  const NativeError native_error{NativeErrorDomain::PosixErrno,
+                                 error_number};
   std::uintptr_t rep = 0;
   if (context.empty()) {
-    rep = detail::status_make_heap(code, native.data(), native.size());
+    rep = detail::status_make_native_heap(code, native_error, native.data(),
+                                          native.size());
   } else {
-    rep = detail::status_make_context(code, context.data(), context.size(),
-                                      native.data(), native.size());
+    rep = detail::status_make_context(code, native_error, context.data(),
+                                      context.size(), native.data(),
+                                      native.size());
   }
   return rep != 0 ? detail::StatusAccess::adopt(rep) : Status(code);
 }
@@ -432,14 +489,16 @@ Status Status::WithContext(std::string_view context) && noexcept {
 Status Status::WithContextSlow(std::string_view context) const & noexcept {
   const std::string_view current = message();
   const std::uintptr_t rep = detail::status_make_context(
-      code(), context.data(), context.size(), current.data(), current.size());
+      code(), native_error(), context.data(), context.size(), current.data(),
+      current.size());
   return rep == 0 ? *this : detail::StatusAccess::adopt(rep);
 }
 
 Status Status::WithContextSlow(std::string_view context) && noexcept {
   const std::string_view current = message();
   const std::uintptr_t rep = detail::status_make_context(
-      code(), context.data(), context.size(), current.data(), current.size());
+      code(), native_error(), context.data(), context.size(), current.data(),
+      current.size());
   if (rep == 0) return std::move(*this);
   Status result = detail::StatusAccess::adopt(rep);
   if (is_heap()) detail::status_release(rep_);

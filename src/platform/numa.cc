@@ -40,16 +40,22 @@ Status numa_native_status(const char* operation, DWORD code) noexcept {
                 length != 0 ? description : "unknown Windows error");
   if (code == ERROR_NOT_ENOUGH_MEMORY || code == ERROR_OUTOFMEMORY ||
       code == ERROR_COMMITMENT_LIMIT) {
-    return Status::ResourceExhausted(message);
+    return Status::FromNative(StatusCode::ResourceExhausted,
+                              {NativeErrorDomain::Win32, code}, message);
   }
-  if (code == ERROR_ACCESS_DENIED) return Status::PermissionDenied(message);
+  if (code == ERROR_ACCESS_DENIED)
+    return Status::FromNative(StatusCode::PermissionDenied,
+                              {NativeErrorDomain::Win32, code}, message);
   if (code == ERROR_NOT_SUPPORTED || code == ERROR_CALL_NOT_IMPLEMENTED) {
-    return Status::Unimplemented(message);
+    return Status::FromNative(StatusCode::Unimplemented,
+                              {NativeErrorDomain::Win32, code}, message);
   }
   if (code == ERROR_INVALID_PARAMETER || code == ERROR_INVALID_ADDRESS) {
-    return Status::InvalidArgument(message);
+    return Status::FromNative(StatusCode::InvalidArgument,
+                              {NativeErrorDomain::Win32, code}, message);
   }
-  return Status::Unavailable(message);
+  return Status::FromNative(StatusCode::Unavailable,
+                            {NativeErrorDomain::Win32, code}, message);
 }
 #elif defined(HYLE_OS_LINUX)
 Status numa_native_status(const char* operation, int code) noexcept {
@@ -65,7 +71,8 @@ Status numa_native_status(const char* operation, int code) noexcept {
   char message[288]{};
   std::snprintf(message, sizeof(message), "%s failed (errno=%d): %s", operation,
                 code, text);
-  return Status(status_code_from_errno(code), message);
+  return Status::FromNative(status_code_from_errno(code),
+                            {NativeErrorDomain::PosixErrno, code}, message);
 }
 #endif
 

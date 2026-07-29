@@ -54,6 +54,18 @@ typedef struct hyle_status {
   uintptr_t rep; /* opaque owning handle */
 } hyle_status;
 
+typedef uint16_t hyle_native_error_domain;
+enum {
+  HYLE_NATIVE_ERROR_NONE = 0,
+  HYLE_NATIVE_ERROR_POSIX_ERRNO = 1,
+  HYLE_NATIVE_ERROR_WIN32 = 2,
+  HYLE_NATIVE_ERROR_VULKAN = 3,
+  HYLE_NATIVE_ERROR_CUDA_RUNTIME = 4,
+  HYLE_NATIVE_ERROR_CUDA_DRIVER = 5,
+  HYLE_NATIVE_ERROR_NVRTC = 6,
+  HYLE_NATIVE_ERROR_UNKNOWN = UINT16_MAX
+};
+
 /* Constant zero/OK initializer. Every hyle_status passed as a destination to
  * free/move/add_context must first be initialized with this macro or returned
  * by a hyle_status_* factory. */
@@ -63,12 +75,23 @@ typedef struct hyle_status {
 HYLE_ERROR_C_API hyle_status hyle_status_ok(void);
 HYLE_ERROR_C_API hyle_status hyle_status_new(hyle_status_code code,
                                              const char *msg);
+HYLE_ERROR_C_API hyle_status hyle_status_new_n(hyle_status_code code,
+                                               const char *msg, size_t len);
+HYLE_ERROR_C_API hyle_status hyle_status_new_native(
+    hyle_status_code code, hyle_native_error_domain domain,
+    int64_t native_code, const char *msg);
+HYLE_ERROR_C_API hyle_status hyle_status_new_native_n(
+    hyle_status_code code, hyle_native_error_domain domain,
+    int64_t native_code, const char *msg, size_t len);
 /* Canonical errno adapter. errno==0 produces OK. `context` may be NULL; a
  * non-empty value is prefixed to the native CRT description. */
 HYLE_ERROR_C_API hyle_status_code hyle_status_code_from_errno(
     int error_number);
 HYLE_ERROR_C_API hyle_status hyle_status_from_errno(int error_number,
                                                     const char *context);
+HYLE_ERROR_C_API hyle_status hyle_status_from_errno_n(int error_number,
+                                                      const char *context,
+                                                      size_t context_len);
 HYLE_ERROR_C_API void hyle_status_free(hyle_status *s);
 HYLE_ERROR_C_API hyle_status hyle_status_clone(hyle_status s);
 /* dst must already hold an initialized Status. Its old value is freed before
@@ -78,6 +101,9 @@ HYLE_ERROR_C_API void hyle_status_move(hyle_status *dst, hyle_status *src);
  * the original code and message unchanged. */
 HYLE_ERROR_C_API void hyle_status_add_context(hyle_status *s,
                                               const char *context);
+HYLE_ERROR_C_API void hyle_status_add_context_n(hyle_status *s,
+                                                const char *context,
+                                                size_t context_len);
 
 /* queries */
 HYLE_ERROR_C_API int hyle_status_is_ok(hyle_status s);
@@ -85,15 +111,18 @@ HYLE_ERROR_C_API hyle_status_code hyle_status_get_code(hyle_status s);
 HYLE_ERROR_C_API int hyle_status_has_message(hyle_status s);
 HYLE_ERROR_C_API int hyle_status_equals(hyle_status a, hyle_status b);
 HYLE_ERROR_C_API const char *hyle_status_code_name(hyle_status_code code);
+HYLE_ERROR_C_API const char *hyle_native_error_domain_name(
+    hyle_native_error_domain domain);
+HYLE_ERROR_C_API int hyle_status_get_native_error(
+    hyle_status s, hyle_native_error_domain *domain, int64_t *native_code);
 HYLE_ERROR_C_API size_t hyle_status_message(hyle_status s, char *buf,
                                             size_t cap);
 HYLE_ERROR_C_API size_t hyle_status_to_string(hyle_status s, char *buf,
                                               size_t cap);
 
 /* Borrowed, NUL-terminated pointer to the message bytes, valid until this
- * status is freed/moved/cloned-over. Returns "" when there is no message (OK or
- * a message-less code). Zero-copy, no sizing round-trip -- the FFI-friendly
- * counterpart to the buffer-fill hyle_status_message above. */
+ * status is freed, moved, or changed in place. Messages created by an *_n API
+ * may contain embedded NULs; use hyle_status_message when every byte matters. */
 HYLE_ERROR_C_API const char *hyle_status_message_cstr(hyle_status s);
 
 /* ---- factories (header-inline) ---------------------------------------------
@@ -202,10 +231,10 @@ static inline int hyle_status_is_unauthenticated(hyle_status s) {
 }
 
 /* Early-return helpers for functions returning hyle_status by value. */
-#define HYLE_C_RETURN_IF_ERROR(st)                       \
-  do {                                                   \
-    hyle_status _hyle_st_ = (st);                        \
-    if (!hyle_status_is_ok(_hyle_st_)) return _hyle_st_; \
+#define HYLE_C_RETURN_IF_ERROR(st)             \
+  do {                                         \
+    hyle_status _hyle_st_ = (st);              \
+    if (_hyle_st_.rep != 0) return _hyle_st_; \
   } while (0)
 
 #ifdef __cplusplus

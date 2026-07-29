@@ -107,7 +107,9 @@ Status from_vk(VkResult r, const char* what) noexcept {
   std::snprintf(message, sizeof(message), "vulkan %s failed: %s (%d)",
                 what != nullptr ? what : "unknown operation", vk_result_name(r),
                 static_cast<int>(r));
-  return Status(code, message);
+  return Status::FromNative(
+      code, {NativeErrorDomain::Vulkan, static_cast<std::int64_t>(r)},
+      message);
 }
 
 // ---- pipeline cache 落盘 (checklist #1) --------------------------------------------

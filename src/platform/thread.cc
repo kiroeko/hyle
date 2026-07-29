@@ -162,11 +162,17 @@ Status thread_os_error(const char* operation, unsigned long code) noexcept {
                 length == 0 ? "" : description);
   if (code == ERROR_NOT_ENOUGH_MEMORY || code == ERROR_OUTOFMEMORY ||
       code == ERROR_MAX_THRDS_REACHED) {
-    return Status::ResourceExhausted(message);
+    return Status::FromNative(StatusCode::ResourceExhausted,
+                              {NativeErrorDomain::Win32, code}, message);
   }
-  if (code == ERROR_ACCESS_DENIED) return Status::PermissionDenied(message);
-  if (code == ERROR_INVALID_PARAMETER) return Status::InvalidArgument(message);
-  return Status::Internal(message);
+  if (code == ERROR_ACCESS_DENIED)
+    return Status::FromNative(StatusCode::PermissionDenied,
+                              {NativeErrorDomain::Win32, code}, message);
+  if (code == ERROR_INVALID_PARAMETER)
+    return Status::FromNative(StatusCode::InvalidArgument,
+                              {NativeErrorDomain::Win32, code}, message);
+  return Status::FromNative(StatusCode::Internal,
+                            {NativeErrorDomain::Win32, code}, message);
 }
 
 Status set_name_impl(std::string_view name,
@@ -401,13 +407,18 @@ Status thread_os_error(const char* operation, int code) noexcept {
                 text == nullptr || text[0] == '\0' ? "" : ": ",
                 text == nullptr ? "" : text);
   if (code == EAGAIN || code == ENOMEM) {
-    return Status::ResourceExhausted(message);
+    return Status::FromNative(StatusCode::ResourceExhausted,
+                              {NativeErrorDomain::PosixErrno, code}, message);
   }
-  if (code == EINVAL) return Status::InvalidArgument(message);
+  if (code == EINVAL)
+    return Status::FromNative(StatusCode::InvalidArgument,
+                              {NativeErrorDomain::PosixErrno, code}, message);
   if (code == EPERM || code == EACCES) {
-    return Status::PermissionDenied(message);
+    return Status::FromNative(StatusCode::PermissionDenied,
+                              {NativeErrorDomain::PosixErrno, code}, message);
   }
-  return Status::Internal(message);
+  return Status::FromNative(StatusCode::Internal,
+                            {NativeErrorDomain::PosixErrno, code}, message);
 }
 
 Status set_name_impl(std::string_view name) noexcept {

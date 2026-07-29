@@ -1,7 +1,8 @@
 /* Pure C consumer of include/hyle/c/error.h (close-01: no C++). */
+#include <errno.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include <errno.h>
 
 #include "hyle/c/error.h"
 
@@ -43,6 +44,16 @@ int main(void) {
     hyle_status_free(&generic);
   }
   {
+    const char bytes[] = {'a', '\0', 'b'};
+    char copied[4] = {0};
+    hyle_status binary =
+        hyle_status_new_n(HYLE_STATUS_DATA_LOSS, bytes, sizeof(bytes));
+    CHECK(hyle_status_message(binary, copied, sizeof(copied)) == sizeof(bytes));
+    CHECK(memcmp(copied, bytes, sizeof(bytes)) == 0);
+    CHECK(copied[3] == '\0');
+    hyle_status_free(&binary);
+  }
+  {
     hyle_status invalid =
         hyle_status_new((hyle_status_code)999, "foreign code");
     CHECK(hyle_status_is_unknown(invalid));
@@ -66,12 +77,44 @@ int main(void) {
           HYLE_STATUS_INVALID_ARGUMENT);
     CHECK(hyle_status_code_from_errno(ENOENT) == HYLE_STATUS_NOT_FOUND);
     hyle_status native = hyle_status_from_errno(ENOENT, "opening model");
+    hyle_native_error_domain domain = HYLE_NATIVE_ERROR_NONE;
+    int64_t native_code = 0;
     CHECK(hyle_status_is_not_found(native));
     CHECK(strncmp(hyle_status_message_cstr(native), "opening model: ", 15) ==
           0);
+    CHECK(hyle_status_get_native_error(native, &domain, &native_code));
+    CHECK(domain == HYLE_NATIVE_ERROR_POSIX_ERRNO);
+    CHECK(native_code == ENOENT);
+    hyle_status_free(&native);
+    native = hyle_status_from_errno_n(ENOENT, "open\0model", 10);
+    CHECK(hyle_status_is_not_found(native));
+    CHECK(hyle_status_message(native, NULL, 0) > 10);
     hyle_status_free(&native);
     native = hyle_status_from_errno(0, "ignored");
     CHECK(hyle_status_is_ok(native));
+    hyle_status_free(&native);
+  }
+
+  {
+    hyle_native_error_domain domain = HYLE_NATIVE_ERROR_NONE;
+    int64_t native_code = 0;
+    hyle_status native = hyle_status_new_native(
+        HYLE_STATUS_UNAVAILABLE, HYLE_NATIVE_ERROR_VULKAN, -4, "device lost");
+    CHECK(hyle_status_get_native_error(native, &domain, &native_code));
+    CHECK(domain == HYLE_NATIVE_ERROR_VULKAN && native_code == -4);
+    CHECK(strcmp(hyle_native_error_domain_name(domain), "Vulkan") == 0);
+    hyle_status_add_context_n(&native, "submit\0kernel", 13);
+    CHECK(hyle_status_get_native_error(native, &domain, &native_code));
+    CHECK(domain == HYLE_NATIVE_ERROR_VULKAN && native_code == -4);
+    hyle_status_free(&native);
+    native = hyle_status_new_native_n(
+        HYLE_STATUS_INTERNAL, (hyle_native_error_domain)1234, 77, NULL, 99);
+    CHECK(hyle_status_get_native_error(native, &domain, &native_code));
+    CHECK(domain == HYLE_NATIVE_ERROR_UNKNOWN && native_code == 77);
+    hyle_status_free(&native);
+    native = hyle_status_internal(NULL);
+    CHECK(!hyle_status_get_native_error(native, &domain, &native_code));
+    CHECK(domain == HYLE_NATIVE_ERROR_NONE && native_code == 0);
     hyle_status_free(&native);
   }
 

@@ -8,10 +8,9 @@
 //
 // The hot path is the OK path: every successful call returns Status::Ok() / a value, so
 // OK-construct + ok()-check + OK-copy must be ~free (HYLE: rep_==0, a single word). The
-// error path splits two ways HYLE optimizes that absl does NOT: a message-LESS error is a
-// pure inline code (NO heap), only a WITH-message error touches the heap (refcounted rep).
-// absl::Status ALWAYS heap-allocates a rep (even code-only) -- so HYLE's inline-code path
-// should win construct/copy on code-only errors. We measure all of it, honestly.
+// A message-less error is a pure inline code; a message-bearing error owns a
+// refcounted rep. Current Abseil also inlines code-only values. Comparison rows
+// disable Abseil's default source-location capture to keep the contract equal.
 //
 // Time/space both reported: the ns rows below + a sizeof block at the end (Status must stay
 // one word; Result<T> = max(sizeof T, 8)+align). On a time/space conflict HYLE favors TIME.
@@ -125,7 +124,8 @@ StdResult std_chain_err(int x) {
 #if defined(HYLE_BENCH_ABSL)
 absl::StatusOr<int> absl_leaf_ok(int x) { return x + 1; }
 const absl::Status& absl_prebuilt_err() {
-  static const absl::Status e = absl::NotFoundError("missing");
+  static const absl::Status e(absl::StatusCode::kNotFound, "missing",
+                              absl::SourceLocation());
   return e;
 }
 absl::StatusOr<int> absl_leaf_err(int x) {
@@ -196,7 +196,7 @@ int main() {
     });
   }
 
-  // ---- (3) code-only error construct: HYLE inline (NO heap) vs absl (ALWAYS heap) ----
+  // ---- (3) code-only error construct: both mature carriers inline this shape ----
   {
     nb::Bench b;
     b.title("error construct (code only, no message)").relative(true).batch(1).minEpochIterations(2000000);
@@ -205,8 +205,9 @@ int main() {
       nb::doNotOptimizeAway(r.has_value());
     });
 #if defined(HYLE_BENCH_ABSL)
-    b.run("absl::InvalidArgumentError(\"\")", [&] {
-      absl::Status s(absl::StatusCode::kInvalidArgument, "");  // absl still heap-allocs a rep
+    b.run("absl::Status(code,empty,no-loc)", [&] {
+      absl::Status s(absl::StatusCode::kInvalidArgument, "",
+                     absl::SourceLocation());
       nb::doNotOptimizeAway(s.ok());
     });
 #endif
@@ -222,8 +223,9 @@ int main() {
     nb::Bench b;
     b.title("error construct (with message -> heap)").relative(true).batch(1).minEpochIterations(1000000);
 #if defined(HYLE_BENCH_ABSL)
-    b.run("absl::NotFoundError(msg)", [&] {
-      absl::Status s = absl::NotFoundError(msg);
+    b.run("absl::Status(code,msg,no-loc)", [&] {
+      absl::Status s(absl::StatusCode::kNotFound, msg,
+                     absl::SourceLocation());
       nb::doNotOptimizeAway(s.ok());
     });
 #endif
@@ -237,7 +239,9 @@ int main() {
   {
     Status err_h = Status::NotFound("resource not found in shard 7");
 #if defined(HYLE_BENCH_ABSL)
-    absl::Status err_a = absl::NotFoundError("resource not found in shard 7");
+    absl::Status err_a(absl::StatusCode::kNotFound,
+                       "resource not found in shard 7",
+                       absl::SourceLocation());
 #endif
     nb::Bench b;
     b.title("heap status: copy (retain+release)").relative(true).batch(1).minEpochIterations(2000000);
@@ -257,7 +261,9 @@ int main() {
   {
     Status err_h = Status::Unavailable("device queue is unavailable");
 #if defined(HYLE_BENCH_ABSL)
-    absl::Status err_a = absl::UnavailableError("device queue is unavailable");
+    absl::Status err_a(absl::StatusCode::kUnavailable,
+                       "device queue is unavailable",
+                       absl::SourceLocation());
 #endif
     nb::Bench b;
     b.title("error context: prefix one semantic layer")
@@ -266,7 +272,9 @@ int main() {
         .minEpochIterations(500000);
 #if defined(HYLE_BENCH_ABSL)
     b.run("absl::StatusBuilder SetPrepend", [&] {
-      absl::Status s = absl::StatusBuilder(err_a).SetPrepend() << "submit work: ";
+      absl::Status s = absl::StatusBuilder(err_a, absl::SourceLocation())
+                           .SetPrepend()
+                       << "submit work: ";
       nb::doNotOptimizeAway(s.ok());
     });
 #endif
@@ -297,7 +305,9 @@ int main() {
   {
     Status err_h = Status::Unavailable("device queue is unavailable");
 #if defined(HYLE_BENCH_ABSL)
-    absl::Status err_a = absl::UnavailableError("device queue is unavailable");
+    absl::Status err_a(absl::StatusCode::kUnavailable,
+                       "device queue is unavailable",
+                       absl::SourceLocation());
 #endif
     nb::Bench b;
     b.title("error context: prefix three semantic layers")
@@ -307,11 +317,11 @@ int main() {
 #if defined(HYLE_BENCH_ABSL)
     b.run("absl::StatusBuilder SetPrepend x3", [&] {
       absl::Status s = err_a;
-      s = absl::StatusBuilder(std::move(s)).SetPrepend()
+      s = absl::StatusBuilder(std::move(s), absl::SourceLocation()).SetPrepend()
           << "dispatch batch: ";
-      s = absl::StatusBuilder(std::move(s)).SetPrepend()
+      s = absl::StatusBuilder(std::move(s), absl::SourceLocation()).SetPrepend()
           << "execute graph: ";
-      s = absl::StatusBuilder(std::move(s)).SetPrepend()
+      s = absl::StatusBuilder(std::move(s), absl::SourceLocation()).SetPrepend()
           << "serve request: ";
       nb::doNotOptimizeAway(s.ok());
     });

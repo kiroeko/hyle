@@ -22,6 +22,7 @@ using Result = std::expected<T, Status>;
 // HYLE value and could silently create the wrong error type.
 [[nodiscard]] inline std::unexpected<Status> make_unexpected(
     Status status) noexcept {
+  HYLE_FATAL_ASSERT(!status.ok());
   return std::unexpected<Status>(std::move(status));
 }
 
@@ -58,7 +59,9 @@ inline Status &&status_error(Result<void> &&result) noexcept {
 // the conversion has to be carried explicitly -- that is this type's whole job.
 class FailReturn {
  public:
-  explicit FailReturn(Status status) noexcept : status_(std::move(status)) {}
+  explicit FailReturn(Status status) noexcept : status_(std::move(status)) {
+    HYLE_FATAL_ASSERT(!status_.ok());
+  }
 
   // -> a function returning Status
   operator Status() && noexcept {
@@ -92,7 +95,8 @@ class FailReturn {
     }                                                                      \
   } while (0)
 
-// Assign the value of a Result<T> to `lhs`, or early-return its error.
+// Assign the value of a Result<T> to `lhs`, or early-return its error. An lvalue
+// expression is copied; an rvalue expression is moved.
 // `lhs` may be a declaration ("auto x") or an existing lvalue. Uses a uniquely
 // named temporary (via __COUNTER__) so multiple uses in one scope never clash.
 // Like other declaration-capable propagation macros, this expands to multiple
@@ -103,7 +107,8 @@ class FailReturn {
 #define HYLE_ASSIGN_OR_RETURN_IMPL(tmp, lhs, expr)                          \
   auto&& tmp = (expr);                                                      \
   if (HYLE_UNLIKELY(!tmp.has_value())) {                                    \
-    return ::hyle::detail::FailReturn(std::move(tmp).error());              \
+    return ::hyle::detail::FailReturn(                                      \
+        std::forward<decltype(tmp)>(tmp).error());                           \
   }                                                                         \
-  lhs = *std::move(tmp) /* operator*: has_value() already checked above, so \
-                           skip .value()'s redundant check + throw path */
+  lhs = *std::forward<decltype(tmp)>(tmp) /* operator*: has_value() already \
+      checked above, so skip .value()'s redundant check + throw path */
