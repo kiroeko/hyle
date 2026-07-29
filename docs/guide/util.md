@@ -1,8 +1,17 @@
 # util：什么情况选什么
 
 `util` 提供几种彼此独立的基础能力，不存在一个需要整体 include 的“万能工具箱”。C++ 用户
-按场景包含 `hyle/util/<capability>.h`；只有 `demangle`、Registry 和 C/FFI 面需要链接
-`hyle::util`。纯 C 的精确映射见 [`c-util.md`](./c-util.md)。
+按场景包含 `hyle/util/<capability>.h`，并链接可安装的 header-only target
+`hyle::util_core`；只有 `demangle`、Registry 和 C/FFI 面需要改为链接 `hyle::util`。
+纯 C 的精确映射见 [`c-util.md`](./c-util.md)。
+
+```cmake
+find_package(Hyle REQUIRED COMPONENTS util_core)
+target_link_libraries(my_target PRIVATE hyle::util_core)
+```
+
+源码嵌入时同样设置 `HYLE_COMPONENTS=util_core` 后链接该 target；不要靠手写 include path
+绕过组件与安装包合同。
 
 ## 先看选择表
 
@@ -32,7 +41,9 @@ close.invoke();
 
 `dismiss()` 取消动作，`invoke()` 立即执行且至多一次，`active()` 只用于本地控制流。guard 是
 `[[nodiscard]]`：必须绑定名字；临时对象会在当前语句末尾立刻执行。多个简单 cleanup 可用
-`HYLE_DEFER(...)`，按声明逆序执行。能写成拥有型 RAII 类时，仍优先 RAII 类。
+`HYLE_DEFER(...)`，按声明逆序执行。能写成拥有型 RAII 类时，仍优先 RAII 类。显式
+`invoke()` 会先消费 guard，再把 callback 异常传给调用者；析构期间 callback 抛异常则按
+ScopeGuard/Folly/Abseil 同类合同终止进程，因此析构 cleanup 通常应写成 `noexcept`。
 
 ## Ref：侵入式共享所有权
 
@@ -46,6 +57,7 @@ struct Buffer : hyle::util::RefCounted<Buffer> {
 
 auto writable = hyle::util::make_ref<Buffer>(4096);
 hyle::util::Ref<const Buffer> read_only = writable;
+auto base = hyle::util::static_pointer_cast<const Buffer>(writable);
 ```
 
 新对象从计数 1 开始：通常用 `make_ref<T>()`。已有“调用方拥有的 +1”用 `adopt_ref(ptr)`；
@@ -55,6 +67,11 @@ hyle::util::Ref<const Buffer> read_only = writable;
 在派生类实现 `destroy()` 并允许 `RefCounted<Derived>` 调用。`use_count/is_unique` 是并发快照，
 不能拿来证明“接下来仍唯一”。需要 weak reference、环检测、aliasing constructor 或对象不能
 嵌计数时，使用 `std::shared_ptr/weak_ptr` 或更贴领域的 handle。
+
+`Ref<Base>`/`Ref<Derived>` 可直接按对象地址比较、排序和放入 `std::unordered_*`；不会为了比较
+临时 retain/release。`static_pointer_cast`、`dynamic_pointer_cast`、`const_pointer_cast`
+均有 lvalue/rvalue 形状：成功的 rvalue cast 转移现有 ownership，不做额外原子往返；失败的
+dynamic rvalue cast 保留源引用，避免把一次探测变成意外释放。
 
 普通用户应让 `Ref` 自己配对单份 retain/release，不直接手调 `incref()/decref()`。单份热路与
 Boost/Folly 一样以前置条件换取最短原子指令：调用者已持有活引用且计数不会溢出。确实需要
@@ -115,7 +132,7 @@ demangler 必然可能临时分配。
 
 ## 当前分层状态
 
-本页的 header-only util-core 已按当前标准严格收口。Registry 与完整 C ABI 依赖尚未严格
-收口的 container，将在 container 之后统一复审；现有接口可测试使用，但不能据此推断其
-发布 ABI 已经冻结。这个分层避免低层 mem/container 为一个运行时 Registry 反向链接
-`hyle_util`。
+本页的 header-only util-core 已按当前标准严格收口，且作为独立 `util_core` 组件完成
+shared/static 安装包消费验证。container 已严格收口；Registry、demangle 与完整 C ABI
+仍属于下一轮独立的 util-runtime 审查，现有接口可测试使用，但不能据此推断其发布 ABI
+已经冻结。这个分层避免低层 mem/container 为一个运行时 Registry 反向链接 `hyle_util`。

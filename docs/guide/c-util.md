@@ -8,6 +8,9 @@
 `hyle_status`，发布前不承诺保留当前签名。成功的可失败调用目前会清除旧错误。
 
 当前面为 **44 个动态导出 + 2 个 header-inline 入口**。没有 api 表或版本门。
+纯 C 消费者选择 `COMPONENTS util` 并链接 `hyle::util`；只有 header-inline 的
+`hyle_util_rng_clone` / `hyle_util_cpu_relax` 本身不需要动态符号。`util_core` 组件是原生 C++
+模板/inline target，不能替代 C runtime。
 
 ## 运行期反修饰与自旋 hint
 
@@ -15,7 +18,7 @@
 |---|---|
 | `hyle_util_last_error` | 返回当前线程最近一次 util C 边界错误；不要释放 |
 | `hyle_util_demangle` | snprintf 语义反修饰；返回所需完整长度 |
-| `hyle_util_cpu_relax` | header-inline 的单次 pause/yield hint；不是同步操作 |
+| `hyle_util_cpu_relax` | header-inline 的单次自旋 hint（x86 pause、AArch64 instruction barrier）；不是同步操作 |
 
 ```c
 char name[256];
@@ -81,6 +84,8 @@ hyle_util_ref_release(ref); /* 同步调用 close_resource 一次 */
 ```
 
 一次成功 retain 必须对应一次 release。最终 release 后，任何线程都不能再访问 handle。callback 不得抛 C++ 异常穿过 C 边界。
+C handle 的 payload 本来就是 `void*`：类型转换由调用方的 C 类型系统完成，不需要也不应复制
+C++ `Ref<T>` 的模板 cast API；这不构成共享所有权能力缺口。
 
 ## 类型擦除 scope cleanup
 

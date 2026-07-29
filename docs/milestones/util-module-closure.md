@@ -1,13 +1,14 @@
 # util 两阶段严格收口
 
-## 当前状态（2026-07-25）
+## 当前状态（2026-07-29 严格回审）
 
 | 审查单元 | 当前结论 |
 |---|---|
-| `util-core`：Ref/ScopeGuard/Rng/type-name/SpinLock | ✅ 按真实使用、成熟库形状、三平台正确性与性能严格收口 |
-| `util-runtime`：Registry/demangle/当前 C adapter | 🟡 功能可用；等 container 严格收口后审 Registry 形状、共享 error 与完整 C ABI |
+| `util-core`：Ref/ScopeGuard/Rng/type-name/SpinLock | ✅ `3c32be6`：真实组件/安装消费、成熟形状、三平台正确性/TSan/性能严格收口 |
+| `util-runtime`：Registry/demangle/当前 C adapter | 🟡 container 前置已完成；仍须独立审 Registry 形状、共享 error、binary/API table 与完整 C ABI |
 
-本轮没有把目录名当成一个假节点。`util-core` 是零 HYLE 二进制依赖的公开头 seam；
+本轮没有把目录名当成一个假节点。`util-core` 是零 HYLE 二进制依赖、但有真实
+`hyle::util_core` INTERFACE component/target 的公开头 seam；
 `util-runtime` 因 Registry 依赖 container，不能在其地基未冻结时先宣布完整 util/C ABI 稳定。
 当前架构见 [`../architecture/util-design.md`](../architecture/util-design.md)，用户选型见
 [`../guide/util.md`](../guide/util.md)，三平台 n=15 证书见
@@ -15,21 +16,46 @@
 
 ### 本轮严格结论
 
+- 原本“直接 include、没有 target”的隐形层被提升为可选择/安装的 `util_core` 组件；mem、sched、
+  graph、util-runtime 的直接边由同一 component manifest 同时生成闭包和真实 target link。
+  source-independent shared/static package consumer 均只请求并使用该组件。
 - ScopeGuard 补齐 `[[nodiscard]]`、显式 `invoke()`（至多一次）和 `active()`；Ref 支持 const
-  与兼容转换赋值，保持单指针 intrusive ownership 形状。
+  与兼容转换赋值，并补异构 identity compare/hash 及标准同形 pointer casts；成功的 rvalue
+  cast 转移 ownership，失败的 dynamic rvalue cast 保留源。ScopeGuard 显式 invoke 可传播异常，
+  析构期异常 terminate，与 Abseil/Folly 的消费者形状一致。
 - Rng 成为标准 URBG，补自然 iterator shuffle 与真实熵播种的 thread-local 默认流；显式 seed
   仍可复现，安全随机明确不在范围内。
 - SpinLock 从无条件 cache-line padding 改为 oneTBB/Folly 同类紧凑 TTAS；首次 probe 不做
-  无效 RMW，指数 backoff 后 yield，AArch64 使用同类 instruction barrier。三工具链均为 1 byte。
+  无效 RMW，指数 backoff 后 yield，AArch64 使用同类 instruction barrier。一次 acquire-only
+  RMW“理论简化”令 M4 8-thread 跌到 oneTBB 约 0.47x；`3c32be6` 恢复 acquire-release 后正反序
+  与双 QoS 回到同档。三工具链均为 1 byte。
 - 下游按临界区内容而非 benchmark 名称裁决：mem LeakTracker 与 ConcurrentVector 因锁内会
-  allocate/rehash/执行用户代码改用 mutex；mem 栈池、sched、graph 的真正短临界区保留 spin。
-- util-core 逐头 self-contained；Win/Linux/M4 正确性通过，Linux TSan 覆盖 Ref/Spin/C adapter、
+  allocate/rehash/执行用户代码改用 mutex；mem 栈池与 graph 的真正短临界区保留 spin，sched
+  的泛型路径留自己的严格波次裁决。
+- util-core 逐头 self-contained；Win/Linux/M4 正确性通过，Linux TSan 覆盖 Ref/Spin、
   mem 受影响项与 ConcurrentVector，无 race。Rng/Ref/SpinLock 同合同成熟 peer 无 material LOSE；
   Linux mutex 反例保留在选择合同中。
+- mem FiberStackPool 与 graph 首错槽只在锁内转移固定状态/指针，保留 SpinLock；sched 有路径
+  在锁内 move/construct 泛型 `T`，已作为 sched 严格复审触发器登记，不越权替 sched 宣布通过。
+
+### 当前提交与验证
+
+- `5dfb74a`：建立组件、包样例与 Ref/ScopeGuard/API 修复；`e87c543`：完成 test/bench 所有权迁移；
+  `fde9b41`：Apple QoS 可复现实验；`3c32be6`：修复 ARM RMW 性能缺陷。
+- Windows MSVC 19.50、WSL GCC 14.2、AppleClang 21：逐头与 util-core tests 均 2/2；
+  installed shared/static C++ consumer 通过；mem 受影响闭包 6/6。WSL ASan/UBSan/TSan 通过。
+- 当前 n=15 证书见 [`../performance/benchmarks-util.md`](../performance/benchmarks-util.md)；M4
+  explicit interactive/utility 均执行，Darwin 未伪称硬 P/E affinity。
+
+### 代码量快照
+
+`cloc`（tracked workspace；自实现语言取 C++/C header/C/CUDA）：全库代码 **278,716**，
+自实现含测试 **135,488**，自实现不含测试 **92,909**，当前 util-core 五个实现头 **620** 行。
+测试、benchmark、样例、CMake 与文档不计入“当前模块实现”。
 
 ### 完整 util 的剩余门
 
-container 严格收口后，只续审而不重做 util-core：确认 Registry 的 key/storage/并发与 type-erasure
+container 已严格收口。完整 util 下一步只续审而不重做 util-core：确认 Registry 的 key/storage/并发与 type-erasure
 形状，裁决 demangle 是否应独立 target，把历史 `hyle_util_last_error` 迁到共享
 error/`hyle_status`，再机械验证纯 C 头、动态导出、所有权和 callback 生命周期。完成这些后，
 本任务页才可把“完整 util”标成严格收口。

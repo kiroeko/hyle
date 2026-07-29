@@ -15,7 +15,7 @@
 | [platform 实测](./benchmarks-platform.md) | **platform 2026-07-25 当前证书**（既有性能表不变；MappedFile advice/residency 按 OS-call complexity 守门） |
 | [time 实测](./benchmarks-time.md) | **time 2026-07-25 当前三平台证书**（clock / exact-ns radix TimerQueue / CommonTimeoutQueue；含 Seastar faithful baseline、order-swap 与 M4 QoS） |
 | [mem 实测](./benchmarks-mem.md) | **mem 严格证书**：既有三平台 Region/FixedPool/pool 证书有效；clean `c640072` 已补齐 shared allocator/standard-adapter/realloc 的 Win/WSL/M4 双 QoS n=15，同合同默认路径无 material LOSE |
-| [util-core 实测](./benchmarks-util.md) | **util-core 2026-07-25 三平台 n=15 证书**：Rng/Ref/SpinLock 实际形状；oneTBB 正反序；mutex 反例与适用边界 |
+| [util-core 实测](./benchmarks-util.md) | **util-core 2026-07-29 三平台 n=15 证书**：Rng/Ref/SpinLock 实际形状；oneTBB 正反序；M4 双 QoS 与 acquire-only RMW 真实回退 A/B；mutex 反例 |
 | [obs 实测](./benchmarks-obs.md) | **obs-runtime 2026-07-29 `06cec5a` 三平台 n=15 证书**：compile/runtime gate、exact-byte record/C ABI、immutable sink snapshot、fan-out 与多 producer；成熟库只作同机制对照，不作跨合同倍数宣称 |
 | [container 实测](./benchmarks-container.md) | **container 唯一当前证书**：三平台详表、新鲜度、非 SOTA、选型与复跑命令 |
 | [simd 产品 kernel](./benchmarks-simd.md) | dot/saxpy、math、dtype、gather、vendor 竞争…；**op 全量不在此** |
@@ -71,12 +71,12 @@
 | **time** TimerQueue arm/cancel/expire | 见模块证书 | (std 无) | n/a | n/a | faithful Seastar radix | 同算法同档 | Win/M4 多数 1.05–1.43x；WSL churn 顺序敏感 | ⚠️ SOTA radix；WSL reverse churn 约慢7%，禁止写全胜 |
 | **time** TimerQueue vs indexed eager heap | 见模块证书 | (std 无) | n/a | n/a | libevent/libuv shape heap | 见详表 | 约2.25–9.83x | ✅ 三平台三负载胜，cancel 复杂度 O(1) vs O(log n) |
 | **time** CommonTimeoutQueue | 见模块证书 | (std 无) | n/a | n/a | checked / naked TAILQ | 见详表 | 同合同不输；M4 naked expire 约0.78x | ⚠️ 同合同 SOTA，公开安全税 |
-| **util-core** Rng next_u64 | 1.556/1.384/2.264 (Win/Lin/M4) | mt19937_64 | 2.282/1.443/2.561 | **1.463/1.045/1.131x** | xoshiro256++ canonical/Folly 同族 | 同算法档 | 同左 | ✅ 三平台 sign WIN |
-| **util-core** Rng varying range_u64 | 2.021/1.460/2.230 | std distribution | 2.832/2.018/7.784 | **1.390/1.382/3.494x** | Lemire mapping | canonical | 同左 | ✅ 三平台 WIN |
-| **util-core** iterator shuffle | 1.159/1.255/0.824 | std::shuffle(同一 Rng) | 5.747/1.331/3.731 | **4.917/1.060/4.525x** | 同 URBG Fisher–Yates | 同左 | 同左 | ✅ 三平台 sign WIN |
-| **util-core** SpinLock 无争用 | 3.830/4.574/0.935 | std::mutex | 11.248/2.378/9.191 | 2.91/**0.52**/9.75x | oneTBB spin_mutex | 3.823/4.595/0.907 | 0.997/1.010/0.980x | ➖正反序同档；Linux mutex 反例保留 |
-| **util-core** SpinLock 2/8 threads | 9.834·59.535/7.800·48.593/1.793·4.297 | mutex（选择边界） | 15.357·62.261/37.264·38.939/高方差 | 平台翻转 | oneTBB spin_mutex | 9.766·61.646/7.688·48.451/1.772·4.187 | 约 0.98–1.04x | ➖oneTBB 正反序同档；高争用不据此选 spin |
-| **util-core** Ref fan-out 64 | 8.312/7.976/3.202 | shared_ptr | 8.248/10.779/3.211 | **1.006/1.353/1.003x** | shared_ptr ownership 原子基线 | 同左 | 同左 | ✅ Win/M4 TIE、Linux WIN；旧 MSVC 20% LOSE 已消除 |
+| **util-core** Rng next_u64 | 1.550/1.385/2.264 (Win/Lin/M4) | mt19937_64 | 2.243/1.455/2.509 | **1.451/~1.05/1.106x** | xoshiro256++ canonical/Folly 同族 | 同算法档 | 同左 | ✅ 三平台 sign WIN |
+| **util-core** Rng varying range_u64 | 2.002/1.474/2.202 | std distribution | 2.750/2.031/7.763 | **1.372/~1.38/3.520x** | Lemire mapping | canonical | 同左 | ✅ 三平台 WIN |
+| **util-core** iterator shuffle | 1.137/1.260/0.810 | std::shuffle(同一 Rng) | 5.597/1.345/3.677 | **4.858/~1.06/~4.54x** | 同 URBG Fisher–Yates | 同左 | 同左 | ✅ 三平台 sign WIN |
+| **util-core** SpinLock 无争用 | 3.758/4.570/0.904 | std::mutex | 10.991/2.379/9.190 | Win/M4 大赢、Linux mutex 更快 | oneTBB spin_mutex | 3.739/4.573/0.897 | 1.000/1.000/0.993x | ➖正反序同档；acquire-only M4 0.888x 回退已由 `3c32be6` 修复 |
+| **util-core** SpinLock 2/8 threads | 8.379·61.382/7.490·50.047/2.405·5.545 | mutex（选择边界） | 13.970·46.306/33.731·38.457/高方差 | 平台翻转 | oneTBB spin_mutex | 8.419·59.219/7.593·51.146/2.316·5.518 | 正反序约同档 | ➖M4 双 QoS 同档；高争用不据此选 spin |
+| **util-core** Ref fan-out 64 | 7.956/8.055/3.190 | shared_ptr | 8.020/10.773/3.211 | **~1.00/~1.34/~1.01x** | shared_ptr ownership 原子基线 | 同左 | 同左 | ✅ Win/M4 TIE、Linux WIN |
 | **obs** gate / preformatted view / structured / 8-producer | 2.160·42.070·38.450·93.690 / 0.910·38.970·34.500·62.950 / 1.100·23.910·23.560·124.390 (Win/Lin/M4) | (无 std log) | n/a | n/a | 同步 sink registry 机制参照 Abseil/Folly | 非同合同 | n/a | ✅ `06cec5a`：编译裁剪 O(0)、runtime gate O(1)、exact view/emit O(S)，NUL convenience O(M+S)；热路径无分配/无 mutation mutex。无同 metadata/ownership peer，故不作跨合同胜负。见 [obs](./benchmarks-obs.md) |
 | **mem** SystemAllocator churn(static/source direct) | 7.93/8.04/7.77 | malloc OS | 25/4.7/20 | 大赢 OS | 裸 mimalloc | 7.86/8.04/7.91 | **~1.00x 三平台** | ➖合并形状**平 mi SOTA**(2026-07-20 n=15) |
 | **mem** SystemAllocator churn(shared same-link) | 8.17/7.81/7.98 | malloc OS | 37.22/—/— | 平台相关 | 同一 DSO backend seam | 8.03/7.84/7.95 | **0.980/1.009/0.996** | ➖ clean `c640072` n=15：三平台默认 shared 形状无 material LOSE；M4 utility 同为 0.996 |

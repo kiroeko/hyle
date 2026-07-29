@@ -96,7 +96,10 @@ benchmark 宣称 SOTA。
 1. **core**（✅ 2026-07-29 局部复证完成）：旧 version/intrusive 证书保留；真实 SIMD/vqsort
    消费的 prefetch/assume/restrict/flatten/unroll 已补齐，并完成 Windows/WSL/Apple 受影响面复证。
 2. **build/package system**（✅ 2026-07-29）：模块归属拆分后，组件/cache/终态依赖、三种交付、双测试形状、三平台 package consumer 与 configure/incremental 性能重签完成。
-3. **util-core seam**（✅ 2026-07-25）：低层 header-only 能力及 include/link 边已收口；mem 的 SpinLock 消费已局部回验，Registry 未被提前冻结。
+3. **util-core seam**（✅ 2026-07-29，`3c32be6`）：低层 header 能力由真实
+   `hyle::util_core` INTERFACE component/target 承载；Ref/ScopeGuard 易用形状、mem/graph 消费、
+   三平台 installed consumer/TSan/n=15 与 M4 双 QoS 已复证。sched 泛型锁内构造留 sched 波次，
+   Registry 未被提前冻结。
 4. **obs**（✅ 2026-07-29）：runtime 已按新方法复证 exact-byte record、RAII/quiescent sink、compile floor 与 24-symbol C surface；trace gate 及 mem/sched/io/compute hooks 的既有证书保留。
 5. **container**（✅ 2026-07-27）：功能负空间、复杂度、争用、allocator/error/platform、C/C++ 形状、三平台/Sanitizer 与性能证书已收口。
 6. **util-runtime / 完整 util**：container 稳定后再冻结 Registry、type-erasure 与完整 C ABI，合并 util-core 的证书。
@@ -124,7 +127,7 @@ math 的处理相反：它当前不是经过独立需求设计的产品，而是
 | time | 功能/API/交付完成 | ✅ 2026-07-29 再收口；x86+ARM64 profiling/ordered pair、presampled-now C parity、44/44 C surface、三平台 shared/static probes、WSL ASan/UBSan/TSan；timer SOTA 证书继续有效 |
 | core | 功能与 compiler/cache primitive 完成 | ✅ `71dabf7` 的 IntrusiveList 证书保留；新增 prefetch/assume/restrict/flatten/unroll 已经 Win/WSL/M4 codegen、正确性和真实消费者复证后重新冻结 |
 | build/package system | 组织与三种交付形状完成 | ✅ 架构严格收口；🚧 持续门升级：all-component package/source/AArch64 与动态 exported-target consumer 已落代码，待本轮三平台及 GitHub 额度恢复后复证；focused API consumers 随各模块验收递增 |
-| util-core | 低层公开头能力完成 | ✅ 严格收口；实际使用形状、依赖边、三平台正确性/TSan/性能已签证 |
+| util-core | 低层公开头能力完成 | ✅ 2026-07-29 `5dfb74a`/`3c32be6`；独立组件、实际使用形状、三平台正确性/package/TSan/性能已签证；acquire-only ARM 真实回退已修 |
 | obs | 功能主体完成 | ✅ 2026-07-29 `4d31bcf`/`06cec5a` 严格复证；exact-byte structured producer、RAII/quiescent sink、compile-floor log + trace seam；24/24 C surface，三平台 Release/package/n=15 与 WSL sanitizer 已签证 |
 | container | 功能/API/依赖/主体性能证书完成 | ✅ 主体严格证书保留；core 语义消费者扫描将 StringInterner Apple shard spacing 64→128B，M4 correctness 与 8t normal workload 受影响项已复证 |
 | util-runtime、math、sched、io | 功能主体基本完成 | 待按新合同认证；旧 closure 是输入证据，不是自动通行证 |

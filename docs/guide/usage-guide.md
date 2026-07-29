@@ -83,7 +83,7 @@ HYLE 的构建开关分**产品/组装参数**与**benchmark 对照门**两个�
 | 选项 | 默认 | 取值 | 何时改 |
 |---|---|---|---|
 | `CMAKE_BUILD_TYPE` | `Release` | `Debug`/`Release`/`RelWithDebInfo` | 性能库默认 Release(-O3)；要符号调试用 RelWithDebInfo |
-| `HYLE_COMPONENTS` | `all` | 组件名的 `;`/`,` 列表 | 只组装所需根；支持 core/error/obs/math/platform/time/mem/simd/container/util/sched/io/compute/graph，依赖自动闭包 |
+| `HYLE_COMPONENTS` | `all` | 组件名的 `;`/`,` 列表 | 只组装所需根；支持 core/util_core/error/obs/math/platform/time/mem/simd/container/util/sched/io/compute/graph，依赖自动闭包；util_core 是无 binary artifact 的可安装 C++ target |
 | `HYLE_STATIC` | `OFF`(SHARED) | `ON`/`OFF` | 要静态链进你的二进制（无 HYLE DLL 分发）设 ON；不改变父工程 `BUILD_SHARED_LIBS` |
 | `HYLE_BUILD_TESTS` | 顶层 `ON`、嵌入 `OFF` | `ON`/`OFF` | ON 时只创建已选组件测试；`hyle_<module>_tests` 同时构建该模块 C++/C binary |
 | `HYLE_TEST_INSTRUMENTATION` | `ON` | `ON`/`OFF` | 仅 tests ON 时生效；ON 定义 `HYLE_TESTING` 以测 fault/结构诊断，OFF 运行 shipping layout/hot path 主体测试 |

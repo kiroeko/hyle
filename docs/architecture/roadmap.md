@@ -16,7 +16,7 @@
 时间分支：core/header ··▶ time-native；error ──▶ time ──▶ sched
 计算分支：{error, platform} ──▶ simd ──▶ compute；sched ──▶ compute
 图分支：  container ──▶ graph；sched ──▶ graph
-util 产品：container ──▶ util-runtime
+util 产品：container ──▶ util-runtime；util-core ··▶ util-runtime
 
 util-core ··▶ mem / sched / graph
 hyle_trace - -▶ every hyle_add_module target - -▶ one optional Tracy client
@@ -32,24 +32,25 @@ math ──▶ users（当前无生产下游）
 | 模块/目标 | PUBLIC target 依赖 | PRIVATE / 条件 target 依赖 | header-only / 跨切面 |
 |---|---|---|---|
 | `core` | — | — | 基础宏、intrusive 原语供底层头使用 |
+| `util-core` (`hyle_util_core`) | —（INTERFACE） | — | Ref/ScopeGuard/Rng/type-name/SpinLock；独立可安装组件，无 binary artifact |
 | `error` | — | — | 全库可恢复失败值根 |
 | `obs-runtime` (`hyle_obs`) | error | — | log/C ABI 产品；共享 Status；与 trace build seam 分开 |
 | `math` | —（INTERFACE） | — | 独立公开标量助手，当前无生产模块消费者 |
 | `platform` | error | — | OS/thread/VM/fs/CPU 机制；`hyle/platform.h` 宏头本身零链接 |
-| `mem` | error、platform | mimalloc | `util::SpinLock`、obs trace hook |
+| `mem` | error、platform、util-core | mimalloc | FiberStackPool 的短临界区；obs trace hook |
 | `time` | error | — | native timer 借 `core/intrusive_list`；不链接 platform/container |
 | `container` | mem | platform | 当前无 util-core 边；ConcurrentVector 的非短写临界区使用 mutex |
 | `simd` | error、platform | — | 统一错误契约由 error 提供；运行期 ISA 能力由 platform 提供 |
-| `util-runtime` (`hyle_util`) | container | — | registry 同时借 mem；其余 util headers 不依赖该二进制目标 |
-| `sched` | error、mem、container、platform | time | `util::SpinLock`、obs trace hook |
+| `util-runtime` (`hyle_util`) | container、util-core | — | registry 经 container 同时借 mem；原生头不依赖该二进制目标 |
+| `sched` | error、mem、container、platform、util-core | time | 短临界区与泛型同步路径；后者随 sched 严审；obs trace hook |
 | `io` | — | error、mem、container；有 fcontext 时 sched | obs trace hook |
 | `compute` | error、mem；有 fcontext 时 sched | platform、simd；可选 GPU/ggml 供应商 | obs trace hook |
-| `graph` | error、mem、container；有 fcontext 时 sched | — | `util::SpinLock` |
+| `graph` | error、mem、container；有 fcontext 时 sched | util-core | 首错槽短临界区 |
 
 ### 两个不能压成单节点的模块
 
-`util` 必须分层阅读。`SpinLock/cpu_relax`、`Ref`、`ScopeGuard`、RNG 与 type-name 是独立
-header-only 能力，可被低层模块直接使用；`Registry` 和 type-erased C ABI 才依赖
+`util` 必须分层阅读。`SpinLock/cpu_relax`、`Ref`、`ScopeGuard`、RNG 与 type-name 由独立
+INTERFACE component/target `hyle::util_core` 承载，可被低层模块显式依赖；`Registry` 和 type-erased C ABI 才依赖
 container/mem，因而编译出的 `hyle_util` 位于 container 之后。container 不 include
 util-core 且不链接 `hyle_util`，所以 target graph 没有 `container ↔ util` 环。新增
 util 能力时必须先判断属于哪一层，禁止让 util-core 反向 include container。
@@ -63,7 +64,8 @@ util 能力时必须先判断属于哪一层，禁止让 util-core 反向 includ
 ### 无环结论与已知收束边
 
 实际 target graph 无环。最长基础链仍是
-`error → platform → mem → container → {sched, util-runtime}`；time 从 error 分叉，simd
+`error → platform → mem → container → {sched, util-runtime}`；util-core 的 header-only 边在
+mem/sched/util-runtime/graph 汇入但不增加二进制链长度；time 从 error 分叉，simd
 汇合 error 与 platform，sched 再汇入 io/compute/graph。`math` 是当前没有生产下游的合法用户叶；它的
 存在不应因此从完整模块图消失。
 
@@ -158,7 +160,8 @@ R1 的 build/package system 是独立审查单元：CMake target 图必须准确
 source embed、`add_subdirectory`、install/`find_package`、CI/交叉编译有一致迁移路径；preset、
 toolchain 和脚本执行环境契约，文档只解释。完成它之后，R1 的 util 才审
 `SpinLock/cpu_relax`、`Ref`、`ScopeGuard`、RNG/type-name 等低层公开头的
-依赖与形状；Registry 和整个 `hyle_util` 产品必须等 container 后在 R2 完成。这是两个真实
+依赖与形状；Registry 和整个 `hyle_util` 产品必须等 container，当前该前置已经满足但完整
+util-runtime 审查尚未执行，仍在 R2 完成。这是两个真实
 构建层的门，不是对同一模块做两轮无边界复审。当前严格状态与唯一“下一模块”只见
 [`pre-release-readiness.md`](../milestones/pre-release-readiness.md)。
 

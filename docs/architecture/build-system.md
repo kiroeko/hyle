@@ -83,23 +83,25 @@ HYLE 被父工程 `add_subdirectory()` 嵌入时不创建源码分发 target，�
 `HYLE_COMPONENTS` 给出所需的产品根，CMake 计算依赖闭包，只把闭包内模块加入构建：
 
 ```text
-roots: core error obs math platform time mem simd container util sched io compute graph
+roots: core util_core error obs math platform time mem simd container util sched io compute graph
 
+util_core-> (header-only leaf)
 obs      -> error
 platform -> error
 time     -> error
-mem      -> error + platform
+mem      -> error + platform + util_core
 simd     -> error + platform
 container-> error + mem + platform
-util     -> container
-sched    -> error + platform + time + mem + container
+util     -> container + util_core
+sched    -> error + platform + time + mem + container + util_core
 io       -> error + mem + container [+ sched]
 compute  -> error + platform + mem + simd [+ sched]
-graph    -> error + mem + container [+ sched]
+graph    -> error + mem + container + util_core [+ sched]
 ```
 
-箭头右侧是 target 依赖闭包，不重复 core/util-core 纯头、只提供 OS/架构/编译器宏的
-`hyle/platform.h` 和 `hyle_trace` 横切 gate。包含 `hyle/platform.h` 只是零链接代价的编译环境
+箭头右侧是 component 解析闭包；`util_core` 虽无 binary artifact，仍是可选择、可安装并被真实
+target link 表达的 INTERFACE component，不能从图里省略。只提供 OS/架构/编译器宏的
+`hyle/platform.h` 与 `hyle_trace` 横切 gate 不作为产品 root。包含 `hyle/platform.h` 只是零链接代价的编译环境
 依赖，不等于链接 `hyle::platform`；例如 time 的 native clock 实现用它选择 OS 分支，但 time 的
 二进制闭包仍然只有 error。未设置 `HYLE_COMPONENTS` 时默认 `all`；逗号与分号都可分隔多个根。
 显式空值会失败，避免丢失的 shell/CI 变量意外触发全库与重型依赖。父工程在
