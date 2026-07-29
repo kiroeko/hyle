@@ -63,6 +63,28 @@ Shell。普通 PowerShell 直接调用缓存中的 `cl.exe` 缺少 `INCLUDE/LIB`
 不是 HYLE 丢失标准头；不过错误信息与 wrapper 易用性仍纳入本模块 guide 审核。fresh WSL/M4
 首配曾观察到 44--112s，包含 FetchContent 获取/配置，不能与上述已注入依赖的 CMake 图成本混写。
 
+## 2026-07-29 模块归属重构后的严格回审
+
+`30d3b40` 把 root/tests/bench 巨型清单下沉到各模块所有权目录后重新按产品合同审计，而不是只看
+“能编过”。本轮在 `75a8d3f` 完成以下闭环：
+
+- 显式 `-DHYLE_COMPONENTS=` 不再静默展开为 `all`；未设置仍默认全库。source-embed 父工程用普通
+  变量选择组件时，cache/GUI 现在镜像实际值，不再出现实际 `container`、cache 却写 `all`；
+- 声明时的 direct-dependency 检查保留，并新增所有模块装载后的 target property 终态审计；configure
+  contract 会故意追加一条晚期内部 link 边，证明绕过会失败；
+- GitHub Actions 连续失败的 run `30241911516` / `30381984449` 均落在 shipping-layout mem 同三条
+  测试。两条 cache 测试错误假定 runner CPU 数对应的 shard refill 恒为 1；region 测试在线程先后
+  结束时把合法 block 复用误判为并发生命期重叠。修正为容量合同和显式重叠生命周期后，同一 clean
+  source archive 在 Windows/WSL/M4 均为 16/16，WSL 单 CPU 限制下原三条也为 3/3；Windows
+  instrumented mem 仍为 4/4；
+- CI 的 shipping-layout 只构建闭包聚合 `hyle_tests`。VS 2026 稳态 no-op 从四个 module roots 的
+  约 4.44s 降为约 2.21s；Ninja 仍是一张 DAG，不虚构相同倍率；
+- Linux CI 新增 complete-source 硬门：从 clean commit 生成 zip，核对 SHA-256、commit manifest、
+  LICENSE/THIRD_PARTY_NOTICES，解包后脱离 Git checkout 构建 `hyle_core`。Windows 本地同脚本已对
+  `75a8d3f` 全链通过；
+- 当前三平台 clean/reconfigure/initial/no-op 点值已替换旧证书；no-op 为 Windows 47--48ms、WSL
+  不超过 10ms、M4 60--120ms，没有模块拆分后的常态重编或数量级回归。
+
 ## core 收口期间已经暴露的基线问题
 
 这些是进入本轮的证据，不预设最终修法：
@@ -218,14 +240,15 @@ Shell。普通 PowerShell 直接调用缓存中的 `cl.exe` 缺少 `INCLUDE/LIB`
 
 | 固定口径 | code |
 |---|---:|
-| 全库（含 docs/in-tree third_party） | 273,137 |
-| 自实现（含测试） | 133,777 |
-| 自实现（不含测试） | 91,888 |
-| build/package 实现 | 4,384 |
+| 全库（含 docs/in-tree third_party） | 274,902 |
+| 自实现（含测试） | 134,163 |
+| 自实现（不含测试） | 92,124 |
+| build/package 实现 | 5,079 |
 
-最后一项固定为 42 个自有 CMake 文件 + preset/CI + 8 个 build/fetch/setup/QEMU shell/PowerShell
-guard；不含 vendored CMake、测试源码和文档。新增两个 CMake 验收脚本分别守 package version 与
-production-shape，故相对旧 4,005 的增长属于产品构建模块，不是测试源码误计。
+最后一项固定为 77 个自有 CMake 文件 + preset/CI + 8 个 build/fetch/setup/QEMU shell/PowerShell
+guard；不含 vendored CMake、测试源码和文档。CMake 验收脚本分别守 package version、
+production-shape、component contract 与 complete-source 交付，故相对旧 4,005 的增长属于产品构建
+模块，不是测试源码误计。
 
 ## 审查顺序
 
