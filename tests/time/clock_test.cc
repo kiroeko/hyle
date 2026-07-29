@@ -442,6 +442,9 @@ TEST(Clock, ProfilingClockFallbackEqualsMonotonic) {
 }
 
 TEST(Clock, ProfilingClockTimingCalibrationIsLowCpu) {
+#if !defined(HYLE_ARCH_X64)
+  GTEST_SKIP() << "TSC timing calibration exists only on x86-64";
+#endif
   if (!force_tsc_timing_calibration_requested()) {
     GTEST_SKIP() << "fresh-process timing-fallback test only";
   }
