@@ -4,14 +4,47 @@
 
 #include <chrono>
 #include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+
+#if defined(__APPLE__)
+#include <pthread.h>
+#endif
 
 #include "hyle/time/clock.h"
 
 namespace {
 namespace nb = ankerl::nanobench;
+
+void configure_main_benchmark_thread() {
+#if defined(__APPLE__)
+  const char* requested = std::getenv("HYLE_BENCH_APPLE_QOS");
+  qos_class_t qos = QOS_CLASS_USER_INTERACTIVE;
+  const char* name = "user-interactive";
+  if (requested != nullptr && std::strcmp(requested, "utility") == 0) {
+    qos = QOS_CLASS_UTILITY;
+    name = "utility";
+  } else if (requested != nullptr &&
+             std::strcmp(requested, "interactive") != 0) {
+    std::fprintf(stderr,
+                 "hyle_time_clock_bench: HYLE_BENCH_APPLE_QOS must be "
+                 "interactive or utility (got %s)\n",
+                 requested);
+    std::abort();
+  }
+  const int result = pthread_set_qos_class_self_np(qos, 0);
+  std::fprintf(stderr,
+               "# HYLE_TIME_CLOCK_BENCH apple_main_qos=%s qos_ok=%d "
+               "affinity=unsupported\n",
+               name, result == 0 ? 1 : 0);
+  if (result != 0) std::abort();
+#endif
+}
 }
 
 int main() {
+  configure_main_benchmark_thread();
   {
     nb::Bench bench;
     bench.title("profiling span boundaries")
