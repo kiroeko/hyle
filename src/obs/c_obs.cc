@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cstring>
 #include <new>
+#include <string_view>
 #include <type_traits>
 #include <utility>
 
@@ -42,7 +43,8 @@ struct hyle_obs_sink_o {
     hyle_obs_log_record c_record{
         sizeof(hyle_obs_log_record),
         static_cast<hyle_obs_log_level>(record.level),
-        record.message,
+        record.message.data(),
+        record.message.size(),
         record.fields,
         record.field_count,
         record.file,
@@ -146,20 +148,26 @@ hyle_status hyle_obs_emit_record(int* out_emitted,
                                  const hyle_obs_log_record* record) {
   if (out_emitted != nullptr) *out_emitted = 0;
   constexpr std::size_t kRequired =
-      offsetof(hyle_obs_log_record, message) +
-      sizeof(const char*);
+      offsetof(hyle_obs_log_record, message_size) + sizeof(std::size_t);
   if (record == nullptr || record->struct_size < kRequired) {
     return steal_status(hyle::Status::InvalidArgument(
         "log record is null or has an invalid struct_size"));
   }
-  if (!valid_level(record->level, false) || record->message == nullptr) {
+  if (!valid_level(record->level, false) ||
+      (record->message == nullptr && record->message_size != 0)) {
     return steal_status(hyle::Status::InvalidArgument(
-        "log record has an invalid level or null message"));
+        "log record has an invalid level or message byte view"));
   }
+
+  const char* message = record->message != nullptr ? record->message : "";
+  const std::size_t message_size =
+      record->message_size == HYLE_OBS_NUL_TERMINATED
+          ? std::strlen(message)
+          : record->message_size;
 
   hyle::obs::LogRecord native{
       .level = static_cast<hyle::obs::LogLevel>(record->level),
-      .message = record->message,
+      .message = std::string_view(message, message_size),
   };
   if (has_member<const hyle_obs_log_field*>(
           record->struct_size, offsetof(hyle_obs_log_record, fields))) {
@@ -204,13 +212,26 @@ hyle_status hyle_obs_emit_record(int* out_emitted,
 
 hyle_status hyle_obs_log(int* out_emitted, hyle_obs_log_level level,
                          const char* message) {
-  if (out_emitted != nullptr) *out_emitted = 0;
-  if (!valid_level(level, false) || message == nullptr) {
+  if (message == nullptr) {
+    if (out_emitted != nullptr) *out_emitted = 0;
     return steal_status(hyle::Status::InvalidArgument(
-        "log level is invalid or message is null"));
+        "log message is null"));
   }
+  return hyle_obs_log_n(out_emitted, level, message, std::strlen(message));
+}
+
+hyle_status hyle_obs_log_n(int* out_emitted, hyle_obs_log_level level,
+                           const char* message, size_t message_size) {
+  if (out_emitted != nullptr) *out_emitted = 0;
+  if (!valid_level(level, false) ||
+      (message == nullptr && message_size != 0)) {
+    return steal_status(hyle::Status::InvalidArgument(
+        "log level is invalid or message byte view is invalid"));
+  }
+  if (message == nullptr) message = "";
   const bool emitted = hyle::obs::log_message(
-      static_cast<hyle::obs::LogLevel>(level), message);
+      static_cast<hyle::obs::LogLevel>(level),
+      std::string_view(message, message_size));
   if (out_emitted != nullptr) *out_emitted = emitted ? 1 : 0;
   return hyle_status{};
 }

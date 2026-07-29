@@ -211,6 +211,13 @@ int main() {
       nb::doNotOptimizeAway(result.rep);
       nb::doNotOptimizeAway(emitted);
     });
+    bench.run("C hyle_obs_log_n + Status", [] {
+      int emitted = 0;
+      hyle_status result =
+          hyle_obs_log_n(&emitted, HYLE_OBS_LOG_INFO, "ready", 5);
+      nb::doNotOptimizeAway(result.rep);
+      nb::doNotOptimizeAway(emitted);
+    });
     status = hyle_obs_sink_destroy(sink);
     if (!hyle_status_is_ok(status)) {
       hyle_status_free(&status);

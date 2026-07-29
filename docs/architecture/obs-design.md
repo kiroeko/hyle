@@ -49,7 +49,9 @@ profiler singleton，时间线与 fiber 身份被拆开。静态 HYLE 则仍用�
 
 ## 2. 日志数据流与生命周期
 
-`LogRecord` / `hyle_obs_log_record` 的字符串和字段都是同步借用：
+`LogRecord` / `hyle_obs_log_record` 的消息、字符串和字段都是同步借用。消息是
+`std::string_view` / `pointer + exact byte count`，因此已有 slice 不必复制或扫描，也能保留
+内嵌 NUL；field key/value 与可选 source 仍是 NUL 结尾字符串：
 
 ```text
 caller builds record
@@ -78,6 +80,12 @@ active refcount 与 remover waiter bit 分别位于一个原子状态字，relea
 释放 state。两代 snapshot 复用前先排空短 reader epoch，既没有无界 retired-list，也
 没有 emit 分配。
 
+C++ 默认用 move-only `SinkRegistration` 持有一次 registry membership。它的析构执行
+quiescent unregister，消除 early return/异常路径遗漏 remove 后留下悬空 callback 的风险；
+需要显式处理失败或 callback 内复杂注销时才直接使用 `add_sink/remove_sink`。RAII 对象只是
+控制面所有权，不进入每条 record，也不给 sink/record 增加常态元数据。C 侧 opaque
+`hyle_obs_sink` 继续用 create/destroy 表达相同所有权。
+
 callback 可以摘除自己。实现先把 callback/state 复制到局部变量，外部 callback
 返回后不再访问 opaque wrapper；本次 callback 的 state 仍须活到自己返回。callback
 内跨摘另一个 sink 会被拒绝：目标可能已被同一 dispatch 快照持有且尚未调用，等待
@@ -94,16 +102,24 @@ registry 采用 process-lifetime `NoDestructor`：它第一次真正使用时构
 
 默认 sink 用 stderr；只有 stderr 真连 TTY 时才输出 ANSI 色码，重定向到文件/CI
 不会污染 escape sequence。默认 sink 自带串行锁，避免多线程 record 的多个
-`fprintf` 片段互相穿插。source/message/field 中的换行、TAB、ESC 和其他 ASCII control 会
+`fprintf` 片段互相穿插。source/message/field 中的换行、TAB、NUL、ESC 和其他 ASCII control 会
 转义成可见文本，使一条 record 始终只占一个物理行，也不能借用户数据注入终端控制码。
+Windows debugger mirror 输出同一份 level/source/message/fields，并用固定 4 KiB 缓冲；过长
+记录显式写入 `...[truncated]`，不会静默截断或为诊断路径分配。
 
 ## 3. 两种日志调用面
 
-`HYLE_LOG_*` 是 C++ 便利面：宏先做一次门控，未通过时参数不求值、不进入
-`std::format`；通过后在调用方 1 KiB 栈缓冲格式化，并附 file/function/line。超长文本
+`HYLE_LOG_*` 是 C++ 便利面：调用方可在包含头之前定义
+`HYLE_OBS_COMPILED_MIN_LEVEL=0..5`，把低于编译期 floor 的调用及参数求值完全删除；保留的
+宏再做**一次** relaxed runtime 门控，未通过时参数不求值、不进入 `std::format`。通过后在
+调用方 1 KiB 栈缓冲格式化并直接 dispatch，不重复读 threshold，并附
+file/function/line。编译期 floor 是每个 translation unit 的消费策略，不是 HYLE binary
+ABI 或进程全局配置；动态 level 仍由 `set_level` 控制。并发修改 runtime level 是 eventual
+configuration：已经通过一次门控的 record 可以完成本次同步 dispatch。超长文本
 显式以 `...[truncated]` 结尾，避免静默截断；需要完整大 payload 时应直接构造 record，
 或让应用自己的日志系统管理拥有型缓冲。
-`log_record` 则适合已有结构化字段或已经格式化好的消息。
+`log_record` 则适合已有结构化字段，`log_message(std::string_view)` 适合已有 byte view；
+`const char*` 便利重载和 C 的 `hyle_obs_log` 会先扫描 NUL，长度已知时用 view / `_n` 入口。
 
 经本轮审查的 C/FFI 发布面是 `include/hyle/c/obs.h`（首发前仍可按产品需要调整，不把
 “已审查”误写成兼容承诺）：
@@ -111,10 +127,14 @@ registry 采用 process-lifetime `NoDestructor`：它第一次真正使用时构
 - POD record/field；
 - opaque sink create/destroy；
 - 普通 `extern "C"` level、emit、registry 函数；
-- header-inline 的五个 level 便利函数。
+- `hyle_obs_log_n` 与五个 `_n` header-inline helper，避免 slice 扫描并保留内嵌 NUL；
+- 五个 Status-expression `HYLE_OBS_EMIT_*` 宏，遵守同一个消费者编译期 floor；
+- 原有五个 NUL 字符串 level 便利函数。
 
 C ABI 不暴露 `std::format`、C++ reference、STL、Tracy 类型或 C++ 类布局。各语言
-在本语言侧格式化后调用 `hyle_obs_log`，或构造 POD record。
+在本语言侧格式化后调用 `hyle_obs_log_n`，或构造 POD record。`LogField` 在 C++ 面复用
+C POD 的两个 pointer 布局，只为 callback 零复制共享 record 字段；HYLE C++ 调用仍直接走
+native implementation，不绕 C ABI。
 
 可恢复失败统一返回 owning `hyle_status`：输入错误、重复/不存在、registry 满和 callback
 内跨摘分别保留共享 error taxonomy；gate/no-sink 是 OK + `out_emitted=0`。obs 不再维护
@@ -124,7 +144,27 @@ HYLE 的底层模块**不应为了证明 obs 被使用而主动打日常日志**
 日志策略，非请求输出也会污染宿主进程。下游利用发生在 trace hook；error/status
 仍是机器可读失败通道，log 是调用方主动选择的诊断通道。
 
-## 4. Trace 双面与零成本边界
+## 4. 依赖、消费者与负空间
+
+`hyle_obs` 的唯一 HYLE runtime 上游是 `hyle_error`；sink 注册的可恢复失败使用共享
+`Status/Result`。默认 stderr/debugger writer 直接拥有 TTY 和 debugger OS 交互，因为
+platform 没有此抽象、obs 与 platform 同处底层且这正是 sink 的 I/O 职责，不能为消除一个
+局部 syscall 制造 `obs -> platform` 依赖。trace gate 是 header/CMake 横切 seam，不让
+mem/sched/io/compute 反向链接 log runtime。
+
+语法消费者扫描没有发现 HYLE 生产模块调用 runtime `HYLE_LOG_*` 或注册 `LogSink`；这是
+基础库不擅自输出日志的正确负空间。语义扫描中的 util fatal diagnostic、core fatal macro
+属于不可恢复合同失败，io benchmark stats 只属于显式 benchmark 输出，均不应迁移成普通
+log。trace 的真实消费者仍是 mem/sched/io/compute。
+
+与 Abseil/Folly 对账后保留同步借用 record、同步 handler/flush、递归抑制、进程期 registry
+和作用域注册形状；没有真实消费者支持 category hierarchy、per-sink routing policy、异步
+线程/队列、文件轮转、上传、聚合/查询/告警、fatal 控制流、owning async record 或 profiler
+viewer。这些能力应在 adapter/application 层组合，不给所有基础 record 添加 category、线程
+ID、refcount 或拥有型字符串。需要时间戳、线程 ID 等 enrich 时，同步 adapter sink 可在
+复制入上层系统时补齐。
+
+## 5. Trace 双面与零成本边界
 
 原生 `HYLE_TRACE_*` 宏用于 HYLE 热路径和同工具链源码用户：
 
@@ -146,15 +186,16 @@ C/FFI runtime trace 函数必须始终存在，OFF 时是函数级 no-op。它�
 Fiber trace 名存放在 Fiber 自身的稳定进程期存储中，不能把临时字符串指针交给
 Tracy。plot/frame/pool 名同理应使用字面量或其他稳定存储。
 
-## 5. 维护硬门
+## 6. 维护硬门
 
 改日志 registry 或 C trampoline 时必须通过：
 
-1. 正常 C++ 测试 + 纯 C consumer；
+1. 正常 C++ 测试 + 编译期 floor codegen + 纯 C consumer；
 2. add/remove/log 并发压力与 remove-waits、自摘、跨摘拒绝测试；
 3. WSL ASan、UBSan、TSan；
 4. 三平台 Release gated/preformatted/formatted 基准；
-5. 动态库导出与 `include/hyle/c/obs.h` / C 测试 / guide 机械覆盖核对。
+5. 动态库导出与 `include/hyle/c/obs.h` / C 测试 / guide 机械覆盖核对；
+6. installed shared/static package 中只请求 `COMPONENTS obs` 的纯 C 与 C++ consumer。
 
 改 trace/CMake 或新增下游 hook 时必须通过：
 

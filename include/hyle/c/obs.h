@@ -39,17 +39,31 @@ typedef enum hyle_obs_log_level {
   HYLE_OBS_LOG_OFF = 5
 } hyle_obs_log_level;
 
+/* Consumer-side compile-time floor for logging convenience macros
+ * (0=TRACE ... 4=ERROR, 5=OFF). This is call-site policy, not library ABI
+ * state; direct hyle_obs_log/emit_record calls retain runtime filtering. */
+#ifndef HYLE_OBS_COMPILED_MIN_LEVEL
+#  define HYLE_OBS_COMPILED_MIN_LEVEL 0
+#endif
+#if HYLE_OBS_COMPILED_MIN_LEVEL < 0 || HYLE_OBS_COMPILED_MIN_LEVEL > 5
+#  error "HYLE_OBS_COMPILED_MIN_LEVEL must be in [0, 5]"
+#endif
+
 typedef struct hyle_obs_log_field {
   const char* key;
   const char* value;
 } hyle_obs_log_field;
 
-/* Borrowed for one synchronous emit/callback. timestamp_ns is optional Unix
- * time; 0 means absent. file/function are optional UTF-8 strings. */
+/* Borrowed for one synchronous emit/callback. message_size is an exact byte
+ * count and may preserve embedded NUL; HYLE_OBS_NUL_TERMINATED asks the checked
+ * emit adapter to call strlen. timestamp_ns is optional Unix time; 0 means
+ * absent. field/file/function strings remain NUL-terminated UTF-8. */
+#define HYLE_OBS_NUL_TERMINATED SIZE_MAX
 typedef struct hyle_obs_log_record {
   uint32_t struct_size;
   hyle_obs_log_level level;
   const char* message;
+  size_t message_size;
   const hyle_obs_log_field* fields;
   size_t field_count;
   const char* file;
@@ -59,8 +73,8 @@ typedef struct hyle_obs_log_record {
 } hyle_obs_log_record;
 
 #define HYLE_OBS_LOG_RECORD_INIT                                             \
-  { sizeof(hyle_obs_log_record), HYLE_OBS_LOG_INFO, "", NULL, 0, NULL, NULL, \
-    0, 0 }
+  { sizeof(hyle_obs_log_record), HYLE_OBS_LOG_INFO, "",                    \
+    HYLE_OBS_NUL_TERMINATED, NULL, 0, NULL, NULL, 0, 0 }
 
 typedef struct hyle_obs_sink_o hyle_obs_sink;
 typedef void (*hyle_obs_sink_write_fn)(void* state,
@@ -77,6 +91,9 @@ HYLE_OBS_C_API hyle_status hyle_obs_emit_record(
     int* out_emitted, const hyle_obs_log_record* record);
 HYLE_OBS_C_API hyle_status hyle_obs_log(
     int* out_emitted, hyle_obs_log_level level, const char* message);
+HYLE_OBS_C_API hyle_status hyle_obs_log_n(
+    int* out_emitted, hyle_obs_log_level level, const char* message,
+    size_t message_size);
 
 /* create registers immediately. destroy unregisters quiescently and is NULL
  * safe. A successful return guarantees no callback on another thread still
@@ -107,6 +124,60 @@ static inline hyle_status hyle_obs_log_warn(const char* message) {
 static inline hyle_status hyle_obs_log_error(const char* message) {
   return hyle_obs_log(NULL, HYLE_OBS_LOG_ERROR, message);
 }
+static inline hyle_status hyle_obs_log_trace_n(const char* message,
+                                               size_t message_size) {
+  return hyle_obs_log_n(NULL, HYLE_OBS_LOG_TRACE, message, message_size);
+}
+static inline hyle_status hyle_obs_log_debug_n(const char* message,
+                                               size_t message_size) {
+  return hyle_obs_log_n(NULL, HYLE_OBS_LOG_DEBUG, message, message_size);
+}
+static inline hyle_status hyle_obs_log_info_n(const char* message,
+                                              size_t message_size) {
+  return hyle_obs_log_n(NULL, HYLE_OBS_LOG_INFO, message, message_size);
+}
+static inline hyle_status hyle_obs_log_warn_n(const char* message,
+                                              size_t message_size) {
+  return hyle_obs_log_n(NULL, HYLE_OBS_LOG_WARN, message, message_size);
+}
+static inline hyle_status hyle_obs_log_error_n(const char* message,
+                                               size_t message_size) {
+  return hyle_obs_log_n(NULL, HYLE_OBS_LOG_ERROR, message, message_size);
+}
+
+/* These expression macros preserve the Status-returning C shape while
+ * removing disabled arguments at preprocessing time. An ignored OK literal
+ * optimizes away; direct functions remain available for dynamic levels. */
+#ifdef __cplusplus
+#  define HYLE_OBS_OK_LITERAL_ hyle_status{0}
+#else
+#  define HYLE_OBS_OK_LITERAL_ ((hyle_status){0})
+#endif
+#if HYLE_OBS_COMPILED_MIN_LEVEL <= 0
+#  define HYLE_OBS_EMIT_TRACE(message) hyle_obs_log_trace((message))
+#else
+#  define HYLE_OBS_EMIT_TRACE(message) HYLE_OBS_OK_LITERAL_
+#endif
+#if HYLE_OBS_COMPILED_MIN_LEVEL <= 1
+#  define HYLE_OBS_EMIT_DEBUG(message) hyle_obs_log_debug((message))
+#else
+#  define HYLE_OBS_EMIT_DEBUG(message) HYLE_OBS_OK_LITERAL_
+#endif
+#if HYLE_OBS_COMPILED_MIN_LEVEL <= 2
+#  define HYLE_OBS_EMIT_INFO(message) hyle_obs_log_info((message))
+#else
+#  define HYLE_OBS_EMIT_INFO(message) HYLE_OBS_OK_LITERAL_
+#endif
+#if HYLE_OBS_COMPILED_MIN_LEVEL <= 3
+#  define HYLE_OBS_EMIT_WARN(message) hyle_obs_log_warn((message))
+#else
+#  define HYLE_OBS_EMIT_WARN(message) HYLE_OBS_OK_LITERAL_
+#endif
+#if HYLE_OBS_COMPILED_MIN_LEVEL <= 4
+#  define HYLE_OBS_EMIT_ERROR(message) hyle_obs_log_error((message))
+#else
+#  define HYLE_OBS_EMIT_ERROR(message) HYLE_OBS_OK_LITERAL_
+#endif
 
 /* Runtime trace seam for C/FFI callers. These are no-ops when HYLE was built
  * without HYLE_TRACE. Native C++ hot paths should use hyle/obs/trace.h macros:

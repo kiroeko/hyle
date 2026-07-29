@@ -6,6 +6,7 @@ hyle_obs_emit_record
 hyle_obs_flush_sinks
 hyle_obs_get_level
 hyle_obs_log
+hyle_obs_log_n
 hyle_obs_set_default_sink_enabled
 hyle_obs_set_level
 hyle_obs_should_log

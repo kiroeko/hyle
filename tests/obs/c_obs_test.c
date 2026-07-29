@@ -38,6 +38,7 @@ struct capture {
   size_t fields;
   uint32_t line;
   uint64_t timestamp_ns;
+  size_t message_size;
   char message[64];
 };
 
@@ -52,8 +53,14 @@ static void capture_write(void* state, const hyle_obs_log_record* record) {
   capture->fields = record->field_count;
   capture->line = record->line;
   capture->timestamp_ns = record->timestamp_ns;
-  (void)snprintf(capture->message, sizeof(capture->message), "%s",
-                 record->message);
+  capture->message_size = record->message_size;
+  {
+    const size_t copy = record->message_size < sizeof(capture->message) - 1
+                            ? record->message_size
+                            : sizeof(capture->message) - 1;
+    if (copy != 0) memcpy(capture->message, record->message, copy);
+    capture->message[copy] = '\0';
+  }
 }
 
 struct self_remove {
@@ -124,6 +131,13 @@ int main(void) {
     CHECK_OK(hyle_obs_log_error("error"));
     CHECK(capture.calls == 6);
     CHECK(strcmp(capture.message, "error") == 0);
+    {
+      const char bytes[] = {'a', '\0', 'b'};
+      CHECK_OK(hyle_obs_log_n(NULL, HYLE_OBS_LOG_INFO, bytes, sizeof(bytes)));
+      CHECK(capture.message_size == sizeof(bytes));
+      CHECK(memcmp(capture.message, bytes, sizeof(bytes)) == 0);
+    }
+    CHECK(capture.calls == 7);
     CHECK(hyle_obs_flush_sinks() == 1);
     CHECK(capture.flushes == 1);
 
@@ -159,6 +173,8 @@ int main(void) {
       bad.message = NULL;
       CHECK(take_status_code(hyle_obs_emit_record(NULL, &bad)) ==
             HYLE_STATUS_INVALID_ARGUMENT);
+      bad.message_size = 0;
+      CHECK_OK(hyle_obs_emit_record(NULL, &bad));
     }
 
     CHECK_OK(hyle_obs_set_level(HYLE_OBS_LOG_OFF));
@@ -167,7 +183,7 @@ int main(void) {
       CHECK_OK(hyle_obs_log(&emitted, HYLE_OBS_LOG_ERROR, "gated"));
       CHECK(!emitted);
     }
-    CHECK(capture.calls == 7);
+    CHECK(capture.calls == 9);
     CHECK_OK(hyle_obs_sink_destroy(sink));
     CHECK_OK(hyle_obs_sink_destroy(NULL));
     CHECK(hyle_obs_sink_count() == 0);

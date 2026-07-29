@@ -35,6 +35,28 @@ if (!hyle_status_is_ok(status)) {
 }
 ```
 
+已有 slice、外语字符串或可能包含 NUL 的消息使用长度入口，避免一次 `strlen`：
+
+```c
+hyle_status status =
+    hyle_obs_log_n(&emitted, HYLE_OBS_LOG_INFO, bytes, byte_count);
+```
+
+如果发布构建希望彻底删除低等级调用，在 include 前设置 0..5 的消费者编译期 floor，并使用
+Status-expression 宏；被裁剪的表达式不会求值：
+
+```c
+#define HYLE_OBS_COMPILED_MIN_LEVEL 2 /* Info */
+#include "hyle/c/obs.h"
+
+HYLE_C_RETURN_IF_ERROR(HYLE_OBS_EMIT_DEBUG(expensive_message()));
+HYLE_C_RETURN_IF_ERROR(HYLE_OBS_EMIT_INFO("ready"));
+```
+
+这个宏只作用于当前 translation unit，不改变 binary ABI 或直接函数的 runtime gate。动态
+level 仍应调用 `hyle_obs_log[_n]`。五个 `hyle_obs_log_*_n` inline helper 则提供固定 level
+但不做编译期裁剪。
+
 `hyle_obs_set_level` 接受 TRACE..OFF；OFF 只是 threshold，不能作为 record level。
 `hyle_obs_should_log` 是无失败 query，非法 record level 直接返回 0。所有带 out parameter
 的入口先清空输出再做工作。
@@ -49,6 +71,8 @@ hyle_obs_log_field fields[] = {
 hyle_obs_log_record record = HYLE_OBS_LOG_RECORD_INIT;
 record.level = HYLE_OBS_LOG_WARN;
 record.message = "slow request";
+/* initializer 默认 message_size=HYLE_OBS_NUL_TERMINATED；长度已知时覆盖： */
+record.message_size = strlen(record.message);
 record.fields = fields;
 record.field_count = 2;
 record.file = __FILE__;
@@ -60,13 +84,17 @@ int emitted = 0;
 hyle_status status = hyle_obs_emit_record(&emitted, &record);
 ```
 
-必须用 `HYLE_OBS_LOG_RECORD_INIT` 设置 `struct_size`。库只读取 `struct_size` 已覆盖的尾字段，
-因此较短的旧布局仍可被 checked 地解释；非法大小、level、NULL message/field 会返回
-`HYLE_STATUS_INVALID_ARGUMENT`。
+必须用 `HYLE_OBS_LOG_RECORD_INIT` 设置 `struct_size`。当前 ABI 尚未发布，`struct_size` 用来
+拒绝错误/不完整布局并为未来尾扩展保留检查点，不承诺解释未经发布的旧 layout。非法大小、
+level、message byte view 或 field 会返回 `HYLE_STATUS_INVALID_ARGUMENT`。
 
-message、field key/value 是 NUL 结尾 UTF-8；file/function 可为 NULL。所有指针只在同步
-emit/callback 期间借用，库不会保存。异步 sink 必须在 callback 内复制。C/FFI 在本语言
-侧格式化后调用 `hyle_obs_log`，或直接填 POD record；C ABI 不重复一套 C++ format DSL。
+message 由 `message + message_size` 精确定界，可包含 NUL；初始化器的
+`HYLE_OBS_NUL_TERMINATED` sentinel 要求 checked adapter 执行 `strlen`。`NULL + 0` 是合法空
+消息，其他 `NULL + size` 非法。field key/value 是 NUL 结尾 UTF-8，file/function 可为 NULL。
+所有指针只在同步 emit/callback 期间借用，库不会保存。sink callback 也必须按
+`record->message_size` 复制/输出，不能用 `%s` 假定消息结尾。异步 sink 必须在 callback 内
+复制。C/FFI 在本语言侧格式化后调用 `_n`，或直接填 POD record；C ABI 不重复一套 C++
+format DSL。
 
 ## 3. Opaque sink、flush 与注销保证
 
@@ -76,7 +104,11 @@ struct writer { FILE* file; };
 static void write_record(void* state,
                          const hyle_obs_log_record* record) {
   struct writer* writer = (struct writer*)state;
-  fprintf(writer->file, "%d %s\n", (int)record->level, record->message);
+  fprintf(writer->file, "%d ", (int)record->level);
+  if (record->message_size != 0) {
+    fwrite(record->message, 1, record->message_size, writer->file);
+  }
+  fputc('\n', writer->file);
 }
 
 static void flush_writer(void* state) {
@@ -122,7 +154,8 @@ registry 入口：
 | `hyle_obs_set_default_sink_enabled` | 幂等达到目标状态，失败返回 Status |
 
 默认 stderr sink 每条写后 flush，只在 TTY 加自己的颜色，并转义 source/message/field 的控制字符，
-使每条 record 保持一个物理行。它适合最低限度诊断；高吞吐持久化请接应用 sink。
+使每条 record 保持一个物理行。Windows debugger mirror 同样转义全部 record；其固定 4 KiB
+缓冲过长时显式标记 truncation。它适合最低限度诊断；高吞吐持久化请接应用 sink。
 
 ## 4. Trace：runtime C seam
 
@@ -160,23 +193,25 @@ C runtime seam 即使关闭仍有一次 ABI 调用，所以不能宣称“关闭
 
 ## 5. 导出覆盖与仅 C++ 能力
 
-动态日志/registry 导出共 12 个：
+动态日志/registry 导出共 13 个：
 
 - `hyle_obs_set_level` / `hyle_obs_get_level` / `hyle_obs_should_log`
-- `hyle_obs_emit_record` / `hyle_obs_log`
+- `hyle_obs_emit_record` / `hyle_obs_log` / `hyle_obs_log_n`
 - `hyle_obs_sink_create` / `hyle_obs_sink_destroy`
 - `hyle_obs_sink_count` / `hyle_obs_sink_capacity` / `hyle_obs_flush_sinks`
 - `hyle_obs_default_sink_enabled` / `hyle_obs_set_default_sink_enabled`
 
 runtime trace 导出共 11 个：enabled、zone begin/end/text、plot、counter、message、frame、
-alloc、free、thread name。另有 5 个 header-inline level 便利函数。manifest、纯 C consumer
+alloc、free、thread name。合计 24 个动态入口；另有 10 个 header-inline level 便利函数和
+5 个编译期 floor 宏。manifest、纯 C consumer、focused installed-package consumer
 与 DLL/.so 导出由 `hyle_obs_c_surface_test` 机械保持一致。
 
 有意仅 C++ 的部分只有语言/编译期形状，而不是功能缺口：
 
 | C++ 面 | C/FFI 组合 |
 |---|---|
-| `std::format` + `HYLE_LOG_*` | 在调用语言格式化，再用 `hyle_obs_log` / POD record |
+| `std::format` + `HYLE_LOG_*` | 在调用语言格式化，再用 `hyle_obs_log_n` / POD record |
+| move-only `SinkRegistration` | opaque sink create/destroy 是同一 ownership；语言 RAII wrapper 可包 destroy |
 | 编译期消失的 `HYLE_TRACE_*` | runtime trace 自由函数；接受一次 ABI no-op 成本 |
 | `LogSink` 值类型 | opaque `hyle_obs_sink` 管理 trampoline 与安全注销 |
 

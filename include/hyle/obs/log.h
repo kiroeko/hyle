@@ -5,9 +5,11 @@
 #include <cstring>
 #include <format>
 #include <source_location>
+#include <string_view>
 #include <utility>
 
 #include "hyle/c/obs.h"
+#include "hyle/error/result.h"
 #include "hyle/error/status.h"
 #include "hyle/macros.h"
 #include "hyle/visibility.h"
@@ -35,11 +37,11 @@ enum class LogLevel : int {
 
 using LogField = hyle_obs_log_field;
 
-// Borrowed for the synchronous duration of log_record(). Strings are UTF-8,
-// NUL-terminated and may be null only where explicitly marked optional.
+// Borrowed for the synchronous duration of log_record(). message is a byte
+// view (embedded NUL is preserved); field strings are NUL-terminated UTF-8.
 struct LogRecord {
   LogLevel level = LogLevel::Info;
-  const char* message = "";
+  std::string_view message{};
   const LogField* fields = nullptr;
   std::size_t field_count = 0;
   const char* file = nullptr;      // optional source path
@@ -74,15 +76,53 @@ HYLE_OBS_API std::size_t sink_capacity() noexcept;
 // fan-out, to keep arbitrary sink implementations recursion-safe.
 HYLE_OBS_API std::size_t flush_sinks() noexcept;
 
+// Move-only RAII ownership of one registry membership. create() registers the
+// borrowed LogSink and returns its Status on failure; destruction unregisters
+// quiescently. The sink state must therefore be declared before (and outlive)
+// this object. Do not also remove the same sink through remove_sink().
+class HYLE_OBS_API SinkRegistration final {
+ public:
+  SinkRegistration() noexcept = default;
+  ~SinkRegistration() noexcept;
+
+  SinkRegistration(const SinkRegistration&) = delete;
+  SinkRegistration& operator=(const SinkRegistration&) = delete;
+  SinkRegistration(SinkRegistration&& other) noexcept;
+  SinkRegistration& operator=(SinkRegistration&& other) noexcept;
+
+  [[nodiscard]] static Result<SinkRegistration> create(LogSink sink) noexcept;
+
+  [[nodiscard]] bool registered() const noexcept { return registered_; }
+  [[nodiscard]] LogSink sink() const noexcept { return sink_; }
+
+  // Idempotent explicit unregister. On failure ownership is retained so the
+  // caller may retry outside a sink callback. Destruction treats such a
+  // failure as a fatal lifetime violation rather than leaving a dangling sink.
+  Status reset() noexcept;
+
+ private:
+  explicit SinkRegistration(LogSink sink) noexcept
+      : sink_(sink), registered_(true) {}
+  void reset_or_abort() noexcept;
+
+  LogSink sink_{};
+  bool registered_ = false;
+};
+
 // Global threshold. Off is valid as a threshold and silences all records.
 HYLE_OBS_API void set_level(LogLevel level) noexcept;
 HYLE_OBS_API LogLevel level() noexcept;
 HYLE_OBS_API bool should_log(LogLevel level) noexcept;
 
 // Fan out synchronously. Returns true when at least one sink received the
-// record. Contract violations (null message/field strings) fail fast.
+// record. Contract violations (null field strings) fail fast.
 HYLE_OBS_API bool log_record(const LogRecord& record) noexcept;
-HYLE_OBS_API bool log_message(LogLevel level, const char* message) noexcept;
+HYLE_OBS_API bool log_message(LogLevel level,
+                              std::string_view message) noexcept;
+inline bool log_message(LogLevel level, const char* message) noexcept {
+  HYLE_FATAL_ASSERT(message != nullptr);
+  return log_message(level, std::string_view(message));
+}
 
 // Default stderr sink (colored only when stderr is a TTY). It is installed on
 // first registry use and can be removed/re-added explicitly. Returned by value;
@@ -99,6 +139,11 @@ HYLE_OBS_API Status set_default_sink_enabled(bool enabled) noexcept;
 // capture the caller, not this template.
 namespace detail {
 
+// The caller has already passed should_log(). This remains an implementation
+// seam for the format helpers so the normal macro path pays exactly one level
+// load; direct users should call log_record().
+HYLE_OBS_API bool log_record_unchecked(const LogRecord& record) noexcept;
+
 template <class... Args>
 void log_fmt_unchecked_at(LogLevel log_level, std::source_location source,
                           std::format_string<Args...> fmt, Args&&... args) {
@@ -114,12 +159,13 @@ void log_fmt_unchecked_at(LogLevel log_level, std::source_location source,
   }
   LogRecord record{
       .level = log_level,
-      .message = buffer,
+      .message = std::string_view(
+          buffer, static_cast<std::size_t>(result.out - buffer)),
       .file = source.file_name(),
       .function = source.function_name(),
       .line = source.line(),
   };
-  (void)log_record(record);
+  (void)log_record_unchecked(record);
 }
 
 }  // namespace detail
@@ -148,13 +194,33 @@ void log_fmt(LogLevel log_level, std::format_string<Args...> fmt,
           level, std::source_location::current(), __VA_ARGS__);                \
     }                                                                          \
   } while (false)
-#define HYLE_LOG_TRACE(...) \
-  HYLE_LOG_AT_(::hyle::obs::LogLevel::Trace, __VA_ARGS__)
-#define HYLE_LOG_DEBUG(...) \
-  HYLE_LOG_AT_(::hyle::obs::LogLevel::Debug, __VA_ARGS__)
-#define HYLE_LOG_INFO(...) \
-  HYLE_LOG_AT_(::hyle::obs::LogLevel::Info, __VA_ARGS__)
-#define HYLE_LOG_WARN(...) \
-  HYLE_LOG_AT_(::hyle::obs::LogLevel::Warn, __VA_ARGS__)
-#define HYLE_LOG_ERROR(...) \
-  HYLE_LOG_AT_(::hyle::obs::LogLevel::Error, __VA_ARGS__)
+#if HYLE_OBS_COMPILED_MIN_LEVEL <= 0
+#  define HYLE_LOG_TRACE(...) \
+    HYLE_LOG_AT_(::hyle::obs::LogLevel::Trace, __VA_ARGS__)
+#else
+#  define HYLE_LOG_TRACE(...) do { } while (false)
+#endif
+#if HYLE_OBS_COMPILED_MIN_LEVEL <= 1
+#  define HYLE_LOG_DEBUG(...) \
+    HYLE_LOG_AT_(::hyle::obs::LogLevel::Debug, __VA_ARGS__)
+#else
+#  define HYLE_LOG_DEBUG(...) do { } while (false)
+#endif
+#if HYLE_OBS_COMPILED_MIN_LEVEL <= 2
+#  define HYLE_LOG_INFO(...) \
+    HYLE_LOG_AT_(::hyle::obs::LogLevel::Info, __VA_ARGS__)
+#else
+#  define HYLE_LOG_INFO(...) do { } while (false)
+#endif
+#if HYLE_OBS_COMPILED_MIN_LEVEL <= 3
+#  define HYLE_LOG_WARN(...) \
+    HYLE_LOG_AT_(::hyle::obs::LogLevel::Warn, __VA_ARGS__)
+#else
+#  define HYLE_LOG_WARN(...) do { } while (false)
+#endif
+#if HYLE_OBS_COMPILED_MIN_LEVEL <= 4
+#  define HYLE_LOG_ERROR(...) \
+    HYLE_LOG_AT_(::hyle::obs::LogLevel::Error, __VA_ARGS__)
+#else
+#  define HYLE_LOG_ERROR(...) do { } while (false)
+#endif

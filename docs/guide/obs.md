@@ -10,9 +10,10 @@ profiling build 才存在的纳秒级时间线。它们都不是 error 的替代
 |---|---|---|
 | 函数失败，要让调用方分支/重试/传播 | `hyle::Status` / `hyle::Result<T>` | 这是机器可读控制流；不要靠解析日志 |
 | 调用方主动记录一条普通诊断 | `HYLE_LOG_*` | level 先门控，未通过时参数不求值；通过后捕获 source location |
-| 已有完整消息，不想再格式化 | `log_message` | 同步借用字符串，直接 fan-out |
+| 已有字符串或 byte slice，不想再格式化 | `log_message(std::string_view)` | 同步借用 exact bytes，不扫描、不复制，可保留内嵌 NUL |
 | 有字段、外部时间戳或自定义 source | `log_record` | 明确的 borrowed structured record |
-| 接进应用现有 logger/队列/文件/遥测后端 | 实现 `LogSink` | HYLE 只产出；复制、排队、轮转、上传归 sink |
+| 作用域内接进现有 logger/队列/文件/遥测 | `SinkRegistration` + `LogSink` | RAII 注销；复制、排队、轮转、上传归 sink |
+| 进程期或 callback 内特殊控制 registry | `add_sink/remove_sink` | 高级显式路径；调用方自行证明配对和 state 生命周期 |
 | 看热路径 zone、fiber、内存和 counter 时间线 | `HYLE_TRACE_*` | 默认编译期消失；开启时汇入唯一 Tracy client |
 | C/FFI 产出同样能力 | [`c-obs.md`](./c-obs.md) | POD record、opaque sink、runtime trace 映射 |
 
@@ -23,6 +24,8 @@ profiling build 才存在的纳秒级时间线。它们都不是 error 的替代
 ## 2. 普通日志
 
 ```cpp
+#include <utility>
+
 #include "hyle/obs/log.h"
 
 using hyle::obs::LogLevel;
@@ -36,6 +39,18 @@ HYLE_LOG_WARN("queue {} is {}% full", queue_name, occupancy);
 也不会进入 `std::format`。通过时使用 1 KiB 栈缓冲；过长消息以
 `...[truncated]` 结尾。大 payload 不应塞进普通日志：需要完整保留时直接构造 record，或交给
 应用拥有型日志系统。
+
+发布构建若要把低等级调用连参数求值和 obs 符号引用一起删除，在 include 之前设置每个
+translation unit 的编译期 floor：
+
+```cpp
+#define HYLE_OBS_COMPILED_MIN_LEVEL 2  // 0 Trace ... 4 Error, 5 Off
+#include "hyle/obs/log.h"
+```
+
+这不是库 target 的 ABI 选项，也不改变其他 translation unit；它只裁剪
+`HYLE_LOG_*` 宏。运行期仍用 `set_level` 动态调节剩余等级。并发收紧 level 时，已经通过
+唯一一次 relaxed gate 的 record 可以完成本次同步投递，这是配置的 eventual 语义。
 
 已有文本或结构化字段时不必绕经 format：
 
@@ -54,8 +69,10 @@ hyle::obs::LogRecord record{
 bool delivered = hyle::obs::log_record(record);
 ```
 
-record、字段和所有字符串都只在同步调用期间借用。`false` 表示被 gate 或没有 sink，
-不是错误。空 message、悬空指针、非空 `field_count` 配空 fields 等是 C++ 合同违反，会
+message 是 exact byte view；例如 `log_message(level, std::string_view(data, size))` 不需要
+NUL 结尾并保留内嵌 NUL。`const char*` 便利重载会寻找结尾 NUL。record、字段和所有字符串
+都只在同步调用期间借用。`false` 表示被 gate 或没有 sink，不是错误。悬空 view、非空
+`field_count` 配空 fields 或空 field 字符串指针等是 C++ 合同违反，会
 fail-fast；外部不可信输入应走 C ABI 的 checked Status 面。
 
 默认 sink 写 stderr。只有终端才加 HYLE 自己的 level 色码；source/message/field 中的换行、
@@ -76,16 +93,20 @@ struct Backend {
   }
 };
 
-Backend backend;
-hyle::obs::LogSink sink{&backend, &Backend::write, &Backend::flush};
-HYLE_RETURN_IF_ERROR(hyle::obs::add_sink(sink));
+Backend backend;  // 必须比 registration 先构造、后析构
+auto registration = hyle::obs::SinkRegistration::create(
+    hyle::obs::LogSink{&backend, &Backend::write, &Backend::flush});
+if (!registration) return hyle::make_unexpected(std::move(registration.error()));
 
-// ... 多线程产生日志 ...
-
+// ... 多线程产生日志；离开作用域时 quiescent unregister ...
 hyle::obs::flush_sinks();
-HYLE_RETURN_IF_ERROR(hyle::obs::remove_sink(sink));
-// remove 成功后，其他线程不可能仍在 callback 中；现在可释放 backend。
 ```
+
+`Result` 内的 registration 是 move-only，析构自动注销；`reset()` 幂等，失败时仍保留
+ownership，便于离开 callback
+后重试。不要把 state 声明在 registration 之后，不要对同一 membership 再手工
+`remove_sink`。需要进程期注册或特殊 callback 控制时才用显式 add/remove，并保证每条退出
+路径都配对。
 
 callback 由 producer 线程同步调用，可能在多个线程并发，必须 thread-safe、`noexcept`，
 也不能长期阻塞 producer。`flush` 可与 `write` 并发。需要异步行为时，sink 在 callback
@@ -96,6 +117,10 @@ callback 返回；callback 内摘除另一个 sink 会返回 `FailedPrecondition
 同一 dispatch snapshot 中等待当前线程调用。sink 内再次产生日志不会重入注册 sink 图：
 默认 stderr 仍启用时 nested record 直接落 stderr，否则报告未投递。这个规则避免诊断
 backend 递归到栈溢出。
+
+不要在一个 sink callback 内析构另一个仍注册的 `SinkRegistration`：它的 quiescent remove
+会被拒绝，而析构无法返回错误，因此按生命周期合同 fail-fast。应调用 `reset()` 获取 Status，
+并把跨 sink 注销调度到 callback 外。
 
 add/remove 是冷路径并返回共享 `Status`：空 callback、重复、缺失、容量耗尽和 callback
 跨摘可以区分。registry 固定最多 64 个 sink；emit 不分配，也不拿 mutation mutex。
@@ -133,6 +158,8 @@ trace seam，不绕经 obs C ABI。
 - 不要在库失败时“打日志然后返回成功”；失败走 error，是否记录由调用方决定。
 - 不要假设 sink callback 串行；需要串行化就在 sink 内做。
 - 不要在 callback 返回后保存 borrowed record 指针；异步 sink 必须复制。
+- 不要把 `record.message.data()` 当 C string；它按 `size()` 定界并可能包含 NUL。
+- 不要让 `SinkRegistration` 比其 callback state 活得更久，或同时手工 remove 同一 sink。
 - 不要把 obs 当信号处理器日志：mutex、stdio、format 和任意 callback 都不是 async-signal-safe。
 - 不要为每个模块创建一套 logger/category 树；已有应用 logger 时用一个 adapter sink。
 - 不要把 runtime trace no-op 宣传成关闭态零指令；只有 `HYLE_TRACE_*` 宏具有这个合同。

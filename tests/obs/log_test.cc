@@ -36,7 +36,7 @@ struct Capture {
   LogSink as_sink() { return LogSink{this, &write}; }
   static void write(void* state, const LogRecord& record) noexcept {
     static_cast<Capture*>(state)->recs.push_back(
-        {record.level, record.message});
+        {record.level, std::string(record.message)});
   }
 };
 
@@ -64,6 +64,17 @@ TEST_F(LogTest, MessageReachesSink) {
   ASSERT_EQ(cap.recs.size(), 1u);
   EXPECT_EQ(cap.recs[0].level, LogLevel::Info);
   EXPECT_EQ(cap.recs[0].msg, "hello");
+}
+
+TEST_F(LogTest, MessageViewPreservesEmbeddedNullWithoutCopy) {
+  constexpr char bytes[] = {'a', '\0', 'b'};
+  EXPECT_TRUE(log_message(LogLevel::Info,
+                          std::string_view(bytes, sizeof(bytes))));
+  ASSERT_EQ(cap.recs.size(), 1u);
+  EXPECT_EQ(cap.recs[0].msg.size(), sizeof(bytes));
+  EXPECT_EQ(cap.recs[0].msg[0], 'a');
+  EXPECT_EQ(cap.recs[0].msg[1], '\0');
+  EXPECT_EQ(cap.recs[0].msg[2], 'b');
 }
 
 TEST_F(LogTest, LevelGateDropsBelowThreshold) {
@@ -187,6 +198,31 @@ TEST_F(LogTest, MultipleSinksAllReceive) {
   EXPECT_EQ(cap.recs.size(), 1u);
   ASSERT_EQ(second.recs.size(), 1u);
   EXPECT_EQ(second.recs[0].msg, "broadcast");
+}
+
+TEST_F(LogTest, SinkRegistrationOwnsMembershipAndMoves) {
+  Capture scoped;
+  {
+    auto result = SinkRegistration::create(scoped.as_sink());
+    ASSERT_TRUE(result.has_value());
+    SinkRegistration registration = std::move(*result);
+    EXPECT_FALSE(result->registered());
+    EXPECT_TRUE(registration.registered());
+    EXPECT_TRUE(log_message(LogLevel::Info, "scoped"));
+    ASSERT_EQ(scoped.recs.size(), 1u);
+  }
+
+  EXPECT_EQ(remove_sink(scoped.as_sink()).code(),
+            hyle::StatusCode::NotFound);
+}
+
+TEST_F(LogTest, SinkRegistrationResetIsIdempotent) {
+  Capture scoped;
+  auto result = SinkRegistration::create(scoped.as_sink());
+  ASSERT_TRUE(result.has_value());
+  EXPECT_TRUE(result->reset().ok());
+  EXPECT_TRUE(result->reset().ok());
+  EXPECT_FALSE(result->registered());
 }
 
 TEST_F(LogTest, DuplicateSinkIsRejectedWithoutDuplicateDelivery) {
@@ -435,12 +471,6 @@ TEST(LogLevelValidation, OffIsThresholdOnly) {
 
 TEST(LogContracts, InvalidNativeInputsFailFast) {
   EXPECT_DEATH(set_level(static_cast<LogLevel>(99)), "");
-  EXPECT_DEATH(
-      ([] {
-        LogRecord record{.level = LogLevel::Info, .message = nullptr};
-        (void)log_record(record);
-      }()),
-      "");
   EXPECT_DEATH(
       ([] {
         LogRecord record{

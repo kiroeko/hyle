@@ -145,24 +145,88 @@ const char* level_color(LogLevel level) noexcept {
 // from injecting terminal control sequences. This is intentionally a streaming
 // transform: the default sink is an I/O path and does not need a second buffer
 // or an allocation merely to be safe.
-void write_escaped(FILE* stream, const char* text) noexcept {
-  for (const unsigned char* cursor =
-           reinterpret_cast<const unsigned char*>(text);
-       *cursor != 0; ++cursor) {
-    switch (*cursor) {
+void write_escaped(FILE* stream, std::string_view text) noexcept {
+  for (unsigned char value : text) {
+    switch (value) {
       case '\n': std::fputs("\\n", stream); break;
       case '\r': std::fputs("\\r", stream); break;
       case '\t': std::fputs("\\t", stream); break;
       default:
-        if (*cursor < 0x20 || *cursor == 0x7f) {
-          std::fprintf(stream, "\\x%02x", static_cast<unsigned>(*cursor));
+        if (value < 0x20 || value == 0x7f) {
+          std::fprintf(stream, "\\x%02x", static_cast<unsigned>(value));
         } else {
-          std::fputc(static_cast<int>(*cursor), stream);
+          std::fputc(static_cast<int>(value), stream);
         }
         break;
     }
   }
 }
+
+#if defined(HYLE_OS_WINDOWS)
+// OutputDebugStringA has no length-taking form. Mirror the same escaped logical
+// record as stderr into one bounded buffer so hostile control bytes cannot
+// forge debugger lines and the mirror does not allocate in a diagnostic path.
+class DebugLine final {
+ public:
+  void append(const char* text) noexcept {
+    while (*text != 0) append_byte(static_cast<unsigned char>(*text++));
+  }
+
+  void append_escaped(std::string_view text) noexcept {
+    constexpr char kHex[] = "0123456789abcdef";
+    for (unsigned char value : text) {
+      switch (value) {
+        case '\n': append("\\n"); break;
+        case '\r': append("\\r"); break;
+        case '\t': append("\\t"); break;
+        default:
+          if (value < 0x20 || value == 0x7f) {
+            append("\\x");
+            append_byte(static_cast<unsigned char>(kHex[value >> 4]));
+            append_byte(static_cast<unsigned char>(kHex[value & 0x0f]));
+          } else {
+            append_byte(value);
+          }
+          break;
+      }
+    }
+  }
+
+  void append_line(std::uint32_t line) noexcept {
+    char digits[16];
+    const int count = std::snprintf(digits, sizeof(digits), "%u",
+                                    static_cast<unsigned>(line));
+    if (count > 0) append(digits);
+  }
+
+  void emit() noexcept {
+    constexpr char kMarker[] = "...[truncated]\n";
+    if (!truncated_) append_byte('\n');
+    if (truncated_) {
+      constexpr std::size_t kMarkerSize = sizeof(kMarker) - 1;
+      static_assert(kMarkerSize < sizeof(bytes_));
+      size_ = sizeof(bytes_) - 1 - kMarkerSize;
+      std::memcpy(bytes_ + size_, kMarker, kMarkerSize);
+      size_ += kMarkerSize;
+    }
+    bytes_[size_] = '\0';
+    OutputDebugStringA(bytes_);
+  }
+
+ private:
+  void append_byte(unsigned char value) noexcept {
+    if (size_ + 1 < sizeof(bytes_)) {
+      bytes_[size_++] = static_cast<char>(value);
+    } else {
+      truncated_ = true;
+    }
+  }
+
+  char bytes_[4096]{};
+  std::size_t size_ = 0;
+  bool truncated_ = false;
+};
+#endif
 
 void default_write(void*, const LogRecord& record) noexcept {
   std::lock_guard<std::mutex> lock(registry().default_mutex);
@@ -188,10 +252,24 @@ void default_write(void*, const LogRecord& record) noexcept {
   std::fputc('\n', stderr);
   std::fflush(stderr);
 #if defined(HYLE_OS_WINDOWS)
-  char debug[1024];
-  int n = std::snprintf(debug, sizeof(debug), "[%s] %s\n",
-                        level_name(record.level), record.message);
-  OutputDebugStringA(n > 0 ? debug : record.message);
+  DebugLine debug;
+  debug.append("[");
+  debug.append(level_name(record.level));
+  debug.append("] ");
+  if (record.file != nullptr && record.line != 0) {
+    debug.append_escaped(record.file);
+    debug.append(":");
+    debug.append_line(record.line);
+    debug.append(" ");
+  }
+  debug.append_escaped(record.message);
+  for (std::size_t i = 0; i < record.field_count; ++i) {
+    debug.append(" ");
+    debug.append_escaped(record.fields[i].key);
+    debug.append("=");
+    debug.append_escaped(record.fields[i].value);
+  }
+  debug.emit();
 #endif
 }
 
@@ -396,6 +474,43 @@ Status remove_sink(LogSink sink) noexcept {
   return {};
 }
 
+Result<SinkRegistration> SinkRegistration::create(LogSink sink) noexcept {
+  Status status = add_sink(sink);
+  if (!status.ok()) return make_unexpected(std::move(status));
+  SinkRegistration registration(sink);
+  return registration;
+}
+
+SinkRegistration::~SinkRegistration() noexcept { reset_or_abort(); }
+
+SinkRegistration::SinkRegistration(SinkRegistration&& other) noexcept
+    : sink_(std::exchange(other.sink_, {})),
+      registered_(std::exchange(other.registered_, false)) {}
+
+SinkRegistration& SinkRegistration::operator=(
+    SinkRegistration&& other) noexcept {
+  if (this == &other) return *this;
+  reset_or_abort();
+  sink_ = std::exchange(other.sink_, {});
+  registered_ = std::exchange(other.registered_, false);
+  return *this;
+}
+
+Status SinkRegistration::reset() noexcept {
+  if (!registered_) return {};
+  Status status = remove_sink(sink_);
+  if (status.ok()) {
+    sink_ = {};
+    registered_ = false;
+  }
+  return status;
+}
+
+void SinkRegistration::reset_or_abort() noexcept {
+  Status status = reset();
+  HYLE_FATAL_ASSERT(status.ok());
+}
+
 std::size_t sink_count() noexcept {
   RegistryState& state = registry();
   std::lock_guard<std::mutex> lock(state.mutex);
@@ -444,9 +559,7 @@ bool should_log(LogLevel value) noexcept {
          static_cast<int>(value) >= static_cast<int>(threshold);
 }
 
-bool log_record(const LogRecord& record) noexcept {
-  if (!should_log(record.level)) return false;
-  HYLE_FATAL_ASSERT(record.message != nullptr);
+bool detail::log_record_unchecked(const LogRecord& record) noexcept {
   HYLE_FATAL_ASSERT(record.field_count == 0 || record.fields != nullptr);
   for (std::size_t i = 0; i < record.field_count; ++i) {
     HYLE_FATAL_ASSERT(record.fields[i].key != nullptr);
@@ -477,8 +590,15 @@ bool log_record(const LogRecord& record) noexcept {
   return count != 0;
 }
 
-bool log_message(LogLevel log_level, const char* message) noexcept {
-  return log_record(LogRecord{.level = log_level, .message = message});
+bool log_record(const LogRecord& record) noexcept {
+  if (!should_log(record.level)) return false;
+  return detail::log_record_unchecked(record);
+}
+
+bool log_message(LogLevel log_level, std::string_view message) noexcept {
+  if (!should_log(log_level)) return false;
+  const LogRecord record{.level = log_level, .message = message};
+  return detail::log_record_unchecked(record);
 }
 
 bool default_sink_enabled() noexcept {
