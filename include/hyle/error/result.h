@@ -8,6 +8,21 @@
 
 namespace hyle {
 
+namespace detail {
+
+// Invalid Result construction is a caller bug. Keep its diagnostics out of
+// every normal construction/propagation frame while preserving the loud trap.
+[[noreturn]] HYLE_NOINLINE inline void result_from_ok_abort() noexcept {
+  HYLE_FATAL_ASSERT(false && "Result error arm cannot contain OK Status");
+  HYLE_UNREACHABLE();
+}
+
+HYLE_FORCE_INLINE void require_error(const Status &status) noexcept {
+  if (HYLE_UNLIKELY(status.ok())) result_from_ok_abort();
+}
+
+}  // namespace detail
+
 // Result<T> = a value of type T or a Status error. Thin alias over C++23
 // std::expected so the monadic ops (and_then/transform/or_else) come for free.
 template <class T>
@@ -22,7 +37,7 @@ using Result = std::expected<T, Status>;
 // HYLE value and could silently create the wrong error type.
 [[nodiscard]] inline std::unexpected<Status> make_unexpected(
     Status status) noexcept {
-  HYLE_FATAL_ASSERT(!status.ok());
+  detail::require_error(status);
   return std::unexpected<Status>(std::move(status));
 }
 
@@ -60,7 +75,7 @@ inline Status &&status_error(Result<void> &&result) noexcept {
 class FailReturn {
  public:
   explicit FailReturn(Status status) noexcept : status_(std::move(status)) {
-    HYLE_FATAL_ASSERT(!status_.ok());
+    require_error(status_);
   }
 
   // -> a function returning Status
