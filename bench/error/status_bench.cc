@@ -31,9 +31,9 @@ using hyle::StatusCode;
 // rival to Result<T> = expected<T, Status>.
 using StdResult = std::expected<int, std::error_code>;
 
-// Four consumer call frames exercise Result. Keep both the leaf and outer chain
-// opaque for every rival: otherwise GCC inlines only the smaller std/Abseil
-// wrapper and charges HYLE an extra call boundary.
+// Four consumer call frames exercise Result. Keep every layer opaque for every
+// rival: otherwise a compiler can inline only one carrier's smaller wrapper
+// and make the call topology unequal.
 HYLE_NOINLINE Result<int> hyle_leaf_ok(int x) { return x + 1; }
 HYLE_NOINLINE Result<int> hyle_leaf_error(int x) {
   return x >= 0
@@ -41,11 +41,17 @@ HYLE_NOINLINE Result<int> hyle_leaf_error(int x) {
              : Result<int>(x);
 }
 
+HYLE_NOINLINE Result<int> hyle_ok_layer1(int x) {
+  HYLE_ASSIGN_OR_RETURN(int value, hyle_leaf_ok(x));
+  return value + 1;
+}
+HYLE_NOINLINE Result<int> hyle_ok_layer2(int x) {
+  HYLE_ASSIGN_OR_RETURN(int value, hyle_ok_layer1(x));
+  return value + 1;
+}
 HYLE_NOINLINE Result<int> hyle_chain_ok(int x) {
-  HYLE_ASSIGN_OR_RETURN(int a, hyle_leaf_ok(x));
-  HYLE_ASSIGN_OR_RETURN(int b, hyle_leaf_ok(a));
-  HYLE_ASSIGN_OR_RETURN(int c, hyle_leaf_ok(b));
-  return c;
+  HYLE_ASSIGN_OR_RETURN(int value, hyle_ok_layer2(x));
+  return value + 1;
 }
 HYLE_NOINLINE Result<int> hyle_chain_error(int x) {
   HYLE_ASSIGN_OR_RETURN(int result, hyle_leaf_error(x));
@@ -60,14 +66,20 @@ HYLE_NOINLINE StdResult std_leaf_error(int x) {
                       std::errc::no_such_file_or_directory)))
                 : StdResult(x);
 }
+HYLE_NOINLINE StdResult std_ok_layer1(int x) {
+  auto result = std_leaf_ok(x);
+  if (!result) return result;
+  return *result + 1;
+}
+HYLE_NOINLINE StdResult std_ok_layer2(int x) {
+  auto result = std_ok_layer1(x);
+  if (!result) return result;
+  return *result + 1;
+}
 HYLE_NOINLINE StdResult std_chain_ok(int x) {
-  auto a = std_leaf_ok(x);
-  if (!a) return a;
-  auto b = std_leaf_ok(*a);
-  if (!b) return b;
-  auto c = std_leaf_ok(*b);
-  if (!c) return c;
-  return *c;
+  auto result = std_ok_layer2(x);
+  if (!result) return result;
+  return *result + 1;
 }
 HYLE_NOINLINE StdResult std_chain_error(int x) {
   auto result = std_leaf_error(x);
@@ -82,14 +94,20 @@ HYLE_NOINLINE absl::StatusOr<int> absl_leaf_error(int x) {
                                                    "", absl::SourceLocation()))
                 : absl::StatusOr<int>(x);
 }
+HYLE_NOINLINE absl::StatusOr<int> absl_ok_layer1(int x) {
+  auto result = absl_leaf_ok(x);
+  if (!result.ok()) return result.status();
+  return *result + 1;
+}
+HYLE_NOINLINE absl::StatusOr<int> absl_ok_layer2(int x) {
+  auto result = absl_ok_layer1(x);
+  if (!result.ok()) return result.status();
+  return *result + 1;
+}
 HYLE_NOINLINE absl::StatusOr<int> absl_chain_ok(int x) {
-  auto a = absl_leaf_ok(x);
-  if (!a.ok()) return a.status();
-  auto b = absl_leaf_ok(*a);
-  if (!b.ok()) return b.status();
-  auto c = absl_leaf_ok(*b);
-  if (!c.ok()) return c.status();
-  return *c;
+  auto result = absl_ok_layer2(x);
+  if (!result.ok()) return result.status();
+  return *result + 1;
 }
 HYLE_NOINLINE absl::StatusOr<int> absl_chain_error(int x) {
   auto result = absl_leaf_error(x);
@@ -176,35 +194,15 @@ int main() {
     });
   }
 
-  // Success propagation through a 4-deep consumer call chain.
-  {
-    nb::Bench b;
-    b.title("Result<int> propagate OK through 4 frames")
-        .relative(true)
-        .batch(1)
-        .minEpochIterations(2000000);
-    b.run("std::expected (manual check)", [&] {
-      auto r = std_chain_ok(++seed);
-      nb::doNotOptimizeAway(r.has_value());
-    });
-#if defined(HYLE_BENCH_ABSL)
-    b.run("absl::StatusOr (manual check)", [&] {
-      auto r = absl_chain_ok(++seed);
-      nb::doNotOptimizeAway(r.ok());
-    });
-#endif
-    b.run("HYLE Result + ASSIGN_OR_RETURN", [&] {
-      auto r = hyle_chain_ok(++seed);
-      nb::doNotOptimizeAway(r.has_value());
-    });
-  }
-
-  // Success propagation with the value consumed, as it is in normal caller
-  // code.
+  // Success propagation through four real call frames, followed by normal
+  // caller consumption of the value.
   {
     std::uint64_t acc_hyle = 0, acc_std = 0;
+#if defined(HYLE_BENCH_ABSL)
+    std::uint64_t acc_absl = 0;
+#endif
     nb::Bench b;
-    b.title("Result<int> propagate OK + consume value")
+    b.title("Result<int> propagate OK through 4 frames + consume")
         .relative(true)
         .batch(1)
         .minEpochIterations(2000000);
@@ -213,6 +211,13 @@ int main() {
       acc_std += r.value_or(0);
       nb::doNotOptimizeAway(acc_std);
     });
+#if defined(HYLE_BENCH_ABSL)
+    b.run("absl::StatusOr (unwrap + use)", [&] {
+      auto r = absl_chain_ok(++seed);
+      acc_absl += r.ok() ? static_cast<std::uint64_t>(*r) : 0;
+      nb::doNotOptimizeAway(acc_absl);
+    });
+#endif
     b.run("HYLE Result (unwrap + use)", [&] {
       auto r = hyle_chain_ok(++seed);
       acc_hyle += r.value_or(0);
