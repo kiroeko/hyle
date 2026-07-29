@@ -6,9 +6,10 @@
 
 ## 当前证书（2026-07-29，三平台 n=15）
 
-产品能力基于 `befaad0`，非法 Result 诊断冷热分离基于 `7d22eb8`，最终 benchmark
-形状为 `6d42add`；Abseil 固定到本地参考库 commit `35b9f25b`。环境为 Windows
-MSVC 19.50、WSL GCC 14.2、Apple M4 AppleClang 21，Release，使用
+基础产品能力基于 `befaad0`，非法 Result 诊断冷热分离基于 `7d22eb8`，渐进 context
+表示固定为 `8dace9d`；benchmark 消费形状仍是 `6d42add`，没有为该实现新增测量专用 API。
+Abseil 固定到本地参考库 commit `35b9f25b`。环境为 Windows MSVC 19.50、WSL GCC 14.2、
+Apple M4 AppleClang 21，Release、`HYLE_TEST_INSTRUMENTATION=OFF`（发布形状），使用
 `scripts/bench-stat.py -n 15` 的同进程配对判定。表中绝对值统一按
 **Windows / Linux / M4** 排列，不能跨机器横比；倍数是配对样本的中位比值，可能与两列
 独立中位数之比略有差异。

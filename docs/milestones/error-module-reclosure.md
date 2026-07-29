@@ -154,7 +154,8 @@ error 自身的功能面、复杂度、C++ API、24-symbol C ABI、消费者用�
 
 ## 2026-07-29 增量：渐进 context 表示
 
-主动对照 Abseil StatusBuilder、anyhow/error-stack 的链式 frame 与 Boost.LEAF 动态错误槽后，
+实现固定于 `8dace9d`。主动对照 Abseil StatusBuilder、anyhow/error-stack 的链式 frame 与
+Boost.LEAF 动态错误槽后，
 确认旧扁平 `WithContext` 的连续 rvalue 链存在 O(k²) 总复制。没有等待深链先成为事故，也没有
 新增 benchmark-only builder/rope：普通 Status 和连续 message/C ABI 合同保持不变；第一层
 context 精确分配，第二层才升级为几何 prefix storage，唯一 rvalue 原地 prepend、共享值 COW，
