@@ -16,8 +16,9 @@ HYLE 的 CMake target 图是项目组织架构的可执行版本，不只是“�
    补全构建系统遗漏的信息。
 2. **component 表达用户意图。**`HYLE_COMPONENTS` 的值是用户想取得的产品根，不是要编译的目录清单；
    构建系统负责计算闭包，并只激活闭包内源码、测试、benchmark 和第三方发现。
-3. **模块拥有实现，根工程拥有组装。**模块自己的源码、依赖、测试和 benchmark 归模块目录；根
-   CMake 只维护工具链合同、component 图、横切 helper 和最终组装，不回到巨型源文件清单。
+3. **模块拥有实现，manifest 拥有产品图。**模块自己的源码、外部实现依赖、测试和 benchmark 归模块
+   目录；声明式 component manifest 唯一拥有内部 HYLE 边及可见性。根 CMake 只维护工具链合同、
+   横切 helper 和最终组装，不回到巨型源文件清单。
 4. **选项描述产品决定，不暴露脚本偶然。**公开 cache 变量回答“要什么组件、能力、交付物或验证”，
    不回答“某段内部 CMake 是否执行”。标准 CMake 已有准确语义时直接使用标准变量。
 5. **父工程拥有父工程。**source embed 不改写父工程的 `BUILD_SHARED_LIBS`、generator、toolchain、
@@ -124,7 +125,8 @@ TLS 与 CUDA 使用 `AUTO|ON|OFF` 三态：AUTO 仅供便利探测，ON 是硬�
 
 | 内容 | 模块所有位置 | 中央文件只负责 |
 |---|---|---|
-| 产品源码、公开/私有依赖 | `src/<module>/CMakeLists.txt` | 根 target 图计算 component 依赖闭包并按序加入模块 |
+| 内部 HYLE 直接依赖及 PUBLIC/PRIVATE | `cmake/HyleComponents.cmake` 的声明式 manifest | 同一声明同时生成 component 闭包和真实 target link |
+| 产品源码、外部实现依赖 | `src/<module>/CMakeLists.txt` | `hyle_add_module()` 按 manifest 接入内部边；根只按闭包加入模块 |
 | 重型可选能力发现/取得 | `cmake/Hyle<Module>Dependencies.cmake` | 根只在解析闭包包含该模块时调用其配置入口 |
 | 正确性、C ABI、header/surface 测试 | `tests/<module>/CMakeLists.txt` | `tests/CMakeLists.txt` 提供 GoogleTest、pure-C/surface/header helper 和 aggregate |
 | 正常 workload 与 SOTA 对拍 | `bench/<module>/CMakeLists.txt` | `bench/CMakeLists.txt` 提供 nanobench、aggregate 和逐模块装载 |
@@ -141,51 +143,49 @@ TLS 与 CUDA 使用 `AUTO|ON|OFF` 三态：AUTO 仅供便利探测，ON 是硬�
 普通 target；未来若改用 `find_package()` 的非 `GLOBAL` imported target，也必须在共同父目录发现或
 显式提升可见性，不能让 sibling 偶然可见。
 
-模块声明时会把 `hyle_add_module(... DEPS/PUBLIC_DEPS ...)` 与唯一 component 图逐边比较；所有模块
-目录返回后还会重新读取 target 的 `LINK_LIBRARIES`/`INTERFACE_LINK_LIBRARIES` 做终态审计。因此模块
-声明之后追加的 `target_link_libraries(hyle_x ... hyle_y)` 也不能绕过组件闭包。外部实现库不进入这张
-HYLE-to-HYLE 图，但仍由所属模块 target 负责 package/export 语义。
+`hyle_add_module()` 自动读取 manifest 并建立内部 target link；模块 CMakeLists 不再重复列出内部
+`DEPS/PUBLIC_DEPS`。所有模块目录返回后仍会读取 target 的 `LINK_LIBRARIES`/
+`INTERFACE_LINK_LIBRARIES` 做终态审计，因此声明之后手写
+`target_link_libraries(hyle_x ... hyle_y)` 也不能绕过组件闭包。外部实现库不进入 HYLE-to-HYLE 图，
+仍由所属模块负责发现、链接与 package/export 语义。
 
-### 为什么内部直接依赖出现两次
+### 一个依赖 manifest，两种自动投影
 
-这是两个 CMake 阶段对同一架构事实的不同投影，不是允许两份事实各自演化：
+内部依赖只声明一次，但要在两个 CMake 阶段发挥作用：
 
-| 位置 | 发生时间 | 必须回答的问题 |
+| manifest 投影 | 发生时间 | 生成结果 |
 |---|---|---|
-| `HyleComponents.cmake` 的 component graph | 任何模块 target 创建前 | 用户请求 `mem` 时，应该先加载哪些模块目录，顺序是什么？ |
-| `src/<module>/CMakeLists.txt` 的 `DEPS/PUBLIC_DEPS` | 该模块 target 创建时 | `hyle_mem` 实际链接谁，哪些 usage requirement 要传播给下游？ |
+| component closure | 任何模块 target 创建前 | 用户请求 `mem` 时解析加载集合和拓扑顺序 |
+| target link | `hyle_add_module(mem ...)` 创建 target 时 | 生成真实 PUBLIC/PRIVATE linker edge 与 usage requirement |
 
-例如中央图声明：
-
-```cmake
-set(_HYLE_DEPS_MEM error platform)
-```
-
-它让 `HYLE_COMPONENTS=mem` 在进入模块目录前解析成 `error;platform;mem`。随后 mem 自己声明：
+例如 mem 的完整内部依赖事实只有：
 
 ```cmake
-hyle_add_module(mem ... PUBLIC_DEPS hyle_error hyle_platform)
+_hyle_declare_component(mem PUBLIC_DEPS error platform)
 ```
 
-这一条才真正产生 linker edge，并决定 PUBLIC/PRIVATE 传播。若只保留 target link，选择阶段面对尚未创建的
-target，无法知道应先加载哪些目录；若只保留中央图，则链接器、编译 usage requirement 和安装导出都没有
-真实边。让根图直接替每个模块生成全部 link 又会把 PUBLIC/PRIVATE、外部实现库等模块所有权拉回中央
-巨型脚本。
+模块所有权目录只声明实现：
 
-所以当前选择的是**受机械约束的冗余**：中央图是内部 component 直接依赖的选择真源，模块 target 是
-链接语义真源；`hyle_add_module()` 在声明时比较二者，所有模块加载后再审计最终 target properties。
-内部 HYLE 边任一侧多一条或少一条都会 configure 失败；mimalloc、OpenSSL、ggml 等非 HYLE 实现依赖
-只属于 target，不伪装成用户 component。未来若 CMake 结构能以更简单的 module manifest 同时生成两种
-投影，可以消除这点重复，但不能以丢失加载前闭包或 PUBLIC/PRIVATE 语义为代价。
+```cmake
+hyle_add_module(mem SOURCES system.cc stats.cc c_mem.cc)
+```
+
+manifest 中 PUBLIC/PRIVATE 的并集让 `HYLE_COMPONENTS=mem` 在进入模块目录前解析成
+`error;platform;mem`；同一份可见性信息随后让 helper 自动链接 `hyle_error`、`hyle_platform`。这样既
+不会面对尚未创建的 target 反向猜闭包，也不把源码、外部库和条件实现清单搬回中央脚本。
+
+终态审计不是第二份声明：它从生成后的 target properties 反查结果是否仍等于 manifest，用来捕获模块
+创建后偷偷追加的内部边。mimalloc、OpenSSL、ggml 等非 HYLE 实现依赖只属于模块 target，不伪装成
+用户 component。若将来需要改变内部依赖，只改 manifest 一处；模块 CMakeLists 无同步工作。
 
 ### 新增模块或能力的固定协议
 
 新增产品模块不是“在根目录多写一个 `add_library`”。维护者按以下顺序扩展：
 
-1. 在 `HyleComponents.cmake` 登记稳定 component 名和直接 HYLE 依赖，保持无环拓扑；这张中央图必须
-   在加载模块前可计算，因而不会从构建后的 target 反向猜依赖。
-2. 在 `src/<module>/CMakeLists.txt` 用统一 helper 声明产品 target、公开/私有源和真实直接 link 边；
-   不把模块清单写回根 CMake。
+1. 在 `HyleComponents.cmake` 用一次声明登记稳定 component 名、PUBLIC/PRIVATE 内部直接依赖，保持无环
+   拓扑；manifest 同时生成加载前闭包和加载后的真实 link，模块目录不得重复内部边。
+2. 在 `src/<module>/CMakeLists.txt` 用统一 helper 声明产品 target 和源文件；外部实现库仍由模块用普通
+   target 命令接入，不把源码/供应商清单写回根 CMake。
 3. 若有重型可选依赖，将发现/取得逻辑放入 `cmake/Hyle<Module>Dependencies.cmake`，根只在闭包选中
    该模块时调用一个配置入口；生成文件进入模块/build tree，不进入源码树。
 4. 提供 `tests/<module>/CMakeLists.txt`，登记 C++ 正确性、适用的纯 C/C surface/header 检查和
@@ -317,8 +317,9 @@ CI 对 Windows/Linux/macOS 运行 core 验证面，并在每个平台
 随后从空目录制作 shared/static mem SDK，再由只链接 `hyle::mem` 的 pure-C error+mem consumer 与 C++
 `SystemAllocator` consumer 真运行；shared 形状机械覆盖 `mem -> platform -> error` 的传递
 shared-object lookup，并证明公开 inline 形状不泄漏 mimalloc 符号，static 形状覆盖 mimalloc
-link-only archive 与 C++ link driver。Linux 还执行 component 空值/嵌入 cache/晚期依赖绕过三项
-configure contract，并从 clean checkout 生成完整 source zip、核对 SHA-256/commit/legal payload、
+link-only archive 与 C++ link driver。Linux 还执行 component 空值、嵌入 cache、晚期依赖成员绕过及
+PUBLIC/PRIVATE 可见性扩大四项 configure contract，并从 clean checkout 生成完整 source zip、核对
+SHA-256/commit/legal payload、
 解压后独立构建 `core`。simd、CUDA、compute/io 全矩阵不塞进每提交 smoke，仍属发布检查。
 
 `cmake/toolchains/linux-aarch64-gcc.cmake` 是整项目交叉编译的参考入口：compiler/sysroot 属工具链，
@@ -328,8 +329,8 @@ host program 与 target library/header/package 搜索严格分开，`CMAKE_TRY_C
 
 ## 维护规则
 
-- 新模块必须同时登记 component、直接依赖和 module target；configure 会验证依赖名、拓扑顺序、
-  target 已存在，以及声明时和所有模块装载后的直接 HYLE link 边都与 component 图完全一致。
+- 新模块必须登记一次 component manifest 并创建 module target；configure 会验证依赖名、拓扑顺序、
+  target 已存在，以及所有模块装载后的直接 HYLE link 边与 manifest 完全一致。
 - 新可选第三方只能在其消费组件已选且 feature 已启用时发现/取得。
 - 不在 CMake 中写开发机绝对路径；preset 是可选入口包，不是编译成功的隐藏前置。
 - parent-owned 的 generator、toolchain、配置、输出目录和 `BUILD_SHARED_LIBS` 不得被 subproject 改写。

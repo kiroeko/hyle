@@ -7,4 +7,4 @@
 # demangle + the complete type-erased util surface. Registry is a public native
 # header and exposes container::string_ref/SwissTable-backed templates, so
 # hyle_container is a PUBLIC dependency (important for static consumers).
-hyle_add_module(util SOURCES demangle.cc c_util.cc PUBLIC_DEPS hyle_container)
+hyle_add_module(util SOURCES demangle.cc c_util.cc)

@@ -1,9 +1,10 @@
 include_guard(GLOBAL)
 
-# Keep the executable component graph in HyleComponents.cmake as the single
-# source of truth. A module's target declaration must name exactly the same
-# direct HYLE dependencies; otherwise component-only builds and package
-# assembly silently describe a different product from the link graph.
+# Keep the executable component manifest in HyleComponents.cmake as the single
+# source of truth. Its PUBLIC/PRIVATE lists generate both the pre-target
+# component closure and hyle_add_module()'s real link edges. The validator below
+# audits the completed targets so a later manual internal link cannot bypass the
+# manifest.
 function(_hyle_validate_module_dependencies name)
   if(NOT name IN_LIST HYLE_KNOWN_COMPONENTS)
     message(FATAL_ERROR
@@ -32,6 +33,46 @@ function(_hyle_validate_module_dependencies name)
   endif()
 endfunction()
 
+function(_hyle_validate_module_public_dependencies name)
+  set(_actual_public_dependencies "")
+  foreach(_dependency IN LISTS ARGN)
+    if(_dependency MATCHES "^hyle_(.+)$")
+      list(APPEND _actual_public_dependencies "${CMAKE_MATCH_1}")
+    endif()
+  endforeach()
+  list(REMOVE_DUPLICATES _actual_public_dependencies)
+  list(SORT _actual_public_dependencies)
+
+  string(TOUPPER "${name}" _component_upper)
+  set(_manifest_public_dependencies
+      "${_HYLE_PUBLIC_DEPS_${_component_upper}}")
+  list(REMOVE_DUPLICATES _manifest_public_dependencies)
+  list(SORT _manifest_public_dependencies)
+
+  if(NOT "${_actual_public_dependencies}" STREQUAL
+         "${_manifest_public_dependencies}")
+    message(FATAL_ERROR
+      "hyle_${name}: public internal dependencies disagree with the component "
+      "manifest; target exposes '${_actual_public_dependencies}', manifest "
+      "declares '${_manifest_public_dependencies}'")
+  endif()
+endfunction()
+
+function(_hyle_manifest_target_dependencies name visibility out_var)
+  string(TOUPPER "${name}" _component_upper)
+  set(_manifest_var "_HYLE_${visibility}_DEPS_${_component_upper}")
+  set(_targets "")
+  foreach(_dependency IN LISTS ${_manifest_var})
+    if(NOT TARGET hyle_${_dependency})
+      message(FATAL_ERROR
+        "hyle_add_module(${name}): manifest ${visibility} dependency target "
+        "'hyle_${_dependency}' does not exist; check component construction order")
+    endif()
+    list(APPEND _targets hyle_${_dependency})
+  endforeach()
+  set(${out_var} "${_targets}" PARENT_SCOPE)
+endfunction()
+
 # Re-read the finished targets after every module CMakeLists has returned.  The
 # declaration-time check above catches mistakes in hyle_add_module(), while this
 # final check also catches a later target_link_libraries(hyle_x ... hyle_y)
@@ -43,6 +84,7 @@ function(hyle_validate_final_module_graph)
     endif()
 
     set(_actual_dependencies "")
+    set(_actual_public_dependencies "")
     foreach(_property IN ITEMS LINK_LIBRARIES INTERFACE_LINK_LIBRARIES)
       get_target_property(_link_items hyle_${_name} ${_property})
       if(NOT _link_items OR _link_items MATCHES "-NOTFOUND$")
@@ -53,6 +95,10 @@ function(hyle_validate_final_module_graph)
           if(_item MATCHES
              "(^|[^A-Za-z0-9_])hyle(_|::)${_candidate}([^A-Za-z0-9_]|$)")
             list(APPEND _actual_dependencies hyle_${_candidate})
+            if(_property STREQUAL "INTERFACE_LINK_LIBRARIES" AND
+               NOT _item MATCHES "\\$<LINK_ONLY:")
+              list(APPEND _actual_public_dependencies hyle_${_candidate})
+            endif()
           endif()
         endforeach()
       endforeach()
@@ -60,14 +106,19 @@ function(hyle_validate_final_module_graph)
     list(REMOVE_DUPLICATES _actual_dependencies)
     _hyle_validate_module_dependencies(
       "${_name}" ${_actual_dependencies})
+    list(REMOVE_DUPLICATES _actual_public_dependencies)
+    _hyle_validate_module_public_dependencies(
+      "${_name}" ${_actual_public_dependencies})
   endforeach()
 endfunction()
 
-# hyle_add_module(<name> [SOURCES ...] [DEPS ...] [PUBLIC_DEPS ...])
+# hyle_add_module(<name> [SOURCES ...])
 # Declares a HYLE module as a library target `hyle_<name>` with conventional
-# include dirs, warnings, sanitizer flags, and a tri-state export macro.
+# include dirs, manifest-derived internal links, warnings, sanitizer flags, and
+# a tri-state export macro. External implementation links stay in the owning
+# module CMakeLists via ordinary target_link_libraries().
 function(hyle_add_module name)
-  cmake_parse_arguments(ARG "" "" "SOURCES;DEPS;PUBLIC_DEPS" ${ARGN})
+  cmake_parse_arguments(ARG "" "" "SOURCES" ${ARGN})
   if(ARG_UNPARSED_ARGUMENTS)
     message(FATAL_ERROR
       "hyle_add_module(${name}): unrecognized arguments: "
@@ -79,20 +130,14 @@ function(hyle_add_module name)
       "${ARG_KEYWORDS_MISSING_VALUES}")
   endif()
 
+  _hyle_manifest_target_dependencies(
+    "${name}" PRIVATE _hyle_private_dependencies)
+  _hyle_manifest_target_dependencies(
+    "${name}" PUBLIC _hyle_public_dependencies)
   _hyle_validate_module_dependencies(
-    "${name}" ${ARG_DEPS} ${ARG_PUBLIC_DEPS})
-
-  # Internal dependencies must already exist in topological construction order.
-  # Otherwise CMake accepts a bare hyle_* token as a platform linker name and the
-  # graph error only appears at link time. External target/flag items remain
-  # valid and are deliberately outside this assertion.
-  foreach(_dependency IN LISTS ARG_DEPS ARG_PUBLIC_DEPS)
-    if(_dependency MATCHES "^hyle_" AND NOT TARGET ${_dependency})
-      message(FATAL_ERROR
-        "hyle_add_module(${name}): internal dependency target '${_dependency}' "
-        "does not exist; check HYLE_KNOWN_COMPONENTS order and component closure")
-    endif()
-  endforeach()
+    "${name}" ${_hyle_private_dependencies} ${_hyle_public_dependencies})
+  _hyle_validate_module_public_dependencies(
+    "${name}" ${_hyle_public_dependencies})
 
   set(target "hyle_${name}")
   if(ARG_SOURCES)
@@ -117,7 +162,9 @@ function(hyle_add_module name)
     # features propagate the floor to consumers (verified by samples/ -- a consumer that
     # didn't set the standard failed on `concept` until this was added).
     target_compile_features(${target} PUBLIC cxx_std_23)
-    target_link_libraries(${target} PRIVATE ${ARG_DEPS} PUBLIC ${ARG_PUBLIC_DEPS})
+    target_link_libraries(${target}
+      PRIVATE ${_hyle_private_dependencies}
+      PUBLIC ${_hyle_public_dependencies})
     # obs-02: every module sees the trace gate (defines + tracy include when ON).
     # PUBLIC so consumers that include our headers (trace.h is inlined, e.g. the
     # RAII zone object) agree on whether the hooks are real or empty -- an ODR
@@ -141,12 +188,18 @@ function(hyle_add_module name)
       target_compile_definitions(${target} PUBLIC "HYLE_STATIC")
     endif()
   else()
+    if(_hyle_private_dependencies)
+      message(FATAL_ERROR
+        "hyle_add_module(${name}): header-only modules cannot have PRIVATE "
+        "component dependencies: ${_hyle_private_dependencies}")
+    endif()
     target_include_directories(${target} INTERFACE
       "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"
       "$<INSTALL_INTERFACE:${HYLE_INSTALL_INCLUDEDIR}>")
     target_compile_features(${target} INTERFACE cxx_std_23)  # header-only modules too
     target_link_libraries(${target} INTERFACE
-      ${ARG_PUBLIC_DEPS} hyle_build_contract hyle_trace hyle_testing)
+      ${_hyle_public_dependencies}
+      hyle_build_contract hyle_trace hyle_testing)
   endif()
 
   set_target_properties(${target} PROPERTIES

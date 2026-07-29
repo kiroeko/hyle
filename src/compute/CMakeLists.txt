@@ -13,8 +13,6 @@
 # Always built (any platform, no GPU); links hyle_simd PRIVATE (simd cores are called inside
 # the .cc, never named in a public compute header).
 set(_compute_sources compute.cc host_backend.cc host_ops.cc)
-set(_compute_public_deps hyle_error hyle_mem)
-set(_compute_private_deps hyle_simd hyle_platform)
 
 if(HYLE_COMPUTE_CUDA_ENABLED)
   # cuda_backend.cu is a CUDA-language TU (compiled by nvcc, host side by the same
@@ -36,10 +34,7 @@ if(HYLE_HAS_FCONTEXT)
   # io_context.cc). Adds sched to compute's PUBLIC deps (gpu_await.h includes
   # sched/waker.h, so a consumer of that header needs sched).
   list(APPEND _compute_sources gpu_poller.cc)
-  list(APPEND _compute_public_deps hyle_sched)
 endif()
-
-list(REMOVE_DUPLICATES _compute_private_deps)
 
 # compute-05 ggml_bridge: borrow ggml operators on HYLE-managed VRAM/completion/sched.
 # ggml_bridge.cc is a PLAIN C++ TU (NOT a .cu) -- ggml compiles its own CUDA internally;
@@ -50,9 +45,7 @@ if(HYLE_COMPUTE_GGML AND HYLE_HAS_FCONTEXT)
   list(APPEND _compute_sources ggml_bridge.cc)
 endif()
 
-hyle_add_module(compute SOURCES ${_compute_sources}
-                DEPS ${_compute_private_deps}
-                PUBLIC_DEPS ${_compute_public_deps})
+hyle_add_module(compute SOURCES ${_compute_sources})
 
 if(HYLE_HAS_FCONTEXT)
   # compute.cc uses Fiber::current() to keep heavyweight CUDA/Vulkan first-use

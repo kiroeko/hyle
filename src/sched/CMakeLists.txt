@@ -49,11 +49,7 @@ hyle_add_module(sched
     blocking.cc
     cancel.cc
     c_sched.cc
-    ${_fctx_asm}
-  DEPS hyle_time
-  # SchedulerOptions publicly names CpuOrder/ThreadPriority, so platform is an
-  # API dependency rather than a private implementation-only link.
-  PUBLIC_DEPS hyle_error hyle_mem hyle_container hyle_platform)
+    ${_fctx_asm})
 
 if(MSVC)
   # The MASM files tag their PROCs with BOOST_CONTEXT_EXPORT (undefined in-file).

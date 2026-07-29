@@ -9,7 +9,6 @@
 # compute's gpu_poller.cc is. Adds hyle_sched to graph's deps only on that path; the
 # serial core stays sched-free.
 set(_graph_sources taskgraph.cc)
-set(_graph_public_deps hyle_error hyle_mem hyle_container)
 
 if(HYLE_HAS_FCONTEXT)
   # step-2 parallel evaluate: parallel_eval.cc uses sched spawn_task + JoinHandle + fiber
@@ -19,9 +18,7 @@ if(HYLE_HAS_FCONTEXT)
   # graph-02: data_parallel.cc = parallel_for / parallel_reduce (recursive-split fork-join
   # over sched). Same sched gate; data_parallel.h references sched::Scheduler.
   list(APPEND _graph_sources data_parallel.cc)
-  list(APPEND _graph_public_deps hyle_sched)
 endif()
 
 hyle_add_module(graph
-  SOURCES ${_graph_sources}
-  PUBLIC_DEPS ${_graph_public_deps})
+  SOURCES ${_graph_sources})

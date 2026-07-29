@@ -110,4 +110,36 @@ if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES
     "${HYLE_CONTRACT_LAST_OUTPUT}")
 endif()
 
+# A late PUBLIC edge can also silently widen a package usage contract even when
+# the dependency set itself is unchanged.  Prove that visibility is audited,
+# not only graph membership.
+set(_visibility_source "${HYLE_SMOKE_ROOT}/visibility-source")
+file(MAKE_DIRECTORY "${_visibility_source}")
+file(WRITE "${_visibility_source}/CMakeLists.txt"
+"cmake_minimum_required(VERSION 3.25)\n"
+"project(hyle_dependency_visibility LANGUAGES NONE)\n"
+"list(APPEND CMAKE_MODULE_PATH \"${HYLE_SOURCE_DIR}/cmake\")\n"
+"set(HYLE_KNOWN_COMPONENTS core error)\n"
+"set(_HYLE_DEPS_CORE \"\")\n"
+"set(_HYLE_PRIVATE_DEPS_CORE \"\")\n"
+"set(_HYLE_PUBLIC_DEPS_CORE \"\")\n"
+"set(_HYLE_DEPS_ERROR core)\n"
+"set(_HYLE_PRIVATE_DEPS_ERROR core)\n"
+"set(_HYLE_PUBLIC_DEPS_ERROR \"\")\n"
+"include(HyleModule)\n"
+"add_library(hyle_core INTERFACE)\n"
+"add_library(hyle_error INTERFACE)\n"
+"target_link_libraries(hyle_error INTERFACE hyle_core)\n"
+"hyle_validate_final_module_graph()\n")
+_hyle_contract_run("late internal dependency visibility widening" FALSE
+  "${CMAKE_COMMAND}" -S "${_visibility_source}"
+  -B "${HYLE_SMOKE_ROOT}/visibility-build"
+  ${_hyle_generator_args})
+if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES
+   "public internal dependencies disagree")
+  message(FATAL_ERROR
+    "late dependency visibility widening failed for the wrong reason:\n"
+    "${HYLE_CONTRACT_LAST_OUTPUT}")
+endif()
+
 message(STATUS "HYLE component contracts passed")

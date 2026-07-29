@@ -70,8 +70,10 @@ Shell。普通 PowerShell 直接调用缓存中的 `cl.exe` 缺少 `INCLUDE/LIB`
 
 - 显式 `-DHYLE_COMPONENTS=` 不再静默展开为 `all`；未设置仍默认全库。source-embed 父工程用普通
   变量选择组件时，cache/GUI 现在镜像实际值，不再出现实际 `container`、cache 却写 `all`；
-- 声明时的 direct-dependency 检查保留，并新增所有模块装载后的 target property 终态审计；configure
-  contract 会故意追加一条晚期内部 link 边，证明绕过会失败；
+- 内部依赖从“中央 component graph + 模块 `DEPS/PUBLIC_DEPS`”双写收束为带 PUBLIC/PRIVATE 的单一
+  component manifest；闭包解析和真实 target link 均由同一声明生成。所有模块装载后的 target
+  property 终态审计保留并覆盖 PUBLIC/PRIVATE；configure contract 会故意追加未声明边并把合法私有边
+  扩大为公共边，证明成员和可见性绕过都会失败；
 - GitHub Actions 连续失败的 run `30241911516` / `30381984449` 均落在 shipping-layout mem 同三条
   测试。两条 cache 测试错误假定 runner CPU 数对应的 shard refill 恒为 1；region 测试在线程先后
   结束时把合法 block 复用误判为并发生命期重叠。修正为容量合同和显式重叠生命周期后，同一 clean
@@ -240,10 +242,10 @@ Shell。普通 PowerShell 直接调用缓存中的 `cl.exe` 缺少 `INCLUDE/LIB`
 
 | 固定口径 | code |
 |---|---:|
-| 全库（含 docs/in-tree third_party） | 275,110 |
+| 全库（含 docs/in-tree third_party） | 275,207 |
 | 自实现（含测试） | 134,163 |
 | 自实现（不含测试） | 92,124 |
-| build/package 实现 | 5,079 |
+| build/package 实现 | 5,173 |
 
 最后一项固定为 77 个自有 CMake 文件 + preset/CI + 8 个 build/fetch/setup/QEMU shell/PowerShell
 guard；不含 vendored CMake、测试源码和文档。CMake 验收脚本分别守 package version、

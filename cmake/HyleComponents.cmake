@@ -5,19 +5,90 @@
 # root CMake uses them both for add_subdirectory() and optional dependency
 # discovery.  Keep this graph synchronized with docs/architecture/roadmap.md.
 
-set(HYLE_KNOWN_COMPONENTS
-    core error obs math platform time mem simd container util sched io compute graph)
+# Declare every component and its direct internal link visibility once.  This
+# manifest is consumed twice: the union drives pre-target component closure,
+# while hyle_add_module() projects PUBLIC/PRIVATE entries into real CMake link
+# edges after the dependency targets exist.  External implementation libraries
+# remain module-owned and deliberately do not appear here.
+function(_hyle_declare_component name)
+  cmake_parse_arguments(ARG "" "" "PRIVATE_DEPS;PUBLIC_DEPS" ${ARGN})
+  if(ARG_UNPARSED_ARGUMENTS)
+    message(FATAL_ERROR
+      "HYLE component '${name}' has unrecognized manifest arguments: "
+      "${ARG_UNPARSED_ARGUMENTS}")
+  endif()
+  if(ARG_KEYWORDS_MISSING_VALUES)
+    message(FATAL_ERROR
+      "HYLE component '${name}' has manifest keywords missing values: "
+      "${ARG_KEYWORDS_MISSING_VALUES}")
+  endif()
+  if(name IN_LIST HYLE_KNOWN_COMPONENTS)
+    message(FATAL_ERROR "HYLE component '${name}' is declared more than once")
+  endif()
 
-set(_hyle_unique_components ${HYLE_KNOWN_COMPONENTS})
-list(REMOVE_DUPLICATES _hyle_unique_components)
-list(LENGTH HYLE_KNOWN_COMPONENTS _hyle_component_count)
-list(LENGTH _hyle_unique_components _hyle_unique_component_count)
-if(NOT _hyle_component_count EQUAL _hyle_unique_component_count)
-  message(FATAL_ERROR "HYLE_KNOWN_COMPONENTS contains a duplicate component")
+  set(_private ${ARG_PRIVATE_DEPS})
+  set(_public ${ARG_PUBLIC_DEPS})
+  list(REMOVE_DUPLICATES _private)
+  list(REMOVE_DUPLICATES _public)
+  foreach(_dependency IN LISTS _private)
+    if(_dependency IN_LIST _public)
+      message(FATAL_ERROR
+        "HYLE component '${name}' declares '${_dependency}' as both PRIVATE and PUBLIC")
+    endif()
+  endforeach()
+
+  set(_all ${_private} ${_public})
+  list(REMOVE_DUPLICATES _all)
+  string(TOUPPER "${name}" _component_upper)
+  set(_HYLE_PRIVATE_DEPS_${_component_upper} "${_private}" PARENT_SCOPE)
+  set(_HYLE_PUBLIC_DEPS_${_component_upper} "${_public}" PARENT_SCOPE)
+  set(_HYLE_DEPS_${_component_upper} "${_all}" PARENT_SCOPE)
+  set(_known_components ${HYLE_KNOWN_COMPONENTS})
+  list(APPEND _known_components "${name}")
+  set(HYLE_KNOWN_COMPONENTS "${_known_components}" PARENT_SCOPE)
+endfunction()
+
+set(HYLE_KNOWN_COMPONENTS "")
+set(_hyle_optional_sched_dep "")
+if(HYLE_FCONTEXT_SUPPORTED)
+  set(_hyle_optional_sched_dep sched)
 endif()
-unset(_hyle_unique_components)
-unset(_hyle_component_count)
-unset(_hyle_unique_component_count)
+
+# Declaration order is construction order and must remain topological.  The
+# visibility here is the visibility of the real hyle_<module> target edge.
+_hyle_declare_component(core)
+_hyle_declare_component(error)
+_hyle_declare_component(obs PUBLIC_DEPS error)
+_hyle_declare_component(math)
+_hyle_declare_component(platform PUBLIC_DEPS error)
+_hyle_declare_component(time PUBLIC_DEPS error)
+_hyle_declare_component(mem PUBLIC_DEPS error platform)
+_hyle_declare_component(simd PUBLIC_DEPS error platform)
+# container headers expose error/mem types; platform is used only by compiled
+# implementation paths such as topology/cache-aware concurrency support.
+_hyle_declare_component(container
+  PRIVATE_DEPS platform
+  PUBLIC_DEPS error mem)
+_hyle_declare_component(util PUBLIC_DEPS container)
+# SchedulerOptions publicly names platform types, while time is consumed only
+# by scheduler implementation TUs.
+_hyle_declare_component(sched
+  PRIVATE_DEPS time
+  PUBLIC_DEPS error platform mem container)
+# io's public protocol/C ABI headers do not require consumers to compile against
+# the implementation modules; static archives still propagate private edges as
+# LINK_ONLY through normal CMake semantics.
+_hyle_declare_component(io
+  PRIVATE_DEPS error mem container ${_hyle_optional_sched_dep})
+# compute publicly exposes error/mem and, where available, sched Waker types;
+# platform and simd stay compiled implementation details.
+_hyle_declare_component(compute
+  PRIVATE_DEPS platform simd
+  PUBLIC_DEPS error mem ${_hyle_optional_sched_dep})
+_hyle_declare_component(graph
+  PUBLIC_DEPS error mem container ${_hyle_optional_sched_dep})
+
+unset(_hyle_optional_sched_dep)
 
 # A source-embedding parent commonly sets this as a normal variable before
 # add_subdirectory().  Capture that effective value before creating the cache
@@ -63,31 +134,6 @@ else()
     endif()
     list(APPEND _hyle_selected "${_component}")
   endforeach()
-endif()
-
-# Direct target dependencies. Header-only/cross-cutting seams that do not need a
-# binary target (core headers, util-core headers, hyle/platform.h compile-time
-# environment macros, hyle_trace) are intentionally absent. Complete
-# io/compute/graph add sched where the target platform supports HYLE's fcontext
-# backend. Their base/host/serial product shapes remain buildable elsewhere.
-set(_HYLE_DEPS_CORE "")
-set(_HYLE_DEPS_ERROR "")
-set(_HYLE_DEPS_MATH "")
-set(_HYLE_DEPS_PLATFORM error)
-set(_HYLE_DEPS_OBS error)
-set(_HYLE_DEPS_TIME error)
-set(_HYLE_DEPS_MEM error platform)
-set(_HYLE_DEPS_SIMD error platform)
-set(_HYLE_DEPS_CONTAINER error mem platform)
-set(_HYLE_DEPS_UTIL container)
-set(_HYLE_DEPS_SCHED error platform time mem container)
-set(_HYLE_DEPS_IO error mem container)
-set(_HYLE_DEPS_COMPUTE error platform mem simd)
-set(_HYLE_DEPS_GRAPH error mem container)
-if(HYLE_FCONTEXT_SUPPORTED)
-  list(APPEND _HYLE_DEPS_IO sched)
-  list(APPEND _HYLE_DEPS_COMPUTE sched)
-  list(APPEND _HYLE_DEPS_GRAPH sched)
 endif()
 
 # HYLE_KNOWN_COMPONENTS is also the construction order. Validate the graph at

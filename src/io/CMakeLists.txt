@@ -12,13 +12,11 @@
 # only there -- proactor.cc itself never depends on sched, keeping the proactor
 # usable on any platform.
 set(_io_sources proactor.cc c_io.cc shared_memory.cc)
-set(_io_deps hyle_error hyle_mem hyle_container)
 if(HYLE_HAS_FCONTEXT)
   # The co_await layers (net/tcp/udp/file/signal) and the DNS offload need sched
   # (the scheduler drives the reap; dns uses spawn_blocking). Only buildable where
   # fcontext (hence sched) exists. proactor.cc itself never depends on sched.
   list(APPEND _io_sources io_context.cc tcp.cc udp.cc file.cc signal.cc dns.cc)
-  list(APPEND _io_deps hyle_sched)
   # io-10 HTTP/1.1: integration layer (read loop -> feed parser -> Request/Response
   # -> write) over co_await TcpStream, so it needs sched too. Protocol PARSING is
   # borrowed from vendored picohttpparser (pure state machine, zero IO/threads) --
@@ -48,7 +46,7 @@ endif()
 if(NOT HYLE_HAS_FCONTEXT)
   list(APPEND _io_sources http2_stub.cc)
 endif()
-hyle_add_module(io SOURCES ${_io_sources} DEPS ${_io_deps})
+hyle_add_module(io SOURCES ${_io_sources})
 
 if(HYLE_HAS_FCONTEXT)
   # picohttpparser is a vendored single-file C parser. Include its dir as SYSTEM

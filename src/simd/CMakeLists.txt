@@ -18,8 +18,8 @@ if(NOT HYLE_SIMD_EXACT_TARGET)
 endif()
 
 # The CPUID PROBE moved to platform/ (platform/cpu.{h,cc}); simd/dispatch.h now forwards
-# those names into hyle::simd so the call sites below are unchanged. simd PUBLIC_DEPS
-# platform to link the detector (best_isa/cpu_features).
+# those names into hyle::simd so the call sites below are unchanged. The component
+# manifest makes platform a PUBLIC link to the detector (best_isa/cpu_features).
 #
 # simd-04 adds runtime-dispatched ops: dispatch_ops.cc (baseline dispatcher) + one kernel
 # TU per ISA variant, each compiled at its own -march. LTO stays OFF for the whole module
@@ -127,8 +127,7 @@ hyle_add_module(simd SOURCES
   sort/stream_topk.cc
   bitpack/bitpack_dispatch.cc
   bitpack/bitpack_scalar.cc
-  ${_simd_arch_sources}
-  PUBLIC_DEPS hyle_error hyle_platform)
+  ${_simd_arch_sources})
 
 if(MSVC AND
    (_simd_exact_target STREQUAL "SCALAR" OR
