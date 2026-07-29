@@ -1,6 +1,6 @@
-// Normal user paths for error utilities. Kept separate from status_bench.cc so
-// adding diagnostics/aggregation workloads cannot change the compiler's inline
-// budget and therefore the codegen of the core carrier micro-invariants.
+// Information-bearing error paths. Every SOTA comparison carries the same
+// message/context/native detail; information-free carrier paths are isolated in
+// status_bench.cc.
 #include <nanobench.h>
 
 #include <cerrno>
@@ -11,13 +11,14 @@
 #include <string_view>
 #include <utility>
 
-#include "hyle/c/error.h"
 #include "hyle/error/format.h"
 #include "hyle/error/result.h"
 #include "hyle/error/status.h"
 
 #if defined(HYLE_BENCH_ABSL)
 #  include "absl/status/status.h"
+#  include "absl/status/status_builder.h"
+#  include "absl/status/statusor.h"
 #  include "absl/strings/cord.h"
 #endif
 
@@ -26,47 +27,20 @@ namespace nb = ankerl::nanobench;
 
 using hyle::Result;
 using hyle::Status;
+using hyle::StatusCode;
 
-// Keep the shared error behind a call boundary. Otherwise GCC can prove that
-// the local retain/release pair is unobservable in the hand-written variant
-// but not through the generic return-type adaptor, which benchmarks escape
-// analysis rather than propagation semantics.
-HYLE_NOINLINE const Status &prebuilt_error() {
-  static const Status status = Status::NotFound("missing");
+const Status &hyle_prebuilt_error() {
+  static const Status status = Status::NotFound("resource not found");
   return status;
 }
 
-Result<void> void_leaf(bool fail) {
-  return fail ? Result<void>(hyle::make_unexpected(prebuilt_error()))
-              : Result<void>();
+HYLE_NOINLINE Result<int> hyle_info_leaf(int value) {
+  return value >= 0 ? Result<int>(hyle::make_unexpected(hyle_prebuilt_error()))
+                    : Result<int>(value);
 }
-
-Status macro_chain(bool fail_first, bool fail_second) {
-  HYLE_RETURN_IF_ERROR(void_leaf(fail_first));
-  HYLE_RETURN_IF_ERROR(void_leaf(fail_second));
-  return {};
-}
-
-Status manual_chain(bool fail_first, bool fail_second) {
-  Result<void> first = void_leaf(fail_first);
-  if (!first) return std::move(first).error();
-  Result<void> second = void_leaf(fail_second);
-  if (!second) return std::move(second).error();
-  return {};
-}
-
-hyle_status c_macro_ok_chain() {
-  HYLE_C_RETURN_IF_ERROR(hyle_status_ok());
-  HYLE_C_RETURN_IF_ERROR(hyle_status_ok());
-  return hyle_status_ok();
-}
-
-hyle_status c_manual_ok_chain() {
-  hyle_status first = hyle_status_ok();
-  if (first.rep != 0) return first;
-  hyle_status second = hyle_status_ok();
-  if (second.rep != 0) return second;
-  return hyle_status_ok();
+Result<int> hyle_info_chain(int value) {
+  HYLE_ASSIGN_OR_RETURN(int result, hyle_info_leaf(value));
+  return result;
 }
 
 #if defined(HYLE_BENCH_ABSL)
@@ -77,10 +51,9 @@ constexpr std::string_view kPosixPayloadUrl =
 
 void set_absl_native_payload(absl::Status &status, std::string_view type_url,
                              std::int64_t code) {
-  status.SetPayload(
-      type_url,
-      absl::Cord(absl::string_view(reinterpret_cast<const char *>(&code),
-                                   sizeof(code))));
+  status.SetPayload(type_url,
+                    absl::Cord(absl::string_view(
+                        reinterpret_cast<const char *>(&code), sizeof(code))));
 }
 
 absl::Status absl_native_error() {
@@ -91,79 +64,161 @@ absl::Status absl_native_error() {
 }
 
 absl::Status absl_errno_with_native() {
-  absl::Status status = absl::ErrnoToStatus(
-      ENOENT, "opening model", absl::SourceLocation());
+  absl::Status status =
+      absl::ErrnoToStatus(ENOENT, "opening model", absl::SourceLocation());
   set_absl_native_payload(status, kPosixPayloadUrl, ENOENT);
   return status;
+}
+
+const absl::Status &absl_prebuilt_error() {
+  static const absl::Status status(absl::StatusCode::kNotFound,
+                                   "resource not found",
+                                   absl::SourceLocation());
+  return status;
+}
+
+HYLE_NOINLINE absl::StatusOr<int> absl_info_leaf(int value) {
+  return value >= 0 ? absl::StatusOr<int>(absl_prebuilt_error())
+                    : absl::StatusOr<int>(value);
+}
+
+absl::StatusOr<int> absl_info_chain(int value) {
+  auto result = absl_info_leaf(value);
+  if (!result.ok()) return result.status();
+  return *result;
 }
 #endif
 
 }  // namespace
 
 int main() {
-  // sched JoinHandle/channel operations publicly return Result<void>. Keep both
-  // booleans opaque to the optimizer so neither side can delete a whole call.
+  // Owning human-readable error construction: same canonical code and message,
+  // with Abseil source-location capture explicitly disabled on the rival.
   {
+    constexpr std::string_view message = "resource not found in shard 7";
     nb::Bench bench;
-    bench.title("Result<void> propagate OK through 2 calls")
-        .relative(true)
-        .batch(1)
-        .minEpochIterations(2000000);
-    bench.run("manual Result<void> checks (OK)", [&] {
-      bool fail_first = false;
-      bool fail_second = false;
-      nb::doNotOptimizeAway(fail_first);
-      nb::doNotOptimizeAway(fail_second);
-      Status status = manual_chain(fail_first, fail_second);
-      nb::doNotOptimizeAway(status.ok());
-    });
-    bench.run("HYLE RETURN_IF_ERROR(Result<void>) (OK)", [&] {
-      bool fail_first = false;
-      bool fail_second = false;
-      nb::doNotOptimizeAway(fail_first);
-      nb::doNotOptimizeAway(fail_second);
-      Status status = macro_chain(fail_first, fail_second);
-      nb::doNotOptimizeAway(status.ok());
-    });
-  }
-
-  {
-    nb::Bench bench;
-    bench.title("C ABI Status propagate OK through 2 calls")
-        .relative(true)
-        .batch(1)
-        .minEpochIterations(2000000);
-    bench.run("C manual rep checks (OK)", [&] {
-      hyle_status status = c_manual_ok_chain();
-      nb::doNotOptimizeAway(status.rep);
-    });
-    bench.run("C HYLE_C_RETURN_IF_ERROR (OK)", [&] {
-      hyle_status status = c_macro_ok_chain();
-      nb::doNotOptimizeAway(status.rep);
-    });
-  }
-
-  {
-    nb::Bench bench;
-    bench.title("Result<void> propagate ERROR from second call")
+    bench.title("Status construct with message")
         .relative(true)
         .batch(1)
         .minEpochIterations(1000000);
-    bench.run("manual Result<void> checks (ERROR)", [&] {
-      bool fail_first = false;
-      bool fail_second = true;
-      nb::doNotOptimizeAway(fail_first);
-      nb::doNotOptimizeAway(fail_second);
-      Status status = manual_chain(fail_first, fail_second);
+#if defined(HYLE_BENCH_ABSL)
+    bench.run("absl::Status(code,msg,no-loc)", [&] {
+      absl::Status status(absl::StatusCode::kNotFound, message,
+                          absl::SourceLocation());
       nb::doNotOptimizeAway(status.ok());
     });
-    bench.run("HYLE RETURN_IF_ERROR(Result<void>) (ERROR)", [&] {
-      bool fail_first = false;
-      bool fail_second = true;
-      nb::doNotOptimizeAway(fail_first);
-      nb::doNotOptimizeAway(fail_second);
-      Status status = macro_chain(fail_first, fail_second);
+#endif
+    bench.run("HYLE Status::NotFound(msg)", [&] {
+      Status status = Status::NotFound(message);
       nb::doNotOptimizeAway(status.ok());
+    });
+  }
+
+  {
+    const Status hyle_status =
+        Status::NotFound("resource not found in shard 7");
+#if defined(HYLE_BENCH_ABSL)
+    const absl::Status absl_status(absl::StatusCode::kNotFound,
+                                   "resource not found in shard 7",
+                                   absl::SourceLocation());
+#endif
+    nb::Bench bench;
+    bench.title("Status copy with message")
+        .relative(true)
+        .batch(1)
+        .minEpochIterations(2000000);
+#if defined(HYLE_BENCH_ABSL)
+    bench.run("absl::Status copy (message)", [&] {
+      absl::Status copy = absl_status;
+      nb::doNotOptimizeAway(copy.ok());
+    });
+#endif
+    bench.run("HYLE Status copy (message)", [&] {
+      Status copy = hyle_status;
+      nb::doNotOptimizeAway(copy.ok());
+    });
+  }
+
+  {
+    const Status hyle_status =
+        Status::Unavailable("device queue is unavailable");
+#if defined(HYLE_BENCH_ABSL)
+    const absl::Status absl_status(absl::StatusCode::kUnavailable,
+                                   "device queue is unavailable",
+                                   absl::SourceLocation());
+#endif
+    nb::Bench bench;
+    bench.title("Status prepend one semantic context")
+        .relative(true)
+        .batch(1)
+        .minEpochIterations(500000);
+#if defined(HYLE_BENCH_ABSL)
+    bench.run("absl::StatusBuilder SetPrepend", [&] {
+      absl::Status status =
+          absl::StatusBuilder(absl_status, absl::SourceLocation()).SetPrepend()
+          << "submit work: ";
+      nb::doNotOptimizeAway(status.ok());
+    });
+#endif
+    bench.run("HYLE Status::WithContext", [&] {
+      Status status = Status(hyle_status).WithContext("submit work");
+      nb::doNotOptimizeAway(status.ok());
+    });
+  }
+
+  {
+    const Status hyle_status =
+        Status::Unavailable("device queue is unavailable");
+#if defined(HYLE_BENCH_ABSL)
+    const absl::Status absl_status(absl::StatusCode::kUnavailable,
+                                   "device queue is unavailable",
+                                   absl::SourceLocation());
+#endif
+    nb::Bench bench;
+    bench.title("Status prepend three semantic contexts")
+        .relative(true)
+        .batch(1)
+        .minEpochIterations(250000);
+#if defined(HYLE_BENCH_ABSL)
+    bench.run("absl::StatusBuilder SetPrepend x3", [&] {
+      absl::Status status = absl_status;
+      status = absl::StatusBuilder(std::move(status), absl::SourceLocation())
+                   .SetPrepend()
+               << "dispatch batch: ";
+      status = absl::StatusBuilder(std::move(status), absl::SourceLocation())
+                   .SetPrepend()
+               << "execute graph: ";
+      status = absl::StatusBuilder(std::move(status), absl::SourceLocation())
+                   .SetPrepend()
+               << "serve request: ";
+      nb::doNotOptimizeAway(status.ok());
+    });
+#endif
+    bench.run("HYLE Status::WithContext x3", [&] {
+      Status status = Status(hyle_status)
+                          .WithContext("dispatch batch")
+                          .WithContext("execute graph")
+                          .WithContext("serve request");
+      nb::doNotOptimizeAway(status.ok());
+    });
+  }
+
+  {
+    int value = 1;
+    nb::Bench bench;
+    bench.title("Result propagate message error")
+        .relative(true)
+        .batch(1)
+        .minEpochIterations(1000000);
+#if defined(HYLE_BENCH_ABSL)
+    bench.run("absl::StatusOr message error", [&] {
+      auto result = absl_info_chain(value++);
+      nb::doNotOptimizeAway(result.ok());
+    });
+#endif
+    bench.run("HYLE Result message error", [&] {
+      auto result = hyle_info_chain(value++);
+      nb::doNotOptimizeAway(result.has_value());
     });
   }
 
@@ -189,8 +244,7 @@ int main() {
     });
 #if defined(HYLE_BENCH_ABSL)
     const absl::Status absl_status(absl::StatusCode::kUnavailable,
-                                   status.message(),
-                                   absl::SourceLocation());
+                                   status.message(), absl::SourceLocation());
     bench.run("absl::Status::ToString owning", [&] {
       std::string text = absl_status.ToString();
       nb::doNotOptimizeAway(text);
@@ -229,9 +283,8 @@ int main() {
     });
   }
 
-  // Real native-leaf construction: classify errno, obtain the CRT diagnostic,
-  // and prepend the operation in one Status allocation. Abseil exposes the
-  // same canonical adapter and is the direct mature-library comparison.
+  // Real native-leaf construction: both sides carry canonical code, message,
+  // operation context, and a machine-readable errno value.
   {
     nb::Bench bench;
     bench.title("errno to canonical Status with operation context")
@@ -239,11 +292,6 @@ int main() {
         .batch(1)
         .minEpochIterations(500000);
 #if defined(HYLE_BENCH_ABSL)
-    bench.run("absl::ErrnoToStatus", [&] {
-      absl::Status status = absl::ErrnoToStatus(
-          ENOENT, "opening model", absl::SourceLocation());
-      nb::doNotOptimizeAway(status.ok());
-    });
     bench.run("absl::ErrnoToStatus + native payload", [&] {
       absl::Status status = absl_errno_with_native();
       nb::doNotOptimizeAway(status.ok());
@@ -268,17 +316,17 @@ int main() {
     });
 #endif
     bench.run("HYLE Status::FromNative", [&] {
-      Status status = Status::FromNative(
-          hyle::StatusCode::Unavailable,
-          {hyle::NativeErrorDomain::Vulkan, -4}, "device lost");
+      Status status = Status::FromNative(hyle::StatusCode::Unavailable,
+                                         {hyle::NativeErrorDomain::Vulkan, -4},
+                                         "device lost");
       nb::doNotOptimizeAway(status.ok());
     });
   }
 
   {
     const Status hyle_status = Status::FromNative(
-        hyle::StatusCode::Unavailable,
-        {hyle::NativeErrorDomain::Vulkan, -4}, "device lost");
+        hyle::StatusCode::Unavailable, {hyle::NativeErrorDomain::Vulkan, -4},
+        "device lost");
 #if defined(HYLE_BENCH_ABSL)
     const absl::Status absl_status = absl_native_error();
 #endif
