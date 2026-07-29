@@ -350,7 +350,8 @@ TEST(IoNet, FullDuplexSameFdEpoll) {
     sched.spawn_on(kOwner, &fw);  // send(a): arms fd a for EPOLLOUT, concurrent
     // Feed recv(a) by writing to the peer end b (plain blocking write is fine here).
     static const char kFeed[] = "feed-recv";
-    ::write(static_cast<int>(sp.b), kFeed, sizeof(kFeed));
+    ASSERT_EQ(::write(static_cast<int>(sp.b), kFeed, sizeof(kFeed)),
+              static_cast<ssize_t>(sizeof(kFeed)));
 
     sched.drain();  // pre-fix: HANGS here (recv fiber orphaned by send's overwrite)
     sched.shutdown();

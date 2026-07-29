@@ -319,6 +319,10 @@ TEST(ObjectPoolDiagnosticsDeathTest, OutstandingLoanAtPoolDestructionTraps) {
         auto* pool = new ObjectPool<int>(system_allocator(), 1);
         auto loan = pool->try_loan(7);
         ASSERT_TRUE(loan);
+        // Detach the RAII handle while deliberately leaving its slot checked
+        // out. The pool destructor must diagnose that outstanding object; a
+        // later loan destructor must not touch the already-destroyed owner.
+        (void)loan.release();
         delete pool;
       },
       ".*");

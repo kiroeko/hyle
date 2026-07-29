@@ -75,12 +75,13 @@ void CheckConversionSpace(DN dn, ToFloat to_float, FromFloat from_float) {
                df, promoted.lanes);
     for (std::size_t lane = 0; lane < n; ++lane) {
       const float expected = to_float(narrow.lanes[lane]);
-      if (std::isnan(expected))
+      if (std::isnan(expected)) {
         EXPECT_TRUE(std::isnan(promoted.lanes[lane])) << (base + lane);
-      else
+      } else {
         EXPECT_EQ(std::bit_cast<std::uint32_t>(promoted.lanes[lane]),
                   std::bit_cast<std::uint32_t>(expected))
             << (base + lane);
+      }
     }
   }
 
@@ -97,10 +98,11 @@ void CheckConversionSpace(DN dn, ToFloat to_float, FromFloat from_float) {
                      encoded.lanes);
     for (std::size_t lane = 0; lane < n; ++lane) {
       const T expected = from_float(input.lanes[lane]);
-      if (std::isnan(input.lanes[lane]))
+      if (std::isnan(input.lanes[lane])) {
         EXPECT_TRUE(std::isnan(to_float(encoded.lanes[lane]))) << (base + lane);
-      else
+      } else {
         EXPECT_EQ(encoded.lanes[lane].bits, expected.bits) << (base + lane);
+      }
     }
   }
 }
@@ -137,17 +139,19 @@ void CheckConversions(DN dn, ToFloat to_float, FromFloat from_float) {
 
   for (std::size_t i = 0; i < n; ++i) {
     const float expected = to_float(narrow.lanes[i]);
-    if (std::isnan(expected))
+    if (std::isnan(expected)) {
       EXPECT_TRUE(std::isnan(promoted.lanes[i])) << i;
-    else
+    } else {
       EXPECT_EQ(std::bit_cast<std::uint32_t>(promoted.lanes[i]),
                 std::bit_cast<std::uint32_t>(expected))
           << i;
+    }
     const auto expected_encoded = from_float(input.lanes[i]);
-    if (std::isnan(input.lanes[i]))
+    if (std::isnan(input.lanes[i])) {
       EXPECT_TRUE(std::isnan(to_float(encoded.lanes[i]))) << i;
-    else
+    } else {
       EXPECT_EQ(encoded.lanes[i].bits, expected_encoded.bits) << i;
+    }
   }
 }
 
@@ -270,8 +274,9 @@ void CheckCompareAndReduce(DN dn, FromFloat from_float,
   EXPECT_EQ(hs::ReduceMinNarrow(dn, with_nan).bits, canonical_qnan);
   EXPECT_EQ(hs::ReduceMaxNarrow(dn, with_nan).bits, canonical_qnan);
   EXPECT_EQ(hs::ReduceMinTotalOrderNarrow(dn, with_nan).bits, negative_qnan);
-  if (n > 1)
+  if (n > 1) {
     EXPECT_EQ(hs::ReduceMaxTotalOrderNarrow(dn, with_nan).bits, positive_qnan);
+  }
   EXPECT_EQ(hs::ReduceMinNumberNarrow(dn, with_nan).bits,
             from_float(n > 1 ? 3.0f : 2.0f).bits);
   EXPECT_EQ(hs::ReduceMaxNumberNarrow(dn, with_nan).bits,

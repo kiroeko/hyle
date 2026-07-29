@@ -209,7 +209,9 @@ HYLE_FORCE_INLINE VFromD<DF> promote_f16(DF df, V packed) noexcept {
 
 template <class DN, class V>
 HYLE_FORCE_INLINE VFromNarrowD<DN> demote_f16(DN dn, V value) noexcept {
+#if defined(HYLE_SIMD_TARGET_AVX512) || defined(HYLE_SIMD_TARGET_AVX2)
   using DF = typename DN::FloatTag;
+#endif
 #if defined(HYLE_SIMD_TARGET_AVX512)
   if constexpr (HYLE_SIMD_BYTES_D(DF) > 32) {
     VFromNarrowD<DN> result;

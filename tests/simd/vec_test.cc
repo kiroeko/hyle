@@ -580,7 +580,9 @@ TEST(Vec, MathExtFloat) {
   hs::Store(hs::MulByPow2(hs::Load(d, big.data), hs::Load(di, ebig.data)), d, out.data);
   for (std::size_t i = 0; i < n; ++i) {
     const float ref = std::ldexp(big.data[i], static_cast<int>(ebig.data[i]));
-    if (std::isnan(ref)) EXPECT_TRUE(std::isnan(out.data[i])) << "mulbypow2 wide nan i=" << i;
+    if (std::isnan(ref)) {
+      EXPECT_TRUE(std::isnan(out.data[i])) << "mulbypow2 wide nan i=" << i;
+    }
     else EXPECT_EQ(out.data[i], ref) << "mulbypow2 wide i=" << i << " v=" << big.data[i] << " e=" << ebig.data[i];
   }
 }
@@ -810,7 +812,14 @@ TEST(Vec, CompressAndMaskedMemory) {
   auto m = hs::Eq(hs::Load(d, par.data), hs::Set(d, 0));  // even lanes true
   // CompressNot(v, m) = Compress(v, ~m): keeps ODD lanes packed low.
   hs::Store(hs::CompressNot(va, m), d, out.data);
-  { std::size_t k = 0; for (std::size_t i = 0; i < n; ++i) if (i % 2) EXPECT_EQ(out.data[k++], a.data[i]) << "cnot"; }
+  {
+    std::size_t k = 0;
+    for (std::size_t i = 0; i < n; ++i) {
+      if (i % 2) {
+        EXPECT_EQ(out.data[k++], a.data[i]) << "cnot";
+      }
+    }
+  }
   // MaskedGatherIndexOr: gather a[idx] on active lanes, else `no`.
   Buf<std::int32_t> idx; for (std::size_t i = 0; i < n; ++i) idx.data[i] = static_cast<std::int32_t>((n - 1) - i);
   auto vidx = hs::Load(d, idx.data);
@@ -841,10 +850,24 @@ TEST(Vec, CompressAndMaskedMemory) {
   std::uint8_t packed[8] = {};
   for (std::size_t i = 0; i < n; ++i) if (i % 2 == 0) packed[i / 8] |= static_cast<std::uint8_t>(1u << (i % 8));
   hs::Store(hs::CompressBits(va, packed), d, out.data);
-  { std::size_t k = 0; for (std::size_t i = 0; i < n; ++i) if (i % 2 == 0) EXPECT_EQ(out.data[k++], a.data[i]) << "cbits i=" << i; }
+  {
+    std::size_t k = 0;
+    for (std::size_t i = 0; i < n; ++i) {
+      if (i % 2 == 0) {
+        EXPECT_EQ(out.data[k++], a.data[i]) << "cbits i=" << i;
+      }
+    }
+  }
   // LoadExpand: scatter first CountTrue(m) contiguous elems of p out to the true (even) lanes.
   hs::Store(hs::LoadExpand(m, d, a.data), d, out.data);
-  { std::size_t k = 0; for (std::size_t i = 0; i < n; ++i) if (i % 2 == 0) EXPECT_EQ(out.data[i], a.data[k++]) << "lexp i=" << i; }
+  {
+    std::size_t k = 0;
+    for (std::size_t i = 0; i < n; ++i) {
+      if (i % 2 == 0) {
+        EXPECT_EQ(out.data[i], a.data[k++]) << "lexp i=" << i;
+      }
+    }
+  }
 }
 
 // ---- B-4 ternary bit fusion + sign/reduce helpers -----------------------------------
@@ -961,7 +984,9 @@ TEST(Vec, LaneAccessAndInit) {
   for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], static_cast<std::int32_t>(10 + i)) << "iota i=" << i;
   // ExtractLane / InsertLane.
   EXPECT_EQ(hs::ExtractLane(vi, 0), 10);
-  if (n >= 2) EXPECT_EQ(hs::ExtractLane(vi, 1), 11);
+  if (n >= 2) {
+    EXPECT_EQ(hs::ExtractLane(vi, 1), 11);
+  }
   auto vj = hs::InsertLane(vi, 0, 999);
   hs::Store(vj, d, out.data);
   EXPECT_EQ(out.data[0], 999); for (std::size_t i = 1; i < n; ++i) EXPECT_EQ(out.data[i], static_cast<std::int32_t>(10+i));
@@ -1046,7 +1071,12 @@ TEST(Vec, SwizzleCompletion) {
   hs::Store(hs::Slide1Up(d, va), d, out.data);
   EXPECT_EQ(out.data[0], 0); for (std::size_t i = 1; i < n; ++i) EXPECT_EQ(out.data[i], a.data[i-1]) << "s1up i=" << i;
   hs::Store(hs::Slide1Down(d, va), d, out.data);
-  if (n) EXPECT_EQ(out.data[n-1], 0); for (std::size_t i = 0; i+1 < n; ++i) EXPECT_EQ(out.data[i], a.data[i+1]) << "s1dn i=" << i;
+  if (n) {
+    EXPECT_EQ(out.data[n - 1], 0);
+  }
+  for (std::size_t i = 0; i + 1 < n; ++i) {
+    EXPECT_EQ(out.data[i], a.data[i + 1]) << "s1dn i=" << i;
+  }
   // SlideUpLanes(amt=2).
   if (n >= 2) {
     hs::Store(hs::SlideUpLanes(d, va, 2), d, out.data);
@@ -2393,13 +2423,19 @@ TEST(Vec, CompressCappedI64) {
 
     hs::Store(hs::Compress(v, mask), d, out);
     std::size_t packed = 0;
-    for (std::size_t i = 0; i < n; ++i)
-      if ((bits >> i) & 1u) EXPECT_EQ(out[packed++], values[i]);
+    for (std::size_t i = 0; i < n; ++i) {
+      if ((bits >> i) & 1u) {
+        EXPECT_EQ(out[packed++], values[i]);
+      }
+    }
 
     hs::Store(hs::CompressNot(v, mask), d, out);
     packed = 0;
-    for (std::size_t i = 0; i < n; ++i)
-      if (((bits >> i) & 1u) == 0) EXPECT_EQ(out[packed++], values[i]);
+    for (std::size_t i = 0; i < n; ++i) {
+      if (((bits >> i) & 1u) == 0) {
+        EXPECT_EQ(out[packed++], values[i]);
+      }
+    }
   }
 }
 
@@ -3019,8 +3055,11 @@ TEST(Vec, GetBiasedExponentAndMulByFloorPow2) {
   hs::Store(hs::MulByFloorPow2(hs::Load(d, sv.data), hs::Load(d, sexp.data)), d, so.data);
   for (std::size_t i = 0; i < n; ++i) {
     const int c = static_cast<int>(i % 5);
-    if (c <= 2) EXPECT_TRUE(std::isnan(so.data[i])) << "special NaN i=" << i;
-    else if (c == 3) EXPECT_TRUE(std::isinf(so.data[i]) && so.data[i] > 0) << "special +inf i=" << i;
+    if (c <= 2) {
+      EXPECT_TRUE(std::isnan(so.data[i])) << "special NaN i=" << i;
+    } else if (c == 3) {
+      EXPECT_TRUE(std::isinf(so.data[i]) && so.data[i] > 0) << "special +inf i=" << i;
+    }
     else EXPECT_FLOAT_EQ(so.data[i], 12.0f) << "special normal i=" << i;
   }
   // Red-team wide finite exponents (overflow->inf, denormal, underflow->0) with fractional floor.
@@ -4225,10 +4264,7 @@ TEST(Vec, SumsOfAdjQuadAbsDiffFamily) {
   const hs::ScalableTag<std::uint8_t> d8;
   const std::size_t n = hs::Lanes(d8);
   if (n < 16) GTEST_SKIP() << "need >=16 u8 lanes";
-  using D16 = hs::Repartition<std::uint16_t, hs::ScalableTag<std::uint8_t>>;
   // Result has n/2 u16 lanes in same register width.
-  const hs::FixedTag<std::uint16_t, /*filled below*/ 1> _ignore{};
-  (void)_ignore;
   Buf<std::uint8_t> a, b;
   for (std::size_t i = 0; i < n; ++i) {
     a.data[i] = static_cast<std::uint8_t>(i * 3 + 1);

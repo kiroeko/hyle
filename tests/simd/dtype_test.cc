@@ -300,14 +300,15 @@ TEST(DtypeBatch, F32ToBf16Avx512MatchesScalar) {
 // On an x86 host with F16C the dispatcher must engage the hardware tier (not the floor).
 TEST(DtypeBatch, ActiveVariantEngagesHardwareWhenAvailable) {
 #if defined(HYLE_ARCH_X64)
-  if (hyle::simd::cpu_features().f16c)
+  if (hyle::simd::cpu_features().f16c) {
     EXPECT_NE(hyle::simd::runtime().dtype.features &
                   hyle::simd::Runtime::kFeatureF16c,
               0u);
-  else
+  } else {
     EXPECT_EQ(hyle::simd::runtime().dtype.features &
                   hyle::simd::Runtime::kFeatureF16c,
               0u);
+  }
 #elif defined(HYLE_ARCH_ARM64)
   // aarch64: fp16 via native vcvt + bf16 via NEON integer are ALWAYS compiled (NEON is the
   // ARMv8 baseline), so the dtype dispatcher engages the NEON tier, never the scalar floor.
@@ -400,14 +401,18 @@ TEST(DtypeBatch, Fp8E4M3BatchMatchesElement) {
   f8e4m3_to_f32_batch(src.data(), got.data(), src.size());
   for (int b = 0; b <= 0xFF; ++b) {
     const float ref = f8e4m3_to_f32(src[b]);
-    if (is_nan_f32(ref)) EXPECT_TRUE(is_nan_f32(got[b])) << "b=" << b;
+    if (is_nan_f32(ref)) {
+      EXPECT_TRUE(is_nan_f32(got[b])) << "b=" << b;
+    }
     else EXPECT_EQ(std::memcmp(&got[b], &ref, 4), 0) << "b=" << b;
   }
   // and the reverse batch direction round-trips
   std::vector<float8_e4m3_t> back(256);
   f32_to_f8e4m3_batch(got.data(), back.data(), got.size());
   for (int b = 0; b <= 0xFF; ++b) {
-    if (is_nan_f32(got[b])) EXPECT_EQ(back[b].bits & 0x7F, 0x7F) << "b=" << b;
+    if (is_nan_f32(got[b])) {
+      EXPECT_EQ(back[b].bits & 0x7F, 0x7F) << "b=" << b;
+    }
     else EXPECT_EQ(back[b].bits, src[b].bits) << "b=" << b;
   }
 }

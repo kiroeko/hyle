@@ -60,7 +60,7 @@ struct EchoResult {
 };
 
 // Server: accept one connection, read a message, echo it back, close.
-Task<int> server_coro(Allocator, IoContext* io, TcpListener* ls, EchoResult* r) {
+Task<int> server_coro(Allocator, IoContext*, TcpListener* ls, EchoResult* r) {
   TcpStream conn = co_await ls->accept(kOwner);
   if (!conn.valid()) {
     r->server_done.store(true, std::memory_order_release);

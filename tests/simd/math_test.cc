@@ -532,7 +532,7 @@ TEST(Math, ComplexF64SpecialTailAndExactAlias) {
     op.fn(re.data(), im.data(), re.data(), im.data(), input.size());
     for (std::size_t i = 0; i < input.size(); ++i) {
       const std::complex<double> want = op.ref(input[i]);
-      for (const auto [got, expected, part] :
+      for (const auto& [got, expected, part] :
            {std::tuple{re[i], want.real(), "re"}, std::tuple{im[i], want.imag(), "im"}}) {
         if (std::isnan(expected)) {
           EXPECT_TRUE(std::isnan(got)) << op.name << ' ' << part << " i=" << i;
@@ -782,8 +782,9 @@ TEST(Math, Simd18BreadthG) {
   }
   hyle::simd::acos_f32_batch(x, z, n);
   for (std::size_t i = 0; i < n; ++i) {
-    if (x[i] >= -1.f && x[i] <= 1.f)
+    if (x[i] >= -1.f && x[i] <= 1.f) {
       EXPECT_NEAR(z[i], std::acos(x[i]), 1e-4f) << "acos i=" << i;
+    }
   }
   hyle::simd::asin_f32_batch(x, z, n);
   hyle::simd::sinh_f32_batch(x, z, n);
@@ -804,9 +805,17 @@ TEST(Math, Simd18BreadthG) {
   hyle::simd::exp10_f32_batch(x, z, n);
   for (std::size_t i = 0; i < n; ++i) EXPECT_NEAR(z[i], std::pow(10.f, x[i]), 1e-3f) << "exp10 i=" << i;
   hyle::simd::fmod_f32_batch(y, x, z, n);
-  for (std::size_t i = 0; i < n; ++i) if (x[i] != 0.f) EXPECT_NEAR(z[i], std::fmod(y[i], x[i]), 1e-4f) << "fmod i=" << i;
+  for (std::size_t i = 0; i < n; ++i) {
+    if (x[i] != 0.f) {
+      EXPECT_NEAR(z[i], std::fmod(y[i], x[i]), 1e-4f) << "fmod i=" << i;
+    }
+  }
   hyle::simd::remainder_f32_batch(y, x, z, n);
-  for (std::size_t i = 0; i < n; ++i) if (x[i] != 0.f) EXPECT_NEAR(z[i], std::remainder(y[i], x[i]), 1e-4f) << "rem i=" << i;
+  for (std::size_t i = 0; i < n; ++i) {
+    if (x[i] != 0.f) {
+      EXPECT_NEAR(z[i], std::remainder(y[i], x[i]), 1e-4f) << "rem i=" << i;
+    }
+  }
   hyle::simd::nextafter_f32_batch(x, y, z, n);
   for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(z[i], std::nextafter(x[i], y[i])) << "nextafter i=" << i;
   hyle::simd::fdim_f32_batch(y, x, z, n);
@@ -826,9 +835,17 @@ TEST(Math, Simd18BreadthG) {
   hyle::simd::exp10_f64_batch(dx, dz, n);
   for (std::size_t i = 0; i < n; ++i) EXPECT_NEAR(dz[i], std::pow(10.0, dx[i]), 1e-6) << "exp10_64 i=" << i;
   hyle::simd::fmod_f64_batch(dy, dx, dz, n);
-  for (std::size_t i = 0; i < n; ++i) if (dx[i] != 0.0) EXPECT_NEAR(dz[i], std::fmod(dy[i], dx[i]), 1e-9) << "fmod64 i=" << i;
+  for (std::size_t i = 0; i < n; ++i) {
+    if (dx[i] != 0.0) {
+      EXPECT_NEAR(dz[i], std::fmod(dy[i], dx[i]), 1e-9) << "fmod64 i=" << i;
+    }
+  }
   hyle::simd::remainder_f64_batch(dy, dx, dz, n);
-  for (std::size_t i = 0; i < n; ++i) if (dx[i] != 0.0) EXPECT_NEAR(dz[i], std::remainder(dy[i], dx[i]), 1e-9) << "rem64 i=" << i;
+  for (std::size_t i = 0; i < n; ++i) {
+    if (dx[i] != 0.0) {
+      EXPECT_NEAR(dz[i], std::remainder(dy[i], dx[i]), 1e-9) << "rem64 i=" << i;
+    }
+  }
   hyle::simd::nextafter_f64_batch(dx, dy, dz, n);
   for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(dz[i], std::nextafter(dx[i], dy[i])) << "nextafter64 i=" << i;
   hyle::simd::fdim_f64_batch(dy, dx, dz, n);

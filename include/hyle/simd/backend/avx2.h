@@ -263,7 +263,6 @@ HYLE_FORCE_INLINE void LoadInterleaved4(D d, const TFromD<D>* p, VFromD<D>& v0, 
 }
 template <class D> requires HYLE_SIMD_W(D, 16, 32)
 HYLE_FORCE_INLINE void StoreInterleaved2(VFromD<D> v0, VFromD<D> v1, D d, TFromD<D>* p) noexcept {
-  using T = TFromD<D>;
   constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
   // Interleave2 is width-independent: InterleaveLower/Upper (per-128-block) + block transpose.
   const auto v10L = InterleaveLower(v0, v1), v10U = InterleaveUpper(v0, v1);
@@ -1090,22 +1089,30 @@ HYLE_FORCE_INLINE Vec256<T, N> AverageRound(Vec256<T, N> a, Vec256<T, N> b) noex
 // Same as sse4's BitCast but 256-bit: free _mm256_cast* between __m256/__m256i/__m256d,
 // plain move within integer widths. Total bytes preserved (32) so lane count tracks width.
 namespace detail {
+HYLE_FORCE_INLINE __m256 bitcast_raw_avx2_impl(__m256 s, __m256*) noexcept { return s; }
+HYLE_FORCE_INLINE __m256i bitcast_raw_avx2_impl(__m256i s, __m256i*) noexcept { return s; }
+HYLE_FORCE_INLINE __m256d bitcast_raw_avx2_impl(__m256d s, __m256d*) noexcept { return s; }
+HYLE_FORCE_INLINE __m256i bitcast_raw_avx2_impl(__m256 s, __m256i*) noexcept {
+  return _mm256_castps_si256(s);
+}
+HYLE_FORCE_INLINE __m256i bitcast_raw_avx2_impl(__m256d s, __m256i*) noexcept {
+  return _mm256_castpd_si256(s);
+}
+HYLE_FORCE_INLINE __m256 bitcast_raw_avx2_impl(__m256i s, __m256*) noexcept {
+  return _mm256_castsi256_ps(s);
+}
+HYLE_FORCE_INLINE __m256d bitcast_raw_avx2_impl(__m256i s, __m256d*) noexcept {
+  return _mm256_castsi256_pd(s);
+}
+HYLE_FORCE_INLINE __m256d bitcast_raw_avx2_impl(__m256 s, __m256d*) noexcept {
+  return _mm256_castps_pd(s);
+}
+HYLE_FORCE_INLINE __m256 bitcast_raw_avx2_impl(__m256d s, __m256*) noexcept {
+  return _mm256_castpd_ps(s);
+}
 template <typename DstRaw, typename SrcRaw>
 HYLE_FORCE_INLINE DstRaw bitcast_raw_avx2(SrcRaw s) noexcept {
-  if constexpr (std::is_same_v<DstRaw, SrcRaw>) return s;
-  else if constexpr (std::is_same_v<SrcRaw, __m256> && std::is_same_v<DstRaw, __m256i>)
-    return _mm256_castps_si256(s);
-  else if constexpr (std::is_same_v<SrcRaw, __m256d> && std::is_same_v<DstRaw, __m256i>)
-    return _mm256_castpd_si256(s);
-  else if constexpr (std::is_same_v<SrcRaw, __m256i> && std::is_same_v<DstRaw, __m256>)
-    return _mm256_castsi256_ps(s);
-  else if constexpr (std::is_same_v<SrcRaw, __m256i> && std::is_same_v<DstRaw, __m256d>)
-    return _mm256_castsi256_pd(s);
-  else if constexpr (std::is_same_v<SrcRaw, __m256> && std::is_same_v<DstRaw, __m256d>)
-    return _mm256_castps_pd(s);
-  else if constexpr (std::is_same_v<SrcRaw, __m256d> && std::is_same_v<DstRaw, __m256>)
-    return _mm256_castpd_ps(s);
-  else static_assert(sizeof(DstRaw) == 0, "avx2 bitcast_raw: unhandled raw pair");
+  return bitcast_raw_avx2_impl(s, static_cast<DstRaw*>(nullptr));
 }
 }  // namespace detail
 template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>
@@ -3510,12 +3517,14 @@ HYLE_FORCE_INLINE void scatter_index_n_native_i32(Vec256<std::int32_t, N> v,
                                                    std::size_t max_lanes) noexcept {
   static_assert(N == 8 && NI == 8, "AVX2 native i32 ScatterIndexN requires full vectors");
   const std::size_t count = max_lanes < 8 ? max_lanes : 8;
+  if (count == 0) {
+    return;
+  }
 #define HYLE_AVX2_SCATTER_N_CASE(n)                                                        \
   case n:                                                                                 \
     detail::scatter_index_n_i32_lanes(v.raw, index.raw, base, std::make_index_sequence<n>{}); \
     return
   switch (count) {
-    HYLE_AVX2_SCATTER_N_CASE(0);
     HYLE_AVX2_SCATTER_N_CASE(1);
     HYLE_AVX2_SCATTER_N_CASE(2);
     HYLE_AVX2_SCATTER_N_CASE(3);

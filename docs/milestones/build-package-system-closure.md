@@ -252,18 +252,18 @@ Shell。普通 PowerShell 直接调用缓存中的 `cl.exe` 缺少 `INCLUDE/LIB`
   `LD_LIBRARY_PATH` 掩盖，而是让每个安装的 HYLE shared target 自带 sibling-relative lookup。
   修复后 `readelf` 确认 simd/platform 为 `RUNPATH [$ORIGIN]`，`otool` 确认二者为
   `LC_RPATH @loader_path`；安装 CMake 文件三平台均无 source/build 绝对路径。
-- 代表性 source embed 已由 Windows container sample 真运行；core 子集和 package smoke 由三平台
-  CI 守门，AArch64 GCC 14 交叉 target 另有不可执行目标程序的硬门。完整 compute/io 矩阵保留为
-  release check，不把每次提交 CI 变成全量依赖构建。
+- 代表性 source embed 已由 Windows container sample 真运行；三平台每提交 CI 构建并测试全部 14 个
+  模块的无外部后端 CPU 面，同时保留 package smoke；AArch64 GCC 14 交叉 target 另有不可执行目标
+  程序的硬门。CUDA/Vulkan/TLS/HTTP2/ggml 等外部 SDK/运行时组合仍由 release check 验证。
 
 ### 本轮四项代码量
 
 | 固定口径 | code |
 |---|---:|
-| 全库（含 docs/in-tree third_party） | 275,497 |
-| 自实现（含测试） | 134,163 |
-| 自实现（不含测试） | 92,124 |
-| build/package 实现 | 5,501 |
+| 全库（含 docs/in-tree third_party） | 275,785 |
+| 自实现（含测试） | 134,306 |
+| 自实现（不含测试） | 92,151 |
+| build/package 实现 | 5,523 |
 
 最后一项固定为 79 个自有 CMake 文件 + preset/CI + 8 个 build/fetch/setup/QEMU shell/PowerShell
 guard；不含 vendored CMake、测试源码和文档。CMake 验收脚本分别守 package version、

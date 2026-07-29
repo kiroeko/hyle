@@ -133,7 +133,7 @@ class Registry {
   mutable std::mutex mu_;
   mutable container::SwissTable<container::string_ref, Entry,
                                 container::Hash<container::string_ref>,
-                                std::equal_to<container::string_ref>,
+                                std::equal_to<>,
                                 mem::Allocator>
       entries_;
 };

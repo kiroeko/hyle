@@ -280,7 +280,6 @@ HYLE_FORCE_INLINE void LoadInterleaved4(D d, const TFromD<D>* p, VFromD<D>& v0, 
 }
 template <class D> requires HYLE_SIMD_W(D, 32, 64)
 HYLE_FORCE_INLINE void StoreInterleaved2(VFromD<D> v0, VFromD<D> v1, D d, TFromD<D>* p) noexcept {
-  using T = TFromD<D>;
   constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
   // width-independent: InterleaveLower/Upper (per-block) + 512 block juggle to [3210][7654].
   const auto i = InterleaveLower(v0, v1), j = InterleaveUpper(v0, v1);
@@ -913,22 +912,30 @@ HYLE_FORCE_INLINE Vec512<T, N> AverageRound(Vec512<T, N> a, Vec512<T, N> b) noex
 // Free _mm512_cast* between __m512/__m512i/__m512d, plain move within integer widths.
 // Total bytes preserved (64) so lane count tracks width.
 namespace detail {
+HYLE_FORCE_INLINE __m512 bitcast_raw_avx512_impl(__m512 s, __m512*) noexcept { return s; }
+HYLE_FORCE_INLINE __m512i bitcast_raw_avx512_impl(__m512i s, __m512i*) noexcept { return s; }
+HYLE_FORCE_INLINE __m512d bitcast_raw_avx512_impl(__m512d s, __m512d*) noexcept { return s; }
+HYLE_FORCE_INLINE __m512i bitcast_raw_avx512_impl(__m512 s, __m512i*) noexcept {
+  return _mm512_castps_si512(s);
+}
+HYLE_FORCE_INLINE __m512i bitcast_raw_avx512_impl(__m512d s, __m512i*) noexcept {
+  return _mm512_castpd_si512(s);
+}
+HYLE_FORCE_INLINE __m512 bitcast_raw_avx512_impl(__m512i s, __m512*) noexcept {
+  return _mm512_castsi512_ps(s);
+}
+HYLE_FORCE_INLINE __m512d bitcast_raw_avx512_impl(__m512i s, __m512d*) noexcept {
+  return _mm512_castsi512_pd(s);
+}
+HYLE_FORCE_INLINE __m512d bitcast_raw_avx512_impl(__m512 s, __m512d*) noexcept {
+  return _mm512_castps_pd(s);
+}
+HYLE_FORCE_INLINE __m512 bitcast_raw_avx512_impl(__m512d s, __m512*) noexcept {
+  return _mm512_castpd_ps(s);
+}
 template <typename DstRaw, typename SrcRaw>
 HYLE_FORCE_INLINE DstRaw bitcast_raw_avx512(SrcRaw s) noexcept {
-  if constexpr (std::is_same_v<DstRaw, SrcRaw>) return s;
-  else if constexpr (std::is_same_v<SrcRaw, __m512> && std::is_same_v<DstRaw, __m512i>)
-    return _mm512_castps_si512(s);
-  else if constexpr (std::is_same_v<SrcRaw, __m512d> && std::is_same_v<DstRaw, __m512i>)
-    return _mm512_castpd_si512(s);
-  else if constexpr (std::is_same_v<SrcRaw, __m512i> && std::is_same_v<DstRaw, __m512>)
-    return _mm512_castsi512_ps(s);
-  else if constexpr (std::is_same_v<SrcRaw, __m512i> && std::is_same_v<DstRaw, __m512d>)
-    return _mm512_castsi512_pd(s);
-  else if constexpr (std::is_same_v<SrcRaw, __m512> && std::is_same_v<DstRaw, __m512d>)
-    return _mm512_castps_pd(s);
-  else if constexpr (std::is_same_v<SrcRaw, __m512d> && std::is_same_v<DstRaw, __m512>)
-    return _mm512_castpd_ps(s);
-  else static_assert(sizeof(DstRaw) == 0, "avx512 bitcast_raw: unhandled raw pair");
+  return bitcast_raw_avx512_impl(s, static_cast<DstRaw*>(nullptr));
 }
 }  // namespace detail
 template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>

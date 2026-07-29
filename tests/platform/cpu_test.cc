@@ -317,10 +317,14 @@ TEST(Cpu, BestIsaAgreesWithFeatures) {
   // Whatever the tier, scalar/sse2 remain supported on x86-64.
   EXPECT_TRUE(supports(Isa::kSse2));
 #elif defined(HYLE_ARCH_ARM64)
-  if (best == Isa::kSve) EXPECT_TRUE(f.sve);
+  if (best == Isa::kSve) {
+    EXPECT_TRUE(f.sve);
+  }
   EXPECT_TRUE(supports(Isa::kNeon));  // mandatory on aarch64
 #elif defined(HYLE_ARCH_RISCV64)
-  if (best == Isa::kRvv) EXPECT_TRUE(f.rvv);
+  if (best == Isa::kRvv) {
+    EXPECT_TRUE(f.rvv);
+  }
 #endif
 }
 

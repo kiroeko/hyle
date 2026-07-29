@@ -102,7 +102,7 @@ struct TimeoutResult {
   TcpStream held;  // keep the accepted server conn alive (so it doesn't RST)
 };
 
-Task<int> timeout_server(Allocator, IoContext* io, TcpListener* ls,
+Task<int> timeout_server(Allocator, IoContext*, TcpListener* ls,
                          TimeoutResult* r) {
   TcpStream conn = co_await ls->accept(kOwner);
   r->held = std::move(conn);  // hold it open but send NOTHING -> client recv stalls
@@ -137,7 +137,7 @@ struct IoWinResult {
   char got[64] = {};
 };
 
-Task<int> iowin_server(Allocator, IoContext* io, TcpListener* ls, IoWinResult*) {
+Task<int> iowin_server(Allocator, IoContext*, TcpListener* ls, IoWinResult*) {
   TcpStream conn = co_await ls->accept(kOwner);
   static const char kMsg[] = "prompt";
   co_await conn.write(kMsg, sizeof(kMsg));
@@ -340,7 +340,7 @@ struct BaseRecvState {
   char buf[64] = {};
   std::atomic<std::int64_t> rc{999};
 };
-Task<int> base_recv_server(Allocator, IoContext* io, TcpListener* ls,
+Task<int> base_recv_server(Allocator, IoContext*, TcpListener* ls,
                            TcpStream* held) {
   TcpStream conn = co_await ls->accept(kOwner);
   static const char kMsg[] = "base-recv-ok";

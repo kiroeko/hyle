@@ -69,8 +69,9 @@ TEST(ComputeBuffer, TracksOwningBackendDevice) {
   Device devices[8];
   const std::size_t count = enumerate(devices, 8);
   for (std::size_t i = 0; i < count && i < 8; ++i) {
-    if (devices[i].ordinal() != owner.ordinal())
+    if (devices[i].ordinal() != owner.ordinal()) {
       EXPECT_FALSE(buffer->belongs_to(devices[i])) << devices[i].backend();
+    }
   }
 }
 

@@ -156,7 +156,12 @@ public:
     if constexpr (N == 0) {
       return 0;
     } else {
-      return static_cast<size_type>(storage_.size);
+      const size_type value = static_cast<size_type>(storage_.size);
+      // Every mutator funnels through set_size(). Preserve that invariant in
+      // the optimizer model too; otherwise a byte-sized counter for N=4 can
+      // be speculated as 5..255 and GCC invents an out-of-bounds destructor.
+      HYLE_ASSUME(value <= N);
+      return value;
     }
   }
   [[nodiscard]] static constexpr size_type capacity() noexcept { return N; }

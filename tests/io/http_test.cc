@@ -168,7 +168,7 @@ Task<HttpResponse> handler(Allocator alloc, void* ctx,
   co_return resp;
 }
 
-Task<int> server_fiber(Allocator alloc, IoContext* io, TcpListener* ls,
+Task<int> server_fiber(Allocator, IoContext*, TcpListener* ls,
                        Result* r) {
   // Accept up to 2 connections (one for the keep-alive test client, room for more).
   TcpStream conn = co_await ls->accept(kOwner);
@@ -260,7 +260,7 @@ Task<HttpResponse> smuggle_handler(Allocator, void* ctx,
   resp.set_body("ok");
   co_return resp;
 }
-Task<int> smuggle_server(Allocator alloc, IoContext* io, TcpListener* ls,
+Task<int> smuggle_server(Allocator alloc, IoContext*, TcpListener* ls,
                          SmuggleResult* r) {
   TcpStream conn = co_await ls->accept(kOwner);
   if (conn.valid()) co_await http_serve(alloc, std::move(conn), &smuggle_handler, r);
@@ -450,7 +450,9 @@ TEST(IoHttp, GetKeepAlive) {
   for (int i = 0; i < 5; ++i) {
     EXPECT_TRUE(r->request_uses_region[i]);
     EXPECT_EQ(r->request_alloc_state[i], r->request_alloc_state[0]);
-    if (i < 4) EXPECT_EQ(r->request_scratch[i], r->request_scratch[0]);
+    if (i < 4) {
+      EXPECT_EQ(r->request_scratch[i], r->request_scratch[0]);
+    }
   }
   EXPECT_GT(r->backing_4k_frees_seen[4], r->backing_4k_frees_seen[3])
       << "request Region high-water blocks were retained past the cap";

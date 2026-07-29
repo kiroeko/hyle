@@ -68,7 +68,7 @@ bool use_avx512bf16() noexcept {
 }
 #endif
 
-#if defined(HYLE_ARCH_ARM64)
+#if defined(HYLE_ARCH_ARM64) && defined(HYLE_SIMD_HAS_SVE_VARIANT)
 bool use_sve_dtype() noexcept {
 #if defined(HYLE_SIMD_EXACT_TARGET_SVE)
   return true;
@@ -80,7 +80,7 @@ bool use_sve_dtype() noexcept {
   return false;
 #endif
 }
-#elif defined(HYLE_ARCH_RISCV64)
+#elif defined(HYLE_ARCH_RISCV64) && defined(HYLE_SIMD_HAS_RVV_VARIANT)
 bool use_rvv_dtype() noexcept {
 #if defined(HYLE_SIMD_EXACT_TARGET_RVV)
   return true;

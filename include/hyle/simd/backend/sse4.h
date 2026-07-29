@@ -307,7 +307,6 @@ HYLE_FORCE_INLINE void LoadInterleaved4(D d, const TFromD<D>* p, VFromD<D>& v0, 
 }
 template <class D> requires HYLE_SIMD_W(D, 0, 16)
 HYLE_FORCE_INLINE void StoreInterleaved2(VFromD<D> v0, VFromD<D> v1, D d, TFromD<D>* p) noexcept {
-  using T = TFromD<D>;
   constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
   // width-independent: InterleaveLower/Upper native for all lane widths (1 block, raw store).
   StoreU(InterleaveLower(v0, v1), d, p + 0 * N);
@@ -1015,24 +1014,33 @@ HYLE_FORCE_INLINE Vec128<T, N> AverageRound(Vec128<T, N> a, Vec128<T, N> b) noex
 // integer width -> any integer width, all __m128i) is a plain move. Underpins gather index
 // math, mask<->vector bridging, FP bit tricks.
 namespace detail {
-// raw -> raw reinterpret between __m128 / __m128i / __m128d (free; no instruction emitted).
+// Overload selection avoids feeding GCC vector types through std::is_same,
+// which discards their target attributes and warns under -Werror. All nine
+// raw-class pairs still lower to a move or a zero-instruction cast intrinsic.
+HYLE_FORCE_INLINE __m128 bitcast_raw_sse_impl(__m128 s, __m128*) noexcept { return s; }
+HYLE_FORCE_INLINE __m128i bitcast_raw_sse_impl(__m128i s, __m128i*) noexcept { return s; }
+HYLE_FORCE_INLINE __m128d bitcast_raw_sse_impl(__m128d s, __m128d*) noexcept { return s; }
+HYLE_FORCE_INLINE __m128i bitcast_raw_sse_impl(__m128 s, __m128i*) noexcept {
+  return _mm_castps_si128(s);
+}
+HYLE_FORCE_INLINE __m128i bitcast_raw_sse_impl(__m128d s, __m128i*) noexcept {
+  return _mm_castpd_si128(s);
+}
+HYLE_FORCE_INLINE __m128 bitcast_raw_sse_impl(__m128i s, __m128*) noexcept {
+  return _mm_castsi128_ps(s);
+}
+HYLE_FORCE_INLINE __m128d bitcast_raw_sse_impl(__m128i s, __m128d*) noexcept {
+  return _mm_castsi128_pd(s);
+}
+HYLE_FORCE_INLINE __m128d bitcast_raw_sse_impl(__m128 s, __m128d*) noexcept {
+  return _mm_castps_pd(s);
+}
+HYLE_FORCE_INLINE __m128 bitcast_raw_sse_impl(__m128d s, __m128*) noexcept {
+  return _mm_castpd_ps(s);
+}
 template <typename DstRaw, typename SrcRaw>
 HYLE_FORCE_INLINE DstRaw bitcast_raw_sse(SrcRaw s) noexcept {
-  if constexpr (std::is_same_v<DstRaw, SrcRaw>) return s;
-  // Route through __m128i as the common integer form.
-  else if constexpr (std::is_same_v<SrcRaw, __m128> && std::is_same_v<DstRaw, __m128i>)
-    return _mm_castps_si128(s);
-  else if constexpr (std::is_same_v<SrcRaw, __m128d> && std::is_same_v<DstRaw, __m128i>)
-    return _mm_castpd_si128(s);
-  else if constexpr (std::is_same_v<SrcRaw, __m128i> && std::is_same_v<DstRaw, __m128>)
-    return _mm_castsi128_ps(s);
-  else if constexpr (std::is_same_v<SrcRaw, __m128i> && std::is_same_v<DstRaw, __m128d>)
-    return _mm_castsi128_pd(s);
-  else if constexpr (std::is_same_v<SrcRaw, __m128> && std::is_same_v<DstRaw, __m128d>)
-    return _mm_castps_pd(s);
-  else if constexpr (std::is_same_v<SrcRaw, __m128d> && std::is_same_v<DstRaw, __m128>)
-    return _mm_castpd_ps(s);
-  else static_assert(sizeof(DstRaw) == 0, "sse4 bitcast_raw: unhandled raw pair");
+  return bitcast_raw_sse_impl(s, static_cast<DstRaw*>(nullptr));
 }
 }  // namespace detail
 template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>

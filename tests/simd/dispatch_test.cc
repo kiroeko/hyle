@@ -43,7 +43,9 @@ void ExpectFeatureFromEnvironment(const char* name, bool actual) {
   const bool valid = (expected[0] == '0' || expected[0] == '1') &&
                      expected[1] == '\0';
   EXPECT_TRUE(valid) << name;
-  if (valid) EXPECT_EQ(actual, expected[0] == '1') << name;
+  if (valid) {
+    EXPECT_EQ(actual, expected[0] == '1') << name;
+  }
 #if defined(HYLE_COMPILER_MSVC)
   std::free(expected);
 #endif

@@ -46,7 +46,7 @@ struct hyle_util_registry_o {
   mutable hyle::container::SwissTable<
       hyle::container::string_ref, CRegistryEntry,
       hyle::container::Hash<hyle::container::string_ref>,
-      std::equal_to<hyle::container::string_ref>, hyle::mem::Allocator>
+      std::equal_to<>, hyle::mem::Allocator>
       entries{hyle::mem::system_allocator()};
 
   ~hyle_util_registry_o() {

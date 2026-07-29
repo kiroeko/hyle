@@ -153,8 +153,9 @@ TEST(GrowablePoolDiagnosticsDeathTest, DoubleDestroyTraps) {
 TEST(GrowablePoolDiagnosticsDeathTest, ForeignPointerTraps) {
   EXPECT_DEATH(
       {
-        GrowablePool<int> pool(system_allocator(), 1);
-        int foreign = 0;
+        struct PointerSizedValue { void* value; };
+        GrowablePool<PointerSizedValue> pool(system_allocator(), 1);
+        PointerSizedValue foreign{};
         pool.destroy(&foreign);
       },
       ".*");

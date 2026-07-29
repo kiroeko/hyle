@@ -305,17 +305,19 @@ TEST(Ops, ActiveVariantMatchesBestCompiledTier) {
   // Linux aarch64 may additionally ship the SVE scalable variant. The active
   // Runtime must match the highest variant actually compiled into this binary.
 #if defined(HYLE_SIMD_HAS_SVE_VARIANT)
-  if (best_isa() == Isa::kSve)
+  if (best_isa() == Isa::kSve) {
     EXPECT_EQ(active, Isa::kSve);
-  else if (best_isa() == Isa::kNeon)
+  } else if (best_isa() == Isa::kNeon) {
     EXPECT_EQ(active, Isa::kNeon);
-  else
+  } else {
     EXPECT_EQ(active, Isa::kScalar);
+  }
 #else
-  if (best_isa() == Isa::kNeon)
+  if (best_isa() == Isa::kNeon) {
     EXPECT_EQ(active, Isa::kNeon);
-  else
+  } else {
     EXPECT_EQ(active, Isa::kScalar);
+  }
 #endif
 #elif defined(HYLE_ARCH_RISCV64)
 #if defined(HYLE_SIMD_HAS_RVV_VARIANT)

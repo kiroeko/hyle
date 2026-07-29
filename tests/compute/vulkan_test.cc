@@ -568,7 +568,9 @@ TEST(VulkanCompute, RecordReplayReflectsBufferChanges) {
     ASSERT_TRUE(rl->replay(*s).ok()) << "iter " << iter;
     // replay() is async. Submit the immutable command buffer again while the first replay
     // may still be pending; Vulkan requires SIMULTANEOUS_USE for this legal API shape.
-    if (iter == 1) ASSERT_TRUE(rl->replay(*s).ok());
+    if (iter == 1) {
+      ASSERT_TRUE(rl->replay(*s).ok());
+    }
     ASSERT_TRUE(s->sync().ok());
 
     std::vector<float> ho(kN, -1.0f);

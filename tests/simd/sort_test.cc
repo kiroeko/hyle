@@ -118,16 +118,18 @@ void expect_select(std::size_t n, std::size_t k, int dist, SortOrder order, std:
   // Partition postcondition: nothing before k orders-after keys[k], nothing after orders-before.
   const T pivot = got[k];
   for (std::size_t i = 0; i < k; ++i) {
-    if (asc)
+    if (asc) {
       ASSERT_LE(got[i], pivot) << "select left n=" << n << " k=" << k << " i=" << i;
-    else
+    } else {
       ASSERT_GE(got[i], pivot) << "select left n=" << n << " k=" << k << " i=" << i;
+    }
   }
   for (std::size_t i = k + 1; i < n; ++i) {
-    if (asc)
+    if (asc) {
       ASSERT_GE(got[i], pivot) << "select right n=" << n << " k=" << k << " i=" << i;
-    else
+    } else {
       ASSERT_LE(got[i], pivot) << "select right n=" << n << " k=" << k << " i=" << i;
+    }
   }
 }
 
@@ -274,13 +276,19 @@ TEST(Sort, FloatingNaNsLastPartialAndSelect) {
     EXPECT_EQ(selected[2], expected_prefix[2]);
     for (std::size_t i = 0; i < 2; ++i) {
       EXPECT_FALSE(std::isnan(selected[i]));
-      if (asc) EXPECT_LE(selected[i], selected[2]);
-      else EXPECT_GE(selected[i], selected[2]);
+      if (asc) {
+        EXPECT_LE(selected[i], selected[2]);
+      } else {
+        EXPECT_GE(selected[i], selected[2]);
+      }
     }
     for (std::size_t i = 3; i < selected.size(); ++i) {
       if (std::isnan(selected[i])) continue;
-      if (asc) EXPECT_GE(selected[i], selected[2]);
-      else EXPECT_LE(selected[i], selected[2]);
+      if (asc) {
+        EXPECT_GE(selected[i], selected[2]);
+      } else {
+        EXPECT_LE(selected[i], selected[2]);
+      }
     }
   }
 }
@@ -379,8 +387,11 @@ void run_kv() {
         ASSERT_EQ(kv[i].value, static_cast<K>(kv[i].key * 2654435761u + 1))
             << "kv value mispaired n=" << n << " i=" << i;  // value still fn(its key)
       for (std::size_t i = 1; i < n; ++i) {
-        if (asc) ASSERT_LE(kv[i - 1].key, kv[i].key) << "kv not asc n=" << n << " i=" << i;
-        else ASSERT_GE(kv[i - 1].key, kv[i].key) << "kv not desc n=" << n << " i=" << i;
+        if (asc) {
+          ASSERT_LE(kv[i - 1].key, kv[i].key) << "kv not asc n=" << n << " i=" << i;
+        } else {
+          ASSERT_GE(kv[i - 1].key, kv[i].key) << "kv not desc n=" << n << " i=" << i;
+        }
       }
       // partial_sort top-k: first k keys are the k smallest/largest, values still paired.
       if (n >= 4) {
@@ -391,8 +402,13 @@ void run_kv() {
         partial_sort(kv2.data(), n, k, order);
         for (std::size_t i = 0; i < k; ++i)
           ASSERT_EQ(kv2[i].value, static_cast<K>(kv2[i].key * 2654435761u + 1)) << "psort kv mispair";
-        for (std::size_t i = 1; i < k; ++i)
-          if (asc) ASSERT_LE(kv2[i - 1].key, kv2[i].key); else ASSERT_GE(kv2[i - 1].key, kv2[i].key);
+        for (std::size_t i = 1; i < k; ++i) {
+          if (asc) {
+            ASSERT_LE(kv2[i - 1].key, kv2[i].key);
+          } else {
+            ASSERT_GE(kv2[i - 1].key, kv2[i].key);
+          }
+        }
       }
     }
   }
@@ -418,12 +434,18 @@ void run_kv_select() {
       select(got.data(), got.size(), k, order);
       EXPECT_EQ(got[k].key, ref[k].key);
       for (std::size_t i = 0; i < k; ++i) {
-        if (asc) EXPECT_LE(got[i].key, got[k].key);
-        else EXPECT_GE(got[i].key, got[k].key);
+        if (asc) {
+          EXPECT_LE(got[i].key, got[k].key);
+        } else {
+          EXPECT_GE(got[i].key, got[k].key);
+        }
       }
       for (std::size_t i = k + 1; i < got.size(); ++i) {
-        if (asc) EXPECT_GE(got[i].key, got[k].key);
-        else EXPECT_LE(got[i].key, got[k].key);
+        if (asc) {
+          EXPECT_GE(got[i].key, got[k].key);
+        } else {
+          EXPECT_LE(got[i].key, got[k].key);
+        }
       }
       auto by_pair = [](const KV& a, const KV& b) {
         return a.key != b.key ? a.key < b.key : a.value < b.value;

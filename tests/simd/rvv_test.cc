@@ -320,7 +320,11 @@ TEST(Rvv, TailOps) {
   auto mm = hs::Eq(hs::Load(di, mb), hs::Set(di, 1));
   hs::Store(hs::Compress(va, mm), di, o);
   std::size_t j = 0;
-  for (std::size_t i = 0; i < n; ++i) if (i % 2 == 0) EXPECT_EQ(o[j++], a[i]);
+  for (std::size_t i = 0; i < n; ++i) {
+    if (i % 2 == 0) {
+      EXPECT_EQ(o[j++], a[i]);
+    }
+  }
   alignas(64) std::int32_t cs[kBuf];
   const std::size_t wrote = hs::CompressStore(va, mm, di, cs);
   EXPECT_EQ(wrote, hs::CountTrue(di, mm));

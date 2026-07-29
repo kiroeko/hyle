@@ -330,7 +330,11 @@ TEST(Sve, TailAndCompress) {
   auto mm = hs::Eq(hs::Load(d, mb), hs::Set(d, static_cast<T>(1)));
   hs::Store(hs::Compress(va, mm), d, o);
   std::size_t j = 0;
-  for (std::size_t i = 0; i < n; ++i) if (i % 2 == 0) EXPECT_EQ(o[j++], a[i]);
+  for (std::size_t i = 0; i < n; ++i) {
+    if (i % 2 == 0) {
+      EXPECT_EQ(o[j++], a[i]);
+    }
+  }
 }
 
 TEST(Sve, PopCountLeadingZero) {
@@ -495,7 +499,11 @@ TEST(Sve, CleanNativeBatch) {
   const std::size_t wrote = hs::CompressStore(va, mm, di, cs);
   EXPECT_EQ(wrote, hs::CountTrue(di, mm));
   std::size_t j = 0;
-  for (std::size_t i = 0; i < n; ++i) if (i % 2 == 0) EXPECT_EQ(cs[j++], a[i]);
+  for (std::size_t i = 0; i < n; ++i) {
+    if (i % 2 == 0) {
+      EXPECT_EQ(cs[j++], a[i]);
+    }
+  }
 }
 
 // P0: instantiate the generic complex/Newton/rotate/128-bit compare layer against SVE.

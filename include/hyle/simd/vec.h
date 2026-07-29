@@ -864,10 +864,10 @@ HYLE_FORCE_INLINE VFromD<D> LoadExpand(M m, D d, const TFromD<D>* p) noexcept {
 template <class D, class VI>
 HYLE_FORCE_INLINE VFromD<D> GatherOffset(D d, const TFromD<D>* base, VI offsets) noexcept {
   using T = TFromD<D>;
-  using OffT = TFromD<DFromV<VI>>;
   // avx2 32-bit: native vpgather with scale=1 (offset is a byte offset). Was a scalar byte-copy
   // loop -- fine-ish on GCC (~1.2x) but MSVC didn't optimize it (~5x slower than Highway).
 #if defined(HYLE_SIMD_AVX2_HAS_NATIVE_GATHER_OFFSET32)
+  using OffT = TFromD<DFromV<VI>>;
   if constexpr (sizeof(T) == 4 && sizeof(OffT) == 4) {
     return NativeGatherOffset32(d, base, offsets);
   } else
@@ -901,8 +901,8 @@ HYLE_FORCE_INLINE void ScatterOffset(VFromD<D> v, D d, TFromD<D>* base, VI offse
 template <class V, class M, class D, class VI>
 HYLE_FORCE_INLINE VFromD<D> MaskedGatherIndexOr(V no, M m, D d, const TFromD<D>* base, VI idx) noexcept {
   using T = TFromD<D>;
-  using IdxT = TFromD<DFromV<VI>>;
 #if defined(HYLE_SIMD_AVX2_HAS_NATIVE_MASKED_GATHER32)
+  using IdxT = TFromD<DFromV<VI>>;
   if constexpr (sizeof(T) == 4 && sizeof(IdxT) == 4) {
     return NativeMaskedGatherOr32(no, m, d, base, idx);  // _mm256_mask_i32gather, fault-safe
   } else

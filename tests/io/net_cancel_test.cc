@@ -65,13 +65,13 @@ struct CancelResult {
   CancelToken* tok = nullptr;
 };
 
-Task<int> cancel_server(Allocator, IoContext* io, TcpListener* ls, CancelResult* r) {
+Task<int> cancel_server(Allocator, IoContext*, TcpListener* ls, CancelResult* r) {
   TcpStream conn = co_await ls->accept(kOwner);
   r->held = std::move(conn);  // hold open, send NOTHING -> client recv stalls
   co_return 0;
 }
 
-Task<int> cancel_client(Allocator alloc, IoContext* io, CancelResult* r,
+Task<int> cancel_client(Allocator, IoContext* io, CancelResult* r,
                         std::uint16_t port) {
   TcpStream s = tcp_socket(*io, kOwner);
   alignas(16) unsigned char ss[128];

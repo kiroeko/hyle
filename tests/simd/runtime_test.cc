@@ -64,10 +64,12 @@ TEST(SimdRuntime, TableMetadataAndExactTierLookup) {
   EXPECT_NE(active.narrow.sum_bf16, nullptr);
   EXPECT_NE(active.math.features & hs::Runtime::kFeatureMathExactLibmScalar, 0u);
   EXPECT_NE(active.dtype.features & hs::Runtime::kFeatureDtypeFp8Scalar, 0u);
-  if (active.sort.isa == hs::Isa::kSve)
+  if (active.sort.isa == hs::Isa::kSve) {
     EXPECT_NE(active.sort.features & hs::Runtime::kFeatureSortCappedNetwork, 0u);
-  if (active.bitpack.isa == hs::Isa::kSve || active.bitpack.isa == hs::Isa::kRvv)
+  }
+  if (active.bitpack.isa == hs::Isa::kSve || active.bitpack.isa == hs::Isa::kRvv) {
     EXPECT_NE(active.bitpack.features & hs::Runtime::kFeatureBitpackLogical128, 0u);
+  }
   const hs::Runtime* exact = hs::runtime_for(active.isa);
   ASSERT_NE(exact, nullptr);
   EXPECT_EQ(active.ops.dot_f32, exact->ops.dot_f32);
@@ -104,8 +106,9 @@ TEST(SimdRuntime, TableMetadataAndExactTierLookup) {
 
 #if defined(HYLE_ARCH_X64)
   EXPECT_EQ(hs::runtime_for(hs::Isa::kNeon), nullptr);
-  if (const hs::Runtime* sse = hs::runtime_for(hs::Isa::kSse42))
+  if (const hs::Runtime* sse = hs::runtime_for(hs::Isa::kSse42)) {
     EXPECT_EQ(sse->math.isa, hs::Isa::kScalar);
+  }
 #elif defined(HYLE_ARCH_ARM64)
   EXPECT_EQ(hs::runtime_for(hs::Isa::kAvx2), nullptr);
 #elif defined(HYLE_ARCH_RISCV64)
