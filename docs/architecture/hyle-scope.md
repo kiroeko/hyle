@@ -104,7 +104,7 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 
 | 固定统计口径 | code | 说明 |
 |---|---:|---|
-| **全库代码** | **276,692** | tracked + 当前待提交文件；含 docs 与 in-tree third_party |
+| **全库代码** | **276,693** | tracked；含 docs 与 in-tree third_party |
 | **自实现（含测试）** | **134,759** | `include/hyle + src + tests`；只计 C/C++/CUDA，不含 CMake/Text |
 | **自实现（不含测试）** | **92,448** | `include/hyle + src`；只计 C/C++/CUDA，库本体硬锚 |
 | **当前处理模块实现（error）** | **1,223** | `include/hyle/error + include/hyle/c/error.h + src/error`；不含测试/benchmark/文档 |
