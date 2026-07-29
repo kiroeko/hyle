@@ -225,19 +225,22 @@ StatusCode status_code_from_errno(int error_number) noexcept {
 namespace detail {
 namespace {
 
-// Heap representation for a status that carries a message. Allocated with a
-// single malloc of sizeof(StatusRep) + len + 1 so the message bytes live inline
-// right after the header (header-before-data, same idea as carray). Never
-// exposed in a public header -- only reached through the functions below.
+// Ordinary message/detail errors keep the compact exact-size representation:
+// one allocation of sizeof(StatusRep) + len + 1 + optional native code. A
+// status with one semantic context stays exact-size but carries an internal
+// history flag. A second rvalue prepend promotes it to ContextStatusRep, which
+// reserves geometrically grown prefix space; later unique rvalues prepend in
+// place, while shared/lvalue errors use COW.
+//
+// This distinction is deliberate: the normal Status shape and its 12-byte heap
+// header pay no capacity metadata, while progressive error propagation has
+// amortized O(final message bytes) copying instead of rebuilding the complete
+// message at every stack layer.
 struct StatusRep {
   StatusRepHeader header;
-  StatusCode code;
+  std::uint16_t code_and_flags;
   NativeErrorDomain native_domain;
   std::uint32_t len;
-  char *msg() noexcept { return reinterpret_cast<char *>(this + 1); }
-  const char *msg() const noexcept {
-    return reinterpret_cast<const char *>(this + 1);
-  }
 };
 static_assert(sizeof(StatusRep) == 12,
               "native domain must consume the StatusRep's former padding");
@@ -245,8 +248,86 @@ static_assert(sizeof(StatusRep) == 12,
 static_assert(offsetof(StatusRep, header) == 0,
               "the header-inline retain path requires a stable prefix");
 
+struct ContextStatusRep {
+  StatusRep base;
+  std::uint32_t capacity;
+  std::uint32_t offset;
+};
+static_assert(sizeof(ContextStatusRep) == 20,
+              "context metadata should not acquire hidden padding");
+
+constexpr std::uint16_t kContextRepFlag = std::uint16_t{1} << 15;
+constexpr std::uint16_t kFlatContextFlag = std::uint16_t{1} << 14;
+constexpr std::uint16_t kRepFlags = kContextRepFlag | kFlatContextFlag;
+constexpr std::uint16_t kCodeMask =
+    static_cast<std::uint16_t>(~kRepFlags);
+constexpr std::size_t kSeparatorLen = 2;
+
+bool is_context_rep(const StatusRep *rep) noexcept {
+  return (rep->code_and_flags & kContextRepFlag) != 0;
+}
+
+StatusCode rep_code(const StatusRep *rep) noexcept {
+  return static_cast<StatusCode>(rep->code_and_flags & kCodeMask);
+}
+
+std::size_t native_detail_size(const StatusRep *rep) noexcept {
+  return rep->native_domain == NativeErrorDomain::None
+             ? std::size_t{0}
+             : sizeof(std::int64_t);
+}
+
+char *ordinary_message(StatusRep *rep) noexcept {
+  return reinterpret_cast<char *>(rep + 1);
+}
+
+const char *ordinary_message(const StatusRep *rep) noexcept {
+  return reinterpret_cast<const char *>(rep + 1);
+}
+
+char *context_storage(ContextStatusRep *rep) noexcept {
+  return reinterpret_cast<char *>(rep + 1) + native_detail_size(&rep->base);
+}
+
+const char *context_storage(const ContextStatusRep *rep) noexcept {
+  return reinterpret_cast<const char *>(rep + 1) +
+         native_detail_size(&rep->base);
+}
+
+char *rep_message(StatusRep *rep) noexcept {
+  if (!is_context_rep(rep)) return ordinary_message(rep);
+  auto *context_rep = reinterpret_cast<ContextStatusRep *>(rep);
+  return context_storage(context_rep) + context_rep->offset;
+}
+
+const char *rep_message(const StatusRep *rep) noexcept {
+  if (!is_context_rep(rep)) return ordinary_message(rep);
+  const auto *context_rep = reinterpret_cast<const ContextStatusRep *>(rep);
+  return context_storage(context_rep) + context_rep->offset;
+}
+
+char *native_detail(StatusRep *rep) noexcept {
+  if (is_context_rep(rep)) {
+    return reinterpret_cast<char *>(
+        reinterpret_cast<ContextStatusRep *>(rep) + 1);
+  }
+  return ordinary_message(rep) + rep->len + 1;
+}
+
+const char *native_detail(const StatusRep *rep) noexcept {
+  if (is_context_rep(rep)) {
+    return reinterpret_cast<const char *>(
+        reinterpret_cast<const ContextStatusRep *>(rep) + 1);
+  }
+  return ordinary_message(rep) + rep->len + 1;
+}
+
 StatusRep *as_rep(std::uintptr_t rep) noexcept {
   return reinterpret_cast<StatusRep *>(rep);
+}
+
+bool has_context_history(std::uintptr_t bits) noexcept {
+  return (as_rep(bits)->code_and_flags & kRepFlags) != 0;
 }
 
 #if defined(HYLE_TESTING)
@@ -280,17 +361,209 @@ std::uintptr_t make_status_rep(StatusCode code, NativeError native,
   if (mem == nullptr) return 0;
   auto *rep = new (mem) StatusRep{};
   rep->header.refcount.store(1, std::memory_order_relaxed);
-  rep->code = normalize_status_code(code);
+  rep->code_and_flags =
+      static_cast<std::uint16_t>(normalize_status_code(code));
   rep->native_domain = native.domain;
   rep->len = static_cast<std::uint32_t>(len);
-  if (len != 0) std::memcpy(rep->msg(), msg, len);
-  rep->msg()[len] = '\0';
+  char *out = ordinary_message(rep);
+  if (len != 0) std::memcpy(out, msg, len);
+  out[len] = '\0';
   if (native.present()) {
-    std::memcpy(rep->msg() + len + 1, &native.code, sizeof(native.code));
+    std::memcpy(out + len + 1, &native.code, sizeof(native.code));
   }
   const auto bits = reinterpret_cast<std::uintptr_t>(rep);
   HYLE_FATAL_ASSERT((bits & 3) == 0);
   return bits;
+}
+
+std::uint32_t grow_context_capacity(std::size_t required,
+                                    std::uint32_t current = 0) noexcept {
+  constexpr std::uint64_t kMax =
+      std::numeric_limits<std::uint32_t>::max();
+  if (required > kMax) return 0;
+
+  std::uint64_t capacity = current == 0 ? required : current;
+  while (capacity < required) {
+    const std::uint64_t growth = capacity / 2 > 32 ? capacity / 2 : 32;
+    if (capacity > kMax - growth) {
+      capacity = kMax;
+      break;
+    }
+    capacity += growth;
+  }
+  return capacity >= required ? static_cast<std::uint32_t>(capacity) : 0;
+}
+
+HYLE_FORCE_INLINE std::uintptr_t make_flat_context_rep(
+    StatusCode code, NativeError native, const char *context,
+    std::size_t context_len, const char *message,
+    std::size_t message_len) noexcept {
+  if (force_status_oom()) return 0;
+  native.domain = normalize_native_error_domain(native.domain);
+  const std::size_t separator_len = message_len == 0 ? 0 : kSeparatorLen;
+  if (context_len > std::numeric_limits<std::uint32_t>::max() ||
+      message_len > std::numeric_limits<std::uint32_t>::max() - context_len ||
+      separator_len > std::numeric_limits<std::uint32_t>::max() - context_len -
+                          message_len) {
+    return 0;
+  }
+  const std::size_t total = context_len + separator_len + message_len;
+  const std::size_t detail_size =
+      native.present() ? sizeof(native.code) : std::size_t{0};
+  if (detail_size > std::numeric_limits<std::size_t>::max() -
+                        sizeof(StatusRep) - 1 ||
+      total > std::numeric_limits<std::size_t>::max() - sizeof(StatusRep) - 1 -
+                  detail_size) {
+    return 0;
+  }
+
+  void *mem = std::malloc(sizeof(StatusRep) + total + 1 + detail_size);
+  if (mem == nullptr) return 0;
+  auto *rep = new (mem) StatusRep{};
+  rep->header.refcount.store(1, std::memory_order_relaxed);
+  rep->code_and_flags =
+      static_cast<std::uint16_t>(normalize_status_code(code)) |
+      kFlatContextFlag;
+  rep->native_domain = native.domain;
+  rep->len = static_cast<std::uint32_t>(total);
+  char *out = ordinary_message(rep);
+  if (context_len != 0) std::memcpy(out, context, context_len);
+  if (separator_len != 0) {
+    out[context_len] = ':';
+    out[context_len + 1] = ' ';
+  }
+  if (message_len != 0) {
+    std::memcpy(out + context_len + separator_len, message, message_len);
+  }
+  out[total] = '\0';
+  if (native.present()) {
+    std::memcpy(out + total + 1, &native.code, sizeof(native.code));
+  }
+
+  const auto bits = reinterpret_cast<std::uintptr_t>(rep);
+  HYLE_FATAL_ASSERT((bits & 3) == 0);
+  return bits;
+}
+
+std::uintptr_t make_context_rep(StatusCode code, NativeError native,
+                                const char *context, std::size_t context_len,
+                                const char *message, std::size_t message_len,
+                                std::uint32_t current_capacity = 0) noexcept {
+  if (force_status_oom()) return 0;
+  native.domain = normalize_native_error_domain(native.domain);
+  const std::size_t separator_len = message_len == 0 ? 0 : kSeparatorLen;
+  if (context_len > std::numeric_limits<std::uint32_t>::max() ||
+      message_len > std::numeric_limits<std::uint32_t>::max() - context_len ||
+      separator_len > std::numeric_limits<std::uint32_t>::max() - context_len -
+                          message_len) {
+    return 0;
+  }
+  const std::size_t total = context_len + separator_len + message_len;
+  const std::uint32_t capacity =
+      grow_context_capacity(total, current_capacity);
+  if (capacity == 0) return 0;
+
+  const std::size_t detail_size =
+      native.present() ? sizeof(native.code) : std::size_t{0};
+  constexpr std::size_t kTerminatorSize = 1;
+  if (detail_size > std::numeric_limits<std::size_t>::max() -
+                        sizeof(ContextStatusRep) - kTerminatorSize ||
+      capacity > std::numeric_limits<std::size_t>::max() -
+                     sizeof(ContextStatusRep) - detail_size -
+                     kTerminatorSize) {
+    return 0;
+  }
+
+  void *mem = std::malloc(sizeof(ContextStatusRep) + detail_size + capacity +
+                          kTerminatorSize);
+  if (mem == nullptr) return 0;
+  auto *rep = new (mem) ContextStatusRep{};
+  rep->base.header.refcount.store(1, std::memory_order_relaxed);
+  rep->base.code_and_flags =
+      static_cast<std::uint16_t>(normalize_status_code(code)) |
+      kContextRepFlag;
+  rep->base.native_domain = native.domain;
+  rep->base.len = static_cast<std::uint32_t>(total);
+  rep->capacity = capacity;
+  rep->offset = capacity - static_cast<std::uint32_t>(total);
+  if (native.present()) {
+    std::memcpy(reinterpret_cast<char *>(rep + 1), &native.code,
+                sizeof(native.code));
+  }
+
+  char *out = context_storage(rep) + rep->offset;
+  if (context_len != 0) std::memcpy(out, context, context_len);
+  if (separator_len != 0) {
+    out[context_len] = ':';
+    out[context_len + 1] = ' ';
+  }
+  if (message_len != 0) {
+    std::memcpy(out + context_len + separator_len, message, message_len);
+  }
+  out[total] = '\0';
+
+  const auto bits = reinterpret_cast<std::uintptr_t>(rep);
+  HYLE_FATAL_ASSERT((bits & 3) == 0);
+  return bits;
+}
+
+struct PrependContextResult {
+  std::uintptr_t rep;
+  bool succeeded;
+};
+
+PrependContextResult prepend_context_owned(std::uintptr_t bits,
+                                           const char *context,
+                                           std::size_t context_len) noexcept {
+  StatusRep *base = as_rep(bits);
+  const std::size_t message_len = base->len;
+  const std::size_t separator_len = message_len == 0 ? 0 : kSeparatorLen;
+  if (context_len > std::numeric_limits<std::uint32_t>::max() ||
+      message_len > std::numeric_limits<std::uint32_t>::max() - context_len ||
+      separator_len > std::numeric_limits<std::uint32_t>::max() - context_len -
+                          message_len) {
+    return {bits, false};
+  }
+  const std::size_t added = context_len + separator_len;
+
+  if (is_context_rep(base) &&
+      base->header.refcount.load(std::memory_order_acquire) == 1) {
+    auto *rep = reinterpret_cast<ContextStatusRep *>(base);
+    if (rep->offset >= added) {
+      const std::uint32_t new_offset =
+          rep->offset - static_cast<std::uint32_t>(added);
+      char *out = context_storage(rep) + new_offset;
+      // The context may be a view into the current message. It still cannot
+      // overlap this destination: all new bytes end exactly at old offset.
+      if (context_len != 0) std::memcpy(out, context, context_len);
+      if (separator_len != 0) {
+        out[context_len] = ':';
+        out[context_len + 1] = ' ';
+      }
+      rep->offset = new_offset;
+      rep->base.len += static_cast<std::uint32_t>(added);
+      return {bits, true};
+    }
+  }
+
+  std::uint32_t current_capacity = 0;
+  if (is_context_rep(base)) {
+    current_capacity =
+        reinterpret_cast<ContextStatusRep *>(base)->capacity;
+  }
+  NativeError native{base->native_domain, 0};
+  if (native.present()) {
+    std::memcpy(&native.code, native_detail(base), sizeof(native.code));
+  }
+  // The caller routes a first semantic layer through the exact-size flat path.
+  // Reaching here therefore establishes a progressive chain. Seed growth from
+  // the exact first-layer length so this allocation leaves useful prefix space
+  // without charging the common one-layer case.
+  if (current_capacity == 0) current_capacity = base->len;
+  const std::uintptr_t replacement = make_context_rep(
+      rep_code(base), native, context, context_len, rep_message(base),
+      message_len, current_capacity);
+  return {replacement == 0 ? bits : replacement, replacement != 0};
 }
 
 }  // namespace
@@ -316,73 +589,36 @@ std::uintptr_t status_make_context(StatusCode code, NativeError native,
                                    const char *context,
                                    std::size_t context_len, const char *message,
                                    std::size_t message_len) noexcept {
-  if (force_status_oom()) return 0;
-  native.domain = normalize_native_error_domain(native.domain);
-  constexpr std::size_t kSeparatorLen = 2;
-  const std::size_t separator_len = message_len == 0 ? 0 : kSeparatorLen;
-  if (context_len > std::numeric_limits<std::uint32_t>::max() ||
-      message_len > std::numeric_limits<std::uint32_t>::max() - context_len ||
-      separator_len > std::numeric_limits<std::uint32_t>::max() - context_len -
-                          message_len) {
-    return 0;
-  }
-  const std::size_t total = context_len + separator_len + message_len;
-  const std::size_t detail_size =
-      native.present() ? sizeof(native.code) : std::size_t{0};
-  if (detail_size > std::numeric_limits<std::size_t>::max() -
-                        sizeof(StatusRep) - 1 ||
-      total > std::numeric_limits<std::size_t>::max() - sizeof(StatusRep) - 1 -
-                  detail_size) {
-    return 0;
-  }
-
-  void *mem = std::malloc(sizeof(StatusRep) + total + 1 + detail_size);
-  if (mem == nullptr) return 0;
-  auto *rep = new (mem) StatusRep{};
-  rep->header.refcount.store(1, std::memory_order_relaxed);
-  rep->code = normalize_status_code(code);
-  rep->native_domain = native.domain;
-  rep->len = static_cast<std::uint32_t>(total);
-  char *out = rep->msg();
-  std::memcpy(out, context, context_len);
-  if (separator_len != 0) {
-    out[context_len] = ':';
-    out[context_len + 1] = ' ';
-  }
-  if (message_len != 0) {
-    std::memcpy(out + context_len + separator_len, message, message_len);
-  }
-  out[total] = '\0';
-  if (native.present()) {
-    std::memcpy(out + total + 1, &native.code, sizeof(native.code));
-  }
-  const auto bits = reinterpret_cast<std::uintptr_t>(rep);
-  HYLE_FATAL_ASSERT((bits & 3) == 0);
-  return bits;
+  return make_flat_context_rep(code, native, context, context_len, message,
+                               message_len);
 }
 
 void status_release(std::uintptr_t rep) noexcept {
   StatusRep *r = as_rep(rep);
   if (r->header.refcount.fetch_sub(1, std::memory_order_acq_rel) == 1) {
-    r->~StatusRep();
+    if (is_context_rep(r)) {
+      reinterpret_cast<ContextStatusRep *>(r)->~ContextStatusRep();
+    } else {
+      r->~StatusRep();
+    }
     std::free(r);
   }
 }
 
 StatusCode status_heap_code(std::uintptr_t rep) noexcept {
-  return as_rep(rep)->code;
+  return rep_code(as_rep(rep));
 }
 
 std::string_view status_heap_message(std::uintptr_t rep) noexcept {
   const StatusRep *r = as_rep(rep);
-  return std::string_view(r->msg(), r->len);
+  return std::string_view(rep_message(r), r->len);
 }
 
 NativeError status_heap_native_error(std::uintptr_t rep) noexcept {
   const StatusRep *r = as_rep(rep);
   NativeError native{r->native_domain, 0};
   if (native.present()) {
-    std::memcpy(&native.code, r->msg() + r->len + 1, sizeof(native.code));
+    std::memcpy(&native.code, native_detail(r), sizeof(native.code));
   }
   return native;
 }
@@ -495,6 +731,22 @@ Status Status::WithContextSlow(std::string_view context) const & noexcept {
 }
 
 Status Status::WithContextSlow(std::string_view context) && noexcept {
+  if (is_heap() && detail::has_context_history(rep_)) {
+    const std::uintptr_t old_rep = rep_;
+    const auto prepended = detail::prepend_context_owned(
+        old_rep, context.data(), context.size());
+    if (!prepended.succeeded) return std::move(*this);
+    if (prepended.rep == old_rep) {
+      Status result = detail::StatusAccess::adopt(old_rep);
+      rep_ = 0;
+      return result;
+    }
+    Status result = detail::StatusAccess::adopt(prepended.rep);
+    detail::status_release(old_rep);
+    rep_ = 0;
+    return result;
+  }
+
   const std::string_view current = message();
   const std::uintptr_t rep = detail::status_make_context(
       code(), native_error(), context.data(), context.size(), current.data(),

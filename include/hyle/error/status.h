@@ -258,8 +258,10 @@ class [[nodiscard]] Status {
                                       std::size_t cap) const noexcept;
 
   // Prefix semantic context on an error: "context: existing message". OK and
-  // empty context are no-ops. Only the error path allocates; on allocation
-  // failure the original status (including any existing message) is preserved.
+  // empty context are no-ops. The first layer is exact-size; a progressive
+  // rvalue chain then reuses unique geometrically grown prefix storage
+  // (amortized linear total copying). Lvalues/shared errors use copy-on-write.
+  // On allocation failure the original status and message are preserved.
 #if defined(HYLE_ERROR_BUILD) && !defined(HYLE_STATIC)
   // The DLL emits these entry points as well as the slow path. Consumers see
   // the inline definitions below, so their common OK path does not cross the

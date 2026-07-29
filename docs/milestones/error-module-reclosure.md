@@ -16,7 +16,8 @@ OS/CUDA/Vulkan 叶子诊断及定长机器可读 native detail。未发布，不
 
 - Status 所有自身操作 `noexcept`；非法枚举归一为 `Unknown`；OOM 保留 code，context
   OOM 保留原消息。
-- 新增一次分配、扁平文本的 `WithContext`；OK/空 context 快路径在消费方头内联。
+- 新增扁平连续文本的 `WithContext`；OK/空 context 快路径在消费方头内联。首层精确分配，
+  当前增量进一步让连续 rvalue 链按几何 prefix storage 渐进增长。
 - 传播宏收成 `HYLE_RETURN_IF_ERROR` / `HYLE_ASSIGN_OR_RETURN`，并迁入 compute/graph。
 - `make_unexpected(Status)` 收短常见 Result 错误返回；`HYLE_RETURN_IF_ERROR` 覆盖真实公开
   API 已使用的 `Result<void>`；`Status::Update`/`IgnoreError` 覆盖首错聚合和显式忽略。
@@ -150,3 +151,17 @@ architecture、C++/语言无关 guide、C guide、performance 与本任务记录
 error 自身的功能面、复杂度、C++ API、24-symbol C ABI、消费者用法和三平台性能证书至此
 再次收口。未来仍只按 architecture 记录的真实消费者触发器重开，不因参考库 API 数量或
 某个微基准可赢而扩大产品面。
+
+## 2026-07-29 增量：渐进 context 表示
+
+主动对照 Abseil StatusBuilder、anyhow/error-stack 的链式 frame 与 Boost.LEAF 动态错误槽后，
+确认旧扁平 `WithContext` 的连续 rvalue 链存在 O(k²) 总复制。没有等待深链先成为事故，也没有
+新增 benchmark-only builder/rope：普通 Status 和连续 message/C ABI 合同保持不变；第一层
+context 精确分配，第二层才升级为几何 prefix storage，唯一 rvalue 原地 prepend、共享值 COW，
+总复制降为 O(最终消息字节)。
+
+确定性测试覆盖 128 层扩容次数、消息顺序、共享 capacity rep、context alias、native detail、
+OOM 无分配进展及纯 C 64 层路径。Windows/WSL/Apple M4 的 C++ 59/59 与纯 C 均通过；发布形状
+（`HYLE_TEST_INSTRUMENTATION=OFF`）n=15 中，一层与旧证书持平，三层从
+120.361/56.547/62.786 ns 降到 78.994/43.255/42.714 ns；对同信息 Abseil 仍为三平台 WIN。
+数字只由 performance 文档承接，本节只记录任务与验收结论。

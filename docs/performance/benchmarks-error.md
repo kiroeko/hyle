@@ -57,8 +57,8 @@ canonical message/native/context carrier。故它是成本下界和选型提示�
 |---|---:|---:|---|
 | owning message Status 构造 | 27.744 / 9.876 / 17.412 | 47.071 / 20.017 / 31.054 | **WIN 1.704 / 2.037 / 1.877x** |
 | owning message Status 拷贝 | 10.238 / 8.850 / 3.181 | 10.580 / 9.262 / 4.180 | **WIN 1.037 / 1.045 / 1.314x** |
-| 前置一层语义 context | 44.537 / 20.948 / 19.170 | 262.126 / 91.302 / 118.366 | **WIN 5.875 / 4.318 / 6.280x** |
-| 前置三层语义 context | 120.361 / 56.547 / 62.786 | 771.647 / 278.287 / 342.946 | **WIN 6.390 / 4.902 / 5.555x** |
+| 前置一层语义 context | 44.660 / 21.686 / 17.401 | 259.779 / 91.417 / 120.739 | **WIN 5.800 / 4.203 / 6.440x** |
+| 前置三层语义 context | 78.994 / 43.255 / 42.714 | 767.287 / 277.394 / 339.224 | **WIN 9.721 / 6.480 / 7.721x** |
 | message Result 错误跨两个调用边界 | 9.709 / 9.221 / 3.814 | 21.157 / 21.248 / 7.202 | **WIN 2.198 / 2.292 / 1.860x** |
 | owning 人读格式化 | 31.484 / 19.741 / 23.787 | 40.831 / 22.874 / 30.729 | **WIN 1.289 / 1.165 / 1.232x** |
 | 首错聚合 `Update` | 9.221 / 8.794 / 3.181 | 10.537 / 9.188 / 4.184 | **WIN 1.141 / 1.045 / 1.315x** |
@@ -81,8 +81,10 @@ backtrace 或异常系统；参考库有而 HYLE 用户没有需求的能力，�
   `absl::StatusOr<int>` 在 Windows 为 24B、Linux/M4 为 16B。
 - OK 与 code-only Status 是 O(1)、零分配；native query 是 O(1)。
 - message 构造是 O(message bytes)，heap Status copy 是 O(1) 原子 retain。
-- 一次 `WithContext` 是 O(context + old message)；连续 k 层扁平重建最坏 O(k²)。这是少量
-  人工语义边界的产品选择；若真实调用出现深机器生成链，再评估链式表示。
+- 第一层 `WithContext` 精确生成扁平消息；第二层 rvalue 才进入 context 专属几何 prefix
+  storage，唯一所有权且容量足够时只写新前缀。连续 rvalue 链的总复制为 O(最终消息字节)，
+  扩容 O(log final bytes)；lvalue/共享值保持 COW，单次仍是 O(context + old message)。普通
+  message/native Status 不携带 capacity/offset。
 - errno canonical 分类是 O(1)；native description 的取得由 OS/CRT 主导，最终只构造一个
   owning Status。
 - 非法 Result error arm 的 fail-fast 诊断放在冷 `noinline` helper；正常传播帧不复制 abort

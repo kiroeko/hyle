@@ -235,6 +235,16 @@ int main(void) {
         strcmp(hyle_status_message_cstr(contextual),
                "launching kernel: vulkan vkQueueSubmit failed: device lost") ==
         0);
+    {
+      int i;
+      for (i = 0; i < 64; ++i) {
+        hyle_status_add_context(&contextual, "dispatching graph");
+      }
+      CHECK(strncmp(hyle_status_message_cstr(contextual),
+                    "dispatching graph: dispatching graph: ", 38) == 0);
+      CHECK(strstr(hyle_status_message_cstr(contextual), "device lost") !=
+            NULL);
+    }
     hyle_status_add_context(&contextual, NULL); /* no-op */
     hyle_status_add_context(NULL, "ignored");   /* no-op */
     hyle_status_free(&contextual);

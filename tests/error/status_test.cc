@@ -192,6 +192,63 @@ TEST(Status, WithContextNestsOutermostFirst) {
             "VK_ERROR_DEVICE_LOST (-4)");
 }
 
+TEST(Status, RvalueContextChainReusesGeometricPrefixStorage) {
+  Status status = Status::Internal("leaf").WithContext("layer");
+  const char *previous_end = status.message().data() + status.message().size();
+  std::size_t allocation_changes = 0;
+  std::string expected = "layer: leaf";
+
+  // This is the shape produced by semantic propagation through independent
+  // call layers. A prepend that reuses prefix capacity keeps the message end
+  // stable; a growth allocation changes it because the old allocation remains
+  // live until the new representation has finished copying.
+  for (int i = 0; i < 128; ++i) {
+    status = std::move(status).WithContext("layer");
+    expected.insert(0, "layer: ");
+    const char *next_end = status.message().data() + status.message().size();
+    if (next_end != previous_end) ++allocation_changes;
+    previous_end = next_end;
+  }
+
+  EXPECT_EQ(status.message(), expected);
+  EXPECT_LE(allocation_changes, 10u);
+}
+
+TEST(Status, SharedContextRepresentationUsesCopyOnWrite) {
+  Status original = Status::Internal("leaf")
+                        .WithContext("inner")
+                        .WithContext("middle");
+  Status shared = original;
+  const char *shared_data = shared.message().data();
+
+  Status outer = std::move(original).WithContext("outer");
+  EXPECT_TRUE(original.ok());
+  EXPECT_EQ(shared.message(), "middle: inner: leaf");
+  EXPECT_EQ(shared.message().data(), shared_data);
+  EXPECT_EQ(outer.message(), "outer: middle: inner: leaf");
+  EXPECT_NE(outer.message().data(), shared.message().data());
+}
+
+TEST(Status, RvalueContextMayAliasExistingMessage) {
+  Status status = Status::Internal("leaf").WithContext("inner");
+  const std::string_view alias = status.message().substr(0, 5);
+  status = std::move(status).WithContext(alias);
+  EXPECT_EQ(status.message(), "inner: inner: leaf");
+}
+
+TEST(Status, NativeDetailSurvivesInPlaceContextAndGrowth) {
+  const NativeError native{NativeErrorDomain::Vulkan, -4};
+  Status status =
+      Status::FromNative(StatusCode::Unavailable, native, "device lost")
+          .WithContext("submitting kernel");
+  for (int i = 0; i < 128; ++i) {
+    status = std::move(status).WithContext("dispatching graph");
+    EXPECT_EQ(status.native_error(), native);
+  }
+  EXPECT_TRUE(status.IsUnavailable());
+  EXPECT_NE(status.message().find("device lost"), std::string_view::npos);
+}
+
 TEST(Status, EmptyContextPreservesSharedRepresentation) {
   Status leaf = Status::Internal("same");
   Status copy = leaf.WithContext("");
@@ -600,6 +657,18 @@ TEST(Status, WithContextOomPreservesExistingMessage) {
   EXPECT_EQ(outer.message(), "device lost");
   EXPECT_EQ(outer.message().data(), original);
   EXPECT_TRUE(leaf.ok());
+}
+
+TEST(Status, WithContextNeedsNoAllocationWhilePrefixCapacityRemains) {
+  Status status = Status::Unavailable("device lost").WithContext("submit");
+  status = std::move(status).WithContext("graph");  // enters geometric growth
+  const char *old_end = status.message().data() + status.message().size();
+  hyle::detail::status_test_force_oom(true);
+  status = std::move(status).WithContext("x");
+  hyle::detail::status_test_force_oom(false);
+
+  EXPECT_EQ(status.message(), "x: graph: submit: device lost");
+  EXPECT_EQ(status.message().data() + status.message().size(), old_end);
 }
 
 TEST(Status, NativeErrorOomPreservesCanonicalCode) {

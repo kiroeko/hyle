@@ -124,25 +124,32 @@ message/detail。
 - context 前置，格式为 `outer context: existing message`；
 - 原 Status 的 canonical code 不变；
 - 多层上下文按最外层到最内层排列；
-- 每次组合生成一个扁平消息，不保留链式节点或隐藏 source-location 栈；
-- 分配失败时返回原 Status，不能为了增加上下文反而丢掉已有消息；
+- 对外始终是一个扁平连续消息，不保留链式节点或隐藏 source-location 栈；
+- 需要分配且分配失败时返回原 Status，不能为了增加上下文反而丢掉已有消息；已有
+  prefix 容量足够时不分配，内存紧张也能完成原地 prepend；
 - rvalue 重载消费原对象，const lvalue 重载产生独立值。
 
-单次组合必须读取并生成完整文本，因此时间/空间是最优的
-`O(context.size + message.size)`。连续 k 层会重复复制已扁平文本，等长 context 的整个构造
-序列最坏为 O(k²)；真实产品只应添加少量语义层。三层场景列入冻结 benchmark，若将来出现
-深层机器生成 context，再以真实调用决定是否改变 representation，不能提前让所有 Status
-承担节点和最终格式化复杂度。
+表示按实际使用渐进升级，而不是让每个错误预付成本：
 
-成熟实现没有一个对所有合同都免费的解：链式 node/rope 可把逐层构造降为 O(k)，但会把遍历、
-分配失败和 flatten 成本推迟到 `message()`、C `message_cstr` 与日志边界，并破坏当前连续
-`string_view` 合同；builder 只有在多个片段同时已知时才能一次 flatten，不能消除跨函数逐层
-传播的重复工作。若真实 profile 出现深链，HYLE 的首选候选是**仅对 context rep**保存几何
-增长的 prefix headroom：rvalue 且引用计数为 1 时向前原地写，空间不足才按倍增容量搬迁；
-lvalue/共享 rep 继续 copy-on-write。它可保持 8B Status 与连续 message，并把正常移动链降为
-摊还 O(最终总文本字节)，同时不让普通 message Status 承担容量字段。只有真实调用稳定明显
-超过当前正常的 1–3 个语义层，且 context 构造进入实际 profile 热点时，才原型测量 crossover
-并决定是否实施；三层 benchmark 本身不是上架理由。
+- 普通 message/native Status 仍使用 12B 内部头和精确单块分配；公开 `Status` 仍为 8B；
+- 第一层 context 仍精确分配，只用内部 flag 记录“已经有语义层”，因此最常见的一层不预留
+  猜测性的未来空间；
+- 第二个 rvalue context 证明这是渐进传播链，此时才切到 context 专属
+  `{capacity, offset, prefix storage}`；容量按 1.5 倍增长（小容量至少增长 32B），消息放在
+  storage 尾端；
+- 唯一所有权且 prefix 足够时只写新 context 和分隔符，O(context bytes)、零分配；容量不足
+  时搬迁一次；共享 representation 与 lvalue 保持 copy-on-write，不修改其他 Status 的值；
+- 几何增长时历次搬迁字节是几何级数，因此连续 rvalue 链的总复制为
+  `O(final message bytes)`，空间也是 O(final bytes)，不再是 O(k²)。单次 lvalue/COW 仍须复制
+  当前完整消息；若机械地反复对 lvalue 赋值，调用方仍会主动选择 O(k²) 路径。
+
+这项实现来自成熟库形状对照，而不是由新增 benchmark API 驱动。Abseil `StatusBuilder` 在每次
+产出 Status 时仍生成扁平消息；Rust `anyhow`/`error-stack` 以链式 frame 做 O(1) 包装，把遍历
+与格式化留到消费端；Boost.LEAF 以动态作用域的 typed error slot 做与调用深度无关的传递。
+后两类都不能同时保留 HYLE 的自包含 owning value、跨线程传递、`string_view`/C
+`message_cstr` 连续借用和查询零分配合同。context-only prefix storage 保留这些合同，同时不让
+普通 Status 承担 node、缓存或容量字段。builder 仍只适合“多个片段同时已知”的一次组合，不能
+代替跨函数逐层传播。
 
 示例最终消息：
 
@@ -335,7 +342,8 @@ benchmark 必须从正常调用链反推：函数边界、所有权、错误率�
 - `Result<int>` 正常 unwrap 与 `std::expected<int, Status>` 无额外层；
 - code-only 和 message error 分别在上述两个信息合同中对标 Abseil Status；
 - `WithContext(OK, ...)` 零分配且接近普通分支成本；
-- 一层/三层 context 与 Abseil StatusBuilder 的等价文本场景对标。
+- 一层/三层 context 与 Abseil StatusBuilder 的等价文本场景对标；一层不得因未来猜测回退，
+  三层必须命中渐进表示；128 层正确性测试机械验证扩容次数保持 O(log final bytes)；
 - native detail 构造/查询与 Abseil payload 的同能力场景对标；普通 Status 不因 benchmark
   常驻 payload metadata；
 - errno 分类是 O(1)，`status_from_errno` 与 Abseil `ErrnoToStatus` 做同形 operation+native
