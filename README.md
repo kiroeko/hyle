@@ -23,8 +23,8 @@ HYLE 专注于**高性能计算**和性能优化，尤其是时间复杂度上�
 
 **想把 HYLE 当依赖用？先看 [使用指南 `docs/guide/usage-guide.md`](./docs/guide/usage-guide.md)**——构建选项、各模块最小用法、SIMD 编译变体模型、C-ABI 边界（面向库使用者）。可运行的示例工程见最外层 [`samples/`](./samples/)。
 
-**制作客户交付物？看 [交付形状 `docs/guide/distribution.md`](./docs/guide/distribution.md)**——
-headers+shared、headers+static 与完整源码是三种一等形状，均与具体授权范围分开处理。
+**收到或制作 HYLE 交付物？看 [三种交付与用户接入 `docs/guide/distribution.md`](./docs/guide/distribution.md)**——
+headers+shared、headers+static 与完整源码分别给出可直接复制的用户 recipe，并与具体授权范围分开处理。
 
 ## 文档
 

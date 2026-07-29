@@ -240,7 +240,7 @@ Shell。普通 PowerShell 直接调用缓存中的 `cl.exe` 缺少 `INCLUDE/LIB`
 
 | 固定口径 | code |
 |---|---:|
-| 全库（含 docs/in-tree third_party） | 274,902 |
+| 全库（含 docs/in-tree third_party） | 275,004 |
 | 自实现（含测试） | 134,163 |
 | 自实现（不含测试） | 92,124 |
 | build/package 实现 | 5,079 |
