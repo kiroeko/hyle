@@ -33,7 +33,7 @@ case 数，也不是报告行数。一个 canonical op 可能有多个类型、�
 41-name manifest 中 15 个 native 新行在三平台各自可用 target 上的第二轮狩猎同样为 0 LOSE。最大的新增回归
 `SumsOfShuffledQuadAbsDiff`（Windows 0.08x、Mac 0.11x）已从 scalar spill 改为寄存器 recipe，WSL
 认证为 1.43–1.49x WIN，Mac 两种 shuffle 中心值约 0.99、认证为 TIE。完整计数与证据见 orderswap matrix/simd-23。
-性能闭环不定义语言外观；发布入口统一留给 close-01 的纯 C ABI。
+性能闭环不定义语言外观；whole-buffer 发布入口现已由 `include/hyle/c/simd.h` 的纯 C ABI 承载。
 
 ---
 

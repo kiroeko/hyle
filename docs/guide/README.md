@@ -30,7 +30,7 @@
 | [`c-io.md`](./c-io.md) | **io 纯 C ABI**：proactor/completion、网络/文件提交、后端诊断、multishot/fixed-file、共享内存，以及 C 与 sched 的组合合同。 |
 | [`io.md`](./io.md) | **IO C++ 使用指南**：per-worker proactor、TCP/UDP deadline/cancel、自动文件卸载、HTTP/HTTPS transport、DNS/signal 与专属快腿。 |
 | [`c-core.md`](./c-core.md) | **core 纯 C/FFI 映射**：version 动态符号、纯 C compiler contract、静态 cache layout，以及零分配 intrusive list 的 header-inline 能力与显式生命周期。 |
-| [`simd-usage.md`](./simd-usage.md) | **SIMD 怎么选和怎么调**：普通动态派发、整库固定 ISA、固定 kernel、常用 batch 能力与调用合同；并标明 close-01 C ABI 迁移边界。 |
+| [`simd-usage.md`](./simd-usage.md) | **SIMD 怎么选和怎么调**：普通动态派发、整库固定 ISA、固定 kernel、常用 batch 能力与调用合同，以及已经落地的 whole-buffer C ABI 边界。 |
 | [`usage-contract.md`](./usage-contract.md) | **怎么调才不出 UB**：为 SOTA 性能保留的调用安全红线（fiber 勿跨 `yield()` 持有 thread_local、分配器跨线程 free、CPUID 探测的 LTO 隔离）。每条带机制+安全模式+后果。**热路径集成前必读。** |
 
 各 `c-*.md` 不只列导出符号，也必须解释原生 C++ 的模板/RAII/协程形状在 C/FFI

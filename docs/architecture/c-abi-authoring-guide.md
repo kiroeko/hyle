@@ -1,6 +1,7 @@
 # C ABI 施工参考（给 HYLE 开发者：如何为一个模块导出 C ABI）
 
-> **读者**：HYLE 开发者。收口某个模块（container / simd / sched / io / compute / graph）需要给它做 C ABI 导出时，照这份走。
+> **读者**：HYLE 开发者。新增或复审模块的 C ABI 时照这份走。当前 core/error/platform/mem/time/
+> obs/simd/util/container/sched/io 已有 C 产品面，compute/graph 尚待模块收口；math 先审产品边界。
 > **配套**：本文件是 **how（照着做的步骤 + 模式 + checklist）**；**why（类型擦除、三层架构、为什么删版本协商）** 见 [`c-abi-design.md`](./c-abi-design.md)。上位依据 [`engineering-charter.md`](./engineering-charter.md) §6、[`coding-conventions.md`](./coding-conventions.md) §4。
 > **样板**：`include/hyle/c/mem.h` + `src/mem/c_mem.cc` + `tests/mem/c_mem_test.c` + `docs/guide/c-mem.md` 是当前最完整的机械实现样板；mem surface 仍是发布前 draft，能力取舍和命名不能未经产品审查直接照搬。
 
@@ -34,7 +35,7 @@
 
 ```c
 /* SPDX-License-Identifier: LicenseRef-HYLE-Proprietary
- * Pure C ABI for the HYLE <mod> module (close-01).
+ * Pure C ABI for the HYLE <mod> module.
  * Naming: every symbol is hyle_* / HYLE_*. Do NOT include hyle/<mod>/ from C.
  * Docs (1:1 with this header): docs/guide/c-<mod>.md */
 #ifndef HYLE_C_<MOD>_H_

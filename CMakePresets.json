@@ -150,7 +150,7 @@
     {
       "name": "linux-aarch64-cross",
       "displayName": "Linux AArch64 cross build",
-      "description": "Reference whole-project cross configuration. The toolchain discovers aarch64-linux-gnu GCC; override HYLE_CROSS_* cache variables for a nonstandard prefix/version.",
+      "description": "Fast core-only AArch64 cross smoke. The toolchain discovers aarch64-linux-gnu GCC; override HYLE_CROSS_* cache variables for a nonstandard prefix/version. This preset does not certify the full module graph.",
       "binaryDir": "${sourceDir}/build-linux-aarch64-cross",
       "toolchainFile": "${sourceDir}/cmake/toolchains/linux-aarch64-gcc.cmake",
       "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Linux" },

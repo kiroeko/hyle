@@ -127,7 +127,7 @@ P0–P6 只表示最早可编译的拓扑层。不在这里复制 LOC、冻结�
 | **P3** | container | 公开依赖 mem，实现依赖 platform |
 | **P4** | sched、util-runtime/registry | 两者都要 container；sched 另要 time/platform/mem/error |
 | **P5** | io、compute、graph | 完整产品形状都消费 sched；compute 另消费 simd，graph/io 消费 container |
-| **P6** | install/export、跨编译器 ABI/FFI 冒烟、发布 bundle | 不是新模块；在各模块 C adapter 就地收口后做整库交付验收 |
+| **P6** | 跨编译器 ABI/FFI 冒烟、离线/发布 bundle 总验收 | install/export 与三种基础交付形状已完成；本层不造新模块，只补 compute/graph C adapter 与整库发布验证 |
 
 **关键路径**：到 scheduler 的最长链是
 `error → platform → mem → container → sched`；独立的 `error → time → sched` 分支必须在
@@ -151,7 +151,7 @@ simd 不进 sched 链，只在 compute 汇合。obs-runtime 是用户产品根�
 | **R3 运行时链** | sched → io | sched 汇合 mem/time/container/platform，io 再消费 sched；反序会反复改 timeout/cancel/completion 形状 |
 | **R4 计算基础** | math↔simd 边界审查 → simd | math 是 clay math 被 std/SIMD 吸收后的残余，不先假定它应独立；先裁决 scalar/std/SIMD 归属，再冻结 SIMD dispatch、类型、算法与正常 batch API |
 | **R5 未完支柱** | compute → graph | 这两者不是“复审已完成实现”，而是先补真实能力再按同一合同收口；graph 最后汇合 sched/compute/simd |
-| **R6 发布** | install/export → 全库 C/FFI 冒烟 → bundle | 每模块 C ABI 随本模块收口，不把接口设计推到最后；本层只做跨模块交付验证 |
+| **R6 发布** | 已完成 install/export → 补 compute/graph C 面 → 全库 C/FFI 冒烟 → 离线/发布 bundle | 每模块 C ABI 随本模块收口，不把接口设计推到最后；本层只做跨模块交付验证 |
 
 R1 的 build/package system 是独立审查单元：CMake target 图必须准确表达模块源码、公开头、
 依赖、C ABI、测试和 benchmark 归属；整库/模块子集、static/shared、CPU-only/可选后端可组合；
@@ -196,7 +196,7 @@ math 不按“28 行小模块”单独快速封口。它不是从用户场景独
 | P3 | container 的 hash/table/string/队列分层对标；lock-free 线性化与 TSan；公开头的 util-core include 边不得引入 `hyle_util` 链接环 |
 | P4 | sched 的 fiber/work-stealing/sync/timer 汇合；util-runtime 的 registry/ref/RNG/C ABI；两者都跑 TSan/ASan/UBSan 和对应热路 peer |
 | P5 | io 四后端与真网络/file；compute CPU/GPU 对拍与 completion；graph 增量 DAG/数据并行在 sched 上的真消费 |
-| P6 | install/export/package；纯 C 与跨编译器/FFI 冒烟；全库 sanitizer/ABI surface 和发布 bundle 验收 |
+| P6 | 已完成 package 合同的回归；纯 C 与跨编译器/FFI 冒烟；全库 sanitizer/ABI surface 和离线/发布 bundle 验收 |
 
 ## 四、决策清单
 

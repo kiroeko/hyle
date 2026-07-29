@@ -147,7 +147,7 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 | sched/io 强收口 + C ABI | +1～4k |
 | compute 能力尾 | +2～10k（主弹性） |
 | graph-02 后两步/后续真实消费者 | +1～5k |
-| close-01 install/export/FFI | +1～4k |
+| close-01 剩余 C ABI/FFI 与发布总验收 | +1～4k（install/export 已完成） |
 
 ### 第三方（足迹，非自有生产 KPI）
 

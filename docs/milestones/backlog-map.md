@@ -92,7 +92,7 @@
 
 | 里程碑 | 状态 | 待决 |
 |---|---|---|
-| close-01 C-ABI shim | 🔶 多模块已有 surface | error/platform/mem/time/obs 已随严格复审认证；platform 120/120、mem 109/109 与 shared distribution 已复证；simd/util-runtime/container/sched/io 的既有 C 面随各模块重新核覆盖和 error 形状；compute/graph + install/export/FFI 待做 |
+| close-01 C-ABI shim | 🔶 十一模块已有 surface | core/error/platform/mem/time/obs/simd/util/container/sched/io 已有纯 C 头、实现与机械门；install/export 已完成。compute/graph C 面、math 边界裁决和跨编译器/真实语言 FFI 冒烟待做 |
 | close-02 serialize | ❓ scope 待澄清 | 借 flatbuffers/capnproto builder+reader 当原语 vs 全推 L1?JSON 借 simdjson 已定 |
 | close-03 FFI 绑定 | 占位 | 依赖 close-01 |
 | graph-02 数据并行层 | ✅ **归属已定(2026-07-10)** | **归 graph**(graph-design.md §2):compute 铁律把铺多核推给 graph-02 fork-join,归 compute 会破其"不起线程池"边界;消费者与 graph-01 同源。序列化(close-02)仍待 scope 复核 |
@@ -103,5 +103,5 @@
 [`pre-release-readiness.md`](./pre-release-readiness.md)：严格基线为 error/platform/mem/time/core、
 build/package、util-core、obs 与 container；mem 的 clean `c640072` 三平台分发证书已完成。
 当前审查单元是 util-runtime / 完整 util，随后沿 sched → io，之后先做
-math↔simd 边界裁决再收 simd。compute/graph 主干不是 0 行，但二者仍先补北极星能力尾再收口；最终做
-install/export、跨编译器和 FFI 冒烟。旧绿色 closure 保留为证据，不再当新证书。
+math↔simd 边界裁决再收 simd。compute/graph 主干不是 0 行，但二者仍先补北极星能力尾再收口；最终在
+既有 install/export 地基上做跨编译器和 FFI 冒烟。旧绿色 closure 保留为证据，不再当新证书。

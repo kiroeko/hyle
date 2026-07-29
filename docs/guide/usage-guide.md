@@ -150,7 +150,7 @@ source embed/install consumer 必须继承的产品合同：
 | `wsl` | `linux` 的 gcc-14/g++-14 便利形状；重压/benchmark 使用 native ext4 checkout |
 | `wsl-tsan` | 继承 wsl，独立 build tree 启用 ThreadSanitizer |
 | `package-cpu-shared/static` | all-component、TLS/CUDA OFF、install ON 的确定性 CPU SDK 输入 |
-| `linux-aarch64-cross` | 标准 toolchain-file 驱动的 whole-project AArch64 cross configure/build；不执行 target binary |
+| `linux-aarch64-cross` | 标准 toolchain-file 驱动的 **core-only** AArch64 cross smoke；不执行 target binary，也不代表全模块 AArch64 认证 |
 | `bench` | 默认 all-components + `HYLE_BUILD_BENCH=ON` + Release，独立 `build-bench` cache；因包含 SIMD，先准备 `HYLE_BENCH_VENDOR_DIR` 中固定版 Highway/xsimd。自选非 SIMD 组件不需要它 |
 | `bench-all-sota` | 继承 `bench`，再把全部 10 个 `HYLE_BENCH_*` gate 一次设 ON（先 fetch SIMD vendors，clone 类再跑 `setup-bench-libs.sh`） |
 
@@ -230,8 +230,10 @@ hyle_stage_runtime_dependencies(app) # Windows shared DLL closure；其他形状
 - 安装前缀始终带 HYLE proprietary notice 和第三方总清单；实际编入的 mimalloc、xxHash、
   wyhash、simdutf、fcontext、picohttpparser、Highway/xsimd/JPEG XL port 以及可选 Tracy 的
   许可证按 target 图迁移。拿到源码或 SDK 不等于取得 HYLE 原创部分的外部使用许可。
-- **当前边界（诚实）**：error/platform/mem/time/obs/simd/util/container 已有纯 `extern "C"` C ABI；其他模块仍在
-  close-01 队列。SIMD 外部调用必须用 `hyle/c/simd.h`，不能把 C++ mangled symbol 当 FFI。
+- **当前边界（诚实）**：core/error/platform/mem/time/obs/simd/util/container/sched/io 已有纯
+  `extern "C"` C ABI；compute/graph 尚无 C 产品面，math 要先完成与 simd/std 的边界审查再决定是否
+  需要独立 C ABI。统一 install/export 已完成，不再属于 C ABI 待办。SIMD 外部调用必须用
+  `hyle/c/simd.h`，不能把 C++ mangled symbol 当 FFI。
 
 ## 2. SIMD 的编译变体模型（`HYLE_SIMD_TARGET_*` 是什么）
 
@@ -585,8 +587,8 @@ HTTP 的完整 C++ recipe 与生命周期见 [`io.md`](./io.md)；本总指南�
 
 HYLE 内部 C++23；稳定边界是 `include/hyle/c/*.h` 的纯 `extern "C"` **命名自由
 函数 + POD/vtable 回调 + 不透明句柄**，不使用模块级 API 函数表，也不把 STL、
-模板或异常跨 DLL。error/platform/mem/time/obs/simd/util/container/sched 已落地；
-上层 io/compute/graph 和统一 install/export 仍在 close-01 收口。sched 的完整 FFI
+模板或异常跨 DLL。core/error/platform/mem/time/obs/simd/util/container/sched/io 已落地；
+compute/graph 尚待各自模块收口，math 先审产品边界。统一 install/export 已完成。sched 的完整 FFI
 合同见 [`c-sched.md`](./c-sched.md)，总规范见
 [`c-abi-design.md`](../architecture/c-abi-design.md)。
 
