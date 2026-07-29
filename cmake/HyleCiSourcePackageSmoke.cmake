@@ -60,6 +60,7 @@ if(NOT _git_result EQUAL 0)
 endif()
 
 set(_extract_dir "${HYLE_SMOKE_ROOT}/source-package-extract")
+file(REMOVE_RECURSE "${_extract_dir}")
 file(MAKE_DIRECTORY "${_extract_dir}")
 file(ARCHIVE_EXTRACT INPUT "${_archive}" DESTINATION "${_extract_dir}")
 file(GLOB _source_roots LIST_DIRECTORIES TRUE
@@ -89,6 +90,7 @@ if(DEFINED HYLE_SMOKE_GENERATOR AND NOT HYLE_SMOKE_GENERATOR STREQUAL "")
   list(APPEND _generator_args -G "${HYLE_SMOKE_GENERATOR}")
 endif()
 set(_consumer_build "${HYLE_SMOKE_ROOT}/source-package-build")
+file(REMOVE_RECURSE "${_consumer_build}")
 _hyle_source_run("configure extracted source package"
   "${CMAKE_COMMAND}" -S "${_source_root}" -B "${_consumer_build}"
   ${_generator_args}

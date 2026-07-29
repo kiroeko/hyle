@@ -48,7 +48,7 @@ TLS/HTTP2/ggml/Vulkan/CUDA SDK and hardware matrices remain periodic/release che
 
 The three smoke actions above import the selected MSVC environment and keep their work under the
 explicit scratch root. `PackageSmoke` builds shared/static CPU packages and runs focused mem plus
-dynamic all-target consumers. `ProductShapeSmoke` runs accepted roots with production test layout.
+package-driven per-component target consumers. `ProductShapeSmoke` runs accepted roots with production test layout.
 `SourcePackageSmoke` requires a clean Git commit, creates the complete-source archive, verifies its
 digest/manifest/legal payload, extracts it, and builds the all-component CPU graph without using the
 checkout. The stable validation layers and module handoff rules are documented in

@@ -2,9 +2,10 @@
 # shared and static all-component CPU SDKs, then configures/builds/runs
 # source-independent consumers against each install prefix. The focused mem C
 # and C++ consumers exercise a real API and loader/static-link closure; the
-# all-component consumer mechanically proves that every exported target can be
-# discovered and linked. Optional SDK/hardware feature matrices remain release
-# checks, not per-commit fan heaters.
+# per-component consumers mechanically prove that every exported target can be
+# discovered and linked without creating an unnatural duplicate closure.
+# Optional SDK/hardware feature matrices remain release checks, not per-commit
+# fan heaters.
 
 cmake_minimum_required(VERSION 3.25)
 
@@ -69,6 +70,7 @@ foreach(_linkage IN ITEMS shared static)
   set(_build "${HYLE_SMOKE_ROOT}/package-${_linkage}")
   set(_prefix "${HYLE_SMOKE_ROOT}/prefix-${_linkage}")
   set(_consumer "${HYLE_SMOKE_ROOT}/consumer-${_linkage}")
+  file(REMOVE_RECURSE "${_build}" "${_prefix}" "${_consumer}")
 
   _hyle_smoke_run("configure ${_linkage} SDK"
     "${CMAKE_COMMAND}" -S "${HYLE_SOURCE_DIR}" -B "${_build}"

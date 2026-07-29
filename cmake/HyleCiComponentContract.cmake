@@ -17,6 +17,10 @@ if(DEFINED HYLE_SMOKE_GENERATOR AND NOT HYLE_SMOKE_GENERATOR STREQUAL "")
   list(APPEND _hyle_generator_args -G "${HYLE_SMOKE_GENERATOR}")
 endif()
 
+set(_hyle_contract_root "${HYLE_SMOKE_ROOT}/component-contract")
+file(REMOVE_RECURSE "${_hyle_contract_root}")
+file(MAKE_DIRECTORY "${_hyle_contract_root}")
+
 function(_hyle_contract_run label expect_success)
   execute_process(
     COMMAND ${ARGN}
@@ -37,7 +41,7 @@ endfunction()
 # ordinary unspecified default remains `all`, but explicit empty must fail.
 _hyle_contract_run("explicit-empty component selection" FALSE
   "${CMAKE_COMMAND}" -S "${HYLE_SOURCE_DIR}"
-  -B "${HYLE_SMOKE_ROOT}/explicit-empty"
+  -B "${_hyle_contract_root}/explicit-empty"
   ${_hyle_generator_args}
   -DHYLE_COMPONENTS:STRING=
   -DHYLE_BUILD_TESTS=OFF
@@ -52,7 +56,7 @@ endif()
 
 # Reproduce the normal-variable form used by add_subdirectory consumers.  The
 # generated target graph and the cache/GUI manifest must agree.
-set(_embed_source "${HYLE_SMOKE_ROOT}/embed-source")
+set(_embed_source "${_hyle_contract_root}/embed-source")
 file(MAKE_DIRECTORY "${_embed_source}")
 file(WRITE "${_embed_source}/CMakeLists.txt"
 "cmake_minimum_required(VERSION 3.25)\n"
@@ -79,13 +83,13 @@ file(WRITE "${_embed_source}/CMakeLists.txt"
 "endforeach()\n")
 _hyle_contract_run("source-embedded component/cache agreement" TRUE
   "${CMAKE_COMMAND}" -S "${_embed_source}"
-  -B "${HYLE_SMOKE_ROOT}/embed-build"
+  -B "${_hyle_contract_root}/embed-build"
   ${_hyle_generator_args}
   -DCMAKE_BUILD_TYPE=Release)
 
 # Prove that the end-of-configuration audit catches an internal link added
 # after the declaration-time helper has returned.
-set(_bypass_source "${HYLE_SMOKE_ROOT}/bypass-source")
+set(_bypass_source "${_hyle_contract_root}/bypass-source")
 file(MAKE_DIRECTORY "${_bypass_source}")
 file(WRITE "${_bypass_source}/CMakeLists.txt"
 "cmake_minimum_required(VERSION 3.25)\n"
@@ -101,7 +105,7 @@ file(WRITE "${_bypass_source}/CMakeLists.txt"
 "hyle_validate_final_module_graph()\n")
 _hyle_contract_run("late internal dependency bypass" FALSE
   "${CMAKE_COMMAND}" -S "${_bypass_source}"
-  -B "${HYLE_SMOKE_ROOT}/bypass-build"
+  -B "${_hyle_contract_root}/bypass-build"
   ${_hyle_generator_args})
 if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES
    "direct internal dependencies disagree")
@@ -113,7 +117,7 @@ endif()
 # A late PUBLIC edge can also silently widen a package usage contract even when
 # the dependency set itself is unchanged.  Prove that visibility is audited,
 # not only graph membership.
-set(_visibility_source "${HYLE_SMOKE_ROOT}/visibility-source")
+set(_visibility_source "${_hyle_contract_root}/visibility-source")
 file(MAKE_DIRECTORY "${_visibility_source}")
 file(WRITE "${_visibility_source}/CMakeLists.txt"
 "cmake_minimum_required(VERSION 3.25)\n"
@@ -133,7 +137,7 @@ file(WRITE "${_visibility_source}/CMakeLists.txt"
 "hyle_validate_final_module_graph()\n")
 _hyle_contract_run("late internal dependency visibility widening" FALSE
   "${CMAKE_COMMAND}" -S "${_visibility_source}"
-  -B "${HYLE_SMOKE_ROOT}/visibility-build"
+  -B "${_hyle_contract_root}/visibility-build"
   ${_hyle_generator_args})
 if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES
    "public internal dependencies disagree")
@@ -146,7 +150,7 @@ endif()
 # declaration.  Exercise the registry in script mode so a duplicate name or a
 # stale exported target cannot degrade into a partially relocatable SDK.
 set(_package_registry_projection
-  "${HYLE_SMOKE_ROOT}/package-registry-projection.cmake")
+  "${_hyle_contract_root}/package-registry-projection.cmake")
 file(WRITE "${_package_registry_projection}"
 "cmake_minimum_required(VERSION 3.25)\n"
 "list(APPEND CMAKE_MODULE_PATH \"${HYLE_SOURCE_DIR}/cmake\")\n"
@@ -165,7 +169,7 @@ _hyle_contract_run("package dependency registry projection" TRUE
   "${CMAKE_COMMAND}" -P "${_package_registry_projection}")
 
 set(_package_registry_duplicate
-  "${HYLE_SMOKE_ROOT}/package-registry-duplicate.cmake")
+  "${_hyle_contract_root}/package-registry-duplicate.cmake")
 file(WRITE "${_package_registry_duplicate}"
 "cmake_minimum_required(VERSION 3.25)\n"
 "list(APPEND CMAKE_MODULE_PATH \"${HYLE_SOURCE_DIR}/cmake\")\n"
@@ -182,7 +186,7 @@ if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES "registered more than once")
 endif()
 
 set(_package_registry_missing_target
-  "${HYLE_SMOKE_ROOT}/package-registry-missing-target.cmake")
+  "${_hyle_contract_root}/package-registry-missing-target.cmake")
 file(WRITE "${_package_registry_missing_target}"
 "cmake_minimum_required(VERSION 3.25)\n"
 "list(APPEND CMAKE_MODULE_PATH \"${HYLE_SOURCE_DIR}/cmake\")\n"
@@ -203,8 +207,8 @@ endif()
 # The checked-in offline bundle entry point derives overrides from directory
 # names.  Keep it list-free and prove the initial-cache contract with a fresh
 # configure instead of only documenting a command line.
-set(_offline_root "${HYLE_SMOKE_ROOT}/offline-bundle")
-set(_offline_project "${HYLE_SMOKE_ROOT}/offline-project")
+set(_offline_root "${_hyle_contract_root}/offline-bundle")
+set(_offline_project "${_hyle_contract_root}/offline-project")
 file(MAKE_DIRECTORY
   "${_offline_root}/deps/ggml"
   "${_offline_root}/deps/vulkan_headers"
@@ -223,7 +227,7 @@ _hyle_contract_run("offline source bundle mapping" TRUE
   "${CMAKE_COMMAND}"
   -C "${_offline_root}/hyle-offline-deps.cmake"
   -S "${_offline_project}"
-  -B "${HYLE_SMOKE_ROOT}/offline-build"
+  -B "${_hyle_contract_root}/offline-build"
   ${_hyle_generator_args})
 
 message(STATUS "HYLE component contracts passed")

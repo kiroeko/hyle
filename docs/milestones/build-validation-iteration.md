@@ -26,11 +26,15 @@ portability、feature/release。新增模块进入 manifest 后自动获得前�
   全部测试，不再维护第二份正则模块清单。
 - [x] CI job 增加明确超时；PR 保留三平台 baseline，昂贵 distribution 在 PR 跑 Linux、main/手动
   再跑 Windows/macOS。
-- [x] Windows：shipping-layout 16/16；shared/static all-component package consumers 各 3/3；
+- [x] Windows：shipping-layout 16/16；shared/static all-component package consumers 各 16/16；
   complete-source manifest/digest/legal/extracted all-component build 全通过。
-- [x] WSL/GCC 14：component contracts、shared/static all-component consumers 各 3/3、native SIMD
+- [x] WSL/GCC 14：component contracts、shared/static all-component consumers 各 16/16、native SIMD
   5/5，以及 all-component AArch64 cross 均通过。
-- [ ] Apple M4 真跑 package 与受影响 SIMD；GitHub runner 在额度恢复后复证。
+- [x] Apple M4：native SIMD 3/3，shared/static all-component consumers 各 16/16；per-component
+  target 形状消除了旧单一消费者人为产生的 duplicate archive warning。
+- [x] package/product/source/component smoke 只删除显式 scratch 下自己拥有的子目录；Apple package
+  fresh 重跑无旧 dylib RPATH 诊断，WSL component contract 同一 scratch 连跑两次通过。
+- [ ] GitHub runner 在额度恢复后复证。
 
 首次 AArch64 扩面虽然生成了全部产物，却暴露 preset 未启用 Werror，SIMD complex fallback 的未初始化
 误报会被放行。将 cross 门提升为 Werror 后，根因是异常值数组采用 sparse lane 索引，GCC 无法证明
@@ -91,11 +95,11 @@ SIMD 主测试 379 项、WSL native SIMD 和 AArch64 GCC14 Werror 均通过。
 
 | 固定口径 | code |
 |---|---:|
-| 全库（含 docs/in-tree third_party） | 275,958 |
+| 全库（含 docs/in-tree third_party） | 275,967 |
 | 自实现（含测试） | 134,300 |
 | 自实现（不含测试） | 92,149 |
-| build/package 实现 | 5,583 |
+| build/package 实现 | 5,590 |
 
-build/package 相对上一轮 5,523 净增 60 行，来自已有 CMake/preset/CI 门的机械扩展和 Windows
+build/package 相对上一轮 5,523 净增 67 行，来自已有 CMake/preset/CI 门的机械扩展和 Windows
 complete-source 一键入口；新增的 installed consumer probe 和本任务文档按既定口径分别属于测试源码
 与文档，不计入模块实现。

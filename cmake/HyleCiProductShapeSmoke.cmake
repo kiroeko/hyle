@@ -43,6 +43,7 @@ if(DEFINED HYLE_GOOGLETEST_SOURCE AND NOT HYLE_GOOGLETEST_SOURCE STREQUAL "")
 endif()
 
 set(_hyle_build "${HYLE_SMOKE_ROOT}/product-shape")
+file(REMOVE_RECURSE "${_hyle_build}")
 # Only roots whose production-layout contract has already closed belong here.
 # Evolving modules still run in the all-component baseline, but are not
 # accidentally certified merely because they compile in that graph.

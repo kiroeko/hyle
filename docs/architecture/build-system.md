@@ -344,8 +344,9 @@ Vulkan 显式关闭，构建聚合 `hyle_tests` 并运行全部 C++、pure-C、h
 增加，未验收模块即使在 all graph 通过也不会被误写成产品证书。
 
 安装门从空目录制作 shared/static 的 all-component CPU SDK。外部消费者从 package 公布的
-`Hyle_AVAILABLE_COMPONENTS` 枚举并链接每个 `hyle::<component>`，机械守住 export/usage-requirement
-图；同时保留真正调用 mem C API 与 C++ `SystemAllocator` 的 focused probes，覆盖
+`Hyle_AVAILABLE_COMPONENTS` 枚举，为每个 `hyle::<component>` 建立独立最小链接目标，机械守住
+export/usage-requirement 图，又不把彼此重叠的 static 闭包硬塞进一个非正常可执行；同时保留真正调用
+mem C API 与 C++ `SystemAllocator` 的 focused probes，覆盖
 `mem -> platform -> error` loader、mimalloc 私有符号和 static C++ link-driver 闭包。只有“枚举 target
 可链接”不能证明每个模块 API 可用，所以新模块收口时必须再提交自己的外部 API probe，随后才进入
 安装消费回归集合。Linux 还执行 component 空值、嵌入 cache、晚期依赖成员绕过、PUBLIC/PRIVATE
