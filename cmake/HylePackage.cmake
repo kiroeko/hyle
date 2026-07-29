@@ -19,49 +19,11 @@ function(hyle_install_package)
       list(APPEND _hyle_package_components "${_component}")
     endif()
   endforeach()
-
-  # A static archive cannot absorb another static archive. Keep mimalloc as an
-  # installed private implementation target so hyle::mem remains self-contained
-  # from the consumer's point of view; it is referenced through LINK_ONLY.
-  if(HYLE_STATIC AND TARGET mimalloc_static)
-    list(APPEND _hyle_export_targets mimalloc_static)
-  endif()
-  # nghttp2 is always a private static protocol core. A shared hyle_io absorbs
-  # it; only a static hyle_io needs the archive exported through LINK_ONLY.
-  if(HYLE_STATIC AND TARGET nghttp2_static)
-    list(APPEND _hyle_export_targets nghttp2_static)
-  endif()
-  # ggml/volk are private PIC archives. Shared hyle_compute absorbs them;
-  # static hyle_compute carries their reviewed target closure through LINK_ONLY.
-  if(HYLE_STATIC AND TARGET ggml)
-    foreach(_hyle_ggml_target IN ITEMS ggml ggml-base ggml-cpu ggml-cuda)
-      if(TARGET ${_hyle_ggml_target})
-        list(APPEND _hyle_export_targets ${_hyle_ggml_target})
-      endif()
-    endforeach()
-    unset(_hyle_ggml_target)
-  endif()
-  if(HYLE_STATIC AND TARGET volk)
-    list(APPEND _hyle_export_targets volk)
-  endif()
-
-  # Tracy is part of the public inline trace contract when enabled, so its one
-  # client target and public header tree travel with a trace-enabled package.
-  if(TARGET hyle_tracy_client)
-    if(NOT EXISTS "${HYLE_TRACY_DIR}/LICENSE")
-      message(FATAL_ERROR
-        "The selected Tracy checkout has no LICENSE at '${HYLE_TRACY_DIR}/LICENSE'; "
-        "refusing to package third-party code without its terms.")
-    endif()
-    list(APPEND _hyle_export_targets hyle_tracy_client)
-    install(DIRECTORY "${HYLE_TRACY_DIR}/public/"
-      DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/hyle/vendor/tracy-public"
-      COMPONENT Hyle_Development)
-    install(FILES "${HYLE_TRACY_DIR}/LICENSE"
-      DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/Hyle"
-      RENAME tracy-LICENSE
-      COMPONENT Hyle_Runtime)
-  endif()
+  hyle_package_collect_registry(
+    _hyle_dependency_export_targets
+    HYLE_PACKAGE_FEATURES
+    HYLE_PACKAGE_FIND_DEPENDENCIES)
+  list(APPEND _hyle_export_targets ${_hyle_dependency_export_targets})
 
   # An installed shared HYLE module must be able to resolve sibling HYLE
   # modules after the whole SDK prefix is moved.  A consumer executable's
@@ -113,185 +75,14 @@ function(hyle_install_package)
     DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/Hyle"
     RENAME THIRD_PARTY-NOTICES.md
     COMPONENT Hyle_Runtime)
-  # License payload follows the selected implementation graph, just like binary
-  # targets. Do not make a migrated package depend on the source checkout for
-  # notices belonging to code compiled into its HYLE libraries.
-  if(TARGET hyle_mem)
-    install(FILES "${HYLE_SOURCE_DIR}/third_party/mimalloc/LICENSE"
-      DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/Hyle"
-      RENAME mimalloc-LICENSE
-      COMPONENT Hyle_Runtime)
-  endif()
-  if(TARGET hyle_container)
-    install(FILES "${HYLE_SOURCE_DIR}/third_party/xxhash/LICENSE"
-      DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/Hyle"
-      RENAME xxhash-LICENSE
-      COMPONENT Hyle_Runtime)
-    install(FILES "${HYLE_SOURCE_DIR}/third_party/wyhash/LICENSE"
-      DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/Hyle"
-      RENAME wyhash-LICENSE
-      COMPONENT Hyle_Runtime)
-    install(FILES
-      "${HYLE_SOURCE_DIR}/third_party/simdutf/LICENSE-MIT"
-      DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/Hyle"
-      RENAME simdutf-LICENSE-MIT
-      COMPONENT Hyle_Runtime)
-    install(FILES
-      "${HYLE_SOURCE_DIR}/third_party/simdutf/LICENSE-APACHE"
-      DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/Hyle"
-      RENAME simdutf-LICENSE-APACHE
-      COMPONENT Hyle_Runtime)
-  endif()
-  if(TARGET hyle_simd)
-    # Highway-derived kernels use the Apache-2.0 choice of Highway's dual
-    # license. The standard text is already kept in-tree for simdutf as well.
-    install(FILES "${HYLE_SOURCE_DIR}/third_party/simdutf/LICENSE-APACHE"
-      DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/Hyle"
-      RENAME highway-Apache-2.0-LICENSE
-      COMPONENT Hyle_Runtime)
-    install(FILES
-      "${HYLE_SOURCE_DIR}/third_party/ported/LICENSE-JPEG-XL-BSD-3-Clause"
-      "${HYLE_SOURCE_DIR}/third_party/ported/LICENSE-XSIMD-BSD-3-Clause"
-      DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/Hyle"
-      COMPONENT Hyle_Runtime)
-  endif()
-  if(TARGET hyle_sched)
-    install(FILES "${HYLE_SOURCE_DIR}/third_party/fcontext/LICENSE_1_0.txt"
-      DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/Hyle"
-      RENAME fcontext-LICENSE_1_0.txt
-      COMPONENT Hyle_Runtime)
-  endif()
-  if(TARGET hyle_io AND HYLE_HAS_FCONTEXT)
-    install(FILES "${HYLE_SOURCE_DIR}/third_party/picohttpparser/LICENSE"
-      DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/Hyle"
-      RENAME picohttpparser-LICENSE
-      COMPONENT Hyle_Runtime)
-  endif()
-  if(TARGET nghttp2_static)
-    get_target_property(nghttp2_SOURCE_DIR nghttp2_static HYLE_DEP_SOURCE_DIR)
-    get_target_property(nghttp2_BINARY_DIR nghttp2_static HYLE_DEP_BINARY_DIR)
-    if(NOT nghttp2_SOURCE_DIR OR NOT nghttp2_BINARY_DIR)
-      message(FATAL_ERROR
-        "nghttp2_static is missing its module-owned source/binary metadata")
-    endif()
-    if(NOT EXISTS "${nghttp2_SOURCE_DIR}/COPYING")
-      message(FATAL_ERROR
-        "The selected nghttp2 checkout has no COPYING at "
-        "'${nghttp2_SOURCE_DIR}/COPYING'; refusing to package it without terms.")
-    endif()
-    install(FILES "${nghttp2_SOURCE_DIR}/COPYING"
-      DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/Hyle"
-      RENAME nghttp2-LICENSE
-      COMPONENT Hyle_Runtime)
-    if(HYLE_STATIC)
-      # nghttp2_static's imported target retains its reviewed include contract.
-      # The static consumer reaches it only through LINK_ONLY, but installing the
-      # two public headers keeps the target independently valid and relocatable.
-      install(FILES
-        "${nghttp2_SOURCE_DIR}/lib/includes/nghttp2/nghttp2.h"
-        "${nghttp2_BINARY_DIR}/lib/includes/nghttp2/nghttp2ver.h"
-        DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/nghttp2"
-        COMPONENT Hyle_Development)
-    endif()
-  endif()
-  if(TARGET ggml)
-    get_target_property(ggml_SOURCE_DIR ggml HYLE_DEP_SOURCE_DIR)
-    if(NOT ggml_SOURCE_DIR)
-      message(FATAL_ERROR "ggml is missing its module-owned source metadata")
-    endif()
-    if(NOT EXISTS "${ggml_SOURCE_DIR}/LICENSE")
-      message(FATAL_ERROR
-        "The selected ggml checkout has no LICENSE at '${ggml_SOURCE_DIR}/LICENSE'; "
-        "refusing to package it without terms.")
-    endif()
-    install(FILES "${ggml_SOURCE_DIR}/LICENSE"
-      DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/Hyle"
-      RENAME ggml-LICENSE
-      COMPONENT Hyle_Runtime)
-    if(HYLE_STATIC)
-      install(DIRECTORY "${ggml_SOURCE_DIR}/include/"
-        DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
-        COMPONENT Hyle_Development)
-    endif()
-  endif()
-  if(TARGET volk)
-    get_target_property(volk_SOURCE_DIR volk HYLE_DEP_SOURCE_DIR)
-    get_target_property(vulkan_headers_SOURCE_DIR volk
-      HYLE_VULKAN_HEADERS_SOURCE_DIR)
-    if(NOT volk_SOURCE_DIR OR NOT vulkan_headers_SOURCE_DIR)
-      message(FATAL_ERROR
-        "volk is missing its module-owned source/header metadata")
-    endif()
-    foreach(_hyle_license IN ITEMS
-        "${volk_SOURCE_DIR}/LICENSE.md"
-        "${vulkan_headers_SOURCE_DIR}/LICENSE.md"
-        "${vulkan_headers_SOURCE_DIR}/LICENSES/Apache-2.0.txt"
-        "${vulkan_headers_SOURCE_DIR}/LICENSES/MIT.txt")
-      if(NOT EXISTS "${_hyle_license}")
-        message(FATAL_ERROR
-          "The selected Vulkan dependency lacks license file '${_hyle_license}'.")
-      endif()
-    endforeach()
-    install(FILES "${volk_SOURCE_DIR}/LICENSE.md"
-      DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/Hyle"
-      RENAME volk-LICENSE.md
-      COMPONENT Hyle_Runtime)
-    install(FILES
-      "${vulkan_headers_SOURCE_DIR}/LICENSE.md"
-      "${vulkan_headers_SOURCE_DIR}/LICENSES/Apache-2.0.txt"
-      "${vulkan_headers_SOURCE_DIR}/LICENSES/MIT.txt"
-      DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/Hyle/Vulkan-Headers"
-      COMPONENT Hyle_Runtime)
-    if(HYLE_STATIC)
-      install(FILES "${volk_SOURCE_DIR}/volk.h"
-        DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/hyle/vendor/volk"
-        COMPONENT Hyle_Development)
-      install(DIRECTORY
-        "${vulkan_headers_SOURCE_DIR}/include/vulkan"
-        "${vulkan_headers_SOURCE_DIR}/include/vk_video"
-        DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/hyle/vendor/volk"
-        COMPONENT Hyle_Development)
-    endif()
-    install(PROGRAMS "${HYLE_SOURCE_DIR}/tools/hyle_shader.py"
-      DESTINATION "${CMAKE_INSTALL_BINDIR}"
-      COMPONENT Hyle_Development)
-  endif()
+  # Third-party payload follows the same module-owned registry as export and
+  # feature metadata; the package layer never switches on dependency names.
+  hyle_package_install_registered_assets()
 
   set(_hyle_package_dir "${CMAKE_INSTALL_LIBDIR}/cmake/Hyle")
   set(HYLE_PACKAGE_COMPONENTS "${_hyle_package_components}")
   set(HYLE_PACKAGE_STATIC "${HYLE_STATIC}")
-  set(HYLE_PACKAGE_FEATURES "")
-  if(HYLE_TRACE)
-    list(APPEND HYLE_PACKAGE_FEATURES trace)
-  endif()
-  if(HYLE_BUILD_IO AND HYLE_IO_TLS_ENABLED)
-    list(APPEND HYLE_PACKAGE_FEATURES io_tls)
-  endif()
-  if(TARGET nghttp2_static)
-    list(APPEND HYLE_PACKAGE_FEATURES io_http2)
-  endif()
-  if(TARGET ggml)
-    list(APPEND HYLE_PACKAGE_FEATURES compute_ggml)
-  endif()
-  if(HYLE_BUILD_COMPUTE AND HYLE_COMPUTE_CUDA_ENABLED)
-    list(APPEND HYLE_PACKAGE_FEATURES compute_cuda)
-  endif()
-  if(HYLE_BUILD_COMPUTE AND HYLE_COMPUTE_VULKAN_ENABLED)
-    list(APPEND HYLE_PACKAGE_FEATURES compute_vulkan)
-  endif()
-  set(HYLE_PACKAGE_NEEDS_OPENSSL OFF)
-  set(HYLE_PACKAGE_NEEDS_CUDA OFF)
-  set(HYLE_PACKAGE_NEEDS_THREADS OFF)
   set(HYLE_PACKAGE_NEEDS_CXX_LINKER "${HYLE_STATIC}")
-  if(HYLE_STATIC AND HYLE_BUILD_IO AND HYLE_IO_TLS_ENABLED)
-    set(HYLE_PACKAGE_NEEDS_OPENSSL ON)
-  endif()
-  if(HYLE_STATIC AND HYLE_BUILD_COMPUTE AND HYLE_COMPUTE_CUDA_ENABLED)
-    set(HYLE_PACKAGE_NEEDS_CUDA ON)
-  endif()
-  if(HYLE_STATIC AND TARGET ggml)
-    set(HYLE_PACKAGE_NEEDS_THREADS ON)
-  endif()
 
   configure_package_config_file(
     "${HYLE_SOURCE_DIR}/cmake/HyleConfig.cmake.in"

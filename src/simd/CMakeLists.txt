@@ -307,3 +307,11 @@ endif()
 # fine -- the dispatcher also gets native codegen, but it runs on the machine you built it
 # for, so there is no SIGILL. Just don't ship THAT binary to an older CPU. LTO-off does not
 # defend against a global -march; the two deployment modes are a deliberate choice, not a bug.
+
+hyle_register_package_dependency(
+  NAME simd_ports
+  OWNER simd
+  RUNTIME_FILE_SPECS
+    "${PROJECT_SOURCE_DIR}/third_party/simdutf/LICENSE-APACHE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|highway-Apache-2.0-LICENSE"
+    "${PROJECT_SOURCE_DIR}/third_party/ported/LICENSE-JPEG-XL-BSD-3-Clause|${CMAKE_INSTALL_DATADIR}/licenses/Hyle"
+    "${PROJECT_SOURCE_DIR}/third_party/ported/LICENSE-XSIMD-BSD-3-Clause|${CMAKE_INSTALL_DATADIR}/licenses/Hyle")

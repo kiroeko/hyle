@@ -45,6 +45,11 @@ function(hyle_configure_compute_dependencies)
       endif()
       enable_language(CUDA)
       set(_hyle_compute_cuda_enabled ON)
+      hyle_register_package_dependency(
+        NAME cuda_toolkit
+        OWNER compute
+        FEATURES compute_cuda
+        STATIC_FIND_DEPENDENCIES CUDAToolkit)
       message(STATUS
         "HYLE: compute CUDA ${HYLE_COMPUTE_CUDA} -- enabled with Toolkit ${CUDAToolkit_VERSION}")
     elseif(HYLE_COMPUTE_CUDA STREQUAL "ON")
@@ -133,8 +138,10 @@ function(hyle_configure_compute_dependencies)
     endblock()
     FetchContent_GetProperties(ggml)
     set_property(DIRECTORY "${ggml_SOURCE_DIR}" PROPERTY EXCLUDE_FROM_ALL TRUE)
+    set(_hyle_ggml_export_targets "")
     foreach(_hyle_ggml_target IN ITEMS ggml ggml-base ggml-cpu ggml-cuda)
       if(TARGET ${_hyle_ggml_target})
+        list(APPEND _hyle_ggml_export_targets ${_hyle_ggml_target})
         string(REPLACE "-" "_" _hyle_ggml_export_name
           "${_hyle_ggml_target}")
         set_target_properties(${_hyle_ggml_target} PROPERTIES
@@ -149,6 +156,17 @@ function(hyle_configure_compute_dependencies)
     # reviewed include directory in HylePackage. Do not inherit upstream's
     # PUBLIC_HEADER install contract into HYLE's single install(TARGETS ...) call.
     set_property(TARGET ggml PROPERTY PUBLIC_HEADER "")
+    hyle_register_package_dependency(
+      NAME ggml
+      OWNER compute
+      FEATURES compute_ggml
+      STATIC_EXPORT_TARGETS ${_hyle_ggml_export_targets}
+      STATIC_FIND_DEPENDENCIES Threads
+      RUNTIME_FILE_SPECS
+        "${ggml_SOURCE_DIR}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|ggml-LICENSE"
+      STATIC_DEVELOPMENT_DIRECTORY_SPECS
+        "${ggml_SOURCE_DIR}/include/|${HYLE_INSTALL_INCLUDEDIR}")
+    unset(_hyle_ggml_export_targets)
     message(STATUS
       "HYLE: ggml ${GGML_PIN_COMMIT} -- private PIC static CPU kernel "
       "(native=${HYLE_COMPUTE_GGML_NATIVE}, exact=${HYLE_SIMD_EXACT_TARGET}, "
@@ -193,6 +211,23 @@ function(hyle_configure_compute_dependencies)
     set_target_properties(volk PROPERTIES
       HYLE_DEP_SOURCE_DIR "${volk_SOURCE_DIR}"
       HYLE_VULKAN_HEADERS_SOURCE_DIR "${vulkan_headers_SOURCE_DIR}")
+    hyle_register_package_dependency(
+      NAME vulkan_loader
+      OWNER compute
+      FEATURES compute_vulkan
+      STATIC_EXPORT_TARGETS volk
+      RUNTIME_FILE_SPECS
+        "${volk_SOURCE_DIR}/LICENSE.md|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|volk-LICENSE.md"
+        "${vulkan_headers_SOURCE_DIR}/LICENSE.md|${CMAKE_INSTALL_DATADIR}/licenses/Hyle/Vulkan-Headers"
+        "${vulkan_headers_SOURCE_DIR}/LICENSES/Apache-2.0.txt|${CMAKE_INSTALL_DATADIR}/licenses/Hyle/Vulkan-Headers"
+        "${vulkan_headers_SOURCE_DIR}/LICENSES/MIT.txt|${CMAKE_INSTALL_DATADIR}/licenses/Hyle/Vulkan-Headers"
+      STATIC_DEVELOPMENT_FILE_SPECS
+        "${volk_SOURCE_DIR}/volk.h|${HYLE_INSTALL_INCLUDEDIR}/hyle/vendor/volk"
+      STATIC_DEVELOPMENT_DIRECTORY_SPECS
+        "${vulkan_headers_SOURCE_DIR}/include/vulkan|${HYLE_INSTALL_INCLUDEDIR}/hyle/vendor/volk"
+        "${vulkan_headers_SOURCE_DIR}/include/vk_video|${HYLE_INSTALL_INCLUDEDIR}/hyle/vendor/volk"
+      DEVELOPMENT_PROGRAM_SPECS
+        "${HYLE_SOURCE_DIR}/tools/hyle_shader.py|${CMAKE_INSTALL_BINDIR}")
 
     # glslang/Python are build-time shader tools only; product sources do not
     # link them, and binary SDK configurations do not fetch them.

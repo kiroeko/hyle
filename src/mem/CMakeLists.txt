@@ -54,3 +54,10 @@ target_link_libraries(hyle_mem PRIVATE mimalloc_static)
 # transitive link).
 target_include_directories(hyle_mem PRIVATE "${_mi}/include")
 target_compile_definitions(hyle_mem PRIVATE HYLE_USE_MIMALLOC)
+
+hyle_register_package_dependency(
+  NAME mimalloc
+  OWNER mem
+  STATIC_EXPORT_TARGETS mimalloc_static
+  RUNTIME_FILE_SPECS
+    "${_mi}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|mimalloc-LICENSE")

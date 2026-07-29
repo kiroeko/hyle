@@ -113,8 +113,10 @@ Windows/Linux/macOS 与 arm64 Linux/macOS）；其他平台仍可组装 io proac
 组件选择同时控制依赖发现：不选 `io` 就不探测 OpenSSL、不取得 nghttp2；不选 `compute`
 就不探测 CUDA，也不取得 ggml/Vulkan-Headers/volk/glslang。第三方默认写入当前 HYLE build
 tree 的 `_deps`，源码与生成物一起归该 build tree 所有；不同 toolchain/build tree 不共享这个
-目录。离线或经审查的依赖源码通过标准 `FETCHCONTENT_SOURCE_DIR_<NAME>` 注入，生成物仍留在本
-build tree，不能写入或依赖源码树。
+目录。`_deps` 是 FetchContent 的 population 实现区，不是可交付的 offline bundle 格式。离线或
+经审查的 bundle 保存独立依赖源码，并通过标准 `FETCHCONTENT_SOURCE_DIR_<NAME>` 逐项注入；依赖
+生成物仍进入本 build tree，不能写入或依赖源码树。仅预填一个仓库根 `.deps`、或只打开
+`FETCHCONTENT_FULLY_DISCONNECTED`，都不是首次配置的稳定合同。
 
 TLS 与 CUDA 使用 `AUTO|ON|OFF` 三态：AUTO 仅供便利探测，ON 是硬能力契约，OFF 不运行依赖探测。
 正式 SDK/CI 必须显式选择 ON/OFF，因此构建机偶然安装了某个 SDK 不会改变发布形状。
@@ -178,6 +180,25 @@ manifest 中 PUBLIC/PRIVATE 的并集让 `HYLE_COMPONENTS=mem` 在进入模块�
 创建后偷偷追加的内部边。mimalloc、OpenSSL、ggml 等非 HYLE 实现依赖只属于模块 target，不伪装成
 用户 component。若将来需要改变内部依赖，只改 manifest 一处；模块 CMakeLists 无同步工作。
 
+### 外部依赖一次登记，多种 package 投影
+
+外部实现依赖的取得、编译和真实链接仍归消费模块，因为这些动作必须发生在 target 创建前后；但同一
+依赖不再到中央 `HylePackage.cmake` 重写一遍名字分支。模块在确认依赖 target/资产后调用一次
+`hyle_register_package_dependency()`，登记 owner、可导出 archive、package feature、静态下游
+`find_dependency()`、公开头/工具和许可证。package 层只遍历 registry，并自动投影为：
+
+| 登记事实 | 自动生成的交付结果 |
+|---|---|
+| `EXPORT_TARGETS` / `STATIC_EXPORT_TARGETS` | shared/static 对应的 `HyleTargets.cmake` 闭包 |
+| `STATIC_FIND_DEPENDENCIES` | 静态包 `HyleConfig.cmake` 的下游 SDK 发现 |
+| `FEATURES` | `Hyle_AVAILABLE_FEATURES` |
+| runtime/development asset specs | 所选实现对应的 license、header 和 tool 安装规则 |
+
+registry 拒绝重复名字、未知 owner、缺失 export target、非法下游依赖格式、缺失/绝对安装资产路径。
+因此增加一种外部实现只修改模块所有权位置；中央 package 文件不知道 mimalloc、nghttp2、ggml、volk、
+OpenSSL、CUDA 或 Tracy 的名字。`THIRD_PARTY_NOTICES.md` 仍是需要人工审查的法律说明，不拿机器 registry
+替代许可证判断；但实际编入 package 的文件闭包由同一登记机械生成。
+
 ### 新增模块或能力的固定协议
 
 新增产品模块不是“在根目录多写一个 `add_library`”。维护者按以下顺序扩展：
@@ -185,7 +206,8 @@ manifest 中 PUBLIC/PRIVATE 的并集让 `HYLE_COMPONENTS=mem` 在进入模块�
 1. 在 `HyleComponents.cmake` 用一次声明登记稳定 component 名、PUBLIC/PRIVATE 内部直接依赖，保持无环
    拓扑；manifest 同时生成加载前闭包和加载后的真实 link，模块目录不得重复内部边。
 2. 在 `src/<module>/CMakeLists.txt` 用统一 helper 声明产品 target 和源文件；外部实现库仍由模块用普通
-   target 命令接入，不把源码/供应商清单写回根 CMake。
+   target 命令接入，并在可用后调用一次 `hyle_register_package_dependency()` 登记 export、feature、
+   下游 SDK 与资产闭包，不把源码/供应商清单写回根 CMake 或中央 package 分支。
 3. 若有重型可选依赖，将发现/取得逻辑放入 `cmake/Hyle<Module>Dependencies.cmake`，根只在闭包选中
    该模块时调用一个配置入口；生成文件进入模块/build tree，不进入源码树。
 4. 提供 `tests/<module>/CMakeLists.txt`，登记 C++ 正确性、适用的纯 C/C surface/header 检查和
@@ -193,7 +215,8 @@ manifest 中 PUBLIC/PRIVATE 的并集让 `HYLE_COMPONENTS=mem` 在进入模块�
 5. 有真实 workload 时再提供 `bench/<module>/CMakeLists.txt`；benchmark 可缺席，但不能以 benchmark
    方便为理由改变产品 API、常态 metadata 或依赖形状。
 6. 公共模块 target 自动参与 build-tree alias 和 install export；不要另维护一份安装 target 清单。
-   新 feature 若改变交付物，补 package manifest、license closure 和外部 consumer 验证。
+   新 feature 若改变交付物，在模块的同一 registry 声明补 feature/license/find-dependency，并加外部
+   consumer 验证；不得直接修改 `HylePackage.cmake` 增加依赖名字分支。
 7. 更新对应 architecture（边界/原则）、guide（用户选型）、C guide（FFI 映射）、performance（证据）
    与 milestone（施工记录），各文档不互相复制职责。
 8. 至少验证最小 component 子集、依赖闭包 aggregate、source embed 和相关 static/shared package；发布前
@@ -317,8 +340,9 @@ CI 对 Windows/Linux/macOS 运行 core 验证面，并在每个平台
 随后从空目录制作 shared/static mem SDK，再由只链接 `hyle::mem` 的 pure-C error+mem consumer 与 C++
 `SystemAllocator` consumer 真运行；shared 形状机械覆盖 `mem -> platform -> error` 的传递
 shared-object lookup，并证明公开 inline 形状不泄漏 mimalloc 符号，static 形状覆盖 mimalloc
-link-only archive 与 C++ link driver。Linux 还执行 component 空值、嵌入 cache、晚期依赖成员绕过及
-PUBLIC/PRIVATE 可见性扩大四项 configure contract，并从 clean checkout 生成完整 source zip、核对
+link-only archive 与 C++ link driver。Linux 还执行 component 空值、嵌入 cache、晚期依赖成员绕过、
+PUBLIC/PRIVATE 可见性扩大，以及 package registry 正向/重复/漏 target 共七项 configure contract，
+并从 clean checkout 生成完整 source zip、核对
 SHA-256/commit/legal payload、
 解压后独立构建 `core`。simd、CUDA、compute/io 全矩阵不塞进每提交 smoke，仍属发布检查。
 
@@ -332,6 +356,8 @@ host program 与 target library/header/package 搜索严格分开，`CMAKE_TRY_C
 - 新模块必须登记一次 component manifest 并创建 module target；configure 会验证依赖名、拓扑顺序、
   target 已存在，以及所有模块装载后的直接 HYLE link 边与 manifest 完全一致。
 - 新可选第三方只能在其消费组件已选且 feature 已启用时发现/取得。
+- 外部依赖的 export target、package feature、下游 SDK 和安装资产只在所属模块 registry 登记一次；
+  中央 package 层只做通用投影，不能按供应商名分支。
 - 不在 CMake 中写开发机绝对路径；preset 是可选入口包，不是编译成功的隐藏前置。
 - parent-owned 的 generator、toolchain、配置、输出目录和 `BUILD_SHARED_LIBS` 不得被 subproject 改写。
 - source tree 只存源码与审查过的 vendored 资产；cache、下载、生成头和制品一律进 build tree。

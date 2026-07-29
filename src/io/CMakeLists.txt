@@ -39,6 +39,12 @@ if(HYLE_HAS_FCONTEXT)
   if(HYLE_IO_TLS_ENABLED)
     list(APPEND _io_sources tls.cc)
   endif()
+
+  hyle_register_package_dependency(
+    NAME picohttpparser
+    OWNER io
+    RUNTIME_FILE_SPECS
+      "${PROJECT_SOURCE_DIR}/third_party/picohttpparser/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|picohttpparser-LICENSE")
 endif()
 
 # Platforms without fcontext do not build the coroutine transport or the real
@@ -79,6 +85,11 @@ if(HYLE_HAS_FCONTEXT AND HYLE_IO_TLS_ENABLED)
   # consumers including tls.h see the real TlsStream; PRIVATE link (impl detail).
   target_link_libraries(hyle_io PRIVATE OpenSSL::SSL OpenSSL::Crypto)
   target_compile_definitions(hyle_io PUBLIC HYLE_IO_TLS)
+  hyle_register_package_dependency(
+    NAME openssl
+    OWNER io
+    FEATURES io_tls
+    STATIC_FIND_DEPENDENCIES OpenSSL)
 endif()
 
 if(WIN32)

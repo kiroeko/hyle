@@ -9,6 +9,7 @@
 | C++ 编译器 / CMake / generator / 汇编器 | **硬门槛** | CMake FATAL_ERROR，配置失败 | CMake 自带检查；Ninja 不是唯一 generator |
 | **ggml** | **自动拉取**（FetchContent） | 有网自动下；无网且无缓存则配置失败 | `FetchContent`（pin commit） |
 | **googletest** | **自动拉取**（FetchContent） | 同上（仅影响测试，`-DHYLE_BUILD_TESTS=OFF` 可跳） | `FetchContent`（pin tag v1.15.2） |
+| **nghttp2** | **自动拉取**（FetchContent） | 仅选择 io 时取得；提供 HTTP/2 协议核 | `FetchContent`（pin commit v1.69.0） |
 | **volk + Vulkan-Headers** | **自动拉取**（FetchContent，compute-06） | 全 pin `vulkan-sdk-1.4.341.0`，落 build tree `_deps`；缺网首配失败 | `FetchContent`（两个 pin commit） |
 | **glslang** | 测试/benchmark shader 工具 | 只在 compute tests/bench 打开时拉取；生产 SDK 不需要 | `FetchContent`（pin commit） |
 | **Vulkan loader + ICD/driver** | 可选能力（compute-06 运行时） | 无则 Vulkan 后端运行时禁用（`vulkan_vtable()` 返 null），其余全绿 | volk 运行时 dlopen `vulkan-1.dll`/`libvulkan.so`/`libvulkan.dylib` |
@@ -22,11 +23,15 @@ ON 要求能力存在，否则配置失败；OFF 连依赖都不探测。只有�
 
 ---
 
-## FetchContent：ggml 与 googletest 的自动拉取（cil2cpp 形式）
+## FetchContent：固定版本源码依赖
 
-**机制**：`ggml`（根 `CMakeLists.txt`）和 `googletest`（`tests/CMakeLists.txt`）都用 CMake 的 `FetchContent`，**pin 到确定版本**：
+**机制**：重型依赖由所属模块的 dependency 入口取得，测试依赖由 tests 入口取得；都用 CMake
+`FetchContent` **pin 到确定版本**：
 
 - ggml → `GIT_TAG eced84c86f8b012c752c016f7fe789adea168e1e`（v0.15.3）
+- nghttp2 → `GIT_TAG 68cb6900fde14c77f0cd7add0e094a862960eb99`（v1.69.0）
+- Vulkan-Headers / volk → `vulkan-sdk-1.4.341.0` 对应固定 commit
+- glslang → compute tests/benchmark 需要 shader 工具时的固定 commit
 - googletest → `GIT_TAG v1.15.2`
 
 **默认行为（开箱即用，需联网）**：新机器 clone HYLE → 跑 `cmake` → FetchContent 自动联网 clone
@@ -43,7 +48,38 @@ cmake -S . -B build -DFETCHCONTENT_SOURCE_DIR_GGML=/approved/ggml
 可以移动**当前 build tree 自己的**依赖区，但不能指向源码树，也不应被不同 toolchain/build tree 共用。
 仓库根 `.deps/` 只是旧开发树兼容的 ignored 路径，不是现行默认契约。
 
-**ggml 的构建开关（HYLE 强制设定，见根 CMakeLists）**：只构建私有 PIC 静态 CPU + 可选 CUDA
+制作 offline source bundle 时，可以把上述依赖分别放在 `deps/<name>/`，再随 bundle 提供一个
+`hyle-offline-deps.cmake` initial-cache 文件，把每个绝对/相对目录写入对应的
+`FETCHCONTENT_SOURCE_DIR_<NAME>`；用户以 `cmake -C hyle-offline-deps.cmake ...` 配置。每个目录还应在
+bundle manifest 记录上游 URL、HYLE pin commit/tag、校验值和许可证。只复制 FetchContent 生成的
+`<build>/_deps` 不够：里面混有特定 toolchain 的 build/stamp 状态，目录布局也不是发布 API。
+
+```cmake
+# hyle-offline-deps.cmake（位于 bundle 根）
+set(FETCHCONTENT_SOURCE_DIR_GGML
+    "${CMAKE_CURRENT_LIST_DIR}/deps/ggml" CACHE PATH "")
+set(FETCHCONTENT_SOURCE_DIR_NGHTTP2
+    "${CMAKE_CURRENT_LIST_DIR}/deps/nghttp2" CACHE PATH "")
+set(FETCHCONTENT_SOURCE_DIR_VULKAN_HEADERS
+    "${CMAKE_CURRENT_LIST_DIR}/deps/Vulkan-Headers" CACHE PATH "")
+set(FETCHCONTENT_SOURCE_DIR_VOLK
+    "${CMAKE_CURRENT_LIST_DIR}/deps/volk" CACHE PATH "")
+# 构建 tests/compute shader 工具时再映射 GOOGLETEST、GLSLANG。
+```
+
+```bash
+cmake -C /approved/hyle-offline-deps.cmake \
+  -S hyle-<version>-source -B build -DHYLE_COMPONENTS=all
+```
+
+逐项 source override 已保证该依赖不执行 download/update；不要把
+`FETCHCONTENT_FULLY_DISCONNECTED=ON` 单独当成首次离线配置开关。若发行方需要机械保证首次配置绝不
+访问网络，应让 bundle 提供 dependency provider；普通 HYLE 离线交付只要完整映射本次 component/
+feature 会触达的全部 FetchContent 项即可。OpenSSL、CUDA Toolkit 这类 `find_package()` SDK 不在
+FetchContent bundle 内，仍需由离线 toolchain/sysroot/package prefix 提供。
+
+**ggml 的构建开关（HYLE 强制设定，见 `HyleComputeDependencies.cmake`）**：只构建私有 PIC 静态 CPU +
+可选 CUDA
 闭包；关闭 OpenMP、BLAS/Accelerate、Metal/Vulkan/RPC、tests/examples/server、backend dynamic load、
 FA/NCCL/ccache，避免引入 HYLE 不消费的运行时。`GGML_CUDA` 跟随最终启用的 CUDA 能力。
 普通源码构建 `HYLE_COMPUTE_GGML_NATIVE=ON` 偏向本机性能；`HYLE_INSTALL=ON` 默认 OFF，x86 使用

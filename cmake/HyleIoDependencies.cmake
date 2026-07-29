@@ -62,6 +62,16 @@ function(hyle_configure_io_dependencies)
       EXPORT_NAME "_nghttp2_static"
       HYLE_DEP_SOURCE_DIR "${nghttp2_SOURCE_DIR}"
       HYLE_DEP_BINARY_DIR "${nghttp2_BINARY_DIR}")
+    hyle_register_package_dependency(
+      NAME nghttp2
+      OWNER io
+      FEATURES io_http2
+      STATIC_EXPORT_TARGETS nghttp2_static
+      RUNTIME_FILE_SPECS
+        "${nghttp2_SOURCE_DIR}/COPYING|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|nghttp2-LICENSE"
+      STATIC_DEVELOPMENT_FILE_SPECS
+        "${nghttp2_SOURCE_DIR}/lib/includes/nghttp2/nghttp2.h|${HYLE_INSTALL_INCLUDEDIR}/nghttp2"
+        "${nghttp2_BINARY_DIR}/lib/includes/nghttp2/nghttp2ver.h|${HYLE_INSTALL_INCLUDEDIR}/nghttp2")
     message(STATUS
       "HYLE: nghttp2 v1.69.0 (${NGHTTP2_PIN_COMMIT}) -- io-11 HTTP/2 enabled "
       "as a private static protocol core")

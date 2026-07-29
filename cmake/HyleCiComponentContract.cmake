@@ -142,4 +142,59 @@ if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES
     "${HYLE_CONTRACT_LAST_OUTPUT}")
 endif()
 
+# External implementation/package facts also have one owner and one
+# declaration.  Exercise the registry in script mode so a duplicate name or a
+# stale exported target cannot degrade into a partially relocatable SDK.
+set(_package_registry_projection
+  "${HYLE_SMOKE_ROOT}/package-registry-projection.cmake")
+file(WRITE "${_package_registry_projection}"
+"list(APPEND CMAKE_MODULE_PATH \"${HYLE_SOURCE_DIR}/cmake\")\n"
+"set(HYLE_KNOWN_COMPONENTS core)\n"
+"set(HYLE_STATIC ON)\n"
+"include(HylePackageRegistry)\n"
+"hyle_register_package_dependency(\n"
+"  NAME demo OWNER foundation FEATURES demo_feature\n"
+"  STATIC_FIND_DEPENDENCIES Threads OpenSSL|3.0)\n"
+"hyle_package_collect_registry(_targets _features _find_dependencies)\n"
+"if(_targets OR NOT _features STREQUAL \"demo_feature\" OR\n"
+"   NOT _find_dependencies STREQUAL \"Threads;OpenSSL|3.0\")\n"
+"  message(FATAL_ERROR \"unexpected registry projection\")\n"
+"endif()\n")
+_hyle_contract_run("package dependency registry projection" TRUE
+  "${CMAKE_COMMAND}" -P "${_package_registry_projection}")
+
+set(_package_registry_duplicate
+  "${HYLE_SMOKE_ROOT}/package-registry-duplicate.cmake")
+file(WRITE "${_package_registry_duplicate}"
+"list(APPEND CMAKE_MODULE_PATH \"${HYLE_SOURCE_DIR}/cmake\")\n"
+"set(HYLE_KNOWN_COMPONENTS core)\n"
+"include(HylePackageRegistry)\n"
+"hyle_register_package_dependency(NAME demo OWNER foundation)\n"
+"hyle_register_package_dependency(NAME demo OWNER foundation)\n")
+_hyle_contract_run("duplicate package dependency registration" FALSE
+  "${CMAKE_COMMAND}" -P "${_package_registry_duplicate}")
+if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES "registered more than once")
+  message(FATAL_ERROR
+    "duplicate package dependency failed for the wrong reason:\n"
+    "${HYLE_CONTRACT_LAST_OUTPUT}")
+endif()
+
+set(_package_registry_missing_target
+  "${HYLE_SMOKE_ROOT}/package-registry-missing-target.cmake")
+file(WRITE "${_package_registry_missing_target}"
+"list(APPEND CMAKE_MODULE_PATH \"${HYLE_SOURCE_DIR}/cmake\")\n"
+"set(HYLE_KNOWN_COMPONENTS core)\n"
+"set(HYLE_STATIC ON)\n"
+"include(HylePackageRegistry)\n"
+"hyle_register_package_dependency(\n"
+"  NAME demo OWNER foundation STATIC_EXPORT_TARGETS absent_vendor)\n"
+"hyle_package_collect_registry(_targets _features _find_dependencies)\n")
+_hyle_contract_run("missing package dependency export target" FALSE
+  "${CMAKE_COMMAND}" -P "${_package_registry_missing_target}")
+if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES "requires missing export target")
+  message(FATAL_ERROR
+    "missing package dependency target failed for the wrong reason:\n"
+    "${HYLE_CONTRACT_LAST_OUTPUT}")
+endif()
+
 message(STATUS "HYLE component contracts passed")

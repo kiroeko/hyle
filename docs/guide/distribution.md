@@ -220,7 +220,7 @@ zip 包含该 commit 的全部 tracked HYLE 源码、头、C ABI、构建文件�
 脚本和 in-tree third_party。`SOURCE-MANIFEST.txt` 在归档时写入精确 commit。build tree、cache、日志、
 本机 `.deps` 和其他 ignored/untracked 文件不会进入客户包；工作树不干净时 target 会直接失败。
 
-客户解压后仍用普通组件入口构建。需要离线或自行审查 fetched dependency 时，供应依赖源码目录：
+客户解压后仍用普通组件入口构建。需要离线或自行审查 fetched dependency 时，供应独立依赖源码目录：
 
 ```bash
 cmake -S hyle-<version>-source -B build \
@@ -230,7 +230,10 @@ cmake -S hyle-<version>-source -B build \
 
 ggml、volk、Vulkan-Headers、glslang、GoogleTest 等依赖使用同一
 `FETCHCONTENT_SOURCE_DIR_<UPPERCASE_NAME>` 机制。依赖源码交付及其许可证仍是独立 closure，不能把本机
-下载缓存直接称为 HYLE 原创源码。
+下载缓存直接称为 HYLE 原创源码。若一次交付包含多项依赖，用随包的 initial-cache 文件集中设置这些
+标准变量（`cmake -C hyle-offline-deps.cmake ...`）；不要要求客户把缓存塞进仓库 `.deps`，也不要复制
+含特定编译器生成物/stamp 的 `<build>/_deps`。bundle manifest 应固定每项上游、pin、校验与 license。
+OpenSSL/CUDA 等系统 SDK 仍由离线 toolchain 或 package prefix 提供，不属于 FetchContent 源码目录。
 
 ## 非 CMake 工程
 

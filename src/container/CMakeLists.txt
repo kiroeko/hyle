@@ -79,3 +79,12 @@ else()
   set_source_files_properties("${PROJECT_SOURCE_DIR}/third_party/simdutf/simdutf.cpp"
     PROPERTIES COMPILE_OPTIONS "-w")
 endif()
+
+hyle_register_package_dependency(
+  NAME container_vendors
+  OWNER container
+  RUNTIME_FILE_SPECS
+    "${PROJECT_SOURCE_DIR}/third_party/xxhash/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|xxhash-LICENSE"
+    "${PROJECT_SOURCE_DIR}/third_party/wyhash/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|wyhash-LICENSE"
+    "${PROJECT_SOURCE_DIR}/third_party/simdutf/LICENSE-MIT|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|simdutf-LICENSE-MIT"
+    "${PROJECT_SOURCE_DIR}/third_party/simdutf/LICENSE-APACHE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|simdutf-LICENSE-APACHE")

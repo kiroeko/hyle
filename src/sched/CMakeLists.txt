@@ -60,3 +60,9 @@ if(MSVC)
   # this target-private; the same unused definition on the C++ TUs is harmless.
   target_compile_definitions(hyle_sched PRIVATE BOOST_CONTEXT_EXPORT=EXPORT)
 endif()
+
+hyle_register_package_dependency(
+  NAME fcontext
+  OWNER sched
+  RUNTIME_FILE_SPECS
+    "${PROJECT_SOURCE_DIR}/third_party/fcontext/LICENSE_1_0.txt|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|fcontext-LICENSE_1_0.txt")

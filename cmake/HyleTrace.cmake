@@ -69,6 +69,15 @@ if(HYLE_TRACE)
     # HYLE_TRACE_TRACY implies HYLE_TRACE inside trace.h; set both + tracy's own.
     target_compile_definitions(hyle_trace INTERFACE
       HYLE_TRACE HYLE_TRACE_TRACY TRACY_ENABLE TRACY_FIBERS)
+    hyle_register_package_dependency(
+      NAME tracy
+      OWNER foundation
+      FEATURES trace
+      EXPORT_TARGETS hyle_tracy_client
+      RUNTIME_FILE_SPECS
+        "${HYLE_TRACY_DIR}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|tracy-LICENSE"
+      DEVELOPMENT_DIRECTORY_SPECS
+        "${HYLE_TRACY_DIR}/public/|${HYLE_INSTALL_INCLUDEDIR}/hyle/vendor/tracy-public")
     message(STATUS "HYLE_TRACE = ON (tracy @ ${HYLE_TRACY_DIR})")
   else()
     message(FATAL_ERROR "HYLE_TRACE_BACKEND='${HYLE_TRACE_BACKEND}' unknown (only 'tracy').")

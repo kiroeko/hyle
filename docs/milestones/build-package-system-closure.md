@@ -84,6 +84,15 @@ Shell。普通 PowerShell 直接调用缓存中的 `cl.exe` 缺少 `INCLUDE/LIB`
 - Linux CI 新增 complete-source 硬门：从 clean commit 生成 zip，核对 SHA-256、commit manifest、
   LICENSE/THIRD_PARTY_NOTICES，解包后脱离 Git checkout 构建 `hyle_core`。Windows 本地同脚本已对
   `75a8d3f` 全链通过；
+- 外部实现依赖的 package/export 元数据从中央供应商名分支收束到模块侧一次 registry 登记；export
+  target、静态 `find_dependency()`、feature、license/header/tool 由通用 package 层投影。重复登记和
+  漏失 export target 纳入 configure contract；offline bundle 明确采用独立源码目录加标准
+  `FETCHCONTENT_SOURCE_DIR_<NAME>` 映射，不把 `.deps`/`<build>/_deps` 缓存布局发布为接口；
+- Windows 从空 scratch 的 shared/static mem package smoke 均为外部 C/C++ consumers 2/2；另以已有
+  dependency source override 对 all-component CPU install 图做 static/shared fresh configure，静态 config
+  只生成 `Threads`、shared 不生成多余下游依赖，两者 feature 均为
+  `io_http2;compute_ggml;compute_vulkan`。static Runtime component 无需编译即实际安装 18 份
+  HYLE/第三方 notice/license，证明通用 registry 覆盖完整资产闭包；
 - 当前三平台 clean/reconfigure/initial/no-op 点值已替换旧证书；no-op 为 Windows 47--48ms、WSL
   不超过 10ms、M4 60--120ms，没有模块拆分后的常态重编或数量级回归。
 
@@ -242,12 +251,12 @@ Shell。普通 PowerShell 直接调用缓存中的 `cl.exe` 缺少 `INCLUDE/LIB`
 
 | 固定口径 | code |
 |---|---:|
-| 全库（含 docs/in-tree third_party） | 275,207 |
+| 全库（含 docs/in-tree third_party） | 275,422 |
 | 自实现（含测试） | 134,163 |
 | 自实现（不含测试） | 92,124 |
-| build/package 实现 | 5,173 |
+| build/package 实现 | 5,436 |
 
-最后一项固定为 77 个自有 CMake 文件 + preset/CI + 8 个 build/fetch/setup/QEMU shell/PowerShell
+最后一项固定为 78 个自有 CMake 文件 + preset/CI + 8 个 build/fetch/setup/QEMU shell/PowerShell
 guard；不含 vendored CMake、测试源码和文档。CMake 验收脚本分别守 package version、
 production-shape、component contract 与 complete-source 交付，故相对旧 4,005 的增长属于产品构建
 模块，不是测试源码误计。
