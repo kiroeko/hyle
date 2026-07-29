@@ -82,8 +82,8 @@ SIMD 主测试 379 项、WSL native SIMD 和 AArch64 GCC14 Werror 均通过。
 - 不缓存跨平台/跨 toolchain build tree；只允许校验过版本的 dependency source/compiler cache。
 - 编译/测试失败归代码；下载或 SDK 获取失败归依赖供应；runner 在任何 step 前被 billing/spending
   limit 拒绝归基础设施。三类必须在记录中分开，不能通过重跑或缩小组件伪造绿色。
-- 当前 GitHub Actions 仍受组织额度/账单限制，run `30423424066` 在 runner 分配前失败；恢复后先跑
-  `workflow_dispatch`，通过才把远端状态作为本阶段证据。
+- 当前 GitHub Actions 仍受组织额度/账单限制，run `30462305179`（commit `137fb87`）在 runner
+  分配前失败；恢复后先跑 `workflow_dispatch`，通过才把远端状态作为本阶段证据。
 
 ## 完成条件
 
