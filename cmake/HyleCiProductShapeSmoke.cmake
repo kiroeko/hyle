@@ -57,7 +57,7 @@ _hyle_product_shape_run("configure production-shape tests"
   ${_hyle_dependency_args})
 _hyle_product_shape_run("build production-shape tests"
   "${CMAKE_COMMAND}" --build "${_hyle_build}" --config Release
-  --target hyle_error_tests hyle_platform_tests hyle_time_tests hyle_mem_tests
+  --target hyle_tests
   --parallel 2)
 _hyle_product_shape_run("run production-shape tests"
   "${CMAKE_CTEST_COMMAND}" --test-dir "${_hyle_build}" -C Release

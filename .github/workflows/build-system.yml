@@ -71,6 +71,14 @@ jobs:
         if: runner.os == 'Windows'
         run: ./scripts/hyle-windows.ps1 -Action Test -Preset windows-ninja -R "^hyle_core_" --output-on-failure
 
+      - name: Verify component and dependency contracts
+        if: runner.os == 'Linux'
+        run: >-
+          cmake -DHYLE_SOURCE_DIR=${{ github.workspace }}
+          -DHYLE_SMOKE_ROOT=${{ runner.temp }}/hyle-component-contract
+          "-DHYLE_SMOKE_GENERATOR=${{ matrix.generator }}"
+          -P cmake/HyleCiComponentContract.cmake
+
       - name: Verify production-shape tests (Unix)
         if: runner.os != 'Windows'
         run: >-
@@ -94,6 +102,15 @@ jobs:
       - name: Verify installed package consumers (Windows selected MSVC)
         if: runner.os == 'Windows'
         run: ./scripts/hyle-windows.ps1 -Action PackageSmoke -SmokeRoot ${{ runner.temp }}/hyle-package-smoke
+
+      - name: Verify complete-source package
+        if: runner.os == 'Linux'
+        run: >-
+          cmake -DHYLE_SOURCE_DIR=${{ github.workspace }}
+          -DHYLE_PACKAGE_BUILD=${{ github.workspace }}/build-${{ matrix.preset }}
+          -DHYLE_SMOKE_ROOT=${{ runner.temp }}/hyle-source-package-smoke
+          "-DHYLE_SMOKE_GENERATOR=${{ matrix.generator }}"
+          -P cmake/HyleCiSourcePackageSmoke.cmake
 
   linux-aarch64-cross:
     name: Linux AArch64 cross configure/build

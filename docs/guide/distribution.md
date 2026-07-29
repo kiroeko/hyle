@@ -3,6 +3,11 @@
 HYLE 的 proprietary 授权与交付物形状是两回事。权利人可以向特定客户交付完整源码，也可以只交付
 静态或动态 SDK；客户能做什么由单独书面授权决定，不由文件扩展名决定。
 
+`HYLE_COMPONENTS` 不写时默认构建 `all`；写了就必须至少有一个有效组件名，显式
+`-DHYLE_COMPONENTS=` 会报错，而不会因脚本变量丢失偷偷变成全库。逗号、分号都可分隔多个根。
+源码嵌入可在 `add_subdirectory(hyle)` 前用普通 CMake 变量设置它，HYLE 会让 cache/GUI 中的值与
+实际解析值保持一致。每次 configure 日志都会同时打印 requested 与 resolved 闭包。
+
 ## headers + shared libraries
 
 ```bash

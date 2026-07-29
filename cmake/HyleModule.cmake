@@ -32,6 +32,37 @@ function(_hyle_validate_module_dependencies name)
   endif()
 endfunction()
 
+# Re-read the finished targets after every module CMakeLists has returned.  The
+# declaration-time check above catches mistakes in hyle_add_module(), while this
+# final check also catches a later target_link_libraries(hyle_x ... hyle_y)
+# call that would otherwise make the executable component graph lie.
+function(hyle_validate_final_module_graph)
+  foreach(_name IN LISTS HYLE_KNOWN_COMPONENTS)
+    if(NOT TARGET hyle_${_name})
+      continue()
+    endif()
+
+    set(_actual_dependencies "")
+    foreach(_property IN ITEMS LINK_LIBRARIES INTERFACE_LINK_LIBRARIES)
+      get_target_property(_link_items hyle_${_name} ${_property})
+      if(NOT _link_items OR _link_items MATCHES "-NOTFOUND$")
+        continue()
+      endif()
+      foreach(_item IN LISTS _link_items)
+        foreach(_candidate IN LISTS HYLE_KNOWN_COMPONENTS)
+          if(_item MATCHES
+             "(^|[^A-Za-z0-9_])hyle(_|::)${_candidate}([^A-Za-z0-9_]|$)")
+            list(APPEND _actual_dependencies hyle_${_candidate})
+          endif()
+        endforeach()
+      endforeach()
+    endforeach()
+    list(REMOVE_DUPLICATES _actual_dependencies)
+    _hyle_validate_module_dependencies(
+      "${_name}" ${_actual_dependencies})
+  endforeach()
+endfunction()
+
 # hyle_add_module(<name> [SOURCES ...] [DEPS ...] [PUBLIC_DEPS ...])
 # Declares a HYLE module as a library target `hyle_<name>` with conventional
 # include dirs, warnings, sanitizer flags, and a tri-state export macro.

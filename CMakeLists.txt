@@ -233,6 +233,11 @@ endforeach()
 unset(_component)
 unset(_component_upper)
 
+# Module CMakeLists may add external/private implementation libraries after
+# hyle_add_module().  Audit the completed HYLE-to-HYLE link graph here so a
+# later internal edge cannot bypass the declaration-time component check.
+hyle_validate_final_module_graph()
+
 include(HylePackage)
 hyle_install_package()
 include(HyleSourcePackage)

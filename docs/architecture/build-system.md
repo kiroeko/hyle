@@ -27,11 +27,12 @@ HYLE 被父工程 `add_subdirectory()` 嵌入时不创建源码分发 target，�
 ```text
 roots: core error obs math platform time mem simd container util sched io compute graph
 
+obs      -> error
 platform -> error
 time     -> error
 mem      -> error + platform
 simd     -> error + platform
-container-> mem + platform
+container-> error + mem + platform
 util     -> container
 sched    -> error + platform + time + mem + container
 io       -> error + mem + container [+ sched]
@@ -42,8 +43,11 @@ graph    -> error + mem + container [+ sched]
 箭头右侧是 target 依赖闭包，不重复 core/util-core 纯头、只提供 OS/架构/编译器宏的
 `hyle/platform.h` 和 `hyle_trace` 横切 gate。包含 `hyle/platform.h` 只是零链接代价的编译环境
 依赖，不等于链接 `hyle::platform`；例如 time 的 native clock 实现用它选择 OS 分支，但 time 的
-二进制闭包仍然只有 error。`all` 是完整产品默认值；逗号与分号都可分隔多个根。未知组件在
-configure 阶段直接失败，配置日志打印 requested/resolved 清单，因此一次构建“组装了什么”可审计。
+二进制闭包仍然只有 error。未设置 `HYLE_COMPONENTS` 时默认 `all`；逗号与分号都可分隔多个根。
+显式空值会失败，避免丢失的 shell/CI 变量意外触发全库与重型依赖。父工程在
+`add_subdirectory()` 前设置普通变量时，CMake cache 会镜像同一有效值，GUI、问题报告与实际 target
+图不会分别显示 `all` 和子集。未知组件同样在 configure 阶段直接失败，配置日志打印
+requested/resolved 清单，因此一次构建“组装了什么”可审计。
 方括号内的 sched 边只在 HYLE 已接入 fcontext 的目标组合上存在（当前为 x86-64
 Windows/Linux/macOS 与 arm64 Linux/macOS）；其他平台仍可组装 io proactor、compute host/backend
 基础层和 graph serial core。显式请求不受支持的 sched 会在 configure 阶段失败，不会静默降级。
@@ -79,6 +83,11 @@ TLS 与 CUDA 使用 `AUTO|ON|OFF` 三态：AUTO 仅供便利探测，ON 是硬�
 源码、生成物或工作目录时必须显式声明，不能依赖兄弟片段泄漏。共享 benchmark peer 应在父目录创建
 普通 target；未来若改用 `find_package()` 的非 `GLOBAL` imported target，也必须在共同父目录发现或
 显式提升可见性，不能让 sibling 偶然可见。
+
+模块声明时会把 `hyle_add_module(... DEPS/PUBLIC_DEPS ...)` 与唯一 component 图逐边比较；所有模块
+目录返回后还会重新读取 target 的 `LINK_LIBRARIES`/`INTERFACE_LINK_LIBRARIES` 做终态审计。因此模块
+声明之后追加的 `target_link_libraries(hyle_x ... hyle_y)` 也不能绕过组件闭包。外部实现库不进入这张
+HYLE-to-HYLE 图，但仍由所属模块 target 负责 package/export 语义。
 
 这里的“独立”指所有权目录、变量/生成目录隔离、可选择的 target 图和独立验证入口，不是把每个
 目录做成另一个 `project()`。开发者仍从仓库根配置，由根统一执行工具链门槛和依赖闭包。例如只施工
@@ -194,7 +203,9 @@ CI 对 Windows/Linux/macOS 运行 core 验证面，并在每个平台
 随后从空目录制作 shared/static mem SDK，再由只链接 `hyle::mem` 的 pure-C error+mem consumer 与 C++
 `SystemAllocator` consumer 真运行；shared 形状机械覆盖 `mem -> platform -> error` 的传递
 shared-object lookup，并证明公开 inline 形状不泄漏 mimalloc 符号，static 形状覆盖 mimalloc
-link-only archive 与 C++ link driver。simd、CUDA、compute/io 全矩阵不塞进每提交 smoke，仍属发布检查。
+link-only archive 与 C++ link driver。Linux 还执行 component 空值/嵌入 cache/晚期依赖绕过三项
+configure contract，并从 clean checkout 生成完整 source zip、核对 SHA-256/commit/legal payload、
+解压后独立构建 `core`。simd、CUDA、compute/io 全矩阵不塞进每提交 smoke，仍属发布检查。
 
 `cmake/toolchains/linux-aarch64-gcc.cmake` 是整项目交叉编译的参考入口：compiler/sysroot 属工具链，
 host program 与 target library/header/package 搜索严格分开，`CMAKE_TRY_COMPILE_TARGET_TYPE` 设为
@@ -204,7 +215,7 @@ host program 与 target library/header/package 搜索严格分开，`CMAKE_TRY_C
 ## 维护规则
 
 - 新模块必须同时登记 component、直接依赖和 module target；configure 会验证依赖名、拓扑顺序、
-  target 已存在，以及 module 声明的直接 HYLE link 边与 component 图完全一致。
+  target 已存在，以及声明时和所有模块装载后的直接 HYLE link 边都与 component 图完全一致。
 - 新可选第三方只能在其消费组件已选且 feature 已启用时发现/取得。
 - 不在 CMake 中写开发机绝对路径；preset 是可选入口包，不是编译成功的隐藏前置。
 - parent-owned 的 generator、toolchain、配置、输出目录和 `BUILD_SHARED_LIBS` 不得被 subproject 改写。

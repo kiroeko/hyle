@@ -19,8 +19,20 @@ unset(_hyle_unique_components)
 unset(_hyle_component_count)
 unset(_hyle_unique_component_count)
 
-set(HYLE_COMPONENTS "all" CACHE STRING
-    "HYLE product roots to build (all or a semicolon/comma-separated component list)")
+# A source-embedding parent commonly sets this as a normal variable before
+# add_subdirectory().  Capture that effective value before creating the cache
+# entry, then mirror it into the cache so CMake GUI/diagnostic output describes
+# the graph that is actually being generated.  Without this step CMake can keep
+# a shadowed `all` cache entry while the normal variable selects one component.
+if(DEFINED HYLE_COMPONENTS)
+  set(_hyle_components_input "${HYLE_COMPONENTS}")
+else()
+  set(_hyle_components_input "all")
+endif()
+set(HYLE_COMPONENTS "${_hyle_components_input}" CACHE STRING
+    "HYLE product roots to build (all or a semicolon/comma-separated component list)"
+    FORCE)
+unset(_hyle_components_input)
 
 set(_hyle_requested "${HYLE_COMPONENTS}")
 string(REPLACE "," ";" _hyle_requested "${_hyle_requested}")
@@ -37,7 +49,10 @@ if("all" IN_LIST _hyle_requested)
   endif()
   set(_hyle_selected ${HYLE_KNOWN_COMPONENTS})
 elseif(NOT _hyle_requested)
-  set(_hyle_selected ${HYLE_KNOWN_COMPONENTS})
+  message(FATAL_ERROR
+    "HYLE_COMPONENTS is explicitly empty. Omit it (or use 'all') for the full "
+    "product, or provide one or more component roots. Refusing to turn an empty "
+    "script/CI argument into an accidental all-component build.")
 else()
   set(_hyle_selected "")
   foreach(_component IN LISTS _hyle_requested)

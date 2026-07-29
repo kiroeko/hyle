@@ -148,7 +148,11 @@ TEST(SharedPoolCache, CallerStorageReusesLocallyAndPublishes) {
   void *p = cache.allocate();
   ASSERT_NE(p, nullptr);
   cache.deallocate(p);
-  EXPECT_EQ(cache.cached(), 1u);
+  // A refill is intentionally one batch from the caller's home shard.  Its
+  // size depends on process-available parallelism and the resulting shard
+  // width, so only the local-capacity contract is portable across CI runners.
+  EXPECT_GE(cache.cached(), 1u);
+  EXPECT_LE(cache.cached(), cache.capacity());
   EXPECT_EQ(cache.allocate(), p);
   cache.deallocate(p);
 
@@ -199,10 +203,14 @@ TEST(SharedPoolCache, DestructionPublishesCallerStorage) {
     ASSERT_NE(p, nullptr);
     cache.deallocate(p);
 
-    std::array<void *, 3> shared{};
-    for (void *&block : shared) {
-      block = pool.allocate();
+    const std::uint32_t locally_cached = cache.cached();
+    ASSERT_GE(locally_cached, 1u);
+    ASSERT_LE(locally_cached, pool.capacity());
+    std::vector<void *> shared;
+    for (std::uint32_t i = locally_cached; i < pool.capacity(); ++i) {
+      void *block = pool.allocate();
       ASSERT_NE(block, nullptr);
+      shared.push_back(block);
     }
     EXPECT_EQ(pool.allocate(), nullptr);
     for (void *block : shared)
@@ -803,11 +811,21 @@ TEST(PooledRegion, PerThreadRegionsNoOverlap) {
   constexpr std::size_t kBytes = 16;
   // One pool block per thread, each big enough for kPerThread bumps.
   SharedPool pool(system_allocator(), kPerThread * 64, kThreads);
-  struct Args { SharedPool* pool; std::vector<void*> got; };
+  std::atomic<int> ready{0};
+  std::atomic<bool> release{false};
+  struct Args {
+    SharedPool* pool;
+    std::atomic<int>* ready;
+    std::atomic<bool>* release;
+    std::vector<void*> got;
+  };
   std::vector<Args> args(kThreads);
   std::vector<hyle::platform::Thread> ts;
+  bool spawn_failed = false;
   for (int t = 0; t < kThreads; ++t) {
     args[t].pool = &pool;
+    args[t].ready = &ready;
+    args[t].release = &release;
     auto r = hyle::platform::Thread::spawn(
         [](void* p) {
           auto* x = static_cast<Args*>(p);
@@ -816,17 +834,41 @@ TEST(PooledRegion, PerThreadRegionsNoOverlap) {
             void* q = a.allocate(kBytes, 16);
             if (q) x->got.push_back(q);
           }
+          x->ready->fetch_add(1, std::memory_order_release);
+          x->ready->notify_one();
+          x->release->wait(false, std::memory_order_acquire);
         },
         &args[t]);
-    ASSERT_TRUE(r.has_value());
+    if (!r.has_value()) {
+      spawn_failed = true;
+      break;
+    }
     ts.push_back(std::move(*r));
   }
-  for (auto& th : ts) th.join();
-  // All returned pointers across all per-thread regions must be distinct.
+  if (spawn_failed) {
+    release.store(true, std::memory_order_release);
+    release.notify_all();
+    for (auto& th : ts) th.join();
+    FAIL() << "could not create every worker thread";
+  }
+
+  int observed = ready.load(std::memory_order_acquire);
+  while (observed != kThreads) {
+    ready.wait(observed, std::memory_order_acquire);
+    observed = ready.load(std::memory_order_acquire);
+  }
+
+  // Keep every region alive while comparing addresses. Without this gate a
+  // low-core runner may finish one worker before starting another, where reuse
+  // of the returned pool block is both legal and expected.
   std::unordered_set<void*> uniq;
   std::size_t total = 0;
   for (auto& x : args) for (void* q : x.got) { uniq.insert(q); ++total; }
   EXPECT_EQ(uniq.size(), total) << "per-thread regions overlapped";
+
+  release.store(true, std::memory_order_release);
+  release.notify_all();
+  for (auto& th : ts) th.join();
 }
 
 // PooledRegion::allocate rejects alignment 0 or a non-power-of-2
