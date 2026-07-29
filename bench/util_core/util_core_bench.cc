@@ -5,6 +5,9 @@
 #include <barrier>
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <iostream>
 #include <memory>
 #include <mutex>
@@ -17,12 +20,44 @@
 #include "hyle/util/ref_counted.h"
 #include "hyle/util/spin_lock.h"
 
+#if defined(__APPLE__)
+#  include <pthread.h>
+#endif
+
 #if defined(HYLE_BENCH_TBB)
 #  include <oneapi/tbb/spin_mutex.h>
 #endif
 
 namespace {
 namespace nb = ankerl::nanobench;
+
+// Darwin exposes a QoS preference rather than supported hard P/E-core
+// affinity. Make SSH-launched runs explicit and reproducible without claiming
+// that either mode pins a physical core class.
+void configure_main_benchmark_thread() {
+#if defined(__APPLE__)
+  const char* requested = std::getenv("HYLE_BENCH_APPLE_QOS");
+  qos_class_t qos = QOS_CLASS_USER_INTERACTIVE;
+  const char* name = "user-interactive";
+  if (requested != nullptr && std::strcmp(requested, "utility") == 0) {
+    qos = QOS_CLASS_UTILITY;
+    name = "utility";
+  } else if (requested != nullptr &&
+             std::strcmp(requested, "interactive") != 0) {
+    std::fprintf(stderr,
+                 "hyle_util_core_bench: HYLE_BENCH_APPLE_QOS must be "
+                 "interactive or utility (got %s)\n",
+                 requested);
+    std::abort();
+  }
+  const int result = pthread_set_qos_class_self_np(qos, 0);
+  std::fprintf(stderr,
+               "# HYLE_UTIL_CORE_BENCH apple_main_qos=%s qos_ok=%d "
+               "affinity=unsupported\n",
+               name, result == 0 ? 1 : 0);
+  if (result != 0) std::abort();
+#endif
+}
 
 struct IntrusiveWidget : hyle::util::RefCounted<IntrusiveWidget> {
   std::uint64_t value = 0;
@@ -75,6 +110,7 @@ void run_contended(nb::Bench& bench, const char* name,
 }  // namespace
 
 int main() {
+  configure_main_benchmark_thread();
   std::cout << "layout SpinLock=" << sizeof(hyle::util::SpinLock)
             << " Ref=" << sizeof(hyle::util::Ref<IntrusiveWidget>)
             << " Rng=" << sizeof(hyle::util::Rng) << '\n';
