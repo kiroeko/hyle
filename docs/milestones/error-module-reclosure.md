@@ -10,7 +10,7 @@
 
 把最早按 clay 和测试形状形成的 error 模块，重构成基础加速库真实调用需要的失败值：
 8B `Status`、`std::expected` Result、显式语义 context、完整 C owning handle，以及
-OS/CUDA/Vulkan 叶子诊断。未发布，不保留未经审查的旧 ABI。
+OS/CUDA/Vulkan 叶子诊断及定长机器可读 native detail。未发布，不保留未经审查的旧 ABI。
 
 ## 本轮实施
 
@@ -31,7 +31,7 @@ OS/CUDA/Vulkan 叶子诊断。未发布，不保留未经审查的旧 ABI。
 - 当前 architecture、guide、performance 分别承接设计、recipe 和数字；error-01/02
   只保留为历史任务。
 
-## 验收状态（2026-07-24，完成）
+## 第一轮验收状态（2026-07-24，历史证书）
 
 - Windows MSVC Release：全新构建目录中的 error C++/纯 C、platform C++/纯 C、
   compute、5 个 Vulkan 变体与 graph 共 11 项测试通过；当前接口 benchmark n=15 已完成。
@@ -51,8 +51,9 @@ OS/CUDA/Vulkan 叶子诊断。未发布，不保留未经审查的旧 ABI。
 ## 易用性/正常路径复审增量
 
 本轮不是“参考库有就照搬”：新增项均由 HYLE 自身调用证实（公开 `Result<void>`、大量
-Result 错误构造、graph 首错聚合、测试/日志的人读格式化）。payload、原生码公共 detail、
-StatusBuilder、自动日志和 `CO_*` 宏继续拒绝进入 error 核心。benchmark 覆盖正常格式化、
+Result 错误构造、graph 首错聚合、测试/日志的人读格式化）。任意 payload、StatusBuilder、
+自动日志和 `CO_*` 宏继续拒绝进入 error 核心。固定 native domain/code 后续由真实 Vulkan
+恢复需求触发，见本文末的 2026-07-29 再开审计。benchmark 覆盖正常格式化、
 `Result<void>` 与聚合形状；核心与正常路径拆成两个 executable，避免 whole-TU inline
 budget 污染核心证据。
 
@@ -79,7 +80,8 @@ budget 污染核心证据。
 
 ## 完成条件
 
-以上条件已经满足，error 自身功能面冻结。后续只按 architecture 的真实触发器重开；
+以上条件在当时已经满足。error 后续确因“message 无法安全支撑 Vulkan 恢复分支”的真实
+触发器重开并于 2026-07-29 再次收口；
 HYLE 全库是否仍有私有错误系统、漏 context 或错误码滥用，作为下一阶段 adoption audit，
 不反向扩大 error 核心 API。
 
@@ -95,3 +97,55 @@ HYLE 全库是否仍有私有错误系统、漏 context 或错误码滥用，作
 - errno 工厂为 O(1) 分类、一次最终 Status 分配；三平台对 Abseil 同合同 n=15 为
   2.858x / 1.011x / 2.940x WIN。Linux 小回退通过去掉无意义的整块 scratch 清零修复，未引入
   全局错误字符串 cache 或 benchmark-only 状态。
+
+## 2026-07-29 再开审计：结构化原生失败与消费者合同证书
+
+### 为什么重开
+
+Vulkan 的 initialization failed、incompatible driver 与 device lost 都可合理归入
+`Unavailable`，但恢复动作不同。旧形状只保留 canonical code + message，消费者若要重建
+device 只能解析人读文本。这是产品缺陷，不是 benchmark 缺项。
+
+成熟库对照给出两种方向：Abseil 的任意 payload，以及 Boost.System 风格 category/value。
+HYLE 的真实 OS/CUDA/Vulkan 消费者只需要一组稳定 domain 和一个 `int64_t`，因此新增窄
+`NativeError`，没有把多 payload map、type URL、Cord 或动态注册表强加给每个 Status。
+`Status` 仍为 one-word handle；只有实际携带 detail 的错误才分配并多存一个 8B code。
+
+### 产品/API 结果
+
+- C++ 增加 `Status::FromNative` / `native_error()`；errno、Win32、Vulkan、CUDA runtime、
+  CUDA driver 与 NVRTC translator 保留同一个 machine-readable 原生值。
+- C ABI 增加 native create/query 及全部 length-aware `*_n` 入口，支持嵌入 NUL 且避免必须
+  `strlen`；当前 error C surface 为 23 个导出，纯 C 独立头和机械 symbol test 锁定。
+- `Result<T>` 继续是 `std::expected<T, Status>`，保留标准 monadic/API 生态；受控构造和传播
+  会 fail-fast 拒绝 `Status::Ok()` 进入 error arm。宏对命名 lvalue 复制、对临时值移动。
+- 非法 Result 的诊断被移入冷 `noinline` helper，正常传播不为 abort 文本扩大每个栈帧；
+  没有新增 Status 字段或 benchmark-only API。
+- 移除 `operator<<`，owning 文本仍由 opt-in `error/format.h` 提供；日志继续属于 obs。
+
+### 性能证书为什么重做
+
+最终 benchmark 只保留两种真实消费者信息合同：
+
+1. 无附加诊断：OK、code-only、真实四调用帧传播与 caller 消费；
+2. 带诊断：owning message、语义 context、machine-readable native value、errno、格式化和聚合。
+
+GCC 的一次约 18% 假 LOSE 来自 std/Abseil 外层包装被内联而 HYLE 没有；M4 的一次约 8%
+假 LOSE 来自把“三个连续 leaf 调用”误写成“四层传播”，导致多个临时 Result 同时存活。
+两处都通过对称函数边界和真实 nested call chain 修复测量，产品类型没有为分数改变。
+
+最终 `6d42add` 在 Windows MSVC 19.50、WSL GCC 14.2、Apple M4 AppleClang 21 上 n=15：
+同能力 Abseil 的无诊断项全部 WIN/TIE，带诊断项全部 WIN。能力更弱的
+`std::error_code/expected` 单独作为下界，Windows code-only construct 与 Result success
+分别快 1.46x/1.15x，诚实保留为选型边界，不冒充同能力比较。完整点值只见
+[`benchmarks-error.md`](../performance/benchmarks-error.md)。
+
+### 正确性与最终状态
+
+Windows error C++/纯 C/surface/header 4/4 通过；WSL 与 M4 定向 error test 通过。另补测试
+确认用户直接用标准 `std::unexpected(Status::Ok())` 绕过工厂后，传播入口仍 fail-fast。
+architecture、C++/语言无关 guide、C guide、performance 与本任务记录已按各自职责更新。
+
+error 自身的功能面、复杂度、C++ API、23-symbol C ABI、消费者用法和三平台性能证书至此
+再次收口。未来仍只按 architecture 记录的真实消费者触发器重开，不因参考库 API 数量或
+某个微基准可赢而扩大产品面。

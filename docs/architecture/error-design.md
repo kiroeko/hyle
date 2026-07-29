@@ -58,19 +58,21 @@ Status failed = Status::Unavailable("device lost");
 - `sizeof(Status) == sizeof(uintptr_t)`；
 - OK 编码为零，构造、检查、复制均不分配；
 - 无消息错误把 canonical code 内联在 tagged word 中，不分配；
-- 只有带消息的错误使用 DLL 内部单块分配、原子引用计数 representation；
+- 带消息或 native detail 的错误使用 DLL 内部单块分配、原子引用计数 representation；
+  detail 的 domain 复用 representation 原有 padding，只有实际携带 detail 时才在消息尾部
+  增加一个 8B code，不扩大普通 message Status；
 - owning STL 类型不跨共享库 ABI；消息以借用 `string_view` 暴露，格式化使用调用方缓冲区；
 - 所有 Status 自身操作均为 `noexcept`；消息分配失败时至少保留错误码；
 - `StatusCode::Ok` 不能携带消息；越界的枚举值在公共/C 边界归一为 `Unknown`；
-- 相等比较 code 与完整消息；程序分支通常只判断 code。
+- 相等比较 canonical code、native detail 与完整消息；程序分支通常只判断 canonical code。
 
 批量/清理场景只提供两个零额外状态的组合工具：
 
 - `overall.Update(next)`：`overall` 仍为 OK 时接收第一个错误，之后不覆盖；
 - `status.IgnoreError()`：明确标注调用方有意忽略一次失败，替代含义不清的 `(void)`。
 
-`status.h` 不引入 owning string 或 iostream。需要 C++ 人读输出时显式包含
-`hyle/error/format.h`，使用 caller-owned `to_string(status)` 或 `operator<<`；C/FFI/低层
+`status.h` 不引入 owning string 或 iostream。需要 C++ owning 人读输出时显式包含
+`hyle/error/format.h`，使用 caller-owned `to_string(status)`；C/FFI/低层
 日志继续使用 `ToString(char*, size_t)`，避免为便利接口加重每个热路径 TU。
 
 canonical code 使用 Abseil/gRPC 的稳定集合，不增设每个后端一套公共枚举。常用边界：
@@ -83,7 +85,30 @@ canonical code 使用 Abseil/gRPC 的稳定集合，不增设每个后端一套�
 - `Internal`：外部依赖返回无法进一步分类的失败，不用来掩盖 HYLE 自身不变量损坏；
 - `Unknown`：来自 C/FFI 的非法枚举或确实无法分类的外部错误。
 
-### 2.2 分层上下文
+### 2.2 canonical code 与原生 detail
+
+canonical code 回答“跨平台调用方该怎么处理”；少数后端恢复逻辑还需要回答“原生系统
+到底返回了哪个数值”。因此 `Status` 提供一个窄而定长的 detail：
+
+```cpp
+Status::FromNative(StatusCode::Unavailable,
+                   {NativeErrorDomain::Vulkan, -4}, "device lost");
+NativeError detail = status.native_error();
+```
+
+domain 只覆盖 HYLE 的真实系统边界：POSIX errno、Win32、Vulkan、CUDA runtime、CUDA
+driver 与 NVRTC。它不是可注册的字符串 category，也不是任意 payload map。普通调用方只按
+canonical code 分支；确实要执行 backend-specific recovery 或输出结构化遥测时，才检查
+`native_error()`。message 永远是人读文本，禁止解析文本取原生码。
+
+这项能力由真实缺陷触发：Vulkan 的 initialization failed、incompatible driver 与 device
+lost 都正确归到 `Unavailable`，但调用方无法在不解析 message 的情况下选择重建 device 或
+直接降级。Abseil 用通用 payload 表达此类数据；HYLE 只需要一组 domain + 一个 `int64_t`，
+故不把 map、Cord、type URL 和多 payload 生命周期强加给所有错误。`FromNative` 只在错误
+路径分配；OK、code-only 与普通 message 形状不变，OOM 时保留 canonical code、丢弃可选
+message/detail。
+
+### 2.3 分层上下文
 
 真实加速库错误必须同时回答“哪一层操作失败”和“底层为什么失败”。`Status` 增加唯一
 一个组合能力：
@@ -118,19 +143,18 @@ creating device buffer: vulkan vkAllocateMemory failed: VK_ERROR_OUT_OF_DEVICE_M
 叶子适配层必须生成自足信息：后端/子系统名、失败操作、原生错误名称与数值。中间层只在
 增加了用户可理解的新语义时调用 `WithContext`，不为每一层函数名机械加壳。
 
-本阶段不加入以下能力：
+本阶段仍不加入以下能力：
 
 - 任意 key/value payload；
-- 公共 native error category 注册表；
+- 可动态注册的 native error category；
 - 自动 source location、栈回溯或日志；
 - `StatusBuilder` 和流式 `operator<<`；
 - 异常层级或嵌套 `exception_ptr`。
 
-这些能力只有在出现消息无法满足的真实程序化消费者后才重新评估。后端原生类型仍不能
-泄漏进公共头；若将来确有按原生码分支的需求，再设计独立、定长的 detail，而不是提前
-引入通用 payload 系统。
+后端原生类型仍不能泄漏进公共头；公开面只保留定长 domain/code。只有出现一个 Status
+必须携带多个独立机器可读 detail 的真实消费者时，才重新评估 payload 系统。
 
-### 2.3 原生 errno 适配
+### 2.4 原生 errno 适配
 
 POSIX/CRT 叶子边界不应在每个模块重复发明 errno 分类。error 提供两个公共基础能力：
 
@@ -141,7 +165,8 @@ Status status_from_errno(int error_number,
 ```
 
 前者按 Abseil `ErrnoToStatusCode` 的成熟 canonical taxonomy 做 O(1) 分类；后者同时取得
-线程安全的 native description，并生成 `operation: description`。`errno == 0` 返回零值 OK；
+线程安全的 native description，附加 `PosixErrno` detail，并生成 `operation: description`。
+`errno == 0` 返回零值 OK；
 失败路径只有最终 Status 的一次分配，OOM 只丢 message、不丢 code。一般调用方优先用工厂，
 不再手写 `strerror`、message 拼接和 code switch。
 
@@ -150,7 +175,7 @@ Status status_from_errno(int error_number,
 诊断中保留原生符号名和数值的 platform/backend translator 仍可自己格式化 message，但 code
 必须复用公共 taxonomy，避免 fs、VM、NUMA 和 mmap 对同一 errno 给出不同 code。
 
-### 2.4 `Result<T>` 与传播
+### 2.5 `Result<T>` 与传播
 
 ```cpp
 template <class T>
@@ -170,13 +195,19 @@ HYLE_ASSIGN_OR_RETURN(lhs, expr);
 - `expr` 只求值一次；
 - 第一项接受 `Status` 或无值成功态的 `Result<void>`，第二项接受 `Result<T>`；
 - 同时支持外层函数返回 `Status` 或 `Result<U>`；
-- 失败时移动 Status，成功路径不分配；
+- rvalue 失败/值被移动，lvalue 失败/值被复制；传播命名 Result 不会暗中消费它；
 - `ASSIGN_OR_RETURN` 可以声明新变量或给已有 lvalue 赋值；
 - 不隐藏日志、source location 或自动文本拼接；需要语义上下文的边界显式使用
   `WithContext`。
 
 构造 `Result<T>` 的失败分支使用 `make_unexpected(Status)`，避免每个调用点重复
-`std::unexpected<Status>`，但不包装 `std::expected`、不复制其容器 API。声明型
+`std::unexpected<Status>`，并在受控入口 fail-fast 拒绝 `Status::Ok()`。`Result<T>` 仍是标准
+alias，所以直接写 `std::unexpected(Status::Ok())` 在类型系统中无法禁止；这是明确的合同
+违反，传播时也会 fail-fast。Abseil `StatusOr` 自有容器会归一/拒绝 OK error，Folly
+`Expected` 与 `std::expected` 则让 error 类型自行定义语义。为这一条不变量包装 expected
+会复制整套构造、monadic 和引用规则，收益小于维护与兼容成本，因此不做。
+
+声明型
 `HYLE_ASSIGN_OR_RETURN` 与成熟库同样会展开为多条语句，作为 `if/else/for/while` 裸语句时
 必须加花括号。
 
@@ -208,8 +239,10 @@ typedef struct hyle_status { uintptr_t rep; } hyle_status;
 - clone、move、free；
 - code、message、相等比较和 buffer-fill 格式化；
 - 借用 NUL 结尾消息，生命周期绑定 owning handle；
+- length-aware 创建/context，允许嵌入 NUL 且避免无意义 `strlen`；
 - 原地增加上下文；
 - errno 到 canonical code/Status 的直接适配；
+- native domain/code 的创建与查询；
 - 返回 `hyle_status` 的函数使用 `HYLE_C_RETURN_IF_ERROR` 传播。
 
 上下文接口采用原地所有权形状：
@@ -244,14 +277,15 @@ translator 必须：
 1. 成功值返回零表示的 OK；
 2. 映射成 canonical code；
 3. 在错误路径保留 operation；
-4. 保留原生错误名称和数值，必要时再加供应商错误字符串；
+4. message 保留原生错误名称和数值，`NativeError` 同时保留可程序化 domain/code；
 5. 使用固定栈缓冲或一次 Status 消息分配，不在成功路径格式化；
-6. 不把 CUDA/Vulkan/OS 类型放进公共 API；
+6. 不把 CUDA/Vulkan/OS 类型放进公共 API，只转为稳定 domain + `int64_t`；
 7. 未知原生值仍返回 `Unknown`/`Internal` 和完整数值，不能只写“failed”。
 
 `status_from_errno` 是通用 POSIX/CRT 入口；platform 的 syscall-specific translator 在保留
-原生名称/数值时复用它的 canonical code。CUDA、Vulkan、Win32 等非 errno domain 继续由
-所属叶子模块做定长 translator，不把 vendor 类型或注册表塞进 error 公共头。
+原生名称/数值时复用它的 canonical code。CUDA、Vulkan、Win32 等由所属叶子模块完成
+taxonomy/message，再用 `Status::FromNative` 附加稳定 detail；不把 vendor 类型或注册表塞进
+error 公共头。
 
 推荐文本：
 
@@ -271,16 +305,28 @@ posix mmap failed: ENOMEM (12): Cannot allocate memory
 
 ## 6. 性能合同
 
-性能验收分两层，不能再由“专门为 benchmark 写的 API”代替用户路径：
+性能验收只允许两种由消费者需要定义的信息合同，不能再由“专门为 benchmark 写的 API”
+代替用户路径：
+
+1. **不携带额外诊断**：成功值或 canonical code；与成熟库同形 carrier/传播对拍。
+   `std::error_code` 这类能力更弱、可平凡析构的类型只作成本下界，不能混入同能力输赢。
+2. **携带诊断**：相同 canonical code、owning message、语义 context 或同一个可程序化
+   native value；与成熟库提供同等信息的入口对拍。
+
+benchmark 必须从正常调用链反推：函数边界、所有权、错误率和最终消费动作都要对称。不得
+为分数给 Status/Result 增加常驻 metadata、特殊公开类型、缓存或 benchmark-only 入口；
+参考库拥有但 HYLE 没有真实消费者的能力也不为扩表上架。
 
 ### 微观不变量
 
 - `sizeof(Status) == 8`（64 位平台）；
 - OK construct/check/copy 和 code-only error 均零分配；
 - `Result<int>` 正常 unwrap 与 `std::expected<int, Status>` 无额外层；
-- code-only 和 message error 对标 Abseil Status；
+- code-only 和 message error 分别在上述两个信息合同中对标 Abseil Status；
 - `WithContext(OK, ...)` 零分配且接近普通分支成本；
 - 一层/三层 context 与 Abseil StatusBuilder 的等价文本场景对标。
+- native detail 构造/查询与 Abseil payload 的同能力场景对标；普通 Status 不因 benchmark
+  常驻 payload metadata；
 - errno 分类是 O(1)，`status_from_errno` 与 Abseil `ErrnoToStatus` 做同形 operation+native
   description 对照；不得为跑分引入全量常驻错误文本表或改变首次失败合同。
 
@@ -291,7 +337,7 @@ posix mmap failed: ENOMEM (12): Cannot allocate memory
 - compute：CUDA/Vulkan 叶子错误 → buffer/kernel 高层上下文；
 - graph：`Result<T>` 提取与跨层传播；
 - sched：`Result<void>` 的 join/channel 正常返回与传播；
-- diagnostics：caller-buffer 与 opt-in owning string/stream 格式化；
+- diagnostics：caller-buffer 与 opt-in owning string 格式化；
 - 成功路径和错误路径分开报告，禁止用高错误率混合 workload 掩盖成功路径回退。
 
 任何新增上下文能力不得改变 OK/code-only representation。性能结果、平台、编译器、样本
@@ -305,14 +351,13 @@ error 只有同时满足以下条件才能冻结：
 2. C ABI：所有适合 FFI 的 Status 能力可达，无诊断 handler 残留；
 3. 边界：error、obs、fatal 没有重复职责和依赖环；
 4. 正确性：OOM 保级、复制/移动、并发引用计数、非法 C 输入和格式化截断均验证；
-5. 可诊断性：CUDA/Vulkan/OS 错误保留 operation、原生名称和数值；
+5. 可诊断性：CUDA/Vulkan/OS 错误保留 operation、原生名称、数值和可查询 native detail；
 6. 性能：Windows、Linux、macOS 的核心与真实路径均无未解释回退；
 7. 文档：architecture 只保留本文的稳定设计，guide 是 recipe，performance 是数字，
    milestone 是任务记录。
 
 冻结后只有以下真实需求允许重开功能面：
 
-- 用户必须按后端原生码做程序化分支，而文本不足；
 - 一个 Status 必须携带多个独立机器可读 detail；
 - 跨进程/网络序列化成为正式产品场景；
 - 真实调用证明 `std::expected` 或当前传播方式无法表达所需所有权。

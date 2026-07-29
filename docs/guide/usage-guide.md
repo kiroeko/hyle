@@ -381,6 +381,7 @@ MPMC、sharded、owner-LIFO stealing、owner-FIFO sharing 的角色选择，不�
 | 只有成功/失败，调用者需要原因 | `Status` |
 | 成功返回一个值/RAII 资源 | `Result<T>` |
 | 批量独立步骤，保留第一个失败 | `Status::Update` |
+| 必须按 CUDA/Vulkan/Win32 原生码恢复 | canonical code 后再查 `native_error()` |
 | 明确接受 cleanup 失败 | `IgnoreError`（让丢弃意图可见） |
 | allocator/pool pop/poll 的“暂时无值”是正常热路结果 | 指针/optional/小 enum，不强塞 Status |
 | HYLE 自身不变量破坏、double free、错误生命周期 | `HYLE_FATAL_ASSERT`，不允许恢复 |
@@ -391,9 +392,10 @@ code 选择遵循调用者该做什么：坏参数用 `InvalidArgument`，合法
 `Unavailable`，永久缺能力用 `Unimplemented`。叶子 message 保留原生原因；中间层只有
 增加“用户正在做什么”的新语义时才加 context。不要解析 message 做程序分支。
 
-**`Status`** 是 8 字节 tagged-word 错误载体（`sizeof(Status)==sizeof(void*)`），三态零开销分级：
-- OK（`rep_==0`，最常见）与**无消息**错误（内联码）——**都不碰堆**；
-- 只有**带消息**的错误才 malloc 一次（引用计数，拷贝共享同一 backing）。
+**`Status`** 是 8 字节 tagged-word 错误载体（`sizeof(Status)==sizeof(void*)`）：
+- OK（`rep_==0`，最常见）与无消息、无 detail 错误（内联码）都不碰堆；
+- 带消息或 machine-readable native detail 的错误 malloc 一次，拷贝共享 backing；
+- 普通逻辑按 canonical code 分支；只有后端专用恢复才读 domain/code，不解析 message。
 
 ```cpp
 #include "hyle/error/status.h"
@@ -404,6 +406,9 @@ Status b = Status::NotFound();                // 无消息，内联码，零分�
 Status c = Status::Internal("shard 7 gone");  // 带消息，堆 rep（refcount）
 Status d = std::move(c).WithContext("loading model");
                                                // "loading model: shard 7 gone"
+Status vk = Status::FromNative(
+    StatusCode::Unavailable, {hyle::NativeErrorDomain::Vulkan, -4},
+    "device lost");
 
 if (!d.ok()) d.code();          // StatusCode::Internal（16 个 canonical 非 OK 码）
 d.IsInternal();                 // 每码一个谓词：IsNotFound() / IsCancelled() / ...
@@ -411,9 +416,8 @@ d.message();                    // string_view（无消息时为空），不拥�
 char buf[128];
 d.ToString(buf, sizeof buf);    // "Internal: loading model: shard 7 gone"
 
-#include "hyle/error/format.h"  // 仅需要 C++ owning/stream 输出的 TU 包含
+#include "hyle/error/format.h"  // 仅需要 C++ owning 文本的 TU 包含
 std::string text = hyle::to_string(d);
-std::cerr << d;                 // 应用侧 opt-in；HYLE 核心不会自动写日志
 ```
 
 **`Result<T>` = `std::expected<T, Status>`**（C++23，monadic `and_then`/`transform` 免费）。两个传播宏做 Rust `?`-式早返回，在返回 `Status` 或 `Result<T>` 的函数里都能用：
@@ -434,6 +438,10 @@ hyle::Result<int> load() {
   return hyle::make_unexpected(hyle::Status::NotFound("model"));
 }
 ```
+
+`make_unexpected` 只接受非 OK Status；把 `Status::Ok()` 放进 error arm 是合同违反并会
+fail-fast。宏对临时 Result 移动、对命名 lvalue Result 复制，不会暗中消费一个还要复用的
+结果对象。
 
 批量操作用 `overall.Update(next)` 保留第一个错误；明确接受清理失败时调用
 `cleanup().IgnoreError()`。`HYLE_ASSIGN_OR_RETURN` 可以声明变量，因此会展开成多条语句；

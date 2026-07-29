@@ -53,7 +53,7 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 支撑层（为上面服务的基质，进主图因被广泛依赖）
 ├─ platform/  OS 抽象       [T2] ← thread/virtual_memory/dynlib/env/path/fs，按 clay *_api_t 细分；mem 要 vm、sched 要 thread、compute 要 dynlib
 ├─ time/      时间/定时器    [T2] ← typed clocks + deadline + exact-ns radix timer queue；sched/io 的 timeout 依赖
-├─ error/     错误模型       [T2] ← status + std::expected + assert，万物用
+├─ error/     错误模型       [T2] ← status + std::expected，万物用
 └─ obs/       可观测        [T2/3] ← instrumentation hook（计数器/trace point）T2 第一天嵌热路径；sink/聚合 T3 缓做
 ```
 
@@ -71,7 +71,7 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 |---|---|---|---|
 | **0 核心** | `sched/`、completion 脊（io/gpu/fiber 完成都唤醒同一 fiber）、`mem/`、`container/`（flat map/set + PodVector + 核心 hasher）、C-ABI 边界 | **HYLE 就没了** | 自己造、深拥有、测试/性能预算最高 |
 | **1 兑现承诺** | `compute/`(GPU)、`io/`(网络)、`simd/` | 还像 HYLE，但"混合/极致性能"的卖点落空 | 自造，可借起步（compute 先包 ggml、simd 可参考 xsimd）|
-| **2 必要基质** | atomics、`platform/`(thread/vm/dynlib/env/path/fs)、`time/`(clock/deadline/timer queue)、`error/`(status+expected+assert)、`obs/` instrumentation hook、构建/ABI 骨架 | **照样是 HYLE**——只是没它编不过/跑不起来 | 优先用 std / 成熟算法，别在这层过度发明；但 `obs/` hook 要第一天嵌热路径 |
+| **2 必要基质** | atomics、`platform/`(thread/vm/dynlib/env/path/fs)、`time/`(clock/deadline/timer queue)、`error/`(status+expected)、`obs/` instrumentation hook、构建/ABI 骨架 | **照样是 HYLE**——只是没它编不过/跑不起来 | 优先用 std / 成熟算法，别在这层过度发明；但 `obs/` hook 要第一天嵌热路径 |
 | **3 便利** | `obs/` 重机器（sink/格式化/聚合）、`serialize/`、外围 hash（md5/uuid/base64）、`plugin/registry`、`random/`、`text/`、`compress/`、`config/`、`graph/` | 在不在都是 HYLE | 能缓则缓、薄封装别自造 |
 
 **为什么 `container/` 在 Tier 0 而 `simd/` 在 Tier 1**（同是"性能焦点"，凭什么分开）：

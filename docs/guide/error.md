@@ -16,6 +16,7 @@ error 是 HYLE 的统一失败值层。它帮助调用方把可恢复失败跨�
 | allocator、pool pop、poll 的“暂时无值”本来就是正常热路结果 | 指针、`optional` 或小 enum | 指针/标量值合同 | 每次构造 owning Status |
 | 参数、文件、权限、OOM、超时、设备暂不可用等运营失败 | canonical `Status` code | 同一 `hyle_status_code` | abort 或异常跨 ABI |
 | C/POSIX 调用刚失败，手里有 errno | `status_from_errno(errno, "operation")` | `hyle_status_from_errno` | 各模块复制 `strerror` + switch |
+| 必须按 Vulkan/CUDA/Win32 原生码恢复 | `Status::FromNative` / `native_error()` | `hyle_status_new_native` / `hyle_status_get_native_error` | 解析 message 或再造私有码表 |
 | HYLE 内部不变量损坏、double free、错误生命周期 | `HYLE_FATAL_ASSERT` | fail-fast 合同 | 返回 Status 后继续运行 |
 | 需要写日志或 trace | 最终消费边界交给 `obs`/宿主 logger | `hyle/c/obs.h` | error 内部自动日志或第二套 handler |
 
@@ -91,6 +92,30 @@ if (fd < 0) {
 backend adapter。操作合同确实更具体时可以覆盖通用 code，例如线程创建的 `EAGAIN` 应报
 `ResourceExhausted`。不要为同一个 errno 在 fs、VM、NUMA 中各维护一套近似 switch。
 
+## 什么时候查看 native error
+
+大多数代码只看 canonical code。只有动作确实依赖后端原生值时才查看 detail，例如 Vulkan
+`DEVICE_LOST` 需要重建 device，而同为 `Unavailable` 的 incompatible driver 更适合直接
+降级：
+
+```cpp
+hyle::Status status = hyle::Status::FromNative(
+    hyle::StatusCode::Unavailable,
+    {hyle::NativeErrorDomain::Vulkan, -4}, "device lost");
+
+if (status.IsUnavailable()) {
+  const hyle::NativeError native = status.native_error();
+  if (native.domain == hyle::NativeErrorDomain::Vulkan && native.code == -4) {
+    // destroy/recreate the affected Vulkan device
+  }
+}
+```
+
+不要先查 native 再忽略 canonical code；domain-specific 分支会降低可移植性。不要解析
+message 取数值。errno 工厂及 HYLE 的 platform/CUDA/Vulkan translator 已自动附带 detail；
+用户包装其它 C library 时才需要直接调用 `FromNative`。一个错误若需要多组结构化字段，
+请在上层结果/遥测对象建模，不把 Status 当任意 metadata bag。
+
 ## message、context 与日志
 
 叶子 message 回答“底层到底发生了什么”，应保留 operation、原生错误名/数值和必要参数：
@@ -110,9 +135,10 @@ return std::move(status).WithContext("creating device buffer");
 
 ## 成本与所有权
 
-`Status` 是一个 machine word：OK 和无消息错误都零分配；只有带消息错误分配一块共享
-引用计数 representation。复制带消息 Status 只增加引用计数，移动转移所有权。需要 C++
-拥有型文本或 stream 输出时显式包含 `hyle/error/format.h`，避免让便利依赖进入所有热路径 TU。
+`Status` 是一个 machine word：OK 和无消息、无 detail 的错误都零分配；带消息或 native
+detail 的错误分配一块共享引用计数 representation。native domain 复用内部 padding，只有
+实际 detail 才多存 8B code；普通 Status 不承担常驻 metadata。复制 heap Status 只增加
+引用计数，移动转移所有权。需要 C++ owning 文本时显式包含 `hyle/error/format.h`。
 
 ```cpp
 hyle::Status status = hyle::Status::Unavailable("device lost");
@@ -130,6 +156,9 @@ if (status.IsUnavailable()) {
 - 不要对来自用户输入、I/O 或设备操作的 `Result<T>` 直接调用 `.value()`；错误分支会抛
   `std::bad_expected_access`，绕开 HYLE 的值式失败协议。用传播宏，或先检查再移动
   `result.error()`。只有测试和已由不变量证明成功的初始化代码适合 `.value()`。
+- `Result<T>` 是 `std::expected` alias。用 `hyle::make_unexpected(non_ok_status)` 构造错误；
+  `Status::Ok()` 作为 error arm 是合同违反，受控构造/传播入口会 fail-fast。不要直接写
+  `std::unexpected(Status::Ok())`。
 - `Status::message()` 返回借用 `string_view`。原 Status 被销毁、赋值，或作为 rvalue 加
   context 后，不要继续使用先前 view；保留一份 Status copy 可以延长共享消息寿命。
 - `status.WithContext(text)` 对 lvalue 保留原值并返回新 Status；
@@ -138,11 +167,13 @@ if (status.IsUnavailable()) {
   另一线程读取。线程安全的是共享的不可变 message representation，不是对同一 C++ 对象的
   并发读写。
 - `HYLE_ASSIGN_OR_RETURN` 支持声明，但会展开成多条语句；控制流下必须使用花括号。宏不会
-  自动增加 context，也不会替你清理此前获得的裸资源。
+  自动增加 context，也不会替你清理此前获得的裸资源。传入临时 Result 会移动；传入命名
+  lvalue Result 会复制值/错误，不会暗中把它消费掉。
 
 ## 语言边界
 
 C++ 的 `Result<T>` 在 C/FFI 中映射为“返回 `hyle_status` + 首位 out 参数”；C++ 的
 `Status::WithContext` 映射为原地 `hyle_status_add_context`。`hyle_status` 是 owning handle，
-不能用普通结构体赋值伪造复制。完整的 clone/move/free、借用消息、buffer-fill 和传播宏见
+native detail 映射为固定 domain/code；不能用普通结构体赋值伪造复制。完整的
+clone/move/free、length-aware 文本、借用消息、buffer-fill 和传播宏见
 [`c-error.md`](./c-error.md)。

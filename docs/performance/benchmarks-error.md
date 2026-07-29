@@ -1,104 +1,116 @@
 # error 实测铁证
 
-> 本页是 [performance 总账](./README.md) 的 **error 模块**详节（`Status` / `Result`）。
-> 模块归属：`include/hyle/error/`、`bench/error/status_bench.cc`（核心 carrier）和
-> `bench/error/normal_bench.cc`（正常用户 workflow）。hash / SwissTable 不在本页。
+> 本页是 [performance 总账](./README.md) 的 error 模块详节。稳定设计见
+> [error-design](../architecture/error-design.md)，用户选型见
+> [error guide](../guide/error.md)。benchmark 只验证消费者会使用的产品形状，不定义 API。
 
-## 当前冻结证书（2026-07-25，三平台 n=15）
+## 当前证书（2026-07-29，三平台 n=15）
 
-> 核心 carrier 产品 commit `3539169`，API 封口与三层 context 增量 commit `b6f2470`；
-> errno 行来自 2026-07-25 成熟库反向审计增量；
-> Windows MSVC 19.50、WSL GCC 14.2、Apple M4 AppleClang 21，
-> Release，Abseil 对照开启。方法为 `scripts/bench-stat.py -n 15`，同一进程内 pair 以
-> `[sign]` 为判定。下表顺序统一为 **Win / Linux / M4**，绝对 ns 不跨机器比较。
+产品能力基于 `befaad0`，非法 Result 诊断冷热分离基于 `7d22eb8`，最终 benchmark
+形状为 `6d42add`；Abseil 固定到本地参考库 commit `35b9f25b`。环境为 Windows
+MSVC 19.50、WSL GCC 14.2、Apple M4 AppleClang 21，Release，使用
+`scripts/bench-stat.py -n 15` 的同进程配对判定。表中绝对值统一按
+**Windows / Linux / M4** 排列，不能跨机器横比；倍数是配对样本的中位比值，可能与两列
+独立中位数之比略有差异。
 
-核心与正常路径必须是两个 executable：把 workflow 追加进核心 TU 曾改变 MSVC
-whole-TU inline budget，使完全相同的 Result error helper 从约 10ns 假退化到 13ns。
-物理拆分后，被测产品 codegen 不再随 benchmark 体积变化。
+本证书严格分成两种消费者信息合同：
 
-### 核心 carrier
+1. **不携带额外诊断**：只有成功值或 canonical code。主对手是 Abseil
+   `Status/StatusOr` 的同能力路径；`std::error_code/expected` 是不能携带任意消息和 native
+   detail 的较弱下界，只单独登记，不用于宣称同能力 SOTA。
+2. **携带诊断**：相同 canonical code、owning message、语义 context 或同一
+   machine-readable native value。对手是 Abseil `Status/StatusOr/StatusBuilder/payload`。
 
-| 操作 | HYLE ns/op（Win/Lin/M4） | 对照 ns/op（Win/Lin/M4） | 配对结论 |
+没有第三类“为了 benchmark 好测”的公开类型。benchmark 也不允许给产品对象增加常驻字段、
+缓存或特殊入口。
+
+## 合同一：不携带额外诊断
+
+| 正常消费者操作 | HYLE ns（Win/Lin/M4） | Abseil ns（Win/Lin/M4） | 配对结论 |
 |---|---:|---:|---|
-| `Status::Ok` 构造+检查 | 0.554 / 0.050 / 0.226 | absl 0.558 / 0.059 / 0.226 | 三平台 TIE |
-| Status OK 拷贝 | 0.560 / 0.277 / 0.241 | absl 0.562 / 0.275 / 0.264 | Win/Lin TIE；M4 **WIN 1.094x** |
-| code-only 错误 | 0.548 / 0.058 / 0.224 | absl 1.698 / 1.028 / 1.202 | **WIN 3.135 / 17.294 / 5.357x** |
-| 带消息错误构造 | 28.052 / 9.038 / 15.424 | absl 53.960 / 21.928 / 29.005 | **WIN 1.924 / 2.409 / 1.926x** |
-| heap Status 拷贝 | 10.322 / 8.974 / 3.181 | absl 10.805 / 9.380 / 4.166 | **WIN 1.043 / 1.049 / 1.309x** |
-| 一层语义 context | 35.392 / 21.209 / 16.247 | StatusBuilder 298.042 / 103.886 / 114.979 | **WIN 8.478 / 4.887 / 7.031x** |
-| 三层语义 context | 226.734 / 52.272 / 58.288 | StatusBuilder 1150.973 / 334.143 / 387.761 | **WIN 5.114 / 6.290 / 6.724x** |
-| `WithContext(OK)` | 0.742 / 0.277 / 0.480 | 无同形入口 | header-inline no-op，零分配 |
-| Result OK 传播 4 层（裸） | 0.758 / 0.184 / 1.073 | StatusOr 1.096 / 0.184 / 1.073 | Win **WIN 1.477x**；Lin/M4 TIE |
-| Result OK 解包并消费 | 1.440 / 0.336 / 1.589 | std 1.435 / 0.335 / 1.589 | 三平台 TIE |
-| Result ERROR 上抛 3 层 | 9.847 / 10.260 / 3.206 | StatusOr 22.326 / 22.335 / 6.746 | **WIN 2.271 / 2.171 / 2.104x** |
+| OK 构造并检查 | 0.547 / 0.057 / 0.226 | 0.547 / 0.054 / 0.226 | 三平台 TIE |
+| OK Status 拷贝并检查 | 0.526 / 0.280 / 0.236 | 0.551 / 0.276 / 0.257 | Win/Lin TIE；M4 **WIN 1.093x** |
+| code-only Status 构造 | 0.547 / 0.060 / 0.224 | 1.694 / 0.916 / 0.958 | **WIN 3.10 / 15.58 / 4.28x** |
+| `Result<int>` 经过四个真实调用帧，caller 解包并消费 | 2.585 / 2.478 / 3.058 | 3.181 / 2.915 / 3.415 | **WIN 1.216 / 1.191 / 1.113x** |
+| code-only Result 错误经过四个真实调用帧 | 2.380 / 1.103 / 1.443 | 4.240 / 2.258 / 2.455 | **WIN 1.773 / 2.006 / 1.681x** |
 
-`std::expected<int,std::error_code>` 只作为平凡错误下界；它不能携带消息，因此 ERROR
-传播不与 Status/StatusOr 宣称输赢。
+四层传播不是在同一个函数里连续创建三个临时 Result，而是 leaf → layer1 → layer2 → caller
+的四个真实 `noinline` 调用帧，三家边界完全对称，最后消费成功值。旧形状曾在 M4 同时保活
+多个临时对象，制造约 8% 假 LOSE；旧 GCC 形状还只内联了 std/Abseil 的外层包装，制造约
+18% 假 LOSE。修复的是测量合同，不是为跑分修改产品 API。
 
-### 正常用户路径
+### 能力更弱的 std 下界
 
-| 操作 | HYLE ns/op（Win/Lin/M4） | 对照 ns/op（Win/Lin/M4） | 配对结论 |
+| 操作 | HYLE ns（Win/Lin/M4） | `std::error_code/expected` ns | 结论 |
 |---|---:|---:|---|
-| `Result<void>` OK 传播 | 2.070 / 0.291 / 0.494 | 正确手写 2.111 / 0.684 / 0.491 | Win/Lin WIN；M4 TIE |
-| `Result<void>` ERROR 传播 | 9.895 / 8.879 / 3.301 | 正确 move 手写 10.172 / 9.243 / 3.299 | Win/M4 TIE；Lin **WIN 1.047x** |
-| caller-buffer 人读格式化 | 10.727 / 9.989 / 8.028 | 无同形 Abseil 入口 | C/FFI/logging 基础路径 |
-| C++ owning `to_string` | 34.109 / 20.028 / 22.626 | absl 42.621 / 25.928 / 27.833 | **WIN 1.247 / 1.302 / 1.212x** |
-| 首错聚合 `Update` | 9.425 / 8.891 / 3.181 | absl 10.771 / 9.248 / 4.249 | **WIN 1.143 / 1.045 / 1.336x** |
-| errno→canonical Status + operation | **39.352 / 51.131 / 25.900** | absl `ErrnoToStatus` 112.347 / 51.693 / 71.926 | **WIN 2.858 / 1.011 / 2.940x**；15/15、14/15、15/15 同向 |
+| code-only error 构造 | 0.547 / 0.060 / 0.224 | 0.374 / 0.062 / 0.224 | Windows std **1.46x** 快；Linux/M4 TIE |
+| 四帧 Result OK + consume | 2.585 / 2.478 / 3.058 | 2.248 / 2.624 / 3.328 | Windows std **1.15x** 快；Linux/M4 HYLE 约 **1.07/1.09x** 快 |
+| 四帧 code-only Result error | 2.380 / 1.103 / 1.443 | 4.836 / 4.413 / 2.166 | HYLE **WIN 2.03 / 4.00 / 1.50x** |
 
-空间不变：`Status=8B`，`Result<int>/Result<void>=16B`；`absl::Status=8B`，
-`absl::StatusOr<int>` 在 Windows 为 24B、Linux/M4 为 16B。
+Windows 的成功下界是真实、保留的 LOSE：`std::error_code` 是平凡析构的两个 word，能力比
+owning `Status` 小。它适合只需 category/value 的局部代码，但不能代替 HYLE 跨模块需要的
+canonical message/native/context carrier。故它是成本下界和选型提示，不是同能力对手。
 
-## 本轮真实回退与修复
+## 合同二：携带消费者需要的诊断
 
-初次在 `768e2f2` 上复证时，旧平台翻转稳定复现：Linux heap copy、`Update` 与
-`Result<void>` ERROR 约慢 9%；M4 OK copy 慢 28%。源码/对手审查发现 Abseil 将 retain
-原子加法内联，而 HYLE 的 retain/release 都跨 shared-library 调用；HYLE 的 heap tag 判断
-在 AArch64 还需要两个相关条件。
+| 正常消费者操作 | HYLE ns（Win/Lin/M4） | Abseil ns（Win/Lin/M4） | 配对结论 |
+|---|---:|---:|---|
+| owning message Status 构造 | 27.744 / 9.876 / 17.412 | 47.071 / 20.017 / 31.054 | **WIN 1.704 / 2.037 / 1.877x** |
+| owning message Status 拷贝 | 10.238 / 8.850 / 3.181 | 10.580 / 9.262 / 4.180 | **WIN 1.037 / 1.045 / 1.314x** |
+| 前置一层语义 context | 44.537 / 20.948 / 19.170 | 262.126 / 91.302 / 118.366 | **WIN 5.875 / 4.318 / 6.280x** |
+| 前置三层语义 context | 120.361 / 56.547 / 62.786 | 771.647 / 278.287 / 342.946 | **WIN 6.390 / 4.902 / 5.555x** |
+| message Result 错误跨两个调用边界 | 9.709 / 9.221 / 3.814 | 21.157 / 21.248 / 7.202 | **WIN 2.198 / 2.292 / 1.860x** |
+| owning 人读格式化 | 31.484 / 19.741 / 23.787 | 40.831 / 22.874 / 30.729 | **WIN 1.289 / 1.165 / 1.232x** |
+| 首错聚合 `Update` | 9.221 / 8.794 / 3.181 | 10.537 / 9.188 / 4.184 | **WIN 1.141 / 1.045 / 1.315x** |
+| errno → canonical + operation + native value | 39.732 / 51.330 / 26.238 | 168.032 / 74.727 / 116.480 | **WIN 4.224 / 1.451 / 4.608x** |
+| message + Vulkan native value 构造 | 35.018 / 12.122 / 16.477 | 87.575 / 37.709 / 53.482 | **WIN 2.500 / 3.110 / 3.373x** |
+| Vulkan native value 查询 | 2.017 / 0.642 / 0.962 | 5.683 / 4.636 / 4.422 | **WIN 2.807 / 7.151 / 4.616x** |
 
-`3539169` 只做表示层优化：内联合法 heap rep 的 relaxed retain，并把合法 tagged word 的
-heap 判定收成一个范围比较。API、8B 布局、C ABI、分配与最后释放路径均不变。A/B 后：
+Abseil payload 是可携带多项任意数据的通用系统；HYLE native detail 只表达一个固定
+`{domain, int64 code}`。上表的 native 行只说明**同样存取一个原生数值**时 HYLE 更快，
+不声称 HYLE 具备或击败任意 payload 系统。这个窄形状来自 Vulkan/CUDA/OS 恢复逻辑的真实
+需求：此前只有 canonical code + message，消费者不得不解析 message。
 
-- Linux heap copy `0.910x LOSE → 1.049x WIN`，`Update`/Result ERROR 一并转 WIN；
-- M4 OK copy `0.719x LOSE → 1.094x WIN`；
-- Windows 保持全部 WIN/TIE。
+同能力 Abseil 项在三平台没有确认 LOSE。这个结论不外推到未上架的 payload、序列化、
+backtrace 或异常系统；参考库有而 HYLE 用户没有需求的能力，不会只为扩大 benchmark 表而
+进入 error。
 
-因此当前功能面上的同形核心与正常路径三平台 **没有已确认 LOSE**。这不是“所有可能的
-错误系统工作负载都已穷尽”；payload、序列化、backtrace 等未进入产品面的能力也不靠本证书
-虚增 benchmark。
+## 空间与复杂度
 
-errno 行是成熟库直接同合同：都做 canonical 映射、取得线程安全 native description、前置
-operation 并返回 owning Status。HYLE 的失败路径只分配最终 Status；没有照搬 Abseil 首次
-使用时建立的全 errno string cache。Linux 初版因每次无条件清零 256B scratch 稳定小输约
-2–4%；改为只初始化首字节后回到 1.011x paired sign WIN，同时不改变首次失败延迟、常驻内存
-或 API。这是正常实现路径的常数修复，不是 benchmark metadata。
-
-`WithContext` 每次按最终文本长度 O(context + message) 分配并复制；连续添加 k 个等长
-context 的总工作量因此为 O(k²)。这符合错误只跨少量语义边界增补说明的正常用法，三层
-实测仍在三平台稳定领先 StatusBuilder。若未来真实产品出现很深的 context 链，必须凭调用
-数据重新评估链式表示，不能从这张三层证书外推为任意深度 SOTA。
+- 64 位平台：`Status=8B`，`Result<int>/Result<void>=16B`；`absl::Status=8B`，
+  `absl::StatusOr<int>` 在 Windows 为 24B、Linux/M4 为 16B。
+- OK 与 code-only Status 是 O(1)、零分配；native query 是 O(1)。
+- message 构造是 O(message bytes)，heap Status copy 是 O(1) 原子 retain。
+- 一次 `WithContext` 是 O(context + old message)；连续 k 层扁平重建最坏 O(k²)。这是少量
+  人工语义边界的产品选择；若真实调用出现深机器生成链，再评估链式表示。
+- errno canonical 分类是 O(1)；native description 的取得由 OS/CRT 主导，最终只构造一个
+  owning Status。
+- 非法 Result error arm 的 fail-fast 诊断放在冷 `noinline` helper；正常传播帧不复制 abort
+  文本和控制流。M4 栈帧从 112B 降到与 Abseil 相同的 80B，这是冷热路径架构修正，不增加
+  产品状态。
 
 ## 复跑命令
 
 ```bash
-# 需 HYLE_BUILD_BENCH=ON、HYLE_BENCH_ABSL=ON，并指向固定 Abseil checkout。
+# 需 HYLE_BUILD_BENCH=ON、HYLE_BENCH_ABSL=ON，并固定 HYLE_ABSL_DIR。
 cmake --build <build> --target hyle_error_bench hyle_error_normal_bench
 
 scripts/bench-stat.py <build>/bin/hyle_error_bench -n 15 \
   --pair "absl::OkStatus" "HYLE Status::Ok" \
-  --pair 'absl::InvalidArgumentError("")' "HYLE Status(code) inline" \
-  --pair "absl::NotFoundError(msg)" "HYLE Status::NotFound(msg)" \
-  --pair "absl::Status copy (error)" "HYLE Status copy (error)" \
   --pair "absl::Status copy (OK)" "HYLE Status copy (OK)" \
-  --pair "std::expected (unwrap + use)" "HYLE Result (unwrap + use)" \
-  --pair "absl::StatusBuilder SetPrepend" "HYLE Status::WithContext" \
-  --pair "absl::StatusBuilder SetPrepend x3" "HYLE Status::WithContext x3" \
-  --pair "absl::StatusOr (manual check)" "HYLE Result + ASSIGN_OR_RETURN"
+  --pair "absl::Status(code,empty,no-loc)" "HYLE Status(code) inline" \
+  --pair "absl::StatusOr (unwrap + use)" "HYLE Result (unwrap + use)" \
+  --pair "absl::StatusOr code-only error" "HYLE Result code-only error"
 
 scripts/bench-stat.py <build>/bin/hyle_error_normal_bench -n 15 \
-  --pair "manual Result<void> checks (OK)" "HYLE RETURN_IF_ERROR(Result<void>) (OK)" \
-  --pair "manual Result<void> checks (ERROR)" "HYLE RETURN_IF_ERROR(Result<void>) (ERROR)" \
+  --pair "absl::Status(code,msg,no-loc)" "HYLE Status::NotFound(msg)" \
+  --pair "absl::Status copy (message)" "HYLE Status copy (message)" \
+  --pair "absl::StatusBuilder SetPrepend" "HYLE Status::WithContext" \
+  --pair "absl::StatusBuilder SetPrepend x3" "HYLE Status::WithContext x3" \
+  --pair "absl::StatusOr message error" "HYLE Result message error" \
   --pair "absl::Status::ToString owning" "HYLE to_string owning" \
   --pair "absl::Status::Update" "HYLE Status::Update" \
-  --pair "absl::ErrnoToStatus" "HYLE status_from_errno"
+  --pair "absl::ErrnoToStatus + native payload" "HYLE status_from_errno" \
+  --pair "absl::Status + SetPayload" "HYLE Status::FromNative" \
+  --pair "absl::Status GetPayload + decode" "HYLE Status::native_error"
 ```

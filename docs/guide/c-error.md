@@ -15,20 +15,26 @@ Result/out、空值合同还是 fail-fast，先看语言无关的 [`error.md`](.
 ```c
 typedef enum hyle_status_code { /* canonical 0..16 */ } hyle_status_code;
 typedef struct hyle_status { uintptr_t rep; } hyle_status;
+typedef uint16_t hyle_native_error_domain;
 ```
 
-`hyle_status` 是 8 字节拥有型句柄：
+`hyle_status` 是一个 machine word 的拥有型句柄（64 位平台为 8B）：
 
 | 操作 | API |
 |---|---|
-| 初始化/创建 | `HYLE_STATUS_INIT`、`hyle_status_ok`、`hyle_status_new`、header-inline 每码工厂 |
+| 初始化/创建 | `HYLE_STATUS_INIT`、`hyle_status_ok`、`hyle_status_new[_n]`、header-inline 每码工厂 |
 | 拷贝 | `hyle_status_clone`，禁止用 `dst = src` 伪拷贝 owning handle |
 | 转移 | `hyle_status_move(&dst, &src)`；dst 必须已初始化，先释放 dst，再把 src 置 OK |
 | 释放 | `hyle_status_free(&s)`，NULL 安全、幂等、释放后为 OK |
 | 增加上下文 | `hyle_status_add_context(&s, context)`，原地替换 owning handle |
 
-OK 与无消息错误零分配；带消息错误共享引用计数 representation。非法 C enum 输入归一为
-`HYLE_STATUS_UNKNOWN`。
+OK 与无消息、无 detail 错误零分配；带消息或 detail 的错误共享引用计数 representation。
+非法 C enum 输入归一为 `HYLE_STATUS_UNKNOWN`。
+
+native detail 是可选的固定 `{domain, int64 code}`。domain 有 POSIX errno、Win32、Vulkan、
+CUDA runtime、CUDA driver、NVRTC 和 Unknown。它不改变 one-word handle；只有实际携带 detail
+的错误才在 heap rep 中多存一个 8B code。跨平台逻辑先判断 canonical status code，只有
+后端专用恢复/遥测才查询 native detail。
 
 每个 `hyle_status` 在传给 `free`、作为 `move` 的 dst 或传给 `add_context` 前，都必须由
 `HYLE_STATUS_INIT`、`hyle_status_ok()`、工厂返回值或另一次合法 move 初始化。不要把未初始化
@@ -40,17 +46,23 @@ OK 与无消息错误零分配；带消息错误共享引用计数 representatio
 |---|---|---|
 | `hyle_status_ok` | `() -> hyle_status` | OK |
 | `hyle_status_new` | `(code, msg) -> hyle_status` | 通用构造；NULL msg 表示无消息 |
+| `hyle_status_new_n` | `(code, msg, len) -> hyle_status` | length-aware；支持嵌入 NUL、无 `strlen` |
+| `hyle_status_new_native[_n]` | `(code, domain, native_code, msg[,len])` | 附加定长原生 detail |
 | `hyle_status_code_from_errno` | `(errno) -> code` | O(1) canonical 分类；0 返回 OK |
 | `hyle_status_from_errno` | `(errno, context) -> status` | 线程安全 native description；NULL context 可用 |
+| `hyle_status_from_errno_n` | `(errno, context, len) -> status` | length-aware context |
 | `hyle_status_free` | `(status*)` | 释放并置 OK；NULL 安全 |
 | `hyle_status_clone` | `(status) -> status` | 新的独立 owning handle |
 | `hyle_status_move` | `(dst*, src*)` | 转移所有权 |
 | `hyle_status_add_context` | `(status*, context)` | 前置 `context: `；OK/NULL/空串 no-op；OOM 保留原状态 |
+| `hyle_status_add_context_n` | `(status*, context, len)` | length-aware 原地 context |
 | `hyle_status_is_ok` | `(status) -> int` | 1/0 |
 | `hyle_status_get_code` | `(status) -> code` | canonical code |
 | `hyle_status_has_message` | `(status) -> int` | 1/0 |
-| `hyle_status_equals` | `(a, b) -> int` | 比较 code 和完整消息 |
+| `hyle_status_equals` | `(a, b) -> int` | 比较 code、native detail 和完整消息 |
 | `hyle_status_code_name` | `(code) -> const char*` | 静态字符串；非法 code 返回 `"Unknown"` |
+| `hyle_native_error_domain_name` | `(domain) -> const char*` | 静态 domain 名；非法输入为 `"Unknown"` |
+| `hyle_status_get_native_error` | `(status, domain*, code*) -> int` | 有 detail 返回 1；输出指针可 NULL |
 | `hyle_status_message` | `(status, buf, cap) -> size_t` | 仅消息；snprintf 式返回所需长度 |
 | `hyle_status_to_string` | `(status, buf, cap) -> size_t` | `"OK"`、`"Code"` 或 `"Code: message"` |
 | `hyle_status_message_cstr` | `(status) -> const char*` | 零拷贝借用，随 handle 存活；无消息返回 `""` |
@@ -73,8 +85,8 @@ hyle_status oom = hyle_status_resource_exhausted(NULL);
 #define HYLE_C_RETURN_IF_ERROR(expr) /* 非 OK 则按值返回 owning handle */
 ```
 
-表达式只求值一次。OK 是零 representation，无需额外释放；错误 handle 的所有权转移给
-调用者。
+表达式只求值一次。OK 是零 representation，宏在头内直接检查 `rep != 0`，不会为热成功
+路径调用 DLL；错误 handle 的所有权转移给调用者。
 
 ## 4. 常用写法
 
@@ -110,8 +122,25 @@ if (fd < 0) {
 ```
 
 `error_number == 0` 返回 OK。`context == NULL` 只保留 native description；返回值仍按普通
-`hyle_status` clone/move/free。若操作合同需要更具体分类，用
+`hyle_status` clone/move/free，并自动携带 `HYLE_NATIVE_ERROR_POSIX_ERRNO` 与原始数值。若
+操作合同需要更具体分类，用
 `hyle_status_code_from_errno` 取得默认 code 后再做少量明确覆盖，不复制整张映射表。
+
+后端原生码需要程序化处理时，创建和查询都不必解析 message：
+
+```c
+hyle_status s = hyle_status_new_native(
+    HYLE_STATUS_UNAVAILABLE, HYLE_NATIVE_ERROR_VULKAN, -4, "device lost");
+hyle_native_error_domain domain;
+int64_t native_code;
+if (hyle_status_get_native_error(s, &domain, &native_code) &&
+    domain == HYLE_NATIVE_ERROR_VULKAN && native_code == -4) {
+  /* recreate the Vulkan device */
+}
+hyle_status_free(&s);
+```
+
+跨平台策略仍先按 `HYLE_STATUS_UNAVAILABLE` 分支；native 只是更窄的二级决策面。
 
 ### 4.2 `Status + out` 冷工厂
 
@@ -143,6 +172,8 @@ hyle_status run(void) {
 - 只把所有权交给另一个变量：先用 `HYLE_STATUS_INIT` 初始化 dst，再调用
   `hyle_status_move`。
 - `hyle_status_message_cstr` 只借用；原 Status 被 free/move/原地加 context 后指针失效。
+- `*_n` 可保存嵌入 NUL 的文本；此时 `message_cstr` 只能看到第一个 NUL，完整字节必须用
+  `hyle_status_message` 的返回长度与 buffer-fill。
 - 直接 `dst = src` 只是复制 tagged word，会造成 heap Status double free；禁止。
 - 每个 owning handle 最终恰好 free 一次；`hyle_status_free` 会把它重置为 OK，因此对同一
   已正确初始化的变量重复 free 是安全的。
@@ -164,6 +195,7 @@ hyle_status_free(&dst);
 | `Result<T>` | `hyle_status` 返回值 + 成功出参 |
 | `HYLE_RETURN_IF_ERROR` / `HYLE_ASSIGN_OR_RETURN` | `HYLE_C_RETURN_IF_ERROR` 或普通分支 |
 | `Status::WithContext` | `hyle_status_add_context` |
+| `Status::FromNative` / `native_error()` | `hyle_status_new_native[_n]` / `hyle_status_get_native_error` |
 | C++/C representation 转移 | 仅由 HYLE 源码内部 bridge 完成；公开 C++ API 不暴露 raw rep |
 | 日志、sink | 独立的 `hyle/c/obs.h` 产品面 |
 
@@ -174,5 +206,6 @@ cmake --build <build> --target hyle_error_c_test
 ctest --test-dir <build> -R hyle_error_c_test --output-on-failure
 ```
 
-纯 C 测试覆盖创建、查询、clone/move/free、非法 enum、errno、借用消息、上下文和早返回；
-机械 surface test 同时锁定 16 个 DLL 导出，独立头测试确保 `hyle/c/error.h` 单独以 C 编译。
+纯 C 测试覆盖创建、查询、clone/move/free、非法 enum、errno/native detail、嵌入 NUL、借用
+消息、上下文和早返回；机械 surface test 同时锁定 23 个 DLL 导出，独立头测试确保
+`hyle/c/error.h` 单独以 C 编译。
