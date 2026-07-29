@@ -84,7 +84,7 @@ class SpinLock {
     // TTAS from the first probe matters under contention: an eager RMW fast
     // path makes every arriving waiter write the already-owned cache line.
     while (flag_.load(std::memory_order_relaxed) ||
-           flag_.exchange(true, std::memory_order_acquire)) {
+           flag_.exchange(true, std::memory_order_acq_rel)) {
       backoff.pause();
     }
   }
@@ -92,7 +92,7 @@ class SpinLock {
   bool try_lock() noexcept {
     // One shot. relaxed pre-check avoids a needless RMW when already held.
     return !flag_.load(std::memory_order_relaxed) &&
-           !flag_.exchange(true, std::memory_order_acquire);
+           !flag_.exchange(true, std::memory_order_acq_rel);
   }
 
   void unlock() noexcept { flag_.store(false, std::memory_order_release); }
