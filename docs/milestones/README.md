@@ -28,15 +28,15 @@
 ### 整体进度与体量（诚实，2026-07-29 工作树快照）——分母别混
 
 > **生产 = `cloc src include` 的 code 列**（header+C++/CUDA 等，不含 tests/bench/docs/third_party）。
-> **旧投影「完成时生产 ~28–40k / 中值 34k」已作废**：当前生产已 **~92.1k**，单 **simd ~37.8k**。
+> **旧投影「完成时生产 ~28–40k / 中值 34k」已作废**：当前生产已 **~92.4k**，单 **simd ~37.8k**。
 > 权威规模节：[`../architecture/hyle-scope.md`](../architecture/hyle-scope.md)。中期报告：[`midterm-report-2026-07-scale-positioning.md`](./midterm-report-2026-07-scale-positioning.md)。SIMD 当前补缺账本：[`simd-capability-fill-list.md`](./simd-capability-fill-list.md)。
 
 | 固定统计口径 | 当前 | 命令/说明 |
 |---|---|---|
-| **全库代码** | **275,967** | tracked + 当前待提交文件；含 docs/third_party，**≠ 自写** |
-| **自实现（含测试）** | **134,300** | `cloc include/hyle src tests`，只计 C++/Header/C/CUDA |
-| **自实现（不含测试）** | **92,149** | `cloc include/hyle src`，只计 C++/Header/C/CUDA；库本体硬锚 |
-| **当前处理模块实现（build/package）** | **5,590** | 自有 CMake/preset/CI 与 build/fetch/setup/QEMU 脚本；不含 vendored CMake、测试源码和文档 |
+| **全库代码** | **276,618** | tracked；含 docs/third_party，**≠ 自写** |
+| **自实现（含测试）** | **134,723** | `cloc include/hyle src tests`，只计 C++/Header/C/CUDA |
+| **自实现（不含测试）** | **92,432** | `cloc include/hyle src`，只计 C++/Header/C/CUDA；库本体硬锚 |
+| **当前处理模块实现（error）** | **1,207** | `include/hyle/error + include/hyle/c/error.h + src/error`；不含测试/benchmark/文档 |
 | **终态生产（纪律收口 A）** | **~75–90k** | 主预期 |
 | **终态生产（做满守界 B）** | **~85–105k** | compute/graph/发布面收口更满 |
 | 失控上限 C | 120k+ 生产 | 应避免 |
