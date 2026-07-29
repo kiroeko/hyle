@@ -140,8 +140,9 @@ message/detail。
 传播的重复工作。若真实 profile 出现深链，HYLE 的首选候选是**仅对 context rep**保存几何
 增长的 prefix headroom：rvalue 且引用计数为 1 时向前原地写，空间不足才按倍增容量搬迁；
 lvalue/共享 rep 继续 copy-on-write。它可保持 8B Status 与连续 message，并把正常移动链降为
-摊还 O(最终总文本字节)，同时不让普通 message Status 承担容量字段。只有稳定出现约 8 层以上
-或 context 构造进入实际 profile 热点时才实施和复证；三层 benchmark 本身不是上架理由。
+摊还 O(最终总文本字节)，同时不让普通 message Status 承担容量字段。只有真实调用稳定明显
+超过当前正常的 1–3 个语义层，且 context 构造进入实际 profile 热点时，才原型测量 crossover
+并决定是否实施；三层 benchmark 本身不是上架理由。
 
 示例最终消息：
 
