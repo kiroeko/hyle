@@ -125,7 +125,10 @@ int main() {
     bench.title("obs gated macro (arguments not formatted)")
         .relative(true)
         .batch(1)
-        .minEpochIterations(100'000);
+        // Sub-nanosecond-to-low-nanosecond gates need a long epoch on Apple
+        // heterogeneous cores; short epochs made the certificate measure QoS
+        // migration more than the relaxed load itself.
+        .minEpochIterations(3'500'000);
     bench.run("HYLE_LOG_INFO gated", [] {
       static int value = 7;
       HYLE_LOG_INFO("value={}", value);
@@ -168,7 +171,7 @@ int main() {
     bench.title("obs normal single-sink production")
         .relative(true)
         .batch(1)
-        .minEpochIterations(20'000);
+        .minEpochIterations(250'000);
     bench.run("native preformatted", [] {
       nb::doNotOptimizeAway(
           hyle::obs::log_message(LogLevel::Info, "ready"));
