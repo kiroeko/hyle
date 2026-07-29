@@ -1,4 +1,4 @@
-# obs 性能证书（2026-07-25）
+# obs-runtime 性能证书（2026-07-29，`06cec5a`）
 
 本页只测 obs 的真实生产形状：运行期 level gate、同步结构化 fan-out、C ABI seam 和多
 producer。文件 I/O、异步队列、滚动与上传属于 sink/应用；把它们混进 producer
@@ -8,11 +8,15 @@ microbenchmark 既不能解释 registry 复杂度，也会让 OS I/O 淹没这�
 
 | 操作 | 时间复杂度 | 分配 / 同步 |
 |---|---|---|
-| `should_log` / 被 gate 的宏 | O(1) | relaxed atomic load；参数不求值 |
-| `log_record` / `log_message` | O(S)，S 为当前 sink 数 | 不分配；不拿 mutation mutex；短 reader epoch + per-slot active ref |
+| 编译期 floor 以下的 `HYLE_LOG_*` / `HYLE_OBS_EMIT_*` | O(0) | 参数不求值；目标文件没有 obs 未定义符号 |
+| `should_log` / 运行期被 gate 的宏 | O(1) | 一次 relaxed atomic load；参数不求值 |
+| `log_record` / 长度已知的 view、`hyle_obs_log_n` | O(S)，S 为当前 sink 数 | 不分配、不扫描 message；不拿 mutation mutex；短 reader epoch + per-slot active ref |
+| NUL convenience `log_message(const char*)` / `hyle_obs_log` | O(M + S) | M 为消息首个 NUL 前字节数；之后与 exact-length 路径相同 |
 | `add_sink` / `remove_sink` | O(S)，且 S ≤ 64 | 冷路径 mutation mutex；remove 另等待旧 reader/callback 排空 |
+| `SinkRegistration` create/reset/destruct | 与 add/remove 同阶 | 只在控制面；不给 record/sink 增加热路径字段 |
 | `flush_sinks` | O(S) | 同步调用支持 flush 的 sink；同 emit 的安全引用合同 |
 | C record / sink trampoline | 与 native 同阶 | owning `hyle_status` 只在失败时拥有错误对象 |
+| 默认 sink | O(M + fields + I/O) | 控制字节流式转义；Windows debugger mirror 为固定 4 KiB，无 heap |
 
 registry 使用两份进程期、原地 immutable snapshot。mutation 串行发布新代；producer
 只复制已发布快照并取得 active reference，因此注册/注销不把共享 mutex 塞进所有正常
@@ -20,12 +24,13 @@ registry 使用两份进程期、原地 immutable snapshot。mutation 串行发�
 
 ## 2. 方法
 
-- runner：`hyle_obs_bench` / nanobench，Release，15 个独立运行的中位数；sink 只做
+- 实现：runtime/API 为 `4d31bcf`，采样稳定性调整后证书绑定 `06cec5a`；
+- runner：`hyle_obs_bench` / nanobench，Release，15 个独立进程运行的中位数；sink 只做
   relaxed atomic counter，不做 I/O；
 - normal：单 sink preformatted、4-field structured、`std::format` 宏与 C Status seam；
 - fan-out：1/4/16 sink，表中按每次 callback 归一化；
 - concurrent：2/8 producer 各发 100,000 条，按每条 emit 归一化；
-- Windows x64 MSVC、WSL2 GCC 14、Apple M4 AppleClang；
+- Windows x64 MSVC 19.50、WSL2 GCC 14.2、Apple M4 AppleClang 21；
 - M4 不宣称物理 P/E 核绑定。interactive 与 utility 都测；utility 组波动更低，故表中用
   utility 作稳定证书，interactive 只作异构调度敏感性审计。
 
@@ -35,21 +40,27 @@ registry 使用两份进程期、原地 immutable snapshot。mutation 串行发�
 
 | 场景 | Windows | WSL2 | M4 utility | 结论 |
 |---|---:|---:|---:|---|
-| `HYLE_LOG_INFO` gated | 2.007 | 0.916 | 0.906 | O(1) relaxed gate；不格式化 |
-| native preformatted，1 sink | 39.328 | 34.488 | 25.001 | immutable snapshot + 安全 active ref |
-| structured，4 fields | 38.690 | 34.464 | 24.267 | 与 preformatted 同档；字段为 borrowed view |
-| `std::format` 宏，1 sink | 92.150 | 85.761 | 64.356 | 增量主要来自调用方格式化，不是 registry 复杂度 |
-| C `hyle_obs_log` + Status | 41.406 | 37.020 | 27.237 | 相对 native seam 约 +2.08 / +2.53 / +2.24 ns |
-| fan-out 1 sink | 39.538 | 34.938 | 25.564 | 与 normal 交叉核对 |
-| fan-out 4 sinks，per sink | 18.316 | 17.837 | 8.312 | 固定 snapshot 成本被摊薄 |
-| fan-out 16 sinks，per sink | 13.120 | 13.726 | 4.459 | 总工作仍严格 O(S) |
-| 2 producer，per emit | 105.034 | 88.882 | 79.512 | 无 producer mutex；sink atomic counter 有共享争用 |
-| 8 producer，per emit | 95.171 | 64.011 | 123.902 | 平台 cache/调度不同；无复杂度退化 |
+| `HYLE_LOG_INFO` runtime gated | 2.160 | 0.910 | 1.100 | O(1) 单次 relaxed gate；不格式化 |
+| native preformatted view，1 sink | 42.070 | 38.970 | 23.910 | exact byte view + immutable snapshot + 安全 active ref |
+| structured，4 fields | 38.450 | 34.500 | 23.560 | 直接 record 与旧证书同档；字段仍 borrowed |
+| `std::format` 宏，1 sink | 89.190 | 87.260 | 63.210 | 宏已从两次 runtime gate 减为一次 |
+| C NUL `hyle_obs_log` + Status | 44.610 | 40.230 | 26.790 | 含 `strlen` convenience 与 checked Status seam |
+| C exact `hyle_obs_log_n` + Status | 44.430 | 39.790 | 27.090 | slice 不扫描；短 literal 点值与 NUL 行同档 |
+| fan-out 1 sink | 41.680 | 38.200 | 24.340 | 与 normal view 交叉核对 |
+| fan-out 4 sinks，per sink | 18.790 | 18.600 | 8.170 | 固定 snapshot 成本被摊薄 |
+| fan-out 16 sinks，per sink | 13.140 | 13.640 | 4.280 | 总工作仍严格 O(S) |
+| 2 producer，per emit | 108.800 | 89.040 | 79.390 | 无 producer mutex；sink atomic counter 有共享争用 |
+| 8 producer，per emit | 93.690 | 62.950 | 124.390 | 平台 cache/调度不同；无复杂度退化 |
 
-最终单原子 wait-state 修正后的 Windows gated/normal spread 为 4.5%/4.3%；WSL normal
-为 17.0%，M4 utility normal 为 7.8%，而 fan-out 4/16 的 M4 spread 为 9.0%/8.1%。
-短 normal workload 仍会随 WSL 宿主负载或 M4 异构调度漂移；QoS 只是偏好而非
-硬核绑定，不能把一次落到 P-core 的点值当产品结论。表保留独立进程中位数，不挑最好点。
+Windows normal/structured/format spread 为 9.5%/8.6%/6.3%；M4 加长 epoch 后为
+0.5%/5.1%/4.3%，fan-out 1/4/16 为 3.3%/6.4%/4.9%。WSL 受宿主负载影响仍较明显，normal
+spread 23.6%，所以它只支持“同历史档/无 material regression”，不拿单个最好点作胜负。
+M4 runtime gate 的绝对值极小，1.04–1.74 ns 对应 63.6% spread；复杂度/codegen 成立，点值
+只记中位数。QoS 不是物理 P/E 核绑定，表保留全部独立进程样本的中位数，不挑最好点。
+
+编译期 floor 另由 consumer test 证明参数不求值；Windows `dumpbin /imports`、WSL
+`nm -uC`、M4 `nm -u` 均未找到被裁剪 translation unit 的 obs 未定义符号。它是 O(0)
+source/codegen 合同，不需要制造一行“0.00 ns”benchmark。
 
 ## 4. 架构 A/B，而非 benchmark API
 
@@ -72,7 +83,10 @@ seam。这里引用 Abseil 的价值是 recursion suppression、Flush 和 proces
 
 - gate O(1)，emit/flush O(S)，mutation O(S≤64)，复杂度与成熟同步 sink registry 同档；
 - 正常 emit 无分配、无 mutation mutex，多 producer A/B 已关闭旧架构争用；
-- C ABI 没有改变复杂度，普通路径只增加约 2–3 ns trampoline/Status seam；
+- exact-length message 将 slice 从 O(M+S) 收回 O(S)；短 NUL convenience 与 `_n` 点值同档，
+  没有为 benchmark 删除边界检查；
+- structured 直接 record 与 2026-07-25 证书三平台同档，fan-out/multi-producer 未见 material
+  regression；view convenience 的额外 pointer+length 是保留内嵌 NUL/避免 slice copy 的产品合同；
 - 暂无一个与 HYLE **相同 metadata、ownership、quiescent-unregister** 合同的成熟 peer 数字，
   所以不伪造全胜表；当前可以认证“没有已知复杂度或正常用法性能缺口”，不能认证跨合同
   的倍数胜利。

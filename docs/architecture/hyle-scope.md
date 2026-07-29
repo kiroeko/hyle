@@ -98,16 +98,16 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 
 > **信源**：体量以 `cloc` 实测为准；能力进度以 [`../milestones/README.md`](../milestones/README.md) 为准。
 > **口径**：生产 = `src` + `include` 的 code 列（不含 tests/bench/docs、不含 third_party）。
-> **2026-07-29 锚定**：旧投影「完成时生产 ~28–40k / 中值 34k」**已作废**——当前生产已 **92.7k**，单 simd **37.8k**。当前判断见 [`../milestones/pre-release-readiness.md`](../milestones/pre-release-readiness.md)；更早数字只作历史快照。
+> **2026-07-29 锚定**：旧投影「完成时生产 ~28–40k / 中值 34k」**已作废**——当前生产已 **92.9k**，单 simd **37.8k**。当前判断见 [`../milestones/pre-release-readiness.md`](../milestones/pre-release-readiness.md)；更早数字只作历史快照。
 
 ### 当前实测（2026-07-29）
 
 | 固定统计口径 | code | 说明 |
 |---|---:|---|
-| **全库代码** | **277,135** | tracked；含 docs 与 in-tree third_party |
-| **自实现（含测试）** | **135,036** | `include/hyle + src + tests`；只计 C/C++/CUDA，不含 CMake/Text |
-| **自实现（不含测试）** | **92,659** | `include/hyle + src`；只计 C/C++/CUDA，库本体硬锚 |
-| **当前处理模块实现（error）** | **1,434** | `include/hyle/error + include/hyle/c/error.h + src/error`；不含测试/benchmark/文档 |
+| **全库代码** | **277,692** | tracked；含 docs 与 in-tree third_party |
+| **自实现（含测试）** | **135,321** | `include/hyle + src + tests`；只计 C/C++/CUDA，不含 CMake/Text |
+| **自实现（不含测试）** | **92,891** | `include/hyle + src`；只计 C/C++/CUDA，库本体硬锚 |
+| **当前处理模块实现（obs）** | **1,250** | `include/hyle/obs + include/hyle/c/obs.h + src/obs`；不含测试/benchmark/文档 |
 | 再加 ggml 等大依赖足迹 | **~200–350k+** | 由 ggml 主导，不计入「自有生产」 |
 
 **生产按模块（src+include，约）：**
@@ -124,7 +124,7 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 | graph | ~0.6k | |
 | error | **1,434**（含公共 C 头） | ~2% |
 | util | ~1.3k | ~2% |
-| obs | **1,018**（含公共 C 头） | ~1% |
+| obs | **1,250**（含公共 C 头） | ~1% |
 | time | **1,421**（含公共 C 头） | ~2% |
 | 其余基质及顶层/C ABI 头 | ~1.8k | ~2% |
 
@@ -229,7 +229,7 @@ clay 从未把光追逻辑、USD/Hydra 协议、service 端点吸进 `infra/`—
 | **③ actor 框架/语言运行时** | ✅ **KEEP OUT** | actor 是 fiber+channel 之上的**模型**(L1)。HYLE 给 fiber+channel 原语,actor 上层拼。判对。 |
 | **③ GUI/窗口系统** | ✅ **KEEP OUT** | 领域,与北极星无关。 |
 | **④ 构建/包管理/测试框架**(CMake/GoogleTest)| ✅ **KEEP OUT** | 工具链,判对。 |
-| **④ 日志聚合/监控后端** | 🔄 **部分 PULL IN** | **严格边界已收口（2026-07-25）**：日志/trace 的“产出原语”属于 L0，聚合、轮转、上传、查询、告警和 viewer 属于运维栈，继续 KEEP OUT。日志是运行期 level gate + 同步 borrowed record + immutable sink snapshot；emit 无分配/无 mutation mutex，quiescent unregister、flush、递归抑制与 process-lifetime registry 已闭环。trace 是另一条编译期面，默认 OFF 时参数不求值/零后端依赖，ON 时接单一共享 Tracy client。真实 hook 覆盖 mem/sched/io/compute。C/FFI 使用共享 Status、POD record/opaque sink 与 runtime trace seam；函数 no-op 不宣称零指令，纳秒热路径用原生宏。架构、生命周期和三平台验收见 [`obs-design.md`](./obs-design.md) / [`../milestones/obs-module-closure.md`](../milestones/obs-module-closure.md)。 |
+| **④ 日志聚合/监控后端** | 🔄 **部分 PULL IN** | **严格边界已复证（2026-07-29）**：日志/trace 的“产出原语”属于 L0，聚合、轮转、上传、查询、告警和 viewer 属于运维栈，继续 KEEP OUT。日志是 compile/runtime level gate + 同步 exact-byte borrowed record + RAII/quiescent immutable sink snapshot；emit 无分配/无 mutation mutex，flush、递归抑制与 process-lifetime registry 已闭环。trace 是另一条编译期面，默认 OFF 时参数不求值/零后端依赖，ON 时接单一共享 Tracy client。真实 hook 覆盖 mem/sched/io/compute。C/FFI 使用共享 Status、length-aware POD record/opaque sink 与 runtime trace seam；函数 no-op 不宣称零指令，纳秒热路径用原生宏。架构、生命周期和三平台验收见 [`obs-design.md`](./obs-design.md) / [`../milestones/obs-module-closure.md`](../milestones/obs-module-closure.md)。 |
 | **④ GC** | ✅ **KEEP OUT** | 做分配器不做 GC,判对。 |
 | **DataModel(undo/序列化/协作)** | 🟡 **拆开看** | undo/协作=L2 领域(KEEP OUT);内含的**序列化**已单独在 DISCUSS-2。原"整块不纳入"太粗。 |
 | **替换 ggml 算子/训练推理引擎** | ✅ **KEEP OUT** | compute 只做抽象层,判对(借 ggml 是明确决策)。 |

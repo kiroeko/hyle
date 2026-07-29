@@ -16,7 +16,7 @@
 | [time 实测](./benchmarks-time.md) | **time 2026-07-25 当前三平台证书**（clock / exact-ns radix TimerQueue / CommonTimeoutQueue；含 Seastar faithful baseline、order-swap 与 M4 QoS） |
 | [mem 实测](./benchmarks-mem.md) | **mem 严格证书**：既有三平台 Region/FixedPool/pool 证书有效；clean `c640072` 已补齐 shared allocator/standard-adapter/realloc 的 Win/WSL/M4 双 QoS n=15，同合同默认路径无 material LOSE |
 | [util-core 实测](./benchmarks-util.md) | **util-core 2026-07-25 三平台 n=15 证书**：Rng/Ref/SpinLock 实际形状；oneTBB 正反序；mutex 反例与适用边界 |
-| [obs 实测](./benchmarks-obs.md) | **obs 2026-07-25 三平台 n=15 证书**：gate、immutable sink snapshot、structured/C ABI、fan-out 与多 producer；成熟库只作同机制对照，不作跨合同倍数宣称 |
+| [obs 实测](./benchmarks-obs.md) | **obs-runtime 2026-07-29 `06cec5a` 三平台 n=15 证书**：compile/runtime gate、exact-byte record/C ABI、immutable sink snapshot、fan-out 与多 producer；成熟库只作同机制对照，不作跨合同倍数宣称 |
 | [container 实测](./benchmarks-container.md) | **container 唯一当前证书**：三平台详表、新鲜度、非 SOTA、选型与复跑命令 |
 | [simd 产品 kernel](./benchmarks-simd.md) | dot/saxpy、math、dtype、gather、vendor 竞争…；**op 全量不在此** |
 | [simd op 对拍证书](./benchmarks-simd-ops.md) | **逐 op vs Highway**：三平台 LOSE=0 摘要 + 覆盖树；全表 → [orderswap 矩阵](../milestones/simd-orderswap-matrix.md)（最新最全） |
@@ -77,7 +77,7 @@
 | **util-core** SpinLock 无争用 | 3.830/4.574/0.935 | std::mutex | 11.248/2.378/9.191 | 2.91/**0.52**/9.75x | oneTBB spin_mutex | 3.823/4.595/0.907 | 0.997/1.010/0.980x | ➖正反序同档；Linux mutex 反例保留 |
 | **util-core** SpinLock 2/8 threads | 9.834·59.535/7.800·48.593/1.793·4.297 | mutex（选择边界） | 15.357·62.261/37.264·38.939/高方差 | 平台翻转 | oneTBB spin_mutex | 9.766·61.646/7.688·48.451/1.772·4.187 | 约 0.98–1.04x | ➖oneTBB 正反序同档；高争用不据此选 spin |
 | **util-core** Ref fan-out 64 | 8.312/7.976/3.202 | shared_ptr | 8.248/10.779/3.211 | **1.006/1.353/1.003x** | shared_ptr ownership 原子基线 | 同左 | 同左 | ✅ Win/M4 TIE、Linux WIN；旧 MSVC 20% LOSE 已消除 |
-| **obs** gate / preformatted / structured / 8-producer | 2.007·39.328·38.690·95.171 / 0.916·34.488·34.464·64.011 / 0.906·25.001·24.267·123.902 (Win/Lin/M4) | (无 std log) | n/a | n/a | 同步 sink registry 机制参照 Abseil/Folly | 非同合同 | n/a | ✅ O(1) gate、O(S) emit；热路径无分配/无 mutation mutex；C Status seam +2–3ns。无同 metadata/ownership peer，故不作跨合同胜负。见 [obs](./benchmarks-obs.md) |
+| **obs** gate / preformatted view / structured / 8-producer | 2.160·42.070·38.450·93.690 / 0.910·38.970·34.500·62.950 / 1.100·23.910·23.560·124.390 (Win/Lin/M4) | (无 std log) | n/a | n/a | 同步 sink registry 机制参照 Abseil/Folly | 非同合同 | n/a | ✅ `06cec5a`：编译裁剪 O(0)、runtime gate O(1)、exact view/emit O(S)，NUL convenience O(M+S)；热路径无分配/无 mutation mutex。无同 metadata/ownership peer，故不作跨合同胜负。见 [obs](./benchmarks-obs.md) |
 | **mem** SystemAllocator churn(static/source direct) | 7.93/8.04/7.77 | malloc OS | 25/4.7/20 | 大赢 OS | 裸 mimalloc | 7.86/8.04/7.91 | **~1.00x 三平台** | ➖合并形状**平 mi SOTA**(2026-07-20 n=15) |
 | **mem** SystemAllocator churn(shared same-link) | 8.17/7.81/7.98 | malloc OS | 37.22/—/— | 平台相关 | 同一 DSO backend seam | 8.03/7.84/7.95 | **0.980/1.009/0.996** | ➖ clean `c640072` n=15：三平台默认 shared 形状无 material LOSE；M4 utility 同为 0.996 |
 | **mem** SystemStdAllocator same-link | 8.18/7.86/7.98 | SystemAllocator same-link | 8.17/7.81/7.98 | **0.995/1.000/1.000** | runtime StdAllocator | 8.53/7.95/7.64 | 更强 runtime 合同另列 | ➖ empty/always-equal 默认 adapter 三平台零 material 税；M4 utility 1.004 |

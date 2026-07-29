@@ -67,10 +67,11 @@
       bulk control 和 owning `hyle_status`；41 个动态符号 + 4 个 header-inline 便利入口，不冻结
       C++ 类布局，不导出 STL/模板，也不引入 time→mem。文档：
       [`c-time.md`](../guide/c-time.md)。
-- [x] **obs**（2026-07-25 严格复审）：`include/hyle/c/obs.h` + `c_obs.cc` + 纯 C
+- [x] **obs**（2026-07-29 严格复证）：`include/hyle/c/obs.h` + `c_obs.cc` + 纯 C
       `hyle_obs_c_test`。覆盖结构化 record、level、quiescent opaque sink、optional flush、
       默认 sink，以及 OFF 时稳定 no-op / ON 时接单一 Tracy client 的 runtime trace；
-      23 个动态入口 + 5 个 header-inline level 便利入口。可恢复失败统一使用 owning
+      24 个动态入口 + 10 个 header-inline level 便利入口 + 5 个 compile-floor 宏；message
+      用 exact byte count，slice 不必复制/扫描。可恢复失败统一使用 owning
       `hyle_status`，不再有 obs 私有 TLS last-error。C++ 原生 trace 宏仍保留编译期
       零成本能力。文档：
       [`c-obs.md`](../guide/c-obs.md)，复审：

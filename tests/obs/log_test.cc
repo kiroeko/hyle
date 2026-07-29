@@ -496,10 +496,12 @@ TEST(LogDefaultSink, StateSetterIsIdempotentAndReportsSuccess) {
 TEST(LogDefaultSink, EscapesControlsAndKeepsOnePhysicalRecord) {
   ASSERT_TRUE(set_default_sink_enabled(true).ok());
   set_level(LogLevel::Info);
+  constexpr char message[] = {'l', 'i', 'n', 'e', '1', '\n', 'l', 'i', 'n',
+                              'e', '2', '\0', '\x1b', '[', '3', '1', 'm'};
   LogField field{"key\t", "value\r"};
   LogRecord record{
       .level = LogLevel::Info,
-      .message = "line1\nline2\x1b[31m",
+      .message = std::string_view(message, sizeof(message)),
       .fields = &field,
       .field_count = 1,
       .file = "source\nfile\x1b",
@@ -510,7 +512,7 @@ TEST(LogDefaultSink, EscapesControlsAndKeepsOnePhysicalRecord) {
   EXPECT_TRUE(log_record(record));
   const std::string output = testing::internal::GetCapturedStderr();
   EXPECT_NE(output.find("source\\nfile\\x1b:9"), std::string::npos);
-  EXPECT_NE(output.find("line1\\nline2\\x1b[31m"), std::string::npos);
+  EXPECT_NE(output.find("line1\\nline2\\x00\\x1b[31m"), std::string::npos);
   EXPECT_NE(output.find("key\\t=value\\r"), std::string::npos);
   EXPECT_EQ(output.find('\x1b'), std::string::npos);
   EXPECT_EQ(output.find('\n'), output.size() - 1);
