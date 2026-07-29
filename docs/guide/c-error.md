@@ -52,6 +52,9 @@ CUDA runtime、CUDA driver、NVRTC 和 Unknown。它不改变 one-word handle；
 | `hyle_status_code_from_errno` | `(errno) -> code` | O(1) canonical 分类；0 返回 OK |
 | `hyle_status_from_errno` | `(errno, context) -> status` | 线程安全 native description；NULL context 可用 |
 | `hyle_status_from_errno_n` | `(errno, context, len) -> status` | length-aware context |
+| `hyle_status_code_from_win32` | `(uint32 code) -> code` | O(1) Win32 canonical 分类；任意 host 可用 |
+| `hyle_status_from_win32` | `(code, context) -> status` | Windows 用 `FormatMessage`；保留 Win32 detail |
+| `hyle_status_from_win32_n` | `(code, context, len) -> status` | length-aware context |
 | `hyle_status_free` | `(status*)` | 释放并置 OK；NULL 安全 |
 | `hyle_status_clone` | `(status) -> status` | 新的独立 owning handle |
 | `hyle_status_move` | `(dst*, src*)` | 转移所有权 |
@@ -128,6 +131,12 @@ if (fd < 0) {
 `hyle_status` clone/move/free，并自动携带 `HYLE_NATIVE_ERROR_POSIX_ERRNO` 与原始数值。若
 操作合同需要更具体分类，用
 `hyle_status_code_from_errno` 取得默认 code 后再做少量明确覆盖，不复制整张映射表。
+
+Win32 叶子也必须立即保存 `GetLastError()`，再调用 `hyle_status_from_win32`。不要在保存前调用
+日志、格式化或另一项 Win32 API；它们可能覆盖同一 thread-local 值。该入口在任意 host 都能
+对稳定的 32-bit Win32 code 分类，Windows 上补系统描述，非 Windows 上使用数字描述；两种
+情况都保留 `HYLE_NATIVE_ERROR_WIN32` detail。`hyle_status_code_from_win32` 只用于调用合同更
+具体时的少量 override，不用于复制另一张大 switch。
 
 后端原生码需要程序化处理时，创建和查询都不必解析 message：
 
@@ -232,8 +241,8 @@ cmake --build <build> --target hyle_error_c_test
 ctest --test-dir <build> -R hyle_error_c_test --output-on-failure
 ```
 
-纯 C 测试覆盖创建、查询、clone/move/free、非法 enum、errno/native detail、嵌入 NUL、借用
-消息、上下文、首错聚合和早返回；机械 surface test 同时锁定 24 个 DLL 导出，独立头测试确保
+纯 C 测试覆盖创建、查询、clone/move/free、非法 enum、errno/Win32/native detail、嵌入 NUL、借用
+消息、上下文、首错聚合和早返回；机械 surface test 同时锁定 27 个 DLL 导出，独立头测试确保
 `hyle/c/error.h` 单独以 C 编译。
 
 二进制 SDK 的外部消费证书位于 `samples/package/error/c`：工程只启用 C，执行

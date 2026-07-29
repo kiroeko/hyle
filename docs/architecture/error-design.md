@@ -171,13 +171,16 @@ creating device buffer: vulkan vkAllocateMemory failed: VK_ERROR_OUT_OF_DEVICE_M
 后端原生类型仍不能泄漏进公共头；公开面只保留定长 domain/code。只有出现一个 Status
 必须携带多个独立机器可读 detail 的真实消费者时，才重新评估 payload 系统。
 
-### 2.4 原生 errno 适配
+### 2.4 原生 OS 适配
 
 POSIX/CRT 叶子边界不应在每个模块重复发明 errno 分类。error 提供两个公共基础能力：
 
 ```cpp
 StatusCode status_code_from_errno(int error_number) noexcept;
 Status status_from_errno(int error_number,
+                         std::string_view operation = {}) noexcept;
+StatusCode status_code_from_win32(std::uint32_t error_number) noexcept;
+Status status_from_win32(std::uint32_t error_number,
                          std::string_view operation = {}) noexcept;
 ```
 
@@ -186,6 +189,11 @@ Status status_from_errno(int error_number,
 `errno == 0` 返回零值 OK；
 失败路径只有最终 Status 的一次分配，OOM 只丢 message、不丢 code。一般调用方优先用工厂，
 不再手写 `strerror`、message 拼接和 code switch。
+
+Win32 入口同样做 O(1) canonical 分类，并保留稳定 32-bit code。Windows 构建用
+`FormatMessage` 生成 description；其它 host 使用确定性数字文本，因此 crash/offline tooling
+仍可分类远端 Win32 错误，且公共头不引入 `windows.h`。未知值映射 `Unknown`，不能因为某个
+platform 调用者偏好重试就笼统映射 `Unavailable`。成功路径不格式化、不分配。
 
 通用映射不是操作语义的替代品。某个系统调用对同一 errno 有更具体的合同，可以局部覆盖；
 例如 `pthread_create(EAGAIN)` 是资源耗尽，而通用 I/O 映射把 EAGAIN 视为暂不可用。需要在
@@ -260,6 +268,7 @@ typedef struct hyle_status { uintptr_t rep; } hyle_status;
 - 原地增加上下文；
 - 消费式首错聚合；
 - errno 到 canonical code/Status 的直接适配；
+- Win32 code 到 canonical code/Status 的直接适配；
 - native domain/code 的创建与查询；
 - 返回 `hyle_status` 的函数使用 `HYLE_C_RETURN_IF_ERROR` 传播。
 
@@ -288,6 +297,7 @@ warning/error/fatal API。
 Status from_vk(VkResult result, std::string_view operation) noexcept;
 Status from_cuda(cudaError_t error, std::string_view operation) noexcept;
 Status status_from_errno(int error, std::string_view operation) noexcept;
+Status status_from_win32(std::uint32_t error, std::string_view operation) noexcept;
 ```
 
 translator 必须：
@@ -295,15 +305,16 @@ translator 必须：
 1. 成功值返回零表示的 OK；
 2. 映射成 canonical code；
 3. 在错误路径保留 operation；
-4. message 保留原生错误名称和数值，`NativeError` 同时保留可程序化 domain/code；
+4. 诊断整体保留 operation、人读描述和机器可读数值：message 不要求重复 detail 已保存的
+   数字；SDK 有稳定 symbolic name 时应保留，`NativeError` 始终保留 domain/code；
 5. 使用固定栈缓冲或一次 Status 消息分配，不在成功路径格式化；
 6. 不把 CUDA/Vulkan/OS 类型放进公共 API，只转为稳定 domain + `int64_t`；
 7. 未知原生值仍返回 `Unknown`/`Internal` 和完整数值，不能只写“failed”。
 
-`status_from_errno` 是通用 POSIX/CRT 入口；platform 的 syscall-specific translator 在保留
-原生名称/数值时复用它的 canonical code。CUDA、Vulkan、Win32 等由所属叶子模块完成
-taxonomy/message，再用 `Status::FromNative` 附加稳定 detail；不把 vendor 类型或注册表塞进
-error 公共头。
+`status_from_errno` 与 `status_from_win32` 是通用 OS 入口；platform 的 syscall-specific
+translator 只有操作合同更具体时才覆盖 canonical code。CUDA、Vulkan 等依赖 SDK 类型和
+SDK-specific recovery 的映射仍由所属叶子模块完成，再用 `Status::FromNative` 附加稳定
+detail；不把 vendor 类型或动态 category 注册表塞进 error 公共头。
 
 推荐文本：
 
@@ -348,6 +359,8 @@ benchmark 必须从正常调用链反推：函数边界、所有权、错误率�
   常驻 payload metadata；
 - errno 分类是 O(1)，`status_from_errno` 与 Abseil `ErrnoToStatus` 做同形 operation+native
   description 对照；不得为跑分引入全量常驻错误文本表或改变首次失败合同。
+- Win32 分类也是固定 switch 的 O(1)，只有错误路径调用 `FormatMessage` 并做一次最终 Status
+  分配；它的价值由 platform 消除重复 translator 与跨模块分类一致性证明，不造高错误率跑分。
 
 ### 真实产品路径
 

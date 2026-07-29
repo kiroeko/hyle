@@ -45,10 +45,14 @@ prefetcher。`write` 仍要求调用方使用正确的原子/锁，`non_temporal
 ## C kernel 的编译器合同
 
 只写数据 kernel、不需要 version/list 时可单独 include `hyle/c/compiler.h`；`hyle/c/core.h`
-也会包含它。五个宏都是 header-only source surface，不增加 DLL 符号或运行时状态：
+也会包含它。全部宏都是 header-only source surface，不增加 DLL 符号或运行时状态：
 
 | 名称 | 什么时候用 | 合同 |
 |---|---|---|
+| `HYLE_C_FORCE_INLINE` / `HYLE_C_NOINLINE` | 已测热叶函数 / 必须保持冷路或 frame 的函数定义 | 强/禁内联 hint；强内联仍受编译器合法性约束 |
+| `HYLE_C_LIKELY(expr)` / `HYLE_C_UNLIKELY(expr)` | profile 证明概率明显偏斜的分支 | 表达式求值一次；未知编译器退为普通 bool |
+| `HYLE_C_UNREACHABLE()` | 已由不变量证明绝不抵达的控制流末端 | 真正抵达是 undefined behavior，不做输入验证 |
+| `HYLE_C_FATAL_ASSERT(expr)` | 违反后进程不能安全继续的程序不变量 | Debug/Release 都诊断并 abort；业务失败改返回 error |
 | `HYLE_C_RESTRICT` | 放在已证明互不别名的 pointer declaration 上 | 承诺错误是 undefined behavior；未知编译器安全退为空 |
 | `HYLE_C_ASSUME(expr)` | 告诉优化器某个内部不变量恒真 | 表达式必须无副作用；Debug 为 false 时诊断并 abort，Release 为 false 是 undefined behavior |
 | `HYLE_C_FLATTEN` | 经过 profile 的深 wrapper/kernel 函数定义前 | GCC/Clang 尽量递归内联；可能扩大代码、伤害 I-cache；MSVC/未知编译器可忽略 |
@@ -132,7 +136,7 @@ while ((hook = hyle_intrusive_list_pop_front(&queue)) != NULL) {
 }
 ```
 
-`HYLE_C_*` 与 C++ 的 `HYLE_ASSUME/RESTRICT/FLATTEN/UNROLL` 共用同一份 compiler backend，但保持语言
+`HYLE_C_*` 与对应的 C++ compiler macros 共用同一份 compiler backend，但保持语言
 命名和 Debug 诊断独立；修工具链映射时不会出现 C/C++ 两套判断漂移。它们是给源码消费者的
 产品面，不是可由 `dlopen`/FFI 调用的运行时 ABI。
 
@@ -143,3 +147,7 @@ prefetch、版本分解与 intrusive list 都是编译期/header-inline 能力�
 `tests/core/c_surface_symbols.txt` 锁动态导出；`c_core_test.c` 以 C 编译器覆盖 compiler macro
 有效路径、版本、cache/prefetch、NULL/非法输入、空队列及完整链表生命周期；Debug death-test
 覆盖 C assume 违约，header self-contained gate 从空翻译单元编译 C 头。
+
+安装后最小工程见 `samples/package/core/c` 与 `samples/package/core/cpp`。它们只请求
+`find_package(Hyle COMPONENTS core)` 并链接 `hyle::core`，由 Windows/Linux/macOS 的
+shared/static package smoke 分别配置、构建和运行，避免示例暗中依赖源码树 include 或其它组件。

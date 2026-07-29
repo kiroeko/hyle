@@ -104,10 +104,10 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 
 | 固定统计口径 | code | 说明 |
 |---|---:|---|
-| **全库代码** | **277,692** | tracked；含 docs 与 in-tree third_party |
-| **自实现（含测试）** | **135,321** | `include/hyle + src + tests`；只计 C/C++/CUDA，不含 CMake/Text |
-| **自实现（不含测试）** | **92,891** | `include/hyle + src`；只计 C/C++/CUDA，库本体硬锚 |
-| **当前处理模块实现（obs）** | **1,250** | `include/hyle/obs + include/hyle/c/obs.h + src/obs`；不含测试/benchmark/文档 |
+| **全库代码** | **278,051** | tracked working snapshot；含 docs 与 in-tree third_party |
+| **自实现（含测试）** | **135,523** | `include/hyle + src + tests`；只计 C/C++/CUDA，不含 CMake/Text |
+| **自实现（不含测试）** | **93,027** | `include/hyle + src`；只计 C/C++/CUDA，库本体硬锚 |
+| **当前处理模块实现（core / error）** | **653 / 1,563** | 各自公共 C/C++ 头 + `src/<module>`；core 含根级 macros/visibility |
 | 再加 ggml 等大依赖足迹 | **~200–350k+** | 由 ggml 主导，不计入「自有生产」 |
 
 **生产按模块（src+include，约）：**
@@ -122,7 +122,7 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 | platform | **7,564**（含公共 C 头） | ~8% |
 | mem | **5,409**（含公共 C 头） | ~6% |
 | graph | ~0.6k | |
-| error | **1,434**（含公共 C 头） | ~2% |
+| error | **1,563**（含公共 C 头） | ~2% |
 | util | ~1.3k | ~2% |
 | obs | **1,250**（含公共 C 头） | ~1% |
 | time | **1,421**（含公共 C 头） | ~2% |

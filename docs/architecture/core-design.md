@@ -64,8 +64,9 @@ owning container 留 container，error/clock/logging 留各自模块。
 `version_string()` 返回字面量静态存储，不分配、不使用 guard variable。
 
 三种 prefetch 对齐 Abseil 的 local/NTA/for-write 形状，在 GCC/Clang、MSVC x86 与 MSVC ARM64
-分别映射 builtin/intrinsic；不支持时安全退化。C++ 的 `HYLE_ASSUME/RESTRICT/FLATTEN/UNROLL` 与 C 的
-`HYLE_C_ASSUME/RESTRICT/FLATTEN/UNROLL` 共用 `compiler_defs.h` 的工具链判断，只表达编译器合同，不
+分别映射 builtin/intrinsic；不支持时安全退化。C++ 与 C 的 force-inline、noinline、branch
+hint、unreachable、assume、restrict、flatten、unroll 共用 `compiler_defs.h` 的工具链判断；
+两种语言另各提供 release-surviving fatal assert。它们只表达编译器/程序合同，不
 增加运行时状态。C++ 形状由 SIMD/vqsort 的 ported kernel 真实消费；纯 C 形状让外部 C kernel
 取得同档 source contract，而不复制 compiler branches。assume/restrict 的错误承诺是调用方
 bug；unroll 与 prefetch 都是可忽略的性能 hint。
@@ -116,7 +117,7 @@ inline 原语，导出函数反而会增加调用成本且不能改善 ABI 表�
 |---|---|---|---|
 | compile/runtime version | constexpr + 两个 runtime 函数 | 同一 defs + 两个 C 符号 | plugin/loader 需要动态 identity |
 | cache layout/prefetch | typed constexpr + inline 函数 | macro + inline 函数 | 布局跨语言一致，热路无 DLL hop |
-| compiler contract | `HYLE_ASSUME/RESTRICT/FLATTEN/UNROLL` | `HYLE_C_ASSUME/RESTRICT/FLATTEN/UNROLL` | 源码级 promise/hint；共用 backend，不存在有意义的动态调用 ABI |
+| compiler contract | inline/noinline/branch/unreachable/assume/restrict/flatten/unroll + fatal | 同名 `HYLE_C_*` 集合 | 源码级 promise/hint；共用 backend，不存在有意义的动态调用 ABI |
 | intrusive list | typed member hook + RAII/callback 便利 | 可见 hook/sentinel + inline 指针原语 | C 显式 lifetime；batch/遍历可同复杂度组合 |
 
 因此“C 能力完整”指版本、cache intent、compiler contract、stable-node queue 等自然 C 用户
@@ -133,7 +134,8 @@ inline 原语，导出函数反而会增加调用成本且不能改善 ABI 表�
   header-inline；显式 init/unlink/clear 对应 C 生命周期，batch/遍历可由基础原语保持同一复杂度组合。
 
 上述默认/高级/组合路径分别由 core C++ tests、SIMD/vqsort 消费编译和 pure-C smoke 机械覆盖；
-guide 给出入口选择与可复制 recipe。新增 source/compiler 便利必须先有真实扩展消费者，不能让
+shared/static 安装后还由 `samples/package/core/{c,cpp}` 只请求 `core` 组件独立复证。guide
+给出入口选择与可复制 recipe。新增 source/compiler 便利必须先有真实扩展消费者，不能让
 core 重新长成杂项 umbrella。
 
 ## 明确负空间

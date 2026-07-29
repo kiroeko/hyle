@@ -64,7 +64,7 @@ Windows 主工作树同步。配置 core benchmark 仍触发全项目可选后�
 - 三种 prefetch 与 cache spacing 的价值只能在真实消费者（SwissTable、vqsort、并发队列、
   SharedPool、scheduler）中测；单独测一条 hint 或 `alignas` 没有产品含义，结果归各消费者
   性能页。header 必须机械确认映射为目标 intrinsic 且没有 DLL hop。
-- C++ 的 `HYLE_ASSUME/RESTRICT/FLATTEN/UNROLL` 与 C 的 `HYLE_C_*` 不拥有算法复杂度或独立 workload；
+- C++ 与 C 的 inline/noinline、branch、unreachable、assume/restrict/flatten/unroll 不拥有算法复杂度或独立 workload；
   它们用于保留成熟 kernel 的 alias/control-flow/loop 合同。性能归采用它们的 SIMD/vqsort 或
   外部 C kernel，core 只负责跨编译器零状态、零调用抽象。
 - C intrusive list 与 C++ 使用相同 circular-sentinel 指针算法；不为同一机器码制造第二张表。

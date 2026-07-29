@@ -166,3 +166,36 @@ OOM 无分配进展及纯 C 64 层路径。Windows/WSL/Apple M4 的 C++ 59/59 �
 （`HYLE_TEST_INSTRUMENTATION=OFF`）n=15 中，一层与旧证书持平，三层从
 120.361/56.547/62.786 ns 降到 78.994/43.255/42.714 ns；对同信息 Abseil 仍为三平台 WIN。
 数字只由 performance 文档承接，本节只记录任务与验收结论。
+
+## 2026-07-29 严格回审增量：Win32 OS adapter 归一
+
+语义重复扫描发现 `NativeErrorDomain::Win32` 虽已公开，platform 的 fs、DynLib、Thread、NUMA、
+MappedFile 与 VirtualMemory 仍各自复制 `FormatMessage + canonical switch + FromNative`。这不是
+SDK-specific translator，而是与 errno 同层的通用 OS 边界；六套近似表已对未知值使用
+`Internal/Unavailable` 等不同分类，旧 architecture 把它留给叶模块的裁决因此重开。
+
+- [x] C++ 新增跨 host 的 O(1) `status_code_from_win32(uint32_t)` 与
+  `status_from_win32(code, context)`；Windows 错误路径用 `FormatMessage`，非 Windows 工具保留
+  数字描述，成功路径仍零分配；
+- [x] common code 覆盖文件/路径、权限、资源、timeout/cancel、precondition、range、unsupported、
+  conflict、auth 和 availability；未知值诚实为 `Unknown`，原始 Win32 detail 始终保留；
+- [x] C ABI 补 `hyle_status_code_from_win32`、`hyle_status_from_win32[_n]`，surface 从历史 24
+  增至 27 个导出；length-aware context、OOM 保级和跨 host 分类有机械测试；
+- [x] shared/static 安装后 error C/C++ probe 都直接消费新入口；Windows error C++/C/surface/
+  header 4/4，core+error 安装 probe 两种 linkage 8/8。
+
+CUDA/Vulkan 仍依赖 SDK 类型和 SDK-specific recovery，继续归 compute 叶模块；Win32 公共头不
+include `windows.h`。platform 的六套旧 translator 将随紧接的 platform 回审迁移到公共入口，
+以真实消费者证明该能力并删除重复表，而不是制造高错误率 benchmark。
+
+本轮最终四项 LOC：全库 278,051；自实现含测试 135,523；自实现不含测试 93,027；error
+实现 1,563。实现固定为 `f31e8d0`：Windows MSVC 19.50、WSL GCC 14.2、AppleClang 21 的
+Release core/error 定向门各 8/8；WSL ASan/UBSan/TSan 各 8/8。三平台 shared/static 的
+core/error C/C++ installed probes 每平台 8/8，证明 27-symbol ABI、header-inline 便利与组件
+target 在安装态一致。
+
+Windows 对既有两种信息合同复跑 n=15：无诊断对 Abseil 为 1 项 TIE、4 项 WIN；带诊断
+10 项全部 WIN。新 Win32 入口不为跑分制造高错误率 workload；固定 switch 的 O(1) 分类、错误
+路径单次 Status 分配，以及下一轮 platform 删除六套重复 translator 是它的算法/消费证据。
+error 自身产品面和性能门至此重新转绿；`error -> platform` 的 adoption edge 保持黄色并明确
+交给紧接的 platform 回审，完成迁移前不把“全库已统一使用”写成已完成事实。

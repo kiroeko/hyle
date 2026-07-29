@@ -101,6 +101,34 @@ core 口径为 `include/hyle/core + include/hyle/c/core.h + include/hyle/c/compi
 include/hyle/macros.h + include/hyle/visibility.h + src/core`，不含测试；根级 macros/visibility
 与独立 C compiler 头都是 core 的逻辑产品面，不能因为不在 `core/` 目录而漏计。
 
+## 2026-07-29 严格回审增量：纯 C compiler parity 与安装态消费
+
+按 `module-closure-methodology` 重新从真实 C kernel 用户反查，发现旧结论把“C 有
+assume/restrict/flatten/unroll”误写成“C 对全部语言无关能力都有路径”。C++ 已有的强/禁内联、
+branch hint、unreachable 与 release-surviving fatal assert 同样是纯 C 内核/扩展的自然源码
+能力，而不是动态 ABI；缺失会迫使用户复制工具链分支。
+
+- [x] `compiler_defs.h` 成为 C/C++ force-inline、noinline、likely/unlikely、unreachable 以及既有
+  assume/restrict/flatten/unroll 的单一 backend；两种公开面只保留语言命名与诊断差异；
+- [x] C 新增 `HYLE_C_FORCE_INLINE/NOINLINE/LIKELY/UNLIKELY/UNREACHABLE/FATAL_ASSERT`；未知
+  compiler 安全退化，UB 与 fail-fast 边界写入 C guide；
+- [x] MSVC Release core C++/C/surface/header 4/4；新宏由纯 C TU 与 C++ death test 覆盖；
+- [x] 新增安装后 `samples/package/core/{c,cpp}`，shared/static 各自只请求并链接 `hyle::core`，
+  两种语言 4/4；此前只有源码树测试、没有真实 installed component consumer 的证据缺口关闭。
+
+本增量没有添加 runtime 状态、导出符号或 benchmark-only 类型。宏自身没有可独立测量的算法
+workload，性能仍由真实 SIMD/kernel 消费者承担；本轮只要求三平台 codegen/编译合同不产生
+helper/DLL hop。Windows MSVC 19.50、WSL GCC 14.2、AppleClang 21 的 Release core/error
+定向门均为 8/8；GCC/M4 的 force-inline helper 不产生符号，MSVC 仅保留 TU-local static
+section，三者 noinline 入口均无 DLL/helper 引用。WSL ASan/UBSan/TSan 又各 8/8。
+
+Windows、Linux、M4 的 shared/static 安装包都由独立 core C/C++ consumer 复证（每平台 4/4）；
+实现固定为 `f31e8d0`。因此 core 自身的功能面、复杂度、C/C++ source API、安装组件和文档在
+本轮重新转绿；后续 platform/time 等下游审查只在发现新的语义复制或依赖变化时重开受影响边。
+
+本轮最终四项 LOC：全库 278,051；自实现含测试 135,523；自实现不含测试 93,027；core
+实现 653。全库数包含两个安装 probe 与本轮最终文档。
+
 2026-07-29 Apple 门通过后的最终工作树快照如下；它同时包含工作树中此前未提交的其他模块/
 构建系统改动，因此前三项不是“本轮 core 净增”。提交只改变 tracked 状态，不改变这些代码量。
 
