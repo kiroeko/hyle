@@ -3,6 +3,7 @@
 /build-*/
 /out/
 /cmake-build-*/
+/.scratch/
 *.o
 *.obj
 *.a
