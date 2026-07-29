@@ -241,6 +241,7 @@ typedef struct hyle_status { uintptr_t rep; } hyle_status;
 - 借用 NUL 结尾消息，生命周期绑定 owning handle；
 - length-aware 创建/context，允许嵌入 NUL 且避免无意义 `strlen`；
 - 原地增加上下文；
+- 消费式首错聚合；
 - errno 到 canonical code/Status 的直接适配；
 - native domain/code 的创建与查询；
 - 返回 `hyle_status` 的函数使用 `HYLE_C_RETURN_IF_ERROR` 传播。

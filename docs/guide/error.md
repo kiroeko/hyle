@@ -11,7 +11,7 @@ error 是 HYLE 的统一失败值层。它帮助调用方把可恢复失败跨�
 |---|---|---|---|
 | 操作只有成功/失败，调用者需要原因 | `Status` | 返回 `hyle_status` | `bool + last_error` |
 | 成功还要交付值或拥有型资源 | `Result<T>` | 返回 `hyle_status`，首位 out 参数交付值 | 失败指针 + TLS errno |
-| 批量独立步骤，只保留第一个失败 | `Status::Update` | 显式保留第一个非 OK Status | 覆盖最初原因 |
+| 批量独立步骤，只保留第一个失败 | `Status::Update` | `hyle_status_update` / `HYLE_C_UPDATE_STATUS` | 覆盖最初原因 |
 | 明确接受 cleanup 失败 | `IgnoreError` | `hyle_status_free` 前显式注释/处理 | 无意图地丢弃返回值 |
 | allocator、pool pop、poll 的“暂时无值”本来就是正常热路结果 | 指针、`optional` 或小 enum | 指针/标量值合同 | 每次构造 owning Status |
 | 参数、文件、权限、OOM、超时、设备暂不可用等运营失败 | canonical `Status` code | 同一 `hyle_status_code` | abort 或异常跨 ABI |
@@ -177,3 +177,7 @@ C++ 的 `Result<T>` 在 C/FFI 中映射为“返回 `hyle_status` + 首位 out �
 native detail 映射为固定 domain/code；不能用普通结构体赋值伪造复制。完整的
 clone/move/free、length-aware 文本、借用消息、buffer-fill 和传播宏见
 [`c-error.md`](./c-error.md)。
+
+C handle 的 `rep` 虽然为按值 ABI 而公开在结构体中，但它是 owning token，不是可复制整数：
+初始化后才能作为 destination，复制必须 `clone`，转移必须 `move`，首错聚合优先使用
+`HYLE_C_UPDATE_STATUS`。裸结构体赋值是最危险的 C/FFI 陷阱，会让两个变量释放同一 backing。

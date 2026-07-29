@@ -158,6 +158,16 @@ void hyle_status_move(hyle_status *dst, hyle_status *src) {
   src->rep = 0;
 }
 
+void hyle_status_update(hyle_status *overall, hyle_status *next) {
+  if (overall == nullptr || next == nullptr || overall == next) return;
+  if (overall->rep == 0) {
+    overall->rep = next->rep;
+    next->rep = 0;
+  } else {
+    hyle_status_free(next);
+  }
+}
+
 void hyle_status_add_context(hyle_status *status, const char *context) {
   hyle_status_add_context_n(
       status, context, context == nullptr ? 0 : std::strlen(context));

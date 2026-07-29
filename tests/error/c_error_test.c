@@ -261,6 +261,31 @@ int main(void) {
   hyle_status_free(&b);
   hyle_status_free(&c);
 
+  /* first-error aggregation consumes each candidate and preserves the first */
+  {
+    hyle_status overall = HYLE_STATUS_INIT;
+    hyle_status first = hyle_status_not_found("first");
+    hyle_status_update(&overall, &first);
+    CHECK(hyle_status_is_not_found(overall));
+    CHECK(hyle_status_is_ok(first));
+
+    hyle_status second = hyle_status_internal("second");
+    hyle_status_update(&overall, &second);
+    CHECK(hyle_status_is_not_found(overall));
+    CHECK(strcmp(hyle_status_message_cstr(overall), "first") == 0);
+    CHECK(hyle_status_is_ok(second));
+
+    HYLE_C_UPDATE_STATUS(overall, hyle_status_unavailable("third"));
+    CHECK(hyle_status_is_not_found(overall));
+    CHECK(strcmp(hyle_status_message_cstr(overall), "first") == 0);
+
+    hyle_status_update(&overall, &overall); /* safe self no-op */
+    CHECK(hyle_status_is_not_found(overall));
+    hyle_status_update(NULL, &second);       /* safe NULL no-ops */
+    hyle_status_update(&overall, NULL);
+    hyle_status_free(&overall);
+  }
+
   /* HYLE_C_RETURN_IF_ERROR */
   {
     hyle_status prop = helper_propagate();

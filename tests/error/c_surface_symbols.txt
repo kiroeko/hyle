@@ -21,3 +21,4 @@ hyle_status_new_native
 hyle_status_new_native_n
 hyle_status_ok
 hyle_status_to_string
+hyle_status_update

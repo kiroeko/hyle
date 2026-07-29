@@ -25,6 +25,7 @@ typedef uint16_t hyle_native_error_domain;
 | 初始化/创建 | `HYLE_STATUS_INIT`、`hyle_status_ok`、`hyle_status_new[_n]`、header-inline 每码工厂 |
 | 拷贝 | `hyle_status_clone`，禁止用 `dst = src` 伪拷贝 owning handle |
 | 转移 | `hyle_status_move(&dst, &src)`；dst 必须已初始化，先释放 dst，再把 src 置 OK |
+| 首错聚合 | `hyle_status_update(&overall, &next)`；消费 next 并置 OK |
 | 释放 | `hyle_status_free(&s)`，NULL 安全、幂等、释放后为 OK |
 | 增加上下文 | `hyle_status_add_context(&s, context)`，原地替换 owning handle |
 
@@ -54,6 +55,7 @@ CUDA runtime、CUDA driver、NVRTC 和 Unknown。它不改变 one-word handle；
 | `hyle_status_free` | `(status*)` | 释放并置 OK；NULL 安全 |
 | `hyle_status_clone` | `(status) -> status` | 新的独立 owning handle |
 | `hyle_status_move` | `(dst*, src*)` | 转移所有权 |
+| `hyle_status_update` | `(overall*, next*)` | 保留首个错误；消费 next 并置 OK；NULL/self no-op |
 | `hyle_status_add_context` | `(status*, context)` | 前置 `context: `；OK/NULL/空串 no-op；OOM 保留原状态 |
 | `hyle_status_add_context_n` | `(status*, context, len)` | length-aware 原地 context |
 | `hyle_status_is_ok` | `(status) -> int` | 1/0 |
@@ -83,6 +85,7 @@ hyle_status oom = hyle_status_resource_exhausted(NULL);
 
 ```c
 #define HYLE_C_RETURN_IF_ERROR(expr) /* 非 OK 则按值返回 owning handle */
+#define HYLE_C_UPDATE_STATUS(overall, expr) /* 表达式求值一次，消费并聚合 */
 ```
 
 表达式只求值一次。OK 是零 representation，宏在头内直接检查 `rep != 0`，不会为热成功
@@ -166,7 +169,24 @@ hyle_status run(void) {
 `HYLE_C_RETURN_IF_ERROR` 对非 OK Status 做所有权转移；调用者最终负责 free。成功 Status 是零值，
 宏直接继续。已有资源需要 cleanup 时使用普通分支，在 return 前先释放资源，不要用宏跳过清理。
 
-### 4.3 clone、move 与借用消息
+### 4.3 首错聚合
+
+批量执行彼此独立的步骤、需要保留第一个失败时，不要让后续错误覆盖最初原因：
+
+```c
+hyle_status overall = HYLE_STATUS_INIT;
+HYLE_C_UPDATE_STATUS(overall, validate_input());
+HYLE_C_UPDATE_STATUS(overall, flush_device());
+HYLE_C_UPDATE_STATUS(overall, close_output());
+return overall; /* ownership 交给 caller */
+```
+
+宏会把表达式求值一次并管理临时 handle。需要保存候选变量时使用
+`hyle_status_update(&overall, &next)`；正常调用后 `next` 一定变为 OK，因此不要再把它当错误
+读取，也不需要为其 heap backing 再 free。NULL/self 调用是 no-op；普通代码不要依赖这个
+防御行为掩盖未初始化变量。
+
+### 4.4 clone、move 与借用消息
 
 - 两个变量都要独立拥有同一错误：`hyle_status_clone`。
 - 只把所有权交给另一个变量：先用 `HYLE_STATUS_INIT` 初始化 dst，再调用
@@ -175,6 +195,8 @@ hyle_status run(void) {
 - `*_n` 可保存嵌入 NUL 的文本；此时 `message_cstr` 只能看到第一个 NUL，完整字节必须用
   `hyle_status_message` 的返回长度与 buffer-fill。
 - 直接 `dst = src` 只是复制 tagged word，会造成 heap Status double free；禁止。
+- `hyle_status_update` 消费 `next`；不要在调用前用裸赋值另留一个同 rep 的“备份”。需要保留
+  候选错误时先 `clone`。
 - 每个 owning handle 最终恰好 free 一次；`hyle_status_free` 会把它重置为 OK，因此对同一
   已正确初始化的变量重复 free 是安全的。
 
@@ -195,6 +217,7 @@ hyle_status_free(&dst);
 | `Result<T>` | `hyle_status` 返回值 + 成功出参 |
 | `HYLE_RETURN_IF_ERROR` / `HYLE_ASSIGN_OR_RETURN` | `HYLE_C_RETURN_IF_ERROR` 或普通分支 |
 | `Status::WithContext` | `hyle_status_add_context` |
+| `Status::Update` | `hyle_status_update` / `HYLE_C_UPDATE_STATUS` |
 | `Status::FromNative` / `native_error()` | `hyle_status_new_native[_n]` / `hyle_status_get_native_error` |
 | C++/C representation 转移 | 仅由 HYLE 源码内部 bridge 完成；公开 C++ API 不暴露 raw rep |
 | 日志、sink | 独立的 `hyle/c/obs.h` 产品面 |
@@ -207,5 +230,5 @@ ctest --test-dir <build> -R hyle_error_c_test --output-on-failure
 ```
 
 纯 C 测试覆盖创建、查询、clone/move/free、非法 enum、errno/native detail、嵌入 NUL、借用
-消息、上下文和早返回；机械 surface test 同时锁定 23 个 DLL 导出，独立头测试确保
+消息、上下文、首错聚合和早返回；机械 surface test 同时锁定 24 个 DLL 导出，独立头测试确保
 `hyle/c/error.h` 单独以 C 编译。

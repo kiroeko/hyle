@@ -97,6 +97,12 @@ HYLE_ERROR_C_API hyle_status hyle_status_clone(hyle_status s);
 /* dst must already hold an initialized Status. Its old value is freed before
  * src is moved into it; src becomes OK. NULL src means "free dst". */
 HYLE_ERROR_C_API void hyle_status_move(hyle_status *dst, hyle_status *src);
+/* Keep the first non-OK status. Both handles must be initialized. A normal
+ * call always consumes `next` and resets it to OK: when `overall` is OK its
+ * ownership moves there; otherwise `next` is freed. NULL or identical pointers
+ * are safe no-ops. */
+HYLE_ERROR_C_API void hyle_status_update(hyle_status *overall,
+                                         hyle_status *next);
 /* Prefix context in place. NULL/OK/empty are no-ops; allocation failure keeps
  * the original code and message unchanged. */
 HYLE_ERROR_C_API void hyle_status_add_context(hyle_status *s,
@@ -235,6 +241,14 @@ static inline int hyle_status_is_unauthenticated(hyle_status s) {
   do {                                         \
     hyle_status _hyle_st_ = (st);              \
     if (_hyle_st_.rep != 0) return _hyle_st_; \
+  } while (0)
+
+/* Evaluate an owning Status expression once and merge it into an initialized
+ * aggregate lvalue. The temporary is consumed by hyle_status_update. */
+#define HYLE_C_UPDATE_STATUS(overall, expr)                   \
+  do {                                                        \
+    hyle_status _hyle_next_status_ = (expr);                  \
+    hyle_status_update(&(overall), &_hyle_next_status_);      \
   } while (0)
 
 #ifdef __cplusplus

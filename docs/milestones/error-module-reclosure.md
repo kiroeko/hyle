@@ -116,7 +116,8 @@ HYLE 的真实 OS/CUDA/Vulkan 消费者只需要一组稳定 domain 和一个 `i
 - C++ 增加 `Status::FromNative` / `native_error()`；errno、Win32、Vulkan、CUDA runtime、
   CUDA driver 与 NVRTC translator 保留同一个 machine-readable 原生值。
 - C ABI 增加 native create/query 及全部 length-aware `*_n` 入口，支持嵌入 NUL 且避免必须
-  `strlen`；当前 error C surface 为 23 个导出，纯 C 独立头和机械 symbol test 锁定。
+  `strlen`；首错聚合补齐消费式 `hyle_status_update` 与表达式宏，当前 error C surface 为
+  24 个导出，纯 C 独立头和机械 symbol test 锁定。
 - `Result<T>` 继续是 `std::expected<T, Status>`，保留标准 monadic/API 生态；受控构造和传播
   会 fail-fast 拒绝 `Status::Ok()` 进入 error arm。宏对命名 lvalue 复制、对临时值移动。
 - 非法 Result 的诊断被移入冷 `noinline` helper，正常传播不为 abort 文本扩大每个栈帧；
@@ -146,6 +147,6 @@ Windows error C++/纯 C/surface/header 4/4 通过；WSL 与 M4 定向 error test
 确认用户直接用标准 `std::unexpected(Status::Ok())` 绕过工厂后，传播入口仍 fail-fast。
 architecture、C++/语言无关 guide、C guide、performance 与本任务记录已按各自职责更新。
 
-error 自身的功能面、复杂度、C++ API、23-symbol C ABI、消费者用法和三平台性能证书至此
+error 自身的功能面、复杂度、C++ API、24-symbol C ABI、消费者用法和三平台性能证书至此
 再次收口。未来仍只按 architecture 记录的真实消费者触发器重开，不因参考库 API 数量或
 某个微基准可赢而扩大产品面。

@@ -118,7 +118,7 @@ math 的处理相反：它当前不是经过独立需求设计的产品，而是
 
 | 模块 | 实现状态 | 当前严格证书 |
 |---|---|---|
-| error | 功能/API/native detail/23-symbol C ABI 完成 | ✅ 2026-07-29 消费者合同再收口；Win/WSL/M4 n=15 同能力 Abseil 无 LOSE，较弱 std 下界单列；全库 adoption 随各消费者复审继续 |
+| error | 功能/API/native detail/24-symbol C ABI 完成 | ✅ 2026-07-29 消费者合同再收口；C 首错聚合直接可达；Win/WSL/M4 n=15 同能力 Abseil 无 LOSE，较弱 std 下界单列；全库 adoption 随各消费者复审继续 |
 | platform | 功能主体完成 | ✅ 消费边已复关；FileInfo 的 signed ns-precision Unix timestamp 已通过 Win/WSL/M4 与 WSL ASan/UBSan，NUMA 主体和既有性能证书未受影响 |
 | mem | 功能/API/P0/分发性能已完成 | ✅ 彻底收口；clean `c640072` 保留 allocator 三平台 shared same-link n=15 与 WSL TSan；当前 109/109 C surface，HugeRegion selected-node/chunk/weighted C++/C 已补齐，Linux 极细条带使用固定批次 placement |
 | time | 功能主体完成 | ✅ 严格收口；signed Unix/OS/chrono 互操作、42/42 C surface 与 platform/io 消费边已通过 Win/WSL/M4、WSL ASan/UBSan；timer SOTA 证书继续有效 |
