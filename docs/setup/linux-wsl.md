@@ -2,6 +2,7 @@
 
 > **lock-free 代码的 TSan 唯一闸门在这**（Windows 跑不了 TSan）。本仓库开发用 WSL Ubuntu 24.04。
 > 覆盖：构建 / 测试 / 性能测试 + TSan + 9p 铁律 + 依赖（OpenSSL、CUDA）。
+> 无网机器的 repository mirror、依赖介质与断网验收见 [`offline.md`](./offline.md)。
 
 ## 一、硬门槛
 

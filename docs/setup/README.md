@@ -18,15 +18,16 @@
 
 | 主题 | 文件 |
 |---|---|
-| 外部依赖（OpenSSL / CUDA / cuDNN / TensorRT / ggml / googletest）怎么装、哪些必需哪些可选 | [`dependencies.md`](./dependencies.md) |
+| 外部依赖（OpenSSL / CUDA / ggml / nghttp2 / Vulkan / googletest）怎么装、哪些必需哪些可选 | [`dependencies.md`](./dependencies.md) |
+| 无网/隔离网机器怎样准备工具链、SDK 与完整依赖源码包 | [`offline.md`](./offline.md) |
 
 ## 最小心智模型（读任何平台文件前先懂这个）
 
 HYLE 的依赖分三类，决定了「新机器 `cmake` 会不会失败」：
 
 1. **硬门槛（必需，缺了 CMake 直接 FATAL_ERROR）**：C++ 编译器（GCC14+ / Clang18+ / MSVC19.43+）、CMake 3.25+、一个 CMake generator，以及所选组件需要的汇编器（MASM/GAS）。Ninja 只是可选 generator；Visual Studio/Unix Makefiles/Xcode 也可用。这些**不自动装**，人得先装好——见各平台文件第一节。
-2. **自动拉取（联网自动，无需人工）**：`ggml`、`googletest` 走 **FetchContent**——新机器首次 `cmake` 会自动联网 clone 到当前 build tree 的 `_deps/`（[`dependencies.md` §FetchContent](./dependencies.md)）。离线时显式注入已审查源码目录。
-3. **可选能力（三态契约）**：OpenSSL（TLS）、CUDA（GPU 后端）取值都是 `AUTO|ON|OFF`。AUTO 可降级，ON 缺依赖即失败，OFF 不探测；正式 CI/交付必须写 ON/OFF。cuDNN/TensorRT 更靠后（当前里程碑不依赖）。
+2. **自动拉取（联网自动，无需人工）**：`googletest`、`nghttp2`、`ggml`、Vulkan-Headers、volk、glslang 按所选组件/feature 走 **FetchContent**——新机器首次 `cmake` 会自动取得并放到当前 build tree 的 `_deps/`（[`dependencies.md` §FetchContent](./dependencies.md)）。离线时用根目录的 `hyle-offline-deps.cmake` 注入已审查源码目录。
+3. **可选能力（显式契约）**：TLS、CUDA 取值为 `AUTO|ON|OFF`；HTTP/2、ggml、Vulkan 为 `ON|OFF`。AUTO 可降级，ON 缺依赖即失败，OFF 不探测/取得依赖；正式 CI/交付必须写死能力集合。cuDNN/TensorRT 更靠后（当前里程碑不依赖）。
 
 > **一句话**：硬门槛靠人装，FetchContent 依赖联网下载或显式注入源码，GPU/TLS 则由 AUTO/ON/OFF 明确选择。
 
@@ -34,9 +35,9 @@ HYLE 的依赖分三类，决定了「新机器 `cmake` 会不会失败」：
 
 **部分能，部分不能，现状是「不自动、靠文档」：**
 
-- **第 2 类（ggml/gtest）已经自动**：FetchContent 就是自动化，联网即备齐，无需人工。
+- **第 2 类（源码依赖）已经自动**：FetchContent 联网时按需备齐；隔离网交付则由发行方准备可审计的 `deps/<FetchContent-name>/` 源码闭包。
 - **第 1 类（编译器/CMake/generator）不自动安装**：装系统级工具链需要 admin/包管理器权限，跨发行版差异大（apt/brew/VS installer/vcpkg 各不同），项目不能安全接管。Windows 的 `scripts/hyle-windows.ps1` 只用 `vswhere` 选择已安装工具链并导入环境，不安装或修改 Visual Studio。
-- **第 3 类（CUDA/OpenSSL）不自动**：CUDA Toolkit 几 GB、要配驱动，OpenSSL 在 Windows 要 vcpkg——都是重量级、机器相关，只在你**要**那个能力时才装。文档给出每个的确切安装步骤（[`dependencies.md`](./dependencies.md)）。
+- **第 3 类中的系统 SDK 不自动**：CUDA Toolkit/driver、OpenSSL 等重量级且机器相关，只在你**要**那个能力时才装；HTTP/2、ggml、Vulkan 的源码部分仍按第 2 类取得。文档给出确切边界（[`dependencies.md`](./dependencies.md)）。
 
 ## 验证一切就绪（各平台通用终点）
 

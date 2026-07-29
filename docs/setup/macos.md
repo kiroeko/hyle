@@ -2,6 +2,7 @@
 
 > ARM/NEON + kqueue 真机验证平台。**无 NVIDIA GPU → CUDA 后端不编，走 CPU/host**（未来 Metal）。
 > 覆盖：构建 / 测试 / 性能测试 + 依赖。本仓库开发机通过 SSH 访问（`ssh kiro@172.22.10.198`）。
+> 无网机器的 Command Line Tools/CMake 介质与断网验收见 [`offline.md`](./offline.md)。
 
 ## 一、硬门槛
 

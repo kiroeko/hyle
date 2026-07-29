@@ -337,8 +337,10 @@ vswhere 发现现有工具链并临时导入环境。VS generator 不保证在�
 `Visual Studio 18 2026` generator 和默认 v145；较旧 CMake 会明确拒绝该 preset，不静默降级。
 它生成 VS 2026 的原生 `hyle.slnx`。
 当已安装的 Visual Studio 比当前 CMake generator 更新时，Ninja 路径仍可使用它的最新编译器。
-CI 对 Windows/Linux/macOS 运行 core 验证面，并在每个平台
-额外以 `HYLE_TEST_INSTRUMENTATION=OFF` 运行 error/platform/time/mem 的 shipping-layout 验证面；
+CI 对 Windows/Linux/macOS 运行全部 14 个模块的确定性 CPU 验证面：TLS、HTTP/2、CUDA、ggml 与
+Vulkan 显式关闭，构建聚合 `hyle_tests` 并运行全部 C++、pure-C、header/surface/ABI 门。它不冒充
+带外部 SDK/设备的发布矩阵；这些 feature 仍需独立 release check。每个平台还
+以 `HYLE_TEST_INSTRUMENTATION=OFF` 运行 error/platform/time/mem 的 shipping-layout 验证面；
 随后从空目录制作 shared/static mem SDK，再由只链接 `hyle::mem` 的 pure-C error+mem consumer 与 C++
 `SystemAllocator` consumer 真运行；shared 形状机械覆盖 `mem -> platform -> error` 的传递
 shared-object lookup，并证明公开 inline 形状不泄漏 mimalloc 符号，static 形状覆盖 mimalloc
@@ -347,7 +349,8 @@ PUBLIC/PRIVATE 可见性扩大、package registry 正向/重复/漏 target，以
 configure contract，
 并从 clean checkout 生成完整 source zip、核对
 SHA-256/commit/legal payload、
-解压后独立构建 `core`。simd、CUDA、compute/io 全矩阵不塞进每提交 smoke，仍属发布检查。
+解压后独立构建 `core`。CUDA、Vulkan、TLS、HTTP/2、ggml 的后端/SDK 组合不塞进每提交 smoke，
+仍属发布检查；simd/container/io/compute 的无外部后端 CPU 面已经进入每提交基线。
 
 `cmake/toolchains/linux-aarch64-gcc.cmake` 是整项目交叉编译的参考入口：compiler/sysroot 属工具链，
 host program 与 target library/header/package 搜索严格分开，`CMAKE_TRY_COMPILE_TARGET_TYPE` 设为

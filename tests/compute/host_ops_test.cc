@@ -240,7 +240,7 @@ TEST(ComputeHostOpsDeath, NullBufferAsserts) {
   Blob blob; blob.push<int>(n); blob.push<float>(a);
   KernelArgs ka{bufs, 2, blob.data, blob.off, blob.fields, blob.nfields};
   LaunchConfig cfg;
-  EXPECT_DEATH(launch(*s, *k, cfg, ka), "");
+  EXPECT_DEATH((void)launch(*s, *k, cfg, ka), "");
 }
 
 TEST(ComputeHostOpsDeath, NegativeNAsserts) {
@@ -255,7 +255,7 @@ TEST(ComputeHostOpsDeath, NegativeNAsserts) {
   Blob blob; blob.push<int>(n); blob.push<float>(a);
   KernelArgs ka{bufs, 2, blob.data, blob.off, blob.fields, blob.nfields};
   LaunchConfig cfg;
-  EXPECT_DEATH(launch(*s, *k, cfg, ka), "");
+  EXPECT_DEATH((void)launch(*s, *k, cfg, ka), "");
 }
 
 TEST(ComputeHostOpsDeath, InsufficientBufferCountAsserts) {
@@ -270,5 +270,5 @@ TEST(ComputeHostOpsDeath, InsufficientBufferCountAsserts) {
   Blob blob; blob.push<int>(n);
   KernelArgs ka{bufs, 2, blob.data, blob.off, blob.fields, blob.nfields};
   LaunchConfig cfg;
-  EXPECT_DEATH(launch(*s, *k, cfg, ka), "");
+  EXPECT_DEATH((void)launch(*s, *k, cfg, ka), "");
 }

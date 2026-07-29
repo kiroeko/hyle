@@ -100,6 +100,10 @@ Shell。普通 PowerShell 直接调用缓存中的 `cl.exe` 缺少 `INCLUDE/LIB`
   3.28/GCC 14 的八项 component contract 均通过；
 - 当前三平台 clean/reconfigure/initial/no-op 点值已替换旧证书；no-op 为 Windows 47--48ms、WSL
   不超过 10ms、M4 60--120ms，没有模块拆分后的常态重编或数量级回归。
+- 每提交三平台 CI 从 core-only 提升为全部 14 模块的 CPU 基线：显式关闭 TLS/HTTP2/CUDA/ggml/
+  Vulkan 后构建 `hyle_tests` 并运行完整 C++、pure-C、header/surface/ABI 门；原 production-layout、
+  shared/static package consumer、complete-source 与 AArch64 交叉证书继续保留。离线环境另有 setup
+  指南，区分宿主工具链、FetchContent 源码闭包和系统 SDK，不再把在线 build cache 当交付物。
 
 ## core 收口期间已经暴露的基线问题
 

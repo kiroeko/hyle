@@ -236,6 +236,8 @@ ggml、volk、Vulkan-Headers、glslang、GoogleTest 等依赖使用同一
 `.deps`，也不要复制
 含特定编译器生成物/stamp 的 `<build>/_deps`。bundle manifest 应固定每项上游、pin、校验与 license。
 OpenSSL/CUDA 等系统 SDK 仍由离线 toolchain 或 package prefix 提供，不属于 FetchContent 源码目录。
+如何从联网准备机制作三平台工具链/依赖介质并在干净断网机器验收，见
+[`setup/offline.md`](../setup/offline.md)。
 
 ## 非 CMake 工程
 

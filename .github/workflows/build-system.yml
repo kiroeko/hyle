@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   platform-and-package-smoke:
-    name: ${{ matrix.label }} core + product-shape + package smoke
+    name: ${{ matrix.label }} CPU modules + product-shape + package smoke
     strategy:
       fail-fast: false
       matrix:
@@ -47,29 +47,51 @@ jobs:
           echo "CC=gcc-14" >> "$GITHUB_ENV"
           echo "CXX=g++-14" >> "$GITHUB_ENV"
 
-      - name: Configure core (Unix)
+      - name: Configure all CPU modules (Unix)
         if: runner.os != 'Windows'
-        run: cmake --preset ${{ matrix.preset }} -DHYLE_COMPONENTS=core -DHYLE_WERROR=ON
+        run: >-
+          cmake --preset ${{ matrix.preset }}
+          -DHYLE_COMPONENTS=all
+          -DHYLE_BUILD_TESTS=ON
+          -DHYLE_BUILD_BENCH=OFF
+          -DHYLE_INSTALL=OFF
+          -DHYLE_WERROR=ON
+          -DHYLE_IO_TLS=OFF
+          -DHYLE_IO_HTTP2=OFF
+          -DHYLE_COMPUTE_CUDA=OFF
+          -DHYLE_COMPUTE_GGML=OFF
+          -DHYLE_COMPUTE_VULKAN=OFF
 
-      - name: Configure core (Windows selected MSVC)
+      - name: Configure all CPU modules (Windows selected MSVC)
         if: runner.os == 'Windows'
-        run: ./scripts/hyle-windows.ps1 -Action Configure -Preset windows-ninja -DHYLE_COMPONENTS=core -DHYLE_WERROR=ON
+        run: >-
+          ./scripts/hyle-windows.ps1 -Action Configure -Preset windows-ninja
+          -DHYLE_COMPONENTS=all
+          -DHYLE_BUILD_TESTS=ON
+          -DHYLE_BUILD_BENCH=OFF
+          -DHYLE_INSTALL=OFF
+          -DHYLE_WERROR=ON
+          -DHYLE_IO_TLS=OFF
+          -DHYLE_IO_HTTP2=OFF
+          -DHYLE_COMPUTE_CUDA=OFF
+          -DHYLE_COMPUTE_GGML=OFF
+          -DHYLE_COMPUTE_VULKAN=OFF
 
-      - name: Build core verification surface (Unix)
+      - name: Build all CPU module tests (Unix)
         if: runner.os != 'Windows'
-        run: cmake --build --preset ${{ matrix.preset }} --target hyle_core_tests --parallel 2
+        run: cmake --build --preset ${{ matrix.preset }} --target hyle_tests --parallel 2
 
-      - name: Build core verification surface (Windows selected MSVC)
+      - name: Build all CPU module tests (Windows selected MSVC)
         if: runner.os == 'Windows'
-        run: ./scripts/hyle-windows.ps1 -Action Build -Preset windows-ninja --target hyle_core_tests --parallel 2
+        run: ./scripts/hyle-windows.ps1 -Action Build -Preset windows-ninja --target hyle_tests --parallel 2
 
-      - name: Run core verification surface (Unix)
+      - name: Run all CPU module tests (Unix)
         if: runner.os != 'Windows'
-        run: ctest --preset ${{ matrix.preset }} -R "^hyle_core_" --output-on-failure
+        run: ctest --preset ${{ matrix.preset }} --output-on-failure
 
-      - name: Run core verification surface (Windows selected MSVC)
+      - name: Run all CPU module tests (Windows selected MSVC)
         if: runner.os == 'Windows'
-        run: ./scripts/hyle-windows.ps1 -Action Test -Preset windows-ninja -R "^hyle_core_" --output-on-failure
+        run: ./scripts/hyle-windows.ps1 -Action Test -Preset windows-ninja --output-on-failure
 
       - name: Verify component and dependency contracts
         if: runner.os == 'Linux'

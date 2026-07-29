@@ -3,6 +3,7 @@
 > 主开发平台之一。当前主机使用 **MSVC 14.50（VS18 Enterprise）**；HYLE 的合同是
 > MSVC 19.43+。CMake 4.2+ 可生成 VS 2026 solution；更旧 CMake 走 VS 2022 generator 回退。
 > 覆盖：构建 / 测试 / 性能测试三件事 + 依赖（OpenSSL、CUDA）。跨平台依赖总览见 [`dependencies.md`](./dependencies.md)。
+> 无网机器的 Build Tools layout、依赖介质与断网验收见 [`offline.md`](./offline.md)。
 
 ## 一、硬门槛（必需，缺了 CMake 直接 FATAL_ERROR）
 

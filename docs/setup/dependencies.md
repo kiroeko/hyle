@@ -79,6 +79,9 @@ toolchain 的 build/stamp 状态，目录布局也不是发布 API。
 feature 会触达的全部 FetchContent 项即可。OpenSSL、CUDA Toolkit 这类 `find_package()` SDK 不在
 FetchContent bundle 内，仍需由离线 toolchain/sysroot/package prefix 提供。
 
+从零准备 Windows/Linux/macOS 工具链、系统 SDK、依赖介质并做真实断网验收，见
+[`offline.md`](./offline.md)。
+
 **ggml 的构建开关（HYLE 强制设定，见 `HyleComputeDependencies.cmake`）**：只构建私有 PIC 静态 CPU +
 可选 CUDA
 闭包；关闭 OpenMP、BLAS/Accelerate、Metal/Vulkan/RPC、tests/examples/server、backend dynamic load、
