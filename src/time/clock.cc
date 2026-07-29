@@ -30,6 +30,19 @@
 #  define HYLE_TIME_HAS_TSC 0
 #endif
 
+// ARM64 exposes a system-wide architected virtual counter to EL0. Folly uses
+// the same CNTVCT_EL0 path for its hardware timestamp; unlike a CPU cycle
+// counter it runs at CNTFRQ_EL0 and is independent of core frequency. GCC and
+// Clang support the required system-register asm on Linux/macOS. MSVC ARM64
+// stays on the portable monotonic fallback until a reviewed intrinsic path is
+// available instead of relying on unsupported inline asm.
+#if defined(HYLE_ARCH_ARM64) && \
+    (defined(HYLE_COMPILER_CLANG) || defined(HYLE_COMPILER_GCC))
+#  define HYLE_TIME_HAS_ARM_COUNTER 1
+#else
+#  define HYLE_TIME_HAS_ARM_COUNTER 0
+#endif
+
 namespace hyle::time {
 
 namespace {
@@ -40,6 +53,29 @@ constexpr std::uint64_t scale_add_saturated(std::uint64_t whole,
   if (whole > (UINT64_MAX - frac) / scale) return UINT64_MAX;
   return whole * scale + frac;
 }
+
+#if HYLE_TIME_HAS_TSC || HYLE_TIME_HAS_ARM_COUNTER
+
+constexpr int kHardwareCounterShift = 32;
+
+// (counter * multiplier) >> 32 in full 128-bit precision. The common Apple
+// ARM64 frequency is exactly 1 GHz and bypasses this helper entirely; the
+// fixed-point path keeps other architected-counter frequencies division-free.
+inline std::uint64_t scale_hardware_counter(std::uint64_t counter,
+                                            std::uint64_t multiplier) noexcept {
+#  if defined(_MSC_VER)
+  std::uint64_t high;
+  const std::uint64_t low = _umul128(counter, multiplier, &high);
+  return (high << (64 - kHardwareCounterShift)) |
+         (low >> kHardwareCounterShift);
+#  else
+  __extension__ using u128 = unsigned __int128;
+  const u128 product = static_cast<u128>(counter) * multiplier;
+  return static_cast<std::uint64_t>(product >> kHardwareCounterShift);
+#  endif
+}
+
+#endif
 
 #if defined(HYLE_TESTING) && HYLE_TIME_HAS_TSC
 bool force_tsc_timing_calibration() noexcept {
@@ -216,10 +252,10 @@ void sleep_until_ns(std::uint64_t deadline_ns) noexcept {
 }
 
 // ---------------------------------------------------------------------------
-// profiling_clock_ns: TSC-backed profiling path (x86-64), Windows + POSIX.
-// Reads rdtsc directly and scales cycles->ns with a precomputed fixed-point
-// multiplier, skipping the OS clock call. Falls back to monotonic_ns() when the
-// hardware lacks an invariant TSC or on non-x86 targets.
+// profiling_clock_ns: direct hardware-counter profiling path. x86-64 uses an
+// invariant TSC; GCC/Clang ARM64 uses the architected virtual counter. Both
+// scale into ns without an OS clock call and fall back to monotonic_ns() when a
+// reviewed hardware path is unavailable.
 //
 // Calibration prefers the EXACT CPUID leaf 0x15 (TSC/crystal ratio + crystal Hz)
 // when the CPU enumerates it -- zero measurement, zero startup wait, exact
@@ -245,6 +281,50 @@ inline std::uint64_t read_tsc() noexcept {
 #endif
 }
 
+inline std::uint64_t read_tsc_measurement_start() noexcept {
+#if defined(_MSC_VER)
+  _ReadWriteBarrier();
+  _mm_lfence();
+  _ReadWriteBarrier();
+  const std::uint64_t value = __rdtsc();
+  _ReadWriteBarrier();
+  _mm_lfence();
+  _ReadWriteBarrier();
+  return value;
+#else
+  std::uint32_t low;
+  std::uint32_t high;
+  __asm__ volatile("lfence\n\trdtsc\n\tlfence"
+                   : "=a"(low), "=d"(high)
+                   :
+                   : "memory");
+  return (static_cast<std::uint64_t>(high) << 32) | low;
+#endif
+}
+
+inline std::uint64_t read_tsc_measurement_stop(bool has_rdtscp) noexcept {
+  if (!has_rdtscp) return read_tsc_measurement_start();
+#if defined(_MSC_VER)
+  _ReadWriteBarrier();
+  unsigned aux;
+  const std::uint64_t value = __rdtscp(&aux);
+  _ReadWriteBarrier();
+  _mm_lfence();
+  _ReadWriteBarrier();
+  return value;
+#else
+  std::uint64_t value;
+  __asm__ volatile("rdtscp\n\t"
+                   "shl $32, %%rdx\n\t"
+                   "or %%rdx, %%rax\n\t"
+                   "lfence"
+                   : "=a"(value)
+                   :
+                   : "rdx", "rcx", "cc", "memory");
+  return value;
+#endif
+}
+
 void cpuid(unsigned leaf, unsigned regs[4]) noexcept {
 #if defined(_MSC_VER)
   int r[4];
@@ -267,6 +347,14 @@ bool hardware_has_invariant_tsc() noexcept {
   if (regs[0] < 0x80000007u) return false;
   cpuid(0x80000007u, regs);
   return (regs[3] & (1u << 8)) != 0;  // EDX bit 8: invariant TSC
+}
+
+bool hardware_has_rdtscp() noexcept {
+  unsigned regs[4] = {0, 0, 0, 0};
+  cpuid(0x80000000u, regs);
+  if (regs[0] < 0x80000001u) return false;
+  cpuid(0x80000001u, regs);
+  return (regs[3] & (1u << 27)) != 0;
 }
 
 // One (OS-ns, tsc) sample taken with minimal gap between the two reads.
@@ -352,10 +440,13 @@ double measure_tsc_hz_once(std::uint64_t sleep_ns) noexcept {
   return elapsed_ticks / elapsed_secs;
 }
 
-// Grow the window (1ms, 2ms, ...) until two successive estimates agree to 1%.
-double measure_tsc_hz() noexcept {
+// Grow the window until two successive estimates agree to 1%. Production
+// starts at 1ms. The test-only forced path starts beyond one Windows scheduler
+// accounting quantum so GetThreadTimes can distinguish sleeping from a busy
+// calibration without turning a 15.625ms accounting tick into a false failure.
+double measure_tsc_hz(std::uint64_t initial_window_ns = 1'000'000) noexcept {
   double last = -1.0;
-  std::uint64_t window_ns = 1'000'000;  // 1 ms
+  std::uint64_t window_ns = initial_window_ns;
   for (int i = 0; i < 8; ++i) {
     double m = measure_tsc_hz_once(window_ns);
     if (m > 1.0) {
@@ -381,52 +472,92 @@ double best_tsc_hz() noexcept {
   // Test-only process gate: exercise the timing fallback even on hosts whose
   // CPUID 0x15 normally makes it unreachable. This branch is compiled out of
   // shipped libraries and is used by a fresh-process cold-start CPU-time test.
-  if (force_tsc_timing_calibration()) return measure_tsc_hz();
+  if (force_tsc_timing_calibration()) return measure_tsc_hz(32'000'000);
 #endif
   double exact = tsc_hz_from_cpuid();
   if (exact > 1.0) return exact;
   return measure_tsc_hz();
 }
 
-// Fixed-point Q32 multiplier: ns = (tsc * kMult) >> 32. Computed once.
-constexpr int kTscShift = 32;
-
 struct TscScale {
   std::uint64_t mult;  // (1e9 / tsc_hz) * 2^32, 0 if TSC unusable
   bool available;
+  bool rdtscp;
 };
 
 const TscScale& tsc_scale() noexcept {
   static const TscScale s = [] {
-    if (!hardware_has_invariant_tsc()) return TscScale{0, false};
+    if (!hardware_has_invariant_tsc()) return TscScale{0, false, false};
     double hz = best_tsc_hz();
-    if (!(hz > 1.0)) return TscScale{0, false};  // calibration failed
-    double m = (1e9 / hz) * static_cast<double>(std::uint64_t{1} << kTscShift);
-    return TscScale{static_cast<std::uint64_t>(m), true};
+    if (!(hz > 1.0)) {
+      return TscScale{0, false, false};  // calibration failed
+    }
+    double m = (1e9 / hz) *
+               static_cast<double>(std::uint64_t{1}
+                                   << kHardwareCounterShift);
+    return TscScale{static_cast<std::uint64_t>(m), true,
+                    hardware_has_rdtscp()};
   }();
   return s;
 }
 
-// (tsc * mult) >> 32 in full 128-bit precision, no overflow.
-inline std::uint64_t scale_tsc_to_ns(std::uint64_t tsc, std::uint64_t mult) noexcept {
-#if defined(_MSC_VER)
-  std::uint64_t hi;
-  std::uint64_t lo = _umul128(tsc, mult, &hi);
-  return (hi << (64 - kTscShift)) | (lo >> kTscShift);
-#else
-  __extension__ using u128 = unsigned __int128;  // GCC/Clang ext; silence -Wpedantic
-  u128 p = static_cast<u128>(tsc) * mult;
-  return static_cast<std::uint64_t>(p >> kTscShift);
-#endif
+#endif  // HYLE_TIME_HAS_TSC
+
+#if HYLE_TIME_HAS_ARM_COUNTER
+
+inline std::uint64_t read_arm_virtual_counter() noexcept {
+  std::uint64_t value;
+  __asm__ volatile("mrs %0, cntvct_el0" : "=r"(value));
+  return value;
 }
 
-#endif  // HYLE_TIME_HAS_TSC
+inline std::uint64_t read_arm_virtual_counter_ordered() noexcept {
+  std::uint64_t value;
+  __asm__ volatile("isb\n\tmrs %0, cntvct_el0\n\tisb"
+                   : "=r"(value)
+                   :
+                   : "memory");
+  return value;
+}
+
+inline std::uint64_t read_arm_counter_frequency() noexcept {
+  std::uint64_t value;
+  __asm__ volatile("mrs %0, cntfrq_el0" : "=r"(value));
+  return value;
+}
+
+struct ArmCounterScale {
+  std::uint64_t multiplier;
+  std::uint64_t frequency;
+};
+
+const ArmCounterScale& arm_counter_scale() noexcept {
+  static const ArmCounterScale scale = [] {
+    const std::uint64_t frequency = read_arm_counter_frequency();
+    if (frequency == 0) return ArmCounterScale{0, 0};
+    const long double multiplier =
+        (1'000'000'000.0L / static_cast<long double>(frequency)) *
+        static_cast<long double>(std::uint64_t{1}
+                                 << kHardwareCounterShift);
+    if (!(multiplier > 0.0L) ||
+        multiplier >= static_cast<long double>(UINT64_MAX)) {
+      return ArmCounterScale{0, 0};
+    }
+    return ArmCounterScale{static_cast<std::uint64_t>(multiplier),
+                           frequency};
+  }();
+  return scale;
+}
+
+#endif  // HYLE_TIME_HAS_ARM_COUNTER
 
 }  // namespace
 
 bool profiling_clock_available() noexcept {
 #if HYLE_TIME_HAS_TSC
   return tsc_scale().available;
+#elif HYLE_TIME_HAS_ARM_COUNTER
+  return arm_counter_scale().frequency != 0;
 #else
   return false;
 #endif
@@ -435,9 +566,54 @@ bool profiling_clock_available() noexcept {
 std::uint64_t profiling_clock_ns() noexcept {
 #if HYLE_TIME_HAS_TSC
   const TscScale& s = tsc_scale();
-  if (s.available) return scale_tsc_to_ns(read_tsc(), s.mult);
+  if (s.available) return scale_hardware_counter(read_tsc(), s.mult);
+#elif HYLE_TIME_HAS_ARM_COUNTER
+  const ArmCounterScale& scale = arm_counter_scale();
+  if (scale.frequency == 1'000'000'000u) {
+    // Apple Silicon exposes a 1 GHz virtual counter: its tick is already ns.
+    return read_arm_virtual_counter();
+  }
+  if (scale.frequency != 0) {
+    return scale_hardware_counter(read_arm_virtual_counter(),
+                                  scale.multiplier);
+  }
 #endif
-  return monotonic_ns();  // no invariant TSC (or non-x86): safe fallback
+  return monotonic_ns();
+}
+
+namespace {
+
+std::uint64_t profiling_measurement_ns(bool stop) noexcept {
+#if HYLE_TIME_HAS_TSC
+  const TscScale& scale = tsc_scale();
+  if (scale.available) {
+    const std::uint64_t counter =
+        stop ? read_tsc_measurement_stop(scale.rdtscp)
+             : read_tsc_measurement_start();
+    return scale_hardware_counter(counter, scale.mult);
+  }
+#elif HYLE_TIME_HAS_ARM_COUNTER
+  (void)stop;
+  const ArmCounterScale& scale = arm_counter_scale();
+  if (scale.frequency != 0) {
+    const std::uint64_t counter = read_arm_virtual_counter_ordered();
+    if (scale.frequency == 1'000'000'000u) return counter;
+    return scale_hardware_counter(counter, scale.multiplier);
+  }
+#else
+  (void)stop;
+#endif
+  return monotonic_ns();
+}
+
+}  // namespace
+
+std::uint64_t profiling_measurement_start_ns() noexcept {
+  return profiling_measurement_ns(false);
+}
+
+std::uint64_t profiling_measurement_stop_ns() noexcept {
+  return profiling_measurement_ns(true);
 }
 
 }  // namespace hyle::time

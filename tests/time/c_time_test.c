@@ -65,12 +65,19 @@ int main(void) {
   CHECK(timestamp.seconds > INT64_C(1577836800)); /* 2020-01-01 */
   hyle_time_realtime_timestamp(NULL);
   CHECK(hyle_time_profiling_clock_ns() != 0);
+  {
+    const uint64_t start = hyle_time_profiling_measurement_start_ns();
+    const uint64_t stop = hyle_time_profiling_measurement_stop_ns();
+    CHECK(start != 0);
+    CHECK(stop != 0);
+  }
   CHECK(hyle_time_coarse_realtime_ns() != 0);
   CHECK(hyle_time_profiling_clock_available() == 0 ||
         hyle_time_profiling_clock_available() == 1);
   CHECK(hyle_time_coarse_realtime_available() == 0 ||
         hyle_time_coarse_realtime_available() == 1);
   CHECK(hyle_time_deadline_after_ns(UINT64_MAX) == UINT64_MAX);
+  CHECK(hyle_time_saturating_add_ns(UINT64_MAX - 1, 2) == UINT64_MAX);
   CHECK(hyle_time_remaining_ns(0) == 0);
   hyle_time_sleep_for_ns(0);
   hyle_time_sleep_for_us(0);
@@ -215,6 +222,9 @@ int main(void) {
     CHECK(cancelled == 0);
   }
   CHECK(!hyle_time_timer_is_scheduled(one));
+  CHECK_OK(hyle_time_queue_schedule_after_at(queue, one, 5, 100));
+  CHECK(hyle_time_timer_deadline_ns(one) == 105);
+  CHECK_OK(hyle_time_queue_cancel(NULL, queue, one));
   CHECK_OK(hyle_time_queue_schedule_after(queue, one, 1));
   CHECK_OK(hyle_time_queue_cancel(NULL, queue, one));
 

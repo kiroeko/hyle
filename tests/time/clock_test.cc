@@ -23,6 +23,8 @@ using hyle::time::MonotonicTimePoint;
 using hyle::time::monotonic_ns;
 using hyle::time::profiling_clock_available;
 using hyle::time::profiling_clock_ns;
+using hyle::time::profiling_measurement_start_ns;
+using hyle::time::profiling_measurement_stop_ns;
 using hyle::time::realtime_ns;
 using hyle::time::remaining_ns;
 using hyle::time::saturating_add_ns;
@@ -82,6 +84,19 @@ TEST(Clock, MonotonicNonDecreasing) {
   }
 }
 
+#if defined(HYLE_ARCH_ARM64) && \
+    (defined(HYLE_COMPILER_CLANG) || defined(HYLE_COMPILER_GCC))
+TEST(Clock, ArmProfilingCounterIsAvailableAndNonDecreasing) {
+  ASSERT_TRUE(profiling_clock_available());
+  std::uint64_t previous = profiling_clock_ns();
+  for (int i = 0; i < 100000; ++i) {
+    const std::uint64_t current = profiling_clock_ns();
+    ASSERT_GE(current, previous);
+    previous = current;
+  }
+}
+#endif
+
 TEST(Clock, MonotonicAdvancesOverSleep) {
   std::uint64_t a = monotonic_ns();
   sleep_for_ms(5);
@@ -89,6 +104,13 @@ TEST(Clock, MonotonicAdvancesOverSleep) {
   EXPECT_GT(b, a);
   // Should have advanced by at least ~4ms (allow scheduler slack below request).
   EXPECT_GE(b - a, 3'000'000ull);
+}
+
+TEST(Clock, OrderedProfilingMeasurementBoundariesAreReadable) {
+  const std::uint64_t start = profiling_measurement_start_ns();
+  const std::uint64_t stop = profiling_measurement_stop_ns();
+  EXPECT_NE(start, 0u);
+  EXPECT_NE(stop, 0u);
 }
 
 TEST(Clock, RealtimeIsPlausiblyNow) {
@@ -439,7 +461,8 @@ TEST(Clock, ProfilingClockTimingCalibrationIsLowCpu) {
       static_cast<double>(cpu_stop - cpu_start) / 1'000'000.0;
   RecordProperty("calibration_wall_ms", wall_ms);
   RecordProperty("calibration_cpu_ms", cpu_ms);
-  ASSERT_GE(wall_ms, 2.0) << "forced fallback did not run two sample windows";
+  ASSERT_GE(wall_ms, 50.0)
+      << "forced fallback did not run two accounting-sized sample windows";
   EXPECT_LT(wall_ms, 1000.0);
   EXPECT_LT(cpu_ms, wall_ms * 0.25 + 1.0)
       << "timing fallback must wait rather than occupy a core";

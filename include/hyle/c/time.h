@@ -32,9 +32,12 @@ extern "C" {
 #endif
 
 /* Clock values are nanoseconds. Deadlines/elapsed time use monotonic, never
- * realtime. profiling_clock is local-span sampling only; query availability. */
+ * realtime. profiling_clock is local-span sampling only; use the ordered
+ * start/stop pair for precise boundaries and query hardware availability. */
 HYLE_TIME_C_API uint64_t hyle_time_monotonic_ns(void);
 HYLE_TIME_C_API uint64_t hyle_time_profiling_clock_ns(void);
+HYLE_TIME_C_API uint64_t hyle_time_profiling_measurement_start_ns(void);
+HYLE_TIME_C_API uint64_t hyle_time_profiling_measurement_stop_ns(void);
 HYLE_TIME_C_API int hyle_time_profiling_clock_available(void);
 HYLE_TIME_C_API uint64_t hyle_time_realtime_ns(void);
 HYLE_TIME_C_API void hyle_time_realtime_timestamp(
@@ -46,7 +49,12 @@ HYLE_TIME_C_API void hyle_time_sleep_until_ns(uint64_t deadline_ns);
 HYLE_TIME_C_API uint64_t hyle_time_deadline_after_ns(uint64_t timeout_ns);
 HYLE_TIME_C_API uint64_t hyle_time_remaining_ns(uint64_t deadline_ns);
 
-/* Header-inline unit conveniences. Multiplication saturates instead of wrapping. */
+/* Header-inline arithmetic/unit conveniences. They saturate instead of
+ * wrapping and let an event loop reuse one monotonic sample across a batch. */
+static inline uint64_t hyle_time_saturating_add_ns(uint64_t base_ns,
+                                                   uint64_t delta_ns) {
+  return delta_ns > UINT64_MAX - base_ns ? UINT64_MAX : base_ns + delta_ns;
+}
 static inline void hyle_time_sleep_for_us(uint64_t us) {
   hyle_time_sleep_for_ns(
       us > UINT64_MAX / UINT64_C(1000) ? UINT64_MAX
@@ -102,10 +110,16 @@ HYLE_TIME_C_API hyle_status hyle_time_queue_create_at(hyle_time_queue** out,
 HYLE_TIME_C_API hyle_status hyle_time_queue_destroy(hyle_time_queue* queue);
 HYLE_TIME_C_API hyle_status hyle_time_queue_schedule(
     hyle_time_queue* queue, hyle_time_timer* timer, uint64_t deadline_ns);
+static inline hyle_status hyle_time_queue_schedule_after_at(
+    hyle_time_queue* queue, hyle_time_timer* timer, uint64_t timeout_ns,
+    uint64_t now_ns) {
+  return hyle_time_queue_schedule(
+      queue, timer, hyle_time_saturating_add_ns(now_ns, timeout_ns));
+}
 static inline hyle_status hyle_time_queue_schedule_after(
     hyle_time_queue* queue, hyle_time_timer* timer, uint64_t timeout_ns) {
-  return hyle_time_queue_schedule(
-      queue, timer, hyle_time_deadline_after_ns(timeout_ns));
+  return hyle_time_queue_schedule_after_at(
+      queue, timer, timeout_ns, hyle_time_monotonic_ns());
 }
 /* out_cancelled receives 1 when an armed timer was detached, 0 when it was
  * already idle. It may be NULL when the distinction is irrelevant. */

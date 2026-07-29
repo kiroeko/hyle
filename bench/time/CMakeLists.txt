@@ -8,6 +8,11 @@ add_executable(hyle_time_normal_bench normal_usage_bench.cc)
 target_link_libraries(hyle_time_normal_bench PRIVATE hyle_time nanobench)
 hyle_apply_warnings(hyle_time_normal_bench)
 
+add_executable(hyle_time_clock_bench clock_bench.cc)
+target_link_libraries(hyle_time_clock_bench PRIVATE hyle_time nanobench)
+hyle_apply_warnings(hyle_time_clock_bench)
+
 hyle_register_benches(time
   hyle_timer_queue_bench
-  hyle_time_normal_bench)
+  hyle_time_normal_bench
+  hyle_time_clock_bench)

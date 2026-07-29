@@ -59,42 +59,53 @@ HYLE_FORCE_INLINE std::uint64_t monotonic_ns() noexcept {
   return value > 0 ? static_cast<std::uint64_t>(value) : 0;
 }
 
-// Profiling clock in scaled ns, read straight from the CPU timestamp counter
-// (rdtsc) instead of going through the OS primitive. Its unit makes local span
-// samples convenient; its name deliberately does NOT promise a monotonic
-// deadline clock. It can be materially cheaper because it skips the
-// QPC/clock_gettime call shell; platform/build point values live in the
-// performance ledger. Opt-in: the default monotonic_ns() pays nothing for it.
+// Profiling clock in scaled ns, read straight from a reviewed hardware counter
+// (invariant TSC on x86-64; the architected virtual counter on GCC/Clang
+// ARM64) instead of going through the OS primitive. Its unit makes local span
+// samples convenient; its name deliberately does NOT promise the deadline
+// semantics of monotonic_now(). It can be materially cheaper because it skips
+// the QPC/clock_gettime call shell; point values live in the performance
+// ledger. Opt-in: the default monotonic_ns() pays nothing for it.
 //
 // TRADEOFFS (read before using -- this is why it is NOT the default):
-//   - Requires an invariant TSC (constant rate, synced across cores). Probed via
-//     CPUID; call profiling_clock_available() to check. On hardware without it
-//     (or non-x86), this transparently FALLS BACK to monotonic_ns() -- always
-//     safe, just not faster there.
-//   - MAY JUMP after the machine wakes from sleep/suspend or on VM migration:
+//   - x86 requires an invariant TSC (constant rate, approximately synced across
+//     cores), probed via CPUID. GCC/Clang ARM64 uses CNTVCT_EL0/CNTFRQ_EL0, the
+//     system-wide architected counter used by mature peers such as Folly. Other
+//     targets transparently FALL BACK to monotonic_ns(). Query availability.
+//   - The x86 path MAY JUMP after sleep/suspend or VM migration:
 //     the TSC can briefly read wrong right after resume (this is exactly why
 //     abseil disables its cycle-counter clock by default). Do NOT use it for
 //     deadlines, timeouts, or anything sched schedules on -- use monotonic_ns().
-//   - NOT STRICTLY MONOTONIC across cores: even with an invariant TSC, a thread
-//     migrated between cores may observe a slightly lower value than its prior
-//     read (per-core TSC sync is approximate). There is no max() clamp (that
-//     would cost a global atomic). So computing elapsed as (b - a) can underflow
-//     to a huge value if the reads straddle a migration. Pin the thread, or only
-//     diff reads taken close together on one core, or just use monotonic_ns().
-//   - First call pays a one-time TSC calibration: an exact read from CPUID leaf
-//     0x15 when the CPU enumerates it (no measurement), else a short sleep-based
-//     timing calibration against the OS clock. It does not busy-spin. Subsequent
-//     calls are a bare rdtsc + a multiply/shift.
+//   - The x86 path is NOT STRICTLY MONOTONIC across cores: even with an
+//     invariant TSC, a migrated thread may observe a slightly lower value than
+//     its prior read (per-core TSC sync is approximate). There is no max() clamp
+//     (that would cost a global atomic). So (b - a) can underflow if the reads
+//     straddle a migration. Pin the thread, keep samples near, or use
+//     monotonic_ns().
+//   - The first x86 call pays a one-time TSC calibration: an exact CPUID leaf
+//     0x15 read when enumerated, else a short sleep-based calibration against
+//     the OS clock. It does not busy-spin. Subsequent calls are rdtsc plus a
+//     multiply/shift.
+//   - This low-cost sampling entry does not serialize surrounding CPU work.
+//     Use the start/stop pair below when the boundaries of a measured region
+//     must not be moved across the counter reads.
 //
 // USE IT FOR: high-frequency elapsed-time sampling / profiling hot-path spans
 // where you want the lowest possible read cost and a rare post-resume glitch is
 // tolerable. When in doubt, use monotonic_ns().
 HYLE_TIME_API std::uint64_t profiling_clock_ns() noexcept;
 
-// True iff profiling_clock_ns() uses the hardware TSC path on this machine
-// (invariant TSC present and calibrated). When false, profiling_clock_ns() is
-// just a forwarder to monotonic_ns() and offers no speedup. Result is cached;
-// the first call triggers CPUID probing + calibration.
+// Ordered profiling-span boundaries. These preserve the same scaled-ns and
+// fallback contract as profiling_clock_ns(), and additionally stop compiler
+// reordering and speculative execution across the boundary. They order normal
+// instruction/load completion; like Folly's equivalent pair, they do not wait
+// for earlier stores to become globally visible. Always pair start with stop.
+HYLE_TIME_API std::uint64_t profiling_measurement_start_ns() noexcept;
+HYLE_TIME_API std::uint64_t profiling_measurement_stop_ns() noexcept;
+
+// True iff profiling_clock_ns() uses a reviewed hardware-counter path on this
+// machine. When false it forwards to monotonic_ns() and offers no speedup.
+// Result is cached; x86 first use may trigger CPUID probing + calibration.
 HYLE_TIME_API bool profiling_clock_available() noexcept;
 
 // Wall-clock ns since 1970-01-01T00:00:00Z (UTC), not counting leap seconds.

@@ -97,6 +97,12 @@ uint64_t hyle_time_monotonic_ns(void) {
 uint64_t hyle_time_profiling_clock_ns(void) {
   return hyle::time::profiling_clock_ns();
 }
+uint64_t hyle_time_profiling_measurement_start_ns(void) {
+  return hyle::time::profiling_measurement_start_ns();
+}
+uint64_t hyle_time_profiling_measurement_stop_ns(void) {
+  return hyle::time::profiling_measurement_stop_ns();
+}
 int hyle_time_profiling_clock_available(void) {
   return hyle::time::profiling_clock_available() ? 1 : 0;
 }
