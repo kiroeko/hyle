@@ -230,8 +230,10 @@ cmake -S hyle-<version>-source -B build \
 
 ggml、volk、Vulkan-Headers、glslang、GoogleTest 等依赖使用同一
 `FETCHCONTENT_SOURCE_DIR_<UPPERCASE_NAME>` 机制。依赖源码交付及其许可证仍是独立 closure，不能把本机
-下载缓存直接称为 HYLE 原创源码。若一次交付包含多项依赖，用随包的 initial-cache 文件集中设置这些
-标准变量（`cmake -C hyle-offline-deps.cmake ...`）；不要要求客户把缓存塞进仓库 `.deps`，也不要复制
+下载缓存直接称为 HYLE 原创源码。若一次交付包含多项依赖，用源码树提供的
+`hyle-offline-deps.cmake` 扫描 `deps/<FetchContent-name>/` 并生成标准变量
+（`cmake -C hyle-offline-deps.cmake ...`）；该文件不重复供应商清单。不要要求客户把缓存塞进仓库
+`.deps`，也不要复制
 含特定编译器生成物/stamp 的 `<build>/_deps`。bundle manifest 应固定每项上游、pin、校验与 license。
 OpenSSL/CUDA 等系统 SDK 仍由离线 toolchain 或 package prefix 提供，不属于 FetchContent 源码目录。
 

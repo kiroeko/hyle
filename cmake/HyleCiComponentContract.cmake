@@ -148,6 +148,7 @@ endif()
 set(_package_registry_projection
   "${HYLE_SMOKE_ROOT}/package-registry-projection.cmake")
 file(WRITE "${_package_registry_projection}"
+"cmake_minimum_required(VERSION 3.25)\n"
 "list(APPEND CMAKE_MODULE_PATH \"${HYLE_SOURCE_DIR}/cmake\")\n"
 "set(HYLE_KNOWN_COMPONENTS core)\n"
 "set(HYLE_STATIC ON)\n"
@@ -166,6 +167,7 @@ _hyle_contract_run("package dependency registry projection" TRUE
 set(_package_registry_duplicate
   "${HYLE_SMOKE_ROOT}/package-registry-duplicate.cmake")
 file(WRITE "${_package_registry_duplicate}"
+"cmake_minimum_required(VERSION 3.25)\n"
 "list(APPEND CMAKE_MODULE_PATH \"${HYLE_SOURCE_DIR}/cmake\")\n"
 "set(HYLE_KNOWN_COMPONENTS core)\n"
 "include(HylePackageRegistry)\n"
@@ -182,6 +184,7 @@ endif()
 set(_package_registry_missing_target
   "${HYLE_SMOKE_ROOT}/package-registry-missing-target.cmake")
 file(WRITE "${_package_registry_missing_target}"
+"cmake_minimum_required(VERSION 3.25)\n"
 "list(APPEND CMAKE_MODULE_PATH \"${HYLE_SOURCE_DIR}/cmake\")\n"
 "set(HYLE_KNOWN_COMPONENTS core)\n"
 "set(HYLE_STATIC ON)\n"
@@ -196,5 +199,31 @@ if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES "requires missing export target")
     "missing package dependency target failed for the wrong reason:\n"
     "${HYLE_CONTRACT_LAST_OUTPUT}")
 endif()
+
+# The checked-in offline bundle entry point derives overrides from directory
+# names.  Keep it list-free and prove the initial-cache contract with a fresh
+# configure instead of only documenting a command line.
+set(_offline_root "${HYLE_SMOKE_ROOT}/offline-bundle")
+set(_offline_project "${HYLE_SMOKE_ROOT}/offline-project")
+file(MAKE_DIRECTORY
+  "${_offline_root}/deps/ggml"
+  "${_offline_root}/deps/vulkan_headers"
+  "${_offline_project}")
+file(COPY "${HYLE_SOURCE_DIR}/hyle-offline-deps.cmake"
+  DESTINATION "${_offline_root}")
+file(WRITE "${_offline_project}/CMakeLists.txt"
+"cmake_minimum_required(VERSION 3.25)\n"
+"project(hyle_offline_bundle_contract LANGUAGES NONE)\n"
+"foreach(_name IN ITEMS GGML VULKAN_HEADERS)\n"
+"  if(NOT IS_DIRECTORY \"\${FETCHCONTENT_SOURCE_DIR_\${_name}}\")\n"
+"    message(FATAL_ERROR \"offline mapping for \${_name} is missing\")\n"
+"  endif()\n"
+"endforeach()\n")
+_hyle_contract_run("offline source bundle mapping" TRUE
+  "${CMAKE_COMMAND}"
+  -C "${_offline_root}/hyle-offline-deps.cmake"
+  -S "${_offline_project}"
+  -B "${HYLE_SMOKE_ROOT}/offline-build"
+  ${_hyle_generator_args})
 
 message(STATUS "HYLE component contracts passed")

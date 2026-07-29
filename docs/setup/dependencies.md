@@ -48,29 +48,30 @@ cmake -S . -B build -DFETCHCONTENT_SOURCE_DIR_GGML=/approved/ggml
 可以移动**当前 build tree 自己的**依赖区，但不能指向源码树，也不应被不同 toolchain/build tree 共用。
 仓库根 `.deps/` 只是旧开发树兼容的 ignored 路径，不是现行默认契约。
 
-制作 offline source bundle 时，可以把上述依赖分别放在 `deps/<name>/`，再随 bundle 提供一个
-`hyle-offline-deps.cmake` initial-cache 文件，把每个绝对/相对目录写入对应的
-`FETCHCONTENT_SOURCE_DIR_<NAME>`；用户以 `cmake -C hyle-offline-deps.cmake ...` 配置。每个目录还应在
-bundle manifest 记录上游 URL、HYLE pin commit/tag、校验值和许可证。只复制 FetchContent 生成的
-`<build>/_deps` 不够：里面混有特定 toolchain 的 build/stamp 状态，目录布局也不是发布 API。
+源码树已提供根文件 `hyle-offline-deps.cmake`。制作 offline source bundle 时，把依赖分别放在
+`deps/<FetchContent-name>/`；文件会扫描这些目录并自动设置对应的
+`FETCHCONTENT_SOURCE_DIR_<UPPERCASE_NAME>`，自身不再维护一份供应商名单。例如：
 
-```cmake
-# hyle-offline-deps.cmake（位于 bundle 根）
-set(FETCHCONTENT_SOURCE_DIR_GGML
-    "${CMAKE_CURRENT_LIST_DIR}/deps/ggml" CACHE PATH "")
-set(FETCHCONTENT_SOURCE_DIR_NGHTTP2
-    "${CMAKE_CURRENT_LIST_DIR}/deps/nghttp2" CACHE PATH "")
-set(FETCHCONTENT_SOURCE_DIR_VULKAN_HEADERS
-    "${CMAKE_CURRENT_LIST_DIR}/deps/Vulkan-Headers" CACHE PATH "")
-set(FETCHCONTENT_SOURCE_DIR_VOLK
-    "${CMAKE_CURRENT_LIST_DIR}/deps/volk" CACHE PATH "")
-# 构建 tests/compute shader 工具时再映射 GOOGLETEST、GLSLANG。
+```text
+hyle-offline-deps.cmake
+deps/
+  ggml/
+  nghttp2/
+  vulkan_headers/
+  volk/
+  googletest/       # 构建 tests 时需要
+  glslang/          # 构建 compute tests/bench 时需要
 ```
 
 ```bash
-cmake -C /approved/hyle-offline-deps.cmake \
+cmake -C hyle-offline-deps.cmake \
   -S hyle-<version>-source -B build -DHYLE_COMPONENTS=all
 ```
+
+目录名必须使用 `FetchContent_Declare()` 的名字，而不是上游仓库展示名，例如
+`vulkan_headers` 而不是 `Vulkan-Headers`。bundle manifest 仍应记录每项上游 URL、HYLE pin
+commit/tag、校验值和许可证。只复制 FetchContent 生成的 `<build>/_deps` 不够：里面混有特定
+toolchain 的 build/stamp 状态，目录布局也不是发布 API。
 
 逐项 source override 已保证该依赖不执行 download/update；不要把
 `FETCHCONTENT_FULLY_DISCONNECTED=ON` 单独当成首次离线配置开关。若发行方需要机械保证首次配置绝不

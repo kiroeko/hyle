@@ -116,7 +116,9 @@ tree 的 `_deps`，源码与生成物一起归该 build tree 所有；不同 too
 目录。`_deps` 是 FetchContent 的 population 实现区，不是可交付的 offline bundle 格式。离线或
 经审查的 bundle 保存独立依赖源码，并通过标准 `FETCHCONTENT_SOURCE_DIR_<NAME>` 逐项注入；依赖
 生成物仍进入本 build tree，不能写入或依赖源码树。仅预填一个仓库根 `.deps`、或只打开
-`FETCHCONTENT_FULLY_DISCONNECTED`，都不是首次配置的稳定合同。
+`FETCHCONTENT_FULLY_DISCONNECTED`，都不是首次配置的稳定合同。源码根的
+`hyle-offline-deps.cmake` 可作为 initial cache 扫描 bundle 的
+`deps/<FetchContent-name>/`，自动生成标准 override；它不维护另一份依赖名字清单。
 
 TLS 与 CUDA 使用 `AUTO|ON|OFF` 三态：AUTO 仅供便利探测，ON 是硬能力契约，OFF 不运行依赖探测。
 正式 SDK/CI 必须显式选择 ON/OFF，因此构建机偶然安装了某个 SDK 不会改变发布形状。
@@ -341,7 +343,8 @@ CI 对 Windows/Linux/macOS 运行 core 验证面，并在每个平台
 `SystemAllocator` consumer 真运行；shared 形状机械覆盖 `mem -> platform -> error` 的传递
 shared-object lookup，并证明公开 inline 形状不泄漏 mimalloc 符号，static 形状覆盖 mimalloc
 link-only archive 与 C++ link driver。Linux 还执行 component 空值、嵌入 cache、晚期依赖成员绕过、
-PUBLIC/PRIVATE 可见性扩大，以及 package registry 正向/重复/漏 target 共七项 configure contract，
+PUBLIC/PRIVATE 可见性扩大、package registry 正向/重复/漏 target，以及 offline bundle 映射共八项
+configure contract，
 并从 clean checkout 生成完整 source zip、核对
 SHA-256/commit/legal payload、
 解压后独立构建 `core`。simd、CUDA、compute/io 全矩阵不塞进每提交 smoke，仍属发布检查。

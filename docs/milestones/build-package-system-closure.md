@@ -93,6 +93,11 @@ Shell。普通 PowerShell 直接调用缓存中的 `cl.exe` 缺少 `INCLUDE/LIB`
   只生成 `Threads`、shared 不生成多余下游依赖，两者 feature 均为
   `io_http2;compute_ggml;compute_vulkan`。static Runtime component 无需编译即实际安装 18 份
   HYLE/第三方 notice/license，证明通用 registry 覆盖完整资产闭包；
+- `hyle-offline-deps.cmake` 作为真实 source artifact 落地：自动扫描
+  `deps/<FetchContent-name>/`，不重复供应商清单，并由 fresh initial-cache configure 合同守门。
+  `5e6affe` 首次 Linux CI 暴露三个生成式 registry probe 缺少最低 CMake 声明，导致 CMake 3.28
+  对 CMP0057 使用 OLD；补齐 `cmake_minimum_required(3.25)` 后，Windows CMake 4.4 与 WSL CMake
+  3.28/GCC 14 的八项 component contract 均通过；
 - 当前三平台 clean/reconfigure/initial/no-op 点值已替换旧证书；no-op 为 Windows 47--48ms、WSL
   不超过 10ms、M4 60--120ms，没有模块拆分后的常态重编或数量级回归。
 
@@ -251,12 +256,12 @@ Shell。普通 PowerShell 直接调用缓存中的 `cl.exe` 缺少 `INCLUDE/LIB`
 
 | 固定口径 | code |
 |---|---:|
-| 全库（含 docs/in-tree third_party） | 275,422 |
+| 全库（含 docs/in-tree third_party） | 275,497 |
 | 自实现（含测试） | 134,163 |
 | 自实现（不含测试） | 92,124 |
-| build/package 实现 | 5,436 |
+| build/package 实现 | 5,501 |
 
-最后一项固定为 78 个自有 CMake 文件 + preset/CI + 8 个 build/fetch/setup/QEMU shell/PowerShell
+最后一项固定为 79 个自有 CMake 文件 + preset/CI + 8 个 build/fetch/setup/QEMU shell/PowerShell
 guard；不含 vendored CMake、测试源码和文档。CMake 验收脚本分别守 package version、
 production-shape、component contract 与 complete-source 交付，故相对旧 4,005 的增长属于产品构建
 模块，不是测试源码误计。
