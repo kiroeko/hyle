@@ -19,6 +19,20 @@
 
 mem 不提供 pinned allocator 或单块 staging convenience。compute `Buffer` 分开保存 opaque `native_handle()` 与可选 `host_data()`；CUDA/host 两值可相同，Vulkan 分别是 `VkMem*` 与 `VkMem::mapped`。CPU 直接访问用显式 `flush_host()` / `invalidate_host()` 表达非 coherent Vulkan 合同；同步 `copy_from()` 自动包住所需 visibility。未来 staging ring 只能组合 HostBuffer、Event 与 backpressure，不上架裸 host allocator 或 `SharedPool(cudaMallocHost)` 组合。
 
+### 1.1 依赖与构建边界
+
+中央 component graph 与真实 target 链接边一致：`mem -> error + platform + util_core`。
+`error` 承担构造/VM/NUMA 冷失败，`platform` 承担 CPU、VM 和 NUMA 机制，`util_core` 承担
+fiber stack pool 的 SpinLock；mem 不直接散落 OS 分支，也不自造第二套错误。`core/cache.h`
+只是 cache-layout header primitive，`obs/trace.h` 只是由 `HYLE_TRACE` 控制的跨切 trace seam，
+两者都不让普通 mem binary 反向依赖 core/obs runtime。HYLE 的 C++ 消费者直接使用 C++
+`Allocator`/`Result`/owner 类型，只有 `src/mem/c_mem.cc` 在 C 边界翻译成
+`hyle_allocator`/`hyle_status`。
+
+安装后消费由 `find_package(Hyle COMPONENTS mem)` + `hyle::mem` 表达；
+`samples/package/mem/{c,cpp}` 分别验证纯 C 与原生 C++ 的 shared/static SDK 路径，不能用源码树
+include 或测试 target 遮蔽导出/传递依赖缺口。
+
 ## 2. 需求基线
 
 ### 2.1 HYLE 内部真实消费者
@@ -90,8 +104,8 @@ blocking borrow 不进入 `mem/` 基础池。等待策略依赖 fiber/condition/
 |---|---|---|
 | `SystemAllocator` | 编译期无状态；static/source 直调 mimalloc，shared 经 mem direct-import seam | 保留；修 typed count 乘法回绕且不向 shared consumer 泄漏 vendor 符号 |
 | `Allocator` | C++ 值句柄 `{alloc, free, realloc, state}` | 保留；内部运行时注入脊；C ABI 只在对外 shim 映射 |
-| `SystemStdAllocator<T>` / `StdAllocator<T>` | 默认静态 system adapter / 借用 `Allocator` 的运行时 adapter | 分型保留；普通容器保持 empty/EBO/always-equal，策略注入才携带完整 backing identity；标准边界 OOM 抛异常 |
-| `system_memory_resource()` / `PmrResource` | 默认 system PMR singleton / `Allocator` → PMR | 分型保留；默认只付 PMR virtual + shared seam，策略注入才叠加 allocator dispatch |
+| `SystemStdAllocator<T>` / `StdAllocator<T>` | 默认静态 system adapter / 借用 `Allocator` 的运行时 adapter | 分型保留；普通容器保持 empty/EBO/always-equal；运行时 adapter 删除默认构造，必须显式给 backing，避免静默选择较慢形状；标准边界 OOM 抛异常 |
+| `system_memory_resource()` / `PmrResource` | 默认 system PMR singleton / `Allocator` → PMR | 分型保留；默认只付 PMR virtual + shared seam，策略注入才叠加 allocator dispatch；PMR 零字节请求以 1B backing 成对处理，不把健康资源误报为 OOM |
 | `AlignedPmrResource` | 可选 minimum base alignment 的 PMR adapter | 保留；对应 oneTBB `cache_aligned_resource` 的用户需求，不给普通 PMR 强加 cache policy |
 | typed/RAII helpers | `allocate_n/zeroed/reallocate_n`、construct/destroy、make_unique | 保留；乘法溢出和显式 alignment 在 System/运行时两层一致 |
 
@@ -255,7 +269,7 @@ variable-size pool 对象，这是有意的产品边界，不是“没有可变�
 | 用户形状 | C++ 原生产品面 | C/FFI 产品面 | 合同 |
 |---|---|---|---|
 | 默认/注入分配 | `SystemAllocator`、`Allocator`、typed helpers | `hyle_system_allocator`、`hyle_allocator`、inline alloc/free/realloc | 默认 direct path；运行时注入保留 backing identity |
-| allocator-template adapter | `SystemStdAllocator<T>` / `StdAllocator<T>` | 不适用 | 默认 empty/always-equal 静态 system 形状；注入形状支持 rebind、完整 backing equality、借用生命周期；标准 OOM exception boundary |
+| allocator-template adapter | `SystemStdAllocator<T>` / `StdAllocator<T>` | 不适用 | 默认 empty/always-equal 静态 system 形状；注入形状无默认构造，支持 rebind、完整 backing equality、借用生命周期；标准 OOM exception boundary |
 | heap size/pressure | `system_good_size/usable_size/collect` | 同名 `hyle_system_*` | 显式查询与回收，不隐藏周期线程 |
 | byte admission | `QuotaAllocator` | `hyle_quota_allocator_*` | strict live requested-byte budget |
 | 统计/泄漏诊断 | `StatsAllocator::create(backing,track,metadata)`、`LeakTracker::create(metadata)` | `hyle_stats_allocator_*` + POD snapshot/bounded copy | opt-in；被测/诊断域分离；metadata OOM 的 dropped/complete 可观察；默认 system 热路零统计税 |
@@ -267,7 +281,7 @@ variable-size pool 对象，这是有意的产品边界，不是“没有可变�
 | owner-local soft cache | `SharedPoolCache`、`ObjectPoolCache<T>` | `hyle_shared_pool_cache_*` + typed raw-slot 宏 | 显式 owner/cache/publish，容量是 soft visibility window |
 | growable owner-local slots | `GrowablePool<T>` | runtime size/alignment `hyle_growable_pool_*` | 单线程、几何增长、Reconstruct |
 | preserve/RAII loan | `PreservingObjectPool<T>`、`PoolLoan` | raw slot acquire/release，由调用方管理 init/cleanup | 能力可组合；C 不伪造 ctor/dtor/RAII |
-| PMR | `system_memory_resource()` / `PmrResource` / `AlignedPmrResource` | 不适用 | 默认 system singleton 与运行时注入分型；后者只提高 container buffer 的 base alignment，不保证 element 间隔 |
+| PMR | `system_memory_resource()` / `PmrResource` / `AlignedPmrResource` | 不适用 | 默认 system singleton 与运行时注入分型；零字节请求仍返回可成对释放的有效 allocation；Aligned 只提高 buffer base alignment，不保证 element 间隔 |
 | guarded fiber stack | `FiberStack`、`FiberStackPool` | sched C ABI 内部消费 | scheduler-owned runtime specialization；有界 retention + cold trim；shutdown 自动归还，不暴露危险 raw stack control |
 | THP/NUMA span | `HugeRegion` + policy/selected nodes/chunk、`reserve_huge_1g_pages` | `hyle_huge_region_*` + policy/selected nodes/chunk | 显式请求、可观察 accepted/applied/chunk 状态；冷预留失败返回同一 Status |
 

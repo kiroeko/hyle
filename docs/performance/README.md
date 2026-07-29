@@ -14,7 +14,7 @@
 | [build/package 实测](./benchmarks-build.md) | **构建系统三平台正常路径证书**：clean/reconfigure/no-op、测试依赖获取分层、组件隔离、production-shape 测试与生成器数据库健康 |
 | [platform 实测](./benchmarks-platform.md) | **platform 2026-07-25 当前证书**（既有性能表不变；MappedFile advice/residency 按 OS-call complexity 守门） |
 | [time 实测](./benchmarks-time.md) | **time 2026-07-25 当前三平台证书**（clock / exact-ns radix TimerQueue / CommonTimeoutQueue；含 Seastar faithful baseline、order-swap 与 M4 QoS） |
-| [mem 实测](./benchmarks-mem.md) | **mem 严格证书**：既有三平台 Region/FixedPool/pool 证书有效；clean `c640072` 已补齐 shared allocator/standard-adapter/realloc 的 Win/WSL/M4 双 QoS n=15，同合同默认路径无 material LOSE |
+| [mem 实测](./benchmarks-mem.md) | **mem 严格证书**：既有三平台 Region/FixedPool/pool 证书有效；clean `c640072` 补齐 shared allocator/standard-adapter/realloc，`8c85331` 又局部复证 PMR zero-size 修复后的正常路径；Win/WSL/M4 双 QoS n=15 无新增 material LOSE |
 | [util-core 实测](./benchmarks-util.md) | **util-core 2026-07-29 三平台 n=15 证书**：Rng/Ref/SpinLock 实际形状；oneTBB 正反序；M4 双 QoS 与 acquire-only RMW 真实回退 A/B；mutex 反例 |
 | [obs 实测](./benchmarks-obs.md) | **obs-runtime 2026-07-29 `06cec5a` 三平台 n=15 证书**：compile/runtime gate、exact-byte record/C ABI、immutable sink snapshot、fan-out 与多 producer；成熟库只作同机制对照，不作跨合同倍数宣称 |
 | [container 实测](./benchmarks-container.md) | **container 唯一当前证书**：三平台详表、新鲜度、非 SOTA、选型与复跑命令 |

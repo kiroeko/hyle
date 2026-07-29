@@ -147,7 +147,7 @@ simd 不进 sched 链，只在 compute 汇合。obs-runtime 是用户产品根�
 
 | 波次 | 审查单元 | 排序理由 |
 |---|---|---|
-| **R0 基线** | error、platform、mem、time | 四模块已按当前实际使用标准形成严格证书；mem 以 clean `c640072` 关闭 shared adapter/realloc 三平台性能尾并恢复冻结 |
+| **R0 基线** | error、platform、mem、time | 四模块已按当前实际使用标准形成严格证书；mem 以 clean `c640072` 关闭 shared adapter/realloc 性能尾，`8c85331` 再关闭 PMR zero-size、显式 runtime adapter 与 installed consumer 合同 |
 | **R1 根、构建与接缝** | core ✅ → build/package system ✅ → util-core seam ✅ → obs ✅ | core compiler/cache primitive 已由 Windows/WSL/M4 codegen、正确性及 SIMD/vqsort 真实消费者复证，四项恢复冻结 |
 | **R2 容器层** | container ✅ → util-runtime/完整 util | core 语义扫描修正 Apple shard spacing；M4 correctness 与 8-thread normal workload 已局部复证，StringInterner 恢复全绿 |
 | **R3 运行时链** | sched → io | sched 汇合 mem/time/container/platform，io 再消费 sched；反序会反复改 timeout/cancel/completion 形状 |

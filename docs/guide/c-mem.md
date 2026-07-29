@@ -2,7 +2,7 @@
 
 > **发布面**：`include/hyle/c/mem.h`  
 > **实现**：`src/mem/c_mem.cc`（链 `hyle_mem`）  
-> **稳定性**：正在按真实 C/FFI 用户任务重新审查；正式发布前可直接重塑，当前 manifest 不承诺 ABI 兼容
+> **稳定性**：当前已按真实 C/FFI 用户任务严格收口；正式发布前仍可直接重塑，当前 manifest 不承诺 ABI 兼容
 > **命名**：全部 `hyle_*` / `HYLE_*`
 
 本文只负责把**已经选定的 mem 能力**准确映射到 C/FFI：签名、Status/out、所有权和
@@ -32,6 +32,9 @@ FixedPool 同时提供 caller-owned `*_storage + *_init`（control/payload 都�
 ```
 
 纯 C 验收目标：`hyle_mem_c_test`。
+安装 SDK 的独立消费者见 [`../../samples/package/mem/c`](../../samples/package/mem/c)：它只请求
+`COMPONENTS mem`，先走默认 system allocator，再演示 `QuotaAllocator -> Region` 组合与
+`hyle_status` 所有权；shared/static 都必须能直接构建运行。
 
 | 块 | 入口 | 所有权 / 容量合同 |
 |---|---|---|

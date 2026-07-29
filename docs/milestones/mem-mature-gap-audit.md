@@ -5,7 +5,7 @@
 | 范围 | `include/hyle/mem`、`include/hyle/c/mem.h`、`src/mem`、测试、guide / architecture / performance |
 | 基线 | `c1f2e394`（独立 worktree：`audit/mem-mature-gap`） |
 | 方法 | 从真实基础加速库用户的 lifetime、ownership、并发、失败和组合需求出发，对照工作区 oneTBB、Folly、marl、mimalloc；不按 benchmark 名称凑类型 |
-| 总结 | ✅ **彻底收口。**能力面宽且边界合理；P0 契约、standard adapter 默认静态/注入分型、fiber stack 冷回收与 shared distribution 三平台证书均已落地。对照 oneTBB 实现后推翻旧 non-goal：selected-node/chunk 与 weighted placement 已由 platform 机制层和 mem HugeRegion 的 C++/C owner 面完整提供，Linux 极细布局也已关闭 VMA 资源复杂度风险。 |
+| 总结 | ✅ **彻底收口。**能力面宽且边界合理；P0 契约、standard adapter 默认静态/注入分型、fiber stack 冷回收与 shared distribution 三平台证书均已落地。对照 oneTBB 实现后推翻旧 non-goal：selected-node/chunk 与 weighted placement 已由 platform 机制层和 mem HugeRegion 的 C++/C owner 面完整提供，Linux 极细布局也已关闭 VMA 资源复杂度风险。2026-07-29 严格回审又关闭 PMR 零字节、runtime adapter 隐式默认和 installed mem consumer 三项真实产品合同，当前实现绑定 `8c85331`。 |
 
 > **实现进展（2026-07-26，`implementation/mem-strict`）：**P0 alignment/stats 已在
 > `2cb1a10` 落地；`ac73fc7` 增加 `StdAllocator<T>`、FiberStackPool 精确 capacity、
@@ -29,6 +29,12 @@
 > material LOSE；Windows runtime `PmrResource` 的双动态层约 8.5% 是显式 policy 成本，不冒充
 > 默认形状。Windows mem 4/4；WSL mem 非 death 191/191 + sched 142/142、纯 C、107/107 surface，
 > GCC14 TSan 同组零报告；M4 完整 6/6 + 107/107 surface。mem 恢复严格证书并退出主动重构队列。
+
+> **严格回审补证（2026-07-29，`8c85331`）：**PMR 零字节请求不再因底层 size-0 NULL 合同
+> 伪报 `bad_alloc`；runtime `StdAllocator<T>` 删除会静默选择 system backing 的默认构造，默认堆
+> 继续由 empty `SystemStdAllocator<T>` 承担。新增 installed `mem` 纯 C/C++ 默认+高级组合样例，
+> Win/WSL/M4 shared/static 十二组 C/C++ consumer 全绿；三平台 mem 正确性、WSL ASan/UBSan 与受影响 PMR
+> n=15 证书全绿。没有新增 allocator 类型、常态 metadata 或 benchmark-only API。
 
 > **NUMA 最终复杂度复审（本轮候选）：**实际 node membership 改为缓存位图，查询 O(1)、输入
 > validation O(S)；重复 node 不再误判非法，而是与 oneTBB 一致表达 weighted placement。Linux
@@ -138,10 +144,11 @@ HugeRegion。PMR、RAII loan、模板构造析构和 raw fiber stack 是合理�
 allocator adapter/stack trim 也不要求 mem C ABI。选-node NUMA 已同步扩展 platform C 与
 HugeRegion options/chunk query。HYLE C++ 内部继续使用原生 `Status` / `Result` / `Allocator`，不绕 C ABI。
 
-**error / platform。** VM/NUMA/fiber 冷路径使用共享 error；platform 负责 page/VM/NUMA，归属正确。
-公开 header 仍有 `fiber_stack.h -> hyle/util/spin_lock.h` 边。构建 target 的 binary 图写成
-`mem -> error + platform` 没错，但 [`pre-release-readiness.md`](pre-release-readiness.md) 的合法
-header-only edge 说明应显式记录这条 util-core 边，避免施工顺序文档与实际 include 图不一致。
+**error / platform / util-core。** VM/NUMA/fiber 冷路径使用共享 error；platform 负责
+page/VM/NUMA，归属正确。中央 component graph 与真实 target 边均为
+`mem -> error + platform + util_core`，其中 fiber stack pool 消费 SpinLock。`core/cache.h` 是
+零链接的 cache-layout header seam，`obs/trace.h` 是 `HYLE_TRACE` 跨切 seam；两者不形成普通
+mem runtime component 边。HYLE 内部使用 C++ API，只有 `c_mem.cc` 翻译 C 边界。
 
 **guide / performance。** 本轮已同步：
 
@@ -184,3 +191,41 @@ nodes/chunk、weighted placement、有界 kernel resource complexity、C++/C gui
 
 这些是设计证据而不是待复制清单；最终 HYLE 类型仍须服从自己的 owner、failure、threading 与 ABI
 合同。
+
+## 7. 2026-07-29 严格回审交付
+
+本轮按 [`module-closure-methodology.md`](../architecture/module-closure-methodology.md) 重建审查单元，
+覆盖公开 C++/C 头、实现、target、成熟库、直接上下游、安装消费、四层文档和受影响性能。结论：
+
+- 功能面继续覆盖 default/runtime heap、标准 adapter、quota/stats/leaks、四类 region/stack、
+  external variable-size TLSF pool、hard/shared/cache/object/growable pool、fiber stack、HugeRegion
+  selected-node/chunk/weighted NUMA。HYLE-owned 自动增长 variable heap 仍由标准 PMR pool 与
+  mimalloc 更自然地承担，不是遗漏；GPU/pinned/registered buffer 仍归其 completion owner。
+- oneTBB `memory_pool`/NUMA/cache-aligned resource、Folly Arena/allocator adaptor、marl pool/loan 与
+  mimalloc 再对账，没有发现 HYLE 用户场景中尚未解释的能力或算法落档。FixedPool FL/SL、
+  SharedPool 分片/tag 饱和、Region retained blocks、NUMA placement 的复杂度证据继续有效。
+- 修复两个实际 API 缺陷：PMR size 0 使用 1B backing 成对释放；`StdAllocator<T>` 必须显式给
+  runtime backing，普通 system 容器选 `SystemStdAllocator<T>`。C ABI 功能范围不变，109/109
+  surface 保持；C 不机械镜像模板/PMR/RAII。
+- 依赖回审确认 mem 正确使用 error/platform/util-core，未直调 OS 或绕 C ABI；component closure
+  `mem -> error + platform + util_core` 在 Windows、Linux、macOS 的 focused configure 与
+  shared/static installed consumer 中都成立。新增 `samples/package/mem/{c,cpp}` 让默认与高级
+  组合成为外部可执行合同。
+- 正确性：Windows mem 4/4（含纯 C、109-symbol surface、独立头、221 项 C++）；WSL GCC 14
+  196 个受影响非 death 测试、ASan 197、UBSan 196；M4 AppleClang 21 完整 4/4。历史未改 death/
+  TSan/NUMA/pool 证书保留，不用无关全库重跑冒充新增证据。
+- 性能：三平台 shared shipping section L n=15 局部复证正常非零 PMR；runtime/direct 比为
+  Win 0.934、WSL 0.988、M4 interactive 1.031、utility 1.035，默认 PMR 四组均 WIN。零字节
+  正确性修复不增加对象状态且没有正常用法退化，详见 performance 真源。
+
+四项 LOC（实现 `8c85331` + 本证书文档工作树，统一 cloc 口径）：
+
+| 口径 | code 行 |
+|---|---:|
+| 全库 tracked（含 docs / in-tree third-party） | 279,585 |
+| HYLE 自实现含测试（`include/hyle + src + tests`） | 135,519 |
+| HYLE 自实现不含测试（`include/hyle + src`） | 92,914 |
+| mem 当前实现（`include/hyle/mem + include/hyle/c/mem.h + src/mem`） | 5,414 |
+
+停止条件成立：没有未解释的功能、复杂度、C/C++ 易用性、依赖、安装或文档缺口。此后只按
+correctness/security、真实新消费者、平台/工具链失效或同合同可复现 material LOSE 局部重开。

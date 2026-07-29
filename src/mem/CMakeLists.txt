@@ -48,10 +48,12 @@ elseif(HYLE_SANITIZER STREQUAL "asan")
   hyle_apply_sanitizer(mimalloc_static)
 endif()
 target_link_libraries(hyle_mem PRIVATE mimalloc_static)
-# Public mem headers use error::Status/Result and platform VM/CPU facilities.
-# Both dependencies are explicit: error is the zero-upstream P0 root, so mem ->
-# error is a legal downward edge (and must not be hidden behind platform's
-# transitive link).
+# The central component graph gives the real hyle_mem target public edges to
+# error (Status/Result), platform (VM/CPU/NUMA), and util_core (SpinLock).  Keep
+# error explicit rather than hiding it behind platform's transitive link.
+# core/cache.h is a header-only cache-layout primitive and obs/trace.h is the
+# optional HYLE_TRACE cross-cutting seam; neither creates a runtime component
+# dependency for a normal mem build.
 target_include_directories(hyle_mem PRIVATE "${_mi}/include")
 target_compile_definitions(hyle_mem PRIVATE HYLE_USE_MIMALLOC)
 

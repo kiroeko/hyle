@@ -2,7 +2,7 @@
 
 > 本页是 [performance 总账](./README.md) 的 **mem 模块**详节。
 > 源：`bench/mem/allocator_bench.cc`、`bench/mem/scenario_bench.cc`、`bench/mem/fiber_stack_bench.cc`。
-> 通用 churn、request closure、FixedPool、latency、fragmentation 和 footprint 按各节所列 commit。2026-07-26 的 clean `c640072` 最终签署 shared SDK 的 allocator/standard-adapter/realloc 形状；`6213115` 签署长寿命 Region 与正常 request；此前 `2cbc307`、`1de939d`、`20f3676` 分别签署 bump/system-realloc/fiber、SharedPool/cache 和 O(1) FixedPool。同契约性能判定同时看配对 **[sign]**、差距大小与绝对 spread；旧 raw/result 继续诚实绑定实际采样 commit，不把历史数据伪改成 HEAD。
+> 通用 churn、request closure、FixedPool、latency、fragmentation 和 footprint 按各节所列 commit。2026-07-26 的 clean `c640072` 最终签署 shared SDK 的 allocator/standard-adapter/realloc 形状；`8c85331` 局部复证 PMR 零字节修复后的正常非零路径；`6213115` 签署长寿命 Region 与正常 request；此前 `2cbc307`、`1de939d`、`20f3676` 分别签署 bump/system-realloc/fiber、SharedPool/cache 和 O(1) FixedPool。同契约性能判定同时看配对 **[sign]**、差距大小与绝对 spread；旧 raw/result 继续诚实绑定实际采样 commit，不把历史数据伪改成 HEAD。
 
 ## 当前性能封口状态
 
@@ -96,6 +96,36 @@ interactive / utility QoS，但不冒充硬 P/E core affinity。raw：
 material LOSE；standard adapter 已达到同类 direct shape 的 SOTA 档。`PmrResource` 在 Windows
 保留可见的双动态层成本，用户只有在确实需要运行时 backing 注入时才选择它；这不是应藏进默认
 对象的 state/dispatch，也不值得为微基准增加常态 cache/metadata。
+
+### PMR 零字节合同局部复证（`8c85331`）
+
+严格回审发现 PMR adapter 把底层 HYLE allocator 的“size 0 返回 NULL”直接翻译成
+`bad_alloc`；这会让健康 resource 在合法零字节调用上伪报 OOM。`8c85331` 将 PMR 的零字节
+请求映射成 1B backing 并在 deallocate 时成对映射，普通非零请求不增加对象字段、cache、TLS
+或渐近复杂度。由于 `PmrResource` 的普通非零热路也经过这个归一化，本轮只局部复证 section L
+中的 direct PMR、默认 system PMR 和 runtime PMR；其它未改行仍由上面的 `c640072` 证书负责。
+
+三平台 shared shipping、每 variant 独立进程、正反交替、n=15；M4 分 interactive/utility QoS：
+[Windows raw](./mem-shared-same-link-win-8c85331.csv)、
+[WSL raw](./mem-shared-same-link-wsl-8c85331.csv)、
+[M4 interactive raw](./mem-shared-same-link-m4-interactive-8c85331.csv)、
+[M4 utility raw](./mem-shared-same-link-m4-utility-8c85331.csv)。Windows/M4 是 clean
+`8c85331`；WSL 仍按项目约定从 Windows 单向 rsync 到 `/root/hyle`，raw 诚实保留镜像旧 HEAD
+`3c32be6`/`dirty=1`，被测 mem include/src/tests/package 文件树与 Windows `8c85331` 的聚合
+SHA-256 同为 `4225db256addb36408f84f7954ad0df9f6af91fe4c0d4a10bf5102a234e3b5c6`，不把镜像
+元数据改写成 clean。
+
+| 正常非零 PMR，ns/op | Win | WSL CPU 2 | M4 interactive | M4 utility |
+|---|---:|---:|---:|---:|
+| direct-backend PMR | 9.07 | 7.97 | 8.27 | 8.30 |
+| `system_memory_resource()` | 8.96 | 7.62 | 7.60 | 7.63 |
+| runtime `PmrResource` | 9.71 | 8.23 | 8.01 | 8.04 |
+| default/direct 配对比 | **1.015** | **1.059** | **1.085** | **1.090** |
+| runtime/direct 配对比 | **0.934** | **0.988** | **1.031** | **1.035** |
+
+默认 PMR 四组均 WIN；runtime 注入在 Windows 仍有显式双动态层的约 6.6% 成本，但比旧证书
+0.915 的约 8.5% 没有退化，WSL/M4 为 TIE/WIN。结论是零字节正确性修复没有污染正常用法
+性能；它不是为 benchmark 添加的形状，也没有改变旧 allocator/pool/NUMA 证书。
 
 2026-07-25 的底座依赖审计发现旧 benchmark 给可执行文件手工链接了 `mimalloc_static`，所以
 “SystemAllocator 内联”数字真实代表 **static/source 合并形状**，不能冒充 shared SDK consumer。

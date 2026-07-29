@@ -6,8 +6,9 @@ HYLE 的“实现进度”与“当前标准的收口证书”必须分开读：
 其余模块的主体实现基本存在；当前持有严格证书的是
 **core、error、platform、mem、time、build/package、util-core、obs、container**；core 因真实
 SIMD/vqsort 消费者暴露的 compiler/cache primitive 重复实现已在 2026-07-29 完成三平台局部复证。mem 在 2026-07-26 成熟库红队中发现的
-P0/API/分发性能缺口均已修复，并由 clean `c640072` 的三平台 shared same-link 与正确性/ABI/
-sanitizer 证书重新冻结。早期标成 closure/frozen 的任务仍是有效施工证据，不自动等于新标准认证。
+P0/API/分发性能缺口均已修复；2026-07-29 又以 `8c85331` 关闭 PMR 零字节、显式 runtime
+adapter 与 installed mem consumer 合同，并由三平台 shared same-link 与正确性/ABI/sanitizer
+局部证书重新冻结。早期标成 closure/frozen 的任务仍是有效施工证据，不自动等于新标准认证。
 
 | 层次 | 当前判断 | 下一动作 |
 |---|---|---|
@@ -19,13 +20,14 @@ sanitizer 证书重新冻结。早期标成 closure/frozen 的任务仍是有效
 build/package system 的模块 target 图、可组合子集与三种交付形状已经重签；在其他模块尚未验收、
 仍会改变的前提下，2026-07-29 又启动持续回归任务，把 shared/static package、complete-source 与
 AArch64 compile 从代表性组件提升为当前 all-component CPU 图，并明确 all-build 不等于模块验收。
-其架构证书没有被重开，但验证集合将随每个模块收口递增。当前审查单元转为 **util-runtime**；
-`util-core seam`、obs 与 container 的严格证书不因此作废。
+其架构证书没有被重开，但验证集合将随每个模块收口递增。2026-07-29 又启动底层已认证模块的
+定向复证 sweep；每个模块只复验明确触发的合同并在下表更新绑定，不因重复查看自动作废
+`util-core seam`、obs、container 或后续 util-runtime 的排队位置。
 
 ## 底座五模块交叉引用复验（2026-07-25）
 
 在继续收口新模块前，`core/error/platform/mem/time` 已按源码 include、链接 target、安装后
-consumer 和二进制导出四层复验。最终二进制依赖图为：
+consumer 和二进制导出四层复验。最终 runtime artifact 依赖图为：
 
 ```text
 core      -> (none)
@@ -34,6 +36,10 @@ platform  -> error
 time      -> error
 mem       -> error + platform
 ```
+
+component/target 解析还必须表达无 binary artifact 的低层 header seam，因此 mem 的真实
+component closure 是 `mem -> error + platform + util_core`；这条边已经同时存在于中央声明和
+`hyle_mem` target。不能把“util-core 不产生 DLL/so”误写成“mem 不依赖 util-core”。
 
 合法但不增加二进制依赖的头文件边只有四类：time 的 timer queue 复用
 `core/intrusive_list.h`；mem 复用 `core/cache.h`，fiber stack pool 复用 util-core 的
@@ -53,12 +59,12 @@ benchmark 直连依赖均已删除；真正把 raw mimalloc 当性能对手的 m
 static mem 闭包在 `-Werror` 下干净构建；AppleClang shared 20/20。三平台 shared/static
 安装包的纯 C 与 C++ `SystemAllocator` consumer 均为 2/2，且 ELF/Mach-O shared
 `hyle_mem` 的 `mi_`/`_mi_` 导出计数为 0。组件解析也逐根验证为
-`core`、`error`、`error+platform`、`error+time`、`error+platform+mem`，没有环、反向边或
+`core`、`error`、`error+platform`、`error+time`、`error+platform+util_core+mem`，没有环、反向边或
 未声明的二进制依赖。
 
 因此这五个底座模块的**相互引用可以关闭**；util-core 对 mem 的受影响边也已回验，下一审查
-单元当时是 container；该单元和随后独立复审的 build/package 均已收口，当前到
-util-runtime。性能边界另作
+单元当时是 container；该单元和随后独立复审的 build/package 均已收口，后续未认证队列仍从
+util-runtime 继续。性能边界另作
 诚实限定：Windows 已量到 shared direct-import 相对同进程 raw mimalloc 约 4.5–6% 的 DSO
 边界成本；三平台“同链接形状”的最终性能证书仍登记在 performance 文档，不能把本次依赖
 正确性结论扩大成性能结论。该性能尾随后由 clean `c640072` 的 Win/WSL/M4 双 QoS same-link
@@ -123,7 +129,7 @@ math 的处理相反：它当前不是经过独立需求设计的产品，而是
 |---|---|---|
 | error | 功能/API/native detail/27-symbol C ABI 完成 | ✅ 2026-07-29 消费者合同再收口；C 首错聚合直接可达；Win/WSL/M4 n=15 同能力 Abseil 无 LOSE；platform generic POSIX/Win32 adoption 已在 `a073931` 转绿，其余消费者随模块复审继续 |
 | platform | 功能/API/120-symbol C ABI 完成 | ✅ 2026-07-29 `a073931` 严格复证；generic error adoption、CPU default-set 复杂度、局部 LTO、macOS 14.4、三平台 Release/installed package 与 WSL sanitizer 均转绿；既有正常 workload SOTA 点值继续有效 |
-| mem | 功能/API/P0/分发性能已完成 | ✅ 彻底收口；clean `c640072` 保留 allocator 三平台 shared same-link n=15 与 WSL TSan；当前 109/109 C surface，HugeRegion selected-node/chunk/weighted C++/C 已补齐，Linux 极细条带使用固定批次 placement |
+| mem | 功能/API/P0/分发性能已完成 | ✅ 2026-07-29 `8c85331` 严格复证；PMR zero-size、显式 runtime StdAllocator、三平台 shared/static installed C/C++ consumer 与受影响 PMR n=15 已转绿；109/109 C surface、HugeRegion selected-node/chunk/weighted 和既有 pool/NUMA/TSan 证书保留 |
 | time | 功能/API/交付完成 | ✅ 2026-07-29 再收口；x86+ARM64 profiling/ordered pair、presampled-now C parity、44/44 C surface、三平台 shared/static probes、WSL ASan/UBSan/TSan；timer SOTA 证书继续有效 |
 | core | 功能与 compiler/cache primitive 完成 | ✅ `71dabf7` 的 IntrusiveList 证书保留；新增 prefetch/assume/restrict/flatten/unroll 已经 Win/WSL/M4 codegen、正确性和真实消费者复证后重新冻结 |
 | build/package system | 组织与三种交付形状完成 | ✅ 架构严格收口；🚧 持续门升级：all-component package/source/AArch64 与动态 exported-target consumer 已落代码，待本轮三平台及 GitHub 额度恢复后复证；focused API consumers 随各模块验收递增 |

@@ -63,7 +63,9 @@ if (auto* grown = alloc.reallocate_n(samples, 1024, 4096, 64)) {
 heap 优先用空类型、always-equal 的 `SystemStdAllocator<T>`；只有确实要在运行时注入 quota、stats、
 region 或用户 backing 时才用 `StdAllocator<T>`。后者按完整 `{alloc,free,realloc,state}` identity
 判断相等并借用 backing；adapter、容器与 `allocate_shared` control block 都必须先于 backing
-销毁。两者在标准库边界按要求把 OOM 转为异常，HYLE 内部仍使用 null/`Result` 合同。
+销毁。`StdAllocator<T>` 有意没有默认构造：运行时 backing 必须写出来；默认构造容器若只需要
+system heap，应把 allocator 类型写成 `SystemStdAllocator<T>`。两者在标准库边界按要求把 OOM
+转为异常，HYLE 内部仍使用 null/`Result` 合同。
 adapter 使用普通 `T*`（不提供 fancy pointer）；`allocate(0)` 可返回 `nullptr`，该返回值仍可用
 `deallocate(pointer, 0)` 配对。C++23 下 `!=` 由跨类型 `operator==` 的 rewritten candidate 提供。
 
@@ -85,7 +87,9 @@ hyle::mem::StatsAllocator stats =
 运行时 backing 注入才构造 `PmrResource(alloc)`。若 SIMD/cache/page-sensitive 容器明确需要更高的**底层
 buffer 起始地址**，使用 `AlignedPmrResource(alloc, alignment)`；这对应 oneTBB
 `cache_aligned_resource` 的需求形状，但 alignment 由用户选择，不把平台 cache policy 塞进
-所有容器。它不会给相邻元素自动加 padding；防 false sharing 仍需 padded/aligned element。
+所有容器。三个 resource 对合法的零字节 PMR 请求都会返回可配对 `deallocate(...,0,...)` 的
+有效 allocation；内部只取 1B backing，不会把底层 allocator 的“size 0 返回 NULL”合同误翻译成
+`bad_alloc`。它不会给相邻元素自动加 padding；防 false sharing 仍需 padded/aligned element。
 
 ```cpp
 hyle::mem::SystemStdAllocator<Node> system_nodes;
@@ -372,3 +376,6 @@ win/loss 或待补证据。性能结果用来帮助选型，不改变前述 owne
 验收记录见 [`../milestones/mem-close-plan.md`](../milestones/mem-close-plan.md)，2026-07-26
 成熟库复审、已完成修复与最终分发证书见
 [`../milestones/mem-mature-gap-audit.md`](../milestones/mem-mature-gap-audit.md)。
+安装包的最小默认/组合写法也作为可执行消费者保存在
+[`../../samples/package/mem`](../../samples/package/mem)：C 与 C++ 两份样例都只通过
+`find_package(Hyle COMPONENTS mem)` 使用 `hyle::mem`，持续覆盖 shared/static 交付。

@@ -33,10 +33,10 @@
 
 | 固定统计口径 | 当前 | 命令/说明 |
 |---|---|---|
-| **全库代码** | **277,692** | tracked；含 docs/third_party，**≠ 自写** |
-| **自实现（含测试）** | **135,321** | `cloc include/hyle src tests`，只计 C++/Header/C/CUDA |
-| **自实现（不含测试）** | **92,891** | `cloc include/hyle src`，只计 C++/Header/C/CUDA；库本体硬锚 |
-| **当前处理模块实现（obs）** | **1,250** | `include/hyle/obs + include/hyle/c/obs.h + src/obs`；不含测试/benchmark/文档 |
+| **全库代码** | **279,585** | tracked；含 docs/third_party，**≠ 自写** |
+| **自实现（含测试）** | **135,519** | `cloc include/hyle src tests`，只计 C++/Header/C/CUDA |
+| **自实现（不含测试）** | **92,914** | `cloc include/hyle src`，只计 C++/Header/C/CUDA；库本体硬锚 |
+| **当前处理模块实现（mem）** | **5,414** | `include/hyle/mem + include/hyle/c/mem.h + src/mem`；不含测试/benchmark/文档 |
 | **终态生产（纪律收口 A）** | **~75–90k** | 主预期 |
 | **终态生产（做满守界 B）** | **~85–105k** | compute/graph/发布面收口更满 |
 | 失控上限 C | 120k+ 生产 | 应避免 |
@@ -120,7 +120,7 @@ util ~1.3k · error **984** · time **1,421** · obs **1,018** · graph ~0.6–0
 | [mem-06c](./mem-06c-numa.md) | P2 | mem | NUMA：query + preferred bind + HugeRegion node + mi use_numa | platform-02b,mem-02 | 0.4-0.8k | numa.h/cc | ✅ 完成(2026-07-17)。soft preferred；单 node 平凡正确；无 libnuma |
 | mem-07 | P2 | mem | GrowablePool(growable/单线程池) + PmrResource(std::pmr 适配) | mem-03 | 1-2k | 145 (+116 测试) | ✅ 完成(吸纳 clay memory_pool/stl_allocator/generic_allocator;修 clay move-assign bug;generic_allocator⛔=Allocator 已是它) |
 | [mem-08](./mem-08-fiber-stack.md) | P2 | mem | fiber_stack：guard + 分级 + FiberStackPool + Fiber 接线 | platform-02b,sched-01 | 0.5-1k | ~518 code(头+接线+测) | ✅ 完成(2026-07-17)。`FiberStack`=`reserve_guarded`;Small/Default/Large;池回收;`Fiber` 默认 guarded。Win+WSL mem 56/56、sched 108/108 |
-| [mem-final](./mem-close-plan.md) | close | mem | 功能/API/性能收口与 release-candidate certification | mem-01..08 | — | 见任务单 | ✅ **2026-07-26 彻底收口**：mature-gap P0、default/injected adapter、fiber 回收均收；selected-node/chunk/weighted 按 platform-first 落地，Linux 极细条带 VMA 复杂度已封口，当前 mem 109/109 C surface；clean `c640072` 的 Win/WSL/M4 allocator shared same-link/TSan 证书继续有效 |
+| [mem-final](./mem-close-plan.md) | close | mem | 功能/API/性能收口与 release-candidate certification | mem-01..08 | — | 见任务单 | ✅ **2026-07-29 严格复证**：mature-gap P0、default/injected adapter、fiber 回收与 NUMA selected-node/chunk/weighted 均收；当前 109/109 C surface；`8c85331` 关闭 PMR zero-size、显式 runtime adapter、三平台 installed consumer 与受影响性能，clean `c640072` 的其余 allocator/pool/TSan 证书继续有效 |
 | [time-01](./time-01-clock.md) | P2 | time | typed 单调/墙钟、deadline、thread sleep | core | — | 见里程碑 | ✅ **2026-07-29 再收口**：x86 TSC + ARM64 architected raw profiler、有序 measurement pair、饱和 deadline、高分辨率 absolute sleep；28 clock tests + 三平台/ASan/UBSan/TSan |
 | [time-02](./time-02-timer-wheel.md) | P2 | time | exact-ns TimerQueue + CommonTimeoutQueue | time-01,core,error(C ABI) | — | 见里程碑 | ✅ **2026-07-29 再收口**：signed Unix timestamp/OS/chrono 互操作、C presampled-now parity、三平台 shared/static probes；44/44 C surface，timer SOTA 证书继续有效 |
 | container-01 | P3 | container | vendor 有界 ring(Vyukov/rigtorp,骨架用) | mem-01 | 1-2k | 220 | ✅ 完成 |
