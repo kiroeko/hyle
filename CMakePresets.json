@@ -153,7 +153,7 @@
     {
       "name": "linux-aarch64-cross",
       "displayName": "Linux AArch64 cross build",
-      "description": "All-component CPU AArch64 cross smoke. The toolchain discovers aarch64-linux-gnu GCC; override HYLE_CROSS_* cache variables for a nonstandard prefix/version. This verifies compilation and linkage, not target execution or module acceptance.",
+      "description": "All-component CPU AArch64 cross smoke with warnings as errors. The toolchain discovers aarch64-linux-gnu GCC; override HYLE_CROSS_* cache variables for a nonstandard prefix/version. This verifies compilation and linkage, not target execution or module acceptance.",
       "binaryDir": "${sourceDir}/build-linux-aarch64-cross",
       "toolchainFile": "${sourceDir}/cmake/toolchains/linux-aarch64-gcc.cmake",
       "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Linux" },
@@ -162,6 +162,7 @@
         "HYLE_COMPONENTS": "all",
         "HYLE_BUILD_TESTS": "OFF",
         "HYLE_BUILD_BENCH": "OFF",
+        "HYLE_WERROR": "ON",
         "HYLE_IO_TLS": "OFF",
         "HYLE_IO_HTTP2": "OFF",
         "HYLE_COMPUTE_CUDA": "OFF",

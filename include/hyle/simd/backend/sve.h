@@ -1014,7 +1014,7 @@ HYLE_FORCE_INLINE VFromD<D> InterleaveWholeUpper(D d, VFromD<D> a, VFromD<D> b) 
 // each block's lane order and also define the unpaired final block for VL=384 etc. as unchanged.
 namespace detail {
 template <class D>
-HYLE_FORCE_INLINE svbool_t first_n_per_128_block(D d, std::size_t count) noexcept {
+HYLE_FORCE_INLINE svbool_t first_n_per_128_block(D, std::size_t count) noexcept {
   using T = TFromD<D>;
   using U = MakeUnsigned<T>;
   constexpr std::size_t kLanesPerBlock = 16 / sizeof(T);

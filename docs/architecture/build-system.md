@@ -361,7 +361,7 @@ all-component CPU 图。Linux AArch64 也交叉编译同一图，而不再只抽
 |---|---|---|---|
 | CPU baseline | 每个 PR、每次 main 提交，三平台 | all components、tests、Werror、所有外部 feature OFF | 当前图可编译/测试；不冻结模块 API |
 | distribution | PR 至少 Linux；main/手动三平台 | shared/static install、外部 consumers、complete source、source embed | 三种交付形状仍完整；focused probe 才证明具体 API |
-| portability | PR/main 的 AArch64 compile；周期门逐步增加 | all-component cross，后续 minimum CMake、ASan/UBSan/TSan、SVE/RVV QEMU | 目标图/工具链可迁移；cross compile 不冒充真机运行 |
+| portability | PR/main 的 AArch64 compile；周期门逐步增加 | all-component cross + Werror，后续 minimum CMake、ASan/UBSan/TSan、SVE/RVV QEMU | 目标图/工具链可迁移；cross compile 不冒充真机运行 |
 | feature/release | 手动、nightly 或 release | TLS/HTTP2/ggml/Vulkan/CUDA 的真实 SDK、loader 和适用硬件 | 只认证实际启用并运行的能力组合 |
 
 `all` 的含义始终是“仓库在该提交声明的全部当前模块”，所以新增组件自动进入 baseline、安装包、

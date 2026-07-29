@@ -150,7 +150,7 @@ source embed/install consumer 必须继承的产品合同：
 | `wsl` | `linux` 的 gcc-14/g++-14 便利形状；重压/benchmark 使用 native ext4 checkout |
 | `wsl-tsan` | 继承 wsl，独立 build tree 启用 ThreadSanitizer |
 | `package-cpu-shared/static` | all-component、install ON 的确定性 feature-enabled CPU SDK 输入；TLS/CUDA OFF，HTTP/2/ggml/Vulkan ON，ggml native OFF |
-| `linux-aarch64-cross` | 标准 toolchain-file 驱动的 all-component CPU AArch64 cross smoke；只验证全部当前模块可编译/链接，不执行 target binary，也不代表真机或模块验收 |
+| `linux-aarch64-cross` | 标准 toolchain-file 驱动的 all-component CPU AArch64 cross smoke；Werror 下验证全部当前模块可编译/链接，不执行 target binary，也不代表真机或模块验收 |
 | `bench` | 默认 all-components + `HYLE_BUILD_BENCH=ON` + Release，独立 `build-bench` cache；因包含 SIMD，先准备 `HYLE_BENCH_VENDOR_DIR` 中固定版 Highway/xsimd。自选非 SIMD 组件不需要它 |
 | `bench-all-sota` | 继承 `bench`，再把全部 10 个 `HYLE_BENCH_*` gate 一次设 ON（先 fetch SIMD vendors，clone 类再跑 `setup-bench-libs.sh`） |
 
