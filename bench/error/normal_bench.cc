@@ -72,14 +72,28 @@ hyle_status c_manual_ok_chain() {
 #if defined(HYLE_BENCH_ABSL)
 constexpr std::string_view kVulkanPayloadUrl =
     "type.hyle.dev/native-error/vulkan";
+constexpr std::string_view kPosixPayloadUrl =
+    "type.hyle.dev/native-error/posix-errno";
+
+void set_absl_native_payload(absl::Status &status, std::string_view type_url,
+                             std::int64_t code) {
+  status.SetPayload(
+      type_url,
+      absl::Cord(absl::string_view(reinterpret_cast<const char *>(&code),
+                                   sizeof(code))));
+}
+
 absl::Status absl_native_error() {
   absl::Status status(absl::StatusCode::kUnavailable, "device lost",
                       absl::SourceLocation());
-  const std::int64_t code = -4;
-  status.SetPayload(
-      kVulkanPayloadUrl,
-      absl::Cord(absl::string_view(reinterpret_cast<const char *>(&code),
-                                   sizeof(code))));
+  set_absl_native_payload(status, kVulkanPayloadUrl, -4);
+  return status;
+}
+
+absl::Status absl_errno_with_native() {
+  absl::Status status = absl::ErrnoToStatus(
+      ENOENT, "opening model", absl::SourceLocation());
+  set_absl_native_payload(status, kPosixPayloadUrl, ENOENT);
   return status;
 }
 #endif
@@ -228,6 +242,10 @@ int main() {
     bench.run("absl::ErrnoToStatus", [&] {
       absl::Status status = absl::ErrnoToStatus(
           ENOENT, "opening model", absl::SourceLocation());
+      nb::doNotOptimizeAway(status.ok());
+    });
+    bench.run("absl::ErrnoToStatus + native payload", [&] {
+      absl::Status status = absl_errno_with_native();
       nb::doNotOptimizeAway(status.ok());
     });
 #endif
