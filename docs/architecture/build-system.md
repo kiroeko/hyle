@@ -103,7 +103,9 @@ graph    -> error + mem + container + util_core [+ sched]
 target link 表达的 INTERFACE component，不能从图里省略。只提供 OS/架构/编译器宏的
 `hyle/platform.h` 与 `hyle_trace` 横切 gate 不作为产品 root。包含 `hyle/platform.h` 只是零链接代价的编译环境
 依赖，不等于链接 `hyle::platform`；例如 time 的 native clock 实现用它选择 OS 分支，但 time 的
-二进制闭包仍然只有 error。未设置 `HYLE_COMPONENTS` 时默认 `all`；逗号与分号都可分隔多个根。
+二进制闭包仍然只有 error。反向的 `platform/fs.h -> time/unix_timestamp.h` 也只是自包含的
+C-compatible 时间值头：platform 不调用 time 符号，所以 platform 的 target 闭包仍然只有 error。
+未设置 `HYLE_COMPONENTS` 时默认 `all`；逗号与分号都可分隔多个根。
 显式空值会失败，避免丢失的 shell/CI 变量意外触发全库与重型依赖。父工程在
 `add_subdirectory()` 前设置普通变量时，CMake cache 会镜像同一有效值，GUI、问题报告与实际 target
 图不会分别显示 `all` 和子集。未知组件同样在 configure 阶段直接失败，配置日志打印

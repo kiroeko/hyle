@@ -13,7 +13,7 @@
 
 ```text
 主调度链：error ──▶ platform ──▶ mem ──▶ container ──▶ sched ──▶ io
-时间分支：core/header ··▶ time-native；error ──▶ time ──▶ sched
+时间分支：core/header ··▶ time-native；error ──▶ time ──▶ sched；time/value ··▶ platform/fs
 计算分支：{error, platform} ──▶ simd ──▶ compute；sched ──▶ compute
 图分支：  container ──▶ graph；sched ──▶ graph
 util 产品：container ──▶ util-runtime；util-core ··▶ util-runtime
@@ -36,7 +36,7 @@ math ──▶ users（当前无生产下游）
 | `error` | — | — | 全库可恢复失败值根 |
 | `obs-runtime` (`hyle_obs`) | error | — | log/C ABI 产品；共享 Status；与 trace build seam 分开 |
 | `math` | —（INTERFACE） | — | 独立公开标量助手，当前无生产模块消费者 |
-| `platform` | error | — | OS/thread/VM/fs/CPU 机制；`hyle/platform.h` 宏头本身零链接 |
+| `platform` | error | — | OS/thread/VM/fs/CPU 机制；fs 复用 time 的 C-compatible UnixTimestamp 值头；`hyle/platform.h` 宏头本身零链接 |
 | `mem` | error、platform、util-core | mimalloc | FiberStackPool 的短临界区；obs trace hook |
 | `time` | error | — | native timer 借 `core/intrusive_list`；不链接 platform/container |
 | `container` | mem | platform | 当前无 util-core 边；ConcurrentVector 的非短写临界区使用 mutex |
@@ -68,6 +68,11 @@ util 能力时必须先判断属于哪一层，禁止让 util-core 反向 includ
 mem/sched/util-runtime/graph 汇入但不增加二进制链长度；time 从 error 分叉，simd
 汇合 error 与 platform，sched 再汇入 io/compute/graph。`math` 是当前没有生产下游的合法用户叶；它的
 存在不应因此从完整模块图消失。
+
+`platform::FileInfo` / `hyle_file_info` 的 mtime 复用 `time/unix_timestamp.h` /
+`c/time_types.h` 中的自包含值形状。这是一条公开 header-only 边：它允许 OS metadata 与 time
+转换 helper 使用同一表示，但不会取得 clock、sleep、deadline 或 timer 符号，因而不能伪造成
+`hyle_platform -> hyle_time` target 边或 DLL 依赖。
 
 部分旧 C shim（util/sched/io）仍使用模块私有 `last_error`，是 error adoption
 审计尚未完成的显式欠账。obs 与 container 已在 2026-07-25 复审中迁到共享

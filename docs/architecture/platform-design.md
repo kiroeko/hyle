@@ -31,6 +31,9 @@ deadline 的时间语义仍归 time/sched；不能因为 OS 同时实现二者�
 构建依赖。
 
 `hyle/platform.h` 只是跨编译器的 `HYLE_OS_*`/属性宏头；包含它不等于链接 platform 模块。
+`FileInfo::modified_time` 与 C `hyle_file_info` 复用 time 的自包含 `UnixTimestamp` /
+`hyle_unix_timestamp` 值头，以免 OS metadata 与时间转换产生两种表示；它不取得 clock、sleep、
+deadline 或 timer 行为，因此是公开 header-only 边，不是 `hyle_platform -> hyle_time` target 边。
 只有直接调用本模块符号的实现才声明 private 依赖，公开头若命名 `CpuOrder`、`ThreadPriority`、
 `VmRegion` 等 platform 类型则声明 public 依赖。不得依靠 mem/sched 的传递链接掩盖直接消费，
 也不得因一个预处理宏虚构二进制依赖。

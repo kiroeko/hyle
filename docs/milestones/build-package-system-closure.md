@@ -233,10 +233,11 @@ Shell。普通 PowerShell 直接调用缓存中的 `cl.exe` 缺少 `INCLUDE/LIB`
 - 本机同时安装旧 VS 2022 与新 VS 18 时，第一次 generator-free smoke 真抓出 CMake 默认选择旧
   MSVC 19.38 的问题；最终 Windows 入口明确为受支持 VS 2022 generator，或由
   `scripts/hyle-windows.ps1` 经 vswhere 选择最新 C++ toolchain 后使用 Ninja，不再静默选旧编译器。
-- `cmake/HyleCiPackageSmoke.cmake` 从空 scratch 制作 shared/static mem SDK，并运行同一个 pure-C
-  error+mem consumer：shared 覆盖 `mem -> platform -> error` loader chain，static 覆盖 mimalloc
-  link-only archive，且 `.c` 保持 C17、最终链接使用 toolchain C++ driver。脚本限制 `--parallel 2`；
-  CI 在三平台复用该流程，并另跑 core C++/C/header/surface 聚合。
+- `cmake/HyleCiPackageSmoke.cmake` 从空 scratch 制作 shared/static all-component CPU SDK，先运行
+  general installed consumers，再自动发现 `samples/package/<module>/...` 的 module-owned focused
+  probes：shared 覆盖传递 loader chain，static 覆盖 mimalloc 等 link-only archive，且纯 `.c`
+  consumer 保持 C17、需要时最终链接使用 toolchain C++ driver。脚本限制 `--parallel 2`，避免把
+  per-commit 分发门做成无边界风扇；CI 在三平台复用同一流程。
 - Linux AArch64 reference toolchain 分离 host program 与 target library/include/package 搜索，并用
   static-library try-compile 禁止目标程序执行。WSL 从临时原生目录用 GCC 14.2 真 configure/build，
   `file` 确认产物为 ARM aarch64 ELF shared object；CI 对同一 preset 设硬门。

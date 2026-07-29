@@ -41,9 +41,10 @@ component/target 解析还必须表达无 binary artifact 的低层 header seam�
 component closure 是 `mem -> error + platform + util_core`；这条边已经同时存在于中央声明和
 `hyle_mem` target。不能把“util-core 不产生 DLL/so”误写成“mem 不依赖 util-core”。
 
-合法但不增加二进制依赖的头文件边只有四类：time 的 timer queue 复用
+合法但不增加二进制依赖的头文件边只有五类：time 的 timer queue 复用
 `core/intrusive_list.h`；mem 复用 `core/cache.h`，fiber stack pool 复用 util-core 的
-`util/spin_lock.h`；time 的 native clock 包含
+`util/spin_lock.h`；platform 的 file metadata 复用 time 的 C-compatible `UnixTimestamp` 值头；
+time 的 native clock 包含
 `hyle/platform.h` 读取 `HYLE_OS_*` 编译环境宏。`hyle/platform.h` 是零链接的编译环境头，
 不等同于 `hyle_platform` target。platform/mem/time 的 C shim 只通过 error 明确保留的
 `src/error/status_access.h` 桥接 `hyle_status`；HYLE C++ 实现没有绕经 C ABI，也没有形成
@@ -69,6 +70,25 @@ util-runtime 继续。性能边界另作
 边界成本；三平台“同链接形状”的最终性能证书仍登记在 performance 文档，不能把本次依赖
 正确性结论扩大成性能结论。该性能尾随后由 clean `c640072` 的 Win/WSL/M4 双 QoS same-link
 n=15 证书关闭；默认 heap、SystemStd、system PMR 与 realloc 无 material LOSE。
+
+### 七组件当前 HEAD 组合复证（2026-07-29）
+
+在 core、error、obs-runtime、platform、time、util-core、mem 各自严格证书完成后，又以
+`b4f08f4` 为同一源码基线组装七组件闭包，而不是把独立通过机械相加：Windows MSVC 19.50
+28/28、WSL GCC 14 28/28、M4 AppleClang 21 27/27 全绿；M4 唯一少项是按设计不登记的 x86 TSC
+校准测试。覆盖 C++ 行为、纯 C ABI、C symbol surface、header self-contained、TSC/NUMA 与断言
+失败路径。WSL 的 mem death-test 107.59s 是该环境已知的子进程启动成本，其余组合测试约 15s，
+不把它误判为产品热路性能。
+
+同一基线另生成只含七组件闭包的 Windows shared/static 安装包；13 个 source-independent focused
+C/C++ consumer 在两种链接形状下共 26/26 configure/build/run 通过。中央 manifest 已在 configure
+时同时投影 component closure 与真实 PUBLIC/PRIVATE target links，并由终态 property audit 拒绝
+后加的未声明边；本轮 include 扫描补记了 `platform/fs -> time/value` 的 header-only 真相，没有
+为它虚构 time DLL 依赖。
+
+GitHub Actions run `30486529929` 的四个 job 均在零 step、约 3s 时失败；check annotation 明确为
+组织近期付款失败或 spending limit，而不是 workflow/code failure。仓库内三平台与分发证据已绿，
+远端 CI 仍须账户 Billing 恢复后重跑；不得通过缩小或停用流水线把这个外部阻塞伪装成通过。
 
 这里关闭的是五模块之间的依赖方向，不是再次冻结每个模块的全部产品合同。后续成熟库
 能力红队分别发现了 mem 的 alignment/并发统计/lifetime P0 与 time 的 integral duration/
