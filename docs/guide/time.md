@@ -12,7 +12,8 @@ callback，也不替业务决定周期 timer 的补发策略。纯 C/FFI 用户�
 | 日志、协议、Unix epoch | `realtime_now()` / `realtime_timestamp()` | monotonic 当日期 | 可因校时跳变；跨边界优先分离秒/纳秒 |
 | 普通 C++ duration/deadline | chrono typed 入口 | 手写 ns 乘法与加法 | 转换向上取整并饱和 |
 | 简单作用域耗时 | `Instant::now()` + `elapsed()` | profiling clock 默认化 | 类型安全、差值可为负 |
-| 高频同核 profiling | `profiling_clock_ns()` | timeout | 先查 availability；x86 TSC 才可能更快 |
+| 高频低成本 profiling 采样 | `profiling_clock_ns()` | timeout / 精确边界 | 先查 availability；不序列化周围指令 |
+| 精确 profiling 区间 | `profiling_measurement_start_ns()` / `stop_ns()` | 两次 raw sampling | 阻止编译器/CPU 跨边界重排；仍不是 deadline clock |
 | 高频粗粒度日志时间戳 | `coarse_realtime_ns()` | 精确事件排序 | coarse 源可能一个 tick 内不变 |
 | 阻塞当前 OS 线程 | `sleep_for` / `sleep_until` | sched worker 上调用 | 至少睡到 deadline；0 是 no-op |
 | 挂起 HYLE fiber | `hyle::sched::sleep_*` | `time::sleep_*` | 不阻塞 worker |
@@ -48,10 +49,22 @@ const std::uint64_t left = hyle::time::remaining_ns(deadline);
 ns，超范围饱和。`Instant` 的 `elapsed()`/`until()` 是非负
 便利入口；`later - earlier` 与 `std::chrono` 一样保留方向，可能为负。
 
-`profiling_clock_ns` 只适合同一 pinned/近邻热路径的 profiling。它返回缩放到 ns 的 TSC
-采样，但名称和合同都不承诺 monotonic：跨核迁移、suspend 或 VM migration 可能让差值失真。
-availability 为 false 时会安全回退，但这不等于应该把它写进 timeout。`coarse_realtime_ns`
-是粗粒度日志时间戳；coarse 是稳定语义，是否更快只由当前平台性能证书说明。
+`profiling_clock_ns` 返回缩放到 ns 的硬件 counter 采样：x86 使用 invariant TSC，GCC/Clang
+ARM64 使用 architected virtual counter。x86 跨核迁移、suspend 或 VM migration 可能让差值
+失真，所以它只适合同一 pinned/近邻热路径；任何平台都不能把它写进 timeout。raw 入口追求
+最低读取成本，不保证周围待测指令没有被重排。真正量一段代码时使用有序 pair：
+
+```cpp
+const auto start = hyle::time::profiling_measurement_start_ns();
+hot_operation();
+const auto stop = hyle::time::profiling_measurement_stop_ns();
+if (stop >= start) record_sample(stop - start); // x86 跨核反向样本应丢弃
+```
+
+有序 pair 阻止编译器与 CPU 把普通指令/load 移过边界，但不会等待先前 store 全局可见；设备
+I/O、持久化和跨核同步仍使用各自的 fence/protocol。availability 为 false 时 raw 与 pair 都
+安全回退到 monotonic，只是不再有硬件快路。`coarse_realtime_ns` 是粗粒度日志时间戳；coarse
+是稳定语义，是否更快只由当前平台性能证书说明。
 
 ### Unix 时间与 OS/FFI 互操作
 
@@ -99,6 +112,14 @@ timers.advance(hyle::time::monotonic_now(), due);
 due.consume_all([](hyle::time::TimerEntry* timer) noexcept {
   if (auto fire = timer->fire_callback()) fire(timer);
 });
+```
+
+一个 event-loop tick 批量 arm 时先采一次 `now`，再把它传给每个 `schedule_after`；这样所有
+timer 属于同一时域并省去重复读钟，而不是缓存一个跨 tick 的旧时间：
+
+```cpp
+const auto now = hyle::time::monotonic_now();
+for (auto* timer : request_timers) timers.schedule_after(timer, 30s, now);
 ```
 
 queue 不分配、不执行 callback。`TimerEntry` 的地址在 linked 期间必须稳定；armed entry 必须先

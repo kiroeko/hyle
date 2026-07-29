@@ -23,6 +23,10 @@
   checked conversion，并迁移 platform/io。
 - [x] 新的 42-symbol C surface 与 platform/io 文件时间最终形状已完成 Windows、WSL GCC14、
   Apple M4 复证；WSL ASan/UBSan 13/13，三平台 io 文件消费边也通过。
+- [x] 2026-07-29 再审补 ARM64 architected profiling counter、ordered measurement pair、C
+  `schedule_after_at` 与 time-owned installed probes；当前 surface 为 44 symbols + 6 inline。
+- [x] 当前形状完成 Win/WSL/M4 Werror、三平台 C/C++ shared/static package、WSL
+  ASan/UBSan/TSan 与 clock n=15；不再沿用“M4 profiling unavailable”的旧结论。
 
 ## 结论先行
 
@@ -53,13 +57,13 @@ C ABI 也覆盖了现有语言无关能力。`sched`/`io` 对 time 的消费方�
 |---|---|---|---|
 | typed clock | `Duration`、steady/system time point、`*_now()` | 普通 C++ deadline、elapsed、墙钟记录 | 合理，优先推荐 |
 | compact clock | `monotonic_ns`、`realtime_ns` | syscall/C ABI/运行时热路的统一 ns 表示 | 合理 |
-| opt-in clock | TSC `profiling_clock`、OS `coarse_realtime` | 高频 profiling、日志/trace 打点 | 能力与语义名已对齐 |
+| opt-in clock | x86 TSC / ARM64 architected `profiling_clock`、ordered pair、OS `coarse_realtime` | 高频采样、精确区间、日志/trace 打点 | 能力与语义已分层 |
 | deadline arithmetic | 饱和 add、duration 转 ns、after/remaining | sched/io timeout 与 FFI 边界 | integral 路径已精确修复 |
 | blocking sleep | relative/absolute、chrono/整数 | 普通 OS 线程；不用于 fiber worker | 能力完整 |
 | elapsed snapshot | `Instant` | stopwatch/阶段耗时 | oneTBB 式小便利，保留 |
 | arbitrary timers | `TimerEntry` + `TimerQueue` | 每 worker 大量 timeout，常 arm/cancel | 核心算法/复杂度正确 |
 | one-duration timers | `CommonTimeoutQueue` | 海量同 idle timeout 的连接 | libevent 式真实特化；尚无生产 consumer |
-| C ABI | opaque timer/general/common queue + Status + visitor | C/FFI 使用时钟与 timer 容器 | 现能力覆盖完整；创建策略仍可改善 |
+| C ABI | opaque timer/general/common queue + Status + visitor | C/FFI 使用时钟与 timer 容器 | 默认 create 与 caller-storage/batch 形状均完整 |
 
 生产消费不是 benchmark 自证：
 
@@ -81,7 +85,8 @@ C ABI 也覆盖了现有语言无关能力。`sched`/`io` 对 time 的消费方�
 |---|---|---|---|
 | `std::chrono` typed duration/time point | 已有 | 足够，不自造 Duration 类 | time 保持 |
 | oneTBB `tick_count`/interval | `Instant` + chrono 差值 | 足够 | time 保持 |
-| Abseil cycle clock | `profiling_clock` TSC profiler | 语义已对齐 | time 保持 |
+| Abseil/Folly hardware timestamp | x86 TSC + ARM64 CNTVCT profiler | 语义与平台覆盖已对齐 | time 保持 |
+| Folly/Abseil ordered measurement pair | start/stop ordered ns pair | x86 同序列；ARM64 使用 ISB | 已完成；raw 与 ordered 不混测 |
 | Linux/Seastar low-resolution clock | `coarse_realtime` 是 coarse wall；无 cached steady | 不能混为一谈 | coarse wall 已正名；cached steady 由 sched profile 驱动 |
 | Seastar radix `timer_set` | 65 桶 exact-ns radix | 同算法/复杂度档 | 保持，重证性能 |
 | libevent common timeout | `CommonTimeoutQueue` | 能力覆盖 | 消费接入时补应用证书 |
@@ -202,7 +207,7 @@ median 3.118/0.030ms。release binary 不含 test env gate，已校准后的 rdt
 
 ### C ABI
 
-- 42 个动态符号 + 4 个 inline convenience 覆盖当前 clock/deadline/sleep/general/common 与
+- 44 个动态符号 + 6 个 inline convenience 覆盖当前 clock/deadline/sleep/general/common 与
   signed Unix timestamp 能力；
 - opaque handle 隔离 C++ intrusive layout，Status 覆盖 recoverable misuse，visitor 前已摘队列且可
   re-arm，形状正确；
@@ -234,6 +239,7 @@ architecture 也正确区分 time 数据结构和 sched/io executor。
 2. [x] 把两个 `fast_*` API 改为真实语义名，整套更新 C++/C/docs/surface；
 3. [x] 扩展正常使用性能矩阵并重跑 Windows/WSL/Apple 两档 QoS；
 4. [x] 同步 time architecture/guide/performance/milestone；全局 readiness 留给主任务统一更新。
+5. [x] ARM64 hardware profiling、ordered boundary、C presampled-now parity 和 installed probes。
 
 ### P1：需要 consumer 或独立设计批准
 
@@ -278,12 +284,16 @@ consumer 决定，避免 time 再次为了 benchmark 或“能力数量”无边
 
 ## 9. 实施验证
 
-- 最终产品实现基点：`16c91b4`，最终 Apple 仪器：`ba61eb5`，Release shared，`HYLE_COMPONENTS=time`；
+- 当前产品实现基点：`e58d3f5`，x86 test 修正：`e16a927`，Apple 仪器：`3b811e8`，
+  Release shared，`HYLE_COMPONENTS=time`；
 - Windows `hyle_time_test`、纯 C、C surface、header 与 fresh calibration：5/5 通过；
 - Windows timer/normal-use benchmark n=15 已记录到 performance；
-- WSL correctness 5/5 与 native-ext4 timer/normal n=15 已完成；Apple 最终 commit 五门 5/5，
+- WSL correctness 5/5 与 native-ext4 clock/timer/normal n=15 已完成；Apple 当前 commit 四门 4/4，
   timer/normal interactive + utility 各 n=15 已完成；
-- WSL GCC14 最终 `16c91b4`：ASan 五门 5/5，UBSan 五门 5/5。
+- WSL GCC14 当前形状：ASan 五门 5/5，UBSan 五门 5/5；TSan 以 `setarch -R` 运行
+  C++ 68 tests、纯 C 与 forced calibration 全绿。
 - 2026-07-27 timestamp 最终增量：Windows time/platform 9/9、io 3/3；WSL time/platform 13/13、
-  io 3/3、ASan/UBSan 各 13/13；Apple M4 time/platform 13/13、io 3/3。42/42 C surface、
+  io 3/3、ASan/UBSan 各 13/13；Apple M4 time/platform 13/13、io 3/3。当前 44/44 C surface、
   pre-epoch 与亚秒文件时间、chrono/timespec/FILETIME 边界均在最终代码形状通过。
+- Windows/WSL/M4 time-only installed C/C++ shared/static probes 各 4/4；clock 当前 n=15 见
+  performance 专页，M4 raw profiling interactive/utility 都约 11.42× 默认钟 throughput。

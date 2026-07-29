@@ -14,7 +14,8 @@
 | timeout / elapsed | `hyle_time_monotonic_ns` | 唯一可用于 deadline 的钟 |
 | 当前日志打点（紧凑 ns） | `hyle_time_realtime_ns` | Unix epoch；会受校时影响；不作通用持久格式 |
 | 文件/FFI/可早于 1970 的时间 | `hyle_time_realtime_timestamp` / `hyle_unix_timestamp` | 有符号 seconds + canonical nanoseconds |
-| 高频 profiling | `hyle_time_profiling_clock_ns` | 先查 available；禁止用于 deadline |
+| 高频 profiling 采样 | `hyle_time_profiling_clock_ns` | 先查 available；不序列化周围指令；禁止用于 deadline |
+| 精确 profiling 区间 | `hyle_time_profiling_measurement_start_ns` / `stop_ns` | 成对使用；边界有序；不是 deadline clock |
 | 粗粒度高频日志 | `hyle_time_coarse_realtime_ns` | 先查 available；可能多次返回同值 |
 | 相对 timeout → deadline | `hyle_time_deadline_after_ns` | 饱和，不会 wrap 到过去 |
 | deadline → 剩余时间 | `hyle_time_remaining_ns` | 已到期返回 0 |
@@ -29,6 +30,11 @@ while (hyle_time_remaining_ns(deadline) != 0) {
 
 不要写 `hyle_time_monotonic_ns() + timeout`；大值会溢出。不要用 realtime 做 timeout；NTP、
 管理员调时或虚拟机时钟校正都会让它跳变。
+
+硬件 profiling 的 raw sampling 与 ordered pair 不能混用。x86 的 ordered pair 使用
+LFENCE/RDTSC/RDTSCP，GCC/Clang ARM64 使用 architected counter + ISB；它们阻止普通代码跨
+测量边界重排，但不是设备/持久化 fence。`hyle_time_profiling_clock_available()` 为 0 时两种
+入口都安全回退到 monotonic。即使 available 为 1，也不得用于 timeout/deadline。
 
 `hyle_unix_timestamp` 同时被 time、platform 文件元数据和 io stat 使用。`seconds` 可为负，
 `nanoseconds` 必须小于 1,000,000,000，`reserved` 必须为 0；用
@@ -79,8 +85,18 @@ st = hyle_time_queue_destroy(queue); hyle_status_free(&st);
 ```
 
 `hyle_time_queue_create_at` 只给 virtual clock、确定性测试或已经持有采样值的 event loop。
-用它创建的 queue 不应调用 header-inline `schedule_after`，因为后者采样真实 monotonic；应自行
-形成同一时域的绝对 deadline 后调用 `schedule`。
+用它创建的 queue 不应调用 header-inline `schedule_after`，因为后者采样真实 monotonic；应调用
+`hyle_time_queue_schedule_after_at(queue, timer, timeout, virtual_now)`，或自行形成同一时域的
+绝对 deadline 后调用 `schedule`。正常 event loop 也可让一批 arm 共用一次 `now`：
+
+```c
+uint64_t now = hyle_time_monotonic_ns();
+for (size_t i = 0; i < timer_count; ++i) {
+  hyle_status st = hyle_time_queue_schedule_after_at(
+      queue, timers[i], timeout_ns, now);
+  /* check and free st */
+}
+```
 
 `advance` 的 `now_ns` 必须非递减。visitor 在 `advance` 调用线程同步执行，并且调用前 timer
 已经 unarm，因此 visitor 内可以 re-arm。visitor 为 NULL 仍会消费到期 timer。不同 radix
@@ -141,12 +157,12 @@ hyle_status_free(&st);
 
 | 分组 | 动态入口 | header-inline |
 |---|---|---|
-| clocks/deadline/sleep | `monotonic_ns`、`profiling_clock_ns/available`、`realtime_ns/realtime_timestamp`、`coarse_realtime_ns/available`、`sleep_for_ns`、`sleep_until_ns`、`deadline_after_ns`、`remaining_ns` | `sleep_for_us/ms` |
+| clocks/deadline/sleep | `monotonic_ns`、`profiling_clock_ns/available`、`profiling_measurement_start_ns/stop_ns`、`realtime_ns/realtime_timestamp`、`coarse_realtime_ns/available`、`sleep_for_ns`、`sleep_until_ns`、`deadline_after_ns`、`remaining_ns` | `saturating_add_ns`、`sleep_for_us/ms` |
 | timer node | `timer_create/destroy`、`timer_storage_size/alignment`、`timer_init/deinit`、`timer_user_data/set_user_data`、`timer_deadline_ns`、`timer_is_scheduled` | — |
-| general queue | `queue_create/create_at/destroy`、`queue_schedule/cancel/advance/cancel_all`、`queue_next_deadline_ns/size/empty` | `queue_schedule_after` |
+| general queue | `queue_create/create_at/destroy`、`queue_schedule/cancel/advance/cancel_all`、`queue_next_deadline_ns/size/empty` | `queue_schedule_after_at/after` |
 | common queue | `common_queue_create/destroy`、`common_queue_schedule/schedule_after/cancel/advance/cancel_all`、`common_queue_next_deadline_ns/size/empty/duration_ns` | `common_queue_schedule_now` |
 
-表中短名都以 `hyle_time_` 为前缀。动态入口共 42 个，inline convenience 共 4 个；inline
+表中短名都以 `hyle_time_` 为前缀。动态入口共 44 个，inline convenience 共 6 个；inline
 仍只调用动态 ABI，不暴露 C++ layout。
 
 ## Status 与生命周期

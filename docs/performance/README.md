@@ -67,7 +67,7 @@
 | **platform** persistent MappedFile 随机页访问 | 2.309/2.532/0.647 | ifstream seek/read | 2585.7/420.5/1527.9 | **1125/168/2355x** | page-cache random access | 同左 | 同左 | ✅真实 mapping 甜点三平台大赢 |
 | **platform** Parker token / `park_timeout(0)` | 9.215·1.690 / 9.818·0.564 / 1.850·1.346 ns | (无公平对手) | n/a | n/a | atomic floor 非对等 | n/a | n/a | ✅zero-timeout 纯 load；旧 µs 级路径作废 |
 | **time** realtime/monotonic | 三平台约12–15 | `std::chrono` 对应钟 | 同档 | ~1.0x | std 本身即同 OS primitive | 同左 | ~1.0x | ➖ header-inline 默认钟无抽象退化 |
-| **time** profiling/coarse clocks | x86 约1.8x / 3.3–5.2x throughput | HYLE 默认钟 | 见详表 | 见左 | (无同合同 std clock) | n/a | n/a | ✅ Win/Linux opt-in 真收益；M4 availability=false 正常回退 |
+| **time** profiling/coarse clocks | raw profiling 7.19/6.77/1.13ns（Win/Lin/M4）；native coarse 2.91/3.75ns | HYLE 默认钟 | 12.8/12.5/12.9ns | raw **1.77/1.84/11.42x** | Folly/Abseil hardware-counter 形状 | 同算法档 | ordered pair 单列强合同成本 | ✅ raw profiling 三平台真收益；M4 ARM counter 可用；macOS coarse unavailable 正确回退 |
 | **time** TimerQueue arm/cancel/expire | 见模块证书 | (std 无) | n/a | n/a | faithful Seastar radix | 同算法同档 | Win/M4 多数 1.05–1.43x；WSL churn 顺序敏感 | ⚠️ SOTA radix；WSL reverse churn 约慢7%，禁止写全胜 |
 | **time** TimerQueue vs indexed eager heap | 见模块证书 | (std 无) | n/a | n/a | libevent/libuv shape heap | 见详表 | 约2.25–9.83x | ✅ 三平台三负载胜，cancel 复杂度 O(1) vs O(log n) |
 | **time** CommonTimeoutQueue | 见模块证书 | (std 无) | n/a | n/a | checked / naked TAILQ | 见详表 | 同合同不输；M4 naked expire 约0.78x | ⚠️ 同合同 SOTA，公开安全税 |

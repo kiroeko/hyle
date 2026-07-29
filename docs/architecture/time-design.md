@@ -31,7 +31,7 @@ native time ──────────────────────�
 |---|---|---|
 | typed clock | `monotonic_now`、`realtime_now`、`Duration`、time point | C++ 正常代码避免把墙钟、duration、deadline 混成整数 |
 | compact clock | `monotonic_ns`、`realtime_ns` | 热路径、系统边界和 C ABI 使用一个明确的 ns 表示 |
-| opt-in clock | `profiling_clock_ns`、`coarse_realtime_ns` + availability | 名称表达 profiling/coarse 语义；绝不偷偷改变默认钟 |
+| opt-in clock | `profiling_clock_ns`、有序 measurement pair、`coarse_realtime_ns` + availability | 低成本采样与精确区间边界分开；绝不偷偷改变默认钟 |
 | Unix interchange | signed `UnixTimestamp{seconds,nanoseconds}` + checked OS/chrono conversion | 文件/FFI 保留 pre-epoch、亚秒精度和宽范围 |
 | arithmetic | 饱和 duration 转换、`deadline_after`、`remaining` | 消除 `now + timeout` 溢出和向下舍入导致的提前超时 |
 | blocking sleep | 相对/绝对、整数/chrono | OS 线程休眠；fiber 必须使用 `sched`，不能阻塞 worker |
@@ -50,11 +50,19 @@ drift 与取消策略属于 executor/event loop；底层只提供一次性节点
 日志、协议和文件时间。两者不能相减或互换。
 
 默认 C++ 钟 header-inline 到 `std::chrono`，避免无意义的 DLL 跳转。C ABI 是导出 wrapper。
-`profiling_clock` 在有 invariant TSC 的 x86 上才启用，可能受 suspend/VM migration/跨核
-偏差影响，因此名称不承诺 monotonic，并禁止用于 deadline。`coarse_realtime` 仅在系统存在
-真正 coarse 源时报告 available；否则透明回退。availability 是策略输入，不是正确性前置条件。
-TSC 频率优先读 CPUID 0x15；不可用时用倍增 sleep window 对 OS monotonic 实际 elapsed 校准，
-不靠 busy-spin 保持 core 活跃。校准只影响首次调用，热读仍是 rdtsc + fixed-point scale。
+`profiling_clock` 在 x86 invariant TSC 和 GCC/Clang ARM64 architected virtual counter
+(`CNTVCT_EL0/CNTFRQ_EL0`) 上启用。x86 可能受 suspend/VM migration/跨核偏差影响，因此名称
+不承诺 deadline 所需的严格 monotonic；任何平台都禁止把它接入 timeout。普通
+`profiling_clock_ns` 是最低成本、未序列化的采样入口；精确测量代码区间使用
+`profiling_measurement_start_ns/stop_ns`，x86 采用 capability-gated
+LFENCE/RDTSC/RDTSCP，ARM64 采用 ISB 包围 counter read，阻止编译器/CPU 把区域指令移过边界。
+该 pair 不等待先前 store 全局可见，不能冒充持久化/设备 I/O fence。
+
+`coarse_realtime` 仅在系统存在真正 coarse 源时报告 available；否则透明回退。availability
+是策略输入，不是正确性前置条件。x86 TSC 频率优先读 CPUID 0x15；不可用时用倍增 sleep
+window 对 OS monotonic 实际 elapsed 校准，不靠 busy-spin 保持 core 活跃。校准只影响首次
+调用，热读仍是 rdtsc + fixed-point scale。ARM64 直接读取系统登记的 counter frequency；
+Apple Silicon 当前为 1GHz，tick 已是 ns，不需要缩放。
 
 相对 timeout 转绝对 deadline 必须饱和并向上取整。integral duration 使用精确整数 ratio
 算术，不能经浮点而在 2^53 以上丢失 ns；floating duration 单独处理 NaN、无穷和 ceil。
@@ -122,13 +130,18 @@ libevent 的 `event_get_struct_event_size + event_assign`，既不公开 C++ lay
 
 C visitor 调用前 timer 已离开 queue，所以 callback 内 re-arm 合法。destroy scheduled timer
 或非空 queue 是可恢复 `FAILED_PRECONDITION`，不会让 C 调用越过 C++ fail-fast/异常边界。
+general queue 的 C header-inline `schedule_after_at` 允许 event loop 把一次 monotonic sample
+复用于一批 arm；默认 `schedule_after` 仍负责自己采钟。两者都经同一个饱和加法 helper，
+不会为了省一次读钟重新引入 overflow。
 
 ## 修改门禁
 
-- clock：Windows/WSL/macOS 与同工作量 `std::chrono` 对照；opt-in 路必须单独报告 availability；
+- clock：Windows/WSL/macOS 与同工作量 `std::chrono` 对照；opt-in 路必须单独报告
+  availability；raw sampling 与 ordered measurement 不跨语义判胜负；
 - timer：随机 oracle、完整 `uint64_t` 边界、wrong-owner、输出链生命周期、回调 re-arm；
 - 性能：预分配相同节点；同时对 indexed heap 和 faithful Seastar radix；固定顺序与反序注册；
   另测 N=1/8/64、散布节点、增量 event-loop、真实读钟的 schedule_after、C ABI 与 sleep overshoot；
-- C ABI：纯 C 编译、surface manifest、自包含头、导出符号、Status 所有权；
-- 消费回归：`time`、`container`、`sched`、`io_timeout`，并跑 ASan/UBSan；
+- C ABI：纯 C 编译、surface manifest、自包含头、导出符号、Status 所有权，以及 time-only
+  shared/static installed C/C++ probe；
+- 消费回归：`time`、`container`、`sched`、`io_timeout`，并按能力跑 ASan/UBSan/TSan；
 - 任何性能结论只进入 performance 文档，架构与 guide 不复制易腐点值。

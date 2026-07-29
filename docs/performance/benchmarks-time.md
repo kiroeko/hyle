@@ -2,12 +2,13 @@
 
 > 本页是 time 性能数字的唯一信源。实现与选择理由分别见
 > [`time-design`](../architecture/time-design.md) 和 [`guide/time`](../guide/time.md)。
-> 当前产品实现固定在 `16c91b4`，Apple-only benchmark 仪器固定在 `ba61eb5`：Windows
-> MSVC 19.50、WSL GCC 14.2 native-ext4、Apple M4 AppleClang 21 Release 均完成 n=15。
+> 当前 clock 产品实现固定在 `e58d3f5`，x86-only test 修正在 `e16a927`，Apple QoS 仪器固定
+> 在 `3b811e8`：Windows MSVC 19.50、WSL GCC 14.2 native-ext4、Apple M4 AppleClang 21
+> Release 均完成 n=15。
 > M4 同时跑 user-interactive 与 utility QoS；每个样本是独立进程，
 > 判定以 `bench-stat.py` paired sign test（p < 0.01，且中位差 >1%）为主。
-> Windows/WSL TimerQueue 算法表采于 `bd29d57`；其后的产品提交只补 bool duration、typed
-> facade inline 与非 TSC 编译门，不改变算法表使用的 raw queue 路径。normal-use 表已在
+> Windows/WSL TimerQueue 算法表采于 `bd29d57`；其后的 clock/ABI 增量不改变算法表使用的
+> raw queue 路径。normal-use 表已在
 > `9129001` 重采；M4 两表使用最终 Apple 仪器 `ba61eb5`。caller-storage 行是本轮最终候选在
 > 同一 Windows 工具链上的新增 n=15；未改写其它平台的历史列。
 
@@ -15,7 +16,7 @@
 
 | 被测面 | 实际入口 | 对手 / 防伪 |
 |---|---|---|
-| clock read | `bench/misc/misc_bench.cc` | 同工作量 `std::chrono`，不是空函数 |
+| clock read / profiling boundary | `bench/time/clock_bench.cc` | 同工作量 `std::chrono`；raw sampling 与 ordered boundary 分表，不跨合同判胜负 |
 | arbitrary timer 算法 | `bench/time/timer_queue_bench.cc` | faithful Seastar `timer_set` radix；另列 indexed eager-erase heap |
 | 正常公开入口 | `bench/time/normal_usage_bench.cc` | 小 N、散布节点、增量循环、真实读钟、C ABI、对象生命周期 |
 | thread sleep | 同上 | HYLE 与 `std::this_thread::sleep_for` 的 warm overshoot 分布 |
@@ -28,20 +29,31 @@ timer 节点在 epoch 外预分配。Seastar 线按成熟库形状使用 circula
 ## 1. Clock 与校准冷路
 
 默认 clock header-inline 到与标准库相同的 OS primitive；目标是没有抽象退化，不是声称比同一个
-primitive 更快。上一轮三平台证书（`14ee67e`）记录：默认 monotonic/realtime 与对应 chrono
-同档；x86 profiling TSC 在 Windows/WSL 分别约 1.77×/1.84× throughput；Windows/Linux coarse
-wall 分别约 5.19×/3.32×；M4 两个 opt-in availability 均为 false 并正确回退。名称重构没有
-改变热读实现，但这组旧提交数字只作回归参照，最终三平台复证完成前不冒充当前点值。
+primitive 更快。`e58d3f5` 把 ARM64 architected virtual counter 纳入 profiling，并把 raw sampling
+与 ordered measurement 分开。下表单位 ns/read（pair 行为 ns/pair），均为 n=15 中位数：
 
-TSC 无 exact CPUID frequency 时，fallback 现在用 1/2/4/... ms sleep-based sampling，不再
-busy-spin。fresh-process 强制 fallback 的 15 次结果：
+| 平台 / QoS | std steady | HYLE monotonic | raw profiling | raw / std throughput | std steady pair | ordered pair | std system / HYLE realtime / coarse |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Windows | 12.754 | 12.796 | **7.188** | **1.77× WIN** | 24.770 | 30.764 | 15.137 / 15.176 / **2.913** |
+| WSL / CPU2 | 12.447 | 12.520 | **6.769** | **1.84× WIN** | 25.019 | 28.241 | 12.475 / 12.432 / **3.745** |
+| M4 interactive | 12.929 | 12.930 | **1.132** | **11.42× WIN** | 24.517 | 33.088 | 13.555 / 13.561 / 12.917 |
+| M4 utility | 12.939 | 12.939 | **1.132** | **11.42× WIN** | 24.513 | 33.107 | 13.546 / 13.670 / 12.947 |
 
-| 平台 | 首次调用 wall median（min–max） | thread CPU median（min–max） | 结论 |
-|---|---:|---:|---|
-| Windows | 3.703 ms（3.150–4.041） | 计时粒度下为 0 | 不再占满 CPU |
-| WSL GCC 14.2 | 3.118 ms（3.084–3.215） | 0.030 ms（0.023–0.050） | CPU / wall 约 1% |
+默认 monotonic/realtime 三平台与 std 同档。Windows/Linux coarse 是真正 native coarse source，
+分别约 5.20×/3.33×；macOS availability=false，表中 `coarse` 只是正确 fallback，约 1.05× 的
+点值不能宣称原生 coarse 能力。M4 的 CNTFRQ 为 1GHz，counter tick 已是 ns，所以 raw sampling
+无需 fixed-point scale；interactive/utility 同向，不能据此声称硬 P/E 核绑定。
 
-该测试只验证冷启动延迟/CPU 合同；已校准后的 profiling read 仍是独立热路。
+ordered pair 比 std 双读慢 11--26%，但二者不是同合同：std 双读不阻止待测代码跨读钟重排；
+HYLE x86 pair 使用 LFENCE/RDTSC/RDTSCP，ARM64 pair 使用 ISB，购买的是精确区域边界。Folly/
+Abseil 的 x86 measurement pair 采用同一序列；不存在同能力 std 入口，因此这列只报告绝对成本，
+不把与无序 pair 的数值差写成 SOTA LOSE，也不借强合同掩盖成本。
+
+x86 TSC 无 exact CPUID frequency 时，生产 fallback 用 1/2/4/... ms sleep-based sampling，不再
+busy-spin。test-only forced path 从 32ms 窗口开始，让 Windows 15.625ms thread-accounting 粒度
+能可靠区分 sleep 与 busy work；Windows/WSL fresh-process 门均约 96ms wall 且满足低 CPU 合同。
+这 96ms 不是 shipping 首调延迟。ARM64 无 TSC calibration，M4 不再注册该 x86-only CTest；它由
+counter availability/nondecreasing 真机用例覆盖。
 
 ## 2. TimerQueue：正常 cardinality
 

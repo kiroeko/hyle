@@ -5,14 +5,16 @@
 | 阶段 | P2 |
 | 模块 | time/ |
 | 依赖 | core 宏/头；无编译期 HYLE 模块依赖 |
-| 状态 | ✅ 2026-07-26 strict 重审实现完成；Windows/WSL/Apple 最终形状五门通过 |
+| 状态 | ✅ 2026-07-29 strict 再审完成；Windows/WSL 五门、Apple 四门（x86-only 门不注册）通过 |
 
 ## 交付能力
 
 - `monotonic_ns()`：唯一可用于 elapsed/deadline/timeout 的稳态时钟。
 - `realtime_ns()`：Unix epoch ns 墙钟，只用于日志/时间戳。
-- `profiling_clock_ns()` + `profiling_clock_available()`：x86 invariant-TSC
-  profiling 快路径；不支持时回退，绝不用于 deadline。
+- `profiling_clock_ns()` + availability：x86 invariant-TSC 与 GCC/Clang ARM64 architected
+  counter 的低成本 sampling；不支持时回退，绝不用于 deadline。
+- `profiling_measurement_start_ns()/stop_ns()`：阻止 compiler/CPU 跨区间边界重排；x86
+  LFENCE/RDTSC/RDTSCP，ARM64 ISB；不替代同步或设备 fence。
 - `coarse_realtime_ns()`：Windows shared-data / Linux
   `CLOCK_REALTIME_COARSE` 的低分辨率日志时间戳。
 - `sleep_for_ns/us/ms()`、`sleep_until_ns()`。
@@ -40,6 +42,8 @@
    未初始化 timespec。
 6. TSC timing fallback 从最多累计 255ms 的 busy-spin 改为 sleep-based sampling；按实际
    monotonic elapsed 算频率，首次校准不再占满一个 core，热读路径不变。
+7. ARM64 读取 `CNTVCT_EL0/CNTFRQ_EL0`；Apple Silicon 1GHz tick 直接是 ns。raw sampling 与
+   ordered measurement 分开，避免把便宜但无边界保证的读钟误当精确 profiler。
 
 ## 正确性边界
 
@@ -51,7 +55,7 @@
 
 ## 验收
 
-- 25 个 clock 测试：单调性、epoch、typed facade、sleep 下限、coarse/TSC availability、
+- 28 个 clock 测试：单调性、epoch、typed facade、sleep 下限、coarse/hardware availability、
   deadline 饱和、2^53±/signed/unsigned/非整 ns 精确转换、过去/未来 sleep-until、
   bool duration、signed Instant subtraction 与 fresh-process 低 CPU 校准。
 - 纯 C smoke 覆盖每个时钟与便利入口。
@@ -65,6 +69,7 @@
 - MSVC `__msvc_chrono.hpp` QPC 频率特判
 - Abseil TSC 频率配对校准思路
 - Tracy invariant-TSC CPUID 探测
+- Folly/Abseil ordered hardware-timestamp sequence 与 Folly ARM64 CNTVCT 形状
 
 当前设计、用法和数字分别见 [`time-design`](../architecture/time-design.md)、
 [`guide/time`](../guide/time.md) 与 [`benchmarks-time`](../performance/benchmarks-time.md)。

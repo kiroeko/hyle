@@ -121,7 +121,7 @@ math 的处理相反：它当前不是经过独立需求设计的产品，而是
 | error | 功能/API/native detail/27-symbol C ABI 完成 | ✅ 2026-07-29 消费者合同再收口；C 首错聚合直接可达；Win/WSL/M4 n=15 同能力 Abseil 无 LOSE；platform generic POSIX/Win32 adoption 已在 `a073931` 转绿，其余消费者随模块复审继续 |
 | platform | 功能/API/120-symbol C ABI 完成 | ✅ 2026-07-29 `a073931` 严格复证；generic error adoption、CPU default-set 复杂度、局部 LTO、macOS 14.4、三平台 Release/installed package 与 WSL sanitizer 均转绿；既有正常 workload SOTA 点值继续有效 |
 | mem | 功能/API/P0/分发性能已完成 | ✅ 彻底收口；clean `c640072` 保留 allocator 三平台 shared same-link n=15 与 WSL TSan；当前 109/109 C surface，HugeRegion selected-node/chunk/weighted C++/C 已补齐，Linux 极细条带使用固定批次 placement |
-| time | 功能主体完成 | ✅ 严格收口；signed Unix/OS/chrono 互操作、42/42 C surface 与 platform/io 消费边已通过 Win/WSL/M4、WSL ASan/UBSan；timer SOTA 证书继续有效 |
+| time | 功能/API/交付完成 | ✅ 2026-07-29 再收口；x86+ARM64 profiling/ordered pair、presampled-now C parity、44/44 C surface、三平台 shared/static probes、WSL ASan/UBSan/TSan；timer SOTA 证书继续有效 |
 | core | 功能与 compiler/cache primitive 完成 | ✅ `71dabf7` 的 IntrusiveList 证书保留；新增 prefetch/assume/restrict/flatten/unroll 已经 Win/WSL/M4 codegen、正确性和真实消费者复证后重新冻结 |
 | build/package system | 组织与三种交付形状完成 | ✅ 架构严格收口；🚧 持续门升级：all-component package/source/AArch64 与动态 exported-target consumer 已落代码，待本轮三平台及 GitHub 额度恢复后复证；focused API consumers 随各模块验收递增 |
 | util-core | 低层公开头能力完成 | ✅ 严格收口；实际使用形状、依赖边、三平台正确性/TSan/性能已签证 |
