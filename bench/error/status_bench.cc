@@ -31,7 +31,9 @@ using hyle::StatusCode;
 // rival to Result<T> = expected<T, Status>.
 using StdResult = std::expected<int, std::error_code>;
 
-// Four successful frames exercise the information-free Result path.
+// Four consumer call frames exercise Result. Keep both the leaf and outer chain
+// opaque for every rival: otherwise GCC inlines only the smaller std/Abseil
+// wrapper and charges HYLE an extra call boundary.
 HYLE_NOINLINE Result<int> hyle_leaf_ok(int x) { return x + 1; }
 HYLE_NOINLINE Result<int> hyle_leaf_error(int x) {
   return x >= 0
@@ -39,13 +41,13 @@ HYLE_NOINLINE Result<int> hyle_leaf_error(int x) {
              : Result<int>(x);
 }
 
-Result<int> hyle_chain_ok(int x) {
+HYLE_NOINLINE Result<int> hyle_chain_ok(int x) {
   HYLE_ASSIGN_OR_RETURN(int a, hyle_leaf_ok(x));
   HYLE_ASSIGN_OR_RETURN(int b, hyle_leaf_ok(a));
   HYLE_ASSIGN_OR_RETURN(int c, hyle_leaf_ok(b));
   return c;
 }
-Result<int> hyle_chain_error(int x) {
+HYLE_NOINLINE Result<int> hyle_chain_error(int x) {
   HYLE_ASSIGN_OR_RETURN(int result, hyle_leaf_error(x));
   return result;
 }
@@ -58,7 +60,7 @@ HYLE_NOINLINE StdResult std_leaf_error(int x) {
                       std::errc::no_such_file_or_directory)))
                 : StdResult(x);
 }
-StdResult std_chain_ok(int x) {
+HYLE_NOINLINE StdResult std_chain_ok(int x) {
   auto a = std_leaf_ok(x);
   if (!a) return a;
   auto b = std_leaf_ok(*a);
@@ -67,7 +69,7 @@ StdResult std_chain_ok(int x) {
   if (!c) return c;
   return *c;
 }
-StdResult std_chain_error(int x) {
+HYLE_NOINLINE StdResult std_chain_error(int x) {
   auto result = std_leaf_error(x);
   if (!result) return result;
   return *result;
@@ -80,7 +82,7 @@ HYLE_NOINLINE absl::StatusOr<int> absl_leaf_error(int x) {
                                                    "", absl::SourceLocation()))
                 : absl::StatusOr<int>(x);
 }
-absl::StatusOr<int> absl_chain_ok(int x) {
+HYLE_NOINLINE absl::StatusOr<int> absl_chain_ok(int x) {
   auto a = absl_leaf_ok(x);
   if (!a.ok()) return a.status();
   auto b = absl_leaf_ok(*a);
@@ -89,7 +91,7 @@ absl::StatusOr<int> absl_chain_ok(int x) {
   if (!c.ok()) return c.status();
   return *c;
 }
-absl::StatusOr<int> absl_chain_error(int x) {
+HYLE_NOINLINE absl::StatusOr<int> absl_chain_error(int x) {
   auto result = absl_leaf_error(x);
   if (!result.ok()) return result.status();
   return *result;

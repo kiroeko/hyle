@@ -34,11 +34,13 @@ const Status &hyle_prebuilt_error() {
   return status;
 }
 
+// Use the same two real call boundaries for HYLE and Abseil. The benchmark
+// measures carrier propagation, not a compiler's asymmetric inlining choice.
 HYLE_NOINLINE Result<int> hyle_info_leaf(int value) {
   return value >= 0 ? Result<int>(hyle::make_unexpected(hyle_prebuilt_error()))
                     : Result<int>(value);
 }
-Result<int> hyle_info_chain(int value) {
+HYLE_NOINLINE Result<int> hyle_info_chain(int value) {
   HYLE_ASSIGN_OR_RETURN(int result, hyle_info_leaf(value));
   return result;
 }
@@ -82,7 +84,7 @@ HYLE_NOINLINE absl::StatusOr<int> absl_info_leaf(int value) {
                     : absl::StatusOr<int>(value);
 }
 
-absl::StatusOr<int> absl_info_chain(int value) {
+HYLE_NOINLINE absl::StatusOr<int> absl_info_chain(int value) {
   auto result = absl_info_leaf(value);
   if (!result.ok()) return result.status();
   return *result;
