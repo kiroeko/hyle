@@ -54,6 +54,10 @@ last-error；C 与 C++ 共用 error 的 code、message 和所有权规则。
 
 ### 3.1 wait / Parker（DLL）
 
+地址等待的 `uint32_t` 必须自然对齐，并且其所有并发读写都要使用 C 原子操作（或由同一个同步
+协议保证），不能一边用普通 load/store、一边调用 wait/wake。wait 允许伪唤醒，必须在循环中
+重新检查谓词；需要保存一个 unpark-before-park token 时直接选 Parker。
+
 | 符号 | 说明 |
 |---|---|
 | `hyle_wait_on_address(addr, expected)` | 地址等待；允许伪唤醒 |
@@ -166,7 +170,7 @@ VMA policy。需要严格控制首次触页时机时使用较粗 chunk 或单次
 | `hyle_fs_exists(out, path)` / `hyle_fs_is_directory(out, path)` | Status+out；缺失是成功的 false，权限/I/O 失败仍是 Status |
 | `hyle_fs_file_size(out, path)` | Status+out；空文件是成功的 0，缺失与目录分别是 `NOT_FOUND` / `FAILED_PRECONDITION` |
 | `hyle_fs_make_directory*` | Status；已存在目录为 OK，已存在非目录为 `ALREADY_EXISTS` |
-| `hyle_fs_remove_directory*` / `hyle_fs_remove_file` | Status；递归删除保留首个失败，且不跟随 symlink/junction |
+| `hyle_fs_remove_directory*` / `hyle_fs_remove_file` | Status；稳定、调用方拥有的目录树中递归删除保留首个失败且不跟随 symlink/junction；不承诺抵抗 entry 的并发替换 |
 | `hyle_fs_rename` / `hyle_fs_copy_file` / `hyle_fs_touch` | Status；保留原生 operation/code/message |
 | `hyle_fs_current_directory(out_size,dst,cap)` / `temp` / `home` | Status+out buffer-fill；`*out_size>=cap` 表示截断，`dst==NULL` 可只查长度 |
 | `hyle_fs_change_directory(path)` | Status；缺失、权限、非法 UTF-8 分开报告 |

@@ -6,6 +6,11 @@
 > **2026-07-24 当前 SOTA 修正（实现 `75f3a45`）**：Win MSVC 19.50、WSL GCC 14.2、
 > Apple M4 AppleClang 21 的 zero-timeout、MappedFile、FileHandle 与持久随机访问均为
 > **n=15**；其它 OS 阻塞段沿用下文标明的新鲜证书。
+> **2026-07-29 严格复证（实现 `a073931`）**：没有改动上表所测的正常热路径语义，既有点值
+> 继续有效；本轮以机制/codegen 证据补强两条原来未被点值覆盖的性能合同。Windows 默认 CPU
+> Set membership 从 O(ND) 嵌套扫描改为排序后二分查找 O(D log D + N log D)，避免稀疏 opaque
+> id bitmap；MSVC IPO build 中 CPU probe object 无 `/GL`、其余 platform TU 有 `/GL`，证明
+> baseline ISA 安全不再靠全模块关闭 LTO。没有为这两条冷初始化/构建合同制造纳秒 benchmark。
 > 旧 2026-06-30 双平台证书作废（源码 7 月大幅改过）。  
 > sched 同步/fiber 不在本页 → [benchmarks-sched.md](./benchmarks-sched.md)。
 

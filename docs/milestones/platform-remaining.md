@@ -43,6 +43,35 @@
 > sched 为 public；io 只有编译期 `HYLE_OS_*` 宏而没有 platform 符号/类型，不再伪报二进制依赖。
 > 其余原生调用的保留边界如下表；这张表是防止以后“为了统一而错误统一”的审计基线。
 
+> **严格方法论复证（2026-07-29，`a073931`）：**按
+> [`module-closure-methodology.md`](../architecture/module-closure-methodology.md) 重新执行需求账、
+> 负空间、复杂度、C/C++ 任务对等、依赖/错误、build/package 与三平台迁移门。功能面继续覆盖
+> CPU/cache/topology、Thread/affinity/priority、wait/Parker、VM/guard/huge/NUMA、同步 fs/env、
+> MappedFile 与 DynLib；FileHandle 有意保持顺序同步 owner，显式 offset/async/registered file 归
+> io，path 词法归 container，clock/deadline 归 time/sched。没有为 benchmark 新增产品类型或常态
+> metadata。
+>
+> 本轮修复的是结构性问题：platform 的 POSIX/Win32 generic native error 全部改走 error 的
+> canonical adapter，删除七套近似 translator；Windows CPU default-set membership 从 O(ND) 改为
+> O(D log D + N log D)；CPU probe 被隔离成唯一关闭 IPO 的 object target，其余 platform 保留
+> parent LTO；C address-wait 的零超时读取用 `atomic_ref`，不再把 C storage 当已构造的
+> `std::atomic`；MSVC C++ consumer 明确取得 `/EHsc`；macOS platform deployment floor 固定为
+> 14.4；递归删除文档补上并发替换不具原子安全性的真实边界。新增 source-independent platform
+> C/C++ installed probes，shared/static 都只通过 `find_package(Hyle COMPONENTS platform)` 消费。
+>
+> Windows MSVC 19.50、WSL GCC 14.2、Apple M4 AppleClang 21 的全新 Release/Werror platform
+> 定向门各 **8/8**；三平台 shared/static installed C/C++ probes 各 **4/4**。WSL ASan/UBSan
+> 各 8/8；TSan 在 WSL 6.18 默认高地址 ASLR 下于 test main 前触发 runtime
+> `unexpected memory mapping`，按既有平台证书使用 `setarch $(uname -m) -R` 后 8/8，不能把
+> sanitizer runtime 启动失败误报成 HYLE data race。macOS 默认 target 14.4 通过，显式 14.3
+> 在 configure 阶段按合同拒绝。MSVC IPO codegen 显示 CPU probe 无 `/GL`、普通 wait TU 有
+> `/GL`。本轮未改正常热路径算法，旧 n=15 点值继续有效；新增复杂度/codegen 证据见 performance。
+>
+> 固定四项 LOC：全库 tracked **277,909**；HYLE 自实现含测试 **135,174**；自实现不含测试
+> **92,675**；platform 当前实现 **7,277**。后三项只计 `include/hyle`、`src`、`tests` 中的
+> C/C++/CUDA code，当前模块口径为 `include/hyle/platform` + `include/hyle/c/platform.h` +
+> `src/platform`，不把 CMake/生成清单算作实现。
+
 | 下游 | 结论 | 原因 |
 |---|---|---|
 | `mem` / `container` | 已正确消费 | VM、NUMA、页信息、动态进程 CPU 视图均走 platform；此前收口已回归。 |

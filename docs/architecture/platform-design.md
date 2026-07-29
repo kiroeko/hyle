@@ -57,7 +57,9 @@ deadline 的时间语义仍归 time/sched；不能因为 OS 同时实现二者�
 CPU API 有三类不同生命周期，不能混用：
 
 1. `cpu_features()` / `best_isa()` 是当前进程可安全执行的指令能力。x86 同时检查 CPU 位和
-   OS 扩展寄存器保存能力；探测 TU 必须保持 baseline ISA 且禁止 LTO 内联高级指令。
+   OS 扩展寄存器保存能力；探测 TU 必须保持 baseline ISA。构建系统把该 TU 独立放入关闭 IPO
+   的 private object target，其余 platform 源仍可接受父工程 LTO，不能用 target-wide 关 LTO
+   换取探测安全。
 2. `cache_info()` / `cpu_topology()` 是缓存的系统硬件视图，适合诊断、容量提示和长期策略。
    它们不等于容器/cgroup 给当前进程的 CPU 配额。
 3. `available_cpu_count/ids/info()` 是动态进程视图，必须尊重 affinity、cpuset/cgroup 和
@@ -157,7 +159,10 @@ link、目录 visitor、cwd/temp/home/env、同步 open/read/write 和原子临�
 - 变长字符串使用 buffer-fill：返回完整长度，允许先 count-only，再由调用方选择 allocator。
 - 目录遍历使用 callback + context 的无分配 core；C++ lambda 只是 inline trampoline。
 - entry type 描述目录项自身且不跟随 symlink；`stat` 报 target 信息并另外保留 path 是否 link。
-- 递归删除绝不跟随 symlink/junction；这是数据安全合同，不是实现细节。
+- 递归删除在调用方拥有且遍历期间不被并发替换的目录树中绝不跟随 symlink/junction；这是数据
+  安全合同，不是实现细节。普通 path API 无法把逐项检查与后续删除做成跨平台原子事务，敌对方
+  能并发改名/替换 entry 的目录不属于这个合同，应由调用方先隔离或使用平台专用 handle-relative
+  sandbox 机制。
 - `create_temp_file` 原子创建并返回已打开 handle，避免“生成名字再打开”的 TOCTOU 窗口。
 - `FileHandle` 的短读/短写是成功；需要观察 close/flush 失败时必须显式 close。
 - Windows `FileHandle`/`MappedFile` 以 `FILE_SHARE_DELETE` 打开，使 rename/delete 与 POSIX
@@ -173,8 +178,10 @@ platform 可以依赖最底层 error。资源创建和有值查询返回 `Result
 私有 TLS last-error，也不让 errno/GetLastError 越过调用边界后才被读取。
 
 POSIX fs、MappedFile、VM 与 NUMA 的 generic errno code 必须来自 error 的
-`status_code_from_errno`；只有系统调用合同更具体时才局部覆盖。Win32/CUDA/Vulkan 是独立
-native domain，由各自 owner 保留定长 translator，不能硬套 errno。
+`status_from_errno`；Win32 generic OS code 必须来自 error 的 `status_from_win32`。只有系统调用
+合同更具体时才由 platform 局部覆盖（例如路径分量不是目录）。CUDA/Vulkan 依赖 SDK 类型与
+SDK-specific recovery，仍由 compute owner 保留 translator；不能硬套 errno，也不能让 platform
+再次复制通用 Win32 taxonomy/message table。
 
 C++ 资源 owner（`Thread`、`VmRegion`、`FileHandle`、`MappedFile`、`DynLib`）均为 move-only
 RAII；借出的 pointer、symbol、native handle 或 view 不得活过 owner。需要转移回收责任时必须
@@ -204,7 +211,9 @@ platform 的 SOTA 标准不是“比系统调用快”，而是同合同下不�
 
 - `cpu_features/cache/topology/page_size` 等稳定事实探测一次后 O(1) 读取。
 - 动态 CPU availability 保持 O(N) OS 查询，不能为 O(1) 缓存而返回过时 cpuset；只用于
-  初始化/重配控制面，不进入每 task 热路径。
+  初始化/重配控制面，不进入每 task 热路径。Windows 默认 CPU Set membership 先排序默认 id，
+  再对每个系统 set 二分查找，时间 O(D log D + N log D)、空间 O(D)，避免旧的 O(ND) 嵌套扫描，
+  也不按可能稀疏且很大的 opaque id 分配 bitmap。
 - Thread 默认路径不为未请求的强保证增加握手/refcount；required 才支付同步配置成本。
 - callable 线程入口只在用户选择 owning 便利重载时多一次冷路径 heap 状态分配；OS thread 创建仍是
   主成本，runtime/sched 与 C adapter 继续使用 allocation-minimal `entry + void*` core。
@@ -227,6 +236,9 @@ platform 的 SOTA 标准不是“比系统调用快”，而是同合同下不�
 
 - Windows affinity 集合的硬 mask 受 processor group 限制；跨组 placement 由上层拆 worker。
 - macOS 无公开硬 pin；priority 是 QoS 软偏好。逐 logical CPU 的 P/E 映射未知时保持 unknown。
+- macOS 的公开 address-wait 实现依赖 14.4 起可用的 `os_sync_wait_on_address*`。构建 platform
+  component 时 deployment target 必须 ≥14.4；HYLE 顶层原生 macOS 构建未显式指定时默认 14.4，
+  被父工程嵌入时若父工程选择更低 target 则 configure 失败，不得静默产出会在旧系统缺符号的库。
 - Linux process availability 受调用线程 affinity/cpuset 影响，新线程继承该视图。
 - POSIX permission bits 与 Windows readonly attribute 只能提供一个诚实的可移植子集。
 - 环境变量的空值行为、symlink 权限和 huge-page/NUMA 能力存在系统差异，返回值与 guide 必须

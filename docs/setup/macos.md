@@ -13,6 +13,10 @@
 | Ninja *或* make | 二选一 | `brew install ninja`（若无 ninja 用 `-G "Unix Makefiles"`） |
 
 - clang 在 `/Library/Developer/CommandLineTools/usr/bin/clang{,++}`。
+- 选择 `platform`（以及依赖它的 mem/simd/container/sched/compute）时，macOS deployment target
+  必须 ≥14.4；Parker/address wait 使用该版本才公开的系统接口。HYLE 顶层构建未指定时默认
+  14.4；嵌入父工程时请在 `add_subdirectory(hyle)` 前设置
+  `CMAKE_OSX_DEPLOYMENT_TARGET=14.4` 或更高，低版本会在 configure 阶段明确失败。
 - ⚠️ **brew / cmake 不在非登录 shell 的 PATH**（Apple Silicon 装在 `/opt/homebrew/bin`）——用绝对路径 `/opt/homebrew/bin/cmake` 或先 `export PATH=/opt/homebrew/bin:$PATH`。非交互 ssh 命令里 `$HOMEBREW_PREFIX` 等为空，别依赖。
 - **fcontext**：arm64 macho 汇编已 vendored 并接线，fiber 在 mac 真跑。
 

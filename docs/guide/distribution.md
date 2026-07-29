@@ -14,6 +14,8 @@ HYLE 的 proprietary 授权与交付物形状是两回事。权利人可以向�
 三种形状都只通过 `hyle::<component>` target 消费。不要手写 include path、`.lib`、`.a`、`.so` 或
 DLL 列表；CMake target 才携带语言标准、模块闭包、系统库、第三方 link-only archive 和运行时 staging
 规则。以下示例选择 `mem` 与 `simd`，依赖的 `core/error/platform` 等组件会自动进入闭包。
+在 macOS 上，任何包含 platform 的闭包要求 deployment target ≥14.4；顶层构建未指定时 HYLE
+默认该值，源码嵌入方若已有更低的 `CMAKE_OSX_DEPLOYMENT_TARGET` 会在 configure 阶段得到明确错误。
 
 ## 用户一：headers + shared libraries
 

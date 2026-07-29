@@ -197,5 +197,7 @@ target 在安装态一致。
 Windows 对既有两种信息合同复跑 n=15：无诊断对 Abseil 为 1 项 TIE、4 项 WIN；带诊断
 10 项全部 WIN。新 Win32 入口不为跑分制造高错误率 workload；固定 switch 的 O(1) 分类、错误
 路径单次 Status 分配，以及下一轮 platform 删除六套重复 translator 是它的算法/消费证据。
-error 自身产品面和性能门至此重新转绿；`error -> platform` 的 adoption edge 保持黄色并明确
-交给紧接的 platform 回审，完成迁移前不把“全库已统一使用”写成已完成事实。
+error 自身产品面和性能门至此重新转绿。紧接的 platform 回审已在 `a073931` 把 POSIX/Win32
+generic adapter 全部迁到公共入口并删除七套近似 translator，`error -> platform` adoption edge
+随三平台 Release/sanitizer 与 shared/static installed probes 转绿；CUDA/Vulkan 的 SDK-specific
+translator 继续由 compute owner 持有，不属于漏迁。

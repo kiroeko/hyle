@@ -5,6 +5,10 @@ platform 是 HYLE 的跨 OS 原语层。它服务两类调用者：HYLE 内部�
 每个系统调用都公开，也不因为 benchmark 有一行就制造一个类型。先按资源和生命周期选
 形状，再到 [`c-platform.md`](./c-platform.md) 查纯 C / FFI 的精确签名。
 
+macOS 使用 platform component 时部署目标必须是 14.4 或更新版本；原因是地址等待/Parker 使用
+系统从 14.4 才公开的 `os_sync_wait_on_address*`。顶层构建未指定时 HYLE 默认 14.4；作为
+`add_subdirectory()` 子工程时由父工程明确设置，低于 14.4 会在 configure 阶段失败。
+
 ## 一页选择表
 
 | 需求 | 选择 | 不要选 | 关键合同 |
@@ -124,6 +128,11 @@ timespec 互转时包含 `hyle/time/unix_timestamp.h`，checked 转换不会静�
 遵循其它 buffer-fill API 的完整长度合同，因而调用方不会在 path 被截断时误拿半条路径删除。
 Windows 创建 symlink 时必须编码 file/directory：已有 target 可用 `SymlinkKind::kAuto`；创建
 dangling link 时显式传 `kFile` 或 `kDirectory`，才具有跨平台一致语义。
+
+`remove_directory_recursive` 在调用方拥有、遍历期间不被别人改名或替换 entry 的目录树中不会
+跟随 symlink/junction。它不是对敌对并发目录的 sandbox primitive：跨平台 path API 无法把逐项
+检查和删除做成一个原子事务。删除临时树或 cache 前应先停止写入者/把树原子移到私有名字；面对
+不可信方可并发修改的目录，使用 OS 专用的 handle-relative 安全删除方案。
 
 模型/数据集需要 warm-up 时对已经打开的 mapping 显式调用，而不是让所有 open 承担 page
 fault：

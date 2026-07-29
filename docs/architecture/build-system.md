@@ -290,6 +290,16 @@ GNUInstallDirs；bin/lib/include/data 子目录必须保持相对路径，迁移
 target 依赖、trace/testing ODR gate 和正确的 `HYLE_<MODULE>_BUILD`/`HYLE_STATIC` 可见性宏。
 公开 inline 代码还通过可导出的 `hyle_build_contract` 传播 MSVC 语言/UTF-8 语义与 x86-64-v2
 SSSE3 floor；源码树和安装包消费者因此不会把同一个 header-inline 函数编成两种 ODR 形状。
+MSVC C++ 还显式传播 `/EHsc`：公开 `noexcept` convenience adapter 会捕获 STL allocation
+exception 并转换成 `Status`，因此消费 TU 必须使用匹配的标准 C++ exception 语义；该选项用
+language generator expression 隔离，不污染纯 C 或 MASM。platform 的 x86 CPU feature probe
+则独立进入关闭 IPO 的 private object target，防止 LTO 把高级 ISA 探测内联进 baseline 路径；
+其余 platform target 仍继承父工程 IPO/LTO，安全隔离不得退化成全模块禁用优化。
+
+macOS platform component 的 deployment floor 是 14.4，因为公开 Parker/address-wait 后端使用
+14.4 才公开的 `os_sync_wait_on_address*`。HYLE 顶层原生 macOS 构建在用户未指定时设置 14.4；
+source embedding 时父工程拥有 `CMAKE_OSX_DEPLOYMENT_TARGET`，若选择 platform 且值更低则
+configure 立即失败。只构建不依赖 platform 的 component 不应被这个 floor 无故抬高。
 
 公开 `include/hyle/core/version_defs.h` 是唯一版本源；CMake 在 `project()` 前读取它，随后让
 共享库、source archive 和 package 使用同一个项目版本，即使组件 SDK 没有构建 `hyle_core`
