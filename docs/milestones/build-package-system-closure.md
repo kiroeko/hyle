@@ -260,9 +260,9 @@ Shell。普通 PowerShell 直接调用缓存中的 `cl.exe` 缺少 `INCLUDE/LIB`
 
 | 固定口径 | code |
 |---|---:|
-| 全库（含 docs/in-tree third_party） | 275,785 |
-| 自实现（含测试） | 134,306 |
-| 自实现（不含测试） | 92,151 |
+| 全库（含 docs/in-tree third_party） | 275,778 |
+| 自实现（含测试） | 134,299 |
+| 自实现（不含测试） | 92,148 |
 | build/package 实现 | 5,523 |
 
 最后一项固定为 79 个自有 CMake 文件 + preset/CI + 8 个 build/fetch/setup/QEMU shell/PowerShell

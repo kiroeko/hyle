@@ -33,11 +33,6 @@ struct LifetimeValue {
   LifetimeValue &operator=(LifetimeValue &&) = delete;
   ~LifetimeValue() noexcept { --alive; }
 
-  friend bool operator==(const LifetimeValue &left,
-                         const LifetimeValue &right) noexcept {
-    return left.value == right.value;
-  }
-
   static inline int alive = 0;
   static inline int moves = 0;
   int value;

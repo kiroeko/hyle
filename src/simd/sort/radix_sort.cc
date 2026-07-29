@@ -79,9 +79,6 @@ inline std::uint32_t to_sortable_i32(std::int32_t x, bool ascending) noexcept {
   const std::uint32_t u = static_cast<std::uint32_t>(x) ^ 0x80000000u;
   return ascending ? u : ~u;
 }
-inline std::uint64_t to_sortable_u64(std::uint64_t x, bool ascending) noexcept {
-  return ascending ? x : ~x;
-}
 inline std::uint64_t to_sortable_i64(std::int64_t x, bool ascending) noexcept {
   const std::uint64_t u = static_cast<std::uint64_t>(x) ^ 0x8000000000000000ull;
   return ascending ? u : ~u;
