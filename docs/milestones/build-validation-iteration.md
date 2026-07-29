@@ -37,7 +37,8 @@ portability、feature/release。新增模块进入 manifest 后自动获得前�
   fresh 重跑无旧 dylib RPATH 诊断，WSL component contract 同一 scratch 连跑两次通过。
 - [x] error 交付 handoff：真正的 C-only owning-handle consumer 与 C++ `Status`/`Result<T>` consumer
   分别直接请求 `COMPONENTS error`，进入 shared/static package smoke；error-only configure contract
-  同时锁住 GoogleTest 必须服从 `HYLE_DEPS_DIR`。
+  同时锁住 GoogleTest 必须服从 `HYLE_DEPS_DIR`。Mac 复证进一步删除 `gtest_main` 已传递的冗余
+  `gtest` 直连，error test link line 不再重复同一 archive。
 - [ ] GitHub runner 在额度恢复后复证。
 
 首次 AArch64 扩面虽然生成了全部产物，却暴露 preset 未启用 Werror，SIMD complex fallback 的未初始化
@@ -112,11 +113,11 @@ complete-source 一键入口；新增的 installed consumer probe 和本任务�
 
 | 固定口径 | code |
 |---|---:|
-| 全库（含 docs/in-tree third_party） | 277,134 |
+| 全库（含 docs/in-tree third_party） | 277,135 |
 | 自实现（含测试） | 135,036 |
 | 自实现（不含测试） | 92,659 |
 | 当前处理模块实现（error） | 1,434 |
 
 error 产品实现未增长；本批新增的是 source-independent package probe、通用自动发现门和构建/文档
 合同。按固定口径，probe 位于 `samples/`，CMake 位于 build system，因此后三项保持不变；全库相对
-上一轮 276,996 增加 138 行。
+上一轮 276,996 增加 139 行。

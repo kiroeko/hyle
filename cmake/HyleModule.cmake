@@ -241,7 +241,10 @@ function(hyle_add_test module)
   set_target_properties(${target} PROPERTIES
     FOLDER "hyle/tests/${module}"
     HYLE_TEST_MODULE "${module}")
-  target_link_libraries(${target} PRIVATE hyle_${module} GTest::gtest GTest::gtest_main ${ARG_DEPS})
+  # The canonical GTest::gtest_main target already propagates GTest::gtest.
+  # Linking both emits the same archive twice (and a duplicate-library warning
+  # from Apple's linker) without adding any symbols.
+  target_link_libraries(${target} PRIVATE hyle_${module} GTest::gtest_main ${ARG_DEPS})
   if(ARG_DEFINES)
     target_compile_definitions(${target} PRIVATE ${ARG_DEFINES})
   endif()
