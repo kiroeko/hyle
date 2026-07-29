@@ -43,11 +43,16 @@ if(DEFINED HYLE_GOOGLETEST_SOURCE AND NOT HYLE_GOOGLETEST_SOURCE STREQUAL "")
 endif()
 
 set(_hyle_build "${HYLE_SMOKE_ROOT}/product-shape")
+# Only roots whose production-layout contract has already closed belong here.
+# Evolving modules still run in the all-component baseline, but are not
+# accidentally certified merely because they compile in that graph.
+set(_hyle_shipping_roots mem time)
+list(JOIN _hyle_shipping_roots "," _hyle_shipping_components)
 _hyle_product_shape_run("configure production-shape tests"
   "${CMAKE_COMMAND}" -S "${HYLE_SOURCE_DIR}" -B "${_hyle_build}"
   ${_hyle_generator_args}
   -DCMAKE_BUILD_TYPE=Release
-  -DHYLE_COMPONENTS=mem,time
+  -DHYLE_COMPONENTS=${_hyle_shipping_components}
   -DHYLE_BUILD_TESTS=ON
   -DHYLE_TEST_INSTRUMENTATION=OFF
   -DHYLE_BUILD_BENCH=OFF
@@ -61,4 +66,4 @@ _hyle_product_shape_run("build production-shape tests"
   --parallel 2)
 _hyle_product_shape_run("run production-shape tests"
   "${CMAKE_CTEST_COMMAND}" --test-dir "${_hyle_build}" -C Release
-  --output-on-failure -R "^hyle_(error|platform|time|mem)_")
+  --output-on-failure)

@@ -339,18 +339,43 @@ vswhere 发现现有工具链并临时导入环境。VS generator 不保证在�
 当已安装的 Visual Studio 比当前 CMake generator 更新时，Ninja 路径仍可使用它的最新编译器。
 CI 对 Windows/Linux/macOS 运行全部 14 个模块的确定性 CPU 验证面：TLS、HTTP/2、CUDA、ggml 与
 Vulkan 显式关闭，构建聚合 `hyle_tests` 并运行全部 C++、pure-C、header/surface/ABI 门。它不冒充
-带外部 SDK/设备的发布矩阵；这些 feature 仍需独立 release check。每个平台还
-以 `HYLE_TEST_INSTRUMENTATION=OFF` 运行 error/platform/time/mem 的 shipping-layout 验证面；
-随后从空目录制作 shared/static mem SDK，再由只链接 `hyle::mem` 的 pure-C error+mem consumer 与 C++
-`SystemAllocator` consumer 真运行；shared 形状机械覆盖 `mem -> platform -> error` 的传递
-shared-object lookup，并证明公开 inline 形状不泄漏 mimalloc 符号，static 形状覆盖 mimalloc
-link-only archive 与 C++ link driver。Linux 还执行 component 空值、嵌入 cache、晚期依赖成员绕过、
-PUBLIC/PRIVATE 可见性扩大、package registry 正向/重复/漏 target，以及 offline bundle 映射共八项
-configure contract，
-并从 clean checkout 生成完整 source zip、核对
-SHA-256/commit/legal payload、
-解压后独立构建 `core`。CUDA、Vulkan、TLS、HTTP/2、ggml 的后端/SDK 组合不塞进每提交 smoke，
-仍属发布检查；simd/container/io/compute 的无外部后端 CPU 面已经进入每提交基线。
+带外部 SDK/设备的发布矩阵；这些 feature 仍需独立 release check。已经严格收口的底层 roots 另以
+`HYLE_TEST_INSTRUMENTATION=OFF` 运行 shipping-layout 验证面；这个 root 清单随模块验收推进而显式
+增加，未验收模块即使在 all graph 通过也不会被误写成产品证书。
+
+安装门从空目录制作 shared/static 的 all-component CPU SDK。外部消费者从 package 公布的
+`Hyle_AVAILABLE_COMPONENTS` 枚举并链接每个 `hyle::<component>`，机械守住 export/usage-requirement
+图；同时保留真正调用 mem C API 与 C++ `SystemAllocator` 的 focused probes，覆盖
+`mem -> platform -> error` loader、mimalloc 私有符号和 static C++ link-driver 闭包。只有“枚举 target
+可链接”不能证明每个模块 API 可用，所以新模块收口时必须再提交自己的外部 API probe，随后才进入
+安装消费回归集合。Linux 还执行 component 空值、嵌入 cache、晚期依赖成员绕过、PUBLIC/PRIVATE
+可见性扩大、package registry 正向/重复/漏 target，以及 offline bundle 映射的 configure contract；
+并从 clean checkout 生成完整 source zip、核对 SHA-256/commit/legal payload、解压后独立构建当前
+all-component CPU 图。Linux AArch64 也交叉编译同一图，而不再只抽查 core。
+
+### 持续回归与模块验收生命周期
+
+其他模块仍会改变，因此构建门按“发现回归的频率”分层，不能把一张越来越大的矩阵塞进每次提交：
+
+| 层 | 触发频率 | 当前合同 | 结论边界 |
+|---|---|---|---|
+| CPU baseline | 每个 PR、每次 main 提交，三平台 | all components、tests、Werror、所有外部 feature OFF | 当前图可编译/测试；不冻结模块 API |
+| distribution | PR 至少 Linux；main/手动三平台 | shared/static install、外部 consumers、complete source、source embed | 三种交付形状仍完整；focused probe 才证明具体 API |
+| portability | PR/main 的 AArch64 compile；周期门逐步增加 | all-component cross，后续 minimum CMake、ASan/UBSan/TSan、SVE/RVV QEMU | 目标图/工具链可迁移；cross compile 不冒充真机运行 |
+| feature/release | 手动、nightly 或 release | TLS/HTTP2/ggml/Vulkan/CUDA 的真实 SDK、loader 和适用硬件 | 只认证实际启用并运行的能力组合 |
+
+`all` 的含义始终是“仓库在该提交声明的全部当前模块”，所以新增组件自动进入 baseline、安装包、
+源码包和 AArch64 compile。模块验收则是单独的状态迁移：施工中只要求全图不破；严格收口后，把该
+模块的 production-layout roots、module-owned installed API probe、适用 sanitizer/ISA 门和文档合同
+加入长期集合。预发布阶段允许直接改善 C/C++ API，不维护虚假的历史兼容快照；一旦公开 ABI 政策
+冻结，再增设跨版本 consumer/ABI snapshot，而不是用当前编译成功替代兼容性证明。
+
+为控制 CI 成本，PR 的昂贵 distribution 只在 Linux 跑，main 与手动触发再补 Windows/macOS；三平台
+all-module baseline 永不因此降级。每个 job 有明确超时，不能用缩小组件集掩盖死锁或依赖下载失控。
+build tree 不跨 toolchain 缓存；未来只缓存带版本/校验和的下载源码或编译器缓存。若 GitHub 在 runner
+分配前因额度/账单拒绝任务，这属于 CI 基础设施不可用，不能记为代码失败，也不能替代本地三平台证据。
+当前迭代任务、缺口与升级条件记录在
+[`../milestones/build-validation-iteration.md`](../milestones/build-validation-iteration.md)。
 
 `cmake/toolchains/linux-aarch64-gcc.cmake` 是整项目交叉编译的参考入口：compiler/sysroot 属工具链，
 host program 与 target library/header/package 搜索严格分开，`CMAKE_TRY_COMPILE_TARGET_TYPE` 设为
@@ -361,6 +386,8 @@ host program 与 target library/header/package 搜索严格分开，`CMAKE_TRY_C
 
 - 新模块必须登记一次 component manifest 并创建 module target；configure 会验证依赖名、拓扑顺序、
   target 已存在，以及所有模块装载后的直接 HYLE link 边与 manifest 完全一致。
+- 新模块自动进入 all-component baseline/distribution/cross compile；严格收口时另交 module-owned
+  installed API probe，并把适用的 production-layout、sanitizer、ISA/后端证书加入长期集合。
 - 新可选第三方只能在其消费组件已选且 feature 已启用时发现/取得。
 - 外部依赖的 export target、package feature、下游 SDK 和安装资产只在所属模块 registry 登记一次；
   中央 package 层只做通用投影，不能按供应商名分支。

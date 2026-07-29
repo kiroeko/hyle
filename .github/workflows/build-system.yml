@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   platform-and-package-smoke:
-    name: ${{ matrix.label }} CPU modules + product-shape + package smoke
+    name: ${{ matrix.label }} CPU baseline + distribution smoke
     strategy:
       fail-fast: false
       matrix:
@@ -24,15 +24,19 @@ jobs:
             os: windows-latest
             preset: windows-ninja
             generator: Ninja
+            timeout: 90
           - label: Linux
             os: ubuntu-latest
             preset: linux
             generator: Unix Makefiles
+            timeout: 60
           - label: macOS
             os: macos-latest
             preset: macos
             generator: Unix Makefiles
+            timeout: 75
     runs-on: ${{ matrix.os }}
+    timeout-minutes: ${{ matrix.timeout }}
     env:
       CMAKE_BUILD_PARALLEL_LEVEL: 2
       CTEST_PARALLEL_LEVEL: 2
@@ -102,7 +106,7 @@ jobs:
           -P cmake/HyleCiComponentContract.cmake
 
       - name: Verify production-shape tests (Unix)
-        if: runner.os != 'Windows'
+        if: runner.os == 'Linux' || (runner.os == 'macOS' && github.event_name != 'pull_request')
         run: >-
           cmake -DHYLE_SOURCE_DIR=${{ github.workspace }}
           -DHYLE_SMOKE_ROOT=${{ runner.temp }}/hyle-product-shape-smoke
@@ -111,18 +115,18 @@ jobs:
           -P cmake/HyleCiProductShapeSmoke.cmake
 
       - name: Verify production-shape tests (Windows selected MSVC)
-        if: runner.os == 'Windows'
+        if: runner.os == 'Windows' && github.event_name != 'pull_request'
         run: >-
           ./scripts/hyle-windows.ps1 -Action ProductShapeSmoke
           -SmokeRoot ${{ runner.temp }}/hyle-product-shape-smoke
           -GTestSource ${{ github.workspace }}/build-windows-ninja/_deps/googletest-src
 
       - name: Verify installed package consumers (Unix)
-        if: runner.os != 'Windows'
+        if: runner.os == 'Linux' || (runner.os == 'macOS' && github.event_name != 'pull_request')
         run: cmake -DHYLE_SOURCE_DIR=${{ github.workspace }} -DHYLE_SMOKE_ROOT=${{ runner.temp }}/hyle-package-smoke "-DHYLE_SMOKE_GENERATOR=${{ matrix.generator }}" -P cmake/HyleCiPackageSmoke.cmake
 
       - name: Verify installed package consumers (Windows selected MSVC)
-        if: runner.os == 'Windows'
+        if: runner.os == 'Windows' && github.event_name != 'pull_request'
         run: ./scripts/hyle-windows.ps1 -Action PackageSmoke -SmokeRoot ${{ runner.temp }}/hyle-package-smoke
 
       - name: Verify complete-source package
@@ -135,8 +139,9 @@ jobs:
           -P cmake/HyleCiSourcePackageSmoke.cmake
 
   linux-aarch64-cross:
-    name: Linux AArch64 cross configure/build
+    name: Linux AArch64 all-component cross build
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     env:
       CMAKE_BUILD_PARALLEL_LEVEL: 2
     steps:
@@ -150,5 +155,5 @@ jobs:
       - name: Configure without target execution
         run: cmake --preset linux-aarch64-cross
 
-      - name: Build target artifact
-        run: cmake --build --preset linux-aarch64-cross --target hyle_core --parallel 2
+      - name: Build all CPU component artifacts
+        run: cmake --build --preset linux-aarch64-cross --parallel 2

@@ -97,7 +97,7 @@
     {
       "name": "package-cpu-shared",
       "displayName": "Portable CPU SDK (shared)",
-      "description": "Deterministic all-component binary SDK input: tests/bench, TLS, and CUDA are explicitly OFF; ggml native tuning is disabled by HYLE_INSTALL.",
+      "description": "Deterministic feature-enabled CPU SDK input: tests/bench, TLS, and CUDA are explicitly OFF; HTTP/2, ggml, and Vulkan are explicitly ON; ggml native tuning is disabled by HYLE_INSTALL.",
       "binaryDir": "${sourceDir}/build-package-cpu-shared",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
@@ -107,7 +107,10 @@
         "HYLE_INSTALL": "ON",
         "HYLE_STATIC": "OFF",
         "HYLE_IO_TLS": "OFF",
-        "HYLE_COMPUTE_CUDA": "OFF"
+        "HYLE_IO_HTTP2": "ON",
+        "HYLE_COMPUTE_CUDA": "OFF",
+        "HYLE_COMPUTE_GGML": "ON",
+        "HYLE_COMPUTE_VULKAN": "ON"
       }
     },
     {
@@ -150,17 +153,20 @@
     {
       "name": "linux-aarch64-cross",
       "displayName": "Linux AArch64 cross build",
-      "description": "Fast core-only AArch64 cross smoke. The toolchain discovers aarch64-linux-gnu GCC; override HYLE_CROSS_* cache variables for a nonstandard prefix/version. This preset does not certify the full module graph.",
+      "description": "All-component CPU AArch64 cross smoke. The toolchain discovers aarch64-linux-gnu GCC; override HYLE_CROSS_* cache variables for a nonstandard prefix/version. This verifies compilation and linkage, not target execution or module acceptance.",
       "binaryDir": "${sourceDir}/build-linux-aarch64-cross",
       "toolchainFile": "${sourceDir}/cmake/toolchains/linux-aarch64-gcc.cmake",
       "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Linux" },
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
-        "HYLE_COMPONENTS": "core",
+        "HYLE_COMPONENTS": "all",
         "HYLE_BUILD_TESTS": "OFF",
         "HYLE_BUILD_BENCH": "OFF",
         "HYLE_IO_TLS": "OFF",
-        "HYLE_COMPUTE_CUDA": "OFF"
+        "HYLE_IO_HTTP2": "OFF",
+        "HYLE_COMPUTE_CUDA": "OFF",
+        "HYLE_COMPUTE_GGML": "OFF",
+        "HYLE_COMPUTE_VULKAN": "OFF"
       }
     }
   ],

@@ -14,12 +14,12 @@ sanitizer 证书重新冻结。早期标成 closure/frozen 的任务仍是有效
 | 严格认证基线 | core、error、platform、mem、time、build/package、util-core、obs、container | 只因明确触发器或依赖受影响项局部回验；core 与 StringInterner Apple cache-layout 边均已复证转绿 |
 | 已实现、待新标准复审 | math、util-runtime、sched、io、simd | 按本文队列逐模块收口，不按旧 benchmark 形状默认通过 |
 | 仍有能力尾 | compute、graph | 先用真实北极星补能力，再执行同一严格合同 |
-| 整库发布面 | build/package 独立模块已重签 | 最终 ABI/FFI/bundle 总验收仍在 R6，不重复打开模块设计 |
+| 整库发布面 | build/package 架构已重签；持续回归迭代中 | 随模块验收递增 focused consumer/sanitizer/feature 门；最终 ABI/FFI/bundle 总验收仍在 R6 |
 
-build/package system 的模块 target 图、可组合子集、三种交付形状、三平台 all-component CPU
-SDK/外部 consumer 与 AArch64 cross 仍是有效旧基线；2026-07-29 又在模块所有权拆分后补齐
-component/cache/终态 link 图、complete-source CI 与当前性能复证。它本身也是正式模块，不能只在最后
-充当验证工具。当前审查单元转为 **util-runtime**；
+build/package system 的模块 target 图、可组合子集与三种交付形状已经重签；在其他模块尚未验收、
+仍会改变的前提下，2026-07-29 又启动持续回归任务，把 shared/static package、complete-source 与
+AArch64 compile 从代表性组件提升为当前 all-component CPU 图，并明确 all-build 不等于模块验收。
+其架构证书没有被重开，但验证集合将随每个模块收口递增。当前审查单元转为 **util-runtime**；
 `util-core seam`、obs 与 container 的严格证书不因此作废。
 
 ## 底座五模块交叉引用复验（2026-07-25）
@@ -123,7 +123,7 @@ math 的处理相反：它当前不是经过独立需求设计的产品，而是
 | mem | 功能/API/P0/分发性能已完成 | ✅ 彻底收口；clean `c640072` 保留 allocator 三平台 shared same-link n=15 与 WSL TSan；当前 109/109 C surface，HugeRegion selected-node/chunk/weighted C++/C 已补齐，Linux 极细条带使用固定批次 placement |
 | time | 功能主体完成 | ✅ 严格收口；signed Unix/OS/chrono 互操作、42/42 C surface 与 platform/io 消费边已通过 Win/WSL/M4、WSL ASan/UBSan；timer SOTA 证书继续有效 |
 | core | 功能与 compiler/cache primitive 完成 | ✅ `71dabf7` 的 IntrusiveList 证书保留；新增 prefetch/assume/restrict/flatten/unroll 已经 Win/WSL/M4 codegen、正确性和真实消费者复证后重新冻结 |
-| build/package system | 组织与三种交付形状完成 | ✅ 严格收口；空组件/cache/终态 link 图 fail-fast，0.x 包兼容与 loader identity、三平台 production-shape 16/16、shared/static consumers 2/2、complete-source CI；no-op 为 WSL ≤10ms、Windows 47--48ms、M4 60--120ms |
+| build/package system | 组织与三种交付形状完成 | ✅ 架构严格收口；🚧 持续门升级：all-component package/source/AArch64 与动态 exported-target consumer 已落代码，待本轮三平台及 GitHub 额度恢复后复证；focused API consumers 随各模块验收递增 |
 | util-core | 低层公开头能力完成 | ✅ 严格收口；实际使用形状、依赖边、三平台正确性/TSan/性能已签证 |
 | obs | 功能主体完成 | ✅ 严格收口；同步 structured producer + compile-time trace seam，三平台 n=15/并发/sanitizer/C surface 已签证 |
 | container | 功能/API/依赖/主体性能证书完成 | ✅ 主体严格证书保留；core 语义消费者扫描将 StringInterner Apple shard spacing 64→128B，M4 correctness 与 8t normal workload 受影响项已复证 |

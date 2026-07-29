@@ -104,10 +104,10 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 
 | 固定统计口径 | code | 说明 |
 |---|---:|---|
-| **全库代码** | **275,778** | tracked + 当前待提交文件；含 docs 与 in-tree third_party |
+| **全库代码** | **275,901** | tracked + 当前待提交文件；含 docs 与 in-tree third_party |
 | **自实现（含测试）** | **134,299** | `include/hyle + src + tests`；只计 C/C++/CUDA，不含 CMake/Text |
 | **自实现（不含测试）** | **92,148** | `include/hyle + src`；只计 C/C++/CUDA，库本体硬锚 |
-| **当前处理模块实现（build/package）** | **5,523** | 自有 CMake/preset/CI 与 build/fetch/setup/QEMU 脚本；不含 vendored CMake、测试源码和文档 |
+| **当前处理模块实现（build/package）** | **5,558** | 自有 CMake/preset/CI 与 build/fetch/setup/QEMU 脚本；不含 vendored CMake、测试源码和文档 |
 | 再加 ggml 等大依赖足迹 | **~200–350k+** | 由 ggml 主导，不计入「自有生产」 |
 
 **生产按模块（src+include，约）：**

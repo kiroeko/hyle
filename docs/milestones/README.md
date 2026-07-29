@@ -33,10 +33,10 @@
 
 | 固定统计口径 | 当前 | 命令/说明 |
 |---|---|---|
-| **全库代码** | **275,778** | tracked + 当前待提交文件；含 docs/third_party，**≠ 自写** |
+| **全库代码** | **275,901** | tracked + 当前待提交文件；含 docs/third_party，**≠ 自写** |
 | **自实现（含测试）** | **134,299** | `cloc include/hyle src tests`，只计 C++/Header/C/CUDA |
 | **自实现（不含测试）** | **92,148** | `cloc include/hyle src`，只计 C++/Header/C/CUDA；库本体硬锚 |
-| **当前处理模块实现（build/package）** | **5,523** | 自有 CMake/preset/CI 与 build/fetch/setup/QEMU 脚本；不含 vendored CMake、测试源码和文档 |
+| **当前处理模块实现（build/package）** | **5,558** | 自有 CMake/preset/CI 与 build/fetch/setup/QEMU 脚本；不含 vendored CMake、测试源码和文档 |
 | **终态生产（纪律收口 A）** | **~75–90k** | 主预期 |
 | **终态生产（做满守界 B）** | **~85–105k** | compute/graph/发布面收口更满 |
 | 失控上限 C | 120k+ 生产 | 应避免 |
@@ -91,7 +91,8 @@ util ~1.3k · error **984** · time **1,421** · obs **1,018** · graph ~0.6–0
 |---|---|---|---|---|---|---|---|
 | **00-scaffolding** | P-1 | 构建 | CMake 多模块结构+GoogleTest/nanobench/sanitizer/CI+HYLE_宏骨架 | — | 0.6-1k | 294 | ✅ 完成 |
 | [core-reclosure](./core-module-closure.md) | P-1 | core | version/cache/macros/visibility/intrusive 严格收口 | 00 | — | 见任务页 | ✅ **2026-07-29 局部复证完成**：旧 `71dabf7` IntrusiveList 证书保留；真实 SIMD/vqsort 消费触发 prefetch/assume/restrict/flatten/unroll 补齐，Win/WSL/M4 正确性、codegen 与受影响消费者全过 |
-| [build/package-reclosure](./build-package-system-closure.md) | P-1 | 构建/打包 | 用 target 图表达项目组织，完成可迁移、可裁剪组装与安装消费 | core | — | 见任务页 | ✅ **2026-07-29 模块拆分后重签**：空组件/cache/终态依赖图合同机械守门；三平台 production-shape 16/16，shared/static consumers、完整 source-package CI 与当前正常路径性能证书完成 |
+| [build/package-reclosure](./build-package-system-closure.md) | P-1 | 构建/打包 | 用 target 图表达项目组织，完成可迁移、可裁剪组装与安装消费 | core | — | 见任务页 | ✅ **2026-07-29 模块拆分后重签**：空组件/cache/终态依赖图合同机械守门；三平台 production-shape、shared/static consumers、完整 source-package 与当前正常路径性能证书完成 |
+| [build-validation-iteration](./build-validation-iteration.md) | P-1 | 构建/回归 | 在模块持续变化期间分层守住全图、三种交付、迁移和发布门 | build/package-reclosure | — | 见任务页 | 🚧 **第一阶段**：package/source/AArch64 提升为 all-component CPU，验收证书与普通 all-build 分离；待三平台和额度恢复后的 GitHub 复证 |
 | error-01 | P0 | error | Status + std::expected（历史首版） | 00 | 1-2k | 456 | 🗃️ 历史完成；接口与边界后由 error reclosure 重审 |
 | error-02 | P0 | error | error_handler vtable（历史） | error-01 | 1k | 127 (+74 测试) | 🗃️ 曾完成，实际消费者审查后退役；日志归 obs、合同违反归 fatal |
 | [error-03](./error-module-reclosure.md) | P0 | error | 面向真实调用重收 Status/Result/C ABI/context | error-01,obs-01 | — | 见任务页 | ✅ **2026-07-24 自身冻结**：功能/C++/C ABI 收口；Win/GCC14/M4 正确性 + 核心/正常路径 n=15，同形项无 LOSE；全库 adoption audit 进行中，mem 冷路径已统一 Status、私有 TLS 已删 |

@@ -1,6 +1,7 @@
 # End-to-end verification for HYLE's complete-source delivery shape: generate
 # from a clean Git commit, validate digest/manifest/legal payload, extract, then
-# configure and build a component from the archive without the checkout.
+# configure and build the current all-component CPU graph from the archive
+# without the checkout.
 
 cmake_minimum_required(VERSION 3.25)
 
@@ -92,15 +93,18 @@ _hyle_source_run("configure extracted source package"
   "${CMAKE_COMMAND}" -S "${_source_root}" -B "${_consumer_build}"
   ${_generator_args}
   -DCMAKE_BUILD_TYPE=Release
-  -DHYLE_COMPONENTS=core
+  -DHYLE_COMPONENTS=all
   -DHYLE_BUILD_TESTS=OFF
   -DHYLE_BUILD_BENCH=OFF
   -DHYLE_WERROR=ON
   -DHYLE_IO_TLS=OFF
-  -DHYLE_COMPUTE_CUDA=OFF)
+  -DHYLE_IO_HTTP2=OFF
+  -DHYLE_COMPUTE_CUDA=OFF
+  -DHYLE_COMPUTE_GGML=OFF
+  -DHYLE_COMPUTE_VULKAN=OFF)
 _hyle_source_run("build extracted source package"
   "${CMAKE_COMMAND}" --build "${_consumer_build}" --config Release
-  --target hyle_core --parallel 2)
+  --parallel 2)
 
 message(STATUS
   "HYLE complete-source package passed: ${_archive} (${_commit})")

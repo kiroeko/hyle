@@ -1,11 +1,10 @@
 # Cross-platform binary-package smoke used by CI and maintainers. It creates
-# shared and static mem SDKs, then configures/builds/runs source-independent C
-# and C++ consumers against each install prefix. Shared mem exercises the mem
-# -> platform -> error loader chain and proves SystemAllocator does not leak
-# private mimalloc symbols; static mem exercises the link-only mimalloc archive
-# and C++ link-driver closure. Keep this bounded: full
-# simd/compute/io delivery matrices are release checks, not per-commit fan
-# heaters.
+# shared and static all-component CPU SDKs, then configures/builds/runs
+# source-independent consumers against each install prefix. The focused mem C
+# and C++ consumers exercise a real API and loader/static-link closure; the
+# all-component consumer mechanically proves that every exported target can be
+# discovered and linked. Optional SDK/hardware feature matrices remain release
+# checks, not per-commit fan heaters.
 
 cmake_minimum_required(VERSION 3.25)
 
@@ -66,7 +65,7 @@ foreach(_linkage IN ITEMS shared static)
   else()
     set(_static OFF)
   endif()
-  set(_components mem)
+  set(_components all)
   set(_build "${HYLE_SMOKE_ROOT}/package-${_linkage}")
   set(_prefix "${HYLE_SMOKE_ROOT}/prefix-${_linkage}")
   set(_consumer "${HYLE_SMOKE_ROOT}/consumer-${_linkage}")
@@ -82,7 +81,10 @@ foreach(_linkage IN ITEMS shared static)
     -DHYLE_INSTALL=ON
     -DHYLE_STATIC=${_static}
     -DHYLE_IO_TLS=OFF
-    -DHYLE_COMPUTE_CUDA=OFF)
+    -DHYLE_IO_HTTP2=OFF
+    -DHYLE_COMPUTE_CUDA=OFF
+    -DHYLE_COMPUTE_GGML=OFF
+    -DHYLE_COMPUTE_VULKAN=OFF)
   _hyle_smoke_run("build ${_linkage} SDK"
     "${CMAKE_COMMAND}" --build "${_build}" --config Release --parallel 2)
   _hyle_smoke_run("install ${_linkage} SDK"
