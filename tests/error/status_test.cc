@@ -486,6 +486,11 @@ Result<int> copy_lvalue_error(Result<int> &source) {
   HYLE_ASSIGN_OR_RETURN(int value, source);
   return value;
 }
+Result<int> propagate_invalid_ok_error() {
+  Result<int> invalid = std::unexpected(Status::Ok());
+  HYLE_ASSIGN_OR_RETURN(int value, invalid);
+  return value;
+}
 
 }  // namespace
 
@@ -529,6 +534,10 @@ TEST(AssignOrReturn, DoesNotConsumeNamedLvalueResult) {
   EXPECT_EQ(propagated.error().message(), "kept error");
   ASSERT_FALSE(error.has_value());
   EXPECT_EQ(error.error().message(), "kept error");
+}
+
+TEST(AssignOrReturn, RejectsOkStatusInErrorArm) {
+  EXPECT_DEATH_IF_SUPPORTED({ (void)propagate_invalid_ok_error(); }, "");
 }
 
 // ---- edge cases toward full coverage ----------------------------------------
