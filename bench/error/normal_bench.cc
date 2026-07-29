@@ -27,7 +27,11 @@ namespace nb = ankerl::nanobench;
 using hyle::Result;
 using hyle::Status;
 
-const Status &prebuilt_error() {
+// Keep the shared error behind a call boundary. Otherwise GCC can prove that
+// the local retain/release pair is unobservable in the hand-written variant
+// but not through the generic return-type adaptor, which benchmarks escape
+// analysis rather than propagation semantics.
+HYLE_NOINLINE const Status &prebuilt_error() {
   static const Status status = Status::NotFound("missing");
   return status;
 }
