@@ -99,7 +99,11 @@ class StdAllocator {
     using other = StdAllocator<U>;
   };
 
-  StdAllocator() noexcept : allocator_(system_allocator()) {}
+  // Runtime policy injection must be explicit. A default constructor that
+  // silently chose system_allocator() made the slower stateful adapter look
+  // like the normal system-heap shape; use empty SystemStdAllocator<T> for
+  // that case instead.
+  StdAllocator() = delete;
 
   explicit StdAllocator(Allocator allocator) noexcept : allocator_(allocator) {
     HYLE_FATAL_ASSERT(allocator_.valid());

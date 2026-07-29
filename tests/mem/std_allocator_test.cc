@@ -5,6 +5,7 @@
 #include <limits>
 #include <memory>
 #include <new>
+#include <type_traits>
 #include <vector>
 
 #include "hyle/mem/allocator.h"
@@ -43,13 +44,10 @@ struct alignas(128) OverAligned {
   std::uint64_t words[16]{};
 };
 
-TEST(StdAllocator, DefaultUsesSystemAllocator) {
-  StdAllocator<int> allocator;
-  int* values = allocator.allocate(4);
-  ASSERT_NE(values, nullptr);
-  values[3] = 17;
-  EXPECT_EQ(values[3], 17);
-  allocator.deallocate(values, 4);
+TEST(StdAllocator, RuntimeBackingMustBeExplicit) {
+  static_assert(!std::is_default_constructible_v<StdAllocator<int>>);
+  StdAllocator<int> allocator(system_allocator());
+  EXPECT_EQ(allocator.allocator().alloc_fn(), system_allocator().alloc_fn());
 }
 
 TEST(SystemStdAllocator, IsEmptyAlwaysEqualAndServesVector) {
@@ -116,7 +114,7 @@ TEST(StdAllocator, AllocateSharedRebindsControlBlockToBacking) {
 }
 
 TEST(StdAllocator, PreservesOverAlignment) {
-  StdAllocator<OverAligned> allocator;
+  StdAllocator<OverAligned> allocator(system_allocator());
   OverAligned* values = allocator.allocate(2);
   ASSERT_NE(values, nullptr);
   EXPECT_EQ(reinterpret_cast<std::uintptr_t>(values) % alignof(OverAligned), 0u);

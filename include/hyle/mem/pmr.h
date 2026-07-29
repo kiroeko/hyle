@@ -21,6 +21,17 @@
 
 namespace hyle::mem {
 
+namespace detail {
+// memory_resource is an operator-new-like interface: even a zero-byte request
+// must not turn an otherwise healthy resource into an artificial bad_alloc.
+// HYLE's lower-level Allocator deliberately maps size zero to nullptr, so PMR
+// adapters reserve the smallest real backing block and pass that same size
+// back on deallocation. Normal non-zero calls are unchanged.
+inline constexpr std::size_t pmr_backing_size(std::size_t bytes) noexcept {
+  return bytes == 0 ? 1 : bytes;
+}
+}  // namespace detail
+
 // Process-wide PMR over the compile-time SystemAllocator path.  Prefer this
 // for ordinary std::pmr containers that use HYLE's default host heap: it pays
 // PMR's required virtual dispatch and the shared-library import, but does not
@@ -47,13 +58,13 @@ class PmrResource : public std::pmr::memory_resource {
 
  private:
   void* do_allocate(std::size_t bytes, std::size_t align) override {
-    void* p = alloc_.allocate(bytes, align);
+    void* p = alloc_.allocate(detail::pmr_backing_size(bytes), align);
     if (p == nullptr) throw std::bad_alloc{};
     return p;
   }
 
   void do_deallocate(void* p, std::size_t bytes, std::size_t align) override {
-    alloc_.deallocate(p, bytes, align);
+    alloc_.deallocate(p, detail::pmr_backing_size(bytes), align);
   }
 
   // Conservative identity for the complete exposed Allocator backing
@@ -91,14 +102,16 @@ class AlignedPmrResource : public std::pmr::memory_resource {
   }
 
   void* do_allocate(std::size_t bytes, std::size_t alignment) override {
-    void* p = alloc_.allocate(bytes, effective(alignment));
+    void* p = alloc_.allocate(detail::pmr_backing_size(bytes),
+                              effective(alignment));
     if (p == nullptr) throw std::bad_alloc{};
     return p;
   }
 
   void do_deallocate(void* p, std::size_t bytes,
                      std::size_t alignment) override {
-    alloc_.deallocate(p, bytes, effective(alignment));
+    alloc_.deallocate(p, detail::pmr_backing_size(bytes),
+                      effective(alignment));
   }
 
   bool do_is_equal(

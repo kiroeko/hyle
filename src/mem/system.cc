@@ -128,18 +128,16 @@ void *system_realloc(void * /*state*/, void *ptr, std::size_t /*old_size*/,
 class SystemMemoryResource final : public std::pmr::memory_resource {
   void *do_allocate(std::size_t bytes, std::size_t alignment) override {
     alignment = detail::system_backend_checked_alignment(alignment);
-    void *pointer = bytes == 0
-                        ? nullptr
-                        : system_backend_allocate_local(bytes, alignment);
+    const std::size_t backing_size = detail::pmr_backing_size(bytes);
+    void *pointer = system_backend_allocate_local(backing_size, alignment);
     if (pointer == nullptr)
       throw std::bad_alloc{};
-    HYLE_TRACE_ALLOC_NAMED(pointer, bytes, "hyle.system");
+    HYLE_TRACE_ALLOC_NAMED(pointer, backing_size, "hyle.system");
     return pointer;
   }
 
-  void do_deallocate(void *pointer, std::size_t bytes,
+  void do_deallocate(void *pointer, std::size_t /*bytes*/,
                      std::size_t alignment) override {
-    (void)bytes;
     (void)detail::system_backend_checked_alignment(alignment);
     if (pointer != nullptr) {
       HYLE_TRACE_FREE_NAMED(pointer, "hyle.system");

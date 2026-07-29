@@ -46,6 +46,7 @@ static_assert(
     std::derived_from<AlignedPmrResource, std::pmr::memory_resource>);
 static_assert(std::same_as<std::allocator_traits<StdAllocator<int>>::value_type,
                            int>);
+static_assert(!std::default_initializable<StdAllocator<int>>);
 static_assert(
     std::same_as<std::allocator_traits<StdAllocator<int>>::rebind_alloc<double>,
                  StdAllocator<double>>);

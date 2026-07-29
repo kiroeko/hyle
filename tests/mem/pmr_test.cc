@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "hyle/mem/allocator.h"
+#include "hyle/mem/stats.h"
 
 using hyle::mem::Allocator;
 using hyle::mem::AlignedPmrResource;
@@ -58,12 +59,32 @@ TEST(SystemMemoryResource, IsProcessLifetimeAndServesPmrVector) {
   EXPECT_EQ(values.back(), 999);
 }
 
+TEST(SystemMemoryResource, ZeroByteRequestIsAValidPmrAllocation) {
+  std::pmr::memory_resource* resource = system_memory_resource();
+  void* pointer = nullptr;
+  EXPECT_NO_THROW(pointer = resource->allocate(0, 64));
+  ASSERT_NE(pointer, nullptr);
+  EXPECT_EQ(reinterpret_cast<std::uintptr_t>(pointer) % 64, 0u);
+  resource->deallocate(pointer, 0, 64);
+}
+
 TEST(PmrResource, ServesPmrVector) {
   PmrResource res(system_allocator());
   std::pmr::vector<int> v(&res);
   for (int i = 0; i < 1000; ++i) v.push_back(i);
   ASSERT_EQ(v.size(), 1000u);
   for (int i = 0; i < 1000; ++i) EXPECT_EQ(v[i], i);
+}
+
+TEST(PmrResource, ZeroByteRequestUsesARealBalancedBackingBlock) {
+  auto stats = hyle::mem::StatsAllocator::create(system_allocator()).value();
+  PmrResource resource(stats.get());
+  void* pointer = nullptr;
+  EXPECT_NO_THROW(pointer = resource.allocate(0, 32));
+  ASSERT_NE(pointer, nullptr);
+  EXPECT_EQ(stats.snapshot().live_bytes, 1u);
+  resource.deallocate(pointer, 0, 32);
+  EXPECT_TRUE(stats.balanced());
 }
 
 // One resource serves containers of different element types (pmr type-erases T,
@@ -131,6 +152,15 @@ TEST(AlignedPmrResource, AlignsContainerBaseWithoutChangingElementStride) {
   ASSERT_NE(bytes.data(), nullptr);
   EXPECT_EQ(reinterpret_cast<std::uintptr_t>(bytes.data()) % 64, 0u);
   EXPECT_EQ(resource.minimum_alignment(), 64u);
+}
+
+TEST(AlignedPmrResource, ZeroByteRequestPreservesMinimumAlignment) {
+  AlignedPmrResource resource(system_allocator(), 128);
+  void* pointer = nullptr;
+  EXPECT_NO_THROW(pointer = resource.allocate(0));
+  ASSERT_NE(pointer, nullptr);
+  EXPECT_EQ(reinterpret_cast<std::uintptr_t>(pointer) % 128, 0u);
+  resource.deallocate(pointer, 0);
 }
 
 TEST(AlignedPmrResource, EqualityIncludesMinimumAlignment) {
