@@ -20,6 +20,16 @@ HYLE_NOINLINE int restrict_sum(const int* HYLE_RESTRICT values,
   return sum;
 }
 
+HYLE_C_NOINLINE int c_contract_branch(int value) noexcept {
+  if (HYLE_C_LIKELY(value >= 0)) return value + 1;
+  if (HYLE_C_UNLIKELY(value == -1)) return 0;
+  HYLE_C_UNREACHABLE();
+}
+
+static HYLE_C_FORCE_INLINE int c_contract_inline(int value) noexcept {
+  return value * 2;
+}
+
 }  // namespace
 
 TEST(CoreVersion, CompileTimeAndRuntimeViewsAgree) {
@@ -57,6 +67,7 @@ TEST(CoreMacros, BranchHintsPreserveTheirExpression) {
 TEST(CoreMacros, OptimizerContractsCompileAndPreserveValidInputs) {
   const int values[] = {1, 2, 3, 4};
   EXPECT_EQ(restrict_sum(values, 4), 10);
+  EXPECT_EQ(c_contract_branch(c_contract_inline(2)), 5);
 }
 
 #if !defined(NDEBUG)
@@ -71,4 +82,8 @@ TEST(CoreMacrosDeath, CAssumeDiagnosesFalseInDebugBuilds) {
 
 TEST(CoreMacrosDeath, FatalAssertAbortsOnFalse) {
   EXPECT_DEATH({ HYLE_FATAL_ASSERT(1 == 2); }, "HYLE fatal");
+}
+
+TEST(CoreMacrosDeath, CFatalAssertAbortsOnFalse) {
+  EXPECT_DEATH({ HYLE_C_FATAL_ASSERT(1 == 2); }, "HYLE C fatal");
 }

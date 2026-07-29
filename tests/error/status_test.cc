@@ -366,6 +366,30 @@ TEST(Status, ErrnoFactoryUsesOneNativeMessageAndContext) {
             (NativeError{NativeErrorDomain::PosixErrno, ENOENT}));
 }
 
+TEST(Status, Win32MapsStableValuesOnEveryHost) {
+  EXPECT_EQ(hyle::status_code_from_win32(0), StatusCode::Ok);
+  EXPECT_EQ(hyle::status_code_from_win32(2), StatusCode::NotFound);
+  EXPECT_EQ(hyle::status_code_from_win32(5), StatusCode::PermissionDenied);
+  EXPECT_EQ(hyle::status_code_from_win32(8),
+            StatusCode::ResourceExhausted);
+  EXPECT_EQ(hyle::status_code_from_win32(87), StatusCode::InvalidArgument);
+  EXPECT_EQ(hyle::status_code_from_win32(120), StatusCode::Unimplemented);
+  EXPECT_EQ(hyle::status_code_from_win32(995), StatusCode::Cancelled);
+  EXPECT_EQ(hyle::status_code_from_win32(0xffffffffu), StatusCode::Unknown);
+}
+
+TEST(Status, Win32FactoryPreservesNativeCodeAndContext) {
+  Status ok = hyle::status_from_win32(0, "ignored");
+  EXPECT_TRUE(ok.ok());
+
+  Status missing = hyle::status_from_win32(2, "opening model");
+  EXPECT_TRUE(missing.IsNotFound());
+  EXPECT_EQ(missing.message().find("opening model: "), 0u);
+  EXPECT_GT(missing.message().size(), std::strlen("opening model: "));
+  EXPECT_EQ(missing.native_error(),
+            (NativeError{NativeErrorDomain::Win32, 2}));
+}
+
 #if defined(HYLE_TESTING)
 TEST(Status, ErrnoFactoryOomPreservesCanonicalCode) {
   hyle::detail::status_test_force_oom(true);
@@ -374,6 +398,15 @@ TEST(Status, ErrnoFactoryOomPreservesCanonicalCode) {
 
   EXPECT_TRUE(missing.IsNotFound());
   EXPECT_FALSE(missing.has_message());
+}
+
+TEST(Status, Win32FactoryOomPreservesCanonicalCode) {
+  hyle::detail::status_test_force_oom(true);
+  Status denied = hyle::status_from_win32(5, "opening model");
+  hyle::detail::status_test_force_oom(false);
+
+  EXPECT_TRUE(denied.IsPermissionDenied());
+  EXPECT_FALSE(denied.has_message());
 }
 #endif
 

@@ -14,6 +14,8 @@ int main(void) {
   const size_t needed = hyle_status_to_string(moved, text, sizeof(text));
   const int ok = hyle_status_get_code(moved) == HYLE_STATUS_NOT_FOUND &&
                  hyle_status_is_ok(copy) &&
+                 hyle_status_code_from_win32(5) ==
+                     HYLE_STATUS_PERMISSION_DENIED &&
                  needed == strlen("NotFound: loading model: model.bin") &&
                  strcmp(text, "NotFound: loading model: model.bin") == 0;
 

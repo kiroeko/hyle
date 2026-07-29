@@ -133,6 +133,23 @@ hyle_status hyle_status_from_errno_n(int error_number, const char *context,
       error_number, view_or_empty(context, context_len)));
 }
 
+hyle_status_code hyle_status_code_from_win32(uint32_t error_number) {
+  return to_c_code(hyle::status_code_from_win32(error_number));
+}
+
+hyle_status hyle_status_from_win32(uint32_t error_number,
+                                   const char *context) {
+  return hyle_status_from_win32_n(
+      error_number, context, context == nullptr ? 0 : std::strlen(context));
+}
+
+hyle_status hyle_status_from_win32_n(uint32_t error_number,
+                                     const char *context,
+                                     size_t context_len) {
+  return steal_to_c(hyle::status_from_win32(
+      error_number, view_or_empty(context, context_len)));
+}
+
 void hyle_status_free(hyle_status *status) {
   if (status == nullptr) return;
   hyle::Status owned = adopt_from_c(*status);

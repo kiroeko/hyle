@@ -13,6 +13,12 @@
 #include "hyle/macros.h"
 #include "status_access.h"
 
+#if defined(_WIN32)
+#  define WIN32_LEAN_AND_MEAN
+#  define NOMINMAX
+#  include <windows.h>
+#endif
+
 namespace hyle {
 
 std::string_view status_code_name(StatusCode code) noexcept {
@@ -218,6 +224,64 @@ StatusCode status_code_from_errno(int error_number) noexcept {
 #ifdef ECANCELED
     case ECANCELED: return StatusCode::Cancelled;
 #endif
+    default: return StatusCode::Unknown;
+  }
+}
+
+StatusCode status_code_from_win32(std::uint32_t error_number) noexcept {
+  // Win32 error values are a stable wire contract. Numeric cases keep this
+  // classifier usable when inspecting a Windows error on Linux/macOS and keep
+  // windows.h out of the public error header.
+  switch (error_number) {
+    case 0: return StatusCode::Ok;                       // ERROR_SUCCESS
+    case 995:                                           // ERROR_OPERATION_ABORTED
+    case 1223: return StatusCode::Cancelled;            // ERROR_CANCELLED
+    case 121:                                           // ERROR_SEM_TIMEOUT
+    case 1460: return StatusCode::DeadlineExceeded;     // ERROR_TIMEOUT
+    case 2:                                             // ERROR_FILE_NOT_FOUND
+    case 3:                                             // ERROR_PATH_NOT_FOUND
+    case 53:                                            // ERROR_BAD_NETPATH
+    case 126:                                           // ERROR_MOD_NOT_FOUND
+    case 127: return StatusCode::NotFound;              // ERROR_PROC_NOT_FOUND
+    case 80:                                            // ERROR_FILE_EXISTS
+    case 183: return StatusCode::AlreadyExists;         // ERROR_ALREADY_EXISTS
+    case 5:                                             // ERROR_ACCESS_DENIED
+    case 19:                                            // ERROR_WRITE_PROTECT
+    case 32:                                            // ERROR_SHARING_VIOLATION
+    case 1314: return StatusCode::PermissionDenied;     // ERROR_PRIVILEGE_NOT_HELD
+    case 4:                                             // ERROR_TOO_MANY_OPEN_FILES
+    case 8:                                             // ERROR_NOT_ENOUGH_MEMORY
+    case 14:                                            // ERROR_OUTOFMEMORY
+    case 39:                                            // ERROR_HANDLE_DISK_FULL
+    case 112:                                           // ERROR_DISK_FULL
+    case 164:                                           // ERROR_MAX_THRDS_REACHED
+    case 1450:                                          // ERROR_NO_SYSTEM_RESOURCES
+    case 1453:                                          // ERROR_WORKING_SET_QUOTA
+    case 1455: return StatusCode::ResourceExhausted;    // ERROR_COMMITMENT_LIMIT
+    case 6:                                             // ERROR_INVALID_HANDLE
+    case 109:                                           // ERROR_BROKEN_PIPE
+    case 145:                                           // ERROR_DIR_NOT_EMPTY
+    case 158:                                           // ERROR_NOT_LOCKED
+    case 267: return StatusCode::FailedPrecondition;    // ERROR_DIRECTORY
+    case 13:                                            // ERROR_INVALID_DATA
+    case 87:                                            // ERROR_INVALID_PARAMETER
+    case 123:                                           // ERROR_INVALID_NAME
+    case 193:                                           // ERROR_BAD_EXE_FORMAT
+    case 487:                                           // ERROR_INVALID_ADDRESS
+    case 998: return StatusCode::InvalidArgument;       // ERROR_NOACCESS
+    case 122:                                           // ERROR_INSUFFICIENT_BUFFER
+    case 206: return StatusCode::OutOfRange;            // ERROR_FILENAME_EXCED_RANGE
+    case 50:                                            // ERROR_NOT_SUPPORTED
+    case 120: return StatusCode::Unimplemented;         // ERROR_CALL_NOT_IMPLEMENTED
+    case 33:                                            // ERROR_LOCK_VIOLATION
+    case 170:                                           // ERROR_BUSY
+    case 1237: return StatusCode::Aborted;              // ERROR_RETRY
+    case 1326: return StatusCode::Unauthenticated;      // ERROR_LOGON_FAILURE
+    case 21:                                            // ERROR_NOT_READY
+    case 1225:                                          // ERROR_CONNECTION_REFUSED
+    case 1231:                                          // ERROR_NETWORK_UNREACHABLE
+    case 1232:                                          // ERROR_HOST_UNREACHABLE
+    case 1236: return StatusCode::Unavailable;          // ERROR_CONNECTION_ABORTED
     default: return StatusCode::Unknown;
   }
 }
@@ -648,8 +712,34 @@ std::string_view describe_errno(int error_number, char *buffer,
 #endif
   const int written = std::snprintf(buffer, cap, "errno %d", error_number);
   if (written <= 0) return "unknown errno";
-  const std::size_t length = static_cast<std::size_t>(written);
-  return std::string_view(buffer, length < cap ? length : cap - 1);
+  const std::size_t formatted_length = static_cast<std::size_t>(written);
+  return std::string_view(
+      buffer, formatted_length < cap ? formatted_length : cap - 1);
+}
+
+std::string_view describe_win32(std::uint32_t error_number, char *buffer,
+                                std::size_t cap) noexcept {
+#if defined(_WIN32)
+  DWORD length = ::FormatMessageA(
+      FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr,
+      static_cast<DWORD>(error_number), 0, buffer, static_cast<DWORD>(cap),
+      nullptr);
+  while (length != 0 &&
+         (buffer[length - 1] == '\r' || buffer[length - 1] == '\n' ||
+          buffer[length - 1] == ' ')) {
+    --length;
+  }
+  if (length != 0) {
+    buffer[length] = '\0';
+    return std::string_view(buffer, length);
+  }
+#endif
+  const int written =
+      std::snprintf(buffer, cap, "Win32 error %u", error_number);
+  if (written <= 0) return "unknown Win32 error";
+  const std::size_t formatted_length = static_cast<std::size_t>(written);
+  return std::string_view(
+      buffer, formatted_length < cap ? formatted_length : cap - 1);
 }
 
 }  // namespace
@@ -667,6 +757,28 @@ Status status_from_errno(int error_number, std::string_view context) noexcept {
       describe_errno(error_number, description, sizeof(description));
   const NativeError native_error{NativeErrorDomain::PosixErrno,
                                  error_number};
+  std::uintptr_t rep = 0;
+  if (context.empty()) {
+    rep = detail::status_make_native_heap(code, native_error, native.data(),
+                                          native.size());
+  } else {
+    rep = detail::status_make_context(code, native_error, context.data(),
+                                      context.size(), native.data(),
+                                      native.size());
+  }
+  return rep != 0 ? detail::StatusAccess::adopt(rep) : Status(code);
+}
+
+Status status_from_win32(std::uint32_t error_number,
+                         std::string_view context) noexcept {
+  const StatusCode code = status_code_from_win32(error_number);
+  if (code == StatusCode::Ok) return Status{};
+
+  char description[512];
+  description[0] = '\0';
+  const std::string_view native =
+      describe_win32(error_number, description, sizeof(description));
+  const NativeError native_error{NativeErrorDomain::Win32, error_number};
   std::uintptr_t rep = 0;
   if (context.empty()) {
     rep = detail::status_make_native_heap(code, native_error, native.data(),

@@ -37,6 +37,16 @@ HYLE_C_FLATTEN int hyle_test_c_compiler_contract_default_unroll(
   return sum;
 }
 
+static HYLE_C_FORCE_INLINE int hyle_test_c_force_inline(int value) {
+  return value + 1;
+}
+
+HYLE_C_NOINLINE int hyle_test_c_branch_contract(int value) {
+  if (HYLE_C_LIKELY(value >= 0)) return hyle_test_c_force_inline(value);
+  if (HYLE_C_UNLIKELY(value == -1)) return 0;
+  HYLE_C_UNREACHABLE();
+}
+
 int main(void) {
   (void)"HYLE_C_CORE_COVERAGE_BODY_MARKER";
   uint32_t v = hyle_version();
@@ -51,6 +61,8 @@ int main(void) {
     const int values[] = {1, 2, 3, 4};
     CHECK(hyle_test_c_compiler_contract_sum(values, 4) == 10);
     CHECK(hyle_test_c_compiler_contract_default_unroll(values, 4) == 10);
+    CHECK(hyle_test_c_branch_contract(4) == 5);
+    HYLE_C_FATAL_ASSERT(values[0] == 1);
   }
 
   {

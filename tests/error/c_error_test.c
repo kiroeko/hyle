@@ -95,6 +95,24 @@ int main(void) {
     hyle_status_free(&native);
   }
 
+  /* canonical Win32 adapter is stable even on a non-Windows host */
+  {
+    CHECK(hyle_status_code_from_win32(0) == HYLE_STATUS_OK);
+    CHECK(hyle_status_code_from_win32(2) == HYLE_STATUS_NOT_FOUND);
+    CHECK(hyle_status_code_from_win32(5) == HYLE_STATUS_PERMISSION_DENIED);
+    hyle_status native = hyle_status_from_win32_n(2, "open\0model", 10);
+    hyle_native_error_domain domain = HYLE_NATIVE_ERROR_NONE;
+    int64_t native_code = 0;
+    CHECK(hyle_status_is_not_found(native));
+    CHECK(hyle_status_message(native, NULL, 0) > 10);
+    CHECK(hyle_status_get_native_error(native, &domain, &native_code));
+    CHECK(domain == HYLE_NATIVE_ERROR_WIN32 && native_code == 2);
+    hyle_status_free(&native);
+    native = hyle_status_from_win32(0, "ignored");
+    CHECK(hyle_status_is_ok(native));
+    hyle_status_free(&native);
+  }
+
   {
     hyle_native_error_domain domain = HYLE_NATIVE_ERROR_NONE;
     int64_t native_code = 0;

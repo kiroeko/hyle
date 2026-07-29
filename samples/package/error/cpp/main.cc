@@ -9,6 +9,8 @@ int main() {
   hyle::Result<int> result = hyle::make_unexpected(std::move(status));
 
   return !result && result.error().IsNotFound() &&
+                 hyle::status_code_from_win32(5) ==
+                     hyle::StatusCode::PermissionDenied &&
                  result.error().message() ==
                      std::string_view("loading model: model.bin")
              ? 0

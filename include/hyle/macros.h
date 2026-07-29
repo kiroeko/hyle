@@ -10,22 +10,10 @@
 #define HYLE_CONCAT(a, b) HYLE_CONCAT_INNER(a, b)
 
 // ---- force inline ----
-#if defined(_MSC_VER)
-#  define HYLE_FORCE_INLINE __forceinline
-#elif defined(__GNUC__) || defined(__clang__)
-#  define HYLE_FORCE_INLINE __attribute__((always_inline)) inline
-#else
-#  define HYLE_FORCE_INLINE inline
-#endif
+#define HYLE_FORCE_INLINE HYLE_DETAIL_COMPILER_FORCE_INLINE
 
 // ---- no inline ----
-#if defined(_MSC_VER)
-#  define HYLE_NOINLINE __declspec(noinline)
-#elif defined(__GNUC__) || defined(__clang__)
-#  define HYLE_NOINLINE __attribute__((noinline))
-#else
-#  define HYLE_NOINLINE
-#endif
+#define HYLE_NOINLINE HYLE_DETAIL_COMPILER_NOINLINE
 
 // ---- aliasing contract ----------------------------------------------------
 // Apply to pointer declarations only when the pointed-to ranges do not alias
@@ -55,22 +43,11 @@
 #endif
 
 // ---- branch prediction ----
-#if defined(__GNUC__) || defined(__clang__)
-#  define HYLE_LIKELY(x)   (__builtin_expect(!!(x), 1))
-#  define HYLE_UNLIKELY(x) (__builtin_expect(!!(x), 0))
-#else
-#  define HYLE_LIKELY(x)   (x)
-#  define HYLE_UNLIKELY(x) (x)
-#endif
+#define HYLE_LIKELY(x) HYLE_DETAIL_COMPILER_LIKELY(x)
+#define HYLE_UNLIKELY(x) HYLE_DETAIL_COMPILER_UNLIKELY(x)
 
 // ---- unreachable ----
-#if defined(_MSC_VER)
-#  define HYLE_UNREACHABLE() __assume(0)
-#elif defined(__GNUC__) || defined(__clang__)
-#  define HYLE_UNREACHABLE() __builtin_unreachable()
-#else
-#  define HYLE_UNREACHABLE() ((void)0)
-#endif
+#define HYLE_UNREACHABLE() HYLE_DETAIL_COMPILER_UNREACHABLE()
 
 // ---- delete copy / copy+move ----
 #define HYLE_DISABLE_COPY(T)        \

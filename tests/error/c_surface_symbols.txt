@@ -2,12 +2,15 @@ hyle_status_add_context
 hyle_status_add_context_n
 hyle_status_clone
 hyle_status_code_from_errno
+hyle_status_code_from_win32
 hyle_status_code_name
 hyle_native_error_domain_name
 hyle_status_equals
 hyle_status_free
 hyle_status_from_errno
 hyle_status_from_errno_n
+hyle_status_from_win32
+hyle_status_from_win32_n
 hyle_status_get_code
 hyle_status_get_native_error
 hyle_status_has_message

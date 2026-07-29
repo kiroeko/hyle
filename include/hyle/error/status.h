@@ -93,6 +93,13 @@ HYLE_ERROR_API std::string_view native_error_domain_name(
 // is resource exhaustion rather than a retryable I/O condition).
 HYLE_ERROR_API StatusCode status_code_from_errno(int error_number) noexcept;
 
+// Map the stable 32-bit value returned by Win32 GetLastError onto the same
+// canonical taxonomy. The mapping is available on every host so tools can
+// classify persisted/remote Windows diagnostics without including windows.h.
+// Zero is Ok; unknown values remain Unknown rather than being marked retryable.
+HYLE_ERROR_API StatusCode status_code_from_win32(
+    std::uint32_t error_number) noexcept;
+
 namespace detail {
 class StatusAccess;
 
@@ -354,5 +361,11 @@ static_assert(sizeof(Status) == sizeof(std::uintptr_t),
 // mapped code and drops only the message, like every other Status factory.
 HYLE_ERROR_API Status status_from_errno(
     int error_number, std::string_view context = {}) noexcept;
+
+// Construct a Status from a Win32 GetLastError value. On Windows the message
+// uses FormatMessage; other hosts retain a deterministic numeric description.
+// The native Win32 code is always preserved for machine-readable recovery.
+HYLE_ERROR_API Status status_from_win32(
+    std::uint32_t error_number, std::string_view context = {}) noexcept;
 
 }  // namespace hyle
