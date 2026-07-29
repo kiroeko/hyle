@@ -192,6 +192,8 @@ return overall; /* ownership 交给 caller */
 - 只把所有权交给另一个变量：先用 `HYLE_STATUS_INIT` 初始化 dst，再调用
   `hyle_status_move`。
 - `hyle_status_message_cstr` 只借用；原 Status 被 free/move/原地加 context 后指针失效。
+- 连续 k 次 `hyle_status_add_context` 会反复扁平复制，最坏 O(k²)；只在少量人工语义边界
+  使用，不要拿它记录调用栈或结构化 breadcrumb，大量事件交给 obs。
 - `*_n` 可保存嵌入 NUL 的文本；此时 `message_cstr` 只能看到第一个 NUL，完整字节必须用
   `hyle_status_message` 的返回长度与 buffer-fill。
 - 直接 `dst = src` 只是复制 tagged word，会造成 heap Status double free；禁止。

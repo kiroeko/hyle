@@ -131,8 +131,17 @@ message/detail。
 单次组合必须读取并生成完整文本，因此时间/空间是最优的
 `O(context.size + message.size)`。连续 k 层会重复复制已扁平文本，等长 context 的整个构造
 序列最坏为 O(k²)；真实产品只应添加少量语义层。三层场景列入冻结 benchmark，若将来出现
-深层机器生成 context，再以真实调用决定是否引入链式 representation，不能提前让所有
-Status 承担节点和最终格式化复杂度。
+深层机器生成 context，再以真实调用决定是否改变 representation，不能提前让所有 Status
+承担节点和最终格式化复杂度。
+
+成熟实现没有一个对所有合同都免费的解：链式 node/rope 可把逐层构造降为 O(k)，但会把遍历、
+分配失败和 flatten 成本推迟到 `message()`、C `message_cstr` 与日志边界，并破坏当前连续
+`string_view` 合同；builder 只有在多个片段同时已知时才能一次 flatten，不能消除跨函数逐层
+传播的重复工作。若真实 profile 出现深链，HYLE 的首选候选是**仅对 context rep**保存几何
+增长的 prefix headroom：rvalue 且引用计数为 1 时向前原地写，空间不足才按倍增容量搬迁；
+lvalue/共享 rep 继续 copy-on-write。它可保持 8B Status 与连续 message，并把正常移动链降为
+摊还 O(最终总文本字节)，同时不让普通 message Status 承担容量字段。只有稳定出现约 8 层以上
+或 context 构造进入实际 profile 热点时才实施和复证；三层 benchmark 本身不是上架理由。
 
 示例最终消息：
 

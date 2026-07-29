@@ -163,6 +163,9 @@ if (status.IsUnavailable()) {
   context 后，不要继续使用先前 view；保留一份 Status copy 可以延长共享消息寿命。
 - `status.WithContext(text)` 对 lvalue 保留原值并返回新 Status；
   `std::move(status).WithContext(text)` 消费原值，适合传播边界。不要机械地给每层函数名加壳。
+- message 当前始终扁平连续；连续 k 层 `WithContext` 的总复制最坏 O(k²)。它适合少量人工
+  语义边界，不适合作机器栈、breadcrumb 或任意字段收集器；大量结构化事件交给 obs，需要
+  很多文本片段且同时已知时先在上层一次组合。
 - 不同 Status 副本可以跨线程传递；同一个 Status 对象不能在一边 `Update`/赋值的同时被
   另一线程读取。线程安全的是共享的不可变 message representation，不是对同一 C++ 对象的
   并发读写。
