@@ -33,7 +33,7 @@
 
 | 固定统计口径 | 当前 | 命令/说明 |
 |---|---|---|
-| **全库代码** | **275,004** | tracked + 当前待提交文件；含 docs/third_party，**≠ 自写** |
+| **全库代码** | **275,110** | tracked + 当前待提交文件；含 docs/third_party，**≠ 自写** |
 | **自实现（含测试）** | **134,163** | `cloc include/hyle src tests`，只计 C++/Header/C/CUDA |
 | **自实现（不含测试）** | **92,124** | `cloc include/hyle src`，只计 C++/Header/C/CUDA；库本体硬锚 |
 | **当前处理模块实现（build/package）** | **5,079** | 自有 CMake/preset/CI 与 build/fetch/setup/QEMU 脚本；不含 vendored CMake、测试源码和文档 |

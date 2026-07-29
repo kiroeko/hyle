@@ -30,6 +30,25 @@
 
 ## 1. 构建与集成
 
+### 1.0 先选消费形状
+
+普通用户先看自己拿到什么，不需要从 HYLE 的全部 CMake 选项开始阅读：
+
+| 你拿到的内容 | 入口 | 需要设置的 HYLE 构建选项 |
+|---|---|---|
+| headers + shared SDK | `find_package(Hyle COMPONENTS ...)` | **无**；linkage 和 feature 已由包固定 |
+| headers + static SDK | `find_package(Hyle COMPONENTS ...)` | **无**；同样只链接 `hyle::<module>` |
+| complete source / source checkout | `add_subdirectory()` 或 FetchContent | 通常只设 `HYLE_COMPONENTS`、`HYLE_STATIC`、`HYLE_BUILD_TESTS=OFF` |
+
+installed SDK 用户用 `CMAKE_PREFIX_PATH` 告诉 CMake 包在哪里，不再设置 `HYLE_STATIC` 或重新选择
+backend；可通过 `Hyle_STATIC`、`Hyle_AVAILABLE_COMPONENTS` 和 `Hyle_AVAILABLE_FEATURES` 查询收到的
+产品。源码用户只有在确实需要 TLS/CUDA 等可选能力时才设置对应模块 feature；正式、可复现的产物写
+明确 `ON`/`OFF`，本机试用才保留 `AUTO`。
+
+三种形状的完整可复制工程、Windows DLL 处理、源码 FetchContent 和自行制作内部 SDK 见
+[`distribution.md`](./distribution.md)。无论哪种形状，用户代码都链接相同的 `hyle::<module>`；不要
+手写 include path、库文件名或传递依赖顺序。
+
 ### 1.1 用 CMake 集成（推荐）
 
 HYLE 是标准 CMake 工程，每个模块导出 `hyle::<module>` 别名 target。先声明所需产品根，
@@ -48,7 +67,8 @@ hyle_stage_runtime_dependencies(your_app) # Windows shared build 的传递 DLL
 
 ### 1.2 构建选项全集（这是"开关太多"的答案）
 
-HYLE 的构建开关分**产品/组装参数**与**benchmark 对照门**两个范畴，别混。构建系统审查期间
+HYLE 的构建开关分**产品/组装参数**与**benchmark 对照门**两个范畴，别混。安装包消费者不使用
+这些构建开关；以下全集只供源码集成、HYLE 开发和制包时查阅。构建系统审查期间
 不再维护容易漂移的“总共有几个开关”手工数字，以本表与 `cmake -LH` 为准：
 
 - **A. 产品/组装参数**（`HYLE_<名>` cache 变量）——决定选哪些模块、static/shared、可选

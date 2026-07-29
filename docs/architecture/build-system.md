@@ -6,6 +6,63 @@ HYLE 的 CMake target 图是项目组织架构的可执行版本，不只是“�
 源码、公开头、C ABI、直接依赖、可选后端和验证面都必须归属到 target；文档解释怎样选择，
 不能用目录顺序、全局变量或维护者记忆补全隐藏依赖。
 
+## 设计目标与不可变原则
+
+构建系统同时服务仓库维护者、源码嵌入方、二进制 SDK 使用者和经授权的源码客户。四类人入口不同，
+但必须落到同一张产品 target 图；不能为某一种交付形状重建第二套源文件、依赖或 feature 清单。
+
+1. **target 是事实，文件名不是接口。**公开能力统一由 `hyle::<module>` 表达；头路径、编译合同、
+   直接依赖、私有 link-only archive 和 runtime staging 随 target 传播。用户不得靠手写库文件顺序
+   补全构建系统遗漏的信息。
+2. **component 表达用户意图。**`HYLE_COMPONENTS` 的值是用户想取得的产品根，不是要编译的目录清单；
+   构建系统负责计算闭包，并只激活闭包内源码、测试、benchmark 和第三方发现。
+3. **模块拥有实现，根工程拥有组装。**模块自己的源码、依赖、测试和 benchmark 归模块目录；根
+   CMake 只维护工具链合同、component 图、横切 helper 和最终组装，不回到巨型源文件清单。
+4. **选项描述产品决定，不暴露脚本偶然。**公开 cache 变量回答“要什么组件、能力、交付物或验证”，
+   不回答“某段内部 CMake 是否执行”。标准 CMake 已有准确语义时直接使用标准变量。
+5. **父工程拥有父工程。**source embed 不改写父工程的 `BUILD_SHARED_LIBS`、generator、toolchain、
+   configuration types、输出目录、安装根或发布 target；HYLE 的局部决定必须落在自己的 target 上。
+6. **可复现优先于便利探测。**`AUTO` 可以帮助本机开发，正式 SDK/CI 必须把会改变产品能力的选项
+   固定成 `ON` 或 `OFF`，并把结果写入 package feature manifest。
+7. **错误配置立即失败。**未知/空 component、非法枚举、缺少硬能力、测试布局进入安装包、未声明
+   link 边和不可迁移安装路径都在 configure 阶段拒绝；不允许静默退回更小或更大的产品。
+8. **授权与 artifact 正交。**shared、static、complete source 只决定文件闭包和消费入口，不自行扩大
+   使用、修改、披露或再分发权利。
+
+这些原则比当前 helper 名称稳定。未来可以重写 CMake 实现，但只要仍满足同一组用户合同，就不属于
+产品架构变化；反之，即使只是增加一个布尔开关，只要破坏上述合同也必须按架构变更审查。
+
+## 选项的信息模型
+
+公开选项按“它描述什么”分层，而不是按最初在哪个 CMake 文件出现分类：
+
+| 信息层 | 命名与值域 | 例子 | 约束 |
+|---|---|---|---|
+| 产品根 | `HYLE_COMPONENTS=<list>` | `mem;simd` | 依赖自动闭包；显式空/未知值失败 |
+| artifact 形状 | `HYLE_STATIC`、`HYLE_INSTALL` | static installed SDK | 不借用或改写父工程 `BUILD_SHARED_LIBS` |
+| 产品能力 | `HYLE_<MODULE>_<FEATURE>` | `HYLE_IO_TLS`、`HYLE_COMPUTE_CUDA` | 可探测能力用 `AUTO/ON/OFF`；ON 是硬合同 |
+| 硬件特化 | HYLE 语义或标准 toolchain 变量 | `HYLE_SIMD_EXACT_TARGET`、`CMAKE_CUDA_ARCHITECTURES` | 进入 artifact/ISA 合同，分发包不得偷用本机 native |
+| 验证形状 | `HYLE_BUILD_*`、`HYLE_TEST_*`、`HYLE_SANITIZER` | tests、bench、shipping layout、TSan | 不改变正常产品 API；测试插桩不得进入 install |
+| 对标开发 | `HYLE_BENCH_*` | `HYLE_BENCH_HIGHWAY` | 只给 benchmark 加对手，永不改变产品 target |
+| 构建环境 | 标准 CMake/toolchain/FetchContent 变量 | `CMAKE_BUILD_TYPE`、`FETCHCONTENT_SOURCE_DIR_GGML` | 不再包一层同义 HYLE 开关 |
+
+新增 cache 变量前必须回答以下问题：
+
+- 它是否是用户或制包者需要选择的稳定决定？如果只是函数之间传状态，使用普通局部变量或 target
+  property；计算结果采用内部 `*_ENABLED`，不得再暴露为第二个可写 cache 开关。
+- 它是否改变安装包能力、ABI、ISA 或依赖闭包？若改变，必须可被 package manifest 审计，并有
+  source-embed/install smoke；不能只在 configure 日志打印一行。
+- 它是否仅属于一个模块？使用 `HYLE_<MODULE>_<FEATURE>`，并只在 component 闭包含该模块时探测或
+ 取得依赖。跨模块产品决定才允许根级 `HYLE_<NAME>`。
+- 它是否存在三种真实状态？只有“便利探测/硬要求/明确禁止”才用 `AUTO/ON/OFF`；普通二元能力使用
+  `ON/OFF`，有限集合使用严格校验的 cache string，拼写错误不得退回默认值。
+- CMake 是否已有同一语义？build type、install prefix、CUDA architectures、toolchain file 和
+  FetchContent source override 均使用标准名字，不创造 HYLE 方言。
+
+因此“选项比较多”本身不是失败；让普通用户必须理解无关选项、同一决定出现两个名字、或一个选项在
+不同入口表达不同产品，才是失败。安装包消费者通常不设置任何 HYLE 构建选项；源码用户通常只设置
+component、linkage、tests，再为实际使用的可选后端补一个明确能力合同。
+
 授权方式与交付形状正交。HYLE 当前是 proprietary，不代表客户只能拿二进制；经单独书面授权的
 客户可以取得完整源码。构建系统把交付形状明确分为三类：
 
@@ -88,6 +145,63 @@ TLS 与 CUDA 使用 `AUTO|ON|OFF` 三态：AUTO 仅供便利探测，ON 是硬�
 目录返回后还会重新读取 target 的 `LINK_LIBRARIES`/`INTERFACE_LINK_LIBRARIES` 做终态审计。因此模块
 声明之后追加的 `target_link_libraries(hyle_x ... hyle_y)` 也不能绕过组件闭包。外部实现库不进入这张
 HYLE-to-HYLE 图，但仍由所属模块 target 负责 package/export 语义。
+
+### 为什么内部直接依赖出现两次
+
+这是两个 CMake 阶段对同一架构事实的不同投影，不是允许两份事实各自演化：
+
+| 位置 | 发生时间 | 必须回答的问题 |
+|---|---|---|
+| `HyleComponents.cmake` 的 component graph | 任何模块 target 创建前 | 用户请求 `mem` 时，应该先加载哪些模块目录，顺序是什么？ |
+| `src/<module>/CMakeLists.txt` 的 `DEPS/PUBLIC_DEPS` | 该模块 target 创建时 | `hyle_mem` 实际链接谁，哪些 usage requirement 要传播给下游？ |
+
+例如中央图声明：
+
+```cmake
+set(_HYLE_DEPS_MEM error platform)
+```
+
+它让 `HYLE_COMPONENTS=mem` 在进入模块目录前解析成 `error;platform;mem`。随后 mem 自己声明：
+
+```cmake
+hyle_add_module(mem ... PUBLIC_DEPS hyle_error hyle_platform)
+```
+
+这一条才真正产生 linker edge，并决定 PUBLIC/PRIVATE 传播。若只保留 target link，选择阶段面对尚未创建的
+target，无法知道应先加载哪些目录；若只保留中央图，则链接器、编译 usage requirement 和安装导出都没有
+真实边。让根图直接替每个模块生成全部 link 又会把 PUBLIC/PRIVATE、外部实现库等模块所有权拉回中央
+巨型脚本。
+
+所以当前选择的是**受机械约束的冗余**：中央图是内部 component 直接依赖的选择真源，模块 target 是
+链接语义真源；`hyle_add_module()` 在声明时比较二者，所有模块加载后再审计最终 target properties。
+内部 HYLE 边任一侧多一条或少一条都会 configure 失败；mimalloc、OpenSSL、ggml 等非 HYLE 实现依赖
+只属于 target，不伪装成用户 component。未来若 CMake 结构能以更简单的 module manifest 同时生成两种
+投影，可以消除这点重复，但不能以丢失加载前闭包或 PUBLIC/PRIVATE 语义为代价。
+
+### 新增模块或能力的固定协议
+
+新增产品模块不是“在根目录多写一个 `add_library`”。维护者按以下顺序扩展：
+
+1. 在 `HyleComponents.cmake` 登记稳定 component 名和直接 HYLE 依赖，保持无环拓扑；这张中央图必须
+   在加载模块前可计算，因而不会从构建后的 target 反向猜依赖。
+2. 在 `src/<module>/CMakeLists.txt` 用统一 helper 声明产品 target、公开/私有源和真实直接 link 边；
+   不把模块清单写回根 CMake。
+3. 若有重型可选依赖，将发现/取得逻辑放入 `cmake/Hyle<Module>Dependencies.cmake`，根只在闭包选中
+   该模块时调用一个配置入口；生成文件进入模块/build tree，不进入源码树。
+4. 提供 `tests/<module>/CMakeLists.txt`，登记 C++ 正确性、适用的纯 C/C surface/header 检查和
+   `hyle_<module>_tests` aggregate。没有测试所有权的产品模块 configure 失败。
+5. 有真实 workload 时再提供 `bench/<module>/CMakeLists.txt`；benchmark 可缺席，但不能以 benchmark
+   方便为理由改变产品 API、常态 metadata 或依赖形状。
+6. 公共模块 target 自动参与 build-tree alias 和 install export；不要另维护一份安装 target 清单。
+   新 feature 若改变交付物，补 package manifest、license closure 和外部 consumer 验证。
+7. 更新对应 architecture（边界/原则）、guide（用户选型）、C guide（FFI 映射）、performance（证据）
+   与 milestone（施工记录），各文档不互相复制职责。
+8. 至少验证最小 component 子集、依赖闭包 aggregate、source embed 和相关 static/shared package；发布前
+   再进入完整平台/后端矩阵。终态 link audit 必须通过，不能靠扩大 component 图掩盖错误依赖。
+
+新增模块通常会修改“一处中央图 + 模块自己的 source/tests/bench 目录”；新增模块能力通常只改模块依赖
+入口和该模块所有权目录。若一次普通能力扩展必须修改多个无关模块的 CMakeLists，先判断是否缺少合理
+的公共 target/helper，而不是继续传播全局变量。
 
 这里的“独立”指所有权目录、变量/生成目录隔离、可选择的 target 图和独立验证入口，不是把每个
 目录做成另一个 `project()`。开发者仍从仓库根配置，由根统一执行工具链门槛和依赖闭包。例如只施工
