@@ -33,7 +33,7 @@
 
 | 固定统计口径 | 当前 | 命令/说明 |
 |---|---|---|
-| **全库代码** | **276,996** | tracked；含 docs/third_party，**≠ 自写** |
+| **全库代码** | **277,134** | tracked；含 docs/third_party，**≠ 自写** |
 | **自实现（含测试）** | **135,036** | `cloc include/hyle src tests`，只计 C++/Header/C/CUDA |
 | **自实现（不含测试）** | **92,659** | `cloc include/hyle src`，只计 C++/Header/C/CUDA；库本体硬锚 |
 | **当前处理模块实现（error）** | **1,434** | `include/hyle/error + include/hyle/c/error.h + src/error`；不含测试/benchmark/文档 |

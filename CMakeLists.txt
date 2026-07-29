@@ -195,6 +195,10 @@ include(HyleTesting)  # HYLE_TESTING gate: optional test-only instrumentation
 # discovery and source fetching only for components in the resolved closure.
 set(HYLE_DEPS_DIR "${HYLE_BINARY_DIR}/_deps" CACHE PATH
     "Build-tree directory for dependencies fetched by HYLE")
+# FetchContent is directory-scoped, so keep this as a normal variable owned by
+# the HYLE subproject.  Every HYLE dependency (including test-only GoogleTest)
+# now observes HYLE_DEPS_DIR without rewriting an embedding parent's cache.
+set(FETCHCONTENT_BASE_DIR "${HYLE_DEPS_DIR}")
 include(HyleIoDependencies)
 include(HyleComputeDependencies)
 

@@ -235,3 +235,7 @@ ctest --test-dir <build> -R hyle_error_c_test --output-on-failure
 纯 C 测试覆盖创建、查询、clone/move/free、非法 enum、errno/native detail、嵌入 NUL、借用
 消息、上下文、首错聚合和早返回；机械 surface test 同时锁定 24 个 DLL 导出，独立头测试确保
 `hyle/c/error.h` 单独以 C 编译。
+
+二进制 SDK 的外部消费证书位于 `samples/package/error/c`：工程只启用 C，执行
+`find_package(Hyle REQUIRED COMPONENTS error)` 并只链接 `hyle::error`。同一个工程必须同时通过
+shared 和 static SDK；static package 会启用 C++ linker driver，但不会把 `.c` 翻译单元改成 C++。

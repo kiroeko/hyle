@@ -183,6 +183,10 @@ native detail 映射为固定 domain/code；不能用普通结构体赋值伪造
 clone/move/free、length-aware 文本、借用消息、buffer-fill 和传播宏见
 [`c-error.md`](./c-error.md)。
 
+安装后 C++ 参考工程位于 `samples/package/error/cpp`，只请求并链接 `hyle::error`；对应的真正
+C-only 工程位于 `samples/package/error/c`。两者由 shared/static package smoke 自动发现和运行，
+不是只在 HYLE 源码树内成立的示例。
+
 C handle 的 `rep` 虽然为按值 ABI 而公开在结构体中，但它是 owning token，不是可复制整数：
 初始化后才能作为 destination，复制必须 `clone`，转移必须 `move`，首错聚合优先使用
 `HYLE_C_UPDATE_STATUS`。裸结构体赋值是最危险的 C/FFI 陷阱，会让两个变量释放同一 backing。

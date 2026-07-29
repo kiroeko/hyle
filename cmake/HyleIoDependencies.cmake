@@ -32,7 +32,6 @@ function(hyle_configure_io_dependencies)
   # nghttp2 owns RFC 9113 framing, HPACK, stream state and flow control. HYLE
   # owns the coroutine transport and imports none of nghttp2's runtime policy.
   if(HYLE_IO_HTTP2)
-    set(FETCHCONTENT_BASE_DIR "${HYLE_DEPS_DIR}")
     include(FetchContent)
     set(NGHTTP2_PIN_COMMIT "68cb6900fde14c77f0cd7add0e094a862960eb99") # v1.69.0
     FetchContent_Declare(nghttp2
@@ -75,10 +74,6 @@ function(hyle_configure_io_dependencies)
     message(STATUS
       "HYLE: nghttp2 v1.69.0 (${NGHTTP2_PIN_COMMIT}) -- io-11 HTTP/2 enabled "
       "as a private static protocol core")
-
-    # Preserve the cache choice for later HYLE subdirectories. PARENT_SCOPE is
-    # the HYLE source directory (the caller), never an embedding parent project.
-    set(FETCHCONTENT_BASE_DIR "${HYLE_DEPS_DIR}" PARENT_SCOPE)
   endif()
 
   set(HYLE_IO_TLS_ENABLED "${_hyle_io_tls_enabled}" PARENT_SCOPE)

@@ -25,7 +25,6 @@ function(hyle_configure_compute_dependencies)
   set(_hyle_compute_cuda_enabled OFF)
   set(_hyle_compute_vulkan_enabled OFF)
   set(_hyle_compute_shader_tools_enabled OFF)
-  set(_hyle_compute_used_fetchcontent OFF)
 
   # CUDA has a deterministic AUTO/ON/OFF contract. The distinct *_ENABLED
   # result prevents truth-testing a string option such as "OFF".
@@ -67,8 +66,6 @@ function(hyle_configure_compute_dependencies)
   # ggml is a pinned implementation kernel, not a public/runtime ABI. HYLE owns
   # outer parallelism and borrows only its operator kernels.
   if(HYLE_COMPUTE_GGML)
-    set(FETCHCONTENT_BASE_DIR "${HYLE_DEPS_DIR}")
-    set(_hyle_compute_used_fetchcontent ON)
     include(FetchContent)
     set(GGML_PIN_COMMIT "eced84c86f8b012c752c016f7fe789adea168e1e") # v0.15.3
     FetchContent_Declare(ggml
@@ -176,8 +173,6 @@ function(hyle_configure_compute_dependencies)
   # HYLE's Vulkan path owns SPIR-V kernels and uses a pinned volk/headers pair,
   # avoiding a build-time Vulkan loader import library.
   if(HYLE_COMPUTE_VULKAN)
-    set(FETCHCONTENT_BASE_DIR "${HYLE_DEPS_DIR}")
-    set(_hyle_compute_used_fetchcontent ON)
     include(FetchContent)
     set(VULKAN_HEADERS_PIN "b5c8f996196ba4aa6d8f97e52b5d3b6e70f7e4e2")
     set(VOLK_PIN           "d979819fd03de3a7606d6e23d6ff4968942599da")
@@ -269,9 +264,4 @@ function(hyle_configure_compute_dependencies)
   set(HYLE_COMPUTE_VULKAN_ENABLED "${_hyle_compute_vulkan_enabled}" PARENT_SCOPE)
   set(HYLE_COMPUTE_SHADER_TOOLS_ENABLED
       "${_hyle_compute_shader_tools_enabled}" PARENT_SCOPE)
-  if(_hyle_compute_used_fetchcontent)
-    # Preserve the cache location for subsequent HYLE subdirectories. The
-    # function caller is HYLE's own directory, so an embedding parent is clean.
-    set(FETCHCONTENT_BASE_DIR "${HYLE_DEPS_DIR}" PARENT_SCOPE)
-  endif()
 endfunction()

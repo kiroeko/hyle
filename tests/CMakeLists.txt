@@ -1,8 +1,8 @@
 include(FetchContent)
 
 # GoogleTest (charter: unit test framework). Pinned tag, FetchContent GIT form (same
-# open-box-auto-download contract as ggml): first `cmake` fetches it under
-# HYLE_DEPS_DIR (build-tree `_deps` by default). No pre-placed mirror.
+# open-box-auto-download contract as ggml): first `cmake` fetches it under the
+# root-owned HYLE_DEPS_DIR (build-tree `_deps` by default). No pre-placed mirror.
 FetchContent_Declare(
   googletest
   GIT_REPOSITORY https://github.com/google/googletest.git

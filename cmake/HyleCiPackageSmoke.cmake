@@ -1,9 +1,9 @@
 # Cross-platform binary-package smoke used by CI and maintainers. It creates
 # shared and static all-component CPU SDKs, then configures/builds/runs
-# source-independent consumers against each install prefix. The focused mem C
-# and C++ consumers exercise a real API and loader/static-link closure; the
-# per-component consumers mechanically prove that every exported target can be
-# discovered and linked without creating an unnatural duplicate closure.
+# source-independent consumers against each install prefix. The general sample
+# exercises mem C/C++ APIs and every exported target; module-owned focused
+# probes under samples/package are discovered automatically and exercise each
+# strictly closed module's real installed API and language boundary.
 # Optional SDK/hardware feature matrices remain release checks, not per-commit
 # fan heaters.
 
@@ -119,5 +119,35 @@ foreach(_linkage IN ITEMS shared static)
   _hyle_smoke_run("run ${_linkage} installed consumers"
     "${CMAKE_CTEST_COMMAND}" --test-dir "${_consumer}" -C Release
     --output-on-failure)
+
+  set(_focused_probe_root "${HYLE_SOURCE_DIR}/samples/package")
+  file(GLOB_RECURSE _focused_probe_cmake_files
+    LIST_DIRECTORIES FALSE
+    "${_focused_probe_root}/*/CMakeLists.txt")
+  list(SORT _focused_probe_cmake_files)
+  foreach(_focused_probe_cmake IN LISTS _focused_probe_cmake_files)
+    get_filename_component(_focused_probe_source
+      "${_focused_probe_cmake}" DIRECTORY)
+    file(RELATIVE_PATH _focused_probe_name
+      "${_focused_probe_root}" "${_focused_probe_source}")
+    string(REPLACE "\\" "-" _focused_probe_id "${_focused_probe_name}")
+    string(REPLACE "/" "-" _focused_probe_id "${_focused_probe_id}")
+    set(_focused_probe_build
+      "${HYLE_SMOKE_ROOT}/focused-${_focused_probe_id}-${_linkage}")
+    file(REMOVE_RECURSE "${_focused_probe_build}")
+
+    _hyle_smoke_run("configure ${_linkage} ${_focused_probe_name} probe"
+      "${CMAKE_COMMAND}" -S "${_focused_probe_source}"
+      -B "${_focused_probe_build}"
+      ${_hyle_generator_args}
+      -DCMAKE_BUILD_TYPE=Release
+      -DCMAKE_PREFIX_PATH=${_prefix})
+    _hyle_smoke_run("build ${_linkage} ${_focused_probe_name} probe"
+      "${CMAKE_COMMAND}" --build "${_focused_probe_build}"
+      --config Release --parallel 2)
+    _hyle_smoke_run("run ${_linkage} ${_focused_probe_name} probe"
+      "${CMAKE_CTEST_COMMAND}" --test-dir "${_focused_probe_build}"
+      -C Release --output-on-failure)
+  endforeach()
 
 endforeach()

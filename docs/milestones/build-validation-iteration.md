@@ -19,7 +19,8 @@ portability、feature/release。新增模块进入 manifest 后自动获得前�
 - [x] 三平台每提交 baseline 保持 `HYLE_COMPONENTS=all`，外部 feature 显式 OFF，构建/运行完整
   `hyle_tests`；它只说明当前 graph 正常。
 - [x] shared/static package smoke 从 mem-only 提升为 all-component CPU SDK；consumer 从
-  `Hyle_AVAILABLE_COMPONENTS` 动态检查全部 imported targets，并继续真跑 mem C/C++ probes。
+  `Hyle_AVAILABLE_COMPONENTS` 动态检查全部 imported targets，并继续真跑 mem C/C++ probes；
+  `samples/package/<module>/...` 的 focused projects 自动发现，不再维护中央模块清单。
 - [x] complete-source 解压验证从 core-only 提升为 all-component CPU graph。
 - [x] Linux AArch64 cross 从 core-only 提升为 all-component CPU graph；仍不冒充 target execution。
 - [x] shipping-layout roots 集中为一个显式清单；只放已严格收口的模块，CTest 直接运行其解析闭包的
@@ -34,6 +35,9 @@ portability、feature/release。新增模块进入 manifest 后自动获得前�
   target 形状消除了旧单一消费者人为产生的 duplicate archive warning。
 - [x] package/product/source/component smoke 只删除显式 scratch 下自己拥有的子目录；Apple package
   fresh 重跑无旧 dylib RPATH 诊断，WSL component contract 同一 scratch 连跑两次通过。
+- [x] error 交付 handoff：真正的 C-only owning-handle consumer 与 C++ `Status`/`Result<T>` consumer
+  分别直接请求 `COMPONENTS error`，进入 shared/static package smoke；error-only configure contract
+  同时锁住 GoogleTest 必须服从 `HYLE_DEPS_DIR`。
 - [ ] GitHub runner 在额度恢复后复证。
 
 首次 AArch64 扩面虽然生成了全部产物，却暴露 preset 未启用 Werror，SIMD complex fallback 的未初始化
@@ -46,9 +50,9 @@ SIMD 主测试 379 项、WSL native SIMD 和 AArch64 GCC14 Werror 均通过。
 
 每个模块通过严格收口时，必须在同一模块施工提交中完成以下 build-system handoff：
 
-1. 新增 `samples/package/<module>` 或等价的 source-independent focused probe，调用常用 C++ API；有
+1. 新增 `samples/package/<module>/...` 的 source-independent focused project，调用常用 C++ API；有
    C ABI 时同时用纯 C translation unit 验证所有权、Status、callback 与链接语言。通用 all-target
-   probe 只守 export 图，不能代替这一步。
+   probe 只守 export 图，不能代替这一步；目录下每个 `CMakeLists.txt` 会自动进入 shared/static smoke。
 2. 若测试插桩会改变正常 layout/热路径，把该模块 root 加入 shipping-layout 集并证明
    `HYLE_TEST_INSTRUMENTATION=OFF`；没有双形状就明确记录不适用。
 3. 把适用的 ASan/UBSan/TSan、QEMU ISA 或真硬件门登记到 portability/release 层；cross compile 与
@@ -103,3 +107,16 @@ SIMD 主测试 379 项、WSL native SIMD 和 AArch64 GCC14 Werror 均通过。
 build/package 相对上一轮 5,523 净增 67 行，来自已有 CMake/preset/CI 门的机械扩展和 Windows
 complete-source 一键入口；新增的 installed consumer probe 和本任务文档按既定口径分别属于测试源码
 与文档，不计入模块实现。
+
+## Error 交付 handoff 代码量（2026-07-29）
+
+| 固定口径 | code |
+|---|---:|
+| 全库（含 docs/in-tree third_party） | 277,134 |
+| 自实现（含测试） | 135,036 |
+| 自实现（不含测试） | 92,659 |
+| 当前处理模块实现（error） | 1,434 |
+
+error 产品实现未增长；本批新增的是 source-independent package probe、通用自动发现门和构建/文档
+合同。按固定口径，probe 位于 `samples/`，CMake 位于 build system，因此后三项保持不变；全库相对
+上一轮 276,996 增加 138 行。

@@ -66,7 +66,12 @@ file(WRITE "${_embed_source}/CMakeLists.txt"
 "set(HYLE_BUILD_BENCH OFF)\n"
 "set(HYLE_IO_TLS OFF)\n"
 "set(HYLE_COMPUTE_CUDA OFF)\n"
+"set(HYLE_DEPS_DIR \"\${CMAKE_BINARY_DIR}/hyle-dependencies\")\n"
+"set(FETCHCONTENT_BASE_DIR \"\${CMAKE_BINARY_DIR}/parent-dependencies\")\n"
 "add_subdirectory(\"${HYLE_SOURCE_DIR}\" hyle)\n"
+"if(NOT FETCHCONTENT_BASE_DIR STREQUAL \"\${CMAKE_BINARY_DIR}/parent-dependencies\")\n"
+"  message(FATAL_ERROR \"HYLE rewrote its embedding parent's FetchContent cache\")\n"
+"endif()\n"
 "get_property(_cached CACHE HYLE_COMPONENTS PROPERTY VALUE)\n"
 "if(NOT _cached STREQUAL \"container\")\n"
 "  message(FATAL_ERROR \"cache says '\${_cached}', expected container\")\n"
@@ -229,5 +234,39 @@ _hyle_contract_run("offline source bundle mapping" TRUE
   -S "${_offline_project}"
   -B "${_hyle_contract_root}/offline-build"
   ${_hyle_generator_args})
+
+# HYLE_DEPS_DIR is the one build-tree population location for every HYLE-owned
+# FetchContent dependency.  Exercise the test-only path because an error-only
+# product does not configure io/compute, which previously left GoogleTest on
+# FetchContent's unrelated default <build>/_deps path.
+set(_fake_gtest_source "${_hyle_contract_root}/fake-googletest")
+set(_error_test_build "${_hyle_contract_root}/error-test-build")
+set(_error_dependency_cache "${_hyle_contract_root}/error-dependencies")
+file(MAKE_DIRECTORY "${_fake_gtest_source}")
+file(WRITE "${_fake_gtest_source}/CMakeLists.txt"
+"cmake_minimum_required(VERSION 3.25)\n"
+"project(fake_googletest LANGUAGES CXX)\n"
+"add_library(gtest INTERFACE)\n"
+"add_library(GTest::gtest ALIAS gtest)\n"
+"add_library(gtest_main INTERFACE)\n"
+"add_library(GTest::gtest_main ALIAS gtest_main)\n")
+_hyle_contract_run("error-only dependency cache ownership" TRUE
+  "${CMAKE_COMMAND}" -S "${HYLE_SOURCE_DIR}"
+  -B "${_error_test_build}"
+  ${_hyle_generator_args}
+  -DCMAKE_BUILD_TYPE=Release
+  -DHYLE_COMPONENTS=error
+  -DHYLE_BUILD_TESTS=ON
+  -DHYLE_BUILD_BENCH=OFF
+  -DHYLE_DEPS_DIR=${_error_dependency_cache}
+  -DFETCHCONTENT_SOURCE_DIR_GOOGLETEST=${_fake_gtest_source})
+if(NOT IS_DIRECTORY "${_error_dependency_cache}/googletest-build")
+  message(FATAL_ERROR
+    "error-only tests ignored HYLE_DEPS_DIR='${_error_dependency_cache}'")
+endif()
+if(IS_DIRECTORY "${_error_test_build}/_deps")
+  message(FATAL_ERROR
+    "error-only tests leaked FetchContent state into '${_error_test_build}/_deps'")
+endif()
 
 message(STATUS "HYLE component contracts passed")

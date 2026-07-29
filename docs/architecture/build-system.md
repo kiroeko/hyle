@@ -111,9 +111,11 @@ Windows/Linux/macOS 与 arm64 Linux/macOS）；其他平台仍可组装 io proac
 基础层和 graph serial core。显式请求不受支持的 sched 会在 configure 阶段失败，不会静默降级。
 
 组件选择同时控制依赖发现：不选 `io` 就不探测 OpenSSL、不取得 nghttp2；不选 `compute`
-就不探测 CUDA，也不取得 ggml/Vulkan-Headers/volk/glslang。第三方默认写入当前 HYLE build
-tree 的 `_deps`，源码与生成物一起归该 build tree 所有；不同 toolchain/build tree 不共享这个
-目录。`_deps` 是 FetchContent 的 population 实现区，不是可交付的 offline bundle 格式。离线或
+就不探测 CUDA，也不取得 ggml/Vulkan-Headers/volk/glslang。根构建把 `HYLE_DEPS_DIR` 一次投影为
+HYLE 目录作用域内的 `FETCHCONTENT_BASE_DIR`，因此产品依赖和 test-only GoogleTest 都写入同一
+位置，又不会改写 source-embedding 父工程的 cache。默认位置是当前 HYLE build tree 的 `_deps`；
+源码与生成物一起归该 build tree 所有，不同 toolchain/build tree 不共享这个目录。`_deps` 是
+FetchContent 的 population 实现区，不是可交付的 offline bundle 格式。离线或
 经审查的 bundle 保存独立依赖源码，并通过标准 `FETCHCONTENT_SOURCE_DIR_<NAME>` 逐项注入；依赖
 生成物仍进入本 build tree，不能写入或依赖源码树。仅预填一个仓库根 `.deps`、或只打开
 `FETCHCONTENT_FULLY_DISCONNECTED`，都不是首次配置的稳定合同。源码根的
@@ -346,10 +348,13 @@ Vulkan 显式关闭，构建聚合 `hyle_tests` 并运行全部 C++、pure-C、h
 安装门从空目录制作 shared/static 的 all-component CPU SDK。外部消费者从 package 公布的
 `Hyle_AVAILABLE_COMPONENTS` 枚举，为每个 `hyle::<component>` 建立独立最小链接目标，机械守住
 export/usage-requirement 图，又不把彼此重叠的 static 闭包硬塞进一个非正常可执行；同时保留真正调用
-mem C API 与 C++ `SystemAllocator` 的 focused probes，覆盖
-`mem -> platform -> error` loader、mimalloc 私有符号和 static C++ link-driver 闭包。只有“枚举 target
-可链接”不能证明每个模块 API 可用，所以新模块收口时必须再提交自己的外部 API probe，随后才进入
-安装消费回归集合。Linux 还执行 component 空值、嵌入 cache、晚期依赖成员绕过、PUBLIC/PRIVATE
+mem C API 与 C++ `SystemAllocator` 的 general probes，覆盖
+`mem -> platform -> error` loader、mimalloc 私有符号和 static C++ link-driver 闭包。严格收口模块在
+`samples/package/<module>/...` 拥有 source-independent focused project；package smoke 递归发现这些
+`CMakeLists.txt`，分别对 shared/static SDK configure、build、run，不维护第二份中央模块名单。error
+当前同时提供从 `LANGUAGES C` 开始的 owning-handle probe 和 `Status`/`Result<T>` C++ probe。只有
+“枚举 target 可链接”不能证明每个模块 API 可用，所以新模块收口时必须提交自己的外部 API probe。
+Linux 还执行 component 空值、嵌入 cache、error-only dependency cache、晚期依赖成员绕过、PUBLIC/PRIVATE
 可见性扩大、package registry 正向/重复/漏 target，以及 offline bundle 映射的 configure contract；
 并从 clean checkout 生成完整 source zip、核对 SHA-256/commit/legal payload、解压后独立构建当前
 all-component CPU 图。Linux AArch64 也交叉编译同一图，而不再只抽查 core。
@@ -387,8 +392,9 @@ host program 与 target library/header/package 搜索严格分开，`CMAKE_TRY_C
 
 - 新模块必须登记一次 component manifest 并创建 module target；configure 会验证依赖名、拓扑顺序、
   target 已存在，以及所有模块装载后的直接 HYLE link 边与 manifest 完全一致。
-- 新模块自动进入 all-component baseline/distribution/cross compile；严格收口时另交 module-owned
-  installed API probe，并把适用的 production-layout、sanitizer、ISA/后端证书加入长期集合。
+- 新模块自动进入 all-component baseline/distribution/cross compile；严格收口时在
+  `samples/package/<module>/...` 另交 module-owned installed API probe（自动进入 shared/static smoke），
+  并把适用的 production-layout、sanitizer、ISA/后端证书加入长期集合。
 - 新可选第三方只能在其消费组件已选且 feature 已启用时发现/取得。
 - 外部依赖的 export target、package feature、下游 SDK 和安装资产只在所属模块 registry 登记一次；
   中央 package 层只做通用投影，不能按供应商名分支。

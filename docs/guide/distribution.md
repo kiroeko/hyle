@@ -250,5 +250,7 @@ C ABI 不要求应用源码使用 CMake，但 SDK 的传递依赖元数据以 `H
 ## 交付前检查
 
 - static/shared SDK 必须用一个脱离源码树的 consumer configure/build/run；
+- 已收口模块的参考 consumer 位于 `samples/package/<module>/`；例如 `error/c` 是真正从
+  `project(... LANGUAGES C)` 开始的 C ABI 工程，`error/cpp` 覆盖 `Status`/`Result<T>`；
 - source zip 必须核对 SHA-256、`SOURCE-MANIFEST.txt`、根 `LICENSE` 和 `THIRD_PARTY_NOTICES.md`；
 - 合同中明确允许的使用、修改、再分发、披露范围；不要用“给了源码/没给源码”代替授权条款。
