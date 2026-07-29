@@ -1,6 +1,6 @@
 [CmdletBinding(PositionalBinding = $false)]
 param(
-    [ValidateSet('Configure', 'Build', 'Test', 'Workflow', 'PackageSmoke', 'ProductShapeSmoke')]
+    [ValidateSet('Configure', 'Build', 'Test', 'Workflow', 'PackageSmoke', 'ProductShapeSmoke', 'SourcePackageSmoke')]
     [string]$Action = 'Configure',
     [string]$Preset = 'windows-ninja',
     [string]$SmokeRoot,
@@ -107,7 +107,7 @@ if (($Action -eq 'Configure' -and $Preset -eq 'windows') -or
     }
 }
 
-$needsNinja = $Action -in @('PackageSmoke', 'ProductShapeSmoke') -or
+$needsNinja = $Action -in @('PackageSmoke', 'ProductShapeSmoke', 'SourcePackageSmoke') -or
     $Preset -in @('windows-ninja', 'windows-ninja-check', 'win', 'windows-cuda')
 if ($needsNinja -and -not (Get-Command ninja -ErrorAction SilentlyContinue)) {
     throw 'The windows-ninja preset requires Ninja on PATH.'
@@ -150,6 +150,30 @@ switch ($Action) {
         }
         & cmake "-DHYLE_SOURCE_DIR=$sourceDir" "-DHYLE_SMOKE_ROOT=$SmokeRoot" `
             -DHYLE_SMOKE_GENERATOR=Ninja @gtestArg @ExtraArgs -P $smokeScript
+    }
+    'SourcePackageSmoke' {
+        if (-not $SmokeRoot) {
+            throw 'Action SourcePackageSmoke requires -SmokeRoot <scratch-directory>.'
+        }
+        $sourceDir = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
+        $packageBuild = Join-Path $SmokeRoot 'package-driver'
+        $smokeScript = Join-Path $sourceDir 'cmake\HyleCiSourcePackageSmoke.cmake'
+        & cmake -S $sourceDir -B $packageBuild -G Ninja `
+            -DCMAKE_BUILD_TYPE=Release `
+            -DHYLE_COMPONENTS=all `
+            -DHYLE_BUILD_TESTS=OFF `
+            -DHYLE_BUILD_BENCH=OFF `
+            -DHYLE_IO_TLS=OFF `
+            -DHYLE_IO_HTTP2=OFF `
+            -DHYLE_COMPUTE_CUDA=OFF `
+            -DHYLE_COMPUTE_GGML=OFF `
+            -DHYLE_COMPUTE_VULKAN=OFF
+        if ($LASTEXITCODE -eq 0) {
+            & cmake "-DHYLE_SOURCE_DIR=$sourceDir" `
+                "-DHYLE_PACKAGE_BUILD=$packageBuild" `
+                "-DHYLE_SMOKE_ROOT=$SmokeRoot" `
+                -DHYLE_SMOKE_GENERATOR=Ninja -P $smokeScript
+        }
     }
 }
 if ($LASTEXITCODE -ne 0) {

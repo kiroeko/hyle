@@ -81,10 +81,11 @@ portability、feature/release。新增模块进入 manifest 后自动获得前�
 
 | 固定口径 | code |
 |---|---:|
-| 全库（含 docs/in-tree third_party） | 275,901 |
+| 全库（含 docs/in-tree third_party） | 275,946 |
 | 自实现（含测试） | 134,299 |
 | 自实现（不含测试） | 92,148 |
-| build/package 实现 | 5,558 |
+| build/package 实现 | 5,582 |
 
-build/package 相对上一轮 5,523 净增 35 行，来自已有 CMake/preset/CI 门的机械扩展；新增的 installed
-consumer probe 和本任务文档按既定口径分别属于测试源码与文档，不计入模块实现。
+build/package 相对上一轮 5,523 净增 59 行，来自已有 CMake/preset/CI 门的机械扩展和 Windows
+complete-source 一键入口；新增的 installed consumer probe 和本任务文档按既定口径分别属于测试源码
+与文档，不计入模块实现。

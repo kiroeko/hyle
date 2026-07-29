@@ -15,6 +15,9 @@ scripts/hyle-windows.ps1 -Action Configure -Preset windows-ninja
 scripts/hyle-windows.ps1 -Action Build -Preset windows-ninja --parallel 2
 scripts/hyle-windows.ps1 -Action Test -Preset windows-ninja --output-on-failure
 scripts/hyle-windows.ps1 -Action Workflow -Preset windows-ninja-check
+scripts/hyle-windows.ps1 -Action PackageSmoke -SmokeRoot "$env:TEMP/hyle-package-smoke"
+scripts/hyle-windows.ps1 -Action ProductShapeSmoke -SmokeRoot "$env:TEMP/hyle-shipping-smoke"
+scripts/hyle-windows.ps1 -Action SourcePackageSmoke -SmokeRoot "$env:TEMP/hyle-source-smoke"
 ```
 
 For an IDE solution, the same wrapper enumerates side-by-side VS 2022 MSVC toolsets and passes the
@@ -36,10 +39,20 @@ It installs nothing and does not persistently change the caller's environment. A
 
 ## Build/package verification automation
 
-`.github/workflows/build-system.yml` runs the same core verification surface on Windows, Linux,
-and macOS, then calls `cmake/HyleCiPackageSmoke.cmake`. The smoke creates shared and static error
-SDKs in scratch directories and builds/runs the pure-C installed consumer against both. It stays
-small enough for every commit; complete io/compute/CUDA SDK matrices remain release checks.
+`.github/workflows/build-system.yml` runs the all-component deterministic CPU baseline on Windows,
+Linux and macOS. Linux additionally runs component contracts, shipping-layout, shared/static
+all-component installed SDK consumers, complete-source extraction/build, and AArch64 cross compile
+on every PR; main/manual runs add the expensive distribution checks on Windows and macOS. This is a
+current-graph regression, not an acceptance certificate for every module. Optional
+TLS/HTTP2/ggml/Vulkan/CUDA SDK and hardware matrices remain periodic/release checks.
+
+The three smoke actions above import the selected MSVC environment and keep their work under the
+explicit scratch root. `PackageSmoke` builds shared/static CPU packages and runs focused mem plus
+dynamic all-target consumers. `ProductShapeSmoke` runs accepted roots with production test layout.
+`SourcePackageSmoke` requires a clean Git commit, creates the complete-source archive, verifies its
+digest/manifest/legal payload, extracts it, and builds the all-component CPU graph without using the
+checkout. The stable validation layers and module handoff rules are documented in
+`docs/architecture/build-system.md`.
 
 `cmake/toolchains/linux-aarch64-gcc.cmake` plus the `linux-aarch64-cross` preset provides the
 whole-project cross-build entry. It never runs a target executable during configure; the SVE/RVV
