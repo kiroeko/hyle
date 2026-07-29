@@ -57,24 +57,25 @@ endif()
 # Declaration order is construction order and must remain topological.  The
 # visibility here is the visibility of the real hyle_<module> target edge.
 _hyle_declare_component(core)
+_hyle_declare_component(util_core)
 _hyle_declare_component(error)
 _hyle_declare_component(obs PUBLIC_DEPS error)
 _hyle_declare_component(math)
 _hyle_declare_component(platform PUBLIC_DEPS error)
 _hyle_declare_component(time PUBLIC_DEPS error)
-_hyle_declare_component(mem PUBLIC_DEPS error platform)
+_hyle_declare_component(mem PUBLIC_DEPS error platform util_core)
 _hyle_declare_component(simd PUBLIC_DEPS error platform)
 # container headers expose error/mem types; platform is used only by compiled
 # implementation paths such as topology/cache-aware concurrency support.
 _hyle_declare_component(container
   PRIVATE_DEPS platform
   PUBLIC_DEPS error mem)
-_hyle_declare_component(util PUBLIC_DEPS container)
+_hyle_declare_component(util PUBLIC_DEPS container util_core)
 # SchedulerOptions publicly names platform types, while time is consumed only
 # by scheduler implementation TUs.
 _hyle_declare_component(sched
   PRIVATE_DEPS time
-  PUBLIC_DEPS error platform mem container)
+  PUBLIC_DEPS error platform mem container util_core)
 # io's public protocol/C ABI headers do not require consumers to compile against
 # the implementation modules; static archives still propagate private edges as
 # LINK_ONLY through normal CMake semantics.
@@ -86,6 +87,7 @@ _hyle_declare_component(compute
   PRIVATE_DEPS platform simd
   PUBLIC_DEPS error mem ${_hyle_optional_sched_dep})
 _hyle_declare_component(graph
+  PRIVATE_DEPS util_core
   PUBLIC_DEPS error mem container ${_hyle_optional_sched_dep})
 
 unset(_hyle_optional_sched_dep)

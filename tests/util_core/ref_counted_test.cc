@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <limits>
+#include <unordered_set>
 #include <thread>
 #include <type_traits>
 #include <vector>
@@ -14,6 +15,9 @@ using hyle::util::Ref;
 using hyle::util::RefCompatible;
 using hyle::util::RefCounted;
 using hyle::util::retain_ref;
+using hyle::util::const_pointer_cast;
+using hyle::util::dynamic_pointer_cast;
+using hyle::util::static_pointer_cast;
 
 namespace {
 
@@ -167,6 +171,50 @@ TEST(RefCounted, ConvertingAssignmentAndConstOwnership) {
   EXPECT_FALSE(derived);  // NOLINT(bugprone-use-after-move)
   EXPECT_EQ(moved->kind(), 1);
   EXPECT_EQ(moved->use_count(), 3u);
+}
+
+TEST(RefCounted, HeterogeneousIdentityComparisonDoesNotRetain) {
+  Ref<Derived> derived = make_ref<Derived>();
+  Ref<Base> base = derived;
+  const auto count = base->use_count();
+  EXPECT_EQ(base, derived);
+  EXPECT_EQ(derived, base);
+  EXPECT_EQ(base->use_count(), count);
+}
+
+TEST(RefCounted, PointerCastsPreserveOwnership) {
+  Ref<Base> base = make_ref<Derived>();
+  EXPECT_EQ(base->use_count(), 1u);
+
+  Ref<Derived> copied = dynamic_pointer_cast<Derived>(base);
+  ASSERT_TRUE(copied);
+  EXPECT_EQ(copied->kind(), 1);
+  EXPECT_EQ(base->use_count(), 2u);
+
+  Ref<const Base> read_only = base;
+  Ref<Base> mutable_again = const_pointer_cast<Base>(read_only);
+  EXPECT_EQ(mutable_again.get(), base.get());
+
+  Ref<Base> moved_source = std::move(base);
+  const auto before_move = moved_source->use_count();
+  Ref<Derived> moved = static_pointer_cast<Derived>(std::move(moved_source));
+  EXPECT_FALSE(moved_source);  // NOLINT(bugprone-use-after-move)
+  EXPECT_EQ(moved->use_count(), before_move);
+
+  Ref<Base> plain = make_ref<Base>();
+  Base* plain_pointer = plain.get();
+  Ref<Derived> failed = dynamic_pointer_cast<Derived>(std::move(plain));
+  EXPECT_FALSE(failed);
+  EXPECT_EQ(plain.get(), plain_pointer);  // failed rvalue cast does not consume
+}
+
+TEST(RefCounted, HashUsesPointerIdentity) {
+  Ref<Widget> widget = make_ref<Widget>(4);
+  std::unordered_set<Ref<Widget>> owners;
+  owners.insert(widget);
+  EXPECT_TRUE(owners.contains(widget));
+  EXPECT_TRUE(owners.contains(retain_ref(widget.get())));
+  EXPECT_EQ(owners.size(), 1u);
 }
 
 // Concurrent incref/decref must not corrupt the count (TSan gate on WSL). Many

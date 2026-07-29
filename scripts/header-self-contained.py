@@ -15,6 +15,10 @@ from pathlib import Path
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--module", required=True)
+    parser.add_argument("--header-dir", default="")
+    parser.add_argument("--header", action="append", default=[])
+    parser.add_argument("--c-header", default="")
+    parser.add_argument("--no-c-header", action="store_true")
     parser.add_argument("--include-dir", required=True, type=Path)
     parser.add_argument("--cc", required=True)
     parser.add_argument("--cxx", required=True)
@@ -28,6 +32,10 @@ def parse_args() -> argparse.Namespace:
     args = parser.parse_args()
     if re.fullmatch(r"[a-z][a-z0-9_]*", args.module) is None:
         parser.error("--module must be a lowercase C identifier")
+    if args.header_dir and re.fullmatch(r"[a-z][a-z0-9_]*", args.header_dir) is None:
+        parser.error("--header-dir must be a lowercase C identifier")
+    if args.no_c_header and args.c_header:
+        parser.error("--no-c-header and --c-header are mutually exclusive")
     return args
 
 
@@ -149,11 +157,26 @@ def main() -> int:
     compiler_env = visual_studio_environment(
         args.vs_instance, args.vs_platform, args.vs_toolset_version
     )
-    module_dir = include_dir / "hyle" / args.module
-    headers = [
-        path.relative_to(include_dir).as_posix()
-        for path in sorted(module_dir.glob("*.h"))
-    ]
+    header_dir = args.header_dir or args.module
+    module_dir = include_dir / "hyle" / header_dir
+    if args.header:
+        selected_headers = []
+        for name in args.header:
+            if Path(name).name != name or not name.endswith(".h"):
+                raise RuntimeError(f"invalid public header basename: {name}")
+            selected = module_dir / name
+            if not selected.is_file():
+                raise RuntimeError(f"selected public header does not exist: {selected}")
+            selected_headers.append(selected)
+        headers = [
+            path.relative_to(include_dir).as_posix()
+            for path in sorted(selected_headers)
+        ]
+    else:
+        headers = [
+            path.relative_to(include_dir).as_posix()
+            for path in sorted(module_dir.glob("*.h"))
+        ]
     if not headers:
         raise RuntimeError(f"no {args.module} headers found under {module_dir}")
 
@@ -171,19 +194,28 @@ def main() -> int:
                 sysroot,
                 compiler_env,
             )
-        compile_header(
-            args.cc,
-            args.c_compiler_id,
-            args.c_frontend,
-            include_dir,
-            f"hyle/c/{args.module}.h",
-            "c",
-            work_dir,
-            sysroot,
-            compiler_env,
-        )
+        c_header_count = 0
+        if not args.no_c_header:
+            c_header = args.c_header or f"hyle/c/{args.module}.h"
+            if not (include_dir / c_header).is_file():
+                raise RuntimeError(f"selected C header does not exist: {c_header}")
+            compile_header(
+                args.cc,
+                args.c_compiler_id,
+                args.c_frontend,
+                include_dir,
+                c_header,
+                "c",
+                work_dir,
+                sysroot,
+                compiler_env,
+            )
+            c_header_count = 1
 
-    print(f"{args.module} headers self-contained: {len(headers)} C++ + 1 C")
+    print(
+        f"{args.module} headers self-contained: "
+        f"{len(headers)} C++ + {c_header_count} C"
+    )
     return 0
 
 

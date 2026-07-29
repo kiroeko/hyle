@@ -54,7 +54,7 @@ static inline void hyle_util_cpu_relax(void) {
 #elif defined(__x86_64__) || defined(__i386__)
   __builtin_ia32_pause();
 #elif defined(__aarch64__) || defined(__arm__)
-  __asm__ __volatile__("yield");
+  __asm__ __volatile__("isb" ::: "memory");
 #endif
 }
 

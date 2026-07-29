@@ -40,6 +40,14 @@ TEST(ScopeGuard, InvokeRunsAtMostOnce) {
   EXPECT_EQ(ran, 1);
 }
 
+TEST(ScopeGuard, ExplicitInvokeMayPropagate) {
+  ScopeGuard guard{[] { throw 7; }};
+  EXPECT_THROW(guard.invoke(), int);
+  EXPECT_FALSE(guard.active());
+  // The action was consumed before invocation, so unwinding and destruction
+  // cannot run it a second time. Destructor-time invocation remains noexcept.
+}
+
 TEST(ScopeGuard, MoveFiresExactlyOnce) {
   int ran = 0;
   {

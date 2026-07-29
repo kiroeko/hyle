@@ -4,6 +4,7 @@
 #include <compare>
 #include <concepts>
 #include <cstdint>
+#include <functional>
 #include <limits>
 #include <type_traits>
 #include <utility>
@@ -153,6 +154,8 @@ concept RefCompatible =
 template <RefCompatible T>
 class Ref {
  public:
+  using element_type = T;
+
   Ref() noexcept = default;
   Ref(std::nullptr_t) noexcept {}  // NOLINT(*-explicit): Ref r = nullptr;
 
@@ -237,12 +240,6 @@ class Ref {
   }
   void swap(Ref& o) noexcept { std::swap(ptr_, o.ptr_); }
 
-  bool operator==(const Ref& o) const noexcept { return ptr_ == o.ptr_; }
-  bool operator==(const T* p) const noexcept { return ptr_ == p; }
-  std::strong_ordering operator<=>(const Ref& o) const noexcept {
-    return ptr_ <=> o.ptr_;
-  }
-
  private:
   template <RefCompatible U>
   friend class Ref;
@@ -252,6 +249,40 @@ class Ref {
   explicit Ref(T* p) noexcept : ptr_(p) {}  // adopt; used by factories
   T* ptr_ = nullptr;
 };
+
+// Pointer-identity comparisons are heterogeneous like std::shared_ptr and
+// Boost intrusive_ptr.  In particular Ref<Derived> vs Ref<Base> does not mint
+// a temporary owner (and therefore does no atomic incref/decref) merely to
+// answer an identity question.
+template <RefCompatible T, RefCompatible U>
+HYLE_FORCE_INLINE bool operator==(const Ref<T>& left,
+                                  const Ref<U>& right) noexcept {
+  return left.get() == right.get();
+}
+
+template <RefCompatible T, RefCompatible U>
+HYLE_FORCE_INLINE std::strong_ordering operator<=>(
+    const Ref<T>& left, const Ref<U>& right) noexcept {
+  return left.get() <=> right.get();
+}
+
+template <RefCompatible T>
+HYLE_FORCE_INLINE bool operator==(const Ref<T>& ref,
+                                  std::nullptr_t) noexcept {
+  return ref.get() == nullptr;
+}
+
+template <RefCompatible T>
+HYLE_FORCE_INLINE std::strong_ordering operator<=>(
+    const Ref<T>& ref, std::nullptr_t) noexcept {
+  return ref.get() <=> static_cast<T*>(nullptr);
+}
+
+template <RefCompatible T, class U>
+  requires requires(T* left, U* right) { left == right; }
+HYLE_FORCE_INLINE bool operator==(const Ref<T>& ref, U* pointer) noexcept {
+  return ref.get() == pointer;
+}
 
 // Construct a T and adopt its initial +1 (RefCounted starts at 1, so NO extra
 // incref). The common way to mint a reference-counted object.
@@ -275,9 +306,69 @@ HYLE_FORCE_INLINE Ref<T> retain_ref(T* p) noexcept {
   return adopt_ref(p);
 }
 
+// Ownership-preserving casts mirror the standard smart-pointer surface. A
+// successful rvalue cast transfers the existing +1 without an atomic round
+// trip; a failed dynamic rvalue cast leaves the source owner unchanged.
+template <RefCompatible T, RefCompatible U>
+  requires requires(U* pointer) { static_cast<T*>(pointer); }
+HYLE_FORCE_INLINE Ref<T> static_pointer_cast(const Ref<U>& source) noexcept {
+  return retain_ref(static_cast<T*>(source.get()));
+}
+
+template <RefCompatible T, RefCompatible U>
+  requires requires(U* pointer) { static_cast<T*>(pointer); }
+HYLE_FORCE_INLINE Ref<T> static_pointer_cast(Ref<U>&& source) noexcept {
+  T* pointer = static_cast<T*>(source.get());
+  (void)source.release();
+  return adopt_ref(pointer);
+}
+
+template <RefCompatible T, RefCompatible U>
+  requires requires(U* pointer) { dynamic_cast<T*>(pointer); }
+HYLE_FORCE_INLINE Ref<T> dynamic_pointer_cast(const Ref<U>& source) noexcept {
+  return retain_ref(dynamic_cast<T*>(source.get()));
+}
+
+template <RefCompatible T, RefCompatible U>
+  requires requires(U* pointer) { dynamic_cast<T*>(pointer); }
+HYLE_FORCE_INLINE Ref<T> dynamic_pointer_cast(Ref<U>&& source) noexcept {
+  T* pointer = dynamic_cast<T*>(source.get());
+  if (pointer == nullptr) return {};
+  (void)source.release();
+  return adopt_ref(pointer);
+}
+
+template <RefCompatible T, RefCompatible U>
+  requires requires(U* pointer) { const_cast<T*>(pointer); }
+HYLE_FORCE_INLINE Ref<T> const_pointer_cast(const Ref<U>& source) noexcept {
+  return retain_ref(const_cast<T*>(source.get()));
+}
+
+template <RefCompatible T, RefCompatible U>
+  requires requires(U* pointer) { const_cast<T*>(pointer); }
+HYLE_FORCE_INLINE Ref<T> const_pointer_cast(Ref<U>&& source) noexcept {
+  T* pointer = const_cast<T*>(source.get());
+  (void)source.release();
+  return adopt_ref(pointer);
+}
+
 template <RefCompatible T>
 HYLE_FORCE_INLINE void swap(Ref<T>& a, Ref<T>& b) noexcept {
   a.swap(b);
 }
 
 }  // namespace hyle::util
+
+namespace std {
+
+// Hashes pointee identity, matching Ref equality and the standard smart-pointer
+// convention. Specializing std::hash for this user-defined template is the
+// intended extension point and enables Ref keys in unordered containers.
+template <hyle::util::RefCompatible T>
+struct hash<hyle::util::Ref<T>> {
+  size_t operator()(const hyle::util::Ref<T>& ref) const noexcept {
+    return hash<T*>{}(ref.get());
+  }
+};
+
+}  // namespace std

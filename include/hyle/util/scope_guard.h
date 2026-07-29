@@ -42,7 +42,7 @@ class [[nodiscard("a temporary ScopeGuard runs immediately; bind it to a name")]
   // Run the action now, at most once. This is useful when cleanup is also the
   // successful commit step and avoids spelling `fn(); guard.dismiss()` outside
   // the guard even though the callable is intentionally encapsulated.
-  void invoke() noexcept {
+  void invoke() noexcept(std::is_nothrow_invocable_v<Fn&>) {
     if (!active_) return;
     active_ = false;
     fn_();

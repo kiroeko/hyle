@@ -71,6 +71,21 @@ function(hyle_add_c_surface_test module)
 endfunction()
 
 function(hyle_add_header_self_contained_test module)
+  cmake_parse_arguments(ARG "NO_C" "HEADER_DIR;C_HEADER" "HEADERS" ${ARGN})
+  if(ARG_UNPARSED_ARGUMENTS)
+    message(FATAL_ERROR
+      "hyle_add_header_self_contained_test(${module}): unrecognized arguments: "
+      "${ARG_UNPARSED_ARGUMENTS}")
+  endif()
+  if(ARG_KEYWORDS_MISSING_VALUES)
+    message(FATAL_ERROR
+      "hyle_add_header_self_contained_test(${module}): keywords missing values: "
+      "${ARG_KEYWORDS_MISSING_VALUES}")
+  endif()
+  if(ARG_NO_C AND ARG_C_HEADER)
+    message(FATAL_ERROR
+      "hyle_add_header_self_contained_test(${module}): NO_C and C_HEADER conflict")
+  endif()
   if(NOT TARGET hyle_${module})
     return()
   endif()
@@ -93,6 +108,18 @@ function(hyle_add_header_self_contained_test module)
       list(APPEND _hyle_vs_args --vs-toolset-version "${_hyle_vs_value}")
     endif()
   endif()
+  set(_hyle_header_args "")
+  if(ARG_HEADER_DIR)
+    list(APPEND _hyle_header_args --header-dir "${ARG_HEADER_DIR}")
+  endif()
+  foreach(_hyle_header IN LISTS ARG_HEADERS)
+    list(APPEND _hyle_header_args --header "${_hyle_header}")
+  endforeach()
+  if(ARG_NO_C)
+    list(APPEND _hyle_header_args --no-c-header)
+  elseif(ARG_C_HEADER)
+    list(APPEND _hyle_header_args --c-header "${ARG_C_HEADER}")
+  endif()
   add_test(NAME hyle_${module}_header_self_contained_test
            COMMAND "${Python3_EXECUTABLE}"
                    "${HYLE_SOURCE_DIR}/scripts/header-self-contained.py"
@@ -104,12 +131,15 @@ function(hyle_add_header_self_contained_test module)
                    --cxx-compiler-id "${CMAKE_CXX_COMPILER_ID}"
                    --c-frontend "${CMAKE_C_COMPILER_FRONTEND_VARIANT}"
                    --cxx-frontend "${CMAKE_CXX_COMPILER_FRONTEND_VARIANT}"
+                   ${_hyle_header_args}
                    ${_hyle_vs_args})
   set_tests_properties(hyle_${module}_header_self_contained_test PROPERTIES
     LABELS "${module};headers")
   hyle_ensure_module_test_target(${module})
   unset(_hyle_vs_args)
   unset(_hyle_vs_value)
+  unset(_hyle_header_args)
+  unset(_hyle_header)
 endfunction()
 # Keep reviewed C manifests, pure-C consumers, and DLL/.so exports in sync.
 # Before first release this is drift detection, not a compatibility promise.
