@@ -7,6 +7,7 @@
 
 #include <gtest/gtest.h>
 
+#include <cerrno>
 #include <cstdio>
 #include <cstdlib>  // std::abort in the death test
 #include <cstring>
@@ -243,11 +244,13 @@ TEST_F(MapTest, InvalidPathIsInvalid) {
   EXPECT_TRUE(m.error().IsNotFound());
 #if defined(_WIN32)
   EXPECT_NE(m.error().message().find("CreateFileW"), std::string_view::npos);
-  EXPECT_NE(m.error().message().find("ERROR_FILE_NOT_FOUND"),
-            std::string_view::npos);
+  EXPECT_EQ(m.error().native_error().domain, hyle::NativeErrorDomain::Win32);
+  EXPECT_EQ(m.error().native_error().code, 2);  // ERROR_FILE_NOT_FOUND
 #else
   EXPECT_NE(m.error().message().find("open"), std::string_view::npos);
-  EXPECT_NE(m.error().message().find("ENOENT"), std::string_view::npos);
+  EXPECT_EQ(m.error().native_error().domain,
+            hyle::NativeErrorDomain::PosixErrno);
+  EXPECT_EQ(m.error().native_error().code, ENOENT);
 #endif
 }
 

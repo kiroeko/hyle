@@ -62,8 +62,8 @@ TEST(DynLib, OpenNonexistentFails) {
   EXPECT_FALSE(lib.error().message().empty());
 #if defined(_WIN32)
   EXPECT_NE(lib.error().message().find("LoadLibraryW"), std::string_view::npos);
-  EXPECT_NE(lib.error().message().find("ERROR_MOD_NOT_FOUND"),
-            std::string_view::npos);
+  EXPECT_EQ(lib.error().native_error().domain, hyle::NativeErrorDomain::Win32);
+  EXPECT_EQ(lib.error().native_error().code, 126);  // ERROR_MOD_NOT_FOUND
 #else
   EXPECT_NE(lib.error().message().find("dlopen"), std::string_view::npos);
 #endif

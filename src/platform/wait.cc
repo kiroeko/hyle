@@ -107,8 +107,14 @@ void wake_all(const std::atomic<std::uint32_t>* addr) noexcept {
 }  // namespace hyle::platform::detail
 
 #elif defined(HYLE_OS_MACOS)
-// os_sync_wait_on_address is public API on macOS 14.4+. Older macOS needs a
-// fallback (待调研: __ulock is private / dispatch_semaphore changes the model).
+// os_sync_wait_on_address is public API on macOS 14.4+. The project/package
+// contract sets and validates that deployment floor; keep a source-level guard
+// too so a non-CMake compilation cannot emit a binary with unresolved imports
+// for an older declared target.
+#  include <Availability.h>
+#  if __MAC_OS_X_VERSION_MIN_REQUIRED < 140400
+#    error "HYLE platform wait requires macOS deployment target 14.4 or newer"
+#  endif
 #  include <cerrno>
 #  include <os/os_sync_wait_on_address.h>
 

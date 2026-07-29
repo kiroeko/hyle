@@ -409,6 +409,8 @@ HYLE_PLATFORM_C_API hyle_status hyle_fs_make_directory(const char* path);
 HYLE_PLATFORM_C_API hyle_status hyle_fs_make_directory_recursive(
     const char* path);
 HYLE_PLATFORM_C_API hyle_status hyle_fs_remove_directory(const char* path);
+/* Does not follow symlinks/junctions in a stable caller-owned tree. The caller
+ * must prevent concurrent entry replacement during path-based traversal. */
 HYLE_PLATFORM_C_API hyle_status hyle_fs_remove_directory_recursive(
     const char* path);
 HYLE_PLATFORM_C_API hyle_status hyle_fs_remove_file(const char* path);

@@ -440,23 +440,11 @@ bool read_sysfs_unsigned(const char* path, unsigned& value) noexcept {
 
 #if defined(HYLE_OS_WINDOWS) || defined(HYLE_OS_LINUX)
 Status cpu_query_status(const char* operation, unsigned long code) noexcept {
-  char message[160];
-  std::snprintf(message, sizeof(message), "%s failed: native code %lu",
-                operation, code);
 #if defined(HYLE_OS_WINDOWS)
-  if (code == ERROR_NOT_ENOUGH_MEMORY || code == ERROR_OUTOFMEMORY) {
-    return Status::ResourceExhausted(message);
-  }
-  if (code == ERROR_ACCESS_DENIED) return Status::PermissionDenied(message);
-  if (code == ERROR_INVALID_PARAMETER) return Status::InvalidArgument(message);
+  return status_from_win32(static_cast<std::uint32_t>(code), operation);
 #else
-  if (code == ENOMEM) return Status::ResourceExhausted(message);
-  if (code == EACCES || code == EPERM) {
-    return Status::PermissionDenied(message);
-  }
-  if (code == EINVAL) return Status::InvalidArgument(message);
+  return status_from_errno(static_cast<int>(code), operation);
 #endif
-  return Status::Unavailable(message);
 }
 #endif
 
@@ -500,6 +488,11 @@ Result<std::size_t> query_available_cpu_ids(unsigned* dst,
           cpu_query_status("GetProcessDefaultCpuSets", code));
     }
     default_count = actual;
+    // CPU-set ids are opaque ULONG values and need not be dense. Sorting the
+    // caller-owned snapshot keeps membership O(log D) without a max-id bitmap;
+    // the previous nested scan was O(system_sets * default_sets), quadratic on
+    // large explicitly partitioned Windows hosts.
+    std::sort(default_ids, default_ids + default_count);
   }
 
   DWORD bytes = 0;
@@ -546,10 +539,9 @@ Result<std::size_t> query_available_cpu_ids(unsigned* dst,
     if (info->Size == 0 || info->Size > bytes - offset) break;
     if (info->Type == CpuSetInformation) {
       const auto& set = info->CpuSet;
-      bool selected = default_count == 0;
-      for (ULONG i = 0; !selected && i < default_count; ++i) {
-        selected = default_ids[i] == set.Id;
-      }
+      const bool selected =
+          default_count == 0 ||
+          std::binary_search(default_ids, default_ids + default_count, set.Id);
       if (selected && (!set.Allocated || set.AllocatedToTargetProcess)) {
         if (!use_affinity_mask ||
             (set.LogicalProcessorIndex < sizeof(DWORD_PTR) * 8u &&

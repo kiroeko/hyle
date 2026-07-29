@@ -16,48 +16,8 @@ namespace hyle::platform {
 
 namespace {
 #if defined(HYLE_OS_WINDOWS)
-const char* win32_loader_error_name(DWORD code) noexcept {
-  switch (code) {
-    case ERROR_MOD_NOT_FOUND: return "ERROR_MOD_NOT_FOUND";
-    case ERROR_PROC_NOT_FOUND: return "ERROR_PROC_NOT_FOUND";
-    case ERROR_BAD_EXE_FORMAT: return "ERROR_BAD_EXE_FORMAT";
-    case ERROR_ACCESS_DENIED: return "ERROR_ACCESS_DENIED";
-    case ERROR_NOT_ENOUGH_MEMORY: return "ERROR_NOT_ENOUGH_MEMORY";
-    case ERROR_OUTOFMEMORY: return "ERROR_OUTOFMEMORY";
-    default: return "WIN32_LOADER_ERROR";
-  }
-}
-
 Status win32_loader_error(const char* operation, DWORD code) noexcept {
-  char description[192]{};
-  DWORD length = ::FormatMessageA(
-      FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, code,
-      0, description, static_cast<DWORD>(sizeof(description)), nullptr);
-  while (length != 0 &&
-         (description[length - 1] == '\r' || description[length - 1] == '\n')) {
-    description[--length] = '\0';
-  }
-  char message[320];
-  std::snprintf(message, sizeof(message),
-                "windows %s failed: %s (%lu)%s%s", operation,
-                win32_loader_error_name(code), static_cast<unsigned long>(code),
-                length == 0 ? "" : ": ", length == 0 ? "" : description);
-  if (code == ERROR_MOD_NOT_FOUND || code == ERROR_PROC_NOT_FOUND) {
-    return Status::FromNative(StatusCode::NotFound,
-                              {NativeErrorDomain::Win32, code}, message);
-  }
-  if (code == ERROR_BAD_EXE_FORMAT)
-    return Status::FromNative(StatusCode::InvalidArgument,
-                              {NativeErrorDomain::Win32, code}, message);
-  if (code == ERROR_ACCESS_DENIED)
-    return Status::FromNative(StatusCode::PermissionDenied,
-                              {NativeErrorDomain::Win32, code}, message);
-  if (code == ERROR_NOT_ENOUGH_MEMORY || code == ERROR_OUTOFMEMORY) {
-    return Status::FromNative(StatusCode::ResourceExhausted,
-                              {NativeErrorDomain::Win32, code}, message);
-  }
-  return Status::FromNative(StatusCode::Unavailable,
-                            {NativeErrorDomain::Win32, code}, message);
+  return status_from_win32(code, operation);
 }
 
 struct WideString {

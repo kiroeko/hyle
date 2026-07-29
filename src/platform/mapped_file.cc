@@ -25,56 +25,8 @@ namespace hyle::platform {
 
 // ---- Windows ----------------------------------------------------------------
 namespace {
-const char* win32_mapping_error_name(DWORD code) noexcept {
-  switch (code) {
-    case ERROR_FILE_NOT_FOUND: return "ERROR_FILE_NOT_FOUND";
-    case ERROR_PATH_NOT_FOUND: return "ERROR_PATH_NOT_FOUND";
-    case ERROR_ACCESS_DENIED: return "ERROR_ACCESS_DENIED";
-    case ERROR_NOT_ENOUGH_MEMORY: return "ERROR_NOT_ENOUGH_MEMORY";
-    case ERROR_OUTOFMEMORY: return "ERROR_OUTOFMEMORY";
-    case ERROR_WORKING_SET_QUOTA: return "ERROR_WORKING_SET_QUOTA";
-    case ERROR_INVALID_PARAMETER: return "ERROR_INVALID_PARAMETER";
-    case ERROR_PRIVILEGE_NOT_HELD: return "ERROR_PRIVILEGE_NOT_HELD";
-    case ERROR_NOT_LOCKED: return "ERROR_NOT_LOCKED";
-    default: return "WIN32_MAPPING_ERROR";
-  }
-}
-
 Status win32_mapping_error(const char* operation, DWORD code) noexcept {
-  char description[192]{};
-  DWORD length = ::FormatMessageA(
-      FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, code,
-      0, description, static_cast<DWORD>(sizeof(description)), nullptr);
-  while (length != 0 &&
-         (description[length - 1] == '\r' || description[length - 1] == '\n')) {
-    description[--length] = '\0';
-  }
-  char message[320];
-  std::snprintf(message, sizeof(message),
-                "windows %s failed: %s (%lu)%s%s", operation,
-                win32_mapping_error_name(code), static_cast<unsigned long>(code),
-                length == 0 ? "" : ": ", length == 0 ? "" : description);
-  if (code == ERROR_FILE_NOT_FOUND || code == ERROR_PATH_NOT_FOUND) {
-    return Status::FromNative(StatusCode::NotFound,
-                              {NativeErrorDomain::Win32, code}, message);
-  }
-  if (code == ERROR_ACCESS_DENIED || code == ERROR_PRIVILEGE_NOT_HELD) {
-    return Status::FromNative(StatusCode::PermissionDenied,
-                              {NativeErrorDomain::Win32, code}, message);
-  }
-  if (code == ERROR_NOT_ENOUGH_MEMORY || code == ERROR_OUTOFMEMORY ||
-      code == ERROR_WORKING_SET_QUOTA) {
-    return Status::FromNative(StatusCode::ResourceExhausted,
-                              {NativeErrorDomain::Win32, code}, message);
-  }
-  if (code == ERROR_INVALID_PARAMETER)
-    return Status::FromNative(StatusCode::InvalidArgument,
-                              {NativeErrorDomain::Win32, code}, message);
-  if (code == ERROR_NOT_LOCKED)
-    return Status::FromNative(StatusCode::FailedPrecondition,
-                              {NativeErrorDomain::Win32, code}, message);
-  return Status::FromNative(StatusCode::Unavailable,
-                            {NativeErrorDomain::Win32, code}, message);
+  return status_from_win32(code, operation);
 }
 
 // UTF-8 -> UTF-16 for CreateFileW. Dynamically sized so conversion itself does
@@ -320,43 +272,11 @@ void MappedFile::reset() noexcept {
 // ---- POSIX ------------------------------------------------------------------
 namespace {
 
-const char* posix_mapping_error_name(int code) noexcept {
-  switch (code) {
-    case ENOENT: return "ENOENT";
-    case ENOTDIR: return "ENOTDIR";
-    case EACCES: return "EACCES";
-    case EPERM: return "EPERM";
-    case ENOMEM: return "ENOMEM";
-    case EMFILE: return "EMFILE";
-    case ENFILE: return "ENFILE";
-    case EINVAL: return "EINVAL";
-    case EOVERFLOW: return "EOVERFLOW";
-    default: return "ERRNO_UNKNOWN";
-  }
-}
-
-[[maybe_unused]] const char* strerror_text(int result, char* buffer) noexcept {
-  return result == 0 ? buffer : nullptr;
-}
-
-[[maybe_unused]] const char* strerror_text(char* result, char*) noexcept {
-  return result;
-}
-
 Status posix_mapping_error(const char* operation, int code) noexcept {
-  char description[192]{};
-  const char* detail = strerror_text(
-      ::strerror_r(code, description, sizeof(description)), description);
-  char message[320];
-  std::snprintf(message, sizeof(message), "posix %s failed: %s (%d)%s%s",
-                operation, posix_mapping_error_name(code), code,
-                detail == nullptr || detail[0] == '\0' ? "" : ": ",
-                detail == nullptr ? "" : detail);
-  if (code == ENOTDIR)
-    return Status::FromNative(StatusCode::NotFound,
-                              {NativeErrorDomain::PosixErrno, code}, message);
-  return Status::FromNative(status_code_from_errno(code),
-                            {NativeErrorDomain::PosixErrno, code}, message);
+  Status status = status_from_errno(code, operation);
+  if (code != ENOTDIR) return status;
+  return Status::FromNative(StatusCode::NotFound, status.native_error(),
+                            status.message());
 }
 
 }  // namespace

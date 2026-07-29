@@ -22,6 +22,19 @@ endforeach()
 set(_hyle_project_version
   "${_hyle_version_MAJOR}.${_hyle_version_MINOR}.${_hyle_version_PATCH}")
 
+# platform's native macOS address-wait backend is the public os_sync API added
+# in macOS 14.4. Make that loader floor part of the generated binary instead of
+# silently inheriting the build host's current OS version. An embedding parent
+# that already chose a deployment target remains authoritative and is validated
+# after project()/component resolution below.
+if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin" AND
+   CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR AND
+   (NOT DEFINED CMAKE_OSX_DEPLOYMENT_TARGET OR
+    CMAKE_OSX_DEPLOYMENT_TARGET STREQUAL ""))
+  set(CMAKE_OSX_DEPLOYMENT_TARGET "14.4" CACHE STRING
+      "Minimum macOS version for HYLE's native platform wait backend")
+endif()
+
 project(hyle
   VERSION "${_hyle_project_version}"
   DESCRIPTION "HYbrid LEvels - general-purpose high-performance C++ infra"
@@ -75,6 +88,21 @@ endif()
 
 include(HyleComponents)
 include(HyleFeatureOption)
+
+if(APPLE AND HYLE_BUILD_PLATFORM)
+  if(NOT DEFINED CMAKE_OSX_DEPLOYMENT_TARGET OR
+     CMAKE_OSX_DEPLOYMENT_TARGET STREQUAL "")
+    message(FATAL_ERROR
+      "HYLE's platform component requires an explicit macOS deployment target "
+      "of 14.4 or newer. An embedding parent must set "
+      "CMAKE_OSX_DEPLOYMENT_TARGET before adding HYLE.")
+  elseif(CMAKE_OSX_DEPLOYMENT_TARGET VERSION_LESS "14.4")
+    message(FATAL_ERROR
+      "HYLE's platform component requires macOS 14.4+ for the public "
+      "os_sync_wait_on_address backend; got "
+      "CMAKE_OSX_DEPLOYMENT_TARGET='${CMAKE_OSX_DEPLOYMENT_TARGET}'.")
+  endif()
+endif()
 
 # ---- C++23 baseline + toolchain gate ----------------------------------------
 set(CMAKE_CXX_STANDARD 23)

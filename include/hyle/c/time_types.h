@@ -25,6 +25,12 @@ typedef struct hyle_unix_timestamp {
 #if defined(__cplusplus)
 static_assert(sizeof(hyle_unix_timestamp) == 16,
               "hyle_unix_timestamp ABI size changed");
+#elif defined(_MSC_VER)
+/* MSVC's C17 front-end does not implement the C11 `_Static_assert` keyword.
+ * A negative-size typedef preserves the compile-time ABI guard without
+ * requiring the C++ front-end or a vendor extension. */
+typedef char hyle_unix_timestamp_abi_size_must_be_16[
+    sizeof(hyle_unix_timestamp) == 16 ? 1 : -1];
 #else
 _Static_assert(sizeof(hyle_unix_timestamp) == 16,
                "hyle_unix_timestamp ABI size changed");

@@ -25,54 +25,11 @@ namespace {
 
 #if defined(HYLE_OS_WINDOWS)
 Status numa_native_status(const char* operation, DWORD code) noexcept {
-  char description[160]{};
-  DWORD length = ::FormatMessageA(
-      FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, code,
-      0, description, sizeof(description), nullptr);
-  while (length > 0 &&
-         (description[length - 1] == '\r' || description[length - 1] == '\n' ||
-          description[length - 1] == ' ')) {
-    description[--length] = '\0';
-  }
-  char message[288]{};
-  std::snprintf(message, sizeof(message), "%s failed (win32=%lu): %s",
-                operation, static_cast<unsigned long>(code),
-                length != 0 ? description : "unknown Windows error");
-  if (code == ERROR_NOT_ENOUGH_MEMORY || code == ERROR_OUTOFMEMORY ||
-      code == ERROR_COMMITMENT_LIMIT) {
-    return Status::FromNative(StatusCode::ResourceExhausted,
-                              {NativeErrorDomain::Win32, code}, message);
-  }
-  if (code == ERROR_ACCESS_DENIED)
-    return Status::FromNative(StatusCode::PermissionDenied,
-                              {NativeErrorDomain::Win32, code}, message);
-  if (code == ERROR_NOT_SUPPORTED || code == ERROR_CALL_NOT_IMPLEMENTED) {
-    return Status::FromNative(StatusCode::Unimplemented,
-                              {NativeErrorDomain::Win32, code}, message);
-  }
-  if (code == ERROR_INVALID_PARAMETER || code == ERROR_INVALID_ADDRESS) {
-    return Status::FromNative(StatusCode::InvalidArgument,
-                              {NativeErrorDomain::Win32, code}, message);
-  }
-  return Status::FromNative(StatusCode::Unavailable,
-                            {NativeErrorDomain::Win32, code}, message);
+  return status_from_win32(code, operation);
 }
 #elif defined(HYLE_OS_LINUX)
 Status numa_native_status(const char* operation, int code) noexcept {
-  char description[160]{};
-  const char* text = description;
-#  if defined(__GLIBC__) && defined(_GNU_SOURCE)
-  text = ::strerror_r(code, description, sizeof(description));
-#  else
-  if (::strerror_r(code, description, sizeof(description)) != 0) {
-    text = "unknown POSIX error";
-  }
-#  endif
-  char message[288]{};
-  std::snprintf(message, sizeof(message), "%s failed (errno=%d): %s", operation,
-                code, text);
-  return Status::FromNative(status_code_from_errno(code),
-                            {NativeErrorDomain::PosixErrno, code}, message);
+  return status_from_errno(code, operation);
 }
 #endif
 

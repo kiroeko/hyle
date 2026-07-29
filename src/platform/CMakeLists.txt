@@ -1,12 +1,30 @@
-hyle_add_module(platform SOURCES wait.cc thread.cc dynlib.cc fs.cc cpu.cc virtual_memory.cc numa.cc mapped_file.cc c_platform.cc)
+# cpu.cc is the CPUID PROBE translation unit and MUST stay LTO-free (conventions
+# §10 / llama.cpp's hard-won bug): otherwise the linker may inline an advanced-
+# ISA instruction into the detector and SIGILL before it can report an old CPU.
+# A private object target gives the probe a real no-IPO boundary without noisy
+# `/GL /GL-` or `-flto -fno-lto` option overrides. The rest of hyle_platform
+# still inherits a shipping parent's IPO setting.
+add_library(hyle_platform_cpu_probe OBJECT cpu.cc)
+target_include_directories(hyle_platform_cpu_probe PRIVATE
+  "${PROJECT_SOURCE_DIR}/include"
+  "${CMAKE_CURRENT_SOURCE_DIR}")
+target_compile_features(hyle_platform_cpu_probe PRIVATE cxx_std_23)
+target_link_libraries(hyle_platform_cpu_probe PRIVATE
+  hyle_build_contract hyle_trace hyle_testing)
+target_compile_definitions(hyle_platform_cpu_probe PRIVATE HYLE_PLATFORM_BUILD)
+if(HYLE_STATIC)
+  target_compile_definitions(hyle_platform_cpu_probe PRIVATE HYLE_STATIC)
+endif()
+hyle_apply_warnings(hyle_platform_cpu_probe)
+hyle_apply_sanitizer(hyle_platform_cpu_probe)
+set_target_properties(hyle_platform_cpu_probe PROPERTIES
+  INTERPROCEDURAL_OPTIMIZATION OFF
+  POSITION_INDEPENDENT_CODE ON
+  FOLDER "hyle/modules/private")
 
-# cpu.cc is the CPUID PROBE translation unit and MUST stay LTO-free (conventions §10 /
-# llama.cpp's hard-won bug): with LTO on, the linker can inline an advanced-ISA
-# instruction INTO the detector, which then SIGILLs on an old CPU before it can report
-# that the CPU is old. platform is compiled entirely at the baseline ISA (no -march TU),
-# so there is no wide instruction to inline today; this defensively forces IPO/LTO off
-# for the whole module so a future global -flto can't break the probe.
-set_target_properties(hyle_platform PROPERTIES INTERPROCEDURAL_OPTIMIZATION OFF)
+hyle_add_module(platform SOURCES
+  wait.cc thread.cc dynlib.cc fs.cc virtual_memory.cc numa.cc mapped_file.cc
+  c_platform.cc $<TARGET_OBJECTS:hyle_platform_cpu_probe>)
 
 # WaitOnAddress / WakeByAddress* are exported from Synchronization.lib (API set).
 if(WIN32)

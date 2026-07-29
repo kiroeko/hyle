@@ -135,7 +135,10 @@ HYLE_PLATFORM_API Status make_directory_recursive(const char* path) noexcept;
 HYLE_PLATFORM_API Status remove_directory(const char* path) noexcept;
 
 // Remove a directory and ALL its contents ("rm -rf").
-// (Hard-to-reverse: deletes recursively. Caller owns the blast radius.)
+// Does not follow symlinks/junctions in a caller-owned tree. Like other
+// path-based recursive APIs, it cannot make traversal atomic against a process
+// concurrently replacing entries; the caller must prevent mutation while it
+// runs. (Hard-to-reverse: deletes recursively. Caller owns the blast radius.)
 HYLE_PLATFORM_API Status remove_directory_recursive(const char* path) noexcept;
 
 // ---- files ------------------------------------------------------------------

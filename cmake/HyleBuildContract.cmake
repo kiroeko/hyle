@@ -10,10 +10,16 @@ set_target_properties(hyle_build_contract PROPERTIES
 
 if(MSVC)
   # Report the real C++ language level and keep source/execution text UTF-8.
-  # Language genexes keep the switches away from MASM fcontext sources.
+  # HYLE does not throw errors across its API, but public noexcept convenience
+  # adapters catch std::bad_alloc/length_error and translate them to Status.
+  # MSVC therefore needs an explicit standard C++ unwind model; leaving it at
+  # the compiler default makes current STL headers emit C4530 and gives source
+  # consumers a different contract. Language genexes also keep these switches
+  # away from C and MASM fcontext sources.
   target_compile_options(hyle_build_contract INTERFACE
     "$<$<COMPILE_LANGUAGE:C,CXX>:/Zc:__cplusplus>"
-    "$<$<COMPILE_LANGUAGE:C,CXX>:/utf-8>")
+    "$<$<COMPILE_LANGUAGE:C,CXX>:/utf-8>"
+    "$<$<COMPILE_LANGUAGE:CXX>:/EHsc>")
 elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   # HYLE's x86-64-v2 public baseline enables the SSSE3 path in header-inline
   # container probes. Propagate it so those functions cannot acquire two ODR

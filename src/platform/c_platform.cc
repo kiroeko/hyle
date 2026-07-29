@@ -206,6 +206,18 @@ void hyle_wait_on_address(volatile uint32_t* addr, uint32_t expected) {
 int hyle_wait_on_address_for(volatile uint32_t* addr, uint32_t expected,
                              uint64_t timeout_ns) {
   if (addr == nullptr) return 1;
+  // The C contract is a uint32_t word accessed atomically by the caller, not a
+  // C++ std::atomic object.  Do the zero-timeout poll through atomic_ref so the
+  // backend never invokes std::atomic::load on storage whose C++ lifetime was
+  // not started as std::atomic<uint32_t>.  Non-zero waits only hand the object
+  // representation to the native futex/WaitOnAddress/os_sync primitive.
+  if (timeout_ns == 0) {
+    auto& word = *const_cast<uint32_t*>(addr);
+    return std::atomic_ref<uint32_t>(word).load(std::memory_order_relaxed) !=
+                   expected
+               ? 1
+               : 0;
+  }
   return hyle::platform::detail::wait_on_address_for(as_atomic(addr), expected,
                                                      timeout_ns)
              ? 1
