@@ -15,6 +15,7 @@
 
 #include "hyle/container/string_ref.h"
 #include "hyle/container/swiss_table.h"
+#include "hyle/error/result.h"
 #include "hyle/error/status.h"
 #include "hyle/macros.h"
 #include "hyle/mem/allocator.h"
@@ -48,6 +49,52 @@
 // matches the real init-heavy/read-heavy lifecycle of named backend selection.
 
 namespace hyle::util {
+
+namespace detail {
+
+// A nullable factory result keeps the traditional fast "missing -> empty"
+// contract.  A Result<T> factory is the error-aware acceleration-library
+// shape: lookup failure becomes NotFound and the creator's Status propagates
+// unchanged.  Both use exactly the same table/layout; callers choose the
+// failure contract in the Registry template argument instead of every entry
+// paying for a tag, a second function pointer, or benchmark-only metadata.
+template <class FactoryResult>
+struct RegistryResultTraits {
+  static FactoryResult missing() { return FactoryResult{}; }
+
+  template <class Derived, class... Args>
+  static FactoryResult default_create(Args&&... args) {
+    if constexpr (std::is_pointer_v<FactoryResult>) {
+      return new Derived(std::forward<Args>(args)...);
+    } else if constexpr (requires {
+                           FactoryResult{
+                               new Derived(std::forward<Args>(args)...)};
+                         }) {
+      return FactoryResult{new Derived(std::forward<Args>(args)...)};
+    } else {
+      static_assert(
+          std::convertible_to<Ref<Derived>, FactoryResult>,
+          "Registry result must own a Derived* or accept Ref<Derived>");
+      return make_ref<Derived>(std::forward<Args>(args)...);
+    }
+  }
+};
+
+template <class Value>
+struct RegistryResultTraits<std::expected<Value, Status>> {
+  static Result<Value> missing() {
+    return make_unexpected(Status::NotFound("registry key is not registered"));
+  }
+
+  template <class Derived, class... Args>
+  static Result<Value> default_create(Args&&... args) {
+    Value value = RegistryResultTraits<Value>::template default_create<Derived>(
+        std::forward<Args>(args)...);
+    return Result<Value>{std::in_place, std::move(value)};
+  }
+};
+
+}  // namespace detail
 
 enum class RegistryPriority : std::uint8_t {
   kFallback = 1,  // lowest: a default that anything else overrides
@@ -226,15 +273,16 @@ class Registry {
     return entries_.find(key) != nullptr;
   }
 
-  // Create the object registered under `key`, or a default-constructed Ptr
-  // (e.g. nullptr) if `key` is absent.
+  // Create the object registered under `key`. A nullable Ptr returns its empty
+  // value when absent. Registry<Result<T>, ...> instead returns NotFound and
+  // propagates the selected creator's Status without changing the table shape.
   HYLE_FORCE_INLINE Ptr create(container::string_ref key, Args... args) const {
     if (const auto* frozen_slots =
             frozen_index_.load(std::memory_order_acquire)) {
       if (const IndexValue* value = frozen_slots->find(key)) {
         return value->creator(std::forward<Args>(args)...);
       }
-      return Ptr{};
+      return detail::RegistryResultTraits<Ptr>::missing();
     }
     return create_mutable(key, std::forward<Args>(args)...);
   }
@@ -422,7 +470,7 @@ class Registry {
     if (const IndexValue* value = frozen_table(index)->find(key)) {
       return value->creator(std::forward<Args>(args)...);
     }
-    return Ptr{};
+    return detail::RegistryResultTraits<Ptr>::missing();
   }
 
   // Kept out of the post-freeze instruction stream. Registry is deliberately
@@ -447,7 +495,8 @@ class Registry {
         creator = found->creator;
       }
     }
-    return creator != nullptr ? creator(std::forward<Args>(args)...) : Ptr{};
+    if (creator != nullptr) return creator(std::forward<Args>(args)...);
+    return detail::RegistryResultTraits<Ptr>::missing();
   }
 
   template <class Fn>
@@ -510,18 +559,8 @@ struct Registerer {
 
   template <class Derived>
   static Ptr default_creator(Args... args) {
-    if constexpr (std::is_pointer_v<Ptr>) {
-      return new Derived(std::forward<Args>(args)...);
-    } else if constexpr (requires {
-                           Ptr{new Derived(std::forward<Args>(args)...)};
-                         }) {
-      return Ptr{new Derived(std::forward<Args>(args)...)};
-    } else {
-      static_assert(
-          std::convertible_to<Ref<Derived>, Ptr>,
-          "Registry Ptr must own a Derived* or accept Ref<Derived>");
-      return make_ref<Derived>(std::forward<Args>(args)...);
-    }
+    return detail::RegistryResultTraits<Ptr>::template default_create<Derived>(
+        std::forward<Args>(args)...);
   }
 };
 

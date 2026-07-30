@@ -89,6 +89,10 @@ HYLE_UTIL_C_API int hyle_util_rng_fill_float(
     hyle_util_rng* rng, float* out, size_t count);
 HYLE_UTIL_C_API int hyle_util_rng_fill_double(
     hyle_util_rng* rng, double* out, size_t count);
+/* Advance exactly count ordinary outputs. This is O(count), matching standard
+ * C++ engines; use jump/long_jump for fixed-size parallel-stream partitioning. */
+HYLE_UTIL_C_API int hyle_util_rng_discard(
+    hyle_util_rng* rng, uint64_t count);
 HYLE_UTIL_C_API int hyle_util_rng_jump(hyle_util_rng* rng);
 HYLE_UTIL_C_API int hyle_util_rng_long_jump(hyle_util_rng* rng);
 HYLE_UTIL_C_API int hyle_util_rng_shuffle(
@@ -132,7 +136,9 @@ HYLE_UTIL_C_API int hyle_util_ref_is_unique(const hyle_util_ref* ref);
  * lookup and enumeration are thread-safe; creators and visitors run outside
  * its lock and may re-enter. freeze is a one-way/idempotent transition that
  * rejects later mutation and makes reads lock-free expected O(1). Quiesce all
- * users before destroy. Callback-returned objects remain caller-owned. */
+ * users before destroy. Callback-returned objects remain caller-owned. Every
+ * creator context, including one replaced by a higher-priority registration,
+ * must outlive its in-flight calls. */
 typedef struct hyle_util_registry_o hyle_util_registry;
 
 typedef enum hyle_util_registry_priority {
@@ -141,8 +147,11 @@ typedef enum hyle_util_registry_priority {
   HYLE_UTIL_REGISTRY_PREFERRED = 3
 } hyle_util_registry_priority;
 
-typedef void* (*hyle_util_registry_create_fn)(
-    void* creator_ctx, const void* create_args);
+/* A creator transfers one owning Status to its caller and writes out_object
+ * only on OK. Initialize success locally with HYLE_STATUS_INIT; use the error
+ * factories for failure. Callbacks must not unwind exceptions through C. */
+typedef hyle_status (*hyle_util_registry_create_fn)(
+    void** out_object, void* creator_ctx, const void* create_args);
 /* Return non-zero to continue; zero stops successfully. key/help remain valid
  * until registry destruction but are always borrowed. */
 typedef int (*hyle_util_registry_visit_fn)(
@@ -187,8 +196,9 @@ HYLE_UTIL_C_API hyle_status hyle_util_registry_create_object(
     hyle_container_string_view key,
     const void* create_args);
 /* Hot/value-shaped counterpart of create_object: returns NULL for an invalid or
- * absent key, and also when the selected creator itself returns NULL. Use the
- * checked form when those outcomes must be distinguished. */
+ * absent key, a creator error, or a successful NULL result. It consumes any
+ * creator error. Use the checked form when those outcomes must be
+ * distinguished. */
 HYLE_UTIL_C_API void* hyle_util_registry_create_or_null(
     const hyle_util_registry* registry, hyle_container_string_view key,
     const void* create_args);

@@ -8,10 +8,13 @@ static int consume(hyle_status status) {
   return ok;
 }
 
-static void* create_value(void* context, const void* arguments) {
+static hyle_status create_value(void** out_object, void* context,
+                                const void* arguments) {
   const uintptr_t base = *(const uintptr_t*)context;
   const uintptr_t increment = *(const uintptr_t*)arguments;
-  return (void*)(base + increment);
+  hyle_status status = HYLE_STATUS_INIT;
+  *out_object = (void*)(base + increment);
+  return status;
 }
 
 int main(void) {
@@ -23,7 +26,8 @@ int main(void) {
   void* object = NULL;
 
   if (!hyle_util_rng_seed(&rng, 42) ||
-      !hyle_util_rng_fill_u64(&rng, random_values, 16)) {
+      !hyle_util_rng_fill_u64(&rng, random_values, 16) ||
+      !hyle_util_rng_discard(&rng, 7)) {
     return 1;
   }
   if (!consume(hyle_util_registry_create_system(&registry))) return 2;

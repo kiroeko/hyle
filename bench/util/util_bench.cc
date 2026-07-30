@@ -36,6 +36,7 @@ namespace {
 
 namespace nb = ankerl::nanobench;
 using Creator = void* (*)();
+using ResultCreator = hyle::Result<void*> (*)();
 
 std::vector<unsigned> g_parallel_cpus;
 
@@ -143,7 +144,13 @@ void* create_token() {
   return &token;
 }
 
-void* create_c_token(void*, const void*) { return create_token(); }
+hyle::Result<void*> create_result_token() { return create_token(); }
+
+hyle_status create_c_token(void** out_object, void*, const void*) {
+  hyle_status status = HYLE_STATUS_INIT;
+  *out_object = create_token();
+  return status;
+}
 
 struct TransparentHash {
   using is_transparent = void;
@@ -161,8 +168,17 @@ struct PeerEntry {
   std::string help;
 };
 
+struct ResultPeerEntry {
+  ResultCreator creator;
+  int priority;
+  std::string help;
+};
+
 using StdMap = std::unordered_map<std::string, PeerEntry, TransparentHash,
                                   std::equal_to<>>;
+using ResultStdMap =
+    std::unordered_map<std::string, ResultPeerEntry, TransparentHash,
+                       std::equal_to<>>;
 
 struct RegistryFixture {
   static constexpr std::size_t kEntries = 256;
@@ -172,10 +188,13 @@ struct RegistryFixture {
   std::array<std::string_view, kEntries> std_keys;
   hyle::util::Registry<void*> mutable_hyle;
   hyle::util::Registry<void*> frozen_hyle;
+  hyle::util::Registry<hyle::Result<void*>> fallible_hyle;
   StdMap mutable_std;
   StdMap frozen_std;
+  ResultStdMap fallible_std;
 #if defined(HYLE_BENCH_ABSL)
   absl::flat_hash_map<std::string, PeerEntry> frozen_absl;
+  absl::flat_hash_map<std::string, ResultPeerEntry> fallible_absl;
 #endif
   hyle_util_registry* frozen_c = nullptr;
   mutable std::mutex std_mutex;
@@ -183,10 +202,13 @@ struct RegistryFixture {
   RegistryFixture() {
     check(mutable_hyle.reserve(kEntries));
     check(frozen_hyle.reserve(kEntries));
+    check(fallible_hyle.reserve(kEntries));
     mutable_std.reserve(kEntries);
     frozen_std.reserve(kEntries);
+    fallible_std.reserve(kEntries);
 #if defined(HYLE_BENCH_ABSL)
     frozen_absl.reserve(kEntries);
+    fallible_absl.reserve(kEntries);
 #endif
     check(hyle_util_registry_create(&frozen_c, hyle_system_allocator()));
     check(hyle_util_registry_reserve(frozen_c, kEntries));
@@ -204,13 +226,22 @@ struct RegistryFixture {
       check(frozen_hyle.register_creator(
           hyle_keys[i], &create_token, hyle::util::RegistryPriority::kDefault,
           "benchmark backend"));
+      check(fallible_hyle.register_creator(
+          hyle_keys[i], &create_result_token,
+          hyle::util::RegistryPriority::kDefault, "benchmark backend"));
       mutable_std.emplace(
           keys[i], PeerEntry{&create_token, 2, "benchmark backend"});
       frozen_std.emplace(
           keys[i], PeerEntry{&create_token, 2, "benchmark backend"});
+      fallible_std.emplace(
+          keys[i],
+          ResultPeerEntry{&create_result_token, 2, "benchmark backend"});
 #if defined(HYLE_BENCH_ABSL)
       frozen_absl.emplace(
           keys[i], PeerEntry{&create_token, 2, "benchmark backend"});
+      fallible_absl.emplace(
+          keys[i],
+          ResultPeerEntry{&create_result_token, 2, "benchmark backend"});
 #endif
       check(hyle_util_registry_register(
           frozen_c, c_keys[i], &create_c_token, nullptr,
@@ -218,6 +249,7 @@ struct RegistryFixture {
           hyle_container_cstr("benchmark backend")));
     }
     (void)frozen_hyle.freeze();
+    (void)fallible_hyle.freeze();
     check(hyle_util_registry_freeze(frozen_c));
   }
 
@@ -261,6 +293,7 @@ int main() {
   configure_main_benchmark_thread();
   RegistryFixture fixture;
   const auto frozen_hyle_view = fixture.frozen_hyle.freeze();
+  const auto fallible_hyle_view = fixture.fallible_hyle.freeze();
   std::size_t index = 0;
 
   {
@@ -373,6 +406,38 @@ int main() {
           &result, fixture.frozen_c, fixture.c_keys[index++ & 255], nullptr);
       if (!hyle_status_is_ok(status)) std::abort();
       nb::doNotOptimizeAway(result);
+    });
+  }
+
+  {
+    nb::Bench bench;
+    bench.title("util-runtime fallible named factory lookup+call, N=256")
+        .relative(true)
+        .batch(1)
+        .minEpochIterations(1'000'000);
+    bench.run("std::unordered_map + Result factory", [&] {
+      const auto found =
+          fixture.fallible_std.find(fixture.std_keys[index++ & 255]);
+      auto result = found->second.creator();
+      if (!result.has_value()) std::abort();
+      nb::doNotOptimizeAway(*result);
+    });
+#if defined(HYLE_BENCH_ABSL)
+    index = 0;
+    bench.run("absl::flat_hash_map + Result factory", [&] {
+      const auto found = fixture.fallible_absl.find(
+          absl::string_view(fixture.std_keys[index++ & 255]));
+      auto result = found->second.creator();
+      if (!result.has_value()) std::abort();
+      nb::doNotOptimizeAway(*result);
+    });
+#endif
+    index = 0;
+    bench.run("HYLE Result FrozenView", [&] {
+      auto result =
+          fallible_hyle_view.create(fixture.hyle_keys[index++ & 255]);
+      if (!result.has_value()) std::abort();
+      nb::doNotOptimizeAway(*result);
     });
   }
 

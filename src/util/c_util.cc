@@ -423,6 +423,14 @@ int hyle_util_rng_fill_double(hyle_util_rng* rng, double* out, size_t count) {
   return 1;
 }
 
+int hyle_util_rng_discard(hyle_util_rng* rng, uint64_t count) {
+  hyle::util::Rng native;
+  if (!load_rng(rng, native)) return 0;
+  native.discard(count);
+  store_rng(native, rng);
+  return 1;
+}
+
 int hyle_util_rng_jump(hyle_util_rng* rng) {
   hyle::util::Rng native;
   if (!load_rng(rng, native)) return 0;
@@ -699,8 +707,13 @@ hyle_status hyle_util_registry_create_object(
   if (!registry_find_creator(registry, key_view, &creator, &creator_ctx)) {
     return to_c_status(Status::NotFound("registry key is not registered"));
   }
-  *out = creator(creator_ctx, create_args);
-  return to_c_status(Status::Ok());
+  void* object = nullptr;
+  hyle_status status = creator(&object, creator_ctx, create_args);
+  // OK is the stable zero C representation. Keep the selected factory's
+  // success path to one indirect call; diagnostics still retain full Status
+  // ownership and are returned unchanged.
+  if (status.rep == 0) *out = object;
+  return status;
 }
 
 void* hyle_util_registry_create_or_null(
@@ -714,7 +727,14 @@ void* hyle_util_registry_create_or_null(
   if (!registry_find_creator(registry, key_view, &creator, &creator_ctx)) {
     return nullptr;
   }
-  return creator(creator_ctx, create_args);
+  void* object = nullptr;
+  hyle_status status = creator(&object, creator_ctx, create_args);
+  if (status.rep == 0) return object;
+  // Adopt only the cold failure arm so destruction releases its owning rep
+  // without two public C-ABI calls on every successful dispatch.
+  [[maybe_unused]] Status owned =
+      hyle::detail::StatusAccess::adopt(status.rep);
+  return nullptr;
 }
 
 hyle_status hyle_util_registry_help(

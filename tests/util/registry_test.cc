@@ -111,6 +111,56 @@ TEST(Registry, MissingKeyReturnsNull) {
   EXPECT_TRUE(ShapeRegistry()->has("Triangle"));
 }
 
+TEST(Registry, ResultFactoryPreservesLookupAndCreatorErrors) {
+  using FactoryResult = hyle::Result<CheapWidget*>;
+  hyle::util::Registry<FactoryResult, bool> registry;
+  auto creator = +[](bool fail) -> FactoryResult {
+    if (fail) {
+      return hyle::make_unexpected(
+          hyle::Status::Unavailable("backend initialization failed"));
+    }
+    return new FancyWidget();
+  };
+  ASSERT_TRUE(registry.register_creator("fallible", creator).ok());
+
+  FactoryResult missing = registry.create("missing", false);
+  ASSERT_FALSE(missing.has_value());
+  EXPECT_TRUE(missing.error().IsNotFound());
+
+  FactoryResult failed = registry.create("fallible", true);
+  ASSERT_FALSE(failed.has_value());
+  EXPECT_TRUE(failed.error().IsUnavailable());
+
+  FactoryResult created = registry.create("fallible", false);
+  ASSERT_TRUE(created.has_value());
+  std::unique_ptr<CheapWidget> object(*created);
+  EXPECT_EQ(object->quality(), 10);
+
+  const auto frozen = registry.freeze();
+  FactoryResult frozen_failed = frozen.create("fallible", true);
+  ASSERT_FALSE(frozen_failed.has_value());
+  EXPECT_TRUE(frozen_failed.error().IsUnavailable());
+  FactoryResult frozen_missing = frozen.create("missing", false);
+  ASSERT_FALSE(frozen_missing.has_value());
+  EXPECT_TRUE(frozen_missing.error().IsNotFound());
+}
+
+TEST(Registry, ResultDefaultCreatorSupportsIntrusiveRef) {
+  using Value = hyle::util::Ref<RefBase>;
+  using FactoryResult = hyle::Result<Value>;
+  using Registry = hyle::util::Registry<FactoryResult>;
+  using Registerer = hyle::util::Registerer<FactoryResult>;
+  static_assert(sizeof(Registry) == sizeof(hyle::util::Registry<Value>));
+
+  Registry registry;
+  ASSERT_TRUE(registry.register_creator(
+      "derived", &Registerer::default_creator<RefDerived>).ok());
+  FactoryResult created = registry.create("derived");
+  ASSERT_TRUE(created.has_value());
+  ASSERT_TRUE(*created);
+  EXPECT_EQ((*created)->value(), 7);
+}
+
 TEST(Registry, HelpTextIsTypeName) {
   // REGISTER_CLASS stores type_name<Derived>() as help.
   string_ref h = ShapeRegistry()->help("Triangle");

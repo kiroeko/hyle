@@ -94,11 +94,22 @@ struct registry_factory_state {
   uintptr_t base;
 };
 
-static void* registry_factory(void* context, const void* arguments) {
+static hyle_status registry_factory(void** out_object, void* context,
+                                    const void* arguments) {
   struct registry_factory_state* state =
       (struct registry_factory_state*)context;
   uintptr_t increment = arguments != NULL ? *(const uintptr_t*)arguments : 0;
-  return (void*)(state->base + increment);
+  hyle_status status = HYLE_STATUS_INIT;
+  *out_object = (void*)(state->base + increment);
+  return status;
+}
+
+static hyle_status failing_registry_factory(void** out_object, void* context,
+                                            const void* arguments) {
+  (void)out_object;
+  (void)context;
+  (void)arguments;
+  return hyle_status_unavailable("backend initialization failed");
 }
 
 struct registry_visit_state {
@@ -216,6 +227,16 @@ static void test_rng_ranges_batches_and_partitioning(void) {
   for (i = 0; i < 64; ++i) {
     CHECK(floats[i] >= 0.0f && floats[i] < 1.0f);
     CHECK(doubles[i] >= 0.0 && doubles[i] < 1.0);
+  }
+
+  {
+    hyle_util_rng discarded = hyle_util_rng_clone(&rng);
+    hyle_util_rng stepped = hyle_util_rng_clone(&rng);
+    CHECK(hyle_util_rng_discard(&discarded, 17));
+    for (i = 0; i < 17; ++i) (void)hyle_util_rng_next_u64(&stepped);
+    CHECK(hyle_util_rng_next_u64(&discarded) ==
+          hyle_util_rng_next_u64(&stepped));
+    CHECK(!hyle_util_rng_discard(NULL, 1));
   }
 
   {
@@ -349,6 +370,16 @@ static void test_runtime_registry(void) {
       HYLE_STATUS_ALREADY_EXISTS));
   CHECK(consume_code(hyle_util_registry_create_object_cstr(
       &object, registry, "missing", NULL), HYLE_STATUS_NOT_FOUND));
+
+  CHECK(consume_ok(hyle_util_registry_register_cstr(
+      registry, "failing", failing_registry_factory, NULL,
+      HYLE_UTIL_REGISTRY_DEFAULT, "fallible implementation")));
+  object = (void*)(uintptr_t)1;
+  CHECK(consume_code(hyle_util_registry_create_object_cstr(
+      &object, registry, "failing", NULL), HYLE_STATUS_UNAVAILABLE));
+  CHECK(object == NULL);
+  CHECK(hyle_util_registry_create_or_null_cstr(
+            registry, "failing", NULL) == NULL);
 
   {
     char owned_key[] = "owned";

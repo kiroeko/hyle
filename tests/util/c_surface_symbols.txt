@@ -17,6 +17,7 @@ hyle_util_registry_is_frozen
 hyle_util_registry_register
 hyle_util_registry_reserve
 hyle_util_registry_size
+hyle_util_rng_discard
 hyle_util_rng_fill_double
 hyle_util_rng_fill_float
 hyle_util_rng_fill_u64
