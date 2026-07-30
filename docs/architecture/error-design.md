@@ -96,8 +96,8 @@ Status::FromNative(StatusCode::Unavailable,
 NativeError detail = status.native_error();
 ```
 
-domain 只覆盖 HYLE 的真实系统边界：POSIX errno、Win32、Vulkan、CUDA runtime、CUDA
-driver 与 NVRTC。它不是可注册的字符串 category，也不是任意 payload map。普通调用方只按
+domain 只覆盖 HYLE 的真实系统边界：POSIX errno、Win32、HRESULT、Vulkan、CUDA runtime、
+CUDA driver 与 NVRTC。它不是可注册的字符串 category，也不是任意 payload map。普通调用方只按
 canonical code 分支；确实要执行 backend-specific recovery 或输出结构化遥测时，才检查
 `native_error()`。message 永远是人读文本，禁止解析文本取原生码。
 
@@ -173,7 +173,7 @@ creating device buffer: vulkan vkAllocateMemory failed: VK_ERROR_OUT_OF_DEVICE_M
 
 ### 2.4 原生 OS 适配
 
-POSIX/CRT 叶子边界不应在每个模块重复发明 errno 分类。error 提供两个公共基础能力：
+POSIX/CRT 与 Windows 叶子边界不应在每个模块重复发明分类。error 提供三组公共基础能力：
 
 ```cpp
 StatusCode status_code_from_errno(int error_number) noexcept;
@@ -182,9 +182,13 @@ Status status_from_errno(int error_number,
 StatusCode status_code_from_win32(std::uint32_t error_number) noexcept;
 Status status_from_win32(std::uint32_t error_number,
                          std::string_view operation = {}) noexcept;
+StatusCode status_code_from_hresult(std::int32_t error_number) noexcept;
+Status status_from_hresult(std::int32_t error_number,
+                           std::string_view operation = {}) noexcept;
 ```
 
-前者按 Abseil `ErrnoToStatusCode` 的成熟 canonical taxonomy 做 O(1) 分类；后者同时取得
+errno classifier 按 Abseil `ErrnoToStatusCode` 的成熟 canonical taxonomy 做 O(1) 分类；
+对应 factory 同时取得
 线程安全的 native description，附加 `PosixErrno` detail，并生成 `operation: description`。
 `errno == 0` 返回零值 OK；
 失败路径只有最终 Status 的一次分配，OOM 只丢 message、不丢 code。一般调用方优先用工厂，
@@ -194,6 +198,11 @@ Win32 入口同样做 O(1) canonical 分类，并保留稳定 32-bit code。Wind
 `FormatMessage` 生成 description；其它 host 使用确定性数字文本，因此 crash/offline tooling
 仍可分类远端 Win32 错误，且公共头不引入 `windows.h`。未知值映射 `Unknown`，不能因为某个
 platform 调用者偏好重试就笼统映射 `Unavailable`。成功路径不格式化、不分配。
+
+COM/WinRT 的 signed 32-bit HRESULT 由独立入口处理：非负值是成功，
+`HRESULT_FROM_WIN32` 复用 Win32 taxonomy，但 detail 保留 `HResult` domain 与完整原值；Windows
+同样优先 `FormatMessage`，其它 host 用确定性十六进制文本。它修复了 platform thread-name
+失败曾只保留手写文本、无法机器恢复/遥测的消费者缺口。
 
 通用映射不是操作语义的替代品。某个系统调用对同一 errno 有更具体的合同，可以局部覆盖；
 例如 `pthread_create(EAGAIN)` 是资源耗尽，而通用 I/O 映射把 EAGAIN 视为暂不可用。需要在
@@ -297,7 +306,10 @@ warning/error/fatal API。
 Status from_vk(VkResult result, std::string_view operation) noexcept;
 Status from_cuda(cudaError_t error, std::string_view operation) noexcept;
 Status status_from_errno(int error, std::string_view operation) noexcept;
-Status status_from_win32(std::uint32_t error, std::string_view operation) noexcept;
+Status status_from_win32(std::uint32_t error,
+                         std::string_view operation) noexcept;
+Status status_from_hresult(std::int32_t error,
+                           std::string_view operation) noexcept;
 ```
 
 translator 必须：
@@ -311,8 +323,8 @@ translator 必须：
 6. 不把 CUDA/Vulkan/OS 类型放进公共 API，只转为稳定 domain + `int64_t`；
 7. 未知原生值仍返回 `Unknown`/`Internal` 和完整数值，不能只写“failed”。
 
-`status_from_errno` 与 `status_from_win32` 是通用 OS 入口；platform 的 syscall-specific
-translator 只有操作合同更具体时才覆盖 canonical code。CUDA、Vulkan 等依赖 SDK 类型和
+`status_from_errno`、`status_from_win32` 与 `status_from_hresult` 是通用 OS 入口；platform
+的 syscall-specific translator 只有操作合同更具体时才覆盖 canonical code。CUDA、Vulkan 等依赖 SDK 类型和
 SDK-specific recovery 的映射仍由所属叶子模块完成，再用 `Status::FromNative` 附加稳定
 detail；不把 vendor 类型或动态 category 注册表塞进 error 公共头。
 

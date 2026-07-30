@@ -98,16 +98,16 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 
 > **信源**：体量以 `cloc` 实测为准；能力进度以 [`../milestones/README.md`](../milestones/README.md) 为准。
 > **口径**：生产 = `src` + `include` 的 code 列（不含 tests/bench/docs、不含 third_party）。
-> **2026-07-29 锚定**：旧投影「完成时生产 ~28–40k / 中值 34k」**已作废**——当前生产已 **92.9k**，单 simd **37.8k**。当前判断见 [`../milestones/pre-release-readiness.md`](../milestones/pre-release-readiness.md)；更早数字只作历史快照。
+> **2026-07-30 锚定**：旧投影「完成时生产 ~28–40k / 中值 34k」**已作废**——当前生产已 **93.7k**，单 simd **37.8k**。当前判断见 [`../milestones/pre-release-readiness.md`](../milestones/pre-release-readiness.md)；更早数字只作历史快照。
 
-### 当前实测（2026-07-29）
+### 当前实测（2026-07-30）
 
 | 固定统计口径 | code | 说明 |
 |---|---:|---|
-| **全库代码** | **278,051** | tracked working snapshot；含 docs 与 in-tree third_party |
-| **自实现（含测试）** | **135,523** | `include/hyle + src + tests`；只计 C/C++/CUDA，不含 CMake/Text |
-| **自实现（不含测试）** | **93,027** | `include/hyle + src`；只计 C/C++/CUDA，库本体硬锚 |
-| **当前处理模块实现（core / error）** | **653 / 1,563** | 各自公共 C/C++ 头 + `src/<module>`；core 含根级 macros/visibility |
+| **全库代码** | **281,337** | tracked working snapshot；含 docs 与 in-tree third_party |
+| **自实现（含测试）** | **136,563** | `include/hyle + src + tests`；只计 C/C++/CUDA，不含 CMake/Text |
+| **自实现（不含测试）** | **93,653** | `include/hyle + src`；只计 C/C++/CUDA，库本体硬锚 |
+| **当前七底座 adoption 审查单元实现** | **20,216** | core/error/obs/platform/time/mem/完整 util 的公共 C/C++ 头 + `src` |
 | 再加 ggml 等大依赖足迹 | **~200–350k+** | 由 ggml 主导，不计入「自有生产」 |
 
 **生产按模块（src+include，约）：**
@@ -119,14 +119,15 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 | compute | ~4.1k | ~5% |
 | sched | ~5.1k | ~6% |
 | container | **14,896**（含公共 C 头） | ~16% |
-| platform | **7,564**（含公共 C 头） | ~8% |
-| mem | **5,409**（含公共 C 头） | ~6% |
+| platform | **7,290**（含公共 C 头） | ~8% |
+| mem | **5,411**（含公共 C 头） | ~6% |
 | graph | ~0.6k | |
-| error | **1,563**（含公共 C 头） | ~2% |
-| util | ~1.3k | ~2% |
+| error | **1,658**（含公共 C 头） | ~2% |
+| util（core + runtime） | **2,214** | ~2% |
 | obs | **1,250**（含公共 C 头） | ~1% |
-| time | **1,421**（含公共 C 头） | ~2% |
-| 其余基质及顶层/C ABI 头 | ~1.8k | ~2% |
+| time | **1,740**（含公共 C 头） | ~2% |
+| core | **653**（含根级 compiler/macros/visibility） | ~1% |
+| 其余基质及顶层/C ABI 头 | ~1.9k | ~2% |
 
 ### 完成时投影（2026-07-19 重估，取代 28–40k）
 

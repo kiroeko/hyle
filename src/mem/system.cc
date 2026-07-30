@@ -224,19 +224,16 @@ Status reserve_huge_1g_pages(std::size_t pages, int numa_node,
   if (rc == 0)
     return Status::Ok();
 
-  char message[192];
-  const char *native_name = rc == ENOMEM ? "ENOMEM" : "unknown";
-  std::snprintf(message, sizeof(message),
-                "mimalloc reserve huge 1GiB pages failed: native=%s (%d), "
-                "pages=%zu, numa_node=%d",
-                native_name, rc, pages, numa_node);
+  char context[160];
+  std::snprintf(context, sizeof(context),
+                "mimalloc reserve huge 1GiB pages (pages=%zu, numa_node=%d)",
+                pages, numa_node);
   // The pinned mimalloc implementation returns ENOMEM for privilege,
   // fragmentation and arena-management failures. It does not expose enough
   // detail to claim PermissionDenied or DeadlineExceeded, so preserve its
-  // native value and use the honest resource classification. Keep Unknown for
-  // a future backend/native code outside that documented contract.
-  return rc == ENOMEM ? Status::ResourceExhausted(message)
-                      : Status::Unknown(message);
+  // native errno and use the error module's O(1) canonical taxonomy. A future
+  // backend/native code outside that documented contract remains Unknown.
+  return status_from_errno(rc, context);
 }
 
 } // namespace hyle::mem

@@ -17,6 +17,7 @@ error 是 HYLE 的统一失败值层。它帮助调用方把可恢复失败跨�
 | 参数、文件、权限、OOM、超时、设备暂不可用等运营失败 | canonical `Status` code | 同一 `hyle_status_code` | abort 或异常跨 ABI |
 | C/POSIX 调用刚失败，手里有 errno | `status_from_errno(errno, "operation")` | `hyle_status_from_errno` | 各模块复制 `strerror` + switch |
 | Win32 调用刚失败，手里有 `GetLastError()` | `status_from_win32(code, "operation")` | `hyle_status_from_win32` | 各文件复制 `FormatMessage` + switch |
+| COM/WinRT 调用返回失败 `HRESULT` | `status_from_hresult(hr, "operation")` | `hyle_status_from_hresult` | 丢掉 HRESULT 或只把十六进制写进 message |
 | 必须按 Vulkan/CUDA 等 SDK 原生码恢复 | `Status::FromNative` / `native_error()` | `hyle_status_new_native` / `hyle_status_get_native_error` | 解析 message 或再造私有码表 |
 | HYLE 内部不变量损坏、double free、错误生命周期 | `HYLE_FATAL_ASSERT` | fail-fast 合同 | 返回 Status 后继续运行 |
 | 需要写日志或 trace | 最终消费边界交给 `obs`/宿主 logger | `hyle/c/obs.h` | error 内部自动日志或第二套 handler |
@@ -99,6 +100,12 @@ Win32 同理：在任何可能覆盖 thread-local last-error 的调用之前保�
 非 Windows 工具也能分类日志/远端传来的 Win32 code，只是描述退为确定性的数字文本。
 `status_code_from_win32` 供确有更具体操作语义的 adapter 少量覆盖，不应复制整张映射表。
 
+COM/WinRT 返回的是 signed 32-bit `HRESULT`，不是 `GetLastError()`。应直接调用
+`status_from_hresult(hr, "operation")`：非负的 `S_OK`/`S_FALSE` 都是成功，
+`HRESULT_FROM_WIN32` 复用同一 Win32 taxonomy，失败保留
+`NativeErrorDomain::HResult` 和完整原值。不要把 HRESULT 误传给 `status_from_win32`，也不要
+先调用其它 COM/Win32 API 后只留下一个手写 `Internal` 文本。
+
 ## 什么时候查看 native error
 
 大多数代码只看 canonical code。只有动作确实依赖后端原生值时才查看 detail，例如 Vulkan
@@ -119,7 +126,8 @@ if (status.IsUnavailable()) {
 ```
 
 不要先查 native 再忽略 canonical code；domain-specific 分支会降低可移植性。不要解析
-message 取数值。errno/Win32 工厂及 HYLE 的 platform/CUDA/Vulkan translator 已自动附带 detail；
+message 取数值。errno/Win32/HRESULT 工厂及 HYLE 的 platform/CUDA/Vulkan translator 已自动
+附带 detail；
 用户包装其它 C library 时才需要直接调用 `FromNative`。一个错误若需要多组结构化字段，
 请在上层结果/遥测对象建模，不把 Status 当任意 metadata bag。
 

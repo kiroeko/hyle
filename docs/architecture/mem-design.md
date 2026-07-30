@@ -255,7 +255,7 @@ variable-size pool 对象，这是有意的产品边界，不是“没有可变�
   policy 换掉无界 kernel metadata；普通大 chunk 仍保留 demand paging。
 - `reserve_huge_1g_pages` 是进程启动期冷控制面，原生 C++ 返回 `Status`，C ABI 原样转移同一
   representation；不得在 C 层把 bool 重新猜成错误原因。mimalloc 当前只暴露 ENOMEM，映射
-  `ResourceExhausted` 并在 message 保留 native value，非法 node/溢出为 `OutOfRange`。
+  `ResourceExhausted` 并通过 `PosixErrno` detail 保留 native value，非法 node/溢出为 `OutOfRange`。
 - `FiberStackPool` 保留且是当前内部刚需；capacity 是真实 clamp 后的 retention 上限，0 禁用
   cache，`trim/clear` 是冷回收。Scheduler 在全部 fiber drain、worker join 后 clear 三个 tier，
   这是不会与 release 竞争的 owner-level 回收点；不在普通 idle 热路周期扫描。

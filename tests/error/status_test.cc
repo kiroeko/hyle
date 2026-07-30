@@ -275,6 +275,8 @@ TEST(Status, NativeErrorDomainNamesAreStable) {
   EXPECT_EQ(hyle::native_error_domain_name(NativeErrorDomain::CudaDriver),
             "CudaDriver");
   EXPECT_EQ(hyle::native_error_domain_name(NativeErrorDomain::Nvrtc), "Nvrtc");
+  EXPECT_EQ(hyle::native_error_domain_name(NativeErrorDomain::HResult),
+            "HResult");
   EXPECT_EQ(hyle::native_error_domain_name(
                 static_cast<NativeErrorDomain>(1234)),
             "Unknown");
@@ -390,6 +392,44 @@ TEST(Status, Win32FactoryPreservesNativeCodeAndContext) {
             (NativeError{NativeErrorDomain::Win32, 2}));
 }
 
+TEST(Status, HResultMapsStableValuesOnEveryHost) {
+  constexpr auto kAccessDenied = static_cast<std::int32_t>(0x80070005u);
+  constexpr auto kInvalidArgument = static_cast<std::int32_t>(0x80070057u);
+  constexpr auto kOutOfMemory = static_cast<std::int32_t>(0x8007000eu);
+  constexpr auto kNotImplemented = static_cast<std::int32_t>(0x80004001u);
+  constexpr auto kAborted = static_cast<std::int32_t>(0x80004004u);
+  constexpr auto kUnexpected = static_cast<std::int32_t>(0x8000ffffu);
+  constexpr auto kMalformedWin32 = static_cast<std::int32_t>(0x80070000u);
+
+  EXPECT_EQ(hyle::status_code_from_hresult(0), StatusCode::Ok);
+  EXPECT_EQ(hyle::status_code_from_hresult(1), StatusCode::Ok);  // S_FALSE
+  EXPECT_EQ(hyle::status_code_from_hresult(kAccessDenied),
+            StatusCode::PermissionDenied);
+  EXPECT_EQ(hyle::status_code_from_hresult(kInvalidArgument),
+            StatusCode::InvalidArgument);
+  EXPECT_EQ(hyle::status_code_from_hresult(kOutOfMemory),
+            StatusCode::ResourceExhausted);
+  EXPECT_EQ(hyle::status_code_from_hresult(kNotImplemented),
+            StatusCode::Unimplemented);
+  EXPECT_EQ(hyle::status_code_from_hresult(kAborted), StatusCode::Cancelled);
+  EXPECT_EQ(hyle::status_code_from_hresult(kUnexpected), StatusCode::Internal);
+  EXPECT_EQ(hyle::status_code_from_hresult(kMalformedWin32),
+            StatusCode::Unknown);
+}
+
+TEST(Status, HResultFactoryPreservesNativeCodeAndContext) {
+  constexpr auto kAccessDenied = static_cast<std::int32_t>(0x80070005u);
+  Status ok = hyle::status_from_hresult(1, "ignored");  // S_FALSE is success.
+  EXPECT_TRUE(ok.ok());
+
+  Status denied = hyle::status_from_hresult(kAccessDenied, "naming thread");
+  EXPECT_TRUE(denied.IsPermissionDenied());
+  EXPECT_EQ(denied.message().find("naming thread: "), 0u);
+  EXPECT_GT(denied.message().size(), std::strlen("naming thread: "));
+  EXPECT_EQ(denied.native_error(),
+            (NativeError{NativeErrorDomain::HResult, kAccessDenied}));
+}
+
 #if defined(HYLE_TESTING)
 TEST(Status, ErrnoFactoryOomPreservesCanonicalCode) {
   hyle::detail::status_test_force_oom(true);
@@ -403,6 +443,16 @@ TEST(Status, ErrnoFactoryOomPreservesCanonicalCode) {
 TEST(Status, Win32FactoryOomPreservesCanonicalCode) {
   hyle::detail::status_test_force_oom(true);
   Status denied = hyle::status_from_win32(5, "opening model");
+  hyle::detail::status_test_force_oom(false);
+
+  EXPECT_TRUE(denied.IsPermissionDenied());
+  EXPECT_FALSE(denied.has_message());
+}
+
+TEST(Status, HResultFactoryOomPreservesCanonicalCode) {
+  constexpr auto kAccessDenied = static_cast<std::int32_t>(0x80070005u);
+  hyle::detail::status_test_force_oom(true);
+  Status denied = hyle::status_from_hresult(kAccessDenied, "naming thread");
   hyle::detail::status_test_force_oom(false);
 
   EXPECT_TRUE(denied.IsPermissionDenied());

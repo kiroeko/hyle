@@ -66,6 +66,7 @@ enum class NativeErrorDomain : std::uint16_t {
   CudaRuntime = 4,
   CudaDriver = 5,
   Nvrtc = 6,
+  HResult = 7,
   Unknown = 0xffff,
 };
 
@@ -100,6 +101,13 @@ HYLE_ERROR_API StatusCode status_code_from_errno(int error_number) noexcept;
 HYLE_ERROR_API StatusCode status_code_from_win32(
     std::uint32_t error_number) noexcept;
 
+// Map a signed 32-bit COM/WinRT HRESULT without requiring windows.h. Any
+// non-negative HRESULT is success. HRESULT_FROM_WIN32 values reuse the Win32
+// taxonomy; common COM failures retain their precise portable meaning. The
+// mapping remains available on every host for persisted/remote diagnostics.
+HYLE_ERROR_API StatusCode status_code_from_hresult(
+    std::int32_t error_number) noexcept;
+
 namespace detail {
 class StatusAccess;
 
@@ -122,6 +130,7 @@ constexpr NativeErrorDomain normalize_native_error_domain(
     case NativeErrorDomain::CudaRuntime:
     case NativeErrorDomain::CudaDriver:
     case NativeErrorDomain::Nvrtc:
+    case NativeErrorDomain::HResult:
     case NativeErrorDomain::Unknown: return domain;
   }
   return NativeErrorDomain::Unknown;
@@ -367,5 +376,11 @@ HYLE_ERROR_API Status status_from_errno(
 // The native Win32 code is always preserved for machine-readable recovery.
 HYLE_ERROR_API Status status_from_win32(
     std::uint32_t error_number, std::string_view context = {}) noexcept;
+
+// Construct a Status from a COM/WinRT HRESULT. The raw signed 32-bit value is
+// preserved as NativeErrorDomain::HResult. Windows uses FormatMessage when it
+// knows the value; other hosts retain a deterministic hexadecimal diagnostic.
+HYLE_ERROR_API Status status_from_hresult(
+    std::int32_t error_number, std::string_view context = {}) noexcept;
 
 }  // namespace hyle

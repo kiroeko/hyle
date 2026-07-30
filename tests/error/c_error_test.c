@@ -113,6 +113,31 @@ int main(void) {
     hyle_status_free(&native);
   }
 
+  /* canonical HRESULT adapter is also host-independent */
+  {
+    const int32_t access_denied = (int32_t)UINT32_C(0x80070005);
+    CHECK(hyle_status_code_from_hresult(0) == HYLE_STATUS_OK);
+    CHECK(hyle_status_code_from_hresult(1) == HYLE_STATUS_OK); /* S_FALSE */
+    CHECK(hyle_status_code_from_hresult(access_denied) ==
+          HYLE_STATUS_PERMISSION_DENIED);
+    CHECK(hyle_status_code_from_hresult((int32_t)UINT32_C(0x80070000)) ==
+          HYLE_STATUS_UNKNOWN);
+    hyle_status native =
+        hyle_status_from_hresult_n(access_denied, "name\0thread", 11);
+    hyle_native_error_domain domain = HYLE_NATIVE_ERROR_NONE;
+    int64_t native_code = 0;
+    CHECK(hyle_status_is_permission_denied(native));
+    CHECK(hyle_status_message(native, NULL, 0) > 11);
+    CHECK(hyle_status_get_native_error(native, &domain, &native_code));
+    CHECK(domain == HYLE_NATIVE_ERROR_HRESULT);
+    CHECK(native_code == access_denied);
+    CHECK(strcmp(hyle_native_error_domain_name(domain), "HResult") == 0);
+    hyle_status_free(&native);
+    native = hyle_status_from_hresult(1, "ignored");
+    CHECK(hyle_status_is_ok(native));
+    hyle_status_free(&native);
+  }
+
   {
     hyle_native_error_domain domain = HYLE_NATIVE_ERROR_NONE;
     int64_t native_code = 0;

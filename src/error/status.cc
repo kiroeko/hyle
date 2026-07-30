@@ -41,6 +41,7 @@ std::string_view native_error_domain_name(NativeErrorDomain domain) noexcept {
     case NativeErrorDomain::CudaRuntime: return "CudaRuntime";
     case NativeErrorDomain::CudaDriver: return "CudaDriver";
     case NativeErrorDomain::Nvrtc: return "Nvrtc";
+    case NativeErrorDomain::HResult: return "HResult";
     case NativeErrorDomain::Unknown: return "Unknown";
   }
   return "Unknown";
@@ -282,6 +283,36 @@ StatusCode status_code_from_win32(std::uint32_t error_number) noexcept {
     case 1231:                                          // ERROR_NETWORK_UNREACHABLE
     case 1232:                                          // ERROR_HOST_UNREACHABLE
     case 1236: return StatusCode::Unavailable;          // ERROR_CONNECTION_ABORTED
+    default: return StatusCode::Unknown;
+  }
+}
+
+StatusCode status_code_from_hresult(std::int32_t error_number) noexcept {
+  // HRESULT success is defined by a clear sign bit; S_FALSE and other positive
+  // success values therefore remain OK rather than becoming false failures.
+  if (error_number >= 0) return StatusCode::Ok;
+  const std::uint32_t raw = static_cast<std::uint32_t>(error_number);
+
+  // HRESULT_FROM_WIN32(x) preserves x in the low 16 bits and uses facility 7.
+  // Reuse the single Win32 taxonomy instead of growing a second OS code table.
+  if ((raw & 0xffff0000u) == 0x80070000u) {
+    const std::uint32_t win32_code = raw & 0xffffu;
+    // HRESULT_FROM_WIN32(ERROR_SUCCESS) is S_OK, never 0x80070000. Do not let
+    // that malformed failure-shaped value collapse to an OK Status.
+    return win32_code == 0 ? StatusCode::Unknown
+                           : status_code_from_win32(win32_code);
+  }
+
+  switch (raw) {
+    case 0x80004004u: return StatusCode::Cancelled;       // E_ABORT
+    case 0x8000000bu: return StatusCode::OutOfRange;      // E_BOUNDS
+    case 0x80004001u:                                    // E_NOTIMPL
+    case 0x80004002u: return StatusCode::Unimplemented;  // E_NOINTERFACE
+    case 0x80004003u: return StatusCode::InvalidArgument;  // E_POINTER
+    case 0x8000000du:  // E_ILLEGAL_STATE_CHANGE
+    case 0x8000000eu:  // E_ILLEGAL_METHOD_CALL
+    case 0x80000013u: return StatusCode::FailedPrecondition;  // RO_E_CLOSED
+    case 0x8000ffffu: return StatusCode::Internal;  // E_UNEXPECTED
     default: return StatusCode::Unknown;
   }
 }
@@ -742,6 +773,32 @@ std::string_view describe_win32(std::uint32_t error_number, char *buffer,
       buffer, formatted_length < cap ? formatted_length : cap - 1);
 }
 
+std::string_view describe_hresult(std::int32_t error_number, char *buffer,
+                                  std::size_t cap) noexcept {
+#if defined(_WIN32)
+  DWORD length = ::FormatMessageA(
+      FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr,
+      static_cast<DWORD>(error_number), 0, buffer, static_cast<DWORD>(cap),
+      nullptr);
+  while (length != 0 &&
+         (buffer[length - 1] == '\r' || buffer[length - 1] == '\n' ||
+          buffer[length - 1] == ' ')) {
+    --length;
+  }
+  if (length != 0) {
+    buffer[length] = '\0';
+    return std::string_view(buffer, length);
+  }
+#endif
+  const int written = std::snprintf(
+      buffer, cap, "HRESULT 0x%08x",
+      static_cast<unsigned>(static_cast<std::uint32_t>(error_number)));
+  if (written <= 0) return "unknown HRESULT";
+  const std::size_t formatted_length = static_cast<std::size_t>(written);
+  return std::string_view(
+      buffer, formatted_length < cap ? formatted_length : cap - 1);
+}
+
 }  // namespace
 
 Status status_from_errno(int error_number, std::string_view context) noexcept {
@@ -779,6 +836,28 @@ Status status_from_win32(std::uint32_t error_number,
   const std::string_view native =
       describe_win32(error_number, description, sizeof(description));
   const NativeError native_error{NativeErrorDomain::Win32, error_number};
+  std::uintptr_t rep = 0;
+  if (context.empty()) {
+    rep = detail::status_make_native_heap(code, native_error, native.data(),
+                                          native.size());
+  } else {
+    rep = detail::status_make_context(code, native_error, context.data(),
+                                      context.size(), native.data(),
+                                      native.size());
+  }
+  return rep != 0 ? detail::StatusAccess::adopt(rep) : Status(code);
+}
+
+Status status_from_hresult(std::int32_t error_number,
+                           std::string_view context) noexcept {
+  const StatusCode code = status_code_from_hresult(error_number);
+  if (code == StatusCode::Ok) return Status{};
+
+  char description[512];
+  description[0] = '\0';
+  const std::string_view native =
+      describe_hresult(error_number, description, sizeof(description));
+  const NativeError native_error{NativeErrorDomain::HResult, error_number};
   std::uintptr_t rep = 0;
   if (context.empty()) {
     rep = detail::status_make_native_heap(code, native_error, native.data(),

@@ -61,6 +61,7 @@ HYLE_NATIVE_DOMAIN_ABI_MATCH(Vulkan, VULKAN);
 HYLE_NATIVE_DOMAIN_ABI_MATCH(CudaRuntime, CUDA_RUNTIME);
 HYLE_NATIVE_DOMAIN_ABI_MATCH(CudaDriver, CUDA_DRIVER);
 HYLE_NATIVE_DOMAIN_ABI_MATCH(Nvrtc, NVRTC);
+HYLE_NATIVE_DOMAIN_ABI_MATCH(HResult, HRESULT);
 HYLE_NATIVE_DOMAIN_ABI_MATCH(Unknown, UNKNOWN);
 #undef HYLE_NATIVE_DOMAIN_ABI_MATCH
 
@@ -147,6 +148,23 @@ hyle_status hyle_status_from_win32_n(uint32_t error_number,
                                      const char *context,
                                      size_t context_len) {
   return steal_to_c(hyle::status_from_win32(
+      error_number, view_or_empty(context, context_len)));
+}
+
+hyle_status_code hyle_status_code_from_hresult(int32_t error_number) {
+  return to_c_code(hyle::status_code_from_hresult(error_number));
+}
+
+hyle_status hyle_status_from_hresult(int32_t error_number,
+                                     const char *context) {
+  return hyle_status_from_hresult_n(
+      error_number, context, context == nullptr ? 0 : std::strlen(context));
+}
+
+hyle_status hyle_status_from_hresult_n(int32_t error_number,
+                                       const char *context,
+                                       size_t context_len) {
+  return steal_to_c(hyle::status_from_hresult(
       error_number, view_or_empty(context, context_len)));
 }
 

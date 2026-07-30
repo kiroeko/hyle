@@ -153,11 +153,8 @@ Status set_name_impl(std::string_view name,
   }
   const HRESULT result = ::SetThreadDescription(thread, wide);
   if (FAILED(result)) {
-    char message[128];
-    std::snprintf(message, sizeof(message),
-                  "windows SetThreadDescription failed: HRESULT 0x%08lx",
-                  static_cast<unsigned long>(result));
-    return Status::Internal(message);
+    return status_from_hresult(static_cast<std::int32_t>(result),
+                               "SetThreadDescription");
   }
   return Status::Ok();
 }

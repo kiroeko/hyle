@@ -63,6 +63,7 @@ enum {
   HYLE_NATIVE_ERROR_CUDA_RUNTIME = 4,
   HYLE_NATIVE_ERROR_CUDA_DRIVER = 5,
   HYLE_NATIVE_ERROR_NVRTC = 6,
+  HYLE_NATIVE_ERROR_HRESULT = 7,
   HYLE_NATIVE_ERROR_UNKNOWN = UINT16_MAX
 };
 
@@ -101,6 +102,14 @@ HYLE_ERROR_C_API hyle_status hyle_status_from_win32(uint32_t error_number,
 HYLE_ERROR_C_API hyle_status hyle_status_from_win32_n(uint32_t error_number,
                                                       const char *context,
                                                       size_t context_len);
+/* Canonical signed 32-bit COM/WinRT HRESULT adapter. Non-negative HRESULTs
+ * produce OK; failures preserve HYLE_NATIVE_ERROR_HRESULT and the raw value. */
+HYLE_ERROR_C_API hyle_status_code hyle_status_code_from_hresult(
+    int32_t error_number);
+HYLE_ERROR_C_API hyle_status hyle_status_from_hresult(int32_t error_number,
+                                                      const char *context);
+HYLE_ERROR_C_API hyle_status hyle_status_from_hresult_n(
+    int32_t error_number, const char *context, size_t context_len);
 HYLE_ERROR_C_API void hyle_status_free(hyle_status *s);
 HYLE_ERROR_C_API hyle_status hyle_status_clone(hyle_status s);
 /* dst must already hold an initialized Status. Its old value is freed before

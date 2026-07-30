@@ -147,7 +147,7 @@ math 的处理相反：它当前不是经过独立需求设计的产品，而是
 
 | 模块 | 实现状态 | 当前严格证书 |
 |---|---|---|
-| error | 功能/API/native detail/27-symbol C ABI 完成 | ✅ 2026-07-29 消费者合同再收口；C 首错聚合直接可达；Win/WSL/M4 n=15 同能力 Abseil 无 LOSE；platform generic POSIX/Win32 adoption 已在 `a073931` 转绿，其余消费者随模块复审继续 |
+| error | 功能/API/native detail/30-symbol C ABI 完成 | ✅ 2026-07-30 七底座 adoption 回审补 HRESULT 公共 translator；platform 的 Win32 CRT/COM 边与 mem mimalloc errno 均保留机器可读 detail；既有 Win/WSL/M4 n=15 同能力 Abseil 无 LOSE |
 | platform | 功能/API/120-symbol C ABI 完成 | ✅ 2026-07-29 `a073931` 严格复证；generic error adoption、CPU default-set 复杂度、局部 LTO、macOS 14.4、三平台 Release/installed package 与 WSL sanitizer 均转绿；既有正常 workload SOTA 点值继续有效 |
 | mem | 功能/API/P0/分发性能已完成 | ✅ 2026-07-29 `8c85331` 严格复证；PMR zero-size、显式 runtime StdAllocator、三平台 shared/static installed C/C++ consumer 与受影响 PMR n=15 已转绿；109/109 C surface、HugeRegion selected-node/chunk/weighted 和既有 pool/NUMA/TSan 证书保留 |
 | time | 功能/API/交付完成 | ✅ 2026-07-29 再收口；x86+ARM64 profiling/ordered pair、presampled-now C parity、44/44 C surface、三平台 shared/static probes、WSL ASan/UBSan/TSan；timer SOTA 证书继续有效 |

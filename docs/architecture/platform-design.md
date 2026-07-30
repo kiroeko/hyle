@@ -181,7 +181,9 @@ platform 可以依赖最底层 error。资源创建和有值查询返回 `Result
 私有 TLS last-error，也不让 errno/GetLastError 越过调用边界后才被读取。
 
 POSIX fs、MappedFile、VM 与 NUMA 的 generic errno code 必须来自 error 的
-`status_from_errno`；Win32 generic OS code 必须来自 error 的 `status_from_win32`。只有系统调用
+`status_from_errno`；Win32 generic OS code 必须来自 error 的 `status_from_win32`，COM/WinRT
+返回值必须来自 `status_from_hresult`。Windows CRT 直接返回 errno 值的 API（例如 `_wputenv_s`）
+仍走 errno 入口。只有系统调用
 合同更具体时才由 platform 局部覆盖（例如路径分量不是目录）。CUDA/Vulkan 依赖 SDK 类型与
 SDK-specific recovery，仍由 compute owner 保留 translator；不能硬套 errno，也不能让 platform
 再次复制通用 Win32 taxonomy/message table。

@@ -975,16 +975,7 @@ Status set_env_var(const char* name, const char* value) noexcept {
         "set environment variable: name or value is not valid UTF-8");
   }
   const int code = _wputenv_s(wn.w(), wv.w());
-  if (code == 0) return Status::Ok();
-  if (code == EINVAL) {
-    return Status::InvalidArgument("_wputenv_s rejected the name or value");
-  }
-  if (code == ENOMEM) {
-    return Status::ResourceExhausted("_wputenv_s could not allocate storage");
-  }
-  char message[128];
-  std::snprintf(message, sizeof(message), "_wputenv_s failed: errno %d", code);
-  return Status::Unavailable(message);
+  return status_from_errno(code, "_wputenv_s(set environment variable)");
 }
 
 Status unset_env_var(const char* name) noexcept {
@@ -1002,16 +993,7 @@ Status unset_env_var(const char* name) noexcept {
         "unset environment variable: name is not valid UTF-8");
   }
   const int code = _wputenv_s(wn.w(), L"");
-  if (code == 0) return Status::Ok();
-  if (code == EINVAL) {
-    return Status::InvalidArgument("_wputenv_s rejected the name");
-  }
-  if (code == ENOMEM) {
-    return Status::ResourceExhausted("_wputenv_s could not allocate storage");
-  }
-  char message[128];
-  std::snprintf(message, sizeof(message), "_wputenv_s failed: errno %d", code);
-  return Status::Unavailable(message);
+  return status_from_errno(code, "_wputenv_s(unset environment variable)");
 }
 
 #else

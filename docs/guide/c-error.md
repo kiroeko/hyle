@@ -32,9 +32,9 @@ typedef uint16_t hyle_native_error_domain;
 OK 与无消息、无 detail 错误零分配；带消息或 detail 的错误共享引用计数 representation。
 非法 C enum 输入归一为 `HYLE_STATUS_UNKNOWN`。
 
-native detail 是可选的固定 `{domain, int64 code}`。domain 有 POSIX errno、Win32、Vulkan、
-CUDA runtime、CUDA driver、NVRTC 和 Unknown。它不改变 one-word handle；只有实际携带 detail
-的错误才在 heap rep 中多存一个 8B code。跨平台逻辑先判断 canonical status code，只有
+native detail 是可选的固定 `{domain, int64 code}`。domain 有 POSIX errno、Win32、HRESULT、
+Vulkan、CUDA runtime、CUDA driver、NVRTC 和 Unknown。它不改变 one-word handle；只有实际
+携带 detail 的错误才在 heap rep 中多存一个 8B code。跨平台逻辑先判断 canonical status code，只有
 后端专用恢复/遥测才查询 native detail。
 
 每个 `hyle_status` 在传给 `free`、作为 `move` 的 dst 或传给 `add_context` 前，都必须由
@@ -55,6 +55,9 @@ CUDA runtime、CUDA driver、NVRTC 和 Unknown。它不改变 one-word handle；
 | `hyle_status_code_from_win32` | `(uint32 code) -> code` | O(1) Win32 canonical 分类；任意 host 可用 |
 | `hyle_status_from_win32` | `(code, context) -> status` | Windows 用 `FormatMessage`；保留 Win32 detail |
 | `hyle_status_from_win32_n` | `(code, context, len) -> status` | length-aware context |
+| `hyle_status_code_from_hresult` | `(int32 hr) -> code` | O(1) COM/WinRT 分类；非负值为 OK |
+| `hyle_status_from_hresult` | `(hr, context) -> status` | Windows 优先系统描述；保留 HRESULT detail |
+| `hyle_status_from_hresult_n` | `(hr, context, len) -> status` | length-aware context |
 | `hyle_status_free` | `(status*)` | 释放并置 OK；NULL 安全 |
 | `hyle_status_clone` | `(status) -> status` | 新的独立 owning handle |
 | `hyle_status_move` | `(dst*, src*)` | 转移所有权 |
@@ -137,6 +140,11 @@ Win32 叶子也必须立即保存 `GetLastError()`，再调用 `hyle_status_from
 对稳定的 32-bit Win32 code 分类，Windows 上补系统描述，非 Windows 上使用数字描述；两种
 情况都保留 `HYLE_NATIVE_ERROR_WIN32` detail。`hyle_status_code_from_win32` 只用于调用合同更
 具体时的少量 override，不用于复制另一张大 switch。
+
+COM/WinRT 的返回值走 `hyle_status_from_hresult`，不要走 Win32 入口。`S_FALSE` 等非负值仍是
+成功；失败保留 signed 32-bit 原值和 `HYLE_NATIVE_ERROR_HRESULT`。若 HRESULT 是
+`HRESULT_FROM_WIN32` 生成的，canonical code 自动复用 Win32 映射，但 native domain 仍准确标成
+HRESULT，调用方不必逆向猜编码来源。
 
 后端原生码需要程序化处理时，创建和查询都不必解析 message：
 
@@ -241,8 +249,9 @@ cmake --build <build> --target hyle_error_c_test
 ctest --test-dir <build> -R hyle_error_c_test --output-on-failure
 ```
 
-纯 C 测试覆盖创建、查询、clone/move/free、非法 enum、errno/Win32/native detail、嵌入 NUL、借用
-消息、上下文、首错聚合和早返回；机械 surface test 同时锁定 27 个 DLL 导出，独立头测试确保
+纯 C 测试覆盖创建、查询、clone/move/free、非法 enum、errno/Win32/HRESULT/native detail、
+嵌入 NUL、借用消息、上下文、首错聚合和早返回；机械 surface test 同时锁定 30 个 DLL 导出，
+独立头测试确保
 `hyle/c/error.h` 单独以 C 编译。
 
 二进制 SDK 的外部消费证书位于 `samples/package/error/c`：工程只启用 C，执行

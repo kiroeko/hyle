@@ -74,10 +74,16 @@ mem/sched/util-runtime/graph 汇入但不增加二进制链长度；time 从 err
 转换 helper 使用同一表示，但不会取得 clock、sleep、deadline 或 timer 符号，因而不能伪造成
 `hyle_platform -> hyle_time` target 边或 DLL 依赖。
 
-部分旧 C shim（util/sched/io）仍使用模块私有 `last_error`，是 error adoption
-审计尚未完成的显式欠账。obs 与 container 已在 2026-07-25 复审中迁到共享
-`hyle_status`；container 的 C 冷失败现在形成直接 `error → container` 单向边，不会
-导致 error 反向依赖或形成环。
+当前已认证的 core/error/obs/platform/time/mem/util-core/util-runtime 均无模块私有
+`last_error`；C 冷控制面使用共享 `hyle_status`，原生 C++ 实现直接使用 `Status/Result`，不绕经
+C ABI。尚未认证模块的 adoption 只在其严格波次结论中更新，不能把历史欠账写成当前全局事实。
+
+这些底座之间的“合理使用”不等于彼此全连接。error 是所有可恢复失败的根；platform 独占
+OS/thread/VM/NUMA 机制；time 独占 clock/sleep/timer；mem 向下组合 error/platform/util-core；
+util-runtime 位于 mem/container 之上。obs 日志与 time timestamp、platform TTY 仍保持 adapter/
+sink 边界，避免强制取钟或反向依赖；mem 的 trace 只经过 header/CMake 横切 seam，不链接 obs
+runtime。模块在自己的层级直接使用 libc/OS 只允许两类情况：它本身就是该机制的 owner，或
+依赖高层模块会形成环；可恢复的原生失败仍必须立即转换为共享 error 并保留 native detail。
 
 ## 二、施工计划：四个轴别混
 

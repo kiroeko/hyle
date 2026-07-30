@@ -201,3 +201,18 @@ error 自身产品面和性能门至此重新转绿。紧接的 platform 回审�
 generic adapter 全部迁到公共入口并删除七套近似 translator，`error -> platform` adoption edge
 随三平台 Release/sanitizer 与 shared/static installed probes 转绿；CUDA/Vulkan 的 SDK-specific
 translator 继续由 compute owner 持有，不属于漏迁。
+
+## 2026-07-30 七底座 adoption 回审：HRESULT 与遗漏的 native detail
+
+core/error/obs/platform/time/mem/util-core/util-runtime 的语义调用扫描发现三个遗漏：Windows
+`_wputenv_s` 的 errno、`SetThreadDescription` 的 HRESULT、mimalloc 1 GiB huge-page 预留的
+errno 曾只进入手写 message，机器可读 native detail 丢失。本轮新增跨 host、无 `windows.h`
+的 `status_code_from_hresult` / `status_from_hresult` 及 C 对等入口；非负 HRESULT 为成功，
+`HRESULT_FROM_WIN32` 复用 Win32 taxonomy，detail 保留独立 `HResult` domain。platform 两条边与
+mem 冷控制面现直接消费 error translator，C surface 27→30。它没有改变 Status carrier、正常
+成功路径或已有 errno/Win32 性能形状。Windows 受影响门 18/18、WSL GCC14 `-Werror` 七底座
+闭包 36/36、Apple M4 闭包 35/35、WSL ASan error/platform/mem 12/12；Windows shared/static
+安装包的纯 C/C++ error consumer 共 4/4，并直接调用新 HRESULT 入口。
+
+本轮四项 LOC：全库 281,337；自实现含测试 136,563；自实现不含测试 93,653；当前
+core/error/obs/platform/time/mem/完整 util 七底座实现 20,216。

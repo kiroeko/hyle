@@ -33,10 +33,10 @@
 
 | 固定统计口径 | 当前 | 命令/说明 |
 |---|---|---|
-| **全库代码** | **281,133** | tracked；含 docs/third_party，**≠ 自写** |
-| **自实现（含测试）** | **136,425** | `cloc include/hyle src tests`，只计 C++/Header/C/CUDA |
-| **自实现（不含测试）** | **93,582** | `cloc include/hyle src`，只计 C++/Header/C/CUDA；库本体硬锚 |
-| **当前处理审查单元实现（util-runtime）** | **1,577** | Registry/demangle/C adapter；不含 util-core、测试/benchmark/文档 |
+| **全库代码** | **281,337** | tracked；含 docs/third_party，**≠ 自写** |
+| **自实现（含测试）** | **136,563** | `cloc include/hyle src tests`，只计 C++/Header/C/CUDA |
+| **自实现（不含测试）** | **93,653** | `cloc include/hyle src`，只计 C++/Header/C/CUDA；库本体硬锚 |
+| **当前七底座 adoption 审查单元实现** | **20,216** | core/error/obs/platform/time/mem/完整 util；不含测试/benchmark/文档 |
 | **终态生产（纪律收口 A）** | **~75–90k** | 主预期 |
 | **终态生产（做满守界 B）** | **~85–105k** | compute/graph/发布面收口更满 |
 | 失控上限 C | 120k+ 生产 | 应避免 |
@@ -95,7 +95,7 @@ util ~1.3k · error **984** · time **1,421** · obs **1,018** · graph ~0.6–0
 | [build-validation-iteration](./build-validation-iteration.md) | P-1 | 构建/回归 | 在模块持续变化期间分层守住全图、三种交付、迁移和发布门 | build/package-reclosure | — | 见任务页 | 🚧 **第一阶段**：package/source/AArch64 提升为 all-component CPU，验收证书与普通 all-build 分离；待三平台和额度恢复后的 GitHub 复证 |
 | error-01 | P0 | error | Status + std::expected（历史首版） | 00 | 1-2k | 456 | 🗃️ 历史完成；接口与边界后由 error reclosure 重审 |
 | error-02 | P0 | error | error_handler vtable（历史） | error-01 | 1k | 127 (+74 测试) | 🗃️ 曾完成，实际消费者审查后退役；日志归 obs、合同违反归 fatal |
-| [error-03](./error-module-reclosure.md) | P0 | error | 面向真实调用重收 Status/Result/C ABI/context | error-01,obs-01 | — | 见任务页 | ✅ **2026-07-24 自身冻结**：功能/C++/C ABI 收口；Win/GCC14/M4 正确性 + 核心/正常路径 n=15，同形项无 LOSE；全库 adoption audit 进行中，mem 冷路径已统一 Status、私有 TLS 已删 |
+| [error-03](./error-module-reclosure.md) | P0 | error | 面向真实调用重收 Status/Result/C ABI/context | error-01,obs-01 | — | 见任务页 | ✅ **2026-07-30 七底座 adoption 回审**：功能/C++/30-symbol C ABI、O(final bytes) context 与 errno/Win32/HRESULT/native detail 收口；Win/GCC14/M4 正确性 + 核心/正常路径 n=15 同形项无 LOSE；已认证底座无私有 TLS error |
 | [obs-01](./obs-01-log.md) | P0 | obs | 同步结构化日志 + quiescent sink registry | error | ~1k | 1,250 实现 | ✅ **2026-07-29 严格复证**（`4d31bcf`/`06cec5a`）：exact-byte record、move-only RAII sink、单 runtime gate、per-TU compile floor、Windows debugger 安全镜像；24/24 C surface；三平台 Release/package/n=15 与 WSL ASan/UBSan/TSan。详见 [`obs-module-closure.md`](./obs-module-closure.md) |
 | [obs-02](./obs-module-closure.md) | P0 | obs | 编译期 trace/counter hook + Tracy 后端 | **能力 C6** | 1-2k | seam + 下游 hooks | ✅ **2026-07-25 严格复审**：OFF 参数不求值/零依赖；ON 覆盖 mem/sched/io/compute 且三平台构建验证；所有 shared 模块汇入一个 Tracy client；runtime C seam 与 native 热路径边界写入 guide |
 | platform-01 | P1 | platform | thread + park(futex/WaitOnAddress/ulock) | error-01 | 2k | 527 | ✅ 完成 |
