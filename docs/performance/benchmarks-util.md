@@ -1,11 +1,11 @@
-# util-core 性能证书（2026-07-29）
+# util 性能证书（2026-07-30）
 
-本页只给 `Rng`、`Ref`、`SpinLock` 以及无需运行期计时的 `ScopeGuard/type_name` 签证。
-产品实现固定在 `3c32be6`，Apple QoS 仪器固定在 `fde9b41`；Windows MSVC 19.50、
-WSL/native-ext4 GCC 14.2、Apple M4 AppleClang 21 均为 Release、15 个独立进程。
-Registry/demangle/C adapter 属于 util-runtime，不能继承本页结论。
+本页同时签证 util-core 与 util-runtime。core 产品实现固定在 `3c32be6`，runtime 固定在
+`d3120fe`；Windows MSVC 19.50、WSL/native-ext4 GCC 14.2、Apple M4 AppleClang 21 均为
+Release、15 个独立进程。core 保留 2026-07-29 的 Rng/Ref/SpinLock 证据；runtime 新增真实
+Registry N=256 与 C RNG batch 消费形状，不以测试专用 API 或常态 benchmark 元数据换结果。
 
-## 方法与对手
+## util-core：方法与对手
 
 - runner：`hyle_util_core_bench`，`bench-stat.py -n 15`；同时读取 absolute spread 与逐 run
   paired sign test。小于 1% 或正反执行顺序翻转的差异不写成产品输赢。
@@ -21,7 +21,7 @@ Registry/demangle/C adapter 属于 util-runtime，不能继承本页结论。
 表中 ns/op 顺序为 **Windows / Linux / M4 interactive**；ratio 是 HYLE/peer throughput 的
 paired median，约值只用于阅读，判定看完整 n=15。
 
-## 当前结果
+## util-core 当前结果
 
 | 场景 | HYLE ns | peer ns | ratio | 判定 |
 |---|---:|---:|---:|---|
@@ -38,7 +38,7 @@ M4 utility 的 SpinLock HYLE/oneTBB paired ratio 为无争用 `0.976`（反序 `
 Rng/range/shuffle 仍分别 `1.117/3.502/4.517x`，Ref 仍 TIE。布局在三工具链保持
 `SpinLock=1 byte`、`Ref<T>=1 pointer`、`Rng=32 bytes`。
 
-## 本轮抓出的真实 ARM 缺陷
+## util-core 抓出的真实 ARM 缺陷
 
 曾把成功的 `atomic<bool>::exchange` 从 acquire-release 削弱成 acquire-only，理由是语言层锁
 获取只需 acquire。x86 指令未变，普通正确性/TSan 也全绿，但 M4 user-interactive 的 8-thread
@@ -50,7 +50,7 @@ handoff 从 oneTBB 同档跌到约 `0.478x`，正反序均 15/15 LOSE；无争�
 特化。它也说明“内存序越弱一定越快”不是可接受的性能论证：低层原语必须在真实 ISA 上与
 成熟 peer 对拍。
 
-## 选择边界
+## util-core 选择边界
 
 Linux 无争用 `std::mutex` 约 2.38 ns，快于 SpinLock 4.57 ns；8-thread 高争用下 mutex 约
 38.5 ns，也快于两种 spin lock 的约 50 ns。Windows/M4 可能反向。结论不是按平台硬编码，
@@ -58,7 +58,7 @@ Linux 无争用 `std::mutex` 约 2.38 ns，快于 SpinLock 4.57 ns；8-thread �
 fiber-aware 原语。mem FiberStackPool/graph 首错槽保留短 spin；会分配、rehash 或执行未知
 构造的路径不得使用它。sched 内 move/construct 泛型 `T` 的路径留 sched 严格审查裁决。
 
-## 复杂度与复跑
+## util-core 复杂度与复跑
 
 - `ScopeGuard` 构造/dismiss/invoke/析构、`Ref` copy/drop/cast/identity compare 都是 O(1)；
   hash 是指针 hash。`dynamic_pointer_cast` 的 RTTI 成本仍为实现定义的常数级类型查询。
@@ -78,4 +78,61 @@ scripts/bench-stat.py build-bench/bin/hyle_util_core_bench -n 15 \
 
 Apple 默认显式 user-interactive；utility 复跑在命令前加
 `HYLE_BENCH_APPLE_QOS=utility`。因此 util-core 当前在同合同成熟 peer 上没有未解释的
-material LOSE；util-runtime 尚未取得这份结论。
+material LOSE。
+
+## util-runtime：测试合同
+
+- runner：`hyle_util_bench`，每行 15 个独立进程；Windows/Linux 固定到 performance-first CPU
+  并请求 high priority，M4 分 user-interactive/utility 两组，Darwin 不伪称硬 P/E affinity。
+- Registry 注册 256 个 11-byte backend 名，creator 返回一个真实对象指针。mutable peer 是
+  `mutex + std::unordered_map`；frozen peer 是 Abseil `flat_hash_map`，另保留 std map 给 C
+  adapter 的普通基线。
+- Abseil immutable map 不含 owned help、priority、factory lifecycle 或并发 freeze，合同比 HYLE
+  更弱，因而是严格的 lookup 下界；结果只有打平/胜出才支持热路径结论。
+- `FrozenView` 是初始化结束后高频 dispatch 的推荐产品形状；普通 `Registry::create` 保留一次
+  lifecycle acquire，以允许同一 API 安全跨越 mutable→frozen 阶段。
+- C checked create 与 nullable hot create 语义不同，前者构造共享 `hyle_status` 以区分 missing key
+  和 creator 返回 NULL；两者只用于量化诊断成本，不把 checked 入口输给 hot 入口写成算法缺陷。
+- 独立 11-byte hash 行只诊断 Registry 的组成原语，不是 util 公开能力，也不能取代整表查找。
+
+下表 ns/op 为 **Windows / Linux / M4 interactive**；speedup 是逐 run paired median 的
+peer/HYLE throughput 比，判定同时看 sign test 与 absolute spread。
+
+## util-runtime 当前结果
+
+| 场景 | HYLE ns | peer ns | paired speedup | 判定 |
+|---|---:|---:|---:|---|
+| C RNG `fill_u64(1024)` | 4.955 / 0.608 / 0.697 | C++ loop 5.181 / 0.749 / 2.458 | 1.046 / 1.235 / 3.508 | ✅ 三平台 WIN |
+| Registry mutable lookup+call | 16.865 / 8.909 / 10.686 | mutex+std 18.251 / 14.076 / 15.058 | 1.096 / 1.587 / 1.438 | ✅ 三平台 sign WIN |
+| cached `FrozenView` lookup+call | 7.960 / 3.958 / 4.521 | Abseil 8.472 / 4.750 / 4.502 | 1.061 / 1.183 / 0.995 | ✅ Win/Linux WIN；M4 TIE |
+| ordinary frozen Registry | 7.983 / 4.088 / 4.717 | Abseil 8.472 / 4.750 / 4.502 | 1.059 / 1.145 / 0.955 | ✅ Win/Linux WIN；M4 TIE |
+| cached `FrozenView`, 8 readers | 1.703 / 1.044 / 1.022 | Abseil 1.720 / 1.223 / 1.045 | 1.002 / 1.178 / 0.986 | ✅ Linux WIN；Win/M4 TIE |
+| ordinary Registry, 8 readers | 1.577 / 1.031 / 1.011 | Abseil 1.720 / 1.223 / 1.045 | 1.085 / 1.142 / 0.998 | ✅ Win/Linux WIN；M4 TIE |
+| C nullable frozen create | 7.894 / 6.109 / 5.734 | immutable std 11.573 / 10.009 / 6.085 | 1.465 / 1.621 / 1.061 | ✅ 三平台 sign WIN |
+| C nullable create, 8 readers | 1.689 / 1.487 / 1.344 | immutable std 2.250 / 2.354 / 1.633 | 1.313 / 1.574 / 1.207 | ✅ 三平台 sign WIN |
+| C checked create / nullable create | 10.817 / 6.774 / 6.963 | hot 7.894 / 6.109 / 5.734 | 0.729 / 0.889 / 0.823 | ℹ️ 共享 Status 诊断合同成本 |
+| 11-byte `hash_bytes` | 0.939 / 0.872 / 0.666 | Abseil 1.506 / 0.749 / 0.743 | 1.603 / 0.858 / 1.115 | ℹ️ Win/M4 WIN；Linux 原语 LOSE，整表仍 WIN |
+
+M4 utility 复跑中，推荐的 `FrozenView` 单线程为 4.524 vs Abseil 4.516 ns（TIE），8-reader
+为 1.065 vs 1.042 ns（TIE）。普通 Registry 单线程 4.730 vs 4.516 ns，paired sign 判 LOSE
+（仅 2/15 run 更快）、约慢 4.5%，absolute 仍 TIE；这正是生命周期 atomic 的可见成本，dispatch-heavy 用户
+缓存 `FrozenView` 即消除。mutable Registry 仍 1.395x WIN；C nullable 单/多线程仍
+1.067/1.200x WIN；C RNG batch 仍 3.530x WIN。
+
+## util-runtime 复杂度与结论
+
+Registry lookup/create 是 O(|key|) hash + expected O(1) probes；register 另复制
+O(|key|+|help|)，扩容摊销 expected O(1)；enumeration O(n)。mutable 枚举需要 O(n) 时间点快照，
+callback 在锁外；frozen 枚举 O(1) 额外空间。freeze 只是 release-publish 同一张 Swiss index，
+时间与额外空间均 O(1)、零分配。Registry 不按 N=256、线程数或 CPU 型号特化。
+
+三平台 intended hot shapes 没有 material LOSE：`FrozenView` 对成熟 immutable peer 为 WIN/TIE，
+C nullable hot path 对 std 基线全胜。Linux raw short-hash 落后 Abseil 约 14% 是保留的诊断事实，
+但 Registry 的完整查找/所有权/调用路径仍胜出，不能为了赢一条孤立微基准扭曲公开 API。普通
+Registry 在 M4 utility 付一次 lifecycle atomic；易用入口保留它，明确高频入口使用 FrozenView。
+
+```bash
+cmake --preset bench -DHYLE_COMPONENTS=util -DHYLE_BENCH_ABSL=ON
+cmake --build --preset bench --target hyle_util_bench
+scripts/bench-stat.py build-bench/bin/hyle_util_bench -n 15
+```

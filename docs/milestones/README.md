@@ -25,18 +25,18 @@
 
 ## 预测 vs 真实 LOC（防玩具化）
 
-### 整体进度与体量（诚实，2026-07-29 工作树快照）——分母别混
+### 整体进度与体量（诚实，2026-07-30 工作树快照）——分母别混
 
 > **生产 = `cloc src include` 的 code 列**（header+C++/CUDA 等，不含 tests/bench/docs/third_party）。
-> **旧投影「完成时生产 ~28–40k / 中值 34k」已作废**：当前生产已 **~92.9k**，单 **simd ~37.8k**。
+> **旧投影「完成时生产 ~28–40k / 中值 34k」已作废**：当前生产已 **~93.6k**，单 **simd ~37.8k**。
 > 权威规模节：[`../architecture/hyle-scope.md`](../architecture/hyle-scope.md)。中期报告：[`midterm-report-2026-07-scale-positioning.md`](./midterm-report-2026-07-scale-positioning.md)。SIMD 当前补缺账本：[`simd-capability-fill-list.md`](./simd-capability-fill-list.md)。
 
 | 固定统计口径 | 当前 | 命令/说明 |
 |---|---|---|
-| **全库代码** | **279,611** | tracked；含 docs/third_party，**≠ 自写** |
-| **自实现（含测试）** | **135,519** | `cloc include/hyle src tests`，只计 C++/Header/C/CUDA |
-| **自实现（不含测试）** | **92,914** | `cloc include/hyle src`，只计 C++/Header/C/CUDA；库本体硬锚 |
-| **当前处理审查单元实现（七组件底座）** | **18,492** | core/error/obs/platform/time/util-core/mem 的公开头与 `src`；不含测试/benchmark/文档 |
+| **全库代码** | **281,133** | tracked；含 docs/third_party，**≠ 自写** |
+| **自实现（含测试）** | **136,425** | `cloc include/hyle src tests`，只计 C++/Header/C/CUDA |
+| **自实现（不含测试）** | **93,582** | `cloc include/hyle src`，只计 C++/Header/C/CUDA；库本体硬锚 |
+| **当前处理审查单元实现（util-runtime）** | **1,577** | Registry/demangle/C adapter；不含 util-core、测试/benchmark/文档 |
 | **终态生产（纪律收口 A）** | **~75–90k** | 主预期 |
 | **终态生产（做满守界 B）** | **~85–105k** | compute/graph/发布面收口更满 |
 | 失控上限 C | 120k+ 生产 | 应避免 |
@@ -84,7 +84,7 @@ util ~1.3k · error **984** · time **1,421** · obs **1,018** · graph ~0.6–0
 > clean `c640072` shared same-link 三平台证书已关闭最后分发性能尾；
 > build/package system 已于 2026-07-29 在模块所有权拆分后再次重签；util-core seam 已在同日按独立组件、成熟 API 与 ARM 真机性能再次重签，obs 仍严格收口；
 > container 主体证书保留；StringInterner 的 Apple cache-layout 受影响边已随 core 复证转绿。
-> 当前进入 util-runtime；其余顺序只见
+> util-runtime 已于 2026-07-30 以 `d3120fe` 完成 Registry/C ABI/三平台性能与 package 严格收口；其余顺序只见
 > [`pre-release-readiness.md`](./pre-release-readiness.md)。
 
 | ID | 阶段 | 模块 | 目的(一行) | 前置 | 预测LOC | 真实LOC | 状态 |
@@ -138,13 +138,13 @@ util ~1.3k · error **984** · time **1,421** · obs **1,018** · graph ~0.6–0
 | container-09 | P3 | container | ConcurrentVector 读优化并发向量（分段/读 lock-free/写 mutex） | mem-01 | 1-2k | 见当前实现 | ✅ 功能完成；2026-07-25 util-core 回审确认写侧会分配并执行用户构造函数，故从 SpinLock 改回 mutex；并发读写 TSan 通过，性能随 container 严格复审重签 |
 | [container-10](./container-10-sharded-queue.md) | P3 | container | ShardedQueue 分片有界 MPMC(N 个 Vyukov 子环,生产者 hash 分片消单点争用) | container-01 | 0.5-1k | 58 (+171 测试) | ✅ 完成(bench-02b 揪出单环 4P 输 moody 1.7x=单点 CAS 争用→分片根治;**双平台15遍反超 rigtorp Win3.27x/Lin5.3x**;复用 BoundedQueue placement-new 避 std 拥有型成员;保留有界弃全局 FIFO;双平台+WSL TSan 零 race。**已接入 sched global 注入**) |
 | [container-final](./container-module-closure.md) | close | container | 实际使用导向的功能/API/复杂度/C ABI/依赖/文档与三平台性能收口 | container-01..10,mem,platform,error | — | 见任务页 | ✅ **主体证书与 Apple 单边复证完成**：2026-07-27 的 232/232 C surface、sanitizer 与非 StringInterner 证据不变；interner shard spacing 使用 Apple 128B core 契约，M4 correctness 与 8t normal workload 已通过 |
-| [util-core closure](./util-module-closure.md) | P3 | util-core | Ref/ScopeGuard/Rng/type-name/SpinLock 实际使用形状与 include seam | core/build | — | 见任务页 | ✅ **2026-07-29 `3c32be6` 再收口**：真实 `hyle::util_core` INTERFACE component；成熟 API 对账；三平台 package/正确性、Linux TSan 与 n=15/M4 双 QoS性能；完整 C ABI 留 util-runtime |
+| [util closure](./util-module-closure.md) | P3 | util | util-core seam + Registry/demangle/C adapter 的完整实际使用收口 | core/build/container/mem/error | — | 见任务页 | ✅ `3c32be6` 收口 util-core；`d3120fe` 收口 util-runtime：一表两阶段 Registry/FrozenView、共享 Status/allocator、46 dynamic + 10 inline C 面、三平台 TSan/package/n=15 |
 | util-01 | P3 | util-core | ref_counted(Ref<T> CRTP) + scope_guard(HYLE_DEFER) | 00 | 1k | 见 closure | ✅ 异构 compare/hash、标准同形 casts、单指针 intrusive 热路；ScopeGuard invoke 异常语义与析构 terminate 陷阱已写入 guide |
 | util-02 | P3 | util-core | 编译期 type_name<T> + type_hash<T> | 00 | 0.5k | 44 (+50 测试) | ✅ Boost 同类 constexpr 形状；明确不作持久/跨编译器 ID |
-| util-03 | P3 | util-runtime | registry 自注册 + DECLARE/DEFINE 宏 | util-02,container-04 | 1k | 见 closure | 🟡 功能可用；SwissTable/并发/creator 旧证据保留，container 收口后重签公开形状与 C ABI |
+| util-03 | P3 | util-runtime | registry 自注册 + DECLARE/DEFINE 宏 | util-02,container-04 | 1k | 见 closure | ✅ owned key/help、priority、reentrant callback、mutable snapshot；O(1) zero-allocation freeze 与 FrozenView；不冒充 dynamic unload manager |
 | util-04 | P3 | util-core | random(xoshiro256++ PRNG) | 00 | 0.5k | 见 closure | ✅ 标准 URBG、Lemire range、iterator shuffle、显式可复现/TLS 非安全流；三平台无 material LOSE |
 | util-05 | P3 | util-core | compact SpinLock（TTAS+backoff） | 00 | 0.5k | 见 closure | ✅ 1-byte 紧凑默认；x86 pause/AArch64 `isb`；`3c32be6` 保留 acq_rel RMW 后 oneTBB 正反序/M4 双 QoS 同档，TSan 通过；高争用/长临界区改用 mutex |
-| util-06 | P3 | util-runtime | demangle 运行期符号反修饰(`__cxa_demangle`/`UnDecorateSymbolName`) | util-02 | 0.5k | 见 closure | 🟡 功能与三平台旧证据保留；是否拆 target、共享 error 和完整 C ABI 随 util-runtime 重签 |
+| util-06 | P3 | util-runtime | demangle 运行期符号反修饰(`__cxa_demangle`/`UnDecorateSymbolName`) | util-02 | 0.5k | 见 closure | ✅ caller-buffer/required-size C/C++ 形状；共享 Status；单冷符号不足以拆独立 component |
 | math-01 | P3 | math | scalar 标量助手(div_ceil/round_up_to_multiple/sgn/approx_eq) | 00 | 0.5k | 28 (+51 测试) | ✅ 完成(clay consts/utils 458 行绝大多数♻️ C++20/23 `<bit>`/`<numbers>`/`<cmath>`;只自写 std 真缺的4个;div_ceil 改溢出安全) |
 | bench-01 | P3 | bench | nanobench 设施 + SwissTable/StringInterner 对标 std | container-04/06 | — | bench设施 | ✅ 完成(SwissTable find2.7x/insert6.1x/erase4.1x>std;intern基准驱动优化0.94→1.31x;absl/F14对标→bench-02) |
 | bench-02 | P3+ | bench | 对标 SOTA(absl/F14/moodycamel/oneTBB/highway/marl,不止 std) | 各模块 | — | — | 📋 规划(用户提:对比 project-hyle 高性能库;拆 02a hashmap/02b 队列/02c hash+wyhash/02d simd-sched) |

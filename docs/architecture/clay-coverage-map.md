@@ -42,7 +42,7 @@
 | `sys/sprintf.h` + `.cc` | 96+69 | ♻️ std::format | ♻️ | clay sprintf=`stb_sprintf` 薄封装;头广告的 "UTF-8 安全截断" **实为注释掉未实现**(.cc 行42/54,clay 美化现状一例)。HYLE:格式化→`std::format`/`std::format_to_n`(类型安全 `{}`+编译期查错=no-throw+buffer-fill 截断等同 snprintf,conventions §8);printf-`%`/va_list 转发→`std::snprintf`(C 标准已有)。不投机 vendor stb_sprintf(快 printf 属实测决定);真 UTF-8 安全截断归 container-06b string_utils |
 | `sys/scope_guard.h` | 74 | util-01 | ✅ | `ScopeGuard` CTAD(省 clay scope_guard/finally 工厂) + `HYLE_DEFER`;单向 dismiss(enable 重启用未做,非缺口) |
 | `sys/alignment.h` | 37 | mem-aux | ✅ | `align_up/align_down/is_aligned`(size + `_ptr` 变体)+ is_pow2 + kMaxSimdAlignment;升级 clay 只有 align_size(独立头已建,mem/alignment.h) |
-| `sys/demangle.h` + `.cc` | 28+45 | container/util type_name | ✅ | **util-06**：运行期 demangle(`__cxa_demangle`/`UnDecorateSymbolName`)。改进:buffer-fill 无分配(clay 用 Allocator+std::function deleter)、MSVC 真反修饰(clay 只回显)。`demangle_type<T>` gap→`type_name<T>`(util-02)更优替代(无 RTTI) |
+| `sys/demangle.h` + `.cc` | 28+45 | container/util type_name | ✅ | **util-06**：运行期 demangle(`__cxa_demangle`/`UnDecorateSymbolName`)。改进:caller buffer+required-size（底层 ABI demangler仍可能临时分配）、MSVC 真反修饰(clay 只回显)。`demangle_type<T>` gap→`type_name<T>`(util-02)更优替代(无 RTTI) |
 | `sys/murmur_hash.h` | (见上) | | | |
 | `sys/assert.cc` | 31 | macros.h | ✅ | HYLE_FATAL_ASSERT 已覆盖等价 |
 | `sys/types.h`/`decls.h`/`version.h` | 67/72/55 | 00-scaffolding | 🔶 | platform.h/visibility.h/version.h 覆盖思路；decls.h include 纪律待坐实 |
@@ -57,14 +57,14 @@
 | `utils/stack_allocator.h` | 122 | mem-04 | ✅ | 修 bug#4(禁拷贝、无堆回退) |
 | `utils/memory_pool.h` | 170 | mem-07 | ✅ | **`GrowablePool<T>`**:growable+single-threaded 池(无原子,填 ObjectPool 固定+lock-free 之外的空位)。几何块+侵入 free-list。**修 clay move-assign bug**(从不转移 allocator_) |
 | `utils/ref_counted.h` | 317 | util-01 | ✅ | 侵入式 `RefCounted<Sub>` CRTP + `Ref<T>` + make/adopt/retain_ref。**改进**:修 clay destroy() CRTP bug、release+末次 acquire fence、批量计数 fail-fast、危险非虚基类析构形状编译期拒绝；另有 type-erased C strong handle |
-| `utils/registry.h` | 340 | util-03 | ✅ | 自注册 + DECLARE/DEFINE 宏。**改进**:SwissTable、全部访问同步、creator 锁外调用可重入、move-only 参数和 Ref factory 正确；同优先级 fail-fast；另有 runtime C registry |
+| `utils/registry.h` | 340 | util-03 | ✅ | 自注册 + DECLARE/DEFINE 宏。**改进**:拥有 key/help、priority resolution、mutable 阶段同步、creator/visitor 锁外可重入；同一 Swiss index 经 O(1) 零分配 freeze 发布，FrozenView 供高频 dispatch；另有共享 Status/allocator 的完整 C registry。动态 unload 明确归 module manager |
 | `utils/type_traits.h` | 240 | (编译期) | 🔶♻️ | 多数被 C++23 concepts 取代；保留底层兼容部分待评 |
 | `utils/type_name.h` | 146 | util-02 | ✅ | 编译期 type_name<T>()(probe 派生偏移,比 clay 硬编码签名矩阵 robust) + type_hash<T>()(FNV-1a constexpr) |
 | `utils/func_traits.h`/`meta_funcs.h`/`C++17.h`/`comparable.h` | 105/80/253/53 | (编译期) | ♻️ | 多数被 C++23(concepts/`<=>`)取代,按需保留 |
 | `utils/string_utils.h` + `.cc` | 673+449 | container-06b | ✅(真实现部分) | 字节串算法吸纳 `string_algo.h`:hex_encode/escape/capitalize/UTF-8(decode/length/icmp)/ASCII case+分类器(全 buffer-fill 无 std 流)。**重大发现**:clay `format_si/find_path_matches/cscore_path_match/cstr_score_similarity` **只声明无实现**(src/ 全无),与 sprintf 假截断同款美化→无可吸纳,净新设计登记 container-06c。str/join/to_string→std::format♻️;stoi/stod→std::from_chars♻️;to_utf8/from_utf8(wchar)→platform-03 |
 | `utils/generic_allocator.h`/`stl_allocator.h` | 62/196 | mem-07 | ✅⛔ | **stl_allocator→`mem::PmrResource`**(std::pmr::memory_resource 包 Allocator,一个 resource 服务所有 T,取代每类型 rebind 样板)。**generic_allocator→⛔**:HYLE `Allocator` 值句柄已是它(type-erased {fn,state} 转发) |
 | `utils/singleton.h` | 133 | (util 待排) | 🔶♻️ | Meyers 单例(C++11 起 std 保证),薄封装待评 |
-| `utils/spin_lock.h` | 43 | util-05 | ✅ | `SpinLock`（紧凑 TTAS + bounded exponential backoff + x86 pause/AArch64 instruction barrier）升级 clay 裸 TAS并满足 Lockable；owner 仅在实测伪共享后显式 padding；长临界区/高争用选 mutex。当前 C++ 形状已严格签证，opaque C ABI 随 util-runtime 续审 |
+| `utils/spin_lock.h` | 43 | util-05 | ✅ | `SpinLock`（紧凑 TTAS + bounded exponential backoff + x86 pause/AArch64 instruction barrier）升级 clay 裸 TAS并满足 Lockable；owner 仅在实测伪共享后显式 padding；长临界区/高争用选 mutex。C ABI 同时提供 allocator-backed heap 与 caller-owned storage |
 | `utils/vector_utils.h`/`device_utils.h`/`float16.h` | 98/125/52 | ♻️ / compute | ♻️⛔ | **2026-06-29 逐文件判定终态**:`vector_utils`(has_resize SFINAE 探测器等)→**♻️ C++23 concepts 取代**;`device_utils`(identity 函子=`std::identity` C++20 + host/device)→**♻️ + compute 域**;`float16`(`using float16=__half` CUDA 别名 + is_half traits,依赖 cuda_fp16.h)→**compute 域**(注意:simd-05 已落可移植 fp16/bf16 存储+转换,clay 这个是 CUDA 类型别名,非同物)。三者均**非 P3 clay 吸纳欠账** |
 
 ## parallel/ — 并发（thread_pool/async_value/concurrent_vector）

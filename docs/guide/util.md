@@ -25,6 +25,8 @@ target_link_libraries(my_target PRIVATE hyle::util_core)
 | 极短、低争用临界区 | `SpinLock` + `std::lock_guard` | 锁内分配、rehash、I/O、等待或在 fiber 中长期持有 |
 | 编译期静态类型名/进程内标签 | `type_name<T>()` / `type_hash<T>()` | 存数据库、写 wire format、跨编译器/plugin 比较 |
 | 运行期 mangled symbol | `demangle()` | 把它当热路径或假定绝不发生内部临时分配 |
+| 启动期注册、运行期按名字选择 backend/factory | `Registry<Ptr, Args...>` | 把它当可卸载 module manager，或让同 priority 的注册顺序决定胜负 |
+| Registry 初始化完成后的高频 dispatch | `auto view = registry.freeze()`，缓存 `FrozenView` | 每次 dispatch 后继续注册，或让 view 活过 registry |
 
 ## ScopeGuard：只处理临时控制流
 
@@ -130,9 +132,46 @@ fiber-aware。临界区可能分配、rehash、调用未知 callback、等待或
 返回值大于等于 cap 表示已截断。它服务日志/backtrace 等冷路径，在 Itanium ABI 下底层
 demangler 必然可能临时分配。
 
-## 当前分层状态
+## Registry：注册阶段可变，服务阶段冻结
 
-本页的 header-only util-core 已按当前标准严格收口，且作为独立 `util_core` 组件完成
-shared/static 安装包消费验证。container 已严格收口；Registry、demangle 与完整 C ABI
-仍属于下一轮独立的 util-runtime 审查，现有接口可测试使用，但不能据此推断其发布 ABI
-已经冻结。这个分层避免低层 mem/container 为一个运行时 Registry 反向链接 `hyle_util`。
+```cpp
+#include "hyle/util/registry.h"
+
+using EngineRegistry = hyle::util::Registry<Engine*, const Config&>;
+EngineRegistry engines;
+
+HYLE_RETURN_IF_ERROR(engines.reserve(16));
+HYLE_RETURN_IF_ERROR(engines.register_creator(
+    "cpu", &make_cpu_engine, hyle::util::RegistryPriority::kFallback,
+    "portable CPU engine"));
+HYLE_RETURN_IF_ERROR(engines.register_creator(
+    "cuda", &make_cuda_engine, hyle::util::RegistryPriority::kPreferred,
+    "CUDA engine"));
+
+// 初始化结束：单向、幂等、O(1)、零分配。
+auto factories = engines.freeze();
+Engine* engine = factories.create("cuda", config);
+```
+
+Registry 会复制并拥有 key/help；调用者无需保留传入字符串。相同 key 的更高 priority 覆盖，
+更低 priority 是成功的 no-op，相同 priority 返回 `AlreadyExists`，因此链接/静态初始化顺序不会
+悄悄决定实现。`reserve()` 只用于启动期减少 rehash；注册和 reserve 在 freeze 后返回
+`FailedPrecondition`。
+
+可变阶段的查询受 mutex 保护。creator 和 `for_each` visitor 都在锁外运行，可以重入同一个
+Registry；可变阶段枚举会为时间点快照分配一次，冻结阶段则无锁、无分配。`Registry::create()`
+在冻结后只多一次生命周期 acquire load，适合普通调用；dispatch 热路径缓存 `FrozenView`，直接
+查不可变 Swiss 索引。两种形状都是 O(key length) hash + expected O(1) probes，creator 自身
+成本另计。
+
+Registry 不提供 unregister：已经创建对象、函数指针和并发 reader 的代码/数据生命周期无法由
+一个名字表安全推断。需要动态装卸 shared library、依赖排序或在途调用排空时，应由 module
+manager 管理 quiescence，再销毁整个 Registry。Registry 必须活过所有 `FrozenView` 和在途操作；
+析构前由调用方让使用者静止。
+
+## 分层与当前状态
+
+header-only util-core 作为独立 `util_core` 组件交付；Registry、demangle 和 C/FFI adapter
+属于 `util` runtime component。完整 util 已在 `d3120fe` 按功能、易用性、C ABI、并发和
+三平台性能严格收口，并完成 shared/static 安装包消费验证。分层仍然保留：它避免低层
+mem/container 为一个运行时 Registry 反向链接 `hyle_util`。

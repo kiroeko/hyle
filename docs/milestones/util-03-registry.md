@@ -1,9 +1,9 @@
 # util-03：registry 自注册 + DECLARE/DEFINE 宏
 
-> **2026-07-19 收口复审**：本文件保留首次实现史；当前合同见
-> [`util-module-closure.md`](./util-module-closure.md)。复审把所有表访问改为
-> 同步，creator 在锁内复制、锁外调用而可重入；修复 move-only 参数转发和
-> `Ref<T>` 默认 creator；并新增类型擦除 C ABI。
+> **历史任务页**：本文件保留首次实现史，行数和测试数不是当前快照。2026-07-30 的当前合同
+> 只见 [`util-module-closure.md`](./util-module-closure.md)：Registry 现在拥有 key/help，
+> creator/visitor 均在锁外可重入，同一 Swiss index 经 O(1) freeze 发布，并有 FrozenView 与
+> 共享 Status/allocator 的类型擦除 C ABI。
 
 | 字段 | 值 |
 |---|---|
@@ -19,7 +19,7 @@
 - **覆盖**:register/has/create/keys(→for_each_key)/help/优先级(Fallback/Default/Preferred) 全覆盖。
 - **改进①(§1 铁律)**:存储用 HYLE **SwissTable**,非 clay 的 **3 个 std::unordered_map**。
 - **改进②(§4 ABI + 性能)**:Creator 是**函数指针**非 `std::function`——Entry `{fn-ptr, priority, help}` 变 trivially-copyable,**内联进 SwissTable**(无堆分配/类型擦除),调用无 std::function 间接。registry creator 是无捕获的类型构造器,不需要闭包。
-- **改进③(§0 fail-fast + §5 no-throw)**:同 key 同优先级冲突(接线 bug)→ `HYLE_FATAL_ASSERT` 响亮 abort,替 clay 的 `std::exit(1)`/`throw`。death test 验证。
+- **改进③(§0 fail-fast + §5 no-throw)**:普通动态注册的同 key 同优先级冲突返回 `AlreadyExists`；静态 REGISTER 宏因没有错误接收者而 fail-fast，替 clay 的 `std::exit(1)`/`throw`。
 - **改进④(§6)**:DEFINE 宏用 **Meyers function-local static**,替 clay 的 leaky `new` 单例。
 - **改进⑤**:help 文本用 `type_name<T>()`(util-02),替 clay 的 demangle。
 - **泛型化**:clay 有 REGISTRY/REGISTRY_REF/SHARED_REGISTRY 三套
@@ -35,10 +35,9 @@
 - **④ clay 覆盖**:全覆盖 + 三套收一套;**简化登记**:clay SetTerminate(测试切 throw)未做——HYLE 直接 EXPECT_DEATH 验 fail-fast,不需要可切换终止。
 - **⑤ 残留脚手架**:无。
 - **⑥ 过度复杂**:比 clay 341 行精简到 94,三套宏/三 map 收敛。
-- **键生命周期契约**:key 是 string_ref;REGISTER 宏 stringize(`#key`)= 字符串字面量(静态生命周期),安全;动态 key 须比 registry 长寿(已注释)。
-- **线程契约**：register/create/has/help/遍历均同步；create 只在锁内复制
-  creator，真正构造在锁外，允许 factory 重入。`for_each_key` 的 visitor 在锁内，
-  因而不得重入同一个 registry。
+- **键生命周期契约**：Registry 复制并拥有动态 key/help；返回 view 在 Registry 析构前稳定。
+- **线程契约**：mutable register/create/has/help 同步；creator/visitor 在锁外，允许重入。
+  mutable 枚举使用时间点快照；freeze 后查找/枚举无锁，FrozenView 直达同一不可变索引。
 
 ## 交付物
 

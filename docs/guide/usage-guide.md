@@ -555,14 +555,16 @@ HYLE_DEFER(std::fclose(fp));         // 作用域退出时执行（C++23 仍无 
 ```
 `make_ref` 收下初始 +1（adopt 语义）；要"保留已有裸指针"用 `retain_ref`，二者在调用点显式区分。
 可复现并行随机流用一个确定 seed，然后每个 worker 取一份状态并调用一次
-`jump()`；无需可复现时用 `thread_rng()`。Registry 适合按名字注册 factory，所有
-表访问线程安全，factory 在锁外调用而可重入；遍历 visitor 在锁内，不能重入。
+`jump()`；无需可复现时用 `thread_rng()`。Registry 适合启动期按名字注册 factory；它拥有
+key/help，factory 与 visitor 都在锁外调用并可重入。初始化结束后调用 `freeze()`，高频 dispatch
+缓存返回的 `FrozenView`，即可绕过普通入口的一次生命周期 atomic。
 
 纯 C、FFI 或跨编译器消费者不要绑模板/类布局，改用
 [`hyle/c/util.h`](../../include/hyle/c/util.h) 的 RNG POD 和
-Ref/ScopeGuard/Registry/SpinLock opaque handle；46 个可调用入口、生命周期和
-callback 合同见 [`c-util.md`](./c-util.md)。`type_name<T>`/`type_hash<T>` 依赖
-C++ 静态类型，是唯一有意不做运行时擦除的 util 能力。
+Ref/Registry/SpinLock opaque handle；当前 46 个动态符号 + 10 个 inline convenience 的生命周期、
+共享 Status/allocator 与 callback 合同见 [`c-util.md`](./c-util.md)。C 没有词法析构，旧 heap
+ScopeGuard 已删除；用 goto-cleanup 或宿主语言 defer/finally。`type_name<T>`/`type_hash<T>`
+依赖 C++ 静态类型，也有意不做运行时擦除。
 
 **性能须知（何时 Ref 划算、何处别用）**：`Ref` 拷贝与析构需要原子引用计数；跨核共享时
 cache-line ownership 转移会放大成本。具体点值见 performance，据此：

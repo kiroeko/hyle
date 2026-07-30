@@ -15,7 +15,7 @@
 | [platform 实测](./benchmarks-platform.md) | **platform 2026-07-25 当前证书**（既有性能表不变；MappedFile advice/residency 按 OS-call complexity 守门） |
 | [time 实测](./benchmarks-time.md) | **time 2026-07-25 当前三平台证书**（clock / exact-ns radix TimerQueue / CommonTimeoutQueue；含 Seastar faithful baseline、order-swap 与 M4 QoS） |
 | [mem 实测](./benchmarks-mem.md) | **mem 严格证书**：既有三平台 Region/FixedPool/pool 证书有效；clean `c640072` 补齐 shared allocator/standard-adapter/realloc，`8c85331` 又局部复证 PMR zero-size 修复后的正常路径；Win/WSL/M4 双 QoS n=15 无新增 material LOSE |
-| [util-core 实测](./benchmarks-util.md) | **util-core 2026-07-29 三平台 n=15 证书**：Rng/Ref/SpinLock 实际形状；oneTBB 正反序；M4 双 QoS 与 acquire-only RMW 真实回退 A/B；mutex 反例 |
+| [util 实测](./benchmarks-util.md) | **完整 util 证书**：core 的 Rng/Ref/SpinLock；runtime 的真实 Registry N=256/C adapter；Abseil peer、FrozenView、M4 双 QoS 与复杂度边界 |
 | [obs 实测](./benchmarks-obs.md) | **obs-runtime 2026-07-29 `06cec5a` 三平台 n=15 证书**：compile/runtime gate、exact-byte record/C ABI、immutable sink snapshot、fan-out 与多 producer；成熟库只作同机制对照，不作跨合同倍数宣称 |
 | [container 实测](./benchmarks-container.md) | **container 唯一当前证书**：三平台详表、新鲜度、非 SOTA、选型与复跑命令 |
 | [simd 产品 kernel](./benchmarks-simd.md) | dot/saxpy、math、dtype、gather、vendor 竞争…；**op 全量不在此** |
@@ -77,6 +77,9 @@
 | **util-core** SpinLock 无争用 | 3.758/4.570/0.904 | std::mutex | 10.991/2.379/9.190 | Win/M4 大赢、Linux mutex 更快 | oneTBB spin_mutex | 3.739/4.573/0.897 | 1.000/1.000/0.993x | ➖正反序同档；acquire-only M4 0.888x 回退已由 `3c32be6` 修复 |
 | **util-core** SpinLock 2/8 threads | 8.379·61.382/7.490·50.047/2.405·5.545 | mutex（选择边界） | 13.970·46.306/33.731·38.457/高方差 | 平台翻转 | oneTBB spin_mutex | 8.419·59.219/7.593·51.146/2.316·5.518 | 正反序约同档 | ➖M4 双 QoS 同档；高争用不据此选 spin |
 | **util-core** Ref fan-out 64 | 7.956/8.055/3.190 | shared_ptr | 8.020/10.773/3.211 | **~1.00/~1.34/~1.01x** | shared_ptr ownership 原子基线 | 同左 | 同左 | ✅ Win/M4 TIE、Linux WIN |
+| **util-runtime** mutable Registry lookup+call | 16.865/8.909/10.686 | mutex+std map | 18.251/14.076/15.058 | **1.096/1.587/1.438x** | init-heavy named factory | 同合同成熟形状 | 见分档 | ✅ 三平台 sign WIN |
+| **util-runtime** frozen `FrozenView` lookup+call | 7.960/3.958/4.521 | n/a | n/a | n/a | absl::flat_hash_map | 8.472/4.750/4.502 | **1.061/1.183/0.995x** | ✅ Win/Linux WIN、M4 TIE；utility 亦 TIE |
+| **util-runtime** C nullable frozen create | 7.894/6.109/5.734 | immutable std | 11.573/10.009/6.085 | **1.465/1.621/1.061x** | checked Status 另合同 | 10.817/6.774/6.963 | — | ✅ 热路径三平台 WIN；诊断税单列 |
 | **obs** gate / preformatted view / structured / 8-producer | 2.160·42.070·38.450·93.690 / 0.910·38.970·34.500·62.950 / 1.100·23.910·23.560·124.390 (Win/Lin/M4) | (无 std log) | n/a | n/a | 同步 sink registry 机制参照 Abseil/Folly | 非同合同 | n/a | ✅ `06cec5a`：编译裁剪 O(0)、runtime gate O(1)、exact view/emit O(S)，NUL convenience O(M+S)；热路径无分配/无 mutation mutex。无同 metadata/ownership peer，故不作跨合同胜负。见 [obs](./benchmarks-obs.md) |
 | **mem** SystemAllocator churn(static/source direct) | 7.93/8.04/7.77 | malloc OS | 25/4.7/20 | 大赢 OS | 裸 mimalloc | 7.86/8.04/7.91 | **~1.00x 三平台** | ➖合并形状**平 mi SOTA**(2026-07-20 n=15) |
 | **mem** SystemAllocator churn(shared same-link) | 8.17/7.81/7.98 | malloc OS | 37.22/—/— | 平台相关 | 同一 DSO backend seam | 8.03/7.84/7.95 | **0.980/1.009/0.996** | ➖ clean `c640072` n=15：三平台默认 shared 形状无 material LOSE；M4 utility 同为 0.996 |

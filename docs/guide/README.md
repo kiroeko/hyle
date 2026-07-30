@@ -23,7 +23,7 @@
 | [`c-mem.md`](./c-mem.md) | **mem C/FFI 精确映射**：选型沿用 mem.md，只说明 Status/out、opaque handle、typed 宏、所有权和各入口。 |
 | [`c-time.md`](./c-time.md) | **time C/FFI 精确映射**：选型沿用 time.md，只说明 Status、opaque timer/queue、同步 visitor、所有权和 shutdown。 |
 | [`c-obs.md`](./c-obs.md) | **obs C/FFI 精确映射**：选型沿用 obs.md；共享 Status/out、length-aware record/log、opaque sink、compile-floor helper、flush 和 runtime trace。 |
-| [`c-util.md`](./c-util.md) | **util 纯 C ABI 精确映射**：选型沿用 util.md；RNG POD、Ref/ScopeGuard/Registry/SpinLock 类型擦除句柄、demangle buffer-fill、所有权和并发合同。 |
+| [`c-util.md`](./c-util.md) | **util 纯 C ABI 精确映射**：选型沿用 util.md；共享 Status/allocator、RNG POD、Ref/Registry/SpinLock 擦除、demangle buffer-fill、所有权和 callback/冻结合同。 |
 | [`c-container.md`](./c-container.md) | **container C/FFI 精确映射**：选型沿用 container.md；共享 Status/out、字符串/路径、运行时擦除 flat map/vector、并发 opaque handle 与失效合同。 |
 | [`c-simd.md`](./c-simd.md) | **SIMD 纯 C ABI**：247 个 whole-buffer 入口、低精度/排序 POD、RNG opaque handle、运行时 ISA 诊断、调用合同和 FFI 绑定方式。 |
 | [`c-sched.md`](./c-sched.md) | **sched 纯 C ABI**：worker-stack/fiber 双腿、Waker、优雅关闭、同步/消息/取消/blocking pool 的类型擦除入口、生命周期和外语绑定合同。 |

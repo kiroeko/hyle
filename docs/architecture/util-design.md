@@ -1,82 +1,110 @@
-# util 架构：先分层，再谈“工具箱”
+# util 架构：两个依赖层，一个产品边界
 
-> 本页维护 util 的长期边界。用户选型见 [`../guide/util.md`](../guide/util.md)，C/FFI
-> 映射见 [`../guide/c-util.md`](../guide/c-util.md)，性能证据只见
+> 本页维护长期设计。用户选型见 [`../guide/util.md`](../guide/util.md)，C/FFI 映射见
+> [`../guide/c-util.md`](../guide/c-util.md)，性能证据只见
 > [`../performance/benchmarks-util.md`](../performance/benchmarks-util.md)。
 
-`util` 不是一个可以随手塞 helper 的杂物目录。它有两个依赖层，必须分开冻结：
+`util` 不是随手堆 helper 的杂物目录。它是一个产品模块，但按依赖切成两个可组装层：
 
 ```text
-P0 util-core headers（本轮审查单元）
-  ScopeGuard / Ref / Rng / type_name / SpinLock + cpu_relax
-       │ hyle::util_core INTERFACE target；不产生 binary artifact
-       ├────────► mem / sched / graph 的真实 target 依赖
-       └────────► 普通 C++ 用户
+P0 hyle::util_core（INTERFACE，无 binary artifact）
+   ScopeGuard / Ref / Rng / type_name / SpinLock / cpu_relax
+                    │
+                    ├──► mem / sched / graph
+                    └──► C++ 用户
 
-P4 util-runtime（container 收口后再审）
-  demangle + Registry + type-erased C adapter
-       │ Registry 公开形状依赖 container::string_ref / SwissTable
-       └────────► hyle_util binary + include/hyle/c/util.h
+P4 hyle::util（hyle_util binary；严格收口波次 R2）
+   demangle / Registry / 纯 C type-erased adapter
+                    │
+                    └──► error + mem + container + util_core
 ```
 
-`Registry` 虽然是模板头，也不是 util-core：它直接 include container，并使编译出的
-`hyle_util` 依赖 container/mem。反过来，container 不依赖 util-core，也不链接
-`hyle_util`；这正是避免 `container ↔ util` 环的 seam。`demangle` 自身不需要 container，
-但当前与 Registry/C adapter 同属一个 runtime target；是否拆 target 留完整 util 审查裁决，
-不能在 container 形状未冻结时靠 target 数量先拍答案。
+Registry 是模板头，但公开形状直接使用 container 的 `string_ref/SwissTable`，并借 mem allocator/
+Region；它因此属于 util-runtime，不能反塞进 P0。container 不依赖 `hyle_util`，从而没有
+`container ↔ util` binary 环。demangle 只有一个冷路径动态符号，本身不依赖 container；为它
+新增 binary component 会增加发布和消费选择而没有形成独立能力族，因此与 runtime 共用 target。
 
-## util-core 能力与成熟形状
+## 能力与负空间
 
-| 能力 | 正常场景 | 形状与参考 | 明确负空间 |
+| 能力 | 正常消费者需求 | 成熟形状 | 明确不做 |
 |---|---|---|---|
-| `ScopeGuard` / `HYLE_DEFER` | 临时 rollback、C API cleanup、多个早退路径 | Abseil Cleanup / Folly ScopeGuard：栈内、move-only、一次执行、可 dismiss/invoke | 优先写拥有型 RAII；显式 invoke 可传播异常，析构期抛出会 terminate |
-| `RefCounted<T>` + `Ref<T>` | 对象内能承担计数、需要单指针侵入式共享所有权或定制 destroy | Boost/Folly/std shared ownership：relaxed incref，release + final acquire；异构比较、identity hash、三类 pointer cast | 无 weak ref；有环/观察者语义选 `shared_ptr/weak_ptr` 或领域句柄 |
-| `Rng` | 仿真、采样、测试、负载均衡等快速可复现伪随机 | 与 Folly 默认同族的 xoshiro256++；满足标准 URBG，Lemire 无偏整数 range，jump 拆流 | 不是 CSPRNG；不提供 token/key/nonce 安全性 |
-| `type_name/hash` | 编译期诊断、进程内类型标签 | Boost.Core/ctti 的 pretty-function probe；全 constexpr | 不可持久化，不是跨编译器/plugin/wire ID |
-| `SpinLock` / `cpu_relax` | 几个指令、低争用且不能睡眠的临界区/自旋循环 | oneTBB 紧凑 TTAS + 指数 backoff；Folly 同样把 compact lock 与显式 padding 分开 | 不公平、非 fiber-aware；分配/rehash/I/O/高争用必须用 mutex/调度原语 |
+| `ScopeGuard` / `HYLE_DEFER` | rollback、C API cleanup、多个早退 | Abseil/Folly：栈内、move-only、一次执行、dismiss/invoke | 代替已有资源 RAII；析构期异常恢复 |
+| `RefCounted<T>` + `Ref<T>` | 对象内计数、单指针侵入式共享所有权、定制 destroy | Boost/Folly/std 同形 retain/release、比较/hash/casts | weak ref、环检测、aliasing control block |
+| `Rng` | 仿真、采样、shuffle、可复现并行流 | xoshiro256++ URBG、Lemire range、jump 拆流 | 密码学安全随机 |
+| `type_name/hash` | 编译期诊断、进程内标签 | pretty-function constexpr probe | 持久/跨编译器/plugin/wire ID |
+| `SpinLock` / `cpu_relax` | 几条指令的低争用临界区/atomic 自旋 | oneTBB/Folly 紧凑 TTAS/backoff | 高争用、阻塞、fiber-aware wait |
+| `demangle` | 日志、backtrace、诊断 UI | caller buffer + required-size | 热路径无分配保证 |
+| `Registry<Ptr, Args...>` | backend/plugin factory 在启动期组合，服务期按名创建 | owned names、priority resolution、mutable→immutable publication | 动态库 unregister/unload、依赖求解、对象排空 |
+
+没有内部消费者不等于应删除用户能力，也不能为了“采用率”把它硬塞进不合适的热路径。反过来，
+新增 helper 必须先有真实消费者场景，并证明它不属于 core/container/mem/platform 等既有模块。
+
+## Registry 状态机与数据形状
+
+```text
+mutable startup
+  mutex-protected register/reserve/read
+  creator + visitor outside lock; reentrant
+  one Swiss index + owned key Region + cold metadata Region
+             │ freeze(): O(1), zero allocation, idempotent
+             ▼
+immutable service
+  the same Swiss index is release-published
+  Registry reads: one acquire lifecycle load + expected-O(1) lookup
+  cached FrozenView: direct expected-O(1) lookup
+```
+
+旧形状若在 freeze 时复制/重建第二张表，会让启动延迟、峰值内存和 OOM surface 随注册规模增长；
+当前一表两阶段直接发布。lookup value 内联 creator，热 key 与冷 help/priority/Entry 分区，避免
+dispatch 为诊断元数据触碰额外 cache line。这些是正常 init-heavy/read-heavy 消费形状的架构
+优化，不是按 benchmark 的 key 数量或线程数特化。
+
+Registry 拥有 key/help，priority 保证静态初始化/链接顺序不成为隐式策略：更高覆盖、更低忽略、
+同级冲突报错。可变枚举在锁内复制时间点快照，锁外执行 callback；冻结枚举直接遍历不可变表。
+`FrozenView` 不拥有表，Registry 必须活过 view 和所有在途 operation。没有 unregister 是安全
+边界：module unload 需要追踪 created object、函数指针与并发 reader quiescence，应由独立 module
+manager 负责，而不是让通用名字表猜测。
 
 ## 复杂度与布局合同
 
-- `ScopeGuard` 构造/销毁、`Ref` copy/drop、`SpinLock` 无争用、`Rng next_*` 都是 O(1)；
-  `Rng::discard(n)` 是 O(n)，固定大跨度拆流用 O(256) 的 `jump/long_jump`。
-- `Rng::shuffle(n)` 是 Fisher–Yates O(n)；bounded integer 期望 O(1)，拒绝采样保证无偏。
-- `type_name/hash` 在常量求值完成；hash 是 O(编译器类型名长度)，不属于运行期热循环。
-- 普通 `SpinLock` 必须保持紧凑。若某个 owner 用 profile 证明伪共享，由 owner 显式
-  `alignas(core::kDestructiveInterferenceSize)`，不能让所有嵌入对象无条件多付 64/128 bytes。
-- SpinLock 成功交换保持 acquire-release。语言内存模型只要求 acquire，但 M4 真机 A/B 表明
-  acquire-only RMW 会令 8-waiter hand-off 跌到 oneTBB 的约 0.47x；与 oneTBB 同档的更强 RMW
-  是当前 ARM cache-coherence/codegen 合同，不得以“理论最弱序”名义机械削弱。
-- `Ref<T>` 保持一个指针；计数位于对象中。它的产品价值是所有权/布局，不承诺每个平台
-  的原子 copy 都快过 `shared_ptr`。
+- ScopeGuard 操作、Ref copy/drop/cast、SpinLock 无争用和 RNG scalar draw 是 O(1)。
+- RNG bounded draw 期望 O(1)，`discard(n)` O(n)，`jump/long_jump` 固定 O(256)，shuffle O(n)。
+- type-name 在常量求值切片；hash 是 O(类型名长度) 的 constexpr 工作，不在运行期热路。
+- Registry 查找是 O(|key|) hash + expected O(1) probes；register 另复制 O(|key|+|help|)，扩容摊销
+  expected O(1)；枚举 O(n)。mutable 枚举临时空间 O(n)，frozen 枚举 O(1)；freeze 时间/额外
+  空间 O(1)。最坏查找仍受恶意 collision 约束。
+- `Ref<T>` 保持一个指针，计数在对象内；SpinLock 保持 1 byte。需要 cache-line padding 时由经
+  profile 证明伪共享的 owner 显式添加，不能让所有实例无条件付费。
+- SpinLock 成功 RMW 保留 acquire-release。M4 真机表明削为 acquire-only 会使 8-waiter handoff
+  跌至 oneTBB 约 0.47x；这是 ISA/codegen 合同，不以抽象模型的最弱合法序机械替代实测。
 
-## 依赖和采用闸门
+## C ABI 原则
 
-当前直接生产消费者只有 `SpinLock/cpu_relax`：mem 的 FiberStackPool、sched 的等待/调度
-细节和 graph 的首错槽；这些边现在都由 `hyle::util_core` target 明确表达。审查时必须看临界区实际工作，
-不能因为类型名叫 SpinLock 就默认正确。mem LeakTracker 曾把可能 allocate/rehash 的
-`unordered_map` 操作放在 SpinLock 下；container ConcurrentVector 又会在写锁中分配 segment
-并运行任意用户构造函数。本轮两处均改为 `std::mutex`，container 因而不再反向 include
-util-core。mem 与 graph 的临界区只做固定状态/指针转移；sched 部分泛型同步路径会在锁内
-move/construct `T`，已登记为 sched 严格复审触发器，不能反过来把 sched 未审结论伪装成
-util-core 缺陷或证书。
+`hyle/c/util.h` 属于 util-runtime，使用 `hyle_status` 和 `hyle_allocator`，不发明模块私有错误槽或
+allocator。RNG 以 POD state/batch 映射；Ref、Registry、SpinLock 以 opaque handle/callback 擦除；
+demangle 使用 caller buffer。字符串采用 length-aware container view，并提供 cstr inline。
 
-Rng/Ref/ScopeGuard/type-name 当前主要是用户能力。没有内部消费者不等于应删除，也不能为了
-提高“采用率”硬塞进不匹配路径；它们分别对应成熟库长期提供的独立基础能力。
+C ABI 当前 46 个动态符号和 10 个 header-inline 便利入口。C++ 的 template/cast 语法与静态
+type-name 有意不伪造。C ScopeGuard 也有意不存在：heap handle 无法提供离开 C 词法作用域自动
+cleanup 的语义，用户应使用 `goto cleanup` 或宿主语言 defer/finally。这叫语义覆盖，而不是把每个
+C++ 函数名机械翻译成 C。
 
-## C ABI 边界
+## 内部采用与依赖检查
 
-util-core 本身是同工具链 C++ header seam，以可安装的 `hyle::util_core` INTERFACE target
-表达 include/组装合同，没有独立 binary ABI。现有 `hyle/c/util.h` 属于
-util-runtime：RNG 以 POD state+batch 映射，Ref/ScopeGuard/SpinLock/Registry 以 opaque
-handle+callback 擦除，type-name/hash 有意仅 C++。该 C 面仍使用历史私有
-`hyle_util_last_error`，必须在 container→完整 util 波次迁到共享 error/`hyle_status` 后才可
-取得严格证书；本轮不得把“纯 C smoke 能编”误写成 C ABI 已冻结。
+mem 的短固定状态/指针转移、sched 等待细节和 graph 首错槽显式依赖 `hyle::util_core` 的
+SpinLock/cpu_relax。会 allocate/rehash/执行未知用户代码的 mem LeakTracker 与 container
+ConcurrentVector 使用 mutex。Registry 的 binary/C adapter 显式链接 error、mem、container 和
+util_core；这些依赖同时由中央 component graph 与 target link 生成/验证。
+
+下游审查仍按实际临界区和生命周期判断，不能把类型名当证据。sched 内锁下 move/construct
+泛型 `T` 的路径仍由 sched 自己收口，不反向污染 util 结论。
 
 ## 维护闸门
 
-1. 新 helper 先证明至少一个真实用户场景，再判断归 util-core、已有模块还是不做。
-2. util-core 公开头必须逐头 self-contained 编译；禁止 include container/platform runtime 头。
-   安装包还必须以 `find_package(Hyle COMPONENTS util_core)` 单独消费，不能借源码树 include 假过。
-3. RNG 算法/状态布局变化必须更新固定序列；默认线程种子变化不得改变显式 seed 的可复现流。
-4. Ref/SpinLock 并发修改过 TSan；布局修改在三工具链 `sizeof` 和下游 owner 上复验。
-5. benchmark 只验证同合同实现与适用边界，不反向决定 API，也不以高争用 spin 获胜为目标。
+1. util-core 公开头必须逐头 self-contained，并可由安装包单独请求；禁止 include runtime 头。
+2. Registry 修改必须复验 mutable/frozen、reentrant callback、freeze race、allocator failure、
+   TSan 和 installed shared/static C/C++ consumer。
+3. RNG 算法/状态布局变化更新固定序列；默认 TLS seed 变化不能破坏显式 seed 的可复现流。
+4. Ref/SpinLock 并发修改跑 TSan；布局修改在 MSVC/GCC/AppleClang 和真实下游 owner 上复验。
+5. C ABI 增删时机械对账动态符号、header-inline、纯 C smoke 与 guide；错误统一走 error。
+6. benchmark 只验证同合同实现与选择边界，不反向制造 API、常态元数据或 workload 特化。

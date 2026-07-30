@@ -1,128 +1,96 @@
-# util 两阶段严格收口
+# util 两层严格收口
 
-## 当前状态（2026-07-29 严格回审）
+## 当前状态（2026-07-30）
 
-| 审查单元 | 当前结论 |
+| 审查单元 | 结论 |
 |---|---|
-| `util-core`：Ref/ScopeGuard/Rng/type-name/SpinLock | ✅ `3c32be6`：真实组件/安装消费、成熟形状、三平台正确性/TSan/性能严格收口 |
-| `util-runtime`：Registry/demangle/当前 C adapter | 🟡 container 前置已完成；仍须独立审 Registry 形状、共享 error、binary/API table 与完整 C ABI |
+| `util-core`：Ref/ScopeGuard/Rng/type-name/SpinLock | ✅ `3c32be6`：独立组件、成熟形状、三平台正确性/TSan/性能收口 |
+| `util-runtime`：Registry/demangle/纯 C adapter | ✅ `d3120fe`：真实消费形状、共享 error/mem、完整 C ABI、三平台正确性/TSan/性能与 package 收口 |
 
-本轮没有把目录名当成一个假节点。`util-core` 是零 HYLE 二进制依赖、但有真实
-`hyle::util_core` INTERFACE component/target 的公开头 seam；
-`util-runtime` 因 Registry 依赖 container，不能在其地基未冻结时先宣布完整 util/C ABI 稳定。
-当前架构见 [`../architecture/util-design.md`](../architecture/util-design.md)，用户选型见
-[`../guide/util.md`](../guide/util.md)，三平台 n=15 证书见
-[`../performance/benchmarks-util.md`](../performance/benchmarks-util.md)。
+完整 util 已按 [`module-closure-methodology.md`](../architecture/module-closure-methodology.md) 暂时结束关注。
+长期边界见 [`../architecture/util-design.md`](../architecture/util-design.md)，用户选型见
+[`../guide/util.md`](../guide/util.md)，C ABI 见 [`../guide/c-util.md`](../guide/c-util.md)，
+三平台性能证据见 [`../performance/benchmarks-util.md`](../performance/benchmarks-util.md)。
 
-### 本轮严格结论
+## 为什么分两层
 
-- 原本“直接 include、没有 target”的隐形层被提升为可选择/安装的 `util_core` 组件；mem、sched、
-  graph、util-runtime 的直接边由同一 component manifest 同时生成闭包和真实 target link。
-  source-independent shared/static package consumer 均只请求并使用该组件。
-- ScopeGuard 补齐 `[[nodiscard]]`、显式 `invoke()`（至多一次）和 `active()`；Ref 支持 const
-  与兼容转换赋值，并补异构 identity compare/hash 及标准同形 pointer casts；成功的 rvalue
-  cast 转移 ownership，失败的 dynamic rvalue cast 保留源。ScopeGuard 显式 invoke 可传播异常，
-  析构期异常 terminate，与 Abseil/Folly 的消费者形状一致。
-- Rng 成为标准 URBG，补自然 iterator shuffle 与真实熵播种的 thread-local 默认流；显式 seed
-  仍可复现，安全随机明确不在范围内。
-- SpinLock 从无条件 cache-line padding 改为 oneTBB/Folly 同类紧凑 TTAS；首次 probe 不做
-  无效 RMW，指数 backoff 后 yield，AArch64 使用同类 instruction barrier。一次 acquire-only
-  RMW“理论简化”令 M4 8-thread 跌到 oneTBB 约 0.47x；`3c32be6` 恢复 acquire-release 后正反序
-  与双 QoS 回到同档。三工具链均为 1 byte。
-- 下游按临界区内容而非 benchmark 名称裁决：mem LeakTracker 与 ConcurrentVector 因锁内会
-  allocate/rehash/执行用户代码改用 mutex；mem 栈池与 graph 的真正短临界区保留 spin，sched
-  的泛型路径留自己的严格波次裁决。
-- util-core 逐头 self-contained；Win/Linux/M4 正确性通过，Linux TSan 覆盖 Ref/Spin、
-  mem 受影响项与 ConcurrentVector，无 race。Rng/Ref/SpinLock 同合同成熟 peer 无 material LOSE；
-  Linux mutex 反例保留在选择合同中。
-- mem FiberStackPool 与 graph 首错槽只在锁内转移固定状态/指针，保留 SpinLock；sched 有路径
-  在锁内 move/construct 泛型 `T`，已作为 sched 严格复审触发器登记，不越权替 sched 宣布通过。
+`util-core` 是零 HYLE binary 依赖的 `hyle::util_core` INTERFACE component，供低层 mem/sched/
+graph 和普通 C++ 用户消费。Registry 的形状依赖 container SwissTable/string view 和 mem，
+因此 Registry、demangle 与 C adapter 属于 `hyle::util` runtime。中央 component graph 与真实
+target link 都表达 `util -> error + mem + container + util_core`，没有制造 container↔util 环。
 
-### 当前提交与验证
+## util-core 结论
 
-- `5dfb74a`：建立组件、包样例与 Ref/ScopeGuard/API 修复；`e87c543`：完成 test/bench 所有权迁移；
-  `fde9b41`：Apple QoS 可复现实验；`3c32be6`：修复 ARM RMW 性能缺陷。
-- Windows MSVC 19.50、WSL GCC 14.2、AppleClang 21：逐头与 util-core tests 均 2/2；
-  installed shared/static C++ consumer 通过；mem 受影响闭包 6/6。WSL ASan/UBSan/TSan 通过。
-- 当前 n=15 证书见 [`../performance/benchmarks-util.md`](../performance/benchmarks-util.md)；M4
-  explicit interactive/utility 均执行，Darwin 未伪称硬 P/E affinity。
+- ScopeGuard 与 Abseil/Folly 同形：栈内、move-only、一次执行、dismiss/invoke；析构 callback
+  抛异常会 terminate，guide 明确优先资源自己的 RAII。
+- Ref 是单指针 intrusive strong ownership，补齐异构 identity/hash、const conversion 和三类
+  pointer cast；无 weak/aliasing 的选择边界公开。
+- Rng 是 xoshiro256++ 标准 URBG，Lemire bounded draw、iterator shuffle、jump/long_jump 与
+  TLS 非安全便利流完整；安全随机明确不在范围内。
+- SpinLock 是 1-byte TTAS/backoff。一次 acquire-only RMW 令 M4 8-thread handoff 跌到 oneTBB
+  约 0.47x，`3c32be6` 恢复 acquire-release 后双 QoS 回到同档；高争用和长临界区不选 spin。
+- mem LeakTracker/ConcurrentVector 等锁内会分配或执行用户代码的误用已改 mutex；真正短固定
+  状态/指针转移的 mem/graph 路径保留 SpinLock。
 
-### 代码量快照
+## util-runtime 发现与修复
 
-`cloc`（tracked workspace；自实现语言取 C++/C header/C/CUDA）：全库代码 **278,716**，
-自实现含测试 **135,488**，自实现不含测试 **92,909**，当前 util-core 五个实现头 **620** 行。
-测试、benchmark、样例、CMake 与文档不计入“当前模块实现”。
+### 面向消费者的 Registry
 
-### 完整 util 的剩余门
+- 定位为 startup-registration/service-dispatch named factory，而不是 benchmark map 或动态模块
+  unload manager。拥有 key/help；priority 决定覆盖，避免链接/静态初始化顺序成为隐藏策略。
+- mutable 阶段线程安全；creator/visitor 都在锁外调用且可重入。mutable 枚举分配时间点快照，
+  frozen 枚举无锁、无分配。
+- `reserve` 后使用一张 Swiss index；`freeze()` 原地 release-publish，单向、幂等、O(1)、零分配。
+  普通 Registry 读取保留一次生命周期 acquire；高频 dispatch 缓存非 owning `FrozenView`，直接
+  查表。creator 内联于 lookup value，key 与冷 help/priority 元数据分区。
+- 明确不提供 unregister：动态库、created object 和并发 reader 的 quiescence 属于 module
+  manager。Registry 析构前由 owner 排空操作，且必须活过 FrozenView。
 
-container 已严格收口。完整 util 下一步只续审而不重做 util-core：确认 Registry 的 key/storage/并发与 type-erasure
-形状，裁决 demangle 是否应独立 target，把历史 `hyle_util_last_error` 迁到共享
-error/`hyle_status`，再机械验证纯 C 头、动态导出、所有权和 callback 生命周期。完成这些后，
-本任务页才可把“完整 util”标成严格收口。
+### C ABI 与底层模块接缝
 
-## 历史施工记录（2026-07-19，已被上述当前证书取代）
+- 删除历史 `hyle_util_last_error`，所有可失败控制面统一返回 owning `hyle_status`；Ref、Registry、
+  SpinLock 的 heap handle 都接受 `hyle_allocator`，不私自发明错误/分配协议。
+- 当前为 46 个动态符号 + 10 个 header-inline 便利入口。纯 C smoke 覆盖全部入口；字符串使用
+  length-aware view 并提供 cstr inline；RNG 有 POD/scalar/batch/jump/shuffle，Ref/Registry/
+  SpinLock 以 opaque handle 擦除。
+- 删除 C heap ScopeGuard。C 没有词法析构，手动 destroy 的 heap handle 没有提供 guard 的安全
+  语义；C 用 goto-cleanup，宿主语言用自身 defer/finally。
+- SpinLock 同时支持 allocator-backed heap 与 caller-owned aligned storage；checked Registry
+  create 与 nullable hot create 分开，诊断成本不污染热路。
+- demangle 保持 util binary 的单个冷路径符号；为一个符号再拆 component 不产生有意义的独立
+  能力族。
 
-以下内容保留为当时的 work-item 证据。其 mixed 模块状态、SpinLock 布局/ARM 策略、下游采用和
-性能点值不是当前架构或性能真相；当前结论只看上方链接的 architecture/guide/performance。
+## 验证证据
 
-| 字段 | 结论 |
-|---|---|
-| 范围 | Ref/ScopeGuard/type_name/Registry/Rng/SpinLock/demangle + C ABI |
-| 状态 | ✅ 功能、红队、C ABI、测试、三平台与性能边界收口 |
-| C ABI | 44 个动态导出 + 2 个 header-inline；纯 C smoke 全入口覆盖 |
+- Windows VS 18 Release util+container：10/10；installed shared/static 的纯 C 与 C++ consumer
+  四组均通过。
+- WSL GCC 14 Release util+container：10/10；全依赖 `HYLE_WERROR=ON` 构建和测试通过。
+- Linux TSan：26 个非 death C++ util case + C ABI test，无 race。
+- Apple M4 / AppleClang 21 util+container：10/10；performance 分 user-interactive/utility 两档。
+- C Registry 自有字符串、allocator failure、freeze race、可重入 factory/visitor、并发读取、
+  checked/hot 分流与 callback 生命周期均有回归。
 
-## 功能与红队修复
+## 性能结论
 
-1. `Ref<T>` 增加批量计数的零值、溢出、下溢 fail-fast；新增 `RefCompatible`，编译期拒绝 `Derived : RefCounted<Base>` 且 Base 非虚析构这一类最终 `delete Base*` 的危险形状。
-2. `Registry` 从“注册静止后读无锁”改为全部表访问同步；creator 指针在锁内复制、锁外调用，因此可重入。修复 move-only 参数未 forward、`Ref` default creator 实际不可构造，以及 GNU `##__VA_ARGS__` 非标准宏腿。
-3. `Rng` 增加状态 snapshot/restore、reseed、原生 u32 Lemire、`long_jump()` 和极端有限 double range。固定 seed 输出被测试钉死。`thread_rng` 改用进程唯一序列，修复 OS 复用线程栈时默认流重复。
-4. Windows ARM 的 `cpu_relax` 从无条件 `_mm_pause` 修为 ARM `__yield`；MSVC 显式包含 intrinsic 头。
-5. Windows demangle 对超过 1 KiB 的合法 `?` decorated symbol 做有上限扩容重试；buffer 合同统一 fail-fast。
-6. 下游审计确认 SpinLock 被 mem/container/sched/graph 实际消费；Rng/Ref/Registry/ScopeGuard 主要是用户能力，不为“消费率”强塞进不适合的热路径。调度器 victim 选择保留单字 xorshift：它只是 idle hot-path hint，不需要用户级随机质量。
+runtime benchmark 使用 Registry N=256 的真实 lookup+factory call。Windows/Linux/M4 上 mutable
+Registry 对 `mutex+std::unordered_map` 全部 WIN；推荐 FrozenView 对 Abseil immutable map 为
+WIN/WIN/TIE，多线程为 TIE/WIN/TIE。C nullable frozen create 对 std 单/多线程三平台全胜。
 
-## C ABI 能力覆盖
+M4 utility 普通 Registry 因保留 lifecycle atomic 单线程约慢 Abseil 4.5%，absolute TIE；明确
+缓存 FrozenView 后回到 TIE。Linux 11-byte raw hash 比 Abseil 慢约 14%，但它只是 container
+原语诊断，完整 Registry 路径仍胜；没有为孤立微基准扭曲产品 API 或增加常态元数据。
 
-按 `c-abi-design.md` / `c-abi-authoring-guide.md` 做能力擦除：
+## 代码量快照
 
-| 原生能力 | C 通路 |
-|---|---|
-| demangle | buffer-fill |
-| Rng | 256-bit POD + scalar/batch/range/shuffle/jump/TLS |
-| Ref<T> | opaque payload + destroy callback strong handle |
-| ScopeGuard<Fn> | opaque callback+ctx guard |
-| Registry<Ptr,Args...> | opaque runtime registry + factory/visitor |
-| SpinLock / cpu_relax | opaque lock / header-inline hint |
-| type_name<T>/type_hash<T> | 有意 C++ only；运行时无法恢复编译器静态类型 |
+`cloc`（tracked workspace；自实现语言取 C++/C header/C/CUDA）：全库代码 **281,133**；
+自实现含测试 **136,425**；自实现不含测试 **93,582**；当前 util-runtime 实现
+（Registry/demangle/C adapter，不含测试/benchmark/文档）**1,577** 行。
 
-机械核对：C 头共 46 个 `hyle_util_*` 可调用入口，纯 C smoke 46/46 均引用；其中 44 个为动态符号，`rng_clone` 与 `cpu_relax` 为 header-inline。
+## 重新打开本模块的触发器
 
-## 验证
-
-- Windows x64 MSVC：`hyle_util_test` 73/73，纯 C smoke 绿；DLL 44/44 动态符号。
-- WSL Linux GCC 14.2，本地 `/root/hyle` ext4：旧 70-case 全量 death run 也通过，但 WSL 的 gtest death 子进程收割约耗 103 秒；当前 TSan、ASan、UBSan 下 68 个非 death case + 纯 C smoke 全绿。death contract 另在 Windows/macOS 快速真跑，不为缩短 WSL 仪器时间改变全局 trap 语义。
-- Apple Silicon / AppleClang 21：73/73 + 纯 C smoke；ARM64 `cpu_relax`/SpinLock 真编真跑；dylib 44/44 动态符号。
-- 并发：原生 Ref/Registry/SpinLock 与 C Ref/Registry/SpinLock 均有多线程压力；TSan 零 race。
-- 内存：callback 生命周期、registry 自有字符串、opaque 句柄经 ASan+LeakSanitizer；零泄漏/UAF。
-
-GCC `-Werror` 全库门仍会被既有 SIMD 头的 `ignored-attributes` / unused typedef 警告挡住；util 自身不是报错源。普通 warning 配置、三类 sanitizer 与 AppleClang 均通过。该跨模块 warning 债不伪装成 util 功能缺陷。
-
-## 三平台性能结论
-
-单位 ns/op；单次收口复测用于确认量级和边界，不把高方差争用行宣传成精确 SOTA。
-
-| 项 | Windows | Linux | Apple M4 | 结论 |
-|---|---:|---:|---:|---|
-| Rng next / mt19937_64 | 1.59 / 2.32 | 1.38 / 1.44 | 2.26 / 3.47* | Win/Mac 赢；GCC 基本平（M4 std 行高方差） |
-| runtime-varying range / std | 2.09 / 2.86 | 1.47 / 2.08 | 2.17 / 7.68 | 三平台赢 1.37–3.54x |
-| C scalar / C++ scalar | 2.47 / 1.52 | 1.84 / 1.40 | 2.35 / 2.26 | 单值 ABI seam 约 0.09–0.95ns |
-| C fill / C++ fill | 4.99 / 5.16 | 0.67 / 0.68 | 0.65 / 0.65 | batch 摊薄后打平 |
-| SpinLock / mutex，无争用 | 3.71 / 10.94 | 4.79 / 2.48 | 1.01 / 4.19 | 平台翻转；Linux mutex 更快 |
-| SpinLock / mutex，8 threads | 50.17 / 50.59 | 60.44 / 39.08 | 271.88 / 20.98 | 高争用不该用 spinlock，M4 尤其明显 |
-| Ref / shared_ptr，fan-out | 10.13 / 8.09 | 8.33 / 11.12 | 3.19 / 3.22 | Windows 输、Linux 赢、M4 平；不作无条件“更快”宣传 |
-
-边界比漂亮倍数更重要：Rng 的 batch C ABI 是成功的；SpinLock 只用于极短低争用区；Ref 的价值是侵入式所有权/少一次控制块分配和稳定对象模型，不是保证每个工具链的原子拷贝都更快。
-
-## 附带修复的 benchmark 仪器债
-
-`scheduler_ext_bench` 仍调用已经删除的 `(Allocator, stack_size, ...)` Fiber 构造器，收口时首次重建即失编译，已迁到 guarded-stack 构造器。原 2,000-round work-stealing shape 又被串行 VM stack setup 淹没，1→8 曲线只剩约 1.45x；A/B 证明与 Rng/xorshift 无关。将计算量提高到 20,000 rounds 后，Win/Linux/M4 的 1→2→4→8 曲线分别为
-`1/1.78/2.85/3.95`、`1/1.66/2.47/3.11`、`1/1.74/2.95/4.34`，重新能测调度扩展而不是栈构造。
+- 出现需要动态装卸 shared library 的真实消费者：新增独立 module manager，不给 Registry 偷加
+  无法证明安全的 unregister。
+- Registry 规模/读写生命周期明显偏离 init-heavy/read-heavy，或 FrozenView 生命周期在真实 API
+  中难以管理。
+- 新 ABI 增删、allocator/error 约定变化、RNG 状态布局变化，或 sanitizer/三平台 peer 证书回退。
+- 下游模块收口发现 util 接缝的真实缺口；修复后必须回跑受影响闭包和 installed-package probes。

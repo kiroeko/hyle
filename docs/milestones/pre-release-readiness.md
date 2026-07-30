@@ -1,10 +1,10 @@
-# HYLE 预发布就绪度与模块严格收口队列（2026-07-29）
+# HYLE 预发布就绪度与模块严格收口队列（2026-07-30）
 
 ## 结论
 
 HYLE 的“实现进度”与“当前标准的收口证书”必须分开读：除 compute/graph 仍有产品能力尾，
 其余模块的主体实现基本存在；当前持有严格证书的是
-**core、error、platform、mem、time、build/package、util-core、obs、container**；core 因真实
+**core、error、platform、mem、time、build/package、完整 util、obs、container**；core 因真实
 SIMD/vqsort 消费者暴露的 compiler/cache primitive 重复实现已在 2026-07-29 完成三平台局部复证。mem 在 2026-07-26 成熟库红队中发现的
 P0/API/分发性能缺口均已修复；2026-07-29 又以 `8c85331` 关闭 PMR 零字节、显式 runtime
 adapter 与 installed mem consumer 合同，并由三平台 shared same-link 与正确性/ABI/sanitizer
@@ -12,8 +12,8 @@ adapter 与 installed mem consumer 合同，并由三平台 shared same-link 与
 
 | 层次 | 当前判断 | 下一动作 |
 |---|---|---|
-| 严格认证基线 | core、error、platform、mem、time、build/package、util-core、obs、container | 只因明确触发器或依赖受影响项局部回验；core 与 StringInterner Apple cache-layout 边均已复证转绿 |
-| 已实现、待新标准复审 | math、util-runtime、sched、io、simd | 按本文队列逐模块收口，不按旧 benchmark 形状默认通过 |
+| 严格认证基线 | core、error、platform、mem、time、build/package、util、obs、container | 只因明确触发器或依赖受影响项局部回验；core、StringInterner 与 util-runtime 均已复证转绿 |
+| 已实现、待新标准复审 | math、sched、io、simd | 按本文队列逐模块收口，不按旧 benchmark 形状默认通过 |
 | 仍有能力尾 | compute、graph | 先用真实北极星补能力，再执行同一严格合同 |
 | 整库发布面 | build/package 架构已重签；持续回归迭代中 | 随模块验收递增 focused consumer/sanitizer/feature 门；最终 ABI/FFI/bundle 总验收仍在 R6 |
 
@@ -22,7 +22,7 @@ build/package system 的模块 target 图、可组合子集与三种交付形状
 AArch64 compile 从代表性组件提升为当前 all-component CPU 图，并明确 all-build 不等于模块验收。
 其架构证书没有被重开，但验证集合将随每个模块收口递增。2026-07-29 又启动底层已认证模块的
 定向复证 sweep；每个模块只复验明确触发的合同并在下表更新绑定，不因重复查看自动作废
-`util-core seam`、obs、container 或后续 util-runtime 的排队位置。
+util、obs 或 container 的证书。
 
 ## 底座五模块交叉引用复验（2026-07-25）
 
@@ -64,8 +64,8 @@ static mem 闭包在 `-Werror` 下干净构建；AppleClang shared 20/20。三�
 未声明的二进制依赖。
 
 因此这五个底座模块的**相互引用可以关闭**；util-core 对 mem 的受影响边也已回验，下一审查
-单元当时是 container；该单元和随后独立复审的 build/package 均已收口，后续未认证队列仍从
-util-runtime 继续。性能边界另作
+单元当时是 container；该单元、随后独立复审的 build/package 与 util-runtime 均已收口，后续
+未认证队列从 sched 继续。性能边界另作
 诚实限定：Windows 已量到 shared direct-import 相对同进程 raw mimalloc 约 4.5–6% 的 DSO
 边界成本；三平台“同链接形状”的最终性能证书仍登记在 performance 文档，不能把本次依赖
 正确性结论扩大成性能结论。该性能尾随后由 clean `c640072` 的 Win/WSL/M4 双 QoS same-link
@@ -124,11 +124,11 @@ benchmark 宣称 SOTA。
 2. **build/package system**（✅ 2026-07-29）：模块归属拆分后，组件/cache/终态依赖、三种交付、双测试形状、三平台 package consumer 与 configure/incremental 性能重签完成。
 3. **util-core seam**（✅ 2026-07-29，`3c32be6`）：低层 header 能力由真实
    `hyle::util_core` INTERFACE component/target 承载；Ref/ScopeGuard 易用形状、mem/graph 消费、
-   三平台 installed consumer/TSan/n=15 与 M4 双 QoS 已复证。sched 泛型锁内构造留 sched 波次，
-   Registry 未被提前冻结。
+   三平台 installed consumer/TSan/n=15 与 M4 双 QoS 已复证。sched 泛型锁内构造留 sched 波次。
 4. **obs**（✅ 2026-07-29）：runtime 已按新方法复证 exact-byte record、RAII/quiescent sink、compile floor 与 24-symbol C surface；trace gate 及 mem/sched/io/compute hooks 的既有证书保留。
 5. **container**（✅ 2026-07-27）：功能负空间、复杂度、争用、allocator/error/platform、C/C++ 形状、三平台/Sanitizer 与性能证书已收口。
-6. **util-runtime / 完整 util**：container 稳定后再冻结 Registry、type-erasure 与完整 C ABI，合并 util-core 的证书。
+6. **util-runtime / 完整 util**（✅ 2026-07-30，`d3120fe`）：container 稳定后完成 Registry
+   mutable→frozen 形状、共享 Status/allocator、完整 C ABI、TSan/package 与三平台性能证书。
 7. **sched**：汇合 platform/mem/time/container；按真实任务、同步、取消、关闭和 blocking workload 审算法及 API。
 8. **io**：在 sched 合同稳定后审 proactor、网络/文件/TLS/HTTP 的普通路径、错误、deadline/cancel 与跨后端性能。
 9. **math↔simd 边界审查，再收 simd**：先裁决 scalar/std/SIMD/消费域归属，再冻结 SIMD dispatch、dtype/math/sort/search。
@@ -156,7 +156,8 @@ math 的处理相反：它当前不是经过独立需求设计的产品，而是
 | util-core | 低层公开头能力完成 | ✅ 2026-07-29 `5dfb74a`/`3c32be6`；独立组件、实际使用形状、三平台正确性/package/TSan/性能已签证；acquire-only ARM 真实回退已修 |
 | obs | 功能主体完成 | ✅ 2026-07-29 `4d31bcf`/`06cec5a` 严格复证；exact-byte structured producer、RAII/quiescent sink、compile-floor log + trace seam；24/24 C surface，三平台 Release/package/n=15 与 WSL sanitizer 已签证 |
 | container | 功能/API/依赖/主体性能证书完成 | ✅ 主体严格证书保留；core 语义消费者扫描将 StringInterner Apple shard spacing 64→128B，M4 correctness 与 8t normal workload 受影响项已复证 |
-| util-runtime、math、sched、io | 功能主体基本完成 | 待按新合同认证；旧 closure 是输入证据，不是自动通行证 |
+| util-runtime | Registry/demangle/C adapter 完成 | ✅ 2026-07-30 `d3120fe`；FrozenView、46 dynamic + 10 inline C 面、共享 Status/allocator、三平台 TSan/package/n=15 已签证 |
+| math、sched、io | 功能主体基本完成 | 待按新合同认证；旧 closure 是输入证据，不是自动通行证 |
 | simd | 功能主体基本完成 | 🟡 strict Round 1 完成；f16/bf16 lanes、共享 error、scalable 真硅性能与最终发布面仍为 P0 |
 | compute、graph | 主干存在、不是 stub | 仍有能力尾；完成能力后按同合同认证 |
 

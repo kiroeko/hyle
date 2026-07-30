@@ -16,7 +16,7 @@
 时间分支：core/header ··▶ time-native；error ──▶ time ──▶ sched；time/value ··▶ platform/fs
 计算分支：{error, platform} ──▶ simd ──▶ compute；sched ──▶ compute
 图分支：  container ──▶ graph；sched ──▶ graph
-util 产品：container ──▶ util-runtime；util-core ··▶ util-runtime
+util 产品：{error, mem, container} ──▶ util-runtime；util-core ··▶ util-runtime
 
 util-core ··▶ mem / sched / graph
 hyle_trace - -▶ every hyle_add_module target - -▶ one optional Tracy client
@@ -39,9 +39,9 @@ math ──▶ users（当前无生产下游）
 | `platform` | error | — | OS/thread/VM/fs/CPU 机制；fs 复用 time 的 C-compatible UnixTimestamp 值头；`hyle/platform.h` 宏头本身零链接 |
 | `mem` | error、platform、util-core | mimalloc | FiberStackPool 的短临界区；obs trace hook |
 | `time` | error | — | native timer 借 `core/intrusive_list`；不链接 platform/container |
-| `container` | mem | platform | 当前无 util-core 边；ConcurrentVector 的非短写临界区使用 mutex |
+| `container` | error、mem | platform | 公开头暴露 Status/mem 类型；当前无 util-core 边，ConcurrentVector 的非短写临界区使用 mutex |
 | `simd` | error、platform | — | 统一错误契约由 error 提供；运行期 ISA 能力由 platform 提供 |
-| `util-runtime` (`hyle_util`) | container、util-core | — | registry 经 container 同时借 mem；原生头不依赖该二进制目标 |
+| `util-runtime` (`hyle_util`) | error、mem、container、util-core | — | Registry/C adapter 显式借共享 Status/allocator；原生 util-core 头不依赖该二进制目标 |
 | `sched` | error、mem、container、platform、util-core | time | 短临界区与泛型同步路径；后者随 sched 严审；obs trace hook |
 | `io` | — | error、mem、container；有 fcontext 时 sched | obs trace hook |
 | `compute` | error、mem；有 fcontext 时 sched | platform、simd；可选 GPU/ggml 供应商 | obs trace hook |
@@ -154,7 +154,7 @@ simd 不进 sched 链，只在 compute 汇合。obs-runtime 是用户产品根�
 |---|---|---|
 | **R0 基线** | error、platform、mem、time | 四模块已按当前实际使用标准形成严格证书；mem 以 clean `c640072` 关闭 shared adapter/realloc 性能尾，`8c85331` 再关闭 PMR zero-size、显式 runtime adapter 与 installed consumer 合同 |
 | **R1 根、构建与接缝** | core ✅ → build/package system ✅ → util-core seam ✅ → obs ✅ | core compiler/cache primitive 已由 Windows/WSL/M4 codegen、正确性及 SIMD/vqsort 真实消费者复证，四项恢复冻结 |
-| **R2 容器层** | container ✅ → util-runtime/完整 util | core 语义扫描修正 Apple shard spacing；M4 correctness 与 8-thread normal workload 已局部复证，StringInterner 恢复全绿 |
+| **R2 容器层** | container ✅ → util-runtime/完整 util ✅ | container 恢复全绿后，util-runtime 以 `d3120fe` 完成一表两阶段 Registry、共享 Status/allocator、完整 C ABI、TSan/package 与三平台 n=15 收口 |
 | **R3 运行时链** | sched → io | sched 汇合 mem/time/container/platform，io 再消费 sched；反序会反复改 timeout/cancel/completion 形状 |
 | **R4 计算基础** | math↔simd 边界审查 → simd | math 是 clay math 被 std/SIMD 吸收后的残余，不先假定它应独立；先裁决 scalar/std/SIMD 归属，再冻结 SIMD dispatch、类型、算法与正常 batch API |
 | **R5 未完支柱** | compute → graph | 这两者不是“复审已完成实现”，而是先补真实能力再按同一合同收口；graph 最后汇合 sched/compute/simd |
@@ -165,8 +165,8 @@ R1 的 build/package system 是独立审查单元：CMake target 图必须准确
 source embed、`add_subdirectory`、install/`find_package`、CI/交叉编译有一致迁移路径；preset、
 toolchain 和脚本执行环境契约，文档只解释。完成它之后，R1 的 util 才审
 `SpinLock/cpu_relax`、`Ref`、`ScopeGuard`、RNG/type-name 等低层公开头的
-依赖与形状；Registry 和整个 `hyle_util` 产品必须等 container，当前该前置已经满足但完整
-util-runtime 审查尚未执行，仍在 R2 完成。这是两个真实
+依赖与形状；Registry 和整个 `hyle_util` 产品必须等 container，该前置与 util-runtime
+严格审查现均已完成。这是两个真实
 构建层的门，不是对同一模块做两轮无边界复审。当前严格状态与唯一“下一模块”只见
 [`pre-release-readiness.md`](../milestones/pre-release-readiness.md)。
 

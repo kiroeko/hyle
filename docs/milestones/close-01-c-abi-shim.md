@@ -53,7 +53,7 @@
   **103** 个动态导出由 header、
   纯 C consumer 与 DLL/ELF manifest 同步。能力边界和剩余 parity 审计见
   [`mem-final`](./mem-close-plan.md)，逐符号文档见 [`c-mem.md`](../guide/c-mem.md)。
-- [x] **util**（2026-07-19 全面复审）：`include/hyle/c/util.h` + `c_util.cc` + 纯 C smoke。RNG 用稳定 POD；Ref/ScopeGuard/Registry/SpinLock 用 opaque handle + callback/ctx 类型擦除；demangle/help 用 buffer-fill。机械覆盖 46/46 可调用入口，其中动态导出 44 个、header-inline 2 个；三平台导出及 C/C++ 测试通过。仅 `type_name<T>`/`type_hash<T>` 因依赖编译器静态类型而有意留 C++。文档：[`c-util.md`](../guide/c-util.md)，复审：[`util-module-closure.md`](./util-module-closure.md)。
+- [x] **util**（2026-07-30 runtime 严格复审）：`include/hyle/c/util.h` + `c_util.cc` + 纯 C smoke。RNG 用稳定 POD；Ref/Registry/SpinLock 用 opaque handle + callback/ctx 类型擦除；demangle/help 用 buffer-fill；失败和分配统一使用共享 `hyle_status`/`hyle_allocator`。机械覆盖 46 个动态符号 + 10 个 header-inline convenience。C heap ScopeGuard 因不具词法析构语义而删除；`type_name<T>`/`type_hash<T>` 有意仅 C++。三平台导出、C/C++ package 与 TSan 通过。文档：[`c-util.md`](../guide/c-util.md)，复审：[`util-module-closure.md`](./util-module-closure.md)。
 - [x] **container**（2026-07-19 收口）：`include/hyle/c/container.h` +
       `c_container.cc`，覆盖字符串/路径、StringInterner、runtime-erased POD
       vector/flat Swiss map、五类 pointer-payload queue 和 append-only vector。
