@@ -160,7 +160,7 @@ simd 不进 sched 链，只在 compute 汇合。obs-runtime 是用户产品根�
 |---|---|---|
 | **R0 基线** | error、platform、mem、time | 四模块已按当前实际使用标准形成严格证书；mem 以 clean `c640072` 关闭 shared adapter/realloc 性能尾，`8c85331` 再关闭 PMR zero-size、显式 runtime adapter 与 installed consumer 合同 |
 | **R1 根、构建与接缝** | core ✅ → build/package system ✅ → util-core seam ✅ → obs ✅ | core compiler/cache primitive 已由 Windows/WSL/M4 codegen、正确性及 SIMD/vqsort 真实消费者复证，四项恢复冻结 |
-| **R2 容器层** | container ✅ → util-runtime/完整 util ✅ | container 恢复全绿后，util-runtime 以 `d3120fe` 完成一表两阶段 Registry、共享 Status/allocator、完整 C ABI、TSan/package 与三平台 n=15 收口 |
+| **R2 容器层** | container ✅ → util-runtime/完整 util ✅ | container 恢复全绿后，util-runtime 以 `1b148ef`/`70fa4e8` 完成一表两阶段 raw/Result Registry、共享 Status/allocator、完整 C ABI、TSan/package 与三平台 n=15 收口 |
 | **R3 运行时链** | sched → io | sched 汇合 mem/time/container/platform，io 再消费 sched；反序会反复改 timeout/cancel/completion 形状 |
 | **R4 计算基础** | math↔simd 边界审查 → simd | math 是 clay math 被 std/SIMD 吸收后的残余，不先假定它应独立；先裁决 scalar/std/SIMD 归属，再冻结 SIMD dispatch、类型、算法与正常 batch API |
 | **R5 未完支柱** | compute → graph | 这两者不是“复审已完成实现”，而是先补真实能力再按同一合同收口；graph 最后汇合 sched/compute/simd |

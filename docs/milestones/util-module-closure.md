@@ -5,7 +5,7 @@
 | 审查单元 | 结论 |
 |---|---|
 | `util-core`：Ref/ScopeGuard/Rng/type-name/SpinLock | ✅ `3c32be6`：独立组件、成熟形状、三平台正确性/TSan/性能收口 |
-| `util-runtime`：Registry/demangle/纯 C adapter | ✅ `d3120fe`：真实消费形状、共享 error/mem、完整 C ABI、三平台正确性/TSan/性能与 package 收口 |
+| `util-runtime`：Registry/demangle/纯 C adapter | ✅ `1b148ef`/`70fa4e8`：fallible/raw 双形状、共享 error/mem、完整 C ABI、三平台正确性/TSan/性能与 package 收口 |
 
 完整 util 已按 [`module-closure-methodology.md`](../architecture/module-closure-methodology.md) 暂时结束关注。
 长期边界见 [`../architecture/util-design.md`](../architecture/util-design.md)，用户选型见
@@ -45,28 +45,32 @@ target link 都表达 `util -> error + mem + container + util_core`，没有制�
   查表。creator 内联于 lookup value，key 与冷 help/priority 元数据分区。
 - 明确不提供 unregister：动态库、created object 和并发 reader 的 quiescence 属于 module
   manager。Registry 析构前由 owner 排空操作，且必须活过 FrozenView。
+- factory 返回值贴近消费错误模型：raw nullable 的 missing/NULL 保持最短路径；
+  `Registry<Result<T>>` 把 missing 映射为 `NotFound` 并原样传播 creator error。两者表布局相同，
+  没有为了 benchmark 添加每项元数据；default creator 同样支持 `Result<Ref<T>>`。
 
 ### C ABI 与底层模块接缝
 
 - 删除历史 `hyle_util_last_error`，所有可失败控制面统一返回 owning `hyle_status`；Ref、Registry、
   SpinLock 的 heap handle 都接受 `hyle_allocator`，不私自发明错误/分配协议。
-- 当前为 46 个动态符号 + 10 个 header-inline 便利入口。纯 C smoke 覆盖全部入口；字符串使用
-  length-aware view 并提供 cstr inline；RNG 有 POD/scalar/batch/jump/shuffle，Ref/Registry/
+- 当前为 47 个动态符号 + 10 个 header-inline 便利入口。纯 C smoke 覆盖全部入口；字符串使用
+  length-aware view 并提供 cstr inline；RNG 有 POD/scalar/batch/discard/jump/shuffle，Ref/Registry/
   SpinLock 以 opaque handle 擦除。
 - 删除 C heap ScopeGuard。C 没有词法析构，手动 destroy 的 heap handle 没有提供 guard 的安全
   语义；C 用 goto-cleanup，宿主语言用自身 defer/finally。
-- SpinLock 同时支持 allocator-backed heap 与 caller-owned aligned storage；checked Registry
-  create 与 nullable hot create 分开，诊断成本不污染热路。
+- SpinLock 同时支持 allocator-backed heap 与 caller-owned aligned storage；C creator 直接返回
+  对象并接收可选 status。checked Registry create 传播 owning error，nullable hot create 传 NULL
+  让 creator 不构造诊断，诊断成本不污染热路。
 - demangle 保持 util binary 的单个冷路径符号；为一个符号再拆 component 不产生有意义的独立
   能力族。
 
 ## 验证证据
 
-- Windows VS 18 Release util+container：10/10；installed shared/static 的纯 C 与 C++ consumer
-  四组均通过。
-- WSL GCC 14 Release util+container：10/10；全依赖 `HYLE_WERROR=ON` 构建和测试通过。
-- Linux TSan：26 个非 death C++ util case + C ABI test，无 race。
-- Apple M4 / AppleClang 21 util+container：10/10；performance 分 user-interactive/utility 两档。
+- Windows MSVC 19.50 Release：util 4/4；installed shared/static 的纯 C 与 C++ consumer 四组通过。
+- WSL GCC 14 Release + `HYLE_WERROR=ON`：util 4/4；ASan/UBSan 4/4；TSan 在 WSL 需禁用 ASLR，
+  28 个非 death C++ case + C ABI test 无 race。
+- Apple M4 / AppleClang 21 Release + `HYLE_WERROR=ON`：util 4/4；performance 分
+  user-interactive/utility 两档。
 - C Registry 自有字符串、allocator failure、freeze race、可重入 factory/visitor、并发读取、
   checked/hot 分流与 callback 生命周期均有回归。
 
@@ -74,7 +78,8 @@ target link 都表达 `util -> error + mem + container + util_core`，没有制�
 
 runtime benchmark 使用 Registry N=256 的真实 lookup+factory call。Windows/Linux/M4 上 mutable
 Registry 对 `mutex+std::unordered_map` 全部 WIN；推荐 FrozenView 对 Abseil immutable map 为
-WIN/WIN/TIE，多线程为 TIE/WIN/TIE。C nullable frozen create 对 std 单/多线程三平台全胜。
+WIN/WIN/TIE，多线程为 TIE/WIN/TIE；同错误合同的 `Registry<Result<void*>>` 为 WIN/WIN/TIE。
+C nullable frozen create 对 std 单/多线程三平台全胜。
 
 M4 utility 普通 Registry 因保留 lifecycle atomic 单线程约慢 Abseil 4.5%，absolute TIE；明确
 缓存 FrozenView 后回到 TIE。Linux 11-byte raw hash 比 Abseil 慢约 14%，但它只是 container
@@ -82,9 +87,9 @@ M4 utility 普通 Registry 因保留 lifecycle atomic 单线程约慢 Abseil 4.5
 
 ## 代码量快照
 
-`cloc`（tracked workspace；自实现语言取 C++/C header/C/CUDA）：全库代码 **281,133**；
-自实现含测试 **136,425**；自实现不含测试 **93,582**；当前 util-runtime 实现
-（Registry/demangle/C adapter，不含测试/benchmark/文档）**1,577** 行。
+`cloc`（tracked workspace；自实现语言取 C++/C header/C/CUDA）：全库代码 **281,579**；
+自实现含测试 **136,674**；自实现不含测试 **93,690**；当前 util-runtime 实现
+（Registry/demangle/C adapter，不含测试/benchmark/文档）**1,614** 行。
 
 ## 重新打开本模块的触发器
 

@@ -34,7 +34,7 @@ Region；它因此属于 util-runtime，不能反塞进 P0。container 不依赖
 | `type_name/hash` | 编译期诊断、进程内标签 | pretty-function constexpr probe | 持久/跨编译器/plugin/wire ID |
 | `SpinLock` / `cpu_relax` | 几条指令的低争用临界区/atomic 自旋 | oneTBB/Folly 紧凑 TTAS/backoff | 高争用、阻塞、fiber-aware wait |
 | `demangle` | 日志、backtrace、诊断 UI | caller buffer + required-size | 热路径无分配保证 |
-| `Registry<Ptr, Args...>` | backend/plugin factory 在启动期组合，服务期按名创建 | owned names、priority resolution、mutable→immutable publication | 动态库 unregister/unload、依赖求解、对象排空 |
+| `Registry<Value, Args...>` | backend/plugin factory 在启动期组合，服务期按名创建 | raw nullable 或 `Result<T>` fallible factory、owned names、priority resolution、mutable→immutable publication | 动态库 unregister/unload、依赖求解、对象排空 |
 
 没有内部消费者不等于应删除用户能力，也不能为了“采用率”把它硬塞进不合适的热路径。反过来，
 新增 helper 必须先有真实消费者场景，并证明它不属于 core/container/mem/platform 等既有模块。
@@ -65,6 +65,11 @@ Registry 拥有 key/help，priority 保证静态初始化/链接顺序不成为�
 边界：module unload 需要追踪 created object、函数指针与并发 reader quiescence，应由独立 module
 manager 负责，而不是让通用名字表猜测。
 
+返回值形状决定失败合同，而不改变 Registry 的表布局。`Registry<T*>` 保留最短的 nullable
+factory：missing 和 factory 返回 NULL 都是 NULL。会因设备、驱动、配置或资源失败的 factory 应
+使用 `Registry<Result<T*>, Args...>`：missing 自动成为 `NotFound`，creator 的 `Status` 原样
+传播。该策略不增加每项元数据，也不要求 benchmark-only API。
+
 ## 复杂度与布局合同
 
 - ScopeGuard 操作、Ref copy/drop/cast、SpinLock 无争用和 RNG scalar draw 是 O(1)。
@@ -84,7 +89,9 @@ manager 负责，而不是让通用名字表猜测。
 allocator。RNG 以 POD state/batch 映射；Ref、Registry、SpinLock 以 opaque handle/callback 擦除；
 demangle 使用 caller buffer。字符串采用 length-aware container view，并提供 cstr inline。
 
-C ABI 当前 46 个动态符号和 10 个 header-inline 便利入口。C++ 的 template/cast 语法与静态
+C ABI 当前 47 个动态符号和 10 个 header-inline 便利入口。C Registry creator 直接返回对象，
+并接收可选 `out_status`：checked create 传入已初始化的 OK Status，nullable hot create 传 NULL，
+让 fallible creator 跳过诊断构造；两条路不增加每项元数据。C++ 的 template/cast 语法与静态
 type-name 有意不伪造。C ScopeGuard 也有意不存在：heap handle 无法提供离开 C 词法作用域自动
 cleanup 的语义，用户应使用 `goto cleanup` 或宿主语言 defer/finally。这叫语义覆盖，而不是把每个
 C++ 函数名机械翻译成 C。
@@ -102,8 +109,8 @@ util_core；这些依赖同时由中央 component graph 与 target link 生成/�
 ## 维护闸门
 
 1. util-core 公开头必须逐头 self-contained，并可由安装包单独请求；禁止 include runtime 头。
-2. Registry 修改必须复验 mutable/frozen、reentrant callback、freeze race、allocator failure、
-   TSan 和 installed shared/static C/C++ consumer。
+2. Registry 修改必须复验 raw nullable/`Result<T>`、C checked/nullable、mutable/frozen、reentrant
+   callback、freeze race、allocator failure、TSan 和 installed shared/static C/C++ consumer。
 3. RNG 算法/状态布局变化更新固定序列；默认 TLS seed 变化不能破坏显式 seed 的可复现流。
 4. Ref/SpinLock 并发修改跑 TSan；布局修改在 MSVC/GCC/AppleClang 和真实下游 owner 上复验。
 5. C ABI 增删时机械对账动态符号、header-inline、纯 C smoke 与 guide；错误统一走 error。

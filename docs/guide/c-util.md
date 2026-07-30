@@ -1,7 +1,7 @@
 # util 纯 C ABI 使用指南
 
 先用 [`util.md`](./util.md) 判断该选哪种能力；本页只说明纯 C/FFI 的准确形状。包含
-`hyle/c/util.h`，请求 CMake component `util` 并链接 `hyle::util`。当前 ABI 有 **46 个动态
+`hyle/c/util.h`，请求 CMake component `util` 并链接 `hyle::util`。当前 ABI 有 **47 个动态
 符号 + 10 个 header-inline 便利入口**；可失败的控制面统一返回 error 模块的 owning
 `hyle_status`，不再有 util 私有的线程局部错误槽。
 
@@ -42,10 +42,11 @@ if (!hyle_util_rng_fill_u64(&rng, ids, 1024)) {
 }
 
 hyle_util_rng worker = hyle_util_rng_clone(&rng);
+hyle_util_rng_discard(&worker, 100); /* 与连续取 100 个普通输出等价，O(n) */
 hyle_util_rng_jump(&rng); /* 下一 worker 再 clone；2^128 间隔 */
 ```
 
-scalar/range、`fill_u64/float/double`、callback shuffle、`jump/long_jump` 与线程局部便利流均有
+scalar/range、`fill_u64/float/double`、`discard`、callback shuffle、`jump/long_jump` 与线程局部便利流均有
 C 入口。batch 用于摊薄 FFI 调用。`hyle_util_thread_rng()` 返回当前线程借用指针，不能销毁、
 不能跨线程；显式状态用于可复现流程。任何 token/key/nonce 必须改用 OS 或 vetted crypto CSPRNG。
 
@@ -75,6 +76,15 @@ Registry 复制 key/help，并可使用调用方 allocator。字符串入口默�
 inline 便利函数。
 
 ```c
+static void* make_engine(hyle_status* out_status, void* config,
+                         const void* options) {
+  void* engine = application_make_engine(config, options);
+  if (engine == NULL && out_status != NULL) {
+    *out_status = hyle_status_unavailable("engine initialization failed");
+  }
+  return engine;
+}
+
 static hyle_status build_registry(hyle_util_registry** out, void* config) {
   hyle_util_registry* reg = NULL;
   hyle_status status = hyle_util_registry_create_system(&reg);
@@ -100,15 +110,23 @@ fail:
 hyle_util_registry* reg = NULL;
 hyle_status status = build_registry(&reg, config);
 if (!hyle_status_is_ok(status)) return status;
-void* engine = hyle_util_registry_create_or_null_cstr(reg, "fast", &options);
+void* engine = NULL;
+status = hyle_util_registry_create_object_cstr(
+    &engine, reg, "fast", &options); /* checked：保留完整诊断 */
+if (!hyle_status_is_ok(status)) {
+  hyle_util_registry_destroy(reg);
+  return status;
+}
 /* 使用并按 factory 合同销毁 engine；所有调用排空后： */
 hyle_util_registry_destroy(reg);
 ```
 
 优先级是 fallback/default/preferred：高者覆盖，低者成功忽略，同级冲突返回
 `HYLE_STATUS_ALREADY_EXISTS`。`reserve` 和注册只允许在 mutable 阶段；`freeze` 单向、幂等、
-O(1)、零分配，此后查询是 lock-free expected O(1)。`create_object` 返回 Status，可区分 key
-缺失和 creator 返回 NULL；`create_or_null` 是热路径 value-shaped 形状，会把两者都映成 NULL。
+O(1)、零分配，此后查询是 lock-free expected O(1)。checked `create_object` 给 creator 传入
+已初始化的 OK `out_status`，因此可区分 key 缺失、creator 失败和成功返回 NULL；失败时 creator
+返回 NULL 并把 `*out_status` 替换为一个 owning error。`create_or_null` 给 creator 传 NULL status，
+让热路径完全跳过诊断构造，并把 invalid/missing/failure/successful-NULL 都映成 NULL。
 
 factory 和 visitor 都在 registry 锁外调用且可以重入。mutable 枚举先分配一个时间点快照；
 frozen 枚举无锁、无分配。visitor 收到的 key/help 是借用 view，在 Registry 析构前稳定；
@@ -139,7 +157,10 @@ C 没有可移植的词法析构。旧的 heap guard 要求每个出口手动 de
 ## 常见坑
 
 - 每个非 OK `hyle_status` 都是 owning 值；返回、move 或 free，不能只打印后丢弃。
-- allocator、factory ctx、destroy ctx、Registry、线程局部 RNG 的生命周期由调用方保证。
-- callback 不能抛异常；若回调可能失败，把错误写入调用方 ctx，再在 C 边界外转换。
+- allocator、factory ctx、destroy ctx、Registry、线程局部 RNG 的生命周期由调用方保证；被更高
+  priority 替换的 factory ctx 也必须活过已在途的调用。
+- callback 不能让 C++ 异常越过 C 边界。Registry creator 只有收到非 NULL `out_status` 时才构造
+  诊断；失败返回 NULL，成功保持 Status 为 OK。写入 error 后又返回对象违反合同且会泄漏对象。
+- shuffle callback 不能重入并修改同一个 RNG；adapter 会先快照状态、完成交换，再写回状态。
 - `create_or_null` 只适合 NULL 已是完整失败语义的热路径；需要诊断就用 checked 入口。
 - freeze 后不能再注册；需要动态模块生命周期时建立独立 module manager，不要伪装成 Registry。

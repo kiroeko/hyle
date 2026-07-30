@@ -84,7 +84,7 @@ util ~1.3k · error **984** · time **1,421** · obs **1,018** · graph ~0.6–0
 > clean `c640072` shared same-link 三平台证书已关闭最后分发性能尾；
 > build/package system 已于 2026-07-29 在模块所有权拆分后再次重签；util-core seam 已在同日按独立组件、成熟 API 与 ARM 真机性能再次重签，obs 仍严格收口；
 > container 主体证书保留；StringInterner 的 Apple cache-layout 受影响边已随 core 复证转绿。
-> util-runtime 已于 2026-07-30 以 `d3120fe` 完成 Registry/C ABI/三平台性能与 package 严格收口；其余顺序只见
+> util-runtime 已于 2026-07-30 以 `1b148ef`/`70fa4e8` 完成 Registry/C ABI/三平台性能与 package 严格收口；其余顺序只见
 > [`pre-release-readiness.md`](./pre-release-readiness.md)。
 
 | ID | 阶段 | 模块 | 目的(一行) | 前置 | 预测LOC | 真实LOC | 状态 |
@@ -138,7 +138,7 @@ util ~1.3k · error **984** · time **1,421** · obs **1,018** · graph ~0.6–0
 | container-09 | P3 | container | ConcurrentVector 读优化并发向量（分段/读 lock-free/写 mutex） | mem-01 | 1-2k | 见当前实现 | ✅ 功能完成；2026-07-25 util-core 回审确认写侧会分配并执行用户构造函数，故从 SpinLock 改回 mutex；并发读写 TSan 通过，性能随 container 严格复审重签 |
 | [container-10](./container-10-sharded-queue.md) | P3 | container | ShardedQueue 分片有界 MPMC(N 个 Vyukov 子环,生产者 hash 分片消单点争用) | container-01 | 0.5-1k | 58 (+171 测试) | ✅ 完成(bench-02b 揪出单环 4P 输 moody 1.7x=单点 CAS 争用→分片根治;**双平台15遍反超 rigtorp Win3.27x/Lin5.3x**;复用 BoundedQueue placement-new 避 std 拥有型成员;保留有界弃全局 FIFO;双平台+WSL TSan 零 race。**已接入 sched global 注入**) |
 | [container-final](./container-module-closure.md) | close | container | 实际使用导向的功能/API/复杂度/C ABI/依赖/文档与三平台性能收口 | container-01..10,mem,platform,error | — | 见任务页 | ✅ **主体证书与 Apple 单边复证完成**：2026-07-27 的 232/232 C surface、sanitizer 与非 StringInterner 证据不变；interner shard spacing 使用 Apple 128B core 契约，M4 correctness 与 8t normal workload 已通过 |
-| [util closure](./util-module-closure.md) | P3 | util | util-core seam + Registry/demangle/C adapter 的完整实际使用收口 | core/build/container/mem/error | — | 见任务页 | ✅ `3c32be6` 收口 util-core；`d3120fe` 收口 util-runtime：一表两阶段 Registry/FrozenView、共享 Status/allocator、46 dynamic + 10 inline C 面、三平台 TSan/package/n=15 |
+| [util closure](./util-module-closure.md) | P3 | util | util-core seam + Registry/demangle/C adapter 的完整实际使用收口 | core/build/container/mem/error | — | 见任务页 | ✅ `3c32be6` 收口 util-core；`1b148ef`/`70fa4e8` 收口 util-runtime：一表两阶段 raw/Result Registry/FrozenView、共享 Status/allocator、47 dynamic + 10 inline C 面、三平台 TSan/package/n=15 |
 | util-01 | P3 | util-core | ref_counted(Ref<T> CRTP) + scope_guard(HYLE_DEFER) | 00 | 1k | 见 closure | ✅ 异构 compare/hash、标准同形 casts、单指针 intrusive 热路；ScopeGuard invoke 异常语义与析构 terminate 陷阱已写入 guide |
 | util-02 | P3 | util-core | 编译期 type_name<T> + type_hash<T> | 00 | 0.5k | 44 (+50 测试) | ✅ Boost 同类 constexpr 形状；明确不作持久/跨编译器 ID |
 | util-03 | P3 | util-runtime | registry 自注册 + DECLARE/DEFINE 宏 | util-02,container-04 | 1k | 见 closure | ✅ owned key/help、priority、reentrant callback、mutable snapshot；O(1) zero-allocation freeze 与 FrozenView；不冒充 dynamic unload manager |

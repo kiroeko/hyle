@@ -557,11 +557,13 @@ HYLE_DEFER(std::fclose(fp));         // 作用域退出时执行（C++23 仍无 
 可复现并行随机流用一个确定 seed，然后每个 worker 取一份状态并调用一次
 `jump()`；无需可复现时用 `thread_rng()`。Registry 适合启动期按名字注册 factory；它拥有
 key/help，factory 与 visitor 都在锁外调用并可重入。初始化结束后调用 `freeze()`，高频 dispatch
-缓存返回的 `FrozenView`，即可绕过普通入口的一次生命周期 atomic。
+缓存返回的 `FrozenView`，即可绕过普通入口的一次生命周期 atomic。不会失败或 NULL 已足够表达
+结果时用 `Registry<T*>`；backend 初始化需要设备/驱动/配置诊断时用
+`Registry<Result<T*>>`，missing 会得到 `NotFound`，creator error 原样传播。
 
 纯 C、FFI 或跨编译器消费者不要绑模板/类布局，改用
 [`hyle/c/util.h`](../../include/hyle/c/util.h) 的 RNG POD 和
-Ref/Registry/SpinLock opaque handle；当前 46 个动态符号 + 10 个 inline convenience 的生命周期、
+Ref/Registry/SpinLock opaque handle；当前 47 个动态符号 + 10 个 inline convenience 的生命周期、
 共享 Status/allocator 与 callback 合同见 [`c-util.md`](./c-util.md)。C 没有词法析构，旧 heap
 ScopeGuard 已删除；用 goto-cleanup 或宿主语言 defer/finally。`type_name<T>`/`type_hash<T>`
 依赖 C++ 静态类型，也有意不做运行时擦除。

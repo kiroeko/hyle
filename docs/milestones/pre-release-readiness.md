@@ -127,7 +127,7 @@ benchmark 宣称 SOTA。
    三平台 installed consumer/TSan/n=15 与 M4 双 QoS 已复证。sched 泛型锁内构造留 sched 波次。
 4. **obs**（✅ 2026-07-29）：runtime 已按新方法复证 exact-byte record、RAII/quiescent sink、compile floor 与 24-symbol C surface；trace gate 及 mem/sched/io/compute hooks 的既有证书保留。
 5. **container**（✅ 2026-07-27）：功能负空间、复杂度、争用、allocator/error/platform、C/C++ 形状、三平台/Sanitizer 与性能证书已收口。
-6. **util-runtime / 完整 util**（✅ 2026-07-30，`d3120fe`）：container 稳定后完成 Registry
+6. **util-runtime / 完整 util**（✅ 2026-07-30，`1b148ef`/`70fa4e8`）：container 稳定后完成 Registry
    mutable→frozen 形状、共享 Status/allocator、完整 C ABI、TSan/package 与三平台性能证书。
 7. **sched**：汇合 platform/mem/time/container；按真实任务、同步、取消、关闭和 blocking workload 审算法及 API。
 8. **io**：在 sched 合同稳定后审 proactor、网络/文件/TLS/HTTP 的普通路径、错误、deadline/cancel 与跨后端性能。
@@ -156,7 +156,7 @@ math 的处理相反：它当前不是经过独立需求设计的产品，而是
 | util-core | 低层公开头能力完成 | ✅ 2026-07-29 `5dfb74a`/`3c32be6`；独立组件、实际使用形状、三平台正确性/package/TSan/性能已签证；acquire-only ARM 真实回退已修 |
 | obs | 功能主体完成 | ✅ 2026-07-29 `4d31bcf`/`06cec5a` 严格复证；exact-byte structured producer、RAII/quiescent sink、compile-floor log + trace seam；24/24 C surface，三平台 Release/package/n=15 与 WSL sanitizer 已签证 |
 | container | 功能/API/依赖/主体性能证书完成 | ✅ 主体严格证书保留；core 语义消费者扫描将 StringInterner Apple shard spacing 64→128B，M4 correctness 与 8t normal workload 受影响项已复证 |
-| util-runtime | Registry/demangle/C adapter 完成 | ✅ 2026-07-30 `d3120fe`；FrozenView、46 dynamic + 10 inline C 面、共享 Status/allocator、三平台 TSan/package/n=15 已签证 |
+| util-runtime | Registry/demangle/C adapter 完成 | ✅ 2026-07-30 `1b148ef`/`70fa4e8`；raw/Result FrozenView、47 dynamic + 10 inline C 面、共享 Status/allocator、三平台 TSan/package/n=15 已签证 |
 | math、sched、io | 功能主体基本完成 | 待按新合同认证；旧 closure 是输入证据，不是自动通行证 |
 | simd | 功能主体基本完成 | 🟡 strict Round 1 完成；f16/bf16 lanes、共享 error、scalable 真硅性能与最终发布面仍为 P0 |
 | compute、graph | 主干存在、不是 stub | 仍有能力尾；完成能力后按同合同认证 |

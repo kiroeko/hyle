@@ -25,7 +25,8 @@ target_link_libraries(my_target PRIVATE hyle::util_core)
 | 极短、低争用临界区 | `SpinLock` + `std::lock_guard` | 锁内分配、rehash、I/O、等待或在 fiber 中长期持有 |
 | 编译期静态类型名/进程内标签 | `type_name<T>()` / `type_hash<T>()` | 存数据库、写 wire format、跨编译器/plugin 比较 |
 | 运行期 mangled symbol | `demangle()` | 把它当热路径或假定绝不发生内部临时分配 |
-| 启动期注册、运行期按名字选择 backend/factory | `Registry<Ptr, Args...>` | 把它当可卸载 module manager，或让同 priority 的注册顺序决定胜负 |
+| 启动期注册、factory 不会失败或 NULL 已是完整语义 | `Registry<T*, Args...>` | 需要诊断时仍让 NULL 同时表示 missing、初始化失败和成功空值 |
+| 启动期注册、backend 初始化可能失败 | `Registry<Result<T*>, Args...>` | 用旁路 thread-local/ctx 保存 error，或丢掉设备/驱动失败原因 |
 | Registry 初始化完成后的高频 dispatch | `auto view = registry.freeze()`，缓存 `FrozenView` | 每次 dispatch 后继续注册，或让 view 活过 registry |
 
 ## ScopeGuard：只处理临时控制流
@@ -137,7 +138,8 @@ demangler 必然可能临时分配。
 ```cpp
 #include "hyle/util/registry.h"
 
-using EngineRegistry = hyle::util::Registry<Engine*, const Config&>;
+using EngineRegistry =
+    hyle::util::Registry<hyle::Result<Engine*>, const Config&>;
 EngineRegistry engines;
 
 HYLE_RETURN_IF_ERROR(engines.reserve(16));
@@ -150,13 +152,19 @@ HYLE_RETURN_IF_ERROR(engines.register_creator(
 
 // 初始化结束：单向、幂等、O(1)、零分配。
 auto factories = engines.freeze();
-Engine* engine = factories.create("cuda", config);
+HYLE_ASSIGN_OR_RETURN(Engine * engine, factories.create("cuda", config));
 ```
 
 Registry 会复制并拥有 key/help；调用者无需保留传入字符串。相同 key 的更高 priority 覆盖，
 更低 priority 是成功的 no-op，相同 priority 返回 `AlreadyExists`，因此链接/静态初始化顺序不会
 悄悄决定实现。`reserve()` 只用于启动期减少 rehash；注册和 reserve 在 freeze 后返回
 `FailedPrecondition`。
+
+返回值应贴合 factory 的真实失败模型。`Registry<T*>` 是 infallible/nullable 形状，missing 与
+creator 返回 NULL 都得到 NULL。`Registry<Result<T*>>` 是推荐的 fallible backend 形状：missing
+得到 `NotFound`，设备、驱动、配置或资源错误由 creator 原样返回。两者共用同一张表、相同
+lookup value 和复杂度；Result 不是额外的 per-entry 元数据。默认 creator 也支持
+`Result<Ref<T>>` 等 owning value。
 
 可变阶段的查询受 mutex 保护。creator 和 `for_each` visitor 都在锁外运行，可以重入同一个
 Registry；可变阶段枚举会为时间点快照分配一次，冻结阶段则无锁、无分配。`Registry::create()`
@@ -172,6 +180,6 @@ manager 管理 quiescence，再销毁整个 Registry。Registry 必须活过所�
 ## 分层与当前状态
 
 header-only util-core 作为独立 `util_core` 组件交付；Registry、demangle 和 C/FFI adapter
-属于 `util` runtime component。完整 util 已在 `d3120fe` 按功能、易用性、C ABI、并发和
+属于 `util` runtime component。完整 util 已在 `1b148ef`/`70fa4e8` 按功能、易用性、C ABI、并发和
 三平台性能严格收口，并完成 shared/static 安装包消费验证。分层仍然保留：它避免低层
 mem/container 为一个运行时 Registry 反向链接 `hyle_util`。
