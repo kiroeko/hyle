@@ -70,7 +70,7 @@ _hyle_declare_component(simd PUBLIC_DEPS error platform)
 _hyle_declare_component(container
   PRIVATE_DEPS platform
   PUBLIC_DEPS error mem)
-_hyle_declare_component(util PUBLIC_DEPS container util_core)
+_hyle_declare_component(util PUBLIC_DEPS error mem container util_core)
 # SchedulerOptions publicly names platform types, while time is consumed only
 # by scheduler implementation TUs.
 _hyle_declare_component(sched

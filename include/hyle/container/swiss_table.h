@@ -21,6 +21,16 @@
 
 namespace hyle::container {
 
+// MSVC sometimes outlines the complete probe walk when it is instantiated
+// inside another DLL translation unit, roughly doubling cheap-key lookup. GCC
+// and Clang already inline this hot template and forcing them recursively can
+// trigger false-positive dead-branch array-bounds diagnostics in short hashes.
+#if defined(_MSC_VER)
+#  define HYLE_SWISS_HOT_INLINE HYLE_FORCE_INLINE
+#else
+#  define HYLE_SWISS_HOT_INLINE inline
+#endif
+
 template <class K, class V, class Hash, class Eq, class Alloc>
 class ConcurrentHashMap;
 
@@ -394,7 +404,7 @@ class SwissTable {
                                            const Q&> &&
              std::is_nothrow_invocable_r_v<bool, const Eq&, const K&,
                                            const Q&>)
-  V* find(const Q& key) noexcept {
+  HYLE_SWISS_HOT_INLINE V* find(const Q& key) noexcept {
     Slot* slot = find_slot(key);
     return slot == nullptr ? nullptr : &slot->value_;
   }
@@ -404,7 +414,7 @@ class SwissTable {
                                            const Q&> &&
              std::is_nothrow_invocable_r_v<bool, const Eq&, const K&,
                                            const Q&>)
-  const V* find(const Q& key) const noexcept {
+  HYLE_SWISS_HOT_INLINE const V* find(const Q& key) const noexcept {
     return const_cast<SwissTable*>(this)->template find<Q>(key);
   }
 
@@ -416,7 +426,7 @@ class SwissTable {
                                            const Q&> &&
              std::is_nothrow_invocable_r_v<bool, const Eq&, const K&,
                                            const Q&>)
-  const K* find_key(const Q& key) const noexcept {
+  HYLE_SWISS_HOT_INLINE const K* find_key(const Q& key) const noexcept {
     const Slot* slot =
         const_cast<SwissTable*>(this)->template find_slot<Q>(key);
     return slot == nullptr ? nullptr : &slot->key_;
@@ -671,7 +681,7 @@ class SwissTable {
                                            const Q&> &&
              std::is_nothrow_invocable_r_v<bool, const Eq&, const K&,
                                            const Q&>)
-  Slot* find_slot(const Q& key) noexcept {
+  HYLE_SWISS_HOT_INLINE Slot* find_slot(const Q& key) noexcept {
     if (cap_ == 0) return nullptr;
     const std::uint64_t h = hash_(key);
     return find_slot_prehashed(key, h);
@@ -684,7 +694,8 @@ class SwissTable {
   template <class Q>
     requires(std::is_nothrow_invocable_r_v<bool, const Eq&, const K&,
                                            const Q&>)
-  Slot* find_slot_prehashed(const Q& key, std::uint64_t h) noexcept {
+  HYLE_SWISS_HOT_INLINE Slot* find_slot_prehashed(
+      const Q& key, std::uint64_t h) noexcept {
     if (cap_ == 0) return nullptr;
     std::size_t pos = detail::h1(h) & mask_;
     std::size_t stride = 0;
@@ -1084,3 +1095,5 @@ class FlatHashSet {
 };
 
 }  // namespace hyle::container
+
+#undef HYLE_SWISS_HOT_INLINE

@@ -51,15 +51,34 @@ HYLE_FORCE_INLINE constexpr std::uint64_t splitmix64(std::uint64_t& s) noexcept 
 // MSVC: _umul128 intrinsic; GCC/Clang: __uint128_t (lowered to one `mul`).
 HYLE_FORCE_INLINE std::uint64_t mul128_hi_lo(std::uint64_t a, std::uint64_t b,
                                              std::uint64_t& lo) noexcept {
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && defined(_M_X64)
   std::uint64_t hi;
   lo = _umul128(a, b, &hi);
   return hi;
-#else
+#elif defined(_MSC_VER) && defined(_M_ARM64)
+  lo = a * b;
+  return __umulh(a, b);
+#elif defined(__GNUC__) || defined(__clang__)
   __extension__ using u128 = unsigned __int128;  // silence -Wpedantic
   const u128 p = static_cast<u128>(a) * b;
   lo = static_cast<std::uint64_t>(p);
   return static_cast<std::uint64_t>(p >> 64);
+#else
+  // Portable 32-bit limb fallback for uncommon compilers without a native
+  // 64x64->128 type/intrinsic. Shipping 64-bit toolchains take a branch above.
+  const std::uint64_t a0 = static_cast<std::uint32_t>(a);
+  const std::uint64_t a1 = a >> 32;
+  const std::uint64_t b0 = static_cast<std::uint32_t>(b);
+  const std::uint64_t b1 = b >> 32;
+  const std::uint64_t p00 = a0 * b0;
+  const std::uint64_t p01 = a0 * b1;
+  const std::uint64_t p10 = a1 * b0;
+  const std::uint64_t p11 = a1 * b1;
+  const std::uint64_t middle =
+      (p00 >> 32) + static_cast<std::uint32_t>(p01) +
+      static_cast<std::uint32_t>(p10);
+  lo = (middle << 32) | static_cast<std::uint32_t>(p00);
+  return p11 + (p01 >> 32) + (p10 >> 32) + (middle >> 32);
 #endif
 }
 

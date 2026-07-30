@@ -1,15 +1,24 @@
 #pragma once
 
+#include <atomic>
+#include <concepts>
 #include <cstddef>
+#include <cstdint>
 #include <cstdio>
+#include <cstring>
+#include <functional>
+#include <limits>
 #include <mutex>
+#include <new>
 #include <type_traits>
 #include <utility>
 
 #include "hyle/container/string_ref.h"
 #include "hyle/container/swiss_table.h"
+#include "hyle/error/status.h"
 #include "hyle/macros.h"
 #include "hyle/mem/allocator.h"
+#include "hyle/mem/region.h"
 #include "hyle/util/ref_counted.h"
 #include "hyle/util/type_name.h"
 
@@ -19,26 +28,24 @@
 // backend/plugin selection (conventions §9).
 //
 // Divergences from clay (deliberate, per conventions §1/§9):
-//  - storage is HYLE SwissTable, NOT std::unordered_map (clay used THREE of
-//    them). §1 铁律: no std hash containers in production.
+//  - mutable storage is a compact HYLE flat index, NOT std::unordered_map
+//    (clay used THREE of them). §1 铁律: no std hash containers in production.
 //  - Creator is a FUNCTION POINTER, not std::function. So Entry is trivially
 //    copyable and lives INLINE in the table (no heap, no type-erasure alloc),
 //    and it is ABI-friendlier (§4). Registry creators are stateless type
 //    constructors (`new Derived(args...)`) -- they never need capture.
-//  - a same-priority collision is a wiring BUG -> HYLE_FATAL_ASSERT (loud abort
-//    with file/line), replacing clay's std::exit(1)/throw (§0 fail-fast, §5
-//    no-throw; "禁 std::exit").
+//  - normal registration returns Status, so dynamic/plugin wiring can recover.
+//    The static REGISTER macros still fail fast because static initialization
+//    has no caller to receive an error.
 //  - help text uses type_name<T>() (util-02), not clay's demangle.
 //
-// Keys are string_ref. The REGISTER macros stringize the key (#name), so it is a
-// string literal with static lifetime -- safe to store as a view. A dynamic key
-// must outlive the registry (contract).
-//
-// Threading: every table access is synchronized. create() copies the selected
-// function pointer under the lock and invokes it after unlocking, so a creator
-// may safely re-enter this registry. for_each_key() deliberately invokes the
-// visitor under the lock to avoid allocating a snapshot; its visitor therefore
-// must not call back into this registry.
+// The registry owns copies of keys and help strings. Returned views stay valid
+// until registry destruction, including after a higher-priority replacement.
+// Mutable reads are synchronized; creators and visitors always run outside the
+// lock and may re-enter. freeze() closes registration permanently and publishes
+// the existing compact Swiss index, after which reads are lock-free expected
+// O(1), freeze itself is O(1), and enumeration performs no allocation. This
+// matches the real init-heavy/read-heavy lifecycle of named backend selection.
 
 namespace hyle::util {
 
@@ -50,92 +57,437 @@ enum class RegistryPriority : std::uint8_t {
 
 template <class Ptr, class... Args>
 class Registry {
+ private:
+  struct Entry;
+  struct IndexValue;
+
  public:
   using Creator = Ptr (*)(Args...);  // function pointer (no capture, no alloc)
 
-  explicit Registry(mem::Allocator alloc = mem::system_allocator())
-      : entries_(alloc) {}
-  HYLE_DISABLE_COPY_AND_MOVE(Registry);
-
-  // Register `creator` under `key`. Higher priority wins; on equal priority for
-  // the same key it fail-fasts (two implementations claiming the same slot is a
-  // bug). `help` is optional descriptive text (e.g. the concrete type name).
-  void register_creator(container::string_ref key, Creator creator,
-                        RegistryPriority priority = RegistryPriority::kDefault,
-                        container::string_ref help = {}) {
-    std::lock_guard<std::mutex> lock(mu_);
-    HYLE_FATAL_ASSERT(key.data != nullptr || key.size == 0);
-    HYLE_FATAL_ASSERT(help.data != nullptr || help.size == 0);
-    HYLE_FATAL_ASSERT(creator != nullptr);
-    HYLE_FATAL_ASSERT(priority >= RegistryPriority::kFallback &&
-                      priority <= RegistryPriority::kPreferred);
-    if (Entry* e = entries_.find(key)) {
-      if (priority > e->priority) {
-        *e = Entry{creator, priority, help};  // higher priority overrides
-      } else if (priority == e->priority) {
-        std::fprintf(stderr, "HYLE registry: key '%.*s' registered twice at "
-                             "the same priority\n",
-                     static_cast<int>(key.size), key.data);
-        HYLE_FATAL_ASSERT(false);  // wiring bug -> abort (was clay std::exit)
-      }
-      // lower priority: keep the existing higher-priority creator (no-op)
-    } else {
-      entries_.insert_or_assign(key, Entry{creator, priority, help});
-    }
-  }
-
-  bool has(container::string_ref key) const noexcept {
-    std::lock_guard<std::mutex> lock(mu_);
-    return entries_.find(key) != nullptr;
-  }
-
-  // Create the object registered under `key`, or a default-constructed Ptr
-  // (e.g. nullptr) if `key` is absent.
-  Ptr create(container::string_ref key, Args... args) {
-    Creator creator = nullptr;
-    {
-      std::lock_guard<std::mutex> lock(mu_);
-      if (Entry* e = entries_.find(key)) creator = e->creator;
-    }
-    if (creator != nullptr) {
-      return creator(std::forward<Args>(args)...);
-    }
-    return Ptr{};
-  }
-
-  // Help text for `key` (empty if absent or none given).
-  container::string_ref help(container::string_ref key) const noexcept {
-    std::lock_guard<std::mutex> lock(mu_);
-    if (Entry* e = entries_.find(key)) return e->help;
-    return {};
-  }
-
-  std::size_t size() const noexcept {
-    std::lock_guard<std::mutex> lock(mu_);
-    return entries_.size();
-  }
-
-  // Visit every (key, creator-entry). Order unspecified.
-  template <class Fn>
-  void for_each_key(Fn&& fn) {
-    std::lock_guard<std::mutex> lock(mu_);
-    entries_.for_each(
-        [&](container::string_ref k, Entry&) { fn(k); });
-  }
-
- private:
-  struct Entry {  // trivially copyable -> stored inline in the SwissTable
+  struct EntryView {
+    container::string_ref key;
     Creator creator;
     RegistryPriority priority;
     container::string_ref help;
   };
 
+  // A non-owning handle to the registry's immutable phase. Cache this handle
+  // in dispatch-heavy consumers after freeze(): unlike Registry::create(), it
+  // does not need to re-check the lifecycle publication atomic on every read.
+  // The originating Registry must outlive the view and must not be destroyed
+  // while any view operation is in flight.
+  class FrozenView {
+   public:
+    HYLE_FORCE_INLINE Ptr create(const container::string_ref& key,
+                                 Args... args) const {
+      return Registry::create_frozen_from(index_, key,
+                                          std::forward<Args>(args)...);
+    }
+
+    bool has(const container::string_ref& key) const noexcept {
+      return Registry::frozen_table(index_)->find(key) != nullptr;
+    }
+
+    container::string_ref help(
+        const container::string_ref& key) const noexcept {
+      if (const IndexValue* value = Registry::frozen_table(index_)->find(key)) {
+        return value->entry->help;
+      }
+      return {};
+    }
+
+    std::size_t size() const noexcept {
+      return Registry::frozen_table(index_)->size();
+    }
+
+    template <class Fn>
+    void for_each(Fn&& fn) const {
+      auto&& visitor = fn;
+      Registry::visit_frozen_table(visitor, Registry::frozen_table(index_));
+    }
+
+   private:
+    friend class Registry;
+    explicit FrozenView(const void* index) noexcept : index_(index) {}
+    const void* index_;
+  };
+
+  explicit Registry(mem::Allocator alloc = mem::system_allocator())
+      : alloc_(alloc), keys_(alloc, string_region_options()),
+        metadata_(alloc, string_region_options()), entries_(alloc) {}
+  ~Registry() = default;
+  HYLE_DISABLE_COPY_AND_MOVE(Registry);
+
+  // Register `creator` under `key`. Higher priority wins; on equal priority for
+  // the same key returns AlreadyExists. Lower priority is a successful no-op.
+  // `help` is optional descriptive text. Key/help are copied before return.
+  // Registration after freeze() returns FailedPrecondition.
+  [[nodiscard]] Status register_creator(
+      container::string_ref key, Creator creator,
+      RegistryPriority priority = RegistryPriority::kDefault,
+      container::string_ref help = {}) noexcept {
+    if (key.data == nullptr || key.size == 0) {
+      return Status::InvalidArgument("registry key is null or empty");
+    }
+    if (help.data == nullptr && help.size != 0) {
+      return Status::InvalidArgument("registry help has null data");
+    }
+    if (creator == nullptr) {
+      return Status::InvalidArgument("registry creator is null");
+    }
+    if (!valid_priority(priority)) {
+      return Status::InvalidArgument("registry priority is invalid");
+    }
+
+    std::lock_guard<std::mutex> lock(mu_);
+    if (frozen_index_.load(std::memory_order_relaxed) != nullptr) {
+      return Status::FailedPrecondition("registry is frozen");
+    }
+    if (IndexValue* index = entries_.find(key)) {
+      Entry* e = index->entry;
+      if (priority > e->priority) {
+        container::string_ref owned_help;
+        if (!copy_string(help, &owned_help, metadata_)) {
+          return Status::ResourceExhausted(
+              "registry help allocation failed");
+        }
+        e->creator = creator;
+        index->creator = creator;
+        e->priority = priority;
+        e->help = owned_help;
+      } else if (priority == e->priority) {
+        return Status::AlreadyExists(
+            "registry key already has the same priority");
+      }
+      return Status::Ok();
+    } else {
+      container::string_ref owned_key;
+      container::string_ref owned_help;
+      if (!copy_string(key, &owned_key, keys_) ||
+          !copy_string(help, &owned_help, metadata_)) {
+        return Status::ResourceExhausted(
+            "registry string allocation failed");
+      }
+      Entry* entry =
+          allocate_entry(owned_key, creator, priority, owned_help);
+      if (entry == nullptr) {
+        return Status::ResourceExhausted("registry entry allocation failed");
+      }
+      using InsertResult = typename Table::InsertResult;
+      if (entries_.try_insert_or_assign(
+              owned_key, IndexValue{entry, creator}) ==
+          InsertResult::kOutOfMemory) {
+        return Status::ResourceExhausted("registry table allocation failed");
+      }
+    }
+    return Status::Ok();
+  }
+
+  // Optional startup tuning. It changes no semantics and is rejected after the
+  // immutable read phase begins.
+  [[nodiscard]] Status reserve(std::size_t count) noexcept {
+    std::lock_guard<std::mutex> lock(mu_);
+    if (frozen_index_.load(std::memory_order_relaxed) != nullptr) {
+      return Status::FailedPrecondition("registry is frozen");
+    }
+    return entries_.reserve(count)
+               ? Status::Ok()
+               : Status::ResourceExhausted("registry reserve failed");
+  }
+
+  // One-way lifecycle transition. The startup Swiss map already owns compact
+  // keys and inlines the lookup/call hot fields, so publication is O(1), does
+  // not allocate, and preserves exactly the same mature probing shape.
+  // Idempotent so independently composed startup code may call it.
+  [[nodiscard]] FrozenView freeze() noexcept {
+    std::lock_guard<std::mutex> lock(mu_);
+    if (frozen_index_.load(std::memory_order_relaxed) != nullptr) {
+      return FrozenView{&entries_};
+    }
+
+    // The pointer is both lifecycle state and publication token. Readers need
+    // one acquire load, rather than a state load followed by an index load.
+    frozen_index_.store(&entries_, std::memory_order_release);
+    return FrozenView{&entries_};
+  }
+
+  bool frozen() const noexcept {
+    return frozen_index_.load(std::memory_order_acquire) != nullptr;
+  }
+
+  bool has(container::string_ref key) const noexcept {
+    if (const auto* index = frozen_index_.load(std::memory_order_acquire)) {
+      return index->find(key) != nullptr;
+    }
+    std::lock_guard<std::mutex> lock(mu_);
+    if (const auto* index = frozen_index_.load(std::memory_order_relaxed)) {
+      return index->find(key) != nullptr;
+    }
+    return entries_.find(key) != nullptr;
+  }
+
+  // Create the object registered under `key`, or a default-constructed Ptr
+  // (e.g. nullptr) if `key` is absent.
+  HYLE_FORCE_INLINE Ptr create(container::string_ref key, Args... args) const {
+    if (const auto* frozen_slots =
+            frozen_index_.load(std::memory_order_acquire)) {
+      if (const IndexValue* value = frozen_slots->find(key)) {
+        return value->creator(std::forward<Args>(args)...);
+      }
+      return Ptr{};
+    }
+    return create_mutable(key, std::forward<Args>(args)...);
+  }
+
+  // Help text for `key` (empty if absent or none given).
+  container::string_ref help(container::string_ref key) const noexcept {
+    if (const auto* frozen_slots =
+            frozen_index_.load(std::memory_order_acquire)) {
+      if (const IndexValue* value = frozen_slots->find(key)) {
+        return value->entry->help;
+      }
+      return {};
+    }
+    std::lock_guard<std::mutex> lock(mu_);
+    if (const auto* published_slots =
+            frozen_index_.load(std::memory_order_relaxed)) {
+      if (const IndexValue* value = published_slots->find(key)) {
+        return value->entry->help;
+      }
+    } else if (const IndexValue* found = entries_.find(key)) {
+      return found->entry->help;
+    }
+    return {};
+  }
+
+  std::size_t size() const noexcept {
+    if (const auto* index = frozen_index_.load(std::memory_order_acquire)) {
+      return index->size();
+    }
+    std::lock_guard<std::mutex> lock(mu_);
+    return entries_.size();
+  }
+
+  // Visit a point-in-time snapshot in unspecified order. A callback returning
+  // bool may stop early by returning false; a void callback always continues.
+  // In mutable mode one temporary array is allocated, then the lock is released
+  // before callbacks. Frozen mode is lock- and allocation-free.
+  template <class Fn>
+  [[nodiscard]] Status for_each(Fn&& fn) const {
+    auto&& visitor = fn;
+    if (const auto* index = frozen_index_.load(std::memory_order_acquire)) {
+      visit_frozen(visitor, index);
+      return Status::Ok();
+    }
+
+    SnapshotStorage snapshot(alloc_);
+    bool became_frozen = false;
+    {
+      std::lock_guard<std::mutex> lock(mu_);
+      became_frozen =
+          frozen_index_.load(std::memory_order_relaxed) != nullptr;
+      if (became_frozen) {
+        // freeze() published immutable storage before releasing this mutex.
+      } else if (!snapshot.allocate(entries_.size())) {
+        return Status::ResourceExhausted(
+            "registry enumeration snapshot allocation failed");
+      } else {
+        entries_.for_each([&](container::string_ref,
+                              const IndexValue& index) {
+          const Entry& entry = *index.entry;
+          snapshot.push(EntryView{entry.key, entry.creator, entry.priority,
+                                  entry.help});
+        });
+      }
+    }
+    if (became_frozen) {
+      visit_frozen(visitor,
+                   frozen_index_.load(std::memory_order_relaxed));
+      return Status::Ok();
+    }
+    for (std::size_t i = 0; i < snapshot.size(); ++i) {
+      if (!invoke_visitor(visitor, snapshot[i])) break;
+    }
+    return Status::Ok();
+  }
+
+  template <class Fn>
+  [[nodiscard]] Status for_each_key(Fn&& fn) const {
+    auto&& visitor = fn;
+    return for_each([&](EntryView entry) -> decltype(auto) {
+      return visitor(entry.key);
+    });
+  }
+
+ private:
+  struct Entry {
+    container::string_ref key;
+    Creator creator;
+    RegistryPriority priority;
+    container::string_ref help;
+  };
+
+  // The same value shape serves startup mutation and frozen reads. Creator is
+  // inline on the lookup path; Entry retains cold priority/help metadata.
+  struct IndexValue {
+    Entry* entry;
+    Creator creator;
+  };
+  static_assert(std::is_trivially_copyable_v<IndexValue>);
+
+  using Table = container::FlatHashMap<
+      container::string_ref, IndexValue, container::Hash<container::string_ref>,
+      std::equal_to<>, mem::Allocator>;
+
+  class SnapshotStorage {
+   public:
+    explicit SnapshotStorage(mem::Allocator alloc) noexcept : alloc_(alloc) {}
+    ~SnapshotStorage() {
+      if (data_ != nullptr) {
+        alloc_.deallocate(data_, capacity_ * sizeof(EntryView),
+                          alignof(EntryView));
+      }
+    }
+    HYLE_DISABLE_COPY_AND_MOVE(SnapshotStorage);
+
+    bool allocate(std::size_t count) noexcept {
+      capacity_ = count;
+      if (count == 0) return true;
+      if (count > (std::numeric_limits<std::size_t>::max)() /
+                      sizeof(EntryView)) {
+        return false;
+      }
+      data_ = static_cast<EntryView*>(
+          alloc_.allocate(count * sizeof(EntryView), alignof(EntryView)));
+      return data_ != nullptr;
+    }
+    void push(EntryView entry) noexcept {
+      HYLE_FATAL_ASSERT(size_ < capacity_);
+      data_[size_++] = entry;
+    }
+    std::size_t size() const noexcept { return size_; }
+    const EntryView& operator[](std::size_t index) const noexcept {
+      return data_[index];
+    }
+
+   private:
+    mem::Allocator alloc_;
+    EntryView* data_ = nullptr;
+    std::size_t size_ = 0;
+    std::size_t capacity_ = 0;
+  };
+
+  static constexpr bool valid_priority(RegistryPriority priority) noexcept {
+    return priority >= RegistryPriority::kFallback &&
+           priority <= RegistryPriority::kPreferred;
+  }
+
+  static constexpr mem::RegionOptions string_region_options() noexcept {
+    mem::RegionOptions options;
+    options.initial_block_size = 4 * 1024;
+    options.max_block_size = 64 * 1024;
+    options.large_allocation_threshold = 16 * 1024;
+    return options;
+  }
+
+  static bool copy_string(container::string_ref source,
+                          container::string_ref* out,
+                          mem::Region& region) noexcept {
+    if (source.size == 0) {
+      *out = container::string_ref{"", 0, true};
+      return true;
+    }
+    auto* storage = static_cast<char*>(region.allocate(source.size + 1, 1));
+    if (storage == nullptr) return false;
+    std::memcpy(storage, source.data, source.size);
+    storage[source.size] = '\0';
+    *out = container::string_ref{storage, source.size, true};
+    return true;
+  }
+
+  Entry* allocate_entry(container::string_ref key, Creator creator,
+                        RegistryPriority priority,
+                        container::string_ref help) noexcept {
+    void* storage = metadata_.allocate(sizeof(Entry), alignof(Entry));
+    if (storage == nullptr) return nullptr;
+    return ::new (storage) Entry{key, creator, priority, help};
+  }
+
+  static const Table* frozen_table(const void* index) noexcept {
+    return static_cast<const Table*>(index);
+  }
+
+  HYLE_FORCE_INLINE static Ptr create_frozen_from(
+      const void* index, const container::string_ref& key, Args... args) {
+    if (const IndexValue* value = frozen_table(index)->find(key)) {
+      return value->creator(std::forward<Args>(args)...);
+    }
+    return Ptr{};
+  }
+
+  // Kept out of the post-freeze instruction stream. Registry is deliberately
+  // init-heavy/read-heavy: after publication, lookup should inline to one
+  // acquire, one ordinary Swiss find, and the creator call. The mutex/race
+  // handoff remains available here for callers that read during startup.
+#if defined(_MSC_VER)
+  HYLE_FORCE_INLINE
+#else
+  HYLE_NOINLINE
+#endif
+  Ptr create_mutable(container::string_ref key, Args... args) const {
+    Creator creator = nullptr;
+    {
+      std::lock_guard<std::mutex> lock(mu_);
+      if (const auto* published_slots =
+              frozen_index_.load(std::memory_order_relaxed)) {
+        if (const IndexValue* value = published_slots->find(key)) {
+          creator = value->creator;
+        }
+      } else if (const IndexValue* found = entries_.find(key)) {
+        creator = found->creator;
+      }
+    }
+    return creator != nullptr ? creator(std::forward<Args>(args)...) : Ptr{};
+  }
+
+  template <class Fn>
+  void visit_frozen(Fn& fn, const Table* index) const {
+    visit_frozen_table(fn, index);
+  }
+
+  template <class Fn>
+  static void visit_frozen_table(Fn& fn, const Table* index) {
+    bool keep_going = true;
+    index->for_each([&](container::string_ref, const IndexValue& value) {
+      if (keep_going) {
+        const Entry* entry = value.entry;
+        keep_going = invoke_visitor(
+            fn, EntryView{entry->key, entry->creator, entry->priority,
+                          entry->help});
+      }
+    });
+  }
+
+  template <class Fn>
+  static bool invoke_visitor(Fn& fn, EntryView entry) {
+    if constexpr (std::is_convertible_v<std::invoke_result_t<Fn&, EntryView>,
+                                        bool>) {
+      return static_cast<bool>(fn(entry));
+    } else {
+      fn(entry);
+      return true;
+    }
+  }
+
+  mem::Allocator alloc_;
   mutable std::mutex mu_;
-  mutable container::SwissTable<container::string_ref, Entry,
-                                container::Hash<container::string_ref>,
-                                std::equal_to<>,
-                                mem::Allocator>
-      entries_;
+  // Lookup touches key bytes but not help/priority metadata. Separate arenas
+  // keep short names densely packed instead of interleaving each key with cold
+  // diagnostics and Entry objects.
+  mem::Region keys_;
+  mem::Region metadata_;
+  Table entries_;
+  mutable std::atomic<const Table*> frozen_index_{nullptr};
 };
 
 // Helper whose constructor registers a creator -- the static-init hook the
@@ -146,7 +498,14 @@ struct Registerer {
              typename Registry<Ptr, Args...>::Creator creator,
              container::string_ref help = {},
              RegistryPriority priority = RegistryPriority::kDefault) {
-    registry->register_creator(key, creator, priority, help);
+    Status status = registry->register_creator(key, creator, priority, help);
+    if (!status.ok()) {
+      char message[256];
+      status.ToString(message, sizeof(message));
+      std::fprintf(stderr, "HYLE static registry registration failed: %s\n",
+                   message);
+      HYLE_FATAL_ASSERT(false);
+    }
   }
 
   template <class Derived>
@@ -181,8 +540,8 @@ struct Registerer {
       ::hyle::util::Registerer<Ptr __VA_OPT__(,) __VA_ARGS__>
 
 // Meyers function-local static (conventions §6: drop clay's leaky `new`). Thread-
-// safe init since C++11; destroyed at exit (frees the SwissTable; entries are
-// trivially copyable so nothing per-entry to clean up).
+// safe init since C++11; destroyed at exit (frees the indexes and bulk-owned
+// entry/string region).
 #define HYLE_DEFINE_REGISTRY(RegistryName, Ptr, ...)                          \
   ::hyle::util::Registry<Ptr __VA_OPT__(,) __VA_ARGS__>* RegistryName() {      \
     static ::hyle::util::Registry<Ptr __VA_OPT__(,) __VA_ARGS__> instance;     \

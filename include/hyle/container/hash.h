@@ -113,21 +113,65 @@ HYLE_FORCE_INLINE std::uint64_t mix64_2(std::uint64_t a, std::uint64_t b) noexce
 #endif
 }
 
+// Byte views carry a runtime length independently from their backing object's
+// static extent. GCC's object-size pass otherwise diagnoses fixed loads in a
+// length-guarded inlined branch as an overread when the pointer originated in a
+// string literal, even though the branch contract proves the bytes exist. This
+// empty compiler barrier forgets only that non-semantic provenance; it emits no
+// instruction and keeps the memcpy load unaligned-safe.
+HYLE_FORCE_INLINE const std::uint8_t* runtime_bytes(
+    const std::uint8_t* data) noexcept {
+#if defined(__GNUC__) && !defined(__clang__)
+  __asm__ __volatile__("" : "+r"(data));
+#endif
+  return data;
+}
+
+HYLE_FORCE_INLINE std::uint64_t load64(const std::uint8_t* data) noexcept {
+  data = runtime_bytes(data);
+  std::uint64_t value;
+  std::memcpy(&value, data, sizeof(value));
+  return value;
+}
+
+HYLE_FORCE_INLINE std::uint32_t load32(const std::uint8_t* data) noexcept {
+  data = runtime_bytes(data);
+  std::uint32_t value;
+  std::memcpy(&value, data, sizeof(value));
+  return value;
+}
+
+// Runtime short-string lengths are mixed with one overlapping load from
+// compile-time random data. This is the low-latency shape used by Abseil:
+// unlike `len * constant`, it adds no dependent integer multiply before the
+// 128-bit avalanche and still gives every length a distinct high-entropy
+// state. The table is long enough for an eight-byte load at every len <= 16.
+alignas(64) inline constexpr std::uint64_t kSmallHashLengthData[] = {
+    0x243f6a8885a308d3ull, 0x13198a2e03707344ull,
+    0xa4093822299f31d0ull, 0x082efa98ec4e6c89ull,
+    0x452821e638d01377ull,
+};
+
+HYLE_FORCE_INLINE std::uint64_t small_hash_length_mix(
+    std::size_t len) noexcept {
+  HYLE_ASSUME(len <= 16);
+  const auto* data = reinterpret_cast<const std::uint8_t*>(
+      kSmallHashLengthData);
+  return load64(data + len);
+}
+
 // 17..32B is still fixed-cost dominated. First and last 16-byte windows cover
 // every input byte (overlapping for 17..31B); three independent multiply-folds
 // avoid a shared-library/vendor call while retaining a seeded avalanche. This
 // is a general byte-hash path, not an interner-only symbol-name special case.
 HYLE_FORCE_INLINE std::uint64_t hash_medium_17_32(
     const void* input, std::size_t len, std::uint64_t seed) noexcept {
-  const auto* bytes = static_cast<const std::uint8_t*>(input);
-  std::uint64_t first0;
-  std::uint64_t first1;
-  std::uint64_t last0;
-  std::uint64_t last1;
-  std::memcpy(&first0, bytes, 8);
-  std::memcpy(&first1, bytes + 8, 8);
-  std::memcpy(&last0, bytes + len - 16, 8);
-  std::memcpy(&last1, bytes + len - 8, 8);
+  const auto* bytes = runtime_bytes(
+      static_cast<const std::uint8_t*>(input));
+  const std::uint64_t first0 = load64(bytes);
+  const std::uint64_t first1 = load64(bytes + 8);
+  const std::uint64_t last0 = load64(bytes + len - 16);
+  const std::uint64_t last1 = load64(bytes + len - 8);
   const std::uint64_t left =
       mix64_2(first0 ^ 0x9ddfea08eb382d69ull ^ seed,
               first1 ^ (len * 0x9e3779b97f4a7c15ull));
@@ -162,10 +206,42 @@ HYLE_FORCE_INLINE Mul128Parts mul128_parts(std::uint64_t a,
 #  endif
 }
 
-HYLE_FORCE_INLINE std::uint64_t load64(const std::uint8_t* data) noexcept {
-  std::uint64_t value;
-  std::memcpy(&value, data, sizeof(value));
-  return value;
+// Dynamic short strings are a different compiler problem from hash_small(): the
+// latter sees a compile-time size, while this path receives a runtime length.
+// Fixed-width first/last loads avoid a variable-sized memcpy and zero-filled
+// temporary. This is the same mature shape used by Abseil/wyhash: overlapping
+// windows are intentional and cover every input byte without reading outside the
+// range. A single multiply-fold remains the dominant operation for each range.
+HYLE_FORCE_INLINE std::uint64_t hash_bytes_small_inline(
+    const void* input, std::size_t len, std::uint64_t seed) noexcept {
+  constexpr std::uint64_t k1 = 0x9ddfea08eb382d69ull;
+  constexpr std::uint64_t k2 = 0xff51afd7ed558ccdull;
+  const auto* bytes = runtime_bytes(
+      static_cast<const std::uint8_t*>(input));
+  const std::uint64_t length_mix = small_hash_length_mix(len);
+
+  if (len >= 8) {
+    const std::uint64_t first = load64(bytes);
+    const std::uint64_t last = load64(bytes + len - 8);
+    return mix64_2(first ^ length_mix ^ seed, last ^ k1);
+  }
+  if (len >= 4) {
+    const std::uint64_t first = load32(bytes);
+    const std::uint64_t last = load32(bytes + len - 4);
+    return mix64((first | (last << 32)) ^ seed ^ length_mix);
+  }
+  if (len != 0) {
+    // first/middle/last is sufficient for 1..3 bytes and deliberately avoids a
+    // length-dependent memcpy. Keep length in the high byte to disambiguate the
+    // overlapping samples.
+    const std::uint64_t packed =
+        static_cast<std::uint64_t>(bytes[0]) |
+        (static_cast<std::uint64_t>(bytes[len >> 1]) << 8) |
+        (static_cast<std::uint64_t>(bytes[len - 1]) << 16) |
+        (static_cast<std::uint64_t>(len) << 24);
+    return mix64(packed ^ seed ^ length_mix);
+  }
+  return mix64(seed ^ k2 ^ length_mix);
 }
 
 // Keep the medium-only core inline: at these lengths a shared-library call is
@@ -262,27 +338,7 @@ HYLE_FORCE_INLINE std::uint64_t hash_bytes(const void* data, std::size_t len,
                                            std::uint64_t seed = 0) noexcept {
   HYLE_FATAL_ASSERT(data != nullptr || len == 0);
   if (len <= 16) {
-    // Fold seed + len so different seeds AND different lengths diverge (XXH3 does
-    // both). One mix for <=8B, a second folded mix for 9..16B. Avalanche and
-    // distinctness are covered by the hash tests (StringView 10k + SmallStruct).
-    std::uint64_t lo = 0, hi = 0;
-    if (len != 0) {  // memcpy(_,nullptr,0) is UB; len==0 -> pure seed/len mix
-      std::memcpy(&lo, data, len < 8 ? len : 8);
-      if (len > 8) {
-        const std::size_t hi_bytes =
-            len <= 8 ? 0 : (len < 16 ? len - 8 : 8);
-        const auto* bytes = static_cast<const char*>(data);
-        const auto* hi_source = len <= 8 ? bytes : bytes + 8;
-        std::memcpy(&hi, hi_source, hi_bytes);
-      }
-    }
-    const std::uint64_t s = lo ^ seed ^ (len * 0x9e3779b97f4a7c15ull);
-    if (len > 8) {
-      // 9..16B: one 128-bit multiply of the two seed/len-folded words (abseil Mix),
-      // instead of two serial mix64 -- saves a multiply on this small-string path.
-      return detail::mix64_2(s, hi ^ 0xff51afd7ed558ccdull);
-    }
-    return detail::mix64(s);
+    return detail::hash_bytes_small_inline(data, len, seed);
   }
   // >16B: best-of-breed by length (runtime `len`). Medium inputs use the compact
   // inline multiply stream so a DLL call does not dominate them. The long

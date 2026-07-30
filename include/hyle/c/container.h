@@ -6,6 +6,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "hyle/c/error.h"
 #include "hyle/c/mem.h"
@@ -46,6 +47,23 @@ typedef struct hyle_container_string_view {
 static inline hyle_container_string_view hyle_container_view(
     const char* data, uint32_t size) {
   hyle_container_string_view value = {data, size, 0};
+  return value;
+}
+
+/* Convenience for configuration paths that already have a C string. Length-
+ * aware hot paths should keep and pass hyle_container_string_view directly. A
+ * NULL input or a length that cannot fit the ABI view produces an invalid view
+ * which consuming functions reject. */
+static inline hyle_container_string_view hyle_container_cstr(
+    const char* data) {
+  hyle_container_string_view value = {data, HYLE_CONTAINER_NPOS, 0};
+  if (data != NULL) {
+    const size_t size = strlen(data);
+    if (size < HYLE_CONTAINER_NPOS) {
+      value.size = (uint32_t)size;
+      value.null_terminated = 1;
+    }
+  }
   return value;
 }
 
