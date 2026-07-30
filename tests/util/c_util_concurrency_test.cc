@@ -11,10 +11,8 @@
 
 namespace {
 
-hyle_status return_context(void** out_object, void* context, const void*) {
-  hyle_status status = HYLE_STATUS_INIT;
-  *out_object = context;
-  return status;
+void* return_context(hyle_status*, void* context, const void*) {
+  return context;
 }
 
 struct ReentrantFactoryContext {
@@ -22,13 +20,11 @@ struct ReentrantFactoryContext {
   bool reentered;
 };
 
-hyle_status reenter_registry(void** out_object, void* context, const void*) {
-  hyle_status status = HYLE_STATUS_INIT;
+void* reenter_registry(hyle_status*, void* context, const void*) {
   auto* state = static_cast<ReentrantFactoryContext*>(context);
   state->reentered =
       hyle_util_registry_has_cstr(state->registry, "reentrant") != 0;
-  *out_object = state;
-  return status;
+  return state;
 }
 
 void count_destroy(void*, void* context) {

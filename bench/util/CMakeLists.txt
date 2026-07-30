@@ -3,6 +3,11 @@ hyle_add_bench(util SOURCES util_bench.cc)
 if(HYLE_BENCH_ABSL)
   target_compile_definitions(hyle_util_bench PRIVATE HYLE_BENCH_ABSL)
   target_link_libraries(hyle_util_bench PRIVATE absl::flat_hash_map)
+  # The peer is intentionally outside HYLE's warning contract. Keep its
+  # template headers visible to the benchmark without turning Abseil's own
+  # pedantic extensions into HYLE_WERROR failures on GCC/Clang.
+  target_include_directories(hyle_util_bench SYSTEM PRIVATE
+    "${HYLE_ABSL_DIR}")
   if(MSVC)
     # Abseil's MSVC prefetch fallback intentionally ignores its address when
     # the compiler has no matching intrinsic. Do not let that vendor-header

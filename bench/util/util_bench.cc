@@ -146,10 +146,8 @@ void* create_token() {
 
 hyle::Result<void*> create_result_token() { return create_token(); }
 
-hyle_status create_c_token(void** out_object, void*, const void*) {
-  hyle_status status = HYLE_STATUS_INIT;
-  *out_object = create_token();
-  return status;
+void* create_c_token(hyle_status*, void*, const void*) {
+  return create_token();
 }
 
 struct TransparentHash {
@@ -179,6 +177,17 @@ using StdMap = std::unordered_map<std::string, PeerEntry, TransparentHash,
 using ResultStdMap =
     std::unordered_map<std::string, ResultPeerEntry, TransparentHash,
                        std::equal_to<>>;
+
+template <class Map, class Key>
+HYLE_FORCE_INLINE hyle::Result<void*> create_peer_result(
+    const Map& entries, const Key& key) {
+  const auto found = entries.find(key);
+  if (found == entries.end()) {
+    return hyle::make_unexpected(
+        hyle::Status::NotFound("registry key is not registered"));
+  }
+  return found->second.creator();
+}
 
 struct RegistryFixture {
   static constexpr std::size_t kEntries = 256;
@@ -416,18 +425,17 @@ int main() {
         .batch(1)
         .minEpochIterations(1'000'000);
     bench.run("std::unordered_map + Result factory", [&] {
-      const auto found =
-          fixture.fallible_std.find(fixture.std_keys[index++ & 255]);
-      auto result = found->second.creator();
+      auto result = create_peer_result(
+          fixture.fallible_std, fixture.std_keys[index++ & 255]);
       if (!result.has_value()) std::abort();
       nb::doNotOptimizeAway(*result);
     });
 #if defined(HYLE_BENCH_ABSL)
     index = 0;
     bench.run("absl::flat_hash_map + Result factory", [&] {
-      const auto found = fixture.fallible_absl.find(
+      auto result = create_peer_result(
+          fixture.fallible_absl,
           absl::string_view(fixture.std_keys[index++ & 255]));
-      auto result = found->second.creator();
       if (!result.has_value()) std::abort();
       nb::doNotOptimizeAway(*result);
     });

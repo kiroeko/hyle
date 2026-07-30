@@ -94,22 +94,23 @@ struct registry_factory_state {
   uintptr_t base;
 };
 
-static hyle_status registry_factory(void** out_object, void* context,
-                                    const void* arguments) {
+static void* registry_factory(hyle_status* out_status, void* context,
+                              const void* arguments) {
+  (void)out_status;
   struct registry_factory_state* state =
       (struct registry_factory_state*)context;
   uintptr_t increment = arguments != NULL ? *(const uintptr_t*)arguments : 0;
-  hyle_status status = HYLE_STATUS_INIT;
-  *out_object = (void*)(state->base + increment);
-  return status;
+  return (void*)(state->base + increment);
 }
 
-static hyle_status failing_registry_factory(void** out_object, void* context,
-                                            const void* arguments) {
-  (void)out_object;
+static void* failing_registry_factory(hyle_status* out_status, void* context,
+                                      const void* arguments) {
   (void)context;
   (void)arguments;
-  return hyle_status_unavailable("backend initialization failed");
+  if (out_status != NULL) {
+    *out_status = hyle_status_unavailable("backend initialization failed");
+  }
+  return NULL;
 }
 
 struct registry_visit_state {

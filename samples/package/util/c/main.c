@@ -8,13 +8,12 @@ static int consume(hyle_status status) {
   return ok;
 }
 
-static hyle_status create_value(void** out_object, void* context,
-                                const void* arguments) {
+static void* create_value(hyle_status* out_status, void* context,
+                          const void* arguments) {
+  (void)out_status;
   const uintptr_t base = *(const uintptr_t*)context;
   const uintptr_t increment = *(const uintptr_t*)arguments;
-  hyle_status status = HYLE_STATUS_INIT;
-  *out_object = (void*)(base + increment);
-  return status;
+  return (void*)(base + increment);
 }
 
 int main(void) {

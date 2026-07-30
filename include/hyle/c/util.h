@@ -147,11 +147,14 @@ typedef enum hyle_util_registry_priority {
   HYLE_UTIL_REGISTRY_PREFERRED = 3
 } hyle_util_registry_priority;
 
-/* A creator transfers one owning Status to its caller and writes out_object
- * only on OK. Initialize success locally with HYLE_STATUS_INIT; use the error
- * factories for failure. Callbacks must not unwind exceptions through C. */
-typedef hyle_status (*hyle_util_registry_create_fn)(
-    void** out_object, void* creator_ctx, const void* create_args);
+/* A creator returns its caller-owned object directly. `out_status` is either
+ * NULL for a diagnostic-free nullable call, or points to an initialized OK
+ * Status for a checked call. On failure return NULL and, when out_status is
+ * non-NULL, replace it with one owning error Status. On success leave it OK;
+ * a successful object may itself be NULL. Callbacks must not unwind C++
+ * exceptions through C. */
+typedef void* (*hyle_util_registry_create_fn)(
+    hyle_status* out_status, void* creator_ctx, const void* create_args);
 /* Return non-zero to continue; zero stops successfully. key/help remain valid
  * until registry destruction but are always borrowed. */
 typedef int (*hyle_util_registry_visit_fn)(
@@ -196,9 +199,9 @@ HYLE_UTIL_C_API hyle_status hyle_util_registry_create_object(
     hyle_container_string_view key,
     const void* create_args);
 /* Hot/value-shaped counterpart of create_object: returns NULL for an invalid or
- * absent key, a creator error, or a successful NULL result. It consumes any
- * creator error. Use the checked form when those outcomes must be
- * distinguished. */
+ * absent key, a creator failure, or a successful NULL result. The creator is
+ * called with out_status == NULL so it can skip diagnostics entirely. Use the
+ * checked form when those outcomes must be distinguished. */
 HYLE_UTIL_C_API void* hyle_util_registry_create_or_null(
     const hyle_util_registry* registry, hyle_container_string_view key,
     const void* create_args);
