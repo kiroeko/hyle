@@ -43,9 +43,10 @@ C ABI。`allocate_n<T>` / `allocate_zeroed<T>` / `reallocate_n<T>` 会检查 cou
 并允许显式 alignment；用同一个 alignment 调 `deallocate_n`。`reallocate_n` 失败或溢出时
 旧 allocation 仍然有效；因为底层 resize 可能按字节搬移，它只接受 trivially-copyable `T`，
 带构析/自引用状态的对象应新建 storage 后逐对象 move/销毁。
-原生 C++ allocate/deallocate/reallocate 的 alignment 必须是非零 2 次幂；显式 overload 的非法值
-fail-fast，省略 alignment 的常用 overload 没有验证分支。纯 C convenience 把 `alignment=0` 在头内
-折叠成默认对齐，非零值同样必须是 2 次幂。
+原生 C++ allocate/deallocate/reallocate 的 alignment 必须是非零 2 次幂；allocate/reallocate 的
+非法值会 fail-fast。deallocate 还必须带回成功分配时相同的 size/alignment，和标准 allocator/PMR
+一样属于调用方前置条件：Debug 会诊断，Release 热路不重复检查。纯 C convenience 作为 FFI 边界
+仍在 Release 校验，并把 `alignment=0` 在头内折叠成默认对齐。
 
 ```cpp
 hyle::mem::Allocator alloc = hyle::mem::system_allocator();

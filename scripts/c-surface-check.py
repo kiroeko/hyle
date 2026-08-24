@@ -24,14 +24,38 @@ def binary_symbols(
     library: Path, symbol_tool: Optional[Path], static: bool
 ) -> set[str]:
     if sys.platform == "win32":
-        dumpbin = (
+        tool = (
             str(symbol_tool) if symbol_tool is not None else shutil.which("dumpbin")
         )
-        if dumpbin is None:
-            raise RuntimeError("dumpbin is required to audit a Windows DLL")
+        if tool is None:
+            raise RuntimeError(
+                "dumpbin, llvm-nm, or llvm-readobj is required to audit a "
+                "Windows library"
+            )
+        tool_name = Path(tool).name.lower()
+        if "llvm-nm" in tool_name:
+            if not static:
+                raise RuntimeError("llvm-nm cannot audit exports from a PE DLL")
+            output = subprocess.check_output(
+                [tool, "-g", "--defined-only", str(library)], text=True
+            )
+            return {
+                fields[-1]
+                for line in output.splitlines()
+                if (fields := line.split())
+            }
+        if "llvm-readobj" in tool_name:
+            if static:
+                raise RuntimeError(
+                    "llvm-readobj is not the configured COFF archive auditor"
+                )
+            output = subprocess.check_output(
+                [tool, "--coff-exports", str(library)], text=True
+            )
+            return set(re.findall(r"^\s*Name:\s+(\S+)\s*$", output, re.MULTILINE))
         if static:
             output = subprocess.check_output(
-                [dumpbin, "/nologo", "/symbols", str(library)], text=True
+                [tool, "/nologo", "/symbols", str(library)], text=True
             )
             return set(
                 re.findall(
@@ -46,7 +70,7 @@ def binary_symbols(
                 )
             )
         output = subprocess.check_output(
-            [dumpbin, "/nologo", "/exports", str(library)], text=True
+            [tool, "/nologo", "/exports", str(library)], text=True
         )
         return set(
             re.findall(

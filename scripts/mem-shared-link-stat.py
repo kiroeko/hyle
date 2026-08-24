@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Certify mem's shared-library standard adapters in fresh processes.
+"""Certify mem's shipping same-link standard adapters in fresh processes.
 
 Section L of hyle_mem_bench intentionally runs one variant per process.  This
 driver alternates forward/reverse order, records every raw value, and prints the
@@ -36,6 +36,7 @@ COMPARISONS = (
     ("system_allocator_direct", "backend_raw_same_link"),
     ("system_std_allocator", "system_allocator_direct"),
     ("allocator_runtime", "backend_raw_same_link"),
+    ("allocator_runtime", "pmr_direct_backend"),
     ("std_allocator_runtime", "allocator_runtime"),
     ("system_memory_resource", "pmr_direct_backend"),
     ("pmr_resource_runtime", "pmr_direct_backend"),
@@ -53,6 +54,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--raw", type=Path, required=True)
     parser.add_argument("--platform", required=True)
     parser.add_argument("--compiler", required=True)
+    parser.add_argument("--linkage", choices=("shared", "static"), default="shared")
     parser.add_argument("--source-dir", type=Path, default=Path(__file__).resolve().parent.parent)
     parser.add_argument("--cpu", type=int, help="pin each child process where sched_setaffinity exists")
     parser.add_argument("--apple-qos", choices=("interactive", "utility"))
@@ -113,8 +115,12 @@ def main() -> int:
             if result.returncode != 0:
                 sys.stderr.write(output)
                 raise SystemExit(f"run {run} variant {variant_id} failed: {result.returncode}")
-            if "HYLE_MEM_LINKAGE shared" not in output:
-                raise SystemExit("certificate requires a shared hyle_mem build")
+            if f"HYLE_MEM_LINKAGE {args.linkage}" not in output:
+                raise SystemExit(
+                    f"certificate requires a {args.linkage} hyle_mem build"
+                )
+            if "HYLE_MEM_BUILD_MODE shipping" not in output:
+                raise SystemExit("certificate requires HYLE_TESTING=OFF")
             if args.apple_qos and (
                 f"HYLE_MEM_LINK_QOS requested={args.apple_qos} qos_ok=1" not in output
             ):
@@ -135,7 +141,7 @@ def main() -> int:
                     "compiler": args.compiler,
                     "platform": args.platform,
                     "qos": args.apple_qos or "n/a",
-                    "linkage": "shared",
+                    "linkage": args.linkage,
                     "run": run,
                     "variant": variant_name,
                     "ns_per_op": ns_per_op,

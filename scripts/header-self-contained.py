@@ -68,7 +68,15 @@ def compile_header(
             str(source),
             f"/I{include_dir}",
             f"/Fo{work_dir / (stem + '.obj')}",
+            "/utf-8",
         ]
+        if language == "c++":
+            # Mirror hyle_build_contract: public inline adapters translate
+            # allocation exceptions into Status and therefore require the
+            # standard C++ unwind model under both cl.exe and clang-cl.
+            command.append("/EHsc")
+            if compiler_id == "MSVC":
+                command.append("/Zc:__cplusplus")
     else:
         standard = "-std=c11" if language == "c" else "-std=c++23"
         command = [compiler, standard, "-fsyntax-only", f"-I{include_dir}"]
@@ -89,14 +97,29 @@ def compile_header(
 
 
 def visual_studio_environment(
-    instance: str, platform_name: str, toolset_version: str
+    instance: str, platform_name: str, toolset_version: str, compiler: str
 ) -> dict[str, str] | None:
-    """Load the selected VS generator's compiler environment once per module."""
-    if platform.system() != "Windows" or not instance:
+    """Load the compiler's VS environment once per module.
+
+    Ninja has no CMAKE_GENERATOR_INSTANCE, so derive the installation from the
+    selected cl.exe/clang-cl.exe path instead of making direct CTest execution
+    depend on an already-open Developer Command Prompt.
+    """
+    if platform.system() != "Windows":
         return None
 
-    # CMAKE_GENERATOR_INSTANCE may append a comma-separated version selector.
-    install_dir = Path(instance.split(",", maxsplit=1)[0])
+    install_dir: Path | None = None
+    if instance:
+        # CMAKE_GENERATOR_INSTANCE may append a version selector.
+        install_dir = Path(instance.split(",", maxsplit=1)[0])
+    else:
+        compiler_path = Path(compiler).resolve()
+        for parent in compiler_path.parents:
+            if parent.name.lower() == "vc":
+                install_dir = parent.parent
+                break
+    if install_dir is None:
+        return None
     vsdevcmd = install_dir / "Common7" / "Tools" / "VsDevCmd.bat"
     if not vsdevcmd.is_file():
         raise RuntimeError(f"Visual Studio environment script not found: {vsdevcmd}")
@@ -155,7 +178,7 @@ def main() -> int:
         sysroot = result.stdout.strip()
     include_dir = args.include_dir.resolve()
     compiler_env = visual_studio_environment(
-        args.vs_instance, args.vs_platform, args.vs_toolset_version
+        args.vs_instance, args.vs_platform, args.vs_toolset_version, args.cxx
     )
     header_dir = args.header_dir or args.module
     module_dir = include_dir / "hyle" / header_dir

@@ -124,14 +124,21 @@ int main() {
   Allocator a = system_allocator();  // mimalloc backing (HYLE_USE_MIMALLOC=ON)
 
 #if defined(HYLE_STATIC)
-  std::puts("HYLE_MEM_LINKAGE static (same-link section is diagnostic only)");
+  std::puts("HYLE_MEM_LINKAGE static");
 #else
   std::puts("HYLE_MEM_LINKAGE shared");
 #endif
+#if defined(HYLE_TESTING)
+  std::puts("HYLE_MEM_BUILD_MODE testing");
+#else
+  std::puts("HYLE_MEM_BUILD_MODE shipping");
+#endif
 
-  // ---- shared-delivery, same-link certificate -----------------------------
+  // ---- shipping same-link certificate ------------------------------------
   // Every formal row crosses the same hyle_mem import seam and reaches the
-  // same mimalloc instance.  This is the normal SDK shape and avoids the old
+  // same mimalloc instance.  Shared is the normal binary SDK shape; static is
+  // also certifiable when the driver explicitly requests that linkage. Both
+  // avoid the old
   // benchmark distortion where raw mi_* lived in the executable while HYLE's
   // backend lived in a DLL/DSO.  The direct mi_* row remains a useful absolute
   // lower bound, but is intentionally excluded from shared SOTA judgments.

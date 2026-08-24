@@ -98,6 +98,7 @@ void release_start(ThreadStart* s) noexcept {
   if (s->refs.fetch_sub(1, std::memory_order_acq_rel) == 1) destroy_start(s);
 }
 
+#if !defined(HYLE_OS_WINDOWS)
 void publish_required_setup(ThreadStart* s, Status status) noexcept {
   if (!s->require_config) {
     status.IgnoreError();
@@ -121,6 +122,7 @@ Status await_required_setup(ThreadStart* s) noexcept {
   detail::wake_one(&s->setup_state);
   return status;
 }
+#endif
 
 }  // namespace
 }  // namespace hyle::platform

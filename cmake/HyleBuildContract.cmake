@@ -17,7 +17,7 @@ if(MSVC)
   # consumers a different contract. Language genexes also keep these switches
   # away from C and MASM fcontext sources.
   target_compile_options(hyle_build_contract INTERFACE
-    "$<$<COMPILE_LANGUAGE:C,CXX>:/Zc:__cplusplus>"
+    "$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:MSVC>>:/Zc:__cplusplus>"
     "$<$<COMPILE_LANGUAGE:C,CXX>:/utf-8>"
     "$<$<COMPILE_LANGUAGE:CXX>:/EHsc>")
 elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")

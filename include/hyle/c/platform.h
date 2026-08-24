@@ -666,8 +666,17 @@ typedef struct hyle_cpu_features {
 
 #define HYLE_CPU_FEATURES_REQUIRED_SIZE                                       \
   ((uint32_t)offsetof(hyle_cpu_features, sse2))
+/* Spell every current field so strict C and C++ consumers can use the public
+ * constant initializer under -Wmissing-field-initializers. Appending a feature
+ * must update this macro as part of the same ABI review. */
 #define HYLE_CPU_FEATURES_INIT                                                \
-  {(uint32_t)sizeof(hyle_cpu_features), 0}
+  {(uint32_t)sizeof(hyle_cpu_features), 0,                                    \
+   0, 0, 0, 0,                                                               \
+   0, 0, 0, 0, 0, 0, 0,                                                     \
+   0, 0, 0, 0, 0,                                                           \
+   0, 0, 0, 0, 0,                                                           \
+   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,                                       \
+   0, 0, 0, 0, 0, 0}
 
 /* Coarse ISA tier values (match hyle::platform::Isa). */
 typedef uint32_t hyle_isa;

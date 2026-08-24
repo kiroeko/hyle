@@ -171,7 +171,9 @@ TEST(SystemAllocatorAlignmentDeathTest, StaticBindingRejectsZeroAndNonPowerOfTwo
   EXPECT_DEATH((void)SystemAllocator::allocate(8, 0), ".*");
   EXPECT_DEATH((void)SystemAllocator::allocate(8, 3), ".*");
   EXPECT_DEATH((void)SystemAllocator::reallocate(nullptr, 0, 8, 6), ".*");
+#if !defined(NDEBUG)
   EXPECT_DEATH(SystemAllocator::deallocate(nullptr, 0, 3), ".*");
+#endif
 }
 
 TEST(SystemAllocatorAlignmentDeathTest, RuntimeHandleRejectsZeroAndNonPowerOfTwo) {
@@ -179,7 +181,9 @@ TEST(SystemAllocatorAlignmentDeathTest, RuntimeHandleRejectsZeroAndNonPowerOfTwo
   EXPECT_DEATH((void)allocator.allocate(8, 0), ".*");
   EXPECT_DEATH((void)allocator.allocate(8, 3), ".*");
   EXPECT_DEATH((void)allocator.reallocate(nullptr, 0, 8, 6), ".*");
+#if !defined(NDEBUG)
   EXPECT_DEATH(allocator.deallocate(nullptr, 0, 3), ".*");
+#endif
 }
 
 TEST(SystemAllocatorAlignmentDeathTest, CConvenienceFreeRejectsNonPowerOfTwo) {

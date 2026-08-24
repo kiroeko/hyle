@@ -169,6 +169,7 @@ class TempDirectoryInput {
 // Join "a/b" into dst[cap]. Returns false (no write) if it would not fit. Bounded
 // and allocation-free -- used to rebuild child paths during recursion without
 // snprintf (whose worst-case length trips GCC -Wformat-truncation under -Werror).
+#if !defined(HYLE_OS_WINDOWS)
 bool join_path(char* dst, std::size_t cap, const char* a,
                const char* b) noexcept {
   std::size_t la = std::strlen(a), lb = std::strlen(b);
@@ -179,6 +180,7 @@ bool join_path(char* dst, std::size_t cap, const char* a,
   dst[la + 1 + lb] = '\0';
   return true;
 }
+#endif
 
 // Raw file-handle operations. Defined once per OS and shared by FileHandle.
 Status close_raw(std::intptr_t raw) noexcept;

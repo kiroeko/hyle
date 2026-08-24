@@ -100,7 +100,7 @@ namespace {
 // mi_malloc/realloc. Only over-alignment uses mi_*_aligned.
 void *system_alloc(void * /*state*/, std::size_t size,
                    std::size_t alignment) noexcept {
-  if (size == 0)
+  if (HYLE_UNLIKELY(size == 0))
     return nullptr;
   void *pointer = system_backend_allocate_local(size, alignment);
   if (pointer != nullptr) {
@@ -111,15 +111,15 @@ void *system_alloc(void * /*state*/, std::size_t size,
 
 void system_free(void * /*state*/, void *ptr, std::size_t /*size*/,
                  std::size_t /*alignment*/) noexcept {
-  if (ptr != nullptr) {
-    HYLE_TRACE_FREE_NAMED(ptr, "hyle.system");
-    system_backend_deallocate_local(ptr);
-  }
+#if defined(HYLE_TRACE)
+  if (ptr != nullptr) HYLE_TRACE_FREE_NAMED(ptr, "hyle.system");
+#endif
+  system_backend_deallocate_local(ptr);
 }
 
 void *system_realloc(void * /*state*/, void *ptr, std::size_t /*old_size*/,
                      std::size_t new_size, std::size_t alignment) noexcept {
-  if (new_size == 0) { // realloc-to-0 == free
+  if (HYLE_UNLIKELY(new_size == 0)) { // realloc-to-0 == free
     if (ptr != nullptr) {
       HYLE_TRACE_FREE_NAMED(ptr, "hyle.system");
       system_backend_deallocate_local(ptr);

@@ -1,12 +1,15 @@
 cmake_minimum_required(VERSION 3.25)
 
-if(NOT DEFINED HYLE_SOURCE_DIR OR HYLE_SOURCE_DIR STREQUAL "")
-  message(FATAL_ERROR "HYLE_SOURCE_DIR is required")
-endif()
-if(NOT DEFINED HYLE_SMOKE_ROOT OR HYLE_SMOKE_ROOT STREQUAL "")
-  message(FATAL_ERROR "HYLE_SMOKE_ROOT is required")
-endif()
-get_filename_component(HYLE_SMOKE_ROOT "${HYLE_SMOKE_ROOT}" ABSOLUTE)
+foreach(_required IN ITEMS HYLE_SOURCE_DIR HYLE_SMOKE_ROOT)
+  if(NOT DEFINED ${_required} OR "${${_required}}" STREQUAL "")
+    message(FATAL_ERROR "${_required} is required")
+  endif()
+  # These values are embedded into generated CMake source below. Native
+  # Windows backslashes would otherwise become escapes such as \h, even though
+  # the same script happens to work when called through the master contract.
+  get_filename_component(${_required} "${${_required}}" ABSOLUTE)
+  file(TO_CMAKE_PATH "${${_required}}" ${_required})
+endforeach()
 file(MAKE_DIRECTORY "${HYLE_SMOKE_ROOT}")
 
 set(_hyle_generator_args "")

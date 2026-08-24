@@ -31,6 +31,32 @@ Allocator oom_allocator() {
   return Allocator(&oom_allocate, &oom_deallocate, &oom_reallocate, nullptr);
 }
 
+struct ToggleOomState {
+  bool fail = false;
+  Allocator backing = system_allocator();
+};
+
+void* toggle_oom_allocate(void* opaque, std::size_t size,
+                          std::size_t alignment) noexcept {
+  auto& state = *static_cast<ToggleOomState*>(opaque);
+  return state.fail ? nullptr : state.backing.allocate(size, alignment);
+}
+
+void toggle_oom_deallocate(void* opaque, void* pointer, std::size_t size,
+                           std::size_t alignment) noexcept {
+  static_cast<ToggleOomState*>(opaque)->backing.deallocate(pointer, size,
+                                                           alignment);
+}
+
+void* toggle_oom_reallocate(void* opaque, void* pointer, std::size_t old_size,
+                            std::size_t new_size,
+                            std::size_t alignment) noexcept {
+  auto& state = *static_cast<ToggleOomState*>(opaque);
+  return state.fail && new_size != 0
+             ? nullptr
+             : state.backing.reallocate(pointer, old_size, new_size, alignment);
+}
+
 struct SharedValue {
   SharedValue(bool* destroyed, int value) noexcept
       : destroyed(destroyed), value(value) {}
@@ -143,7 +169,15 @@ TEST(StdAllocator, OomAndCountOverflowUseStandardExceptions) {
                    (std::numeric_limits<std::size_t>::max)() / sizeof(int) + 1),
                std::bad_array_new_length);
 
-  std::vector<int, StdAllocator<int>> values(allocator);
+  // MSVC Debug allocates iterator-proxy metadata in vector's noexcept empty
+  // constructor. Let implementation metadata succeed, then make the injected
+  // backing fail so reserve exercises the portable container OOM contract.
+  using OomVector = std::vector<int, StdAllocator<int>>;
+  ToggleOomState state;
+  Allocator toggled(&toggle_oom_allocate, &toggle_oom_deallocate,
+                    &toggle_oom_reallocate, &state);
+  OomVector values{StdAllocator<int>(toggled)};
+  state.fail = true;
   EXPECT_THROW(values.reserve(1), std::bad_alloc);
 }
 

@@ -118,7 +118,7 @@ struct SystemAllocator {
   // entry.
   static void* allocate(std::size_t size,
                         std::size_t alignment = kSystemDefaultAlignment) noexcept {
-    if (size == 0) {
+    if (HYLE_UNLIKELY(size == 0)) {
       (void)detail::system_backend_checked_alignment(alignment);
       return nullptr;
     }
@@ -131,15 +131,18 @@ struct SystemAllocator {
   static void deallocate(
       void* ptr, std::size_t /*size*/ = 0,
       std::size_t alignment = kSystemDefaultAlignment) noexcept {
-    (void)detail::system_backend_checked_alignment(alignment);
-    if (ptr != nullptr) {
-      HYLE_TRACE_FREE_NAMED(ptr, "hyle.system");
-      detail::system_backend_deallocate(ptr);
-    }
+    // Matching alignment is an allocator deallocation precondition. Preserve a
+    // Debug diagnostic, but keep Release on the same direct-free shape as
+    // std::allocator/PMR and mimalloc itself.
+    HYLE_ASSUME(alignment != 0 && (alignment & (alignment - 1)) == 0);
+#if defined(HYLE_TRACE)
+    if (ptr != nullptr) HYLE_TRACE_FREE_NAMED(ptr, "hyle.system");
+#endif
+    detail::system_backend_deallocate(ptr);
   }
   static void* reallocate(void* ptr, std::size_t /*old_size*/, std::size_t new_size,
                           std::size_t alignment = kSystemDefaultAlignment) noexcept {
-    if (new_size == 0) {
+    if (HYLE_UNLIKELY(new_size == 0)) {
       (void)detail::system_backend_checked_alignment(alignment);
       if (ptr != nullptr) {
         HYLE_TRACE_FREE_NAMED(ptr, "hyle.system");

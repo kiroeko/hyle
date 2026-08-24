@@ -110,7 +110,7 @@ blocking borrow 不进入 `mem/` 基础池。等待策略依赖 fiber/condition/
 | `AlignedPmrResource` | 可选 minimum base alignment 的 PMR adapter | 保留；对应 oneTBB `cache_aligned_resource` 的用户需求，不给普通 PMR 强加 cache policy |
 | typed/RAII helpers | `allocate_n/zeroed/reallocate_n`、construct/destroy、make_unique | 保留；乘法溢出和显式 alignment 在 System/运行时两层一致 |
 
-通用 malloc 借 mimalloc，不自造任意大小通用堆。sized-free 必须带回原请求的 size/alignment；backing identity 与 ownership 不能丢失。C++ 默认 alignment overload 保持零验证分支；显式动态 allocate/deallocate/reallocate 在 dispatch 前验证非零 2 次幂。C convenience 单独把 0 归一为默认值。mimalloc v3 会让小于 `MI_MAX_ALIGN_SIZE` 的 size class 使用更弱的自然对齐；HYLE 对默认/更弱 alignment 的 `<16B` 请求只把 backing size 提升到 16 后继续走 plain `mi_malloc/realloc`，trace 与 sized-free 仍记录原请求，over-aligned 才走 `mi_*_aligned`。这条实现假设由 `MI_MALLOC_VERSION==30500` 编译门和 1/8/37B alloc+realloc 测试共同锁定。
+通用 malloc 借 mimalloc，不自造任意大小通用堆。sized-free 必须带回原请求的 size/alignment；backing identity 与 ownership 不能丢失。C++ 默认 alignment overload 保持零验证分支；显式动态 allocate/reallocate 在 dispatch 前验证非零 2 次幂。deallocate 的 size/alignment 必须与成功分配匹配，和 `std::pmr::memory_resource`/allocator-template 一样是调用方前置条件：Debug 诊断，Release 不在每次 free 上重复验证。C convenience 作为 FFI 边界仍在 Release 把 0 归一为默认值并拒绝非 2 次幂。mimalloc v3 会让小于 `MI_MAX_ALIGN_SIZE` 的 size class 使用更弱的自然对齐；HYLE 对默认/更弱 alignment 的 `<16B` 请求只把 backing size 提升到 16 后继续走 plain `mi_malloc/realloc`，trace 与 sized-free 仍记录原请求，over-aligned 才走 `mi_*_aligned`。这条实现假设由 `MI_MALLOC_VERSION==30500` 编译门和 1/8/37B alloc+realloc 测试共同锁定。
 
 ### 4.1 C/FFI 产品面
 

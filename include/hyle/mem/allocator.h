@@ -91,7 +91,11 @@ public:
   }
   void deallocate(void *ptr, std::size_t size,
                   std::size_t alignment) const noexcept {
-    checked_alignment_(alignment);
+    // `alignment` must match the successful allocation. Like
+    // memory_resource::deallocate and mature allocator-template APIs, this is
+    // a caller precondition: diagnose it in Debug without taxing every Release
+    // free. The C convenience boundary keeps release-surviving validation.
+    HYLE_ASSUME(alignment != 0 && (alignment & (alignment - 1)) == 0);
     free_fn_(state_, ptr, size, alignment);
   }
   void *reallocate(void *ptr, std::size_t old_size,

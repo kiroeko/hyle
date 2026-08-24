@@ -41,6 +41,17 @@ function(hyle_add_c_test module source)
     LINKER_LANGUAGE CXX)
   target_link_libraries(${target} PRIVATE hyle_${module} ${ARGN})
   set_source_files_properties("${source}" PROPERTIES LANGUAGE C)
+  # Exercise every public C ABI with the consumer-side enum-shrinking switch.
+  # The test contract belongs here rather than in selected module fragments:
+  # exported tags must use fixed-width typedefs regardless of which module owns
+  # them. clang-cl needs the option forwarded to the Clang frontend explicitly.
+  if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+    if(CMAKE_C_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
+      target_compile_options(${target} PRIVATE /clang:-fshort-enums)
+    else()
+      target_compile_options(${target} PRIVATE -fshort-enums)
+    endif()
+  endif()
   hyle_apply_warnings(${target})
   hyle_apply_sanitizer(${target})
   add_test(NAME ${target} COMMAND ${target})
@@ -158,12 +169,29 @@ set_tests_properties(hyle_bench_stat_parser_test PROPERTIES
   LABELS "tooling;benchmark")
 if(WIN32)
   get_filename_component(_hyle_linker_dir "${CMAKE_LINKER}" DIRECTORY)
-  set(_hyle_c_symbol_tool "${_hyle_linker_dir}/dumpbin.exe")
+  get_filename_component(_hyle_compiler_dir "${CMAKE_C_COMPILER}" DIRECTORY)
+  if(CMAKE_C_COMPILER_ID MATCHES "Clang" AND
+     CMAKE_C_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
+    # The LLVM toolchain bundled with Visual Studio has no dumpbin beside
+    # lld-link. llvm-nm reads COFF archives; llvm-readobj reads PE exports.
+    if(HYLE_STATIC)
+      find_program(_hyle_c_symbol_tool NAMES llvm-nm
+        HINTS "${_hyle_compiler_dir}" REQUIRED NO_DEFAULT_PATH)
+    else()
+      find_program(_hyle_c_symbol_tool NAMES llvm-readobj
+        HINTS "${_hyle_compiler_dir}" REQUIRED NO_DEFAULT_PATH)
+    endif()
+  else()
+    find_program(_hyle_c_symbol_tool NAMES dumpbin
+      HINTS "${_hyle_linker_dir}" REQUIRED)
+  endif()
 elseif(CMAKE_NM)
   set(_hyle_c_symbol_tool "${CMAKE_NM}")
 else()
   find_program(_hyle_c_symbol_tool NAMES nm REQUIRED)
 endif()
+unset(_hyle_compiler_dir)
+unset(_hyle_linker_dir)
 
 # Every module owns its test registration beside its test sources. A real
 # subdirectory gives each module independent source/binary/variable scope while
