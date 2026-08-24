@@ -56,23 +56,37 @@ typedef void (*hyle_sched_task_fn)(void* ctx);
 typedef void (*hyle_sched_cancel_fn)(void* ctx);
 typedef void (*hyle_sched_blocking_done_fn)(void* ctx, int cancelled);
 
+/* Versioned scheduler input options. struct_size and the zero reserved word
+ * form the required prefix; every business field has a documented default.
+ * The library reads only complete fields within struct_size, treats
+ * has_worker_priority+worker_priority and the allocator as indivisible units,
+ * and ignores unknown future tail bytes. */
 typedef struct hyle_sched_options {
   uint32_t struct_size;
-  uint32_t num_workers; /* 0 = process-available CPUs, capped at 1024 */
+  uint32_t reserved; /* must be zero */
   size_t queue_capacity;
   size_t fiber_stack_size;
   hyle_allocator backing;
-  int worker_cpu_order;     /* hyle_cpu_order; default keeps OS order */
-  int has_worker_priority;  /* 0/1 */
-  int worker_priority;      /* hyle_thread_priority when present */
+  hyle_cpu_order worker_cpu_order; /* default keeps OS order */
+  uint32_t has_worker_priority;    /* 0/1 */
+  hyle_thread_priority worker_priority; /* meaningful when flag is 1 */
+  /* Kept in the former trailing padding so the other 64-bit offsets remain
+   * stable. 0 = process-available CPUs, capped at 1024. */
+  uint32_t num_workers;
 } hyle_sched_options;
 
+#define HYLE_SCHED_OPTIONS_REQUIRED_SIZE                                      \
+  ((uint32_t)offsetof(hyle_sched_options, queue_capacity))
 #define HYLE_SCHED_OPTIONS_INIT                                                \
   { (uint32_t)sizeof(hyle_sched_options), 0, 1024, 64 * 1024,                 \
     { NULL, NULL, NULL, NULL }, HYLE_CPU_ORDER_OS_DEFAULT, 0,                \
-    HYLE_THREAD_PRIORITY_NORMAL }
+    HYLE_THREAD_PRIORITY_NORMAL, 0 }
 
 HYLE_SCHED_C_API hyle_sched_options hyle_sched_options_default(void);
+/* NULL selects defaults. A non-NULL pointer must expose its struct_size word;
+ * values below HYLE_SCHED_OPTIONS_REQUIRED_SIZE or a nonzero reserved word are
+ * invalid and return NULL with hyle_sched_last_error() set. Missing complete
+ * fields retain defaults and unknown trailing bytes are ignored. */
 HYLE_SCHED_C_API hyle_sched_scheduler* hyle_sched_scheduler_create(
     const hyle_sched_options* options);
 HYLE_SCHED_C_API void hyle_sched_scheduler_destroy(
@@ -189,17 +203,19 @@ HYLE_SCHED_C_API void hyle_sched_channel_close(hyle_sched_channel* channel);
 
 /* Type-erased pointer-value messaging. Payload ownership always remains with the
  * caller; HYLE only copies pointer values. */
-typedef enum hyle_sched_recv_result {
+typedef int32_t hyle_sched_recv_result;
+enum {
   HYLE_SCHED_RECV_LAGGED = -2,
   HYLE_SCHED_RECV_CLOSED = -1,
   HYLE_SCHED_RECV_EMPTY = 0,
   HYLE_SCHED_RECV_VALUE = 1
-} hyle_sched_recv_result;
-typedef enum hyle_sched_send_result {
+};
+typedef int32_t hyle_sched_send_result;
+enum {
   HYLE_SCHED_SEND_CLOSED = -1,
   HYLE_SCHED_SEND_FULL = 0,
   HYLE_SCHED_SEND_SENT = 1
-} hyle_sched_send_result;
+};
 
 HYLE_SCHED_C_API hyle_sched_send_result hyle_sched_channel_try_send(
     hyle_sched_channel* channel, void* value);

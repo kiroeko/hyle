@@ -3,7 +3,8 @@
 > Tier 0 host-RAM 基础设施。本页是 mem 当前边界、公共能力形状和长期合同的设计真源。
 > 用户写法见 [`../guide/mem.md`](../guide/mem.md) 与 [`../guide/c-mem.md`](../guide/c-mem.md)，
 > 实测只见 [`../performance/benchmarks-mem.md`](../performance/benchmarks-mem.md)，当前复审状态只见
-> [`../milestones/mem-mature-gap-audit.md`](../milestones/mem-mature-gap-audit.md)；
+> [`../milestones/pre-release-readiness.md`](../milestones/pre-release-readiness.md)；
+> [`mem-mature-gap-audit.md`](../milestones/mem-mature-gap-audit.md) 是 2026-07 的历史复审输入，
 > [`mem-close-plan.md`](../milestones/mem-close-plan.md) 是上一轮冻结证书。
 
 ## 1. 边界
@@ -109,7 +110,7 @@ blocking borrow 不进入 `mem/` 基础池。等待策略依赖 fiber/condition/
 | `AlignedPmrResource` | 可选 minimum base alignment 的 PMR adapter | 保留；对应 oneTBB `cache_aligned_resource` 的用户需求，不给普通 PMR 强加 cache policy |
 | typed/RAII helpers | `allocate_n/zeroed/reallocate_n`、construct/destroy、make_unique | 保留；乘法溢出和显式 alignment 在 System/运行时两层一致 |
 
-通用 malloc 借 mimalloc，不自造任意大小通用堆。sized-free 必须带回原请求的 size/alignment；backing identity 与 ownership 不能丢失。C++ 默认 alignment overload 保持零验证分支；显式动态 allocate/deallocate/reallocate 在 dispatch 前验证非零 2 次幂。C convenience 单独把 0 归一为默认值。
+通用 malloc 借 mimalloc，不自造任意大小通用堆。sized-free 必须带回原请求的 size/alignment；backing identity 与 ownership 不能丢失。C++ 默认 alignment overload 保持零验证分支；显式动态 allocate/deallocate/reallocate 在 dispatch 前验证非零 2 次幂。C convenience 单独把 0 归一为默认值。mimalloc v3 会让小于 `MI_MAX_ALIGN_SIZE` 的 size class 使用更弱的自然对齐；HYLE 对默认/更弱 alignment 的 `<16B` 请求只把 backing size 提升到 16 后继续走 plain `mi_malloc/realloc`，trace 与 sized-free 仍记录原请求，over-aligned 才走 `mi_*_aligned`。这条实现假设由 `MI_MALLOC_VERSION==30500` 编译门和 1/8/37B alloc+realloc 测试共同锁定。
 
 ### 4.1 C/FFI 产品面
 
@@ -250,6 +251,9 @@ variable-size pool 对象，这是有意的产品边界，不是“没有可变�
   表示全部可用节点；顺序、重复 id 的 weighted placement、page 粒度和能力失败沿用 platform
   合同；C 用
   `hyle_huge_region_open_interleaved_nodes` 达到同一能力。`interleave_chunk_size()` 可观察实际条带。
+  C ABI 的单 node、requested-node 与 selected-node array 统一使用 fixed-width
+  platform 共享的 `hyle_numa_node`；adapter 拒绝数组中的负值/ANY sentinel，再无异常地转换到 native
+  unsigned node span，避免调用方在 platform→mem 消费边手写有符号 cast。
   要保持自定义条带 policy 粒度时默认不请求 THP；显式叠加 THP 仍只是 advice，物理大页粒度
   可能覆盖更小条带。Linux 极细自定义布局会在构造期 first-touch，以常量 scratch 和有界 VMA
   policy 换掉无界 kernel metadata；普通大 chunk 仍保留 demand paging。

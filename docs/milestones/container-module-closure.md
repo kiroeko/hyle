@@ -1,5 +1,9 @@
 # container 模块严格收口（最终证书：2026-07-27）
 
+> **历史证据提示（2026-08-25）：**标题中的“最终证书”只指 2026-07-27 当时形状；本页的
+> 绿色结论不等于 simdutf 9.1/hash/string API 更新后 working tree 的当前证书。现行状态只看
+> [`pre-release-readiness`](./pre-release-readiness.md)。
+
 > **2026-07-27 最终结论：✅ 按当前实际使用标准严格收口。** container 已从早期
 > Swiss/queue benchmark 集合重塑为按 ownership、稳定性、有序性、并发角色和容量合同
 > 选择的数据结构层。公开面覆盖 small/fixed/POD sequence、flat hash、sorted flat、B-tree、

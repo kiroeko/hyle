@@ -46,8 +46,10 @@ const std::uint64_t left = hyle::time::remaining_ns(deadline);
 
 不要写 `monotonic_ns() + timeout_ns`，因为大 timeout 会 wrap 到过去。chrono integral duration
 用精确 ratio 算术转换，包含 2^53 以上的 ns；浮点 duration 的 NaN/非正数转 0，正值向上取整到
-ns，超范围饱和。`Instant` 的 `elapsed()`/`until()` 是非负
-便利入口；`later - earlier` 与 `std::chrono` 一样保留方向，可能为负。
+ns，超范围饱和。`Instant` 的 `elapsed()`/`until()` 是非负便利入口：反向为 0，正向差值超出
+`Duration::rep` 时饱和到 `Duration::max()`。`later - earlier` 与 `std::chrono` 一样保留方向，
+可能为负，并沿用 chrono 的 representability 前置条件；对任意外部/极值 time point 应使用
+前两个 checked convenience。
 
 `profiling_clock_ns` 返回缩放到 ns 的硬件 counter 采样：x86 使用 invariant TSC，GCC/Clang
 ARM64 使用 architected virtual counter。x86 跨核迁移、suspend 或 VM migration 可能让差值
@@ -64,7 +66,8 @@ if (stop >= start) record_sample(stop - start); // x86 跨核反向样本应丢�
 有序 pair 阻止编译器与 CPU 把普通指令/load 移过边界，但不会等待先前 store 全局可见；设备
 I/O、持久化和跨核同步仍使用各自的 fence/protocol。availability 为 false 时 raw 与 pair 都
 安全回退到 monotonic，只是不再有硬件快路。`coarse_realtime_ns` 是粗粒度日志时间戳；coarse
-是稳定语义，是否更快只由当前平台性能证书说明。
+是稳定语义；是否更快只由 [`benchmarks-time`](../performance/benchmarks-time.md) 的 freshness
+状态和当前平台同合同证据说明。
 
 ### Unix 时间与 OS/FFI 互操作
 

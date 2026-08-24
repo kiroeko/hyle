@@ -16,7 +16,7 @@
 | `HYLE_STATIC_CACHE_LINE_SIZE` | compile-time macro | 公共结构布局：Apple Silicon 128，其余当前支持目标 64 |
 | `hyle_prefetch_read` | header-inline | 预计会复用的读，偏向本地 cache |
 | `hyle_prefetch_read_non_temporal` | header-inline | 大片一次性/低复用读；不支持时可退化 |
-| `hyle_prefetch_write` | header-inline | 即将修改的地址；capable CPU 可提前请求 exclusive ownership |
+| `hyle_prefetch_write` | header-inline | 即将修改的地址；capable target 可请求 exclusive ownership，不支持时按编译 ISA baseline 安全退化 |
 
 ```c
 #include "hyle/c/core.h"

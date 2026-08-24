@@ -30,6 +30,11 @@ HYLE 的 CMake target 图是项目组织架构的可执行版本，不只是“�
 8. **授权与 artifact 正交。**shared、static、complete source 只决定文件闭包和消费入口，不自行扩大
    使用、修改、披露或再分发权利。
 
+目标 ABI 必须是 64-bit；32-bit 在 configure 阶段直接拒绝，避免 core/error 看似能编而依赖
+64-bit lock-free word 的 container/sched 产品只在后续实例化时失败。正式优化与 CI 架构是
+x86-64、AArch64 和 RV64；其他 64-bit 架构仍可进入明确的 generic/scalar 分支，但不自动获得
+某个 tuned ISA 或 fcontext 能力，组件各自在 configure 时验证硬能力。
+
 这些原则比当前 helper 名称稳定。未来可以重写 CMake 实现，但只要仍满足同一组用户合同，就不属于
 产品架构变化；反之，即使只是增加一个布尔开关，只要破坏上述合同也必须按架构变更审查。
 
@@ -112,7 +117,10 @@ C-compatible 时间值头：platform 不调用 time 符号，所以 platform 的
 requested/resolved 清单，因此一次构建“组装了什么”可审计。
 方括号内的 sched 边只在 HYLE 已接入 fcontext 的目标组合上存在（当前为 x86-64
 Windows/Linux/macOS 与 arm64 Linux/macOS）；其他平台仍可组装 io proactor、compute host/backend
-基础层和 graph serial core。显式请求不受支持的 sched 会在 configure 阶段失败，不会静默降级。
+基础层和 graph serial core。io 的 `error/mem/container/[sched]` 都是 PUBLIC usage requirement：C ABI
+按值返回 owning `hyle_status`/接受 allocator，C++ 公开头还含 container 类型与 header-inline sched 调用，
+所以只链接 `hyle::io` 的 installed consumer 也会得到正确 import/runtime closure。显式请求不受支持的
+sched 会在 configure 阶段失败，不会静默降级。
 
 组件选择同时控制依赖发现：不选 `io` 就不探测 OpenSSL、不取得 nghttp2；不选 `compute`
 就不探测 CUDA，也不取得 ggml/Vulkan-Headers/volk/glslang。根构建把 `HYLE_DEPS_DIR` 一次投影为
@@ -121,13 +129,41 @@ HYLE 目录作用域内的 `FETCHCONTENT_BASE_DIR`，因此产品依赖和 test-
 源码与生成物一起归该 build tree 所有，不同 toolchain/build tree 不共享这个目录。`_deps` 是
 FetchContent 的 population 实现区，不是可交付的 offline bundle 格式。离线或
 经审查的 bundle 保存独立依赖源码，并通过标准 `FETCHCONTENT_SOURCE_DIR_<NAME>` 逐项注入；依赖
-生成物仍进入本 build tree，不能写入或依赖源码树。仅预填一个仓库根 `.deps`、或只打开
+生成物仍进入本 build tree，不能写入或依赖源码树。标准 override 本身也由中央 wrapper 校验：接受精确
+clean Git identity，或 lock 中官方 archive 的 raw expanded-tree manifest（无需 `.git`）；增删改和逃逸
+symlink 在 `FetchContent_MakeAvailable` 前失败。由于 FetchContent 的“全工程第一次声明胜出”，wrapper
+还会复验 `MakeAvailable` **实际选中的** source；父工程提前声明同名任意源码不能产生成功的 HYLE 配置/
+package。父 CMake/toolchain 本身属于可执行信任根，复验保证产品身份，不声称能在恶意父脚本执行前沙箱化它。
+仅预填一个仓库根 `.deps`、或只打开
 `FETCHCONTENT_FULLY_DISCONNECTED`，都不是首次配置的稳定合同。源码根的
 `hyle-offline-deps.cmake` 可作为 initial cache 扫描 bundle 的
-`deps/<FetchContent-name>/`，自动生成标准 override；它不维护另一份依赖名字清单。
+`deps/<lock-name>/`，自动生成标准 override 并强制完全断网；它不维护另一份依赖名字清单。
+
+中央 lock 的元数据投影始终完整，但 in-tree snapshot 的存在/内容审计按实际装配闭包触发：mem→mimalloc，
+container→xxHash/wyhash/simdutf，带 fcontext transport 的 io→picohttpparser，sched→fcontext，benchmark→nanobench。这样 core-only
+源码形状不被未消费 vendor 反向绑架。完整源码交付不同：`hyle_source_package` 在归档前调用 lock reader 的
+全量 script audit，保证“本次不编”不能掩盖发布包中的漂移或残缺。
+
+迁入产品并经 HYLE API/D-tag 改写的源码使用独立 `integrated_source` class，而不冒充 byte-identical
+vendor：lock 同时记录 upstream origin commit/tree/archive、HYLE integration path 集合、这些 adapted
+bytes 的规范化内容 hash 和 HYLE 根内许可证副本。普通 configure 只在实际选择 `simd` 时审计 Highway/
+xsimd ports；完整源码审计检查全部 integrated records。每个 class 还固定 license root：in-tree/
+integrated 必须是 `hyle`，FetchContent/external/benchmark 必须是 `dependency`，错误组合在投影阶段失败，
+不会被某个 verifier 静默跳过。in-tree license 还必须位于该 record 的 vendored path，integrated license
+必须位于 `third_party/ported/`，避免相同许可证文本/hash 被错误归给另一来源。
 
 TLS 与 CUDA 使用 `AUTO|ON|OFF` 三态：AUTO 仅供便利探测，ON 是硬能力契约，OFF 不运行依赖探测。
 正式 SDK/CI 必须显式选择 ON/OFF，因此构建机偶然安装了某个 SDK 不会改变发布形状。
+HTTP/2 与 ggml bridge 还要求 sched/fcontext：支持目标默认 ON，不支持目标默认 OFF；后者显式 ON 直接
+configure 失败，TLS AUTO 则不探测 OpenSSL。稳定 stub/availability=0 仍在，但 package feature manifest
+绝不登记未编入的能力。CUDA、Vulkan 和 host compute 不因缺 fcontext 被连带关闭。
+io 还在真实 target 上 PUBLIC 导出 `HYLE_IO_HAS_COROUTINE_TRANSPORT=0|1`：无 fcontext 的
+安装包虽保留统一头文件树，但 sched-dependent C++ 头会在值为 0 时给出明确
+compile-time diagnostic；proactor/shared-memory 头与 C HTTP/2 probe/stub 不受影响。这使
+source-embedded target 和 moved installed target 共享同一 capability 契约，不依赖文件是否存在的推测。
+对不用 CMake target 的合法 headers+library 消费，`hyle/io/capabilities.h` 使用与 CMake
+相同的公开 OS/arch/compiler-ABI 事实推导默认值；若 target 导出值与该事实不一致，
+头文件会把它诊断为用错目标包，不允许静默降级。
 
 ## 模块所有权与并行施工
 
@@ -171,7 +207,7 @@ TLS 与 CUDA 使用 `AUTO|ON|OFF` 三态：AUTO 仅供便利探测，ON 是硬�
 例如 mem 的完整内部依赖事实只有：
 
 ```cmake
-_hyle_declare_component(mem PUBLIC_DEPS error platform)
+_hyle_declare_component(mem PUBLIC_DEPS error platform util_core)
 ```
 
 模块所有权目录只声明实现：
@@ -181,7 +217,8 @@ hyle_add_module(mem SOURCES system.cc stats.cc c_mem.cc)
 ```
 
 manifest 中 PUBLIC/PRIVATE 的并集让 `HYLE_COMPONENTS=mem` 在进入模块目录前解析成
-`error;platform;mem`；同一份可见性信息随后让 helper 自动链接 `hyle_error`、`hyle_platform`。这样既
+`util_core;error;platform;mem`；同一份可见性信息随后让 helper 自动链接 `hyle_error`、
+`hyle_platform`、`hyle_util_core`。这样既
 不会面对尚未创建的 target 反向猜闭包，也不把源码、外部库和条件实现清单搬回中央脚本。
 
 终态审计不是第二份声明：它从生成后的 target properties 反查结果是否仍等于 manifest，用来捕获模块
@@ -338,11 +375,18 @@ HYLE 实际消费的 CPU、可选 CUDA 与 Vulkan meta-loader PIC 静态实现�
 benchmark 的离线 shader 生成，不进入生产 SDK。CUDA SDK 必须显式给出
 `CMAKE_CUDA_ARCHITECTURES`，不能把构建机的 `native` 烙成误称可分发的二进制。
 
+Tracy 有额外的 runtime identity 约束：trace-on shared SDK 以一个 shared
+`hyle_tracy_client` 统一进程内 HYLE 模块；trace-on static SDK 只支持 archive 进入一个最终
+link image。多个 DLL/plugin 各自消费 static SDK 会复制 singleton，因此是明确不支持的 artifact
+组合，必须改用 shared `hyle_obs`。CMake package 无法看到独立配置的其他 plugin，不设置虚假的
+“process unique”自动门；distribution review 必须按最终 image topology 检查这项。
+
 ggml 的 CPU ISA 是交付物契约：通用安装包默认关闭 `GGML_NATIVE` 并使用 x86 SSE4.2 baseline；已知
 部署机器可用 `HYLE_SIMD_EXACT_TARGET=AVX2/AVX512` 将 HYLE 与 ggml 提升到同一 ISA floor，源码自用
 也可显式打开 `HYLE_COMPUTE_GGML_NATIVE`。这不冒充 ggml 的多后端动态变体分发；若要一个包在未知
 CPU 上同时得到每台机器的 ggml 最优 ISA，需另做每 ISA backend + runtime score/load 的产品形状。
-cross compile 和三平台完整迁移矩阵的最终证书只见 build/package milestone。
+cross compile 和三平台完整迁移矩阵的历史验收记录见 build/package milestone；当前认证状态只看
+[`pre-release-readiness`](../milestones/pre-release-readiness.md)。
 
 平台 preset 只组合开发入口，不重新定义产品：Linux/macOS 不锁 generator，Windows 明分
 CMake 4.2+ 原生 VS 2026、VS 2022 回退与“已选择 MSVC + Ninja”三条路径；后者由
@@ -353,25 +397,41 @@ vswhere 发现现有工具链并临时导入环境。VS generator 不保证在�
 `Visual Studio 18 2026` generator 和默认 v145；较旧 CMake 会明确拒绝该 preset，不静默降级。
 它生成 VS 2026 的原生 `hyle.slnx`。
 当已安装的 Visual Studio 比当前 CMake generator 更新时，Ninja 路径仍可使用它的最新编译器。
-CI 对 Windows/Linux/macOS 运行全部 14 个模块的确定性 CPU 验证面：TLS、HTTP/2、CUDA、ggml 与
+CI 对 Windows/Linux/macOS 运行全部 15 个产品组件（含 header-only `util_core`）的确定性 CPU
+验证面：TLS、HTTP/2、CUDA、ggml 与
 Vulkan 显式关闭，构建聚合 `hyle_tests` 并运行全部 C++、pure-C、header/surface/ABI 门。它不冒充
 带外部 SDK/设备的发布矩阵；这些 feature 仍需独立 release check。已经严格收口的底层 roots 另以
 `HYLE_TEST_INSTRUMENTATION=OFF` 运行 shipping-layout 验证面；这个 root 清单随模块验收推进而显式
 增加，未验收模块即使在 all graph 通过也不会被误写成产品证书。
 
-安装门从空目录制作 shared/static 的 all-component CPU SDK。外部消费者从 package 公布的
+安装门从空目录制作 shared/static 的 all-component CPU SDK，安装后先整体搬到新 prefix，再允许任何
+consumer 配置，因此绝对 build/install 路径不能冒充 relocatable。外部消费者从 package 公布的
 `Hyle_AVAILABLE_COMPONENTS` 枚举，为每个 `hyle::<component>` 建立独立最小链接目标，机械守住
 export/usage-requirement 图，又不把彼此重叠的 static 闭包硬塞进一个非正常可执行；同时保留真正调用
 mem C API 与 C++ `SystemAllocator` 的 general probes，覆盖
 `mem -> platform -> error` loader、mimalloc 私有符号和 static C++ link-driver 闭包。严格收口模块在
 `samples/package/<module>/...` 拥有 source-independent focused project；package smoke 递归发现这些
 `CMakeLists.txt`，分别对 shared/static SDK configure、build、run，不维护第二份中央模块名单。error
-当前同时提供从 `LANGUAGES C` 开始的 owning-handle probe 和 `Status`/`Result<T>` C++ probe。只有
+当前同时提供从 `LANGUAGES C` 开始的 owning-handle probe 和 `Status`/`Result<T>` C++ probe；io 的
+C/C++ probes 则只链接 `hyle::io`，实际调用 allocator/owning Status/container/header-inline sched surface。
+只有
 “枚举 target 可链接”不能证明每个模块 API 可用，所以新模块收口时必须提交自己的外部 API probe。
 Linux 还执行 component 空值、嵌入 cache、error-only dependency cache、晚期依赖成员绕过、PUBLIC/PRIVATE
-可见性扩大、package registry 正向/重复/漏 target，以及 offline bundle 映射的 configure contract；
+可见性扩大、package registry/许可证闭包与路径安全，以及 locked source override/offline bundle 的完整
+正负 configure contract；
 并从 clean checkout 生成完整 source zip、核对 SHA-256/commit/legal payload、解压后独立构建当前
 all-component CPU 图。Linux AArch64 也交叉编译同一图，而不再只抽查 core。
+
+workflow 另定义一条 Linux locked-feature job，从中央 lock 缓存并复验 ggml、nghttp2、Vulkan-Headers、
+volk、glslang、GoogleTest、Tracy 官方 archive。重依赖 correctness 只构建/运行真实
+`hyle_io_http2_test`、`hyle_compute_ggml_bridge_test`、`hyle_compute_vulkan_test` 一次，再分别制作
+static/shared SDK，由源码无关 downstream 运行 HTTP/2 SETTINGS 与 host ggml probe；production SDK 仍
+拒绝取得/安装 test-only glslang。另有 obs-only shared/static trace-on SDK/consumer，要求 `HYLE_TRACE_TRACY`
+传播、Tracy header/license/target 完整，并运行 C/C++ trace surface；同一轻量形状也覆盖 static
+单最终 executable（文档允许的 singleton topology）。static 必须携带私有闭包 target/header，
+shared 必须不泄漏它们。该 job
+固定 `--parallel 2`，避免把同一重依赖矩阵无意义复制到三平台 CPU baseline。它描述持续门的职责，
+不等于当前提交已经取得 hosted green；实际签署状态归 pre-release readiness。
 
 ### 持续回归与模块验收生命周期
 
@@ -394,7 +454,9 @@ all-component CPU 图。Linux AArch64 也交叉编译同一图，而不再只抽
 all-module baseline 永不因此降级。每个 job 有明确超时，不能用缩小组件集掩盖死锁或依赖下载失控。
 build tree 不跨 toolchain 缓存；未来只缓存带版本/校验和的下载源码或编译器缓存。若 GitHub 在 runner
 分配前因额度/账单拒绝任务，这属于 CI 基础设施不可用，不能记为代码失败，也不能替代本地三平台证据。
-当前迭代任务、缺口与升级条件记录在
+当前复审状态、未完成证据和升级条件统一记录在
+[`../milestones/pre-release-readiness.md`](../milestones/pre-release-readiness.md)；
+2026-07 建立持续门的施工过程保留在历史记录
 [`../milestones/build-validation-iteration.md`](../milestones/build-validation-iteration.md)。
 
 `cmake/toolchains/linux-aarch64-gcc.cmake` 是整项目交叉编译的参考入口：compiler/sysroot 属工具链，

@@ -300,8 +300,11 @@ HYLE_FORCE_INLINE constexpr std::uint64_t integral_duration_ns_saturated(
     const WideDivision nanoseconds =
         multiply_divide(count, kPeriodNumerator, kDivisor);
     if (nanoseconds.overflow) return UINT64_MAX;
-    return nanoseconds.quotient +
-           (nanoseconds.remainder != 0 ? 1u : 0u);
+    if (nanoseconds.remainder != 0) {
+      return nanoseconds.quotient == UINT64_MAX ? UINT64_MAX
+                                                : nanoseconds.quotient + 1u;
+    }
+    return nanoseconds.quotient;
   } else {
     return convert_generic();
   }
@@ -394,6 +397,30 @@ inline void sleep_for_ms(std::uint64_t ms) noexcept {
                    : ms * 1'000'000ull);
 }
 
+namespace detail {
+
+// std::chrono time-point subtraction requires the result to fit the duration
+// representation. The non-negative Instant conveniences have a stronger
+// boundary contract: clamp backwards differences to zero and positive
+// unrepresentable differences to Duration::max without performing the
+// overflowing subtraction.
+constexpr Duration nonnegative_instant_difference(
+    MonotonicTimePoint later, MonotonicTimePoint earlier) noexcept {
+  using Rep = Duration::rep;
+  static_assert(std::is_signed_v<Rep>);
+  const Rep later_count = later.time_since_epoch().count();
+  const Rep earlier_count = earlier.time_since_epoch().count();
+  if (later_count <= earlier_count) return Duration::zero();
+
+  constexpr Rep kMax = (std::numeric_limits<Rep>::max)();
+  if (earlier_count < 0 && later_count > kMax + earlier_count) {
+    return (Duration::max)();
+  }
+  return Duration(later_count - earlier_count);
+}
+
+}  // namespace detail
+
 // A type-safe monotonic snapshot (oneTBB tick_count / Tokio Instant shape).
 // The representation is hidden so it cannot be confused with realtime ns.
 class Instant {
@@ -406,14 +433,13 @@ class Instant {
     return point_;
   }
   [[nodiscard]] Duration elapsed() const noexcept {
-    const MonotonicTimePoint now = monotonic_now();
-    return now > point_ ? now - point_ : Duration::zero();
+    return detail::nonnegative_instant_difference(monotonic_now(), point_);
   }
   [[nodiscard]] std::uint64_t elapsed_ns() const noexcept {
     return static_cast<std::uint64_t>(elapsed().count());
   }
   [[nodiscard]] Duration until(Instant later) const noexcept {
-    return later.point_ > point_ ? later.point_ - point_ : Duration::zero();
+    return detail::nonnegative_instant_difference(later.point_, point_);
   }
   [[nodiscard]] std::uint64_t until_ns(Instant later) const noexcept {
     return static_cast<std::uint64_t>(until(later).count());
@@ -422,7 +448,8 @@ class Instant {
   friend Duration operator-(Instant later, Instant earlier) noexcept {
     // Match std::chrono time-point subtraction: direction is meaningful, so
     // reverse subtraction is negative rather than silently clamped to zero.
-    // elapsed()/until() retain their explicitly non-negative convenience shape.
+    // As with the chrono operator, the mathematical difference must fit in
+    // Duration::rep. elapsed()/until() instead clamp both directions safely.
     return later.point_ - earlier.point_;
   }
   friend bool operator==(Instant, Instant) noexcept = default;

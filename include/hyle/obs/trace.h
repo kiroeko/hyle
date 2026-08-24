@@ -8,7 +8,10 @@
 // The default OFF form does not evaluate arguments, call a function or include a
 // backend. This makes it safe to leave hooks in fiber switching, IO completion
 // and allocation paths. A Tracy build defines HYLE_TRACE_TRACY through the public
-// hyle_trace CMake target and links one shared client for the whole HYLE process.
+// hyle_trace CMake target. Shared HYLE provides one client DLL for the process.
+// A static trace-on SDK is supported only when every HYLE archive is linked into
+// one final executable/link image. If multiple DLLs/plugins each static-link it,
+// each image gets a separate Tracy singleton; use shared hyle_obs for that shape.
 
 // ---- backend selection ------------------------------------------------------
 // A backend define implies the master gate. HYLE_TRACE without a selected backend
@@ -23,9 +26,53 @@
 #  ifndef TRACY_FIBERS
 #    define TRACY_FIBERS
 #  endif
+#  include <cstddef>
 #  include <cstdint>
 #  include <cstring>
+#  include <type_traits>
 #  include <tracy/Tracy.hpp>
+
+namespace hyle::obs::detail {
+
+// Tracy stores copied zone text and messages with a 16-bit byte count. Its
+// public API asserts the limit only in debug builds and truncates the count in
+// release builds, so every adapter must bound the scan before entering Tracy.
+inline constexpr std::size_t kTraceDynamicTextMax = 65534;
+
+inline std::size_t bounded_trace_string_length(
+    const char* text,
+    std::size_t limit = kTraceDynamicTextMax) noexcept {
+  std::size_t size = 0;
+  while (size < limit && text[size] != '\0')
+    ++size;
+  return size;
+}
+
+// Tracy 0.14 has int64_t/float/double PlotData overloads, so an ordinary int
+// argument is ambiguous on MSVC.  Normalize ordinary integral/enum counters to
+// its signed transport, use double for a full-width unsigned value, and preserve
+// float/double semantics.  This keeps
+// HYLE_TRACE_PLOT("queue.depth", depth) a normal consumer shape instead of
+// forcing every call site to know a profiler-backend overload set.
+template <class T>
+inline auto trace_plot_value(T value) noexcept {
+  using U = std::remove_cv_t<std::remove_reference_t<T>>;
+  static_assert(std::is_arithmetic_v<U> || std::is_enum_v<U>,
+                "HYLE_TRACE_PLOT value must be numeric or an enum");
+  if constexpr (std::is_floating_point_v<U>) {
+    if constexpr (sizeof(U) <= sizeof(float)) {
+      return static_cast<float>(value);
+    } else {
+      return static_cast<double>(value);
+    }
+  } else if constexpr (std::is_unsigned_v<U> && sizeof(U) >= sizeof(std::uint64_t)) {
+    return static_cast<double>(value);
+  } else {
+    return static_cast<std::int64_t>(value);
+  }
+}
+
+}  // namespace hyle::obs::detail
 
 // Zone timing is RAII for the enclosing scope. A named zone uses a literal/static
 // site name; dynamic detail belongs in HYLE_TRACE_MESSAGE or the C runtime zone-text
@@ -35,7 +82,8 @@
 
 // A numeric time series. `name` MUST be a string literal / long-lived
 // pointer (tracy stores the pointer by identity, not a copy).
-#  define HYLE_TRACE_PLOT(name, value) TracyPlot(name, value)
+#  define HYLE_TRACE_PLOT(name, value) \
+    TracyPlot(name, ::hyle::obs::detail::trace_plot_value(value))
 // A counter is a plot of the caller-maintained running value.
 #  define HYLE_TRACE_COUNTER(name, value) \
     TracyPlot(name, static_cast<std::int64_t>(value))
@@ -56,7 +104,10 @@
 #  define HYLE_TRACE_MESSAGE(msg)                                           \
     do {                                                                    \
       const char* const hyle_trace_message_ = (msg);                        \
-      TracyMessage(hyle_trace_message_, std::strlen(hyle_trace_message_));  \
+      TracyMessage(                                                        \
+          hyle_trace_message_,                                             \
+          ::hyle::obs::detail::bounded_trace_string_length(                \
+              hyle_trace_message_));                                       \
     } while (false)
 #  define HYLE_TRACE_MESSAGE_LITERAL(msg) TracyMessageL(msg)
 

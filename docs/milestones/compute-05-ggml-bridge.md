@@ -1,5 +1,9 @@
 # compute-05：ggml_bridge —— 借 ggml 算子（不借运行时）
 
+> **历史施工记录：**本文保留落地时的上游 pin、源码行号与验收证据，不代表当前依赖版本。现行
+> revision 以 [`cmake/HyleDependencyLock.json`](../../cmake/HyleDependencyLock.json) 为准；本轮升级
+> 影响与重新复证门见 [`dependency-upgrade-2026-08.md`](./dependency-upgrade-2026-08.md)。
+
 > **当前边界（2026-07-21）：**ggml bridge 输入当前来自普通 HYLE host mem。compute HostBuffer 已分开 native handle、mapped pointer 与 coherence；错误 pinned allocator / 单块 staging API 已删除，且从来不是 ggml bridge 前置。异步 StagingRing 待真实 overlap 消费者。
 
 | 字段 | 值 |

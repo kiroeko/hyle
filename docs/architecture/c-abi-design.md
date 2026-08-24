@@ -136,7 +136,8 @@ C ABI 用户（第 2 层）的易用性则靠 **header-inline 便利层**（零�
 - 每个对外模块一层 `include/hyle/c/<mod>.h`：纯 C 可编译、`extern "C"`、opaque `_o` 句柄、create/destroy 配对、POD 值类型、显式 allocator 注入。
 - 可扩展输入 POD 以 `struct_size` 开头；值返回 snapshot POD 只用于小而
   稳定的输出。桥接编译单元用 standard-layout/trivially-copyable/offset
-  与 enum-value `static_assert` 把 C/C++ 两面锁在一起。
+  与 fixed-width tag/flag 的 type/value `static_assert` 把 C/C++ 两面锁在一起；导出签名/POD
+  不直接使用宽度受编译选项影响的 C enum。
 - 分平台导出宏三态（`HYLE_<MOD>_C_API`：dllexport/dllimport/visibility）。
 - 桥接实现 `src/<mod>/c_<mod>.cc` 编进对应 `hyle_<mod>`，**显式构造** C++ 对象，不 reinterpret 布局。
 - 纯 C smoke test `tests/<mod>/c_<mod>_test.c`（C 编译器编，只 include C 头）证明无 mangling/模板/STL 泄漏。

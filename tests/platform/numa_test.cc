@@ -7,6 +7,7 @@
 #include "hyle/platform.h"
 #include "hyle/platform/numa.h"
 #include "hyle/platform/virtual_memory.h"
+#include "numa_internal.h"
 
 using hyle::platform::kNumaAny;
 using hyle::platform::has_numa_capability;
@@ -177,6 +178,22 @@ TEST(Numa, CapabilitiesDescribeSelectedInterleavePrimitive) {
         capabilities, NumaCapability::kTopology));
   }
 }
+
+#if defined(_WIN32) && defined(HYLE_TESTING)
+TEST(Numa, WindowsSelectedInterleaveRequiresSingleOwnerCommitPrimitive) {
+  using hyle::platform::detail::
+      windows_selected_interleave_supported_for_testing;
+
+  EXPECT_FALSE(
+      windows_selected_interleave_supported_for_testing(false, false));
+  // VirtualAlloc2 placeholder replacement splits one address range into
+  // independently released allocations, so it cannot back the public
+  // one-vm_release owner contract by itself.
+  EXPECT_FALSE(windows_selected_interleave_supported_for_testing(false, true));
+  EXPECT_TRUE(windows_selected_interleave_supported_for_testing(true, false));
+  EXPECT_TRUE(windows_selected_interleave_supported_for_testing(true, true));
+}
+#endif
 
 TEST(Numa, SelectedInterleaveAllocationIsWritableAndOrdinaryReleaseWorks) {
   const std::size_t p = page_size();

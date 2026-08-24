@@ -67,6 +67,9 @@ class CpuAffinity {
 };
 
 struct ThreadOpts {
+  // This natural C++ value type has no layout/version contract. The C adapter's
+  // hyle_thread_opts is a separate versioned POD: it preserves the historical
+  // name/stack/single-affinity/priority/policy prefix and appends later fields.
   std::string_view name;                     // <=15 bytes effective on Linux
   std::optional<std::size_t> stack_size;     // bytes; honored via native attrs
   // Empty means unrestricted. Windows CPU ids are flattened across processor

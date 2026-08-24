@@ -14,7 +14,10 @@ STL、模板或 C++ 对象布局。C++ 源码用户若与 HYLE 使用同一工�
   `out=NULL, capacity=0` 查询长度是受支持的。输入与输出不要重叠，除非函数明确
   是原地操作（`hyle_container_path_normalize`）。
 - 创建、扩容、插入和驻留这类可能失败的冷路径统一返回共享 `hyle_status`，并把
-  结果写到首个 `out` 参数；进入函数时会先清空输出。调用者用
+  结果写到首个 `out` 参数。所有非 NULL 的首个 out 都在参数校验和分配前写安全值：create
+  写 NULL，所有 map/set/B-tree insert 写 `ALREADY_PRESENT`，interner acquire 写 0，intern
+  写空 view，批量驻留写 completed=0，concurrent pointer vector append 写 `SIZE_MAX`。因此失败后
+  不会残留调用方旧值；Status 为 OK 时再按操作语义读取最终结果。调用者用
   `hyle_status_is_ok` / `hyle_status_get_code` 检查，并始终用 `hyle_status_free`
   释放返回状态。container 不再维护私有 TLS `last_error`。
 - 满队列、空队列、未找到 key、stale interner ID 都是正常控制流，不创建 Status；
@@ -26,6 +29,9 @@ STL、模板或 C++ 对象布局。C++ 源码用户若与 HYLE 使用同一工�
   allocator。
 - opaque handle 必须用对应 `*_destroy` 释放。队列只搬运 `void*`，从不拥有或
   释放 payload。
+- `hyle_container_insert_result` 与 `hyle_container_steal_status` 是固定
+  `uint32_t` ABI typedef，命名值是常量；`-fshort-enums` 不会改变函数参数、out pointer 或
+  struct layout。FFI binding 应映射为无符号 32-bit，而不是本语言默认 enum。
 
 最小例子：
 
@@ -82,16 +88,28 @@ ASCII 单字节便利函数全部 header-inline：
 `hyle_container_string_copy`、`hyle_container_string_concat`、
 `hyle_container_string_lower`、`hyle_container_string_upper`、
 `hyle_container_hex_encode`、`hyle_container_hex_decode`、
-`hyle_container_string_c_escape`、`hyle_container_utf8_length`。
-`hyle_container_utf8_length` 对非法 UTF-8 返回 -1。quick-open fuzzy ranking 是
+`hyle_container_string_c_escape`、`hyle_container_utf8_validate`、
+`hyle_container_utf8_length`。validate-only 对合法输入（含空 view）返回 1、非法返回 0，
+只做一遍；length 对非法 UTF-8 返回 -1，合法输入先 validate 再 count。quick-open fuzzy ranking 是
 应用搜索策略，不是容器/FFI 基元；严格复审已从本模块删除。
 `string_c_escape` 对控制字符使用熟悉的 `\\n`/`\\t` 等形式，其余非打印字节（包括
 内嵌 NUL）使用固定三位八进制转义；它处理任意 byte string，不会把输出提前截断成
 伪 C 字符串。
 
-`hyle_container_hash_bytes` 是非加密、进程内 table hash：同一进程内对同一输入/seed
-可重复，但值可随 HYLE 版本、构建或 CPU ISA 变化。它适合 C erased map callback 和
-临时 lookup，不适合作为落盘 fingerprint、协议字段或不可信输入的 MAC。
+`hyle_container_hash_bytes` 是非加密 table hash：同一输入和显式 seed 可重复，但值可随
+HYLE 版本、构建或 CPU ISA 变化。未提供 hash callback 的 C erased map 会在创建时缓存
+HYLE 的 best-effort process seed，并把它喂入 byte core；这只阻止离线碰撞集合直接跨独立
+启动复用，不保证密码学不可预测。每个 erased map/set handle 缓存一个 `uint64_t` seed word，
+不增加 per-entry metadata，也避免热 lookup 重复读取全局状态或跨 ABI 取 seed。首次使用后
+`fork` 的子进程继承 seed，`exec` 才重新派生。
+它适合 trusted/general-purpose 临时 lookup，不适合作为落盘 fingerprint、协议字段或 MAC。
+
+攻击者能控制字符串/byte key 并观察 table 行为时，使用
+`hyle_container_siphash24(data, size, key0, key1)`。这是 stateless SipHash-2-4；两个 key word
+必须来自应用的 CSPRNG/secret manager、对攻击者保密，并由调用方按进程/租户边界轮换。
+erased map 可把它包装进 `hyle_container_hash_fn`，从 options 的 `context` 读取 128-bit key；
+自定义 callback 后 HYLE 不再另加 process seed。这个显式成本边界避免把非密码学默认 seed
+虚假宣传为 hardened。
 
 路径视图与 buffer-fill：
 `hyle_container_path_extension`、`hyle_container_path_strip_extension`、
@@ -126,9 +144,9 @@ ASCII 单字节便利函数全部 header-inline：
   不得释放。
 
 大批符号/模型导入应直接使用 `*_many`，不要在 FFI 循环里逐项跨 ABI：batch 会在每个
-有界块内只取得实际涉及的 shard lock。当前三平台性能证书中 batch、并发、长串增长与
-生命周期均同档或领先；Linux/GCC 逐条 `intern` 相对单全局表+mutex peer 有约 12% 的
-局部性边界，这是分片并发合同的成本，不应通过退回全局锁隐藏。
+有界块内只取得实际涉及的 shard lock。逐条入口的局部性表现会随平台变化，这是分片并发
+合同的成本，不应通过退回全局锁隐藏。当前证据新鲜度和具体点值只见
+[`benchmarks-container`](../performance/benchmarks-container.md)。
 
 ## DynamicBitSet 与 sparse u32 set
 
@@ -205,6 +223,23 @@ clear 后逻辑范围都改变，应重新查询。`commit_write` 不得超过�
 
 用 `HYLE_CONTAINER_VECTOR_OPTIONS_INIT` 或
 `HYLE_CONTAINER_VECTOR_OPTIONS_FOR` 初始化带 `struct_size` 的 options。
+
+所有 vector/hash map/concurrent map/hash set/B-tree options 都按可读前缀解码，而不是要求
+`struct_size == sizeof(当前结构)`：库先用 INIT 默认值初始化完整本地副本，只读取声明范围内
+完整存在的字段；未知尾部忽略，声明长度落在可选字段中间时该字段也按缺失处理，绝不拼出
+半个 pointer/function pointer。`reserved` 必须为 0，调用方仍必须保证其声明的
+`struct_size` 字节真实可读。各语义最小面和缺省尾部如下：
+
+| options | `REQUIRED_SIZE` 覆盖到 | 缺失尾字段默认 |
+|---|---|---|
+| vector | item size + alignment | initial capacity 0；system backing |
+| hash map / concurrent map | key/value size + alignment | byte hash/memcmp；NULL context；system backing |
+| hash set | key size + alignment | byte hash/memcmp；NULL context；system backing |
+| B-tree map/set | key/value layout + 必需 compare | NULL context；system backing |
+
+使用头中的 `HYLE_CONTAINER_*_OPTIONS_REQUIRED_SIZE` 构造旧/外语 binding 前缀；普通 C 代码
+仍应首选完整 INIT/FOR 宏。小于 required 的声明、非零 reserved，以及 B-tree 的 NULL compare
+均返回 `HYLE_STATUS_INVALID_ARGUMENT`，out handle 保持 NULL。
 元素必须可按字节复制；C++ 非平凡类型不能放入该容器。
 
 入口：
@@ -238,6 +273,11 @@ push/append/resize fill/insert 的输入都可来自当前 vector 的 live data�
 默认按字节 hash/equal；有 padding、指针成员或自定义相等语义的 key 必须提供
 `hyle_container_hash_fn` 和 `hyle_container_equal_fn`。回调不得抛异常、递归修改
 同一 map，且 context 必须活到销毁。
+
+`equal` 定义等价类，必须满足 `equal(a,b) => hash(a)==hash(b)`。因此仅提供自定义
+`equal` 而保留默认 byte hash 的 options 会在 map/set/concurrent map 的 `create` 阶段
+返回 `HYLE_STATUS_INVALID_ARGUMENT`；两者都为 `NULL` 才是配套的 byte hash + `memcmp`
+默认。只提供自定义 `hash` 而保留 `memcmp` equality 是允许的。
 
 入口：
 `hyle_container_hash_map_create`、`hyle_container_hash_map_destroy`、
@@ -292,11 +332,16 @@ hyle_container_btree_map_destroy(deadlines);
 ```
 
 内置 comparator 有 i32/u32/i64/u64 和逐字节顺序；它们通过 memcpy 读取数值，不要求调用
-方传入地址天然对齐。结构体 key、字符串内容或业务排序应提供返回 `<0 / 0 / >0` 的 strict
-weak-order callback；context 必须活到 handle 销毁，callback 不得修改同一容器。
+方传入地址天然对齐。数值 comparator 的宽度必须与 `key_size` 精确一致（i32/u32 为 4 bytes，
+i64/u64 为 8 bytes），create 会以 `INVALID_ARGUMENT` 拒绝错配；不要用 u64 comparator 比较
+较短 key，也不要让 i32 comparator 忽略较长 key 的尾部。结构体 key、字符串内容或业务排序
+应提供返回 `<0 / 0 / >0` 的 strict weak-order callback；context 必须活到 handle 销毁，callback
+不得修改同一容器。
 
 map 的 insert 不覆盖已有值，`insert_or_assign` 才覆盖；两者都用共享
 `hyle_container_insert_result` 区分 inserted/already-present/assigned，并用 Status 报 OOM。
+只要 `out_result` 非 NULL，B-tree map/set insert 会在参数校验和可能的增长前先写
+`HYLE_CONTAINER_ALREADY_PRESENT`；因此 invalid/OOM 路径不会泄露调用方旧字节，且树保持不变。
 set 只存 key，不需要 dummy value。find 返回容器拥有的借用地址；contains/erase 是普通控制
 流。成功 mutation 会使此前所有 find pointer 和 cursor 失效，失败或未命中的操作不失效。
 
@@ -482,7 +527,7 @@ payload 可为 NULL，HYLE 不解释也不拥有它。
 按值 POD queue，应该新增 `element_size`/`alignment` 的类型擦除接口，而不是
 导出某个模板实例；按值 vector 已由 `hyle_container_vector_*` 覆盖。
 
-当前动态 C 面由 232 个 `HYLE_CONTAINER_C_API` 声明组成；纯 C callable manifest、DLL/
+当前动态 C 面由 234 个 `HYLE_CONTAINER_C_API` 声明组成；纯 C callable manifest、DLL/
 SO 导出检查和 C17 测试机械覆盖同一集合。模板参数、非平凡 C++ 生命周期或 iterator
 布局无法稳定类型擦除时，上表给出等价动态能力或明确负空间，而不是假装 C ABI 能导出
 任意 C++ 模板实例。

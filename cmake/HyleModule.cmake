@@ -278,6 +278,19 @@ function(hyle_register_bench module target)
   if(NOT TARGET ${target})
     message(FATAL_ERROR "Cannot register missing benchmark target: ${target}")
   endif()
+  # Benchmarks are consumers of HYLE's public headers, including header-only
+  # targets that deliberately do not link a product library. Give every one
+  # the same source encoding, language and public ISA baseline as an installed
+  # consumer instead of acquiring those semantics only by accident through a
+  # linked hyle_<module> target.
+  target_link_libraries(${target} PRIVATE hyle_build_contract)
+  if(MSVC)
+    # Benchmark controls intentionally read an immutable process environment
+    # (filters, sample counts and Apple QoS selection).  Centralize the CRT
+    # policy on validation executables so every registered benchmark remains
+    # /WX-clean instead of scattering this definition across source files.
+    target_compile_definitions(${target} PRIVATE _CRT_SECURE_NO_WARNINGS=1)
+  endif()
   get_property(_registered_module TARGET ${target} PROPERTY HYLE_BENCH_MODULE)
   if(_registered_module AND
      NOT "${_registered_module}" STREQUAL "${module}")

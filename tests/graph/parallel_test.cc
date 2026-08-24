@@ -351,6 +351,115 @@ TEST(GraphParallel, EmptyAndAllCleanAreNoOps) {
   EXPECT_EQ(d->task.done() ? d->task.result() : -999, 1);  // ran exactly once
 }
 
+Task<int> admission_failure_coro(mem::Allocator alloc, Scheduler* sched,
+                                 Source* sources, int count, bool wavefront,
+                                 int* ran, int* dirty) {
+  TaskGraph g(alloc);
+  NodeId ids[8]{};
+  for (int i = 0; i < count; ++i) ids[i] = g.add_source(source_fn, &sources[i]);
+
+  Status s = wavefront ? evaluate_parallel_wavefront(g, *sched, alloc)
+                       : evaluate_parallel(g, *sched, alloc);
+  *ran = 0;
+  *dirty = 0;
+  for (int i = 0; i < count; ++i) {
+    *ran += sources[i].cell.runs.load(std::memory_order_relaxed);
+    *dirty += g.is_dirty(ids[i]) ? 1 : 0;
+  }
+  co_return s.ok() ? 0 : (s.IsResourceExhausted() ? 1 : 2);
+}
+
+int run_admission_failure_case(bool wavefront, Source* sources, int count,
+                               int* ran, int* dirty) {
+  // Four runnable slots total (one local + one global queue, capacity two each)
+  // cannot hold eight seeds while this sole worker is still inside the caller
+  // fiber.  This deterministically exercises worker-side admission failure.
+  Scheduler sched(1, system_allocator(), 2);
+  auto d = std::make_unique<Drive>();
+  d->task = admission_failure_coro(tsan_visible_allocator(), &sched, sources,
+                                   count, wavefront, ran, dirty);
+  Fiber f(kDefaultStackSize, &drive_entry, d.get());
+  EXPECT_TRUE(sched.spawn(&f));
+  sched.drain();
+  sched.shutdown();
+  EXPECT_TRUE(d->finished.load(std::memory_order_acquire));
+  return d->task.done() ? d->task.result() : -999;
+}
+
+Task<int> successor_admission_failure_coro(
+    mem::Allocator alloc, Scheduler* sched, Source* root, Source* successors,
+    int count, int* ran, int* dirty) {
+  TaskGraph g(alloc);
+  const NodeId root_id = g.add_source(source_fn, root);
+  NodeId ids[8]{};
+  for (int i = 0; i < count; ++i) {
+    ids[i] = g.add_node(source_fn, &successors[i], &root_id, 1);
+  }
+
+  Status s = evaluate_parallel_wavefront(g, *sched, alloc);
+  *ran = root->cell.runs.load(std::memory_order_relaxed);
+  *dirty = g.is_dirty(root_id) ? 1 : 0;
+  for (int i = 0; i < count; ++i) {
+    *ran += successors[i].cell.runs.load(std::memory_order_relaxed);
+    *dirty += g.is_dirty(ids[i]) ? 1 : 0;
+  }
+  co_return s.ok() ? 0 : (s.IsResourceExhausted() ? 1 : 2);
+}
+
+int run_successor_admission_failure_case(Source* root, Source* successors,
+                                         int count, int* ran, int* dirty) {
+  Scheduler sched(1, system_allocator(), 2);
+  auto d = std::make_unique<Drive>();
+  d->task = successor_admission_failure_coro(
+      tsan_visible_allocator(), &sched, root, successors, count, ran, dirty);
+  Fiber f(kDefaultStackSize, &drive_entry, d.get());
+  EXPECT_TRUE(sched.spawn(&f));
+  sched.drain();
+  sched.shutdown();
+  EXPECT_TRUE(d->finished.load(std::memory_order_acquire));
+  return d->task.done() ? d->task.result() : -999;
+}
+
+TEST(GraphParallel, BoundedQueueAdmissionFailureStaysStructured) {
+  constexpr int kNodes = 8;
+  Source level_sources[kNodes];
+  Source wavefront_sources[kNodes];
+  for (int i = 0; i < kNodes; ++i) {
+    level_sources[i].seed = i;
+    wavefront_sources[i].seed = i;
+  }
+
+  int level_ran = -1, level_dirty = -1;
+  EXPECT_EQ(run_admission_failure_case(false, level_sources, kNodes,
+                                       &level_ran, &level_dirty),
+            1);
+  EXPECT_GT(level_ran, 0);
+  EXPECT_LT(level_ran, kNodes);
+  EXPECT_EQ(level_dirty, kNodes - level_ran);
+
+  int wavefront_ran = -1, wavefront_dirty = -1;
+  EXPECT_EQ(run_admission_failure_case(true, wavefront_sources, kNodes,
+                                       &wavefront_ran, &wavefront_dirty),
+            1);
+  EXPECT_GT(wavefront_ran, 0);
+  EXPECT_LT(wavefront_ran, kNodes);
+  EXPECT_EQ(wavefront_dirty, kNodes - wavefront_ran);
+
+  // Exercise the other wf_spawn call site: one admitted seed releases a fan-out
+  // from inside wf_node_task.  The parent task keeps completion accounting live
+  // while the fifth successor is rejected by the same bounded queues.
+  Source root{{}, 100};
+  Source successors[kNodes];
+  for (int i = 0; i < kNodes; ++i) successors[i].seed = i;
+  int successor_ran = -1, successor_dirty = -1;
+  EXPECT_EQ(run_successor_admission_failure_case(
+                &root, successors, kNodes, &successor_ran, &successor_dirty),
+            1);
+  EXPECT_GT(successor_ran, 1);           // root + at least one successor ran
+  EXPECT_LT(successor_ran, kNodes + 1);  // at least one successor was rejected
+  EXPECT_EQ(successor_dirty, kNodes + 1 - successor_ran);
+}
+
 // ==== step-3 wavefront: evaluate_parallel_wavefront ==========================
 
 // Correctness oracle: wavefront gives the SAME result as the level-barrier path on a

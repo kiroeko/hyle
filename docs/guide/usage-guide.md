@@ -73,7 +73,7 @@ HYLE 的构建开关分**产品/组装参数**与**benchmark 对照门**两个�
 
 - **A. 产品/组装参数**（`HYLE_<名>` cache 变量）——决定选哪些模块、static/shared、可选
   backend、测试与工程严格度；普通集成最常用的是 `HYLE_COMPONENTS` 和 `HYLE_STATIC`。
-- **B. 开发/基准对照门**（`HYLE_BENCH_<名>`，共 **10 个 gate**；其中 7 个 clone 类各配一个 `HYLE_<X>_DIR` 路径变量）——**只往 benchmark 加对照行，对出厂库零影响**。只有已选组件的 benchmark 会创建；仅当组件闭包含 `simd` 时才检查 `HYLE_BENCH_VENDOR_DIR` 下固定版 Highway/xsimd checkout。集成方永远用不到（见 §1.2.1）。
+- **B. 开发/基准对照门**（`bench-all-sota` 管理 **10 个共享 gate**；IO 另有 3 个平台/依赖专用 gate）——**只往 benchmark 加对照行，对出厂库零影响**。只有已选组件的 benchmark 会创建；仅当组件闭包含 `simd` 时才检查 `HYLE_BENCH_VENDOR_DIR` 下固定版 Highway/xsimd checkout。集成方永远用不到（见 §1.2.1）。
 - **CMake preset** 是开发机入口组合，不是产品参数或构建前置；集成方不需要 preset。
 
 > **命名约定**：凡产品参数都是 `HYLE_<名>` cache 变量，用 `-D` 设；bench 对照门统一带 `HYLE_BENCH_` 前缀，自我标记为 B 类。CMakePresets 里的 `bench` / `bench-all-sota` 是**预设包**（不是参数本身），`--preset` 选用——它们只是"把一组 `-D` 一次设好"的快捷方式，`bench-` 前缀表明展开的全是 B 类 bench 门。
@@ -94,10 +94,11 @@ HYLE 的构建开关分**产品/组装参数**与**benchmark 对照门**两个�
 | `HYLE_DEPS_DIR` | `<hyle-build>/_deps` | path | 当前 build tree 的 FetchContent 源码/生成物；不要让不同 toolchain/build tree 共用。离线源码用标准 `FETCHCONTENT_SOURCE_DIR_<NAME>` 注入 |
 | `HYLE_SIMD_EXACT_TARGET` | 空（runtime fat） | SCALAR/SSE4/AVX2/AVX512/NEON/SVE/RVV | 构建整库 exact ISA；普通分发不要改，见 §2 |
 | `HYLE_TRACE` | `OFF` | `ON`/`OFF` | 编译期 instrumentation；ON 还需 `HYLE_TRACY_DIR` |
-| `HYLE_IO_HTTP2` | `ON` | `ON`/`OFF` | 仅在选中 io 时取得 nghttp2；OFF 保留 unavailable stub C ABI |
-| `HYLE_IO_TLS` | `AUTO` | `AUTO`/`ON`/`OFF` | AUTO 有 OpenSSL 就启用；ON 把 TLS 设为硬交付契约，缺依赖即失败；OFF 不探测 OpenSSL |
+| `HYLE_IO_HTTP2` | 有 fcontext `ON`，否则 `OFF` | `ON`/`OFF` | 仅在选中 io 且 sched 可用时取得 nghttp2；无 fcontext 显式 ON 失败，OFF 仍保留 unavailable stub C ABI |
+| `HYLE_IO_TLS` | `AUTO` | `AUTO`/`ON`/`OFF` | 有 fcontext 时 AUTO 有 OpenSSL 就启用；无 fcontext 时 AUTO 不探测、ON 失败；OFF 始终不探测 OpenSSL |
 | `HYLE_COMPUTE_CUDA` | `AUTO` | `AUTO`/`ON`/`OFF` | AUTO 有 Toolkit 就启用；ON 要求 CUDA；OFF 不探测 Toolkit、也不启用 CUDA language |
-| `HYLE_COMPUTE_GGML` / `HYLE_COMPUTE_VULKAN` | `ON` | `ON`/`OFF` | 仅在选中 compute 时取得对应供应商 |
+| `HYLE_COMPUTE_GGML` | 有 fcontext `ON`，否则 `OFF` | `ON`/`OFF` | ggml bridge 依赖 sched；无 fcontext 显式 ON 失败，host/CUDA/Vulkan 不受影响 |
+| `HYLE_COMPUTE_VULKAN` | `ON` | `ON`/`OFF` | 仅在选中 compute 时取得 Vulkan-Headers/volk；不要求 fcontext |
 | `HYLE_COMPUTE_GGML_NATIVE` | 普通构建 `ON`；install `OFF` | `ON`/`OFF` | ON 为当前 CPU 编译 ggml；可迁移包保持 OFF，已知 CPU 可配合 exact target 提升 ISA floor |
 | `CMAKE_CUDA_ARCHITECTURES` | 普通 CUDA 构建 `native` | CMake architecture 列表/`all-major` | CUDA SDK 必须显式给出，如 `80;86;89`；`HYLE_INSTALL=ON` 拒绝 `native` |
 
@@ -126,6 +127,10 @@ HYLE 的构建开关分**产品/组装参数**与**benchmark 对照门**两个�
 
 > 还有 `HYLE_BENCH_{MOODYCAMEL,TBB,RIGTORP,XSIMD,SIMDUTF,BOOST,WYHASH,MARL}`(队列/分配器/math/utf8/侵入容器/hash 对标)。`HYLE_BENCH_{HIGHWAY,XSIMD}` 都使用 `HYLE_BENCH_VENDOR_DIR` 下的固定外部 checkout；SIMDUTF 仍在 `third_party/`。其余是 opt-in sibling clone。**一键全开**：先运行 `scripts/fetch-bench-vendors.{sh,ps1}`，再运行 `scripts/setup-bench-libs.sh`，最后 `cmake --preset bench-all-sota`。全清单与运行法见 [`scripts/README.md`](../../scripts/README.md)。
 >
+> 上述 ABSL/Highway 加 8 个补充项正好是 preset 管理的 **10 个共享 gate**。IO benchmark 另有
+> `HYLE_BENCH_{LIBURING,ASIO,LIBUV}`；它们受 OS、头/库和 backend 形状约束，不由
+> `bench-all-sota` 隐式打开，需要按 IO 性能文档显式选择。
+>
 > 产品 SIMD math 不再依赖 in-tree Highway/xsimd；固定外部 checkout 只用于 benchmark 对照。
 > `simdutf` 仍作为 UTF-8 产品核 vendored。`HYLE_BENCH_*` 只切换对照行，不改变产品路径。
 
@@ -152,7 +157,11 @@ source embed/install consumer 必须继承的产品合同：
 | `package-cpu-shared/static` | all-component、install ON 的确定性 feature-enabled CPU SDK 输入；TLS/CUDA OFF，HTTP/2/ggml/Vulkan ON，ggml native OFF |
 | `linux-aarch64-cross` | 标准 toolchain-file 驱动的 all-component CPU AArch64 cross smoke；Werror 下验证全部当前模块可编译/链接，不执行 target binary，也不代表真机或模块验收 |
 | `bench` | 默认 all-components + `HYLE_BUILD_BENCH=ON` + Release，独立 `build-bench` cache；因包含 SIMD，先准备 `HYLE_BENCH_VENDOR_DIR` 中固定版 Highway/xsimd。自选非 SIMD 组件不需要它 |
-| `bench-all-sota` | 继承 `bench`，再把全部 10 个 `HYLE_BENCH_*` gate 一次设 ON（先 fetch SIMD vendors，clone 类再跑 `setup-bench-libs.sh`） |
+| `bench-all-sota` | 继承 `bench`，再把 10 个共享 `HYLE_BENCH_*` gate 一次设 ON（含 WYHASH；先 fetch SIMD vendors，clone 类再跑 `setup-bench-libs.sh`）；不隐式打开 3 个 IO 专用 gate |
+
+所有 preset/source-embed/install 形状都要求 64-bit target ABI；32-bit toolchain 会在 configure
+阶段收到明确错误。x86-64、AArch64、RV64 有架构专用路径；其他 64-bit 架构只取得可用的
+generic/scalar 能力，不能假定 SIMD variant 或 fcontext 可用。
 
 ```bash
 # Windows（PowerShell；其他 clone 型 rival 按 scripts/README 准备）
@@ -221,8 +230,11 @@ hyle_stage_runtime_dependencies(app) # Windows shared DLL closure；其他形状
 - package 只承诺它实际安装的组件；请求缺失 component 会在 configure 阶段列出 available 清单。
 - `Hyle_AVAILABLE_COMPONENTS` 可审计模块闭包，`Hyle_AVAILABLE_FEATURES` 可审计 trace、TLS、CUDA、
   Vulkan 等可选能力；不要从本机恰好装了什么反推包的形状。
-- io package 可保留默认 `HYLE_IO_HTTP2=ON`：pinned nghttp2 静态协议核被 shared io 吸收，static
-  io package 自动迁移其 link-only archive、生成头和 MIT 条款。
+- 有 sched/fcontext 的 io package 可保留默认 `HYLE_IO_HTTP2=ON`：pinned nghttp2 静态协议核被 shared
+  io 吸收，static io package 自动迁移其 link-only archive、生成头和 MIT 条款。无 fcontext 目标默认
+  OFF，显式 ON 失败；stub 仍提供稳定 availability=0，但不会伪写 `io_http2` feature。
+  该最小 io 形状只承诺 proactor/shared-memory 和 C HTTP/2 probe/stub；头树虽然统一安装，
+  `hyle::io` 会导出 `HYLE_IO_HAS_COROUTINE_TRANSPORT=0`，sched-dependent C++ 头会立即拒绝编译。
 - compute package 同样完整：shared `hyle_compute` 吸收 ggml/volk，static package 自动传播其
   link-only archive、头与 Threads/CUDA 依赖；可运行 consumer 见
   [`samples/07_installed_compute/`](../../samples/07_installed_compute/)。正式构建显式选择
@@ -365,8 +377,15 @@ C-friendly 连续数组。字符串优先名为 `StringView` / `StringInterner`�
 MPMC、sharded、owner-LIFO stealing、owner-FIFO sharing 的角色选择，不能只看 benchmark。
 完整选择表和坑点见 [`container.md`](./container.md)。
 
-**哈希器（`hyle/container/hash.h`）**：默认 `Hash<T>` / `hash_bytes` 让整数、指针和
-≤16B POD 走内联 mix，较长字节串按长度和安全 ISA 选择库内 XXH3 或 wyhash。它是
+**哈希器（`hyle/container/hash.h`）**：默认 `Hash<T>` 只覆盖整数/枚举、指针、浮点、
+`string_view` 和 `std::string`；`+0.0` / `-0.0` 会按相等语义归一。owning string 若需
+用 `string_view` / `string_ref` / C literal 异构查询，显式选透明 `StringHash` +
+`StringEqual`；helper 不保存借用指针且调用为 `noexcept`。C pointer/array 按 NUL 结尾
+解释，含嵌入 NUL 的 key 必须传显式长度的 view。所有未特化的用户自定义类型默认都
+不可哈希，必须提供逐字段语义 hasher 或显式特化。`BytewiseHash<T>` 只是调用方 opt-in：
+它要求 trivially-copyable 且具有唯一对象表示，但这个 trait 只能排除 padding/多重编码，
+不能证明自定义 `Eq` 比较了每个 byte；调用方仍须保证 `Eq(a,b)` 蕴含对象 bytes 完全相同。
+较长字节串由 `hash_bytes` 按长度和安全 ISA 选择库内 XXH3 或 wyhash。它是
 进程内 table hash，不是跨版本/构建/CPU 稳定的 fingerprint。公开 API 不再提供
 把私有 vendor 头拉入用户 TU 的 `hash_bytes_inline`：它只改善一个微基准调用 seam，
 却破坏 header/static/shared/source 三种交付的一致性。真实热点优先缓存 hash 或批处理。
@@ -608,7 +627,9 @@ compute/graph 尚待各自模块收口，math 先审产品边界。统一 instal
 
 ### 3.9 platform —— OS 抽象（线程/VM/文件映射/fs/动态库/CPU 探测）
 
-最底层 OS 封装，其它模块的地基；也可直接用。全部 move-only RAII、跨平台（Win/Linux/mac 三平台真机验证）。
+最底层 OS 封装，其它模块的地基；也可直接用。公开 owner 均为 move-only RAII；Win/Linux/mac
+三平台的上一轮真机结果是历史输入，当前工作树是否重新签署只看
+[`pre-release-readiness`](../milestones/pre-release-readiness.md)。
 
 ```cpp
 // 虚拟内存：保留/提交分离 + guard page（fiber 栈、大缓冲的地基）

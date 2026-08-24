@@ -1,5 +1,7 @@
 #pragma once
 
+#include "hyle/io/coroutine_transport.h"
+
 #include <cstdint>
 
 #include "hyle/io/proactor.h"

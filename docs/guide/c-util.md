@@ -127,6 +127,9 @@ O(1)、零分配，此后查询是 lock-free expected O(1)。checked `create_obj
 已初始化的 OK `out_status`，因此可区分 key 缺失、creator 失败和成功返回 NULL；失败时 creator
 返回 NULL 并把 `*out_status` 替换为一个 owning error。`create_or_null` 给 creator 传 NULL status，
 让热路径完全跳过诊断构造，并把 invalid/missing/failure/successful-NULL 都映成 NULL。
+`hyle_util_registry_priority` 是固定 `uint32_t` ABI 加枚举常量，而不是宽度由编译器决定的
+C enum；因此 library、visitor callback 与启用 `-fshort-enums` 的外部 C consumer 仍使用同一
+calling convention。
 
 factory 和 visitor 都在 registry 锁外调用且可以重入。mutable 枚举先分配一个时间点快照；
 frozen 枚举无锁、无分配。visitor 收到的 key/help 是借用 view，在 Registry 析构前稳定；

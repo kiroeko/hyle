@@ -181,7 +181,7 @@ TEST(MemApiSurface, CFactoriesReturnStructuredStatus) {
 
   hyle_huge_region* region = nullptr;
   status = hyle_huge_region_open(&region, 0, HYLE_HUGE_NONE,
-                                 HYLE_MEM_NUMA_ANY);
+                                 HYLE_NUMA_ANY);
   EXPECT_TRUE(hyle_status_is_invalid_argument(status));
   EXPECT_EQ(region, nullptr);
   EXPECT_TRUE(hyle_status_has_message(status));

@@ -97,7 +97,8 @@ class Buffer {
   HYLE_COMPUTE_API Buffer& operator=(Buffer&& o) noexcept;
   HYLE_COMPUTE_API ~Buffer();
 
-  // Allocate `bytes` from `type`. External-boundary failure returns Result
+  // Allocate `bytes` from `type`. An invalid/default BufferType returns
+  // InvalidArgument; external-boundary failure returns Result
   // (Unavailable/ResourceExhausted). `bytes` must be <= type.max_size() (a larger
   // logical buffer is the caller's split into multiple Buffers).
   HYLE_COMPUTE_API static Result<Buffer> create(const BufferType& type,
@@ -105,9 +106,10 @@ class Buffer {
 
   bool valid() const noexcept { return vt_ != nullptr; }
 
-  // Does this allocation belong to `device`? The typed kernel-launch shell uses this
-  // before exposing native_handle() to a backend: CUDA device pointers and Vulkan VkMem*
-  // are not interchangeable even when both devices represent the same physical GPU.
+  // Does this allocation belong to `device`? Invalid/default buffers or devices return
+  // false. The typed kernel-launch shell uses this before exposing native_handle() to a
+  // backend: CUDA device pointers and Vulkan VkMem* are not interchangeable even when
+  // both devices represent the same physical GPU.
   HYLE_COMPUTE_API bool belongs_to(const Device& device) const noexcept;
 
   // Opaque backend-native allocation handle. KernelArgs passes this value back to the

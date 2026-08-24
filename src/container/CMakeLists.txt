@@ -1,8 +1,9 @@
 # container: header-only templates (SPSC / bounded_queue / ws_fifo / ws deque) + the
 # compiled hash unit (container-02). hash.cc privately includes the vendored
 # xxhash + wyhash single-headers (best-of-breed byte hasher: XXH3 short-mid, wyhash
-# long); those include dirs are PRIVATE so neither leaks to consumers. string_algo.cc
-# is the dispatched utf8_length entry, which BORROWS simdutf's verified SIMD core.
+# long); those include dirs are PRIVATE so neither leaks to consumers.
+# string_algo.cc provides dispatched UTF-8 validate/count entries by BORROWING
+# simdutf's verified SIMD core.
 # string_ref.cc holds the std forwards (substring find/rfind + char-set find_*_of, where
 # MSVC STL's vectorized asm wins) + count/rfind/ASCII-case DISPATCHERS. These kernels use
 # simd/vec.h (2026-07): kernels live in str_search_{scalar,sse4,avx2,avx512,neon}.cc (shared
@@ -56,9 +57,10 @@ endif()
 # wider codegen into the baseline dispatcher (same isolation rule as simd/, conventions §10).
 set_target_properties(hyle_container PROPERTIES INTERPROCEDURAL_OPTIMIZATION OFF)
 
-# --- simdutf-accelerated utf8_length (vendored, UNCONDITIONAL, 借核不手搓) ------
-# utf8_length BORROWS simdutf's verified validate+count cores. simdutf is VENDORED in
-# third_party (the single-header amalgamation: simdutf.h + simdutf.cpp) and wired
+# --- simdutf-accelerated UTF-8 validate/count (vendored, UNCONDITIONAL, 借核不手搓) --
+# utf8_validate BORROWS simdutf's one-pass validation core; utf8_length BORROWS its
+# validate+count cores. simdutf is VENDORED in third_party (the single-header
+# amalgamation: simdutf.h + simdutf.cpp) and wired
 # UNCONDITIONALLY -- a perf library ships its fastest path by default (user directive: no
 # opt-in gate; same stance as the hard mimalloc dep). The .cpp compiles PRIVATE into
 # hyle_container; simdutf does its OWN runtime ISA dispatch internally, so there is no
@@ -83,6 +85,7 @@ endif()
 hyle_register_package_dependency(
   NAME container_vendors
   OWNER container
+  LOCKED_DEPENDENCIES xxhash wyhash simdutf
   RUNTIME_FILE_SPECS
     "${PROJECT_SOURCE_DIR}/third_party/xxhash/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|xxhash-LICENSE"
     "${PROJECT_SOURCE_DIR}/third_party/wyhash/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|wyhash-LICENSE"

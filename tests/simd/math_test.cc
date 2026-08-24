@@ -269,6 +269,56 @@ TEST(Math, Simd09MatchesLibm) {
   check(hyle::simd::acosh_f32_batch, std::acosh, ramp(1.0f, 50.0f, 600), "acosh");
 }
 
+TEST(Math, HighwayPortPreservesSignedZero) {
+  constexpr std::size_t n = 64;
+  alignas(64) float f_input[n], f_y[n], f_x[n], f_out[n];
+  alignas(64) double d_input[n], d_y[n], d_x[n], d_out[n];
+  for (std::size_t i = 0; i < n; ++i) {
+    const bool negative_y = (i & 1U) != 0;
+    const bool negative_x = (i & 2U) == 0;
+    f_input[i] = negative_y ? -0.0f : 0.0f;
+    d_input[i] = negative_y ? -0.0 : 0.0;
+    f_y[i] = f_input[i];
+    d_y[i] = d_input[i];
+    f_x[i] = negative_x ? -0.0f : 0.0f;
+    d_x[i] = negative_x ? -0.0 : 0.0;
+  }
+
+  for (const auto fn : {hyle::simd::sin_f32_batch,
+                        hyle::simd::expm1_f32_batch}) {
+    fn(f_input, f_out, n);
+    for (std::size_t i = 0; i < n; ++i) {
+      EXPECT_EQ(f_out[i], 0.0f) << "f32 lane=" << i;
+      EXPECT_EQ(std::signbit(f_out[i]), std::signbit(f_input[i]))
+          << "f32 lane=" << i;
+    }
+  }
+  for (const auto fn : {hyle::simd::sin_f64_batch,
+                        hyle::simd::expm1_f64_batch}) {
+    fn(d_input, d_out, n);
+    for (std::size_t i = 0; i < n; ++i) {
+      EXPECT_EQ(d_out[i], 0.0) << "f64 lane=" << i;
+      EXPECT_EQ(std::signbit(d_out[i]), std::signbit(d_input[i]))
+          << "f64 lane=" << i;
+    }
+  }
+
+  hyle::simd::atan2_f32_batch(f_y, f_x, f_out, n);
+  hyle::simd::atan2_f64_batch(d_y, d_x, d_out, n);
+  for (std::size_t i = 0; i < n; ++i) {
+    const float f_want = std::atan2(f_y[i], f_x[i]);
+    const double d_want = std::atan2(d_y[i], d_x[i]);
+    EXPECT_NEAR(f_out[i], f_want, 4.0f * std::numeric_limits<float>::epsilon())
+        << "atan2 f32 lane=" << i;
+    EXPECT_NEAR(d_out[i], d_want, 8.0 * std::numeric_limits<double>::epsilon())
+        << "atan2 f64 lane=" << i;
+    EXPECT_EQ(std::signbit(f_out[i]), std::signbit(f_want))
+        << "atan2 f32 lane=" << i;
+    EXPECT_EQ(std::signbit(d_out[i]), std::signbit(d_want))
+        << "atan2 f64 lane=" << i;
+  }
+}
+
 // xsimd-ONLY borrows (lgamma/tgamma) vs libm. Highway has no gamma, so these are a single-source
 // borrow (no best-of). Ranges avoid the poles (0, negative integers) and f32 overflow: tgamma
 // overflows past ~35, so cap at 10 (tgamma(10)=362880). lgamma grows slowly, safe to ~50.

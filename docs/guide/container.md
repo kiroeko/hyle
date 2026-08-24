@@ -34,7 +34,7 @@ container 提供性能敏感的基础数据结构、借用字符串/路径算法
 | 单 owner 做新任务、多个 thief 偷旧任务 | `WorkStealingDeque<T>` | owner bottom LIFO，thief top；固定容量 |
 | owner 需要 FIFO，thief 批量接走约一半 | `WsFifoQueue<T>` | 调度专用；两个队列必须容量相同 |
 | 多 writer append，quiesce 后按索引遍历 | `ConcurrentVector<T>` | 分段稳定地址；append 并行，实时 `size()` 不是元素完成栅栏 |
-| 进程内 table hash | `hash_bytes` / `Hash<T>` | 小 typed key 内联；长输入可按 CPU 派发；值不可持久化/上 wire |
+| 进程内 table hash | `hash_bytes` / `Hash<T>` | 内建标量/指针/view 有默认；自定义 key 提供语义 hasher；值不可持久化/上 wire |
 | 词法路径切分/拼接/归一化 | `path.h` view/buffer API | 不访问文件系统，不解析 symlink/case/权限 |
 
 ### 当前没有提供的形状
@@ -132,22 +132,49 @@ element pointer 失效。普通操作把 OOM 当 fatal；需要恢复时使用 `
 #include "hyle/container/swiss_table.h"
 
 hyle::container::FlatHashMap<std::string, std::unique_ptr<Node>,
-                             TransparentStringHash, TransparentStringEq>
+                              hyle::container::StringHash,
+                              hyle::container::StringEqual>
     nodes;
 nodes.insert("root", std::make_unique<Node>());
 if (auto* node = nodes.find(std::string_view("root"))) use(**node);
 
-hyle::container::FlatHashSet<std::string, TransparentStringHash,
-                             TransparentStringEq>
+hyle::container::FlatHashSet<std::string, hyle::container::StringHash,
+                              hyle::container::StringEqual>
     enabled;
 enabled.insert("avx2");
 if (const std::string* name = enabled.find(std::string_view("avx2"))) {
   use_canonical_name(*name);
 }
+
+// Internet-facing or otherwise attacker-controlled keys: obtain these two
+// words from the application's CSPRNG/secret manager and keep them private.
+using HardenedMap = hyle::container::FlatHashMap<
+    std::string, Request, hyle::container::HardenedStringHash,
+    hyle::container::StringEqual>;
+HardenedMap requests(
+    hyle::mem::SystemAllocator{},
+    hyle::container::HardenedStringHash{secret_word_0, secret_word_1},
+    hyle::container::StringEqual{});
 ```
 
 map 支持 owning non-trivial key/value、move-only value 和 compatible Hash/Eq 的异构
-find/contains/erase。和 Abseil/Folly/std 的熟悉语义一致：`insert` 不覆盖已有 value；
+find/contains/erase。`Hash<std::string>` 已覆盖同型 owning-string lookup；需要用
+`string_view`、`string_ref` 或 C literal 无分配查询时，选公开透明
+`StringHash` + `StringEqual`，两者只在调用期间借用字符且都是 `noexcept`。C 指针和
+数组按 NUL 结尾字符串解释；含嵌入 NUL 的 key 必须用带显式长度的 `string_view` 或
+`string_ref`。
+
+默认 `StringHash` 在构造 hasher 时缓存同一进程的 best-effort seed，并把 seed 喂入 byte
+core；所有默认实例在同一进程内一致，所以 copy/swap/rehash 保持正确，又能使离线预计算的
+固定碰撞集合不能直接跨独立启动复用。每个 hasher/table policy 缓存一个 `uint64_t`，不增加
+per-entry metadata，也避免每次 lookup 读取进程全局状态；它不宣称抗自适应攻击或提供
+密码学随机性；父进程首次使用后再 `fork`，子进程会继承该 seed，只有 `exec` 才是新的启动。
+测试/可复现工作可显式构造 `StringHash{seed}`。来自网络或其他不可信主体、攻击者可观察
+table 行为的字符串应使用 `HardenedStringHash`：它是 SipHash-2-4，要求调用方注入并管理
+不可预测的 128-bit secret，HYLE 不会把 ASLR/clock seed 冒充秘密。fast 与 hardened 都遵守
+同一透明 lookup 与 `Eq(a,b) => same hash` 合同；代价选择必须按真实威胁模型，而不是为了
+微基准统一成一个策略。和
+Abseil/Folly/std 的熟悉语义一致：`insert` 不覆盖已有 value；
 `try_emplace` 只在 key 不存在时构造 value，并返回 `{value_pointer, inserted}`；
 `insert_or_assign` 明确表示覆盖；默认构造 value 的常用计数/缓存可用 `operator[]`。
 这些普通入口把 OOM 当 fatal。需要恢复时用 `try_insert_or_assign`，或先
@@ -396,6 +423,11 @@ lock-free 1P/1C 角色应选后文 `SpscQueue`。
 因为原始来源“看起来像字符串”就手填。默认 view 和空切片可安全查询；所有长度按 bytes，
 只有 UTF-8 入口按 code point 解释。
 
+协议/parser 边界只需判断输入是否合法时调用 `utf8_validate(view)`：它只做一遍 validate。
+确实需要 code-point 数量时才调用 `utf8_length(view)`；非法返回 -1，合法输入需要 validate
+再 count 两遍。两者都走 vendored simdutf 9.1 的 runtime ISA dispatch，不要求消费者选择
+backend。
+
 `StringInterner` 有两种不要混用的生命周期：
 
 - `intern` / `intern_many` 返回稳定借用 view，活到 interner 销毁；适合进程/模型/图级符号。
@@ -406,11 +438,11 @@ lock-free 1P/1C 角色应选后文 `SpscQueue`。
 shard，并按 shard 序加锁，不会因单 shard 批量工作冻结整个 interner。返回 view 都由
 interner 拥有，不得 free。interner 必须比 view/ID 的所有使用者长寿。
 
-性能选择也与合同一致：三平台的 batch、并发、长串增长和可回收生命周期均已与成熟
-同合同 peer 同档或领先；Linux/GCC 的逐条 `intern` 因 16/32/64 自适应分片带来的随机
-shard/table 局部性，当前约慢单全局 `unordered_map+mutex` peer 12%。不要为这一个平台
-把共享 interner 降级为全局锁；单线程一次性导入用 `intern_many`，完全不需要跨线程共享时
-则直接用普通 flat set/map。Windows 与 M4 的逐条入口本身领先同合同 peer。
+性能选择也与合同一致：共享/回收需求明确时选 interner，高吞吐导入优先 batch；单线程
+一次性导入用 `intern_many`，完全不需要跨线程共享时则直接用普通 flat set/map。分片会让
+逐条入口的局部性表现随平台变化，不要为单个平台点值把并发合同降级为全局锁。当前证据
+新鲜度、具体对手和点值只见
+[`benchmarks-container`](../performance/benchmarks-container.md)。
 
 `path.h` 只做词法操作。`normalize("a/../b")` 不查询磁盘，所以不能证明结果与真实文件、
 symlink 或 Windows case rules 等价；需要真实 filesystem 行为时使用 platform 模块。
@@ -461,6 +493,11 @@ range，因为它对 reservation count 取快照，并不额外发布仍在构�
 - allocator 必须活到容器销毁；storage 必须由创建它的 allocator 释放。
 - `StringView`、flat map/set find 返回值和 vector data 都是借用地址，分别受来源/grow/erase 失效。
 - flat map/set 平均 O(1) 不等于 adversarial hash 安全；业务 Hash 必须提供足够熵且与 Eq 一致。
+  默认 `Hash<T>` 对所有未特化的用户自定义类型都不可用；请提供逐字段语义 hasher。浮点零
+  已归一，因此默认 `Hash<double>` 与 `std::equal_to<>` 对 `+0.0/-0.0` 保持同一 equality
+  class。`BytewiseHash<T>` 是调用方显式 opt-in，并只接受 unique-representation type；该
+  trait 仍不能证明自定义 Eq 比较每个 byte，故调用方必须另行保证
+  `Eq(a,b) => bytes(a)==bytes(b)`。
 - `ShardedQueue` 不保证 global FIFO；work-stealing 两种队列也不提供 MPMC 的任意角色语义。
 - `SpscQueue` 的 producer/consumer 角色不能各自增加第二个线程；`size_approx()` 只是监控
   快照，不是发布 fence，也不能代替 push/pop 成功值做控制流。

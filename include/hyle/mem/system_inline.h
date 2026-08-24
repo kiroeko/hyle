@@ -21,13 +21,26 @@
 // implementation dependency. Shared consumers do not name mi_* at all.
 //
 #if defined(HYLE_STATIC) && !defined(HYLE_MEM_BUILD)
+#if defined(_MSC_VER) && !defined(__EDG__)
+// Keep the redeclaration type-compatible with mimalloc v3's public prototype.
+// Some users (and the allocator comparison benchmark) legitimately include
+// mimalloc.h in the same translation unit; MSVC diagnoses a later addition of
+// __declspec(restrict) as C4565 under /WX.
+#define HYLE_MEM_MI_ALLOCATOR_RETURN __declspec(allocator) __declspec(restrict)
+#elif defined(_MSC_VER)
+#define HYLE_MEM_MI_ALLOCATOR_RETURN __declspec(restrict)
+#else
+#define HYLE_MEM_MI_ALLOCATOR_RETURN
+#endif
 extern "C" {
-void* mi_malloc(std::size_t size) noexcept;
-void* mi_malloc_aligned(std::size_t size, std::size_t alignment) noexcept;
+HYLE_MEM_MI_ALLOCATOR_RETURN void* mi_malloc(std::size_t size) noexcept;
+HYLE_MEM_MI_ALLOCATOR_RETURN void* mi_malloc_aligned(
+    std::size_t size, std::size_t alignment) noexcept;
 void mi_free(void* p) noexcept;
 void* mi_realloc(void* p, std::size_t newsize) noexcept;
 void* mi_realloc_aligned(void* p, std::size_t newsize, std::size_t alignment) noexcept;
 }
+#undef HYLE_MEM_MI_ALLOCATOR_RETURN
 #endif
 
 namespace hyle::mem {
@@ -36,6 +49,11 @@ inline constexpr std::size_t kSystemDefaultAlignment = kDefaultAlignment;
 
 namespace detail {
 
+// Reviewed mimalloc v3 invariant (MI_MAX_ALIGN_SIZE). Keeping the value at the
+// private implementation seam lets platforms with a wider max_align_t fall
+// back to mi_*_aligned instead of silently weakening HYLE's contract.
+inline constexpr std::size_t kMimallocV3NaturalAlignment = 16;
+
 HYLE_FORCE_INLINE std::size_t system_backend_checked_alignment(
     std::size_t alignment) noexcept {
   // The overwhelming common case is the compile-time default. Keep it to one
@@ -43,6 +61,9 @@ HYLE_FORCE_INLINE std::size_t system_backend_checked_alignment(
   // contract check before selecting the backend entry.
   if (HYLE_UNLIKELY(alignment != kSystemDefaultAlignment)) {
     HYLE_FATAL_ASSERT(is_pow2(alignment));
+    if (alignment < kSystemDefaultAlignment) {
+      return kSystemDefaultAlignment;
+    }
   }
   return alignment;
 }
@@ -50,16 +71,29 @@ HYLE_FORCE_INLINE std::size_t system_backend_checked_alignment(
 #if defined(HYLE_STATIC)
 inline void* system_backend_allocate(std::size_t size,
                                      std::size_t alignment) noexcept {
-  return alignment <= kSystemDefaultAlignment
-             ? mi_malloc(size)
-             : mi_malloc_aligned(size, alignment);
+  alignment = system_backend_checked_alignment(alignment);
+  if (alignment <= kMimallocV3NaturalAlignment) {
+    // mimalloc v3 gives blocks at least MI_MAX_ALIGN_SIZE alignment once the
+    // requested size reaches that boundary. Padding only sub-default requests
+    // preserves its plain small-allocation fast path.
+    return mi_malloc(size < kMimallocV3NaturalAlignment
+                         ? kMimallocV3NaturalAlignment
+                         : size);
+  }
+  return mi_malloc_aligned(size, alignment);
 }
 inline void system_backend_deallocate(void* ptr) noexcept { mi_free(ptr); }
 inline void* system_backend_reallocate(void* ptr, std::size_t new_size,
                                        std::size_t alignment) noexcept {
-  return alignment <= kSystemDefaultAlignment
-             ? mi_realloc(ptr, new_size)
-             : mi_realloc_aligned(ptr, new_size, alignment);
+  alignment = system_backend_checked_alignment(alignment);
+  if (alignment <= kMimallocV3NaturalAlignment) {
+    const std::size_t backing_size =
+        new_size < kMimallocV3NaturalAlignment
+            ? kMimallocV3NaturalAlignment
+            : new_size;
+    return mi_realloc(ptr, backing_size);
+  }
+  return mi_realloc_aligned(ptr, new_size, alignment);
 }
 #else
 // Binary implementation seams, not a second user-facing allocator. Inline
@@ -79,12 +113,15 @@ HYLE_MEM_API void* system_backend_reallocate(
 // common host-RAM path pays zero indirect dispatch. Trivially copyable and
 // empty (EBO-friendly).
 struct SystemAllocator {
-  // Default alignment takes the backend's plain fast path; over-alignment uses
-  // its aligned entry.
+  // Every request is normalized to at least max_align_t. The backend pads
+  // sub-default sizes to that boundary; over-alignment uses mimalloc's aligned
+  // entry.
   static void* allocate(std::size_t size,
                         std::size_t alignment = kSystemDefaultAlignment) noexcept {
-    alignment = detail::system_backend_checked_alignment(alignment);
-    if (size == 0) return nullptr;
+    if (size == 0) {
+      (void)detail::system_backend_checked_alignment(alignment);
+      return nullptr;
+    }
     void* pointer = detail::system_backend_allocate(size, alignment);
     if (pointer != nullptr) {
       HYLE_TRACE_ALLOC_NAMED(pointer, size, "hyle.system");
@@ -102,8 +139,8 @@ struct SystemAllocator {
   }
   static void* reallocate(void* ptr, std::size_t /*old_size*/, std::size_t new_size,
                           std::size_t alignment = kSystemDefaultAlignment) noexcept {
-    alignment = detail::system_backend_checked_alignment(alignment);
     if (new_size == 0) {
+      (void)detail::system_backend_checked_alignment(alignment);
       if (ptr != nullptr) {
         HYLE_TRACE_FREE_NAMED(ptr, "hyle.system");
         detail::system_backend_deallocate(ptr);

@@ -3,6 +3,7 @@
 #include <atomic>
 #include <cstddef>
 #include <new>
+#include <utility>
 
 #include "hyle/error/status.h"
 #include "hyle/sched/coro.h"
@@ -80,8 +81,21 @@ sched::Task<bool> pf_rec(mem::Allocator alloc, sched::Scheduler* sched, ForState
   }
   const std::size_t mid = b + (e - b) / 2;
   auto right = spawn_task(*sched, alloc, pf_rec(alloc, sched, st, mid, e));  // fork right
-  co_await pf_rec(alloc, sched, st, b, mid);  // recurse left inline (same fiber)
-  (void)right.join();                          // join right (fork-join barrier)
+  auto left = pf_rec(alloc, sched, st, b, mid);
+  if (left.valid()) {
+    co_await left;  // recurse left inline (same fiber)
+  } else {
+    st->record(Status::ResourceExhausted(
+        "parallel_for left coroutine frame allocation failed"));
+  }
+  auto right_result = right.join();            // join right (fork-join barrier)
+  if (!right_result) {
+    // A worker-side recursive spawn can be rejected when every bounded runnable
+    // queue is full.  Dropping that error used to report success after silently
+    // skipping the right range.
+    st->record(std::move(right_result).error().WithContext(
+        "parallel_for right subtree"));
+  }
   co_return true;
 }
 
@@ -89,7 +103,13 @@ sched::Task<bool> pf_rec(mem::Allocator alloc, sched::Scheduler* sched, ForState
 // trivial-return + caller-slot pattern; here the "slot" is ForState itself, on the caller stack.
 sched::Task<bool> pf_driver(mem::Allocator alloc, sched::Scheduler* sched, ForState* st,
                             std::size_t b, std::size_t e) {
-  co_await pf_rec(alloc, sched, st, b, e);
+  auto root = pf_rec(alloc, sched, st, b, e);
+  if (root.valid()) {
+    co_await root;
+  } else {
+    st->record(Status::ResourceExhausted(
+        "parallel_for recursive coroutine frame allocation failed"));
+  }
   co_return true;
 }
 
@@ -109,7 +129,11 @@ Status parallel_for(sched::Scheduler& sched, mem::Allocator alloc, BlockedRange 
   // that blocks THIS fiber until the whole tree finishes, keeping `st` (this frame) alive
   // throughout. The root task returns trivial bool; the real result is st.first_err.
   auto root = spawn_task(sched, alloc, pf_driver(alloc, &sched, &st, range.begin, range.end));
-  (void)root.join();
+  auto root_result = root.join();
+  if (!root_result) {
+    return std::move(root_result).error().WithContext(
+        "parallel_for root task");
+  }
 
   if (st.failed.load(std::memory_order_acquire)) {
     st.err_mu.lock();
@@ -167,8 +191,21 @@ sched::Task<bool> pr_rec(mem::Allocator alloc, sched::Scheduler* sched, RedState
   alignas(alignof(std::max_align_t)) unsigned char rbuf[256];
   void* rslot = rbuf;  // elem_size <= 256 asserted at entry (see parallel_reduce)
   auto right = spawn_task(*sched, alloc, pr_rec(alloc, sched, st, mid, e, rslot));
-  co_await pr_rec(alloc, sched, st, b, mid, out);  // left into out
-  (void)right.join();
+  auto left = pr_rec(alloc, sched, st, b, mid, out);
+  if (left.valid()) {
+    co_await left;  // left into out
+  } else {
+    st->record(Status::ResourceExhausted(
+        "parallel_reduce left coroutine frame allocation failed"));
+  }
+  auto right_result = right.join();
+  if (!right_result) {
+    // On admission failure the right coroutine never ran, so rslot is
+    // uninitialized.  Record the structured scheduler error before the combine
+    // guard; reading rslot here was the intermittent ReduceSumMatchesSerial UB.
+    st->record(std::move(right_result).error().WithContext(
+        "parallel_reduce right subtree"));
+  }
   if (!st->failed.load(std::memory_order_acquire))
     st->combine(st->ctx, out, rslot);  // out := combine(left, right)
   co_return true;
@@ -193,7 +230,11 @@ Status parallel_reduce(sched::Scheduler& sched, mem::Allocator alloc, BlockedRan
   st.grain = resolve_grain(sched, range);
 
   auto root = spawn_task(sched, alloc, pr_rec(alloc, &sched, &st, range.begin, range.end, result));
-  (void)root.join();
+  auto root_result = root.join();
+  if (!root_result) {
+    return std::move(root_result).error().WithContext(
+        "parallel_reduce root task");
+  }
 
   if (st.failed.load(std::memory_order_acquire)) {
     st.err_mu.lock();

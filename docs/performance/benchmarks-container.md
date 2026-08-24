@@ -1,34 +1,43 @@
-# container 实测铁证（导航 + 当前真相）
+# container 性能证据（导航 + freshness 真相）
 
 > 本页是 [performance 总账](./README.md) 的 **container 模块**入口。  
-> **模块收口**（正确性/C ABI，非性能全表）：[../milestones/container-module-closure.md](../milestones/container-module-closure.md)（最终证书 2026-07-27）。
+> **历史模块收口**（正确性/C ABI，非性能全表）：[../milestones/container-module-closure.md](../milestones/container-module-closure.md)（上次签署 2026-07-27）。2026-08-25 的 hash/string API 修正与 simdutf 9.1 升级已重开受影响边；本页旧三平台点值在复跑前不是当前整模块证书。
 > 调度队列的 SOTA 对标多在 sched 消费路径 + `queue_sota_bench`；并发关联容器已在本页按 shared-registry 正常合同单列。IntrusiveList 已归 core，见 [`benchmarks-core`](./benchmarks-core.md)。
 
 ## 0. 数据新鲜度（先看这个）
 
-| 面 | 证书状态 | 说明 |
+| 面 | 证据状态 | 说明 |
 |---|---|---|
-| **StringInterner / string 收口表** | ✅ **三平台证书；M4 受影响边已复证** | adaptive mutex + 16B cached-hash pointer index；Win/WSL 64B、Apple 128B core spacing。M4 correctness 通过；8t normal workload 14.678 vs sharded Abseil+mutex 19.679 ns/op，1.341x WIN |
-| **path** | ✅ 双平台 n=15 | Win+Lin；算法基线 + filesystem 分离 |
-| **FlatHashMap / FlatHashSet** | ✅ **三平台 n=15** | 同合同 Abseil；WSL map/set miss 是已登记小缺口，M4 查找/删除/迭代赢，fresh insert 同档 |
-| **BTreeMap / BTreeSet** | ✅ **2026-07-26 三平台 n=15** | Abseil B-tree 同类；按 ordered index、range scan、build/copy/churn、time expiry 十轴验收；边界偏置 split/delete 已消除主要 mutation 缺口，剩余逐平台边界明示 |
-| **hash / mix64 / Hash&lt;T&gt;** | ✅ **三平台 n=15** | 17–128B 产品 inline multiply stream；Win ≥1KiB、Linux ≥512B、M4 ≥1KiB 产品级宽核 crossover |
-| **SmallVector / PodVector** | ✅ **三平台 n=15** | build+consume 防 DCE；SmallVector WSL inline 与 Absl 同档、spill 赢，Win/M4 赢；Pod read 同档、growth 同档或赢 |
-| **ConcurrentVector** | ✅ **三平台 n=15** | append/range/旧 prefix+writer 同合同 SOTA；WSL `operator[]` 是已知随机访问边界，M4 全矩阵同档或赢 |
-| **DynamicBitSet / SparseSet** | ✅ **2026-07-26 三平台 n=15** | actual-use graph frontier / frame-local active IDs；M4 bitset 与 std 同档；纯 SparseSet membership 明确输 dense bitmap |
-| **RingDeque / ByteRingBuffer** | ✅ **2026-07-26 三平台 n=15** | 固定容量 FIFO 与 32KiB backlog/4KiB stream staging；WSL 与 Folly-shaped floor 同档，Win/M4 胜 floor |
-| **SpscQueue** | ✅ **2026-07-26 三平台 n=15** | 1P/1C 持续传输、1024 exact slots；三平台与 portable Folly-shaped 同合同 peer 均为统计同档 |
-| **ConcurrentFlatHashMap / ConcurrentNodeHashMap** | ✅ **2026-07-26 三平台 n=15** | 同 hash、同 accessor 合同对 oneTBB；读/混合路径三平台全胜；node rebuild 在 Win/Linux paired 统计同档，flat rebuild 6.25–7.05x |
-| **FlatMap / FlatSet** | ✅ **三平台 n=15** | map 为 split key/value storage，set 为独立单数组；M4 对 C++23 `std::flat_map/set` 全轴同档或赢 |
+| **StringInterner / string 收口表** | 🗃️ **2026-07 三平台历史输入** | adaptive mutex + 16B cached-hash pointer index；Win/WSL 64B、Apple 128B core spacing。旧 M4 8t normal workload 为 14.678 vs 19.679 ns/op；本轮未重签 |
+| **path** | 🗃️ 旧双平台 n=15 | 算法基线 + filesystem 分离；本轮未重签 |
+| **FlatHashMap / FlatHashSet** | 🗃️ **2026-07 三平台历史输入** | 同合同 Abseil；旧 WSL map/set miss 与 M4 点值仍可定位回归，不是当前发布结论 |
+| **BTreeMap / BTreeSet** | 🗃️ **2026-07-26 三平台历史输入** | ordered index、range scan、build/copy/churn、time expiry 十轴旧证据；本轮未重签 |
+| **hash_bytes / mix64** | 🗃️ **上次三平台 n=15** | 算法未改，可作回归输入；17–128B 与宽核 crossover 尚未在本轮 source/peer/compiler 合同下重签 |
+| **typed Hash&lt;T&gt; / StringHash** | 🟡 **受影响性能待三平台复跑** | 默认自定义 raw-object hash 已删除，float/double 改为 canonical bit mix，新增 owning/heterogeneous string helper；Windows float/double 点测不是三平台证书 |
+| **UTF-8 validate/count** | 🟡 **simdutf 9.1 受影响项** | 一遍 validate-only 与 validate+count 已分开；Windows/GCC 14 WSL invalid/tail/ASCII/non-ASCII correctness 已过。Windows Release 单点约 `0.20 ns/B` validate、`0.21 ns/B` validate+count；当前配置未编同合同 rival，三平台 n=15 性能仍待刷新 |
+| **SmallVector / PodVector** | 🗃️ **2026-07 三平台历史输入** | build+consume 防 DCE 的旧矩阵；本轮未重签 |
+| **ConcurrentVector** | 🗃️ **2026-07 三平台历史输入** | append/range/prefix+writer 旧证据与 WSL 随机访问边界；本轮未重签 |
+| **DynamicBitSet / SparseSet** | 🗃️ **2026-07-26 三平台历史输入** | graph frontier / frame-local active IDs 旧证据；本轮未重签 |
+| **RingDeque / ByteRingBuffer** | 🗃️ **2026-07-26 三平台历史输入** | 固定容量 FIFO 与 stream staging 旧证据；本轮未重签 |
+| **SpscQueue** | 🗃️ **2026-07-26 三平台历史输入** | exact-capacity 1P/1C 旧证据；本轮未重签 |
+| **ConcurrentFlatHashMap / ConcurrentNodeHashMap** | 🗃️ **2026-07-26 三平台历史输入** | oneTBB 同 accessor 旧矩阵；本轮未重签 |
+| **FlatMap / FlatSet** | 🗃️ **2026-07 三平台历史输入** | split-storage map / single-array set 旧矩阵；本轮未重签 |
 | **并发队列** | 见 queue / sched 文 | 不在本页展开 |
 
-**读法**：标 ✅ 的可当当前产品结论；标 ⚠️ 的方向大体可信，但**不要**当 2026-07-20 式三平台 sign 证书去对外硬报绝对 ns。
+2026-08-25 Windows/MSVC point（单进程方向检查，不是三平台证书）：float bit-mix 0.56 ns/hash
+（`std::hash` 0.90），double 0.51（`std::hash` 1.64）；短串默认 process-seeded `StringHash`
+1.89，显式 deterministic seed 2.02，`HardenedStringHash`/SipHash-2-4 9.99，`std::hash<string_view>`
+6.05 ns/hash。真实 `FlatHashMap` 50% hit query 为 fast 7.24、hardened 17.61 ns/query。它量化了
+正常 fast 与显式安全策略的代价边界；WSL/macOS、顺序互换与 n=15 尚未补齐，所以保持 🟡。
 
-## 1. 总览判定（对真 SOTA，非只赢 std）
+**读法**：🗃️ 只表示可用于回归定位的历史输入，不能当当前产品结论；🟡 表示本轮明确受影响且
+尚未完成三平台重签。下文旧 ✅/➖/⚠️ 保留当时判定语义，统一受本 freshness gate 覆盖。
 
-| 组件 | 真 SOTA 标尺 | 判定（当前文档共识） |
+## 1. 上次总览判定（对真 SOTA，非只赢 std）
+
+| 组件 | 真 SOTA 标尺 | 历史判定 / 当前待重签输入 |
 |---|---|---|
-| **mix64 / Hash&lt;T&gt; 小 POD** | wyhash / abseil 形 | ✅ 赢或 SOTA 同款（整数 / 16B POD） |
+| **mix64 / 整数 Hash、显式 BytewiseHash 16B key** | wyhash / abseil 形 | ✅ 赢或 SOTA 同款（自定义 key 不自动 opt-in） |
 | **hash_bytes ≤16B** | XXH3-small / wyhash | ➖ **inline mix**（不同算法）；非「输 XXH3 wrapper」 |
 | **hash_bytes 中长串** | 裸 XXH3 / wyhash | ✅ 17–128B 三平台同档或赢；宽输入按产品 crossover，三平台已签 |
 | **FlatHashMap** | absl::flat_hash_map / Folly F14 | ✅ Win 五项胜；WSL 四项胜、miss 0.97x；M4 hit/miss/erase/iterate 赢、insert 同档 |
@@ -158,9 +167,9 @@ dense 15/15）。
 这个 lose 是结构事实：dense bitmap 一次 indexed byte load，SparseSet 要读 sparse position
 再反查 dense；SparseSet 的收益来自不清 U bytes、直接 O(active) 迭代和同时保存 active
 ID。不得为赢 membership benchmark 给常态对象再塞一份 bitmap，否则会把本来明确的
-内存/生命周期选择扭曲成三数组容器。当前证书覆盖 Windows/MSVC、WSL/GCC14 AVX2
-与 M4/AppleClang NEON；本地没有可编译的 Boost dynamic_bitset peer，因此只把
-`std::bitset` 写作当前成熟同接口证据，不外推成“所有对手 SOTA”。
+内存/生命周期选择扭曲成三数组容器。2026-07 历史证据覆盖 Windows/MSVC、WSL/GCC14 AVX2
+与 M4/AppleClang NEON；当时本地没有可编译的 Boost dynamic_bitset peer，因此只把
+`std::bitset` 写作该轮成熟同接口证据，不外推成“所有对手 SOTA”。
 
 ### RingDeque / ByteRingBuffer：单线程常态形状（三平台 Release，n=15）
 
@@ -192,10 +201,10 @@ memmove 剩余 backlog；`std::deque<byte>` 使用逐元素 API。数值按处�
 | M4 / AppleClang 21 | **0.010 ns/B（99.35 GB/s）** | 0.043（23.33） | 1.216（0.82） | HYLE **4.26x / 约121x**；均 15/15 |
 
 这不是“逐 byte deque”微基准塑形：公开类型同时提供 partial copy 与 two-span zero-copy，
-正常网络/file/audio 用户可直接把 spans 接 scatter/gather I/O。当前数字只证明 copy
+正常网络/file/audio 用户可直接把 spans 接 scatter/gather I/O。该轮数字只证明 copy
 staging；zero-copy 的价值取决于真实 syscall/codec 消费者，不用一个不读写 bytes 的
-metadata benchmark 虚报无限带宽。当前证书覆盖 Windows/MSVC、WSL/GCC14 与
-M4/AppleClang；三平台 typed/C/surface/header gate 也均通过。
+metadata benchmark 虚报无限带宽。2026-07 历史证据覆盖 Windows/MSVC、WSL/GCC14 与
+M4/AppleClang；当时三平台 typed/C/surface/header gate 也均通过。
 
 ### SpscQueue：正常 1P/1C 持续传输（三平台 Release，n=15）
 
@@ -428,7 +437,8 @@ Windows/M4 赢 1.545x/1.06x、WSL 与 std 同档；三平台 sequential read 均
 ## 3. 选型（不同场景不同 container 组成）
 
 ```text
-整数 / 小 POD key 哈希     → Hash<T> / mix64（热路径）
+整数 key 哈希              → Hash<T> / mix64（热路径）
+representation-equality key→ 显式 BytewiseHash<T>；其他自定义 key 用语义 hasher
 长字节哈希                 → hash_bytes（自动按发布平台/ISA 选择 wyhash 或宽 XXH3）
 通用 hash map              → FlatHashMap
 高频 membership / 去重     → FlatHashSet

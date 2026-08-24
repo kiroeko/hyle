@@ -1,5 +1,8 @@
 # build/package system 严格收口任务（2026-07-25）
 
+> **历史证据提示（2026-08-25）：**本页的绿色结论绑定文中日期/commit，不是依赖升级后
+> working tree 的当前证书。现行状态只看 [`pre-release-readiness`](./pre-release-readiness.md)。
+
 > 本页是施工与验收记录。收口后，稳定的项目组织模型归
 > `docs/architecture/build-system.md`，用户迁移与组装 recipe 归 guide；本页不长期兼任用户手册。
 

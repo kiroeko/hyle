@@ -135,8 +135,8 @@
     },
     {
       "name": "bench-all-sota",
-      "displayName": "Benchmarks + all gated SOTA rivals",
-      "description": "Development-only comparison build. The HYLE_BENCH_* gates add opponent rows and never change the shipped library.",
+      "displayName": "Benchmarks + all shared SOTA rivals",
+      "description": "Development-only comparison build. Enables all ten shared HYLE_BENCH_* rival gates; IO-only backend gates remain explicit because they are platform/dependency specific.",
       "inherits": "bench",
       "cacheVariables": {
         "HYLE_BENCH_ABSL": "ON",
@@ -147,7 +147,8 @@
         "HYLE_BENCH_SIMDUTF": "ON",
         "HYLE_BENCH_MOODYCAMEL": "ON",
         "HYLE_BENCH_RIGTORP": "ON",
-        "HYLE_BENCH_BOOST": "ON"
+        "HYLE_BENCH_BOOST": "ON",
+        "HYLE_BENCH_WYHASH": "ON"
       }
     },
     {

@@ -1,5 +1,8 @@
 # platform 剩余事项收口
 
+> **历史证据提示（2026-08-25）：**本页的绿色结论绑定文中日期/commit，不是依赖升级后
+> working tree 的当前证书。现行状态只看 [`pre-release-readiness`](./pre-release-readiness.md)。
+
 > **后续替代（2026-07-22）：**本文后文提到的旧 `MemoryArena` 当前由 `SharedPool` / 显式 `SharedPoolCache` 覆盖；旧头与 C ABI 已删除。
 
 > **后续替代（2026-07-24）：**platform 已删除模块私有 TLS last-error，公开可恢复失败统一走

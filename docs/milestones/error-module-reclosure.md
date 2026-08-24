@@ -1,5 +1,8 @@
 # error-03：error 模块实际使用导向重收口
 
+> **历史证据提示（2026-08-25）：**本页的绿色结论绑定文中日期/commit，不是依赖升级后
+> working tree 的当前证书。现行状态只看 [`pre-release-readiness`](./pre-release-readiness.md)。
+
 > 本文是 Jira 式任务记录。稳定设计见
 > [`../architecture/error-design.md`](../architecture/error-design.md)，用户选型见
 > [`../guide/error.md`](../guide/error.md)，C/FFI 映射见

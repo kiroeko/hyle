@@ -38,6 +38,7 @@ if(HYLE_TRACE)
         "tracy checkout (need <dir>/public/tracy/Tracy.hpp). Set -DHYLE_TRACY_DIR=... "
         "Refusing to build a half-wired profiler.")
     endif()
+    hyle_verify_locked_source_input(tracy "${HYLE_TRACY_DIR}")
     # The tracy client: ONE TU (TracyClient.cpp) compiled with TRACY_ENABLE. tracy
     # is a global singleton and its docs require the client TU be built exactly
     # once. HYLE is a multi-DLL build by default, so this target MUST follow
@@ -48,6 +49,18 @@ if(HYLE_TRACE)
       add_library(hyle_tracy_client STATIC "${HYLE_TRACY_DIR}/public/TracyClient.cpp")
     else()
       add_library(hyle_tracy_client SHARED "${HYLE_TRACY_DIR}/public/TracyClient.cpp")
+    endif()
+    # Preserve the platform closure from Tracy's own TracyClient target even
+    # though HYLE intentionally compiles the single client TU directly.  In a
+    # static SDK these become LINK_ONLY consumer requirements; the package
+    # registry below arranges find_dependency(Threads) before target import.
+    find_package(Threads REQUIRED)
+    target_link_libraries(hyle_tracy_client
+      PRIVATE Threads::Threads ${CMAKE_DL_LIBS})
+    if(WIN32 AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+      target_link_libraries(hyle_tracy_client PRIVATE ws2_32 dbghelp secur32)
+      target_compile_definitions(hyle_tracy_client
+        PUBLIC WINVER=0x0A00 _WIN32_WINNT=0x0A00)
     endif()
     target_include_directories(hyle_tracy_client SYSTEM PUBLIC
       "$<BUILD_INTERFACE:${HYLE_TRACY_DIR}/public>"
@@ -74,11 +87,15 @@ if(HYLE_TRACE)
       OWNER foundation
       FEATURES trace
       EXPORT_TARGETS hyle_tracy_client
+      STATIC_FIND_DEPENDENCIES Threads
+      LOCKED_DEPENDENCIES tracy
       RUNTIME_FILE_SPECS
         "${HYLE_TRACY_DIR}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|tracy-LICENSE"
       DEVELOPMENT_DIRECTORY_SPECS
         "${HYLE_TRACY_DIR}/public/|${HYLE_INSTALL_INCLUDEDIR}/hyle/vendor/tracy-public")
-    message(STATUS "HYLE_TRACE = ON (tracy @ ${HYLE_TRACY_DIR})")
+    message(STATUS
+      "HYLE_TRACE = ON (tracy ${HYLE_DEP_TRACY_VERSION} "
+      "${HYLE_DEP_TRACY_COMMIT} @ ${HYLE_TRACY_DIR})")
   else()
     message(FATAL_ERROR "HYLE_TRACE_BACKEND='${HYLE_TRACE_BACKEND}' unknown (only 'tracy').")
   endif()

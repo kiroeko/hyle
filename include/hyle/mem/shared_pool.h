@@ -66,6 +66,7 @@ protected:
   };
 
 #if defined(HYLE_TESTING)
+  // TEST-ONLY: deterministic interleaving hook used by concurrency tests.
   using EmptyScanHook = void (*)(void *, std::uint32_t) noexcept;
 #endif
 
@@ -200,11 +201,13 @@ protected:
   }
 
 #if defined(HYLE_TESTING)
+  // TEST-ONLY: require all diagnostic per-slot liveness bits to be clear.
   void testing_assert_no_outstanding() const noexcept {
     for (std::uint32_t i = 0; i < count_; ++i)
       HYLE_FATAL_ASSERT(testing_live_[i].load(std::memory_order_acquire) == 0);
   }
 
+  // TEST-ONLY: clear diagnostic liveness before a quiescent bulk reset.
   void testing_discard_all() noexcept {
     for (std::uint32_t i = 0; i < count_; ++i)
       testing_live_[i].store(0, std::memory_order_release);
@@ -591,28 +594,32 @@ protected:
   }
 
 #if defined(HYLE_TESTING)
+  // TEST-ONLY: install a deterministic empty-shard observation hook.
   void testing_set_empty_scan_hook(EmptyScanHook hook, void *state) noexcept {
     testing_empty_scan_hook_ = hook;
     testing_empty_scan_state_ = state;
   }
 
+  // TEST-ONLY: pop directly from one shard for structural concurrency tests.
   void *testing_pop_from_shard(std::uint32_t s) noexcept {
     const std::uint32_t idx = pop_shard(s);
     return checkout(idx);
   }
 
+  // TEST-ONLY: push directly to one shard for structural concurrency tests.
   void testing_push_to_shard(std::uint32_t s, void *p) noexcept {
     push_shard(s, return_index(p));
   }
+  // TEST-ONLY: expose the constructed shard count to structural tests.
   std::uint32_t testing_num_shards() const noexcept { return num_shards_; }
 
+  // TEST-ONLY: exercise cross-shard fallback from a chosen home shard.
   void *testing_allocate_from_home(std::uint32_t home) noexcept {
     const std::uint32_t idx = pop_any_shard(home);
     return checkout(idx);
   }
 
-  // Quiescent-only hook: force the no-wrap path without executing billions of
-  // ops.
+  // TEST-ONLY: quiescent hook forcing the no-wrap path without billions of ops.
   void testing_force_tag_saturation() noexcept {
     for (std::uint32_t s = 0; s < num_shards_; ++s) {
       const std::uint64_t old = heads_[s].h.load(std::memory_order_relaxed);
@@ -708,24 +715,31 @@ public:
       : detail::ShardedSlab(alloc, block_size, block_count, alignment) {}
 
 #if defined(HYLE_TESTING)
+  // TEST-ONLY: public test spelling for the internal empty-scan callback.
   using TestingEmptyScanHook = void (*)(void *, std::uint32_t) noexcept;
 
+  // TEST-ONLY: force every shard tag to its saturation boundary.
   void testing_force_tag_saturation() noexcept {
     detail::ShardedSlab::testing_force_tag_saturation();
   }
+  // TEST-ONLY: install a deterministic empty-shard observation hook.
   void testing_set_empty_scan_hook(TestingEmptyScanHook hook,
                                    void *state) noexcept {
     detail::ShardedSlab::testing_set_empty_scan_hook(hook, state);
   }
+  // TEST-ONLY: pop directly from a selected shard.
   void *testing_pop_from_shard(std::uint32_t shard) noexcept {
     return detail::ShardedSlab::testing_pop_from_shard(shard);
   }
+  // TEST-ONLY: push directly to a selected shard.
   void testing_push_to_shard(std::uint32_t shard, void *p) noexcept {
     detail::ShardedSlab::testing_push_to_shard(shard, p);
   }
+  // TEST-ONLY: expose the constructed shard count.
   std::uint32_t testing_num_shards() const noexcept {
     return detail::ShardedSlab::testing_num_shards();
   }
+  // TEST-ONLY: exercise fallback allocation from a chosen home shard.
   void *testing_allocate_from_home(std::uint32_t home) noexcept {
     return detail::ShardedSlab::testing_allocate_from_home(home);
   }

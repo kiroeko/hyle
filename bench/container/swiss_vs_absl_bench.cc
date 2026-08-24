@@ -1,5 +1,3 @@
-#define _CRT_SECURE_NO_WARNINGS 1
-
 // FlatHashMap/FlatHashSet vs their Abseil peers -- the SOTA parity check (not
 // just "beat the known-slow std::unordered_* family"). Abseil is the design
 // HYLE's Swiss core is modeled on, so this is an honest reference comparison.

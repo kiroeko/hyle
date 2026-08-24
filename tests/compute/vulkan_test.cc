@@ -70,6 +70,19 @@ bool find_vulkan(Device& out) {
 // The push-constant block -- MUST match saxpy.comp's Params (std430: uint@0, 3 float).
 struct SaxpyParams { std::uint32_t n; float alpha; float beta; float bias; };
 
+bool environment_is_set(const char* name) {
+#if defined(_WIN32)
+  char* value = nullptr;
+  std::size_t size = 0;
+  const errno_t error = _dupenv_s(&value, &size, name);
+  const bool present = error == 0 && value != nullptr;
+  std::free(value);
+  return present;
+#else
+  return std::getenv(name) != nullptr;
+#endif
+}
+
 }  // namespace
 
 TEST(VulkanCompute, HostBufferSeparatesNativeHandleFromMappedData) {
@@ -140,7 +153,7 @@ HYLE_IMPORT std::size_t vk_pipeline_cache_flush_for_test() noexcept;
 }
 
 TEST(VulkanCompute, ForcedStagingIsLazyAndTransferSized) {
-  if (std::getenv("HYLE_VK_FORCE_STAGING") == nullptr)
+  if (!environment_is_set("HYLE_VK_FORCE_STAGING"))
     GTEST_SKIP() << "dedicated forced-staging CTest owns this contract";
   Device vk;
   if (!find_vulkan(vk)) GTEST_SKIP() << "no Vulkan compute device";

@@ -16,6 +16,17 @@
 `hyle_status` 由调用方用 `hyle_status_free` 释放。platform 不再维护模块私有 TLS
 last-error；C 与 C++ 共用 error 的 code、message 和所有权规则。
 
+返回 `hyle_status` 的 owning-handle 出参会在参数校验前清成 `NULL`。NUMA placement
+出参可省略；非 NULL 时会先写 `HYLE_NUMA_PLACEMENT_UNAVAILABLE`，只有成功才改成实际
+结果。失败后不要继续使用调用前保存在这些出参里的旧值。
+
+所有 tag/flag（thread priority、protect、NUMA、file/map、ISA/CPU）都使用固定宽 typedef 加
+整数常量：含负值的 priority/`HYLE_NUMA_ANY` 是 `int32_t`，其余是 `uint32_t`。它们仍可用于
+`switch/case`，但不会被 `-fshort-enums` 或编译器默认 enum 宽度改变 ABI。
+这些 typedef 也贯穿函数参数/返回、callback 与 POD 字段，而不是只包住常量定义。保留的
+裸 `int` 仅表达 C 布尔值/callback 真值或 `spawn_opts` 的 affinity sentinel；裸 `unsigned`
+仅表达 CPU id 或数量，数组容量/字节数继续用 `size_t`。
+
 ---
 
 ## 1. 链什么
@@ -44,7 +55,7 @@ last-error；C 与 C++ 共用 error 的 code、message 和所有权规则。
 | fs/env | buffer-fill / visitor | 无堆句柄 |
 | fs 权限/链接/临时文件/env 写 | `hyle_fs_get_permissions` / `hyle_fs_*_symlink` / `hyle_fs_create_temp_file` / `hyle_env_set` | temp file 返回 `hyle_file_handle`（`hyle_fs_close` 释放） |
 | MappedFile | `hyle_mapped_file_*` | destroy 释放 |
-| cpu | `hyle_cpu_features_get` 等 | 值返回 POD |
+| cpu | `hyle_cpu_features_get` 等 | 调用方存储的版本化 POD；返回 owning Status |
 
 ---
 
@@ -71,7 +82,7 @@ last-error；C 与 C++ 共用 error 的 code、message 和所有权规则。
 
 | 符号 | 说明 |
 |---|---|
-| `hyle_thread_spawn(out, entry, ctx, opts)` | 成功设 `*out`；失败返 `hyle_status`（调用方 free） |
+| `hyle_thread_spawn(out, entry, ctx, opts)` | 成功设 `*out`；失败清成 NULL 并返 `hyle_status`（调用方 free） |
 | `hyle_thread_spawn_opts(out, entry, ctx, name, stack, affinity, priority)` | FFI 便利入口；不用构造 opts/has 字段，0/-1 是默认 sentinel |
 | `hyle_thread_join` | join + **destroy** 句柄 |
 | `hyle_thread_joinable` | 1/0 |
@@ -85,7 +96,7 @@ last-error；C 与 C++ 共用 error 的 code、message 和所有权规则。
 
 | 符号 | 说明 |
 |---|---|
-| `hyle_thread_opts` | 首字段 `struct_size`，其后为 name/stack/单 CPU 或 CPU 数组 affinity/priority 与 `config_policy` |
+| `hyle_thread_opts` | `struct_size` 后显式 `reserved`，全部业务字段均可选；历史字段顺序为 name/stack/单 CPU affinity/priority/`config_policy`，CPU 数组 affinity 只追加在尾部。64-bit ABI 上 size=72，priority/policy/array/count offset=44/48/56/64，`HYLE_THREAD_OPTS_REQUIRED_SIZE=8` |
 | `hyle_thread_priority` | `LOWEST`/`LOW`/`NORMAL`/`HIGH`/`HIGHEST`（-2..2）；Linux 提升需权限，macOS 映射 QoS |
 | `hyle_thread_config_policy` | 默认 `BEST_EFFORT`；`REQUIRED` 在 entry 前同步配置，失败不运行 entry |
 | `HYLE_THREAD_OPTS_INIT` | 默认初始化宏；会写 `struct_size`，不是全零字节 |
@@ -116,8 +127,8 @@ last-error；C 与 C++ 共用 error 的 code、message 和所有权规则。
 | `hyle_vm_alloc_rw(out, size)` | 一次 OS 操作得到可立即使用的 RW mapping（size 上取整）；返回 Status |
 | `hyle_vm_free_rw(p, size)` | 释放 `alloc_rw` 的块（size 为原始请求）；返回 Status |
 | `hyle_vm_alloc_numa_interleaved(out, placement, size, nodes, count, chunk)` | 已提交的 selected-node/chunk 连续 RW span；整段 `hyle_vm_release`，不能 decommit/recommit |
-| `hyle_vm_region_reserve(out, size)` / `reserve_guarded` | Status+out；guarded 低 1 页 NOACCESS |
-| `hyle_vm_region_reserve_numa(out, size, node)` | 偏好 NUMA `node`（`HYLE_NUMA_ANY`==普通 reserve）的托管 region |
+| `hyle_vm_region_reserve(out, size)` / `reserve_guarded` | Status+out；两者先将有效 `*out` 清为 NULL，再验参/进入 OS；guarded 低 1 页 NOACCESS |
+| `hyle_vm_region_reserve_numa(out, size, node)` | 同样先清 `*out`；偏好 NUMA `node`（`HYLE_NUMA_ANY`==普通 reserve）的托管 region |
 | `hyle_vm_region_alloc_numa_interleaved(out, size, nodes, count, chunk)` | 上述 selected allocation 的 opaque owner；destroy 释放，decommit 返回 `FAILED_PRECONDITION` |
 | `hyle_vm_region_adopt(out, base, size)` | 收编裸预留；只有成功后才转移所有权，wrapper OOM/参数错误时调用方仍拥有 base |
 | `hyle_vm_region_destroy` | |
@@ -140,22 +151,25 @@ soft 建议，绝不影响正确性。Linux 用 madvise；Windows/macOS 匿名�
 
 | 符号 | 说明 |
 |---|---|
-| `hyle_numa_node`：`HYLE_NUMA_ANY` | 具名 enum；`(-1)` 无 NUMA 约束 |
+| `hyle_numa_node`：`HYLE_NUMA_ANY` | 固定 `int32_t` tag；`(-1)` 无 NUMA 约束 |
 | `hyle_numa_policy` | `PREFERRED`(软) / `BIND`(硬,Linux) / `INTERLEAVE`(全节点条带) |
 | `hyle_numa_placement` | `APPLIED`（OS 已接受 policy，不是物理驻留证明）/ `NOT_NEEDED` / `UNAVAILABLE`（软 preferred 降级） |
-| `hyle_numa_capabilities` | runtime feature bitset；用户不要围绕 `HYLE_OS_*` 编译分叉 |
-| `hyle_numa_nodes(NULL,0)` / `(dst,cap)` | 查询总数/复制实际 node id；id 可稀疏，稳定到进程结束 |
+| `hyle_numa_capabilities` | 返回固定 `hyle_numa_capability` runtime feature bitset；用户不要围绕 `HYLE_OS_*` 编译分叉 |
+| `hyle_numa_nodes(NULL,0)` / `(dst,cap)` | 查询总数/复制固定 `hyle_numa_node` 实际 id；id 可稀疏，稳定到进程结束 |
 | `hyle_numa_node_count` | `hyle_numa_nodes` 的数量，≥1；不能据此推导 id |
 | `hyle_numa_current_node` | 调用线程 home 节点；失败时回退 nodes 列表首项 |
 | `hyle_numa_node_of_cpu(cpu)` | 逻辑 CPU 所属节点；越界/失败时回退 nodes 列表首项；配单 CPU affinity 放置 worker arena |
-| `hyle_vm_bind_numa(out_placement, ptr, size, node, policy)` | 返回 Status；placement 出参可 NULL；Linux BIND 是严格集合，INTERLEAVE 是 placement policy |
+| `hyle_vm_bind_numa(out_placement, ptr, size, node, policy)` | 返回 Status；placement 出参可 NULL，失败时为 `UNAVAILABLE`；Linux BIND 是严格集合，INTERLEAVE 是 placement policy |
 | `hyle_vm_bind_numa_interleave(out_placement, ptr, size)` | 全节点条带（INTERLEAVE 别名） |
 | `hyle_vm_reserve_numa(out, out_placement, size, node)` | Status+out；preferred 失败仍可成功分配并报告 `UNAVAILABLE` |
-| `hyle_vm_alloc_numa_interleaved(...)` | `nodes==NULL,count==0` 选择全部；显式 id 必须可用并按条带顺序，重复 id 表达权重；`chunk==0` 表示一页 |
+| `hyle_vm_alloc_numa_interleaved(...)` | `nodes==NULL,count==0` 选择全部；显式 `hyle_numa_node` id 必须非负且可用（数组中不接受 `HYLE_NUMA_ANY`），按条带顺序，重复 id 表达权重；`chunk==0` 表示一页 |
 
 capability 是启动期可发现性，操作的 `hyle_status` 才是权限、配额和实时 OS 状态的最终裁决。
 单节点机器上 selected allocation 正常成功并报告 `NOT_NEEDED`；Linux/Windows 多节点会安装
-条带 policy，但目标节点压力下可回退，因此 `APPLIED` 不是逐页 residency 证明；macOS 当前公开
+条带 policy，但目标节点压力下可回退，因此 `APPLIED` 不是逐页 residency 证明。Windows 的
+`HYLE_NUMA_CAP_SELECTED_INTERLEAVE` 只在可用的 `VirtualAllocExNuma` 能把所有条带留在一个可
+整段释放的 reservation 中时置位；只有 `VirtualAlloc2` 时 preferred reserve 仍可用，但 selected
+allocation 在多节点请求上返回 `UNIMPLEMENTED`，不会返回需要逐条带释放的伪连续 owner。macOS 当前公开
 逻辑 node 0。裸 selected allocation 只允许整段 release；需要自动所有权和防误用
 decommit 时用 `hyle_vm_region_alloc_numa_interleaved`。
 Linux 普通布局保持 demand paging；极细自定义布局会在构造期首次触页，以免为每页永久占一个
@@ -171,27 +185,27 @@ VMA policy。需要严格控制首次触页时机时使用较粗 chunk 或单次
 | `hyle_fs_file_size(out, path)` | Status+out；空文件是成功的 0，缺失与目录分别是 `NOT_FOUND` / `FAILED_PRECONDITION` |
 | `hyle_fs_make_directory*` | Status；已存在目录为 OK，已存在非目录为 `ALREADY_EXISTS` |
 | `hyle_fs_remove_directory*` / `hyle_fs_remove_file` | Status；稳定、调用方拥有的目录树中递归删除保留首个失败且不跟随 symlink/junction；不承诺抵抗 entry 的并发替换 |
-| `hyle_fs_rename` / `hyle_fs_copy_file` / `hyle_fs_touch` | Status；保留原生 operation/code/message |
+| `hyle_fs_rename` / `hyle_fs_copy_file` / `hyle_fs_touch` | Status；保留原生 operation/code/message；copy 成功只限 regular file，POSIX open 先失败时保留 native error，Windows reparse 语义沿用 CopyFileW |
 | `hyle_fs_current_directory(out_size,dst,cap)` / `temp` / `home` | Status+out buffer-fill；`*out_size>=cap` 表示截断，`dst==NULL` 可只查长度 |
 | `hyle_fs_change_directory(path)` | Status；缺失、权限、非法 UTF-8 分开报告 |
 | `hyle_env_get(out_size,name,dst,cap)` | Status+out；未设置为 `NOT_FOUND`，已设置为空是成功且 size=0 |
 | `hyle_fs_visit_fn` | `(name, hyle_file_type, ctx)→int`；0 停止；类型描述 entry 自身，不跟随 symlink |
-| `hyle_fs_directory_iterate(out_completed,...)` | Status+out；无分配快速遍历，常见文件系统不逐项 stat；visitor 提前停止是成功且 completed=0 |
+| `hyle_fs_directory_iterate(out_completed,...)` | Status+out；不返回 owning entry，普通路径不逐项分配/stat；长 Windows search pattern 可申请一次 checked scratch；visitor 提前停止是成功且 completed=0 |
 
 ### 3.5b fs 权限 / 符号链接 / 临时文件 / env 写（DLL，v4）
 
 | 符号 | 说明 |
 |---|---|
-| `hyle_fs_get_permissions(out,path)` | Status+out；低 9 位权限，合法 0000 不再与失败混淆；Windows 由 READONLY 合成 |
-| `hyle_fs_set_permissions(path, mode)` | Status；POSIX chmod；Windows 只认写位→READONLY |
+| `hyle_fs_get_permissions(out,path)` | Status+固定 `hyle_file_perms` out；低 9 位权限，合法 0000 不再与失败混淆；Windows 由 READONLY 合成 |
+| `hyle_fs_set_permissions(path, mode)` | `mode` 是固定 `hyle_file_perms`；POSIX chmod；Windows 只认写位→READONLY |
 | `hyle_fs_is_readonly(out,path)` / `hyle_fs_set_readonly(path, ro)` | Status(+out)；跨平台可靠子集 |
 | `hyle_fs_create_symlink(target, link, kind)` | Status；`AUTO` 适合已存在 target，创建可移植的 dangling link 必须显式 `FILE/DIRECTORY`；Windows 仍可能 `PERMISSION_DENIED` |
 | `hyle_fs_create_hard_link(target, link)` | Status；硬链接（同卷、仅文件） |
 | `hyle_fs_is_symlink(out,path)` | Status+out；自身是否符号链接（不跟随），缺失为 false |
-| `hyle_fs_read_symlink(out_size,path,dst,cap)` | Status+out buffer-fill；非链接为 `FAILED_PRECONDITION` |
+| `hyle_fs_read_symlink(out_size,path,dst,cap)` | Status+out buffer-fill；非链接为 `FAILED_PRECONDITION`；POSIX `readlink` 填满内部 scratch 时扩容重试，不返回截断 target 的假完整长度 |
 | `hyle_file_handle` / `HYLE_FILE_HANDLE_INVALID` | 一字宽 native file resource；可容纳 POSIX fd / Windows HANDLE，不暗示 POSIX 语义 |
-| `hyle_fs_create_temp_file(out, out_path_size, dir, prefix, dst, cap)` | Status+out；原子创建并返回**打开的** handle；完整路径长度即使 dst 截断也可见，避免 TOCTOU |
-| `hyle_fs_open(out, path, flags)` | Status+out；`flags`=`HYLE_OPEN_READ/WRITE/CREATE/TRUNCATE/APPEND` OR；Windows 用 UTF-16 API；无需 mmap 的普通 I/O |
+| `hyle_fs_create_temp_file(out, out_path_size, dir, prefix, dst, cap)` | Status+out；原子创建并返回**打开的** handle；完整路径长度即使 dst 截断也可见；显式 dir 不能为空；checked dynamic scratch 不额外施加 MAX_PATH/1024 ceiling，仍服从 native FS 上限 |
+| `hyle_fs_open(out, path, flags)` | Status+out；固定 `hyle_file_open_flags`=`HYLE_OPEN_READ/WRITE/CREATE/TRUNCATE/APPEND` OR；Windows 用 UTF-16 API；无需 mmap 的普通 I/O |
 | `hyle_fs_read(out_moved, file, buf, n)` / `hyle_fs_write(out_moved, file, buf, n)` | Status+out；读 0=EOF，短读/短写是成功，调用方可继续 |
 | `hyle_fs_close(file)` | 返回 Status；关闭 create_temp_file / open 返回的 handle；INVALID 安全 |
 | `hyle_env_set(name, value)` / `hyle_env_unset(name)` | Status；进程级，与并发读非线程安全；Windows 写入也按 UTF-8 转 UTF-16 |
@@ -218,12 +232,12 @@ Windows 只有 `WILL_NEED` 有直接 hint 对等物；POSIX 支持五档 `madvis
 
 | 符号 | 说明 |
 |---|---|
-| `hyle_cpu_features` | 与 C++ `CpuFeatures` **全 bool 字段 1:1**（C 用 int 0/1）；不混入拓扑或 ISA 派生值 |
+| `hyle_cpu_features` | `struct_size` + 零 `reserved` 版本前缀，之后与 C++ `CpuFeatures` **全 bool 字段 1:1**（C 用 int 0/1）；不混入拓扑或 ISA 派生值 |
 | x86 字段 | `sse2`…`avx10_2`（见头） |
 | arm 字段 | `neon`…`arm_bf16` |
 | RISC-V 字段 | `rvv`…`rvv_zvfhmin` |
-| `hyle_isa`：`HYLE_ISA_*` | 具名 enum；`SCALAR`/`SSE2`/…/`RVV` 粗粒度档（与 `Isa` 数值一致） |
-| `hyle_cpu_features_get` | 值返回 |
+| `hyle_isa`：`HYLE_ISA_*` | 固定 `uint32_t` tag；`SCALAR`/`SSE2`/…/`RVV` 粗粒度档（与 `Isa` 数值一致） |
+| `hyle_cpu_features_get(out)` | owning Status + caller-storage；先用 `HYLE_CPU_FEATURES_INIT` 初始化 |
 | `hyle_cpu_best_isa` | 当前进程可安全执行的最高粗粒度 ISA 档 |
 | `hyle_cpu_supports_isa(isa)` | 本进程能否跑该档（同架构比较） |
 | `hyle_cpu_isa_name(isa)` | 稳定英文名（日志） |
@@ -232,8 +246,27 @@ Windows 只有 `WILL_NEED` 有直接 hint 对等物；POSIX 支持五档 `madvis
 | `hyle_cpu_topology_get` | 缓存的系统视图：`system_logical_cpus`、performance/efficiency CPU 数与 `is_hybrid` |
 | `hyle_cpu_available_count(out_count)` | 动态进程视图的 count-only 便利入口；创建 worker / 选择 shard 数优先用它 |
 | `hyle_cpu_available_ids(out_count, dst, cap)` | 动态进程视图；返回 Status，`*out_count` 是完整数量，最多写 cap 个可用于 thread affinity 的 id；`dst==NULL` 可只查数 |
-| `hyle_cpu_available_info(out_count, dst, cap)` | 每个可用 CPU 的 id、单机单调 `performance_rank` 与 `hyle_cpu_kind`；rank 0 = 未知 |
+| `hyle_cpu_available_info(out_count, dst, cap)` | 每个可用 CPU 的 id、单机单调 `performance_rank` 与固定字段 `hyle_cpu_kind`；64-bit ABI 上 POD size=12、kind offset=8；rank 0 = 未知 |
 | `hyle_cpu_available_ids_ordered(out_count, order, dst, cap)` | 保留全部可用 CPU，按 OS 默认/强核优先/能效核优先排列；未知时不猜 |
+
+CPU feature 是会继续追加的能力快照，因此不再把 160-byte 结构按值跨 ABI 返回。普通调用如下：
+
+```c
+hyle_cpu_features features = HYLE_CPU_FEATURES_INIT;
+hyle_status status = hyle_cpu_features_get(&features);
+if (hyle_status_is_ok(status) && features.avx2) {
+  /* AVX2 is available to this process. */
+}
+hyle_status_free(&status);
+```
+
+`struct_size` 是调用方可写容量，不是精确版本号：至少为
+`HYLE_CPU_FEATURES_REQUIRED_SIZE` 的已知短前缀可用；库只写落在
+`min(struct_size, sizeof(hyle_cpu_features))` 内的完整已知字段，不制造半个 `int`，并保留调用方
+声明的 `struct_size`。
+更大 future struct 的未知尾部不被旧库改写，所以必须用 INIT（它把完整调用方对象的当前字段初始化
+为 false/0），不能把未初始化栈内存直接传入。NULL、过小前缀或非零 `reserved` 返回
+`INVALID_ARGUMENT`；只要容量允许，已知输出字段在报错前也会被重置为安全值，不会残留上一次查询结果。
 
 拓扑只采用 OS/CPU 的明确分类（Windows `EfficiencyClass`、macOS
 `hw.perflevelN`、Linux `cpu_capacity`）。若平台没有可靠信息，会保守返回
@@ -328,6 +361,17 @@ hyle_status st = hyle_thread_spawn_opts(
 `spawn_opts` 是默认 best-effort 的简写；需要 required 或需要“不设置 priority”时使用完整
 `hyle_thread_opts`。required affinity 在 macOS 返回 `HYLE_STATUS_UNIMPLEMENTED`。已经在
 entry 内时可调用 `hyle_this_thread_set_*` 并按普通 `hyle_status` 规则检查、释放。
+
+`struct_size` 是可读字节数，不是“必须等于当前 `sizeof`”的版本号。非 NULL 指针至少须让
+size word 本身可读；库先建立完整的当前默认结构，再只覆盖
+`min(struct_size, sizeof(hyle_thread_opts))` 个字节；小于
+`HYLE_THREAD_OPTS_REQUIRED_SIZE`（64-bit 为 8，只含 size+必须为 0 的 reserved）的必需前缀会返回
+`INVALID_ARGUMENT`，缺失的业务字段保持默认，未来结构多出的未知尾部被忽略。name/config 等
+单字段只有完整可读才生效；has+value 与 `affinity_cpus`/`affinity_cpu_count` 等成对扩展只有
+整组完整可读时才启用，中间前缀会忽略整组，绝不使用部分复制的 pointer/count。满足显式
+`reserved=0` 合同、到 `config_policy` 为止的 56 字节历史字段前缀可读；普通源码仍应使用
+`HYLE_THREAD_OPTS_INIT`/`default()` 写当前大小，较短大小主要服务按该版本化前缀合同生成的
+FFI binding。HYLE 尚未发布，不把更早、没有显式 reserved 合同的头产生的二进制声明为兼容。
 
 若线程应在一个应用分区内迁移，传数组而不是为每个 CPU 重复造一套 option：
 

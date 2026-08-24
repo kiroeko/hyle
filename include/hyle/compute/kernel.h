@@ -72,6 +72,7 @@ class Kernel {
   // templated/mangled kernels work). The device's compute capability is auto-probed
   // for -arch=sm_XX. A same-source recompile hits an in-process cache (XXH3(source) ^
   // arch). Compile failure returns a Status carrying the NVRTC log.
+  // An invalid Device returns InvalidArgument.
   //
   // On the host backend `source` compilation isn't meaningful -> returns Unimplemented
   // (host kernels are registered via load_host, below); a GPU-less test uses load_host.
@@ -82,6 +83,7 @@ class Kernel {
   // ② Load an already-compiled PTX string (skips NVRTC), for a consumer that has PTX (CUDA).
   // `entry` is the kernel name in the PTX (extern "C" / already-lowered). PTX is text, so no
   // length is needed. For a Vulkan SPIR-V module use load_spirv() instead.
+  // An invalid Device returns InvalidArgument.
   HYLE_COMPUTE_API static Result<Kernel> load_ptx(const Device& device,
                                                   const char* ptx,
                                                   const char* entry) noexcept;
@@ -93,6 +95,7 @@ class Kernel {
   // is the consumer's choice, not fixed by us. `entry` is the entry-point name ("main" for
   // glslc/glslang output). On a non-Vulkan backend this returns Unimplemented (CUDA takes
   // PTX via load_ptx). SPIR-V is not "PTX": the split keeps each backend's format explicit.
+  // An invalid Device returns InvalidArgument.
   HYLE_COMPUTE_API static Result<Kernel> load_spirv(const Device& device,
                                                     const SpirvBlob& blob,
                                                     const char* entry = "main") noexcept;
@@ -114,7 +117,8 @@ class Kernel {
   // ③ Host fallback: register a host function as a "kernel". `fn` is called by launch
   // with the config + KernelArgs (fn reads args.buffers / args.scalars itself). Only
   // meaningful on the host backend; on a GPU device returns Unimplemented (use compile/
-  // load_ptx there). This is what lets kernel launch be exercised with no GPU.
+  // load_ptx there); an invalid Device returns InvalidArgument. This is what lets kernel
+  // launch be exercised with no GPU.
   using HostFn = void (*)(const LaunchConfig&, const KernelArgs&) noexcept;
   HYLE_COMPUTE_API static Result<Kernel> load_host(const Device& device,
                                                    HostFn fn) noexcept;

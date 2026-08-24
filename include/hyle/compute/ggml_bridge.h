@@ -76,14 +76,17 @@ class HYLE_COMPUTE_API GgmlBackend {
   GgmlBackend& operator=(GgmlBackend&& o) noexcept;
   ~GgmlBackend();
 
-  // Create a ggml backend on `device`. A GPU device -> ggml CUDA backend; a CPU device
-  // -> ggml CPU backend with n_threads set. A persistent gallocr (result/scratch device
-  // buffers) is created alongside and reused for every op (llama.cpp model).
-  //   n_threads: CPU-backend thread count (③ batching-split). Pass full cores for a
+  // Create a ggml backend on `device`. A HYLE "cuda" device selects ggml CUDA; a
+  // HYLE "host" device selects ggml CPU with n_threads set. Other HYLE backends
+  // (including "vulkan") return Unimplemented rather than being mistaken for CUDA.
+  // A persistent gallocr (result/scratch device buffers) is created alongside and
+  // reused for every op (llama.cpp model).
+  //   n_threads: positive CPU-backend thread count (③ batching-split). Pass full cores for a
   //   batched big graph; pass 1 for high-concurrency independent small inference.
   //   IGNORED by the CUDA backend (GPU-side stream scheduling). Default = 1 (the
   //   conservative "never oversubscribe" leaf; batched callers pass full cores).
-  // External-boundary failure (backend init) -> Result error.
+  // An invalid Device or non-positive n_threads returns InvalidArgument;
+  // external-boundary failure (backend init) -> Result error.
   static Result<GgmlBackend> create(const Device& device, int n_threads = 1) noexcept;
 
   bool valid() const noexcept { return be_ != nullptr; }
@@ -222,9 +225,11 @@ class HYLE_COMPUTE_API FfnBlock {
 
   // Build the block on `device` and COPY the four weight matrices into resident device memory
   // (ONCE -- initialization cost, not per-forward). d = hidden dim, ffn = intermediate dim, eps =
-  // RMSNorm epsilon, n_threads = CPU-backend threads (ignored on GPU). Weight host pointers are
-  // read only during create() (copied in); the caller need not keep them after. External-boundary
-  // failure (backend/buffer alloc) -> Result error.
+  // RMSNorm epsilon, n_threads = positive CPU-backend threads (ignored on CUDA). Only HYLE
+  // "host" and "cuda" devices are accepted; other backends return Unimplemented.
+  // Weight host pointers are read only during create() (copied in); the caller need
+  // not keep them after. Invalid Device/non-positive n_threads -> InvalidArgument;
+  // external-boundary failure (backend/buffer alloc) -> Result error.
   //   CONTRACT: d>0, ffn>0, eps>=0, all four weight pointers non-null.
   static Result<FfnBlock> create(const Device& device, int d, int ffn, float eps,
                                  const float* w_norm, const float* w_gate, const float* w_up,
@@ -243,6 +248,7 @@ class HYLE_COMPUTE_API FfnBlock {
  private:
   explicit FfnBlock(void* be, void* galloc, void* wctx, void* wbuf, void* weights, int d,
                     int ffn, float eps) noexcept;
+  void reset() noexcept;
   void* be_ = nullptr;       // ggml_backend_t (compute backend)
   void* galloc_ = nullptr;   // ggml_gallocr_t (activation/intermediate device buffers, per-forward)
   void* wctx_ = nullptr;     // ggml_context* holding the resident weight tensors' metadata

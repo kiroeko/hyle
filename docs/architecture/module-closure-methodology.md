@@ -300,6 +300,8 @@ architecture 不写每日状态和 benchmark 点值；milestone 不承担当前�
 
 - correctness/security/ABI 缺陷；
 - 新平台、ISA、后端或编译器使合同失效；
+- 直接或传递依赖升级，改变了本模块实际编译进来的 API/ABI、默认 feature、算法、线程模型、
+  ownership、错误语义、平台选择或性能基线；
 - 同合同强 peer 证明复杂度落档或存在可复现 material LOSE；
 - 真实消费者暴露缺失能力、难用接口、复制机制或错误依赖；
 - 发布/授权/构建形状改变模块边界。
@@ -307,6 +309,13 @@ architecture 不写每日状态和 benchmark 点值；milestone 不承担当前�
 重开默认是**受影响项复证**，不是推翻所有旧证据。旧证书绑定的未修改算法仍可保留；新能力
 及其消费者转黄，完成相应平台、性能、API 和文档门后重新绑定。没有 workload 的猜测、单次
 亚纳秒波动、新库出现、命名偏好或为了增加 LOC，都不是重开理由。
+
+依赖升级不能只做“改 pin + 全量测试”。升级提交必须先产出影响账本：依赖的旧/新 revision、
+实际启用 feature、HYLE adapter/直接调用点、install/static closure、license/offline 来源，以及
+可能变化的语义和性能路径。然后按影响账本重开相应门：编译通过只复证了 source compatibility，
+测试通过只复证了已有断言；默认行为、错误映射、跨 backend identity、allocator ownership 和
+同合同性能仍须分别检查。若升级后发现旧 HYLE 实现本来就错误，按产品缺陷修实现并补回归，
+不能为了保持旧证书而在 adapter 中模拟错误行为。
 
 ## 十四、每个模块的最小交付清单
 

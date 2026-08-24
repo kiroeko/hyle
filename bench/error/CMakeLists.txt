@@ -14,11 +14,13 @@ if(HYLE_BENCH_ABSL)
   # Abseil is the mature-library rival for both equivalent contracts.
   target_compile_definitions(hyle_error_bench PRIVATE HYLE_BENCH_ABSL)
   target_link_libraries(hyle_error_bench PRIVATE absl::status absl::statusor)
+  hyle_mark_absl_benchmark_consumer(hyle_error_bench)
   target_compile_definitions(hyle_error_normal_bench PRIVATE HYLE_BENCH_ABSL)
   target_link_libraries(hyle_error_normal_bench PRIVATE
     absl::status
     absl::status_builder
     absl::statusor)
+  hyle_mark_absl_benchmark_consumer(hyle_error_normal_bench)
 endif()
 
 hyle_register_benches(error

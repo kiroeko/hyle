@@ -1,6 +1,9 @@
 /* Pure-C util-runtime consumer and C-surface coverage probe. */
 #include "hyle/c/util.h"
 
+_Static_assert(sizeof(hyle_util_registry_priority) == sizeof(uint32_t),
+               "hyle_util_registry_priority must have a fixed 32-bit ABI");
+
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>

@@ -21,32 +21,33 @@ namespace hyle {
 // ---- status code table (single source of truth) ----------------------------
 // X-macro: each row is X(PascalName, SCREAMING_NAME, value). The C++ StatusCode
 // enum, name table, factories and Is<Code>() predicates are generated from it.
-// The C ABI enum hyle_status_code (hyle/c/error.h) is hand-written for a clean
-// FFI header, but c_error.cc static_asserts every row against it -- a value
-// drift or a missing/renamed C code fails to compile. Adding a code = one row
-// here + one line in hyle/c/error.h (enum value + inline factory/predicate).
-// Code set follows the abseil/gRPC canonical taxonomy.
+// The C ABI's fixed-width hyle_status_code constants (hyle/c/error.h) are
+// hand-written for a clean FFI header, but c_error.cc static_asserts every row
+// against it -- a value drift or a missing/renamed C code fails to compile.
+// Adding a code = one row here + one line in hyle/c/error.h (constant value +
+// inline factory/predicate). Code set follows the abseil/gRPC canonical
+// taxonomy.
 //   X(PascalName, SCREAMING_NAME, value)
-#define HYLE_FOREACH_ERROR_STATUS_CODE(X)       \
-  X(Cancelled, CANCELLED, 1)                    \
-  X(Unknown, UNKNOWN, 2)                        \
-  X(InvalidArgument, INVALID_ARGUMENT, 3)       \
-  X(DeadlineExceeded, DEADLINE_EXCEEDED, 4)     \
-  X(NotFound, NOT_FOUND, 5)                     \
-  X(AlreadyExists, ALREADY_EXISTS, 6)           \
-  X(PermissionDenied, PERMISSION_DENIED, 7)     \
-  X(ResourceExhausted, RESOURCE_EXHAUSTED, 8)   \
-  X(FailedPrecondition, FAILED_PRECONDITION, 9) \
-  X(Aborted, ABORTED, 10)                       \
-  X(OutOfRange, OUT_OF_RANGE, 11)               \
-  X(Unimplemented, UNIMPLEMENTED, 12)           \
-  X(Internal, INTERNAL, 13)                     \
-  X(Unavailable, UNAVAILABLE, 14)               \
-  X(DataLoss, DATA_LOSS, 15)                    \
+#define HYLE_FOREACH_ERROR_STATUS_CODE(X)                                      \
+  X(Cancelled, CANCELLED, 1)                                                   \
+  X(Unknown, UNKNOWN, 2)                                                       \
+  X(InvalidArgument, INVALID_ARGUMENT, 3)                                      \
+  X(DeadlineExceeded, DEADLINE_EXCEEDED, 4)                                    \
+  X(NotFound, NOT_FOUND, 5)                                                    \
+  X(AlreadyExists, ALREADY_EXISTS, 6)                                          \
+  X(PermissionDenied, PERMISSION_DENIED, 7)                                    \
+  X(ResourceExhausted, RESOURCE_EXHAUSTED, 8)                                  \
+  X(FailedPrecondition, FAILED_PRECONDITION, 9)                                \
+  X(Aborted, ABORTED, 10)                                                      \
+  X(OutOfRange, OUT_OF_RANGE, 11)                                              \
+  X(Unimplemented, UNIMPLEMENTED, 12)                                          \
+  X(Internal, INTERNAL, 13)                                                    \
+  X(Unavailable, UNAVAILABLE, 14)                                              \
+  X(DataLoss, DATA_LOSS, 15)                                                   \
   X(Unauthenticated, UNAUTHENTICATED, 16)
 
-#define HYLE_FOREACH_STATUS_CODE(X) \
-  X(Ok, OK, 0)                      \
+#define HYLE_FOREACH_STATUS_CODE(X)                                            \
+  X(Ok, OK, 0)                                                                 \
   HYLE_FOREACH_ERROR_STATUS_CODE(X)
 
 enum class StatusCode : std::uint16_t {
@@ -57,7 +58,8 @@ enum class StatusCode : std::uint16_t {
 
 // Stable categories for one optional backend/OS error number. This deliberately
 // stays narrower than std::error_category or an arbitrary payload registry:
-// portable recovery uses StatusCode; backend-specific recovery may inspect this.
+// portable recovery uses StatusCode; backend-specific recovery may inspect
+// this.
 enum class NativeErrorDomain : std::uint16_t {
   None = 0,
   PosixErrno = 1,
@@ -77,15 +79,14 @@ struct NativeError {
   constexpr bool present() const noexcept {
     return domain != NativeErrorDomain::None;
   }
-  friend constexpr bool operator==(NativeError, NativeError) noexcept =
-      default;
+  friend constexpr bool operator==(NativeError, NativeError) noexcept = default;
 };
 
 // Stable, never-localized code name ("Ok", "NotFound", ...). Defined in the DLL
 // so the name table lives in exactly one translation unit.
 HYLE_ERROR_API std::string_view status_code_name(StatusCode code) noexcept;
-HYLE_ERROR_API std::string_view native_error_domain_name(
-    NativeErrorDomain domain) noexcept;
+HYLE_ERROR_API std::string_view
+native_error_domain_name(NativeErrorDomain domain) noexcept;
 
 // Map a C/POSIX errno value onto the canonical Status taxonomy. This is a
 // pure O(1) classification and returns Ok for error_number == 0. Individual
@@ -98,15 +99,15 @@ HYLE_ERROR_API StatusCode status_code_from_errno(int error_number) noexcept;
 // canonical taxonomy. The mapping is available on every host so tools can
 // classify persisted/remote Windows diagnostics without including windows.h.
 // Zero is Ok; unknown values remain Unknown rather than being marked retryable.
-HYLE_ERROR_API StatusCode status_code_from_win32(
-    std::uint32_t error_number) noexcept;
+HYLE_ERROR_API StatusCode
+status_code_from_win32(std::uint32_t error_number) noexcept;
 
 // Map a signed 32-bit COM/WinRT HRESULT without requiring windows.h. Any
 // non-negative HRESULT is success. HRESULT_FROM_WIN32 values reuse the Win32
 // taxonomy; common COM failures retain their precise portable meaning. The
 // mapping remains available on every host for persisted/remote diagnostics.
-HYLE_ERROR_API StatusCode status_code_from_hresult(
-    std::int32_t error_number) noexcept;
+HYLE_ERROR_API StatusCode
+status_code_from_hresult(std::int32_t error_number) noexcept;
 
 namespace detail {
 class StatusAccess;
@@ -120,18 +121,19 @@ constexpr StatusCode normalize_status_code(StatusCode code) noexcept {
   return status_code_is_valid(code) ? code : StatusCode::Unknown;
 }
 
-constexpr NativeErrorDomain normalize_native_error_domain(
-    NativeErrorDomain domain) noexcept {
+constexpr NativeErrorDomain
+normalize_native_error_domain(NativeErrorDomain domain) noexcept {
   switch (domain) {
-    case NativeErrorDomain::None:
-    case NativeErrorDomain::PosixErrno:
-    case NativeErrorDomain::Win32:
-    case NativeErrorDomain::Vulkan:
-    case NativeErrorDomain::CudaRuntime:
-    case NativeErrorDomain::CudaDriver:
-    case NativeErrorDomain::Nvrtc:
-    case NativeErrorDomain::HResult:
-    case NativeErrorDomain::Unknown: return domain;
+  case NativeErrorDomain::None:
+  case NativeErrorDomain::PosixErrno:
+  case NativeErrorDomain::Win32:
+  case NativeErrorDomain::Vulkan:
+  case NativeErrorDomain::CudaRuntime:
+  case NativeErrorDomain::CudaDriver:
+  case NativeErrorDomain::Nvrtc:
+  case NativeErrorDomain::HResult:
+  case NativeErrorDomain::Unknown:
+    return domain;
   }
   return NativeErrorDomain::Unknown;
 }
@@ -141,13 +143,14 @@ constexpr NativeErrorDomain normalize_native_error_domain(
 // the rep is never exposed.
 HYLE_ERROR_API std::uintptr_t status_make_heap(StatusCode code, const char *msg,
                                                std::size_t len) noexcept;
-HYLE_ERROR_API std::uintptr_t status_make_native_heap(
-    StatusCode code, NativeError native, const char *msg,
-    std::size_t len) noexcept;
-HYLE_ERROR_API std::uintptr_t status_make_context(
-    StatusCode code, NativeError native, const char *context,
-    std::size_t context_len, const char *message,
-    std::size_t message_len) noexcept;
+HYLE_ERROR_API std::uintptr_t status_make_native_heap(StatusCode code,
+                                                      NativeError native,
+                                                      const char *msg,
+                                                      std::size_t len) noexcept;
+HYLE_ERROR_API std::uintptr_t
+status_make_context(StatusCode code, NativeError native, const char *context,
+                    std::size_t context_len, const char *message,
+                    std::size_t message_len) noexcept;
 // Keep the hot retain operation in consumer code, like Abseil/Folly intrusive
 // carriers do. Only this stable prefix is visible; allocation, message storage
 // and the last-release/free path remain inside the DLL.
@@ -160,17 +163,17 @@ inline void status_retain(std::uintptr_t rep) noexcept {
 }
 HYLE_ERROR_API void status_release(std::uintptr_t rep) noexcept;
 HYLE_ERROR_API StatusCode status_heap_code(std::uintptr_t rep) noexcept;
-HYLE_ERROR_API std::string_view status_heap_message(
-    std::uintptr_t rep) noexcept;
-HYLE_ERROR_API NativeError status_heap_native_error(
-    std::uintptr_t rep) noexcept;
+HYLE_ERROR_API std::string_view
+status_heap_message(std::uintptr_t rep) noexcept;
+HYLE_ERROR_API NativeError
+status_heap_native_error(std::uintptr_t rep) noexcept;
 
-// Test-only: while enabled, Status message/detail allocation behaves as if
+// TEST-ONLY: while enabled, Status message/detail allocation behaves as if
 // malloc returned null. Shipped builds strip this (HYLE_TESTING off).
 #if defined(HYLE_TESTING)
 HYLE_ERROR_API void status_test_force_oom(bool enable) noexcept;
 #endif
-}  // namespace detail
+} // namespace detail
 
 // ---- Status -----------------------------------------------------------------
 // 8-byte error carrier (clay-style tagged pointer). Encoding of rep_:
@@ -181,8 +184,8 @@ HYLE_ERROR_API void status_test_force_oom(bool enable) noexcept;
 // ref-counted (retain/release in the DLL). Public surface is a single uintptr_t
 // -- no std owning type leaks across the ABI seam (coding-conventions line 22).
 class [[nodiscard]] Status {
- public:
-  Status() noexcept = default;  // OK
+public:
+  Status() noexcept = default; // OK
 
   Status(StatusCode code, std::string_view message) noexcept {
     code = detail::normalize_status_code(code);
@@ -214,45 +217,55 @@ class [[nodiscard]] Status {
                            std::string_view message = {}) noexcept {
     code = detail::normalize_status_code(code);
     native.domain = detail::normalize_native_error_domain(native.domain);
-    if (code == StatusCode::Ok) return Status{};
-    if (!native.present()) return Status(code, message);
+    if (code == StatusCode::Ok)
+      return Status{};
+    if (!native.present())
+      return Status(code, message);
     const std::uintptr_t heap = detail::status_make_native_heap(
         code, native, message.data(), message.size());
-    if (heap == 0) return Status(code);
+    if (heap == 0)
+      return Status(code);
     Status result;
     result.rep_ = heap;
     return result;
   }
 
   Status(const Status &o) noexcept : rep_(o.rep_) {
-    if (is_heap()) detail::status_retain(rep_);
+    if (is_heap())
+      detail::status_retain(rep_);
   }
   Status(Status &&o) noexcept : rep_(o.rep_) { o.rep_ = 0; }
   Status &operator=(const Status &o) noexcept {
     if (this != &o) {
-      if (is_heap()) detail::status_release(rep_);
+      if (is_heap())
+        detail::status_release(rep_);
       rep_ = o.rep_;
-      if (is_heap()) detail::status_retain(rep_);
+      if (is_heap())
+        detail::status_retain(rep_);
     }
     return *this;
   }
   Status &operator=(Status &&o) noexcept {
     if (this != &o) {
-      if (is_heap()) detail::status_release(rep_);
+      if (is_heap())
+        detail::status_release(rep_);
       rep_ = o.rep_;
       o.rep_ = 0;
     }
     return *this;
   }
   ~Status() {
-    if (is_heap()) detail::status_release(rep_);
+    if (is_heap())
+      detail::status_release(rep_);
   }
 
   bool ok() const noexcept { return rep_ == 0; }
 
   StatusCode code() const noexcept {
-    if (rep_ == 0) return StatusCode::Ok;
-    if (rep_ & kInlineTag) return static_cast<StatusCode>(rep_ >> kCodeShift);
+    if (rep_ == 0)
+      return StatusCode::Ok;
+    if (rep_ & kInlineTag)
+      return static_cast<StatusCode>(rep_ >> kCodeShift);
     return detail::status_heap_code(rep_);
   }
 
@@ -289,25 +302,27 @@ class [[nodiscard]] Status {
   // a second strong out-of-line copy in hyle_error.lib collides as soon as a
   // dependent archive also instantiates this hot-path wrapper.
   Status WithContext(std::string_view context) const & noexcept {
-    if (ok() || context.empty()) return *this;
+    if (ok() || context.empty())
+      return *this;
     return WithContextSlow(context);
   }
   Status WithContext(std::string_view context) && noexcept {
-    if (ok() || context.empty()) return std::move(*this);
+    if (ok() || context.empty())
+      return std::move(*this);
     return std::move(*this).WithContextSlow(context);
   }
 #endif
 
   // Per-code predicates: IsNotFound(), IsCancelled(), ... (Ok included).
-#define HYLE_STATUS_PREDICATE(name, screaming, value) \
+#define HYLE_STATUS_PREDICATE(name, screaming, value)                          \
   bool Is##name() const noexcept { return code() == StatusCode::name; }
   HYLE_FOREACH_STATUS_CODE(HYLE_STATUS_PREDICATE)
 #undef HYLE_STATUS_PREDICATE
 
   // Per-code factories: Status::NotFound("msg"), Status::Internal("msg"), ...
-#define HYLE_STATUS_FACTORY(name, screaming, value)            \
-  static Status name(std::string_view message = {}) noexcept { \
-    return Status(StatusCode::name, message);                  \
+#define HYLE_STATUS_FACTORY(name, screaming, value)                            \
+  static Status name(std::string_view message = {}) noexcept {                 \
+    return Status(StatusCode::name, message);                                  \
   }
   HYLE_FOREACH_ERROR_STATUS_CODE(HYLE_STATUS_FACTORY)
 #undef HYLE_STATUS_FACTORY
@@ -325,17 +340,19 @@ class [[nodiscard]] Status {
   // Keep the first failure while combining a sequence of independent
   // operations. A later error never overwrites an earlier one.
   void Update(const Status &status) noexcept {
-    if (ok() && !status.ok()) (void)(*this = status);
+    if (ok() && !status.ok())
+      (void)(*this = status);
   }
   void Update(Status &&status) noexcept {
-    if (ok() && !status.ok()) (void)(*this = std::move(status));
+    if (ok() && !status.ok())
+      (void)(*this = std::move(status));
   }
 
   // Make an intentionally discarded result visible at the call site. This is
   // preferable to a bare `(void)status`, especially at cleanup boundaries.
   void IgnoreError() const noexcept {}
 
- private:
+private:
   friend class detail::StatusAccess;
 
   // Keep the common OK/no-op path header-inline; only a real error crosses the
@@ -347,8 +364,7 @@ class [[nodiscard]] Status {
   static constexpr std::uintptr_t kInlineTag = 1;
   static constexpr std::uintptr_t kCodeShift = 2;
   static constexpr std::uintptr_t kMaxInlineRep =
-      (static_cast<std::uintptr_t>(StatusCode::Unauthenticated) <<
-       kCodeShift) |
+      (static_cast<std::uintptr_t>(StatusCode::Unauthenticated) << kCodeShift) |
       kInlineTag;
 
   // Every valid inline representation is <= kMaxInlineRep; process heap
@@ -357,7 +373,7 @@ class [[nodiscard]] Status {
   // `rep_ != 0 && (rep_ & 3) == 0` on AArch64.
   bool is_heap() const noexcept { return rep_ > kMaxInlineRep; }
 
-  std::uintptr_t rep_ = 0;  // 0 = OK
+  std::uintptr_t rep_ = 0; // 0 = OK
 };
 
 static_assert(sizeof(Status) == sizeof(std::uintptr_t),
@@ -368,14 +384,14 @@ static_assert(sizeof(Status) == sizeof(std::uintptr_t),
 // message is "context: native description". errno==0 is OK and ignores
 // context. The failure path performs one Status allocation; OOM preserves the
 // mapped code and drops only the message, like every other Status factory.
-HYLE_ERROR_API Status status_from_errno(
-    int error_number, std::string_view context = {}) noexcept;
+HYLE_ERROR_API Status status_from_errno(int error_number,
+                                        std::string_view context = {}) noexcept;
 
 // Construct a Status from a Win32 GetLastError value. On Windows the message
 // uses FormatMessage; other hosts retain a deterministic numeric description.
 // The native Win32 code is always preserved for machine-readable recovery.
-HYLE_ERROR_API Status status_from_win32(
-    std::uint32_t error_number, std::string_view context = {}) noexcept;
+HYLE_ERROR_API Status status_from_win32(std::uint32_t error_number,
+                                        std::string_view context = {}) noexcept;
 
 // Construct a Status from a COM/WinRT HRESULT. The raw signed 32-bit value is
 // preserved as NativeErrorDomain::HResult. Windows uses FormatMessage when it
@@ -383,4 +399,4 @@ HYLE_ERROR_API Status status_from_win32(
 HYLE_ERROR_API Status status_from_hresult(
     std::int32_t error_number, std::string_view context = {}) noexcept;
 
-}  // namespace hyle
+} // namespace hyle

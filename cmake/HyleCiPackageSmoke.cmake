@@ -108,6 +108,15 @@ foreach(_linkage IN ITEMS shared static)
     "-DHYLE_INCOMPATIBLE_VERSION:STRING=${_hyle_incompatible_version}"
     -P "${HYLE_SOURCE_DIR}/cmake/HyleCheckPackageVersion.cmake")
 
+  # Consume the SDK only after moving the complete install tree.  This catches
+  # absolute build/prefix paths in exported targets and proves the binary
+  # artifact is an actual relocatable SDK rather than a same-machine install
+  # demonstration.
+  set(_relocated_prefix "${HYLE_SMOKE_ROOT}/relocated-prefix-${_linkage}")
+  file(REMOVE_RECURSE "${_relocated_prefix}")
+  file(RENAME "${_prefix}" "${_relocated_prefix}")
+  set(_prefix "${_relocated_prefix}")
+
   _hyle_smoke_run("configure ${_linkage} installed consumers"
     "${CMAKE_COMMAND}" -S "${HYLE_SOURCE_DIR}/samples/05_installed_c"
     -B "${_consumer}"

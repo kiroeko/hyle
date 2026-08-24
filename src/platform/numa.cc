@@ -1,5 +1,7 @@
 #include "hyle/platform/numa.h"
 
+#include "numa_internal.h"
+
 #include <array>
 #include <cstdio>
 #include <cstring>
@@ -61,13 +63,6 @@ struct HyleMemExtendedParameter {
 
 enum { kMemExtendedParameterNumaNode = 2 };
 
-// Keep the public Windows SDK level out of HYLE's API contract. These values
-// are the documented VirtualAlloc2/VirtualFree placeholder flags and let a
-// build with an older SDK still discover the entry point at runtime.
-inline constexpr ULONG kMemReplacePlaceholder = 0x00004000UL;
-inline constexpr ULONG kMemReservePlaceholder = 0x00040000UL;
-inline constexpr DWORD kMemPreservePlaceholder = 0x00000002UL;
-
 using PVirtualAlloc2 = PVOID(WINAPI*)(HANDLE, PVOID, SIZE_T, ULONG, ULONG,
                                       HyleMemExtendedParameter*, ULONG);
 
@@ -110,6 +105,19 @@ WinNumaFns& win_fns() {
     return x;
   }();
   return f;
+}
+
+// A selected-node allocation must retain the public one-owner contract:
+// callers release the complete contiguous range with one vm_release call.
+// VirtualAllocExNuma commits stripes inside one ordinary reservation and keeps
+// that ownership shape. VirtualAlloc2 placeholder replacement does not: every
+// replaced stripe becomes a separate allocation that must be released and
+// coalesced individually. Advertising that path would make both rollback and
+// the public raw/RAII/C owners leak all but one stripe.
+constexpr bool win_selected_interleave_supported(
+    bool has_virtual_alloc_ex_numa, bool has_virtual_alloc2) noexcept {
+  (void)has_virtual_alloc2;
+  return has_virtual_alloc_ex_numa;
 }
 
 #elif defined(HYLE_OS_LINUX)
@@ -353,16 +361,27 @@ Result<unsigned> make_numa_mask(std::span<const unsigned> nodes,
 
 }  // namespace
 
+#if defined(HYLE_OS_WINDOWS) && defined(HYLE_TESTING)
+namespace detail {
+bool windows_selected_interleave_supported_for_testing(
+    bool has_virtual_alloc_ex_numa, bool has_virtual_alloc2) noexcept {
+  return win_selected_interleave_supported(has_virtual_alloc_ex_numa,
+                                            has_virtual_alloc2);
+}
+}  // namespace detail
+#endif
+
 NumaCapability numa_capabilities() noexcept {
   NumaCapability capabilities = NumaCapability::kNone;
   if (topology().native)
     capabilities = capabilities | NumaCapability::kTopology;
 #if defined(HYLE_OS_WINDOWS)
   auto& f = win_fns();
-  if (f.virtual_alloc2 || f.virtual_alloc_ex_numa) {
-    capabilities = capabilities | NumaCapability::kPreferredReservation |
-                   NumaCapability::kSelectedInterleave;
-  }
+  if (f.virtual_alloc2 || f.virtual_alloc_ex_numa)
+    capabilities = capabilities | NumaCapability::kPreferredReservation;
+  if (win_selected_interleave_supported(f.virtual_alloc_ex_numa != nullptr,
+                                        f.virtual_alloc2 != nullptr))
+    capabilities = capabilities | NumaCapability::kSelectedInterleave;
 #elif defined(HYLE_OS_LINUX) && defined(SYS_mbind)
   capabilities = capabilities | NumaCapability::kPreferredReservation |
                  NumaCapability::kBindExisting |
@@ -785,24 +804,22 @@ vm_allocate_numa_interleaved(std::size_t size,
 
 #elif defined(HYLE_OS_WINDOWS)
   auto& f = win_fns();
-  // VirtualAllocExNuma can commit a stripe inside one ordinary reservation.
-  // If only VirtualAlloc2 is available, its documented replacement protocol
-  // requires a placeholder reservation that is split before each stripe is
-  // replaced. A plain MEM_COMMIT into a normal reservation is not an
-  // equivalent fallback.
-  const bool use_placeholders = !f.virtual_alloc_ex_numa && f.virtual_alloc2;
-  void* data = use_placeholders
-                   ? f.virtual_alloc2(
-                         GetCurrentProcess(), nullptr, aligned,
-                         MEM_RESERVE | kMemReservePlaceholder, PAGE_NOACCESS,
-                         nullptr, 0)
-                   : ::VirtualAlloc(nullptr, aligned, MEM_RESERVE,
-                                    PAGE_NOACCESS);
+  const PVirtualAllocExNuma commit_numa = f.virtual_alloc_ex_numa;
+  // Only VirtualAllocExNuma preserves one ordinary reservation while
+  // committing preferred-node stripes inside it. VirtualAlloc2 placeholder
+  // replacement creates one independently owned allocation per stripe, which
+  // cannot satisfy NumaAllocation/VmRegion's single vm_release contract.
+  if (!win_selected_interleave_supported(commit_numa != nullptr,
+                                         f.virtual_alloc2 != nullptr)) {
+    return std::unexpected(Status::Unimplemented(
+        "selected-node NUMA interleaved allocation requires "
+        "VirtualAllocExNuma on Windows"));
+  }
+  void* data =
+      ::VirtualAlloc(nullptr, aligned, MEM_RESERVE, PAGE_NOACCESS);
   if (data == nullptr) {
     return std::unexpected(numa_native_status(
-        use_placeholders ? "VirtualAlloc2(MEM_RESERVE_PLACEHOLDER)"
-                         : "VirtualAlloc(MEM_RESERVE NUMA interleave)",
-        ::GetLastError()));
+        "VirtualAlloc(MEM_RESERVE NUMA interleave)", ::GetLastError()));
   }
 
   auto* base = static_cast<std::byte*>(data);
@@ -812,28 +829,8 @@ vm_allocate_numa_interleaved(std::size_t size,
                                    ? placement_chunk
                                    : aligned - offset;
     const DWORD node = static_cast<DWORD>(selected[stripe % selected.size()]);
-    void* committed = nullptr;
-    if (!use_placeholders) {
-      committed =
-          f.virtual_alloc_ex_numa(GetCurrentProcess(), base + offset, length,
+    void* committed = commit_numa(GetCurrentProcess(), base + offset, length,
                                   MEM_COMMIT, PAGE_READWRITE, node);
-    } else {
-      if (offset + length < aligned &&
-          !::VirtualFree(base + offset, length,
-                         MEM_RELEASE | kMemPreservePlaceholder)) {
-        const DWORD code = ::GetLastError();
-        (void)vm_release(data, aligned);
-        return std::unexpected(numa_native_status(
-            "VirtualFree(MEM_PRESERVE_PLACEHOLDER)", code));
-      }
-      HyleMemExtendedParameter param{};
-      param.Type = kMemExtendedParameterNumaNode;
-      param.ULong = node;
-      committed = f.virtual_alloc2(GetCurrentProcess(), base + offset, length,
-                                   MEM_RESERVE | MEM_COMMIT |
-                                       kMemReplacePlaceholder,
-                                   PAGE_READWRITE, &param, 1);
-    }
     if (committed != base + offset) {
       const DWORD code = ::GetLastError();
       (void)vm_release(data, aligned);

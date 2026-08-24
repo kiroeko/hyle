@@ -1,9 +1,14 @@
-# core 性能证书
+# core 历史性能证据
+
+> **2026-08-25 freshness gate：**本页 IntrusiveList 点值和 compiler/cache 证据绑定下述
+> 2026-07 commit。它们可作本轮回归输入，但 core 已由依赖升级/消费者红队重新打开；相同
+> source identity、peer pin、编译合同与三平台复跑完成前，不是当前 working tree 的发布证书。
+> 现行状态只看 [`pre-release-readiness`](../milestones/pre-release-readiness.md)。
 
 > 本页是 core 性能结论的唯一信源。设计与使用分别见
 > [`core-design`](../architecture/core-design.md) 和 [`guide/core`](../guide/core.md)。
 > IntrusiveList 数字绑定 `71dabf7`。2026-07-28 真实 SIMD/vqsort 消费者触发 compiler/cache
-> primitive 局部重开；它没有改动链表实现，因此旧链表点值仍有效。新增形状已在
+> primitive 局部重开；它没有改动链表实现，因此旧链表点值仍可作历史输入。新增形状当时已在
 > Windows/WSL/Apple 完成正确性、codegen 与真实消费者复证。
 
 ## 测什么、不测什么
@@ -55,7 +60,7 @@ Windows 主工作树同步。配置 core benchmark 仍触发全项目可选后�
 | rival-first | 非空 list 析构自动摘链 | **0.918** | 0.939 | — | TIE；HYLE 12/15 较快，p=.035 |
 
 双顺序都得到同一产品结论：FIFO 明确领先，乱序删除与析构摘链同档。最终三平台没有任何
-同合同场景被判 LOSE；这就是当前 core 热路的 SOTA 证据边界，不外推到未测 workload。
+同合同场景被判 LOSE；这就是该轮 core 热路的 SOTA 历史证据边界，不外推到未测 workload。
 
 ## 其他 core 能力
 
@@ -72,9 +77,15 @@ Windows 主工作树同步。配置 core benchmark 仍触发全项目可选后�
 ### 2026-07-28 compiler/cache primitive 受影响验证
 
 最终 header 的 Release object 已机械检查：MSVC x64 的 C/C++ local/NTA/write 分别为
-`prefetcht0/prefetchnta/prefetcht0`（MSVC 无 ET0 时 write 明确退为读 hint），GCC14 x64 为
-`prefetcht0/prefetchnta/prefetchw`；MSVC ARM64 交叉编译为
-`PLDL1KEEP/PLDL1STRM/PSTL1KEEP`。三者都在调用点内联，无 HYLE DLL hop。
+`prefetcht0/prefetchnta/prefetcht0`（MSVC 无 ET0 时 write 明确退为读 hint）；2026-08-25
+复核的 GCC14 与 Clang20 `-march=x86-64` C/C++ baseline 都是
+`prefetcht0/prefetchnta/prefetcht0`，不会越过 target 强发 PREFETCHW，而 `-march=znver3`
+才安全选择 `prefetchw`。同日复核的 GCC14 `aarch64-linux-gnu -march=armv8-a`、
+Clang20 `--target=aarch64-linux-gnu -march=armv8-a` 与 Clang20
+`--target=arm64-apple-macos11` write hint 都是 `prfm pstl1keep`；后者是 Darwin target
+交叉 codegen，不冒充 AppleClang 本机验证。MSVC ARM64 交叉编译为
+`PLDL1KEEP/PLDL1STRM/PSTL1KEEP`。三者都在调用点内联，无 HYLE DLL hop。下文另列的
+AppleClang 21 / Apple M4 object 是实际 macOS 本机证据。
 
 restrict/flatten/unroll 的正常消费者结果只在
 [`benchmarks-simd`](./benchmarks-simd.md) 维护：KV32 partial-sort 的 Windows/WSL n=15 受影响门
@@ -86,7 +97,8 @@ object 中 compiler-contract loop 都是本地向量优化代码，不引用 HYL
 factor-4 hint 可见为四段 vector-body 展开。Debug 的 `HYLE_C_ASSUME(false)` 在两者均由
 death-test 验证为诊断后终止。AppleClang 21 的 C object 同样为本地向量化/展开代码；三种
 prefetch 分别生成 `prfm pldl1keep`、`prfm pldl1strm`、`prfm pstl1keep`，Release/Debug
-core 均为 4/4。
+core 均为 4/4。2026-08-25 另以 Clang20 `-O0 -fsanitize=undefined -Werror` 编译 pure-C
+consumer，unroll 安全退为空且零 `-Wpass-failed`；同一 TU 的 `-O2 -Werror` 仍保留 Release hint。
 
 ## 复跑
 

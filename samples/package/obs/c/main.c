@@ -1,7 +1,17 @@
 #define HYLE_OBS_COMPILED_MIN_LEVEL 2
 #include <hyle/c/obs.h>
 
+#include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
+
+#if defined(_MSC_VER)
+typedef char installed_log_level_must_be_u32[
+    sizeof(hyle_obs_log_level) == sizeof(uint32_t) ? 1 : -1];
+#else
+_Static_assert(sizeof(hyle_obs_log_level) == sizeof(uint32_t),
+               "installed log level ABI must stay fixed-width");
+#endif
 
 typedef struct capture {
   int writes;
@@ -40,11 +50,28 @@ int main(void) {
 
   if (!status_ok_and_free(hyle_obs_set_default_sink_enabled(0))) return 1;
   if (!status_ok_and_free(hyle_obs_set_level(HYLE_OBS_LOG_TRACE))) return 2;
+  hyle_obs_trace_fiber_enter("package-c-fiber");
+  hyle_obs_trace_fiber_leave();
 
   capture out = {0, 0, 0};
   hyle_obs_sink* sink = NULL;
-  if (!status_ok_and_free(
-          hyle_obs_sink_create(&sink, capture_write, capture_flush, &out))) {
+  const size_t control_size = hyle_obs_sink_control_size();
+  const size_t control_alignment = hyle_obs_sink_control_alignment();
+  if (control_alignment == 0 ||
+      (control_alignment & (control_alignment - 1)) != 0 ||
+      control_size > SIZE_MAX - (control_alignment - 1)) {
+    return 3;
+  }
+  void* control_storage =
+      malloc(control_size + control_alignment - 1);
+  if (control_storage == NULL) return 3;
+  const uintptr_t aligned_address =
+      ((uintptr_t)control_storage + control_alignment - 1) &
+      ~(uintptr_t)(control_alignment - 1);
+  if (!status_ok_and_free(hyle_obs_sink_init(
+          &sink, (void*)aligned_address, control_size, capture_write,
+          capture_flush, &out))) {
+    free(control_storage);
     return 3;
   }
 
@@ -57,11 +84,17 @@ int main(void) {
   int emitted = 0;
   if (!status_ok_and_free(hyle_obs_emit_record(&emitted, &record)) ||
       !emitted || hyle_obs_flush_sinks() != 1) {
-    (void)hyle_obs_sink_destroy(sink);
+    if (status_ok_and_free(hyle_obs_sink_destroy(sink))) {
+      free(control_storage);
+    }
     return 4;
   }
 
-  if (!status_ok_and_free(hyle_obs_sink_destroy(sink))) return 5;
+  if (!status_ok_and_free(hyle_obs_sink_destroy(sink))) {
+    free(control_storage);
+    return 5;
+  }
+  free(control_storage);
   if (!status_ok_and_free(hyle_obs_set_default_sink_enabled(1))) return 6;
   return out.writes == 1 && out.flushes == 1 && out.matched ? 0 : 7;
 }

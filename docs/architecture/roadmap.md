@@ -43,7 +43,7 @@ math ──▶ users（当前无生产下游）
 | `simd` | error、platform | — | 统一错误契约由 error 提供；运行期 ISA 能力由 platform 提供 |
 | `util-runtime` (`hyle_util`) | error、mem、container、util-core | — | Registry/C adapter 显式借共享 Status/allocator；原生 util-core 头不依赖该二进制目标 |
 | `sched` | error、mem、container、platform、util-core | time | 短临界区与泛型同步路径；后者随 sched 严审；obs trace hook |
-| `io` | — | error、mem、container；有 fcontext 时 sched | obs trace hook |
+| `io` | error、mem、container；有 fcontext 时 sched | — | obs trace hook |
 | `compute` | error、mem；有 fcontext 时 sched | platform、simd；可选 GPU/ggml 供应商 | obs trace hook |
 | `graph` | error、mem、container；有 fcontext 时 sched | util-core | 首错槽短临界区 |
 
@@ -58,7 +58,9 @@ util 能力时必须先判断属于哪一层，禁止让 util-core 反向 includ
 
 `obs` 同样有两条线：`hyle_obs` 是独立的同步日志/C ABI 产品；`hyle_trace` 是
 `HyleModule.cmake` 自动 PUBLIC 传播给每个模块的 INTERFACE gate。默认 OFF 时它为空，开启时
-所有模块汇入同一个 `hyle_tracy_client`。产品代码 include `obs/trace.h` 不等于链接日志 DLL，
+shared 构建或单一最终 link image 的 static 构建汇入同一个 `hyle_tracy_client`；多个
+DLL/plugin 不得各自静态链接 trace-on SDK，必须改用 shared `hyle_obs`。产品代码 include
+`obs/trace.h` 不等于链接日志 DLL，
 依赖图必须用跨切虚线而不是伪造 `hyle_obs → 全库` 的硬边。
 
 ### 无环结论与已知收束边
@@ -74,9 +76,10 @@ mem/sched/util-runtime/graph 汇入但不增加二进制链长度；time 从 err
 转换 helper 使用同一表示，但不会取得 clock、sleep、deadline 或 timer 符号，因而不能伪造成
 `hyle_platform -> hyle_time` target 边或 DLL 依赖。
 
-当前已认证的 core/error/obs/platform/time/mem/util-core/util-runtime 均无模块私有
-`last_error`；C 冷控制面使用共享 `hyle_status`，原生 C++ 实现直接使用 `Status/Result`，不绕经
-C ABI。尚未认证模块的 adoption 只在其严格波次结论中更新，不能把历史欠账写成当前全局事实。
+共享错误合同的架构要求是：模块不得维护私有 `last_error`；C 冷控制面使用共享
+`hyle_status`，原生 C++ 实现直接使用 `Status/Result`，不绕经 C ABI。哪些模块已在当前
+working tree 上完成 adoption 复证属于快变验收状态，只由
+[`pre-release-readiness`](../milestones/pre-release-readiness.md) 维护，本页不复制认证名单。
 
 这些底座之间的“合理使用”不等于彼此全连接。error 是所有可恢复失败的根；platform 独占
 OS/thread/VM/NUMA 机制；time 独占 clock/sleep/timer；mem 向下组合 error/platform/util-core；
@@ -90,7 +93,8 @@ runtime。模块在自己的层级直接使用 libc/OS 只允许两类情况：�
 **澄清**：依赖层（阶段 P0-P6）是**拓扑序**（谁先能编译），**不是实现步骤或当前复审队列**。把总量只分成 7 个拓扑层仍不能当施工清单；真正的施工粒度在 milestone。正确做法分四个轴：
 
 - **轴 A — 依赖层（阶段 P0-P6）**：哪层先能编译，下面表的拓扑序。粗粒度。
-- **轴 B — 里程碑（M）**：每个 work item 自成“实现→正确性→性能→文档”闭环。数量、实测 LOC 和当前状态只在 milestones/README 维护。
+- **轴 B — 里程碑（M）**：每个 work item 自成“实现→正确性→性能→文档”闭环。任务数量与
+  dated LOC 在 milestones/README；当前模块认证状态只在 pre-release-readiness 维护。
 - **轴 C — 交付能力（C）**：用户/消费者视角"这个库能做什么"。轴 B 是**机制**（收割接缝、timer queue、work-stealing），轴 C 是**能力**（带超时的网络 io、优雅关闭、取消）。见下节。
 - **轴 D — 模块严格收口（R）**：已有代码按“真实场景→成熟库→API/复杂度→C/C++→下游采用→文档”重新认证。它按接口爆炸半径排序，不按旧 benchmark 或目录顺序。
 
@@ -158,9 +162,9 @@ simd 不进 sched 链，只在 compute 汇合。obs-runtime 是用户产品根�
 
 | 波次 | 审查单元 | 排序理由 |
 |---|---|---|
-| **R0 基线** | error、platform、mem、time | 四模块已按当前实际使用标准形成严格证书；mem 以 clean `c640072` 关闭 shared adapter/realloc 性能尾，`8c85331` 再关闭 PMR zero-size、显式 runtime adapter 与 installed consumer 合同 |
-| **R1 根、构建与接缝** | core ✅ → build/package system ✅ → util-core seam ✅ → obs ✅ | core compiler/cache primitive 已由 Windows/WSL/M4 codegen、正确性及 SIMD/vqsort 真实消费者复证，四项恢复冻结 |
-| **R2 容器层** | container ✅ → util-runtime/完整 util ✅ | container 恢复全绿后，util-runtime 以 `1b148ef`/`70fa4e8` 完成一表两阶段 raw/Result Registry、共享 Status/allocator、完整 C ABI、TSan/package 与三平台 n=15 收口 |
+| **R0 基线** | error → platform → mem → time | 先稳定共享失败值与 OS 机制，再收 allocator/NUMA 和 clock/timer；后续模块都直接消费这些合同 |
+| **R1 根、构建与接缝** | core → build/package system → util-core seam → obs | 先定零依赖头、真实 target/package 图与 header-only seam，再审横切日志/trace；避免下游复证建立在漂移的编译或交付合同上 |
+| **R2 容器层** | container → util-runtime/完整 util | container 先稳定 ownership/hash/并发形状，依赖它的 Registry/C adapter 随后收口；本行只表达顺序，不表达当前绿证 |
 | **R3 运行时链** | sched → io | sched 汇合 mem/time/container/platform，io 再消费 sched；反序会反复改 timeout/cancel/completion 形状 |
 | **R4 计算基础** | math↔simd 边界审查 → simd | math 是 clay math 被 std/SIMD 吸收后的残余，不先假定它应独立；先裁决 scalar/std/SIMD 归属，再冻结 SIMD dispatch、类型、算法与正常 batch API |
 | **R5 未完支柱** | compute → graph | 这两者不是“复审已完成实现”，而是先补真实能力再按同一合同收口；graph 最后汇合 sched/compute/simd |
@@ -171,9 +175,8 @@ R1 的 build/package system 是独立审查单元：CMake target 图必须准确
 source embed、`add_subdirectory`、install/`find_package`、CI/交叉编译有一致迁移路径；preset、
 toolchain 和脚本执行环境契约，文档只解释。完成它之后，R1 的 util 才审
 `SpinLock/cpu_relax`、`Ref`、`ScopeGuard`、RNG/type-name 等低层公开头的
-依赖与形状；Registry 和整个 `hyle_util` 产品必须等 container，该前置与 util-runtime
-严格审查现均已完成。这是两个真实
-构建层的门，不是对同一模块做两轮无边界复审。当前严格状态与唯一“下一模块”只见
+依赖与形状；Registry 和整个 `hyle_util` 产品必须等 container。这是两个真实构建层的门，
+不是对同一模块做两轮无边界复审；本页不记录它们是否已完成。当前严格状态与唯一“下一模块”只见
 [`pre-release-readiness.md`](../milestones/pre-release-readiness.md)。
 
 math 不按“28 行小模块”单独快速封口。它不是从用户场景独立设计出来的产品，而是 clay math
@@ -197,7 +200,8 @@ math 不按“28 行小模块”单独快速封口。它不是从用户场景独
 > 本文件只管**拓扑序、施工计划、决策、验收门槛**这些慢变内容。
 >
 > 本节有意不再复制“一句话现状”、模块冻结表、LOC 或完成百分比：这些快变信息曾多次与
-> milestones 漂移。roadmap 只回答依赖顺序和验收门；当前状态沿上面的唯一信源链接读取。
+> milestones 漂移。roadmap 只回答依赖顺序和验收门；当前认证状态只读
+> [`pre-release-readiness`](../milestones/pre-release-readiness.md)。
 
 
 

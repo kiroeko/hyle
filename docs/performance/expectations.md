@@ -2,6 +2,11 @@
 
 > 本页是 [performance 总账](./README.md) 的预期/边界部分:AVX-512 上架状态、主表(时间/空间分列)、Amdahl 整体观、诚实边界、验证 gate。实测数据见同目录的 benchmarks-*.md。
 
+> **新鲜度：**本页的点值和“已完成”描述绑定 2026-07 的 source/peer/nanobench 形状，
+> 只作历史设计输入。nanobench 4.6.0 升级后的当前证书与复开状态以
+> [`README`](./README.md) 和
+> [`pre-release-readiness`](../milestones/pre-release-readiness.md) 为准。
+
 ## AVX-512 上架状态（①②③ 已接线并经 Intel SDE 执行对拍；性能待真机；④ pointer-bump 已完成）
 
 > 逐模块性能审查(error→simd→math→dtype→platform→mem→time)后，把“已赢或追平 SOTA、但本机硬件够不到、或仍差一条指令”的优化显式记账于此。本开发机 i9-13900K 的 P-core 不提供 AVX-512；①②③ 已完成代码、dispatch、CMake tier、双平台编译/objdump，并由 Intel SDE 通过正确性与派发执行门。SDE 不模拟真实硬件时序，性能结论仍待 AVX-512 真机 benchmark。④ 与硬件无关，已完成双平台验证。
@@ -13,7 +18,7 @@
 | ③ | **math exp/log/tanh 512b 变体** | ✅上架:`transcendental_{xsimd,highway}_avx512.cc`(借同核 512b/16-lane),`math_dispatch` 加 avx512 档优先(exp/tanh→xsimd-512、log→highway-512)回退 AVX2;新 `hyle_set_avx512_math_isa`(全 AVX-512 组+cd) | objdump:GCC xsimd512 92zmm/highway512 43zmm、MSVC xsimd512 581zmm。`Math.*MatchesLibm` 对 libm 对拍,本机走 AVX2 路径过 | Intel SDE 正确性门已通过；性能仍待真机。**MSVC log-512 已排除**(Highway AVX3=`HWY_BROKEN_MSVC` 退 ymm,故 highway512 仅 GCC/Clang;MSVC log 留 avx2 highway,同速不假装512) |
 | ④ | **Arena/StackAllocator pointer-style bump**(硬件无关) | ✅完成:offset-based(存 `base_`+`top_`/`offset_`,每 `allocate` 重算 `base+offset`→对齐→减回 offset)改 canonical `cur_`/`end_` 双指针纯指针 bump,直接对齐活指针。Marker 从 size_t 偏移改 byte*(API 不变) | objdump(GCC -O2 inlined):offset 版 ~15 指令含 3 load + base+offset 往返(对齐一次、overflow 记账再算一次);pointer 版 ~10 指令 2 load 无 +base/-base。**bench-stat 15 遍实测(Linux):Arena 0.68→0.34ns、Stack 0.68→0.34ns、mark/rewind 0.63→0.43ns=~2x**(gap 50%»spread ~12%,真赢非平局) | — |
 
-**诚实定性**:①②③ 已从"留账非即做"转为**已上架+双平台编译 objdump 验真**(用户指令:写完接线才能在真机验证,否则永远落不了地);三项的 512-bit 执行正确性是 `存疑`,待 Intel SDE/真 AVX-512 机跑既有测试(全部宽度无关/对 oracle,真机一跑即自证,无需新码)。**关键发现**:Highway 在 MSVC 把整个 AVX3 标 `HWY_BROKEN`(已知 codegen bug),故 ③ 的 highway-512 log 仅 GCC/Clang 上是真 512,MSVC 退 ymm 已显式排除——不假装 512。④ 已完成(pointer-style bump);**实测意外——不是预期的"亚-ns 平局"而是 ~2x 真赢**(Arena/Stack 0.68→0.34ns、mark/rewind 0.63→0.43ns,15 遍 gap 50%»spread 12%):offset 版每 alloc 多一次 `base_` load + base±offset 往返算两遍(对齐一次、overflow 记账再算一次),objdump ~15 指令 vs pointer 版 ~10 指令;在 0.68ns(仅 ~3-4 指令成本)的量级上省 5 条指令直接砍半。**"亚-ns 天花板不值得做"的预判被实测推翻**——bump 成本本身太小,任何多余指令占比都放大。**没有其它"本机低成本高收益"项**——time/`monotonic_ns` 那种(频率特判换 1.48x)的机会,逐模块扫描后未再发现(④ 这个 2x 是本轮附带发现的第二个)。
+**2026-07 当轮定性**:①②③ 已从"留账非即做"转为**已上架+双平台编译 objdump 验真**(用户指令:写完接线才能在真机验证,否则永远落不了地);三项的 512-bit 执行正确性是 `存疑`,待 Intel SDE/真 AVX-512 机跑既有测试(全部宽度无关/对 oracle,真机一跑即自证,无需新码)。**关键发现**:Highway 在 MSVC 把整个 AVX3 标 `HWY_BROKEN`(已知 codegen bug),故 ③ 的 highway-512 log 仅 GCC/Clang 上是真 512,MSVC 退 ymm 已显式排除——不假装 512。④ 当时已完成(pointer-style bump);**当轮实测意外——不是预期的"亚-ns 平局"而是 ~2x 真赢**(Arena/Stack 0.68→0.34ns、mark/rewind 0.63→0.43ns,15 遍 gap 50%»spread 12%):offset 版每 alloc 多一次 `base_` load + base±offset 往返算两遍(对齐一次、overflow 记账再算一次),objdump ~15 指令 vs pointer 版 ~10 指令;在 0.68ns(仅 ~3-4 指令成本)的量级上省 5 条指令直接砍半。**"亚-ns 天花板不值得做"的预判被实测推翻**——bump 成本本身太小,任何多余指令占比都放大。“没有其它本机低成本高收益项”只描述 2026-07 那轮扫描，不能外推为当前代码或未来参考库永远没有机会。
 
 ## 主表：时间 / 空间分列
 

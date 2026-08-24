@@ -11,12 +11,17 @@
 #include <unordered_map>
 #include <vector>
 
+#include "hyle/container/string_ref.h"
 #include "hyle/container/swiss_table.h"
 #include "hyle/mem/allocator.h"
 
-using hyle::container::SwissTable;
 using hyle::container::FlatHashMap;
 using hyle::container::FlatHashSet;
+using hyle::container::HardenedStringHash;
+using hyle::container::StringEqual;
+using hyle::container::StringHash;
+using hyle::container::SwissTable;
+using hyle::container::string_ref;
 using hyle::mem::Allocator;
 using hyle::mem::system_allocator;
 
@@ -26,6 +31,20 @@ static_assert(std::forward_iterator<FlatHashSet<int>::iterator>);
 static_assert(std::is_copy_constructible_v<FlatHashMap<int, std::string>>);
 static_assert(!std::is_copy_constructible_v<
               FlatHashMap<int, std::unique_ptr<int>>>);
+static_assert(sizeof(StringHash) == sizeof(std::uint64_t));
+static_assert(std::is_nothrow_default_constructible_v<StringHash>);
+static_assert(std::is_empty_v<StringEqual>);
+static_assert(sizeof(HardenedStringHash) == 2 * sizeof(std::uint64_t));
+static_assert(!std::is_default_constructible_v<HardenedStringHash>);
+static_assert(std::is_nothrow_invocable_r_v<std::uint64_t, StringHash,
+                                            const std::string&>);
+static_assert(std::is_nothrow_invocable_r_v<bool, StringEqual,
+                                            const std::string&,
+                                            std::string_view>);
+static_assert(requires {
+  typename StringHash::is_transparent;
+  typename StringEqual::is_transparent;
+});
 
 namespace {
 
@@ -35,26 +54,6 @@ void* fail_realloc(void*, void*, std::size_t, std::size_t,
                    std::size_t) noexcept {
   return nullptr;
 }
-
-struct TransparentStringHash {
-  std::uint64_t operator()(const std::string& value) const noexcept {
-    return operator()(std::string_view(value));
-  }
-  std::uint64_t operator()(std::string_view value) const noexcept {
-    return hyle::container::hash_bytes(value.data(), value.size());
-  }
-};
-
-struct TransparentStringEq {
-  bool operator()(const std::string& left,
-                  const std::string& right) const noexcept {
-    return left == right;
-  }
-  bool operator()(const std::string& left,
-                  std::string_view right) const noexcept {
-    return left == right;
-  }
-};
 
 struct CountedMapValue {
   static int constructions;
@@ -487,8 +486,7 @@ TEST(FlatHashMap, TryEmplaceConstructsOnlyForAbsentKeysAndSubscriptIsFamiliar) {
 }
 
 TEST(SwissTable, OwnsNonTrivialStringKeys) {
-  SwissTable<std::string, int, TransparentStringHash, TransparentStringEq>
-      table;
+  SwissTable<std::string, int, StringHash, StringEqual> table;
   for (int i = 0; i < 500; ++i) {
     table.insert("key-" + std::to_string(i), i);
   }
@@ -497,15 +495,60 @@ TEST(SwissTable, OwnsNonTrivialStringKeys) {
 }
 
 TEST(SwissTable, HeterogeneousLookupAndEraseAvoidKeyConstruction) {
-  SwissTable<std::string, int, TransparentStringHash, TransparentStringEq>
-      table;
+  SwissTable<std::string, int, StringHash, StringEqual> table;
   table.insert("alpha", 7);
   const std::string_view query = "alpha";
   ASSERT_NE(table.find(query), nullptr);
   EXPECT_EQ(*table.find(query), 7);
   EXPECT_TRUE(table.contains(query));
+  EXPECT_EQ(*table.find(string_ref{"alpha"}), 7);
+  EXPECT_EQ(*table.find("alpha"), 7);
   EXPECT_TRUE(table.erase(query));
   EXPECT_FALSE(table.contains(query));
+}
+
+TEST(SwissTable, PublicStringHelpersShareOneByteEqualityClass) {
+  const std::string owned = "alpha";
+  const std::string_view view = owned;
+  const string_ref ref{owned};
+  constexpr char embedded[] = {'a', '\0', 'b', '\0'};
+  const std::string embedded_owned(embedded, 3);
+  const std::string embedded_prefix(embedded, 1);
+  const std::string_view embedded_view(embedded, 3);
+
+  EXPECT_EQ(StringHash{}(owned), StringHash{}(view));
+  EXPECT_EQ(StringHash{}(owned), StringHash{}(ref));
+  EXPECT_EQ(StringHash{}(owned), StringHash{}("alpha"));
+  EXPECT_TRUE(StringEqual{}(owned, view));
+  EXPECT_TRUE(StringEqual{}(owned, ref));
+  EXPECT_TRUE(StringEqual{}(owned, "alpha"));
+  EXPECT_EQ(StringHash{}(embedded_prefix), StringHash{}(embedded));
+  EXPECT_TRUE(StringEqual{}(embedded_prefix, embedded));
+  EXPECT_EQ(StringHash{}(embedded_owned), StringHash{}(embedded_view));
+  EXPECT_TRUE(StringEqual{}(embedded_owned, embedded_view));
+}
+
+TEST(SwissTable, OwningStdStringHasADefaultHasher) {
+  FlatHashMap<std::string, int> table;
+  EXPECT_TRUE(table.insert_or_assign(std::string("alpha"), 7));
+  ASSERT_NE(table.find(std::string("alpha")), nullptr);
+  EXPECT_EQ(*table.find(std::string("alpha")), 7);
+}
+
+TEST(SwissTable, HardenedStringHasherSupportsOwningAndBorrowedKeys) {
+  using Map = FlatHashMap<std::string, int, HardenedStringHash, StringEqual,
+                          Allocator>;
+  Map table(system_allocator(),
+            HardenedStringHash{0x0123456789abcdefull,
+                               0xfedcba9876543210ull},
+            StringEqual{});
+  ASSERT_TRUE(table.insert_or_assign(std::string("request-id"), 42));
+
+  const std::string_view view = "request-id";
+  const string_ref ref{view};
+  ASSERT_NE(table.find(view), nullptr);
+  EXPECT_EQ(*table.find(ref), 42);
+  EXPECT_TRUE(table.contains("request-id"));
 }
 
 TEST(SwissTable, FallibleInsertReportsAllocationFailure) {
@@ -545,6 +588,20 @@ TEST(FlatHashMap, IterationKeepsKeysConstAndValuesMutable) {
   EXPECT_EQ(*table.find_key(87), 87);
 }
 
+TEST(FlatHashMap, FloatingPointSignedZeroUsesOneEqualityClass) {
+  using Table = FlatHashMap<double, int>;
+  Table table;
+  EXPECT_EQ(table.try_insert_or_assign(0.0, 7),
+            Table::InsertResult::kInserted);
+
+  ASSERT_NE(table.find(-0.0), nullptr);
+  EXPECT_EQ(*table.find(-0.0), 7);
+  EXPECT_EQ(table.try_insert_or_assign(-0.0, 9),
+            Table::InsertResult::kUpdated);
+  EXPECT_EQ(table.size(), 1u);
+  EXPECT_EQ(*table.find(0.0), 9);
+}
+
 TEST(FlatHashSet, InsertFindEraseAndIterate) {
   FlatHashSet<int> set;
   EXPECT_EQ(set.try_insert(7), FlatHashSet<int>::InsertResult::kInserted);
@@ -568,7 +625,7 @@ TEST(FlatHashSet, InsertFindEraseAndIterate) {
 }
 
 TEST(FlatHashSet, HeterogeneousLookupReturnsCanonicalStoredKey) {
-  FlatHashSet<std::string, TransparentStringHash, TransparentStringEq> set;
+  FlatHashSet<std::string, StringHash, StringEqual> set;
   ASSERT_TRUE(set.insert(std::string("alpha")));
   const std::string_view query = "alpha";
   const std::string* stored = set.find(query);

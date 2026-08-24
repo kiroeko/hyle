@@ -10,6 +10,9 @@ endif()
 
 add_executable(installed_io_http2_consumer main.c)
 target_link_libraries(installed_io_http2_consumer PRIVATE hyle::io)
+if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+  target_compile_options(installed_io_http2_consumer PRIVATE -fshort-enums)
+endif()
 hyle_stage_runtime_dependencies(installed_io_http2_consumer)
 
 enable_testing()

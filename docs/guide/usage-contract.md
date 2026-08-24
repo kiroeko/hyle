@@ -35,7 +35,12 @@ g_ctx.use();               // ✓ 在当前线程(B)重新解析
 
 **契约**：经 `mem::system_allocator()`（mimalloc 后端）分配的内存，**可以在任意线程释放**——fiber 在 worker A 分配、迁移后在 worker B 释放是**安全且支持**的核心用例。
 
-**为什么安全**：分配器封在 `Allocator` vtable（函数指针）后、且实现跨 `.so` 边界（`hyle_mem`）。fiber 体调 `deallocate()` 是**不透明调用**——`-O3` 无法把 `mi_free` 内部的 TLS heap 读提升/缓存到 fiber 体的 yield 之上，每次在**当前线程**重新解析。即第 1 条的危险模式在分配器路径上**天然不成立**。实测：强制迁移 **687 万次跨线程 free，rc=0 净**（mimalloc v2.3.2，含段完整性校验，见 E13/E17）。
+**为什么安全**：当前 backing 锁定 mimalloc `v3.5.0`，分配器封在 `Allocator` vtable（函数指针）后、
+且实现跨 `.so` 边界（`hyle_mem`）。fiber 体调 `deallocate()` 是**不透明调用**——`-O3` 无法把
+`mi_free` 内部的 TLS heap 读提升/缓存到 fiber 体的 yield 之上，每次在**当前线程**重新解析。即第 1
+条的危险模式在分配器路径上天然不成立。E13/E17 的 **687 万次跨线程 free，rc=0** 是旧
+`v2.3.2` 的历史证据，不冒充 v3.5 当前性能证书；v3.5 的 release gate 由现行 mem/fiber 跨线程释放、
+allocator ABI 和 sanitizer 测试重新绑定。
 
 **⚡ 性能注意事项**：
 - **对齐**：默认对齐（≤16B，`alignof(max_align_t)`）走 `mi_malloc` 快路径；**仅在真需要过对齐**（如 AVX512 的 64B）才传更大 alignment——过对齐路径有额外簿记，紧凑 alloc/free 循环里会变慢。
@@ -72,4 +77,6 @@ cache 复用 hard pool 的 batch pop/push；正常走 32-bit tagged CAS，tag �
 
 ---
 
-> 一句话:**HYLE 把热路径顶到 SOTA,代价是调用者遵守少数几条明确边界**。这些边界都来自真实验证(见 ki-1-crash-hunt.md 的 E1–E17),不是臆测的防御。
+> 一句话：**HYLE 以把同合同热路径做到 SOTA 为目标；具体入口只有在 performance freshness
+> gate 签署后才能这样宣称，调用者同时要遵守这里的明确边界。**这些边界来自真实验证
+>（见 ki-1-crash-hunt.md 的 E1–E17），不是臆测的防御。

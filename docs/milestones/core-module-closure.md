@@ -1,5 +1,8 @@
 # core 模块严格收口任务（2026-07-25）
 
+> **历史证据提示（2026-08-25）：**本页的绿色结论绑定文中日期/commit，不是依赖升级后
+> working tree 的当前证书。现行状态只看 [`pre-release-readiness`](./pre-release-readiness.md)。
+
 > 本页只记录施工与验收。稳定设计见
 > [`core-design`](../architecture/core-design.md)，使用方式见 [`guide/core`](../guide/core.md) /
 > [`guide/c-core`](../guide/c-core.md)，性能数字只见

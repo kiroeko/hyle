@@ -1,5 +1,9 @@
 # time 成熟库能力缺口复审（2026-07-26）
 
+> **历史证据提示（2026-08-25）：**本页的绿色结论绑定文中日期/commit，不是依赖升级与
+> 新消费者红队后 working tree 的当前证书。现行状态只看
+> [`pre-release-readiness`](./pre-release-readiness.md)。
+
 > 本页是复审记录，不是新的实现真源。当前设计、用户入口和性能点值仍分别见
 > [`time-design`](../architecture/time-design.md)、[`guide/time`](../guide/time.md) /
 > [`guide/c-time`](../guide/c-time.md) 与

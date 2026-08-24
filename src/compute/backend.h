@@ -27,6 +27,8 @@
 
 namespace hyle::compute {
 
+class Device;
+
 // One backend's operation table. All pointers are non-null for a valid backend
 // (host + cuda both fill every slot). Signatures use the public value types
 // (Device/DeviceCaps/EventStatus/Status) but never expose a backend-native type.
@@ -237,5 +239,11 @@ const ComputeBackend* cuda_vtable() noexcept;
 // fails) -- compute.cc's add_backend() tolerates null (that backend contributes 0 devices).
 const ComputeBackend* vulkan_vtable() noexcept;
 #endif
+
+// Internal adapter seam for code that must hand a HYLE device back to the
+// backend-specific library that owns it. Device::ordinal() is a global opaque
+// table index; it must never be passed directly to CUDA/Vulkan/other native
+// APIs when more than one backend is enumerated.
+int device_backend_ordinal(const Device& device) noexcept;
 
 }  // namespace hyle::compute

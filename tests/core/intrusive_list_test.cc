@@ -14,7 +14,8 @@ struct Node {
   explicit Node(int input) : value(input) {}
 };
 using NodeList = IntrusiveList<Node, &Node::hook>;
-}  // namespace
+volatile bool g_throw_from_visitor = false;
+} // namespace
 
 TEST(IntrusiveList, PushPopAndRemovePreserveOrder) {
   NodeList list;
@@ -87,15 +88,16 @@ TEST(IntrusiveList, PrefixAndConsumeSupportBatchHandoff) {
   int moved = 0;
 
   EXPECT_EQ(source.move_prefix_to(
-                destination, [](const Node* node) { return node->value <= 2; },
-                [&moved](Node*) { ++moved; }),
+                destination,
+                [](const Node *node) noexcept { return node->value <= 2; },
+                [&moved](Node *) noexcept { ++moved; }),
             2u);
   EXPECT_EQ(moved, 2);
   EXPECT_EQ(source.front(), &c);
 
   NodeList consumed;
   int sum = 0;
-  EXPECT_EQ(destination.consume_all([&](Node* node) {
+  EXPECT_EQ(destination.consume_all([&](Node *node) noexcept {
     EXPECT_FALSE(node->hook.linked());
     sum += node->value;
     consumed.push_back(node);
@@ -106,7 +108,7 @@ TEST(IntrusiveList, PrefixAndConsumeSupportBatchHandoff) {
   EXPECT_EQ(consumed.pop_front(), &d);
   EXPECT_EQ(consumed.pop_front(), &a);
   EXPECT_EQ(consumed.pop_front(), &b);
-  EXPECT_EQ(destination.consume_all([](Node*) {}), 0u);
+  EXPECT_EQ(destination.consume_all([](Node *) noexcept {}), 0u);
 }
 
 TEST(IntrusiveList, ForEachVisitsMutableAndConstNodes) {
@@ -116,10 +118,10 @@ TEST(IntrusiveList, ForEachVisitsMutableAndConstNodes) {
   list.push_back(&b);
   list.push_back(&c);
 
-  list.for_each([](Node* node) { node->value *= 2; });
-  const NodeList& view = list;
+  list.for_each([](Node *node) { node->value *= 2; });
+  const NodeList &view = list;
   int sum = 0;
-  view.for_each([&sum](const Node* node) { sum += node->value; });
+  view.for_each([&sum](const Node *node) { sum += node->value; });
   EXPECT_EQ(sum, 12);
 }
 
@@ -156,15 +158,69 @@ TEST(IntrusiveList, DestroyingOrClearingListResetsEveryHook) {
 }
 
 TEST(IntrusiveList, CopyingOrMovingHookDoesNotCopyMembership) {
-  NodeList list;
-  Node source(1);
+  NodeList list, destination_list;
+  Node source(1), destination(2);
   list.push_back(&source);
+  destination_list.push_back(&destination);
 
   IntrusiveListHook copied(source.hook);
   IntrusiveListHook moved(std::move(source.hook));
   EXPECT_FALSE(copied.linked());
   EXPECT_FALSE(moved.linked());
   EXPECT_TRUE(source.hook.linked());
+
+  destination.hook = source.hook;
+  EXPECT_TRUE(source.hook.linked());
+  EXPECT_TRUE(destination.hook.linked());
+  EXPECT_EQ(list.front(), &source);
+  EXPECT_EQ(destination_list.front(), &destination);
+
+  destination.hook = std::move(source.hook);
+  EXPECT_TRUE(source.hook.linked());
+  EXPECT_TRUE(destination.hook.linked());
+  EXPECT_EQ(list.front(), &source);
+  EXPECT_EQ(destination_list.front(), &destination);
+}
+
+TEST(IntrusiveList, PrefixCallbacksObserveUnchangedSourceMembership) {
+  NodeList source, destination;
+  Node a(1), b(2), c(3);
+  source.push_back(&a);
+  source.push_back(&b);
+  source.push_back(&c);
+
+  EXPECT_EQ(source.move_prefix_to(
+                destination,
+                [&](const Node *node) noexcept {
+                  EXPECT_TRUE(node->hook.linked());
+                  EXPECT_EQ(source.front(), &a);
+                  return node->value <= 2;
+                },
+                [&](Node *node) noexcept {
+                  EXPECT_TRUE(node->hook.linked());
+                  EXPECT_EQ(source.front(), &a);
+                }),
+            2u);
+  EXPECT_EQ(source.front(), &c);
+  EXPECT_EQ(destination.front(), &a);
+  EXPECT_EQ(destination.back(), &b);
+}
+
+TEST(IntrusiveList, ForEachPropagatesExceptionsWithoutChangingList) {
+  NodeList list;
+  Node a(1), b(2);
+  list.push_back(&a);
+  list.push_back(&b);
+
+  g_throw_from_visitor = true;
+  EXPECT_THROW(list.for_each([](Node *) {
+    if (g_throw_from_visitor)
+      throw 7;
+  }),
+               int);
+  g_throw_from_visitor = false;
+  EXPECT_EQ(list.front(), &a);
+  EXPECT_EQ(list.back(), &b);
 }
 
 TEST(IntrusiveList, TryInsertionRejectsInvalidMembership) {

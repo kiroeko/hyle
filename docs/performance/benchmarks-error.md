@@ -1,10 +1,15 @@
 # error 实测铁证
 
+> **2026-08-25 freshness gate：**本页点值绑定下述 2026-07 commit，只是本轮重签的历史输入。
+> error 已由依赖升级/消费者红队重新打开；相同 source identity、peer pin、编译合同与三平台
+> n=15 完成前，不是当前发布证书。现行状态只看
+> [`pre-release-readiness`](../milestones/pre-release-readiness.md)。
+
 > 本页是 [performance 总账](./README.md) 的 error 模块详节。稳定设计见
 > [error-design](../architecture/error-design.md)，用户选型见
 > [error guide](../guide/error.md)。benchmark 只验证消费者会使用的产品形状，不定义 API。
 
-## 当前证书（2026-07-29，三平台 n=15）
+## 历史证据（2026-07-29，三平台 n=15）
 
 基础产品能力基于 `befaad0`，非法 Result 诊断冷热分离基于 `7d22eb8`，渐进 context
 表示固定为 `8dace9d`；benchmark 消费形状仍是 `6d42add`，没有为该实现新增测量专用 API。
@@ -17,7 +22,7 @@ Apple M4 AppleClang 21，Release、`HYLE_TEST_INSTRUMENTATION=OFF`（发布形�
 **Windows / Linux / M4** 排列，不能跨机器横比；倍数是配对样本的中位比值，可能与两列
 独立中位数之比略有差异。
 
-本证书严格分成两种消费者信息合同：
+该轮历史证据严格分成两种消费者信息合同：
 
 1. **不携带额外诊断**：只有成功值或 canonical code。主对手是 Abseil
    `Status/StatusOr` 的同能力路径；`std::error_code/expected` 是不能携带任意消息和 native

@@ -18,6 +18,7 @@ static_assert(sizeof(hyle_status) == sizeof(std::uintptr_t));
 static_assert(alignof(hyle_status) == alignof(std::uintptr_t));
 static_assert(std::is_standard_layout_v<hyle_status>);
 static_assert(std::is_trivially_copyable_v<hyle_status>);
+static_assert(sizeof(hyle_status_code) == sizeof(std::uint16_t));
 
 hyle::StatusCode to_cpp_code(hyle_status_code code) noexcept {
   const auto raw = static_cast<std::uint16_t>(code);
@@ -29,31 +30,30 @@ hyle_status_code to_c_code(hyle::StatusCode code) noexcept {
   return static_cast<hyle_status_code>(static_cast<std::uint16_t>(code));
 }
 
-hyle::NativeErrorDomain to_cpp_domain(
-    hyle_native_error_domain domain) noexcept {
+hyle::NativeErrorDomain
+to_cpp_domain(hyle_native_error_domain domain) noexcept {
   return hyle::detail::normalize_native_error_domain(
       static_cast<hyle::NativeErrorDomain>(domain));
 }
 
-hyle_native_error_domain to_c_domain(
-    hyle::NativeErrorDomain domain) noexcept {
+hyle_native_error_domain to_c_domain(hyle::NativeErrorDomain domain) noexcept {
   return static_cast<hyle_native_error_domain>(
       static_cast<std::uint16_t>(domain));
 }
 
-#define HYLE_STATUS_ABI_MATCH(name, screaming, value)          \
-  static_assert(                                               \
-      static_cast<std::uint16_t>(hyle::StatusCode::name) ==    \
-          static_cast<std::uint16_t>(HYLE_STATUS_##screaming), \
+#define HYLE_STATUS_ABI_MATCH(name, screaming, value)                          \
+  static_assert(                                                               \
+      static_cast<std::uint16_t>(hyle::StatusCode::name) ==                    \
+          HYLE_STATUS_##screaming,                                             \
       "C hyle_status_code drifted from C++ StatusCode: " #screaming);
 HYLE_FOREACH_STATUS_CODE(HYLE_STATUS_ABI_MATCH)
 #undef HYLE_STATUS_ABI_MATCH
 
-#define HYLE_NATIVE_DOMAIN_ABI_MATCH(cpp_name, c_name)                    \
-  static_assert(static_cast<std::uint16_t>(                               \
-                    hyle::NativeErrorDomain::cpp_name) ==                 \
-                static_cast<std::uint16_t>(HYLE_NATIVE_ERROR_##c_name),   \
-                "C native error domain drifted from C++: " #c_name)
+#define HYLE_NATIVE_DOMAIN_ABI_MATCH(cpp_name, c_name)                         \
+  static_assert(                                                               \
+      static_cast<std::uint16_t>(hyle::NativeErrorDomain::cpp_name) ==         \
+          static_cast<std::uint16_t>(HYLE_NATIVE_ERROR_##c_name),              \
+      "C native error domain drifted from C++: " #c_name)
 HYLE_NATIVE_DOMAIN_ABI_MATCH(None, NONE);
 HYLE_NATIVE_DOMAIN_ABI_MATCH(PosixErrno, POSIX_ERRNO);
 HYLE_NATIVE_DOMAIN_ABI_MATCH(Win32, WIN32);
@@ -75,9 +75,11 @@ hyle::Status adopt_from_c(hyle_status status) noexcept {
 
 std::size_t copy_sv(std::string_view value, char *buf,
                     std::size_t cap) noexcept {
-  if (buf == nullptr || cap == 0) return value.size();
+  if (buf == nullptr || cap == 0)
+    return value.size();
   const std::size_t write = value.size() < cap - 1 ? value.size() : cap - 1;
-  if (write != 0) std::memcpy(buf, value.data(), write);
+  if (write != 0)
+    std::memcpy(buf, value.data(), write);
   buf[write] = '\0';
   return value.size();
 }
@@ -86,7 +88,7 @@ std::string_view view_or_empty(const char *data, std::size_t len) noexcept {
   return data == nullptr ? std::string_view() : std::string_view(data, len);
 }
 
-}  // namespace
+} // namespace
 
 extern "C" {
 
@@ -99,7 +101,8 @@ hyle_status hyle_status_new(hyle_status_code code, const char *msg) {
 hyle_status hyle_status_new_n(hyle_status_code code, const char *msg,
                               size_t len) {
   const hyle::StatusCode normalized = to_cpp_code(code);
-  if (normalized == hyle::StatusCode::Ok) return hyle_status_ok();
+  if (normalized == hyle::StatusCode::Ok)
+    return hyle_status_ok();
   return steal_to_c(hyle::Status(normalized, view_or_empty(msg, len)));
 }
 
@@ -138,14 +141,12 @@ hyle_status_code hyle_status_code_from_win32(uint32_t error_number) {
   return to_c_code(hyle::status_code_from_win32(error_number));
 }
 
-hyle_status hyle_status_from_win32(uint32_t error_number,
-                                   const char *context) {
+hyle_status hyle_status_from_win32(uint32_t error_number, const char *context) {
   return hyle_status_from_win32_n(
       error_number, context, context == nullptr ? 0 : std::strlen(context));
 }
 
-hyle_status hyle_status_from_win32_n(uint32_t error_number,
-                                     const char *context,
+hyle_status hyle_status_from_win32_n(uint32_t error_number, const char *context,
                                      size_t context_len) {
   return steal_to_c(hyle::status_from_win32(
       error_number, view_or_empty(context, context_len)));
@@ -169,7 +170,8 @@ hyle_status hyle_status_from_hresult_n(int32_t error_number,
 }
 
 void hyle_status_free(hyle_status *status) {
-  if (status == nullptr) return;
+  if (status == nullptr)
+    return;
   hyle::Status owned = adopt_from_c(*status);
   status->rep = 0;
 }
@@ -182,19 +184,22 @@ hyle_status hyle_status_clone(hyle_status status) {
 }
 
 void hyle_status_move(hyle_status *dst, hyle_status *src) {
-  if (dst == nullptr) return;
+  if (dst == nullptr)
+    return;
   if (src == nullptr) {
     hyle_status_free(dst);
     return;
   }
-  if (dst == src) return;
+  if (dst == src)
+    return;
   hyle_status_free(dst);
   dst->rep = src->rep;
   src->rep = 0;
 }
 
 void hyle_status_update(hyle_status *overall, hyle_status *next) {
-  if (overall == nullptr || next == nullptr || overall == next) return;
+  if (overall == nullptr || next == nullptr || overall == next)
+    return;
   if (overall->rep == 0) {
     overall->rep = next->rep;
     next->rep = 0;
@@ -204,17 +209,17 @@ void hyle_status_update(hyle_status *overall, hyle_status *next) {
 }
 
 void hyle_status_add_context(hyle_status *status, const char *context) {
-  hyle_status_add_context_n(
-      status, context, context == nullptr ? 0 : std::strlen(context));
+  hyle_status_add_context_n(status, context,
+                            context == nullptr ? 0 : std::strlen(context));
 }
 
 void hyle_status_add_context_n(hyle_status *status, const char *context,
                                size_t context_len) {
-  if (status == nullptr || context == nullptr || context_len == 0) return;
+  if (status == nullptr || context == nullptr || context_len == 0)
+    return;
   hyle::Status owned = adopt_from_c(*status);
   status->rep = 0;
-  owned = std::move(owned).WithContext(
-      std::string_view(context, context_len));
+  owned = std::move(owned).WithContext(std::string_view(context, context_len));
   *status = steal_to_c(std::move(owned));
 }
 
@@ -262,8 +267,10 @@ int hyle_status_get_native_error(hyle_status status,
   hyle::Status borrowed = adopt_from_c(status);
   const hyle::NativeError native = borrowed.native_error();
   (void)hyle::detail::StatusAccess::release(borrowed);
-  if (domain != nullptr) *domain = to_c_domain(native.domain);
-  if (native_code != nullptr) *native_code = native.code;
+  if (domain != nullptr)
+    *domain = to_c_domain(native.domain);
+  if (native_code != nullptr)
+    *native_code = native.code;
   return native.present() ? 1 : 0;
 }
 
@@ -288,4 +295,4 @@ const char *hyle_status_message_cstr(hyle_status status) {
   return message.empty() ? "" : message.data();
 }
 
-}  // extern "C"
+} // extern "C"

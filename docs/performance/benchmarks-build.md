@@ -1,4 +1,9 @@
-# build/package system 性能证书
+# build/package system 历史性能证据
+
+> **2026-08-25 freshness gate：**本页只记录 2026-07-29 `75a8d3f` 的结构诊断。依赖 lock、
+> component/package/CI 图已继续演进，build/package 已重新打开；同一当前图的三平台重签完成前，
+> 下列数字与勾选不是当前发布证书。现行状态只看
+> [`pre-release-readiness`](../milestones/pre-release-readiness.md)。
 
 构建系统没有运行时 ns/op，但它仍有用户可感知的正常路径性能：clean configure、无源码变化的
 reconfigure/no-op build、改一个模块后的失效范围，以及依赖获取。这里单独记录点值；architecture
@@ -26,7 +31,7 @@ reconfigure/no-op build、改一个模块后的失效范围，以及依赖获取
 | Apple M4 product：`error,time` | 0.340s | 0.040s | 0.570s | 0.060s |
 | Apple M4 tests + 本地 pinned GoogleTest | 0.540s | 0.150s | 4.890s | 0.120s |
 
-结论：三端 no-op 都在 10--120ms 以内，且 Ninja 明确报告 `no work to do`；最新把 root/tests/bench
+结论：三端 no-op 都在 10--120ms 以内，且 Ninja 明确报告 `no work to do`；该绑定提交把 root/tests/bench
 CMake 下沉到模块目录后没有常态重编或全局 target 泄漏。Windows 单次 cold 点比旧证书高约
 7--13%、M4 基本不变，WSL clean configure 从旧 18--23s 降到 15.8--17.3s；一次样本不足以把这些
 冷启动波动判成输赢，但足以排除数量级回归。WSL 仍明显慢于 Windows/M4，product 与本地注入测试图
@@ -36,7 +41,7 @@ CMake 下沉到模块目录后没有常态重编或全局 target 泄漏。Window
 ## 聚合 target 调度
 
 shipping-layout CI 过去把 `hyle_error_tests hyle_platform_tests hyle_time_tests hyle_mem_tests` 作为四个
-显式根交给 `cmake --build`；统一 `hyle_tests` 本来已经准确表达当前 component 闭包。Windows
+显式根交给 `cmake --build`；统一 `hyle_tests` 在该绑定提交已准确表达 component 闭包。Windows
 VS 2026/MSBuild 在所有输出已存在后的交替 no-op 复测如下：
 
 | 入口 | 三次 wall time | 稳态中心 |

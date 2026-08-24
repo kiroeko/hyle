@@ -38,13 +38,15 @@ typedef struct hyle_io_proactor_o hyle_io_proactor;
 typedef struct hyle_io_shared_memory_o hyle_io_shared_memory;
 typedef struct hyle_io_http2_session_o hyle_io_http2_session;
 
-typedef enum hyle_io_backend {
+/* Fixed-width across compilers and -fshort-enums consumers. */
+typedef uint32_t hyle_io_backend;
+enum {
   HYLE_IO_BACKEND_NONE = 0,
   HYLE_IO_BACKEND_IOCP = 1,
   HYLE_IO_BACKEND_IO_URING = 2,
   HYLE_IO_BACKEND_EPOLL = 3,
   HYLE_IO_BACKEND_KQUEUE = 4
-} hyle_io_backend;
+};
 
 /* Capability bits describe the selected backend/extension surface. They do not
  * promise that every operation will succeed on the running kernel: registration
@@ -62,6 +64,11 @@ enum {
   HYLE_IO_CAP_HTTP2 = UINT64_C(1) << 8
 };
 
+/* Small by-value snapshot with a frozen v1 layout: size 16, backend offset 4,
+ * bits offset 8 on the supported 64-bit ABI. struct_size describes the value
+ * returned by this library; it is not caller capacity or an extensible input
+ * handshake. A future field requires a new query/type rather than appending to
+ * this by-value return. */
 typedef struct hyle_io_capabilities {
   uint32_t struct_size;
   hyle_io_backend backend;
@@ -79,14 +86,27 @@ typedef struct hyle_io_uring_extension {
 
 typedef struct hyle_io_proactor_options {
   uint32_t struct_size;
+  uint32_t reserved; /* must be zero */
   uint32_t entries; /* 0 = 256 */
-  int defer_taskrun;
+  uint32_t defer_taskrun; /* 0/1 */
   hyle_allocator backing;
 } hyle_io_proactor_options;
 
+#define HYLE_IO_PROACTOR_OPTIONS_REQUIRED_SIZE                                \
+  ((uint32_t)offsetof(hyle_io_proactor_options, entries))
 #define HYLE_IO_PROACTOR_OPTIONS_INIT                                         \
-  {(uint32_t)sizeof(hyle_io_proactor_options), 256, 0,                        \
+  {(uint32_t)sizeof(hyle_io_proactor_options), 0, 256, 0,                     \
    {NULL, NULL, NULL, NULL}}
+
+/* `struct_size` is the readable prefix, not an exact-version check. The
+ * required prefix is {struct_size,reserved}; omitted entries/defer_taskrun/
+ * backing fields use HYLE_IO_PROACTOR_OPTIONS_INIT semantics and unknown
+ * future tail bytes are ignored. Optional fields take effect only when the
+ * complete field is present. In particular, backing is one atomic allocator
+ * value: a prefix ending inside hyle_allocator does not partially override the
+ * default allocator. Use the INIT macro or hyle_io_proactor_options_default()
+ * for ordinary source code; prefix construction is intended for ABI/FFI
+ * bindings. */
 
 typedef struct hyle_io_completion {
   uint64_t user_data;
@@ -267,10 +287,12 @@ HYLE_IO_C_API hyle_status hyle_io_shared_memory_unlink(const char* name);
  * stream resets and flow control. Returned byte/message views are borrowed and
  * remain valid only until the next call on the same session.
  */
-typedef enum hyle_io_http2_role {
+/* Fixed-width for the by-value factory parameter. */
+typedef uint32_t hyle_io_http2_role;
+enum {
   HYLE_IO_HTTP2_CLIENT = 0,
   HYLE_IO_HTTP2_SERVER = 1
-} hyle_io_http2_role;
+};
 
 typedef struct hyle_io_http2_header {
   const char* name;

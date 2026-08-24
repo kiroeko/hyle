@@ -3,11 +3,27 @@
 > 本页是 [performance 总账](./README.md) 的 **mem 模块**详节。
 > 源：`bench/mem/allocator_bench.cc`、`bench/mem/scenario_bench.cc`、`bench/mem/fiber_stack_bench.cc`。
 > 通用 churn、request closure、FixedPool、latency、fragmentation 和 footprint 按各节所列 commit。2026-07-26 的 clean `c640072` 最终签署 shared SDK 的 allocator/standard-adapter/realloc 形状；`8c85331` 局部复证 PMR 零字节修复后的正常非零路径；`6213115` 签署长寿命 Region 与正常 request；此前 `2cbc307`、`1de939d`、`20f3676` 分别签署 bump/system-realloc/fiber、SharedPool/cache 和 O(1) FixedPool。同契约性能判定同时看配对 **[sign]**、差距大小与绝对 spread；旧 raw/result 继续诚实绑定实际采样 commit，不把历史数据伪改成 HEAD。
+>
+> **2026-08-25 freshness warning：**底层已从 mimalloc 2.3.2 跨主版本到 3.5.0，且
+> nanobench 已从 4.3.11 升到 4.6.0。Region/pool 的算法与复杂度证据可继续作设计输入，
+> 但本页所有 nanobench 旧点值都绑定旧 harness，不能继续充当当前数值证书；此外，
+> 所有直接承重 mimalloc 的 alloc/free/realloc/aligned、
+> PMR、remote-free/collect、fragmentation/footprint 与 shared/static 点值都必须重跑，以下旧值不得
+> 冒充当前发布性能证书。
+> v3 还改变了 `<16B` 的自然对齐形状；section `M` 单独比较“plain mi_malloc 将 backing
+> size 提升到 16”与 `mi_malloc_aligned(size,16)`，并同时量 `SystemAllocator`/runtime vtable，
+> 防止为修 correctness 把 tiny-object 热路静默换成 aligned over-allocation。
 
-## 当前性能封口状态
+2026-08-25 Windows/MSVC shipping-like point（单进程机制证据，不是 n=15/三平台证书）：
+`raw mi_malloc(16)` 1.91 ns/op，`mi_malloc_aligned(1..15,16)` 5.24 ns/op（约 2.74x 成本）；
+shared `SystemAllocator` padding contract 4.51 ns/op，runtime `Allocator` 4.55 ns/op。它支持保留
+plain fast path 并只扩 backing size 的实现选择；正式 allocator 全矩阵仍按 freshness warning 待签。
 
-本页独占 mem 的性能现状；architecture 和 guide 不复制点值。已签结果按各节标注的 commit
-有效，不因 API-only commit 自动失效。MEM-FINAL-2 的四个有界证据缺口已关闭：
+## 2026-07 历史性能证据状态
+
+本页独占 mem 的性能详节；architecture 和 guide 不复制点值。以下结果按各节标注的 commit
+曾经有效，现作为本轮复跑的基线和算法证据，不等于 nanobench 4.6/mimalloc 3.5 下的当前证书。
+MEM-FINAL-2 当时关闭的四个有界证据缺口为：
 
 | 原缺口 | `2cbc307` 关闭证据 | 结论 |
 |---|---|---|
@@ -154,7 +170,7 @@ same-link 三平台正式证书接住。需要运行时注入的 vtable/PMR 路�
 smoke（MSVC 19.50，section A，`n=15`，未作为正式 clean 证书替换上表）为：shared
 `SystemAllocator/raw mi=0.913`、runtime vtable/raw mi=0.904、runtime vtable/同类 PMR=0.982；
 三者 paired sign 均在 lose 侧、absolute spread 判 TIE。它只保留为 alignment 修复当时的
-回归诊断；当前 shared 结论已由上面的 clean `c640072` 三平台同链接证书取代。
+回归诊断；在 2026-07，它由上面的 clean `c640072` 三平台同链接证书取代。
 
 ## 2. Bump 与单线程定长对象
 
@@ -330,7 +346,7 @@ pmr resource 与其他池一样在计时 lambda 外构造。`scalable_allocator`
 证明 `SharedPool` 的硬可见性语义。hard core 的性能目标是把其额外同步成本压到合理范围，
 而不是把 weaker-visibility 数字误标成同契约 SOTA。
 
-### 3.2 当前显式 cache：Windows / WSL / M4 clean 证书
+### 3.2 2026-07 历史显式 cache：Windows / WSL / M4 clean 证书
 
 绑定 clean product commit `1de939d`。三平台均为 Release shipping-like、8 workers、64B block、
 request batch=64、working set=容量的 75%、handoff batch=256。Win MSVC 19.50 与 WSL
@@ -352,7 +368,7 @@ Darwin 无公开硬亲和 API，两组只证明 application QoS 下的结论。
 显式 cache 的 locality 形状与 oneTBB fixed_pool 接近；Windows、WSL 与 M4 两种 QoS
 全部配对同侧。它不是硬容量视图，性能优势不能替代 3.4 的 quota 语义。
 
-### 3.3 当前 hard core：三平台 clean 证书
+### 3.3 2026-07 历史 hard core：三平台 clean 证书
 
 绑定 clean product commit `1de939d`，Release shipping-like（`HYLE_BUILD_TESTS=OFF`）；配置与
 3.2 相同。Win MSVC 19.50、WSL GCC 14.2 为 `n=15`，Apple M4 AppleClang 21 的
@@ -527,6 +543,9 @@ scripts/bench-stat.py build-bench/bin/hyle_mem_bench -n 15 \
          "HYLE SystemAllocator::reallocate (compile-time)" \
   --pair "raw mi_realloc (SOTA)" \
          "HYLE Allocator::reallocate (vtable)"
+
+# mimalloc v3 小 size-class 对齐：先跑 point，再以相同 pair 做正式多进程采样
+HYLE_BENCH_SECTIONS=M build-bench/bin/hyle_mem_bench
 
 # adapter-only：不重复 section F 的其他长项
 HYLE_BENCH_SECTIONS=F HYLE_MEM_ADAPTER_ONLY=1 \

@@ -4,20 +4,28 @@
 >
 > **两段式**：① 下面"预期表"是开工前基于参考库公开基准的**推算目标**;② 实现后必须有**对标 SOTA 的真实 benchmark**(非推算),数字诚实印出——赢/平/输都登记,差距是优化目标。
 
+> **2026-08-25 freshness gate：**依赖升级和消费者红队已重新打开 core、error、platform、mem、
+> time、build/package、util、obs、container。nanobench 又从 4.3.11 升到 4.6.0，并改变 epoch/
+> calibration、batch-relative 与 counter-overhead 处理；所以包括 simd/sched/io 在内的所有
+> nanobench 旧点值都只能用于定位算法档位和回归方向。只有相同 source identity、peer pin、
+> **harness revision、runner parser、运行过滤器/环境**、编译合同与三平台 n=15 重跑完成后，
+> 表中的 ✅/➖/⚠️ 才可恢复为当前判定。现行签署状态只看
+> [`pre-release-readiness`](../milestones/pre-release-readiness.md)；新实现不能借用旧点值恢复绿证。
+
 ## 本目录结构（原单文件已拆分，按模块分档）
 
 | 文档 | 内容 |
 |---|---|
 | 本页（对标总账） | 全模块 win/loss ledger 一览 + 总账小结（最常看的一张表） |
-| [error 实测](./benchmarks-error.md) | **error 2026-07-29 两类消费者信息合同三平台 n=15 证书**（无诊断 / 带诊断严格分表；同能力 Abseil 无 LOSE，较弱 std 下界的真实输赢单列） |
-| [core 实测](./benchmarks-core.md) | **core 当前证书**：IntrusiveList 对 Boost auto_unlink 同 ownership 的 FIFO/remove/batch-discard；cache/prefetch 只在真实消费者承重 |
-| [build/package 实测](./benchmarks-build.md) | **构建系统三平台正常路径证书**：clean/reconfigure/no-op、测试依赖获取分层、组件隔离、production-shape 测试与生成器数据库健康 |
-| [platform 实测](./benchmarks-platform.md) | **platform 2026-07-25 当前证书**（既有性能表不变；MappedFile advice/residency 按 OS-call complexity 守门） |
-| [time 实测](./benchmarks-time.md) | **time 2026-07-25 当前三平台证书**（clock / exact-ns radix TimerQueue / CommonTimeoutQueue；含 Seastar faithful baseline、order-swap 与 M4 QoS） |
-| [mem 实测](./benchmarks-mem.md) | **mem 严格证书**：既有三平台 Region/FixedPool/pool 证书有效；clean `c640072` 补齐 shared allocator/standard-adapter/realloc，`8c85331` 又局部复证 PMR zero-size 修复后的正常路径；Win/WSL/M4 双 QoS n=15 无新增 material LOSE |
-| [util 实测](./benchmarks-util.md) | **完整 util 证书**：core 的 Rng/Ref/SpinLock；runtime 的真实 Registry N=256/C adapter；Abseil peer、FrozenView、M4 双 QoS 与复杂度边界 |
-| [obs 实测](./benchmarks-obs.md) | **obs-runtime 2026-07-29 `06cec5a` 三平台 n=15 证书**：compile/runtime gate、exact-byte record/C ABI、immutable sink snapshot、fan-out 与多 producer；成熟库只作同机制对照，不作跨合同倍数宣称 |
-| [container 实测](./benchmarks-container.md) | **container 唯一当前证书**：三平台详表、新鲜度、非 SOTA、选型与复跑命令 |
+| [error 实测](./benchmarks-error.md) | **2026-07-29 历史证据**：两类消费者信息合同三平台 n=15（无诊断 / 带诊断严格分表；同能力 Abseil 无 LOSE，较弱 std 下界的真实输赢单列） |
+| [core 实测](./benchmarks-core.md) | **历史证据，待本轮重签**：IntrusiveList 对 Boost auto_unlink 同 ownership 的 FIFO/remove/batch-discard；cache/prefetch 只在真实消费者承重 |
+| [build/package 实测](./benchmarks-build.md) | **历史证据，待本轮重签**：clean/reconfigure/no-op、测试依赖获取分层、组件隔离、production-shape 测试与生成器数据库健康 |
+| [platform 实测](./benchmarks-platform.md) | **2026-07-25 历史证据**（MappedFile advice/residency 按 OS-call complexity 守门） |
+| [time 实测](./benchmarks-time.md) | **2026-07-25 历史证据**（clock / exact-ns radix TimerQueue / CommonTimeoutQueue；含 Seastar faithful baseline、order-swap 与 M4 QoS） |
+| [mem 实测](./benchmarks-mem.md) | ⚠️ **mimalloc 3.5.0 升级后待刷新**：既有 Region/FixedPool 算法证据仍是输入；system allocator、realloc、PMR、remote-free/collect 与 shared/static ownership 的旧三平台点值不是当前证书 |
+| [util 实测](./benchmarks-util.md) | **历史证据，待本轮重签**：core 的 Rng/Ref/SpinLock；runtime 的真实 Registry N=256/C adapter；Abseil peer、FrozenView、M4 双 QoS 与复杂度边界 |
+| [obs 实测](./benchmarks-obs.md) | **obs-runtime 2026-07-29 历史热路证据**：未改的 gate/record/fan-out 数据可作输入；Tracy 0.14.1、当前 29-symbol C 面和 caller-storage sink 不在该性能证书内 |
+| [container 实测](./benchmarks-container.md) | ⚠️ **hash/string API 与 simdutf 9.1 受影响项待刷新**：旧三平台详表只作历史输入；当前仅有 Windows correctness、installed consumer 与 float/double/fast-vs-hardened point |
 | [simd 产品 kernel](./benchmarks-simd.md) | dot/saxpy、math、dtype、gather、vendor 竞争…；**op 全量不在此** |
 | [simd op 对拍证书](./benchmarks-simd-ops.md) | **逐 op vs Highway**：三平台 LOSE=0 摘要 + 覆盖树；全表 → [orderswap 矩阵](../milestones/simd-orderswap-matrix.md)（最新最全） |
 | [simd op 对拍方法论](./simd-op-benchmark-methodology.md) | op_parity 规程：形状、双序、锚点闸门、LOSE 证据阶梯 |
@@ -25,9 +33,9 @@
 | [io 实测](./benchmarks-io.md) | echo 吞吐 + shard-per-core 扩展 + vs 裸 epoll/liburing/asio/libuv + 连接生命周期 + TLS/HTTP + multishot/DEFER/fixed-files/direct-accept 机制项 |
 | [预期与边界](./expectations.md) | AVX-512 上架状态、主表（时间/空间分列）、Amdahl 整体观、诚实边界、验证 gate |
 
-## 对标总账（win/loss ledger，全部实测 vs 真 SOTA，非 std）
+## 对标点值总账（历史 win/loss ledger，本轮重签中）
 
-> **一眼看尽输赢**。**两把标尺各拆成「组件名 + ns」两列**:`std组件`/`std ns`(基线下界——赢它是最低门槛)和 `SOTA组件`/`SOTA ns`(真门槛:absl/F14、mimalloc、moodycamel/tokio/rigtorp、Highway/xsimd、marl、boost、simdutf)。`比std`/`比SOTA`:>1=HYLE 快几倍。**判定**针对 SOTA:✅赢 / ➖平(噪声内) / ❌输(均附根因:by-design 接缝 / 约束选择 / 选错工具 / scalar 待优化,无一为未处理的真缺陷) / ⚠️平台翻转 / ⏳待补。`n/a`=该层无对等物(非未测:如 bounded-MPMC 队列无 std 等价物);`同std`=该项 std 本身即领域 SOTA,无独立第三方更快。**error 行来自 2026-07-29 `6d42add` 的 Win/GCC14/M4、n=15 消费者合同证书**；其余模块日期不一，未刷新前勿当当前证书。
+> **一眼看尽输赢**。**两把标尺各拆成「组件名 + ns」两列**:`std组件`/`std ns`(基线下界——赢它是最低门槛)和 `SOTA组件`/`SOTA ns`(真门槛:absl/F14、mimalloc、moodycamel/tokio/rigtorp、Highway/xsimd、marl、boost、simdutf)。`比std`/`比SOTA`:>1=HYLE 快几倍。**判定**针对 SOTA:✅赢 / ➖平(噪声内) / ❌输(均附根因:by-design 接缝 / 约束选择 / 选错工具 / scalar 待优化,无一为未处理的真缺陷) / ⚠️平台翻转 / ⏳待补。`n/a`=该层无对等物(非未测:如 bounded-MPMC 队列无 std 等价物);`同std`=该项 std 本身即领域 SOTA,无独立第三方更快。**error 行来自 2026-07-29 `6d42add` 的 Win/GCC14/M4、n=15 历史消费者合同证据**；其余模块日期不一，未刷新前勿当当前证书。
 
 | 模块 · 操作 | HYLE ns | std 组件 | std ns | 比std | SOTA 组件 | SOTA ns | 比SOTA | 判定 |
 |---|---|---|---|---|---|---|---|---|
@@ -58,7 +66,7 @@
 | **platform** Parker ping-pong(真阻塞) | 341/22.5k/2053(Win/Lin/M4) | std::condition_variable | 638/23.5k/2130 | **1.75x/1.05x/1.05x** | (std CV 即实用标尺) | 同左 | 同左 | ⚠️**平台翻转**(Win 大赢;Lin/M4 平或微赢)。旧 2.99x 作废。见 [platform](./benchmarks-platform.md) |
 | **platform** Thread spawn+join | 43.4k/33.6k/10.6k | std::thread | 44.4k/33.6k/10.7k | ~1.0x 三平台 | std::thread(即 SOTA) | 同左 | ~1.0x | ➖平(OS 主导,证零封装税) |
 | **platform** Thread owning callable | 40.529k/32.787k/10.510k | raw `entry+ctx` core | 40.081k/33.511k/10.538k | ~1.0x 三平台 | std::thread | 40.494k/33.686k/10.553k | ~1.0x 三平台 | ➖n=15 三平台平；易用入口无可测 OS-thread 创建税 |
-| **platform** directory_iterate visitor | 40.23k/7.05k/16.46k | std::filesystem | 39.76k/14.97k/18.25k | **0.981/2.135/1.109x** | filesystem | 同左 | 同左 | ⚠️当前三平台证书：Win TIE，Linux/M4 WIN |
+| **platform** directory_iterate visitor | 40.23k/7.05k/16.46k | std::filesystem | 39.76k/14.97k/18.25k | **0.981/2.135/1.109x** | filesystem | 同左 | 同左 | ⚠️历史三平台判定：Win TIE，Linux/M4 WIN |
 | **platform** vm_allocate_rw vs raw 一步 | 885/860.9/309.8 | raw 一步分配 | 880/853.8/305.0 | **0.987/0.978/0.982x** | raw 一步 | 同左 | 同左 | ➖三平台 TIE，普通 VM 形状近 OS 地板 |
 | **platform** vm_reserve+commit vs raw 一步 | 1144/1086.3/720.5 | raw 一步分配 | 877/853.8/305.0 | **0.77/0.779/0.421x** | raw 一步 | 同左 | 同左 | ❌**by-design 两步**输一步 raw；购买 staged commit，非漏优化 |
 | **platform** MappedFile 64KiB vs ifstream | 45.05k/11.48k/13.31k | ifstream 拷贝 | 79.42k/**8.72k**/20.11k | **1.76/0.76/1.51x** | 使用形状标尺 | 同左 | 同左 | ⚠️Win/M4 赢；Linux 小顺扫应选 buffered read |
@@ -104,10 +112,10 @@
 | **mem** SystemAllocator reallocate(shared same-link) | 72.77/68.23/82.07 | std::realloc | 196.38/42/187 | 平台相关 | 同一 DSO backend realloc | 71.14/67.84/81.91 | **0.974/0.997/1.003** | ➖ clean `c640072`：默认 shared realloc 最大约 2.6%，三平台无 material LOSE；M4 utility 0.983 |
 | **mem** runtime Allocator reallocate(shared same-link) | 73.79/66.47/79.48 | std::realloc | 196/42/187 | 平台相关 | 同一 DSO backend realloc | 71.14/67.84/81.91 | **0.965/1.018/1.023** | ➖Win 动态策略约 3.5%，WSL/M4 WIN；M4 utility 1.037，不混入默认路径结论 |
 | **mem** scheduler-owned FiberStackPool batch p50 | 7.60/10.19/13.25 µs | （无 std fiber stack cache） | n/a | n/a | direct guarded OS VM | 151.80/182.62/80.67 µs | **20.03/17.89/6.07x** | ✅ p50/p95/p99 三平台全 sign WIN；M4 utility 也全 WIN，详见 mem §5 raw CSV |
-| **container·hash** Hash&lt;T&gt; 16B POD 内联 | 0.43 | std::hash | ~0.9 | ~2x | wyhash | 0.94 | 2.2x | ✅赢(2026-07 改 abseil 单 128 位乘 mix64_2:0.59→0.43,vs wyhash 1.6x→2.2x) |
+| **container·hash** 显式 BytewiseHash&lt;T&gt; 16B key 内联 | 0.43 | std::hash | ~0.9 | ~2x | wyhash | 0.94 | 2.2x | ✅赢(仅 representation-equality key opt-in；2026-07 改 abseil 单 128 位乘 mix64_2:0.59→0.43,vs wyhash 1.6x→2.2x) |
 | **container·hash** mix64 整数 | 0.44 | std::hash | 1.50 | 3.4x | wyhash64 | 0.57 | 1.27x | ✅赢(已 SOTA=abseil 同款单乘折叠) |
 | **container·hash** hash_bytes 8B(inline mix,非 XXH3) | 0.23/B | std::hash&lt;string&gt; | 0.29 | 1.3x | 裸 XXH3-small / wyhash | 0.21/0.30 | ~平/赢 wyhash | ➖**≤16B 走 inline mix 非 XXH3**(两算法比,非"输 XXH3");赢 wyhash-small、近平 XXH3-small |
-| **container·hash** hash_bytes 16B(inline mix,非 XXH3) | 0.15/B | std::hash&lt;string&gt; | 0.35 | 2.3x | 裸 XXH3-small / wyhash | 0.12/0.15 | ~平 wyhash | ➖同上(inline mix vs XXH3-small,不同算法;热路径 Hash&lt;T&gt; 见上行赢 wyhash 2.2x) |
+| **container·hash** hash_bytes 16B(inline mix,非 XXH3) | 0.15/B | std::hash&lt;string&gt; | 0.35 | 2.3x | 裸 XXH3-small / wyhash | 0.12/0.15 | ~平 wyhash | ➖同上(inline mix vs XXH3-small,不同算法;显式 BytewiseHash&lt;T&gt; 热路径见上行赢 wyhash 2.2x) |
 | **container·hash** hash_bytes 64B(Win/Lin/M4) | **21.94/26.71/29.03 GB/s** | std::hash&lt;string&gt; | 明显较慢 | — | raw XXH3/wyhash 最快者 | 24.21/26.46/31.21 GB/s | **三平台同档** | ➖ 17–128B 已是公开头内产品 multiply stream；combined spread 内同档，不再有旧 DLL seam |
 | **container·hash** hash_bytes 256B(M4) | **40.06 GB/s** | std::hash&lt;string&gt; | 明显较慢 | — | raw wyhash | 43.77 GB/s | 0.915x | ⚠️ 小型 long-input product seam；没有为一个长度扩大 public header streaming core |
 | **container·hash** hash_bytes 1KiB(Win/Lin/M4) | **45.70/61.09/40.92 GB/s** | std::hash&lt;string&gt; | 明显较慢 | — | raw 最快 vendor core | 47.43/58.59/42.72 GB/s | **同档/赢/同档** | ✅ 三平台 n=15；Win/M4 1KiB、Linux 512B 是产品 API crossover，不取裸算法交叉点 |
@@ -201,8 +209,9 @@
 **历史总账小结（2026-06-30 快照，不作为当前证书）**：当时按两把标尺统计约
 36 win / 16 tie，并推动了 allocator、hashmap、SIMD、queue、string-ref 等多轮
 优化。此后接口、对手和三平台仪器都已升级，不能继续用这组数量证明当前
-“全线赢”。尤其 StringInterner 的旧 1.17–1.24x 证书已被本页当前 direct-ID peer
-三平台表替代。发布判断以各模块最新 closure 文档和本页逐行当前数据为准，不再
-维护一个会把不同日期、不同合同混在一起的总 win 数。
+“全线赢”。StringInterner 后续 direct-ID peer 三平台表也是最近一次历史输入，不因比早期
+1.17–1.24x 证据更新就自动成为当前证书。发布判断只看
+[`pre-release-readiness`](../milestones/pre-release-readiness.md)；本页不再维护一个会把不同日期、
+不同合同混在一起的总 win 数。
 
 **io 段补记(2026-07-05,reinject+COOP 优化后 n=15 重测)**:HYLE echo-1w **单核反超成熟抽象框架 asio 1.25x / libuv 1.52x**(优化前是统计平局,-33% 推成真赢)、**平裸 epoll**(零抽象就绪循环,追平即好);多核 shard-per-core 开箱大赢。新增**真实连接生命周期**基准(accept+serve+close):每连接固定成本 ~240µs 主导、每 round-trip 仅 +~2.6µs——量化了 keep-alive/连接池的价值。io 机制项(multishot awaitable / DEFER_TASKRUN / registered-fixed-files / direct-accept)均为**正确接入、loopback 上统计平局或边际**、"就位待承重"——它们的收益需 loopback lockstep 造不出的突发/高扇出/高建连率负载,已诚实登记为待承重(非回归、非缺陷);direct-accept 的"慢 1%"经拆相追根证为 teardown microbench 伪影(accept 原语本身 direct 更快)。

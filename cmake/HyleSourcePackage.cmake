@@ -20,6 +20,8 @@ function(hyle_add_source_package)
       "${_hyle_source_dist_dir}/hyle-${PROJECT_VERSION}-source.zip")
   add_custom_target(hyle_source_package
     COMMAND "${CMAKE_COMMAND}"
+      -P "${HYLE_SOURCE_DIR}/cmake/HyleDependencyVersions.cmake"
+    COMMAND "${CMAKE_COMMAND}"
       "-DHYLE_SOURCE_DIR=${HYLE_SOURCE_DIR}"
       "-DHYLE_SOURCE_ARCHIVE=${_hyle_source_archive}"
       "-DHYLE_SOURCE_PREFIX=hyle-${PROJECT_VERSION}-source/"
@@ -29,7 +31,7 @@ function(hyle_add_source_package)
       "${_hyle_source_archive}"
       "${_hyle_source_archive}.sha256"
     COMMENT
-      "Packaging the clean Git-tracked HYLE source tree (license is unchanged)"
+      "Auditing every vendor and packaging the clean Git-tracked HYLE source tree"
     VERBATIM)
   set_property(TARGET hyle_source_package PROPERTY FOLDER "hyle/distribution")
 endfunction()

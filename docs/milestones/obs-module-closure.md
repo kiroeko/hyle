@@ -1,5 +1,9 @@
 # obs-runtime 模块严格复证（2026-07-29）
 
+> **历史证据提示（2026-08-25）：**本页的绿色结论绑定文中日期/commit，不是 Tracy 0.14.1
+> 与新 C sink/record 合同后 working tree 的当前证书。现行状态只看
+> [`pre-release-readiness`](./pre-release-readiness.md)。
+
 obs-runtime 已按当前 [`module-closure-methodology`](../architecture/module-closure-methodology.md)
 重新打开并完成复证。runtime/API 实现绑定 `4d31bcf`，性能采样合同绑定 `06cec5a`；它是
 **实现体量小、横向影响面

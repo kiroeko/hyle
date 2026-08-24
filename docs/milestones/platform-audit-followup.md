@@ -50,12 +50,12 @@ platform **功能完整、C ABI 接近满分**:8 子系统(wait/cpu/numa/virtual
 
 ### P2 一致性/轻微 [LOW — #5/copy_file/getpwuid_r 已做;其余边际记录]
 - **#5 dynlib 非 UTF-8 [已做]**:open/get 转 `LoadLibraryW`/`GetModuleHandleW` + `to_wide`(MultiByteToWideChar),current 转 `GetModuleHandleW(nullptr)`;顺带修 open(nullptr) 未防护(to_wide null 检查)。Windows DynLib 14 测试绿。
-- **copy_file(x,x) 自拷贝截断 [已做]**:POSIX copy_file 开头 `strcmp(from,to)==0` 守卫(避免 O_TRUNC 截空);Windows CopyFileW 本就失败安全。POSIX 段待三平台复验。
+- **copy_file(x,x) 自拷贝截断 [已做]**:POSIX 先 open/fstat 验证 regular source，再以同路径 no-op；不同名字仍以 dev+inode 防 hard-link alias，既避免 O_TRUNC 截空，也不把 `copy_file(missing, missing)` 误报成功。Windows CopyFileW 本就失败安全。Windows/Linux 已复验，macOS 待门禁。
 - **getpwuid→getpwuid_r [已做]**:home_directory 改线程安全的 getpwuid_r。POSIX 段待三平台复验。
 - **[边际 LOW — 已处置(后续批次)]**:
   - **[已做]** page_align_up/large_page_align_up 溢出 guard(vm.h:`n > SIZE_MAX-(p-1)` → 0)。
   - **[已做]** get_env_var Windows 探长度竞态守卫(`got >= need` 即并发变长 → 返空,不越界读)。
-  - **[已做]** remove_directory_recursive 深递归上限(`rm_recursive_depth` + `kRmMaxDepth=512`,栈溢出防护)。
+  - **[已做]** remove_directory_recursive 改 resumable native-iterator postorder DFS，移除递归调用栈与固定 512 深度限制；每层一个 OS iterator、所有层共享一个 path buffer，普通文件/link 立即删且不排队同层兄弟，辅助内存 `O(depth + max_path)`。300 层与 2048-file 宽目录回归已过 Windows/Linux；frame/path OOM 或 OS handle/fd 耗尽返回 ResourceExhausted。
   - **[部分已做]** wrapper OOM last-error:vm_region 4 个 create 已设(vm_set_last_error);dynlib(内部 g_error 无公开 set)/mapped_file(无独立 last-error)/parker(无 error 通道)的 wrapper OOM 无 set 通路,wrapper 极小、OOM 罕见,**接受现状**。
 
 ### P3 文档 stale

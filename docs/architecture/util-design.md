@@ -80,8 +80,9 @@ factory：missing 和 factory 返回 NULL 都是 NULL。会因设备、驱动、
   空间 O(1)。最坏查找仍受恶意 collision 约束。
 - `Ref<T>` 保持一个指针，计数在对象内；SpinLock 保持 1 byte。需要 cache-line padding 时由经
   profile 证明伪共享的 owner 显式添加，不能让所有实例无条件付费。
-- SpinLock 成功 RMW 保留 acquire-release。M4 真机表明削为 acquire-only 会使 8-waiter handoff
-  跌至 oneTBB 约 0.47x；这是 ISA/codegen 合同，不以抽象模型的最弱合法序机械替代实测。
+- SpinLock 成功 RMW 保留 acquire-release。历史 M4 真机证据表明机械削为 acquire-only 会造成
+  material handoff regression；这是 ISA/codegen 合同，不以抽象模型的最弱合法序替代实测。
+  具体点值与 freshness 只见 [`benchmarks-util`](../performance/benchmarks-util.md)。
 
 ## C ABI 原则
 

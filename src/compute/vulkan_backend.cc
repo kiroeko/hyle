@@ -112,6 +112,21 @@ Status from_vk(VkResult r, const char* what) noexcept {
       message);
 }
 
+#if defined(HYLE_TESTING)
+bool test_environment_is_set(const char* name) noexcept {
+#  if defined(_WIN32)
+  char* value = nullptr;
+  std::size_t size = 0;
+  const errno_t error = _dupenv_s(&value, &size, name);
+  const bool present = error == 0 && value != nullptr;
+  std::free(value);
+  return present;
+#  else
+  return std::getenv(name) != nullptr;
+#  endif
+}
+#endif
+
 // ---- pipeline cache 落盘 (checklist #1) --------------------------------------------
 // kompute builds an EMPTY per-algorithm cache = no reuse. HYLE keeps a device-shared cache
 // (built once in init) AND optionally PERSISTS it across process runs: cold-start no longer
@@ -462,7 +477,8 @@ void retire(VkStream* s, bool force) noexcept {
       for (VkDescriptorPool p : f.dpools) vkDestroyDescriptorPool(dev, p, nullptr);
       if (f.owns_fence) vkDestroyFence(dev, f.fence, nullptr);  // borrowed Event fences: skip
     } else {
-      if (keep != &f - s->inflight.data()) s->inflight[keep] = std::move(f);
+      const auto index = static_cast<std::size_t>(&f - s->inflight.data());
+      if (keep != index) s->inflight[keep] = std::move(f);
       ++keep;  // still running -> keep (move to compact, avoid copying the vector)
     }
   }
@@ -772,7 +788,7 @@ Status make_mem(std::size_t bytes, bool host_visible, VkMem** out) noexcept {
     // match (which may be coherent while a later non-coherent type exists). Prefer cached,
     // then accept any non-coherent host-visible type so the visibility path is exercised
     // whenever the physical device can provide it. Absent from the shipped library.
-    if (std::getenv("HYLE_VK_FORCE_NONCOHERENT")) {
+    if (test_environment_is_set("HYLE_VK_FORCE_NONCOHERENT")) {
       VkPhysicalDeviceMemoryProperties mp;
       vkGetPhysicalDeviceMemoryProperties(ctx().phys, &mp);
       auto find_noncoherent = [&](VkMemoryPropertyFlags want) {
@@ -817,7 +833,7 @@ Status make_mem(std::size_t bytes, bool host_visible, VkMem** out) noexcept {
     // is never exercised. HYLE_VK_FORCE_STAGING=1 forces the non-mapped path + plain
     // DEVICE_LOCAL so tests cover staging on hardware that wouldn't otherwise hit it.
     // Compiled ONLY under HYLE_TESTING (HYLE_BUILD_TESTS); absent from the shipped lib.
-    if (will_map && std::getenv("HYLE_VK_FORCE_STAGING")) {
+    if (will_map && test_environment_is_set("HYLE_VK_FORCE_STAGING")) {
       uint32_t dl = find_mem_type(mr.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
       if (dl != UINT32_MAX) { mt = dl; will_map = false; }  // pretend "no ReBAR"
     }
@@ -1509,7 +1525,7 @@ Status vk_kernel_launch(void* stream_native, void* module, void* /*func*/,
 // also holds the cb + ALL the per-item descriptor pools (dpools vector); retire() frees
 // them together when that one fence signals -- no shared-fence double-free.
 Status vk_kernel_launch_batch(void* stream_native, const void* const* modules,
-                              const void* const* funcs, const LaunchConfig* configs,
+                              const void* const*, const LaunchConfig* configs,
                               const KernelArgs* args_arr, unsigned count) noexcept {
   if (count == 0) return Status();
   auto* stream = static_cast<VkStream*>(stream_native);

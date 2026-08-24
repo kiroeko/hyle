@@ -12,6 +12,7 @@
 #include <pthread.h>
 #endif
 
+#include "hyle/c/time.h"
 #include "hyle/time/clock.h"
 
 namespace {
@@ -45,6 +46,11 @@ void configure_main_benchmark_thread() {
 
 int main() {
   configure_main_benchmark_thread();
+  const bool profiling_counter_available =
+      hyle::time::profiling_clock_available();
+  std::fprintf(stderr,
+               "# HYLE_TIME_CLOCK_BENCH profiling_clock_available=%d\n",
+               profiling_counter_available ? 1 : 0);
   {
     nb::Bench bench;
     bench.title("profiling span boundaries")
@@ -87,9 +93,19 @@ int main() {
     bench.run("HYLE monotonic_ns", [&] {
       nb::doNotOptimizeAway(hyle::time::monotonic_ns());
     });
-    bench.run("HYLE profiling_clock_ns (hardware counter)", [&] {
+    bench.run("HYLE C monotonic_ns", [&] {
+      nb::doNotOptimizeAway(hyle_time_monotonic_ns());
+    });
+    bench.run(profiling_counter_available
+                  ? "HYLE profiling_clock_ns (hardware counter)"
+                  : "HYLE profiling_clock_ns (monotonic fallback)",
+              [&] {
       nb::doNotOptimizeAway(hyle::time::profiling_clock_ns());
     });
+    bench.run(profiling_counter_available
+                  ? "HYLE C profiling_clock_ns (hardware counter)"
+                  : "HYLE C profiling_clock_ns (monotonic fallback)",
+              [&] { nb::doNotOptimizeAway(hyle_time_profiling_clock_ns()); });
   }
   {
     nb::Bench bench;
@@ -109,8 +125,14 @@ int main() {
     bench.run("HYLE realtime_ns", [&] {
       nb::doNotOptimizeAway(hyle::time::realtime_ns());
     });
+    bench.run("HYLE C realtime_ns", [&] {
+      nb::doNotOptimizeAway(hyle_time_realtime_ns());
+    });
     bench.run("HYLE coarse_realtime_ns", [&] {
       nb::doNotOptimizeAway(hyle::time::coarse_realtime_ns());
+    });
+    bench.run("HYLE C coarse_realtime_ns", [&] {
+      nb::doNotOptimizeAway(hyle_time_coarse_realtime_ns());
     });
   }
   return 0;

@@ -80,7 +80,8 @@ class Event {
   HYLE_COMPUTE_API Event& operator=(Event&& o) noexcept;
   HYLE_COMPUTE_API ~Event();
 
-  // Create an event on `device`. Fails (Unavailable/ResourceExhausted) if the
+  // Create an event on `device`. An invalid Device returns InvalidArgument.
+  // Fails (Unavailable/ResourceExhausted) if the
   // backend can't allocate one (cudaEventCreate error) -- an external-boundary
   // failure, so it returns Result, not a fatal assert.
   HYLE_COMPUTE_API static Result<Event> create(const Device& device) noexcept;
@@ -90,7 +91,8 @@ class Event {
   // cudaEventElapsedTime model -- a first-class profiling capability (adaptive kernel
   // selection, perf monitoring, compute benchmarks). SEPARATE from create() so the
   // completion path keeps the cheaper no-timing event. Returns Unimplemented on a backend
-  // without timing support. Record it on a stream with Stream::record() (auto-dispatched),
+  // without timing support, and InvalidArgument for an invalid Device. Record it on a
+  // stream with Stream::record() (auto-dispatched),
   // exactly like a plain event; read elapsed_ns(start, stop) after both complete.
   HYLE_COMPUTE_API static Result<Event> create_timing(const Device& device) noexcept;
 
@@ -150,7 +152,8 @@ class Stream {
   HYLE_COMPUTE_API Stream& operator=(Stream&& o) noexcept;
   HYLE_COMPUTE_API ~Stream();
 
-  // Create a stream on `device`. Fails at the external boundary (returns Result).
+  // Create a stream on `device`. An invalid Device returns InvalidArgument; backend
+  // failures are also returned through Result.
   HYLE_COMPUTE_API static Result<Stream> create(const Device& device) noexcept;
 
   bool valid() const noexcept { return vt_ != nullptr; }

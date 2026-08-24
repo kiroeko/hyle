@@ -3,6 +3,197 @@
 #include <stdio.h>
 #include <string.h>
 
+_Static_assert(sizeof(hyle_io_backend) == sizeof(uint32_t),
+               "IO backend must have a fixed C ABI width");
+_Static_assert(sizeof(hyle_io_http2_role) == sizeof(uint32_t),
+               "HTTP/2 role must have a fixed C ABI width");
+_Static_assert(offsetof(hyle_io_capabilities, backend) == 4,
+               "IO capabilities backend ABI offset");
+_Static_assert(offsetof(hyle_io_capabilities, bits) == 8,
+               "IO capabilities bits ABI offset");
+_Static_assert(sizeof(hyle_io_capabilities) == 16,
+               "IO capabilities frozen v1 ABI size");
+
+_Static_assert(sizeof(((hyle_io_proactor_options*)0)->struct_size) ==
+                   sizeof(uint32_t),
+               "proactor options struct_size ABI width");
+_Static_assert(offsetof(hyle_io_proactor_options, reserved) == 4,
+               "proactor options reserved ABI offset");
+_Static_assert(offsetof(hyle_io_proactor_options, entries) == 8,
+               "proactor options entries ABI offset");
+_Static_assert(offsetof(hyle_io_proactor_options, defer_taskrun) == 12,
+               "proactor options defer ABI offset");
+_Static_assert(sizeof(((hyle_io_proactor_options*)0)->defer_taskrun) ==
+                   sizeof(uint32_t),
+               "proactor options defer ABI width");
+_Static_assert(offsetof(hyle_io_proactor_options, backing) == 16,
+               "proactor options allocator ABI offset");
+_Static_assert(HYLE_IO_PROACTOR_OPTIONS_REQUIRED_SIZE == 8,
+               "proactor options semantic required prefix");
+_Static_assert(sizeof(hyle_io_proactor_options) == 48,
+               "proactor options 64-bit ABI size");
+
+typedef struct io_options_required_prefix {
+  uint32_t struct_size;
+  uint32_t reserved;
+} io_options_required_prefix;
+
+/* A physical prefix containing only the first allocator subfield. The options
+ * decoder must treat the entire hyle_allocator as absent. */
+typedef struct io_options_partial_allocator {
+  uint32_t struct_size;
+  uint32_t reserved;
+  uint32_t entries;
+  uint32_t defer_taskrun;
+  unsigned char backing_fragment[sizeof(void*)];
+} io_options_partial_allocator;
+
+_Static_assert(sizeof(io_options_required_prefix) == 8,
+               "physical proactor required prefix size");
+_Static_assert(offsetof(io_options_partial_allocator, backing_fragment) ==
+                   offsetof(hyle_io_proactor_options, backing),
+               "physical proactor allocator fragment offset");
+
+typedef struct io_test_allocator_state {
+  hyle_allocator base;
+  size_t allocations;
+  size_t frees;
+  size_t reallocations;
+} io_test_allocator_state;
+
+static void* io_test_alloc(void* raw, size_t size, size_t alignment) {
+  io_test_allocator_state* state = (io_test_allocator_state*)raw;
+  void* out = state->base.alloc(state->base.state, size, alignment);
+  if (out != NULL) ++state->allocations;
+  return out;
+}
+
+static void io_test_free(void* raw, void* ptr, size_t size,
+                         size_t alignment) {
+  io_test_allocator_state* state = (io_test_allocator_state*)raw;
+  if (ptr != NULL) ++state->frees;
+  state->base.free(state->base.state, ptr, size, alignment);
+}
+
+static void* io_test_realloc(void* raw, void* ptr, size_t old_size,
+                             size_t new_size, size_t alignment) {
+  io_test_allocator_state* state = (io_test_allocator_state*)raw;
+  void* out = state->base.realloc(state->base.state, ptr, old_size, new_size,
+                                  alignment);
+  ++state->reallocations;
+  return out;
+}
+
+#define CHECK_OPTIONS(expr)          \
+  do {                               \
+    if (!(expr)) return __LINE__;    \
+  } while (0)
+
+static int check_proactor_options_contract(void) {
+  hyle_io_proactor* p;
+
+  /* Every business option is absent from the semantic minimum prefix. */
+  {
+    io_options_required_prefix prefix = {
+        (uint32_t)sizeof(io_options_required_prefix), 0};
+    p = hyle_io_proactor_create(
+        (const hyle_io_proactor_options*)(const void*)&prefix);
+    CHECK_OPTIONS(p != NULL);
+    hyle_io_proactor_destroy(p);
+  }
+
+  /* Reject before reading reserved: this object physically contains only the
+   * size word and truthfully declares that four-byte prefix. */
+  {
+    uint32_t too_short = (uint32_t)sizeof(too_short);
+    p = hyle_io_proactor_create(
+        (const hyle_io_proactor_options*)(const void*)&too_short);
+    CHECK_OPTIONS(p == NULL);
+    CHECK_OPTIONS(strstr(hyle_io_last_error(), "invalid argument") != NULL);
+  }
+
+  {
+    io_options_required_prefix invalid = {
+        (uint32_t)sizeof(io_options_required_prefix), 1};
+    p = hyle_io_proactor_create(
+        (const hyle_io_proactor_options*)(const void*)&invalid);
+    CHECK_OPTIONS(p == NULL);
+    CHECK_OPTIONS(strstr(hyle_io_last_error(), "reserved") != NULL);
+  }
+
+  {
+    hyle_io_proactor_options invalid = HYLE_IO_PROACTOR_OPTIONS_INIT;
+    invalid.defer_taskrun = 2;
+    p = hyle_io_proactor_create(&invalid);
+    CHECK_OPTIONS(p == NULL);
+    CHECK_OPTIONS(strstr(hyle_io_last_error(), "0 or 1") != NULL);
+  }
+
+  /* One allocator pointer is not a usable partial vtable. If the decoder
+   * byte-overlaid this prefix onto the system default, it would manufacture a
+   * mixed invalid allocator; the whole-field rule retains the default. */
+  {
+    io_options_partial_allocator partial;
+    memset(&partial, 0, sizeof(partial));
+    partial.struct_size = (uint32_t)sizeof(partial);
+    partial.entries = 256;
+    p = hyle_io_proactor_create(
+        (const hyle_io_proactor_options*)(const void*)&partial);
+    CHECK_OPTIONS(p != NULL);
+    hyle_io_proactor_destroy(p);
+  }
+
+  /* A complete allocator is applied as one value and owns the opaque handle. */
+  {
+    hyle_io_proactor_options complete = HYLE_IO_PROACTOR_OPTIONS_INIT;
+    io_test_allocator_state state = {hyle_system_allocator(), 0, 0, 0};
+    complete.backing = (hyle_allocator){io_test_alloc, io_test_free,
+                                        io_test_realloc, &state};
+    p = hyle_io_proactor_create(&complete);
+    CHECK_OPTIONS(p != NULL);
+    CHECK_OPTIONS(state.allocations == 1);
+    hyle_io_proactor_destroy(p);
+    CHECK_OPTIONS(state.frees == 1);
+  }
+
+  /* Conversely, a fully present but invalid allocator must not be mistaken
+   * for an absent optional tail. */
+  {
+    hyle_io_proactor_options invalid = HYLE_IO_PROACTOR_OPTIONS_INIT;
+    invalid.backing.alloc = io_test_alloc;
+    p = hyle_io_proactor_create(&invalid);
+    CHECK_OPTIONS(p == NULL);
+    CHECK_OPTIONS(strstr(hyle_io_last_error(), "allocator") != NULL);
+  }
+
+  /* Future tail bytes are outside this library's known layout and unread. */
+  {
+    struct future_io_options {
+      hyle_io_proactor_options known;
+      unsigned char tail[16];
+    } future;
+    memset(&future, 0xA5, sizeof(future));
+    future.known = (hyle_io_proactor_options)HYLE_IO_PROACTOR_OPTIONS_INIT;
+    future.known.struct_size = (uint32_t)sizeof(future);
+    p = hyle_io_proactor_create(&future.known);
+    CHECK_OPTIONS(p != NULL);
+    hyle_io_proactor_destroy(p);
+  }
+
+  /* memcpy-based reads also accept a physically unaligned FFI byte buffer. */
+  {
+    hyle_io_proactor_options known = HYLE_IO_PROACTOR_OPTIONS_INIT;
+    unsigned char raw[sizeof(known) + 1];
+    memcpy(raw + 1, &known, sizeof(known));
+    p = hyle_io_proactor_create(
+        (const hyle_io_proactor_options*)(const void*)(raw + 1));
+    CHECK_OPTIONS(p != NULL);
+    hyle_io_proactor_destroy(p);
+  }
+
+  return 0;
+}
+
 static int reference_entire_surface(void) {
   (void)&hyle_io_last_error;
   (void)&hyle_io_proactor_options_default;
@@ -87,9 +278,16 @@ int main(void) {
   hyle_io_proactor_options options = HYLE_IO_PROACTOR_OPTIONS_INIT;
   hyle_io_proactor* p;
   hyle_io_completion completion = {0, 0, 0, 0};
+  int options_result;
   size_t n;
 
   if (!reference_entire_surface()) return 1;
+  options_result = check_proactor_options_contract();
+  if (options_result != 0) {
+    fprintf(stderr, "proactor options contract failed at line %d: %s\n",
+            options_result, hyle_io_last_error());
+    return options_result;
+  }
   p = hyle_io_proactor_create(&options);
   if (p == NULL || !hyle_io_proactor_valid(p)) {
     fprintf(stderr, "create: %s\n", hyle_io_last_error());

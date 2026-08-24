@@ -65,7 +65,7 @@ class DevicePool {
 
   // Create a pool on `device`. CUDA picks VMM when supported, otherwise its legacy
   // cached-block backend; Vulkan uses cached native blocks. External-boundary failure
-  // returns Result.
+  // returns Result; an invalid Device returns InvalidArgument.
   HYLE_COMPUTE_API static Result<DevicePool> create(const Device& device) noexcept;
 
   bool valid() const noexcept { return vt_ != nullptr; }

@@ -3,9 +3,12 @@
 #include <gtest/gtest.h>
 
 #include <cstdint>
+#include <string_view>
+#include <type_traits>
 #include <vector>
 
 #include "hyle/compute/buffer.h"
+#include "hyle/compute/device_pool.h"
 #include "hyle/compute/kernel.h"
 #include "hyle/compute/stream.h"
 
@@ -43,9 +46,61 @@ Device find_gpu_or_host(bool* is_gpu) {
   return default_device();
 }
 
+bool find_cuda(Device* out) {
+  Device devs[8];
+  const std::size_t n = enumerate(devs, 8);
+  for (std::size_t i = 0; i < n && i < 8; ++i) {
+    if (std::string_view(devs[i].backend()) == "cuda") {
+      *out = devs[i];
+      return true;
+    }
+  }
+  return false;
+}
+
+void no_op_host_kernel(const LaunchConfig&, const KernelArgs&) noexcept {}
+
 }  // namespace
 
 // ---- device enumeration (host always present) -------------------------------
+
+static_assert(std::is_trivially_copyable_v<Device>);
+
+TEST(ComputeDevice, DefaultConstructionIsInvalidPlaceholder) {
+  Device d;
+  EXPECT_FALSE(d.valid());
+  EXPECT_EQ(d.ordinal(), -1);
+}
+
+TEST(ComputeDevice, InvalidPlaceholderFactoriesReturnInvalidArgument) {
+  const Device invalid;
+
+  auto stream = Stream::create(invalid);
+  ASSERT_FALSE(stream.has_value());
+  EXPECT_TRUE(stream.error().IsInvalidArgument());
+  auto event = Event::create(invalid);
+  ASSERT_FALSE(event.has_value());
+  EXPECT_TRUE(event.error().IsInvalidArgument());
+  auto timing = Event::create_timing(invalid);
+  ASSERT_FALSE(timing.has_value());
+  EXPECT_TRUE(timing.error().IsInvalidArgument());
+  auto pool = DevicePool::create(invalid);
+  ASSERT_FALSE(pool.has_value());
+  EXPECT_TRUE(pool.error().IsInvalidArgument());
+
+  auto compiled = Kernel::compile(invalid, "", "entry");
+  ASSERT_FALSE(compiled.has_value());
+  EXPECT_TRUE(compiled.error().IsInvalidArgument());
+  auto ptx = Kernel::load_ptx(invalid, "", "entry");
+  ASSERT_FALSE(ptx.has_value());
+  EXPECT_TRUE(ptx.error().IsInvalidArgument());
+  auto spirv = Kernel::load_spirv(invalid, SpirvBlob{}, "main");
+  ASSERT_FALSE(spirv.has_value());
+  EXPECT_TRUE(spirv.error().IsInvalidArgument());
+  auto host = Kernel::load_host(invalid, &no_op_host_kernel);
+  ASSERT_FALSE(host.has_value());
+  EXPECT_TRUE(host.error().IsInvalidArgument());
+}
 
 TEST(ComputeDevice, EnumerateNeverEmpty) {
   Device devs[8];
@@ -60,9 +115,26 @@ TEST(ComputeDevice, EnumerateNeverEmpty) {
 }
 
 TEST(ComputeDevice, EnumerateReportsCountBeyondBuffer) {
-  // Passing max=0 still returns the true count (like vkEnumerate*).
-  std::size_t n = enumerate(nullptr, 0);
+  // A null output is count-only even when a caller leaves a non-zero capacity.
+  const std::size_t n = enumerate(nullptr, 0);
   EXPECT_GE(n, 1u);
+  EXPECT_EQ(enumerate(nullptr, 8), n);
+}
+
+TEST(ComputeDevice, GlobalOrdinalsAndDefaultAgree) {
+  Device devs[32];
+  const std::size_t n = enumerate(devs, 32);
+  ASSERT_GE(n, 1u);
+  for (std::size_t i = 0; i < n && i < 32; ++i) {
+    EXPECT_TRUE(devs[i].valid());
+    EXPECT_EQ(devs[i].ordinal(), static_cast<int>(i));
+  }
+
+  const Device d = default_device();
+  EXPECT_TRUE(d.valid());
+  EXPECT_EQ(d.ordinal(), 0);
+  EXPECT_EQ(d.type(), devs[0].type());
+  EXPECT_STREQ(d.backend(), devs[0].backend());
 }
 
 TEST(ComputeDevice, DefaultDeviceValid) {
@@ -222,9 +294,8 @@ TEST(ComputeEvent, SelfMoveAssignment) {
 // we SEE NotReady (a fast GPU could finish first -- flaky); we assert the poll loop
 // TERMINATES at kReady and sync() agrees.
 TEST(ComputeEvent, GpuEventPollsToReady) {
-  bool is_gpu = false;
-  Device d = find_gpu_or_host(&is_gpu);
-  if (!is_gpu) {
+  Device d;
+  if (!find_cuda(&d)) {
     GTEST_SKIP() << "no CUDA GPU present -- host backend completes inline (always Ready)";
   }
 
@@ -328,10 +399,9 @@ TEST(ComputeEvent, ElapsedRejectsPlainCompletionEvents) {
 // elapsed time. Proves the timestamp-query path (CUDA cudaEventElapsedTime / Vulkan
 // VkQueryPool * timestampPeriod) actually measures device time. SKIPPED without a GPU.
 TEST(ComputeEvent, GpuTimingMeasuresElapsed) {
-  bool is_gpu = false;
-  Device d = find_gpu_or_host(&is_gpu);
-  if (!is_gpu) {
-    GTEST_SKIP() << "no GPU present -- host timing is inline (0), covered above";
+  Device d;
+  if (!find_cuda(&d)) {
+    GTEST_SKIP() << "no CUDA GPU present -- Vulkan timing is covered by its SPIR-V test";
   }
 
   auto s = Stream::create(d);

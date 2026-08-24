@@ -29,7 +29,7 @@ core 不依赖 error/platform/mem/time，也不创建资源，因此没有 Statu
 | linked runtime version | `version()` / `version_string()` | plugin、FFI、动态加载后诊断 header/runtime 是否匹配 |
 | static cache layout | `core::k*InterferenceSize` / `HYLE_STATIC_CACHE_LINE_SIZE` | `alignas`、结构体 ABI、伪共享隔离；Apple Silicon 128B，其余当前支持目标 64B |
 | runtime cache fact | `platform::cache_line_size()` | 算法按当前 CPU 精确取值，不参与稳定类型布局 |
-| cache hints | `prefetch_read` / `prefetch_read_non_temporal` / `prefetch_write` | 有复用读、一次性流式读、即将修改三种真实 memory-access intent；只在 profile 后使用 |
+| cache hints | `prefetch_read` / `prefetch_read_non_temporal` / `prefetch_write` | 有复用读、一次性流式读、即将修改三种真实 memory-access intent；只在 profile 后使用，且 compiler builtin 不越过 TU ISA baseline |
 | compiler/fatal macros | `macros.h` / `hyle/c/compiler.h` / `visibility.h` | C/C++ restrict、assume、flatten、unroll 与 C++ inline/noinline、branch、EBO、导出、不可恢复合同；主要供 HYLE 实现和高级 kernel 用户 |
 | intrusive batch/list | `IntrusiveListHook` + `IntrusiveList<T, Hook>` | stable-address、调用方拥有节点、O(1) arm/cancel/splice；time delivery/bucket 是生产消费者 |
 
@@ -69,7 +69,9 @@ hint、unreachable、assume、restrict、flatten、unroll 共用 `compiler_defs.
 两种语言另各提供 release-surviving fatal assert。它们只表达编译器/程序合同，不
 增加运行时状态。C++ 形状由 SIMD/vqsort 的 ported kernel 真实消费；纯 C 形状让外部 C kernel
 取得同档 source contract，而不复制 compiler branches。assume/restrict 的错误承诺是调用方
-bug；unroll 与 prefetch 都是可忽略的性能 hint。
+bug；unroll 与 prefetch 都是可忽略的性能 hint。Clang 在未优化/sanitizer TU 中不发 unroll
+pragma，避免无法执行的 transform 通过 `-Wpass-failed` 破坏 `-Werror` consumer build；Release
+非 sanitizer TU 仍保留同一 hint。
 
 cache-layout 语义消费者必须使用 core 常量，不能硬编码 64B；container 的 queue/map/interner、
 mem pool 与 scheduler 状态据此在 Apple Silicon 使用 128B。SIMD lane scratch、AVX-512 table 和
@@ -81,13 +83,22 @@ mem pool 与 scheduler 状态据此在 Apple Silicon 使用 128B。SIMD lane scr
 链表采用 Boost/Folly 同类的 circular sentinel + member auto-unlink：每个 hook 两个指针，列表
 本身一个 sentinel，无 size 元数据、无分配。节点地址在 linked 期间稳定；一个 hook 同时只能
 进一个 list，需要多重 membership 就嵌多个 hook。节点析构自动摘链，list 析构/`clear()`
-会把所有 hook 复位；复制/移动 hook 不复制 membership。
+会把所有 hook 复位；copy/move 构造 hook 得到 unlinked hook，copy/move assignment 则刻意
+保留 destination 的既有 membership，均不导入 source membership。
 
 `push_back/front` 与 Boost 的 Release 容器一样以“node 非空、该 hook 未链接”为前置条件；
 输入可能重复时用返回 bool 的 `try_push_back/front`。`remove(node)` 同样以“非空且属于该
 list”为前置条件，不存/查 owner；membership 可选时直接用幂等 `hook.unlink()`。time 已用
-exact-owner 状态证明这些热路前置条件。类型必须是 standard-layout，member-to-parent 恢复
-沿用 Boost `parent_from_member` 一类实现并 launder。
+exact-owner 状态证明这些热路前置条件。类型必须是 standard-layout。C++ 标准没有任意
+pointer-to-data-member 的逆运算，因此 member-to-parent 恢复显式依赖项目支持工具链的 ABI：
+MSVC 的单 `int` data-member offset，或 GCC/Clang 的 Itanium `ptrdiff_t` offset；编译期 size
+assert 对更复杂的 inheritance representation fail closed。实现用 `bit_cast` 解码并 launder，
+不再通过 null-pointer member expression 制造形式 UB。
+
+`consume_all` 先清空 sentinel，故只接受 `noexcept` callback；当前节点在 callback 前已摘链，
+可安全销毁/重链。`for_each` 禁止改变节点 membership/lifetime，但允许异常传播，异常时链结构
+保持不变。`move_prefix_to` 的 predicate/on_move 都必须 `noexcept`，扫描期间节点仍属于 source，
+两者不得摘链、销毁或重链；全部 callback 完成后才 O(1) splice 整段。
 
 | 操作 | 复杂度 |
 |---|---:|

@@ -1,9 +1,13 @@
 #pragma once
 
+#include <bit>
 #include <cstddef>
 #include <cstdint>
 #include <concepts>
 #include <cstring>  // std::memcpy (hash_small small-key load)
+#include <functional>
+#include <limits>
+#include <string>
 #include <string_view>
 #include <type_traits>
 
@@ -37,6 +41,14 @@ HYLE_CONTAINER_API std::uint64_t hash_bytes_wyhash(const void* data, std::size_t
 // API: callers describe bytes, platform owns safe feature selection.
 HYLE_CONTAINER_API std::uint64_t hash_bytes_long(const void* data, std::size_t len,
                                                  std::uint64_t seed) noexcept;
+// One best-effort per-process seed used by the fast default string hash. It is
+// deliberately non-cryptographic: its job is to invalidate offline collision
+// sets across independent executable starts. Each hasher/table caches one word
+// of this shared seed, avoiding a global load or exported call on every lookup;
+// there is no per-entry state. A fork performed after first use inherits the
+// initialized seed; exec creates a new one. Callers needing secret rotation
+// must manage a SipHash key.
+HYLE_CONTAINER_API std::uint64_t process_hash_seed() noexcept;
 
 // Upper bound of the inline medium-input kernel. Above it the bytes amortize the
 // out-of-line product dispatcher; at and below it avoiding that seam wins in
@@ -296,7 +308,7 @@ HYLE_FORCE_INLINE std::uint64_t hash_bytes_medium_inline(
 
 // Inline hash for a SMALL fixed-size byte blob (n <= 16) -- the common map-key case
 // (PODs/small structs). absl/F14 do the same: small keys get an inline integer mix, NOT a
-// call into the general byte hasher. This avoids the non-inlinable hash_bytes (XXH3) call
+// call into the general byte hasher. This avoids the non-inlinable long-input dispatcher
 // whose fixed cost dominates tiny inputs (measured ~1.85x at 8B). Loads up to two 64-bit
 // words (zero-padded; n is constant per type so no length ambiguity) and folds them through
 // the same 128-bit-multiply mixer as the integer path -- so both words avalanche.
@@ -307,7 +319,8 @@ HYLE_FORCE_INLINE std::uint64_t hash_small(const void* p, std::size_t n) noexcep
     // Keep the destination bound explicit even though every production caller
     // instantiates this helper with sizeof(T) <= 16. Besides making the helper
     // robust in isolation, this prevents GCC's inliner from diagnosing an
-    // impossible oversized memcpy while cloning Hash<T> for larger T.
+    // impossible oversized memcpy while cloning a typed bytewise hasher for
+    // larger T.
     const std::size_t hi_bytes =
         n <= 8 ? 0 : (n < 16 ? n - 8 : 8);
     const auto* bytes = static_cast<const char*>(p);
@@ -356,17 +369,32 @@ HYLE_FORCE_INLINE std::uint64_t hash_bytes(const void* data, std::size_t len,
   return detail::hash_bytes_long(data, len, seed);
 }
 
-// Default hasher. Specialized for the common cheap cases. Trivially-copyable T up
-// to 128 bytes stays inline; larger blobs use the product long-input dispatcher.
-// Users may specialize Hash<T> for their own types.
-template <class T, class = void>
-struct Hash {
+// SipHash-2-4 with a caller-supplied 128-bit key. This is the explicit hardened
+// path for attacker-controlled byte/string keys. The key must be unpredictable
+// to the attacker; HYLE does not silently turn a clock/ASLR seed into a claimed
+// cryptographic secret. Output is a table hash, not a MAC protocol contract.
+HYLE_CONTAINER_API std::uint64_t siphash24(const void* data, std::size_t len,
+                                           std::uint64_t key0,
+                                           std::uint64_t key1) noexcept;
+
+// Explicit bytewise opt-in for keys whose equality is exactly their object
+// representation. Unique object representations exclude padding and alternate
+// encodings, but the trait cannot prove that a user-defined Eq compares every
+// byte. Callers remain responsible for Eq(a, b) => identical object bytes; types
+// with field-wise or otherwise broader equality must use a semantic hasher.
+template <class T>
+struct BytewiseHash {
   static_assert(std::is_trivially_copyable_v<T>,
-                "Hash<T>: specialize Hash for non-trivially-copyable T");
+                "BytewiseHash<T> requires a trivially-copyable T");
+  static_assert(std::has_unique_object_representations_v<T>,
+                "BytewiseHash<T> requires a unique object representation; this "
+                "does not prove compatibility with a custom equality relation");
+
   std::uint64_t operator()(const T& v) const noexcept {
     // sizeof(T) is a COMPILE-TIME constant, so this whole ladder resolves at compile
-    // time (if constexpr): each Hash<T> instantiation calls exactly ONE hasher with
-    // ZERO runtime branch -- the best-of-breed pick is baked in per type.
+    // time (if constexpr): each BytewiseHash<T> instantiation calls exactly ONE
+    // hasher with ZERO runtime branch -- the best-of-breed pick is baked in per
+    // type.
     if constexpr (sizeof(T) <= 16) {
       return detail::hash_small(&v, sizeof(T));           // inline mix, no call
     } else if constexpr (sizeof(T) <= 32) {
@@ -383,11 +411,61 @@ struct Hash {
   }
 };
 
+// Default hasher. The primary template is deliberately unavailable for every
+// user-defined type: neither trivial copyability nor unique object
+// representations prove compatibility with that type's equality relation.
+// Supply a semantic hasher (or specialize Hash<T>), or explicitly opt in to
+// BytewiseHash<T> when equality is exactly bytewise.
+template <class T, class = void>
+struct Hash {
+  std::uint64_t operator()(const T&) const noexcept = delete;
+};
+
 // Integral / enum: inline mix, no out-of-line call.
 template <class T>
 struct Hash<T, std::enable_if_t<std::is_integral_v<T> || std::is_enum_v<T>>> {
   std::uint64_t operator()(T v) const noexcept {
     return detail::mix64(static_cast<std::uint64_t>(v));
+  }
+};
+
+// IEEE float/double have one equality-compatible bit representation after
+// canonicalizing signed zero. Hash those bits directly so the table hot path is
+// the same single inline mix as an integer key. NaNs are not equal and need no
+// canonicalization.
+template <>
+struct Hash<float> {
+  std::uint64_t operator()(float v) const noexcept {
+    static_assert(std::numeric_limits<float>::is_iec559 &&
+                  sizeof(float) == sizeof(std::uint32_t));
+    const std::uint32_t bits = v == 0.0f
+                                   ? 0u
+                                   : std::bit_cast<std::uint32_t>(v);
+    return detail::mix64(bits);
+  }
+};
+
+template <>
+struct Hash<double> {
+  std::uint64_t operator()(double v) const noexcept {
+    static_assert(std::numeric_limits<double>::is_iec559 &&
+                  sizeof(double) == sizeof(std::uint64_t));
+    const std::uint64_t bits = v == 0.0
+                                   ? 0u
+                                   : std::bit_cast<std::uint64_t>(v);
+    return detail::mix64(bits);
+  }
+};
+
+// long double has platform-specific width, padding, and encodings. Keep its
+// equality semantics delegated to the standard library and only canonicalize
+// signed zero before HYLE's final avalanche.
+template <>
+struct Hash<long double> {
+  std::uint64_t operator()(long double v) const noexcept {
+    if (v == 0.0L) v = 0.0L;
+    return detail::mix64(
+        static_cast<std::uint64_t>(std::hash<long double>{}(v)));
   }
 };
 
@@ -399,12 +477,143 @@ struct Hash<T*> {
   }
 };
 
-// Strings / byte views: the length-adaptive process-local byte hash above.
-template <>
-struct Hash<std::string_view> {
-  std::uint64_t operator()(std::string_view s) const noexcept {
-    return hash_bytes(s.data(), s.size());
+namespace detail {
+
+struct StringSpan {
+  const char* data;
+  std::size_t size;
+};
+
+inline StringSpan as_string_span(std::string_view value) noexcept {
+  return {value.data(), value.size()};
+}
+
+template <class P>
+  requires(std::is_pointer_v<P> &&
+           std::convertible_to<P, const char*> &&
+           std::same_as<std::remove_cv_t<std::remove_pointer_t<P>>, char>)
+inline StringSpan as_string_span(const P& value) noexcept {
+  HYLE_FATAL_ASSERT(value != nullptr);
+  return {value, std::char_traits<char>::length(value)};
+}
+
+template <std::size_t N>
+inline StringSpan as_string_span(const char (&value)[N]) noexcept {
+  static_assert(N != 0);
+  HYLE_FATAL_ASSERT(value[N - 1] == '\0');
+  return {value, std::char_traits<char>::length(value)};
+}
+
+template <class R>
+concept MethodStringRange = requires(const R& value) {
+  { value.data() } noexcept -> std::convertible_to<const char*>;
+  { value.size() } noexcept -> std::convertible_to<std::size_t>;
+};
+
+template <MethodStringRange R>
+inline StringSpan as_string_span(const R& value) noexcept {
+  const auto size = static_cast<std::size_t>(value.size());
+  const char* data = value.data();
+  HYLE_FATAL_ASSERT(data != nullptr || size == 0);
+  return {data, size};
+}
+
+template <class R>
+concept FieldStringRange = requires(const R& value) {
+  { value.data } noexcept -> std::convertible_to<const char*>;
+  { value.size } noexcept -> std::convertible_to<std::size_t>;
+};
+
+template <class R>
+  requires(!MethodStringRange<R> && FieldStringRange<R>)
+inline StringSpan as_string_span(const R& value) noexcept {
+  const auto size = static_cast<std::size_t>(value.size);
+  const char* data = value.data;
+  HYLE_FATAL_ASSERT(data != nullptr || size == 0);
+  return {data, size};
+}
+
+}  // namespace detail
+
+// Public transparent helper for trusted/general-purpose owning-string tables.
+// Every default-constructed instance caches the same best-effort process seed
+// and feeds it into the byte core (not merely a final XOR), invalidating offline
+// collision sets across starts. This is not a cryptographic/adaptive-attack
+// promise; use HardenedStringHash with a caller-managed secret for that case.
+// Explicit StringHash(seed) selects a reproducible deterministic seed.
+// A post-initialization fork inherits the parent's process seed; it is not an
+// automatic key-rotation boundary.
+//
+// Queries may be std::string/string_view, string_ref-like {data,size} views, or
+// NUL-terminated C strings. Bytes are inspected only during the call and no
+// borrowed pointer is retained. Use a sized view for embedded NUL bytes.
+struct StringHash {
+  using is_transparent = void;
+
+  StringHash() noexcept : seed_(detail::process_hash_seed()) {}
+  explicit constexpr StringHash(std::uint64_t seed) noexcept : seed_(seed) {}
+
+  template <class S>
+    requires requires(const S& text) { detail::as_string_span(text); }
+  std::uint64_t operator()(const S& text) const noexcept {
+    const detail::StringSpan span = detail::as_string_span(text);
+    return hash_bytes(span.data, span.size, seed_);
   }
+
+ private:
+  std::uint64_t seed_;
+};
+
+struct StringEqual {
+  using is_transparent = void;
+
+  template <class L, class R>
+    requires requires(const L& left, const R& right) {
+      detail::as_string_span(left);
+      detail::as_string_span(right);
+    }
+  bool operator()(const L& left, const R& right) const noexcept {
+    const detail::StringSpan lhs = detail::as_string_span(left);
+    const detail::StringSpan rhs = detail::as_string_span(right);
+    return lhs.size == rhs.size &&
+           (lhs.size == 0 || std::memcmp(lhs.data, rhs.data, lhs.size) == 0);
+  }
+};
+
+// Explicit SipHash-2-4 policy for attacker-controlled string keys. Callers must
+// inject an unpredictable 128-bit key and keep it secret for the table's
+// lifetime. The hasher owns only the key; queried character storage is borrowed
+// for the duration of operator() exactly like StringHash.
+struct HardenedStringHash {
+  using is_transparent = void;
+
+  constexpr HardenedStringHash(std::uint64_t key0,
+                               std::uint64_t key1) noexcept
+      : key0_(key0), key1_(key1) {}
+
+  template <class S>
+    requires requires(const S& text) { detail::as_string_span(text); }
+  std::uint64_t operator()(const S& text) const noexcept {
+    const detail::StringSpan span = detail::as_string_span(text);
+    return siphash24(span.data, span.size, key0_, key1_);
+  }
+
+ private:
+  std::uint64_t key0_;
+  std::uint64_t key1_;
+};
+
+// Standard string keys/views use the process-seeded fast policy by default.
+// Select StringHash + StringEqual explicitly for heterogeneous view lookup, or
+// HardenedStringHash + StringEqual for attacker-controlled keys.
+template <>
+struct Hash<std::string_view> : StringHash {
+  using StringHash::StringHash;
+};
+
+template <>
+struct Hash<std::string> : StringHash {
+  using StringHash::StringHash;
 };
 
 // A type usable as a hash key: Hash<T> yields a uint64 for it.

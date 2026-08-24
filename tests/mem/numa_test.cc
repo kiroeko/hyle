@@ -84,9 +84,12 @@ TEST(MemNuma, HugeRegionHardBindFlag) {
 TEST(MemNuma, ReserveHuge1gSoft) {
   // Usually ResourceExhausted without admin/hugetlb; must not crash or hang.
   EXPECT_TRUE(reserve_huge_1g_pages(0).ok());
-  reserve_huge_1g_pages(1, kNumaAny, /*timeout_ms=*/50).IgnoreError();
-  reserve_huge_1g_pages(1, static_cast<int>(numa_nodes().front()), 50)
-      .IgnoreError();
+  Status interleaved =
+      reserve_huge_1g_pages(1, kNumaAny, /*timeout_ms=*/50);
+  EXPECT_TRUE(interleaved.ok() || interleaved.IsResourceExhausted());
+  Status at_node = reserve_huge_1g_pages(
+      1, static_cast<int>(numa_nodes().front()), 50);
+  EXPECT_TRUE(at_node.ok() || at_node.IsResourceExhausted());
 
   Status invalid_node = reserve_huge_1g_pages(1, -2, 1);
   EXPECT_TRUE(invalid_node.IsOutOfRange());

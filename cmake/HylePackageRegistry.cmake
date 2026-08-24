@@ -4,9 +4,96 @@ include_guard(GLOBAL)
 # package layer projects this registry into exported targets, feature metadata,
 # downstream find_dependency() calls, licenses, headers, and tools.  A spec is
 # `absolute-source|relative-install-destination[|installed-name]`.
+function(_hyle_package_normalized_sha256 path out_var)
+  if(NOT EXISTS "${path}" OR IS_DIRECTORY "${path}" OR IS_SYMLINK "${path}")
+    message(FATAL_ERROR
+      "Package registry license source must be a regular file: '${path}'")
+  endif()
+  file(READ "${path}" _content)
+  string(REPLACE "\r\n" "\n" _content "${_content}")
+  string(REPLACE "\r" "\n" _content "${_content}")
+  string(SHA256 _sha256 "${_content}")
+  set(${out_var} "${_sha256}" PARENT_SCOPE)
+endfunction()
+
+function(_hyle_package_validate_locked_dependencies registry locked runtime_files)
+  set(_runtime_hashes "")
+  set(_runtime_assets "")
+  foreach(_spec IN LISTS runtime_files)
+    string(REPLACE "|" ";" _asset_fields "${_spec}")
+    list(LENGTH _asset_fields _asset_field_count)
+    if(_asset_field_count LESS 2 OR _asset_field_count GREATER 3)
+      message(FATAL_ERROR
+        "Package dependency '${registry}' has malformed runtime asset '${_spec}'")
+    endif()
+    list(GET _asset_fields 0 _source)
+    if(NOT IS_ABSOLUTE "${_source}" OR NOT EXISTS "${_source}")
+      message(FATAL_ERROR
+        "Package dependency '${registry}' lacks runtime source '${_source}'")
+    endif()
+    _hyle_package_normalized_sha256("${_source}" _sha256)
+    list(APPEND _runtime_hashes "${_sha256}")
+    list(APPEND _runtime_assets "${_spec}")
+  endforeach()
+
+  foreach(_dependency IN LISTS locked)
+    if(NOT _dependency MATCHES "^[a-z][a-z0-9_]*$")
+      message(FATAL_ERROR
+        "Package dependency '${registry}' has invalid locked dependency "
+        "'${_dependency}'")
+    endif()
+    if(NOT _dependency IN_LIST HYLE_DEPENDENCY_NAMES)
+      message(FATAL_ERROR
+        "Package dependency '${registry}' names unlocked dependency "
+        "'${_dependency}'")
+    endif()
+    string(TOUPPER "${_dependency}" _dependency_key)
+    set(_prefix "HYLE_DEP_${_dependency_key}")
+    if(NOT DEFINED ${_prefix}_CLASS OR
+       NOT DEFINED ${_prefix}_LICENSE_FILE_SPECS)
+      message(FATAL_ERROR
+        "Package dependency '${registry}' lacks central lock projection for "
+        "'${_dependency}'")
+    endif()
+    if(${_prefix}_CLASS STREQUAL "benchmark")
+      message(FATAL_ERROR
+        "Package dependency '${registry}' maps benchmark-only lock "
+        "'${_dependency}' into the production package")
+    endif()
+    foreach(_license_spec IN LISTS ${_prefix}_LICENSE_FILE_SPECS)
+      string(REPLACE "|" ";" _license_fields "${_license_spec}")
+      list(LENGTH _license_fields _license_field_count)
+      if(NOT _license_field_count EQUAL 3)
+        message(FATAL_ERROR
+          "Locked dependency '${_dependency}' has malformed license projection "
+          "'${_license_spec}'")
+      endif()
+      list(GET _license_fields 1 _license_path)
+      list(GET _license_fields 2 _license_sha256)
+      list(FIND _runtime_hashes "${_license_sha256}" _runtime_index)
+      if(_runtime_index EQUAL -1)
+        message(FATAL_ERROR
+          "Package dependency '${registry}' does not install locked license "
+          "hash '${_license_sha256}' as a distinct runtime asset for "
+          "'${_dependency}' path '${_license_path}'")
+      endif()
+      # Consume one runtime asset for each locked license path.  Keeping this a
+      # multiset prevents one identical license text from silently satisfying
+      # multiple dependencies or multiple required files.
+      list(REMOVE_AT _runtime_hashes ${_runtime_index})
+      list(REMOVE_AT _runtime_assets ${_runtime_index})
+    endforeach()
+  endforeach()
+  if(_runtime_hashes)
+    message(FATAL_ERROR
+      "Package dependency '${registry}' contains unlocked runtime asset(s) "
+      "after consuming every locked license: ${_runtime_assets}")
+  endif()
+endfunction()
+
 function(hyle_register_package_dependency)
   cmake_parse_arguments(ARG "" "NAME;OWNER"
-    "FEATURES;EXPORT_TARGETS;STATIC_EXPORT_TARGETS;STATIC_FIND_DEPENDENCIES;RUNTIME_FILE_SPECS;DEVELOPMENT_FILE_SPECS;STATIC_DEVELOPMENT_FILE_SPECS;DEVELOPMENT_DIRECTORY_SPECS;STATIC_DEVELOPMENT_DIRECTORY_SPECS;DEVELOPMENT_PROGRAM_SPECS"
+    "FEATURES;EXPORT_TARGETS;STATIC_EXPORT_TARGETS;STATIC_FIND_DEPENDENCIES;LOCKED_DEPENDENCIES;RUNTIME_FILE_SPECS;DEVELOPMENT_FILE_SPECS;STATIC_DEVELOPMENT_FILE_SPECS;DEVELOPMENT_DIRECTORY_SPECS;STATIC_DEVELOPMENT_DIRECTORY_SPECS;DEVELOPMENT_PROGRAM_SPECS"
     ${ARGN})
   if(ARG_UNPARSED_ARGUMENTS)
     message(FATAL_ERROR
@@ -30,18 +117,54 @@ function(hyle_register_package_dependency)
     message(FATAL_ERROR
       "HYLE package dependency '${ARG_NAME}' has unknown owner '${ARG_OWNER}'")
   endif()
+  if(ARG_RUNTIME_FILE_SPECS AND NOT ARG_LOCKED_DEPENDENCIES)
+    message(FATAL_ERROR
+      "Package dependency '${ARG_NAME}' has runtime assets without "
+      "LOCKED_DEPENDENCIES")
+  endif()
+  if(NOT ARG_RUNTIME_FILE_SPECS AND ARG_LOCKED_DEPENDENCIES)
+    message(FATAL_ERROR
+      "Package dependency '${ARG_NAME}' declares a runtime asset lock without "
+      "RUNTIME_FILE_SPECS")
+  endif()
+  if(ARG_LOCKED_DEPENDENCIES)
+    list(REMOVE_DUPLICATES ARG_LOCKED_DEPENDENCIES)
+    _hyle_package_validate_locked_dependencies(
+      "${ARG_NAME}" "${ARG_LOCKED_DEPENDENCIES}" "${ARG_RUNTIME_FILE_SPECS}")
+  endif()
 
   get_property(_registered GLOBAL PROPERTY HYLE_PACKAGE_DEPENDENCIES)
   if(ARG_NAME IN_LIST _registered)
     message(FATAL_ERROR
       "HYLE package dependency '${ARG_NAME}' is registered more than once")
   endif()
+
+  # A central lock record has exactly one package owner. Otherwise two module
+  # registries can independently project the same dependency, drift their
+  # destinations/targets, and both appear locally valid. Keep this ownership
+  # mechanical across the active product closure.
+  foreach(_locked_dependency IN LISTS ARG_LOCKED_DEPENDENCIES)
+    string(TOUPPER "${_locked_dependency}" _locked_key)
+    get_property(_locked_owner GLOBAL PROPERTY
+      "HYLE_PACKAGE_LOCKED_DEP_${_locked_key}_OWNER")
+    if(_locked_owner)
+      message(FATAL_ERROR
+        "Locked dependency '${_locked_dependency}' is already owned by package "
+        "registry '${_locked_owner}'; '${ARG_NAME}' cannot register it again")
+    endif()
+  endforeach()
+  foreach(_locked_dependency IN LISTS ARG_LOCKED_DEPENDENCIES)
+    string(TOUPPER "${_locked_dependency}" _locked_key)
+    set_property(GLOBAL PROPERTY
+      "HYLE_PACKAGE_LOCKED_DEP_${_locked_key}_OWNER" "${ARG_NAME}")
+  endforeach()
   list(APPEND _registered "${ARG_NAME}")
   set_property(GLOBAL PROPERTY HYLE_PACKAGE_DEPENDENCIES "${_registered}")
 
   string(TOUPPER "${ARG_NAME}" _key)
   foreach(_field IN ITEMS OWNER FEATURES EXPORT_TARGETS STATIC_EXPORT_TARGETS
-      STATIC_FIND_DEPENDENCIES RUNTIME_FILE_SPECS DEVELOPMENT_FILE_SPECS
+      STATIC_FIND_DEPENDENCIES LOCKED_DEPENDENCIES
+      RUNTIME_FILE_SPECS DEVELOPMENT_FILE_SPECS
       STATIC_DEVELOPMENT_FILE_SPECS DEVELOPMENT_DIRECTORY_SPECS
       STATIC_DEVELOPMENT_DIRECTORY_SPECS DEVELOPMENT_PROGRAM_SPECS)
     set_property(GLOBAL PROPERTY "HYLE_PACKAGE_DEP_${_key}_${_field}"
@@ -107,6 +230,29 @@ function(hyle_package_collect_registry out_targets out_features out_find_depende
   set(${out_find_dependencies} "${_find_dependencies}" PARENT_SCOPE)
 endfunction()
 
+function(_hyle_package_validate_install_destination dependency kind destination)
+  # Install destinations are portable relative paths. Reject traversal and
+  # host-specific roots before install() can normalize them outside the package
+  # prefix; also reject non-canonical dot/empty segments that can conceal one.
+  if(NOT destination OR IS_ABSOLUTE "${destination}" OR
+     destination MATCHES "^[\\/]" OR destination MATCHES "^[A-Za-z]:" OR
+     destination MATCHES "(^|[\\/])\\.\\.?($|[\\/])" OR
+     destination MATCHES "[\\/][\\/]" OR destination MATCHES "[|;]")
+    message(FATAL_ERROR
+      "Package dependency '${dependency}' ${kind} destination must be a safe "
+      "portable relative path: '${destination}'")
+  endif()
+endfunction()
+
+function(_hyle_package_validate_install_name dependency kind name)
+  if(NOT name OR name STREQUAL "." OR name STREQUAL ".." OR
+     name MATCHES "[<>:\"/\\\\|?*;]")
+    message(FATAL_ERROR
+      "Package dependency '${dependency}' ${kind} RENAME must be one safe "
+      "basename: '${name}'")
+  endif()
+endfunction()
+
 function(_hyle_package_parse_asset dependency kind spec out_source out_destination out_name)
   string(REPLACE "|" ";" _fields "${spec}")
   list(LENGTH _fields _field_count)
@@ -129,10 +275,10 @@ function(_hyle_package_parse_asset dependency kind spec out_source out_destinati
     message(FATAL_ERROR
       "Package dependency '${dependency}' lacks ${kind} source '${_source}'")
   endif()
-  if(NOT _destination OR IS_ABSOLUTE "${_destination}")
-    message(FATAL_ERROR
-      "Package dependency '${dependency}' ${kind} destination must be relative: "
-      "'${_destination}'")
+  _hyle_package_validate_install_destination(
+    "${dependency}" "${kind}" "${_destination}")
+  if(_name)
+    _hyle_package_validate_install_name("${dependency}" "${kind}" "${_name}")
   endif()
   set(${out_source} "${_source}" PARENT_SCOPE)
   set(${out_destination} "${_destination}" PARENT_SCOPE)

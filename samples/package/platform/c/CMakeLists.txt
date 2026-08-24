@@ -5,6 +5,9 @@ find_package(Hyle 0.1 REQUIRED COMPONENTS platform)
 
 add_executable(hyle_package_platform_c main.c)
 target_link_libraries(hyle_package_platform_c PRIVATE hyle::platform)
+if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+  target_compile_options(hyle_package_platform_c PRIVATE -fshort-enums)
+endif()
 hyle_stage_runtime_dependencies(hyle_package_platform_c)
 
 enable_testing()

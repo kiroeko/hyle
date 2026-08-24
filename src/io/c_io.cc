@@ -42,6 +42,58 @@ using hyle::io::c_detail::clear_error;
 using hyle::io::c_detail::normalize_allocator;
 using hyle::io::c_detail::set_error;
 
+template <class Field>
+void read_proactor_option_field(const hyle_io_proactor_options* input,
+                                std::uint32_t declared_size,
+                                std::size_t offset,
+                                Field& output) noexcept {
+  const std::size_t readable = declared_size;
+  if (offset <= readable && sizeof(Field) <= readable - offset) {
+    const auto* bytes = reinterpret_cast<const unsigned char*>(input);
+    std::memcpy(&output, bytes + offset, sizeof(Field));
+  }
+}
+
+bool decode_proactor_options(const hyle_io_proactor_options* input,
+                             hyle_io_proactor_options& output) noexcept {
+  output = hyle_io_proactor_options_default();
+  if (input == nullptr) return true;
+
+  // The input may be an older, shorter, or unaligned ABI object. Even the
+  // leading size word must therefore be byte-read before accessing any field.
+  std::uint32_t declared_size = 0;
+  std::memcpy(&declared_size, input, sizeof(declared_size));
+  if (declared_size < HYLE_IO_PROACTOR_OPTIONS_REQUIRED_SIZE) {
+    set_error("invalid argument: proactor options struct_size is too small");
+    return false;
+  }
+
+  // The required prefix is fully readable. Optional extension fields are
+  // overlaid one complete field at a time; a partial allocator is absent, not
+  // a manufactured vtable assembled from caller bytes and defaults.
+  std::memcpy(&output, input, HYLE_IO_PROACTOR_OPTIONS_REQUIRED_SIZE);
+  if (output.reserved != 0) {
+    set_error("invalid argument: proactor options reserved must be zero");
+    return false;
+  }
+  read_proactor_option_field(input, declared_size,
+                             offsetof(hyle_io_proactor_options, entries),
+                             output.entries);
+  read_proactor_option_field(
+      input, declared_size,
+      offsetof(hyle_io_proactor_options, defer_taskrun), output.defer_taskrun);
+  read_proactor_option_field(input, declared_size,
+                             offsetof(hyle_io_proactor_options, backing),
+                             output.backing);
+  output.struct_size = static_cast<std::uint32_t>(sizeof(output));
+  output.reserved = 0;
+  if (output.defer_taskrun > 1) {
+    set_error("invalid argument: proactor defer_taskrun must be 0 or 1");
+    return false;
+  }
+  return true;
+}
+
 bool valid_token(std::uint64_t token) noexcept {
   if (token != HYLE_IO_WAKE_TOKEN) return true;
   set_error("UINT64_MAX is reserved for the proactor wake token");
@@ -56,6 +108,13 @@ int submit(hyle_io_proactor* p, std::uint64_t token, Fn&& fn) noexcept;
 static_assert(std::is_standard_layout_v<hyle_io_proactor_options>);
 static_assert(std::is_trivially_copyable_v<hyle_io_proactor_options>);
 static_assert(offsetof(hyle_io_proactor_options, struct_size) == 0);
+static_assert(sizeof(hyle_io_proactor_options::struct_size) == 4);
+static_assert(offsetof(hyle_io_proactor_options, reserved) == 4);
+static_assert(HYLE_IO_PROACTOR_OPTIONS_REQUIRED_SIZE == 8);
+static_assert(offsetof(hyle_io_proactor_options, entries) == 8);
+static_assert(offsetof(hyle_io_proactor_options, defer_taskrun) == 12);
+static_assert(sizeof(hyle_io_proactor_options::defer_taskrun) == 4);
+static_assert(offsetof(hyle_io_proactor_options, backing) == 16);
 static_assert(std::is_standard_layout_v<hyle_io_completion>);
 static_assert(std::is_trivially_copyable_v<hyle_io_completion>);
 static_assert(sizeof(hyle_io_completion) == sizeof(hyle::io::Completion));
@@ -87,7 +146,12 @@ static_assert(HYLE_IO_DATAGRAM_SCRATCH_SIZE ==
               hyle::io::Proactor::kDatagramScratch);
 static_assert(std::is_standard_layout_v<hyle_io_capabilities>);
 static_assert(std::is_trivially_copyable_v<hyle_io_capabilities>);
+static_assert(sizeof(hyle_io_backend) == sizeof(std::uint32_t));
 static_assert(offsetof(hyle_io_capabilities, struct_size) == 0);
+static_assert(offsetof(hyle_io_capabilities, backend) == 4);
+static_assert(offsetof(hyle_io_capabilities, bits) == 8);
+static_assert(sizeof(hyle_io_capabilities) == 16);
+static_assert(sizeof(hyle_io_http2_role) == sizeof(std::uint32_t));
 static_assert(std::is_standard_layout_v<hyle_io_uring_extension>);
 static_assert(std::is_trivially_copyable_v<hyle_io_uring_extension>);
 static_assert(sizeof(hyle_io_uring_extension) == sizeof(void*));
@@ -165,17 +229,8 @@ hyle_io_proactor_options hyle_io_proactor_options_default(void) {
 
 hyle_io_proactor* hyle_io_proactor_create(
     const hyle_io_proactor_options* options) {
-  hyle_io_proactor_options normalized = hyle_io_proactor_options_default();
-  if (options != nullptr) {
-    if (options->struct_size < offsetof(hyle_io_proactor_options, backing)) {
-      set_error("proactor options struct_size is too small");
-      return nullptr;
-    }
-    const std::size_t bytes =
-        options->struct_size < sizeof(normalized) ? options->struct_size
-                                                  : sizeof(normalized);
-    std::memcpy(&normalized, options, bytes);
-  }
+  hyle_io_proactor_options normalized;
+  if (!decode_proactor_options(options, normalized)) return nullptr;
   if (normalized.entries == 0) normalized.entries = 256;
   if (!normalize_allocator(&normalized.backing)) return nullptr;
 

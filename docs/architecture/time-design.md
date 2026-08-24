@@ -63,9 +63,15 @@ LFENCE/RDTSC/RDTSCP，ARM64 采用 ISB 包围 counter read，阻止编译器/CPU
 window 对 OS monotonic 实际 elapsed 校准，不靠 busy-spin 保持 core 活跃。校准只影响首次
 调用，热读仍是 rdtsc + fixed-point scale。ARM64 直接读取系统登记的 counter frequency；
 Apple Silicon 当前为 1GHz，tick 已是 ns，不需要缩放。
+CPUID.15 缺 crystal 时，CPUID.16 的 base MHz fallback 以 checked wide multiply/divide
+派生，并拒绝 0 或超出 32-bit crystal 字段的结果；异常 hypervisor tuple、非有限频率以及
+落在 `[1, UINT64_MAX]` 之外的 32.32 multiplier 都 fail closed 到 OS monotonic。
 
 相对 timeout 转绝对 deadline 必须饱和并向上取整。integral duration 使用精确整数 ratio
 算术，不能经浮点而在 2^53 以上丢失 ns；floating duration 单独处理 NaN、无穷和 ceil。
+`Instant::elapsed/until` 在比较后以 checked subtraction 形成非负 duration：反向 clamp 0，
+跨 `MonotonicTimePoint::min/max` 的正向不可表示差值饱和 `Duration::max`。raw `Instant`
+subtraction 刻意保持 `std::chrono` 的有符号语义与 representability 前置条件。
 绝对 sleep 在 Windows 使用高分辨率
 waitable timer，在 Linux 使用绝对 `clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME)`；
 `EINTR` 才重试。零时长是 no-op，yield 属于调度 API。
@@ -115,6 +121,8 @@ exactly one queue owns the linked node
 4. fired/cancelled 输出必须 drain 后才能复用或销毁节点。
 5. 两种 queue 都是 single-owner 数据结构。跨线程操作投递到 owner event loop，不在热路加锁。
 6. 同一 radix bucket 保持 FIFO；跨 deadline/bucket 不承诺全序。需要全序的消费者对批次排序。
+7. C source handle 必须活过同步 visitor；交付深度非零时 destroy 返回
+   `FAILED_PRECONDITION`，阻止后续 callback 经悬空 source re-arm。
 
 ## C++ 与 C 边界
 
@@ -133,6 +141,17 @@ C visitor 调用前 timer 已离开 queue，所以 callback 内 re-arm 合法。
 general queue 的 C header-inline `schedule_after_at` 允许 event loop 把一次 monotonic sample
 复用于一批 arm；默认 `schedule_after` 仍负责自己采钟。两者都经同一个饱和加法 helper，
 不会为了省一次读钟重新引入 overflow。
+
+C++ 的 `advance(now,out)` 仍是零分配批量 splice：输出节点在 caller-owned `TimerList` 中时，
+caller 必须先 pop/drain 再复用或销毁。C 同步 visitor 需要更强的正常消费者语义，因为一个
+callback 会自然地关闭、续期或取消同批其他连接。适配层因此给尚待调用的节点记录 stack
+delivery context，并用 `pop_front` 逐项交付；cancel/reschedule/destroy/deinit 会 O(1) 从该
+context 的 intrusive list 摘除目标，绝不保留 callback 可销毁的 next pointer。嵌套 visitor
+各有独立 context，当前节点在调用前已清 context。这个状态复用 opaque C timer 原有的
+storage-kind 对齐槽，不扩大 control、不修改 native `TimerEntry`，也不改变两种 C++ queue 的
+热路或复杂度。queue wrapper 只按同步批次维护一个非原子交付深度；destroy 据此拒绝 visitor
+内释放 source。被 callback 撤销的未来节点不计入 C 的实际交付 count。所有非 NULL 数值 out
+参数在校验前清零，失败不会泄漏调用方旧值。
 
 ## 修改门禁
 

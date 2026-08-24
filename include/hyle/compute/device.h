@@ -41,20 +41,25 @@ HYLE_COMPUTE_API const char* device_type_name(DeviceType t) noexcept;
 // A handle to one compute engine. Non-owning value type (trivially copyable): the
 // backend state (a CUDA device ordinal, or nothing for host) is small and lives
 // behind `ordinal_`/`type_`; there is no per-Device resource to release (Streams
-// and Events own theirs). Get one from enumerate()/default_device(), then make
-// streams on it.
+// and Events own theirs). A default-constructed Device is an invalid output
+// placeholder; get a valid value from enumerate()/default_device() before using
+// any observer other than valid()/ordinal() or creating resources from it.
 class Device {
  public:
   Device() noexcept = default;
 
+  bool valid() const noexcept { return ordinal_ >= 0; }
+  // Requires valid().
   DeviceType type() const noexcept { return type_; }
   // Opaque device index minted by enumerate()/default_device(). Identifies the
   // physical engine; the dispatch layer maps it to a backend + backend-local
   // ordinal. Treat it as a handle, not an arithmetic value.
   int ordinal() const noexcept { return ordinal_; }
+  // Requires valid().
   bool is_gpu() const noexcept { return type_ == DeviceType::kGpu || type_ == DeviceType::kIGpu; }
 
-  // Human-readable device name ("NVIDIA GeForce RTX 4070" / "cpu"). Points at
+  // The remaining observers require valid(). Human-readable device name
+  // ("NVIDIA GeForce RTX 4070" / "cpu"). Points at
   // backend-owned storage stable for the process; never null.
   HYLE_COMPUTE_API const char* name() const noexcept;
   // Backend that owns this device: "cuda" / "vulkan" / "host". Lets a consumer pick a
@@ -74,15 +79,17 @@ class Device {
   Device(DeviceType type, int ordinal) noexcept : type_(type), ordinal_(ordinal) {}
 
   DeviceType type_ = DeviceType::kCpu;
-  int ordinal_ = 0;
+  int ordinal_ = -1;
 };
 
 // Fill `out` (a caller array of `max`) with the available devices, returning how
 // many exist (which may exceed `max` -- call again with a bigger array, like
-// vkEnumerate*). The host CPU device is ALWAYS present (index last), so the result
+// vkEnumerate*). Passing null is a count-only query and ignores `max`. The host
+// CPU device is ALWAYS present (index last), so the result
 // is never zero; real GPUs (CUDA) come first when the backend is compiled in and a
-// GPU is found at runtime. Buffer-fill, no allocation (same discipline as
-// platform fs iterate).
+// GPU is found at runtime. The allocation-free process table retains at most 32
+// entries and reserves its final slot for that host fallback. Buffer-fill, no
+// allocation (same discipline as platform fs iterate).
 HYLE_COMPUTE_API std::size_t enumerate(Device* out, std::size_t max) noexcept;
 
 // The best default device: the first GPU if one exists, else the host CPU. A

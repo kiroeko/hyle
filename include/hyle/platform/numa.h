@@ -146,9 +146,12 @@ HYLE_PLATFORM_API Result<NumaReservation> vm_reserve_numa(
 // fine custom pattern, retaining one VMA policy per stripe is unsafe; HYLE
 // instead performs O(pages) placement with fixed-size move batches.
 // Windows reserves one address range and commits each stripe with a preferred
-// node. Interleave/preference is a placement policy, not a physical-residency
-// proof; the OS may fall back under pressure. A platform without a multi-node
-// primitive returns Unimplemented rather than silently omitting the policy.
+// node when VirtualAllocExNuma is available. VirtualAlloc2 alone cannot satisfy
+// the one-vm_release ownership contract for replaced placeholder stripes, so it
+// does not advertise this capability. Interleave/preference is a placement
+// policy, not a physical-residency proof; the OS may fall back under pressure.
+// A platform without a multi-node primitive returns Unimplemented rather than
+// silently omitting the policy.
 // Single-node placement is a normal allocation with kNotNeeded.
 HYLE_PLATFORM_API Result<NumaAllocation> vm_allocate_numa_interleaved(
     std::size_t size, std::span<const unsigned> nodes = {},

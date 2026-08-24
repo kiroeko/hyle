@@ -5,6 +5,7 @@
 #include <atomic>
 #include <cmath>
 #include <cstdint>
+#include <cstring>
 #include <memory>
 #include <vector>
 
@@ -45,6 +46,21 @@ using namespace hyle::compute;
 #endif
 
 namespace {
+
+// Prefer the ggml CUDA adapter when available, otherwise use ggml CPU. Vulkan
+// may be HYLE's global default GPU, but this bridge deliberately does not claim
+// a ggml Vulkan adapter; passing that device must remain an explicit error.
+Device default_ggml_device() {
+  Device devices[32];
+  const std::size_t count = enumerate(devices, 32);
+  const Device* host = nullptr;
+  for (std::size_t i = 0; i < count && i < 32; ++i) {
+    if (std::strcmp(devices[i].backend(), "cuda") == 0) return devices[i];
+    if (std::strcmp(devices[i].backend(), "host") == 0) host = &devices[i];
+  }
+  EXPECT_NE(host, nullptr);
+  return host != nullptr ? *host : Device{};
+}
 
 // Golden CPU reference for ggml's C = A·Bᵀ. A is m rows × k, B is n rows × k (both
 // row-major). out is n rows × m row-major: out[j*m + i] = sum_l A[i*k+l]*B[j*k+l].
@@ -125,7 +141,7 @@ int drive_one(const Device& device, BlockingPool& pool, int m, int k, int n,
 // host mem + HYLE fiber sched + ggml operator (on ggml VRAM)" end-to-end proof.
 TEST(GgmlBridge, MatmulDefaultDevice) {
   BlockingPool pool(system_allocator());
-  int rc = drive_one(default_device(), pool, /*m=*/8, /*k=*/16, /*n=*/4,
+  int rc = drive_one(default_ggml_device(), pool, /*m=*/8, /*k=*/16, /*n=*/4,
                      /*n_threads=*/1);
   EXPECT_EQ(rc, 0) << "matmul failed at step " << rc;
 }
@@ -145,6 +161,51 @@ TEST(GgmlBridge, CpuThreadModelSplit) {
   BlockingPool pool(system_allocator());
   EXPECT_EQ(drive_one(cpu, pool, 8, 16, 4, /*n_threads=*/1), 0) << "n_threads=1 leaf";
   EXPECT_EQ(drive_one(cpu, pool, 8, 16, 4, /*n_threads=*/4), 0) << "n_threads=4 batched";
+}
+
+TEST(GgmlBridge, RejectsADeviceFromAnUnsupportedBackend) {
+  Device devices[32];
+  const std::size_t count = enumerate(devices, 32);
+  const Device* vulkan = nullptr;
+  for (std::size_t i = 0; i < count && i < 32; ++i) {
+    if (std::strcmp(devices[i].backend(), "vulkan") == 0) {
+      vulkan = &devices[i];
+      break;
+    }
+  }
+  if (vulkan == nullptr) GTEST_SKIP() << "no Vulkan device";
+
+  auto backend = GgmlBackend::create(*vulkan);
+  ASSERT_FALSE(backend.has_value());
+  EXPECT_TRUE(backend.error().IsUnimplemented()) << backend.error().message();
+
+  const float weight[1] = {1.0f};
+  auto ffn = FfnBlock::create(*vulkan, 1, 1, 0.0f, weight, weight, weight,
+                              weight);
+  ASSERT_FALSE(ffn.has_value());
+  EXPECT_TRUE(ffn.error().IsUnimplemented()) << ffn.error().message();
+}
+
+TEST(GgmlBridge, InvalidFactoryArgumentsReturnInvalidArgument) {
+  const float weight[1] = {1.0f};
+  const Device invalid;
+
+  auto invalid_backend = GgmlBackend::create(invalid, 1);
+  ASSERT_FALSE(invalid_backend.has_value());
+  EXPECT_TRUE(invalid_backend.error().IsInvalidArgument());
+  auto invalid_ffn = FfnBlock::create(invalid, 1, 1, 0.0f, weight, weight,
+                                      weight, weight, 1);
+  ASSERT_FALSE(invalid_ffn.has_value());
+  EXPECT_TRUE(invalid_ffn.error().IsInvalidArgument());
+
+  const Device device = default_ggml_device();
+  auto zero_threads = GgmlBackend::create(device, 0);
+  ASSERT_FALSE(zero_threads.has_value());
+  EXPECT_TRUE(zero_threads.error().IsInvalidArgument());
+  auto negative_threads = FfnBlock::create(device, 1, 1, 0.0f, weight, weight,
+                                           weight, weight, -1);
+  ASSERT_FALSE(negative_threads.has_value());
+  EXPECT_TRUE(negative_threads.error().IsInvalidArgument());
 }
 
 // ---- compute-09 step-1: elementwise / norm operators through the SHARED graph executor ----
@@ -225,7 +286,7 @@ int drive_elementwise(const Device& device, BlockingPool& pool) {
 
 TEST(GgmlBridge, ElementwiseOpsDefaultDevice) {
   BlockingPool pool(system_allocator());
-  int rc = drive_elementwise(default_device(), pool);
+  int rc = drive_elementwise(default_ggml_device(), pool);
   EXPECT_EQ(rc, 0) << "elementwise op failed at step " << rc;
 }
 TEST(GgmlBridge, ElementwiseOpsCpu) {
@@ -292,12 +353,17 @@ int run_ffn(const Device& device, BlockingPool& pool) {
   auto blk = FfnBlock::create(device, kD, kFfn, 1e-5f, wn.data(), wg.data(), wu.data(),
                               wd.data(), /*n_threads=*/1);
   if (!blk.has_value()) return -1;
-  // MOVE coverage: move-construct, then run every forward on the moved-into block. Proves the
-  // move-ctor transfers weight/buffer/backend ownership (weights stay resident) and the
-  // moved-from block's dtor is a safe no-op (nulled handles). blk is dead after this line.
+  // MOVE coverage: move-construct and then move-assign over another live block.  This proves
+  // assignment releases its previous backend without ending the destination object's lifetime,
+  // transfers ownership, and leaves both moved-from destructors as safe no-ops.
   FfnBlock mvd = std::move(*blk);
+  auto assigned = FfnBlock::create(device, kD, kFfn, 1e-5f, wn.data(), wg.data(), wu.data(),
+                                   wd.data(), /*n_threads=*/1);
+  if (!assigned.has_value()) return -2;
+  *assigned = std::move(mvd);
+  if (!assigned->valid() || mvd.valid()) return -3;
   std::vector<float> out(static_cast<size_t>(kRows) * kD, -12345.0f);
-  auto h = mvd.forward(pool, system_allocator(), x.data(), out.data(), kRows);
+  auto h = assigned->forward(pool, system_allocator(), x.data(), out.data(), kRows);
   auto r = h.join();
   if (!r.has_value() || !r->ok()) return -5;
   std::vector<float> ref;
@@ -309,7 +375,7 @@ int run_ffn(const Device& device, BlockingPool& pool) {
   // weights (no re-create) and must still match the reference for the new input.
   std::vector<float> x2(static_cast<size_t>(kRows) * kD), out2(static_cast<size_t>(kRows) * kD, 0.0f);
   fill(x2, 99);
-  auto h2 = mvd.forward(pool, system_allocator(), x2.data(), out2.data(), kRows);
+  auto h2 = assigned->forward(pool, system_allocator(), x2.data(), out2.data(), kRows);
   auto r2 = h2.join();
   if (!r2.has_value() || !r2->ok()) return -10;
   std::vector<float> ref2;
@@ -338,7 +404,7 @@ int drive_ffn(const Device& device, BlockingPool& pool) {
 
 TEST(GgmlBridge, FfnBlockDefaultDevice) {
   BlockingPool pool(system_allocator());
-  EXPECT_EQ(drive_ffn(default_device(), pool), 0) << "FFN block failed";
+  EXPECT_EQ(drive_ffn(default_ggml_device(), pool), 0) << "FFN block failed";
 }
 TEST(GgmlBridge, FfnBlockCpu) {
   Device devs[8];
@@ -356,7 +422,7 @@ TEST(GgmlBridge, FfnBlockCpu) {
 // this). Also exercises spawn_blocking not stalling the workers (fibers overlap).
 TEST(GgmlBridge, ConcurrentIndependentBackends) {
   constexpr int kFibers = 6;
-  Device d = default_device();
+  Device d = default_ggml_device();
   BlockingPool pool(system_allocator());
 
   std::vector<std::unique_ptr<MatmulArg>> args;
@@ -442,7 +508,7 @@ void batch_fiber(void* p) {
 // crash case, now correct).
 TEST(GgmlBridge, BatchedMatmul) {
   BlockingPool pool(system_allocator());
-  BatchArg arg{default_device(), &pool};
+  BatchArg arg{default_ggml_device(), &pool};
   auto f = std::make_unique<Fiber>(kDefaultStackSize,
                                    &batch_fiber, &arg);
   Scheduler sched(2, system_allocator(), 256);
@@ -538,7 +604,7 @@ void reuse_fiber(void* p) {
 // changes (the exact scenario the old dummy-buffer model crashed on).
 TEST(GgmlBridge, BackendReuseAcrossShapes) {
   BlockingPool pool(system_allocator());
-  ReuseArg arg{default_device(), &pool};
+  ReuseArg arg{default_ggml_device(), &pool};
   auto f = std::make_unique<Fiber>(kDefaultStackSize,
                                    &reuse_fiber, &arg);
   Scheduler sched(2, system_allocator(), 256);

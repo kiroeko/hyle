@@ -34,6 +34,21 @@ for (size_t i = 0; i < n; ++i) {
 hyle_io_proactor_destroy(p);
 ```
 
+`hyle_io_proactor_options` 的 ABI 头固定为两个 32-bit word：
+`uint32_t struct_size` 和必须为 0 的 `uint32_t reserved`。全部业务字段都有
+默认值，因此 `HYLE_IO_PROACTOR_OPTIONS_REQUIRED_SIZE` 是 8；普通源码仍应使用
+`HYLE_IO_PROACTOR_OPTIONS_INIT` 或 `hyle_io_proactor_options_default()`，而短前缀
+主要供旧 binding/FFI 使用。
+
+`struct_size` 表示调用方提供的可读前缀，不要求等于当前 `sizeof`。库先建立完整
+默认 options，再只用调用方完整提供的字段覆盖：缺失的 `entries`、
+`defer_taskrun` 和 `backing` 保留默认值，落在字段中间的前缀把该字段视为缺失。
+`hyle_allocator` 是一个不可拆分的 vtable+state 单元，只有整个字段都可读时才会
+覆盖默认 allocator。大于当前结构的未知尾部会被忽略，库不会读取它。小于
+required prefix 或 `reserved != 0` 时 create 返回 NULL，
+`hyle_io_last_error()` 报告 invalid argument。`defer_taskrun` 是固定宽度
+`uint32_t` 布尔值，只接受 0 或 1。
+
 proactor 是单 owner 线程对象；只有 `hyle_io_wake` 可从其他线程调用。
 `hyle_io_post` 仍是 owner-thread 注入。C 用户若要和 HYLE scheduler 组合，常见
 形状是：每个 worker 一个 proactor，`hyle_sched_spawn_on` 把该 shard 的完成循环
@@ -48,6 +63,13 @@ io_uring 降为 epoll，benchmark 和依赖特定能力的程序必须查询，�
 `hyle_io_has_async_file_data/metadata` 是相同信息的便利查询。当前 io_uring
 的 data 与 STATX metadata 都是真异步；IOCP 只有 data read/write 是
 overlapped，epoll/kqueue 的文件 facade 走 blocking pool。
+
+`hyle_io_backend` 是固定 `uint32_t` typedef，命名值是 integer constants；FFI 不应
+绑定成本语言默认 enum，`-fshort-enums` 也不会改变返回值或 snapshot 字段宽度。
+`hyle_io_capabilities` 是按值返回的小型 **frozen v1 snapshot**：当前 64-bit ABI 固定
+size 16、backend offset 4、bits offset 8。这里的 `struct_size` 只描述库返回的完整值，
+不是调用方 capacity，也不是允许未来直接追加字段的 extensible handshake；需要新字段时
+新增 query/type，现有 bit 能力继续在 `bits` 内演进。
 
 capability bit 表示已选 backend 暴露相应机制，不是对任意内核版本、容器
 策略和当前资源的“调用必成功”保证。例如拿到 io_uring extension 后，旧内核
@@ -180,7 +202,19 @@ HTTP/2 是可选构建能力，但 C ABI 的符号集合保持稳定。先调用
 操作失败并设置 `hyle_io_last_error()`；调用方不需要按构建变体做动态符号
 探测。返回 1 才创建 session。session 工厂的全零 `hyle_allocator` 选择系统
 allocator；非零 allocator 必须完整提供 alloc/free/realloc。HTTP/2 开启与
-关闭的纯 C smoke 都受 CI/收口测试覆盖。
+关闭的纯 C smoke 都受 CI/收口测试覆盖。`hyle_io_http2_role` 同样是固定
+`uint32_t` typedef，只接受 `HYLE_IO_HTTP2_CLIENT` / `HYLE_IO_HTTP2_SERVER`；不要把
+宿主语言或编译器的默认 enum 宽度带过 ABI。
+HTTP/2 transport 依赖 sched/fcontext：支持目标默认启用，不支持目标默认关闭且显式
+`HYLE_IO_HTTP2=ON` 在 configure 阶段失败。后一种形状仍导出上述稳定 stub/availability=0，安装包也不会
+把 `io_http2` 写进 feature manifest。TLS 同理：无 fcontext 时 AUTO 不探测 OpenSSL，ON 直接失败。
+
+这个无 fcontext 的 `io` 产品只包含 standalone proactor、shared memory 和稳定 HTTP/2
+C probe/stub；安装树仍保留统一公共头文件集，头文件存在不代表 coroutine transport
+已编入。CMake 用户可查看 `sched` 是否在 `Hyle_AVAILABLE_COMPONENTS` 中；链接
+`hyle::io` 时还会收到 `HYLE_IO_HAS_COROUTINE_TRANSPORT=0|1`。值为 0 时包含
+`hyle/io/net.h` 或任何依赖它的 tcp/udp/file/dns/signal/http C++ 头会给出明确
+编译期错误，而不是在最后链接时才出现缺失符号。
 
 HTTP/1.1 与 TLS convenience 仍没有同等级 C facade；C/FFI 可完整使用 proactor
 网络机制并接宿主 HTTP/TLS stack。这是余下的易用性缺口，不用把 C++ 对象强转

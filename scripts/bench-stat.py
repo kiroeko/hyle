@@ -55,9 +55,11 @@ def _binom_two_sided(k, n):
 
 def parse_run(text):
     """One process's stdout -> {(title, variant): op/s}. Tracks the current
-    table title from each header row (the `relative` line carries it last)."""
+    table title and op/s column from each nanobench header row.  Relative
+    tables prepend a `relative` column; absolute tables do not."""
     out = {}
     title = None
+    ops_col = None
     for ln in text.splitlines():
         if "|" not in ln:
             continue
@@ -65,8 +67,13 @@ def parse_run(text):
         if len(cols) < 6:
             continue
         last = cols[-1].strip()
-        if cols[1] == "relative":          # header row: title is in the last col
+        if cols[1] == "relative":
             title = last
+            ops_col = 3
+            continue
+        if cols[1] == "ns/op" and len(cols) >= 6:
+            title = last
+            ops_col = 2
             continue
         # nanobench appends an extra warning cell after an unstable row:
         #   ... | :wavy_dash: `variant` | (Unstable with ...)
@@ -74,18 +81,38 @@ def parse_run(text):
         # dropping exactly the noisy rows for which cross-process aggregation is
         # most valuable. Find the quoted variant cell instead.
         variant_cell = next((c for c in cols[5:] if BT in c), None)
-        if title and variant_cell is not None:
+        if title and ops_col is not None and variant_cell is not None:
             begin = variant_cell.find(BT)
             end = variant_cell.find(BT, begin + 1)
             if end < 0:
                 continue
             variant = variant_cell[begin + 1:end]
             try:
-                ops = float(cols[3].replace(",", ""))
-            except ValueError:
-                continue
-            out[(title, variant)] = ops
+                ops = float(cols[ops_col].replace(",", ""))
+            except (IndexError, ValueError):
+                raise ValueError(
+                    f"nanobench row has no parseable op/s value: {ln!r}")
+            key = (title, variant)
+            if key in out:
+                raise ValueError(f"duplicate nanobench row: {key!r}")
+            out[key] = ops
     return out
+
+
+def require_consistent_rows(runs):
+    """Reject partial cross-process samples instead of silently lowering N."""
+    if not runs or not runs[0]:
+        raise ValueError("no nanobench rows parsed -- is this a nanobench exe?")
+    expected = set(runs[0])
+    for index, run in enumerate(runs[1:], start=2):
+        actual = set(run)
+        if actual != expected:
+            missing = sorted(expected - actual)
+            extra = sorted(actual - expected)
+            raise ValueError(
+                f"nanobench row set changed in run {index}: "
+                f"missing={missing!r}, extra={extra!r}")
+    return sorted(expected)
 
 
 def parse_sleep_telemetry(text):
@@ -131,22 +158,26 @@ def main():
     cmd = (["setarch", "-R"] if args.setarch else []) + [exe]
     runs = []
     sleep_runs = []
-    for _ in range(args.runs):
+    for run_index in range(1, args.runs + 1):
         r = subprocess.run(cmd, capture_output=True, text=True)
         if r.returncode != 0:
             sys.exit(f"bench exited {r.returncode}: {r.stderr[:400]}")
         output = r.stdout + r.stderr
-        runs.append(parse_run(output))
+        try:
+            runs.append(parse_run(output))
+        except ValueError as error:
+            sys.exit(f"cannot parse nanobench run {run_index}: {error}")
         sleep_runs.append(parse_sleep_telemetry(output))
 
-    keys = sorted({k for r in runs for k in r})
-    if not keys:
-        sys.exit("no nanobench rows parsed -- is this a nanobench exe?")
+    try:
+        keys = require_consistent_rows(runs)
+    except ValueError as error:
+        sys.exit(str(error))
 
     agg = {}
     print(f"N={args.runs} runs\n")
     for k in keys:
-        vals = [r[k] for r in runs if k in r]
+        vals = [r[k] for r in runs]
         med = statistics.median(vals)
         nsop = 1e9 / med
         spread = (max(vals) - min(vals)) / med * 100.0

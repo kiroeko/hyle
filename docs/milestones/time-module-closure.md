@@ -1,5 +1,9 @@
 # time 模块收口任务（2026-07-25）
 
+> **历史证据提示（2026-08-25）：**本页的勾选、点值与绿色结论绑定文中日期/commit，不是
+> 依赖升级与新消费者红队后 working tree 的当前证书。现行状态只看
+> [`pre-release-readiness`](./pre-release-readiness.md)。
+
 > 本页是 milestone/Jira 式任务记录，只说明改了什么、如何验收。当前整体设计见
 > [`time-design`](../architecture/time-design.md)，用户用法见 [`guide/time`](../guide/time.md) /
 > [`guide/c-time`](../guide/c-time.md)，全部性能数字只见
@@ -9,9 +13,9 @@
 
 - [x] 按真实基础库用户形状复审能力，不按已有 benchmark 反推 API；
 - [x] C++ typed API 与紧凑热路径并存，C ABI 覆盖全部语言无关能力；
-- [x] arbitrary timer 达到成熟库 SOTA 算法与 O(1) arm/cancel；
+- [x] 当轮 arbitrary timer 采用成熟库同档算法与 O(1) arm/cancel；
 - [x] sched/io 消费统一，旧 API 和 open-coded deadline 清零；
-- [x] 2026-07-29 当前形状的 Windows、WSL、Apple 真机正确性/性能，以及 WSL
+- [x] 绑定 2026-07-29 形状的 Windows、WSL、Apple 真机正确性/性能，以及 WSL
   GCC14 ASan/UBSan/TSan；x86 Release 五门、M4 四门和适用 sanitizer 门均通过；
 - [x] architecture / guide / performance / milestone 文档各归其位，真实 LOSE 与边界不冒充绿色。
 
@@ -25,7 +29,7 @@
    代码。补 `cancel_all`、chrono overload、typed next deadline 和完整生命周期门。
 4. clock 补 typed chrono facade、signed `Instant` subtraction、absolute sleep；Windows 使用
    high-resolution waitable timer，Linux 使用 absolute monotonic sleep。
-5. C ABI 从未经产品审查的旧 wheel 面重做；当前为 44 个动态符号 + 6 个 header-inline convenience：
+5. C ABI 从未经产品审查的旧 wheel 面重做；该轮为 44 个动态符号 + 6 个 header-inline convenience：
    opaque timer/general/common queue、Status、同步 visitor、callback re-arm、完整 shutdown。
 6. sched 的 fiber sleep/timed I/O 迁到 per-worker `TimerQueue`；deadline 统一走 time 饱和算术。
 7. benchmark 新增 faithful Seastar radix、真实 indexed eager heap、checked/naked TAILQ、
@@ -83,11 +87,11 @@ libevent common timeout、folly TimeoutQueue/HHWheelTimer。
 - C++ time：28 clock + 23 TimerQueue + 16 CommonTimeoutQueue + 1 header test；
 - 两组 million-operation randomized oracle、完整 uint64 deadline、wrong-owner、death/lifecycle；
 - 纯 C consumer 覆盖全部 handle、跨 source Status、顺序拒绝、visitor re-arm、NULL 默认；
-- 当前 44/44 动态符号 surface manifest 在 Windows/WSL/M4 通过，C11/C++23 自包含头通过；新增
+- 绑定提交的 44/44 动态符号 surface manifest 在 Windows/WSL/M4 通过，C11/C++23 自包含头通过；新增
   timestamp/API 与 platform/io 消费边已在 Windows、WSL GCC14、Apple M4 最终复证；
 - Windows Release、WSL GCC14 native-ext4 为 5/5；AppleClang 21 为 4/4（x86-only TSC
   calibration 不注册）；
-- 当前 `3b811e8` 上 WSL GCC14 ASan 5/5、UBSan 5/5；TSan 按项目要求在
+- 绑定 `3b811e8` 的 WSL GCC14 ASan 5/5、UBSan 5/5；TSan 按项目要求在
   `setarch x86_64 -R` 下 C++ 68 tests、纯 C 与 forced calibration 均通过。time-only 构建不需要
   mimalloc ODR workaround，分别使用 `detect_leaks=1:halt_on_error=1` 与
   `halt_on_error=1:print_stacktrace=1` 的正常严格选项。
@@ -103,7 +107,7 @@ Windows scheduler 全组曾有一次既有 `Blocking.RetiredThreadHandlesStayBou
 
 详细表不在 milestone 复制。摘要：
 
-- 当前默认 clocks 三平台与同工作量 `std::chrono` 同档；raw profiling throughput 在
+- 绑定提交的默认 clocks 三平台与同工作量 `std::chrono` 同档；raw profiling throughput 在
   Windows/WSL/M4 为 1.77×/1.84×/11.42×，M4 interactive/utility 同向；
 - 最终形状 Windows 已证：对同算法 radix 在 N=1/8/64 与 N=4096 均胜；对 indexed heap 只有
   N=1 输，从 N=8 起胜；连续/散布 incremental event-loop 统计平；
@@ -127,7 +131,7 @@ Windows scheduler 全组曾有一次既有 `Blocking.RetiredThreadHandlesStayBou
 
 ## 2026-07-29 代码量
 
-统一口径由 tracked 工作树 `cloc` 统计；自实现只计 C++、C/C++ Header、C、CUDA，当前模块
+统一口径由当时 tracked 工作树 `cloc` 统计；自实现只计 C++、C/C++ Header、C、CUDA，该轮模块
 实现不含测试/benchmark/CMake：
 
 | 口径 | 行数 |

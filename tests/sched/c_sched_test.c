@@ -21,6 +21,62 @@
     if (!(expr)) return __LINE__;    \
   } while (0)
 
+_Static_assert(offsetof(hyle_sched_options, reserved) == 4,
+               "sched options reserved ABI offset");
+_Static_assert(offsetof(hyle_sched_options, queue_capacity) == 8,
+               "sched options queue ABI offset");
+_Static_assert(offsetof(hyle_sched_options, fiber_stack_size) == 16,
+               "sched options stack ABI offset");
+_Static_assert(offsetof(hyle_sched_options, backing) == 24,
+               "sched options allocator ABI offset");
+_Static_assert(offsetof(hyle_sched_options, worker_cpu_order) == 56,
+               "sched options CPU order ABI offset");
+_Static_assert(offsetof(hyle_sched_options, has_worker_priority) == 60,
+               "sched options priority flag ABI offset");
+_Static_assert(offsetof(hyle_sched_options, worker_priority) == 64,
+               "sched options priority ABI offset");
+_Static_assert(offsetof(hyle_sched_options, num_workers) == 68,
+               "sched options worker count ABI offset");
+_Static_assert(HYLE_SCHED_OPTIONS_REQUIRED_SIZE == 8,
+               "sched options semantic required prefix");
+_Static_assert(sizeof(hyle_sched_options) == 72,
+               "sched options 64-bit ABI size");
+_Static_assert(sizeof(((hyle_sched_options*)0)->worker_cpu_order) ==
+                   sizeof(uint32_t),
+               "sched options CPU order ABI width");
+_Static_assert(sizeof(((hyle_sched_options*)0)->has_worker_priority) ==
+                   sizeof(uint32_t),
+               "sched options priority flag ABI width");
+_Static_assert(sizeof(((hyle_sched_options*)0)->worker_priority) ==
+                   sizeof(int32_t),
+               "sched options priority ABI width");
+_Static_assert(sizeof(hyle_sched_recv_result) == sizeof(int32_t),
+               "sched receive result ABI width");
+_Static_assert(sizeof(hyle_sched_send_result) == sizeof(int32_t),
+               "sched send result ABI width");
+
+typedef struct sched_options_required_prefix {
+  uint32_t struct_size;
+  uint32_t reserved;
+} sched_options_required_prefix;
+
+/* A physical prefix ending one byte into the current allocator member. The
+ * decoder must ignore that whole member, never manufacture a function pointer
+ * from this fragment, and retain the system allocator default. */
+typedef struct sched_options_partial_allocator {
+  uint32_t struct_size;
+  uint32_t reserved;
+  size_t queue_capacity;
+  size_t fiber_stack_size;
+  unsigned char backing_fragment;
+} sched_options_partial_allocator;
+
+_Static_assert(sizeof(sched_options_required_prefix) == 8,
+               "physical sched required prefix size");
+_Static_assert(offsetof(sched_options_partial_allocator, backing_fragment) ==
+                   offsetof(hyle_sched_options, backing),
+               "physical sched allocator fragment offset");
+
 static int status_ok(hyle_status status) {
   int ok = hyle_status_is_ok(status);
   hyle_status_free(&status);
@@ -172,24 +228,83 @@ int main(void) {
   hyle_allocator state_alloc = {
       tracked_alloc, tracked_free, tracked_realloc, &tracked};
 
-  /* Versioned options: an older prefix keeps defaults for absent fields. */
-  hyle_sched_options prefix = HYLE_SCHED_OPTIONS_INIT;
-  prefix.struct_size = (uint32_t)offsetof(hyle_sched_options, queue_capacity);
-  prefix.num_workers = 1;
-  hyle_sched_scheduler* prefix_scheduler =
-      hyle_sched_scheduler_create(&prefix);
-  CHECK(prefix_scheduler != NULL);
-  CHECK(hyle_sched_num_workers(prefix_scheduler) == 1);
-  hyle_sched_scheduler_destroy(prefix_scheduler);
+  /* A real minimum-size binding supplies only size+reserved. Every business
+   * option is absent and therefore uses the current defaults. */
+  {
+    sched_options_required_prefix prefix = {
+        (uint32_t)sizeof(sched_options_required_prefix), 0};
+    hyle_sched_scheduler* prefix_scheduler = hyle_sched_scheduler_create(
+        (const hyle_sched_options*)(const void*)&prefix);
+    CHECK(prefix_scheduler != NULL);
+    CHECK(hyle_sched_num_workers(prefix_scheduler) >= 1);
+    hyle_sched_scheduler_destroy(prefix_scheduler);
+  }
+
+  /* A partial allocator is absent as a unit, even though one byte is declared
+   * readable. This must use the default allocator and remain callable. */
+  {
+    sched_options_partial_allocator partial = {
+        (uint32_t)(offsetof(sched_options_partial_allocator,
+                            backing_fragment) +
+                   1),
+        0,
+        1024,
+        64 * 1024,
+        0xA5};
+    hyle_sched_scheduler* partial_scheduler = hyle_sched_scheduler_create(
+        (const hyle_sched_options*)(const void*)&partial);
+    CHECK(partial_scheduler != NULL);
+    hyle_sched_scheduler_destroy(partial_scheduler);
+  }
+
+  /* has_worker_priority+worker_priority is one extension unit. A prefix ending
+   * before the value ignores even an invalid visible flag. */
+  {
+    hyle_sched_options partial_priority = HYLE_SCHED_OPTIONS_INIT;
+    partial_priority.struct_size =
+        (uint32_t)offsetof(hyle_sched_options, worker_priority);
+    partial_priority.has_worker_priority = 2;
+    partial_priority.worker_priority = 99;
+    hyle_sched_scheduler* partial_scheduler =
+        hyle_sched_scheduler_create(&partial_priority);
+    CHECK(partial_scheduler != NULL);
+    hyle_sched_scheduler_destroy(partial_scheduler);
+  }
+
+  /* A future caller may append bytes. Current code reads only its known
+   * complete fields and ignores the unknown tail. */
+  {
+    struct future_sched_options {
+      hyle_sched_options known;
+      unsigned char tail[16];
+    } future;
+    memset(&future, 0xA5, sizeof(future));
+    future.known = (hyle_sched_options)HYLE_SCHED_OPTIONS_INIT;
+    future.known.struct_size = (uint32_t)sizeof(future);
+    future.known.num_workers = 1;
+    hyle_sched_scheduler* future_scheduler =
+        hyle_sched_scheduler_create(&future.known);
+    CHECK(future_scheduler != NULL);
+    CHECK(hyle_sched_num_workers(future_scheduler) == 1);
+    hyle_sched_scheduler_destroy(future_scheduler);
+  }
 
   hyle_sched_options automatic = HYLE_SCHED_OPTIONS_INIT;
+  CHECK(automatic.struct_size == sizeof(automatic));
+  CHECK(automatic.reserved == 0);
+  CHECK(automatic.queue_capacity == 1024);
+  CHECK(automatic.fiber_stack_size == 64 * 1024);
   CHECK(automatic.worker_cpu_order == HYLE_CPU_ORDER_OS_DEFAULT);
   CHECK(automatic.has_worker_priority == 0);
+  CHECK(automatic.worker_priority == HYLE_THREAD_PRIORITY_NORMAL);
+  CHECK(automatic.num_workers == 0);
   {
     size_t available = 0;
     CHECK(status_ok(hyle_cpu_available_count(&available)));
     CHECK(automatic.num_workers == 0);
     hyle_sched_options detected = hyle_sched_options_default();
+    CHECK(detected.struct_size == sizeof(detected));
+    CHECK(detected.reserved == 0);
     CHECK(detected.num_workers == (available > 1024 ? 1024u : available));
   }
 #if defined(_WIN32)
@@ -241,9 +356,20 @@ int main(void) {
   hyle_sched_scheduler_destroy(automatic_scheduler);
 
   hyle_sched_options invalid = HYLE_SCHED_OPTIONS_INIT;
-  invalid.struct_size = 0;
+  invalid.struct_size = HYLE_SCHED_OPTIONS_REQUIRED_SIZE - 1;
   CHECK(hyle_sched_scheduler_create(&invalid) == NULL);
   CHECK(hyle_sched_last_error() != NULL);
+  CHECK(strlen(hyle_sched_last_error()) != 0);
+
+  invalid = (hyle_sched_options)HYLE_SCHED_OPTIONS_INIT;
+  invalid.struct_size = 0;
+  CHECK(hyle_sched_scheduler_create(&invalid) == NULL);
+  CHECK(strlen(hyle_sched_last_error()) != 0);
+
+  invalid = (hyle_sched_options)HYLE_SCHED_OPTIONS_INIT;
+  invalid.struct_size = HYLE_SCHED_OPTIONS_REQUIRED_SIZE;
+  invalid.reserved = 1;
+  CHECK(hyle_sched_scheduler_create(&invalid) == NULL);
   CHECK(strlen(hyle_sched_last_error()) != 0);
 
   invalid = hyle_sched_options_default();

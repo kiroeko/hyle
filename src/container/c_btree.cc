@@ -1,5 +1,7 @@
 #include "hyle/c/container.h"
 
+#include "c_options.h"
+
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
@@ -11,6 +13,8 @@
 #include "hyle/mem/allocator.h"
 
 namespace {
+
+namespace hc = hyle::container;
 
 bool is_power_of_two(std::size_t value) noexcept {
   return value != 0 && (value & (value - 1)) == 0;
@@ -37,12 +41,23 @@ bool checked_add(std::size_t left, std::size_t right,
   return true;
 }
 
+bool valid_builtin_scalar_compare_size(
+    const hyle_container_btree_options &options) noexcept {
+  if (options.compare == hyle_container_compare_i32 ||
+      options.compare == hyle_container_compare_u32)
+    return options.key_size == sizeof(std::uint32_t);
+  if (options.compare == hyle_container_compare_i64 ||
+      options.compare == hyle_container_compare_u64)
+    return options.key_size == sizeof(std::uint64_t);
+  return true;
+}
+
 bool valid_options(const hyle_container_btree_options &options,
                    bool require_value) noexcept {
-  if (options.struct_size < sizeof(hyle_container_btree_options) ||
-      options.reserved != 0 || options.key_size == 0 ||
+  if (options.reserved != 0 || options.key_size == 0 ||
       !is_power_of_two(options.key_alignment) ||
       !is_power_of_two(options.value_alignment) || options.compare == nullptr ||
+      !valid_builtin_scalar_compare_size(options) ||
       !valid_backing(options.backing) ||
       (require_value && options.value_size == 0) ||
       (!require_value && options.value_size != 0))
@@ -63,6 +78,24 @@ bool valid_options(const hyle_container_btree_options &options,
   // The implementation guarantees at least five entries per node. Reject a
   // layout whose minimum node would overflow even before child pointers.
   return stride <= (SIZE_MAX - 4096) / 6;
+}
+
+bool decode_btree_options(const hyle_container_btree_options *input,
+                          hyle_container_btree_options &output) noexcept {
+  output =
+      hyle_container_btree_options HYLE_CONTAINER_BTREE_OPTIONS_INIT;
+  std::uint32_t declared_size = 0;
+  if (!hc::c_detail::read_required_options_prefix(
+          input, HYLE_CONTAINER_BTREE_OPTIONS_REQUIRED_SIZE, output,
+          declared_size))
+    return false;
+  hc::c_detail::read_optional_options_field(
+      input, declared_size,
+      offsetof(hyle_container_btree_options, context), output.context);
+  hc::c_detail::read_optional_options_field(
+      input, declared_size,
+      offsetof(hyle_container_btree_options, backing), output.backing);
+  return true;
 }
 
 void *c_allocate(void *state, std::size_t size,
@@ -1032,10 +1065,12 @@ hyle_container_btree_map_create(hyle_container_btree_map **out,
   if (out == nullptr)
     return hyle_status_invalid_argument("B-tree map output is NULL");
   *out = nullptr;
-  if (options == nullptr || !valid_options(*options, true))
+  hyle_container_btree_options decoded = HYLE_CONTAINER_BTREE_OPTIONS_INIT;
+  if (!decode_btree_options(options, decoded) ||
+      !valid_options(decoded, true))
     return hyle_status_invalid_argument("invalid B-tree map options");
-  auto *map =
-      allocate_handle<hyle_container_btree_map>(options->backing, *options);
+  auto *map = allocate_handle<hyle_container_btree_map>(decoded.backing,
+                                                         decoded);
   if (map == nullptr)
     return hyle_status_resource_exhausted("B-tree map allocation failed");
   *out = map;
@@ -1059,6 +1094,8 @@ static hyle_status
 btree_map_insert_impl(hyle_container_insert_result *out_result,
                       hyle_container_btree_map *map, const void *key,
                       const void *value, bool assign) {
+  if (out_result != nullptr)
+    *out_result = HYLE_CONTAINER_ALREADY_PRESENT;
   if (out_result == nullptr || map == nullptr || key == nullptr ||
       value == nullptr)
     return hyle_status_invalid_argument(
@@ -1222,10 +1259,12 @@ hyle_container_btree_set_create(hyle_container_btree_set **out,
   if (out == nullptr)
     return hyle_status_invalid_argument("B-tree set output is NULL");
   *out = nullptr;
-  if (options == nullptr || !valid_options(*options, false))
+  hyle_container_btree_options decoded = HYLE_CONTAINER_BTREE_OPTIONS_INIT;
+  if (!decode_btree_options(options, decoded) ||
+      !valid_options(decoded, false))
     return hyle_status_invalid_argument("invalid B-tree set options");
-  auto *set =
-      allocate_handle<hyle_container_btree_set>(options->backing, *options);
+  auto *set = allocate_handle<hyle_container_btree_set>(decoded.backing,
+                                                         decoded);
   if (set == nullptr)
     return hyle_status_resource_exhausted("B-tree set allocation failed");
   *out = set;
@@ -1249,6 +1288,8 @@ hyle_status
 hyle_container_btree_set_insert(hyle_container_insert_result *out_result,
                                 hyle_container_btree_set *set,
                                 const void *key) {
+  if (out_result != nullptr)
+    *out_result = HYLE_CONTAINER_ALREADY_PRESENT;
   if (out_result == nullptr || set == nullptr || key == nullptr)
     return hyle_status_invalid_argument(
         "result, B-tree set, and key are required");

@@ -1,16 +1,16 @@
 include(FetchContent)
 
-# GoogleTest (charter: unit test framework). Pinned tag, FetchContent GIT form (same
-# open-box-auto-download contract as ggml): first `cmake` fetches it under the
+# GoogleTest (charter: unit test framework). Pinned, hash-checked archive form:
+# first `cmake` fetches it under the
 # root-owned HYLE_DEPS_DIR (build-tree `_deps` by default). No pre-placed mirror.
 FetchContent_Declare(
   googletest
-  GIT_REPOSITORY https://github.com/google/googletest.git
-  GIT_TAG        v1.15.2
-  GIT_SHALLOW    TRUE)
+  URL      ${HYLE_DEP_GOOGLETEST_ARCHIVE_URL}
+  URL_HASH SHA256=${HYLE_DEP_GOOGLETEST_ARCHIVE_SHA256}
+  DOWNLOAD_EXTRACT_TIMESTAMP FALSE)
 # Use shared CRT on MSVC to match our build.
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(googletest)
+hyle_fetchcontent_make_available_locked(googletest)
 
 add_custom_target(hyle_tests)
 set_target_properties(hyle_tests PROPERTIES FOLDER "hyle/validation")
@@ -31,7 +31,14 @@ function(hyle_add_c_test module source)
   add_executable(${target} "${source}")
   set_target_properties(${target} PROPERTIES
     FOLDER "hyle/tests/${module}"
-    HYLE_TEST_MODULE "${module}")
+    HYLE_TEST_MODULE "${module}"
+    # Every HYLE binary module is implemented in C++.  Keep the translation
+    # unit genuinely C, but use the matching C++ driver for the final link so
+    # sanitizer runtimes with C++-only pieces (notably Clang UBSan vptr) are
+    # complete.  A clang-linked C executable can otherwise start successfully
+    # in an ordinary build yet fail at runtime on __ubsan_vptr_type_cache when
+    # it loads an instrumented HYLE DSO.
+    LINKER_LANGUAGE CXX)
   target_link_libraries(${target} PRIVATE hyle_${module} ${ARGN})
   set_source_files_properties("${source}" PROPERTIES LANGUAGE C)
   hyle_apply_warnings(${target})
@@ -144,6 +151,11 @@ endfunction()
 # Keep reviewed C manifests, pure-C consumers, and DLL/.so exports in sync.
 # Before first release this is drift detection, not a compatibility promise.
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
+add_test(NAME hyle_bench_stat_parser_test
+         COMMAND "${Python3_EXECUTABLE}"
+                 "${CMAKE_CURRENT_SOURCE_DIR}/tooling/bench_stat_parser_test.py")
+set_tests_properties(hyle_bench_stat_parser_test PROPERTIES
+  LABELS "tooling;benchmark")
 if(WIN32)
   get_filename_component(_hyle_linker_dir "${CMAKE_LINKER}" DIRECTORY)
   set(_hyle_c_symbol_tool "${_hyle_linker_dir}/dumpbin.exe")

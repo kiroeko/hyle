@@ -14,7 +14,7 @@ profiling build 才存在的纳秒级时间线。它们都不是 error 的替代
 | 有字段、外部时间戳或自定义 source | `log_record` | 明确的 borrowed structured record |
 | 作用域内接进现有 logger/队列/文件/遥测 | `SinkRegistration` + `LogSink` | RAII 注销；复制、排队、轮转、上传归 sink |
 | 进程期或 callback 内特殊控制 registry | `add_sink/remove_sink` | 高级显式路径；调用方自行证明配对和 state 生命周期 |
-| 看热路径 zone、fiber、内存和 counter 时间线 | `HYLE_TRACE_*` | 默认编译期消失；开启时汇入唯一 Tracy client |
+| 看热路径 zone、fiber、内存和 counter 时间线 | `HYLE_TRACE_*` | 默认编译期消失；shared 或单最终 image 的 static 构建汇入一个 Tracy client |
 | C/FFI 产出同样能力 | [`c-obs.md`](./c-obs.md) | POD record、opaque sink、runtime trace 映射 |
 
 如果应用已经使用 Abseil/Folly/spdlog 等日志系统，通常不要再建第二套日志配置树：注册
@@ -147,7 +147,9 @@ cmake -S . -B build-trace \
 zone 用作用域配对；fiber enter/leave 必须跟逻辑执行上下文配对。plot/frame/pool/fiber 的
 身份名要用字符串字面量或其他长期稳定存储，不能传临时 `std::string::c_str()`。动态
 message 会复制文本。共享 HYLE 的所有模块连接同一个 `hyle_tracy_client`，不能在各 DLL
-再各编一份 TracyClient。
+再各编一份 TracyClient。trace-on static SDK 只支持所有 HYLE archive 最终进入一个 link image；
+多个 DLL/plugin 各自静态链接会得到多个互不相认的 Tracy singleton，不属于受支持形状。此类 host
+必须使用 shared `hyle_obs`，不能把“每个 image 一个”描述成 process-unique。
 
 C/FFI runtime trace 函数在 OFF build 中仍是可链接 no-op，所以有一次 ABI 调用；极热的
 C++ 源码路径应使用上述编译期宏。HYLE 内部的 mem/sched/io/compute 也只走这条 native

@@ -30,14 +30,18 @@ extern "C" {
 #  define HYLE_OBS_C_API
 #endif
 
-typedef enum hyle_obs_log_level {
+/* Fixed-width across compilers and flags such as -fshort-enums. Named values
+ * remain integer constants, while every exported parameter/return and record
+ * field uses the stable uint32_t ABI type. */
+typedef uint32_t hyle_obs_log_level;
+enum {
   HYLE_OBS_LOG_TRACE = 0,
   HYLE_OBS_LOG_DEBUG = 1,
   HYLE_OBS_LOG_INFO = 2,
   HYLE_OBS_LOG_WARN = 3,
   HYLE_OBS_LOG_ERROR = 4,
   HYLE_OBS_LOG_OFF = 5
-} hyle_obs_log_level;
+};
 
 /* Consumer-side compile-time floor for logging convenience macros
  * (0=TRACE ... 4=ERROR, 5=OFF). This is call-site policy, not library ABI
@@ -72,9 +76,19 @@ typedef struct hyle_obs_log_record {
   uint64_t timestamp_ns;
 } hyle_obs_log_record;
 
+#define HYLE_OBS_LOG_RECORD_REQUIRED_SIZE                                    \
+  ((uint32_t)(offsetof(hyle_obs_log_record, message_size) +                 \
+              sizeof(((hyle_obs_log_record*)0)->message_size)))
 #define HYLE_OBS_LOG_RECORD_INIT                                             \
-  { sizeof(hyle_obs_log_record), HYLE_OBS_LOG_INFO, "",                    \
+  { (uint32_t)sizeof(hyle_obs_log_record), HYLE_OBS_LOG_INFO, "",          \
     HYLE_OBS_NUL_TERMINATED, NULL, 0, NULL, NULL, 0, 0 }
+
+/* This is a raw record, not an options object: level/message/message_size are
+ * required payload and therefore immediately follow struct_size; no reserved
+ * word is inserted between them. A non-NULL input must expose at least
+ * HYLE_OBS_LOG_RECORD_REQUIRED_SIZE bytes. Missing complete optional fields
+ * use INIT defaults, unknown future tail bytes are ignored, and fields plus
+ * field_count form one atomic optional unit. */
 
 typedef struct hyle_obs_sink_o hyle_obs_sink;
 typedef void (*hyle_obs_sink_write_fn)(void* state,
@@ -95,10 +109,25 @@ HYLE_OBS_C_API hyle_status hyle_obs_log_n(
     int* out_emitted, hyle_obs_log_level level, const char* message,
     size_t message_size);
 
-/* create registers immediately. destroy unregisters quiescently and is NULL
- * safe. A successful return guarantees no callback on another thread still
- * uses state. A callback may destroy its OWN handle; destroying another sink
- * from a callback fails (it may be pending in the same dispatch snapshot). */
+/* Caller-storage path for allocation-domain control without adding a mem
+ * runtime dependency to obs. Query the exact size/alignment, then pass storage
+ * that remains live until destroy succeeds. init registers immediately;
+ * destroy unregisters quiescently, ends the control object's lifetime, and
+ * leaves caller storage to its owner. Write/flush self-destroy is supported;
+ * reuse the storage only after the outer emit/flush call returns and releases
+ * the retiring dispatch reference. */
+HYLE_OBS_C_API size_t hyle_obs_sink_control_size(void);
+HYLE_OBS_C_API size_t hyle_obs_sink_control_alignment(void);
+HYLE_OBS_C_API hyle_status hyle_obs_sink_init(
+    hyle_obs_sink** out, void* control, size_t control_bytes,
+    hyle_obs_sink_write_fn write, hyle_obs_sink_flush_fn flush, void* state);
+
+/* Convenience factory backed by the process C++ heap. Prefer init when the
+ * allocation domain must be explicit or bounded. Both forms use destroy;
+ * destroy is NULL safe. A successful return guarantees no callback on another
+ * thread still uses state. A callback may destroy its OWN handle; destroying
+ * another sink from a callback fails (it may be pending in the same dispatch
+ * snapshot). */
 HYLE_OBS_C_API hyle_status hyle_obs_sink_create(
     hyle_obs_sink** out, hyle_obs_sink_write_fn write,
     hyle_obs_sink_flush_fn flush, void* state);
@@ -181,7 +210,14 @@ static inline hyle_status hyle_obs_log_error_n(const char* message,
 
 /* Runtime trace seam for C/FFI callers. These are no-ops when HYLE was built
  * without HYLE_TRACE. Native C++ hot paths should use hyle/obs/trace.h macros:
- * their disabled form has no function call or argument evaluation. */
+ * their disabled form has no function call or argument evaluation. Dynamic
+ * copied text is prefix-truncated to Tracy's 16-bit payload limit. Each dynamic
+ * zone name/file/function component is capped independently so their combined
+ * source-location record is always representable. A trace-on static SDK is
+ * single-final-link-image only: multiple DLLs/plugins that each static-link it
+ * create separate Tracy singletons. Such hosts must use shared hyle_obs. */
+#define HYLE_OBS_TRACE_TEXT_MAX ((size_t)65534u)
+#define HYLE_OBS_TRACE_SOURCE_COMPONENT_MAX ((size_t)21841u)
 typedef struct hyle_obs_trace_zone {
   uintptr_t rep[2];
 } hyle_obs_trace_zone;
@@ -195,6 +231,12 @@ HYLE_OBS_C_API void hyle_obs_trace_zone_text(
 HYLE_OBS_C_API void hyle_obs_trace_plot(const char* name, double value);
 HYLE_OBS_C_API void hyle_obs_trace_counter(const char* name, int64_t value);
 HYLE_OBS_C_API void hyle_obs_trace_message(const char* message);
+/* Logical-fiber identity across OS-thread migration. stable_name must be a
+ * non-NULL, long-lived pointer (a string literal is ideal), and the same fiber
+ * must reuse the same pointer on every enter. Pair each enter with leave before
+ * returning to non-fiber code. NULL enter is ignored. */
+HYLE_OBS_C_API void hyle_obs_trace_fiber_enter(const char* stable_name);
+HYLE_OBS_C_API void hyle_obs_trace_fiber_leave(void);
 HYLE_OBS_C_API void hyle_obs_trace_frame(const char* stable_name);
 HYLE_OBS_C_API void hyle_obs_trace_alloc(
     const void* pointer, size_t size, const char* stable_pool_name);

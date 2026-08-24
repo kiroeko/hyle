@@ -1,5 +1,9 @@
 #include "hyle/time/clock.h"
 
+#include "hyle/c/time.h"
+
+#include "clock_internal.h"
+
 #if defined(HYLE_TESTING)
 #  include <cstdlib>
 #endif
@@ -97,7 +101,9 @@ bool force_tsc_timing_calibration() noexcept {
 
 #if defined(HYLE_OS_WINDOWS)
 
-std::uint64_t coarse_realtime_ns() noexcept {
+namespace {
+
+HYLE_FORCE_INLINE std::uint64_t coarse_realtime_ns_impl() noexcept {
   // Coarse: reads KUSER_SHARED_DATA without the precise-clock path, at the cost
   // of OS-tick resolution. Platform/build point values live in the perf ledger.
   FILETIME ft;
@@ -109,8 +115,6 @@ std::uint64_t coarse_realtime_ns() noexcept {
   const std::uint64_t unix_ticks = ticks - kEpochDiff;
   return scale_add_saturated(unix_ticks, 100ull, 0);
 }
-
-namespace {
 
 void coarse_sleep_for_ns(std::uint64_t ns) noexcept {
   // Sleep takes ms (coarse, ~15ms granularity by default). Round up so we never
@@ -190,7 +194,9 @@ void sleep_for_ns(std::uint64_t ns) noexcept {
 
 #else  // POSIX (Linux / macOS)
 
-std::uint64_t coarse_realtime_ns() noexcept {
+namespace {
+
+HYLE_FORCE_INLINE std::uint64_t coarse_realtime_ns_impl() noexcept {
   // Linux CLOCK_REALTIME_COARSE is a vDSO read with kernel-tick resolution.
   // macOS/other POSIX lacking it fall back to CLOCK_REALTIME (still correct,
   // just not faster there). Point values live in the perf ledger.
@@ -206,6 +212,8 @@ std::uint64_t coarse_realtime_ns() noexcept {
                              static_cast<std::uint64_t>(ts.tv_nsec));
 }
 
+}  // namespace
+
 void sleep_for_ns(std::uint64_t ns) noexcept {
   if (ns == 0) return;
   struct timespec req;
@@ -220,6 +228,10 @@ void sleep_for_ns(std::uint64_t ns) noexcept {
 }
 
 #endif
+
+std::uint64_t coarse_realtime_ns() noexcept {
+  return coarse_realtime_ns_impl();
+}
 
 bool coarse_realtime_available() noexcept {
 #if defined(HYLE_OS_WINDOWS) || defined(CLOCK_REALTIME_COARSE)
@@ -387,23 +399,17 @@ double tsc_hz_from_cpuid() noexcept {
   if (regs[0] < 0x15u) return 0.0;  // leaf 0x15 not supported
   cpuid(0x15u, regs);
   const unsigned denom = regs[0], numer = regs[1];
-  unsigned crystal = regs[2];
-  if (denom == 0 || numer == 0) return 0.0;  // ratio not enumerated
-  if (crystal == 0) {
+  const unsigned crystal = regs[2];
+  unsigned base_mhz = 0;
+  if (denom != 0 && numer != 0 && crystal == 0) {
     // Crystal not reported: derive from leaf 0x16 base MHz (SDM-sanctioned fallback).
     unsigned r2[4] = {0, 0, 0, 0};
     cpuid(0, r2);
     if (r2[0] < 0x16u) return 0.0;
     cpuid(0x16u, r2);
-    const unsigned base_mhz = r2[0] & 0xffffu;
-    if (base_mhz == 0) return 0.0;
-    // base_MHz ~= crystal * numer/denom / 1e6  =>  crystal = base_MHz*1e6*denom/numer
-    crystal = static_cast<unsigned>(
-        static_cast<std::uint64_t>(base_mhz) * 1'000'000ull * denom / numer);
-    if (crystal == 0) return 0.0;
+    base_mhz = r2[0] & 0xffffu;
   }
-  return static_cast<double>(crystal) * static_cast<double>(numer) /
-         static_cast<double>(denom);
+  return detail::derive_tsc_hz({denom, numer, crystal, base_mhz});
 }
 
 // Read the pair several times, keep the one whose two clock reads were closest
@@ -489,14 +495,11 @@ const TscScale& tsc_scale() noexcept {
   static const TscScale s = [] {
     if (!hardware_has_invariant_tsc()) return TscScale{0, false, false};
     double hz = best_tsc_hz();
-    if (!(hz > 1.0)) {
+    const std::uint64_t multiplier = detail::tsc_scale_multiplier(hz);
+    if (multiplier == 0) {
       return TscScale{0, false, false};  // calibration failed
     }
-    double m = (1e9 / hz) *
-               static_cast<double>(std::uint64_t{1}
-                                   << kHardwareCounterShift);
-    return TscScale{static_cast<std::uint64_t>(m), true,
-                    hardware_has_rdtscp()};
+    return TscScale{multiplier, true, hardware_has_rdtscp()};
   }();
   return s;
 }
@@ -617,3 +620,30 @@ std::uint64_t profiling_measurement_stop_ns() noexcept {
 }
 
 }  // namespace hyle::time
+
+// Keep the C hardware/coarse-clock thunks in the implementation TU that owns
+// the corresponding C++ functions.  This lets release/LTO builds fold the
+// private call instead of crossing a second exported-function seam inside the
+// same shared library.
+extern "C" {
+
+uint64_t hyle_time_profiling_clock_ns(void) {
+  return hyle::time::profiling_clock_ns();
+}
+uint64_t hyle_time_profiling_measurement_start_ns(void) {
+  return hyle::time::profiling_measurement_start_ns();
+}
+uint64_t hyle_time_profiling_measurement_stop_ns(void) {
+  return hyle::time::profiling_measurement_stop_ns();
+}
+int hyle_time_profiling_clock_available(void) {
+  return hyle::time::profiling_clock_available() ? 1 : 0;
+}
+uint64_t hyle_time_coarse_realtime_ns(void) {
+  return hyle::time::coarse_realtime_ns_impl();
+}
+int hyle_time_coarse_realtime_available(void) {
+  return hyle::time::coarse_realtime_available() ? 1 : 0;
+}
+
+}  // extern "C"

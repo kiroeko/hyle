@@ -20,7 +20,7 @@ if(HYLE_BENCH_TBB)
   add_subdirectory(
     "${HYLE_TBB_DIR}"
     "${HYLE_BINARY_DIR}/bench/peers/onetbb"
-    EXCLUDE_FROM_ALL)
+    EXCLUDE_FROM_ALL SYSTEM)
 endif()
 
 # Optional SOTA parity bench: SwissTable vs absl::flat_hash_map. Off by default
@@ -37,5 +37,18 @@ if(HYLE_BENCH_ABSL)
   add_subdirectory(
     "${HYLE_ABSL_DIR}"
     "${HYLE_BINARY_DIR}/bench/peers/abseil"
-    EXCLUDE_FROM_ALL)
+    EXCLUDE_FROM_ALL SYSTEM)
+
+  # MSVC attributes warnings from instantiated external templates to the
+  # consuming translation unit. Current Abseil has constexpr fallback branches
+  # that intentionally diagnose as C4702 even with /external:W0. Apply this
+  # exception only to benchmark targets that explicitly consume Abseil.
+  function(hyle_mark_absl_benchmark_consumer target)
+    if(NOT TARGET ${target})
+      message(FATAL_ERROR "Unknown Abseil benchmark consumer: ${target}")
+    endif()
+    if(MSVC)
+      target_compile_options(${target} PRIVATE /wd4702)
+    endif()
+  endfunction()
 endif()

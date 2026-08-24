@@ -8,13 +8,13 @@
 
 static int g_fails = 0;
 
-#define CHECK(cond)                                                  \
-  do {                                                               \
-    if (!(cond)) {                                                   \
-      fprintf(stderr, "CHECK failed: %s (%s:%d)\n", #cond, __FILE__, \
-              __LINE__);                                             \
-      ++g_fails;                                                     \
-    }                                                                \
+#define CHECK(cond)                                                            \
+  do {                                                                         \
+    if (!(cond)) {                                                             \
+      fprintf(stderr, "CHECK failed: %s (%s:%d)\n", #cond, __FILE__,           \
+              __LINE__);                                                       \
+      ++g_fails;                                                               \
+    }                                                                          \
   } while (0)
 
 static hyle_status helper_fail(void) { return hyle_status_not_found("gone"); }
@@ -26,6 +26,7 @@ static hyle_status helper_propagate(void) {
 
 int main(void) {
   (void)"HYLE_C_ERROR_COVERAGE_BODY_MARKER";
+  CHECK(sizeof(hyle_status_code) == sizeof(uint16_t));
   /* OK */
   hyle_status zero = HYLE_STATUS_INIT;
   CHECK(hyle_status_is_ok(zero));
@@ -73,8 +74,7 @@ int main(void) {
   /* canonical errno adapter */
   {
     CHECK(hyle_status_code_from_errno(0) == HYLE_STATUS_OK);
-    CHECK(hyle_status_code_from_errno(EINVAL) ==
-          HYLE_STATUS_INVALID_ARGUMENT);
+    CHECK(hyle_status_code_from_errno(EINVAL) == HYLE_STATUS_INVALID_ARGUMENT);
     CHECK(hyle_status_code_from_errno(ENOENT) == HYLE_STATUS_NOT_FOUND);
     hyle_status native = hyle_status_from_errno(ENOENT, "opening model");
     hyle_native_error_domain domain = HYLE_NATIVE_ERROR_NONE;
@@ -334,7 +334,7 @@ int main(void) {
 
     hyle_status_update(&overall, &overall); /* safe self no-op */
     CHECK(hyle_status_is_not_found(overall));
-    hyle_status_update(NULL, &second);       /* safe NULL no-ops */
+    hyle_status_update(NULL, &second); /* safe NULL no-ops */
     hyle_status_update(&overall, NULL);
     hyle_status_free(&overall);
   }

@@ -1,13 +1,10 @@
-// hash bench (task #23): HYLE's runtime hasher had NO standalone benchmark -- it was only
-// ever exercised inside SwissTable. README claims XXH3 as the default hasher; this races it.
-// THREE+ groups per workload:
+// Standalone table-hash benchmark. THREE+ groups per workload:
 //   * HYLE hash_bytes / Hash<uint64> (mix64)   -- what HYLE ships
-//   * raw XXH3_64bits + wyhash                  -- SOTA references (XXH3 is what HYLE wraps,
-//                                                  so HYLE-vs-rawXXH3 = wrapper overhead;
-//                                                  wyhash is the rival fast hash)
+//   * raw XXH3_64bits + wyhash                  -- SOTA algorithm references for the
+//                                                  length-adaptive HYLE product path
 //   * std::hash                                 -- the std baseline
-// xxhash is vendored (third_party/xxhash, XXH_INLINE_ALL). wyhash is a sibling clone, so it
-// is gated behind HYLE_BENCH_WYHASH (header-only -> just an include path).
+// Both xxhash and wyhash are vendored product dependencies. Benchmark CMake may
+// still gate the raw wyhash comparison row independently of product behavior.
 #include <nanobench.h>
 
 #define XXH_INLINE_ALL
@@ -34,6 +31,7 @@
 #include <vector>
 
 #include "hyle/container/hash.h"
+#include "hyle/container/swiss_table.h"
 #include "hyle/platform/cpu.h"
 
 #if defined(HYLE_HASH_PEER_AVX2)
@@ -148,6 +146,107 @@ int main() {
     });
   }
 
+  // ---- normal short-string policy cost. Keep the stateful hashers outside the
+  // timed lambda: real tables construct/copy their policy once, so measuring
+  // process-seed initialization on every key would be the wrong contract.
+  {
+    std::vector<std::string> keys;
+    keys.reserve(4096);
+    for (std::size_t i = 0; i < 4096; ++i) {
+      keys.push_back(random_string(8 + (i % 25), 0x51A7u + i));
+    }
+    hyle::container::StringHash process_seeded;
+    hyle::container::StringHash deterministic{0x9e3779b97f4a7c15ull};
+    hyle::container::HardenedStringHash hardened{
+        0x0123456789abcdefull, 0xfedcba9876543210ull};
+    nb::Bench b;
+    b.title("hash short string (4096 varied 8..32B keys)")
+        .relative(true)
+        .batch(keys.size())
+        .minEpochIterations(2000);
+    b.run("HYLE StringHash (cached process seed)", [&] {
+      std::uint64_t acc = 0;
+      for (const auto& key : keys) acc ^= process_seeded(key);
+      nb::doNotOptimizeAway(acc);
+    });
+    b.run("HYLE StringHash (explicit deterministic seed)", [&] {
+      std::uint64_t acc = 0;
+      for (const auto& key : keys) acc ^= deterministic(key);
+      nb::doNotOptimizeAway(acc);
+    });
+    b.run("HYLE HardenedStringHash (SipHash-2-4)", [&] {
+      std::uint64_t acc = 0;
+      for (const auto& key : keys) acc ^= hardened(key);
+      nb::doNotOptimizeAway(acc);
+    });
+    b.run("std::hash<string_view> (baseline)", [&] {
+      std::uint64_t acc = 0;
+      const std::hash<std::string_view> hash;
+      for (const auto& key : keys) acc ^= hash(key);
+      nb::doNotOptimizeAway(acc);
+    });
+  }
+
+  // ---- real heterogeneous FlatHashMap hit/miss lookup. Both rows use the
+  // exact same table, allocation, equality, and query ownership; only the hash
+  // policy changes. Half the string_view queries hit and half miss.
+  {
+    using FastMap = hyle::container::FlatHashMap<
+        std::string, std::uint64_t, hyle::container::StringHash,
+        hyle::container::StringEqual>;
+    using HardenedMap = hyle::container::FlatHashMap<
+        std::string, std::uint64_t, hyle::container::HardenedStringHash,
+        hyle::container::StringEqual>;
+    constexpr std::size_t kKeys = 4096;
+    std::vector<std::string> keys;
+    std::vector<std::string> misses;
+    keys.reserve(kKeys);
+    misses.reserve(kKeys);
+    for (std::size_t i = 0; i < kKeys; ++i) {
+      keys.push_back(random_string(8 + (i % 25), 0x7AB1Eu + i));
+      misses.push_back(keys.back());
+      misses.back().push_back(static_cast<char>(i));
+    }
+
+    FastMap fast;
+    HardenedMap hardened(
+        hyle::mem::SystemAllocator{},
+        hyle::container::HardenedStringHash{0x0123456789abcdefull,
+                                            0xfedcba9876543210ull},
+        hyle::container::StringEqual{});
+    fast.reserve(kKeys);
+    hardened.reserve(kKeys);
+    for (std::size_t i = 0; i < kKeys; ++i) {
+      fast.insert_or_assign(keys[i], i);
+      hardened.insert_or_assign(keys[i], i);
+    }
+
+    nb::Bench b;
+    b.title("FlatHashMap<string> heterogeneous lookup (4096, 50% hit)")
+        .relative(true)
+        .batch(kKeys)
+        .minEpochIterations(200);
+    std::size_t iteration = 0;
+    b.run("HYLE FlatHashMap + process-seeded StringHash", [&] {
+      std::uint64_t acc = 0;
+      for (std::size_t i = 0; i < kKeys; ++i) {
+        const std::string& query = (i & 1u) == 0 ? keys[i] : misses[i];
+        if (const auto* value = fast.find(std::string_view(query))) acc ^= *value;
+      }
+      nb::doNotOptimizeAway(acc + iteration++);
+    });
+    b.run("HYLE FlatHashMap + keyed SipHash-2-4", [&] {
+      std::uint64_t acc = 0;
+      for (std::size_t i = 0; i < kKeys; ++i) {
+        const std::string& query = (i & 1u) == 0 ? keys[i] : misses[i];
+        if (const auto* value = hardened.find(std::string_view(query))) {
+          acc ^= *value;
+        }
+      }
+      nb::doNotOptimizeAway(acc + iteration++);
+    });
+  }
+
   // ---- integer hashing (HYLE mix64: the find-miss-critical path) ----
   {
     std::mt19937_64 rng(42);
@@ -177,11 +276,59 @@ int main() {
     });
   }
 
-  // ---- small POD key (16B struct): typed Hash<T> inline path vs the old hash_bytes call.
-  // This is the real map-key hot path. Hash<T> and a compile-time-sized
-  // hash_bytes call both inline the <=16B mix (absl/F14 style). Their rows are
-  // a facade-parity check: neither should retain the historical out-of-line
-  // XXH3 seam, and neither is expected to beat the other materially.
+  // ---- normal finite floating-point table keys. HYLE canonicalizes signed
+  // zero then bit-casts into the same inline mixer as uint32/uint64; std::hash is
+  // retained as the equality-compatible baseline.
+  {
+    std::vector<float> keys(4096);
+    for (std::size_t i = 0; i < keys.size(); ++i) {
+      keys[i] = static_cast<float>(i) * 0.25f + 0.125f;
+    }
+    nb::Bench b;
+    b.title("hash float (4096 finite keys)")
+        .relative(true)
+        .batch(keys.size())
+        .minEpochIterations(50000);
+    b.run("HYLE Hash<float> (canonical bits + mix64)", [&] {
+      std::uint64_t acc = 0;
+      hyle::container::Hash<float> h;
+      for (float key : keys) acc ^= h(key);
+      nb::doNotOptimizeAway(acc);
+    });
+    b.run("std::hash<float> (baseline)", [&] {
+      std::uint64_t acc = 0;
+      std::hash<float> h;
+      for (float key : keys) acc ^= h(key);
+      nb::doNotOptimizeAway(acc);
+    });
+  }
+  {
+    std::vector<double> keys(4096);
+    for (std::size_t i = 0; i < keys.size(); ++i) {
+      keys[i] = static_cast<double>(i) * 0.25 + 0.125;
+    }
+    nb::Bench b;
+    b.title("hash double (4096 finite keys)")
+        .relative(true)
+        .batch(keys.size())
+        .minEpochIterations(50000);
+    b.run("HYLE Hash<double> (canonical bits + mix64)", [&] {
+      std::uint64_t acc = 0;
+      hyle::container::Hash<double> h;
+      for (double key : keys) acc ^= h(key);
+      nb::doNotOptimizeAway(acc);
+    });
+    b.run("std::hash<double> (baseline)", [&] {
+      std::uint64_t acc = 0;
+      std::hash<double> h;
+      for (double key : keys) acc ^= h(key);
+      nb::doNotOptimizeAway(acc);
+    });
+  }
+
+  // ---- explicitly bytewise 16B key vs a direct hash_bytes call. This models a
+  // representation-equality map key whose owner deliberately opted in. Both
+  // paths inline the <=16B mix (absl/F14 style); the rows are facade parity.
   {
     struct Key16 { std::uint64_t a, b; };
     std::mt19937_64 rng(7);
@@ -189,9 +336,9 @@ int main() {
     for (auto& k : keys) { k.a = rng(); k.b = rng(); }
     nb::Bench b;
     b.title("hash 16B POD key (4096)").relative(true).batch(keys.size()).minEpochIterations(20000);
-    b.run("HYLE Hash<Key16> (inline mix)", [&] {
+    b.run("HYLE BytewiseHash<Key16> (explicit inline mix)", [&] {
       std::uint64_t acc = 0;
-      hyle::container::Hash<Key16> h;
+      hyle::container::BytewiseHash<Key16> h;
       for (const auto& k : keys) acc ^= h(k);
       nb::doNotOptimizeAway(acc);
     });

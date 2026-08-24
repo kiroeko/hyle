@@ -224,7 +224,6 @@ int main(){
     // 32-bit+float tree); Highway trees them (SumOfLanes/MinOfLanes). Measure the gap.
     {
       const hs::ScalableTag<std::int16_t> h16; const hn::ScalableTag<std::int16_t> g16;
-      const std::size_t hw16=hs::Lanes(h16), gw16=hn::Lanes(g16);
       std::vector<std::int16_t> r16(kN); { std::mt19937_64 r(31); std::uniform_int_distribution<int> d(-5000,5000); for(auto&e:r16)e=(std::int16_t)d(r); }
       run_full_reduce_t("ReduceSum i16", h16,g16,hw16,gw16,r16.data(), [&](auto v){return hs::ReduceSum(h16,v);}, [&](auto v){return hn::ReduceSum(g16,v);});
       run_full_reduce_t("ReduceMin i16", h16,g16,hw16,gw16,r16.data(), [&](auto v){return hs::ReduceMin(h16,v);}, [&](auto v){return hn::ReduceMin(g16,v);});
@@ -661,8 +660,6 @@ int main(){
   }
   // ---- SaturatedSub i16 (native vpsubsw) ----
   {
-    const hs::ScalableTag<std::int16_t> hd16; const hn::ScalableTag<std::int16_t> gd16;
-    const std::size_t hw16=hs::Lanes(hd16), gw16=hn::Lanes(gd16);
     std::vector<std::int16_t> s16a(kN), s16b(kN), s16o(kN);
     { std::mt19937_64 r(61); std::uniform_int_distribution<int> dd(-30000,30000); for(auto&e:s16a)e=(std::int16_t)dd(r); for(auto&e:s16b)e=(std::int16_t)dd(r); }
     nb::Bench b; b.title("SaturatedSub i16").relative(true).batch(kN).minEpochIterations(8000);

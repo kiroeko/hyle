@@ -64,5 +64,6 @@ endif()
 hyle_register_package_dependency(
   NAME fcontext
   OWNER sched
+  LOCKED_DEPENDENCIES fcontext
   RUNTIME_FILE_SPECS
     "${PROJECT_SOURCE_DIR}/third_party/fcontext/LICENSE_1_0.txt|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|fcontext-LICENSE_1_0.txt")

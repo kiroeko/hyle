@@ -3,6 +3,37 @@
 #define _CRT_SECURE_NO_WARNINGS 1
 #endif
 #include "hyle/c/mem.h"
+
+_Static_assert(sizeof(hyle_huge_flags) == sizeof(uint32_t),
+               "hyle_huge_flags must have a fixed 32-bit ABI");
+_Static_assert(sizeof(hyle_numa_node) == sizeof(int32_t),
+               "shared hyle_numa_node must have a fixed 32-bit ABI");
+_Static_assert(sizeof(((hyle_region_options*)0)->struct_size) ==
+                   sizeof(uint32_t),
+               "region struct_size must have a fixed 32-bit ABI");
+_Static_assert(offsetof(hyle_region_options, initial_block_size) == 8,
+               "region size-field offsets must remain stable");
+_Static_assert(sizeof(hyle_region_options) == 40,
+               "region options must remain stable on the 64-bit ABI");
+
+typedef struct test_region_options_prefix {
+  uint32_t struct_size;
+  uint32_t reserved;
+} test_region_options_prefix;
+typedef struct test_region_options_v1 {
+  uint32_t struct_size;
+  uint32_t reserved;
+  size_t initial_block_size;
+  size_t max_block_size;
+  size_t large_allocation_threshold;
+} test_region_options_v1;
+
+_Static_assert(sizeof(test_region_options_prefix) ==
+                   HYLE_REGION_OPTIONS_REQUIRED_SIZE,
+               "region required prefix drifted");
+_Static_assert(sizeof(test_region_options_v1) ==
+                   offsetof(hyle_region_options, size_limit),
+               "region v1 prefix drifted");
 #include "hyle/c/platform.h"
 
 #include <stdio.h>
@@ -121,9 +152,9 @@ static void *counting_realloc(void *st, void *p, size_t old_size,
 }
 
 int main(void) {
-  /* The mechanical ABI audit counts only references below this marker, excluding
-     declarations pulled from the header. Keep it as code so comment stripping
-     cannot erase it. */
+  /* The mechanical ABI audit counts only references below this marker,
+     excluding declarations pulled from the header. Keep it as code so comment
+     stripping cannot erase it. */
   (void)"HYLE_C_MEM_COVERAGE_BODY_MARKER";
   CHECK(hyle_default_alignment() >= sizeof(void *));
 
@@ -133,8 +164,8 @@ int main(void) {
   CHECK(sys.alloc != NULL && sys.free != NULL && sys.realloc != NULL);
   {
     counting_backing_state state = {sys, 0};
-    hyle_allocator counting = {counting_alloc, counting_free,
-                               counting_realloc, &state};
+    hyle_allocator counting = {counting_alloc, counting_free, counting_realloc,
+                               &state};
     hyle_shared_pool *pool = NULL;
     CHECK_OK(hyle_shared_pool_create(&pool, counting, 64, 8, 0));
     CHECK(pool != NULL);
@@ -262,8 +293,7 @@ int main(void) {
     hyle_free(&a, p, 96, 16);
     hyle_free(&a, q, 32, 8);
     CHECK(hyle_stats_allocator_balanced(stats));
-    CHECK_OK(
-        hyle_stats_allocator_copy_leaks(&leak_count, stats, NULL, 0));
+    CHECK_OK(hyle_stats_allocator_copy_leaks(&leak_count, stats, NULL, 0));
     CHECK(leak_count == 0u);
     hyle_stats_allocator_reset(stats);
     hyle_stats_allocator_snapshot(stats, &snapshot);
@@ -277,8 +307,7 @@ int main(void) {
     size_t fail_at;
     for (fail_at = 0; fail_at != 3; ++fail_at) {
       failing_metadata_state state = {sys, 0, fail_at, 0};
-      hyle_allocator metadata = {failing_metadata_alloc,
-                                 failing_metadata_free,
+      hyle_allocator metadata = {failing_metadata_alloc, failing_metadata_free,
                                  failing_metadata_realloc, &state};
       hyle_stats_allocator *failed = (hyle_stats_allocator *)(size_t)1;
       hyle_status status =
@@ -322,8 +351,7 @@ int main(void) {
      * through it. The convenience helper keeps metadata on the system heap. */
     hyle_allocator oom = {oom_alloc, oom_free, oom_realloc, NULL};
     hyle_stats_allocator *stats = NULL;
-    CHECK_OK(hyle_stats_allocator_create_with_default_metadata(&stats, oom,
-                                                               0));
+    CHECK_OK(hyle_stats_allocator_create_with_default_metadata(&stats, oom, 0));
     CHECK(stats != NULL);
     hyle_allocator measured = hyle_stats_allocator_as_allocator(stats);
     CHECK(hyle_alloc(&measured, 64, 16) == NULL);
@@ -381,14 +409,79 @@ int main(void) {
     CHECK(hyle_status_is_invalid_argument(status));
     CHECK(r == NULL);
     hyle_status_free(&status);
+
+    {
+      const test_region_options_prefix prefix = {
+          HYLE_REGION_OPTIONS_REQUIRED_SIZE, 0};
+      CHECK_OK(hyle_region_create_default(
+          &r, (const hyle_region_options *)&prefix));
+      CHECK(r != NULL);
+      CHECK(hyle_region_size_limit(r) == SIZE_MAX);
+      hyle_region_destroy(r);
+      r = NULL;
+    }
+    {
+      const test_region_options_v1 prefix = {
+          (uint32_t)sizeof(test_region_options_v1), 0, 128, 256, 192};
+      CHECK_OK(hyle_region_create_default(
+          &r, (const hyle_region_options *)&prefix));
+      CHECK(r != NULL);
+      CHECK(hyle_region_size_limit(r) == SIZE_MAX);
+      hyle_region_destroy(r);
+      r = NULL;
+    }
+    {
+      hyle_region_options invalid = HYLE_REGION_OPTIONS_INIT;
+      invalid.struct_size = HYLE_REGION_OPTIONS_REQUIRED_SIZE - 1;
+      r = (hyle_region *)(uintptr_t)1;
+      status = hyle_region_create_default(&r, &invalid);
+      CHECK(hyle_status_is_invalid_argument(status));
+      CHECK(r == NULL);
+      hyle_status_free(&status);
+
+      invalid.struct_size = HYLE_REGION_OPTIONS_REQUIRED_SIZE;
+      invalid.reserved = 1;
+      status = hyle_region_create_default(&r, &invalid);
+      CHECK(hyle_status_is_invalid_argument(status));
+      CHECK(r == NULL);
+      hyle_status_free(&status);
+    }
+    {
+      struct {
+        hyle_region_options current;
+        uint64_t future[2];
+      } extended = {HYLE_REGION_OPTIONS_INIT, {1, 2}};
+      extended.current.struct_size = (uint32_t)sizeof(extended);
+      extended.current.initial_block_size = 128;
+      extended.current.max_block_size = 256;
+      extended.current.large_allocation_threshold = 192;
+      extended.current.size_limit = 2048;
+      CHECK_OK(hyle_region_create_default(&r, &extended.current));
+      CHECK(r != NULL && hyle_region_size_limit(r) == 2048);
+      hyle_region_destroy(r);
+      r = NULL;
+    }
+    {
+      hyle_region_options partial = HYLE_REGION_OPTIONS_INIT;
+      partial.struct_size =
+          (uint32_t)offsetof(hyle_region_options, size_limit) + 1;
+      partial.initial_block_size = 128;
+      partial.max_block_size = 256;
+      partial.large_allocation_threshold = 192;
+      partial.size_limit = 17;
+      CHECK_OK(hyle_region_create_default(&r, &partial));
+      CHECK(r != NULL && hyle_region_size_limit(r) == SIZE_MAX);
+      hyle_region_destroy(r);
+      r = NULL;
+    }
   }
 
   /* ---- external fixed Region + variable-size FixedPool ---- */
   {
     unsigned char region_storage[512];
     hyle_fixed_region region;
-    CHECK_OK(hyle_fixed_region_init(&region, region_storage,
-                                    sizeof region_storage));
+    CHECK_OK(
+        hyle_fixed_region_init(&region, region_storage, sizeof region_storage));
     CHECK(hyle_fixed_region_capacity(&region) == sizeof region_storage);
     CHECK(hyle_fixed_region_remaining(&region) == sizeof region_storage);
     void *p = hyle_fixed_region_allocate(&region, 64, 32);
@@ -409,8 +502,7 @@ int main(void) {
     {
       hyle_fixed_region invalid = {{0, 0, 0}};
       CHECK(hyle_fixed_region_allocate(&invalid, 8, 8) == NULL);
-      CHECK(!hyle_allocator_is_valid(
-          hyle_fixed_region_as_allocator(&invalid)));
+      CHECK(!hyle_allocator_is_valid(hyle_fixed_region_as_allocator(&invalid)));
     }
 
     unsigned char pool_storage[4096];
@@ -445,14 +537,14 @@ int main(void) {
 
     pool = (hyle_fixed_pool *)(size_t)1;
     hyle_status undersized = hyle_fixed_pool_init(
-        &pool, &pool_control, hyle_fixed_pool_control_size() - 1,
-        pool_storage, sizeof pool_storage);
+        &pool, &pool_control, hyle_fixed_pool_control_size() - 1, pool_storage,
+        sizeof pool_storage);
     CHECK(hyle_status_is_invalid_argument(undersized));
     CHECK(pool == NULL);
     hyle_status_free(&undersized);
 
-    CHECK_OK(hyle_fixed_pool_create(&pool, sys, pool_storage,
-                                    sizeof pool_storage));
+    CHECK_OK(
+        hyle_fixed_pool_create(&pool, sys, pool_storage, sizeof pool_storage));
     CHECK(pool != NULL);
     hyle_fixed_pool_destroy(pool);
   }
@@ -522,14 +614,12 @@ int main(void) {
     CHECK(hyle_shared_pool_cache_block_size(cache) == sizeof(CachedNode));
     CHECK(hyle_shared_pool_cache_capacity(cache) == 4u);
     CHECK(hyle_shared_pool_cache_transfer_batch(cache) == 2u);
-    CachedNode *a =
-        (CachedNode *)hyle_shared_pool_cache_allocate(cache);
+    CachedNode *a = (CachedNode *)hyle_shared_pool_cache_allocate(cache);
     CHECK(a != NULL);
     a->bytes[0] = 0x5A;
     CHECK(a->bytes[0] == 0x5A);
     hyle_shared_pool_cache_deallocate(cache, a);
-    CachedNode *macro_node =
-        HYLE_OBJECT_POOL_CACHE_ACQUIRE(cache, CachedNode);
+    CachedNode *macro_node = HYLE_OBJECT_POOL_CACHE_ACQUIRE(cache, CachedNode);
     CHECK(macro_node != NULL);
     HYLE_OBJECT_POOL_CACHE_RELEASE(cache, macro_node);
     CHECK(hyle_shared_pool_cache_cached(cache) > 0u);
@@ -737,8 +827,7 @@ int main(void) {
 
     /* SharedPool slab OOM -> RESOURCE_EXHAUSTED (was a fatal abort). */
     hyle_shared_pool *failed_pool = (hyle_shared_pool *)(size_t)1;
-    hyle_status status =
-        hyle_shared_pool_create(&failed_pool, oom, 64, 4, 0);
+    hyle_status status = hyle_shared_pool_create(&failed_pool, oom, 64, 4, 0);
     CHECK(hyle_status_is_resource_exhausted(status));
     CHECK(hyle_status_has_message(status));
     CHECK(failed_pool == NULL);
@@ -747,8 +836,8 @@ int main(void) {
     CHECK_OK(hyle_shared_pool_create_default(&cache_core, 64, 4, 0));
     CHECK(cache_core != NULL);
     hyle_shared_pool_cache *failed_cache = NULL;
-    status = hyle_shared_pool_cache_create(&failed_cache, cache_core, oom, 4,
-                                           2);
+    status =
+        hyle_shared_pool_cache_create(&failed_cache, cache_core, oom, 4, 2);
     CHECK(hyle_status_is_resource_exhausted(status));
     CHECK(failed_cache == NULL);
     hyle_status_free(&status);
@@ -782,13 +871,13 @@ int main(void) {
     size_t bytes = 4u * 1024u * 1024u;
     hyle_huge_region *hr = NULL;
     CHECK_OK(hyle_huge_region_open(&hr, bytes, HYLE_HUGE_THP_HINT,
-                                   HYLE_MEM_NUMA_ANY));
+                                   HYLE_NUMA_ANY));
     CHECK(hr != NULL);
     if (hr != NULL) {
       CHECK(hyle_huge_region_size(hr) >= bytes);
       CHECK((hyle_huge_region_requested_flags(hr) & HYLE_HUGE_THP_HINT) != 0);
       CHECK((hyle_huge_region_accepted_flags(hr) & ~HYLE_HUGE_THP_HINT) == 0);
-      CHECK(hyle_huge_region_requested_numa_node(hr) == HYLE_MEM_NUMA_ANY);
+      CHECK(hyle_huge_region_requested_numa_node(hr) == HYLE_NUMA_ANY);
       CHECK(hyle_huge_region_numa_placement_applied(hr) == 0);
       unsigned char *d = (unsigned char *)hyle_huge_region_data(hr);
       CHECK(d != NULL);
@@ -808,8 +897,10 @@ int main(void) {
     CHECK(hi != NULL);
     hyle_huge_region_destroy(hi);
 
-    unsigned selected_node = 0;
-    (void)hyle_numa_nodes(&selected_node, 1);
+    hyle_numa_node platform_node = 0;
+    (void)hyle_numa_nodes(&platform_node, 1);
+    CHECK(platform_node >= 0);
+    hyle_numa_node selected_node = platform_node;
     hyle_status selected_status = hyle_huge_region_open_interleaved_nodes(
         &hi, bytes, HYLE_HUGE_PREFAULT, &selected_node, 1,
         hyle_page_size() * 2);
@@ -825,11 +916,10 @@ int main(void) {
     }
     hyle_status_free(&selected_status);
     if (hi != NULL) {
-      CHECK(hyle_huge_region_interleave_chunk_size(hi) ==
-            hyle_page_size() * 2);
+      CHECK(hyle_huge_region_interleave_chunk_size(hi) == hyle_page_size() * 2);
       hyle_huge_region_destroy(hi);
     }
-    unsigned weighted_nodes[2] = {selected_node, selected_node};
+    hyle_numa_node weighted_nodes[2] = {selected_node, selected_node};
     hyle_status weighted_status = hyle_huge_region_open_interleaved_nodes(
         &hi, bytes, HYLE_HUGE_NONE, weighted_nodes, 2, hyle_page_size());
     if (selected_available) {
@@ -843,20 +933,30 @@ int main(void) {
     }
     hyle_status_free(&weighted_status);
 
+    {
+      hyle_numa_node invalid_nodes[1] = {HYLE_NUMA_ANY};
+      hi = (hyle_huge_region *)(uintptr_t)1;
+      hyle_status invalid_nodes_status =
+          hyle_huge_region_open_interleaved_nodes(
+              &hi, bytes, HYLE_HUGE_NONE, invalid_nodes, 1,
+              hyle_page_size());
+      CHECK(hyle_status_is_invalid_argument(invalid_nodes_status));
+      CHECK(hi == NULL);
+      hyle_status_free(&invalid_nodes_status);
+    }
+
     hyle_status status = hyle_huge_region_open(
         &hr, bytes, HYLE_HUGE_NUMA_BIND | HYLE_HUGE_NUMA_INTERLEAVE,
-        HYLE_MEM_NUMA_ANY);
+        HYLE_NUMA_ANY);
     CHECK(hyle_status_is_invalid_argument(status));
     CHECK(hr == NULL);
     hyle_status_free(&status);
-    status = hyle_huge_region_open(&hr, bytes, 1u << 31,
-                                   HYLE_MEM_NUMA_ANY);
+    status = hyle_huge_region_open(&hr, bytes, 1u << 31, HYLE_NUMA_ANY);
     CHECK(hyle_status_is_invalid_argument(status));
     CHECK(hr == NULL);
     hyle_status_free(&status);
 
-    status = hyle_huge_region_open_local(
-        &hr, bytes, HYLE_HUGE_NUMA_INTERLEAVE);
+    status = hyle_huge_region_open_local(&hr, bytes, HYLE_HUGE_NUMA_INTERLEAVE);
     CHECK(hyle_status_is_invalid_argument(status));
     CHECK(hr == NULL);
     hyle_status_free(&status);
@@ -864,14 +964,13 @@ int main(void) {
     hyle_huge_region_destroy(NULL); /* NULL-safe */
   }
 
-  /* ---- structured Status + named-enum types (FFI discoverability) ---- */
+  /* ---- structured Status + fixed-width FFI types --------------------- */
   {
-    hyle_huge_flags one_flag = HYLE_HUGE_THP_HINT; /* named enum as a type */
-    hyle_mem_numa_node any = HYLE_MEM_NUMA_ANY;
+    hyle_huge_flags one_flag = HYLE_HUGE_THP_HINT;
+    hyle_numa_node any = HYLE_NUMA_ANY;
     uint32_t flags = (uint32_t)one_flag | (uint32_t)HYLE_HUGE_PREFAULT;
     hyle_huge_region *hr = NULL;
-    CHECK_OK(hyle_huge_region_open(&hr, 2u * 1024u * 1024u, flags,
-                                   (int)any));
+    CHECK_OK(hyle_huge_region_open(&hr, 2u * 1024u * 1024u, flags, any));
     CHECK(hr != NULL);
     hyle_huge_region_destroy(hr);
   }
@@ -881,7 +980,7 @@ int main(void) {
   hyle_enable_allocator_hugepages(0, 0);
   hyle_enable_allocator_numa(0);
   hyle_system_collect(0);
-  CHECK_OK(hyle_reserve_huge_1g_pages(0, HYLE_MEM_NUMA_ANY, 0));
+  CHECK_OK(hyle_reserve_huge_1g_pages(0, HYLE_NUMA_ANY, 0));
   {
     hyle_status status = hyle_reserve_huge_1g_pages(1, -2, 1);
     CHECK(hyle_status_is_out_of_range(status));

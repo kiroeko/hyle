@@ -63,8 +63,8 @@ void drive_entry(void* p) {
   d->finished.store(true, std::memory_order_release);
 }
 template <class Make>
-int run(Make make, int workers = 4) {
-  Scheduler sched(static_cast<unsigned>(workers), system_allocator(), 256);
+int run(Make make, int workers = 4, std::size_t queue_capacity = 256) {
+  Scheduler sched(static_cast<unsigned>(workers), system_allocator(), queue_capacity);
   auto d = std::make_unique<Drive>();
   d->task = make(&sched);
   Fiber f(kDefaultStackSize, &drive_entry, d.get());
@@ -199,6 +199,44 @@ Task<int> reduce_coro(mem::Allocator alloc, Scheduler* sched, std::size_t n, std
   Status s = parallel_reduce(*sched, alloc, BlockedRange(0, n, grain), sizeof(std::int64_t),
                              &sum_body, &sum_combine, &sum_identity, nullptr, result);
   co_return s.ok() ? 0 : -1;
+}
+
+Task<int> saturated_for_coro(mem::Allocator alloc, Scheduler* sched,
+                             std::int64_t* out, std::size_t n) {
+  Status s = parallel_for(*sched, alloc, BlockedRange(0, n, 1),
+                          &square_body, out);
+  co_return s.ok() ? 0 : (s.IsResourceExhausted() ? 1 : 2);
+}
+
+Task<int> saturated_reduce_coro(mem::Allocator alloc, Scheduler* sched,
+                                std::size_t n, std::int64_t* result) {
+  Status s = parallel_reduce(*sched, alloc, BlockedRange(0, n, 1),
+                             sizeof(std::int64_t), &sum_body, &sum_combine,
+                             &sum_identity, nullptr, result);
+  co_return s.ok() ? 0 : (s.IsResourceExhausted() ? 1 : 2);
+}
+
+TEST(DataParallel, BoundedQueueSaturationReturnsStructuredError) {
+  // One worker cannot drain its own queues while recursively descending the
+  // left branch.  Capacity two therefore deterministically rejects a deeper
+  // right spawn.  Both algorithms must surface ResourceExhausted; reduce must
+  // never combine the uninitialized partial belonging to the rejected task.
+  constexpr std::size_t kN = 256;
+  std::vector<std::int64_t> out(kN, -1);
+  EXPECT_EQ(run([&](Scheduler* s) {
+              return saturated_for_coro(tsan_visible_allocator(), s,
+                                        out.data(), kN);
+            },
+            1, 2),
+            1);
+
+  std::int64_t result = -1;
+  EXPECT_EQ(run([&](Scheduler* s) {
+              return saturated_reduce_coro(tsan_visible_allocator(), s, kN,
+                                           &result);
+            },
+            1, 2),
+            1);
 }
 
 TEST(DataParallel, ReduceSumMatchesSerial) {

@@ -372,10 +372,11 @@ Region retained-block scaling。正式性能表只维护在
 [`../performance/benchmarks-mem.md`](../performance/benchmarks-mem.md)，本指南不复制点值、
 win/loss 或待补证据。性能结果用来帮助选型，不改变前述 ownership/capacity 合同。
 
-当前设计边界见 [`../architecture/mem-design.md`](../architecture/mem-design.md)；上一轮预发布冻结的
-验收记录见 [`../milestones/mem-close-plan.md`](../milestones/mem-close-plan.md)，2026-07-26
-成熟库复审、已完成修复与最终分发证书见
-[`../milestones/mem-mature-gap-audit.md`](../milestones/mem-mature-gap-audit.md)。
+当前设计边界见 [`../architecture/mem-design.md`](../architecture/mem-design.md)，当前签署状态只看
+[`../milestones/pre-release-readiness.md`](../milestones/pre-release-readiness.md)。
+[`../milestones/mem-close-plan.md`](../milestones/mem-close-plan.md) 与 2026-07-26 的
+[`../milestones/mem-mature-gap-audit.md`](../milestones/mem-mature-gap-audit.md) 都是上一轮历史
+验收输入，不是依赖升级后工作树的自动分发证书。
 安装包的最小默认/组合写法也作为可执行消费者保存在
 [`../../samples/package/mem`](../../samples/package/mem)：C 与 C++ 两份样例都只通过
 `find_package(Hyle COMPONENTS mem)` 使用 `hyle::mem`，持续覆盖 shared/static 交付。

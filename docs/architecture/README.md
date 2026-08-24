@@ -27,10 +27,11 @@ HYLE infra（通用、不特化、贴硬件）
 │  ├─ error/     统一失败值与跨 ABI 诊断
 │  ├─ platform/  CPU/thread/wait/VM/fs/dynlib 跨 OS 机制
 │  ├─ time/      typed clocks、deadline、thread sleep 与 timer queues
-│  ├─ util/      无更合适 owner 的窄通用工具
+│  ├─ util_core  独立可安装的 header-only Ref/ScopeGuard/Rng/type-name/SpinLock seam
+│  ├─ util/      依赖 mem/container 的 Registry、demangle 与 C/FFI runtime
 │  └─ obs/       日志、trace 与 instrumentation hook
 ├─ mem/          极致 host 内存管理：allocator/region/pool/NUMA/大页/fiber stack
-├─ container/    超越 std 容器：SwissTable/SmallVector/intrusive/lock-free
+├─ container/    超越 std 容器：SwissTable/SmallVector/ordered index/lock-free
 ├─ simd/         SIMD 抽象：可移植 vector + 运行时 dispatch + dtype/math/算法核
 ├─ math/         标量数值类型、常量与基础数学能力
 ├─ sched/        统一调度【核心】：fiber + per-core run-queue + work-stealing + coroutine
@@ -76,9 +77,9 @@ HYLE infra（通用、不特化、贴硬件）
 | [`simd-dispatch-guide.md`](./simd-dispatch-guide.md) | SIMD 当前部署与维护规范：ASCII 架构图、未知 CPU Runtime、整库 exact、用户 TU native、自定义 fat-kernel 与 C ABI 边界 |
 | [`time-design.md`](./time-design.md) | time 依赖位置、时钟/算术/sleep 分层、radix/common queues、所有权数据流、C++/C ABI 双面与维护硬门 |
 | [`obs-design.md`](./obs-design.md) | obs 双通路：同步结构化日志的 quiescent sink 生命周期、C ABI trampoline，以及默认零成本/开启时单 Tracy client 的 trace 架构 |
-| [`simd-vendor-surface.md`](./simd-vendor-surface.md) | 产品零 Highway/xsimd 的边界、外部 benchmark 对照和可选 simdutf 薄借 |
+| [`simd-vendor-surface.md`](./simd-vendor-surface.md) | 产品零 Highway/xsimd 的边界、外部 benchmark 对照，以及 container 无条件编入 simdutf v9.1 的薄借边界 |
 | [`mem-design.md`](./mem-design.md) | mem 当前整体设计：host-RAM 边界、模块化 allocator/region/pool/stack/diagnostics、C++/C 能力映射、所有权与失败合同 |
-| [`container-design.md`](./container-design.md) | 容器设计：唯一"造不借"的 T0 + 补 SwissTable SIMD 探测 + SmallVector/intrusive/lock-free 队列（供 sched）|
+| [`container-design.md`](./container-design.md) | 容器设计：唯一"造不借"的 T0 + 补 SwissTable SIMD 探测 + SmallVector/ordered index/lock-free 队列（供 sched）；共享 intrusive primitive 已归 core |
 | [`graph-design.md`](./graph-design.md) | **graph 支柱选型**：北极星② CAD/BIM/CAE 编排——依赖 DAG 增量重算(graph-01,clay taskgraph 零增量资产、从零造脏标记/缓存)+ 数据并行层(graph-02 parallel_for/reduce,归属拍板归 graph)；clay 继承面 ~800-1.5k 骨架 vs 从零 3-4k 增量引擎；纯编排层零自有执行资源(跑 sched+compute 之上)|
 | [`graph-02-design.md`](./graph-02-design.md) | **graph-02 数据并行层设计**：parallel_for/reduce/scan/sort over range，跑 HYLE sched(不借 oneTBB 运行时,只借其设计)。五决策：分块=递归 split+grainsize(work-stealing 友好非静态均分)/reduce=fast+deterministic 双档(浮点结合性)/kernel=Body 收 subrange(接 simd 紧循环)/scan v1 就做/复用 graph-01 sched 基建。分块靠 graph-02、块内靠 simd 的零阻抗接缝 |
 | [`roadmap.md`](./roadmap.md) | 实现路线图：完整 target/header/cross-cut 依赖、P0-P6 构建拓扑、R0-R6 模块严格收口顺序、验收门槛与慢变决策 |

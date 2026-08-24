@@ -8,6 +8,7 @@ if(HYLE_BENCH_ABSL)
   if(TARGET hyle_obs_bench)
     target_compile_definitions(hyle_obs_bench PRIVATE HYLE_BENCH_ABSL)
     target_link_libraries(hyle_obs_bench PRIVATE absl::log absl::log_sink)
+    hyle_mark_absl_benchmark_consumer(hyle_obs_bench)
   endif()
 endif()
 

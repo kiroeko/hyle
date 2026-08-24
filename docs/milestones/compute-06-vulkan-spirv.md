@@ -1,5 +1,9 @@
 # compute-06：Vulkan compute —— HYLE 自造 SPIR-V kernel（跨厂商通用 GPU 计算）
 
+> **历史施工记录：**本文保留落地时的上游 pin、源码行号与验收证据，不代表当前依赖版本。现行
+> revision 以 [`cmake/HyleDependencyLock.json`](../../cmake/HyleDependencyLock.json) 为准；本轮升级
+> 影响与重新复证门见 [`dependency-upgrade-2026-08.md`](./dependency-upgrade-2026-08.md)。
+
 | 字段 | 值 |
 |---|---|
 | **阶段** | P5 |

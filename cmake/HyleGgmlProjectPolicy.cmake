@@ -1,5 +1,5 @@
 # Included by CMAKE_PROJECT_ggml_INCLUDE_BEFORE, inside ggml's project() and
-# before its language detection. ggml 0.15.3 declares generic ASM on MSVC even
+# before its language detection. The pinned ggml project declares generic ASM on MSVC even
 # though it has no generic assembler source there. CMake 4.1's CMP0194 NEW
 # behavior correctly rejects cl as an ASM compiler; retain the compatibility
 # behavior only for this pinned upstream project until its declaration changes.

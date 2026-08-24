@@ -26,10 +26,13 @@
 math/bitpack/vqsort 虽保留各自算法 dispatcher，也只通过 pointer/POD batch API 暴露。vendor 摘除与
 runtime/native/exact 派发彼此正交，详见 [`simd-dispatch-guide.md`](./simd-dispatch-guide.md)。
 
-## 仍可选薄借
+## container 直接借用的成熟 SIMD 核
 
-**UTF-8 计数**（`src/container/string_algo.cc`）：`simdutf::validate_utf8 + count_utf8`，`-DHYLE_SIMD_SIMDUTF` 门控；未定义宏时不 include。**不在 simd-20 范围**（要么同模式移植，要么保留可选外部依赖）。
+**UTF-8 validate/count**（`src/container/string_algo.cc`）：vendored simdutf v9.1 amalgamation 无条件编入
+`hyle_container`；`utf8_validate` 直接借单遍 `validate_utf8`，`utf8_length` 借
+`validate_utf8 + count_utf8`，并复用其 runtime ISA dispatch。
+公开 container 头不泄露 simdutf 类型；scalar decoder 保留为 constexpr/reference fallback。
 
-**一句话**：HYLE 自造核心 SIMD + math + bitpack + vqsort；仓库无 highway/xsimd；bench 用外部 pin 对拍；仅可选 UTF-8 可薄借 simdutf。
+**一句话**：HYLE 自造核心 SIMD + math + bitpack + vqsort；仓库无 highway/xsimd；bench 用外部 pin 对拍；container 的 UTF-8 validate/count 直接借 vendored simdutf。
 
 完整阶段史见 [`../milestones/simd-20-vendor-extraction.md`](../milestones/simd-20-vendor-extraction.md)。

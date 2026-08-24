@@ -10,6 +10,7 @@
 
 #include "hyle/c/mem.h"
 #include "hyle/mem/allocator.h"
+#include "system_internal.h"
 #include "hyle/mem/pmr.h"
 #include "hyle/mem/quota_allocator.h"
 #include "hyle/mem/shared_pool.h"
@@ -35,6 +36,9 @@ using hyle::mem::system_collect;
 using hyle::mem::system_good_size;
 using hyle::mem::system_usable_size;
 using hyle::mem::SystemAllocator;
+#if defined(HYLE_TESTING)
+using hyle::mem::system_backend_version_for_testing;
+#endif
 
 namespace {
 bool is_aligned(const void *p, std::size_t a) {
@@ -85,6 +89,13 @@ TEST(Allocator, SystemAllocatorIsValid) {
   EXPECT_NE(a.alloc_fn(), nullptr);
 }
 
+#if defined(HYLE_TESTING)
+TEST(Allocator, ShippingBackendIsReviewedMimallocVersion) {
+  // mi_version uses major*10000 + minor*100 + patch: v3.5.0 == 30500.
+  EXPECT_EQ(system_backend_version_for_testing(), 30500);
+}
+#endif
+
 TEST(Allocator, SystemCollectPreservesLiveAllocations) {
   Allocator allocator = system_allocator();
   auto *live = allocator.allocate_n<std::uint64_t>(128);
@@ -93,6 +104,52 @@ TEST(Allocator, SystemCollectPreservesLiveAllocations) {
   system_collect();
   EXPECT_EQ(live[0], 0x123456789abcdef0ULL);
   allocator.deallocate_n(live, 128);
+  system_collect(true);
+}
+
+TEST(Allocator, CrossThreadSystemFreeThenOwnerCollectIsSafe) {
+  struct RemoteBlock {
+    void* pointer;
+    std::size_t size;
+    std::size_t alignment;
+    unsigned char marker;
+  };
+
+  constexpr std::size_t kBlocks = 4096;
+  Allocator owner = system_allocator();
+  std::vector<RemoteBlock> blocks;
+  blocks.reserve(kBlocks);
+  for (std::size_t i = 0; i < kBlocks; ++i) {
+    const std::size_t alignment = (i & 1u) == 0 ? 16u : 64u;
+    const std::size_t size = 24u + i % 128u;
+    void* pointer = owner.allocate(size, alignment);
+    ASSERT_NE(pointer, nullptr);
+    const auto marker = static_cast<unsigned char>(i * 37u + 11u);
+    std::memset(pointer, marker, size);
+    blocks.push_back(RemoteBlock{pointer, size, alignment, marker});
+  }
+
+  std::atomic<bool> corrupted{false};
+  std::thread remote_free([&] {
+    Allocator consumer = system_allocator();
+    for (const RemoteBlock& block : blocks) {
+      const auto* bytes = static_cast<const unsigned char*>(block.pointer);
+      if (bytes[0] != block.marker || bytes[block.size - 1] != block.marker) {
+        corrupted.store(true, std::memory_order_relaxed);
+      }
+      consumer.deallocate(block.pointer, block.size, block.alignment);
+    }
+  });
+  remote_free.join();
+  EXPECT_FALSE(corrupted.load(std::memory_order_relaxed));
+
+  // v3 keeps remote frees in the allocating thread heap until that owner runs
+  // maintenance. This is the contract path long-lived workers rely on.
+  system_collect(true);
+  void* probe = owner.allocate(4096, 64);
+  ASSERT_NE(probe, nullptr);
+  EXPECT_TRUE(is_aligned(probe, 64));
+  owner.deallocate(probe, 4096, 64);
   system_collect(true);
 }
 
@@ -161,10 +218,33 @@ TEST(Allocator, RespectsExplicitAlignment) {
 
 TEST(Allocator, SmallAlignmentBumpedToDefault) {
   Allocator a = system_allocator();
-  void *p = a.allocate(8, 1); // sub-default request still safe-aligned
-  ASSERT_NE(p, nullptr);
-  EXPECT_TRUE(is_aligned(p, kDefaultAlignment));
-  a.deallocate(p, 8, 1);
+  for (std::size_t size : {std::size_t{1}, std::size_t{8}, std::size_t{37}}) {
+    for (std::size_t alignment :
+         {std::size_t{1}, std::size_t{2}, std::size_t{4}, std::size_t{8},
+          kDefaultAlignment}) {
+      void *p = a.allocate(size, alignment);
+      ASSERT_NE(p, nullptr) << "size=" << size << " align=" << alignment;
+      EXPECT_TRUE(is_aligned(p, kDefaultAlignment))
+          << "size=" << size << " align=" << alignment;
+      void *q = a.reallocate(p, size, size + 13, alignment);
+      ASSERT_NE(q, nullptr) << "size=" << size << " align=" << alignment;
+      EXPECT_TRUE(is_aligned(q, kDefaultAlignment))
+          << "size=" << size << " align=" << alignment;
+      a.deallocate(q, size + 13, alignment);
+    }
+  }
+}
+
+TEST(Allocator, CompileTimeSmallAlignmentBumpedToDefault) {
+  for (std::size_t size : {std::size_t{1}, std::size_t{8}, std::size_t{37}}) {
+    void *p = SystemAllocator::allocate(size, 1);
+    ASSERT_NE(p, nullptr) << "size=" << size;
+    EXPECT_TRUE(is_aligned(p, kDefaultAlignment)) << "size=" << size;
+    void *q = SystemAllocator::reallocate(p, size, size + 13, 1);
+    ASSERT_NE(q, nullptr) << "size=" << size;
+    EXPECT_TRUE(is_aligned(q, kDefaultAlignment)) << "size=" << size;
+    SystemAllocator::deallocate(q, size + 13, 1);
+  }
 }
 
 TEST(Allocator, ReallocatePreservesData) {

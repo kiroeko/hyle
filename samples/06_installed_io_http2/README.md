@@ -3,7 +3,10 @@
 This pure-C consumer requests the installed `io` component, audits the package's
 `io_http2` feature manifest, links `hyle::io`, and verifies the HTTP/2 protocol core at
 runtime. It uses only the installed prefix; neither nghttp2's checkout nor HYLE's source
-tree is visible to the consumer.
+tree is visible to the consumer. GNU/Clang builds deliberately enable
+`-fshort-enums`; compile-time checks prove that the installed backend and HTTP/2 role
+parameters remain fixed 32-bit typedefs and that the by-value capabilities snapshot keeps
+its frozen v1 layout.
 
 ```bash
 cmake -S . -B build -DCMAKE_PREFIX_PATH=/path/to/hyle-prefix

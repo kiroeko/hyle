@@ -151,6 +151,269 @@ if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES
     "${HYLE_CONTRACT_LAST_OUTPUT}")
 endif()
 
+# FetchContent documents that the first declaration of a dependency name wins
+# across the complete project hierarchy.  A source-embedding parent must not be
+# able to predeclare a same-named arbitrary source and silently make HYLE's
+# locked FetchContent_Declare() a no-op.  The parent is executable/trusted CMake,
+# but the resulting HYLE product must still fail identity verification.
+set(_first_declare_source
+  "${_hyle_contract_root}/fetchcontent-first-declare-source")
+set(_first_declare_parent
+  "${_hyle_contract_root}/fetchcontent-first-declare-parent")
+file(MAKE_DIRECTORY "${_first_declare_source}" "${_first_declare_parent}")
+file(WRITE "${_first_declare_source}/LICENSE"
+  "not the locked GoogleTest license\n")
+file(WRITE "${_first_declare_source}/CMakeLists.txt"
+"cmake_minimum_required(VERSION 3.25)\n"
+"project(not_locked_googletest LANGUAGES NONE)\n")
+file(WRITE "${_first_declare_parent}/CMakeLists.txt"
+"cmake_minimum_required(VERSION 3.25)\n"
+"project(hyle_fetchcontent_first_declare LANGUAGES C CXX)\n"
+"include(FetchContent)\n"
+"FetchContent_Declare(googletest SOURCE_DIR \"${_first_declare_source}\")\n"
+"set(HYLE_COMPONENTS core)\n"
+"set(HYLE_BUILD_TESTS ON)\n"
+"set(HYLE_BUILD_BENCH OFF)\n"
+"set(HYLE_INSTALL OFF)\n"
+"set(HYLE_IO_TLS OFF)\n"
+"set(HYLE_IO_HTTP2 OFF)\n"
+"set(HYLE_COMPUTE_CUDA OFF)\n"
+"set(HYLE_COMPUTE_GGML OFF)\n"
+"set(HYLE_COMPUTE_VULKAN OFF)\n"
+"add_subdirectory(\"${HYLE_SOURCE_DIR}\" hyle)\n")
+_hyle_contract_run("FetchContent first-declaration lock bypass" FALSE
+  "${CMAKE_COMMAND}" -S "${_first_declare_parent}"
+  -B "${_hyle_contract_root}/fetchcontent-first-declare-build"
+  ${_hyle_generator_args}
+  -DCMAKE_BUILD_TYPE=Release)
+if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES
+   "Locked dependency 'googletest'.*(license|source tree)")
+  message(FATAL_ERROR
+    "FetchContent first-declaration bypass failed for the wrong reason:\n"
+    "${HYLE_CONTRACT_LAST_OUTPUT}")
+endif()
+
+# Lock projection must not require an unused in-tree snapshot.  A selected
+# dependency and the complete-audit script entry point must still fail closed.
+set(_vendor_fixture "${_hyle_contract_root}/vendor-closure-fixture")
+file(MAKE_DIRECTORY "${_vendor_fixture}/cmake")
+configure_file("${HYLE_SOURCE_DIR}/cmake/HyleDependencyVersions.cmake"
+  "${_vendor_fixture}/cmake/HyleDependencyVersions.cmake" COPYONLY)
+file(WRITE "${_vendor_fixture}/cmake/HyleDependencyLock.json"
+"{
+  \"schema_version\": 3,
+  \"expanded_tree_algorithm\": \"hyle-path-hex-v1-raw-sha256\",
+  \"dependencies\": [{
+    \"name\": \"demo\", \"class\": \"in_tree\",
+    \"repository\": \"https://github.com/example/demo.git\",
+    \"version\": \"fixture\",
+    \"revision\": \"1111111111111111111111111111111111111111\",
+    \"git_tree\": \"2222222222222222222222222222222222222222\",
+    \"archive\": {
+      \"url\": \"https://codeload.github.com/example/demo/tar.gz/1111111111111111111111111111111111111111\",
+      \"sha256\": \"3333333333333333333333333333333333333333333333333333333333333333\"
+    },
+    \"vendored\": {
+      \"path\": \"third_party/demo\",
+      \"tree_sha256\": \"4444444444444444444444444444444444444444444444444444444444444444\"
+    },
+    \"license\": { \"expression\": \"MIT\", \"files\": [{
+      \"root\": \"hyle\", \"path\": \"third_party/demo/LICENSE\",
+      \"sha256\": \"5555555555555555555555555555555555555555555555555555555555555555\"
+    }] }
+  }]
+}
+")
+set(_vendor_unused "${_vendor_fixture}/unused.cmake")
+file(WRITE "${_vendor_unused}"
+"cmake_minimum_required(VERSION 3.25)\n"
+"include(\"${_vendor_fixture}/cmake/HyleDependencyVersions.cmake\")\n"
+"hyle_audit_in_tree_dependencies()\n")
+_hyle_contract_run("unused in-tree dependency is not required" TRUE
+  "${CMAKE_COMMAND}" -P "${_vendor_unused}")
+
+set(_vendor_selected "${_vendor_fixture}/selected.cmake")
+file(WRITE "${_vendor_selected}"
+"cmake_minimum_required(VERSION 3.25)\n"
+"include(\"${_vendor_fixture}/cmake/HyleDependencyVersions.cmake\")\n"
+"hyle_audit_in_tree_dependencies(demo)\n")
+_hyle_contract_run("selected in-tree dependency is required" FALSE
+  "${CMAKE_COMMAND}" -P "${_vendor_selected}")
+if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES
+   "required by the selected closure is missing")
+  message(FATAL_ERROR
+    "selected vendor failed for the wrong reason:\n"
+    "${HYLE_CONTRACT_LAST_OUTPUT}")
+endif()
+
+_hyle_contract_run("complete in-tree audit requires every snapshot" FALSE
+  "${CMAKE_COMMAND}" -P
+  "${_vendor_fixture}/cmake/HyleDependencyVersions.cmake")
+if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES
+   "required by the selected closure is missing")
+  message(FATAL_ERROR
+    "complete vendor audit failed for the wrong reason:\n"
+    "${HYLE_CONTRACT_LAST_OUTPUT}")
+endif()
+
+# License roots are class semantics, not an optional verifier hint.  A bad
+# root must fail during projection even when that dependency is not selected;
+# otherwise one audit path could silently skip the license entirely.
+file(READ "${_vendor_fixture}/cmake/HyleDependencyLock.json"
+  _vendor_lock_json)
+string(REPLACE "\"root\": \"hyle\"" "\"root\": \"dependency\""
+  _vendor_bad_root_json "${_vendor_lock_json}")
+set(_vendor_bad_root_lock "${_vendor_fixture}/bad-license-root.json")
+file(WRITE "${_vendor_bad_root_lock}" "${_vendor_bad_root_json}")
+set(_vendor_bad_root_script "${_vendor_fixture}/bad-license-root.cmake")
+file(WRITE "${_vendor_bad_root_script}"
+"cmake_minimum_required(VERSION 3.25)\n"
+"set_property(GLOBAL PROPERTY HYLE_INTERNAL_ATTESTED_DEPENDENCY_LOCK_FILE \"${_vendor_bad_root_lock}\")\n"
+"set(HYLE_DEPENDENCY_LOCK_FILE \"${_vendor_bad_root_lock}\")\n"
+"include(\"${_vendor_fixture}/cmake/HyleDependencyVersions.cmake\")\n")
+_hyle_contract_run("class-specific license root" FALSE
+  "${CMAKE_COMMAND}" -P "${_vendor_bad_root_script}")
+if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES
+   "class 'in_tree' requires license root 'hyle'")
+  message(FATAL_ERROR
+    "bad license root failed for the wrong reason:\n"
+    "${HYLE_CONTRACT_LAST_OUTPUT}")
+endif()
+
+string(REPLACE
+  "third_party/demo/LICENSE" "third_party/other/LICENSE"
+  _vendor_bad_owner_json "${_vendor_lock_json}")
+set(_vendor_bad_owner_lock "${_vendor_fixture}/bad-license-owner.json")
+file(WRITE "${_vendor_bad_owner_lock}" "${_vendor_bad_owner_json}")
+set(_vendor_bad_owner_script "${_vendor_fixture}/bad-license-owner.cmake")
+file(WRITE "${_vendor_bad_owner_script}"
+"cmake_minimum_required(VERSION 3.25)\n"
+"set_property(GLOBAL PROPERTY HYLE_INTERNAL_ATTESTED_DEPENDENCY_LOCK_FILE \"${_vendor_bad_owner_lock}\")\n"
+"set(HYLE_DEPENDENCY_LOCK_FILE \"${_vendor_bad_owner_lock}\")\n"
+"include(\"${_vendor_fixture}/cmake/HyleDependencyVersions.cmake\")\n")
+_hyle_contract_run("in-tree license ownership" FALSE
+  "${CMAKE_COMMAND}" -P "${_vendor_bad_owner_script}")
+if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES "outside its vendored path")
+  message(FATAL_ERROR
+    "cross-vendor license path failed for the wrong reason:\n"
+    "${HYLE_CONTRACT_LAST_OUTPUT}")
+endif()
+
+file(READ "${HYLE_SOURCE_DIR}/cmake/HyleDependencyLock.json"
+  _main_dependency_lock_json)
+string(JSON _main_dependency_count LENGTH
+  "${_main_dependency_lock_json}" dependencies)
+math(EXPR _main_dependency_last "${_main_dependency_count} - 1")
+unset(_highway_port_index)
+foreach(_main_dependency_index RANGE 0 ${_main_dependency_last})
+  string(JSON _main_dependency_name GET
+    "${_main_dependency_lock_json}"
+    dependencies ${_main_dependency_index} name)
+  if(_main_dependency_name STREQUAL "highway_port")
+    set(_highway_port_index ${_main_dependency_index})
+  endif()
+endforeach()
+if(NOT DEFINED _highway_port_index)
+  message(FATAL_ERROR "central lock has no highway_port integrated source")
+endif()
+string(REPLACE
+  "third_party/ported/LICENSE-HIGHWAY"
+  "third_party/foreign/LICENSE-HIGHWAY"
+  _integrated_bad_owner_json "${_main_dependency_lock_json}")
+set(_integrated_bad_owner_lock
+  "${_hyle_contract_root}/integrated-bad-license-owner.json")
+file(WRITE "${_integrated_bad_owner_lock}" "${_integrated_bad_owner_json}")
+set(_integrated_bad_owner_script
+  "${_hyle_contract_root}/integrated-bad-license-owner.cmake")
+file(WRITE "${_integrated_bad_owner_script}"
+"cmake_minimum_required(VERSION 3.25)\n"
+"set_property(GLOBAL PROPERTY HYLE_INTERNAL_ATTESTED_DEPENDENCY_LOCK_FILE \"${_integrated_bad_owner_lock}\")\n"
+"set(HYLE_DEPENDENCY_LOCK_FILE \"${_integrated_bad_owner_lock}\")\n"
+"include(\"${HYLE_SOURCE_DIR}/cmake/HyleDependencyVersions.cmake\")\n")
+
+# A command-line cache variable is data, not an authority to replace the
+# central ledger. Trusted fixture code can attest one exact alternate path via
+# a GLOBAL property, but a plain -D override must be rejected before parsing.
+set(_untrusted_lock_override_script
+  "${_hyle_contract_root}/untrusted-lock-override.cmake")
+file(WRITE "${_untrusted_lock_override_script}"
+"cmake_minimum_required(VERSION 3.25)\n"
+"include(\"${HYLE_SOURCE_DIR}/cmake/HyleDependencyVersions.cmake\")\n")
+_hyle_contract_run("untrusted central lock override" FALSE
+  "${CMAKE_COMMAND}"
+  -DHYLE_DEPENDENCY_LOCK_FILE=${_integrated_bad_owner_lock}
+  -P "${_untrusted_lock_override_script}")
+if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES
+   "Refusing untrusted HYLE_DEPENDENCY_LOCK_FILE override")
+  message(FATAL_ERROR
+    "untrusted central lock override failed for the wrong reason:\n"
+    "${HYLE_CONTRACT_LAST_OUTPUT}")
+endif()
+_hyle_contract_run("integrated-source license ownership" FALSE
+  "${CMAKE_COMMAND}" -P "${_integrated_bad_owner_script}")
+if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES
+   "must be under 'third_party/ported/'")
+  message(FATAL_ERROR
+    "integrated license ownership failed for the wrong reason:\n"
+    "${HYLE_CONTRACT_LAST_OUTPUT}")
+endif()
+
+string(JSON _integrated_bad_content_json SET
+  "${_main_dependency_lock_json}"
+  dependencies ${_highway_port_index} integrated content_sha256
+  "\"0000000000000000000000000000000000000000000000000000000000000000\"")
+set(_integrated_bad_content_lock
+  "${_hyle_contract_root}/integrated-bad-content.json")
+file(WRITE "${_integrated_bad_content_lock}" "${_integrated_bad_content_json}")
+set(_integrated_bad_content_script
+  "${_hyle_contract_root}/integrated-bad-content.cmake")
+file(WRITE "${_integrated_bad_content_script}"
+"cmake_minimum_required(VERSION 3.25)\n"
+"set_property(GLOBAL PROPERTY HYLE_INTERNAL_ATTESTED_DEPENDENCY_LOCK_FILE \"${_integrated_bad_content_lock}\")\n"
+"set(HYLE_DEPENDENCY_LOCK_FILE \"${_integrated_bad_content_lock}\")\n"
+"include(\"${HYLE_SOURCE_DIR}/cmake/HyleDependencyVersions.cmake\")\n"
+"hyle_audit_integrated_source_dependencies(highway_port)\n")
+_hyle_contract_run("integrated-source adapted content" FALSE
+  "${CMAKE_COMMAND}" -P "${_integrated_bad_content_script}")
+if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES
+   "adapted content does not match the lock")
+  message(FATAL_ERROR
+    "integrated content mismatch failed for the wrong reason:\n"
+    "${HYLE_CONTRACT_LAST_OUTPUT}")
+endif()
+
+# Repeating an adapted path would make the hash projection ambiguous: one lock
+# could appear to cover more surfaces while hashing the same bytes twice.
+string(JSON _highway_integrated_path_count LENGTH
+  "${_main_dependency_lock_json}"
+  dependencies ${_highway_port_index} integrated paths)
+string(JSON _highway_first_integrated_path GET
+  "${_main_dependency_lock_json}"
+  dependencies ${_highway_port_index} integrated paths 0)
+string(JSON _integrated_duplicate_path_json SET
+  "${_main_dependency_lock_json}"
+  dependencies ${_highway_port_index} integrated paths
+  ${_highway_integrated_path_count}
+  "\"${_highway_first_integrated_path}\"")
+set(_integrated_duplicate_path_lock
+  "${_hyle_contract_root}/integrated-duplicate-path.json")
+file(WRITE "${_integrated_duplicate_path_lock}"
+  "${_integrated_duplicate_path_json}")
+set(_integrated_duplicate_path_script
+  "${_hyle_contract_root}/integrated-duplicate-path.cmake")
+file(WRITE "${_integrated_duplicate_path_script}"
+"cmake_minimum_required(VERSION 3.25)\n"
+"set_property(GLOBAL PROPERTY HYLE_INTERNAL_ATTESTED_DEPENDENCY_LOCK_FILE \"${_integrated_duplicate_path_lock}\")\n"
+"set(HYLE_DEPENDENCY_LOCK_FILE \"${_integrated_duplicate_path_lock}\")\n"
+"include(\"${HYLE_SOURCE_DIR}/cmake/HyleDependencyVersions.cmake\")\n")
+_hyle_contract_run("integrated-source duplicate path" FALSE
+  "${CMAKE_COMMAND}" -P "${_integrated_duplicate_path_script}")
+if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES "has duplicate HYLE path")
+  message(FATAL_ERROR
+    "integrated duplicate path failed for the wrong reason:\n"
+    "${HYLE_CONTRACT_LAST_OUTPUT}")
+endif()
+
 # External implementation/package facts also have one owner and one
 # declaration.  Exercise the registry in script mode so a duplicate name or a
 # stale exported target cannot degrade into a partially relocatable SDK.
@@ -209,40 +472,39 @@ if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES "requires missing export target")
     "${HYLE_CONTRACT_LAST_OUTPUT}")
 endif()
 
-# The checked-in offline bundle entry point derives overrides from directory
-# names.  Keep it list-free and prove the initial-cache contract with a fresh
-# configure instead of only documenting a command line.
-set(_offline_root "${_hyle_contract_root}/offline-bundle")
-set(_offline_project "${_hyle_contract_root}/offline-project")
-file(MAKE_DIRECTORY
-  "${_offline_root}/deps/ggml"
-  "${_offline_root}/deps/vulkan_headers"
-  "${_offline_project}")
-file(COPY "${HYLE_SOURCE_DIR}/hyle-offline-deps.cmake"
-  DESTINATION "${_offline_root}")
-file(WRITE "${_offline_project}/CMakeLists.txt"
-"cmake_minimum_required(VERSION 3.25)\n"
-"project(hyle_offline_bundle_contract LANGUAGES NONE)\n"
-"foreach(_name IN ITEMS GGML VULKAN_HEADERS)\n"
-"  if(NOT IS_DIRECTORY \"\${FETCHCONTENT_SOURCE_DIR_\${_name}}\")\n"
-"    message(FATAL_ERROR \"offline mapping for \${_name} is missing\")\n"
-"  endif()\n"
-"endforeach()\n")
-_hyle_contract_run("offline source bundle mapping" TRUE
+_hyle_contract_run("locked package/license registry contract" TRUE
   "${CMAKE_COMMAND}"
-  -C "${_offline_root}/hyle-offline-deps.cmake"
-  -S "${_offline_project}"
-  -B "${_hyle_contract_root}/offline-build"
-  ${_hyle_generator_args})
+  -DHYLE_SOURCE_DIR=${HYLE_SOURCE_DIR}
+  -DHYLE_SMOKE_ROOT=${_hyle_contract_root}
+  -P "${HYLE_SOURCE_DIR}/cmake/HyleCiPackageRegistryContract.cmake")
+
+_hyle_contract_run("64-bit target-platform contract" TRUE
+  "${CMAKE_COMMAND}"
+  -DHYLE_SOURCE_DIR=${HYLE_SOURCE_DIR}
+  -DHYLE_SMOKE_ROOT=${_hyle_contract_root}
+  -DHYLE_SMOKE_GENERATOR=${HYLE_SMOKE_GENERATOR}
+  -P "${HYLE_SOURCE_DIR}/cmake/HyleCiTargetPlatformContract.cmake")
+
+# Exercise the strict offline preload in a self-contained local Git fixture:
+# allow-listing, HEAD/tree/clean checks, license hashes, no-network cache gates,
+# and the explicit non-Git escape hatch all have positive/negative coverage.
+_hyle_contract_run("verified offline dependency contract" TRUE
+  "${CMAKE_COMMAND}"
+  -DHYLE_SOURCE_DIR=${HYLE_SOURCE_DIR}
+  -DHYLE_SMOKE_ROOT=${_hyle_contract_root}
+  -DHYLE_SMOKE_GENERATOR=${HYLE_SMOKE_GENERATOR}
+  -P "${HYLE_SOURCE_DIR}/cmake/HyleCiOfflineDependencyContract.cmake")
 
 # HYLE_DEPS_DIR is the one build-tree population location for every HYLE-owned
-# FetchContent dependency.  Exercise the test-only path because an error-only
-# product does not configure io/compute, which previously left GoogleTest on
-# FetchContent's unrelated default <build>/_deps path.
+# FetchContent dependency.  Exercise the test-only path through a self-locked
+# GoogleTest-shaped fixture; arbitrary fake direct overrides are intentionally
+# rejected by the production provenance wrapper.
 set(_fake_gtest_source "${_hyle_contract_root}/fake-googletest")
+set(_fake_gtest_lock "${_hyle_contract_root}/fake-googletest-lock.json")
 set(_error_test_build "${_hyle_contract_root}/error-test-build")
 set(_error_dependency_cache "${_hyle_contract_root}/error-dependencies")
 file(MAKE_DIRECTORY "${_fake_gtest_source}")
+file(WRITE "${_fake_gtest_source}/LICENSE" "fixture license\n")
 file(WRITE "${_fake_gtest_source}/CMakeLists.txt"
 "cmake_minimum_required(VERSION 3.25)\n"
 "project(fake_googletest LANGUAGES CXX)\n"
@@ -250,6 +512,36 @@ file(WRITE "${_fake_gtest_source}/CMakeLists.txt"
 "add_library(GTest::gtest ALIAS gtest)\n"
 "add_library(gtest_main INTERFACE)\n"
 "add_library(GTest::gtest_main ALIAS gtest_main)\n")
+include("${HYLE_SOURCE_DIR}/cmake/HyleDependencyVersions.cmake")
+hyle_compute_expanded_source_tree_sha256(
+  "${_fake_gtest_source}" _fake_gtest_expanded_tree)
+string(SHA256 _fake_gtest_license_sha256 "fixture license\n")
+file(WRITE "${_fake_gtest_lock}"
+"{
+  \"schema_version\": 3,
+  \"expanded_tree_algorithm\": \"hyle-path-hex-v1-raw-sha256\",
+  \"dependencies\": [{
+    \"name\": \"googletest\", \"class\": \"fetchcontent\",
+    \"repository\": \"${HYLE_DEP_GOOGLETEST_REPOSITORY}\",
+    \"version\": \"fixture-${HYLE_DEP_GOOGLETEST_VERSION}\",
+    \"revision\": \"${HYLE_DEP_GOOGLETEST_COMMIT}\",
+    \"git_tree\": \"${HYLE_DEP_GOOGLETEST_GIT_TREE}\",
+    \"archive\": {
+      \"url\": \"${HYLE_DEP_GOOGLETEST_ARCHIVE_URL}\",
+      \"sha256\": \"${HYLE_DEP_GOOGLETEST_ARCHIVE_SHA256}\"
+    },
+    \"expanded_tree_sha256\": \"${_fake_gtest_expanded_tree}\",
+    \"license\": { \"expression\": \"BSD-3-Clause\", \"files\": [{
+      \"root\": \"dependency\", \"path\": \"LICENSE\",
+      \"sha256\": \"${_fake_gtest_license_sha256}\"
+    }] }
+  }]
+}
+")
+set(_fake_gtest_lock_attestation
+  "${_hyle_contract_root}/fake-gtest-lock-attestation.cmake")
+file(WRITE "${_fake_gtest_lock_attestation}"
+"set_property(GLOBAL PROPERTY HYLE_INTERNAL_ATTESTED_DEPENDENCY_LOCK_FILE \"${_fake_gtest_lock}\")\n")
 _hyle_contract_run("error-only dependency cache ownership" TRUE
   "${CMAKE_COMMAND}" -S "${HYLE_SOURCE_DIR}"
   -B "${_error_test_build}"
@@ -259,6 +551,8 @@ _hyle_contract_run("error-only dependency cache ownership" TRUE
   -DHYLE_BUILD_TESTS=ON
   -DHYLE_BUILD_BENCH=OFF
   -DHYLE_DEPS_DIR=${_error_dependency_cache}
+  -DHYLE_DEPENDENCY_LOCK_FILE=${_fake_gtest_lock}
+  -DCMAKE_PROJECT_TOP_LEVEL_INCLUDES=${_fake_gtest_lock_attestation}
   -DFETCHCONTENT_SOURCE_DIR_GOOGLETEST=${_fake_gtest_source})
 if(NOT IS_DIRECTORY "${_error_dependency_cache}/googletest-build")
   message(FATAL_ERROR

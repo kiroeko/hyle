@@ -1,4 +1,4 @@
-/* auto-generated on 2026-06-23 15:54:42 +0200. Do not edit! */
+/* auto-generated on 2026-08-18 10:19:29 -0400. Do not edit! */
 /* begin file include\simdutf.h */
 #ifndef SIMDUTF_H
 #define SIMDUTF_H
@@ -432,6 +432,7 @@
 // Sometimes logging is useful, but we want it disabled by default
 // and free of any logging code in release builds.
 #ifdef SIMDUTF_LOGGING
+  #include <cstdlib>
   #include <iostream>
   #define simdutf_log(msg)                                                     \
     std::cout << "[" << __FUNCTION__ << "]: " << msg << std::endl              \
@@ -940,7 +941,7 @@ SIMDUTF_DISABLE_UNDESIRED_WARNINGS
 #define SIMDUTF_SIMDUTF_VERSION_H
 
 /** The version of simdutf being used (major.minor.revision) */
-#define SIMDUTF_VERSION "9.0.0"
+#define SIMDUTF_VERSION "9.1.0"
 
 namespace simdutf {
 enum {
@@ -951,7 +952,7 @@ enum {
   /**
    * The minor version (major.MINOR.revision) of simdutf being used.
    */
-  SIMDUTF_VERSION_MINOR = 0,
+  SIMDUTF_VERSION_MINOR = 1,
   /**
    * The revision (major.minor.REVISION) of simdutf being used.
    */
@@ -1344,6 +1345,20 @@ static inline uint32_t detect_supported_architectures() {
   #define SIMDUTF_FEATURE_BASE64 1
 #endif
 
+/// helpers placed in namespace detail are not a part of the public API
+namespace simdutf {
+namespace detail {
+namespace {
+// this is to avoid including <algorithm> just for min
+constexpr std::size_t min(std::size_t a, std::size_t b) {
+  return a < b ? a : b;
+}
+template <typename T, typename U>
+constexpr std::size_t min(const T &a, const U &b) = delete;
+} // namespace
+} // namespace detail
+} // namespace simdutf
+
 #if SIMDUTF_CPLUSPLUS23
 /* begin file include\simdutf\constexpr_ptr.h */
 #ifndef SIMDUTF_CONSTEXPR_PTR_H
@@ -1612,6 +1627,8 @@ template <endianness big_endian> constexpr uint16_t swap_if_needed(uint16_t c) {
 #ifndef SIMDUTF_ASCII_H
 #define SIMDUTF_ASCII_H
 
+#include <cstring>
+
 namespace simdutf {
 namespace scalar {
 namespace {
@@ -1701,6 +1718,7 @@ validate_with_errors(InputPtr data, size_t len) noexcept {
 #define SIMDUTF_ATOMIC_UTIL_H
 #if SIMDUTF_ATOMIC_REF
   #include <atomic>
+  #include <cstring>
 namespace simdutf {
 namespace scalar {
 
@@ -1727,7 +1745,7 @@ inline void memcpy_atomic_read(char *dst, const char *src, size_t len) {
   // Handle unaligned start
   size_t offset = reinterpret_cast<std::uintptr_t>(src) % alignment;
   if (offset) {
-    size_t to_align = std::min(len, alignment - offset);
+    size_t to_align = detail::min(len, alignment - offset);
     bbb_memcpy_atomic_read(dst, src, to_align);
     src += to_align;
     dst += to_align;
@@ -1774,7 +1792,7 @@ inline void memcpy_atomic_write(char *dst, const char *src, size_t len) {
   // Handle unaligned start
   size_t offset = reinterpret_cast<std::uintptr_t>(dst) % alignment;
   if (offset) {
-    size_t to_align = std::min(len, alignment - offset);
+    size_t to_align = detail::min(len, alignment - offset);
     bbb_memcpy_atomic_write(dst, src, to_align);
     dst += to_align;
     src += to_align;
@@ -1917,6 +1935,8 @@ simdutf_constexpr23 size_t convert(InputPtr data, size_t len,
 /* begin file include\simdutf\scalar\latin1_to_utf8\latin1_to_utf8.h */
 #ifndef SIMDUTF_LATIN1_TO_UTF8_H
 #define SIMDUTF_LATIN1_TO_UTF8_H
+
+#include <cstring>
 
 namespace simdutf {
 namespace scalar {
@@ -2619,6 +2639,8 @@ simdutf_constexpr23 size_t convert_valid(const char16_t *data, size_t len,
 #ifndef SIMDUTF_UTF16_TO_UTF8_H
 #define SIMDUTF_UTF16_TO_UTF8_H
 
+#include <cstring>
+
 namespace simdutf {
 namespace scalar {
 namespace {
@@ -2916,6 +2938,8 @@ simdutf_constexpr23 size_t convert_with_replacement(const char16_t *data,
 #ifndef SIMDUTF_VALID_UTF16_TO_UTF8_H
 #define SIMDUTF_VALID_UTF16_TO_UTF8_H
 
+#include <cstring>
+
 namespace simdutf {
 namespace scalar {
 namespace {
@@ -3093,6 +3117,8 @@ utf16_length_from_utf32(const char32_t *p, size_t len) {
 #ifndef SIMDUTF_UTF32_TO_LATIN1_H
 #define SIMDUTF_UTF32_TO_LATIN1_H
 
+#include <cstring>
+
 namespace simdutf {
 namespace scalar {
 namespace {
@@ -3162,6 +3188,8 @@ inline simdutf_constexpr23 result convert_with_errors(const char32_t *data,
 /* begin file include\simdutf\scalar\utf32_to_latin1\valid_utf32_to_latin1.h */
 #ifndef SIMDUTF_VALID_UTF32_TO_LATIN1_H
 #define SIMDUTF_VALID_UTF32_TO_LATIN1_H
+
+#include <cstring>
 
 namespace simdutf {
 namespace scalar {
@@ -3364,6 +3392,8 @@ simdutf_constexpr23 size_t convert_valid(const char32_t *data, size_t len,
 #ifndef SIMDUTF_UTF32_TO_UTF8_H
 #define SIMDUTF_UTF32_TO_UTF8_H
 
+#include <cstring>
+
 namespace simdutf {
 namespace scalar {
 namespace {
@@ -3508,6 +3538,8 @@ simdutf_constexpr23 result convert_with_errors(InputPtr data, size_t len,
 #ifndef SIMDUTF_VALID_UTF32_TO_UTF8_H
 #define SIMDUTF_VALID_UTF32_TO_UTF8_H
 
+#include <cstring>
+
 namespace simdutf {
 namespace scalar {
 namespace {
@@ -3581,6 +3613,8 @@ simdutf_constexpr23 size_t convert_valid(InputPtr data, size_t len,
 /* begin file include\simdutf\scalar\utf8.h */
 #ifndef SIMDUTF_UTF8_H
 #define SIMDUTF_UTF8_H
+
+#include <cstring>
 
 namespace simdutf {
 namespace scalar {
@@ -3911,6 +3945,8 @@ trim_partial_utf8(InputPtr input, size_t length) {
 #ifndef SIMDUTF_UTF8_TO_LATIN1_H
 #define SIMDUTF_UTF8_TO_LATIN1_H
 
+#include <cstring>
+
 namespace simdutf {
 namespace scalar {
 namespace {
@@ -4138,6 +4174,8 @@ inline result rewind_and_convert_with_errors(size_t prior_bytes,
 #ifndef SIMDUTF_VALID_UTF8_TO_LATIN1_H
 #define SIMDUTF_VALID_UTF8_TO_LATIN1_H
 
+#include <cstring>
+
 namespace simdutf {
 namespace scalar {
 namespace {
@@ -4226,6 +4264,8 @@ simdutf_constexpr23 size_t convert_valid(InputPtr data, size_t len,
 /* begin file include\simdutf\scalar\utf8_to_utf16\utf8_to_utf16.h */
 #ifndef SIMDUTF_UTF8_TO_UTF16_H
 #define SIMDUTF_UTF8_TO_UTF16_H
+
+#include <cstring>
 
 namespace simdutf {
 namespace scalar {
@@ -4570,6 +4610,8 @@ inline result rewind_and_convert_with_errors(size_t prior_bytes,
 #ifndef SIMDUTF_VALID_UTF8_TO_UTF16_H
 #define SIMDUTF_VALID_UTF8_TO_UTF16_H
 
+#include <cstring>
+
 namespace simdutf {
 namespace scalar {
 namespace {
@@ -4677,6 +4719,8 @@ simdutf_constexpr23 size_t convert_valid(InputPtr data, size_t len,
 /* begin file include\simdutf\scalar\utf8_to_utf32\utf8_to_utf32.h */
 #ifndef SIMDUTF_UTF8_TO_UTF32_H
 #define SIMDUTF_UTF8_TO_UTF32_H
+
+#include <cstring>
 
 namespace simdutf {
 namespace scalar {
@@ -4977,6 +5021,8 @@ inline result rewind_and_convert_with_errors(size_t prior_bytes,
 /* begin file include\simdutf\scalar\utf8_to_utf32\valid_utf8_to_utf32.h */
 #ifndef SIMDUTF_VALID_UTF8_TO_UTF32_H
 #define SIMDUTF_VALID_UTF8_TO_UTF32_H
+
+#include <cstring>
 
 namespace simdutf {
 namespace scalar {
@@ -5735,6 +5781,12 @@ convert_latin1_to_utf8(
  * This function is suitable to work with inputs from untrusted sources.
  *
  * We write as many characters as possible.
+ *
+ * Using convert_latin1_to_utf8_safe instead of convert_latin1_to_utf8 comes
+ * with a significant penalty in some cases, being up to four times slower,
+ * especially on short inputs. If you have allocated the output buffer so that
+ * it contains utf8_length_from_latin1(input, length) bytes, then prefer
+ * convert_latin1_to_utf8.
  *
  * @param input         the Latin1 string to convert
  * @param length        the length of the string in bytes
@@ -6704,6 +6756,11 @@ convert_utf16_to_utf8(
  *
  * This function is not BOM-aware.
  *
+ * Using convert_utf16_to_utf8_safe instead of convert_utf16_to_utf8 comes with
+ * a significant penalty in some cases, being up to three times slower,
+ * especially on short inputs. If you have allocated the output buffer so that
+ * it contains utf8_length_from_utf16(input, length) bytes, then prefer
+ * convert_utf16_to_utf8.
  *
  * @param input         the UTF-16 string to convert
  * @param length        the length of the string in 16-bit code units (char16_t)
@@ -11628,6 +11685,10 @@ base64_valid_or_padding(char16_t input,
  *
  * https://tc39.es/proposal-arraybuffer-base64/spec/#sec-frombase64
  *
+ * The base64_to_binary_safe function has negligible overhead compared with
+ * base64_to_binary in the absence of ignorable characters; however, on short
+ * inputs containing ignorable characters, it can be up to three times slower.
+ *
  * @param input         the base64 string to process, in ASCII stored as 8-bit
  * or 16-bit units
  * @param length        the length of the string in 8-bit or 16-bit units.
@@ -13862,6 +13923,8 @@ get_active_implementation();
 
 // this is not part of the public api
 
+#include <type_traits> // for is_same
+
 namespace simdutf {
 
 template <typename chartype>
@@ -13927,7 +13990,7 @@ simdutf_warn_unused simdutf_constexpr23 result base64_to_binary_safe_impl(
   size_t output_position = 0;
 
   // We also do a first pass using the fast path to decode as much as possible
-  size_t safe_input = (std::min)(
+  size_t safe_input = detail::min(
       remaining_input_length,
       base64_length_from_binary(remaining_output_length / 3 * 3, options));
   bool done_with_partial = (safe_input == remaining_input_length);

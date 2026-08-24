@@ -1,5 +1,7 @@
 #include "hyle/c/container.h"
 
+#include "c_options.h"
+
 #include <algorithm>
 #include <cstring>
 #include <limits>
@@ -37,6 +39,82 @@ bool is_power_of_two(std::size_t value) noexcept {
 bool valid_backing(const hyle_allocator& backing) noexcept {
   return backing.alloc != nullptr && backing.free != nullptr &&
          backing.realloc != nullptr;
+}
+
+bool valid_hash_callbacks(hyle_container_hash_fn hash,
+                          hyle_container_equal_fn equal) noexcept {
+  // A custom equivalence relation can merge byte-distinct keys, so the
+  // process-seeded byte hash is not necessarily compatible with it. A custom
+  // hash with the default byte equality remains valid.
+  return equal == nullptr || hash != nullptr;
+}
+
+bool decode_vector_options(const hyle_container_vector_options* input,
+                           hyle_container_vector_options& output) noexcept {
+  output = hyle_container_vector_options HYLE_CONTAINER_VECTOR_OPTIONS_INIT;
+  std::uint32_t declared_size = 0;
+  if (!hc::c_detail::read_required_options_prefix(
+          input, HYLE_CONTAINER_VECTOR_OPTIONS_REQUIRED_SIZE, output,
+          declared_size))
+    return false;
+  hc::c_detail::read_optional_options_field(
+      input, declared_size,
+      offsetof(hyle_container_vector_options, initial_capacity),
+      output.initial_capacity);
+  hc::c_detail::read_optional_options_field(
+      input, declared_size, offsetof(hyle_container_vector_options, backing),
+      output.backing);
+  return output.reserved == 0;
+}
+
+bool decode_hash_map_options(
+    const hyle_container_hash_map_options* input,
+    hyle_container_hash_map_options& output) noexcept {
+  output =
+      hyle_container_hash_map_options HYLE_CONTAINER_HASH_MAP_OPTIONS_INIT;
+  std::uint32_t declared_size = 0;
+  if (!hc::c_detail::read_required_options_prefix(
+          input, HYLE_CONTAINER_HASH_MAP_OPTIONS_REQUIRED_SIZE, output,
+          declared_size))
+    return false;
+  hc::c_detail::read_optional_options_field(
+      input, declared_size, offsetof(hyle_container_hash_map_options, hash),
+      output.hash);
+  hc::c_detail::read_optional_options_field(
+      input, declared_size, offsetof(hyle_container_hash_map_options, equal),
+      output.equal);
+  hc::c_detail::read_optional_options_field(
+      input, declared_size,
+      offsetof(hyle_container_hash_map_options, context), output.context);
+  hc::c_detail::read_optional_options_field(
+      input, declared_size,
+      offsetof(hyle_container_hash_map_options, backing), output.backing);
+  return output.reserved == 0;
+}
+
+bool decode_hash_set_options(
+    const hyle_container_hash_set_options* input,
+    hyle_container_hash_set_options& output) noexcept {
+  output =
+      hyle_container_hash_set_options HYLE_CONTAINER_HASH_SET_OPTIONS_INIT;
+  std::uint32_t declared_size = 0;
+  if (!hc::c_detail::read_required_options_prefix(
+          input, HYLE_CONTAINER_HASH_SET_OPTIONS_REQUIRED_SIZE, output,
+          declared_size))
+    return false;
+  hc::c_detail::read_optional_options_field(
+      input, declared_size, offsetof(hyle_container_hash_set_options, hash),
+      output.hash);
+  hc::c_detail::read_optional_options_field(
+      input, declared_size, offsetof(hyle_container_hash_set_options, equal),
+      output.equal);
+  hc::c_detail::read_optional_options_field(
+      input, declared_size,
+      offsetof(hyle_container_hash_set_options, context), output.context);
+  hc::c_detail::read_optional_options_field(
+      input, declared_size,
+      offsetof(hyle_container_hash_set_options, backing), output.backing);
+  return output.reserved == 0;
 }
 
 bool checked_align_up(std::size_t value, std::size_t alignment,
@@ -142,7 +220,7 @@ std::size_t copy_concat(hc::string_ref left, hc::string_ref right, char* out,
 struct RawMap {
   RawMap(const hyle_container_hash_map_options& options,
          hyle::mem::Allocator alloc)
-      : options(options), alloc(alloc) {
+      : options(options), alloc(alloc), seed(hc::detail::process_hash_seed()) {
     key_offset = align_up(sizeof(std::uint64_t), options.key_alignment);
     value_offset =
         align_up(key_offset + options.key_size, options.value_alignment);
@@ -194,7 +272,7 @@ struct RawMap {
   std::uint64_t hash(const void* input) const noexcept {
     return options.hash != nullptr
                ? options.hash(input, options.key_size, options.context)
-               : hc::hash_bytes(input, options.key_size);
+               : hc::hash_bytes(input, options.key_size, seed);
   }
   bool equal(const void* left, const void* right) const noexcept {
     return options.equal != nullptr
@@ -325,6 +403,7 @@ struct RawMap {
   static constexpr std::size_t kNoSlot = SIZE_MAX;
   hyle_container_hash_map_options options;
   hyle::mem::Allocator alloc;
+  std::uint64_t seed;
   hc::detail::ctrl_t* ctrl = nullptr;
   std::byte* slots = nullptr;
   std::size_t cap = 0;
@@ -605,6 +684,8 @@ static_assert(static_cast<int>(hc::StealStatus::kEmpty) ==
               HYLE_CONTAINER_STEAL_EMPTY);
 static_assert(static_cast<int>(hc::StealStatus::kRetry) ==
               HYLE_CONTAINER_STEAL_RETRY);
+static_assert(sizeof(hyle_container_insert_result) == sizeof(std::uint32_t));
+static_assert(sizeof(hyle_container_steal_status) == sizeof(std::uint32_t));
 
 extern "C" {
 
@@ -612,6 +693,12 @@ uint64_t hyle_container_hash_bytes(const void* data, size_t size,
                                    uint64_t seed) {
   if (!valid_range(data, size, "non-zero hash size requires data")) return 0;
   return hc::hash_bytes(data, size, seed);
+}
+
+uint64_t hyle_container_siphash24(const void* data, size_t size,
+                                  uint64_t key0, uint64_t key1) {
+  if (!valid_range(data, size, "non-zero hash size requires data")) return 0;
+  return hc::siphash24(data, size, key0, key1);
 }
 
 int hyle_container_string_compare(hyle_container_string_view left,
@@ -784,6 +871,10 @@ size_t hyle_container_string_c_escape(hyle_container_string_view text,
     return 0;
   return hc::c_escape(to_cpp(text), out, capacity);
 }
+int hyle_container_utf8_validate(hyle_container_string_view text) {
+  if (!valid_range(text.data, text.size, "invalid text view")) return 0;
+  return hc::utf8_validate(to_cpp(text)) ? 1 : 0;
+}
 int64_t hyle_container_utf8_length(hyle_container_string_view text) {
   if (!valid_range(text.data, text.size, "invalid text view")) return -1;
   return hc::utf8_length(to_cpp(text));
@@ -934,11 +1025,11 @@ void hyle_container_string_interner_destroy(hyle_container_string_interner* inte
 hyle_status hyle_container_string_interner_acquire(
     hyle_container_string_id* out, hyle_container_string_interner* interner,
     hyle_container_string_view text) {
+  if (out != nullptr) *out = 0;
   if (out == nullptr || interner == nullptr ||
       !valid_range(text.data, text.size, "invalid text view"))
     return hyle_status_invalid_argument(
         "output, string interner, and valid text are required");
-  *out = 0;
   const hyle_container_string_id id = interner->value.acquire(to_cpp(text)).value;
   if (text.size != 0 && id == 0)
     return hyle_status_resource_exhausted("string interner allocation failed");
@@ -950,12 +1041,12 @@ hyle_status hyle_container_string_interner_acquire_many(
     hyle_container_string_interner* interner,
     const hyle_container_string_view* input,
     hyle_container_string_id* output, size_t count) {
+  if (out_completed != nullptr) *out_completed = 0;
   if (out_completed == nullptr || interner == nullptr ||
       !valid_range(input, count, "non-zero count requires input") ||
       !valid_range(output, count, "non-zero count requires output"))
     return hyle_status_invalid_argument(
         "completed output, interner, input, and output are required");
-  *out_completed = 0;
   for (size_t i = 0; i < count; ++i)
     if (!valid_range(input[i].data, input[i].size, "invalid text view"))
       return hyle_status_invalid_argument("input contains an invalid view");
@@ -1038,11 +1129,11 @@ hyle_container_string_view hyle_container_string_interner_lookup(
 hyle_status hyle_container_string_interner_intern(
     hyle_container_string_view* out, hyle_container_string_interner* interner,
     hyle_container_string_view text) {
+  if (out != nullptr) *out = {};
   if (out == nullptr || interner == nullptr ||
       !valid_range(text.data, text.size, "invalid text view"))
     return hyle_status_invalid_argument(
         "output, string interner, and valid text are required");
-  *out = {};
   const hc::string_ref result = interner->value.intern(to_cpp(text));
   if (text.size != 0 && result.data == nullptr)
     return hyle_status_resource_exhausted("string interner allocation failed");
@@ -1054,12 +1145,12 @@ hyle_status hyle_container_string_interner_intern_many(
     hyle_container_string_interner* interner,
     const hyle_container_string_view* input,
     hyle_container_string_view* output, size_t count) {
+  if (out_completed != nullptr) *out_completed = 0;
   if (out_completed == nullptr || interner == nullptr ||
       !valid_range(input, count, "non-zero count requires input")) {
     return hyle_status_invalid_argument(
         "completed output, interner, and input are required");
   }
-  *out_completed = 0;
   for (size_t i = 0; i < count; ++i)
     if (!valid_range(input[i].data, input[i].size, "invalid text view"))
       return hyle_status_invalid_argument("input contains an invalid view");
@@ -1461,28 +1552,26 @@ hyle_status hyle_container_vector_create(
   if (out == nullptr)
     return hyle_status_invalid_argument("vector output is NULL");
   *out = nullptr;
-  if (options == nullptr ||
-      options->struct_size < sizeof(hyle_container_vector_options) ||
-      options->item_size == 0 ||
-      !is_power_of_two(options->item_alignment) ||
-      !valid_backing(options->backing) ||
-      options->item_alignment > UINT32_MAX ||
-      options->initial_capacity >
-          (SIZE_MAX - sizeof(hc::CArrayHeader) - options->item_alignment) /
-              options->item_size) {
+  hyle_container_vector_options decoded =
+      HYLE_CONTAINER_VECTOR_OPTIONS_INIT;
+  if (!decode_vector_options(options, decoded) || decoded.item_size == 0 ||
+      !is_power_of_two(decoded.item_alignment) ||
+      !valid_backing(decoded.backing) || decoded.item_alignment > UINT32_MAX ||
+      decoded.initial_capacity >
+          (SIZE_MAX - sizeof(hc::CArrayHeader) - decoded.item_alignment) /
+              decoded.item_size) {
     return hyle_status_invalid_argument("invalid vector options");
   }
-  auto* vector =
-      allocate_handle<hyle_container_vector>(options->backing);
+  auto* vector = allocate_handle<hyle_container_vector>(decoded.backing);
   if (vector == nullptr) {
     return hyle_status_resource_exhausted("vector handle allocation failed");
   }
-  vector->item_size = options->item_size;
-  vector->item_alignment = options->item_alignment;
-  vector->backing = options->backing;
-  if (options->initial_capacity != 0) {
+  vector->item_size = decoded.item_size;
+  vector->item_alignment = decoded.item_alignment;
+  vector->backing = decoded.backing;
+  if (decoded.initial_capacity != 0) {
     vector->data = hc::detail::carray_set_capacity_internal(
-        nullptr, options->initial_capacity, vector->item_size,
+        nullptr, decoded.initial_capacity, vector->item_size,
         vector->item_alignment, to_cpp(&vector->backing));
     if (vector->data == nullptr) {
       free_handle(vector);
@@ -1715,16 +1804,17 @@ hyle_status hyle_container_hash_map_create(
   if (out == nullptr)
     return hyle_status_invalid_argument("hash map output is NULL");
   *out = nullptr;
-  if (options == nullptr ||
-      options->struct_size < sizeof(hyle_container_hash_map_options) ||
-      options->value_size == 0 || !valid_backing(options->backing) ||
-      !valid_hash_slot_layout(options->key_size, options->key_alignment,
-                              options->value_size,
-                              options->value_alignment)) {
+  hyle_container_hash_map_options decoded =
+      HYLE_CONTAINER_HASH_MAP_OPTIONS_INIT;
+  if (!decode_hash_map_options(options, decoded) || decoded.value_size == 0 ||
+      !valid_backing(decoded.backing) ||
+      !valid_hash_callbacks(decoded.hash, decoded.equal) ||
+      !valid_hash_slot_layout(decoded.key_size, decoded.key_alignment,
+                              decoded.value_size, decoded.value_alignment)) {
     return hyle_status_invalid_argument("invalid hash map options");
   }
-  auto* map = allocate_handle<hyle_container_hash_map>(
-      options->backing, *options);
+  auto* map =
+      allocate_handle<hyle_container_hash_map>(decoded.backing, decoded);
   if (map == nullptr)
     return hyle_status_resource_exhausted("hash map allocation failed");
   *out = map;
@@ -1846,6 +1936,8 @@ static hyle_status raw_hash_insert_impl(
 hyle_status hyle_container_hash_map_insert(
     hyle_container_insert_result* out_result,
     hyle_container_hash_map* map, const void* key, const void* value) {
+  if (out_result != nullptr)
+    *out_result = HYLE_CONTAINER_ALREADY_PRESENT;
   if (out_result == nullptr || map == nullptr || key == nullptr ||
       value == nullptr)
     return hyle_status_invalid_argument(
@@ -1855,6 +1947,8 @@ hyle_status hyle_container_hash_map_insert(
 hyle_status hyle_container_hash_map_insert_or_assign(
     hyle_container_insert_result* out_result,
     hyle_container_hash_map* map, const void* key, const void* value) {
+  if (out_result != nullptr)
+    *out_result = HYLE_CONTAINER_ALREADY_PRESENT;
   if (out_result == nullptr || map == nullptr || key == nullptr ||
       value == nullptr)
     return hyle_status_invalid_argument(
@@ -1918,18 +2012,19 @@ hyle_status hyle_container_concurrent_hash_map_create(
     return hyle_status_invalid_argument(
         "concurrent hash map output is NULL");
   *out = nullptr;
-  if (options == nullptr ||
-      options->struct_size < sizeof(hyle_container_hash_map_options) ||
-      options->value_size == 0 || !valid_backing(options->backing) ||
+  hyle_container_hash_map_options decoded =
+      HYLE_CONTAINER_HASH_MAP_OPTIONS_INIT;
+  if (!decode_hash_map_options(options, decoded) || decoded.value_size == 0 ||
+      !valid_backing(decoded.backing) ||
+      !valid_hash_callbacks(decoded.hash, decoded.equal) ||
       shard_count == 0 || !is_power_of_two(shard_count) ||
-      !valid_hash_slot_layout(options->key_size, options->key_alignment,
-                              options->value_size,
-                              options->value_alignment)) {
+      !valid_hash_slot_layout(decoded.key_size, decoded.key_alignment,
+                              decoded.value_size, decoded.value_alignment)) {
     return hyle_status_invalid_argument(
         "invalid concurrent hash map options or shard count");
   }
   auto* map = allocate_handle<hyle_container_concurrent_hash_map>(
-      options->backing, *options, shard_count);
+      decoded.backing, decoded, shard_count);
   if (map == nullptr || map->shard_count != shard_count) {
     free_handle(map);
     return hyle_status_resource_exhausted(
@@ -2011,6 +2106,8 @@ static hyle_status concurrent_raw_hash_insert_impl(
     hyle_container_insert_result* out_result,
     hyle_container_concurrent_hash_map* map, const void* key,
     const void* value, bool assign_existing) {
+  if (out_result != nullptr)
+    *out_result = HYLE_CONTAINER_ALREADY_PRESENT;
   if (out_result == nullptr || map == nullptr || key == nullptr ||
       value == nullptr)
     return hyle_status_invalid_argument(
@@ -2122,15 +2219,16 @@ hyle_status hyle_container_hash_set_create(
   if (out == nullptr)
     return hyle_status_invalid_argument("hash set output is NULL");
   *out = nullptr;
-  if (options == nullptr ||
-      options->struct_size < sizeof(hyle_container_hash_set_options) ||
-      !valid_backing(options->backing) ||
-      !valid_hash_slot_layout(options->key_size, options->key_alignment, 0,
-                              1)) {
+  hyle_container_hash_set_options decoded =
+      HYLE_CONTAINER_HASH_SET_OPTIONS_INIT;
+  if (!decode_hash_set_options(options, decoded) ||
+      !valid_backing(decoded.backing) ||
+      !valid_hash_callbacks(decoded.hash, decoded.equal) ||
+      !valid_hash_slot_layout(decoded.key_size, decoded.key_alignment, 0, 1)) {
     return hyle_status_invalid_argument("invalid hash set options");
   }
-  auto* set = allocate_handle<hyle_container_hash_set>(options->backing,
-                                                        *options);
+  auto* set =
+      allocate_handle<hyle_container_hash_set>(decoded.backing, decoded);
   if (set == nullptr)
     return hyle_status_resource_exhausted("hash set allocation failed");
   *out = set;
@@ -2166,6 +2264,8 @@ void hyle_container_hash_set_clear(hyle_container_hash_set* set) {
 hyle_status hyle_container_hash_set_insert(
     hyle_container_insert_result* out_result,
     hyle_container_hash_set* set, const void* key) {
+  if (out_result != nullptr)
+    *out_result = HYLE_CONTAINER_ALREADY_PRESENT;
   if (out_result == nullptr || set == nullptr || key == nullptr)
     return hyle_status_invalid_argument(
         "result, set, and key are required");
@@ -2427,10 +2527,10 @@ hyle_status hyle_container_concurrent_ptr_vector_reserve(
 hyle_status hyle_container_concurrent_ptr_vector_try_push_back(
     size_t* out_index, hyle_container_concurrent_ptr_vector* vector,
     void* item) {
+  if (out_index != nullptr) *out_index = SIZE_MAX;
   if (out_index == nullptr || vector == nullptr)
     return hyle_status_invalid_argument(
         "index output and concurrent pointer vector are required");
-  *out_index = SIZE_MAX;
   const size_t index = vector->value.try_push_back(item);
   if (index == SIZE_MAX)
     return hyle_status_resource_exhausted(

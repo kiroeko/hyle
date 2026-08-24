@@ -1,0 +1,216 @@
+{
+  "schema_version": 3,
+  "expanded_tree_algorithm": "hyle-path-hex-v1-raw-sha256",
+  "dependencies": [
+    {
+      "name": "ggml", "class": "fetchcontent",
+      "repository": "https://github.com/ggml-org/ggml.git", "version": "v0.21.0",
+      "revision": "8599e0ea3756c4bac4ef813af2241cb1a8bbfb0b", "git_tree": "f6a93ab908d56ccf20c53a74c824148862e6c128",
+      "archive": { "url": "https://codeload.github.com/ggml-org/ggml/tar.gz/8599e0ea3756c4bac4ef813af2241cb1a8bbfb0b", "sha256": "3623ae4195577c11795f035baa602fcb282b80aa9d91be024874b5023eb1d0b5" },
+      "expanded_tree_sha256": "e5340a3de6edbe3da3f7085ec54b8cc6498e374f1a219c2533abc4495f50aacb",
+      "license": { "expression": "MIT", "files": [
+        { "root": "dependency", "path": "LICENSE", "sha256": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d" }
+      ] }
+    },
+    {
+      "name": "nghttp2", "class": "fetchcontent",
+      "repository": "https://github.com/nghttp2/nghttp2.git", "version": "v1.70.0",
+      "revision": "85e300c79fb6dbcfa9c1013215c8710c1c2cd3d2", "git_tree": "1325b520572d4d9f285f37585e6077a39b95bdd4",
+      "archive": { "url": "https://codeload.github.com/nghttp2/nghttp2/tar.gz/85e300c79fb6dbcfa9c1013215c8710c1c2cd3d2", "sha256": "3b0d9a02357125078c367a080bdfff1caf130400b7b313dab8b4e887075d2955" },
+      "expanded_tree_sha256": "ca7aa79a25b3d61a49f4029a5884de22da5f3136dcfe2551000156b374cf748a",
+      "license": { "expression": "MIT", "files": [
+        { "root": "dependency", "path": "COPYING", "sha256": "6b94f3abc1aabd0c72a7c7d92a77f79dda7c8a0cb3df839a97890b4116a2de2a" }
+      ] }
+    },
+    {
+      "name": "vulkan_headers", "class": "fetchcontent",
+      "repository": "https://github.com/KhronosGroup/Vulkan-Headers.git", "version": "vulkan-sdk-1.4.357.0",
+      "revision": "e3b1eec08173d6b825cd3ac88c885a63b621504a", "git_tree": "7509994568d7423209793fb72c3ac793d9aec0c9",
+      "archive": { "url": "https://codeload.github.com/KhronosGroup/Vulkan-Headers/tar.gz/e3b1eec08173d6b825cd3ac88c885a63b621504a", "sha256": "f492279345cbc10708b64fcd432b3ff6c8246a5837c4db2b649abba00cf82208" },
+      "expanded_tree_sha256": "69d6adc9001f61e1ed86ae4213f852557a4c8719bb6ab0fbb6bb432142c9d905",
+      "license": { "expression": "Apache-2.0 OR MIT", "files": [
+        { "root": "dependency", "path": "LICENSE.md", "sha256": "95ad366d23fadf701d355bc45fb8b82ae2d700239471d35d41286ac3b08ff903" },
+        { "root": "dependency", "path": "LICENSES/Apache-2.0.txt", "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30" },
+        { "root": "dependency", "path": "LICENSES/MIT.txt", "sha256": "1ca3502222d967f3be5751c55f6b7ee735b5383909c3b501495f54b216dbf227" }
+      ] }
+    },
+    {
+      "name": "volk", "class": "fetchcontent",
+      "repository": "https://github.com/zeux/volk.git", "version": "vulkan-sdk-1.4.357.0",
+      "revision": "776893306c5d3b22b6185b5d4a258b81d94572bf", "git_tree": "c534aee6edf5bec69244703c4d8d1b1fbc1a3f77",
+      "archive": { "url": "https://codeload.github.com/zeux/volk/tar.gz/776893306c5d3b22b6185b5d4a258b81d94572bf", "sha256": "ff5b63e1b7104b34955eb4a993b94882a55f8561e971b92119069e496e3496b5" },
+      "expanded_tree_sha256": "0a6386ed18afd5f8a7b853a12a5a269b8bbb1c79ccc956f13674f38eea62e0fe",
+      "license": { "expression": "MIT", "files": [
+        { "root": "dependency", "path": "LICENSE.md", "sha256": "04a0693a84f19e53d281ca98bbb0c86ca77251ab13769c6168e6684feb9a1436" }
+      ] }
+    },
+    {
+      "name": "glslang", "class": "fetchcontent",
+      "repository": "https://github.com/KhronosGroup/glslang.git", "version": "vulkan-sdk-1.4.357.0",
+      "revision": "168d452a4f460d24b588fed08477a81c44ee27a1", "git_tree": "0200f250f183c6118da9cb72e3cf0f58ec5db540",
+      "archive": { "url": "https://codeload.github.com/KhronosGroup/glslang/tar.gz/168d452a4f460d24b588fed08477a81c44ee27a1", "sha256": "c167b2474af06cbab93abae8249efaf88fb79a09f30488e2a24d399e4258ce7a" },
+      "expanded_tree_sha256": "69241c3df1a049d18c0252c1760dbfab30a6738168c20d7ed3a5cf8686bfc5ae",
+      "license": { "expression": "LicenseRef-glslang-multiple", "files": [
+        { "root": "dependency", "path": "LICENSE.txt", "sha256": "17e70c676e1521ff3e4686f04a2053d93a7e28a33be8de7ec37ab0ff72feb677" }
+      ] }
+    },
+    {
+      "name": "googletest", "class": "fetchcontent",
+      "repository": "https://github.com/google/googletest.git", "version": "v1.18.0",
+      "revision": "063de7e9578f82b369302001269680b4b1553359", "git_tree": "22ba34626d4cffc7ca30cfc9989cd76159041563",
+      "archive": { "url": "https://codeload.github.com/google/googletest/tar.gz/063de7e9578f82b369302001269680b4b1553359", "sha256": "623fe05d283020f37a579a8985ba338091ac7229da62b5591ff40acdf05b95e2" },
+      "expanded_tree_sha256": "162765170ae623200700729f7db85d53806794e20d9c23a92f6d4f96ae529cc6",
+      "license": { "expression": "BSD-3-Clause", "files": [
+        { "root": "dependency", "path": "LICENSE", "sha256": "9702de7e4117a8e2b20dafab11ffda58c198aede066406496bef670d40a22138" }
+      ] }
+    },
+    {
+      "name": "tracy", "class": "external_checkout",
+      "repository": "https://github.com/wolfpld/tracy.git", "version": "v0.14.1",
+      "revision": "30997d5ca6bb632cc10807a1da8a6d3de0aeeb3c", "git_tree": "3b409c7240b60b618468282d8e81ad364b087faf",
+      "archive": { "url": "https://codeload.github.com/wolfpld/tracy/tar.gz/30997d5ca6bb632cc10807a1da8a6d3de0aeeb3c", "sha256": "e9d527343623435de954a72ad211a1ae4b205cb877d5cc81b8bd505aac0a2cde" },
+      "expanded_tree_sha256": "89284be534e24da06a40b2733706aa9ed821a15e10f90bc4caa57748e0216959",
+      "license": { "expression": "BSD-3-Clause", "files": [
+        { "root": "dependency", "path": "LICENSE", "sha256": "27ab6b51e57f7e263a6e953d9c8984cd26e69d2f7606bde81e4b3048acf30732" }
+      ] }
+    },
+    {
+      "name": "mimalloc", "class": "in_tree",
+      "repository": "https://github.com/microsoft/mimalloc.git", "version": "v3.5.0",
+      "revision": "18b08671c9302247bfb682286e6bf3cc1773f801", "git_tree": "56cf91764ef04ff34a5adeda4ac8100e098e1f70",
+      "archive": { "url": "https://codeload.github.com/microsoft/mimalloc/tar.gz/18b08671c9302247bfb682286e6bf3cc1773f801", "sha256": "4948bab491bb960c726097e94583a3097354498f50bbf2acd3fa8f581bfeb5ba" },
+      "vendored": { "path": "third_party/mimalloc", "tree_sha256": "72e9fbb0a6b7e96907c78cc422443cec957591ddf4c1ede8a3ea9dc0c7d9156a" },
+      "license": { "expression": "MIT", "files": [
+        { "root": "hyle", "path": "third_party/mimalloc/LICENSE", "sha256": "82ade5d7d9b029044b5fbbc326207fc47c2d44ee4dd71e8a559c36d728217de9" }
+      ] }
+    },
+    {
+      "name": "simdutf", "class": "in_tree",
+      "repository": "https://github.com/simdutf/simdutf.git", "version": "v9.1.0",
+      "revision": "2d4e249dcfd978b39dd567b156f20a43db97377b", "git_tree": "a39108d83b5487400dc59fb9b842bf1153c12df4",
+      "archive": { "url": "https://codeload.github.com/simdutf/simdutf/tar.gz/2d4e249dcfd978b39dd567b156f20a43db97377b", "sha256": "7abb510fd3a64a6f7c91e14d6e21c531fec22f15c9d87ffcb8bea0e66c45322f" },
+      "vendored": { "path": "third_party/simdutf", "tree_sha256": "2e46f7c40f3123c548a3af968a87903cdf692307d3e8a7908316147696d6cc9c" },
+      "license": { "expression": "MIT OR Apache-2.0", "files": [
+        { "root": "hyle", "path": "third_party/simdutf/LICENSE-MIT", "sha256": "fc8dbc04e03ad4efc08a647ffe7f995b811a95bc04c0e85a56d5277c6593fa5f" },
+        { "root": "hyle", "path": "third_party/simdutf/LICENSE-APACHE", "sha256": "3d34610fc6b5e1b0bfe4e2f36171c2d62c28ef05cb8d704f5a0073be41a43b3d" }
+      ] }
+    },
+    {
+      "name": "xxhash", "class": "in_tree",
+      "repository": "https://github.com/Cyan4973/xxHash.git", "version": "v0.8.3-dev-snapshot-2026-07-27",
+      "revision": "c0b5ea995d66691734b1a79ad89e73a0d2fd5a53", "git_tree": "dca2d19fa4038fcd80298370ac0205e7de39dcc7",
+      "archive": { "url": "https://codeload.github.com/Cyan4973/xxHash/tar.gz/c0b5ea995d66691734b1a79ad89e73a0d2fd5a53", "sha256": "6b49e0f12bad8b6fdb1037e0f251c39a0f9bd39c3d756a12ccb1dcf31e5419fa" },
+      "vendored": { "path": "third_party/xxhash", "tree_sha256": "17df0b4fc6c0fc1eabc6f7a43f6be9803729c1d9515c81d0fa1c970f0e44d3a1" },
+      "license": { "expression": "BSD-2-Clause", "files": [
+        { "root": "hyle", "path": "third_party/xxhash/LICENSE", "sha256": "6ffedbc0f7878612d2b23589f1ff2ab15633e1df7963a5d9fc750ec5500c7e7a" }
+      ] }
+    },
+    {
+      "name": "wyhash", "class": "in_tree",
+      "repository": "https://github.com/wangyi-fudan/wyhash.git", "version": "snapshot-2026-03-23",
+      "revision": "e4764a0b637d34d3421a7760affada9288b625a8", "git_tree": "d46bdbb7759447c6e5767ea70d786b178b45b26e",
+      "archive": { "url": "https://codeload.github.com/wangyi-fudan/wyhash/tar.gz/e4764a0b637d34d3421a7760affada9288b625a8", "sha256": "449fd098eb43073471e34de7e50b795562f80d96639954d336d7be1b40bbb3c9" },
+      "vendored": { "path": "third_party/wyhash", "tree_sha256": "3829c578388b42feb7fe4cdb6b65152620702e479dde7776a9af9154c03428ed" },
+      "license": { "expression": "Unlicense", "files": [
+        { "root": "hyle", "path": "third_party/wyhash/LICENSE", "sha256": "6a90b88421a0d9b090e121daa11b3c6d55eed5eeb3281a2fcc454d6a28b5547c" }
+      ] }
+    },
+    {
+      "name": "nanobench", "class": "in_tree",
+      "repository": "https://github.com/martinus/nanobench.git", "version": "v4.6.0",
+      "revision": "b709728dba4df0356d467abfb0ba20781a8031c0", "git_tree": "5c19f7794675a7ab83dd1dc60bf613f173702bcd",
+      "archive": { "url": "https://codeload.github.com/martinus/nanobench/tar.gz/b709728dba4df0356d467abfb0ba20781a8031c0", "sha256": "145517050e528a82e3b5d55d5af6fc91e6efa0e486a255a05359a385470a840c" },
+      "vendored": { "path": "third_party/nanobench", "tree_sha256": "ca24764c04ce6643f57280ef7837087e8dd5ba451f78fd86e7a918df1c9caace" },
+      "license": { "expression": "MIT", "files": [
+        { "root": "hyle", "path": "third_party/nanobench/nanobench.h", "sha256": "2cfcdd57044fd0ee11d1be2b5dc545781b05c36049613c0089a73b332afd8c4d" }
+      ] }
+    },
+    {
+      "name": "picohttpparser", "class": "in_tree",
+      "repository": "https://github.com/h2o/picohttpparser.git", "version": "1.dev-snapshot-2026-04-06",
+      "revision": "f4d94b48b31e0abae029ebeafcfd9ca0680ede58", "git_tree": "a34da1097197526ccb99732fc02155eff764c547",
+      "archive": { "url": "https://codeload.github.com/h2o/picohttpparser/tar.gz/f4d94b48b31e0abae029ebeafcfd9ca0680ede58", "sha256": "bd773fad1e2c6532b7a65ef6b60dec3612a3e566e3c844272cc2cbab89dc7e9c" },
+      "vendored": { "path": "third_party/picohttpparser", "tree_sha256": "bbbdc490933d00a7ac916d7ca7d93f260ed8462ae20250d345142bf7a419277d" },
+      "license": { "expression": "MIT", "files": [
+        { "root": "hyle", "path": "third_party/picohttpparser/LICENSE", "sha256": "402cb06e987f0d5020f4c20ea04d2111b53e3d410e40afd57bb0716a83d6c44b" }
+      ] }
+    },
+    {
+      "name": "fcontext", "class": "in_tree",
+      "repository": "https://github.com/boostorg/context.git", "version": "boost-1.92.0",
+      "revision": "cc1b9e02cd530d6607becc984e1e5bfa4f7b3600", "git_tree": "6385b2357b7bf5d2da1123d03c8ee94df0281f97",
+      "archive": { "url": "https://codeload.github.com/boostorg/context/tar.gz/cc1b9e02cd530d6607becc984e1e5bfa4f7b3600", "sha256": "4b54746ccf87f0066974ccdde188b1343371e032b7b9b9cf3e22b2792e9ca9c6" },
+      "vendored": { "path": "third_party/fcontext", "tree_sha256": "e235578df19caa9b5d05133a1f81b6d0ab118a2039f34fbaed2bc95fdf26d98a" },
+      "license": { "expression": "BSL-1.0", "files": [
+        { "root": "hyle", "path": "third_party/fcontext/LICENSE_1_0.txt", "sha256": "c9bff75738922193e67fa726fa225535870d2aa1059f91452c411736284ad566" }
+      ] }
+    },
+    {
+      "name": "highway_port", "class": "integrated_source",
+      "repository": "https://github.com/google/highway.git", "version": "snapshot-2026-06-25-port-origin",
+      "revision": "83eff39371e5e6494b305b253f8a3c06f831faf4", "git_tree": "d39e0609201e1f1361c24da7075272a157177925",
+      "archive": { "url": "https://codeload.github.com/google/highway/tar.gz/83eff39371e5e6494b305b253f8a3c06f831faf4", "sha256": "ef9874b4f1f3739d409c5615f49eba4e4c9b017977141a55f9992ca10e5e6dfc" },
+      "integrated": { "paths": [
+        "src/simd/bitpack/bitpack_body.inc",
+        "src/simd/bitpack/bitpack_dispatch.cc",
+        "src/simd/bitpack/bitpack_hyle-inl.h",
+        "src/simd/bitpack/bitpack_hyle_u16-inl.h",
+        "src/simd/bitpack/bitpack_hyle_avx2.cc",
+        "src/simd/bitpack/bitpack_hyle_avx512.cc",
+        "src/simd/bitpack/bitpack_hyle_neon.cc",
+        "src/simd/bitpack/bitpack_hyle_scalable.cc",
+        "src/simd/math/math_hyle-inl.h",
+        "src/simd/math/transcendental_highway.cc",
+        "src/simd/math/transcendental_highway_avx512.cc",
+        "src/simd/math/transcendental_highway_neon.cc",
+        "src/simd/math/transcendental_highway_scalable.cc",
+        "src/simd/sort/sort_dispatch.cc",
+        "src/simd/sort/vqsort_hyle",
+        "src/simd/sort/vqsort_body.inc",
+        "src/simd/sort/vqsort_hyle_avx2.cc",
+        "src/simd/sort/vqsort_hyle_avx512.cc",
+        "src/simd/sort/vqsort_hyle_neon.cc",
+        "src/simd/sort/vqsort_hyle_rvv.cc",
+        "src/simd/sort/vqsort_hyle_sve.cc"
+      ], "content_sha256": "98115207395d45cf5a05f708f836f2d84bdc45dcb4780c501f6e7f1131095861" },
+      "license": { "expression": "Apache-2.0 AND BSD-3-Clause", "files": [
+        { "root": "hyle", "path": "third_party/ported/LICENSE-HIGHWAY", "sha256": "b8b1fae5894cfbe213b47f1378bb2269cf82de18b34447e871c0225ace0d3ad7" },
+        { "root": "hyle", "path": "third_party/ported/LICENSE-JPEG-XL-BSD-3-Clause", "sha256": "b330dd9452548e55a717a0618d7e6274dfa3266372dbe859dcd9a330fd3c3191" }
+      ] }
+    },
+    {
+      "name": "xsimd_port", "class": "integrated_source",
+      "repository": "https://github.com/xtensor-stack/xsimd.git", "version": "snapshot-2026-06-11-port-origin",
+      "revision": "5d2490f515cf773f984da9ec0a1aec103d00d238", "git_tree": "1b16f281b7769d34256a9d92fda2168ca32b07e6",
+      "archive": { "url": "https://codeload.github.com/xtensor-stack/xsimd/tar.gz/5d2490f515cf773f984da9ec0a1aec103d00d238", "sha256": "e51af33ac5aa19fc9e60573819b966fa9b8fbbaaab858ba90bcc68022cc6c02d" },
+      "integrated": { "paths": [
+        "src/simd/math/math_xsimd_body.inc",
+        "src/simd/math/math_xsimd_hyle-inl.h",
+        "src/simd/math/transcendental_xsimd.cc",
+        "src/simd/math/transcendental_xsimd_avx512.cc",
+        "src/simd/math/transcendental_xsimd_neon.cc"
+      ], "content_sha256": "b7680a24da1840a7904ef835e9eb7a95ad69c17922038063e3b1c7be7a967ec8" },
+      "license": { "expression": "BSD-3-Clause", "files": [
+        { "root": "hyle", "path": "third_party/ported/LICENSE-XSIMD-BSD-3-Clause", "sha256": "080d98a805c16fd591adab0c0a3f040bae841227126935dc174c8209a3bb6cdc" }
+      ] }
+    },
+    {
+      "name": "highway", "class": "benchmark",
+      "repository": "https://github.com/google/highway.git", "version": "snapshot-2026-08-22",
+      "revision": "239071390b18ca70f8fadde90ebefa6d8b12cb69", "git_tree": "8a93fbea0b2bc9291046ec867128592e31d68866",
+      "archive": { "url": "https://codeload.github.com/google/highway/tar.gz/239071390b18ca70f8fadde90ebefa6d8b12cb69", "sha256": "b9413269f96dd0128a7fb003baa68ce78745c44782dce78cd6f2b1ad32c61618" },
+      "license": { "expression": "LicenseRef-Highway-multiple", "files": [
+        { "root": "dependency", "path": "LICENSE", "sha256": "85de9303e7a81f35d81befd51a4004c41b5e7f7e40cd4e3f5ff609ecd71a0e44" }
+      ] }
+    },
+    {
+      "name": "xsimd", "class": "benchmark",
+      "repository": "https://github.com/xtensor-stack/xsimd.git", "version": "snapshot-2026-08-22",
+      "revision": "3b3151ff665514a00a437cc985f47b7de99b772b", "git_tree": "6179b2daf3d1066e4e35b775a94a260597c9362f",
+      "archive": { "url": "https://codeload.github.com/xtensor-stack/xsimd/tar.gz/3b3151ff665514a00a437cc985f47b7de99b772b", "sha256": "2316f51eb6209b5df2e5eb30fae489d3e32173780e209ab4c4f1d9b6f0b448ca" },
+      "license": { "expression": "BSD-3-Clause", "files": [
+        { "root": "dependency", "path": "LICENSE", "sha256": "501352acba62cc54e8e3d293754d606f919c9b425b962193c211f9fa29cd9940" }
+      ] }
+    }
+  ]
+}

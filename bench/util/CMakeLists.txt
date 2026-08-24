@@ -8,10 +8,11 @@ if(HYLE_BENCH_ABSL)
   # pedantic extensions into HYLE_WERROR failures on GCC/Clang.
   target_include_directories(hyle_util_bench SYSTEM PRIVATE
     "${HYLE_ABSL_DIR}")
+  hyle_mark_absl_benchmark_consumer(hyle_util_bench)
   if(MSVC)
     # Abseil's MSVC prefetch fallback intentionally ignores its address when
     # the compiler has no matching intrinsic. Do not let that vendor-header
     # warning invalidate HYLE's own /WX benchmark build.
-    target_compile_options(hyle_util_bench PRIVATE /wd4100 /wd4702)
+    target_compile_options(hyle_util_bench PRIVATE /wd4100)
   endif()
 endif()

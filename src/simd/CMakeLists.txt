@@ -309,9 +309,16 @@ endif()
 # defend against a global -march; the two deployment modes are a deliberate choice, not a bug.
 
 hyle_register_package_dependency(
-  NAME simd_ports
+  NAME simd_highway_port
   OWNER simd
+  LOCKED_DEPENDENCIES highway_port
   RUNTIME_FILE_SPECS
-    "${PROJECT_SOURCE_DIR}/third_party/simdutf/LICENSE-APACHE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|highway-Apache-2.0-LICENSE"
-    "${PROJECT_SOURCE_DIR}/third_party/ported/LICENSE-JPEG-XL-BSD-3-Clause|${CMAKE_INSTALL_DATADIR}/licenses/Hyle"
+    "${PROJECT_SOURCE_DIR}/third_party/ported/LICENSE-HIGHWAY|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|highway-LICENSE"
+    "${PROJECT_SOURCE_DIR}/third_party/ported/LICENSE-JPEG-XL-BSD-3-Clause|${CMAKE_INSTALL_DATADIR}/licenses/Hyle")
+
+hyle_register_package_dependency(
+  NAME simd_xsimd_port
+  OWNER simd
+  LOCKED_DEPENDENCIES xsimd_port
+  RUNTIME_FILE_SPECS
     "${PROJECT_SOURCE_DIR}/third_party/ported/LICENSE-XSIMD-BSD-3-Clause|${CMAKE_INSTALL_DATADIR}/licenses/Hyle")

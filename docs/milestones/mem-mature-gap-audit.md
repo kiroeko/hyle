@@ -1,5 +1,8 @@
 # mem 成熟库能力缺口复审（2026-07-26）
 
+> **历史证据提示（2026-08-25）：**本页的绿色结论绑定文中日期/commit，不是 mimalloc 3.5.0
+> 升级后 working tree 的当前证书。现行状态只看 [`pre-release-readiness`](./pre-release-readiness.md)。
+
 | 字段 | 结论 |
 |---|---|
 | 范围 | `include/hyle/mem`、`include/hyle/c/mem.h`、`src/mem`、测试、guide / architecture / performance |
@@ -123,8 +126,10 @@ construct/destroy/unique-array 便利性可以随 adapter 一并审，但不应�
 ## 3. 明确非目标
 
 - 不自写任意大小通用 malloc 与 mimalloc/标准 PMR 重复竞争；也不把 `mi_heap_t`、vendor options
-  原样泄漏成 HYLE ABI。当前 mimalloc v2 first-class heap 带 allocation-thread 约束，包装错误比少一个
-  类型更危险。
+  原样泄漏成 HYLE ABI。该轮审计所面对的 mimalloc v2 first-class heap 带
+  allocation-thread 约束；当前 v3 backing 的具体合同与重认证状态以 `mem-design`、
+  `dependency-upgrade-2026-08` 和 `pre-release-readiness` 为准。无论 vendor 版本，错误包装
+  first-class heap 的风险都比少一个 HYLE 类型更大。
 - 不在 mem 实现 blocking borrow；等待、fiber semaphore 与 cancellation 属 sched wrapper。
 - 不把 GPU/device/pinned/staging 抽象成泛化 `MemorySpace`；native handle、mapped pointer、event 与
   completion lifetime 属 compute。

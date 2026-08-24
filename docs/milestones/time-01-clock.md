@@ -1,11 +1,14 @@
 # time-01：单调钟、墙钟、deadline 与 sleep
 
+> **历史任务提示（2026-08-25）：**本页状态与验证绑定 2026-07-29 形状，不是当前 working
+> tree 的发布证书。现行状态只看 [`pre-release-readiness`](./pre-release-readiness.md)。
+
 | 字段 | 值 |
 |---|---|
 | 阶段 | P2 |
 | 模块 | time/ |
 | 依赖 | core 宏/头；无编译期 HYLE 模块依赖 |
-| 状态 | ✅ 2026-07-29 strict 再审完成；Windows/WSL 五门、Apple 四门（x86-only 门不注册）通过 |
+| 状态 | 🗃️ 2026-07-29 历史 strict 再审；当时 Windows/WSL 五门、Apple 四门（x86-only 门不注册）通过 |
 
 ## 交付能力
 

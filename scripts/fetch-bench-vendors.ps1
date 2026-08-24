@@ -59,6 +59,11 @@ try {
     if ($actual -ne $revision) {
       throw "$name resolved to $actual, expected $revision."
     }
+    & cmake "-DHYLE_VERIFY_BENCH_DEPENDENCY_NAME=$name" `
+      "-DHYLE_VERIFY_BENCH_DEPENDENCY_DIR=$checkout" -P $versionsFile
+    if ($LASTEXITCODE -ne 0) {
+      throw "locked provenance verification failed for $checkout"
+    }
     Write-Host "[ok] $name $actual -> $checkout"
   }
 } finally {

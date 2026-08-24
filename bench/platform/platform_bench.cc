@@ -44,7 +44,12 @@
 #include <thread>
 #include <vector>
 
+#if defined(__APPLE__)
+#  include <pthread.h>
+#endif
+
 #include "hyle/platform/fs.h"
+#include "hyle/c/platform.h"
 #include "hyle/platform/mapped_file.h"
 #include "hyle/platform/numa.h"
 #include "hyle/platform/thread.h"
@@ -82,9 +87,59 @@ namespace {
 namespace nb = ankerl::nanobench;
 
 void noop_entry(void*) {}
+
+[[noreturn]] void benchmark_failed(const char* operation) {
+  std::fprintf(stderr, "hyle_platform_bench: %s failed\n", operation);
+  std::abort();
+}
+
+void require_benchmark(bool condition, const char* operation) {
+  if (!condition) benchmark_failed(operation);
+}
+
+void require_c_status(hyle_status status, const char* operation) {
+  const bool ok = hyle_status_is_ok(status) != 0;
+  hyle_status_free(&status);
+  require_benchmark(ok, operation);
+}
+
+constexpr std::uint64_t patterned_checksum(std::size_t bytes) noexcept {
+  std::uint64_t result = 0;
+  for (std::size_t i = 0; i < bytes; ++i) result += i & 0x7Fu;
+  return result;
+}
+
+// Darwin does not expose hard P/E-core affinity.  Make the scheduler contract
+// explicit so measurements from an SSH shell are not silently compared across
+// different QoS classes.
+void configure_main_benchmark_thread() {
+#if defined(__APPLE__)
+  const char* requested = std::getenv("HYLE_BENCH_APPLE_QOS");
+  qos_class_t qos = QOS_CLASS_USER_INTERACTIVE;
+  const char* name = "user-interactive";
+  if (requested != nullptr && std::strcmp(requested, "utility") == 0) {
+    qos = QOS_CLASS_UTILITY;
+    name = "utility";
+  } else if (requested != nullptr &&
+             std::strcmp(requested, "interactive") != 0) {
+    std::fprintf(stderr,
+                 "hyle_platform_bench: HYLE_BENCH_APPLE_QOS must be "
+                 "interactive or utility (got %s)\n",
+                 requested);
+    std::abort();
+  }
+  const int rc = pthread_set_qos_class_self_np(qos, 0);
+  std::fprintf(stderr,
+               "# HYLE_PLATFORM_BENCH apple_main_qos=%s qos_ok=%d "
+               "affinity=unsupported\n",
+               name, rc == 0 ? 1 : 0);
+  if (rc != 0) std::abort();
+#endif
+}
 }  // namespace
 
 int main() {
+  configure_main_benchmark_thread();
   const char* only = std::getenv("HYLE_PLATFORM_BENCH_ONLY");
   const auto enabled = [only](const char* tag) noexcept {
     return only == nullptr || only[0] == '\0' || std::strstr(only, tag) != nullptr;
@@ -116,6 +171,16 @@ int main() {
       }
       nb::doNotOptimizeAway(&parker);
     });
+    hyle_parker_o* c_parker = nullptr;
+    require_c_status(hyle_parker_create(&c_parker), "hyle_parker_create");
+    b.run("HYLE C Parker unpark()+park()", [&] {
+      for (int i = 0; i < kIters; ++i) {
+        hyle_parker_unpark(c_parker);
+        hyle_parker_park(c_parker);
+      }
+      nb::doNotOptimizeAway(c_parker);
+    });
+    hyle_parker_destroy(c_parker);
   }
 
   // ---- 2. Parker round-trip: 2-thread ping-pong (REAL block+wake) ------------
@@ -191,13 +256,23 @@ int main() {
     b.run("HYLE platform::Thread spawn+join", [&] {
       for (int i = 0; i < kSpawns; ++i) {
         auto r = Thread::spawn(&noop_entry, nullptr);
-        if (r) r.value().join();
+        require_benchmark(r.has_value(), "Thread::spawn(function pointer)");
+        r.value().join();
       }
     });
     b.run("HYLE platform::Thread callable spawn+join", [&] {
       for (int i = 0; i < kSpawns; ++i) {
         auto r = Thread::spawn([] {});
-        if (r) r.value().join();
+        require_benchmark(r.has_value(), "Thread::spawn(callable)");
+        r.value().join();
+      }
+    });
+    b.run("HYLE C thread spawn+join+Status", [&] {
+      for (int i = 0; i < kSpawns; ++i) {
+        hyle_thread_o* thread = nullptr;
+        require_c_status(hyle_thread_spawn(&thread, &noop_entry, nullptr, nullptr),
+                         "hyle_thread_spawn");
+        hyle_thread_join(thread);
       }
     });
   }
@@ -228,6 +303,7 @@ int main() {
           ".", [&](const char*, hyle::platform::FileType type) {
             n += type == hyle::platform::FileType::kDirectory ? 2 : 1;
           });
+      require_benchmark(completed.has_value(), "for_each_entry");
       nb::doNotOptimizeAway(completed.has_value());
       nb::doNotOptimizeAway(n);
     });
@@ -251,11 +327,14 @@ int main() {
 #if defined(_WIN32)
         void* p = ::VirtualAlloc(nullptr, pg, MEM_RESERVE | MEM_COMMIT,
                                  PAGE_READWRITE);
-        if (p) ::VirtualFree(p, 0, MEM_RELEASE);
+        require_benchmark(p != nullptr, "VirtualAlloc");
+        require_benchmark(::VirtualFree(p, 0, MEM_RELEASE) != 0,
+                          "VirtualFree");
 #else
         void* p = ::mmap(nullptr, pg, PROT_READ | PROT_WRITE,
                          MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-        if (p != MAP_FAILED) ::munmap(p, pg);
+        require_benchmark(p != MAP_FAILED, "mmap");
+        require_benchmark(::munmap(p, pg) == 0, "munmap");
 #endif
         nb::doNotOptimizeAway(p);
       }
@@ -263,19 +342,28 @@ int main() {
     b.run("HYLE vm_allocate_rw+release", [&] {
       for (int i = 0; i < kIters; ++i) {
         auto allocated = vm_allocate_rw(pg);
-        void* p = allocated ? *allocated : nullptr;
-        if (p != nullptr) (void)vm_release(p, pg);
+        require_benchmark(allocated.has_value(), "vm_allocate_rw");
+        void* p = *allocated;
+        require_benchmark(vm_release(p, pg).ok(), "vm_release(allocated)");
+        nb::doNotOptimizeAway(p);
+      }
+    });
+    b.run("HYLE C vm_alloc_rw+free_rw+Status", [&] {
+      for (int i = 0; i < kIters; ++i) {
+        void* p = nullptr;
+        require_c_status(hyle_vm_alloc_rw(&p, pg), "hyle_vm_alloc_rw");
+        require_benchmark(p != nullptr, "hyle_vm_alloc_rw output");
+        require_c_status(hyle_vm_free_rw(p, pg), "hyle_vm_free_rw");
         nb::doNotOptimizeAway(p);
       }
     });
     b.run("HYLE vm_reserve+commit+release", [&] {
       for (int i = 0; i < kIters; ++i) {
         auto reserved = vm_reserve(pg);
-        void* p = reserved ? *reserved : nullptr;
-        if (p != nullptr) {
-          (void)vm_commit(p, pg);
-          (void)vm_release(p, pg);
-        }
+        require_benchmark(reserved.has_value(), "vm_reserve");
+        void* p = *reserved;
+        require_benchmark(vm_commit(p, pg).ok(), "vm_commit");
+        require_benchmark(vm_release(p, pg).ok(), "vm_release(reserved)");
         nb::doNotOptimizeAway(p);
       }
     });
@@ -295,11 +383,10 @@ int main() {
     b.run("HYLE vm_reserve+commit(16MiB)+release", [&] {
       for (int i = 0; i < kIters; ++i) {
         auto reserved = vm_reserve(kSpan);
-        void* p = reserved ? *reserved : nullptr;
-        if (p != nullptr) {
-          (void)vm_commit(p, kSpan);
-          (void)vm_release(p, kSpan);
-        }
+        require_benchmark(reserved.has_value(), "vm_reserve(16MiB)");
+        void* p = *reserved;
+        require_benchmark(vm_commit(p, kSpan).ok(), "vm_commit(16MiB)");
+        require_benchmark(vm_release(p, kSpan).ok(), "vm_release(16MiB)");
         nb::doNotOptimizeAway(p);
       }
     });
@@ -457,8 +544,9 @@ int main() {
     constexpr int kIters = 50000;
     const std::size_t pg = page_size();
     auto reserved = vm_reserve(pg);
-    void* base = reserved ? *reserved : nullptr;
-    if (base != nullptr) (void)vm_commit(base, pg);
+    require_benchmark(reserved.has_value(), "vm_reserve(protect)");
+    void* base = *reserved;
+    require_benchmark(vm_commit(base, pg).ok(), "vm_commit(protect)");
     nb::Bench b;
     b.title("VM protect toggle (1 page RW<->RO pair)")
         .relative(true)
@@ -468,23 +556,40 @@ int main() {
       for (int i = 0; i < kIters; ++i) {
 #if defined(_WIN32)
         DWORD old_prot;
-        ::VirtualProtect(base, pg, PAGE_READONLY, &old_prot);
-        ::VirtualProtect(base, pg, PAGE_READWRITE, &old_prot);
+        require_benchmark(
+            ::VirtualProtect(base, pg, PAGE_READONLY, &old_prot) != 0,
+            "VirtualProtect(read-only)");
+        require_benchmark(
+            ::VirtualProtect(base, pg, PAGE_READWRITE, &old_prot) != 0,
+            "VirtualProtect(read-write)");
 #else
-        ::mprotect(base, pg, PROT_READ);
-        ::mprotect(base, pg, PROT_READ | PROT_WRITE);
+        require_benchmark(::mprotect(base, pg, PROT_READ) == 0,
+                          "mprotect(read-only)");
+        require_benchmark(::mprotect(base, pg, PROT_READ | PROT_WRITE) == 0,
+                          "mprotect(read-write)");
 #endif
       }
       nb::doNotOptimizeAway(base);
     });
     b.run("HYLE vm_protect", [&] {
       for (int i = 0; i < kIters; ++i) {
-        (void)vm_protect(base, pg, Protect::kRead);
-        (void)vm_protect(base, pg, Protect::kReadWrite);
+        require_benchmark(vm_protect(base, pg, Protect::kRead).ok(),
+                          "vm_protect(read-only)");
+        require_benchmark(vm_protect(base, pg, Protect::kReadWrite).ok(),
+                          "vm_protect(read-write)");
       }
       nb::doNotOptimizeAway(base);
     });
-    if (base != nullptr) (void)vm_release(base, pg);
+    b.run("HYLE C vm_protect+Status", [&] {
+      for (int i = 0; i < kIters; ++i) {
+        require_c_status(hyle_vm_protect(base, pg, HYLE_PROTECT_READ),
+                         "hyle_vm_protect(read-only)");
+        require_c_status(hyle_vm_protect(base, pg, HYLE_PROTECT_READ_WRITE),
+                         "hyle_vm_protect(read-write)");
+      }
+      nb::doNotOptimizeAway(base);
+    });
+    require_benchmark(vm_release(base, pg).ok(), "vm_release(protect)");
   }
 
   // ---- 10. mapped_file open+read: HYLE vs std::ifstream vs validated mmap ----
@@ -498,14 +603,17 @@ int main() {
   if (enabled("mapped-file")) {
     namespace sfs = std::filesystem;
     constexpr std::size_t kBytes = 64u * 1024u;
+    constexpr std::uint64_t kExpectedSum = patterned_checksum(kBytes);
     const std::string path =
         (sfs::temp_directory_path() / "hyle_platform_bench_map.bin").string();
     {
       std::ofstream f(path, std::ios::binary | std::ios::trunc);
+      require_benchmark(f.good(), "ofstream open(mapped-file setup)");
       std::vector<char> seed(kBytes);
       for (std::size_t i = 0; i < kBytes; ++i)
         seed[i] = static_cast<char>(i & 0x7F);
       f.write(seed.data(), static_cast<std::streamsize>(kBytes));
+      require_benchmark(f.good(), "ofstream write(mapped-file setup)");
     }
     nb::Bench b;
     b.title("mapped_file open+read 64KiB (vs ifstream / raw mmap)")
@@ -513,11 +621,15 @@ int main() {
         .minEpochIterations(50);
     b.run("std::ifstream read+sum (copies)", [&] {
       std::ifstream f(path, std::ios::binary);
+      require_benchmark(f.good(), "ifstream open(sequential)");
       std::vector<char> buf(kBytes);
       f.read(buf.data(), static_cast<std::streamsize>(kBytes));
+      require_benchmark(f.gcount() == static_cast<std::streamsize>(kBytes),
+                        "ifstream read(sequential)");
       std::uint64_t s = 0;
       for (std::size_t i = 0; i < kBytes; ++i)
         s += static_cast<unsigned char>(buf[i]);
+      require_benchmark(s == kExpectedSum, "ifstream checksum(sequential)");
       nb::doNotOptimizeAway(s);
     });
     b.run("raw validated mmap+sum floor", [&] {
@@ -526,74 +638,90 @@ int main() {
       wchar_t wide[512];
       const int need = ::MultiByteToWideChar(
           CP_UTF8, MB_ERR_INVALID_CHARS, path.c_str(), -1, nullptr, 0);
-      if (need > 0 &&
-          need <= static_cast<int>(sizeof(wide) / sizeof(wide[0])) &&
+      require_benchmark(
+          need > 0 &&
+              need <= static_cast<int>(sizeof(wide) / sizeof(wide[0])),
+          "MultiByteToWideChar(size)");
+      require_benchmark(
           ::MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, path.c_str(),
-                                -1, wide, need) == need) {
-        HANDLE fh = ::CreateFileW(wide, GENERIC_READ,
-                                  FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr,
-                                  OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-        if (fh != INVALID_HANDLE_VALUE) {
-          LARGE_INTEGER file_size;
-          if (::GetFileSizeEx(fh, &file_size) && file_size.QuadPart > 0) {
-            const std::uint64_t n =
-                static_cast<std::uint64_t>(file_size.QuadPart);
-            HANDLE mh = ::CreateFileMappingW(
-                fh, nullptr, PAGE_READONLY, static_cast<DWORD>(n >> 32),
-                static_cast<DWORD>(n & 0xFFFFFFFFu), nullptr);
-            if (mh) {
-              SYSTEM_INFO si;
-              ::GetSystemInfo(&si);  // same offset/granularity contract as HYLE
-              const unsigned char* d = nullptr;
-              if (si.dwAllocationGranularity != 0) {
-                d = static_cast<const unsigned char*>(::MapViewOfFile(
-                    mh, FILE_MAP_READ, 0, 0, static_cast<SIZE_T>(n)));
-              }
-              if (d) {
-                for (std::uint64_t i = 0; i < n; ++i) s += d[i];
-                ::UnmapViewOfFile(d);
-              }
-              ::CloseHandle(mh);
-            }
-          }
-          ::CloseHandle(fh);
-        }
-      }
+                                -1, wide, need) == need,
+          "MultiByteToWideChar(convert)");
+      HANDLE fh = ::CreateFileW(wide, GENERIC_READ,
+                                FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr,
+                                OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+      require_benchmark(fh != INVALID_HANDLE_VALUE, "CreateFileW(mapped)");
+      LARGE_INTEGER file_size;
+      require_benchmark(::GetFileSizeEx(fh, &file_size) != 0,
+                        "GetFileSizeEx(mapped)");
+      require_benchmark(file_size.QuadPart == static_cast<LONGLONG>(kBytes),
+                        "GetFileSizeEx(mapped size)");
+      const std::uint64_t n = static_cast<std::uint64_t>(file_size.QuadPart);
+      HANDLE mh = ::CreateFileMappingW(
+          fh, nullptr, PAGE_READONLY, static_cast<DWORD>(n >> 32),
+          static_cast<DWORD>(n & 0xFFFFFFFFu), nullptr);
+      require_benchmark(mh != nullptr, "CreateFileMappingW");
+      SYSTEM_INFO si;
+      ::GetSystemInfo(&si);  // same offset/granularity contract as HYLE
+      require_benchmark(si.dwAllocationGranularity != 0,
+                        "GetSystemInfo(allocation granularity)");
+      const auto* d = static_cast<const unsigned char*>(::MapViewOfFile(
+          mh, FILE_MAP_READ, 0, 0, static_cast<SIZE_T>(n)));
+      require_benchmark(d != nullptr, "MapViewOfFile");
+      for (std::uint64_t i = 0; i < n; ++i) s += d[i];
+      require_benchmark(::UnmapViewOfFile(d) != 0, "UnmapViewOfFile");
+      require_benchmark(::CloseHandle(mh) != 0, "CloseHandle(mapping)");
+      require_benchmark(::CloseHandle(fh) != 0, "CloseHandle(file)");
 #else
       int fd = ::open(path.c_str(), O_RDONLY | O_CLOEXEC);
-      if (fd >= 0) {
-        struct ::stat st;
-        if (::fstat(fd, &st) == 0 && st.st_size > 0) {
-          const std::size_t n = static_cast<std::size_t>(st.st_size);
-          const long pg = ::sysconf(_SC_PAGESIZE);
-          void* pv = pg > 0
-                         ? ::mmap(nullptr, n, PROT_READ, MAP_PRIVATE, fd, 0)
-                         : MAP_FAILED;
-          ::close(fd);
-          fd = -1;
-          if (pv != MAP_FAILED) {
-            const unsigned char* d = static_cast<const unsigned char*>(pv);
-            for (std::size_t i = 0; i < n; ++i) s += d[i];
-            ::munmap(pv, n);
-          }
-        }
-        if (fd >= 0) ::close(fd);
-      }
+      require_benchmark(fd >= 0, "open(mapped)");
+      struct ::stat st;
+      require_benchmark(::fstat(fd, &st) == 0, "fstat(mapped)");
+      require_benchmark(st.st_size == static_cast<off_t>(kBytes),
+                        "fstat(mapped size)");
+      const std::size_t n = static_cast<std::size_t>(st.st_size);
+      require_benchmark(::sysconf(_SC_PAGESIZE) > 0, "sysconf(page size)");
+      void* pv = ::mmap(nullptr, n, PROT_READ, MAP_PRIVATE, fd, 0);
+      require_benchmark(pv != MAP_FAILED, "mmap(mapped)");
+      require_benchmark(::close(fd) == 0, "close(mapped file)");
+      const unsigned char* d = static_cast<const unsigned char*>(pv);
+      for (std::size_t i = 0; i < n; ++i) s += d[i];
+      require_benchmark(::munmap(pv, n) == 0, "munmap(mapped)");
 #endif
+      require_benchmark(s == kExpectedSum, "raw mapped checksum");
       nb::doNotOptimizeAway(s);
     });
     b.run("HYLE MappedFile open+sum (zero-copy)", [&] {
       std::uint64_t s = 0;
       auto mapped = MappedFile::open(path.c_str());
-      if (mapped) {
-        const unsigned char* d =
-            static_cast<const unsigned char*>(mapped->data());
-        for (std::size_t i = 0; i < mapped->size(); ++i) s += d[i];
-      }
+      require_benchmark(mapped.has_value(), "MappedFile::open(sequential)");
+      require_benchmark(mapped->size() == kBytes,
+                        "MappedFile::open(sequential size)");
+      const unsigned char* d =
+          static_cast<const unsigned char*>(mapped->data());
+      for (std::size_t i = 0; i < mapped->size(); ++i) s += d[i];
+      require_benchmark(s == kExpectedSum, "MappedFile checksum");
+      nb::doNotOptimizeAway(s);
+    });
+    b.run("HYLE C MappedFile open+sum+Status", [&] {
+      std::uint64_t s = 0;
+      hyle_mapped_file_o* mapped = nullptr;
+      require_c_status(hyle_mapped_file_open(&mapped, path.c_str(),
+                                             HYLE_MAP_READ_ONLY, 0, 0),
+                       "hyle_mapped_file_open");
+      require_benchmark(mapped != nullptr && hyle_mapped_file_valid(mapped) != 0,
+                        "hyle_mapped_file_valid");
+      require_benchmark(hyle_mapped_file_size(mapped) == kBytes,
+                        "hyle_mapped_file_size");
+      const auto* data =
+          static_cast<const unsigned char*>(hyle_mapped_file_data(mapped));
+      for (std::size_t i = 0; i < kBytes; ++i) s += data[i];
+      require_benchmark(s == kExpectedSum, "C MappedFile checksum");
+      hyle_mapped_file_destroy(mapped);
       nb::doNotOptimizeAway(s);
     });
     std::error_code ec;
     sfs::remove(path, ec);
+    require_benchmark(!ec, "remove(mapped-file scratch)");
   }
 
   // ---- 11. persistent mapping for random page access ------------------------
@@ -610,6 +738,7 @@ int main() {
         (sfs::temp_directory_path() / "hyle_platform_bench_random.bin").string();
     {
       std::ofstream f(path, std::ios::binary | std::ios::trunc);
+      require_benchmark(f.good(), "ofstream open(random setup)");
       std::vector<char> chunk(64u * 1024u);
       for (std::size_t i = 0; i < chunk.size(); ++i) {
         chunk[i] = static_cast<char>(i & 0x7F);
@@ -618,6 +747,7 @@ int main() {
            written += chunk.size()) {
         f.write(chunk.data(), static_cast<std::streamsize>(chunk.size()));
       }
+      require_benchmark(f.good(), "ofstream write(random setup)");
     }
     std::vector<std::size_t> offsets(kProbes);
     for (std::size_t i = 0; i < offsets.size(); ++i) {
@@ -626,6 +756,11 @@ int main() {
     }
     std::ifstream stream(path, std::ios::binary);
     auto mapped = MappedFile::open(path.c_str());
+    require_benchmark(stream.good(), "ifstream open(random)");
+    require_benchmark(mapped.has_value(), "MappedFile::open(random)");
+    require_benchmark(mapped->size() == kBytes, "MappedFile::open(random size)");
+    std::uint64_t expected_sum = 0;
+    for (std::size_t offset : offsets) expected_sum += offset & 0x7Fu;
     nb::Bench b;
     b.title("persistent 16MiB random-page reads")
         .relative(true)
@@ -637,8 +772,10 @@ int main() {
         char byte = 0;
         stream.seekg(static_cast<std::streamoff>(offset));
         stream.read(&byte, 1);
+        require_benchmark(stream.good(), "ifstream random read");
         s += static_cast<unsigned char>(byte);
       }
+      require_benchmark(s == expected_sum, "ifstream random checksum");
       nb::doNotOptimizeAway(s);
     });
     // Direct mapped loads are roughly three orders faster; give this row its
@@ -646,16 +783,16 @@ int main() {
     b.minEpochIterations(3000);
     b.run("persistent HYLE MappedFile direct access", [&] {
       std::uint64_t s = 0;
-      if (mapped) {
-        const auto* data = static_cast<const unsigned char*>(mapped->data());
-        for (std::size_t offset : offsets) s += data[offset];
-      }
+      const auto* data = static_cast<const unsigned char*>(mapped->data());
+      for (std::size_t offset : offsets) s += data[offset];
+      require_benchmark(s == expected_sum, "MappedFile random checksum");
       nb::doNotOptimizeAway(s);
     });
-    if (mapped) mapped->reset();
+    mapped->reset();
     stream.close();
     std::error_code ec;
     sfs::remove(path, ec);
+    require_benchmark(!ec, "remove(random scratch)");
   }
 
   // ---- 12. FileHandle open+sequential read vs the same raw OS calls ---------
@@ -666,15 +803,18 @@ int main() {
   if (enabled("file-handle")) {
     namespace sfs = std::filesystem;
     constexpr std::size_t kBytes = 64u * 1024u;
+    constexpr std::uint64_t kExpectedSum = patterned_checksum(kBytes);
     const std::string path =
         (sfs::temp_directory_path() / "hyle_platform_bench_read.bin").string();
     {
       std::ofstream f(path, std::ios::binary | std::ios::trunc);
+      require_benchmark(f.good(), "ofstream open(file setup)");
       std::vector<char> seed(kBytes);
       for (std::size_t i = 0; i < kBytes; ++i) {
         seed[i] = static_cast<char>(i & 0x7F);
       }
       f.write(seed.data(), static_cast<std::streamsize>(kBytes));
+      require_benchmark(f.good(), "ofstream write(file setup)");
     }
     std::vector<unsigned char> buffer(kBytes);
     nb::Bench b;
@@ -706,8 +846,9 @@ int main() {
           }
           total += got;
         }
-        ::CloseHandle(fh);
+        require_benchmark(::CloseHandle(fh) != 0, "CloseHandle(read file)");
       }
+      require_benchmark(fh != INVALID_HANDLE_VALUE, "CreateFileW(read)");
 #else
       int fd = ::open(path.c_str(), O_RDONLY | O_CLOEXEC);
       if (fd >= 0) {
@@ -718,31 +859,57 @@ int main() {
           if (got <= 0) break;
           total += static_cast<std::size_t>(got);
         }
-        ::close(fd);
+        require_benchmark(::close(fd) == 0, "close(read file)");
       }
+      require_benchmark(fd >= 0, "open(read file)");
 #endif
+      require_benchmark(total == buffer.size(), "raw read(short read)");
       std::uint64_t s = 0;
       for (std::size_t i = 0; i < total; ++i) s += buffer[i];
+      require_benchmark(s == kExpectedSum, "raw read checksum");
       nb::doNotOptimizeAway(s);
     });
     b.run("HYLE FileHandle open+read+close", [&] {
       std::size_t total = 0;
       auto file = hyle::platform::open_file(
           path.c_str(), hyle::platform::kOpenRead);
-      if (file) {
-        while (total < buffer.size()) {
-          auto got = file->read(buffer.data() + total, buffer.size() - total);
-          if (!got || *got == 0) break;
-          total += *got;
-        }
-        (void)file->close();
+      require_benchmark(file.has_value(), "open_file");
+      while (total < buffer.size()) {
+        auto got = file->read(buffer.data() + total, buffer.size() - total);
+        require_benchmark(got.has_value(), "FileHandle::read");
+        if (*got == 0) break;
+        total += *got;
       }
+      require_benchmark(total == buffer.size(), "FileHandle::read(short read)");
+      require_benchmark(file->close().ok(), "FileHandle::close");
       std::uint64_t s = 0;
       for (std::size_t i = 0; i < total; ++i) s += buffer[i];
+      require_benchmark(s == kExpectedSum, "FileHandle checksum");
+      nb::doNotOptimizeAway(s);
+    });
+    b.run("HYLE C file open+read+close+Status", [&] {
+      hyle_file_handle file = HYLE_FILE_HANDLE_INVALID;
+      require_c_status(hyle_fs_open(&file, path.c_str(), HYLE_OPEN_READ),
+                       "hyle_fs_open");
+      std::size_t total = 0;
+      while (total < buffer.size()) {
+        std::size_t moved = 0;
+        require_c_status(hyle_fs_read(&moved, file, buffer.data() + total,
+                                      buffer.size() - total),
+                         "hyle_fs_read");
+        if (moved == 0) break;
+        total += moved;
+      }
+      require_benchmark(total == buffer.size(), "hyle_fs_read(short read)");
+      require_c_status(hyle_fs_close(file), "hyle_fs_close");
+      std::uint64_t s = 0;
+      for (std::size_t i = 0; i < total; ++i) s += buffer[i];
+      require_benchmark(s == kExpectedSum, "C FileHandle checksum");
       nb::doNotOptimizeAway(s);
     });
     std::error_code ec;
     sfs::remove(path, ec);
+    require_benchmark(!ec, "remove(file scratch)");
   }
 
   return 0;

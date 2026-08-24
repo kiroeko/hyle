@@ -29,6 +29,8 @@ using hyle::Status;
 namespace hc = hyle::container;
 namespace hm = hyle::mem;
 
+static_assert(sizeof(hyle_util_registry_priority) == sizeof(std::uint32_t));
+
 hyle_status to_c_status(Status status) noexcept {
   return hyle_status{hyle::detail::StatusAccess::release(status)};
 }

@@ -94,8 +94,6 @@ int main(){
   {
     auto fa = [](){ std::mt19937_64 r(9); std::uniform_real_distribution<float> d(0.5f,1e6f); std::vector<float> v(kN); for(auto&e:v)e=d(r); return v; }();
     std::vector<float> fo(kN);
-    const hs::ScalableTag<float> hdf; const hn::ScalableTag<float> gdf;
-    const std::size_t wfh=hs::Lanes(hdf), wfg=hn::Lanes(gdf);
     nb::Bench b; b.title("GetExponent f32").relative(true).batch(kN).minEpochIterations(5000);
     HYLE_RUN_PAIR(b, [&](auto rep){ hyle_bench::stagger(rep); auto* p_fa = fa.data(); auto* p_fo = fo.data(); for(std::size_t i=0;i+wfh<=kN;i+=wfh) hs::StoreU(hs::GetExponent(hs::LoadU(hdf,p_fa+i)), hdf, p_fo+i); nb::doNotOptimizeAway(p_fo);  hyle_bench::mark(rep); }, [&](auto rep){ hyle_bench::stagger(rep); auto* p_fa = fa.data(); auto* p_fo = fo.data(); for(std::size_t i=0;i+wfg<=kN;i+=wfg) hn::StoreU(hn::GetExponent(hn::LoadU(gdf,p_fa+i)), gdf, p_fo+i); nb::doNotOptimizeAway(p_fo);  hyle_bench::mark(rep); });
   }
@@ -333,7 +331,6 @@ int main(){
   // bf16 = uint16 IEEE carrier (2N lanes) -> f32 (N lanes). MulEvenAdd/MulOddAdd are the bf16 dot-product FMA.
   {
     const hs::ScalableTag<std::uint16_t> hdbf; const hn::ScalableTag<std::uint16_t> gdbf;
-    const hs::ScalableTag<float> hdf; const hn::ScalableTag<float> gdf;
     const std::size_t wbfh=hs::Lanes(hdbf), wbfg=hn::Lanes(gdbf);
     // Highway's MulEvenAdd takes a bfloat16_t-typed vector (Repartition of the f32 tag); bit-cast the
     // uint16 carrier load into it. HYLE's takes the uint16 carrier directly -- same bits, equal work.

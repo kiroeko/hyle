@@ -101,7 +101,10 @@ static inline int hyle_container_path_is_separator(char c) {
 
 /* Error contract:
  * - create/reserve/insert/intern operations return owning hyle_status values
- *   and initialize their leading out parameter before doing work;
+ *   and initialize every non-NULL leading out parameter before validation or
+ *   work: create -> NULL, insert -> ALREADY_PRESENT, interner acquire -> 0,
+ *   interner intern -> empty view, batch completed -> 0, concurrent pointer
+ *   append index -> SIZE_MAX;
  * - queue full/empty, map miss, and stale IDs are normal value results;
  * - borrowed views require size == 0 || data != NULL.
  * There is deliberately no module-private TLS last-error channel. */
@@ -111,6 +114,10 @@ static inline int hyle_container_path_is_separator(char c) {
  * it as a persistent fingerprint, wire value, or adversarial-input MAC. */
 HYLE_CONTAINER_C_API uint64_t hyle_container_hash_bytes(
     const void* data, size_t size, uint64_t seed);
+/* SipHash-2-4 for attacker-controlled keys. key0/key1 are a caller-owned
+ * unpredictable 128-bit secret; this stateless entry never stores them. */
+HYLE_CONTAINER_C_API uint64_t hyle_container_siphash24(
+    const void* data, size_t size, uint64_t key0, uint64_t key1);
 
 HYLE_CONTAINER_C_API int hyle_container_string_compare(
     hyle_container_string_view left, hyle_container_string_view right);
@@ -169,6 +176,11 @@ HYLE_CONTAINER_C_API size_t hyle_container_hex_decode(
     hyle_container_string_view hex, void* out, size_t capacity);
 HYLE_CONTAINER_C_API size_t hyle_container_string_c_escape(
     hyle_container_string_view text, char* out, size_t capacity);
+/* One-pass validate-only path. Returns 1 for valid UTF-8 (including empty), 0
+ * for malformed input or an invalid {NULL, nonzero} view. */
+HYLE_CONTAINER_C_API int hyle_container_utf8_validate(
+    hyle_container_string_view text);
+/* Validate + count; valid input may require two dispatched passes. */
 HYLE_CONTAINER_C_API int64_t hyle_container_utf8_length(
     hyle_container_string_view text);
 
@@ -398,7 +410,13 @@ hyle_container_byte_ring_consume(hyle_container_byte_ring* ring, size_t count);
 HYLE_CONTAINER_C_API void
 hyle_container_byte_ring_clear(hyle_container_byte_ring* ring);
 
-/* Runtime-erased trivially-copyable vector (the PodVector capability). */
+/* Runtime-erased trivially-copyable vector (the PodVector capability).
+ * Versioned options rules used by every options struct below:
+ * - struct_size and reserved are in the required prefix; reserved must be zero.
+ * - struct_size must cover the family-specific REQUIRED_SIZE.
+ * - each fully present trailing field is read; a missing/partial field keeps
+ *   the documented default, and bytes beyond the current struct are ignored.
+ * - callers must make struct_size bytes readable at the supplied address. */
 typedef struct hyle_container_vector_o hyle_container_vector;
 typedef struct hyle_container_vector_options {
   uint32_t struct_size;
@@ -408,11 +426,16 @@ typedef struct hyle_container_vector_options {
   size_t initial_capacity;
   hyle_allocator backing;
 } hyle_container_vector_options;
+#define HYLE_CONTAINER_VECTOR_OPTIONS_REQUIRED_SIZE                           \
+  ((uint32_t)offsetof(hyle_container_vector_options, initial_capacity))
 #define HYLE_CONTAINER_VECTOR_OPTIONS_INIT                                    \
-  {sizeof(hyle_container_vector_options), 0, 0, 0, 0, hyle_system_allocator()}
+  {(uint32_t)sizeof(hyle_container_vector_options), 0, 0, 0, 0,               \
+   hyle_system_allocator()}
 #define HYLE_CONTAINER_VECTOR_OPTIONS_FOR(type, capacity)                      \
-  {sizeof(hyle_container_vector_options), 0, sizeof(type),                    \
+  {(uint32_t)sizeof(hyle_container_vector_options), 0, sizeof(type),          \
    HYLE_CONTAINER_ALIGNOF(type), (capacity), hyle_system_allocator()}
+/* initial_capacity defaults to zero and backing defaults to the system
+ * allocator when their complete fields are outside struct_size. */
 HYLE_CONTAINER_C_API hyle_status hyle_container_vector_create(
     hyle_container_vector** out,
     const hyle_container_vector_options* options);
@@ -453,7 +476,11 @@ HYLE_CONTAINER_C_API hyle_status hyle_container_vector_try_shrink_to_fit(
 HYLE_CONTAINER_C_API void hyle_container_vector_clear(
     hyle_container_vector* vector);
 
-/* Runtime-erased POD hash map. hash/equal may be NULL for hash_bytes/memcmp. */
+/* Runtime-erased POD hash map. NULL hash + NULL equal selects the
+ * process-seeded byte hash + memcmp defaults. A custom hash may retain memcmp
+ * by leaving equal NULL. A custom equal REQUIRES a compatible custom hash;
+ * create rejects equal != NULL && hash == NULL because every equivalent pair
+ * must produce the same hash. */
 typedef uint64_t (*hyle_container_hash_fn)(const void* key, size_t key_size,
                                            void* context);
 typedef int (*hyle_container_equal_fn)(const void* left, const void* right,
@@ -473,14 +500,18 @@ typedef struct hyle_container_hash_map_options {
   void* context;
   hyle_allocator backing;
 } hyle_container_hash_map_options;
+#define HYLE_CONTAINER_HASH_MAP_OPTIONS_REQUIRED_SIZE                         \
+  ((uint32_t)offsetof(hyle_container_hash_map_options, hash))
 #define HYLE_CONTAINER_HASH_MAP_OPTIONS_INIT                                  \
-  {sizeof(hyle_container_hash_map_options), 0, 0, 0, 0, 0, NULL, NULL, NULL,  \
-   hyle_system_allocator()}
+  {(uint32_t)sizeof(hyle_container_hash_map_options), 0, 0, 0, 0, 0, NULL,    \
+   NULL, NULL, hyle_system_allocator()}
 #define HYLE_CONTAINER_HASH_MAP_OPTIONS_FOR(key_type, value_type)              \
-  {sizeof(hyle_container_hash_map_options), 0, sizeof(key_type),              \
+  {(uint32_t)sizeof(hyle_container_hash_map_options), 0, sizeof(key_type),    \
    HYLE_CONTAINER_ALIGNOF(key_type), sizeof(value_type),                      \
    HYLE_CONTAINER_ALIGNOF(value_type), NULL, NULL, NULL,                       \
    hyle_system_allocator()}
+/* hash/equal/context default to NULL and backing defaults to the system
+ * allocator when their complete fields are outside struct_size. */
 HYLE_CONTAINER_C_API hyle_status hyle_container_hash_map_create(
     hyle_container_hash_map** out,
     const hyle_container_hash_map_options* options);
@@ -494,11 +525,13 @@ HYLE_CONTAINER_C_API hyle_status hyle_container_hash_map_reserve(
     hyle_container_hash_map* map, size_t count);
 HYLE_CONTAINER_C_API void hyle_container_hash_map_clear(
     hyle_container_hash_map* map);
-typedef enum hyle_container_insert_result {
+/* Fixed-width across compilers and -fshort-enums. */
+typedef uint32_t hyle_container_insert_result;
+enum {
   HYLE_CONTAINER_INSERTED = 0,
   HYLE_CONTAINER_ALREADY_PRESENT = 1,
   HYLE_CONTAINER_ASSIGNED = 2
-} hyle_container_insert_result;
+};
 HYLE_CONTAINER_C_API hyle_status hyle_container_hash_map_insert(
     hyle_container_insert_result* out_result,
     hyle_container_hash_map* map, const void* key, const void* value);
@@ -576,7 +609,8 @@ HYLE_CONTAINER_C_API int hyle_container_concurrent_hash_map_visit(
     hyle_container_concurrent_hash_map_visit_fn visitor, void* context);
 
 /* Runtime-erased POD hash set. Stores one canonical key per member and does
- * not allocate a dummy mapped-value field in each flat slot. */
+ * not allocate a dummy mapped-value field in each flat slot. The map callback
+ * rule also applies: a custom equal requires a compatible custom hash. */
 typedef int (*hyle_container_hash_set_visit_fn)(const void* key,
                                                  void* context);
 typedef struct hyle_container_hash_set_o hyle_container_hash_set;
@@ -590,13 +624,17 @@ typedef struct hyle_container_hash_set_options {
   void* context;
   hyle_allocator backing;
 } hyle_container_hash_set_options;
+#define HYLE_CONTAINER_HASH_SET_OPTIONS_REQUIRED_SIZE                         \
+  ((uint32_t)offsetof(hyle_container_hash_set_options, hash))
 #define HYLE_CONTAINER_HASH_SET_OPTIONS_INIT                                  \
-  {sizeof(hyle_container_hash_set_options), 0, 0, 0, NULL, NULL, NULL,        \
-   hyle_system_allocator()}
+  {(uint32_t)sizeof(hyle_container_hash_set_options), 0, 0, 0, NULL, NULL,    \
+   NULL, hyle_system_allocator()}
 #define HYLE_CONTAINER_HASH_SET_OPTIONS_FOR(key_type)                         \
-  {sizeof(hyle_container_hash_set_options), 0, sizeof(key_type),              \
+  {(uint32_t)sizeof(hyle_container_hash_set_options), 0, sizeof(key_type),    \
    HYLE_CONTAINER_ALIGNOF(key_type), NULL, NULL, NULL,                        \
    hyle_system_allocator()}
+/* hash/equal/context default to NULL and backing defaults to the system
+ * allocator when their complete fields are outside struct_size. */
 HYLE_CONTAINER_C_API hyle_status hyle_container_hash_set_create(
     hyle_container_hash_set** out,
     const hyle_container_hash_set_options* options);
@@ -628,7 +666,9 @@ HYLE_CONTAINER_C_API int hyle_container_hash_set_visit(
 /* Mutable ordered POD indexes. The comparator must define a strict weak order
  * and return <0 / 0 / >0. HYLE stores key/value bytes by value; pointers
  * returned from find/cursor access and every cursor are invalidated by any
- * successful mutation. The numeric helpers avoid alignment/aliasing hazards. */
+ * successful mutation. The numeric helpers avoid alignment/aliasing hazards
+ * and require key_size to match their suffix exactly (i32/u32: 4 bytes,
+ * i64/u64: 8 bytes); B-tree create rejects a mismatched options layout. */
 typedef int (*hyle_container_compare_fn)(const void *left, const void *right,
                                          size_t key_size, void *context);
 HYLE_CONTAINER_C_API int hyle_container_compare_i32(const void *left,
@@ -663,8 +703,10 @@ typedef struct hyle_container_btree_options {
   void *context;
   hyle_allocator backing;
 } hyle_container_btree_options;
+#define HYLE_CONTAINER_BTREE_OPTIONS_REQUIRED_SIZE                            \
+  ((uint32_t)offsetof(hyle_container_btree_options, context))
 #define HYLE_CONTAINER_BTREE_OPTIONS_INIT                                      \
-  {sizeof(hyle_container_btree_options),                                       \
+  {(uint32_t)sizeof(hyle_container_btree_options),                             \
    0,                                                                          \
    0,                                                                          \
    0,                                                                          \
@@ -674,7 +716,7 @@ typedef struct hyle_container_btree_options {
    NULL,                                                                       \
    hyle_system_allocator()}
 #define HYLE_CONTAINER_BTREE_MAP_OPTIONS_FOR(key_type, value_type, compare_fn) \
-  {sizeof(hyle_container_btree_options),                                       \
+  {(uint32_t)sizeof(hyle_container_btree_options),                             \
    0,                                                                          \
    sizeof(key_type),                                                           \
    HYLE_CONTAINER_ALIGNOF(key_type),                                           \
@@ -684,7 +726,7 @@ typedef struct hyle_container_btree_options {
    NULL,                                                                       \
    hyle_system_allocator()}
 #define HYLE_CONTAINER_BTREE_SET_OPTIONS_FOR(key_type, compare_fn)             \
-  {sizeof(hyle_container_btree_options),                                       \
+  {(uint32_t)sizeof(hyle_container_btree_options),                             \
    0,                                                                          \
    sizeof(key_type),                                                           \
    HYLE_CONTAINER_ALIGNOF(key_type),                                           \
@@ -693,6 +735,8 @@ typedef struct hyle_container_btree_options {
    compare_fn,                                                                 \
    NULL,                                                                       \
    hyle_system_allocator()}
+/* compare is part of the required prefix and must be non-NULL. context
+ * defaults to NULL and backing defaults to the system allocator when absent. */
 
 /* Trivial cursor representation; fields are opaque. end is represented by a
  * valid owner and a NULL node. previous(end) reaches the last element. */
@@ -714,6 +758,9 @@ HYLE_CONTAINER_C_API size_t
 hyle_container_btree_map_size(const hyle_container_btree_map *map);
 HYLE_CONTAINER_C_API void
 hyle_container_btree_map_clear(hyle_container_btree_map *map);
+/* Both map insert forms initialize a non-NULL out_result to ALREADY_PRESENT
+ * before validation or growth, so invalid/OOM returns never expose
+ * caller-stale result bytes. */
 HYLE_CONTAINER_C_API hyle_status hyle_container_btree_map_insert(
     hyle_container_insert_result *out_result, hyle_container_btree_map *map,
     const void *key, const void *value);
@@ -776,6 +823,7 @@ HYLE_CONTAINER_C_API size_t
 hyle_container_btree_set_size(const hyle_container_btree_set *set);
 HYLE_CONTAINER_C_API void
 hyle_container_btree_set_clear(hyle_container_btree_set *set);
+/* Uses the same stable failure initialization as B-tree map insert. */
 HYLE_CONTAINER_C_API hyle_status
 hyle_container_btree_set_insert(hyle_container_insert_result *out_result,
                                 hyle_container_btree_set *set, const void *key);
@@ -886,12 +934,14 @@ HYLE_CONTAINER_C_API size_t hyle_container_sharded_queue_shard_count(
 
 typedef struct hyle_container_work_stealing_deque_o
     hyle_container_work_stealing_deque;
-typedef enum hyle_container_steal_status {
+/* Fixed-width across compilers and -fshort-enums. */
+typedef uint32_t hyle_container_steal_status;
+enum {
   HYLE_CONTAINER_STEAL_OK = 0,
   HYLE_CONTAINER_STEAL_EMPTY = 1,
   /* Another owner/thief won this attempt; retry according to caller policy. */
   HYLE_CONTAINER_STEAL_RETRY = 2
-} hyle_container_steal_status;
+};
 HYLE_CONTAINER_C_API hyle_status hyle_container_work_stealing_deque_create(
     hyle_container_work_stealing_deque** out, hyle_allocator backing,
     size_t capacity);

@@ -78,6 +78,30 @@ struct WfState {
   util::SpinLock err_mu; // guards first_err write
   sched::Waker waker;    // wakes the waiting fiber when pending hits 0
 
+  void record(Status s) noexcept {
+    bool expected = false;
+    if (had_err.compare_exchange_strong(expected, true,
+                                        std::memory_order_acq_rel)) {
+      err_mu.lock();
+      first_err = std::move(s);
+      err_mu.unlock();
+    }
+  }
+
+  // Balance one task's pending slot + WfState reference.  Copy the Waker before
+  // drop_ref(): a future caller may legitimately make this the last reference,
+  // and wake must not touch a freed WfState.  Today failed-admission rollback is
+  // protected by either the seeding guard or the currently-running parent task,
+  // but sharing the normal completion path keeps that invariant from becoming a
+  // latent lost-wake if wf_spawn gains another caller.
+  void finish_task_ref() noexcept {
+    sched::Waker w = waker;
+    const bool last =
+        pending.fetch_sub(1, std::memory_order_acq_rel) == 1;
+    drop_ref();
+    if (last) w.wake();
+  }
+
   void add_ref() noexcept { refcount.fetch_add(1, std::memory_order_relaxed); }
   void drop_ref() noexcept {
     if (refcount.fetch_sub(1, std::memory_order_acq_rel) == 1) {
@@ -122,8 +146,23 @@ sched::Task<bool> wf_node_task(mem::Allocator alloc, WfState *st,
 void wf_spawn(mem::Allocator alloc, WfState *st, std::uint32_t i) {
   st->pending.fetch_add(1, std::memory_order_acq_rel);
   st->add_ref(); // the new task holds a ref
-  spawn_task(*st->sched, alloc, wf_node_task(alloc, st, i))
-      .detach(); // lands on this worker's local q
+  auto handle = spawn_task(*st->sched, alloc, wf_node_task(alloc, st, i));
+  // A failed admission is already a finished JoinHandle.  A successfully
+  // admitted task can also finish before this check, so consume the handle only
+  // when finished and distinguish those cases through join(): an unexpected
+  // result means the task did not perform its WfState completion accounting, so
+  // this path balances the pending/ref increments above.  A live admitted task
+  // is detached normally.
+  if (handle.is_finished()) {
+    auto result = handle.join();
+    if (!result) {
+      st->record(std::move(result).error().WithContext(
+          "wavefront node task admission"));
+      st->finish_task_ref();
+    }
+  } else {
+    handle.detach(); // lands on this worker's local queue
+  }
 }
 
 // One node's run on a worker. Runs the node, then DECENTRALIZED-releases its
@@ -157,24 +196,13 @@ sched::Task<bool> wf_node_task(mem::Allocator alloc, WfState *st,
     // First failer records the error; a failed node's successors are never
     // released (their remaining never hits 0), so they stay dirty (deferred,
     // same as serial/level path).
-    bool expected = false;
-    if (st->had_err.compare_exchange_strong(expected, true,
-                                            std::memory_order_acq_rel)) {
-      st->err_mu.lock();
-      st->first_err = s;
-      st->err_mu.unlock();
-    }
+    st->record(s);
   }
   // COMPLETION: if I am the last pending node, wake the waiter. Copy the Waker
   // to MY stack FIRST -- after the wake the waiter may resume and drop the last
   // ref, freeing st; touching st->waker after that would be the exact
   // send-after-free the old channel design had.
-  sched::Waker w = st->waker;
-  const bool last = (st->pending.fetch_sub(1, std::memory_order_acq_rel) == 1);
-  st->drop_ref(); // this task's ref (may free st if the waiter already dropped
-                  // -- it hasn't)
-  if (last)
-    w.wake();
+  st->finish_task_ref();
   co_return s.ok();
 }
 
@@ -253,10 +281,17 @@ Status evaluate_parallel(TaskGraph &g, sched::Scheduler &sched,
     // keep it dirty (retried next evaluate) + record the first error -- but
     // still join the rest so none dangles.
     for (std::uint32_t j = 0; j < cnt; ++j) {
-      (void)handles[j]
-          .join(); // wait for completion; the Status is in outcome[id]
+      auto joined = handles[j].join(); // waits for completion when admitted
       const std::uint32_t id = ran_ids[j];
-      if (outcome[id].ok()) {
+      if (!joined) {
+        // Allocation/admission failure means run_node_task never wrote outcome.
+        // Keep the node dirty and surface the scheduler error instead of treating
+        // the default-OK slot as a successful evaluation.
+        if (first_err.ok()) {
+          first_err = std::move(joined).error().WithContext(
+              "parallel graph node task");
+        }
+      } else if (outcome[id].ok()) {
         g.clear_dirty_(id);
       } else if (first_err.ok()) {
         first_err = outcome[id];

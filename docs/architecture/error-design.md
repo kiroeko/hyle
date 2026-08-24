@@ -291,7 +291,8 @@ void hyle_status_add_context(hyle_status* status, const char* context);
 representation；分配失败时保持原状态及原消息不变。这样 C 用户不需要同时管理“旧状态
 和新状态”两个 owning handle。
 
-C enum 属于不可信 FFI 输入。非法 `hyle_status_code` 归一为 `HYLE_STATUS_UNKNOWN`，不能
+C 传入的 fixed-width code 属于不可信 FFI 输入。非法 `hyle_status_code` 归一为
+`HYLE_STATUS_UNKNOWN`，不能
 让越界值进入内部 tagged representation。C++ 与 C code 表仍由编译期逐项断言保持一致。
 
 C error 头只负责 Status。日志与 sink 使用 `hyle/c/obs.h`；C 调用方自身的程序错误由

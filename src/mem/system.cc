@@ -2,6 +2,8 @@
 #include "hyle/mem/hugepage.h"
 #include "hyle/mem/pmr.h"
 
+#include "system_internal.h"
+
 #include <mimalloc.h> // PRIVATE include -- mi_* types never leak to a header
 
 #include "hyle/mem/system_inline.h"
@@ -16,6 +18,10 @@
 #include <new>
 
 namespace hyle::mem {
+
+static_assert(MI_MALLOC_VERSION == 30500,
+              "HYLE's reviewed mimalloc contract requires v3.5.0");
+
 namespace {
 
 // Calls originating inside hyle_mem must not bounce through the exported
@@ -25,18 +31,28 @@ namespace {
 // both routes reach these same private backend helpers.
 void *system_backend_allocate_local(std::size_t size,
                                     std::size_t alignment) noexcept {
-  return alignment <= kDefaultAlignment
-             ? mi_malloc(size)
-             : mi_malloc_aligned(size, alignment);
+  alignment = detail::system_backend_checked_alignment(alignment);
+  if (alignment <= detail::kMimallocV3NaturalAlignment) {
+    return mi_malloc(size < detail::kMimallocV3NaturalAlignment
+                         ? detail::kMimallocV3NaturalAlignment
+                         : size);
+  }
+  return mi_malloc_aligned(size, alignment);
 }
 
 void system_backend_deallocate_local(void *ptr) noexcept { mi_free(ptr); }
 
 void *system_backend_reallocate_local(void *ptr, std::size_t new_size,
                                       std::size_t alignment) noexcept {
-  return alignment <= kDefaultAlignment
-             ? mi_realloc(ptr, new_size)
-             : mi_realloc_aligned(ptr, new_size, alignment);
+  alignment = detail::system_backend_checked_alignment(alignment);
+  if (alignment <= detail::kMimallocV3NaturalAlignment) {
+    const std::size_t backing_size =
+        new_size < detail::kMimallocV3NaturalAlignment
+            ? detail::kMimallocV3NaturalAlignment
+            : new_size;
+    return mi_realloc(ptr, backing_size);
+  }
+  return mi_realloc_aligned(ptr, new_size, alignment);
 }
 
 } // namespace
@@ -77,16 +93,15 @@ namespace {
 //
 // THREE split entries (alloc/free/realloc) instead of one 5-arg realloc_func:
 // the hot alloc path is 3 args (no Win64 stack spill) with NO dispatch branch
-// -- the seam costs only the unavoidable indirect call now. mi_malloc already
-// guarantees >= 16-byte (alignof(max_align_t)) alignment, so the common
-// default-aligned case takes the plain (faster) path; only over-aligned (>16,
-// e.g. AVX512 64B) needs mi_*_aligned.
+// -- the seam costs only the unavoidable indirect call now. HYLE guarantees
+// at least alignof(max_align_t), including for weaker explicit requests.
+// mimalloc v3 naturally aligns blocks at that boundary once their size reaches
+// it, so sub-default sizes are padded while the common path stays on plain
+// mi_malloc/realloc. Only over-alignment uses mi_*_aligned.
 void *system_alloc(void * /*state*/, std::size_t size,
                    std::size_t alignment) noexcept {
   if (size == 0)
     return nullptr;
-  // A valid default-or-weaker alignment takes plain mi_malloc; over-alignment
-  // alone selects the aligned backend entry.
   void *pointer = system_backend_allocate_local(size, alignment);
   if (pointer != nullptr) {
     HYLE_TRACE_ALLOC_NAMED(pointer, size, "hyle.system");
@@ -111,10 +126,11 @@ void *system_realloc(void * /*state*/, void *ptr, std::size_t /*old_size*/,
     }
     return nullptr;
   }
-  // mi_realloc_aligned preserves alignment and returns nullptr on OOM with the
-  // original block left intact (C realloc contract) -- matches our vtable.
-  // Both forms accept nullptr as allocate; the default-aligned path therefore
-  // needs neither alignment normalization nor a separate pointer branch.
+  // The backend selector preserves the normalized alignment and leaves the
+  // original block intact on OOM (C realloc contract). Plain mi_realloc handles
+  // the <=16B-alignment fast path; only over-alignment uses the aligned entry.
+  // Both forms accept nullptr as allocate, so no separate pointer branch is
+  // needed.
   void *result =
       system_backend_reallocate_local(ptr, new_size, alignment);
   if (result != nullptr) {
@@ -127,7 +143,6 @@ void *system_realloc(void * /*state*/, void *ptr, std::size_t /*old_size*/,
 
 class SystemMemoryResource final : public std::pmr::memory_resource {
   void *do_allocate(std::size_t bytes, std::size_t alignment) override {
-    alignment = detail::system_backend_checked_alignment(alignment);
     const std::size_t backing_size = detail::pmr_backing_size(bytes);
     void *pointer = system_backend_allocate_local(backing_size, alignment);
     if (pointer == nullptr)
@@ -137,12 +152,12 @@ class SystemMemoryResource final : public std::pmr::memory_resource {
   }
 
   void do_deallocate(void *pointer, std::size_t /*bytes*/,
-                     std::size_t alignment) override {
-    (void)detail::system_backend_checked_alignment(alignment);
-    if (pointer != nullptr) {
-      HYLE_TRACE_FREE_NAMED(pointer, "hyle.system");
-      system_backend_deallocate_local(pointer);
-    }
+                     std::size_t /*alignment*/) override {
+    // memory_resource::deallocate requires a pointer/alignment pair previously
+    // returned by this resource.  Rechecking those preconditions here duplicates
+    // the PMR caller's contract on every normal container deallocation.
+    HYLE_TRACE_FREE_NAMED(pointer, "hyle.system");
+    system_backend_deallocate_local(pointer);
   }
 
   bool do_is_equal(
@@ -173,6 +188,10 @@ std::size_t system_good_size(std::size_t size) noexcept {
 }
 
 void system_collect(bool force) noexcept { mi_collect(force); }
+
+#if defined(HYLE_TESTING)
+int system_backend_version_for_testing() noexcept { return mi_version(); }
+#endif
 
 void enable_allocator_hugepages(AllocatorHugepagePolicy policy) noexcept {
   // Programmatic stand-in for MIMALLOC_ALLOW_THP /

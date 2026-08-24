@@ -81,5 +81,9 @@ while IFS='|' read -r name repository revision; do
     printf '%s\n' "$name resolved to $actual, expected $revision." >&2
     exit 1
   }
+  cmake \
+    -DHYLE_VERIFY_BENCH_DEPENDENCY_NAME="$name" \
+    -DHYLE_VERIFY_BENCH_DEPENDENCY_DIR="$checkout" \
+    -P "$VERSIONS_FILE"
   printf '%s\n' "[ok] $name $actual -> $checkout"
 done < "$manifest"

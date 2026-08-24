@@ -28,7 +28,7 @@ license text and the notices in each source file control.
 
 | Origin | HYLE files | Selected license | Full text in source / installed package |
 |---|---|---|---|
-| Google Highway | `src/simd/sort/vqsort_hyle/`, `src/simd/bitpack/bitpack_hyle-inl.h`, and most of `src/simd/math/math_hyle-inl.h` | Apache-2.0 option of Apache-2.0 OR BSD-3-Clause | `third_party/simdutf/LICENSE-APACHE` / `highway-Apache-2.0-LICENSE`; source files retain upstream copyright, origin, and commit notices |
+| Google Highway | `src/simd/sort/vqsort_hyle/`, `src/simd/bitpack/bitpack_hyle-inl.h`, and most of `src/simd/math/math_hyle-inl.h` | Apache-2.0 option of Apache-2.0 OR BSD-3-Clause | `third_party/ported/LICENSE-HIGHWAY` / `highway-LICENSE`; source files retain upstream copyright, origin, and commit notices |
 | JPEG XL | `Cbrt` portion of `src/simd/math/math_hyle-inl.h` | BSD-3-Clause | `third_party/ported/LICENSE-JPEG-XL-BSD-3-Clause` / same basename |
 | xsimd | `src/simd/math/math_xsimd_hyle-inl.h` | BSD-3-Clause | `third_party/ported/LICENSE-XSIMD-BSD-3-Clause` / same basename |
 

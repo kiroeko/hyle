@@ -177,9 +177,10 @@ Registry 不提供 unregister：已经创建对象、函数指针和并发 reade
 manager 管理 quiescence，再销毁整个 Registry。Registry 必须活过所有 `FrozenView` 和在途操作；
 析构前由调用方让使用者静止。
 
-## 分层与当前状态
+## 分层与证据入口
 
 header-only util-core 作为独立 `util_core` 组件交付；Registry、demangle 和 C/FFI adapter
-属于 `util` runtime component。完整 util 已在 `1b148ef`/`70fa4e8` 按功能、易用性、C ABI、并发和
-三平台性能严格收口，并完成 shared/static 安装包消费验证。分层仍然保留：它避免低层
+属于 `util` runtime component。`1b148ef`/`70fa4e8` 是上一轮功能、C ABI、并发、性能与 package
+复证的历史输入，不代表当前 working tree 已恢复绿证；现行状态只看
+[`pre-release-readiness`](../milestones/pre-release-readiness.md)。分层仍然保留：它避免低层
 mem/container 为一个运行时 Registry 反向链接 `hyle_util`。

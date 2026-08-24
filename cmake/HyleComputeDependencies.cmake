@@ -4,8 +4,11 @@ include_guard(GLOBAL)
 # and embedding parents can preconfigure compute without probing a GPU SDK.
 hyle_auto_feature_option(HYLE_COMPUTE_CUDA
   "Build the compute CUDA backend")
+set(_hyle_compute_ggml_default ${HYLE_FCONTEXT_SUPPORTED})
 option(HYLE_COMPUTE_GGML
-  "compute-05: borrow ggml operators via ggml_bridge" ON)
+  "compute-05: borrow ggml operators via ggml_bridge"
+  ${_hyle_compute_ggml_default})
+unset(_hyle_compute_ggml_default)
 set(_hyle_ggml_native_default ON)
 if(HYLE_INSTALL)
   set(_hyle_ggml_native_default OFF)
@@ -25,6 +28,16 @@ function(hyle_configure_compute_dependencies)
   set(_hyle_compute_cuda_enabled OFF)
   set(_hyle_compute_vulkan_enabled OFF)
   set(_hyle_compute_shader_tools_enabled OFF)
+
+  # ggml_bridge completes blocking operator work through sched.  Host, CUDA and
+  # Vulkan backends remain useful without fcontext, but an explicit ggml request
+  # cannot silently become an installed package that advertises no real bridge.
+  if(HYLE_COMPUTE_GGML AND NOT HYLE_FCONTEXT_SUPPORTED)
+    message(FATAL_ERROR
+      "HYLE_COMPUTE_GGML=ON requires sched/fcontext, but HYLE has no fcontext "
+      "assembly for ${CMAKE_SYSTEM_NAME}/${CMAKE_SYSTEM_PROCESSOR}. Select "
+      "HYLE_COMPUTE_GGML=OFF; host/CUDA/Vulkan compute remain available.")
+  endif()
 
   # CUDA has a deterministic AUTO/ON/OFF contract. The distinct *_ENABLED
   # result prevents truth-testing a string option such as "OFF".
@@ -67,11 +80,10 @@ function(hyle_configure_compute_dependencies)
   # outer parallelism and borrows only its operator kernels.
   if(HYLE_COMPUTE_GGML)
     include(FetchContent)
-    set(GGML_PIN_COMMIT "eced84c86f8b012c752c016f7fe789adea168e1e") # v0.15.3
     FetchContent_Declare(ggml
-      GIT_REPOSITORY https://github.com/ggml-org/ggml.git
-      GIT_TAG        ${GGML_PIN_COMMIT}
-      GIT_SHALLOW    TRUE)
+      URL      ${HYLE_DEP_GGML_ARCHIVE_URL}
+      URL_HASH SHA256=${HYLE_DEP_GGML_ARCHIVE_SHA256}
+      DOWNLOAD_EXTRACT_TIMESTAMP FALSE)
     block()
       # This hook runs in ggml's project() before language detection. Use the
       # HYLE source root, not the caller's CMAKE_SOURCE_DIR, when source-embedded.
@@ -81,10 +93,8 @@ function(hyle_configure_compute_dependencies)
         "${HYLE_SOURCE_DIR}/cmake/HyleGgmlProjectPolicy.cmake")
       set(BUILD_SHARED_LIBS OFF)
       set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-      set(GGML_STANDALONE OFF)
       set(GGML_BUILD_TESTS OFF)
       set(GGML_BUILD_EXAMPLES OFF)
-      set(GGML_BUILD_SERVER OFF)
       set(GGML_BACKEND_DL OFF)
       set(GGML_OPENMP OFF)
       set(GGML_CCACHE OFF)
@@ -131,7 +141,7 @@ function(hyle_configure_compute_dependencies)
           set(GGML_AVX512 ON)
         endif()
       endif()
-      FetchContent_MakeAvailable(ggml)
+      hyle_fetchcontent_make_available_locked(ggml)
     endblock()
     FetchContent_GetProperties(ggml)
     set_property(DIRECTORY "${ggml_SOURCE_DIR}" PROPERTY EXCLUDE_FROM_ALL TRUE)
@@ -159,13 +169,15 @@ function(hyle_configure_compute_dependencies)
       FEATURES compute_ggml
       STATIC_EXPORT_TARGETS ${_hyle_ggml_export_targets}
       STATIC_FIND_DEPENDENCIES Threads
+      LOCKED_DEPENDENCIES ggml
       RUNTIME_FILE_SPECS
         "${ggml_SOURCE_DIR}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|ggml-LICENSE"
       STATIC_DEVELOPMENT_DIRECTORY_SPECS
         "${ggml_SOURCE_DIR}/include/|${HYLE_INSTALL_INCLUDEDIR}")
     unset(_hyle_ggml_export_targets)
     message(STATUS
-      "HYLE: ggml ${GGML_PIN_COMMIT} -- private PIC static CPU kernel "
+      "HYLE: ggml ${HYLE_DEP_GGML_VERSION} (${HYLE_DEP_GGML_COMMIT}) -- "
+      "private PIC static CPU kernel "
       "(native=${HYLE_COMPUTE_GGML_NATIVE}, exact=${HYLE_SIMD_EXACT_TARGET}, "
       "CUDA=${_hyle_compute_cuda_enabled}, cache: ${HYLE_DEPS_DIR})")
   endif()
@@ -174,27 +186,23 @@ function(hyle_configure_compute_dependencies)
   # avoiding a build-time Vulkan loader import library.
   if(HYLE_COMPUTE_VULKAN)
     include(FetchContent)
-    set(VULKAN_HEADERS_PIN "b5c8f996196ba4aa6d8f97e52b5d3b6e70f7e4e2")
-    set(VOLK_PIN           "d979819fd03de3a7606d6e23d6ff4968942599da")
-    set(GLSLANG_PIN        "f0bd0257c308b9a26562c1a30c4748a0219cc951")
-
     set(VULKAN_HEADERS_ENABLE_TESTS OFF)
     set(VULKAN_HEADERS_ENABLE_INSTALL OFF)
     set(VULKAN_HEADERS_ENABLE_MODULE OFF)
     FetchContent_Declare(vulkan_headers
-      GIT_REPOSITORY https://github.com/KhronosGroup/Vulkan-Headers.git
-      GIT_TAG        ${VULKAN_HEADERS_PIN}
-      GIT_SHALLOW    TRUE)
-    FetchContent_MakeAvailable(vulkan_headers)
+      URL      ${HYLE_DEP_VULKAN_HEADERS_ARCHIVE_URL}
+      URL_HASH SHA256=${HYLE_DEP_VULKAN_HEADERS_ARCHIVE_SHA256}
+      DOWNLOAD_EXTRACT_TIMESTAMP FALSE)
+    hyle_fetchcontent_make_available_locked(vulkan_headers)
 
     set(VULKAN_HEADERS_INSTALL_DIR "${vulkan_headers_SOURCE_DIR}")
     set(VOLK_PULL_IN_VULKAN ON)
     set(VOLK_INSTALL OFF)
     FetchContent_Declare(volk
-      GIT_REPOSITORY https://github.com/zeux/volk.git
-      GIT_TAG        ${VOLK_PIN}
-      GIT_SHALLOW    TRUE)
-    FetchContent_MakeAvailable(volk)
+      URL      ${HYLE_DEP_VOLK_ARCHIVE_URL}
+      URL_HASH SHA256=${HYLE_DEP_VOLK_ARCHIVE_SHA256}
+      DOWNLOAD_EXTRACT_TIMESTAMP FALSE)
+    hyle_fetchcontent_make_available_locked(volk)
     FetchContent_GetProperties(volk)
     set_property(DIRECTORY "${vulkan_headers_SOURCE_DIR}" PROPERTY EXCLUDE_FROM_ALL TRUE)
     set_property(DIRECTORY "${volk_SOURCE_DIR}" PROPERTY EXCLUDE_FROM_ALL TRUE)
@@ -211,6 +219,7 @@ function(hyle_configure_compute_dependencies)
       OWNER compute
       FEATURES compute_vulkan
       STATIC_EXPORT_TARGETS volk
+      LOCKED_DEPENDENCIES volk vulkan_headers
       RUNTIME_FILE_SPECS
         "${volk_SOURCE_DIR}/LICENSE.md|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|volk-LICENSE.md"
         "${vulkan_headers_SOURCE_DIR}/LICENSE.md|${CMAKE_INSTALL_DATADIR}/licenses/Hyle/Vulkan-Headers"
@@ -236,10 +245,10 @@ function(hyle_configure_compute_dependencies)
         set(ENABLE_SPIRV ON)
         set(ENABLE_GLSLANG_BINARIES ON)
         FetchContent_Declare(glslang
-          GIT_REPOSITORY https://github.com/KhronosGroup/glslang.git
-          GIT_TAG        ${GLSLANG_PIN}
-          GIT_SHALLOW    TRUE)
-        FetchContent_MakeAvailable(glslang)
+          URL      ${HYLE_DEP_GLSLANG_ARCHIVE_URL}
+          URL_HASH SHA256=${HYLE_DEP_GLSLANG_ARCHIVE_SHA256}
+          DOWNLOAD_EXTRACT_TIMESTAMP FALSE)
+        hyle_fetchcontent_make_available_locked(glslang)
       endblock()
       FetchContent_GetProperties(glslang)
       set_property(DIRECTORY "${glslang_SOURCE_DIR}" PROPERTY EXCLUDE_FROM_ALL TRUE)
@@ -253,7 +262,8 @@ function(hyle_configure_compute_dependencies)
 
     set(_hyle_compute_vulkan_enabled ON)
     message(STATUS
-      "HYLE: Vulkan compute enabled -- private PIC volk + Vulkan-Headers 1.4.341 "
+      "HYLE: Vulkan compute enabled -- private PIC volk + Vulkan-Headers "
+      "${HYLE_DEP_VULKAN_SDK_VERSION} "
       "(shader tools=${_hyle_compute_shader_tools_enabled}, cache: ${HYLE_DEPS_DIR}; "
       "loader dlopen'd at runtime)")
   endif()

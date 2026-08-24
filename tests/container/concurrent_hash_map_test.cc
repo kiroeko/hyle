@@ -14,6 +14,7 @@
 #include "hyle/mem/allocator.h"
 
 using hyle::container::ConcurrentHashMap;
+using hyle::container::StringEqual;
 using hyle::mem::Allocator;
 using hyle::mem::system_allocator;
 
@@ -63,17 +64,6 @@ struct CountingStringHash {
   std::uint64_t operator()(std::string_view value) const noexcept {
     calls->fetch_add(1, std::memory_order_relaxed);
     return hyle::container::hash_bytes(value.data(), value.size());
-  }
-};
-
-struct TransparentStringEq {
-  bool operator()(const std::string &left,
-                  const std::string &right) const noexcept {
-    return left == right;
-  }
-  bool operator()(const std::string &left,
-                  std::string_view right) const noexcept {
-    return left == right;
   }
 };
 
@@ -208,9 +198,9 @@ TEST(ConcurrentHashMap, FallibleInsertDoesNotStrandLockOrEntry) {
 TEST(ConcurrentHashMap, LongKeyLookupHashesOnlyOnce) {
   std::atomic<std::size_t> calls{0};
   using Map = ConcurrentHashMap<std::string, int, CountingStringHash,
-                                TransparentStringEq>;
+                                StringEqual>;
   Map map(8, hyle::mem::SystemAllocator{}, CountingStringHash{&calls},
-          TransparentStringEq{});
+          StringEqual{});
   ASSERT_TRUE(map.reserve(32));
   Map::Accessor inserted;
   EXPECT_EQ(map.try_emplace(inserted, std::string(200, 'x'), 3),

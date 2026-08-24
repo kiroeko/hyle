@@ -6,12 +6,12 @@
 #include <string.h>
 
 static int g_fails = 0;
-#define CHECK(c)                                                              \
-  do {                                                                        \
-    if (!(c)) {                                                               \
+#define CHECK(c)                                                             \
+  do {                                                                       \
+    if (!(c)) {                                                              \
       fprintf(stderr, "CHECK failed: %s (%s:%d)\n", #c, __FILE__, __LINE__); \
-      ++g_fails;                                                              \
-    }                                                                         \
+      ++g_fails;                                                             \
+    }                                                                        \
   } while (0)
 
 static int consume_ok(hyle_status status, const char* expression) {
@@ -37,6 +37,31 @@ struct rearm_state {
   size_t visits;
 };
 
+enum pending_action {
+  PENDING_CANCEL,
+  PENDING_RESCHEDULE,
+  PENDING_DESTROY,
+  PENDING_REJECT_RESCHEDULE,
+  PENDING_REJECT_RESCHEDULE_AFTER
+};
+
+struct pending_state {
+  hyle_time_queue* queue;
+  hyle_time_common_queue* common;
+  hyle_time_timer* target;
+  uint64_t reschedule_deadline;
+  enum pending_action action;
+  size_t visits;
+  int cancelled;
+};
+
+struct destroy_source_state {
+  hyle_time_queue* queue;
+  hyle_time_common_queue* common;
+  int rejected;
+  int destroyed;
+};
+
 static void collect_timer(hyle_time_timer* timer, void* ctx) {
   struct visit_state* state = (struct visit_state*)ctx;
   ++state->count;
@@ -51,6 +76,110 @@ static void rearm_once(hyle_time_timer* timer, void* ctx) {
   if (state->visits == 1) {
     CHECK_OK(hyle_time_queue_schedule(state->queue, timer, UINT64_C(700001)));
   }
+}
+
+static void mutate_pending_timer(hyle_time_timer* timer, void* ctx) {
+  struct pending_state* state = (struct pending_state*)ctx;
+  ++state->visits;
+  if (state->visits != 1) {
+    CHECK(state->action == PENDING_REJECT_RESCHEDULE ||
+          state->action == PENDING_REJECT_RESCHEDULE_AFTER);
+    CHECK(timer == state->target);
+    return;
+  }
+  CHECK(timer != state->target);
+  CHECK(!hyle_time_timer_is_scheduled(state->target));
+
+  if (state->action == PENDING_CANCEL) {
+    if (state->common != NULL) {
+      CHECK_OK(hyle_time_common_queue_cancel(&state->cancelled, state->common,
+                                             state->target));
+    } else {
+      CHECK_OK(hyle_time_queue_cancel(&state->cancelled, state->queue,
+                                      state->target));
+    }
+    return;
+  }
+
+  if (state->action == PENDING_RESCHEDULE) {
+    if (state->common != NULL) {
+      CHECK_OK(hyle_time_common_queue_schedule(state->common, state->target,
+                                               state->reschedule_deadline));
+    } else {
+      CHECK_OK(hyle_time_queue_schedule(state->queue, state->target,
+                                        state->reschedule_deadline));
+    }
+    return;
+  }
+
+  if (state->action == PENDING_REJECT_RESCHEDULE ||
+      state->action == PENDING_REJECT_RESCHEDULE_AFTER) {
+    hyle_status status =
+        state->action == PENDING_REJECT_RESCHEDULE
+            ? hyle_time_common_queue_schedule(state->common, state->target,
+                                              state->reschedule_deadline)
+            : hyle_time_common_queue_schedule_after(
+                  state->common, state->target, state->reschedule_deadline);
+    CHECK(hyle_status_is_invalid_argument(status));
+    hyle_status_free(&status);
+    return;
+  }
+
+  CHECK_OK(hyle_time_timer_destroy(state->target));
+  state->target = NULL;
+}
+
+static void try_destroy_source(hyle_time_timer* timer, void* ctx) {
+  struct destroy_source_state* state = (struct destroy_source_state*)ctx;
+  hyle_status status;
+  (void)timer;
+  if (state->queue != NULL) {
+    status = hyle_time_queue_destroy(state->queue);
+  } else {
+    status = hyle_time_common_queue_destroy(state->common);
+  }
+  state->rejected = hyle_status_is_failed_precondition(status);
+  state->destroyed = hyle_status_is_ok(status);
+  hyle_status_free(&status);
+  if (state->destroyed) {
+    state->queue = NULL;
+    state->common = NULL;
+  }
+}
+
+static void check_source_destroy_contract(void) {
+  hyle_time_queue* queue = NULL;
+  hyle_time_common_queue* common = NULL;
+  hyle_time_timer* timer = NULL;
+  size_t moved = 0;
+  struct destroy_source_state state;
+
+  CHECK_OK(hyle_time_queue_create_at(&queue, 0));
+  CHECK_OK(hyle_time_timer_create(&timer, NULL));
+  CHECK_OK(hyle_time_queue_schedule(queue, timer, 1));
+  state = (struct destroy_source_state){queue, NULL, 0, 0};
+  CHECK_OK(
+      hyle_time_queue_advance(&moved, queue, 1, try_destroy_source, &state));
+  CHECK(moved == 1 && state.rejected && !state.destroyed);
+  if (state.queue != NULL) {
+    CHECK(hyle_time_queue_empty(state.queue));
+    CHECK_OK(hyle_time_queue_destroy(state.queue));
+  }
+  CHECK_OK(hyle_time_timer_destroy(timer));
+
+  timer = NULL;
+  CHECK_OK(hyle_time_common_queue_create(&common, 1));
+  CHECK_OK(hyle_time_timer_create(&timer, NULL));
+  CHECK_OK(hyle_time_common_queue_schedule(common, timer, 1));
+  state = (struct destroy_source_state){NULL, common, 0, 0};
+  CHECK_OK(hyle_time_common_queue_cancel_all(&moved, common, try_destroy_source,
+                                             &state));
+  CHECK(moved == 1 && state.rejected && !state.destroyed);
+  if (state.common != NULL) {
+    CHECK(hyle_time_common_queue_empty(state.common));
+    CHECK_OK(hyle_time_common_queue_destroy(state.common));
+  }
+  CHECK_OK(hyle_time_timer_destroy(timer));
 }
 
 int main(void) {
@@ -83,6 +212,7 @@ int main(void) {
   hyle_time_sleep_for_us(0);
   hyle_time_sleep_for_ms(0);
   hyle_time_sleep_until_ns(hyle_time_monotonic_ns());
+  check_source_destroy_contract();
   hyle_time_queue* queue = NULL;
   hyle_time_common_queue* common = NULL;
   hyle_time_timer* one = NULL;
@@ -114,18 +244,17 @@ int main(void) {
     CHECK(timer_alignment != 0 &&
           (timer_alignment & (timer_alignment - 1)) == 0);
     CHECK(timer_size % timer_alignment == 0);
-    raw = (unsigned char*)malloc(timer_size * timer_count +
-                                 timer_alignment - 1);
+    raw =
+        (unsigned char*)malloc(timer_size * timer_count + timer_alignment - 1);
     CHECK(raw != NULL);
     if (raw != NULL) {
       uintptr_t address = (uintptr_t)raw;
-      address = (address + timer_alignment - 1) &
-                ~(uintptr_t)(timer_alignment - 1);
+      address =
+          (address + timer_alignment - 1) & ~(uintptr_t)(timer_alignment - 1);
       storage = (unsigned char*)address;
       for (size_t i = 0; i < timer_count; ++i) {
-        CHECK_OK(hyle_time_timer_init(
-            &timers[i], storage + i * timer_size, timer_size,
-            (void*)(uintptr_t)(10 + i)));
+        CHECK_OK(hyle_time_timer_init(&timers[i], storage + i * timer_size,
+                                      timer_size, (void*)(uintptr_t)(10 + i)));
         CHECK(timers[i] != NULL);
         CHECK_OK(hyle_time_queue_schedule(queue, timers[i], 100 + i));
       }
@@ -158,8 +287,8 @@ int main(void) {
     }
     {
       hyle_time_timer* invalid = (hyle_time_timer*)(uintptr_t)1;
-      hyle_status status = hyle_time_timer_init(
-          NULL, storage, timer_size, NULL);
+      hyle_status status =
+          hyle_time_timer_init(NULL, storage, timer_size, NULL);
       CHECK(hyle_status_is_invalid_argument(status));
       hyle_status_free(&status);
       status = hyle_time_timer_init(&invalid, NULL, timer_size, NULL);
@@ -193,10 +322,15 @@ int main(void) {
 
   /* Cross-source ownership is an ordinary Status failure in C. */
   {
+    int cancelled = 99;
     hyle_status status =
         hyle_time_common_queue_schedule(common, one, UINT64_C(10));
     CHECK(hyle_status_is_failed_precondition(status));
     CHECK(strstr(hyle_status_message_cstr(status), "another source") != NULL);
+    hyle_status_free(&status);
+    status = hyle_time_common_queue_cancel(&cancelled, common, one);
+    CHECK(hyle_status_is_failed_precondition(status));
+    CHECK(cancelled == 0);
     hyle_status_free(&status);
   }
 
@@ -241,11 +375,53 @@ int main(void) {
     CHECK(moved == 1 && rearm.visits == 2);
     CHECK(!hyle_time_timer_is_scheduled(three));
     {
-      hyle_status status = hyle_time_queue_advance(
-          &moved, queue, UINT64_C(799999), NULL, NULL);
+      moved = 99;
+      hyle_status status =
+          hyle_time_queue_advance(&moved, queue, UINT64_C(799999), NULL, NULL);
       CHECK(hyle_status_is_invalid_argument(status));
+      CHECK(moved == 0);
       hyle_status_free(&status);
     }
+  }
+
+  /* A visitor may suppress a not-yet-delivered peer from the same batch.
+   * The implementation must not retain a traversal pointer into that peer. */
+  {
+    struct pending_state pending = {queue, NULL, two, 0, PENDING_CANCEL, 0, 0};
+    CHECK_OK(hyle_time_queue_schedule(queue, one, UINT64_C(810000)));
+    CHECK_OK(hyle_time_queue_schedule(queue, two, UINT64_C(810000)));
+    CHECK_OK(hyle_time_queue_advance(&moved, queue, UINT64_C(810000),
+                                     mutate_pending_timer, &pending));
+    CHECK(moved == 1 && pending.visits == 1 && pending.cancelled == 1);
+    CHECK(hyle_time_queue_empty(queue));
+  }
+  {
+    struct pending_state pending = {
+        queue, NULL, two, UINT64_C(830000), PENDING_RESCHEDULE, 0, 0};
+    CHECK_OK(hyle_time_queue_schedule(queue, one, UINT64_C(820000)));
+    CHECK_OK(hyle_time_queue_schedule(queue, two, UINT64_C(820000)));
+    CHECK_OK(hyle_time_queue_advance(&moved, queue, UINT64_C(820000),
+                                     mutate_pending_timer, &pending));
+    CHECK(moved == 1 && pending.visits == 1);
+    CHECK(hyle_time_timer_is_scheduled(two));
+    state.count = 0;
+    state.sum = 0;
+    CHECK_OK(hyle_time_queue_advance(&moved, queue, UINT64_C(830000),
+                                     collect_timer, &state));
+    CHECK(moved == 1 && state.count == 1 && state.sum == 2);
+  }
+  {
+    hyle_time_timer* doomed = NULL;
+    struct pending_state pending;
+    CHECK_OK(hyle_time_timer_create(&doomed, (void*)(uintptr_t)9));
+    pending =
+        (struct pending_state){queue, NULL, doomed, 0, PENDING_DESTROY, 0, 0};
+    CHECK_OK(hyle_time_queue_schedule(queue, one, UINT64_C(840000)));
+    CHECK_OK(hyle_time_queue_schedule(queue, doomed, UINT64_C(840000)));
+    CHECK_OK(hyle_time_queue_advance(&moved, queue, UINT64_C(840000),
+                                     mutate_pending_timer, &pending));
+    CHECK(moved == 1 && pending.visits == 1 && pending.target == NULL);
+    CHECK(hyle_time_queue_empty(queue));
   }
 
   CHECK(hyle_time_common_queue_duration_ns(common) == 30);
@@ -264,8 +440,8 @@ int main(void) {
 
   state.count = 0;
   state.sum = 0;
-  CHECK_OK(hyle_time_common_queue_advance(&moved, common, 130,
-                                          collect_timer, &state));
+  CHECK_OK(hyle_time_common_queue_advance(&moved, common, 130, collect_timer,
+                                          &state));
   CHECK(moved == 1 && state.count == 1 && state.sum == 4);
   CHECK(hyle_time_common_queue_next_deadline_ns(common) == 230);
   {
@@ -275,12 +451,78 @@ int main(void) {
   }
   CHECK(hyle_time_common_queue_empty(common));
 
+  /* Common-timeout delivery uses the same mutation-safe visitor contract. */
+  {
+    struct pending_state pending = {
+        NULL, common, two, UINT64_C(450), PENDING_REJECT_RESCHEDULE, 0, 0};
+    CHECK_OK(hyle_time_common_queue_schedule(common, one, UINT64_C(400)));
+    CHECK_OK(hyle_time_common_queue_schedule(common, two, UINT64_C(400)));
+    CHECK_OK(hyle_time_common_queue_schedule(common, three, UINT64_C(500)));
+    CHECK_OK(hyle_time_common_queue_advance(&moved, common, UINT64_C(400),
+                                            mutate_pending_timer, &pending));
+    CHECK(moved == 2 && pending.visits == 2);
+    CHECK(!hyle_time_timer_is_scheduled(two));
+    CHECK(hyle_time_timer_is_scheduled(three));
+    CHECK_OK(hyle_time_common_queue_cancel(NULL, common, three));
+  }
+  {
+    struct pending_state pending = {
+        NULL, common, two, UINT64_C(550), PENDING_REJECT_RESCHEDULE_AFTER,
+        0,    0};
+    CHECK_OK(hyle_time_common_queue_schedule(common, one, UINT64_C(510)));
+    CHECK_OK(hyle_time_common_queue_schedule(common, two, UINT64_C(510)));
+    CHECK_OK(hyle_time_common_queue_schedule(common, three, UINT64_C(600)));
+    CHECK_OK(hyle_time_common_queue_advance(&moved, common, UINT64_C(510),
+                                            mutate_pending_timer, &pending));
+    CHECK(moved == 2 && pending.visits == 2);
+    CHECK(!hyle_time_timer_is_scheduled(two));
+    CHECK(hyle_time_timer_is_scheduled(three));
+    CHECK_OK(hyle_time_common_queue_cancel(NULL, common, three));
+  }
+  {
+    struct pending_state pending = {NULL, common, two, 0, PENDING_CANCEL, 0, 0};
+    CHECK_OK(hyle_time_common_queue_schedule(common, one, UINT64_C(300)));
+    CHECK_OK(hyle_time_common_queue_schedule(common, two, UINT64_C(300)));
+    CHECK_OK(hyle_time_common_queue_advance(&moved, common, UINT64_C(300),
+                                            mutate_pending_timer, &pending));
+    CHECK(moved == 1 && pending.visits == 1 && pending.cancelled == 1);
+    CHECK(hyle_time_common_queue_empty(common));
+  }
+  {
+    struct pending_state pending = {
+        NULL, common, two, UINT64_C(320), PENDING_RESCHEDULE, 0, 0};
+    CHECK_OK(hyle_time_common_queue_schedule(common, one, UINT64_C(310)));
+    CHECK_OK(hyle_time_common_queue_schedule(common, two, UINT64_C(310)));
+    CHECK_OK(hyle_time_common_queue_advance(&moved, common, UINT64_C(310),
+                                            mutate_pending_timer, &pending));
+    CHECK(moved == 1 && pending.visits == 1);
+    CHECK(hyle_time_timer_is_scheduled(two));
+    state.count = 0;
+    state.sum = 0;
+    CHECK_OK(hyle_time_common_queue_advance(&moved, common, UINT64_C(320),
+                                            collect_timer, &state));
+    CHECK(moved == 1 && state.count == 1 && state.sum == 2);
+  }
+  {
+    hyle_time_timer* doomed = NULL;
+    struct pending_state pending;
+    CHECK_OK(hyle_time_timer_create(&doomed, (void*)(uintptr_t)9));
+    pending =
+        (struct pending_state){NULL, common, doomed, 0, PENDING_DESTROY, 0, 0};
+    CHECK_OK(hyle_time_common_queue_schedule(common, one, UINT64_C(330)));
+    CHECK_OK(hyle_time_common_queue_schedule(common, doomed, UINT64_C(330)));
+    CHECK_OK(hyle_time_common_queue_advance(&moved, common, UINT64_C(330),
+                                            mutate_pending_timer, &pending));
+    CHECK(moved == 1 && pending.visits == 1 && pending.target == NULL);
+    CHECK(hyle_time_common_queue_empty(common));
+  }
+
   CHECK_OK(hyle_time_common_queue_schedule_after(common, one, 300));
   CHECK_OK(hyle_time_common_queue_schedule_after(common, two, 400));
   state.count = 0;
   state.sum = 0;
-  CHECK_OK(hyle_time_common_queue_cancel_all(&moved, common,
-                                             collect_timer, &state));
+  CHECK_OK(
+      hyle_time_common_queue_cancel_all(&moved, common, collect_timer, &state));
   CHECK(moved == 2 && state.count == 2 && state.sum == 6);
   CHECK(hyle_time_common_queue_empty(common));
 
@@ -304,11 +546,33 @@ int main(void) {
   CHECK(hyle_time_queue_empty(NULL));
   CHECK(hyle_time_queue_next_deadline_ns(NULL) == UINT64_MAX);
   {
+    int cancelled = 99;
     hyle_status status = hyle_time_queue_schedule(NULL, three, 1);
     CHECK(hyle_status_is_invalid_argument(status));
     hyle_status_free(&status);
+    moved = 99;
     status = hyle_time_queue_advance(&moved, NULL, 1, NULL, NULL);
     CHECK(hyle_status_is_invalid_argument(status));
+    CHECK(moved == 0);
+    hyle_status_free(&status);
+    moved = 99;
+    status = hyle_time_queue_cancel_all(&moved, NULL, NULL, NULL);
+    CHECK(hyle_status_is_invalid_argument(status));
+    CHECK(moved == 0);
+    hyle_status_free(&status);
+    status = hyle_time_queue_cancel(&cancelled, queue, NULL);
+    CHECK(hyle_status_is_invalid_argument(status));
+    CHECK(cancelled == 0);
+    hyle_status_free(&status);
+    moved = 99;
+    status = hyle_time_common_queue_advance(&moved, NULL, 1, NULL, NULL);
+    CHECK(hyle_status_is_invalid_argument(status));
+    CHECK(moved == 0);
+    hyle_status_free(&status);
+    moved = 99;
+    status = hyle_time_common_queue_cancel_all(&moved, NULL, NULL, NULL);
+    CHECK(hyle_status_is_invalid_argument(status));
+    CHECK(moved == 0);
     hyle_status_free(&status);
   }
   CHECK(hyle_time_timer_user_data(NULL) == NULL);

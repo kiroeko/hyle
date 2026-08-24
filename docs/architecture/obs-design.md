@@ -44,14 +44,24 @@ sink/运维系统的职责；obs 只提供基础库应有的安全产出接缝�
 
 共享库构建里 `hyle_tracy_client` 必须也是共享库。若将静态
 `TracyClient.cpp` 分别链进 `hyle_mem.dll`、`hyle_sched.dll` 等模块，会制造多个
-profiler singleton，时间线与 fiber 身份被拆开。静态 HYLE 则仍用一个 archive，
-最终链接器只解析一份。
+profiler singleton，时间线与 fiber 身份被拆开。静态 HYLE 只在所有 archive 进入**同一个
+最终 link image**（通常是一个 executable）时由最终链接器解析一份 client；如果 host 的多个
+DLL/plugin 各自静态链接 trace-on SDK，它们必然各有 Tracy singleton，当前不支持把这些 image
+伪装成 process-unique。该部署形状必须改用 shared `hyle_obs`/`hyle_tracy_client`。独立 package
+配置无法从一个 image 的 target graph 看见另一个 plugin，因此这条边界以 artifact/consumer
+形状审计和文档守门，不宣称存在不可实现的跨构建自动检测。
 
 ## 2. 日志数据流与生命周期
 
 `LogRecord` / `hyle_obs_log_record` 的消息、字符串和字段都是同步借用。消息是
 `std::string_view` / `pointer + exact byte count`，因此已有 slice 不必复制或扫描，也能保留
 内嵌 NUL；field key/value 与可选 source 仍是 NUL 结尾字符串：
+
+C raw record 的 `struct_size` 表示可读前缀。其 semantic required prefix 直接包含
+level/message/message_size；record 不是带全套业务默认的 options，所以不增加会移动热路径
+payload 的 reserved header word。适配器先建完整默认 record，再用 `memcpy` 按完整字段读取；
+fields/count 作为一个 pointer+count 单元，optional 短尾保持默认，未知未来尾部不访问。这样
+真实短对象和未对齐 FFI bytes 不会因把它们解引用成当前完整 C struct 而越界或触发未对齐 UB。
 
 ```text
 caller builds record
@@ -84,7 +94,9 @@ C++ 默认用 move-only `SinkRegistration` 持有一次 registry membership。�
 quiescent unregister，消除 early return/异常路径遗漏 remove 后留下悬空 callback 的风险；
 需要显式处理失败或 callback 内复杂注销时才直接使用 `add_sink/remove_sink`。RAII 对象只是
 控制面所有权，不进入每条 record，也不给 sink/record 增加常态元数据。C 侧 opaque
-`hyle_obs_sink` 继续用 create/destroy 表达相同所有权。
+`hyle_obs_sink` 有两种创建形状：`init` 在调用方提供的 queried size/alignment storage 中
+构造且不分配，`create` 明确是 process C++ heap convenience；两者都用 destroy 表达同一
+quiescent ownership。external storage 的 destroy 结束对象生命周期但不释放 storage。
 
 callback 可以摘除自己。实现先把 callback/state 复制到局部变量，外部 callback
 返回后不再访问 opaque wrapper；本次 callback 的 state 仍须活到自己返回。callback
@@ -125,16 +137,21 @@ configuration：已经通过一次门控的 record 可以完成本次同步 disp
 “已审查”误写成兼容承诺）：
 
 - POD record/field；
-- opaque sink create/destroy；
+- opaque sink caller-storage init、system-heap create 与共同 destroy；
 - 普通 `extern "C"` level、emit、registry 函数；
 - `hyle_obs_log_n` 与五个 `_n` header-inline helper，避免 slice 扫描并保留内嵌 NUL；
 - 五个 Status-expression `HYLE_OBS_EMIT_*` 宏，遵守同一个消费者编译期 floor；
-- 原有五个 NUL 字符串 level 便利函数。
+- 原有五个 NUL 字符串 level 便利函数；
+- 始终可链接的 runtime trace free functions，包括与 C++ hook 同合同的 logical-fiber
+  enter/leave；稳定 pointer identity/lifetime 留在调用方，不穿 ABI 暴露 Tracy/scheduler 类型。
 
 C ABI 不暴露 `std::format`、C++ reference、STL、Tracy 类型或 C++ 类布局。各语言
 在本语言侧格式化后调用 `hyle_obs_log_n`，或构造 POD record。`LogField` 在 C++ 面复用
 C POD 的两个 pointer 布局，只为 callback 零复制共享 record 字段；HYLE C++ 调用仍直接走
 native implementation，不绕 C ABI。
+跨导出边界按值传递并嵌入 record 的 `hyle_obs_log_level` 是明确的 `uint32_t` typedef，
+命名 level 使用常量而非 ABI 宽度未定的 `typedef enum`；纯 C gate 以 `-fshort-enums`
+反向证明编译器开关不会改变 layout。
 
 可恢复失败统一返回 owning `hyle_status`：输入错误、重复/不存在、registry 满和 callback
 内跨摘分别保留共享 error taxonomy；gate/no-sink 是 OK + `out_emitted=0`。obs 不再维护
@@ -151,6 +168,9 @@ HYLE 的底层模块**不应为了证明 obs 被使用而主动打日常日志**
 platform 没有此抽象、obs 与 platform 同处底层且这正是 sink 的 I/O 职责，不能为消除一个
 局部 syscall 制造 `obs -> platform` 依赖。trace gate 是 header/CMake 横切 seam，不让
 mem/sched/io/compute 反向链接 log runtime。
+opaque C sink 的 allocation-domain 控制由 size/alignment query + caller storage 提供，因此
+无需为了可替换分配器引入 `obs -> mem`；保留的 `create` 是显式 system-heap convenience，
+不应在受限/插件 ABI 边界伪装成调用方 allocator ownership。
 
 语法消费者扫描没有发现 HYLE 生产模块调用 runtime `HYLE_LOG_*` 或注册 `LogSink`；这是
 基础库不擅自输出日志的正确负空间。语义扫描中的 util fatal diagnostic、core fatal macro
@@ -173,6 +193,10 @@ ID、refcount 或拥有型字符串。需要时间戳、线程 ID 等 enrich 时
 
 C/FFI runtime trace 函数必须始终存在，OFF 时是函数级 no-op。它们有一次 ABI 调用，
 所以不能宣传为“关闭态零指令”；极热 C/C++ 源码路径应使用原生宏。
+Tracy copied text 使用 16-bit byte count，且上游只在 debug assert 长度；adapter 必须先做
+bounded scan。message/zone text 截到 65534 bytes，动态 source-location 的
+name/file/function 各截到 21841 bytes，使 header + 三段 payload 总长始终可表示，不能在
+release 把 full `strlen` 与 truncated allocation length 同时交给后端。
 
 当前真实下游：
 
@@ -190,7 +214,7 @@ Tracy。plot/frame/pool 名同理应使用字面量或其他稳定存储。
 
 改日志 registry 或 C trampoline 时必须通过：
 
-1. 正常 C++ 测试 + 编译期 floor codegen + 纯 C consumer；
+1. 正常 C++ 测试 + 编译期 floor codegen + 纯 C consumer（含 caller-storage sink）；
 2. add/remove/log 并发压力与 remove-waits、自摘、跨摘拒绝测试；
 3. WSL ASan、UBSan、TSan；
 4. 三平台 Release gated/preformatted/formatted 基准；
@@ -200,7 +224,7 @@ Tracy。plot/frame/pool 名同理应使用字面量或其他稳定存储。
 改 trace/CMake 或新增下游 hook 时必须通过：
 
 1. OFF 构建参数不求值测试，且产品库不依赖 Tracy；
-2. ON 构建 obs + 被埋点模块测试；
+2. ON 构建 obs + 被埋点模块测试，并用超长 message/zone text/source components 验证截断；
 3. 共享构建的每个模块只依赖同一个 `hyle_tracy_client`；
 4. 名称和 zone token 的存储期/配对审计；
 5. Windows、Linux、macOS 至少各跑一次 ON 构建。

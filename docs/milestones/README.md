@@ -25,18 +25,18 @@
 
 ## 预测 vs 真实 LOC（防玩具化）
 
-### 整体进度与体量（诚实，2026-07-30 工作树快照）——分母别混
+### 整体进度与体量（2026-07-30 不可变工作树快照）——分母别混
 
 > **生产 = `cloc src include` 的 code 列**（header+C++/CUDA 等，不含 tests/bench/docs/third_party）。
-> **旧投影「完成时生产 ~28–40k / 中值 34k」已作废**：当前生产已 **~93.6k**，单 **simd ~37.8k**。
+> **旧投影「完成时生产 ~28–40k / 中值 34k」已作废**：该日生产为 **~93.6k**，单 **simd ~37.8k**。
 > 权威规模节：[`../architecture/hyle-scope.md`](../architecture/hyle-scope.md)。中期报告：[`midterm-report-2026-07-scale-positioning.md`](./midterm-report-2026-07-scale-positioning.md)。SIMD 当前补缺账本：[`simd-capability-fill-list.md`](./simd-capability-fill-list.md)。
 
-| 固定统计口径 | 当前 | 命令/说明 |
+| 固定统计口径 | 2026-07-30 快照 | 命令/说明 |
 |---|---|---|
 | **全库代码** | **281,337** | tracked；含 docs/third_party，**≠ 自写** |
 | **自实现（含测试）** | **136,563** | `cloc include/hyle src tests`，只计 C++/Header/C/CUDA |
 | **自实现（不含测试）** | **93,653** | `cloc include/hyle src`，只计 C++/Header/C/CUDA；库本体硬锚 |
-| **当前七底座 adoption 审查单元实现** | **20,216** | core/error/obs/platform/time/mem/完整 util；不含测试/benchmark/文档 |
+| **当时七底座 adoption 审查单元实现** | **20,216** | core/error/obs/platform/time/mem/完整 util；不含测试/benchmark/文档 |
 | **终态生产（纪律收口 A）** | **~75–90k** | 主预期 |
 | **终态生产（做满守界 B）** | **~85–105k** | compute/graph/发布面收口更满 |
 | 失控上限 C | 120k+ 生产 | 应避免 |
@@ -59,7 +59,7 @@ util ~1.3k · error **984** · time **1,421** · obs **1,018** · graph ~0.6–0
 
 > **真实LOC** = 该里程碑自写代码的 cloc 实测（生产+测试，不含文档、不含 vendored）。每步闭环后回填。
 > **预测/真实差距**是防玩具信号：骨架精瘦合理；stub 不可接受。
-> 早期「每里程碑 1–4k / 全库 22–40k」对 **std 可约小件系统性高估**，对 **simd 不可约大件系统性低估**——历史推演归档于 git，**以本节与 hyle-scope 规模节为当前真相**。
+> 早期「每里程碑 1–4k / 全库 22–40k」对 **std 可约小件系统性高估**，对 **simd 不可约大件系统性低估**——历史推演归档于 git；本节与 hyle-scope 保留的是注明日期的规模快照，**不是自动更新的当前计数器**。
 
 **预测分档（仍有效）**
 - std 现代化小件：0.03–0.2k
@@ -78,13 +78,11 @@ util ~1.3k · error **984** · time **1,421** · obs **1,018** · graph ~0.6–0
 > [`io-capability-fill-list.md`](./io-capability-fill-list.md) 跟踪，不能把
 > “主干可用”误读成 capability closure 已清零。
 >
-> **2026-07-25 证书口径升级**：下表的 ✅/“冻结”只说明对应历史 work item 已完成，
-> 不自动取得当前实际使用导向的严格证书。当前 error/platform/mem/time 通过，core 因
-> 2026-07-28 真实 SIMD/vqsort 消费者触发局部复证而暂为黄色；mem 的
-> clean `c640072` shared same-link 三平台证书已关闭最后分发性能尾；
-> build/package system 已于 2026-07-29 在模块所有权拆分后再次重签；util-core seam 已在同日按独立组件、成熟 API 与 ARM 真机性能再次重签，obs 仍严格收口；
-> container 主体证书保留；StringInterner 的 Apple cache-layout 受影响边已随 core 复证转绿。
-> util-runtime 已于 2026-07-30 以 `1b148ef`/`70fa4e8` 完成 Registry/C ABI/三平台性能与 package 严格收口；其余顺序只见
+> **2026-07-25—30 历史证书演进**：下表的 ✅/“冻结”只说明对应历史 work item 已完成，
+> 不自动取得当前实际使用导向的严格证书。截至 2026-07-25，error/platform/mem/time 当时
+> 通过，core 因真实 SIMD/vqsort 消费者触发局部复证而转黄；随后 mem 的 `c640072`、
+> build/package、util-core、obs、container/StringInterner 与 util-runtime 分别在表中注明的
+> 2026-07 commit 上完成当轮复证。它们全部只是历史输入；现行认证状态只见
 > [`pre-release-readiness.md`](./pre-release-readiness.md)。
 
 | ID | 阶段 | 模块 | 目的(一行) | 前置 | 预测LOC | 真实LOC | 状态 |
@@ -93,10 +91,11 @@ util ~1.3k · error **984** · time **1,421** · obs **1,018** · graph ~0.6–0
 | [core-reclosure](./core-module-closure.md) | P-1 | core | version/cache/macros/visibility/intrusive 严格收口 | 00 | — | 见任务页 | ✅ **2026-07-29 局部复证完成**：旧 `71dabf7` IntrusiveList 证书保留；真实 SIMD/vqsort 消费触发 prefetch/assume/restrict/flatten/unroll 补齐，Win/WSL/M4 正确性、codegen 与受影响消费者全过 |
 | [build/package-reclosure](./build-package-system-closure.md) | P-1 | 构建/打包 | 用 target 图表达项目组织，完成可迁移、可裁剪组装与安装消费 | core | — | 见任务页 | ✅ **2026-07-29 模块拆分后重签**：空组件/cache/终态依赖图合同机械守门；三平台 production-shape、shared/static consumers、完整 source-package 与当前正常路径性能证书完成 |
 | [build-validation-iteration](./build-validation-iteration.md) | P-1 | 构建/回归 | 在模块持续变化期间分层守住全图、三种交付、迁移和发布门 | build/package-reclosure | — | 见任务页 | 🚧 **第一阶段**：package/source/AArch64 提升为 all-component CPU，验收证书与普通 all-build 分离；待三平台和额度恢复后的 GitHub 复证 |
+| [dependency-upgrade-2026-08](./dependency-upgrade-2026-08.md) | P-1 | 依赖/供应链 | 单一 JSON provenance lock、严格 offline 验证及 2026-08 全依赖升级影响/复证账本 | build/package-reclosure | — | 见任务页 | 🚧 **升级已落盘、证书重绑中**：旧/新 revision、真实消费者、license/install/offline 与逐项 release gate 已登记；benchmark 历史点值待新 pin rebaseline |
 | error-01 | P0 | error | Status + std::expected（历史首版） | 00 | 1-2k | 456 | 🗃️ 历史完成；接口与边界后由 error reclosure 重审 |
 | error-02 | P0 | error | error_handler vtable（历史） | error-01 | 1k | 127 (+74 测试) | 🗃️ 曾完成，实际消费者审查后退役；日志归 obs、合同违反归 fatal |
 | [error-03](./error-module-reclosure.md) | P0 | error | 面向真实调用重收 Status/Result/C ABI/context | error-01,obs-01 | — | 见任务页 | ✅ **2026-07-30 七底座 adoption 回审**：功能/C++/30-symbol C ABI、O(final bytes) context 与 errno/Win32/HRESULT/native detail 收口；Win/GCC14/M4 正确性 + 核心/正常路径 n=15 同形项无 LOSE；已认证底座无私有 TLS error |
-| [obs-01](./obs-01-log.md) | P0 | obs | 同步结构化日志 + quiescent sink registry | error | ~1k | 1,250 实现 | ✅ **2026-07-29 严格复证**（`4d31bcf`/`06cec5a`）：exact-byte record、move-only RAII sink、单 runtime gate、per-TU compile floor、Windows debugger 安全镜像；24/24 C surface；三平台 Release/package/n=15 与 WSL ASan/UBSan/TSan。详见 [`obs-module-closure.md`](./obs-module-closure.md) |
+| [obs-01](./obs-01-log.md) | P0 | obs | 同步结构化日志 + quiescent sink registry | error | ~1k | 1,250 实现 | ✅ **2026-07-29 历史复证**（`4d31bcf`/`06cec5a`）：exact-byte record、move-only RAII sink、单 runtime gate、per-TU compile floor、Windows debugger 安全镜像；当时 24/24 C surface；三平台 Release/package/n=15 与 WSL ASan/UBSan/TSan。详见 [`obs-module-closure.md`](./obs-module-closure.md) |
 | [obs-02](./obs-module-closure.md) | P0 | obs | 编译期 trace/counter hook + Tracy 后端 | **能力 C6** | 1-2k | seam + 下游 hooks | ✅ **2026-07-25 严格复审**：OFF 参数不求值/零依赖；ON 覆盖 mem/sched/io/compute 且三平台构建验证；所有 shared 模块汇入一个 Tracy client；runtime C seam 与 native 热路径边界写入 guide |
 | platform-01 | P1 | platform | thread + park(futex/WaitOnAddress/ulock) | error-01 | 2k | 527 | ✅ 完成 |
 | platform-02 | P1 | platform | virtual_memory + dynlib | platform-01 | 1k | 158 (dynlib) | ✅ 拆分完成：dynlib + platform-02b virtual_memory |
@@ -120,9 +119,9 @@ util ~1.3k · error **984** · time **1,421** · obs **1,018** · graph ~0.6–0
 | [mem-06c](./mem-06c-numa.md) | P2 | mem | NUMA：query + preferred bind + HugeRegion node + mi use_numa | platform-02b,mem-02 | 0.4-0.8k | numa.h/cc | ✅ 完成(2026-07-17)。soft preferred；单 node 平凡正确；无 libnuma |
 | mem-07 | P2 | mem | GrowablePool(growable/单线程池) + PmrResource(std::pmr 适配) | mem-03 | 1-2k | 145 (+116 测试) | ✅ 完成(吸纳 clay memory_pool/stl_allocator/generic_allocator;修 clay move-assign bug;generic_allocator⛔=Allocator 已是它) |
 | [mem-08](./mem-08-fiber-stack.md) | P2 | mem | fiber_stack：guard + 分级 + FiberStackPool + Fiber 接线 | platform-02b,sched-01 | 0.5-1k | ~518 code(头+接线+测) | ✅ 完成(2026-07-17)。`FiberStack`=`reserve_guarded`;Small/Default/Large;池回收;`Fiber` 默认 guarded。Win+WSL mem 56/56、sched 108/108 |
-| [mem-final](./mem-close-plan.md) | close | mem | 功能/API/性能收口与 release-candidate certification | mem-01..08 | — | 见任务单 | ✅ **2026-07-29 严格复证**：mature-gap P0、default/injected adapter、fiber 回收与 NUMA selected-node/chunk/weighted 均收；当前 109/109 C surface；`8c85331` 关闭 PMR zero-size、显式 runtime adapter、三平台 installed consumer 与受影响性能，clean `c640072` 的其余 allocator/pool/TSan 证书继续有效 |
+| [mem-final](./mem-close-plan.md) | close | mem | 功能/API/性能收口与 release-candidate certification | mem-01..08 | — | 见任务单 | ✅ **2026-07-29 历史复证**：mature-gap P0、default/injected adapter、fiber 回收与 NUMA selected-node/chunk/weighted 均收；当时 109/109 C surface；`8c85331` 关闭 PMR zero-size、显式 runtime adapter、三平台 installed consumer 与受影响性能，clean `c640072` 的其余 allocator/pool/TSan 证书在该轮继续有效 |
 | [time-01](./time-01-clock.md) | P2 | time | typed 单调/墙钟、deadline、thread sleep | core | — | 见里程碑 | ✅ **2026-07-29 再收口**：x86 TSC + ARM64 architected raw profiler、有序 measurement pair、饱和 deadline、高分辨率 absolute sleep；28 clock tests + 三平台/ASan/UBSan/TSan |
-| [time-02](./time-02-timer-wheel.md) | P2 | time | exact-ns TimerQueue + CommonTimeoutQueue | time-01,core,error(C ABI) | — | 见里程碑 | ✅ **2026-07-29 再收口**：signed Unix timestamp/OS/chrono 互操作、C presampled-now parity、三平台 shared/static probes；44/44 C surface，timer SOTA 证书继续有效 |
+| [time-02](./time-02-timer-wheel.md) | P2 | time | exact-ns TimerQueue + CommonTimeoutQueue | time-01,core,error(C ABI) | — | 见里程碑 | ✅ **2026-07-29 历史再收口**：signed Unix timestamp/OS/chrono 互操作、C presampled-now parity、三平台 shared/static probes；当时 44/44 C surface，timer SOTA 证据绑定该轮源码 |
 | container-01 | P3 | container | vendor 有界 ring(Vyukov/rigtorp,骨架用) | mem-01 | 1-2k | 220 | ✅ 完成 |
 | container-02 | P3 | container | XXH3 接入(默认 hasher) | 00 | 1k | 133 | ✅ 完成(XXH3 封 .cc 不泄;小键内联) |
 | container-03 | P3 | container | carray header-before-data + RAII 壳 | mem-02 | 1-2k | 224 | ✅ 完成(type-erased核;修over-align) |

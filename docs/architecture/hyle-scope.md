@@ -75,7 +75,7 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 | **3 便利** | `obs/` 重机器（sink/格式化/聚合）、`serialize/`、外围 hash（md5/uuid/base64）、`plugin/registry`、`random/`、`text/`、`compress/`、`config/`、`graph/` | 在不在都是 HYLE | 能缓则缓、薄封装别自造 |
 
 **为什么 `container/` 在 Tier 0 而 `simd/` 在 Tier 1**（同是"性能焦点"，凭什么分开）：
-- `container/`（flat hashmap）是**地基 ∩ 差异**：clay 里 `string_buf`/`type_name`/`cstring`/`taskgraph` 等 13 处依赖它，抽掉整个 infra 裂开；且 C-ABI 边界上 abseil 的 C++ 类型过不去，没 drop-in。**核心 hasher 跟容器一起 Tier 0：运行期/hashmap/内容寻址用 XXH3（借 xxHash，替换 clay murmur），编译期类型 ID 留 murmur（constexpr 友好）**。
+- `container/`（flat hashmap）是**地基 ∩ 差异**：clay 里 `string_buf`/`type_name`/`cstring`/`taskgraph` 等 13 处依赖它，抽掉整个 infra 裂开；且 C-ABI 边界上 abseil 的 C++ 类型过不去，没 drop-in。**核心 table hasher 跟容器一起 Tier 0：整数走 mix64，字节按长度走 inline stream、baseline wyhash 或 runtime-gated wide XXH3；结果仅限进程内 table，不承担内容寻址。编译期类型 ID 留 murmur（constexpr 友好）**。
 - `simd/` 是**差异但非地基**：是焦点，但 `string_buf`/`registry`/类型系统不依赖它才能工作（只有 compute/math 热路径用），抽掉 HYLE 仍能站立。故 Tier 1。
 
 **为什么分这个**（不是排座次，是让每个决策有依据）：
@@ -98,16 +98,16 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 
 > **信源**：体量以 `cloc` 实测为准；能力进度以 [`../milestones/README.md`](../milestones/README.md) 为准。
 > **口径**：生产 = `src` + `include` 的 code 列（不含 tests/bench/docs、不含 third_party）。
-> **2026-07-30 锚定**：旧投影「完成时生产 ~28–40k / 中值 34k」**已作废**——当前生产已 **93.7k**，单 simd **37.8k**。当前判断见 [`../milestones/pre-release-readiness.md`](../milestones/pre-release-readiness.md)；更早数字只作历史快照。
+> **2026-07-30 锚定快照**：旧投影「完成时生产 ~28–40k / 中值 34k」在该日已作废；当时生产为 **93.7k**，单 simd **37.8k**。这些数字不随 working tree 自动更新，现行判断见 [`../milestones/pre-release-readiness.md`](../milestones/pre-release-readiness.md)。
 
-### 当前实测（2026-07-30）
+### 2026-07-30 实测快照（非当前计数器）
 
 | 固定统计口径 | code | 说明 |
 |---|---:|---|
 | **全库代码** | **281,337** | tracked working snapshot；含 docs 与 in-tree third_party |
 | **自实现（含测试）** | **136,563** | `include/hyle + src + tests`；只计 C/C++/CUDA，不含 CMake/Text |
 | **自实现（不含测试）** | **93,653** | `include/hyle + src`；只计 C/C++/CUDA，库本体硬锚 |
-| **当前七底座 adoption 审查单元实现** | **20,216** | core/error/obs/platform/time/mem/完整 util 的公共 C/C++ 头 + `src` |
+| **当时七底座 adoption 审查单元实现** | **20,216** | core/error/obs/platform/time/mem/完整 util 的公共 C/C++ 头 + `src` |
 | 再加 ggml 等大依赖足迹 | **~200–350k+** | 由 ggml 主导，不计入「自有生产」 |
 
 **生产按模块（src+include，约）：**
@@ -140,11 +140,11 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 **含测试粗乘**：生产 ×1.4–1.6 → A 约 **95–125k**、B 约 **120–160k**（tests only）。
 **自有工程（+bench+docs）**：A 约 **130–160k**、B 约 **160–200k**。
 
-**剩余增量直觉（相对今日 91.0k 生产，非承诺）：**
+**当时的剩余增量直觉（相对 2026-07 快照约 91.0k 生产，非承诺）：**
 
 | 方向 | 再长（生产） |
 |---|---:|
-| 基础模块收口复审 | 原则上小增量；mem 已严格收口，仅按真实触发器重开 |
+| 基础模块收口复审 | 原则上小增量；任何旧证书都可由依赖/API/消费者新证据触发局部重开 |
 | sched/io 强收口 + C ABI | +1～4k |
 | compute 能力尾 | +2～10k（主弹性） |
 | graph-02 后两步/后续真实消费者 | +1～5k |
@@ -155,7 +155,7 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 | 库 | 约行数 | 状态 |
 |---|---|---|
 | mimalloc | ~15k | in-tree vendored |
-| simdutf | ~60k（整树 cloc） | 可选 UTF-8 薄借，门控宏 |
+| simdutf | v9.1 amalgamation | in-tree；无条件编入 container 的 UTF-8 validate/count 路径 |
 | fcontext | ~0.8k + asm | vendored |
 | xxhash 等 | 小 | vendored / 薄封 |
 | highway/xsimd | 0 产品 | 仅 bench 外部 pin |
@@ -283,12 +283,8 @@ WebSocket、gRPC（依赖 protobuf/IDL，更靠 L1）仍后置于范围外。
 
 ## 进度
 
-路线图见 [`roadmap.md`](./roadmap.md)；逐里程碑实时状态见
-[`milestones/README.md`](../milestones/README.md)。当前除 compute/graph 仍有产品能力尾外，
-其余模块主体基本实现；按当前实际使用导向合同，严格证书已有
-error/platform/mem/time/core、build/package、util-core、obs 与 container；mem 已由 clean `c640072`
-关闭 shared standard-adapter/realloc 的三平台性能补表，并由 `8c85331` 局部复证 PMR
-zero-size、显式 runtime adapter 与 installed consumer。旧 simd/sched/io
-closure 以及 util-runtime 的既有结果仍只是复审输入证据，
-不能替代本轮功能、复杂度、C/C++ 易用性、依赖采用和双 guide 认证。当前队列见
+路线图见 [`roadmap.md`](./roadmap.md)，逐 work item 的施工记录见
+[`milestones/README.md`](../milestones/README.md)。模块主体实现程度、历史 closure 与当前
+working tree 的发布认证是三件事；本架构页不复制快变的绿色名单、commit 证书或待办。
+现行模块判定与重开队列只看
 [`pre-release-readiness.md`](../milestones/pre-release-readiness.md)。

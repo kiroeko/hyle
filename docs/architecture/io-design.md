@@ -44,6 +44,10 @@ IoContext（每 Scheduler worker 一个 Proactor + 文件 blocking pool）
   取得的 `IoUringExtension` 调用；portable one-shot 永远保留。
 - epoll/kqueue pending 表使用 container/ 的 flat SwissTable。IOCP/io_uring
   不需要 fd readiness 映射，因此不会为统一外观平白引入 hash lookup。
+- C ABI 的 backend 与 HTTP/2 role 都是固定 `uint32_t` typedef，不使用会受
+  `-fshort-enums` 影响的 exported enum。按值返回的 `hyle_io_capabilities` 则冻结为
+  v1 的 16-byte snapshot（backend/bits offset 4/8）；其中 `struct_size` 是结果自描述，
+  不是可追加尾字段的 input 协商。超出 bits 的新形状通过新 query/type 演进。
 
 > **维护警戒线**：portable API 必须在所有支持后端真实实现、等价模拟或明确
 > 返回 `StatusCode::Unimplemented`；该状态只是平台/实现不支持当前操作的

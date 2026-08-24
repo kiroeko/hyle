@@ -1,13 +1,18 @@
 # platform 实测铁证
 
+> **2026-08-25 freshness gate：**下述 2026-07 点值与机制证据可作回归输入，但 platform 已由
+> 依赖升级/消费者红队重新打开；相同 source identity、peer pin、编译合同与三平台复跑完成前，
+> 不是当前 working tree 的发布证书。现行状态只看
+> [`pre-release-readiness`](../milestones/pre-release-readiness.md)。
+
 > 本页是 [performance 总账](./README.md) 的 **platform 模块**详节。  
 > 源：`bench/platform/platform_bench.cc` → `hyle_platform_bench`。  
 > 方法：`scripts/bench-stat.py`，信任 **[sign] 配对符号检验**。  
-> **2026-07-24 当前 SOTA 修正（实现 `75f3a45`）**：Win MSVC 19.50、WSL GCC 14.2、
+> **2026-07-24 历史 SOTA 证据（实现 `75f3a45`）**：Win MSVC 19.50、WSL GCC 14.2、
 > Apple M4 AppleClang 21 的 zero-timeout、MappedFile、FileHandle 与持久随机访问均为
-> **n=15**；其它 OS 阻塞段沿用下文标明的新鲜证书。
-> **2026-07-29 严格复证（实现 `a073931`）**：没有改动上表所测的正常热路径语义，既有点值
-> 继续有效；本轮以机制/codegen 证据补强两条原来未被点值覆盖的性能合同。Windows 默认 CPU
+> **n=15**；其它 OS 阻塞段沿用下文标明的当时证据。
+> **2026-07-29 历史复证（实现 `a073931`）**：没有改动上表所测的正常热路径语义，既有点值
+> 当时继续作为证书；该轮以机制/codegen 证据补强两条原来未被点值覆盖的性能合同。Windows 默认 CPU
 > Set membership 从 O(ND) 嵌套扫描改为排序后二分查找 O(D log D + N log D)，避免稀疏 opaque
 > id bitmap；MSVC IPO build 中 CPU probe object 无 `/GL`、其余 platform TU 有 `/GL`，证明
 > baseline ISA 安全不再靠全模块关闭 LTO。没有为这两条冷初始化/构建合同制造纳秒 benchmark。
@@ -199,7 +204,7 @@ Windows 与 WSL/Linux 用单 worker performance-first scheduler，worker 实际�
 priority 只在线程创建时写入 `ThreadOpts`，不进入任务热路。性能结论是默认路径无回归，
 opt-in 初始化路径与原生能力查询同阶；它不宣称改变 OS 最终调度质量。
 
-### 2026-07-24 Linux / M4 当前接口最终复证
+### 2026-07-24 Linux / M4 当轮接口复证
 
 为避免完整 suite 的 OS 阻塞段再次占机十分钟以上，本轮按用户场景拆开运行；源码均为当前
 `Result/Status` 接口。WSL GCC 14.2 与 Apple M4 AppleClang 21 的 VM/protect 各跑 n=5，
@@ -237,9 +242,9 @@ arena），两次 OS 操作就是其合同成本。普通立即使用场景应�
 
 ### 2. `directory_iterate` 的平台差异
 
-- Linux/M4 当前 n=15 证书仍赢（d_type/原生目录枚举 + visitor 无分配）。
-- Win 底层都是 `FindNextFileW` 量级，HYLE 还付 UTF-16→UTF-8 visitor 转换；当前 n=15
-  是统计平，不宣称结构性赢。旧“sign 输 0.93x”已被当前接口复测取代。
+- Linux/M4 当轮 n=15 证据为赢（d_type/原生目录枚举 + visitor 无分配）。
+- Win 底层都是 `FindNextFileW` 量级，HYLE 还付 UTF-16→UTF-8 visitor 转换；当轮 n=15
+  是统计平，不宣称结构性赢。旧“sign 输 0.93x”已被该轮接口复测取代。
 - 不把任一 OS 的方向外推到另外两个平台。
 
 ### 3. Parker vs CV 平台翻转（预期内）

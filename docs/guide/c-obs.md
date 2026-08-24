@@ -60,6 +60,9 @@ level 仍应调用 `hyle_obs_log[_n]`。五个 `hyle_obs_log_*_n` inline helper 
 `hyle_obs_set_level` 接受 TRACE..OFF；OFF 只是 threshold，不能作为 record level。
 `hyle_obs_should_log` 是无失败 query，非法 record level 直接返回 0。所有带 out parameter
 的入口先清空输出再做工作。
+`hyle_obs_log_level` 是固定 `uint32_t` ABI typedef，`HYLE_OBS_LOG_*` 是命名常量；FFI 应
+绑定为无符号 32-bit，不要映射成本语言默认 enum。GCC/Clang 的 `-fshort-enums` 不会改变
+record 字段或按值函数参数宽度。
 
 ## 2. 结构化 record
 
@@ -84,9 +87,19 @@ int emitted = 0;
 hyle_status status = hyle_obs_emit_record(&emitted, &record);
 ```
 
-必须用 `HYLE_OBS_LOG_RECORD_INIT` 设置 `struct_size`。当前 ABI 尚未发布，`struct_size` 用来
-拒绝错误/不完整布局并为未来尾扩展保留检查点，不承诺解释未经发布的旧 layout。非法大小、
-level、message byte view 或 field 会返回 `HYLE_STATUS_INVALID_ARGUMENT`。
+普通源码应使用 `HYLE_OBS_LOG_RECORD_INIT`。`struct_size` 是调用方提供的可读 byte prefix，
+不是必须等于当前 `sizeof` 的版本号；语义最小值
+`HYLE_OBS_LOG_RECORD_REQUIRED_SIZE` 覆盖 `struct_size`、`level`、`message` 和
+`message_size`（当前 64-bit ABI 为 24 bytes）。它是一次待发送的 raw record，不是“所有
+业务字段都有默认”的 options，因此没有为了形式一致而在 `struct_size` 后插入 reserved word：
+offset 4 的 level 本身就是 required payload，保留紧凑常用形状也不移动既有 required prefix。
+
+实现先建立完整的当前默认 record，再从 declared prefix 用 byte read 覆盖完整字段；这也适用于
+真实短物理对象与未对齐 FFI buffer。`fields + field_count` 是一个原子组合，只有两者都完整可读
+才生效；落在其他 optional field 中间的 prefix 把该字段视为缺失。缺失 source/timestamp 等
+字段保持 INIT 默认，超过当前布局的未知尾部不读取。小于 required prefix，以及非法 level、
+message byte view 或 field，返回 `HYLE_STATUS_INVALID_ARGUMENT`。调用方必须保证 required
+payload 指针在同步 emit 期间有效。
 
 message 由 `message + message_size` 精确定界，可包含 NUL；初始化器的
 `HYLE_OBS_NUL_TERMINATED` sentinel 要求 checked adapter 执行 `strlen`。`NULL + 0` 是合法空
@@ -129,14 +142,21 @@ static hyle_status run_with_file_sink(void) {
 }
 ```
 
-create 成功后立即注册；write 为 NULL、registry 满或分配失败通过共享 Status 区分。
+`create` 是使用进程 C++ heap 的 convenience factory，成功后立即注册；write 为 NULL、
+registry 满或分配失败通过共享 Status 区分。必须控制分配域或避免 hidden allocation 时，先用
+`hyle_obs_sink_control_size/alignment` 查询 opaque control 的精确约束，再把调用方 allocator
+取得的 aligned storage 传给 `hyle_obs_sink_init`。`init` 自身不分配；storage 必须活到
+destroy 成功，destroy 只结束 control object 生命周期，storage 仍由调用方原 allocator 释放。
 `hyle_obs_sink_destroy(NULL)` 是 OK。destroy 成功返回时，其他线程不可能仍在旧 callback
 中；同一非 NULL handle 只能消费一次，也不能由两个线程并发 destroy。
 
 callback 可以销毁自己的 handle。opaque trampoline 在进入外部 callback 前复制函数与
 state，返回后不再读已释放 wrapper；但 state 自然仍须活到 callback 返回。callback 内销毁
 另一个 sink 返回 `HYLE_STATUS_FAILED_PRECONDITION` 且不消费目标 handle，调用方应在所有
-sink callback 外重试。
+sink callback 外重试。caller-storage control 的 write 和 flush callback 都可 self-destroy；
+destroy 会结束 control object 生命周期，但必须等外层 `hyle_obs_emit_record`/日志入口或
+`hyle_obs_flush_sinks` 返回、retiring dispatch 释放后，才可在同一 storage 再次 init。C smoke
+分别覆盖 write/flush self-destroy，并在每次 retirement 后复用相同 storage。
 
 write/flush 由 producer 线程同步调用，可能多线程并发；不得让异常跨 ABI。flush 可与
 write 并发，`hyle_obs_flush_sinks` 返回实际调用的非 NULL flush callback 数。sink 内再次
@@ -147,7 +167,8 @@ registry 入口：
 
 | 入口 | 语义 |
 |---|---|
-| `hyle_obs_sink_create` / `hyle_obs_sink_destroy` | Status + opaque ownership；quiescent unregister |
+| `hyle_obs_sink_control_size/alignment` / `hyle_obs_sink_init` | 调用方 storage、无 hidden allocation 的 opaque control |
+| `hyle_obs_sink_create` / `hyle_obs_sink_destroy` | system-heap convenience / 两种创建路径共用的 quiescent unregister |
 | `hyle_obs_sink_count` / `hyle_obs_sink_capacity` | 当前数量 / 固定 64 槽上限 |
 | `hyle_obs_flush_sinks` | 同步 flush 所有支持它的 sink |
 | `hyle_obs_default_sink_enabled` | 默认 stderr sink 当前是否注册 |
@@ -186,23 +207,35 @@ if (hyle_obs_trace_enabled()) {
 
 NULL message/name/pointer 在有意义的入口上安全忽略；NULL frame name 表示无名 frame，NULL
 pool name 表示默认内存域。zone token 只在当前进程/build 有意义，不能持久化或跨进程传输。
+`hyle_obs_trace_fiber_enter(stable_name)` / `leave()` 与 C++ fiber hook 完全同义：enter name
+必须是长期稳定、非 NULL 的同一 pointer（优先 string literal 或 fiber 自有且活到 trace 结束的
+storage），逻辑 fiber 每次迁移/恢复都复用它，并在回到非 fiber 执行前配对 leave；NULL enter
+安全忽略，但不替代配对。
+Tracy wire record 用 16-bit 长度：message/zone text 最多复制
+`HYLE_OBS_TRACE_TEXT_MAX` bytes，动态 zone 的 name/file/function 分别最多复制
+`HYLE_OBS_TRACE_SOURCE_COMPONENT_MAX` bytes；更长输入按 prefix 截断，adapter 会 bounded scan，
+不会先对不受信任字符串做无界 `strlen`。
 
 C runtime seam 即使关闭仍有一次 ABI 调用，所以不能宣称“关闭态零指令”。同工具链 C++
 源码的纳秒热路径使用 `hyle/obs/trace.h` 的 `HYLE_TRACE_*` 宏：关闭时参数不求值；开启时
-所有模块汇入同一个 Tracy client。
+shared HYLE 的所有模块汇入同一个 Tracy client。trace-on static SDK 只支持一个最终 link image；
+若多个 DLL/plugin 各自静态链接，它们会各自拥有 Tracy singleton，时间线/fiber identity 不再
+process-unique。该 host 形状必须改用 shared `hyle_obs`。
 
 ## 5. 导出覆盖与仅 C++ 能力
 
-动态日志/registry 导出共 13 个：
+动态日志/registry 导出共 16 个：
 
 - `hyle_obs_set_level` / `hyle_obs_get_level` / `hyle_obs_should_log`
 - `hyle_obs_emit_record` / `hyle_obs_log` / `hyle_obs_log_n`
+- `hyle_obs_sink_control_size` / `hyle_obs_sink_control_alignment` / `hyle_obs_sink_init`
 - `hyle_obs_sink_create` / `hyle_obs_sink_destroy`
 - `hyle_obs_sink_count` / `hyle_obs_sink_capacity` / `hyle_obs_flush_sinks`
 - `hyle_obs_default_sink_enabled` / `hyle_obs_set_default_sink_enabled`
 
-runtime trace 导出共 11 个：enabled、zone begin/end/text、plot、counter、message、frame、
-alloc、free、thread name。合计 24 个动态入口；另有 10 个 header-inline level 便利函数和
+runtime trace 导出共 13 个：enabled、zone begin/end/text、plot、counter、message、
+fiber enter/leave、frame、alloc、free、thread name。合计 29 个动态入口；另有 10 个
+header-inline level 便利函数和
 5 个编译期 floor 宏。manifest、纯 C consumer、focused installed-package consumer
 与 DLL/.so 导出由 `hyle_obs_c_surface_test` 机械保持一致。
 
@@ -211,7 +244,7 @@ alloc、free、thread name。合计 24 个动态入口；另有 10 个 header-in
 | C++ 面 | C/FFI 组合 |
 |---|---|
 | `std::format` + `HYLE_LOG_*` | 在调用语言格式化，再用 `hyle_obs_log_n` / POD record |
-| move-only `SinkRegistration` | opaque sink create/destroy 是同一 ownership；语言 RAII wrapper 可包 destroy |
+| move-only `SinkRegistration` | opaque sink init/create + destroy 是同一 ownership；语言 RAII wrapper 可包 destroy |
 | 编译期消失的 `HYLE_TRACE_*` | runtime trace 自由函数；接受一次 ABI no-op 成本 |
 | `LogSink` 值类型 | opaque `hyle_obs_sink` 管理 trampoline 与安全注销 |
 

@@ -90,7 +90,7 @@ class DynLib {
 
  private:
   void* handle_ = nullptr;  // HMODULE on Windows, void* from dlopen on POSIX
-  bool owns_ = false;       // current() handles are not freed on close
+  bool owns_ = false;       // close/destructor must release the loader reference
 };
 
 }  // namespace hyle::platform

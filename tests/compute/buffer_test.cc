@@ -60,11 +60,18 @@ TEST(ComputeBuffer, HostBufferTypeIsHost) {
   EXPECT_TRUE(bt.is_host());  // pinned host RAM is always host-dereferenceable
 }
 
+TEST(ComputeBuffer, InvalidTypeReturnsInvalidArgument) {
+  auto buffer = Buffer::create(BufferType{}, 64);
+  ASSERT_FALSE(buffer.has_value());
+  EXPECT_TRUE(buffer.error().IsInvalidArgument());
+}
+
 TEST(ComputeBuffer, TracksOwningBackendDevice) {
   Device owner = default_device();
   auto buffer = Buffer::create(device_buffer_type(owner), 64);
   ASSERT_TRUE(buffer.has_value());
   EXPECT_TRUE(buffer->belongs_to(owner));
+  EXPECT_FALSE(buffer->belongs_to(Device{}));
 
   Device devices[8];
   const std::size_t count = enumerate(devices, 8);

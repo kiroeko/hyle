@@ -35,14 +35,14 @@
 |---|---|---|
 | **highway** | 参考 + bench 对照 | D-tag/scalable/dynamic-dispatch 架构范本与 SOTA oracle；simd-20 后不进产品构建，外部 pin checkout 仅用于 benchmark |
 | **xsimd** | 参考 + bench 对照 | 数学 best-of 与精度/性能 oracle；simd-20 后不进产品构建 |
-| **simdutf** | 可选薄借 | 仅 `HYLE_SIMD_SIMDUTF` 门控 utf8 validate/count；未定义时不 include，不属于 Runtime/native 核心面 |
+| **simdutf** | 借（container 直接编入） | vendored v9.1 amalgamation 无条件编入 `hyle_container`；`utf8_validate` 借其单遍 validate，`utf8_length` 借 validate/count，二者复用内部 runtime ISA dispatch，公开头不泄露 vendor 类型 |
 | **sleef** | **已退役(clone 留存)** | 曾评估作 transcendental 核,选定 highway+xsimd 后退役;仍 clone 供对照,不进构建 |
 | **nanobench** | 借(测试期)| 微基准框架,vendored 在 `third_party/`;`scripts/bench-stat.py` 在其上做 n=15 统计判定(gap>spread 才判赢) |
 
 ### compute/（Tier 1，含 Intel 计算加速）
 | 库 | 角色 | 说明 |
 |---|---|---|
-| **ggml** | 借（主力）| 算子 + 多后端（cuda/hip/metal/vulkan/sycl/webgpu/opencl…），`ggml_bridge` adapter 对接上游 pin 版；同时参考 ggml-backend 接口、dev_caps、CPU 多变体 dispatch |
+| **ggml** | 借（主力）| 当前中央 lock 固定 `v0.21.0`；HYLE 实际只构建私有 PIC 静态 CPU + 可选 CUDA 闭包，全部类型封在 `ggml_bridge`。其自有 threadpool 不可替换成 HYLE scheduler；按合批性选择 ggml 自有并行或 `n_threads=1`，阻塞提交走 HYLE blocking pool |
 | **kompute** | 参考（compute-06 Vulkan 后端骨架）| Vulkan compute 封装，**纯 Vulkan 零隐藏运行时**（无 std::thread/事件循环，唯一同步=可选 submit mutex + 每 Sequence 一个 vk::Fence），合"不引入第二调度器"铁律。抄其 Manager 初始化链 / Algorithm 的 SPIR-V→pipeline→descriptor / Tensor 的 memory-type 选择+staging 双缓冲+barrier 编排；**丢**阻塞 `waitForFences`（换非阻塞 `getFenceStatus` 轮询接 fiber，= Event::query 语义，fence=Vulkan Event 的 native handle）、shared_ptr 所有权、logger、OpBase 虚基类。详见 compute-design「compute-06 kompute 映射」节 |
 | **vitamin-cuda** | **抄（compute-04/06 自造 kernel）** | 教学级 CUDA kernel 库（`C:\public\project-hyle\vitamin-cuda`），SGEMM/HGEMM/flash_attn/softmax/rope/reduce 等，含中英"beating cuBLAS"逐步优化 writeup（`posts/`）。**正是 ggml 显存边界之外 HYLE 自造 kernel 的领域**（compute-05 定案：借 ggml 用 ggml 显存；自造 kernel 才在 HYLE Buffer 上真零拷贝）——② CAD/CAE 数值核的 SOTA 抄写源。SGEMM 优化阶梯：naive → block tiling+共享内存 → a 转置写 smem+float4 → swizzle 消 bank conflict → C 写回事务合并 → double buffer 流水线（超 cuBLAS）。抄其 tiling/向量化/swizzle/双缓冲手法进 compute-04 NVRTC kernel |
 | **llama.cpp** | 参考 | 多变体 DLL+score dispatch、CMake ISA 处理、探测器隔离（-fno-LTO）、推理引擎工程范式；compute-05 显存归属边界（host 归调用方/device 归 ggml gallocr）的权威范本 |
@@ -65,8 +65,8 @@
 ### container/（Tier 0）
 | 库 | 角色 | 说明 |
 |---|---|---|
-| **abseil-cpp** | 参考 | SwissTable 设计（控制字节 + SIMD 探测），hashmap 头号参考 |
-| **folly** | 参考 | F14 hashmap + 并发原语/SmallVector 等 |
+| **abseil-cpp** | 参考 | SwissTable 设计（控制字节 + SIMD 探测），hashmap 头号参考；seed-aware default hash 与 table seed 用来打散跨启动/跨表布局，但其 ASLR seed 同样明确不作安全承诺 |
+| **folly** | 参考 | F14 hashmap + 并发原语/SmallVector 等；透明 string policy 与 seeded fast hash 形状用于易用性/正常 workload 对账 |
 | **moodycamel-ConcurrentQueue** | 参考(bench 对照)| lock-free MPMC 队列，sched global 注入队列参考;queue bench-02b 的 SOTA 对标基线 |
 | **rigtorp-MPMCQueue** / **MPMCQueue** | 参考(bench 对照)| 定长环形 MPMC(Vyukov 序号法);BoundedQueue 设计参考 + queue bench-02b 对标 |
 | **boost**(intrusive) | 参考 | 侵入式 list/map（sched run-queue/waiter 链）|
@@ -83,8 +83,9 @@
 ### hash/（Tier 3）
 | 库 | 角色 | 说明 |
 |---|---|---|
-| **xxHash** | **借（默认 hasher）** | **XXH3 设为 hashmap 默认 hasher + 内容寻址**（30+ GB/s、SMHasher 满分、自带 x86 dispatch、大小端一致）。**替换 clay 的 murmur**（murmur 仅 3.9 GB/s，留编译期 type-ID 用）|
-| **wyhash** | **不借** | 作者自承非 64-bit 抗碰撞（~62bit）、长数据 PractRand 失败；无优势盖过 XXH3 |
+| **xxHash** | **借（宽输入 runtime path）** | `hash_bytes` 的超 crossover 输入在 x86 AVX2/AArch64 NEON 安全路径使用 XXH3；不是默认 typed hash，也不承诺内容寻址或持久 bit pattern |
+| **wyhash** | **借（baseline long-input core）** | 17–128B 先走库内 inline multiply stream；其上默认进入 vendored wyhash baseline，达到平台实测 crossover 且 ISA 可用时再转宽 XXH3 |
+| **SipHash-2-4** | **按公开算法/known vectors 自实现** | 显式 `HardenedStringHash` 与 C stateless keyed 入口；128-bit secret 必须由调用方安全注入，默认 fast process seed 不冒充 CSPRNG |
 
 ### serialize/（Tier 3）
 | 库 | 角色 | 说明 |
@@ -96,7 +97,7 @@
 ### obs/（Tier 2 hook / Tier 3 重机器）
 | 库 | 角色 | 说明 |
 |---|---|---|
-| **tracy** | **后端 + 参考设计** | native hook 的编译期 no-op、scoped zone、plot/counter/fiber/frame/message/memory/thread-name 由 Tracy 承载；HYLE 只保留自己的 seam，并保证 shared build 全进程一个 client。server/UI 是外部 profiler 工具，不复制进 obs 产品 API |
+| **tracy** | **后端 + 参考设计** | 中央 lock 固定 `v0.14.1`；启用 trace 时只接受 HEAD/tree/clean/license 全验证的 `HYLE_TRACY_DIR`。native hook 的编译期 no-op、scoped zone、plot/counter/fiber/frame/message/memory/thread-name 由 Tracy 承载；HYLE 只保留自己的 seam，并保证 shared build 全进程一个 client。server/UI 是外部 profiler 工具，不复制进 obs 产品 API |
 | **abseil-cpp** | **参考 + benchmark 机制项** | 同步 `LogSink`、全局注册/摘除、flush、sink 内日志不递归回注册图、process-lifetime registry 是 log runtime 的直接形状参考；其完整 LogEntry 带更多 metadata，点值只能标载荷差异，不能冒充同合同胜负 |
 | **folly** | **参考** | handler 同步线程语义、flush、category/handler 分层及默认转义不可信控制字符。HYLE 借安全边界与 adapter 形状；hierarchical category、async writer/file/upload 属于应用日志系统，不塞进低层 producer seam |
 
@@ -107,37 +108,40 @@
 | **liburing** | **参考(不链)** | io_uring 机制权威:barrier/SQE 布局/多 op(multishot accept/recv、provided buf_ring、ASYNC_CANCEL)。**HYLE 用裸 syscall 自写,不链 liburing**——精确复刻其 v2.15 fast-path barrier + buf_ring 协议(io-01/02/07 已落地) |
 | **tokio-uring** | 参考 | 见 sched/ 段:submit/flush 节奏 + msghdr 生命周期(io-04 udp) |
 | **libevent** | 参考 | reactor 级:common_timeout 有序链算法(time CommonTimeoutQueue 同款基线)、evdns 异步 DNS(io-09 待)、bufferevent 水位(应用层不做);对 HYLE proactor 价值小于以上 |
-| **nghttp2** | **借核(io-11 HTTP/2，已落地)** | 固定 v1.69.0 commit；借 HTTP/2 frame/HPACK/stream/flow-control core，自写 allocator、caps、over-co_await transport 与 C codec，不取其 event loop/应用层 |
+| **nghttp2** | **借核(io-11 HTTP/2，已落地)** | 中央 lock 固定 `v1.70.0` commit；只构建静态 libnghttp2 protocol core，借 HTTP/2 frame/HPACK/stream/flow-control，自写 allocator、caps、over-co_await transport 与 C codec，不取其 event loop/应用层 |
 
 ### graph/（Tier 6，北极星② 编排 + 数据并行）
 | 库 | 角色 | 说明 |
 |---|---|---|
 | **oneTBB** | **参考（设计,不借运行时）** | graph-02 数据并行的 SOTA 设计源:`blocked_range`(grainsize + 递归 split)、`parallel_reduce`(reduction_tree_node + **deterministic** 双档)、`parallel_scan`(两趟)。**不借其 task arena/调度器**(双调度器红线);跑 HYLE sched。见 graph-02-design |
 | **taskflow** | 参考 | 现代 C++ 的 DAG + 数据并行一体框架(`tf::Taskflow` 依赖图 + for_each/reduce/scan + subflow 动态图)——**graph-01(DAG 编排)+ graph-02(数据并行)合起来的最贴 SOTA 对照**,纯 header 比 oneTBB 更贴 HYLE 编排语义。对拍其 API 形态;调度仍归 HYLE sched |
-| **eigen** | **参考（CAE 求解器,按需）** | 北极星② CAE 的稠密/稀疏线代 SOTA(matmul/分解/迭代求解器 CG/BiCGSTAB);motivation 里"CAE 把 compute/simd 压到稀疏线代深度"的头号参考。**并行可注入外部池**:`Parallelizer.h` 除 OpenMP 外有 `EIGEN_GEMM_THREADPOOL`(`pool->NumThreads()`,src:38/81)——同 ggml `set_threadpool` 模式,能喂 HYLE 调度器而非用其 OpenMP(避双运行时)。**等 graph-02 之后真做 CAE 求解器消费者时读**,现在超前 |
+| **eigen** | **参考（CAE 求解器,按需）** | 北极星② CAE 的稠密/稀疏线代 SOTA(matmul/分解/迭代求解器 CG/BiCGSTAB);motivation 里"CAE 把 compute/simd 压到稀疏线代深度"的头号参考。`EIGEN_GEMM_THREADPOOL` 暴露 `pool->NumThreads()` 路径，但未来 HYLE adapter 仍须实证任务提交接口和所有权，不能再类比 ggml 的不可注入 `set_threadpool`。**等 graph-02 之后真做 CAE 求解器消费者时读**,现在超前 |
 | **openvdb** | **参考（CAD/CAE 网格/体数据,按需）** | 工业级稀疏体素/网格数据结构 + 其上的并行遍历(自带 TBB 并行,只读其数据结构 + 分块遍历设计,并行归 HYLE graph-02)。北极星② 几何核/网格 stencil 的参考。**等真做几何/体数据消费者再读**,现在超前 |
 
 ## 开工优先级（按 roadmap 阶段）
 
-- **P3-P4 即用**：marl（sched 精读）、moodycamel（队列）、boost.context（fcontext）、abseil/folly（container）、highway/xsimd（SIMD 架构与外部 benchmark 对照）、simdutf（可选 UTF-8 薄借）。
+- **P3-P4 即用**：marl（sched 精读）、moodycamel（队列）、boost.context（fcontext）、abseil/folly（container）、xxHash/wyhash（table byte hash）、highway/xsimd（SIMD 架构与外部 benchmark 对照）、simdutf（container UTF-8 validate/count 直接借核）。
 - **P5 即用**：ggml + llama.cpp（compute 主力借/参考）、oneDNN/oneMath（Intel 加速，CPU/数学后端）、seastar（io reactor_backend）。
-- **P6 / 按需**：simdjson/flatbuffers/capnproto（serialize）、xxHash（hash，设默认 hasher）、tracy（obs，借设计）、**oneTBB/taskflow（graph-02 数据并行设计对照）、nghttp2（io-11 HTTP/2 借核）、eigen/openvdb（北极星② CAE/几何,更后置按需）**。oneDPL/oneDAL **边界外**（见下）。
+- **P6 / 按需**：simdjson/flatbuffers/capnproto（serialize）、tracy（obs，借设计）、**oneTBB/taskflow（graph-02 数据并行设计对照）、nghttp2（io-11 HTTP/2 借核）、eigen/openvdb（北极星② CAE/几何,更后置按需）**。oneDPL/oneDAL **边界外**（见下）。
 
 ## 借 vs 造的总原则（呼应 charter）
 
-借**多年解决的通用难题**（highway/xsimd 数学核、ggml 算子、boost.context 汇编、liburing syscall）；造**贴 HYLE 需求或差异焦点**（container 全自造、sched 调度自造、simd 抽象自造）。所有借入第三方一律封 adapter / 不外露其类型（同 ggml/mimalloc 解耦原则）。
+借**多年解决的通用难题**（highway/xsimd 数学核、ggml 算子、boost.context 汇编、liburing syscall）；造**贴 HYLE 需求或差异焦点**（container 自有容器算法/API、sched 调度、simd 抽象）。container 的 byte-hash core 与 UTF-8 validate/count 明确属于上一类叶子依赖，分别借 wyhash/XXH3 与 simdutf，并不等于把容器 ownership/布局交给外部 runtime。所有借入第三方一律封 adapter / 不外露其类型（同 ggml/mimalloc 解耦原则）。
 
 ### 关键区分：加速库分两类，只借第一类（这是 oneTBB 为何边界外的原因）
 
 | 类 | 是什么 | 例 | HYLE |
 |---|---|---|---|
-| **指令/kernel 级加速**（让单次计算更快）| 优化的算子/数学核/SIMD intrinsic，**不自带调度** | oneDNN(AMX/VNNI JIT)、oneMath(BLAS)、highway/xsimd 数学核、ggml 算子、XXH3 | ✅ **借**（喂它 HYLE 的线程，结果回灌）|
+| **指令/kernel 级加速**（让单次计算更快）| 优化的算子/数学核/SIMD intrinsic；部分库仍自带不可替换的内部并行 | oneDNN(AMX/VNNI JIT)、oneMath(BLAS)、highway/xsimd 数学核、ggml 算子、XXH3 | ✅ **借**（每个 adapter 明确线程所有权；不能一概声称注入 HYLE pool）|
 | **并行运行时级加速**（把任务铺到多核）| **自带 work-stealing 调度器 / task arena / 线程池** | **oneTBB**、oneDPL、OpenMP、asio io_context、boost.fiber | ❌ **不借**（这是 HYLE 自己的活）|
 
 **oneTBB 确实是加速库——但它加速的是"运行时层"，恰是 HYLE 要独占的那一层。** 它的 `parallel_for` 离不开 task arena（自带 work-stealing 调度器）；引它 = HYLE fiber 调度器 + TBB 调度器**两套在同一批核上抢线程、过度订阅、cache 争抢**——正是 HYLE 存在要消灭的"双调度器阻抗失配"（同拒 boost.fiber/asio 的理由）。所以 oneTBB scheduler/queue、oneDPL **边界外**；只 oneTBB 的 allocator pool 设计作 mem/ 参考。
 
 **那 CPU 数据并行（matmul 等铺满多核）靠谁？** 三层，都不需要 TBB：
-1. **借来的算子自带并行 + 可注入 HYLE 调度器**：ggml CPU 后端有 `ggml_backend_cpu_set_threadpool`（`ggml-cpu.h:135`）——**HYLE 把自己的线程池喂给 ggml，而非让 ggml 自起线程**，避免双调度器。oneDNN 同理（内部 JIT，并行跑在 HYLE 给的线程上）。
+1. **借来的算子必须逐库明确并行所有权**：ggml 的 `set_threadpool` 只接受 ggml 自己创建的
+   threadpool，不是 HYLE scheduler 注入点。HYLE 对不可合批的小任务用 `n_threads=1` 后自行铺并发；
+   对能合批的大 graph 才让 ggml 自有并行独占该次计算，并从 blocking pool 提交。oneDNN 等未来 adapter
+   也必须实证其注入接口，不能从函数名类推。
 2. **HYLE 自有 kernel 的数据并行**：work-stealing 调度器做 fork-join / parallel-for——**一个调度器同时干 IO 并发(fiber)和 CPU 数据并行**，这正是 work-stealing 的本职。
 3. **指令级加速**：借 highway/xsimd 数学核、oneDNN 的 AMX kernel（第一类），不借 TBB。
 
@@ -150,7 +154,8 @@
 | 并行框架（TBB/OpenMP/oneDPL）| 边界外；数据并行用 HYLE 调度器 |
 | 异步/IO 运行时（asio/libuv/seastar 整框架）| 只借 syscall 层（liburing），事件循环自造 |
 | 分配器后台线程（mimalloc/jemalloc 的 purge 线程）| 配置关掉或纳管，别让它自起线程 |
-| 算子库内部线程（ggml/oneDNN）| **注入 HYLE 线程池**（`set_threadpool`），不让其自起 |
+| ggml 内部线程 | 不伪造注入：小任务 `n_threads=1` + HYLE 外层并发；合批大 graph 才使用 ggml 自有并行并由 blocking pool 隔离 |
+| 其他算子库内部线程（如未来 oneDNN） | adapter 落地前逐项验证外部 pool 接口；无证据不得宣称已注入 HYLE scheduler |
 | 日志/profiler 异步刷盘（spdlog async / tracy server）| 借设计不借库，或用 HYLE 调度器驱动 |
 | 协程库自带调度器 | 只用语言级 `co_await`，调度归 HYLE sched |
 

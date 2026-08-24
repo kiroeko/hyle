@@ -76,11 +76,13 @@ _hyle_declare_component(util PUBLIC_DEPS error mem container util_core)
 _hyle_declare_component(sched
   PRIVATE_DEPS time
   PUBLIC_DEPS error platform mem container util_core)
-# io's public protocol/C ABI headers do not require consumers to compile against
-# the implementation modules; static archives still propagate private edges as
-# LINK_ONLY through normal CMake semantics.
+# io's C ABI exposes allocator and owning Status values, while its C++ headers
+# expose container value types and header-inline sched calls (for example
+# complete()/await_suspend()).  These are consumer usage requirements, not only
+# implementation closure: installed consumers that link hyle::io alone must see
+# the corresponding import libraries and runtime DLLs.
 _hyle_declare_component(io
-  PRIVATE_DEPS error mem container ${_hyle_optional_sched_dep})
+  PUBLIC_DEPS error mem container ${_hyle_optional_sched_dep})
 # compute publicly exposes error/mem and, where available, sched Waker types;
 # platform and simd stay compiled implementation details.
 _hyle_declare_component(compute

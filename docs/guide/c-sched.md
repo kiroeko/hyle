@@ -14,6 +14,26 @@
 `hyle_sched_last_error()`。成功调用会清除旧错误。返回的字符串是借用的
 thread-local 存储，不要释放，也不要跨线程保存。
 
+`hyle_sched_options` 是可尾扩展的输入 POD。`struct_size` 与必须为 0 的 `reserved`
+组成 8 字节语义必需前缀；所有业务字段都有默认值。`HYLE_SCHED_OPTIONS_INIT` 写当前
+`sizeof`、零 reserved、queue=1024、fiber stack=64 KiB、OS 默认 CPU 顺序、不设置
+priority，并以 `num_workers=0` 表示运行时进程可用 CPU 数；
+`hyle_sched_options_default()` 会立即把该 worker 数探测出来。
+
+桥接先建立完整的当前默认结构，再用 raw byte read 取得 size，并仅覆盖完整可读成员。
+allocator 必须整个 `hyle_allocator` 可读才生效；`has_worker_priority+worker_priority` 也作为
+一个单元，partial 成员/组合全部保持默认。小于 `HYLE_SCHED_OPTIONS_REQUIRED_SIZE`、非零
+reserved 或完整但非法的业务值使 create 返回 NULL 并设置 last-error；未知未来尾部忽略，
+绝不要求调用方的 size 等于当前 `sizeof`。非 NULL 指针至少须让 size word 可读，并保证其
+声明的其余字节实际可读。
+
+当前 64-bit ABI 的 size 为 72；queue/stack/allocator/CPU-order/priority-flag/priority/
+worker-count offsets 分别为 8/16/24/56/60/64/68。显式 reserved 占 offset 4，worker count
+使用原结构的尾部 padding，因此除 worker count 从旧的 offset 4 移到 68 外，其余业务字段
+offset 与总大小保持不变。CPU order 使用固定 `hyle_cpu_order`，priority flag 使用
+`uint32_t`，priority value 使用固定 `hyle_thread_priority`，不会受 C enum 编译选项影响。
+HYLE 尚未发布，不把没有 reserved 合同的更早头声明为二进制兼容。
+
 ## 1. 三种执行入口
 
 它们不是同一个成本/能力档，按任务是否需要挂起选择：
@@ -148,7 +168,8 @@ payload 的生命周期由调用方负责。
 - `HYLE_SCHED_RECV_VALUE/EMPTY/CLOSED`
 
 timed send/recv 的超时也映射为 `FULL`/`EMPTY`。`close` 后已有元素仍可被接收，
-队列耗尽后才返回 CLOSED。
+队列耗尽后才返回 CLOSED。两组 result 都是有符号 32-bit ABI typedef，具名值只是整数常量；
+外语绑定不要映射成本语言默认 enum，GCC/Clang 的 `-fshort-enums` 也不会改变返回 ABI。
 
 ### Oneshot
 

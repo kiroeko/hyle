@@ -9,8 +9,9 @@
 | **性能真源** | [`../performance/benchmarks-mem.md`](../performance/benchmarks-mem.md) |
 | **用户入口** | [`../guide/mem.md`](../guide/mem.md)、[`../guide/c-mem.md`](../guide/c-mem.md) |
 
-> **2026-07-26 后续状态：**本页保留上一轮 final 的历史验收；当前状态由
-> [`mem-mature-gap-audit.md`](./mem-mature-gap-audit.md) 覆盖。成熟库红队发现的 alignment、并发
+> **2026-07-26 后续状态：**本页保留上一轮 final 的历史验收；当前状态只见
+> [`pre-release-readiness.md`](./pre-release-readiness.md)。后续历史复审输入见
+> [`mem-mature-gap-audit.md`](./mem-mature-gap-audit.md)。成熟库红队发现的 alignment、并发
 > peak、snapshot/lifetime P0 已修，随后补齐 `SystemStdAllocator<T>` 与
 > `system_memory_resource()` 默认静态 adapter；clean `c640072` 已完成 Win/WSL/M4 双 QoS shared
 > same-link allocator/adapter/realloc n=15 与受影响正确性/ABI/sanitizer 复签。`FixedPool` 已经提供

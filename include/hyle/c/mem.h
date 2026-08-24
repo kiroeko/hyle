@@ -26,6 +26,7 @@
 #include <string.h>
 
 #include "hyle/c/error.h"
+#include "hyle/c/platform.h" /* shared hyle_numa_node / HYLE_NUMA_ANY */
 
 #ifdef __cplusplus
 extern "C" {
@@ -306,7 +307,8 @@ static inline hyle_status hyle_stats_allocator_create_with_default_metadata(
 /* ========================================================================== */
 
 typedef struct hyle_region_options {
-  size_t struct_size;
+  uint32_t struct_size;
+  uint32_t reserved;
   /* Ordinary-block total backing-byte targets, including internal metadata
    * and alignment padding. One user allocation may force a larger block. */
   size_t initial_block_size;
@@ -315,16 +317,22 @@ typedef struct hyle_region_options {
   size_t size_limit;
 } hyle_region_options;
 
+#define HYLE_REGION_OPTIONS_REQUIRED_SIZE                                     \
+  ((uint32_t)offsetof(hyle_region_options, initial_block_size))
 #define HYLE_REGION_OPTIONS_INIT                                               \
-  {sizeof(hyle_region_options), 64u * 1024u, 4u * 1024u * 1024u,              \
+  {(uint32_t)sizeof(hyle_region_options), 0, 64u * 1024u,                      \
+   4u * 1024u * 1024u,                                                        \
    256u * 1024u,                                                              \
    SIZE_MAX}
 
 typedef struct hyle_region_o hyle_region;
 
-/* `options==NULL` selects HYLE_REGION_OPTIONS_INIT. Unknown trailing fields are
- * ignored; struct_size must cover every field through size_limit for this ABI
- * version. */
+/* `options==NULL` selects HYLE_REGION_OPTIONS_INIT. Otherwise struct_size must
+ * cover the fixed-width struct_size+reserved prefix and reserved must be zero.
+ * Each fully present size field overrides its INIT default; a missing/partial
+ * field keeps the default, and unknown trailing bytes are ignored. The caller
+ * must make struct_size bytes readable at the supplied address. On HYLE's
+ * required 64-bit ABI the reserved word preserves the prior size-field offsets. */
 HYLE_MEM_C_API hyle_status
 hyle_region_create(hyle_region **out, hyle_allocator backing,
                    const hyle_region_options *options);
@@ -682,53 +690,54 @@ static inline hyle_status hyle_growable_pool_create_default(
 
 /* HugeFlags bits. THP is a soft hint; Linux bind is strict, while interleave
  * installs an OS placement policy that may fall back under memory pressure.
- * Bind/interleave are mutually exclusive. Named enum so cross-language FFI
- * tools surface the flags as typed constants. */
-typedef enum hyle_huge_flags {
+ * Bind/interleave are mutually exclusive. The ABI type is fixed-width even
+ * under compiler flags such as -fshort-enums; values remain enum constants for
+ * switch/case and FFI generator discoverability. */
+typedef uint32_t hyle_huge_flags;
+enum {
   HYLE_HUGE_NONE = 0,
   HYLE_HUGE_THP_HINT = 1u << 0,  /* MADV_HUGEPAGE hint (Linux) */
   HYLE_HUGE_PREFAULT = 1u << 1,  /* touch every page up front */
   HYLE_HUGE_NUMA_BIND = 1u << 2, /* hard-bind to node (else preferred) */
   HYLE_HUGE_NUMA_INTERLEAVE = 1u << 3 /* stripe across all nodes */
-} hyle_huge_flags;
-
-/* No NUMA constraint (matches HYLE_NUMA_ANY in c/platform.h). Named enum for
- * the same FFI discoverability reason. */
-typedef enum hyle_mem_numa_node { HYLE_MEM_NUMA_ANY = -1 } hyle_mem_numa_node;
+};
 
 typedef struct hyle_huge_region_o hyle_huge_region;
 
 /* Reserve+commit `bytes` (large-page aligned), placed per flags/node.
- * INTERLEAVE requires HYLE_MEM_NUMA_ANY. */
+ * INTERLEAVE requires the platform-wide HYLE_NUMA_ANY sentinel. */
 HYLE_MEM_C_API hyle_status
-hyle_huge_region_open(hyle_huge_region **out, size_t bytes, uint32_t flags,
-                      int numa_node);
+hyle_huge_region_open(hyle_huge_region **out, size_t bytes,
+                      hyle_huge_flags flags,
+                      hyle_numa_node numa_node);
 /* Prefer/bind to the calling thread's home node; INTERLEAVE is invalid here. */
 HYLE_MEM_C_API hyle_status
 hyle_huge_region_open_local(hyle_huge_region **out, size_t bytes,
-                            uint32_t flags);
+                            hyle_huge_flags flags);
 /* Interleave across all nodes + THP (shared multi-MB arena). */
 HYLE_MEM_C_API hyle_status
 hyle_huge_region_open_interleaved(hyle_huge_region **out, size_t bytes);
 /* Interleave over an explicit node set. NULL/0 selects all nodes. Stripes
- * follow array order; IDs must be available and repeats express weighted
- * placement. bytes_per_chunk==0 means one OS page. Unlike the convenience
+ * follow array order; IDs must be nonnegative and available (the ANY sentinel
+ * is invalid in an explicit list), and repeats express weighted placement.
+ * bytes_per_chunk==0 means one OS page. Unlike the convenience
  * function above, flags are explicit; use HYLE_HUGE_NONE when preserving
  * stripe-policy granularity matters more than THP. */
 HYLE_MEM_C_API hyle_status hyle_huge_region_open_interleaved_nodes(
-    hyle_huge_region **out, size_t bytes, uint32_t flags,
-    const unsigned *nodes, size_t node_count, size_t bytes_per_chunk);
+    hyle_huge_region **out, size_t bytes, hyle_huge_flags flags,
+    const hyle_numa_node *nodes, size_t node_count,
+    size_t bytes_per_chunk);
 HYLE_MEM_C_API void hyle_huge_region_destroy(hyle_huge_region *r);
 HYLE_MEM_C_API void *hyle_huge_region_data(hyle_huge_region *r);
 HYLE_MEM_C_API size_t hyle_huge_region_size(const hyle_huge_region *r);
 /* Requested versus OS-accepted policy. THP accepted means the advice call
  * succeeded; physical page promotion remains kernel-controlled and may happen
  * later. */
-HYLE_MEM_C_API uint32_t
+HYLE_MEM_C_API hyle_huge_flags
 hyle_huge_region_requested_flags(const hyle_huge_region *r);
-HYLE_MEM_C_API uint32_t
+HYLE_MEM_C_API hyle_huge_flags
 hyle_huge_region_accepted_flags(const hyle_huge_region *r);
-HYLE_MEM_C_API int
+HYLE_MEM_C_API hyle_numa_node
 hyle_huge_region_requested_numa_node(const hyle_huge_region *r);
 HYLE_MEM_C_API int
 hyle_huge_region_numa_placement_applied(const hyle_huge_region *r);
@@ -747,11 +756,12 @@ HYLE_MEM_C_API void hyle_enable_allocator_hugepages(int allow_thp,
 /* max_nodes==0 => all NUMA nodes (mimalloc default). */
 HYLE_MEM_C_API void hyle_enable_allocator_numa(unsigned max_nodes);
 /* Reserve `pages` contiguous 1GiB huge OS pages into mimalloc's arenas.
- * numa_node==HYLE_MEM_NUMA_ANY => interleave; timeout_ms==0 => HYLE's short
+ * numa_node==HYLE_NUMA_ANY => interleave; timeout_ms==0 => HYLE's short
  * default. Invalid node/size returns OUT_OF_RANGE; a native reservation
  * failure returns RESOURCE_EXHAUSTED and preserves the native value. */
 HYLE_MEM_C_API hyle_status
-hyle_reserve_huge_1g_pages(size_t pages, int numa_node, unsigned timeout_ms);
+hyle_reserve_huge_1g_pages(size_t pages, hyle_numa_node numa_node,
+                           unsigned timeout_ms);
 
 #ifdef __cplusplus
 } /* extern "C" */

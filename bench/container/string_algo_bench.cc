@@ -1,5 +1,5 @@
-// string_algo UTF-8/ASCII/hex bench. utf8_length is the product's dispatched
-// validate+count path (simdutf when built in, strict scalar fallback otherwise).
+// string_algo UTF-8/ASCII/hex bench. utf8_validate is the product's dispatched
+// one-pass validation path; utf8_length is its validate+count path.
 // ASCII case conversion and hex encode/decode are included specifically to decide
 // whether another runtime SIMD kernel is justified; matched scalar references
 // make that decision evidence-based.
@@ -22,6 +22,7 @@ using hyle::container::hex_decode;
 using hyle::container::string_ref;
 using hyle::container::to_lower;
 using hyle::container::utf8_length;
+using hyle::container::utf8_validate;
 
 namespace {
 namespace nb = ankerl::nanobench;
@@ -49,8 +50,9 @@ int bench_string_algo() {
   const string_ref sr{u8.data(), static_cast<std::uint32_t>(u8.size())};
 
   // ---- utf8_length: count code points (scalar decoder vs simdutf SIMD) -------
-  // FAIRNESS: HYLE utf8_length does VALIDATE + COUNT in one pass (returns -1 on
-  // malformed input). simdutf::count_utf8 counts ONLY (assumes valid) -- racing
+  // FAIRNESS: HYLE utf8_length does VALIDATE + COUNT in two dispatched passes
+  // for valid input (and returns -1 on malformed input).
+  // simdutf::count_utf8 counts ONLY (assumes valid) -- racing
   // against it alone is apples-to-oranges (HYLE does strictly more work). The
   // matched-contract rival is simdutf validate_utf8 + count_utf8 (same validate+
   // count semantics). Both shown: count-only marks the pure-SIMD ceiling, the
@@ -71,14 +73,12 @@ int bench_string_algo() {
       nb::doNotOptimizeAway(simdutf::count_utf8(u8.data(), u8.size()));
     });
 #endif
-    b.run("HYLE utf8_length (dispatched: scalar | simdutf-borrow when wired)", [&] {
+    b.run("HYLE utf8_length (vendored simdutf runtime dispatch)", [&] {
       nb::doNotOptimizeAway(utf8_length(sr));
     });
   }
 
-  // ---- utf8 validate only: HYLE has no validate-only entry, so this races -----
-  // simdutf::validate_utf8 against HYLE utf8_length>=0 (which validates AND counts
-  // -- still more work). Kept to show simdutf's pure-validate speed.
+  // ---- utf8 validate only: same one-pass contract and dispatched backend ------
   {
     nb::Bench b;
     b.title("utf8 validate (~2KB mixed)")
@@ -90,8 +90,8 @@ int bench_string_algo() {
       nb::doNotOptimizeAway(simdutf::validate_utf8(u8.data(), u8.size()));
     });
 #endif
-    b.run("HYLE utf8_length>=0 (dispatched validate+count)", [&] {
-      nb::doNotOptimizeAway(utf8_length(sr) >= 0);
+    b.run("HYLE utf8_validate (vendored simdutf runtime dispatch)", [&] {
+      nb::doNotOptimizeAway(utf8_validate(sr));
     });
   }
 

@@ -105,6 +105,7 @@ hyle_container_dynamic_bitset_size
 hyle_container_dynamic_bitset_test
 hyle_container_dynamic_bitset_xor
 hyle_container_hash_bytes
+hyle_container_siphash24
 hyle_container_hash_map_capacity
 hyle_container_hash_map_clear
 hyle_container_hash_map_contains
@@ -202,6 +203,7 @@ hyle_container_string_starts_with
 hyle_container_string_trim
 hyle_container_string_upper
 hyle_container_utf8_length
+hyle_container_utf8_validate
 hyle_container_vector_at
 hyle_container_vector_capacity
 hyle_container_vector_clear

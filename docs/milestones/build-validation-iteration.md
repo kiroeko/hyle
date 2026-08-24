@@ -1,14 +1,16 @@
 # 构建系统持续回归与演进计划
 
-> 状态：🚧 第一阶段实施中（2026-07-29）。本页是 Jira 式施工记录；稳定原则见
+> 状态：✅ 2026-07 历史施工记录；当前复审状态只见
+> [`pre-release-readiness.md`](pre-release-readiness.md)。稳定原则见
 > [`../architecture/build-system.md`](../architecture/build-system.md)，用户入口见
 > [`../guide/usage-guide.md`](../guide/usage-guide.md)。
 
 ## 背景与目标
 
-build/package 的 target/component/三种交付架构已经严格收口，但 math、util-runtime、sched、io、
-simd、compute、graph 仍会在逐模块验收中改变。持续门必须同时满足两点：任何当前模块改动都不能悄悄
-破坏全图和交付；“all build 通过”又不能被误读为该模块功能/API/性能已经验收。
+本轮在 2026-07 建立了 build/package 的 target/component/三种交付架构；当时仍在施工的
+math、util-runtime、sched、io、simd、compute、graph 后续会继续改变。这里记录的是建立持续门时的
+任务和证据，不再充当当前收口结论；任何当前模块改动仍不得悄悄破坏全图和交付，且“all build 通过”
+不能被误读为该模块功能/API/性能已经验收。
 
 本任务不再做一次性的最终矩阵，而是建立可递增的四层回归：CPU baseline、distribution、
 portability、feature/release。新增模块进入 manifest 后自动获得前三层的机械覆盖；模块严格收口时再

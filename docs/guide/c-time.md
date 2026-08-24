@@ -98,9 +98,17 @@ for (size_t i = 0; i < timer_count; ++i) {
 }
 ```
 
-`advance` 的 `now_ns` 必须非递减。visitor 在 `advance` 调用线程同步执行，并且调用前 timer
-已经 unarm，因此 visitor 内可以 re-arm。visitor 为 NULL 仍会消费到期 timer。不同 radix
-bucket 的交付顺序不保证全序。
+`advance` 的 `now_ns` 必须非递减。visitor 在 `advance` 调用线程同步执行，并且当前 timer
+在调用前已经 unarm，因此 visitor 内可以 re-arm 或释放它。callback 也可以操作同批尚未调用
+visitor 的其他 timer：用原 source `cancel` 会撤销其待交付 callback 并返回 1，reschedule 会
+在成功后撤销旧交付并重新 arm，`destroy/deinit` 会先安全摘链再释放。common queue 的
+reschedule 若破坏 tail 非递减约束，则返回 `INVALID_ARGUMENT` 并保留原待交付 callback。
+被成功撤销的节点不计入
+`out_fired`；因此该值是实际 visitor 次数（visitor 为 NULL 时是实际 drain 数），而不是进入
+批次时的快照大小。不同 source 仍返回 `FAILED_PRECONDITION`。visitor 为 NULL 会消费全部到期
+timer。source queue 必须活到最外层 `advance/cancel_all` 返回；visitor 内销毁 source 会返回
+`FAILED_PRECONDITION`，否则同批 callback 续期 timer 会落到已释放 handle。不同 radix bucket
+的交付顺序不保证全序。
 
 ### 海量 C timer：调用方 storage
 
@@ -176,17 +184,22 @@ hyle_status_free(&st);
 | 同一 timer 已被另一个 queue 拥有 | `FAILED_PRECONDITION` |
 | common deadline 破坏非递减顺序 | `INVALID_ARGUMENT` |
 | destroy 仍 scheduled 的 timer / 非空 queue | `FAILED_PRECONDITION` |
+| visitor 内销毁正在交付的 source queue | `FAILED_PRECONDITION` |
 | opaque control 分配失败 | `RESOURCE_EXHAUSTED` |
 | caller storage 为空、过小或未对齐 | `INVALID_ARGUMENT` |
 | `create/destroy` 与 `init/deinit` 错配 | `FAILED_PRECONDITION` |
 
 `cancel_all` 是 shutdown/错误回滚入口：它 detach 全部 timer，并可经同步 visitor 把节点归还
-业务 owner。`UINT64_MAX` 同时可是真实远期 deadline 和 empty sentinel；需要区分时调用
-`*_empty()`。queue 是 single-owner；跨线程 arm/cancel 必须串行投递到 owner event loop。
+业务 owner；它与 `advance` 使用相同的 mutation-safe delivery 规则。`UINT64_MAX` 同时可是真实
+远期 deadline 和 empty sentinel；需要区分时调用 `*_empty()`。queue 是 single-owner；跨线程
+arm/cancel 必须串行投递到 owner event loop。非 NULL 的 `out_cancelled/out_fired` 会在任何校验
+前清零，所以失败不会把调用方上一次计数伪装成本次结果。
 
-性能证书单列 C ABI 正常路径：arm/cancel/advance 都保持 O(1) 且无分配，但不宣称 wrapper
-零成本。caller-storage 已消除海量 timer 的逐对象 allocation，同时保留 Status 与 opaque
-layout；不要为了微测绕过这两个边界。
+性能证书单列 C ABI 正常路径：arm/cancel 保持 O(1)，advance 为 native queue 工作加 O(实际
+批次大小)，三者都无分配，但不宣称 wrapper 零成本。同步交付 context 复用 opaque timer 中
+原 storage-kind 对齐槽：没有扩大 control，也没有给 native `TimerEntry` 增常态字段。
+caller-storage 已消除海量 timer 的逐对象 allocation，同时保留 Status 与 opaque layout；不要
+为了微测绕过这两个边界。
 
 完整动态 surface 由 `tests/time/c_surface_symbols.txt` 机械冻结；C 头自包含门同时用 C11 与
 C++23 编译。性能与平台证据只维护在

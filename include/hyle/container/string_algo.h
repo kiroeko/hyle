@@ -7,18 +7,16 @@
 #include "hyle/container/string_ref.h"
 #include "hyle/macros.h"
 
-// Byte-string algorithms (clay utils/string_utils.cc + sys/cstring.cc, the parts
-// clay ACTUALLY implemented). clay's string_utils.h was the std-stream epicenter
-// (<ostream>/<sstream>/std::string everywhere) -- HYLE re-expresses the genuine
-// algorithms as string_ref-in / buffer-fill-out, pulling in zero std streams.
+// Allocation-free byte-string foundations for parsers, protocols, configuration,
+// and path helpers. Inputs are non-owning string_ref values; transforms use
+// caller-provided buffers; character rules are locale-free and deterministic.
 //
-// What is and isn't here (honest scope):
-//  * IN  : ASCII case classify/convert, hex encode/decode, C byte escape,
-//          UTF-8 iterate/length/validate.
-//  * std : str()/join()/to_string -> std::format; stoi/stod -> std::from_chars;
-//          tolower/toupper(std::string) -> these (ASCII, locale-free, no alloc).
-//  * GONE: clay only-declared formatting/fuzzy helpers. Application-specific
-//          ranking belongs in a search/UI layer, not this container foundation.
+// Scope:
+//  * IN : ASCII classification/case conversion, hex encode/decode, C byte escape,
+//         and strict UTF-8 iteration/validation/code-point counting.
+//  * USE THE STANDARD LIBRARY for formatting/joining, numeric parsing, and owned
+//         string composition (`std::format`, `std::from_chars`, `std::string`).
+//  * APPLICATION LAYER: fuzzy matching, ranking, and UI/search-specific policy.
 
 namespace hyle::container {
 
@@ -174,12 +172,14 @@ inline std::size_t c_escape(string_ref s, char* out, std::size_t cap) noexcept {
 
 // ---- UTF-8 validation/count --------------------------------------------------
 // Forward decoder over a byte range. next() returns the next code point, 0 at
-// end, and flips valid() to false on malformed input (clay's utf8_decode, on
-// string_ref instead of std::string::const_iterator).
+// end, and flips valid() to false on malformed input. A null pointer is an
+// empty valid range only when size is zero; null + nonzero starts invalid.
 class Utf8Decoder {
  public:
   explicit Utf8Decoder(string_ref s) noexcept
-      : p_(s.data), end_(s.data == nullptr ? nullptr : s.data + s.size) {}
+      : p_(s.data),
+        end_(s.data == nullptr ? nullptr : s.data + s.size),
+        valid_(s.data != nullptr || s.size == 0) {}
 
   bool is_end() const noexcept { return p_ == end_; }
   bool valid() const noexcept { return valid_; }
@@ -234,13 +234,23 @@ class Utf8Decoder {
   bool valid_ = true;
 };
 
-// Number of UTF-8 code points in `s`, or -1 if `s` is not valid UTF-8 (VALIDATE +
-// COUNT). Dispatched: the scalar Utf8Decoder scan is the default + fallback, but
-// when the container module is built with -DHYLE_SIMD_SIMDUTF it BORROWS simdutf's
-// verified SIMD validate+count cores (借核不手搓, same as simd/math borrows
-// Highway/xsimd). The runtime entry lives in string_algo.cc; this is a thin delegate.
+// Validate a UTF-8 byte range without counting it. This is the one-pass normal
+// path for parsers/protocol boundaries that only need an accept/reject decision.
+// Number of UTF-8 code points returns -1 on invalid input and therefore performs
+// validate + count (two dispatched passes for valid input).
+// A null data pointer is valid only for an empty range: {nullptr, 0} validates
+// and counts as zero, while {nullptr, nonzero} returns false / -1.
+//
+// The shipping container target embeds reviewed simdutf v9.1 and borrows its
+// verified cores plus internal runtime ISA dispatch. Utf8Decoder remains the
+// scalar/reference fallback; vendor types do not cross this public seam. The
+// runtime entries live in string_algo.cc.
 namespace detail {
+HYLE_CONTAINER_API bool utf8_validate_runtime(string_ref s) noexcept;
 HYLE_CONTAINER_API std::int64_t utf8_length_runtime(string_ref s) noexcept;
+}
+inline bool utf8_validate(string_ref s) noexcept {
+  return detail::utf8_validate_runtime(s);
 }
 inline std::int64_t utf8_length(string_ref s) noexcept {
   return detail::utf8_length_runtime(s);

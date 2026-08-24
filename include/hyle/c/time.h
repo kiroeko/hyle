@@ -18,17 +18,17 @@ extern "C" {
 #endif
 
 #if defined(HYLE_STATIC)
-#  define HYLE_TIME_C_API
+  #define HYLE_TIME_C_API
 #elif defined(_WIN32) || defined(__CYGWIN__)
-#  if defined(HYLE_TIME_BUILD)
-#    define HYLE_TIME_C_API __declspec(dllexport)
-#  else
-#    define HYLE_TIME_C_API __declspec(dllimport)
-#  endif
+  #if defined(HYLE_TIME_BUILD)
+    #define HYLE_TIME_C_API __declspec(dllexport)
+  #else
+    #define HYLE_TIME_C_API __declspec(dllimport)
+  #endif
 #elif defined(__GNUC__) || defined(__clang__)
-#  define HYLE_TIME_C_API __attribute__((visibility("default")))
+  #define HYLE_TIME_C_API __attribute__((visibility("default")))
 #else
-#  define HYLE_TIME_C_API
+  #define HYLE_TIME_C_API
 #endif
 
 /* Clock values are nanoseconds. Deadlines/elapsed time use monotonic, never
@@ -40,8 +40,7 @@ HYLE_TIME_C_API uint64_t hyle_time_profiling_measurement_start_ns(void);
 HYLE_TIME_C_API uint64_t hyle_time_profiling_measurement_stop_ns(void);
 HYLE_TIME_C_API int hyle_time_profiling_clock_available(void);
 HYLE_TIME_C_API uint64_t hyle_time_realtime_ns(void);
-HYLE_TIME_C_API void hyle_time_realtime_timestamp(
-    hyle_unix_timestamp* out);
+HYLE_TIME_C_API void hyle_time_realtime_timestamp(hyle_unix_timestamp* out);
 HYLE_TIME_C_API uint64_t hyle_time_coarse_realtime_ns(void);
 HYLE_TIME_C_API int hyle_time_coarse_realtime_available(void);
 HYLE_TIME_C_API void hyle_time_sleep_for_ns(uint64_t ns);
@@ -57,22 +56,33 @@ static inline uint64_t hyle_time_saturating_add_ns(uint64_t base_ns,
 }
 static inline void hyle_time_sleep_for_us(uint64_t us) {
   hyle_time_sleep_for_ns(
-      us > UINT64_MAX / UINT64_C(1000) ? UINT64_MAX
-                                       : us * UINT64_C(1000));
+      us > UINT64_MAX / UINT64_C(1000) ? UINT64_MAX : us * UINT64_C(1000));
 }
 static inline void hyle_time_sleep_for_ms(uint64_t ms) {
-  hyle_time_sleep_for_ns(
-      ms > UINT64_MAX / UINT64_C(1000000) ? UINT64_MAX
-                                          : ms * UINT64_C(1000000));
+  hyle_time_sleep_for_ns(ms > UINT64_MAX / UINT64_C(1000000)
+                             ? UINT64_MAX
+                             : ms * UINT64_C(1000000));
 }
 
 typedef struct hyle_time_timer_o hyle_time_timer;
 typedef struct hyle_time_queue_o hyle_time_queue;
 typedef struct hyle_time_common_queue_o hyle_time_common_queue;
 
-/* Visitor runs synchronously on the thread calling advance. The timer has
- * already left its source and may be rescheduled by the visitor. */
+/* Visitor runs synchronously on the thread calling advance/cancel_all. The
+ * current timer has left its source and may be rescheduled or released. A
+ * callback may also cancel, successfully reschedule, destroy or deinit a
+ * not-yet-visited timer from the same delivery batch; that operation removes
+ * the timer's old pending visit. A rejected common-queue reschedule preserves
+ * the pending visit. A pending timer is reported as unscheduled, while cancel
+ * on its originating source returns 1 because it suppressed that pending visit.
+ * The returned advance/cancel_all count is the number actually visited (or
+ * drained when visit is NULL), after such suppression. The source queue must
+ * remain alive until the outer advance/cancel_all returns; destroying it from
+ * any nested visitor returns FAILED_PRECONDITION. */
 typedef void (*hyle_time_timer_visit_fn)(hyle_time_timer* timer, void* ctx);
+
+/* Queue cancel/advance/cancel_all operations clear every non-null numeric
+ * output before validation, including when the returned Status is an error. */
 
 /* A reusable opaque timer node. Creation allocates once; arm/cancel/expire do
  * not allocate. For large timer sets, the storage_size/alignment + init/deinit
@@ -88,9 +98,10 @@ HYLE_TIME_C_API hyle_status hyle_time_timer_create(hyle_time_timer** out,
 HYLE_TIME_C_API hyle_status hyle_time_timer_destroy(hyle_time_timer* timer);
 HYLE_TIME_C_API size_t hyle_time_timer_storage_size(void);
 HYLE_TIME_C_API size_t hyle_time_timer_storage_alignment(void);
-HYLE_TIME_C_API hyle_status hyle_time_timer_init(
-    hyle_time_timer** out, void* storage, size_t storage_size,
-    void* user_data);
+HYLE_TIME_C_API hyle_status hyle_time_timer_init(hyle_time_timer** out,
+                                                 void* storage,
+                                                 size_t storage_size,
+                                                 void* user_data);
 HYLE_TIME_C_API hyle_status hyle_time_timer_deinit(hyle_time_timer* timer);
 HYLE_TIME_C_API void* hyle_time_timer_user_data(const hyle_time_timer* timer);
 HYLE_TIME_C_API void hyle_time_timer_set_user_data(hyle_time_timer* timer,
@@ -108,32 +119,36 @@ HYLE_TIME_C_API hyle_status hyle_time_queue_create(hyle_time_queue** out);
 HYLE_TIME_C_API hyle_status hyle_time_queue_create_at(hyle_time_queue** out,
                                                       uint64_t now_ns);
 HYLE_TIME_C_API hyle_status hyle_time_queue_destroy(hyle_time_queue* queue);
-HYLE_TIME_C_API hyle_status hyle_time_queue_schedule(
-    hyle_time_queue* queue, hyle_time_timer* timer, uint64_t deadline_ns);
+HYLE_TIME_C_API hyle_status hyle_time_queue_schedule(hyle_time_queue* queue,
+                                                     hyle_time_timer* timer,
+                                                     uint64_t deadline_ns);
 static inline hyle_status hyle_time_queue_schedule_after_at(
     hyle_time_queue* queue, hyle_time_timer* timer, uint64_t timeout_ns,
     uint64_t now_ns) {
   return hyle_time_queue_schedule(
       queue, timer, hyle_time_saturating_add_ns(now_ns, timeout_ns));
 }
-static inline hyle_status hyle_time_queue_schedule_after(
-    hyle_time_queue* queue, hyle_time_timer* timer, uint64_t timeout_ns) {
-  return hyle_time_queue_schedule_after_at(
-      queue, timer, timeout_ns, hyle_time_monotonic_ns());
+static inline hyle_status hyle_time_queue_schedule_after(hyle_time_queue* queue,
+                                                         hyle_time_timer* timer,
+                                                         uint64_t timeout_ns) {
+  return hyle_time_queue_schedule_after_at(queue, timer, timeout_ns,
+                                           hyle_time_monotonic_ns());
 }
-/* out_cancelled receives 1 when an armed timer was detached, 0 when it was
- * already idle. It may be NULL when the distinction is irrelevant. */
-HYLE_TIME_C_API hyle_status hyle_time_queue_cancel(
-    int* out_cancelled, hyle_time_queue* queue, hyle_time_timer* timer);
+/* out_cancelled receives 1 when an armed timer was detached or a pending
+ * synchronous visit from this source was suppressed, 0 when already idle.
+ * It may be NULL when the distinction is irrelevant. */
+HYLE_TIME_C_API hyle_status hyle_time_queue_cancel(int* out_cancelled,
+                                                   hyle_time_queue* queue,
+                                                   hyle_time_timer* timer);
 /* now_ns must be non-decreasing across calls. Due timers are visited
  * synchronously; order across different radix buckets is unspecified. */
 HYLE_TIME_C_API hyle_status hyle_time_queue_advance(
     size_t* out_fired, hyle_time_queue* queue, uint64_t now_ns,
     hyle_time_timer_visit_fn visit, void* ctx);
 /* Detach all timers without firing them; visitor order is unspecified. */
-HYLE_TIME_C_API hyle_status hyle_time_queue_cancel_all(
-    size_t* out_cancelled, hyle_time_queue* queue,
-    hyle_time_timer_visit_fn visit, void* ctx);
+HYLE_TIME_C_API hyle_status
+hyle_time_queue_cancel_all(size_t* out_cancelled, hyle_time_queue* queue,
+                           hyle_time_timer_visit_fn visit, void* ctx);
 HYLE_TIME_C_API uint64_t
 hyle_time_queue_next_deadline_ns(const hyle_time_queue* queue);
 /* UINT64_MAX is both the empty sentinel and a valid far deadline; call empty()
@@ -149,31 +164,30 @@ HYLE_TIME_C_API hyle_status hyle_time_common_queue_create(
     hyle_time_common_queue** out, uint64_t duration_ns);
 HYLE_TIME_C_API hyle_status
 hyle_time_common_queue_destroy(hyle_time_common_queue* queue);
-HYLE_TIME_C_API hyle_status hyle_time_common_queue_schedule(
-    hyle_time_common_queue* queue, hyle_time_timer* timer,
-    uint64_t deadline_ns);
+HYLE_TIME_C_API hyle_status
+hyle_time_common_queue_schedule(hyle_time_common_queue* queue,
+                                hyle_time_timer* timer, uint64_t deadline_ns);
 HYLE_TIME_C_API hyle_status hyle_time_common_queue_schedule_after(
     hyle_time_common_queue* queue, hyle_time_timer* timer, uint64_t now_ns);
 static inline hyle_status hyle_time_common_queue_schedule_now(
     hyle_time_common_queue* queue, hyle_time_timer* timer) {
-  return hyle_time_common_queue_schedule_after(
-      queue, timer, hyle_time_monotonic_ns());
+  return hyle_time_common_queue_schedule_after(queue, timer,
+                                               hyle_time_monotonic_ns());
 }
 HYLE_TIME_C_API hyle_status hyle_time_common_queue_cancel(
-    int* out_cancelled, hyle_time_common_queue* queue,
-    hyle_time_timer* timer);
+    int* out_cancelled, hyle_time_common_queue* queue, hyle_time_timer* timer);
 HYLE_TIME_C_API hyle_status hyle_time_common_queue_advance(
     size_t* out_fired, hyle_time_common_queue* queue, uint64_t now_ns,
     hyle_time_timer_visit_fn visit, void* ctx);
 HYLE_TIME_C_API hyle_status hyle_time_common_queue_cancel_all(
     size_t* out_cancelled, hyle_time_common_queue* queue,
     hyle_time_timer_visit_fn visit, void* ctx);
-HYLE_TIME_C_API uint64_t hyle_time_common_queue_next_deadline_ns(
-    const hyle_time_common_queue* queue);
+HYLE_TIME_C_API uint64_t
+hyle_time_common_queue_next_deadline_ns(const hyle_time_common_queue* queue);
 HYLE_TIME_C_API size_t
 hyle_time_common_queue_size(const hyle_time_common_queue* queue);
-HYLE_TIME_C_API int
-hyle_time_common_queue_empty(const hyle_time_common_queue* queue);
+HYLE_TIME_C_API int hyle_time_common_queue_empty(
+    const hyle_time_common_queue* queue);
 HYLE_TIME_C_API uint64_t
 hyle_time_common_queue_duration_ns(const hyle_time_common_queue* queue);
 

@@ -19,7 +19,7 @@
 | [`obs.md`](./obs.md) | **obs 选型入口 + C++ 自然写法**：error/log/trace 怎么选，compile floor、exact-byte record、RAII sink 生命周期、递归与异步桥接，以及 native trace 的零成本边界。 |
 | [`container.md`](./container.md) | **container 选型入口 + C++ 自然写法**：小序列/POD vector/flat map/字符串驻留/五类并发队列分别何时选择，明确失效、顺序和当前性能边界。 |
 | [`c-error.md`](./c-error.md) | **error C/FFI 精确映射**：选型沿用 error.md，只说明 `hyle_status` 的 owning 生命周期、Status/out、上下文、格式化与传播。 |
-| [`c-platform.md`](./c-platform.md) | **platform 纯 C ABI**：Parker/Thread/DynLib/VM/mapped_file/fs/cpu/numa 不透明句柄与自由函数、named enum、所有权与易用示例。 |
+| [`c-platform.md`](./c-platform.md) | **platform 纯 C ABI**：Parker/Thread/DynLib/VM/mapped_file/fs/cpu/numa 不透明句柄与自由函数、fixed-width tag/flag 与命名整数常量、所有权与易用示例。 |
 | [`c-mem.md`](./c-mem.md) | **mem C/FFI 精确映射**：选型沿用 mem.md，只说明 Status/out、opaque handle、typed 宏、所有权和各入口。 |
 | [`c-time.md`](./c-time.md) | **time C/FFI 精确映射**：选型沿用 time.md，只说明 Status、opaque timer/queue、同步 visitor、所有权和 shutdown。 |
 | [`c-obs.md`](./c-obs.md) | **obs C/FFI 精确映射**：选型沿用 obs.md；共享 Status/out、length-aware record/log、opaque sink、compile-floor helper、flush 和 runtime trace。 |

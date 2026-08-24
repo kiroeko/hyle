@@ -1,4 +1,9 @@
-# obs-runtime 性能证书（2026-07-29，`06cec5a`）
+# obs-runtime 历史性能证据（2026-07-29，`06cec5a`）
+
+> **2026-08-25 freshness gate：**本页只覆盖旧 gate/record/fan-out 热路。Tracy 0.14.1、
+> 当前 29-symbol C 面与 caller-storage sink 不在该次采样合同内；obs 已重新打开。相同 source
+> identity、peer pin、编译合同与三平台重跑完成前，不是当前发布证书。现行状态只看
+> [`pre-release-readiness`](../milestones/pre-release-readiness.md)。
 
 本页只测 obs 的真实生产形状：运行期 level gate、同步结构化 fan-out、C ABI seam 和多
 producer。文件 I/O、异步队列、滚动与上传属于 sink/应用；把它们混进 producer
@@ -32,7 +37,7 @@ registry 使用两份进程期、原地 immutable snapshot。mutation 串行发�
 - concurrent：2/8 producer 各发 100,000 条，按每条 emit 归一化；
 - Windows x64 MSVC 19.50、WSL2 GCC 14.2、Apple M4 AppleClang 21；
 - M4 不宣称物理 P/E 核绑定。interactive 与 utility 都测；utility 组波动更低，故表中用
-  utility 作稳定证书，interactive 只作异构调度敏感性审计。
+  utility 作该轮稳定证据，interactive 只作异构调度敏感性审计。
 
 所有点值单位均为 ns/op；并发行为 ns/emit，fan-out 行为 ns/sink callback。
 
@@ -79,16 +84,16 @@ seam。这里引用 Abseil 的价值是 recursion suppression、Flush 和 proces
 形状，而不是拿 payload 较轻的 HYLE 宣称“快几十倍”。Folly 同样用于同步 handler、flush
 与终端转义的设计核对，Tracy用于 compile-time trace/backend 边界。
 
-因此当前严格结论是：
+因此该轮严格结论是：
 
 - gate O(1)，emit/flush O(S)，mutation O(S≤64)，复杂度与成熟同步 sink registry 同档；
 - 正常 emit 无分配、无 mutation mutex，多 producer A/B 已关闭旧架构争用；
 - exact-length message 将 slice 从 O(M+S) 收回 O(S)；短 NUL convenience 与 `_n` 点值同档，
   没有为 benchmark 删除边界检查；
-- structured 直接 record 与 2026-07-25 证书三平台同档，fan-out/multi-producer 未见 material
+- structured 直接 record 与 2026-07-25 历史证据三平台同档，fan-out/multi-producer 未见 material
   regression；view convenience 的额外 pointer+length 是保留内嵌 NUL/避免 slice copy 的产品合同；
 - 暂无一个与 HYLE **相同 metadata、ownership、quiescent-unregister** 合同的成熟 peer 数字，
-  所以不伪造全胜表；当前可以认证“没有已知复杂度或正常用法性能缺口”，不能认证跨合同
+  所以不伪造全胜表；该轮只支持“没有已知复杂度或正常用法性能缺口”，不能认证跨合同
   的倍数胜利。
 
 若真实消费者以后要求 category routing、per-sink filtering 或异步队列，必须先定义同合同

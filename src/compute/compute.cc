@@ -40,23 +40,30 @@ struct DeviceTable {
 
   void probe() noexcept {
     // GPUs first (CUDA backend), if compiled in and any device is present.
+    // Reserve the final slot while probing optional backends: without this, 32
+    // GPU entries (or duplicated CUDA+Vulkan views) would silently evict the
+    // host fallback despite the public always-present contract.
 #if defined(HYLE_COMPUTE_CUDA)
-    add_backend(cuda_vtable());
+    add_backend(cuda_vtable(), 1);
 #endif
     // Vulkan compute backend (compute-06) next: cross-vendor GPU. On NVIDIA it ranks
     // below CUDA (CUDA preferred for N-cards); on AMD/Intel/Apple it's the GPU path.
     // vulkan_vtable() may be null (no loader/device at runtime) -- add_backend tolerates.
 #if defined(HYLE_COMPUTE_VULKAN)
-    add_backend(vulkan_vtable());
+    add_backend(vulkan_vtable(), 1);
 #endif
     // Host CPU fallback always last -- guarantees >= 1 device.
     add_backend(host_vtable());
+    HYLE_FATAL_ASSERT(count != 0 && entries[count - 1].vt == host_vtable());
   }
 
-  void add_backend(const ComputeBackend* vt) noexcept {
+  void add_backend(const ComputeBackend* vt,
+                   std::size_t tail_reserve = 0) noexcept {
     if (vt == nullptr) return;
+    HYLE_FATAL_ASSERT(tail_reserve < kMax);
+    const std::size_t limit = kMax - tail_reserve;
     std::size_t n = vt->device_count();
-    for (std::size_t i = 0; i < n && count < kMax; ++i) {
+    for (std::size_t i = 0; i < n && count < limit; ++i) {
       entries[count++] = DeviceEntry{vt, static_cast<int>(i)};
     }
   }
@@ -165,6 +172,7 @@ const char* device_type_name(DeviceType t) noexcept {
 
 std::size_t enumerate(Device* out, std::size_t max) noexcept {
   const DeviceTable& t = table();
+  if (out == nullptr) max = 0;
   for (std::size_t i = 0; i < t.count && i < max; ++i) {
     const DeviceEntry& e = t.entries[i];
     out[i] = Device(e.vt->device_type(e.local), static_cast<int>(i));
@@ -177,6 +185,10 @@ Device default_device() noexcept {
   const DeviceTable& t = table();
   const DeviceEntry& e = t.entries[0];
   return Device(e.vt->device_type(e.local), 0);
+}
+
+int device_backend_ordinal(const Device& device) noexcept {
+  return resolve(device).local;
 }
 
 const char* Device::name() const noexcept {
@@ -226,6 +238,9 @@ Stream::~Stream() {
 }
 
 Result<Stream> Stream::create(const Device& device) noexcept {
+  if (!device.valid())
+    return std::unexpected(
+        Status::InvalidArgument("creating compute stream on an invalid device"));
   DeviceEntry e = resolve(device);
   void* native = nullptr;
   Status st = e.vt->stream_create(e.local, &native);
@@ -291,6 +306,9 @@ Event::~Event() {
 }
 
 Result<Event> Event::create(const Device& device) noexcept {
+  if (!device.valid())
+    return std::unexpected(
+        Status::InvalidArgument("creating compute event on an invalid device"));
   DeviceEntry e = resolve(device);
   void* native = nullptr;
   Status st = e.vt->event_create(e.local, &native);
@@ -304,6 +322,9 @@ Result<Event> Event::create(const Device& device) noexcept {
 }
 
 Result<Event> Event::create_timing(const Device& device) noexcept {
+  if (!device.valid())
+    return std::unexpected(Status::InvalidArgument(
+        "creating compute timing event on an invalid device"));
   DeviceEntry e = resolve(device);
   // A backend without a timing slot (none currently, but future backends may skip it)
   // reports Unimplemented rather than crashing on a null fn-ptr.
@@ -416,13 +437,15 @@ Buffer::~Buffer() {
 }
 
 bool Buffer::belongs_to(const Device& device) const noexcept {
-  if (vt_ == nullptr) return false;
+  if (vt_ == nullptr || !device.valid()) return false;
   const DeviceEntry e = resolve(device);
   return vt_ == e.vt && ordinal_ == e.local;
 }
 
 Result<Buffer> Buffer::create(const BufferType& type, std::size_t bytes) noexcept {
-  HYLE_FATAL_ASSERT(type.valid());
+  if (!type.valid())
+    return std::unexpected(
+        Status::InvalidArgument("creating compute buffer from an invalid type"));
   // Caller contract: a single Buffer must fit the backend's max single-allocation
   // size; a larger logical buffer is the caller's split into multiple Buffers.
   HYLE_FATAL_ASSERT(bytes <= type.vt_->buffer_max_size(type.ordinal_, type.kind_));
@@ -532,6 +555,9 @@ DevicePool::~DevicePool() {
 }
 
 Result<DevicePool> DevicePool::create(const Device& device) noexcept {
+  if (!device.valid())
+    return std::unexpected(
+        Status::InvalidArgument("creating device pool on an invalid device"));
   DeviceEntry e = resolve(device);
   void* handle = nullptr;
   Status st = e.vt->pool_create(e.local, &handle);
@@ -593,6 +619,9 @@ Kernel::~Kernel() {
 
 Result<Kernel> Kernel::compile(const Device& device, const char* source,
                                const char* entry) noexcept {
+  if (!device.valid())
+    return std::unexpected(
+        Status::InvalidArgument("compiling compute kernel on an invalid device"));
   DeviceEntry e = resolve(device);
   void* module = nullptr;
   void* func = nullptr;
@@ -609,6 +638,9 @@ Result<Kernel> Kernel::compile(const Device& device, const char* source,
 
 Result<Kernel> Kernel::load_ptx(const Device& device, const char* ptx,
                                 const char* entry) noexcept {
+  if (!device.valid())
+    return std::unexpected(
+        Status::InvalidArgument("loading PTX kernel on an invalid device"));
   DeviceEntry e = resolve(device);
   void* module = nullptr;
   void* func = nullptr;
@@ -635,6 +667,9 @@ Result<Kernel> Kernel::load_spirv(const Device& device, const SpirvBlob& blob,
                                   const char* entry, const SpecConstant* specs,
                                   unsigned spec_count, const void* spec_data,
                                   unsigned spec_data_size) noexcept {
+  if (!device.valid())
+    return std::unexpected(
+        Status::InvalidArgument("loading SPIR-V kernel on an invalid device"));
   DeviceEntry e = resolve(device);
   void* module = nullptr;
   void* func = nullptr;
@@ -655,6 +690,9 @@ Result<Kernel> Kernel::load_spirv(const Device& device, const SpirvBlob& blob,
 }
 
 Result<Kernel> Kernel::load_host(const Device& device, HostFn fn) noexcept {
+  if (!device.valid())
+    return std::unexpected(
+        Status::InvalidArgument("loading host kernel on an invalid device"));
   DeviceEntry e = resolve(device);
   void* module = nullptr;
   void* func = nullptr;

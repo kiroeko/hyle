@@ -178,7 +178,8 @@ size、rank、finger 或预取 metadata。短数值 key 在 node 内线性搜索
 销毁。满页先尝试把 entry 向有余量的兄弟页平衡；边界写入会填满旧页、把新页留给后续有序
 数据。分裂前会预留必要 sibling/root，OOM 时结构保持不变。trivially-copyable entry 使用
 `memmove`，非平凡 entry 执行 nothrow move construction/destruction；两条路径共享同一公开
-合同，不是 benchmark 特化。
+合同，不是 benchmark 特化。C insert 的非 NULL result slot 在校验/分配前固定初始化为
+already-present sentinel，invalid/OOM 既不改变树，也不把 caller-stale result 当作有效输出。
 
 成功 mutation 可能搬移一个 node 内的 slot，因而统一失效既有 iterator/reference/pointer。
 这是 cache-packed storage 的必要代价；需要 grow 后稳定地址的用户选 node-based 结构。
@@ -229,9 +230,9 @@ queue。元素要求 nothrow move construction/destruction，使增长失败能�
 
 head/tail 按成熟 ring 形状单调推进；无符号差值给出 size，power-of-two mask 给出物理
 slot，hot pop 不在每次变空时重置两个游标。后者曾令 GCC 常态 FIFO 多一条分支和双写；
-删除冗余后与 portable Folly-shaped floor 在 WSL 统计同档，并在 Windows/M4 快约
-6%/15%，而不是增加常态 metadata 或专用 benchmark API。push/pop 两端与随机访问均为 O(1)，增长
-为 O(N)，已达到该 storage 形状的渐进下界。
+删除冗余后恢复到成熟 portable ring 的成本档，而不是增加常态 metadata 或专用 benchmark API。
+push/pop 两端与随机访问均为 O(1)，增长为 O(N)，已达到该 storage 形状的渐进下界；具体
+平台点值只见 performance 文档。
 
 `ByteRingBuffer` 不是 `RingDeque<std::byte>` 的别名：它面向 socket/file/audio staging，
 以 partial `write/read` 提供方便 copy 路径，并以 `writable/readable` 返回至多两段 span，
@@ -313,9 +314,9 @@ header-before-data、recorded allocator/alignment 和 type-erased reallocate cor
 contiguous range 直接批量 memcpy；single-pass input range 只消费一次。range insert 先
 物化输入，再以一次 memmove 搬后缀和一次 memcpy 写入；复杂度
 O(size-position+inserted-count)，达到连续存储下界。缩短 resize 为 O(1)，不会构造无用
-fill value；shrink O(size)，失败保留原 block。首轮 Windows 同合同 growth/read benchmark
-仍分别约 1.48x/1.0x `std::vector`；新增 API 本身不能借旧 push/read 数字宣称 SOTA，若
-真实消费者把位置 mutation 变成热点再单独建证书。
+fill value；shrink O(size)，失败保留原 block。旧 growth/read 点值不能替新增 range/mutation API
+宣称 SOTA；若真实消费者把位置 mutation 变成热点再按同合同单独建证书，具体数字只进
+performance 文档。
 
 ## SwissTable
 
@@ -430,7 +431,8 @@ baseline dispatcher (cached platform::best_isa())
 `std::string_view`，因为当前 MSVC 标准库实现实测更强；公开头不会因此暴露 STL。
 短路径组件继续用内联标量反向扫描，避免 dispatcher seam。
 
-UTF-8 validate/count 使用内化的 simdutf source，并由 simdutf 自己派发；这不是
+UTF-8 validate/count 使用内化的 simdutf source，并由 simdutf 自己派发；validate-only
+是一遍常用路径，count 合同在合法输入上明确为 validate + count 两遍。这不是
 container 对外依赖。hex encode/decode 当前是无查表分支的标量/编译器向量化实现，
 只证明胜过等契约 scalar reference，未宣称战胜专门 SIMD codec。
 
@@ -440,11 +442,11 @@ SIMD 只进入可批量处理的字节/lane 工作，不按模块名强套：
 |---|---|---|
 | Swiss control-byte probe | x86 SSE2 16 lanes；AArch64 NEON 8 lanes | 已是成熟 Swiss 基线形状；每次 probe 再动态派发 AVX2 的固定税通常不值 |
 | count/rfind/ASCII case | SSE4/AVX2/AVX512/NEON runtime dispatch | 已进入产品；长串摊薄 dispatcher，短串走标量 |
-| UTF-8 validate/count | simdutf 自派发 | 借成熟核，不重写 |
+| UTF-8 validate/count | simdutf 自派发 | 一遍 validate-only 与严格 validate+count 分开；借成熟核，不重写 |
 | table hash | 17–128B inline multiply stream；x86 AVX2 / AArch64 NEON XXH3；baseline wyhash | varied-input 产品 API 证据后进入产品；Windows/M4 从 1KiB、Linux/GCC14 从 512B，CPU/OS gate 在 platform |
 | vector relocation | compiler/libc `memcpy/memmove` | 不重复实现平台已有宽拷贝与 non-temporal 策略 |
 | lock-free queue / atomics | 不做 | 瓶颈是依赖链、cache line ownership 和 CAS，不是 lane arithmetic |
-| DynamicBitSet | SSE4/AVX2/AVX512/NEON runtime dispatch | 位运算与 x86 count 复用 header-only vec DSL；NEON count 用 byte CNT+四路 UDOT，修复 M4 通用 u64-lane reduction 的 12% 缺口；小于 8/16 words 分别走本地 scalar |
+| DynamicBitSet | SSE4/AVX2/AVX512/NEON runtime dispatch | 位运算与 x86 count 复用 header-only vec DSL；NEON count 用 byte CNT+四路 UDOT，避免通用 u64-lane reduction 的已测回退；小于 8/16 words 分别走本地 scalar |
 | BTree node search | 数值 key 线性比较；通用 comparator 二分 | 典型 node 很小且 comparator/entry layout 泛型；当前三平台实际 workload 不支持为每个 node 增加 SIMD metadata 或动态派发税 |
 
 长 hash 的 x86 宽核放在独立 AVX2 TU，baseline dispatcher 只有在 CPUID+XGETBV 安全门
@@ -453,11 +455,38 @@ Windows/MSVC 与 M4/AppleClang 1KiB、Linux/GCC14 512B 的保守交叉点。
 `hash_bytes` 是进程内 table hash，值可随
 HYLE 版本、构建与 ISA 选择变化，不得持久化或作为 wire fingerprint。若用户需要稳定内容
 指纹，应由独立命名/独立合同提供，不能暗中冻结 table hasher 的当前 bit pattern。
+默认 `StringHash` / `Hash<string/view>` 在 policy 构造时缓存一个进程 seed，并把它作为输入
+注入 short/medium/wyhash/XXH3 core；只在结果末端 XOR 或 mix 无法拆开 raw core 的完整
+碰撞类，因此不采用。所有默认 policy 共享进程 seed；每个 hasher/table policy 缓存一个
+`uint64_t`，不增加 per-entry metadata，也避免每次 lookup 读取进程全局状态。这与 Abseil 的
+per-table/process salt 目标相同但粒度更粗，只保证跨独立启动破坏离线
+预计算集合，不保证密码学不可预测或抗可观察的自适应 hash flood。进程首次使用后 `fork`
+会继承 seed，`exec` 才重新派生；显式 `StringHash(seed)` 保留确定性复现。
+
+不可信字符串另有显式 `HardenedStringHash`：SipHash-2-4 持有调用方注入的 128-bit secret，
+无默认构造，C 面用 stateless `hyle_container_siphash24`。HYLE 的 ASLR/clock process seed 不
+冒充 CSPRNG，也不自动生成 hardened key；应用必须从自己的安全随机源/secret manager 获取、
+保密并按隔离边界轮换。hardened policy 仍只在调用期间借 view，与 `StringEqual` 保持同一
+owning/heterogeneous 等价关系。正常短串和整表 hit/miss workload 分开记录 fast/salted 与
+keyed SipHash 成本，不能用 raw byte microbench 隐藏安全策略代价。
+默认 typed `Hash<T>` 还必须满足 `Eq(a,b) => Hash(a)==Hash(b)`：整数/枚举/指针走语义明确
+的 mix，浮点使用 equality-compatible value hash 并归一 signed zero；所有未特化的用户
+自定义类型一律不提供默认 Hash。`BytewiseHash<T>` 只允许调用方显式 opt-in，并要求
+`has_unique_object_representations`，但这个 trait 仍无法证明自定义 Eq 比较所有 byte。
+因此带 padding、alternate encoding 或业务 equality 的 struct 必须提供逐字段 hasher，不能
+把“trivially-copyable/unique representation”误当成“对象表示就是相等语义”。负向编译
+测试同时锁住 padded key，以及 padding-free 但 Eq 忽略字段的 key；整表测试锁住
+`+0.0/-0.0` 查找与去重。
+
+标准 owning string 是单独审定的内建语义类型：`Hash<std::string>` 覆盖同型默认查找；
+公开透明 `StringHash` / `StringEqual` 统一 `std::string`、`string_view`、`string_ref` 和
+C literal 的即时 byte view，使 owning key 的异构 find/contains/erase 不要求消费者
+复制测试私有 boilerplate，也不保存借用指针。
 
 ## C ABI 边界
 
 `include/hyle/c/container.h` 当前遵守统一 C ABI 机械合同。HYLE 尚未发布、C ABI 尚未
-冻结，因此本轮没有为兼容保留错误名字；动态面已按真实 C/FFI 能力复审为 232 个声明，
+冻结，因此本轮没有为兼容保留错误名字；动态面已按真实 C/FFI 能力复审为 234 个声明，
 并由符号 manifest、纯 C17 调用覆盖和 header-self-contained 门逐项守住。它不是把每个
 C++ 成员机械导出：模板编译期属性、非平凡对象生命周期和跨锁裸指针有意不进入 C ABI。
 当前原则是：
@@ -473,6 +502,11 @@ C++ 成员机械导出：模板编译期属性、非平凡对象生命周期和�
 | 五类 pointer queue | 保留能力、角色已审定 | C 热路径统一 `try_*`；pointer 是跨 FFI 的 caller-owned work handle，不增加 runtime stride/copy callback；SPSC 明示唯一 producer/consumer，Chase-Lev 明示 owner bottom/thief top，WsFifo 明示 back/front |
 | concurrent pointer vector | 保留能力、形状已重塑 | 明确命名 `concurrent_ptr_vector`；reserve 预分配 stable segments；`try_get(out)` 区分越界与合法 NULL payload；不冒充 erased POD vector |
 | dynamic bitset / sparse u32 set | 保留 opaque 能力 | 两者是语言无关的 runtime-universe 数据结构；C 面覆盖 resize/algebra/iteration 与 dense active IDs，不暴露 C++ 布局 |
+
+跨导出边界传递的 `hyle_container_insert_result` 与
+`hyle_container_steal_status` 都是明确的 `uint32_t` typedef；命名常量不使用 ABI 宽度未定的
+`typedef enum`。纯 C gate 在 GCC/Clang 下额外启用 `-fshort-enums`，保证该开关不能改变参数/
+out-pointer 布局。
 
 “保留能力”不等于冻结当前函数列表；未发布阶段仍可在真实消费证据出现时修正。当前 C
 面已经覆盖全部跨边界仍成立的动态能力，HYLE 内部 C++ 模块继续直接使用 typed API。
@@ -509,6 +543,12 @@ C concurrent facade 则确有旧形状问题：它只存 pointer 却叫通用 co
 `utf8_icmp` 只折叠 ASCII，却用名称暗示 Unicode case folding，也已删除。保留的
 UTF-8 基元只承诺 validate/count；C escaping 则改为明确的 `string_c_escape`，对 NUL、
 控制字节和非 UTF-8 byte 都产生完整转义。这里删的是错误抽象，不是为了缩符号数。
+C++/C 暂不冻结 UTF-8↔UTF-16/32 transcode：HYLE 的跨模块文本规范是 UTF-8，当前 UTF-16
+消费者只位于 Windows platform/IO 的 OS 边界并需要 Win32 特有的 NUL/path/native-error
+合同，UTF-32 没有真实产品消费者。仅因 simdutf 已带 codec 就导出，会提前冻结 endian、
+strict-vs-replacement、size query、短 buffer/partial-write 等一组尚无消费者裁决的合同。
+将来出现非 platform 的语言 runtime/协议消费者时，应一次补齐对称的 fixed-code-unit、
+strict buffer-fill C++/C 面；这项是登记的 scope expansion，不是 validate-only 缺口的替代品。
 C hash traversal 同样不再冒充标准 `for_each`：提前停止的 callback 形状改名为
 `map/set_visit`，返回 1 表示完整遍历、0 表示 visitor 停止或参数无效。
 
@@ -527,6 +567,8 @@ pointer/count 的 `try_append/try_insert/try_resize/erase/try_shrink_to_fit` 覆
   OOM/越界不修改旧 size/data/capacity。
 - C flat map 与 typed mutation 语义一致：insert 不覆盖，insert_or_assign 才覆盖；
   三态结果明确区分 inserted/already-present/assigned。
+- C erased map/set 的默认 byte hash 与 `memcmp` 必须成对；自定义 equal 会改变等价类，因而
+  `create` 只在同时提供 compatible hash 时接受，机械保持 `Eq(a,b) => same hash`。
 - C B-tree 与 typed unique-key/range 语义一致；NULL bound 表示无界，成功 mutation 统一
   使 cursor/pointer 失效，OOM 不改变旧结构。
 - 并发 queue/vector 的稳定最小共同面使用 pointer payload；并发 map 则按 options 擦除
@@ -549,17 +591,19 @@ pointer/count 的 `try_append/try_insert/try_resize/erase/try_shrink_to_fit` 覆
 
 “SOTA”必须逐契约、逐操作成立，不能写成整个 container 的无条件标签：
 
-- flat Swiss map 的 Windows 已测核心操作领先 Abseil；WSL 除 miss 约慢 3% 外领先，
-  set miss 约慢 6%，不作无条件 SOTA 宣称；
-- ordered B-tree 对 Abseil 的三平台实际矩阵中，copy/点查/构建/mutation 整体同档或领先；
-  边界偏置 split/delete 已把原 M4 time-index 0.872x 提升到 1.027x。剩余 Windows full
-  iteration/range、WSL above-max/expiry 与 M4 domain-miss/build/churn 仍公开登记，不用
-  miss 分布特化、常态元数据或 benchmark API 隐藏；
-- PodVector/SmallVector/队列按各自对等形状判断；
-- 路径的大倍数主要来自零分配结构，对同形 string-view 扫描通常是平局；
-- StringInterner 长串增长、重复 churn、并发分片和 batch 分别验收；Linux 单条 `intern`
-  仍保留自适应分片的局部性常数边界，高吞吐导入优先 batch；
-- 4KB 字符扫描的 0.8x–0.95x 点值应结合 64KB/1MB、方差和调用形状，不包装成赢。
+- flat Swiss map/set 分开验收 hit、miss、insert、erase 与 iteration，不以其中一项替代全表；
+- ordered B-tree 分开验收点查、范围、确定性遍历、build/copy 与 mutation，不为某个 miss 分布
+  增加常态元数据或 benchmark API；
+- PodVector、SmallVector、bitset、sparse set 与各类队列只和相同 ownership/capacity/concurrency
+  合同的 peer 比较；
+- path 的零分配结构优势不能外推为同形 string-view 扫描优势；
+- StringInterner 的逐条、batch、长串增长、可回收生命周期和并发分片必须分别验收；高吞吐
+  导入优先 batch，但不能用 batch 隐藏逐条入口的真实代价；
+- 字符扫描必须同时看多种长度、执行顺序与方差，不能用单一长度包装输赢。
+
+具体点值、平台翻转、对手 pin 和 freshness 只由
+[`benchmarks-container`](../performance/benchmarks-container.md) 维护；本架构页只固定比较合同与
+不允许为 benchmark 扭曲产品形状的原则。
 
 测试矩阵包括 typed 单测、纯 C 调用覆盖、C++ C-ABI 并发测试、allocator
 故障注入、三平台构建/运行、ASan/UBSan/TSan，以及独立 SOTA benchmark。

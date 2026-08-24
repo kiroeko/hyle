@@ -37,6 +37,10 @@
 
 namespace hyle::time {
 
+namespace detail {
+struct CommonTimeoutQueueAccess;
+}
+
 class CommonTimeoutQueue {
  public:
   using EntryList = TimerList;
@@ -205,9 +209,29 @@ class CommonTimeoutQueue {
   }
 
  private:
+  friend struct detail::CommonTimeoutQueueAccess;
+
+  [[nodiscard]] bool accepts_idle_deadline(
+      std::uint64_t deadline_ns) const noexcept {
+    return list_.empty() || list_.back()->deadline_ns_ <= deadline_ns;
+  }
+
   EntryList list_;               // sorted by deadline (append-ordered)
   std::size_t count_ = 0;
   std::uint64_t duration_ns_;    // the single duration this queue serves
 };
+
+namespace detail {
+// Narrow adapter seam for the recoverable C boundary. A timer awaiting its
+// synchronous visitor is no longer armed, but a rejected common-queue re-arm
+// must preserve that pending visit. Preflight the idle-entry ordering check
+// before the C adapter detaches it from the delivery batch.
+struct CommonTimeoutQueueAccess {
+  static bool accepts_idle_deadline(const CommonTimeoutQueue& queue,
+                                    std::uint64_t deadline_ns) noexcept {
+    return queue.accepts_idle_deadline(deadline_ns);
+  }
+};
+}  // namespace detail
 
 }  // namespace hyle::time

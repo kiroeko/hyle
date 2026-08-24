@@ -44,7 +44,8 @@ struct alignas(hyle::core::kDestructiveInterferenceSize) HotCounter {
 - 随后还会反复读取同一 cache line：`prefetch_read(ptr)`。
 - 大片流式读取、预计只消费一次：`prefetch_read_non_temporal(ptr)`；目标不支持时允许退化。
 - 即将修改、希望 capable CPU 提前取得 exclusive ownership：`prefetch_write(ptr)`；它不是写入，
-  也不能消除原子或锁。
+  也不能消除原子或锁。编译器只能选择当前 translation unit ISA baseline 允许的 hint；若目标
+  不支持 write-prefetch，可退化为 read-prefetch 或 no-op，不会越过 `-march` 强发指令。
 
 三种 prefetch 都只放在 profile 证明有收益的位置。它们是 best-effort hint，不检查对象生命周期，
 不建立地址有效性、内存序或线程可见性；过早、过晚或错误 locality 的 prefetch 反而会增加带宽
@@ -73,17 +74,22 @@ ready.push_back(&request);
 Request* next = ready.pop_front();
 ```
 
-它不拥有节点、不分配，push/pop/remove/append 都是 O(1)。节点析构或 list 析构会自动摘链；
-但节点 linked 时不可移动地址。一个对象若同时进入 ready 与 timeout 两条链，需要两个独立
-hook。跨线程并发需要外部同步。`push_back/front` 要求 node 非空且该 hook 当前未链接；输入
-可能重复时改用返回 bool 的 `try_push_back/front`。
+它不拥有节点、不分配，push/pop/remove/append 都是 O(1)。节点析构或 list 析构会自动摘链。
+copy/move 构造 hook 会得到新的 unlinked hook；对已有 hook 做 copy/move assignment 则刻意保留
+destination 当前 membership，绝不从 source 复制 membership。节点 linked 时不可移动地址。
+一个对象若同时进入 ready 与 timeout 两条链，需要两个独立 hook。跨线程并发需要外部同步。
+`push_back/front` 要求 node 非空且该 hook 当前未链接；输入可能重复时改用返回 bool 的
+`try_push_back/front`。
 
 下列情况不要用它：希望容器拥有元素、需要随机访问/完整 STL iterator、节点地址会因 vector
 扩容改变，或只是普通小集合。此时优先选 `SmallVector`、`PodVector`、`FlatHashMap` 或标准容器。
 
 `remove(node)` 要求 node 非空且属于该 list；不知道是否 linked 时用幂等
 `node.hook.unlink()`。`consume_all` 的 callback 执行前当前节点已经 unlinked，可以销毁或
-加入另一条链；`for_each` callback 不得改变 membership。
+加入另一条链，但 callback 必须是 `noexcept`。`for_each` callback 不得改变
+membership/lifetime；它可以抛异常，此时遍历停止而链保持有效。`move_prefix_to` 的 predicate
+与 `on_move` 必须 `noexcept`，且扫描时节点仍在 source 链中，不得摘链、销毁或重链；完整前缀
+在回调完成后才以 O(1) 区间 splice 转移。
 
 ## 宏的使用边界
 
@@ -100,7 +106,9 @@ hook。跨线程并发需要外部同步。`push_back/front` 要求 node 非空�
 - `HYLE_FLATTEN`：只放在经过 profile 的深 wrapper/template 入口；要求 GCC/Clang 尽量内联函数体
   内的可内联调用。它可能显著增加 code size、伤害 I-cache，MSVC/未知编译器允许退为空。
 - `HYLE_UNROLL(n)` / `HYLE_DEFAULT_UNROLL`：best-effort loop hint，只用于测过的 kernel；更多展开
-  可能因 code size 和 I-cache 变慢。
+  可能因 code size 和 I-cache 变慢。Clang 的未优化或 sanitizer TU 会把它退为空，因为该编译器
+  对无法完成的显式 loop transform 发 `-Wpass-failed`；hint 不能在消费者使用 `-Werror` 时变成
+  correctness build failure。
 
 这些形状分别对应 Abseil/Highway 的 assume、Highway restrict/flatten/unroll，并由 HYLE 的 SIMD/vqsort
 真实消费；它们是 source/compiler seam，不是动态 ABI，也不是通用业务 API。

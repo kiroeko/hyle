@@ -69,6 +69,8 @@ endif()
 set(HYLE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 set(HYLE_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}")
 list(APPEND CMAKE_MODULE_PATH "${HYLE_SOURCE_DIR}/cmake")
+include(HyleTargetPlatform)
+include(HyleDependencyVersions)
 
 # Resolve platform capability before the component graph.  io/compute/graph
 # have useful sched-free product shapes on targets for which HYLE does not yet
@@ -136,6 +138,33 @@ if(HYLE_INSTALL AND HYLE_BUILD_TESTS)
     "HYLE_INSTALL=ON requires HYLE_BUILD_TESTS=OFF. Test configurations are validation "
     "artifacts; the instrumented form may change layout, and neither form is an SDK.")
 endif()
+
+# Lock projection is global, but vendored source requirements follow the
+# selected component/feature closure.  This keeps a core-only partial source
+# checkout independent from mem/container/io/sched/benchmark vendors while
+# still auditing every snapshot before its first consumer is configured.
+set(_hyle_active_in_tree_dependencies "")
+if(HYLE_BUILD_MEM)
+  list(APPEND _hyle_active_in_tree_dependencies mimalloc)
+endif()
+if(HYLE_BUILD_CONTAINER)
+  list(APPEND _hyle_active_in_tree_dependencies xxhash wyhash simdutf)
+endif()
+if(HYLE_BUILD_IO AND HYLE_FCONTEXT_SUPPORTED)
+  list(APPEND _hyle_active_in_tree_dependencies picohttpparser)
+endif()
+if(HYLE_BUILD_SCHED AND HYLE_FCONTEXT_SUPPORTED)
+  list(APPEND _hyle_active_in_tree_dependencies fcontext)
+endif()
+if(HYLE_BUILD_BENCH)
+  list(APPEND _hyle_active_in_tree_dependencies nanobench)
+endif()
+hyle_audit_in_tree_dependencies(${_hyle_active_in_tree_dependencies})
+unset(_hyle_active_in_tree_dependencies)
+if(HYLE_BUILD_SIMD)
+  hyle_audit_integrated_source_dependencies(highway_port xsimd_port)
+endif()
+
 set(HYLE_INSTALL_INCLUDEDIR "include")
 if(HYLE_INSTALL)
   include(GNUInstallDirs)

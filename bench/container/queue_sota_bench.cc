@@ -1,5 +1,3 @@
-#define _CRT_SECURE_NO_WARNINGS 1
-
 // SOTA parity for the lock-free queue cluster (task #9). Until now these four
 // structures claimed to match moodycamel / tokio / oneTBB but had ZERO head-to-
 // head benchmark -- "coverage too low so assume SOTA" is exactly the self-

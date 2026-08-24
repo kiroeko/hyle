@@ -1,17 +1,22 @@
 # obs-01：结构化日志产出
 
+> **历史任务提示（2026-08-25）：**本页保留 2026-07 的施工形状；当前 obs 已改用 owning
+> `hyle_status`、caller-storage sink 并扩为 29 个动态入口。现行设计/用法与认证分别只看
+> [`obs-design`](../architecture/obs-design.md)、[`c-obs`](../guide/c-obs.md) 和
+> [`pre-release-readiness`](./pre-release-readiness.md)。
+
 | 字段 | 值 |
 |---|---|
 | **阶段** | P0 |
 | **模块** | obs |
-| **状态** | ✅ 2026-07-19 全面复审收口；三平台 + ASan/UBSan/TSan + C ABI |
+| **状态** | 🗃️ 2026-07-19 历史复审；当时三平台 + ASan/UBSan/TSan + C ABI |
 
-obs-01 从 clay `sys/log` 起步，但当前实现已经不是“level + 字符串 callback”的薄
-移植。完整现状与维护规则见
+obs-01 从 clay `sys/log` 起步；该轮实现已经不是“level + 字符串 callback”的薄
+移植。当前完整形状与维护规则见
 [`../architecture/obs-design.md`](../architecture/obs-design.md)，本轮验收见
 [`obs-module-closure.md`](./obs-module-closure.md)。
 
-## 最终能力
+## 该轮交付能力
 
 - `LogRecord`：level、message、key/value fields、source file/function/line、可选
   Unix timestamp；
@@ -22,7 +27,8 @@ obs-01 从 clay `sys/log` 起步，但当前实现已经不是“level + 字符�
 - callback 自摘安全；跨摘其他 sink 明确拒绝，避免同一 snapshot 自等待死锁；
 - 默认 stderr sink：线程内 record 不穿插，只在 TTY 着色，Windows 同步 debugger
   output；
-- 稳定纯 C ABI：POD record + opaque sink + last-error + 五个 level 便利函数。
+- 当时的纯 C ABI：POD record + opaque sink + last-error + 五个 level 便利函数；last-error
+  后来已由共享 owning `hyle_status` 取代，不能按本行实现新绑定。
 
 ## 相对 clay 的关键修正
 
@@ -41,8 +47,8 @@ obs 是“产出”原语，不是日志服务。异步缓冲、文件轮转、�
 由 sink/运维层实现。HYLE 内部原语不主动输出日常日志；error/status 是机器可读失败
 通道，应用决定何时把诊断变成 record。
 
-trace/counter 属于 obs-02，当前也已收口并接入 mem/sched/io/compute；两条通路的
-统一架构见 obs-design。
+trace/counter 属于 obs-02；该轮记录中它也已接入 mem/sched/io/compute。两条通路的当前
+统一架构见 obs-design，认证状态不由本页决定。
 
 ## 验收
 
@@ -51,5 +57,5 @@ trace/counter 属于 obs-02，当前也已收口并接入 mem/sched/io/compute�
 - 纯 C 测试覆盖完整日志/C ABI 生命周期和错误面；
 - Windows MSVC、WSL GCC14、Apple M4 AppleClang 通过；
 - WSL ASan、UBSan、TSan 通过；
-- gated/preformatted/formatted 三层基准进入 `hyle_misc_bench`，结果见
-  [`../performance/README.md`](../performance/README.md) 的 obs 当前行。
+- gated/preformatted/formatted 三层基准进入 `hyle_misc_bench`，历史结果见
+  [`../performance/README.md`](../performance/README.md) 的 obs 行及其 freshness gate。

@@ -99,10 +99,6 @@
 
 ## 六、一句话排期建议
 
-**2026-07-27 当前顺序**只见
-[`pre-release-readiness.md`](./pre-release-readiness.md)：严格基线为 error/platform/mem/time/core、
-build/package、util-core、obs 与 container；mem 的 `8c85331` 定向复证已接住 PMR/API/package
-触发项，旧 `c640072` 的其余三平台证书保留。当前先完成底层已认证模块的定向复证 sweep；之后
-回到 util-runtime / 完整 util，随后沿 sched → io，再做
-math↔simd 边界裁决再收 simd。compute/graph 主干不是 0 行，但二者仍先补北极星能力尾再收口；最终在
-既有 install/export 地基上做跨编译器和 FFI 冒烟。旧绿色 closure 保留为证据，不再当新证书。
+本页不复制当前施工队列。2026-07 的排期已经成为历史快照；现行顺序、九模块复开状态和
+证书只见 [`pre-release-readiness.md`](./pre-release-readiness.md)。compute/graph 主干不是 0 行，
+但仍须先补北极星能力尾再收口；旧绿色 closure 只保留为施工证据，不当新证书。

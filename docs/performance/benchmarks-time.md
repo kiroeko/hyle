@@ -1,5 +1,11 @@
 # time 性能证书
 
+> **2026-08-25 freshness gate：**本页点值绑定下述历史提交，当前 time 因依赖升级红队与
+> delivery/lifetime 修复重新打开。clock 热读、raw queue 与未改路径可作为回归输入，但不是
+> 当前 working tree 的自动性能证书；尤其 C `schedule+advance+visitor` 已改为同批 callback
+> 可安全 cancel/reschedule/destroy peer 的 mutation-safe 交付，旧 16.450 ns 只能解释旧实现。
+> 最终三平台 n=15 重采完成前，不据本页旧数字宣称当前 time 已重新 SOTA 收口。
+
 > 本页是 time 性能数字的唯一信源。实现与选择理由分别见
 > [`time-design`](../architecture/time-design.md) 和 [`guide/time`](../guide/time.md)。
 > 当前 clock 产品实现固定在 `e58d3f5`，x86-only test 修正在 `e16a927`，Apple QoS 仪器固定
@@ -168,7 +174,7 @@ M4 的 scattered 对象反而更快，说明真实 object-embedded layout 不是
 | C++ schedule+cancel | 3.618 ns | 3.144 ns | 3.263 ns |
 | C ABI schedule+cancel+Status | 11.996 ns | 11.024 ns | 7.915 ns |
 | C ABI schedule_after clock+cancel+Status | 20.234 ns | 20.964 ns | 22.624 ns |
-| C ABI schedule+advance+visitor，fire one | 16.450 ns | — | — |
+| C ABI schedule+advance+visitor，fire one（旧交付实现，待重测） | 16.450 ns | — | — |
 | C++ new/delete `TimerEntry` | 21.349 ns | 7.349 ns | 15.449 ns |
 | C opaque timer create/destroy+Status | 26.005 ns | 15.663 ns | 18.999 ns |
 | C caller-storage timer init/deinit+Status | **9.156 ns** | **3.314 ns** | — |

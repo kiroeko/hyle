@@ -12,10 +12,12 @@
 #include "hyle/platform/fs.h"
 
 // Opt-in owning conveniences for platform control/query paths. The syscall
-// layer in fs.h/cpu.h deliberately remains buffer-fill and allocation-free so
-// C, FFI, arenas and hot callers choose storage. This header is the everyday
-// C++ shape: it allocates standard-library owners, retries a changing snapshot,
-// and reports allocation/size failures through the shared error model.
+// layer in fs.h/cpu.h deliberately keeps caller-owned buffer-fill output so C,
+// FFI and arena users choose the returned storage. Implementations may still
+// allocate checked transient scratch for unbounded OS paths/encoding; such OOM
+// is reported through Status. This header is the everyday C++ shape: it returns
+// standard-library owners, retries a changing snapshot, and reports allocation/
+// size failures through the shared error model.
 
 namespace hyle::platform {
 namespace convenience_detail {

@@ -90,8 +90,15 @@ side-by-side toolset 中挑最高版本。例如 VS 2022 同时有 14.38/14.44 �
 ## 五、测试
 
 ```bat
+powershell -File scripts/hyle-windows.ps1 -Action Test -Preset windows --output-on-failure
+
+:: 仅在当前 shell 已手工 call VsDevCmd/vcvars64 后可直接运行：
 ctest --preset windows --output-on-failure
 ```
+
+header-self-contained 测试会在 CTest 期间再次调用 `cl.exe`；普通 PowerShell 即使复用已配置的
+build tree 也没有 MSVC 的 `INCLUDE`。仓库 wrapper 会为该次 Test 动作重新导入环境，且不会把
+环境永久写回调用方。
 
 - **GPU 测试（compute）**：CUDA runtime DLL 需在 PATH。toolkit 的 `bin` 通常已入 PATH（`where nvcc` 命中即可）。`hyle_compute_ggml_bridge_test` 在 RTX 4070 上跑零拷贝 matmul。
 - **TLS 测试**：需 OpenSSL DLL 在 PATH，见第七节。

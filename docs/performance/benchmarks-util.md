@@ -1,6 +1,11 @@
-# util 性能证书（2026-07-30）
+# util 历史性能证据（2026-07-30）
 
-本页同时签证 util-core 与 util-runtime。core 产品实现固定在 `3c32be6`，runtime 的错误传播
+> **2026-08-25 freshness gate：**本页固定于下述 2026-07 commit。util 已因 mem/container
+> 下游变化与本轮总复审重新打开；相同 source identity、peer pin、编译合同与三平台重跑完成前，
+> 这些点值不是当前发布证书。现行状态只看
+> [`pre-release-readiness`](../milestones/pre-release-readiness.md)。
+
+本页记录当时对 util-core 与 util-runtime 的签证。core 产品实现固定在 `3c32be6`，runtime 的错误传播
 能力固定在 `1b148ef`，C nullable callback 定稿固定在 `70fa4e8`；Windows MSVC 19.50、WSL/native-ext4
 GCC 14.2、Apple M4 AppleClang 21 均为
 Release、15 个独立进程。core 保留 2026-07-29 的 Rng/Ref/SpinLock 证据；runtime 新增真实
@@ -22,7 +27,7 @@ Registry N=256 与 C RNG batch 消费形状，不以测试专用 API 或常态 b
 表中 ns/op 顺序为 **Windows / Linux / M4 interactive**；ratio 是 HYLE/peer throughput 的
 paired median，约值只用于阅读，判定看完整 n=15。
 
-## util-core 当前结果
+## util-core 2026-07 历史结果
 
 | 场景 | HYLE ns | peer ns | ratio | 判定 |
 |---|---:|---:|---:|---|
@@ -78,7 +83,7 @@ scripts/bench-stat.py build-bench/bin/hyle_util_core_bench -n 15 \
 ```
 
 Apple 默认显式 user-interactive；utility 复跑在命令前加
-`HYLE_BENCH_APPLE_QOS=utility`。因此 util-core 当前在同合同成熟 peer 上没有未解释的
+`HYLE_BENCH_APPLE_QOS=utility`。因此该轮 util-core 在同合同成熟 peer 上没有未解释的
 material LOSE。
 
 ## util-runtime：测试合同
@@ -102,7 +107,7 @@ material LOSE。
 下表 ns/op 为 **Windows / Linux / M4 interactive**；speedup 是逐 run paired median 的
 peer/HYLE throughput 比，判定同时看 sign test 与 absolute spread。
 
-## util-runtime 当前结果
+## util-runtime 2026-07 历史结果
 
 | 场景 | HYLE ns | peer ns | paired speedup | 判定 |
 |---|---:|---:|---:|---|

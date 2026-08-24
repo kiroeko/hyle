@@ -107,7 +107,7 @@ void xsimd_run(Op op, const float* src, float* dst, std::size_t n) {
   std::size_t i = 0;
   for (; i + w <= n; i += w) {
     batch v = batch::load_unaligned(src + i);
-    batch r;
+    batch r = v;
     switch (op) {
       case Op::kExp: r = xsimd::exp(v); break;   case Op::kLog: r = xsimd::log(v); break;
       case Op::kTanh: r = xsimd::tanh(v); break; case Op::kSin: r = xsimd::sin(v); break;
@@ -129,7 +129,7 @@ void highway_run(Op op, const float* src, float* dst, std::size_t n) {
   std::size_t i = 0;
   for (; i + w <= n; i += w) {
     auto v = hn::LoadU(d, src + i);
-    decltype(v) r;
+    auto r = v;
     switch (op) {
       case Op::kExp: r = hn::Exp(d, v); break;   case Op::kLog: r = hn::Log(d, v); break;
       case Op::kTanh: r = hn::Tanh(d, v); break; case Op::kSin: r = hn::Sin(d, v); break;
@@ -151,7 +151,7 @@ void xsimd_run64(Op op, const double* src, double* dst, std::size_t n) {
   std::size_t i = 0;
   for (; i + w <= n; i += w) {
     batch v = batch::load_unaligned(src + i);
-    batch r;
+    batch r = v;
     switch (op) {
       case Op::kExp: r = xsimd::exp(v); break;   case Op::kLog: r = xsimd::log(v); break;
       case Op::kTanh: r = xsimd::tanh(v); break; case Op::kSin: r = xsimd::sin(v); break;
@@ -173,7 +173,7 @@ void highway_run64(Op op, const double* src, double* dst, std::size_t n) {
   std::size_t i = 0;
   for (; i + w <= n; i += w) {
     auto v = hn::LoadU(d, src + i);
-    decltype(v) r;
+    auto r = v;
     switch (op) {
       case Op::kExp: r = hn::Exp(d, v); break;   case Op::kLog: r = hn::Log(d, v); break;
       case Op::kTanh: r = hn::Tanh(d, v); break; case Op::kSin: r = hn::Sin(d, v); break;

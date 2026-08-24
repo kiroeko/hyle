@@ -39,10 +39,21 @@
     HYLE_DETAIL_COMPILER_PRAGMA(GCC unroll factor)
 #  define HYLE_DETAIL_COMPILER_DEFAULT_UNROLL HYLE_DETAIL_COMPILER_UNROLL(4)
 #elif defined(__clang__)
+#  if defined(__OPTIMIZE__) && !__has_feature(address_sanitizer) &&           \
+      !__has_feature(thread_sanitizer) && !__has_feature(memory_sanitizer) && \
+      !__has_feature(undefined_behavior_sanitizer)
 #  define HYLE_DETAIL_COMPILER_PRAGMA_INNER(tokens) _Pragma(#tokens)
 #  define HYLE_DETAIL_COMPILER_PRAGMA(tokens) HYLE_DETAIL_COMPILER_PRAGMA_INNER(tokens)
 #  define HYLE_DETAIL_COMPILER_UNROLL(factor) HYLE_DETAIL_COMPILER_PRAGMA(unroll factor)
 #  define HYLE_DETAIL_COMPILER_DEFAULT_UNROLL HYLE_DETAIL_COMPILER_PRAGMA(unroll)
+#  else
+/* An explicit Clang loop-transform pragma that cannot be honored emits
+ * -Wpass-failed. That turns a best-effort hint into a consumer build failure
+ * under -Werror, notably at -O0 and under sanitizer instrumentation. Keep the
+ * source contract a no-op in those configurations. */
+#  define HYLE_DETAIL_COMPILER_UNROLL(factor)
+#  define HYLE_DETAIL_COMPILER_DEFAULT_UNROLL
+#  endif
 #else
 #  define HYLE_DETAIL_COMPILER_UNROLL(factor)
 #  define HYLE_DETAIL_COMPILER_DEFAULT_UNROLL

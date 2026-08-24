@@ -141,11 +141,14 @@ HYLE_UTIL_C_API int hyle_util_ref_is_unique(const hyle_util_ref* ref);
  * must outlive its in-flight calls. */
 typedef struct hyle_util_registry_o hyle_util_registry;
 
-typedef enum hyle_util_registry_priority {
+/* Fixed-width at the C ABI boundary; -fshort-enums must not alter callback or
+ * exported-function calling conventions. */
+typedef uint32_t hyle_util_registry_priority;
+enum {
   HYLE_UTIL_REGISTRY_FALLBACK = 1,
   HYLE_UTIL_REGISTRY_DEFAULT = 2,
   HYLE_UTIL_REGISTRY_PREFERRED = 3
-} hyle_util_registry_priority;
+};
 
 /* A creator returns its caller-owned object directly. `out_status` is either
  * NULL for a diagnostic-free nullable call, or points to an initialized OK

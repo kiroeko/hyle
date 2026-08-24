@@ -1,5 +1,9 @@
 # util 两层严格收口
 
+> **历史证据提示（2026-08-25）：**本页的绿色结论绑定文中日期/commit，不是 mem/container
+> 升级后 working tree 的当前证书。现行状态只看
+> [`pre-release-readiness`](./pre-release-readiness.md)。
+
 ## 当前状态（2026-07-30）
 
 | 审查单元 | 结论 |

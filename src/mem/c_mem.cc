@@ -19,6 +19,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <limits>
 #include <new>
 #include <optional>
 #include <span>
@@ -48,6 +49,104 @@ hyle_status steal_status(hyle::Status &&status) noexcept {
 static_assert(std::is_standard_layout_v<hyle_allocator>);
 static_assert(std::is_trivially_copyable_v<hyle_allocator>);
 static_assert(sizeof(hyle_allocator) == sizeof(void *) * 4);
+static_assert(sizeof(hyle_huge_flags) == sizeof(std::uint32_t));
+static_assert(sizeof(hyle_numa_node) == sizeof(std::int32_t));
+static_assert(std::is_standard_layout_v<hyle_region_options>);
+static_assert(std::is_trivially_copyable_v<hyle_region_options>);
+static_assert(offsetof(hyle_region_options, struct_size) == 0);
+static_assert(offsetof(hyle_region_options, initial_block_size) == 8);
+static_assert(offsetof(hyle_region_options, size_limit) == 32);
+static_assert(sizeof(hyle_region_options) == 40);
+
+template <class Field>
+void read_region_options_field(const hyle_region_options *input,
+                               std::uint32_t declared_size,
+                               std::size_t field_offset,
+                               Field &output) noexcept {
+  if (field_offset <= declared_size &&
+      sizeof(Field) <= declared_size - field_offset) {
+    const auto *bytes = reinterpret_cast<const unsigned char *>(input);
+    std::memcpy(&output, bytes + field_offset, sizeof(Field));
+  }
+}
+
+bool decode_region_options(const hyle_region_options *input,
+                           hyle_region_options &output) noexcept {
+  output = hyle_region_options HYLE_REGION_OPTIONS_INIT;
+  if (input == nullptr)
+    return true;
+
+  std::uint32_t declared_size = 0;
+  std::memcpy(&declared_size, input, sizeof(declared_size));
+  if (declared_size < HYLE_REGION_OPTIONS_REQUIRED_SIZE)
+    return false;
+  std::memcpy(&output, input, HYLE_REGION_OPTIONS_REQUIRED_SIZE);
+  output.struct_size = static_cast<std::uint32_t>(sizeof(output));
+  read_region_options_field(input, declared_size,
+                            offsetof(hyle_region_options, initial_block_size),
+                            output.initial_block_size);
+  read_region_options_field(input, declared_size,
+                            offsetof(hyle_region_options, max_block_size),
+                            output.max_block_size);
+  read_region_options_field(
+      input, declared_size,
+      offsetof(hyle_region_options, large_allocation_threshold),
+      output.large_allocation_threshold);
+  read_region_options_field(input, declared_size,
+                            offsetof(hyle_region_options, size_limit),
+                            output.size_limit);
+  return output.reserved == 0;
+}
+
+// The C ABI uses one signed fixed-width node type so a node returned by
+// hyle_numa_nodes can flow through mem without casts. The native C++ NUMA API
+// deliberately uses unsigned IDs, so validate/repack at this adapter boundary;
+// an inline buffer keeps the normal small node list allocation-free.
+class MemNumaNodeArray {
+ public:
+  MemNumaNodeArray() noexcept = default;
+  ~MemNumaNodeArray() { delete[] heap_; }
+  MemNumaNodeArray(const MemNumaNodeArray&) = delete;
+  MemNumaNodeArray& operator=(const MemNumaNodeArray&) = delete;
+
+  hyle::Status assign(const hyle_numa_node* nodes,
+                      std::size_t count) noexcept {
+    if (nodes == nullptr && count != 0) {
+      return hyle::Status::InvalidArgument(
+          "NUMA node array is NULL with nonzero count");
+    }
+    if (count > (std::numeric_limits<std::size_t>::max)() /
+                    sizeof(unsigned)) {
+      return hyle::Status::OutOfRange("NUMA node array is too large");
+    }
+    if (count > kInlineCount) {
+      heap_ = new (std::nothrow) unsigned[count];
+      if (heap_ == nullptr) {
+        return hyle::Status::ResourceExhausted(
+            "NUMA node conversion allocation failed");
+      }
+      data_ = heap_;
+    }
+    for (std::size_t i = 0; i < count; ++i) {
+      if (nodes[i] < 0) {
+        return hyle::Status::InvalidArgument(
+            "explicit NUMA node array contains a negative node");
+      }
+      data_[i] = static_cast<unsigned>(nodes[i]);
+    }
+    size_ = count;
+    return hyle::Status::Ok();
+  }
+
+  std::span<const unsigned> span() const noexcept { return {data_, size_}; }
+
+ private:
+  static constexpr std::size_t kInlineCount = 16;
+  unsigned inline_[kInlineCount]{};
+  unsigned* data_ = inline_;
+  unsigned* heap_ = nullptr;
+  std::size_t size_ = 0;
+};
 
 // ---- C hyle_allocator -> C++ mem::Allocator (via noexcept trampolines)
 // ------- `state` points at a live hyle_allocator (stored inside the owning
@@ -475,20 +574,19 @@ hyle_status hyle_region_create(hyle_region_o **out, hyle_allocator backing,
     return steal_status(hyle::Status::InvalidArgument(
         "hyle_region_create: invalid backing"));
   }
-  hyle_region_options defaults = HYLE_REGION_OPTIONS_INIT;
-  const hyle_region_options *in = options != nullptr ? options : &defaults;
-  if (in->struct_size < sizeof(hyle_region_options) ||
-      in->initial_block_size == 0 ||
-      in->max_block_size < in->initial_block_size ||
-      in->large_allocation_threshold == 0) {
+  hyle_region_options decoded = HYLE_REGION_OPTIONS_INIT;
+  if (!decode_region_options(options, decoded) ||
+      decoded.initial_block_size == 0 ||
+      decoded.max_block_size < decoded.initial_block_size ||
+      decoded.large_allocation_threshold == 0) {
     return steal_status(hyle::Status::InvalidArgument(
         "hyle_region_create: invalid options"));
   }
   hyle::mem::RegionOptions cpp;
-  cpp.initial_block_size = in->initial_block_size;
-  cpp.max_block_size = in->max_block_size;
-  cpp.large_allocation_threshold = in->large_allocation_threshold;
-  cpp.size_limit = in->size_limit;
+  cpp.initial_block_size = decoded.initial_block_size;
+  cpp.max_block_size = decoded.max_block_size;
+  cpp.large_allocation_threshold = decoded.large_allocation_threshold;
+  cpp.size_limit = decoded.size_limit;
   auto *r = allocate_handle<hyle_region_o>(backing, cpp);
   if (r == nullptr) {
     return steal_status(hyle::Status::ResourceExhausted(
@@ -1053,7 +1151,8 @@ size_t hyle_growable_pool_slot_stride(const hyle_growable_pool_o *p) {
  */
 
 hyle_status hyle_huge_region_open(hyle_huge_region_o **out, size_t bytes,
-                                  uint32_t flags, int numa_node) {
+                                  hyle_huge_flags flags,
+                                  hyle_numa_node numa_node) {
   constexpr uint32_t kKnownFlags = HYLE_HUGE_THP_HINT | HYLE_HUGE_PREFAULT |
                                    HYLE_HUGE_NUMA_BIND |
                                    HYLE_HUGE_NUMA_INTERLEAVE;
@@ -1083,7 +1182,7 @@ hyle_status hyle_huge_region_open(hyle_huge_region_o **out, size_t bytes,
 }
 
 hyle_status hyle_huge_region_open_local(hyle_huge_region_o **out, size_t bytes,
-                                        uint32_t flags) {
+                                        hyle_huge_flags flags) {
   constexpr uint32_t kKnownFlags = HYLE_HUGE_THP_HINT | HYLE_HUGE_PREFAULT |
                                    HYLE_HUGE_NUMA_BIND |
                                    HYLE_HUGE_NUMA_INTERLEAVE;
@@ -1138,8 +1237,9 @@ hyle_status hyle_huge_region_open_interleaved(hyle_huge_region_o **out,
 }
 
 hyle_status hyle_huge_region_open_interleaved_nodes(
-    hyle_huge_region_o **out, size_t bytes, uint32_t flags,
-    const unsigned *nodes, size_t node_count, size_t bytes_per_chunk) {
+    hyle_huge_region_o **out, size_t bytes, hyle_huge_flags flags,
+    const hyle_numa_node *nodes, size_t node_count,
+    size_t bytes_per_chunk) {
   constexpr uint32_t kKnownFlags = HYLE_HUGE_THP_HINT | HYLE_HUGE_PREFAULT |
                                    HYLE_HUGE_NUMA_BIND |
                                    HYLE_HUGE_NUMA_INTERLEAVE;
@@ -1153,12 +1253,12 @@ hyle_status hyle_huge_region_open_interleaved_nodes(
     return steal_status(hyle::Status::InvalidArgument(
         "hyle_huge_region_open_interleaved_nodes: invalid size or flags"));
   }
-  if (nodes == nullptr && node_count != 0) {
-    return steal_status(hyle::Status::InvalidArgument(
-        "hyle_huge_region_open_interleaved_nodes: nodes is NULL with nonzero count"));
-  }
+  MemNumaNodeArray converted;
+  hyle::Status converted_status = converted.assign(nodes, node_count);
+  if (!converted_status.ok())
+    return steal_status(std::move(converted_status));
   auto r = hyle::mem::HugeRegion::allocate_interleaved(
-      bytes, std::span<const unsigned>(nodes, node_count), bytes_per_chunk,
+      bytes, converted.span(), bytes_per_chunk,
       to_huge_flags(flags));
   if (!r) return steal_status(std::move(r).error());
   const hyle_allocator backing = system_backing();
@@ -1182,16 +1282,17 @@ size_t hyle_huge_region_size(const hyle_huge_region_o *r) {
   return r ? r->region.size() : 0;
 }
 
-uint32_t hyle_huge_region_requested_flags(const hyle_huge_region_o *r) {
+hyle_huge_flags hyle_huge_region_requested_flags(const hyle_huge_region_o *r) {
   return r ? static_cast<uint32_t>(r->region.requested_flags()) : 0;
 }
 
-uint32_t hyle_huge_region_accepted_flags(const hyle_huge_region_o *r) {
+hyle_huge_flags hyle_huge_region_accepted_flags(const hyle_huge_region_o *r) {
   return r ? static_cast<uint32_t>(r->region.accepted_flags()) : 0;
 }
 
-int hyle_huge_region_requested_numa_node(const hyle_huge_region_o *r) {
-  return r ? r->region.requested_numa_node() : HYLE_MEM_NUMA_ANY;
+hyle_numa_node hyle_huge_region_requested_numa_node(
+    const hyle_huge_region_o *r) {
+  return r ? r->region.requested_numa_node() : HYLE_NUMA_ANY;
 }
 
 int hyle_huge_region_numa_placement_applied(const hyle_huge_region_o *r) {
@@ -1215,7 +1316,8 @@ void hyle_enable_allocator_numa(unsigned max_nodes) {
   hyle::mem::enable_allocator_numa(max_nodes);
 }
 
-hyle_status hyle_reserve_huge_1g_pages(size_t pages, int numa_node,
+hyle_status hyle_reserve_huge_1g_pages(size_t pages,
+                                       hyle_numa_node numa_node,
                                        unsigned timeout_ms) {
   return steal_status(
       hyle::mem::reserve_huge_1g_pages(pages, numa_node, timeout_ms));

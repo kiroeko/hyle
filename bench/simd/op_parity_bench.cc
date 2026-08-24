@@ -720,7 +720,8 @@ int main() {
   auto bench_mul_high = []<typename T>(const char* title, std::uint64_t seed) {
     const hs::ScalableTag<T> hd;
     const hn::ScalableTag<T> gd;
-    const std::size_t hw = hs::Lanes(hd), gw = hn::Lanes(gd);
+    [[maybe_unused]] const std::size_t hw = hs::Lanes(hd);
+    [[maybe_unused]] const std::size_t gw = hn::Lanes(gd);
     std::vector<T> a(kN), b(kN), out(kN);
     std::mt19937_64 rng(seed);
     for (auto& e : a) e = static_cast<T>(rng());
@@ -767,25 +768,26 @@ int main() {
   // AVX-512 and NEON do have both low and high operations.
 #if !defined(HYLE_SIMD_TARGET_SSE4)
   {
-    const hs::ScalableTag<std::uint64_t> hd;
-    const hn::ScalableTag<std::uint64_t> gd;
-    const std::size_t hw = hs::Lanes(hd), gw = hn::Lanes(gd);
-    std::vector<std::uint64_t> a(kN), b(kN), lo(kN), hi(kN);
+    const hs::ScalableTag<std::uint64_t> mul_hd;
+    const hn::ScalableTag<std::uint64_t> mul_gd;
+    const std::size_t mul_hw = hs::Lanes(mul_hd);
+    const std::size_t mul_gw = hn::Lanes(mul_gd);
+    std::vector<std::uint64_t> mul_a(kN), mul_b(kN), lo(kN), hi(kN);
     std::mt19937_64 rng(43);
-    for (auto& e : a) e = rng();
-    for (auto& e : b) e = rng();
+    for (auto& e : mul_a) e = rng();
+    for (auto& e : mul_b) e = rng();
     nb::Bench bench;
     bench.title("MulHighLow u64 (4096)").relative(true).batch(kN).minEpochIterations(4000);
     HYLE_RUN_PAIR(
         bench,
         [&](auto rep) {
           hyle_bench::stagger(rep);
-          for (std::size_t i = 0; i + hw <= kN; i += hw) {
-            auto high = hs::Zero(hd);
-            const auto low = hs::MulHighLow(hs::LoadU(hd, a.data() + i),
-                                             hs::LoadU(hd, b.data() + i), high);
-            hs::StoreU(low, hd, lo.data() + i);
-            hs::StoreU(high, hd, hi.data() + i);
+          for (std::size_t i = 0; i + mul_hw <= kN; i += mul_hw) {
+            auto high = hs::Zero(mul_hd);
+            const auto low = hs::MulHighLow(hs::LoadU(mul_hd, mul_a.data() + i),
+                                             hs::LoadU(mul_hd, mul_b.data() + i), high);
+            hs::StoreU(low, mul_hd, lo.data() + i);
+            hs::StoreU(high, mul_hd, hi.data() + i);
           }
           nb::doNotOptimizeAway(lo.data());
           nb::doNotOptimizeAway(hi.data());
@@ -793,11 +795,11 @@ int main() {
         },
         [&](auto rep) {
           hyle_bench::stagger(rep);
-          for (std::size_t i = 0; i + gw <= kN; i += gw) {
-            const auto va = hn::LoadU(gd, a.data() + i);
-            const auto vb = hn::LoadU(gd, b.data() + i);
-            hn::StoreU(hn::Mul(va, vb), gd, lo.data() + i);
-            hn::StoreU(hn::MulHigh(va, vb), gd, hi.data() + i);
+          for (std::size_t i = 0; i + mul_gw <= kN; i += mul_gw) {
+            const auto va = hn::LoadU(mul_gd, mul_a.data() + i);
+            const auto vb = hn::LoadU(mul_gd, mul_b.data() + i);
+            hn::StoreU(hn::Mul(va, vb), mul_gd, lo.data() + i);
+            hn::StoreU(hn::MulHigh(va, vb), mul_gd, hi.data() + i);
           }
           nb::doNotOptimizeAway(lo.data());
           nb::doNotOptimizeAway(hi.data());

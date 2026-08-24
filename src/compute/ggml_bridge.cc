@@ -11,9 +11,11 @@
 #include "hyle/compute/ggml_bridge.h"
 
 #include <cstdint>
+#include <cstring>
 #include <new>       // std::nothrow (FfnWeights heap alloc)
 #include <utility>
 
+#include "backend.h"
 #include "hyle/macros.h"
 
 // ggml headers -- CONFINED to this .cc (never in ggml_bridge.h). ggml-cuda.h is pure
@@ -205,21 +207,31 @@ GgmlBackend::~GgmlBackend() {
 }
 
 Result<GgmlBackend> GgmlBackend::create(const Device& device, int n_threads) noexcept {
+  if (!device.valid())
+    return std::unexpected(
+        Status::InvalidArgument("creating ggml backend on an invalid device"));
+  if (n_threads <= 0)
+    return std::unexpected(
+        Status::InvalidArgument("ggml backend thread count must be positive"));
   ggml_backend_t be = nullptr;
-  if (device.is_gpu()) {
+  if (std::strcmp(device.backend(), "cuda") == 0) {
 #if defined(HYLE_COMPUTE_CUDA)
-    // GPU -> ggml CUDA backend on the device's ordinal.
-    be = ggml_backend_cuda_init(device.ordinal());
+    // Device::ordinal() is the HYLE-global table index. ggml expects the
+    // CUDA-local ordinal, which differs once other backends are present.
+    be = ggml_backend_cuda_init(device_backend_ordinal(device));
     if (be == nullptr) return std::unexpected(Status::Unavailable("ggml_backend_cuda_init failed"));
 #else
     return std::unexpected(Status::Unavailable("ggml CUDA backend not compiled"));
 #endif
-  } else {
+  } else if (std::strcmp(device.backend(), "host") == 0) {
     // CPU -> ggml CPU backend with the configured thread count (③ batching-split:
     // caller passes full cores for a batched big graph, 1 for independent small work).
     be = ggml_backend_cpu_init();
     if (be == nullptr) return std::unexpected(Status::Unavailable("ggml_backend_cpu_init failed"));
     ggml_backend_cpu_set_n_threads(be, n_threads);
+  } else {
+    return std::unexpected(Status::Unimplemented(
+        "ggml bridge supports only HYLE host and CUDA devices"));
   }
   // One persistent gallocr (llama.cpp model): allocates the real device buffers for
   // every compute graph, created once and reused for all ops. This is spec ①'s "device
@@ -392,7 +404,7 @@ FfnBlock::FfnBlock(FfnBlock&& o) noexcept
 
 FfnBlock& FfnBlock::operator=(FfnBlock&& o) noexcept {
   if (this != &o) {
-    this->~FfnBlock();
+    reset();
     be_ = o.be_; galloc_ = o.galloc_; wctx_ = o.wctx_; wbuf_ = o.wbuf_; weights_ = o.weights_;
     d_ = o.d_; ffn_ = o.ffn_; eps_ = o.eps_;
     o.be_ = nullptr; o.galloc_ = nullptr; o.wctx_ = nullptr; o.wbuf_ = nullptr; o.weights_ = nullptr;
@@ -400,7 +412,7 @@ FfnBlock& FfnBlock::operator=(FfnBlock&& o) noexcept {
   return *this;
 }
 
-FfnBlock::~FfnBlock() {
+void FfnBlock::reset() noexcept {
   delete static_cast<FfnWeights*>(weights_);                                    // TU-local POD
   if (wbuf_ != nullptr) ggml_backend_buffer_free(static_cast<ggml_backend_buffer_t>(wbuf_));
   if (wctx_ != nullptr) ggml_free(static_cast<ggml_context*>(wctx_));
@@ -409,23 +421,34 @@ FfnBlock::~FfnBlock() {
   be_ = galloc_ = wctx_ = wbuf_ = weights_ = nullptr;
 }
 
+FfnBlock::~FfnBlock() { reset(); }
+
 Result<FfnBlock> FfnBlock::create(const Device& device, int d, int ffn, float eps,
                                   const float* w_norm, const float* w_gate, const float* w_up,
                                   const float* w_down, int n_threads) noexcept {
+  if (!device.valid())
+    return std::unexpected(
+        Status::InvalidArgument("creating ggml FFN on an invalid device"));
+  if (n_threads <= 0)
+    return std::unexpected(
+        Status::InvalidArgument("ggml FFN thread count must be positive"));
   HYLE_FATAL_ASSERT(d > 0 && ffn > 0 && eps >= 0.0f);
   HYLE_FATAL_ASSERT(w_norm && w_gate && w_up && w_down);
 
   // 1. compute backend (same as GgmlBackend::create).
   ggml_backend_t be = nullptr;
-  if (device.is_gpu()) {
+  if (std::strcmp(device.backend(), "cuda") == 0) {
 #if defined(HYLE_COMPUTE_CUDA)
-    be = ggml_backend_cuda_init(device.ordinal());
+    be = ggml_backend_cuda_init(device_backend_ordinal(device));
 #endif
     if (be == nullptr) return std::unexpected(Status::Unavailable("ggml CUDA backend unavailable"));
-  } else {
+  } else if (std::strcmp(device.backend(), "host") == 0) {
     be = ggml_backend_cpu_init();
     if (be == nullptr) return std::unexpected(Status::Unavailable("ggml_backend_cpu_init failed"));
     ggml_backend_cpu_set_n_threads(be, n_threads);
+  } else {
+    return std::unexpected(Status::Unimplemented(
+        "ggml FFN supports only HYLE host and CUDA devices"));
   }
 
   // 2. weight context (no_alloc: metadata only; buffer comes from alloc_ctx_tensors_from_buft).

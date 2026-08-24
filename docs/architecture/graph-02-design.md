@@ -68,10 +68,13 @@ graph-02 parallel_for(range, body)      ← 编排：递归 split + spawn 到 sc
    ├─ 分块调度  → sched work-stealing（graph-01 已绑定的同一套）
    └─ 每块计算  → body 内紧循环 → simd vec<T,N>（块内向量化）
                  或 → compute host kernel（compute-07 的 Kernel::HostFn）
-借来的算子（ggml/oneDNN）自带并行 → 注入 HYLE 线程池（set_threadpool），不经 graph-02
+借来的算子（ggml/oneDNN）→ 每个 adapter 单独证明并行所有权，不经 graph-02
 ```
 
-**边界**：graph-02 只管"把 range 铺到多核 + 合并结果"；单块内怎么算是 simd/compute 的事；AI-GEMM 那种整算子并行是 ggml 自带并行（注入 HYLE 池，references.md:104），不重造。
+**边界**：graph-02 只管"把 range 铺到多核 + 合并结果"；单块内怎么算是 simd/compute 的事。
+ggml `set_threadpool` 只接受 ggml 自建 pool，不能注入 HYLE scheduler；不可合批小任务使用
+`n_threads=1` 后由 HYLE 外层并发，合批大 graph 才授权 ggml 自有并行并从 blocking pool 隔离提交。
+oneDNN 等未来 adapter 也必须实证接口，不能从函数名类推。
 
 ## 五、里程碑拆分与验收
 
@@ -95,7 +98,7 @@ graph-02 parallel_for(range, body)      ← 编排：递归 split + spawn 到 sc
 | GPU 数据并行（range 铺到 GPU 线程）| v1 CPU 数据并行(sched workers + simd);GPU 并行是 compute 自造 kernel(04/06)的 grid,不同机制 |
 | 借 oneTBB/oneDPL/OpenMP 运行时 | 双调度器红线(references.md:99) |
 | 分布式/跨机数据并行 | 北极星② HPC 分布式是更上层;graph 先单机多核(同 graph-01 边界) |
-| 重造 GEMM/BLAS 的并行 | 借 ggml/oneDNN 自带并行(注入 HYLE 池) |
+| 重造 GEMM/BLAS 的并行 | 借 ggml/oneDNN 自带并行；adapter 明确内层线程所有权，并与 HYLE blocking 提交隔离，不能假定可注入 HYLE pool |
 
 ## 七、参考
 

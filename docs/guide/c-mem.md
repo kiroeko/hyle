@@ -2,7 +2,7 @@
 
 > **发布面**：`include/hyle/c/mem.h`  
 > **实现**：`src/mem/c_mem.cc`（链 `hyle_mem`）  
-> **稳定性**：当前已按真实 C/FFI 用户任务严格收口；正式发布前仍可直接重塑，当前 manifest 不承诺 ABI 兼容
+> **稳定性**：当前 C/FFI 能力与 manifest 已机械审查，但模块认证仍以 [`pre-release-readiness`](../milestones/pre-release-readiness.md) 为准；正式发布前可直接重塑，不承诺 ABI 兼容
 > **命名**：全部 `hyle_*` / `HYLE_*`
 
 本文只负责把**已经选定的 mem 能力**准确映射到 C/FFI：签名、Status/out、所有权和
@@ -129,8 +129,13 @@ allocate/free/reallocate + bulk reset。当前没有的是 HYLE-owned、自动�
 和 bulk release 的单个 C pool handle；没有真实 C/FFI 消费者前，不复制一套与通用 heap 重叠的
 所有权协议。需要硬 buffer 边界选 FixedPool，需要 owned phase lifetime 选 Region。
 
-- `hyle_region_create(&out,...)` 的 options 以 `HYLE_REGION_OPTIONS_INIT` 初始化，并带
-  `struct_size`。`clear` 保留普通 blocks、释放 dedicated large blocks；`release` 归还全部。
+- `hyle_region_create(&out,...)` 的 options 以 `HYLE_REGION_OPTIONS_INIT` 初始化。`struct_size`
+  是固定 `uint32_t`，随后固定 `uint32_t reserved==0`；64-bit ABI 上首个 size 字段仍在 offset 8，
+  整体仍为 40 bytes。NULL options 或只有 `HYLE_REGION_OPTIONS_REQUIRED_SIZE`（8 bytes）的前缀
+  都选全部 INIT 默认；每个完整出现的 size 字段依次覆盖默认，缺失/部分尾字段保持默认，故
+  缺失 `size_limit` 明确为 `SIZE_MAX`。未知尾部忽略；调用方必须保证声明的 struct_size 字节
+  可读。小于 8 或 reserved 非零返回 INVALID_ARGUMENT。`clear` 保留普通 blocks、释放
+  dedicated large blocks；`release` 归还全部。
 - `hyle_fixed_region_init(&region,storage,size)` 直接初始化 3-word 值对象，是严格 no-heap
   bulk-reset bump；没有需要管理的 control allocation，也无需 destroy。旧切片在 clear 后全部失效。
 - `hyle_fixed_pool_init(&out,&control,sizeof control,storage,size)` 的 control/payload 都由调用方持有；
@@ -295,7 +300,14 @@ typed 宏为 `HYLE_GROWABLE_POOL_CREATE/ACQUIRE/RELEASE`。需要 ctor/dtor 的 
 mem 不再维护私有 TLS error code/string。冷路径与全库共用 `hyle_status`；成功 Status 是 8B
 零值、零分配，错误消息分配失败时仍保留 code。热分配路径则完全不构造 Status。
 
-flags：`HYLE_HUGE_THP_HINT`、`HYLE_HUGE_PREFAULT`、`HYLE_HUGE_NUMA_BIND`、`HYLE_HUGE_NUMA_INTERLEAVE`；bind/interleave 互斥，interleave 只能搭配 `HYLE_MEM_NUMA_ANY`，也不能传给 `open_local`。无 NUMA 约束用 `HYLE_MEM_NUMA_ANY`。
+flags：`HYLE_HUGE_THP_HINT`、`HYLE_HUGE_PREFAULT`、`HYLE_HUGE_NUMA_BIND`、`HYLE_HUGE_NUMA_INTERLEAVE`；bind/interleave 互斥，interleave 只能搭配 `HYLE_NUMA_ANY`，也不能传给 `open_local`。无 NUMA 约束用 `HYLE_NUMA_ANY`。
+`hyle_huge_flags` 固定为 `uint32_t`；NUMA 参数直接复用 platform 的固定宽 `hyle_numa_node`，单 node 参数、
+requested-node 查询和 selected-node 数组都使用同一个 type，所以 platform 的
+`hyle_numa_nodes` 结果可逐项传入而不需要 `(int)`/`(unsigned)` cast。显式数组只接受非负
+实际 node ID，`HYLE_NUMA_ANY` 只用于单 node 参数；数组中出现负值返回
+`INVALID_ARGUMENT`。常量仍可用于
+`switch`/位运算，但不要把它们当成由编译器自行选宽度的 C enum。这样调用方即使启用
+`-fshort-enums`，flags、返回值和 `-1` sentinel 的 ABI 仍与 HYLE 二进制一致。
 selected-node 调用前用 platform 的 `hyle_numa_nodes` 取得实际 id，不要从 count 猜 `[0,count)`；
 用 `hyle_numa_capabilities` 可预检，多节点 policy 是否成功安装仍以返回 Status 为准；目标节点
 压力下 OS 可以回退。`count==0` 选择全部节点，

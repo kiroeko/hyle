@@ -18,7 +18,8 @@ dependency on boost headers or build system.
 ## Source
 
 - Upstream: https://github.com/boostorg/context  (`libs/context/src/asm/`)
-- Pinned commit: `d2142b69252150dafb5f6569b7eb9a42312a92a3`
+- Release: `boost-1.92.0`
+- Pinned commit: `cc1b9e02cd530d6607becc984e1e5bfa4f7b3600`
 - Files are copied **verbatim**, not modified.
 
 ## Contents (6 platform/arch x 3 routines = 18 files)

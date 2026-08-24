@@ -13,7 +13,8 @@ HYLE 的 proprietary 授权与交付物形状是两回事。权利人可以向�
 
 三种形状都只通过 `hyle::<component>` target 消费。不要手写 include path、`.lib`、`.a`、`.so` 或
 DLL 列表；CMake target 才携带语言标准、模块闭包、系统库、第三方 link-only archive 和运行时 staging
-规则。以下示例选择 `mem` 与 `simd`，依赖的 `core/error/platform` 等组件会自动进入闭包。
+规则。以下示例选择 `mem` 与 `simd`，依赖的 `error/platform/util_core` 会自动进入闭包；公开
+core 头会随 SDK 安装，但未调用 `hyle_core` 符号时不会虚构一个 core binary component 依赖。
 在 macOS 上，任何包含 platform 的闭包要求 deployment target ≥14.4；顶层构建未指定时 HYLE
 默认该值，源码嵌入方若已有更低的 `CMAKE_OSX_DEPLOYMENT_TARGET` 会在 configure 阶段得到明确错误。
 
@@ -43,6 +44,9 @@ cmake --build build --config Release
 `CMAKE_PREFIX_PATH`。Windows 没有 rpath，`hyle_stage_runtime_dependencies()` 会在构建后把该
 executable 的传递 HYLE DLL 闭包复制到旁边；它在 Unix 和 static SDK 上是 no-op。Unix HYLE 动态库
 自身使用 `$ORIGIN`/`@loader_path` 查找同目录传递依赖。
+安装前缀可以整体移动：不要保留原构建目录或原 prefix 来“帮助”消费。HYLE 的 package gate 正是先
+搬走完整 shared/static SDK，再从新位置编译并运行 focused consumers；如果发行方重排 `include/lib/bin`
+以外的相对布局，必须重新生成 package，不能手改导出的绝对路径。
 
 用户不再设置 `HYLE_STATIC=OFF`：shared/static 是交付前缀已经固定的属性，可用只读的
 `Hyle_STATIC` 判断当前包形状。不要把两个 linkage、两个 ABI minor 或不同 ISA floor 的 SDK 混进同一
@@ -198,6 +202,19 @@ CPU-only 包写 `HYLE_COMPUTE_CUDA=OFF`。shared 包把 ggml/volk 静态实现�
 依赖。两种包都安装准确的 ggml/volk/Vulkan-Headers license closure 和 shader helper，用户不需要
 供应商源码 checkout。
 
+workflow 对该重型形状只定义一条 Linux job，避免在三平台重复下载：从中央 lock 下载并按
+archive SHA-256 缓存 ggml、nghttp2、Vulkan-Headers、volk、glslang、GoogleTest、Tracy，展开后再验证
+无 `.git` 完整树。它先只构建并运行 HTTP/2、ggml bridge、Vulkan 三个真实 adapter tests 一次；然后关闭
+tests/bench，以 `--parallel 2` 分别 build/install static/shared 产品形状。
+源码无关 downstream 对两种形状都检查 feature manifest、许可证、真实 HTTP/2 SETTINGS 输出与 host
+`GgmlBackend`；static 必须导出私有闭包 targets/headers，shared 则必须不泄漏它们。glslang 仍只属于
+tests/bench，该 production gate 会拒绝其被取得或安装。最后另做小型 obs-only shared/static trace-on SDK，
+由 installed consumer 编译并运行 C/C++ Tracy surface，验证 exact source、公开宏、target/header/license、
+Threads/`dl` static closure 与运行时 staging；static consumer 是允许的单最终 executable topology，不是
+多 DLL/plugin 复制 singleton。这样无需把重型全模块矩阵再复制一遍。
+这段是持续验证合同，不是“当前已绿”声明；hosted run 与本地三平台证据必须在
+[`pre-release-readiness`](../milestones/pre-release-readiness.md) 单独签署。
+
 可迁移 compute 包默认 `HYLE_COMPUTE_GGML_NATIVE=OFF`；x86 ggml 使用 SSE4.2 安全基线。面向已知
 机器且性能优先时，用 `HYLE_SIMD_EXACT_TARGET=AVX2`/`AVX512` 让 HYLE 与 ggml 使用相同 ISA floor，
 或仅在同构本机源码构建显式打开 `HYLE_COMPUTE_GGML_NATIVE=ON`。后者产物不要发给更老 CPU。
@@ -231,12 +248,21 @@ cmake -S hyle-<version>-source -B build \
 ```
 
 ggml、volk、Vulkan-Headers、glslang、GoogleTest 等依赖使用同一
-`FETCHCONTENT_SOURCE_DIR_<UPPERCASE_NAME>` 机制。依赖源码交付及其许可证仍是独立 closure，不能把本机
+`FETCHCONTENT_SOURCE_DIR_<UPPERCASE_NAME>` 机制，但 direct override 也必须通过中央 lock：目录须为
+精确 commit/tree 且无 tracked、untracked、ignored 项的 Git checkout，或 lock 中官方 archive 的逐目录/文件原始字节/安全相对链接
+manifest 完全一致的无 `.git` 展开树。客户因此不必为了 source bundle 携带 Git metadata，同时任何
+增删改、空目录或链接变化都会在显式 override 的 `MakeAvailable` 前失败；父工程若利用 FetchContent
+“第一次声明胜出”预声明同名源码，wrapper 还会复验实际 population，错误身份不能成功配置/package。
+父 CMake/toolchain 本身仍是可执行信任根。依赖源码交付及其许可证仍是独立 closure，不能把本机
 下载缓存直接称为 HYLE 原创源码。若一次交付包含多项依赖，用源码树提供的
-`hyle-offline-deps.cmake` 扫描 `deps/<FetchContent-name>/` 并生成标准变量
-（`cmake -C hyle-offline-deps.cmake ...`）；该文件不重复供应商清单。不要要求客户把缓存塞进仓库
+`hyle-offline-deps.cmake` 扫描 `deps/<lock-name>/` 并生成标准变量
+（`cmake -C hyle-offline-deps.cmake ...`）；该文件不重复供应商清单，并默认完全断网。bundle 应同时
+保存官方 archive SHA-256（传输证明）与 lock expanded-tree SHA-256（展开后内容证明）。不要要求客户把缓存塞进仓库
 `.deps`，也不要复制
 含特定编译器生成物/stamp 的 `<build>/_deps`。bundle manifest 应固定每项上游、pin、校验与 license。
+若内部补丁使展开树不同，只能在保留独立签名/SBOM 证明时通过 preload 的显式 unsafe escape；该形状必须
+是无 symlink 的普通目录树（安全相对链接只属于 digest 完全匹配的官方展开树），普通 direct override 不能
+自我豁免。
 OpenSSL/CUDA 等系统 SDK 仍由离线 toolchain 或 package prefix 提供，不属于 FetchContent 源码目录。
 如何从联网准备机制作三平台工具链/依赖介质并在干净断网机器验收，见
 [`setup/offline.md`](../setup/offline.md)。
@@ -252,7 +278,8 @@ C ABI 不要求应用源码使用 CMake，但 SDK 的传递依赖元数据以 `H
 ## 交付前检查
 
 - static/shared SDK 必须用一个脱离源码树的 consumer configure/build/run；
-- 已收口模块的参考 consumer 位于 `samples/package/<module>/`；例如 `error/c` 是真正从
+- 模块的 focused 参考 consumer 位于 `samples/package/<module>/`；它们验证具体 package 合同，
+  不单独证明模块已严格收口。例如 `error/c` 是真正从
   `project(... LANGUAGES C)` 开始的 C ABI 工程，`error/cpp` 覆盖 `Status`/`Result<T>`；
 - source zip 必须核对 SHA-256、`SOURCE-MANIFEST.txt`、根 `LICENSE` 和 `THIRD_PARTY_NOTICES.md`；
 - 合同中明确允许的使用、修改、再分发、披露范围；不要用“给了源码/没给源码”代替授权条款。

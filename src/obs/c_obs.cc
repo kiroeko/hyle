@@ -20,14 +20,16 @@ struct hyle_obs_sink_o {
   hyle_obs_sink_write_fn write;
   hyle_obs_sink_flush_fn flush;
   void* state;
+  bool owns_control;
   hyle::obs::LogSink native;
 
   hyle_obs_sink_o(hyle_obs_sink_write_fn callback,
                   hyle_obs_sink_flush_fn flush_callback,
-                  void* callback_state) noexcept
+                  void* callback_state, bool owns_control_storage) noexcept
       : write(callback),
         flush(flush_callback),
         state(callback_state),
+        owns_control(owns_control_storage),
         native{this, &hyle_obs_sink_o::dispatch,
                flush_callback != nullptr ? &hyle_obs_sink_o::flush_dispatch
                                          : nullptr} {}
@@ -76,14 +78,72 @@ bool valid_level(hyle_obs_log_level level, bool threshold) noexcept {
   return raw >= HYLE_OBS_LOG_TRACE && raw <= top;
 }
 
-bool has_member(std::uint32_t struct_size, std::size_t offset,
-                std::size_t member_size) noexcept {
-  return struct_size >= offset && struct_size - offset >= member_size;
+constexpr bool has_record_bytes(std::uint32_t struct_size,
+                                std::size_t offset,
+                                std::size_t member_size) noexcept {
+  const std::size_t readable = struct_size;
+  return readable >= offset && readable - offset >= member_size;
 }
 
-template <class Member>
-bool has_member(std::uint32_t struct_size, std::size_t offset) noexcept {
-  return has_member(struct_size, offset, sizeof(Member));
+template <class Field>
+void read_record_field(const hyle_obs_log_record* input,
+                       std::uint32_t declared_size, std::size_t offset,
+                       Field& output) noexcept {
+  if (!has_record_bytes(declared_size, offset, sizeof(Field))) return;
+  const auto* bytes = reinterpret_cast<const unsigned char*>(input);
+  std::memcpy(&output, bytes + offset, sizeof(Field));
+}
+
+hyle::Status decode_log_record(const hyle_obs_log_record* input,
+                               hyle_obs_log_record& output) noexcept {
+  const hyle_obs_log_record defaults = HYLE_OBS_LOG_RECORD_INIT;
+  output = defaults;
+  if (input == nullptr) {
+    return hyle::Status::InvalidArgument("log record is null");
+  }
+
+  // A versioned raw input can be a physically shorter or unaligned FFI byte
+  // object, so no member may be dereferenced before its complete bytes are
+  // known to be part of the declared readable prefix.
+  std::uint32_t declared_size = 0;
+  std::memcpy(&declared_size, input, sizeof(declared_size));
+  if (declared_size < HYLE_OBS_LOG_RECORD_REQUIRED_SIZE) {
+    return hyle::Status::InvalidArgument(
+        "log record has an invalid struct_size");
+  }
+
+  read_record_field(input, declared_size,
+                    offsetof(hyle_obs_log_record, level), output.level);
+  read_record_field(input, declared_size,
+                    offsetof(hyle_obs_log_record, message), output.message);
+  read_record_field(input, declared_size,
+                    offsetof(hyle_obs_log_record, message_size),
+                    output.message_size);
+
+  constexpr std::size_t kFieldsPairBegin =
+      offsetof(hyle_obs_log_record, fields);
+  constexpr std::size_t kFieldsPairEnd =
+      offsetof(hyle_obs_log_record, field_count) +
+      sizeof(decltype(hyle_obs_log_record::field_count));
+  if (has_record_bytes(declared_size, kFieldsPairBegin,
+                       kFieldsPairEnd - kFieldsPairBegin)) {
+    read_record_field(input, declared_size,
+                      offsetof(hyle_obs_log_record, fields), output.fields);
+    read_record_field(input, declared_size,
+                      offsetof(hyle_obs_log_record, field_count),
+                      output.field_count);
+  }
+  read_record_field(input, declared_size,
+                    offsetof(hyle_obs_log_record, file), output.file);
+  read_record_field(input, declared_size,
+                    offsetof(hyle_obs_log_record, function), output.function);
+  read_record_field(input, declared_size,
+                    offsetof(hyle_obs_log_record, line), output.line);
+  read_record_field(input, declared_size,
+                    offsetof(hyle_obs_log_record, timestamp_ns),
+                    output.timestamp_ns);
+  output.struct_size = static_cast<std::uint32_t>(sizeof(output));
+  return hyle::Status::Ok();
 }
 
 #if defined(HYLE_TRACE) && defined(HYLE_TRACE_TRACY)
@@ -106,7 +166,19 @@ static_assert(std::is_standard_layout_v<hyle_obs_log_field>);
 static_assert(std::is_trivially_copyable_v<hyle_obs_log_field>);
 static_assert(std::is_standard_layout_v<hyle_obs_log_record>);
 static_assert(std::is_trivially_copyable_v<hyle_obs_log_record>);
+static_assert(sizeof(hyle_obs_log_level) == sizeof(std::uint32_t));
 static_assert(offsetof(hyle_obs_log_record, struct_size) == 0);
+static_assert(offsetof(hyle_obs_log_record, level) == 4);
+static_assert(offsetof(hyle_obs_log_record, message) == 8);
+static_assert(offsetof(hyle_obs_log_record, message_size) == 16);
+static_assert(HYLE_OBS_LOG_RECORD_REQUIRED_SIZE == 24);
+static_assert(offsetof(hyle_obs_log_record, fields) == 24);
+static_assert(offsetof(hyle_obs_log_record, field_count) == 32);
+static_assert(offsetof(hyle_obs_log_record, file) == 40);
+static_assert(offsetof(hyle_obs_log_record, function) == 48);
+static_assert(offsetof(hyle_obs_log_record, line) == 56);
+static_assert(offsetof(hyle_obs_log_record, timestamp_ns) == 64);
+static_assert(sizeof(hyle_obs_log_record) == 72);
 static_assert(static_cast<int>(hyle::obs::LogLevel::Trace) ==
               HYLE_OBS_LOG_TRACE);
 static_assert(static_cast<int>(hyle::obs::LogLevel::Debug) ==
@@ -147,36 +219,29 @@ int hyle_obs_should_log(hyle_obs_log_level level) {
 hyle_status hyle_obs_emit_record(int* out_emitted,
                                  const hyle_obs_log_record* record) {
   if (out_emitted != nullptr) *out_emitted = 0;
-  constexpr std::size_t kRequired =
-      offsetof(hyle_obs_log_record, message_size) + sizeof(std::size_t);
-  if (record == nullptr || record->struct_size < kRequired) {
-    return steal_status(hyle::Status::InvalidArgument(
-        "log record is null or has an invalid struct_size"));
-  }
-  if (!valid_level(record->level, false) ||
-      (record->message == nullptr && record->message_size != 0)) {
+  hyle_obs_log_record normalized;
+  hyle::Status decode_status = decode_log_record(record, normalized);
+  if (!decode_status.ok()) return steal_status(std::move(decode_status));
+
+  if (!valid_level(normalized.level, false) ||
+      (normalized.message == nullptr && normalized.message_size != 0)) {
     return steal_status(hyle::Status::InvalidArgument(
         "log record has an invalid level or message byte view"));
   }
 
-  const char* message = record->message != nullptr ? record->message : "";
+  const char* message =
+      normalized.message != nullptr ? normalized.message : "";
   const std::size_t message_size =
-      record->message_size == HYLE_OBS_NUL_TERMINATED
+      normalized.message_size == HYLE_OBS_NUL_TERMINATED
           ? std::strlen(message)
-          : record->message_size;
+          : normalized.message_size;
 
   hyle::obs::LogRecord native{
-      .level = static_cast<hyle::obs::LogLevel>(record->level),
+      .level = static_cast<hyle::obs::LogLevel>(normalized.level),
       .message = std::string_view(message, message_size),
   };
-  if (has_member<const hyle_obs_log_field*>(
-          record->struct_size, offsetof(hyle_obs_log_record, fields))) {
-    native.fields = record->fields;
-  }
-  if (has_member<std::size_t>(
-          record->struct_size, offsetof(hyle_obs_log_record, field_count))) {
-    native.field_count = record->field_count;
-  }
+  native.fields = normalized.fields;
+  native.field_count = normalized.field_count;
   if (native.field_count != 0 && native.fields == nullptr) {
     return steal_status(hyle::Status::InvalidArgument(
         "log record field_count requires a non-null fields array"));
@@ -188,22 +253,10 @@ hyle_status hyle_obs_emit_record(int* out_emitted,
           "log field key and value must be non-null"));
     }
   }
-  if (has_member<const char*>(
-          record->struct_size, offsetof(hyle_obs_log_record, file))) {
-    native.file = record->file;
-  }
-  if (has_member<const char*>(
-          record->struct_size, offsetof(hyle_obs_log_record, function))) {
-    native.function = record->function;
-  }
-  if (has_member<std::uint32_t>(
-          record->struct_size, offsetof(hyle_obs_log_record, line))) {
-    native.line = record->line;
-  }
-  if (has_member<std::uint64_t>(
-          record->struct_size, offsetof(hyle_obs_log_record, timestamp_ns))) {
-    native.timestamp_ns = record->timestamp_ns;
-  }
+  native.file = normalized.file;
+  native.function = normalized.function;
+  native.line = normalized.line;
+  native.timestamp_ns = normalized.timestamp_ns;
 
   const bool emitted = hyle::obs::log_record(native);
   if (out_emitted != nullptr) *out_emitted = emitted ? 1 : 0;
@@ -248,7 +301,7 @@ hyle_status hyle_obs_sink_create(hyle_obs_sink** out,
     return steal_status(hyle::Status::InvalidArgument(
         "sink write callback must be non-null"));
   }
-  auto* sink = new (std::nothrow) hyle_obs_sink(write, flush, state);
+  auto* sink = new (std::nothrow) hyle_obs_sink(write, flush, state, true);
   if (sink == nullptr) {
     return steal_status(
         hyle::Status::ResourceExhausted("sink allocation failed"));
@@ -262,13 +315,52 @@ hyle_status hyle_obs_sink_create(hyle_obs_sink** out,
   return hyle_status{};
 }
 
+size_t hyle_obs_sink_control_size(void) { return sizeof(hyle_obs_sink); }
+
+size_t hyle_obs_sink_control_alignment(void) {
+  return alignof(hyle_obs_sink);
+}
+
+hyle_status hyle_obs_sink_init(hyle_obs_sink** out, void* control,
+                               size_t control_bytes,
+                               hyle_obs_sink_write_fn write,
+                               hyle_obs_sink_flush_fn flush, void* state) {
+  if (out == nullptr) {
+    return steal_status(hyle::Status::InvalidArgument(
+        "sink output must be non-null"));
+  }
+  *out = nullptr;
+  if (control == nullptr || control_bytes < sizeof(hyle_obs_sink) ||
+      reinterpret_cast<std::uintptr_t>(control) % alignof(hyle_obs_sink) != 0) {
+    return steal_status(hyle::Status::InvalidArgument(
+        "sink control storage is null, undersized, or misaligned"));
+  }
+  if (write == nullptr) {
+    return steal_status(hyle::Status::InvalidArgument(
+        "sink write callback must be non-null"));
+  }
+
+  auto* sink = ::new (control) hyle_obs_sink(write, flush, state, false);
+  hyle::Status status = hyle::obs::add_sink(sink->native);
+  if (!status.ok()) {
+    sink->~hyle_obs_sink_o();
+    return steal_status(std::move(status));
+  }
+  *out = sink;
+  return hyle_status{};
+}
+
 hyle_status hyle_obs_sink_destroy(hyle_obs_sink* sink) {
   if (sink == nullptr) return hyle_status{};
   hyle::Status status = hyle::obs::remove_sink(sink->native);
   if (!status.ok()) {
     return steal_status(std::move(status));
   }
-  delete sink;
+  if (sink->owns_control) {
+    delete sink;
+  } else {
+    sink->~hyle_obs_sink_o();
+  }
   return hyle_status{};
 }
 
@@ -305,9 +397,19 @@ hyle_obs_trace_zone hyle_obs_trace_zone_begin(
   const char* safe_name = name != nullptr ? name : "";
   const char* safe_file = file != nullptr ? file : "";
   const char* safe_function = function != nullptr ? function : "";
+  constexpr std::size_t kComponentMax =
+      HYLE_OBS_TRACE_SOURCE_COMPONENT_MAX;
+  static_assert(12 + 3 * kComponentMax <= UINT16_MAX);
+  const std::size_t file_size =
+      hyle::obs::detail::bounded_trace_string_length(safe_file, kComponentMax);
+  const std::size_t function_size =
+      hyle::obs::detail::bounded_trace_string_length(safe_function,
+                                                     kComponentMax);
+  const std::size_t name_size =
+      hyle::obs::detail::bounded_trace_string_length(safe_name, kComponentMax);
   const uint64_t source = ___tracy_alloc_srcloc_name(
-      line, safe_file, std::strlen(safe_file), safe_function,
-      std::strlen(safe_function), safe_name, std::strlen(safe_name), 0);
+      line, safe_file, file_size, safe_function, function_size, safe_name,
+      name_size, 0);
   result = from_tracy_zone(___tracy_emit_zone_begin_alloc(source, 1));
 #else
   (void)name;
@@ -329,7 +431,9 @@ void hyle_obs_trace_zone_end(hyle_obs_trace_zone zone) {
 void hyle_obs_trace_zone_text(hyle_obs_trace_zone zone, const char* text) {
 #if defined(HYLE_TRACE) && defined(HYLE_TRACE_TRACY)
   if (text != nullptr) {
-    ___tracy_emit_zone_text(to_tracy_zone(zone), text, std::strlen(text));
+    ___tracy_emit_zone_text(
+        to_tracy_zone(zone), text,
+        hyle::obs::detail::bounded_trace_string_length(text));
   }
 #else
   (void)zone;
@@ -353,6 +457,13 @@ void hyle_obs_trace_message(const char* message) {
   if (message == nullptr) return;
   HYLE_TRACE_MESSAGE(message);
 }
+
+void hyle_obs_trace_fiber_enter(const char* stable_name) {
+  if (stable_name == nullptr) return;
+  HYLE_TRACE_FIBER_ENTER(stable_name);
+}
+
+void hyle_obs_trace_fiber_leave(void) { HYLE_TRACE_FIBER_LEAVE(); }
 
 void hyle_obs_trace_frame(const char* stable_name) {
 #if defined(HYLE_TRACE) && defined(HYLE_TRACE_TRACY)

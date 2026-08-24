@@ -120,6 +120,7 @@ public:
   }
 
 #if defined(HYLE_TESTING)
+  // TEST-ONLY: validate a cached slot before a typed wrapper runs user code.
   void testing_assert_checked_out(void *p) const noexcept {
     pool_->cache_assert_checked_out(p);
   }

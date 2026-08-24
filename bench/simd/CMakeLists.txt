@@ -227,6 +227,15 @@ hyle_apply_warnings(hyle_radix_sort_bench)
 # (includes vec.h at a fixed ISA target), so per-ISA exes like the vec_test variants: avx2 runs on
 # an AVX2 host, avx512 under Intel SDE. Only x86 (native gather/compress are x86 intrinsics).
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+  # The parity translation units intentionally use a benchmark-size `kN` and
+  # instantiate header-only HYLE/Highway templates that use the same local
+  # spelling. MSVC C4459 diagnoses that caller/header name coincidence even
+  # though neither declaration can refer to the other. Keep /WX for actionable
+  # diagnostics while suppressing this target-local template warning only.
+  set(_hyle_op_parity_msvc_options)
+  if(MSVC)
+    set(_hyle_op_parity_msvc_options /wd4459)
+  endif()
   hyle_isa_flags(_gb_avx2 AVX2)
   add_executable(hyle_gather_bench_avx2 gather_bench.cc)
   target_link_libraries(hyle_gather_bench_avx2 PRIVATE nanobench)
@@ -256,7 +265,8 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   # PER-TARGET flags (not set_source_files_properties, which would leak onto the avx512 target that
   # shares this source): full AVX2 baseline so Highway static dispatch picks true 256-bit.
   if(MSVC)
-    target_compile_options(hyle_op_parity_bench_avx2 PRIVATE /arch:AVX2 /bigobj)
+    target_compile_options(hyle_op_parity_bench_avx2 PRIVATE /arch:AVX2 /bigobj
+                                                                ${_hyle_op_parity_msvc_options})
   else()
     target_compile_options(hyle_op_parity_bench_avx2 PRIVATE -mavx2 -mfma -mf16c -mbmi -mbmi2 -maes -mpclmul)
   endif()
@@ -268,20 +278,29 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   target_include_directories(hyle_op_parity_bench_avx512 SYSTEM PRIVATE "${_hyle_bench_highway_dir}" "${_hyle_bench_xsimd_dir}/include")
   target_compile_definitions(hyle_op_parity_bench_avx512 PRIVATE HYLE_SIMD_TARGET_AVX512)
   hyle_isa_flags(_op_avx512 AVX512)
-  target_compile_options(hyle_op_parity_bench_avx512 PRIVATE ${_op_avx512})
+  target_compile_options(hyle_op_parity_bench_avx512 PRIVATE ${_op_avx512}
+                                                              ${_hyle_op_parity_msvc_options})
+  if(MSVC)
+    # xsimd's AVX-512BW template has an intentionally unreachable fallback;
+    # MSVC reports C4702 at the instantiation point despite /external:W0.
+    target_compile_options(hyle_op_parity_bench_avx512 PRIVATE /wd4702)
+  endif()
   hyle_apply_warnings(hyle_op_parity_bench_avx512)
 
   # sse4 variant (128-bit): proves the sse4 backend's native-op rewrites (PopCount/LZCnt/TZCnt/
   # ReverseBits/DupEven/Odd/ConcatEven/Odd/GetExponent) match/beat Highway's SSE4 same ops. Same
   # apples-to-apples (both inline, same TU/ISA). Highway needs the AES/PCLMUL baseline so its SSE4
   # static target isn't downgraded.
-  add_executable(hyle_op_parity_bench_sse4 op_parity_bench.cc)
+  add_executable(hyle_op_parity_bench_sse4 op_parity_bench.cc
+                 "${_hyle_bench_highway_dir}/hwy/abort.cc")
   target_link_libraries(hyle_op_parity_bench_sse4 PRIVATE nanobench)
   target_include_directories(hyle_op_parity_bench_sse4 PRIVATE "${PROJECT_SOURCE_DIR}/include")
   target_include_directories(hyle_op_parity_bench_sse4 SYSTEM PRIVATE "${_hyle_bench_highway_dir}" "${_hyle_bench_xsimd_dir}/include")
   target_compile_definitions(hyle_op_parity_bench_sse4 PRIVATE HYLE_SIMD_TARGET_SSE4)
   if(MSVC)
     # MSVC has no /arch:SSE4; SSE4.2 intrinsics are unconditional on x64.
+    target_compile_options(hyle_op_parity_bench_sse4 PRIVATE
+      ${_hyle_op_parity_msvc_options})
   else()
     target_compile_options(hyle_op_parity_bench_sse4 PRIVATE -msse4.2 -maes -mpclmul)
   endif()
@@ -293,7 +312,8 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   target_include_directories(hyle_op_parity_full_bench_avx2 SYSTEM PRIVATE "${_hyle_bench_highway_dir}")
   target_compile_definitions(hyle_op_parity_full_bench_avx2 PRIVATE HYLE_SIMD_TARGET_AVX2)
   if(MSVC)
-    target_compile_options(hyle_op_parity_full_bench_avx2 PRIVATE /arch:AVX2 /bigobj)
+    target_compile_options(hyle_op_parity_full_bench_avx2 PRIVATE /arch:AVX2 /bigobj
+                                                                     ${_hyle_op_parity_msvc_options})
   else()
     target_compile_options(hyle_op_parity_full_bench_avx2 PRIVATE -mavx2 -mfma -mf16c -mbmi -mbmi2 -maes -mpclmul)
   endif()
@@ -306,7 +326,8 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   target_include_directories(hyle_op_parity_widen_bench_avx2 SYSTEM PRIVATE "${_hyle_bench_highway_dir}")
   target_compile_definitions(hyle_op_parity_widen_bench_avx2 PRIVATE HYLE_SIMD_TARGET_AVX2)
   if(MSVC)
-    target_compile_options(hyle_op_parity_widen_bench_avx2 PRIVATE /arch:AVX2 /bigobj)
+    target_compile_options(hyle_op_parity_widen_bench_avx2 PRIVATE /arch:AVX2 /bigobj
+                                                                      ${_hyle_op_parity_msvc_options})
   else()
     target_compile_options(hyle_op_parity_widen_bench_avx2 PRIVATE -mavx2 -mfma -mf16c -mbmi -mbmi2 -maes -mpclmul)
   endif()

@@ -31,6 +31,18 @@ bool has_gpu() {
   return false;
 }
 
+bool find_cuda(Device* out) {
+  Device devs[8];
+  const std::size_t n = enumerate(devs, 8);
+  for (std::size_t i = 0; i < n && i < 8; ++i) {
+    if (std::strcmp(devs[i].backend(), "cuda") == 0) {
+      *out = devs[i];
+      return true;
+    }
+  }
+  return false;
+}
+
 Device host_device() {
   Device devs[8];
   const std::size_t n = enumerate(devs, 8);
@@ -103,8 +115,8 @@ TEST(ComputeKernel, BlocksForHelper) {
 // ---- NVRTC compile + launch end-to-end (GPU) --------------------------------
 
 TEST(ComputeKernel, NvrtcVecAddEndToEnd) {
-  if (!has_gpu()) GTEST_SKIP() << "no CUDA GPU -- NVRTC path is GPU-only";
-  Device d = default_device();
+  Device d;
+  if (!find_cuda(&d)) GTEST_SKIP() << "no CUDA device -- NVRTC path is CUDA-only";
 
   auto k = Kernel::compile(d, kVecAddSrc, "vecadd");
   ASSERT_TRUE(k.has_value()) << k.error().message();
@@ -142,8 +154,8 @@ TEST(ComputeKernel, NvrtcVecAddEndToEnd) {
 }
 
 TEST(ComputeKernel, TypedShellPreservesMixedOrderOnCuda) {
-  if (!has_gpu()) GTEST_SKIP() << "no CUDA GPU";
-  Device d = default_device();
+  Device d;
+  if (!find_cuda(&d)) GTEST_SKIP() << "no CUDA device";
   auto k = Kernel::compile(d, kVecAddSrc, "mixed_order");
   auto s = Stream::create(d);
   ASSERT_TRUE(k.has_value() && s.has_value());
@@ -217,8 +229,8 @@ TEST(ComputeKernel, RawArgsRejectMalformedMetadata) {
 // ---- compile cache: second compile of same source hits cache ----------------
 
 TEST(ComputeKernel, CompileCacheHit) {
-  if (!has_gpu()) GTEST_SKIP() << "no CUDA GPU";
-  Device d = default_device();
+  Device d;
+  if (!find_cuda(&d)) GTEST_SKIP() << "no CUDA device";
   // Two compiles of the same source; both must succeed and be launchable. (The cache
   // is internal; we assert correctness of the cached path, not timing.)
   auto k1 = Kernel::compile(d, kVecAddSrc, "vecadd");
@@ -230,8 +242,8 @@ TEST(ComputeKernel, CompileCacheHit) {
 // ---- compile error surfaces NVRTC log ---------------------------------------
 
 TEST(ComputeKernel, CompileErrorReturnsStatus) {
-  if (!has_gpu()) GTEST_SKIP() << "no CUDA GPU";
-  Device d = default_device();
+  Device d;
+  if (!find_cuda(&d)) GTEST_SKIP() << "no CUDA device";
   auto k = Kernel::compile(d, "this is not valid cuda", "nope");
   EXPECT_FALSE(k.has_value());  // returns a Status, not a crash
 }
@@ -252,8 +264,7 @@ TEST(ComputeKernel, DevicePoolScratch) {
 // ---- host fallback: load_host + launch calls the fn inline ------------------
 
 TEST(ComputeKernel, HostFallbackLaunch) {
-  if (has_gpu()) GTEST_SKIP() << "host-fallback path; a GPU present would use NVRTC";
-  Device d = default_device();
+  Device d = host_device();
 
   auto k = Kernel::load_host(d, &host_vecadd);
   ASSERT_TRUE(k.has_value()) << k.error().message();

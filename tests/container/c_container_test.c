@@ -6,7 +6,13 @@ enum { HYLE_C_CONTAINER_COVERAGE_BODY_MARKER = 0 };
 
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+
+_Static_assert(sizeof(hyle_container_insert_result) == sizeof(uint32_t),
+               "insert result must have a fixed C ABI width");
+_Static_assert(sizeof(hyle_container_steal_status) == sizeof(uint32_t),
+               "steal status must have a fixed C ABI width");
 
 static int g_failures;
 #define CHECK(x)                                                               \
@@ -49,11 +55,127 @@ static hyle_container_string_view sv(const char* text) {
   return value;
 }
 
+static void test_status_outputs_initialized_on_failure(void) {
+  int key = 1;
+  int value = 2;
+  hyle_container_insert_result result = HYLE_CONTAINER_ASSIGNED;
+  hyle_container_string_id id = UINT64_MAX;
+  size_t completed = SIZE_MAX;
+  size_t index = 0;
+  hyle_container_string_view interned = {(const char*)(uintptr_t)1, 7, 1};
+
+  CHECK(status_code(hyle_container_hash_map_insert(
+            &result, NULL, &key, &value)) == HYLE_STATUS_INVALID_ARGUMENT);
+  CHECK(result == HYLE_CONTAINER_ALREADY_PRESENT);
+  result = HYLE_CONTAINER_ASSIGNED;
+  CHECK(status_code(hyle_container_hash_map_insert_or_assign(
+            &result, NULL, &key, &value)) == HYLE_STATUS_INVALID_ARGUMENT);
+  CHECK(result == HYLE_CONTAINER_ALREADY_PRESENT);
+
+  result = HYLE_CONTAINER_ASSIGNED;
+  CHECK(status_code(hyle_container_concurrent_hash_map_insert(
+            &result, NULL, &key, &value)) == HYLE_STATUS_INVALID_ARGUMENT);
+  CHECK(result == HYLE_CONTAINER_ALREADY_PRESENT);
+  result = HYLE_CONTAINER_ASSIGNED;
+  CHECK(status_code(hyle_container_concurrent_hash_map_insert_or_assign(
+            &result, NULL, &key, &value)) == HYLE_STATUS_INVALID_ARGUMENT);
+  CHECK(result == HYLE_CONTAINER_ALREADY_PRESENT);
+
+  result = HYLE_CONTAINER_ASSIGNED;
+  CHECK(status_code(hyle_container_hash_set_insert(&result, NULL, &key)) ==
+        HYLE_STATUS_INVALID_ARGUMENT);
+  CHECK(result == HYLE_CONTAINER_ALREADY_PRESENT);
+
+  CHECK(status_code(hyle_container_string_interner_acquire(
+            &id, NULL, sv("x"))) == HYLE_STATUS_INVALID_ARGUMENT);
+  CHECK(id == 0);
+  CHECK(status_code(hyle_container_string_interner_acquire_many(
+            &completed, NULL, NULL, NULL, 0)) ==
+        HYLE_STATUS_INVALID_ARGUMENT);
+  CHECK(completed == 0);
+  CHECK(status_code(hyle_container_string_interner_intern(
+            &interned, NULL, sv("x"))) == HYLE_STATUS_INVALID_ARGUMENT);
+  CHECK(interned.data == NULL && interned.size == 0 &&
+        interned.null_terminated == 0);
+  completed = SIZE_MAX;
+  CHECK(status_code(hyle_container_string_interner_intern_many(
+            &completed, NULL, NULL, NULL, 0)) ==
+        HYLE_STATUS_INVALID_ARGUMENT);
+  CHECK(completed == 0);
+
+  CHECK(status_code(hyle_container_concurrent_ptr_vector_try_push_back(
+            &index, NULL, NULL)) == HYLE_STATUS_INVALID_ARGUMENT);
+  CHECK(index == SIZE_MAX);
+}
+
 static uint64_t constant_hash(const void* key, size_t size, void* context) {
   (void)key;
   (void)size;
   (void)context;
   return 7;
+}
+static int always_equal(const void* left, const void* right, size_t size,
+                        void* context) {
+  (void)left;
+  (void)right;
+  (void)size;
+  (void)context;
+  return 1;
+}
+
+static void check_btree_scalar_width_rejected(
+    hyle_container_compare_fn compare, size_t scalar_size) {
+  hyle_container_btree_options options =
+      HYLE_CONTAINER_BTREE_MAP_OPTIONS_FOR(uint8_t, uint8_t, compare);
+  hyle_container_btree_map* map = (hyle_container_btree_map*)1;
+  hyle_container_btree_set* set = (hyle_container_btree_set*)1;
+
+  options.key_size = scalar_size - 1;
+  options.key_alignment = 1;
+  CHECK(status_code(hyle_container_btree_map_create(&map, &options)) ==
+        HYLE_STATUS_INVALID_ARGUMENT);
+  CHECK(map == NULL);
+  /* If create-time validation regresses, make the formerly accepted layout
+     reach a comparison. ASan then mechanically catches the scalar helper
+     reading past either exactly-sized heap key. */
+  if (map != NULL) {
+    uint8_t* left = (uint8_t*)malloc(options.key_size);
+    uint8_t* right = (uint8_t*)malloc(options.key_size);
+    uint8_t value = 0;
+    hyle_container_insert_result result = HYLE_CONTAINER_ALREADY_PRESENT;
+    CHECK(left != NULL && right != NULL);
+    if (left != NULL && right != NULL) {
+      memset(left, 0, options.key_size);
+      memset(right, 1, options.key_size);
+      CHECK(status_ok(
+          hyle_container_btree_map_insert(&result, map, left, &value)));
+      CHECK(status_ok(
+          hyle_container_btree_map_insert(&result, map, right, &value)));
+    }
+    free(left);
+    free(right);
+    hyle_container_btree_map_destroy(map);
+  }
+
+  options.value_size = 0;
+  options.value_alignment = 1;
+  CHECK(status_code(hyle_container_btree_set_create(&set, &options)) ==
+        HYLE_STATUS_INVALID_ARGUMENT);
+  CHECK(set == NULL);
+
+  options.value_size = sizeof(uint8_t);
+  options.value_alignment = HYLE_CONTAINER_ALIGNOF(uint8_t);
+  options.key_size = scalar_size + 1;
+  map = (hyle_container_btree_map*)1;
+  CHECK(status_code(hyle_container_btree_map_create(&map, &options)) ==
+        HYLE_STATUS_INVALID_ARGUMENT);
+  CHECK(map == NULL);
+
+  options.key_size = scalar_size;
+  map = NULL;
+  CHECK(status_ok(hyle_container_btree_map_create(&map, &options)));
+  CHECK(map != NULL);
+  hyle_container_btree_map_destroy(map);
 }
 static int visit_map(const void* key, void* value, void* context) {
   (void)key;
@@ -66,6 +188,247 @@ static int stop_map_visit(const void* key, void* value, void* context) {
   (void)value;
   ++*(int*)context;
   return 0;
+}
+
+typedef struct test_vector_options_prefix {
+  uint32_t struct_size;
+  uint32_t reserved;
+  size_t item_size;
+  size_t item_alignment;
+} test_vector_options_prefix;
+typedef struct test_hash_map_options_prefix {
+  uint32_t struct_size;
+  uint32_t reserved;
+  size_t key_size;
+  size_t key_alignment;
+  size_t value_size;
+  size_t value_alignment;
+} test_hash_map_options_prefix;
+typedef struct test_hash_set_options_prefix {
+  uint32_t struct_size;
+  uint32_t reserved;
+  size_t key_size;
+  size_t key_alignment;
+} test_hash_set_options_prefix;
+typedef struct test_btree_options_prefix {
+  uint32_t struct_size;
+  uint32_t reserved;
+  size_t key_size;
+  size_t key_alignment;
+  size_t value_size;
+  size_t value_alignment;
+  hyle_container_compare_fn compare;
+} test_btree_options_prefix;
+
+_Static_assert(sizeof(test_vector_options_prefix) ==
+                   HYLE_CONTAINER_VECTOR_OPTIONS_REQUIRED_SIZE,
+               "vector required prefix drifted");
+_Static_assert(sizeof(test_hash_map_options_prefix) ==
+                   HYLE_CONTAINER_HASH_MAP_OPTIONS_REQUIRED_SIZE,
+               "hash map required prefix drifted");
+_Static_assert(sizeof(test_hash_set_options_prefix) ==
+                   HYLE_CONTAINER_HASH_SET_OPTIONS_REQUIRED_SIZE,
+               "hash set required prefix drifted");
+_Static_assert(sizeof(test_btree_options_prefix) ==
+                   HYLE_CONTAINER_BTREE_OPTIONS_REQUIRED_SIZE,
+               "B-tree required prefix drifted");
+
+static void test_versioned_options_prefixes(void) {
+  const test_vector_options_prefix vector_prefix = {
+      HYLE_CONTAINER_VECTOR_OPTIONS_REQUIRED_SIZE, 0, sizeof(int),
+      HYLE_CONTAINER_ALIGNOF(int)};
+  const test_hash_map_options_prefix map_prefix = {
+      HYLE_CONTAINER_HASH_MAP_OPTIONS_REQUIRED_SIZE,
+      0,
+      sizeof(int),
+      HYLE_CONTAINER_ALIGNOF(int),
+      sizeof(int),
+      HYLE_CONTAINER_ALIGNOF(int)};
+  const test_hash_set_options_prefix set_prefix = {
+      HYLE_CONTAINER_HASH_SET_OPTIONS_REQUIRED_SIZE, 0, sizeof(int),
+      HYLE_CONTAINER_ALIGNOF(int)};
+  const test_btree_options_prefix btree_map_prefix = {
+      HYLE_CONTAINER_BTREE_OPTIONS_REQUIRED_SIZE,
+      0,
+      sizeof(int),
+      HYLE_CONTAINER_ALIGNOF(int),
+      sizeof(int),
+      HYLE_CONTAINER_ALIGNOF(int),
+      hyle_container_compare_i32};
+  const test_btree_options_prefix btree_set_prefix = {
+      HYLE_CONTAINER_BTREE_OPTIONS_REQUIRED_SIZE,
+      0,
+      sizeof(int),
+      HYLE_CONTAINER_ALIGNOF(int),
+      0,
+      1,
+      hyle_container_compare_i32};
+  hyle_container_vector* vector = NULL;
+  hyle_container_hash_map* map = NULL;
+  hyle_container_concurrent_hash_map* concurrent = NULL;
+  hyle_container_hash_set* set = NULL;
+  hyle_container_btree_map* btree_map = NULL;
+  hyle_container_btree_set* btree_set = NULL;
+  int key = 7;
+  int value = 11;
+  hyle_container_insert_result inserted = HYLE_CONTAINER_ALREADY_PRESENT;
+
+  /* Exact historical-size objects prove the library never reads a missing
+     optional tail. All absent backing fields default to the system allocator. */
+  CHECK(status_ok(hyle_container_vector_create(
+      &vector, (const hyle_container_vector_options*)&vector_prefix)));
+  CHECK(vector != NULL && hyle_container_vector_capacity(vector) == 0);
+  hyle_container_vector_destroy(vector);
+
+  CHECK(status_ok(hyle_container_hash_map_create(
+      &map, (const hyle_container_hash_map_options*)&map_prefix)));
+  CHECK(map_inserted(map, &key, &value));
+  hyle_container_hash_map_destroy(map);
+
+  CHECK(status_ok(hyle_container_concurrent_hash_map_create(
+      &concurrent, (const hyle_container_hash_map_options*)&map_prefix, 2)));
+  CHECK(status_ok(hyle_container_concurrent_hash_map_insert(
+      &inserted, concurrent, &key, &value)));
+  CHECK(inserted == HYLE_CONTAINER_INSERTED);
+  hyle_container_concurrent_hash_map_destroy(concurrent);
+
+  CHECK(status_ok(hyle_container_hash_set_create(
+      &set, (const hyle_container_hash_set_options*)&set_prefix)));
+  CHECK(set_inserted(set, &key));
+  hyle_container_hash_set_destroy(set);
+
+  CHECK(status_ok(hyle_container_btree_map_create(
+      &btree_map, (const hyle_container_btree_options*)&btree_map_prefix)));
+  CHECK(status_ok(hyle_container_btree_map_insert(
+      &inserted, btree_map, &key, &value)));
+  hyle_container_btree_map_destroy(btree_map);
+
+  CHECK(status_ok(hyle_container_btree_set_create(
+      &btree_set, (const hyle_container_btree_options*)&btree_set_prefix)));
+  CHECK(status_ok(
+      hyle_container_btree_set_insert(&inserted, btree_set, &key)));
+  hyle_container_btree_set_destroy(btree_set);
+
+  /* Every required prefix rejects one byte short, and reserved is checked
+     without consulting optional tail fields. */
+  {
+    hyle_container_vector_options options =
+        HYLE_CONTAINER_VECTOR_OPTIONS_FOR(int, 0);
+    options.struct_size = HYLE_CONTAINER_VECTOR_OPTIONS_REQUIRED_SIZE - 1;
+    vector = (hyle_container_vector*)1;
+    CHECK(status_code(hyle_container_vector_create(&vector, &options)) ==
+          HYLE_STATUS_INVALID_ARGUMENT);
+    CHECK(vector == NULL);
+    options.struct_size = HYLE_CONTAINER_VECTOR_OPTIONS_REQUIRED_SIZE;
+    options.reserved = 1;
+    CHECK(status_code(hyle_container_vector_create(&vector, &options)) ==
+          HYLE_STATUS_INVALID_ARGUMENT);
+  }
+  {
+    hyle_container_hash_map_options options =
+        HYLE_CONTAINER_HASH_MAP_OPTIONS_FOR(int, int);
+    options.struct_size = HYLE_CONTAINER_HASH_MAP_OPTIONS_REQUIRED_SIZE - 1;
+    map = (hyle_container_hash_map*)1;
+    concurrent = (hyle_container_concurrent_hash_map*)1;
+    CHECK(status_code(hyle_container_hash_map_create(&map, &options)) ==
+          HYLE_STATUS_INVALID_ARGUMENT);
+    CHECK(map == NULL);
+    CHECK(status_code(hyle_container_concurrent_hash_map_create(
+              &concurrent, &options, 2)) == HYLE_STATUS_INVALID_ARGUMENT);
+    CHECK(concurrent == NULL);
+    options.struct_size = HYLE_CONTAINER_HASH_MAP_OPTIONS_REQUIRED_SIZE;
+    options.reserved = 1;
+    CHECK(status_code(hyle_container_hash_map_create(&map, &options)) ==
+          HYLE_STATUS_INVALID_ARGUMENT);
+  }
+  {
+    hyle_container_hash_set_options options =
+        HYLE_CONTAINER_HASH_SET_OPTIONS_FOR(int);
+    options.struct_size = HYLE_CONTAINER_HASH_SET_OPTIONS_REQUIRED_SIZE - 1;
+    set = (hyle_container_hash_set*)1;
+    CHECK(status_code(hyle_container_hash_set_create(&set, &options)) ==
+          HYLE_STATUS_INVALID_ARGUMENT);
+    CHECK(set == NULL);
+    options.struct_size = HYLE_CONTAINER_HASH_SET_OPTIONS_REQUIRED_SIZE;
+    options.reserved = 1;
+    CHECK(status_code(hyle_container_hash_set_create(&set, &options)) ==
+          HYLE_STATUS_INVALID_ARGUMENT);
+  }
+  {
+    hyle_container_btree_options options =
+        HYLE_CONTAINER_BTREE_MAP_OPTIONS_FOR(int, int,
+                                             hyle_container_compare_i32);
+    options.struct_size = HYLE_CONTAINER_BTREE_OPTIONS_REQUIRED_SIZE - 1;
+    btree_map = (hyle_container_btree_map*)1;
+    CHECK(status_code(hyle_container_btree_map_create(&btree_map, &options)) ==
+          HYLE_STATUS_INVALID_ARGUMENT);
+    CHECK(btree_map == NULL);
+    options.struct_size = HYLE_CONTAINER_BTREE_OPTIONS_REQUIRED_SIZE;
+    options.reserved = 1;
+    CHECK(status_code(hyle_container_btree_map_create(&btree_map, &options)) ==
+          HYLE_STATUS_INVALID_ARGUMENT);
+    options.reserved = 0;
+    options.compare = NULL;
+    CHECK(status_code(hyle_container_btree_map_create(&btree_map, &options)) ==
+          HYLE_STATUS_INVALID_ARGUMENT);
+  }
+
+  /* Newer callers may append arbitrary tail bytes. */
+  {
+    struct {
+      hyle_container_vector_options current;
+      uint64_t future[2];
+    } extended = {HYLE_CONTAINER_VECTOR_OPTIONS_FOR(int, 3), {1, 2}};
+    extended.current.struct_size = (uint32_t)sizeof(extended);
+    CHECK(status_ok(hyle_container_vector_create(&vector, &extended.current)));
+    CHECK(hyle_container_vector_capacity(vector) >= 3);
+    hyle_container_vector_destroy(vector);
+  }
+  {
+    struct {
+      hyle_container_hash_map_options current;
+      uint64_t future[2];
+    } extended = {HYLE_CONTAINER_HASH_MAP_OPTIONS_FOR(int, int), {1, 2}};
+    extended.current.struct_size = (uint32_t)sizeof(extended);
+    CHECK(status_ok(hyle_container_hash_map_create(&map, &extended.current)));
+    hyle_container_hash_map_destroy(map);
+    CHECK(status_ok(hyle_container_concurrent_hash_map_create(
+        &concurrent, &extended.current, 2)));
+    hyle_container_concurrent_hash_map_destroy(concurrent);
+  }
+  {
+    struct {
+      hyle_container_hash_set_options current;
+      uint64_t future[2];
+    } extended = {HYLE_CONTAINER_HASH_SET_OPTIONS_FOR(int), {1, 2}};
+    extended.current.struct_size = (uint32_t)sizeof(extended);
+    CHECK(status_ok(hyle_container_hash_set_create(&set, &extended.current)));
+    hyle_container_hash_set_destroy(set);
+  }
+  {
+    struct {
+      hyle_container_btree_options current;
+      uint64_t future[2];
+    } extended = {HYLE_CONTAINER_BTREE_MAP_OPTIONS_FOR(
+                      int, int, hyle_container_compare_i32),
+                  {1, 2}};
+    extended.current.struct_size = (uint32_t)sizeof(extended);
+    CHECK(status_ok(
+        hyle_container_btree_map_create(&btree_map, &extended.current)));
+    hyle_container_btree_map_destroy(btree_map);
+  }
+
+  /* A prefix ending inside an optional pointer keeps the safe default rather
+     than manufacturing a pointer from partial bytes. */
+  {
+    hyle_container_hash_map_options partial =
+        HYLE_CONTAINER_HASH_MAP_OPTIONS_FOR(int, int);
+    partial.hash = constant_hash;
+    partial.struct_size = HYLE_CONTAINER_HASH_MAP_OPTIONS_REQUIRED_SIZE + 1;
+    CHECK(status_ok(hyle_container_hash_map_create(&map, &partial)));
+    CHECK(map_inserted(map, &key, &value));
+    hyle_container_hash_map_destroy(map);
+  }
 }
 typedef struct ordered_range_stats {
   int count;
@@ -187,8 +550,36 @@ static void test_strings_and_paths(void) {
   hyle_container_string_view candidates[] = {
       sv("src/config.h"), sv("cfg.ini"), sv("none.txt")};
   hyle_container_string_view value;
+  unsigned char sip_message[64];
+  static const struct {
+    size_t length;
+    uint64_t expected;
+  } sip_cases[] = {
+      {3, UINT64_C(0x85676696d7fb7e2d)},
+      {7, UINT64_C(0xab0200f58b01d137)},
+      {8, UINT64_C(0x93f5f5799a932462)},
+      {15, UINT64_C(0xa129ca6149be45e5)},
+      {16, UINT64_C(0x3f2acc7f57c29bdb)},
+      {31, UINT64_C(0x32d892fad841c342)},
+      {32, UINT64_C(0x7127512f72f27cce)},
+      {63, UINT64_C(0x958a324ceb064572)},
+  };
+  size_t sip_index;
 
   CHECK(hyle_container_hash_bytes("abc", 3, 0) != 0);
+  CHECK(hyle_container_siphash24(NULL, 0, UINT64_C(0x0706050403020100),
+                                 UINT64_C(0x0f0e0d0c0b0a0908)) ==
+        UINT64_C(0x726fdb47dd0e0e31));
+  for (sip_index = 0; sip_index < sizeof(sip_message); ++sip_index)
+    sip_message[sip_index] = (unsigned char)sip_index;
+  for (sip_index = 0; sip_index < sizeof(sip_cases) / sizeof(sip_cases[0]);
+       ++sip_index) {
+    CHECK(hyle_container_siphash24(
+              sip_message, sip_cases[sip_index].length,
+              UINT64_C(0x0706050403020100),
+              UINT64_C(0x0f0e0d0c0b0a0908)) ==
+          sip_cases[sip_index].expected);
+  }
   CHECK(hyle_container_string_compare(sv("abc"), sv("abd")) < 0);
   CHECK(hyle_container_string_equal_ignore_case(sv("AbC"), sv("aBc")));
   CHECK(hyle_container_string_find(sv("hello"), sv("ll"), 0) == 2);
@@ -252,12 +643,17 @@ static void test_strings_and_paths(void) {
               sizeof(output)) == 13);
     CHECK(strcmp(output, "A\\000\\037\\377") == 0);
   }
+  CHECK(hyle_container_utf8_validate(sv("hello")) == 1);
+  CHECK(hyle_container_utf8_validate(hyle_container_view(NULL, 0)) == 1);
   CHECK(hyle_container_utf8_length(sv("hello")) == 5);
   {
     const unsigned char malformed[] = {0xc0u, 0x80u};
+    CHECK(hyle_container_utf8_validate(
+              hyle_container_view((const char*)malformed, 2)) == 0);
     CHECK(hyle_container_utf8_length(
               hyle_container_view((const char*)malformed, 2)) == -1);
   }
+  CHECK(hyle_container_utf8_validate(hyle_container_view(NULL, 1)) == 0);
 
   value = hyle_container_path_extension(sv("a/b.txt"));
   CHECK(value.size == 4 && memcmp(value.data, ".txt", 4) == 0);
@@ -415,6 +811,15 @@ static void test_vector_and_map(void) {
           HYLE_STATUS_INVALID_ARGUMENT);
     CHECK(invalid_map == NULL);
   }
+  {
+    hyle_container_hash_map_options invalid = map_options;
+    hyle_container_hash_map* invalid_map = (hyle_container_hash_map*)1;
+    invalid.hash = NULL;
+    invalid.equal = always_equal;
+    CHECK(status_code(hyle_container_hash_map_create(&invalid_map, &invalid)) ==
+          HYLE_STATUS_INVALID_ARGUMENT);
+    CHECK(invalid_map == NULL);
+  }
   CHECK(status_ok(hyle_container_hash_map_create(&map, &map_options)));
   CHECK(map != NULL);
   input = 1;
@@ -537,6 +942,15 @@ static void test_hash_set(void) {
           HYLE_STATUS_INVALID_ARGUMENT);
     CHECK(invalid_set == NULL);
   }
+  {
+    hyle_container_hash_set_options invalid = options;
+    hyle_container_hash_set* invalid_set = (hyle_container_hash_set*)1;
+    invalid.hash = NULL;
+    invalid.equal = always_equal;
+    CHECK(status_code(hyle_container_hash_set_create(&invalid_set, &invalid)) ==
+          HYLE_STATUS_INVALID_ARGUMENT);
+    CHECK(invalid_set == NULL);
+  }
   CHECK(status_ok(hyle_container_hash_set_create(&set, &options)));
   CHECK(set != NULL);
   CHECK(status_ok(hyle_container_hash_set_reserve(set, 64)));
@@ -603,6 +1017,15 @@ static void test_btree_map_and_set(void) {
                                      NULL) < 0);
     CHECK(hyle_container_compare_bytes(bytes_left, bytes_right, 3, NULL) < 0);
   }
+
+  check_btree_scalar_width_rejected(hyle_container_compare_i32,
+                                    sizeof(int32_t));
+  check_btree_scalar_width_rejected(hyle_container_compare_u32,
+                                    sizeof(uint32_t));
+  check_btree_scalar_width_rejected(hyle_container_compare_i64,
+                                    sizeof(int64_t));
+  check_btree_scalar_width_rejected(hyle_container_compare_u64,
+                                    sizeof(uint64_t));
 
   {
     hyle_container_btree_options invalid = map_options;
@@ -818,6 +1241,11 @@ static void test_concurrent_hash_map(void) {
   CHECK(status_code(hyle_container_concurrent_hash_map_create(
             &invalid, &options, 3)) == HYLE_STATUS_INVALID_ARGUMENT);
   CHECK(invalid == NULL);
+  options.equal = always_equal;
+  CHECK(status_code(hyle_container_concurrent_hash_map_create(
+            &invalid, &options, 8)) == HYLE_STATUS_INVALID_ARGUMENT);
+  CHECK(invalid == NULL);
+  options.equal = NULL;
   CHECK(status_ok(hyle_container_concurrent_hash_map_create(
       &map, &options, 8)));
   CHECK(map != NULL);
@@ -1077,7 +1505,9 @@ int main(void) {
   hyle_container_bounded_queue* bounded_queue = NULL;
   hyle_container_string_interner* string_interner = NULL;
   test_strings_and_paths();
+  test_status_outputs_initialized_on_failure();
   test_string_interner();
+  test_versioned_options_prefixes();
   test_vector_and_map();
   test_hash_set();
   test_btree_map_and_set();
@@ -1207,9 +1637,10 @@ int main(void) {
     CHECK(status_ok(hyle_container_hash_map_create(&map, &options)));
     CHECK(map != NULL);
     {
-      hyle_container_insert_result result;
+      hyle_container_insert_result result = HYLE_CONTAINER_ASSIGNED;
       CHECK(status_code(hyle_container_hash_map_insert(
                 &result, map, &key, &value)) == HYLE_STATUS_RESOURCE_EXHAUSTED);
+      CHECK(result == HYLE_CONTAINER_ALREADY_PRESENT);
     }
     hyle_container_hash_map_destroy(map);
   }
@@ -1219,7 +1650,7 @@ int main(void) {
     hyle_container_btree_map *map = NULL;
     int key = 1;
     int value = 2;
-    hyle_container_insert_result result = HYLE_CONTAINER_ALREADY_PRESENT;
+    hyle_container_insert_result result = HYLE_CONTAINER_ASSIGNED;
     fail_after_allocator failing = {hyle_system_allocator(), 1};
     hyle_allocator fail_storage = {fail_after_alloc, fail_after_free,
                                    fail_after_realloc, &failing};
@@ -1227,8 +1658,26 @@ int main(void) {
     CHECK(status_ok(hyle_container_btree_map_create(&map, &options)));
     CHECK(status_code(hyle_container_btree_map_insert(
               &result, map, &key, &value)) == HYLE_STATUS_RESOURCE_EXHAUSTED);
+    CHECK(result == HYLE_CONTAINER_ALREADY_PRESENT);
     CHECK(hyle_container_btree_map_size(map) == 0);
     hyle_container_btree_map_destroy(map);
+  }
+  {
+    hyle_container_btree_options options = HYLE_CONTAINER_BTREE_SET_OPTIONS_FOR(
+        int, hyle_container_compare_i32);
+    hyle_container_btree_set *set = NULL;
+    int key = 1;
+    hyle_container_insert_result result = HYLE_CONTAINER_ASSIGNED;
+    fail_after_allocator failing = {hyle_system_allocator(), 1};
+    hyle_allocator fail_storage = {fail_after_alloc, fail_after_free,
+                                   fail_after_realloc, &failing};
+    options.backing = fail_storage;
+    CHECK(status_ok(hyle_container_btree_set_create(&set, &options)));
+    CHECK(status_code(hyle_container_btree_set_insert(&result, set, &key)) ==
+          HYLE_STATUS_RESOURCE_EXHAUSTED);
+    CHECK(result == HYLE_CONTAINER_ALREADY_PRESENT);
+    CHECK(hyle_container_btree_set_size(set) == 0);
+    hyle_container_btree_set_destroy(set);
   }
 
   {

@@ -67,15 +67,43 @@ if(HYLE_BENCH_MARL)
   if(NOT EXISTS "${HYLE_MARL_DIR}/CMakeLists.txt")
     message(FATAL_ERROR "HYLE_BENCH_MARL=ON but no marl at ${HYLE_MARL_DIR}")
   endif()
-  add_subdirectory("${HYLE_MARL_DIR}" "${HYLE_BINARY_DIR}/_bench_deps/marl" EXCLUDE_FROM_ALL)
+  # Marl declares the generic ASM language unconditionally, even though its
+  # MSVC source list contains only C++. CMake 4.4's CMP0194 correctly stops
+  # treating cl.exe as a generic assembler, so adding Marl's project directly
+  # cannot generate with a modern MSVC + Ninja toolchain. Keep this
+  # benchmark-only adapter local: build the exact MSVC source list without
+  # rewriting the external checkout, while other toolchains continue to use
+  # Marl's own project and architecture-specific assembly selection.
+  if(MSVC)
+    add_library(hyle_bench_marl STATIC
+      "${HYLE_MARL_DIR}/src/debug.cpp"
+      "${HYLE_MARL_DIR}/src/memory.cpp"
+      "${HYLE_MARL_DIR}/src/scheduler.cpp"
+      "${HYLE_MARL_DIR}/src/thread.cpp"
+      "${HYLE_MARL_DIR}/src/trace.cpp")
+    target_include_directories(hyle_bench_marl SYSTEM PUBLIC
+      "${HYLE_MARL_DIR}/include")
+    target_compile_definitions(hyle_bench_marl PRIVATE
+      _CRT_SECURE_NO_WARNINGS
+      NOMINMAX
+      WIN32_LEAN_AND_MEAN)
+    target_compile_options(hyle_bench_marl PRIVATE /wd4127 /wd4324)
+    target_link_libraries(hyle_bench_marl PUBLIC Threads::Threads)
+    set(_hyle_bench_marl_target hyle_bench_marl)
+  else()
+    add_subdirectory("${HYLE_MARL_DIR}" "${HYLE_BINARY_DIR}/_bench_deps/marl" EXCLUDE_FROM_ALL)
+    set(_hyle_bench_marl_target marl)
+  endif()
   add_executable(hyle_sched_marl_bench sync_marl_bench.cc)
-  target_link_libraries(hyle_sched_marl_bench PRIVATE hyle_sched nanobench marl)
+  target_link_libraries(hyle_sched_marl_bench PRIVATE hyle_sched nanobench
+                                                        ${_hyle_bench_marl_target})
   hyle_apply_warnings(hyle_sched_marl_bench)
   # sched-11 blocking_bench's marl comparison row (marl::blocking_call = new-thread-
   # per-call; the HYLE-pool-vs-marl-new-thread head-to-head). Same gate; links marl.
   if(TARGET hyle_sched_blocking_bench)
     target_compile_definitions(hyle_sched_blocking_bench PRIVATE HYLE_BENCH_MARL)
-    target_link_libraries(hyle_sched_blocking_bench PRIVATE marl)
+    target_link_libraries(hyle_sched_blocking_bench PRIVATE
+      ${_hyle_bench_marl_target})
   endif()
   hyle_register_benches(sched hyle_sched_marl_bench)
 endif()

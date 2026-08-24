@@ -178,7 +178,7 @@ public:
   std::size_t peak() const noexcept { return peak_; }
 
 #if defined(HYLE_TESTING)
-  // Structural test hook: the TLSF index examines at most the optional recent
+  // TEST-ONLY: the TLSF index examines at most the optional recent
   // cursor and one bitmap-selected free-list head, regardless of fragmentation.
   std::uint32_t debug_last_fit_candidates() const noexcept {
     return debug_last_fit_candidates_;

@@ -43,6 +43,7 @@ if(HYLE_HAS_FCONTEXT)
   hyle_register_package_dependency(
     NAME picohttpparser
     OWNER io
+    LOCKED_DEPENDENCIES picohttpparser
     RUNTIME_FILE_SPECS
       "${PROJECT_SOURCE_DIR}/third_party/picohttpparser/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|picohttpparser-LICENSE")
 endif()
@@ -53,6 +54,18 @@ if(NOT HYLE_HAS_FCONTEXT)
   list(APPEND _io_sources http2_stub.cc)
 endif()
 hyle_add_module(io SOURCES ${_io_sources})
+
+# Public headers are installed as one reviewed tree, so capability cannot be
+# inferred from header presence.  Export the exact product fact on hyle::io in
+# both source-embedded and installed-package use; net.h turns value 0 into an
+# actionable diagnostic while proactor/shared_memory and the C stub stay valid.
+if(HYLE_HAS_FCONTEXT)
+  target_compile_definitions(hyle_io
+    PUBLIC HYLE_IO_HAS_COROUTINE_TRANSPORT=1)
+else()
+  target_compile_definitions(hyle_io
+    PUBLIC HYLE_IO_HAS_COROUTINE_TRANSPORT=0)
+endif()
 
 if(HYLE_HAS_FCONTEXT)
   # picohttpparser is a vendored single-file C parser. Include its dir as SYSTEM

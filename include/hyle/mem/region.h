@@ -255,7 +255,7 @@ public:
   std::size_t size_limit() const noexcept { return options_.size_limit; }
 
 #if defined(HYLE_TESTING)
-  // Structural test hook: after clear(), each retained ordinary block is
+  // TEST-ONLY: after clear(), each retained ordinary block is
   // considered at most once before the Region grows again.
   std::size_t debug_reuse_candidates() const noexcept {
     return debug_reuse_candidates_;

@@ -447,14 +447,12 @@ constexpr string_ref operator""_sr(const char* s, std::size_t n) noexcept {
 }  // namespace literals
 
 // ---- Hash specialization (lets string_ref be a SwissTable key) --------------
-// Hashes the bytes with XXH3 (hash_bytes lives in hash.cc). Only instantiated
-// when string_ref is actually used as a key, so headers that just pass
-// string_ref by value never pull a link dependency on the hash unit.
+// Uses the same process-seeded string policy as std::string/string_view. Only
+// instantiated when string_ref is actually used as a key, so headers that just
+// pass string_ref by value never pull a link dependency on its long-input unit.
 template <>
-struct Hash<string_ref> {
-  std::uint64_t operator()(string_ref s) const noexcept {
-    return hash_bytes(s.data, s.size);
-  }
+struct Hash<string_ref> : StringHash {
+  using StringHash::StringHash;
 };
 
 }  // namespace hyle::container

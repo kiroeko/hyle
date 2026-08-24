@@ -53,7 +53,10 @@ template <class Traits, typename T>
 void HeapSort(Traits st, T* HWY_RESTRICT lanes, const size_t num_lanes) {
   constexpr size_t N1 = st.LanesPerKey();
   HWY_DASSERT(num_lanes % N1 == 0);
-  if (num_lanes == N1) return;
+  // Upstream 3ed31b26: zero keys are already sorted and must not underflow the
+  // build-heap loop. Public dispatch also rejects k=0; keep the port safe when
+  // this helper is reused directly.
+  if (num_lanes <= N1) return;
 
   // Build heap.
   for (size_t i = ((num_lanes - N1) / N1 / 2) * N1; i != (~N1 + 1); i -= N1) {
@@ -107,6 +110,7 @@ void HeapSelect(Traits st, T* HWY_RESTRICT lanes, const size_t num_lanes,
 template <class Traits, typename T>
 void HeapPartialSort(Traits st, T* HWY_RESTRICT lanes, const size_t num_lanes,
                      const size_t k_lanes) {
+  if (k_lanes == 0) return;
   // When k_lanes == num_lanes, selecting all elements is a no-op; skip to
   // avoid out-of-bounds access in HeapSelect.
   if (k_lanes < num_lanes) {

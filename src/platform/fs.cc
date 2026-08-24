@@ -14,6 +14,8 @@
 
 #include "hyle/platform/fs.h"
 
+#include "fs_internal.h"
+
 #include <cerrno>
 #include <cstdint>
 #include <cstdio>
@@ -62,6 +64,108 @@ bool valid_env_name(const char* name) noexcept {
   return name != nullptr && name[0] != '\0' && std::strchr(name, '=') == nullptr;
 }
 
+// `create_temp_file(dir, prefix, ...)` promises that the result stays directly
+// under dir. Treat prefix as one basename fragment, never as a path supplied by
+// the caller. Windows additionally rejects filename metacharacters here so a
+// colon cannot turn a would-be temp file into an alternate data stream.
+bool valid_temp_prefix(const char* prefix) noexcept {
+  if (prefix == nullptr) return true;
+#if defined(HYLE_OS_WINDOWS)
+  return std::strpbrk(prefix, "<>:\"/\\|?*") == nullptr;
+#else
+  // Reject both separators for cross-platform behavior even though backslash
+  // is an ordinary POSIX filename byte.
+  return std::strchr(prefix, '/') == nullptr &&
+         std::strchr(prefix, '\\') == nullptr;
+#endif
+}
+
+bool checked_size_add(std::size_t left, std::size_t right,
+                      std::size_t& result) noexcept {
+  if (right > (std::numeric_limits<std::size_t>::max)() - left) return false;
+  result = left + right;
+  return true;
+}
+
+template <class T>
+class MallocArray {
+ public:
+  MallocArray() noexcept = default;
+  ~MallocArray() { std::free(data_); }
+  MallocArray(const MallocArray&) = delete;
+  MallocArray& operator=(const MallocArray&) = delete;
+
+  bool resize(std::size_t count) noexcept {
+    overflowed_ = count > (std::numeric_limits<std::size_t>::max)() / sizeof(T);
+    if (overflowed_) return false;
+    void* replacement = std::realloc(data_, count * sizeof(T));
+    if (replacement == nullptr && count != 0) return false;
+    data_ = static_cast<T*>(replacement);
+    return true;
+  }
+
+  T* data() noexcept { return data_; }
+  const T* data() const noexcept { return data_; }
+  bool overflowed() const noexcept { return overflowed_; }
+
+ private:
+  T* data_ = nullptr;
+  bool overflowed_ = false;
+};
+
+// Resolve an explicit directory or copy the process temp directory without a
+// fixed path ceiling. The second query is checked and retried because process
+// environment/configuration can change between count and fill.
+class TempDirectoryInput {
+ public:
+  Status resolve(const char* explicit_directory) noexcept {
+    if (explicit_directory != nullptr) {
+      if (explicit_directory[0] == '\0') {
+        return Status::InvalidArgument(
+            "create temp file: explicit directory is empty");
+      }
+      path_ = explicit_directory;
+      return Status::Ok();
+    }
+
+    char* output = stack_;
+    std::size_t capacity = sizeof(stack_);
+    for (;;) {
+      auto length = temp_directory(output, capacity);
+      if (!length) return std::move(length).error();
+      if (*length == 0) {
+        return Status::FailedPrecondition(
+            "create temp file: temp directory is empty");
+      }
+      if (*length < capacity) {
+        path_ = output;
+        return Status::Ok();
+      }
+      std::size_t required;
+      if (!checked_size_add(*length, 1, required)) {
+        return Status::OutOfRange(
+            "create temp file: temp directory is too long");
+      }
+      if (!heap_.resize(required)) {
+        return heap_.overflowed()
+                   ? Status::OutOfRange(
+                         "create temp file: temp directory is too long")
+                   : Status::ResourceExhausted(
+                         "create temp file: temp directory allocation failed");
+      }
+      output = heap_.data();
+      capacity = required;
+    }
+  }
+
+  const char* path() const noexcept { return path_; }
+
+ private:
+  char stack_[512];
+  MallocArray<char> heap_;
+  const char* path_ = nullptr;
+};
+
 // Join "a/b" into dst[cap]. Returns false (no write) if it would not fit. Bounded
 // and allocation-free -- used to rebuild child paths during recursion without
 // snprintf (whose worst-case length trips GCC -Wformat-truncation under -Werror).
@@ -86,6 +190,19 @@ Result<std::size_t> write_raw(std::intptr_t raw, const void* buf,
                               std::size_t n) noexcept;
 
 }  // namespace
+
+#if defined(HYLE_TESTING) && !defined(HYLE_OS_WINDOWS)
+namespace detail {
+namespace {
+ReadSymlinkFunctionForTesting g_read_symlink_function_for_testing = nullptr;
+}
+
+void set_read_symlink_function_for_testing(
+    ReadSymlinkFunctionForTesting function) noexcept {
+  g_read_symlink_function_for_testing = function;
+}
+} // namespace detail
+#endif
 
 #if defined(HYLE_OS_WINDOWS)
 
@@ -880,27 +997,65 @@ Result<std::size_t> read_symlink(const char* path, char* dst,
 Result<CreatedTempFile> create_temp_file(const char* dir, const char* prefix,
                                          char* dst, std::size_t cap) noexcept {
   clear_output(dst, cap);
-  char dirbuf[1024];
-  if (dir == nullptr) {
-    auto temp = temp_directory(dirbuf, sizeof(dirbuf));
-    if (!temp) return std::unexpected(std::move(temp).error());
-    if (*temp >= sizeof(dirbuf)) {
-      return std::unexpected(
-          Status::OutOfRange("create temp file: temp directory is too long"));
-    }
-    dir = dirbuf;
+  if (!valid_temp_prefix(prefix)) {
+    return std::unexpected(Status::InvalidArgument(
+        "create temp file: prefix must be one filename fragment"));
   }
-  WidePath wd(dir);
+  TempDirectoryInput directory;
+  Status directory_status = directory.resolve(dir);
+  if (!directory_status.ok())
+    return std::unexpected(std::move(directory_status));
+
+  WidePath wd(directory.path());
   if (wd.w() == nullptr) {
     return std::unexpected(
-        Status::InvalidArgument("create temp file: invalid UTF-8 directory"));
+        wd.allocation_failed()
+            ? Status::ResourceExhausted(
+                  "create temp file: directory conversion allocation failed")
+            : Status::InvalidArgument(
+                  "create temp file: invalid UTF-8 directory"));
   }
-  std::size_t dl = std::wcslen(wd.w());
-  wchar_t wpre[16];
+  const std::size_t dl = std::wcslen(wd.w());
   const char* p = prefix != nullptr ? prefix : "tmp";
-  int pn = MultiByteToWideChar(CP_UTF8, 0, p, -1, wpre, 16);
-  if (pn <= 0) { wpre[0] = L't'; wpre[1] = L'\0'; }
-  std::size_t pl = std::wcslen(wpre);
+  WidePath wp(p, false);
+  if (wp.w() == nullptr) {
+    return std::unexpected(
+        wp.allocation_failed()
+            ? Status::ResourceExhausted(
+                  "create temp file: prefix conversion allocation failed")
+            : Status::InvalidArgument(
+                  "create temp file: prefix is not valid UTF-8"));
+  }
+  const wchar_t* wpre = wp.w();
+  const std::size_t pl = std::wcslen(wpre);
+
+  const bool needs_separator =
+      wd.w()[dl - 1] != L'\\' && wd.w()[dl - 1] != L'/';
+  std::size_t path_chars = dl;
+  if ((needs_separator && !checked_size_add(path_chars, 1, path_chars)) ||
+      !checked_size_add(path_chars, pl, path_chars) ||
+      !checked_size_add(path_chars, 16, path_chars) ||
+      !checked_size_add(path_chars, 4, path_chars) ||
+      !checked_size_add(path_chars, 1, path_chars)) {
+    return std::unexpected(
+        Status::OutOfRange("create temp file: generated path is too long"));
+  }
+  MallocArray<wchar_t> wpath;
+  if (!wpath.resize(path_chars)) {
+    return std::unexpected(
+        wpath.overflowed()
+            ? Status::OutOfRange(
+                  "create temp file: generated path is too long")
+            : Status::ResourceExhausted(
+                  "create temp file: path allocation failed"));
+  }
+  std::memcpy(wpath.data(), wd.w(), dl * sizeof(wchar_t));
+  std::size_t random_offset = dl;
+  if (needs_separator) wpath.data()[random_offset++] = L'\\';
+  std::memcpy(wpath.data() + random_offset, wpre, pl * sizeof(wchar_t));
+  random_offset += pl;
+  constexpr wchar_t kExt[] = L".tmp";
+  std::memcpy(wpath.data() + random_offset + 16, kExt, sizeof(kExt));
 
   // TRUE atomic create (mkstemp-equivalent): generate a high-entropy random name
   // and CreateFileW with CREATE_NEW, which fails if the name already exists. On
@@ -911,46 +1066,36 @@ Result<CreatedTempFile> create_temp_file(const char* dir, const char* prefix,
   constexpr int kMaxTries = 128;
   const wchar_t kHex[] = L"0123456789abcdef";
   for (int attempt = 0; attempt < kMaxTries; ++attempt) {
-    // dir + '\' + prefix + 16 hex + ".tmp" + NUL
-    if (dl + 1 + pl + 16 + 4 + 1 > MAX_PATH) {
-      return std::unexpected(
-          Status::OutOfRange("create temp file: generated path is too long"));
-    }
-    wchar_t wpath[MAX_PATH];
-    std::memcpy(wpath, wd.w(), dl * sizeof(wchar_t));
-    std::size_t w = dl;
-    if (w == 0 || (wpath[w - 1] != L'\\' && wpath[w - 1] != L'/')) wpath[w++] = L'\\';
-    std::memcpy(wpath + w, wpre, pl * sizeof(wchar_t));
-    w += pl;
     // 64 random bits -> 16 hex chars (rand_s is RtlGenRandom-backed, unpredictable).
+    std::size_t w = random_offset;
     for (int word = 0; word < 2; ++word) {
       unsigned r = 0;
-      if (rand_s(&r) != 0) r = static_cast<unsigned>(GetTickCount()) ^ (attempt << 16);
-      for (int i = 0; i < 8; ++i) { wpath[w++] = kHex[r & 0xF]; r >>= 4; }
-    }
-    const wchar_t kExt[] = L".tmp";
-    std::memcpy(wpath + w, kExt, sizeof(kExt));  // includes NUL
-    w += 4;
-
-    HANDLE h = CreateFileW(wpath, GENERIC_READ | GENERIC_WRITE, 0, nullptr,
-                           CREATE_NEW, FILE_ATTRIBUTE_TEMPORARY, nullptr);
-    if (h != INVALID_HANDLE_VALUE) {
-      char u8[MAX_PATH * 3];
-      if (WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, wpath, -1, u8,
-                              sizeof(u8), nullptr, nullptr) <= 0) {
-        const DWORD conversion_error = ::GetLastError();
-        ::CloseHandle(h);
-        ::DeleteFileW(wpath);
-        return std::unexpected(win32_fs_status(
-            "WideCharToMultiByte(temp path)", conversion_error));
+      if (rand_s(&r) != 0) {
+        return std::unexpected(Status::Unavailable(
+            "create temp file: system random generator failed"));
       }
-      const std::size_t path_size = std::strlen(u8);
-      fill(dst, cap, u8, path_size);
+      for (int i = 0; i < 8; ++i) {
+        wpath.data()[w++] = kHex[r & 0xF];
+        r >>= 4;
+      }
+    }
+
+    HANDLE h = CreateFileW(wpath.data(), GENERIC_READ | GENERIC_WRITE, 0,
+                           nullptr, CREATE_NEW, FILE_ATTRIBUTE_TEMPORARY,
+                           nullptr);
+    if (h != INVALID_HANDLE_VALUE) {
+      auto output = fill_w(dst, cap, wpath.data(), -1);
+      if (!output) {
+        Status conversion_status = std::move(output).error();
+        ::CloseHandle(h);
+        ::DeleteFileW(wpath.data());
+        return std::unexpected(std::move(conversion_status));
+      }
       return CreatedTempFile{
-          FileHandle{reinterpret_cast<std::intptr_t>(h)}, path_size};
+          FileHandle{reinterpret_cast<std::intptr_t>(h)}, *output};
     }
     const DWORD code = GetLastError();
-    if (code != ERROR_FILE_EXISTS) {
+    if (code != ERROR_FILE_EXISTS && code != ERROR_ALREADY_EXISTS) {
       return std::unexpected(win32_fs_status("CreateFileW(CREATE_NEW)", code));
     }
     // else: name collided -> loop and try a fresh random name.
@@ -1113,10 +1258,14 @@ Status copy_file(const char* from, const char* to) noexcept {
   if (from == nullptr || to == nullptr) {
     return Status::InvalidArgument("copy file: path is null");
   }
-  // Self-copy is a successful no-op. This string check is only a fast path:
-  // distinct names may still be hard links to the same inode.
-  if (std::strcmp(from, to) == 0) return Status::Ok();
-  int in = ::open(from, O_RDONLY | O_CLOEXEC);
+  // A verified regular-file self-copy is a successful no-op. Do not return
+  // before opening and classifying the source: equal missing/non-regular paths
+  // are still errors. Distinct names may also be hard links to the same inode.
+  const bool same_path = std::strcmp(from, to) == 0;
+  // O_NONBLOCK prevents a path concurrently replaced by a FIFO/device from
+  // hanging this synchronous regular-file API before fstat can reject it. It
+  // has no effect on regular-file reads.
+  int in = ::open(from, O_RDONLY | O_CLOEXEC | O_NONBLOCK);
   if (in < 0) return posix_fs_status("open copy source", errno);
   struct ::stat in_stat;
   if (::fstat(in, &in_stat) != 0) {
@@ -1124,11 +1273,17 @@ Status copy_file(const char* from, const char* to) noexcept {
     ::close(in);
     return posix_fs_status("fstat copy source", code);
   }
+  if (!S_ISREG(in_stat.st_mode)) {
+    ::close(in);
+    return Status::FailedPrecondition(
+        "copy file: source is not a regular file");
+  }
+  if (same_path) return close_raw(in);
   // Open without O_TRUNC, then compare the opened descriptors. Checking paths
   // before open has a TOCTOU race and misses hard-link aliases; truncating first
   // would destroy the source before we discover that both fds name one inode.
-  int out =
-      ::open(to, O_WRONLY | O_CREAT | O_CLOEXEC, in_stat.st_mode & 0777);
+  int out = ::open(to, O_WRONLY | O_CREAT | O_CLOEXEC | O_NONBLOCK,
+                   in_stat.st_mode & 0777);
   if (out < 0) {
     const int code = errno;
     ::close(in);
@@ -1140,6 +1295,12 @@ Status copy_file(const char* from, const char* to) noexcept {
     ::close(in);
     ::close(out);
     return posix_fs_status("fstat copy destination", code);
+  }
+  if (!S_ISREG(out_stat.st_mode)) {
+    ::close(in);
+    ::close(out);
+    return Status::FailedPrecondition(
+        "copy file: destination is not a regular file");
   }
   if (in_stat.st_dev == out_stat.st_dev &&
       in_stat.st_ino == out_stat.st_ino) {
@@ -1157,31 +1318,37 @@ Status copy_file(const char* from, const char* to) noexcept {
   Status status = Status::Ok();
 #if defined(HYLE_OS_LINUX)
   // Fast path: copy_file_range keeps bytes in the kernel (and can reflink on
-  // btrfs/xfs) -- no user-space bounce. Only fall back to read/write if it fails
-  // on the FIRST call (EXDEV cross-fs / ENOSYS old kernel / EINVAL), i.e. before
-  // any bytes are written, so the fallback can't double-copy.
+  // btrfs/xfs) -- no user-space bounce. Drive it to EOF instead of trusting
+  // st_size: procfs/sysfs regular files can report size zero while yielding
+  // content. Unsupported-operation failures fall back at the descriptors'
+  // current offsets, so a partial kernel copy is never duplicated.
   bool use_userspace = false;
-  off_t remaining = in_stat.st_size;
-  bool any_copied = false;
-  while (remaining > 0) {
-    ssize_t n = ::copy_file_range(in, nullptr, out, nullptr,
-                                  static_cast<std::size_t>(remaining), 0);
+  bool copied_any = false;
+  constexpr std::size_t kCopyFileRangeChunk = std::size_t{1} << 30;
+  for (;;) {
+    ssize_t n =
+        ::copy_file_range(in, nullptr, out, nullptr, kCopyFileRangeChunk, 0);
     if (n < 0) {
       if (errno == EINTR) continue;
-      if (!any_copied) {
-        use_userspace = true;  // unsupported here; retry whole copy in user space
+      const int code = errno;
+      if (code == EXDEV || code == ENOSYS || code == EINVAL ||
+          code == EOPNOTSUPP) {
+        use_userspace = true;
         break;
       }
-      status = posix_fs_status("copy_file_range", errno);
+      status = posix_fs_status("copy_file_range", code);
       break;
     }
-    if (n == 0) break;  // EOF
-    any_copied = true;
-    remaining -= n;
+    if (n == 0) {
+      // A zero-size virtual regular file can still yield bytes through read(2),
+      // while copy_file_range reports zero immediately. Probe it in user space;
+      // a genuinely empty file costs only one extra EOF read.
+      if (!copied_any && in_stat.st_size == 0) use_userspace = true;
+      break;
+    }
+    copied_any = true;
   }
   if (use_userspace) {
-    ::lseek(in, 0, SEEK_SET);
-    ::lseek(out, 0, SEEK_SET);
 #else
   {
 #endif
@@ -1471,52 +1638,132 @@ Result<std::size_t> read_symlink(const char* path, char* dst,
   if (path == nullptr) {
     return std::unexpected(Status::InvalidArgument("read symlink: path is null"));
   }
-  char buf[4096];
-  ssize_t n = ::readlink(path, buf, sizeof(buf));
-  if (n < 0) {
-    const int code = errno;
-    if (code == EINVAL) {
-      return std::unexpected(
-          Status::FailedPrecondition("read symlink: path is not a symlink"));
+  char stack[256];
+  char* buffer = stack;
+  std::size_t buffer_capacity = sizeof(stack);
+  MallocArray<char> heap;
+  for (;;) {
+    std::ptrdiff_t raw_result;
+    int code = 0;
+#if defined(HYLE_TESTING)
+    if (detail::g_read_symlink_function_for_testing != nullptr) {
+      raw_result = detail::g_read_symlink_function_for_testing(
+          path, buffer, buffer_capacity, &code);
+    } else
+#endif
+    {
+      ssize_t result;
+      do {
+        result = ::readlink(path, buffer, buffer_capacity);
+      } while (result < 0 && errno == EINTR);
+      raw_result = static_cast<std::ptrdiff_t>(result);
+      if (result < 0) code = errno;
     }
-    return std::unexpected(posix_fs_status("readlink", code));
+
+    if (raw_result < 0) {
+      if (code == EINVAL) {
+        return std::unexpected(
+            Status::FailedPrecondition("read symlink: path is not a symlink"));
+      }
+      return std::unexpected(posix_fs_status("readlink", code));
+    }
+    const std::size_t length = static_cast<std::size_t>(raw_result);
+    if (length < buffer_capacity) {
+      return fill(dst, cap, buffer, length);
+    }
+
+    // readlink does not append NUL and n==capacity is indistinguishable from a
+    // truncated result. Grow and retry until one call leaves spare capacity.
+    if (buffer_capacity >
+        (std::numeric_limits<std::size_t>::max)() / 2) {
+      return std::unexpected(
+          Status::OutOfRange("read symlink: target is too long"));
+    }
+    buffer_capacity *= 2;
+    if (!heap.resize(buffer_capacity)) {
+      return std::unexpected(
+          heap.overflowed()
+              ? Status::OutOfRange("read symlink: target is too long")
+              : Status::ResourceExhausted(
+                    "read symlink: target buffer allocation failed"));
+    }
+    buffer = heap.data();
   }
-  return fill(dst, cap, buf, static_cast<std::size_t>(n));
 }
 
 Result<CreatedTempFile> create_temp_file(const char* dir, const char* prefix,
                                          char* dst, std::size_t cap) noexcept {
   clear_output(dst, cap);
-  char dirbuf[1024];
-  if (dir == nullptr) {
-    auto temp = temp_directory(dirbuf, sizeof(dirbuf));
-    if (!temp) return std::unexpected(std::move(temp).error());
-    if (*temp >= sizeof(dirbuf)) {
-      return std::unexpected(
-          Status::OutOfRange("create temp file: temp directory is too long"));
-    }
-    dir = dirbuf;
+  if (!valid_temp_prefix(prefix)) {
+    return std::unexpected(Status::InvalidArgument(
+        "create temp file: prefix must be one filename fragment"));
   }
+  TempDirectoryInput directory;
+  Status directory_status = directory.resolve(dir);
+  if (!directory_status.ok())
+    return std::unexpected(std::move(directory_status));
+  dir = directory.path();
+
   const char* p = prefix != nullptr ? prefix : "tmp";
   // Build "<dir>/<prefix>XXXXXX" (mkstemp replaces the 6 X's atomically).
-  char tmpl[1024];
-  std::size_t dl = std::strlen(dir), pl = std::strlen(p);
-  if (dl + 1 + pl + 6 + 1 > sizeof(tmpl)) {
+  const std::size_t dl = std::strlen(dir);
+  const std::size_t pl = std::strlen(p);
+  const bool needs_separator = dir[dl - 1] != '/';
+  std::size_t path_chars = dl;
+  if ((needs_separator && !checked_size_add(path_chars, 1, path_chars)) ||
+      !checked_size_add(path_chars, pl, path_chars) ||
+      !checked_size_add(path_chars, 6, path_chars) ||
+      !checked_size_add(path_chars, 1, path_chars)) {
     return std::unexpected(
         Status::OutOfRange("create temp file: generated path is too long"));
   }
-  std::memcpy(tmpl, dir, dl);
+  MallocArray<char> tmpl;
+  if (!tmpl.resize(path_chars)) {
+    return std::unexpected(
+        tmpl.overflowed()
+            ? Status::OutOfRange(
+                  "create temp file: generated path is too long")
+            : Status::ResourceExhausted(
+                  "create temp file: path allocation failed"));
+  }
+  std::memcpy(tmpl.data(), dir, dl);
   std::size_t w = dl;
-  if (w == 0 || tmpl[w - 1] != '/') tmpl[w++] = '/';
-  std::memcpy(tmpl + w, p, pl);
+  if (needs_separator) tmpl.data()[w++] = '/';
+  std::memcpy(tmpl.data() + w, p, pl);
   w += pl;
-  std::memcpy(tmpl + w, "XXXXXX", 6);
+  std::memcpy(tmpl.data() + w, "XXXXXX", 6);
   w += 6;
-  tmpl[w] = '\0';
-  int fd = ::mkstemp(tmpl);
+  tmpl.data()[w] = '\0';
+#if defined(HYLE_OS_LINUX)
+  // Keep the descriptor non-inheritable from the instant it is created. A
+  // later fcntl leaves a fork+exec race in multi-threaded programs.
+  int fd = ::mkostemp(tmpl.data(), O_CLOEXEC);
+  if (fd < 0) return std::unexpected(posix_fs_status("mkostemp", errno));
+#else
+  int fd = ::mkstemp(tmpl.data());
   if (fd < 0) return std::unexpected(posix_fs_status("mkstemp", errno));
-  const std::size_t path_size = std::strlen(tmpl);
-  fill(dst, cap, tmpl, path_size);
+  // macOS has no mkostemp. Close the inheritance window as soon as possible,
+  // and remove the newly-created file if descriptor setup fails.
+  int descriptor_flags;
+  do {
+    descriptor_flags = ::fcntl(fd, F_GETFD);
+  } while (descriptor_flags < 0 && errno == EINTR);
+  int close_on_exec_result = -1;
+  if (descriptor_flags >= 0) {
+    do {
+      close_on_exec_result = ::fcntl(fd, F_SETFD, descriptor_flags | FD_CLOEXEC);
+    } while (close_on_exec_result < 0 && errno == EINTR);
+  }
+  if (descriptor_flags < 0 || close_on_exec_result < 0) {
+    const int code = errno;
+    ::close(fd);
+    ::unlink(tmpl.data());
+    return std::unexpected(
+        posix_fs_status("fcntl temp file close-on-exec", code));
+  }
+#endif
+  const std::size_t path_size = std::strlen(tmpl.data());
+  fill(dst, cap, tmpl.data(), path_size);
   return CreatedTempFile{FileHandle{static_cast<std::intptr_t>(fd)}, path_size};
 }
 
@@ -1714,58 +1961,299 @@ Status make_directory_recursive(const char* path) noexcept {
 }
 
 namespace {
-// Visitor state for remove_directory_recursive: remembers the parent path so it
-// can rebuild each child's full path, and an `ok` flag latched on first failure.
-struct RmCtx {
-  const char* dir;
-  Status status;
-  unsigned depth;
+struct RmPath {
+  char stack[4096];
+  char* data = stack;
+  std::size_t size = 0;
+  std::size_t capacity = sizeof(stack);
 };
 
-// Recursion depth cap: a pathological deep tree would blow the stack
-// (~several KB/frame). 512 is far past any real nesting. Fwd-decl for rm_visit.
-constexpr unsigned kRmMaxDepth = 512;
-Status rm_recursive_depth(const char* path, unsigned depth) noexcept;
-
-bool rm_visit(const char* name, FileType type, void* vctx) noexcept {
-  auto* c = static_cast<RmCtx*>(vctx);
-  char child[4096];
-  if (!join_path(child, sizeof(child), c->dir, name)) {
-    c->status.Update(
-        Status::OutOfRange("recursive remove: child path is too long"));
-    return false;
+Status rm_path_reserve(RmPath* path, std::size_t required) noexcept {
+  if (required <= path->capacity) return Status::Ok();
+  const std::size_t max_size = (std::numeric_limits<std::size_t>::max)();
+  std::size_t grown_capacity = path->capacity;
+  while (grown_capacity < required) {
+    if (grown_capacity > max_size / 2) {
+      grown_capacity = required;
+      break;
+    }
+    grown_capacity *= 2;
   }
-  // The iterator reports the entry itself, so symlinks/reparse points can be
-  // removed without an extra lstat/GetFileAttributes syscall per child.
-  Status status;
-  if (type == FileType::kSymlink) {
-    status = remove_symlink(child);
-  } else if (type == FileType::kDirectory) {
-    status = rm_recursive_depth(child, c->depth + 1);
+  char* grown = nullptr;
+  if (path->data == path->stack) {
+    grown = static_cast<char*>(std::malloc(grown_capacity));
+    if (grown != nullptr) std::memcpy(grown, path->stack, path->size + 1);
   } else {
-    status = remove_file(child);
+    grown = static_cast<char*>(std::realloc(path->data, grown_capacity));
   }
-  c->status.Update(std::move(status));
-  return c->status.ok();
+  if (grown == nullptr) {
+    return Status::ResourceExhausted(
+        "recursive remove: path buffer allocation failed");
+  }
+  path->data = grown;
+  path->capacity = grown_capacity;
+  return Status::Ok();
 }
 
-// Depth-capped recursive core; both the public entry and rm_visit route here.
-Status rm_recursive_depth(const char* path, unsigned depth) noexcept {
-  if (depth > kRmMaxDepth) {
-    return Status::OutOfRange("recursive remove: directory tree is too deep");
+Status rm_path_set(RmPath* path, const char* value) noexcept {
+  const std::size_t size = std::strlen(value);
+  if (size == (std::numeric_limits<std::size_t>::max)()) {
+    return Status::OutOfRange("recursive remove: root path size overflow");
   }
-  // A symlink/junction at this level: remove the LINK itself, never follow it into
-  // a target outside the tree (platform-audit #1/#2 data-loss guard). is_symlink
-  // tests the path itself (lstat / reparse bit), before is_directory (follows).
-  HYLE_ASSIGN_OR_RETURN(bool link, is_symlink(path));
-  if (link) return remove_symlink(path);
-  HYLE_ASSIGN_OR_RETURN(bool directory, is_directory(path));
-  if (!directory) return remove_file(path);  // a plain file: just unlink
-  RmCtx c{path, Status::Ok(), depth};
-  auto completed = directory_iterate(path, rm_visit, &c);
-  if (!completed) return std::move(completed).error();
-  if (!c.status.ok()) return std::move(c.status);
-  return remove_directory(path);
+  HYLE_RETURN_IF_ERROR(rm_path_reserve(path, size + 1));
+  std::memcpy(path->data, value, size + 1);
+  path->size = size;
+  return Status::Ok();
+}
+
+Status rm_path_append(RmPath* path, const char* name) noexcept {
+  const std::size_t name_size = std::strlen(name);
+  const bool separator =
+      path->size != 0 && path->data[path->size - 1] != '/' &&
+      path->data[path->size - 1] != '\\';
+  const std::size_t separator_size = separator ? 1u : 0u;
+  const std::size_t max_size = (std::numeric_limits<std::size_t>::max)();
+  if (path->size > max_size - separator_size) {
+    return Status::OutOfRange("recursive remove: child path size overflow");
+  }
+  const std::size_t prefix_size = path->size + separator_size;
+  if (name_size >= max_size - prefix_size) {
+    return Status::OutOfRange("recursive remove: child path size overflow");
+  }
+  const std::size_t child_size = prefix_size + name_size;
+  HYLE_RETURN_IF_ERROR(rm_path_reserve(path, child_size + 1));
+  std::size_t cursor = path->size;
+  if (separator) path->data[cursor++] = '/';
+  std::memcpy(path->data + cursor, name, name_size + 1);
+  path->size = child_size;
+  return Status::Ok();
+}
+
+void rm_path_truncate(RmPath* path, std::size_t size) noexcept {
+  path->size = size;
+  path->data[size] = '\0';
+}
+
+void rm_path_destroy(RmPath* path) noexcept {
+  if (path->data != path->stack) std::free(path->data);
+  path->data = path->stack;
+  path->size = 0;
+  path->capacity = sizeof(path->stack);
+}
+
+#if defined(HYLE_OS_WINDOWS)
+struct RmFrame {
+  HANDLE iterator = INVALID_HANDLE_VALUE;
+  WIN32_FIND_DATAW entry{};
+  std::size_t path_size = 0;
+  bool first_pending = false;
+};
+#else
+struct RmFrame {
+  DIR* iterator = nullptr;
+  std::size_t path_size = 0;
+};
+#endif
+
+struct RmFrames {
+  RmFrame* data = nullptr;
+  std::size_t size = 0;
+  std::size_t capacity = 0;
+};
+
+Status rm_frames_reserve(RmFrames* frames, std::size_t required) noexcept {
+  if (required <= frames->capacity) return Status::Ok();
+  const std::size_t max_size = (std::numeric_limits<std::size_t>::max)();
+  std::size_t grown_capacity = frames->capacity == 0 ? 16 : frames->capacity;
+  while (grown_capacity < required) {
+    if (grown_capacity > max_size / 2) {
+      grown_capacity = required;
+      break;
+    }
+    grown_capacity *= 2;
+  }
+  if (grown_capacity > max_size / sizeof(RmFrame)) {
+    return Status::OutOfRange("recursive remove: iterator stack size overflow");
+  }
+  void* grown =
+      std::realloc(frames->data, grown_capacity * sizeof(RmFrame));
+  if (grown == nullptr) {
+    return Status::ResourceExhausted(
+        "recursive remove: iterator stack allocation failed");
+  }
+  frames->data = static_cast<RmFrame*>(grown);
+  frames->capacity = grown_capacity;
+  return Status::Ok();
+}
+
+Status rm_open_frame(const char* path, std::size_t path_size,
+                     RmFrame* frame) noexcept {
+#if defined(HYLE_OS_WINDOWS)
+  WidePath wide_path(path);
+  if (wide_path.w() == nullptr) {
+    return wide_path.allocation_failed()
+               ? Status::ResourceExhausted(
+                     "recursive remove: path conversion allocation failed")
+               : Status::InvalidArgument(
+                     "recursive remove: path is not valid UTF-8");
+  }
+  const std::size_t wide_size = std::wcslen(wide_path.w());
+  const bool separator =
+      wide_size != 0 && wide_path.w()[wide_size - 1] != L'\\' &&
+      wide_path.w()[wide_size - 1] != L'/';
+  const std::size_t pattern_size = wide_size + (separator ? 1u : 0u) + 2;
+  wchar_t pattern_stack[MAX_PATH];
+  wchar_t* pattern = pattern_stack;
+  if (pattern_size > MAX_PATH) {
+    if (pattern_size >
+        (std::numeric_limits<std::size_t>::max)() / sizeof(wchar_t)) {
+      return Status::OutOfRange(
+          "recursive remove: search pattern size overflow");
+    }
+    pattern = static_cast<wchar_t*>(
+        std::malloc(pattern_size * sizeof(wchar_t)));
+    if (pattern == nullptr) {
+      return Status::ResourceExhausted(
+          "recursive remove: search pattern allocation failed");
+    }
+  }
+  std::memcpy(pattern, wide_path.w(), wide_size * sizeof(wchar_t));
+  std::size_t cursor = wide_size;
+  if (separator) pattern[cursor++] = L'\\';
+  pattern[cursor++] = L'*';
+  pattern[cursor] = L'\0';
+  HANDLE iterator = FindFirstFileExW(
+      pattern, FindExInfoBasic, &frame->entry, FindExSearchNameMatch, nullptr,
+      FIND_FIRST_EX_LARGE_FETCH);
+  const DWORD code = iterator == INVALID_HANDLE_VALUE ? ::GetLastError() : 0;
+  if (pattern != pattern_stack) std::free(pattern);
+  if (iterator == INVALID_HANDLE_VALUE) {
+    return win32_fs_status("FindFirstFileExW(recursive remove)", code);
+  }
+  frame->iterator = iterator;
+  frame->path_size = path_size;
+  frame->first_pending = true;
+  return Status::Ok();
+#else
+  DIR* iterator = ::opendir(path);
+  if (iterator == nullptr) return posix_fs_status("opendir recursive remove", errno);
+  frame->iterator = iterator;
+  frame->path_size = path_size;
+  return Status::Ok();
+#endif
+}
+
+Status rm_close_frame(RmFrame* frame) noexcept {
+#if defined(HYLE_OS_WINDOWS)
+  if (frame->iterator == INVALID_HANDLE_VALUE) return Status::Ok();
+  const BOOL closed = ::FindClose(frame->iterator);
+  const DWORD code = closed ? 0 : ::GetLastError();
+  frame->iterator = INVALID_HANDLE_VALUE;
+  return closed ? Status::Ok()
+                : win32_fs_status("FindClose(recursive remove)", code);
+#else
+  if (frame->iterator == nullptr) return Status::Ok();
+  DIR* iterator = frame->iterator;
+  frame->iterator = nullptr;
+  if (::closedir(iterator) == 0) return Status::Ok();
+  return posix_fs_status("closedir recursive remove", errno);
+#endif
+}
+
+Status rm_next_entry(RmFrame* frame, char* name, std::size_t name_capacity,
+                     FileType* type, bool* has_entry) noexcept {
+  *has_entry = false;
+#if defined(HYLE_OS_WINDOWS)
+  for (;;) {
+    if (frame->first_pending) {
+      frame->first_pending = false;
+    } else if (!::FindNextFileW(frame->iterator, &frame->entry)) {
+      const DWORD code = ::GetLastError();
+      return code == ERROR_NO_MORE_FILES
+                 ? Status::Ok()
+                 : win32_fs_status("FindNextFileW(recursive remove)", code);
+    }
+    const wchar_t* wide_name = frame->entry.cFileName;
+    if (wide_name[0] == L'.' &&
+        (wide_name[1] == L'\0' ||
+         (wide_name[1] == L'.' && wide_name[2] == L'\0'))) {
+      continue;
+    }
+    const int converted = ::WideCharToMultiByte(
+        CP_UTF8, WC_ERR_INVALID_CHARS, wide_name, -1, name,
+        static_cast<int>(name_capacity), nullptr, nullptr);
+    if (converted <= 0) {
+      return win32_fs_status("WideCharToMultiByte(recursive remove entry)",
+                             ::GetLastError());
+    }
+    *type = FileType::kRegular;
+    if ((frame->entry.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0) {
+      *type = FileType::kSymlink;
+    } else if ((frame->entry.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
+      *type = FileType::kDirectory;
+    } else if ((frame->entry.dwFileAttributes & FILE_ATTRIBUTE_DEVICE) != 0) {
+      *type = FileType::kCharacterDevice;
+    }
+    *has_entry = true;
+    return Status::Ok();
+  }
+#else
+  for (;;) {
+    errno = 0;
+    struct dirent* entry = ::readdir(frame->iterator);
+    if (entry == nullptr) {
+      const int code = errno;
+      if (code == EINTR) continue;
+      return code == 0 ? Status::Ok()
+                       : posix_fs_status("readdir recursive remove", code);
+    }
+    const char* entry_name = entry->d_name;
+    if (entry_name[0] == '.' &&
+        (entry_name[1] == '\0' ||
+         (entry_name[1] == '.' && entry_name[2] == '\0'))) {
+      continue;
+    }
+    const std::size_t name_size = std::strlen(entry_name);
+    if (name_size >= name_capacity) {
+      return Status::OutOfRange(
+          "recursive remove: directory entry name is too long");
+    }
+    std::memcpy(name, entry_name, name_size + 1);
+    *type = file_type_from_dirent(entry->d_type);
+    if (*type == FileType::kUnknown) {
+      struct ::stat metadata;
+      if (::fstatat(::dirfd(frame->iterator), entry_name, &metadata,
+                    AT_SYMLINK_NOFOLLOW) != 0) {
+        return posix_fs_status("fstatat recursive remove entry", errno);
+      }
+      *type = file_type_from_mode(metadata.st_mode);
+    }
+    *has_entry = true;
+    return Status::Ok();
+  }
+#endif
+}
+
+Status rm_push_frame(RmFrames* frames, const char* path,
+                     std::size_t path_size) noexcept {
+  HYLE_RETURN_IF_ERROR(rm_frames_reserve(frames, frames->size + 1));
+  RmFrame* frame = &frames->data[frames->size];
+  *frame = RmFrame{};
+  HYLE_RETURN_IF_ERROR(rm_open_frame(path, path_size, frame));
+  ++frames->size;
+  return Status::Ok();
+}
+
+Status rm_finish(RmFrames* frames, RmPath* path, Status status) noexcept {
+  while (frames->size != 0) {
+    --frames->size;
+    status.Update(rm_close_frame(&frames->data[frames->size]));
+  }
+  std::free(frames->data);
+  frames->data = nullptr;
+  frames->capacity = 0;
+  rm_path_destroy(path);
+  return status;
 }
 }  // namespace
 
@@ -1773,7 +2261,86 @@ Status remove_directory_recursive(const char* path) noexcept {
   if (path == nullptr || path[0] == '\0') {
     return Status::InvalidArgument("recursive remove: path is empty");
   }
-  return rm_recursive_depth(path, 0);
+
+  // Inspect the root itself before asking whether it is a directory. This is
+  // the data-loss guard: is_directory follows links, while is_symlink/lstat
+  // detects the link or junction that must be unlinked instead.
+  HYLE_ASSIGN_OR_RETURN(bool root_link, is_symlink(path));
+  if (root_link) return remove_symlink(path);
+  HYLE_ASSIGN_OR_RETURN(bool root_directory, is_directory(path));
+  if (!root_directory) return remove_file(path);
+
+  RmPath current_path;
+  RmFrames frames;
+  Status status = rm_path_set(&current_path, path);
+  if (status.ok()) {
+    status = rm_push_frame(&frames, current_path.data, current_path.size);
+  }
+  if (!status.ok()) return rm_finish(&frames, &current_path, std::move(status));
+
+  // Resumable depth-first postorder traversal. One native iterator remains open
+  // per ancestor and one mutable path buffer names the current entry. Siblings
+  // are never queued, so auxiliary memory is O(depth + longest path), not width.
+  char entry_name[4096];
+  while (frames.size != 0) {
+    RmFrame* frame = &frames.data[frames.size - 1];
+    rm_path_truncate(&current_path, frame->path_size);
+
+    FileType type = FileType::kUnknown;
+    bool has_entry = false;
+    status = rm_next_entry(frame, entry_name, sizeof(entry_name), &type,
+                           &has_entry);
+    if (!status.ok()) {
+      return rm_finish(&frames, &current_path, std::move(status));
+    }
+    if (!has_entry) {
+      status = rm_close_frame(frame);
+      --frames.size;
+      if (status.ok()) status = remove_directory(current_path.data);
+      if (!status.ok()) {
+        return rm_finish(&frames, &current_path, std::move(status));
+      }
+      continue;
+    }
+
+    const std::size_t parent_size = frame->path_size;
+    status = rm_path_append(&current_path, entry_name);
+    if (!status.ok()) {
+      return rm_finish(&frames, &current_path, std::move(status));
+    }
+
+    if (type == FileType::kSymlink) {
+      status = remove_symlink(current_path.data);
+    } else if (type == FileType::kDirectory) {
+      // Re-check immediately before descent. This preserves the link check and
+      // reduces stale-type risk under the API's caller-no-mutation contract.
+      auto link = is_symlink(current_path.data);
+      if (!link) {
+        status = std::move(link).error();
+      } else if (*link) {
+        status = remove_symlink(current_path.data);
+      } else {
+        auto directory = is_directory(current_path.data);
+        if (!directory) {
+          status = std::move(directory).error();
+        } else if (!*directory) {
+          status = remove_file(current_path.data);
+        } else {
+          status =
+              rm_push_frame(&frames, current_path.data, current_path.size);
+          if (status.ok()) continue;
+        }
+      }
+    } else {
+      status = remove_file(current_path.data);
+    }
+
+    rm_path_truncate(&current_path, parent_size);
+    if (!status.ok()) {
+      return rm_finish(&frames, &current_path, std::move(status));
+    }
+  }
+  return rm_finish(&frames, &current_path, Status::Ok());
 }
 
 }  // namespace hyle::platform

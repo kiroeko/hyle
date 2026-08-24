@@ -15,6 +15,7 @@
 #endif
 
 #include "hyle/time/clock.h"
+#include "clock_internal.h"
 
 using hyle::time::coarse_realtime_available;
 using hyle::time::coarse_realtime_ns;
@@ -111,6 +112,45 @@ TEST(Clock, OrderedProfilingMeasurementBoundariesAreReadable) {
   const std::uint64_t stop = profiling_measurement_stop_ns();
   EXPECT_NE(start, 0u);
   EXPECT_NE(stop, 0u);
+}
+
+TEST(Clock, CpuidTscTupleDerivationFailsClosed) {
+  using hyle::time::detail::derive_tsc_hz;
+  using hyle::time::detail::tsc_scale_multiplier;
+
+  EXPECT_EQ(derive_tsc_hz({2, 156, 38'400'000, 0}), 2'995'200'000.0);
+  EXPECT_EQ(derive_tsc_hz({2, 156, 0, 2'995}), 2'994'999'930.0);
+  EXPECT_EQ(derive_tsc_hz({0, 156, 38'400'000, 0}), 0.0);
+  EXPECT_EQ(derive_tsc_hz({2, 0, 38'400'000, 0}), 0.0);
+  EXPECT_EQ(derive_tsc_hz({2, 156, 0, 0}), 0.0);
+
+  // These injected hypervisor tuples overflow the old three-factor u64
+  // product, exceed the 32-bit crystal field, or truncate the crystal to zero.
+  EXPECT_EQ(derive_tsc_hz(
+                {(std::numeric_limits<std::uint32_t>::max)(), 1, 0, 65'535}),
+            0.0);
+  EXPECT_EQ(derive_tsc_hz({2, 1, 0, 3'000}), 0.0);
+  EXPECT_EQ(derive_tsc_hz(
+                {1, (std::numeric_limits<std::uint32_t>::max)(), 0, 1}),
+            0.0);
+
+  EXPECT_GT(tsc_scale_multiplier(2'995'200'000.0), 0u);
+  EXPECT_EQ(tsc_scale_multiplier(derive_tsc_hz(
+                {1, (std::numeric_limits<std::uint32_t>::max)(),
+                 (std::numeric_limits<std::uint32_t>::max)(), 0})),
+            0u);
+  EXPECT_EQ(tsc_scale_multiplier(0.0), 0u);
+  EXPECT_EQ(tsc_scale_multiplier(-1.0), 0u);
+  EXPECT_EQ(tsc_scale_multiplier(1.0), 0u);
+  EXPECT_EQ(tsc_scale_multiplier(
+                (std::numeric_limits<double>::infinity)()),
+            0u);
+  EXPECT_EQ(tsc_scale_multiplier(
+                (std::numeric_limits<double>::quiet_NaN)()),
+            0u);
+  EXPECT_EQ(tsc_scale_multiplier(0.1), 0u);
+  EXPECT_EQ(tsc_scale_multiplier(1e20), 0u);
+  EXPECT_EQ(tsc_scale_multiplier(1e9 * 0x1p32), 1u);
 }
 
 TEST(Clock, RealtimeIsPlausiblyNow) {
@@ -284,6 +324,19 @@ TEST(Clock, InstantElapsedClampsFutureInstant) {
   EXPECT_EQ(future.elapsed_ns(), 0u);
 }
 
+TEST(Clock, InstantConvenienceDifferencesSaturateAtRepresentationEdges) {
+  const Instant minimum{MonotonicTimePoint::min()};
+  const Instant maximum{MonotonicTimePoint::max()};
+  const Instant minus_one{
+      MonotonicTimePoint(hyle::time::Duration(-1))};
+
+  EXPECT_EQ(minimum.elapsed(), (hyle::time::Duration::max)());
+  EXPECT_EQ(minimum.until(maximum), (hyle::time::Duration::max)());
+  EXPECT_EQ(minimum.until(minus_one), (hyle::time::Duration::max)());
+  EXPECT_EQ(maximum.until(minimum), hyle::time::Duration::zero());
+  EXPECT_EQ(minimum.until(minimum), hyle::time::Duration::zero());
+}
+
 TEST(Clock, ChronoFacadePreservesUnitsAndRoundsUp) {
   using namespace std::chrono_literals;
   EXPECT_EQ(hyle::time::duration_ns_saturated(1500us), 1'500'000u);
@@ -330,6 +383,8 @@ TEST(Clock, IntegralDurationConversionHandlesSignedAndUnsignedLimits) {
   using UnsignedMs = std::chrono::duration<std::uint64_t, std::milli>;
   using UnsignedFemto =
       std::chrono::duration<std::uint64_t, std::femto>;
+  using OverflowingCeil =
+      std::chrono::duration<std::uint64_t, std::ratio<7, 5'000'000'000>>;
 
   EXPECT_EQ(hyle::time::duration_ns_saturated(
                 SignedNs(std::numeric_limits<std::int64_t>::min())),
@@ -352,6 +407,11 @@ TEST(Clock, IntegralDurationConversionHandlesSignedAndUnsignedLimits) {
       kMax / kScale + (kMax % kScale != 0 ? 1u : 0u);
   EXPECT_EQ(hyle::time::duration_ns_saturated(UnsignedFemto(kMax)),
             kCeilMaxDivScale);
+  // count * 7 / 5 has quotient UINT64_MAX and remainder 2. The upward
+  // rounding step itself must saturate instead of wrapping back to zero.
+  EXPECT_EQ(hyle::time::duration_ns_saturated(
+                OverflowingCeil(13'176'245'766'935'394'011ull)),
+            kMax);
 }
 
 TEST(Clock, IntegralDurationConversionRoundsFractionalNanosecondsUpExactly) {

@@ -22,7 +22,7 @@
 > race、MI_DEBUG=3 全量堆校验无损坏、原始崩溃器本体在 Linux 原生 + Windows MSVC 本机
 > 重负载下 + 强制迁移 687 万次跨线程 free 均**不复现**。证据(SIGILL = 代码页问题 +
 > 全部 instrumented 净 + 原始崩溃全在 9p)指向 **9p/WSL demand-paging 环境假象**,非
-> HYLE 缺陷。fiber 切换 ~21-23ns 数值有效(mimalloc v2.3.2 + 本 session 复测一致);spawn 的权威对标见下 sched 同步节（拆分 worker-stack 与 stackful 合同，三平台对 marl），非此处历史的 vs std::async 弱基线。
+> HYLE 缺陷。fiber 切换 ~21-23ns 是 mimalloc v2.3.2 绑定的历史值；升级到 v3.5.0 后必须复跑，当前不得继续作为发布数值。spawn 的权威对标见下 sched 同步节（拆分 worker-stack 与 stackful 合同，三平台对 marl），非此处历史的 vs std::async 弱基线。
 
 ## LIFO fast-slot：同 worker 唤醒 cache-hot 恢复（复杂度机会①，`scheduler.cc`）
 

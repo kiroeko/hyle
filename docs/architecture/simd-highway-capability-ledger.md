@@ -1,8 +1,9 @@
 # SIMD × Highway 能力账本
 
-> 本账本比较用户能解决的问题和实现形状，不以函数名数量或 LOC 判输赢。参考快照是本地
-> `C:\public\project-hyle\highway` 的 `83eff39371e5e6494b305b253f8a3c06f831faf4`；HYLE
-> 不链接 Highway，后者只进入测试和 benchmark。
+> 本账本比较用户能解决的问题和实现形状，不以函数名数量或 LOC 判输赢。既有审计/点值绑定历史
+> Highway 快照 `83eff39371e5e6494b305b253f8a3c06f831faf4`，不得改标签冒充新结果。中央 lock 的当前 benchmark
+> 对手已升到 `239071390b18ca70f8fadde90ebefa6d8b12cb69`；发布新比较结论前必须 rebaseline。HYLE 不把
+> Highway 当外部产品库链接，它只作为 benchmark/reference checkout；移植进产品的核保留各自历史来源。
 
 ## 为什么 Highway 更大
 

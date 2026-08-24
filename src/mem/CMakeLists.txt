@@ -61,5 +61,6 @@ hyle_register_package_dependency(
   NAME mimalloc
   OWNER mem
   STATIC_EXPORT_TARGETS mimalloc_static
+  LOCKED_DEPENDENCIES mimalloc
   RUNTIME_FILE_SPECS
     "${_mi}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|mimalloc-LICENSE")

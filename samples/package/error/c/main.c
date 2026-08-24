@@ -2,6 +2,18 @@
 
 #include <string.h>
 
+#if defined(_MSC_VER)
+typedef char installed_status_code_must_be_u16[
+    sizeof(hyle_status_code) == sizeof(uint16_t) ? 1 : -1];
+typedef char installed_native_domain_must_be_u16[
+    sizeof(hyle_native_error_domain) == sizeof(uint16_t) ? 1 : -1];
+#else
+_Static_assert(sizeof(hyle_status_code) == sizeof(uint16_t),
+               "installed status-code ABI width");
+_Static_assert(sizeof(hyle_native_error_domain) == sizeof(uint16_t),
+               "installed native-domain ABI width");
+#endif
+
 int main(void) {
   hyle_status status = hyle_status_not_found("model.bin");
   hyle_status_add_context(&status, "loading model");
@@ -16,16 +28,15 @@ int main(void) {
 
   char text[64];
   const size_t needed = hyle_status_to_string(moved, text, sizeof(text));
-  const int ok = hyle_status_get_code(moved) == HYLE_STATUS_NOT_FOUND &&
-                 hyle_status_is_ok(copy) &&
-                 hyle_status_code_from_win32(5) ==
-                     HYLE_STATUS_PERMISSION_DENIED &&
-                 hyle_status_is_permission_denied(com) &&
-                 hyle_status_get_native_error(com, &domain, &native_code) &&
-                 domain == HYLE_NATIVE_ERROR_HRESULT &&
-                 native_code == access_denied &&
-                 needed == strlen("NotFound: loading model: model.bin") &&
-                 strcmp(text, "NotFound: loading model: model.bin") == 0;
+  const int ok =
+      hyle_status_get_code(moved) == HYLE_STATUS_NOT_FOUND &&
+      hyle_status_is_ok(copy) &&
+      hyle_status_code_from_win32(5) == HYLE_STATUS_PERMISSION_DENIED &&
+      hyle_status_is_permission_denied(com) &&
+      hyle_status_get_native_error(com, &domain, &native_code) &&
+      domain == HYLE_NATIVE_ERROR_HRESULT && native_code == access_denied &&
+      needed == strlen("NotFound: loading model: model.bin") &&
+      strcmp(text, "NotFound: loading model: model.bin") == 0;
 
   hyle_status_free(&com);
   hyle_status_free(&moved);

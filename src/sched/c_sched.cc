@@ -43,6 +43,79 @@ hyle_sched_options scheduler_options_base() noexcept {
   return options;
 }
 
+constexpr bool sched_options_has_bytes(std::uint32_t declared_size,
+                                       std::size_t offset,
+                                       std::size_t size) noexcept {
+  const std::size_t readable = declared_size;
+  return readable >= offset && readable - offset >= size;
+}
+
+template <class Field>
+void read_sched_options_field(const hyle_sched_options* input,
+                              std::uint32_t declared_size,
+                              std::size_t offset, Field& output) noexcept {
+  if (!sched_options_has_bytes(declared_size, offset, sizeof(Field))) return;
+  const auto* bytes = reinterpret_cast<const unsigned char*>(input);
+  std::memcpy(&output, bytes + offset, sizeof(Field));
+}
+
+bool decode_scheduler_options(const hyle_sched_options* input,
+                              hyle_sched_options& output) noexcept {
+  output = scheduler_options_base();
+  if (input == nullptr) return true;
+
+  std::uint32_t declared_size = 0;
+  std::memcpy(&declared_size, input, sizeof(declared_size));
+  if (declared_size < HYLE_SCHED_OPTIONS_REQUIRED_SIZE) {
+    set_error("sched options struct_size is too small");
+    return false;
+  }
+
+  std::uint32_t reserved = 0;
+  const auto* bytes = reinterpret_cast<const unsigned char*>(input);
+  std::memcpy(&reserved, bytes + offsetof(hyle_sched_options, reserved),
+              sizeof(reserved));
+  if (reserved != 0) {
+    set_error("sched options reserved field must be zero");
+    return false;
+  }
+
+  output.struct_size = static_cast<std::uint32_t>(sizeof(output));
+  output.reserved = 0;
+  read_sched_options_field(input, declared_size,
+                           offsetof(hyle_sched_options, queue_capacity),
+                           output.queue_capacity);
+  read_sched_options_field(input, declared_size,
+                           offsetof(hyle_sched_options, fiber_stack_size),
+                           output.fiber_stack_size);
+  read_sched_options_field(input, declared_size,
+                           offsetof(hyle_sched_options, backing),
+                           output.backing);
+  read_sched_options_field(input, declared_size,
+                           offsetof(hyle_sched_options, worker_cpu_order),
+                           output.worker_cpu_order);
+
+  constexpr std::size_t kPriorityPairBegin =
+      offsetof(hyle_sched_options, has_worker_priority);
+  constexpr std::size_t kPriorityPairEnd =
+      offsetof(hyle_sched_options, worker_priority) +
+      sizeof(decltype(hyle_sched_options::worker_priority));
+  if (sched_options_has_bytes(declared_size, kPriorityPairBegin,
+                              kPriorityPairEnd - kPriorityPairBegin)) {
+    read_sched_options_field(
+        input, declared_size,
+        offsetof(hyle_sched_options, has_worker_priority),
+        output.has_worker_priority);
+    read_sched_options_field(input, declared_size,
+                             offsetof(hyle_sched_options, worker_priority),
+                             output.worker_priority);
+  }
+  read_sched_options_field(input, declared_size,
+                           offsetof(hyle_sched_options, num_workers),
+                           output.num_workers);
+  return true;
+}
+
 bool valid_backing(const hyle_allocator& a) noexcept {
   return a.alloc != nullptr && a.free != nullptr && a.realloc != nullptr;
 }
@@ -175,7 +248,26 @@ void drop_handle(T* p) noexcept {
 
 static_assert(std::is_standard_layout_v<hyle_sched_options>);
 static_assert(std::is_trivially_copyable_v<hyle_sched_options>);
+static_assert(std::is_same_v<hyle_sched_recv_result, std::int32_t>);
+static_assert(std::is_same_v<hyle_sched_send_result, std::int32_t>);
 static_assert(offsetof(hyle_sched_options, struct_size) == 0);
+static_assert(offsetof(hyle_sched_options, reserved) == 4);
+static_assert(offsetof(hyle_sched_options, queue_capacity) == 8);
+static_assert(offsetof(hyle_sched_options, fiber_stack_size) == 16);
+static_assert(offsetof(hyle_sched_options, backing) == 24);
+static_assert(offsetof(hyle_sched_options, worker_cpu_order) == 56);
+static_assert(offsetof(hyle_sched_options, has_worker_priority) == 60);
+static_assert(offsetof(hyle_sched_options, worker_priority) == 64);
+static_assert(offsetof(hyle_sched_options, num_workers) == 68);
+static_assert(HYLE_SCHED_OPTIONS_REQUIRED_SIZE == 8);
+static_assert(sizeof(hyle_sched_options) == 72);
+static_assert(std::is_same_v<decltype(hyle_sched_options::worker_cpu_order),
+                             hyle_cpu_order>);
+static_assert(
+    std::is_same_v<decltype(hyle_sched_options::has_worker_priority),
+                   std::uint32_t>);
+static_assert(std::is_same_v<decltype(hyle_sched_options::worker_priority),
+                             hyle_thread_priority>);
 
 struct hyle_sched_scheduler_o {
   hyle_allocator backing;
@@ -389,19 +481,8 @@ hyle_sched_scheduler* hyle_sched_scheduler_create(
     const hyle_sched_options* options) {
   // Do not query the OS before overlaying explicit options. A caller-provided
   // worker count needs no availability probe; automatic mode queries once below.
-  hyle_sched_options o = scheduler_options_base();
-  if (options != nullptr) {
-    if (options->struct_size < sizeof(options->struct_size)) {
-      set_error("sched options struct_size is too small");
-      return nullptr;
-    }
-    const std::size_t readable =
-        options->struct_size < sizeof(o) ? options->struct_size : sizeof(o);
-    // Start from current defaults and overlay only the prefix the caller knows.
-    // This accepts older options structs while allowing future callers to append
-    // fields without making this library read past its known layout.
-    std::memcpy(&o, options, readable);
-  }
+  hyle_sched_options o;
+  if (!decode_scheduler_options(options, o)) return nullptr;
   if (o.num_workers == 0) {
     o.num_workers = default_worker_count();
   }
@@ -409,7 +490,6 @@ hyle_sched_scheduler* hyle_sched_scheduler_create(
       o.queue_capacity < 2 || o.queue_capacity > (size_t{1} << 31) ||
       !std::has_single_bit(o.queue_capacity) ||
       o.fiber_stack_size < hyle::mem::kFiberStackSmall ||
-      o.worker_cpu_order < HYLE_CPU_ORDER_OS_DEFAULT ||
       o.worker_cpu_order > HYLE_CPU_ORDER_EFFICIENCY_FIRST ||
       (o.has_worker_priority != 0 && o.has_worker_priority != 1) ||
       (o.has_worker_priority &&

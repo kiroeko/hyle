@@ -10,10 +10,6 @@
 //   * std::malloc/free       -- the OS allocator (weak baseline; shows mimalloc's win).
 // mimalloc is a hard vendored dep (third_party/mimalloc), so this needs no gate.
 
-#if defined(_MSC_VER)
-#define _CRT_SECURE_NO_WARNINGS
-#endif
-
 #include <mimalloc.h>
 #include <nanobench.h>
 
@@ -109,8 +105,10 @@ class MiResource final : public std::pmr::memory_resource {
 // seam; their delta therefore isolates HYLE's extra runtime Allocator dispatch.
 class BackendResource final : public std::pmr::memory_resource {
   void* do_allocate(std::size_t bytes, std::size_t alignment) override {
-    if (bytes == 0) return nullptr;
-    return hyle::mem::detail::system_backend_allocate(bytes, alignment);
+    void* pointer = hyle::mem::detail::system_backend_allocate(
+        hyle::mem::detail::pmr_backing_size(bytes), alignment);
+    if (pointer == nullptr) throw std::bad_alloc{};
+    return pointer;
   }
   void do_deallocate(void* p, std::size_t, std::size_t) override {
     hyle::mem::detail::system_backend_deallocate(p);
@@ -268,6 +266,54 @@ int main() {
         void* p = mi_malloc(bytes_at(i));
         ankerl::nanobench::doNotOptimizeAway(p);
         mi_free(p);
+      }
+    });
+  }
+
+  // ---- mimalloc v3 sub-default alignment regression guard -----------------
+  // v3 may naturally align blocks smaller than max_align_t to their smaller
+  // size class. HYLE pads those requests to 16 and stays on mi_malloc instead
+  // of sending the hottest tiny-object path through aligned over-allocation.
+  // Keep both raw vendor shapes visible so a future backend upgrade cannot
+  // trade the public alignment contract for an unmeasured slow path.
+  if (want_section('M')) {
+    constexpr int kN = 200000;
+    auto tiny_size_at = [](int i) -> std::size_t {
+      return 1u + (static_cast<std::uint32_t>(i) % 15u);
+    };
+    ankerl::nanobench::Bench b;
+    b.title("sub-max-align alloc/free, 200k tiny blocks")
+        .relative(true)
+        .batch(kN)
+        .minEpochIterations(20);
+    b.run("raw mi_malloc padded to 16 (backend shape)", [&] {
+      for (int i = 0; i < kN; ++i) {
+        void* p = mi_malloc(16);
+        ankerl::nanobench::doNotOptimizeAway(p);
+        mi_free(p);
+      }
+    });
+    b.run("raw mi_malloc_aligned(size, 16)", [&] {
+      for (int i = 0; i < kN; ++i) {
+        void* p = mi_malloc_aligned(tiny_size_at(i), 16);
+        ankerl::nanobench::doNotOptimizeAway(p);
+        mi_free(p);
+      }
+    });
+    b.run("HYLE SystemAllocator (contract path)", [&] {
+      for (int i = 0; i < kN; ++i) {
+        const std::size_t bytes = tiny_size_at(i);
+        void* p = hyle::mem::SystemAllocator::allocate(bytes, 1);
+        ankerl::nanobench::doNotOptimizeAway(p);
+        hyle::mem::SystemAllocator::deallocate(p, bytes, 1);
+      }
+    });
+    b.run("HYLE system_allocator (vtable contract path)", [&] {
+      for (int i = 0; i < kN; ++i) {
+        const std::size_t bytes = tiny_size_at(i);
+        void* p = a.allocate(bytes, 1);
+        ankerl::nanobench::doNotOptimizeAway(p);
+        a.deallocate(p, bytes, 1);
       }
     });
   }

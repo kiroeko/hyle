@@ -37,15 +37,16 @@ macOS 使用 platform component 时部署目标必须是 14.4 或更新版本；
 | 决定当前 worker 数/绑核 | owning `available_cpu_ids()` 或 buffer-fill core | `hardware_concurrency` / `cpu_topology` | 动态遵守 affinity、cgroup/cpuset、Windows CPU Sets；id 可稀疏 |
 | cache 容量提示、P/E 总量 | `cache_info` / `cpu_topology` | 假定探测值永远存在 | 未知 cache 为 0；P/E 不做频率猜测 |
 
-## C++ 的 owning 与无分配两层
+## C++ 的 owning 与 caller-owned 输出两层
 
 platform 对变长查询提供两层，不让一种形状勉强服务所有用户：
 
 - 日常控制面包含 `hyle/platform/convenience.h`，直接取得 owning
   `std::string` / `std::vector`，自动处理 count、分配、变化后的重试和截断；分配失败仍是
   `ResourceExhausted`，不会从这个边界抛出。
-- allocator/arena、C/FFI 或要求无隐藏分配的代码包含 `fs.h` / `cpu.h`，使用 buffer-fill
-  core。它写入调用方存储并返回完整长度/数量，没有被便利层替代。
+- allocator/arena、C/FFI 或需要控制**结果存储**的代码包含 `fs.h` / `cpu.h`，使用
+  buffer-fill core。它不返回 owning STL 对象，但长路径、UTF 转码和 OS 查询仍可能申请有检查的
+  临时 scratch，OOM 会成为 `ResourceExhausted`；buffer-fill 不代表实现绝无内部 allocation。
 
 ```cpp
 #include "hyle/platform/convenience.h"
@@ -118,21 +119,37 @@ cwd/temp/home/env/symlink 字符串；要自管存储时使用 `Result<size_t>` 
 状态；`type` 是跟随 symlink 后的 target 类型，而 `is_symlink` 描述 path 自身。批量目录
 扫描则用 `for_each_entry(name, FileType)`：它返回 entry 自身类型（symlink 不跟随），优先使用
 `dirent` / `FindFirstFile` 已有元数据，只有 POSIX 文件系统返回 `DT_UNKNOWN` 才补一次 `lstat`。
-这是一条无分配快速原语；确实需要 size/mtime 时由调用方只对选中的 entry 调 `stat`，platform
-不制造持有字符串和分配器策略的高层 directory object。
+这是一条不制造 owning entry 的快速原语；普通路径不做逐 entry heap allocation，长 Windows
+search pattern 可能申请一次 checked scratch。确实需要 size/mtime 时由调用方只对选中的 entry
+调 `stat`，platform 不制造持有字符串和分配器策略的高层 directory object。
 `modified_time` 使用共享的 `time::UnixTimestamp{seconds,nanoseconds}`，保留 1970 年前的
 有符号值和文件系统亚秒精度；它不是会 wrap 的 `uint64_t mtime_ns`。需要 chrono/time_t/
 timespec 互转时包含 `hyle/time/unix_timestamp.h`，checked 转换不会静默饱和为另一个时刻。
 
-`create_temp_file` 返回 `CreatedTempFile{file, path_size}`。handle 始终是权威资源，`path_size`
-遵循其它 buffer-fill API 的完整长度合同，因而调用方不会在 path 被截断时误拿半条路径删除。
+`copy_file` 的成功面是单个文件。POSIX 对成功打开的对象验证 regular，再按 EOF 拷贝（因此
+`st_size==0` 的 procfs/sysfs virtual regular file 仍可得到内容）；若 non-regular path 在 open
+阶段先失败，则保留该 native error，例如无 reader 的 destination FIFO 会报 `ENXIO`，而不是
+虚构成统一的 `FailedPrecondition`。Windows 的 reparse follow/replace 语义直接沿用 `CopyFileW`。
+
+`create_temp_file` 返回 `CreatedTempFile{file, path_size}`。handle 始终是权威资源且不会跨
+process exec 继承；prefix 必须是单个 basename 片段（不能含路径分隔符），因此返回路径始终
+直接位于 `dir` 下。合法 prefix 原样保留，不会在 Windows 转换失败或较长时静默替换。
+`path_size` 遵循其它 buffer-fill API 的完整长度合同，因而调用方不会在 path 被截断时误拿
+半条路径删除。显式 `dir` 不能为空；实现用 checked dynamic scratch 拼接路径，不再额外施加
+Windows `MAX_PATH` 或 POSIX 1024-byte ceiling（文件系统自身的 component/path 上限仍生效）。
+POSIX `read_symlink` 在 `readlink` 恰好填满 scratch 时会扩容重试；`n==capacity` 不会被误报成
+完整 target。
 Windows 创建 symlink 时必须编码 file/directory：已有 target 可用 `SymlinkKind::kAuto`；创建
 dangling link 时显式传 `kFile` 或 `kDirectory`，才具有跨平台一致语义。
 
 `remove_directory_recursive` 在调用方拥有、遍历期间不被别人改名或替换 entry 的目录树中不会
 跟随 symlink/junction。它不是对敌对并发目录的 sandbox primitive：跨平台 path API 无法把逐项
 检查和删除做成一个原子事务。删除临时树或 cache 前应先停止写入者/把树原子移到私有名字；面对
-不可信方可并发修改的目录，使用 OS 专用的 handle-relative 安全删除方案。
+不可信方可并发修改的目录，使用 OS 专用的 handle-relative 安全删除方案。实现用 resumable
+native iterator frame 做后序 DFS，不让目录深度增长进程调用栈：每层一个 OS iterator，所有层
+共享一个可增长 path buffer，普通文件/symlink 立即删除且从不缓存同层兄弟。辅助内存因此是
+`O(depth + max_path)`，与目录宽度无关；极深树若命中 frame 分配或进程 handle/fd 上限则明确返回
+`ResourceExhausted`。
 
 模型/数据集需要 warm-up 时对已经打开的 mapping 显式调用，而不是让所有 open 承担 page
 fault：
@@ -277,8 +294,11 @@ if (available.size() > 1 &&
 表达权重，例如 `{n0,n0,n1}` 每轮给 n0 两个 chunk、n1 一个。`bytes_per_chunk==0` 表示一页，否则
 必须是页大小的整数倍。单节点机器返回正常 allocation 和 `NumaPlacement::kNotNeeded`。Linux 的
 普通布局在 first-touch 前惰性设置 policy；极细自定义布局为避免每页一个 VMA policy，可能在
-allocate 内完成 first-touch，因此大分配不要把“未传 prefault flag”当作惰性承诺。Windows 在一个
-连续 reserve 中按条带 preferred-node NUMA commit；macOS 当前只有逻辑 node 0。policy 成功不是物理页
+allocate 内完成 first-touch，因此大分配不要把“未传 prefault flag”当作惰性承诺。Windows 仅在
+`VirtualAllocExNuma` 可用时报告 selected-interleave capability，并在一个普通连续 reserve 中按条带
+preferred-node NUMA commit；只有 `VirtualAlloc2` 的环境仍可做 preferred reservation，但 selected
+allocation 会返回 `Unimplemented`，不会用多 owner placeholder 条带伪装成可一次 release 的 span。
+macOS 当前只有逻辑 node 0。policy 成功不是物理页
 永久驻留证明；需要托管生命周期时优先 `VmRegion`；裸
 `vm_allocate_numa_interleaved` 返回 page-rounded size，只与整段 `vm_release` 配对。selected
 region 的 `decommit` 会以 `FailedPrecondition` 拒绝，防止 recommit 静默丢掉 placement。

@@ -13,7 +13,7 @@ Result/out、空值合同还是 fail-fast，先看语言无关的 [`error.md`](.
 ## 1. 类型与所有权
 
 ```c
-typedef enum hyle_status_code { /* canonical 0..16 */ } hyle_status_code;
+typedef uint16_t hyle_status_code; /* canonical 0..16; fixed-width ABI */
 typedef struct hyle_status { uintptr_t rep; } hyle_status;
 typedef uint16_t hyle_native_error_domain;
 ```
@@ -30,7 +30,9 @@ typedef uint16_t hyle_native_error_domain;
 | 增加上下文 | `hyle_status_add_context(&s, context)`，原地替换 owning handle |
 
 OK 与无消息、无 detail 错误零分配；带消息或 detail 的错误共享引用计数 representation。
-非法 C enum 输入归一为 `HYLE_STATUS_UNKNOWN`。
+非法 code 输入归一为 `HYLE_STATUS_UNKNOWN`。`hyle_status_code` 刻意不是 C enum：固定
+`uint16_t` 可避免 `-fshort-enums` 或不同编译器改变导出函数的传参与返回 ABI；具名值仍是
+可用于 `switch`/`case` 的整数常量。
 
 native detail 是可选的固定 `{domain, int64 code}`。domain 有 POSIX errno、Win32、HRESULT、
 Vulkan、CUDA runtime、CUDA driver、NVRTC 和 Unknown。它不改变 one-word handle；只有实际
@@ -249,11 +251,12 @@ cmake --build <build> --target hyle_error_c_test
 ctest --test-dir <build> -R hyle_error_c_test --output-on-failure
 ```
 
-纯 C 测试覆盖创建、查询、clone/move/free、非法 enum、errno/Win32/HRESULT/native detail、
+纯 C 测试覆盖创建、查询、clone/move/free、非法 code/domain 值、errno/Win32/HRESULT/native detail、
 嵌入 NUL、借用消息、上下文、首错聚合和早返回；机械 surface test 同时锁定 30 个 DLL 导出，
 独立头测试确保
 `hyle/c/error.h` 单独以 C 编译。
 
-二进制 SDK 的外部消费证书位于 `samples/package/error/c`：工程只启用 C，执行
+二进制 SDK 的外部消费 sample/probe 位于 `samples/package/error/c`：工程只启用 C，执行
 `find_package(Hyle REQUIRED COMPONENTS error)` 并只链接 `hyle::error`。同一个工程必须同时通过
 shared 和 static SDK；static package 会启用 C++ linker driver，但不会把 `.c` 翻译单元改成 C++。
+它是否已在当前提交签署只见 [`../milestones/pre-release-readiness.md`](../milestones/pre-release-readiness.md)。

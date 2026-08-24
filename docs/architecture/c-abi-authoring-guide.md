@@ -101,13 +101,27 @@ extern "C" {
    - 桥接 `.cc` 对公开 POD 至少
      `static_assert(std::is_standard_layout_v<T>)` 与
      `std::is_trivially_copyable_v<T>`；关键首字段/固定大小再 assert。
-   - 可能追加字段的输入 options 以 `uint32_t struct_size` 为首字段，初始化
-     宏/helper 写 `sizeof(T)`；库在读字段前先验证可读范围。不要把“全零
-     内存”误写成可长期演进的 ABI 协议。
+   - 可能追加字段的输入 options 统一以 `uint32_t struct_size`、`uint32_t reserved`
+     开头；初始化宏/helper 写当前 `sizeof(T)` 并把 `reserved` 置 0。公开
+     `*_REQUIRED_SIZE` 只覆盖这两个字及真正没有默认语义的必需字段，不能把某一版
+     `sizeof(T)` 或历史偶然尾字段冻结成最小前缀；`reserved != 0` 必须拒绝。
+   - options 解码先建立完整的当前默认结构，再从 raw input 覆盖字段。首次读取
+     `struct_size` 也必须用 `memcpy`/byte read，不能先把较短旧对象当当前 `T` 解引用；
+     后续任何复制都不得越过调用方声明的 `struct_size` 或本库已知布局。
+   - required prefix 校验完整后才按字节复制；optional 成员只在整个成员可读时覆盖，
+     截止于成员中间时保持默认。`has_* + value`、pointer + count 及其它语义成对字段是
+     一个原子扩展单元，任一字段不完整时整组保持默认，不能拼出部分 pointer/view。
+   - 小于 `*_REQUIRED_SIZE` 的输入拒绝；旧的可读前缀用缺省尾字段继续工作；大于当前
+     `sizeof(T)` 的未知未来尾部忽略。实现不得要求 `struct_size == sizeof(T)` 或
+     `struct_size >= sizeof(T)`。非 NULL 指针至少要让首个 size word 实际可读，调用方还
+     必须保证其声明的其余字节范围可读；库读取 size 后只读取解码所需且完整的已知字段。
+     不要把“全零内存”误写成可长期演进的 ABI 协议。
    - 小型输出 snapshot 可以值返回 POD，但发布后字段和布局即冻结；预期
      高频扩展的输出改为 `struct_size + out*`，或新增独立查询函数。
-   - C enum 与 C++ enum/位值在桥接 `.cc` 用 `static_assert` 锁定，不能靠
-     两份手抄表默契一致。
+   - 导出签名、callback 或 POD 中的 tag/flag 不得直接使用 C enum；使用明确的
+     `int32_t`/`uint32_t`（必要时其它已说明宽度）typedef + integer constants，避免
+     `-fshort-enums`/编译器默认宽度改变 ABI。与 C++ enum/位值在桥接 `.cc` 用
+     `static_assert` 锁定，不能靠两份手抄表默契一致。
 
 ## 4. 易用性：两条线，各自做到位
 
@@ -160,7 +174,10 @@ oneshot/WaitGroup，when_any 用 atomic winner + oneshot + cancel；mem 的
   运行时产品能力”，并写清边界。不得用“有状态/模板/C 没有类”单独免责。
 - [ ] 六件套齐（§1）；导出宏三态；`extern "C"` 包全。
 - [ ] 桥接三铁律（§3）：opaque 句柄 anon-ns 外定义 + 零 reinterpret + fail-fast/边界二分。
-- [ ] C POD 有 layout/trivial/关键 offset assert；可扩展输入 options 首字段为 `struct_size`；C/C++ enum 值有编译期锁。
+- [ ] C POD 有 layout/trivial/关键 offset assert；可扩展输入 options 遵守 §3 的
+  `struct_size + reserved + semantic REQUIRED_SIZE`、byte-read、完整成员/组合覆盖及
+  unknown-tail 规则；公开 tag/flag 固定宽且 C/C++ 值有编译期锁；GCC/Clang C consumer
+  用 `-fshort-enums` 复证。
 - [ ] 易用性 header-inline 层（§4）：便利转发 + typed 宏 + 工厂/谓词按模块需要补。
 - [ ] **无** api 表 / api_get / 版本宏（design §3）。
 - [ ] 纯 C smoke test 覆盖句柄生命周期 + 便利 + NULL 安全 + 边界校验。

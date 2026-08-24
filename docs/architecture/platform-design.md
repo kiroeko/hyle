@@ -47,7 +47,7 @@ deadline 或 timer 行为，因此是公开 header-only 边，不是 `hyle_platf
 | 地址等待 | `detail::wait_on_address*`、`Parker`、`Unparker` | mutex/worker parking/waker 地基 | 裸等待允许伪唤醒；Parker 保存一个 token，解决 unpark-before-park |
 | 虚拟内存 | `VmRegion` 与 `vm_*` | staged commit、guard page、大块地址保留、自定义 owner | 页粒度；reserve 与 commit 分离；RAII 优先，裸函数供底层组合 |
 | NUMA/大页 | `numa_nodes/capabilities`、`vm_*numa*`、huge-page advice | 大块 arena、per-node/selected-node backing、THP 提示 | node id 可稀疏；只有 Linux bind 是严格节点集合；interleave/preferred 是 OS placement policy；建议失败不破坏 mapping |
-| 文件系统与环境 | `FileInfo`、`FileHandle`、无分配 visitor、buffer-fill 查询 | 配置、资源、目录扫描、临时文件、部署环境 | UTF-8 路径；短读写正常；打开 owner 不阻塞原子替换路径 |
+| 文件系统与环境 | `FileInfo`、`FileHandle`、无 owning 结果的 visitor、buffer-fill 查询 | 配置、资源、目录扫描、临时文件、部署环境 | UTF-8 路径；短读写正常；打开 owner 不阻塞原子替换路径；长路径 scratch OOM 显式返回 |
 | 文件映射 | `MappedFile` + `Advice`/`prefetch`/`lock` | 大文件随机访问、权重/数据集、COW、显式 warm-up/驻留 | RO/RW/COW；任意 offset；hint 与 residency 不隐式发生 |
 | 动态库 | `DynLib` | 插件、用户 backend、FFI 宿主符号 | open/get/current 语义分开；符号签名由调用方承担 |
 
@@ -141,8 +141,12 @@ placement；0 chunk 表示一页，条带遵循调用方给定顺序。拓扑缓
 `mbind`。自定义 chunk/order 在条带数不大时仍保留惰性 range policy；条带数过大时改用固定批次
 first-touch + `move_pages`，以 O(pages) 一次性工作换掉无界 O(stripes) 持久
 VMA policy；syscall 为 O(pages/batch)，scratch 为常量。它优于 oneTBB 为全部 page 分配
-page/node/status 数组再一次 `move_pages` 的 O(pages) 临时空间。Windows 先保留一个连续地址区，
-再按条带 NUMA-aware commit；
+page/node/status 数组再一次 `move_pages` 的 O(pages) 临时空间。Windows 只在
+`VirtualAllocExNuma` 可用时宣称 selected-interleave：先保留一个普通的连续地址区，再在同一
+reservation 内按条带 NUMA-aware commit，因此 rollback、raw `vm_release`、`VmRegion` 析构都只
+释放一个 owner。`VirtualAlloc2` 的 placeholder replacement 会把各条带变成必须分别释放、恢复并
+合并的独立 allocation，与公开的一次整段 release 合同不相容；它可以继续服务单 owner 的
+preferred reservation，但不能单独启用 `kSelectedInterleave`。
 同一 node 的 weighted 退化会合并成一个 commit。两边普通内存访问都没有 HYLE metadata/dispatch。
 
 没有多节点 primitive 的平台不伪造成功：多节点放置请求返回 `Unimplemented`。macOS 当前只暴露
@@ -160,13 +164,25 @@ link、目录 visitor、cwd/temp/home/env、同步 open/read/write 和原子临�
 - Windows 路径在边界从 UTF-8 转宽字符并使用 Unicode API；公开面不泄漏 `wchar_t`。
 - 查询使用 `Result<T>`，所以合法的 0、空文件、0000 权限不会与失败混淆。
 - 变长字符串使用 buffer-fill：返回完整长度，允许先 count-only，再由调用方选择 allocator。
-- 目录遍历使用 callback + context 的无分配 core；C++ lambda 只是 inline trampoline。
+- 目录遍历使用 callback + context，不构造 owning entry；普通路径无逐 entry heap allocation，
+  但无界路径/编码 scratch 允许 checked allocation 并以 `ResourceExhausted` 失败。C++ lambda 只是
+  inline trampoline。
 - entry type 描述目录项自身且不跟随 symlink；`stat` 报 target 信息并另外保留 path 是否 link。
 - 递归删除在调用方拥有且遍历期间不被并发替换的目录树中绝不跟随 symlink/junction；这是数据
   安全合同，不是实现细节。普通 path API 无法把逐项检查与后续删除做成跨平台原子事务，敌对方
   能并发改名/替换 entry 的目录不属于这个合同，应由调用方先隔离或使用平台专用 handle-relative
-  sandbox 机制。
-- `create_temp_file` 原子创建并返回已打开 handle，避免“生成名字再打开”的 TOCTOU 窗口。
+  sandbox 机制。后序遍历使用 resumable native iterator frame 而非递归调用栈：每层保留一个
+  OS iterator，单个可增长 path buffer 表示当前路径，普通文件/symlink 立即删除，同层兄弟从不
+  排队。辅助内存为 `O(depth + max_path)`，但 OS iterator handle 同样为 `O(depth)`，极深树可能
+  命中进程 handle/fd 上限并返回 `ResourceExhausted`；不会因目录宽度线性持有完整路径。
+- `create_temp_file` 把 prefix 限为单个 basename 片段，保证结果直接位于指定目录；它原子创建并
+  返回已打开且不跨 exec 继承的 handle，保留合法 prefix，避免“生成名字再打开”的 TOCTOU
+  窗口和静默名称替换。显式目录不能为空；dynamic checked scratch 避免库自身的 MAX_PATH/1024
+  ceiling，native filesystem 上限仍是最终边界。POSIX `read_symlink` 把
+  `n==scratch capacity` 视为可能截断并扩容重试，保持 buffer-fill 的完整长度合同。
+- `copy_file` 只把 regular-file copy 作为成功合同。POSIX 在 open 后按 descriptor 分类并按 EOF
+  驱动，不能依赖 `st_size`；若 non-regular destination 在 open 阶段先以 `ENXIO` 等失败则保留
+  native error。Windows 的 reparse follow/replace 行为由 `CopyFileW` 定义，不伪造 POSIX 等价。
 - `FileHandle` 的短读/短写是成功；需要观察 close/flush 失败时必须显式 close。
 - Windows `FileHandle`/`MappedFile` 以 `FILE_SHARE_DELETE` 打开，使 rename/delete 与 POSIX
   一样只替换目录项、已有 owner 继续持有文件对象；这也是原子模型/缓存更新的必要合同。
@@ -194,10 +210,25 @@ RAII；借出的 pointer、symbol、native handle 或 view 不得活过 owner。
 
 C ABI 是独立但等价的产品面：
 
-- POD facts 和 named enum 直接值传递；资源用 opaque handle 或一字宽 native handle。
+- 小型且布局冻结的 POD facts 和 fixed-width tag/flag 可直接值传递；tag 使用 `int32_t`/`uint32_t` typedef +
+  integer constants，不让 C `-fshort-enums` 改变参数、返回或 POD 布局；资源用 opaque handle
+  或一字宽 native handle。
+- fixed typedef 必须贯穿导出参数/返回、callback 与 POD 字段；`hyle_thread_opts` 在
+  `struct_size` 后把旧 padding 显式命名为必须为 0 的 `reserved`，业务字段全部可选；保留到
+  `config_policy` 为止的历史顺序，数组 affinity 只追加在尾部。64-bit ABI 锁定 size 72、
+  priority/policy/array/count offset 44/48/56/64，mandatory readable size 8；满足显式
+  `reserved=0` 合同的历史字段前缀 56 仍可读。`hyle_cpu_info` 锁定 size 12、kind offset 8。
+  裸 `int` 只保留 C bool/callback truth 与显式 sentinel，裸 `unsigned` 只保留 CPU id/count。
+- 会随新 ISA 扩展的 `hyle_cpu_features` 不按值跨 ABI：调用方用 INIT 提供
+  `struct_size + reserved` 版本前缀和可写容量，adapter 只写已知前缀、保留 future tail，且在
+  参数错误时也先把可写的已知 feature 字段初始化为 false。已知短前缀可继续使用，旧库也能
+  接受更大的未来结构；这类大型可演进 snapshot 统一返回 owning Status + out。
 - 所有可恢复失败返回拥有型 `hyle_status` + out 参数，调用方统一 `hyle_status_free`。
 - callback 使用 function pointer + `void*` context；字符串/数组使用 pointer + count/view。
-- C thread opts 以 `struct_size` 开头并提供初始化宏/setter；全零不冒充有效初始化。
+- C thread opts 以 `struct_size` 开头并提供初始化宏/setter；全零不冒充有效初始化。桥接先以
+  当前默认值构造本地结构，再只 memcpy 调用方声明且本库已知的前缀：过短必需前缀拒绝、
+  缺失尾字段取默认、未知未来尾部忽略。pointer+count 等成对扩展仅在两字段都完整可读时启用，
+  防止部分字段复制后形成伪造 view 或越界读取。
 - C 不机械复制 C++ 模板/RAII 名称，但必须能覆盖同一用户任务，不得出现 C 无法完成的
   platform 能力。
 

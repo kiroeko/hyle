@@ -135,12 +135,14 @@ struct HashedText {
   std::uint32_t shard;
 };
 
-HYLE_FORCE_INLINE std::uint64_t hash_intern_text(string_ref text) noexcept {
-  return hash_bytes(text.data, text.size);
+HYLE_FORCE_INLINE std::uint64_t hash_intern_text(
+    string_ref text, std::uint64_t seed) noexcept {
+  return hash_bytes(text.data, text.size, seed);
 }
 
-HYLE_FORCE_INLINE HashedText prepare(string_ref text, std::uint32_t shard_bits) noexcept {
-  const std::uint64_t content_hash = hash_intern_text(text);
+HYLE_FORCE_INLINE HashedText prepare(string_ref text, std::uint32_t shard_bits,
+                                     std::uint64_t seed) noexcept {
+  const std::uint64_t content_hash = hash_intern_text(text, seed);
   // SwissTable uses the hash's low bits for H1 and top 7 bits for H2. Select a
   // shard from disjoint middle bits, preserving full entropy in both table
   // components and avoiding a second avalanche on every lookup.
@@ -338,7 +340,8 @@ template <class Impl> bool release_locked(Impl& impl, mem::Allocator alloc, Stri
 } // namespace
 
 struct StringInterner::Impl {
-  explicit Impl(mem::Allocator allocator) noexcept : alloc(allocator) {
+  explicit Impl(mem::Allocator allocator) noexcept
+      : alloc(allocator), hash_seed(detail::process_hash_seed()) {
     auto available = platform::available_cpu_count();
     const std::size_t workers = available && *available != 0 ? *available : 8;
     shard_bits = workers > 32 ? 6u : workers > 8 ? 5u : 4u;
@@ -359,6 +362,7 @@ struct StringInterner::Impl {
   bool valid() const noexcept { return shards != nullptr; }
 
   mem::Allocator alloc;
+  std::uint64_t hash_seed;
   Shard* shards = nullptr;
   std::uint32_t shard_bits = 4;
   std::uint32_t shard_count = 16;
@@ -445,7 +449,7 @@ std::size_t update_many(Impl& impl, const StringId* ids, std::size_t count,
 StringId StringInterner::acquire(string_ref text) noexcept {
   if (text.size == 0) return StringId{0};
   if (impl_ == nullptr) return StringId{0};
-  const HashedText input = prepare(text, impl_->shard_bits);
+  const HashedText input = prepare(text, impl_->shard_bits, impl_->hash_seed);
   std::lock_guard lock(impl_->shards[input.shard].mu);
   Entry* entry = find_or_add_locked(*impl_, alloc_, input, false);
   return entry == nullptr ? StringId{0} : entry->id;
@@ -463,7 +467,8 @@ std::size_t StringInterner::acquire_many(const string_ref* input, StringId* outp
     std::uint64_t shard_mask = 0;
     for (std::size_t i = 0; i < chunk; ++i) {
       if (input[completed + i].size == 0) continue;
-      prepared[i] = prepare(input[completed + i], impl_->shard_bits);
+      prepared[i] =
+          prepare(input[completed + i], impl_->shard_bits, impl_->hash_seed);
       shard_mask |= std::uint64_t{1} << prepared[i].shard;
     }
     auto locks = lock_shards(*impl_, shard_mask);
@@ -526,7 +531,7 @@ string_ref StringInterner::lookup(StringId id) noexcept {
 string_ref StringInterner::intern(string_ref text) noexcept {
   if (text.size == 0) return string_ref{"", 0, true};
   if (impl_ == nullptr) return string_ref{};
-  const HashedText input = prepare(text, impl_->shard_bits);
+  const HashedText input = prepare(text, impl_->shard_bits, impl_->hash_seed);
   std::lock_guard lock(impl_->shards[input.shard].mu);
   Entry* entry = find_or_add_locked(*impl_, alloc_, input, true);
   return entry == nullptr ? string_ref{}
@@ -545,7 +550,8 @@ std::size_t StringInterner::intern_many(const string_ref* input, string_ref* out
     std::uint64_t shard_mask = 0;
     for (std::size_t i = 0; i < chunk; ++i) {
       if (input[completed + i].size == 0) continue;
-      prepared[i] = prepare(input[completed + i], impl_->shard_bits);
+      prepared[i] =
+          prepare(input[completed + i], impl_->shard_bits, impl_->hash_seed);
       shard_mask |= std::uint64_t{1} << prepared[i].shard;
     }
     auto locks = lock_shards(*impl_, shard_mask);

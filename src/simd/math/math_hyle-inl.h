@@ -1899,7 +1899,11 @@ HYLE_FORCE_INLINE V Atan2(const D d, V y, V x) {
   const M ay_gt_ax = Gt(ay, ax);
   V angle = MaskedSubOrHwy(poly, ay_gt_ax, kPiOverTwo, poly);
 
-  const M x_neg = Lt(x, k0);
+  // Upstream e7e66dd5: inspect the sign bit so x=-0 reflects into the
+  // negative half-plane and atan2(+/-0, -0) returns +/-pi. HYLE's generic
+  // floating IsNegative is intentionally the numeric x < 0 fast path, so use
+  // the bit-domain mask conversion required by this IEEE signed-zero case.
+  const M x_neg = MaskFromVec(x);
   angle = MaskedSubOrHwy(angle, x_neg, kPi, angle);
 
   const M is_nan = IsEitherNaN(y, x);
@@ -2169,7 +2173,9 @@ HYLE_FORCE_INLINE V Expm1(const D d, V x) {
 
   // Reduce, approximate, and then reconstruct.
   const V y = impl.ExpPoly(d, impl.ExpReduce(d, x, q));
-  const V z = IfThenElse(Lt(Abs(x), kLn2Over2), y,
+  // Upstream 1a4eb392: the polynomial loses -0 while forming 0.5*(+0)+(-0).
+  // expm1 has the sign of x, so restore it on this small-argument path.
+  const V z = IfThenElse(Lt(Abs(x), kLn2Over2), CopySign(y, x),
                          Sub(impl.LoadExpShortRange(d, Add(y, kOne), q), kOne));
   return IfThenElse(Lt(x, kLowerBound), kNegOne, z);
 }
@@ -2350,8 +2356,11 @@ HYLE_FORCE_INLINE V Sin(const D d, V x) {
   const VI32 q = impl.ToInt32(d, MulAdd(abs_x, kOneOverPi, kHalf));
 
   // Reduce range, apply sign, and approximate.
-  return impl.Poly(d, Xor(impl.SinReduce(d, abs_x, q),
-                          Xor(impl.SinSignFromQuadrant(d, q), sign_x)));
+  const V s = impl.Poly(d, Xor(impl.SinReduce(d, abs_x, q),
+                               Xor(impl.SinSignFromQuadrant(d, q), sign_x)));
+  // Upstream c9563e98: the polynomial returns +0 for a zero reduced
+  // argument. sin is odd, so retain the input sign for an exact-zero result.
+  return IfThenElse(Eq(s, Zero(d)), CopySign(s, x), s);
 }
 
 template <class D, class V>
