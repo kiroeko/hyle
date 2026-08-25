@@ -2,7 +2,14 @@ include_guard(GLOBAL)
 
 # This ledger is also executed directly via `cmake -P` by the complete-source
 # package target. Script mode does not inherit the top-level project's policy
-# settings, so make the one non-legacy expression used below self-contained.
+# settings, so make the non-legacy string/list expressions used below
+# self-contained.  CMP0053 is required because normalized dependency files are
+# arbitrary text: the OLD behavior re-evaluates `${...}` and backslash escapes
+# inside their bytes before hashing, producing host/CMake-version-dependent
+# content identities.
+if(POLICY CMP0053)
+  cmake_policy(SET CMP0053 NEW)
+endif()
 if(POLICY CMP0057)
   cmake_policy(SET CMP0057 NEW)
 endif()
