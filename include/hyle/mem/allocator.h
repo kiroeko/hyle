@@ -25,16 +25,17 @@ namespace hyle::mem {
 // fundamental scalar; backends never return less than this).
 inline constexpr std::size_t kDefaultAlignment = alignof(std::max_align_t);
 
-// ---- C-ABI allocator vtable -------------------------------------------------
+// ---- ABI-clean allocator vtable --------------------------------------------
 // THREE function pointers (alloc/free/realloc), each carrying alignment. clay
 // used ONE 5-arg realloc_func for all three "to minimize symbols" -- but that
 // is a PERFORMANCE bug, not a virtue: on the Win64 ABI only 4 integer args land
 // in registers, so the 5th (alignment) SPILLS TO THE STACK on every call, and
 // one-function-does-three forces a dispatch branch (ptr==null? new==0?) on the
-// hot path. Splitting is still 100% C-ABI clean (three C function pointers,
-// trivially copyable, cross-DLL stable -- exactly what jemalloc/pmr/cudaMalloc
-// do) AND register-friendly: alloc is 3 args (all in registers), free is 4 (all
-// in registers), no dispatch branch. Measured: removes the spill + branch tax.
+// hot path. Splitting remains ABI-clean for one matching build (three C
+// function pointers, trivially copyable -- the same basic shape used by
+// jemalloc/pmr/cudaMalloc) AND register-friendly: alloc is 3 args (all in
+// registers), free is 4 (all in registers), no dispatch branch. No released
+// foreign binding freezes this layout. Measured: removes the spill + branch tax.
 // Returns nullptr on OOM (allocation is a hot path; failure is a value, not a
 // Status).
 //   AllocFn  (state, size, alignment)                 -> ptr (nullptr on

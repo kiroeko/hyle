@@ -93,9 +93,9 @@ typedef struct hyle_obs_log_record {
  * Missing complete optional fields use INIT defaults, unknown future tail
  * bytes are ignored, and fields plus field_count form one atomic optional
  * unit. The emit boundary takes const
- * void* deliberately: FFI callers may provide a physically shorter or
- * unaligned byte record, which would not be a valid hyle_obs_log_record object.
- * Ordinary C callers still pass &record directly. */
+ * void* deliberately: a future FFI adapter may provide a physically shorter
+ * or unaligned byte record, which would not be a valid hyle_obs_log_record
+ * object. The C-syntax fixture passes &record directly. */
 
 typedef struct hyle_obs_sink_o hyle_obs_sink;
 typedef void (*hyle_obs_sink_write_fn)(void* state,
@@ -215,7 +215,7 @@ static inline hyle_status hyle_obs_log_error_n(const char* message,
 #  define HYLE_OBS_EMIT_ERROR(message) HYLE_OBS_OK_LITERAL_
 #endif
 
-/* Runtime trace seam for C/FFI callers. These are no-ops when HYLE was built
+/* Pre-release runtime trace FFI candidate. These are no-ops when HYLE was built
  * without HYLE_TRACE. Native C++ hot paths should use hyle/obs/trace.h macros:
  * their disabled form has no function call or argument evaluation. Dynamic
  * copied text is prefix-truncated to Tracy's 16-bit payload limit. Each dynamic

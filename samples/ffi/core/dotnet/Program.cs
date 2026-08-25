@@ -146,7 +146,8 @@ internal static class Program
             }
 
             // LibraryImport resolves these entry points lazily on first call;
-            // do not touch them until the global ABI bootstrap has succeeded.
+            // do not touch them until this exact core artifact's bootstrap has
+            // returned an accepted global FFI generation.
             uint productVersion = HyleCoreNative.ProductVersion();
             IntPtr productStringPointer = HyleCoreNative.ProductVersionString();
             if (productStringPointer == IntPtr.Zero)

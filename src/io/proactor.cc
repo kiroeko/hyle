@@ -353,8 +353,8 @@ bool Proactor::post(std::uint64_t user_data, std::int64_t result) noexcept {
   // byte count); anything needing a negative/64-bit outcome must NOT go through
   // post() -- a real op carries its int64 result via GetOverlappedResult/neg_err,
   // and the io-05 file path uses a 64-bit syn_result IoOp instead. Assert the
-  // contract at runtime so an untrusted C caller cannot turn a range mistake
-  // into process termination or silent truncation.
+  // contract at runtime so an untrusted raw/FFI boundary cannot turn a range
+  // mistake into process termination or silent truncation.
   if (result < 0 || result > 0xFFFFFFFFll) return false;
   return ::PostQueuedCompletionStatus(
              impl_->port,

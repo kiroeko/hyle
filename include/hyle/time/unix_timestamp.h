@@ -11,8 +11,9 @@
 
 namespace hyle::time {
 
-// One value representation is shared with C/FFI and OS metadata APIs.  It is
-// deliberately timespec-shaped rather than a single nanosecond integer:
+// One value representation is shared with OS metadata APIs and the current
+// pre-release FFI schema candidate. It is deliberately timespec-shaped rather
+// than a single nanosecond integer:
 // pre-epoch values stay negative and the range is not limited to ~292 years.
 using UnixTimestamp = ::hyle_unix_timestamp;
 using UnixTimePoint =

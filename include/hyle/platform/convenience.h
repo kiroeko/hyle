@@ -12,8 +12,9 @@
 #include "hyle/platform/fs.h"
 
 // Opt-in owning conveniences for platform control/query paths. The syscall
-// layer in fs.h/cpu.h deliberately keeps caller-owned buffer-fill output so C,
-// FFI and arena users choose the returned storage. Implementations may still
+// layer in fs.h/cpu.h deliberately keeps caller-owned buffer-fill output so
+// arena users and future FFI adapters can choose the returned storage.
+// Implementations may still
 // allocate checked transient scratch for unbounded OS paths/encoding; such OOM
 // is reported through Status. This header is the everyday C++ shape: it returns
 // standard-library owners, retries a changing snapshot, and reports allocation/

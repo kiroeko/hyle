@@ -74,13 +74,13 @@ int main() {
       nb::doNotOptimizeAway(rng.next_u64());
     });
   }
-  // A C/FFI scalar call crosses the stable DLL seam; batch fill below shows how
-  // callers amortize that tax when producing more than one value.
+  // The current pre-release FFI candidate's scalar call crosses a DLL seam;
+  // batch fill below shows how a future binding could amortize that tax.
   {
     hyle_util_rng c_rng{};
     if (!hyle_util_rng_seed(&c_rng, 12345)) return 1;
     nb::Bench b;
-    b.title("PRNG C ABI scalar next_u64")
+    b.title("PRNG FFI-candidate scalar next_u64")
         .relative(true)
         .batch(1)
         .minEpochIterations(1000000);

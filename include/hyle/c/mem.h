@@ -634,9 +634,9 @@ typedef struct hyle_growable_pool_o hyle_growable_pool;
  * OOM is likewise graceful -- acquire() returns NULL.
  *
  * Like the fixed object-pool macro (HYLE_OBJECT_POOL_CREATE), acquire() hands
- * out RAW uninitialized storage and release() runs NO destructor: the C caller
- * inits the slot and cleans it up before releasing. (The ctor/dtor-running C++
- * hyle::mem::GrowablePool<T> is a C++-only convenience, not a gap here.) */
+ * out RAW uninitialized storage and release() runs NO destructor: a future
+ * foreign binding must initialize the slot and clean it up before releasing.
+ * The ctor/dtor-running hyle::mem::GrowablePool<T> is the C++ product shape. */
 HYLE_MEM_C_API hyle_status
 hyle_growable_pool_create(hyle_growable_pool **out, hyle_allocator backing,
                           size_t slot_size, size_t slot_align,

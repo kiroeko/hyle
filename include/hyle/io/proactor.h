@@ -240,8 +240,8 @@ class Proactor {
   // negative errno. io_uring issues a real IORING_OP_STATX and converts its native
   // result to this POD before delivery. IOCP/epoll/kqueue synthesize a completion
   // from a synchronous metadata query; the ordinary File facade offloads those
-  // paths so a scheduler worker is not blocked. Raw Proactor/C callers can inspect
-  // has_async_file_metadata() or the capability bit.
+  // paths so a scheduler worker is not blocked. Raw Proactor users and future
+  // FFI adapters can inspect has_async_file_metadata() or the capability bit.
   HYLE_IO_API bool submit_statx(std::intptr_t fd, FileStat* out,
                                 std::uint64_t user_data) noexcept;
   // Flush `fd`'s data to disk. `datasync` = fdatasync (data only, skip metadata) vs

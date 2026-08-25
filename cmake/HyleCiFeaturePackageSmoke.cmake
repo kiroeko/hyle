@@ -415,7 +415,7 @@ function(_hyle_feature_smoke_tracy shape is_static)
 "  HYLE_TRACE_PLOT(\"installed.value\", value);\n"
 "  HYLE_TRACE_ALLOC(&value, sizeof(value));\n"
 "  HYLE_TRACE_FREE(&value);\n"
-"  hyle_obs_trace_message(\"installed C trace surface\");\n"
+"  hyle_obs_trace_message(\"installed FFI-candidate trace fixture\");\n"
 "  hyle_obs_trace_counter(\"installed.counter\", value);\n"
 "  return hyle_obs_trace_enabled() == 1 ? 0 : 1;\n"
 "}\n")

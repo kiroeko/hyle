@@ -12,7 +12,7 @@ int main(void) {
   void *block = hyle_alloc(&allocator, 64, 0);
   const int ok = needed == strlen("NotFound: model.bin") &&
                  strcmp(text, "NotFound: model.bin") == 0 && block != NULL;
-  printf("installed C ABI: %s\n", text);
+  printf("installed pre-release FFI schema fixture: %s\n", text);
   hyle_free(&allocator, block, 64, 0);
   hyle_status_free(&status);
   return ok ? 0 : 1;

@@ -82,8 +82,8 @@ public final class HyleCoreFfiSmoke {
                         ffiAbi));
             }
 
-            // Resolve the remaining required symbols only after the global ABI
-            // bootstrap has accepted this exact native artifact.
+            // Resolve remaining symbols only after this exact core artifact's
+            // bootstrap has returned an accepted global FFI generation.
             MethodHandle productVersionFunction = bind(
                     lookup,
                     "hyle_version",
