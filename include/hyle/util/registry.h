@@ -445,7 +445,8 @@ class Registry {
       *out = container::string_ref{"", 0, true};
       return true;
     }
-    auto* storage = static_cast<char*>(region.allocate(source.size + 1, 1));
+    const std::size_t bytes = static_cast<std::size_t>(source.size) + 1;
+    auto* storage = static_cast<char*>(region.allocate(bytes, 1));
     if (storage == nullptr) return false;
     std::memcpy(storage, source.data, source.size);
     storage[source.size] = '\0';

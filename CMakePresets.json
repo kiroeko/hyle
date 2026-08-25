@@ -41,6 +41,17 @@
       "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" }
     },
     {
+      "name": "windows-clangcl",
+      "displayName": "Windows clang-cl + Ninja",
+      "description": "Clang frontend with the Windows/MSVC ABI and SDK. The wrapper imports the Visual Studio environment; clang-cl must be installed and discoverable on PATH.",
+      "inherits": "windows-ninja",
+      "binaryDir": "${sourceDir}/build-windows-clangcl",
+      "environment": {
+        "CC": "clang-cl",
+        "CXX": "clang-cl"
+      }
+    },
+    {
       "name": "linux",
       "displayName": "Linux CPU development",
       "description": "Generator- and compiler-name-independent Release build. Select any supported GCC 14+ or Clang 18+ through CC/CXX or normal CMake arguments.",
@@ -95,10 +106,10 @@
       }
     },
     {
-      "name": "package-cpu-shared",
-      "displayName": "Portable CPU SDK (shared)",
-      "description": "Deterministic feature-enabled CPU SDK input: tests/bench, TLS, and CUDA are explicitly OFF; HTTP/2, ggml, and Vulkan are explicitly ON; ggml native tuning is disabled by HYLE_INSTALL.",
-      "binaryDir": "${sourceDir}/build-package-cpu-shared",
+      "name": "package-feature-shared",
+      "displayName": "Portable feature SDK (shared, CUDA-free)",
+      "description": "Deterministic all-component SDK input: tests/bench, trace, sanitizer, TLS, CUDA, native ggml tuning, and exact-ISA specialization are explicitly OFF; HTTP/2, ggml, and Vulkan are explicitly ON.",
+      "binaryDir": "${sourceDir}/build-package-feature-shared",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "HYLE_COMPONENTS": "all",
@@ -106,18 +117,22 @@
         "HYLE_BUILD_BENCH": "OFF",
         "HYLE_INSTALL": "ON",
         "HYLE_STATIC": "OFF",
+        "HYLE_SANITIZER": "off",
+        "HYLE_TRACE": "OFF",
+        "HYLE_SIMD_EXACT_TARGET": "",
         "HYLE_IO_TLS": "OFF",
         "HYLE_IO_HTTP2": "ON",
         "HYLE_COMPUTE_CUDA": "OFF",
         "HYLE_COMPUTE_GGML": "ON",
+        "HYLE_COMPUTE_GGML_NATIVE": "OFF",
         "HYLE_COMPUTE_VULKAN": "ON"
       }
     },
     {
-      "name": "package-cpu-static",
-      "displayName": "Portable CPU SDK (static)",
-      "inherits": "package-cpu-shared",
-      "binaryDir": "${sourceDir}/build-package-cpu-static",
+      "name": "package-feature-static",
+      "displayName": "Portable feature SDK (static, CUDA-free)",
+      "inherits": "package-feature-shared",
+      "binaryDir": "${sourceDir}/build-package-feature-static",
       "cacheVariables": {
         "HYLE_STATIC": "ON"
       }
@@ -176,14 +191,15 @@
     { "name": "windows", "configurePreset": "windows", "configuration": "Release" },
     { "name": "windows-vs2026", "configurePreset": "windows-vs2026", "configuration": "Release" },
     { "name": "windows-ninja", "configurePreset": "windows-ninja", "configuration": "Release" },
+    { "name": "windows-clangcl", "configurePreset": "windows-clangcl", "configuration": "Release" },
     { "name": "linux", "configurePreset": "linux", "configuration": "Release" },
     { "name": "macos", "configurePreset": "macos", "configuration": "Release" },
     { "name": "win", "configurePreset": "win", "configuration": "Release" },
     { "name": "wsl", "configurePreset": "wsl", "configuration": "Release" },
     { "name": "wsl-tsan", "configurePreset": "wsl-tsan", "configuration": "RelWithDebInfo" },
     { "name": "windows-cuda", "configurePreset": "windows-cuda", "configuration": "Release" },
-    { "name": "package-cpu-shared", "configurePreset": "package-cpu-shared", "configuration": "Release" },
-    { "name": "package-cpu-static", "configurePreset": "package-cpu-static", "configuration": "Release" },
+    { "name": "package-feature-shared", "configurePreset": "package-feature-shared", "configuration": "Release" },
+    { "name": "package-feature-static", "configurePreset": "package-feature-static", "configuration": "Release" },
     { "name": "bench", "configurePreset": "bench", "configuration": "Release" },
     { "name": "bench-all-sota", "configurePreset": "bench-all-sota", "configuration": "Release" },
     { "name": "linux-aarch64-cross", "configurePreset": "linux-aarch64-cross", "configuration": "Release" }
@@ -192,6 +208,7 @@
     { "name": "windows", "configurePreset": "windows", "configuration": "Release", "output": { "outputOnFailure": true }, "execution": { "noTestsAction": "error" } },
     { "name": "windows-vs2026", "configurePreset": "windows-vs2026", "configuration": "Release", "output": { "outputOnFailure": true }, "execution": { "noTestsAction": "error" } },
     { "name": "windows-ninja", "configurePreset": "windows-ninja", "configuration": "Release", "output": { "outputOnFailure": true }, "execution": { "noTestsAction": "error" } },
+    { "name": "windows-clangcl", "configurePreset": "windows-clangcl", "configuration": "Release", "output": { "outputOnFailure": true }, "execution": { "noTestsAction": "error" } },
     { "name": "linux", "configurePreset": "linux", "configuration": "Release", "output": { "outputOnFailure": true }, "execution": { "noTestsAction": "error" } },
     { "name": "macos", "configurePreset": "macos", "configuration": "Release", "output": { "outputOnFailure": true }, "execution": { "noTestsAction": "error" } },
     { "name": "win", "configurePreset": "win", "configuration": "Release", "output": { "outputOnFailure": true }, "execution": { "noTestsAction": "error" } },
@@ -202,6 +219,7 @@
     { "name": "windows-check", "steps": [ { "type": "configure", "name": "windows" }, { "type": "build", "name": "windows" }, { "type": "test", "name": "windows" } ] },
     { "name": "windows-vs2026-check", "steps": [ { "type": "configure", "name": "windows-vs2026" }, { "type": "build", "name": "windows-vs2026" }, { "type": "test", "name": "windows-vs2026" } ] },
     { "name": "windows-ninja-check", "steps": [ { "type": "configure", "name": "windows-ninja" }, { "type": "build", "name": "windows-ninja" }, { "type": "test", "name": "windows-ninja" } ] },
+    { "name": "windows-clangcl-check", "steps": [ { "type": "configure", "name": "windows-clangcl" }, { "type": "build", "name": "windows-clangcl" }, { "type": "test", "name": "windows-clangcl" } ] },
     { "name": "linux-check", "steps": [ { "type": "configure", "name": "linux" }, { "type": "build", "name": "linux" }, { "type": "test", "name": "linux" } ] },
     { "name": "macos-check", "steps": [ { "type": "configure", "name": "macos" }, { "type": "build", "name": "macos" }, { "type": "test", "name": "macos" } ] }
   ]

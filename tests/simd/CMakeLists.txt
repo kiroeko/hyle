@@ -98,7 +98,7 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   # /arch:AVX512 does not expose VBMI/BITALG macros (probe-verified), so the native path never
   # compiles on MSVC -- the base avx512 variant already covers the MSVC fallback, making a dl
   # variant there a pointless duplicate.
-  if(NOT MSVC)
+  if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     hyle_isa_flags(_avx512dl_flags AVX512_DL)
     hyle_add_test(simd NAME avx512_dl SOURCES vec_test.cc native_test.cc narrow_float_test.cc DEFINES HYLE_SIMD_TARGET_AVX512 OPTIONS ${_avx512dl_flags} ${_avx512_autorun})
   endif()

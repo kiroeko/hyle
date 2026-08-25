@@ -15,7 +15,7 @@
 namespace hyle::simd {
 namespace {
 
-#if defined(HYLE_ARCH_X64)
+#if defined(HYLE_ARCH_X64) && !defined(HYLE_SIMD_EXACT)
 // The fp16 hardware kernel (cvt_f16c.cc) uses 256-bit YMM ops (_mm256_cvtph_ps etc.), so
 // it needs BOTH F16C *and* AVX with OS-saved YMM. Gate on f16c && avx:
 //  - f.avx is already XGETBV-gated (os_ymm), so this never runs YMM on a stale OS that
@@ -26,30 +26,14 @@ namespace {
 // level, so neither the intrinsics nor the auto-vectorized scalar tail can emit an AVX2
 // instruction that would SIGILL on an F16C+AVX-but-not-AVX2 CPU.
 bool use_f16c() noexcept {
-#if defined(HYLE_SIMD_EXACT_TARGET_AVX2) || defined(HYLE_SIMD_EXACT_TARGET_AVX512)
-  return true;
-#elif defined(HYLE_SIMD_EXACT)
-  return false;
-#elif defined(HYLE_ARCH_X64)
   return (runtime().dtype.features & Runtime::kFeatureF16c) != 0;
-#else
-  return false;
-#endif
 }
 
 // The bf16 AVX2 kernel (cvt_avx2.cc) uses 256-bit integer YMM ops (_mm256_cvtepu16_epi32,
 // packus, permute4x64), so it needs AVX2 with OS-saved YMM. cpu_features().avx2 is the
 // AVX2 flag; .avx is XGETBV-gated (os_ymm), so requiring both is the honest YMM gate.
 bool use_avx2() noexcept {
-#if defined(HYLE_SIMD_EXACT_TARGET_AVX2) || defined(HYLE_SIMD_EXACT_TARGET_AVX512)
-  return true;
-#elif defined(HYLE_SIMD_EXACT)
-  return false;
-#elif defined(HYLE_ARCH_X64)
   return runtime().dtype.isa == Isa::kAvx2 || runtime().dtype.isa == Isa::kAvx512;
-#else
-  return false;
-#endif
 }
 
 // The native bf16 convert kernel (cvt_avx512bf16.cc) uses VCVTNEPS2BF16, gated on the
@@ -58,17 +42,12 @@ bool use_avx2() noexcept {
 // the honest gate for a 512-bit instruction. Only f32->bf16 has a win (the convert folds
 // the AVX2 RNE sequence into one op); bf16->f32 stays on the optimal AVX2 <<16 shift.
 bool use_avx512bf16() noexcept {
-#if defined(HYLE_SIMD_EXACT)
-  return false;  // AVX-512 base does not imply the optional BF16 extension.
-#elif defined(HYLE_ARCH_X64)
   return (runtime().dtype.features & Runtime::kFeatureAvx512Bf16) != 0;
-#else
-  return false;
-#endif
 }
 #endif
 
-#if defined(HYLE_ARCH_ARM64) && defined(HYLE_SIMD_HAS_SVE_VARIANT)
+#if defined(HYLE_ARCH_ARM64) && defined(HYLE_SIMD_HAS_SVE_VARIANT) && \
+    !defined(HYLE_SIMD_EXACT)
 bool use_sve_dtype() noexcept {
 #if defined(HYLE_SIMD_EXACT_TARGET_SVE)
   return true;
@@ -80,7 +59,8 @@ bool use_sve_dtype() noexcept {
   return false;
 #endif
 }
-#elif defined(HYLE_ARCH_RISCV64) && defined(HYLE_SIMD_HAS_RVV_VARIANT)
+#elif defined(HYLE_ARCH_RISCV64) && defined(HYLE_SIMD_HAS_RVV_VARIANT) && \
+    !defined(HYLE_SIMD_EXACT)
 bool use_rvv_dtype() noexcept {
 #if defined(HYLE_SIMD_EXACT_TARGET_RVV)
   return true;

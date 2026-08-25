@@ -143,8 +143,11 @@ D:\hyle-offline\vs-layout\vs_BuildTools.exe --noWeb --wait `
   --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended
 ```
 
-另外携带 CMake 官方二进制包；使用 `windows-ninja` 时再带 Ninja，完整测试带 Python 3，制作源码包
-带 Git。Visual Studio layout 路径保持较短并保留在稳定位置，安装器后续维护会记住该位置。官方入口：
+另外携带 CMake 官方二进制包；使用 `windows-ninja` 时再带 Ninja。若离线机还要运行
+`windows-clangcl` 可移植性门，准备 layout 时必须把 Visual Studio 的「C++ Clang tools for Windows」
+一并纳入（或携带组织批准的 LLVM 18+ 离线包），安装后确认 `clang-cl --version` 与 PATH；普通
+MSVC workload 不保证包含该 frontend。完整测试带 Python 3，制作源码包带 Git。Visual Studio layout
+路径保持较短并保留在稳定位置，安装器后续维护会记住该位置。官方入口：
 [Visual Studio 离线 layout](https://learn.microsoft.com/en-us/visualstudio/install/create-an-offline-installation-of-visual-studio?view=visualstudio)、
 [Build Tools workload IDs](https://learn.microsoft.com/en-us/visualstudio/install/workload-component-id-vs-build-tools?view=visualstudio)、
 [CMake downloads](https://cmake.org/download/)。

@@ -22,7 +22,9 @@
    - Linux：`madvise(MADV_HUGEPAGE|NOHUGEPAGE)`  
    - Win/mac：诚实 `false`（无匿名 THP madvise）
 2. **mem::HugeRegion**：large-page 对齐 reserve+commit + 可选 THP + prefault  
-3. **`enable_allocator_hugepages`**：封 mimalloc `allow_thp` / `allow_large_os_pages`（不泄 mi_*）
+3. 早期曾封装 `enable_allocator_hugepages`；mimalloc 3.5 loader 时序红队证明 Windows 会在用户代码
+   前缓存 large-page capability，而 Linux 只对未来 mmap 动态读 option，故该跨平台伪 setter 已移除。
+   system allocator 用启动前环境配置，逐 span 策略用 HugeRegion。
 
 ## 交付
 
@@ -35,5 +37,5 @@
 
 - large_page_size 为 0 或 ≥ page_size 的 2 幂  
 - HugeRegion ≥ threshold 可写；move/reset  
-- enable_allocator_hugepages 双调用不崩  
+- 旧 setter 的“双调用不崩”测试已作废：它不能证明策略生效
 - 双平台 mem + platform 相关测全绿  

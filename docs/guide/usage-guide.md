@@ -151,10 +151,11 @@ source embed/install consumer 必须继承的产品合同：
 | `windows-vs2026` | CMake 4.2+ 的原生 VS 2026/v145 solution（`.slnx`） |
 | `windows` | VS 2022 generator 回退；包装脚本显式选择最高的合格 v143 toolset |
 | `windows-ninja` / `win` | 使用已选择的 MSVC + Ninja；`scripts/hyle-windows.ps1` 用 vswhere 自动导入最新已安装环境 |
+| `windows-clangcl` | 同一 Windows SDK/MSVC ABI 下使用 clang-cl + Ninja；用于捕获 cl.exe 不会诊断的 target-feature、alignment 与可移植性问题，必须使用独立 build tree |
 | `linux` / `macos` | 不指定 generator；通过 CC/CXX 或 CMake 正常规则选择受支持工具链 |
 | `wsl` | `linux` 的 gcc-14/g++-14 便利形状；重压/benchmark 使用 native ext4 checkout |
 | `wsl-tsan` | 继承 wsl，独立 build tree 启用 ThreadSanitizer |
-| `package-cpu-shared/static` | all-component、install ON 的确定性 feature-enabled CPU SDK 输入；TLS/CUDA OFF，HTTP/2/ggml/Vulkan ON，ggml native OFF |
+| `package-feature-shared/static` | all-component、install ON 的确定性 feature SDK 输入；TLS/CUDA、tests/bench、trace、sanitizer、exact ISA 与 ggml native OFF，HTTP/2/ggml/Vulkan ON。它是 CUDA-free，不是 CPU-only（仍含 Vulkan） |
 | `linux-aarch64-cross` | 标准 toolchain-file 驱动的 all-component CPU AArch64 cross smoke；Werror 下验证全部当前模块可编译/链接，不执行 target binary，也不代表真机或模块验收 |
 | `bench` | 默认 all-components + `HYLE_BUILD_BENCH=ON` + Release，独立 `build-bench` cache；因包含 SIMD，先准备 `HYLE_BENCH_VENDOR_DIR` 中固定版 Highway/xsimd。自选非 SIMD 组件不需要它 |
 | `bench-all-sota` | 继承 `bench`，再把 10 个共享 `HYLE_BENCH_*` gate 一次设 ON（含 WYHASH；先 fetch SIMD vendors，clone 类再跑 `setup-bench-libs.sh`）；不隐式打开 3 个 IO 专用 gate |
@@ -190,7 +191,7 @@ HYLE 默认编成**共享库**（`.so`/`.dll`，每个已选模块一个 `hyle_<
 | 你的场景 | 选 | 命令 | 为什么 |
 |---|---|---|---|
 | **多个进程/插件共用一份 HYLE**；想热替换实现；想锁住 ABI 边界 | **动态**（默认）| `cmake -B build -DCMAKE_BUILD_TYPE=Release` | 一份 `.so`/`.dll` 多处加载；`HYLE_<MOD>_API` 的 dllexport/import 在此生效，跨边界 ABI 稳定 |
-| **单一可执行、想零运行时依赖**；嵌入式/容器精简；想让链接器删未用符号 | **静态** | `cmake -B build -DHYLE_STATIC=ON -DCMAKE_BUILD_TYPE=Release` | 折进你的二进制，没有"找不到 .so"问题；`HYLE_<MOD>_API` 退化为空 |
+| **单一可执行、不想分发 HYLE 动态库**；嵌入式/容器精简；想让链接器删未用符号 | **静态** | `cmake -B build -DHYLE_STATIC=ON -DCMAKE_BUILD_TYPE=Release` | HYLE 模块折进你的二进制；仍可能依赖 compiler runtime、系统 SDK/库及已启用 backend 的运行时，`HYLE_<MOD>_API` 退化为空 |
 
 **分发型 vs 自用型构建（与 §2 SIMD 模型直接相关）**：
 - **分发给未知 CPU** → 用**默认 baseline**（别加全局 `-march=native`）。这样 SIMD 的 baseline dispatcher 不会发出 AVX2 指令，老 CPU 不 SIGILL；热路径由运行期 CPUID dispatch 选变体（§2-B）。这是发布 `.so`/`.dll` 的正确姿势。

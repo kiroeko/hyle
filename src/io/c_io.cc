@@ -271,7 +271,10 @@ int hyle_io_proactor_in_flight(const hyle_io_proactor* p) {
 }
 
 hyle_io_backend hyle_io_proactor_backend(const hyle_io_proactor* p) {
-  return p != nullptr ? p->value.backend_kind() : HYLE_IO_BACKEND_NONE;
+  if (p == nullptr) {
+    return static_cast<hyle_io_backend>(HYLE_IO_BACKEND_NONE);
+  }
+  return p->value.backend_kind();
 }
 
 hyle_io_capabilities hyle_io_proactor_capabilities(

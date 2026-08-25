@@ -57,7 +57,7 @@ struct CpuFeatures {
   bool avx_vnni = false;   // AVX-VNNI (Alder Lake+): VEX 256-bit vpdpbusd, not AVX-512
   bool avx512bf16 = false; // bf16 dot product (AI)
   bool avx512fp16 = false; // native fp16 arithmetic
-  bool avx10_2 = false;    // AVX10.2 (fp8 convert vcvtph2hf8/bf8; leaf 0x24 version >= 2)
+  bool avx10_2 = false;    // AVX10.2 (leaf 0x24 version >= 2), OS-ZMM gated for HYLE's 512-bit TU
   // ---- arm (read false on non-ARM) ----
   bool neon = false;       // baseline on aarch64 (always true there)
   bool sve = false;        // scalable vectors (runtime-length; see vec.h Lanes())

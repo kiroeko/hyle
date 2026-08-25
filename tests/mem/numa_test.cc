@@ -10,15 +10,11 @@
 #include "hyle/platform/numa.h"
 #include "hyle/platform/virtual_memory.h"
 
-using hyle::mem::enable_allocator_numa;
 using hyle::mem::HugeFlags;
 using hyle::mem::HugeRegion;
 using hyle::mem::reserve_huge_1g_pages;
 using hyle::Status;
 using hyle::platform::kNumaAny;
-using hyle::platform::numa_current_node;
-using hyle::platform::numa_node_available;
-using hyle::platform::numa_node_count;
 using hyle::platform::numa_nodes;
 using hyle::platform::page_size;
 
@@ -46,15 +42,6 @@ TEST(MemNuma, HugeRegionAnyNode) {
                                       kNumaAny)
                      .value();
   ASSERT_TRUE(r.valid());
-}
-
-TEST(MemNuma, EnableAllocatorNuma) {
-  enable_allocator_numa(0);  // all nodes
-  enable_allocator_numa(1);  // clamp to 1
-  enable_allocator_numa(0);
-  // Topology still sane after policy tweaks.
-  EXPECT_GE(numa_node_count(), 1u);
-  EXPECT_TRUE(numa_node_available(numa_current_node()));
 }
 
 TEST(MemNuma, HugeRegionInterleaved) {

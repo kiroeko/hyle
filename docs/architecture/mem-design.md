@@ -246,6 +246,14 @@ variable-size pool 对象，这是有意的产品边界，不是“没有可变�
 
 - `HugeRegion`、显式 NUMA bind/interleave、THP/prefault 保留；bind/interleave 互斥，interleave
   只能搭配 NUMA-any 且不能走 local factory；策略失败是可观察的降级或错误，不保证自动 NUMA 最优。
+- system allocator 的 mimalloc backing 默认自动探测 NUMA。它在 loader 阶段、进入用户代码前缓存
+  node count；因此运行期 `enable_allocator_numa` 形状无法履行并已移除。部署级 node cap 只能由
+  进程启动前的 `MIMALLOC_USE_NUMA_NODES` 提供，运行期 placement 必须走 HugeRegion/platform，
+  不能用一个调用成功但实际无效的 setter 冒充能力。
+- system allocator 的 THP/large-page 默认同样由启动前的 `MIMALLOC_ALLOW_THP` /
+  `MIMALLOC_ALLOW_LARGE_OS_PAGES` 配置。large-page capability 在 Windows loader 初始化时缓存，
+  而 Linux 会对未来 mmap 动态读 option；旧的组合 runtime setter 因而跨平台语义不一致并已移除。
+  HugeRegion 继续拥有可移植的 per-span policy，1GiB 显式 reserve 继续是真 runtime API。
 - selected-node set + `bytes_per_chunk` 由 platform 统一拥有跨 OS 机制，mem 只以
   `HugeRegion::allocate_interleaved(bytes,nodes,chunk,flags)` 提供大块 owner 形状。空 node span
   表示全部可用节点；顺序、重复 id 的 weighted placement、page 粒度和能力失败沿用 platform
@@ -287,7 +295,7 @@ variable-size pool 对象，这是有意的产品边界，不是“没有可变�
 | preserve/RAII loan | `PreservingObjectPool<T>`、`PoolLoan` | raw slot acquire/release，由调用方管理 init/cleanup | 能力可组合；C 不伪造 ctor/dtor/RAII |
 | PMR | `system_memory_resource()` / `PmrResource` / `AlignedPmrResource` | 不适用 | 默认 system singleton 与运行时注入分型；零字节请求仍返回可成对释放的有效 allocation；Aligned 只提高 buffer base alignment，不保证 element 间隔 |
 | guarded fiber stack | `FiberStack`、`FiberStackPool` | sched C ABI 内部消费 | scheduler-owned runtime specialization；有界 retention + cold trim；shutdown 自动归还，不暴露危险 raw stack control |
-| THP/NUMA span | `HugeRegion` + policy/selected nodes/chunk、`reserve_huge_1g_pages` | `hyle_huge_region_*` + policy/selected nodes/chunk | 显式请求、可观察 accepted/applied/chunk 状态；冷预留失败返回同一 Status |
+| THP/NUMA span | `HugeRegion` + policy/selected nodes/chunk、`reserve_huge_1g_pages` | `hyle_huge_region_*` + policy/selected nodes/chunk | system allocator 自动拓扑；启动前环境限制；显式 span 请求可观察 accepted/applied/chunk，冷预留失败返回同一 Status |
 
 C ABI 的“完整”按用户能力可达判断，不按 C++ 符号 1:1 判断。模板 ctor/dtor、RAII 和 PMR
 没有自然 C 对象形状；raw slot 与显式 cleanup 是 C 的惯用表达。属于 C 用户范围的标量状态

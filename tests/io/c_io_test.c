@@ -288,6 +288,16 @@ int main(void) {
             options_result, hyle_io_last_error());
     return options_result;
   }
+  {
+    hyle_io_capabilities caps = hyle_io_proactor_capabilities(NULL);
+    if (hyle_io_proactor_backend(NULL) != HYLE_IO_BACKEND_NONE ||
+        caps.struct_size != sizeof(caps) ||
+        caps.backend != HYLE_IO_BACKEND_NONE || caps.bits != 0 ||
+        strcmp(hyle_io_backend_name(hyle_io_proactor_backend(NULL)),
+               "none") != 0) {
+      return 20;
+    }
+  }
   p = hyle_io_proactor_create(&options);
   if (p == NULL || !hyle_io_proactor_valid(p)) {
     fprintf(stderr, "create: %s\n", hyle_io_last_error());

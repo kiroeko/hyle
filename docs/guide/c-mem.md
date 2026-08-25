@@ -51,7 +51,7 @@ FixedPool 同时提供 caller-owned `*_storage + *_init`（control/payload 都�
 | PooledRegion | `hyle_pooled_region_create(&out,pool)` → `destroy` | 借 `SharedPool` 一个块 |
 | GrowablePool | `hyle_growable_pool_create(&out,...)` → `destroy` | 单线程、按需增长的裸槽池 |
 | HugeRegion | `hyle_huge_region_open*(&out,...)` → `destroy` | 大页 / NUMA host RAM 区 |
-| 进程维护/策略 | `hyle_system_collect` / `hyle_enable_allocator_*` / `hyle_reserve_huge_1g_pages` | cold path 与全局软策略 |
+| 进程维护/显式预留 | `hyle_system_collect` / `hyle_reserve_huge_1g_pages` | cold-path 回收；支持平台运行期显式预留连续 1 GiB huge pages（通常需要 OS 权限） |
 
 **sized-free 合同**：`free` / `deallocate` 必须带回分配请求时相同的 size 与 alignment。pool/region/stack 不保存每指针尺寸；传错是调用方契约违反。只有 system 分配器提供物理容量查询 `hyle_system_usable_size`。
 
@@ -293,12 +293,22 @@ typed 宏为 `HYLE_GROWABLE_POOL_CREATE/ACQUIRE/RELEASE`。需要 ctor/dtor 的 
 | `hyle_huge_region_requested_flags` / `accepted_flags` | 区分请求策略与 OS-facing call 已接受策略 |
 | `hyle_huge_region_requested_numa_node` / `numa_placement_applied` | NUMA 请求与 policy 是否被 OS 接受；不是逐页 residency 证明 |
 | `hyle_huge_region_interleave_chunk_size` | interleaved region 的实际条带大小；其它 region 为 0 |
-| `hyle_enable_allocator_hugepages` | 启用 mimalloc THP / large OS page 策略 |
-| `hyle_enable_allocator_numa` | 配置 mimalloc NUMA node 数 |
 | `hyle_reserve_huge_1g_pages` | 预留 1GiB 大页；非法 node/溢出返回 OUT_OF_RANGE，mimalloc 无法取得连续 host RAM 时返回 RESOURCE_EXHAUSTED，并保留 native error |
 
 mem 不再维护私有 TLS error code/string。冷路径与全库共用 `hyle_status`；成功 Status 是 8B
 零值、零分配，错误消息分配失败时仍保留 code。热分配路径则完全不构造 Status。
+
+system allocator 的 mimalloc backing 默认在支持的平台自动探测并使用 NUMA 拓扑。部署方若要
+限制它可见的 node 数，须在**启动进程之前**设置 `MIMALLOC_USE_NUMA_NODES=N`。embedded
+mimalloc 会在进入 `main` / 用户构造器之前由 loader 初始化并缓存该值，所以 C ABI 不提供一个
+名义可调用、实际已经来不及生效的 setter。运行中需要对特定 span 选择 node、bind 或 interleave
+时使用 `hyle_huge_region_open*` 或 platform NUMA API；这两条能力有完整 C ABI。
+
+system allocator 的默认 THP / large-page 策略同样属于进程启动配置：启动前分别使用
+`MIMALLOC_ALLOW_THP` 与 `MIMALLOC_ALLOW_LARGE_OS_PAGES`。后者尤其会在 Windows loader 初始化时
+缓存系统 large-page capability，不能由 `main` 中的 void setter 可靠改变，故 C ABI 不伪造这个
+接口。运行中针对一块 span 的可移植选择仍是 `hyle_huge_region_open*` flags；显式 1GiB arena
+预留使用 `hyle_reserve_huge_1g_pages`。
 
 flags：`HYLE_HUGE_THP_HINT`、`HYLE_HUGE_PREFAULT`、`HYLE_HUGE_NUMA_BIND`、`HYLE_HUGE_NUMA_INTERLEAVE`；bind/interleave 互斥，interleave 只能搭配 `HYLE_NUMA_ANY`，也不能传给 `open_local`。无 NUMA 约束用 `HYLE_NUMA_ANY`。
 `hyle_huge_flags` 固定为 `uint32_t`；NUMA 参数直接复用 platform 的固定宽 `hyle_numa_node`，单 node 参数、

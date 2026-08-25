@@ -5,17 +5,17 @@
 
 #include "hyle/macros.h"
 
-#if defined(__GNUC__) || defined(__clang__)
-#  if __has_include(<cxxabi.h>)
-#    include <cxxabi.h>
-#    define HYLE_HAS_CXA_DEMANGLE 1
-#  endif
-#elif defined(_WIN32)
+#if defined(_WIN32)
 #  define WIN32_LEAN_AND_MEAN
 #  include <windows.h>
 #  include <dbghelp.h>  // UnDecorateSymbolName
 #  pragma comment(lib, "dbghelp.lib")
 #  include <mutex>
+#elif defined(__GNUC__) || defined(__clang__)
+#  if __has_include(<cxxabi.h>)
+#    include <cxxabi.h>
+#    define HYLE_HAS_CXA_DEMANGLE 1
+#  endif
 #endif
 
 namespace hyle::util {

@@ -53,6 +53,17 @@
 namespace hyle::compute {
 namespace {
 
+// Vulkan's C structs conventionally initialize sType and leave every other
+// member zero. Spell that contract explicitly so C++ compilers do not have to
+// infer intent from a partial aggregate initializer (clang-cl diagnoses the
+// latter under the strict warning profile).
+template <class T>
+T make_vk_info(VkStructureType structure_type) noexcept {
+  T info{};
+  info.sType = structure_type;
+  return info;
+}
+
 const char* vk_result_name(VkResult result) noexcept {
   switch (result) {
     case VK_SUCCESS: return "VK_SUCCESS";
@@ -261,9 +272,11 @@ struct VkContext {
     // another library mutates the process environment while this context lives.
     pipeline_cache_path = read_pipe_cache_path();
     if (volkInitialize() != VK_SUCCESS) return;  // no loader -> stay !ok
-    VkApplicationInfo app{VK_STRUCTURE_TYPE_APPLICATION_INFO};
+    auto app = make_vk_info<VkApplicationInfo>(
+        VK_STRUCTURE_TYPE_APPLICATION_INFO);
     app.apiVersion = VK_API_VERSION_1_2;
-    VkInstanceCreateInfo ici{VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO};
+    auto ici = make_vk_info<VkInstanceCreateInfo>(
+        VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO);
     ici.pApplicationInfo = &app;
     // MoltenVK (mac) is a PORTABILITY driver: vkCreateInstance fails with
     // VK_ERROR_INCOMPATIBLE_DRIVER (-9, measured on Apple M4) unless we opt in via
@@ -328,11 +341,13 @@ struct VkContext {
       if (std::strcmp(e.extensionName, kPortSubset) == 0) { need_subset = true; break; }
 
     float pri = 1.0f;
-    VkDeviceQueueCreateInfo qci{VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO};
+    auto qci = make_vk_info<VkDeviceQueueCreateInfo>(
+        VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO);
     qci.queueFamilyIndex = compute_qfi;
     qci.queueCount = 1;
     qci.pQueuePriorities = &pri;
-    VkDeviceCreateInfo dci{VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO};
+    auto dci = make_vk_info<VkDeviceCreateInfo>(
+        VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO);
     dci.queueCreateInfoCount = 1;
     dci.pQueueCreateInfos = &qci;
     if (need_subset) {
@@ -351,7 +366,8 @@ struct VkContext {
 
     // Shared pipeline cache (#1). If HYLE_VK_PIPELINE_CACHE names a file with a UUID-matching
     // blob, seed the cache from it (cold-start avoids re-compiling SPIR-V->ISA); else empty.
-    VkPipelineCacheCreateInfo pcci{VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO};
+    auto pcci = make_vk_info<VkPipelineCacheCreateInfo>(
+        VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO);
     std::vector<uint8_t> seed;
     if (!pipeline_cache_path.empty())
       if (load_pipe_cache(pipeline_cache_path.c_str(), cache_uuid, &seed) && !seed.empty()) {
@@ -488,7 +504,8 @@ void retire(VkStream* s, bool force) noexcept {
 Status vk_stream_create(int, void** out_native) noexcept {
   auto* s = new (std::nothrow) VkStream{};
   if (s == nullptr) return Status::ResourceExhausted("vk stream alloc");
-  VkCommandPoolCreateInfo ci{VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
+  auto ci = make_vk_info<VkCommandPoolCreateInfo>(
+      VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO);
   ci.queueFamilyIndex = ctx().compute_qfi;
   ci.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
   VkResult r = vkCreateCommandPool(ctx().device, &ci, nullptr, &s->pool);
@@ -502,11 +519,12 @@ Status vk_stream_create(int, void** out_native) noexcept {
 // does not wait for work other threads enqueue after the marker while we are blocked.
 Status wait_queue_position() noexcept {
   VkDevice dev = ctx().device;
-  VkFenceCreateInfo fci{VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
+  auto fci = make_vk_info<VkFenceCreateInfo>(
+      VK_STRUCTURE_TYPE_FENCE_CREATE_INFO);
   VkFence fence = VK_NULL_HANDLE;
   VkResult r = vkCreateFence(dev, &fci, nullptr, &fence);
   if (r != VK_SUCCESS) return from_vk(r, "vkCreateFence(stream sync)");
-  VkSubmitInfo si{VK_STRUCTURE_TYPE_SUBMIT_INFO};
+  auto si = make_vk_info<VkSubmitInfo>(VK_STRUCTURE_TYPE_SUBMIT_INFO);
   {
     std::lock_guard<std::mutex> lk(ctx().submit_mtx);
     r = vkQueueSubmit(ctx().queue, 1, &si, fence);
@@ -545,7 +563,8 @@ struct VkEvent {
 Status vk_event_create(int, void** out_native) noexcept {
   auto* event = new (std::nothrow) VkEvent{};
   if (event == nullptr) return Status::ResourceExhausted("vk event alloc");
-  VkFenceCreateInfo ci{VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
+  auto ci = make_vk_info<VkFenceCreateInfo>(
+      VK_STRUCTURE_TYPE_FENCE_CREATE_INFO);
   VkResult r = vkCreateFence(ctx().device, &ci, nullptr, &event->fence);
   if (r != VK_SUCCESS) {
     delete event;
@@ -577,7 +596,7 @@ void vk_event_record(void* stream_native, void* event_native) noexcept {
   if (event->recorded && !event->submit_failed)
     vkWaitForFences(dev, 1, &event->fence, VK_TRUE, UINT64_MAX);
   vkResetFences(dev, 1, &event->fence);
-  VkSubmitInfo si{VK_STRUCTURE_TYPE_SUBMIT_INFO};
+  auto si = make_vk_info<VkSubmitInfo>(VK_STRUCTURE_TYPE_SUBMIT_INFO);
   std::lock_guard<std::mutex> lk(ctx().submit_mtx);
   const VkResult r = vkQueueSubmit(ctx().queue, 1, &si, event->fence);
   event->recorded = true;
@@ -621,21 +640,25 @@ Status vk_event_create_timing(int, void** out_native) noexcept {
     return Status::Unimplemented("vk backend: device has no timestamp support");
   auto* t = new (std::nothrow) VkTimingEvent{};
   if (t == nullptr) return Status::ResourceExhausted("vk timing event alloc");
-  VkFenceCreateInfo fci{VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
+  auto fci = make_vk_info<VkFenceCreateInfo>(
+      VK_STRUCTURE_TYPE_FENCE_CREATE_INFO);
   VkResult r = vkCreateFence(ctx().device, &fci, nullptr, &t->fence);
   if (r != VK_SUCCESS) { delete t; return from_vk(r, "vkCreateFence(timing)"); }
-  VkQueryPoolCreateInfo qci{VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO};
+  auto qci = make_vk_info<VkQueryPoolCreateInfo>(
+      VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO);
   qci.queryType = VK_QUERY_TYPE_TIMESTAMP;
   qci.queryCount = 1;
   r = vkCreateQueryPool(ctx().device, &qci, nullptr, &t->pool);
   if (r != VK_SUCCESS) { vkDestroyFence(ctx().device, t->fence, nullptr); delete t;
                          return from_vk(r, "vkCreateQueryPool"); }
-  VkCommandPoolCreateInfo pci{VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
+  auto pci = make_vk_info<VkCommandPoolCreateInfo>(
+      VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO);
   pci.queueFamilyIndex = ctx().compute_qfi;
   pci.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
   r = vkCreateCommandPool(ctx().device, &pci, nullptr, &t->command_pool);
   if (r == VK_SUCCESS) {
-    VkCommandBufferAllocateInfo cbai{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
+    auto cbai = make_vk_info<VkCommandBufferAllocateInfo>(
+        VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO);
     cbai.commandPool = t->command_pool;
     cbai.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     cbai.commandBufferCount = 1;
@@ -672,7 +695,8 @@ void vk_event_record_timing(void* stream_native, void* event_native) noexcept {
   vkResetFences(dev, 1, &t->fence);
   bool have_cb = vkResetCommandBuffer(t->cb, 0) == VK_SUCCESS;
   if (have_cb) {
-    VkCommandBufferBeginInfo bg{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
+    auto bg = make_vk_info<VkCommandBufferBeginInfo>(
+        VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO);
     bg.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
     have_cb = vkBeginCommandBuffer(t->cb, &bg) == VK_SUCCESS;
     if (have_cb) {
@@ -681,7 +705,7 @@ void vk_event_record_timing(void* stream_native, void* event_native) noexcept {
       have_cb = vkEndCommandBuffer(t->cb) == VK_SUCCESS;
     }
   }
-  VkSubmitInfo si{VK_STRUCTURE_TYPE_SUBMIT_INFO};
+  auto si = make_vk_info<VkSubmitInfo>(VK_STRUCTURE_TYPE_SUBMIT_INFO);
   si.commandBufferCount = have_cb ? 1u : 0u;
   si.pCommandBuffers = have_cb ? &t->cb : nullptr;
   std::lock_guard<std::mutex> lk(ctx().submit_mtx);
@@ -764,7 +788,8 @@ Status make_mem(std::size_t bytes, bool host_visible, VkMem** out) noexcept {
   auto* m = new (std::nothrow) VkMem{};
   if (m == nullptr) return Status::ResourceExhausted("vk mem alloc");
   m->size = bytes;
-  VkBufferCreateInfo bi{VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
+  auto bi = make_vk_info<VkBufferCreateInfo>(
+      VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO);
   bi.size = bytes ? bytes : 1;
   bi.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT |
              VK_BUFFER_USAGE_TRANSFER_DST_BIT;
@@ -843,7 +868,8 @@ Status make_mem(std::size_t bytes, bool host_visible, VkMem** out) noexcept {
     vkDestroyBuffer(ctx().device, m->buf, nullptr); delete m;
     return Status::ResourceExhausted("vk: no suitable memory type");
   }
-  VkMemoryAllocateInfo ai{VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
+  auto ai = make_vk_info<VkMemoryAllocateInfo>(
+      VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO);
   ai.allocationSize = mr.size;
   ai.memoryTypeIndex = mt;
   m->allocation_size = ai.allocationSize;
@@ -886,7 +912,8 @@ Status ensure_staging(VkMem* m, VkDeviceSize bytes) noexcept {
   VkDeviceMemory memory = VK_NULL_HANDLE;
   void* mapped = nullptr;
 
-  VkBufferCreateInfo bi{VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
+  auto bi = make_vk_info<VkBufferCreateInfo>(
+      VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO);
   bi.size = bytes;
   bi.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
   bi.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -902,7 +929,8 @@ Status ensure_staging(VkMem* m, VkDeviceSize bytes) noexcept {
     vkDestroyBuffer(dev, buffer, nullptr);
     return Status::ResourceExhausted("vk: no host-visible staging memory type");
   }
-  VkMemoryAllocateInfo ai{VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
+  auto ai = make_vk_info<VkMemoryAllocateInfo>(
+      VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO);
   ai.allocationSize = mr.size;
   ai.memoryTypeIndex = mt;
   r = vkAllocateMemory(dev, &ai, nullptr, &memory);
@@ -935,27 +963,31 @@ Status ensure_staging(VkMem* m, VkDeviceSize bytes) noexcept {
 template <class Rec>
 Status staged_submit(Rec&& rec) noexcept {
   VkDevice dev = ctx().device;
-  VkCommandPoolCreateInfo pci{VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
+  auto pci = make_vk_info<VkCommandPoolCreateInfo>(
+      VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO);
   pci.queueFamilyIndex = ctx().compute_qfi;
   pci.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
   VkCommandPool pool = VK_NULL_HANDLE;
   VkResult r = vkCreateCommandPool(dev, &pci, nullptr, &pool);
   if (r != VK_SUCCESS) return from_vk(r, "vkCreateCommandPool(staged)");
-  VkCommandBufferAllocateInfo cbai{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
+  auto cbai = make_vk_info<VkCommandBufferAllocateInfo>(
+      VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO);
   cbai.commandPool = pool; cbai.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY; cbai.commandBufferCount = 1;
   VkCommandBuffer cb = VK_NULL_HANDLE;
   r = vkAllocateCommandBuffers(dev, &cbai, &cb);
   if (r != VK_SUCCESS) { vkDestroyCommandPool(dev, pool, nullptr); return from_vk(r, "vkAllocateCommandBuffers(staged)"); }
-  VkCommandBufferBeginInfo bg{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
+  auto bg = make_vk_info<VkCommandBufferBeginInfo>(
+      VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO);
   bg.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
   vkBeginCommandBuffer(cb, &bg);
   rec(cb);
   vkEndCommandBuffer(cb);
-  VkFenceCreateInfo fci{VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
+  auto fci = make_vk_info<VkFenceCreateInfo>(
+      VK_STRUCTURE_TYPE_FENCE_CREATE_INFO);
   VkFence fence = VK_NULL_HANDLE;
   r = vkCreateFence(dev, &fci, nullptr, &fence);
   if (r != VK_SUCCESS) { vkDestroyCommandPool(dev, pool, nullptr); return from_vk(r, "vkCreateFence(staged)"); }
-  VkSubmitInfo si{VK_STRUCTURE_TYPE_SUBMIT_INFO};
+  auto si = make_vk_info<VkSubmitInfo>(VK_STRUCTURE_TYPE_SUBMIT_INFO);
   si.commandBufferCount = 1; si.pCommandBuffers = &cb;
   {
     std::lock_guard<std::mutex> lk(ctx().submit_mtx);  // VkQueue is externally synchronized
@@ -976,7 +1008,7 @@ void record_copy(VkCommandBuffer cb, VkBuffer from, VkBuffer to,
                  std::size_t bytes, bool d2h) noexcept {
   auto barrier = [&](VkAccessFlags src, VkAccessFlags dst, VkPipelineStageFlags ss,
                      VkPipelineStageFlags ds) {
-    VkMemoryBarrier mb{VK_STRUCTURE_TYPE_MEMORY_BARRIER};
+    auto mb = make_vk_info<VkMemoryBarrier>(VK_STRUCTURE_TYPE_MEMORY_BARRIER);
     mb.srcAccessMask = src; mb.dstAccessMask = dst;
     vkCmdPipelineBarrier(cb, ss, ds, 0, 1, &mb, 0, nullptr, 0, nullptr);
   };
@@ -1014,7 +1046,8 @@ VkMappedMemoryRange mapped_range(const VkMem* m, std::size_t offset,
                       : end + padding;
   }
   if (aligned_end > m->allocation_size) aligned_end = m->allocation_size;
-  VkMappedMemoryRange range{VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE};
+  auto range = make_vk_info<VkMappedMemoryRange>(
+      VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE);
   range.memory = m->mem;
   range.offset = begin;
   range.size = aligned_end - begin;
@@ -1088,7 +1121,7 @@ Status vk_buffer_set(void* dst_base, std::size_t offset, const void* src,
   return staged_submit([&](VkCommandBuffer cb) {
     VkBufferCopy region{0, offset, size};  // staging[0] -> primary[offset]
     vkCmdCopyBuffer(cb, m->staging_buf, m->buf, 1, &region);
-    VkMemoryBarrier mb{VK_STRUCTURE_TYPE_MEMORY_BARRIER};
+    auto mb = make_vk_info<VkMemoryBarrier>(VK_STRUCTURE_TYPE_MEMORY_BARRIER);
     mb.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;   // primary now readable by a kernel
     mb.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
     vkCmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
@@ -1131,7 +1164,8 @@ Status vk_buffer_copy(void* dst_base, std::size_t dst_off, const void* src_base,
   // device -- no host round-trip). Order prior shader/host writes before the transfer, then
   // make the transfer write visible to a later kernel / readback.
   return staged_submit([&](VkCommandBuffer cb) {
-    VkMemoryBarrier before{VK_STRUCTURE_TYPE_MEMORY_BARRIER};
+    auto before = make_vk_info<VkMemoryBarrier>(
+        VK_STRUCTURE_TYPE_MEMORY_BARRIER);
     before.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_HOST_WRITE_BIT |
                            VK_ACCESS_TRANSFER_WRITE_BIT;
     before.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -1142,7 +1176,7 @@ Status vk_buffer_copy(void* dst_base, std::size_t dst_off, const void* src_base,
                          0, nullptr, 0, nullptr);
     VkBufferCopy region{src_off, dst_off, size};
     vkCmdCopyBuffer(cb, s->buf, d->buf, 1, &region);
-    VkMemoryBarrier mb{VK_STRUCTURE_TYPE_MEMORY_BARRIER};
+    auto mb = make_vk_info<VkMemoryBarrier>(VK_STRUCTURE_TYPE_MEMORY_BARRIER);
     mb.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     mb.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_HOST_READ_BIT;
     vkCmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT,
@@ -1172,7 +1206,7 @@ Status vk_buffer_clear(void* base, std::size_t offset, std::uint8_t value,
   uint32_t word = value; word |= word << 8; word |= word << 16;
   return staged_submit([&](VkCommandBuffer cb) {
     vkCmdFillBuffer(cb, m->buf, offset, size, word);
-    VkMemoryBarrier mb{VK_STRUCTURE_TYPE_MEMORY_BARRIER};
+    auto mb = make_vk_info<VkMemoryBarrier>(VK_STRUCTURE_TYPE_MEMORY_BARRIER);
     mb.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     mb.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_HOST_READ_BIT;
     vkCmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT,
@@ -1295,14 +1329,16 @@ Status build_pipeline(VkKernel* k, uint32_t buffer_count, uint32_t push_size) no
   std::vector<VkDescriptorSetLayoutBinding> binds(buffer_count);
   for (uint32_t i = 0; i < buffer_count; ++i)
     binds[i] = {i, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
-  VkDescriptorSetLayoutCreateInfo dlci{VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO};
+  auto dlci = make_vk_info<VkDescriptorSetLayoutCreateInfo>(
+      VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO);
   dlci.bindingCount = buffer_count;
   dlci.pBindings = buffer_count ? binds.data() : nullptr;
   VkResult r = vkCreateDescriptorSetLayout(ctx().device, &dlci, nullptr, &k->dsl);
   if (r != VK_SUCCESS) { k->dsl = VK_NULL_HANDLE; return from_vk(r, "vkCreateDescriptorSetLayout"); }
 
   VkPushConstantRange pcr{VK_SHADER_STAGE_COMPUTE_BIT, 0, push_size};
-  VkPipelineLayoutCreateInfo plci{VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};
+  auto plci = make_vk_info<VkPipelineLayoutCreateInfo>(
+      VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO);
   plci.setLayoutCount = 1;
   plci.pSetLayouts = &k->dsl;
   if (push_size) { plci.pushConstantRangeCount = 1; plci.pPushConstantRanges = &pcr; }
@@ -1315,8 +1351,10 @@ Status build_pipeline(VkKernel* k, uint32_t buffer_count, uint32_t push_size) no
     return from_vk(r, "vkCreatePipelineLayout");
   }
 
-  VkComputePipelineCreateInfo cpci{VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO};
-  cpci.stage = {VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO};
+  auto cpci = make_vk_info<VkComputePipelineCreateInfo>(
+      VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO);
+  cpci.stage = make_vk_info<VkPipelineShaderStageCreateInfo>(
+      VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO);
   cpci.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
   cpci.stage.module = k->module;
   cpci.stage.pName = "main";
@@ -1363,7 +1401,8 @@ Status vk_kernel_load_ptx(int, const char* code, unsigned code_size, const char*
   HYLE_FATAL_ASSERT(code_size >= 4 && code_size % 4 == 0);
   auto* k = new (std::nothrow) VkKernel{};
   if (k == nullptr) return Status::ResourceExhausted("vk kernel alloc");
-  VkShaderModuleCreateInfo smci{VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO};
+  auto smci = make_vk_info<VkShaderModuleCreateInfo>(
+      VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO);
   smci.codeSize = code_size;
   smci.pCode = reinterpret_cast<const uint32_t*>(code);
   VkResult r = vkCreateShaderModule(ctx().device, &smci, nullptr, &k->module);
@@ -1429,11 +1468,13 @@ Status vk_kernel_launch(void* stream_native, void* module, void* /*func*/,
   VkDescriptorSet dset = VK_NULL_HANDLE;
   if (args->buffer_count) {
     VkDescriptorPoolSize ps{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, args->buffer_count};
-    VkDescriptorPoolCreateInfo dpci{VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO};
+    auto dpci = make_vk_info<VkDescriptorPoolCreateInfo>(
+        VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO);
     dpci.maxSets = 1; dpci.poolSizeCount = 1; dpci.pPoolSizes = &ps;
     VkResult r = vkCreateDescriptorPool(dev, &dpci, nullptr, &dpool);
     if (r != VK_SUCCESS) return from_vk(r, "vkCreateDescriptorPool");
-    VkDescriptorSetAllocateInfo dsai{VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO};
+    auto dsai = make_vk_info<VkDescriptorSetAllocateInfo>(
+        VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO);
     dsai.descriptorPool = dpool; dsai.descriptorSetCount = 1; dsai.pSetLayouts = &k->dsl;
     r = vkAllocateDescriptorSets(dev, &dsai, &dset);
     if (r != VK_SUCCESS) { vkDestroyDescriptorPool(dev, dpool, nullptr);
@@ -1444,7 +1485,8 @@ Status vk_kernel_launch(void* stream_native, void* module, void* /*func*/,
     for (uint32_t i = 0; i < args->buffer_count; ++i) {
       auto* m = static_cast<VkMem*>(args->buffers[i]);
       dbi[i] = {m->buf, 0, VK_WHOLE_SIZE};
-      w[i] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
+      w[i] = make_vk_info<VkWriteDescriptorSet>(
+          VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET);
       w[i].dstSet = dset; w[i].dstBinding = i; w[i].descriptorCount = 1;
       w[i].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER; w[i].pBufferInfo = &dbi[i];
     }
@@ -1452,13 +1494,15 @@ Status vk_kernel_launch(void* stream_native, void* module, void* /*func*/,
   }
 
   // Record: bind pipeline + descriptor set + push constants + dispatch (grid = groups).
-  VkCommandBufferAllocateInfo cbai{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
+  auto cbai = make_vk_info<VkCommandBufferAllocateInfo>(
+      VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO);
   cbai.commandPool = stream->pool; cbai.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY; cbai.commandBufferCount = 1;
   VkCommandBuffer cb = VK_NULL_HANDLE;
   VkResult r = vkAllocateCommandBuffers(dev, &cbai, &cb);
   if (r != VK_SUCCESS) { if (dpool) vkDestroyDescriptorPool(dev, dpool, nullptr);
                          return from_vk(r, "vkAllocateCommandBuffers"); }
-  VkCommandBufferBeginInfo bg{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
+  auto bg = make_vk_info<VkCommandBufferBeginInfo>(
+      VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO);
   bg.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
   vkBeginCommandBuffer(cb, &bg);
   vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_COMPUTE, k->pipeline);
@@ -1478,7 +1522,7 @@ Status vk_kernel_launch(void* stream_native, void* module, void* /*func*/,
   // same buffer, 红队 D). ONE global memory barrier covers all buffers -- precise per-buffer
   // barriers matter for the multi-kernel batch path (above), not this single dispatch. This
   // replaces the skeleton's "rely on vkQueueWaitIdle + coherent memory" shortcut.
-  VkMemoryBarrier mb{VK_STRUCTURE_TYPE_MEMORY_BARRIER};
+  auto mb = make_vk_info<VkMemoryBarrier>(VK_STRUCTURE_TYPE_MEMORY_BARRIER);
   mb.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
   mb.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT |
                      VK_ACCESS_HOST_READ_BIT | VK_ACCESS_TRANSFER_READ_BIT;
@@ -1495,13 +1539,14 @@ Status vk_kernel_launch(void* stream_native, void* module, void* /*func*/,
   // MUST outlive GPU execution -- freeing them here would be use-after-free). retire() at
   // entry reclaims prior completed submissions so the list stays bounded.
   retire(stream, /*force=*/false);
-  VkFenceCreateInfo fci{VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
+  auto fci = make_vk_info<VkFenceCreateInfo>(
+      VK_STRUCTURE_TYPE_FENCE_CREATE_INFO);
   VkFence fence = VK_NULL_HANDLE;
   r = vkCreateFence(dev, &fci, nullptr, &fence);
   if (r != VK_SUCCESS) { vkFreeCommandBuffers(dev, stream->pool, 1, &cb);
                          if (dpool) vkDestroyDescriptorPool(dev, dpool, nullptr);
                          return from_vk(r, "vkCreateFence"); }
-  VkSubmitInfo si{VK_STRUCTURE_TYPE_SUBMIT_INFO};
+  auto si = make_vk_info<VkSubmitInfo>(VK_STRUCTURE_TYPE_SUBMIT_INFO);
   si.commandBufferCount = 1; si.pCommandBuffers = &cb;
   {
     std::lock_guard<std::mutex> lk(ctx().submit_mtx);  // VkQueue is externally synchronized
@@ -1546,12 +1591,14 @@ Status vk_kernel_launch_batch(void* stream_native, const void* const* modules,
     HYLE_FATAL_ASSERT(k->push_size == args_arr[i].scalar_bytes);
   }
   // One command buffer for the whole batch.
-  VkCommandBufferAllocateInfo cbai{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
+  auto cbai = make_vk_info<VkCommandBufferAllocateInfo>(
+      VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO);
   cbai.commandPool = stream->pool; cbai.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY; cbai.commandBufferCount = 1;
   VkCommandBuffer cb = VK_NULL_HANDLE;
   VkResult r = vkAllocateCommandBuffers(dev, &cbai, &cb);
   if (r != VK_SUCCESS) return from_vk(r, "vkAllocateCommandBuffers(batch)");
-  VkCommandBufferBeginInfo bg{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
+  auto bg = make_vk_info<VkCommandBufferBeginInfo>(
+      VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO);
   bg.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
   vkBeginCommandBuffer(cb, &bg);
 
@@ -1577,7 +1624,8 @@ Status vk_kernel_launch_batch(void* stream_native, const void* const* modules,
     VkDescriptorSet dset = VK_NULL_HANDLE;
     if (a.buffer_count) {
       VkDescriptorPoolSize ps{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, a.buffer_count};
-      VkDescriptorPoolCreateInfo dpci{VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO};
+      auto dpci = make_vk_info<VkDescriptorPoolCreateInfo>(
+          VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO);
       dpci.maxSets = 1; dpci.poolSizeCount = 1; dpci.pPoolSizes = &ps;
       VkDescriptorPool dpool = VK_NULL_HANDLE;
       if (vkCreateDescriptorPool(dev, &dpci, nullptr, &dpool) != VK_SUCCESS) {
@@ -1589,7 +1637,8 @@ Status vk_kernel_launch_batch(void* stream_native, const void* const* modules,
         return Status::ResourceExhausted("vk batch: descriptor pool alloc failed");
       }
       pools.push_back(dpool);
-      VkDescriptorSetAllocateInfo dsai{VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO};
+      auto dsai = make_vk_info<VkDescriptorSetAllocateInfo>(
+          VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO);
       dsai.descriptorPool = dpool; dsai.descriptorSetCount = 1; dsai.pSetLayouts = &k->dsl;
       if (vkAllocateDescriptorSets(dev, &dsai, &dset) != VK_SUCCESS) {
         // Same fail-fast as the pool-alloc failure above (dpool is already in `pools`).
@@ -1603,7 +1652,8 @@ Status vk_kernel_launch_batch(void* stream_native, const void* const* modules,
       for (uint32_t b = 0; b < a.buffer_count; ++b) {
         auto* m = static_cast<VkMem*>(a.buffers[b]);
         dbi[b] = {m->buf, 0, VK_WHOLE_SIZE};
-        w[b] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
+        w[b] = make_vk_info<VkWriteDescriptorSet>(
+            VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET);
         w[b].dstSet = dset; w[b].dstBinding = b; w[b].descriptorCount = 1;
         w[b].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER; w[b].pBufferInfo = &dbi[b];
       }
@@ -1614,7 +1664,8 @@ Status vk_kernel_launch_batch(void* stream_native, const void* const* modules,
     // includes SHADER_WRITE so a WAW/WAR hazard (this kernel writes a buffer a prior one
     // read/wrote) is ordered too (红队 D: the old barrier's dst omitted SHADER_WRITE).
     if (touches_pending(a)) {
-      VkMemoryBarrier mb{VK_STRUCTURE_TYPE_MEMORY_BARRIER};
+      auto mb = make_vk_info<VkMemoryBarrier>(
+          VK_STRUCTURE_TYPE_MEMORY_BARRIER);
       mb.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
       mb.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
       vkCmdPipelineBarrier(cb, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
@@ -1636,7 +1687,7 @@ Status vk_kernel_launch_batch(void* stream_native, const void* const* modules,
   // maps memory), a transfer (staging D2H), or a following submit's kernel. Only the FINAL
   // visibility needs host/transfer scope, so it's hoisted out of the per-dispatch loop.
   {
-    VkMemoryBarrier mb{VK_STRUCTURE_TYPE_MEMORY_BARRIER};
+    auto mb = make_vk_info<VkMemoryBarrier>(VK_STRUCTURE_TYPE_MEMORY_BARRIER);
     mb.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
     mb.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_HOST_READ_BIT | VK_ACCESS_TRANSFER_READ_BIT;
     vkCmdPipelineBarrier(cb, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
@@ -1645,13 +1696,14 @@ Status vk_kernel_launch_batch(void* stream_native, const void* const* modules,
   }
   vkEndCommandBuffer(cb);
 
-  VkFenceCreateInfo fci{VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
+  auto fci = make_vk_info<VkFenceCreateInfo>(
+      VK_STRUCTURE_TYPE_FENCE_CREATE_INFO);
   VkFence fence = VK_NULL_HANDLE;
   r = vkCreateFence(dev, &fci, nullptr, &fence);
   if (r != VK_SUCCESS) { vkFreeCommandBuffers(dev, stream->pool, 1, &cb);
                          for (auto p : pools) vkDestroyDescriptorPool(dev, p, nullptr);
                          return from_vk(r, "vkCreateFence(batch)"); }
-  VkSubmitInfo si{VK_STRUCTURE_TYPE_SUBMIT_INFO};
+  auto si = make_vk_info<VkSubmitInfo>(VK_STRUCTURE_TYPE_SUBMIT_INFO);
   si.commandBufferCount = 1; si.pCommandBuffers = &cb;
   {
     std::lock_guard<std::mutex> lk(ctx().submit_mtx);
@@ -1698,11 +1750,13 @@ Status vk_recorded_create(void* stream_native, void* module, void* /*func*/,
   VkDescriptorSet dset = VK_NULL_HANDLE;
   if (args->buffer_count) {
     VkDescriptorPoolSize ps{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, args->buffer_count};
-    VkDescriptorPoolCreateInfo dpci{VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO};
+    auto dpci = make_vk_info<VkDescriptorPoolCreateInfo>(
+        VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO);
     dpci.maxSets = 1; dpci.poolSizeCount = 1; dpci.pPoolSizes = &ps;
     VkResult r = vkCreateDescriptorPool(dev, &dpci, nullptr, &rec->dpool);
     if (r != VK_SUCCESS) { delete rec; return from_vk(r, "vkCreateDescriptorPool(recorded)"); }
-    VkDescriptorSetAllocateInfo dsai{VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO};
+    auto dsai = make_vk_info<VkDescriptorSetAllocateInfo>(
+        VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO);
     dsai.descriptorPool = rec->dpool; dsai.descriptorSetCount = 1; dsai.pSetLayouts = &k->dsl;
     r = vkAllocateDescriptorSets(dev, &dsai, &dset);
     if (r != VK_SUCCESS) { vkDestroyDescriptorPool(dev, rec->dpool, nullptr); delete rec;
@@ -1712,13 +1766,15 @@ Status vk_recorded_create(void* stream_native, void* module, void* /*func*/,
     for (uint32_t i = 0; i < args->buffer_count; ++i) {
       auto* m = static_cast<VkMem*>(args->buffers[i]);
       dbi[i] = {m->buf, 0, VK_WHOLE_SIZE};
-      w[i] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
+      w[i] = make_vk_info<VkWriteDescriptorSet>(
+          VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET);
       w[i].dstSet = dset; w[i].dstBinding = i; w[i].descriptorCount = 1;
       w[i].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER; w[i].pBufferInfo = &dbi[i];
     }
     vkUpdateDescriptorSets(dev, args->buffer_count, w.data(), 0, nullptr);
   }
-  VkCommandBufferAllocateInfo cbai{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
+  auto cbai = make_vk_info<VkCommandBufferAllocateInfo>(
+      VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO);
   cbai.commandPool = stream->pool; cbai.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY; cbai.commandBufferCount = 1;
   VkResult r = vkAllocateCommandBuffers(dev, &cbai, &rec->cb);
   if (r != VK_SUCCESS) { if (rec->dpool) vkDestroyDescriptorPool(dev, rec->dpool, nullptr);
@@ -1726,7 +1782,8 @@ Status vk_recorded_create(void* stream_native, void* module, void* /*func*/,
   // Replays are asynchronous, so callers may submit the same recording again before an
   // earlier replay completes. Vulkan requires SIMULTANEOUS_USE for that state transition;
   // merely omitting ONE_TIME_SUBMIT does not make a pending command buffer re-submittable.
-  VkCommandBufferBeginInfo bg{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
+  auto bg = make_vk_info<VkCommandBufferBeginInfo>(
+      VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO);
   bg.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
   vkBeginCommandBuffer(rec->cb, &bg);
   vkCmdBindPipeline(rec->cb, VK_PIPELINE_BIND_POINT_COMPUTE, k->pipeline);
@@ -1738,7 +1795,7 @@ Status vk_recorded_create(void* stream_native, void* module, void* /*func*/,
                     cfg->grid.z <= ctx().max_wg_count[2]);
   vkCmdDispatch(rec->cb, cfg->grid.x, cfg->grid.y, cfg->grid.z);
   // Same terminal barrier as the single launch: writes visible to host read / next dispatch.
-  VkMemoryBarrier mb{VK_STRUCTURE_TYPE_MEMORY_BARRIER};
+  auto mb = make_vk_info<VkMemoryBarrier>(VK_STRUCTURE_TYPE_MEMORY_BARRIER);
   mb.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
   mb.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT |
                      VK_ACCESS_HOST_READ_BIT | VK_ACCESS_TRANSFER_READ_BIT;
@@ -1755,11 +1812,12 @@ Status vk_recorded_replay(void* stream_native, void* recorded) noexcept {
   auto* rec = static_cast<VkRecorded*>(recorded);
   VkDevice dev = ctx().device;
   retire(stream, /*force=*/false);  // reclaim prior replays' fences
-  VkFenceCreateInfo fci{VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
+  auto fci = make_vk_info<VkFenceCreateInfo>(
+      VK_STRUCTURE_TYPE_FENCE_CREATE_INFO);
   VkFence fence = VK_NULL_HANDLE;
   VkResult r = vkCreateFence(dev, &fci, nullptr, &fence);
   if (r != VK_SUCCESS) return from_vk(r, "vkCreateFence(replay)");
-  VkSubmitInfo si{VK_STRUCTURE_TYPE_SUBMIT_INFO};
+  auto si = make_vk_info<VkSubmitInfo>(VK_STRUCTURE_TYPE_SUBMIT_INFO);
   si.commandBufferCount = 1; si.pCommandBuffers = &rec->cb;
   {
     std::lock_guard<std::mutex> lk(ctx().submit_mtx);

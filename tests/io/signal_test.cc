@@ -36,12 +36,13 @@ using hyle::sched::Task;
 
 namespace {
 constexpr unsigned kOwner = 0;
+
+#if !defined(_WIN32)
 struct Drive {
   Task<int> task;
 };
 void drive_entry(void* p) { static_cast<Drive*>(p)->task.resume(); }
 
-#if !defined(_WIN32)
 struct SigR {
   std::atomic<int> got{-999};
   std::atomic<bool> done{false};

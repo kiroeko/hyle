@@ -61,19 +61,34 @@ if (-not (Test-Path -LiteralPath $vsDevCmd)) {
 }
 
 # Import the selected Visual Studio environment into this PowerShell process so
-# configure and Ninja builds see one coherent compiler/SDK contract. Nothing is
-# written to the caller's persistent environment.
-$environmentCommand = 'call "' + $vsDevCmd + '" -arch=x64 >nul && set'
-$environmentLines = & $env:ComSpec /d /s /c $environmentCommand
-if ($LASTEXITCODE -ne 0) {
-    throw "Failed to initialize the Visual Studio environment from $vsDevCmd"
+# configure and Ninja builds see one coherent compiler/SDK contract. Reuse an
+# already initialized environment for the same installation/architecture:
+# repeatedly calling VsDevCmd prepends duplicate PATH entries until cmd.exe's
+# 8191-character input limit is exceeded (notably in multi-command CI steps).
+$selectedInstallation = [System.IO.Path]::GetFullPath($installation).TrimEnd('\')
+$activeInstallation = if ($env:VSINSTALLDIR) {
+    [System.IO.Path]::GetFullPath($env:VSINSTALLDIR).TrimEnd('\')
+} else {
+    ''
 }
-foreach ($line in $environmentLines) {
-    $separator = $line.IndexOf('=')
-    if ($separator -gt 0) {
-        $name = $line.Substring(0, $separator)
-        $value = $line.Substring($separator + 1)
-        Set-Item -Path "Env:$name" -Value $value
+$hasSelectedEnvironment = $env:VSCMD_VER -and
+    $env:VCINSTALLDIR -and
+    $env:WindowsSdkDir -and
+    $env:VSCMD_ARG_TGT_ARCH -eq 'x64' -and
+    $activeInstallation -eq $selectedInstallation
+if (-not $hasSelectedEnvironment) {
+    $environmentCommand = 'call "' + $vsDevCmd + '" -arch=x64 >nul && set'
+    $environmentLines = & $env:ComSpec /d /s /c $environmentCommand
+    if ($LASTEXITCODE -ne 0) {
+        throw "Failed to initialize the Visual Studio environment from $vsDevCmd"
+    }
+    foreach ($line in $environmentLines) {
+        $separator = $line.IndexOf('=')
+        if ($separator -gt 0) {
+            $name = $line.Substring(0, $separator)
+            $value = $line.Substring($separator + 1)
+            Set-Item -Path "Env:$name" -Value $value
+        }
     }
 }
 
@@ -108,9 +123,14 @@ if (($Action -eq 'Configure' -and $Preset -eq 'windows') -or
 }
 
 $needsNinja = $Action -in @('PackageSmoke', 'ProductShapeSmoke', 'SourcePackageSmoke') -or
-    $Preset -in @('windows-ninja', 'windows-ninja-check', 'win', 'windows-cuda')
+    $Preset -in @('windows-ninja', 'windows-ninja-check', 'windows-clangcl',
+        'windows-clangcl-check', 'win', 'windows-cuda')
 if ($needsNinja -and -not (Get-Command ninja -ErrorAction SilentlyContinue)) {
-    throw 'The windows-ninja preset requires Ninja on PATH.'
+    throw "The '$Preset' preset/action requires Ninja on PATH."
+}
+if ($Preset -in @('windows-clangcl', 'windows-clangcl-check') -and
+    -not (Get-Command clang-cl -ErrorAction SilentlyContinue)) {
+    throw "The '$Preset' preset requires clang-cl on PATH. Install the Visual Studio LLVM component or initialize an environment that provides clang-cl."
 }
 
 switch ($Action) {

@@ -32,7 +32,7 @@ TEST(Dispatch, FeaturesAreCachedStableObject) {
 namespace {
 
 void ExpectFeatureFromEnvironment(const char* name, bool actual) {
-#if defined(HYLE_COMPILER_MSVC)
+#if defined(_WIN32)
   char* expected = nullptr;
   std::size_t length = 0;
   ASSERT_EQ(_dupenv_s(&expected, &length, name), 0) << name;
@@ -46,7 +46,7 @@ void ExpectFeatureFromEnvironment(const char* name, bool actual) {
   if (valid) {
     EXPECT_EQ(actual, expected[0] == '1') << name;
   }
-#if defined(HYLE_COMPILER_MSVC)
+#if defined(_WIN32)
   std::free(expected);
 #endif
 }

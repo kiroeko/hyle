@@ -975,10 +975,7 @@ int main(void) {
     hyle_huge_region_destroy(hr);
   }
 
-  /* ---- process-wide policy: callable, no crash (effect is global/soft) ----
-   */
-  hyle_enable_allocator_hugepages(0, 0);
-  hyle_enable_allocator_numa(0);
+  /* ---- explicit huge-page reservation ---- */
   hyle_system_collect(0);
   CHECK_OK(hyle_reserve_huge_1g_pages(0, HYLE_NUMA_ANY, 0));
   {

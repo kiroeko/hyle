@@ -6,7 +6,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
-#include <cstdlib>
 #include <cstring>
 #include <memory>
 #include <string>
@@ -26,31 +25,6 @@ using sched::Fiber;
 using sched::kDefaultStackSize;
 using sched::Scheduler;
 using sched::Task;
-
-// TSan-visible allocator (same rationale as parallel_test.cc / join_test.cc:29): mimalloc's
-// own arena bypasses TSan's malloc interceptors, false-positiving on reused task-frame
-// addresses under the recursive-split spawn/free churn. A malloc-backed allocator is visible.
-#if defined(_MSC_VER)
-void* tv_a(void*, std::size_t n, std::size_t al) noexcept {
-  if (al < sizeof(void*)) al = sizeof(void*);
-  return _aligned_malloc(n, al);
-}
-void tv_f(void*, void* p, std::size_t, std::size_t) noexcept { _aligned_free(p); }
-void* tv_r(void*, void* p, std::size_t, std::size_t nn, std::size_t al) noexcept {
-  if (al < sizeof(void*)) al = sizeof(void*);
-  return _aligned_realloc(p, nn, al);
-}
-#else
-void* tv_a(void*, std::size_t n, std::size_t al) noexcept {
-  if (al < sizeof(void*)) al = sizeof(void*);
-  return std::aligned_alloc(al, (n + al - 1) & ~(al - 1));
-}
-void tv_f(void*, void* p, std::size_t, std::size_t) noexcept { std::free(p); }
-void* tv_r(void*, void* p, std::size_t, std::size_t nn, std::size_t) noexcept {
-  return std::realloc(p, nn);
-}
-#endif
-Allocator tsan_visible_allocator() noexcept { return Allocator(&tv_a, &tv_f, &tv_r, nullptr); }
 
 // Fiber-driver harness: run `body(alloc)` (a coroutine returning int) on a Scheduler.
 struct Drive {
@@ -93,7 +67,7 @@ TEST(DataParallel, ForFillsRangeMatchesSerial) {
   constexpr std::size_t kN = 10000;
   std::vector<std::int64_t> out(kN, -1);
   int rc = run([&](Scheduler* s) {
-    return for_coro(tsan_visible_allocator(), s, out.data(), kN, 64);
+    return for_coro(system_allocator(), s, out.data(), kN, 64);
   });
   EXPECT_EQ(rc, 0);
   for (std::size_t i = 0; i < kN; ++i)
@@ -104,7 +78,7 @@ TEST(DataParallel, ForAutoGrain) {
   constexpr std::size_t kN = 5000;
   std::vector<std::int64_t> out(kN, -1);
   int rc = run([&](Scheduler* s) {
-    return for_coro(tsan_visible_allocator(), s, out.data(), kN, kAutoGrain);
+    return for_coro(system_allocator(), s, out.data(), kN, kAutoGrain);
   });
   EXPECT_EQ(rc, 0);
   for (std::size_t i = 0; i < kN; ++i) ASSERT_EQ(out[i], static_cast<std::int64_t>(i * i));
@@ -114,7 +88,8 @@ TEST(DataParallel, ForGrainOneMaxSplit) {
   constexpr std::size_t kN = 512;
   std::vector<std::int64_t> out(kN, -1);
   int rc = run([&](Scheduler* s) {
-    return for_coro(tsan_visible_allocator(), s, out.data(), kN, 1);  // split to singletons
+    return for_coro(system_allocator(), s, out.data(), kN,
+                    1);  // split to singletons
   });
   EXPECT_EQ(rc, 0);
   for (std::size_t i = 0; i < kN; ++i) ASSERT_EQ(out[i], static_cast<std::int64_t>(i * i));
@@ -122,7 +97,9 @@ TEST(DataParallel, ForGrainOneMaxSplit) {
 
 TEST(DataParallel, ForEmptyRange) {
   std::int64_t dummy = 0;
-  int rc = run([&](Scheduler* s) { return for_coro(tsan_visible_allocator(), s, &dummy, 0, 8); });
+  int rc = run([&](Scheduler* s) {
+    return for_coro(system_allocator(), s, &dummy, 0, 8);
+  });
   EXPECT_EQ(rc, 0);
 }
 
@@ -140,7 +117,9 @@ TEST(DataParallel, ForEachIndexExactlyOnce) {
   constexpr std::size_t kN = 3333;
   std::vector<std::atomic<int>> hits(kN);
   for (auto& h : hits) h.store(0);
-  int rc = run([&](Scheduler* s) { return count_coro(tsan_visible_allocator(), s, hits.data(), kN); });
+  int rc = run([&](Scheduler* s) {
+    return count_coro(system_allocator(), s, hits.data(), kN);
+  });
   EXPECT_EQ(rc, 0);
   for (std::size_t i = 0; i < kN; ++i) ASSERT_EQ(hits[i].load(), 1) << "at " << i;
 }
@@ -157,7 +136,9 @@ Task<int> forfail_coro(mem::Allocator alloc, Scheduler* sched, std::size_t* targ
 }
 TEST(DataParallel, ForBodyErrorPropagates) {
   std::size_t target = 777;
-  int rc = run([&](Scheduler* s) { return forfail_coro(tsan_visible_allocator(), s, &target, 2000); });
+  int rc = run([&](Scheduler* s) {
+    return forfail_coro(system_allocator(), s, &target, 2000);
+  });
   EXPECT_EQ(rc, 1);  // Internal surfaced
 }
 
@@ -175,7 +156,9 @@ Task<int> imbal_coro(mem::Allocator alloc, Scheduler* sched, std::int64_t* out, 
 TEST(DataParallel, ForLoadImbalanceStillCorrect) {
   constexpr std::size_t kN = 4096;
   std::vector<std::int64_t> out(kN, 0);
-  int rc = run([&](Scheduler* s) { return imbal_coro(tsan_visible_allocator(), s, out.data(), kN); });
+  int rc = run([&](Scheduler* s) {
+    return imbal_coro(system_allocator(), s, out.data(), kN);
+  });
   EXPECT_EQ(rc, 0);
   std::int64_t sum = 0; for (auto v : out) sum += v;
   EXPECT_EQ(sum, static_cast<std::int64_t>(kN));  // every index written
@@ -224,7 +207,7 @@ TEST(DataParallel, BoundedQueueSaturationReturnsStructuredError) {
   constexpr std::size_t kN = 256;
   std::vector<std::int64_t> out(kN, -1);
   EXPECT_EQ(run([&](Scheduler* s) {
-              return saturated_for_coro(tsan_visible_allocator(), s,
+              return saturated_for_coro(system_allocator(), s,
                                         out.data(), kN);
             },
             1, 2),
@@ -232,7 +215,7 @@ TEST(DataParallel, BoundedQueueSaturationReturnsStructuredError) {
 
   std::int64_t result = -1;
   EXPECT_EQ(run([&](Scheduler* s) {
-              return saturated_reduce_coro(tsan_visible_allocator(), s, kN,
+              return saturated_reduce_coro(system_allocator(), s, kN,
                                            &result);
             },
             1, 2),
@@ -243,7 +226,7 @@ TEST(DataParallel, ReduceSumMatchesSerial) {
   constexpr std::size_t kN = 100000;
   std::int64_t result = -1;
   int rc = run([&](Scheduler* s) {
-    return reduce_coro(tsan_visible_allocator(), s, kN, 128, &result);
+    return reduce_coro(system_allocator(), s, kN, 128, &result);
   });
   EXPECT_EQ(rc, 0);
   std::int64_t expect = static_cast<std::int64_t>(kN) * (kN - 1) / 2;  // sum 0..kN-1
@@ -254,15 +237,24 @@ TEST(DataParallel, ReduceAutoGrainAndGrainOne) {
   constexpr std::size_t kN = 2048;
   std::int64_t expect = static_cast<std::int64_t>(kN) * (kN - 1) / 2;
   std::int64_t r_auto = -1, r_one = -1;
-  EXPECT_EQ(run([&](Scheduler* s) { return reduce_coro(tsan_visible_allocator(), s, kN, kAutoGrain, &r_auto); }), 0);
-  EXPECT_EQ(run([&](Scheduler* s) { return reduce_coro(tsan_visible_allocator(), s, kN, 1, &r_one); }), 0);
+  EXPECT_EQ(run([&](Scheduler* s) {
+              return reduce_coro(system_allocator(), s, kN, kAutoGrain,
+                                 &r_auto);
+            }),
+            0);
+  EXPECT_EQ(run([&](Scheduler* s) {
+              return reduce_coro(system_allocator(), s, kN, 1, &r_one);
+            }),
+            0);
   EXPECT_EQ(r_auto, expect);
   EXPECT_EQ(r_one, expect);  // integer sum is associative -> exact regardless of tree shape
 }
 
 TEST(DataParallel, ReduceEmptyRangeIsIdentity) {
   std::int64_t result = 12345;
-  int rc = run([&](Scheduler* s) { return reduce_coro(tsan_visible_allocator(), s, 0, 8, &result); });
+  int rc = run([&](Scheduler* s) {
+    return reduce_coro(system_allocator(), s, 0, 8, &result);
+  });
   EXPECT_EQ(rc, 0);
   EXPECT_EQ(result, 0);  // identity
 }
@@ -282,7 +274,9 @@ Task<int> reducefail_coro(mem::Allocator alloc, Scheduler* sched, std::size_t* t
 TEST(DataParallel, ReduceBodyErrorPropagates) {
   std::size_t target = 500;
   std::int64_t result = -1;
-  int rc = run([&](Scheduler* s) { return reducefail_coro(tsan_visible_allocator(), s, &target, 1500, &result); });
+  int rc = run([&](Scheduler* s) {
+    return reducefail_coro(system_allocator(), s, &target, 1500, &result);
+  });
   EXPECT_EQ(rc, 1);
 }
 
@@ -321,7 +315,9 @@ Task<int> concat_coro(mem::Allocator alloc, Scheduler* sched, std::size_t n, std
 TEST(DataParallel, ReduceNonCommutativePreservesOrder) {
   constexpr std::size_t kN = 20;
   StrBuf result{};
-  int rc = run([&](Scheduler* s) { return concat_coro(tsan_visible_allocator(), s, kN, 3, &result); });
+  int rc = run([&](Scheduler* s) {
+    return concat_coro(system_allocator(), s, kN, 3, &result);
+  });
   EXPECT_EQ(rc, 0);
   // Serial reference: "0,1,2,...,19,". A left/right swap would reorder these.
   std::string expect;
@@ -343,14 +339,18 @@ Task<int> big_sum_coro(mem::Allocator alloc, Scheduler* sched, std::size_t n, st
 TEST(DataParallel, ReduceLargeRange) {
   constexpr std::size_t kN = 1000000;  // 1M elements, grain 256 -> ~4k blocks, ~12-level tree
   std::int64_t result = -1;
-  int rc = run([&](Scheduler* s) { return big_sum_coro(tsan_visible_allocator(), s, kN, 256, &result); });
+  int rc = run([&](Scheduler* s) {
+    return big_sum_coro(system_allocator(), s, kN, 256, &result);
+  });
   EXPECT_EQ(rc, 0);
   EXPECT_EQ(result, static_cast<std::int64_t>(kN) * (kN - 1) / 2);
 }
 TEST(DataParallel, ReduceLargeRangeAutoGrain) {
   constexpr std::size_t kN = 1000000;
   std::int64_t result = -1;
-  int rc = run([&](Scheduler* s) { return big_sum_coro(tsan_visible_allocator(), s, kN, kAutoGrain, &result); });
+  int rc = run([&](Scheduler* s) {
+    return big_sum_coro(system_allocator(), s, kN, kAutoGrain, &result);
+  });
   EXPECT_EQ(rc, 0);
   EXPECT_EQ(result, static_cast<std::int64_t>(kN) * (kN - 1) / 2);
 }

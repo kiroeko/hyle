@@ -10,8 +10,6 @@
 #include "hyle/platform/virtual_memory.h"
 
 using hyle::mem::advise_hugepage_range;
-using hyle::mem::AllocatorHugepagePolicy;
-using hyle::mem::enable_allocator_hugepages;
 using hyle::mem::HugeFlags;
 using hyle::mem::hugepage_region_threshold;
 using hyle::mem::HugeRegion;
@@ -151,19 +149,6 @@ TEST(HugeRegion, AdviseHugepageRangeHelper) {
   (void)advise_hugepage_range(r.data(), r.size());
   (void)r.advise_hugepage();
   std::memset(r.data(), 0, 64);
-}
-
-TEST(HugepagePolicy, EnableDoesNotCrash) {
-  AllocatorHugepagePolicy pol;
-  pol.allow_thp = true;
-  pol.allow_large_os_pages = false; // no privilege required
-  enable_allocator_hugepages(pol);
-  // Second call with large pages requested (may no-op without privileges).
-  pol.allow_large_os_pages = true;
-  enable_allocator_hugepages(pol);
-  pol.allow_thp = false;
-  pol.allow_large_os_pages = false;
-  enable_allocator_hugepages(pol);
 }
 
 TEST(HugepagePolicy, ThresholdMatchesLargePageWhenKnown) {

@@ -20,7 +20,9 @@
 
 1. **platform** `NumaPolicy`：Preferred / Bind / Interleave；`vm_bind_numa` / `vm_bind_numa_interleave` / `vm_reserve_numa`
 2. **HugeRegion**：`allocate` / `allocate_local` / `allocate_interleaved` + `kNumaBind`/`kNumaInterleave`
-3. **`enable_allocator_numa`** + **`reserve_huge_1g_pages`**（mi 1GiB，失败 soft）
+3. **`reserve_huge_1g_pages`**（mi 1GiB，失败 soft）；早期的
+   `enable_allocator_numa` 后经 mimalloc 3.5 loader 时序红队证明无法从用户代码可靠生效，已移除。
+   system allocator 的进程启动 node cap 使用启动前环境，运行期 placement 使用 HugeRegion/platform。
 4. **MemoryArena**：slab ≥ threshold → `HugeRegion::allocate_local` + THP
 
 ## 契约

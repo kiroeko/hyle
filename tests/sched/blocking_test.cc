@@ -2,7 +2,6 @@
 
 #include <atomic>
 #include <chrono>
-#include <cstdlib>
 #include <memory>
 #include <thread>
 #include <vector>
@@ -23,35 +22,6 @@ using hyle::sched::Scheduler;
 using hyle::sched::spawn_blocking;
 
 namespace {
-
-// TSan-visible (malloc-backed) allocator for the churn stress test -- same
-// rationale as join_test.cc: mimalloc's own heap blinds TSan to free->reuse, so a
-// high-churn test would false-positive; malloc is intercepted, keeping the gate
-// meaningful. Non-stress tests use system_allocator() (mimalloc, the ship path).
-#if defined(_MSC_VER)
-void* tsan_ma(void*, std::size_t n, std::size_t al) noexcept {
-  if (al < sizeof(void*)) al = sizeof(void*);
-  return _aligned_malloc(n, al);
-}
-void tsan_mf(void*, void* p, std::size_t, std::size_t) noexcept { _aligned_free(p); }
-void* tsan_mr(void*, void* p, std::size_t, std::size_t nn, std::size_t al) noexcept {
-  if (al < sizeof(void*)) al = sizeof(void*);
-  return _aligned_realloc(p, nn, al);
-}
-#else
-void* tsan_ma(void*, std::size_t n, std::size_t al) noexcept {
-  if (al < sizeof(void*)) al = sizeof(void*);
-  return std::aligned_alloc(al, (n + al - 1) & ~(al - 1));
-}
-void tsan_mf(void*, void* p, std::size_t, std::size_t) noexcept { std::free(p); }
-void* tsan_mr(void*, void* p, std::size_t, std::size_t nn, std::size_t) noexcept {
-  return std::realloc(p, nn);
-}
-#endif
-Allocator tsan_visible_allocator() noexcept {
-  return Allocator(&tsan_ma, &tsan_mf, &tsan_mr, nullptr);
-}
-
 }  // namespace
 
 // A blocking closure returns its value; a bare thread joins it (thread-mode).
@@ -288,11 +258,12 @@ TEST(Blocking, RetiredThreadHandlesStayBoundedAcrossBursts) {
 }
 
 // Concurrency stress (TSan gate): many spawn_blocking + join from the main thread,
-// churning pool threads + JoinState alloc/free. TSan-visible allocator so the
-// free->reuse edge stays visible (see note atop file).
+// Churn pool threads and JoinState allocation/free through the shipping
+// allocator. mimalloc is built with MI_TSAN in sanitizer configurations, so
+// this path remains visible to TSan without a test-only allocator shape.
 TEST(Blocking, ChurnStress) {
   constexpr int kN = 200;
-  Allocator al = tsan_visible_allocator();
+  Allocator al = system_allocator();
   BlockingPool pool(al, /*max_threads=*/8);
   std::atomic<int> total{0};
   for (int i = 0; i < kN; ++i) {

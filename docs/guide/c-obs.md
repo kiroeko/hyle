@@ -94,17 +94,20 @@ hyle_status status = hyle_obs_emit_record(&emitted, &record);
 业务字段都有默认”的 options，因此没有为了形式一致而在 `struct_size` 后插入 reserved word：
 offset 4 的 level 本身就是 required payload，保留紧凑常用形状也不移动既有 required prefix。
 
-实现先建立完整的当前默认 record，再从 declared prefix 用 byte read 覆盖完整字段；这也适用于
-真实短物理对象与未对齐 FFI buffer。`fields + field_count` 是一个原子组合，只有两者都完整可读
+`hyle_obs_emit_record` 因而有意接收 `const void *record_bytes`，而不是声称输入已经是一个
+满足当前大小/对齐的 `hyle_obs_log_record *`；普通 C 调用仍直接传 `&record`。实现先建立完整的
+当前默认 record，再从 declared prefix 用 byte read 覆盖完整字段；这也适用于真实短物理对象
+与未对齐 FFI buffer。`fields + field_count` 是一个原子组合，只有两者都完整可读
 才生效；落在其他 optional field 中间的 prefix 把该字段视为缺失。缺失 source/timestamp 等
 字段保持 INIT 默认，超过当前布局的未知尾部不读取。小于 required prefix，以及非法 level、
-message byte view 或 field，返回 `HYLE_STATUS_INVALID_ARGUMENT`。调用方必须保证 required
-payload 指针在同步 emit 期间有效。
+message byte view 或 field，返回 `HYLE_STATUS_INVALID_ARGUMENT`。输入至少要有可读的
+`uint32_t struct_size`；一旦 declared size 达到 required prefix，调用方必须在同步 emit 期间保证
+`min(struct_size, sizeof(hyle_obs_log_record))` 字节可读，不能只提供 required bytes 却宣称更长 prefix。
 
 message 由 `message + message_size` 精确定界，可包含 NUL；初始化器的
 `HYLE_OBS_NUL_TERMINATED` sentinel 要求 checked adapter 执行 `strlen`。`NULL + 0` 是合法空
 消息，其他 `NULL + size` 非法。field key/value 是 NUL 结尾 UTF-8，file/function 可为 NULL。
-所有指针只在同步 emit/callback 期间借用，库不会保存。sink callback 也必须按
+record 内所有借用指针只在同步 emit/callback 期间有效，库不会保存。sink callback 也必须按
 `record->message_size` 复制/输出，不能用 `%s` 假定消息结尾。异步 sink 必须在 callback 内
 复制。C/FFI 在本语言侧格式化后调用 `_n`，或直接填 POD record；C ABI 不重复一套 C++
 format DSL。

@@ -45,7 +45,9 @@ cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
 cmake --build build
 ```
 
-- ggml/googletest 首次配置自动联网拉到 `build/_deps`；删除 build 会一并删除，避免跨 toolchain 污染。
+- 这条默认 `all` + tests + HTTP/2/ggml/Vulkan 命令首次配置会把 googletest、nghttp2、ggml、
+  Vulkan-Headers、volk、glslang 自动拉到 `build/_deps`；关闭对应 component/feature/test 后只取得实际
+  闭包。删除 build 会一并删除，避免跨 toolchain 污染。
 - `wsl.exe` 从 Windows 侧驱动的坑：`wsl.exe -e bash -lc '...'` 外层 git-bash 会吃掉 `$VAR`；把逻辑写成 `.sh`（在 WSL 原生 bash 里跑变量才正常）。传 `/mnt/c/x.sh` 路径给 wsl.exe 会被 git-bash 改写 → 用 `wsl.exe -e bash -lc 'bash /root/x.sh'`，脚本直接在 `/root` 用 heredoc 生成、别 cp。
 
 ## 四、测试
@@ -70,7 +72,10 @@ setarch -R ./build-tsan/bin/hyle_sched_test    # -R 关 ASLR，稳定 TSan
 
 - `HYLE_SANITIZER` = `off|asan|tsan|ubsan`（也接受 `address/thread/undefined/none`；**拼错 FATAL_ERROR**，不静默降级成假 PASS）。
 - **必须 `setarch -R`**——否则新内核高熵 ASLR 触发 "FATAL: ThreadSanitizer: unexpected memory mapping"。
-- **⚠️ mimalloc × TSan 已知误报（KI-2/KI-3）**：凡链 mimalloc 的 exe 在 TSan 下会报 mimalloc 内部跨线程块回收的假 race（`[anon:mimalloc]` 地址），或启动期 `mi_out_default` 断言。**仅 TSan 构建**，Release 零影响。判定 HYLE 自身逻辑 race 时，要区分"冲突地址在 mimalloc 堆页"（假报）vs 真正的共享状态竞争。详见 `docs/architecture/known-issues.md`。
+- mimalloc 3.5 在 TSan 形状中必须与 HYLE 一起用 `MI_TSAN=1` 和
+  `-fsanitize=thread` 编译；并发压力测试直接使用 shipping
+  `system_allocator()`，不再绕到 malloc。旧版的启动断言和回收地址假 race 已在升级复验中消失，
+  因此新的 sanitizer 报告不能按历史 KI-2/KI-3 自动忽略，必须按真实缺陷调查。
 - **TSan 用无 CUDA 构建更干净**（CUDA + TSan 不合）：`-DCMAKE_DISABLE_FIND_PACKAGE_CUDAToolkit=ON` 让 ggml 走 CPU-only，TSan 只验 HYLE 的 host 侧协调（spawn_blocking/fiber 唤醒）。
 
 ## 六、性能测试（bench）
@@ -88,7 +93,7 @@ cmake --build build-bench --target hyle_sched_bench
 
 - **必须原生 ext4**（见 9p 铁律）——`/mnt/c` 上 bench 数字无效（CPU 打不饱和）。
 - SIMD bench 将 `HYLE_BENCH_VENDOR_DIR` 的固定版 Highway/xsimd 当对照；它们只供 bench，
-  不替代本轮仍由产品源码使用的 `third_party/` 副本。
+  产品使用已经迁入并修改的 HYLE port，不再依赖 `third_party/{highway,xsimd}` checkout。
 - 统计对标用 `scripts/bench-stat.py`（多遍取统计，防单遍噪声）。
 
 ## 七、可选依赖

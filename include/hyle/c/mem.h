@@ -9,7 +9,7 @@
  *
  * Surface: the injectable Allocator vtable; quota/stats decorators; owned and
  * external regions; variable-size, fixed-slot, cached and growable pools;
- * HugeRegion; and process-wide mimalloc maintenance/policy. Opaque public
+ * HugeRegion; and process-wide mimalloc maintenance/explicit reservation. Opaque public
  * aliases hide owning implementation objects; common constructors have
  * header-inline system-backing forms. Docs (1:1):
  * docs/guide/c-mem.md
@@ -746,15 +746,9 @@ HYLE_MEM_C_API size_t
 hyle_huge_region_interleave_chunk_size(const hyle_huge_region *r);
 
 /* ========================================================================== */
-/* Process-wide mimalloc policy (free functions) */
+/* Process-wide mimalloc maintenance/reservation (free functions) */
 /* ========================================================================== */
 
-/* THP hint + large OS pages for the system allocator's arenas (call at start).
- */
-HYLE_MEM_C_API void hyle_enable_allocator_hugepages(int allow_thp,
-                                                    int allow_large_os_pages);
-/* max_nodes==0 => all NUMA nodes (mimalloc default). */
-HYLE_MEM_C_API void hyle_enable_allocator_numa(unsigned max_nodes);
 /* Reserve `pages` contiguous 1GiB huge OS pages into mimalloc's arenas.
  * numa_node==HYLE_NUMA_ANY => interleave; timeout_ms==0 => HYLE's short
  * default. Invalid node/size returns OUT_OF_RANGE; a native reservation

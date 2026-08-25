@@ -2393,7 +2393,11 @@ HYLE_FORCE_INLINE void ScatterIndex(detail::V128<D> v, D d, TFromD<D>* base,
 // Compress byte-index table for 4x i32 (Highway's method): only 16 mask combos, each a 16-byte
 // pshufb index that gathers active 32-bit lanes to the front. 16*16 = 256 B. constexpr-built.
 namespace detail {
-struct CompressIdx32x4 {
+// _mm_load_si128 below is part of the hot single-shuffle path. Make the table's
+// alignment a language-level guarantee instead of relying on how each compiler
+// happens to place an inline constexpr byte array (clang-cl only gave it byte
+// alignment and correctly faulted on the aligned load).
+struct alignas(16) CompressIdx32x4 {
   std::uint8_t idx[16 * 16] = {};
   constexpr CompressIdx32x4() {
     for (unsigned bits = 0; bits < 16; ++bits) {

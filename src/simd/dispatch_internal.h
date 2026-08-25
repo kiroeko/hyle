@@ -12,6 +12,47 @@
 // emitted by hyle_add_dispatched_kernel.
 namespace hyle::simd::detail {
 
+#if defined(HYLE_ARCH_X64)
+// Exact runtime prerequisites for the optional x86 product TUs. These are
+// deliberately narrower than best_isa(): a specialty kernel may be useful
+// below HYLE's broad Highway-compatible AVX2/AVX-512 tier, but it must still
+// satisfy every ISA feature that its own compile flags permit.
+struct X86SpecialtySupport {
+  bool avx2_int;
+  bool f16c;
+  bool avx_vnni;
+  bool avx512_vnni;
+  bool avx512_bf16;
+  bool avx10_2;
+};
+
+constexpr X86SpecialtySupport x86_specialty_support(
+    const CpuFeatures& f) noexcept {
+  // -mavx2/-mavxvnni may use the AVX2 integer face and always require an
+  // OS-saved YMM state. Keep AVX explicit even for malformed/masked CPUID sets.
+  const bool avx2_tu = f.avx && f.avx2;
+  // The AVX-512 VNNI/BF16 TUs compile with F+BW+VL+DQ in addition to their
+  // specialty extension. Clang also enables FMA/F16C as prerequisites of
+  // -mavx512f and may emit them anywhere in the TU (including scalar tails).
+  // A hypervisor may mask those legacy bits independently.
+  const bool avx512_tu =
+      avx2_tu && f.fma && f.f16c && f.avx512f && f.avx512bw &&
+      f.avx512vl && f.avx512dq;
+  return X86SpecialtySupport{
+      .avx2_int = avx2_tu,
+      .f16c = f.avx && f.f16c,
+      .avx_vnni = avx2_tu && f.avx_vnni,
+      .avx512_vnni = avx512_tu && f.avx512vnni,
+      .avx512_bf16 = avx512_tu && f.avx512bf16,
+      // CpuFeatures::avx10_2 means AVX10.2 version plus OS ZMM state. Current
+      // AVX10 supports all vector widths. The -mavx10.2-512 TU also permits
+      // FMA/F16C; retain those legacy prerequisites for independently masked
+      // virtual CPUs even though conforming AVX10.2 hardware includes them.
+      .avx10_2 = avx2_tu && f.fma && f.f16c && f.avx10_2,
+  };
+}
+#endif
+
 #define HYLE_SIMD_SUFFIXED_SYMBOL_I(name, suffix) name##_##suffix
 #define HYLE_SIMD_SUFFIXED_SYMBOL(name, suffix) HYLE_SIMD_SUFFIXED_SYMBOL_I(name, suffix)
 #if defined(HYLE_SIMD_EXACT)

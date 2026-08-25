@@ -48,7 +48,7 @@ x86-64、AArch64 和 RV64；其他 64-bit 架构仍可进入明确的 generic/sc
 | artifact 形状 | `HYLE_STATIC`、`HYLE_INSTALL` | static installed SDK | 不借用或改写父工程 `BUILD_SHARED_LIBS` |
 | 产品能力 | `HYLE_<MODULE>_<FEATURE>` | `HYLE_IO_TLS`、`HYLE_COMPUTE_CUDA` | 可探测能力用 `AUTO/ON/OFF`；ON 是硬合同 |
 | 硬件特化 | HYLE 语义或标准 toolchain 变量 | `HYLE_SIMD_EXACT_TARGET`、`CMAKE_CUDA_ARCHITECTURES` | 进入 artifact/ISA 合同，分发包不得偷用本机 native |
-| 验证形状 | `HYLE_BUILD_*`、`HYLE_TEST_*`、`HYLE_SANITIZER` | tests、bench、shipping layout、TSan | 不改变正常产品 API；测试插桩不得进入 install |
+| 验证形状 | `HYLE_BUILD_TESTS`、`HYLE_TEST_INSTRUMENTATION`、`HYLE_BUILD_BENCH`、`HYLE_SANITIZER` | tests、bench、shipping layout、TSan | 不改变正常产品 API；测试插桩不得进入 install |
 | 对标开发 | `HYLE_BENCH_*` | `HYLE_BENCH_HIGHWAY` | 只给 benchmark 加对手，永不改变产品 target |
 | 构建环境 | 标准 CMake/toolchain/FetchContent 变量 | `CMAKE_BUILD_TYPE`、`FETCHCONTENT_SOURCE_DIR_GGML` | 不再包一层同义 HYLE 开关 |
 
@@ -68,6 +68,8 @@ x86-64、AArch64 和 RV64；其他 64-bit 架构仍可进入明确的 generic/sc
 因此“选项比较多”本身不是失败；让普通用户必须理解无关选项、同一决定出现两个名字、或一个选项在
 不同入口表达不同产品，才是失败。安装包消费者通常不设置任何 HYLE 构建选项；源码用户通常只设置
 component、linkage、tests，再为实际使用的可选后端补一个明确能力合同。
+由组件解析得到的 `HYLE_BUILD_<COMPONENT>` 是内部计算结果，不是用户可写的 cache 选项；公开参数必须
+使用上表中的精确名字，文档不得用并不存在的通配选项暗示另一套接口。
 
 授权方式与交付形状正交。HYLE 当前是 proprietary，不代表客户只能拿二进制；经单独书面授权的
 客户可以取得完整源码。构建系统把交付形状明确分为三类：
@@ -90,21 +92,26 @@ HYLE 被父工程 `add_subdirectory()` 嵌入时不创建源码分发 target，�
 ```text
 roots: core util_core error obs math platform time mem simd container util sched io compute graph
 
+core     -> (leaf)
 util_core-> (header-only leaf)
+error    -> (leaf)
 obs      -> error
+math     -> (leaf)
 platform -> error
 time     -> error
 mem      -> error + platform + util_core
 simd     -> error + platform
-container-> error + mem + platform
-util     -> container + util_core
-sched    -> error + platform + time + mem + container + util_core
+container-> error + mem + platform(private)
+util     -> error + mem + container + util_core
+sched    -> error + platform + mem + container + util_core + time(private)
 io       -> error + mem + container [+ sched]
-compute  -> error + platform + mem + simd [+ sched]
-graph    -> error + mem + container + util_core [+ sched]
+compute  -> error + mem [+ sched] + platform(private) + simd(private)
+graph    -> error + mem + container [+ sched] + util_core(private)
 ```
 
-箭头右侧是 component 解析闭包；`util_core` 虽无 binary artifact，仍是可选择、可安装并被真实
+箭头右侧是中央 manifest 中的**直接 target 边**，不是已经展平的传递闭包；component resolver 会从这些
+边递归计算闭包。未标注的边是 PUBLIC，`(private)` 仍参与产品组装，但不进入下游 consumer 的 usage
+requirements。`util_core` 虽无 binary artifact，仍是可选择、可安装并被真实
 target link 表达的 INTERFACE component，不能从图里省略。只提供 OS/架构/编译器宏的
 `hyle/platform.h` 与 `hyle_trace` 横切 gate 不作为产品 root。包含 `hyle/platform.h` 只是零链接代价的编译环境
 依赖，不等于链接 `hyle::platform`；例如 time 的 native clock 实现用它选择 OS 分支，但 time 的
@@ -389,7 +396,8 @@ cross compile 和三平台完整迁移矩阵的历史验收记录见 build/packa
 [`pre-release-readiness`](../milestones/pre-release-readiness.md)。
 
 平台 preset 只组合开发入口，不重新定义产品：Linux/macOS 不锁 generator，Windows 明分
-CMake 4.2+ 原生 VS 2026、VS 2022 回退与“已选择 MSVC + Ninja”三条路径；后者由
+CMake 4.2+ 原生 VS 2026、VS 2022 回退、“已选择 MSVC + Ninja”和
+“clang-cl frontend + Windows/MSVC ABI + Ninja”四条路径；Ninja 路径由
 `scripts/hyle-windows.ps1` 经
 vswhere 发现现有工具链并临时导入环境。VS generator 不保证在并存的 v143 中选择数值最高工具集，
 因此同一脚本在 `-Preset windows` 时枚举 VS 2022 的 MSVC 目录并显式传入最高的 14.43+ `-T version=`；
@@ -397,6 +405,11 @@ vswhere 发现现有工具链并临时导入环境。VS generator 不保证在�
 `Visual Studio 18 2026` generator 和默认 v145；较旧 CMake 会明确拒绝该 preset，不静默降级。
 它生成 VS 2026 的原生 `hyle.slnx`。
 当已安装的 Visual Studio 比当前 CMake generator 更新时，Ninja 路径仍可使用它的最新编译器。
+clang-cl 同时定义 `_MSC_VER`，CMake 的 `MSVC` 变量也为真，但 compiler ID 是 Clang；两者描述
+ABI compatibility，不证明 frontend 是 cl.exe。编译选项、intrinsic feature gate 和探针因此
+以 compiler ID 分流，Clang target flags 通过 `/clang:` 精确转发。CI 以独立 clang-cl build tree
+持续覆盖已收口 foundation roots 与 SIMD，不用 MSVC cache 或“参数被忽略也算通过”的 flag-only
+探针冒充支持。
 CI 对 Windows/Linux/macOS 运行全部 15 个产品组件（含 header-only `util_core`）的确定性 CPU
 验证面：TLS、HTTP/2、CUDA、ggml 与
 Vulkan 显式关闭，构建聚合 `hyle_tests` 并运行全部 C++、pure-C、header/surface/ABI 门。它不冒充
@@ -439,10 +452,12 @@ shared 必须不泄漏它们。该 job
 
 | 层 | 触发频率 | 当前合同 | 结论边界 |
 |---|---|---|---|
-| CPU baseline | 每个 PR、每次 main 提交，三平台 | all components、tests、Werror、所有外部 feature OFF | 当前图可编译/测试；不冻结模块 API |
-| distribution | PR 至少 Linux；main/手动三平台 | shared/static install、外部 consumers、complete source、source embed | 三种交付形状仍完整；focused probe 才证明具体 API |
-| portability | PR/main 的 AArch64 compile；周期门逐步增加 | all-component cross + Werror，后续 minimum CMake、ASan/UBSan/TSan、SVE/RVV QEMU | 目标图/工具链可迁移；cross compile 不冒充真机运行 |
-| feature/release | 手动、nightly 或 release | TLS/HTTP2/ggml/Vulkan/CUDA 的真实 SDK、loader 和适用硬件 | 只认证实际启用并运行的能力组合 |
+| CPU baseline | 每个 PR、每次 main 提交、手动；Windows/Linux/macOS | all components、tests、Werror、外部 feature OFF | 当前图可编译/测试；不冻结模块 API |
+| compiler diversity | 每个 PR、每次 main 提交、手动；Windows clang-cl | core/error/obs/platform/time/mem/container/util/simd 的严格 in-tree tests，再逐档编审 exact SCALAR/SSE4/AVX2/AVX512 SIMD artifact | 捕获 MSVC frontend 遗漏的可移植性问题；不证明 install/package/shipping layout |
+| distribution | Linux 每个事件；Windows/macOS 仅 main/手动 | Linux 跑 component/source-embed、production layout、shared/static installed consumers 与 complete source；Windows/macOS 只跑 production layout 和 installed package | 三种形状的完整持续证据目前来自 Linux；其他平台只认证实际运行的子集 |
+| locked feature package | 每个 PR、每次 main 提交、手动；Linux | 中央 lock 的 HTTP/2/ggml/Vulkan adapter、static/shared feature SDK，以及 shared/static Tracy consumer | 证明锁定源码与 host adapter/package closure；不冒充 TLS、CUDA 或真实 Vulkan device |
+| portability | 每个 PR、每次 main 提交、手动；Linux AArch64 cross | all-component cross + Werror | 目标图可交叉编译；不执行 target binary，也不冒充真机运行 |
+| hardware/release | 独立周期/发布验收；不由本 workflow 自动触发 | TLS/CUDA 和真实 Vulkan loader/driver/device，以及适用 sanitizer、SVE/RVV 真机/QEMU 门 | 只认证实际启用并运行的能力组合 |
 
 `all` 的含义始终是“仓库在该提交声明的全部当前模块”，所以新增组件自动进入 baseline、安装包、
 源码包和 AArch64 compile。模块验收则是单独的状态迁移：施工中只要求全图不破；严格收口后，把该
@@ -450,8 +465,10 @@ shared 必须不泄漏它们。该 job
 加入长期集合。预发布阶段允许直接改善 C/C++ API，不维护虚假的历史兼容快照；一旦公开 ABI 政策
 冻结，再增设跨版本 consumer/ABI snapshot，而不是用当前编译成功替代兼容性证明。
 
-为控制 CI 成本，PR 的昂贵 distribution 只在 Linux 跑，main 与手动触发再补 Windows/macOS；三平台
-all-module baseline 永不因此降级。每个 job 有明确超时，不能用缩小组件集掩盖死锁或依赖下载失控。
+为控制 CI 成本，Linux 在每个事件跑完整 distribution，Windows/macOS 在 main 与手动触发时补
+production-layout 与 installed-package 子集；complete-source/source-embed 目前不在这两个平台重复。
+三平台 all-module baseline 永不因此降级；clang-cl 另有每事件的选定模块严格门，但不替代 package 门。
+每个 job 有明确超时，不能用缩小组件集掩盖死锁或依赖下载失控。
 build tree 不跨 toolchain 缓存；未来只缓存带版本/校验和的下载源码或编译器缓存。若 GitHub 在 runner
 分配前因额度/账单拒绝任务，这属于 CI 基础设施不可用，不能记为代码失败，也不能替代本地三平台证据。
 当前复审状态、未完成证据和升级条件统一记录在

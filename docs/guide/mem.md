@@ -335,6 +335,19 @@ interleave policy 被接受也不是每页永久驻留目标节点的证明。
 可以返回可用 region 但 `numa_placement_applied()==false`，THP 仍是 best-effort。
 bind 与 interleave 互斥；interleave 必须搭配 `kNumaAny`，不能传给 `allocate_local`。
 
+`SystemAllocator` 的 mimalloc backing 默认在支持的平台自动探测并使用 NUMA 拓扑。若部署方需要
+限制它可见的 node 数，只能在**启动进程之前**设置 `MIMALLOC_USE_NUMA_NODES=N`；embedded
+mimalloc 会在进入 `main` / 用户构造器之前由 loader 初始化并缓存该值，因此 HYLE 有意不提供一个
+实际上来不及生效的运行期 setter。这个环境变量属于 system allocator 的进程启动配置，不是某次
+分配的 placement。运行中需要对特定 span 显式选择 node、bind 或 interleave 时使用
+`HugeRegion` / platform NUMA API。
+
+system allocator 的 THP / large-page 默认策略也必须在启动进程前通过
+`MIMALLOC_ALLOW_THP` / `MIMALLOC_ALLOW_LARGE_OS_PAGES` 配置。Windows 会在 loader 阶段缓存
+large-page capability；因此 HYLE 不提供一个跨平台语义不一致、在 Windows 用户代码中实际太晚的
+runtime setter。运行中对特定 span 的 THP/prefault/NUMA 策略用 `HugeRegion` flags，显式 1GiB
+arena 预留用 `reserve_huge_1g_pages`。
+
 需要一个连续的大块 owner、但只在选定节点间按自定义 chunk 条带时，使用 selected overload：
 
 ```cpp

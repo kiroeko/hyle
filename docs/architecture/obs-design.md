@@ -59,9 +59,13 @@ DLL/plugin 各自静态链接 trace-on SDK，它们必然各有 Tracy singleton�
 
 C raw record 的 `struct_size` 表示可读前缀。其 semantic required prefix 直接包含
 level/message/message_size；record 不是带全套业务默认的 options，所以不增加会移动热路径
-payload 的 reserved header word。适配器先建完整默认 record，再用 `memcpy` 按完整字段读取；
+payload 的 reserved header word。公开 emit 边界用 `const void *record_bytes`，避免把真实短对象或
+未对齐输入伪装成已满足当前布局的 typed pointer；普通 `&record` 仍可直接传入。适配器先建完整
+默认 record，再用 `memcpy` 按完整字段读取；
 fields/count 作为一个 pointer+count 单元，optional 短尾保持默认，未知未来尾部不访问。这样
 真实短对象和未对齐 FFI bytes 不会因把它们解引用成当前完整 C struct 而越界或触发未对齐 UB。
+调用方仍须让 `min(struct_size, sizeof(hyle_obs_log_record))` 字节真实可读；raw-byte 边界消除的是
+typed-object/对齐假设，不可能替调用方验证一个虚报长度的裸指针。
 
 ```text
 caller builds record

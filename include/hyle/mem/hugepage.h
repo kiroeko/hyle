@@ -30,19 +30,6 @@
 
 namespace hyle::mem {
 
-// ---- process-wide mimalloc policy -------------------------------------------
-
-struct AllocatorHugepagePolicy {
-  bool allow_thp = true;
-  bool allow_large_os_pages = false;
-};
-
-HYLE_MEM_API void
-enable_allocator_hugepages(AllocatorHugepagePolicy policy = {}) noexcept;
-
-// 0 = all NUMA nodes (mimalloc default).
-HYLE_MEM_API void enable_allocator_numa(unsigned max_nodes = 0) noexcept;
-
 // Reserve `pages` contiguous 1GiB huge OS pages into mimalloc's arenas.
 //   numa_node == platform::kNumaAny → interleave across nodes
 //   otherwise → pin to that node

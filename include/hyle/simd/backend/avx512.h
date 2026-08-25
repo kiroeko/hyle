@@ -25,10 +25,11 @@
 // Lane types f32/f64 + i8/u8/i16/u16/i32/u32/i64/u64; native width is 512-bit = 64 bytes =
 // 64 i8 / 32 i16 / 16 i32 / 8 i64 / 16 f32 / 8 f64. Layered AVX2/SSE4 backends represent
 // 32-byte and <=16-byte partials as physical YMM/XMM values while retaining logical N.
-// Tier = AVX-512 F+BW+VL+DQ, so BW gives 8/16-bit ops, DQ gives mullo_epi64 + 64-bit min/max,
+// Tier = AVX-512 F+BW+VL+DQ plus the inherited BMI2 mask helper, so BW gives 8/16-bit ops,
+// DQ gives mullo_epi64 + 64-bit min/max,
 // F gives abs_epi64 + reduce_*.
 //
-// STATUS: natively compiled (-mavx512f -mavx512bw -mavx512vl -mavx512dq), objdump-verified
+// STATUS: natively compiled (-mavx512f -mavx512bw -mavx512vl -mavx512dq -mbmi2), objdump-verified
 // to emit real zmm/k-reg instructions, and correctness-executed under Intel SDE `-future`
 // (including the fixed-width partial boundary/oracle matrix). SDE is not performance evidence;
 // AVX-512 throughput claims still require real hardware.

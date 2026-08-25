@@ -1,4 +1,4 @@
-# Windows 环境准备（MSVC）
+# Windows 环境准备（MSVC / clang-cl）
 
 > 主开发平台之一。当前主机使用 **MSVC 14.50（VS18 Enterprise）**；HYLE 的合同是
 > MSVC 19.43+。CMake 4.2+ 可生成 VS 2026 solution；更旧 CMake 走 VS 2022 generator 回退。
@@ -11,11 +11,15 @@
 |---|---|---|
 | Visual Studio / Build Tools | C++ 工作负载（cl / MASM / Windows SDK） | VS Installer 勾「使用 C++ 的桌面开发」 |
 | MSVC 编译器 | 19.43+（VS 17.13+） | 随 VS，C++23 `std::expected` 需要 |
+| clang-cl frontend | 18+（仅 `windows-clangcl` 可移植性门） | VS Installer 安装「C++ Clang tools for Windows」，或使用受审 LLVM 安装，并确保 `clang-cl` 在 PATH |
 | CMake | 3.25+ | `winget install Kitware.CMake` 或随 VS |
 | Generator | VS generator 自带；Ninja 可选 | 新版 MSVC 尚未被当前 CMake generator 识别时用 `winget install Ninja-build.Ninja` |
 | Git | Git-for-Windows（自带 git-bash） | `winget install Git.Git` |
 
-**fcontext 门控**：sched 模块在 x86_64 + MSVC 下编（`HYLE_HAS_FCONTEXT`），MASM（ml64）做纤程切换汇编，`enable_language(ASM_MASM)` 自动接。
+**fcontext 门控**：CMake 先把目标平台是否有已接线汇编计算为内部
+`HYLE_FCONTEXT_SUPPORTED`；只有 component 闭包实际选择 sched 时，内部 `HYLE_HAS_FCONTEXT` 才为真并
+启用汇编语言。x86_64 Windows 的 cl.exe 与 clang-cl 都走 MSVC ABI + MASM（ml64）实现。两者都不是
+用户可写的 cache 选项；要不要 sched 由 `HYLE_COMPONENTS` 和依赖闭包决定。
 
 ## 二、环境初始化（关键，每个构建 shell 都要先做）
 
@@ -28,6 +32,11 @@ Edition/安装路径：
 scripts/hyle-windows.ps1 -Action Configure -Preset windows-ninja
 scripts/hyle-windows.ps1 -Action Build -Preset windows-ninja --parallel 2
 scripts/hyle-windows.ps1 -Action Test -Preset windows-ninja --output-on-failure
+
+# 可移植性复核：Clang frontend + Windows/MSVC ABI，不能复用 MSVC cache
+scripts/hyle-windows.ps1 -Action Configure -Preset windows-clangcl
+scripts/hyle-windows.ps1 -Action Build -Preset windows-clangcl --parallel 2
+scripts/hyle-windows.ps1 -Action Test -Preset windows-clangcl --output-on-failure
 
 # CMake 4.2+ + VS 2026：原生 v145 solution
 scripts/hyle-windows.ps1 -Action Configure -Preset windows-vs2026 -DHYLE_COMPONENTS=core
@@ -82,6 +91,19 @@ side-by-side toolset 中挑最高版本。例如 VS 2022 同时有 14.38/14.44 �
 只用 `--fresh` 重建 CMake cache/生成文件，不删除源码、依赖 checkout 或编译产物。
 `Visual Studio 18 2026` generator 从 CMake 4.2 才存在；CMake 4.1 及更早版本不能通过安装 IDE 获得
 新 generator。此时 VS 2026 仍可打开 VS 2022 solution，命令行最新编译器走 Ninja 入口。
+
+`windows-clangcl` 仍由同一 wrapper 导入 Windows SDK、MSVC headers/libraries 和 MASM 环境，但
+将 C/C++ frontend 固定为 PATH 中的 `clang-cl`；它与 cl.exe 使用同一 Windows ABI，却不是
+`CMAKE_CXX_COMPILER_ID=MSVC`。因此 ISA/告警逻辑必须按 compiler ID 区分，不能把 CMake 的
+`MSVC` ABI-family 变量误当成 cl.exe 身份。
+
+```powershell
+Get-Command clang-cl
+clang-cl --version  # 必须为 18+
+```
+
+wrapper 只验证并使用已安装的 frontend，不替用户安装 LLVM；不要让 `windows-clangcl` 复用任何 cl.exe
+build tree。
 
 - 目标名：`hyle_add_test(<mod>)` → `hyle_<mod>_test`；带 NAME 的 → `hyle_<mod>_<name>_test`（如 `hyle_compute_ggml_bridge_test`）。
 - MSVC 默认 /W4；改导出宏/类布局注意 C4251/C4273。全局已加 `/Zc:__cplusplus`（否则 C++23 feature-test 宏误触发）+ `/utf-8`（杀 C4819）。

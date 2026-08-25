@@ -1,10 +1,6 @@
 #include <gtest/gtest.h>
 
 #include <atomic>
-#include <cstdlib>
-#if defined(_MSC_VER)
-#  include <malloc.h>  // _aligned_malloc/_free/_realloc (MSVC lacks std::aligned_alloc)
-#endif
 
 #include "hyle/mem/allocator.h"
 #include "hyle/sched/coro.h"
@@ -25,40 +21,6 @@ using hyle::sched::when_all;
 using hyle::sched::when_any;
 
 namespace {
-// A plain malloc-backed Allocator, used by the concurrency STRESS test only.
-// Rationale: system_allocator() is mimalloc, which bypasses TSan's malloc
-// interceptors (its own mmap heap) -- so under a high alloc/free/reuse churn TSan
-// cannot see the free->reuse happens-before edge and FALSE-POSITIVES a data race
-// on the reused address (same tool-interaction family as KI-2). Verified: this
-// same churn with the malloc-backed allocator below is TSan-CLEAN, and the lower-
-// churn Join tests are clean even under mimalloc. So the stress test uses a
-// TSan-visible allocator to keep the race gate meaningful; every other test uses
-// the real system_allocator() (mimalloc) to exercise the shipping path.
-#if defined(_MSC_VER)
-void* tsan_ma(void*, std::size_t n, std::size_t al) noexcept {
-  if (al < sizeof(void*)) al = sizeof(void*);
-  return _aligned_malloc(n, al);
-}
-void tsan_mf(void*, void* p, std::size_t, std::size_t) noexcept {
-  _aligned_free(p);
-}
-void* tsan_mr(void*, void* p, std::size_t, std::size_t nn, std::size_t al) noexcept {
-  if (al < sizeof(void*)) al = sizeof(void*);
-  return _aligned_realloc(p, nn, al);
-}
-#else
-void* tsan_ma(void*, std::size_t n, std::size_t al) noexcept {
-  if (al < sizeof(void*)) al = sizeof(void*);
-  return std::aligned_alloc(al, (n + al - 1) & ~(al - 1));
-}
-void tsan_mf(void*, void* p, std::size_t, std::size_t) noexcept { std::free(p); }
-void* tsan_mr(void*, void* p, std::size_t, std::size_t nn, std::size_t) noexcept {
-  return std::realloc(p, nn);
-}
-#endif
-Allocator tsan_visible_allocator() noexcept {
-  return Allocator(&tsan_ma, &tsan_mf, &tsan_mr, nullptr);
-}
 void* fail_alloc(void*, std::size_t, std::size_t) noexcept { return nullptr; }
 void fail_free(void*, void*, std::size_t, std::size_t) noexcept {}
 void* fail_realloc(void*, void*, std::size_t, std::size_t,
@@ -311,9 +273,9 @@ TEST(Join, AbortIsCooperative) {
 // refcount/CV/GroupSignal races.
 TEST(Join, ManyTasksJoinAllComplete) {
   constexpr int kN = 200;
-  // TSan-visible allocator (see note atop file): mimalloc blinds TSan to the
-  // free->reuse edge under this churn, false-positiving on reused addresses.
-  Allocator al = tsan_visible_allocator();
+  // Exercise the shipping allocator. mimalloc's MI_TSAN instrumentation keeps
+  // its free/reuse edges visible in sanitizer builds.
+  Allocator al = system_allocator();
   Scheduler sched(8, al, 1024);
   std::atomic<int> total{0};
   for (int i = 0; i < kN; ++i) {
@@ -335,10 +297,10 @@ TEST(Join, ManyTasksJoinAllComplete) {
 // call g->on_complete() on freed memory -- a UAF. The existing WhenAnyReturnsAWinner
 // test hides this: its loser is parked and NEVER completes. Here BOTH complete (two
 // trivial add_coro), so the loser exercises the signal-the-group path, and many
-// rounds on 8 workers widen the window. TSan-visible allocator so the free->reuse of
-// the GroupSignal's stack slot is a race TSan can see (per the note atop this file).
+// rounds on 8 workers widen the window. The shipping allocator is deliberately
+// retained so the stress shape covers the production path as well as the race.
 TEST(Join, WhenAnyLoserCompletesConcurrently) {
-  Allocator al = tsan_visible_allocator();
+  Allocator al = system_allocator();
   Scheduler sched(8, al, 1024);
   constexpr int kRounds = 2000;
   for (int i = 0; i < kRounds; ++i) {

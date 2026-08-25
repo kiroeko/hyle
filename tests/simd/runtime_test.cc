@@ -9,6 +9,7 @@
 #include "hyle/simd/random.h"
 #include "hyle/simd/fat_kernel.h"
 #include "hyle/simd/runtime.h"
+#include "src/simd/dispatch_internal.h"
 
 namespace hs = hyle::simd;
 
@@ -88,11 +89,12 @@ TEST(SimdRuntime, TableMetadataAndExactTierLookup) {
   } else {
     EXPECT_EQ(scalar->isa, hs::Isa::kScalar);
 #if defined(HYLE_ARCH_X64)
-    const auto& cpu = hyle::platform::cpu_features();
-    if (cpu.avx512vnni) {
+    const auto specialty = hs::detail::x86_specialty_support(
+        hyle::platform::cpu_features());
+    if (specialty.avx512_vnni) {
       EXPECT_NE(active.ops_module.features & hs::Runtime::kFeatureAvx512Vnni, 0u);
       EXPECT_EQ(active.ops_module.features & hs::Runtime::kFeatureAvxVnni, 0u);
-    } else if (cpu.avx_vnni) {
+    } else if (specialty.avx_vnni) {
       EXPECT_NE(active.ops_module.features & hs::Runtime::kFeatureAvxVnni, 0u);
       EXPECT_EQ(active.ops_module.features & hs::Runtime::kFeatureAvx512Vnni, 0u);
     }
@@ -167,6 +169,68 @@ TEST(SimdRuntime, GeneratedPublicFatKernelMatchesRuntimeTier) {
 }
 
 #if defined(HYLE_ARCH_X64)
+TEST(SimdRuntime, SpecialtyDispatchRequiresEveryCompiledTuFeature) {
+  hs::CpuFeatures f;
+  f.avx2 = true;
+  EXPECT_FALSE(hs::detail::x86_specialty_support(f).avx2_int);
+  f.f16c = true;
+  EXPECT_FALSE(hs::detail::x86_specialty_support(f).f16c);
+  f.avx = true;
+  EXPECT_TRUE(hs::detail::x86_specialty_support(f).avx2_int);
+  EXPECT_TRUE(hs::detail::x86_specialty_support(f).f16c);
+
+  f.avx_vnni = true;
+  f.avx2 = false;
+  EXPECT_FALSE(hs::detail::x86_specialty_support(f).avx_vnni);
+  f.avx2 = true;
+  EXPECT_TRUE(hs::detail::x86_specialty_support(f).avx_vnni);
+
+  f.avx512vnni = true;
+  f.avx512bf16 = true;
+  f.fma = true;
+  f.f16c = true;
+  f.avx512f = true;
+  f.avx512bw = true;
+  f.avx512vl = true;
+  f.avx512dq = true;
+  auto specialty = hs::detail::x86_specialty_support(f);
+  EXPECT_TRUE(specialty.avx512_vnni);
+  EXPECT_TRUE(specialty.avx512_bf16);
+
+  for (bool hs::CpuFeatures::*required : {
+           &hs::CpuFeatures::avx,
+           &hs::CpuFeatures::avx2,
+           &hs::CpuFeatures::fma,
+           &hs::CpuFeatures::f16c,
+           &hs::CpuFeatures::avx512f,
+           &hs::CpuFeatures::avx512bw,
+           &hs::CpuFeatures::avx512vl,
+           &hs::CpuFeatures::avx512dq,
+       }) {
+    auto masked = f;
+    masked.*required = false;
+    specialty = hs::detail::x86_specialty_support(masked);
+    EXPECT_FALSE(specialty.avx512_vnni);
+    EXPECT_FALSE(specialty.avx512_bf16);
+  }
+
+  // The detector folds AVX10.2 version + OS ZMM state into avx10_2. Current
+  // AVX10 supports all vector widths; runtime still insists on the AVX2/YMM
+  // prerequisite so a masked VM cannot select the -mavx10.2-512 TU.
+  f.avx10_2 = true;
+  EXPECT_TRUE(hs::detail::x86_specialty_support(f).avx10_2);
+  for (bool hs::CpuFeatures::*required : {
+           &hs::CpuFeatures::avx,
+           &hs::CpuFeatures::avx2,
+           &hs::CpuFeatures::fma,
+           &hs::CpuFeatures::f16c,
+       }) {
+    auto masked = f;
+    masked.*required = false;
+    EXPECT_FALSE(hs::detail::x86_specialty_support(masked).avx10_2);
+  }
+}
+
 TEST(SimdRuntime, DetectionOnlyAvxTierUsesSse4FatKernel) {
   EXPECT_EQ(hs::detail::select_x86_fat_kernel_for_isa(
                 hs::Isa::kAvx, &fat_scalar, &fat_sse4, &fat_avx2,

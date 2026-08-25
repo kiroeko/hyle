@@ -129,23 +129,26 @@ Runtime selected_runtime() noexcept {
   result.dtype.isa = Isa::kNeon;
 #elif defined(HYLE_ARCH_X64)
   const auto& f = cpu_features();
-  if (f.f16c && f.avx) result.ops.dot_f16_f16 = &detail::dot_f16_f16_f16c;
-  if (f.avx512bf16)
+  const auto specialty = detail::x86_specialty_support(f);
+  if (specialty.f16c)
+    result.ops.dot_f16_f16 = &detail::dot_f16_f16_f16c;
+  if (specialty.avx512_bf16)
     result.ops.dot_bf16_bf16 = &detail::dot_bf16_bf16_avx512bf16;
-  if (f.avx512vnni) {
+  if (specialty.avx512_vnni) {
     result.ops.dot_i8_i8 = &detail::dot_i8_i8_avx512_vnni;
     result.ops_module.features |= Runtime::kFeatureAvx512Vnni;
-  } else if (f.avx_vnni) {
+  } else if (specialty.avx_vnni) {
     result.ops.dot_i8_i8 = &detail::dot_i8_i8_avx_vnni;
     result.ops_module.features |= Runtime::kFeatureAvxVnni;
   }
-  result.dtype.isa = f.avx2 ? Isa::kAvx2 : Isa::kScalar;
-  if (f.f16c && f.avx) result.dtype.features |= Runtime::kFeatureF16c;
-  if (f.avx512bf16) {
+  result.dtype.isa = specialty.avx2_int ? Isa::kAvx2 : Isa::kScalar;
+  if (specialty.f16c) result.dtype.features |= Runtime::kFeatureF16c;
+  if (specialty.avx512_bf16) {
     result.dtype.isa = Isa::kAvx512;
     result.dtype.features |= Runtime::kFeatureAvx512Bf16;
   }
-  if (f.avx10_2) result.dtype.features |= Runtime::kFeatureAvx10_2;
+  if (specialty.avx10_2)
+    result.dtype.features |= Runtime::kFeatureAvx10_2;
   const Isa product_tier =
       result.isa == Isa::kAvx512 ? Isa::kAvx512
       : result.isa == Isa::kAvx2 ? Isa::kAvx2

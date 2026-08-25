@@ -4,6 +4,8 @@
 
 #include "hyle/platform/cpu.h"
 
+#include "cpu_internal.h"
+
 // cpu.cc -- the ISOLATED, LTO-DISABLED probe TU (conventions §10 probe isolation).
 // Nothing here may use an instruction above the baseline ISA: this code runs FIRST, on
 // an as-yet-unknown CPU, to discover what that CPU can run. If LTO inlined an AVX
@@ -98,6 +100,13 @@ inline bool bit(std::uint32_t reg, int idx) noexcept {
   return (reg & (std::uint32_t{1} << idx)) != 0;
 }
 
+constexpr bool has_avx10_2(std::uint32_t leaf24_ebx) noexcept {
+  const std::uint32_t version = leaf24_ebx & 0xFFu;
+  return version >= 2;
+}
+static_assert(!has_avx10_2(1));
+static_assert(has_avx10_2(2));
+
 CpuFeatures detect_x86() noexcept {
   CpuFeatures f;
   std::uint32_t abcd[4];
@@ -151,12 +160,14 @@ CpuFeatures detect_x86() noexcept {
     // AVX-VNNI (VEX encoding, 256-bit): leaf 7,1 EAX bit 4 — independent of AVX-512.
     f.avx_vnni = bit(abcd[0], 4);
     f.avx512bf16 = bit(abcd[0], 5);
-    // AVX10: leaf 7,1 EDX bit 19 advertises AVX10 support; the converged version is in leaf 0x24
-    // subleaf 0, EBX[7:0]. AVX10.2 (the fp8 vcvtph2hf8/bf8 converts) = version >= 2.
+    // AVX10: leaf 7,1 EDX bit 19 advertises AVX10 support; leaf 0x24
+    // subleaf 0 reports the version in EBX[7:0]. Current Intel SDM revisions
+    // reserve EBX[18:16] (always 111b): every AVX10 processor supports all
+    // vector widths, so they must not be interpreted as width capability bits.
     const bool avx10_supported = bit(abcd[3], 19);
     if (avx10_supported && max_leaf >= 0x24) {
       cpuid(0x24u, 0, abcd);
-      cpu_avx10_2 = (abcd[1] & 0xFFu) >= 2;  // EBX[7:0] = AVX10 converged version
+      cpu_avx10_2 = has_avx10_2(abcd[1]);
     }
   }
 
@@ -307,13 +318,10 @@ Isa compute_best(const CpuFeatures& f) noexcept {
   // ALL of its group's features, AND each tier's group SUBSUMES the lower tier's, so
   // a higher Isa genuinely implies every lower one (the enum's contract).
   // kGroupAVX2 = AVX2 + FMA + F16C + LZCNT + BMI1 + BMI2 (+ SSE4 below it).
-  const bool avx2_group =
-      f.avx2 && f.fma && f.f16c && f.lzcnt && f.bmi1 && f.bmi2 && f.sse42;
+  const auto groups = detail::x86_isa_groups(f);
   // kGroupAVX3 = AVX-512 F+BW+VL+DQ+CD on TOP of the full AVX2 group.
-  const bool avx512_group = avx2_group && f.avx512f && f.avx512bw && f.avx512vl &&
-                            f.avx512dq && f.avx512cd;
-  if (avx512_group) return Isa::kAvx512;
-  if (avx2_group) return Isa::kAvx2;
+  if (groups.avx512) return Isa::kAvx512;
+  if (groups.avx2) return Isa::kAvx2;
   // Pure AVX (256-bit FLOAT) without the full AVX2 integer group: Sandy/Ivy Bridge. f.avx
   // already AND's in the OS-YMM-save check (read_xcr0), so reporting kAvx here is SIGILL-
   // safe. This is a DETECTION tier -- best_isa() tells the truth about the CPU; there is no

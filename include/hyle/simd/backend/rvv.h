@@ -494,7 +494,7 @@ template <class M, class V> HYLE_FORCE_INLINE V IfThenElse(M m, V yes, V no) noe
 // ---- mask reductions ----------------------------------------------------------------
 template <class D, class M> HYLE_FORCE_INLINE bool AllTrue(D d, M m) noexcept {
   const std::size_t vl = Lanes(d);
-  return __riscv_vcpop(m, vl) == static_cast<long>(vl);
+  return __riscv_vcpop(m, vl) == vl;
 }
 template <class D, class M> HYLE_FORCE_INLINE bool AllFalse(D d, M m) noexcept {
   return __riscv_vcpop(m, Lanes(d)) == 0;
@@ -1398,7 +1398,6 @@ HYLE_FORCE_INLINE V UpperHalf(DH dh, V v) noexcept {
 // each source with the even/odd mask (packs active lanes to front), then splice hi's packed half in
 // after lo's (vl/2 each). Use a slideup to place hi's compressed result at offset vl/2.
 template <class D, class V> HYLE_FORCE_INLINE V ConcatEven(D d, V hi, V lo) noexcept {
-  using T = TFromV<V>;
   const std::size_t vl = Lanes(d);
   const auto em = detail::even_mask_rvv(d);
   const V lo_packed = __riscv_vcompress(lo, em, vl);  // lo's even lanes at [0, vl/2)
@@ -1406,7 +1405,6 @@ template <class D, class V> HYLE_FORCE_INLINE V ConcatEven(D d, V hi, V lo) noex
   return __riscv_vslideup(lo_packed, hi_packed, vl / 2, vl);  // hi's evens at [vl/2, vl)
 }
 template <class D, class V> HYLE_FORCE_INLINE V ConcatOdd(D d, V hi, V lo) noexcept {
-  using T = TFromV<V>;
   const std::size_t vl = Lanes(d);
   const auto em = detail::even_mask_rvv(d);
   const auto om = __riscv_vmnot(em, vl);  // odd-lane mask
@@ -1635,7 +1633,6 @@ HYLE_FORCE_INLINE V OddEvenBlocks(V odd, V even) noexcept {
   using T = TFromV<V>;
   using U = MakeUnsigned<T>;
   const std::size_t vl = detail::vlmax<T>();
-  constexpr std::size_t kLanesPerBlock = 16 / sizeof(T);
   constexpr unsigned kShift = sizeof(T) == 1 ? 4 : sizeof(T) == 2 ? 3 :
                               sizeof(T) == 4 ? 2 : 1;
   const auto block = __riscv_vsrl(detail::iota_u_rvv<T>(vl), kShift, vl);

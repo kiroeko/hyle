@@ -6,10 +6,12 @@
 
 #include <emmintrin.h>  // __m128i (SSE2, always available on x86-64)
 // AES-NI (_mm_aesenc_si128 ...) + PCLMULQDQ (_mm_clmulepi64_si128) live in <wmmintrin.h>.
-// GCC/Clang only expose them under -maes / -mpclmul (__AES__ / __PCLMUL__); MSVC x64 has
-// them unconditionally. Guard the include so a base variant (no -maes) still compiles and
-// falls back to the software floor below.
-#if defined(_MSC_VER) || defined(__AES__) || defined(__PCLMUL__)
+// GCC/Clang (including clang-cl) only expose them under -maes / -mpclmul
+// (__AES__ / __PCLMUL__); cl.exe x64 exposes them unconditionally. Guard the
+// include so a base variant (no -maes) still compiles and falls back to the
+// software floor below. _MSC_VER alone is not a cl.exe test: clang-cl defines it
+// for ABI compatibility while still enforcing Clang's target-feature contract.
+#if (defined(_MSC_VER) && !defined(__clang__)) || defined(__AES__) || defined(__PCLMUL__)
 #  include <wmmintrin.h>
 #endif
 
@@ -33,7 +35,7 @@ namespace hyle::simd::detail {
 
 // ---- AES round primitives on a single 128-bit block --------------------------------------
 HYLE_FORCE_INLINE __m128i aes_round_block(__m128i s, __m128i k) noexcept {
-#if defined(_MSC_VER) || defined(__AES__)
+#if (defined(_MSC_VER) && !defined(__clang__)) || defined(__AES__)
   return _mm_aesenc_si128(s, k);
 #else
   std::uint8_t sb[16], kb[16];
@@ -43,7 +45,7 @@ HYLE_FORCE_INLINE __m128i aes_round_block(__m128i s, __m128i k) noexcept {
 #endif
 }
 HYLE_FORCE_INLINE __m128i aes_last_round_block(__m128i s, __m128i k) noexcept {
-#if defined(_MSC_VER) || defined(__AES__)
+#if (defined(_MSC_VER) && !defined(__clang__)) || defined(__AES__)
   return _mm_aesenclast_si128(s, k);
 #else
   std::uint8_t sb[16], kb[16];
@@ -53,7 +55,7 @@ HYLE_FORCE_INLINE __m128i aes_last_round_block(__m128i s, __m128i k) noexcept {
 #endif
 }
 HYLE_FORCE_INLINE __m128i aes_round_inv_block(__m128i s, __m128i k) noexcept {
-#if defined(_MSC_VER) || defined(__AES__)
+#if (defined(_MSC_VER) && !defined(__clang__)) || defined(__AES__)
   return _mm_aesdec_si128(s, k);
 #else
   std::uint8_t sb[16], kb[16];
@@ -63,7 +65,7 @@ HYLE_FORCE_INLINE __m128i aes_round_inv_block(__m128i s, __m128i k) noexcept {
 #endif
 }
 HYLE_FORCE_INLINE __m128i aes_last_round_inv_block(__m128i s, __m128i k) noexcept {
-#if defined(_MSC_VER) || defined(__AES__)
+#if (defined(_MSC_VER) && !defined(__clang__)) || defined(__AES__)
   return _mm_aesdeclast_si128(s, k);
 #else
   std::uint8_t sb[16], kb[16];
@@ -73,7 +75,7 @@ HYLE_FORCE_INLINE __m128i aes_last_round_inv_block(__m128i s, __m128i k) noexcep
 #endif
 }
 HYLE_FORCE_INLINE __m128i aes_inv_mix_block(__m128i s) noexcept {
-#if defined(_MSC_VER) || defined(__AES__)
+#if (defined(_MSC_VER) && !defined(__clang__)) || defined(__AES__)
   return _mm_aesimc_si128(s);
 #else
   std::uint8_t sb[16];
@@ -86,7 +88,7 @@ HYLE_FORCE_INLINE __m128i aes_inv_mix_block(__m128i s) noexcept {
 // AESKeyGenAssist needs a compile-time rcon immediate, so the worker is templated on kRcon.
 template <std::uint8_t kRcon>
 HYLE_FORCE_INLINE __m128i aes_keygen_block(__m128i v) noexcept {
-#if defined(_MSC_VER) || defined(__AES__)
+#if (defined(_MSC_VER) && !defined(__clang__)) || defined(__AES__)
   return _mm_aeskeygenassist_si128(v, kRcon);
 #else
   std::uint8_t s[16];
@@ -98,7 +100,7 @@ HYLE_FORCE_INLINE __m128i aes_keygen_block(__m128i v) noexcept {
 
 // ---- carryless multiply on a single 128-bit block ----------------------------------------
 HYLE_FORCE_INLINE __m128i clmul_lower_block(__m128i a, __m128i b) noexcept {
-#if defined(_MSC_VER) || defined(__PCLMUL__)
+#if (defined(_MSC_VER) && !defined(__clang__)) || defined(__PCLMUL__)
   return _mm_clmulepi64_si128(a, b, 0x00);
 #else
   std::uint64_t av[2], bv[2], o[2];
@@ -108,7 +110,7 @@ HYLE_FORCE_INLINE __m128i clmul_lower_block(__m128i a, __m128i b) noexcept {
 #endif
 }
 HYLE_FORCE_INLINE __m128i clmul_upper_block(__m128i a, __m128i b) noexcept {
-#if defined(_MSC_VER) || defined(__PCLMUL__)
+#if (defined(_MSC_VER) && !defined(__clang__)) || defined(__PCLMUL__)
   return _mm_clmulepi64_si128(a, b, 0x11);
 #else
   std::uint64_t av[2], bv[2], o[2];

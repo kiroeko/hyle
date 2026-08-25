@@ -108,6 +108,17 @@ def visual_studio_environment(
     if platform.system() != "Windows":
         return None
 
+    # The Windows wrapper already imports one coherent VS/SDK environment before
+    # launching CTest. Calling VsDevCmd a second time prepends the same tool paths
+    # again; on a feature-rich VS installation that can push cmd.exe past its
+    # 8191-character input limit. Reuse the initialized environment when present.
+    if (
+        os.environ.get("VSCMD_VER")
+        and os.environ.get("VCINSTALLDIR")
+        and os.environ.get("WindowsSdkDir")
+    ):
+        return os.environ.copy()
+
     install_dir: Path | None = None
     if instance:
         # CMAKE_GENERATOR_INSTANCE may append a version selector.

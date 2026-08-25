@@ -1304,17 +1304,8 @@ size_t hyle_huge_region_interleave_chunk_size(
   return r ? r->region.interleave_chunk_size() : 0;
 }
 
-/* ---- process-wide policy ---------------------------------------------------
+/* ---- process-wide maintenance/reservation ---------------------------------
  */
-
-void hyle_enable_allocator_hugepages(int allow_thp, int allow_large_os_pages) {
-  hyle::mem::enable_allocator_hugepages(
-      {allow_thp != 0, allow_large_os_pages != 0});
-}
-
-void hyle_enable_allocator_numa(unsigned max_nodes) {
-  hyle::mem::enable_allocator_numa(max_nodes);
-}
 
 hyle_status hyle_reserve_huge_1g_pages(size_t pages,
                                        hyle_numa_node numa_node,

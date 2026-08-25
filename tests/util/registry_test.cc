@@ -57,11 +57,13 @@ struct FailingAllocatorState {
   hyle::mem::Allocator backing = hyle::mem::system_allocator();
   std::size_t calls = 0;
   std::size_t fail_after = 0;
+  std::size_t last_allocation_size = 0;
 };
 
 void* failing_allocate(void* context, std::size_t size,
                        std::size_t alignment) noexcept {
   auto* state = static_cast<FailingAllocatorState*>(context);
+  state->last_allocation_size = size;
   if (state->calls++ >= state->fail_after) return nullptr;
   return state->backing.allocate(size, alignment);
 }
@@ -438,4 +440,25 @@ TEST(Registry, AllocationFailureIsRecoverableAndFreezeDoesNotAllocate) {
   EXPECT_EQ(freeze_failure.calls, calls_before_freeze);
   EXPECT_TRUE(populated.frozen());
   EXPECT_TRUE(populated.has("entry"));
+}
+
+TEST(Registry, MaximumStringLengthWidensBeforeNulByteAllocation) {
+  auto creator = +[]() -> CheapWidget* { return nullptr; };
+  FailingAllocatorState failure;
+  hyle::util::Registry<CheapWidget*> registry(failing_allocator(&failure));
+
+  // The empty Swiss index returns before hashing. The backing allocator then
+  // rejects the first string-region request, so the one-byte placeholder is
+  // never read and this test does not allocate or copy a 4 GiB string. Before
+  // widening, uint32_t(size + 1) wrapped to zero and Region never called the
+  // backing allocator at all.
+  const char placeholder = 'x';
+  const string_ref maximum_key{&placeholder, string_ref::npos};
+  const hyle::Status status =
+      registry.register_creator(maximum_key, creator);
+
+  EXPECT_TRUE(status.IsResourceExhausted());
+  EXPECT_EQ(failure.calls, 1u);
+  EXPECT_GT(failure.last_allocation_size,
+            static_cast<std::size_t>(string_ref::npos));
 }

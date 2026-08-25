@@ -197,7 +197,8 @@ cmake -S . -B build-compute-sdk \
   -DCMAKE_INSTALL_PREFIX=/path/to/hyle-compute-sdk
 ```
 
-CPU-only 包写 `HYLE_COMPUTE_CUDA=OFF`。shared 包把 ggml/volk 静态实现吸收到
+CUDA-free 包写 `HYLE_COMPUTE_CUDA=OFF`；真正不含 GPU backend 的 CPU-only 包还要写
+`HYLE_COMPUTE_VULKAN=OFF`。shared 包把 ggml/volk 静态实现吸收到
 `hyle_compute`，不额外分发供应商 DLL；static 包通过 imported target 传播对应 archive、头与系统
 依赖。两种包都安装准确的 ggml/volk/Vulkan-Headers license closure 和 shader helper，用户不需要
 供应商源码 checkout。
@@ -239,16 +240,21 @@ zip 包含该 commit 的全部 tracked HYLE 源码、头、C ABI、构建文件�
 脚本和 in-tree third_party。`SOURCE-MANIFEST.txt` 在归档时写入精确 commit。build tree、cache、日志、
 本机 `.deps` 和其他 ignored/untracked 文件不会进入客户包；工作树不干净时 target 会直接失败。
 
-客户解压后仍用普通组件入口构建。需要离线或自行审查 fetched dependency 时，供应独立依赖源码目录：
+客户解压后仍用普通组件入口构建。需要离线或自行审查 fetched dependency 时，把中央 lock 对应的
+精确源码树放在解压根的 `deps/<lock-name>/`，再通过包内 preload 完全断网配置。例如只制作启用
+HTTP/2 的 io 产品时，放入 `deps/nghttp2/` 后运行：
 
 ```bash
-cmake -S hyle-<version>-source -B build \
-  -DHYLE_COMPONENTS=io \
-  -DFETCHCONTENT_SOURCE_DIR_NGHTTP2=/approved/vendor/nghttp2
+cmake -C hyle-<version>-source/hyle-offline-deps.cmake \
+  -S hyle-<version>-source -B build \
+  -DHYLE_COMPONENTS=io -DHYLE_BUILD_TESTS=OFF -DHYLE_BUILD_BENCH=OFF \
+  -DHYLE_IO_TLS=OFF -DHYLE_IO_HTTP2=ON
 ```
 
 ggml、volk、Vulkan-Headers、glslang、GoogleTest 等依赖使用同一
-`FETCHCONTENT_SOURCE_DIR_<UPPERCASE_NAME>` 机制，但 direct override 也必须通过中央 lock：目录须为
+`deps/<lock-name>/` 形状；preload 验证后才设置标准
+`FETCHCONTENT_SOURCE_DIR_<UPPERCASE_NAME>`。手工 direct override 仍会被中央 lock 复验，但它只注入一项
+源码，不会自动补齐已选 component/feature 的完整断网闭包，也不会替你打开 disconnected 门：目录须为
 精确 commit/tree 且无 tracked、untracked、ignored 项的 Git checkout，或 lock 中官方 archive 的逐目录/文件原始字节/安全相对链接
 manifest 完全一致的无 `.git` 展开树。客户因此不必为了 source bundle 携带 Git metadata，同时任何
 增删改、空目录或链接变化都会在显式 override 的 `MakeAvailable` 前失败；父工程若利用 FetchContent

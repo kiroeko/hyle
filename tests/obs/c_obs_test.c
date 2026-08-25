@@ -258,8 +258,7 @@ int main(void) {
       obs_record_required_prefix prefix = {
           (uint32_t)sizeof(prefix), HYLE_OBS_LOG_INFO, "short", 5};
       int emitted = 0;
-      CHECK_OK(hyle_obs_emit_record(
-          &emitted, (const hyle_obs_log_record*)(const void*)&prefix));
+      CHECK_OK(hyle_obs_emit_record(&emitted, &prefix));
       CHECK(emitted);
       CHECK(strcmp(capture.message, "short") == 0);
       CHECK(capture.fields == 0);
@@ -283,8 +282,7 @@ int main(void) {
       partial.required.message_size = 4;
       partial.fields = &ignored;
       partial.field_count_fragment = 1;
-      CHECK_OK(hyle_obs_emit_record(
-          NULL, (const hyle_obs_log_record*)(const void*)&partial));
+      CHECK_OK(hyle_obs_emit_record(NULL, &partial));
       CHECK(capture.fields == 0);
       CHECK(!capture.fields_present);
     }
@@ -323,13 +321,17 @@ int main(void) {
      * unaligned FFI buffer into the aligned local record. */
     {
       hyle_obs_log_record known = HYLE_OBS_LOG_RECORD_INIT;
-      unsigned char raw[sizeof(known) + 1];
+      union {
+        hyle_obs_log_record alignment;
+        unsigned char bytes[sizeof(hyle_obs_log_record) + 1];
+      } raw;
+      int emitted = 0;
       known.message = "unaligned";
       known.message_size = 9;
       known.timestamp_ns = UINT64_C(456);
-      memcpy(raw + 1, &known, sizeof(known));
-      CHECK_OK(hyle_obs_emit_record(
-          NULL, (const hyle_obs_log_record*)(const void*)(raw + 1)));
+      memcpy(raw.bytes + 1, &known, sizeof(known));
+      CHECK_OK(hyle_obs_emit_record(&emitted, raw.bytes + 1));
+      CHECK(emitted);
       CHECK(strcmp(capture.message, "unaligned") == 0);
       CHECK(capture.timestamp_ns == UINT64_C(456));
     }
@@ -338,8 +340,7 @@ int main(void) {
       uint32_t physical_too_short = (uint32_t)sizeof(physical_too_short);
       hyle_obs_log_record bad = HYLE_OBS_LOG_RECORD_INIT;
       CHECK(take_status_code(hyle_obs_emit_record(
-                NULL,
-                (const hyle_obs_log_record*)(const void*)&physical_too_short)) ==
+                NULL, &physical_too_short)) ==
             HYLE_STATUS_INVALID_ARGUMENT);
       bad.struct_size = 1;
       CHECK(take_status_code(hyle_obs_emit_record(NULL, &bad)) ==

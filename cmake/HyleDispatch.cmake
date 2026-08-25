@@ -236,15 +236,20 @@ function(hyle_exact_simd_library)
   endif()
   target_compile_definitions(${ARG_TARGET} PRIVATE
     HYLE_SIMD_EXACT=1 HYLE_SIMD_EXACT_TARGET_${_isa}=1)
-  if(MSVC AND CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64" AND
+  if(MSVC AND CMAKE_CXX_COMPILER_ID STREQUAL "MSVC" AND
+     CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64" AND
      (_isa STREQUAL "SCALAR" OR _isa STREQUAL "SSE4"))
     # CL 19.50 may otherwise emit guarded AVX loop versions even without /arch:AVX. Exact
     # scalar/SSE artifacts promise that higher-tier instructions are absent, not merely guarded.
     target_compile_options(${ARG_TARGET} PRIVATE /arch:SSE2)
-  elseif(NOT MSVC AND CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64" AND
+  elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64" AND
          _isa STREQUAL "SCALAR")
-    target_compile_options(${ARG_TARGET} PRIVATE
-      -march=x86-64 -mno-avx -mno-avx2 -mno-avx512f)
+    set(_scalar_flags -march=x86-64 -mssse3 -mno-avx -mno-avx2
+                      -mno-avx512f)
+    if(MSVC)
+      _hyle_forward_clang_cl_flags(_scalar_flags ${_scalar_flags})
+    endif()
+    target_compile_options(${ARG_TARGET} PRIVATE ${_scalar_flags})
   elseif(NOT _isa STREQUAL "SCALAR")
     hyle_isa_flags(_flags "${_tier}")
     if(_flags)
@@ -334,7 +339,6 @@ function(hyle_add_dispatched_kernel)
       else()
         set(_target_define HYLE_SIMD_TARGET_SVE)
         set(_tier SVE)
-        target_compile_definitions(${ARG_TARGET} PRIVATE HYLE_SIMD_HAS_SVE_VARIANT=1)
       endif()
     elseif(_variant STREQUAL "rvv")
       if(NOT _is_riscv64)
@@ -342,7 +346,6 @@ function(hyle_add_dispatched_kernel)
       else()
         set(_target_define HYLE_SIMD_TARGET_RVV)
         set(_tier RVV)
-        target_compile_definitions(${ARG_TARGET} PRIVATE HYLE_SIMD_HAS_RVV_VARIANT=1)
       endif()
     else()
       message(FATAL_ERROR "hyle_add_dispatched_kernel: unknown target '${_variant}'")
@@ -356,6 +359,16 @@ function(hyle_add_dispatched_kernel)
       if(_manifest_index EQUAL -1)
         continue()
       endif()
+    endif()
+
+    # Exact manifests deliberately omit every foreign leg. Do not mutate the
+    # consumer target until after that membership decision: defining HAS_SVE or
+    # HAS_RVV for an exact NEON/scalar target makes baseline dispatchers refer to
+    # symbols that were never generated.
+    if(_variant STREQUAL "sve")
+      target_compile_definitions(${ARG_TARGET} PRIVATE HYLE_SIMD_HAS_SVE_VARIANT=1)
+    elseif(_variant STREQUAL "rvv")
+      target_compile_definitions(${ARG_TARGET} PRIVATE HYLE_SIMD_HAS_RVV_VARIANT=1)
     endif()
 
     set(_source "${_generated_dir}/${ARG_NAME}_${_variant}.cc")

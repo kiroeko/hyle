@@ -85,10 +85,15 @@ typedef struct hyle_obs_log_record {
 
 /* This is a raw record, not an options object: level/message/message_size are
  * required payload and therefore immediately follow struct_size; no reserved
- * word is inserted between them. A non-NULL input must expose at least
- * HYLE_OBS_LOG_RECORD_REQUIRED_SIZE bytes. Missing complete optional fields
- * use INIT defaults, unknown future tail bytes are ignored, and fields plus
- * field_count form one atomic optional unit. */
+ * word is inserted between them. A non-NULL input must expose struct_size's
+ * uint32_t itself; once that value reaches HYLE_OBS_LOG_RECORD_REQUIRED_SIZE,
+ * the buffer must expose min(struct_size, sizeof(hyle_obs_log_record)) bytes.
+ * Missing complete optional fields use INIT defaults, unknown future tail
+ * bytes are ignored, and fields plus field_count form one atomic optional
+ * unit. The emit boundary takes const
+ * void* deliberately: FFI callers may provide a physically shorter or
+ * unaligned byte record, which would not be a valid hyle_obs_log_record object.
+ * Ordinary C callers still pass &record directly. */
 
 typedef struct hyle_obs_sink_o hyle_obs_sink;
 typedef void (*hyle_obs_sink_write_fn)(void* state,
@@ -102,7 +107,7 @@ HYLE_OBS_C_API hyle_status hyle_obs_set_level(hyle_obs_log_level level);
 HYLE_OBS_C_API hyle_obs_log_level hyle_obs_get_level(void);
 HYLE_OBS_C_API int hyle_obs_should_log(hyle_obs_log_level level);
 HYLE_OBS_C_API hyle_status hyle_obs_emit_record(
-    int* out_emitted, const hyle_obs_log_record* record);
+    int* out_emitted, const void* record_bytes);
 HYLE_OBS_C_API hyle_status hyle_obs_log(
     int* out_emitted, hyle_obs_log_level level, const char* message);
 HYLE_OBS_C_API hyle_status hyle_obs_log_n(

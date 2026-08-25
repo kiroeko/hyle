@@ -4,7 +4,7 @@ Project automation: environment setup and reproducible builds. The goal is that 
 **fresh checkout on any machine** can build, test, and benchmark HYLE without
 depending on a hand-crafted directory layout.
 
-## `hyle-windows.ps1` — select an installed MSVC environment
+## `hyle-windows.ps1` — select an installed Windows C++ environment
 
 CMake may know the VS 2022 generator but not a newer installed Visual Studio generation.
 For Ninja, this wrapper asks `vswhere` for the latest installation with the x64 C++ workload,
@@ -18,6 +18,16 @@ scripts/hyle-windows.ps1 -Action Workflow -Preset windows-ninja-check
 scripts/hyle-windows.ps1 -Action PackageSmoke -SmokeRoot "$env:TEMP/hyle-package-smoke"
 scripts/hyle-windows.ps1 -Action ProductShapeSmoke -SmokeRoot "$env:TEMP/hyle-shipping-smoke"
 scripts/hyle-windows.ps1 -Action SourcePackageSmoke -SmokeRoot "$env:TEMP/hyle-source-smoke"
+```
+
+The same imported Windows SDK/MSVC ABI environment can drive clang-cl in a separate tree. Install
+Clang 18+ first (for example the Visual Studio **C++ Clang tools for Windows** component) and make
+sure `clang-cl` is discoverable on `PATH`:
+
+```powershell
+scripts/hyle-windows.ps1 -Action Configure -Preset windows-clangcl
+scripts/hyle-windows.ps1 -Action Build -Preset windows-clangcl --parallel 2
+scripts/hyle-windows.ps1 -Action Test -Preset windows-clangcl --output-on-failure
 ```
 
 For an IDE solution, the same wrapper enumerates side-by-side VS 2022 MSVC toolsets and passes the
@@ -39,12 +49,15 @@ It installs nothing and does not persistently change the caller's environment. A
 
 ## Build/package verification automation
 
-`.github/workflows/build-system.yml` runs the all-component deterministic CPU baseline on Windows,
-Linux and macOS. Linux additionally runs component contracts, shipping-layout, shared/static
-all-component installed SDK consumers, complete-source extraction/build, and AArch64 cross compile
-on every PR; main/manual runs add the expensive distribution checks on Windows and macOS. This is a
-current-graph regression, not an acceptance certificate for every module. Optional
-TLS/HTTP2/ggml/Vulkan/CUDA SDK and hardware matrices remain periodic/release checks.
+`.github/workflows/build-system.yml` runs on every pull request, every push to `main`, and manual
+dispatch. Every event gets the all-component deterministic CPU baseline on Windows/Linux/macOS,
+Linux component/source-embed contracts, Linux production/package/complete-source checks, an
+all-component Linux AArch64 cross build, a selected-module Windows clang-cl strict gate, and one
+Linux locked-feature job for HTTP/2/ggml/Vulkan adapters, static/shared SDKs, and Tracy consumers.
+Windows/macOS production-layout and installed-package checks run only on `main`/manual events; they
+do not repeat complete-source/source-embed. This is a current-graph regression, not an acceptance
+certificate for every module. TLS/CUDA and real Vulkan loader/driver/device matrices remain separate
+periodic/release checks; the hosted workflow does not claim them.
 
 The three smoke actions above import the selected MSVC environment and keep their work under the
 explicit scratch root. `PackageSmoke` builds shared/static CPU packages and runs focused mem plus
@@ -80,7 +93,9 @@ scripts/fetch-bench-vendors.sh
 scripts/fetch-bench-vendors.sh --dir "$HOME/vendor"
 ```
 
-The scripts read the sole pin source, `cmake/vendor-versions.cmake`, refuse to
+The scripts read `cmake/vendor-versions.cmake`, a compatibility projection that loads the sole
+dependency ledger `cmake/HyleDependencyLock.json`; pins must be changed in the JSON, not in the
+projection. The fetchers refuse to
 overwrite a non-Git or dirty checkout, and leave detached checkouts at the
 recorded revisions. CMake independently rejects absent, mismatched, or dirty
 checkouts. Pass the same root via `-DHYLE_BENCH_VENDOR_DIR=<root>`; Windows and
@@ -108,16 +123,17 @@ fetcher above; simdutf and xxHash remain in `third_party/`.
 ```sh
 scripts/setup-bench-libs.sh              # clone all into the repo's parent dir
 scripts/setup-bench-libs.sh --shallow    # --depth 1 (faster)
-scripts/setup-bench-libs.sh marl highway # only the named ones
-HYLE_DEPS_DIR=/custom/path scripts/setup-bench-libs.sh
+scripts/setup-bench-libs.sh marl oneTBB  # only the named ones
+HYLE_BENCH_DEPS_DIR=/custom/path scripts/setup-bench-libs.sh
 ```
 
 - **Idempotent**: a lib that already has a `.git` is skipped, never clobbered.
 - **Default location** = the repo's parent dir (`$repo/../`), which is exactly
   where the gated-bench CMake defaults (`HYLE_<LIB>_DIR`) look. So after running
   it with no args, every `-DHYLE_BENCH_*=ON` works with **no extra `-D`**.
-- **Custom location**: set `HYLE_DEPS_DIR`, then pass the dir to the build:
-  `-DHYLE_MARL_DIR=$HYLE_DEPS_DIR/marl` etc.
+- **Custom location**: set `HYLE_BENCH_DEPS_DIR`, then pass the dir to the build:
+  `-DHYLE_MARL_DIR=$HYLE_BENCH_DEPS_DIR/marl` etc. This name is deliberately distinct from CMake's
+  `HYLE_DEPS_DIR`, which owns one build tree's FetchContent population.
 
 ## Running the gated SOTA benchmarks
 
@@ -197,16 +213,21 @@ cargo run --release --config \
   'patch.crates-io.crossbeam-deque.path="../../../../crossbeam-deque"'
 ```
 
-## Reproducing the dual-platform workflow
+## Reproducing the toolchain workflows
 
 - **Windows (MSVC)**: `windows-vs2026` uses CMake 4.2+'s native VS 2026/v145
   generator; `windows` is the VS 2022 fallback with the highest supported v143
   selected by `hyle-windows.ps1`; `windows-ninja` uses the latest environment
   selected by that wrapper. Their build trees are separate.
+- **Windows (clang-cl)**: `windows-clangcl` reuses the selected Windows SDK/MSVC ABI
+  environment but fixes the frontend to a PATH-visible Clang 18+; its build tree
+  is separate from every cl.exe tree.
 - **Linux (GCC14, incl. ThreadSanitizer)**: separate build dir `build-wsl*/`,
   `CXX=g++-14 CC=gcc-14`. Lock-free code MUST pass TSan
   (`-DHYLE_SANITIZER=tsan -DCMAKE_BUILD_TYPE=RelWithDebInfo`, run under
   `setarch -R`). Never reuse the Windows `build/` dir (CMakeCache conflicts).
+- **macOS (AppleClang 18+)**: `macos` leaves generator selection to CMake and uses
+  its own `build-macos`; it is the Apple Silicon/NEON and kqueue runtime gate.
 
 ## `mem-cert-stat.py` — whole-request mem latency
 

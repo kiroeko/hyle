@@ -193,27 +193,6 @@ void system_collect(bool force) noexcept { mi_collect(force); }
 int system_backend_version_for_testing() noexcept { return mi_version(); }
 #endif
 
-void enable_allocator_hugepages(AllocatorHugepagePolicy policy) noexcept {
-  // Programmatic stand-in for MIMALLOC_ALLOW_THP /
-  // MIMALLOC_ALLOW_LARGE_OS_PAGES. Call early; mimalloc reads options on first
-  // OS alloc. Safe if called later (affects subsequent segments).
-  if (policy.allow_thp) {
-    mi_option_enable(mi_option_allow_thp);
-  } else {
-    mi_option_disable(mi_option_allow_thp);
-  }
-  if (policy.allow_large_os_pages) {
-    mi_option_enable(mi_option_allow_large_os_pages);
-  } else {
-    mi_option_disable(mi_option_allow_large_os_pages);
-  }
-}
-
-void enable_allocator_numa(unsigned max_nodes) noexcept {
-  // 0 = use all NUMA nodes (mimalloc default meaning).
-  mi_option_set(mi_option_use_numa_nodes, static_cast<long>(max_nodes));
-}
-
 Status reserve_huge_1g_pages(std::size_t pages, int numa_node,
                              unsigned timeout_ms) noexcept {
   if (pages == 0)

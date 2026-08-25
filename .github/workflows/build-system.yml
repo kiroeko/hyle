@@ -158,6 +158,44 @@ jobs:
       - name: Build all CPU component artifacts
         run: cmake --build --preset linux-aarch64-cross --parallel 2
 
+  windows-clangcl-foundation:
+    name: Windows clang-cl foundation + SIMD strict
+    runs-on: windows-latest
+    timeout-minutes: 45
+    env:
+      CMAKE_BUILD_PARALLEL_LEVEL: 2
+      CTEST_PARALLEL_LEVEL: 2
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Configure strict Windows ABI with the Clang frontend
+        run: >-
+          ./scripts/hyle-windows.ps1 -Action Configure -Preset windows-clangcl
+          -DHYLE_COMPONENTS=core,error,obs,platform,time,mem,container,util,simd
+          -DHYLE_BUILD_TESTS=ON
+          -DHYLE_BUILD_BENCH=OFF
+          -DHYLE_INSTALL=OFF
+          -DHYLE_WERROR=ON
+          -DHYLE_IO_TLS=OFF
+          -DHYLE_COMPUTE_CUDA=OFF
+
+      - name: Build foundation and SIMD tests
+        run: ./scripts/hyle-windows.ps1 -Action Build -Preset windows-clangcl --target hyle_tests --parallel 2
+
+      - name: Run foundation and SIMD tests
+        run: ./scripts/hyle-windows.ps1 -Action Test -Preset windows-clangcl --output-on-failure
+
+      - name: Build and audit every x86 exact artifact
+        run: |
+          ./scripts/hyle-windows.ps1 -Action Configure -Preset windows-clangcl -DHYLE_SIMD_EXACT_TARGET=SCALAR
+          ./scripts/hyle-windows.ps1 -Action Build -Preset windows-clangcl --target hyle_simd_exact_artifact_check --parallel 2
+          ./scripts/hyle-windows.ps1 -Action Configure -Preset windows-clangcl -DHYLE_SIMD_EXACT_TARGET=SSE4
+          ./scripts/hyle-windows.ps1 -Action Build -Preset windows-clangcl --target hyle_simd_exact_artifact_check --parallel 2
+          ./scripts/hyle-windows.ps1 -Action Configure -Preset windows-clangcl -DHYLE_SIMD_EXACT_TARGET=AVX2
+          ./scripts/hyle-windows.ps1 -Action Build -Preset windows-clangcl --target hyle_simd_exact_artifact_check --parallel 2
+          ./scripts/hyle-windows.ps1 -Action Configure -Preset windows-clangcl -DHYLE_SIMD_EXACT_TARGET=AVX512
+          ./scripts/hyle-windows.ps1 -Action Build -Preset windows-clangcl --target hyle_simd_exact_artifact_check --parallel 2
+
   linux-locked-feature-package:
     name: Linux locked adapters + feature SDK + Tracy smoke
     runs-on: ubuntu-latest

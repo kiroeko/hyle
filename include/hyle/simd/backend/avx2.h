@@ -23,7 +23,8 @@
 // backend/avx2.h -- 256-bit AVX2 backend (simd-design landing list #2).
 //
 // ONE backend per TU (variant-DLL model): pulled in by vec.h only when the TU is built
-// with -DHYLE_SIMD_TARGET_AVX2 (+ -mavx2 -mfma -mf16c on GCC/Clang; /arch:AVX2 on MSVC).
+// with -DHYLE_SIMD_TARGET_AVX2 (+ -mavx2 -mfma -mf16c -mbmi2 on GCC/Clang;
+// /arch:AVX2 on MSVC). HYLE's runtime AVX2 group includes BMI2.
 // Same op contract as scalar.h / sse4.h, so the unified test/kernel source compiles
 // unchanged. Lane types f32/f64 + all integer widths. One __m256-family register is
 // 32 bytes; partial tags at 16 bytes and below resolve through the layered SSE4
@@ -2128,7 +2129,7 @@ HYLE_FORCE_INLINE unsigned mask_bits(Mask256<T, N> m) noexcept {
     // ⚠️ MSVC does NOT define __BMI2__ even under /arch:AVX2, yet _pext_u32 is available there and
     // codegens `pext`; gate on _MSC_VER too, else MSVC falls to the scalar loop (the OrderedDemote2-
     // MasksTo/i16-mask MSVC 5x-slow cluster). GCC/Clang define __BMI2__ with -mavx2 -mbmi2.
-#if defined(__BMI2__) || defined(_MSC_VER)
+#if defined(__BMI2__) || (defined(_MSC_VER) && !defined(__clang__))
     return static_cast<unsigned>(_pext_u32(bytes, 0x55555555u));
 #else  // AVX2 without BMI2 (rare; e.g. a test TU compiled -mavx2 only): scalar compaction fallback.
     unsigned out = 0;

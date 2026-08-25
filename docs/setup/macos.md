@@ -31,7 +31,9 @@ cd ~/hyle
 /opt/homebrew/bin/cmake --build --preset macos --parallel 2
 ```
 
-- ggml/googletest 首次配置自动联网拉到 `build/_deps`（mac 有网即可）。
+- 默认 `all` + tests + HTTP/2/ggml/Vulkan 形状首次配置会把 googletest、nghttp2、ggml、
+  Vulkan-Headers、volk、glslang 自动拉到 `build-macos/_deps`；关闭对应 component/feature/test 后只取得
+  实际闭包，且每个 build tree 保持自己的 `_deps`。
 - CUDA 显式 OFF，配置不会探测 Toolkit；HYLE 将 ggml 收窄为 CPU-only，不构建未消费的 Metal/BLAS backend。
 
 ## 三、测试
@@ -61,8 +63,8 @@ scripts/fetch-bench-vendors.sh
 ```
 
 - mac 是本地磁盘（APFS），性能数字可信；ARM 侧数字与 x86 不直接可比（架构不同）。
-- SIMD bench 只从 `~/vendor/{highway,xsimd}` 取对照；迁移完成前产品 kernel 仍独立使用
-  `third_party/` 副本。
+- SIMD bench 只从 `~/vendor/{highway,xsimd}` 取对照；产品使用已经迁入并修改的 HYLE port，
+  不再依赖 `third_party/{highway,xsimd}` checkout。
 
 ## 五、同步工作流（SSH 开发机）
 

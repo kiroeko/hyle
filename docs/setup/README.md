@@ -10,9 +10,9 @@
 
 | 平台 | 文件 | 角色 |
 |---|---|---|
-| Windows（MSVC） | [`windows.md`](./windows.md) | 主开发平台之一；GPU（CUDA）真机 |
+| Windows（MSVC / clang-cl） | [`windows.md`](./windows.md) | MSVC 主构建 + clang-cl 可移植性门；GPU（CUDA）真机 |
 | Linux / WSL（GCC14） | [`linux-wsl.md`](./linux-wsl.md) | **lock-free TSan 唯一闸门**；GPU（CUDA）真机；9p 铁律 |
-| macOS（Apple Silicon） | [`macos.md`](./macos.md) | ARM/NEON + kqueue 真机；无 CUDA（CPU-only） |
+| macOS（Apple Silicon） | [`macos.md`](./macos.md) | ARM/NEON + kqueue 真机；CUDA-free，仍可构建 Vulkan backend |
 
 依赖（跨平台，可选能力）单独一文件：
 
@@ -36,7 +36,7 @@ HYLE 的依赖分三类，决定了「新机器 `cmake` 会不会失败」：
 **部分能，部分不能，现状是「不自动、靠文档」：**
 
 - **第 2 类（源码依赖）已经自动**：FetchContent 联网时按需备齐；隔离网交付则由发行方准备可审计的 `deps/<FetchContent-name>/` 源码闭包。
-- **第 1 类（编译器/CMake/generator）不自动安装**：装系统级工具链需要 admin/包管理器权限，跨发行版差异大（apt/brew/VS installer/vcpkg 各不同），项目不能安全接管。Windows 的 `scripts/hyle-windows.ps1` 只用 `vswhere` 选择已安装工具链并导入环境，不安装或修改 Visual Studio。
+- **第 1 类（编译器/CMake/generator）不自动安装**：装系统级工具链需要 admin/包管理器权限，跨发行版差异大（apt/brew/VS installer/vcpkg 各不同），项目不能安全接管。Windows 的 `scripts/hyle-windows.ps1` 只用 `vswhere` 选择已安装 SDK/MSVC ABI 环境，并按 preset 调用已安装的 cl.exe 或 PATH 中的 clang-cl；它不安装或修改 Visual Studio/LLVM。
 - **第 3 类中的系统 SDK 不自动**：CUDA Toolkit/driver、OpenSSL 等重量级且机器相关，只在你**要**那个能力时才装；HTTP/2、ggml、Vulkan 的源码部分仍按第 2 类取得。文档给出确切边界（[`dependencies.md`](./dependencies.md)）。
 
 ## 验证一切就绪（各平台通用终点）
@@ -49,10 +49,12 @@ cmake --build --preset <windows-vs2026|windows|linux|macos> --parallel 2
 ctest --preset <windows-vs2026|windows|linux|macos>
 ```
 
-这些 preset 的 CPU feature contract 相同（TLS/CUDA 显式 OFF），但不强迫 Unix 使用 Ninja。
+这些 preset 的开发 feature contract 相同（TLS/CUDA 显式 OFF，但 HTTP/2/ggml/Vulkan 仍按默认能力构建），
+因此不能称为 CPU-only；它们不强迫 Unix 使用 Ninja。
 完整一步入口是 `cmake --workflow --preset <windows-vs2026|windows|linux|macos>-check`。VS 2026
 原生入口要求 CMake 4.2+；`windows` 是 VS 2022 回退。Windows 若要让 Ninja 使用已选择的最新
-MSVC，改用 `scripts/hyle-windows.ps1` + `windows-ninja`。
+MSVC，改用 `scripts/hyle-windows.ps1` + `windows-ninja`；安装 clang-cl 18+ 后可用同一 wrapper +
+`windows-clangcl` 在独立 build tree 做可移植性复核。
 
 - 看配置日志确认可选能力状态：`io TLS <AUTO|ON|OFF>` / `compute CUDA <AUTO|ON|OFF>` / `ggml via FetchContent`。
 - lock-free 改动**必须**过 WSL TSan（[`linux-wsl.md`](./linux-wsl.md)）。

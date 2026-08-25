@@ -4,6 +4,8 @@
 // hardware, so it checks the logic of the probe, not a specific CPU.
 #include "hyle/platform/cpu.h"
 
+#include "cpu_internal.h"
+
 #include <gtest/gtest.h>
 
 #include <algorithm>
@@ -304,15 +306,12 @@ TEST(Cpu, BestIsaAgreesWithFeatures) {
   Isa best = best_isa();
 
 #if defined(HYLE_ARCH_X64)
-  const bool avx2_group =
-      f.avx2 && f.fma && f.f16c && f.lzcnt && f.bmi1 && f.bmi2 && f.sse42;
-  const bool avx512_group = avx2_group && f.avx512f && f.avx512bw &&
-                            f.avx512vl && f.avx512dq && f.avx512cd;
+  const auto groups = hyle::platform::detail::x86_isa_groups(f);
   if (best == Isa::kAvx512) {
-    EXPECT_TRUE(avx512_group);
+    EXPECT_TRUE(groups.avx512);
   } else if (best == Isa::kAvx2) {
-    EXPECT_TRUE(avx2_group);
-    EXPECT_FALSE(avx512_group);  // else it would have scored higher
+    EXPECT_TRUE(groups.avx2);
+    EXPECT_FALSE(groups.avx512);  // else it would have scored higher
   }
   // Whatever the tier, scalar/sse2 remain supported on x86-64.
   EXPECT_TRUE(supports(Isa::kSse2));
@@ -327,6 +326,62 @@ TEST(Cpu, BestIsaAgreesWithFeatures) {
   }
 #endif
 }
+
+#if defined(HYLE_ARCH_X64)
+TEST(Cpu, SyntheticIsaGroupsRequireEveryCompiledTierFeature) {
+  CpuFeatures f;
+  f.avx = true;
+  f.avx2 = true;
+  f.fma = true;
+  f.f16c = true;
+  f.lzcnt = true;
+  f.bmi1 = true;
+  f.bmi2 = true;
+  f.sse42 = true;
+
+  EXPECT_TRUE(hyle::platform::detail::x86_isa_groups(f).avx2);
+  for (bool CpuFeatures::*required : {
+           &CpuFeatures::avx,
+           &CpuFeatures::avx2,
+           &CpuFeatures::fma,
+           &CpuFeatures::f16c,
+           &CpuFeatures::lzcnt,
+           &CpuFeatures::bmi1,
+           &CpuFeatures::bmi2,
+           &CpuFeatures::sse42,
+       }) {
+    auto masked = f;
+    masked.*required = false;
+    EXPECT_FALSE(hyle::platform::detail::x86_isa_groups(masked).avx2);
+  }
+
+  f.avx512f = true;
+  f.avx512bw = true;
+  f.avx512vl = true;
+  f.avx512dq = true;
+  f.avx512cd = true;
+  EXPECT_TRUE(hyle::platform::detail::x86_isa_groups(f).avx512);
+  for (bool CpuFeatures::*required : {
+           &CpuFeatures::avx,
+           &CpuFeatures::avx2,
+           &CpuFeatures::fma,
+           &CpuFeatures::f16c,
+           &CpuFeatures::lzcnt,
+           &CpuFeatures::bmi1,
+           &CpuFeatures::bmi2,
+           &CpuFeatures::sse42,
+           &CpuFeatures::avx512f,
+           &CpuFeatures::avx512bw,
+           &CpuFeatures::avx512vl,
+           &CpuFeatures::avx512dq,
+           &CpuFeatures::avx512cd,
+       }) {
+    auto masked = f;
+    masked.*required = false;
+    EXPECT_FALSE(hyle::platform::detail::x86_isa_groups(masked).avx512);
+  }
+}
+#endif
 
 // supports() is monotone in the tier order within an arch: everything <= best
 // is supported, everything > best is not.

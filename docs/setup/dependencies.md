@@ -77,6 +77,8 @@ cmake -S . -B build -DFETCHCONTENT_SOURCE_DIR_GGML=/approved/ggml
 不能带着错误身份成功生成，并不把父脚本当成可沙箱执行的数据。其他名字同理：
 `GOOGLETEST`、`NGHTTP2`、`VOLK`、`VULKAN_HEADERS`、`GLSLANG`。`HYLE_DEPS_DIR`
 可以移动**当前 build tree 自己的**依赖区，但不能指向源码树，也不应被不同 toolchain/build tree 共用。
+benchmark 对手的 sibling checkout 根使用环境变量 `HYLE_BENCH_DEPS_DIR`；它刻意不是
+`HYLE_DEPS_DIR`，也不参与 FetchContent population。
 仓库根 `.deps/` 只是旧开发树兼容的 ignored 路径，不是现行默认契约。
 
 源码树已提供根文件 `hyle-offline-deps.cmake`。制作 offline source bundle 时，把依赖分别放在

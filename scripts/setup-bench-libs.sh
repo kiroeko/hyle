@@ -16,12 +16,12 @@
 #
 # USAGE:
 #   scripts/setup-bench-libs.sh            # clone into the repo's parent dir
-#   HYLE_DEPS_DIR=/some/where scripts/setup-bench-libs.sh   # custom location
+#   HYLE_BENCH_DEPS_DIR=/some/where scripts/setup-bench-libs.sh   # custom location
 #   scripts/setup-bench-libs.sh --shallow  # --depth 1 (faster, less history)
 #   scripts/setup-bench-libs.sh marl moodycamel-ConcurrentQueue   # only the named libs
 #
-# Then point the build at $HYLE_DEPS_DIR (only needed if NOT the sibling default):
-#   cmake ... -DHYLE_BENCH_MARL=ON -DHYLE_MARL_DIR=$HYLE_DEPS_DIR/marl
+# Then point the build at $HYLE_BENCH_DEPS_DIR (only needed if NOT the sibling default):
+#   cmake ... -DHYLE_BENCH_MARL=ON -DHYLE_MARL_DIR=$HYLE_BENCH_DEPS_DIR/marl
 #
 # Cross-platform: pure `git`, works in git-bash (Windows) and Linux/macOS.
 # Idempotent: a lib that already has a .git is left untouched (no clobber).
@@ -31,7 +31,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 # Default deps dir = repo's parent (the sibling layout the CMake defaults expect).
-DEPS_DIR="${HYLE_DEPS_DIR:-$(cd "$REPO_DIR/.." && pwd)}"
+DEPS_DIR="${HYLE_BENCH_DEPS_DIR:-$(cd "$REPO_DIR/.." && pwd)}"
 
 SHALLOW=""
 SELECT=()

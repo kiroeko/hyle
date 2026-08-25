@@ -86,15 +86,14 @@ constexpr bool has_record_bytes(std::uint32_t struct_size,
 }
 
 template <class Field>
-void read_record_field(const hyle_obs_log_record* input,
+void read_record_field(const std::byte* input,
                        std::uint32_t declared_size, std::size_t offset,
                        Field& output) noexcept {
   if (!has_record_bytes(declared_size, offset, sizeof(Field))) return;
-  const auto* bytes = reinterpret_cast<const unsigned char*>(input);
-  std::memcpy(&output, bytes + offset, sizeof(Field));
+  std::memcpy(&output, input + offset, sizeof(Field));
 }
 
-hyle::Status decode_log_record(const hyle_obs_log_record* input,
+hyle::Status decode_log_record(const void* input,
                                hyle_obs_log_record& output) noexcept {
   const hyle_obs_log_record defaults = HYLE_OBS_LOG_RECORD_INIT;
   output = defaults;
@@ -105,18 +104,19 @@ hyle::Status decode_log_record(const hyle_obs_log_record* input,
   // A versioned raw input can be a physically shorter or unaligned FFI byte
   // object, so no member may be dereferenced before its complete bytes are
   // known to be part of the declared readable prefix.
+  const auto* bytes = static_cast<const std::byte*>(input);
   std::uint32_t declared_size = 0;
-  std::memcpy(&declared_size, input, sizeof(declared_size));
+  std::memcpy(&declared_size, bytes, sizeof(declared_size));
   if (declared_size < HYLE_OBS_LOG_RECORD_REQUIRED_SIZE) {
     return hyle::Status::InvalidArgument(
         "log record has an invalid struct_size");
   }
 
-  read_record_field(input, declared_size,
+  read_record_field(bytes, declared_size,
                     offsetof(hyle_obs_log_record, level), output.level);
-  read_record_field(input, declared_size,
+  read_record_field(bytes, declared_size,
                     offsetof(hyle_obs_log_record, message), output.message);
-  read_record_field(input, declared_size,
+  read_record_field(bytes, declared_size,
                     offsetof(hyle_obs_log_record, message_size),
                     output.message_size);
 
@@ -127,19 +127,19 @@ hyle::Status decode_log_record(const hyle_obs_log_record* input,
       sizeof(decltype(hyle_obs_log_record::field_count));
   if (has_record_bytes(declared_size, kFieldsPairBegin,
                        kFieldsPairEnd - kFieldsPairBegin)) {
-    read_record_field(input, declared_size,
+    read_record_field(bytes, declared_size,
                       offsetof(hyle_obs_log_record, fields), output.fields);
-    read_record_field(input, declared_size,
+    read_record_field(bytes, declared_size,
                       offsetof(hyle_obs_log_record, field_count),
                       output.field_count);
   }
-  read_record_field(input, declared_size,
+  read_record_field(bytes, declared_size,
                     offsetof(hyle_obs_log_record, file), output.file);
-  read_record_field(input, declared_size,
+  read_record_field(bytes, declared_size,
                     offsetof(hyle_obs_log_record, function), output.function);
-  read_record_field(input, declared_size,
+  read_record_field(bytes, declared_size,
                     offsetof(hyle_obs_log_record, line), output.line);
-  read_record_field(input, declared_size,
+  read_record_field(bytes, declared_size,
                     offsetof(hyle_obs_log_record, timestamp_ns),
                     output.timestamp_ns);
   output.struct_size = static_cast<std::uint32_t>(sizeof(output));
@@ -217,10 +217,10 @@ int hyle_obs_should_log(hyle_obs_log_level level) {
 }
 
 hyle_status hyle_obs_emit_record(int* out_emitted,
-                                 const hyle_obs_log_record* record) {
+                                 const void* record_bytes) {
   if (out_emitted != nullptr) *out_emitted = 0;
   hyle_obs_log_record normalized;
-  hyle::Status decode_status = decode_log_record(record, normalized);
+  hyle::Status decode_status = decode_log_record(record_bytes, normalized);
   if (!decode_status.ok()) return steal_status(std::move(decode_status));
 
   if (!valid_level(normalized.level, false) ||
