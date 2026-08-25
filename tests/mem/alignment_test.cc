@@ -88,7 +88,11 @@ TEST(Alignment, AddressAlignUpReportsOverflow) {
 }
 
 TEST(Alignment, PointerVariants) {
-  alignas(64) char buf[256];
+  // GCC 14's ASan dataflow conservatively treats taking an interior pointer to
+  // uninitialized stack storage as a maybe-uninitialized read. The test cares
+  // only about addresses, but zero-initialize so the strict sanitizer target
+  // remains warning-clean instead of suppressing the diagnostic globally.
+  alignas(64) char buf[256]{};
   char* base = buf;  // 64-aligned
   EXPECT_TRUE(is_aligned_ptr(base, 64));
 
