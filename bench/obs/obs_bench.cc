@@ -11,6 +11,7 @@
 #include <thread>
 #include <vector>
 
+#include "hyle/c/error_helpers.h"
 #include "hyle/c/obs.h"
 #include "hyle/obs/log.h"
 
@@ -211,14 +212,14 @@ int main() {
       int emitted = 0;
       hyle_status result =
           hyle_obs_log(&emitted, HYLE_OBS_LOG_INFO, "ready");
-      nb::doNotOptimizeAway(result.rep);
+      nb::doNotOptimizeAway(result);
       nb::doNotOptimizeAway(emitted);
     });
     bench.run("C hyle_obs_log_n + Status", [] {
       int emitted = 0;
       hyle_status result =
           hyle_obs_log_n(&emitted, HYLE_OBS_LOG_INFO, "ready", 5);
-      nb::doNotOptimizeAway(result.rep);
+      nb::doNotOptimizeAway(result);
       nb::doNotOptimizeAway(emitted);
     });
     status = hyle_obs_sink_destroy(sink);

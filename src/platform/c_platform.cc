@@ -208,9 +208,7 @@ static_assert(HYLE_PERM_OTHER_EXEC == 0001);
 static_assert(HYLE_PERM_ALL == 0777);
 
 hyle_status steal_status(hyle::Status &&s) noexcept {
-  hyle_status out;
-  out.rep = hyle::detail::StatusAccess::release(s);
-  return out;
+  return hyle::detail::status_to_ffi(std::move(s));
 }
 
 hyle_numa_placement
@@ -732,11 +730,11 @@ hyle_status hyle_dynlib_open_symbol(hyle_dynlib_o **out_lib, void **out_sym,
   }
   hyle_dynlib_o *lib = nullptr;
   hyle_status status = hyle_dynlib_open(&lib, path);
-  if (!hyle_status_is_ok(status))
+  if (status != nullptr)
     return status;
   void *sym = nullptr;
   status = hyle_dynlib_symbol(&sym, lib, name);
-  if (!hyle_status_is_ok(status)) {
+  if (status != nullptr) {
     hyle_dynlib_close(lib);
     return status;
   }

@@ -1,4 +1,5 @@
 #include <hyle/c/mem.h>
+#include <hyle/c/error_helpers.h>
 
 #include <stdint.h>
 

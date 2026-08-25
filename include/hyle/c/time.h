@@ -92,9 +92,10 @@ typedef void (*hyle_time_timer_visit_fn)(hyle_time_timer* timer, void* ctx);
  * opaque (the same future-proof shape as libevent event_assign). Each init must
  * receive fresh or previously deinitialized storage. The storage and timer must
  * remain alive until deinit. Do not mix create/destroy with init/deinit.
- * Recoverable misuse returns owning hyle_status; free errors with
- * hyle_status_free. Destroy/deinit leave a scheduled timer alive and report
- * FAILED_PRECONDITION instead of aborting across the C boundary. */
+ * Recoverable misuse returns a non-NULL owning hyle_status; destroy it with
+ * hyle_status_destroy. NULL is OK. Destroy/deinit leave a scheduled timer
+ * alive and report FAILED_PRECONDITION instead of aborting across the C
+ * boundary. */
 HYLE_TIME_C_API hyle_status hyle_time_timer_create(hyle_time_timer** out,
                                                    void* user_data);
 HYLE_TIME_C_API hyle_status hyle_time_timer_destroy(hyle_time_timer* timer);

@@ -112,7 +112,7 @@ TEST(Status, UpdateKeepsFirstError) {
   Status moved;
   moved.Update(std::move(moved_source));
   EXPECT_TRUE(moved.IsDataLoss());
-  EXPECT_TRUE(moved_source.ok());
+  EXPECT_TRUE(moved_source.IsUnknown());
 }
 
 TEST(Status, IgnoreErrorIsExplicitNoOp) {
@@ -136,11 +136,27 @@ TEST(Status, CopySharesMessage) {
   EXPECT_EQ(a.message().data(), b.message().data());  // same backing buffer
 }
 
+TEST(Status, SwapExchangesOneWordRepresentations) {
+  Status first = Status::Internal("first");
+  Status second = Status::NotFound();
+  const char *first_message = first.message().data();
+
+  using std::swap;
+  swap(first, second);
+  EXPECT_TRUE(first.IsNotFound());
+  EXPECT_FALSE(first.has_message());
+  EXPECT_TRUE(second.IsInternal());
+  EXPECT_EQ(second.message(), "first");
+  EXPECT_EQ(second.message().data(), first_message);
+}
+
 TEST(Status, MoveLeavesUsableSource) {
   Status a = Status::Internal("m");
   Status b = std::move(a);
   EXPECT_TRUE(b.IsInternal());
   EXPECT_EQ(b.message(), "m");
+  EXPECT_TRUE(a.IsUnknown());
+  EXPECT_FALSE(a.has_message());
 }
 
 TEST(Status, SharedMessageCopiesAcrossThreads) {
@@ -222,7 +238,7 @@ TEST(Status, SharedContextRepresentationUsesCopyOnWrite) {
   const char *shared_data = shared.message().data();
 
   Status outer = std::move(original).WithContext("outer");
-  EXPECT_TRUE(original.ok());
+  EXPECT_TRUE(original.IsUnknown());
   EXPECT_EQ(shared.message(), "middle: inner: leaf");
   EXPECT_EQ(shared.message().data(), shared_data);
   EXPECT_EQ(outer.message(), "outer: middle: inner: leaf");
@@ -529,6 +545,86 @@ TEST(Result, MonadicTransformOnValue) {
   EXPECT_EQ(*doubled, 42);
 }
 
+TEST(Result, MonadicAndComparisonSurfaceAcceptsStatus) {
+  Result<int> result =
+      hyle::make_unexpected(Status::Unavailable("backend offline"));
+  EXPECT_TRUE(result ==
+              std::unexpected(Status::Unavailable("backend offline")));
+
+  bool observed = false;
+  Result<int> recovered = result.or_else([&](const Status &status) {
+    observed = status.IsUnavailable();
+    return Result<int>{42};
+  });
+  EXPECT_TRUE(observed);
+  ASSERT_TRUE(recovered.has_value());
+  EXPECT_EQ(*recovered, 42);
+}
+
+TEST(Result, SwapPreservesCheckedValueAndErrorArms) {
+  Result<int> value = 42;
+  Result<int> error =
+      hyle::make_unexpected(Status::DataLoss("corrupt tensor"));
+  value.swap(error);
+
+  ASSERT_FALSE(value.has_value());
+  EXPECT_TRUE(value.error().IsDataLoss());
+  EXPECT_EQ(value.error().message(), "corrupt tensor");
+  ASSERT_TRUE(error.has_value());
+  EXPECT_EQ(*error, 42);
+}
+
+TEST(Result, ExpectedStyleUnexpectedAssignmentPreservesInvariant) {
+  Result<int> result = 42;
+  result = std::unexpected(Status::Unavailable("backend offline"));
+  ASSERT_FALSE(result.has_value());
+  EXPECT_TRUE(result.error().IsUnavailable());
+  EXPECT_EQ(result.error().message(), "backend offline");
+
+  EXPECT_DEATH_IF_SUPPORTED(
+      { result = std::unexpected(Status::Ok()); }, "");
+  EXPECT_DEATH_IF_SUPPORTED(
+      { result.error() = Status::Ok(); }, "");
+}
+
+TEST(Result, MovedFromErrorArmRemainsNonOk) {
+  Result<int> source =
+      hyle::make_unexpected(Status::NotFound("original error"));
+  Result<int> destination = std::move(source);
+
+  ASSERT_FALSE(destination.has_value());
+  EXPECT_TRUE(destination.error().IsNotFound());
+  EXPECT_EQ(destination.error().message(), "original error");
+  ASSERT_FALSE(source.has_value());
+  EXPECT_TRUE(source.error().IsUnknown());
+}
+
+TEST(Result, ErrorArmCannotExposeMutableStatusBase) {
+  static_assert(!std::is_convertible_v<
+                decltype(std::declval<Result<int> &>().error()), Status &>);
+  static_assert(std::is_convertible_v<
+                decltype(std::declval<const Result<int> &>().error()), Status>);
+
+  Result<int> result =
+      hyle::make_unexpected(Status::Unavailable("backend offline"));
+  Status copied = result.error();
+  copied = Status::Ok();
+  EXPECT_FALSE(result.has_value());
+  EXPECT_TRUE(result.error().IsUnavailable());
+}
+
+TEST(Result, RvalueErrorContextLeavesErrorArmNonOk) {
+  Result<int> result =
+      hyle::make_unexpected(Status::NotFound("model.bin"));
+  Status contextual =
+      std::move(result).error().WithContext("loading model");
+
+  EXPECT_TRUE(contextual.IsNotFound());
+  EXPECT_EQ(contextual.message(), "loading model: model.bin");
+  ASSERT_FALSE(result.has_value());
+  EXPECT_TRUE(result.error().IsUnknown());
+}
+
 // ---- propagation macros: HYLE_RETURN_IF_ERROR -------------------------------
 
 namespace {
@@ -562,6 +658,13 @@ Result<int> chain_result_from_void_result(bool fail) {
   return 9;
 }
 
+Status chain_status_with_user_named_temporary(bool fail) {
+  int hyle_status_ = 7;
+  HYLE_RETURN_IF_ERROR(fail ? inner_fails() : inner_ok());
+  return hyle_status_ == 7 ? Status::Ok()
+                           : Status::Internal("local was overwritten");
+}
+
 }  // namespace
 
 TEST(ReturnIfError, PropagatesInStatusFunction) {
@@ -590,6 +693,11 @@ TEST(ReturnIfError, AcceptsResultVoidIntoResultFunction) {
   Result<int> result = chain_result_from_void_result(true);
   ASSERT_FALSE(result.has_value());
   EXPECT_TRUE(result.error().IsUnavailable());
+}
+
+TEST(ReturnIfError, DoesNotCollideWithCallerLocalNames) {
+  EXPECT_TRUE(chain_status_with_user_named_temporary(false).ok());
+  EXPECT_TRUE(chain_status_with_user_named_temporary(true).IsPermissionDenied());
 }
 
 // ---- propagation macros: HYLE_ASSIGN_OR_RETURN ------------------------------
@@ -626,12 +734,6 @@ Result<int> copy_lvalue_error(Result<int> &source) {
   HYLE_ASSIGN_OR_RETURN(int value, source);
   return value;
 }
-Result<int> propagate_invalid_ok_error() {
-  Result<int> invalid = std::unexpected(Status::Ok());
-  HYLE_ASSIGN_OR_RETURN(int value, invalid);
-  return value;
-}
-
 }  // namespace
 
 TEST(AssignOrReturn, BindsValueOnOk) {
@@ -676,8 +778,10 @@ TEST(AssignOrReturn, DoesNotConsumeNamedLvalueResult) {
   EXPECT_EQ(error.error().message(), "kept error");
 }
 
-TEST(AssignOrReturn, RejectsOkStatusInErrorArm) {
-  EXPECT_DEATH_IF_SUPPORTED({ (void)propagate_invalid_ok_error(); }, "");
+TEST(Result, DirectUnexpectedRejectsOkStatusAtConstruction) {
+  EXPECT_DEATH_IF_SUPPORTED(
+      { Result<int> invalid = std::unexpected(Status::Ok()); (void)invalid; },
+      "");
 }
 
 // ---- edge cases toward full coverage ----------------------------------------
@@ -739,7 +843,7 @@ TEST(Status, WithContextOomPreservesExistingMessage) {
   EXPECT_TRUE(outer.IsUnavailable());
   EXPECT_EQ(outer.message(), "device lost");
   EXPECT_EQ(outer.message().data(), original);
-  EXPECT_TRUE(leaf.ok());
+  EXPECT_TRUE(leaf.IsUnknown());
 }
 
 TEST(Status, WithContextNeedsNoAllocationWhilePrefixCapacityRemains) {

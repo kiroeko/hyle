@@ -81,7 +81,7 @@ struct RegistryResultTraits {
 };
 
 template <class Value>
-struct RegistryResultTraits<std::expected<Value, Status>> {
+struct RegistryResultTraits<Result<Value>> {
   static Result<Value> missing() {
     return make_unexpected(Status::NotFound("registry key is not registered"));
   }

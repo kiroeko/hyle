@@ -1,4 +1,5 @@
 #define HYLE_OBS_COMPILED_MIN_LEVEL 2
+#include <hyle/c/error_helpers.h>
 #include <hyle/c/obs.h>
 
 #include <stdint.h>

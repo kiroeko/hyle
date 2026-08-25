@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "hyle/c/container.h"
+#include "hyle/c/error_helpers.h"
 
 namespace {
 

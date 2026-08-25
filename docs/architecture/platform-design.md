@@ -232,7 +232,8 @@ native-C 产品面，也不承诺与 C++ API 做 1:1 parity。先以真实 Java/
   `struct_size + reserved` 版本前缀和可写容量，adapter 只写已知前缀、保留 future tail，且在
   参数错误时也先把可写的已知 feature 字段初始化为 false。已知短前缀可继续使用，旧库也能
   接受更大的未来结构；这类大型可演进 snapshot 统一返回 owning Status + out。
-- 所有可恢复失败返回拥有型 `hyle_status` + out 参数，调用方统一 `hyle_status_free`。
+- 所有可恢复失败返回 opaque `hyle_status` + out 参数；`NULL` 是 OK，每个非 NULL owning
+  handle 由调用方恰好一次传给 `hyle_status_destroy`。
 - callback 使用 function pointer + `void*` context；字符串/数组使用 pointer + count/view。
 - C thread opts 以 `struct_size` 开头并提供初始化宏/setter；全零不冒充有效初始化。桥接先以
   当前默认值构造本地结构，再只 memcpy 调用方声明且本库已知的前缀：过短必需前缀拒绝、

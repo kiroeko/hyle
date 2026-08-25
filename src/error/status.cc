@@ -690,7 +690,14 @@ std::uintptr_t status_make_context(StatusCode code, NativeError native,
 
 void status_release(std::uintptr_t rep) noexcept {
   StatusRep *r = as_rep(rep);
-  if (r->header.refcount.fetch_sub(1, std::memory_order_acq_rel) == 1) {
+  // A freshly-created/message Status is overwhelmingly destroyed while still
+  // uniquely owned.  Like Abseil's intrusive Status rep, prove that common
+  // case with an acquire load and avoid an unnecessary atomic RMW. A rep that
+  // is still shared takes the fetch_sub path.
+  const bool last_owner =
+      r->header.refcount.load(std::memory_order_acquire) == 1 ||
+      r->header.refcount.fetch_sub(1, std::memory_order_acq_rel) == 1;
+  if (last_owner) {
     if (is_context_rep(r)) {
       reinterpret_cast<ContextStatusRep *>(r)->~ContextStatusRep();
     } else {
@@ -730,16 +737,78 @@ namespace {
   return result;
 }
 
+bool is_utf8_continuation(std::uint8_t byte) noexcept {
+  return byte >= 0x80u && byte <= 0xbfu;
+}
+
+// strerror_r follows LC_MESSAGES and can therefore return non-UTF-8 bytes on
+// an otherwise supported POSIX host. Validate its short cold-path result
+// without allocation; callers fall back to deterministic ASCII when the
+// process locale does not satisfy HYLE's public UTF-8 text contract.
+bool is_valid_utf8(std::string_view text) noexcept {
+  const auto *bytes =
+      reinterpret_cast<const std::uint8_t *>(text.data());
+  std::size_t i = 0;
+  while (i < text.size()) {
+    const std::uint8_t first = bytes[i];
+    if (first <= 0x7fu) {
+      ++i;
+      continue;
+    }
+    if (first >= 0xc2u && first <= 0xdfu) {
+      if (i + 1 >= text.size() || !is_utf8_continuation(bytes[i + 1]))
+        return false;
+      i += 2;
+      continue;
+    }
+    if (first >= 0xe0u && first <= 0xefu) {
+      if (i + 2 >= text.size() || !is_utf8_continuation(bytes[i + 2]))
+        return false;
+      const std::uint8_t second = bytes[i + 1];
+      if ((first == 0xe0u && (second < 0xa0u || second > 0xbfu)) ||
+          (first == 0xedu && (second < 0x80u || second > 0x9fu)) ||
+          ((first != 0xe0u && first != 0xedu) &&
+           !is_utf8_continuation(second))) {
+        return false;
+      }
+      i += 3;
+      continue;
+    }
+    if (first >= 0xf0u && first <= 0xf4u) {
+      if (i + 3 >= text.size() ||
+          !is_utf8_continuation(bytes[i + 2]) ||
+          !is_utf8_continuation(bytes[i + 3])) {
+        return false;
+      }
+      const std::uint8_t second = bytes[i + 1];
+      if ((first == 0xf0u && (second < 0x90u || second > 0xbfu)) ||
+          (first == 0xf4u && (second < 0x80u || second > 0x8fu)) ||
+          ((first != 0xf0u && first != 0xf4u) &&
+           !is_utf8_continuation(second))) {
+        return false;
+      }
+      i += 4;
+      continue;
+    }
+    return false;
+  }
+  return true;
+}
+
 std::string_view describe_errno(int error_number, char *buffer,
-                                std::size_t cap) noexcept {
+                                 std::size_t cap) noexcept {
 #if defined(_WIN32)
   if (::strerror_s(buffer, cap, error_number) == 0 && buffer[0] != '\0') {
-    return buffer;
+    const std::string_view description(buffer);
+    if (is_valid_utf8(description)) return description;
   }
 #else
   const char *text = errno_text(
       ::strerror_r(error_number, buffer, cap), buffer);
-  if (text != nullptr && text[0] != '\0') return text;
+  if (text != nullptr && text[0] != '\0') {
+    const std::string_view description(text);
+    if (is_valid_utf8(description)) return description;
+  }
 #endif
   const int written = std::snprintf(buffer, cap, "errno %d", error_number);
   if (written <= 0) return "unknown errno";
@@ -751,18 +820,25 @@ std::string_view describe_errno(int error_number, char *buffer,
 std::string_view describe_win32(std::uint32_t error_number, char *buffer,
                                 std::size_t cap) noexcept {
 #if defined(_WIN32)
-  DWORD length = ::FormatMessageA(
+  wchar_t wide[512];
+  DWORD length = ::FormatMessageW(
       FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr,
-      static_cast<DWORD>(error_number), 0, buffer, static_cast<DWORD>(cap),
+      static_cast<DWORD>(error_number), 0, wide,
+      static_cast<DWORD>(sizeof(wide) / sizeof(wide[0])),
       nullptr);
   while (length != 0 &&
-         (buffer[length - 1] == '\r' || buffer[length - 1] == '\n' ||
-          buffer[length - 1] == ' ')) {
+         (wide[length - 1] == L'\r' || wide[length - 1] == L'\n' ||
+          wide[length - 1] == L' ')) {
     --length;
   }
-  if (length != 0) {
-    buffer[length] = '\0';
-    return std::string_view(buffer, length);
+  if (length != 0 && cap > 1) {
+    const int converted = ::WideCharToMultiByte(
+        CP_UTF8, WC_ERR_INVALID_CHARS, wide, static_cast<int>(length), buffer,
+        static_cast<int>(cap - 1), nullptr, nullptr);
+    if (converted > 0) {
+      buffer[converted] = '\0';
+      return std::string_view(buffer, static_cast<std::size_t>(converted));
+    }
   }
 #endif
   const int written =
@@ -776,18 +852,25 @@ std::string_view describe_win32(std::uint32_t error_number, char *buffer,
 std::string_view describe_hresult(std::int32_t error_number, char *buffer,
                                   std::size_t cap) noexcept {
 #if defined(_WIN32)
-  DWORD length = ::FormatMessageA(
+  wchar_t wide[512];
+  DWORD length = ::FormatMessageW(
       FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr,
-      static_cast<DWORD>(error_number), 0, buffer, static_cast<DWORD>(cap),
+      static_cast<DWORD>(error_number), 0, wide,
+      static_cast<DWORD>(sizeof(wide) / sizeof(wide[0])),
       nullptr);
   while (length != 0 &&
-         (buffer[length - 1] == '\r' || buffer[length - 1] == '\n' ||
-          buffer[length - 1] == ' ')) {
+         (wide[length - 1] == L'\r' || wide[length - 1] == L'\n' ||
+          wide[length - 1] == L' ')) {
     --length;
   }
-  if (length != 0) {
-    buffer[length] = '\0';
-    return std::string_view(buffer, length);
+  if (length != 0 && cap > 1) {
+    const int converted = ::WideCharToMultiByte(
+        CP_UTF8, WC_ERR_INVALID_CHARS, wide, static_cast<int>(length), buffer,
+        static_cast<int>(cap - 1), nullptr, nullptr);
+    if (converted > 0) {
+      buffer[converted] = '\0';
+      return std::string_view(buffer, static_cast<std::size_t>(converted));
+    }
   }
 #endif
   const int written = std::snprintf(
@@ -831,7 +914,7 @@ Status status_from_win32(std::uint32_t error_number,
   const StatusCode code = status_code_from_win32(error_number);
   if (code == StatusCode::Ok) return Status{};
 
-  char description[512];
+  char description[2048];
   description[0] = '\0';
   const std::string_view native =
       describe_win32(error_number, description, sizeof(description));
@@ -853,7 +936,7 @@ Status status_from_hresult(std::int32_t error_number,
   const StatusCode code = status_code_from_hresult(error_number);
   if (code == StatusCode::Ok) return Status{};
 
-  char description[512];
+  char description[2048];
   description[0] = '\0';
   const std::string_view native =
       describe_hresult(error_number, description, sizeof(description));
@@ -901,18 +984,6 @@ std::size_t Status::ToString(char *buf, std::size_t cap) const noexcept {
   return need;
 }
 
-#if !defined(HYLE_STATIC)
-Status Status::WithContext(std::string_view context) const & noexcept {
-  if (ok() || context.empty()) return *this;
-  return WithContextSlow(context);
-}
-
-Status Status::WithContext(std::string_view context) && noexcept {
-  if (ok() || context.empty()) return std::move(*this);
-  return std::move(*this).WithContextSlow(context);
-}
-#endif
-
 Status Status::WithContextSlow(std::string_view context) const & noexcept {
   const std::string_view current = message();
   const std::uintptr_t rep = detail::status_make_context(
@@ -929,12 +1000,12 @@ Status Status::WithContextSlow(std::string_view context) && noexcept {
     if (!prepended.succeeded) return std::move(*this);
     if (prepended.rep == old_rep) {
       Status result = detail::StatusAccess::adopt(old_rep);
-      rep_ = 0;
+      rep_ = kMovedFromRep;
       return result;
     }
     Status result = detail::StatusAccess::adopt(prepended.rep);
     detail::status_release(old_rep);
-    rep_ = 0;
+    rep_ = kMovedFromRep;
     return result;
   }
 
@@ -945,7 +1016,7 @@ Status Status::WithContextSlow(std::string_view context) && noexcept {
   if (rep == 0) return std::move(*this);
   Status result = detail::StatusAccess::adopt(rep);
   if (is_heap()) detail::status_release(rep_);
-  rep_ = 0;
+  rep_ = kMovedFromRep;
   return result;
 }
 

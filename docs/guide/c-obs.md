@@ -17,28 +17,36 @@ thread-local last-error：
 
 ```c
 #include "hyle/c/obs.h"
+#include "hyle/c/error_helpers.h"
 
 hyle_status configure_log(void) {
-  HYLE_C_RETURN_IF_ERROR(hyle_obs_set_level(HYLE_OBS_LOG_INFO));
-  HYLE_C_RETURN_IF_ERROR(hyle_obs_log_info("server started"));
-  return (hyle_status){0};
+  hyle_status status = hyle_obs_set_level(HYLE_OBS_LOG_INFO);
+  if (!hyle_status_is_ok(status)) return status;
+  status = hyle_obs_log_info("server started");
+  if (!hyle_status_is_ok(status)) return status;
+  return hyle_status_ok();
 }
 ```
 
-转移/传播非 OK status 后不要再 free；在本函数消费它时调用 `hyle_status_free`。OK status
-不拥有错误对象，free 仍安全。level 便利函数只返回 Status；需要区分“成功投递”与
-“正常 gate/no sink”时使用完整入口：
+这里的 `hyle_status_ok`、`hyle_status_is_ok`、`hyle_status_free` 及 code predicates 是
+`hyle/c/error_helpers.h` 提供的 source-only fixture conveniences，不是动态 FFI 导出。
+managed direct FFI 应直接用 `NULL` / `hyle_status_get_code` 判断，并用
+`hyle_status_destroy` 销毁每个非 NULL owning handle。转移/传播 owning handle 后原 owner 不再
+销毁它；在本函数消费时调用 `hyle_status_destroy`。level 便利函数只返回 Status；需要区分
+“成功投递”与“正常 gate/no sink”时使用完整入口：
 
 ```c
 int emitted = 0;
 hyle_status status =
     hyle_obs_log(&emitted, HYLE_OBS_LOG_INFO, "ready");
 if (!hyle_status_is_ok(status)) {
-  report(hyle_status_message_cstr(status));
-  hyle_status_free(&status);
+  char message[256];
+  hyle_status_message(status, message, sizeof message);
+  report(message);
 } else if (!emitted) {
   /* 被 level gate，或当前没有 sink；不是错误。 */
 }
+hyle_status_free(&status);
 ```
 
 已有 slice、外语字符串或可能包含 NUL 的消息使用长度入口，避免一次 `strlen`：
@@ -54,9 +62,12 @@ Status-expression 宏；被裁剪的表达式不会求值：
 ```c
 #define HYLE_OBS_COMPILED_MIN_LEVEL 2 /* Info */
 #include "hyle/c/obs.h"
+#include "hyle/c/error_helpers.h"
 
-HYLE_C_RETURN_IF_ERROR(HYLE_OBS_EMIT_DEBUG(expensive_message()));
-HYLE_C_RETURN_IF_ERROR(HYLE_OBS_EMIT_INFO("ready"));
+hyle_status status = HYLE_OBS_EMIT_DEBUG(expensive_message());
+if (!hyle_status_is_ok(status)) return status;
+status = HYLE_OBS_EMIT_INFO("ready");
+if (!hyle_status_is_ok(status)) return status;
 ```
 
 这个宏只作用于当前 translation unit，不改变 binary ABI 或直接函数的 runtime gate。动态
@@ -140,14 +151,16 @@ static void flush_writer(void* state) {
 static hyle_status run_with_file_sink(void) {
   struct writer writer = {fopen("app.log", "a")};
   hyle_obs_sink* sink = NULL;
-  HYLE_C_RETURN_IF_ERROR(
-      hyle_obs_sink_create(&sink, write_record, flush_writer, &writer));
+  hyle_status status =
+      hyle_obs_sink_create(&sink, write_record, flush_writer, &writer);
+  if (!hyle_status_is_ok(status)) return status;
 
   /* 多线程产生日志…… */
   hyle_obs_flush_sinks();
-  HYLE_C_RETURN_IF_ERROR(hyle_obs_sink_destroy(sink));
+  status = hyle_obs_sink_destroy(sink);
+  if (!hyle_status_is_ok(status)) return status;
   fclose(writer.file); /* destroy 成功后释放 state 安全 */
-  return (hyle_status){0};
+  return hyle_status_ok();
 }
 ```
 

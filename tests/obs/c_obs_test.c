@@ -1,4 +1,5 @@
 /* C-syntax compiler/schema/link fixture for include/hyle/c/obs.h. */
+#include "hyle/c/error_helpers.h"
 #include "hyle/c/obs.h"
 
 #include <stdio.h>
@@ -65,8 +66,9 @@ static int g_fails = 0;
 static int status_ok(hyle_status status) {
   int ok = hyle_status_is_ok(status);
   if (!ok) {
-    fprintf(stderr, "unexpected status: %s\n",
-            hyle_status_message_cstr(status));
+    char message[256];
+    hyle_status_message(status, message, sizeof(message));
+    fprintf(stderr, "unexpected status: %s\n", message);
   }
   hyle_status_free(&status);
   return ok;

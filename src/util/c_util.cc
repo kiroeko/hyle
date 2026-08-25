@@ -32,7 +32,7 @@ namespace hm = hyle::mem;
 static_assert(sizeof(hyle_util_registry_priority) == sizeof(std::uint32_t));
 
 hyle_status to_c_status(Status status) noexcept {
-  return hyle_status{hyle::detail::StatusAccess::release(status)};
+  return hyle::detail::status_to_ffi(std::move(status));
 }
 
 bool valid_backing(const hyle_allocator& backing) noexcept {
@@ -709,9 +709,9 @@ hyle_status hyle_util_registry_create_object(
   if (!registry_find_creator(registry, key_view, &creator, &creator_ctx)) {
     return to_c_status(Status::NotFound("registry key is not registered"));
   }
-  hyle_status status = HYLE_STATUS_INIT;
+  hyle_status status = nullptr;
   void* object = creator(&status, creator_ctx, create_args);
-  if (status.rep == 0) *out = object;
+  if (status == nullptr) *out = object;
   return status;
 }
 

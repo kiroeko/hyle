@@ -1,3 +1,4 @@
+#include "hyle/c/error_helpers.h"
 #include "hyle/c/simd.h"
 
 #include <math.h>
@@ -76,7 +77,11 @@ int main(void) {
   info.struct_size = 0;
   status = hyle_simd_runtime_info_get(&info);
   CHECK(hyle_status_is_invalid_argument(status));
-  CHECK(strlen(hyle_status_message_cstr(status)) != 0);
+  {
+    char message[128];
+    CHECK(hyle_status_message(status, message, sizeof(message)) != 0);
+    CHECK(message[0] != '\0');
+  }
   hyle_status_free(&status);
   status = hyle_simd_runtime_info_get(NULL);
   CHECK(hyle_status_is_invalid_argument(status));

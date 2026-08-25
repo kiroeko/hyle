@@ -18,10 +18,11 @@
 
 | 返回面 | 诊断 |
 |---|---|
-| Parker / Thread / DynLib / MappedFile / VM / NUMA / fs / env | 返回 `hyle_status`，用 `hyle_status_get_code` / `hyle_status_message_cstr` |
+| Parker / Thread / DynLib / MappedFile / VM / NUMA / fs / env | 返回 `hyle_status`，用 `hyle_status_get_code` / caller-buffer `hyle_status_message` |
 
-`hyle_status` 由调用方用 `hyle_status_free` 释放。platform 不再维护模块私有 TLS
-last-error；C 与 C++ 共用 error 的 code、message 和所有权规则。
+`NULL` 是 OK；每个非 NULL `hyle_status` 都是 owning handle，由调用方恰好一次传给
+`hyle_status_destroy`。platform 不再维护模块私有 TLS last-error；C 与 C++ 共用 error 的
+code、message 和所有权规则。
 
 返回 `hyle_status` 的 owning-handle 出参会在参数校验前清成 `NULL`。NUMA placement
 出参可省略；非 NULL 时会先写 `HYLE_NUMA_PLACEMENT_UNAVAILABLE`，只有成功才改成实际
@@ -38,10 +39,16 @@ last-error；C 与 C++ 共用 error 的 code、message 和所有权规则。
 
 ## 1. 链什么
 
-```text
+```c
 #include "hyle/c/platform.h"   /* pulls hyle/c/error.h for hyle_status */
+#include "hyle/c/error_helpers.h"
 // link: hyle_platform (+ hyle_error)
 ```
+
+本文原生 C recipe 中的 `hyle_status_is_ok`、`hyle_status_free` 及 code predicates 是
+`hyle/c/error_helpers.h` 提供的 source-only fixture conveniences，不是动态 FFI 导出。
+managed direct FFI 应直接用 `NULL` / `hyle_status_get_code` 判断，并用
+`hyle_status_destroy` 销毁每个非 NULL owning handle。
 
 纯 C 验收：`hyle_platform_c_test`。
 
@@ -89,7 +96,7 @@ last-error；C 与 C++ 共用 error 的 code、message 和所有权规则。
 
 | 符号 | 说明 |
 |---|---|
-| `hyle_thread_spawn(out, entry, ctx, opts)` | 成功设 `*out`；失败清成 NULL 并返 `hyle_status`（调用方 free） |
+| `hyle_thread_spawn(out, entry, ctx, opts)` | 成功设 `*out`；失败清成 NULL 并返 owning `hyle_status`（调用方 destroy） |
 | `hyle_thread_spawn_opts(out, entry, ctx, name, stack, affinity, priority)` | FFI 便利入口；不用构造 opts/has 字段，0/-1 是默认 sentinel |
 | `hyle_thread_join` | join + **destroy** 句柄 |
 | `hyle_thread_joinable` | 1/0 |
@@ -371,7 +378,8 @@ hyle_status st = hyle_thread_spawn_opts(
 
 `spawn_opts` 是默认 best-effort 的简写；需要 required 或需要“不设置 priority”时使用完整
 `hyle_thread_opts`。required affinity 在 macOS 返回 `HYLE_STATUS_UNIMPLEMENTED`。已经在
-entry 内时可调用 `hyle_this_thread_set_*` 并按普通 `hyle_status` 规则检查、释放。
+entry 内时可调用 `hyle_this_thread_set_*` 并按普通 `hyle_status` 规则检查；每个非 NULL owner
+调用 `hyle_status_destroy`。
 
 `struct_size` 是可读字节数，不是“必须等于当前 `sizeof`”的版本号。非 NULL 指针至少须让
 size word 本身可读；库先建立完整的当前默认结构，再只覆盖
@@ -450,7 +458,9 @@ char tmp[512];
 size_t full = 0;
 hyle_status st = hyle_fs_temp_directory(&full, tmp, sizeof tmp);
 if (!hyle_status_is_ok(st)) {
-  fprintf(stderr, "platform: %s\n", hyle_status_message_cstr(st));
+  char message[256];
+  hyle_status_message(st, message, sizeof message);
+  fprintf(stderr, "platform: %s\n", message);
 }
 hyle_status_free(&st);
 if (full >= sizeof tmp) { /* truncated: retry with a larger buffer */ }

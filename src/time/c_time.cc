@@ -82,7 +82,7 @@ struct hyle_time_common_queue_o {
 namespace {
 
 hyle_status steal_status(hyle::Status&& status) noexcept {
-  return hyle_status{hyle::detail::StatusAccess::release(status)};
+  return hyle::detail::status_to_ffi(std::move(status));
 }
 
 hyle::Status validate_pair(const void* source,

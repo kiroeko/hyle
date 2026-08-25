@@ -11,7 +11,13 @@
 
 ```c
 #include "hyle/c/time.h"
+#include "hyle/c/error_helpers.h"
 ```
+
+本文 recipe 中的 `hyle_status_is_ok`、`hyle_status_free` 及 code predicates 是
+`hyle/c/error_helpers.h` 提供的 source-only fixture conveniences，不是动态 FFI 导出。
+managed direct FFI 应直接用 `NULL` / `hyle_status_get_code` 判断，并用
+`hyle_status_destroy` 销毁每个非 NULL owning handle。
 
 ## 时钟、deadline 与 sleep
 
@@ -65,7 +71,7 @@ static void on_due(hyle_time_timer* timer, void* ctx) {
 hyle_time_queue* queue = NULL;
 hyle_time_timer* timer = NULL;
 hyle_status st = hyle_time_queue_create(&queue);
-if (!hyle_status_is_ok(st)) { /* read message, then free st */ }
+if (!hyle_status_is_ok(st)) { /* inspect the error */ }
 hyle_status_free(&st);
 
 st = hyle_time_timer_create(&timer, request);
@@ -100,7 +106,8 @@ uint64_t now = hyle_time_monotonic_ns();
 for (size_t i = 0; i < timer_count; ++i) {
   hyle_status st = hyle_time_queue_schedule_after_at(
       queue, timers[i], timeout_ns, now);
-  /* check and free st */
+  if (!hyle_status_is_ok(st)) { /* handle */ }
+  hyle_status_free(&st); /* source helper consumes non-NULL and clears st */
 }
 ```
 
@@ -131,7 +138,8 @@ for (size_t i = 0; i < connection_count; ++i) {
   hyle_time_timer* timer = NULL;
   hyle_status st = hyle_time_timer_init(
       &timer, (unsigned char*)arena + i * stride, stride, &connections[i]);
-  /* check/free st; retain timer */
+  if (!hyle_status_is_ok(st)) { /* handle */ }
+  hyle_status_free(&st); /* source helper; retain timer only after OK */
 }
 ```
 
@@ -181,8 +189,9 @@ hyle_status_free(&st);
 
 ## Status 与生命周期
 
-所有返回 `hyle_status` 的调用都把 Status 所有权交给调用方；成功和失败都调用
-`hyle_status_free(&status)`。常见错误：
+`NULL` 表示 OK，不需要销毁；每个非 NULL `hyle_status` 都把唯一所有权交给调用方，必须恰好
+一次传给 `hyle_status_destroy`。原生 C fixture 可用 source-only
+`hyle_status_free(&status)` 对两种情况统一处理并清空本地变量。常见错误：
 
 | 情况 | 状态 |
 |---|---|

@@ -11,6 +11,7 @@
 #include <utility>
 
 #include "hyle/mem/allocator.h"
+#include "../error/status_ffi_source_helpers.h"
 
 namespace {
 

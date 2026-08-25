@@ -2,6 +2,7 @@
 #if defined(_WIN32)
 #define _CRT_SECURE_NO_WARNINGS 1
 #endif
+#include "hyle/c/error_helpers.h"
 #include "hyle/c/mem.h"
 
 _Static_assert(sizeof(hyle_huge_flags) == sizeof(uint32_t),

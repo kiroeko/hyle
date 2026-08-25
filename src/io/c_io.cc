@@ -10,6 +10,7 @@
 #include "hyle/io/shared_memory.h"
 #include "c_io_internal.h"
 #include "../error/status_access.h"
+#include "../error/status_ffi_source_helpers.h"
 
 namespace hyle::io::c_detail {
 
@@ -733,7 +734,7 @@ hyle_status hyle_io_shared_memory_unlink(const char* name) {
     clear_error();
   else
     set_error("shared memory unlink failed");
-  return hyle_status{hyle::detail::StatusAccess::release(status)};
+  return hyle::detail::status_to_ffi(std::move(status));
 }
 
 }  // extern "C"

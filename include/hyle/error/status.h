@@ -24,9 +24,10 @@ namespace hyle {
 // The C ABI's fixed-width hyle_status_code constants (hyle/c/error.h) are
 // hand-written for a clean FFI header, but c_error.cc static_asserts every row
 // against it -- a value drift or a missing/renamed C code fails to compile.
-// Adding a code = one row here + one line in hyle/c/error.h (constant value +
-// inline factory/predicate). Code set follows the abseil/gRPC canonical
-// taxonomy.
+// Adding a code = one row here + the matching fixed constant in
+// hyle/c/error.h and source-helper predicate in hyle/c/error_helpers.h. The
+// direct FFI intentionally has no foreign-side Status factories. Code set
+// follows the abseil/gRPC canonical taxonomy.
 //   X(PascalName, SCREAMING_NAME, value)
 #define HYLE_FOREACH_ERROR_STATUS_CODE(X)                                      \
   X(Cancelled, CANCELLED, 1)                                                   \
@@ -138,9 +139,10 @@ normalize_native_error_domain(NativeErrorDomain domain) noexcept {
   return NativeErrorDomain::Unknown;
 }
 
-// Heap representation for message/detail errors lives entirely in the DLL
-// (status.cc). These are the only operations the header needs; the layout of
-// the rep is never exposed.
+// Heap representation for message/detail errors lives in the DLL (status.cc).
+// One prefix is deliberately a compiled-code contract: consumer-side Status
+// copies inline the relaxed retain below, as mature intrusive carriers do. The
+// allocation, flags, message/native layout and final-release path stay opaque.
 HYLE_ERROR_API std::uintptr_t status_make_heap(StatusCode code, const char *msg,
                                                std::size_t len) noexcept;
 HYLE_ERROR_API std::uintptr_t status_make_native_heap(StatusCode code,
@@ -234,9 +236,15 @@ public:
     if (is_heap())
       detail::status_retain(rep_);
   }
-  Status(Status &&o) noexcept : rep_(o.rep_) { o.rep_ = 0; }
+  // A moved-from Status remains a valid code-only error rather than becoming
+  // OK. This matches mature Status carriers and, critically, prevents moving
+  // a Result error arm from creating an error-state Result whose error is OK.
+  Status(Status &&o) noexcept : rep_(o.rep_) { o.rep_ = kMovedFromRep; }
   Status &operator=(const Status &o) noexcept {
-    if (this != &o) {
+    // Distinct Status objects commonly share one immutable heap backing.  The
+    // value is already identical in that case, so avoid an otherwise needless
+    // release/retain pair (and its two atomic operations).
+    if (rep_ != o.rep_) {
       if (is_heap())
         detail::status_release(rep_);
       rep_ = o.rep_;
@@ -250,7 +258,7 @@ public:
       if (is_heap())
         detail::status_release(rep_);
       rep_ = o.rep_;
-      o.rep_ = 0;
+      o.rep_ = kMovedFromRep;
     }
     return *this;
   }
@@ -291,16 +299,9 @@ public:
   // rvalue chain then reuses unique geometrically grown prefix storage
   // (amortized linear total copying). Lvalues/shared errors use copy-on-write.
   // On allocation failure the original status and message are preserved.
-#if defined(HYLE_ERROR_BUILD) && !defined(HYLE_STATIC)
-  // The DLL emits these entry points as well as the slow path. Consumers see
-  // the inline definitions below, so their common OK path does not cross the
-  // DLL seam; keeping the entry points also makes incremental DLL relinks safe.
-  HYLE_ERROR_API Status WithContext(std::string_view context) const & noexcept;
-  HYLE_ERROR_API Status WithContext(std::string_view context) && noexcept;
-#else
-  // Static builds use one inline definition in every archive/consumer. Emitting
-  // a second strong out-of-line copy in hyle_error.lib collides as soon as a
-  // dependent archive also instantiates this hot-path wrapper.
+  // Keep the common OK/empty path in every consumer and export only the
+  // distinctly-named slow path. This avoids a split inline/out-of-line identity
+  // for the same public member across the shared-library build boundary.
   Status WithContext(std::string_view context) const & noexcept {
     if (ok() || context.empty())
       return *this;
@@ -311,7 +312,6 @@ public:
       return std::move(*this);
     return std::move(*this).WithContextSlow(context);
   }
-#endif
 
   // Per-code predicates: IsNotFound(), IsCancelled(), ... (Ok included).
 #define HYLE_STATUS_PREDICATE(name, screaming, value)                          \
@@ -330,11 +330,23 @@ public:
   static Status Ok() noexcept { return Status(); }
 
   friend bool operator==(const Status &a, const Status &b) noexcept {
+    // Copies share an immutable representation.  Identity is therefore a
+    // complete equality proof and makes equality of shared long diagnostics
+    // O(1) instead of re-reading and comparing the full message.
+    if (a.rep_ == b.rep_)
+      return true;
     return a.code() == b.code() && a.native_error() == b.native_error() &&
            a.message() == b.message();
   }
   friend bool operator!=(const Status &a, const Status &b) noexcept {
     return !(a == b);
+  }
+
+  // A value carrier should participate in unqualified swap without paying
+  // three move operations (or transiently creating moved-from sentinels).
+  friend void swap(Status &a, Status &b) noexcept {
+    using std::swap;
+    swap(a.rep_, b.rep_);
   }
 
   // Keep the first failure while combining a sequence of independent
@@ -363,6 +375,9 @@ private:
 
   static constexpr std::uintptr_t kInlineTag = 1;
   static constexpr std::uintptr_t kCodeShift = 2;
+  static constexpr std::uintptr_t kMovedFromRep =
+      (static_cast<std::uintptr_t>(StatusCode::Unknown) << kCodeShift) |
+      kInlineTag;
   static constexpr std::uintptr_t kMaxInlineRep =
       (static_cast<std::uintptr_t>(StatusCode::Unauthenticated) << kCodeShift) |
       kInlineTag;

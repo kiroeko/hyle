@@ -1,269 +1,193 @@
-# error Native FFI 候选（待 managed review）
+# error direct Native FFI：托管端接收与释放失败
 
-> **当前状态（Native FFI 复审前）**：HYLE 没有 native-C 客户。本页记录的是旧 C-shaped
-> surface / Native FFI 合同候选，不是已认证的 C 产品。复审先裁决真实外语任务；可以结论为
-> `FFI=N/A`。只有保留 direct FFI 时才用 Java FFM + .NET P/Invoke 重新验收动态导出、所有权、
-> 回调和 batch 形状；在此之前，正文中的“稳定”“完整”
-> “纯 C 用户”等说法都只属于历史描述，不是当前跨语言证书；首发前 surface 可改变。
+`hyle/c/error.h` 是 Java FFM、.NET P/Invoke 等直接绑定 `hyle_error` shared artifact 的 C-syntax
+schema。它不是原生 C 产品 API，也不追求 C++ `Status` 的功能 parity。HYLE 尚未发布 binding，
+当前 ABI 可继续破坏性改进；一旦某个 binding 发布，其 bootstrap 兼容规则才开始生效。
 
-> **发布面**：`include/hyle/c/error.h`  
-> **实现**：`src/error/c_error.cc`（链接 `hyle_error`）
-> **稳定性**：未发布、可自由修改；旧候选还没有逐 artifact bootstrap，因而未认证。若真实外语
-> 任务裁决保留 error FFI，须从 `hyle_error` 自身提供当时选定的 ABI bootstrap，但仍不引函数表。
-> **命名**：全部 `hyle_*` / `HYLE_*`
+## 1. 这个 FFI 解决什么
 
-跨语言、跨编译器和纯 C 消费者只绑定本头，不 include `hyle/error/*.h`。error C 面
-只传递可恢复失败；日志和 sink 使用 `hyle/c/obs.h`。如果还没决定应该用 Status、
-Result/out、空值合同还是 fail-fast，先看语言无关的 [`error.md`](./error.md)；本文只说明
-选定 Status 后怎样准确映射到 C/FFI。
+真实旅程是：foreign runtime 调用另一个 HYLE artifact；成功收到 NULL，失败收到一个 owning
+`hyle_status`；调用 `hyle_error` 查询 code/message/native detail，最后释放。foreign runtime
+不创建、clone、move、加 context 或聚合 Status，这些属于 native implementation。
 
-## 1. 类型与所有权
-
-```c
-typedef uint16_t hyle_status_code; /* canonical 0..16; fixed-width ABI */
-typedef struct hyle_status { uintptr_t rep; } hyle_status;
-typedef uint16_t hyle_native_error_domain;
+```text
+downstream HYLE call
+        │
+        ├── NULL ───────────────► success
+        │
+        └── opaque hyle_status ─► query through hyle_error ─► destroy once
 ```
 
-`hyle_status` 是一个 machine word 的拥有型句柄（64 位平台为 8B）：
+## 2. artifact bootstrap
 
-| 操作 | API |
+精确加载实际将要调用的 `hyle_error.dll` / `libhyle_error.so` / `libhyle_error.dylib`，只解析并
+调用：
+
+```c
+uint32_t hyle_error_ffi_abi_version(void);
+```
+
+high 16 bits 是 major，low 16 bits 是 minor。binding 接受相同 major 且 runtime minor 不小于它
+要求的 minor。版本不兼容时，必须在解析/调用任何其他 error symbol 前拒绝。
+
+下游 producer artifact 也必须验证它自己的 bootstrap；core 的版本查询不能替任何其他 artifact
+背书。所有 artifact 必须来自一个一致 SDK。不要依赖 PATH 搜索碰巧找到同名旧 DLL。
+
+## 3. 类型与所有权
+
+```c
+typedef struct hyle_status_handle *hyle_status;
+```
+
+- NULL 是完整 OK 表示；查询 NULL 安全，destroy NULL 安全；
+- 非 NULL 是一个 immutable owning handle，最终恰好调用一次 `hyle_status_destroy(status)`；
+- 不能解引用、做 pointer arithmetic、序列化或复制成第二个 owner；
+- code-only handle 可能是 process-lifetime sentinel，两个 handle 可能数值相同；仍按各次返回的
+  逻辑 ownership 调 destroy，不能用 pointer identity 推断 error identity；
+- message/native handle 由 `hyle_error` 管理，query/destroy 期间该 artifact 必须保持加载；
+- owner lifetime 被固定时可从多个线程并发 query；不能让 destroy/close 与任何 query 竞争；
+- 先释放所有 status，再卸载 producer 和 `hyle_error`。
+
+.NET 应包装为 zero-invalid `SafeHandle`；Java 应使用不可复制的 owner/`AutoCloseable`，或确保每条
+路径都在 `finally` destroy。不要向业务层暴露裸 `IntPtr` / `MemorySegment` ownership。
+
+## 4. 六个动态导出
+
+`tests/error/c_surface_symbols.txt` 是机械清单：
+
+| export | signature 语义 |
 |---|---|
-| 初始化/创建 | `HYLE_STATUS_INIT`、`hyle_status_ok`、`hyle_status_new[_n]`、header-inline 每码工厂 |
-| 拷贝 | `hyle_status_clone`，禁止用 `dst = src` 伪拷贝 owning handle |
-| 转移 | `hyle_status_move(&dst, &src)`；dst 必须已初始化，先释放 dst，再把 src 置 OK |
-| 首错聚合 | `hyle_status_update(&overall, &next)`；消费 next 并置 OK |
-| 释放 | `hyle_status_free(&s)`，NULL 安全、幂等、释放后为 OK |
-| 增加上下文 | `hyle_status_add_context(&s, context)`，原地替换 owning handle |
+| `hyle_error_ffi_abi_version` | `uint32_t(void)` artifact bootstrap |
+| `hyle_status_destroy` | 消费一个 owning handle；NULL 安全 |
+| `hyle_status_get_code` | fixed-width `uint16_t` canonical code；NULL→OK |
+| `hyle_status_get_native_error` | 返回 1/0；可选输出 fixed-width domain/code |
+| `hyle_status_message` | 精确 UTF-8 message bytes caller-buffer copy |
+| `hyle_status_to_string` | UTF-8 `Code[: message]` caller-buffer copy |
 
-OK 与无消息、无 detail 错误零分配；带消息或 detail 的错误共享引用计数 representation。
-非法 code 输入归一为 `HYLE_STATUS_UNKNOWN`。`hyle_status_code` 刻意不是 C enum：固定
-`uint16_t` 可避免 `-fshort-enums` 或不同编译器改变导出函数的传参与返回 ABI；具名值仍是
-可用于 `switch`/`case` 的整数常量。
+Windows 全部显式 `__cdecl`。`hyle_status_code` 与 `hyle_native_error_domain` 都是 `uint16_t` constants，
+不是 compiler-sized enum。length/capacity 是 `uint64_t`；HYLE FFI 只支持 64 位目标。
 
-native detail 是可选的固定 `{domain, int64 code}`。domain 有 POSIX errno、Win32、HRESULT、
-Vulkan、CUDA runtime、CUDA driver、NVRTC 和 Unknown。它不改变 one-word handle；只有实际
-携带 detail 的错误才在 heap rep 中多存一个 8B code。跨平台逻辑先判断 canonical status code，只有
-后端专用恢复/遥测才查询 native detail。
+没有导出的 factory、clone、move、predicate、context、Update、borrowed cstr、code-name 或 OS
+adapter。它们不属于当前 receiving-binding 任务；不要在 binding 中假定旧的 raw-word C 候选仍
+存在。
 
-每个 `hyle_status` 在传给 `free`、作为 `move` 的 dst 或传给 `add_context` 前，都必须由
-`HYLE_STATUS_INIT`、`hyle_status_ok()`、工厂返回值或另一次合法 move 初始化。不要把未初始化
-的栈变量交给这些函数：`move` 会先释放 dst 中原有的 owning handle。
+## 5. caller-buffer 规则
 
-## 2. DLL 导出符号
-
-| 符号 | 签名要点 | 说明 |
-|---|---|---|
-| `hyle_status_ok` | `() -> hyle_status` | OK |
-| `hyle_status_new` | `(code, msg) -> hyle_status` | 通用构造；NULL msg 表示无消息 |
-| `hyle_status_new_n` | `(code, msg, len) -> hyle_status` | length-aware；支持嵌入 NUL、无 `strlen` |
-| `hyle_status_new_native[_n]` | `(code, domain, native_code, msg[,len])` | 附加定长原生 detail |
-| `hyle_status_code_from_errno` | `(errno) -> code` | O(1) canonical 分类；0 返回 OK |
-| `hyle_status_from_errno` | `(errno, context) -> status` | 线程安全 native description；NULL context 可用 |
-| `hyle_status_from_errno_n` | `(errno, context, len) -> status` | length-aware context |
-| `hyle_status_code_from_win32` | `(uint32 code) -> code` | O(1) Win32 canonical 分类；任意 host 可用 |
-| `hyle_status_from_win32` | `(code, context) -> status` | Windows 用 `FormatMessage`；保留 Win32 detail |
-| `hyle_status_from_win32_n` | `(code, context, len) -> status` | length-aware context |
-| `hyle_status_code_from_hresult` | `(int32 hr) -> code` | O(1) COM/WinRT 分类；非负值为 OK |
-| `hyle_status_from_hresult` | `(hr, context) -> status` | Windows 优先系统描述；保留 HRESULT detail |
-| `hyle_status_from_hresult_n` | `(hr, context, len) -> status` | length-aware context |
-| `hyle_status_free` | `(status*)` | 释放并置 OK；NULL 安全 |
-| `hyle_status_clone` | `(status) -> status` | 新的独立 owning handle |
-| `hyle_status_move` | `(dst*, src*)` | 转移所有权 |
-| `hyle_status_update` | `(overall*, next*)` | 保留首个错误；消费 next 并置 OK；NULL/self no-op |
-| `hyle_status_add_context` | `(status*, context)` | 前置 `context: `；OK/NULL/空串 no-op；OOM 保留原状态 |
-| `hyle_status_add_context_n` | `(status*, context, len)` | length-aware 原地 context |
-| `hyle_status_is_ok` | `(status) -> int` | 1/0 |
-| `hyle_status_get_code` | `(status) -> code` | canonical code |
-| `hyle_status_has_message` | `(status) -> int` | 1/0 |
-| `hyle_status_equals` | `(a, b) -> int` | 比较 code、native detail 和完整消息 |
-| `hyle_status_code_name` | `(code) -> const char*` | 静态字符串；非法 code 返回 `"Unknown"` |
-| `hyle_native_error_domain_name` | `(domain) -> const char*` | 静态 domain 名；非法输入为 `"Unknown"` |
-| `hyle_status_get_native_error` | `(status, domain*, code*) -> int` | 有 detail 返回 1；输出指针可 NULL |
-| `hyle_status_message` | `(status, buf, cap) -> size_t` | 仅消息；snprintf 式返回所需长度 |
-| `hyle_status_to_string` | `(status, buf, cap) -> size_t` | `"OK"`、`"Code"` 或 `"Code: message"` |
-| `hyle_status_message_cstr` | `(status) -> const char*` | 零拷贝借用，随 handle 存活；无消息返回 `""` |
-
-## 3. Header-inline 便利面
-
-每个非 OK canonical code 都有工厂，例如：
+两个文本函数采用同一规则：
 
 ```c
-hyle_status s = hyle_status_not_found("shader file");
-hyle_status oom = hyle_status_resource_exhausted(NULL);
+uint64_t hyle_status_message(hyle_status status,
+                             char *buffer, uint64_t capacity);
+uint64_t hyle_status_to_string(hyle_status status,
+                               char *buffer, uint64_t capacity);
 ```
 
-每码也有谓词：`hyle_status_is_not_found`、`hyle_status_is_unavailable` 等；通用入口是
-`hyle_status_code_is(status, code)`。
+1. 返回完整所需 UTF-8 byte 数，不包含结尾 NUL；
+2. `buffer == NULL` 是 size-only query；
+3. `buffer != NULL && capacity > 0` 时最多写 `capacity-1` bytes，再写 NUL；
+4. 缓冲不足仍返回完整长度；
+5. message 允许嵌入 NUL，必须按返回长度解码，不能 `strlen`；
+6. Status immutable，所以 size-query 后用 `required + 1` 重试不会被该 handle 自身改变。
 
-返回 `hyle_status` 的 C 函数可以使用：
+小 buffer 得到的是 byte prefix，可能恰好截在多字节 UTF-8 code point 中间；不要解码截断结果。
+它只用于诊断/探测 truncation，拿 `required + 1` 重试成功后再解码完整 bytes。
 
-```c
-#define HYLE_C_RETURN_IF_ERROR(expr) /* 非 OK 则按值返回 owning handle */
-#define HYLE_C_UPDATE_STATUS(overall, expr) /* 表达式求值一次，消费并聚合 */
+通用读取流程：
+
+```text
+required = message(status, NULL, 0)
+bytes = allocate(required + 1)
+actual = message(status, bytes, required + 1)
+assert actual == required
+decode bytes[0..required) as UTF-8
 ```
 
-表达式只求值一次。OK 是零 representation，宏在头内直接检查 `rep != 0`，不会为热成功
-路径调用 DLL；错误 handle 的所有权转移给调用者。
+调用方提供给 native API 的 message/context 由调用方保证 UTF-8；error 不在热路径验证。HYLE
+产生的 Win32/HRESULT system description 经 UTF-16→UTF-8 转换；`errno` 的 locale-sensitive
+description 会在冷路径验证，非法 UTF-8 退化为确定性的 ASCII `errno N`，native errno 不丢失。
 
-## 4. 常用写法
+## 6. code 与 native detail
 
-### 4.1 普通传播与语义 context
+先按 canonical code 恢复：
 
 ```c
-hyle_status load_model(void) {
-  hyle_status s = open_weights();
-  if (!hyle_status_is_ok(s)) {
-    hyle_status_add_context(&s, "loading model weights");
-    return s;
-  }
-  return hyle_status_ok();
-}
-
-hyle_status s = load_model();
-if (!hyle_status_is_ok(s)) {
-  char text[256];
-  hyle_status_to_string(s, text, sizeof text);
-  /* 应用自行决定是否交给 obs/宿主 logger */
-}
-hyle_status_free(&s);
+hyle_status_code code = hyle_status_get_code(status);
 ```
 
-原生 C/POSIX 叶子直接保存 errno 并构造同一个 owning Status：
+只有 backend-specific recovery/telemetry 才查 detail：
 
 ```c
-int fd = open(path, O_RDONLY);
-if (fd < 0) {
-  int error_number = errno;
-  return hyle_status_from_errno(error_number, "opening model weights");
-}
-```
-
-`error_number == 0` 返回 OK。`context == NULL` 只保留 native description；返回值仍按普通
-`hyle_status` clone/move/free，并自动携带 `HYLE_NATIVE_ERROR_POSIX_ERRNO` 与原始数值。若
-操作合同需要更具体分类，用
-`hyle_status_code_from_errno` 取得默认 code 后再做少量明确覆盖，不复制整张映射表。
-
-Win32 叶子也必须立即保存 `GetLastError()`，再调用 `hyle_status_from_win32`。不要在保存前调用
-日志、格式化或另一项 Win32 API；它们可能覆盖同一 thread-local 值。该入口在任意 host 都能
-对稳定的 32-bit Win32 code 分类，Windows 上补系统描述，非 Windows 上使用数字描述；两种
-情况都保留 `HYLE_NATIVE_ERROR_WIN32` detail。`hyle_status_code_from_win32` 只用于调用合同更
-具体时的少量 override，不用于复制另一张大 switch。
-
-COM/WinRT 的返回值走 `hyle_status_from_hresult`，不要走 Win32 入口。`S_FALSE` 等非负值仍是
-成功；失败保留 signed 32-bit 原值和 `HYLE_NATIVE_ERROR_HRESULT`。若 HRESULT 是
-`HRESULT_FROM_WIN32` 生成的，canonical code 自动复用 Win32 映射，但 native domain 仍准确标成
-HRESULT，调用方不必逆向猜编码来源。
-
-后端原生码需要程序化处理时，创建和查询都不必解析 message：
-
-```c
-hyle_status s = hyle_status_new_native(
-    HYLE_STATUS_UNAVAILABLE, HYLE_NATIVE_ERROR_VULKAN, -4, "device lost");
 hyle_native_error_domain domain;
 int64_t native_code;
-if (hyle_status_get_native_error(s, &domain, &native_code) &&
-    domain == HYLE_NATIVE_ERROR_VULKAN && native_code == -4) {
-  /* recreate the Vulkan device */
-}
-hyle_status_free(&s);
+int32_t present =
+    hyle_status_get_native_error(status, &domain, &native_code);
 ```
 
-跨平台策略仍先按 `HYLE_STATUS_UNAVAILABLE` 分支；native 只是更窄的二级决策面。
+无 detail 时返回 0，并把提供的 outputs 写为 `HYLE_NATIVE_ERROR_NONE` / 0；任一 output 可为 NULL。
+message 是人读文本，不要从中解析 code。code/domain constants 的数字定义以 header 为准，binding
+可以映射成自己的 enum，但跨 ABI 仍以 `uint16` 传递。
 
-### 4.2 `Status + out` 冷工厂
+## 7. .NET 绑定形状
+
+推荐结构：
+
+1. `NativeLibrary.Load(exactErrorPath)`；只 `GetExport` bootstrap 并验证；
+2. 精确加载 producer 并验证它自己的 bootstrap；
+3. 为 source-generated `LibraryImport` 安装只接受这两个逻辑名的 resolver；
+4. producer 返回的非零 pointer 立即包进 zero-invalid `SafeHandle`；
+5. query 期间用 `DangerousAddRef`/生成器支持的 SafeHandle 参数固定 lifetime；
+6. `ReleaseHandle` 只调用 `hyle_status_destroy(handle)`；
+7. 先 dispose 所有 SafeHandle，再 free producer/error libraries。
+
+不要让多个 SafeHandle 包装同一个返回值，不要靠 finalizer 作为正常生命周期。可运行样例见
+[`samples/ffi/error/dotnet`](../../samples/ffi/error/dotnet)。
+
+## 8. Java FFM 绑定形状
+
+推荐结构：
+
+1. 用 confined/shared `Arena` 对 exact path 建立 `SymbolLookup.libraryLookup`；
+2. lookup/call 每个 artifact 的 bootstrap，兼容后才 lookup 普通 symbols；
+3. `MemorySegment.NULL` 表示成功；非 NULL 放进不可复制 owner；
+4. caller-buffer 使用 arena 分配 `required + 1`，按 byte length 解码 UTF-8；
+5. owner 的 `close()` 或 `finally` 调用 destroy，防止异常路径泄漏；
+6. 所有 handle 释放后再关闭承载 library lookup 的 Arena。
+
+不要用 `getUtf8String` 读取可能含嵌入 NUL 的 message。可运行样例见
+[`samples/ffi/error/java`](../../samples/ffi/error/java)。
+
+## 9. native-C source helper 不是 FFI
+
+仓库自己的 C compiler/package fixture 可额外包含：
 
 ```c
-#include "hyle/c/mem.h"
-
-hyle_status make_request_pool(hyle_shared_pool **out) {
-  /* 工厂进入时会清空 *out；成功后调用方拥有 *out。 */
-  return hyle_shared_pool_create_default(out, 256, 1024, 0);
-}
-
-hyle_status run(void) {
-  hyle_shared_pool *pool = NULL;
-  HYLE_C_RETURN_IF_ERROR(make_request_pool(&pool));
-
-  void *block = hyle_shared_pool_allocate(pool); /* 热路：耗尽就是 NULL */
-  if (block != NULL) hyle_shared_pool_deallocate(pool, block);
-  hyle_shared_pool_destroy(pool);
-  return hyle_status_ok();
-}
+#include "hyle/c/error_helpers.h"
 ```
 
-`HYLE_C_RETURN_IF_ERROR` 对非 OK Status 做所有权转移；调用者最终负责 free。成功 Status 是零值，
-宏直接继续。已有资源需要 cleanup 时使用普通分支，在 return 前先释放资源，不要用宏跳过清理。
+它只提供 NULL initializer、code predicates 和 `destroy-and-clear` 等 `static inline` spelling。
+这些函数不会出现在 DLL/so/dylib export table，不能被 Java/.NET lookup，也不代表 HYLE 面向 C
+客户提供 source API。业务 binding 应直接映射六个动态导出。
 
-### 4.3 首错聚合
+## 10. 验收与常见错误
 
-批量执行彼此独立的步骤、需要保留第一个失败时，不要让后续错误覆盖最初原因：
+error FFI 的最低证据包含：
 
-```c
-hyle_status overall = HYLE_STATUS_INIT;
-HYLE_C_UPDATE_STATUS(overall, validate_input());
-HYLE_C_UPDATE_STATUS(overall, flush_device());
-HYLE_C_UPDATE_STATUS(overall, close_output());
-return overall; /* ownership 交给 caller */
-```
+- C11 schema/header 自包含、六符号 manifest 与真实 export table 一致；
+- test-only producer 返回 NULL、code-only、含嵌入 NUL message + native detail 三种状态；
+- Windows Java 25 与 .NET 8 exact-path 正向旅程；
+- incompatible artifact 只含坏 bootstrap，binding 在 lookup 普通 symbol 前拒绝；
+- Linux/macOS 对真实 shared artifact 做 bootstrap、最小 query/destroy；
+- shared package 中 producer/error runtime dependencies 可解析，static/source 只作 native 交付验证。
 
-宏会把表达式求值一次并管理临时 handle。需要保存候选变量时使用
-`hyle_status_update(&overall, &next)`；正常调用后 `next` 一定变为 OK，因此不要再把它当错误
-读取，也不需要为其 heap backing 再 free。NULL/self 调用是 no-op；普通代码不要依赖这个
-防御行为掩盖未初始化变量。
+常见错误：
 
-### 4.4 clone、move 与借用消息
-
-- 两个变量都要独立拥有同一错误：`hyle_status_clone`。
-- 只把所有权交给另一个变量：先用 `HYLE_STATUS_INIT` 初始化 dst，再调用
-  `hyle_status_move`。
-- `hyle_status_message_cstr` 只借用；原 Status 被 free/move/原地加 context 后指针失效。
-- `hyle_status_add_context` 消费并原地更新唯一 owning handle：第一层精确分配，第二层起进入
-  几何 prefix storage，连续 k 次的总复制为 O(最终消息字节)。每次调用后此前借用的
-  `message_cstr` 都失效；不要拿 context 记录调用栈或结构化 breadcrumb，大量事件交给 obs。
-- `*_n` 可保存嵌入 NUL 的文本；此时 `message_cstr` 只能看到第一个 NUL，完整字节必须用
-  `hyle_status_message` 的返回长度与 buffer-fill。
-- 直接 `dst = src` 只是复制 tagged word，会造成 heap Status double free；禁止。
-- `hyle_status_update` 消费 `next`；不要在调用前用裸赋值另留一个同 rep 的“备份”。需要保留
-  候选错误时先 `clone`。
-- 每个 owning handle 最终恰好 free 一次；`hyle_status_free` 会把它重置为 OK，因此对同一
-  已正确初始化的变量重复 free 是安全的。
-
-```c
-hyle_status src = hyle_status_unavailable("device lost");
-hyle_status dst = HYLE_STATUS_INIT;
-hyle_status_move(&dst, &src); /* src 现在是 OK */
-hyle_status_free(&dst);
-```
-
-传播宏只适用于当前函数可以立即 return 的位置。如果前面已经取得文件、锁或 opaque handle，
-先用普通分支完成 cleanup，再返回 Status；宏不会自动展开资源清理。
-
-## 5. C++ 到 C 的映射
-
-| C++ 能力 | C 路径 |
-|---|---|
-| `Result<T>` | `hyle_status` 返回值 + 成功出参 |
-| `HYLE_RETURN_IF_ERROR` / `HYLE_ASSIGN_OR_RETURN` | `HYLE_C_RETURN_IF_ERROR` 或普通分支 |
-| `Status::WithContext` | `hyle_status_add_context` |
-| `Status::Update` | `hyle_status_update` / `HYLE_C_UPDATE_STATUS` |
-| `Status::FromNative` / `native_error()` | `hyle_status_new_native[_n]` / `hyle_status_get_native_error` |
-| C++/C representation 转移 | 仅由 HYLE 源码内部 bridge 完成；公开 C++ API 不暴露 raw rep |
-| 日志、sink | 独立的 `hyle/c/obs.h` 产品面 |
-
-## 6. 验收
-
-```bash
-cmake --build <build> --target hyle_error_c_test
-ctest --test-dir <build> -R hyle_error_c_test --output-on-failure
-```
-
-纯 C 测试覆盖创建、查询、clone/move/free、非法 code/domain 值、errno/Win32/HRESULT/native detail、
-嵌入 NUL、借用消息、上下文、首错聚合和早返回；机械 surface test 同时锁定 30 个 DLL 导出，
-独立头测试确保
-`hyle/c/error.h` 单独以 C 编译。
-
-二进制 SDK 的外部消费 sample/probe 位于 `samples/package/error/c`：工程只启用 C，执行
-`find_package(Hyle REQUIRED COMPONENTS error)` 并只链接 `hyle::error`。同一个工程必须同时通过
-shared 和 static SDK；static package 会启用 C++ linker driver，但不会把 `.c` 翻译单元改成 C++。
-它是否已在当前提交签署只见 [`../milestones/pre-release-readiness.md`](../milestones/pre-release-readiness.md)。
+- 把 `hyle_status` 当结构体或 C++ `Status` layout；
+- 裸复制 owning pointer，再 destroy 两次；
+- 未固定 owner lifetime 就并发 query，或让 query 与 destroy/close 竞争；
+- 忘记 NULL 是 OK，先创建一个多余“OK object”；
+- 在 bootstrap 前预绑定所有 symbols；
+- 只验证 core artifact；
+- 用 PATH/`java.library.path` 搜索而不是 exact artifact；
+- 用 C-string API截断嵌入 NUL message；
+- 卸载 `hyle_error` 后再 query/finalize SafeHandle；
+- 把 `error_helpers.h` 的 inline 函数列为动态能力。

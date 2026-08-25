@@ -43,7 +43,7 @@ namespace {
 using hyle::mem::Allocator;
 
 hyle_status steal_status(hyle::Status &&status) noexcept {
-  return hyle_status{hyle::detail::StatusAccess::release(status)};
+  return hyle::detail::status_to_ffi(std::move(status));
 }
 
 static_assert(std::is_standard_layout_v<hyle_allocator>);

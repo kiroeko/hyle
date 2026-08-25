@@ -1,5 +1,6 @@
 #define _CRT_SECURE_NO_WARNINGS 1
 #include "hyle/c/container.h"
+#include "hyle/c/error_helpers.h"
 
 /* Everything below this marker belongs to the reviewed C-syntax fixture. */
 enum { HYLE_C_CONTAINER_COVERAGE_BODY_MARKER = 0 };

@@ -26,16 +26,22 @@ FixedPool 同时提供 caller-owned `*_storage + *_init`（control/payload 都�
 只存在于不可解引用的内部 struct tag，不进入用户变量和函数签名。
 
 所有可能失败的冷构造/初始化入口统一采用 `hyle_status + out`：out 参数在前，函数进入时
-先清空 `*out`，成功返回零值 OK，失败返回可拥有、可传播的共享 error Status。调用方始终用
-`hyle_status_free` 结束 Status 生命周期。`alloc/realloc`、region bump、pool pop/acquire
+先清空 `*out`，成功返回 `NULL`，失败返回可拥有、可传播的 opaque error handle。调用方把
+每个非 NULL owning handle 恰好一次传给 `hyle_status_destroy`。`alloc/realloc`、region bump、pool pop/acquire
 仍在热路直接返回指针或 NULL；容量耗尽/OOM 是其值合同，不为每次调用制造 Status。
 
 ## 1. 链接与所有权
 
 ```c
 #include "hyle/c/mem.h"
+#include "hyle/c/error_helpers.h"
 // link: hyle_mem
 ```
+
+本文 recipe 中的 `hyle_status_ok`、`hyle_status_is_ok`、`hyle_status_free` 及 code predicates
+是 `hyle/c/error_helpers.h` 提供的 source-only fixture conveniences，不是动态 FFI 导出。
+managed direct FFI 应直接用 `NULL` / `hyle_status_get_code` 判断，并用
+`hyle_status_destroy` 销毁每个非 NULL owning handle。
 
 纯 C 验收目标：`hyle_mem_c_test`。
 安装 SDK 的独立消费者见 [`../../samples/package/mem/c`](../../samples/package/mem/c)：它只请求
@@ -301,8 +307,9 @@ typed 宏为 `HYLE_GROWABLE_POOL_CREATE/ACQUIRE/RELEASE`。需要 ctor/dtor 的 
 | `hyle_huge_region_interleave_chunk_size` | interleaved region 的实际条带大小；其它 region 为 0 |
 | `hyle_reserve_huge_1g_pages` | 预留 1GiB 大页；非法 node/溢出返回 OUT_OF_RANGE，mimalloc 无法取得连续 host RAM 时返回 RESOURCE_EXHAUSTED，并保留 native error |
 
-mem 不再维护私有 TLS error code/string。冷路径与全库共用 `hyle_status`；成功 Status 是 8B
-零值、零分配，错误消息分配失败时仍保留 code。热分配路径则完全不构造 Status。
+mem 不再维护私有 TLS error code/string。冷路径与全库共用 `hyle_status`；成功 Status 是
+`NULL`、零分配，失败是 opaque owning handle，错误消息分配失败时仍保留 code。热分配路径
+则完全不构造 Status。
 
 system allocator 的 mimalloc backing 默认在支持的平台自动探测并使用 NUMA 拓扑。部署方若要
 限制它可见的 node 数，须在**启动进程之前**设置 `MIMALLOC_USE_NUMA_NODES=N`。embedded
@@ -359,12 +366,12 @@ hyle_status_free(&status);
 typedef struct { int id; double value; } Node;
 hyle_status use_nodes(void) {
   hyle_shared_pool *core = NULL;
-  HYLE_C_RETURN_IF_ERROR(
-      HYLE_OBJECT_POOL_CREATE_DEFAULT(&core, Node, 1024));
+  hyle_status status =
+      HYLE_OBJECT_POOL_CREATE_DEFAULT(&core, Node, 1024);
+  if (!hyle_status_is_ok(status)) return status;
 
   hyle_shared_pool_cache *local = NULL;
-  hyle_status status =
-      HYLE_OBJECT_POOL_CACHE_CREATE_DEFAULT(&local, core, 64, 16);
+  status = HYLE_OBJECT_POOL_CACHE_CREATE_DEFAULT(&local, core, 64, 16);
   if (!hyle_status_is_ok(status)) {
     hyle_shared_pool_destroy(core);
     return status;
@@ -387,12 +394,12 @@ hyle_status use_nodes(void) {
 ```c
 hyle_status run_with_budget(void) {
   hyle_stats_allocator *stats = NULL;
-  HYLE_C_RETURN_IF_ERROR(hyle_stats_allocator_create_default(&stats, 0));
+  hyle_status status = hyle_stats_allocator_create_default(&stats, 0);
+  if (!hyle_status_is_ok(status)) return status;
 
   hyle_allocator measured = hyle_stats_allocator_as_allocator(stats);
   hyle_quota_allocator *quota = NULL;
-  hyle_status status =
-      hyle_quota_allocator_create(&quota, measured, 1u << 20);
+  status = hyle_quota_allocator_create(&quota, measured, 1u << 20);
   if (!hyle_status_is_ok(status)) {
     hyle_stats_allocator_destroy(stats);
     return status;
@@ -428,12 +435,12 @@ hyle_status_free(&status);
 ```c
 hyle_status use_cached_blocks(void) {
   hyle_shared_pool* pool = NULL;
-  HYLE_C_RETURN_IF_ERROR(
-      hyle_shared_pool_create_default(&pool, 256, 4096, 0));
+  hyle_status status =
+      hyle_shared_pool_create_default(&pool, 256, 4096, 0);
+  if (!hyle_status_is_ok(status)) return status;
 
   hyle_shared_pool_cache* cache = NULL;
-  hyle_status status =
-      hyle_shared_pool_cache_create_default(&cache, pool, 128, 32);
+  status = hyle_shared_pool_cache_create_default(&cache, pool, 128, 32);
   if (!hyle_status_is_ok(status)) {
     hyle_shared_pool_destroy(pool);
     return status;

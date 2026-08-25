@@ -48,6 +48,7 @@
 #  include <pthread.h>
 #endif
 
+#include "hyle/c/error_helpers.h"
 #include "hyle/platform/fs.h"
 #include "hyle/c/platform.h"
 #include "hyle/platform/mapped_file.h"

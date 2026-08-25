@@ -1,4 +1,5 @@
 #include <hyle/c/container.h>
+#include <hyle/c/error_helpers.h>
 
 #include <stdint.h>
 

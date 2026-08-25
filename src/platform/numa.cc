@@ -693,8 +693,10 @@ vm_allocate_numa_interleaved(std::size_t size,
     auto max_node = make_numa_mask(one_node, mask);
     if (!max_node || sys_mbind(data, aligned, MPOL_BIND, mask.data(),
                                max_node ? *max_node : 0u, 0) != 0) {
-      Status error = max_node ? numa_native_status("mbind(MPOL_BIND)", errno)
-                              : std::move(max_node).error();
+      Status error =
+          max_node
+              ? numa_native_status("mbind(MPOL_BIND)", errno)
+              : static_cast<Status>(std::move(max_node).error());
       (void)vm_release(data, aligned);
       return std::unexpected(std::move(error));
     }

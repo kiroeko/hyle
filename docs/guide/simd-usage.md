@@ -75,12 +75,18 @@ Highway parity。应用通常只应调用处理整段连续数据的语义接口
 
 ```c
 #include "hyle/c/simd.h"
+#include "hyle/c/error_helpers.h"
 
 float x[4096], y[4096], out[4096];
 hyle_simd_add_f32(x, y, out, 4096);
 float inner = hyle_simd_dot_f32(x, y, 4096);
 hyle_simd_saxpy_f32(0.25f, x, y, 4096);
 ```
+
+下列原生 C recipe 使用的 `hyle_status_is_ok`、`hyle_status_free` 及 code predicates 是
+`hyle/c/error_helpers.h` 提供的 source-only fixture conveniences，不是动态 FFI 导出。
+managed direct FFI 应直接用 `NULL` / `hyle_status_get_code` 判断，并用
+`hyle_status_destroy` 销毁每个非 NULL owning handle。
 
 模型权重或激活以窄类型存储时，不要先扩成一个临时 f32 数组；同一个入口会在寄存器中 widening：
 
@@ -102,7 +108,9 @@ float half_dot = hyle_simd_dot_f16(left, right, 4096);
 hyle_simd_random_o* state = NULL;
 hyle_status status = hyle_simd_random_create(&state, 12345);
 if (!hyle_status_is_ok(status)) {
-  fprintf(stderr, "%s\n", hyle_status_message_cstr(status));
+  char message[256];
+  hyle_status_message(status, message, sizeof message);
+  fprintf(stderr, "%s\n", message);
   hyle_status_free(&status);
   return;
 }

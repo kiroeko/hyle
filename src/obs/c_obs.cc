@@ -69,7 +69,7 @@ struct hyle_obs_sink_o {
 namespace {
 
 hyle_status steal_status(hyle::Status&& status) noexcept {
-  return hyle_status{hyle::detail::StatusAccess::release(status)};
+  return hyle::detail::status_to_ffi(std::move(status));
 }
 
 bool valid_level(hyle_obs_log_level level, bool threshold) noexcept {

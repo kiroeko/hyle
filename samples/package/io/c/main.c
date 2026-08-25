@@ -1,4 +1,5 @@
 #include <hyle/c/io.h>
+#include <hyle/c/error_helpers.h>
 
 #include <string.h>
 

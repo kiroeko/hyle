@@ -23,9 +23,9 @@ STL、模板或 C++ 对象布局。C++ 源码用户若与 HYLE 使用同一工�
   结果写到首个 `out` 参数。所有非 NULL 的首个 out 都在参数校验和分配前写安全值：create
   写 NULL，所有 map/set/B-tree insert 写 `ALREADY_PRESENT`，interner acquire 写 0，intern
   写空 view，批量驻留写 completed=0，concurrent pointer vector append 写 `SIZE_MAX`。因此失败后
-  不会残留调用方旧值；Status 为 OK 时再按操作语义读取最终结果。调用者用
-  `hyle_status_is_ok` / `hyle_status_get_code` 检查，并始终用 `hyle_status_free`
-  释放返回状态。container 不再维护私有 TLS `last_error`。
+  不会残留调用方旧值；Status 为 OK 时再按操作语义读取最终结果。动态 FFI 直接以 `NULL` /
+  `hyle_status_get_code` 检查，并把每个非 NULL owning handle 恰好一次传给
+  `hyle_status_destroy`。container 不再维护私有 TLS `last_error`。
 - 满队列、空队列、未找到 key、stale interner ID 都是正常控制流，不创建 Status；
   仍由 `int`、空 view 或 `NULL` 表达。热路径因此没有错误字符串和分配成本。
 - 无状态查询要求 view 满足 `size == 0 || data != NULL`。非法 view 返回该函数的
@@ -43,6 +43,7 @@ STL、模板或 C++ 对象布局。C++ 源码用户若与 HYLE 使用同一工�
 
 ```c
 #include "hyle/c/container.h"
+#include "hyle/c/error_helpers.h"
 
 int main(void) {
   hyle_container_vector_options opt =
@@ -66,6 +67,11 @@ int main(void) {
   return 0;
 }
 ```
+
+这里的 `hyle_status_is_ok`、`hyle_status_free` 及 code predicates 来自
+`hyle/c/error_helpers.h`，只是 HYLE 原生 C/schema fixture recipe 使用的 source-only
+`static inline` 便利函数，不是动态 FFI 导出。managed direct FFI 应直接用 `NULL` /
+`hyle_status_get_code` 判断，并用 `hyle_status_destroy` 销毁每个非 NULL owning handle。
 
 ## 字符串、路径与匹配
 

@@ -1,3 +1,4 @@
+#include <hyle/c/error_helpers.h>
 #include <hyle/c/platform.h>
 
 #include <stddef.h>

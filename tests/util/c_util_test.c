@@ -1,4 +1,5 @@
 /* C-syntax compiler/schema/link fixture for the util-runtime FFI candidate. */
+#include "hyle/c/error_helpers.h"
 #include "hyle/c/util.h"
 
 _Static_assert(sizeof(hyle_util_registry_priority) == sizeof(uint32_t),
@@ -107,11 +108,13 @@ static void* registry_factory(hyle_status* out_status, void* context,
 }
 
 static void* failing_registry_factory(hyle_status* out_status, void* context,
-                                      const void* arguments) {
+                                       const void* arguments) {
   (void)context;
   (void)arguments;
   if (out_status != NULL) {
-    *out_status = hyle_status_unavailable("backend initialization failed");
+    /* A source-level callback can forward an owning failure received from a
+     * HYLE producer; it does not need public Status construction exports. */
+    *out_status = hyle_util_demangle(NULL, NULL, NULL, 0);
   }
   return NULL;
 }
@@ -380,7 +383,7 @@ static void test_runtime_registry(void) {
       HYLE_UTIL_REGISTRY_DEFAULT, "fallible implementation")));
   object = (void*)(uintptr_t)1;
   CHECK(consume_code(hyle_util_registry_create_object_cstr(
-      &object, registry, "failing", NULL), HYLE_STATUS_UNAVAILABLE));
+      &object, registry, "failing", NULL), HYLE_STATUS_INVALID_ARGUMENT));
   CHECK(object == NULL);
   CHECK(hyle_util_registry_create_or_null_cstr(
             registry, "failing", NULL) == NULL);

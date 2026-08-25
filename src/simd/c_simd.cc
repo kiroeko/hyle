@@ -14,6 +14,7 @@
 #include "hyle/simd/scan.h"
 #include "hyle/simd/search.h"
 #include "hyle/simd/sort.h"
+#include "../error/status_ffi_source_helpers.h"
 
 struct hyle_simd_random_o {
   explicit hyle_simd_random_o(std::uint64_t seed) noexcept : state(seed) {}

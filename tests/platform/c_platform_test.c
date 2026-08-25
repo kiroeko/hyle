@@ -4,6 +4,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #endif
+#include "hyle/c/error_helpers.h"
 #include "hyle/c/platform.h"
 #include "hyle/core/cache_defs.h"
 

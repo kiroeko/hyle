@@ -17,9 +17,11 @@ inline std::string to_string(const Status &status) {
   const std::size_t size = status.ToString(local, sizeof(local));
   if (size < sizeof(local)) return std::string(local, size);
 
-  std::string text(size + 1, '\0');
-  status.ToString(text.data(), text.size());
-  text.resize(size);
+  std::string text;
+  text.resize_and_overwrite(size + 1, [&](char *data, std::size_t capacity) {
+    status.ToString(data, capacity);
+    return size;
+  });
   return text;
 }
 

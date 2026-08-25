@@ -12,14 +12,22 @@
 `hyle_status`，不再有 util 私有的线程局部错误槽。
 
 ```c
+#include "hyle/c/util.h"
+#include "hyle/c/error_helpers.h"
+
 hyle_status status = some_util_call(...);
 if (!hyle_status_is_ok(status)) {
   char text[256];
   hyle_status_to_string(status, text, sizeof(text));
   fprintf(stderr, "%s\n", text);
 }
-hyle_status_free(&status); /* OK 也可安全释放 */
+hyle_status_free(&status); /* source helper 接受 NULL 并清空本地变量 */
 ```
+
+这里的 `hyle_status_ok`、`hyle_status_is_ok`、`hyle_status_free` 及 code predicates 是
+`hyle/c/error_helpers.h` 提供的 source-only fixture conveniences，不是动态 FFI 导出。
+managed direct FFI 应直接用 `NULL` / `hyle_status_get_code` 判断，并用
+`hyle_status_destroy` 销毁每个非 NULL owning handle。
 
 ## 反修饰与自旋 hint
 
@@ -64,8 +72,9 @@ handle，并复制 allocator；最终 release 同步调用 destroy 一次，再�
 
 ```c
 hyle_util_ref* ref = NULL;
-HYLE_C_RETURN_IF_ERROR(
-    hyle_util_ref_create_system(&ref, resource, close_resource, NULL));
+hyle_status status =
+    hyle_util_ref_create_system(&ref, resource, close_resource, NULL);
+if (!hyle_status_is_ok(status)) return status;
 hyle_util_ref* second = hyle_util_ref_retain(ref);
 hyle_util_ref_release(second);
 hyle_util_ref_release(ref);
@@ -84,11 +93,9 @@ inline 便利函数。
 ```c
 static void* make_engine(hyle_status* out_status, void* config,
                          const void* options) {
-  void* engine = application_make_engine(config, options);
-  if (engine == NULL && out_status != NULL) {
-    *out_status = hyle_status_unavailable("engine initialization failed");
-  }
-  return engine;
+  /* application_make_engine receives and forwards a downstream HYLE status;
+     the error C schema deliberately has no public status factory. */
+  return application_make_engine(out_status, config, options);
 }
 
 static hyle_status build_registry(hyle_util_registry** out, void* config) {
@@ -131,7 +138,8 @@ hyle_util_registry_destroy(reg);
 `HYLE_STATUS_ALREADY_EXISTS`。`reserve` 和注册只允许在 mutable 阶段；`freeze` 单向、幂等、
 O(1)、零分配，此后查询是 lock-free expected O(1)。checked `create_object` 给 creator 传入
 已初始化的 OK `out_status`，因此可区分 key 缺失、creator 失败和成功返回 NULL；失败时 creator
-返回 NULL 并把 `*out_status` 替换为一个 owning error。`create_or_null` 给 creator 传 NULL status，
+返回 NULL，并把从下游 HYLE producer 收到的 owning error 转移到 `*out_status`，而不是调用
+error C schema 自造状态。`create_or_null` 给 creator 传 NULL status，
 让热路径完全跳过诊断构造，并把 invalid/missing/failure/successful-NULL 都映成 NULL。
 `hyle_util_registry_priority` 是固定 `uint32_t` ABI 加枚举常量，而不是宽度由编译器决定的
 C enum；因此 library、visitor callback 与启用 `-fshort-enums` 的外部 C consumer 仍使用同一
@@ -165,7 +173,8 @@ C 没有可移植的词法析构。旧的 heap guard 要求每个出口手动 de
 
 ## 常见坑
 
-- 每个非 OK `hyle_status` 都是 owning 值；返回、move 或 free，不能只打印后丢弃。
+- 每个非 NULL `hyle_status` 都是 owning handle；返回/转移所有权或调用
+  `hyle_status_destroy`，不能只打印后丢弃。
 - allocator、factory ctx、destroy ctx、Registry、线程局部 RNG 的生命周期由调用方保证；被更高
   priority 替换的 factory ctx 也必须活过已在途的调用。
 - callback 不能让 C++ 异常越过 C 边界。Registry creator 只有收到非 NULL `out_status` 时才构造

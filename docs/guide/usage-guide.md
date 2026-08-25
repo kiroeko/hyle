@@ -450,7 +450,10 @@ d.ToString(buf, sizeof buf);    // "Internal: loading model: shard 7 gone"
 std::string text = hyle::to_string(d);
 ```
 
-**`Result<T>` = `std::expected<T, Status>`**（C++23，monadic `and_then`/`transform` 免费）。两个传播宏做 Rust `?`-式早返回，在返回 `Status` 或 `Result<T>` 的函数里都能用：
+**`Result<T>` 保留标准 `std::expected` 形状**（C++23，monadic
+`and_then`/`transform` 免费）；其同尺寸受检 error arm 包装 `Status` 并拒绝
+`Status::Ok()`。两个传播宏做 Rust `?`-式早返回，在返回 `Status` 或
+`Result<T>` 的函数里都能用：
 
 ```cpp
 #include "hyle/error/result.h"   // Result<T> + 两个早返回宏

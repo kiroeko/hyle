@@ -15,6 +15,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "hyle/c/error_helpers.h"
 #include "hyle/c/util.h"
 #include "hyle/container/string_ref.h"
 #include "hyle/platform/cpu.h"

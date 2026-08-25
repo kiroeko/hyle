@@ -1,40 +1,46 @@
 /* SPDX-License-Identifier: LicenseRef-HYLE-Proprietary
  *
- * Pre-release Native FFI schema candidate for HYLE error. This is not a
- * native-C product API or a frozen cross-language contract; module review may
- * retain a task-driven subset or declare FFI=N/A.
- * Naming: every symbol is `hyle_*` / `HYLE_*`.
+ * Pre-release direct Native FFI schema for the HYLE error artifact. It is
+ * designed for managed/runtime bindings (Java FFM, .NET P/Invoke, ...), not as
+ * a source-level C product API. No released binding consumes this contract
+ * yet, so it may change freely before the first FFI product release.
+ *
+ * Naming: every exported symbol is `hyle_*`.
  * Docs (1:1 with this header): docs/guide/c-error.md
  */
 #ifndef HYLE_C_ERROR_H_
 #define HYLE_C_ERROR_H_
 
-#include <stddef.h>
 #include <stdint.h>
+
+#include "hyle/core/version_defs.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #if defined(HYLE_STATIC)
-#define HYLE_ERROR_C_API
+#  define HYLE_ERROR_C_API
 #elif defined(_WIN32) || defined(__CYGWIN__)
-#if defined(HYLE_ERROR_BUILD)
-#define HYLE_ERROR_C_API __declspec(dllexport)
-#else
-#define HYLE_ERROR_C_API __declspec(dllimport)
-#endif
+#  if defined(HYLE_ERROR_BUILD)
+#    define HYLE_ERROR_C_API __declspec(dllexport)
+#  else
+#    define HYLE_ERROR_C_API __declspec(dllimport)
+#  endif
 #elif defined(__GNUC__) || defined(__clang__)
-#define HYLE_ERROR_C_API __attribute__((visibility("default")))
+#  define HYLE_ERROR_C_API __attribute__((visibility("default")))
 #else
-#define HYLE_ERROR_C_API
+#  define HYLE_ERROR_C_API
 #endif
 
-/* ---- status codes ----------------------------------------------------------
- */
-/* Fixed-width across compilers and flags such as -fshort-enums. Values remain
- * enum constants for switch/case and source ergonomics, while every exported
- * parameter and return uses the stable uint16_t ABI type. */
+#if defined(_WIN32) || defined(__CYGWIN__)
+#  define HYLE_ERROR_C_CALL __cdecl
+#else
+#  define HYLE_ERROR_C_CALL
+#endif
+
+/* Fixed-width canonical code. The named values are constants rather than a C
+ * enum ABI, so -fshort-enums cannot change any function signature. */
 typedef uint16_t hyle_status_code;
 enum {
   HYLE_STATUS_OK = 0,
@@ -56,10 +62,6 @@ enum {
   HYLE_STATUS_UNAUTHENTICATED = 16
 };
 
-typedef struct hyle_status {
-  uintptr_t rep; /* opaque owning handle */
-} hyle_status;
-
 typedef uint16_t hyle_native_error_domain;
 enum {
   HYLE_NATIVE_ERROR_NONE = 0,
@@ -73,210 +75,45 @@ enum {
   HYLE_NATIVE_ERROR_UNKNOWN = UINT16_MAX
 };
 
-/* Constant zero/OK initializer. Every hyle_status passed as a destination to
- * free/move/add_context must first be initialized with this macro or returned
- * by a hyle_status_* factory. */
-#define HYLE_STATUS_INIT {0}
+/* Owning, immutable error handle returned by HYLE module FFIs. NULL is the
+ * complete OK representation and needs no call into hyle_error. A non-NULL
+ * value is owned exactly once and must eventually be passed to
+ * hyle_status_destroy. Never dereference, perform pointer arithmetic on, or
+ * duplicate a handle by copying it into a second owner. */
+typedef struct hyle_status_handle *hyle_status;
 
-/* construct / destroy */
-HYLE_ERROR_C_API hyle_status hyle_status_ok(void);
-HYLE_ERROR_C_API hyle_status hyle_status_new(hyle_status_code code,
-                                             const char *msg);
-HYLE_ERROR_C_API hyle_status hyle_status_new_n(hyle_status_code code,
-                                               const char *msg, size_t len);
-HYLE_ERROR_C_API hyle_status
-hyle_status_new_native(hyle_status_code code, hyle_native_error_domain domain,
-                       int64_t native_code, const char *msg);
-HYLE_ERROR_C_API hyle_status
-hyle_status_new_native_n(hyle_status_code code, hyle_native_error_domain domain,
-                         int64_t native_code, const char *msg, size_t len);
-/* Canonical errno adapter. errno==0 produces OK. `context` may be NULL; a
- * non-empty value is prefixed to the native CRT description. */
-HYLE_ERROR_C_API hyle_status_code hyle_status_code_from_errno(int error_number);
-HYLE_ERROR_C_API hyle_status hyle_status_from_errno(int error_number,
-                                                    const char *context);
-HYLE_ERROR_C_API hyle_status hyle_status_from_errno_n(int error_number,
-                                                      const char *context,
-                                                      size_t context_len);
-/* Canonical Win32 GetLastError adapter. It remains callable on non-Windows
- * hosts for classifying persisted/remote 32-bit Windows error values. */
-HYLE_ERROR_C_API hyle_status_code
-hyle_status_code_from_win32(uint32_t error_number);
-HYLE_ERROR_C_API hyle_status hyle_status_from_win32(uint32_t error_number,
-                                                    const char *context);
-HYLE_ERROR_C_API hyle_status hyle_status_from_win32_n(uint32_t error_number,
-                                                      const char *context,
-                                                      size_t context_len);
-/* Canonical signed 32-bit COM/WinRT HRESULT adapter. Non-negative HRESULTs
- * produce OK; failures preserve HYLE_NATIVE_ERROR_HRESULT and the raw value. */
-HYLE_ERROR_C_API hyle_status_code
-hyle_status_code_from_hresult(int32_t error_number);
-HYLE_ERROR_C_API hyle_status hyle_status_from_hresult(int32_t error_number,
-                                                      const char *context);
-HYLE_ERROR_C_API hyle_status hyle_status_from_hresult_n(int32_t error_number,
-                                                        const char *context,
-                                                        size_t context_len);
-HYLE_ERROR_C_API void hyle_status_free(hyle_status *s);
-HYLE_ERROR_C_API hyle_status hyle_status_clone(hyle_status s);
-/* dst must already hold an initialized Status. Its old value is freed before
- * src is moved into it; src becomes OK. NULL src means "free dst". */
-HYLE_ERROR_C_API void hyle_status_move(hyle_status *dst, hyle_status *src);
-/* Keep the first non-OK status. Both handles must be initialized. A normal
- * call always consumes `next` and resets it to OK: when `overall` is OK its
- * ownership moves there; otherwise `next` is freed. NULL or identical pointers
- * are safe no-ops. */
-HYLE_ERROR_C_API void hyle_status_update(hyle_status *overall,
-                                         hyle_status *next);
-/* Prefix context in place. NULL/OK/empty are no-ops; allocation failure keeps
- * the original code and message unchanged. */
-HYLE_ERROR_C_API void hyle_status_add_context(hyle_status *s,
-                                              const char *context);
-HYLE_ERROR_C_API void hyle_status_add_context_n(hyle_status *s,
-                                                const char *context,
-                                                size_t context_len);
+/* ABI generation of this exact hyle_error shared artifact. A binding must call
+ * this before resolving any other symbol from the artifact. */
+HYLE_ERROR_C_API uint32_t HYLE_ERROR_C_CALL hyle_error_ffi_abi_version(void);
 
-/* queries */
-HYLE_ERROR_C_API int hyle_status_is_ok(hyle_status s);
-HYLE_ERROR_C_API hyle_status_code hyle_status_get_code(hyle_status s);
-HYLE_ERROR_C_API int hyle_status_has_message(hyle_status s);
-HYLE_ERROR_C_API int hyle_status_equals(hyle_status a, hyle_status b);
-HYLE_ERROR_C_API const char *hyle_status_code_name(hyle_status_code code);
-HYLE_ERROR_C_API const char *
-hyle_native_error_domain_name(hyle_native_error_domain domain);
-HYLE_ERROR_C_API int
-hyle_status_get_native_error(hyle_status s, hyle_native_error_domain *domain,
-                             int64_t *native_code);
-HYLE_ERROR_C_API size_t hyle_status_message(hyle_status s, char *buf,
-                                            size_t cap);
-HYLE_ERROR_C_API size_t hyle_status_to_string(hyle_status s, char *buf,
-                                              size_t cap);
+/* Release one owning handle. NULL is accepted. This is the only lifetime
+ * operation needed by a zero-invalid .NET SafeHandle or Java AutoCloseable. */
+HYLE_ERROR_C_API void HYLE_ERROR_C_CALL hyle_status_destroy(hyle_status status);
 
-/* Borrowed, NUL-terminated pointer to the message bytes, valid until this
- * status is freed, moved, or changed in place. Messages created by an *_n API
- * may contain embedded NULs; use hyle_status_message when every byte matters.
+/* Borrowing queries. NULL reports OK/no message/no native detail. Immutable
+ * queries may run concurrently while the owning handle's lifetime is pinned.
+ * Destroying or otherwise consuming that handle concurrently is invalid. */
+HYLE_ERROR_C_API hyle_status_code HYLE_ERROR_C_CALL
+hyle_status_get_code(hyle_status status);
+
+/* Return 1 when a native detail is present, otherwise 0. Either output may be
+ * NULL. Missing detail writes NONE/0 to supplied outputs. */
+HYLE_ERROR_C_API int32_t HYLE_ERROR_C_CALL hyle_status_get_native_error(
+    hyle_status status, hyle_native_error_domain *out_domain,
+    int64_t *out_code);
+
+/* Caller-buffer UTF-8 byte copies. Return the required byte count excluding
+ * the trailing NUL. If buffer is non-NULL and capacity is nonzero, write at
+ * most capacity-1 bytes followed by NUL. A NULL buffer is a size-only query.
+ * Messages may contain embedded NUL bytes; use the returned length rather than
+ * a C-string scan. A truncated byte prefix may end inside a UTF-8 sequence;
+ * retry with required+1 bytes before decoding text. uint64_t is intentional:
+ * HYLE supports 64-bit target ABIs.
  */
-HYLE_ERROR_C_API const char *hyle_status_message_cstr(hyle_status s);
-
-/* ---- factories (header-inline) ---------------------------------------------
- */
-static inline hyle_status hyle_status_cancelled(const char *msg) {
-  return hyle_status_new(HYLE_STATUS_CANCELLED, msg);
-}
-static inline hyle_status hyle_status_unknown(const char *msg) {
-  return hyle_status_new(HYLE_STATUS_UNKNOWN, msg);
-}
-static inline hyle_status hyle_status_invalid_argument(const char *msg) {
-  return hyle_status_new(HYLE_STATUS_INVALID_ARGUMENT, msg);
-}
-static inline hyle_status hyle_status_deadline_exceeded(const char *msg) {
-  return hyle_status_new(HYLE_STATUS_DEADLINE_EXCEEDED, msg);
-}
-static inline hyle_status hyle_status_not_found(const char *msg) {
-  return hyle_status_new(HYLE_STATUS_NOT_FOUND, msg);
-}
-static inline hyle_status hyle_status_already_exists(const char *msg) {
-  return hyle_status_new(HYLE_STATUS_ALREADY_EXISTS, msg);
-}
-static inline hyle_status hyle_status_permission_denied(const char *msg) {
-  return hyle_status_new(HYLE_STATUS_PERMISSION_DENIED, msg);
-}
-static inline hyle_status hyle_status_resource_exhausted(const char *msg) {
-  return hyle_status_new(HYLE_STATUS_RESOURCE_EXHAUSTED, msg);
-}
-static inline hyle_status hyle_status_failed_precondition(const char *msg) {
-  return hyle_status_new(HYLE_STATUS_FAILED_PRECONDITION, msg);
-}
-static inline hyle_status hyle_status_aborted(const char *msg) {
-  return hyle_status_new(HYLE_STATUS_ABORTED, msg);
-}
-static inline hyle_status hyle_status_out_of_range(const char *msg) {
-  return hyle_status_new(HYLE_STATUS_OUT_OF_RANGE, msg);
-}
-static inline hyle_status hyle_status_unimplemented(const char *msg) {
-  return hyle_status_new(HYLE_STATUS_UNIMPLEMENTED, msg);
-}
-static inline hyle_status hyle_status_internal(const char *msg) {
-  return hyle_status_new(HYLE_STATUS_INTERNAL, msg);
-}
-static inline hyle_status hyle_status_unavailable(const char *msg) {
-  return hyle_status_new(HYLE_STATUS_UNAVAILABLE, msg);
-}
-static inline hyle_status hyle_status_data_loss(const char *msg) {
-  return hyle_status_new(HYLE_STATUS_DATA_LOSS, msg);
-}
-static inline hyle_status hyle_status_unauthenticated(const char *msg) {
-  return hyle_status_new(HYLE_STATUS_UNAUTHENTICATED, msg);
-}
-
-/* ---- predicates (header-inline; full code set) -----------------------------
- */
-static inline int hyle_status_code_is(hyle_status s, hyle_status_code code) {
-  return hyle_status_get_code(s) == code;
-}
-static inline int hyle_status_is_cancelled(hyle_status s) {
-  return hyle_status_code_is(s, HYLE_STATUS_CANCELLED);
-}
-static inline int hyle_status_is_unknown(hyle_status s) {
-  return hyle_status_code_is(s, HYLE_STATUS_UNKNOWN);
-}
-static inline int hyle_status_is_invalid_argument(hyle_status s) {
-  return hyle_status_code_is(s, HYLE_STATUS_INVALID_ARGUMENT);
-}
-static inline int hyle_status_is_deadline_exceeded(hyle_status s) {
-  return hyle_status_code_is(s, HYLE_STATUS_DEADLINE_EXCEEDED);
-}
-static inline int hyle_status_is_not_found(hyle_status s) {
-  return hyle_status_code_is(s, HYLE_STATUS_NOT_FOUND);
-}
-static inline int hyle_status_is_already_exists(hyle_status s) {
-  return hyle_status_code_is(s, HYLE_STATUS_ALREADY_EXISTS);
-}
-static inline int hyle_status_is_permission_denied(hyle_status s) {
-  return hyle_status_code_is(s, HYLE_STATUS_PERMISSION_DENIED);
-}
-static inline int hyle_status_is_resource_exhausted(hyle_status s) {
-  return hyle_status_code_is(s, HYLE_STATUS_RESOURCE_EXHAUSTED);
-}
-static inline int hyle_status_is_failed_precondition(hyle_status s) {
-  return hyle_status_code_is(s, HYLE_STATUS_FAILED_PRECONDITION);
-}
-static inline int hyle_status_is_aborted(hyle_status s) {
-  return hyle_status_code_is(s, HYLE_STATUS_ABORTED);
-}
-static inline int hyle_status_is_out_of_range(hyle_status s) {
-  return hyle_status_code_is(s, HYLE_STATUS_OUT_OF_RANGE);
-}
-static inline int hyle_status_is_unimplemented(hyle_status s) {
-  return hyle_status_code_is(s, HYLE_STATUS_UNIMPLEMENTED);
-}
-static inline int hyle_status_is_internal(hyle_status s) {
-  return hyle_status_code_is(s, HYLE_STATUS_INTERNAL);
-}
-static inline int hyle_status_is_unavailable(hyle_status s) {
-  return hyle_status_code_is(s, HYLE_STATUS_UNAVAILABLE);
-}
-static inline int hyle_status_is_data_loss(hyle_status s) {
-  return hyle_status_code_is(s, HYLE_STATUS_DATA_LOSS);
-}
-static inline int hyle_status_is_unauthenticated(hyle_status s) {
-  return hyle_status_code_is(s, HYLE_STATUS_UNAUTHENTICATED);
-}
-
-/* Early-return helpers for functions returning hyle_status by value. */
-#define HYLE_C_RETURN_IF_ERROR(st)                                             \
-  do {                                                                         \
-    hyle_status _hyle_st_ = (st);                                              \
-    if (_hyle_st_.rep != 0)                                                    \
-      return _hyle_st_;                                                        \
-  } while (0)
-
-/* Evaluate an owning Status expression once and merge it into an initialized
- * aggregate lvalue. The temporary is consumed by hyle_status_update. */
-#define HYLE_C_UPDATE_STATUS(overall, expr)                                    \
-  do {                                                                         \
-    hyle_status _hyle_next_status_ = (expr);                                   \
-    hyle_status_update(&(overall), &_hyle_next_status_);                       \
-  } while (0)
+HYLE_ERROR_C_API uint64_t HYLE_ERROR_C_CALL hyle_status_message(
+    hyle_status status, char *buffer, uint64_t capacity);
+HYLE_ERROR_C_API uint64_t HYLE_ERROR_C_CALL hyle_status_to_string(
+    hyle_status status, char *buffer, uint64_t capacity);
 
 #ifdef __cplusplus
 }

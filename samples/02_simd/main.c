@@ -2,6 +2,7 @@
  * This is not a native-C product sample or a certified managed binding. */
 #include <stdio.h>
 
+#include "hyle/c/error_helpers.h"
 #include "hyle/c/simd.h"
 
 int main(void) {
@@ -12,8 +13,9 @@ int main(void) {
 
   hyle_status status = hyle_simd_runtime_info_get(&runtime);
   if (!hyle_status_is_ok(status)) {
-    fprintf(stderr, "SIMD runtime query failed: %s\n",
-            hyle_status_message_cstr(status));
+    char message[256];
+    hyle_status_message(status, message, sizeof(message));
+    fprintf(stderr, "SIMD runtime query failed: %s\n", message);
     hyle_status_free(&status);
     return 1;
   }

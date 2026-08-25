@@ -1,4 +1,5 @@
 /* C-syntax compiler/schema/link fixture for include/hyle/c/io.h. */
+#include "hyle/c/error_helpers.h"
 #include "hyle/c/io.h"
 
 #include <stdio.h>

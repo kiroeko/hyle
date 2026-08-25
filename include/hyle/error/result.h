@@ -1,6 +1,7 @@
 #pragma once
 
 #include <expected>
+#include <type_traits>
 #include <utility>
 
 #include "hyle/error/status.h"
@@ -21,12 +22,107 @@ HYLE_FORCE_INLINE void require_error(const Status &status) noexcept {
   if (HYLE_UNLIKELY(status.ok())) result_from_ok_abort();
 }
 
+// Keep Result's error arm physically identical to Status while enforcing the
+// one semantic invariant that plain std::expected cannot express: an error arm
+// must not contain OK. Public inheritance would let a caller upcast
+// `result.error()` to mutable Status& and assign OK, bypassing every checked
+// ResultError constructor/assignment. Composition prevents that escape hatch;
+// the common read-only Status surface remains available directly, and explicit
+// value conversions preserve the ordinary propagation/return shapes. A private
+// Status base is not sufficient because the language prefers (then rejects)
+// its inaccessible derived-to-base conversion before considering an operator
+// that returns a Status value.
+class ResultError final {
+ public:
+  ResultError(const Status &status) noexcept : status_(status) {
+    require_error(status_);
+  }
+  ResultError(Status &&status) noexcept : status_(std::move(status)) {
+    require_error(status_);
+  }
+
+  ResultError(const ResultError &) noexcept = default;
+  ResultError(ResultError &&) noexcept = default;
+  ResultError &operator=(const ResultError &) noexcept = default;
+  ResultError &operator=(ResultError &&) noexcept = default;
+
+  ResultError &operator=(const Status &status) noexcept {
+    require_error(status);
+    status_ = status;
+    return *this;
+  }
+  ResultError &operator=(Status &&status) noexcept {
+    require_error(status);
+    status_ = std::move(status);
+    return *this;
+  }
+
+  // Result observers should feel like Status without exposing a mutable base
+  // reference that could violate the error-arm invariant.
+  bool ok() const noexcept { return status_.ok(); }
+  StatusCode code() const noexcept { return status_.code(); }
+  bool has_message() const noexcept { return status_.has_message(); }
+  std::string_view message() const noexcept { return status_.message(); }
+  NativeError native_error() const noexcept { return status_.native_error(); }
+  bool has_native_error() const noexcept {
+    return status_.has_native_error();
+  }
+  std::size_t ToString(char *buffer, std::size_t capacity) const noexcept {
+    return status_.ToString(buffer, capacity);
+  }
+  Status WithContext(std::string_view context) const & noexcept {
+    return status_.WithContext(context);
+  }
+  Status WithContext(std::string_view context) && noexcept {
+    return std::move(status_).WithContext(context);
+  }
+  void IgnoreError() const noexcept { status_.IgnoreError(); }
+
+#define HYLE_RESULT_ERROR_PREDICATE(name, screaming, value)                  \
+  bool Is##name() const noexcept { return status_.Is##name(); }
+  HYLE_FOREACH_STATUS_CODE(HYLE_RESULT_ERROR_PREDICATE)
+#undef HYLE_RESULT_ERROR_PREDICATE
+
+  // Conversions deliberately produce a Status value. An lvalue copies; an
+  // rvalue consumes and leaves this error as code-only Unknown. There is no
+  // conversion to mutable Status&, so `Status& s = result.error()` is rejected.
+  operator Status() const & noexcept { return status_; }
+  operator Status() && noexcept { return std::move(status_); }
+
+  const Status &status() const noexcept { return status_; }
+
+  friend bool operator==(const ResultError &a,
+                         const ResultError &b) noexcept {
+    return a.status_ == b.status_;
+  }
+  friend bool operator==(const ResultError &a, const Status &b) noexcept {
+    return a.status_ == b;
+  }
+  friend bool operator==(const Status &a, const ResultError &b) noexcept {
+    return a == b.status_;
+  }
+  friend void swap(ResultError &a, ResultError &b) noexcept {
+    using std::swap;
+    swap(a.status_, b.status_);
+  }
+
+ private:
+  Status status_;
+};
+
+static_assert(sizeof(ResultError) == sizeof(Status));
+static_assert(!std::is_convertible_v<ResultError &, Status &>);
+static_assert(std::is_convertible_v<const ResultError &, Status>);
+static_assert(std::is_convertible_v<ResultError &&, Status>);
+static_assert(std::is_nothrow_swappable_v<ResultError>);
+
 }  // namespace detail
 
-// Result<T> = a value of type T or a Status error. Thin alias over C++23
-// std::expected so the monadic ops (and_then/transform/or_else) come for free.
+// Result<T> = a value or a non-OK Status error. It remains a thin C++23
+// std::expected alias, so the standard observers and monadic operations come
+// for free; the same-size checked error arm only enforces the invariant above.
 template <class T>
-using Result = std::expected<T, Status>;
+using Result = std::expected<T, detail::ResultError>;
 
 // Construct the error arm of any Result<T> without repeating the standard
 // carrier type at every return site:
@@ -35,10 +131,9 @@ using Result = std::expected<T, Status>;
 //
 // Keep this Status-specific: a generic clone of std::unexpected would add no
 // HYLE value and could silently create the wrong error type.
-[[nodiscard]] inline std::unexpected<Status> make_unexpected(
+[[nodiscard]] inline std::unexpected<detail::ResultError> make_unexpected(
     Status status) noexcept {
-  detail::require_error(status);
-  return std::unexpected<Status>(std::move(status));
+  return std::unexpected<detail::ResultError>(std::move(status));
 }
 
 namespace detail {
@@ -61,9 +156,9 @@ inline Status &&status_error(Status &&status) noexcept {
   return std::move(status);
 }
 inline const Status &status_error(const Result<void> &result) noexcept {
-  return result.error();
+  return result.error().status();
 }
-inline Status &&status_error(Result<void> &&result) noexcept {
+inline Status status_error(Result<void> &&result) noexcept {
   return std::move(result).error();
 }
 
@@ -101,13 +196,16 @@ class FailReturn {
 
 // Evaluate a Status or Result<void> expression; if not OK, return its Status
 // (converted) immediately.
-#define HYLE_RETURN_IF_ERROR(expr)                                         \
-  do {                                                                     \
-    auto &&hyle_status_ = (expr);                                          \
-    if (HYLE_UNLIKELY(!::hyle::detail::status_ok(hyle_status_))) {         \
-      return ::hyle::detail::FailReturn(::hyle::detail::status_error(      \
-          std::forward<decltype(hyle_status_)>(hyle_status_)));            \
-    }                                                                      \
+#define HYLE_RETURN_IF_ERROR(expr)                                           \
+  HYLE_RETURN_IF_ERROR_IMPL(HYLE_CONCAT(hyle_status_, __COUNTER__), expr)
+
+#define HYLE_RETURN_IF_ERROR_IMPL(tmp, expr)                                 \
+  do {                                                                       \
+    auto &&tmp = (expr);                                                     \
+    if (HYLE_UNLIKELY(!::hyle::detail::status_ok(tmp))) {                   \
+      return ::hyle::detail::FailReturn(::hyle::detail::status_error(       \
+          std::forward<decltype(tmp)>(tmp)));                                \
+    }                                                                        \
   } while (0)
 
 // Assign the value of a Result<T> to `lhs`, or early-return its error. An lvalue

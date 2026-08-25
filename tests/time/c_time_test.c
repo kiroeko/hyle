@@ -1,4 +1,5 @@
 /* C-syntax compiler/schema/link fixture for include/hyle/c/time.h. */
+#include "hyle/c/error_helpers.h"
 #include "hyle/c/time.h"
 
 #include <stdio.h>
@@ -17,8 +18,9 @@ static int g_fails = 0;
 static int consume_ok(hyle_status status, const char* expression) {
   int ok = hyle_status_is_ok(status);
   if (!ok) {
-    fprintf(stderr, "%s failed: %s\n", expression,
-            hyle_status_message_cstr(status));
+    char message[256];
+    hyle_status_message(status, message, sizeof(message));
+    fprintf(stderr, "%s failed: %s\n", expression, message);
     ++g_fails;
   }
   hyle_status_free(&status);
@@ -326,7 +328,11 @@ int main(void) {
     hyle_status status =
         hyle_time_common_queue_schedule(common, one, UINT64_C(10));
     CHECK(hyle_status_is_failed_precondition(status));
-    CHECK(strstr(hyle_status_message_cstr(status), "another source") != NULL);
+    {
+      char message[256];
+      hyle_status_message(status, message, sizeof(message));
+      CHECK(strstr(message, "another source") != NULL);
+    }
     hyle_status_free(&status);
     status = hyle_time_common_queue_cancel(&cancelled, common, one);
     CHECK(hyle_status_is_failed_precondition(status));

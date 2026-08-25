@@ -7,6 +7,7 @@
 #include <thread>
 #include <vector>
 
+#include "hyle/c/error_helpers.h"
 #include "hyle/c/util.h"
 
 namespace {

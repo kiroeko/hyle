@@ -14,7 +14,13 @@ C++ coroutine、`TcpStream`、OpenSSL 对象或 STL 类型放进 ABI。
 
 ```c
 #include "hyle/c/io.h"
+#include "hyle/c/error_helpers.h"
 ```
+
+本文 recipe 中的 `hyle_status_is_ok`、`hyle_status_free` 及 code predicates 是
+`hyle/c/error_helpers.h` 提供的 source-only fixture conveniences，不是动态 FFI 导出。
+managed direct FFI 应直接用 `NULL` / `hyle_status_get_code` 判断，并用
+`hyle_status_destroy` 销毁每个非 NULL owning handle。
 
 ## 1. 基本完成循环
 
@@ -171,8 +177,9 @@ create 是排他的；open 映射完整对象。POSIX 的 unlink 删除名字但
 mapping；Windows 没有同等的“立即移除名字”操作，对象在最后一个 handle
 关闭后自动消失。因此 `hyle_io_shared_memory_unlink()` 返回 owning
 `hyle_status`：POSIX 成功为 OK，Windows 稳定返回
-`HYLE_STATUS_UNIMPLEMENTED`，不再以成功 no-op 误导调用方。所有返回的 status
-都要调用 `hyle_status_free()`（OK 不分配，但统一释放最省心）。能力边界见
+`HYLE_STATUS_UNIMPLEMENTED`，不再以成功 no-op 误导调用方。`NULL` 是 OK；每个非 NULL
+owning status 都要恰好一次传给 `hyle_status_destroy`。上例的 source-only helper
+`hyle_status_free(&status)` 只是把这条规则包装成可接受 NULL 并清空本地变量的便利写法。能力边界见
 [`io-capability-fill-list.md`](../milestones/io-capability-fill-list.md)。
 指针只在本进程有效，跨进程协议必须存 offset/POD，不能存裸指针。
 默认工厂用 `hyle_system_allocator()` 保存 opaque handle；需要由宿主 allocator

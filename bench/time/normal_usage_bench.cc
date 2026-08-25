@@ -21,6 +21,7 @@
 #include <pthread.h>
 #endif
 
+#include "hyle/c/error_helpers.h"
 #include "hyle/c/time.h"
 #include "hyle/time/timer_queue.h"
 

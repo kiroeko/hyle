@@ -6,6 +6,7 @@
 #include <span>
 #include <type_traits>
 
+#include "hyle/c/error_helpers.h"
 #include "hyle/c/mem.h"
 #include "hyle/mem/alignment.h"
 #include "hyle/mem/allocator.h"

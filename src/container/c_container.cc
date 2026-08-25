@@ -27,6 +27,7 @@
 #include "hyle/container/ws_fifo_queue.h"
 #include "hyle/core/cache.h"
 #include "hyle/mem/allocator.h"
+#include "../error/status_ffi_source_helpers.h"
 
 namespace hc = hyle::container;
 

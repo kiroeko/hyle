@@ -15,12 +15,18 @@ C++ `Runtime`、STL、模板、D-tag 或 ISA 相关向量类型。可恢复失�
 
 ```c
 #include "hyle/c/simd.h"
+#include "hyle/c/error_helpers.h"
 
 float x[1024], y[1024], out[1024];
 hyle_simd_add_f32(x, y, out, 1024);
 float score = hyle_simd_dot_f32(x, y, 1024);
 hyle_simd_exp_f32_batch(out, out, 1024);
 ```
+
+本文 recipe 中的 `hyle_status_is_ok`、`hyle_status_free` 及 code predicates 是
+`hyle/c/error_helpers.h` 提供的 source-only fixture conveniences，不是动态 FFI 导出。
+managed direct FFI 应直接用 `NULL` / `hyle_status_get_code` 判断，并用
+`hyle_status_destroy` 销毁每个非 NULL owning handle。
 
 默认 fat 库在进程内探测一次平台能力并缓存不可变 Runtime；每次调用只在 whole-buffer
 边界进入已选 kernel，不在元素循环里执行 CPUID。调用者不应自行选 SSE/AVX/NEON。
@@ -29,8 +35,11 @@ hyle_simd_exp_f32_batch(out, out, 1024);
 ```c
 hyle_simd_runtime_info info = HYLE_SIMD_RUNTIME_INFO_INIT;
 hyle_status status = hyle_simd_runtime_info_get(&info);
-if (!hyle_status_is_ok(status))
-  fprintf(stderr, "%s\n", hyle_status_message_cstr(status));
+if (!hyle_status_is_ok(status)) {
+  char message[256];
+  hyle_status_message(status, message, sizeof message);
+  fprintf(stderr, "%s\n", message);
+}
 hyle_status_free(&status);
 ```
 
@@ -55,7 +64,8 @@ exact-libm scalar、fp8 scalar、lower-tier winner、SVE capped network、logica
 - 数组始终由调用者拥有；HYLE 不接管、不返回 `std::vector`，也不要求专用 allocator。
 - `hyle_simd_random_create(&out, seed)` 用 out 参数返回 handle，status 报告空 out 或分配失败；
   成功的 `hyle_simd_random_o*` 由 `hyle_simd_random_destroy` 释放。destroy 和三个 fill
-  都接受 NULL 句柄（no-op）。每个返回 status 无论成功失败都由调用者 `hyle_status_free`。
+  都接受 NULL 句柄（no-op）。status 的 `NULL` 是 OK；每个非 NULL owning status 都由调用者
+  `hyle_status_destroy`。
 - C#、Rust、Java 等绑定把自己的数组 pin/borrow 后传 pointer/count；容器 facade 属于
   各语言绑定，不形成第二套 HYLE ABI。
 
@@ -102,8 +112,8 @@ exact-libm scalar、fp8 scalar、lower-tier winner、SVE capped network、logica
   `is_sorted_total` 使用完整 IEEE-754 totalOrder；descending 反转整个顺序，缺失 find 返回 `n`。
 - `hyle_simd_supports_isa` 只接受本头列出的 canonical ISA 常量；未知数值返回 0。它回答
   CPU/OS 是否支持该档，不是让普通调用方自行挑 kernel。
-- `hyle_simd_runtime_info_get` 和 `hyle_simd_random_create` 返回 owning `hyle_status`；成功和失败
-  都调用 `hyle_status_free`。create 先把有效 out 清为 NULL，失败不会留下半构造 handle。
+- `hyle_simd_runtime_info_get` 和 `hyle_simd_random_create` 返回 owning `hyle_status`；`NULL` 是
+  OK，每个非 NULL handle 都调用 `hyle_status_destroy`。create 先把有效 out 清为 NULL，失败不会留下半构造 handle。
 - 除明确支持 exact in-place 的接口外，输入输出不得重叠；带偏移 overlap 不受支持。
 - `select` 要求 `k < n`，`partial_sort` 要求 `k <= n`；非法 sort enum fail-fast。
 - bitpack 的 `bits` 必须在元素位宽内，packed bytes 是同一 tier 的内存格式，不是长期 wire format。
