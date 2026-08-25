@@ -85,13 +85,16 @@
 每行先填写 [`benchmark-evidence-standard`](../performance/benchmark-evidence-standard.md) 的合同卡；
 没有资格的比较不得填胜负。
 
-| 正常 workload | peer/同合同 | 规模/QoS | 算法/codegen | Win | Linux | macOS | 总结 |
+| 正常 workload | peer/同合同 | 规模/QoS | 算法/codegen | Windows exact / SOTA | Linux exact / SOTA | macOS exact / SOTA | 总结 |
 |---|---|---|---|---|---|---|---|
-|  |  |  |  |  |  |  | `WIN/EQUIVALENT/LOSE/INCONCLUSIVE/NOT_COMPARABLE` |
+|  |  |  |  |  |  |  | 五态精确结论 + `PASS/FAIL/UNRESOLVED/N/A` |
 
+- 预声明 margin `m` / SOTA 上界 `U=1+m`（两种判定必须共用，禁止事后改变）：
+- 默认序、peer-first、适用 shape 的逐项 exact verdict / SOTA gate 与合成结果：
+- 每进程 baseline op/s、rival op/s、ratio raw JSON 日志索引：
 - code-shape/order-swap/真实消费者稳定性：
 - footprint、tail latency、allocation/lock/syscall 等非均值吞吐成本：
-- 所有 `LOSE/INCONCLUSIVE` 的根因与阻塞裁决：
+- 所有 exact `LOSE/INCONCLUSIVE` 及 SOTA `FAIL/UNRESOLVED` 的根因与阻塞裁决：
 
 ## 7. 文档与红队
 
@@ -112,5 +115,6 @@
 | 当前模块实现 |  |
 
 最终证书必须列出：candidate commit/tree、公开 surface hash/manifest、三平台日志索引、peer revision、
-claim-bearing benchmark 与 runner identity、shared/static/source 交付结果、required CI、最终提交与
-push。任何空项或未知都保持黄色。
+claim-bearing benchmark 与 runner identity、每进程 paired raw JSON、五态 exact verdict 与独立
+SOTA gate 的 order/shape 合成、shared/static/source 交付结果、required CI、最终提交与 push。
+任何空项或目标 claim 的 gate 未决都保持黄色。

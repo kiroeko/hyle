@@ -227,7 +227,7 @@ API。微基准可以解释一次原子、hint 或函数边界，但不能独立
 
 | 级别 | 必须满足 | 允许的结论 |
 |---|---|---|
-| 产品对拍 | 同语义/ownership/QoS，正常用户或内部消费者 workload，setup 与必要检查同等计费 | 通过下述统计和稳定性门后才可写 `WIN/EQUIVALENT/LOSE`；否则写 `INCONCLUSIVE` |
+| 产品对拍 | 同语义/ownership/QoS，正常用户或内部消费者 workload，setup 与必要检查同等计费 | 通过下述统计和稳定性门后记录五态精确结论，并另记独立 SOTA non-inferiority gate |
 | 机制诊断 | 隔离一段原子、链表、dispatch 或 codegen，用于定位产品结果 | 只解释根因，不单独签 SOTA |
 | 不可比 | 任一侧改变分配、检查、批量、容量、数据布局、并发语义或失败合同 | 只能写“不可比”，不得计算胜负 |
 | 不稳定 | 同合同但执行顺序、等价 harness 写法、函数/堆布局或微小 code placement 扰动使方向翻转 | 写“未知/placement-sensitive”，不得挑有利变体，也不得用 TIE 暗示已经证明同档 |
@@ -248,18 +248,30 @@ prefill/decode 批量、线程/NUMA 和 backend handoff。抽取的是数据、�
 - 代表性小/中/大规模和正常数据分布；
 - 适用时单线程、共享争用和分片路径；
 - 至少 15 个独立进程样本；同进程 peer/candidate 比值按预声明 equivalence margin 和分布无关
-  中位数区间判 `WIN/EQUIVALENT/LOSE/INCONCLUSIVE`，不得把“不显著”写成平；
-- 默认顺序与 peer-first 必须得到同一类有效结论；缺序、类别不同或方向翻转一律
-  `INCONCLUSIVE`，不挑有利顺序或池化掩盖系统误差；
-- 对 sub-cache 或短 aggregate，至少再做一种合同等价的 code-shape/placement 扰动；方向翻转
-  即降为 unknown/placement-sensitive，并转由真实消费者守门；
+  中位数区间判 `WIN/EQUIVALENT/LOSE/INCONCLUSIVE`，不得把“不显著”写成平；每个进程两边
+  op/s 和 paired ratio 必须以机器可读 raw JSON 留档，只有汇总值不够；
+- 五态之外另做单边 SOTA non-inferiority gate，但沿用采样前声明的**同一个** `m` 和
+  `U=1+m`：中位数 CI 上界 `<=U` 为 `PASS`，下界 `>U` 为 `FAIL`，仍跨 `U` 为
+  `UNRESOLVED`，不可比为 `N/A`；它只回答“能否排除实质落后”，不能把精确
+  `INCONCLUSIVE` 改写为 `WIN/EQUIVALENT`；
+- 默认顺序与 peer-first 的精确关系不兼容时，精确结论仍为 `INCONCLUSIVE`；SOTA gate 则要求
+  两个执行序各自 `PASS` 才能合成 `PASS`，不挑有利顺序或池化掩盖系统误差；
+- 对 sub-cache 或短 aggregate，至少再做一种合同等价的 code-shape/placement 扰动；精确方向
+  翻转仍记 unknown/placement-sensitive；适用的每个 shape non-inferiority gate 也必须 `PASS`
+  才能合成 SOTA `PASS`；
 - Windows/Linux/macOS 真机；ISA/后端不可得时明确写“未认证”，不用模拟器时序；
 - 每个 LOSE 都要归因：算法缺口、实现缺口、必要语义税、硬件墙或测量无效。
 
+单边 gate 不是放宽预算的出口：不得为它另设更宽 margin，也不得看完结果再改变 `m`。CI 只跨
+`WIN/EQUIVALENT` 边界、但上界仍 `<=U` 时，可以同时诚实记录 exact `INCONCLUSIVE` 和 SOTA
+`PASS`；这证明的是 non-inferiority，而不是等价或获胜。默认序、peer-first 及所有适用 shape
+gate 必须逐项留档并全部通过，缺一就是 `UNRESOLVED`。
+
 单边绝对 spread 是机器噪声诊断，不代替同进程 paired ratio：共同噪声可能让两边绝对值都漂，
 却不破坏配对方向。反之，paired ratio 自身大幅漂移、正反顺序不一致或样本不足，只能使结论
-变成 `INCONCLUSIVE`，不能证明没有问题。先用隔离 workload、反汇编、计数器或不同机器降低不确定性；
-确实无法判定时保留黄色，而不是把怀疑写成 SOTA。
+变成精确 `INCONCLUSIVE`；如果相应 non-inferiority gate 也不是 `PASS`，就不能证明没有实质
+落后。先用隔离 workload、反汇编、计数器或不同机器降低不确定性；目标 claim 的 gate 确实
+无法判定时保留黄色，而不是把怀疑写成 SOTA。
 
 ## 九、C++ API 与 C ABI 是两个消费产品
 
@@ -392,7 +404,8 @@ architecture 不写每日状态和 benchmark 点值；milestone 不承担当前�
 - [ ] C++ 默认/高级/组合三条用户旅程有可复制 recipe 或 sample，易用性表无未解释摩擦；
 - [ ] C ABI 能力映射无未解释缺口，C 便利层、纯 C/导出/FFI 机械门通过；
 - [ ] Windows/Linux/macOS、适用 sanitizer/ISA 正确性完成；
-- [ ] 同合同正常 workload 性能完成，LOSE/未知诚实登记；
+- [ ] 同合同正常 workload 性能完成；五态 exact verdict、独立 SOTA gate、逐进程 raw JSON、
+      order/shape 合成齐全，LOSE/未知诚实登记；
 - [ ] architecture/guide/C guide/performance/milestone 归位；
 - [ ] 四项 LOC、实现 commit、提交与推送完成。
 

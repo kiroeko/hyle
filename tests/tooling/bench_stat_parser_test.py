@@ -2,6 +2,7 @@
 """Canary for every nanobench table shape consumed by bench-stat.py."""
 
 import importlib.util
+import json
 import math
 import pathlib
 
@@ -130,6 +131,82 @@ def main():
             "NOT_COMPARABLE", "comparison-contract-not-equivalent"):
         raise AssertionError(
             f"unequal contract acquired a performance claim: {informational!r}")
+
+    # The one-sided SOTA gate is independent from the exact five-state
+    # verdict, but uses the same predeclared upper limit U=1+m.
+    win_equivalent_crossing = [0.95] * 8 + [1.0] * 7
+    exact = bench_stat.paired_verdict(win_equivalent_crossing, margin)
+    sota = bench_stat.sota_noninferiority_gate(
+        win_equivalent_crossing, margin)
+    if exact["verdict"] != "INCONCLUSIVE" or sota["gate"] != "PASS":
+        raise AssertionError(
+            "an exact WIN/EQUIVALENT crossing did not retain INCONCLUSIVE "
+            f"while passing non-inferiority: {exact!r}/{sota!r}")
+
+    sota_cases = (
+        ([0.95] * 15, margin, True, "PASS"),
+        ([1.0] * 15, margin, True, "PASS"),
+        ([upper_boundary] * 15, margin, True, "PASS"),
+        ([1.05] * 15, margin, True, "FAIL"),
+        ([1.0] * 8 + [1.05] * 7, margin, True, "UNRESOLVED"),
+        ([1.0] * 14, margin, True, "UNRESOLVED"),
+        ([1.0] * 15, None, True, "UNRESOLVED"),
+        ([0.1] * 15, margin, False, "N/A"),
+    )
+    for ratios, declared_margin, comparable, expected_gate in sota_cases:
+        gate = bench_stat.sota_noninferiority_gate(
+            ratios, declared_margin, comparable=comparable)
+        if gate["gate"] != expected_gate:
+            raise AssertionError(
+                f"SOTA gate mismatch: {gate!r} != {expected_gate!r}")
+
+    if bench_stat.combine_sota_gates("PASS", "PASS") != "PASS":
+        raise AssertionError("two passing orders did not pass SOTA gate")
+    if bench_stat.combine_sota_gates(
+            "PASS", "PASS", shape="PASS") != "PASS":
+        raise AssertionError("passing required shape gate did not compose")
+    for gates in (("PASS", "UNRESOLVED", None),
+                  ("PASS", "PASS", "UNRESOLVED")):
+        if bench_stat.combine_sota_gates(*gates[:2], shape=gates[2]) != "UNRESOLVED":
+            raise AssertionError(f"unresolved SOTA gate acquired PASS: {gates!r}")
+    if bench_stat.combine_sota_gates("PASS", "FAIL") != "FAIL":
+        raise AssertionError("a failing execution order did not block SOTA")
+    if bench_stat.combine_sota_gates(
+            "PASS", "PASS", comparable=False) != "N/A":
+        raise AssertionError("a non-comparable contract acquired a SOTA gate")
+    if bench_stat.combine_sota_gates("N/A", "N/A") != "N/A":
+        raise AssertionError("not-comparable SOTA gates lost N/A")
+
+    pair_runs = [
+        {("consumer N=32", "HYLE"): 100.0,
+         ("consumer N=32", "peer"): 95.0},
+        {("consumer N=32", "HYLE"): 120.0,
+         ("consumer N=32", "peer"): 126.0},
+    ]
+    records = bench_stat.pair_process_records(
+        pair_runs, "consumer N=32", "HYLE", "peer")
+    if len(records) != 2:
+        raise AssertionError(f"raw process records lost samples: {records!r}")
+    expected_raw = (
+        (1, 100.0, 95.0, 0.95),
+        (2, 120.0, 126.0, 1.05),
+    )
+    for record, expected_values in zip(records, expected_raw):
+        actual_values = (
+            record["run"], record["baseline_ops_per_second"],
+            record["rival_ops_per_second"],
+            record["ratio_rival_over_baseline"],
+        )
+        if actual_values != expected_values:
+            raise AssertionError(
+                f"raw paired process values changed: {record!r}")
+        encoded = bench_stat.format_pair_process_record(record)
+        if not encoded.startswith(bench_stat.PAIR_RAW_PREFIX):
+            raise AssertionError(f"raw JSON marker missing: {encoded!r}")
+        decoded = json.loads(encoded[len(bench_stat.PAIR_RAW_PREFIX):])
+        if decoded != record:
+            raise AssertionError(
+                f"raw JSON did not round-trip: {decoded!r} != {record!r}")
 
     for verdict in ("WIN", "EQUIVALENT", "LOSE"):
         if bench_stat.combine_order_verdicts(verdict, verdict) != verdict:

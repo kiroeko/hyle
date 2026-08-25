@@ -25,6 +25,12 @@ BASELINE is the HYLE candidate and RIVAL is its peer. It never turns "not
 significant" into equivalence. A deliberately informational, unequal-contract
 pair is classified NOT_COMPARABLE before statistical evidence is considered.
 
+The same predeclared margin also drives a separate, one-sided SOTA
+non-inferiority gate.  That gate answers only whether the interval rules out
+BASELINE being materially slower than RIVAL; it does not replace or rewrite
+the exact five-state verdict.  Consequently an exact INCONCLUSIVE interval
+that crosses only the WIN/EQUIVALENT boundary can still PASS non-inferiority.
+
 Absolute per-variant spread is printed as a diagnostic, not as an alternative
 verdict: machine noise is often correlated and cancels in the paired ratio.
 Formal evidence also repeats the experiment with variant order swapped and,
@@ -57,6 +63,7 @@ import subprocess
 import sys
 
 BT = chr(96)  # backtick; nanobench wraps variant names in `...`
+PAIR_RAW_PREFIX = "# HYLE_BENCH_PAIR_RAW "
 
 
 def _run_text(command, cwd=None):
@@ -344,6 +351,60 @@ def paired_verdict(ratios, equivalence_margin_percent=None,
     }
 
 
+def sota_noninferiority_gate(ratios, equivalence_margin_percent=None,
+                             tail_alpha=0.01, minimum_runs=15,
+                             comparable=True):
+    """Evaluate the independent one-sided SOTA gate for one execution order.
+
+    Ratios and the predeclared margin have exactly the same meaning as in
+    paired_verdict().  If U=1+m, PASS requires the median CI upper bound to be
+    at most U; FAIL requires the lower bound to be greater than U.  An interval
+    that still reaches beyond U is UNRESOLVED.  This deliberately leaves the
+    exact five-state verdict untouched.
+    """
+    decision = paired_verdict(
+        ratios,
+        equivalence_margin_percent,
+        tail_alpha=tail_alpha,
+        minimum_runs=minimum_runs,
+        comparable=comparable,
+    )
+    interval = decision["interval"]
+    band = decision["band"]
+    limit = None if band is None else band[1]
+
+    if decision["verdict"] == "NOT_COMPARABLE":
+        gate = "N/A"
+        reason = "comparison-contract-not-equivalent"
+    elif len(ratios) < minimum_runs:
+        gate = "UNRESOLVED"
+        reason = "insufficient-samples"
+    elif limit is None:
+        gate = "UNRESOLVED"
+        reason = "sota-limit-not-declared"
+    elif interval is None:
+        gate = "UNRESOLVED"
+        reason = "confidence-interval-unavailable"
+    else:
+        lower, upper, _ = interval
+        if upper <= limit:
+            gate = "PASS"
+            reason = "median-ci-upper-within-sota-limit"
+        elif lower > limit:
+            gate = "FAIL"
+            reason = "median-ci-lower-beyond-sota-limit"
+        else:
+            gate = "UNRESOLVED"
+            reason = "median-ci-crosses-sota-limit"
+    return {
+        "gate": gate,
+        "reason": reason,
+        "interval": interval,
+        "limit": limit,
+        "tail_alpha": tail_alpha,
+    }
+
+
 def combine_order_verdicts(first, second, comparable=True, shape_stable=True):
     """Combine two independently sampled orders after external review gates."""
     valid = {"WIN", "EQUIVALENT", "LOSE", "INCONCLUSIVE",
@@ -359,6 +420,64 @@ def combine_order_verdicts(first, second, comparable=True, shape_stable=True):
     if first in stable and first == second:
         return first
     return "INCONCLUSIVE"
+
+
+def combine_sota_gates(default_order, peer_first, shape=None,
+                       comparable=True):
+    """Combine independently sampled SOTA gates.
+
+    PASS requires every applicable gate to PASS.  Any valid FAIL blocks the
+    claim; otherwise an incomplete or unstable gate remains UNRESOLVED.  Shape
+    is optional only for workloads whose predeclared contract says the extra
+    placement gate is not applicable.
+    """
+    valid = {"PASS", "FAIL", "UNRESOLVED", "N/A"}
+    gates = [default_order, peer_first]
+    if shape is not None:
+        gates.append(shape)
+    if any(gate not in valid for gate in gates):
+        raise ValueError("unknown SOTA non-inferiority gate")
+    if not comparable or any(gate == "N/A" for gate in gates):
+        return "N/A"
+    if any(gate == "FAIL" for gate in gates):
+        return "FAIL"
+    if all(gate == "PASS" for gate in gates):
+        return "PASS"
+    return "UNRESOLVED"
+
+
+def pair_process_records(runs, title, baseline, rival, comparable=True):
+    """Return one machine-readable paired measurement record per process."""
+    baseline_key = (title, baseline)
+    rival_key = (title, rival)
+    records = []
+    for run_index, run in enumerate(runs, start=1):
+        if baseline_key not in run or rival_key not in run:
+            continue
+        baseline_ops = run[baseline_key]
+        rival_ops = run[rival_key]
+        if (not math.isfinite(baseline_ops) or baseline_ops <= 0.0 or
+                not math.isfinite(rival_ops) or rival_ops <= 0.0):
+            raise ValueError("paired op/s samples must be finite and positive")
+        records.append({
+            "record": "hyle_bench_pair_process",
+            "schema": 1,
+            "run": run_index,
+            "title": title,
+            "baseline": baseline,
+            "rival": rival,
+            "baseline_ops_per_second": baseline_ops,
+            "rival_ops_per_second": rival_ops,
+            "ratio_rival_over_baseline": rival_ops / baseline_ops,
+            "comparable": comparable,
+        })
+    return records
+
+
+def format_pair_process_record(record):
+    """Encode one paired process record as a grep-friendly JSON payload."""
+    return PAIR_RAW_PREFIX + json.dumps(
+        record, sort_keys=True, separators=(",", ":"), allow_nan=False)
 
 
 def parse_run(text):
@@ -538,17 +657,23 @@ def main():
         print("\n=== pair ratios (RIVAL/BASELINE op/s) ===")
         print("    subject=BASELINE(candidate); single-order classification is provisional")
         print("    equivalence uses a distribution-free median interval with tail alpha=0.01")
+        print("    SOTA gate independently tests non-inferiority at the same predeclared upper limit")
         print("    formal evidence must also agree after order swap and applicable code-shape gates")
     for base, rival, comparable in requested_pairs:
         any_hit = False
         for t in titles:
-            bk, rk = (t, base), (t, rival)
-            ratios = [r[rk] / r[bk] for r in runs if bk in r and rk in r]
-            if not ratios:
+            records = pair_process_records(
+                runs, t, base, rival, comparable=comparable)
+            if not records:
                 continue
             any_hit = True
+            ratios = [record["ratio_rival_over_baseline"]
+                      for record in records]
             decision = paired_verdict(
                 ratios, args.equivalence_margin_pct, comparable=comparable)
+            sota = sota_noninferiority_gate(
+                ratios, args.equivalence_margin_pct, comparable=comparable)
+            bk, rk = (t, base), (t, rival)
             rmed = decision["median"]
             combined = agg[bk][1] + agg[rk][1]
             gap = decision["gap_percent"]
@@ -563,6 +688,8 @@ def main():
             band_text = ("undeclared" if band is None else
                          f"[{band[0]:.3f},{band[1]:.3f}]")
             print(f"  {t[:34]:36s} RIVAL={rival} BASELINE={base}")
+            for record in records:
+                print(format_pair_process_record(record))
             print(f"    ratio med {rmed:5.3f}  min {min(ratios):5.3f} max {max(ratios):5.3f}"
                   f"  gap {gap:4.1f}% vs spread {combined:4.1f}%"
                   f"  [absolute]{absolute_hint}")
@@ -571,6 +698,11 @@ def main():
                   f" reason={decision['reason']}"
                   f" sign_diag={decision['above']}/{decision['effective']}>1,"
                   f"p={decision['p_value']:.1e}")
+            limit_text = ("undeclared" if sota["limit"] is None else
+                          f"{sota['limit']:.3f}")
+            print(f"    sota_noninferiority_limit {limit_text}"
+                  f"  [order_sota_gate]{sota['gate']}"
+                  f" reason={sota['reason']}")
         if not any_hit:
             print(f"  (no rows matched pair: {base!r} / {rival!r})")
 
