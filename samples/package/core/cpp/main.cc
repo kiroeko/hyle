@@ -7,7 +7,7 @@
 
 struct Node {
   int value;
-  hyle::core::IntrusiveListHook hook;
+  hyle::core::IntrusiveListHook hook{};
 };
 
 HYLE_NOINLINE int consume(int value) {

@@ -78,7 +78,7 @@ generic/RV64 机器报告更小或更大的值，精确探测仍然有效，但�
 
 struct Request {
   int id;
-  hyle::core::IntrusiveListHook ready_hook;
+  hyle::core::IntrusiveListHook ready_hook{};
 };
 using ReadyList =
     hyle::core::IntrusiveList<Request, &Request::ready_hook>;
@@ -113,6 +113,9 @@ ready.swap(deferred);
 它不拥有节点、不分配，push/pop/remove/insert/erase/splice/swap 都是 O(1)。支持双向 iterator、
 range-for 与 reverse iteration；偶发计数用 `std::ranges::distance`（O(n)），没有每次修改都维护的
 size/owner 元数据。节点析构或 list 析构会自动摘链。
+在 aggregate 节点定义中给 hook 写 `{}` 默认成员初始化；这样 `Request{42}` 既明确得到未链接
+hook，也不会触发 GCC/Clang 的 `-Wmissing-field-initializers`。若节点定义不能改，则每次 aggregate
+初始化都要显式提供 hook 的 `{}`。
 copy/move 构造 hook 会得到新的 unlinked hook；对已有 hook 做 copy/move assignment 则刻意保留
 destination 当前 membership，绝不从 source 复制 membership。节点 linked 时不可移动地址。
 节点类型必须是 standard-layout；模板会机械拒绝不满足的类型，因为从 member hook 恢复外层对象
