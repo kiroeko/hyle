@@ -117,13 +117,18 @@ void bench_unlink(bool rival_first) {
 #endif
 
   nb::Bench bench;
-  bench.title("intrusive arbitrary cancel N=" + std::to_string(Count))
+  bench.title("intrusive refill + arbitrary cancel N=" +
+              std::to_string(Count))
       .relative(true)
       .batch(Count)
       .minEpochIterations(Count < 256 ? 200000 : 2000);
   auto run_hyle = [&] {
     NodeList list;
-    for (std::size_t index = 0; index < Count; ++index)
+    // Production queues receive a runtime-sized batch. Keeping Count in this
+    // loop lets MSVC fully unroll the N=32 refill and turns the result into a
+    // code-placement test of two kilobyte-sized lambdas instead of a list
+    // operation comparison.
+    for (std::size_t index = 0; index < order.size(); ++index)
       list.push_back(&nodes[index]);
     for (std::size_t index : order)
       list.remove(&nodes[index]);
@@ -132,7 +137,7 @@ void bench_unlink(bool rival_first) {
 #if defined(HYLE_BENCH_BOOST)
   auto run_boost = [&] {
     BoostList list;
-    for (std::size_t index = 0; index < Count; ++index)
+    for (std::size_t index = 0; index < order.size(); ++index)
       list.push_back(boost_nodes[index]);
     for (std::size_t index : order)
       list.erase(BoostList::s_iterator_to(boost_nodes[index]));
