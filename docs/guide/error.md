@@ -1,26 +1,32 @@
 # HYLE error：什么情况选择什么
 
+> 当前产品面只承诺本页的 C++ 形状。HYLE 没有 native-C 客户、尚未发布 managed binding，
+> 发布前也不承担 Native FFI 兼容义务。`include/hyle/c/error.h` 是可重设计的 FFI 候选 schema，
+> 不是 C 产品 API；只有真实跨语言任务才触发 Java/.NET direct-binding 验收，没有任务时可裁决
+> `FFI=N/A`。任何 native-C sample/test 只承担 schema、编译器、导出或 package fixture 作用。
+
 error 是 HYLE 的统一失败值层。它帮助调用方把可恢复失败跨函数、模块、线程和语言边界
 传递；它不代替日志、异常层级或程序不变量检查。先判断失败属于哪一类，再选择形状。
-本文是**语言无关的选型入口**，示例使用自然的 C++ 写法；纯 C/FFI 用户完成选型后，
-到 [`c-error.md`](./c-error.md) 查 `hyle_status` 的所有权与精确 ABI。
+本文是 C++ 消费者的选型入口。未来若出现真实跨语言错误传播任务，应从目标 runtime 的
+异常/结果/字符串所有权出发审查 [`c-error.md`](./c-error.md) 的候选 schema，而不是默认复制
+C++ API。
 
 ## 一页选择表
 
-| 用户场景 | C++ 形状 | C / FFI 形状 | 不应该用什么 |
-|---|---|---|---|
-| 操作只有成功/失败，调用者需要原因 | `Status` | 返回 `hyle_status` | `bool + last_error` |
-| 成功还要交付值或拥有型资源 | `Result<T>` | 返回 `hyle_status`，首位 out 参数交付值 | 失败指针 + TLS errno |
-| 批量独立步骤，只保留第一个失败 | `Status::Update` | `hyle_status_update` / `HYLE_C_UPDATE_STATUS` | 覆盖最初原因 |
-| 明确接受 cleanup 失败 | `IgnoreError` | `hyle_status_free` 前显式注释/处理 | 无意图地丢弃返回值 |
-| allocator、pool pop、poll 的“暂时无值”本来就是正常热路结果 | 指针、`optional` 或小 enum | 指针/标量值合同 | 每次构造 owning Status |
-| 参数、文件、权限、OOM、超时、设备暂不可用等运营失败 | canonical `Status` code | 同一 `hyle_status_code` | abort 或异常跨 ABI |
-| C/POSIX 调用刚失败，手里有 errno | `status_from_errno(errno, "operation")` | `hyle_status_from_errno` | 各模块复制 `strerror` + switch |
-| Win32 调用刚失败，手里有 `GetLastError()` | `status_from_win32(code, "operation")` | `hyle_status_from_win32` | 各文件复制 `FormatMessage` + switch |
-| COM/WinRT 调用返回失败 `HRESULT` | `status_from_hresult(hr, "operation")` | `hyle_status_from_hresult` | 丢掉 HRESULT 或只把十六进制写进 message |
-| 必须按 Vulkan/CUDA 等 SDK 原生码恢复 | `Status::FromNative` / `native_error()` | `hyle_status_new_native` / `hyle_status_get_native_error` | 解析 message 或再造私有码表 |
-| HYLE 内部不变量损坏、double free、错误生命周期 | `HYLE_FATAL_ASSERT` | fail-fast 合同 | 返回 Status 后继续运行 |
-| 需要写日志或 trace | 最终消费边界交给 `obs`/宿主 logger | `hyle/c/obs.h` | error 内部自动日志或第二套 handler |
+| 用户场景 | C++ 形状 | 不应该用什么 |
+|---|---|---|
+| 操作只有成功/失败，调用者需要原因 | `Status` | `bool + last_error` |
+| 成功还要交付值或拥有型资源 | `Result<T>` | 失败指针 + TLS errno |
+| 批量独立步骤，只保留第一个失败 | `Status::Update` | 覆盖最初原因 |
+| 明确接受 cleanup 失败 | `IgnoreError` | 无意图地丢弃返回值 |
+| allocator、pool pop、poll 的“暂时无值”本来就是正常热路结果 | 指针、`optional` 或小 enum | 每次构造 owning Status |
+| 参数、文件、权限、OOM、超时、设备暂不可用等运营失败 | canonical `Status` code | abort 或异常穿透模块边界 |
+| C/POSIX 调用刚失败，手里有 errno | `status_from_errno(errno, "operation")` | 各模块复制 `strerror` + switch |
+| Win32 调用刚失败，手里有 `GetLastError()` | `status_from_win32(code, "operation")` | 各文件复制 `FormatMessage` + switch |
+| COM/WinRT 调用返回失败 `HRESULT` | `status_from_hresult(hr, "operation")` | 丢掉 HRESULT 或只把十六进制写进 message |
+| 必须按 Vulkan/CUDA 等 SDK 原生码恢复 | `Status::FromNative` / `native_error()` | 解析 message 或再造私有码表 |
+| HYLE 内部不变量损坏、double free、错误生命周期 | `HYLE_FATAL_ASSERT` | 返回 Status 后继续运行 |
+| 需要写日志或 trace | 最终消费边界交给 `obs`/宿主 logger | error 内部自动日志或第二套 handler |
 
 判断关键不是“失败罕不罕见”，而是它是不是一个调用方需要理解和传播的**运营失败**。
 例如 mem 句柄工厂、HugeRegion 和 external init 是冷控制面，返回 Status；同一对象的
@@ -191,18 +197,14 @@ if (status.IsUnavailable()) {
   自动增加 context，也不会替你清理此前获得的裸资源。传入临时 Result 会移动；传入命名
   lvalue Result 会复制值/错误，不会暗中把它消费掉。
 
-## 语言边界
+## Native FFI 候选状态
 
-C++ 的 `Result<T>` 在 C/FFI 中映射为“返回 `hyle_status` + 首位 out 参数”；C++ 的
-`Status::WithContext` 映射为原地 `hyle_status_add_context`。`hyle_status` 是 owning handle，
-native detail 映射为固定 domain/code；不能用普通结构体赋值伪造复制。完整的
-clone/move/free、length-aware 文本、借用消息、buffer-fill 和传播宏见
-[`c-error.md`](./c-error.md)。
+HYLE 当前没有已发布的 error binding。`include/hyle/c/error.h` / [`c-error.md`](./c-error.md)
+中的 `hyle_status`、out 参数、clone/move/free、length-aware 文本和 native detail 都只是发布前
+候选 schema，可以为真实 Java/.NET 等消费者的异常、结果与批量任务而改变；它们不是 C++ parity
+承诺，也不承担旧版本兼容。若没有这样的消费任务，本模块的 Native FFI 可明确记为 `N/A`。
 
-安装后 C++ 参考工程位于 `samples/package/error/cpp`，只请求并链接 `hyle::error`；对应的真正
-C-only 工程位于 `samples/package/error/c`。两者由 shared/static package smoke 自动发现和运行，
-不是只在 HYLE 源码树内成立的示例。
-
-C handle 的 `rep` 虽然为按值 ABI 而公开在结构体中，但它是 owning token，不是可复制整数：
-初始化后才能作为 destination，复制必须 `clone`，转移必须 `move`，首错聚合优先使用
-`HYLE_C_UPDATE_STATUS`。裸结构体赋值是最危险的 C/FFI 陷阱，会让两个变量释放同一 backing。
+候选 `hyle_status` 当前是 owning token，裸结构体赋值可能让两个值释放同一 backing；这仍值得
+schema/compiler fixture 检查，但不能被误写成已有 C 客户的使用陷阱。安装后的 C++ 参考工程
+`samples/package/error/cpp` 才是产品消费示例；`samples/package/error/c` 只是让 C 编译器与
+shared/static package 验证候选 schema，不是 native-C sample，更不是 managed binding。

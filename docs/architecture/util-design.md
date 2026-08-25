@@ -1,6 +1,12 @@
 # util 架构：两个依赖层，一个产品边界
 
-> 本页维护长期设计。用户选型见 [`../guide/util.md`](../guide/util.md)，C/FFI 映射见
+> **Native FFI 状态校正（2026-08-25）**：HYLE 没有 native-C 客户，也没有已发布的 managed
+> binding。本文关于 C/C++、C/FFI 或 C 用户的旧表述只记录待复审的 ABI 候选，不是当前跨语言
+> 证书或兼容承诺；首发前可破坏性调整。先从真实 foreign-runtime 任务裁决 FFI 是否为 `N/A`；
+> 只有保留 direct FFI 时，util-runtime 才必须通过 Java FFM + .NET P/Invoke、真实导出、handle/
+> callback 生命周期与 batch 旅程后冻结。
+
+> 本页维护长期设计。用户选型见 [`../guide/util.md`](../guide/util.md)，Native FFI 候选映射见
 > [`../guide/c-util.md`](../guide/c-util.md)，性能证据只见
 > [`../performance/benchmarks-util.md`](../performance/benchmarks-util.md)。
 
@@ -14,7 +20,7 @@ P0 hyle::util_core（INTERFACE，无 binary artifact）
                     └──► C++ 用户
 
 P4 hyle::util（hyle_util binary；严格收口波次 R2）
-   demangle / Registry / 纯 C type-erased adapter
+   demangle / Registry / C-shaped type-erased adapter（Native FFI 候选）
                     │
                     └──► error + mem + container + util_core
 ```
@@ -84,18 +90,21 @@ factory：missing 和 factory 返回 NULL 都是 NULL。会因设备、驱动、
   material handoff regression；这是 ISA/codegen 合同，不以抽象模型的最弱合法序替代实测。
   具体点值与 freshness 只见 [`benchmarks-util`](../performance/benchmarks-util.md)。
 
-## C ABI 原则
+## Native FFI 候选原则
 
-`hyle/c/util.h` 属于 util-runtime，使用 `hyle_status` 和 `hyle_allocator`，不发明模块私有错误槽或
-allocator。RNG 以 POD state/batch 映射；Ref、Registry、SpinLock 以 opaque handle/callback 擦除；
-demangle 使用 caller buffer。字符串采用 length-aware container view，并提供 cstr inline。
+`hyle/c/util.h` 是 util-runtime 现有 C-syntax schema 候选，使用 `hyle_status` 和
+`hyle_allocator`，不发明模块私有错误槽或 allocator。HYLE 没有 C 产品或已发布 managed binding；
+先从真实 foreign-runtime 任务决定整个候选面是保留、缩小还是 `N/A`。若保留，RNG 以 POD
+state/batch 映射；Ref、Registry、SpinLock 以 opaque handle/callback 擦除；demangle 使用 caller
+buffer，字符串采用 length-aware view。编译期能力不为 parity 导出。
 
-C ABI 当前 47 个动态符号和 10 个 header-inline 便利入口。C Registry creator 直接返回对象，
+当前候选账本有 47 个动态符号和 10 个 header-inline 便利入口；这只是实现盘点，不是兼容或
+完整性承诺。候选 Registry creator 直接返回对象，
 并接收可选 `out_status`：checked create 传入已初始化的 OK Status，nullable hot create 传 NULL，
 让 fallible creator 跳过诊断构造；两条路不增加每项元数据。C++ 的 template/cast 语法与静态
-type-name 有意不伪造。C ScopeGuard 也有意不存在：heap handle 无法提供离开 C 词法作用域自动
-cleanup 的语义，用户应使用 `goto cleanup` 或宿主语言 defer/finally。这叫语义覆盖，而不是把每个
-C++ 函数名机械翻译成 C。
+type-name 有意不伪造。ScopeGuard 也不应机械变成 heap handle：它无法提供离开词法作用域自动
+cleanup 的语义；foreign host 应使用本语言 defer/finally。这叫任务语义覆盖，而不是把每个 C++
+函数名机械翻译成导出符号。
 
 ## 内部采用与依赖检查
 
@@ -110,9 +119,12 @@ util_core；这些依赖同时由中央 component graph 与 target link 生成/�
 ## 维护闸门
 
 1. util-core 公开头必须逐头 self-contained，并可由安装包单独请求；禁止 include runtime 头。
-2. Registry 修改必须复验 raw nullable/`Result<T>`、C checked/nullable、mutable/frozen、reentrant
-   callback、freeze race、allocator failure、TSan 和 installed shared/static C/C++ consumer。
+2. Registry 修改必须复验 raw nullable/`Result<T>`、mutable/frozen、reentrant callback、freeze
+   race、allocator failure、TSan 和 installed shared/static C++ consumer；只有保留 Registry direct
+   FFI 时，才追加候选 checked/nullable 形状及 Java/.NET handle/callback/lifetime 旅程。
 3. RNG 算法/状态布局变化更新固定序列；默认 TLS seed 变化不能破坏显式 seed 的可复现流。
 4. Ref/SpinLock 并发修改跑 TSan；布局修改在 MSVC/GCC/AppleClang 和真实下游 owner 上复验。
-5. C ABI 增删时机械对账动态符号、header-inline、纯 C smoke 与 guide；错误统一走 error。
+5. 先裁决真实 foreign-runtime 任务；无任务可记录 `FFI=N/A` 并删除候选。保留 direct FFI 时，
+   动态符号、header-inline、纯 C smoke 与 guide 的机械对账只算 hygiene，还必须通过 Java FFM +
+   .NET P/Invoke 的精确 shared-library smoke；错误统一走 error。
 6. benchmark 只验证同合同实现与选择边界，不反向制造 API、常态元数据或 workload 特化。

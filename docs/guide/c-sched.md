@@ -1,6 +1,12 @@
-# sched 纯 C ABI 使用指南
+# sched Native FFI 候选（待 managed review）
 
-`hyle/c/sched.h` 是 HYLE 调度器的稳定语言边界。它只暴露命名自由函数、
+> **当前状态（Native FFI 复审前）**：HYLE 没有 native-C 客户。本页记录的是旧 C-shaped
+> surface / Native FFI 合同候选，不是已认证的 C 产品。复审先裁决真实外语任务；可以结论为
+> `FFI=N/A`。只有保留 direct FFI 时才用 Java FFM + .NET P/Invoke 重新验收动态导出、所有权、
+> 回调和 batch 形状；在此之前，正文中的“稳定”“完整”
+> “纯 C 用户”等说法都只属于历史描述，不是当前跨语言证书；首发前 surface 可改变。
+
+`hyle/c/sched.h` 当前只是调度器的 pre-release FFI schema 候选。它只描述命名自由函数、
 具名枚举、POD 配置、函数指针和不透明句柄；C++ fiber、模板、异常、
 `std::vector` 和 coroutine frame 都不跨 ABI。
 

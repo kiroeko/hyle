@@ -1,33 +1,38 @@
 # HYLE mem：什么情况选择什么
 
+> 当前产品面只承诺本页的 C++ 形状。HYLE 没有 native-C 客户、尚未发布 managed binding，
+> 发布前也不承担 Native FFI 兼容义务。`include/hyle/c/mem.h` 是可重设计的 FFI 候选 schema，
+> 不是 C 产品 API；只有真实跨语言任务才触发 Java/.NET direct-binding 验收，没有任务时可裁决
+> `FFI=N/A`。任何 native-C sample/test 只承担 schema、编译器、导出或 package fixture 作用。
+
 mem 是 host RAM 的基础原语层。它不替业务猜生命周期，也不把某个 benchmark 的最优
 形状包装成通用 allocator；使用者先确定 ownership、并发、容量和释放方式，再选择类型。
-本文是**语言无关的选型入口**，正文示例用最自然的 C++ RAII 写法；纯 C/FFI 用户先在这里
-选能力，再到 [`c-mem.md`](./c-mem.md) 查对应的 Status/out、opaque handle 和 typed 宏。
+本文是 C++ 消费者的选型入口。若未来出现真实跨语言内存任务，必须从目标 runtime 的
+ownership、buffer 与 batch 需求重新裁决；[`c-mem.md`](./c-mem.md) 只记录当前候选 schema。
 
 ## 一页选择表
 
-| 需求 | C++ 形状 | C / FFI 形状 | 关键合同 |
-|---|---|---|---|
-| 普通动态分配 / 依赖注入 | `system_allocator()` / `Allocator` | `hyle_system_allocator` / `hyle_allocator` | sized-free；free/realloc 带回原 size/alignment |
-| 接入传统 allocator-template API | 默认 system heap 用 `SystemStdAllocator<T>`；运行时 backing 用 `StdAllocator<T>` | 不适用：C 直接持有 allocator vtable | 前者空类型/静态绑定；后者借用 backing；STL OOM 转 `bad_alloc` |
-| 接入 STL PMR | 默认 system heap 用 `system_memory_resource()`；运行时 backing 用 `PmrResource`；显式高对齐用 `AlignedPmrResource` | 不需要：C 直接持有 allocator vtable | 默认形状单层 PMR dispatch；注入形状借用 `Allocator` |
-| 任意 backing 的严格 live-byte admission | `QuotaAllocator` | `hyle_quota_allocator` | 线程安全；按 requested bytes 精确计量 |
-| opt-in allocation 计数 / 泄漏诊断 | `StatsAllocator::create(backing,track,metadata)` | `hyle_stats_allocator` | 被测 backing 与诊断 metadata 分域；计数线程安全，leak inventory 是慢路 |
-| request/frame/graph phase 临时对象 | `Region` | `hyle_region` | owned、单线程、growable、bulk `clear()` |
-| 调用方 buffer 中的临时对象 | `FixedRegion` | `hyle_fixed_region` 值对象 | external、单线程、bump、无 fallback |
-| 从共享硬池借一个 scratch block | `PooledRegion` | `hyle_pooled_region` | 单线程、固定容量、整体归还 |
-| LIFO checkpoint/rewind scratch | `StackAllocator` | `hyle_stack_allocator` | owned fixed slab、单线程 |
-| 外部 buffer 内变长 alloc/free/realloc + 整池 reset | `FixedPool` | `hyle_fixed_pool` | 单线程、O(1) indexed fit/merge、无 fallback；约 4 KiB control；fixed 指 backing 容量固定 |
-| 自己增长 backing 的变长 alloc/free + bulk release | `std::pmr::unsynchronized_pool_resource(system_memory_resource())`；并发用 synchronized 版本 | 暂无单个同形 C 对象；见下文组合边界 | C++ 复用标准池；运行时 upstream 才包 `PmrResource` |
-| 多线程固定块、严格容量 | `SharedPool` | `hyle_shared_pool` | hard capacity；free 完成后立即全局可见 |
-| worker-local 热点固定块复用 | `SharedPoolCache` over `SharedPool` | `hyle_shared_pool_cache` | 显式 owner/capacity/batch；可见性是 soft，需 publish |
-| 固定数量 typed 对象，每次重建 | `ObjectPool<T>` | `HYLE_OBJECT_POOL_*` 裸槽宏 | C 自行 init/cleanup；C++ 跑 ctor/dtor |
-| 昂贵对象保留内部状态 | `PreservingObjectPool<T>` | SharedPool 裸槽 + 调用方状态协议 | return 不销毁内部状态；最终 cleanup 由 C 调用方负责 |
-| 单线程 typed 对象、容量可增长 | `GrowablePool<T>` | `hyle_growable_pool` / typed 宏 | 指针稳定，按需增加 chunks |
-| 自动归还 pooled object | `PoolLoan<T, Owner>` / `try_loan()` | 手动 acquire/release | owner 必须比 loan/slot 长寿 |
-| 大块、THP/NUMA placement | `HugeRegion` | `hyle_huge_region` | requested 与 accepted policy 可分别查询 |
-| fiber stack | `FiberStack` / `FiberStackPool` | 不独立导出；由 sched C ABI 管理 | guard page + 有界 runtime 缓存；shutdown/trim 可归还 VM |
+| 需求 | C++ 形状 | 关键合同 |
+|---|---|---|
+| 普通动态分配 / 依赖注入 | `system_allocator()` / `Allocator` | sized-free；free/realloc 带回原 size/alignment |
+| 接入传统 allocator-template API | 默认 system heap 用 `SystemStdAllocator<T>`；运行时 backing 用 `StdAllocator<T>` | 前者空类型/静态绑定；后者借用 backing；STL OOM 转 `bad_alloc` |
+| 接入 STL PMR | 默认 system heap 用 `system_memory_resource()`；运行时 backing 用 `PmrResource`；显式高对齐用 `AlignedPmrResource` | 默认形状单层 PMR dispatch；注入形状借用 `Allocator` |
+| 任意 backing 的严格 live-byte admission | `QuotaAllocator` | 线程安全；按 requested bytes 精确计量 |
+| opt-in allocation 计数 / 泄漏诊断 | `StatsAllocator::create(backing,track,metadata)` | 被测 backing 与诊断 metadata 分域；计数线程安全，leak inventory 是慢路 |
+| request/frame/graph phase 临时对象 | `Region` | owned、单线程、growable、bulk `clear()` |
+| 调用方 buffer 中的临时对象 | `FixedRegion` | external、单线程、bump、无 fallback |
+| 从共享硬池借一个 scratch block | `PooledRegion` | 单线程、固定容量、整体归还 |
+| LIFO checkpoint/rewind scratch | `StackAllocator` | owned fixed slab、单线程 |
+| 外部 buffer 内变长 alloc/free/realloc + 整池 reset | `FixedPool` | 单线程、O(1) indexed fit/merge、无 fallback；约 4 KiB control；fixed 指 backing 容量固定 |
+| 自己增长 backing 的变长 alloc/free + bulk release | `std::pmr::unsynchronized_pool_resource(system_memory_resource())`；并发用 synchronized 版本 | C++ 复用标准池；运行时 upstream 才包 `PmrResource` |
+| 多线程固定块、严格容量 | `SharedPool` | hard capacity；free 完成后立即全局可见 |
+| worker-local 热点固定块复用 | `SharedPoolCache` over `SharedPool` | 显式 owner/capacity/batch；可见性是 soft，需 publish |
+| 固定数量 typed 对象，每次重建 | `ObjectPool<T>` | 每次取得运行 ctor，归还运行 dtor |
+| 昂贵对象保留内部状态 | `PreservingObjectPool<T>` | return 不销毁内部状态；pool 析构时统一 cleanup |
+| 单线程 typed 对象、容量可增长 | `GrowablePool<T>` | 指针稳定，按需增加 chunks |
+| 自动归还 pooled object | `PoolLoan<T, Owner>` / `try_loan()` | owner 必须比 loan/slot 长寿 |
+| 大块、THP/NUMA placement | `HugeRegion` | requested 与 accepted policy 可分别查询 |
+| fiber stack | `FiberStack` / `FiberStackPool` | guard page + 有界 runtime 缓存；shutdown/trim 可归还 VM |
 
 GPU staging、submission/completion lifetime 属于 `compute/transfer`，不由 mem 用“通用
 pinned pool”猜测。graph tensor liveness planner 属于 graph；mem 只提供它消费的 Region。
@@ -38,15 +43,16 @@ pinned pool”猜测。graph tensor liveness planner 属于 graph；mem 只提�
 
 ## 通用 allocator、typed array、标准 adapter 与 PMR
 
-`Allocator` 是 HYLE 内部和 C++ 用户的按值注入句柄；模块之间直接传这个 C++ 类型，不经
-C ABI。`allocate_n<T>` / `allocate_zeroed<T>` / `reallocate_n<T>` 会检查 count 乘法溢出，
+`Allocator` 是 HYLE 内部和 C++ 用户的按值注入句柄；模块之间直接传这个 C++ 类型，不绕经
+foreign ABI adapter。`allocate_n<T>` / `allocate_zeroed<T>` / `reallocate_n<T>` 会检查 count
+乘法溢出，
 并允许显式 alignment；用同一个 alignment 调 `deallocate_n`。`reallocate_n` 失败或溢出时
 旧 allocation 仍然有效；因为底层 resize 可能按字节搬移，它只接受 trivially-copyable `T`，
 带构析/自引用状态的对象应新建 storage 后逐对象 move/销毁。
 原生 C++ allocate/deallocate/reallocate 的 alignment 必须是非零 2 次幂；allocate/reallocate 的
 非法值会 fail-fast。deallocate 还必须带回成功分配时相同的 size/alignment，和标准 allocator/PMR
-一样属于调用方前置条件：Debug 会诊断，Release 热路不重复检查。纯 C convenience 作为 FFI 边界
-仍在 Release 校验，并把 `alignment=0` 在头内折叠成默认对齐。
+一样属于调用方前置条件：Debug 会诊断，Release 热路不重复检查。未来 binding wrapper 若接收
+不可信外部参数，必须在进入这条 C++ 热路前完成校验，不能依赖当前候选 C schema 的偶然形状。
 
 ```cpp
 hyle::mem::Allocator alloc = hyle::mem::system_allocator();
@@ -237,8 +243,8 @@ pool.reset();  // 此时无 live allocation；整池恢复
 ```
 
 `FixedPool` 把 block/allocation metadata 放进调用方 storage；two-level segregated free lists、
-两层 bitmap、边界和统计属于 `FixedPool` 控制对象（C surface 可由 caller-owned control 原地
-构造，或从显式 control allocator 创建 opaque handle）。一级按数量级定位，二级把每个范围
+两层 bitmap、边界和统计属于 `FixedPool` 控制对象，不占用 payload backing。一级按数量级定位，
+二级把每个范围
 分成 8 段；分配未命中 recent-free 快路后直接取得一个满足大小的链表头，不扫描同级空闲块。
 因此 allocate/free/邻块合并的索引工作都是 O(1)，不会因长期碎片化退化。它支持变长
 allocate/deallocate/reallocate、精确 requested `used/peak`；realloc 在当前物理 span 足够或后一
@@ -392,5 +398,6 @@ win/loss 或待补证据。性能结果用来帮助选型，不改变前述 owne
 [`../milestones/mem-mature-gap-audit.md`](../milestones/mem-mature-gap-audit.md) 都是上一轮历史
 验收输入，不是依赖升级后工作树的自动分发证书。
 安装包的最小默认/组合写法也作为可执行消费者保存在
-[`../../samples/package/mem`](../../samples/package/mem)：C 与 C++ 两份样例都只通过
-`find_package(Hyle COMPONENTS mem)` 使用 `hyle::mem`，持续覆盖 shared/static 交付。
+[`../../samples/package/mem`](../../samples/package/mem)：其中 C++ 工程是产品消费示例；native-C
+工程只验证候选 schema 能被 C 编译器、shared/static package 与导出检查消费，不代表 C 产品或
+managed binding 已发布。

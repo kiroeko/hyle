@@ -1,5 +1,10 @@
 # obs 选型与 C++ 使用指南
 
+> 当前产品面只承诺本页的 C++ 形状。HYLE 没有 native-C 客户、尚未发布 managed binding，
+> 发布前也不承担 Native FFI 兼容义务。`include/hyle/c/obs.h` 是可重设计的 FFI 候选 schema，
+> 不是 C 产品 API；只有真实跨语言任务才触发 Java/.NET direct-binding 验收，没有任务时可裁决
+> `FFI=N/A`。任何 native-C sample/test 只承担 schema、编译器、导出或 package fixture 作用。
+
 obs 有两条彼此独立的通路：**log** 是用户主动产出的同步诊断 record，**trace** 是
 profiling build 才存在的纳秒级时间线。它们都不是 error 的替代品，也不是一套日志
 运维系统。
@@ -15,7 +20,7 @@ profiling build 才存在的纳秒级时间线。它们都不是 error 的替代
 | 作用域内接进现有 logger/队列/文件/遥测 | `SinkRegistration` + `LogSink` | RAII 注销；复制、排队、轮转、上传归 sink |
 | 进程期或 callback 内特殊控制 registry | `add_sink/remove_sink` | 高级显式路径；调用方自行证明配对和 state 生命周期 |
 | 看热路径 zone、fiber、内存和 counter 时间线 | `HYLE_TRACE_*` | 默认编译期消失；shared 或单最终 image 的 static 构建汇入一个 Tracy client |
-| C/FFI 产出同样能力 | [`c-obs.md`](./c-obs.md) | POD record、opaque sink、runtime trace 映射 |
+| 真实跨语言任务需要产出诊断 | 先定义 managed 消费者的 record/batch/lifetime 任务 | 当前 [`c-obs.md`](./c-obs.md) 只是候选 schema，不能把 C++ parity 当需求 |
 
 如果应用已经使用 Abseil/Folly/spdlog 等日志系统，通常不要再建第二套日志配置树：注册
 一个 HYLE sink，把 record 适配进现有系统即可。分层 category、异步 writer、文件滚动、
@@ -73,7 +78,8 @@ message 是 exact byte view；例如 `log_message(level, std::string_view(data, 
 NUL 结尾并保留内嵌 NUL。`const char*` 便利重载会寻找结尾 NUL。record、字段和所有字符串
 都只在同步调用期间借用。`false` 表示被 gate 或没有 sink，不是错误。悬空 view、非空
 `field_count` 配空 fields 或空 field 字符串指针等是 C++ 合同违反，会
-fail-fast；外部不可信输入应走 C ABI 的 checked Status 面。
+fail-fast；未来的跨语言 wrapper 必须在进入 C++ 核前验证外部不可信输入。当前候选 C schema
+存在 checked Status 形状，也不构成已发布 binding 承诺。
 
 默认 sink 写 stderr。只有终端才加 HYLE 自己的 level 色码；source/message/field 中的换行、
 TAB、ESC 等控制字符会转义，所以一条 record 不会伪造额外物理行或注入 ANSI 序列。
@@ -151,9 +157,10 @@ message 会复制文本。共享 HYLE 的所有模块连接同一个 `hyle_tracy
 多个 DLL/plugin 各自静态链接会得到多个互不相认的 Tracy singleton，不属于受支持形状。此类 host
 必须使用 shared `hyle_obs`，不能把“每个 image 一个”描述成 process-unique。
 
-C/FFI runtime trace 函数在 OFF build 中仍是可链接 no-op，所以有一次 ABI 调用；极热的
-C++ 源码路径应使用上述编译期宏。HYLE 内部的 mem/sched/io/compute 也只走这条 native
-trace seam，不绕经 obs C ABI。
+当前候选 Native FFI runtime trace 函数在 OFF build 中仍是可链接 no-op，因此若未来真实
+binding 采用它，仍会承担一次 ABI 调用；这项候选合同发布前可以重塑。极热的 C++ 源码路径
+应使用上述编译期宏。HYLE 内部的 mem/sched/io/compute 也只走 native trace seam，不绕经
+候选 FFI adapter。
 
 ## 5. 常见误用
 

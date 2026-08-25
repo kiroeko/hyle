@@ -2,8 +2,9 @@
 
 These are source-independent consumers of an installed HYLE SDK:
 
-- `c/` starts as a C-only CMake project, requests only `error`, and exercises
-  C status ownership, context, formatting, and the shared/static link boundary.
+- `c/` is a C-syntax schema/compiler/link fixture, not a native-C product
+  journey. It requests only `error` and exercises the old status candidate and
+  shared/static link boundary; error review may change it or declare FFI=N/A.
 - `cpp/` requests only `error` and exercises the normal `Status`, `Result<T>`,
   and rvalue `WithContext` path.
 

@@ -1,8 +1,15 @@
-# HYLE C ABI：platform
+# platform Native FFI 候选（待 managed review）
+
+> **当前状态（Native FFI 复审前）**：HYLE 没有 native-C 客户。本页记录的是旧 C-shaped
+> surface / Native FFI 合同候选，不是已认证的 C 产品。复审先裁决真实外语任务；可以结论为
+> `FFI=N/A`。只有保留 direct FFI 时才用 Java FFM + .NET P/Invoke 重新验收动态导出、所有权、
+> 回调和 batch 形状；在此之前，正文中的“稳定”“完整”
+> “纯 C 用户”等说法都只属于历史描述，不是当前跨语言证书；首发前 surface 可改变。
 
 > **发布面**：`include/hyle/c/platform.h`  
 > **实现**：`src/platform/c_platform.cc`（链 `hyle_platform` + `hyle_error`）
-> **稳定性**：未发布，无 ABI 版本门（纯 `extern "C"` 自由函数导出）  
+> **稳定性**：未发布、可自由修改；旧候选还没有逐 artifact bootstrap，因而未认证。若真实外语
+> 任务裁决保留 platform FFI，须从 `hyle_platform` 自身提供当时选定的 ABI bootstrap。
 > **命名**：全部 `hyle_*` / `HYLE_*`
 
 跨语言 / 跨编译器只许绑本头（及 `hyle/c/error.h`）。不要 include `hyle/platform/*.h`。
@@ -285,7 +292,11 @@ hyle_status_free(&status);
 
 ### 3.7 导出形态
 
-纯 `extern "C"` 自由函数 + opaque 句柄（Parker/Thread/DynLib/VmRegion/MappedFile），FFI 直接绑符号。**无 `hyle_platform_api` 函数指针表、无 `api_get` 版本协商**（版本协商是分发独立编译插件才需要的件；HYLE 单一 `.so`、未发布，不背此负担）。设计推理见 [`../architecture/c-abi-design.md`](../architecture/c-abi-design.md) §3。
+旧候选是纯 `extern "C"` 自由函数 + opaque 句柄（Parker/Thread/DynLib/VmRegion/MappedFile）。它
+**没有** `hyle_platform_api` 函数指针表或 `api_get`，这点可以保留；但也尚缺 required artifact
+bootstrap，所以不能视为已认证 direct FFI。若任务裁决保留该面，应增加轻量
+`hyle_platform_ffi_abi_version` 查询，而不是函数表。设计推理见
+[`../architecture/c-abi-design.md`](../architecture/c-abi-design.md) §6。
 
 **header-inline（无 DLL 符号）**：`hyle_page_align_up`、`hyle_large_page_align_up`、thread opts helpers / `HYLE_THREAD_OPTS_INIT`。
 
@@ -484,7 +495,9 @@ cwd/home/env/symlink 和 CPU ids/info 使用同一模式；数组的 `cap` 是�
 
 ## 5. 稳定性
 
-HYLE 未发布，C ABI 面无版本门/协商——发布前按需自由演进，追求干净正确。发布后如何冻结 ABI 见 [`../architecture/c-abi-design.md`](../architecture/c-abi-design.md) §3。
+HYLE 未发布，当前候选可按需自由演进，不需要兼容任何既有消费者。若 platform 最终有真实
+direct FFI 任务，发布前要补逐 artifact bootstrap 并完成 managed smoke；发布后才冻结已发布
+binding 实际依赖的合同。见 [`../architecture/c-abi-design.md`](../architecture/c-abi-design.md) §6。
 
 导出面覆盖：wait/Parker、Thread（priority 5 档）、DynLib、VM 自由函数 + VmRegion（含 `reserve_numa`/selected interleave/`adopt`）、hugepage·THP、NUMA（实际 node 列表 + runtime capability + preferred/bind/all/selected interleave）、fs/env（权限/符号链接/硬链接/原子临时文件/env 写）、MappedFile（RO/RW/COW + advice/residency）、cpu 全字段。
 

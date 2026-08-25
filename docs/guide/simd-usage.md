@@ -1,7 +1,8 @@
 # SIMD 使用指南
 
-> `include/hyle/c/simd.h` 是 whole-buffer 的跨语言/跨编译器稳定入口；完整 C 符号、POD 和
-> FFI 说明见 [`c-simd.md`](./c-simd.md)。`hyle/simd/*.h` 是原生 C++ source surface，
+> `include/hyle/c/simd.h` 是 whole-buffer Native FFI 的历史候选，不是已经由 managed runtime
+> 验收的稳定产品；HYLE 没有 native-C 客户。候选符号与 POD 见 [`c-simd.md`](./c-simd.md)，
+> 须经 Java/.NET direct binding 复审。`hyle/simd/*.h` 是原生 C++ source surface，
 > 其中 whole-buffer 算法供 C++ 用户使用，寄存器 DSL/native 头属于 expert tier；均不承诺
 > 跨编译器 ABI。
 
@@ -13,7 +14,8 @@ Highway parity。应用通常只应调用处理整段连续数据的语义接口
 
 | 需求 | 应选层 | 是否运行时选 ISA | 稳定性 |
 |---|---|---:|---|
-| 发布一个二进制给未知 CPU 或跨语言绑定 | `hyle/c/simd.h` whole-buffer C ABI | 是，每个模块缓存选择结果 | binary-stable C/FFI 面 |
+| C++ 应用发布一个二进制给未知 CPU | `hyle/simd/{ops,math,...}.h` whole-buffer source API | 是，每个模块缓存选择结果 | 同受支持工具链的 C++ source contract |
+| 未来真实跨语言 whole-buffer 任务 | 先审 `hyle/c/simd.h` 候选；也可能 `FFI=N/A` | 若保留则是 | 当前未认证、首发前可重做 |
 | C++ 用户调用 whole-buffer 算法 | `hyle/simd/{ops,math,...}.h` | 是 | 原生 source API，不承诺跨工具链 ABI |
 | 整个 HYLE 只在一种已知 ISA 上运行 | `HYLE_SIMD_EXACT_TARGET` | 否，直接绑定目标实现 | 构建配置 |
 | 自己写一个固定 ISA 的 kernel TU | `hyle/simd/native.h` / `native/*.h` | 否 | expert source surface |
@@ -21,10 +23,9 @@ Highway parity。应用通常只应调用处理整段连续数据的语义接口
 | 实现或移植寄存器级 kernel | `hyle/simd/vec.h` | 否 | 内部 DSL，类型随 ISA 变化 |
 
 ```text
-                         普通应用 / 任意语言
+                              C++ 普通应用
                                   |
-                         hyle/c/simd.h
-                      pointer + count + POD
+                    hyle/simd whole-buffer API
                                   |
               +-------------------+-------------------+
               |                                       |
@@ -67,7 +68,10 @@ Highway parity。应用通常只应调用处理整段连续数据的语义接口
   固化到边界上。命名形如 `ctan_f32_batch` / `ctan_f64_batch`，输入输出可完全同址。
 - `*_in_range_*` 是调用者承诺输入范围的快速合同，不是自动检查后回退的安全版本。
 
-## 稳定 C ABI 调用示例
+## 历史 Native FFI 候选示例（未认证）
+
+下例只展示旧 C-shaped schema 能表达的 batch 形状，不是 native-C 产品推荐，也不证明 Java/.NET
+可以直接消费。SIMD 复审可删除、改名或只保留其中真实外语任务需要的子集。
 
 ```c
 #include "hyle/c/simd.h"
@@ -292,11 +296,11 @@ vector/mask 出现在 entry 签名中。这个选择宏在默认 fat 构建中�
 SVE symbol。fat `TARGETS` 必须列出本平台完整 canonical tier，CMake 会在配置期检查。
 
 `native::transform` 不提供通用 C callback 版本：逐 lane function pointer 阻断内联和向量化，恰好破坏
-这个 API 的目的。跨语言用户应调用已有具名 batch 产品；需要自定义语义时，在 fat-kernel impl 中
-使用上面的 C++ helper，再导出自己的 pointer/count C entry。
+这个 API 的目的。若未来跨语言任务成立，应从真实任务选择具名 batch export；需要自定义语义时，
+消费方可在 fat-kernel impl 中使用上面的 C++ helper，并在自己的边界设计 pointer/count entry。
 
 ## C++ source surface
 
-同工具链源码用户仍可直接调用 `hyle::simd::dot/sort/...`；它们与 C shim 进入同一 dispatcher，
-但不是跨编译器稳定 ABI。HYLE 没有 `hyle_simd_api_t`、`api_get` 或版本函数表：核心发布面直接导出
-自由 C 符号。C++、C#、Java、Rust 的容器包装由消费方或独立 binding 项目提供。
+同工具链源码用户直接调用 `hyle::simd::dot/sort/...`；这是当前正式用户面，但不是跨编译器稳定
+ABI。旧自由 C 符号只是未认证候选，不能称为核心发布面；SIMD 复审先决定是否有真实 managed
+任务，再决定保留哪些 batch exports，以及由何种正式 binding 包装。

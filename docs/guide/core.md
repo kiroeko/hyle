@@ -1,17 +1,27 @@
-# core：基础能力怎么选
+# core：能力、交付形态与选型
 
-core 大多是其他模块的地基。普通用户最常直接使用的是版本诊断；只有在写高性能数据结构、
-plugin 或 stable-address 节点队列时才需要缓存与侵入链表入口。
+core 是其他模块的地基，不只是版本查询。它还提供缓存布局常量、三种
+prefetch intent、编译器合同宏和零分配侵入链表。但这些能力的交付形态不同：
 
-| 任务 | 直接包含 | 入口 |
-|---|---|---|
-| header/runtime 版本诊断 | `hyle/core/version.h` | `kVersion*`、`version()` |
-| cache 布局与访问 hint | `hyle/core/cache.h` | `k*InterferenceSize`、三种 prefetch |
-| 调用方拥有的稳定节点队列 | `hyle/core/intrusive_list.h` | `IntrusiveListHook` / `IntrusiveList` |
-| 维护 HYLE 或编写同层 kernel | `hyle/macros.h` | compiler/fatal contract；普通业务不要默认使用 |
+| 能力 | C++ source / linked API | native-C helper | Java/.NET/Rust/Python direct FFI |
+|---|---|---|---|
+| headers 的产品/FFI ABI 常量 | `hyle/core/version.h` 的 `kVersion*` / `kFfiAbiVersion*` | 无行为 helper；只有 language-neutral schema defs | binding 内嵌生成时的 expected ABI，不是动态符号 |
+| Native FFI ABI 握手 | C++ 源码用 `kFfiAbiVersion*` | 无 | `hyle_ffi_abi_version` |
+| 已加载 runtime 产品版本 | `version()` / `version_string()` | 无；C 声明只是 ABI schema | `hyle_version` / `hyle_version_string` |
+| cache 布局 | `hyle/core/cache.h` 的 `k*InterferenceSize` constexpr | 无客户产品面 | 无动态符号 |
+| cache 访问 hint | `hyle/core/cache.h` 的三种 inline prefetch | 无公开 helper | 无动态符号 |
+| stable-address 节点队列 | `hyle/core/intrusive_list.h` 的 template/inline | 无公开 helper | 无动态符号 |
+| compiler/fatal contract | `hyle/macros.h` | 无公开 helper | 无动态符号 |
 
-这些头按任务拆分，没有必须 include 的 core umbrella；普通用户不需要为版本查询引入 intrusive
-模板，也不需要为 cache hint 引入 platform runtime。
+因此“`hyle_core` 的 Native FFI 动态导出只有一个 ABI bootstrap 和两个产品版本符号”不等于
+“core 只有版本能力”。
+其余能力有意编进 C++ 消费者 translation unit：编译器合同和 cache layout 本来就是编译期
+信息，prefetch 需要感知调用方 ISA，侵入链表依赖 typed member hook、稳定地址和原生生命周期。
+代价是替换
+`hyle_core` DLL/DSO 不会更新这些已编译逻辑；头文件或 inline 实现变化后必须重编消费者。
+
+这些 C++ 头按任务拆分，没有必须 include 的 core umbrella；版本查询不会引入
+intrusive 模板，cache hint 也不会引入 platform runtime。
 
 公开 C++ source API 的基线是 C++23。通过 CMake 消费时只请求 core target 即可；它会传播
 C++23 和 native MSVC 所需的 conforming preprocessor 合同：
@@ -43,9 +53,11 @@ if (hyle::version() != hyle::kVersion) {
 }
 ```
 
-只编译当前源码时用 `kVersion*`；动态加载、plugin/FFI 边界诊断用 `version()`。它比较的是
-语义版本，不是 Git commit；同一语义版本的 source provenance 由发布 manifest/SBOM 记录。
-版本号不承担 feature negotiation，预发布阶段也没有版本函数表。
+只编译当前源码时用 `kVersion*`；动态加载、plugin 或包匹配诊断用 `version()`。它比较的是
+语义产品版本，不是 Git commit；同一语义版本的 source provenance 由发布 manifest/SBOM 记录。
+产品版本不承担 FFI generation 协商；direct binding 必须先从 exact `hyle_core` artifact 调用
+`hyle_ffi_abi_version`，检查它返回的全局 ABI major/minor，且当前不使用模块函数表。完整加载顺序见
+[`c-core`](./c-core.md)。
 `version_string()` 返回 hyle_core 模块拥有的借用指针，不要 free；若调用方会卸载该 DLL/DSO，
 必须在 `dlclose`/`FreeLibrary` 前复制字符串。
 
@@ -74,6 +86,8 @@ struct alignas(hyle::core::kDestructiveInterferenceSize) HotCounter {
 - 四者都是编译期 layout recommendation/bound。算法决定一次处理/flush 多少字节时可包含
   `hyle/platform/cpu.h`，调用 `hyle::platform::cache_line_size()` 取得 best-effort runtime
   observation；查询不可用时返回 64，所以它不是精确拓扑 API，也不能替代安全 destructive spacing。
+  这是 **platform 能力，不在 core 链接闭包内**；使用时要另外请求 `COMPONENTS platform`
+  并链接 `hyle::platform`。
 - 随后还会反复读取同一 cache line：`prefetch_read(ptr)`。
 - 大片流式读取、预计只消费一次：`prefetch_read_non_temporal(ptr)`；目标不支持时允许退化。
 - 即将修改、希望 capable CPU 提前取得 exclusive ownership：`prefetch_write(ptr)`；它不是写入，
@@ -94,10 +108,10 @@ target 的实际 alignment（使用 max 常量时就是 128B），只有把类�
 默认值是编译目标家族的 ABI 选择，不是运行时自适应。不要把为一种 target family 编译的公共
 对象布局与另一种 artifact 混用；新 ARM/RV64 或 runtime observation 超出已认证范围时，必须
 重新裁决 layout/footprint/ABI，不能只因 best-effort probe/fallback 能运行就带着“支持”标签发布。
-本次预发布升级把 x86 target destructive recommendation 从 128B 改为 64B，会改变使用该常量的
-header-defined C++ 类型和用户自定义 `alignas` 类型布局；升级必须 clean rebuild 全部 translation
-units、静态库/动态库与 plugins，禁止混用旧 headers/objects/installed binaries。当前仍是 0.1.0，
-runtime version comparison 不会机械识别同一预发布版本号内部的 layout 变化。
+若新版本改变这些布局常量，任何使用它们的 header-defined 类型和用户自定义
+`alignas` 类型都可能改变 ABI。升级时必须 clean rebuild 全部 translation units、静态库/
+动态库与 plugins，禁止混用不同版本的 headers、objects 和 installed binaries。runtime 版本
+查询只能比较版本数字，不会检查进程中每个已编译类型的实际布局。
 
 ## 侵入链表：什么时候值得用
 
@@ -203,4 +217,5 @@ abort，定义后把抵达视为 undefined behavior。常规 CMake Debug/Release
 这些形状分别对应 Abseil/Highway 的 assume、Highway restrict/flatten/unroll，并由 HYLE 的 SIMD/vqsort
 真实消费；它们是 source/compiler seam，不是动态 ABI，也不是通用业务 API。
 
-纯 C/FFI 用户见 [`c-core`](./c-core.md)。
+Java/.NET/Rust/Python 不编译 C shim 的 direct dynamic FFI 用户见 [`c-core`](./c-core.md)。
+core 不提供独立的 native C source 产品面；`include/hyle/c/core.h` 只是 Native FFI ABI schema。

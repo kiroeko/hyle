@@ -1,9 +1,14 @@
 # util：什么情况选什么
 
+> 当前产品面只承诺本页的 C++ 形状。HYLE 没有 native-C 客户、尚未发布 managed binding，
+> 发布前也不承担 Native FFI 兼容义务。`include/hyle/c/util.h` 是可重设计的 FFI 候选 schema，
+> 不是 C 产品 API；只有真实跨语言任务才触发 Java/.NET direct-binding 验收，没有任务时可裁决
+> `FFI=N/A`。任何 native-C sample/test 只承担 schema、编译器、导出或 package fixture 作用。
+
 `util` 提供几种彼此独立的基础能力，不存在一个需要整体 include 的“万能工具箱”。C++ 用户
 按场景包含 `hyle/util/<capability>.h`，并链接可安装的 header-only target
-`hyle::util_core`；只有 `demangle`、Registry 和 C/FFI 面需要改为链接 `hyle::util`。
-纯 C 的精确映射见 [`c-util.md`](./c-util.md)。
+`hyle::util_core`；只有 `demangle`、Registry 等 runtime 能力需要改为链接 `hyle::util`。
+[`c-util.md`](./c-util.md) 只记录当前候选 FFI schema，不能作为已发布 binding 或 C 用户旅程。
 
 ```cmake
 find_package(Hyle REQUIRED COMPONENTS util_core)
@@ -179,8 +184,8 @@ manager 管理 quiescence，再销毁整个 Registry。Registry 必须活过所�
 
 ## 分层与证据入口
 
-header-only util-core 作为独立 `util_core` 组件交付；Registry、demangle 和 C/FFI adapter
-属于 `util` runtime component。`1b148ef`/`70fa4e8` 是上一轮功能、C ABI、并发、性能与 package
-复证的历史输入，不代表当前 working tree 已恢复绿证；现行状态只看
+header-only util-core 作为独立 `util_core` 组件交付；Registry、demangle 和候选 Native FFI
+adapter 属于 `util` runtime component。`1b148ef`/`70fa4e8` 是上一轮功能、旧 C surface、并发、
+性能与 package 复证的历史输入，不代表当前 working tree 已恢复绿证，也不产生兼容承诺；现行状态只看
 [`pre-release-readiness`](../milestones/pre-release-readiness.md)。分层仍然保留：它避免低层
 mem/container 为一个运行时 Registry 反向链接 `hyle_util`。

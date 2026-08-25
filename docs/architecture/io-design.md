@@ -1,5 +1,11 @@
 # HYLE io/ 网络库选型
 
+> **Native FFI 状态校正（2026-08-25）**：HYLE 没有 native-C 客户，也没有已发布的 managed
+> binding。本文关于 C/C++、C/FFI 或 C 用户的旧表述只记录待复审的 ABI 候选，不是当前跨语言
+> 证书或兼容承诺；首发前可破坏性调整。先从真实 foreign-runtime 任务裁决 FFI 是否为 `N/A`；
+> 只有保留 direct FFI 时，io 才必须通过 Java FFM + .NET P/Invoke、真实导出、completion/buffer/
+> callback 生命周期与 batch 旅程后冻结。
+
 > 本文档定下 HYLE `io/` 模块的网络层选型。上游约束见 [`hyle-scope.md`](./hyle-scope.md)（`sched/` 统一调度 + fiber）。
 
 ## 2026-07-20 当前架构（维护入口）
@@ -24,8 +30,8 @@ IoContext（每 Scheduler worker 一个 Proactor + 文件 blocking pool）
           └─ provided buffer · recv multishot · fixed file · direct accept
              （显式快腿；不进入 portable Proactor）
 
-纯 C / FFI 用户
-  hyle/c/io.h：opaque proactor/shmem/HTTP2 codec + POD completion + native handle
+foreign-runtime 任务候选（当前没有已发布 binding）
+  hyle/c/io.h：opaque proactor/shmem/HTTP2 codec + POD completion + native handle 候选
        └─ 自己组合 event loop / scheduler；不把 coroutine/STL/OpenSSL 类型过 ABI
 ```
 
@@ -37,17 +43,19 @@ IoContext（每 Scheduler worker 一个 Proactor + 文件 blocking pool）
   低层 Proactor 保持机制透明，调用者选择它就承担同步 fallback 语义。
 - plain TCP 与已握手 TLS 经同一个 `HttpTransport` 进入 HTTP framing 核。
 - HTTP/2 协议核固定为 nghttp2；它不拥有 IO/event loop。C++ connection 直接
-  驱动 `HttpTransport`，C ABI 暴露 transport-neutral feed/next-output codec。
+  驱动 `HttpTransport`；现有 C-shaped 候选提供 transport-neutral feed/next-output codec，
+  是否成为 direct FFI 由真实 host 任务决定。
 - TCP read/write/connect/accept 和 UDP recv/send 均有 base、deadline、
   CancelToken 腿；base 腿只用于确定能完成的受控路径。
 - Linux-only recv-multishot/provided-buffer/fixed-file/direct-accept 只能经成功
   取得的 `IoUringExtension` 调用；portable one-shot 永远保留。
 - epoll/kqueue pending 表使用 container/ 的 flat SwissTable。IOCP/io_uring
   不需要 fd readiness 映射，因此不会为统一外观平白引入 hash lookup。
-- C ABI 的 backend 与 HTTP/2 role 都是固定 `uint32_t` typedef，不使用会受
-  `-fshort-enums` 影响的 exported enum。按值返回的 `hyle_io_capabilities` 则冻结为
-  v1 的 16-byte snapshot（backend/bits offset 4/8）；其中 `struct_size` 是结果自描述，
-  不是可追加尾字段的 input 协商。超出 bits 的新形状通过新 query/type 演进。
+- 当前 ABI 候选的 backend 与 HTTP/2 role 都是固定 `uint32_t` typedef，不使用会受
+  `-fshort-enums` 影响的 exported enum。fixture 当前断言按值返回的 `hyle_io_capabilities` 为
+  16-byte snapshot（backend/bits offset 4/8）；其中 `struct_size` 是结果自描述，不是可追加尾字段
+  的 input 协商。这些是当前候选实现事实，不是已发布 v1 兼容承诺；保留 direct FFI 时须在
+  Java/.NET 旅程中重新裁决演进方式。
 
 > **维护警戒线**：portable API 必须在所有支持后端真实实现、等价模拟或明确
 > 返回 `StatusCode::Unimplemented`；该状态只是平台/实现不支持当前操作的
@@ -120,7 +128,7 @@ src/io/
 ├─ file.cc / dns.cc          capability-aware blocking offload
 ├─ tls.cc / http*.cc         transport + picohttpparser/nghttp2 protocol core
 ├─ shared_memory.cc          Windows/POSIX mapping
-└─ c_io.cc + http2.cc        稳定 C ABI shim + H2 codec facade
+└─ c_io.cc + http2.cc        C-shaped ABI 候选 bridge + H2 codec facade
 ```
 
 一句话：**对上一套 proactor 抽象，对下 4 个后端，中间只借 syscall 封装、调度自己管。**

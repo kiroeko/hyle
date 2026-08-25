@@ -1,18 +1,17 @@
-# Sample 05 — installed all-target and mem API consumer
+# Fixture 05 — installed package/schema conformance
 
-This mixed C/C++ project requires the installed `mem` component, then checks every component
-advertised by `Hyle_AVAILABLE_COMPONENTS`. Its C executable calls the mem and error C APIs
-through `hyle::mem`; its C++ executable calls `SystemAllocator`; one minimal executable per
-available component mechanically checks every imported target. The C allocation path also
-makes shared-package tests load the real `mem -> platform -> error` module chain.
+This mixed C/C++ validation project is not a native-C customer example. It requires the installed
+`mem` component, then checks every component advertised by `Hyle_AVAILABLE_COMPONENTS`. Its C
+executable is a compiler/link fixture for the old mem/error FFI-schema candidates; those surfaces
+remain unreviewed and may change or become FFI=N/A. Its C++ executable is the real user journey for
+`SystemAllocator`; one minimal executable per available component checks every imported target.
 
 ```bash
 cmake -S . -B build -G Ninja -DCMAKE_PREFIX_PATH=/opt/hyle
 cmake --build build
-./build/installed_c_consumer
+./build/installed_ffi_schema_fixture
 ```
 
-The same project works with shared and static HYLE packages. For the genuinely C-only,
-error-only package contract, see `../package/error/c`; its CMake project starts with only the C
-language, while a static HYLE package enables C++ solely as the linker driver. The matching
-error C++ API probe lives in `../package/error/cpp`.
+The same fixture runs against shared and static packages. `../package/error/c` deliberately starts
+with only the C language to audit schema/compiler/link hygiene; it is not a genuinely C-only
+product contract. The actual error C++ package consumer lives in `../package/error/cpp`.

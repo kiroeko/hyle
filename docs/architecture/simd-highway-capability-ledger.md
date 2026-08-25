@@ -1,5 +1,9 @@
 # SIMD × Highway 能力账本
 
+> **状态校正（2026-08-25）**：表中的 C ABI 数量是 2026-07 的旧候选盘点，不是当前产品优势或
+> direct FFI 证书。HYLE 没有 native-C 客户；SIMD 先按真实外语任务裁决 FFI 是否需要，保留时再
+> 以 Java/.NET、逐 artifact bootstrap 与 managed ownership 重审。算法/ISA 对账不受此校正影响。
+
 > 本账本比较用户能解决的问题和实现形状，不以函数名数量或 LOC 判输赢。既有审计/点值绑定历史
 > Highway 快照 `83eff39371e5e6494b305b253f8a3c06f831faf4`，不得改标签冒充新结果。中央 lock 的当前 benchmark
 > 对手已升到 `239071390b18ca70f8fadde90ebefa6d8b12cb69`；发布新比较结论前必须 rebaseline。HYLE 不把
@@ -46,7 +50,7 @@ CPU/编译器平台矩阵、SSE2/SSSE3/SSE4 等细粒度 target、宏展开的�
 | bitpack | contrib bit pack | u8/u16/u32 batch，固定 logical block 合同 | 同类能力已覆盖 |
 | crypto primitive | AES/CLMul 等 register ops | AES/CLMul register ops，按 feature gate | 原语级覆盖；不承诺完整密码产品 |
 | runtime dispatch / multitarget | foreach-target + dynamic/static target | Runtime / exact / native + fat-kernel | 两者都覆盖；HYLE 的交付编译器矩阵较窄 |
-| C ABI | Highway 不是其主要产品形状 | 246 个 pointer/count/POD/status 入口（243 动态符号） | HYLE 优势；可恢复失败已统一共享 error seam |
+| 旧 FFI 候选 | Highway 不是其主要产品形状 | 246 个 pointer/count/POD/status 候选（243 动态符号） | 不计优势；待真实 managed 任务裁决与重签 |
 
 ### RVV 是既有后端，不是缺口
 
@@ -109,13 +113,14 @@ CPU/编译器平台矩阵、SSE2/SSSE3/SSE4 等细粒度 target、宏展开的�
 - `copy`/`fill`：标准库或 `mem` 已能表达，SIMD 包装没有独立语义收益。
 - Highway contrib 的 hash、image、matvec、thread pool、topology/allocator：owner 分别是
   `container`、图像/compute 消费层、`compute`、`sched`、`platform`/`mem`，不能为能力表好看塞进 SIMD。
-- 通用逐元素 C callback：调用边界妨碍内联/向量化；C ABI 保留具名 pointer/count 产品。
+- 通用逐元素 foreign callback：调用边界妨碍内联/向量化；若保留 FFI，只考虑真实任务所需的具名
+  pointer/count batch。
 - 完整加密协议或密码库：寄存器 AES/CLMul 只是积木，安全产品需独立 threat model 和审查。
 
 ## 结论
 
-HYLE SIMD 不是 Highway 的小型拷贝：它把大量能力收成预编译 batch API 和稳定 C ABI，也额外覆盖
+HYLE SIMD 不是 Highway 的小型拷贝：它把大量能力收成预编译 C++ batch API，也额外覆盖
 AI dtype/激活/复数数学；Highway 则在平台、编译器、special-float lane 和通用 source-algorithm
 层更成熟。range algorithm 与 narrow tag 都是实际 kernel 形状，不是 LOC 驱动。SIMD **尚未
-严格收口**：narrow prebuilt C ABI/sort 产品决策、本轮算法的 scalable 重验、
+严格收口**：是否存在 managed FFI 任务及其 batch/sort 形状、本轮算法的 scalable 重验、
 scalable 真机性能和最终多平台证书仍是明确的 P0。

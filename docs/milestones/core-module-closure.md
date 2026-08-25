@@ -1,27 +1,88 @@
 # core 模块严格复审记录（2026-07-25—2026-08-25）
 
-> **当前证书（2026-08-25）：`SIGNED`。**产品实现冻结于 `a951f0a`（tree
-> `714d660299bb67d2c855452e8cbdb14cd89ec841`）；正式 core harness/runner 证据绑定
-> `2707583`（tree `ac85153f7d3241472ace9fc8556afdb88311082a`）。两点之间
-> `CMakeLists.txt/cmake/include/src/samples/package` 零差异，后续只改变测试/benchmark/证据文档。
-> 当前队列状态仍以 [`pre-release-readiness`](./pre-release-readiness.md) 为准。
+> **当前证书（2026-08-25）：`SIGNED`。**这表示 core 按当前模块收口方法完成验收，**不表示
+> 未发布的 FFI 候选已经冻结或需要兼容**。运行时行为基线为 `9459d3f`（tree
+> `925b516d00226a20767361ec59b3fee057ae1b21`）；最终 source/public-contract、严格 bootstrap-order、
+> incompatible-major harness 和证据输入绑定 `c0b9a84`（tree
+> `795fc79e925df13c6df9750129afea7fc2029c3d`）。后续提交只改注释、证据工具/探针和 fixture/sample
+> 分类，不改变 core 的运行时行为或 claim-bearing 热路径。当前队列状态仍以
+> [`pre-release-readiness`](./pre-release-readiness.md) 为准。
 
 > 本页只记录施工与验收。稳定设计见
 > [`core-design`](../architecture/core-design.md)，使用方式见 [`guide/core`](../guide/core.md) /
 > [`guide/c-core`](../guide/c-core.md)，性能数字只见
 > [`benchmarks-core`](../performance/benchmarks-core.md)。
 
-## 2026-08-25 最终严格证书
+## 2026-08-25 Native FFI 口径更正与当前证书
+
+本次更正不新增一个“原生 C 用户面”。HYLE 没有 native-C 产品客户；
+`include/hyle/c/core.h` 使用 C17 可描述语法，是 Java、.NET、Rust、Python 等运行时直接绑定
+shared library 的 **Native FFI ABI schema**。C 编译器 fixture 只验证 schema 和 calling
+convention，不代表 HYLE 承诺 C source API。
+
+| 身份 | 当前结论 |
+|---|---|
+| review state | 🟢 `SIGNED`；core 的 C++ source、linked identity 与当前 direct Native FFI 候选已按新口径闭合；无已发布 binding，故没有 ABI 兼容义务 |
+| product implementation | `9459d3fa91e75b95d261067284451c45fe96f54a` / tree `925b516d00226a20767361ec59b3fee057ae1b21` |
+| source / public contract / validation harness | `c0b9a84d81ad6df1fb81fcec6235425a8f3448ab` / tree `795fc79e925df13c6df9750129afea7fc2029c3d` |
+| Native FFI export manifest | **3/3**：`hyle_ffi_abi_version`、`hyle_version`、`hyle_version_string` |
+| Windows shared/direct binding | **PASS**：MSVC 19.50.35728 Release `components=core/shared` 4/4（含产品 export 3/3 与 header self-contained）；.NET SDK 10/`net8.0` 与 Java 25 从命令行给定的 exact **installed DLL** 路径加载，先解析并校验该 core artifact 的 bootstrap，再解析/调用两个产品版本符号；两者加载只导出 ABI major 2、无产品符号的 test-only DLL 时均先拒绝 generation，再确认产品符号不存在 |
+| C++ delivery shapes | **PASS**：`c0b9a84` 下 Windows installed headers+shared 与 headers+static 的独立 C++ consumer 各 1/1；complete-source `add_subdirectory` static C++ consumer 1/1。三者都运行 version/cache/compiler/intrusive 正常旅程 |
+| WSL shared boundary | **PASS**：detached `c0b9a84`、GCC 14.2 Release core 4/4；test-only incompatible fixture 的 ELF 动态导出只有 `hyle_ffi_abi_version` |
+| macOS shared boundary | **PASS**：detached `c0b9a84`、AppleClang 21 Release core 4/4；test-only incompatible dylib 的外部定义只有 `_hyle_ffi_abi_version` |
+| sanitizer | **PASS**：detached `c0b9a84`、GCC 14.2 RelWithDebInfo 的 ASan 与 UBSan core 各 4/4；core 不拥有并发 runtime，TSan 不是本模块当前适用门 |
+| required CI | **WAIVED / `[skip ci]`**：本月 Actions 额度接近上限，本轮未启动新 workflow；以上 Windows/WSL/macOS fresh 真机证据承担模块签署，且不冒充持续 CI 回归已新增。build/package 后续复审再决定长期 managed-binding job |
+| performance binding | **保留**：`a951f0a`→`9459d3f` 未改变 IntrusiveList、prefetch 或 compiler contract 的 claim-bearing 热实现；`9459d3f`→`c0b9a84` 也只改变合同文字、test/evidence/probe/sample 分类。因此既有三平台同合同 SOTA gate 仍绑定同一热代码，没有伪造新性能点值 |
+| 全库代码 | **301,385**（tracked，含 docs/in-tree third_party） |
+| 自实现（含测试） | **141,773** |
+| 自实现（不含测试） | **95,984** |
+| core 实现 | **689**（11 个 native code-bearing files；不含 tests/bench/docs/samples/CMake） |
+
+可复核证据已进入版本库，不再依赖无法审计的 PowerShell transcript 或 `.scratch` 文件名：
+
+- [`c0b9a84` 证据 manifest](../evidence/core/manifest-c0b9a84.md) 绑定完整 commit/tree、三台机器的
+  实际 checkout、工具链/配置、源码/探针/产物哈希，并解释沿用旧标签的 build-cache 目录；
+- [managed FFI structured evidence](../evidence/core/managed-ffi-windows-c0b9a84.json) 保存 Java/.NET
+  四条正负路径的命令、stdout/stderr、return code、工具版本和输入 SHA-256；
+- 同目录保存 Windows/WSL/macOS core 4/4、WSL ASan/UBSan、三种 C++ 交付 CTest 日志及
+  [FFI export transcript](../evidence/core/ffi-exports-c0b9a84.log)。
+
+当前能力必须按三层读取：
+
+| 层 | core 当前能力 | 是否属于 direct FFI |
+|---|---|---|
+| C++ source / linked API | compile/runtime product identity、compiler contract、target-family cache layout、prefetch intent、`IntrusiveList` | 只有 linked runtime identity 的三个 C-schema symbols 属于 |
+| native-C helper | 当前 core 不提供受支持的 C source 产品旅程；C17 只承担 ABI schema 的机械可编译性 | 否 |
+| direct Native FFI | 从 exact core artifact 调用 bootstrap，取得全局 ABI generation；通过后再读 packed/string product identity | 是，恰好 3 个真实导出 |
+
+compiler attribute、branch/assume/restrict/unroll/flatten、cache layout 和 prefetch 都在调用方 TU
+决定代码形状，导成逐次 DLL 调用会改变语义或把热路变慢；`IntrusiveList` 则要求节点地址稳定、
+依赖 C++ 生命周期和批量 O(1) 重链。它们合理保留为 C++ source 能力，不因未出现在 managed
+binding 中而构成 FFI 缺口。runtime CPU/cache observation 仍归 `platform`，不下沉到 core。
+
+旧 pure-C list 曾使用自指 sentinel：**任何已初始化的 list（即使为空）都不能 move/copy、
+`memcpy` 或按值传递**，因为 sentinel link 指向对象自身；已链接节点地址也必须稳定，且 node/list
+任一 storage 失效前必须 detach。该 helper 已从当前 core schema 删除；这条历史陷阱只解释为何
+不能把旧 C fixture 当成可管理语言直接绑定的 list ABI。
+
+下面的 `a951f0a`/`2707583` 证书、pure-C parity、两个动态 version symbols 和旧 LOC 都保留为
+施工来路。它们已被本节的 `c0b9a84` source/验证 identity 和 Native FFI 判据 **superseded**，不得继续作为
+当前 C/FFI 收口结论。
+
+## 2026-08-25 旧 source/C 口径证书（历史，已 superseded）
+
+> 本节完整保留当时的功能、性能和三平台证据。其 “C17 source API 完整”、pure-C consumer、
+> “动态 ABI 只有两个 version symbols”及当时的 candidate/LOC 都不是当前 Native FFI 证书。
 
 | 身份 | 结论 |
 |---|---|
-| review state | `SIGNED`；功能、设计、复杂度、C++/C、依赖、三平台、交付、性能和文档门闭合 |
+| 当时 review state | 当时为 `SIGNED`；功能、设计、复杂度、C++/C、依赖、三平台、交付、性能和文档门闭合 |
 | product candidate | `a951f0a436336366df9729e663c2fccfd357cff2` / tree `714d660299bb67d2c855452e8cbdb14cd89ec841` |
 | evidence harness | `2707583f2fdd0d38f77f3302480be662dfade2f6` / tree `ac85153f7d3241472ace9fc8556afdb88311082a` |
 | public surface identity | SHA-256 `58038784ef0231b6ad73b7dc5e1b6622b3f8d79aa9a22c186090d1e268baba62` |
 | strong peer | Boost.Intrusive clean `df8eeb90846648464e3c8e378e312f0cec772e83` |
 | runner | SHA-256 `22b285cb469479522f719158e2b9c1757aefb604d4a781e801ebbd9d76dca26d` |
-| current verdict | core 结束关注；只有 methodology 的重开触发器才重新转黄 |
+| 当时 verdict | core 结束关注；只有 methodology 的重开触发器才重新转黄 |
 
 ### 功能与边界裁决
 
@@ -133,7 +194,7 @@ include/hyle/macros.h + include/hyle/visibility.h + src/core`；不含 tests/ben
 - C++ source baseline 为 C++23，pure-C 为 C17；安装/source CMake target 传播语言与 native MSVC
   preprocessor 合同。安装 SDK 的统一 public header tree 与 component target/link closure 是两件事。
 
-### 当前性能资格
+### 当时的性能资格
 
 - 当前 harness 覆盖 FIFO、refill+cancel、read-only traversal、whole-batch handoff 和 non-owning
   teardown；四类有 N=32/4096，teardown 为 N=4096。
@@ -145,18 +206,21 @@ include/hyle/macros.h + include/hyle/visibility.h + src/core`；不含 tests/ben
 - 其余 claim-bearing 行须在 sampling 前登记 equivalence margin，并完成默认序、peer-first、短
   aggregate placement 变体、三平台和真实 consumer gates；单顺序 runner 输出不是模块证书。
 
-### 剩余验收门
+### 当时的剩余验收门（历史快照，非当前 TODO）
 
-- [ ] 冻结最终 candidate commit/tree 和 public surface identity；
-- [ ] Windows/MSVC、Linux/GCC、macOS/AppleClang 的 Release/Debug、适用 sanitizer 与 codegen
+以下条目逐字保留签署前曾经缺失的证据类别；其关闭结果已经归档在上方旧口径证书，当前判据则由
+本页顶部的 Native FFI 证书取代。
+
+- 当时待冻结最终 candidate commit/tree 和 public surface identity；
+- 当时待完成 Windows/MSVC、Linux/GCC、macOS/AppleClang 的 Release/Debug、适用 sanitizer 与 codegen
   绑定同一 candidate；
-- [ ] pure C/C++ header、nodiscard、C17/C++23、shared/static/source package consumer 全矩阵；
-- [ ] target-family cache layout 的 runtime coherency、对象 footprint 与直接消费者正确性/性能回归；
-- [ ] 五类 core workload 按五态标准归档，所有 claim-bearing `INCONCLUSIVE/LOSE` 有裁决；
+- 当时待完成 pure C/C++ header、nodiscard、C17/C++23、shared/static/source package consumer 全矩阵；
+- 当时待完成 target-family cache layout 的 runtime coherency、对象 footprint 与直接消费者正确性/性能回归；
+- 当时待完成五类 core workload 按五态标准归档，所有 claim-bearing `INCONCLUSIVE/LOSE` 有裁决；
   N=32 cancel 作为非阻塞机制诊断保留未知，但必须有 time 真实消费者门；
-- [ ] time/scheduler list consumer 与 container/mem/cache consumer 的实际受影响边复证；
-- [ ] architecture/guide/C guide/performance/readiness 最终一致性审计；
-- [ ] 四项 LOC、最终 SHA、三平台日志索引、push 和 required CI：**待 review owner 填写**。
+- 当时待完成 time/scheduler list consumer 与 container/mem/cache consumer 的实际受影响边复证；
+- 当时待完成 architecture/guide/C guide/performance/readiness 最终一致性审计；
+- 当时待填写四项 LOC、最终 SHA、三平台日志索引、push 和 required CI。
 
 只有上列全部关闭，状态才能从黄色转为 `SIGNED`。以下内容均为 2026-07 历史施工记录。
 

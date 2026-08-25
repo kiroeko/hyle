@@ -4,7 +4,10 @@
 
 ## HYLE 是什么
 
-**一个 C++ 基础设施库**（可组装成带 C ABI 的共享/静态库，也可按授权交付完整源码），给上层
+**一个 C++ 基础设施库**（C++ 用户可消费 headers + shared/static 或按授权取得完整源码；
+Java/.NET 等外部运行时能力只按真实任务通过 shared library 的 direct Native FFI 提供；当前 core
+验证了 bootstrap + product identity 的 pre-release 形状，但尚无已发布 binding/兼容义务；其余
+模块先裁决 FFI 是否需要，无任务可 `N/A`），给上层
 （AI 推理引擎、CAD/BIM/CAE 工程计算管线、训练框架、agent）当地基。把四样东西做在**同一套底座**上：
 
 1. **调度** — 一个调度器同时管 线程 / 进程 / 纤程 / 协程
@@ -36,10 +39,16 @@ HYLE 在 clay 地基上扩张的方向是两条，不是往应用爬：
 7. **fiber** — clay 承诺却从未实现的核心，亲手补上
 8. **网络 IO** — proactor 模型，与调度一体（fiber 遇 IO 让出）
 
-## 模块划分
+## 概念支柱与完整组件
 
 ```
 HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现承诺 2=必要基质 3=便利]
+
+根 seam / 小型基质
+├─ core/      版本、编译器/cache contract、intrusive primitive
+├─ util-core/ header-only low-level seam（真实 target 名 `util_core`）
+├─ error/     统一失败值与 context
+└─ math/      std/SIMD 未承载的标量残余；独立边界仍待复审
 
 核心计算/并发（论点本身）
 ├─ mem/       极致内存管理  [T0] ← 继承 clay 分配器家族+arena，修 5 个 bug，加 NUMA/大页/cache-line
@@ -50,14 +59,18 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 ├─ compute/   异构计算原语   [T1] ← device/stream/buffer 抽象，先包装 ggml 不替算子
 └─ graph/     并行任务编排   [T3] ← 继承 clay taskgraph，剥离特化，跑在 sched 之上
 
-支撑层（为上面服务的基质，进主图因被广泛依赖）
+支撑/运行时层（为上面服务，均在真实 component graph）
 ├─ platform/  OS 抽象       [T2] ← thread/virtual_memory/dynlib/env/path/fs，按 clay *_api_t 细分；mem 要 vm、sched 要 thread、compute 要 dynlib
 ├─ time/      时间/定时器    [T2] ← typed clocks + deadline + exact-ns radix timer queue；sched/io 的 timeout 依赖
-├─ error/     错误模型       [T2] ← status + std::expected，万物用
-└─ obs/       可观测        [T2/3] ← instrumentation hook（计数器/trace point）T2 第一天嵌热路径；sink/聚合 T3 缓做
+├─ obs/       可观测        [T2/3] ← instrumentation hook（计数器/trace point）+ runtime sink
+└─ util/      Registry/runtime utilities；依赖 container，与 `util_core` 不是同一个审查单元
 ```
 
-> **不进 runtime 主图**：`ffi/`（TS/Python 语言绑定）是 build-time 工具、归"对外沟通"工具链（C-ABI 边界本身已是 T0）；`serialize/`、外围 hash(md5/uuid/base64)、`plugin/registry`、`random/`、`text/`、`compress/`、`config/` 是 T3，列举不画。Tier 详解见下方"模块分层"。
+> **不进 runtime 主图**：`ffi/`（正式语言 binding package）是 build-time/包装工具、归“对外沟通”
+> 工具链；shared-library Native FFI ABI schema/export 本身属于各能力模块。通用 plugin framework、
+> `serialize/`、外围 hash(md5/uuid/base64)、`text/`、`compress/`、`config/` 仍是图外 T3。已有
+> `util::Registry` 与 RNG 实现分别属于 `util`/SIMD 等真实组件，不能再误写成全部图外。精确 target
+> 依赖只看 [`roadmap`](./roadmap.md) / [`build-system`](./build-system.md) 的中央 manifest 投影。
 
 ## 模块分层：哪些是核心，哪些可借可缓
 
@@ -65,17 +78,18 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 
 > **判据：把这个模块换成现成库（std / folly / asio / ggml），HYLE 还是不是 HYLE？**
 > 换了就不是 → 核心，自己造；换了照样是 → 可借、可缓。
-> **补一刀**：是"数据结构"不等于"可换"。若①全 infra 都依赖它 ②边界上没 drop-in（C++ 类型过不了 C-ABI），那它即便是个容器也是地基（如下方 `container/`）。
+> **补一刀**：是"数据结构"不等于"可换"。若①全 infra 都依赖它 ②边界上没 drop-in（C++ 类型
+> 过不了 Native FFI），那它即便是个容器也是地基（如下方 `container/`）。
 
 | Tier | 模块 | 换成现成库会怎样 | 怎么做 |
 |---|---|---|---|
-| **0 核心** | `sched/`、completion 脊（io/gpu/fiber 完成都唤醒同一 fiber）、`mem/`、`container/`（flat map/set + PodVector + 核心 hasher）、C-ABI 边界 | **HYLE 就没了** | 自己造、深拥有、测试/性能预算最高 |
+| **0 核心** | `sched/`、completion 脊（io/gpu/fiber 完成都唤醒同一 fiber）、`mem/`、`container/`（flat map/set + PodVector + 核心 hasher）、按真实任务提供的 Native FFI 边界 | **HYLE 就没了** | 自己造、深拥有、测试/性能预算最高 |
 | **1 兑现承诺** | `compute/`(GPU)、`io/`(网络)、`simd/` | 还像 HYLE，但"混合/极致性能"的卖点落空 | 自造，可借起步（compute 先包 ggml、simd 可参考 xsimd）|
 | **2 必要基质** | atomics、`platform/`(thread/vm/dynlib/env/path/fs)、`time/`(clock/deadline/timer queue)、`error/`(status+expected)、`obs/` instrumentation hook、构建/ABI 骨架 | **照样是 HYLE**——只是没它编不过/跑不起来 | 优先用 std / 成熟算法，别在这层过度发明；但 `obs/` hook 要第一天嵌热路径 |
-| **3 便利** | `obs/` 重机器（sink/格式化/聚合）、`serialize/`、外围 hash（md5/uuid/base64）、`plugin/registry`、`random/`、`text/`、`compress/`、`config/`、`graph/` | 在不在都是 HYLE | 能缓则缓、薄封装别自造 |
+| **3 便利** | `obs/` 重机器（sink/格式化/聚合）、通用 plugin framework、`serialize/`、外围 hash（md5/uuid/base64）、`text/`、`compress/`、`config/`、`graph/` | 在不在都是 HYLE | 能缓则缓、薄封装别自造；不否定已进入 util/SIMD 的具体 Registry/RNG 能力 |
 
 **为什么 `container/` 在 Tier 0 而 `simd/` 在 Tier 1**（同是"性能焦点"，凭什么分开）：
-- `container/`（flat hashmap）是**地基 ∩ 差异**：clay 里 `string_buf`/`type_name`/`cstring`/`taskgraph` 等 13 处依赖它，抽掉整个 infra 裂开；且 C-ABI 边界上 abseil 的 C++ 类型过不去，没 drop-in。**核心 table hasher 跟容器一起 Tier 0：整数走 mix64，字节按长度走 inline stream、baseline wyhash 或 runtime-gated wide XXH3；结果仅限进程内 table，不承担内容寻址。编译期类型 ID 留 murmur（constexpr 友好）**。
+- `container/`（flat hashmap）是**地基 ∩ 差异**：clay 里 `string_buf`/`type_name`/`cstring`/`taskgraph` 等 13 处依赖它，抽掉整个 infra 裂开；abseil 的具体 C++ 类型也不是内部接缝的 drop-in。**核心 table hasher 跟容器一起 Tier 0：整数走 mix64，字节按长度走 inline stream、baseline wyhash 或 runtime-gated wide XXH3；结果仅限进程内 table，不承担内容寻址。编译期类型 ID 留 murmur（constexpr 友好）**。
 - `simd/` 是**差异但非地基**：是焦点，但 `string_buf`/`registry`/类型系统不依赖它才能工作（只有 compute/math 热路径用），抽掉 HYLE 仍能站立。故 Tier 1。
 
 **为什么分这个**（不是排座次，是让每个决策有依据）：
@@ -127,13 +141,13 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 | obs | **1,250**（含公共 C 头） | ~1% |
 | time | **1,740**（含公共 C 头） | ~2% |
 | core | **653**（含根级 compiler/macros/visibility） | ~1% |
-| 其余基质及顶层/C ABI 头 | ~1.9k | ~2% |
+| 其余基质及顶层/Native FFI schema | ~1.9k | ~2% |
 
 ### 完成时投影（2026-07-19 重估，取代 28–40k）
 
 | 剧本 | 生产 code | 条件 |
 |---|---:|---|
-| **A 纪律收口（主预期）** | **~75–90k**（中值 **~82.5k**） | 已实现模块按新合同逐一认证；模块内 C ABI/guide；compute/graph 必要能力尾与 install |
+| **A 纪律收口（主预期）** | **~75–90k**（中值 **~82.5k**） | 已实现模块按新合同逐一认证；模块内 C++ source/Native FFI/guide；compute/graph 必要能力尾与 install |
 | **B 能力做满仍守边界** | **~85–105k** | compute 后端/算子尾更满；graph-02 完整；发布工具链完整 |
 | **C 失控上限（避免）** | **120k+** | 继续镜像 Highway contrib / 自研算子帝国 / 协议层吸入 infra |
 
@@ -145,10 +159,10 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 | 方向 | 再长（生产） |
 |---|---:|
 | 基础模块收口复审 | 原则上小增量；任何旧证书都可由依赖/API/消费者新证据触发局部重开 |
-| sched/io 强收口 + C ABI | +1～4k |
+| sched/io 强收口 + direct Native FFI | +1～4k |
 | compute 能力尾 | +2～10k（主弹性） |
 | graph-02 后两步/后续真实消费者 | +1～5k |
-| close-01 剩余 C ABI/FFI 与发布总验收 | +1～4k（install/export 已完成） |
+| close-01 剩余 direct Native FFI 与发布总验收 | +1～4k（install/export 已完成） |
 
 ### 第三方（足迹，非自有生产 KPI）
 
@@ -184,7 +198,7 @@ HYLE 是 L0 底座，协议/框架/应用都在它**之上**，由消费 HYLE �
 | **L1 中间件/框架** | 协议/框架 | （slate 渲染器直接用 clay，未单独拆）| HTTP/gRPC/actor/RPC——**消费 HYLE 的另一个项目** |
 | **L2 应用** | 产品 | `slate/src/`（光追渲染器 kernel/bvh/scene/hydra）、`iron/src/services`（AI 推理服务）| agent(TS)、训练/推理(Python) |
 
-clay 从未把光追逻辑、USD/Hydra 协议、service 端点吸进 `infra/`——都在 `src/`、在 infra 之上。**HYLE 继承这个纪律：底座永远是底座。** HYLE 的 C-ABI 边界（见 charter §6）正是 L0 与上层之间那道缝。
+clay 从未把光追逻辑、USD/Hydra 协议、service 端点吸进 `infra/`——都在 `src/`、在 infra 之上。**HYLE 继承这个纪律：底座永远是底座。** HYLE 的 C++ source / direct Native FFI 边界（见 charter §6）正是 L0 与上层之间那道缝。
 
 ### 四类不做
 
@@ -230,7 +244,7 @@ clay 从未把光追逻辑、USD/Hydra 协议、service 端点吸进 `infra/`—
 | **③ actor 框架/语言运行时** | ✅ **KEEP OUT** | actor 是 fiber+channel 之上的**模型**(L1)。HYLE 给 fiber+channel 原语,actor 上层拼。判对。 |
 | **③ GUI/窗口系统** | ✅ **KEEP OUT** | 领域,与北极星无关。 |
 | **④ 构建/包管理/测试框架**(CMake/GoogleTest)| ✅ **KEEP OUT** | 工具链,判对。 |
-| **④ 日志聚合/监控后端** | 🔄 **部分 PULL IN** | **严格边界已复证（2026-07-29）**：日志/trace 的“产出原语”属于 L0，聚合、轮转、上传、查询、告警和 viewer 属于运维栈，继续 KEEP OUT。日志是 compile/runtime level gate + 同步 exact-byte borrowed record + RAII/quiescent immutable sink snapshot；emit 无分配/无 mutation mutex，flush、递归抑制与 process-lifetime registry 已闭环。trace 是另一条编译期面，默认 OFF 时参数不求值/零后端依赖，ON 时接单一共享 Tracy client。真实 hook 覆盖 mem/sched/io/compute。C/FFI 使用共享 Status、length-aware POD record/opaque sink 与 runtime trace seam；函数 no-op 不宣称零指令，纳秒热路径用原生宏。架构、生命周期和三平台验收见 [`obs-design.md`](./obs-design.md) / [`../milestones/obs-module-closure.md`](../milestones/obs-module-closure.md)。 |
+| **④ 日志聚合/监控后端** | 🔄 **部分 PULL IN** | **C++ 边界历史复证（2026-07-29）**：日志/trace 的“产出原语”属于 L0，聚合、轮转、上传、查询、告警和 viewer 属于运维栈，继续 KEEP OUT。日志是 compile/runtime level gate + 同步 exact-byte borrowed record + RAII/quiescent immutable sink snapshot；emit 无分配/无 mutation mutex，flush、递归抑制与 process-lifetime registry 已闭环。trace 是另一条编译期面，默认 OFF 时参数不求值/零后端依赖，ON 时接单一共享 Tracy client。真实 hook 覆盖 mem/sched/io/compute。旧共享 Status、length-aware POD record/opaque sink 与 runtime trace ABI surface 仍待 Java/.NET direct-binding 复审；函数 no-op 不宣称零指令，纳秒热路径用原生宏。架构、生命周期和历史三平台验收见 [`obs-design.md`](./obs-design.md) / [`../milestones/obs-module-closure.md`](../milestones/obs-module-closure.md)。 |
 | **④ GC** | ✅ **KEEP OUT** | 做分配器不做 GC,判对。 |
 | **DataModel(undo/序列化/协作)** | 🟡 **拆开看** | undo/协作=L2 领域(KEEP OUT);内含的**序列化**已单独在 DISCUSS-2。原"整块不纳入"太粗。 |
 | **替换 ggml 算子/训练推理引擎** | ✅ **KEEP OUT** | compute 只做抽象层,判对(借 ggml 是明确决策)。 |
@@ -263,10 +277,10 @@ clay 从未把光追逻辑、USD/Hydra 协议、service 端点吸进 `infra/`—
 
 **为什么不结合现成完整网络库(调研实证,三条死路)**:
 1. **HYLE 用 asio/libevent** → 它们的协议层焊死自己的 `io_context`/event_base,只能 `poll_one()`/`EVLOOP_NONBLOCK` **单步驱动**=**双重 poll**(asio/libevent 自己还在 epoll/io_uring,HYLE proactor 也在)→ 直接废掉 io_uring 优势。cpp-httplib 更是阻塞线程池,和 fiber 冲突。
-2. **C-ABI 让完整库反向用 HYLE 的 io** → 也不行。障碍是**运行时控制反转**(谁拥有事件循环、完成怎么通知),不是调用约定;完整库编译期就焊死"等我自己的循环",C++ 库又几乎没有"可插拔 IO 后端"插槽,C-ABI 插头再标准也无处可插(除非改库源码=fork 重写,比借 parser 还贵)。
+2. **Native FFI 让完整库反向用 HYLE 的 io** → 也不行。障碍是**运行时控制反转**(谁拥有事件循环、完成怎么通知),不是调用约定;完整库编译期就焊死"等我自己的循环",C++ 库又几乎没有"可插拔 IO 后端"插槽,ABI 插头再标准也无处可插(除非改库源码=fork 重写,比借 parser 还贵)。
 3. **根因:C++ 没有中立异步契约**。Rust 能干净结合(hyper 只依赖 `AsyncRead/AsyncWrite` trait,tokio-uring 换后端 hyper 零改)是因为 `Future/Poll/Waker` 是语言级契约;C++ 无等价物(asio concept 绑 executor、seastar 绑 future/reactor、P2300 sender/receiver 还没库用)。**所以"用别人的完整协议库 + 自己的运行时"在 C++ 里本质做不到干净结合。**
 
-> **活路只有一条**(seastar/tokio/folly 全走):**借纯 parser(不碰 IO)+ 自造集成层(接 HYLE io_uring/fiber)**。seastar 是最直接先例——自有 reactor→自己写 HTTP 栈(~3.5k 行)但解析交给 Ragel 生成;不手写协议。C-ABI 留给其正确用途:**把 HYLE 整体(含自集成 HTTP)对外暴露给上层引擎/TS/Py**,不是内部结合网络库。
+> **活路只有一条**(seastar/tokio/folly 全走):**借纯 parser(不碰 IO)+ 自造集成层(接 HYLE io_uring/fiber)**。seastar 是最直接先例——自有 reactor→自己写 HTTP 栈(~3.5k 行)但解析交给 Ragel 生成;不手写协议。Native FFI 留给其正确用途：把 HYLE runtime 能力按真实任务暴露给 Java/.NET 等上层，不是内部结合网络库。
 
 **性能怎么保证(为什么这条路能快)**:性能不来自"用了某个快库",来自**网络字节全程待在 HYLE 自己的 io_uring/shard-per-core 上,不引入第二套运行时**——① 无双重 poll(fd 只被 HYLE proactor 管);② 无阻塞线程池(连接跑 fiber,10-20ns 切换,百万连接是设计目标);③ parser 是纯用户态状态机,零 syscall,且是被千锤百炼的借来件;④ 集成层就是 `co_await stream.read/write` + 喂 parser,和 echo bench 跑出 shard-per-core 扩展性的同一条路径。**即 HTTP 性能 = HYLE 自有 io_uring/fiber 性能 + 一个借来的解析器,无额外运行时税。**
 

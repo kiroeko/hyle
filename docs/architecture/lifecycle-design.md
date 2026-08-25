@@ -17,7 +17,7 @@
 
 **核心纪律（铁，与编译开关无关）——bug 绝不 catch**：
 - **bug 被 catch = 把崩溃推迟到更难查的地方**。use-after-free 当场 abort + 栈，胜过吞掉后在三个模块外随机炸。**这条不动摇:自家 bug 一律 fail-fast,绝不 catch。**
-- **异常跨 C-ABI 边界是 UB**，HYLE 对外纯 C 头（charter §6），异常根本过不去。
+- **异常跨 Native FFI 边界是 UB**；外语只调用不抛异常的 C calling-convention 导出（charter §6）。
 
 **throw 可以用,但谨慎——用数据和后果说话(非教条禁止)**：
 - **默认 no-throw**(bug→fail-fast,运营失败→Status)。要破例用 throw,**必须拿测量数据 + 后果分析撑**,不靠"感觉该用"。
@@ -28,8 +28,8 @@
 
 | 区 | 异常 | 说明 |
 |---|---|---|
-| **核心区**(热路径、近 C-ABI)| no-throw 纪律铁定;是否加 `-fno-exceptions` 旗标 **= 实测决定** | happy-path 零运行时成本;旗标买二进制/优化,量了再定 |
-| **adapter 区**(包会抛的 C++ 库,如 JSON)| **可开异常,但 catch 必转 Status、绝不外泄** | 隔壁稳定的正解;外来异常不得跨进核心区/C-ABI。优先用 nothrow API(simdjson 有)绕开 |
+| **核心区**(热路径、近 Native FFI)| no-throw 纪律铁定;是否加 `-fno-exceptions` 旗标 **= 实测决定** | happy-path 零运行时成本;旗标买二进制/优化,量了再定 |
+| **adapter 区**(包会抛的 C++ 库,如 JSON)| **可开异常,但 catch 必转 Status、绝不外泄** | 隔壁稳定的正解;外来异常不得跨进核心区/Native FFI。优先用 nothrow API(simdjson 有)绕开 |
 | **任何区** | **自家 bug 绝不 catch** | fail-fast,违反=藏 bug |
 
 > **clay 实际怎么做（查证,作对照）**：clay **没有 `-fno-exceptions`**,异常默认开着;自有代码仅 6 处 `throw`（registry 冲突、string 转数字）;14 处 catch 集中在边界——worker 执行用户 task 周围 catch-all、`graph_io` 在 nlohmann JSON 解析周围 catch。即"异常开着但极少用 + 边界兜底"。HYLE 比 clay 更有条件收紧（自带 allocator 返 null 不 throw + 自带容器,绕开 std 抛异常主源），但**收到多紧由数据定**,不教条。
@@ -105,14 +105,24 @@ runtime 怎么停，清理顺序怎么定：
 - **故障隔离 = 进程边界**（非 try-catch）：真实模型是多 agent 实例、每实例若干 fiber——隔离落在**每实例一进程（或有界组）**，实例崩只崩自己。进程内 fiber 同命（数量有界，非百万），是 fail-fast 的合理代价。
 - **失控检测**：sysmon（已在 sched 提）兼测长期占核 fiber / 内存暴涨 agent。
 
-## 5. 跨 C-ABI 边界的错误约定
+## 5. 跨 Native FFI 边界的错误约定
 
-内部 `std::expected` **过不了 C 头**。FFI 错误约定（charter §6 定了纯 C 头、没定错误怎么传）：
+内部 `std::expected`、异常和 C++ 对象布局都不能跨 direct FFI。HYLE 没有 native-C 客户；以下是
+各模块复审时必须验证的外语绑定形状，而不是用纯 C sample 即可签署的完成声明：
 
-- C 函数返回 **错误码 enum**（`hyle_status_t`），结果走 **out 参数**。
-- 详细错误信息走 **`hyle_last_error_message(handle)`** 取线程局部错误串（errno 式，但线程局部）。
-- 不透明 handle 的 create 失败返回 NULL + 设错误码。
-- **取消跨边界**：C 侧传 `hyle_cancel_token_t` handle，FFI 调用可被它取消。
+- 可恢复失败返回共享、可拥有的 `hyle_status`，成功结果走首位 out 参数；不得依赖“NULL 后再读
+  thread-local last-error”的两步协议。
+- owning status/message 必须有明确 clone/move/destroy 或 caller-buffer 路径；分配失败仍保留原始
+  code，异常绝不跨边界。
+- owning handle 的 create/open 同样使用 status + out，destroy/close 与分配模块配对；Java 包成
+  `AutoCloseable`，.NET 包成 `SafeHandle`/`IDisposable`。
+- callback 使用 function pointer + context，并定义 GC strong root、线程、重入、cancel/unregister/
+  drain；buffer 定义 ptr/len/capacity/written/required 与释放方。
+- 高频失败或批处理返回 batch/partial-completion 结果，不能让每个元素支付一次 P/Invoke/FFM hop。
+- binding 在解析某个 FFI artifact 的其他 required symbols 前，先从同一 exact handle 调用该
+  artifact 的 ABI bootstrap；core 只认证 `hyle_core`，不能替其他模块背书。多 artifact
+  binding 逐个握手并从同一 package root 装载。error 及其他模块的既有 C-shaped surface 在真实
+  外语任务裁决前仍是黄色候选；没有任务可明确 `FFI=N/A`。
 
 ## 影响哪些里程碑（回填 milestones）
 
@@ -121,7 +131,7 @@ runtime 怎么停，清理顺序怎么定：
 - **sched-04（Waker）**：awaitable 接口须含取消语义（返回 Cancelled）；新增 `CancelToken` 树。
 - **sched-05（fiber-sync）**：channel 必须有界（背压）；CV/mutex 的等待要可取消。
 - **io-01（proactor 抽象）**：提交接口须支持取消 + cancel-safe 缓冲所有权契约；SQ 满的背压。
-- **新增里程碑**：`sched-07 取消(CancelToken树+await取消点)`、`close-01 C-ABI 错误约定`扩充、`runtime 关闭`(归 sched 或新 lifecycle 里程碑)。
+- **新增里程碑**：`sched-07 取消(CancelToken树+await取消点)`、`close-01 Native FFI 错误约定`扩充、`runtime 关闭`(归 sched 或新 lifecycle 里程碑)。
 - **mem**：per-agent 内存计量挂在**计量 Allocator wrapper**(包一层 `mem::Allocator` 记字节)。
 
 ## 一句话

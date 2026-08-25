@@ -230,7 +230,7 @@ storage，CQE 收割时转换成 `hyle_io_file_stat` 后释放；duplicate token
 
 ## 可以保留的显式错误腿与合法 no-op
 
-- `http2_stub.cc`：可选依赖关闭时保持稳定 C ABI，先报告
+- `http2_stub.cc`：可选依赖关闭时保持当前预发布 FFI 候选的统一符号集合，先报告
   `available()==0`，业务调用明确失败并写 error。它不假装成功。
 - destroy/reset 接受 NULL、零长度 feed/write：幂等资源管理和零长度语义。
 - `await_ready()==false`：coroutine 总要进入 submit/suspend 仲裁，不是失败。

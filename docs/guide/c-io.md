@@ -1,6 +1,12 @@
-# io 纯 C ABI 使用指南
+# io Native FFI 候选（待 managed review）
 
-`hyle/c/io.h` 是 IO 模块的稳定语言边界。它暴露完成式 proactor、POD
+> **当前状态（Native FFI 复审前）**：HYLE 没有 native-C 客户。本页记录的是旧 C-shaped
+> surface / Native FFI 合同候选，不是已认证的 C 产品。复审先裁决真实外语任务；可以结论为
+> `FFI=N/A`。只有保留 direct FFI 时才用 Java FFM + .NET P/Invoke 重新验收动态导出、所有权、
+> 回调和 batch 形状；在此之前，正文中的“稳定”“完整”
+> “纯 C 用户”等说法都只属于历史描述，不是当前跨语言证书；首发前 surface 可改变。
+
+`hyle/c/io.h` 当前只是 IO 模块的 pre-release FFI schema 候选。它描述完成式 proactor、POD
 completion、文件/网络提交原语、io_uring 可选加速和命名共享内存；不把
 C++ coroutine、`TcpStream`、OpenSSL 对象或 STL 类型放进 ABI。
 
@@ -50,7 +56,7 @@ required prefix 或 `reserved != 0` 时 create 返回 NULL，
 `uint32_t` 布尔值，只接受 0 或 1。
 
 proactor 是单 owner 线程对象；只有 `hyle_io_wake` 可从其他线程调用。
-`hyle_io_post` 仍是 owner-thread 注入。C 用户若要和 HYLE scheduler 组合，常见
+`hyle_io_post` 仍是 owner-thread 注入。未来 foreign binding 若要和 HYLE scheduler 组合，候选
 形状是：每个 worker 一个 proactor，`hyle_sched_spawn_on` 把该 shard 的完成循环
 钉在同一 worker；其他线程发布任务后调用 `hyle_io_wake`。
 
@@ -66,7 +72,7 @@ overlapped，epoll/kqueue 的文件 facade 走 blocking pool。
 
 `hyle_io_backend` 是固定 `uint32_t` typedef，命名值是 integer constants；FFI 不应
 绑定成本语言默认 enum，`-fshort-enums` 也不会改变返回值或 snapshot 字段宽度。
-`hyle_io_capabilities` 是按值返回的小型 **frozen v1 snapshot**：当前 64-bit ABI 固定
+`hyle_io_capabilities` 是按值返回的小型 **当前候选 snapshot**：现有 64-bit schema 为
 size 16、backend offset 4、bits offset 8。这里的 `struct_size` 只描述库返回的完整值，
 不是调用方 capacity，也不是允许未来直接追加字段的 extensible handshake；需要新字段时
 新增 query/type，现有 bit 能力继续在 `bits` 内演进。

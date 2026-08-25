@@ -22,6 +22,12 @@
 | ratio / margin | Boost op/s ÷ HYLE op/s；采样前固定 3%，band `[0.971,1.030]` |
 | raw contract | 每个 process/每对手保留 baseline/rival op/s 与 ratio 的 schema-1 JSON；default 与 peer-first 独立采样 |
 
+当前 core 运行时行为基线为 `9459d3f`，最终 source/public-contract/验证 harness 为 `c0b9a84`。
+性能原始证据仍按上表绑定 `a951f0a`/`2707583`，因为 `a951f0a`→`9459d3f` 没有改变
+IntrusiveList、prefetch 或 compiler contract 的 claim-bearing 热实现；`9459d3f`→`c0b9a84`
+也只改变合同文字、test/evidence/probe/sample 分类。新增的 runtime identity 是 O(1) 冷启动路径。
+因此这是对同一热代码的证书复用，不是没有重跑却声称得到一组新性能数据。
+
 `2707583` 修正了正式 FIFO 的最后一个合同不对称：两边现在都取回并消费 popped node payload。
 旧 Boost 路径只 `pop_front()`，GCC 可把它折成不恢复 payload 的六指令循环；修正后两边都承担
 真实 FIFO consumer 的节点取回工作，旧 WSL 5--8% apparent LOSE 消失。该修正只改 harness，

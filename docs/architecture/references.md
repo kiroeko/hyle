@@ -11,14 +11,14 @@
 
 | HYLE 模块 | 首要本地参考 | 本轮主要核对什么 |
 |---|---|---|
-| core | C/C++ 标准库、oneTBB、Abseil、Highway、Boost.Intrusive、folly | 版本/cache/compiler contract 最小面、intrusive 生命周期与零额外所有权 |
-| error | `std::expected`、Abseil Status、folly Expected | 值大小、context、传播、OS/GPU 叶错误与 C owning handle |
+| core | C++ 标准库、C ABI calling convention、oneTBB、Abseil、Highway、Boost.Intrusive、folly | 版本/cache/compiler contract 最小面、intrusive 生命周期与零额外所有权 |
+| error | `std::expected`、Abseil Status、folly Expected | 值大小、context、传播、OS/GPU 叶错误与 direct FFI owning handle |
 | platform | folly portability、libuv、Abseil、llama.cpp | thread/affinity、wait、VM/fs/dynlib、CPU dispatch 与平台忠实语义 |
 | mem | mimalloc、oneTBB allocator/pool、folly、seastar | 通用/专用分配边界、arena/pool/cache/NUMA/huge page、复杂度与跨线程 free |
 | time | Abseil、folly、libevent、seastar | clock 语义、deadline/sleep、arbitrary/common timer queue 与取消复杂度 |
 | util | folly、Abseil、Boost | scope/ref/random/registry/spin 的模块归属、生命周期、并发和 header seam |
 | obs | Tracy、folly | OFF 零成本、单 backend client、结构化 log、sink 摘除与 fiber trace |
-| math | clay math、C++23 `<bit>/<cmath>/<numbers>`、Eigen、HYLE simd | 把迁移残余逐项分给 std/scalar/SIMD/消费域，先裁决模块边界，再谈 API/C ABI |
+| math | clay math、C++23 `<bit>/<cmath>/<numbers>`、Eigen、HYLE simd | 把迁移残余逐项分给 std/scalar/SIMD/消费域，先裁决模块边界，再谈 C++ API/direct Native FFI |
 | container | Abseil、folly、oneTBB、moodycamel、rigtorp | SwissTable/SmallVector/string、并发/侵入式容器、allocator 与迭代失效 |
 | sched | marl、folly fibers、tokio、seastar、oneTBB/taskflow | fiber/work-stealing、同步/取消/关闭、blocking 与 oversubscription |
 | io | liburing、tokio-uring、seastar、Asio、libuv、libevent | proactor 生命周期、四后端语义、deadline/cancel、文件/网络与 backpressure |
@@ -27,6 +27,11 @@
 | graph | oneTBB、taskflow、Eigen、OpenVDB | DAG 增量重算、fork-join/scan/sort、确定性与 CAD/CAE 真消费者 |
 
 对照结论必须落在对应 architecture/guide/performance；这里仅维护“应该读谁、读什么”。
+
+direct Native FFI 的运行时参照是 .NET 8 `LibraryImport` + `DllImportResolver` 与 Java 25 FFM
+`SymbolLookup.libraryLookup`：两者都从调用方给出的精确 shared-library 路径解析真实导出，并验证
+calling convention、符号、值/所有权与生命周期。pure-C fixture 只提供 schema/compiler/export hygiene，
+不替代这些托管运行时直绑证据；static archive 与 source tree 也不是 managed FFI 载体。
 
 ## 按模块映射
 
@@ -78,7 +83,7 @@
 | **folly** | 参考 | `hardware_timestamp` 的 x86 TSC / ARM64 CNTVCT 平台形状，以及 raw sampling 与 ordered measurement start/stop 的语义分离 |
 | **tracy** | 参考 | invariant-TSC 探测（`CheckHardwareSupportsInvariantTSC`：CPUID leaf1 EDX bit4 + leaf 0x80000007 EDX bit8）+ rdtsc 仅作测量用途的范式 |
 
-> 对参考库均**读设计自实现、不引入外部依赖**。time native 核只借 core 头；整个 `hyle_time` target 因 C adapter 的统一 `hyle_status` 合同依赖 error，但不链接 platform。MSVC `__msvc_chrono.hpp` steady_clock 的常见频率特判（10/24MHz→乘法）亦是 `monotonic_ns` 补特判的参考。
+> 对参考库均**读设计自实现、不引入外部依赖**。time native 核只借 core 头；整个 `hyle_time` target 因历史 ABI adapter 的统一 `hyle_status` 合同依赖 error，但不链接 platform。MSVC `__msvc_chrono.hpp` steady_clock 的常见频率特判（10/24MHz→乘法）亦是 `monotonic_ns` 补特判的参考。
 
 ### hash/（Tier 3）
 | 库 | 角色 | 说明 |

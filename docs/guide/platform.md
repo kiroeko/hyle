@@ -1,9 +1,15 @@
 # HYLE platform：什么情况选择什么
 
+> 当前产品面只承诺本页的 C++ 形状。HYLE 没有 native-C 客户、尚未发布 managed binding，
+> 发布前也不承担 Native FFI 兼容义务。`include/hyle/c/platform.h` 是可重设计的 FFI 候选 schema，
+> 不是 C 产品 API；只有真实跨语言任务才触发 Java/.NET direct-binding 验收，没有任务时可裁决
+> `FFI=N/A`。任何 native-C sample/test 只承担 schema、编译器、导出或 package fixture 作用。
+
 platform 是 HYLE 的跨 OS 原语层。它服务两类调用者：HYLE 内部模块需要稳定、可组合的
 线程/等待/页内存地基；库用户需要在 Windows、Linux、macOS 上表达同一资源合同。它不把
 每个系统调用都公开，也不因为 benchmark 有一行就制造一个类型。先按资源和生命周期选
-形状，再到 [`c-platform.md`](./c-platform.md) 查纯 C / FFI 的精确签名。
+形状。若将来出现真实跨语言任务，再把所需场景与 [`c-platform.md`](./c-platform.md) 的候选
+schema 对照；该文档当前不是可供 C 用户消费的稳定接口清单。
 
 macOS 使用 platform component 时部署目标必须是 14.4 或更新版本；原因是地址等待/Parker 使用
 系统从 14.4 才公开的 `os_sync_wait_on_address*`。顶层构建未指定时 HYLE 默认 14.4；作为
@@ -44,7 +50,8 @@ platform 对变长查询提供两层，不让一种形状勉强服务所有用�
 - 日常控制面包含 `hyle/platform/convenience.h`，直接取得 owning
   `std::string` / `std::vector`，自动处理 count、分配、变化后的重试和截断；分配失败仍是
   `ResourceExhausted`，不会从这个边界抛出。
-- allocator/arena、C/FFI 或需要控制**结果存储**的代码包含 `fs.h` / `cpu.h`，使用
+- allocator/arena、需要控制**结果存储**，或正在实现真实 binding wrapper 的代码包含
+  `fs.h` / `cpu.h`，使用
   buffer-fill core。它不返回 owning STL 对象，但长路径、UTF 转码和 OS 查询仍可能申请有检查的
   临时 scratch，OOM 会成为 `ResourceExhausted`；buffer-fill 不代表实现绝无内部 allocation。
 
@@ -58,7 +65,7 @@ HYLE_ASSIGN_OR_RETURN(std::vector<unsigned> cpus,
 
 owning 查询是初始化/重配路径的易用入口，不应放进每 task 热路径；需要复用存储时直接用
 buffer-fill core。`convenience.h` 是显式 opt-in，原有 platform 头不会因此拉入 owning STL
-类型或改变 DLL/C ABI。
+类型或改变已编译库 ABI。
 
 ## 页内存
 

@@ -1,8 +1,13 @@
 # HYLE time：什么情况选择什么
 
+> 当前产品面只承诺本页的 C++ 形状。HYLE 没有 native-C 客户、尚未发布 managed binding，
+> 发布前也不承担 Native FFI 兼容义务。`include/hyle/c/time.h` 是可重设计的 FFI 候选 schema，
+> 不是 C 产品 API；只有真实跨语言任务才触发 Java/.NET direct-binding 验收，没有任务时可裁决
+> `FFI=N/A`。任何 native-C sample/test 只承担 schema、编译器、导出或 package fixture 作用。
+
 `time` 提供时钟、deadline、OS 线程 sleep 和无分配 timer 数据结构。它不替 event loop 执行
-callback，也不替业务决定周期 timer 的补发策略。纯 C/FFI 用户先在这里选能力，再到
-[`c-time.md`](./c-time.md) 查 Status、opaque handle 与 visitor 合同。
+callback，也不替业务决定周期 timer 的补发策略。跨语言消费者出现真实任务后，应先从本页选择
+需要暴露的语义，再审查 [`c-time.md`](./c-time.md) 中可变的候选 schema，而不是默认追求 C++ parity。
 
 ## 一页选择表
 
@@ -170,8 +175,8 @@ executor API 暴露这些 policy，而不是改变 `TimerQueue`。
 ## shutdown 与失败
 
 正常 shutdown 调 `cancel_all(out)`，drain 返回节点，再销毁 queue/entry。C++ 对程序员合同
-错误 fail-fast；需要处理不可信输入或 FFI 时用 C API，它把 cross-source、顺序和非空 destroy
-转成 `hyle_status`。
+错误 fail-fast；跨不可信或外语边界的 wrapper 必须先验证 cross-source、顺序和非空 destroy
+等输入，再进入 C++ 核。当前候选 C schema 即使把这些错误表达为 status，也不等于已发布 binding。
 
 架构和维护不变量见 [`time-design.md`](../architecture/time-design.md)，唯一正式性能表见
 [`benchmarks-time.md`](../performance/benchmarks-time.md)。

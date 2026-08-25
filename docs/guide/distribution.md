@@ -7,14 +7,19 @@ HYLE 的 proprietary 授权与交付物形状是两回事。权利人可以向�
 
 | 用户拿到的交付物 | 推荐入口 | 用户是否编译 HYLE | 典型场景 |
 |---|---|---:|---|
-| headers + shared libraries | `find_package(Hyle)` | 否 | 多个程序共享 HYLE、缩短最终链接、允许替换同一 ABI 代际的 DLL/so/dylib |
-| headers + static libraries | `find_package(Hyle)` | 否 | 单一可执行、部署时不携带 HYLE 动态库、受控静态闭包 |
-| complete source | `add_subdirectory()` / FetchContent | 是 | 需要审查或修改源码、统一编译选项/LTO/目标 ISA，或者客户自行制作内部 SDK |
+| headers + shared libraries | C++：`find_package(Hyle)`；Java/.NET：精确库路径直绑 | 否 | C++ 动态 SDK；也是 managed direct Native FFI 唯一可加载的 artifact |
+| headers + static libraries | `find_package(Hyle)` | 否 | C++ 单一可执行、部署时不携带 HYLE 动态库、受控静态闭包 |
+| complete source | `add_subdirectory()` / FetchContent | 是 | C++ 源码集成、审查/修改源码、统一编译选项/LTO/目标 ISA，或者自行制作内部 SDK |
 
-三种形状都只通过 `hyle::<component>` target 消费。不要手写 include path、`.lib`、`.a`、`.so` 或
-DLL 列表；CMake target 才携带语言标准、模块闭包、系统库、第三方 link-only archive 和运行时 staging
+Native C++ 消费者在三种形状中都只通过 `hyle::<component>` target 消费。不要手写 include path、
+`.lib`、`.a`、`.so` 或 DLL 列表；CMake target 才携带语言标准、模块闭包、系统库、第三方 link-only archive 和运行时 staging
 规则。以下示例选择 `mem` 与 `simd`，依赖的 `error/platform/util_core` 会自动进入闭包；公开
 core 头会随 SDK 安装，但未调用 `hyle_core` 符号时不会虚构一个 core binary component 依赖。
+HYLE 当前没有 native-C 客户产品。Java/.NET 等 host 不消费 CMake target，而是从调用方给出的精确
+shared-library 路径解析 direct Native FFI；pure-C fixture 只验证 schema/compiler/export hygiene。
+“shared 是载体”不表示所有模块已经通过 managed binding：当前 core 模块已严格重签，其 direct
+FFI 只有 ABI bootstrap 与两个 product-identity symbols；其他模块状态以
+[`pre-release-readiness`](../milestones/pre-release-readiness.md) 为准。
 在 macOS 上，任何包含 platform 的闭包要求 deployment target ≥14.4；顶层构建未指定时 HYLE
 默认该值，源码嵌入方若已有更低的 `CMAKE_OSX_DEPLOYMENT_TARGET` 会在 configure 阶段得到明确错误。
 
@@ -24,7 +29,7 @@ core 头会随 SDK 安装，但未调用 `hyle_core` 符号时不会虚构一个
 
 ```cmake
 cmake_minimum_required(VERSION 3.25)
-project(my_app LANGUAGES C CXX)
+project(my_app LANGUAGES CXX)
 
 find_package(Hyle 0.1 REQUIRED COMPONENTS mem simd)
 
@@ -52,6 +57,11 @@ executable 的传递 HYLE DLL 闭包复制到旁边；它在 Unix 和 static SDK
 `Hyle_STATIC` 判断当前包形状。不要把两个 linkage、两个 ABI minor 或不同 ISA floor 的 SDK 混进同一
 prefix。
 
+managed host 只接收 shared library 的精确路径，不从 `PATH`/`java.library.path` 猜同名库。core 的
+.NET 8 `LibraryImport` + `DllImportResolver` 与 Java 25 FFM `SymbolLookup.libraryLookup` 示例见
+[`samples/ffi/core`](../../samples/ffi/core/README.md)，可用
+[`scripts/run-core-ffi-smoke.py`](../../scripts/run-core-ffi-smoke.py) 直接验证。
+
 ## 用户二：headers + static libraries
 
 消费端 CMake 与 shared SDK 相同：
@@ -65,11 +75,11 @@ hyle_stage_runtime_dependencies(my_app) # static 包上安全 no-op
 
 区别只在交付方提供的是 static prefix，`Hyle_STATIC` 为 true。必须链接 imported target：例如 static
 `hyle::mem` 会通过 target 传播 mimalloc archive 和匹配工具链的 C++ link driver；手写
-`libhyle_mem.a`/`hyle_mem.lib` 会丢失这些闭包。纯 C 调用仍包含 `hyle/c/*.h` 并链接同一个 target，
-无需把 HYLE C++ 实现复制进 C translation unit。
+`libhyle_mem.a`/`hyle_mem.lib` 会丢失这些闭包。static SDK 是 C++ 发布形式；即使 pure-C schema fixture
+能够链接 archive，也不能由 managed host 动态加载，因而不构成 direct Native FFI 证据。
 
 static 不等于跨工具链 ABI 通用。客户应用仍应使用交付合同指定的 compiler runtime、配置和目标 ISA；
-需要跨这些边界时，选择 shared C ABI 或 complete source 重新构建。
+需要 managed direct Native FFI 时选择 shared SDK，需要重建 C++ ABI/ISA 时选择 complete source。
 
 ## 用户三：complete source
 
@@ -81,7 +91,7 @@ static 不等于跨工具链 ABI 通用。客户应用仍应使用交付合同�
 
 ```cmake
 cmake_minimum_required(VERSION 3.25)
-project(my_app LANGUAGES C CXX)
+project(my_app LANGUAGES CXX)
 
 set(HYLE_COMPONENTS "mem;simd")
 set(HYLE_BUILD_TESTS OFF)
@@ -96,6 +106,8 @@ hyle_stage_runtime_dependencies(my_app)
 
 这些变量必须在 `add_subdirectory()` 之前设置。HYLE 只把所选组件及其依赖闭包加入父工程；作为
 subproject 时不会创建源码分发 target，也不会接管父工程的安装或发布流程。
+complete source 本身是 C++ 发布形式，不是可加载的 FFI artifact；需要 Java/.NET 直绑时，从源码构建
+并交付 shared library，再运行相同 exact-path smoke。
 
 ### 由 FetchContent 取得授权源码包
 
@@ -163,6 +175,11 @@ feature/component manifest、HYLE notice 和实际编入实现的第三方许可
 `$ORIGIN`/`@loader_path` 解析同一 `lib/` 内的 HYLE 传递依赖；整体移动 prefix 不需要重写它们。
 0.x 阶段每个 minor 是一个 ABI 代际：`find_package(Hyle 0.1 ...)` 不会误接受 0.2，Unix/Mach-O
 动态库也以 `0.1` 作为 SONAME/install-name。ABI 尚未冻结不等于省略版本边界。
+shared 是经复审 direct Native FFI 的唯一发布载体，但这个 `mem;simd` 例子本身首先是 C++ SDK，
+不表示两个黄色候选模块已经承诺 FFI。每个模块先裁决真实外语任务；无任务可记 `FFI=N/A`。
+只有保留 FFI 时，托管 consumer 才对实际交付的模块精确库路径先做该 artifact 的永久 bootstrap，
+再做 load/resolve/call smoke；多模块 binding 逐个验证并只从这个安装根装载，不能用 core、
+export-list 或 pure-C link 替代。
 
 ### 制作 headers + static libraries
 
@@ -183,6 +200,7 @@ cmake --install build-sdk-static --config Release
 不要从安装目录手写 `.lib`/`.a` 文件名。imported target 会传播 C++ linker runtime、系统库和 mimalloc、
 nghttp2、ggml、volk 等私有 link-only archive；CUDA compute 包还会传播所需 Toolkit targets。绕开
 target 就丢失静态闭包。
+该形状只作为 C++ SDK 发布；它不承载 managed direct Native FFI。
 
 ### compute SDK 的可复现能力契约
 
@@ -210,7 +228,7 @@ tests/bench，以 `--parallel 2` 分别 build/install static/shared 产品形状
 源码无关 downstream 对两种形状都检查 feature manifest、许可证、真实 HTTP/2 SETTINGS 输出与 host
 `GgmlBackend`；static 必须导出私有闭包 targets/headers，shared 则必须不泄漏它们。glslang 仍只属于
 tests/bench，该 production gate 会拒绝其被取得或安装。最后另做小型 obs-only shared/static trace-on SDK，
-由 installed consumer 编译并运行 C/C++ Tracy surface，验证 exact source、公开宏、target/header/license、
+由 installed consumer 编译并运行 C++ Tracy consumer 与 pure-C schema/surface fixture，验证 exact source、公开宏、target/header/license、
 Threads/`dl` static closure 与运行时 staging；static consumer 是允许的单最终 executable topology，不是
 多 DLL/plugin 复制 singleton。这样无需把重型全模块矩阵再复制一遍。
 这段是持续验证合同，不是“当前已绿”声明；hosted run 与本地三平台证据必须在
@@ -236,7 +254,7 @@ cmake --build build-source-dist --target hyle_source_package
 - `hyle-<version>-source.zip`
 - `hyle-<version>-source.zip.sha256`
 
-zip 包含该 commit 的全部 tracked HYLE 源码、头、C ABI、构建文件、测试、benchmark、sample、文档、
+zip 包含该 commit 的全部 tracked HYLE 源码、头、Native FFI schema/bridge、构建文件、测试、benchmark、sample、文档、
 脚本和 in-tree third_party。`SOURCE-MANIFEST.txt` 在归档时写入精确 commit。build tree、cache、日志、
 本机 `.deps` 和其他 ignored/untracked 文件不会进入客户包；工作树不干净时 target 会直接失败。
 
@@ -275,17 +293,20 @@ OpenSSL/CUDA 等系统 SDK 仍由离线 toolchain 或 package prefix 提供，�
 
 ## 非 CMake 工程
 
-C ABI 不要求应用源码使用 CMake，但 SDK 的传递依赖元数据以 `HyleConfig.cmake` 为准。优先使用
-构建系统已有的 CMake-package import；没有该能力时，用一个很薄的 CMake bridge 链接所需
+Java/.NET 等 managed host 直接加载 shared library 的精确路径，不使用 CMake；其 direct Native FFI
+合同由真实导出符号、calling convention、值/所有权和生命周期组成。Native C++ 工程的传递依赖元数据
+仍以 `HyleConfig.cmake` 为准：优先使用构建系统已有的 CMake-package import；没有该能力时，用一个很薄的 CMake bridge 链接所需
 `hyle::<module>`，再把生成的本地 target/最终制品接入主工程。不要从 static SDK 手抄一串
 `.a`/`.lib`：这会漏掉 C++ linker runtime、mimalloc/nghttp2/ggml/volk 以及可选 CUDA/OpenSSL
 闭包。0.1 暂不提供只对简单 shared leaf 正确、对 static/feature 包不完整的 pkg-config 文件。
 
 ## 交付前检查
 
-- static/shared SDK 必须用一个脱离源码树的 consumer configure/build/run；
+- static/shared SDK 必须用一个脱离源码树的 C++ consumer configure/build/run；
 - 模块的 focused 参考 consumer 位于 `samples/package/<module>/`；它们验证具体 package 合同，
-  不单独证明模块已严格收口。例如 `error/c` 是真正从
-  `project(... LANGUAGES C)` 开始的 C ABI 工程，`error/cpp` 覆盖 `Status`/`Result<T>`；
+  不单独证明模块已严格收口。core 的 `core/cpp` 是 C++ 产品 consumer，`core/ffi_abi` 是 pure-C
+  schema/compiler/package conformance fixture；真正 managed FFI 证据由 `samples/ffi/core` 从精确路径
+  加载 shared library。其他历史 `*/c` probe 同样只作 schema/compiler/package fixture，除非该模块另有
+  真实托管运行时直绑证据；
 - source zip 必须核对 SHA-256、`SOURCE-MANIFEST.txt`、根 `LICENSE` 和 `THIRD_PARTY_NOTICES.md`；
 - 合同中明确允许的使用、修改、再分发、披露范围；不要用“给了源码/没给源码”代替授权条款。

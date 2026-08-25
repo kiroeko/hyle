@@ -24,9 +24,9 @@ HYLE 的文档按读者任务分层，同一事实只在一个目录维护。发
 ## 更新纪律
 
 - 公共类型、所有权或模块边界改变：更新对应 `architecture/*-design.md`，再更新 guide。
-- C/FFI 产品面改变：更新 `architecture/c-abi-design.md`、对应 `guide/c-*.md` 和机械清单；
+- Native FFI ABI 改变：更新 `architecture/c-abi-design.md`、对应 `guide/c-*.md`、导出清单和
+  Java/.NET direct-binding 证据；C schema 可编译本身不算产品验收。
   milestone 只记录这次 work item 做了什么。
 - benchmark 改变：结果、方法和未关闭输项只写入 `performance/`；guide 只链接，不抄数字。
 - task 完成：milestone 写验收和 commit，稳定结论合并回 architecture/performance/guide 后停止扩写。
 - 项目状态只在 milestone 索引/预发布任务单维护；architecture 不写每日完成百分比。
-

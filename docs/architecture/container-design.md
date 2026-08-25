@@ -1,5 +1,10 @@
 # HYLE container 架构
 
+> **Native FFI 状态校正（2026-08-25）**：HYLE 没有 native-C 客户。本文关于 C/C++、C/FFI
+> 或 C 用户的旧表述只记录待复审的 ABI surface，不是当前跨语言证书。先从真实外语任务裁决
+> FFI 是否为 `N/A`；只有保留 direct FFI 时，container 才必须通过 Java FFM + .NET P/Invoke、
+> 真实导出、opaque ownership 与 batch 旅程后冻结该边界。
+
 container 是 Tier 0 数据结构层：提供平坦 hash、连续数组、字符串/路径、驻留池和
 调度器所需并发容器。其性能核心自行维护；abseil、boost、TBB、rigtorp 和
 `std::*` 只作为 benchmark/oracle，不进入产品依赖。

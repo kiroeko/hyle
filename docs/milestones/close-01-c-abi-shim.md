@@ -1,6 +1,6 @@
-# close-01：独立 `extern "C"` C/FFI 产品面
+# close-01：Native FFI direct shared-library 候选面
 
-> 本页是跨模块 C/FFI 施工任务，不是当前 API 参考。稳定原则见
+> 本页是跨模块 Native FFI 施工任务，不是当前 API 参考。稳定原则见
 > [`../architecture/c-abi-design.md`](../architecture/c-abi-design.md)，逐符号用法见
 > [`../guide/`](../guide/README.md)。
 
@@ -9,14 +9,72 @@
 | **阶段** | P6（收口） |
 | **模块** | 收口 / 全模块 |
 | **Tier** | 边界 |
-| **LOC 估** | 2-3k |
+| **LOC** | **N/A**：跨模块任务不汇总成一个实现 LOC；各模块重审时分别记录四项固定口径 |
 | **骨架?** | 否 |
-| **状态** | 🔶 **部分落地**：core + error + platform + mem + time + obs + util + simd + container + sched + io C-ABI ✅；install/export ✅；compute/graph、math 边界与全库跨编译器 / FFI 冒烟仍待 |
+| **状态** | 🟡 **重新排队**：仅 core 按 managed direct-binding 口径重签；其余模块此前的 pure-C/header/export 覆盖已 superseded，全部待重审 |
 
-> **本文件的目的**：跟踪 C/FFI 产品面的跨模块实施与验收。HYLE 是 C++ 库，原生 C++
-> 头是 C++ 用户的首选 source API；C ABI 另行设计，用于 C 和跨编译器/跨语言绑定。
+> **本文件的目的**：跟踪跨模块 Native FFI 的实施与验收。HYLE 是 C++ 库，原生 C++
+> 头是 source API；项目没有 native-C 产品客户。`include/hyle/c/` 的 C 语法只用作
+> Java、.NET、Rust、Python 等 foreign runtime 的 ABI schema。
 
-## 产品铁律（用户拍板，2026-06）
+## 2026-08-25 当前口径与重新排队
+
+旧任务把“C 编译器能 include、静态 inline recipe 能跑、声明/引用/导出数字相等”合并称为
+“C/FFI 完整”。这个判据现已 **superseded**：pure-C fixture 可以证明 schema 无 C++ 泄漏，
+但不能证明 Java/.NET 能直接加载 shared artifact、表达所有权并安全管理 lifetime。
+
+| 层 | 客户与形状 | close-01 是否计入 direct FFI |
+|---|---|---|
+| C++ source API | 同工具链 C++23；模板、RAII、PMR、compiler/ISA/TU-local 能力 | 否；独立产品面 |
+| native-C helper | `static inline`、宏、transparent struct、C recipe | 否；当前没有 native-C 产品旅程 |
+| direct Native FFI | 真实 exported symbol、opaque handle、固定宽/evolvable POD、callback+context、ptr+len/buffer ownership | 是；必须由 foreign runtime 无自编译 shim 调用 |
+
+当前模块状态：
+
+| 模块 | 当前判定 |
+|---|---|
+| core | 🟢 运行时行为基线 `9459d3f`，source/public-contract/正负 bootstrap harness `c0b9a84`；Native FFI 候选 manifest 为 `hyle_ffi_abi_version`、`hyle_version`、`hyle_version_string` 三个符号；没有已发布 binding，因此没有兼容义务 |
+| error、platform、mem、time、obs、util、container、simd、sched、io、math、build/package | 🟡 旧 pure-C/API/export 数字只作历史输入；逐模块重审 exports、opaque/POD/callback/buffer、managed lifetime、batch-first 和 direct binding |
+| compute、graph | 🟡 能力尚未稳定；先完成产品边界，再设计 Native FFI，不能由旧占位面反向冻结实现 |
+
+core 的当前证据绑定同一产品边界：
+
+- Windows：`c0b9a84`、MSVC 19.50.35728 Release `components=core/shared` 4/4（含产品
+  exports 3/3），随后 .NET SDK 10/`net8.0` 与 Java 25 从命令行传入的 exact installed DLL
+  路径 direct load；严格先解析/调用该 core artifact 的 bootstrap，通过后才解析并调用两个
+  product identity symbols；两条负路径先拒绝 major 2，再确认产品符号不存在；
+- WSL：detached `c0b9a84`、GCC 14.2 Release core 4/4，真实 shared C-syntax fixture 调用候选
+  symbols，incompatible fixture 的动态导出只有 bootstrap；另有 ASan/UBSan 各 4/4；
+- macOS：detached `c0b9a84`、AppleClang 21 Release core 4/4，真实 shared C-syntax fixture
+  调用候选 symbols，incompatible dylib 的外部定义只有 bootstrap。
+
+完整 commit/tree、工具链/命令、源码与产物 hash 及持久化日志见
+[`core evidence manifest`](../evidence/core/manifest-c0b9a84.md)。
+
+### 当前硬验收门
+
+- **真实 shared exports**：schema 中 direct declarations、manifest 和 DLL/ELF/Mach-O 导出一致；
+  `static inline`、宏和调用方自己编译的 helper 不计数。
+- **artifact bootstrap first**：binding 先只解析待调用 artifact 的 bootstrap；core 当前使用
+  `hyle_ffi_abi_version`，未来其他 FFI 模块使用 `hyle_<module>_ffi_abi_version` 返回同一全局
+  generation。major/minor 兼容后才能解析该 artifact 其余 required symbols，core 结果不替别的
+  DLL/so/dylib 背书，product version 不代替 ABI 协商。当前没有已发布 binding，首发前方案可
+  直接重做；只有正式发布后才产生向后兼容义务。
+- **managed lifetime**：create/destroy、borrow/copy、callback thread/reentrancy、buffer capacity/
+  written/required、异步完成与 unload 规则可由 GC/runtime 安全实现。
+- **batch first**：跨边界热能力优先 whole-buffer/batch；逐元素 DLL hop 不能只为追求 C++ 名字 parity。
+- **真实语言 smoke**：保留 direct FFI 时，Windows Java + .NET 对 exact artifact 无 shim 直绑；
+  WSL/macOS 对真实 shared artifact 检查导出并以 C-syntax fixture 调用。正式承诺 Rust/Python binding 产品时，其 package
+  也必须 direct bind 已承诺能力。
+- **编译期负空间**：templates、RAII、compiler hints、prefetch/ISA intrinsic 等可合理不导出，
+  但必须记录理由；不能用 fake runtime wrapper 改变其语义。
+- **异常与分配边界**：异常不跨 ABI；每个 owning resource 与 buffer 都有同模块释放路径或明确
+  caller-owned 合同，禁止跨 CRT/allocator 猜测释放。
+
+## 历史产品口径（2026-06，已 superseded）
+
+> 以下文字原样保留旧决策来路。其中“用于 C”、pure-C 可消费和跨编译器 C consumer 不再是
+> 产品目标，也不能作为当前 Native FFI closure；仍有效的 ABI 形状须在新口径逐项复用和重证。
 
 **纯 `extern "C"` C 头是唯一承诺跨编译器/跨 STL/跨语言二进制稳定的接缝，
 但不是唯一产品 API。** 推论：
@@ -28,7 +86,7 @@
 2. **未做 close-01 之前，HYLE 不具备"可发布给 FFI 消费方"的资格**。Python ctypes / Rust bindgen / TS N-API 绑的必须是 C shim，不是现在的 C++ 头。**发布说明里必须讲清这条**，别让用户拿 C++ `.dll` 去跨语言绑然后踩 mangling。
 3. **内部 C++23 的 ABI 风险由 C 头完全隔离**（charter §85）——这是内部敢用 C++23 的前提，也是 close-01 存在的全部理由。
 
-## 设计（charter §6 / conventions §4，已定）
+### 历史设计（charter §6 / conventions §4）
 
 - **对外契约**：纯 `extern "C"` 自由函数 + 不透明句柄（opaque `_o`）
   create/destroy 配对 + 小型 POD/显式 allocator 注入。函数指针只在能力本身
@@ -36,7 +94,10 @@
 - **零异常跨边界**：错误经 `Status` 值返回，绝不让 C++ 异常跨 C 接缝（UB）。
 - **分配责任锁在 DLL 内**（防 CRT 堆不匹配），禁客户端 `new/delete` HYLE 对象。
 
-## 具体事务（开工时细化，先占位）
+## 历史具体事务（2026-07；完成勾选不代表当前 FFI 收口）
+
+> 本节的符号数量、纯 C consumer 和 inline convenience 是当时真实施工结果，予以保留；
+> 它们现在只算 schema/helper/回归证据。除 core 外，各模块均已转黄等待 managed binding 重审。
 
 - [x] core/error/platform/mem/time/simd/util/obs/container/**sched**/io 已封
   `include/hyle/c/<mod>.h`，纯 C 编译器可 include，与内部 C++ 头物理隔离；
@@ -97,7 +158,10 @@
       补 `struct_size`、调用方数组所有权与 opaque 生命周期，并保留普通动态、exact library、
       fixed TU 三层选择说明。
 
-## C++ 形状到 C 能力的用户通路复核
+## 历史 C++ 形状到 C recipe 复核（已 superseded）
+
+> 下表回答的是 native-C 用户如何组合 primitive，不证明 Java/.NET/Rust/Python 能 direct bind。
+> 表内“完整”只绑定 2026-07 的旧判据，不是当前模块状态。
 
 “头里有多少函数”只证明符号覆盖，不证明 C/FFI 用户能完成同一件事。2026-07-20
 按 authoring guide §4.1 重新检查已收口模块：每个不能直接导出的模板、RAII 或
@@ -121,7 +185,10 @@ recipe。当前入口如下：
 稳定组合通路，就必须把模块从“C ABI 完整”退回“有覆盖缺口”，直到补
 POD/opaque/callback 接口。
 
-## 验收标准（"算完成"的硬指标）
+## 历史验收标准（已 superseded）
+
+> 下列 pure-C、跨 C 编译器与 TS/Python 占位门保留为历史；当前硬门以上文 Java/.NET
+> exact-path direct binding、真实 shared export/minimal call 和 managed lifetime 为准。
 
 - **纯 C 可消费**：一个用 **C 编译器**（非 C++）编译的 TU，`#include` C shim 头并调用 `make/调用/destroy` 全程通过——证明无 mangling、无模板、无 STL 泄漏。
 - **跨编译器**：MSVC 编的 HYLE `.dll` 被 GCC/Clang 编的消费者链接调用通过（反之亦然）——这是 C++ 头做不到、C ABI 才有的能力，必须实测。
@@ -129,7 +196,7 @@ POD/opaque/callback 接口。
 - **异常隔离**：故障注入测试确认无 C++ 异常逃逸到 C 边界。
 - **依赖**：各对外模块 C++ 实现已稳定（C shim 是薄转发层，底层没定型就封等于返工——故排在 P6）。
 
-## 运行时依赖 + 安装/分发（2026-07-05 登记；2026-07-29 已落地）
+## 历史运行时依赖 + 安装/分发（2026-07-05 登记；2026-07-29 已落地）
 
 **原问题**：io-08 TLS 首次把外部动态运行时依赖带进产品，暴露出本地能链接不等于 SDK 能迁移。
 
@@ -140,5 +207,8 @@ loader path；Windows consumer 可用 `hyle_stage_runtime_dependencies()` stagin
 实际 target 闭包安装。实现与验证证据见
 [`build-package-system-closure.md`](./build-package-system-closure.md)。
 
-**仍未完成的发布层工作**：真实语言 FFI、跨编译器 C ABI、可选外部动态 runtime 的发行策略，以及
-包含全部 fetched source 的离线依赖 bundle。它们不能再被表述成“install/export 尚未实现”。
+**按当前口径仍未完成的发布层工作**：除 core 外各模块先裁决真实 foreign-runtime 任务；无任务
+可明确 `FFI=N/A`，只有保留 direct FFI 的模块才需 Java/.NET 验收。另有已承诺的 Rust/Python
+direct binding、可选外部动态 runtime 的发行策略，以及包含全部 fetched source 的
+离线依赖 bundle。旧 native-C/跨编译器 C 结果不再充当这些工作的替代证书；同时也不能把它们
+误写成“install/export 尚未实现”。

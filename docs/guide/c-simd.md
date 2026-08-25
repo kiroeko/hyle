@@ -1,6 +1,12 @@
-# SIMD 纯 C ABI
+# SIMD Native FFI 候选（待 managed review）
 
-`include/hyle/c/simd.h` 是 SIMD 模块给外部程序、其他编译器和 FFI 的稳定入口。它只有
+> **当前状态（Native FFI 复审前）**：HYLE 没有 native-C 客户。本页记录的是旧 C-shaped
+> surface / Native FFI 合同候选，不是已认证的 C 产品。复审先裁决真实外语任务；可以结论为
+> `FFI=N/A`。只有保留 direct FFI 时才用 Java FFM + .NET P/Invoke 重新验收动态导出、所有权、
+> 回调和 batch 形状；在此之前，正文中的“稳定”“完整”
+> “纯 C 用户”等说法都只属于历史描述，不是当前跨语言证书；首发前 surface 可改变。
+
+`include/hyle/c/simd.h` 当前只是 SIMD 的 pre-release FFI schema 候选。它只有
 `extern "C"` 自由函数、pointer/count、固定布局 POD 和一个 RNG opaque handle；不暴露
 C++ `Runtime`、STL、模板、D-tag 或 ISA 相关向量类型。可恢复失败使用
 `hyle/c/error.h` 的 owning `hyle_status`，SIMD 不维护私有 thread-local 错误字符串。

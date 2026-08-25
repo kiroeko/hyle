@@ -28,8 +28,8 @@
 | `OPEN` | 新模块，或用户要求从当前标准完整复审 | 只建立边界、场景和旧证据账本 | 审查单元与需求来源已冻结 |
 | `AUDITED` | 功能/参考/类型/复杂度/依赖/API 红队完成 | 实现裁决后的缺口；删除坏形状 | 公共方案及负空间已裁决 |
 | `CANDIDATE` | 产品改动完成，候选 commit/tree 明确 | 只做验证修复；任何产品改动都换 candidate | 全部机械与性能门绑定同一候选 |
-| `EVIDENCE_COMPLETE` | 三平台、C/C++、package、消费者和文档证据齐全 | 红队复核证据资格与遗漏 | 无未知、无未解释同合同 LOSE |
-| `SIGNED` | 清单全勾、LOC、commit、push、CI 完成 | 停止无证据重复全审 | 出现第十三节重开触发器 |
+| `EVIDENCE_COMPLETE` | 三平台、C++ source、适用的 shared Native FFI、package、消费者和文档证据齐全 | 红队复核证据资格与遗漏 | 无未知、无未解释同合同 LOSE |
+| `SIGNED` | 清单全勾、LOC、commit、push；required CI 完成，或明确登记 N/A/waiver 及等价本地/真机证据 | 停止无证据重复全审 | 出现第十三节重开触发器 |
 | `REOPENED` | 触发器命中 | 受影响门转黄；保留未受影响历史证据 | 重新产生候选并签署 |
 
 面向用户只显示黄色/绿色：`SIGNED` 才是绿色，其余状态一律黄色。完整复审时，历史绿色只能
@@ -41,11 +41,13 @@
 
 1. 冻结审查单元、候选前基线和直接依赖/消费者；
 2. 从真实任务建立功能与负空间账本，再读成熟库的公开面、实现和消费者；
-3. 裁决模块归属、类型形状、复杂度、C++ 与 C 产品面，之后才改代码；
+3. 裁决模块归属、类型形状、复杂度，以及 C++ source、native-C helper、direct Native FFI
+   三层，之后才改代码；
 4. 完成功能/正确性/API/sample/文档，不以 benchmark 结果反向生造入口；
 5. 冻结 candidate，按平台和交付形状做机械验证；
 6. 只对有资格的正常 workload 做性能判定，红队复核后签证书；
-7. 报四项 LOC，提交、推送并等待 required CI；然后才能转绿。
+7. 报四项 LOC，提交、推送并等待 required CI；若因额度/平台策略明确不触发 CI，证书必须记录
+   waiver、等价真机证据，以及“未取得持续回归证明”，然后才能转绿。
 
 并行 agent 只能加速相互独立的审计、平台验证或隔离 worktree 实验。一个负责人拥有 canonical
 workspace 和最终裁决；subagent 不在共享工作树并发改同一文件，不各自提交一半产品方案，也
@@ -56,11 +58,12 @@ canonical workspace 的提交历史是唯一产品事实。
 
 收口第一步是写清“这次到底审什么”。审查单元至少包含：
 
-- 本模块公开 C++ 头、实现、纯 C 头、导出清单和 build target；
+- 本模块公开 C++ 头、实现、Native FFI 的 C schema/bridge/export manifest、native-C helper
+  和 build target；
 - 根目录或其他目录中逻辑上由本模块拥有的能力，例如 core 的根级 compiler macros；
 - 本模块使用的直接上游及其 ownership/error/platform 合同；
 - 直接下游消费者、adapter、ported/vendor-derived kernel 和公开 sample；
-- 对应 architecture、guide、C guide、performance 与 milestone 页面。
+- 对应 architecture、guide、Native FFI guide、performance 与 milestone 页面。
 
 目录不是产品边界。能力放错目录、根级头、header-only seam、PRIVATE target 和复制到下游的
 局部实现都必须纳入。开始时建立一张边界表：
@@ -68,14 +71,15 @@ canonical workspace 的提交历史是唯一产品事实。
 | 项 | 当前事实 | 本轮是否纳入 | 理由 |
 |---|---|---|---|
 | 公开 C++ surface | 头/target | 是/否 | 用户或下游合同 |
-| C/FFI surface | 头/导出 | 是/否 | 是否语言无关 |
+| native-C helper | inline/macro/透明 primitive | 是/否 | 是否只是本地源码工具 |
+| direct Native FFI | schema/bridge/真实导出/绑定 | 是/否 | Java/.NET/Rust/Python 的 runtime 任务 |
 | 私有热核 | 文件/消费者 | 是/否 | 是否决定公开承诺或性能 |
 | 上游依赖 | target/header | 是/否 | 是否要回验调用方式 |
 | 下游消费者 | module/file | 是/否 | 是否采用或复制了本能力 |
 
 同时按依赖图判断模块角色。越靠近根，越应是零状态、窄职责、稳定的编译期/机制合同；越靠
 近上层，越可以承载 ownership、调度和应用级组合。若能力进入本模块必须反向依赖更高层，先
-修归属，不能用 forward declaration、C ABI 或复制代码遮蔽架构倒置。
+修归属，不能用 forward declaration、Native FFI bridge 或复制代码遮蔽架构倒置。
 
 ## 三、从真实场景重建功能面
 
@@ -96,7 +100,7 @@ canonical workspace 的提交历史是唯一产品事实。
 
 - include、namespace、类型名和函数调用；
 - CMake PUBLIC/PRIVATE/INTERFACE 链接边；
-- C ABI 调用、导出、sample 和 benchmark；
+- Native FFI 调用、shared-library 导出、Java/.NET/Rust/Python binding、sample 和 benchmark；
 - std/OS/第三方 API 的直接调用，判断是否绕过已存在的 HYLE 能力。
 
 第二遍是**语义重复扫描**，不能依赖“谁 include 了本模块”：
@@ -160,7 +164,10 @@ primitive。这个案例确立一条硬规则：**“没有 include 本模块”
 保留，但不能伪装成通用用户能力。
 
 此时还要裁决运行时/编译期和动态/header-inline 边界：布局常量、模板、指针原语和编译器 hint
-通常应 header-inline；跨 DLL ownership、runtime identity 和 opaque resource 才进入动态 ABI。
+通常应留在 C++ source 或 native-C helper；它们可以合理不进入动态 ABI。凡声称
+Java/.NET/Rust/Python 可用的 runtime 能力，则必须有真实 exported symbol，并用 opaque handle、
+固定布局 POD、callback+context、ptr+len/buffer ownership 表达。`static inline`、macro 或要求
+调用方编译 native-C recipe 都不能计入 direct FFI。
 
 ## 六、复杂度先于纳秒优化
 
@@ -278,25 +285,32 @@ gate 必须逐项留档并全部通过，缺一就是 `UNRESOLVED`。
 落后。先用隔离 workload、反汇编、计数器或不同机器降低不确定性；目标 claim 的 gate 确实
 无法判定时保留黄色，而不是把怀疑写成 SOTA。
 
-## 九、C++ API 与 C ABI 是两个消费产品
+## 九、C++ source、native-C helper 与 direct Native FFI 分层验收
 
-API 易用性是独立硬门，不能被“功能完整”“符号齐全”或“性能很快”代偿。评审时至少走三条
-用户旅程：第一次使用的默认路径、需要注入/调优的高级路径、与相邻 HYLE 模块组合的路径。
-每条都实际写一段最小调用代码，并记录用户是否被迫知道实现细节。
+HYLE 的消费层是原生 C++ source API 与按真实跨语言任务提供的 direct Native FFI。项目没有原生
+C 客户；C 语法用于描述稳定 calling convention/layout。模块可在能力账本证明没有真实 foreign
+runtime 任务后把 FFI 明确裁决为 `N/A`；只有保留 direct FFI 的模块才以 Java/.NET 作为最低
+direct-binding 验收宿主。Rust/Python 在正式承诺对应 binding 产品时进入其发布矩阵。native-C
+helper 是中间技术层，不是用户产品，也不能替 direct FFI 取得完成度。
 
-| 易用性问题 | 通过标准 | 常见失败形状 |
+API 易用性是独立硬门，不能被“功能完整”“符号齐全”或“性能很快”代偿。评审 C++ 时走默认、
+高级、组合三条 source 旅程；评审 FFI 时则从 managed runtime 直接加载发布 shared artifact，
+先做 ABI bootstrap，再按该模块真实 exported shape 走 use，以及适用的 create/error/close、buffer、
+callback 和 batch 旅程；不存在的形状记 `N/A + 理由`。
+
+| 易用性问题 | C++ source 通过标准 | direct FFI 通过标准 |
 |---|---|---|
-| 可发现性 | 按任务能找到一个自然头、类型和动词 | 必须从 benchmark/test 猜入口 |
-| 首次正确调用 | 最短 recipe 含完整 ownership/error/lifetime | 先拼 vtable、内部状态或神秘常量 |
-| 默认值 | 常用场景少参数且语义明确 | 每次都填 options；默认依赖隐式 TLS/全局状态 |
-| 类型引导 | owned/view/handle、单位、clock、device 等不易混用 | 裸整数/`void*` 承担多个语义 |
-| 状态与失效 | valid/moved-from/closed/cancelled 规则可见 | 调用顺序只藏在实现或 death test |
-| 高级控制 | 注入 allocator/cache/backend 等 opt-in，普通对象零税 | 所有人承担调优元数据和生命周期 |
-| 失败处理 | 正常失败自然传播，程序错误明确 fail-fast | bool/NULL/TLS/异常混用，错误信息丢失 |
-| 组合 | 与上下游类型直接拼，不需要格式往返或 adapter 链 | 每个调用点手写转换/复制/桥接 |
+| 可发现性 | 按任务找到自然头、类型和动词 | 从 schema/guide 找到实际 exported symbol |
+| 首次正确调用 | 最短 sample 含 ownership/error/lifetime | 不编译 shim 即可 load、marshal、调用、关闭 |
+| 类型与状态 | RAII/typed ownership，失效规则可见 | opaque handle/POD，不暴露 native 内部状态机 |
+| 默认与演进 | 默认值清楚，高级状态 opt-in | options 有 `struct_size`，旧前缀/未来尾部规则可执行 |
+| buffer/string | C++ view/owner 自然 | direction、长度、编码、borrow/free 与失效点完整 |
+| callback/async | callable 与 scheduler 组合自然 | callback+context、GC rooting、线程、cancel/drain 明确 |
+| 数据面成本 | 正常入口满足 workload | batch-first，不让每个元素支付一次 FFI hop |
+| 失败处理 | Status/Result 与 fail-fast 分界 | 无异常/TLS 歧义，status ownership 可由 managed wrapper 收束 |
 
-可复制 guide recipe 是易用性测试的一部分，但文档不能替坏 API 辩护：如果正确调用需要长篇
-解释内部状态机，应先改类型、默认构造、options builder 或 convenience，再写 guide。
+文档不能替坏 API 辩护：如果正确调用要求手工拼内部 vtable、复制 inline 算法、维护透明自引用
+结构或写很长的 native recipe，应先改 export/handle/POD/batch 形状。
 
 ### C++ source API
 
@@ -304,28 +318,59 @@ API 易用性是独立硬门，不能被“功能完整”“符号齐全”或�
 
 - 一个不读内部实现也能选对的默认路径；
 - RAII/typed ownership、明确 move/copy 与失效规则；
-- 正常组合 recipe，而不要求用户拼 vtable 或 benchmark 参数；
+- 正常组合 recipe，而不要求用户拼 benchmark 参数；
 - 与共享 error、allocator、platform/scheduler 的自然集成；
-- 高级控制是 opt-in，不让普通调用承担其状态和成本。
+- 高级控制 opt-in，不让普通调用承担其状态和成本。
 
-至少保留一段“默认路径”和一段“高级/组合路径”的编译测试或 sample；只在单测里直接构造
-private-ish primitive，不能证明 C++ 用户 API 易用。
+至少保留默认路径和高级/组合路径的编译测试或 sample。HYLE 自己的 C++ 实现直接使用 C++ API/
+内部 seam，不为“统一”而绕经 FFI。
 
-HYLE 自己的 C++ 实现直接使用 C++ API/内部 seam，不绕经 C ABI。
+### native-C helper
 
-### C/FFI 产品面
+`static inline`、macro、C initializer、透明 pointer primitive 可以用于 bridge、内核源码或可选
+native shim，并可由纯 C 编译/codegen test 验证。但它们：
 
-C ABI 按**语言无关能力**覆盖，不机械翻译 C++ 模板和内部类。每项 C++ 能力都要登记：C 可
-直接表达、需要 opaque handle/callback/visitor、应 header-inline，还是有明确语言相关理由不
-提供。没有“无法覆盖但未解释”的洞。
+- 不在 shared-library export manifest 中；
+- Java/.NET/Python 不能直接解析，Rust bindgen 也不会获得其实现；
+- 纯 C recipe 需要另行编译，因此不算跨语言通路；
+- 不得出现在 direct FFI 能力完成表的“已覆盖”列。
 
-C 易用性另查：是否有 `*_INIT`/默认 options、create-use-destroy 对称、NULL/长度查询约定、
-typed/header-inline 便利层、callback+ctx 和 buffer-fill/visitor。能靠公开 POD 表达不代表应该
-让用户手填内部字段；只有 intrusive link 等明确以 transparent layout 为产品合同的原语例外。
+编译期 compiler contract、layout constant 等没有合理 runtime 语义时，留在本层或 C++ source
+是正确边界；必须写明 non-export 理由，而不是制造一个返回常量或逐项 hint 的无价值函数。
 
-机械验证至少包括纯 C 编译、独立头、导出 manifest、create/destroy 与跨 DLL allocator 归属、
-callback 生命周期、错误字符串所有权、共享/static consumer。C ABI 易用性不能只靠“符号数
-相等”判断；一个需要用户手工管理内部状态机的完整镜像仍然是坏接口。
+### direct Native FFI ABI
+
+能力账本若确认本模块存在跨语言 runtime 任务，每项被承诺的能力都必须通过真实动态导出表达。
+若没有这种任务，模块可以把 direct FFI 明确判为 `N/A`，保留 C++ source-only；不得为了清单整齐
+制造无价值 DLL hop。存在 direct FFI 时，按实际任务选用的标准积木是：
+
+- 待调用 artifact 的 bootstrap；core 当前使用 `hyle_ffi_abi_version`，其他 FFI 模块拟使用
+  `hyle_<module>_ffi_abi_version` 返回同一全局 generation；binding 在解析该 artifact 其余
+  required symbols 前检查 major/minor 兼容；
+- unmangled exported symbol；
+- opaque handle + create/open/close/destroy；
+- fixed-width、可演进 POD；
+- callback function pointer + context，以及 register/cancel/drain；
+- ptr+len、caller buffer-fill，或 library buffer + 对称 free；
+- batch/fused operation 与 partial-completion 语义。
+
+透明 C struct 只有在 Java/.NET/Rust/Python 都能安全维护其全部不变量时才可作为 ABI；intrusive
+link、自引用 sentinel、要求稳定 native 地址的对象通常不满足。若对应用户任务真实存在，应在
+拥有该任务的上层模块设计 opaque、batch-first API，而不是把 native pointer primitive 宣称为
+FFI 容器。
+
+承诺 direct FFI 的模块，机械验证至少包括：
+
+- C schema self-contained/layout asserts；
+- shared artifact 中 FFI namespace 的精确 export manifest；同库 C++ decorated exports 单列；
+- Java 与 .NET 真实 direct-load smoke；
+- 已承诺官方 binding 时，Rust/Python 对同一 artifact 的直接绑定；
+- 按实际 exported shape 验证 create/destroy、跨模块 allocator ownership、POD、buffer/string
+  ownership、callback GC-root/线程/unregister/drain；不存在的形状逐项记 `N/A + 理由`；
+- shared library 的根保活策略与逆依赖 unload 顺序可执行；
+- 若存在数据面，运行 batch 正常 workload，避免逐项 FFI 往返。
+
+纯 C smoke、静态链接 consumer 或用户侧 C shim 都不能代替 Java/.NET 动态加载证据。
 
 ## 十、正确性与平台门
 
@@ -336,6 +381,8 @@ callback 生命周期、错误字符串所有权、共享/static consumer。C AB
 - concurrency：竞态、进展保证、跨线程/跨核、shutdown/cancel；
 - platform：Windows/Linux/macOS 的真实后端与降级路径；
 - toolchain：MSVC、GCC、AppleClang，适用时 baseline/特殊 ISA 和交叉编译；
+- Native FFI：真实 shared artifact、导出名/calling convention、Java/.NET managed lifetime、
+  Rust/Python marshalling、callback GC-root、buffer ownership 与 batch 路径；
 - sanitizer：ASan/UBSan/TSan 按能力适用性执行；模拟器只证明正确性，不证明性能。
 
 测试绿只证明已写断言的合同，没有替代功能查漏、依赖扫描和成熟库对账。
@@ -348,7 +395,7 @@ callback 生命周期、错误字符串所有权、共享/static consumer。C AB
 |---|---|
 | `architecture/<module>-design.md` | 当前职责、类型/所有权、依赖、负空间和长期理由 |
 | `guide/<module>.md` | 用户在什么场景选什么，默认 C++ 写法、组合方式和坑 |
-| `guide/c-<module>.md` | C 能力映射、opaque/inline/导出、所有权和 FFI 坑 |
+| `guide/c-<module>.md` | Native FFI schema、真实导出、Java/.NET 映射、managed lifetime、buffer/callback/batch；已承诺的其他 binding 追加映射；native-C helper 单列且不冒充 FFI |
 | `performance/benchmarks-<module>.md` | workload、peer、合同、平台、commit、统计、LOSE/未知 |
 | `milestones/<module>-*.md` | 本轮改动、命令、验收、剩余门、LOC、commit/push |
 
@@ -364,7 +411,8 @@ architecture 不写每日状态和 benchmark 点值；milestone 不承担当前�
 2. 每个公开类型能否指向真实用户/内部场景，还是只为 benchmark 好测？
 3. 强 peer 是否用另一种算法或 ownership 形状取得更好的复杂度，而我们只解释成噪声？
 4. 本模块是否绕过 error/platform/mem/time/core 等已冻结地基？
-5. C ABI 是用户可用的能力产品，还是对 C++ 内部形状的机械镜像？
+5. direct Native FFI 能否由 Java/.NET 无 shim 调用；已经承诺的其他语言 binding 能否做到同样，
+   还是只有 C 头、inline/macro 或对 C++ 内部形状的机械镜像？
 6. 默认对象是否为可选统计、cache、owner tracking 或调试承担永久元数据？
 7. 文档、导出、build target 与代码是否描述同一个产品边界？
 8. 三平台缺一时，状态是否诚实保持黄色？
@@ -407,11 +455,20 @@ architecture 不写每日状态和 benchmark 点值；milestone 不承担当前�
 - [ ] 向下采用与向上消费者收束完成；
 - [ ] C++ 默认路径和高级路径可用；
 - [ ] C++ 默认/高级/组合三条用户旅程有可复制 recipe 或 sample，易用性表无未解释摩擦；
-- [ ] C ABI 能力映射无未解释缺口，C 便利层、纯 C/导出/FFI 机械门通过；
+- [ ] C++ source、native-C helper、direct Native FFI 三层矩阵无混记；编译期 non-export 有理由，
+      runtime FFI 有真实导出；
+- [ ] direct FFI 有真实 runtime 任务；若无则明确 `N/A` 且未制造 parity export；
+- [ ] 若承诺 direct FFI，export manifest 与实际适用的 opaque/POD/callback/buffer ownership、
+      managed lifetime、batch-first 门通过；不存在的 shape 已记 `N/A + 理由`；
+- [ ] 若承诺 direct FFI，managed binding 先对每个待调用 artifact 完成 FFI ABI major/minor 握手，
+      再解析其 required symbols；首个 binding 发布前不承诺兼容，发布后才稳定它实际依赖的
+      bootstrap 名字/calling convention/签名；
+- [ ] 若承诺 direct FFI，Java + .NET 真实 shared-library smoke 通过；已承诺的 Rust/Python binding
+      通过，否则明确 N/A；
 - [ ] Windows/Linux/macOS、适用 sanitizer/ISA 正确性完成；
 - [ ] 同合同正常 workload 性能完成；五态 exact verdict、独立 SOTA gate、逐进程 raw JSON、
       order/shape 合成齐全，LOSE/未知诚实登记；
-- [ ] architecture/guide/C guide/performance/milestone 归位；
+- [ ] architecture/guide/Native FFI guide/performance/milestone 归位；
 - [ ] 四项 LOC、实现 commit、提交与推送完成。
 
 任何未勾项都必须显示为剩余门；“功能面/性能/API/文档大致没问题”不再作为收口结论。

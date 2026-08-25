@@ -11,7 +11,7 @@
 - **服务对象(双北极星,都四样全压,合起来压满五支柱)**:① **类 llama.cpp 推理引擎**(io serving+HTTP+批调度+KV-cache+GPU/CPU kernel,拉满 io/sched/mem/compute) ② **CAD/BIM/CAE 工程计算管线**(参数化/仿真依赖 DAG 增量重算+几何/BVH kernel+**CAE 稀疏线代/迭代求解器**+大场景图·网格·矩阵+云端协同/HPC,额外拉满 **graph** 支柱——clay taskgraph 老本行,CAE 再把 compute/simd 压到求解器深度);③ 蜂群 agent(消费者之一,压 fiber+io+channel)。热路径 = fiber/io/channel/mem/hashmap/SIMD/**graph 重算**。
 
 ## 1. std 使用纪律(分层,源:coding-conventions §1)
-- **公开头/跨 DLL/C-ABI 签名禁 std 拥有型**:`std::string`/`vector`/`unordered_map`/`shared_ptr`/`function`。用 `StringView`(视图)/`PodVector`/FlatHashMap/侵入式 `Ref<T>`/函数指针。**硬线(可 lint)**:公开头 `#include <string>/<vector>/<unordered_map>` 用于导出符号 = 违规。
+- **公开头/跨 DLL/direct Native FFI 签名禁 std 拥有型**:`std::string`/`vector`/`unordered_map`/`shared_ptr`/`function`。用 `StringView`(视图)/`PodVector`/FlatHashMap/侵入式 `Ref<T>`/函数指针。**硬线(可 lint)**:公开头 `#include <string>/<vector>/<unordered_map>` 用于导出符号 = 违规。
 - **全库禁 std 流**:`<iostream>`/`cout`/`cerr`/`endl`/`<sstream>`/`ostream`。诊断走 `std::fprintf(stderr,...)` / obs log;格式化用 `std::format`(值语义)不用 `<<`。
 - **已有同合同 HYLE 类型时禁较弱 std 热路径替代品**：`unordered_map/set`/`std::hash` →
   `FlatHashMap/FlatHashSet` / `Hash<T>`；连续/字符串用 `PodVector`/`SmallVector` /
@@ -23,15 +23,21 @@
 
 ## 2. 失败模型(源:lifecycle-design §0 / charter)
 - **自家 bug 绝不 catch** → fail-fast:`HYLE_FATAL_ASSERT`/abort + 诊断。**默认 no-throw**;破例须"不伤热路径 + 为隔壁稳定 + catch 外来非自家 bug"且**拿数据撑**。
-- 运营失败显式返 `Status`/`std::expected` + `HYLE_RETURN_IF_ERROR` / `HYLE_ASSIGN_OR_RETURN`。catch 只在 adapter 边界做"外来异常→Status",绝不外泄(异常跨 C-ABI = UB)。
+- 运营失败显式返 `Status`/`std::expected` + `HYLE_RETURN_IF_ERROR` / `HYLE_ASSIGN_OR_RETURN`。catch 只在 adapter 边界做"外来异常→Status",绝不外泄(异常跨 Native FFI = UB)。
 
 ## 3. 分层判据(源:roadmap 依赖图 / scope)
-- 依赖图无环:`error→platform→mem→container→sched→io/compute→graph`。**高层依赖低层;反向 = 架构倒置(禁)**。
+- 依赖图无环，但不是一条链：`error→{obs,platform,time}`，`{error,platform,util_core}→mem`，
+  `mem→container→util/sched`，sched 再服务 io/可选 compute/graph；compute 与 graph 是独立分支，
+  不能画成彼此 target 依赖。精确 PUBLIC/PRIVATE 边只看 [`roadmap`](./roadmap.md) 中央真相表。
 - 唯一例外:container(T0) 内联自包含 SIMD 探测片段,不依赖 simd(T1)。
 - **若实现 X 必须依赖更高层的 Y → 路线图/分层有问题,先修分层,别半做**(用户铁律)。
 
-## 4. C-ABI 边界(源:conventions §4)
-- 对外纯 `extern "C"` C 头 shim(ggml 式)+ 内部 C++23。
+## 4. Native FFI 边界(源:c-abi-design / conventions §4)
+- C++23 是 source API；HYLE 当前没有 native-C 客户产品。`include/hyle/c/*.h` 的 C 语法是语言无关 ABI schema，不是另一套 C 用户 API。
+- 每模块先裁决真实外语任务；无任务可 `FFI=N/A`。保留的 direct Native FFI 必须是 shared library
+  中真实可见的 `extern "C"` 符号，并由 Java/.NET 等托管运行时用精确库路径直绑验证；静态库和
+  完整源码是 C++ 发布形式，不是托管 FFI 载体。首个 binding 发布前不承担兼容义务。
+- pure-C compile/smoke 只证明 schema、编译器、calling convention 与 export/link hygiene，不能代替托管运行时加载证据。
 - `make_X()/destroy_X()` 配对,分配责任锁 DLL 内(防 CRT 堆不匹配),禁客户端 `new/delete`。
 - 跨 DLL 方法标 `HYLE_<MOD>_API`(类有非 POD 成员时宏放方法不放类,防 C4251)。
 
@@ -52,7 +58,8 @@
 
 模块从“实现/旧任务完成”升级为“当前严格收口”时，以上施工闭环还不够；必须完整执行
 [`module-closure-methodology.md`](./module-closure-methodology.md)。尤其不能漏掉语义重复消费者
-扫描、复杂度表、依赖双向收束、同合同正常 workload 和 C/C++ 两条产品线。
+扫描、复杂度表、依赖双向收束、同合同正常 workload、C++ source API 与真实 direct Native FFI；
+pure-C fixture 单列为 schema/compiler/export hygiene。
 
 ## 7. 构建/环境(源:reference 记忆)
 > 从零建环境的完整步骤(工具链门槛 / vcpkg+OpenSSL / CUDA / ggml / 各命令)见 [`docs/setup/`](../setup/README.md)(按平台分:windows/linux-wsl/macos + dependencies);这里只留每天用的速查。

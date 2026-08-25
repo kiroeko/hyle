@@ -1,5 +1,10 @@
 # HYLE sched/ 设计
 
+> **Native FFI 状态校正（2026-08-25）**：HYLE 没有 native-C 客户。本文关于 C/C++、C/FFI
+> 或 C 用户的旧表述只记录待复审的 ABI surface，不是当前跨语言证书。先从真实外语任务裁决
+> FFI 是否为 `N/A`；只有保留 direct FFI 时，sched 才必须通过 Java FFM + .NET P/Invoke、真实导出、
+> task/callback/close 生命周期与 batch 旅程后冻结。
+
 > 统一调度器：把「线程 / 进程 / 纤程 / 协程」收敛成一张调度表，是 `io/`、`compute/` completion 机制的共同地基。上游约束见 [`hyle-scope.md`](./hyle-scope.md)、[`engineering-charter.md`](./engineering-charter.md)。
 > clay 现状：thread_pool 真实现但单全局锁（长不出统一调度器，须重写），catomics 原子层扎实可继承，fiber 零实现。详见 [`clay-asset-liability.md`](./clay-asset-liability.md) 第五节。
 

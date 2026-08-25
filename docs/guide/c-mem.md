@@ -1,4 +1,10 @@
-# HYLE mem C surface
+# mem Native FFI 候选（待 managed review）
+
+> **当前状态（Native FFI 复审前）**：HYLE 没有 native-C 客户。本页记录的是旧 C-shaped
+> surface / Native FFI 合同候选，不是已认证的 C 产品。复审先裁决真实外语任务；可以结论为
+> `FFI=N/A`。只有保留 direct FFI 时才用 Java FFM + .NET P/Invoke 重新验收动态导出、所有权、
+> 回调和 batch 形状；在此之前，正文中的“稳定”“完整”
+> “纯 C 用户”等说法都只属于历史描述，不是当前跨语言证书；首发前 surface 可改变。
 
 > **发布面**：`include/hyle/c/mem.h`  
 > **实现**：`src/mem/c_mem.cc`（链 `hyle_mem`）  
@@ -462,7 +468,9 @@ hyle_status_free(&status);
 
 ## 9. 导出边界
 
-当前 mem C surface 是纯 `extern "C"` 自由函数 + opaque 句柄，没有模块 API 表或版本协商。模板、RAII 与 `std::pmr` 不跨边界：
+当前 mem 候选是纯 `extern "C"` 自由函数 + opaque 句柄，没有模块 API 表；也尚缺逐 artifact
+bootstrap，所以不能视为已认证 direct FFI。若真实外语任务裁决保留该面，应增加轻量
+`hyle_mem_ffi_abi_version`，仍不引函数表。模板、RAII 与 `std::pmr` 不跨边界：
 
 - `ObjectPool<T>` → 默认硬容量 typed 宏；`ObjectPoolCache<T>` → 显式 cache typed 宏 + publish；
 - `GrowablePool<T>` → runtime size/align + typed 宏；

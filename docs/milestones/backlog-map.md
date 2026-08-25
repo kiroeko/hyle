@@ -14,7 +14,7 @@
 | **A 模块广度延期** | 地基/支柱模块内部,当时优先级低或缺硬件,**无下游能力在等** | 按价值/成本自行排期,不需要"消费者驱动"。该做就做 |
 | **B 能力驱动的半成品机制** | sched/io 里有前置依赖、孤立做会拍错接口的机制,**挂在轴 C 能力上等驱动** | 由其能力里程碑落地时定形。**关键:一旦前置齐 + 能力被选中,就必须开工,不能无限等** |
 | **C 依赖序未到的主体支柱** | compute/graph 两大支柱,不在"等驱动"逻辑里——它们本身是北极星驱动的支柱,只是**关键路径还没走到** | 走到即开工。是最大的剩余工作量 |
-| **D 严格收口证书债** | 主体实现和旧 closure 已有，但尚未按实际使用导向重新检查功能/API/复杂度/C ABI/guide/依赖 | 不盲目扩功能；按 pre-release-readiness 的爆炸半径顺序逐模块认证 |
+| **D 严格收口证书债** | 主体实现和旧 closure 已有，但尚未按实际使用导向重新检查功能/API/复杂度/C++ source API/direct Native FFI/guide/依赖 | 不盲目扩功能；按 pre-release-readiness 的爆炸半径顺序逐模块认证 |
 
 > **对"一直不做"的自省(2026-07-04)**:B 类的"等消费者驱动"是防投机的纪律(sched-04d 曾因此推迟是对的——当时接口会拍错)。但它**不该变成拖延的借口**:当一个能力的前置全部就绪时,它就该进入排期,而不是继续挂着。下面的"就绪度"列就是防这个——**标 🟢 就绪的必须排期,不能再等**。
 
@@ -33,7 +33,7 @@
 | [simd-19](./simd-19-partial-vector-repr.md) | 定宽后端 partial-vector 表示(部分标签用窄 D 寄存器) | 🟢 就绪(有设计) | NEON perf 收口留的唯一"可修"真输 `PromoteMaskTo i16→i32` 0.575:定宽后端把每个 `Vec<T,N>` 当满宽寄存器,partial tag 满宽物化再掰回;scalable 已用 `kPow2`+`vl` 解,定宽待跟上。方案 A 根治(翻倍实现面)/ B 热点窄手术/ C 不做,建议 B。**COLD op(~0.5ns 绝对),不阻塞北极星**,按"只能平不能输"排期 |
 | ~~[simd-12](./simd-12-vendor-displacement.md)~~ | ~~自研超过部分Highway/xsimd + 确认小数组调用税~~ | ✅ **完成(2026-07-11)** | u16 11/13正确SIMD核取代scalar fallback；SoA csin/ccos自研编排在AVX2胜xsimd、NEON胜原scalar；small-K自研候选未稳定赢std而撤销，整数/KV `k<=16`采用实测更快的std核。三套scaling bench、独立oracle、特殊值/alias/ASan闭环。 |
 | ~~[simd-13](./simd-13-vendor-displacement-2.md)~~ | ~~继续竞争直接借用的 complex SIMD 核~~ | ✅ **完成(2026-07-11)** | HYLE SoA `ctanh/cpow` 在 AVX2/NEON 上架：常规 lane 分别消除复三角/双曲重复计算和 complex-pow 的重复 `log/exp`，全域异常 lane 保留 `std::complex`。Windows、WSL 与 Apple 真机统计证明常规或 large 输入无确认回退，Windows/WSL有明确随机胜利；`cexp/clog/csqrt`、VQSort 和其余 bit-pack 宽度保留供应商。P4 已由[`simd-14`](./simd-14-fixed-width-p4.md)完成，下一步仅P5。 |
-| ~~simd-08 尾 → simd-09~~ | best-of 审计 + 数学函数/算法级能力 | ✅ **simd-09 全完成(2026-07-09)** | 线① 11 数学函数 best-of(Highway 9/xsimd 2)+ 线② 6 件(intdiv/cmp128/RNG 自实现 + vqsort/bit_pack/KV-top-k vendor 薄封装)。四 ISA + SDE + mac 全真跑。详见 simd-09 里程碑 |
+| ~~simd-08 尾 → simd-09~~ | best-of 审计 + 数学函数/算法级能力 | ✅ **simd-09 当时范围完成(2026-07-09)** | 线① 11 数学函数 best-of(Highway 9/xsimd 2)+ 线② 5 件(intdiv/cmp128/RNG 自实现 + vqsort/bit_pack vendor 薄封装)；K32V32 KV top-k 留真实消费者驱动。四 ISA + SDE + mac 真跑。详见 simd-09 里程碑 |
 | ~~simd SVE/RVV scalable 后端~~ | ~~原判"未来项缓实现"~~ | ✅ **scalable P0-P4 + fixed P3完成** | sizeless native type由后端traits承载；共享层以`Rebind+kPow2+cap`表达partial tag与lane-width rebind。P0解锁泛型complex/128-cmp/Newton/rotate，P1补scalable swizzle/interleaved I/O，P2补Promote/Truncate/Demote2/widen-dot/Sums/ReduceMul/Q15/SatAbs-Neg，P3补24个定宽Masked*公开名并完成性能闸，P4直接实例化FMA/magnitude/even-odd widen/bf16/mod，P5平凡合成+mask前缀(simd-15)。SVE 19 tests×4 VL、RVV 18 tests×4 VLEN全绿；主闭集P0-P5软件面收口，剩硬件门控(qemu≥9.1)，见`simd-gap-inventory.md` |
 | ~~simd native-intrinsic 性能档~~ | ~~gather/compress 现 store+reload → native vpgather/vpcompress~~ | ✅ **已做+实测(2026-07-09,#66/#69)** | avx2 GatherIndex→`_mm256_i32gather`(**本机实测 1.31x 赢,保留**);avx512 Compress/Expand/CompressStore→`vpcompress/vpexpand`、GatherIndex→`vpgather`(SDE 正确性验,**性能待真机**——SDE 是功能模拟器,复杂指令模拟开销高,perf 不可信)。留 `GatherIndexEmulated/CompressEmulated` store+reload 参照供 A/B bench。`gather_bench.cc` 逐 ISA 对拍,performance.md 已记数据+SDE 工具边界。swizzle 全是硬件 shuffle 直通(无 emulation),不在此列 |
 | ~~build-asan hwy::Abort 链接~~ | ~~undefined reference to hwy::Abort~~ | ✅ **已修(2026-07-09,0a64455)** | 根因:Highway 借核经 HWY_DASSERT 调 hwy::Abort,Release -O2 DCE 掉、ASan -O2-g 没 DCE→残留未定义(HYLE 从不编 Highway abort.cc)。修:把 `third_party/highway/hwy/abort.cc`(baseline C++)编进 hyle_simd 源列表→所有构建配置都链干净。build-asan 整库 ASan 实测 sse4/avx2 173/173 零错误(不再需 standalone 绕过) |
@@ -53,7 +53,10 @@
 > **compute-06 内部欠账(2026-07-08 登记)**:compute-06 按验收(三平台 vecadd+合批+co_await 全绿)已 ✅,但 kompute 25 点核对表"应做(抄/改)"21 项里做了 12、欠 9。**里程碑"明确不做"表(compute-06-vulkan-spirv.md:191)已接住多队列/运行时GLSL/Image/spirv-opt(B类消费者驱动,合理等);上面两行接住剩下无归属的**——① 是正确性硬伤(基础库义务,必做)、② 是性能收尾。避免这些散落在核对表/memory 里无排期。
 > **simd-09 线② 全 5 件完成(2026-07-09)**:通用原语 intdiv/cmp128/RNG **自实现泛型层**;重型件 vqsort/bit_pack **vendor 薄封装 Highway**(用户"vqsort 先做、bit_pack 也要,不能用 Highway 么"→修正了之前"无 flat 入口无法薄借"的过度结论:公开层吃裸指针不 include highway、借核 TU 内部用 Highway D-tag,与数学核借法同构;VQSortStatic/-DVQSORT_ONLY_STATIC 与 Pack<kBits> 都 header-only)。x86 全绿(MSVC+WSL GCC)。**借核过对拍闸门揪出 Highway vendor bug**:Pack16<11>/<13> 满位宽 round-trip 失败(三处独立探针坐实算法 bug),回退 HYLE bitstream codec 绕过,见 docs/debug/highway-pack16-roundtrip-hunt.md。剩:NEON 待 mac(#63)、K32V32 top-k 键值对留消费驱动。
 
-**A 类结论**:全部"就绪但低优先级",不阻塞北极星。simd-03 硬件硬阻塞已解。**platform-02b + mem-08 ✅**——VM 原语与 fiber 栈 guard/分级/池已接线。剩余 A 类(mem-06/bench-02)按需。**compute-06 收尾②性能收尾 2026-07-08 全清**——核对表 25 项该做的(#25 计时/#11-12 barrier/#1 cache 落盘/#6 HOST_CACHED/#2-3 spec constants/tools+load_spirv/#14-16 record-replay)全完成=compute-06b/c/d,记录见 compute-06 里程碑状态行;仅剩消费者驱动的边角项(上表,无当前消费者按需)。(收尾① staging 亦已完成,均从本表移除。)
+**A 类结论**:历史 mem-06/08 与 platform-02b 已全部落地，不再是剩余项；当前只保留 bench-02、
+simd-19 等明确低优先级/消费者驱动项，不阻塞北极星。**compute-06 收尾②性能收尾 2026-07-08
+全清**——核对表 25 项该做的(#25 计时/#11-12 barrier/#1 cache 落盘/#6 HOST_CACHED/#2-3 spec
+constants/tools+load_spirv/#14-16 record-replay)全完成=compute-06b/c/d；仅剩消费者驱动的边角项。
 
 ## 三、B 类:能力驱动的半成品机制(前置就绪度是排期关键)
 
@@ -64,18 +67,19 @@
 | **C2 带超时 io** | io-06 + sched-04d | io-04 ✅ / time-02 ✅ / sched-10 select ✅ | ✅ **完成(2026-07-05)** | io-06 落地:timer vs io 竞态(shard-per-core 单线程免原子仲裁)+ submit_cancel 三后端 + refcount slot 续命防迟到 CQE UAF + IoContext orphan drain。**顺带落地 sched-04d**(shard-per-core 免去其最硬的跨核 cancel 队列)。TimedRecv/Accept/ConnectOp;红队审 + 计数分配器验漏;三后端双平台 + TSan 净 |
 | **C3 结构化取消** | sched-07 | 无硬前置(C2 已定形 io cancel;io-10 HTTP 消费者已到位) | ✅ **完成(2026-07-05)** | shard-per-core 无锁取消树落地:唯一原子是 per-node cancelled 标志(兼容 is_cancel_requested seam),树/回调链/派生/传播/析构过继全非原子。借 tokio-util tree_node 拓扑+析构过继+迭代传播(去 Mutex)+ folly CancellationCallback(去原子握手)。CancelToken/CancelScope/CancelCallback/HYLE_CHECK_CANCEL + io/net_cancel.h 可取消 io(栈 slot 无 heap,经 tokio-uring 核实 oneshot cancel 恰一个 CQE)。消费者=HTTP 请求 fan-out(io-10)。红队审揪修 fire_callbacks 相邻注销 UAF。Win+WSL(io_uring+epoll)+TSan 全绿。**sched 支柱 01~11 全 ✅** |
 | **C4 优雅关闭** | sched-08 | signal ✅(C10);**不依赖 C3**(调研推翻) | ✅ **完成(2026-07-05)** | 调研发现关闭只需平信号广播不需取消树→与 C3 **解耦**。sched-08 落地:accepting 接纳位两阶段(begin_shutdown 拒新+广播 / drain_for 超时)+ shutdown_requested() 长命 fiber 轮询退出。有栈 fiber 超时不强杀(协作退/detach)。signal_set(C10)作触发器。双平台 sched 85/85 + TSan 净 |
-| **C5 文件/共享内存** | io-05 | io-02 ✅ | ✅ **文件 io + named shmem** | 文件 io 四后端 capability-aware：原生 async 或 blocking pool；named shmem 有 Windows file mapping、POSIX `shm_open`、C++ RAII 与纯 C opaque ABI，同名双 mapping 测试覆盖 |
+| **C5 文件/共享内存** | io-05 | io-02 ✅ | ✅ **文件 io + named shmem** | 文件 io 四后端 capability-aware：原生 async 或 blocking pool；named shmem 有 Windows file mapping、POSIX `shm_open`、C++ RAII 与历史 pure-C opaque surface，同名双 mapping 测试覆盖 |
 | **C9 TLS** | io-08 | io-04 ✅(over co_await stream) | ✅ **完成(三平台,2026-07-05)** | OpenSSL memory-BIO 泵 over co_await TcpStream:TlsContext/TlsStream + tls_handshake/read/write/shutdown。红队审净+修 2 隐患。Linux io_uring+epoll+TSan 净 + Windows IOCP 净(vcpkg OpenSSL 3.6.3)。可选依赖(不装 OpenSSL 零依赖) |
-| **C11 HTTP** | io-10(HTTP/1.1)+ io-11(HTTP/2) | 超时 C2 ✅ + TLS C9 ✅ + DNS C10 ✅ | ✅ **io-10/io-11 三平台真后端全绿** | HTTP/1.1 借 picohttpparser；HTTP/2 借固定版本 nghttp2 协议核，自有 coroutine transport/allocator/caps/C ABI。H2 多 stream、HPACK、RST/GOAWAY、flow-control 与 graceful TLS close 均有 |
+| **C11 HTTP** | io-10(HTTP/1.1)+ io-11(HTTP/2) | 超时 C2 ✅ + TLS C9 ✅ + DNS C10 ✅ | ✅ **io-10/io-11 三平台真后端全绿** | HTTP/1.1 借 picohttpparser；HTTP/2 借固定版本 nghttp2 协议核，自有 coroutine transport/allocator/caps/历史 ABI codec。H2 多 stream、HPACK、RST/GOAWAY、flow-control 与 graceful TLS close 均有 |
 
 **B 类结论——2026-07-05 基本清空**:
 1. ~~io-06 / C2(带超时 io)~~ ✅ **完成**。顺带落地 sched-04d。
 2. ~~sched-08 / C4(优雅关闭)~~ ✅ **完成**。调研解耦了 C3。
 3. ~~io-08 / C9(TLS)~~ ✅ **完成(三平台)**。OpenSSL memory-BIO,红队审净。
 4. ~~io-10 / C11(HTTP/1.1)~~ ✅ **完成(三平台)**。借 picohttpparser + 自写集成层。**北极星① 服务器骨架最后一块**。
-5. ~~sched-07 / C3(取消)~~ ✅ **完成**。io-10 HTTP fan-out 驱动。**sched 支柱 01~11 全 ✅ 真收口**。
-6. **原两个小尾均已落地**：io-05 named shmem 已有 C++/C ABI；io-11 已有 C++ connection 与 C codec，Windows/WSL/macOS 真后端均验收。剩余是 H2 无界 chunk writer、HTTP whole-request deadline/cancel 和公开性能尾。
-7. **下一大块 = compute 支柱**(C 类,0 行、前置就绪、北极星① 算力本体)。
+5. ~~sched-07 / C3(取消)~~ ✅ **历史机制完成**。io-10 HTTP fan-out 驱动；sched 01~11 的旧任务已完成，但按现行严格标准仍未签署。
+6. **原两个小尾均已落地（历史实现证据）**：io-05 named shmem 已有 C++ 与 ABI-shaped surface；io-11 已有 C++ connection 与 C-syntax codec，Windows/WSL/macOS 真后端均验收。它们不自动成为 managed FFI 产品。剩余是 H2 无界 chunk writer、HTTP whole-request deadline/cancel 和公开性能尾。
+7. “compute 为 0 行、下一大块才开工”是早期排期判断，已被后续 compute-01~09 实现取代；当前
+   compute/graph 是有代码但能力未完的半成品，状态见下节与 readiness。
 
 ## 四、C 类:依赖序未到的主体支柱(最大剩余块)
 
@@ -92,9 +96,9 @@
 
 | 里程碑 | 状态 | 待决 |
 |---|---|---|
-| close-01 C-ABI shim | 🔶 十一模块已有 surface | core/error/platform/mem/time/obs/simd/util/container/sched/io 已有纯 C 头、实现与机械门；install/export 已完成。compute/graph C 面、math 边界裁决和跨编译器/真实语言 FFI 冒烟待做 |
+| close-01 Native FFI 边界 | 🔶 旧 surface 已转为历史输入 | 十一模块旧纯 C 头/实现/机械门只证明 schema/compiler/export hygiene，不代表 native-C 产品或 managed FFI 完成。现行形状是 C++ source API + 按真实绑定任务提供 direct Native FFI；core 已有 Java/.NET exact-path shared-library smoke，其余模块需按任务复审 |
 | close-02 serialize | ❓ scope 待澄清 | 借 flatbuffers/capnproto builder+reader 当原语 vs 全推 L1?JSON 借 simdjson 已定 |
-| close-03 FFI 绑定 | 占位 | 依赖 close-01 |
+| close-03 FFI 绑定 | 按真实 host 任务推进 | shared library 是 managed FFI 载体；static/source 是 C++ 发布形式，不以旧纯 C surface 数量驱动绑定 |
 | graph-02 数据并行层 | ✅ **归属已定(2026-07-10)** | **归 graph**(graph-design.md §2):compute 铁律把铺多核推给 graph-02 fork-join,归 compute 会破其"不起线程池"边界;消费者与 graph-01 同源。序列化(close-02)仍待 scope 复核 |
 
 ## 六、一句话排期建议

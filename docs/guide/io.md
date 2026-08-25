@@ -1,7 +1,13 @@
 # IO 使用指南
 
+> 当前产品面只承诺本页的 C++ 形状。HYLE 没有 native-C 客户、尚未发布 managed binding，
+> 发布前也不承担 Native FFI 兼容义务。`include/hyle/c/io.h` 是可重设计的 FFI 候选 schema，
+> 不是 C 产品 API；只有真实跨语言任务才触发 Java/.NET direct-binding 验收，没有任务时可裁决
+> `FFI=N/A`。任何 native-C sample/test 只承担 schema、编译器、导出或 package fixture 作用。
+
 HYLE IO 有两层。普通 C++ 程序优先用 `IoContext` 与 RAII/`co_await`
-封装；需要精确控制后端、写语言绑定或自己管理状态机时才直接用 `Proactor`。
+封装；需要精确控制后端或自己管理状态机时才直接用 `Proactor`。未来若有真实语言绑定任务，
+也应从消费者所需的批量/异步形状出发，不把低层 `Proactor` parity 当作默认目标。
 
 ## 1. 运行时结构
 
@@ -124,5 +130,7 @@ transport owner fiber 上调用。
   专属快腿。先查询/尝试注册，失败后回到 portable one-shot；不能把“不支持”
   当成一个极快 benchmark 样本。
 
-纯 C/FFI 用户看 [`c-io.md`](./c-io.md)。它暴露相同的低层 proactor、backend
-diagnostics、网络/文件提交、multishot/fixed-file 与 shared-memory 能力。
+[`c-io.md`](./c-io.md) 记录当前低层 proactor、backend diagnostics、网络/文件提交、
+multishot/fixed-file 与 shared-memory 的候选 Native FFI schema。它可以在发布前删除或重塑，
+不是 native-C 产品，也不代表 Java/.NET 等 managed binding 已存在；没有真实跨语言 IO 任务时
+本模块可明确记为 `FFI=N/A`。

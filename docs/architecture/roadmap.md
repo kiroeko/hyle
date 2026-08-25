@@ -34,14 +34,14 @@ math ──▶ users（当前无生产下游）
 | `core` | — | — | 基础宏、intrusive 原语供底层头使用 |
 | `util-core` (`hyle_util_core`) | —（INTERFACE） | — | Ref/ScopeGuard/Rng/type-name/SpinLock；独立可安装组件，无 binary artifact |
 | `error` | — | — | 全库可恢复失败值根 |
-| `obs-runtime` (`hyle_obs`) | error | — | log/C ABI 产品；共享 Status；与 trace build seam 分开 |
+| `obs-runtime` (`hyle_obs`) | error | — | 同步 log runtime；历史 ABI surface 使用共享 Status；与 trace build seam 分开 |
 | `math` | —（INTERFACE） | — | 独立公开标量助手，当前无生产模块消费者 |
 | `platform` | error | — | OS/thread/VM/fs/CPU 机制；fs 复用 time 的 C-compatible UnixTimestamp 值头；`hyle/platform.h` 宏头本身零链接 |
 | `mem` | error、platform、util-core | mimalloc | FiberStackPool 的短临界区；obs trace hook |
 | `time` | error | — | native timer 借 `core/intrusive_list`；不链接 platform/container |
 | `container` | error、mem | platform | 公开头暴露 Status/mem 类型；当前无 util-core 边，ConcurrentVector 的非短写临界区使用 mutex |
 | `simd` | error、platform | — | 统一错误契约由 error 提供；运行期 ISA 能力由 platform 提供 |
-| `util-runtime` (`hyle_util`) | error、mem、container、util-core | — | Registry/C adapter 显式借共享 Status/allocator；原生 util-core 头不依赖该二进制目标 |
+| `util-runtime` (`hyle_util`) | error、mem、container、util-core | — | Registry/历史 ABI adapter 显式借共享 Status/allocator；原生 util-core 头不依赖该二进制目标 |
 | `sched` | error、mem、container、platform、util-core | time | 短临界区与泛型同步路径；后者随 sched 严审；obs trace hook |
 | `io` | error、mem、container；有 fcontext 时 sched | — | obs trace hook |
 | `compute` | error、mem；有 fcontext 时 sched | platform、simd；可选 GPU/ggml 供应商 | obs trace hook |
@@ -50,13 +50,14 @@ math ──▶ users（当前无生产下游）
 ### 两个不能压成单节点的模块
 
 `util` 必须分层阅读。`SpinLock/cpu_relax`、`Ref`、`ScopeGuard`、RNG 与 type-name 由独立
-INTERFACE component/target `hyle::util_core` 承载，可被低层模块显式依赖；`Registry` 和 type-erased C ABI 才依赖
+INTERFACE component/target `hyle::util_core` 承载，可被低层模块显式依赖；`Registry` 和历史 type-erased ABI adapter 才依赖
 container/mem，因而编译出的 `hyle_util` 位于 container 之后。container 不 include
 util-core 且不链接 `hyle_util`，所以 target graph 没有 `container ↔ util` 环。新增
 util 能力时必须先判断属于哪一层，禁止让 util-core 反向 include container。
 `add_subdirectory` 在根 CMake 中的文本先后不是依赖层；这里只以 target link 与公开头合同判定顺序。
 
-`obs` 同样有两条线：`hyle_obs` 是独立的同步日志/C ABI 产品；`hyle_trace` 是
+`obs` 同样有两条线：`hyle_obs` 是独立同步日志 runtime（已有 ABI surface 是否成为 direct Native FFI
+由真实绑定任务决定，不按 native-C 产品解释）；`hyle_trace` 是
 `HyleModule.cmake` 自动 PUBLIC 传播给每个模块的 INTERFACE gate。默认 OFF 时它为空，开启时
 shared 构建或单一最终 link image 的 static 构建汇入同一个 `hyle_tracy_client`；多个
 DLL/plugin 不得各自静态链接 trace-on SDK，必须改用 shared `hyle_obs`。产品代码 include
@@ -76,8 +77,8 @@ mem/sched/util-runtime/graph 汇入但不增加二进制链长度；time 从 err
 转换 helper 使用同一表示，但不会取得 clock、sleep、deadline 或 timer 符号，因而不能伪造成
 `hyle_platform -> hyle_time` target 边或 DLL 依赖。
 
-共享错误合同的架构要求是：模块不得维护私有 `last_error`；C 冷控制面使用共享
-`hyle_status`，原生 C++ 实现直接使用 `Status/Result`，不绕经 C ABI。哪些模块已在当前
+共享错误合同的架构要求是：模块不得维护私有 `last_error`；direct Native FFI 冷控制面使用共享
+`hyle_status`，原生 C++ 实现直接使用 `Status/Result`，不绕经 ABI bridge。哪些模块已在当前
 working tree 上完成 adoption 复证属于快变验收状态，只由
 [`pre-release-readiness`](../milestones/pre-release-readiness.md) 维护，本页不复制认证名单。
 
@@ -96,7 +97,7 @@ runtime。模块在自己的层级直接使用 libc/OS 只允许两类情况：�
 - **轴 B — 里程碑（M）**：每个 work item 自成“实现→正确性→性能→文档”闭环。任务数量与
   dated LOC 在 milestones/README；当前模块认证状态只在 pre-release-readiness 维护。
 - **轴 C — 交付能力（C）**：用户/消费者视角"这个库能做什么"。轴 B 是**机制**（收割接缝、timer queue、work-stealing），轴 C 是**能力**（带超时的网络 io、优雅关闭、取消）。见下节。
-- **轴 D — 模块严格收口（R）**：已有代码按“真实场景→成熟库→API/复杂度→C/C++→下游采用→文档”重新认证。它按接口爆炸半径排序，不按旧 benchmark 或目录顺序。
+- **轴 D — 模块严格收口（R）**：已有代码按“真实场景→成熟库→API/复杂度→C++ source API/direct Native FFI→下游采用→文档”重新认证。它按接口爆炸半径排序，不按旧 benchmark 或目录顺序。
 
 ### 轴 C：交付能力清单（消费者视角）——机制的反向拉动者
 
@@ -110,8 +111,8 @@ runtime。模块在自己的层级直接使用 libc/OS 只允许两类情况：�
 | **C2 带超时的 io** | TCP read/write/connect/accept 与 UDP recv/send 带 deadline，超时取消在途 op | **io-06**（io_uring `ASYNC_CANCEL`/IOCP `CancelIoEx` 取消在途 op）**驱动** sched-04d（fiber 定时等待 + 跨核 timer cancel 队列）；底层需 **C7 的 select**（等 timer/io 先完成者）| ✅ **完成(2026-07-20)**。timed 网络便利面已铺齐；timer vs io 竞态**先到者胜**。**shard-per-core 单线程串行=非原子仲裁**(io completion + timer fire + resume 全在 owner worker,seastar 式免原子);对称 gate 每 episode 恰 1 次 wake_rendezvous。timer 赢→`submit_cancel` 四后端(io_uring ASYNC_CANCEL/IOCP CancelIoEx/epoll+kqueue 删除 watch 并合成);**迟到 CQE 续命**(heap TimedSlot refcount,普通 op 栈 slot 零成本不变)防 UAF。**顺带落地 sched-04d**——但 shard-per-core **免去其最硬的跨核 cancel 队列**。红队审 + 计数分配器验漏 + 三后端测试 |
 | **C3 结构化取消** | CancelToken 树 + await 取消点，父取消传播子 | sched-07 | ✅ sched CancelToken 树与 io TCP/UDP cancellable convenience 已接通；HTTP whole-request 统一 cancel/deadline 仍是产品层尾项 |
 | **C4 优雅关闭** | 两阶段 drain：停收新连接 → 排空在途 → 逆序清理 | sched-08；触发靠 **C10 的 signal 处理**（SIGTERM/SIGINT）| ✅ **完成(2026-07-05)**。调研 seastar gate/tokio TaskTracker 后落地:关闭只需**平的关闭信号广播 + 在途计数归零,不需 sched-07 取消树**(与 C3 解耦)。sched-08:`begin_shutdown()` 置 accepting=false 拒新 spawn + 广播全 worker;`drain_for(timeout)` 等 outstanding 归零(超时返 false);`shutdown_requested()` 长命 fiber 轮询退出。有栈 fiber 超时不强杀(协作退/detach)。signal_set(C10 ✅)作触发器。双平台 sched 85/85 + WSL TSan 净 |
-| **C5 文件/共享内存 io** | 异步文件读写（openat/statx/fsync/fallocate）+ 跨进程 shmem | io-05 | ✅ 文件原语 + `File` RAII + **命名 shared memory**（Win file mapping / POSIX `shm_open`，C++ RAII + C opaque ABI）。普通 C++ `File` 按 capability 自动选原生异步或 `IoContext` blocking pool：io_uring 数据/metadata 快腿、IOCP data overlapped，IOCP metadata 与 epoll/kqueue regular-file 自动卸载，不堵 worker；低层 Proactor 保留精确机制语义 |
-| **C6 可观测性** | 结构化日志 + trace/counter 埋点（对标 Tracy）| obs-01/02 ✅；2026-07-29 严格复证 | ✅ exact-byte borrowed record + RAII/quiescent sink + immutable snapshot + flush/递归抑制 + 共享 Status C ABI；per-TU compile floor 可删除低等级调用。默认零成本 native trace seam 覆盖 zone/plot/counter/fiber/frame/message/memory/thread-name，已接 mem/sched/io/compute；共享构建只加载一个 Tracy client。架构与验收见 [`obs-design.md`](./obs-design.md) / [`../milestones/obs-module-closure.md`](../milestones/obs-module-closure.md) |
+| **C5 文件/共享内存 io** | 异步文件读写（openat/statx/fsync/fallocate）+ 跨进程 shmem | io-05 | ✅ 文件原语 + `File` RAII + **命名 shared memory**（Win file mapping / POSIX `shm_open`，C++ RAII + 历史 opaque ABI surface）。普通 C++ `File` 按 capability 自动选原生异步或 `IoContext` blocking pool：io_uring 数据/metadata 快腿、IOCP data overlapped，IOCP metadata 与 epoll/kqueue regular-file 自动卸载，不堵 worker；低层 Proactor 保留精确机制语义 |
+| **C6 可观测性** | 结构化日志 + trace/counter 埋点（对标 Tracy）| obs-01/02 ✅；2026-07-29 严格复证 | ✅ exact-byte borrowed record + RAII/quiescent sink + immutable snapshot + flush/递归抑制 + 历史共享 Status ABI surface；per-TU compile floor 可删除低等级调用。默认零成本 native trace seam 覆盖 zone/plot/counter/fiber/frame/message/memory/thread-name，已接 mem/sched/io/compute；共享构建只加载一个 Tracy client。架构与验收见 [`obs-design.md`](./obs-design.md) / [`../milestones/obs-module-closure.md`](../milestones/obs-module-closure.md) |
 | **C7 并发原语补全** | Semaphore / RwLock / oneshot / broadcast·watch / JoinHandle+select·when_all | **sched-09**（Semaphore/RwLock/oneshot/broadcast/watch）+ **sched-10**（JoinHandle + when_all/when_any(select) 结构化并发）| ✅ **完成**（sched-10 JoinHandle+spawn_task+when_all/when_any;sched-09 Semaphore/RwLock/oneshot/watch/broadcast 2026-07-03 落地,tokio 语义抄全建在 CV 地基,双平台 73/73 + WSL TSan 净;**select=C2 前置已就位**） |
 | **C8 阻塞卸载** | `spawn_blocking`：把阻塞 syscall/CPU 活扔到卸载池,不拖死 shard worker | **sched-11**（阻塞卸载线程池） | ✅ **完成**（2026-07-03,sched-11:懒创建池上限512+10s keep-alive,结果经现有 JoinHandle 回传,双平台82/82+WSL TSan 净）。sysmon 不做(tokio 也无,卸载显式)。真服务器调阻塞库(DB驱动/文件/getaddrinfo)可用 |
 | **C9 TLS** | 加密 socket（over co_await stream）| **io-08**（借 OpenSSL memory-BIO shim over 现有 stream）| ✅ **完成(三平台,2026-07-05)**。借 OpenSSL memory-BIO 泵:SSL 引擎只做握手+加解密(纯内存),密文收发由 co_await TcpStream 驱动(SSL_get_error WANT_READ/WRITE→flush_wbio/feed_rbio)。TlsContext/TlsStream + 自由函数 tls_handshake/read/write/shutdown。踩坑全抄(MOVING_WRITE_BUFFER/错误队列/EOF 三分/BIO 所有权)。红队审三大面净+修 2 隐患。loopback TLS 握手+加密 echo:Linux io_uring+epoll+TSan 净 / **Windows IOCP 净**(vcpkg OpenSSL 3.6.3,机制与平台无关一次编过) |
@@ -144,7 +145,7 @@ P0–P6 只表示最早可编译的拓扑层。不在这里复制 LOC、冻结�
 | **P3** | container | 公开依赖 mem，实现依赖 platform |
 | **P4** | sched、util-runtime/registry | 两者都要 container；sched 另要 time/platform/mem/error |
 | **P5** | io、compute、graph | 完整产品形状都消费 sched；compute 另消费 simd，graph/io 消费 container |
-| **P6** | 跨编译器 ABI/FFI 冒烟、离线/发布 bundle 总验收 | install/export 与三种基础交付形状已完成；本层不造新模块，只补 compute/graph C adapter 与整库发布验证 |
+| **P6** | direct Native FFI 与跨编译器 schema 冒烟、离线/发布 bundle 总验收 | install/export 与三种基础交付机制已有历史实现；当前 build/package 证书仍为黄色，须在模块边界稳定后重绑。shared library 才承载 Java/.NET direct FFI，static/source 是 C++ 发布形式；绑定能力按真实任务增加 |
 
 **关键路径**：到 scheduler 的最长链是
 `error → platform → mem → container → sched`；独立的 `error → time → sched` 分支必须在
@@ -162,42 +163,43 @@ simd 不进 sched 链，只在 compute 汇合。obs-runtime 是用户产品根�
 
 | 波次 | 审查单元 | 排序理由 |
 |---|---|---|
-| **R0 基线** | error → platform → mem → time | 先稳定共享失败值与 OS 机制，再收 allocator/NUMA 和 clock/timer；后续模块都直接消费这些合同 |
-| **R1 根、构建与接缝** | core → build/package system → util-core seam → obs | 先定零依赖头、真实 target/package 图与 header-only seam，再审横切日志/trace；避免下游复证建立在漂移的编译或交付合同上 |
-| **R2 容器层** | container → util-runtime/完整 util | container 先稳定 ownership/hash/并发形状，依赖它的 Registry/C adapter 随后收口；本行只表达顺序，不表达当前绿证 |
+| **R0 根** | core ✅ | 零依赖头、编译期 seam 与 core artifact 的全局-generation FFI bootstrap 已按当前标准签署；状态和 identity 只见 readiness/core milestone |
+| **R1 已实现底座** | error → platform → mem → time → obs → util-core seam → build/package system（已签子集） | 依次稳定失败值、OS、allocator/NUMA、clock/timer、横切诊断与零运行时依赖的 util-core；随后让 build/package 对这批已稳定 public/target/FFI 边重绑三种 C++ 交付和 shared FFI。完整 util 不能越过 container 依赖先签 |
+| **R2 容器与 util runtime** | container → util-runtime → build/package 受影响边回验 | container 先稳定 ownership/hash/并发形状，依赖它的 Registry/runtime 随后收口；最后只回验新增组件闭包和发布边，不重开整个 build/package |
 | **R3 运行时链** | sched → io | sched 汇合 mem/time/container/platform，io 再消费 sched；反序会反复改 timeout/cancel/completion 形状 |
 | **R4 计算基础** | math↔simd 边界审查 → simd | math 是 clay math 被 std/SIMD 吸收后的残余，不先假定它应独立；先裁决 scalar/std/SIMD 归属，再冻结 SIMD dispatch、类型、算法与正常 batch API |
 | **R5 未完支柱** | compute → graph | 这两者不是“复审已完成实现”，而是先补真实能力再按同一合同收口；graph 最后汇合 sched/compute/simd |
-| **R6 发布** | 已完成 install/export → 补 compute/graph C 面 → 全库 C/FFI 冒烟 → 离线/发布 bundle | 每模块 C ABI 随本模块收口，不把接口设计推到最后；本层只做跨模块交付验证 |
+| **R6 发布** | 复证 install/export → 按绑定任务补 direct Native FFI → shared library 的 Java/.NET exact-path 冒烟 → 离线/发布 bundle | 不把历史机制完成误写成当前证书，也不把 native-C surface 数量当完成度；static/source 验 C++ 发布，shared 另验真实托管 FFI；本层只做跨模块交付验证 |
 
-R1 的 build/package system 是独立审查单元：CMake target 图必须准确表达模块源码、公开头、
-依赖、C ABI、测试和 benchmark 归属；整库/模块子集、static/shared、CPU-only/可选后端可组合；
-source embed、`add_subdirectory`、install/`find_package`、CI/交叉编译有一致迁移路径；preset、
-toolchain 和脚本执行环境契约，文档只解释。完成它之后，R1 的 util 才审
-`SpinLock/cpu_relax`、`Ref`、`ScopeGuard`、RNG/type-name 等低层公开头的
-依赖与形状；Registry 和整个 `hyle_util` 产品必须等 container。这是两个真实构建层的门，
-不是对同一模块做两轮无边界复审；本页不记录它们是否已完成。当前严格状态与唯一“下一模块”只见
+R1 只审 `SpinLock/cpu_relax`、`Ref`、`ScopeGuard`、RNG/type-name 等不依赖 container runtime 的
+util-core seam；Registry/runtime 留到 R2，在其直接依赖 container 签署后审。两层沿用同一 util
+能力账本，但各自证书不得互相冒充。build/package system 随后作为独立审查单元：CMake target 图必须准确表达模块源码、公开头、
+依赖、C++ source API、Native FFI schema/export、测试和 benchmark 归属；整库/模块子集、
+static/shared、CPU-only/可选后端可组合；source embed、`add_subdirectory`、install/`find_package`、
+CI/交叉编译有一致迁移路径；preset、toolchain 和脚本只执行这些合同，文档负责解释。当前严格状态
+与唯一“下一模块”只见
 [`pre-release-readiness.md`](../milestones/pre-release-readiness.md)。
 
 math 不按“28 行小模块”单独快速封口。它不是从用户场景独立设计出来的产品，而是 clay math
 迁移后，大部分能力被标准库或 hyle::simd 承载所剩的集合。R4 必须逐项回答“为什么是
 `hyle::math` 而不是 std、simd 或消费域”，再决定保留命名空间、迁移能力、合并目标或删除；
-在边界裁决前不为当前偶然 surface 机械扩 C ABI。
+在边界裁决前不为当前偶然 surface 机械扩 direct Native FFI。
 
 下面是统一方法的压缩门，不是完整施工步骤：
 
 1. 从真实用户/HYLE 内部消费者场景列能力与负空间，再与本地成熟库逐项对账；参考库是查漏与算法/形状证据，不是照抄功能数量。
 2. 先审 C++ source API 的 ownership、lifetime、concurrency、failure 和组合方式；不得保留只为 benchmark 存在的类型、元数据或入口。
 3. 证明复杂度档与同合同正常用法性能；微基准只解释机制，不能反向塑造产品 API。点值、方法和 win/loss 只写 performance。
-4. C ABI 覆盖全部语言无关能力，使用共享 error 合同；C++ 模块内部不绕经 C ABI。纯 C 头、导出、生命周期和 FFI 组合必须机械验证。
+4. direct Native FFI 只覆盖真实 Java/.NET 等绑定任务所需的语言无关能力，使用共享 error 合同；C++ 模块内部不绕经 ABI bridge。pure-C fixture 只验 schema/compiler/export hygiene；真实 FFI 必须从精确路径加载 shared library 并调用导出符号。
 5. 同轮检查依赖的两面：本模块是否正确消费已冻结地基，以及直接下游是否仍自造重复机制或错误调用；只回验实际受影响边。
-6. 交付 architecture、语言无关/C++ 选型 guide、`c-<module>` 精确映射、坑点、测试和性能证书；milestone 只保存施工记录。
+6. 交付 architecture、C++ source/direct Native FFI 选型 guide、精确映射与坑点、测试和性能证书；milestone 只保存施工记录。
 
 ## 三、验收门槛与状态信源
 
-> **进度不在这里维护**（避免两处状态表互相 drift）。逐里程碑的真实状态 + cloc 实测 LOC +
-> clay API diff 是 [`../milestones/README.md`](../milestones/README.md) 的"全部里程碑"表，**那是唯一信源**。
-> 本文件只管**拓扑序、施工计划、决策、验收门槛**这些慢变内容。
+> **当前严格证书不在这里维护**（避免两处状态表互相 drift），唯一信源是
+> [`pre-release-readiness`](../milestones/pre-release-readiness.md)。
+> [`../milestones/README.md`](../milestones/README.md) 只索引 work-item 的历史施工状态；实时 LOC 由
+> `scripts/loc-report.py` 计算并写入当前模块证书。本文只管**拓扑序、施工计划、决策、验收门槛**。
 >
 > 本节有意不再复制“一句话现状”、模块冻结表、LOC 或完成百分比：这些快变信息曾多次与
 > milestones 漂移。roadmap 只回答依赖顺序和验收门；当前认证状态只读
@@ -212,9 +214,9 @@ math 不按“28 行小模块”单独快速封口。它不是从用户场景独
 | P1 | platform 三平台编译与 OS 机制冒烟；time 单调/墙钟分离、饱和 deadline、exact-ns radix/common queue oracle |
 | P2 | mem 对齐/NUMA/pool/allocator 正确性与 mimalloc peer；simd 每后端对拍 scalar、ULP 与运行期 ISA 安全 |
 | P3 | container 的 hash/table/string/队列分层对标；lock-free 线性化与 TSan；公开头的 util-core include 边不得引入 `hyle_util` 链接环 |
-| P4 | sched 的 fiber/work-stealing/sync/timer 汇合；util-runtime 的 registry/ref/RNG/C ABI；两者都跑 TSan/ASan/UBSan 和对应热路 peer |
+| P4 | sched 的 fiber/work-stealing/sync/timer 汇合；util-runtime 的 registry/ref/RNG 与历史 ABI adapter；两者都跑 TSan/ASan/UBSan 和对应热路 peer |
 | P5 | io 四后端与真网络/file；compute CPU/GPU 对拍与 completion；graph 增量 DAG/数据并行在 sched 上的真消费 |
-| P6 | 已完成 package 合同的回归；纯 C 与跨编译器/FFI 冒烟；全库 sanitizer/ABI surface 和离线/发布 bundle 验收 |
+| P6 | 已完成 package 合同的回归；pure-C schema/compiler fixture 与 Java/.NET shared-library direct FFI 分开冒烟；全库 sanitizer/ABI surface 和离线/发布 bundle 验收 |
 
 ## 四、决策清单
 
@@ -230,7 +232,7 @@ math 不按“28 行小模块”单独快速封口。它不是从用户场景独
 | modules | 暂缓 | charter |
 | 单测 | **GoogleTest** | charter；**用户拍板** |
 | 基准/查错 | nanobench + TSan/ASan/UBSan 分构建 + libFuzzer | charter |
-| 对外沟通 | **纯 extern "C" C-ABI shim（ggml 式）** + 内部 C++23 | charter；**用户拍板**（选方案2 保 ABI 稳定）|
+| 对外沟通 | **C++23 source API + shared library 的 direct Native FFI**；C 语法头是 ABI schema，不是 native-C 产品 | c-abi-design；2026-08 当前边界复审 |
 | io 模型 | proactor + io_uring/IOCP/kqueue/epoll 四后端，借 liburing 不借 asio | io-design |
 | compute | device/stream/kernel 两层抽象 + 借上游 ggml（adapter 隔离）+ Vulkan compute 一等公民 + GPU completion 接 sched | compute-design；**用户确认**（ggml 解耦）|
 | sched 切换 | boost.context **fcontext 裸原语**（不要 boost.fiber），ucontext 出局 | sched-design |
@@ -243,7 +245,7 @@ math 不按“28 行小模块”单独快速封口。它不是从用户场景独
 | tier 倒置 | container(T0) 内联自包含探测片段，不依赖 simd(T1) | simd/container-design |
 | device 内存 | **compute/ 自有 stream-bound buffer（不走 mem/ allocator 抽象）**：device/pinned/unified buffer 各立一个 ggml 式 buffer_type 实例，所有权 + stream 绑定在 compute/;host↔device 边界是显式 copy/command-submit。统一内存(DGX Spark/Mac)无"互传"概念,本就无拷贝可省 | mem/compute-design；**异构内存不强行统一**（device 走 drawcall/提交、统一内存无互传,故 mem/ 只管 host RAM）|
 | simd 向量 | **scalable-friendly 接口 + 先实现定宽后端**（x86 SSE4.2/AVX2/AVX512 + ARM NEON）；将来加 SVE/RVV 不改 API | simd-design；**用户拍板** |
-| hashmap 写法 | **concept 模板写内部 + 过边界特定类型封 C-ABI shim**；去掉 C 宏 temp/哨兵包袱 | container-design；**用户拍板** |
+| hashmap 写法 | **concept 模板写内部 + 真实绑定需要时封 direct Native FFI**；去掉 C 宏 temp/哨兵包袱 | container-design；当前 FFI 边界由 c-abi-design 校正 |
 
 ### 历史选型（均已落地，保留决策来源）
 
@@ -268,5 +270,7 @@ completion poller 和 `spawn_blocking` 均已落地；其当前机制见 sched/c
 - `src/*/CMakeLists.txt` 的 target 依赖变化时，同一提交更新第一节真相表。
 - 公开头新增跨模块 include 时，必须判断是 PUBLIC target 边还是可证明自包含的 header-only 边。
 - util/obs 变更必须分别检查两层；禁止把 util-core 与 util-runtime、obs-runtime 与 trace gate 再次压成一个假节点。
-- 实时 LOC/状态只写 hyle-scope/milestones，性能点值只写 performance，本文只维护拓扑、能力顺序和慢变决策。
+- 当前严格状态只写 pre-release-readiness；当前 LOC 只由脚本生成并写入本轮模块证书；
+  hyle-scope/milestones 中标日期的旧 LOC 只作历史快照。性能点值只写 performance，本文只维护
+  拓扑、能力顺序和慢变决策。
 - CI 应增加 CMake target graph 与公开头 include 扫描；人工 ASCII 只做可读摘要，真相表必须可由构建配置复核。

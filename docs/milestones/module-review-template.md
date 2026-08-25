@@ -13,14 +13,15 @@
 | 起点 commit / 旧证书 | `<sha>` / `<doc#section>` |
 | 当前状态 | `OPEN/AUDITED/CANDIDATE/EVIDENCE_COMPLETE/SIGNED/REOPENED` |
 | candidate commit/tree | `<sha>` / `<tree>`；未冻结写 `none` |
-| required CI / push | `<run/url/status>` |
+| required CI / push | `<run/url/status>`，或明确 `N/A/waiver` + 等价真机证据与未覆盖项 |
 
 ## 1. 审查单元与依赖
 
 | 边界项 | 文件/target/symbol | public/internal | 本轮纳入 | 理由 |
 |---|---|---|---|---|
 | C++ surface |  |  |  |  |
-| C/FFI surface |  |  |  |  |
+| native-C helper（若有；非产品） |  |  |  |  |
+| direct Native FFI schema/export |  |  |  |  |
 | private hot kernel |  |  |  |  |
 | build/package/export |  |  |  |  |
 | direct upstream |  |  |  |  |
@@ -61,12 +62,13 @@
 | C++ 默认路径 |  |  |  |
 | C++ 高级/调优路径 |  |  |  |
 | C++ 相邻模块组合 |  |  |  |
-| C 默认路径 |  |  |  |
-| C/FFI 高级或 callback 路径 |  |  |  |
+| Java FFM direct path（或模块 FFI=N/A） |  |  |  |
+| .NET P/Invoke direct path（或模块 FFI=N/A） |  |  |  |
+| Native FFI handle/buffer/callback/batch |  |  |  |
 
-| 语言无关能力 | C++ 入口 | C 表达：symbol/opaque/inline/visitor | 缺口或明确不导出理由 |
-|---|---|---|---|
-|  |  |  |  |
+| 能力 | C++ source 入口 | foreign-runtime 任务 | direct export/opaque/POD/callback/buffer/batch | 不导出理由或缺口 |
+|---|---|---|---|---|
+|  |  |  |  |  |
 
 ## 5. 正确性、平台与交付矩阵
 
@@ -74,7 +76,9 @@
 |---|---|---|---|---|
 | Release / Debug |  |  |  |  |
 | ASan / UBSan / TSan（适用项） |  |  |  |  |
-| pure C / C++ header / surface |  |  |  |  |
+| C++ header + pure-C schema/compiler fixture |  |  |  |  |
+| shared export + exact-path minimal dynamic call |  |  |  |  |
+| Java + .NET managed smoke（至少一台宿主；无 FFI 则 N/A） |  |  |  |  |
 | shared installed consumer |  |  |  |  |
 | static installed consumer |  |  |  |  |
 | source add_subdirectory/bundle |  |  |  |  |
@@ -100,7 +104,8 @@
 
 - [ ] architecture 只保留稳定职责、类型、依赖与负空间；
 - [ ] guide 回答“什么情况用什么”、默认/高级/组合写法与坑；
-- [ ] C guide 给出能力映射、所有权、callback/FFI 坑；
+- [ ] Native FFI guide 从真实导出表出发，给出 Java/.NET 映射、ABI bootstrap、ownership、
+      buffer/callback/batch 与坑；native-C helper 单列且不冒充产品；
 - [ ] performance 绑定 workload/peer/harness/runner/compiler/candidate 与原始日志；
 - [ ] milestone 记录施工，不冒充当前设计；
 - [ ] 方法论第十二节十个红队问题逐条回答，无“未看”。
@@ -116,5 +121,6 @@
 
 最终证书必须列出：candidate commit/tree、公开 surface hash/manifest、三平台日志索引、peer revision、
 claim-bearing benchmark 与 runner identity、每进程 paired raw JSON、五态 exact verdict 与独立
-SOTA gate 的 order/shape 合成、shared/static/source 交付结果、required CI、最终提交与 push。
+SOTA gate 的 order/shape 合成、C++ shared/static/source 交付结果、适用的 shared Native FFI
+exact-path Java/.NET 结果、required CI、最终提交与 push。
 任何空项或目标 claim 的 gate 未决都保持黄色。

@@ -1,6 +1,12 @@
-# HYLE time：纯 C / FFI 指南
+# time Native FFI 候选（待 managed review）
 
-本页只解释 [`hyle/c/time.h`](../../include/hyle/c/time.h) 的 C ABI。先在
+> **当前状态（Native FFI 复审前）**：HYLE 没有 native-C 客户。本页记录的是旧 C-shaped
+> surface / Native FFI 合同候选，不是已认证的 C 产品。复审先裁决真实外语任务；可以结论为
+> `FFI=N/A`。只有保留 direct FFI 时才用 Java FFM + .NET P/Invoke 重新验收动态导出、所有权、
+> 回调和 batch 形状；在此之前，正文中的“稳定”“完整”
+> “纯 C 用户”等说法都只属于历史描述，不是当前跨语言证书；首发前 surface 可改变。
+
+本页只盘点 [`hyle/c/time.h`](../../include/hyle/c/time.h) 的 pre-release FFI schema 候选。先在
 [`time.md`](./time.md) 按场景选能力；C++ 用户直接使用 `hyle::time`，不要在 HYLE 内部绕 C ABI。
 
 ```c
@@ -201,6 +207,6 @@ arm/cancel 必须串行投递到 owner event loop。非 NULL 的 `out_cancelled/
 caller-storage 已消除海量 timer 的逐对象 allocation，同时保留 Status 与 opaque layout；不要
 为了微测绕过这两个边界。
 
-完整动态 surface 由 `tests/time/c_surface_symbols.txt` 机械冻结；C 头自包含门同时用 C11 与
+当前候选动态 surface 由 `tests/time/c_surface_symbols.txt` 机械对账防漂移；C 头自包含门同时用 C11 与
 C++23 编译。性能与平台证据只维护在
 [`benchmarks-time.md`](../performance/benchmarks-time.md)。

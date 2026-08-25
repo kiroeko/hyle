@@ -1,6 +1,12 @@
-# util 纯 C ABI 使用指南
+# util Native FFI 候选（待 managed review）
 
-先用 [`util.md`](./util.md) 判断该选哪种能力；本页只说明纯 C/FFI 的准确形状。包含
+> **当前状态（Native FFI 复审前）**：HYLE 没有 native-C 客户。本页记录的是旧 C-shaped
+> surface / Native FFI 合同候选，不是已认证的 C 产品。复审先裁决真实外语任务；可以结论为
+> `FFI=N/A`。只有保留 direct FFI 时才用 Java FFM + .NET P/Invoke 重新验收动态导出、所有权、
+> 回调和 batch 形状；在此之前，正文中的“稳定”“完整”
+> “纯 C 用户”等说法都只属于历史描述，不是当前跨语言证书；首发前 surface 可改变。
+
+先用 [`util.md`](./util.md) 判断该选哪种能力；本页只盘点 pre-release FFI schema 候选。包含
 `hyle/c/util.h`，请求 CMake component `util` 并链接 `hyle::util`。当前 ABI 有 **47 个动态
 符号 + 10 个 header-inline 便利入口**；可失败的控制面统一返回 error 模块的 owning
 `hyle_status`，不再有 util 私有的线程局部错误槽。

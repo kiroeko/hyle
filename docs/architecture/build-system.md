@@ -3,7 +3,7 @@
 ## 定位
 
 HYLE 的 CMake target 图是项目组织架构的可执行版本，不只是“把当前仓库编过”的脚本。
-源码、公开头、C ABI、直接依赖、可选后端和验证面都必须归属到 target；文档解释怎样选择，
+源码、C++ 公开头、Native FFI schema/export、直接依赖、可选后端和验证面都必须归属到 target；文档解释怎样选择，
 不能用目录顺序、全局变量或维护者记忆补全隐藏依赖。
 
 ## 设计目标与不可变原则
@@ -76,11 +76,13 @@ component、linkage、tests，再为实际使用的可选后端补一个明确�
 
 | 交付形状 | 构建入口 | 内容与用途 |
 |---|---|---|
-| headers + shared libraries | `HYLE_INSTALL=ON; HYLE_STATIC=OFF` | 动态 SDK；安装 target、运行库、头、manifest 和 license closure |
-| headers + static libraries | `HYLE_INSTALL=ON; HYLE_STATIC=ON` | 静态 SDK；额外传播 link-only 私有 archive/系统依赖 |
-| complete source | 顶层构建的 `hyle_source_package` | 干净 Git commit 的完整 tracked tree；客户用同一 component/feature 图自行组装 |
+| headers + shared libraries | `HYLE_INSTALL=ON; HYLE_STATIC=OFF` | C++ 动态 SDK；也是**经模块复审后** direct Native FFI 唯一可加载的载体，不表示每个 shared module 都承诺 FFI |
+| headers + static libraries | `HYLE_INSTALL=ON; HYLE_STATIC=ON` | C++ 静态 SDK；额外传播 link-only 私有 archive/系统依赖 |
+| complete source | 顶层构建的 `hyle_source_package` | C++ 源码交付；干净 Git commit 的完整 tracked tree，客户用同一 component/feature 图自行组装 |
 
-三者改变的是 artifact closure，不改变许可证。源码包不能从工作目录盲拷贝：target 遇到 tracked
+三者改变的是 artifact closure，不改变许可证。HYLE 当前没有 native-C 客户产品；C 语法头是
+direct Native FFI 的语言无关 schema，pure-C fixture 只验 compiler/export hygiene。托管运行时必须加载
+shared artifact；static archive 或 source tree 不能代替动态绑定证据。源码包不能从工作目录盲拷贝：target 遇到 tracked
 修改或未跟踪文件会拒绝，产物带 export-substituted commit manifest 与 SHA-256。
 HYLE 被父工程 `add_subdirectory()` 嵌入时不创建源码分发 target，避免一个依赖暗中接管父工程打包。
 
@@ -116,6 +118,11 @@ target link 表达的 INTERFACE component，不能从图里省略。只提供 OS
 `hyle/platform.h` 与 `hyle_trace` 横切 gate 不作为产品 root。包含 `hyle/platform.h` 只是零链接代价的编译环境
 依赖，不等于链接 `hyle::platform`；例如 time 的 native clock 实现用它选择 OS 分支，但 time 的
 二进制闭包仍然只有 error。反向的 `platform/fs.h -> time/unix_timestamp.h` 也只是自包含的
+
+组件图描述 C++ 实现/交付依赖，不为 FFI 形式强迫所有模块依赖 `hyle_core`。direct FFI 的版本常量
+全局一致，但握手逐 artifact 进行：core 用 `hyle_ffi_abi_version`，以后实际保留 FFI 的其他模块从
+自己的 shared library 导出 `hyle_<module>_ffi_abi_version`。因此 `HYLE_COMPONENTS=mem` 不会仅为
+一个无关 core 查询改变 native 闭包；若 mem 最终 `FFI=N/A`，它根本不增加 FFI bootstrap。
 C-compatible 时间值头：platform 不调用 time 符号，所以 platform 的 target 闭包仍然只有 error。
 未设置 `HYLE_COMPONENTS` 时默认 `all`；逗号与分号都可分隔多个根。
 显式空值会失败，避免丢失的 shell/CI 变量意外触发全库与重型依赖。父工程在
@@ -124,8 +131,8 @@ C-compatible 时间值头：platform 不调用 time 符号，所以 platform 的
 requested/resolved 清单，因此一次构建“组装了什么”可审计。
 方括号内的 sched 边只在 HYLE 已接入 fcontext 的目标组合上存在（当前为 x86-64
 Windows/Linux/macOS 与 arm64 Linux/macOS）；其他平台仍可组装 io proactor、compute host/backend
-基础层和 graph serial core。io 的 `error/mem/container/[sched]` 都是 PUBLIC usage requirement：C ABI
-按值返回 owning `hyle_status`/接受 allocator，C++ 公开头还含 container 类型与 header-inline sched 调用，
+基础层和 graph serial core。io 的 `error/mem/container/[sched]` 都是 PUBLIC usage requirement：历史 ABI
+surface 按值返回 owning `hyle_status`/接受 allocator，C++ 公开头还含 container 类型与 header-inline sched 调用，
 所以只链接 `hyle::io` 的 installed consumer 也会得到正确 import/runtime closure。显式请求不受支持的
 sched 会在 configure 阶段失败，不会静默降级。
 
@@ -166,7 +173,7 @@ configure 失败，TLS AUTO 则不探测 OpenSSL。稳定 stub/availability=0 �
 绝不登记未编入的能力。CUDA、Vulkan 和 host compute 不因缺 fcontext 被连带关闭。
 io 还在真实 target 上 PUBLIC 导出 `HYLE_IO_HAS_COROUTINE_TRANSPORT=0|1`：无 fcontext 的
 安装包虽保留统一头文件树，但 sched-dependent C++ 头会在值为 0 时给出明确
-compile-time diagnostic；proactor/shared-memory 头与 C HTTP/2 probe/stub 不受影响。这使
+compile-time diagnostic；proactor/shared-memory 头与 pure-C HTTP/2 schema/probe fixture 不受影响。这使
 source-embedded target 和 moved installed target 共享同一 capability 契约，不依赖文件是否存在的推测。
 对不用 CMake target 的合法 headers+library 消费，`hyle/io/capabilities.h` 使用与 CMake
 相同的公开 OS/arch/compiler-ABI 事实推导默认值；若 target 导出值与该事实不一致，
@@ -181,7 +188,7 @@ source-embedded target 和 moved installed target 共享同一 capability 契约
 | 内部 HYLE 直接依赖及 PUBLIC/PRIVATE | `cmake/HyleComponents.cmake` 的声明式 manifest | 同一声明同时生成 component 闭包和真实 target link |
 | 产品源码、外部实现依赖 | `src/<module>/CMakeLists.txt` | `hyle_add_module()` 按 manifest 接入内部边；根只按闭包加入模块 |
 | 重型可选能力发现/取得 | `cmake/Hyle<Module>Dependencies.cmake` | 根只在解析闭包包含该模块时调用其配置入口 |
-| 正确性、C ABI、header/surface 测试 | `tests/<module>/CMakeLists.txt` | `tests/CMakeLists.txt` 提供 GoogleTest、pure-C/surface/header helper 和 aggregate |
+| 正确性、Native FFI schema/export、header/surface 测试 | `tests/<module>/CMakeLists.txt` | `tests/CMakeLists.txt` 提供 GoogleTest、pure-C schema/surface/header helper 和 aggregate；真实 managed FFI 另跑 shared-library consumer |
 | 正常 workload 与 SOTA 对拍 | `bench/<module>/CMakeLists.txt` | `bench/CMakeLists.txt` 提供 nanobench、aggregate 和逐模块装载 |
 
 测试片段是必需所有权：选中的产品组件若没有 `tests/<module>/CMakeLists.txt`，configure 直接失败，
@@ -262,7 +269,7 @@ OpenSSL、CUDA 或 Tracy 的名字。`THIRD_PARTY_NOTICES.md` 仍是需要人工
    下游 SDK 与资产闭包，不把源码/供应商清单写回根 CMake 或中央 package 分支。
 3. 若有重型可选依赖，将发现/取得逻辑放入 `cmake/Hyle<Module>Dependencies.cmake`，根只在闭包选中
    该模块时调用一个配置入口；生成文件进入模块/build tree，不进入源码树。
-4. 提供 `tests/<module>/CMakeLists.txt`，登记 C++ 正确性、适用的纯 C/C surface/header 检查和
+4. 提供 `tests/<module>/CMakeLists.txt`，登记 C++ 正确性、适用的 pure-C schema/surface/header 检查和
    `hyle_<module>_tests` aggregate。没有测试所有权的产品模块 configure 失败。
 5. 有真实 workload 时再提供 `bench/<module>/CMakeLists.txt`；benchmark 可缺席，但不能以 benchmark
    方便为理由改变产品 API、常态 metadata 或依赖形状。
@@ -306,7 +313,10 @@ ctest --test-dir build-container -C Release -L container --output-on-failure
    `find_package(Hyle COMPONENTS ...)` 后链接同名 `hyle::<module>`；config 会拒绝安装中不存在的
    component，并传播 C++23、static/shared、模块依赖和内部静态后端。`Hyle_AVAILABLE_COMPONENTS`
    是本次组装的产品清单，`Hyle_AVAILABLE_FEATURES` 是 trace/TLS/CUDA/Vulkan 等能力清单。
-4. **直接预构建文件**：仅是诊断/ABI smoke 路径；缺少传递依赖建模，不是推荐发布面。
+4. **direct Native FFI shared artifact**：对已经通过真实任务裁决并保留 FFI 的模块，Java/.NET 等
+   host 用精确 shared-library 路径加载，先从同一 handle 调用 artifact bootstrap，再解析其余
+   导出；多模块 binding 逐个握手并只从一个 package/install root 装载完整依赖闭包。这是托管 FFI
+   的产品验证路径，但不替代 C++ 消费者的 CMake target/依赖闭包。
 
 0.1 不另装 pkg-config 文件。oneTBB/Abseil/libevent/mimalloc 的 `.pc` 证明它适合简单 Unix link
 closure，但 HYLE 的 static 包还要表达 C++ link driver、CMake imported archive、可选
@@ -356,16 +366,17 @@ loader identity（例如 `libhyle_time.so.0.1`），package 也只把同 minor �
 以后才切换为常规的 major-only SONAME / `SameMajorVersion`。package smoke 同时检查当前 full
 version exact、同 minor compatible 和下一 ABI generation rejected。
 
-C surface gate 在共享构建检查动态导出表，在静态构建检查 archive 中定义的全局 C 符号；
-二者都还要对齐 reviewed manifest、声明和 pure-C 引用，不能用“静态库没有 exports”跳过 ABI
-完整性验证。
+direct Native FFI 的产品事实只来自 shared 构建：仅对复审后保留 FFI 的模块，动态导出表才是
+产品 manifest，随后由 Java/.NET 等 host 从精确 library path 逐 artifact 握手、解析并调用；无真实
+foreign-runtime 任务可明确 `FFI=N/A`。静态 archive 的全局 C 符号检查和 pure-C 引用仍可
+守住 schema/compiler/link hygiene，但它们不证明托管运行时可绑定，也不把 static SDK 变成 C 产品。
 
 ## 验证产物归属
 
-`hyle_add_test(module ...)` 和 pure-C helper 只在对应产品 target 存在时创建测试。每个已选模块
+`hyle_add_test(module ...)` 和 pure-C schema helper 只在对应产品 target 存在时创建测试。每个已选模块
 有 `hyle_<module>_tests` aggregate，统一 `hyle_tests` 依赖全部已解析组件的 aggregate。因此：
 
-- 构建 `hyle_core_tests` 会同时产出 core C++/C binary，不再留下 CTest 指向旧或缺失 binary；
+- 构建 `hyle_core_tests` 会同时产出 core C++ test 与 pure-C schema/compiler fixture，不再留下 CTest 指向旧或缺失 binary；
 - 构建 `hyle_tests` 后运行 CTest，登记项与当前组件闭包一致；
 - 切换同一 build tree 的 `HYLE_COMPONENTS` 会重新生成 target/test 集，而不是沿用旧模块。
 
@@ -423,15 +434,16 @@ installed/source consumer 中复验，不能
 PUBLIC 传播 `/analyze`、`-Werror` 或 HYLE 私有宏来替用户决定 warning policy。用户可以选择是否
 把诊断升级为 error，但 HYLE 的验证门必须证明 capable compiler 确实能观察到该合同。
 
-同一个 exported `hyle::_build_contract` 还传播所有 public C headers 的 C17 floor，以及 native
+同一个 exported `hyle::_build_contract` 还传播所有 Native FFI schema headers 的 C17 floor，以及 native
 MSVC 展开 `__VA_OPT__`/variadic macro 所需的 `/Zc:preprocessor`；它们是 source semantics，不能
-塞进 HYLE target 的 PRIVATE warnings。focused C consumer 会故意先声明 C11，再通过链接
-`hyle::core` 被提升到 C17，以免编译器默认模式恰好够新而制造假绿。
+塞进 HYLE target 的 PRIVATE warnings。pure-C focused fixture 会故意先声明 C11，再通过链接
+`hyle::core` 被提升到 C17，以免编译器默认模式恰好够新而制造假绿；这是 schema/compiler hygiene，
+不是 native-C 客户产品证明。
 
 `header-self-contained.py` 的直接 compiler invocation 只证明空 TU 可包含头，以及 must-use
 诊断确实存在；它刻意不伪造 CMake 的 configuration flags，因而不能证明 Release lowering。
-Debug/Release 的 assume/unreachable 行为由真实 `hyle_core_test` / pure-C target 证明，安装后的
-usage requirements 则由 focused child-CMake consumer 证明。CI 必须持续覆盖轻量 Debug 与
+Debug/Release 的 assume/unreachable 行为由真实 `hyle_core_test` / pure-C fixture 证明，安装后的
+usage requirements 则由 focused child-CMake fixture 证明。CI 必须持续覆盖轻量 Debug 与
 multi-config consumer；一次人工 closure 证据不能冒充持续回归能力。
 
 同理，core 的 target-family constructive/destructive 静态值是公共 layout recommendation，
@@ -443,7 +455,7 @@ multi-config consumer；一次人工 closure 证据不能冒充持续回归能�
 
 CI 对 Windows/Linux/macOS 运行全部 15 个产品组件（含 header-only `util_core`）的确定性 CPU
 验证面：TLS、HTTP/2、CUDA、ggml 与
-Vulkan 显式关闭，构建聚合 `hyle_tests` 并运行全部 C++、pure-C、header/surface/ABI 门。它不冒充
+Vulkan 显式关闭，构建聚合 `hyle_tests` 并运行全部 C++、pure-C schema、header/surface/export 门。它不冒充
 带外部 SDK/设备的发布矩阵；这些 feature 仍需独立 release check。已经严格收口的底层 roots 另以
 `HYLE_TEST_INSTRUMENTATION=OFF` 运行 shipping-layout 验证面；这个 root 清单随模块验收推进而显式
 增加，未验收模块即使在 all graph 通过也不会被误写成产品证书。
@@ -451,13 +463,15 @@ Vulkan 显式关闭，构建聚合 `hyle_tests` 并运行全部 C++、pure-C、h
 安装门从空目录制作 shared/static 的 all-component CPU SDK，安装后先整体搬到新 prefix，再允许任何
 consumer 配置，因此绝对 build/install 路径不能冒充 relocatable。外部消费者从 package 公布的
 `Hyle_AVAILABLE_COMPONENTS` 枚举，为每个 `hyle::<component>` 建立独立最小链接目标，机械守住
-export/usage-requirement 图，又不把彼此重叠的 static 闭包硬塞进一个非正常可执行；同时保留真正调用
-mem C API 与 C++ `SystemAllocator` 的 general probes，覆盖
+export/usage-requirement 图，又不把彼此重叠的 static 闭包硬塞进一个非正常可执行；同时保留历史
+ABI-schema probes 与 C++ `SystemAllocator` general probes，覆盖
 `mem -> platform -> error` loader、mimalloc 私有符号和 static C++ link-driver 闭包。严格收口模块在
 `samples/package/<module>/...` 拥有 source-independent focused project；package smoke 递归发现这些
-`CMakeLists.txt`，分别对 shared/static SDK configure、build、run，不维护第二份中央模块名单。error
-当前同时提供从 `LANGUAGES C` 开始的 owning-handle probe 和 `Status`/`Result<T>` C++ probe；io 的
-C/C++ probes 则只链接 `hyle::io`，实际调用 allocator/owning Status/container/header-inline sched surface。
+`CMakeLists.txt`，分别对 shared/static SDK configure、build、run，不维护第二份中央模块名单。
+当前 core 的 `samples/package/core/cpp` 是 C++ 产品 consumer；`samples/package/core/ffi_abi` 是由 C
+编译器表达的 ABI schema/package conformance fixture；真正的托管绑定证据在 `samples/ffi/core`，由
+.NET 8 与 Java 25 从精确路径加载 shared library。其他模块旧有 `*/c` probe 保留为历史
+schema/compiler/package fixture，不能据此宣称 native-C 产品或 managed FFI 已收口。
 只有
 “枚举 target 可链接”不能证明每个模块 API 可用，所以新模块收口时必须提交自己的外部 API probe。
 Linux 还执行 component 空值、嵌入 cache、error-only dependency cache、晚期依赖成员绕过、PUBLIC/PRIVATE
@@ -471,7 +485,7 @@ volk、glslang、GoogleTest、Tracy 官方 archive。重依赖 correctness 只�
 `hyle_io_http2_test`、`hyle_compute_ggml_bridge_test`、`hyle_compute_vulkan_test` 一次，再分别制作
 static/shared SDK，由源码无关 downstream 运行 HTTP/2 SETTINGS 与 host ggml probe；production SDK 仍
 拒绝取得/安装 test-only glslang。另有 obs-only shared/static trace-on SDK/consumer，要求 `HYLE_TRACE_TRACY`
-传播、Tracy header/license/target 完整，并运行 C/C++ trace surface；同一轻量形状也覆盖 static
+传播、Tracy header/license/target 完整，并运行 C++ trace consumer 与 pure-C schema/surface fixture；同一轻量形状也覆盖 static
 单最终 executable（文档允许的 singleton topology）。static 必须携带私有闭包 target/header，
 shared 必须不泄漏它们。该 job
 固定 `--parallel 2`，避免把同一重依赖矩阵无意义复制到三平台 CPU baseline。它描述持续门的职责，
@@ -492,8 +506,9 @@ shared 必须不泄漏它们。该 job
 
 `all` 的含义始终是“仓库在该提交声明的全部当前模块”，所以新增组件自动进入 baseline、安装包、
 源码包和 AArch64 compile。模块验收则是单独的状态迁移：施工中只要求全图不破；严格收口后，把该
-模块的 production-layout roots、module-owned installed API probe、适用 sanitizer/ISA 门和文档合同
-加入长期集合。预发布阶段允许直接改善 C/C++ API，不维护虚假的历史兼容快照；一旦公开 ABI 政策
+模块的 production-layout roots、module-owned installed C++ API probe、适用的 shared-library direct
+Native FFI smoke、sanitizer/ISA 门和文档合同加入长期集合。预发布阶段允许直接改善 C++ API/Native FFI，
+不维护虚假的历史兼容快照；一旦公开 ABI 政策
 冻结，再增设跨版本 consumer/ABI snapshot，而不是用当前编译成功替代兼容性证明。
 
 为控制 CI 成本，Linux 在每个事件跑完整 distribution，Windows/macOS 在 main 与手动触发时补
@@ -517,8 +532,9 @@ host program 与 target library/header/package 搜索严格分开，`CMAKE_TRY_C
 - 新模块必须登记一次 component manifest 并创建 module target；configure 会验证依赖名、拓扑顺序、
   target 已存在，以及所有模块装载后的直接 HYLE link 边与 manifest 完全一致。
 - 新模块自动进入 all-component baseline/distribution/cross compile；严格收口时在
-  `samples/package/<module>/...` 另交 module-owned installed API probe（自动进入 shared/static smoke），
-  并把适用的 production-layout、sanitizer、ISA/后端证书加入长期集合。
+  `samples/package/<module>/...` 另交 module-owned installed C++ API 或 schema fixture（自动进入
+  shared/static smoke）；若存在真实托管绑定任务，再交 shared-library exact-path FFI smoke，并把适用的
+  production-layout、sanitizer、ISA/后端证书加入长期集合。
 - 新可选第三方只能在其消费组件已选且 feature 已启用时发现/取得。
 - 外部依赖的 export target、package feature、下游 SDK 和安装资产只在所属模块 registry 登记一次；
   中央 package 层只做通用投影，不能按供应商名分支。

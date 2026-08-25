@@ -1,5 +1,11 @@
 # obs 设计：同步日志产出 + 编译期追踪
 
+> **Native FFI 状态校正（2026-08-25）**：HYLE 没有 native-C 客户，也没有已发布的 managed
+> binding。本文关于 C/C++、C/FFI 或 C 用户的旧表述只记录待复审的 ABI 候选，不是当前跨语言
+> 证书或兼容承诺；首发前可破坏性调整。先从真实 foreign-runtime 任务裁决 FFI 是否为 `N/A`；
+> 只有保留 direct FFI 时，obs 才必须通过 Java FFM + .NET P/Invoke、真实导出、sink/callback
+> 生命周期与 batch 旅程后冻结该边界。
+
 obs 有两条相互独立的产出通路：
 
 - **log** 面向运行中长期存在的诊断记录。它是同步、level-gated、结构化 fan-out；
@@ -11,8 +17,8 @@ sink/运维系统的职责；obs 只提供基础库应有的安全产出接缝�
 ## 1. 总体架构
 
 ```text
-                  同工具链 / 源码用户                    C / FFI 用户
-               include/hyle/obs/*.h                  include/hyle/c/obs.h
+                  同工具链 / 源码用户             foreign-runtime 任务候选
+               include/hyle/obs/*.h             include/hyle/c/obs.h（未认证）
                          |                                   |
              +-----------+-----------+              +--------+--------+
              |                       |              |                 |
@@ -28,18 +34,18 @@ sink/运维系统的职责；obs 只提供基础库应有的安全产出接缝�
                          |                                             |
           +--------------+----------------+                            |
           |              |                |                            |
-     default stderr   native C++ sink   opaque C sink trampoline       |
+     default stderr   native C++ sink   opaque ABI sink candidate      |
           |                               |                            |
           +---------- callback 外部消费 --+                            |
                                                                        |
                          HYLE_TRACE=ON                                  |
-        native macros ----------------+---------------- runtime C ABI --+
+        native macros ----------------+----------- runtime ABI candidate --+
                                      |
                            one shared hyle_tracy_client
                                      |
                 +----------+----------+---------+----------+
                 |          |          |         |          |
-               mem       sched       io      compute    app/FFI
+               mem       sched       io      compute    foreign host
 ```
 
 共享库构建里 `hyle_tracy_client` 必须也是共享库。若将静态
@@ -137,8 +143,9 @@ configuration：已经通过一次门控的 record 可以完成本次同步 disp
 `log_record` 则适合已有结构化字段，`log_message(std::string_view)` 适合已有 byte view；
 `const char*` 便利重载和 C 的 `hyle_obs_log` 会先扫描 NUL，长度已知时用 view / `_n` 入口。
 
-经本轮审查的 C/FFI 发布面是 `include/hyle/c/obs.h`（首发前仍可按产品需要调整，不把
-“已审查”误写成兼容承诺）：
+现有 `include/hyle/c/obs.h` 是待任务裁决的 C-syntax ABI 候选，不是发布面。HYLE 当前没有
+native-C 产品或已发布 managed binding；先决定真实 foreign-runtime log/trace/sink 任务是否成立，
+可以整块 `N/A`。若保留 direct FFI，下面只是进入 Java/.NET 复审的候选能力：
 
 - POD record/field；
 - opaque sink caller-storage init、system-heap create 与共同 destroy；
@@ -149,13 +156,13 @@ configuration：已经通过一次门控的 record 可以完成本次同步 disp
 - 始终可链接的 runtime trace free functions，包括与 C++ hook 同合同的 logical-fiber
   enter/leave；稳定 pointer identity/lifetime 留在调用方，不穿 ABI 暴露 Tracy/scheduler 类型。
 
-C ABI 不暴露 `std::format`、C++ reference、STL、Tracy 类型或 C++ 类布局。各语言
+候选 ABI 不暴露 `std::format`、C++ reference、STL、Tracy 类型或 C++ 类布局。各语言
 在本语言侧格式化后调用 `hyle_obs_log_n`，或构造 POD record。`LogField` 在 C++ 面复用
 C POD 的两个 pointer 布局，只为 callback 零复制共享 record 字段；HYLE C++ 调用仍直接走
 native implementation，不绕 C ABI。
 跨导出边界按值传递并嵌入 record 的 `hyle_obs_log_level` 是明确的 `uint32_t` typedef，
 命名 level 使用常量而非 ABI 宽度未定的 `typedef enum`；纯 C gate 以 `-fshort-enums`
-反向证明编译器开关不会改变 layout。
+反向证明编译器开关不会改变当前 schema layout，但不证明 managed binding 或兼容承诺。
 
 可恢复失败统一返回 owning `hyle_status`：输入错误、重复/不存在、registry 满和 callback
 内跨摘分别保留共享 error taxonomy；gate/no-sink 是 OK + `out_emitted=0`。obs 不再维护
@@ -195,8 +202,9 @@ ID、refcount 或拥有型字符串。需要时间戳、线程 ID 等 enrich 时
 - 默认 OFF：宏参数不求值，无函数调用、无后端依赖；
 - ON：zone/plot/counter/fiber/frame/message/memory/thread-name 转发 Tracy。
 
-C/FFI runtime trace 函数必须始终存在，OFF 时是函数级 no-op。它们有一次 ABI 调用，
-所以不能宣传为“关闭态零指令”；极热 C/C++ 源码路径应使用原生宏。
+当前候选 runtime trace 函数在 OFF 时仍存在并做函数级 no-op；这只是现有实现事实。若真实
+foreign-runtime 任务不成立，可以在首发前删除并记 `FFI=N/A`；若保留，它们有一次 ABI 调用，
+不能宣传为“关闭态零指令”，并必须通过 Java/.NET direct smoke。极热 C++ 源码路径使用原生宏。
 Tracy copied text 使用 16-bit byte count，且上游只在 debug assert 长度；adapter 必须先做
 bounded scan。message/zone text 截到 65534 bytes，动态 source-location 的
 name/file/function 各截到 21841 bytes，使 header + 三段 payload 总长始终可表示，不能在
@@ -216,14 +224,18 @@ Tracy。plot/frame/pool 名同理应使用字面量或其他稳定存储。
 
 ## 6. 维护硬门
 
-改日志 registry 或 C trampoline 时必须通过：
+改日志 registry 或候选 ABI trampoline 时必须通过：
 
-1. 正常 C++ 测试 + 编译期 floor codegen + 纯 C consumer（含 caller-storage sink）；
+1. 正常 C++ 测试 + 编译期 floor codegen；纯 C fixture（含 caller-storage sink）只验证
+   schema/compiler/export hygiene；
 2. add/remove/log 并发压力与 remove-waits、自摘、跨摘拒绝测试；
 3. WSL ASan、UBSan、TSan；
 4. 三平台 Release gated/preformatted/formatted 基准；
-5. 动态库导出与 `include/hyle/c/obs.h` / C 测试 / guide 机械覆盖核对；
-6. installed shared/static package 中只请求 `COMPONENTS obs` 的纯 C 与 C++ consumer。
+5. 先裁决真实 foreign-runtime 任务；`N/A` 时记录理由且不制造 parity export；
+6. 保留 direct FFI 时，动态库导出与 `include/hyle/c/obs.h`/fixture/guide 机械对账，并由 Java
+   FFM + .NET P/Invoke 从精确 shared library 验证 sink/callback rooting、remove/drain 和 trace OFF/ON；
+7. installed shared/static package 中只请求 `COMPONENTS obs` 的 C++ consumer；static 不是 managed
+   FFI 载体。
 
 改 trace/CMake 或新增下游 hook 时必须通过：
 

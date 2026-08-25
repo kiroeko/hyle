@@ -28,7 +28,8 @@
 
 ### 命名 / 宏 / 可见性（继承 clay，改前缀 `HYLE_`）
 - `namespace hyle` + 内部 `hyle::detail`。
-- C++ 重类型大驼峰（`Allocator`/`SharedPool`/`SharedPoolCache`）；C-ABI 结构体 snake_case + `_t`(vtable)/`_o`(不透明实例)。
+- C++ 重类型大驼峰（`Allocator`/`SharedPool`/`SharedPoolCache`）；Native FFI schema 使用
+  `hyle_*` snake_case、opaque handle 与固定布局 POD，不暴露 C++ 类型。
 - 导出宏三态（static/dllexport/dllimport，类比 `CLAY_SYS_API`）；`HYLE_FORCE_INLINE`、
   `HYLE_LIKELY/UNLIKELY`、类型化 compile-time cache layout、`HYLE_DISABLE_COPY*`。
 - 删除 clay 里的老编译器退化分支（MSVC<1900、GCC5 等）。
@@ -37,7 +38,8 @@
 
 - **协程驱动 fiber**：`co_await` 作为 fiber 让出/唤醒的语言机制（C++20 协程三编译器已稳）。
 - **分配显式可控、默认零间接**：容器默认编译期 `SystemAllocator`（静态/源码形状内联直达 mimalloc；shared SDK 经 `hyle_mem` 一次直接 import，vendor ABI 不外泄），运行时 `Allocator` 句柄（按值传的 `{alloc/free/realloc fn, state}`）按需 opt-in 注入（arena/mock/跨 DLL）。无隐藏全局堆。
-- **内部完整 C++23**（模板/SIMD/容器尽情用），对外只暴露 C 接缝（见 §6），所以内部 C++ ABI 不外露。
+- **内部完整 C++23**（模板/SIMD/容器尽情用）；C++ 头是正式 source API，跨语言 binary 边界才走
+  direct Native FFI（见 §6），所以 C++ 对象布局不进入外语 ABI。
 - **贴硬件**：cache-line 对齐、分支预测标注、无锁优先（基于 clay 的 catomics）。
 - **构建**：CMake；修掉 clay 的反模式（Clang 硬编码 `-g -O0`、`-march=native` 损害可分发性）。默认编译为共享库（见 §6）。
 
@@ -70,25 +72,38 @@
 ## 5. 边界
 
 - **模块公开/内部二分**：每模块有 `include/`（公开）与 `src/`（内部）。公开头不泄漏内部实现类型。
-- **ABI 承诺只在 C 接缝**：原生 C++ 头是正式 source API，但不承诺跨编译器/跨 STL 二进制
-  兼容；唯一稳定 binary ABI 是对外 C 头（§6）。
+- **binary ABI 承诺只在 Native FFI 接缝**：原生 C++ 头是正式 source API，但不承诺跨编译器/
+  跨 STL 二进制兼容；跨语言稳定边界由 shared artifact 的 C calling convention、真实导出和
+  明确 layout/ownership 共同构成（§6），不是“存在一个 C 头”单独决定。
 - **依赖方向**：`sched/` 是 `io/`、`compute/` 的 completion 共同地基，单向依赖；`graph/` 跑在 `sched/` 上。无环。
 - **第三方解耦**：ggml 等通过 adapter 对接上游 pin 版，HYLE 抽象不暴露第三方类型（见 compute-design.md）。
 
 ## 6. 对外沟通 / FFI（关键决策）
 
-### 决策：**纯 `extern "C"` C 头作唯一 FFI 接缝（ggml 式）+ 内部完整 C++23**
+### 决策：**C++23 source API + shared library 的 direct Native FFI**
 
-- **对外契约 = 一层纯 C 头**：不透明句柄（opaque handle）+ `create/destroy` 配对 + 值类型结构体 + 显式 allocator。所有跨语言消费方绑这一套。
-- **消费方**：TS 写的 agent（N-API / WASM）、Python 写的训练/推理（ctypes/cffi）、Rust（bindgen `-sys` + 安全封装）——共用同一 C 头。
-- **共享/静态 binary SDK 都保留同一 C ABI**；跨语言动态加载通常选择共享库，单体/嵌入式可选静态库。
-  经单独授权还可交付完整源码；交付形状不改变唯一 FFI 接缝，也不改变授权范围。
+- HYLE 没有 native-C 客户，也不维护另一套面向 C 程序员的产品 API。
+- `include/hyle/c/*.h` 使用 C 语法，是为了让 Java FFM、.NET P/Invoke 以及未来正式承诺的
+  Rust/Python binding 描述稳定 calling convention、整数宽度、POD 和 opaque handle。
+- direct FFI 能力必须是 shared artifact 中真实导出的 unmangled symbol；`static inline`、macro、
+  透明自引用结构和调用方另编译的 C recipe 都不是动态能力。
+- 标准形状是 exported free function、opaque handle + create/destroy、可演进 fixed-width POD、
+  callback + context、ptr + len/明确 buffer ownership，以及能摊薄边界成本的 batch operation。
+- 每模块先从真实 foreign-runtime 任务裁决是否需要 direct FFI；没有任务可明确记 `FFI=N/A`，
+  不为追求 C++ parity 制造导出。只有保留 direct FFI 的模块，最低验收才是 Java 与 .NET 从精确
+  `.dll/.so/.dylib` 路径无 shim 直绑；正式发布其他 binding package 时，才把其支持平台加入
+  发布矩阵。C schema 编译测试只是卫生门。
+- headers + static 与完整源码是 C++ 交付形式；headers + shared 同时承载 C++ 动态 SDK 和 Native
+  FFI。源码客户当然可以自行构建 shared artifact，但源码包本身不是可加载 ABI。
 
 ### 与 clay 的关系（回答"clay 是不是也这样保 ABI 稳定"）
-- **方向一致**：clay 已用「`*_api_t` 函数指针 vtable + 不透明指针 + make/destroy 工厂 + 显式 Allocator 注入」穿透 DLL 边界、避免导出 C++ 类布局/STL。
+- **方向一致**：clay 已用「函数指针 vtable + 不透明指针 + make/destroy 工厂 + 显式 Allocator
+  注入」穿透 DLL 边界、避免导出 C++ 类布局/STL。
 - **但 clay 没到纯 C 头**：它仍是 C++ 头（`namespace clay`、模板 `carray`、`string_buf_t` 是纯虚接口依赖 C++ ABI），保的是"同一 C++ 工具链下的跨 DLL 稳定"，**非跨语言/跨编译器**。
-- **HYLE 收紧为纯 C 头**：把 clay 这套精神贯彻到底——这是 ABI 稳定的最强形式（C ABI 跨编译器跨语言都稳），且能被 FFI 直接消费。
-- **协同点**：正因对外只承诺 C ABI，**内部上 C++23 的 ABI 风险被 C 头完全隔离**——编译器/标准版本变动不影响任何 FFI 消费方。这是 §2 敢定 C++23 的底气。
+- **HYLE 收紧为真实 direct FFI**：语言中立 schema 必须与 export manifest、calling convention、
+  ownership 和 managed-runtime consumer 同时成立；不能把 header-inline helper 当导出。
+- **协同点**：外语边界不暴露 C++ 类型，所以内部 C++23 的 STL/layout 风险被 ABI bridge 隔离。
+  稳定性仍限定在声明支持的 target ABI/triple；C 语法不会神奇消除架构、位宽或 calling-convention 差异。
 
 ## 7. 决策速查表
 
@@ -103,8 +118,8 @@
 | 单测 | GoogleTest | 行业标准 + iron 已 vendored |
 | 微基准 | nanobench | 贴硬件、单头 |
 | 并发查错 | TSan/ASan/UBSan 分构建 + libFuzzer | 无锁代码必需 |
-| 对外 ABI | 纯 C-ABI shim（ggml 式）| ABI 最稳 + 跨语言 |
-| 内部实现 | 完整 C++23（不外露）| C 头隔离 ABI 风险 |
+| 对外 ABI | shared library direct Native FFI；C 语法只作 schema | Java/.NET 无 shim 直绑 + 明确 layout/ownership |
+| 内部实现 | 完整 C++23；另有正式 C++ source API | FFI bridge 不暴露 C++ 对象布局 |
 
 ## 8. 下一步
 

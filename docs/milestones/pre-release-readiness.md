@@ -1,29 +1,31 @@
 # HYLE 预发布就绪度与模块严格收口队列（2026-08-25）
 
-> **2026-08-25 当前完整复审队列：**依赖升级与 core 红队共同证明，旧的“严格收口”只能作为
-> 历史施工证据，不能继续充当当前产品证书。**core 已按当前方法重签为 `SIGNED`**；error、
-> platform、mem、time、obs、util、build/package 仍黄，并继续逐个从功能、真实消费者、成熟库、
-> 类型形状、复杂度、C++/C 易用性、依赖、性能资格、三平台和文档完整复审。这不是无证据推倒
-> 重写；旧实现和日志是查漏/回归输入，但每一道门都必须重新作出显式裁决并绑定同一 candidate。
-> `container/simd/sched/io/math` 不在这八个底座模块的本轮签署范围，只回验底座修改直接触及的边；
-> `compute/graph` 仍是半成品，只维持全图机械健康，不用其未稳定形状反向塑造底座 API。
+> **2026-08-25 Native FFI 口径更正：**HYLE 没有 native-C 产品客户；`include/hyle/c/*.h`
+> 是 Java、.NET、Rust、Python 等运行时直接加载 shared library 所用的 C-syntax ABI schema。
+> 过去的 pure-C include/compile/link、`static inline`/宏 recipe 和 C 测试覆盖只能证明 schema 或
+> native-C helper 可用，**不等于 direct Native FFI 收口**。core 的运行时行为基线为 `9459d3f`，
+> source/public-contract、正负 bootstrap harness 与持久化证据绑定 `c0b9a84`；除 core 外的所有模块当前统一标黄，等待逐模块
+> 先裁决真实 foreign-runtime 任务。没有任务可以明确 `FFI=N/A`；只有保留 direct FFI 的模块才
+> 重审真实 exports、opaque/POD/callback/buffer ownership、managed lifetime、batch 形状和
+> Java/.NET direct binding。旧证书继续保留为历史施工/回归输入，但已被本口径 superseded。
 
 ## 结论
 
 HYLE 的“历史任务完成”与“当前严格收口”必须分开读。2026-07-27--30 的证书保存设计来路、
-已发现缺陷和可复用回归，但不能自动成为现在的证书。core 本轮再次发现 C/C++ source contract、
-IntrusiveList 正常形状、cache footprint 与 benchmark 资格问题，完成修复、三平台/API/package/
-消费者和同合同性能闭环后已重新 `SIGNED`。这说明只重签 changed seam 不足以回答
-“功能/API/性能是否真的完成”；其余模块仍须各自建立 review 记录、冻结 candidate，任何未知保持黄色。
+已发现缺陷和可复用回归，但不能自动成为现在的证书，尤其不能以 native-C fixture 代替真实
+managed-runtime 绑定。core 的 C++ source/性能主体沿用此前严格复审，并在 `c0b9a84` 重新裁定
+Native FFI 边界：编译期 compiler/cache/prefetch/list 能力合理不导出，direct FFI 只保留一个
+ABI bootstrap 和两个 product identity symbols。其余模块须各自建立 review 记录、冻结 candidate，
+任何 direct-binding、所有权或 lifetime 未知都保持黄色。
 
 | 层次 | 当前判断 | 下一动作 |
 |---|---|---|
-| 当前严格证书 | core | `a951f0a` 产品候选、`2707583` 正式 harness；功能/API/依赖/三平台/package/性能/文档已 `SIGNED` |
-| 历史严格证书 | error、platform、mem、time、obs、util、build/package | 只作设计/算法/回归输入；当前仍黄色并逐个完整复审 |
+| 当前严格证书 | core | 运行时行为基线 `9459d3f`，source/public-contract/验证 harness `c0b9a84`；Native FFI 候选 manifest 为 3 个符号，Windows Java/.NET exact installed-DLL 正向调用与 incompatible-major 早拒绝、WSL/macOS shared CTest/fixture 单导出已通过；无已发布 binding，故没有兼容义务 |
+| 旧 C/API 施工与证书 | error、platform、mem、time、obs、util、build/package、container、simd、sched、io、math | pure-C/API 数字只作设计/算法/回归输入；无论当时是否签署，当前全部黄色并按 managed direct-binding 标准逐个重审 |
 | 本轮已有中间快照 | mem/container/obs/util 的 Windows Release 与 GCC 14 WSL focused；container 的 Windows/GCC 14、obs 的 Windows installed shared C/C++ consumer；obs exact Tracy 0.14.1 trace-on | 后续改动可使其失效；不扩大为最终 clean、三平台、static、sanitizer、完整性能证书或再次收口 |
-| 尚未整体收口 | container、math、sched、io、simd | 本轮只验证依赖升级触及项；完整收口仍留给后续独立任务 |
-| 仍有能力尾 | compute、graph | 先用真实北极星补能力，再执行同一严格合同 |
-| 整库发布面 | build/package 的 2026-07 架构证书是历史输入 | 在前七模块 public/target 边稳定后完整复审依赖图、三种交付物、离线/source bundle 与 all-component CPU 图 |
+| 尚未整体收口 | container、math、sched、io、simd | 🟡 本轮只验证依赖升级触及项；功能与 Native FFI 均留给后续独立任务 |
+| 仍有能力尾 | compute、graph | 🟡 先用真实北极星补能力，再执行同一严格合同与 Native FFI 裁决 |
+| 整库发布面 | build/package 的 2026-07 架构证书是历史输入 | 🟡 在各模块 direct FFI 边界稳定后，复审 shared artifact、exact-path managed smoke、依赖图、离线/source bundle 与 all-component CPU 图 |
 
 build/package system 的模块 target 图、可组合子集与三种交付形状曾在 2026-07-29 重签；当时又
 启动持续回归任务，把 shared/static package、complete-source 与 AArch64 compile 从代表性组件
@@ -36,6 +38,9 @@ build/package system 的模块 target 图、可组合子集与三种交付形状
 下表解释为什么旧证书失效，不再界定完整复审的上限，也不声明当前 dirty working tree 已通过。
 详细依赖身份与证据门见
 [`dependency-upgrade-2026-08`](./dependency-upgrade-2026-08.md)。
+
+> 下表沿用的 “C ABI/纯 C/symbol surface” 是当时的变更定位词，不是当前 FFI 证书。
+> 其中任何一项即使再次通过，也只能成为 schema/helper 证据；direct FFI 仍须按本页新门单独验收。
 
 | 历史收口范围 | 本批次实际改动 | 完整复审的优先证据入口 |
 |---|---|---|
@@ -141,10 +146,17 @@ GitHub Actions run `30486529929` 的四个 job 均在零 step、约 3s 时失败
 2. **架构与类型形状**：ownership、lifetime、concurrency、failure、组合方式贴正常调用；删除只为 benchmark 方便而存在的 API/元数据/类型。
 3. **复杂度与性能**：先争取同类 SOTA 算法复杂度，再在同合同正常 workload 对拍强 peer；微基准只能解释机制，不能决定公开形状。
 4. **正确性与平台**：所有权、OOM/overflow、并发、失效、平台差异和 feature dispatch 红队；Windows/Linux/macOS，适用时 ASan/UBSan/TSan/特殊 ISA。
-5. **C++ 易用性**：首选 source API 的默认/高级/组合三条用户旅程有可复制 recipe；RAII/typed 入口、默认值、失效规则和错误传播不要求用户理解内部状态，HYLE C++ 内部不得绕经 C ABI。
-6. **C ABI 完整性与易用性**：覆盖全部语言无关能力；共享 `hyle_status`/error 语义，并提供所需 init/default/typed inline 便利层；纯 C 头、动态导出、所有权、callback/visitor 生命周期与 FFI 组合机械验证。
-7. **依赖收束**：向下确认正确使用已冻结 error/platform/mem/time 等能力；向上扫描直接消费者是否自造重复机制或错误调用。只重测实际受影响边。
-8. **文档归位**：architecture 管稳定设计，performance 管方法和点值，`guide/<module>.md` 管“什么情况选什么”的 C++/语言无关入口，`c-<module>.md` 只管精确 C 映射与坑，milestone 保留施工记录。
+5. **C++ 易用性**：首选 source API 的默认/高级/组合三条用户旅程有可复制 recipe；RAII/typed 入口、默认值、失效规则和错误传播不要求用户理解内部状态，HYLE C++ 内部不得绕经 Native FFI ABI。
+6. **Native FFI 完整性与易用性**：先从真实外语 runtime 任务决定本模块是否需要 direct FFI；
+   没有任务可明确 `N/A`，不得制造 parity export。存在任务时，C-syntax schema 只描述真实
+   shared-library exports；无原生 C 产品旅程。逐项裁决 exported symbol、opaque handle、固定宽/
+   evolvable POD、callback+context、buffer ownership、managed lifetime 与 batch-first 形状；
+   `static inline`/宏/native-C recipe 不计 direct FFI。Java 与 .NET 必须对 exact artifact 无 shim
+   直绑并先检查待调用 artifact 自己的 ABI bootstrap，WSL/macOS 至少验证真实 shared export
+   和最小调用；一个 core 查询不能替其他 DLL/so/dylib 背书。编译期能力可有理由不导出。
+7. **依赖收束**：向下确认正确使用当前已签署的地基（目前只有 core；随队列增加）；向上扫描
+   直接消费者是否自造重复机制或错误调用。只重测实际受影响边。
+8. **文档归位**：architecture 管稳定设计，performance 管方法和点值，`guide/<module>.md` 管 C++ source 选择，`c-<module>.md` 管 Native FFI schema、真实导出、managed ownership/lifetime 与 binding 映射；native-C helper 必须另列且不得冒充 FFI，milestone 保留施工记录。
 
 参考库不是 feature 数量竞赛。每个借鉴项必须能回答“哪个真实场景需要它”；每个性能结论
 必须同合同、同所有权、同并发度、同错误语义。否则宁可登记未知，也不能用一个容易赢的
@@ -154,49 +166,53 @@ benchmark 宣称 SOTA。
 
 排序依据是**接口爆炸半径 + 消费关系**，不是目录顺序，也不是谁的 benchmark 更多：
 
-1. **core** ✅：零依赖根、compiler/cache/list 形状、C++/C/package、真实消费者和五态/单边
-   性能全部重新裁决；当前 `SIGNED`，无重开触发器不再重复全审。
-2. **error**：在 core 签署后复审共享失败模型、context 复杂度、C ABI/ownership、全库 adoption 和
+1. **core** ✅：运行时行为基线 `9459d3f`、source/public-contract/正负 harness `c0b9a84`；C++ source 边界、3-symbol Native FFI 候选、
+   Windows Java/.NET exact-path direct smoke 与 WSL/macOS shared minimal call 已裁决，当前 `SIGNED`。
+2. **error**：在 core 签署后复审共享失败模型、context 复杂度、Native FFI ownership、全库 adoption 和
    两类真实错误路径性能。
-3. **platform**：在 error 稳定后复审 OS/CPU/thread/fs/VM/NUMA 能力与 C/C++ 易用形状，向上扫描
+3. **platform**：在 error 稳定后复审 OS/CPU/thread/fs/VM/NUMA 能力、C++ source 与 Native FFI 形状，向上扫描
    syscall/CPU probe 绕行。
 4. **mem**：在 error/platform 稳定后复审 allocator/pool/region/NUMA/PMR 的功能、ownership、
-   footprint、C 面和同合同 allocator 性能。
-5. **time**：复审 clock/duration/timer queue、溢出/callback/reentrancy、C 面和真实 timer workload；
+   footprint、managed lifetime/buffer ABI 和同合同 allocator 性能。
+5. **time**：复审 clock/duration/timer queue、溢出/callback/reentrancy、Native FFI 和真实 timer workload；
    同时承接 core IntrusiveList 的直接消费者门。
-6. **obs**：复审 log/trace/metric/sink、disabled/normal hot path、caller storage、C ABI 与 Tracy seam。
-7. **util**：先裁决 util-core header seam，再在同一 review 中完成 Registry/runtime；不拆成两个会
-   重复全审的独立模块。
-8. **build/package system**：待前七模块 public/target 边稳定后，完整复审 component graph、三种
-   交付、offline/source bundle、许可证、跨编译器 ABI 和持续 CI。
-9. **后续未收口模块**：container → sched → io → math↔simd → compute → graph；本轮只回验八个
-   底座修改直接触及的边，不能借局部绿灯取得模块证书。
-10. **发布总验收**：install/export、跨编译器 ABI、纯 C/TS/Python 最小 FFI 和发布 bundle。
+6. **obs**：复审 log/trace/metric/sink、disabled/normal hot path、caller storage、Native FFI callback/lifetime 与 Tracy seam。
+7. **util-core seam**：只裁决不依赖 container runtime 的低层自包含头；完整 util 不能越过它的
+   container 直接依赖先签。
+8. **build/package system（已签子集）**：待前七单元 public/target/FFI 边稳定后，完整复审
+   component graph、shared Native FFI artifact、三种 C++ 交付、offline/source bundle、许可证和
+   持续 CI；后续模块只做受影响边回验。
+9. **container → util-runtime**：container 签署后才能审 Registry/runtime；随后回验新增的
+   build/package 组件闭包。再继续 sched → io → math↔simd → compute → graph。
+10. **发布总验收**：install/export、Java/.NET exact-path direct binding、Windows/WSL/macOS 真实
+    shared artifact 和发布 bundle；正式承诺 Rust/Python binding 时追加其 package consumer。
+    native-C fixture 不可代替这些门。
 
 util 的两步是其真实产品分层：前一步只冻结低层自包含头，后一步才冻结依赖 container 的
-`hyle_util` runtime。两步必须使用同一任务页累计证据，禁止演变为两轮全模块复审。
+`hyle_util` runtime。两步使用同一能力账本累计证据，但分别签署审查单元；第二步只回验第一步
+被真实影响的边，禁止演变为两轮无边界全审。
 
 math 的处理相反：它当前不是经过独立需求设计的产品，而是迁移残余。严格复审必须与 simd
 的标量/向量边界一起做；可能结论包括保留清晰 scalar helper、迁移到 std/其他模块或撤销
-独立 target。先决定边界，再决定 guide/C ABI，不能用文档和导出把历史偶然固化下来。
+独立 target。先决定边界，再决定 guide/Native FFI，不能用文档和导出把历史偶然固化下来。
 
 ## 当前模块判定
 
 | 模块 | 实现状态 | 当前严格证书 |
 |---|---|---|
-| core | 功能边界、compiler/list、target-family cache layout 与三种交付已冻结 | 🟢 `SIGNED`：产品 `a951f0a`、正式 harness `2707583`；三平台 C++/C/package/sanitizer/consumer 通过，N=4096 同合同四路径 SOTA gate 全 PASS；N=32/append 机制诊断与 time N=8 不同合同债务未被伪装成 core 胜负 |
-| error | 2026-07 历史证书存在；本轮尚未完整复审 | 🟡 固定宽 C ABI、context 算法、全库 adoption、C++/C 易用性与当前两类性能均须重新裁决 |
-| platform | 2026-07 历史证书存在；本轮尚未完整复审 | 🟡 OS/CPU/thread/fs/VM/NUMA 功能、API/ABI、绕行扫描、三平台与性能均须重新裁决 |
-| mem | 2026-07 历史证书存在；mimalloc 3.5.0 与公开 NUMA/options 已改变输入 | 🟡 allocator/pool/region/NUMA/PMR 功能、ownership、C/C++/交付、sanitizer 与当前性能须完整复审 |
-| time | 2026-07 历史证书存在；`Instant` 与 C timer 合同已改 | 🟡 clock/timer 功能、极值/callback、C++/C/package、三平台和五态性能须完整复审 |
-| obs | 2026-07 历史证书存在；Tracy/C record/sink/fiber 已改 | 🟡 功能、disabled/normal hot path、29-symbol C 面、lifetime、交付与三平台性能须完整复审 |
-| util-core | 2026-07 历史证书存在；与完整 util 同轮复审 | 🟡 Ref/Rng/lock/scope guard、consumer、C++ 易用性、package/TSan/性能均重新裁决 |
-| util-runtime | 2026-07 历史证书存在；priority ABI/overflow/demangle 已改 | 🟡 Registry/runtime 功能、共享 error/mem、固定宽 C ABI、OOM、交付/sanitizer 与性能均重新裁决 |
-| build/package system | 2026-07 历史证书存在；依赖与交付图直接变化 | 🟡 前七模块边界稳定后完整复审 component graph、all-component package/source/AArch64、offline/license/CI 与三种交付 |
-| container | 尚未严格收口；hash/string/simdutf 边直接受影响 | 本轮只收集该 seam 的 correctness、installed consumer 与 simdutf 9.1 同合同证据；不能扩大成 container 功能/API/整体性能 closure，性能差距留待其独立收口处理 |
-| math、sched、io | 功能主体基本完成、尚未严格收口 | 本轮只认证升级直接触及边，不作模块 closure 结论 |
-| simd | 功能主体基本完成、尚未严格收口 | 本轮修正 classic MSVC AVX-512 vqsort 的错误编译器假设：产品 tier 保持 AVX-512、sort 如实回落 AVX2，clang-cl 不降级；focused MSVC/clang-cl build/artifact 与本机 public sort 已过，AVX-512 hosted execution 待 final CI。该结果不代替整体功能/API/三平台性能与发布面 closure |
-| compute、graph | 半成品 | 本轮仅机械兼容；完成能力后再按同合同认证 |
+| core | C++ source 边界与编译期能力保持；Native FFI 候选收为 artifact bootstrap + product identity | 🟢 `SIGNED`：运行时行为基线 `9459d3f`、source/public-contract/正负 harness `c0b9a84`；FFI exports 3/3，Windows Java/.NET strict bootstrap-order exact installed-DLL 正向调用和 incompatible-major 早拒绝、WSL ELF 与 macOS Mach-O core 4/4/fixture 单导出、WSL ASan/UBSan、三种 C++ 交付均通过；无发布兼容承诺，旧 pure-C parity 仅作历史证据 |
+| error | 2026-07 pure-C/ABI 历史证书存在 | 🟡 待按 exported status、ownership/buffer、Java/.NET direct binding、context 算法与全库 adoption 重审 |
+| platform | 2026-07 pure-C/ABI 历史证书存在 | 🟡 待按 opaque OS resource、callback/buffer/lifetime、Java/.NET direct binding、三平台与性能重审 |
+| mem | 2026-07 pure-C/ABI 历史证书存在；mimalloc/NUMA/options 已改变输入 | 🟡 待按 allocator/pool/region/NUMA、opaque ownership、managed lifetime/buffer、三平台交付与性能重审 |
+| time | 2026-07 pure-C/ABI 历史证书存在；`Instant`/timer 合同已改 | 🟡 待按 clock/timer、callback+context/reentrancy、managed lifetime/batch、Java/.NET 与五态性能重审 |
+| obs | 2026-07 pure-C/ABI 历史证书存在；Tracy/record/sink/fiber 已改 | 🟡 待按真实 exports、sink/callback lifetime、disabled/normal hot path、Java/.NET 与三平台性能重审；旧 29-symbol 数字不构成现行证书 |
+| util-core | 2026-07 历史证书存在；与完整 util 同轮复审 | 🟡 待重审 C++ source 边界；编译期能力可合理不导出，不能为凑 FFI parity 制造 DLL hop |
+| util-runtime | 2026-07 pure-C/ABI 历史证书存在 | 🟡 待按 Registry opaque/callback、buffer ownership、managed lifetime、Java/.NET、OOM 与性能重审 |
+| build/package system | 2026-07 历史证书存在；依赖与交付图直接变化 | 🟡 待各模块 FFI 边稳定后重审 shared artifacts、exact-path managed smoke、component graph、offline/license/CI |
+| container | 尚未严格收口；旧 pure-C callable/export 数字存在 | 🟡 待重审 batch-first whole-buffer API、opaque ownership、managed lifetime、Java/.NET direct binding、功能与同合同性能 |
+| math、sched、io | 功能主体基本完成、尚未严格收口 | 🟡 待功能边界与 Native FFI 重新裁决；既有 native-C recipe/局部测试不作 closure 结论 |
+| simd | 功能主体基本完成、旧 244-symbol C 面存在 | 🟡 待以 managed whole-buffer/batch 场景重审真实 exports、buffer ownership、Java/.NET direct binding、ISA correctness 与性能；旧 pure-C 247/244 数字不构成 FFI 证书 |
+| compute、graph | 半成品 | 🟡 先补真实能力，再按同一 C++ source/Native FFI 合同认证 |
 
 ## 停止与重开规则
 

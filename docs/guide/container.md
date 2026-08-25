@@ -1,12 +1,15 @@
 # HYLE container：什么情况选择什么
 
+> C++ 用法仍以本页为准；涉及 C/FFI 的旧列与段落只是待复审的 Native FFI 候选。HYLE 没有
+> native-C 客户，container 在 Java/.NET direct binding 验收前不宣称跨语言产品已收口。
+
 container 提供性能敏感的基础数据结构、借用字符串/路径算法和调度队列。它不是为了
 替换全部 STL，也不因为某个 microbenchmark 赢就要求用户改类型：先按 ownership、元素
 生命周期、并发角色、顺序保证和容量上限选形状，再看性能证书。
 
-本文是语言无关的选型入口，示例使用自然的 C++ typed API。纯 C/FFI 用户先在这里选
-能力，再到 [`c-container.md`](./c-container.md) 查看 Status/out、opaque handle 和 POD
-类型擦除映射。
+本文是 C++ 产品的选型入口，示例使用自然的 typed API。未来若出现真实 foreign-runtime
+任务，binding 复审者可先在这里选能力，再把 [`c-container.md`](./c-container.md) 中的
+Status/out、opaque handle 和 POD 类型擦除视为可删改的候选映射；它目前不是已发布产品。
 
 ## 一页选择表
 

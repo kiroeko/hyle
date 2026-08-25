@@ -1,5 +1,11 @@
 # error 设计：值语义失败、分层上下文与诊断边界
 
+> **Native FFI 状态校正（2026-08-25）**：HYLE 没有 native-C 客户，也没有已发布的 managed
+> binding。本文关于 C/C++、C/FFI 或 C 用户的旧表述只记录待复审的 ABI 候选，不是当前跨语言
+> 证书或兼容承诺；首发前可破坏性调整。先从真实 foreign-runtime 任务裁决 FFI 是否为 `N/A`；
+> 只有保留 direct FFI 时，error 才必须通过 Java FFM + .NET P/Invoke、真实导出、所有权/缓冲区
+> 与 batch/error 旅程后冻结该边界。
+
 > **信源**：本文定义 HYLE error 模块的长期产品形状。用户用法放在
 > `docs/guide/`，性能数字只放在 `docs/performance/`，施工和迁移状态只放在
 > `docs/milestones/`。本文不以已有测试或 benchmark 的形状反推 API。
@@ -7,7 +13,7 @@
 ## 0. 定位
 
 HYLE 是 C++ 基础加速库。error 模块只解决一种问题：**把可恢复的运营失败作为值，
-可靠地跨函数、模块、线程和 C ABI 传递**。
+可靠地跨函数、模块和线程传递；若真实 foreign-runtime 任务成立，再穿过 Native FFI 边界**。
 
 它不承担日志系统、异常框架、崩溃报告器或任意元数据容器的职责。设计从下面的真实
 调用场景出发：
@@ -15,7 +21,7 @@ HYLE 是 C++ 基础加速库。error 模块只解决一种问题：**把可恢�
 1. OS、CUDA、Vulkan、文件和网络调用失败，叶子适配层把原生失败转换为统一状态；
 2. compute/io/platform 等中间层增加“正在做什么”的语义上下文；
 3. 上层按稳定错误码决定重试、降级、返回用户或结束一次任务；
-4. C/FFI 调用方以明确所有权传递同一种失败；
+4. 被选中的 foreign-runtime 任务以明确所有权传递同一种失败；没有任务时该边界可为 `N/A`；
 5. 调用方违反合同或 HYLE 内部不变量损坏时立即 fail-fast，而不是伪装成 Status；
 6. 应用需要日志时显式使用 obs，而不是 Status 在传播途中偷偷输出。
 
@@ -72,7 +78,7 @@ Status failed = Status::Unavailable("device lost");
 - `status.IgnoreError()`：明确标注调用方有意忽略一次失败，替代含义不清的 `(void)`。
 
 `status.h` 不引入 owning string 或 iostream。需要 C++ owning 人读输出时显式包含
-`hyle/error/format.h`，使用 caller-owned `to_string(status)`；C/FFI/低层
+`hyle/error/format.h`，使用 caller-owned `to_string(status)`；caller-buffer/低层
 日志继续使用 `ToString(char*, size_t)`，避免为便利接口加重每个热路径 TU。
 
 canonical code 使用 Abseil/gRPC 的稳定集合，不增设每个后端一套公共枚举。常用边界：
@@ -83,7 +89,7 @@ canonical code 使用 Abseil/gRPC 的稳定集合，不增设每个后端一套�
 - `Unavailable`：外部服务、驱动或设备暂不可用，可由上层决定是否重试；
 - `Unimplemented`：当前构建/后端不支持用户明确请求的能力；
 - `Internal`：外部依赖返回无法进一步分类的失败，不用来掩盖 HYLE 自身不变量损坏；
-- `Unknown`：来自 C/FFI 的非法枚举或确实无法分类的外部错误。
+- `Unknown`：来自不可信 ABI/外部输入的非法枚举或确实无法分类的外部错误。
 
 ### 2.2 canonical code 与原生 detail
 
@@ -253,21 +259,23 @@ HYLE 当前 `sched::Task<T>` 是独立的协程值模型，并不返回 `Result<
 异常。HYLE 尚未发布，不保留兼容别名。新宏必须迁入 compute、graph、platform 等真实
 调用链后才能算被产品接受；仅有宏单测和微基准不构成验收。
 
-## 3. C/FFI 产品面
+## 3. Native FFI 候选面
 
-C ABI 保持一个 machine word 的 owning handle：
+现有 `hyle/c/error.h` 与 bridge 使用一个 machine word 的 owning handle：
 
 ```c
 typedef struct hyle_status { uintptr_t rep; } hyle_status;
 ```
 
-公开 C++ `Status` 不暴露 raw representation 的 adopt/release。HYLE 各模块内部只传 C++
+它只是 C-syntax ABI 候选，不是 native-C 产品或已发布 managed contract。先由真实 Java/.NET 等
+任务决定是否保留；没有任务时可整体 `N/A`。公开 C++ `Status` 不暴露 raw representation 的
+adopt/release。HYLE 各模块内部只传 C++
 `Status` / `Result<T>`，不通过 `hyle_status` 互调；raw representation 的零拷贝 ownership
-转移只允许出现在 `src/*/c_*.cc` 对外 C ABI shim（共同使用 `src/error/status_access.h`），
-不是模块间 ABI。C handle 的零值 initializer 是
+转移只允许出现在 `src/*/c_*.cc` 对外 ABI 候选 bridge（共同使用 `src/error/status_access.h`），
+不是模块间 ABI。当前候选 handle 的零值 initializer 是
 `HYLE_STATUS_INIT`，所有会释放/替换旧值的 pointer API 都要求目标已初始化。
 
-能力必须覆盖：
+若任务裁决保留 owning Status direct FFI，至少复审以下任务能力，而不是按 C++ 名称机械 parity：
 
 - OK/错误创建；
 - clone、move、free；
@@ -288,14 +296,14 @@ void hyle_status_add_context(hyle_status* status, const char* context);
 ```
 
 `status == NULL`、OK、NULL/空 context 均为 no-op。成功时替换 handle 中的
-representation；分配失败时保持原状态及原消息不变。这样 C 用户不需要同时管理“旧状态
+representation；分配失败时保持原状态及原消息不变。这样 foreign host 不需要同时管理“旧状态
 和新状态”两个 owning handle。
 
-C 传入的 fixed-width code 属于不可信 FFI 输入。非法 `hyle_status_code` 归一为
+ABI 调用方传入的 fixed-width code 属于不可信输入。非法 `hyle_status_code` 归一为
 `HYLE_STATUS_UNKNOWN`，不能
-让越界值进入内部 tagged representation。C++ 与 C code 表仍由编译期逐项断言保持一致。
+让越界值进入内部 tagged representation。C++ 与候选 schema 的 code 表仍由编译期逐项断言保持一致。
 
-C error 头只负责 Status。日志与 sink 使用 `hyle/c/obs.h`；C 调用方自身的程序错误由
+若保留该候选，error 头只负责 Status。日志与 sink 属于 obs；foreign host 自身的程序错误由
 宿主语言/runtime 的 fail-fast 机制处理，不在 `hyle/c/error.h` 保留第二套
 warning/error/fatal API。
 
@@ -377,8 +385,8 @@ benchmark 必须从正常调用链反推：函数边界、所有权、错误率�
 
 ### 真实产品路径
 
-- platform：Thread/DynLib/MappedFile 的原生 OS 失败 → Status → C ABI；VM/NUMA
-  已迁入同一 translator/context 合同；
+- platform：Thread/DynLib/MappedFile 的原生 OS 失败 → Status；若 platform 保留 direct FFI，
+  再由其候选 adapter 转换。VM/NUMA 已迁入同一 translator/context 合同；
 - compute：CUDA/Vulkan 叶子错误 → buffer/kernel 高层上下文；
 - graph：`Result<T>` 提取与跨层传播；
 - sched：`Result<void>` 的 join/channel 正常返回与传播；
@@ -393,9 +401,11 @@ benchmark 必须从正常调用链反推：函数边界、所有权、错误率�
 error 只有同时满足以下条件才能冻结：
 
 1. C++ API：Status/Result/context/传播覆盖三条真实产品调用链；
-2. C ABI：所有适合 FFI 的 Status 能力可达，无诊断 handler 残留；
+2. Native FFI：先以真实 foreign-runtime 任务裁决；无任务可明确 `N/A`。保留时只覆盖任务所需
+   Status 能力，Java FFM + .NET P/Invoke 从精确 shared library 验证 ABI bootstrap、owning handle、
+   buffer 和错误旅程；纯 C 编译/manifest 只算 hygiene；
 3. 边界：error、obs、fatal 没有重复职责和依赖环；
-4. 正确性：OOM 保级、复制/移动、并发引用计数、非法 C 输入和格式化截断均验证；
+4. 正确性：OOM 保级、复制/移动、并发引用计数、非法 ABI 候选输入和格式化截断均验证；
 5. 可诊断性：CUDA/Vulkan/OS 错误保留 operation、原生名称、数值和可查询 native detail；
 6. 性能：Windows、Linux、macOS 的核心与真实路径均无未解释回退；
 7. 文档：architecture 只保留本文的稳定设计，guide 是 recipe，performance 是数字，

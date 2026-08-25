@@ -1,5 +1,10 @@
 # SIMD native/runtime 双轨指南
 
+> **状态校正（2026-08-25）**：本页的 SIMD 派发/ISA 设计仍是有效实现说明；其中“稳定 C ABI”、
+> “普通应用走 `hyle/c/simd.h`”与 243/246 个发布入口是 2026-07 历史结论。HYLE 没有 native-C
+> 客户，SIMD direct FFI 仍为黄色候选：先裁决真实外语 whole-buffer 任务，无任务可 `FFI=N/A`；
+> 只有保留时才以逐 artifact bootstrap、Java/.NET 和 managed buffer/lifetime 重新签署。
+
 HYLE 的派发边界按**类型契约**划分，不按“头文件还是 `.cc`”划分。一个函数只要让
 target-dependent vector/mask 类型穿过边界，就只能在编译期确定 target；一个函数若只有指针、标量、
 长度和不透明状态，就可以编成多个 ISA 变体并在稳定边界选择。
@@ -32,7 +37,7 @@ target-dependent vector/mask 类型穿过边界，就只能在编译期确定 ta
              scalar / SSE4 / AVX2 / AVX512 / NEON / SVE / RVV
 
      custom kernel: hyle_add_fat_kernel -> per-ISA entries -> HYLE_SIMD_SELECT_FAT_KERNEL
-     stable C ABI: free C functions + POD + opaque RNG -> ordinary batch API only
+     old FFI candidate: free C functions + POD + opaque RNG -> task review pending
 ```
 
 fat 与 exact 的 generated TU、手写产品 TU、Runtime table 和 exact suffix 都由
@@ -45,7 +50,7 @@ fat 与 exact 的 generated TU、手写产品 TU、Runtime table 和 exact suffi
 
 | 层 | 当前规模（2026-07-16） | 面向谁 | 稳定边界 |
 |---|---:|---|---|
-| 稳定 C ABI | 246 个入口（243 导出 + 3 个 typed header-inline） | 普通应用、FFI、跨编译器 | pointer/count、共享 POD、opaque RNG、owning `hyle_status` |
+| 旧 Native FFI 候选 | 246 个入口（243 导出 + 3 个 header-inline；2026-07 盘点） | 尚未认证；真实外语任务待裁决 | pointer/count、共享 POD、opaque RNG、owning `hyle_status` 候选 |
 | C++ batch core（开发期） | 公开 whole-buffer overload | HYLE 内部/同工具链测试 | 进入同一 dispatcher；不是发布 ABI |
 | `native::` whole-buffer kernel | ops/random/scan/search | 固定 ISA、需要跨调用内联的源码用户 | target-bound C++，不承诺跨 ISA 类型稳定 |
 | `vec.h` 寄存器 DSL | 387 个去重公开/selector 名 | 编写自定义 SIMD kernel 的高级用户 | target-bound vector/mask；只在 TU 内编译期实例化 |
@@ -58,12 +63,11 @@ math、dtype、sort/select、scan、bitpack、RNG 与基础 ops，并非只有�
 target function 再 `HWY_EXPORT/HWY_DYNAMIC_DISPATCH`；HYLE 的预编译 batch API 更直接。Highway 的优势是
 `contrib/{algo,dot,hash,image,intdiv,matvec,random,sort,...}` 分类和组合入口更成熟。
 
-普通应用的发布外观不归 SIMD C++ 头所有：
+当前普通用户面与待审外语边界必须分开：
 
-1. `include/hyle/c/simd.h` 提供跨语言/跨编译器稳定入口，只含 pointer/count、POD、opaque handle
-   和自由 C 函数；C、C++、C#、Java、Rust 等消费方在各自工程里适配本语言容器。
-2. HYLE 不提供 `std::span`/`std::vector` 伞头，也不在核心仓库维护某一种语言的容器便利层；这避免
-   “C ABI 是发布契约，但文档却把 C++ facade 当普通用户入口”的双重产品面。
+1. C++ 应用使用 `include/hyle/simd/*.h` 的 whole-buffer source API；它不承诺跨编译器/STL ABI。
+2. `include/hyle/c/simd.h` 只保存 pre-release schema 候选，不能在 Java/.NET managed review 前宣称
+   跨语言产品；复审可以删掉没有真实任务的入口或整体裁决 `FFI=N/A`。
 3. 是否补 `algo`、hash、image、matvec 等高层能力按 HYLE 模块边界和真实消费者决定，不为了镜像 Highway
    contrib 目录而堆 API。
 4. `vec.h`/`native::` 是源码级 expert surface，不承诺稳定 ABI，也不伪装成发布入口。
@@ -94,9 +98,9 @@ target function 再 `HWY_EXPORT/HWY_DYNAMIC_DISPATCH`；HYLE 的预编译 batch 
 3. 至少有两个值得保留的实现，或必须提供 scalar 安全兜底；
 4. 它是用户能理解的语义操作，而非某个 ISA 的内部拼装零件。
 
-## 普通用户：不知道目标 CPU
+## 历史 FFI 候选：不知道目标 CPU
 
-普通用户调用 close-01 的 C ABI，例如：
+下例只记录 2026-07 close-01 的候选形状，不是当前普通用户推荐：
 
 ```c
 #include "hyle/c/simd.h"
@@ -109,9 +113,9 @@ hyle_simd_inclusive_scan_f32(out, count);
 预编译库内含各 ISA kernel，C shim 转发到内部 batch core，由 Runtime 根据 platform 探测选择最佳实现。
 用户不自行调用 CPUID，也不需要知道 HYLE 内部的 C++ `Runtime`、D-tag 或 STL。
 
-现有 `include/hyle/simd/*.h` 仅供仓库开发、测试和同工具链源码集成；它们不是可发布承诺。
-消费方需要容器便利时，在自己的边界上用 `.data()/size()`、slice、Span 或 MemorySegment
-包装 C ABI，HYLE 核心不替任一语言选择容器模型。
+现有 `include/hyle/simd/*.h` 是同受支持工具链 C++ 用户的正式 source surface；模块整体仍待本轮
+严格复审。若未来保留 direct FFI，正式 binding 再以 slice/Span/MemorySegment 等宿主容器包装
+reviewed batch exports，不能把旧 C 示例自动当成 Java/.NET 产品。
 
 HYLE 内部诊断或同工具链开发需要把选择提升到更外层时，可以保存 C++ 表引用：
 
@@ -136,7 +140,7 @@ canonical table：请求该 tier 返回它，其余一律 `nullptr`，并且不�
 | `kFeatureSortCappedNetwork` | SVE partition 吃满 VL，但基础 network 有 128/256-bit cap |
 | `kFeatureBitpackLogical128` | SVE/RVV 指令可 scalable，但 logical block 固定 128 bit，字节不随 VL/VLEN 改变；不承诺跨 tier wire format |
 
-该表是版本化的 C++ 诊断便利面（当前 `kTableVersion=6`），不是 close-01 的稳定 C ABI。
+该表是版本化的 C++ 诊断便利面（当前 `kTableVersion=6`），不是 close-01 的 Native FFI 候选 schema。
 
 ## 已知目标用户：两种精确目标模式
 
@@ -267,12 +271,12 @@ Highway 通过 `foreach_target.h` 重包含 TU、target namespace 与 `HWY_EXPOR
 实现相同边界。HYLE 借其原则，不复制自包含宏系统：CMake 生成独立 variant TU，`Runtime` 保存选中的
 函数表，native header 仍是正常 C++ 头。
 
-## C ABI 边界
+## Native FFI 候选边界（待复审）
 
-本页描述的 expert C++ 面不改变 `close-01`：唯一承诺稳定 ABI 的接缝是
-`include/hyle/c/*` 的纯 `extern "C"` shim。SIMD C shim 使用自由函数、共享固定布局 POD、
-带 `struct_size` 的 runtime snapshot 和 opaque RNG；没有模块 api 表/版本门，也不会把
-`Runtime` C++ 类型、`RandomState` 类布局、模板或 STL 类型冻结为 C ABI。
+本页描述的 expert C++ 面不自动推出 direct FFI。旧 SIMD shim 使用自由函数、共享固定布局 POD、
+带 `struct_size` 的 runtime snapshot 和 opaque RNG；这些只是复审输入，不是稳定承诺，而且当前
+还缺逐 artifact bootstrap。若真实外语任务保留某个子集，必须重验 managed ownership/batch/export
+并补 bootstrap；`Runtime` C++ 类型、`RandomState` 类布局、模板或 STL 永远不跨该边界。
 
 ## 变体安全合同
 

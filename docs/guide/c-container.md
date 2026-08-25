@@ -1,6 +1,12 @@
-# container 纯 C ABI 使用指南
+# container Native FFI 候选（待 managed review）
 
-`#include "hyle/c/container.h"` 是 container 的纯 C/FFI 发布面。它只暴露
+> **当前状态（Native FFI 复审前）**：HYLE 没有 native-C 客户。本页记录的是旧 C-shaped
+> surface / Native FFI 合同候选，不是已认证的 C 产品。复审先裁决真实外语任务；可以结论为
+> `FFI=N/A`。只有保留 direct FFI 时才用 Java FFM + .NET P/Invoke 重新验收动态导出、所有权、
+> 回调和 batch 形状；在此之前，正文中的“稳定”“完整”
+> “纯 C 用户”等说法都只属于历史描述，不是当前跨语言证书；首发前 surface 可改变。
+
+`#include "hyle/c/container.h"` 当前只是 container 的 pre-release FFI schema 候选。它只暴露
 定宽 POD、buffer-fill 函数、allocator vtable 和 opaque handle；不暴露
 STL、模板或 C++ 对象布局。C++ 源码用户若与 HYLE 使用同一工具链，也可直接使用
 `hyle/container/*.h`，而且通常应优先使用 typed C++ 面；它不承诺跨编译器 ABI。

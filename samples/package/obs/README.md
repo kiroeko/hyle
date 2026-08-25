@@ -2,9 +2,9 @@
 
 These are source-independent consumers of an installed HYLE SDK:
 
-- `c/` starts as a C-only CMake project, requests only `obs`, and exercises
-  checked level control, a structured borrowed record, opaque sink ownership,
-  flush, and shared `hyle_status` cleanup.
+- `c/` is a C-syntax schema/compiler/link fixture, not a native-C product
+  journey. It exercises the old obs candidate; obs review may change it or
+  declare FFI=N/A.
 - `cpp/` requests only `obs` and exercises the normal formatted macro plus the
   move-only `SinkRegistration` lifetime path.
 

@@ -1,5 +1,10 @@
 # HYLE simd/ 设计
 
+> **Native FFI 状态校正（2026-08-25）**：HYLE 没有 native-C 客户。本文关于 C/C++、C/FFI
+> 或 C 用户的旧表述只记录待复审的 ABI surface，不是当前跨语言证书。先从真实外语任务裁决
+> FFI 是否为 `N/A`；只有保留 direct FFI 时，simd 才必须通过 Java FFM + .NET P/Invoke、真实导出、
+> whole-buffer ownership 与 batch 旅程后冻结该边界。
+
 > SIMD 抽象层（Tier 1，性能焦点 #1）。clay 这块基本空白。早期「净新 ~5–8k」已作废：2026-07-17 实测 **~34k 生产**（`src/simd`+`include/hyle/simd`），约占全库生产 **~64%**。体量与终态见 [`hyle-scope.md`](./hyle-scope.md) 规模节。上游约束见同文档与 [`engineering-charter.md`](./engineering-charter.md)。
 >
 > **2026-07-16 终态索引**：部署和维护以
@@ -72,7 +77,7 @@ CMake 为 ops/random/scan/search 从同一 `kernel_impl.h` 生成 scalar/SSE4/AV
 因为 feature gate、per-op winner 和算法阈值属于模块语义；同一 manifest 仍过滤它们的 source、Runtime
 table 和 exact suffix，防止手写策略退回 fat 符号依赖。`Runtime::Module::isa` 表示主产品 tier，v6
 feature bits 明示 AVX-VNNI/AVX512-VNNI、exact-libm/fp8 scalar、lower-tier winner、capped network 与
-logical-128 bitpack。稳定 C ABI 在 `include/hyle/c/simd.h`，243 个导出符号只转发 whole-buffer
+logical-128 bitpack。预发布 Native FFI 候选在 `include/hyle/c/simd.h`，当前 243 个导出符号只转发 whole-buffer
 产品，不把寄存器向量放进 Runtime 或 C 边界；可恢复 runtime-info/RNG-create 失败返回共享
 owning `hyle_status`，没有模块私有 TLS 错误槽。
 完整 ASCII 图和维护规则见

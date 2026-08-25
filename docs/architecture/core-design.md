@@ -7,46 +7,51 @@
 
 ## 定位与边界
 
-`core` 是零 HYLE 上游的源码与 ABI 根，承载四类能力：编译期/运行时版本、稳定缓存布局与
-prefetch、编译器属性/合同宏、零分配侵入链表。`macros.h`、`visibility.h` 虽位于 `hyle/`
-根目录，也属于 core 的实现边界；目录位置不能把它们变成无主资产。
+`core` 是零 HYLE 上游的源码根和最小 runtime identity ABI，承载四类能力：编译期/运行时版本、
+稳定缓存布局与 prefetch、编译器属性/合同宏、零分配侵入链表。`macros.h`、`visibility.h`
+虽位于 `hyle/` 根目录，也属于 core 的实现边界；目录位置不能把它们变成无主资产。
 
 ```text
-version_defs/cache_defs/compiler_defs ──► C 与 C++ 公开头
-version.h + hyle_core ────► runtime version
-cache.h/macros/c/compiler/visibility ─► 全库 header seam
-intrusive_list.h ─────────► time ─► sched/io
+version_defs/cache_defs/compiler_defs ─► C++ source / build and schema definitions
+version.h + hyle_core ─────────────────► C++ linked runtime identity
+c_core.cc + hyle_core ─────────────────► direct FFI runtime identity
+cache.h/macros/visibility ─────────────► 全库 source seam
+intrusive_list.h ──────────────────────► time ─► sched/io
 ```
 
 core 不依赖 error/platform/mem/time，也不创建资源，因此没有 Status 或 allocator seam。
-运行时探测仍归 platform；core 只提供必须参与对象布局的编译期常量。
+运行时 cache/CPU 探测由 platform 独占；core 只提供必须参与 native 对象布局的编译期常量。
 
 ## 能力与真实场景
 
-| 能力 | 入口 | 场景与形状 |
+| 能力 | C++ source / linked 入口 | 场景与形状 |
 |---|---|---|
-| header version | `kVersion*` / `HYLE_VERSION_*` | 编译期 feature/log 标记，无 DLL 调用 |
-| linked runtime version | `version()` / `version_string()` | plugin、FFI、动态加载后诊断 header/runtime 是否匹配 |
-| static cache layout | `core::k*InterferenceSize` + `kMinConstructive*` / `kMaxDestructive*`，以及四个对应 C macro | `alignas`、结构体 ABI；默认值按目标家族选择 64/128B，显式 min/max 为 64/128B |
-| runtime cache observation | `platform::cache_line_size()` | best-effort 探测当前机器；查询失败回退 64，不参与稳定类型布局或安全隔离 |
-| cache hints | `prefetch_read` / `prefetch_read_non_temporal` / `prefetch_write` | 有复用读、一次性流式读、即将修改三种真实 memory-access intent；只在 profile 后使用，且 compiler builtin 不越过 TU ISA baseline |
-| compiler/fatal macros | `macros.h` / `hyle/c/compiler.h` / `visibility.h` | C/C++ must-use、restrict、assume、flatten、unroll、inline/noinline、branch、EBO、导出与不可恢复合同；主要供 HYLE 实现和高级 kernel 用户 |
-| intrusive list/batch | `IntrusiveListHook` + `IntrusiveList<T, Hook>` | stable-address、调用方拥有节点、双向 range、O(1) arm/cancel/insert/erase/splice；time delivery/bucket 是生产消费者 |
+| header version | `kVersion*` / `HYLE_VERSION_*` | native 编译期 feature/log 标记，无 DLL 调用 |
+| linked runtime identity | `version()` / `version_string()`；FFI ABI/product version C exports | managed binding 先协商 ABI，再诊断 native package/product identity |
+| static cache layout | `core::k*InterferenceSize` + min/max | native `alignas` 与结构体 ABI；默认值按目标家族选择 64/128B |
+| cache hints | 三种 `prefetch_*` | native TU 中的 local/NTA/for-write intent；只在 profile 后使用 |
+| compiler/fatal macros | `macros.h` / `visibility.h` | must-use、restrict、assume、flatten、unroll、inline/noinline、branch、EBO、导出与不可恢复合同 |
+| intrusive list/batch | `IntrusiveListHook` + `IntrusiveList<T, Hook>` | stable-address、调用方拥有节点、双向 range、O(1) arm/cancel/insert/erase/splice；time 是生产消费者 |
+
+`platform::cache_line_size()` 是相邻 platform 模块的 C++ best-effort runtime observation，不是
+core 能力。旧 `hyle_cpu_cache_line_size()` 只是黄色 FFI 候选：platform 复审可能保留，也可能因
+没有真实外语任务裁决为 `FFI=N/A`。无论结果如何，查询失败回退 64，不能参与稳定类型布局或
+安全隔离；core 不复制这个符号。
 
 按方法论展开后的场景合同如下；core 不分配资源，因此没有 allocator/OOM 路径：
 
 | 场景 | 数据、ownership 与 lifetime | concurrency 与 failure | 规模/复杂度 |
 |---|---|---|---|
-| plugin/header-runtime identity | header 常量与 TU-local linked static string；调用方只借用，字符串有效至承载 hyle_core 的 module unload | 只读并发；版本不匹配由调用方诊断，不分配/抛错 | O(1)，冷路 |
+| managed binding/native runtime identity | binding 预期 ABI、header product 常量与 module-local static string；字符串只借用到 hyle_core unload | 只读并发；ABI 不兼容由 loader 拒绝，product 不匹配由调用方诊断 | O(1)，冷路 |
 | 公共 cache layout / prefetch | 调用方对象与地址；target-family recommendation/min/max 参与 ABI，runtime observation 归 platform | layout 可跨线程，hint 不建立同步；无效生命周期地址，或把 fallback-able observation 冒充安全 layout，是合同违约 | 编译期/O(1)，只在真实消费者承重 |
-| kernel compiler contract | 调用方表达式、pointer 与 loop，零 runtime 状态 | TU-local；错误 assume/restrict/unreachable 是程序 bug，must-use 是诊断 | O(0) source seam；unroll/inline 只作 measured hint |
-| stable-node queue/batch | 节点由调用方拥有且地址稳定；C++ hook/list RAII 摘链，C 显式 unlink/clear | 默认外部同步；checked insert 返回 bool，unchecked owner/membership 违约是 bug | 单节点/整批 O(1)，遍历/consume O(n)，不维护 size/owner |
+| kernel compiler contract | 调用方表达式、pointer 与 loop，零 runtime 状态 | TU-local；错误 assume/restrict/unreachable 是程序 bug，must-use 是诊断 | source seam；unroll/inline 只作 measured hint |
+| stable-node queue/batch | 节点由调用方拥有且地址稳定；C++ hook/list RAII 摘链 | 默认外部同步；checked insert 返回 bool，unchecked owner/membership 违约是 bug | 单节点/整批 O(1)，遍历/consume O(n)，不维护 size/owner |
 
 ### 语法与语义消费者账本
 
 | core 职责 | 显式消费者 | 语义重复扫描结论 |
 |---|---|---|
-| version single source | root CMake、runtime C/C++、plugin/FFI 诊断 | 无第二份手写版本；CMake 从 defs 读取并由 runtime static_assert |
+| version single source | root CMake、C++ linked API、direct FFI、plugin/loader 诊断 | product 与 FFI ABI 各有一份 defs；CMake/runtime 由 static_assert 锁定 |
 | static cache layout | container queues/maps/interner、mem pool、scheduler | dense array 采用 target-family spacing，持续跨线程写的稀疏 control atomics 可显式采用 128B max；SIMD/entry scratch 的 64B 是向量/对象 alignment，不属于 cache 重复 |
 | prefetch intent | SwissTable、SIMD/vqsort | vqsort 私有 helper 已收束；没有其他 builtin/intrinsic 旁路 |
 | compiler contract | SIMD/vqsort 及全库 fatal/inline 用户 | vqsort 的 assume/noinline/restrict/flatten/unroll 分支已映射到 core；无第二套同义宏 |
@@ -61,7 +66,7 @@ StringInterner shard 属 core 职责，并已采用 destructive-interference 常
 | 参考 | 借鉴的问题/形状 | HYLE 裁决 |
 |---|---|---|
 | oneTBB | compile/runtime version identity、默认 cache-line 值与 128B `max_nfs_size` | 版本单源；默认 layout 按目标家族，最大隔离作为显式 opt-in；不引未发布阶段的函数表协商 |
-| Abseil | local、NTA、for-write 三种 prefetch intent | C/C++ header-inline 对齐；不增加 cache residency 承诺 |
+| Abseil | local、NTA、for-write 三种 prefetch intent | C++ header-inline 形状对齐；不增加 cache residency 承诺，不另造 FFI symbol |
 | Highway | 优化构建 force-inline；Debug 普通 inline；noinline/assume/restrict/flatten/unroll | 收为 core source seam；hint 无独立产品 benchmark |
 | Boost/Folly intrusive | member hook、auto-unlink、双向 iterator、无 owner/size 的 O(1) hot path | 保留一个紧凑通用 non-owning sequence；不扩成 owning/counted 容器家族 |
 
@@ -69,23 +74,27 @@ StringInterner shard 属 core 职责，并已采用 destructive-interference 常
 owning container 留 container，error/clock/logging 留各自模块。
 
 本轮负空间也显式裁决：C++ alignment promise 已有 `std::assume_aligned`，SIMD aligned Load 又
-直接表达 kernel 合同，没有纯 C 消费者要求另一套宏；noreturn/fallthrough 分别已有标准 C/C++
-拼法，因此不包装。`lifetimebound` 对 `Status::message()` 和 container borrowed view/reference
+直接表达 kernel 合同；项目没有原生 C 产品需要另一套宏，managed FFI 也无法把 translation-unit
+alignment promise 表达成有意义的动态调用。noreturn/fallthrough 已有标准 native 拼法，因此
+不包装。`lifetimebound` 对 `Status::message()` 和 container borrowed view/reference
 是真实的零成本诊断候选，但它需要跨模块统一注解与 compile-diagnostic 门，留到 error/container
 复审共同裁决，不在 core 为凑 feature 数量先放一个无人正确使用的宏。
 
-版本定义只有一份公开宏源；CMake 在 `project()` 前读取它，`version.cc` 再静态断言 runtime
-编译定义，component package、loader identity、header 与 runtime 不存在第二份手写版本。
+product version 与 FFI ABI version 都在 `version_defs.h` 单点定义。前者是 8/8/8 的 HYLE release
+identity；后者是 16/16 的 binding protocol，major 变化允许破坏 ABI，minor 只允许 additive。
+managed binding 必须先解析 `hyle_ffi_abi_version`，要求 major 相同且 runtime minor 不低于自己
+生成时所需 minor，再解析其余 required symbols。CMake 在 `project()` 前读取 product version，
+`version.cc` 再静态断言 runtime 编译定义，避免第二份手写 release identity。
 `version_string()` 返回 `version.cc` 内部链接的静态存储，不分配、不使用 guard variable，也不会
 被 consumer/另一 DSO 的 public inline header 常量抢占。指针只在承载 hyle_core 的动态模块仍
 加载时有效；需要跨 `dlclose`/`FreeLibrary` 保存就先复制。
 
 三种 prefetch 对齐 Abseil 的 local/NTA/for-write 形状，在 GCC/Clang、MSVC x86 与 MSVC ARM64
-分别映射 builtin/intrinsic；不支持时安全退化。C++ 与 C 的 must-use、force-inline、noinline、branch
-hint、unreachable、assume、restrict、flatten、unroll 共用 `compiler_defs.h` 的工具链判断；
-两种语言另各提供 release-surviving fatal assert。它们只表达编译器/程序合同，不
-增加运行时状态。C++ 形状由 SIMD/vqsort 的 ported kernel 真实消费；纯 C 形状让外部 C kernel
-取得同档 source contract，而不复制 compiler branches。assume/restrict 的错误承诺是调用方
+分别映射 builtin/intrinsic；不支持时安全退化。must-use、force-inline、noinline、branch hint、
+unreachable、assume、restrict、flatten、unroll 共用 `compiler_defs.h` 的工具链判断，并由
+`macros.h` 暴露 C++ source contract。它们只表达编译器/程序合同，不增加运行时状态，且由
+SIMD/vqsort 的 ported kernel 真实消费。旧 `hyle/c/compiler.h` source helper 已移出 FFI schema；
+它即使存在也不会构成 direct FFI。assume/restrict 的错误承诺是调用方
 bug；未定义 `NDEBUG` 时 unreachable 会先诊断并 abort，定义后才成为 optimizer UB；unroll 与 prefetch
 都是可忽略的性能 hint。GCC/Clang 的 force-inline 在 `-O0` 退为普通 inline，避免大量模板叶函数
 拖垮未优化编译，优化构建仍保留 always-inline。Clang 在未优化/sanitizer TU 中不发 unroll
@@ -151,50 +160,80 @@ iterator 在插入、整链/单节点 splice 与 swap 后继续指向同一节�
 splice 的 list-membership 是前置条件。需要 owning 元素、随机访问、常量时间 size 或线程安全时
 选 container/标准容器，不把 core primitive 扩成另一个 Boost.Container 家族。
 
-## C/C++ 双面
+## C++ source、native-C helper 与 direct FFI
 
-C++ 公开 source surface 的语言基线是 C++23，纯 C 为 C17。安装态或 source target 的
-`hyle::core` 会传播相应 compile feature，并在 native MSVC 为 C/C++ 传播 conforming
-preprocessor；手工只取头文件的消费者必须自己建立同一 translation-unit 合同。这是 source API
-要求，不改变下面的动态 C ABI 边界。
+C++ source surface 的语言基线是 C++23。Native FFI 的 C schema 保持 C17 可编译，用来描述
+calling convention 和验证 ABI；项目没有原生 C 用户产品。安装态或 source target 会传播对应
+compile feature，手工只取 C++ 头文件者必须自行建立相同 TU 合同。
 
-C++ 使用 auto-unlink RAII 模板；C 头提供同算法的可见 hook/list、静态 initializer、const-safe
-entry/traversal 与 header-inline push/pop/unlink/append，不产生 DLL 热路。C 无析构器，因此释放节点前必须显式 unlink，销毁
-list 前必须 clear 或逐个 pop。缓存布局宏由 C/C++ 共用 `cache_defs.h`，compiler contract 共用
-`compiler_defs.h`，避免跨语言判断漂移；C 的 compiler 宏与三种 prefetch 同样 header-inline，
-不引入动态 ABI 或热路调用。
+core 的三层矩阵如下：
 
-动态 C ABI 只有 `hyle_version` 与 `hyle_version_string`；其余能力是编译期布局或纯指针模板/
-inline 原语，导出函数反而会增加调用成本且不能改善 ABI 表达。
+| 能力 | C++ source / linked API | native-C helper | direct Native FFI | 裁决 |
+|---|---|---|---|---|
+| compile/runtime identity | constexpr + `version()` / `version_string()` | 无行为 helper；仅 language-neutral expected-version defs | `hyle_ffi_abi_version` / `hyle_version` / `hyle_version_string` | ABI bootstrap 与 loader identity 有真实 runtime 价值 |
+| static cache layout | 四个 typed constexpr | shared compile-time defs，不在 FFI schema | 无 | 只参与 native 对象布局；不是运行时事实 |
+| prefetch intent | 三个 inline 函数 | 无公开 helper | 无 | 单地址 FFI hop 比 hint 更贵；需要效果时融合进所属模块 batch op |
+| compiler/fatal contract | `HYLE_*` | 无公开 helper | 无 | translation-unit promise/hint，没有动态调用语义 |
+| intrusive list | typed member hook + RAII/range/callback | 无公开 helper | 无 | 依赖稳定 native 地址与手工 lifetime，不是 managed 容器 ABI |
 
-能力映射按用户任务而不是符号镜像：
+表中的 native-C helper 不属于 Java/.NET/Rust/Python 能力覆盖。core 已把旧 compiler/prefetch/
+intrusive native-C source surface 从 `hyle/c/core.h` schema 移出；当前 schema 只保留 bootstrap
+与 product identity。core 的 direct FFI 有意只有三个版本符号；这不是遗漏，而是其他四类能力
+均没有合理的独立 runtime ABI。
 
-| 能力 | C++ source API | C/FFI 产品面 | 边界理由 |
-|---|---|---|---|
-| compile/runtime version | constexpr + 两个 runtime 函数 | 同一 defs + 两个 C 符号 | plugin/loader 需要动态 identity |
-| cache layout/prefetch | target-family/min/max typed constexpr + inline 函数 | 四个 layout macro + inline 函数 | 同一 target 上布局跨语言一致，热路无 DLL hop |
-| compiler contract | must-use/inline/noinline/branch/unreachable/assume/restrict/flatten/unroll + fatal | 同名 `HYLE_C_*` 集合 | 源码级 promise/hint；共用 backend，不存在有意义的动态调用 ABI |
-| intrusive list | typed member hook + RAII/range/callback | 可见 hook/sentinel + init/const traversal/insert-before/splice-before/inline 指针原语 | C 显式 lifetime；任意位置插入、batch 与遍历可同复杂度直达或组合 |
+### 为什么 prefetch 不导出
 
-因此“C 能力完整”指版本、cache intent、compiler contract、stable-node queue 等自然 C 用户
-任务都有同档通路，不表示把 C++ 析构或模板 callback 逐符号翻译一遍。compiler contract 单独
-放在 `hyle/c/compiler.h`，`hyle/c/core.h` 只为可发现性转 include；两者都不增加动态符号。
+prefetch 的有效位置、距离、locality 与 ISA 都由拥有循环的 native translation unit 决定。把一个
+地址从 Java/.NET/Python 逐次送过 FFI 再发 hint，边界成本与 pin/lifetime 风险通常远大于收益，
+也无法建立 cache residency 或同步语义。若某个跨语言数据面确实受益，应由 container/simd/
+compute 等拥有 workload 的模块在批处理导出内部 prefetch，而不是增加 `hyle_prefetch_*` 动态
+符号。
 
-## API 易用性结论
+### 为什么 intrusive list 不导出
 
-- 默认旅程：按任务直接包含 version/cache/intrusive 单头；没有强迫所有用户引入 umbrella。
-- 高级旅程：compiler contract 单独在 `macros.h`，危险 UB/代码体积合同不混进普通业务 API。
-- 组合旅程：time 直接以 typed intrusive list 组合；container/mem/sched 直接消费 cache 常量，
-  没有 C ABI 往返或 adapter 链。
-- C 旅程：kernel-only 可单独 include compiler 头；版本为两个动态 identity 符号，其余热路
-  header-inline；静态/动态 init、const 遍历和显式 unlink/clear 对应 C 生命周期。
+透明 intrusive list 要求调用方在节点内嵌 hook、保持节点和 sentinel 地址稳定、理解 ownerless
+membership，并在正确时序手工脱链。Java/.NET/Python 的 GC 和对象搬移不能自然满足这些合同；
+Rust 虽能包装 native memory，也不能让面向四种语言的公共 ABI 退化为裸指针容器。若未来有真实
+跨语言 queue/batch 场景，应在拥有任务的上层模块设计 opaque handle、library-owned storage 与
+批量 enqueue/drain，而不是导出 core hook 操作。
 
-上述默认/高级/组合路径必须分别由 core C++ tests、SIMD/vqsort 消费编译和 pure-C smoke 机械
-覆盖；shared/static 安装后还必须由 `samples/package/core/{c,cpp}` 只请求 `core` target 独立
-复证。安装 SDK 保留统一 public header tree，隔离边界是 component/target closure，不是按目录裁剪
-头文件。当前通过状态与 exact candidate 只记录在 milestone；本页不把历史 smoke 冒充当前证书。
-guide 给出入口选择与可复制 recipe。新增 source/compiler 便利必须先有真实扩展消费者，不能让
-core 重新长成杂项 umbrella。
+旧 native-C intrusive helper 的设计还暴露了以下陷阱；这些也是它不应作为 managed ABI、且不应
+重新混入 FFI schema 的直接证据：
+
+- linked node 的地址必须稳定；
+- **任何已初始化 list（即使为空）都不能搬址、赋值、`memcpy` 或按值返回**，因为 sentinel
+  指向自身，非空时首尾 hook 还会反向指向它；只能在最终存储初始化，或用显式 splice 将节点
+  转移到另一已初始化 list；
+- `HYLE_INTRUSIVE_LIST_INIT(name)` 是按该对象地址建立自引用，复制初始化后的字节会悬挂；
+- C 没有析构器，node 或 list 任一存储结束前都必须先把所有相关 hook 脱链；仅让 nodes 比 list
+  活得久不能挽救已经失效的 sentinel；
+- 不得对非空 live list 重新 `init`；`try_*` 只拒绝 NULL/double-link，不验证 position owner；
+- `HYLE_INTRUSIVE_ENTRY*` 的 hook 必须非 NULL 且确实来自指定 member。
+
+### runtime cache observation 的归属
+
+core 的 cache 常量冻结 native layout recommendation；platform 才拥有当前机器的 best-effort
+C++ observation。它是否需要 direct FFI 查询仍由 platform 的真实外语任务裁决，当前旧符号只是
+候选。两者不可合并：runtime fallback 不能保证 false-sharing spacing，compile-time 常量也不应
+伪装成硬件探测导出。新目标的 layout 认证与 platform probe 分别复证。
+
+## API 与证据结论
+
+- C++ 默认旅程：按任务包含 version/cache/intrusive 单头；
+- C++ 高级旅程：compiler contract 单独在 `macros.h`，危险 UB/代码体积合同不混入普通业务 API；
+- C++ 组合旅程：time 使用 typed intrusive list，container/mem/sched 使用 cache 常量，不绕 FFI；
+- native-C helper：core 当前无公开 compiler/prefetch/list helper；旧 surface 的 C 测试不再计入；
+- direct FFI：Java 与 .NET 从 shared artifact 先解析 `hyle_ffi_abi_version`，通过 major/minor
+  握手后再解析两个 `hyle_version*` symbols，并验证 borrowed version string 的 module
+  lifetime；未来若发布 Rust/Python binding，也应绑定同一组三个符号并先做同一 ABI 握手。
+
+core C++ tests、SIMD/vqsort 消费编译、C schema smoke 与 direct managed smoke 必须分账。旧
+历史 native-C package 示例即使能编译也只能证明 schema/source/package，不能代替 Java/.NET
+动态加载；当前 [`samples/package/core/ffi_abi`](../../samples/package/core/ffi_abi) 是 conformance
+fixture，direct FFI 证据则由 [`samples/ffi/core`](../../samples/ffi/core/README.md) 从 shared
+artifact 解析三个真实 exports。
+安装 SDK 保留统一 public header tree，隔离边界是 component/target closure，不是按目录裁剪。
+当前通过状态与 exact candidate 只记录在 milestone；本页不把历史 smoke 冒充当前证书。
 
 ## 明确负空间
 

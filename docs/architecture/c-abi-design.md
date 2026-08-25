@@ -1,147 +1,252 @@
-# C ABI 设计决策（C++ 库的独立 C/FFI 产品面）
+# Native FFI ABI 设计决策（C++ 库的跨语言动态接缝）
 
-> **信源**：本文件是 HYLE **对外 C ABI 面的设计推理与决策**。落地细节看 `include/hyle/c/*.h` 与各模块 `docs/guide/c-*.md`（逐符号 1:1）；本文件只管"为什么这么设计"。
-> 上位依据：[`engineering-charter.md`](./engineering-charter.md) §6（FFI 决策）、[`coding-conventions.md`](./coding-conventions.md) §4（C-ABI 范式）。本文件在其之上补齐**具体做法与实证对照**。
+> **信源**：本文件规定 HYLE 对外 Native FFI ABI 的长期形状。C++ 产品设计见各模块
+> architecture/guide，具体 ABI schema 见 `include/hyle/c/*.h`，逐入口绑定合同见
+> `docs/guide/c-*.md`。施工步骤见
+> [`c-abi-authoring-guide.md`](./c-abi-authoring-guide.md)。
 
-## 0. 目标与边界
+## 0. 目标：让外部语言运行时直接加载动态库
 
-**HYLE 是 C++ 基础加速库；`include/hyle/c/*.h` 是另行设计的 C/FFI 产品面，
-不是把原生 C++ 类自动翻译一遍。** C ABI 覆盖适合跨语言使用的运行时能力，模板、
-RAII 和 C++ 标准库适配只在存在自然 C 用户任务时才下沉。
+HYLE 没有原生 C 客户。`include/hyle/c/*.h` 选择 C 语法，是因为 C calling convention 和
+plain layout 是 Java、.NET、Rust、Python 都能描述的 **Native FFI ABI schema**，不是因为要
+另做一套面向 C 程序员的产品 API。
 
-- **C ABI 是唯一承诺跨编译器/跨 STL/跨语言稳定的接缝**——几乎所有 OS/语言都认 C 调用约定 + C 结构体布局。
-- **两种消费者、两条独立线路**（关键区分）：
-  - **C++ 用户**：直接用 `include/hyle/<mod>/*.h` 的原生 C++ API（模板、RAII、`Allocator`/`VmRegion`/`ObjectPool<T>`）。不关心跨语言。**这条线的"完整"独立评估**——C++ 面本身完整即可。
-  - **跨语言用户**：只绑 `include/hyle/c/*.h`。**这条线的"完整"也独立评估**——每个能力有没有 C ABI 通路。
-  - 两条线互不牵扯：C++ 有模板 ≠ C ABI 缺能力；C ABI 没导出某类 ≠ C++ 用户拿不到。
-  - 但“符号不必 1:1”不等于任意删能力：属于 C/FFI 产品范围而不能直接导出的
-    模板、RAII、协程或回调组合，应在对应 `docs/guide/c-*.md` 给出可执行的 C 组合
-    路径。明确只服务原生 C++ 的能力则应写清边界，不制造生硬的 C 壳。
+目标消费者必须能直接加载 HYLE 的 `.dll` / `.so` / `.dylib`，解析公开导出并调用，不要求用户：
 
-## 1. 核心手法：类型擦除（C++ → C ABI 的关键结论）
+- 编译一段 C/C++ shim；
+- 复制 HYLE 的 `static inline` 实现；
+- 展开 C macro 或照着 native-C recipe 重写算法；
+- 知道 C++ 类、STL、模板实例或异常 ABI。
 
-C ABI 要当一等公民，数据模型就得是**运行时参数化**，而非**编译期参数化**。C 没有泛型，编译期的 `<T>` 过不了边界；把类型信息**擦除成运行时参数**就过得去。
+ABI 形状必须允许下列常见绑定直接描述：
 
-| 编译期（C++，过不了 C） | 运行时擦除（C ABI 通路） |
-|---|---|
-| `ObjectPool<T>` / `ObjectPoolCache<T>` | hard pool 用 `hyle_shared_pool_create(&out,sizeof(T),count,alignof(T))`；soft 层用 `hyle_shared_pool_cache_create(&out,pool,metadata,capacity,batch)` 显式附着并 publish；`<T>` 降为 runtime size/alignment |
-| `GrowablePool<T>` | `hyle_growable_pool_create(&out,slot_size,slot_align,initial_slots)` —— 非模板运行时核心（`detail::GrowablePoolCore`）承载擦除后的裸槽逻辑，`<T>` 模板只是跑 ctor/dtor 的薄包装 |
-| `Allocator::construct<T>()` | 裸 `alloc` 返回内存，构造由调用方语言做 |
-| `Tensor<float, N>`（ggml 的对照） | `ggml_tensor { enum type; void* data; int64_t ne[]; }` —— 类型降成 `enum` 标签 |
+- Java：FFM API、JNA 或项目选定的等价 direct binding；
+- .NET：P/Invoke；
+- Rust：`extern "C"` / bindgen 生成的 `-sys` 层；
+- Python：ctypes/cffi。
 
-**判据**：C ABI 用户"不缺能力" ≠ "每个 C++ 符号都有 C 对应"。判据是**能力有没有 C ABI 通路**：
-- `ObjectPool<T>` / `ObjectPoolCache<T>` 不直接导出模板，但定长对象池能力分别经 `hyle_shared_pool_*` / `hyle_shared_pool_cache_*` + typed 宏可达 → **不缺**。
-- 泛型语法不可达（`<T>`），但能力经 size 擦除全部可达。
+“C 头能被 C 编译器包含”只是 schema 卫生门，不是 FFI 产品验收。
 
-## 2. 双产品面与共享实现（ggml/oneDNN 实证）
+本文件规定的是可供外部运行时绑定的 ABI 底座，不等于 HYLE 已发布 NuGet、JAR、crate 或 Python
+package。当前 core 的 Java/.NET probe 证明 direct binding 可行并建立最低验收形状；正式 binding
+package 仍需自己的高层 wrapper、版本选择、artifact 分发和所声明平台的 consumer matrix。
 
-```
-┌─ 原生 C++ 产品面                         ← include/hyle/<mod>/*.h
-│   模板、RAII、强类型与 std::pmr；是 C++ 用户的首选 source API
-├─ C/FFI 产品面                            ← include/hyle/c/*.h
-│   opaque 句柄 + 自由函数 + POD；是跨编译器/跨语言的 ABI 稳定面
-└─ 共享实现                                ← src/*.cc + header-inline fast path
-    两个产品面复用算法与合同，但分别按语言习惯设计，不要求符号或对象布局 1:1
-```
+## 1. 三层必须分账
 
-**实证（源码在 `C:\public\project-hyle\` 下）**：
-- **ggml**：21 个 C 头 `extern "C"` + **唯一 1 个** C++ only 头 `ggml-cpp.h`（`#ifndef __cplusplus #error`，仅 `unique_ptr`+deleter 包 C 句柄，deleter 调 `ggml_free`）。内部实现是 C++（8 `.cpp` vs 3 `.c`，`ggml-impl.h` 有 template/std::），但**对外零 C++ 泄漏**。ggml 不是"避免了模板"，是**领域决定其公开数据模型天然是 C 形状**（`ggml_tensor` = 运行时 `enum type` 标签，非模板）——类型多态放运行时，C ABI 自然一等公民。
-- **oneDNN**：26 C 头 + 16 C++ 头；`dnnl.hpp` `#include "dnnl.h"`，用 `handle<T, traits>` 模板（`shared_ptr` + `handle_traits<T>::destructor` 调 C 的 `dnnl_*_destroy`）包 opaque C 句柄，`error::wrap_c_api` 把 C 返回码转 C++ 异常。**重量级 C++ 便利层，但仍在 C ABI 之上**。
+| 层 | 面向谁 | 允许的形状 | 能证明什么 |
+|---|---|---|---|
+| C++ source API | 原生 C++23 用户与 HYLE 内部模块 | 模板、RAII、concept、`std::span`、header-inline | C++ 用户任务可用，且源码组合自然 |
+| native-C helper | HYLE 自己的桥接代码、可选 native shim/内核源码 | `static inline`、macro、透明 pointer primitive、C initializer | 只证明本地源码可编译、可内联；不属于 direct FFI |
+| direct Native FFI ABI | Java/.NET/Rust/Python | 真实 exported symbol、opaque handle、固定布局 POD、callback+context、ptr+len | 无自编译 shim 即可从动态库取得运行时能力 |
 
-HYLE 不在 C ABI 上再包一层冗余 C++ facade：原生 `include/hyle/<mod>/*.h` 本身就是
-第一等 C++ 产品面。C ABI 只承担自然的 C 用户任务与跨语言稳定接缝。
+三层可以共享实现，但不能互相冒充：
 
-## 3. 版本协商：删除（场景驱动，非默认标配）
+- C++ 有能力，不自动推出 FFI 有能力；
+- C 头里存在函数名，不自动推出动态库有该符号；
+- `static inline`、macro、transparent struct 和纯 C recipe 都不能计入 direct FFI 覆盖；
+- 反过来，纯编译期能力没有合理运行时语义时，可以明确不进入 FFI，而不是为了“数量对齐”
+  制造无价值导出。
 
-**决策（2026-07-18）：删掉整套 `hyle_*_api` 函数指针表 + `hyle_*_api_get(out, expected_abi)` 版本门 + `HYLE_*_C_ABI_VERSION` 宏。** C ABI 面回归**纯 `extern "C"` 自由函数导出**（ggml 核心的形态）。
+Native FFI 事实以两项共同决定：公开 C schema 中带导出属性的声明，以及构建产物中 `hyle_*`
+FFI namespace 的 export manifest；该 namespace 内多出或缺失都属缺陷。同一 shared library 还可
+合法承载 C++ dynamic SDK 的 decorated exports，它们由 C++ public API/build contract 另行审计，
+不计入 FFI manifest。行为型 inline/macro helper 原则上移出 schema 头；迁移期仍共处时也必须
+单列为第二层，不能混入导出清单或 FFI 能力矩阵。ABI tag/flag 常量等 declarative macro 只是
+schema metadata，binding 生成后保存其值，仍不是动态能力。
 
-**实证对照**：
-- **clay**（HYLE 前身）：C-ABI vtable（`allocator_api_t`/`os_api_t`）**没有任何 version 字段**；`api_registry_api_t` 仅前向声明、从未定义。ABI 稳定纯靠 opaque 句柄 + vtable + make/destroy。**零版本协商。**
-- **ggml**：核心 C API 只有 `ggml_version()`/`ggml_commit()` 返**字符串**（人看的），无数字版本门。**唯一**的数字版本校验 `GGML_BACKEND_API_VERSION` 在 `ggml-backend-reg.cpp:239`——**只在 dlopen 一个独立编译的 backend 插件时**校验 `reg->api_version` 拒绝错配。
-- **HYLE 曾经**：每个 c 头都上了 `api` 表 + `api_get(expected)` 拒旧号 + "表尾追加保前缀布局"——**比 clay（零）和 ggml（仅插件处）都重**，是核心 API 面就上全套。
+## 2. 先按跨语言任务裁决，而不是翻译 C++ 符号
 
-**为什么删**：
-1. **场景不成立**。版本门保护的是"host 与独立编译的插件二进制错配"（ggml backend 插件的场景）。HYLE 目前是**单一 `.so` 一起编译发布**，没有"独立编译的插件"这个场景——版本门保护的错配根本不会发生。
-2. **未发布、无外部调用方**。"向后兼容"（表尾追加、拒绝旧号）保护的老调用方不存在，是纯负担。
-3. **干净优先**。未发布阶段应做尽量干净正确的版本，不背兼容包袱。字段该怎么排怎么排，该改就改。
-
-**结论**：版本协商是**场景驱动的件（分发独立编译插件才需要）**，不是 C++→C ABI 的默认标配。将来 HYLE 真做"可独立编译加载的后端插件"时，再在**那个插件边界**引入版本握手（学 ggml backend 的 `api_version`），而不是核心 API 面。
-
-> **函数指针表本身**也一并删了：它是为"运行时动态发现/版本谈判"设计的，与版本门同源。纯 `extern "C"` 导出 + 头文件声明已足够 FFI 直接绑（`dlsym`/bindgen/ctypes 都认符号），不需要把所有函数塞进一个结构体再 `api_get` 填表。
-
-## 4. 有状态能力：先判断是不是产品能力
-
-“有状态”不是免除 C ABI 的理由。先按用户场景分类：
-
-| 类 | 模块 | 当前判定与 C 用户路径 |
+| C++ 能力形状 | Native FFI 裁决 | 标准形状 |
 |---|---|---|
-| `StatsAllocator` / `LeakTracker` / `AllocStats` | mem | 已认定为 opt-in 用户能力：opaque stats allocator + POD out-snapshot + bounded leak copy；默认 system allocator 不埋统计成本 |
+| 有真实跨语言价值的无状态 runtime 函数 | 直接导出 | `hyle_*` 自由函数 |
+| RAII / owning resource | 导出资源能力 | opaque handle + create/open + close/destroy |
+| 模板算法或容器 | 先确认跨语言任务，再类型擦除 | runtime tag/size/stride + opaque state；不能只给 typed macro |
+| callback / async completion | 导出时显式建模 | function pointer + context + register/cancel/drain 合同 |
+| 字符串、数组、序列化结果 | 明确数据方向和所有权 | ptr+len、caller buffer-fill，或 library-owned buffer + 对称 free |
+| 高频逐元素操作 | 不能照搬细粒度 C++ API | batch-first/fused export，摊薄 P/Invoke/FFM/ctypes 边界成本 |
+| compiler hint、`assume`、`restrict`、unroll | 不进入 direct FFI | C++/native-C source helper；托管调用时没有可保持的 TU 合同 |
+| 编译期 layout/alignment 常量 | 通常不进入 direct FFI | 只影响本地编译布局；运行时硬件查询归拥有该事实的模块 |
+| 单地址 prefetch | 不导出 | FFI hop 通常比 hint 更贵；需要时融合进处理整批数据的 runtime op |
+| transparent intrusive hook/list | 不作为 managed FFI 容器 | stable native address 和手工 lifetime 不适合 GC；有队列场景时设计 opaque、批量的上层资源 |
 
-**升级规则**：只要上述统计/诊断被提升为面向用户的产品能力，就必须导出；
-典型形态是 opaque handle + POD snapshot/visitor，或者在所属资源句柄上提供标量
-查询。不能继续以“C 没有类”或“它是诊断功能”为由省略。
+判据是“Java/.NET/Rust/Python 能否直接完成被承诺的运行时任务”，不是“C++ 每个函数是否有一个
+C 拼法”。如果答案依赖调用方编译 recipe，它属于 native-C helper；如果该能力本来只在编译期
+影响代码生成，则明确记录不导出即可。
 
-**对照 ggml**：ggml 没有导出统计器类，而是把产品需要的“用了多少内存”
-降维成 `ggml_used_mem(ctx)` / `ggml_backend_buffer_get_usage` 标量查询。要点是
-**用户能力可达**，不是必须照搬 C++ 对象形状。
+## 3. ABI 基本积木
 
-**注意区分**（措辞要精确）：
-- `ObjectPool<T>`：**泛型语法不可达，但能力可达**（经 arena + 宏）——不是"不需要"。
-- `StatsAllocator`：已通过 `hyle_stats_allocator_*` 提供正式 C 通路；计数是 opt-in
-  wrapper，逐地址 leak inventory 还需显式开启，因此不污染默认分配热路。
-两者目前都没有同名 C 对象，但前者是直接类型擦除，后者是明确的产品边界判定；
-都必须在用户 guide 中交代可达路径，不能只写“C++ only”。
+### 3.1 Exported symbol
 
-## 5. 错误跨 C 边界
+所有 direct FFI 入口都是 unmangled `extern "C"` 自由函数，并使用模块三态导出宏。共享库 export
+manifest 必须锁住确切名称；不能把链接器偶然保留的 inline/template 实例当产品 ABI。静态库可供
+C++/嵌入式交付，但不能替代动态直绑证据。calling convention 也是 ABI：支持平台统一使用并
+记录 HYLE 的 C convention，构建参数不得静默改成另一 convention；.NET 等 binding 必须显式匹配。
 
-- **返回值通道**：`hyle_status`（opaque owning handle，`uintptr_t rep`）值返回 + 分支；`HYLE_C_RETURN_IF_ERROR` 传播。`Result<T>`（`std::expected`）是模板，C 侧用 `hyle_status` + 出参表达。
-- **诊断通道**：独立使用 `hyle/c/obs.h`；error 不维护第二套全局 handler。
-- **绝不让 C++ 异常跨 C 边界**（UB）。catch 只在 adapter 边界做"外来异常→Status"。
-- **mem 按冷/热路径分层，不另造错误系统**：句柄工厂、external init、HugeRegion 和
-  诊断复制等冷路径统一返回 `hyle_status`，out 参数在前且进入时清空。成功 Status 是
-  8B 零值、零分配；错误消息 OOM 时仍保留 inline code。HugeRegion 直接把 C++/platform
-  Status 所有权交给 C，不降级成模块私有枚举，也没有 stale TLS。`alloc/realloc`、region
-  bump、pool pop/acquire 等热路径继续直接返回指针/NULL，不在容量耗尽/OOM 路上构造
-  owning Status；生命周期、foreign/double free 等契约违反仍 fail-fast。这是接口语义与
-  成本裁决，不是依赖约束：error 是 P0 零上游根，mem 显式依赖它且不会形成环。
-- **platform 按失败形状分通道**：Parker/Thread 构造、DynLib、MappedFile、VM/NUMA 与
-  打开的 file resource 都返回 `hyle_status` + 出参，因此 C 与 C++ 共用错误分类且没有
-  “NULL/INVALID 究竟是合法值还是失败”的歧义。fs path 查询区分普通 false 与 OS 失败，
-  path 变更、权限、symlink、遍历、cwd/temp/home/env buffer-fill 与 env 写均采用
-  Status(+out)。platform 不保留模块私有 last-error；环境变量未设置用 `NOT_FOUND`，不再
-  占用 `SIZE_MAX` sentinel。
-- 对照：ggml 用 `ggml_status` 返回码；oneDNN 用 `dnnl_status_t` + C++ 层 `wrap_c_api` 转异常。HYLE 的可恢复失败同样走显式返回值，程序错误独立 fail-fast。
+### 3.2 Opaque handle 与 managed lifetime
 
-## 6. C++ API 易用性（第 1 层，给 C++ 用户）
+跨边界资源用不透明指针或明确宽度的 token 表示，禁止暴露 C++ 对象布局。每个 owning handle
+必须回答：
 
-C++ 用户拿原生 API，易用性靠 C++ 语言特性本身：
-- **RAII**：`VmRegion`/`MappedFile`/`FileHandle`/`StackAllocator` 析构自动释放，move-only。
-- **模板便利**：`Allocator::allocate_n<T>`/`construct<T>`/`make_unique<T>`、硬容量 `ObjectPool<T>`、显式软层 `ObjectPoolCache<T>`、`GrowablePool<T>`。
-- **类型安全**：强类型句柄、`Status::Is##Code()` 谓词、`Result<T>` 单子式传播（`HYLE_ASSIGN_OR_RETURN`）。
+- 谁创建、谁销毁，NULL 是否可传；
+- destroy/close 是否幂等，失败后 out 参数是什么；
+- borrowed child、view、错误字符串和 buffer 有效到何时；
+- callback/异步操作仍在飞时，cancel、drain 与 destroy 的顺序；
+- 哪个线程可以使用或释放。
 
-C ABI 用户（第 2 层）的易用性则靠 **header-inline 便利层**（零新导出符号，不进 ABI）：
-- core：`hyle/c/compiler.h` 提供 C kernel 的 assume/restrict/flatten/unroll source contract，与 C++ 共用
-  compiler backend；它是 C 产品面但不是动态调用 ABI。
-- error：全码工厂 `hyle_status_not_found()` 等 + 谓词 `hyle_status_is_*()` + `HYLE_C_RETURN_IF_ERROR`。
-- platform：`hyle_thread_opts_set_*` + `HYLE_THREAD_OPTS_INIT` + `hyle_page_align_up` inline。
-- mem：`hyle_alloc`/`free`/`realloc` 便利转发 + `*_create_default(&out,...)` system-backing 构造 + 默认硬容量 `HYLE_OBJECT_POOL_*`、显式软容量 `HYLE_OBJECT_POOL_CACHE_*` typed 宏（构造宏返回 Status；`HYLE_ALIGNOF` 跨 C/C++ shim）。默认 alignment 在头内常量折叠，不先跨 DLL 查询。
+绑定层必须能自然包成 Java `AutoCloseable`、.NET `SafeHandle`、Rust `Drop`、Python context
+manager/finalizer。finalizer 只能兜底，正常路径仍需确定性 close；库不得依赖 GC 恰好及时运行。
 
-**原则**：两条线各自把易用性做到位——C++ 靠语言特性，C 靠 header-inline 糖 + opaque 句柄。inline 糖不进 DLL 导出、零 ABI 风险，是"给 C 用户便利但不污染稳定面"的标准手法（HYLE 与 ggml/oneDNN 一致）。
+### 3.3 POD 与演进
 
-## 7. 落地纪律
+跨 ABI POD 只含固定宽度整数、浮点、指针、显式长度和其他已裁决 POD。tag/flag 不直接使用宽度
+不稳定的 C enum。可扩展输入以 `struct_size` + `reserved` 开头，桥接层按可读完整字段解码；
+小而冻结的 snapshot 才适合值返回。C/C++ 两面用 standard-layout、trivially-copyable、size、
+alignment、offset 和 tag value 的 `static_assert` 锁定。
 
-- HYLE 主体是 C++23：`include/hyle/<mod>/*.h` 用 `<cstddef>` 与
-  `std::size_t`/`std::byte`。只有语言中立的 `include/hyle/c/*.h` 用 `<stddef.h>` 与
-  全局 `size_t`；这些头必须继续能由 C11/C17 编译器直接消费。
-- 每个对外模块一层 `include/hyle/c/<mod>.h`：纯 C 可编译、`extern "C"`、opaque `_o` 句柄、create/destroy 配对、POD 值类型、显式 allocator 注入。
-- 可扩展输入 POD 以 `struct_size` 开头；值返回 snapshot POD 只用于小而
-  稳定的输出。桥接编译单元用 standard-layout/trivially-copyable/offset
-  与 fixed-width tag/flag 的 type/value `static_assert` 把 C/C++ 两面锁在一起；导出签名/POD
-  不直接使用宽度受编译选项影响的 C enum。
-- 分平台导出宏三态（`HYLE_<MOD>_C_API`：dllexport/dllimport/visibility）。
-- 桥接实现 `src/<mod>/c_<mod>.cc` 编进对应 `hyle_<mod>`，**显式构造** C++ 对象，不 reinterpret 布局。
-- 纯 C smoke test `tests/<mod>/c_<mod>_test.c`（C 编译器编，只 include C 头）证明无 mangling/模板/STL 泄漏。
-- 文档 `docs/guide/c-<mod>.md` 逐符号 1:1；对模板/RAII/协程等非
-  1:1 形状，另给“C++ 能力 → C 组合”表和可复制 recipe。不得只列
-  “C++ 专属”而不说明 C 用户如何取得等价能力或为什么它明确不是产品能力。
-- 三平台真编真测（Win MSVC + WSL GCC + mac clang），mac 的严格 clang 常揪出隐式 include 依赖（如 `std::nothrow` 需 `<new>`）。
+POD “C 可写”不等于“托管语言好绑”。嵌套自引用指针、平台相关 bit-field、柔性数组、未说明
+packing 或需要调用方维护内部不变量的透明结构，都不应进入 direct FFI。
+
+### 3.4 Callback
+
+callback 一律是 plain function pointer + `void* context`，并明确：
+
+- 同步调用还是可能在返回后保存；
+- 调用线程、是否并发、是否允许重入；
+- context 和 delegate 必须存活到哪个 unregister/drain 点；
+- callback 返回值如何停止、取消或报告错误；
+- native 侧是否会在 destroy 后再次回调。
+
+Java/.NET smoke 必须真实保活 callback/delegate、触发 GC 压力并完成 unregister/drain，不能让
+一个 C callback test 代替 managed runtime 的 pinning 与线程行为。
+Java upcall 若可能被 native worker thread 调用，stub 必须由可跨线程访问且覆盖完整注册期的
+shared arena 承载；confined arena 只适合明确限定在 owner thread/同步调用栈内的 callback。
+Java `Throwable`、.NET exception 或其他 managed unwind 绝不能穿过 native frame：binding trampoline
+必须在 managed 边界内捕获，并按已设计的 status/stop/record 通路报告。
+
+### 3.5 Buffer 与字符串所有权
+
+每个 pointer 都同时写清 direction、element type、element count/byte length、NULL 与 zero-length
+规则、alignment、借用/拥有关系和有效期。优先级是：
+
+1. 调用方提供 buffer，函数返回 required/written size；
+2. 库返回 borrowed view，并给出精确失效点；
+3. 库分配 owning buffer，同时导出同模块的对称 free。
+
+禁止要求 Java/.NET/Python 用本语言 allocator 释放 HYLE 内存，也禁止返回没有长度或生命周期说明
+的裸字符串。错误消息同样遵守这套规则。
+
+### 3.6 Batch-first
+
+跨 managed/native 边界的调用成本可能远高于一次容器操作、prefetch 或小算术。公开运行时能力应
+优先接受数组、span-like ptr+count、descriptor batch 或 command list，并明确 partial completion
+和 per-item error。逐元素 primitive 可以作为 C++/native-C 内核实现，但不能因为它“inline 很快”
+就声称 FFI 路径也快。
+
+### 3.7 Shared library 是所有 FFI 对象的根生命周期
+
+函数地址、opaque handle、borrowed pointer、callback/upcall stub 与仍在执行的 native worker 都依赖
+其所属 shared library 保持加载。生产 binding 通常把 HYLE libraries 固定到进程生命周期；若确实
+支持显式 unload，顺序必须是：停止新调用，cancel/drain 异步工作，unregister callbacks，关闭全部
+handles 并复制/放弃 borrowed views，释放 managed callback arenas/delegates，然后按实际依赖图逆序
+卸载模块；若该 package 加载了 `hyle_core`，它在所有依赖者之后卸载。卸载后的函数指针、POD
+内嵌指针和错误字符串全部失效。
+
+## 4. 类型擦除的正确用途
+
+类型擦除服务于真实 runtime 能力，而不是把 template 名字机械改成 `void*`：
+
+| C++ | 合理的 FFI 形状 |
+|---|---|
+| `GrowablePool<T>` | 若跨语言确有池化场景：opaque pool + slot size/alignment + batch acquire/release |
+| `Allocator::construct<T>` | 只导出 raw allocation/buffer ownership；对象构造由绑定语言负责 |
+| `Tensor<T, N>` | runtime dtype/rank/shape/stride descriptor + opaque storage |
+| `std::function` consumer | callback pointer + context + 明确保存/取消/线程合同 |
+
+若类型擦除后仍要求调用方嵌入 native hook、执行宏或维护 C++ 不变量，它没有成为 direct FFI。
+
+## 5. 错误跨边界
+
+- C++ 异常绝不跨 `extern "C"`；桥接层捕获允许出现的外来异常并翻译。
+- 可恢复失败使用统一 `hyle_status` + out 参数，out 进入时清空，成功才转移所有权。
+- owning status/message 的销毁和借用期限必须适合 managed wrapper；不得依赖 TLS last-error。
+- 热路若用 NULL/计数表达正常耗尽，必须与非法输入和系统失败无歧义；批接口需说明 partial
+  completion。
+- 生命周期、foreign/double free、违反并发合同等程序错误仍 fail-fast，但文档必须让绑定层可以
+  避免这些状态。
+
+## 6. 版本与动态发现
+
+Native FFI 继续采用普通 `extern "C"` 导出，不恢复全模块函数指针表或 `api_get`。但 separately
+distributed managed bindings 与 native runtime 确实会独立演进，因此使用**全局版本、逐 artifact
+握手**：
+
+- high 16 bits 是 ABI major，low 16 bits 是 minor；
+- core artifact 的 bootstrap 是 `hyle_ffi_abi_version`；它只认证被加载的 `hyle_core`，不能替另一
+  个模块 DLL/so/dylib 背书；
+- 以后某模块经真实 runtime 任务裁决为需要 direct FFI 时，其自身 shared artifact 必须导出
+  bootstrap `hyle_<module>_ffi_abi_version`，返回同一 `HYLE_FFI_ABI_VERSION`；FFI=`N/A` 的模块
+  不为凑形式增加 bootstrap，也不因此依赖 core；
+- binding 从待调用模块的 exact library handle 先解析该 artifact 的 bootstrap；
+- major 必须相同，runtime minor 必须大于等于 binding 生成时所需 minor；
+- 通过后才解析该 binding 需要的其余 symbols；
+- ABI version 与 product `major.minor.patch` 分开，后者只描述 HYLE release identity。
+
+这不是函数表：符号仍由 loader 直接解析，minor 增长只允许增加 exports，或扩展本来就采用
+`struct_size` 协议的 optional 尾字段。**当前没有任何已发布 binding 或外部兼容对象**：首个 FFI
+产品发布前，现有 symbol、版本值和 bootstrap 方案都可以直接修改或删除，不保留无人消费的历史
+别名。某个 binding 一旦正式发布，它实际依赖的 bootstrap 名、C calling convention 与精确
+`uint32_t(void)` 签名才跨后续 major 保留，否则旧 binding 连安全拒绝都做不到；扩展协议时增加
+新名字，旧入口只为已发布消费者保留。模块 bootstrap 不是模块私有版本号，只是从该 artifact
+查询全局 ABI generation。
+
+一个 binding 同时调用多个 HYLE shared artifacts 时，必须逐个握手，并从同一个 package/install
+root 装载完整依赖闭包；core 握手通过不能证明另一 artifact 来自同一套产物。官方 binding/package
+还必须把单一 library root、依赖 staging 与禁止混用不同安装根作为原子发布合同。该门归
+build/package 复审；在它完成前，非 core 模块不能借 core 的绿色证书取得 direct FFI 证书。符号
+可发现性仍由各 artifact 的 FFI-subset export manifest 和真实动态加载 smoke 证明。
+
+## 7. 证据：C smoke 不能替代 FFI smoke
+
+每个承诺 direct FFI 的模块至少需要：
+
+1. C schema self-contained 编译和 ABI layout asserts；
+2. shared artifact 中 FFI namespace 的精确 export manifest；C++ decorated exports 单独验收；
+3. Java 从产物目录直接 load，先验证该 exact artifact 的 FFI ABI version，再调用该模块真实 exports；
+4. .NET P/Invoke 对同一 shared artifact 做相同的逐 artifact ABI 握手与真实 exports 路径；
+5. 按实际 ABI shape 覆盖 POD、handle、buffer、callback、error 与 unload lifetime；不存在的 shape
+   明确记 `N/A + 理由`，不得为凑矩阵制造导出；
+6. 若存在数据面，运行 batch 正常 workload，确认没有把逐项 FFI hop 当正常路径；
+7. Windows/Linux/macOS 对各自 shared artifact 的 loader、calling convention、位宽、导出名和
+   最小动态调用真跑；模块收口至少有一台宿主完成 Java + .NET 双 managed smoke。
+
+这些测试不得编译用户侧 C shim。纯 C 测试仍可验证 schema 和 native-C helper，但只能记在第二层。
+Java/.NET 的真实运行结果是 managed lifetime 与 marshalling 的最低硬门。Rust/Python 在 HYLE
+正式承诺对应 binding package 时进入该 binding 的发布矩阵；不能为了凑语言数量，用四份只调
+version 的重复 smoke 代替一个覆盖真实 handle/buffer/callback 的托管消费者。
+一旦发布官方 Java/.NET binding package，该 package 支持的每个平台都必须运行自身 consumer；
+模块施工期的一台宿主双 smoke 不能冒充 binding package 的发布矩阵。
+
+## 8. core 是边界裁决示例
+
+core 的 direct FFI 只有 runtime ABI/product identity 是合理的：
+
+- compiler contracts、cache layout 常量都是 translation-unit/编译期能力；
+- 单地址 prefetch 跨 FFI 调用得不偿失，需要时应融合到所属模块的 batch runtime op；
+- transparent intrusive list 依赖稳定 native 地址、嵌入 hook 和手工脱链，不是 managed 容器 ABI；
+- runtime cache-line observation 属 platform，不因 core 有 cache layout 常量就复制一份导出。
+
+因此 core 只导出 `hyle_ffi_abi_version`、`hyle_version`、`hyle_version_string` 不是“遗漏”。
+旧 native-C prefetch/list/compiler helper 既不能计作 Java/.NET/Rust/Python 覆盖，也不应继续混在
+FFI schema 中；它们已从 core schema 移出。这个区分是所有模块复审的模板。
+
+## 9. 落地纪律
+
+- HYLE 主体保持 C++23；Native FFI schema 使用语言中立 C 声明，但没有原生 C 产品旅程。
+- 每个 schema item 必须标为 direct export、ABI POD/callback，或 native-C helper；禁止模糊的
+  “C API 已覆盖”。
+- bridge 编进能力所属模块，显式构造 C++ 对象，不 reinterpret C++ 布局。
+- create/destroy、buffer ownership、callback lifetime 和 batch semantics 是 API 设计的一部分，
+  不是绑定文档补丁。
+- 编译期/source-only 能力可明确不导出；runtime 跨语言任务不能用 inline/macro/recipe 免责。
+- 关闭一个模块前同时核对 C++ source、native-C helper 和 direct FFI 三份矩阵，并以真实
+  Java/.NET 动态加载结果签署 FFI 门。

@@ -8,7 +8,7 @@
 > 区别于另外两份：[`architecture/`](../architecture/) 是设计内幕（为什么这么造，面向贡献者）；[`usage-contract.md`](./usage-contract.md)（同目录）是**为 SOTA 性能保留的调用安全边界**（哪些用法会触发 UB，必读但只讲"红线"）。本指南讲"正常怎么用"。
 >
 > 项目施工状态见 [`../milestones/README.md`](../milestones/README.md)。本指南不复制就绪度，
-> 只列当前源码中的稳定入口和正常用法；绑定 commit 的性能数字只见
+> 只列当前源码中的有效入口和正常用法；这不是预发布兼容承诺。绑定 commit 的性能数字只见
 > [`../performance/`](../performance/README.md)。
 
 ## 0. 模块入口
@@ -34,7 +34,7 @@
 
 普通用户先看自己拿到什么，不需要从 HYLE 的全部 CMake 选项开始阅读：
 
-| 你拿到的内容 | 入口 | 需要设置的 HYLE 构建选项 |
+| C++ 用户拿到的内容 | 入口 | 需要设置的 HYLE 构建选项 |
 |---|---|---|
 | headers + shared SDK | `find_package(Hyle COMPONENTS ...)` | **无**；linkage 和 feature 已由包固定 |
 | headers + static SDK | `find_package(Hyle COMPONENTS ...)` | **无**；同样只链接 `hyle::<module>` |
@@ -46,8 +46,13 @@ backend；可通过 `Hyle_STATIC`、`Hyle_AVAILABLE_COMPONENTS` 和 `Hyle_AVAILA
 明确 `ON`/`OFF`，本机试用才保留 `AUTO`。
 
 三种形状的完整可复制工程、Windows DLL 处理、源码 FetchContent 和自行制作内部 SDK 见
-[`distribution.md`](./distribution.md)。无论哪种形状，用户代码都链接相同的 `hyle::<module>`；不要
+[`distribution.md`](./distribution.md)。在这三种 **native C++** 形状中，用户代码都链接相同的
+`hyle::<module>`；不要
 手写 include path、库文件名或传递依赖顺序。
+
+Java/.NET 等 managed host 只消费 shared artifact 的 direct Native FFI：从部署层给出的精确库路径
+加载，不使用 `target_link_libraries`。当前只有 core 模块按此标准签署，其 direct FFI 是 ABI
+bootstrap + 两个 product-identity symbols；其余模块仍以 readiness 状态为准。
 
 ### 1.1 用 CMake 集成（推荐）
 
@@ -85,7 +90,7 @@ HYLE 的构建开关分**产品/组装参数**与**benchmark 对照门**两个�
 | `CMAKE_BUILD_TYPE` | `Release` | `Debug`/`Release`/`RelWithDebInfo` | 性能库默认 Release(-O3)；要符号调试用 RelWithDebInfo |
 | `HYLE_COMPONENTS` | `all` | 组件名的 `;`/`,` 列表 | 只组装所需根；支持 core/util_core/error/obs/math/platform/time/mem/simd/container/util/sched/io/compute/graph，依赖自动闭包；util_core 是无 binary artifact 的可安装 C++ target |
 | `HYLE_STATIC` | `OFF`(SHARED) | `ON`/`OFF` | 要静态链进你的二进制（无 HYLE DLL 分发）设 ON；不改变父工程 `BUILD_SHARED_LIBS` |
-| `HYLE_BUILD_TESTS` | 顶层 `ON`、嵌入 `OFF` | `ON`/`OFF` | ON 时只创建已选组件测试；`hyle_<module>_tests` 同时构建该模块 C++/C binary |
+| `HYLE_BUILD_TESTS` | 顶层 `ON`、嵌入 `OFF` | `ON`/`OFF` | ON 时只创建已选组件测试；`hyle_<module>_tests` 同时构建该模块 C++ test 与适用的 pure-C schema/compiler fixture |
 | `HYLE_TEST_INSTRUMENTATION` | `ON` | `ON`/`OFF` | 仅 tests ON 时生效；ON 定义 `HYLE_TESTING` 以测 fault/结构诊断，OFF 运行 shipping layout/hot path 主体测试 |
 | `HYLE_BUILD_BENCH` | `OFF` | `ON`/`OFF` | 只有想跑微基准才开；仅创建组件闭包内的 benchmark。构建 `hyle_<module>_benches` 或全部已选组件的 `hyle_benches` |
 | `HYLE_INSTALL` | `OFF` | `ON`/`OFF` | 显式生成 relocatable `HyleConfig.cmake`、组件 targets 和 install rules；与 `HYLE_BUILD_TESTS=ON` 互斥，避免发布 test-only ABI |
@@ -94,7 +99,7 @@ HYLE 的构建开关分**产品/组装参数**与**benchmark 对照门**两个�
 | `HYLE_DEPS_DIR` | `<hyle-build>/_deps` | path | 当前 build tree 的 FetchContent 源码/生成物；不要让不同 toolchain/build tree 共用。离线源码用标准 `FETCHCONTENT_SOURCE_DIR_<NAME>` 注入 |
 | `HYLE_SIMD_EXACT_TARGET` | 空（runtime fat） | SCALAR/SSE4/AVX2/AVX512/NEON/SVE/RVV | 构建整库 exact ISA；普通分发不要改，见 §2 |
 | `HYLE_TRACE` | `OFF` | `ON`/`OFF` | 编译期 instrumentation；ON 还需 `HYLE_TRACY_DIR` |
-| `HYLE_IO_HTTP2` | 有 fcontext `ON`，否则 `OFF` | `ON`/`OFF` | 仅在选中 io 且 sched 可用时取得 nghttp2；无 fcontext 显式 ON 失败，OFF 仍保留 unavailable stub C ABI |
+| `HYLE_IO_HTTP2` | 有 fcontext `ON`，否则 `OFF` | `ON`/`OFF` | 仅在选中 io 且 sched 可用时取得 nghttp2；无 fcontext 显式 ON 失败，OFF 仍保留 unavailable stub 动态导出候选 |
 | `HYLE_IO_TLS` | `AUTO` | `AUTO`/`ON`/`OFF` | 有 fcontext 时 AUTO 有 OpenSSL 就启用；无 fcontext 时 AUTO 不探测、ON 失败；OFF 始终不探测 OpenSSL |
 | `HYLE_COMPUTE_CUDA` | `AUTO` | `AUTO`/`ON`/`OFF` | AUTO 有 Toolkit 就启用；ON 要求 CUDA；OFF 不探测 Toolkit、也不启用 CUDA language |
 | `HYLE_COMPUTE_GGML` | 有 fcontext `ON`，否则 `OFF` | `ON`/`OFF` | ggml bridge 依赖 sched；无 fcontext 显式 ON 失败，host/CUDA/Vulkan 不受影响 |
@@ -190,7 +195,7 @@ HYLE 默认编成**共享库**（`.so`/`.dll`，每个已选模块一个 `hyle_<
 
 | 你的场景 | 选 | 命令 | 为什么 |
 |---|---|---|---|
-| **多个进程/插件共用一份 HYLE**；想热替换实现；想锁住 ABI 边界 | **动态**（默认）| `cmake -B build -DCMAKE_BUILD_TYPE=Release` | 一份 `.so`/`.dll` 多处加载；`HYLE_<MOD>_API` 的 dllexport/import 在此生效，跨边界 ABI 稳定 |
+| **多个进程/插件共用一份 HYLE**；需要动态部署且所有 C++ 消费者使用受支持的同一工具链/build contract | **动态**（默认）| `cmake -B build -DCMAKE_BUILD_TYPE=Release` | 一份 `.so`/`.dll` 多处加载；`HYLE_<MOD>_API` 的 dllexport/import 在此生效，但 C++ 不承诺跨编译器/STL ABI；跨语言稳定接缝只属于经复审的 direct Native FFI |
 | **单一可执行、不想分发 HYLE 动态库**；嵌入式/容器精简；想让链接器删未用符号 | **静态** | `cmake -B build -DHYLE_STATIC=ON -DCMAKE_BUILD_TYPE=Release` | HYLE 模块折进你的二进制；仍可能依赖 compiler runtime、系统 SDK/库及已启用 backend 的运行时，`HYLE_<MOD>_API` 退化为空 |
 
 **分发型 vs 自用型构建（与 §2 SIMD 模型直接相关）**：
@@ -226,15 +231,16 @@ hyle_stage_runtime_dependencies(app) # Windows shared DLL closure；其他形状
   `CMAKE_INSTALL_LIBDIR`/`INCLUDEDIR` 等直接设成绝对路径，否则无法整体搬迁，configure 会拒绝。
 - imported target 自动传播 C++23、`HYLE_STATIC`、公开头与依赖模块；静态 mem 的 mimalloc 后端也作为
   内部 `LINK_ONLY` target 随包安装，用户不手写它。
-- 纯 C 工程消费 static package 时，`HyleConfig` 只为最终链接启用 CXX language，让 CMake 选择当前
-  toolchain 的 C++ ABI/runtime；`.c` 源仍按 C17 编译，不硬编码 `stdc++` 或 `c++`。
+- direct FFI 必须消费 shared artifact；static package 不能由 Java/.NET/Rust/Python 的 loader
+  直接打开。若宿主自行编译一层 C/C++ wrapper 再静态链接，那是另一种 C shim 交付形态，
+  不属于本文承诺的 direct FFI。
 - package 只承诺它实际安装的组件；请求缺失 component 会在 configure 阶段列出 available 清单。
 - `Hyle_AVAILABLE_COMPONENTS` 可审计模块闭包，`Hyle_AVAILABLE_FEATURES` 可审计 trace、TLS、CUDA、
   Vulkan 等可选能力；不要从本机恰好装了什么反推包的形状。
 - 有 sched/fcontext 的 io package 可保留默认 `HYLE_IO_HTTP2=ON`：pinned nghttp2 静态协议核被 shared
   io 吸收，static io package 自动迁移其 link-only archive、生成头和 MIT 条款。无 fcontext 目标默认
   OFF，显式 ON 失败；stub 仍提供稳定 availability=0，但不会伪写 `io_http2` feature。
-  该最小 io 形状只承诺 proactor/shared-memory 和 C HTTP/2 probe/stub；头树虽然统一安装，
+  该最小 io 形状只承诺 proactor/shared-memory 和 HTTP/2 probe/stub 的动态导出候选；头树虽然统一安装，
   `hyle::io` 会导出 `HYLE_IO_HAS_COROUTINE_TRANSPORT=0`，sched-dependent C++ 头会立即拒绝编译。
 - compute package 同样完整：shared `hyle_compute` 吸收 ggml/volk，static package 自动传播其
   link-only archive、头与 Threads/CUDA 依赖；可运行 consumer 见
@@ -243,14 +249,18 @@ hyle_stage_runtime_dependencies(app) # Windows shared DLL closure；其他形状
 - 安装前缀始终带 HYLE proprietary notice 和第三方总清单；实际编入的 mimalloc、xxHash、
   wyhash、simdutf、fcontext、picohttpparser、Highway/xsimd/JPEG XL port 以及可选 Tracy 的
   许可证按 target 图迁移。拿到源码或 SDK 不等于取得 HYLE 原创部分的外部使用许可。
-- **当前边界（诚实）**：core/error/platform/mem/time/obs/simd/util/container/sched/io 已有纯
-  `extern "C"` C ABI；compute/graph 尚无 C 产品面，math 要先完成与 simd/std 的边界审查再决定是否
-  需要独立 C ABI。统一 install/export 已完成，不再属于 C ABI 待办。SIMD 外部调用必须用
-  `hyle/c/simd.h`，不能把 C++ mangled symbol 当 FFI。
+- **当前 direct FFI 边界（诚实）**：core 已按 Java/.NET 无 C shim 的
+  managed binding 口径复审，可直接绑定的是 `hyle_ffi_abi_version` bootstrap、
+  `hyle_version` 与 `hyle_version_string`。core 不维护 native C source 产品面。
+  error/platform/mem/time/obs/simd/util/container/sched/io 虽已有 `extern "C"` 导出，但其
+  `c-*.md` 仍是 native FFI 合同候选，待逐模块 managed binding 复审；不得用纯 C 编译
+  smoke 或 header-inline helper 宣称跨语言能力已验收。compute/graph 尚无该产品面，math
+  要先完成与 simd/std 的边界审查。SIMD 外语绑定只能指向 `hyle/c/simd.h` 中真正
+  导出的 C 符号，不能绑 C++ mangled symbol，也不能把 inline helper 当成导出。
 
 ## 2. SIMD 的编译变体模型（`HYLE_SIMD_TARGET_*` 是什么）
 
-常用 batch 能力、稳定 C ABI 示例和 exact/native source 路径集中在
+常用 batch 能力、native FFI 合同候选和 exact/native source 路径集中在
 [`simd-usage.md`](./simd-usage.md)。本节只解释如何构建和选择 ISA 变体。
 
 > 这是"编译选项多"的另一处来源，单列澄清——**普通使用者基本不用碰它**。
@@ -473,9 +483,10 @@ fail-fast。宏对临时 Result 移动、对命名 lvalue Result 复制，不会
 OOM 时保留错误码；增加 context OOM 时保留原消息。Status 传播不自动写日志，人读
 诊断统一使用 §3.5 的 obs。
 
-跨 DLL / C-FFI 消费者用纯 C 面（`hyle/c/error.h`）：普通失败返回 `hyle_status`，成功还要
+跨 DLL 的 direct FFI 候选面定义在 `hyle/c/error.h`：普通失败返回 `hyle_status`，成功还要
 交付句柄时使用首位 out 参数。mem 冷工厂就是这一形状，热 allocate/acquire 仍返回 NULL。
-完成选型后，精确的 owning 生命周期与 ABI 映射见 [`c-error.md`](./c-error.md)。
+完成选型后，所有权与导出候选见 [`c-error.md`](./c-error.md)；该页仍待 managed binding 复审，
+不能仅因 native C 示例可编译就视为 Java/.NET/Rust/Python 验收通过。
 
 ### 3.4 sched —— 纤程 + 调度器
 ```cpp
@@ -492,8 +503,8 @@ sched.shutdown();                       // 排空后 join worker
 需要返回值/结构化组合时用
 `spawn_task(sched, alloc, Task<T>) -> JoinHandle<T>`；阻塞 syscall 用
 `spawn_blocking`，不要占住 worker。`shutdown()` 允许已接纳任务派生后代并排空；
-服务关闭先 `begin_shutdown()` + `drain_for()`。完整选择、生命周期和纯 C/FFI
-用法见 [`c-sched.md`](./c-sched.md)。
+服务关闭先 `begin_shutdown()` + `drain_for()`。完整选择、生命周期和 native FFI 合同候选见
+[`c-sched.md`](./c-sched.md)；其 managed binding 还待复审。
 
 ⚠️ 见 `usage-contract.md`：fiber 体勿跨 `yield()` 持有 thread_local 派生值（work-stealing 会迁移线程）。
 
@@ -528,8 +539,9 @@ HYLE_TRACE_ALLOC_NAMED(ptr, bytes, "arena");
 ```
 
 默认 `HYLE_TRACE=OFF` 时宏参数不求值、生成零指令；`-DHYLE_TRACE=ON
--DHYLE_TRACY_DIR=...` 接 Tracy。纯 C/FFI 使用稳定 runtime trace 函数及
-opaque sink，见 [`c-obs.md`](./c-obs.md)，不要直接绑定 C++ `LogSink` 或 Tracy 类型。
+-DHYLE_TRACY_DIR=...` 接 Tracy。direct FFI 只能绑定 runtime trace 导出与 opaque sink
+候选面，见 [`c-obs.md`](./c-obs.md)；该页 managed binding 待复审，且不得直接绑定
+C++ `LogSink`、Tracy 类型或 compile-time trace 宏。
 
 ### 3.6 time —— 时钟、deadline 与定时器
 
@@ -549,8 +561,8 @@ duration 才用 `CommonTimeoutQueue`。二者都是 stable-address、single-owne
 结构，只交付节点而不执行 callback。OS 线程 sleep 用 `time::sleep_*`，HYLE fiber 必须使用
 `sched::sleep_*`，否则会阻塞 worker。
 
-完整选择表、代码、周期 timer 策略和生命周期陷阱见 [`time.md`](./time.md)；纯 C/FFI 的
-Status/opaque handle/visitor 映射见 [`c-time.md`](./c-time.md)；性能数字只见
+完整选择表、代码、周期 timer 策略和生命周期陷阱见 [`time.md`](./time.md)；Status/opaque
+handle/visitor 的 native FFI 合同候选见 [`c-time.md`](./c-time.md)，其 managed binding 待复审；性能数字只见
 [`../performance/benchmarks-time.md`](../performance/benchmarks-time.md)。
 
 ### 3.7 util —— Rng / Ref / Registry / DEFER
@@ -581,12 +593,11 @@ key/help，factory 与 visitor 都在锁外调用并可重入。初始化结束�
 结果时用 `Registry<T*>`；backend 初始化需要设备/驱动/配置诊断时用
 `Registry<Result<T*>>`，missing 会得到 `NotFound`，creator error 原样传播。
 
-纯 C、FFI 或跨编译器消费者不要绑模板/类布局，改用
-[`hyle/c/util.h`](../../include/hyle/c/util.h) 的 RNG POD 和
-Ref/Registry/SpinLock opaque handle；当前 47 个动态符号 + 10 个 inline convenience 的生命周期、
-共享 Status/allocator 与 callback 合同见 [`c-util.md`](./c-util.md)。C 没有词法析构，旧 heap
-ScopeGuard 已删除；用 goto-cleanup 或宿主语言 defer/finally。`type_name<T>`/`type_hash<T>`
-依赖 C++ 静态类型，也有意不做运行时擦除。
+direct FFI 用户不要绑模板/类布局。[`hyle/c/util.h`](../../include/hyle/c/util.h)
+中真正导出的 RNG POD 与 Ref/Registry/SpinLock opaque handle 是 native FFI 合同候选；
+inline convenience 不是动态符号。候选面的所有权、共享 Status/allocator 与 callback 合同见
+[`c-util.md`](./c-util.md)，其 managed binding 待复审。清理使用宿主语言的 defer/finally；
+`type_name<T>`/`type_hash<T>` 依赖 C++ 静态类型，也有意不做运行时擦除。
 
 **性能须知（何时 Ref 划算、何处别用）**：`Ref` 拷贝与析构需要原子引用计数；跨核共享时
 cache-line ownership 转移会放大成本。具体点值见 performance，据此：
@@ -615,14 +626,41 @@ HTTP 的完整 C++ recipe 与生命周期见 [`io.md`](./io.md)；本总指南�
 [`../performance/benchmarks-io.md`](../performance/benchmarks-io.md)。
 
 
-## 4. C-ABI 边界（跨 DLL / FFI）
+## 4. Native FFI 边界（direct dynamic binding）
 
-HYLE 内部 C++23；稳定边界是 `include/hyle/c/*.h` 的纯 `extern "C"` **命名自由
-函数 + POD/vtable 回调 + 不透明句柄**，不使用模块级 API 函数表，也不把 STL、
-模板或异常跨 DLL。core/error/platform/mem/time/obs/simd/util/container/sched/io 已落地；
-compute/graph 尚待各自模块收口，math 先审产品边界。统一 install/export 已完成。sched 的完整 FFI
-合同见 [`c-sched.md`](./c-sched.md)，总规范见
-[`c-abi-design.md`](../architecture/c-abi-design.md)。
+HYLE 的消费面分三层，不能因为它们出现在同一个 `include/hyle/c/*.h` 就混为一件事：
+
+| 层 | 调用方 | 什么算可用 |
+|---|---|---|
+| C++ source API | 编译 C++23 translation unit | C++ 头中的类、模板、constexpr 与 inline |
+| native C source helper | HYLE 内部桥接或遗留 shim 编译 C17 translation unit | macro、`static inline` 和 source recipe；不是客户产品层 |
+| native FFI 合同 | Java/.NET/Rust/Python 不编译 C shim | shared library 里真正导出的 C calling-convention 符号，及其签名中的 fixed-width POD、opaque handle、callback |
+
+`extern "C"` 只规定名字与 calling convention，不会把 macro 或 `static inline` 变成动态符号。
+因此 bindgen/jextract 能读头文件、或纯 C smoke 能编译，都不等于 P/Invoke、`ctypes`、Java FFM
+或 Rust dynamic loader 可直接调用。任何需要生成并编译 wrapper C 文件的方案属于 C shim。
+
+native FFI 签名不把 STL、C++ 模板或异常跨 DLL，也不使用模块级 API 函数表。当前状态是：
+
+- core 已复审：direct FFI 是 `hyle_ffi_abi_version` bootstrap + `hyle_version` /
+  `hyle_version_string`；详见 [`c-core.md`](./c-core.md)。cache/prefetch/compiler/intrusive 是
+  C++ source 能力，不在导出表，core 也不提供 native C helper 层。
+- error/platform/mem/time/obs/simd/util/container/sched/io 已有 C 导出候选面，但对应
+  `c-*.md` 均待 Java FFM 与 .NET P/Invoke 的最低 managed-binding 复审；正式承诺 Rust/Python
+  binding 时再追加其 package consumer。复审前
+  不把 native C helper 或 C smoke 当作跨语言易用性证书。
+- compute/graph 尚无 native FFI 产品面，math 先审与 simd/std 的产品边界。
+
+每个 binding 在解析某 artifact 的 required symbols 前，都先从该 exact library handle 调用其
+bootstrap：core 是 `hyle_ffi_abi_version`，未来其他 FFI 模块是
+`hyle_<module>_ffi_abi_version`。只有 runtime major 等于 binding major，且 runtime minor 不小于
+binding 所需 minor 时才继续。一个 binding 使用多个模块就逐 artifact 验证，并只从同一个
+package/install root 装载完整闭包；core 的结果不能替另一 DLL/so/dylib 背书。所有 bootstrap
+返回同一全局 ABI generation，产品版本查询不能代替握手。当前尚无已发布 binding，故这些
+pre-release 名字和值都可在首发前直接重做；只有发布后才为真实消费者保留对应 bootstrap。
+
+总体设计背景见 [`c-abi-design.md`](../architecture/c-abi-design.md)；具体能否直接绑定，以各
+`c-*.md` 的动态导出表和 managed-binding 复审状态为准。
 
 ## 5. 安全边界（必读补充）
 
@@ -706,7 +744,7 @@ auto pinned = Thread::spawn([&] { run_pinned(); }, pinned_opts); // 设置失败
 unknown 当 performance。macOS 用 `SchedulerOptions::worker_priority = ThreadPriority::kHigh`
 走 QoS，不猜 logical CPU 编号；两个 scheduler 选项都默认关闭。
 
-**跨平台语义提醒**：`create_symlink` 在 Windows 需开发者模式/管理员（否则返回 `PermissionDenied`）；`set_env_var(name,"")` 在 Windows 删除变量、POSIX 保留空值；thread 配置默认 best-effort，需要保证时选 `ThreadConfigPolicy::kRequired` 或检查 `this_thread::set_*` 的 Status（macOS 硬 affinity 明确 `Unimplemented`，priority 走 QoS）。`cpu_topology()` 只报告系统明确提供的 P/E 分类；信息不足时把全部逻辑 CPU 归入 performance 并令 `hybrid=false`，不做频率启发式猜测。worker 数用动态 `available_cpu_count()`，绑核 id 用 `available_cpu_ids()`；二者都遵守进程 affinity/cpuset。纯 C / FFI 消费者用 `hyle/c/platform.h`（见 [`c-platform.md`](./c-platform.md)）。
+**跨平台语义提醒**：`create_symlink` 在 Windows 需开发者模式/管理员（否则返回 `PermissionDenied`）；`set_env_var(name,"")` 在 Windows 删除变量、POSIX 保留空值；thread 配置默认 best-effort，需要保证时选 `ThreadConfigPolicy::kRequired` 或检查 `this_thread::set_*` 的 Status（macOS 硬 affinity 明确 `Unimplemented`，priority 走 QoS）。`cpu_topology()` 只报告系统明确提供的 P/E 分类；信息不足时把全部逻辑 CPU 归入 performance 并令 `hybrid=false`，不做频率启发式猜测。worker 数用动态 `available_cpu_count()`，绑核 id 用 `available_cpu_ids()`；二者都遵守进程 affinity/cpuset。direct FFI 只绑定 `hyle/c/platform.h` 中真正导出的符号，见 [`c-platform.md`](./c-platform.md)；该 native FFI 合同候选的 managed binding 待复审。
 
 本指南讲"正常用法"。**为 SOTA 性能保留的调用约束**（违反 = UB，非 HYLE bug）单独列在 [`usage-contract.md`](./usage-contract.md)（同目录）：fiber 跨 yield 的 thread_local、分配器跨线程 free、CPUID 探测的 LTO 隔离等。集成前过一遍。
 

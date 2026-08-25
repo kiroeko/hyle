@@ -24,6 +24,10 @@ under `include/hyle`, `src`, and (for the first total) `tests`; consequently
 docs, benchmarks, samples, third-party code, CMake, and build/cache trees do not
 enter those totals. A module count uses the same native language policy and
 excludes tests, benchmarks, docs, and CMake.
+In JSON schema 2, each metric's `files` is the number of files actually counted
+by `cloc`; `selected_files` is the wider tracked-path selection before language
+filtering. This keeps a selected `CMakeLists.txt` from being mislabeled as a
+native implementation file.
 
 `core`, `util-core`, and `util-runtime` have explicit logical boundaries in the
 script. Other native modules use `include/hyle/<module>`, all matching
@@ -32,6 +36,31 @@ not fit either shape, repeat `--module-path REPO_PATH`; the exact override is
 printed in the report so the certificate cannot hide its counting boundary.
 `--self-check` also verifies the fixed core boundary and the expected subset
 relations. `cloc` and Python 3 must be available on `PATH`.
+
+## `run-core-ffi-smoke.py` — direct Java/.NET ABI proof
+
+This runner builds temporary Java FFM and .NET `LibraryImport` consumers, then
+loads one exact shared `hyle_core` path without a C/C++ shim. It also loads the
+test-only incompatible fixture, which exports only ABI major 2, and proves both
+bindings reject it before wider symbol resolution. It validates the Native FFI
+ABI handshake and product identity; it is not a native-C product sample. A
+.NET 8+ SDK and JDK 25+ are required for the complete gate:
+
+```bash
+python scripts/run-core-ffi-smoke.py --library /absolute/path/to/libhyle_core.so \
+  --incompatible-library /absolute/path/to/libhyle_core_ffi_incompatible_fixture.so
+python scripts/run-core-ffi-smoke.py --library /absolute/path/to/libhyle_core.dylib \
+  --incompatible-library /absolute/path/to/libhyle_core_ffi_incompatible_fixture.dylib
+```
+
+```powershell
+python scripts/run-core-ffi-smoke.py `
+  --library C:\absolute\path\to\hyle_core.dll `
+  --incompatible-library C:\absolute\path\to\hyle_core_ffi_incompatible_fixture.dll
+```
+
+Use `--only dotnet` or `--only java` for a focused diagnostic. All managed
+compiler output is placed in an automatically removed temporary directory.
 
 ## `hyle-windows.ps1` — select an installed Windows C++ environment
 

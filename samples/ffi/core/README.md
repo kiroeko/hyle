@@ -8,9 +8,10 @@ bootstrap candidate, and reject an incompatible ABI before using a wider module
 surface. No released binding consumes this contract yet, so its names and
 version may change freely before the first FFI product release.
 
-Both probes first validate the global ABI bootstrap using the compatibility
-rule “same major and runtime minor greater than or equal to the binding's
-required minor”; only then do they resolve/call the product-identity symbols.
+Both probes first call the bootstrap from the exact core artifact and validate
+the returned global FFI generation using the candidate rule “same major and
+runtime minor greater than or equal to the binding's required minor”; only then
+do they resolve/call the product-identity symbols.
 For the current source tree the expected values are:
 
 - `hyle_ffi_abi_version()` = `0x00010000`;

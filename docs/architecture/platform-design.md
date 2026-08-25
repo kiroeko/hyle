@@ -1,5 +1,11 @@
 # HYLE platform/ 设计
 
+> **Native FFI 状态校正（2026-08-25）**：HYLE 没有 native-C 客户，也没有已发布的 managed
+> binding。本文关于 C/C++、C/FFI 或 C 用户的旧表述只记录待复审的 ABI 候选，不是当前跨语言
+> 证书或兼容承诺；首发前可破坏性调整。先从真实 foreign-runtime 任务裁决 FFI 是否为 `N/A`；
+> 只有保留 direct FFI 时，platform 才必须通过 Java FFM + .NET P/Invoke、真实导出、资源所有权/
+> 回调与 batch 旅程后冻结该边界。
+
 > 跨操作系统机制基础层。本页是 platform 的长期边界、公共类型形状和维护约束的设计
 > 真源。用户如何选择见 [`../guide/platform.md`](../guide/platform.md) 与
 > [`../guide/c-platform.md`](../guide/c-platform.md)，性能结论只见
@@ -75,7 +81,7 @@ worker 数、轮转、超订和 NUMA-aware stealing 都是 sched 或应用策略
 ## 4. Thread 只表达 OS 线程机制
 
 `Thread` 是 move-only OS handle，不用 `std::thread` 暴露 ABI，也不接受 `std::function`。
-入口使用 function pointer + context，既能服务内部 runtime，也能直接映射到 C/FFI。
+入口使用 function pointer + context，既能服务内部 runtime，也能在任务成立时映射到 Native FFI 候选。
 
 `ThreadOpts` 只承载 OS 在创建边界可执行的配置：name、stack size、单 CPU/CPU 集合 affinity、
 portable priority 和配置策略。view 参数在 `spawn()` 返回前同步复制；用户无需为短期配置
@@ -190,7 +196,7 @@ link、目录 visitor、cwd/temp/home/env、同步 open/read/write 和原子临�
 platform 不拥有 path 字符串算法、glob、watcher、高层 directory object、async stream 或虚拟
 文件系统。纯词法 path 操作属于 container/string，变化通知和异步数据流属于 io。
 
-## 8. 错误、所有权与 C ABI
+## 8. 错误、所有权与 Native FFI 候选
 
 platform 可以依赖最底层 error。资源创建和有值查询返回 `Result<T>`，状态变更返回
 `Status`；错误保存 HYLE code、operation 和原生系统诊断。成功热路径不分配，模块不维护
@@ -208,16 +214,19 @@ C++ 资源 owner（`Thread`、`VmRegion`、`FileHandle`、`MappedFile`、`DynLib
 RAII；借出的 pointer、symbol、native handle 或 view 不得活过 owner。需要转移回收责任时必须
 使用显式 release/close 语义。
 
-C ABI 是独立但等价的产品面：
+现有 `include/hyle/c/platform.h` 与 `c_platform.cc` 只是 C-syntax ABI 候选账本，不是独立的
+native-C 产品面，也不承诺与 C++ API 做 1:1 parity。先以真实 Java/.NET 等任务决定整块边界是
+保留、缩小还是 `N/A`；只有保留 direct FFI 时，下面的形状才成为待验合同：
 
-- 小型且布局冻结的 POD facts 和 fixed-width tag/flag 可直接值传递；tag 使用 `int32_t`/`uint32_t` typedef +
+- 小型 POD facts 和 fixed-width tag/flag 可直接值传递；tag 使用 `int32_t`/`uint32_t` typedef +
   integer constants，不让 C `-fshort-enums` 改变参数、返回或 POD 布局；资源用 opaque handle
   或一字宽 native handle。
 - fixed typedef 必须贯穿导出参数/返回、callback 与 POD 字段；`hyle_thread_opts` 在
   `struct_size` 后把旧 padding 显式命名为必须为 0 的 `reserved`，业务字段全部可选；保留到
-  `config_policy` 为止的历史顺序，数组 affinity 只追加在尾部。64-bit ABI 锁定 size 72、
+  `config_policy` 为止的当前候选顺序，数组 affinity 只追加在尾部。当前 64-bit fixture 断言 size 72、
   priority/policy/array/count offset 44/48/56/64，mandatory readable size 8；满足显式
-  `reserved=0` 合同的历史字段前缀 56 仍可读。`hyle_cpu_info` 锁定 size 12、kind offset 8。
+  `reserved=0` 合同的字段前缀 56 可读。`hyle_cpu_info` 当前断言 size 12、kind offset 8；这些
+  数字在首个 managed binding 发布前不是兼容承诺。
   裸 `int` 只保留 C bool/callback truth 与显式 sentinel，裸 `unsigned` 只保留 CPU id/count。
 - 会随新 ISA 扩展的 `hyle_cpu_features` 不按值跨 ABI：调用方用 INIT 提供
   `struct_size + reserved` 版本前缀和可写容量，adapter 只写已知前缀、保留 future tail，且在
@@ -229,17 +238,18 @@ C ABI 是独立但等价的产品面：
   当前默认值构造本地结构，再只 memcpy 调用方声明且本库已知的前缀：过短必需前缀拒绝、
   缺失尾字段取默认、未知未来尾部忽略。pointer+count 等成对扩展仅在两字段都完整可读时启用，
   防止部分字段复制后形成伪造 view 或越界读取。
-- C 不机械复制 C++ 模板/RAII 名称，但必须能覆盖同一用户任务，不得出现 C 无法完成的
-  platform 能力。
+- 不机械复制 C++ 模板/RAII 名称。只有已选中的 foreign-runtime 任务要求能力可达；未选中的
+  编译期、RAII 或同工具链能力可以明确不导出，不能为 parity 制造符号。
 
 C++ 在同一个无分配 core 上提供两种显式便利形状：`Thread::spawn(callable, opts)` 拥有 capturing/
 move-only callable；`platform/convenience.h` 以 header-only overload 返回 owning
 `std::string/std::vector`。后者负责 count/fill、动态视图重试与 STL 分配异常到 `Status` 的
-adapter 转换，但不进入 DLL/C ABI，也不让 `fs.h/cpu.h` 的 core 被迫引入 owning 类型。这样普通
+adapter 转换，但不进入 DLL/direct FFI 候选，也不让 `fs.h/cpu.h` 的 core 被迫引入 owning 类型。这样普通
 C++ 使用不重复样板，allocator/arena/FFI 与热调用者仍能控制每次分配。
 
-导出符号和精确所有权以 [`../guide/c-platform.md`](../guide/c-platform.md) 为用户信源；机械
-声明/纯 C 引用/动态库导出一致性是发布闸门，不在 architecture 复制易过时的符号计数。
+候选符号和精确所有权映射记录在 [`../guide/c-platform.md`](../guide/c-platform.md)。纯 C 编译、
+声明引用和动态导出一致性只证明 schema/compiler/export hygiene；若保留 direct FFI，还必须由
+Java FFM 与 .NET P/Invoke 从精确 shared-library 路径完成 ABI bootstrap、调用和生命周期旅程。
 
 ## 9. 性能架构
 
@@ -305,7 +315,8 @@ platform 的 SOTA 标准不是“比系统调用快”，而是同合同下不�
 
 1. 这是可复用 OS 机制，还是某个上层 workload 的策略？
 2. 系统事实、动态进程事实和用户偏好是否被不同类型表达？
-3. C++ 与纯 C 是否都能完成同一真实任务，所有权和失败是否可见？
+3. 是否存在真实 foreign-runtime 任务？没有时是否明确 `FFI=N/A`；保留 direct FFI 时，Java/.NET
+   是否都能完成该任务，且所有权和失败可见？
 4. 新调用是否给默认热路径增加 syscall、分配、握手或间接层？
 5. Windows/Linux/macOS 的能力差异是显式结果，还是被静默吞掉？
 6. 是否有真实内部或外部消费者，而非只为 benchmark 制造形状？
