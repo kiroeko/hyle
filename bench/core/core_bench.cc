@@ -1,11 +1,18 @@
 #include <nanobench.h>
 
+#include <chrono>
 #include <cstddef>
+#include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <list>
 #include <memory>
 #include <string>
 #include <vector>
+
+#if defined(__APPLE__)
+#  include <pthread.h>
+#endif
 
 #include "hyle/core/intrusive_list.h"
 
@@ -17,6 +24,45 @@ namespace {
 namespace nb = ankerl::nanobench;
 using hyle::core::IntrusiveList;
 using hyle::core::IntrusiveListHook;
+
+nb::Bench make_bench() {
+  nb::Bench bench;
+#if defined(__APPLE__)
+  // Darwin has no supported hard P/E-core affinity. Keep an epoch long enough
+  // that a scheduler burst cannot dominate these sub-nanosecond primitives.
+  bench.minEpochTime(std::chrono::milliseconds(8));
+#endif
+  return bench;
+}
+
+// Make SSH-launched Apple runs explicit without claiming physical-core
+// pinning. Interactive is the product certificate; utility is a separate
+// lower-priority audit selected by HYLE_BENCH_APPLE_QOS=utility.
+void configure_main_benchmark_thread() {
+#if defined(__APPLE__)
+  const char *requested = std::getenv("HYLE_BENCH_APPLE_QOS");
+  qos_class_t qos = QOS_CLASS_USER_INTERACTIVE;
+  const char *name = "user-interactive";
+  if (requested != nullptr && std::strcmp(requested, "utility") == 0) {
+    qos = QOS_CLASS_UTILITY;
+    name = "utility";
+  } else if (requested != nullptr &&
+             std::strcmp(requested, "interactive") != 0) {
+    std::fprintf(stderr,
+                 "hyle_core_bench: HYLE_BENCH_APPLE_QOS must be "
+                 "interactive or utility (got %s)\n",
+                 requested);
+    std::abort();
+  }
+  const int result = pthread_set_qos_class_self_np(qos, 0);
+  std::fprintf(stderr,
+               "# HYLE_CORE_BENCH apple_main_qos=%s qos_ok=%d "
+               "affinity=unsupported\n",
+               name, result == 0 ? 1 : 0);
+  if (result != 0)
+    std::abort();
+#endif
+}
 
 bool rival_first_requested() {
 #if defined(_WIN32)
@@ -62,7 +108,7 @@ void bench_fifo(bool rival_first) {
     boost_nodes[index].value = static_cast<int>(index);
 #endif
 
-  nb::Bench bench;
+  nb::Bench bench = make_bench();
   bench.title("intrusive FIFO batch N=" + std::to_string(Count))
       .relative(true)
       .batch(Count)
@@ -116,7 +162,7 @@ void bench_unlink(bool rival_first) {
   auto boost_nodes = std::make_unique<BoostNode[]>(Count);
 #endif
 
-  nb::Bench bench;
+  nb::Bench bench = make_bench();
   bench.title("intrusive refill + arbitrary cancel N=" +
               std::to_string(Count))
       .relative(true)
@@ -172,7 +218,7 @@ void bench_iteration(bool rival_first) {
   }
 #endif
 
-  nb::Bench bench;
+  nb::Bench bench = make_bench();
   bench.title("intrusive read-only traversal N=" + std::to_string(Count))
       .relative(true)
       .batch(Count)
@@ -217,7 +263,7 @@ void bench_splice(bool rival_first) {
     boost_source.push_back(boost_nodes[index]);
 #endif
 
-  nb::Bench bench;
+  nb::Bench bench = make_bench();
   bench.title("intrusive whole-batch handoff N=" + std::to_string(Count))
       .relative(true)
       .batch(2)
@@ -251,7 +297,7 @@ void bench_discard(bool rival_first) {
 #if defined(HYLE_BENCH_BOOST)
   auto boost_nodes = std::make_unique<BoostNode[]>(Count);
 #endif
-  nb::Bench bench;
+  nb::Bench bench = make_bench();
   bench.title("intrusive owner teardown N=" + std::to_string(Count))
       .relative(true)
       .batch(Count)
@@ -284,6 +330,7 @@ void bench_discard(bool rival_first) {
 } // namespace
 
 int main() {
+  configure_main_benchmark_thread();
   const bool rival_first = rival_first_requested();
   bench_fifo<32>(rival_first);
   bench_fifo<4096>(rival_first);
