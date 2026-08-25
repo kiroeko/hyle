@@ -117,18 +117,22 @@ void bench_fifo(bool rival_first) {
     NodeList list;
     for (std::size_t index = 0; index < Count; ++index)
       list.push_back(&nodes[index]);
-    while (list.pop_front() != nullptr) {
-    }
-    nb::doNotOptimizeAway(&list);
+    std::size_t checksum = 0;
+    while (Node *node = list.pop_front())
+      checksum += static_cast<std::size_t>(node->value);
+    nb::doNotOptimizeAway(checksum);
   };
 #if defined(HYLE_BENCH_BOOST)
   auto run_boost = [&] {
     BoostList list;
     for (std::size_t index = 0; index < Count; ++index)
       list.push_back(boost_nodes[index]);
-    while (!list.empty())
+    std::size_t checksum = 0;
+    while (!list.empty()) {
+      checksum += static_cast<std::size_t>(list.front().value);
       list.pop_front();
-    nb::doNotOptimizeAway(&list);
+    }
+    nb::doNotOptimizeAway(checksum);
   };
   if (rival_first) {
     bench.run("boost::intrusive auto_unlink", run_boost);
@@ -144,9 +148,12 @@ void bench_fifo(bool rival_first) {
     std::list<int> list;
     for (std::size_t index = 0; index < Count; ++index)
       list.push_back(static_cast<int>(index));
-    while (!list.empty())
+    std::size_t checksum = 0;
+    while (!list.empty()) {
+      checksum += static_cast<std::size_t>(list.front());
       list.pop_front();
-    nb::doNotOptimizeAway(&list);
+    }
+    nb::doNotOptimizeAway(checksum);
   });
 }
 
