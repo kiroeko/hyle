@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <string_view>
 
-#include "hyle/c/compiler.h"
+#include "hyle/c/core.h"
 #include "hyle/core/cache.h"
 #include "hyle/core/version.h"
 #include "hyle/macros.h"
@@ -20,18 +20,7 @@ HYLE_NOINLINE int restrict_sum(const int* HYLE_RESTRICT values,
   return sum;
 }
 
-HYLE_C_NOINLINE int c_contract_branch(int value) noexcept {
-  if (HYLE_C_LIKELY(value >= 0)) return value + 1;
-  if (HYLE_C_UNLIKELY(value == -1)) return 0;
-  HYLE_C_UNREACHABLE();
-}
-
-static HYLE_C_FORCE_INLINE int c_contract_inline(int value) noexcept {
-  return value * 2;
-}
-
 HYLE_NODISCARD int must_inspect_cpp_result() noexcept { return 7; }
-HYLE_C_NODISCARD int must_inspect_c_result() noexcept { return 11; }
 
 }  // namespace
 
@@ -41,7 +30,11 @@ TEST(CoreVersion, CompileTimeAndRuntimeViewsAgree) {
   static_assert(hyle::kVersionPatch == HYLE_VERSION_PATCH);
   static_assert(hyle::kVersion == HYLE_VERSION_PACKED);
   static_assert(std::string_view(hyle::kVersionString) == HYLE_VERSION_STRING);
+  static_assert(hyle::kFfiAbiVersionMajor == HYLE_FFI_ABI_VERSION_MAJOR);
+  static_assert(hyle::kFfiAbiVersionMinor == HYLE_FFI_ABI_VERSION_MINOR);
+  static_assert(hyle::kFfiAbiVersion == HYLE_FFI_ABI_VERSION);
 
+  EXPECT_EQ(hyle_ffi_abi_version(), hyle::kFfiAbiVersion);
   EXPECT_EQ(hyle::version(), hyle::kVersion);
   EXPECT_STREQ(hyle::version_string(), hyle::kVersionString);
 }
@@ -89,9 +82,7 @@ TEST(CoreMacros, BranchHintsPreserveTheirExpression) {
 TEST(CoreMacros, OptimizerContractsCompileAndPreserveValidInputs) {
   const int values[] = {1, 2, 3, 4};
   EXPECT_EQ(restrict_sum(values, 4), 10);
-  EXPECT_EQ(c_contract_branch(c_contract_inline(2)), 5);
   EXPECT_EQ(must_inspect_cpp_result(), 7);
-  EXPECT_EQ(must_inspect_c_result(), 11);
 }
 
 #if !defined(NDEBUG)
@@ -99,23 +90,12 @@ TEST(CoreMacrosDeath, AssumeDiagnosesFalseInDebugBuilds) {
   EXPECT_DEATH({ HYLE_ASSUME(false); }, "HYLE fatal");
 }
 
-TEST(CoreMacrosDeath, CAssumeDiagnosesFalseInDebugBuilds) {
-  EXPECT_DEATH({ HYLE_C_ASSUME(0); }, "HYLE C fatal");
-}
-
 TEST(CoreMacrosDeath, UnreachableDiagnosesTripsInDebugBuilds) {
   EXPECT_DEATH({ HYLE_UNREACHABLE(); }, "HYLE fatal");
 }
 
-TEST(CoreMacrosDeath, CUnreachableDiagnosesTripsInDebugBuilds) {
-  EXPECT_DEATH({ HYLE_C_UNREACHABLE(); }, "HYLE C fatal");
-}
 #endif
 
 TEST(CoreMacrosDeath, FatalAssertAbortsOnFalse) {
   EXPECT_DEATH({ HYLE_FATAL_ASSERT(1 == 2); }, "HYLE fatal");
-}
-
-TEST(CoreMacrosDeath, CFatalAssertAbortsOnFalse) {
-  EXPECT_DEATH({ HYLE_C_FATAL_ASSERT(1 == 2); }, "HYLE C fatal");
 }

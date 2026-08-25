@@ -19,7 +19,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--header", action="append", default=[])
     parser.add_argument("--c-header", default="")
     parser.add_argument("--no-c-header", action="store_true")
-    parser.add_argument("--check-c-nodiscard", action="store_true")
     parser.add_argument("--include-dir", required=True, type=Path)
     parser.add_argument("--cc", required=True)
     parser.add_argument("--cxx", required=True)
@@ -38,95 +37,6 @@ def parse_args() -> argparse.Namespace:
     if args.no_c_header and args.c_header:
         parser.error("--no-c-header and --c-header are mutually exclusive")
     return args
-
-
-def compile_c_nodiscard_contract(
-    compiler: str,
-    compiler_id: str,
-    frontend: str,
-    include_dir: Path,
-    work_dir: Path,
-    sysroot: str,
-    compiler_env: dict[str, str] | None,
-) -> None:
-    """Prove that HYLE_C_NODISCARD rejects an ignored result.
-
-    Compile a valid control first so an unavailable warning mode cannot make an
-    expected-failure test pass accidentally. Native MSVC exposes the C17 seam
-    through SAL analysis; clang-cl uses Clang's ordinary unused-result warning.
-    """
-    source_prefix = (
-        '#include "hyle/c/compiler.h"\n'
-        'HYLE_C_NODISCARD static int must_inspect(void) { return 7; }\n'
-    )
-    good_source = work_dir / "c_nodiscard_control.c"
-    bad_source = work_dir / "c_nodiscard_ignored.c"
-    good_source.write_text(
-        source_prefix + "int main(void) { return must_inspect() == 7 ? 0 : 1; }\n",
-        encoding="utf-8",
-    )
-    bad_source.write_text(
-        source_prefix + "int main(void) { must_inspect(); return 0; }\n",
-        encoding="utf-8",
-    )
-
-    msvc_frontend = compiler_id == "MSVC" or frontend == "MSVC"
-
-    def command(source: Path, object_name: str) -> list[str]:
-        if msvc_frontend:
-            result = [
-                compiler,
-                "/nologo",
-                "/std:c11",
-                "/TC",
-                "/c",
-                str(source),
-                f"/I{include_dir}",
-                f"/Fo{work_dir / object_name}",
-                "/utf-8",
-                "/WX",
-            ]
-            if compiler_id == "MSVC":
-                result.append("/analyze")
-            else:
-                result.append("/clang:-Wunused-result")
-            return result
-
-        result = [
-            compiler,
-            "-std=c11",
-            "-c",
-            f"-I{include_dir}",
-            "-Werror=unused-result",
-        ]
-        if sysroot:
-            result.extend(["-isysroot", sysroot])
-        result.extend([str(source), "-o", str(work_dir / object_name)])
-        return result
-
-    good = subprocess.run(
-        command(good_source, "c_nodiscard_control.obj"),
-        text=True,
-        capture_output=True,
-        check=False,
-        env=compiler_env,
-    )
-    if good.returncode != 0:
-        output = "\n".join(part for part in (good.stdout, good.stderr) if part)
-        raise RuntimeError(f"C nodiscard control did not compile:\n{output}")
-
-    bad = subprocess.run(
-        command(bad_source, "c_nodiscard_ignored.obj"),
-        text=True,
-        capture_output=True,
-        check=False,
-        env=compiler_env,
-    )
-    if bad.returncode == 0:
-        raise RuntimeError(
-            "HYLE_C_NODISCARD did not reject an ignored result under the "
-            "selected C compiler contract"
-        )
 
 
 def compile_header(
@@ -335,21 +245,9 @@ def main() -> int:
                 compiler_env,
             )
             c_header_count = 1
-        if args.check_c_nodiscard:
-            compile_c_nodiscard_contract(
-                args.cc,
-                args.c_compiler_id,
-                args.c_frontend,
-                include_dir,
-                work_dir,
-                sysroot,
-                compiler_env,
-            )
-
     print(
         f"{args.module} headers self-contained: "
         f"{len(headers)} C++ + {c_header_count} C"
-        + (" + C nodiscard contract" if args.check_c_nodiscard else "")
     )
     return 0
 

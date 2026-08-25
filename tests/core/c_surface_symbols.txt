@@ -1,2 +1,3 @@
+hyle_ffi_abi_version
 hyle_version
 hyle_version_string

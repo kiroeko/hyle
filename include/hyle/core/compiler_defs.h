@@ -1,16 +1,16 @@
 /* SPDX-License-Identifier: LicenseRef-HYLE-Proprietary
  *
- * Language-neutral compiler spellings shared by HYLE's C and C++ source
- * surfaces.  These HYLE_DETAIL_* names are implementation details; users
- * include hyle/macros.h or hyle/c/compiler.h instead.
+ * Compiler spellings backing HYLE's C++ source contracts. These
+ * HYLE_DETAIL_* names are implementation details; users include
+ * hyle/macros.h instead.
  */
 #ifndef HYLE_CORE_COMPILER_DEFS_H_
 #define HYLE_CORE_COMPILER_DEFS_H_
 
 /* A source-level "the result carries information that must be inspected"
  * contract.  C++ has a standard spelling; GCC/Clang expose the equivalent in
- * C17, while native MSVC's C frontend records the contract for /analyze
- * through SAL. c/compiler.h includes sal.h before exposing that spelling. */
+ * C17. Native MSVC's C frontend spelling remains here for internal ABI-header
+ * tooling that includes the detail header after SAL. */
 #if defined(__cplusplus)
 #  define HYLE_DETAIL_COMPILER_NODISCARD [[nodiscard]]
 #elif defined(__GNUC__) || defined(__clang__)

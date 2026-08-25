@@ -5,7 +5,7 @@
 #include <windows.h>
 #endif
 #include "hyle/c/platform.h"
-#include "hyle/c/core.h"
+#include "hyle/core/cache_defs.h"
 
 #include <limits.h>
 #include <stdio.h>

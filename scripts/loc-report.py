@@ -32,7 +32,6 @@ MODULE_BOUNDARIES = {
     "core": (
         "include/hyle/core",
         "include/hyle/c/core.h",
-        "include/hyle/c/compiler.h",
         "include/hyle/macros.h",
         "include/hyle/visibility.h",
         "src/core",
@@ -350,7 +349,6 @@ def self_check(report: dict[str, object]) -> None:
     expected_core = (
         "include/hyle/core",
         "include/hyle/c/core.h",
-        "include/hyle/c/compiler.h",
         "include/hyle/macros.h",
         "include/hyle/visibility.h",
         "src/core",
