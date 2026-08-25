@@ -1,5 +1,8 @@
 # obs 设计：同步日志产出 + 编译期追踪
 
+> **V2 状态：`NOT_REVIEWED`。** 本页暂作既有设计输入，不代表当前功能、性能或 API 证书。
+> 当前 Native FFI 为 `N/A`；正文旧 C/FFI surface 与验收叙事待 obs 轮次重写。
+
 > **Native FFI 状态校正（2026-08-25）**：HYLE 没有 native-C 客户，也没有已发布的 managed
 > binding。本文关于 C/C++、C/FFI 或 C 用户的旧表述只记录待复审的 ABI 候选，不是当前跨语言
 > 证书或兼容承诺；首发前可破坏性调整。先从真实 foreign-runtime 任务裁决 FFI 是否为 `N/A`；
@@ -246,6 +249,6 @@ Tracy。plot/frame/pool 名同理应使用字面量或其他稳定存储。
 5. Windows、Linux、macOS 至少各跑一次 ON 构建。
 
 性能数与仪器见
-[`../performance/benchmarks-obs.md`](../performance/benchmarks-obs.md)，
+[`../performance/benchmarks-obs.md`](../implementation/evidence/performance/benchmarks-obs.md)，
 模块收口证据见
-[`../milestones/obs-module-closure.md`](../milestones/obs-module-closure.md)。
+[`../milestones/obs-module-closure.md`](../implementation/tasks/obs/obs-module-closure.md)。

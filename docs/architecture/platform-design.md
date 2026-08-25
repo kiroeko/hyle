@@ -1,16 +1,11 @@
 # HYLE platform/ 设计
 
-> **Native FFI 状态校正（2026-08-25）**：HYLE 没有 native-C 客户，也没有已发布的 managed
-> binding。本文关于 C/C++、C/FFI 或 C 用户的旧表述只记录待复审的 ABI 候选，不是当前跨语言
-> 证书或兼容承诺；首发前可破坏性调整。先从真实 foreign-runtime 任务裁决 FFI 是否为 `N/A`；
-> 只有保留 direct FFI 时，platform 才必须通过 Java FFM + .NET P/Invoke、真实导出、资源所有权/
-> 回调与 batch 旅程后冻结该边界。
+> **V2 状态：`NOT_REVIEWED`。** 本页暂作既有设计输入，不代表当前功能、性能或 API 证书。
+> 当前 Native FFI 为 `N/A`；正文旧 C/FFI surface 与验收叙事待 platform 轮次重写。
 
-> 跨操作系统机制基础层。本页是 platform 的长期边界、公共类型形状和维护约束的设计
-> 真源。用户如何选择见 [`../guide/platform.md`](../guide/platform.md) 与
-> [`../guide/c-platform.md`](../guide/c-platform.md)，性能结论只见
-> [`../performance/benchmarks-platform.md`](../performance/benchmarks-platform.md)，施工历史只见
-> [`../milestones/platform-remaining.md`](../milestones/platform-remaining.md)。
+> 用户当前选型见 [user/platform](../user/platform.md)，上一轮性能输入见
+> [historical platform evidence](../implementation/evidence/performance/benchmarks-platform.md)，施工历史见
+> [platform tasks](../implementation/tasks/platform/)。
 
 ## 1. 定位与依赖
 
@@ -248,9 +243,8 @@ move-only callable；`platform/convenience.h` 以 header-only overload 返回 ow
 adapter 转换，但不进入 DLL/direct FFI 候选，也不让 `fs.h/cpu.h` 的 core 被迫引入 owning 类型。这样普通
 C++ 使用不重复样板，allocator/arena/FFI 与热调用者仍能控制每次分配。
 
-候选符号和精确所有权映射记录在 [`../guide/c-platform.md`](../guide/c-platform.md)。纯 C 编译、
-声明引用和动态导出一致性只证明 schema/compiler/export hygiene；若保留 direct FFI，还必须由
-Java FFM 与 .NET P/Invoke 从精确 shared-library 路径完成 ABI bootstrap、调用和生命周期旅程。
+这段 C-shaped adapter 是上一轮历史输入，不属于当前产品。platform v2 轮次应删除旧 schema、
+bridge 与 fixture，除非新的真实外语任务重新通过 [FFI policy](native-ffi-policy.md)准入。
 
 ## 9. 性能架构
 
@@ -275,7 +269,7 @@ platform 的 SOTA 标准不是“比系统调用快”，而是同合同下不�
 
 基准必须比较相同语义：HYLE wrapper 对 raw OS、目录 visitor 对同等 metadata 的 std/OS
 形状、MappedFile 同时对 buffered stream 和 raw mmap。点值、样本和平台输赢只维护在
-[`../performance/benchmarks-platform.md`](../performance/benchmarks-platform.md)。
+[`../performance/benchmarks-platform.md`](../implementation/evidence/performance/benchmarks-platform.md)。
 
 ## 10. 平台差异必须显式保留
 

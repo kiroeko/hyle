@@ -1,145 +1,114 @@
-# HYLE 生命周期与失败边界设计
+# HYLE 生命周期与失败边界
 
-> 之前的设计挖透了 happy path（fiber 怎么跑/切换/唤醒），但**失败边界**（取消/背压/关闭/隔离/跨边界错误）几乎空白——而真实产品(双北极星:推理引擎 serving + CAD/BIM/CAE 工程管线,及其消费者并发 agent)恰恰活在这些边界上:请求超时要取消、连接洪峰要背压、停机要优雅关闭、参数化重算/仿真迭代要能中途取消。本文补齐。（下文以并发 agent 为主要举例,但这些边界对推理引擎 serving 与工程管线同样成立。）
->
-> 统领原则（用户定，源自 clay 经验）：**失败就暴露，绝不 try-catch。**
+本文规定跨模块的失败、取消、背压、关闭和资源隔离语义。具体类型与实现由所属模块在各自 review
+中签署；本页不记录某次任务是否完成。
 
-## 0. 失败哲学：四类失败，泾渭分明
+## 1. 失败分类
 
-"绝不 try-catch" 不是"不处理失败"，而是**按失败的性质分类处理，bug 类绝不吞**。四类：
-
-| 类 | 是什么 | 处理 | 例 |
-|---|---|---|---|
-| **① bug / 不变量违反** | 代码错了：use-after-free、锁序违反、不可能的状态 | **`HYLE_FATAL_ASSERT` → abort + 诊断，响亮地崩，绝不 catch** | 双重 free、枚举越界、空指针解引用 |
-| **② 运营失败**（可恢复）| 外部世界的预期失败 | **`Status`/`expected` 值，显式处理**，不 throw 不崩 | IO 错误、超时、分配失败、解析失败、连接重置 |
-| **③ 取消** | 不是失败，是控制信号 | **`Status::Cancelled` 值，协作式传播**（见 §1）| agent 超时、父取消子 |
-| **④ 跨进程故障隔离** | 一个 agent 崩了不该拖垮别人 | **进程边界**（联邦模型），非进程内 catch（见 §4）| 失控 agent 段错误 |
-
-**核心纪律（铁，与编译开关无关）——bug 绝不 catch**：
-- **bug 被 catch = 把崩溃推迟到更难查的地方**。use-after-free 当场 abort + 栈，胜过吞掉后在三个模块外随机炸。**这条不动摇:自家 bug 一律 fail-fast,绝不 catch。**
-- **异常跨 Native FFI 边界是 UB**；外语只调用不抛异常的 C calling-convention 导出（charter §6）。
-
-**throw 可以用,但谨慎——用数据和后果说话(非教条禁止)**：
-- **默认 no-throw**(bug→fail-fast,运营失败→Status)。要破例用 throw,**必须拿测量数据 + 后果分析撑**,不靠"感觉该用"。
-- **判据**:throw 只在 ①不影响热路径性能(zero-cost 异常不抛时运行时开销≈0,这点对热路径成立) ②或为隔壁稳定(隔离外来异常)且 ③catch 的是**外来异常不是自家 bug** ——三条都满足才考虑。
-- **`-fno-exceptions` 旗标本身 = 实测决定,不预先拍死**:happy-path 运行时它不买性能(zero-cost),但买**更小二进制 + 更强优化**(编译器可假设无 throw)。到底值多少,**量了再定**(套"硬问题用数据说话"纪律)。
-
-**三层模型(纪律铁 / 旗标待测 / adapter 可开但封死)**：
-
-| 区 | 异常 | 说明 |
+| 类别 | 含义 | 表达 |
 |---|---|---|
-| **核心区**(热路径、近 Native FFI)| no-throw 纪律铁定;是否加 `-fno-exceptions` 旗标 **= 实测决定** | happy-path 零运行时成本;旗标买二进制/优化,量了再定 |
-| **adapter 区**(包会抛的 C++ 库,如 JSON)| **可开异常,但 catch 必转 Status、绝不外泄** | 隔壁稳定的正解;外来异常不得跨进核心区/Native FFI。优先用 nothrow API(simdjson 有)绕开 |
-| **任何区** | **自家 bug 绝不 catch** | fail-fast,违反=藏 bug |
+| 程序不变量 | HYLE 或调用方违反不能恢复的合同 | fail-fast + 诊断，不能 catch 后继续 |
+| 运营失败 | I/O、OOM、设备、协议或外部输入的预期失败 | `Status/Result<T>` 值，调用方显式处理 |
+| 未就绪/容量状态 | poll empty、try-lock、bounded queue full 等正常控制状态 | 紧凑值/枚举，避免制造重错误对象 |
+| 取消 | 调用方不再需要结果 | 协作式取消，通常映射 canonical cancelled 状态 |
+| 资源压力 | quota、backpressure、admission 被拒 | 有界、可恢复、可观测的结果 |
+| 故障隔离 | 进程崩溃、driver/device loss 等不能在对象内恢复的边界 | 进程/backend 隔离与上层重启策略 |
 
-> **clay 实际怎么做（查证,作对照）**：clay **没有 `-fno-exceptions`**,异常默认开着;自有代码仅 6 处 `throw`（registry 冲突、string 转数字）;14 处 catch 集中在边界——worker 执行用户 task 周围 catch-all、`graph_io` 在 nlohmann JSON 解析周围 catch。即"异常开着但极少用 + 边界兜底"。HYLE 比 clay 更有条件收紧（自带 allocator 返 null 不 throw + 自带容器,绕开 std 抛异常主源），但**收到多紧由数据定**,不教条。
+日志不是失败通道。error 保存机器可处理语义与必要诊断；obs 决定何时记录。模块不得在构造或
+传播 `Status` 时自动打印，也不得以 TLS last-error、`false/-1` 或私有 error enum 绕过 error。
 
-**待调研**：①`-fno-exceptions` 给 HYLE 代码买到的二进制/优化收益（实测）②借入 C++ 库的隔离 TU 机制（分文件编译 + 边界转 Status）。compute/serialize 开工时定,不在此锁死。
+## 2. 异常边界
 
-**关键澄清——fail-fast vs 故障隔离不矛盾**：
-- HYLE infra **自身**的 bug（①）→ fail-fast，abort 整进程。infra bug 不可恢复，崩了对。
-- agent **级**的隔离（④）→ **进程边界**：真实部署是**多个 agent 实例、每实例若干 fiber**（不是单进程百万 fiber）。隔离天然落在**每实例一进程（或有界组）**边界——一个实例的 infra 级 bug fail-fast 崩掉的**只是那一个 agent 实例**，不波及整群。这让 fail-fast 与隔离**完全自洽**：进程内 fiber 同命（数量有界、可接受），跨实例靠进程边界 + io/shmem 联邦。
-- agent **业务**失败（LLM 返错、工具失败）是 ②，是 `Status` 值、agent 逻辑处理，**根本不是崩溃**。
+HYLE 公共操作默认不抛异常：运营失败返回值，程序 bug 立即暴露。这个规则不是为了隐藏失败，
+而是让热路径、异步 completion 和跨模块组合拥有单一、显式的失败通道。
 
-## 1. 取消（cancellation）——serving/agent 的命门
+第三方 C++ API 可能抛异常。adapter 可以在最窄边界捕获外来异常并转换为 `Status`，但不能捕获
+HYLE 自身不变量后继续。是否以 `-fno-exceptions` 编译是独立的 build/code-size/codegen 决策，
+必须测量并确保所有依赖兼容；它不改变上述语义。
 
-推理请求超时要取消在途 io、agent 超时要取消 LLM 调用、父任务挂了要级联取消子 fiber。这是高并发 serving 与并发 agent 的核心操作(对应 io-06 带超时 io + sched-07 结构化取消)。**sched-07 已落地(2026-07-05,`sched/cancel.h/cc` + `io/net_cancel.h`)**——下述模型即实现形态,消费者是 HTTP 请求 fan-out(io-10)。
+## 3. 结构化取消
 
-### 模型：结构化并发 + 取消令牌树
+取消具有 owner 和作用域。父任务结束或取消时，仍属于它的子操作必须收到信号；已经脱离作用域
+的工作需要显式 owner，不得依赖栈上 token 幸存。
 
-- **`CancelToken`**：树的一个节点。**shard-per-core 无锁**——一棵树的所有节点只被一个 owner worker 触碰,故树链/回调链/派生/传播/析构过继全非原子;**唯一原子是 per-node `cancelled` 标志**(为兼容 `is_cancel_requested()` seam——`Fiber::cancel_flag_` 是 `atomic<bool>*`,task fiber 跨 await 迁移 worker 时读需跨线程可见;x86 上 = 普通 mov)。move-only 单 owner,无 refcount(每 derive 新 node)。
-- **令牌成树**：子令牌 `derive()` 自父;**取消父 → 迭代级联取消所有后代**(非递归防深树爆栈)。这正好映射"父 agent 取消子 agent"/"一个 HTTP 请求 fan-out 多个子 task"。**析构过继**:中间 token 先 drop 时孙过继祖父,防漏取消(借 tokio-util tree_node,去其 Mutex)。
-- **协作式**：fiber 不被强行"杀"，而是在**取消点**检查令牌、提前返回。`CancelScope`(RAII)把 token 发布到当前 fiber 的 `cancel_flag_` seam,`is_cancel_requested()`/`HYLE_CHECK_CANCEL()` 观测;io 取消经 `CancelCallback`(借 folly CancellationCallback 侵入链,去其原子握手)注册 `submit_cancel`。
+取消是协作式的：
 
-### await 点即取消点（与零异常天然契合）
+1. 请求方设置取消状态；
+2. 排队、等待和适当的计算边界检查；
+3. 新工作停止进入；
+4. 已提交到 OS/GPU/第三方 backend 的工作尝试 native cancel；
+5. 即使 native cancel 不可用或失败，晚到 completion 仍被安全接收和丢弃/归还；
+6. owner 在所有可能触碰资源的 completion quiescent 前保持资源存活。
 
-C++ 无异常**不能强制展开栈**（不像 Rust drop future）。HYLE 的解法优雅且零异常：
+“返回 cancelled”不等于底层操作已经停止。API 必须区分 request accepted、operation prevented、
+completion drained 和结果 ignored，不能让用户在后台仍可能写 buffer 时释放或复用它。
 
-- **每个 await 点是隐式取消点**：fiber `co_await` 一个操作时，若令牌已取消，awaitable **返回 `Status::Cancelled`** 而非结果。
-- **`HYLE_ASSIGN_OR_RETURN` 自动向上传播**：取消值像普通错误一样早返回，**正常 return 路径展开栈、RAII/`HYLE_DEFER` 逐层触发清理**。
-- 净效果：**用 `co_await` + `ASSIGN_OR_RETURN` 写的代码自动可取消、自动清理，无需异常、无需强制 unwind、无需 try-catch**。深层不查令牌的纯 CPU 循环不可取消（协作式的固有代价）——需要时手动插 `HYLE_CHECK_CANCEL()`。
+## 4. Cancel-safe ownership
 
-### 难点：取消正阻塞在 io/GPU 上的 fiber
+异步提交前就要决定谁拥有 buffer、descriptor、callback context 和 native handle：
 
-| 后端 | 取消机制 |
-|---|---|
-| **io_uring** | 提交 `IORING_OP_ASYNC_CANCEL`（按 user_data 取消在飞 SQE）；原 op 以 `-ECANCELED` 完成 → Waker 触发 → fiber 续跑见 Cancelled |
-| **IOCP** | `CancelIoEx` |
-| **epoll/kqueue**（reactor）| 移除 fd 兴趣 + 唤醒 fiber |
-| **GPU** | **kernel 内不可抢占**（物理事实，CUDA 证实）。"如何更细地中断"是**待调研开放问题**（见下），现在不锁方案 |
+- kernel/OS 持有期间，调用方不能移动、释放或改变会破坏操作的状态；
+- 取消若不能保证底层不再访问，资源转给 operation state，直到 completion/drain；
+- partial progress（例如部分读写）与取消/错误同时发生时，结果要保留已完成数量；
+- callback unregister 需要定义是否同步、是否允许一个 callback 已在途以及怎样等待 quiescence；
+- timeout 是由 time 触发的取消政策，不应在每个 backend 发明另一套生命周期。
 
-> **GPU 取消：事实 + 待调研（不写处方，避免半成品带偏实现）**
-> **已知物理事实**：GPU 无 kernel 内抢占，已 launch 的 kernel 算到底。
-> **参考实证（仅作素材，非定论）**：ggml CPU 在 node 间查 `cplan.abort_callback`（`ggml-cpu.c:3067`，粒度=一个 op）；Metal 在命令缓冲段间查（`ggml-metal-context.m:599`）；CUDA 连 op 边界都不查（`ggml-cuda.cu:4468`），"可中断感"来自上层 token 循环（`llama_decode` 是最小取消单位）。
-> **方向假设（待验证）**："协作式 op/批边界查标志 + 丢未提交批"可能是比"等整图"更细的伪抢占，取消延迟上界≈单 op/批时长。但**这需要更专业的调查 + 实验才能定**（不同后端粒度差异大、切图开销、与 ggml_bridge 的交互），**现在不写死方案**。
-> **行动项**：留待 compute 模块开工前专项调研（连同 sched-07 取消的 GPU 侧落地一并定）。
+## 5. 背压与容量
 
-### cancel-safe：缓冲所有权（io_uring 的经典坑）
+无界排队会把短暂过载变成 OOM 和 tail collapse。每个可积压资源都要有 owner、容量和满时策略：
 
-取消 io_uring read 后，**内核可能仍写你的缓冲，直到 cancel 真正完成**。所以：**操作持有缓冲直到 CQE 真正到达（成功 OR -ECANCELED 完成），不是直到请求取消那一刻**。HYLE awaitable 的所有权约定：**buffer 生命周期 = 到完成 CQE，取消时也不例外**。这是"completion 而非 readiness"的所有权模型，必须写进 io awaitable 契约。
+| 资源 | owner | 满时允许的策略 |
+|---|---|---|
+| scheduler/global injection | sched | reject、等待容量、调用方执行或显式降级 |
+| file/socket submissions | io/backend | suspend 到可提交、返回 backpressure、取消 |
+| memory pool/arena/quota | mem/consumer | recoverable OOM、释放/回收、显式 fallback |
+| device queue/staging | compute/backend | 有界等待、分批、上层 admission |
+| logs/traces | obs | 按产品政策 drop/sample/block；默认不能意外阻塞热路 |
 
-## 2. 背压 / 流控——大量 fiber 不能一拥而上打爆有界资源
+策略属于资源 owner 或上层 consumer；底层 primitive 不应悄悄无限增长。容量、等待公平性、drop、
+partial progress 和统计必须在 API 附近可发现。
 
-有界资源满了怎么办，必须有策略，否则大量并发 fiber 直接压垮：
+## 6. 优雅关闭
 
-| 满的资源 | 策略 |
-|---|---|
-| **run-queue（有界 ring）** | 满 → 溢出到 global（已设计，sched 2.2）|
-| **io_uring SQ** | 满 → 提交方 fiber **让出等 SQ 有位**（背压传导到发起者），不丢、不无界缓冲 |
-| **channel（fiber 间）** | **有界 channel**：满则发送 fiber 阻塞让出（CSP 语义），天然背压 |
-| **新 fiber spawn** | 受**资源限额**门控（§4）：内存/数量超限则 spawn 返回 `Status::ResourceExhausted`，调用方决定退避 |
+可重入、可验证的关闭通常按以下状态推进：
 
-**原则**：背压**传导到源头**（让发起者等/被拒），绝不**无界缓冲**（那是把 OOM 推迟）。有界 + 阻塞让出（fiber 让出代价极低）是百万 agent 的正解。
+```text
+RUNNING -> STOP_ACCEPTING -> CANCEL/FINISH -> DRAIN -> RELEASED
+```
 
-## 3. 优雅关闭（graceful shutdown）
+- `STOP_ACCEPTING` 后新任务立即得到明确结果；
+- 已接收任务按合同完成或取消，不静默遗失；
+- `DRAIN` 等待所有 callback/completion、借用与跨线程释放结束；
+- worker、backend、allocator 和 obs sink 按依赖逆序释放；
+- 重复 shutdown 的行为明确，析构不能在未知线程无限等待；
+- 关闭期间的错误仍可观测，但不能重新启动已关闭的下层。
 
-runtime 怎么停，清理顺序怎么定：
+模块关闭协议必须能在 source/static/shared 三种 C++ 交付下用相同用户 journey 验证。
 
-- **两阶段**：①stop accepting（拒新任务/新连接）②drain（等在飞 fiber 完成或超时）→ 超时则取消剩余（§1）。
-- **清理顺序**（逆依赖）：先停 `io`/`compute`（completion 源）→ 排空 `sched`（fiber 跑完）→ 释放 `mem`。
-- **析构顺序灾难**（clay 前车之鉴）：全局/单例用显式 init/shutdown，**不依赖静态析构顺序**；Meyers singleton 仅用于无依赖的；有依赖的走显式 `runtime.shutdown()`。
+## 7. 跨模块责任
 
-## 4. 资源限额 / 故障隔离
+- error：canonical failure、context 与 OS/backend translator；
+- time：deadline 与 timer mechanism，不拥有请求策略；
+- sched：task/fiber 生命周期、结构化子任务、waker 和 drain；
+- io/compute：native cancel、operation state、late completion 和 buffer ownership；
+- mem：resource lifetime、quota/OOM 和跨线程释放合同；
+- obs：不改变控制流的诊断与统计；
+- 推理引擎/应用：SLO、重试、admission、batch、公平与进程重启策略。
 
-- **per-agent 资源预算**：内存配额（fiber 栈 + 分配，接 mem/ 的**计量 Allocator wrapper**——包一层记字节数的 `mem::Allocator`）、fiber 数上限。超限 → `Status::ResourceExhausted`，不崩。
-- **故障隔离 = 进程边界**（非 try-catch）：真实模型是多 agent 实例、每实例若干 fiber——隔离落在**每实例一进程（或有界组）**，实例崩只崩自己。进程内 fiber 同命（数量有界，非百万），是 fail-fast 的合理代价。
-- **失控检测**：sysmon（已在 sched 提）兼测长期占核 fiber / 内存暴涨 agent。
+下层不得为了“方便”持有上层 scheduler/request/model 对象；需要通知时使用所属层定义的窄 seam，
+并明确其 owner 和 quiescence。
 
-## 5. 跨 Native FFI 边界的错误约定
+## 8. 验收问题
 
-内部 `std::expected`、异常和 C++ 对象布局都不能跨 direct FFI。HYLE 没有 native-C 客户；以下是
-各模块复审时必须验证的外语绑定形状，而不是用纯 C sample 即可签署的完成声明：
+每个异步或资源型 API 至少回答并测试：
 
-- 可恢复失败返回共享、可拥有的 `hyle_status`，成功结果走首位 out 参数；不得依赖“NULL 后再读
-  thread-local last-error”的两步协议。
-- owning status/message 必须有明确 clone/move/destroy 或 caller-buffer 路径；分配失败仍保留原始
-  code，异常绝不跨边界。
-- owning handle 的 create/open 同样使用 status + out，destroy/close 与分配模块配对；Java 包成
-  `AutoCloseable`，.NET 包成 `SafeHandle`/`IDisposable`。
-- callback 使用 function pointer + context，并定义 GC strong root、线程、重入、cancel/unregister/
-  drain；buffer 定义 ptr/len/capacity/written/required 与释放方。
-- 高频失败或批处理返回 batch/partial-completion 结果，不能让每个元素支付一次 P/Invoke/FFM hop。
-- binding 在解析某个 FFI artifact 的其他 required symbols 前，先从同一 exact handle 调用该
-  artifact 的 ABI bootstrap；core 只认证 `hyle_core`，不能替其他模块背书。多 artifact
-  binding 逐个握手并从同一 package root 装载。error 及其他模块的既有 C-shaped surface 在真实
-  外语任务裁决前仍是黄色候选；没有任务可明确 `FFI=N/A`。
+1. 谁创建、谁销毁、move 后怎样；
+2. 何时可以安全释放/复用 buffer；
+3. 取消前、提交中、完成竞态和完成后分别发生什么；
+4. native cancel 不支持时怎样 drain；
+5. 队列/内存满时是否有界、可恢复并可观测；
+6. shutdown 与 callback 重入是否死锁；
+7. OOM、backend loss、partial progress 和 late completion 是否保真；
+8. sanitizer、fault injection、stress 与真实 backend 是否覆盖高风险窗口。
 
-## 影响哪些里程碑（回填 milestones）
-
-本设计**改动既有里程碑的接口**，幸亏在写码前补：
-
-- **sched-04（Waker）**：awaitable 接口须含取消语义（返回 Cancelled）；新增 `CancelToken` 树。
-- **sched-05（fiber-sync）**：channel 必须有界（背压）；CV/mutex 的等待要可取消。
-- **io-01（proactor 抽象）**：提交接口须支持取消 + cancel-safe 缓冲所有权契约；SQ 满的背压。
-- **新增里程碑**：`sched-07 取消(CancelToken树+await取消点)`、`close-01 Native FFI 错误约定`扩充、`runtime 关闭`(归 sched 或新 lifecycle 里程碑)。
-- **mem**：per-agent 内存计量挂在**计量 Allocator wrapper**(包一层 `mem::Allocator` 记字节)。
-
-## 一句话
-
-HYLE 的失败哲学：**bug 响亮地崩（fail-fast，绝不 try-catch）、运营失败显式返回（Status/expected）、取消是协作式控制信号（await 点 + 正常返回展开 + RAII 清理，仍不 try-catch）、隔离靠进程边界（非进程内 catch）。** 取消、背压、有界、隔离——这四样让百万 agent 不至于一崩全崩、一拥而上打爆。
-
-## 参考
-
-- `engineering-charter.md` §2（零异常 + expected）、§4（覆盖/sanitizer）。
-- `sched-design.md`（fiber/Waker/进程联邦/sysmon）、`io-design.md`（proactor/取消接口待定项）。
-- io_uring `IORING_OP_ASYNC_CANCEL`；结构化并发（Rust tokio CancellationToken、Kotlin/Swift 结构化并发）的取消树思路。
+不清楚这些答案的 API 不能因 happy-path benchmark 很快而签署。

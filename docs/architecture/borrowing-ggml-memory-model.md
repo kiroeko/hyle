@@ -31,7 +31,7 @@
 - 崩溃点 `ggml-cuda.cu:1924` `const bool src1_on_device = id == src1_ctx->device;`
 - 根因：`src1->buffer->context == NULL`。`cudaMalloc(&p, 0)` 返回 null，size-0 dummy 的 base 是 nil；多个输入共享这个 dummy 时，`ggml_gallocr_alloc_graph` 处理把共享 dummy 的 context 弄丢；varied 形状走通用 `ggml_cuda_op_mul_mat` 路径读 `src1_ctx->device` → 空解引用。
 - （uniform 形状走 cuBLAS batched 路径不读该字段，所以"单发/同形状能跑"是假象，掩盖了结构问题。）
-- 全过程见 [`../debug/ggml-zerocopy-null-buffer-hunt.md`](../debug/ggml-zerocopy-null-buffer-hunt.md)。
+- 全过程见 [`../debug/ggml-zerocopy-null-buffer-hunt.md`](../developer/debugging/ggml-zerocopy-null-buffer-hunt.md)。
 
 **结论**：ggml 的显存模型是它算子正确性的一部分——tensor 的 buffer 必须由 ggml 自己分配管理（gallocr），算子内核依赖 buffer 的 context/device 元数据、图内显存复用、padding 等一整套。**"外部显存注入"在 CUDA 上不是"没找对 API"，是 ggml 明确不支持。** llama.cpp 在 GPU 上也从不注入外部显存——权重加载时拷进 ggml 显存一次、常驻复用（`llama-model.cpp:1570` `ggml_backend_alloc_ctx_tensors_from_buft` = 真 buffer），激活走 gallocr。
 
@@ -86,5 +86,5 @@ HYLE mem 管的 host 结果                     ← 回到 HYLE mem 抽象
 
 - ggml 铁证：`ggml-cuda.cu:5032`（CUDA `buffer_from_host_ptr=false`）、`:688`（tensor_set = 裸 cudaMemcpyHostToDevice，host 源无约束）、`:1924`（注入 dummy 的崩溃点）、`ggml-backend.h:430`（CPU `buffer_from_ptr` 存在、CUDA 无）。
 - llama.cpp 铁证：`llama-model.cpp:1555`（CPU/mmap 权重 `buffer_from_host_ptr` 零拷贝）、`:1570`（GPU 权重 `alloc_ctx_tensors_from_buft` 真 buffer + 拷入）。
-- 调试血泪：[`../debug/ggml-zerocopy-null-buffer-hunt.md`](../debug/ggml-zerocopy-null-buffer-hunt.md)。
-- 关联：[`compute-design.md`](./compute-design.md) 发现 2/5/7/9 + compute-05 定案；[`../milestones/compute-05-ggml-bridge.md`](../milestones/compute-05-ggml-bridge.md)。
+- 调试血泪：[`../debug/ggml-zerocopy-null-buffer-hunt.md`](../developer/debugging/ggml-zerocopy-null-buffer-hunt.md)。
+- 关联：[`compute-design.md`](compute-design.md) 发现 2/5/7/9 + compute-05 定案；[`../milestones/compute-05-ggml-bridge.md`](../implementation/tasks/compute/compute-05-ggml-bridge.md)。

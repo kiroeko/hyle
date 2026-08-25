@@ -1,9 +1,12 @@
 # SIMD vendor 借用面（现状盘点）
 
+> **V2 状态：`NOT_REVIEWED`。** 本页盘点既有 vendor 边界，不是当前 SIMD 功能或性能证书；
+> 具体计数与“终态”字样要在 SIMD 轮次重新生成和裁决。
+
 > 本文只回答一个问题：**有哪些地方我们直接调用 Highway / xsimd / simdutf（而非 HYLE 自造后端）？**
 >
 > **覆盖率 / op 计数 / SOTA 判决不在本文** —— 唯一数据源是
-> [`../milestones/simd-orderswap-matrix.md`](../milestones/simd-orderswap-matrix.md)。数字随代码演进，跑 `scripts/simd-op-coverage.py` 取实时值。
+> [历史 SIMD closure](../implementation/tasks/simd/simd-module-closure.md)。数字随代码演进，跑 `scripts/simd-op-coverage.py` 取实时值。
 
 **关键前提**：`include/` 里**零** vendor 调用。公开 API 只吃裸指针。
 
@@ -24,7 +27,7 @@
 
 这些产品 kernel 遵循同一双轨边界：ops/random/scan 的 per-ISA wrapper 与 `native::` 复用同一 D-tag body；
 math/bitpack/vqsort 虽保留各自算法 dispatcher，也只通过 pointer/POD batch API 暴露。vendor 摘除与
-runtime/native/exact 派发彼此正交，详见 [`simd-dispatch-guide.md`](./simd-dispatch-guide.md)。
+runtime/native/exact 派发彼此正交，详见 [`simd-dispatch-guide.md`](../developer/maintenance/simd-dispatch-guide.md)。
 
 ## container 直接借用的成熟 SIMD 核
 
@@ -35,4 +38,4 @@ runtime/native/exact 派发彼此正交，详见 [`simd-dispatch-guide.md`](./si
 
 **一句话**：HYLE 自造核心 SIMD + math + bitpack + vqsort；仓库无 highway/xsimd；bench 用外部 pin 对拍；container 的 UTF-8 validate/count 直接借 vendored simdutf。
 
-完整阶段史见 [`../milestones/simd-20-vendor-extraction.md`](../milestones/simd-20-vendor-extraction.md)。
+完整阶段史见 [`../milestones/simd-20-vendor-extraction.md`](../implementation/tasks/simd/simd-20-vendor-extraction.md)。

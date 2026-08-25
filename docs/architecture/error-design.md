@@ -1,9 +1,12 @@
 # error 设计：值语义失败与跨运行时接缝
 
-> 本文只描述长期设计。用户写法见 [`../guide/error.md`](../guide/error.md)，direct Native FFI
-> 见 [`../guide/c-error.md`](../guide/c-error.md)，性能证据见
-> [`../performance/benchmarks-error.md`](../performance/benchmarks-error.md)，施工状态见
-> `milestones/`。HYLE 尚未发布，不保留此前未经审查的 C ABI 形状。
+> **V2 状态：`NOT_REVIEWED`。** 本页是上一轮 error 设计输入，不是当前模块证书。当前产品只
+> 提供 C++ source/static/shared；Native FFI 为 `N/A`。正文中的旧 FFI、验收状态与性能叙事在
+> error 轮次必须删除或重新裁决。用户当前写法见 [user/error](../user/error.md)，施工状态见
+> [implementation/status](../implementation/status.md)。
+
+> 上一轮性能输入见 [historical error evidence](../implementation/evidence/performance/benchmarks-error.md)。
+> 正文尚未按新的四类文档职责拆净。
 
 ## 0. 职责与依赖位置
 
@@ -90,6 +93,13 @@ HRESULT、Vulkan、CUDA runtime/driver 与 NVRTC 边界。它不是动态 catego
 普通恢复只看 canonical code；backend-specific recovery/遥测才看 native detail。禁止解析 message
 取得机器值。
 
+`std::error_code` / Boost.System custom category 必须在拥有第三方调用的模块边界转换，error 不把
+`error_category*` 或 category registry 放进 Status。generic/POSIX 与 Windows system category 可分别
+落到 errno/Win32 adapter；custom category 由所属模块映 canonical code，只有稳定登记的 HYLE
+domain 才保留原生数值。category identity 若仍参与机器恢复，就继续保留模块 typed error，不能
+经诊断 message 伪造 round-trip。重复的真实 std/Boost 消费可触发独立 cold adapter header，但不
+授权扩大 8B carrier 或普通构造热路。
+
 ### 2.3 message、UTF-8 与 context
 
 公共文本合同是 UTF-8。调用方传入的 message/context 必须已经是 UTF-8；error 不在热错误路径
@@ -153,6 +163,13 @@ construction/assignment 都会 fail-fast 拒绝 `Status::Ok()`，调用方也不
 同时把“错误槽不得为 OK”从传播宏的迟到检查提升为不可绕过的类型不变量。HYLE 未发布，不为此前
 “直接以 `Status` 作为 error type”的 type identity 保留兼容层。
 
+C++23 `std::expected` 禁止 reference value，因此 `Result<T&>` 不是当前产品形状。非空对象借用用
+`Result<std::reference_wrapper<T>>`，nullable 对象用有明确 NULL 合同的 `Result<T*>`，连续范围/
+文本用 `Result<std::span<T>>` / `Result<std::string_view>`；这些成功值都不延长 owner 生命周期。
+Abseil `StatusOr<T&>` 的 lifetime-bound reference specialization 已作为成熟对照审查，但当前树没有
+一个引用 Result 消费者。只有多个真实 API 证明 wrapper 明显破坏 monadic/lifetime 易用性时，才
+重开统一 borrowed-result 形状，不能为 API 数量脱离消费另造 expected 实现。
+
 普通失败返回使用 `make_unexpected(Status)`；也允许直接 `std::unexpected(Status)`。两个宏只
 补 C++ 缺少的 `?` 语法：
 
@@ -173,8 +190,10 @@ HYLE_ASSIGN_OR_RETURN(auto value, expr);  // Result<T>
 - opt-in `hyle/error/format.h::to_string` 提供 owning `std::string`，长输出用
   `resize_and_overwrite` 避免先零填充再覆盖。
 
-需要收集全部错误、并行错误排序或结构化日志时，使用上层结果集合/obs；不要把 Status 变成
-全局 error list 或自动 logger。
+需要收集全部错误、并行错误排序或结构化日志时，所属模块使用 caller-owned
+`std::vector<Status>`、固定容量报告或已有容器，并显式定义顺序、上限与收集 OOM；结构化遥测交给
+obs。只有多个真实模块重复同一 bounded collection/ordering 合同时才重开公共 `MultiError`，不要
+把 Status 变成全局 error list 或自动 logger。
 
 ## 3. Direct Native FFI
 
@@ -212,6 +231,13 @@ calling convention。error 的真实任务不是让 foreign runtime 重建整套
 adapter：当前 managed receiver 任务不需要它们，暴露会制造 owning raw-handle 误用和无消费者
 兼容负担。将来 managed callback 真要向 HYLE 返回 Status 时，按那条回调任务另设计，不预埋
 通用构造器。
+
+当前未收口的 util Native FFI 候选已有一个具体触发点：Registry creator 接收
+`hyle_status* out_status`，但 receiving-only error FFI 只能让 foreign callback 转移另一个 HYLE
+producer 给出的 owner，不能构造任意 managed failure。util review 若保留 Java/.NET callback，
+必须在 `FFI=N/A`、模块级 fixed code + borrowed UTF-8 bytes（native 同步复制）与重开 error
+factory/必要 ownership 操作之间作真实任务裁决，并补 OOM、异常、同步/异步生命周期和 managed
+负向证据；候选头与 native-C fixture 不能冒充这项能力已经完成。
 
 `include/hyle/c/error_helpers.h` 只是仓库 C 编译/package fixture 可选的 source-inline 便利层，
 提供 NULL/predicate/`destroy-and-clear` spelling；它没有动态符号，不能计作 direct FFI 或 C 产品。
@@ -254,14 +280,16 @@ native detail 不同合同，只能作机制诊断，不能宣称产品输赢。
 
 | 参考 | 借鉴 | 明确差异 |
 |---|---|---|
-| Abseil `Status/StatusOr` | canonical taxonomy、intrusive shared rep、unique-release fast path、非 OK error-arm invariant、errno mapping | 不引入任意 payload/StatusBuilder；context 保留扁平渐进表示 |
+| Abseil `Status/StatusOr` | canonical taxonomy、intrusive shared rep、unique-release fast path、非 OK error-arm invariant、errno mapping；审查 `StatusOr<T&>` lifetime guards | 不引入任意 payload/StatusBuilder；context 保留扁平渐进表示；当前借用值保持 C++23 expected wrapper 形状 |
 | Folly `Expected` | 标准 expected-shaped value/error 组合、零成功分配 | 不引入 exception_wrapper 作为 HYLE operational channel |
 | Boost.System/Outcome/LEAF | domain+code、checked failure 与动态 typed detail 的取舍 | HYLE 当前只需一个固定 native detail，不做动态 category/slot |
 | C++23 `std::expected` | observers 与 monadic surface | 用零状态 `ResultError` 补 Status 的非 OK 不变量 |
 
-以下只有真实消费者出现才重开：多独立机器 detail、跨进程序列化、WinSock Status 冷路径、
-managed-to-native error construction/callback。参考库 API 更多、LOC 更大或某个微基准容易赢都不是
-功能授权。
+以下只有真实消费者出现才重开：多独立机器 detail、可遍历/序列化的 structured cause、公共
+multi-error、跨进程序列化、WinSock Status 冷路径、`Result<T&>` 专用 monadic 形状、重复的
+std/Boost error-code adapter、managed-to-native error construction/callback。当前 util Registry
+FFI 候选是最后一项的显式待裁决触发点，不是已交付能力。参考库 API 更多、LOC 更大或某个微基准
+容易赢都不是功能授权。
 
 ## 6. 采用与模块边界
 

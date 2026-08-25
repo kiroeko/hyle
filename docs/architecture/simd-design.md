@@ -1,15 +1,18 @@
 # HYLE simd/ 设计
 
+> **V2 状态：`NOT_REVIEWED`。** 本页暂作既有设计输入，不代表当前功能、性能或 API 证书。
+> 当前 Native FFI 为 `N/A`；正文旧 C/FFI、LOC 与阶段验收叙事待 simd 轮次重写。
+
 > **Native FFI 状态校正（2026-08-25）**：HYLE 没有 native-C 客户。本文关于 C/C++、C/FFI
 > 或 C 用户的旧表述只记录待复审的 ABI surface，不是当前跨语言证书。先从真实外语任务裁决
 > FFI 是否为 `N/A`；只有保留 direct FFI 时，simd 才必须通过 Java FFM + .NET P/Invoke、真实导出、
 > whole-buffer ownership 与 batch 旅程后冻结该边界。
 
-> SIMD 抽象层（Tier 1，性能焦点 #1）。clay 这块基本空白。早期「净新 ~5–8k」已作废：2026-07-17 实测 **~34k 生产**（`src/simd`+`include/hyle/simd`），约占全库生产 **~64%**。体量与终态见 [`hyle-scope.md`](./hyle-scope.md) 规模节。上游约束见同文档与 [`engineering-charter.md`](./engineering-charter.md)。
+> SIMD 抽象层（Tier 1，性能焦点 #1）。clay 这块基本空白。早期「净新 ~5–8k」已作废：2026-07-17 实测 **~34k 生产**（`src/simd`+`include/hyle/simd`），约占全库生产 **~64%**。体量与终态见 [`hyle-scope.md`](hyle-scope.md) 规模节。上游约束见同文档与 [`engineering-charter.md`](../developer/standards/engineering-charter.md)。
 >
 > **2026-07-16 终态索引**：部署和维护以
-> [`simd-dispatch-guide.md`](./simd-dispatch-guide.md) 为准；vendor 边界以
-> [`simd-vendor-surface.md`](./simd-vendor-surface.md) 为准。本文后半保留各阶段性能、指令和契约决策，
+> [`simd-dispatch-guide.md`](../developer/maintenance/simd-dispatch-guide.md) 为准；vendor 边界以
+> [`simd-vendor-surface.md`](simd-vendor-surface.md) 为准。本文后半保留各阶段性能、指令和契约决策，
 > 但早期“借核/静态路径/变体 DLL”讨论属于决策史，不再覆盖 simd-20/22 的最终实现。
 
 ## clay 现状：近乎空白
@@ -81,7 +84,7 @@ logical-128 bitpack。预发布 Native FFI 候选在 `include/hyle/c/simd.h`，�
 产品，不把寄存器向量放进 Runtime 或 C 边界；可恢复 runtime-info/RNG-create 失败返回共享
 owning `hyle_status`，没有模块私有 TLS 错误槽。
 完整 ASCII 图和维护规则见
-[`simd-dispatch-guide.md`](./simd-dispatch-guide.md)。
+[`simd-dispatch-guide.md`](../developer/maintenance/simd-dispatch-guide.md)。
 
 ### 历史决策记录：为什么不做 per-ISA DLL
 
@@ -116,7 +119,7 @@ clay 是编译期固定指令集且只到 SSE2——**跑在 AVX512 机器上只
 
 **探测档 ≠ kernel 档（kAvx 的案例,2026-06）**：`best_isa()` 的枚举档报告的是**CPU 真实能力**,与"我们编了哪些 kernel"是**两层**。`Isa::kAvx`(纯 256-bit float,Sandy/Ivy Bridge:有 AVX 无 AVX2 的 256-bit 整数)就是这个分离的实例——`f.avx` 早已被探测(且 AND 进 OS-YMM-save 的 `read_xcr0` 门),但之前没有对应枚举档,Ivy Bridge 被误报成 `kSse42`。补 `kAvx` 让 `best_isa()` 诚实。但**没有 avx-only kernel**，当前 `Runtime` 构造会把没有实现的能力档规范化到实际可用 kernel，同时在 dtype features 中单独保留 F16C 等精确能力。两层故意分开:**探测层求真**(CPU 是什么如实报)、**kernel 层务实**(只编值得编的档,缺档向下 clamp,绝不 SIGILL)。
 
-> 详见横切原则 [`coding-conventions.md` → 能力 dispatch](./coding-conventions.md)。`compute/` 的后端选择是同一模型，粒度从"指令集"换成"设备/扩展"。
+> 详见横切原则 [`coding-conventions.md` → 能力 dispatch](../developer/standards/coding-conventions.md)。`compute/` 的后端选择是同一模型，粒度从"指令集"换成"设备/扩展"。
 
 ## dtype 层（AI 数值刚需，scope 完整性评估补的缺口）
 
@@ -231,7 +234,7 @@ dtype 与 math 的 AVX-512 路径已上架；本机虽是 AVX2-only，512-bit �
 **结论:9 个 store+reload/std 标量慢 op(GetExponent/DupEven-Odd/ReverseBits/PopCount/LZCnt/TZCnt/Compress/ConcatEven-Odd)全换原生 + 2 个残留 2.x 输家(LZCnt/Compress)也追平 → 四固定宽后端全部 ≥ 统计打平**:
 - 手法:vpshufb 半字节-LUT(popcount/reversebits)、位提取指数域(GetExponent)、**float-exp trick**(LZCnt=min(158-biased_exp,32)、TZCnt=min(be(x&-x)-127,32),`cvtepi32_ps` 取指数)、packed 索引表+vpermd / pshufb 字节表(Compress)、vpermd/shuffle_ps/vuzp/vtrn(Concat/Dup)。NEON 硬件原生最省(vcntq/vclzq/vrbitq/vuzp/vtrn)。
 - **Compress 契约变更**:HYLE 旧契约保证不活跃尾部清零(强于 Highway"unspecified"),该保证在 AVX2/SSE4(无清零-compress 指令)是 ~2x 软件税。核实唯一消费者 vqsort 自带 Highway 不依赖 + 标准用法(`CompressStore`/前 `CountTrue`)不碰尾部后,**契约改为尾部 unspecified**(对齐 Highway/xsimd),各 target 尾部行为可不同(avx512 maskz 硬件清零、store+reload 路径恰好清零、avx2/sse4 vpermd/pshufb 不清零)。
-- SVE/RVV 无需改(SVE 早用原生 svcnt/svclz/svuzp;RVV popcount/clz 属 Zvbb 扩展,rv64gcv 无,登记边界同 Highway)。详见 `docs/performance/benchmarks-simd.md` op-parity 全表。
+- SVE/RVV 无需改(SVE 早用原生 svcnt/svclz/svuzp;RVV popcount/clz 属 Zvbb 扩展,rv64gcv 无,登记边界同 Highway)。历史结果见 `docs/implementation/evidence/performance/benchmarks-simd.md`。
 
 ### P3 定宽 Masked* 补全与 complex 直接公式
 
@@ -259,7 +262,7 @@ P4 新增12个公开名：四个 FMA 符号/交错变体、`MinMagnitude/MaxMagn
 
 - **`ctanh`**：普通 lane 计算一次 `sincos(2y)`，用 `expm1(|2x|)`推导小实部的双曲对；整块安全 large-real lane直接写出极限值，混合 block 的`|x|>20` lane用`q=exp(-2|x|)`渐近式，避免双曲溢出。real/imaginary axis、subnormal、NaN/Inf、近极点及会让`2y`溢出的有限虚部逐 lane 回退`std::complex`，不会连带正常邻 lane。异常结果先保存、vector store后覆盖，所以只支持的精确原位 alias 仍正确。
 - **`cpow`**：对 regular lane 计算一次`rho=hypot(z)`、`L=log(rho)`、`phi=atan2(z)`，再融合`A=w_re*L-w_im*phi`、`B=w_re*phi+w_im*L`，只做一次`exp(A)`和一次`sincos(B)`。base/exponent 的轴、subnormal、非有限、过大值、危险指数窗口与 branch-cut lane 均回退`std::pow`。
-- `ctanh/cpow` 的 xsimd core 只在外部 benchmark 对照中存在；生产 AVX2/NEON 走 HYLE SoA。本文当时“继续保留 xsimd/Highway”的 `clog/csqrt`、VQSort 与 bit-pack 结论后来由 simd-20 全部摘除，终态见 [`simd-vendor-surface.md`](./simd-vendor-surface.md)。完整阶段裁决见 [`simd-13`](../milestones/simd-13-vendor-displacement-2.md)。
+- `ctanh/cpow` 的 xsimd core 只在外部 benchmark 对照中存在；生产 AVX2/NEON 走 HYLE SoA。本文当时“继续保留 xsimd/Highway”的 `clog/csqrt`、VQSort 与 bit-pack 结论后来由 simd-20 全部摘除，终态见 [`simd-vendor-surface.md`](simd-vendor-surface.md)。完整阶段裁决见 [`simd-13`](../implementation/tasks/simd/simd-13-vendor-displacement-2.md)。
 
 ### SVE scalable 后端(simd-09,首个非定宽后端)——sizeless 类型如何融入 D-tag 契约
 

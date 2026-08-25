@@ -1,6 +1,9 @@
 # HYLE graph-02 数据并行层设计
 
-> 本文档定 graph 支柱第二个里程碑 **graph-02 数据并行层**（`parallel_for` / `reduce` / `scan` / `sort` over range）的设计。上游定位见 [`graph-design.md`](./graph-design.md)（graph 支柱选型 + graph-02 归属定案）；调度对接见 [`sched-design.md`](./sched-design.md)；kernel 对接见 [`compute-design.md`](./compute-design.md) + `simd`；对标源见本地 `oneTBB`（`include/oneapi/tbb/blocked_range.h`、`parallel_reduce.h`、`parallel_for.h`）。
+> **V2 状态：`INCOMPLETE / HISTORICAL DESIGN INPUT`。** graph 尚未形成新产品边界；本文的
+> 定案、API 与性能字样都需在 graph 轮次按真实消费者重审。
+
+> 本文档定 graph 支柱第二个里程碑 **graph-02 数据并行层**（`parallel_for` / `reduce` / `scan` / `sort` over range）的设计。上游定位见 [`graph-design.md`](graph-design.md)（graph 支柱选型 + graph-02 归属定案）；调度对接见 [`sched-design.md`](sched-design.md)；kernel 对接见 [`compute-design.md`](compute-design.md) + `simd`；对标源见本地 `oneTBB`（`include/oneapi/tbb/blocked_range.h`、`parallel_reduce.h`、`parallel_for.h`）。
 >
 > **一句话**：graph-01 编排"节点/边的依赖 DAG"（改一个参数重算下游）；graph-02 编排"一个大 range 切块并行跑同一 kernel"（一个网格 100 万单元铺满多核）。二者是 graph 支柱的两种正交图式计算，都**只编排、不拥有算力**——range 分块调度靠 sched work-stealing，每块的计算是 simd 核 / compute host kernel。references.md:105 的原话即此：「work-stealing 调度器做 fork-join / parallel-for——一个调度器同时干 IO 并发和 CPU 数据并行，这正是 work-stealing 的本职」。
 
@@ -102,9 +105,9 @@ oneDNN 等未来 adapter 也必须实证接口，不能从函数名类推。
 
 ## 七、参考
 
-- [`graph-design.md`](./graph-design.md) §2：graph-02 归属定案（归 graph）。
-- [`references.md`](./references.md):99-106：为何不借 oneTBB 运行时 + CPU 数据并行三层（自带并行注入 / HYLE 自有 fork-join / 指令级借核）。
-- [`compute-design.md`](./compute-design.md):341：数据并行铺多核归 graph-02、host kernel 单线程内联的铁律。
+- [`graph-design.md`](graph-design.md) §2：graph-02 归属定案（归 graph）。
+- [`references.md`](references.md):99-106：为何不借 oneTBB 运行时 + CPU 数据并行三层（自带并行注入 / HYLE 自有 fork-join / 指令级借核）。
+- [`compute-design.md`](compute-design.md):341：数据并行铺多核归 graph-02、host kernel 单线程内联的铁律。
 - 本地 `oneTBB`（**设计对标源,不借运行时**）：`blocked_range.h`（grainsize + 递归 split）、`parallel_reduce.h`（reduction_tree_node + deterministic_reduction_tree_node 双档）、`parallel_scan.h`（两趟）。
 - graph-01 `src/graph/parallel_eval.cc`：复用的 sched fork-join 基建 + 三个 UAF 教训。
 - `simd`（simd-09 vqsort）：parallel_sort 叶子块的向量排序核。

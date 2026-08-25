@@ -1,5 +1,8 @@
 # HYLE container 架构
 
+> **V2 状态：`NOT_REVIEWED`。** 本页暂作既有设计输入，不代表当前功能、性能或 API 证书。
+> 当前 Native FFI 为 `N/A`；正文旧 C/FFI surface 与验收叙事待 container 轮次重写。
+
 > **Native FFI 状态校正（2026-08-25）**：HYLE 没有 native-C 客户。本文关于 C/C++、C/FFI
 > 或 C 用户的旧表述只记录待复审的 ABI surface，不是当前跨语言证书。先从真实外语任务裁决
 > FFI 是否为 `N/A`；只有保留 direct FFI 时，container 才必须通过 Java FFM + .NET P/Invoke、
@@ -413,7 +416,7 @@ OOM 落进 fatal assert。
 吞吐/生命周期用户应使用 `intern_many`、`acquire_many`、`retain_many`、
 `release_many`。每个有界块先算一次 hash，只按升序获取实际涉及的 shard lock；
 既避免全池冻结也避免重复 hash。性能结论见
-[`benchmarks-container.md`](../performance/benchmarks-container.md)。
+[`benchmarks-container.md`](../implementation/evidence/performance/benchmarks-container.md)。
 
 ## 字符串 SIMD 策略
 
@@ -579,8 +582,8 @@ pointer/count 的 `try_append/try_insert/try_resize/erase/try_shrink_to_fit` 覆
 - 并发 queue/vector 的稳定最小共同面使用 pointer payload；并发 map 则按 options 擦除
   POD key/value，并用 `find_copy/update` 保住锁的生命周期。
 
-完整使用和失效规则见 [`c-container.md`](../guide/c-container.md)；收口证据见
-[`container-module-closure.md`](../milestones/container-module-closure.md)。
+上表只记录旧 C surface 的历史形状；当前 Native FFI 为 `N/A`。上一轮施工证据见
+[`container-module-closure.md`](../implementation/tasks/container/container-module-closure.md)，不能作为 v2 证书。
 
 ## 下游利用
 
@@ -607,7 +610,7 @@ pointer/count 的 `try_append/try_insert/try_resize/erase/try_shrink_to_fit` 覆
 - 字符扫描必须同时看多种长度、执行顺序与方差，不能用单一长度包装输赢。
 
 具体点值、平台翻转、对手 pin 和 freshness 只由
-[`benchmarks-container`](../performance/benchmarks-container.md) 维护；本架构页只固定比较合同与
+[`benchmarks-container`](../implementation/evidence/performance/benchmarks-container.md) 维护；本架构页只固定比较合同与
 不允许为 benchmark 扭曲产品形状的原则。
 
 测试矩阵包括 typed 单测、纯 C 调用覆盖、C++ C-ABI 并发测试、allocator
@@ -628,5 +631,5 @@ pointer/count 的 `try_append/try_insert/try_resize/erase/try_shrink_to_fit` 覆
 - [abseil Swiss Tables design](https://abseil.io/about/design/swisstables)
 - [SwissTable control-byte overview](https://faultlore.com/blah/hashbrown-tldr)
 - 本地 `abseil-cpp/absl/container/internal/btree.h`（cache-packed B-tree 对照）
-- [C ABI design](./c-abi-design.md)
-- [C ABI authoring guide](./c-abi-authoring-guide.md)
+- [C ABI design](native-ffi-policy.md)
+- [C ABI authoring guide](native-ffi-policy.md)

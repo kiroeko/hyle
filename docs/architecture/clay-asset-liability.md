@@ -147,6 +147,6 @@
 8. 新容器（SmallVector/intrusive/lock-free 队列）
 
 **HYLE 总体量**：当前四项 `cloc` 实测、终态纪律与第三方边界只见
-[`hyle-scope.md`](./hyle-scope.md)；2026-07-17 时的快照保留在
-[`midterm-report-2026-07-scale-positioning.md`](../milestones/midterm-report-2026-07-scale-positioning.md)。
+[`hyle-scope.md`](hyle-scope.md)；2026-07-17 时的快照保留在
+[`midterm-report-2026-07-scale-positioning.md`](../implementation/tasks/project/midterm-report-2026-07-scale-positioning.md)。
 这不是“重构 clay”，是“以 clay 为地基的全新 infra”。

@@ -1,6 +1,9 @@
 # HYLE compute/ 异构计算选型
 
-> 本文档定下 HYLE `compute/` 模块（GPU/异构算力）的设计。上游约束见 [`hyle-scope.md`](./hyle-scope.md)（不特化、贴硬件）、调度对接见 `sched/`。GPU 现状盘点见 [`clay-asset-liability.md`](./clay-asset-liability.md) 第五节。
+> **V2 状态：`INCOMPLETE / NOT_REVIEWED`。** 本页是半成品阶段的调查与设计历史，不是冻结的
+> 产品架构或性能证书。真实推理消费者和前置模块可能改变其类型；只在 compute 轮次重写。
+
+> 本文档定下 HYLE `compute/` 模块（GPU/异构算力）的设计。上游约束见 [`hyle-scope.md`](hyle-scope.md)（不特化、贴硬件）、调度对接见 `sched/`。GPU 现状盘点见 [`clay-asset-liability.md`](clay-asset-liability.md) 第五节。
 
 > **当前收口原则（2026-07-22 审计）：**公开形状由可复述的消费者场景和跨后端合同决定，benchmark 只验证某个实现选择，不反向定义 API。`Stream/Event/Buffer/Kernel` 是稳定主轴；合批服务多算子链，record/replay 服务固定 bindings 的迭代负载，timing event 服务 profiling。一次 tiny-saxpy 的 `ns/op` 不能证明这些形状，更不能单独推出新抽象。当前 Vulkan 多个逻辑 Stream 仍共享一个 `VkQueue`，正确性成立但会保守跨 Stream 排队；真正独立并发需消费者工况 + timeline semaphore/多队列方案及端到端数据后再承诺。
 
@@ -74,7 +77,7 @@ compute/
 
 - **要极限性能 / 已知跑 N 卡**（训练、大模型推理）→ CUDA（或 HIP 对 AMD）。tensor core、cuBLAS/cuDNN、生态算子最全。
 - **要"一次写、全平台跑" / 不想锁厂商**（agent 端侧、异构集群、消费级显卡）→ Vulkan compute（SPIR-V）。一份 `.comp` 编译成 SPIR-V，N/AMD/Intel/Apple 都吃。
-- **HYLE 策略**：上层抽象屏蔽差异，两条后端都建。选择走**编译期优先、运行期一次冷跳兜底**的统一 dispatch 模型（详见 [`coding-conventions.md` → 能力 dispatch](./coding-conventions.md)）——构建期可只编目标后端（llama.cpp 式 `-DGGML_CUDA=ON` 按机器定死，零 dispatch）；发布二进制则启动探测一次、冷跳进可用后端（CPU(simd) → Vulkan compute → CUDA/HIP/Metal 原生）。**后端选择是冷路径，kernel 内部满速无间接。**
+- **HYLE 策略**：上层抽象屏蔽差异，两条后端都建。选择走**编译期优先、运行期一次冷跳兜底**的统一 dispatch 模型（详见 [`coding-conventions.md` → 能力 dispatch](../developer/standards/coding-conventions.md)）——构建期可只编目标后端（llama.cpp 式 `-DGGML_CUDA=ON` 按机器定死，零 dispatch）；发布二进制则启动探测一次、冷跳进可用后端（CPU(simd) → Vulkan compute → CUDA/HIP/Metal 原生）。**后端选择是冷路径，kernel 内部满速无间接。**
 
 ## 借 vs 造
 
@@ -180,7 +183,7 @@ compute/
 iron（clay 宿主）**不直接用 ggml**，而是 `add_subdirectory(stable-diffusion.cpp)` 把整个 sd.cpp 应用 + 它冻结的 ggml 快照吞进来（`iron/thirdparty/CMakeLists.txt:1`），业务层 `flux_api.cc` 调 sd.cpp 高层门面 `new_sd_ctx`/`txt2img`（20 参数），几乎不碰 ggml。这是 **L2 层"借整个推理应用" + clay/oatpp/sd.cpp 三套 runtime 各自为政**——正是 HYLE 动机（motivation §24）要消除的"东拼西凑"。**HYLE compute-05 要借的是"算子 kernel"粒度（借 ggml 不借 sd.cpp）、pin 上游版（不绑应用冻结快照）、接进统一 completion 脊（iron 里 clay 和 ggml 完全不通）。** iron 反证：不 fork、不借整库、不绑冻结快照。
 
 ### 发现 2：显存归属边界——host 归 HYLE / device 归 ggml（外部显存注入在 CUDA 上结构性死路，非零拷贝）
-> **⚠️ 2026-07-07 两阶段真跑 + gdb 彻底修正**：本发现初版愿景是"HYLE 自己 cudaMalloc 的显存零拷贝喂给 ggml 算子算"。**被 RTX 4070 真跑 + WSL gdb 逐行证伪**——先是 `->buffer=NULL` 单算子段错误，再是 dummy-buffer 合批 varied 形状崩（`ggml-cuda.cu:1924`，共享 size-0 dummy 的 context 被 gallocr 弄丢）。根因不是"没找对 API"：**CUDA 后端 `buffer_from_host_ptr=false`（`ggml-cuda.cu:5032`），结构性不接受外部显存指针**。全过程 gdb 坐实见 [`../debug/ggml-zerocopy-null-buffer-hunt.md`](../debug/ggml-zerocopy-null-buffer-hunt.md)，正式边界见 [`borrowing-ggml-memory-model.md`](./borrowing-ggml-memory-model.md)。
+> **⚠️ 2026-07-07 两阶段真跑 + gdb 彻底修正**：本发现初版愿景是"HYLE 自己 cudaMalloc 的显存零拷贝喂给 ggml 算子算"。**被 RTX 4070 真跑 + WSL gdb 逐行证伪**——先是 `->buffer=NULL` 单算子段错误，再是 dummy-buffer 合批 varied 形状崩（`ggml-cuda.cu:1924`，共享 size-0 dummy 的 context 被 gallocr 弄丢）。根因不是"没找对 API"：**CUDA 后端 `buffer_from_host_ptr=false`（`ggml-cuda.cu:5032`），结构性不接受外部显存指针**。全过程 gdb 坐实见 [`../debug/ggml-zerocopy-null-buffer-hunt.md`](../developer/debugging/ggml-zerocopy-null-buffer-hunt.md)，正式边界见 [`borrowing-ggml-memory-model.md`](borrowing-ggml-memory-model.md)。
 
 **正确边界：借 ggml 算子 = host 内存归 HYLE（mem 喂入/取出），device 显存归 ggml（gallocr 自管），就像 llama.cpp。**
 - **device 侧归 ggml（CUDA 上必须）**：ggml 算子计算用的 tensor buffer（输入/中间/结果）由 `ggml_gallocr` 分配管理。CUDA 无公开 API 注册外部显存（`buffer_from_host_ptr=false`）；且 CUDA matmul 内核依赖 buffer 的 `context->device`/`buft` 元数据、图内复用、padding 一整套，是算子正确性的一部分。**不注入外部 `->data`、不造假 dummy buffer**（那在多算子 varied 形状必崩）。
@@ -243,7 +246,7 @@ HYLE device/stream/event/buffer/kernel 抽象在最上层，下挂两类后端�
 - **结论（引出专章）**：ggml CPU 后端对 HYLE 只有两种正当用法——**(a) `n_threads=1` 当纯计算叶子**（`n_threads==1` 时 ggml 零 spawn、直接在调用线程 `ggml_graph_compute_thread(workers[0])`，`ggml-cpu.c:3356-3358` 铁证），并行由 HYLE 铺；**(b) 合批成单个大 graph 后放它全核**（此时无并发、不打架，见专章）。**选 a 还是 b 取决于"能不能合批"**——这不是 07 才评的细节，是 compute-05 的执行模型骨架，下方专章定死。
 
 ### compute-05 定案（基于上述）
-- **显存归属边界（发现 2，2026-07-07 gdb 定论）**：**host 归 HYLE / device 归 ggml，就像 llama.cpp**。ggml 算子用 `gallocr` 分配它的 device buffer（CUDA 上 `buffer_from_host_ptr=false`，外部显存注入结构性死路）；HYLE 的 host 数据经 `tensor_set`(拷入,源可 pinned)/`tensor_get`(拷出) 进出（host 源零约束）。HYLE 显存自管归 compute-04/06 自造 kernel + ② CAD/CAE 数据。**不注入外部显存、不造假 dummy buffer。** 专文 [`borrowing-ggml-memory-model.md`](./borrowing-ggml-memory-model.md)。
+- **显存归属边界（发现 2，2026-07-07 gdb 定论）**：**host 归 HYLE / device 归 ggml，就像 llama.cpp**。ggml 算子用 `gallocr` 分配它的 device buffer（CUDA 上 `buffer_from_host_ptr=false`，外部显存注入结构性死路）；HYLE 的 host 数据经 `tensor_set`(拷入,源可 pinned)/`tensor_get`(拷出) 进出（host 源零约束）。HYLE 显存自管归 compute-04/06 自造 kernel + ② CAD/CAE 数据。**不注入外部显存、不造假 dummy buffer。** 专文 [`borrowing-ggml-memory-model.md`](borrowing-ggml-memory-model.md)。
 - **completion 走 spawn_blocking**（发现 3/4/8）：`ggml graph_compute` 卸到 sched-11 blocking pool，fiber 挂起、完成经 JoinHandle/Waker 唤醒。**不接 GpuPoller**（ggml stream 私有）。
 - **CPU 线程模型 = 合批性二分，`n_threads` 可配（非硬编码 1）**（发现 10 + 执行模型专章，照 llama.cpp `:2425-2429` 铁证）：能合批的大 graph 放 ggml 全核（无并发不打架）；合不了批的高并发独立小推理走 `n_threads=1` + HYLE 铺 N 个。**详见下方「compute-05 CPU 执行模型专章」。**
 - **性能杠杆是合批**（发现 4，llama.cpp 真并发手段）：HYLE 侧合并多算力请求成一个 ggml graph 一次提交 > 多 fiber 各自卸载。**且合批不只是性能杠杆——它还是决定线程数的开关**（见专章）。

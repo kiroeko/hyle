@@ -1,32 +1,29 @@
-# HYLE 文档地图与信源规则
+# HYLE 文档
 
-HYLE 的文档按读者任务分层，同一事实只在一个目录维护。发现冲突时，先按下表找到
-该事实的责任目录，再修责任文档；不要在其他目录复制一份“同步后的答案”。
+HYLE 的人读文档只分四类。分类依据是文档回答的问题，而不是文件扩展名或作者。
 
-| 目录 | 只负责 | 不负责 |
+| 目录 | 回答的问题 | 内容 |
 |---|---|---|
-| [`architecture/`](./architecture/README.md) | 当前整体设计、模块边界、公共能力形状、长期约束与决策理由 | 施工进度、某次测试数、benchmark 点值 |
-| [`guide/`](./guide/README.md) | 用户如何构建、选型、调用和正确管理生命周期 | 设计演进史、性能总表、项目排期 |
-| [`performance/`](./performance/README.md) | benchmark 方法、环境、原始结果、同合同对照、win/loss 与待补证据 | API 设计、实现任务排期 |
-| [`milestones/`](./milestones/README.md) | Jira 式 work item：目的、依赖、改动、验收、提交和剩余任务 | 当前架构真相、长期用户手册、跨任务性能总账 |
-| [`debug/`](./debug/) | 一次故障或调查的证据链 | 当前产品说明 |
-| [`setup/`](./setup/README.md) | 贡献者环境与构建依赖 | 产品能力和进度 |
+| [`architecture/`](architecture/README.md) | 为什么做、希望成为什么、为什么这样设计？ | 项目背景、需求与愿景、系统/模块架构、正式决策及决策背景 |
+| [`implementation/`](implementation/README.md) | 某次工作实际发生了什么？ | Jira 式任务、调查过程、结果、提交、当前施工状态与历史事实 |
+| [`developer/`](developer/README.md) | 维护者下一次应当怎样正确地做？ | 开发规则、模块协作、review 方法、构建测试、性能仪器、debug 与 troubleshooting |
+| [`user/`](user/README.md) | 外部 C++ 用户怎样完成任务？ | 安装集成、模块选型、自然 API 写法、生命周期和常见陷阱 |
 
-## 冲突优先级
+## 不属于人读文档的内容
 
-1. 实际公开头和实现决定“代码现在做什么”；测试与导出清单决定机械事实。
-2. `architecture/` 决定“产品为什么这样设计、边界在哪里”。
-3. `performance/` 决定“在哪个 commit、平台和 workload 下快慢如何”。
-4. `guide/` 必须与前三者一致，但只保留用户完成任务所需的信息。
-5. `milestones/` 和 `debug/` 是带日期的工作记录。旧名、旧数字和当时判断可以作为历史
-   留存，但不得被引用为当前产品事实。
+- 机器可读合同跟实现放置，例如组件图在 `cmake/`，未来 review manifest 放在相应工具目录。
+- 原始 CSV/JSON/log/hash 放在仓库根级 [`evidence/`](../evidence/README.md)；实施文档只解释其
+  candidate、环境和结论。
+- 法律文本使用根级 `LICENSE`/`NOTICE` 及第三方许可证；architecture 只能解释许可决策。
+- 生成式 API reference 属构建产物，用户入口可以链接，但不手工复制公开头。
 
-## 更新纪律
+## 归档纪律
 
-- 公共类型、所有权或模块边界改变：更新对应 `architecture/*-design.md`，再更新 guide。
-- Native FFI ABI 改变：更新 `architecture/c-abi-design.md`、对应 `guide/c-*.md`、导出清单和
-  Java/.NET direct-binding 证据；C schema 可编译本身不算产品验收。
-  milestone 只记录这次 work item 做了什么。
-- benchmark 改变：结果、方法和未关闭输项只写入 `performance/`；guide 只链接，不抄数字。
-- task 完成：milestone 写验收和 commit，稳定结论合并回 architecture/performance/guide 后停止扩写。
-- 项目状态只在 milestone 索引/预发布任务单维护；architecture 不写每日完成百分比。
+1. 同一事实只有一个权威来源；其他位置只链接。
+2. architecture 不写完成百分比、某次测试数或 benchmark 点值。
+3. implementation 不自动成为当前产品合同；任务结束后把仍有效的决策、维护方法和用户写法
+   分别沉淀到另外三个目录。
+4. developer 不保存一次性任务状态；它只保留可重复执行的规则、工具和排查方法。
+5. user 不要求读源码、内部里程碑或历史性能调查才能完成正常任务。
+6. 删除被替代文档，不维护兼容跳转页；Git 历史承担恢复和追溯。
+7. 修改文档后运行 `python scripts/check-docs.py`。

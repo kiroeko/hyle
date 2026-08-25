@@ -37,14 +37,25 @@ printed in the report so the certificate cannot hide its counting boundary.
 `--self-check` also verifies the fixed core boundary and the expected subset
 relations. `cloc` and Python 3 must be available on `PATH`.
 
-## `run-core-ffi-smoke.py` — direct Java/.NET ABI proof
+## `check-docs.py` — documentation contract
 
-This runner builds temporary Java FFM and .NET `LibraryImport` consumers, then
-loads one exact shared `hyle_core` path without a C/C++ shim. It also loads the
-test-only incompatible fixture, which exports only ABI major 2, and proves both
-bindings reject it before wider symbol resolution. It validates the Native FFI
-ABI handshake and product identity; it is not a native-C product sample. A
-.NET 8+ SDK and JDK 25+ are required for the complete gate:
+Runs without third-party packages. It enforces the four human-documentation
+roots, rejects retired directories/C-language user guides and checks relative
+Markdown links across the repository documentation surfaces:
+
+```bash
+python scripts/check-docs.py
+```
+
+The Linux baseline CI runs the same command. Content correctness still requires
+module review; this script prevents structural and navigation drift.
+
+## `run-core-ffi-smoke.py` — retired FFI experiment
+
+This script belongs to the pre-v2 Core FFI experiment. Native FFI is now `N/A`;
+the script, managed fixtures and three Core exports are technical debt scheduled
+for removal during Core rebuild. Do not run it as a product gate or cite it as a
+supported Java/.NET capability. Its historical invocation was:
 
 ```bash
 python scripts/run-core-ffi-smoke.py --library /absolute/path/to/libhyle_core.so \
@@ -59,8 +70,8 @@ python scripts/run-core-ffi-smoke.py `
   --incompatible-library C:\absolute\path\to\hyle_core_ffi_incompatible_fixture.dll
 ```
 
-Use `--only dotnet` or `--only java` for a focused diagnostic. All managed
-compiler output is placed in an automatically removed temporary directory.
+`--only dotnet` and `--only java` selected one historical diagnostic. The current
+policy is [`docs/architecture/native-ffi-policy.md`](../docs/architecture/native-ffi-policy.md).
 
 ## `hyle-windows.ps1` — select an installed Windows C++ environment
 
@@ -282,7 +293,7 @@ independent processes and tail alpha `.01`, the interval is the third through th
 ratio (actual coverage about 99.26%). A formal result must independently run the default and
 peer-first orders and obtain compatible classifications; short/code-placement-sensitive kernels
 also need the perturbation gate described in
-[`benchmark-evidence-standard.md`](../docs/performance/benchmark-evidence-standard.md). The script's
+[`benchmark-evidence-standard.md`](../docs/developer/performance/benchmark-evidence-standard.md). The script's
 `[order_verdict]` and `[order_sota_gate]` are therefore evidence inputs, not a module certificate.
 Default order, peer-first, and every applicable shape gate must each pass before review can compose
 a SOTA `PASS`. Absolute per-variant spread and the sign-test p-value are diagnostics only.
@@ -357,7 +368,9 @@ write every raw row with `--raw`. On macOS it also records the requested QoS,
 whether the QoS call succeeded, and the unsupported hard-affinity boundary;
 an unsuccessful QoS request rejects the certificate. Use at least
 `-n 15 --samples 4096` for a certificate; short runs are harness smoke tests only. See
-`docs/performance/benchmarks-mem.md` §8 for commands and interpretation.
+`docs/implementation/evidence/performance/benchmarks-mem.md` §8 for the historical
+commands and interpretation. A new certificate must also satisfy the current
+instrument qualification standard.
 
 ## `mem-fiber-stack-stat.py` — scheduler-owned fiber stack latency
 
@@ -367,7 +380,8 @@ paired variants are scheduler-owned `FiberStackPool` reuse and direct guarded
 VM reserve/release. It records commit, dirty state, compiler/platform, Linux CPU
 binding and Apple QoS; dirty runs or a failed macOS QoS request are not release
 evidence. Formal runs use `-n 15 --samples 2048` on Windows/Linux and `-n 31`
-for each macOS QoS. See `docs/performance/benchmarks-mem.md` §5.
+for each macOS QoS. See
+`docs/implementation/evidence/performance/benchmarks-mem.md` §5.
 
 ## `mem-shared-link-stat.py` — mem shared standard-adapter certificate
 
@@ -379,7 +393,7 @@ come from `HYLE_STATIC=OFF`, `HYLE_BUILD_TESTS=OFF` shipping configuration.
 ```bash
 python3 scripts/mem-shared-link-stat.py build-bench/bin/hyle_mem_bench \
   --runs 15 --platform linux --compiler gcc-14.2 \
-  --cpu 2 --raw docs/performance/mem-shared-same-link-linux.csv
+  --cpu 2 --raw evidence/performance/mem-shared-same-link-linux.csv
 ```
 
 On macOS omit `--cpu` and pass `--apple-qos interactive` or `--apple-qos utility`; the benchmark

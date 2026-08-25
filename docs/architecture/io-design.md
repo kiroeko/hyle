@@ -1,12 +1,15 @@
 # HYLE io/ 网络库选型
 
+> **V2 状态：`NOT_REVIEWED`。** 本页暂作既有设计输入，不代表当前功能、性能或 API 证书。
+> 当前 Native FFI 为 `N/A`；正文旧 C/FFI surface 与验收叙事待 io 轮次重写。
+
 > **Native FFI 状态校正（2026-08-25）**：HYLE 没有 native-C 客户，也没有已发布的 managed
 > binding。本文关于 C/C++、C/FFI 或 C 用户的旧表述只记录待复审的 ABI 候选，不是当前跨语言
 > 证书或兼容承诺；首发前可破坏性调整。先从真实 foreign-runtime 任务裁决 FFI 是否为 `N/A`；
 > 只有保留 direct FFI 时，io 才必须通过 Java FFM + .NET P/Invoke、真实导出、completion/buffer/
 > callback 生命周期与 batch 旅程后冻结。
 
-> 本文档定下 HYLE `io/` 模块的网络层选型。上游约束见 [`hyle-scope.md`](./hyle-scope.md)（`sched/` 统一调度 + fiber）。
+> 本文档定下 HYLE `io/` 模块的网络层选型。上游约束见 [`hyle-scope.md`](hyle-scope.md)（`sched/` 统一调度 + fiber）。
 
 ## 2026-07-20 当前架构（维护入口）
 
@@ -61,12 +64,12 @@ foreign-runtime 任务候选（当前没有已发布 binding）
 > 返回 `StatusCode::Unimplemented`；该状态只是平台/实现不支持当前操作的
 > 错误提示，不是 stub 实现。不得以恒定 `false`/成功 no-op 冒充完整能力。
 > 现存例外和补全工单见
-> [`io-capability-fill-list.md`](../milestones/io-capability-fill-list.md)。
+> [`io-capability-fill-list.md`](../implementation/tasks/io/io-capability-fill-list.md)。
 
 实现与正确性已完成本轮收口，现有 8 benchmark 的三平台证书也已生成；已确认
 的 M4 TLS/kqueue 多 worker 与 handshake 性能尾，以及尚缺的专项 peer 测试见
-[`io-module-closure.md`](../milestones/io-module-closure.md) 与
-[`benchmarks-io.md`](../performance/benchmarks-io.md)。下文“已落地纪要”保留
+[`io-module-closure.md`](../implementation/tasks/io/io-module-closure.md) 与
+[`benchmarks-io.md`](../implementation/evidence/performance/benchmarks-io.md)。下文“已落地纪要”保留
 施工历史，若与本节冲突，以本节和代码为准。
 
 ## 两个调查事实

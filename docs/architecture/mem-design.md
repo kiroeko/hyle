@@ -1,17 +1,11 @@
 # HYLE mem/ 设计
 
-> **Native FFI 状态校正（2026-08-25）**：HYLE 没有 native-C 客户，也没有已发布的 managed
-> binding。本文关于 C/C++、C/FFI 或 C 用户的旧表述只记录待复审的 ABI 候选，不是当前跨语言
-> 证书或兼容承诺；首发前可破坏性调整。先从真实 foreign-runtime 任务裁决 FFI 是否为 `N/A`；
-> 只有保留 direct FFI 时，mem 才必须通过 Java FFM + .NET P/Invoke、真实导出、allocator/buffer
-> 所有权与 batch 旅程后冻结该边界。
+> **V2 状态：`NOT_REVIEWED`。** 本页暂作既有设计输入，不代表当前功能、性能或 API 证书。
+> 当前 Native FFI 为 `N/A`；正文旧 C/FFI surface 与验收叙事待 mem 轮次重写。
 
-> Tier 0 host-RAM 基础设施。本页是 mem 当前边界、公共能力形状和长期合同的设计真源。
-> 用户写法见 [`../guide/mem.md`](../guide/mem.md) 与 [`../guide/c-mem.md`](../guide/c-mem.md)，
-> 实测只见 [`../performance/benchmarks-mem.md`](../performance/benchmarks-mem.md)，当前复审状态只见
-> [`../milestones/pre-release-readiness.md`](../milestones/pre-release-readiness.md)；
-> [`mem-mature-gap-audit.md`](../milestones/mem-mature-gap-audit.md) 是 2026-07 的历史复审输入，
-> [`mem-close-plan.md`](../milestones/mem-close-plan.md) 是上一轮冻结证书。
+> 用户当前选型见 [user/mem](../user/mem.md)，上一轮性能输入见
+> [historical mem evidence](../implementation/evidence/performance/benchmarks-mem.md)，施工历史见
+> [mem tasks](../implementation/tasks/mem/)。
 
 ## 1. 边界
 
@@ -373,7 +367,7 @@ mem 进入预发布冻结必须同时满足：
 - diagnostics：membership fail-fast 保留；`HYLE_TESTING` 已覆盖 shared/cached/object/growable pool 的 double return/destroy、foreign pointer 与 outstanding allocation，shipping 构建完全剥离额外状态和指令；LeakTracker metadata OOM 必须留下 dropped/complete 证据，不能静默伪称完整。
 - performance workload 必须描述 request batch、producer/consumer handoff、quota、expensive-context reuse 等用户行为，并扫描线程、工作集、容量和批次；不能围绕内部阈值造场景。
 
-当前固定池实测见 [`../performance/benchmarks-mem.md`](../performance/benchmarks-mem.md)。
+当前固定池实测见 [`../performance/benchmarks-mem.md`](../implementation/evidence/performance/benchmarks-mem.md)。
 
 ## 参考
 

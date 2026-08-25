@@ -1,14 +1,11 @@
 # util 架构：两个依赖层，一个产品边界
 
-> **Native FFI 状态校正（2026-08-25）**：HYLE 没有 native-C 客户，也没有已发布的 managed
-> binding。本文关于 C/C++、C/FFI 或 C 用户的旧表述只记录待复审的 ABI 候选，不是当前跨语言
-> 证书或兼容承诺；首发前可破坏性调整。先从真实 foreign-runtime 任务裁决 FFI 是否为 `N/A`；
-> 只有保留 direct FFI 时，util-runtime 才必须通过 Java FFM + .NET P/Invoke、真实导出、handle/
-> callback 生命周期与 batch 旅程后冻结。
+> **V2 状态：`NOT_REVIEWED`。** 本页暂作既有设计输入，不代表当前功能、性能或 API 证书。
+> 当前 Native FFI 为 `N/A`；正文旧 C/FFI surface 与验收叙事待 util 轮次重写。
 
-> 本页维护长期设计。用户选型见 [`../guide/util.md`](../guide/util.md)，Native FFI 候选映射见
-> [`../guide/c-util.md`](../guide/c-util.md)，性能证据只见
-> [`../performance/benchmarks-util.md`](../performance/benchmarks-util.md)。
+> 用户当前选型见 [user/util](../user/util.md)，上一轮性能输入见
+> [historical util evidence](../implementation/evidence/performance/benchmarks-util.md)，施工历史见
+> [util tasks](../implementation/tasks/util/)。
 
 `util` 不是随手堆 helper 的杂物目录。它是一个产品模块，但按依赖切成两个可组装层：
 
@@ -88,7 +85,7 @@ factory：missing 和 factory 返回 NULL 都是 NULL。会因设备、驱动、
   profile 证明伪共享的 owner 显式添加，不能让所有实例无条件付费。
 - SpinLock 成功 RMW 保留 acquire-release。历史 M4 真机证据表明机械削为 acquire-only 会造成
   material handoff regression；这是 ISA/codegen 合同，不以抽象模型的最弱合法序替代实测。
-  具体点值与 freshness 只见 [`benchmarks-util`](../performance/benchmarks-util.md)。
+  具体点值与 freshness 只见 [`benchmarks-util`](../implementation/evidence/performance/benchmarks-util.md)。
 
 ## Native FFI 候选原则
 

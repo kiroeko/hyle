@@ -43,6 +43,10 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Verify documentation contract
+        if: runner.os == 'Linux'
+        run: python3 scripts/check-docs.py
+
       - name: Select GCC 14
         if: runner.os == 'Linux'
         run: |

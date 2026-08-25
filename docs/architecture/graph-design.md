@@ -1,6 +1,9 @@
 # HYLE graph/ 并行任务编排选型
 
-> 本文档定下 HYLE `graph/` 支柱（并行任务编排：依赖 DAG 增量重算 + 数据并行）的设计。上游定位见 [`motivation.md`](./motivation.md)（北极星② CAD/BIM/CAE）、[`hyle-scope.md`](./hyle-scope.md)（DISCUSS-3 归属）；clay 资产盘点见 [`clay-asset-liability.md`](./clay-asset-liability.md) 第六节；调度对接见 [`sched-design.md`](./sched-design.md)；kernel 对接见 [`compute-design.md`](./compute-design.md)。
+> **V2 状态：`INCOMPLETE / NOT_REVIEWED`。** 本页是半成品阶段的调查与设计历史，不是冻结的
+> 产品架构或性能证书。graph 的需求、归属及与 compute/sched 的边界要由真实消费者重新裁决。
+
+> 本文档定下 HYLE `graph/` 支柱（并行任务编排：依赖 DAG 增量重算 + 数据并行）的设计。上游定位见 [`motivation.md`](motivation.md)（北极星② CAD/BIM/CAE）、[`hyle-scope.md`](hyle-scope.md)（DISCUSS-3 归属）；clay 资产盘点见 [`clay-asset-liability.md`](clay-asset-liability.md) 第六节；调度对接见 [`sched-design.md`](sched-design.md)；kernel 对接见 [`compute-design.md`](compute-design.md)。
 >
 > **一句话**：graph 是**北极星② 独占拉满的那根支柱**——推理引擎几乎不碰它。它承接 CAD/BIM/CAE 工程管线的两类图式计算：**① 参数化/仿真依赖 DAG 的增量重算**（改一个参数只重算下游脏节点，graph-01）、**② 数据并行算法层**（parallel_for/reduce/scan/sort，CAE 网格单元并行/场量归约，graph-02）。二者都跑在 `sched/` work-stealing 之上、几何/求解 kernel 走 `compute/`。
 
@@ -48,7 +51,7 @@ clay 的 `plugins/taskgraph/`（iron/infra 版，`slate-render/iron/infra/{inclu
 
 ### 2. graph-02（数据并行层）归 graph，不归 compute
 
-这是 [`hyle-scope.md`](./hyle-scope.md) DISCUSS-3 的悬空待决点。基于三条项目内既有约束，拍板 **归 graph**：
+这是 [`hyle-scope.md`](hyle-scope.md) DISCUSS-3 的悬空待决点。基于三条项目内既有约束，拍板 **归 graph**：
 
 - **compute 自己把"铺多核"推给了 graph-02**。compute-design.md:341 立了铁律：「数据并行铺多核**不在后端自起线程**（scope 铁律"不引第二运行时"）——靠 HYLE sched 的 fork-join（graph-02 parallel_for），host_kernel_launch 保持单线程内联」。若把 graph-02 塞进 compute，等于让 compute 违反自己"单线程内联、不起线程池"的边界。
 - **消费者与 graph-01 同源**。graph-02 的 parallel_for/reduce 的头号消费者是 CAE 的「网格单元并行 / 场量归约」（motivation.md:20），与 graph-01 的「仿真依赖 DAG 重算」是同一个北极星② 管线里的两种图式计算。放一个支柱，北极星② 的算力编排是一个内聚门面。
@@ -81,7 +84,7 @@ graph/（北极星② 编排：依赖 DAG 重算 + 数据并行）
 | 里程碑 | 内容 | 原估 | **实测(cloc)** | 说明 |
 |---|---|---|---|---|
 | **graph-01** | taskgraph 增量重算：DAG 建模 + 脏标记传播 + 结果缓存 + 拓扑并行 + 绑 sched fiber | 3–4k | ✅ **216 prod / ~490 test（2026-07-10 完成 step-1+2）** | **远低于原估——是精瘦不是 stub（见下）** |
-| **graph-02** | 数据并行层：parallel_for/reduce/scan/sort + blocked_range/partitioner | 1–2k | 未做（**设计已起草 [`graph-02-design.md`](./graph-02-design.md)**）| 全从零（clay 无此层）；对标 oneTBB/oneDPL 设计（不借运行时）；消费 sched+simd。五决策已拍（递归 split / reduce 双档 / Body 收 subrange / scan v1 / 复用 graph-01 基建）。**参考 graph-01 的收敛，实际大概率也显著低于 1–2k** |
+| **graph-02** | 数据并行层：parallel_for/reduce/scan/sort + blocked_range/partitioner | 1–2k | 未做（**设计已起草 [`graph-02-design.md`](graph-02-design.md)**）| 全从零（clay 无此层）；对标 oneTBB/oneDPL 设计（不借运行时）；消费 sched+simd。五决策已拍（递归 split / reduce 双档 / Body 收 subrange / scan v1 / 复用 graph-01 基建）。**参考 graph-01 的收敛，实际大概率也显著低于 1–2k** |
 
 > **⚠️ 原估 3–4k 严重偏高，实测 graph-01 只有 216 生产行——已完成、功能完整（增量语义 + 并行，20 测试跨 WSL/ASan/TSan/MSVC 四配置全绿 + 两轮红队），非半成品。三个原因把估算压下来了：**
 > 1. **两个设计决策消灭了整类代码**：「边只能指向更小 id → 插入序天然是拓扑序」这条约束，让**拓扑排序 + 环检测算法（通常数百行）完全不用写**；脏传播退化成一趟 for 循环。
@@ -108,10 +111,10 @@ graph/（北极星② 编排：依赖 DAG 重算 + 数据并行）
 
 ## 六、参考
 
-- [`motivation.md`](./motivation.md)：北极星② CAD/BIM/CAE 定位、graph 是独占拉满的支柱、clay taskgraph/cycles 血统背书。
-- [`clay-asset-liability.md`](./clay-asset-liability.md) 第六节：taskgraph 逐文件盘点 + 「改后继承」处置（剥离 TaskQueue 后端/Python 耦合/data_type 扩 tensor）。
-- [`compute-design.md`](./compute-design.md):341：数据并行铺多核归 graph-02 fork-join、host kernel 单线程内联的铁律。
-- [`sched-design.md`](./sched-design.md)：work-stealing + Waker completion 脊（graph 节点完成接同一唤醒机制）。
-- [`hyle-scope.md`](./hyle-scope.md) DISCUSS-3：数据并行层归属（本文档拍板归 graph）。
+- [`motivation.md`](motivation.md)：北极星② CAD/BIM/CAE 定位、graph 是独占拉满的支柱、clay taskgraph/cycles 血统背书。
+- [`clay-asset-liability.md`](clay-asset-liability.md) 第六节：taskgraph 逐文件盘点 + 「改后继承」处置（剥离 TaskQueue 后端/Python 耦合/data_type 扩 tensor）。
+- [`compute-design.md`](compute-design.md):341：数据并行铺多核归 graph-02 fork-join、host kernel 单线程内联的铁律。
+- [`sched-design.md`](sched-design.md)：work-stealing + Waker completion 脊（graph 节点完成接同一唤醒机制）。
+- [`hyle-scope.md`](hyle-scope.md) DISCUSS-3：数据并行层归属（本文档拍板归 graph）。
 - clay taskgraph 源码：`slate-render/iron/infra/{include,src}/plugins/taskgraph`（`graph_executor.cc` one-shot 执行核心、`framebuffer.cc` 值容器、`graph_node.h` 邻接表）。
 - 对标：oneTBB `flow_graph`（DAG 编排）+ `parallel_for`/`blocked_range`/`partitioner`（数据并行）；oneDPL。

@@ -1,4 +1,4 @@
-docs/performance/*.csv text eol=lf
+evidence/performance/*.csv text eol=lf
 third_party/mimalloc/** whitespace=-trailing-space
 third_party/simdutf/simdutf.cpp whitespace=cr-at-eol
 third_party/simdutf/simdutf.h whitespace=cr-at-eol
