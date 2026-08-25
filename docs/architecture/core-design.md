@@ -33,6 +33,15 @@ core 不依赖 error/platform/mem/time，也不创建资源，因此没有 Statu
 | compiler/fatal macros | `macros.h` / `hyle/c/compiler.h` / `visibility.h` | C/C++ must-use、restrict、assume、flatten、unroll、inline/noinline、branch、EBO、导出与不可恢复合同；主要供 HYLE 实现和高级 kernel 用户 |
 | intrusive list/batch | `IntrusiveListHook` + `IntrusiveList<T, Hook>` | stable-address、调用方拥有节点、双向 range、O(1) arm/cancel/insert/erase/splice；time delivery/bucket 是生产消费者 |
 
+按方法论展开后的场景合同如下；core 不分配资源，因此没有 allocator/OOM 路径：
+
+| 场景 | 数据、ownership 与 lifetime | concurrency 与 failure | 规模/复杂度 |
+|---|---|---|---|
+| plugin/header-runtime identity | header 常量与 linked static string，调用方只借用、进程期有效 | 只读并发；版本不匹配由调用方诊断，不分配/抛错 | O(1)，冷路 |
+| 公共 cache layout / prefetch | 调用方对象与地址；静态 bound 参与 ABI，runtime exact 归 platform | layout 可跨线程，hint 不建立同步；无效生命周期地址或错误 layout 认证是合同违约 | 编译期/O(1)，只在真实消费者承重 |
+| kernel compiler contract | 调用方表达式、pointer 与 loop，零 runtime 状态 | TU-local；错误 assume/restrict/unreachable 是程序 bug，must-use 是诊断 | O(0) source seam；unroll/inline 只作 measured hint |
+| stable-node queue/batch | 节点由调用方拥有且地址稳定；C++ hook/list RAII 摘链，C 显式 unlink/clear | 默认外部同步；checked insert 返回 bool，unchecked owner/membership 违约是 bug | 单节点/整批 O(1)，遍历/consume O(n)，不维护 size/owner |
+
 ### 语法与语义消费者账本
 
 | core 职责 | 显式消费者 | 语义重复扫描结论 |
@@ -58,6 +67,12 @@ StringInterner shard 属 core 职责，并已采用 destructive-interference 常
 
 这张表用于查漏和裁决算法/类型，不按参考库 feature 数量扩 core。runtime topology 留 platform，
 owning container 留 container，error/clock/logging 留各自模块。
+
+本轮负空间也显式裁决：C++ alignment promise 已有 `std::assume_aligned`，SIMD aligned Load 又
+直接表达 kernel 合同，没有纯 C 消费者要求另一套宏；noreturn/fallthrough 分别已有标准 C/C++
+拼法，因此不包装。`lifetimebound` 对 `Status::message()` 和 container borrowed view/reference
+是真实的零成本诊断候选，但它需要跨模块统一注解与 compile-diagnostic 门，留到 error/container
+复审共同裁决，不在 core 为凑 feature 数量先放一个无人正确使用的宏。
 
 版本定义只有一份公开宏源；CMake 在 `project()` 前读取它，`version.cc` 再静态断言 runtime
 编译定义，component package、loader identity、header 与 runtime 不存在第二份手写版本。
@@ -144,7 +159,7 @@ inline 原语，导出函数反而会增加调用成本且不能改善 ABI 表�
 | compile/runtime version | constexpr + 两个 runtime 函数 | 同一 defs + 两个 C 符号 | plugin/loader 需要动态 identity |
 | cache layout/prefetch | typed constexpr + inline 函数 | macro + inline 函数 | 布局跨语言一致，热路无 DLL hop |
 | compiler contract | must-use/inline/noinline/branch/unreachable/assume/restrict/flatten/unroll + fatal | 同名 `HYLE_C_*` 集合 | 源码级 promise/hint；共用 backend，不存在有意义的动态调用 ABI |
-| intrusive list | typed member hook + RAII/range/callback | 可见 hook/sentinel + init/const traversal/inline 指针原语 | C 显式 lifetime；batch/遍历可同复杂度组合 |
+| intrusive list | typed member hook + RAII/range/callback | 可见 hook/sentinel + init/const traversal/insert-before/splice-before/inline 指针原语 | C 显式 lifetime；任意位置插入、batch 与遍历可同复杂度直达或组合 |
 
 因此“C 能力完整”指版本、cache intent、compiler contract、stable-node queue 等自然 C 用户
 任务都有同档通路，不表示把 C++ 析构或模板 callback 逐符号翻译一遍。compiler contract 单独

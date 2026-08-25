@@ -92,11 +92,31 @@ for (Request& item : ready) {
 Request* next = ready.pop_front();
 ```
 
+批量交接和任意取消不需要另造 batch 类型：
+
+```cpp
+Request a{1}, b{2}, cancelled{3};
+ReadyList ready;
+ReadyList incoming;
+
+ready.push_back(&a);
+auto ticket = ready.insert(ready.end(), &cancelled);
+ready.erase(ticket);                    // 返回 successor；cancelled 已摘链
+incoming.push_back(&b);
+ready.splice(ready.end(), incoming);    // O(1) 整批交接，incoming 变空
+
+ReadyList deferred;
+deferred.splice(deferred.end(), ready, ready.begin()); // O(1) 转移单节点
+ready.swap(deferred);
+```
+
 它不拥有节点、不分配，push/pop/remove/insert/erase/splice/swap 都是 O(1)。支持双向 iterator、
 range-for 与 reverse iteration；偶发计数用 `std::ranges::distance`（O(n)），没有每次修改都维护的
 size/owner 元数据。节点析构或 list 析构会自动摘链。
 copy/move 构造 hook 会得到新的 unlinked hook；对已有 hook 做 copy/move assignment 则刻意保留
 destination 当前 membership，绝不从 source 复制 membership。节点 linked 时不可移动地址。
+节点类型必须是 standard-layout；模板会机械拒绝不满足的类型，因为从 member hook 恢复外层对象
+依赖该布局合同。
 一个对象若同时进入 ready 与 timeout 两条链，需要两个独立 hook。跨线程并发需要外部同步。
 `push_back/front` 要求 node 非空且该 hook 当前未链接；输入可能重复时改用返回 bool 的
 `try_push_back/front`。`try_*` 与返回已摘节点的 `pop_*` 都是 must-use：前者不检查结果就不知道
@@ -115,6 +135,12 @@ destination 当前 membership，绝不从 source 复制 membership。节点 link
 membership/lifetime；它可以抛异常，此时遍历停止而链保持有效。`move_prefix_to` 的 predicate
 与 `on_move` 必须 `noexcept`，且扫描时节点仍在 source 链中，不得摘链、销毁或重链；完整前缀
 在回调完成后才以 O(1) 区间 splice 转移。
+
+whole-list `splice(pos, source)`、`append(source)` 与 `move_prefix_to(destination, ...)` 要求两条
+list 不是同一个对象；违反是程序 bug，未定义 `NDEBUG` 时会诊断并 abort，定义后属于 optimizer
+合同违约。single-node `splice(pos, same_list, item)` 则明确支持同链重排，把节点移到自己或自己
+successor 前是 no-op；`swap` 的 self 调用也安全。不要把 whole-list self-transfer 和这两个安全
+特例混为一谈。
 
 ## 宏的使用边界
 

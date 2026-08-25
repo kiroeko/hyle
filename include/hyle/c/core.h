@@ -156,22 +156,41 @@ static inline int hyle_intrusive_list_empty(const hyle_intrusive_list *list) {
   return list == NULL || list->sentinel.next == &list->sentinel;
 }
 
+/* Insert before position; NULL position means end(). Preconditions for the
+ * unchecked form: list/hook are non-NULL, position is NULL or belongs to list,
+ * and hook is not linked. */
+static inline void
+hyle_intrusive_list_insert_before(hyle_intrusive_list *list,
+                                  hyle_intrusive_list_hook *position,
+                                  hyle_intrusive_list_hook *hook) {
+  if (position == NULL)
+    position = &list->sentinel;
+  hook->prev = position->prev;
+  hook->next = position;
+  position->prev->next = hook;
+  position->prev = hook;
+}
+
+HYLE_C_NODISCARD static inline int
+hyle_intrusive_list_try_insert_before(hyle_intrusive_list *list,
+                                      hyle_intrusive_list_hook *position,
+                                      hyle_intrusive_list_hook *hook) {
+  if (list == NULL || hook == NULL || hyle_intrusive_hook_linked(hook))
+    return 0;
+  hyle_intrusive_list_insert_before(list, position, hook);
+  return 1;
+}
+
 static inline void
 hyle_intrusive_list_push_back(hyle_intrusive_list *list,
                               hyle_intrusive_list_hook *hook) {
-  hook->prev = list->sentinel.prev;
-  hook->next = &list->sentinel;
-  list->sentinel.prev->next = hook;
-  list->sentinel.prev = hook;
+  hyle_intrusive_list_insert_before(list, NULL, hook);
 }
 
 static inline void
 hyle_intrusive_list_push_front(hyle_intrusive_list *list,
                                hyle_intrusive_list_hook *hook) {
-  hook->prev = &list->sentinel;
-  hook->next = list->sentinel.next;
-  list->sentinel.next->prev = hook;
-  list->sentinel.next = hook;
+  hyle_intrusive_list_insert_before(list, list->sentinel.next, hook);
 }
 
 HYLE_C_NODISCARD static inline int
@@ -291,30 +310,42 @@ static inline void hyle_intrusive_list_clear(hyle_intrusive_list *list) {
   list->sentinel.next = &list->sentinel;
 }
 
-/* Splice source onto destination in O(1), preserving order. Returns zero for
- * invalid/self input and one for a successful no-op or transfer. */
+/* Splice all of source before position in O(1); NULL position means end().
+ * Position ownership is an unchecked precondition: it must be NULL or belong
+ * to destination. Returns zero for a NULL list/source or self input, and one
+ * for a successful no-op or transfer. */
 HYLE_C_NODISCARD static inline int
-hyle_intrusive_list_append(hyle_intrusive_list *destination,
-                           hyle_intrusive_list *source) {
+hyle_intrusive_list_splice_before(hyle_intrusive_list *destination,
+                                  hyle_intrusive_list_hook *position,
+                                  hyle_intrusive_list *source) {
   hyle_intrusive_list_hook *first;
   hyle_intrusive_list_hook *last;
-  hyle_intrusive_list_hook *destination_last;
+  hyle_intrusive_list_hook *before;
   if (destination == NULL || source == NULL || destination == source)
     return 0;
   if (hyle_intrusive_list_empty(source))
     return 1;
+  if (position == NULL)
+    position = &destination->sentinel;
 
   first = source->sentinel.next;
   last = source->sentinel.prev;
   source->sentinel.prev = &source->sentinel;
   source->sentinel.next = &source->sentinel;
 
-  destination_last = destination->sentinel.prev;
-  destination_last->next = first;
-  first->prev = destination_last;
-  last->next = &destination->sentinel;
-  destination->sentinel.prev = last;
+  before = position->prev;
+  before->next = first;
+  first->prev = before;
+  last->next = position;
+  position->prev = last;
   return 1;
+}
+
+/* Append is the common tail-batch spelling of splice_before(..., NULL, ...). */
+HYLE_C_NODISCARD static inline int
+hyle_intrusive_list_append(hyle_intrusive_list *destination,
+                           hyle_intrusive_list *source) {
+  return hyle_intrusive_list_splice_before(destination, NULL, source);
 }
 
 #ifdef __cplusplus

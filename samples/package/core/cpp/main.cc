@@ -26,11 +26,20 @@ HYLE_NODISCARD int sum_values(const int* HYLE_RESTRICT values,
 int main() {
   using List = hyle::core::IntrusiveList<Node, &Node::hook>;
   List queue;
+  List incoming;
+  List deferred;
   Node first{20};
   Node second{22};
+  Node cancelled{-1};
   const int values[] = {20, 22};
   queue.push_back(&first);
-  queue.push_back(&second);
+  auto cancelled_position = queue.insert(queue.end(), &cancelled);
+  queue.erase(cancelled_position);
+  incoming.push_back(&second);
+  queue.splice(queue.end(), incoming);
+  deferred.splice(deferred.end(), queue, queue.begin());
+  queue.swap(deferred);
+  queue.splice(queue.end(), deferred);
   int sum = 0;
   for (const Node& node : queue) sum += node.value;
   hyle::core::prefetch_read(&first);

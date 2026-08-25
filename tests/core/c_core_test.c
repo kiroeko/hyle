@@ -149,6 +149,23 @@ int main(void) {
   CHECK(!hyle_intrusive_hook_linked(&c.hook));
   CHECK(!hyle_intrusive_hook_linked(&d.hook));
 
+  /* Arbitrary-position insert and whole-batch splice are natural C tasks;
+   * NULL position is the documented end() spelling. */
+  hyle_intrusive_list_push_back(&source, &a.hook);
+  hyle_intrusive_list_push_back(&source, &b.hook);
+  hyle_intrusive_list_push_back(&destination, &c.hook);
+  CHECK(!hyle_intrusive_list_try_insert_before(NULL, NULL, &d.hook));
+  CHECK(hyle_intrusive_list_splice_before(&destination, &c.hook, &source));
+  CHECK(hyle_intrusive_list_empty(&source));
+  CHECK(hyle_intrusive_list_try_insert_before(&destination, &b.hook, &d.hook));
+  CHECK(!hyle_intrusive_list_try_insert_before(&destination, NULL, &d.hook));
+  CHECK(hyle_intrusive_list_front(&destination) == &a.hook);
+  CHECK(hyle_intrusive_list_next(&destination, &a.hook) == &d.hook);
+  CHECK(hyle_intrusive_list_next(&destination, &d.hook) == &b.hook);
+  CHECK(hyle_intrusive_list_back(&destination) == &c.hook);
+  CHECK(!hyle_intrusive_list_splice_before(&destination, NULL, &destination));
+  hyle_intrusive_list_clear(&destination);
+
   if (g_fails) {
     fprintf(stderr, "c_core_test: %d failed\n", g_fails);
     return 1;

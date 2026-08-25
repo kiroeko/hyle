@@ -3,6 +3,11 @@
 > 场景选型先读 [`core.md`](./core.md)。本页只说明
 > `include/hyle/c/core.h` 与 `include/hyle/c/compiler.h` 的精确 C 形状、所有权和坑。
 
+公开 C source surface 的语言基线是 C17。通过 CMake 链接 `hyle::core` 时，exported target 会把
+C17 以及 native MSVC 所需的 conforming preprocessor 合同传播给消费 target；整体源码嵌入或
+手工只取头文件时，调用方必须自行用 C17 模式编译（native MSVC 同时启用
+`/Zc:preprocessor`）。这不是 DLL ABI 要求，而是消费这些 header-inline 能力的翻译单元合同。
+
 ## 版本与缓存布局
 
 | 名称 | 形状 | 说明 |
@@ -94,16 +99,18 @@ int sum(const int* HYLE_C_RESTRICT values, size_t count) {
 | `hyle_intrusive_list` | circular sentinel list；不拥有节点、不分配 |
 | `HYLE_INTRUSIVE_HOOK_INIT` | hook 的静态/聚合初始化值 |
 | `HYLE_INTRUSIVE_LIST_INIT(name)` | list 的自引用静态/自动初始化值，不必另调 init |
-| `HYLE_INTRUSIVE_ENTRY(hook,type,member)` | 从 member hook 恢复外层标准布局 C struct |
-| `HYLE_INTRUSIVE_CONST_ENTRY(hook,type,member)` | const hook 恢复 const 外层 struct，不丢 const |
+| `HYLE_INTRUSIVE_ENTRY(hook,type,member)` | 从非 NULL member hook 恢复外层标准布局 C struct |
+| `HYLE_INTRUSIVE_CONST_ENTRY(hook,type,member)` | 从非 NULL const hook 恢复 const 外层 struct，不丢 const |
 
 | inline 函数 | 合同 |
 |---|---|
 | `hyle_intrusive_hook_init` | 新/已脱链 hook 初始化；不可拿它强行重置 linked hook |
 | `hyle_intrusive_hook_linked` | NULL/idle 为 false |
 | `hyle_intrusive_hook_unlink` | 从当前链 O(1) 摘除；NULL/idle 幂等 |
-| `hyle_intrusive_list_init` | 使用 list 前必须调用 |
+| `hyle_intrusive_list_init` | 未使用 `HYLE_INTRUSIVE_LIST_INIT` 时，在使用 list 前调用 |
 | `hyle_intrusive_list_empty` | NULL 视为空；已初始化 list 为 O(1) |
+| `hyle_intrusive_list_insert_before` | O(1) unchecked 任意位置插入；position 为 NULL 表示尾部 |
+| `hyle_intrusive_list_try_insert_before` | checked 插入；NULL list/hook 或 double-link 返回 0 |
 | `hyle_intrusive_list_push_back/front` | O(1) 无分支；前置条件是 list/hook 非 NULL 且 hook 未链接 |
 | `hyle_intrusive_list_try_push_back/front` | O(1) checked 入口；成功 1，NULL 或 double-link 为 0 |
 | `hyle_intrusive_list_front/back` | 返回 hook；空/NULL 返回 NULL，不摘链 |
@@ -112,6 +119,7 @@ int sum(const int* HYLE_C_RESTRICT values, size_t count) {
 | `hyle_intrusive_list_next/prev_const` | const-safe 正反向遍历 |
 | `hyle_intrusive_list_pop_front/back` | O(1) 摘链并返回 hook；空/NULL 返回 NULL |
 | `hyle_intrusive_list_clear` | O(n) 摘除全部节点，不释放节点 |
+| `hyle_intrusive_list_splice_before` | O(1) 把 source 整批移到 position 前；NULL position 表示尾部；source 清空 |
 | `hyle_intrusive_list_append` | O(1) splice source 到 destination 尾；source 清空；非法/self 为 0 |
 
 ```c
@@ -125,8 +133,15 @@ request item = {42, HYLE_INTRUSIVE_HOOK_INIT};
 hyle_intrusive_list_push_back(&queue, &item.ready);
 
 hyle_intrusive_list_hook* hook = hyle_intrusive_list_pop_front(&queue);
-request* next = HYLE_INTRUSIVE_ENTRY(hook, request, ready);
+if (hook != NULL) {
+  request* next = HYLE_INTRUSIVE_ENTRY(hook, request, ready);
+  consume(next);
+}
 ```
+
+`HYLE_INTRUSIVE_ENTRY*` 是 pointer arithmetic 宏，输入 NULL 不是“返回 NULL”，而是无效地址；
+必须先检查 `front/back/pop` 的返回值。position 属于哪条 list 也不存 owner 元数据：unchecked
+入口和 `splice_before` 都要求调用方保证 position 为 NULL 或属于 destination。
 
 只读遍历不需要直接碰 sentinel，也不会丢掉 const：
 
@@ -143,7 +158,8 @@ while (it != NULL) {
 
 C 没有析构器：节点存储结束前必须 `hyle_intrusive_hook_unlink`，list 存储结束前必须 clear/
 pop 完或确保节点仍更长寿。linked 期间节点地址不可变化；多重 membership 使用多个 hook；
-并发访问由调用方同步。`try_push_*`、`pop_*` 与 `append` 都带 `HYLE_C_NODISCARD`：调用方必须
+并发访问由调用方同步。`try_push_*`、`try_insert_before`、`pop_*`、`splice_before` 与 `append` 都带
+`HYLE_C_NODISCARD`：调用方必须
 检查成功位或接住被摘节点；已知具体节点而只想摘链时直接调用 `hook_unlink`。所有 list 操作都是
 header-inline，因此没有每次跨 DLL 的热路成本。
 
@@ -152,8 +168,12 @@ header-inline，因此没有每次跨 DLL 的热路成本。
 | C++ 能力 | 纯 C 通路 | 是否同档 |
 |---|---|---|
 | hook/list RAII auto-unlink | 存储结束前显式 `hook_unlink`，list 结束前 `clear` | 同一 O(1) 摘链；析构语法是 C++ 特性 |
-| single-node `splice(pos,source,it)` | 保存 next，`hook_unlink` 后 `push_front/back` | O(1)；C 基础面不制造 iterator ABI |
-| `append` / list move | `hyle_intrusive_list_append` | O(1) |
+| `insert(pos,node)` / checked insert | `insert_before(list,pos,hook)` / `try_insert_before`；`pos == NULL` 表示 end | O(1)；checked 只拒绝 NULL/already-linked，不为 owner 增元数据 |
+| `erase(pos)` | 先保存 `next(list,hook)`，再 `hook_unlink` | O(1)，保存值就是 successor |
+| single-node `splice(pos,source,it)` | 先处理 `pos == it` 的同 list no-op，再 `hook_unlink(it)` + `insert_before(destination,pos,it)` | O(1)；C 不制造 iterator 类型 |
+| whole-list `splice(pos,source)` | `hyle_intrusive_list_splice_before(destination,pos,source)` | O(1)，`pos == NULL` 表示 end |
+| `append` / list move | `hyle_intrusive_list_append` | O(1)，等价于 tail `splice_before` |
+| `swap` | 初始化临时 list，依次把 left→temp、right→left、temp→right；检查三次 `append` | O(1)；低频组合不扩新入口 |
 | `consume_all` | 循环 `pop_front` 后调用 C 函数 | O(n)，当前 hook 在用户回调前已摘链 |
 | range/`for_each` | `front[_const]` + `next[_const]`；若摘链先保存 `next` | O(n) |
 | `move_prefix_to` | 按谓词循环 `front` + `pop_front` + `push_back` | O(k)，不需要 callback ABI 或额外分配 |

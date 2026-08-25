@@ -11,7 +11,7 @@
 
 | HYLE 模块 | 首要本地参考 | 本轮主要核对什么 |
 |---|---|---|
-| core | C/C++ 标准库、Boost.Intrusive、folly | 版本/宏最小面、intrusive 生命周期与零额外所有权 |
+| core | C/C++ 标准库、oneTBB、Abseil、Highway、Boost.Intrusive、folly | 版本/cache/compiler contract 最小面、intrusive 生命周期与零额外所有权 |
 | error | `std::expected`、Abseil Status、folly Expected | 值大小、context、传播、OS/GPU 叶错误与 C owning handle |
 | platform | folly portability、libuv、Abseil、llama.cpp | thread/affinity、wait、VM/fs/dynlib、CPU dispatch 与平台忠实语义 |
 | mem | mimalloc、oneTBB allocator/pool、folly、seastar | 通用/专用分配边界、arena/pool/cache/NUMA/huge page、复杂度与跨线程 free |
