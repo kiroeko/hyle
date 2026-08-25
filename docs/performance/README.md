@@ -9,8 +9,8 @@
 > 当时没有签出 WIN/LOSE，不自动等于已证明同档；重签时必须改为
 > `WIN/EQUIVALENT/LOSE/INCONCLUSIVE/NOT_COMPARABLE` 之一。
 
-> **2026-08-25 freshness gate：**依赖升级与 core 红队已使 core、error、platform、mem、
-> time、obs、util、build/package 全部转黄，并重新执行完整模块收口。相对
+> **2026-08-25 freshness gate：**依赖升级曾使 core、error、platform、mem、time、obs、util、
+> build/package 全部转黄；core 已按新标准重签为 `SIGNED`，其余七个审查单元仍黄。相对
 > `6dcd038`，七个运行时模块的公开头和/或实现均实际改过；changed seam 矩阵只是
 > 复审输入，不是功能、API 或性能审查的上限。
 > container/simd/sched/io 只核验本轮直接触及边，不能据此获得整体收口，定向性能差距也不单独
@@ -28,7 +28,7 @@
 |---|---|
 | 本页（对标总账） | 全模块 win/loss ledger 一览 + 总账小结（最常看的一张表） |
 | [error 实测](./benchmarks-error.md) | **2026-07-29 历史证据**：两类消费者信息合同三平台 n=15（无诊断 / 带诊断严格分表；同能力 Abseil 无 LOSE，较弱 std 下界的真实输赢单列） |
-| [core 实测](./benchmarks-core.md) | 🟡 **当前无数值证书**：五类 IntrusiveList workload 的资格与历史点值已分层；N=32 cancel 为非阻塞 `INCONCLUSIVE/placement-sensitive` 机制诊断，小批产品风险由 time 真实消费者承重；splice 也只是机制诊断，cache/prefetch 只在真实消费者承重 |
+| [core 实测](./benchmarks-core.md) | 🟢 **当前证书**：Windows/GCC14/M4 双 QoS 的 N=4096 FIFO/remove/traversal/auto-detach 对 Boost 同合同 non-inferiority gate 全 `PASS`；精确 `WIN/EQUIVALENT/INCONCLUSIVE` 分格保留。N=32 与 splice 仍只作机制诊断，TimerQueue N=8 的不同合同成本归 time 黄项 |
 | [build/package 实测](./benchmarks-build.md) | **历史证据，待本轮重签**：clean/reconfigure/no-op、测试依赖获取分层、组件隔离、production-shape 测试与生成器数据库健康 |
 | [platform 实测](./benchmarks-platform.md) | **2026-07-25 历史证据**（MappedFile advice/residency 按 OS-call complexity 守门） |
 | [time 实测](./benchmarks-time.md) | **2026-07-25 历史证据**（clock / exact-ns radix TimerQueue / CommonTimeoutQueue；含 Seastar faithful baseline、order-swap 与 M4 QoS） |

@@ -241,26 +241,34 @@ predeclared multiplicative margin `m`, it reports one execution order as `WIN`, 
 `LOSE`, or `INCONCLUSIVE`; an explicitly unequal-contract informational pair is
 `NOT_COMPARABLE`. Failure to prove a material difference is never called equivalent.
 
+The same predeclared margin also produces a separate SOTA non-inferiority gate. Its upper
+limit is `U=1+m`: a median-ratio CI whose upper bound is at most `U` is `PASS`, a CI wholly
+beyond `U` is `FAIL`, and a CI that still crosses `U` is `UNRESOLVED`. This gate answers only
+whether a material loss has been excluded. It never turns an exact `INCONCLUSIVE` result that
+crosses the WIN/EQUIVALENT boundary into either exact verdict, and it cannot use a second or
+post-hoc margin.
+
 The equivalence band is reciprocal: `[1/(1+m), 1+m]`. At the default evidence size of 15
 independent processes and tail alpha `.01`, the interval is the third through thirteenth ordered
 ratio (actual coverage about 99.26%). A formal result must independently run the default and
 peer-first orders and obtain compatible classifications; short/code-placement-sensitive kernels
 also need the perturbation gate described in
 [`benchmark-evidence-standard.md`](../docs/performance/benchmark-evidence-standard.md). The script's
-`[order_verdict]` is therefore evidence input, not a module certificate. Absolute per-variant
-spread and the sign-test p-value are diagnostics only.
+`[order_verdict]` and `[order_sota_gate]` are therefore evidence inputs, not a module certificate.
+Default order, peer-first, and every applicable shape gate must each pass before review can compose
+a SOTA `PASS`. Absolute per-variant spread and the sign-test p-value are diagnostics only.
 
 A diagnostic run may omit provenance gates. A clean evidence run uses `--require-clean`, declares
 the workload-specific margin before sampling, and names every external Git peer that contributes
 comparison code. For the core intrusive-list benchmark:
 
 ```bash
-python scripts/bench-stat.py build-bench/bin/hyle_core_bench -n 15 --require-clean \
+python scripts/bench-stat.py build-bench/bin/hyle_core_bench -n 31 --require-clean \
   --peer boost=../boost --equivalence-margin-pct 3 \
   --pair "HYLE IntrusiveList" "boost::intrusive auto_unlink"
 
 HYLE_BENCH_RIVAL_FIRST=1 python scripts/bench-stat.py \
-  build-bench/bin/hyle_core_bench -n 15 --require-clean \
+  build-bench/bin/hyle_core_bench -n 31 --require-clean \
   --peer boost=../boost --equivalence-margin-pct 3 \
   --pair "HYLE IntrusiveList" "boost::intrusive auto_unlink"
 ```
@@ -271,12 +279,15 @@ contracts. It prints the ratio as information while mechanically suppressing a p
 
 The runner records the HYLE and peer HEAD/tree/dirty/remote identities, its own and the executable's
 SHA-256, host, relevant CMake cache contract, HYLE benchmark environment, and the centrally locked
-nanobench version/revision/header hash. `--require-clean` rejects a dirty or unidentified current
-source/peer and an executable outside a discoverable CMake build tree. This is a runtime provenance
-snapshot, **not** a cryptographic build binding: a formal result must also retain the fresh
-configure/build log that produced the recorded executable hash. The runner does not guess which
-peers a benchmark uses; omitting a required `--peer` makes the run incomplete evidence. Do not pass
-unrelated sibling checkouts merely to make a list look comprehensive.
+nanobench version/revision/header hash. For every requested pair it also emits one
+`# HYLE_BENCH_PAIR_RAW ` schema-1 JSON record per process with baseline op/s, rival op/s, and the
+paired ratio; a log containing only aggregate medians is not formal evidence. `--require-clean`
+rejects a dirty or unidentified current source/peer and an executable outside a discoverable CMake
+build tree. This is a runtime provenance snapshot, **not** a cryptographic build binding: a formal
+result must also retain the fresh configure/build log that produced the recorded executable hash.
+The runner does not guess which peers a benchmark uses; omitting a required `--peer` makes the run
+incomplete evidence. Do not pass unrelated sibling checkouts merely to make a list look
+comprehensive.
 
 ## Rust cross-language benches (`bench/rust/`)
 

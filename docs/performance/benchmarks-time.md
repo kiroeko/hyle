@@ -5,6 +5,30 @@
 > 当前 working tree 的自动性能证书；尤其 C `schedule+advance+visitor` 已改为同批 callback
 > 可安全 cancel/reschedule/destroy peer 的 mutation-safe 交付，旧 16.450 ns 只能解释旧实现。
 > 最终三平台 n=15 重采完成前，不据本页旧数字宣称当前依赖组合已有新鲜 SOTA 点值。
+> core 的 2026-08 直接消费者复验再次观察到 M4 N=8 cancel 的已知差距；该行还包含 HYLE
+> `size/next-deadline/owner` 合同而非纯 list unlink，不能归作 core 同合同结论。本轮只给
+> small-cardinality harness 补 `HYLE_BENCH_RIVAL_FIRST` 正反序守门；点值和 time 模块裁决仍待
+> time 自己的完整复审，不能由 core 证书代签。
+
+### 2026-08 core 受影响边诊断（不是 time 证书）
+
+M4 用修正后的 small-cardinality 顺序守门跑了 interactive/utility × HYLE-first/peer-first，
+每格 n=15、3% margin。下表 ratio 为 Seastar-shape op/s ÷ HYLE op/s；runner 先按数值合同输出，
+随后产品审查再裁决语义资格：
+
+| QoS / 顺序 | N=8 cancel ratio / CI | runner exact / gate |
+|---|---|---|
+| interactive / HYLE-first | 1.017 / `[1.010,1.025]` | `EQUIVALENT/PASS` |
+| interactive / peer-first | 1.095 / `[1.085,1.121]` | `LOSE/FAIL` |
+| utility / HYLE-first | 1.021 / `[1.015,1.025]` | `EQUIVALENT/PASS` |
+| utility / peer-first | 1.099 / `[1.095,1.110]` | `LOSE/FAIL` |
+
+HYLE 四格稳定在 2.636--2.637 ns/node；Seastar-shape 在其后运行约 2.584--2.588 ns，先运行则
+约 2.399--2.405 ns，顺序效应几乎全部落在 peer。更重要的是，HYLE 同时维护公开的全局
+`size()`、空转移 `next_deadline` 复位和 owner/linked 合同，而该 dependency-free peer 没有等强
+语义。故产品级资格是 `NOT_COMPARABLE/N/A`，数值合成只说明
+`INCONCLUSIVE/placement-sensitive`，不能签 N=8 SOTA，也不能把它归咎于 core list。N=1/N=64
+cancel 及 N=1/8/64 expire 的四格诊断均为 HYLE WIN；它们同样只供 time 后续完整复审归因。
 
 > 本页是 time 性能数字的唯一信源。实现与选择理由分别见
 > [`time-design`](../architecture/time-design.md) 和 [`guide/time`](../guide/time.md)。
@@ -239,20 +263,29 @@ application-level 证书。
 |---|---|
 | exact duration conversion | 整数路径精确饱和并覆盖 bool Rep；Windows/WSL/Apple 正确性门已通过 |
 | 默认/opt-in clock | 语义形状已定；默认路径同 OS primitive，opt-in availability 合同不变 |
-| TimerQueue 算法 | SOTA-class radix、O(1) arm/cancel；三平台小 N 和 N=4096 已复证 |
+| TimerQueue 算法 | SOTA-class radix、O(1) arm/cancel；旧三平台证据是回归输入，当前五态重签待 time 复审 |
 | 正常 event-loop | 三平台真实 clock 成本已单列；M4 scattered 优于 packed contiguous |
 | C ABI | 能力覆盖完整，正常操作常数税已公开；不把 DLL/Status 成本伪装为零 |
 | thread sleep | Windows 高分辨率路径明显优于 std；Linux/M4 与 std 同档；三平台 early=0 |
-| strict 性能收口 | 三平台 Release 证据齐全；保留 WSL reverse churn、M4 N=8 cancel 等真实 LOSE |
+| strict 性能收口 | 🟡 待 time 完整复审；WSL reverse churn 是历史差距，M4 N=8 新证据因不同合同与注册顺序敏感降为 `NOT_COMPARABLE` 诊断 |
 
 ## 9. 复跑
 
 ```bash
-scripts/bench-stat.py <build>/bin/hyle_timer_queue_bench -n 15 \
-  --pair "Seastar-shape radix N=1" "HYLE radix N=1" \
-  --pair "indexed heap N=1" "HYLE radix N=1" \
-  --pair "radix timer_set (Seastar shape)" "HYLE TimerQueue (radix)" \
-  --pair "indexed min-heap (libevent/libuv)" "HYLE TimerQueue (radix)"
+scripts/bench-stat.py <build>/bin/hyle_timer_queue_bench -n 31 \
+  --require-clean --equivalence-margin-pct 3 \
+  --pair "HYLE radix N=1" "Seastar-shape radix N=1" \
+  --pair "HYLE radix N=1" "indexed heap N=1" \
+  --pair "HYLE TimerQueue (radix)" "radix timer_set (Seastar shape)" \
+  --pair "HYLE TimerQueue (radix)" "indexed min-heap (libevent/libuv)"
+
+HYLE_BENCH_RIVAL_FIRST=1 scripts/bench-stat.py \
+  <build>/bin/hyle_timer_queue_bench -n 31 \
+  --require-clean --equivalence-margin-pct 3 \
+  --pair "HYLE radix N=1" "Seastar-shape radix N=1" \
+  --pair "HYLE radix N=1" "indexed heap N=1" \
+  --pair "HYLE TimerQueue (radix)" "radix timer_set (Seastar shape)" \
+  --pair "HYLE TimerQueue (radix)" "indexed min-heap (libevent/libuv)"
 
 scripts/bench-stat.py <build>/bin/hyle_time_normal_bench -n 15 \
   --pair "HYLE contiguous TimerEntry" "HYLE heap-embedded scattered TimerEntry" \

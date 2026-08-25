@@ -89,7 +89,7 @@ util ~1.3k · error **984** · time **1,421** · obs **1,018** · graph ~0.6–0
 | ID | 阶段 | 模块 | 目的(一行) | 前置 | 预测LOC | 真实LOC | 状态 |
 |---|---|---|---|---|---|---|---|
 | **00-scaffolding** | P-1 | 构建 | CMake 多模块结构+GoogleTest/nanobench/sanitizer/CI+HYLE_宏骨架 | — | 0.6-1k | 294 | ✅ 完成 |
-| [core-reclosure](./core-module-closure.md) | P-1 | core | version/cache/macros/visibility/intrusive 严格收口 | 00 | — | 见任务页 | ✅ **2026-07-29 局部复证完成**：旧 `71dabf7` IntrusiveList 证书保留；真实 SIMD/vqsort 消费触发 prefetch/assume/restrict/flatten/unroll 补齐，Win/WSL/M4 正确性、codegen 与受影响消费者全过 |
+| [core-reclosure](./core-module-closure.md) | P-1 | core | version/cache/macros/visibility/intrusive 严格收口 | 00 | — | 见任务页 | ✅ **2026-08-25 当前严格证书 `SIGNED`**：产品 `a951f0a`、正式 harness `2707583`；功能边界、C++/C、target-family cache layout、三种交付、三平台/sanitizer/consumer 与 N=4096 同合同 SOTA gate 闭合；精确 unknown 和 time 不同合同债务分开保留 |
 | [build/package-reclosure](./build-package-system-closure.md) | P-1 | 构建/打包 | 用 target 图表达项目组织，完成可迁移、可裁剪组装与安装消费 | core | — | 见任务页 | ✅ **2026-07-29 模块拆分后重签**：空组件/cache/终态依赖图合同机械守门；三平台 production-shape、shared/static consumers、完整 source-package 与当前正常路径性能证书完成 |
 | [build-validation-iteration](./build-validation-iteration.md) | P-1 | 构建/回归 | 在模块持续变化期间分层守住全图、三种交付、迁移和发布门 | build/package-reclosure | — | 见任务页 | 🚧 **第一阶段**：package/source/AArch64 提升为 all-component CPU，验收证书与普通 all-build 分离；待三平台和额度恢复后的 GitHub 复证 |
 | [dependency-upgrade-2026-08](./dependency-upgrade-2026-08.md) | P-1 | 依赖/供应链 | 单一 JSON provenance lock、严格 offline 验证及 2026-08 全依赖升级影响/复证账本 | build/package-reclosure | — | 见任务页 | 🚧 **升级已落盘、证书重绑中**：旧/新 revision、真实消费者、license/install/offline 与逐项 release gate 已登记；benchmark 历史点值待新 pin rebaseline |

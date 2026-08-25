@@ -10,8 +10,10 @@
 // O(log n), matching libevent min_heap_erase_ and libuv heap_remove. The old
 // benchmark used lazy tombstones and therefore did not model either reference.
 //
-// Decision rule (perf doc): run under scripts/bench-stat.py -n>=15; a gap smaller
-// than the summed run-to-run spread is a STATISTICAL TIE, not a win.
+// Decision rule (perf doc): run independent processes under bench-stat.py with
+// a predeclared margin, raw paired samples, median CI, default/peer-first
+// orders, the exact five-state verdict and the separate non-inferiority gate.
+// Absolute spread remains a noise diagnostic and never decides a tie/win.
 #include <nanobench.h>
 
 #include <array>
@@ -80,6 +82,20 @@ void configure_main_benchmark_thread() {
                "affinity=unsupported\n",
                name, rc == 0 ? 1 : 0);
   if (rc != 0) std::abort();
+#endif
+}
+
+bool rival_first_requested() {
+#if defined(_WIN32)
+  char* value = nullptr;
+  std::size_t size = 0;
+  const bool present =
+      _dupenv_s(&value, &size, "HYLE_BENCH_RIVAL_FIRST") == 0 &&
+      value != nullptr;
+  std::free(value);
+  return present;
+#else
+  return std::getenv("HYLE_BENCH_RIVAL_FIRST") != nullptr;
 #endif
 }
 
@@ -464,7 +480,7 @@ static_assert(sizeof(RadixTimerSet::Node) == sizeof(TimerEntry),
               "same-class radix baseline must retain public node metadata");
 
 template <std::size_t N>
-void benchmark_small_cardinality() {
+void benchmark_small_cardinality(bool rival_first) {
   static_assert(N != 0);
   constexpr std::uint64_t kEpochIterations =
       8192 / N > 200 ? 8192 / N : 200;
@@ -480,27 +496,35 @@ void benchmark_small_cardinality() {
     RadixTimerSet radix(N);
     TimerQueue queue(0);
     std::array<TimerEntry, N> entries;
-    b.run("indexed heap" + cardinality, [&] {
+    auto run_heap = [&] {
       for (std::size_t i = 0; i < N; ++i) {
         heap.schedule(i, (i + 1) * kMs);
       }
       for (std::size_t i = 0; i < N; ++i) heap.cancel(i);
       nb::doNotOptimizeAway(heap.live);
-    });
-    b.run("Seastar-shape radix" + cardinality, [&] {
+    };
+    auto run_radix = [&] {
       for (std::size_t i = 0; i < N; ++i) {
         radix.schedule(i, (i + 1) * kMs);
       }
       for (std::size_t i = 0; i < N; ++i) radix.cancel(i);
       nb::doNotOptimizeAway(radix.empty());
-    });
-    b.run("HYLE radix" + cardinality, [&] {
+    };
+    auto run_hyle = [&] {
       for (std::size_t i = 0; i < N; ++i) {
         queue.schedule(&entries[i], (i + 1) * kMs);
       }
       for (TimerEntry& entry : entries) queue.cancel(&entry);
       nb::doNotOptimizeAway(queue.size());
-    });
+    };
+    b.run("indexed heap" + cardinality, run_heap);
+    if (rival_first) {
+      b.run("Seastar-shape radix" + cardinality, run_radix);
+      b.run("HYLE radix" + cardinality, run_hyle);
+    } else {
+      b.run("HYLE radix" + cardinality, run_hyle);
+      b.run("Seastar-shape radix" + cardinality, run_radix);
+    }
   }
 
   {
@@ -515,15 +539,15 @@ void benchmark_small_cardinality() {
     std::array<TimerEntry, N> entries;
     std::uint64_t radix_base = 0;
     std::uint64_t queue_base = 0;
-    b.run("indexed heap expire" + cardinality, [&] {
+    auto run_heap = [&] {
       for (std::size_t i = 0; i < N; ++i) {
         heap.schedule(i, (i + 1) * kMs);
       }
       std::uint64_t fired = 0;
       heap.expire((N + 1) * kMs, fired);
       nb::doNotOptimizeAway(fired);
-    });
-    b.run("Seastar-shape radix expire" + cardinality, [&] {
+    };
+    auto run_radix = [&] {
       for (std::size_t i = 0; i < N; ++i) {
         radix.schedule(i, radix_base + (i + 1) * kMs);
       }
@@ -531,8 +555,8 @@ void benchmark_small_cardinality() {
       radix.expire(radix_base + (N + 1) * kMs, fired);
       radix_base += (N + 1) * kMs;
       nb::doNotOptimizeAway(fired);
-    });
-    b.run("HYLE radix expire" + cardinality, [&] {
+    };
+    auto run_hyle = [&] {
       for (std::size_t i = 0; i < N; ++i) {
         queue.schedule(&entries[i], queue_base + (i + 1) * kMs);
       }
@@ -542,7 +566,15 @@ void benchmark_small_cardinality() {
       std::uint64_t fired = 0;
       out.consume_all([&](TimerEntry*) noexcept { ++fired; });
       nb::doNotOptimizeAway(fired);
-    });
+    };
+    b.run("indexed heap expire" + cardinality, run_heap);
+    if (rival_first) {
+      b.run("Seastar-shape radix expire" + cardinality, run_radix);
+      b.run("HYLE radix expire" + cardinality, run_hyle);
+    } else {
+      b.run("HYLE radix expire" + cardinality, run_hyle);
+      b.run("Seastar-shape radix expire" + cardinality, run_radix);
+    }
   }
 }
 
@@ -550,6 +582,7 @@ void benchmark_small_cardinality() {
 
 int main() {
   configure_main_benchmark_thread();
+  const bool rival_first = rival_first_requested();
 
   // Workload shape (the target reality): arm N timeouts, cancel most of them
   // before they fire (a response arrived), expire the survivors. N per op.
@@ -934,9 +967,9 @@ int main() {
   // The old certificate only exercised the N=4096 batch shape. These rows
   // expose normal small queues where fixed object overhead and branch count can
   // dominate, and where an indexed heap may honestly be the better constant.
-  benchmark_small_cardinality<1>();
-  benchmark_small_cardinality<8>();
-  benchmark_small_cardinality<64>();
+  benchmark_small_cardinality<1>(rival_first);
+  benchmark_small_cardinality<8>(rival_first);
+  benchmark_small_cardinality<64>(rival_first);
 
   return 0;
 }

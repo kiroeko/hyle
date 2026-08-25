@@ -219,6 +219,11 @@ HYLE 必须严肃尝试或用真实约束否决。不能用一个只覆盖小 N 
 形状和 QoS。不能让 HYLE 承担检查/分配/dispatch，而 peer 使用 unchecked direct kernel；也不能
 反过来靠删掉用户需要的语义赢。
 
+直接消费者门经常同时计入“被审底层 primitive + 消费模块自己的语义”。若 peer 少维护
+`size/owner/deadline/error` 等公开合同，该结果只能作为 gross-regression/归因诊断：必须另用
+同合同 primitive 对拍判断底层是否退化，并把无法消除的语义成本登记给实际收费的消费模块。
+不能拿上层不同合同的 LOSE 否决无关底层，也不能借底层已过掩盖上层成本；两份结论分别留档。
+
 选择 benchmark 的顺序是场景 → workload → peer → 统计方法，绝不能从现有 benchmark 反推
 API。微基准可以解释一次原子、hint 或函数边界，但不能独立证明产品 SOTA。没有独立 workload
 的 compiler/cache primitive 应通过 codegen 和真实消费者验证，而不是制造无意义的单指令表。

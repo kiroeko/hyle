@@ -1,24 +1,25 @@
 # HYLE 预发布就绪度与模块严格收口队列（2026-08-25）
 
 > **2026-08-25 当前完整复审队列：**依赖升级与 core 红队共同证明，旧的“严格收口”只能作为
-> 历史施工证据，不能继续充当当前产品证书。**core、error、platform、mem、time、obs、util、
-> build/package** 现在全部转黄，并按当前方法逐个从功能、真实消费者、成熟库、类型形状、复杂度、
-> C++/C 易用性、依赖、性能资格、三平台和文档完整复审。这不是无证据推倒重写；旧实现和日志是
-> 查漏/回归输入，但每一道门都必须重新作出显式裁决并绑定同一 candidate。
+> 历史施工证据，不能继续充当当前产品证书。**core 已按当前方法重签为 `SIGNED`**；error、
+> platform、mem、time、obs、util、build/package 仍黄，并继续逐个从功能、真实消费者、成熟库、
+> 类型形状、复杂度、C++/C 易用性、依赖、性能资格、三平台和文档完整复审。这不是无证据推倒
+> 重写；旧实现和日志是查漏/回归输入，但每一道门都必须重新作出显式裁决并绑定同一 candidate。
 > `container/simd/sched/io/math` 不在这八个底座模块的本轮签署范围，只回验底座修改直接触及的边；
 > `compute/graph` 仍是半成品，只维持全图机械健康，不用其未稳定形状反向塑造底座 API。
 
 ## 结论
 
 HYLE 的“历史任务完成”与“当前严格收口”必须分开读。2026-07-27--30 的证书保存设计来路、
-已发现缺陷和可复用回归，但全部八模块当前都不是 `SIGNED`。尤其 core 本轮再次发现 C/C++ source
-contract、IntrusiveList 正常形状、cache footprint 与 benchmark 资格问题，说明只重签 changed
-seam 不足以回答“功能/API/性能是否真的完成”。每个模块必须建立新的 review 记录、冻结 candidate，
-再取得当前证书；任何未知都保持黄色。
+已发现缺陷和可复用回归，但不能自动成为现在的证书。core 本轮再次发现 C/C++ source contract、
+IntrusiveList 正常形状、cache footprint 与 benchmark 资格问题，完成修复、三平台/API/package/
+消费者和同合同性能闭环后已重新 `SIGNED`。这说明只重签 changed seam 不足以回答
+“功能/API/性能是否真的完成”；其余模块仍须各自建立 review 记录、冻结 candidate，任何未知保持黄色。
 
 | 层次 | 当前判断 | 下一动作 |
 |---|---|---|
-| 历史严格证书 | core、error、platform、mem、time、obs、util、build/package | 只作设计/算法/回归输入；当前八模块全部黄色并逐个完整复审 |
+| 当前严格证书 | core | `a951f0a` 产品候选、`2707583` 正式 harness；功能/API/依赖/三平台/package/性能/文档已 `SIGNED` |
+| 历史严格证书 | error、platform、mem、time、obs、util、build/package | 只作设计/算法/回归输入；当前仍黄色并逐个完整复审 |
 | 本轮已有中间快照 | mem/container/obs/util 的 Windows Release 与 GCC 14 WSL focused；container 的 Windows/GCC 14、obs 的 Windows installed shared C/C++ consumer；obs exact Tracy 0.14.1 trace-on | 后续改动可使其失效；不扩大为最终 clean、三平台、static、sanitizer、完整性能证书或再次收口 |
 | 尚未整体收口 | container、math、sched、io、simd | 本轮只验证依赖升级触及项；完整收口仍留给后续独立任务 |
 | 仍有能力尾 | compute、graph | 先用真实北极星补能力，再执行同一严格合同 |
@@ -153,8 +154,8 @@ benchmark 宣称 SOTA。
 
 排序依据是**接口爆炸半径 + 消费关系**，不是目录顺序，也不是谁的 benchmark 更多：
 
-1. **core**（完整复审进行中）：零依赖根、compiler/cache/list 形状、C++/C/package、真实消费者和
-   五态性能全部重新裁决；当前黄色。
+1. **core** ✅：零依赖根、compiler/cache/list 形状、C++/C/package、真实消费者和五态/单边
+   性能全部重新裁决；当前 `SIGNED`，无重开触发器不再重复全审。
 2. **error**：在 core 签署后复审共享失败模型、context 复杂度、C ABI/ownership、全库 adoption 和
    两类真实错误路径性能。
 3. **platform**：在 error 稳定后复审 OS/CPU/thread/fs/VM/NUMA 能力与 C/C++ 易用形状，向上扫描
@@ -183,7 +184,7 @@ math 的处理相反：它当前不是经过独立需求设计的产品，而是
 
 | 模块 | 实现状态 | 当前严格证书 |
 |---|---|---|
-| core | 本轮完整复审进行中；compiler/list 已重构，cache layout 正在重裁决 | 🟡 旧 `71dabf7`/三平台证据只作历史输入；candidate 未冻结；N=32 cancel 是由 time 消费者承重的非阻塞 placement 诊断，其余功能/API/package/consumer/五态性能和最终文档门未全齐 |
+| core | 功能边界、compiler/list、target-family cache layout 与三种交付已冻结 | 🟢 `SIGNED`：产品 `a951f0a`、正式 harness `2707583`；三平台 C++/C/package/sanitizer/consumer 通过，N=4096 同合同四路径 SOTA gate 全 PASS；N=32/append 机制诊断与 time N=8 不同合同债务未被伪装成 core 胜负 |
 | error | 2026-07 历史证书存在；本轮尚未完整复审 | 🟡 固定宽 C ABI、context 算法、全库 adoption、C++/C 易用性与当前两类性能均须重新裁决 |
 | platform | 2026-07 历史证书存在；本轮尚未完整复审 | 🟡 OS/CPU/thread/fs/VM/NUMA 功能、API/ABI、绕行扫描、三平台与性能均须重新裁决 |
 | mem | 2026-07 历史证书存在；mimalloc 3.5.0 与公开 NUMA/options 已改变输入 | 🟡 allocator/pool/region/NUMA/PMR 功能、ownership、C/C++/交付、sanitizer 与当前性能须完整复审 |
@@ -215,4 +216,4 @@ math 的处理相反：它当前不是经过独立需求设计的产品，而是
 - 构建拓扑和慢变顺序：[`../architecture/roadmap.md`](../architecture/roadmap.md)；参考库角色：[`../architecture/references.md`](../architecture/references.md)。
 - 当前任务与 LOC：[`README.md`](./README.md)；每个旧 closure 文件只是该轮施工证据。
 - 稳定设计：[`../architecture/`](../architecture/README.md)；性能：[`../performance/`](../performance/README.md)；用户入口：[`../guide/`](../guide/README.md)。
-- 历史认证/施工输入：[`error-module-reclosure.md`](./error-module-reclosure.md)、[`platform-remaining.md`](./platform-remaining.md)、[`mem-mature-gap-audit.md`](./mem-mature-gap-audit.md)、[`time-mature-gap-audit.md`](./time-mature-gap-audit.md)、[`core-module-closure.md`](./core-module-closure.md)、[`build-package-system-closure.md`](./build-package-system-closure.md)、[`util-module-closure.md`](./util-module-closure.md)、[`obs-module-closure.md`](./obs-module-closure.md)、[`container-module-closure.md`](./container-module-closure.md)。这些任务页中的绿色只绑定各自日期/commit；container 等未达到当前严格口径的模块不能因旧任务名带 closure 就视为已收口。
+- 当前 core 证书与施工账本：[`core-module-closure.md`](./core-module-closure.md)；其余历史认证/施工输入：[`error-module-reclosure.md`](./error-module-reclosure.md)、[`platform-remaining.md`](./platform-remaining.md)、[`mem-mature-gap-audit.md`](./mem-mature-gap-audit.md)、[`time-mature-gap-audit.md`](./time-mature-gap-audit.md)、[`build-package-system-closure.md`](./build-package-system-closure.md)、[`util-module-closure.md`](./util-module-closure.md)、[`obs-module-closure.md`](./obs-module-closure.md)、[`container-module-closure.md`](./container-module-closure.md)。除 core 外，这些任务页中的绿色只绑定各自日期/commit；container 等未达到当前严格口径的模块不能因旧任务名带 closure 就视为已收口。

@@ -1,14 +1,104 @@
 # core 模块严格复审记录（2026-07-25—2026-08-25）
 
-> **历史证据提示（2026-08-25）：**本页的绿色结论绑定文中日期/commit，不是依赖升级后
-> working tree 的当前证书。现行状态只看 [`pre-release-readiness`](./pre-release-readiness.md)。
+> **当前证书（2026-08-25）：`SIGNED`。**产品实现冻结于 `a951f0a`（tree
+> `714d660299bb67d2c855452e8cbdb14cd89ec841`）；正式 core harness/runner 证据绑定
+> `2707583`（tree `ac85153f7d3241472ace9fc8556afdb88311082a`）。两点之间
+> `CMakeLists.txt/cmake/include/src/samples/package` 零差异，后续只改变测试/benchmark/证据文档。
+> 当前队列状态仍以 [`pre-release-readiness`](./pre-release-readiness.md) 为准。
 
 > 本页只记录施工与验收。稳定设计见
 > [`core-design`](../architecture/core-design.md)，使用方式见 [`guide/core`](../guide/core.md) /
 > [`guide/c-core`](../guide/c-core.md)，性能数字只见
 > [`benchmarks-core`](../performance/benchmarks-core.md)。
 
-## 2026-08-25 当前完整复审（黄色）
+## 2026-08-25 最终严格证书
+
+| 身份 | 结论 |
+|---|---|
+| review state | `SIGNED`；功能、设计、复杂度、C++/C、依赖、三平台、交付、性能和文档门闭合 |
+| product candidate | `a951f0a436336366df9729e663c2fccfd357cff2` / tree `714d660299bb67d2c855452e8cbdb14cd89ec841` |
+| evidence harness | `2707583f2fdd0d38f77f3302480be662dfade2f6` / tree `ac85153f7d3241472ace9fc8556afdb88311082a` |
+| public surface identity | SHA-256 `58038784ef0231b6ad73b7dc5e1b6622b3f8d79aa9a22c186090d1e268baba62` |
+| strong peer | Boost.Intrusive clean `df8eeb90846648464e3c8e378e312f0cec772e83` |
+| runner | SHA-256 `22b285cb469479522f719158e2b9c1757aefb604d4a781e801ebbd9d76dca26d` |
+| current verdict | core 结束关注；只有 methodology 的重开触发器才重新转黄 |
+
+### 功能与边界裁决
+
+core 只承担四组零上游基础合同：① compile-time 与 linked-runtime 版本 identity；②
+force/no-inline、branch、assume/restrict/unroll/flatten、fatal/source-location 等 compiler contract；
+③ target-family cache layout 与三种 prefetch intent；④ stable-address、caller-owned、零分配的
+IntrusiveList。runtime CPU/topology 属于 platform，owning/general containers 属于 container，
+时钟/timer 语义属于 time，错误值属于 error；本轮没有为了 benchmark 把这些上层状态吸进 core。
+
+IntrusiveList 对照 Boost/Folly 后补齐双向 iterator、positional insert/erase、单节点/整表 splice、
+append/swap/move、clear/consume/prefix move 与 auto-unlink。节点和整表操作维持 O(1)，只有显式
+遍历、clear、consume 和 prefix scan 为 O(n)；默认 hook 仍只有两个指针，不增加 size/owner/
+统计元数据。cache 推荐按编译目标确定：x86-64/ARM64EC 64/64B，native Apple ARM64
+128/128B，未认证 ARM64/RV64 fallback 64/128B；dense 结构使用 target 值，只有稀疏持续争用
+control state 才 opt-in 128B max。
+
+### API 与交付裁决
+
+- C++23 source API 按单头选择，IntrusiveList 提供 range/RAII auto-unlink 与 checked convenience；
+  cache/compiler seam 均 header-inline，不制造 DLL hop。
+- C17 source API 覆盖全部语言无关能力：transparent hook/list、静态初始化、const traversal、
+  checked insert、pop/unlink/clear/splice/append，以及同一 cache/compiler contract。C 没有析构，
+  所以 owner 必须在 storage 失效前显式 unlink/clear；对非空 list 直接 re-init 会留下悬空 hook。
+- 动态 C ABI 有意只有 `hyle_version`、`hyle_version_string`；其余是 C source/编译期能力，不适合
+  变成逐操作 ABI 调用。runtime version string 为模块拥有的 borrowed storage，module unload 前复制。
+- installed shared/static 与 complete-source `add_subdirectory` 三种形状均以只请求 core 的 C/C++
+  consumer 验证；target 传播 C++23/C17、native MSVC conforming preprocessor 与 Windows runtime
+  staging。cache-layout 是预发布 source/C++ layout ABI break，所有 TU/plugin/object 必须 clean rebuild。
+
+### 正确性、平台与消费者
+
+- Windows MSVC 19.50 Release/Debug 的 core 受影响闭包各 20/20，clang-cl 20.1.8 core-only 5/5；
+  shared/static package C/C++、source C/C++ 均通过，DLL 没有导出 header-inline version storage。
+- Linux GCC 14 native-ext4 的 Release 31/31、Debug shipping 30/30、ASan/UBSan 各 9/9；
+  a951 的 TSan affected closure 133/133 由产品零差异绑定。pure C/C++、ELF surface 与
+  shared/static/source consumer 通过；Debug strict Werror 另暴露 sched coroutine allocation 的
+  `-Wmismatched-new-delete`，属于 sched 债务，不改变 core 结果。
+- Apple M4/AppleClang native Release/Debug 各 19/19，ASan/UBSan focused seam、TSan queue 4/4
+  与 SharedPool/cache 5/5、shared/static/source 通过；Rosetta
+  x86-64 验证 64/64B profile、core C/C++、platform cache 与 SharedPool dense layout。CXX-only
+  source parent、generic deployment target 和 Rosetta all-container ISA 选择问题登记给 build/package。
+- target-family footprint、runtime probe coherency、queue/map/interner/SharedPool/scheduler/time 直接
+  消费边均复验；a951→270 产品树零差异使较早的 package/sanitizer 结果仍严格绑定同一产品字节。
+
+### 性能裁决
+
+正式产品 claim 只覆盖与 Boost 同 ownership/metadata/工作量的 N=4096 FIFO、arbitrary remove、
+read-only traversal 和 auto-detach；预声明 margin 3%，每进程输出原始 paired JSON，Windows/
+Linux/macOS 均跑 default 与 peer-first。Windows default remove 在 n=31 为 `UNRESOLVED`，按事前
+规则保留原日志并以同 margin 扩到 n=63 后转 `PASS`。最终四条正常路径三平台（M4 另含
+interactive/utility）全部 non-inferiority `PASS`；精确关系仍逐格保留
+`WIN/EQUIVALENT/INCONCLUSIVE`，没有把单边 gate 改写成“平”。完整结果和 hash 见性能页；
+最终提交的全库 CI 由 GitHub Actions 留档。
+
+N=32 的方向会随等价 code shape/placement 改变，故预先降为机制诊断；whole-list append 只计
+两次重链，记 `NOT_COMPARABLE/N/A`。time 的 N=8 consumer 复验又显示固定执行序会改变 peer
+速度，而且 HYLE 同时维护 `size/next-deadline/owner` 强语义；它是 time 的
+`NOT_COMPARABLE`/语义成本债务，不是 core list 同合同 LOSE。该发现已反写方法论：消费者门若
+混入上层额外语义，必须先隔离 primitive 再按实际收费模块归因。
+
+### 最终四项代码量
+
+`python scripts/loc-report.py --module core --self-check` 在最终文档工作树上的固定口径：
+
+| 口径 | code |
+|---|---:|
+| 全库代码（tracked，含 docs/in-tree third_party） | 300,127 |
+| 自实现（含测试） | 142,185 |
+| 自实现（不含测试） | 96,254 |
+| core 实现 | 959 |
+
+core 边界为 `include/hyle/core + include/hyle/c/core.h + include/hyle/c/compiler.h +
+include/hyle/macros.h + include/hyle/visibility.h + src/core`；不含 tests/bench/docs/samples/CMake。
+
+## 2026-08-25 审查期记录（当时黄色，已由上方证书取代）
+
+> 本节中的“当前/待完成”固定描述签署前的审查现场，不代表现在仍黄色。
 
 本轮不是给 2026-07 证书做一次局部补丁，而是按当前
 [`module-closure-methodology`](../architecture/module-closure-methodology.md) 对 core 的功能、
