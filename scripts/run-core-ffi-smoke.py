@@ -474,23 +474,37 @@ def main(argv: Sequence[str] | None = None) -> int:
             args.incompatible_library, "incompatible FFI fixture"
         )
         runner_path = Path(__file__).resolve(strict=True)
-        evidence_path = (
-            evidence_destination(
-                args.evidence_json,
-                (library, incompatible_library, runner_path),
+        evidence_path: Path | None = None
+        inputs: dict[str, dict[str, str]] | None = None
+        if args.evidence_json is not None:
+            java_probe_source = (
+                SAMPLE_ROOT / "java" / "HyleCoreFfiSmoke.java"
+            ).resolve(strict=True)
+            dotnet_probe_source = (SAMPLE_ROOT / "dotnet" / "Program.cs").resolve(
+                strict=True
             )
-            if args.evidence_json is not None
-            else None
-        )
-        inputs = (
-            {
+            dotnet_probe_project = (
+                SAMPLE_ROOT / "dotnet" / "HyleCoreFfiSmoke.csproj"
+            ).resolve(strict=True)
+            evidence_path = evidence_destination(
+                args.evidence_json,
+                (
+                    library,
+                    incompatible_library,
+                    runner_path,
+                    java_probe_source,
+                    dotnet_probe_source,
+                    dotnet_probe_project,
+                ),
+            )
+            inputs = {
                 "product_library": evidence_input(library),
                 "incompatible_fixture": evidence_input(incompatible_library),
                 "runner": evidence_input(runner_path),
+                "java_probe_source": evidence_input(java_probe_source),
+                "dotnet_probe_source": evidence_input(dotnet_probe_source),
+                "dotnet_probe_project": evidence_input(dotnet_probe_project),
             }
-            if evidence_path is not None
-            else None
-        )
         dotnet = dotnet_tool() if args.only in ("all", "dotnet") else None
         java = java_tools() if args.only in ("all", "java") else None
         tools: dict[str, dict[str, str]] = {}
@@ -533,6 +547,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "schema_version": 1,
                 "result": "pass",
                 "selection": args.only,
+                "selected_probe_count": len(probes),
                 "started_at_utc": started_at.isoformat().replace("+00:00", "Z"),
                 "completed_at_utc": completed_at.isoformat().replace("+00:00", "Z"),
                 "host": {
