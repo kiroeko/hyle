@@ -13,13 +13,16 @@ across 12 runs.)
 
 This script runs the exe N times, parses the op/s column per (title, variant),
 and reports the MEDIAN ns/op plus the run-to-run SPREAD ((max-min)/median). For
-any pair you ask about, it computes the per-run op/s RATIO and applies the
-decision rule the perf doc uses:
+any requested pair it computes a same-process op/s RATIO and applies the
+canonical product verdict:
 
-    call a win/loss ONLY if |ratio_median - 1| > (spreadA + spreadB);
-    otherwise it's a STATISTICAL TIE.
+    WIN/LOSE only when the paired two-sided sign test has p < 0.01 and the
+    median gap is material (>1%); otherwise TIE.
 
-That is the honest bar: a gap smaller than the measurement spread is not a win.
+Absolute per-variant spread is printed as a diagnostic, not as an alternative
+verdict: machine noise is often correlated and cancels in the paired ratio.
+Formal evidence also repeats the experiment with variant order swapped; a
+direction that reverses under order swap cannot be signed as product truth.
 
 USAGE
 -----
@@ -239,6 +242,33 @@ def _binom_two_sided(k, n):
     return min(p, 1.0)
 
 
+def paired_verdict(ratios):
+    """Return the canonical same-process ratio verdict and its evidence."""
+    if not ratios:
+        raise ValueError("paired verdict needs at least one ratio")
+    median = statistics.median(ratios)
+    gap_percent = abs(median - 1.0) * 100.0
+    above = sum(1 for ratio in ratios if ratio > 1.0)
+    below = sum(1 for ratio in ratios if ratio < 1.0)
+    effective = above + below
+    p_value = (
+        _binom_two_sided(max(above, below), effective)
+        if effective > 0 else 1.0
+    )
+    if effective >= 6 and p_value < 0.01 and gap_percent > 1.0:
+        verdict = "WIN" if above > below else "LOSE"
+    else:
+        verdict = "TIE"
+    return {
+        "median": median,
+        "gap_percent": gap_percent,
+        "above": above,
+        "effective": effective,
+        "p_value": p_value,
+        "verdict": verdict,
+    }
+
+
 def parse_run(text):
     """One process's stdout -> {(title, variant): op/s}. Tracks the current
     table title and op/s column from each nanobench header row.  Relative
@@ -342,6 +372,11 @@ def main():
                     default=[], help="report RIVAL/BASELINE op/s ratio; repeatable")
     args = ap.parse_args()
 
+    if args.runs <= 0:
+        ap.error("--runs must be positive")
+    if args.require_clean and args.runs < 15:
+        ap.error("--require-clean formal evidence requires at least 15 runs")
+
     # Normalize to an absolute path: on Windows, CreateProcess won't resolve a
     # forward-slash relative path like "build/bin/foo.exe" (the shell would, but
     # subprocess bypasses it). abspath fixes that and is a no-op on POSIX.
@@ -386,10 +421,9 @@ def main():
 
     if args.pair:
         print("\n=== pair ratios (RIVAL/BASELINE op/s) ===")
-        print("    two verdicts: [spread] gap>combined-spread (absolute); [sign] PAIRED SIGN TEST on")
-        print("    per-run ratios -- if k/N runs land the SAME side of 1.0, binomial p<0.01 => real")
-        print("    win/loss EVEN when absolute spread is large (same-machine noise is CORRELATED, so")
-        print("    the ratio is far tighter than either variant's absolute spread). Trust [sign].")
+        print("    verdict: paired sign test on same-process ratios, p<0.01 and median gap>1%")
+        print("    absolute combined spread is diagnostic only; formal evidence must also agree")
+        print("    after swapping variant order")
     for base, rival in args.pair:
         any_hit = False
         for t in titles:
@@ -398,31 +432,20 @@ def main():
             if not ratios:
                 continue
             any_hit = True
-            rmed = statistics.median(ratios)
+            decision = paired_verdict(ratios)
+            rmed = decision["median"]
             combined = agg[bk][1] + agg[rk][1]
-            gap = abs(rmed - 1.0) * 100.0
-            # [spread] verdict: absolute (the old, conservative rule).
-            spread_v = "TIE" if gap <= combined else ("WIN" if rmed > 1 else "LOSE")
-            # [sign] verdict: paired sign test. Count runs with ratio>1 vs <1 (ignore exact ties).
-            n = len(ratios)
-            above = sum(1 for r in ratios if r > 1.0)
-            below = sum(1 for r in ratios if r < 1.0)
-            eff = above + below  # non-tied runs
-            k = max(above, below)
-            # two-sided binomial p under H0=0.5: P(X>=k) + P(X<=eff-k), doubled by symmetry.
-            p = _binom_two_sided(k, eff) if eff > 0 else 1.0
-            # sign is meaningful only if a CONSISTENT direction AND a non-trivial median gap (>1%)
-            # (guards against a 0.2% "win" that is 15/15 but practically nil).
-            if eff >= 6 and p < 0.01 and gap > 1.0:
-                sign_v = "WIN" if above > below else "LOSE"
-            else:
-                sign_v = "TIE"
-            # A row is a REAL non-tie if EITHER verdict is significant; flag disagreements loudly.
-            flag = "  <<< SIGN-CAUGHT (spread hid it)" if sign_v != "TIE" and spread_v == "TIE" else ""
+            gap = decision["gap_percent"]
+            # Absolute spread is a stability diagnostic, not a product verdict.
+            absolute_hint = (
+                "inside" if gap <= combined else
+                ("outside+" if rmed > 1 else "outside-"))
             print(f"  {t[:34]:36s} {rival} / {base}")
             print(f"    ratio med {rmed:5.3f}  min {min(ratios):5.3f} max {max(ratios):5.3f}"
                   f"  gap {gap:4.1f}% vs spread {combined:4.1f}%"
-                  f"  [spread]{spread_v} [sign]{sign_v} ({above}/{eff}>1, p={p:.1e}){flag}")
+                  f"  [absolute]{absolute_hint} [verdict]{decision['verdict']}"
+                  f" ({decision['above']}/{decision['effective']}>1,"
+                  f" p={decision['p_value']:.1e})")
         if not any_hit:
             print(f"  (no rows matched pair: {base!r} / {rival!r})")
 

@@ -4,6 +4,35 @@ Project automation: environment setup and reproducible builds. The goal is that 
 **fresh checkout on any machine** can build, test, and benchmark HYLE without
 depending on a hand-crafted directory layout.
 
+## `loc-report.py` — canonical module-closure LOC
+
+Every module closure reports the same four `code` counts: all repository code,
+HYLE-written native code with tests, HYLE-written native code without tests,
+and the current module implementation. Run it from anywhere inside the checkout:
+
+```bash
+python scripts/loc-report.py --module core --self-check
+python scripts/loc-report.py --module mem --json
+```
+
+The snapshot is the current content of Git-tracked files. Modified/staged files
+are therefore counted and reported as dirty; untracked files are not counted but
+also make the report dirty. The repository total includes every language `cloc`
+recognizes, including tracked docs, benchmarks, and in-tree third-party code.
+The two self-written totals count only `C++`, `C/C++ Header`, `C`, and `CUDA`
+under `include/hyle`, `src`, and (for the first total) `tests`; consequently
+docs, benchmarks, samples, third-party code, CMake, and build/cache trees do not
+enter those totals. A module count uses the same native language policy and
+excludes tests, benchmarks, docs, and CMake.
+
+`core`, `util-core`, and `util-runtime` have explicit logical boundaries in the
+script. Other native modules use `include/hyle/<module>`, all matching
+`include/hyle/c/<module>*.h`, and `src/<module>`. If a future closure unit does
+not fit either shape, repeat `--module-path REPO_PATH`; the exact override is
+printed in the report so the certificate cannot hide its counting boundary.
+`--self-check` also verifies the fixed core boundary and the expected subset
+relations. `cloc` and Python 3 must be available on `PATH`.
+
 ## `hyle-windows.ps1` — select an installed Windows C++ environment
 
 CMake may know the VS 2022 generator but not a newer installed Visual Studio generation.
@@ -206,7 +235,10 @@ cmake --build build-bench --target hyle_queue_sota_bench
 ## `bench-stat.py` — paired process-level performance evidence
 
 `bench-stat.py` repeats one nanobench executable in fresh processes and decides each requested
-pair from the median ratio, run-to-run spread and paired sign test. A diagnostic run may omit
+pair from its same-process ratios: WIN/LOSE requires a two-sided paired sign test with `p < 0.01`,
+a material median gap above 1%, and the same direction after rerunning with variant order swapped.
+Per-variant absolute spread remains a noise diagnostic; it is not an alternative verdict because
+common host noise can cancel in the paired ratio. A diagnostic run may omit
 provenance gates; a formal run uses `--require-clean` from a clean HYLE checkout and declares every
 external Git peer that contributes comparison code:
 

@@ -63,6 +63,27 @@ def main():
     if bench_stat.git_identity(missing_peer) is not None:
         raise AssertionError("missing peer path acquired a Git identity")
 
+    verdict_cases = (
+        ([1.02] * 15, "WIN"),
+        ([0.98] * 15, "LOSE"),
+        ([1.005] * 15, "TIE"),  # consistent but below the 1% materiality bar
+        ([1.02] * 8 + [0.98] * 7, "TIE"),
+        ([1.0] * 15, "TIE"),
+    )
+    for ratios, expected_verdict in verdict_cases:
+        decision = bench_stat.paired_verdict(ratios)
+        if decision["verdict"] != expected_verdict:
+            raise AssertionError(
+                f"paired verdict mismatch: {decision!r} != {expected_verdict!r}"
+            )
+
+    try:
+        bench_stat.paired_verdict([])
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("empty paired sample acquired a verdict")
+
 
 if __name__ == "__main__":
     main()
