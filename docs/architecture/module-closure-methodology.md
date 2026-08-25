@@ -187,6 +187,26 @@ HYLE 必须严肃尝试或用真实约束否决。不能用一个只覆盖小 N 
 API。微基准可以解释一次原子、hint 或函数边界，但不能独立证明产品 SOTA。没有独立 workload
 的 compiler/cache primitive 应通过 codegen 和真实消费者验证，而不是制造无意义的单指令表。
 
+每个结果在进入性能表前先分级，不能让一个数值自动取得胜负资格：
+
+| 级别 | 必须满足 | 允许的结论 |
+|---|---|---|
+| 产品对拍 | 同语义/ownership/QoS，正常用户或内部消费者 workload，setup 与必要检查同等计费 | 通过下述统计和稳定性门后才可写 WIN/TIE/LOSE |
+| 机制诊断 | 隔离一段原子、链表、dispatch 或 codegen，用于定位产品结果 | 只解释根因，不单独签 SOTA |
+| 不可比 | 任一侧改变分配、检查、批量、容量、数据布局、并发语义或失败合同 | 只能写“不可比”，不得计算胜负 |
+| 不稳定 | 同合同但执行顺序、等价 harness 写法、函数/堆布局或微小 code placement 扰动使方向翻转 | 写“未知/placement-sensitive”，不得挑有利变体，也不得用 TIE 暗示已经证明同档 |
+
+尤其是 sub-cache、小批次和百纳秒级 aggregate：即使单一二进制的 paired sign test 显著，若
+合同等价的 runtime bound/value capture、variant 排列或 code placement 能使方向翻转，该格仍
+没有产品胜负资格。只有机械确认关键热核同等计费，并且真实消费者没有回归时，才可把它降为
+“机制 TIE（placement-sensitive）”；缺少任一层就继续保持 unknown/黄色。禁止为了得到稳定
+有利的地址或指令排列而修改产品字段、API、常态元数据或挑选 benchmark 写法。
+
+真实消费者语料不能只来自 HYLE 已有测试。与模块职责相关时，应从本地成熟项目的生产路径
+抽取 workload，例如 llama.cpp/ggml 的模型映射与权重驻留、量化块遍历、KV 生命周期、
+prefill/decode 批量、线程/NUMA 和 backend handoff。抽取的是数据、生命周期和并发合同；模型
+专用类型与调参不得倒灌到基础模块公开 API。
+
 默认性能闸包括：
 
 - 代表性小/中/大规模和正常数据分布；
@@ -194,6 +214,8 @@ API。微基准可以解释一次原子、hint 或函数边界，但不能独立
 - 至少 15 个独立进程样本；同进程 peer/candidate 比值做 paired sign test，只有 `p < 0.01`
   且中位差大于 1% 才判 WIN/LOSE，否则 TIE；
 - 默认顺序与 peer-first 正反顺序必须给出相同方向；翻转就记 TIE/未知，不挑有利顺序；
+- 对 sub-cache 或短 aggregate，至少再做一种合同等价的 code-shape/placement 扰动；方向翻转
+  即降为 unknown/placement-sensitive，并转由真实消费者守门；
 - Windows/Linux/macOS 真机；ISA/后端不可得时明确写“未认证”，不用模拟器时序；
 - 每个 LOSE 都要归因：算法缺口、实现缺口、必要语义税、硬件墙或测量无效。
 
