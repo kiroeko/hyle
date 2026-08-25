@@ -1,3 +1,4 @@
+/* C-syntax compiler/schema/link fixture for include/hyle/c/io.h. */
 #include "hyle/c/io.h"
 
 #include <stdio.h>
@@ -12,7 +13,7 @@ _Static_assert(offsetof(hyle_io_capabilities, backend) == 4,
 _Static_assert(offsetof(hyle_io_capabilities, bits) == 8,
                "IO capabilities bits ABI offset");
 _Static_assert(sizeof(hyle_io_capabilities) == 16,
-               "IO capabilities frozen v1 ABI size");
+               "IO capabilities current candidate ABI size");
 
 _Static_assert(sizeof(((hyle_io_proactor_options*)0)->struct_size) ==
                    sizeof(uint32_t),

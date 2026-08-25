@@ -1,4 +1,4 @@
-# close-01: pure C TU linking only the mem C ABI header (hyle/c/mem.h -> hyle_mem).
+# C-compiler/schema/link fixture for the pre-release mem FFI candidate.
 hyle_add_c_test(mem c_mem_test.c)
 hyle_add_c_surface_test(mem)
 hyle_add_header_self_contained_test(mem)

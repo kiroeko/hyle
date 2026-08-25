@@ -1,7 +1,7 @@
 #define _CRT_SECURE_NO_WARNINGS 1
 #include "hyle/c/container.h"
 
-/* Everything below this marker is part of the reviewed pure-C surface. */
+/* Everything below this marker belongs to the reviewed C-syntax fixture. */
 enum { HYLE_C_CONTAINER_COVERAGE_BODY_MARKER = 0 };
 
 #include <stdint.h>

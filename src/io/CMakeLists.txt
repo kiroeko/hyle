@@ -27,10 +27,10 @@ if(HYLE_HAS_FCONTEXT)
   if(HYLE_IO_HTTP2)
     list(APPEND _io_sources http2.cc)
   else()
-    # Keep the public C ABI link-stable when the optional protocol core is
-    # disabled.  The stub reports availability=0 and fails every operation;
-    # consumers can ship one binary against HTTP/2-enabled and minimal HYLE
-    # builds without conditional symbol lookup.
+    # Keep the current pre-release FFI candidate's symbol set uniform when the
+    # optional protocol core is disabled. The stub reports availability=0 and
+    # fails every operation. This is build-shape hygiene, not compatibility with
+    # an already released binding.
     list(APPEND _io_sources http2_stub.cc)
   endif()
   # io-08 TLS: only when OpenSSL is available (optional capability). TlsStream is a
@@ -49,7 +49,7 @@ if(HYLE_HAS_FCONTEXT)
 endif()
 
 # Platforms without fcontext do not build the coroutine transport or the real
-# HTTP/2 session. They still export the feature-probe/stub C ABI.
+# HTTP/2 session. They still export the feature-probe/stub FFI candidate.
 if(NOT HYLE_HAS_FCONTEXT)
   list(APPEND _io_sources http2_stub.cc)
 endif()

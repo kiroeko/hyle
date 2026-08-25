@@ -41,7 +41,8 @@ function(hyle_add_c_test module source)
     LINKER_LANGUAGE CXX)
   target_link_libraries(${target} PRIVATE hyle_${module} ${ARGN})
   set_source_files_properties("${source}" PROPERTIES LANGUAGE C)
-  # Exercise every public C ABI with the consumer-side enum-shrinking switch.
+  # Exercise every pre-release FFI schema with the C compiler's enum-shrinking
+  # switch. This is schema hygiene, not a native-C product compatibility test.
   # The test contract belongs here rather than in selected module fragments:
   # exported tags must use fixed-width typedefs regardless of which module owns
   # them. clang-cl needs the option forwarded to the Clang frontend explicitly.
@@ -159,7 +160,7 @@ function(hyle_add_header_self_contained_test module)
   unset(_hyle_header_args)
   unset(_hyle_header)
 endfunction()
-# Keep reviewed C manifests, pure-C consumers, and DLL/.so exports in sync.
+# Keep reviewed FFI manifests, C-syntax fixtures, and DLL/.so exports in sync.
 # Before first release this is drift detection, not a compatibility promise.
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 add_test(NAME hyle_bench_stat_parser_test

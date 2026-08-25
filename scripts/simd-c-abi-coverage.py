@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Mechanically compare the preprocessed SIMD C header, pure-C test and ELF exports."""
+"""Compare the pre-release SIMD FFI header, C fixture, and ELF exports."""
 
 from __future__ import annotations
 
@@ -10,11 +10,8 @@ import subprocess
 import sys
 from pathlib import Path
 
-
 SYMBOL = re.compile(r"\b(hyle_simd_[a-z0-9_]+)\s*\(")
-INLINE_SYMBOL = re.compile(
-    r"\bstatic\s+inline\s+[^;{]*?\b(hyle_simd_[a-z0-9_]+)\s*\("
-)
+INLINE_SYMBOL = re.compile(r"\bstatic\s+inline\s+[^;{]*?\b(hyle_simd_[a-z0-9_]+)\s*\(")
 TEST_BODY_MARKER = "HYLE_C_SIMD_COVERAGE_BODY_MARKER"
 
 
@@ -49,7 +46,7 @@ def main() -> int:
     missing_test = sorted(api - tested)
     print(f"SIMD C ABI test references: {len(api) - len(missing_test)}/{len(api)}")
     if missing_test:
-        print("Missing from pure-C test:", *missing_test, sep="\n  ")
+        print("Missing from C-syntax fixture:", *missing_test, sep="\n  ")
 
     missing_export: list[str] = []
     if args.library is not None:

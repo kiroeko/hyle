@@ -63,9 +63,9 @@ extern "C" {
 /* ========================================================================== */
 /* Allocator vtable — the injectable {alloc, free, realloc, state} handle. */
 /*                                                                            */
-/* This is a NATURAL C ABI shape: three C function pointers + a state void*, */
-/* trivially copyable and cross-DLL stable (exactly what jemalloc / C++17 pmr */
-/* / cudaMalloc expose). It is layout-compatible with the C++ hyle::mem:: */
+/* This is a natural FFI candidate shape: three C function pointers + a state */
+/* void*, trivially copyable across a matching DLL boundary (similar to what */
+/* jemalloc / C++17 pmr / cudaMalloc expose). It is layout-compatible with the */
 /* Allocator by design, but the bridge NEVER reinterpret-casts: it constructs */
 /* a C++ Allocator explicitly from these four fields (and vice versa). */
 /*                                                                            */

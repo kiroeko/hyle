@@ -1,4 +1,4 @@
-/* Pure C consumer of include/hyle/c/error.h (close-01: no C++). */
+/* C-syntax compiler/schema/link fixture for include/hyle/c/error.h. */
 #include <errno.h>
 #include <stdint.h>
 #include <stdio.h>

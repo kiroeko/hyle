@@ -802,7 +802,8 @@ class RwLock {
     return sem_.try_acquire(kMaxReaders) ? WriteGuard(this) : WriteGuard();
   }
 
-  // Raw lock/unlock pairs for C ABI and foreign-language RAII equivalents.
+  // Raw lock/unlock pairs; these may support a future task-driven FFI adapter
+  // but do not freeze one today.
   void lock_read() noexcept { (void)sem_.acquire(1); }
   bool try_lock_read() noexcept { return sem_.try_acquire(1); }
   void unlock_read() noexcept { sem_.release(1); }

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Keep a pre-release module's C declarations, pure-C use, and exports in sync."""
+"""Keep a pre-release module's FFI declarations, C fixture, and exports in sync."""
 
 from __future__ import annotations
 
@@ -10,7 +10,6 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Optional
-
 
 SYMBOL = re.compile(r"\b(hyle_[a-z0-9_]+)\s*\(")
 
@@ -24,9 +23,7 @@ def binary_symbols(
     library: Path, symbol_tool: Optional[Path], static: bool
 ) -> set[str]:
     if sys.platform == "win32":
-        tool = (
-            str(symbol_tool) if symbol_tool is not None else shutil.which("dumpbin")
-        )
+        tool = str(symbol_tool) if symbol_tool is not None else shutil.which("dumpbin")
         if tool is None:
             raise RuntimeError(
                 "dumpbin, llvm-nm, or llvm-readobj is required to audit a "
@@ -40,9 +37,7 @@ def binary_symbols(
                 [tool, "-g", "--defined-only", str(library)], text=True
             )
             return {
-                fields[-1]
-                for line in output.splitlines()
-                if (fields := line.split())
+                fields[-1] for line in output.splitlines() if (fields := line.split())
             }
         if "llvm-readobj" in tool_name:
             if static:
@@ -97,9 +92,7 @@ def binary_symbols(
         )
         strip_c_prefix = False
     return {
-        fields[-1][1:]
-        if strip_c_prefix and fields[-1].startswith("_")
-        else fields[-1]
+        fields[-1][1:] if strip_c_prefix and fields[-1].startswith("_") else fields[-1]
         for line in output.splitlines()
         if (fields := line.split())
     }
@@ -160,27 +153,26 @@ def main() -> int:
     exercised = set(SYMBOL.findall(test_text[marker:]))
     missing_test = sorted(manifest - exercised)
     print(
-        f"{args.module} C pure-C references: "
+        f"{args.module} C-syntax fixture references: "
         f"{len(manifest) - len(missing_test)}/{len(manifest)}"
     )
     if missing_test:
-        print("Missing from pure-C test:", *missing_test, sep="\n  ")
+        print("Missing from C-syntax fixture:", *missing_test, sep="\n  ")
         ok = False
 
     if args.library is not None:
-        all_binary_symbols = binary_symbols(
-            args.library, args.symbol_tool, args.static
-        )
+        all_binary_symbols = binary_symbols(args.library, args.symbol_tool, args.static)
         actual_exports = {
-            name
-            for name in all_binary_symbols
-            if name.startswith("hyle_")
+            name for name in all_binary_symbols if name.startswith("hyle_")
         }
-        ok = report_set(
-            f"{args.module} C binary {'symbols' if args.static else 'exports'}",
-            manifest,
-            actual_exports,
-        ) and ok
+        ok = (
+            report_set(
+                f"{args.module} C binary {'symbols' if args.static else 'exports'}",
+                manifest,
+                actual_exports,
+            )
+            and ok
+        )
         for prefix in args.forbid_prefix:
             forbidden = sorted(
                 name for name in all_binary_symbols if name.startswith(prefix)

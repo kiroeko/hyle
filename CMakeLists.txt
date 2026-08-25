@@ -56,7 +56,9 @@ unset(_hyle_version_MAJOR)
 unset(_hyle_version_MINOR)
 unset(_hyle_version_PATCH)
 
-# A pre-1.0 minor release may change the C and C++ ABI.  Give each 0.x minor
+# This is the shared-object loader/SOVERSION identity, not the independently
+# reviewed Native FFI generation handshake. A pre-1.0 minor release may change
+# the C++ ABI. Give each 0.x minor
 # its own loader identity instead of claiming that every 0.x package is binary
 # compatible.  Once the project reaches 1.0, the conventional major-only ABI
 # identity applies.

@@ -1,4 +1,4 @@
-/* Pure-C util-runtime consumer and C-surface coverage probe. */
+/* C-syntax compiler/schema/link fixture for the util-runtime FFI candidate. */
 #include "hyle/c/util.h"
 
 _Static_assert(sizeof(hyle_util_registry_priority) == sizeof(uint32_t),

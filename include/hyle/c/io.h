@@ -65,11 +65,11 @@ enum {
   HYLE_IO_CAP_HTTP2 = UINT64_C(1) << 8
 };
 
-/* Small by-value snapshot with a frozen v1 layout: size 16, backend offset 4,
- * bits offset 8 on the supported 64-bit ABI. struct_size describes the value
- * returned by this library; it is not caller capacity or an extensible input
- * handshake. A future field requires a new query/type rather than appending to
- * this by-value return. */
+/* Small by-value snapshot in the current candidate layout: size 16, backend
+ * offset 4, bits offset 8 on the supported 64-bit ABI. struct_size describes
+ * the value returned by this library; it is not caller capacity or an
+ * extensible input handshake. Before a binding product exists this layout and
+ * its evolution rule may be redesigned freely. */
 typedef struct hyle_io_capabilities {
   uint32_t struct_size;
   hyle_io_backend backend;

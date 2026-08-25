@@ -26,8 +26,10 @@ inline constexpr std::uint32_t kFfiAbiVersionMinor =
     HYLE_FFI_ABI_VERSION_MINOR;
 inline constexpr std::uint32_t kFfiAbiVersion = HYLE_FFI_ABI_VERSION;
 
-// Runtime version of the linked hyle_core. Compare with kVersion when loading
-// HYLE dynamically or crossing a plugin/FFI boundary.
+// Product identity of the linked hyle_core. Compare with kVersion only to
+// diagnose a header/runtime package mismatch; product equality is not an FFI
+// compatibility rule. A foreign binding checks the artifact ABI bootstrap
+// before using any product-identity query.
 HYLE_CORE_API std::uint32_t version() noexcept;
 // Human-readable runtime identity. The returned storage is borrowed from that
 // hyle_core module; never free it and copy it before unloading.

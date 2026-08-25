@@ -13,8 +13,9 @@
 
 // Intrusive reference counting (clay ref_counted). The count lives INSIDE the
 // object (CRTP base), so a Ref<T> is one pointer with no separate control block.
-// This is the native same-toolchain C++ surface; the stable cross-DLL/FFI seam
-// is the type-erased hyle_util_ref in hyle/c/util.h, not the template layout.
+// This is the native same-toolchain C++ surface. The type-erased hyle_util_ref
+// in hyle/c/util.h is only a pre-release FFI schema candidate; no released
+// binding currently freezes either shape.
 // incref is relaxed; decref is release plus an acquire fence only on the final
 // drop (a new ref can only form from an existing one).
 //

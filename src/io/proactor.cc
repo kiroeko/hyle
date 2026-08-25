@@ -1817,7 +1817,7 @@ bool Proactor::post(std::uint64_t user_data, std::int64_t result) noexcept {
   // post() is owner-thread-only; wake() is the cross-thread primitive. Keep the
   // synthetic completion in user space for BOTH io_uring and epoll so its signed
   // 64-bit result is preserved. An io_uring NOP CQE always reports res=0, which
-  // previously discarded `result` and made the Linux C ABI differ from IOCP.
+  // previously discarded `result` and made the Linux FFI candidate differ from IOCP.
   impl_->posted.push_back({user_data, result});
   return true;
 }

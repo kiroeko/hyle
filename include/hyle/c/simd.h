@@ -75,8 +75,8 @@ typedef struct hyle_simd_runtime_info {
   hyle_simd_module_info bitpack;
 } hyle_simd_runtime_info;
 
-/* Frozen readable prefix of the first runtime-info layout. Future fields append
- * after this prefix; old callers remain valid when they pass this size. */
+/* Readable prefix of the current candidate runtime-info layout. It exercises
+ * size-aware binding mechanics but is not frozen for an existing caller. */
 #define HYLE_SIMD_RUNTIME_INFO_V1_SIZE \
   ((uint32_t)(offsetof(hyle_simd_runtime_info, bitpack) + \
               sizeof(hyle_simd_module_info)))

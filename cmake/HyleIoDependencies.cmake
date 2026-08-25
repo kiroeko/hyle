@@ -13,21 +13,21 @@ set(HYLE_IO_TLS_ENABLED OFF)
 
 function(hyle_configure_io_dependencies)
   # TLS and HTTP/2 are coroutine transports, not capabilities of the standalone
-  # proactor/stable stub.  Do not fetch or advertise protocol dependencies on a
+  # proactor/pre-release FFI stub. Do not fetch or advertise protocol dependencies on a
   # target where sched cannot be built.  Explicit ON remains a hard contract;
-  # AUTO is the only mode allowed to degrade to the stable availability=0 ABI.
+  # AUTO is the only mode allowed to degrade to the availability=0 candidate.
   if(NOT HYLE_FCONTEXT_SUPPORTED)
     if(HYLE_IO_HTTP2)
       message(FATAL_ERROR
         "HYLE_IO_HTTP2=ON requires sched/fcontext, but HYLE has no fcontext "
         "assembly for ${CMAKE_SYSTEM_NAME}/${CMAKE_SYSTEM_PROCESSOR}. Select "
-        "HYLE_IO_HTTP2=OFF; the stable C ABI stub remains available and reports 0.")
+        "HYLE_IO_HTTP2=OFF; the pre-release FFI stub remains available and reports 0.")
     endif()
     if(HYLE_IO_TLS STREQUAL "ON")
       message(FATAL_ERROR
         "HYLE_IO_TLS=ON requires sched/fcontext, but HYLE has no fcontext "
         "assembly for ${CMAKE_SYSTEM_NAME}/${CMAKE_SYSTEM_PROCESSOR}. Select "
-        "HYLE_IO_TLS=AUTO/OFF; AUTO keeps the stable no-TLS surface without "
+        "HYLE_IO_TLS=AUTO/OFF; AUTO keeps the no-TLS candidate surface without "
         "probing OpenSSL.")
     endif()
     if(HYLE_IO_TLS STREQUAL "AUTO")

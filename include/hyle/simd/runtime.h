@@ -11,7 +11,8 @@ namespace hyle::simd {
 class RandomState;
 
 struct Runtime {
-  // Version of this C++ convenience table, not the stable C ABI from include/hyle/c/.
+  // Version of this C++ convenience table, independent of the pre-release FFI
+  // schema candidate under include/hyle/c/.
   static constexpr std::uint32_t kTableVersion = 7;
 
   struct Ops {

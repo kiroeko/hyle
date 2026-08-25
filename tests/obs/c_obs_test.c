@@ -1,4 +1,4 @@
-/* Pure C consumer of include/hyle/c/obs.h. */
+/* C-syntax compiler/schema/link fixture for include/hyle/c/obs.h. */
 #include "hyle/c/obs.h"
 
 #include <stdio.h>

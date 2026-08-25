@@ -1,4 +1,4 @@
-/* Pure C consumer of include/hyle/c/platform.h */
+/* C-syntax compiler/schema/link fixture for include/hyle/c/platform.h. */
 #if defined(_WIN32)
 #define _CRT_SECURE_NO_WARNINGS 1
 #define WIN32_LEAN_AND_MEAN

@@ -1,4 +1,5 @@
-# close-01: pure C whole-buffer SIMD consumer. Register/native C++ types never cross this edge.
+# C-compiler/schema/link fixture for the pre-release whole-buffer SIMD FFI
+# candidate. Register/native C++ types never cross this edge.
 option(HYLE_TEST_SIMD_AVX512_RUNNABLE
   "register AVX-512 SIMD tests for direct execution on this host" OFF)
 option(HYLE_TEST_SIMD_SVE

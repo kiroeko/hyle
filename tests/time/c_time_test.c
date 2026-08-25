@@ -1,4 +1,4 @@
-/* Pure C consumer of include/hyle/c/time.h. */
+/* C-syntax compiler/schema/link fixture for include/hyle/c/time.h. */
 #include "hyle/c/time.h"
 
 #include <stdio.h>

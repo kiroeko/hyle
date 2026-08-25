@@ -52,8 +52,9 @@ HYLE_FORCE_INLINE UnixTimestamp realtime_timestamp() noexcept {
 
 // Steady monotonic counter in ns from an unspecified zero. The native C++ path
 // is header-inline over std::chrono, avoiding an extra hyle_time shared-library
-// hop before the standard library reaches CLOCK_MONOTONIC/QPC. The stable C ABI
-// remains an exported wrapper. This is the only clock for deadlines/timeouts.
+// hop before the standard library reaches CLOCK_MONOTONIC/QPC. The current FFI
+// schema candidate retains an exported wrapper, but it is not frozen. This is
+// the only clock for deadlines/timeouts.
 HYLE_FORCE_INLINE std::uint64_t monotonic_ns() noexcept {
   const auto value = monotonic_now().time_since_epoch().count();
   return value > 0 ? static_cast<std::uint64_t>(value) : 0;

@@ -30,13 +30,12 @@
 //
 // Two layers (mirrors SharedPool <-> ObjectPool<T>):
 //   * GrowablePoolCore : NON-TEMPLATE runtime core. Hands out RAW uninitialized
-//     slots (acquire/release), no ctor/dtor. This is what the C ABI exports
-//     (hyle_growable_pool_*): C has no ctor/dtor, so the C user placement-inits
-//     the returned slot and cleans it up before release -- exactly the model of
-//     the pool-backed object pool (HYLE_OBJECT_POOL_CREATE).
+//     slots (acquire/release), no ctor/dtor. The current pre-release FFI schema
+//     candidate maps hyle_growable_pool_* to this layer; a foreign binding must
+//     initialize a returned slot and clean it up before release.
 //   * GrowablePool<T> : thin TYPED wrapper. create()/destroy() run the
 //   ctor/dtor
-//     around the core's raw slots. A C++-only convenience, not a C ABI gap.
+//     around the core's raw slots. This is the primary C++ product surface.
 //
 // Fixes a real clay bug: clay's move-assignment (memory_pool.h:61) swapped the
 // block list but NEVER transferred allocator_, so a move-assigned pool freed
@@ -53,12 +52,13 @@ namespace detail {
 
 // Non-template runtime core of GrowablePool: raw-slot churn (acquire/release) +
 // geometric block growth + intrusive free-list. No T, no ctor/dtor. The typed
-// GrowablePool<T> wraps this to run ctor/dtor; the C ABI uses it directly.
+// GrowablePool<T> wraps this to run ctor/dtor; the current FFI candidate uses
+// the raw core directly.
 class GrowablePoolCore {
 public:
   // Validate the runtime shape before entering the fail-fast C++ constructor.
-  // The typed C++ wrapper always supplies sizeof/alignof(T), but the C ABI
-  // takes caller-controlled values and must reject shapes whose stride
+  // The typed C++ wrapper always supplies sizeof/alignof(T), but the FFI
+  // candidate takes caller-controlled values and must reject shapes whose stride
   // calculation would wrap to zero (otherwise grow() could return a
   // one-past-block pointer).
   static constexpr bool valid_layout(std::size_t slot_size,
