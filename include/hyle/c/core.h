@@ -43,7 +43,8 @@ extern "C" {
  * diagnose a header/runtime mismatch after dlopen or across an FFI boundary. */
 HYLE_CORE_C_API uint32_t hyle_version(void);
 
-/* Human-readable "major.minor.patch" (static storage; never freed). */
+/* Human-readable "major.minor.patch". The returned string is borrowed from
+ * the linked hyle_core module; never free it and copy it before unload. */
 HYLE_CORE_C_API const char *hyle_version_string(void);
 
 /* Decompose the packed version (header-inline; no DLL hop). */
@@ -145,6 +146,9 @@ static inline void hyle_intrusive_hook_unlink(hyle_intrusive_list_hook *hook) {
   hook->next = NULL;
 }
 
+/* Initialize fresh storage, or a list that has already been safely cleared.
+ * Reinitializing a non-empty live list strands its hooks and corrupts later
+ * unlink operations. */
 static inline void hyle_intrusive_list_init(hyle_intrusive_list *list) {
   if (list != NULL) {
     list->sentinel.prev = &list->sentinel;

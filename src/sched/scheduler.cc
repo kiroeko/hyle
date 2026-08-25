@@ -229,7 +229,7 @@ struct Scheduler::Impl {
     // does not ping-pong one global cache line with all completing workers.
     // This field owns its cache line; otherwise producer writes would also
     // invalidate the worker-only cursors above it.
-    alignas(core::kDestructiveInterferenceSize)
+    alignas(core::kMaxDestructiveInterferenceSize)
         std::atomic<std::uint64_t> inline_outstanding{0};
     Worker(mem::Allocator a, std::size_t cap, std::uint64_t seed, unsigned i)
         : local(a, cap),

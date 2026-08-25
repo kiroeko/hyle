@@ -152,11 +152,11 @@ class SpscQueue {
     alignas(T) std::byte storage[sizeof(T)];
   };
 
-  struct alignas(core::kDestructiveInterferenceSize) ProducerState {
+  struct alignas(core::kMaxDestructiveInterferenceSize) ProducerState {
     std::atomic<size_type> write{0};
   };
 
-  struct alignas(core::kDestructiveInterferenceSize) ConsumerState {
+  struct alignas(core::kMaxDestructiveInterferenceSize) ConsumerState {
     std::atomic<size_type> read{0};
   };
 

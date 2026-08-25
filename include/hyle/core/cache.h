@@ -11,12 +11,18 @@
 
 namespace hyle::core {
 
-// Compile-time layout bounds. Use platform::cache_line_size() instead when an
-// algorithm needs the exact runtime value rather than a stable object ABI.
+// Compile-time target-family layout recommendations. Use
+// platform::cache_line_size() when an algorithm benefits from a best-effort
+// runtime observation; it can fall back to 64 and is not a safe replacement
+// for destructive-interference layout constants.
 inline constexpr std::size_t kConstructiveInterferenceSize =
     HYLE_STATIC_CONSTRUCTIVE_INTERFERENCE_SIZE;
 inline constexpr std::size_t kDestructiveInterferenceSize =
     HYLE_STATIC_DESTRUCTIVE_INTERFERENCE_SIZE;
+inline constexpr std::size_t kMinConstructiveInterferenceSize =
+    HYLE_MIN_CONSTRUCTIVE_INTERFERENCE_SIZE;
+inline constexpr std::size_t kMaxDestructiveInterferenceSize =
+    HYLE_MAX_DESTRUCTIVE_INTERFERENCE_SIZE;
 
 // Best-effort read prefetch with high temporal locality. It is a performance
 // hint only: correctness must never depend on the address being fetched.

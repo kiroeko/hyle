@@ -24,6 +24,8 @@ inline constexpr const char kVersionString[] = HYLE_VERSION_STRING;
 // Runtime version of the linked hyle_core. Compare with kVersion when loading
 // HYLE dynamically or crossing a plugin/FFI boundary.
 HYLE_CORE_API std::uint32_t version() noexcept;
+// Human-readable runtime identity. The returned storage is borrowed from that
+// hyle_core module; never free it and copy it before unloading.
 HYLE_CORE_API const char* version_string() noexcept;
 
 }  // namespace hyle

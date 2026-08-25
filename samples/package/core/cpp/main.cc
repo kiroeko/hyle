@@ -5,6 +5,26 @@
 
 #include <cstddef>
 
+static_assert(hyle::core::kMinConstructiveInterferenceSize == 64);
+static_assert(hyle::core::kMaxDestructiveInterferenceSize == 128);
+static_assert(hyle::core::kConstructiveInterferenceSize >=
+              hyle::core::kMinConstructiveInterferenceSize);
+static_assert(hyle::core::kDestructiveInterferenceSize <=
+              hyle::core::kMaxDestructiveInterferenceSize);
+static_assert(hyle::core::kConstructiveInterferenceSize <=
+              hyle::core::kDestructiveInterferenceSize);
+#if defined(__APPLE__) &&                                                \
+    (defined(__aarch64__) || defined(__arm64__))
+static_assert(hyle::core::kConstructiveInterferenceSize == 128);
+static_assert(hyle::core::kDestructiveInterferenceSize == 128);
+#elif defined(__x86_64__) || defined(_M_X64)
+static_assert(hyle::core::kConstructiveInterferenceSize == 64);
+static_assert(hyle::core::kDestructiveInterferenceSize == 64);
+#else
+static_assert(hyle::core::kConstructiveInterferenceSize == 64);
+static_assert(hyle::core::kDestructiveInterferenceSize == 128);
+#endif
+
 struct Node {
   int value;
   hyle::core::IntrusiveListHook hook{};

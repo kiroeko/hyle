@@ -20,6 +20,17 @@ static int g_fails = 0;
     }                                                                        \
   } while (0)
 
+typedef struct hyle_cache_layout_probe {
+  _Alignas(HYLE_STATIC_DESTRUCTIVE_INTERFERENCE_SIZE) unsigned char value;
+} hyle_cache_layout_probe;
+_Static_assert(_Alignof(hyle_cache_layout_probe) ==
+                   HYLE_STATIC_DESTRUCTIVE_INTERFERENCE_SIZE,
+               "C cache-layout macro must be usable with _Alignas");
+_Static_assert(sizeof(hyle_cache_layout_probe) %
+                       HYLE_STATIC_DESTRUCTIVE_INTERFERENCE_SIZE ==
+                   0,
+               "aligned C objects must retain spacing in arrays");
+
 int hyle_test_c_compiler_contract_sum(const int* HYLE_C_RESTRICT values,
                                       size_t count) {
   int sum = 0;
@@ -57,9 +68,22 @@ int main(void) {
   const volatile uint32_t destructive_size =
       HYLE_STATIC_DESTRUCTIVE_INTERFERENCE_SIZE;
   CHECK(v == HYLE_VERSION_PACKED);
+  CHECK(HYLE_MIN_CONSTRUCTIVE_INTERFERENCE_SIZE == 64);
+  CHECK(HYLE_MAX_DESTRUCTIVE_INTERFERENCE_SIZE == 128);
+  CHECK(constructive_size >= HYLE_MIN_CONSTRUCTIVE_INTERFERENCE_SIZE);
+  CHECK(destructive_size <= HYLE_MAX_DESTRUCTIVE_INTERFERENCE_SIZE);
+  CHECK(constructive_size <= destructive_size);
+#if defined(__APPLE__) &&                                                \
+    (defined(__aarch64__) || defined(__arm64__))
+  CHECK(constructive_size == 128);
+  CHECK(destructive_size == 128);
+#elif defined(__x86_64__) || defined(_M_X64)
+  CHECK(constructive_size == 64);
+  CHECK(destructive_size == 64);
+#else
   CHECK(constructive_size == 64);
   CHECK(destructive_size == 128);
-  CHECK(constructive_size <= destructive_size);
+#endif
   CHECK(hyle_version_major(v) == 0u);
   CHECK(hyle_version_minor(v) == 1u);
   CHECK(hyle_version_patch(v) == 0u);

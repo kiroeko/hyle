@@ -119,10 +119,12 @@ HYLE_PLATFORM_API bool supports(Isa isa) noexcept;
 // Human-readable tier name ("scalar", "avx2", ...). For logging/diagnostics only.
 HYLE_PLATFORM_API const char* isa_name(Isa isa) noexcept;
 
-// L1 data cache line size in bytes (typically 64 on x86/ARM, 128 on Apple
-// Silicon). The alignment
-// to use for false-sharing padding. Probed once (CPUID leaf 1 on x86, sysctl on
-// macOS, sysconf on Linux), cached; falls back to 64 when the query is unavailable.
+// Best-effort L1 data cache line observation in bytes (typically 64 on
+// x86/ARM, 128 on Apple Silicon). Probed once (CPUID leaf 1 on x86,
+// RelationCache on Windows non-x86, sysctl on macOS, sysconf on Linux), cached;
+// falls back to 64 when the query is unavailable. Do not use the fallback-able
+// result to define public ABI or safety-critical false-sharing padding; use
+// core's compile-time layout contract for that purpose.
 HYLE_PLATFORM_API unsigned cache_line_size() noexcept;
 
 // Cache capacity visible to a logical processor, in bytes. Zero means unknown.

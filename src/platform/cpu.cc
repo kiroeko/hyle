@@ -344,15 +344,54 @@ Isa compute_best(const CpuFeatures& f) noexcept {
 #endif
 }
 
-// L1 data cache line size in bytes. x86: CPUID leaf 1 EBX[15:8] (CLFLUSH line size
-// in 8-byte units). macOS ARM: sysctl hw.cachelinesize. Linux: sysconf. 64 fallback.
-// Compiled in this LTO-off baseline TU so the x86 CPUID path is SIGILL-safe.
+// L1 data cache line size in bytes. x86: CPUID leaf 1 EBX[15:8] (CLFLUSH line
+// size in 8-byte units). Windows non-x86: RelationCache. macOS: sysctl. Linux:
+// sysconf. 64 fallback. Compiled in this LTO-off baseline TU so the x86 CPUID
+// path is SIGILL-safe.
 unsigned detect_cache_line() noexcept {
 #if defined(HYLE_ARCH_X64)
   std::uint32_t abcd[4];
   cpuid(1, 0, abcd);
   const unsigned line = ((abcd[1] >> 8) & 0xffu) * 8u;
   return line ? line : 64u;
+#elif defined(HYLE_OS_WINDOWS)
+  DWORD bytes = 0;
+  if (::GetLogicalProcessorInformationEx(RelationCache, nullptr, &bytes) ||
+      ::GetLastError() != ERROR_INSUFFICIENT_BUFFER ||
+      bytes < sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX)) {
+    return 64u;
+  }
+  auto *storage = new (std::nothrow) std::byte[bytes];
+  if (storage == nullptr)
+    return 64u;
+  auto *buffer = reinterpret_cast<PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX>(
+      storage);
+  if (!::GetLogicalProcessorInformationEx(RelationCache, buffer, &bytes)) {
+    delete[] storage;
+    return 64u;
+  }
+
+  unsigned detected = 0;
+  DWORD offset = 0;
+  while (offset + sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX) <= bytes) {
+    const auto *info =
+        reinterpret_cast<const SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX *>(
+            storage + offset);
+    if (info->Size < sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX) ||
+        info->Size > bytes - offset) {
+      break;
+    }
+    if (info->Relationship == RelationCache && info->Cache.Level == 1 &&
+        (info->Cache.Type == CacheData ||
+         info->Cache.Type == CacheUnified)) {
+      const unsigned line = info->Cache.LineSize;
+      if (line >= 16u && line <= 256u && (line & (line - 1u)) == 0u)
+        detected = std::max(detected, line);
+    }
+    offset += info->Size;
+  }
+  delete[] storage;
+  return detected != 0 ? detected : 64u;
 #elif defined(HYLE_OS_MACOS)
   std::size_t v = 0;
   std::size_t sz = sizeof(v);

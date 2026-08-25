@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <atomic>
+#include <cstddef>
 #include <cstdint>
 #include <thread>
 #include <type_traits>
@@ -31,6 +32,38 @@ static_assert(std::is_trivially_copyable_v<TriviallyCopyableNonAssignable>);
 static_assert(alignof(TriviallyCopyableNonAssignable) == 128);
 static_assert(!std::is_default_constructible_v<TriviallyCopyableNonAssignable>);
 static_assert(!std::is_copy_assignable_v<TriviallyCopyableNonAssignable>);
+static_assert(alignof(BoundedQueue<std::uint64_t>) ==
+              hyle::core::kMaxDestructiveInterferenceSize);
+static_assert(sizeof(BoundedQueue<std::uint64_t>) %
+                  hyle::core::kMaxDestructiveInterferenceSize ==
+              0);
+
+struct RecordingAllocatorState {
+  void *allocated_pointer = nullptr;
+  std::size_t allocated_size = 0;
+  std::size_t allocated_alignment = 0;
+  void *deallocated_pointer = nullptr;
+  std::size_t deallocated_size = 0;
+  std::size_t deallocated_alignment = 0;
+};
+
+struct RecordingAllocator {
+  RecordingAllocatorState *state;
+
+  void *allocate(std::size_t size, std::size_t alignment) const noexcept {
+    state->allocated_size = size;
+    state->allocated_alignment = alignment;
+    state->allocated_pointer = system_allocator().allocate(size, alignment);
+    return state->allocated_pointer;
+  }
+  void deallocate(void *pointer, std::size_t size,
+                  std::size_t alignment) const noexcept {
+    state->deallocated_pointer = pointer;
+    state->deallocated_size = size;
+    state->deallocated_alignment = alignment;
+    system_allocator().deallocate(pointer, size, alignment);
+  }
+};
 
 }  // namespace
 
@@ -79,6 +112,23 @@ TEST(BoundedQueue, PointerPayload) {
   void* p = nullptr;
   ASSERT_TRUE(q.try_pop(p));
   EXPECT_EQ(p, &a);
+}
+
+TEST(BoundedQueue, DenseCellsUseTargetFamilySpacing) {
+  constexpr std::size_t kCapacity = 8;
+  RecordingAllocatorState state;
+  {
+    BoundedQueue<std::uint64_t, RecordingAllocator> queue(
+        RecordingAllocator{&state}, kCapacity);
+    ASSERT_TRUE(queue.valid());
+    EXPECT_EQ(state.allocated_alignment,
+              hyle::core::kDestructiveInterferenceSize);
+    EXPECT_EQ(state.allocated_size,
+              kCapacity * hyle::core::kDestructiveInterferenceSize);
+  }
+  EXPECT_EQ(state.deallocated_pointer, state.allocated_pointer);
+  EXPECT_EQ(state.deallocated_alignment, state.allocated_alignment);
+  EXPECT_EQ(state.deallocated_size, state.allocated_size);
 }
 
 TEST(BoundedQueue, TriviallyCopyablePayloadNeedNotBeAssignable) {

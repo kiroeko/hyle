@@ -60,6 +60,8 @@ TEST(Cpu, CacheLineSizeSane) {
 
 TEST(Cpu, RuntimeCacheLineFitsCertifiedStaticLayoutBounds) {
   const unsigned runtime = cache_line_size();
+  EXPECT_GE(runtime, hyle::core::kMinConstructiveInterferenceSize);
+  EXPECT_LE(runtime, hyle::core::kMaxDestructiveInterferenceSize);
   EXPECT_GE(runtime, hyle::core::kConstructiveInterferenceSize);
   EXPECT_LE(runtime, hyle::core::kDestructiveInterferenceSize);
 }

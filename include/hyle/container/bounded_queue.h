@@ -124,17 +124,13 @@ class BoundedQueue {
   std::size_t capacity() const noexcept { return valid() ? mask_ + 1 : 0; }
 
  private:
-  // Each cell on its OWN destructive-interference span. The canonical
-  // Vyukov/rigtorp layout pads slots to a cache line (rigtorp uses 64 bytes on
-  // current x86), so
+  // Each cell uses the target-family destructive-interference span. The
+  // canonical Vyukov/rigtorp layout pads slots to a cache line, so
   // adjacent cells, produced/consumed by different threads concurrently, don't false-
   // share. HYLE's earlier port OMITTED this: an 8-byte T made Cell 16 bytes -> 4 cells
   // per line -> producers/consumers on neighbouring slots ping-pong the line (measured
-  // ~1.33x slower than rigtorp at 4P/4C). alignas(cache line) restores parity. Cost:
-  // HYLE uses core's stable 128-byte upper bound to also cover 128-byte target
-  // families. This can cost twice rigtorp's x86 slot footprint and therefore
-  // requires direct-consumer throughput/footprint regression evidence; it is
-  // the explicit space-for-portable-false-sharing-isolation trade.
+  // ~1.33x slower than rigtorp at 4P/4C). Target spacing restores parity without
+  // forcing every x86 slot to pay the 128-byte cross-family maximum.
   static constexpr std::size_t kCellAlignment =
       alignof(T) > core::kDestructiveInterferenceSize
           ? alignof(T)
@@ -166,8 +162,10 @@ class BoundedQueue {
   // Keep the two contended counters on separate cache lines (canonical Vyukov
   // layout) so producers hammering enqueue_pos_ don't false-share with
   // consumers hammering dequeue_pos_.
-  alignas(core::kDestructiveInterferenceSize) std::atomic<std::uint64_t> enqueue_pos_;
-  alignas(core::kDestructiveInterferenceSize) std::atomic<std::uint64_t> dequeue_pos_;
+  alignas(core::kMaxDestructiveInterferenceSize)
+      std::atomic<std::uint64_t> enqueue_pos_;
+  alignas(core::kMaxDestructiveInterferenceSize)
+      std::atomic<std::uint64_t> dequeue_pos_;
 };
 
 }  // namespace hyle::container

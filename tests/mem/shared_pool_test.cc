@@ -30,6 +30,53 @@ namespace {
 bool aligned(const void* p, std::size_t a) {
   return (reinterpret_cast<std::uintptr_t>(p) & (a - 1)) == 0;
 }
+
+struct RecordingBackingState {
+  std::array<void *, 3> pointers{};
+  std::array<std::size_t, 3> sizes{};
+  std::array<std::size_t, 3> alignments{};
+  std::array<void *, 3> freed_pointers{};
+  std::array<std::size_t, 3> freed_sizes{};
+  std::array<std::size_t, 3> freed_alignments{};
+  std::size_t allocation_calls = 0;
+  std::size_t deallocation_calls = 0;
+  std::size_t outstanding = 0;
+};
+
+void *recording_allocate(void *opaque, std::size_t size,
+                         std::size_t alignment) noexcept {
+  auto &state = *static_cast<RecordingBackingState *>(opaque);
+  void *pointer = system_allocator().allocate(size, alignment);
+  if (state.allocation_calls < state.sizes.size()) {
+    state.pointers[state.allocation_calls] = pointer;
+    state.sizes[state.allocation_calls] = size;
+    state.alignments[state.allocation_calls] = alignment;
+  }
+  ++state.allocation_calls;
+  if (pointer != nullptr)
+    ++state.outstanding;
+  return pointer;
+}
+
+void recording_deallocate(void *opaque, void *pointer, std::size_t size,
+                           std::size_t alignment) noexcept {
+  if (pointer == nullptr)
+    return;
+  auto &state = *static_cast<RecordingBackingState *>(opaque);
+  if (state.deallocation_calls < state.freed_sizes.size()) {
+    state.freed_pointers[state.deallocation_calls] = pointer;
+    state.freed_sizes[state.deallocation_calls] = size;
+    state.freed_alignments[state.deallocation_calls] = alignment;
+  }
+  ++state.deallocation_calls;
+  --state.outstanding;
+  system_allocator().deallocate(pointer, size, alignment);
+}
+
+void *recording_reallocate(void *, void *, std::size_t, std::size_t,
+                           std::size_t) noexcept {
+  return nullptr;
+}
 }  // namespace
 
 TEST(SharedPool, AllocateFreeRoundTrip) {
@@ -62,6 +109,43 @@ TEST(SharedPool, ExhaustionReturnsNull) {
 }
 
 #if defined(HYLE_TESTING)
+TEST(SharedPool, DenseShardHeadsUseTargetFamilySpacing) {
+  RecordingBackingState state;
+  Allocator backing(&recording_allocate, &recording_deallocate,
+                    &recording_reallocate, &state);
+  {
+    SharedPool pool(backing, 64, 64);
+    ASSERT_TRUE(pool.valid());
+    ASSERT_EQ(state.allocation_calls, 3u);
+    EXPECT_EQ(state.alignments[2],
+              hyle::core::kDestructiveInterferenceSize);
+    EXPECT_EQ(state.sizes[2],
+              static_cast<std::size_t>(pool.testing_num_shards()) *
+                  hyle::core::kDestructiveInterferenceSize);
+  }
+  ASSERT_EQ(state.deallocation_calls, 3u);
+  EXPECT_EQ(state.outstanding, 0u);
+  std::array<bool, 3> matched{};
+  for (std::size_t allocation = 0; allocation < state.sizes.size();
+       ++allocation) {
+    bool found = false;
+    for (std::size_t deallocation = 0;
+         deallocation < state.freed_sizes.size(); ++deallocation) {
+      if (!matched[deallocation] &&
+          state.pointers[allocation] == state.freed_pointers[deallocation] &&
+          state.sizes[allocation] == state.freed_sizes[deallocation] &&
+          state.alignments[allocation] ==
+              state.freed_alignments[deallocation]) {
+        matched[deallocation] = true;
+        found = true;
+        break;
+      }
+    }
+    EXPECT_TRUE(found) << "allocation pair " << allocation
+                       << " was not returned to the backing allocator";
+  }
+}
+
 TEST(SharedPool, DefaultShardsFollowAvailableParallelism) {
 #if defined(_WIN32)
   if (::GetActiveProcessorGroupCount() != 1) GTEST_SKIP();

@@ -656,8 +656,8 @@ private:
     return id;
   }
 
-  // Bounds heads_: at the core 128-byte destructive-spacing upper bound, the
-  // maximum 128 heads occupy 16 KiB.
+  // Bounds heads_: target-family spacing keeps the maximum x86 array at 8 KiB
+  // and the native Apple/generic conservative array at 16 KiB.
   static constexpr std::uint32_t kShardCap = 128;
   static std::uint32_t default_shards() noexcept {
     auto available = hyle::platform::available_cpu_count();
@@ -676,6 +676,8 @@ private:
     std::atomic_flag saturated_lock = ATOMIC_FLAG_INIT;
     std::atomic<std::uint64_t> saturated_changes{0};
   };
+  static_assert(alignof(ShardHead) == core::kDestructiveInterferenceSize);
+  static_assert(sizeof(ShardHead) == core::kDestructiveInterferenceSize);
 
   std::byte *slab_ = nullptr;
   std::atomic<std::uint32_t> *next_ = nullptr; // parallel free-list links

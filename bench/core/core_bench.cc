@@ -124,10 +124,10 @@ void bench_unlink(bool rival_first) {
       .minEpochIterations(Count < 256 ? 200000 : 2000);
   auto run_hyle = [&] {
     NodeList list;
-    // Production queues receive a runtime-sized batch. Keeping Count in this
-    // loop lets MSVC fully unroll the N=32 refill and turns the result into a
-    // code-placement test of two kilobyte-sized lambdas instead of a list
-    // operation comparison.
+    // Production queues receive a runtime-sized batch. Using the runtime-sized
+    // order view here prevents MSVC from fully unrolling the N=32 refill and
+    // turning the result into a code-placement test of two kilobyte-sized
+    // lambdas instead of a list-operation comparison.
     for (std::size_t index = 0; index < order.size(); ++index)
       list.push_back(&nodes[index]);
     for (std::size_t index : order)

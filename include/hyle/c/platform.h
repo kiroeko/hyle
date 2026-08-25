@@ -710,8 +710,9 @@ HYLE_PLATFORM_C_API hyle_isa hyle_cpu_best_isa(void);
 HYLE_PLATFORM_C_API int hyle_cpu_supports_isa(hyle_isa isa);
 /* "scalar", "avx2", ... — stable English name for logging. */
 HYLE_PLATFORM_C_API const char *hyle_cpu_isa_name(hyle_isa isa);
-/* L1 data cache line size in bytes (64 on mainstream CPUs; for
- * alignment/padding). */
+/* Best-effort L1 data cache line observation in bytes (typically 64, 128 on
+ * Apple Silicon). Falls back to 64 when unavailable; do not use it to define
+ * public ABI or safety-critical false-sharing padding. */
 HYLE_PLATFORM_C_API unsigned hyle_cpu_cache_line_size(void);
 
 typedef struct hyle_cache_info {

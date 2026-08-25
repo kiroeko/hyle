@@ -225,8 +225,10 @@ class WsFifoQueue {
   HYLE_NO_UNIQUE_ADDRESS Alloc alloc_{};
   Slot* buf_ = nullptr;
   std::uint32_t mask_;
-  alignas(core::kDestructiveInterferenceSize) std::atomic<std::uint64_t> head_;  // packed steal|real
-  alignas(core::kDestructiveInterferenceSize) std::atomic<std::uint32_t> tail_;
+  alignas(core::kMaxDestructiveInterferenceSize)
+      std::atomic<std::uint64_t> head_; // packed steal|real
+  alignas(core::kMaxDestructiveInterferenceSize)
+      std::atomic<std::uint32_t> tail_;
 };
 
 }  // namespace hyle::container

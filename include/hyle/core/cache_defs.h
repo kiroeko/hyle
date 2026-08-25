@@ -1,22 +1,30 @@
 #ifndef HYLE_CORE_CACHE_DEFS_H_
 #define HYLE_CORE_CACHE_DEFS_H_
 
-/* Stable compile-time layout bounds, deliberately shared by C and C++.
+/* Stable target-family layout recommendations, deliberately shared by C and
+ * C++. They are not runtime observations: algorithms may query the
+ * best-effort platform::cache_line_size()/hyle_cpu_cache_line_size(), but
+ * safety-critical false-sharing spacing uses these compile-time constants.
  *
- * Destructive interference needs an upper bound: underestimating it permits
- * false sharing.  128 bytes matches oneTBB's max_nfs_size and covers the
- * currently certified 64/128-byte cache-line families (including Rosetta and
- * native Apple Silicon) without making public layouts depend on runtime
- * discovery. A target whose runtime coherency line lies outside [64, 128]
- * requires a new layout certification before release.
- *
- * Constructive interference needs a lower bound: data kept inside this span
- * is within one L1 line on every currently certified target. 64 bytes remains
- * honest for both Intel Macs and Rosetta (which cannot be distinguished at
- * compile time), as well as native 128-byte Apple Silicon. Runtime algorithms
- * that need the exact line size must query platform instead of using either
- * layout constant. */
-#define HYLE_STATIC_DESTRUCTIVE_INTERFERENCE_SIZE 128
-#define HYLE_STATIC_CONSTRUCTIVE_INTERFERENCE_SIZE 64
+ * Dense data-plane arrays (queue cells, pool/map shards) use the target value
+ * so x86 does not double its footprint merely to share one sizeof across
+ * unrelated platform ABIs. Sparse control-plane atomics that are continuously
+ * written by different threads may opt into the certified 128-byte maximum.
+ * Unknown ARM/RISC-V targets fail closed with the 64/128 conservative pair
+ * until a concrete distribution profile is certified. */
+#define HYLE_MIN_CONSTRUCTIVE_INTERFERENCE_SIZE 64
+#define HYLE_MAX_DESTRUCTIVE_INTERFERENCE_SIZE 128
+
+#if defined(__APPLE__) &&                                             \
+    (defined(__aarch64__) || defined(__arm64__))
+#  define HYLE_STATIC_CONSTRUCTIVE_INTERFERENCE_SIZE 128
+#  define HYLE_STATIC_DESTRUCTIVE_INTERFERENCE_SIZE 128
+#elif defined(__x86_64__) || defined(_M_X64)
+#  define HYLE_STATIC_CONSTRUCTIVE_INTERFERENCE_SIZE 64
+#  define HYLE_STATIC_DESTRUCTIVE_INTERFERENCE_SIZE 64
+#else
+#  define HYLE_STATIC_CONSTRUCTIVE_INTERFERENCE_SIZE 64
+#  define HYLE_STATIC_DESTRUCTIVE_INTERFERENCE_SIZE 128
+#endif
 
 #endif /* HYLE_CORE_CACHE_DEFS_H_ */

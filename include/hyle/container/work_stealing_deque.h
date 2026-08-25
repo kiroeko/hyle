@@ -186,8 +186,10 @@ class WorkStealingDeque {
   std::uint64_t mask_;
   // top (thief end) and bottom (owner end) are hammered by different threads;
   // keep them on separate cache lines to avoid false sharing.
-  alignas(core::kDestructiveInterferenceSize) std::atomic<std::uint64_t> top_;
-  alignas(core::kDestructiveInterferenceSize) std::atomic<std::uint64_t> bottom_;
+  alignas(core::kMaxDestructiveInterferenceSize)
+      std::atomic<std::uint64_t> top_;
+  alignas(core::kMaxDestructiveInterferenceSize)
+      std::atomic<std::uint64_t> bottom_;
 };
 
 }  // namespace hyle::container
