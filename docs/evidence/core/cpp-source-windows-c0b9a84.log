@@ -1,0 +1,19 @@
+Start testing: Aug 25 20:06 �й���׼ʱ��
+----------------------------------------------------------
+1/1 Testing: core_source_cpp
+1/1 Test: core_source_cpp
+Command: "C:/public/project-hyle/hyle/.scratch/core-source-c0b9a84/build/core_source_cpp.exe"
+Directory: C:/public/project-hyle/hyle/.scratch/core-source-c0b9a84/build
+"core_source_cpp" start time: Aug 25 20:06 �й���׼ʱ��
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.03 sec
+----------------------------------------------------------
+Test Passed.
+"core_source_cpp" end time: Aug 25 20:06 �й���׼ʱ��
+"core_source_cpp" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Aug 25 20:06 �й���׼ʱ��
+

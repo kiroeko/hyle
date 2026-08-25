@@ -1,0 +1,133 @@
+Start testing: Aug 25 20:03 CST
+----------------------------------------------------------
+2/5 Testing: hyle_core_test
+2/5 Test: hyle_core_test
+Command: "/root/hyle-core-build-3a30069-gcc14/bin/hyle_core_test"
+Directory: /root/hyle-core-build-3a30069-gcc14/tests/core
+"hyle_core_test" start time: Aug 25 20:03 CST
+Output:
+----------------------------------------------------------
+Running main() from /root/hyle-core-build-3a30069-gcc14/_deps/googletest-src/googletest/src/gtest_main.cc
+[==========] Running 18 tests from 5 test suites.
+[----------] Global test environment set-up.
+[----------] 1 test from CoreVersion
+[ RUN      ] CoreVersion.CompileTimeAndRuntimeViewsAgree
+[       OK ] CoreVersion.CompileTimeAndRuntimeViewsAgree (0 ms)
+[----------] 1 test from CoreVersion (0 ms total)
+
+[----------] 1 test from CoreCache
+[ RUN      ] CoreCache.StaticLayoutContractIsUsable
+[       OK ] CoreCache.StaticLayoutContractIsUsable (0 ms)
+[----------] 1 test from CoreCache (0 ms total)
+
+[----------] 2 tests from CoreMacros
+[ RUN      ] CoreMacros.BranchHintsPreserveTheirExpression
+[       OK ] CoreMacros.BranchHintsPreserveTheirExpression (0 ms)
+[ RUN      ] CoreMacros.OptimizerContractsCompileAndPreserveValidInputs
+[       OK ] CoreMacros.OptimizerContractsCompileAndPreserveValidInputs (0 ms)
+[----------] 2 tests from CoreMacros (0 ms total)
+
+[----------] 1 test from CoreMacrosDeath
+[ RUN      ] CoreMacrosDeath.FatalAssertAbortsOnFalse
+[       OK ] CoreMacrosDeath.FatalAssertAbortsOnFalse (94 ms)
+[----------] 1 test from CoreMacrosDeath (94 ms total)
+
+[----------] 13 tests from IntrusiveList
+[ RUN      ] IntrusiveList.ConventionalRangeInsertEraseAndSpliceAreUsable
+[       OK ] IntrusiveList.ConventionalRangeInsertEraseAndSpliceAreUsable (0 ms)
+[ RUN      ] IntrusiveList.SingleNodeSpliceSupportsSameListReordering
+[       OK ] IntrusiveList.SingleNodeSpliceSupportsSameListReordering (0 ms)
+[ RUN      ] IntrusiveList.PushPopAndRemovePreserveOrder
+[       OK ] IntrusiveList.PushPopAndRemovePreserveOrder (0 ms)
+[ RUN      ] IntrusiveList.SingleAndWholeListSpliceWithoutAllocation
+[       OK ] IntrusiveList.SingleAndWholeListSpliceWithoutAllocation (0 ms)
+[ RUN      ] IntrusiveList.MoveConstructionAndAssignmentTransferMembership
+[       OK ] IntrusiveList.MoveConstructionAndAssignmentTransferMembership (0 ms)
+[ RUN      ] IntrusiveList.PrefixAndConsumeSupportBatchHandoff
+[       OK ] IntrusiveList.PrefixAndConsumeSupportBatchHandoff (0 ms)
+[ RUN      ] IntrusiveList.ForEachVisitsMutableAndConstNodes
+[       OK ] IntrusiveList.ForEachVisitsMutableAndConstNodes (0 ms)
+[ RUN      ] IntrusiveList.DestroyingNodeAutomaticallyUnlinksIt
+[       OK ] IntrusiveList.DestroyingNodeAutomaticallyUnlinksIt (0 ms)
+[ RUN      ] IntrusiveList.DestroyingOrClearingListResetsEveryHook
+[       OK ] IntrusiveList.DestroyingOrClearingListResetsEveryHook (0 ms)
+[ RUN      ] IntrusiveList.CopyingOrMovingHookDoesNotCopyMembership
+[       OK ] IntrusiveList.CopyingOrMovingHookDoesNotCopyMembership (0 ms)
+[ RUN      ] IntrusiveList.PrefixCallbacksObserveUnchangedSourceMembership
+[       OK ] IntrusiveList.PrefixCallbacksObserveUnchangedSourceMembership (0 ms)
+[ RUN      ] IntrusiveList.ForEachPropagatesExceptionsWithoutChangingList
+[       OK ] IntrusiveList.ForEachPropagatesExceptionsWithoutChangingList (0 ms)
+[ RUN      ] IntrusiveList.TryInsertionRejectsInvalidMembership
+[       OK ] IntrusiveList.TryInsertionRejectsInvalidMembership (0 ms)
+[----------] 13 tests from IntrusiveList (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 18 tests from 5 test suites ran. (94 ms total)
+[  PASSED  ] 18 tests.
+<end of output>
+Test time =   0.10 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_core_test" end time: Aug 25 20:03 CST
+"hyle_core_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+3/5 Testing: hyle_core_c_test
+3/5 Test: hyle_core_c_test
+Command: "/root/hyle-core-build-3a30069-gcc14/bin/hyle_core_c_test"
+Directory: /root/hyle-core-build-3a30069-gcc14/tests/core
+"hyle_core_c_test" start time: Aug 25 20:03 CST
+Output:
+----------------------------------------------------------
+c_core_test: Native FFI ABI checks passed
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_core_c_test" end time: Aug 25 20:03 CST
+"hyle_core_c_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+4/5 Testing: hyle_core_c_surface_test
+4/5 Test: hyle_core_c_surface_test
+Command: "/usr/bin/python3" "/root/hyle-core-3a30069/scripts/c-surface-check.py" "--module" "core" "--library" "/root/hyle-core-build-3a30069-gcc14/bin/libhyle_core.so.0.1.0" "--symbol-tool" "/usr/bin/nm"
+Directory: /root/hyle-core-build-3a30069-gcc14/tests/core
+"hyle_core_c_surface_test" start time: Aug 25 20:03 CST
+Output:
+----------------------------------------------------------
+core C surface declarations: 3/3
+core C-syntax fixture references: 3/3
+core C binary exports: 3/3
+<end of output>
+Test time =   0.08 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_core_c_surface_test" end time: Aug 25 20:03 CST
+"hyle_core_c_surface_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+5/5 Testing: hyle_core_header_self_contained_test
+5/5 Test: hyle_core_header_self_contained_test
+Command: "/usr/bin/python3" "/root/hyle-core-3a30069/scripts/header-self-contained.py" "--module" "core" "--include-dir" "/root/hyle-core-3a30069/include" "--cc" "/usr/bin/gcc-14" "--cxx" "/usr/bin/g++-14" "--c-compiler-id" "GNU" "--cxx-compiler-id" "GNU" "--c-frontend" "GNU" "--cxx-frontend" "GNU"
+Directory: /root/hyle-core-build-3a30069-gcc14/tests/core
+"hyle_core_header_self_contained_test" start time: Aug 25 20:03 CST
+Output:
+----------------------------------------------------------
+core headers self-contained: 6 C++ + 1 C
+<end of output>
+Test time =   0.24 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_core_header_self_contained_test" end time: Aug 25 20:03 CST
+"hyle_core_header_self_contained_test" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Aug 25 20:03 CST
+
+c-abi =   0.08 sec*proc
+
+core =   0.42 sec*proc
+
+headers =   0.24 sec*proc
+
+

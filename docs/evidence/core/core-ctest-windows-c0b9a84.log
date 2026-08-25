@@ -1,0 +1,19 @@
+Test project C:/public/project-hyle/hyle/.scratch/core-ffi-release-current
+    Start 2: hyle_core_test
+1/4 Test #2: hyle_core_test .........................   Passed    0.02 sec
+    Start 3: hyle_core_c_test
+2/4 Test #3: hyle_core_c_test .......................   Passed    0.01 sec
+    Start 4: hyle_core_c_surface_test
+3/4 Test #4: hyle_core_c_surface_test ...............   Passed    0.07 sec
+    Start 5: hyle_core_header_self_contained_test
+4/4 Test #5: hyle_core_header_self_contained_test ...   Passed    1.81 sec
+
+100% tests passed out of 4
+
+Label Time Summary:
+c-abi      =   0.08 sec*proc (2 tests)
+core       =   1.91 sec*proc (4 tests)
+headers    =   1.81 sec*proc (1 test)
+
+Total Test time (real) =   1.91 sec
+

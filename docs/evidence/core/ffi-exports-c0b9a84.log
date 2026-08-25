@@ -1,0 +1,19 @@
+source commit: c0b9a84d81ad6df1fb81fcec6235425a8f3448ab
+source tree:   795fc79e925df13c6df9750129afea7fc2029c3d
+
+[Windows 11 x64 / MSVC 19.50.35728]
+command: dumpbin /nologo /exports hyle_core_ffi_incompatible_fixture.dll | Select-String hyle_
+1    0 00001000 hyle_ffi_abi_version
+
+command: dumpbin /nologo /exports <installed-prefix>/bin/hyle_core.dll | Select-String hyle_
+3    2 00001020 hyle_ffi_abi_version
+4    3 00001030 hyle_version
+5    4 00001040 hyle_version_string
+
+[Ubuntu 24.04 WSL x64 / GCC 14.2.0]
+command: nm -D --defined-only bin/libhyle_core_ffi_incompatible_fixture.so
+0000000000001100 T hyle_ffi_abi_version
+
+[macOS arm64 / AppleClang 21.0.0]
+command: nm -gU bin/libhyle_core_ffi_incompatible_fixture.dylib
+0000000000000ad8 T _hyle_ffi_abi_version

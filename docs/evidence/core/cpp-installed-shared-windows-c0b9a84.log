@@ -1,0 +1,19 @@
+Start testing: Aug 25 20:06 �й���׼ʱ��
+----------------------------------------------------------
+1/1 Testing: hyle_package_core_cpp
+1/1 Test: hyle_package_core_cpp
+Command: "C:/public/project-hyle/hyle/.scratch/core-ffi-package-20260825-v2/shared-cpp-v2/hyle_package_core_cpp.exe"
+Directory: C:/public/project-hyle/hyle/.scratch/core-ffi-package-20260825-v2/shared-cpp-v2
+"hyle_package_core_cpp" start time: Aug 25 20:06 �й���׼ʱ��
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.04 sec
+----------------------------------------------------------
+Test Passed.
+"hyle_package_core_cpp" end time: Aug 25 20:06 �й���׼ʱ��
+"hyle_package_core_cpp" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Aug 25 20:06 �й���׼ʱ��
+
