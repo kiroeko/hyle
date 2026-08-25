@@ -38,13 +38,15 @@ extern "C" {
 #define HYLE_CORE_C_CALL
 #endif
 
-/* Native FFI protocol version of the linked HYLE runtime. Bindings compare
- * this with HYLE_FFI_ABI_VERSION before resolving any other required symbol.
- * The high 16 bits are major and the low 16 bits are minor. */
+/* Native FFI protocol version of this hyle_core artifact. Bindings compare
+ * this with HYLE_FFI_ABI_VERSION before resolving any other core symbol. The
+ * high 16 bits are major and the low 16 bits are minor. This bootstrap name,
+ * C calling convention, and uint32_t(void) signature are permanent across ABI
+ * majors so that an old binding can always query and reject a new artifact. */
 HYLE_CORE_C_API uint32_t HYLE_CORE_C_CALL hyle_ffi_abi_version(void);
 
-/* Product version of the linked hyle_core. Compare with HYLE_VERSION_PACKED
- * to diagnose a binding/native-package mismatch. */
+/* Product version of this hyle_core artifact. Compare with HYLE_VERSION_PACKED
+ * only to diagnose a binding/native-package mismatch; it is not an ABI gate. */
 HYLE_CORE_C_API uint32_t HYLE_CORE_C_CALL hyle_version(void);
 
 /* Human-readable product version (major.minor.patch). The returned UTF-8/ASCII

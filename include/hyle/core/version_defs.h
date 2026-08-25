@@ -20,9 +20,12 @@
   HYLE_VERSION_STRINGIZE(HYLE_VERSION_MAJOR) \
   "." HYLE_VERSION_STRINGIZE(HYLE_VERSION_MINOR) "." HYLE_VERSION_STRINGIZE(HYLE_VERSION_PATCH)
 
-// Stable contract between hyle native libraries and separately distributed
-// Java/.NET/Rust/Python bindings. A major change may remove or alter symbols;
-// a minor change is additive. Bindings accept the same major and a runtime
+// Stable contract between HYLE native libraries and separately distributed
+// Java/.NET/Rust/Python bindings. A major change may remove or alter ordinary
+// ABI symbols; a minor change is additive. The bootstrap symbol used to read
+// this value, its C calling convention, and its uint32_t(void) signature are
+// permanent across ABI majors so that an old binding can always reject a new
+// incompatible runtime safely. Bindings accept the same major and a runtime
 // minor greater than or equal to the minor they were generated against.
 #define HYLE_FFI_ABI_VERSION_MAJOR 1
 #define HYLE_FFI_ABI_VERSION_MINOR 0
