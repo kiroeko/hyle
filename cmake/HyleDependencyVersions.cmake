@@ -1,5 +1,12 @@
 include_guard(GLOBAL)
 
+# This ledger is also executed directly via `cmake -P` by the complete-source
+# package target. Script mode does not inherit the top-level project's policy
+# settings, so make the one non-legacy expression used below self-contained.
+if(POLICY CMP0057)
+  cmake_policy(SET CMP0057 NEW)
+endif()
+
 # HyleDependencyLock.json is the only hand-maintained dependency ledger.  This
 # module validates it, projects its records to the legacy HYLE_DEP_* variables,
 # and proves that each in-tree snapshot still matches the locked content.

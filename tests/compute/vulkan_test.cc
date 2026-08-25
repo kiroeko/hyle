@@ -70,6 +70,7 @@ bool find_vulkan(Device& out) {
 // The push-constant block -- MUST match saxpy.comp's Params (std430: uint@0, 3 float).
 struct SaxpyParams { std::uint32_t n; float alpha; float beta; float bias; };
 
+#if defined(HYLE_TESTING)
 bool environment_is_set(const char* name) {
 #if defined(_WIN32)
   char* value = nullptr;
@@ -82,6 +83,7 @@ bool environment_is_set(const char* name) {
   return std::getenv(name) != nullptr;
 #endif
 }
+#endif
 
 }  // namespace
 

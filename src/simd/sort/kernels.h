@@ -44,9 +44,9 @@ HYLE_SORT_KEY_TYPES(HYLE_SORT_DECL_SCALAR)
 #undef HYLE_SORT_DECL_SCALAR
 
 #if defined(HYLE_ARCH_X64)
-// AVX2 (256-bit) + AVX-512 (512-bit) HYLE vqsort port cores. Entered by sort_dispatch when
-// cpu_features().avx2 / the avx512 group. The 512 core exists on MSVC too (plain integer/compare
-// SIMD, no _MSC_VER exclusion).
+// AVX2 (256-bit) + AVX-512 (512-bit) HYLE vqsort port symbols. Product CMake omits the AVX-512
+// instantiation for the classic MSVC frontend and sort_dispatch binds that product tier to AVX2;
+// clang-cl and GNU-like frontends compile and dispatch the 512-bit core normally.
 #define HYLE_SORT_DECL_AVX2(T, tag) HYLE_SORT_DECL_TRIO(T, tag, avx2)
 HYLE_SORT_KEY_TYPES(HYLE_SORT_DECL_AVX2)
 #undef HYLE_SORT_DECL_AVX2

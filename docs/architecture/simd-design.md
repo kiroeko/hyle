@@ -190,7 +190,7 @@ total-order sorted check。不增加逐元素 callback。
 
 **执行边界**：SDE 提供正确性与 dispatch 验证，不用于性能结论；AVX512 性能仍只接受真机 benchmark。
 
-**派发现状**：`hyle_add_dispatched_kernel` 生成的 AVX-512 薄 TU 已接入统一 Runtime；具备完整 ZMM OS-state 与 ISA 特性的主机默认选择 AVX512 kernel，否则回落 AVX2/SSE4/scalar。exact AVX512 构建则在编译期直连，不查询 Runtime。
+**派发现状**：`hyle_add_dispatched_kernel` 生成的 AVX-512 薄 TU 已接入统一 Runtime；具备完整 ZMM OS-state 与 ISA 特性的主机默认选择 AVX512 kernel，否则回落 AVX2/SSE4/scalar。exact AVX512 构建则在编译期直连，不查询 Runtime。例外是 classic MSVC (`cl.exe`) 的 sort：Highway 官方将 AVX3 标为 `HWY_BROKEN_MSVC`，HYLE 真机 correctness 也复现 64-bit/U128/KV 数据损坏，因此产品整体 tier 仍为 AVX512，但 `runtime().sort.isa` 如实报告 AVX2 并绑定 AVX2 vqsort TU；clang-cl 不受此降级影响。
 
 ### AVX-512 dtype/math 上架
 

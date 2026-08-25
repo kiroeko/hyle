@@ -71,6 +71,15 @@ TEST(SimdRuntime, TableMetadataAndExactTierLookup) {
   if (active.bitpack.isa == hs::Isa::kSve || active.bitpack.isa == hs::Isa::kRvv) {
     EXPECT_NE(active.bitpack.features & hs::Runtime::kFeatureBitpackLogical128, 0u);
   }
+#if defined(HYLE_ARCH_X64)
+  if (active.isa == hs::Isa::kAvx512) {
+    EXPECT_EQ(active.sort.isa,
+              hs::detail::sort_isa_for_product_isa(hs::Isa::kAvx512));
+    if (active.sort.isa != active.isa) {
+      EXPECT_NE(active.sort.features & hs::Runtime::kFeaturePerOpLowerTier, 0u);
+    }
+  }
+#endif
   const hs::Runtime* exact = hs::runtime_for(active.isa);
   ASSERT_NE(exact, nullptr);
   EXPECT_EQ(active.ops.dot_f32, exact->ops.dot_f32);
@@ -118,6 +127,22 @@ TEST(SimdRuntime, TableMetadataAndExactTierLookup) {
   EXPECT_EQ(hs::runtime_for(hs::Isa::kNeon), nullptr);
 #endif
 }
+
+#if defined(HYLE_ARCH_X64)
+TEST(SimdRuntime, SortCompilerTierContract) {
+  EXPECT_EQ(hs::detail::sort_isa_for_product_isa(hs::Isa::kAvx2),
+            hs::Isa::kAvx2);
+#if defined(HYLE_COMPILER_MSVC)
+  EXPECT_EQ(hs::detail::sort_isa_for_product_isa(hs::Isa::kAvx512),
+            hs::Isa::kAvx2);
+#else
+  // In particular, clang-cl defines _MSC_VER but is not subject to the cl.exe
+  // fallback and must retain the supported AVX-512 vqsort implementation.
+  EXPECT_EQ(hs::detail::sort_isa_for_product_isa(hs::Isa::kAvx512),
+            hs::Isa::kAvx512);
+#endif
+}
+#endif
 
 TEST(SimdRuntime, PublicFatKernelSelectorMatchesRuntimeTier) {
 #if defined(HYLE_ARCH_X64)

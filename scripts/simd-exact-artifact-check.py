@@ -30,7 +30,7 @@ X86_FORBIDDEN_SOURCES = {
              "transcendental_highway_avx512.cc", "transcendental_xsimd_avx512.cc",
              "vqsort_hyle_avx512.cc", "bitpack_hyle_avx512.cc"),
     # AVX2 math/dtype files are intentional per-op implementation dependencies of the canonical
-    # AVX-512 product. Sort and bitpack, however, must contain only their AVX-512 product TU.
+    # AVX-512 product. Compiler-specific sort handling is refined in check_build_graph below.
     "avx512": ("dot_f16c.cc", "dot_avx512bf16.cc", "cvt_avx512bf16.cc",
                "vqsort_hyle_avx2.cc", "bitpack_hyle_avx2.cc"),
 }
@@ -38,6 +38,19 @@ X86_FORBIDDEN_SOURCES = {
 
 def fail(message: str) -> None:
     raise RuntimeError(message)
+
+
+def uses_classic_msvc_frontend(build: Path) -> bool:
+    """Return true for cl.exe, but not clang-cl (which also defines _MSC_VER)."""
+    cache = build / "CMakeCache.txt"
+    if not cache.is_file():
+        return False
+    text = cache.read_text(encoding="utf-8", errors="replace")
+    match = re.search(r"^CMAKE_CXX_COMPILER:FILEPATH=(.+)$", text, re.M)
+    if match is None:
+        return False
+    compiler = match.group(1).strip().replace("\\", "/").rsplit("/", 1)[-1]
+    return compiler.lower() in {"cl", "cl.exe"}
 
 
 def find_dumpbin() -> Path | None:
@@ -85,7 +98,14 @@ def check_build_graph(build: Path, isa: str) -> None:
     if not ninja.is_file():
         return
     text = ninja.read_text(encoding="utf-8", errors="replace").replace("\\", "/")
-    for source in X86_FORBIDDEN_SOURCES.get(isa, ()):
+    forbidden = list(X86_FORBIDDEN_SOURCES.get(isa, ()))
+    if isa == "avx512" and uses_classic_msvc_frontend(build):
+        # The overall exact artifact remains canonical AVX-512, but sort is an
+        # explicit compiler-specific AVX2 implementation dependency. Conversely,
+        # the known-broken AVX-512 vqsort TU must not enter this cl.exe artifact.
+        forbidden.remove("vqsort_hyle_avx2.cc")
+        forbidden.append("vqsort_hyle_avx512.cc")
+    for source in forbidden:
         if f"src/simd/" in text and source in text:
             fail(f"forbidden non-target implementation is present in build graph: {source}")
 

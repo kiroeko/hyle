@@ -45,13 +45,12 @@ endif()
 set(_hyle_build "${HYLE_SMOKE_ROOT}/product-shape")
 file(REMOVE_RECURSE "${_hyle_build}")
 # Only roots whose production-layout contract has already closed belong here.
-# Evolving modules still run in the all-component baseline, but are not
-# accidentally certified merely because they compile in that graph.
-# These roots close over every currently re-certified foundation module:
-# core, util_core, error, platform, time, mem, container, util and obs.  Keep
-# the list as product roots rather than spelling the transitive graph by hand,
-# so this smoke also proves that the central component manifest resolves the
-# shipping closure correctly.
+# Their dependency closure necessarily pulls in some evolving modules (notably
+# container through util). Passing this smoke proves those transitive seams are
+# healthy; it does not certify the evolving module's complete product surface.
+# Keep the strictly closed modules as product roots rather than spelling the
+# transitive graph by hand, so the smoke also proves that the central component
+# manifest resolves the real shipping closure correctly.
 set(_hyle_shipping_roots core util obs time)
 list(JOIN _hyle_shipping_roots "," _hyle_shipping_components)
 _hyle_product_shape_run("configure production-shape tests"

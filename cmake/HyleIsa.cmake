@@ -179,20 +179,15 @@ function(hyle_set_avx512_math_isa src)
   set_source_files_properties("${src}" PROPERTIES COMPILE_OPTIONS "${_flags}")
 endfunction()
 
-# hyle_set_avx512_sort_isa(<source-file>) -- ISA flags for the AVX-512 (512-bit) Highway vqsort
-# borrow TU (src/simd/sort/vqsort_highway_avx512.cc). SAME requirement as the math AVX-512 borrow:
-# Highway's HWY_STATIC_TARGET must see the FULL baseline macro chain to pick AVX3 -- the AVX2
-# baseline (SSE4=PCLMUL+AES + BMI2+FMA+F16C) PLUS the AVX-512 group (f/bw/vl/dq/cd), else it
-# silently downgrades to the 256-bit target (the shipped vqsort would run at half width). It is a
-# separate function from hyle_set_avx512_math_isa only for a self-documenting call site (the flag
-# set is identical -- vqsort has no extra ISA need beyond the Highway AVX3 baseline). MSVC's
-# /arch:AVX512 implies the whole set; UNLIKE the math AVX3 log core, vqsort's AVX3 target is NOT
-# HWY_BROKEN on MSVC (integer/compare SIMD, not FP transcendentals), so this TU is compiled there.
-# Only reached when best_isa() >= kAvx512 (runtime-gated in sort_dispatch), so the zmm codegen
-# never runs on a non-AVX512 CPU.
+# hyle_set_avx512_sort_isa(<source-file>) -- ISA flags for an AVX-512 (512-bit) vqsort TU.
+# The full AVX2 baseline plus AVX-512 f/bw/vl/dq/cd is required. This helper is intentionally
+# unavailable to the classic MSVC frontend: official Highway marks AVX3 targets HWY_BROKEN_MSVC,
+# and the HYLE port's cl.exe correctness gate confirms data corruption. Product CMake links its
+# AVX2 sort TU instead. clang-cl is a distinct frontend and retains this AVX-512 path.
 function(hyle_set_avx512_sort_isa src)
   if(MSVC AND NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    set(_flags "/arch:AVX512")
+    message(FATAL_ERROR
+      "hyle_set_avx512_sort_isa is unsupported with cl.exe; link the AVX2 sort TU")
   else()
     set(_flags "-mavx512f;-mavx512bw;-mavx512vl;-mavx512dq;-mavx512cd;-mavx2;-mfma;-mf16c;-mbmi;-mbmi2;-maes;-mpclmul")
     if(MSVC)

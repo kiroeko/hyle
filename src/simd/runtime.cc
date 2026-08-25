@@ -69,6 +69,9 @@ namespace {
       value.dtype.isa = Isa::kAvx2;                                                 \
       value.dtype.features |= Runtime::kFeatureF16c;                                \
       value.math.features |= Runtime::kFeaturePerOpLowerTier;                       \
+      value.sort.isa = detail::sort_isa_for_product_isa(tier);                      \
+      if constexpr (detail::sort_isa_for_product_isa(tier) != tier)                 \
+        value.sort.features |= Runtime::kFeaturePerOpLowerTier;                     \
     } else if constexpr (tier == Isa::kSve) {                                       \
       value.sort.features |= Runtime::kFeatureSortCappedNetwork;                    \
       value.bitpack.features |= Runtime::kFeatureBitpackLogical128;                 \
@@ -117,6 +120,9 @@ Runtime selected_runtime() noexcept {
   result.dtype.isa = Isa::kAvx2;
   result.dtype.features |= Runtime::kFeatureF16c;
   result.math.features |= Runtime::kFeaturePerOpLowerTier;
+  result.sort.isa = detail::sort_isa_for_product_isa(Isa::kAvx512);
+  if (result.sort.isa != result.isa)
+    result.sort.features |= Runtime::kFeaturePerOpLowerTier;
 #elif defined(HYLE_SIMD_EXACT_TARGET_AVX2)
   result.dtype.isa = Isa::kAvx2;
   result.dtype.features |= Runtime::kFeatureF16c;
@@ -154,10 +160,12 @@ Runtime selected_runtime() noexcept {
       : result.isa == Isa::kAvx2 ? Isa::kAvx2
                                  : Isa::kScalar;
   result.math.isa = product_tier;
-  result.sort.isa = product_tier;
+  result.sort.isa = detail::sort_isa_for_product_isa(product_tier);
   result.bitpack.isa = product_tier;
   if (product_tier == Isa::kAvx512)
     result.math.features |= Runtime::kFeaturePerOpLowerTier;
+  if (result.sort.isa != product_tier)
+    result.sort.features |= Runtime::kFeaturePerOpLowerTier;
 #elif defined(HYLE_ARCH_ARM64)
   result.dtype.isa = Isa::kNeon;
 #endif

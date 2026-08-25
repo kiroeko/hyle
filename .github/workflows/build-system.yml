@@ -97,6 +97,12 @@ jobs:
         if: runner.os == 'Windows'
         run: ./scripts/hyle-windows.ps1 -Action Test -Preset windows-ninja --output-on-failure
 
+      - name: Audit classic MSVC exact AVX-512 sort fallback
+        if: runner.os == 'Windows'
+        run: |
+          ./scripts/hyle-windows.ps1 -Action Configure -Preset windows-ninja -DHYLE_COMPONENTS=simd -DHYLE_SIMD_EXACT_TARGET=AVX512 -DHYLE_BUILD_TESTS=ON -DHYLE_BUILD_BENCH=OFF -DHYLE_INSTALL=OFF -DHYLE_WERROR=ON
+          ./scripts/hyle-windows.ps1 -Action Build -Preset windows-ninja --target hyle_simd_exact_artifact_check --parallel 2
+
       - name: Verify component and dependency contracts
         if: runner.os == 'Linux'
         run: >-
@@ -171,7 +177,7 @@ jobs:
       - name: Configure strict Windows ABI with the Clang frontend
         run: >-
           ./scripts/hyle-windows.ps1 -Action Configure -Preset windows-clangcl
-          -DHYLE_COMPONENTS=core,error,obs,platform,time,mem,container,util,simd
+          '-DHYLE_COMPONENTS=core,error,obs,platform,time,mem,container,util,simd'
           -DHYLE_BUILD_TESTS=ON
           -DHYLE_BUILD_BENCH=OFF
           -DHYLE_INSTALL=OFF

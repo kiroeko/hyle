@@ -12,6 +12,19 @@
 // emitted by hyle_add_dispatched_kernel.
 namespace hyle::simd::detail {
 
+// Highway disables its AVX3 targets under the classic MSVC frontend. The HYLE
+// vqsort port has the same compiler boundary: cl.exe can compile the AVX-512
+// instantiation, but its generated code corrupts 64-bit, UInt128 and KV data.
+// Keep this policy separate from the CPU tier so a process may truthfully
+// report an AVX-512 product runtime while sort uses the safe AVX2 product TU.
+// clang-cl defines _MSC_VER too, but is not affected and must retain AVX-512.
+constexpr Isa sort_isa_for_product_isa(Isa product_isa) noexcept {
+#if defined(HYLE_COMPILER_MSVC)
+  if (product_isa == Isa::kAvx512) return Isa::kAvx2;
+#endif
+  return product_isa;
+}
+
 #if defined(HYLE_ARCH_X64)
 // Exact runtime prerequisites for the optional x86 product TUs. These are
 // deliberately narrower than best_isa(): a specialty kernel may be useful

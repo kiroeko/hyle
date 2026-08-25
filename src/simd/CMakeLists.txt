@@ -34,6 +34,13 @@ endif()
 set(_simd_arch_sources "")
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   set(HYLE_SIMD_X64 TRUE)
+  # Official Highway excludes every AVX3 target under cl.exe. The HYLE vqsort
+  # port has the same correctness boundary, while clang-cl is known-good and
+  # must not be caught by CMake's broader MSVC frontend-family variable.
+  set(_hyle_simd_cl_sort_fallback FALSE)
+  if(MSVC AND CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    set(_hyle_simd_cl_sort_fallback TRUE)
+  endif()
   if(HYLE_SIMD_BUILD_FAT)
     list(APPEND _simd_arch_sources
       ops/dot_f16c.cc
@@ -52,17 +59,24 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
       math/transcendental_highway.cc
       math/transcendental_xsimd.cc)
   endif()
+  if(HYLE_SIMD_BUILD_AVX2 OR
+     (HYLE_SIMD_BUILD_AVX512 AND _hyle_simd_cl_sort_fallback))
+    # An exact AVX-512 cl.exe product still needs the AVX2 vqsort TU: this is a
+    # compiler-specific per-module fallback, not a second runtime target.
+    list(APPEND _simd_arch_sources sort/vqsort_hyle_avx2.cc)
+  endif()
   if(HYLE_SIMD_BUILD_AVX2)
     list(APPEND _simd_arch_sources
-      sort/vqsort_hyle_avx2.cc
       bitpack/bitpack_hyle_avx2.cc)
   endif()
   if(HYLE_SIMD_BUILD_AVX512)
     list(APPEND _simd_arch_sources
       math/transcendental_highway_avx512.cc
       math/transcendental_xsimd_avx512.cc
-      sort/vqsort_hyle_avx512.cc
       bitpack/bitpack_hyle_avx512.cc)
+    if(NOT _hyle_simd_cl_sort_fallback)
+      list(APPEND _simd_arch_sources sort/vqsort_hyle_avx512.cc)
+    endif()
   endif()
   # AVX10.2 f16->fp8 convert TU: require both the target flag and the exact FP8
   # intrinsic surface. A flag-only probe produced a false positive on clang-cl:
@@ -298,23 +312,33 @@ if(HYLE_SIMD_X64)
   endif()
   # HYLE vqsort / bit-pack variants: D-tag backend selected by HYLE_SIMD_TARGET_*;
   # hyle_set_isa supplies the AVX2 / AVX-512 codegen for their dispatcher gates.
-  if(HYLE_SIMD_BUILD_AVX2)
+  if(HYLE_SIMD_BUILD_AVX2 OR
+     (HYLE_SIMD_BUILD_AVX512 AND _hyle_simd_cl_sort_fallback))
     hyle_set_isa(sort/vqsort_hyle_avx2.cc AVX2)
+  endif()
+  if(HYLE_SIMD_BUILD_AVX2)
     hyle_set_isa(bitpack/bitpack_hyle_avx2.cc AVX2)
   endif()
   if(HYLE_SIMD_BUILD_AVX512)
-    hyle_set_isa(sort/vqsort_hyle_avx512.cc AVX512)
     hyle_set_isa(bitpack/bitpack_hyle_avx512.cc AVX512)
+    if(NOT _hyle_simd_cl_sort_fallback)
+      hyle_set_isa(sort/vqsort_hyle_avx512.cc AVX512)
+    endif()
   endif()
   if(MSVC)
     # MSVC 19.50 diagnoses the intentionally unreachable sides of vqsort's
     # compile-time sorting networks after __assume/if-constexpr folding. Keep
     # the exception local to the two ported vqsort instantiation units; all
     # other HYLE code remains under /W4 /WX and C4702.
-    set_property(SOURCE
-      sort/vqsort_hyle_avx2.cc
-      sort/vqsort_hyle_avx512.cc
-      APPEND PROPERTY COMPILE_OPTIONS /wd4702)
+    if(HYLE_SIMD_BUILD_AVX2 OR
+       (HYLE_SIMD_BUILD_AVX512 AND _hyle_simd_cl_sort_fallback))
+      set_property(SOURCE sort/vqsort_hyle_avx2.cc
+        APPEND PROPERTY COMPILE_OPTIONS /wd4702)
+    endif()
+    if(HYLE_SIMD_BUILD_AVX512 AND NOT _hyle_simd_cl_sort_fallback)
+      set_property(SOURCE sort/vqsort_hyle_avx512.cc
+        APPEND PROPERTY COMPILE_OPTIONS /wd4702)
+    endif()
   endif()
 endif()
 

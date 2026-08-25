@@ -11,25 +11,32 @@
 #include "src/simd/sort/kernels.h"
 
 // sort_dispatch.cc -- baseline dispatcher for the vqsort borrow ops. Mirrors math_dispatch.cc:
-// per-type it routes to the widest LIVE tier -> x86 avx512 -> avx2 -> scalar;
+// per-type it routes to the widest compiler-safe LIVE tier -> x86 avx512 -> avx2 -> scalar;
 // arm64 SVE full-VL partition + capped network -> NEON; riscv64 RVV -> scalar. The right-hand tier
 // is the fallback when a scalable variant is unavailable, not an unconditional module clamp. The
 // borrow cores are
 // vendored header-only (can't be missing) + compiled per tier; this dispatcher only enters a wide
 // tier when the CPU supports it (cpu_features()), so an old CPU never SIGILLs.
 //
-// Unlike math (per-OP best-of-breed across two libs), sort borrows ONE lib (Highway -- only it
-// ships a vectorized sort), so there is no per-op library pick, just the tier ladder. vqsort's
-// AVX-512 target is NOT MSVC-broken (integer/compare SIMD, not FP transcendentals), so the 512
-// tier is used on all compilers -- no _MSC_VER exclusion (contrast the math AVX3 log core).
+// Unlike math (per-OP best-of-breed across two libs), sort has one vectorized implementation,
+// so there is no per-op library pick, just the tier ladder. Highway marks all AVX3 targets broken
+// under the classic MSVC frontend; HYLE's port shares that codegen boundary. cl.exe therefore
+// binds AVX-512 product builds to the AVX2 sort TU. clang-cl and GNU-like frontends retain AVX-512.
 
 namespace hyle::simd {
 namespace {
 
 #define HYLE_SORT_SYMBOL_I(name, tag) name##_##tag
 #define HYLE_SORT_SYMBOL(name, tag) HYLE_SORT_SYMBOL_I(name, tag)
+#if defined(HYLE_COMPILER_MSVC)
+#define HYLE_SORT_AVX512_SYMBOL(name) detail::HYLE_SIMD_SUFFIXED_SYMBOL(name, avx2)
+#else
+#define HYLE_SORT_AVX512_SYMBOL(name) detail::HYLE_SIMD_SUFFIXED_SYMBOL(name, avx512)
+#endif
 #if defined(HYLE_SIMD_EXACT_TARGET_SSE4) || defined(HYLE_SIMD_EXACT_TARGET_SCALAR)
 #define HYLE_SORT_EXACT_SYMBOL(name) detail::HYLE_SIMD_SUFFIXED_SYMBOL(name, scalar)
+#elif defined(HYLE_SIMD_EXACT_TARGET_AVX512) && defined(HYLE_COMPILER_MSVC)
+#define HYLE_SORT_EXACT_SYMBOL(name) HYLE_SORT_AVX512_SYMBOL(name)
 #elif defined(HYLE_SIMD_EXACT)
 #define HYLE_SORT_EXACT_SYMBOL(name) HYLE_SIMD_EXACT_SYMBOL(name)
 #endif
@@ -47,8 +54,8 @@ bool have_avx2() noexcept {
 #endif
 }
 
-// AVX-512 group (f+bw+vl+dq+cd) -- same condition as math_dispatch's have_avx512 / best_isa()>=
-// kAvx512. vqsort's sorting networks + Compress widen to 512-bit here.
+// AVX-512 group (f+bw+vl+dq+cd), additionally constrained by the compiler policy encoded in
+// runtime().sort.isa. On cl.exe the product runtime remains AVX-512 but this module reports AVX2.
 bool have_avx512() noexcept {
 #if defined(HYLE_SIMD_EXACT_TARGET_AVX512)
   return true;
@@ -92,7 +99,7 @@ bool try_radix_sort(T* keys, std::size_t n, SortOrder order) noexcept {
 #define HYLE_SORT_TIER_SORT(tag) \
   do { \
     static const bool hw512 = have_avx512(); \
-    if (hw512) { detail::sort_##tag##_avx512(keys, n, asc); return; } \
+    if (hw512) { HYLE_SORT_AVX512_SYMBOL(HYLE_SORT_SYMBOL(sort, tag))(keys, n, asc); return; } \
     static const bool hw2 = have_avx2(); \
     if (hw2) { detail::sort_##tag##_avx2(keys, n, asc); return; } \
     detail::sort_##tag##_scalar(keys, n, asc); \
@@ -100,7 +107,7 @@ bool try_radix_sort(T* keys, std::size_t n, SortOrder order) noexcept {
 #define HYLE_SORT_TIER_PSORT(tag) \
   do { \
     static const bool hw512 = have_avx512(); \
-    if (hw512) { detail::psort_##tag##_avx512(keys, n, k, asc); return; } \
+    if (hw512) { HYLE_SORT_AVX512_SYMBOL(HYLE_SORT_SYMBOL(psort, tag))(keys, n, k, asc); return; } \
     static const bool hw2 = have_avx2(); \
     if (hw2) { detail::psort_##tag##_avx2(keys, n, k, asc); return; } \
     detail::psort_##tag##_scalar(keys, n, k, asc); \
@@ -108,7 +115,7 @@ bool try_radix_sort(T* keys, std::size_t n, SortOrder order) noexcept {
 #define HYLE_SORT_TIER_SELECT(tag) \
   do { \
     static const bool hw512 = have_avx512(); \
-    if (hw512) { detail::select_##tag##_avx512(keys, n, k, asc); return; } \
+    if (hw512) { HYLE_SORT_AVX512_SYMBOL(HYLE_SORT_SYMBOL(select, tag))(keys, n, k, asc); return; } \
     static const bool hw2 = have_avx2(); \
     if (hw2) { detail::select_##tag##_avx2(keys, n, k, asc); return; } \
     detail::select_##tag##_scalar(keys, n, k, asc); \
@@ -197,7 +204,7 @@ HYLE_SORT_KEY_TYPES(HYLE_SORT_DISPATCH)
 #define HYLE_SORT_KV_LADDER_SORT(kvtag, h) \
   do { \
     static const bool hw512 = have_avx512(); \
-    if (hw512) { detail::sort_##kvtag##_avx512(h, n, asc); return; } \
+    if (hw512) { HYLE_SORT_AVX512_SYMBOL(HYLE_SORT_SYMBOL(sort, kvtag))(h, n, asc); return; } \
     static const bool hw2 = have_avx2(); \
     if (hw2) { detail::sort_##kvtag##_avx2(h, n, asc); return; } \
     detail::sort_##kvtag##_scalar(h, n, asc); \
@@ -205,7 +212,7 @@ HYLE_SORT_KEY_TYPES(HYLE_SORT_DISPATCH)
 #define HYLE_SORT_KV_LADDER_PSORT(kvtag, h) \
   do { \
     static const bool hw512 = have_avx512(); \
-    if (hw512) { detail::psort_##kvtag##_avx512(h, n, k, asc); return; } \
+    if (hw512) { HYLE_SORT_AVX512_SYMBOL(HYLE_SORT_SYMBOL(psort, kvtag))(h, n, k, asc); return; } \
     static const bool hw2 = have_avx2(); \
     if (hw2) { detail::psort_##kvtag##_avx2(h, n, k, asc); return; } \
     detail::psort_##kvtag##_scalar(h, n, k, asc); \
@@ -213,7 +220,7 @@ HYLE_SORT_KEY_TYPES(HYLE_SORT_DISPATCH)
 #define HYLE_SORT_KV_LADDER_SELECT(kvtag, h) \
   do { \
     static const bool hw512 = have_avx512(); \
-    if (hw512) { detail::select_##kvtag##_avx512(h, n, k, asc); return; } \
+    if (hw512) { HYLE_SORT_AVX512_SYMBOL(HYLE_SORT_SYMBOL(select, kvtag))(h, n, k, asc); return; } \
     static const bool hw2 = have_avx2(); \
     if (hw2) { detail::select_##kvtag##_avx2(h, n, k, asc); return; } \
     detail::select_##kvtag##_scalar(h, n, k, asc); \
@@ -316,6 +323,7 @@ void select(UInt128* keys, std::size_t n, std::size_t k, SortOrder order) noexce
 #if defined(HYLE_SORT_EXACT_SYMBOL)
 #undef HYLE_SORT_EXACT_SYMBOL
 #endif
+#undef HYLE_SORT_AVX512_SYMBOL
 #undef HYLE_SORT_SYMBOL
 #undef HYLE_SORT_SYMBOL_I
 

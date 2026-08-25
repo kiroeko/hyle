@@ -85,8 +85,15 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   else()
     set(_avx512_autorun NO_AUTORUN)
   endif()
+  set(_avx512_sort_kernel_test sort_kernel_test.cc)
+  if(MSVC AND CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    # The direct backend test bypasses product dispatch, so it cannot represent
+    # cl.exe's AVX2 sort fallback. Public sort_test.cc remains the correctness
+    # gate and exercises that fallback on an AVX-512 product/host.
+    set(_avx512_sort_kernel_test "")
+  endif()
   hyle_add_test(simd NAME avx512 SOURCES vec_test.cc native_test.cc
-                sort_kernel_test.cc narrow_float_test.cc ${_fixed_partial_tests}
+                ${_avx512_sort_kernel_test} narrow_float_test.cc ${_fixed_partial_tests}
                 DEFINES HYLE_SIMD_TARGET_AVX512 OPTIONS ${_avx512_flags}
                 ${_avx512_autorun})
   target_include_directories(hyle_simd_avx512_test PRIVATE "${PROJECT_SOURCE_DIR}")
