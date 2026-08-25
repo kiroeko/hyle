@@ -27,73 +27,87 @@ using hyle::container::utf8_validate;
 namespace {
 namespace nb = ankerl::nanobench;
 
-// ~2 KB mixed ASCII + multibyte UTF-8 (Latin-1 accents + CJK), deterministic.
-// Multibyte content is where a scalar decoder's per-byte branching hurts most vs
-// simdutf's vectorized classification.
-std::string gen_utf8() {
+// Deterministic mixed ASCII + multibyte UTF-8 (Latin-1 accents + CJK).  Always
+// append complete blocks: resizing through a code point would accidentally turn
+// a valid workload into a truncated-tail workload.
+std::string gen_mixed_utf8(std::size_t minimum_size) {
   std::string s;
-  // Repeat a mixed block: ASCII word + 2-byte (é) + 3-byte (中) sequences.
-  const char* block = "hello world ";       // ASCII
-  const char* accent = "\xC3\xA9\xC3\xA8";  // é è (2-byte each)
+  const char* block = "hello world ";            // ASCII
+  const char* accent = "\xC3\xA9\xC3\xA8";       // é è (2-byte each)
   const char* cjk = "\xE4\xB8\xAD\xE6\x96\x87";  // 中文 (3-byte each)
-  while (s.size() < 2000) {
+  while (s.size() < minimum_size) {
     s += block;
     s += accent;
     s += cjk;
   }
   return s;
 }
+
+void bench_utf8_case(const char* label, const std::string& input) {
+  const string_ref text{input.data(), static_cast<std::uint32_t>(input.size())};
+  const std::uint64_t minimum_iterations =
+      input.size() <= 64 ? 200'000 : 20'000;
+
+  // utf8_length's product contract is validate + count, returning -1 for
+  // malformed input.  The direct simdutf row implements that exact contract;
+  // count_utf8 alone is intentionally absent because it assumes valid input.
+  {
+    nb::Bench bench;
+    bench.title(std::string("utf8 validate+count: ") + label)
+        .relative(true)
+        .batch(input.size())
+        .minEpochIterations(minimum_iterations);
+#if defined(HYLE_BENCH_SIMDUTF)
+    bench.run("simdutf validate+count -> -1 invalid (same contract)", [&] {
+      const std::int64_t result =
+          simdutf::validate_utf8(input.data(), input.size())
+              ? static_cast<std::int64_t>(
+                    simdutf::count_utf8(input.data(), input.size()))
+              : std::int64_t{-1};
+      nb::doNotOptimizeAway(result);
+    });
+#endif
+    bench.run("HYLE utf8_length (simdutf 9.1 product path)",
+              [&] { nb::doNotOptimizeAway(utf8_length(text)); });
+  }
+
+  // validate-only has a naturally identical direct simdutf contract.
+  {
+    nb::Bench bench;
+    bench.title(std::string("utf8 validate-only: ") + label)
+        .relative(true)
+        .batch(input.size())
+        .minEpochIterations(minimum_iterations);
+#if defined(HYLE_BENCH_SIMDUTF)
+    bench.run("simdutf validate_utf8 (same contract)", [&] {
+      nb::doNotOptimizeAway(simdutf::validate_utf8(input.data(), input.size()));
+    });
+#endif
+    bench.run("HYLE utf8_validate (simdutf 9.1 product path)",
+              [&] { nb::doNotOptimizeAway(utf8_validate(text)); });
+  }
+}
 }  // namespace
 
 int bench_string_algo() {
-  const std::string u8 = gen_utf8();
-  const string_ref sr{u8.data(), static_cast<std::uint32_t>(u8.size())};
+  // Common consumer shapes: tiny protocol/path strings, long ASCII payloads,
+  // mixed-language text, malformed input found after substantial scanning, and
+  // a truncated multibyte sequence at the buffer tail.
+  const std::string ascii_short = "GET /v1/models";
+  const std::string ascii_long(4096, 'a');
+  const std::string mixed_short = gen_mixed_utf8(24);
+  const std::string mixed_long = gen_mixed_utf8(4096);
+  std::string invalid_middle(4096, 'a');
+  invalid_middle[invalid_middle.size() / 2] = static_cast<char>(0xFF);
+  std::string truncated_tail(4096, 'a');
+  truncated_tail.back() = static_cast<char>(0xE2);  // 3-byte lead, no payload.
 
-  // ---- utf8_length: count code points (scalar decoder vs simdutf SIMD) -------
-  // FAIRNESS: HYLE utf8_length does VALIDATE + COUNT in two dispatched passes
-  // for valid input (and returns -1 on malformed input).
-  // simdutf::count_utf8 counts ONLY (assumes valid) -- racing
-  // against it alone is apples-to-oranges (HYLE does strictly more work). The
-  // matched-contract rival is simdutf validate_utf8 + count_utf8 (same validate+
-  // count semantics). Both shown: count-only marks the pure-SIMD ceiling, the
-  // validate+count row is the honest same-contract comparison.
-  {
-    nb::Bench b;
-    b.title("utf8 validate+count code points (~2KB mixed)")
-        .relative(true)
-        .batch(u8.size())
-        .minEpochIterations(20000);
-#if defined(HYLE_BENCH_SIMDUTF)
-    b.run("simdutf validate_utf8+count_utf8 (same contract)", [&] {
-      bool ok = simdutf::validate_utf8(u8.data(), u8.size());
-      std::size_t n = ok ? simdutf::count_utf8(u8.data(), u8.size()) : 0;
-      nb::doNotOptimizeAway(n);
-    });
-    b.run("simdutf::count_utf8 only (SIMD ceiling, no validate)", [&] {
-      nb::doNotOptimizeAway(simdutf::count_utf8(u8.data(), u8.size()));
-    });
-#endif
-    b.run("HYLE utf8_length (vendored simdutf runtime dispatch)", [&] {
-      nb::doNotOptimizeAway(utf8_length(sr));
-    });
-  }
-
-  // ---- utf8 validate only: same one-pass contract and dispatched backend ------
-  {
-    nb::Bench b;
-    b.title("utf8 validate (~2KB mixed)")
-        .relative(true)
-        .batch(u8.size())
-        .minEpochIterations(20000);
-#if defined(HYLE_BENCH_SIMDUTF)
-    b.run("simdutf::validate_utf8 (SIMD, validate only)", [&] {
-      nb::doNotOptimizeAway(simdutf::validate_utf8(u8.data(), u8.size()));
-    });
-#endif
-    b.run("HYLE utf8_validate (vendored simdutf runtime dispatch)", [&] {
-      nb::doNotOptimizeAway(utf8_validate(sr));
-    });
-  }
+  bench_utf8_case("ASCII short (14 B)", ascii_short);
+  bench_utf8_case("ASCII long (4 KiB)", ascii_long);
+  bench_utf8_case("mixed UTF-8 short", mixed_short);
+  bench_utf8_case("mixed UTF-8 long (~4 KiB)", mixed_long);
+  bench_utf8_case("invalid byte in middle (4 KiB)", invalid_middle);
+  bench_utf8_case("truncated multibyte tail (4 KiB)", truncated_tail);
 
   // ---- hex_encode: 1 KB -> 2 KB hex (scalar table lookup) --------------------
   // No single SOTA hex lib worth cloning; race a naive byte-at-a-time reference

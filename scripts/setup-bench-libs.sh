@@ -12,7 +12,11 @@
 # at these libs via the HYLE_<LIB>_DIR CMake cache vars, whose DEFAULTS are a
 # sibling of this repo (../<lib>). That made benchmarking impossible on a fresh
 # machine that didn't happen to have the exact sibling layout. This script
-# reproduces that layout anywhere, idempotently, with no hard-coded absolute path.
+# bootstraps that layout anywhere, idempotently, with no hard-coded absolute path.
+# These non-SIMD peers are not centrally pinned by this script: an existing
+# checkout is deliberately never moved. A performance certificate must record
+# every actually compiled checkout with bench-stat.py --peer and separately
+# prove that the chosen revision is a current credible comparison point.
 #
 # USAGE:
 #   scripts/setup-bench-libs.sh            # clone into the repo's parent dir
@@ -44,12 +48,14 @@ for arg in "$@"; do
 done
 
 # name|url -- URLs are the upstreams actually used by this project's clones.
-# (moodycamel + crossbeam-deque are community forks pinned for reproducibility;
-#  swap to cameron314/moodycamel or crossbeam-rs/crossbeam if you prefer canon.)
+# crossbeam-deque remains an optional compatibility checkout for the Rust path;
+# the normal Rust benchmark uses the current crates.io release instead. It must
+# not be presented as a pinned/current SOTA peer merely because this script
+# cloned it once.
 LIBS=(
   "abseil-cpp|https://github.com/abseil/abseil-cpp.git"
   "folly|https://github.com/facebook/folly.git"
-  "moodycamel-ConcurrentQueue|https://github.com/ikiller1/moodycamel-ConcurrentQueue.git"
+  "moodycamel-ConcurrentQueue|https://github.com/cameron314/concurrentqueue.git"
   "oneTBB|https://github.com/uxlfoundation/oneTBB.git"
   "marl|https://github.com/google/marl.git"
   "crossbeam-deque|https://github.com/k-sareen/crossbeam-deque.git"
@@ -77,7 +83,12 @@ for entry in "${LIBS[@]}"; do
   want "$name" || continue
   dst="$DEPS_DIR/$name"
   if [ -d "$dst/.git" ] || [ -f "$dst/.git" ]; then
-    echo "  [skip]  $name (already present)"
+    actual_url="$(git -C "$dst" remote get-url origin 2>/dev/null || true)"
+    if [ -n "$actual_url" ] && [ "$actual_url" != "$url" ]; then
+      echo "  [warn]  $name already present with origin $actual_url (expected $url)" >&2
+    else
+      echo "  [skip]  $name (already present)"
+    fi
     skipped=$((skipped + 1))
     continue
   fi

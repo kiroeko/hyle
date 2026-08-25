@@ -1,10 +1,10 @@
 # time 性能证书
 
-> **2026-08-25 freshness gate：**本页点值绑定下述历史提交，当前 time 因依赖升级红队与
-> delivery/lifetime 修复重新打开。clock 热读、raw queue 与未改路径可作为回归输入，但不是
+> **2026-08-25 freshness gate：**本页点值绑定下述历史提交；time 的产品收口状态未改变，但
+> 依赖升级和 delivery/lifetime 修复使受影响性能边必须重签。clock 热读、raw queue 与未改路径可作为回归输入，但不是
 > 当前 working tree 的自动性能证书；尤其 C `schedule+advance+visitor` 已改为同批 callback
 > 可安全 cancel/reschedule/destroy peer 的 mutation-safe 交付，旧 16.450 ns 只能解释旧实现。
-> 最终三平台 n=15 重采完成前，不据本页旧数字宣称当前 time 已重新 SOTA 收口。
+> 最终三平台 n=15 重采完成前，不据本页旧数字宣称当前依赖组合已有新鲜 SOTA 点值。
 
 > 本页是 time 性能数字的唯一信源。实现与选择理由分别见
 > [`time-design`](../architecture/time-design.md) 和 [`guide/time`](../guide/time.md)。

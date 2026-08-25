@@ -1,7 +1,7 @@
 # platform 实测铁证
 
-> **2026-08-25 freshness gate：**下述 2026-07 点值与机制证据可作回归输入，但 platform 已由
-> 依赖升级/消费者红队重新打开；相同 source identity、peer pin、编译合同与三平台复跑完成前，
+> **2026-08-25 freshness gate：**下述 2026-07 点值与机制证据可作回归输入；platform 的产品
+> 收口状态未改变，但相同 source identity、peer pin、编译合同与三平台复跑完成前，
 > 不是当前 working tree 的发布证书。现行状态只看
 > [`pre-release-readiness`](../milestones/pre-release-readiness.md)。
 

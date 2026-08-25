@@ -1,7 +1,7 @@
 # util 历史性能证据（2026-07-30）
 
-> **2026-08-25 freshness gate：**本页固定于下述 2026-07 commit。util 已因 mem/container
-> 下游变化与本轮总复审重新打开；相同 source identity、peer pin、编译合同与三平台重跑完成前，
+> **2026-08-25 freshness gate：**本页固定于下述 2026-07 commit。util 的产品收口状态未改变；
+> mem/container 下游变化只触发相应边回归。相同 source identity、peer pin、编译合同与三平台重跑完成前，
 > 这些点值不是当前发布证书。现行状态只看
 > [`pre-release-readiness`](../milestones/pre-release-readiness.md)。
 

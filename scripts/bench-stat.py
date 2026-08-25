@@ -33,13 +33,199 @@ Run under `setarch -R` on Linux if the exe is built with a sanitizer. Per the
 9p rule, run from a native-ext4 checkout, never /mnt/c.
 """
 import argparse
+import datetime
+import hashlib
+import json
 import math
 import os
+import pathlib
+import platform
 import statistics
 import subprocess
 import sys
 
 BT = chr(96)  # backtick; nanobench wraps variant names in `...`
+
+
+def _run_text(command, cwd=None):
+    try:
+        result = subprocess.run(command, cwd=cwd, capture_output=True, text=True)
+    except OSError:
+        return None
+    if result.returncode != 0:
+        return None
+    return result.stdout.strip()
+
+
+def _sha256(path):
+    digest = hashlib.sha256()
+    with open(path, "rb") as source:
+        for chunk in iter(lambda: source.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def git_identity(path):
+    """Return reproducibility metadata for one Git checkout, or None."""
+    root = _run_text(["git", "rev-parse", "--show-toplevel"], cwd=path)
+    if not root:
+        return None
+    head = _run_text(["git", "rev-parse", "HEAD"], cwd=root)
+    tree = _run_text(["git", "rev-parse", "HEAD^{tree}"], cwd=root)
+    status = _run_text(
+        ["git", "status", "--porcelain", "--untracked-files=all"], cwd=root)
+    if not head or not tree or status is None:
+        return None
+    remote = _run_text(["git", "remote", "get-url", "origin"], cwd=root)
+    return {
+        "root": os.path.abspath(root),
+        "head": head,
+        "tree": tree,
+        "dirty": bool(status),
+        "remote": remote or "none",
+    }
+
+
+def parse_peer_spec(spec):
+    """Parse NAME=PATH used by --peer without guessing path delimiters."""
+    if "=" not in spec:
+        raise ValueError("peer must use NAME=PATH")
+    name, path = spec.split("=", 1)
+    if not name or not path:
+        raise ValueError("peer must use non-empty NAME=PATH")
+    return name, os.path.abspath(path)
+
+
+def _cmake_contract(exe):
+    """Find the owning build cache and return certificate-relevant entries."""
+    cache = None
+    for parent in pathlib.Path(exe).resolve().parents:
+        candidate = parent / "CMakeCache.txt"
+        if candidate.is_file():
+            cache = candidate
+            break
+    if cache is None:
+        return None, {}
+    wanted = {
+        "CMAKE_BUILD_TYPE",
+        "CMAKE_CXX_COMPILER",
+        "CMAKE_CXX_FLAGS",
+        "CMAKE_CXX_FLAGS_RELEASE",
+        "CMAKE_GENERATOR",
+        "CMAKE_GENERATOR_PLATFORM",
+        "CMAKE_GENERATOR_TOOLSET",
+        "HYLE_BUILD_BENCH",
+        "HYLE_BUILD_TESTS",
+        "HYLE_COMPONENTS",
+        "HYLE_STATIC",
+        "HYLE_SANITIZER",
+        "HYLE_TRACE",
+        "HYLE_TRACE_BACKEND",
+        "HYLE_TEST_INSTRUMENTATION",
+        "HYLE_SIMD_EXACT_TARGET",
+        "HYLE_WERROR",
+        "HYLE_BENCH_VENDOR_DIR",
+    }
+    values = {}
+    for line in cache.read_text(encoding="utf-8", errors="replace").splitlines():
+        if not line or line.startswith(("#", "//")) or "=" not in line:
+            continue
+        key_type, value = line.split("=", 1)
+        key = key_type.split(":", 1)[0]
+        if key in wanted or key.startswith("HYLE_BENCH_"):
+            values[key] = value
+    return str(cache), values
+
+
+def _nanobench_identity(repo_root):
+    lock_path = pathlib.Path(repo_root) / "cmake" / "HyleDependencyLock.json"
+    header_path = pathlib.Path(repo_root) / "third_party" / "nanobench" / "nanobench.h"
+    if not lock_path.is_file() or not header_path.is_file():
+        return None
+    lock = json.loads(lock_path.read_text(encoding="utf-8"))
+    dependency = next(
+        (item for item in lock.get("dependencies", [])
+         if item.get("name") == "nanobench"), None)
+    if dependency is None:
+        return None
+    return {
+        "version": dependency.get("version", "unknown"),
+        "revision": dependency.get("revision", "unknown"),
+        "header_sha256": _sha256(header_path),
+    }
+
+
+def print_provenance_metadata(args, exe):
+    """Emit a runtime provenance snapshot and optionally require clean inputs.
+
+    This deliberately does not claim that the executable was built from the
+    observed checkouts.  That binding comes from the fresh configure/build log;
+    a future embedded build manifest may make it machine-verifiable.
+    """
+    script = pathlib.Path(__file__).resolve()
+    source = git_identity(script.parent.parent)
+    issues = []
+    if source is None:
+        issues.append("HYLE source is not an identifiable Git checkout")
+    elif source["dirty"]:
+        issues.append("HYLE source checkout is dirty")
+
+    peers = []
+    for spec in args.peer:
+        try:
+            name, path = parse_peer_spec(spec)
+        except ValueError as error:
+            issues.append(f"invalid --peer {spec!r}: {error}")
+            continue
+        identity = git_identity(path)
+        if identity is None:
+            issues.append(f"peer {name!r} is not an identifiable Git checkout: {path}")
+            continue
+        if identity["dirty"]:
+            issues.append(f"peer {name!r} checkout is dirty")
+        peers.append((name, identity))
+
+    cache_path, cache = _cmake_contract(exe)
+    if cache_path is None:
+        issues.append("benchmark executable has no discoverable CMakeCache.txt")
+    nanobench = _nanobench_identity(source["root"] if source else script.parent.parent)
+    if nanobench is None:
+        issues.append("nanobench lock/header identity is unavailable")
+    if args.require_clean and issues:
+        sys.exit("clean-input gate rejected: " + "; ".join(issues))
+
+    print("# HYLE_BENCH_PROVENANCE schema=1 binding=runtime-snapshot "
+          f"clean={int(not issues)} require_clean={int(args.require_clean)}")
+    print("# observed_at utc=" + json.dumps(
+        datetime.datetime.now(datetime.timezone.utc).isoformat()))
+    print(f"# runner path={json.dumps(str(script))} sha256={_sha256(script)}")
+    print(f"# executable path={json.dumps(exe)} sha256={_sha256(exe)}")
+    print("# host "
+          f"system={json.dumps(platform.system())} "
+          f"release={json.dumps(platform.release())} "
+          f"machine={json.dumps(platform.machine())} "
+          f"processor={json.dumps(platform.processor() or os.environ.get('PROCESSOR_IDENTIFIER', ''))}")
+    if source:
+        print("# source " + " ".join(
+            f"{key}={json.dumps(str(value))}" for key, value in source.items()))
+    if nanobench:
+        print("# nanobench " + " ".join(
+            f"{key}={json.dumps(str(value))}" for key, value in nanobench.items()))
+    if cache_path:
+        print(f"# cmake_cache path={json.dumps(cache_path)}")
+        for key in sorted(cache):
+            print(f"# cmake {key}={json.dumps(cache[key])}")
+    for name, identity in peers:
+        print(f"# peer name={json.dumps(name)} " + " ".join(
+            f"{key}={json.dumps(str(value))}" for key, value in identity.items()))
+    for name in sorted(os.environ):
+        if name.startswith("HYLE_") and ("BENCH" in name or "QOS" in name):
+            print(f"# env {name}={json.dumps(os.environ[name])}")
+    for issue in issues:
+        print(f"# unclean reason={json.dumps(issue)}")
+    print("# build_binding verified=0 "
+          "requirement=\"attach the fresh configure/build log to formal evidence\"")
+    print()
 
 
 def _binom_two_sided(k, n):
@@ -147,6 +333,11 @@ def main():
     ap.add_argument("exe", help="path to the nanobench executable")
     ap.add_argument("-n", "--runs", type=int, default=15, help="process repetitions (default 15)")
     ap.add_argument("--setarch", action="store_true", help="wrap in `setarch -R` (sanitizer builds)")
+    ap.add_argument("--require-clean", action="store_true",
+                    help="reject dirty/unidentified current HYLE or peer inputs; "
+                         "does not bind an existing executable to those checkouts")
+    ap.add_argument("--peer", action="append", default=[], metavar="NAME=PATH",
+                    help="record and cleanliness-check a Git benchmark peer; repeatable")
     ap.add_argument("--pair", nargs=2, action="append", metavar=("BASELINE", "RIVAL"),
                     default=[], help="report RIVAL/BASELINE op/s ratio; repeatable")
     args = ap.parse_args()
@@ -155,6 +346,9 @@ def main():
     # forward-slash relative path like "build/bin/foo.exe" (the shell would, but
     # subprocess bypasses it). abspath fixes that and is a no-op on POSIX.
     exe = os.path.abspath(args.exe)
+    if not os.path.isfile(exe):
+        sys.exit(f"benchmark executable not found: {exe}")
+    print_provenance_metadata(args, exe)
     cmd = (["setarch", "-R"] if args.setarch else []) + [exe]
     runs = []
     sleep_runs = []

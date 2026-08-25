@@ -1,5 +1,10 @@
 # sched 实测铁证
 
+> **2026-08-25 freshness gate：**Boost.Context fcontext 已升级到 1.92.0，mimalloc 已从
+> 2.3.2 升到 3.5.0，nanobench 已从 4.3.11 升到 4.6.0。下述 scheduler/fiber 点值只作
+> 历史回归输入；同一当前提交、peer identity、harness/runner、编译合同与三平台复跑完成前，
+> 不是当前发布 SOTA 证书。
+
 > 历史段落中的 `HYLE_CACHE_LINE_SIZE` 是当时实现名；当前同一布局合同由
 > `core::kDestructiveInterferenceSize` 承载，Apple Silicon 为 128B。
 

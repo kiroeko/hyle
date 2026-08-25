@@ -1,8 +1,8 @@
 # error 实测铁证
 
 > **2026-08-25 freshness gate：**本页点值绑定下述 2026-07 commit，只是本轮重签的历史输入。
-> error 已由依赖升级/消费者红队重新打开；相同 source identity、peer pin、编译合同与三平台
-> n=15 完成前，不是当前发布证书。现行状态只看
+> error 的产品收口状态未改变；相同 source identity、peer pin、编译合同与三平台 n=15 完成前，
+> 这些点值不是当前依赖组合的发布证书。现行状态只看
 > [`pre-release-readiness`](../milestones/pre-release-readiness.md)。
 
 > 本页是 [performance 总账](./README.md) 的 error 模块详节。稳定设计见

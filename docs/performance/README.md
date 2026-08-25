@@ -4,12 +4,15 @@
 >
 > **两段式**：① 下面"预期表"是开工前基于参考库公开基准的**推算目标**;② 实现后必须有**对标 SOTA 的真实 benchmark**(非推算),数字诚实印出——赢/平/输都登记,差距是优化目标。
 
-> **2026-08-25 freshness gate：**依赖升级和消费者红队已重新打开 core、error、platform、mem、
-> time、build/package、util、obs、container。nanobench 又从 4.3.11 升到 4.6.0，并改变 epoch/
+> **2026-08-25 freshness gate：**依赖升级使 core、error、platform、mem、time、build/package、
+> util、obs 的受影响证据需要重签，但不重新做完整模块收口。相对 `6dcd038`，七个运行时模块的
+> 公开头和/或实现均实际改过，所以 changed seam 不能只按“下游依赖变动”沿用旧证书；
+> container/simd/sched/io 只核验本轮直接触及边，不能据此获得整体收口，定向性能差距也不单独
+> 阻塞本轮 project-health checkpoint。nanobench 又从 4.3.11 升到 4.6.0，并改变 epoch/
 > calibration、batch-relative 与 counter-overhead 处理；所以包括 simd/sched/io 在内的所有
 > nanobench 旧点值都只能用于定位算法档位和回归方向。只有相同 source identity、peer pin、
 > **harness revision、runner parser、运行过滤器/环境**、编译合同与三平台 n=15 重跑完成后，
-> 表中的 ✅/➖/⚠️ 才可恢复为当前判定。现行签署状态只看
+> 表中的 ✅/➖/⚠️ 才可恢复为当前点值判定。现行签署状态只看
 > [`pre-release-readiness`](../milestones/pre-release-readiness.md)；新实现不能借用旧点值恢复绿证。
 
 ## 本目录结构（原单文件已拆分，按模块分档）
@@ -24,12 +27,12 @@
 | [time 实测](./benchmarks-time.md) | **2026-07-25 历史证据**（clock / exact-ns radix TimerQueue / CommonTimeoutQueue；含 Seastar faithful baseline、order-swap 与 M4 QoS） |
 | [mem 实测](./benchmarks-mem.md) | ⚠️ **mimalloc 3.5.0 升级后待刷新**：既有 Region/FixedPool 算法证据仍是输入；system allocator、realloc、PMR、remote-free/collect 与 shared/static ownership 的旧三平台点值不是当前证书 |
 | [util 实测](./benchmarks-util.md) | **历史证据，待本轮重签**：core 的 Rng/Ref/SpinLock；runtime 的真实 Registry N=256/C adapter；Abseil peer、FrozenView、M4 双 QoS 与复杂度边界 |
-| [obs 实测](./benchmarks-obs.md) | **obs-runtime 2026-07-29 历史热路证据**：未改的 gate/record/fan-out 数据可作输入；Tracy 0.14.1、当前 29-symbol C 面和 caller-storage sink 不在该性能证书内 |
-| [container 实测](./benchmarks-container.md) | ⚠️ **hash/string API 与 simdutf 9.1 受影响项待刷新**：旧三平台详表只作历史输入；当前仅有 Windows correctness、installed consumer 与 float/double/fast-vs-hardened point |
+| [obs 实测](./benchmarks-obs.md) | **obs-runtime 2026-07-29 历史热路证据**：未改的 gate/record/fan-out 数据可作输入；Tracy 0.14.1、当前 29-symbol C 面和 caller-storage sink 不在该性能证书内；本轮受影响边的定向证据见 [Tracy 0.14.1 升级核验](./upgrade-2026-08-obs-tracy.md) |
+| [container 实测](./benchmarks-container.md) | ⚠️ **hash/string API 与 simdutf 9.1 受影响项待刷新**：旧三平台详表只作历史输入；本轮受影响边的定向证据见 [simdutf 9.1 升级核验](./upgrade-2026-08-container-simdutf.md) |
 | [simd 产品 kernel](./benchmarks-simd.md) | dot/saxpy、math、dtype、gather、vendor 竞争…；**op 全量不在此** |
 | [simd op 对拍证书](./benchmarks-simd-ops.md) | **逐 op vs Highway**：三平台 LOSE=0 摘要 + 覆盖树；全表 → [orderswap 矩阵](../milestones/simd-orderswap-matrix.md)（最新最全） |
 | [simd op 对拍方法论](./simd-op-benchmark-methodology.md) | op_parity 规程：形状、双序、锚点闸门、LOSE 证据阶梯 |
-| [sched 实测](./benchmarks-sched.md) | fiber 切换、sched 同步（marl 对标）、调度器层；**platform 原语已拆出** → [benchmarks-platform.md](./benchmarks-platform.md) |
+| [sched 实测](./benchmarks-sched.md) | fiber 切换、sched 同步（marl 对标）、调度器层；**platform 原语已拆出** → [benchmarks-platform.md](./benchmarks-platform.md)；本轮受影响边的分层证据见 [Boost.Context 1.92 fcontext 升级核验](./upgrade-2026-08-sched-fcontext.md) |
 | [io 实测](./benchmarks-io.md) | echo 吞吐 + shard-per-core 扩展 + vs 裸 epoll/liburing/asio/libuv + 连接生命周期 + TLS/HTTP + multishot/DEFER/fixed-files/direct-accept 机制项 |
 | [预期与边界](./expectations.md) | AVX-512 上架状态、主表（时间/空间分列）、Amdahl 整体观、诚实边界、验证 gate |
 

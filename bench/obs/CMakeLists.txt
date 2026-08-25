@@ -4,6 +4,15 @@ add_executable(hyle_obs_bench obs_bench.cc)
 target_link_libraries(hyle_obs_bench PRIVATE hyle_obs nanobench)
 hyle_apply_warnings(hyle_obs_bench)
 
+# Tracy-upgrade evidence exists only in a trace-on build.  It compares HYLE's
+# public macro seam with direct Tracy 0.14.1 macros under identical event
+# contracts; direct backend use remains confined to this validation target.
+if(TARGET hyle_tracy_client)
+  add_executable(hyle_obs_tracy_bench tracy_bench.cc)
+  target_link_libraries(hyle_obs_tracy_bench PRIVATE hyle_obs nanobench)
+  hyle_apply_warnings(hyle_obs_tracy_bench)
+endif()
+
 if(HYLE_BENCH_ABSL)
   if(TARGET hyle_obs_bench)
     target_compile_definitions(hyle_obs_bench PRIVATE HYLE_BENCH_ABSL)
@@ -13,3 +22,6 @@ if(HYLE_BENCH_ABSL)
 endif()
 
 hyle_register_benches(obs hyle_obs_bench)
+if(TARGET hyle_obs_tracy_bench)
+  hyle_register_benches(obs hyle_obs_tracy_bench)
+endif()

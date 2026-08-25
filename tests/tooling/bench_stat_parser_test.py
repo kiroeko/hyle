@@ -48,6 +48,21 @@ def main():
     else:
         raise AssertionError("partial cross-process samples were accepted")
 
+    if bench_stat.parse_peer_spec("highway=../highway") != (
+            "highway", str((pathlib.Path.cwd() / "../highway").resolve())):
+        raise AssertionError("NAME=PATH peer parsing changed")
+    for invalid in ("highway", "=../highway", "highway="):
+        try:
+            bench_stat.parse_peer_spec(invalid)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError(f"invalid peer spec accepted: {invalid!r}")
+
+    missing_peer = pathlib.Path.cwd() / "bench-stat-peer-that-does-not-exist"
+    if bench_stat.git_identity(missing_peer) is not None:
+        raise AssertionError("missing peer path acquired a Git identity")
+
 
 if __name__ == "__main__":
     main()

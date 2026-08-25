@@ -1,7 +1,7 @@
 # build/package system 历史性能证据
 
 > **2026-08-25 freshness gate：**本页只记录 2026-07-29 `75a8d3f` 的结构诊断。依赖 lock、
-> component/package/CI 图已继续演进，build/package 已重新打开；同一当前图的三平台重签完成前，
+> component/package/CI 图已继续演进；build/package 的架构收口状态未改变，但同一当前图的三平台重签完成前，
 > 下列数字与勾选不是当前发布证书。现行状态只看
 > [`pre-release-readiness`](../milestones/pre-release-readiness.md)。
 

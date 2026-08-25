@@ -1,5 +1,11 @@
 # simd op 对拍证书（vs Highway）
 
+> **2026-08-25 freshness gate：**下述矩阵绑定 2026-07 的 Highway 与 nanobench 输入。
+> 当前 Highway peer 已升级到 `239071390b18ca70f8fadde90ebefa6d8b12cb69`，nanobench
+> 已升级到 4.6.0；所以“最新、最全”只描述历史矩阵内部的相对关系，不表示它已认证当前
+> working tree。新 peer、相同精确 ISA、双序与三平台聚合报告完成前，旧 LOSE=0 不能提升为
+> 当前 SOTA 结论。
+
 > 本页是 [performance 总账](./README.md) 的 **simd 逐 op** 详节。  
 > **全量矩阵（最新、最全）**：[../milestones/simd-orderswap-matrix.md](../milestones/simd-orderswap-matrix.md)（2026-07-16 校准仪器 v4；**勿手抄旧快照**）。  
 > **产品 kernel / 数学核 / dtype**（另一口径）：[benchmarks-simd.md](./benchmarks-simd.md)。  

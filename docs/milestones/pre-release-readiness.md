@@ -1,21 +1,22 @@
 # HYLE 预发布就绪度与模块严格收口队列（2026-08-25）
 
-> **2026-08-25 dependency-triggered / red-team 重开：**本轮重新打开
-> **core、error、platform、mem、time、build/package、util、obs、container** 九个模块；
-> 下文 2026-07-27--30 的 ✅ 是上一次签署基线，不再自动等于当前发布绿证。当前只可逐项
-> 使用本轮已经复验的受影响边，直到九模块的 Windows/WSL/macOS、shared/static/package、
-> sanitizer 和受影响性能门由本轮总验收重新签署。mem 因 mimalloc 2.3.2→3.5.0，container
-> 因 simdutf→9.1.0 与默认 hash/string API 修正，obs 因 Tracy→0.14.1 与 C sink/长度合同
-> 修正而明确保持打开；util 自身算法未变，但其 mem/container 下游受影响边目前只完成
-> Windows 与 GCC 14 WSL focused 复验。其余六模块的最终细项由本轮交叉审计汇总，不能沿用
-> 本页旧“当前全绿”措辞。当前 working tree 仍在修复本轮红队发现，任何较早的 aggregate/package
-> 通过都会被后续受影响改动失效；只有最终提交上的重跑才能恢复绿证。
+> **2026-08-25 依赖升级回归批次（不是模块收口）：**本轮目标是升级锁定依赖、修复直接暴露的
+> 兼容/正确性问题，并重验实际受影响边，不是重新做一遍完整功能面与架构审查。此前严格收口过的
+> **core、error、platform、mem、time、build/package、util、obs** 仍以旧证书作为未改范围的
+> 设计基线；但相对最后一个聚合收口点 `6dcd038`，七个运行时模块的公开头和/或实现均实际改过，
+> build/package 图也直接改过，不能写成“产品形状没改”或“只影响下游”。每个 changed seam 的
+> API/ABI、正确性、受影响性能和文档证据必须在同一 clean commit 上重签。
+> `container/simd/sched/io` 只验证本次升级触及的 dependency seam；定向性能诊断即使发现差距，
+> 也只进入后续模块收口 backlog，不单独阻塞本轮 project-health checkpoint，更不能据此宣称模块
+> 已收口。`compute/graph` 是半成品，本轮仅维持全图 build/test 所需的机械兼容，不投入能力、
+> API、架构或性能工作。
 
 ## 结论
 
-HYLE 的“实现进度”与“当前标准的收口证书”必须分开读：除 compute/graph 仍有产品能力尾，
-其余模块的主体实现基本存在；**九个底座模块当前全部处于本轮重开状态**。它们在
-2026-07-27--30 持有的严格证书仍是有效历史输入，却不是 2026-08-25 的自动发布通行证。
+HYLE 的“产品收口状态”与“当前提交的回归证据”必须分开读。已收口模块不因例行升级被描述成
+重新开发；它们在 2026-07-27--30 持有的严格证书仍是未改范围的设计与算法基线。但本批次也
+包含公开合同和实现修复，因此旧证书既不是 2026-08-25 新 dependency/harness 组合的自动发布
+通行证，也不能覆盖下面列出的 changed seam。
 core 因真实 SIMD/vqsort 消费者暴露的 compiler/cache primitive 重复实现已在 2026-07-29 完成三平台局部复证。mem 在 2026-07-26 成熟库红队中发现的
 P0/API/分发性能缺口均已修复；2026-07-29 又以 `8c85331` 关闭 PMR 零字节、显式 runtime
 adapter 与 installed mem consumer 合同，并由三平台 shared same-link 与正确性/ABI/sanitizer
@@ -23,18 +24,38 @@ adapter 与 installed mem consumer 合同，并由三平台 shared same-link 与
 
 | 层次 | 当前判断 | 下一动作 |
 |---|---|---|
-| 上次严格认证基线 | core、error、platform、mem、time、build/package、util、obs、container | 仅作历史输入；本轮九模块均已由依赖升级/红队发现触发重开 |
-| 本轮已过局部边 | mem/container/obs/util 的 Windows Release 与 GCC 14 WSL focused；container 的 Windows/GCC 14、obs 的 Windows installed shared C/C++ consumer；obs exact Tracy 0.14.1 trace-on | 不扩大为三平台、static、sanitizer 或完整性能证书 |
-| 已实现、待新标准复审 | math、sched、io、simd | 按本文队列逐模块收口，不按旧 benchmark 形状默认通过 |
+| 已严格收口基线 | core、error、platform、mem、time、build/package、util、obs | 未改范围沿用设计基线；本批次实际改动与升级失效边必须重签 |
+| 本轮已有中间快照 | mem/container/obs/util 的 Windows Release 与 GCC 14 WSL focused；container 的 Windows/GCC 14、obs 的 Windows installed shared C/C++ consumer；obs exact Tracy 0.14.1 trace-on | 后续改动可使其失效；不扩大为最终 clean、三平台、static、sanitizer、完整性能证书或再次收口 |
+| 尚未整体收口 | container、math、sched、io、simd | 本轮只验证依赖升级触及项；完整收口仍留给后续独立任务 |
 | 仍有能力尾 | compute、graph | 先用真实北极星补能力，再执行同一严格合同 |
-| 整库发布面 | build/package 的 2026-07 架构证书只作历史输入；本轮同样重开 | 随模块验收递增 focused consumer/sanitizer/feature 门；最终 ABI/FFI/bundle 总验收仍在 R6 |
+| 整库发布面 | build/package 的 2026-07 架构证书是设计基线；升级后的交付证据待重签 | 回归新的依赖图、三种交付物、离线/source bundle 与 all-component CPU 图；不是重新设计整个构建系统 |
 
 build/package system 的模块 target 图、可组合子集与三种交付形状曾在 2026-07-29 重签；当时又
 启动持续回归任务，把 shared/static package、complete-source 与 AArch64 compile 从代表性组件
-提升为 all-component CPU 图，并明确 all-build 不等于模块验收。2026-08-25 的依赖升级和红队
-发现满足明确触发器，因此 build/package 与其余八模块一起重新进入验收。每个旧证书仍可作为
-未受影响能力的输入，但必须由
-本轮总验收明确裁决哪些边可保留，不能因“此前通过”自动恢复 util、obs 或 container 绿证。
+提升为 all-component CPU 图，并明确 all-build 不等于模块验收。2026-08-25 只回归新的依赖图、
+三种交付物和 source bundle；每个旧证书仍可作为未受影响能力的输入，最终 clean checkpoint
+只裁决本轮受影响边是否恢复发布绿灯，不把它写成九模块又完成了一轮收口。
+
+### 本批次实际触达矩阵（相对 `6dcd038`）
+
+下表只界定必须复证的边，不声明当前 dirty working tree 已经通过。详细依赖身份与证据门见
+[`dependency-upgrade-2026-08`](./dependency-upgrade-2026-08.md)。
+
+| 已收口范围 | 本批次实际改动 | 当前证书边界 |
+|---|---|---|
+| core | 公开 C/C++ prefetch、Clang unroll 条件、intrusive-list callback/container-of 合同 | 重签头消费者、compiler/ISA codegen、sanitizer 与受影响点值；不重做功能面 closure |
+| error | 公开 C status code 固定宽 ABI 与 C adapter/ABI 检查 | 重签纯 C/C++、surface、`-fshort-enums`/跨编译器 ABI；nanobench 点值另行刷新 |
+| platform | 公开 thread/CPU/FS/NUMA C/C++ 合同及实现，含 versioned/FFI record、所有权和错误路径 | 重签 API/ABI、跨平台正确性、package consumer 及实际改动热路 |
+| mem | C NUMA 类型复用、region options/flag ABI，以及 mimalloc-v3 allocation/alignment/realloc 与 NUMA/huge-page adapter | 重签 v3 正确性/所有权、C/C++/三种交付、sanitizer 与 allocator 性能 |
+| time | `Instant` 溢出合同、C timer callback/reentrancy/cancel 语义与 clock/timer adapter | 重签极值/回调生命周期、C/C++/package、跨平台时钟与受影响性能 |
+| obs | C log record/level、caller-storage sink、fiber trace、Tracy text/plot adapter 与 C 实现 | 重签 29-symbol/FFI/sink lifetime、trace OFF/ON static/shared、package 与热路 |
+| util | Registry priority ABI、frozen-name overflow 与 demangle portability | 重签固定宽 C ABI、OOM/overflow、C++ consumer、package/sanitizer 与受影响 registry 性能 |
+| build/package | lock/provenance、component graph、FetchContent/offline/source bundle、CI/package 合同 | 重签 shared/static/complete-source、模块化 installed consumer、离线输入与 all-component CPU 图 |
+
+`container/simd/sched/io` 不进入上表的“已收口范围”：它们本轮分别只做
+simdutf/hash/string、Highway/xsimd、Boost.Context fcontext、nghttp2 HTTP/2 的定向诊断和
+正确性/交付回归；性能输赢是后续 closure 的输入，不是本升级任务的模块验收结论。
+`compute/graph` 仍只做现有 adapter 的机械 build/test/package 兼容。
 
 ## 底座五模块交叉引用复验（历史证据，2026-07-25）
 
@@ -82,8 +103,8 @@ static mem 闭包在 `-Werror` 下干净构建；AppleClang shared 20/20。三�
 未声明的二进制依赖。
 
 因此这五个底座模块的**相互引用可以关闭**；util-core 对 mem 的受影响边也已回验，下一审查
-单元当时是 container；该单元、随后独立复审的 build/package 与 util-runtime 均已收口，后续
-未认证队列从 sched 继续。性能边界另作
+单元当时是 container。container 完成过多轮施工任务和局部证据，但按当前口径未取得与八个底座
+相同强度的整体严格证书；build/package 与 util-runtime 则已收口。性能边界另作
 诚实限定：Windows 已量到 shared direct-import 相对同进程 raw mimalloc 约 4.5–6% 的 DSO
 边界成本；三平台“同链接形状”的最终性能证书仍登记在 performance 文档，不能把本次依赖
 正确性结论扩大成性能结论。该性能尾随后由 clean `c640072` 的 Win/WSL/M4 双 QoS same-link
@@ -137,22 +158,25 @@ benchmark 宣称 SOTA。
 
 排序依据是**接口爆炸半径 + 消费关系**，不是目录顺序，也不是谁的 benchmark 更多：
 
-1. **core**（🟡 2026-08-25 重开）：2026-07 version/intrusive 与 compiler/cache primitive
-   证书仅作历史输入；本轮总验收前不恢复绿证。
-2. **build/package system**（🟡 2026-08-25 重开）：2026-07 的组件/cache/终态依赖、三种交付、
-   双测试形状和三平台 package 结果仅作历史输入；本轮依赖升级后的完整交付图待重签。
-3. **util-core seam**（🟡 2026-08-25 重开；历史基线 `3c32be6`）：低层 header 能力由真实
+1. **core**（已收口；2026-08-25 升级回归中）：重验本批次改过的 prefetch/unroll/
+   intrusive-list 公开合同、compiler/ISA/sanitizer 与消费者边，不重做完整功能面审查。
+2. **build/package system**（已收口；2026-08-25 升级回归中）：2026-07 的组件/cache/终态依赖、三种交付、
+   双测试形状和三平台 package 结果是基线；本轮依赖升级后的完整交付图待重签。
+3. **util-core seam**（已收口；历史基线 `3c32be6`）：低层 header 能力由真实
    `hyle::util_core` INTERFACE component/target 承载；Ref/ScopeGuard 易用形状、mem/graph 消费、
-   三平台 installed consumer/TSan/n=15 与 M4 双 QoS 是历史证据，本轮总验收前不自动恢复。
-4. **obs**（🟡 2026-08-25 重开）：上次 runtime 证书是输入；C surface 已扩为 29 symbol，
+   三平台 installed consumer/TSan/n=15 与 M4 双 QoS 是历史证据；本轮重验 changed core/compiler
+   消费边。完整 util 的固定宽 C ABI 与 Registry 改动在 util-runtime 行处理。
+4. **obs**（已收口；2026-08-25 升级回归中）：上次 runtime 证书是输入；C surface 已扩为 29 symbol，
    Windows/GCC 14 WSL trace-off 与 exact Tracy 0.14.1 Windows trace-on 受影响边通过，
    Windows installed shared C/C++ consumer 通过，WSL/macOS package、static/sanitizer 待总验收。
-5. **container**（🟡 2026-08-25 重开）：默认 hash 等价类、公开 string helper、C btree OOM
+5. **container**（尚未严格收口；2026-08-25 只验升级触及边）：默认 hash 等价类、公开 string helper、C btree OOM
    与 simdutf 9.1 受影响面已在 Windows/GCC 14 WSL 通过；两平台 installed shared C/C++
-   consumer 也通过，macOS/static/sanitizer/正式性能仍待重新签署。
-6. **util-runtime / 完整 util**（🟡 2026-08-25 重开；历史基线 `1b148ef`/`70fa4e8`）：Registry
+   consumer 也通过；本轮只补 targeted correctness/package/performance diagnostic，整体
+   macOS/static/sanitizer/正式性能随以后 container closure 处理。
+6. **util-runtime / 完整 util**（已收口；历史基线 `1b148ef`/`70fa4e8`）：Registry
    mutable→frozen 形状、共享 Status/allocator、完整 C ABI、TSan/package 与三平台性能结果只作
-   历史输入；mem/container 下游变化与本轮总验收未完成。
+   历史输入；本轮必须重验实际改过的 Registry priority 固定宽 ABI、frozen-name overflow、
+   demangle portability，以及 mem/container 下游边。
 7. **sched**：汇合 platform/mem/time/container；按真实任务、同步、取消、关闭和 blocking workload 审算法及 API。
 8. **io**：在 sched 合同稳定后审 proactor、网络/文件/TLS/HTTP 的普通路径、错误、deadline/cancel 与跨后端性能。
 9. **math↔simd 边界审查，再收 simd**：先裁决 scalar/std/SIMD/消费域归属，再冻结 SIMD dispatch、dtype/math/sort/search。
@@ -171,19 +195,19 @@ math 的处理相反：它当前不是经过独立需求设计的产品，而是
 
 | 模块 | 实现状态 | 当前严格证书 |
 |---|---|---|
-| error | 功能/API/native detail/30-symbol C ABI 主体完成；本轮重开 | 🟡 2026-07-30 adoption/n=15 是历史输入；dependency-triggered/red-team 总验收前不恢复绿证，细项由本轮交叉审计汇总 |
-| platform | 功能/API/120-symbol C ABI 主体完成；本轮重开 | 🟡 `a073931` 的三平台/package/sanitizer/性能是历史输入；本轮交叉审计与总验收未签 |
-| mem | 功能/API/P0 主体存在；mimalloc 3.5.0 受影响边重开 | 🟡 Windows 与 GCC 14 WSL focused 已通过 runtime `mi_version()==30500`、usable/good/stats/collect、真实跨线程 free+owner collect、1GiB taxonomy，以及 v3 小对象弱对齐回归；shared installed/static/source、macOS、sanitizer、NUMA/大页硬件和正式 allocator 性能待本轮重签 |
-| time | 功能/API/交付主体完成；本轮重开 | 🟡 2026-07-29 profiling/C parity/三平台/sanitizer/timer 性能是历史输入；本轮交叉审计与总验收未签 |
-| core | 功能与 compiler/cache primitive 主体完成；本轮重开 | 🟡 `71dabf7` 与后续三平台 codegen/消费者复证是历史输入；本轮总验收前不恢复绿证 |
-| build/package system | 组织与三种交付形状主体完成；本轮重开 | 🟡 历史架构证书只作输入；all-component package/source/AArch64、动态 exported-target consumer 与升级后依赖图待本轮三平台复证 |
-| util-core | 低层公开头能力主体完成；本轮重开 | 🟡 `5dfb74a`/`3c32be6` 的三平台/package/TSan/性能是历史输入；mem 等真实消费者变化与本轮总验收未签 |
-| obs | 功能主体完成；Tracy/C sink/长度/fiber parity 边重开 | 🟡 Windows 与 GCC 14 WSL Release trace-off、29/29 C surface、exact Tracy 0.14.1 Windows trace-on，以及 Windows installed shared C/C++ consumer 已通过；WSL/macOS package、static、sanitizer 与 feature consumer 待本轮重签；旧 runtime n=15 只覆盖未改热路 |
-| container | 功能主体完成；hash/string/simdutf 边重开 | 🟡 Windows/GCC 14 WSL 各 308/308 typed/纯 C/surface/header 通过，Windows 与 GCC 14 installed shared C/C++ consumer 通过（C 含 `-fshort-enums`）；64 个 SipHash KAT、Eq/hash 拒绝负例，以及 simdutf 9.1 的单遍 validate 与 validate+count invalid/tail/ASCII/non-ASCII 回归已覆盖；float/double/string/SipHash/UTF-8 均只有 Windows 单点（UTF-8 当前点未编同合同 peer），macOS/sanitizer/static 与正式性能待重签 |
-| util-runtime | Registry/demangle/C adapter 主体完成；九模块总复审中 | 🟡 自身 API/算法未改，Windows/GCC 14 WSL 受影响 mem/container 下游测试通过；其余本轮细项与三平台集成由总验收裁决，旧证书不自动恢复 |
-| math、sched、io | 功能主体基本完成 | 待按新合同认证；旧 closure 是输入证据，不是自动通行证 |
-| simd | 功能主体基本完成 | 🟡 strict Round 1 完成；f16/bf16 lanes、共享 error、scalable 真硅性能与最终发布面仍为 P0 |
-| compute、graph | 主干存在、不是 stub | 仍有能力尾；完成能力后按同合同认证 |
+| error | 已严格收口基线；本轮 C status ABI/adapter 已改 | 🟡 2026-07-30 adoption/n=15 是历史基线；固定宽 C ABI、纯 C/C++ surface/行为及当前点值待 final clean 重签 |
+| platform | 已严格收口基线；本轮公开 thread/CPU/FS/NUMA 合同及实现已改 | 🟡 `a073931` 的三平台/package/sanitizer/性能是历史基线；changed API/ABI、跨平台正确性、consumer 与受影响性能待 final clean 重签 |
+| mem | 已严格收口基线；mimalloc 3.5.0、C NUMA/options/flag 与 allocator adapter 已改 | 🟡 Windows 与 GCC 14 WSL focused 有中间快照；shared/static/source、macOS、sanitizer、C/C++ surface 与正式 allocator 性能待 final clean 重签 |
+| time | 已严格收口基线；本轮 `Instant` 与 C timer 合同/实现已改 | 🟡 2026-07-29 profiling/C parity/三平台/sanitizer/timer 性能是历史基线；极值、回调生命周期、C/C++/package 与受影响性能待 final clean 重签 |
+| core | 已严格收口基线；本轮 prefetch/unroll/intrusive-list 公开合同已改 | 🟡 `71dabf7` 与后续三平台 codegen/消费者复证是历史基线；changed header、compiler/ISA/sanitizer/consumer 与点值待 final clean 重签 |
+| build/package system | 已严格收口；依赖交付图直接受影响 | 🟡 all-component package/source/AArch64、动态 exported-target consumer 与升级后依赖图待本轮三平台重签 |
+| util-core | 已严格收口基线；本轮消费 changed core/compiler seam | 🟡 `5dfb74a`/`3c32be6` 的三平台/package/TSan/性能是历史基线；只重签实际触及的 header/consumer 边 |
+| obs | 已严格收口基线；Tracy 与公开 C record/sink/fiber 合同及实现已改 | 🟡 Windows/GCC 14 WSL trace-off、29-symbol、exact Tracy 0.14.1 trace-on 与 Windows installed consumer 有中间快照；其余平台、static/shared、FFI/lifetime、sanitizer/package 与热路待 final clean 重签 |
+| container | 尚未严格收口；hash/string/simdutf 边直接受影响 | 本轮只收集该 seam 的 correctness、installed consumer 与 simdutf 9.1 同合同证据；不能扩大成 container 功能/API/整体性能 closure，性能差距留待其独立收口处理 |
+| util-runtime | 已严格收口基线；priority ABI、frozen-name overflow 与 demangle 已改 | 🟡 Windows/GCC 14 WSL 本体及下游有中间快照；固定宽 C ABI、OOM/overflow、package/sanitizer 与当前性能证据待 final clean 重签 |
+| math、sched、io | 功能主体基本完成、尚未严格收口 | 本轮只认证升级直接触及边，不作模块 closure 结论 |
+| simd | 功能主体基本完成、尚未严格收口 | 本轮修正 classic MSVC AVX-512 vqsort 的错误编译器假设：产品 tier 保持 AVX-512、sort 如实回落 AVX2，clang-cl 不降级；focused MSVC/clang-cl build/artifact 与本机 public sort 已过，AVX-512 hosted execution 待 final CI。该结果不代替整体功能/API/三平台性能与发布面 closure |
+| compute、graph | 半成品 | 本轮仅机械兼容；完成能力后再按同合同认证 |
 
 ## 停止与重开规则
 
@@ -203,4 +227,4 @@ math 的处理相反：它当前不是经过独立需求设计的产品，而是
 - 构建拓扑和慢变顺序：[`../architecture/roadmap.md`](../architecture/roadmap.md)；参考库角色：[`../architecture/references.md`](../architecture/references.md)。
 - 当前任务与 LOC：[`README.md`](./README.md)；每个旧 closure 文件只是该轮施工证据。
 - 稳定设计：[`../architecture/`](../architecture/README.md)；性能：[`../performance/`](../performance/README.md)；用户入口：[`../guide/`](../guide/README.md)。
-- 历史认证记录或当前复开审计输入：[`error-module-reclosure.md`](./error-module-reclosure.md)、[`platform-remaining.md`](./platform-remaining.md)、[`mem-mature-gap-audit.md`](./mem-mature-gap-audit.md)、[`time-mature-gap-audit.md`](./time-mature-gap-audit.md)、[`core-module-closure.md`](./core-module-closure.md)、[`build-package-system-closure.md`](./build-package-system-closure.md)、[`util-module-closure.md`](./util-module-closure.md)、[`obs-module-closure.md`](./obs-module-closure.md)、[`container-module-closure.md`](./container-module-closure.md)。这些任务页中的绿色绑定各自日期/commit；现行最终形状是否认证只看本页状态表。
+- 历史认证/施工输入：[`error-module-reclosure.md`](./error-module-reclosure.md)、[`platform-remaining.md`](./platform-remaining.md)、[`mem-mature-gap-audit.md`](./mem-mature-gap-audit.md)、[`time-mature-gap-audit.md`](./time-mature-gap-audit.md)、[`core-module-closure.md`](./core-module-closure.md)、[`build-package-system-closure.md`](./build-package-system-closure.md)、[`util-module-closure.md`](./util-module-closure.md)、[`obs-module-closure.md`](./obs-module-closure.md)、[`container-module-closure.md`](./container-module-closure.md)。这些任务页中的绿色只绑定各自日期/commit；container 等未达到当前严格口径的模块不能因旧任务名带 closure 就视为已收口。

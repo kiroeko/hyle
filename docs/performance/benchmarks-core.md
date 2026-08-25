@@ -1,8 +1,8 @@
 # core 历史性能证据
 
 > **2026-08-25 freshness gate：**本页 IntrusiveList 点值和 compiler/cache 证据绑定下述
-> 2026-07 commit。它们可作本轮回归输入，但 core 已由依赖升级/消费者红队重新打开；相同
-> source identity、peer pin、编译合同与三平台复跑完成前，不是当前 working tree 的发布证书。
+> 2026-07 commit。它们可作本轮回归输入；core 的产品收口状态未改变，但相同 source identity、
+> peer pin、编译合同与三平台复跑完成前，这些点值不是当前 working tree 的发布证书。
 > 现行状态只看 [`pre-release-readiness`](../milestones/pre-release-readiness.md)。
 
 > 本页是 core 性能结论的唯一信源。设计与使用分别见

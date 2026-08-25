@@ -1,5 +1,11 @@
 # simd 产品 kernel 实测
 
+> **2026-08-25 freshness gate：**nanobench 已从 4.3.11 升到 4.6.0，Highway/xsimd
+> 对手也已切到 2026-08-22 的新锁定 revision；本页旧点值与下游 op 矩阵仍是历史输入，
+> 不能作为当前 working tree 的 SOTA 证书。必须以相同 HYLE source identity、新 peer pin、
+> harness/runner、精确 ISA 编译合同和三平台复跑重新签署。现行状态只看
+> [`pre-release-readiness`](../milestones/pre-release-readiness.md)。
+
 > 本页是 [performance 总账](./README.md) 的 **simd 产品路径** 详节：  
 > dot/saxpy、数学核、dtype、gather/compress、vendor 竞争、activation/sort 等。  
 > 环境：WSL Ubuntu24.04 原生 ext4 GCC14 + Win MSVC19.50 Release；部分段含 Apple NEON。  

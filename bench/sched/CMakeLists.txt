@@ -8,6 +8,57 @@
 # IN the build on purpose: if it ever recurs, we investigate head-on, not hide it.
   hyle_add_bench(sched SOURCES scheduler_bench.cc)
 
+# Dependency-upgrade evidence: compare the consumer-facing Fiber resume/yield
+# path with a raw round trip through the exact same vendored Boost.Context 1.92
+# fcontext assembly.  The source intentionally includes sched's private shim;
+# this target is validation-only and does not make fcontext public API.
+if(HYLE_HAS_FCONTEXT)
+  # Reuse the exact assembly source list already selected for hyle_sched instead
+  # of maintaining a second architecture table in the benchmark layer.
+  get_target_property(_hyle_sched_sources hyle_sched SOURCES)
+  set(_hyle_bench_fcontext_asm)
+  foreach(_hyle_sched_source IN LISTS _hyle_sched_sources)
+    if(_hyle_sched_source MATCHES "\\.(asm|S)$")
+      list(APPEND _hyle_bench_fcontext_asm "${_hyle_sched_source}")
+    endif()
+  endforeach()
+  if(NOT _hyle_bench_fcontext_asm)
+    message(FATAL_ERROR
+      "hyle_sched_fcontext_bench could not recover hyle_sched's selected fcontext assembly")
+  endif()
+  if(HYLE_STATIC)
+    # The final executable already receives the selected assembly from the
+    # static hyle_sched archive.  Reuse those symbols so both HYLE and the raw
+    # seam have ordinary in-image calls and no duplicate assembly definition.
+    add_library(hyle_bench_fcontext_peer STATIC fcontext_peer.cc)
+    target_compile_definitions(hyle_bench_fcontext_peer PUBLIC
+      HYLE_BENCH_PEER_STATIC)
+  else()
+    # Keep raw symbols in a separate image from shared hyle_sched.  This avoids
+    # relying on private product exports while preserving the exact asm bytes.
+    add_library(hyle_bench_fcontext_peer SHARED
+      fcontext_peer.cc ${_hyle_bench_fcontext_asm})
+    target_compile_definitions(hyle_bench_fcontext_peer PRIVATE
+      HYLE_BENCH_PEER_EXPORTS)
+  endif()
+  target_include_directories(hyle_bench_fcontext_peer PRIVATE
+    "${PROJECT_SOURCE_DIR}/src/sched")
+  target_link_libraries(hyle_bench_fcontext_peer PRIVATE hyle_mem)
+  if(MSVC)
+    target_compile_definitions(hyle_bench_fcontext_peer PRIVATE
+      BOOST_CONTEXT_EXPORT=EXPORT)
+  endif()
+  hyle_apply_warnings(hyle_bench_fcontext_peer)
+
+  add_executable(hyle_sched_fcontext_bench fcontext_bench.cc)
+  target_link_libraries(hyle_sched_fcontext_bench PRIVATE
+    hyle_sched hyle_bench_fcontext_peer nanobench)
+  hyle_apply_warnings(hyle_sched_fcontext_bench)
+  unset(_hyle_sched_sources)
+  unset(_hyle_bench_fcontext_asm)
+  unset(_hyle_sched_source)
+endif()
+
 # sched-05 fiber-aware sync primitives bench (own exe: scheduler_bench.cc already
 # owns main(), so this is a second target rather than another source in it).
 add_executable(hyle_sched_sync_bench sync_bench.cc)
@@ -109,6 +160,7 @@ if(HYLE_BENCH_MARL)
 endif()
 
 hyle_register_benches(sched
+  hyle_sched_fcontext_bench
   hyle_sched_sync_bench
   hyle_sched_sync_ext_bench
   hyle_sched_blocking_bench

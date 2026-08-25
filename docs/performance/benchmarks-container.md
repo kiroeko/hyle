@@ -487,11 +487,22 @@ scripts/bench-stat.py <build>/bin/hyle_container_flat_sorted_bench -n 15 \
 scripts/bench-stat.py <build>/bin/hyle_container_misc_bench -n 15 ...
 
 # string / StringInterner
-scripts/bench-stat.py <build>/bin/hyle_string_ref_bench -n 15 ...
-scripts/bench-stat.py <build>/bin/hyle_string_buf_bench -n 15 ...
+HYLE_CONTAINER_BENCH_FILTER=string-ref \
+  scripts/bench-stat.py <build>/bin/hyle_container_bench -n 15 ...
+HYLE_CONTAINER_BENCH_FILTER=string-buf \
+  scripts/bench-stat.py <build>/bin/hyle_container_bench -n 15 ...
+
+# simdutf 9.1 直接受影响腿；同合同 validate+count 与 validate-only 分开
+HYLE_CONTAINER_BENCH_FILTER=string-algo \
+  scripts/bench-stat.py <build>/bin/hyle_container_bench -n 15 \
+  --pair "simdutf validate+count -> -1 invalid (same contract)" \
+         "HYLE utf8_length (simdutf 9.1 product path)" \
+  --pair "simdutf validate_utf8 (same contract)" \
+         "HYLE utf8_validate (simdutf 9.1 product path)"
 
 # path
-scripts/bench-stat.py <build>/bin/hyle_path_bench -n 15 ...
+HYLE_CONTAINER_BENCH_FILTER=path \
+  scripts/bench-stat.py <build>/bin/hyle_container_bench -n 15 ...
 
 # ConcurrentVector only（queue bench 其余 workload 不运行）
 HYLE_QUEUE_BENCH_FILTER=concurrent-vector \

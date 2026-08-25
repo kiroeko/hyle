@@ -128,6 +128,10 @@ HYLE_BENCH_DEPS_DIR=/custom/path scripts/setup-bench-libs.sh
 ```
 
 - **Idempotent**: a lib that already has a `.git` is skipped, never clobbered.
+- **Bootstrap, not a pin**: this helper does not move an existing checkout and
+  therefore cannot prove freshness. Before a formal comparison, deliberately
+  select a current upstream revision, keep the checkout clean, and pass it to
+  `bench-stat.py --peer NAME=PATH`; the provenance snapshot records the exact identity.
 - **Default location** = the repo's parent dir (`$repo/../`), which is exactly
   where the gated-bench CMake defaults (`HYLE_<LIB>_DIR`) look. So after running
   it with no args, every `-DHYLE_BENCH_*=ON` works with **no extra `-D`**.
@@ -198,6 +202,28 @@ cmake -S . -B build-bench -G Ninja -DCMAKE_BUILD_TYPE=Release \
 cmake --build build-bench --target hyle_queue_sota_bench
 ./build-bench/bin/hyle_queue_sota_bench
 ```
+
+## `bench-stat.py` — paired process-level performance evidence
+
+`bench-stat.py` repeats one nanobench executable in fresh processes and decides each requested
+pair from the median ratio, run-to-run spread and paired sign test. A diagnostic run may omit
+provenance gates; a formal run uses `--require-clean` from a clean HYLE checkout and declares every
+external Git peer that contributes comparison code:
+
+```bash
+python scripts/bench-stat.py build-bench/bin/hyle_sort_bench -n 15 --require-clean \
+  --peer highway=../highway \
+  --pair "Highway VQSelect direct" "HYLE public"
+```
+
+The runner records the HYLE and peer HEAD/tree/dirty/remote identities, its own and the executable's
+SHA-256, host, relevant CMake cache contract, HYLE benchmark environment, and the centrally locked
+nanobench version/revision/header hash. `--require-clean` rejects a dirty or unidentified current
+source/peer and an executable outside a discoverable CMake build tree. This is a runtime provenance
+snapshot, **not** a cryptographic build binding: a formal result must also retain the fresh
+configure/build log that produced the recorded executable hash. The runner does not guess which
+peers a benchmark uses; omitting a required `--peer` makes the run incomplete evidence. Do not pass
+unrelated sibling checkouts merely to make a list look comprehensive.
 
 ## Rust cross-language benches (`bench/rust/`)
 

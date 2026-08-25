@@ -6,6 +6,42 @@ evidence.  The machine-readable authority is
 this document records impact and required revalidation, not a second set of
 CMake pins.
 
+This work item is a dependency upgrade and project-health checkpoint, not a
+module-closure pass. The previous closure decisions for
+`core/error/platform/mem/time/obs/util/build-package` remain the design baseline
+for unchanged scope. That does **not** mean this batch only changed downstream
+dependencies: relative to the last aggregate closure checkpoint `6dcd038`, all
+seven runtime modules have public-header and/or implementation changes, while
+the build/package graph changed directly. Every changed seam is therefore
+yellow until its API/ABI, correctness, affected performance and documentation
+evidence is signed on one clean commit. Modules outside that strict baseline
+receive only targeted validation for a directly changed upgrade seam; a
+diagnostic performance gap there is backlog for the later module closure, not a
+blocker for this project-health checkpoint. `compute/graph` remain half-finished:
+their rows below require only the mechanical compatibility needed to keep the
+existing component graph building and testing, not feature, API, architecture
+or performance work.
+
+## Actual HYLE touch matrix since `6dcd038`
+
+This is a source-impact matrix, not a list of completed evidence. It prevents a
+historical certificate from being reused over a changed public contract while
+also preventing this upgrade task from silently becoming an all-module closure
+pass.
+
+| Scope | Actual public / implementation touch in this batch | Evidence that must be re-signed |
+|---|---|---|
+| core | C/C++ prefetch behavior, Clang unroll-hint conditions and intrusive-list callback/container-of contracts changed in public headers | C/C++ header consumers, supported compiler/ISA codegen, sanitizer behavior and any affected primitive point values |
+| error | The public C status-code type became explicitly fixed-width and the C adapter/ABI checks changed | Pure-C and C++ behavior, symbol/surface and `-fshort-enums`/cross-compiler ABI; current benchmark values are separately stale because nanobench changed |
+| platform | Public C/C++ thread, CPU-feature, filesystem and NUMA contracts changed together with their implementations, including versioned/FFI records and ownership/error paths | C/C++ API and ABI consumers, struct-prefix/unaligned FFI cases, cross-platform FS/thread/CPU/NUMA correctness, package consumers and performance of actually changed hot paths |
+| mem | The C surface now shares platform NUMA types, versions region options and fixes flag widths; the mimalloc-v3 allocation/alignment/reallocation path and NUMA/huge-page adapters changed | C/C++ surface and ownership, v3 allocation/alignment/OOM/remote-free behavior, NUMA/huge-page contracts, shared/static/source consumers, sanitizers and allocator performance |
+| time | Public `Instant` overflow behavior and C timer callback/reentrancy/cancel contracts changed with the clock/timer adapter implementation | C/C++ boundary and callback-lifetime tests, extreme-duration/overflow cases, cross-platform clocks, package consumers and affected timer/clock performance |
+| obs | The C log record/level ABI, caller-storage sink, fiber tracing and Tracy text/plot adapters changed, together with the C implementation | 29-symbol C surface, short-record/unaligned FFI and sink lifetime, trace-OFF plus exact trace-ON static/shared shapes, package consumers and changed hot paths |
+| util | Registry priority ABI, frozen-name overflow handling and demangle portability changed in public/implementation code | Fixed-width pure-C ABI, registry OOM/overflow and C++ consumers, package/sanitizer checks and affected registry performance |
+| build/package | Dependency lock/provenance, component graph, FetchContent/offline/source-bundle and CI/package contracts changed directly | Fresh shared/static/complete-source delivery, modular installed consumers, offline inputs, all-component CPU graph and supported cross-platform/toolchain checks |
+| container / simd / sched / io | Only upgrade-triggered seams are in scope: simdutf/hash/string, Highway/xsimd integrated paths, Boost.Context fcontext and nghttp2 HTTP/2 respectively | Targeted correctness, build/package and honest same-contract diagnostics only. Results do not certify a whole module; a loss is input to its later closure and does not by itself block this project-health checkpoint |
+| compute / graph | Only mechanical dependency/API compatibility needed by the existing all-component build | Compile/test/package health of the existing adapters; no capability, public-shape or SOTA conclusion |
+
 ## Sibling-checkout audit snapshot
 
 Observed under `C:/public/project-hyle` on 2026-08-25.  These local clones are
@@ -33,12 +69,12 @@ official stable targets and therefore were not copied blindly.
 
 | Dependency / class | Previous identity → current locked identity | Actual HYLE consumer and likely break surface | License / offline / install contract | Pre-release evidence gate |
 |---|---|---|---|---|
-| ggml / FetchContent | `eced84c86f8b012c752c016f7fe789adea168e1e` (`v0.15.3`) → `8599e0ea3756c4bac4ef813af2241cb1a8bbfb0b` (`v0.21.0`) | compute-05 `ggml_bridge`; private PIC static CPU + optional CUDA. Highest risk: backend/tensor APIs, target names, exported headers and upstream CMake options | MIT `LICENSE`; verified codeload archive online; offline/direct source accepts exact Git or the locked no-`.git` raw expanded tree; static SDK owns target/header/license closure | Host and CUDA adapter compile; ggml operator parity; native/portable ISA shapes; static/shared install + downstream consume; confirm only v0.21 options are set |
+| ggml / FetchContent | `eced84c86f8b012c752c016f7fe789adea168e1e` (`v0.15.3`) → `8599e0ea3756c4bac4ef813af2241cb1a8bbfb0b` (`v0.21.0`) | compute-05 `ggml_bridge`; private PIC static CPU + optional CUDA. Highest risk: backend/tensor APIs, target names, exported headers and upstream CMake options | MIT `LICENSE`; verified codeload archive online; offline/direct source accepts exact Git or the locked no-`.git` raw expanded tree; static SDK owns target/header/license closure | Existing host adapter and tests compile/run; static/shared source/package graph consumes the v0.21 target/options. CUDA/operator/ISA product completion is deferred with compute closure |
 | nghttp2 / FetchContent | `68cb6900fde14c77f0cd7add0e094a862960eb99` (`v1.69.0`) → `85e300c79fb6dbcfa9c1013215c8710c1c2cd3d2` (`v1.70.0`) | io-11 C codec and HTTP/2 state machine; private `nghttp2_static`. Risk is C API/configured header and noisy optional-app probes, not transport ownership | MIT `COPYING`; archive/Git checks as above; static SDK exports core target and copied public headers | io-only configure/build; HTTP/2 codec/stream/flow-control tests; install + downstream static consume; prove app/HTTP3 dependencies stay absent |
-| Vulkan-Headers / FetchContent | `b5c8f996196ba4aa6d8f97e52b5d3b6e70f7e4e2` → `e3b1eec08173d6b825cd3ac88c885a63b621504a` | compute-06 compile-time API and generated declarations | Apache-2.0 OR MIT license set; same archive/offline checks; installed SDK carries required headers | Configure/build with Vulkan loader; ABI/layout compile assertions; install consume |
-| volk / FetchContent | `d979819fd03de3a7606d6e23d6ff4968942599da` → `776893306c5d3b22b6185b5d4a258b81d94572bf` | compute-06 dynamic loader table; risk is generated symbol/table shape | MIT `LICENSE.md`; archive/offline verification; one private/exported closure as registered | Loader-present and loader-absent runtime paths; Vulkan tests; static/shared package smoke |
+| Vulkan-Headers / FetchContent | `b5c8f996196ba4aa6d8f97e52b5d3b6e70f7e4e2` → `e3b1eec08173d6b825cd3ac88c885a63b621504a` | compute-06 compile-time API and generated declarations | Apache-2.0 OR MIT license set; same archive/offline checks; installed SDK carries required headers | Existing adapter/layout assertions compile and package consumers resolve; no new compute API or capability work |
+| volk / FetchContent | `d979819fd03de3a7606d6e23d6ff4968942599da` → `776893306c5d3b22b6185b5d4a258b81d94572bf` | compute-06 dynamic loader table; risk is generated symbol/table shape | MIT `LICENSE.md`; archive/offline verification; one private/exported closure as registered | Existing loader-present/absent tests and static/shared package smoke only; backend completion is deferred |
 | glslang / FetchContent | `f0bd0257c308b9a26562c1a30c4748a0219cc951` → `168d452a4f460d24b588fed08477a81c44ee27a1` | compute test/benchmark shader compiler only; not production runtime | upstream multi-license `LICENSE.txt`; archive/offline verification; must not leak into production SDK closure | Shader compilation tests/bench configure; prove tests-off product does not fetch/export glslang |
-| Vulkan train invariant | `vulkan-sdk-1.4.341.0` → `vulkan-sdk-1.4.357.0` | Headers + volk + glslang must move atomically | reader rejects a mixed version train | Full compute-06 shader→pipeline→dispatch test on at least one real driver; loader-negative fallback |
+| Vulkan train invariant | `vulkan-sdk-1.4.341.0` → `vulkan-sdk-1.4.357.0` | Headers + volk + glslang must move atomically | reader rejects a mixed version train | Mixed-train rejection, existing shader/loader tests and compile health; full real-driver compute certification is deferred |
 | googletest / FetchContent | `b514bdc898e2951020cbdca1304b75f5950d1f59` (`v1.15.2`) → `063de7e9578f82b369302001269680b4b1553359` (`v1.18.0`) | test harness only; assertion/listener/discovery integration | BSD-3-Clause `LICENSE`; archive/offline verification; absent when tests are OFF | Configure/build/run aggregate tests; tests-off source/package shape |
 | Tracy / external checkout | previously unconstrained `HYLE_TRACY_DIR` (local sibling was `0b120ba84f8e829619f7b3fbd95049c1ae08500d`) → `30997d5ca6bb632cc10807a1da8a6d3de0aeeb3c` (`v0.14.1`) | obs trace macros plus exactly one `TracyClient.cpp`; risk is public macro/API drift and multi-DLL singleton/export rules | BSD-3-Clause `LICENSE`; trace build requires exact clean Git HEAD/tree or exact official-archive expanded tree, plus license. Installed trace-enabled SDK copies Tracy public headers and license | Trace OFF zero-symbol/zero-dependency gate; trace ON static/shared compile; one-client symbol audit; install/downstream consumer; runtime viewer handshake |
 
@@ -82,8 +118,9 @@ measurement/calibration implementation rather than only declarations. This
 does not by itself reopen a module's functional/API closure, but every current
 nanobench certificate must bind the harness revision, runner parser and runtime
 filter/configuration, then be sampled again. SIMD, sched and IO historical rows
-are therefore affected too; limiting the rebaseline to the nine product modules
-under red-team review would be false provenance.
+are therefore affected too. This invalidates old point values; it does not turn
+the dependency-upgrade work item into a closure review of every benchmarked
+module.
 
 ## Integrated product-source origins
 
@@ -116,6 +153,16 @@ exhaustive/layout tests, and that previously omitted file is now inside the
 integrated content audit. xsimd's changed common-math area is mechanical C++17
 traits cleanup; its large-argument temporary-buffer alignment fix does not apply
 to the borrowed tanh D-tag path. No xsimd algorithm backport was justified.
+
+The current Highway review also invalidated one old HYLE compiler assumption:
+upstream explicitly marks AVX3 targets broken under the classic MSVC frontend,
+and the hosted AVX-512 runner reproduced corruption in 64-bit, UInt128 and KV
+vqsort cases. HYLE now keeps the process/product tier at AVX-512 while binding
+only the sort module to its AVX2 TU under `cl.exe`; `runtime().sort.isa` and the
+lower-tier feature bit expose that choice. clang-cl and GNU-like frontends retain
+the AVX-512 sort TU. Focused MSVC fat public-sort tests and MSVC/clang-cl exact
+artifact audits pass; execution on an AVX-512-capable hosted runner remains a
+final CI gate for the new checkpoint.
 
 JPEG XL is not an unresolved or invented third checkout here. The locked Highway
 origin's `hwy/contrib/math/math-inl.h` carries the JPEG XL copyright immediately
@@ -180,7 +227,7 @@ committed tree to a current release certificate.
   root tree and codeload SHA are locked; the unchanged vendored tree/license
   audit and focused Windows container/hash 5/5 tests pass.
 - Ordinary configure audits only the in-tree snapshots consumed by the selected
-  mem/container/io/sched/benchmark closure, so core-only partial source does not
+  mem/container/io/sched/benchmark component graph, so core-only partial source does not
   inherit unused vendors. The selected-missing negative and unused-missing
   positive pass; complete-source packaging runs the full audit before archive.
 - All six product/test FetchContent archives and Tracy match locked archive
@@ -220,6 +267,7 @@ committed tree to a current release certificate.
   prior sibling HEAD is rejected by the intended HEAD-mismatch gate.
 
 These results are not a cross-platform release certificate. Final current-tree
-Windows, hosted Linux feature-package, macOS, CUDA-enabled, sanitizer and
-refreshed benchmark evidence remain bound to the gates in the tables above and
-the pre-release readiness workflow.
+Windows, WSL, macOS, sanitizer, package/source-delivery and upgrade-affected
+benchmark evidence remain bound to the gates above. CUDA and full real-driver
+Vulkan certification stay with the unfinished compute module rather than being
+silently pulled into this dependency-health task.

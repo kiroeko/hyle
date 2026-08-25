@@ -1,8 +1,8 @@
 # obs-runtime 历史性能证据（2026-07-29，`06cec5a`）
 
 > **2026-08-25 freshness gate：**本页只覆盖旧 gate/record/fan-out 热路。Tracy 0.14.1、
-> 当前 29-symbol C 面与 caller-storage sink 不在该次采样合同内；obs 已重新打开。相同 source
-> identity、peer pin、编译合同与三平台重跑完成前，不是当前发布证书。现行状态只看
+> 当前 29-symbol C 面与 caller-storage sink 不在该次采样合同内；obs 产品收口状态未改变。
+> 相同 source identity、peer pin、编译合同与三平台重跑完成前，这些点值不是当前发布证书。现行状态只看
 > [`pre-release-readiness`](../milestones/pre-release-readiness.md)。
 
 本页只测 obs 的真实生产形状：运行期 level gate、同步结构化 fan-out、C ABI seam 和多
