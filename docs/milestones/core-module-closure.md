@@ -1,4 +1,4 @@
-# core 模块严格收口任务（2026-07-25）
+# core 模块严格复审记录（2026-07-25—2026-08-25）
 
 > **历史证据提示（2026-08-25）：**本页的绿色结论绑定文中日期/commit，不是依赖升级后
 > working tree 的当前证书。现行状态只看 [`pre-release-readiness`](./pre-release-readiness.md)。
@@ -7,6 +7,68 @@
 > [`core-design`](../architecture/core-design.md)，使用方式见 [`guide/core`](../guide/core.md) /
 > [`guide/c-core`](../guide/c-core.md)，性能数字只见
 > [`benchmarks-core`](../performance/benchmarks-core.md)。
+
+## 2026-08-25 当前完整复审（黄色）
+
+本轮不是给 2026-07 证书做一次局部补丁，而是按当前
+[`module-closure-methodology`](../architecture/module-closure-methodology.md) 对 core 的功能、
+设计、复杂度、C++/C 易用性、依赖、性能资格、平台和文档重新逐门裁决。旧勾选项只作查漏与
+回归输入；没有证据要求重写已有实现，也不能把历史绿色直接迁移成当前绿色。
+
+| 项 | 当前状态 |
+|---|---|
+| review state | `AUDITED`；产品/cache-layout 修改与验证仍在进行，面向用户为黄色 |
+| 起点 | `a8db371` dependency checkpoint；本轮 compiler/list 施工点为 `6b21140`、`87587dd` |
+| package/sample 增量 | `40c11b1` 修正 aggregate hook 默认初始化；C target 的 C17 uplift 与 native MSVC conforming preprocessor 纳入验收 |
+| benchmark 起点 | `217c8be` 提供五类 workload；它不是最终性能证书 identity |
+| candidate commit/tree | **none：尚未冻结**；最终由 review owner 填写 |
+| current verdict | 黄色；任何旧 `TIE/WIN` 都不是当前五态 verdict |
+
+### 本轮已作出的产品裁决
+
+- version、compiler contract、prefetch、cache layout 与 IntrusiveList 仍属于零 HYLE 上游的 core；
+  没有把 error/platform/mem/time 或 owning container 吸入根模块。
+- C++ IntrusiveList 采用 stable-address、caller-owned member hook；无 size/owner 常态元数据，单节点
+  与整批操作保持成熟 intrusive container 的 O(1) 档。C 以 transparent hook/list、inline pointer
+  primitive 和显式 lifetime 表达同一语言无关能力，不伪造 C++ RAII/callback 动态 ABI。
+- cache layout 改为 target-family recommendation：x86-64 默认 64B/64B constructive/
+  destructive，native Apple ARM64 默认 128B/128B；ARM64EC 按 x64 ABI 为 64B/64B；未认证
+  native Windows ARM64（`_M_ARM64`）/generic ARM64 使用 conservative 64B/128B。dense arrays
+  使用 target 值，稀疏且持续跨线程写的 control atomics 可显式选择 128B max。best-effort
+  runtime observation 继续归 platform，不再让所有 x86 cell 为跨家族
+  maximum 永久付双倍 footprint。
+- 这是有意的预发布 source/C++ layout ABI break：x86 static destructive 值从 128B 变为 64B，
+  用户 C `_Alignas` 类型、header-defined C++ consumers 及其 objects/plugins 必须 clean rebuild；
+  动态 C 导出仍只有两个 version symbols，但同为 0.1.0 的 runtime 数字不会检测旧/新 object 混用。
+- C++ source baseline 为 C++23，pure-C 为 C17；安装/source CMake target 传播语言与 native MSVC
+  preprocessor 合同。安装 SDK 的统一 public header tree 与 component target/link closure 是两件事。
+
+### 当前性能资格
+
+- 当前 harness 覆盖 FIFO、refill+cancel、read-only traversal、whole-batch handoff 和 non-owning
+  teardown；四类有 N=32/4096，teardown 为 N=4096。
+- N=32 cancel 在 compile-time/runtime bound 的合同等价改写下方向翻转，固定为
+  `INCONCLUSIVE/placement-sensitive`，不得挑有利版本。该短 aggregate 降为非阻塞机制
+  诊断；小批 cancel 产品风险由 time 真实 arm/cancel/expire workload 承重。
+- whole-batch splice 只计两次 O(1) 重链，是机制诊断；产品结果由 time/scheduler 的真实
+  arm/cancel/expire/handoff/drain workload 承重。
+- 其余 claim-bearing 行须在 sampling 前登记 equivalence margin，并完成默认序、peer-first、短
+  aggregate placement 变体、三平台和真实 consumer gates；单顺序 runner 输出不是模块证书。
+
+### 剩余验收门
+
+- [ ] 冻结最终 candidate commit/tree 和 public surface identity；
+- [ ] Windows/MSVC、Linux/GCC、macOS/AppleClang 的 Release/Debug、适用 sanitizer 与 codegen
+  绑定同一 candidate；
+- [ ] pure C/C++ header、nodiscard、C17/C++23、shared/static/source package consumer 全矩阵；
+- [ ] target-family cache layout 的 runtime coherency、对象 footprint 与直接消费者正确性/性能回归；
+- [ ] 五类 core workload 按五态标准归档，所有 claim-bearing `INCONCLUSIVE/LOSE` 有裁决；
+  N=32 cancel 作为非阻塞机制诊断保留未知，但必须有 time 真实消费者门；
+- [ ] time/scheduler list consumer 与 container/mem/cache consumer 的实际受影响边复证；
+- [ ] architecture/guide/C guide/performance/readiness 最终一致性审计；
+- [ ] 四项 LOC、最终 SHA、三平台日志索引、push 和 required CI：**待 review owner 填写**。
+
+只有上列全部关闭，状态才能从黄色转为 `SIGNED`。以下内容均为 2026-07 历史施工记录。
 
 ## 2026-07-28 真实消费者触发的局部重开
 
@@ -32,8 +94,8 @@ include core、而是在本地复制 primitive 的代码。SIMD/vqsort 复审找
 - [x] 最终文档与四项 LOC 工作树快照；
 - [x] Apple 门完成后绑定实现 commit、提交并推送。
 
-`71dabf7` 的 IntrusiveList 性能证书继续有效；2026-07-29 Apple 门完成后，core 的功能、
-正确性、C/C++ source surface、三平台 codegen 与真实消费者复证重新转绿。
+当时将 `71dabf7` 的 IntrusiveList 性能证书继续视为有效；2026-07-29 Apple 门完成后，
+core 的功能、正确性、C/C++ source surface、三平台 codegen 与真实消费者复证在当时重新转绿。
 
 ## 完成定义
 
@@ -49,8 +111,8 @@ include core、而是在本地复制 primitive 的代码。SIMD/vqsort 复审找
 1. 删除纯 scaffolding `scaffolding_ok()` 与 `HYLE_PAD` 测试形状；宏只保留真实消费者。
 2. 版本定义收为一份 C/C++ 共用 source，区分 header compile-time 与 linked runtime；CMake
    project version 用 `static_assert` 防漂移，字符串返回不再构造 `std::string`。
-3. 缓存布局从硬编码 64B 宏升级为类型化 core 契约；Apple Silicon 使用 128B。runtime 精确
-   查询仍归 platform。队列、SharedPool、SpinLock、scheduler 与 Swiss prefetch 已迁移。
+3. 缓存布局从硬编码 64B 宏升级为类型化 core 契约；Apple Silicon 使用 128B。best-effort
+   runtime observation 仍归 platform。队列、SharedPool、SpinLock、scheduler 与 Swiss prefetch 已迁移。
 4. IntrusiveList 补 Folly/Boost-shaped auto-unlink hook、list clear/destructor、O(1) move 和
    launder；不加 size/owner 元数据。time delivery-list 析构语义同步回验。
 5. C 头补零分配 intrusive list inline 能力、静态缓存布局与完整 pure-C smoke；动态 ABI 仍仅
@@ -78,7 +140,7 @@ include core、而是在本地复制 primitive 的代码。SIMD/vqsort 复审找
   8-thread normal workload 为 14.678 ns/op，对同合同 sharded Abseil+mutex 19.679 ns/op，
   15/15、1.341x WIN。
 
-## 当前验收证据
+## 2026-07 历史验收证据
 
 - Windows MSVC Release：core/time/mem/container/util/sched 相关 18/18；core C surface 与
   C/C++ header self-contained 通过；最终 API delta 8/8。
@@ -86,12 +148,13 @@ include core、而是在本地复制 primitive 的代码。SIMD/vqsort 复审找
   `util_test` death-test 子进程链主导（116.98s）。此前并行超载的四个 cache-layout 队列
   conservation 压测也已隔离 4/4；最终 API delta 8/8。
 - Apple M4 AppleClang：同一相关组 18/18，最终 API delta 8/8。
-- Windows/WSL Boost 同形 n=15：FIFO/remove/batch-discard 三场景均为统计 TIE；Apple 默认与
-  rival-first 双顺序均为 FIFO HYLE win、remove/discard TIE。三平台无 LOSE，数字只在
+- Windows/WSL Boost 同形 n=15：FIFO/remove/batch-discard 三场景当时均记为统计 TIE；
+  Apple 默认与 rival-first 双顺序当时均记为 FIFO HYLE win、remove/discard TIE。
+  “三平台无 LOSE”只是旧统计规则下的历史结论，不映射当前五态；数字只在
   performance 页。
 - 最终实现绑定 `71dabf7`；本任务页与性能证书的归档提交紧随其后。
 
-## 四项代码量
+## 2026-07 历史四项代码量
 
 | 固定口径 | code |
 |---|---:|
@@ -126,8 +189,9 @@ helper/DLL hop。Windows MSVC 19.50、WSL GCC 14.2、AppleClang 21 的 Release c
 section，三者 noinline 入口均无 DLL/helper 引用。WSL ASan/UBSan/TSan 又各 8/8。
 
 Windows、Linux、M4 的 shared/static 安装包都由独立 core C/C++ consumer 复证（每平台 4/4）；
-实现固定为 `f31e8d0`。因此 core 自身的功能面、复杂度、C/C++ source API、安装组件和文档在
-本轮重新转绿；后续 platform/time 等下游审查只在发现新的语义复制或依赖变化时重开受影响边。
+实现固定为 `f31e8d0`。因此当时判定 core 自身的功能面、复杂度、C/C++ source API、
+安装组件和文档重新转绿，并采用“只因新消费者/依赖变化重开受影响边”的口径。
+该口径已被本页顶部 2026-08 完整复审覆盖，不是当前证书。
 
 本轮最终四项 LOC：全库 278,051；自实现含测试 135,523；自实现不含测试 93,027；core
 实现 653。全库数包含两个安装 probe 与本轮最终文档。
@@ -142,15 +206,15 @@ Windows、Linux、M4 的 shared/static 安装包都由独立 core C/C++ consumer
 | 自实现（不含测试） | 92,124 |
 | core 实现 | 646 |
 
-## 功能与负空间结论
+## 2026-07 历史功能与负空间结论
 
-core 当前覆盖基础库需要的 version/cache/compiler contract/intrusive primitive，且 C 对所有
-语言无关能力都有路径。runtime CPU 探测归 platform，owning container 归 container，Status
+当时的证书判断 core 覆盖基础库需要的 version/cache/compiler contract/intrusive primitive，
+且 C 对所有语言无关能力都有路径。runtime CPU 探测归 platform，owning container 归 container，Status
 归 error；不把这些吸入零依赖根。IntrusiveList 的 push/remove 采用成熟库的 valid-membership
 前置条件，time 有 exact-owner 真实消费者；可选 membership 分别走 `try_push_*` 与幂等 hook
 unlink。没有 benchmark-only seam；O(1) size/iterator 生态也无需求证据，故不增长常态元数据。
 
-## 后续触发器
+## 2026-07 证书当时登记的后续触发器
 
 只有 header/linked version 协商需求、新 cache-line 平台、真实消费者需要新的 intrusive
 原语、同合同强 peer 证明复杂度/性能落档，或构建/安装 ABI 改变时重开。下一审查单元是构建

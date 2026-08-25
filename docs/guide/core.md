@@ -13,6 +13,21 @@ plugin 或 stable-address 节点队列时才需要缓存与侵入链表入口。
 这些头按任务拆分，没有必须 include 的 core umbrella；普通用户不需要为版本查询引入 intrusive
 模板，也不需要为 cache hint 引入 platform runtime。
 
+公开 C++ source API 的基线是 C++23。通过 CMake 消费时只请求 core target 即可；它会传播
+C++23 和 native MSVC 所需的 conforming preprocessor 合同：
+
+```cmake
+find_package(Hyle 0.1 REQUIRED COMPONENTS core)
+target_link_libraries(my_target PRIVATE hyle::core)
+hyle_stage_runtime_dependencies(my_target)
+```
+
+整体源码 `add_subdirectory()` 也使用同一个 target。若手工复制/包含头文件而不链接 CMake
+target，调用方必须自行选择 C++23，native MSVC 还要启用 `/Zc:preprocessor`。安装 SDK 采用统一
+public header tree；“只请求 core”约束的是可用 target 与链接闭包，不表示物理删除其他头目录。
+runtime staging helper 对 static/source 消费是安全 no-op，Windows shared 消费则负责复制 DLL；
+三种分发形状的完整工程见 [`distribution`](./distribution.md)。
+
 ## 版本：编译期还是运行时
 
 ```cpp
@@ -31,6 +46,8 @@ if (hyle::version() != hyle::kVersion) {
 只编译当前源码时用 `kVersion*`；动态加载、plugin/FFI 边界诊断用 `version()`。它比较的是
 语义版本，不是 Git commit；同一语义版本的 source provenance 由发布 manifest/SBOM 记录。
 版本号不承担 feature negotiation，预发布阶段也没有版本函数表。
+`version_string()` 返回 hyle_core 模块拥有的借用指针，不要 free；若调用方会卸载该 DLL/DSO，
+必须在 `dlclose`/`FreeLibrary` 前复制字符串。
 
 ## 缓存：布局常量还是运行时事实
 
@@ -45,10 +62,18 @@ struct alignas(hyle::core::kDestructiveInterferenceSize) HotCounter {
 };
 ```
 
-- 让高频跨线程写状态互不干扰：`kDestructiveInterferenceSize` 是稳定 128B 上界。
-- 把共同读取的小字段尽量放进一个 line：`kConstructiveInterferenceSize` 是稳定 64B 下界。
-- 两者都是公共布局常量，不是“当前 CPU 的精确 cache-line size”。
-- 算法决定一次处理/flush 多少字节：用 `hyle::platform::cache_line_size()` 取得运行时事实。
+- dense queue cell、pool/map shard 的目标家族 spacing：使用 `kDestructiveInterferenceSize`；当前
+  x86-64 与 ARM64EC（x64 ABI）为 64B，native Apple ARM64 为 128B；未认证 native Windows
+  ARM64（`_M_ARM64`）/generic ARM64 使用 conservative 128B。
+- 共同读取且希望保持紧凑的目标家族 span：使用 `kConstructiveInterferenceSize`；当前 x86-64
+  与 ARM64EC 为 64B，native Apple ARM64 为 128B；未认证 native Windows ARM64/generic ARM64
+  使用 conservative 64B。
+- 数量很少、被不同线程持续写入且确实需要跨已认证家族最大隔离的 control atomic：显式使用
+  `kMaxDestructiveInterferenceSize`（128B）。跨家族最小 constructive 值为
+  `kMinConstructiveInterferenceSize`（64B）。不要让 dense 数组默认承担最大 padding。
+- 四者都是编译期 layout recommendation/bound。算法决定一次处理/flush 多少字节时可包含
+  `hyle/platform/cpu.h`，调用 `hyle::platform::cache_line_size()` 取得 best-effort runtime
+  observation；查询不可用时返回 64，所以它不是精确拓扑 API，也不能替代安全 destructive spacing。
 - 随后还会反复读取同一 cache line：`prefetch_read(ptr)`。
 - 大片流式读取、预计只消费一次：`prefetch_read_non_temporal(ptr)`；目标不支持时允许退化。
 - 即将修改、希望 capable CPU 提前取得 exclusive ownership：`prefetch_write(ptr)`；它不是写入，
@@ -59,15 +84,20 @@ struct alignas(hyle::core::kDestructiveInterferenceSize) HotCounter {
 不建立地址有效性、内存序或线程可见性；过早、过晚或错误 locality 的 prefetch 反而会增加带宽
 和 cache 压力。普通顺序遍历先相信硬件 prefetcher，不要默认手工插入。
 
-128B destructive spacing 会多占空间，只有确实存在跨核写竞争的状态才使用；普通对象不要默认
-整行 padding。SIMD 最大 alignment 是另一件事，不要拿 interference 常量替代
+destructive spacing 会多占空间，尤其显式 128B max；只有确实存在跨核写竞争的状态才使用，普通
+对象不要默认整行 padding。SIMD 最大 alignment 是另一件事，不要拿 interference 常量替代
 `mem::kMaxSimdAlignment`。C++17 以后普通 `new` 和标准 allocator 会为 over-aligned 类型选择
-对应分配入口；若把这种类型放进自管 raw storage，仍须由 backing allocation 保证至少 128B
-alignment，只有把类型声明成 `alignas` 并不能修正一个已经错位的地址。
+对应分配入口；若把这种类型放进自管 raw storage，backing allocation 仍须满足该类型在当前
+target 的实际 alignment（使用 max 常量时就是 128B），只有把类型声明成 `alignas` 并不能修正
+一个已经错位的地址。
 
-这两个 bound 只认证 runtime coherency line 落在 `[64,128]` 的当前目标。platform 若在新
-generic/RV64 机器报告更小或更大的值，精确探测仍然有效，但当前静态 layout 合同不成立；该
-目标必须重新裁决常量/ABI，不能带着“支持”标签发布。
+默认值是编译目标家族的 ABI 选择，不是运行时自适应。不要把为一种 target family 编译的公共
+对象布局与另一种 artifact 混用；新 ARM/RV64 或 runtime observation 超出已认证范围时，必须
+重新裁决 layout/footprint/ABI，不能只因 best-effort probe/fallback 能运行就带着“支持”标签发布。
+本次预发布升级把 x86 target destructive recommendation 从 128B 改为 64B，会改变使用该常量的
+header-defined C++ 类型和用户自定义 `alignas` 类型布局；升级必须 clean rebuild 全部 translation
+units、静态库/动态库与 plugins，禁止混用旧 headers/objects/installed binaries。当前仍是 0.1.0，
+runtime version comparison 不会机械识别同一预发布版本号内部的 layout 变化。
 
 ## 侵入链表：什么时候值得用
 

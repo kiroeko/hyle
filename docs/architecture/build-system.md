@@ -434,10 +434,12 @@ Debug/Release 的 assume/unreachable 行为由真实 `hyle_core_test` / pure-C t
 usage requirements 则由 focused child-CMake consumer 证明。CI 必须持续覆盖轻量 Debug 与
 multi-config consumer；一次人工 closure 证据不能冒充持续回归能力。
 
-同理，core 的 64B constructive/128B destructive 静态 layout 只认证 runtime coherency line
-落在 `[64,128]` 的目标。platform 仍可如实探测 16–256B 的 generic hardware，但三平台/新架构
-发布测试必须比较 runtime exact 与静态上下界；超界表示该 artifact 未认证，不能因“能编译”就
-发布，须先重新裁决常量及受影响公共类型 ABI。
+同理，core 的 target-family constructive/destructive 静态值是公共 layout recommendation，
+跨当前认证家族的显式 bounds 才是 `[64,128]`。platform 仍可如实探测
+16–256B 的 generic hardware，但三平台/新架构发布测试必须同时守两层关系：
+`target_constructive <= runtime <= target_destructive` 验证当前 profile 假设，
+`certified_min <= runtime <= certified_max` 验证已支持家族的总范围。任一超界都
+表示该 artifact 未认证，不能因“能编译”就发布，须先重新裁决常量及受影响公共类型 ABI。
 
 CI 对 Windows/Linux/macOS 运行全部 15 个产品组件（含 header-only `util_core`）的确定性 CPU
 验证面：TLS、HTTP/2、CUDA、ggml 与

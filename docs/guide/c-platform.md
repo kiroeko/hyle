@@ -241,7 +241,7 @@ Windows 只有 `WILL_NEED` 有直接 hint 对等物；POSIX 支持五档 `madvis
 | `hyle_cpu_best_isa` | 当前进程可安全执行的最高粗粒度 ISA 档 |
 | `hyle_cpu_supports_isa(isa)` | 本进程能否跑该档（同架构比较） |
 | `hyle_cpu_isa_name(isa)` | 稳定英文名（日志） |
-| `hyle_cpu_cache_line_size` | L1 数据缓存行字节数（主流 64；对齐/填充用；探测失败回退 64） |
+| `hyle_cpu_cache_line_size` | best-effort L1 数据缓存行 observation（主流 64、Apple Silicon 128；探测失败回退 64）；算法调优可用，公共 ABI/安全 false-sharing padding 改用 core 静态合同 |
 | `hyle_cpu_cache_info` | 值返回 `hyle_cache_info`：L1D/L1I/L2/L3 容量（字节；未知级为 0） |
 | `hyle_cpu_topology_get` | 缓存的系统视图：`system_logical_cpus`、performance/efficiency CPU 数与 `is_hybrid` |
 | `hyle_cpu_available_count(out_count)` | 动态进程视图的 count-only 便利入口；创建 worker / 选择 shard 数优先用它 |

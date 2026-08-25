@@ -8,6 +8,16 @@ C17 以及 native MSVC 所需的 conforming preprocessor 合同传播给消费 t
 手工只取头文件时，调用方必须自行用 C17 模式编译（native MSVC 同时启用
 `/Zc:preprocessor`）。这不是 DLL ABI 要求，而是消费这些 header-inline 能力的翻译单元合同。
 
+```cmake
+find_package(Hyle 0.1 REQUIRED COMPONENTS core)
+target_link_libraries(my_c_target PRIVATE hyle::core)
+hyle_stage_runtime_dependencies(my_c_target)
+```
+
+安装 SDK 保留统一 public header tree；`COMPONENTS core` 约束的是 target/link closure，不表示按
+目录裁剪成只剩 core 头。runtime staging helper 对 static/source 消费是安全 no-op，Windows
+shared 消费则负责复制 DLL；三种分发形状的完整工程见 [`distribution`](./distribution.md)。
+
 ## 版本与缓存布局
 
 | 名称 | 形状 | 说明 |
@@ -16,10 +26,12 @@ C17 以及 native MSVC 所需的 conforming preprocessor 合同传播给消费 t
 | `HYLE_VERSION_PACK(a,b,c)` / `HYLE_VERSION_PACKED` | macro | 8/8/8 packed version |
 | `HYLE_VERSION_STRING` | string literal | 当前 headers 的 `major.minor.patch` |
 | `hyle_version` | `() -> uint32_t` | 已链接 `hyle_core` 的 runtime packed version |
-| `hyle_version_string` | `() -> const char*` | runtime 字符串，静态存储，不 free |
+| `hyle_version_string` | `() -> const char*` | runtime 模块拥有的借用字符串，不 free；只在承载 hyle_core 的模块仍加载时有效 |
 | `hyle_version_major/minor/patch` | header-inline | 拆 packed version，无 DLL hop |
-| `HYLE_STATIC_CONSTRUCTIVE_INTERFERENCE_SIZE` | compile-time macro | 公共布局的 64B constructive 下界 |
-| `HYLE_STATIC_DESTRUCTIVE_INTERFERENCE_SIZE` | compile-time macro | 公共布局的 128B destructive 上界 |
+| `HYLE_STATIC_CONSTRUCTIVE_INTERFERENCE_SIZE` | compile-time macro | target-family constructive recommendation；x86-64/ARM64EC 64B，native Apple ARM64 128B，未认证 native Windows/generic ARM64 为 conservative 64B |
+| `HYLE_STATIC_DESTRUCTIVE_INTERFERENCE_SIZE` | compile-time macro | target-family destructive recommendation；x86-64/ARM64EC 64B，native Apple ARM64 128B，未认证 native Windows/generic ARM64 为 conservative 128B |
+| `HYLE_MIN_CONSTRUCTIVE_INTERFERENCE_SIZE` | compile-time macro | 已认证家族的 64B constructive minimum |
+| `HYLE_MAX_DESTRUCTIVE_INTERFERENCE_SIZE` | compile-time macro | 稀疏 hot control state 可 opt-in 的 128B maximum isolation |
 | `hyle_prefetch_read` | header-inline | 预计会复用的读，偏向本地 cache |
 | `hyle_prefetch_read_non_temporal` | header-inline | 大片一次性/低复用读；不支持时可退化 |
 | `hyle_prefetch_write` | header-inline | 即将修改的地址；capable target 可请求 exclusive ownership，不支持时按编译 ISA baseline 安全退化 |
@@ -35,13 +47,26 @@ if (hyle_version() != HYLE_VERSION_PACKED) {
 printf("HYLE %s\n", hyle_version_string());
 ```
 
-需要当前 CPU 的运行时精确 cache line 时调用 platform 的
-`hyle_cpu_cache_line_size()`；不要用 runtime 值定义跨翻译单元 struct ABI。destructive 128B
-用于确实有跨核写竞争的字段隔离，普通对象不要为“看起来更快”默认 padding。若用 `_Alignas`
-声明 128B 对齐的 C 类型，动态存储也必须来自满足该 alignment 的分配入口；普通 `malloc` 只承诺
-`max_align_t`，不能因为目标类型声明了 `_Alignas` 就自动变成 over-aligned allocation。
-两个 bound 只认证 `hyle_cpu_cache_line_size()` 落在 `[64,128]` 的当前目标；新 generic/RV64
-目标若超出范围，runtime 查询仍有效，但必须重新认证静态布局后才能作为受支持构建发布。
+若 loader 随后会 `dlclose`/`FreeLibrary` hyle_core，必须先把 runtime version string 复制到调用方
+拥有的存储；卸载后继续持有该指针是悬空引用。
+
+算法需要运行时 cache-line observation 时调用 platform 的 `hyle_cpu_cache_line_size()`；它是
+best-effort probe，查询失败回退 64，不是精确拓扑 API，也不能用于 safety-critical padding。
+不要用 runtime 值定义跨翻译单元 struct ABI。dense queue cell/pool/map shard 的 false-sharing
+spacing 选 `HYLE_STATIC_DESTRUCTIVE_INTERFERENCE_SIZE`；共同读取且希望紧凑在一个 target-family
+span 内的数据才选 `HYLE_STATIC_CONSTRUCTIVE_INTERFERENCE_SIZE`。这样可避免 x86 dense 数组为跨家族
+maximum 付双倍 footprint；数量少且被不同线程
+持续写入的 control atomics 才显式使用 `HYLE_MAX_DESTRUCTIVE_INTERFERENCE_SIZE`。普通对象不要
+为“看起来更快”默认 padding。
+
+若用 `_Alignas` 声明 over-aligned C 类型，动态存储也必须来自满足该 target 实际 alignment 的
+分配入口；普通 `malloc` 只承诺 `max_align_t`，不能因为目标类型声明了 `_Alignas` 就自动变成
+over-aligned allocation。默认 macro 是编译目标家族的 ABI 选择，不是运行时自适应；新 ARM/
+RV64 或超出认证范围的新目标必须重新认证 probe、layout/footprint/ABI 后才能作为受支持构建发布。
+本次预发布升级把 x86 的 `HYLE_STATIC_DESTRUCTIVE_INTERFERENCE_SIZE` 从 128 改为 64；动态 C
+符号集合没有变化，但任何使用这些 macro 定义 `_Alignas` struct 的 C source ABI 都会变化。
+必须 clean rebuild 全部 C translation units/shims/plugins 和已安装 HYLE binary，不能混旧 header/
+object；当前同为 0.1.0 的 runtime version 数字不会自动发现这种混用。
 
 ```c
 for (size_t i = 0; i != count; ++i) {
@@ -107,7 +132,7 @@ int sum(const int* HYLE_C_RESTRICT values, size_t count) {
 | `hyle_intrusive_hook_init` | 新/已脱链 hook 初始化；不可拿它强行重置 linked hook |
 | `hyle_intrusive_hook_linked` | NULL/idle 为 false |
 | `hyle_intrusive_hook_unlink` | 从当前链 O(1) 摘除；NULL/idle 幂等 |
-| `hyle_intrusive_list_init` | 未使用 `HYLE_INTRUSIVE_LIST_INIT` 时，在使用 list 前调用 |
+| `hyle_intrusive_list_init` | 未使用 `HYLE_INTRUSIVE_LIST_INIT` 时初始化 fresh list；只能在首次使用前或已安全 clear 后调用 |
 | `hyle_intrusive_list_empty` | NULL 视为空；已初始化 list 为 O(1) |
 | `hyle_intrusive_list_insert_before` | O(1) unchecked 任意位置插入；position 为 NULL 表示尾部 |
 | `hyle_intrusive_list_try_insert_before` | checked 插入；NULL list/hook 或 double-link 返回 0 |
@@ -119,7 +144,7 @@ int sum(const int* HYLE_C_RESTRICT values, size_t count) {
 | `hyle_intrusive_list_next/prev_const` | const-safe 正反向遍历 |
 | `hyle_intrusive_list_pop_front/back` | O(1) 摘链并返回 hook；空/NULL 返回 NULL |
 | `hyle_intrusive_list_clear` | O(n) 摘除全部节点，不释放节点 |
-| `hyle_intrusive_list_splice_before` | O(1) 把 source 整批移到 position 前；NULL position 表示尾部；source 清空 |
+| `hyle_intrusive_list_splice_before` | O(1) 把 source 整批移到 position 前；NULL position 表示尾部；NULL/self 返回 0，empty/success 返回 1；position owner 仍是 unchecked 前置条件 |
 | `hyle_intrusive_list_append` | O(1) splice source 到 destination 尾；source 清空；非法/self 为 0 |
 
 ```c
@@ -156,7 +181,8 @@ while (it != NULL) {
 }
 ```
 
-C 没有析构器：节点存储结束前必须 `hyle_intrusive_hook_unlink`，list 存储结束前必须 clear/
+C 没有析构器：不得对仍含 live hooks 的非空 list 再调用 `hyle_intrusive_list_init`，否则旧节点会
+被遗留在破损链中，后续 unlink 也会破坏结构。节点存储结束前必须 `hyle_intrusive_hook_unlink`，list 存储结束前必须 clear/
 pop 完或确保节点仍更长寿。linked 期间节点地址不可变化；多重 membership 使用多个 hook；
 并发访问由调用方同步。`try_push_*`、`try_insert_before`、`pop_*`、`splice_before` 与 `append` 都带
 `HYLE_C_NODISCARD`：调用方必须
@@ -201,5 +227,6 @@ prefetch、版本分解与 intrusive list 都是编译期/header-inline 能力�
 覆盖 C assume 违约，header self-contained gate 从空翻译单元编译 C 头。
 
 安装后最小工程见 `samples/package/core/c` 与 `samples/package/core/cpp`。它们只请求
-`find_package(Hyle COMPONENTS core)` 并链接 `hyle::core`，由 Windows/Linux/macOS 的
-shared/static package smoke 分别配置、构建和运行，避免示例暗中依赖源码树 include 或其它组件。
+`find_package(Hyle COMPONENTS core)` 并链接 `hyle::core`；严格验收必须在 Windows/Linux/macOS
+分别以 shared/static package 配置、构建和运行，避免示例暗中依赖源码树 include 或其它 target。
+当前 exact candidate 的通过状态只记录在 milestone，不能把历史 smoke 当作本轮证书。

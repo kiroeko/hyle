@@ -1,18 +1,25 @@
 # HYLE 性能：预期与实测（核心目的：做到 SOTA）
 
-> **第一性目的**：HYLE 是高性能 infra 库，**唯一存在理由是性能做到 SOTA**。标尺不是 `std`(赢它是最低门槛),而是**各领域 SOTA 参考库**(hashmap→absl/F14、分配器→mimalloc、队列→moodycamel/tokio、SIMD→Highway)。**做到等同或超过参考库才算数;只赢 std 不算价值。**
+> **第一性目的**：HYLE 是高性能 infra 库，**唯一存在理由是性能做到 SOTA**。标尺不是 `std`(赢它是最低门槛),而是**各领域 SOTA 参考库**(hashmap→absl/F14、分配器→mimalloc、队列→moodycamel/tokio、SIMD→Highway)。**只有同合同证据确认 `WIN` 或 `EQUIVALENT` 才算达门；只赢 std 不算价值。**
 >
-> **两段式**：① 下面"预期表"是开工前基于参考库公开基准的**推算目标**;② 实现后必须有**对标 SOTA 的真实 benchmark**(非推算),数字诚实印出——赢/平/输都登记,差距是优化目标。
+> **两段式**：① 下面"预期表"是开工前基于参考库公开基准的**推算目标**;② 实现后必须有**对标 SOTA 的真实 benchmark**(非推算)，数字和五态判定都诚实登记，无法证明时保留 `INCONCLUSIVE/NOT_COMPARABLE`。
 
-> **2026-08-25 freshness gate：**依赖升级使 core、error、platform、mem、time、build/package、
-> util、obs 的受影响证据需要重签，但不重新做完整模块收口。相对 `6dcd038`，七个运行时模块的
-> 公开头和/或实现均实际改过，所以 changed seam 不能只按“下游依赖变动”沿用旧证书；
+> **判定规范：**所有新证据必须遵守
+> [`benchmark-evidence-standard`](./benchmark-evidence-standard.md)。旧表中的“平/TIE”只表示
+> 当时没有签出 WIN/LOSE，不自动等于已证明同档；重签时必须改为
+> `WIN/EQUIVALENT/LOSE/INCONCLUSIVE/NOT_COMPARABLE` 之一。
+
+> **2026-08-25 freshness gate：**依赖升级与 core 红队已使 core、error、platform、mem、
+> time、obs、util、build/package 全部转黄，并重新执行完整模块收口。相对
+> `6dcd038`，七个运行时模块的公开头和/或实现均实际改过；changed seam 矩阵只是
+> 复审输入，不是功能、API 或性能审查的上限。
 > container/simd/sched/io 只核验本轮直接触及边，不能据此获得整体收口，定向性能差距也不单独
 > 阻塞本轮 project-health checkpoint。nanobench 又从 4.3.11 升到 4.6.0，并改变 epoch/
 > calibration、batch-relative 与 counter-overhead 处理；所以包括 simd/sched/io 在内的所有
-> nanobench 旧点值都只能用于定位算法档位和回归方向。只有相同 source identity、peer pin、
-> **harness revision、runner parser、运行过滤器/环境**、编译合同与三平台 n=15 重跑完成后，
-> 表中的 ✅/➖/⚠️ 才可恢复为当前点值判定。现行签署状态只看
+> nanobench 旧点值都只能用于定位算法档位和回归方向。新证书必须绑定 source identity、peer pin、
+> **harness revision、runner parser、运行过滤器/环境**、编译合同、预声明 margin、raw paired
+> ratios、fresh build、默认/peer-first 与所需 placement 证据，再分平台输出当前五态判定。
+> 现行签署状态只看
 > [`pre-release-readiness`](../milestones/pre-release-readiness.md)；新实现不能借用旧点值恢复绿证。
 
 ## 本目录结构（原单文件已拆分，按模块分档）
@@ -21,7 +28,7 @@
 |---|---|
 | 本页（对标总账） | 全模块 win/loss ledger 一览 + 总账小结（最常看的一张表） |
 | [error 实测](./benchmarks-error.md) | **2026-07-29 历史证据**：两类消费者信息合同三平台 n=15（无诊断 / 带诊断严格分表；同能力 Abseil 无 LOSE，较弱 std 下界的真实输赢单列） |
-| [core 实测](./benchmarks-core.md) | **历史证据，待本轮重签**：IntrusiveList 对 Boost auto_unlink 同 ownership 的 FIFO/remove/batch-discard；cache/prefetch 只在真实消费者承重 |
+| [core 实测](./benchmarks-core.md) | 🟡 **当前无数值证书**：五类 IntrusiveList workload 的资格与历史点值已分层；N=32 cancel 为非阻塞 `INCONCLUSIVE/placement-sensitive` 机制诊断，小批产品风险由 time 真实消费者承重；splice 也只是机制诊断，cache/prefetch 只在真实消费者承重 |
 | [build/package 实测](./benchmarks-build.md) | **历史证据，待本轮重签**：clean/reconfigure/no-op、测试依赖获取分层、组件隔离、production-shape 测试与生成器数据库健康 |
 | [platform 实测](./benchmarks-platform.md) | **2026-07-25 历史证据**（MappedFile advice/residency 按 OS-call complexity 守门） |
 | [time 实测](./benchmarks-time.md) | **2026-07-25 历史证据**（clock / exact-ns radix TimerQueue / CommonTimeoutQueue；含 Seastar faithful baseline、order-swap 与 M4 QoS） |
@@ -38,7 +45,12 @@
 
 ## 对标点值总账（历史 win/loss ledger，本轮重签中）
 
-> **一眼看尽输赢**。**两把标尺各拆成「组件名 + ns」两列**:`std组件`/`std ns`(基线下界——赢它是最低门槛)和 `SOTA组件`/`SOTA ns`(真门槛:absl/F14、mimalloc、moodycamel/tokio/rigtorp、Highway/xsimd、marl、boost、simdutf)。`比std`/`比SOTA`:>1=HYLE 快几倍。**判定**针对 SOTA:✅赢 / ➖平(噪声内) / ❌输(均附根因:by-design 接缝 / 约束选择 / 选错工具 / scalar 待优化,无一为未处理的真缺陷) / ⚠️平台翻转 / ⏳待补。`n/a`=该层无对等物(非未测:如 bounded-MPMC 队列无 std 等价物);`同std`=该项 std 本身即领域 SOTA,无独立第三方更快。**error 行来自 2026-07-29 `6d42add` 的 Win/GCC14/M4、n=15 历史消费者合同证据**；其余模块日期不一，未刷新前勿当当前证书。
+> **这是历史点值账本，不是当前五态证书。**两把标尺拆成「组件名 + ns」：
+> `std` 只常是成本下界，同合同 SOTA peer 才是产品门。表内旧 ✅/➖/❌/⚠️/⏳ 仅保留当时解读，
+> **不映射** `WIN/EQUIVALENT/LOSE/INCONCLUSIVE/NOT_COMPARABLE`；尤其“平/TIE/噪声内”不等于
+> `EQUIVALENT`，“by design”也不能自动豁免同合同 `LOSE`。`n/a` 只表示该层没有对等物。
+> 任何当前声明都必须在对应模块页中按五态重签，并同时绑定 candidate、peer、harness/
+> runner、预声明 margin、原始配对比率、fresh build、默认/peer-first 与所需 placement 证据。
 
 | 模块 · 操作 | HYLE ns | std 组件 | std ns | 比std | SOTA 组件 | SOTA ns | 比SOTA | 判定 |
 |---|---|---|---|---|---|---|---|---|
