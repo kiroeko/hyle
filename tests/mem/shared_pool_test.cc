@@ -31,6 +31,7 @@ bool aligned(const void* p, std::size_t a) {
   return (reinterpret_cast<std::uintptr_t>(p) & (a - 1)) == 0;
 }
 
+#if defined(HYLE_TESTING)
 struct RecordingBackingState {
   std::array<void *, 3> pointers{};
   std::array<std::size_t, 3> sizes{};
@@ -77,6 +78,7 @@ void *recording_reallocate(void *, void *, std::size_t, std::size_t,
                            std::size_t) noexcept {
   return nullptr;
 }
+#endif
 }  // namespace
 
 TEST(SharedPool, AllocateFreeRoundTrip) {
