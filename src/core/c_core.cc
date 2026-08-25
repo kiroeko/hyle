@@ -1,6 +1,7 @@
 // Native FFI bridge for the core module (include/hyle/c/core.h). Lives in
-// hyle_core so HYLE_CORE_BUILD exports stable, unmangled symbols for managed
-// and other foreign-language bindings.
+// hyle_core so HYLE_CORE_BUILD exports current unmangled candidate symbols for
+// managed and other foreign-language bindings. Compatibility begins only when
+// a binding product is released.
 #include "hyle/c/core.h"
 #include "hyle/core/version.h"
 

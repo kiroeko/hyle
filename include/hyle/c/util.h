@@ -1,9 +1,9 @@
 /* SPDX-License-Identifier: LicenseRef-HYLE-Proprietary
  *
- * Pure C ABI for language-independent HYLE util-runtime capabilities.
- * C++-only lexical helpers remain in hyle::util_core; this surface covers
- * diagnostics, reproducible random streams, shared ownership, named factories,
- * and an opaque FFI synchronization handle.
+ * Pre-release Native FFI schema candidate for HYLE util-runtime. This is not a
+ * native-C product API or a frozen cross-language contract; module review may
+ * retain task-driven capabilities or declare FFI=N/A. C++-only lexical helpers
+ * remain in hyle::util_core.
  * Docs (1:1 with this header): docs/guide/c-util.md
  */
 #ifndef HYLE_C_UTIL_H_

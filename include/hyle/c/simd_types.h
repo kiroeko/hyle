@@ -1,4 +1,6 @@
-/* Stable C/C++ value types shared by the HYLE SIMD C ABI and its C++ core. */
+/* Pre-release language-neutral value types shared by the HYLE SIMD draft FFI
+ * schema and its C++ core. This header alone is not a frozen ABI or a native-C
+ * product promise; SIMD managed review may revise or remove FFI-facing uses. */
 #ifndef HYLE_C_SIMD_TYPES_H_
 #define HYLE_C_SIMD_TYPES_H_
 

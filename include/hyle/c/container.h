@@ -1,5 +1,7 @@
 /* SPDX-License-Identifier: LicenseRef-HYLE-Proprietary
- * Pure C ABI for HYLE container capabilities (pre-release draft).
+ * Pre-release Native FFI schema candidate for HYLE container. This is not a
+ * native-C product API and is not a frozen cross-language contract. The module
+ * review may retain and validate a task-driven subset or declare FFI=N/A.
  * Docs: docs/guide/c-container.md */
 #ifndef HYLE_C_CONTAINER_H_
 #define HYLE_C_CONTAINER_H_

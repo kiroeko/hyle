@@ -20,10 +20,10 @@
   HYLE_VERSION_STRINGIZE(HYLE_VERSION_MAJOR) \
   "." HYLE_VERSION_STRINGIZE(HYLE_VERSION_MINOR) "." HYLE_VERSION_STRINGIZE(HYLE_VERSION_PATCH)
 
-// Stable contract between HYLE native libraries and separately distributed
-// Java/.NET/Rust/Python bindings. A major change may remove or alter ordinary
-// ABI symbols; a minor change is additive. HYLE has not released a binding
-// product yet, so this pre-release protocol may still change without backward
+// Pre-release contract candidate between HYLE native libraries and separately
+// distributed Java/.NET/Rust/Python bindings. A major change may remove or
+// alter ordinary ABI symbols; a minor change is additive. HYLE has not
+// released a binding product yet, so this pre-release protocol may change without backward
 // compatibility. Once a binding is published, the bootstrap symbol it uses,
 // its C calling convention, and its uint32_t(void) signature remain available
 // so that old bindings can reject incompatible runtimes safely. Bindings accept

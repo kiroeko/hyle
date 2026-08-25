@@ -1,9 +1,11 @@
 /* SPDX-License-Identifier: LicenseRef-HYLE-Proprietary
  *
- * Pure C ABI for the HYLE platform module (close-01).
+ * Pre-release Native FFI schema candidate for HYLE platform. This is not a
+ * native-C product API or a frozen cross-language contract; module review may
+ * retain a task-driven subset or declare FFI=N/A.
  *
  * Naming: every symbol is `hyle_*` / `HYLE_*`.
- * Do NOT include hyle/platform/ headers from C or cross-compiler FFI.
+ * Binding generators must not infer a product promise from this draft.
  *
  * Subsystems: wait/Parker, Thread, DynLib, virtual memory, fs/env, cpu
  * features. Docs: docs/guide/c-platform.md

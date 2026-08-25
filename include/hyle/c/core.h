@@ -1,8 +1,9 @@
 /* SPDX-License-Identifier: LicenseRef-HYLE-Proprietary
  *
- * Stable Native FFI ABI for the HYLE core module. This header is the schema
- * consumed by binding generators and foreign runtimes; HYLE does not maintain
- * a separate source-level C product API.
+ * Pre-release Native FFI ABI candidate for the HYLE core module. This header
+ * is the schema consumed by binding generators and foreign runtimes; HYLE does
+ * not maintain a separate source-level C product API. No compatibility promise
+ * begins until a binding product is actually released.
  *
  * Naming: every exported symbol is `hyle_*`.
  * Docs (1:1 with this header): docs/guide/c-core.md

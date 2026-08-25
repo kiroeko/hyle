@@ -1,7 +1,9 @@
 /* SPDX-License-Identifier: LicenseRef-HYLE-Proprietary
  *
- * Pure C ABI for the HYLE scheduler. C++ fibers, coroutines and templates never
- * cross this boundary; callbacks and opaque handles are the type-erased seam.
+ * Pre-release Native FFI schema candidate for HYLE sched. This is not a
+ * native-C product API or a frozen cross-language contract; module review may
+ * retain task-driven callbacks/opaque handles or declare FFI=N/A. C++ fibers,
+ * coroutines and templates must not cross any eventual FFI boundary.
  * Docs: docs/guide/c-sched.md
  */
 #ifndef HYLE_C_SCHED_H_

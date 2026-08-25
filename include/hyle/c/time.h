@@ -1,7 +1,9 @@
 /* SPDX-License-Identifier: LicenseRef-HYLE-Proprietary
  *
- * Pure C ABI for HYLE clocks and timer queues (close-01).
- * C++ layouts and intrusive hooks never cross this edge.
+ * Pre-release Native FFI schema candidate for HYLE clocks and timer queues.
+ * This is not a native-C product API or a frozen cross-language contract;
+ * module review may retain a task-driven subset or declare FFI=N/A. C++
+ * layouts and intrusive hooks must not cross any eventual FFI edge.
  * Docs (1:1 with this header): docs/guide/c-time.md
  */
 #ifndef HYLE_C_TIME_H_

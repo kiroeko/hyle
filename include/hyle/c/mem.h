@@ -1,11 +1,12 @@
 /* SPDX-License-Identifier: LicenseRef-HYLE-Proprietary
  *
- * Pre-release pure-C surface for the HYLE mem module. This header is reviewed
- * by C user tasks rather than mechanically mirroring the native C++ classes;
- * names and signatures are not an ABI compatibility promise before 1.0.
+ * Pre-release Native FFI schema candidate for HYLE mem. This is not a native-C
+ * product API or a frozen cross-language contract. Module review starts from
+ * real foreign-runtime tasks and may retain a validated subset or declare
+ * FFI=N/A; names and signatures may change before that decision.
  *
  * Naming: every symbol is `hyle_*` / `HYLE_*`.
- * Do NOT include hyle/mem/ headers from C or cross-compiler FFI.
+ * Binding generators must not infer a product promise from this draft.
  *
  * Surface: the injectable Allocator vtable; quota/stats decorators; owned and
  * external regions; variable-size, fixed-slot, cached and growable pools;

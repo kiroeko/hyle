@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: LicenseRef-HYLE-Proprietary
  *
- * Pure C ABI for the HYLE error module (close-01).
+ * Pre-release Native FFI schema candidate for HYLE error. This is not a
+ * native-C product API or a frozen cross-language contract; module review may
+ * retain a task-driven subset or declare FFI=N/A.
  * Naming: every symbol is `hyle_*` / `HYLE_*`.
  * Docs (1:1 with this header): docs/guide/c-error.md
  */

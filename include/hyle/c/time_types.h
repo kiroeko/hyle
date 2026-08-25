@@ -1,7 +1,8 @@
 /* SPDX-License-Identifier: LicenseRef-HYLE-Proprietary
  *
- * C-compatible time value types shared by time, platform and io.  This header
- * contains no out-of-line functions and has no library dependency.
+ * C-syntax time value types shared by current draft FFI schemas for time,
+ * platform and io. This header contains no out-of-line functions and has no
+ * library dependency; it is not by itself a native-C product or frozen ABI.
  */
 #ifndef HYLE_C_TIME_TYPES_H_
 #define HYLE_C_TIME_TYPES_H_

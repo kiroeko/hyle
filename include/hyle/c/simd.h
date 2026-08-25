@@ -1,5 +1,7 @@
-/* Pure C ABI for HYLE SIMD whole-buffer products (close-01).
- * Register vectors and target-bound native APIs are intentionally C++ only. */
+/* Pre-release Native FFI schema candidate for HYLE SIMD whole-buffer products.
+ * This is not a native-C product API or a frozen cross-language contract;
+ * managed review may retain task-driven batches or declare FFI=N/A. Register
+ * vectors and target-bound native APIs are intentionally C++ only. */
 #ifndef HYLE_C_SIMD_H_
 #define HYLE_C_SIMD_H_
 

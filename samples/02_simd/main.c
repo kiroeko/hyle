@@ -1,4 +1,5 @@
-/* Stable, runtime-dispatched SIMD C ABI. One binary runs on unknown customer CPUs. */
+/* Pre-release SIMD FFI schema/package conformance fixture.
+ * This is not a native-C product sample or a certified managed binding. */
 #include <stdio.h>
 
 #include "hyle/c/simd.h"

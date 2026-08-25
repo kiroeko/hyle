@@ -1,8 +1,9 @@
 /* SPDX-License-Identifier: LicenseRef-HYLE-Proprietary
  *
- * Pure C ABI for HYLE completion-based I/O. The stable seam is an opaque
- * proactor plus caller-owned POD completions; C++ coroutines, STL and backend
- * structs never cross this boundary.
+ * Pre-release Native FFI schema candidate for HYLE completion-based I/O. This
+ * is not a native-C product API or a frozen cross-language contract; module
+ * review may retain a task-driven opaque/POD subset or declare FFI=N/A. C++
+ * coroutines, STL and backend structs must not cross any eventual FFI boundary.
  *
  * Docs: docs/guide/c-io.md
  */

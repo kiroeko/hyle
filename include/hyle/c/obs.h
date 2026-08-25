@@ -1,7 +1,9 @@
 /* SPDX-License-Identifier: LicenseRef-HYLE-Proprietary
  *
- * Pure C ABI for HYLE structured logging and explicit trace emission.
- * Native zero-cost trace macros remain in hyle/obs/trace.h.
+ * Pre-release Native FFI schema candidate for HYLE observability. This is not
+ * a native-C product API or a frozen cross-language contract; module review
+ * may retain a task-driven subset or declare FFI=N/A. Native zero-cost trace
+ * macros remain in hyle/obs/trace.h.
  * Docs (1:1 with this header): docs/guide/c-obs.md
  */
 #ifndef HYLE_C_OBS_H_

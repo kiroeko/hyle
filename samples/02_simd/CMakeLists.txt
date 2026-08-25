@@ -15,6 +15,8 @@ add_executable(simd_sample main.cc)
 target_link_libraries(simd_sample PRIVATE hyle::simd)
 hyle_stage_runtime_dependencies(simd_sample)
 
+# Compiler/link hygiene for the old C-shaped FFI candidate. This target is not
+# a native-C customer sample and does not certify Java/.NET direct binding.
 add_executable(simd_c_sample main.c)
 target_link_libraries(simd_c_sample PRIVATE hyle::simd)
 hyle_stage_runtime_dependencies(simd_c_sample)
