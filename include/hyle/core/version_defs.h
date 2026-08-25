@@ -22,11 +22,12 @@
 
 // Stable contract between HYLE native libraries and separately distributed
 // Java/.NET/Rust/Python bindings. A major change may remove or alter ordinary
-// ABI symbols; a minor change is additive. The bootstrap symbol used to read
-// this value, its C calling convention, and its uint32_t(void) signature are
-// permanent across ABI majors so that an old binding can always reject a new
-// incompatible runtime safely. Bindings accept the same major and a runtime
-// minor greater than or equal to the minor they were generated against.
+// ABI symbols; a minor change is additive. HYLE has not released a binding
+// product yet, so this pre-release protocol may still change without backward
+// compatibility. Once a binding is published, the bootstrap symbol it uses,
+// its C calling convention, and its uint32_t(void) signature remain available
+// so that old bindings can reject incompatible runtimes safely. Bindings accept
+// the same major and a runtime minor at least as new as their required minor.
 #define HYLE_FFI_ABI_VERSION_MAJOR 1
 #define HYLE_FFI_ABI_VERSION_MINOR 0
 #define HYLE_FFI_ABI_VERSION_PACK(major, minor) \

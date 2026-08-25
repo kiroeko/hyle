@@ -58,9 +58,15 @@ public final class HyleCoreFfiSmoke {
                     && runtimeMinor >= requiredMinor;
             if (!compatible) {
                 if (expectIncompatible) {
+                    if (lookup.find("hyle_version").isPresent()
+                            || lookup.find("hyle_version_string").isPresent()) {
+                        throw new IllegalStateException(
+                                "The incompatible fixture must export only the ABI bootstrap");
+                    }
                     System.out.printf(
                             "Java correctly rejected incompatible HYLE FFI ABI: "
-                                    + "runtime=0x%08x, required=0x%08x%n",
+                                    + "runtime=0x%08x, required=0x%08x; "
+                                    + "product symbols absent%n",
                             ffiAbi, EXPECTED_FFI_ABI);
                     return;
                 }

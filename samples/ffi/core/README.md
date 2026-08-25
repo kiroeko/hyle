@@ -3,8 +3,10 @@
 These samples verify the smallest real managed-runtime boundary of the shared
 `hyle_core` library. They are deliberately **not C product examples** and are
 not full .NET or Java bindings. Their job is to prove that a foreign runtime
-can load one exact native artifact, resolve the stable Native FFI bootstrap
-symbol, and reject an incompatible ABI before using a wider module surface.
+can load one exact native artifact, resolve the current pre-release Native FFI
+bootstrap candidate, and reject an incompatible ABI before using a wider module
+surface. No released binding consumes this contract yet, so its names and
+version may change freely before the first FFI product release.
 
 Both probes first validate the global ABI bootstrap using the compatibility
 rule “same major and runtime minor greater than or equal to the binding's
@@ -26,13 +28,21 @@ bare `hyle_core` name: the runner canonicalizes and passes the exact `.dll`,
 `.so`, or `.dylib` path so an older system-installed copy cannot satisfy the
 test accidentally.
 
+The .NET probe intentionally pins its native handle until process exit; this
+avoids unloading while source-generated stubs could still call it. The Java
+probe scopes the lookup to a confined `Arena` and copies the borrowed product
+string before closing that arena. A production multi-module binding must own a
+package-level library root and unload the native dependency graph in reverse.
+
 ## Run
 
 Build shared `hyle_core` and the test-only
 `hyle_core_ffi_incompatible_fixture` target first, then run from the HYLE
 repository root. The fixture exports ABI major 2 and deliberately omits both
-product symbols, so a passing negative probe proves bootstrap rejection happened
-before wider symbol resolution. It is never installed.
+product symbols. Each negative probe first rejects the incompatible major and
+only then confirms that both product lookups are absent; the persisted evidence
+therefore proves both bootstrap order and the fixture's intended one-symbol
+surface. It is never installed.
 
 ```powershell
 python scripts/run-core-ffi-smoke.py `

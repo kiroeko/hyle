@@ -47,6 +47,19 @@ internal static partial class HyleCoreNative
         }
     }
 
+    internal static bool HasExport(string symbol)
+    {
+        lock (LoadGate)
+        {
+            if (libraryHandle == IntPtr.Zero)
+            {
+                throw new InvalidOperationException(
+                    "The exact hyle_core library has not been loaded.");
+            }
+            return NativeLibrary.TryGetExport(libraryHandle, symbol, out _);
+        }
+    }
+
     private static IntPtr ResolveExactLibrary(
         string libraryName,
         Assembly assembly,
@@ -109,9 +122,16 @@ internal static class Program
             {
                 if (expectIncompatible)
                 {
+                    if (HyleCoreNative.HasExport("hyle_version") ||
+                        HyleCoreNative.HasExport("hyle_version_string"))
+                    {
+                        throw new InvalidOperationException(
+                            "The incompatible fixture must export only the ABI bootstrap.");
+                    }
                     Console.WriteLine(
                         ".NET correctly rejected incompatible HYLE FFI ABI: " +
-                        $"runtime=0x{ffiAbi:x8}, required=0x{ExpectedFfiAbi:x8}");
+                        $"runtime=0x{ffiAbi:x8}, required=0x{ExpectedFfiAbi:x8}; " +
+                        "product symbols absent");
                     return 0;
                 }
                 throw new InvalidOperationException(
