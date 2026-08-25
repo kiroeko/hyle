@@ -11,7 +11,8 @@
 > **粒度原则**：一个里程碑 = 一次"写完→编过→单测(覆盖达 Tier 标准)→基准→提交"的闭环。
 > 模块级“当前严格收口”比单个里程碑闭环更强，统一执行
 > [`../architecture/module-closure-methodology.md`](../architecture/module-closure-methodology.md)；
-> milestone 只记录该轮施工和证据，不另造一份方法。
+> milestone 只记录该轮施工和证据，不另造一份方法。新一轮模块复审从
+> [`module-review-template.md`](./module-review-template.md) 复制执行账本，不再自由发挥验收格式。
 >
 > **生长方式（JIT）**：最先执行的 `00-scaffolding` 与 walking-skeleton 几步已写完整；其余**临到该模块开工前再补全细节**——后期里程碑依赖前面实现学到的东西，提前写=空想。索引行先占位（ID/依赖/目的/LOC），细节随推进生长。
 >

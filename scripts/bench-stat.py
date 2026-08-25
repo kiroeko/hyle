@@ -8,29 +8,38 @@ kernels (simd dot/saxpy ~0.03-0.08 ns/op) that single err% is 1-5%, and two
 variants within a few percent of each other are INDISTINGUISHABLE from noise. A
 one-shot "HYLE 1.10x Highway" readout is therefore not a result -- it's a coin
 flip dressed up as a number. (The SwissTable find-miss row learned this the hard
-way: a one-shot "4% behind absl" turned into "statistical tie" once measured
-across 12 runs.)
+way: a one-shot "4% behind absl" became unresolved once measured across
+independent processes.)
 
 This script runs the exe N times, parses the op/s column per (title, variant),
 and reports the MEDIAN ns/op plus the run-to-run SPREAD ((max-min)/median). For
-any requested pair it computes a same-process op/s RATIO and applies the
-canonical product verdict:
+any requested pair it computes a same-process op/s RATIO and a provisional,
+single-order statistical classification. A formal classification requires a
+workload-specific equivalence margin declared before sampling:
 
-    WIN/LOSE only when the paired two-sided sign test has p < 0.01 and the
-    median gap is material (>1%); otherwise TIE.
+    WIN / EQUIVALENT / LOSE / INCONCLUSIVE
+
+The classification uses a distribution-free confidence interval for the
+population median paired ratio. WIN and LOSE are from BASELINE's perspective;
+BASELINE is the HYLE candidate and RIVAL is its peer. It never turns "not
+significant" into equivalence. A deliberately informational, unequal-contract
+pair is classified NOT_COMPARABLE before statistical evidence is considered.
 
 Absolute per-variant spread is printed as a diagnostic, not as an alternative
 verdict: machine noise is often correlated and cancels in the paired ratio.
-Formal evidence also repeats the experiment with variant order swapped; a
-direction that reverses under order swap cannot be signed as product truth.
+Formal evidence also repeats the experiment with variant order swapped and,
+for short aggregates, an equivalent code-shape/placement perturbation. This
+script labels a single order as provisional; the review certificate combines
+those external gates and decides whether the comparison contract is valid.
 
 USAGE
 -----
     scripts/bench-stat.py <exe> [-n N] [--pair BASELINE RIVAL] ...
 
-    # simd: is HYLE avx2 really beating Highway, or is it a tie?
-    scripts/bench-stat.py build-wsl-bench/bin/hyle_simd_bench -n 15 \
-        --pair "Highway avx2 (SOTA)" "HYLE avx2 (256b+FMA)"
+    # core: classify one execution order of HYLE vs Boost.
+    scripts/bench-stat.py build-bench/bin/hyle_core_bench -n 15 \
+        --equivalence-margin-pct 3 \
+        --pair "HYLE IntrusiveList" "boost::intrusive auto_unlink"
 
 Run under `setarch -R` on Linux if the exe is built with a sanitizer. Per the
 9p rule, run from a native-ext4 checkout, never /mnt/c.
@@ -242,10 +251,47 @@ def _binom_two_sided(k, n):
     return min(p, 1.0)
 
 
-def paired_verdict(ratios):
-    """Return the canonical same-process ratio verdict and its evidence."""
+def _median_confidence_interval(ratios, tail_alpha=0.01):
+    """Return a distribution-free interval for the population median.
+
+    Select the narrowest order-statistic interval whose two binomial tails are
+    each no larger than tail_alpha. With n=15 and alpha=.01 this is [x3,x13]
+    (1-indexed), with actual coverage about 99.26% (at least 98%).
+    """
+    ordered = sorted(ratios)
+    n = len(ordered)
+    selected = None
+    for k in range(1, (n + 1) // 2 + 1):
+        lower_tail = sum(math.comb(n, i) for i in range(k)) / (2 ** n)
+        if lower_tail <= tail_alpha:
+            selected = k
+        else:
+            break
+    if selected is None:
+        return None
+    return ordered[selected - 1], ordered[n - selected], selected
+
+
+def paired_verdict(ratios, equivalence_margin_percent=None,
+                   tail_alpha=0.01, minimum_runs=15, comparable=True):
+    """Classify one execution order from BASELINE's perspective.
+
+    Ratios are RIVAL/BASELINE op/s. Contract comparability, order swap,
+    code-placement stability, and platform aggregation are external gates.
+    """
     if not ratios:
         raise ValueError("paired verdict needs at least one ratio")
+    if any(not math.isfinite(ratio) or ratio <= 0.0 for ratio in ratios):
+        raise ValueError("paired ratios must be finite and positive")
+    if not 0.0 < tail_alpha < 0.5:
+        raise ValueError("tail alpha must be between zero and 0.5")
+    if not isinstance(minimum_runs, int) or minimum_runs <= 0:
+        raise ValueError("minimum runs must be a positive integer")
+    if equivalence_margin_percent is not None and not (
+            math.isfinite(equivalence_margin_percent) and
+            equivalence_margin_percent > 0.0):
+        raise ValueError("equivalence margin must be finite and positive")
+
     median = statistics.median(ratios)
     gap_percent = abs(median - 1.0) * 100.0
     above = sum(1 for ratio in ratios if ratio > 1.0)
@@ -255,10 +301,35 @@ def paired_verdict(ratios):
         _binom_two_sided(max(above, below), effective)
         if effective > 0 else 1.0
     )
-    if effective >= 6 and p_value < 0.01 and gap_percent > 1.0:
-        verdict = "WIN" if above > below else "LOSE"
+    interval = _median_confidence_interval(ratios, tail_alpha)
+    verdict = "INCONCLUSIVE"
+    band = None
+    if equivalence_margin_percent is not None:
+        margin = equivalence_margin_percent / 100.0
+        band = (1.0 / (1.0 + margin), 1.0 + margin)
+
+    if not comparable:
+        verdict = "NOT_COMPARABLE"
+        reason = "comparison-contract-not-equivalent"
+    elif len(ratios) < minimum_runs:
+        reason = "insufficient-samples"
+    elif equivalence_margin_percent is None:
+        reason = "margin-not-declared"
+    elif interval is None:
+        reason = "confidence-interval-unavailable"
     else:
-        verdict = "TIE"
+        lower, upper, _ = interval
+        if upper < band[0]:
+            verdict = "WIN"
+            reason = "baseline-faster-outside-margin"
+        elif lower > band[1]:
+            verdict = "LOSE"
+            reason = "rival-faster-outside-margin"
+        elif lower >= band[0] and upper <= band[1]:
+            verdict = "EQUIVALENT"
+            reason = "median-ci-inside-equivalence-band"
+        else:
+            reason = "median-ci-crosses-decision-boundary"
     return {
         "median": median,
         "gap_percent": gap_percent,
@@ -266,7 +337,28 @@ def paired_verdict(ratios):
         "effective": effective,
         "p_value": p_value,
         "verdict": verdict,
+        "reason": reason,
+        "interval": interval,
+        "band": band,
+        "tail_alpha": tail_alpha,
     }
+
+
+def combine_order_verdicts(first, second, comparable=True, shape_stable=True):
+    """Combine two independently sampled orders after external review gates."""
+    valid = {"WIN", "EQUIVALENT", "LOSE", "INCONCLUSIVE",
+             "NOT_COMPARABLE"}
+    if first not in valid or second not in valid:
+        raise ValueError("unknown execution-order verdict")
+    if (not comparable or first == "NOT_COMPARABLE" or
+            second == "NOT_COMPARABLE"):
+        return "NOT_COMPARABLE"
+    if not shape_stable:
+        return "INCONCLUSIVE"
+    stable = {"WIN", "EQUIVALENT", "LOSE"}
+    if first in stable and first == second:
+        return first
+    return "INCONCLUSIVE"
 
 
 def parse_run(text):
@@ -369,13 +461,31 @@ def main():
     ap.add_argument("--peer", action="append", default=[], metavar="NAME=PATH",
                     help="record and cleanliness-check a Git benchmark peer; repeatable")
     ap.add_argument("--pair", nargs=2, action="append", metavar=("BASELINE", "RIVAL"),
-                    default=[], help="report RIVAL/BASELINE op/s ratio; repeatable")
+                    default=[], help="classify candidate BASELINE from the "
+                                     "RIVAL/BASELINE op/s ratio; repeatable")
+    ap.add_argument("--not-comparable-pair", nargs=2, action="append",
+                    metavar=("BASELINE", "RIVAL"), default=[],
+                    help="report an informational RIVAL/BASELINE ratio without "
+                         "a performance claim; repeatable")
+    ap.add_argument("--equivalence-margin-pct", type=float,
+                    help="predeclared practical equivalence margin in percent; "
+                         "required with --pair for formal --require-clean evidence")
     args = ap.parse_args()
 
     if args.runs <= 0:
         ap.error("--runs must be positive")
     if args.require_clean and args.runs < 15:
         ap.error("--require-clean formal evidence requires at least 15 runs")
+    if args.require_clean and args.pair and args.equivalence_margin_pct is None:
+        ap.error("formal paired evidence requires --equivalence-margin-pct")
+    if (args.equivalence_margin_pct is not None and
+            (not math.isfinite(args.equivalence_margin_pct) or
+             args.equivalence_margin_pct <= 0.0)):
+        ap.error("--equivalence-margin-pct must be finite and positive")
+    duplicate_pairs = set(map(tuple, args.pair)) & set(
+        map(tuple, args.not_comparable_pair))
+    if duplicate_pairs:
+        ap.error("the same pair cannot be both comparable and not comparable")
 
     # Normalize to an absolute path: on Windows, CreateProcess won't resolve a
     # forward-slash relative path like "build/bin/foo.exe" (the shell would, but
@@ -419,12 +529,17 @@ def main():
         if t not in titles:
             titles.append(t)
 
-    if args.pair:
+    requested_pairs = [
+        (base, rival, True) for base, rival in args.pair
+    ] + [
+        (base, rival, False) for base, rival in args.not_comparable_pair
+    ]
+    if requested_pairs:
         print("\n=== pair ratios (RIVAL/BASELINE op/s) ===")
-        print("    verdict: paired sign test on same-process ratios, p<0.01 and median gap>1%")
-        print("    absolute combined spread is diagnostic only; formal evidence must also agree")
-        print("    after swapping variant order")
-    for base, rival in args.pair:
+        print("    subject=BASELINE(candidate); single-order classification is provisional")
+        print("    equivalence uses a distribution-free median interval with tail alpha=0.01")
+        print("    formal evidence must also agree after order swap and applicable code-shape gates")
+    for base, rival, comparable in requested_pairs:
         any_hit = False
         for t in titles:
             bk, rk = (t, base), (t, rival)
@@ -432,7 +547,8 @@ def main():
             if not ratios:
                 continue
             any_hit = True
-            decision = paired_verdict(ratios)
+            decision = paired_verdict(
+                ratios, args.equivalence_margin_pct, comparable=comparable)
             rmed = decision["median"]
             combined = agg[bk][1] + agg[rk][1]
             gap = decision["gap_percent"]
@@ -440,12 +556,21 @@ def main():
             absolute_hint = (
                 "inside" if gap <= combined else
                 ("outside+" if rmed > 1 else "outside-"))
-            print(f"  {t[:34]:36s} {rival} / {base}")
+            interval = decision["interval"]
+            ci_text = ("unavailable" if interval is None else
+                       f"[{interval[0]:.3f},{interval[1]:.3f}]")
+            band = decision["band"]
+            band_text = ("undeclared" if band is None else
+                         f"[{band[0]:.3f},{band[1]:.3f}]")
+            print(f"  {t[:34]:36s} RIVAL={rival} BASELINE={base}")
             print(f"    ratio med {rmed:5.3f}  min {min(ratios):5.3f} max {max(ratios):5.3f}"
                   f"  gap {gap:4.1f}% vs spread {combined:4.1f}%"
-                  f"  [absolute]{absolute_hint} [verdict]{decision['verdict']}"
-                  f" ({decision['above']}/{decision['effective']}>1,"
-                  f" p={decision['p_value']:.1e})")
+                  f"  [absolute]{absolute_hint}")
+            print(f"    median_ci98+ {ci_text} equivalence_band {band_text}"
+                  f"  [order_verdict]{decision['verdict']}"
+                  f" reason={decision['reason']}"
+                  f" sign_diag={decision['above']}/{decision['effective']}>1,"
+                  f"p={decision['p_value']:.1e}")
         if not any_hit:
             print(f"  (no rows matched pair: {base!r} / {rival!r})")
 

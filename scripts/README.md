@@ -234,19 +234,40 @@ cmake --build build-bench --target hyle_queue_sota_bench
 
 ## `bench-stat.py` — paired process-level performance evidence
 
-`bench-stat.py` repeats one nanobench executable in fresh processes and decides each requested
-pair from its same-process ratios: WIN/LOSE requires a two-sided paired sign test with `p < 0.01`,
-a material median gap above 1%, and the same direction after rerunning with variant order swapped.
-Per-variant absolute spread remains a noise diagnostic; it is not an alternative verdict because
-common host noise can cancel in the paired ratio. A diagnostic run may omit
-provenance gates; a formal run uses `--require-clean` from a clean HYLE checkout and declares every
-external Git peer that contributes comparison code:
+`bench-stat.py` repeats one nanobench executable in fresh processes and computes same-process
+`RIVAL/BASELINE` throughput ratios. `BASELINE` is the HYLE candidate: ratio below one favors HYLE.
+The runner uses an exact, distribution-free interval for the population median ratio. Given a
+predeclared multiplicative margin `m`, it reports one execution order as `WIN`, `EQUIVALENT`,
+`LOSE`, or `INCONCLUSIVE`; an explicitly unequal-contract informational pair is
+`NOT_COMPARABLE`. Failure to prove a material difference is never called equivalent.
+
+The equivalence band is reciprocal: `[1/(1+m), 1+m]`. At the default evidence size of 15
+independent processes and tail alpha `.01`, the interval is the third through thirteenth ordered
+ratio (actual coverage about 99.26%). A formal result must independently run the default and
+peer-first orders and obtain compatible classifications; short/code-placement-sensitive kernels
+also need the perturbation gate described in
+[`benchmark-evidence-standard.md`](../docs/performance/benchmark-evidence-standard.md). The script's
+`[order_verdict]` is therefore evidence input, not a module certificate. Absolute per-variant
+spread and the sign-test p-value are diagnostics only.
+
+A diagnostic run may omit provenance gates. A clean evidence run uses `--require-clean`, declares
+the workload-specific margin before sampling, and names every external Git peer that contributes
+comparison code. For the core intrusive-list benchmark:
 
 ```bash
-python scripts/bench-stat.py build-bench/bin/hyle_sort_bench -n 15 --require-clean \
-  --peer highway=../highway \
-  --pair "Highway VQSelect direct" "HYLE public"
+python scripts/bench-stat.py build-bench/bin/hyle_core_bench -n 15 --require-clean \
+  --peer boost=../boost --equivalence-margin-pct 3 \
+  --pair "HYLE IntrusiveList" "boost::intrusive auto_unlink"
+
+HYLE_BENCH_RIVAL_FIRST=1 python scripts/bench-stat.py \
+  build-bench/bin/hyle_core_bench -n 15 --require-clean \
+  --peer boost=../boost --equivalence-margin-pct 3 \
+  --pair "HYLE IntrusiveList" "boost::intrusive auto_unlink"
 ```
+
+Use `--not-comparable-pair BASELINE RIVAL` when an absolute cost comparison is useful but the two
+rows have different ownership, validation, allocation, batching, concurrency, ISA, or QoS
+contracts. It prints the ratio as information while mechanically suppressing a performance claim.
 
 The runner records the HYLE and peer HEAD/tree/dirty/remote identities, its own and the executable's
 SHA-256, host, relevant CMake cache contract, HYLE benchmark environment, and the centrally locked

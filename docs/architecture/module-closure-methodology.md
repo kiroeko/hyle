@@ -16,6 +16,42 @@
 一个模块只有同时交付稳定设计、正常使用 API、复杂度/性能证据、平台正确性、依赖收束和
 正确分层的文档，才能取得当前严格证书。任何一项未知就写未知或黄色，不能拿其他项代偿。
 
+本文中的“必须/不得”是发布门，不是建议。每轮复审使用
+[`module-review-template`](../milestones/module-review-template.md) 建立可核对记录；性能判定还必须
+遵守 [`benchmark-evidence-standard`](../performance/benchmark-evidence-standard.md)。模板可以
+增加模块特有门，但不得删除或合并本文的门槛。
+
+### 1.1 审查状态机
+
+| 状态 | 进入条件 | 允许动作 | 退出条件 |
+|---|---|---|---|
+| `OPEN` | 新模块，或用户要求从当前标准完整复审 | 只建立边界、场景和旧证据账本 | 审查单元与需求来源已冻结 |
+| `AUDITED` | 功能/参考/类型/复杂度/依赖/API 红队完成 | 实现裁决后的缺口；删除坏形状 | 公共方案及负空间已裁决 |
+| `CANDIDATE` | 产品改动完成，候选 commit/tree 明确 | 只做验证修复；任何产品改动都换 candidate | 全部机械与性能门绑定同一候选 |
+| `EVIDENCE_COMPLETE` | 三平台、C/C++、package、消费者和文档证据齐全 | 红队复核证据资格与遗漏 | 无未知、无未解释同合同 LOSE |
+| `SIGNED` | 清单全勾、LOC、commit、push、CI 完成 | 停止无证据重复全审 | 出现第十三节重开触发器 |
+| `REOPENED` | 触发器命中 | 受影响门转黄；保留未受影响历史证据 | 重新产生候选并签署 |
+
+面向用户只显示黄色/绿色：`SIGNED` 才是绿色，其余状态一律黄色。完整复审时，历史绿色只能
+作为查漏和回归输入，所有门都要重新作出显式裁决；这不意味着无证据重写已有实现。候选冻结
+后若改动产品代码、公开头、CMake 合同或 claim-bearing benchmark，候选 identity 必须更新，
+相应证据重跑，不能把旧日志拼到新 SHA 上。
+
+### 1.2 固定施工顺序
+
+1. 冻结审查单元、候选前基线和直接依赖/消费者；
+2. 从真实任务建立功能与负空间账本，再读成熟库的公开面、实现和消费者；
+3. 裁决模块归属、类型形状、复杂度、C++ 与 C 产品面，之后才改代码；
+4. 完成功能/正确性/API/sample/文档，不以 benchmark 结果反向生造入口；
+5. 冻结 candidate，按平台和交付形状做机械验证；
+6. 只对有资格的正常 workload 做性能判定，红队复核后签证书；
+7. 报四项 LOC，提交、推送并等待 required CI；然后才能转绿。
+
+并行 agent 只能加速相互独立的审计、平台验证或隔离 worktree 实验。一个负责人拥有 canonical
+workspace 和最终裁决；subagent 不在共享工作树并发改同一文件，不各自提交一半产品方案，也
+不能把不同 SHA 的平台日志合成一个证书。所有外部机器副本都视为可丢弃验证环境，Windows
+canonical workspace 的提交历史是唯一产品事实。
+
 ## 二、先冻结审查单元，而不是先看目录
 
 收口第一步是写清“这次到底审什么”。审查单元至少包含：
@@ -191,7 +227,7 @@ API。微基准可以解释一次原子、hint 或函数边界，但不能独立
 
 | 级别 | 必须满足 | 允许的结论 |
 |---|---|---|
-| 产品对拍 | 同语义/ownership/QoS，正常用户或内部消费者 workload，setup 与必要检查同等计费 | 通过下述统计和稳定性门后才可写 WIN/TIE/LOSE |
+| 产品对拍 | 同语义/ownership/QoS，正常用户或内部消费者 workload，setup 与必要检查同等计费 | 通过下述统计和稳定性门后才可写 `WIN/EQUIVALENT/LOSE`；否则写 `INCONCLUSIVE` |
 | 机制诊断 | 隔离一段原子、链表、dispatch 或 codegen，用于定位产品结果 | 只解释根因，不单独签 SOTA |
 | 不可比 | 任一侧改变分配、检查、批量、容量、数据布局、并发语义或失败合同 | 只能写“不可比”，不得计算胜负 |
 | 不稳定 | 同合同但执行顺序、等价 harness 写法、函数/堆布局或微小 code placement 扰动使方向翻转 | 写“未知/placement-sensitive”，不得挑有利变体，也不得用 TIE 暗示已经证明同档 |
@@ -199,7 +235,7 @@ API。微基准可以解释一次原子、hint 或函数边界，但不能独立
 尤其是 sub-cache、小批次和百纳秒级 aggregate：即使单一二进制的 paired sign test 显著，若
 合同等价的 runtime bound/value capture、variant 排列或 code placement 能使方向翻转，该格仍
 没有产品胜负资格。只有机械确认关键热核同等计费，并且真实消费者没有回归时，才可把它降为
-“机制 TIE（placement-sensitive）”；缺少任一层就继续保持 unknown/黄色。禁止为了得到稳定
+“机制诊断（placement-sensitive）”；缺少任一层就继续保持 unknown/黄色。禁止为了得到稳定
 有利的地址或指令排列而修改产品字段、API、常态元数据或挑选 benchmark 写法。
 
 真实消费者语料不能只来自 HYLE 已有测试。与模块职责相关时，应从本地成熟项目的生产路径
@@ -211,9 +247,10 @@ prefill/decode 批量、线程/NUMA 和 backend handoff。抽取的是数据、�
 
 - 代表性小/中/大规模和正常数据分布；
 - 适用时单线程、共享争用和分片路径；
-- 至少 15 个独立进程样本；同进程 peer/candidate 比值做 paired sign test，只有 `p < 0.01`
-  且中位差大于 1% 才判 WIN/LOSE，否则 TIE；
-- 默认顺序与 peer-first 正反顺序必须给出相同方向；翻转就记 TIE/未知，不挑有利顺序；
+- 至少 15 个独立进程样本；同进程 peer/candidate 比值按预声明 equivalence margin 和分布无关
+  中位数区间判 `WIN/EQUIVALENT/LOSE/INCONCLUSIVE`，不得把“不显著”写成平；
+- 默认顺序与 peer-first 必须得到同一类有效结论；缺序、类别不同或方向翻转一律
+  `INCONCLUSIVE`，不挑有利顺序或池化掩盖系统误差；
 - 对 sub-cache 或短 aggregate，至少再做一种合同等价的 code-shape/placement 扰动；方向翻转
   即降为 unknown/placement-sensitive，并转由真实消费者守门；
 - Windows/Linux/macOS 真机；ISA/后端不可得时明确写“未认证”，不用模拟器时序；
@@ -221,7 +258,7 @@ prefill/decode 批量、线程/NUMA 和 backend handoff。抽取的是数据、�
 
 单边绝对 spread 是机器噪声诊断，不代替同进程 paired ratio：共同噪声可能让两边绝对值都漂，
 却不破坏配对方向。反之，paired ratio 自身大幅漂移、正反顺序不一致或样本不足，只能使结论
-变成未知/TIE，不能证明没有问题。先用隔离 workload、反汇编、计数器或不同机器降低不确定性；
+变成 `INCONCLUSIVE`，不能证明没有问题。先用隔离 workload、反汇编、计数器或不同机器降低不确定性；
 确实无法判定时保留黄色，而不是把怀疑写成 SOTA。
 
 ## 九、C++ API 与 C ABI 是两个消费产品

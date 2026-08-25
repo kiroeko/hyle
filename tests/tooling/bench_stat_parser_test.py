@@ -2,6 +2,7 @@
 """Canary for every nanobench table shape consumed by bench-stat.py."""
 
 import importlib.util
+import math
 import pathlib
 
 
@@ -63,19 +64,98 @@ def main():
     if bench_stat.git_identity(missing_peer) is not None:
         raise AssertionError("missing peer path acquired a Git identity")
 
+    order_interval = bench_stat._median_confidence_interval(
+        [float(value) for value in range(1, 16)])
+    if order_interval != (3.0, 13.0, 3):
+        raise AssertionError(f"n=15 exact order interval changed: {order_interval!r}")
+
+    # Verdicts are from BASELINE's perspective while ratios are RIVAL/BASELINE.
     verdict_cases = (
-        ([1.02] * 15, "WIN"),
-        ([0.98] * 15, "LOSE"),
-        ([1.005] * 15, "TIE"),  # consistent but below the 1% materiality bar
-        ([1.02] * 8 + [0.98] * 7, "TIE"),
-        ([1.0] * 15, "TIE"),
+        ([0.95] * 15, 3.0, "WIN"),
+        ([1.05] * 15, 3.0, "LOSE"),
+        ([1.005] * 15, 1.0, "EQUIVALENT"),
+        ([1.02] * 8 + [0.98] * 7, 1.0, "INCONCLUSIVE"),
+        ([1.0] * 15, 1.0, "EQUIVALENT"),
+        ([0.95] * 12 + [1.0] * 3, 3.0, "INCONCLUSIVE"),
+        ([0.95] * 13 + [1.0] * 2, 3.0, "WIN"),
     )
-    for ratios, expected_verdict in verdict_cases:
-        decision = bench_stat.paired_verdict(ratios)
+    for ratios, margin, expected_verdict in verdict_cases:
+        decision = bench_stat.paired_verdict(ratios, margin)
         if decision["verdict"] != expected_verdict:
             raise AssertionError(
                 f"paired verdict mismatch: {decision!r} != {expected_verdict!r}"
             )
+
+    undeclared = bench_stat.paired_verdict([1.0] * 15)
+    if (undeclared["verdict"], undeclared["reason"]) != (
+            "INCONCLUSIVE", "margin-not-declared"):
+        raise AssertionError(f"undeclared margin acquired a claim: {undeclared!r}")
+    too_few = bench_stat.paired_verdict([1.0] * 14, 1.0)
+    if (too_few["verdict"], too_few["reason"]) != (
+            "INCONCLUSIVE", "insufficient-samples"):
+        raise AssertionError(f"short sample acquired a claim: {too_few!r}")
+
+    margin = 3.0
+    lower_boundary = 1.0 / (1.0 + margin / 100.0)
+    upper_boundary = 1.0 + margin / 100.0
+    for boundary in (lower_boundary, upper_boundary):
+        decision = bench_stat.paired_verdict([boundary] * 15, margin)
+        if decision["verdict"] != "EQUIVALENT":
+            raise AssertionError(f"equivalence boundary was made material: {decision!r}")
+    below = math.nextafter(lower_boundary, 0.0)
+    above = math.nextafter(upper_boundary, math.inf)
+    if bench_stat.paired_verdict([below] * 15, margin)["verdict"] != "WIN":
+        raise AssertionError("ratio just below the lower boundary did not WIN")
+    if bench_stat.paired_verdict([above] * 15, margin)["verdict"] != "LOSE":
+        raise AssertionError("ratio just above the upper boundary did not LOSE")
+
+    forward = bench_stat.paired_verdict([0.95] * 15, margin)
+    reciprocal = bench_stat.paired_verdict([1.0 / 0.95] * 15, margin)
+    if (forward["verdict"], reciprocal["verdict"]) != ("WIN", "LOSE"):
+        raise AssertionError(
+            f"swapping candidate and peer was not reciprocal: {forward!r}/{reciprocal!r}")
+    if not math.isclose(forward["band"][0], 1.0 / forward["band"][1]):
+        raise AssertionError(f"equivalence band is not reciprocal: {forward['band']!r}")
+    equivalent = bench_stat.paired_verdict([1.005] * 15, margin)
+    inverse_equivalent = bench_stat.paired_verdict(
+        [1.0 / 1.005] * 15, margin)
+    if (equivalent["verdict"], inverse_equivalent["verdict"]) != (
+            "EQUIVALENT", "EQUIVALENT"):
+        raise AssertionError(
+            "equivalence changed when candidate and peer were swapped")
+
+    informational = bench_stat.paired_verdict(
+        [0.1] * 15, margin, comparable=False)
+    if (informational["verdict"], informational["reason"]) != (
+            "NOT_COMPARABLE", "comparison-contract-not-equivalent"):
+        raise AssertionError(
+            f"unequal contract acquired a performance claim: {informational!r}")
+
+    for verdict in ("WIN", "EQUIVALENT", "LOSE"):
+        if bench_stat.combine_order_verdicts(verdict, verdict) != verdict:
+            raise AssertionError(f"stable order verdict lost: {verdict}")
+    for first, second in (("WIN", "EQUIVALENT"), ("WIN", "LOSE"),
+                          ("INCONCLUSIVE", "INCONCLUSIVE")):
+        if bench_stat.combine_order_verdicts(first, second) != "INCONCLUSIVE":
+            raise AssertionError(f"unstable orders acquired a claim: {first}/{second}")
+    if bench_stat.combine_order_verdicts(
+            "WIN", "WIN", shape_stable=False) != "INCONCLUSIVE":
+        raise AssertionError("placement-sensitive orders acquired a claim")
+    if bench_stat.combine_order_verdicts(
+            "WIN", "WIN", comparable=False) != "NOT_COMPARABLE":
+        raise AssertionError("unequal contract acquired a combined claim")
+    if bench_stat.combine_order_verdicts(
+            "NOT_COMPARABLE", "NOT_COMPARABLE") != "NOT_COMPARABLE":
+        raise AssertionError("not-comparable orders lost their contract verdict")
+
+    for invalid_ratios in ([0.0] * 15, [float("nan")] * 15,
+                           [float("inf")] * 15):
+        try:
+            bench_stat.paired_verdict(invalid_ratios, 1.0)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError(f"invalid ratios acquired a verdict: {invalid_ratios!r}")
 
     try:
         bench_stat.paired_verdict([])
