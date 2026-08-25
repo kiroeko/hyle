@@ -210,14 +210,14 @@ def cloc_version(cloc: str, root: Path) -> str:
     return output.strip().splitlines()[-1]
 
 
-def cloc_count(
+def cloc_measure(
     cloc: str,
     root: Path,
     files: Sequence[str],
     languages: Sequence[str] | None,
-) -> int:
+) -> tuple[int, int]:
     if not files:
-        return 0
+        return 0, 0
 
     list_name = ""
     try:
@@ -235,7 +235,8 @@ def cloc_count(
         assert isinstance(output, str)
         try:
             payload = json.loads(output)
-            return int(payload.get("SUM", {}).get("code", 0))
+            summary = payload.get("SUM", {})
+            return int(summary.get("code", 0)), int(summary.get("nFiles", 0))
         except (TypeError, ValueError, json.JSONDecodeError) as exc:
             raise ReportError("cloc returned malformed JSON") from exc
     finally:
@@ -275,36 +276,50 @@ def build_report(args: argparse.Namespace) -> dict[str, object]:
     self_without_tests = files_under(tracked, SELF_WITHOUT_TESTS_ROOTS)
 
     cloc = find_cloc()
+    repository_code, repository_files = cloc_measure(cloc, root, tracked, None)
+    self_with_tests_code, self_with_tests_files = cloc_measure(
+        cloc, root, self_with_tests, NATIVE_LANGUAGES
+    )
+    self_without_tests_code, self_without_tests_files = cloc_measure(
+        cloc, root, self_without_tests, NATIVE_LANGUAGES
+    )
+    module_code, module_code_files = cloc_measure(
+        cloc, root, module_files, NATIVE_LANGUAGES
+    )
     metrics = [
         {
             "id": "repository",
             "label": "full repository code",
-            "code": cloc_count(cloc, root, tracked, None),
-            "files": len(tracked),
+            "code": repository_code,
+            "files": repository_files,
+            "selected_files": len(tracked),
             "paths": ["Git-tracked regular files (current working tree)"],
             "languages": ["all languages recognized by cloc"],
         },
         {
             "id": "self_with_tests",
             "label": "self-written including tests",
-            "code": cloc_count(cloc, root, self_with_tests, NATIVE_LANGUAGES),
-            "files": len(self_with_tests),
+            "code": self_with_tests_code,
+            "files": self_with_tests_files,
+            "selected_files": len(self_with_tests),
             "paths": list(SELF_WITH_TESTS_ROOTS),
             "languages": list(NATIVE_LANGUAGES),
         },
         {
             "id": "self_without_tests",
             "label": "self-written excluding tests",
-            "code": cloc_count(cloc, root, self_without_tests, NATIVE_LANGUAGES),
-            "files": len(self_without_tests),
+            "code": self_without_tests_code,
+            "files": self_without_tests_files,
+            "selected_files": len(self_without_tests),
             "paths": list(SELF_WITHOUT_TESTS_ROOTS),
             "languages": list(NATIVE_LANGUAGES),
         },
         {
             "id": "module",
             "label": f"current module implementation ({args.module})",
-            "code": cloc_count(cloc, root, module_files, NATIVE_LANGUAGES),
-            "files": len(module_files),
+            "code": module_code,
+            "files": module_code_files,
+            "selected_files": len(module_files),
             "paths": module_specs,
             "languages": list(NATIVE_LANGUAGES),
         },
@@ -312,7 +327,7 @@ def build_report(args: argparse.Namespace) -> dict[str, object]:
 
     commit, dirty = repository_identity(root)
     report: dict[str, object] = {
-        "schema": 1,
+        "schema": 2,
         "repository": {
             "root": str(root),
             "commit": commit,
@@ -397,7 +412,7 @@ def print_human(report: dict[str, object], passed_self_check: bool) -> None:
             f"{len(repository['tracked_missing_files'])} (not counted)"
         )
     print()
-    print(f"{'metric':<42} {'code':>10} {'selected files':>15}")
+    print(f"{'metric':<42} {'code':>10} {'counted files':>15}")
     print(f"{'-' * 42} {'-' * 10} {'-' * 15}")
     for metric in metrics:
         print(f"{metric['label']:<42} {metric['code']:>10,} {metric['files']:>15,}")
