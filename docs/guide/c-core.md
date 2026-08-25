@@ -13,12 +13,15 @@
 | `hyle_version` | `() -> uint32_t` | 已链接 `hyle_core` 的 runtime packed version |
 | `hyle_version_string` | `() -> const char*` | runtime 字符串，静态存储，不 free |
 | `hyle_version_major/minor/patch` | header-inline | 拆 packed version，无 DLL hop |
-| `HYLE_STATIC_CACHE_LINE_SIZE` | compile-time macro | 公共结构布局：Apple Silicon 128，其余当前支持目标 64 |
+| `HYLE_STATIC_CONSTRUCTIVE_INTERFERENCE_SIZE` | compile-time macro | 公共布局的 64B constructive 下界 |
+| `HYLE_STATIC_DESTRUCTIVE_INTERFERENCE_SIZE` | compile-time macro | 公共布局的 128B destructive 上界 |
 | `hyle_prefetch_read` | header-inline | 预计会复用的读，偏向本地 cache |
 | `hyle_prefetch_read_non_temporal` | header-inline | 大片一次性/低复用读；不支持时可退化 |
 | `hyle_prefetch_write` | header-inline | 即将修改的地址；capable target 可请求 exclusive ownership，不支持时按编译 ISA baseline 安全退化 |
 
 ```c
+#include <stdio.h>
+
 #include "hyle/c/core.h"
 
 if (hyle_version() != HYLE_VERSION_PACKED) {
@@ -28,7 +31,12 @@ printf("HYLE %s\n", hyle_version_string());
 ```
 
 需要当前 CPU 的运行时精确 cache line 时调用 platform 的
-`hyle_cpu_cache_line_size()`；不要用 runtime 值定义跨翻译单元 struct ABI。
+`hyle_cpu_cache_line_size()`；不要用 runtime 值定义跨翻译单元 struct ABI。destructive 128B
+用于确实有跨核写竞争的字段隔离，普通对象不要为“看起来更快”默认 padding。若用 `_Alignas`
+声明 128B 对齐的 C 类型，动态存储也必须来自满足该 alignment 的分配入口；普通 `malloc` 只承诺
+`max_align_t`，不能因为目标类型声明了 `_Alignas` 就自动变成 over-aligned allocation。
+两个 bound 只认证 `hyle_cpu_cache_line_size()` 落在 `[64,128]` 的当前目标；新 generic/RV64
+目标若超出范围，runtime 查询仍有效，但必须重新认证静态布局后才能作为受支持构建发布。
 
 ```c
 for (size_t i = 0; i != count; ++i) {
@@ -50,11 +58,12 @@ prefetcher。`write` 仍要求调用方使用正确的原子/锁，`non_temporal
 | 名称 | 什么时候用 | 合同 |
 |---|---|---|
 | `HYLE_C_FORCE_INLINE` / `HYLE_C_NOINLINE` | 已测热叶函数 / 必须保持冷路或 frame 的函数定义 | 强/禁内联 hint；强内联仍受编译器合法性约束 |
+| `HYLE_C_NODISCARD` | 必须检查/释放的状态或结果函数声明前 | GCC/Clang C17 产生 unused-result 诊断；MSVC C 记录 SAL `/analyze` 合同 |
 | `HYLE_C_LIKELY(expr)` / `HYLE_C_UNLIKELY(expr)` | profile 证明概率明显偏斜的分支 | 表达式求值一次；未知编译器退为普通 bool |
-| `HYLE_C_UNREACHABLE()` | 已由不变量证明绝不抵达的控制流末端 | 真正抵达是 undefined behavior，不做输入验证 |
+| `HYLE_C_UNREACHABLE()` | 已由不变量证明绝不抵达的控制流末端 | 未定义 `NDEBUG` 时诊断并 abort；定义后抵达是 undefined behavior，不做输入验证 |
 | `HYLE_C_FATAL_ASSERT(expr)` | 违反后进程不能安全继续的程序不变量 | Debug/Release 都诊断并 abort；业务失败改返回 error |
 | `HYLE_C_RESTRICT` | 放在已证明互不别名的 pointer declaration 上 | 承诺错误是 undefined behavior；未知编译器安全退为空 |
-| `HYLE_C_ASSUME(expr)` | 告诉优化器某个内部不变量恒真 | 表达式必须无副作用；Debug 为 false 时诊断并 abort，Release 为 false 是 undefined behavior |
+| `HYLE_C_ASSUME(expr)` | 告诉优化器某个内部不变量恒真 | 表达式必须无副作用；未定义 `NDEBUG` 时 false 会诊断并 abort，定义后为 false 是 undefined behavior |
 | `HYLE_C_FLATTEN` | 经过 profile 的深 wrapper/kernel 函数定义前 | GCC/Clang 尽量递归内联；可能扩大代码、伤害 I-cache；MSVC/未知编译器可忽略 |
 | `HYLE_C_UNROLL(n)` | 已 profile 的固定展开 kernel loop 前 | best-effort hint；MSVC/未知编译器可忽略，不改变语义 |
 | `HYLE_C_DEFAULT_UNROLL` | 需要工具链默认/保守展开而不指定因子时 | GCC 当前映射为 4，Clang 采用默认 unroll；同样只是 hint |
@@ -72,9 +81,10 @@ int sum(const int* HYLE_C_RESTRICT values, size_t count) {
 }
 ```
 
-业务输入验证必须写正常分支并返回 error，不能拿 `ASSUME` 代替；有副作用的表达式在 Debug 与
-Release 可能有不同求值行为。`RESTRICT` 要覆盖 pointer 有效期内的全部访问，局部看起来不冲突
-并不够。flatten/unroll 都可能增加 code size、伤害 I-cache，所以没有代表性 profile 时不加。
+业务输入验证必须写正常分支并返回 error，不能拿 `ASSUME` 代替；有副作用的表达式在是否定义
+`NDEBUG` 的 TU 中可能有不同求值行为。`RESTRICT` 要覆盖 pointer 有效期内的全部访问，局部看起来不冲突
+并不够。GCC/Clang 的 force-inline 在 `-O0` 退成普通 inline，避免未优化编译膨胀；优化构建仍
+强制 inline。flatten/unroll 都可能增加 code size、伤害 I-cache，所以没有代表性 profile 时不加。
 
 ## 侵入链表类型
 
@@ -82,7 +92,10 @@ Release 可能有不同求值行为。`RESTRICT` 要覆盖 pointer 有效期内�
 |---|---|
 | `hyle_intrusive_list_hook` | 嵌入调用方节点的 prev/next；一个 hook 同时只能属于一条链 |
 | `hyle_intrusive_list` | circular sentinel list；不拥有节点、不分配 |
+| `HYLE_INTRUSIVE_HOOK_INIT` | hook 的静态/聚合初始化值 |
+| `HYLE_INTRUSIVE_LIST_INIT(name)` | list 的自引用静态/自动初始化值，不必另调 init |
 | `HYLE_INTRUSIVE_ENTRY(hook,type,member)` | 从 member hook 恢复外层标准布局 C struct |
+| `HYLE_INTRUSIVE_CONST_ENTRY(hook,type,member)` | const hook 恢复 const 外层 struct，不丢 const |
 
 | inline 函数 | 合同 |
 |---|---|
@@ -94,6 +107,9 @@ Release 可能有不同求值行为。`RESTRICT` 要覆盖 pointer 有效期内�
 | `hyle_intrusive_list_push_back/front` | O(1) 无分支；前置条件是 list/hook 非 NULL 且 hook 未链接 |
 | `hyle_intrusive_list_try_push_back/front` | O(1) checked 入口；成功 1，NULL 或 double-link 为 0 |
 | `hyle_intrusive_list_front/back` | 返回 hook；空/NULL 返回 NULL，不摘链 |
+| `hyle_intrusive_list_front/back_const` | const-safe 首尾访问 |
+| `hyle_intrusive_list_next/prev` | 正反向遍历；到 sentinel 后返回 NULL |
+| `hyle_intrusive_list_next/prev_const` | const-safe 正反向遍历 |
 | `hyle_intrusive_list_pop_front/back` | O(1) 摘链并返回 hook；空/NULL 返回 NULL |
 | `hyle_intrusive_list_clear` | O(n) 摘除全部节点，不释放节点 |
 | `hyle_intrusive_list_append` | O(1) splice source 到 destination 尾；source 清空；非法/self 为 0 |
@@ -104,28 +120,42 @@ typedef struct request {
   hyle_intrusive_list_hook ready;
 } request;
 
-hyle_intrusive_list queue;
-request item = {42, {NULL, NULL}};
-hyle_intrusive_list_init(&queue);
+hyle_intrusive_list queue = HYLE_INTRUSIVE_LIST_INIT(queue);
+request item = {42, HYLE_INTRUSIVE_HOOK_INIT};
 hyle_intrusive_list_push_back(&queue, &item.ready);
 
 hyle_intrusive_list_hook* hook = hyle_intrusive_list_pop_front(&queue);
 request* next = HYLE_INTRUSIVE_ENTRY(hook, request, ready);
 ```
 
+只读遍历不需要直接碰 sentinel，也不会丢掉 const：
+
+```c
+const hyle_intrusive_list* view = &queue;
+const hyle_intrusive_list_hook* it = hyle_intrusive_list_front_const(view);
+int id_sum = 0;
+while (it != NULL) {
+  const request* item = HYLE_INTRUSIVE_CONST_ENTRY(it, request, ready);
+  id_sum += item->id;
+  it = hyle_intrusive_list_next_const(view, it);
+}
+```
+
 C 没有析构器：节点存储结束前必须 `hyle_intrusive_hook_unlink`，list 存储结束前必须 clear/
 pop 完或确保节点仍更长寿。linked 期间节点地址不可变化；多重 membership 使用多个 hook；
-并发访问由调用方同步。所有 list 操作都是 header-inline，因此没有每次跨 DLL 的热路成本。
+并发访问由调用方同步。`try_push_*`、`pop_*` 与 `append` 都带 `HYLE_C_NODISCARD`：调用方必须
+检查成功位或接住被摘节点；已知具体节点而只想摘链时直接调用 `hook_unlink`。所有 list 操作都是
+header-inline，因此没有每次跨 DLL 的热路成本。
 
 ## C++ 能力到 C 的通路
 
 | C++ 能力 | 纯 C 通路 | 是否同档 |
 |---|---|---|
 | hook/list RAII auto-unlink | 存储结束前显式 `hook_unlink`，list 结束前 `clear` | 同一 O(1) 摘链；析构语法是 C++ 特性 |
-| `move_front_to` | `pop_front` 后 `push_back` | O(1) |
+| single-node `splice(pos,source,it)` | 保存 next，`hook_unlink` 后 `push_front/back` | O(1)；C 基础面不制造 iterator ABI |
 | `append` / list move | `hyle_intrusive_list_append` | O(1) |
 | `consume_all` | 循环 `pop_front` 后调用 C 函数 | O(n)，当前 hook 在用户回调前已摘链 |
-| `for_each` | 从 `sentinel.next` 遍历到 `&sentinel`；若摘链先保存 `next` | O(n) |
+| range/`for_each` | `front[_const]` + `next[_const]`；若摘链先保存 `next` | O(n) |
 | `move_prefix_to` | 按谓词循环 `front` + `pop_front` + `push_back` | O(k)，不需要 callback ABI 或额外分配 |
 
 ```c
@@ -142,7 +172,9 @@ while ((hook = hyle_intrusive_list_pop_front(&queue)) != NULL) {
 
 ## 导出形态与机械门
 
-动态符号仍只有 `hyle_version`、`hyle_version_string`。compiler contract、缓存常量、三种
+动态符号仍只有 `hyle_version`、`hyle_version_string`。这一区分很重要：本页其余入口是给 C
+源码（以及能编译 C shim 的 FFI）使用的 source API，不是 Rust/Python 可直接按 DLL symbol 绑定的
+动态 ABI。compiler contract、缓存常量、三种
 prefetch、版本分解与 intrusive list 都是编译期/header-inline 能力，不进入导出表。
 `tests/core/c_surface_symbols.txt` 锁动态导出；`c_core_test.c` 以 C 编译器覆盖 compiler macro
 有效路径、版本、cache/prefetch、NULL/非法输入、空队列及完整链表生命周期；Debug death-test

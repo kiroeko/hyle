@@ -124,14 +124,17 @@ class BoundedQueue {
   std::size_t capacity() const noexcept { return valid() ? mask_ + 1 : 0; }
 
  private:
-  // Each cell on its OWN cache line. The canonical Vyukov/rigtorp layout pads slots
-  // to a cache line (rigtorp: alignas(hardwareInterferenceSize) + sizeof%64==0) so
+  // Each cell on its OWN destructive-interference span. The canonical
+  // Vyukov/rigtorp layout pads slots to a cache line (rigtorp uses 64 bytes on
+  // current x86), so
   // adjacent cells, produced/consumed by different threads concurrently, don't false-
   // share. HYLE's earlier port OMITTED this: an 8-byte T made Cell 16 bytes -> 4 cells
   // per line -> producers/consumers on neighbouring slots ping-pong the line (measured
   // ~1.33x slower than rigtorp at 4P/4C). alignas(cache line) restores parity. Cost:
-  // the buffer grows to one static cache line per slot (space-for-throughput,
-  // the same trade rigtorp makes).
+  // HYLE uses core's stable 128-byte upper bound to also cover 128-byte target
+  // families. This can cost twice rigtorp's x86 slot footprint and therefore
+  // requires direct-consumer throughput/footprint regression evidence; it is
+  // the explicit space-for-portable-false-sharing-isolation trade.
   static constexpr std::size_t kCellAlignment =
       alignof(T) > core::kDestructiveInterferenceSize
           ? alignof(T)

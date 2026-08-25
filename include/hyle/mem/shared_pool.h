@@ -656,7 +656,9 @@ private:
     return id;
   }
 
-  static constexpr std::uint32_t kShardCap = 128; // bounds heads_ (128 -> 8 KB)
+  // Bounds heads_: at the core 128-byte destructive-spacing upper bound, the
+  // maximum 128 heads occupy 16 KiB.
+  static constexpr std::uint32_t kShardCap = 128;
   static std::uint32_t default_shards() noexcept {
     auto available = hyle::platform::available_cpu_count();
     std::size_t c = available && *available != 0 ? *available : 8;

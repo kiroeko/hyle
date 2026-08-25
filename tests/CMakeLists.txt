@@ -89,7 +89,7 @@ function(hyle_add_c_surface_test module)
 endfunction()
 
 function(hyle_add_header_self_contained_test module)
-  cmake_parse_arguments(ARG "NO_C" "HEADER_DIR;C_HEADER" "HEADERS" ${ARGN})
+  cmake_parse_arguments(ARG "NO_C;CHECK_C_NODISCARD" "HEADER_DIR;C_HEADER" "HEADERS" ${ARGN})
   if(ARG_UNPARSED_ARGUMENTS)
     message(FATAL_ERROR
       "hyle_add_header_self_contained_test(${module}): unrecognized arguments: "
@@ -137,6 +137,9 @@ function(hyle_add_header_self_contained_test module)
     list(APPEND _hyle_header_args --no-c-header)
   elseif(ARG_C_HEADER)
     list(APPEND _hyle_header_args --c-header "${ARG_C_HEADER}")
+  endif()
+  if(ARG_CHECK_C_NODISCARD)
+    list(APPEND _hyle_header_args --check-c-nodiscard)
   endif()
   add_test(NAME hyle_${module}_header_self_contained_test
            COMMAND "${Python3_EXECUTABLE}"

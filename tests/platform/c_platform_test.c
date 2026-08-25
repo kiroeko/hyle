@@ -5,6 +5,7 @@
 #include <windows.h>
 #endif
 #include "hyle/c/platform.h"
+#include "hyle/c/core.h"
 
 #include <limits.h>
 #include <stdio.h>
@@ -990,6 +991,8 @@ int main(void) {
     unsigned cl = hyle_cpu_cache_line_size();
     CHECK(cl >= 16u && cl <= 256u &&
           (cl & (cl - 1u)) == 0u); /* sane power of two */
+    CHECK(cl >= HYLE_STATIC_CONSTRUCTIVE_INTERFERENCE_SIZE);
+    CHECK(cl <= HYLE_STATIC_DESTRUCTIVE_INTERFERENCE_SIZE);
   }
   {
     hyle_cache_info cache = hyle_cpu_cache_info();

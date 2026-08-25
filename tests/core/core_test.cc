@@ -30,6 +30,9 @@ static HYLE_C_FORCE_INLINE int c_contract_inline(int value) noexcept {
   return value * 2;
 }
 
+HYLE_NODISCARD int must_inspect_cpp_result() noexcept { return 7; }
+HYLE_C_NODISCARD int must_inspect_c_result() noexcept { return 11; }
+
 }  // namespace
 
 TEST(CoreVersion, CompileTimeAndRuntimeViewsAgree) {
@@ -44,10 +47,14 @@ TEST(CoreVersion, CompileTimeAndRuntimeViewsAgree) {
 }
 
 TEST(CoreCache, StaticLayoutContractIsUsable) {
-  static_assert(hyle::core::kCacheLineSize == HYLE_STATIC_CACHE_LINE_SIZE);
-  static_assert(hyle::core::kConstructiveInterferenceSize == hyle::core::kCacheLineSize);
-  static_assert(hyle::core::kDestructiveInterferenceSize == hyle::core::kCacheLineSize);
-  static_assert(hyle::core::kCacheLineSize == 64 || hyle::core::kCacheLineSize == 128);
+  static_assert(hyle::core::kConstructiveInterferenceSize ==
+                HYLE_STATIC_CONSTRUCTIVE_INTERFERENCE_SIZE);
+  static_assert(hyle::core::kDestructiveInterferenceSize ==
+                HYLE_STATIC_DESTRUCTIVE_INTERFERENCE_SIZE);
+  static_assert(hyle::core::kConstructiveInterferenceSize == 64);
+  static_assert(hyle::core::kDestructiveInterferenceSize == 128);
+  static_assert(hyle::core::kConstructiveInterferenceSize <=
+                hyle::core::kDestructiveInterferenceSize);
 
   alignas(hyle::core::kDestructiveInterferenceSize) std::byte storage[1]{};
   EXPECT_EQ(reinterpret_cast<std::uintptr_t>(storage) % hyle::core::kDestructiveInterferenceSize,
@@ -68,6 +75,8 @@ TEST(CoreMacros, OptimizerContractsCompileAndPreserveValidInputs) {
   const int values[] = {1, 2, 3, 4};
   EXPECT_EQ(restrict_sum(values, 4), 10);
   EXPECT_EQ(c_contract_branch(c_contract_inline(2)), 5);
+  EXPECT_EQ(must_inspect_cpp_result(), 7);
+  EXPECT_EQ(must_inspect_c_result(), 11);
 }
 
 #if !defined(NDEBUG)
@@ -77,6 +86,14 @@ TEST(CoreMacrosDeath, AssumeDiagnosesFalseInDebugBuilds) {
 
 TEST(CoreMacrosDeath, CAssumeDiagnosesFalseInDebugBuilds) {
   EXPECT_DEATH({ HYLE_C_ASSUME(0); }, "HYLE C fatal");
+}
+
+TEST(CoreMacrosDeath, UnreachableDiagnosesTripsInDebugBuilds) {
+  EXPECT_DEATH({ HYLE_UNREACHABLE(); }, "HYLE fatal");
+}
+
+TEST(CoreMacrosDeath, CUnreachableDiagnosesTripsInDebugBuilds) {
+  EXPECT_DEATH({ HYLE_C_UNREACHABLE(); }, "HYLE C fatal");
 }
 #endif
 

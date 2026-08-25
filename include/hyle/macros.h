@@ -15,6 +15,11 @@
 // ---- no inline ----
 #define HYLE_NOINLINE HYLE_DETAIL_COMPILER_NOINLINE
 
+// ---- must inspect the returned value --------------------------------------
+// Put before a function declaration. This is a diagnostic contract, not
+// runtime validation.
+#define HYLE_NODISCARD HYLE_DETAIL_COMPILER_NODISCARD
+
 // ---- aliasing contract ----------------------------------------------------
 // Apply to pointer declarations only when the pointed-to ranges do not alias
 // for the lifetime of the pointer. Violating this promise is undefined.
@@ -46,9 +51,6 @@
 #define HYLE_LIKELY(x) HYLE_DETAIL_COMPILER_LIKELY(x)
 #define HYLE_UNLIKELY(x) HYLE_DETAIL_COMPILER_UNLIKELY(x)
 
-// ---- unreachable ----
-#define HYLE_UNREACHABLE() HYLE_DETAIL_COMPILER_UNREACHABLE()
-
 // ---- delete copy / copy+move ----
 #define HYLE_DISABLE_COPY(T)        \
   T(const T&) = delete;             \
@@ -75,9 +77,18 @@
     if (HYLE_UNLIKELY(!(cond))) {                                            \
       ::std::fprintf(stderr, "HYLE fatal: %s\n  at %s:%d\n", #cond,          \
                      __FILE__, __LINE__);                                    \
-      HYLE_TRAP();                                                           \
+      ::std::abort();                                                        \
     }                                                                        \
   } while (0)
+
+// ---- unreachable ----------------------------------------------------------
+// Preserve the optimizer contract in Release, but make an accidental trip
+// diagnosable in Debug instead of immediately entering undefined behavior.
+#if !defined(NDEBUG)
+#  define HYLE_UNREACHABLE() HYLE_FATAL_ASSERT(false)
+#else
+#  define HYLE_UNREACHABLE() HYLE_DETAIL_COMPILER_UNREACHABLE()
+#endif
 
 // ---- optimizer assumption -------------------------------------------------
 // The expression must be side-effect free. Debug builds diagnose a violated

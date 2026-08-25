@@ -8,6 +8,11 @@ set_target_properties(hyle_build_contract PROPERTIES
   EXPORT_NAME "_build_contract"
   FOLDER "hyle/foundation")
 
+# Public C headers are a C17 source contract. The top-level CMAKE_C_STANDARD
+# only controls HYLE's own translation units; this usage requirement also
+# raises an installed/source consumer that selected an older C floor.
+target_compile_features(hyle_build_contract INTERFACE c_std_17)
+
 if(MSVC)
   # Report the real C++ language level and keep source/execution text UTF-8.
   # HYLE does not throw errors across its API, but public noexcept convenience
@@ -19,7 +24,12 @@ if(MSVC)
   target_compile_options(hyle_build_contract INTERFACE
     "$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:MSVC>>:/Zc:__cplusplus>"
     "$<$<COMPILE_LANGUAGE:C,CXX>:/utf-8>"
-    "$<$<COMPILE_LANGUAGE:CXX>:/EHsc>")
+    "$<$<COMPILE_LANGUAGE:CXX>:/EHsc>"
+    # Public variadic-macro surfaces use conforming preprocessing. CMake's
+    # MSVC variable also covers clang-cl, so select native cl.exe by compiler
+    # ID independently for C and C++.
+    "$<$<AND:$<COMPILE_LANGUAGE:C>,$<C_COMPILER_ID:MSVC>>:/Zc:preprocessor>"
+    "$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:MSVC>>:/Zc:preprocessor>")
 endif()
 
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")

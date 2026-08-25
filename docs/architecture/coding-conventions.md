@@ -98,8 +98,9 @@ node-stable associative，在需要 range order 或地址稳定时强换 flat ma
 - **header-before-data 侵入式数组**（carray）：指针即数据、`a[i]` 零间接、cache 友好、可直传 C API。**改进**：C++23 包一层带 `[[nodiscard]]`/迭代器的薄封装补类型安全。
 - **type-erased core + typed shell**：内联模板按类型在头里展开，重逻辑走 `HYLE_API` 的 `detail::*_internal(void*, item_size, ...)` 只编一份进 DLL。**保留为核心范式**（跨 DLL 防代码膨胀 + allocator 一致）。
 - **`string_ref` 的 `null_terminated` 位**：相对 `std::string_view` 的真实增量——标志为真才能零拷贝当 C 串传。保留。
-- **cache-line 对齐**：C++ 使用 `core::kDestructiveInterferenceSize`，C/公共布局使用
-  `HYLE_STATIC_CACHE_LINE_SIZE`；Apple Silicon 为 128B，其余当前目标 64B。运行时算法事实用
+- **cache interference 布局**：C++ 使用 `core::kDestructiveInterferenceSize` / `kConstructiveInterferenceSize`，
+  C/公共布局使用对应两个 `HYLE_STATIC_*_INTERFERENCE_SIZE`；对当前认证的 64/128B coherency
+  family，constructive 是 64B 下界，destructive 是 128B 上界。运行时算法事实用
   `platform::cache_line_size()`，不得拿 runtime 值形成公共类型 ABI。
 - **padding**：优先 `alignas` + 真实字段布局与 `static_assert`；不保留只为压制 benchmark/
   `-Wpadded` 的匿名 padding 宏。

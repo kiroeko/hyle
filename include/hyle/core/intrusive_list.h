@@ -3,6 +3,7 @@
 #include <bit>
 #include <cstddef>
 #include <cstdint>
+#include <iterator>
 #include <new>
 #include <type_traits>
 
@@ -56,6 +57,72 @@ public:
   static_assert(std::is_standard_layout_v<T>,
                 "intrusive container_of requires a standard-layout node");
 
+private:
+  template <bool IsConst> class BasicIterator {
+    friend class IntrusiveList;
+    template <bool> friend class BasicIterator;
+
+    using HookPointer =
+        std::conditional_t<IsConst, const IntrusiveListHook *,
+                           IntrusiveListHook *>;
+
+    explicit BasicIterator(HookPointer hook) noexcept : hook_(hook) {}
+
+  public:
+    using iterator_category = std::bidirectional_iterator_tag;
+    using iterator_concept = std::bidirectional_iterator_tag;
+    using value_type = T;
+    using difference_type = std::ptrdiff_t;
+    using pointer = std::conditional_t<IsConst, const T *, T *>;
+    using reference = std::conditional_t<IsConst, const T &, T &>;
+
+    BasicIterator() noexcept = default;
+    template <bool OtherConst>
+      requires(IsConst && !OtherConst)
+    BasicIterator(const BasicIterator<OtherConst> &other) noexcept
+        : hook_(other.hook_) {}
+
+    reference operator*() const noexcept {
+      return *IntrusiveList::node_of(hook_);
+    }
+    pointer operator->() const noexcept {
+      return IntrusiveList::node_of(hook_);
+    }
+
+    BasicIterator &operator++() noexcept {
+      hook_ = hook_->next_;
+      return *this;
+    }
+    BasicIterator operator++(int) noexcept {
+      BasicIterator copy = *this;
+      ++*this;
+      return copy;
+    }
+    BasicIterator &operator--() noexcept {
+      hook_ = hook_->prev_;
+      return *this;
+    }
+    BasicIterator operator--(int) noexcept {
+      BasicIterator copy = *this;
+      --*this;
+      return copy;
+    }
+
+    template <bool Other>
+    bool operator==(const BasicIterator<Other> &right) const noexcept {
+      return hook_ == right.hook_;
+    }
+
+  private:
+    HookPointer hook_ = nullptr;
+  };
+
+public:
+  using iterator = BasicIterator<false>;
+  using const_iterator = BasicIterator<true>;
+  using reverse_iterator = std::reverse_iterator<iterator>;
+  using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+
   IntrusiveList() noexcept {
     sentinel_.next_ = &sentinel_;
     sentinel_.prev_ = &sentinel_;
@@ -76,22 +143,56 @@ public:
 
   bool empty() const noexcept { return sentinel_.next_ == &sentinel_; }
 
+  iterator begin() noexcept { return iterator(sentinel_.next_); }
+  const_iterator begin() const noexcept {
+    return const_iterator(sentinel_.next_);
+  }
+  const_iterator cbegin() const noexcept { return begin(); }
+  iterator end() noexcept { return iterator(&sentinel_); }
+  const_iterator end() const noexcept { return const_iterator(&sentinel_); }
+  const_iterator cend() const noexcept { return end(); }
+  reverse_iterator rbegin() noexcept { return reverse_iterator(end()); }
+  const_reverse_iterator rbegin() const noexcept {
+    return const_reverse_iterator(end());
+  }
+  const_reverse_iterator crbegin() const noexcept { return rbegin(); }
+  reverse_iterator rend() noexcept { return reverse_iterator(begin()); }
+  const_reverse_iterator rend() const noexcept {
+    return const_reverse_iterator(begin());
+  }
+  const_reverse_iterator crend() const noexcept { return rend(); }
+
   // Preconditions: node is non-null and its selected hook is not linked.
   void push_back(T *node) noexcept { insert_before(&sentinel_, hook_of(node)); }
   void push_front(T *node) noexcept {
     insert_before(sentinel_.next_, hook_of(node));
   }
 
-  bool try_push_back(T *node) noexcept {
+  HYLE_NODISCARD bool try_push_back(T *node) noexcept {
     if (node == nullptr || hook_of(node)->linked())
       return false;
     push_back(node);
     return true;
   }
-  bool try_push_front(T *node) noexcept {
+  HYLE_NODISCARD bool try_push_front(T *node) noexcept {
     if (node == nullptr || hook_of(node)->linked())
       return false;
     push_front(node);
+    return true;
+  }
+
+  // Insert before pos. Preconditions: pos belongs to this list, node is
+  // non-null and its selected hook is not linked.
+  iterator insert(const_iterator pos, T *node) noexcept {
+    IntrusiveListHook *hook = hook_of(node);
+    insert_before(mutable_hook(pos), hook);
+    return iterator(hook);
+  }
+
+  HYLE_NODISCARD bool try_insert(const_iterator pos, T *node) noexcept {
+    if (node == nullptr || hook_of(node)->linked())
+      return false;
+    (void)insert(pos, node);
     return true;
   }
 
@@ -104,7 +205,7 @@ public:
     return empty() ? nullptr : node_of(sentinel_.prev_);
   }
 
-  T *pop_front() noexcept {
+  HYLE_NODISCARD T *pop_front() noexcept {
     if (empty())
       return nullptr;
     IntrusiveListHook *h = sentinel_.next_;
@@ -117,7 +218,7 @@ public:
     h->next_ = nullptr;
     return node_of(h);
   }
-  T *pop_back() noexcept {
+  HYLE_NODISCARD T *pop_back() noexcept {
     if (empty())
       return nullptr;
     IntrusiveListHook *h = sentinel_.prev_;
@@ -127,6 +228,15 @@ public:
     h->prev_ = nullptr;
     h->next_ = nullptr;
     return node_of(h);
+  }
+
+  // Erase pos and return its successor. Preconditions: pos is dereferenceable
+  // and belongs to this list.
+  iterator erase(const_iterator pos) noexcept {
+    const_iterator next = pos;
+    ++next;
+    unlink_unchecked(mutable_hook(pos));
+    return iterator(mutable_hook(next));
   }
 
   // Detach all nodes. The list never destroys them because it owns no storage.
@@ -168,23 +278,10 @@ public:
     return count;
   }
 
-  // Transfer one node without clearing and rebuilding its links.
-  T *move_front_to(IntrusiveList &dst) noexcept {
-    HYLE_FATAL_ASSERT(&dst != this);
-    if (empty())
-      return nullptr;
-    IntrusiveListHook *h = sentinel_.next_;
-    h->next_->prev_ = &sentinel_;
-    sentinel_.next_ = h->next_;
-    insert_before(&dst.sentinel_, h);
-    return node_of(h);
-  }
-
-  // Concatenate `source` onto this list in O(1). Nodes stay linked throughout;
-  // neither list owns them. This is the radix/timing-wheel bucket-splice
-  // primitive and is also useful for batching completion queues.
-  void append(IntrusiveList &source) noexcept {
-    HYLE_FATAL_ASSERT(&source != this);
+  // Transfer all of source before pos in O(1). Nodes stay linked throughout;
+  // neither list owns them. Preconditions: pos belongs to this list.
+  void splice(const_iterator pos, IntrusiveList &source) noexcept {
+    HYLE_ASSUME(&source != this);
     if (source.empty())
       return;
 
@@ -193,11 +290,56 @@ public:
     source.sentinel_.prev_ = &source.sentinel_;
     source.sentinel_.next_ = &source.sentinel_;
 
-    IntrusiveListHook *dst_last = sentinel_.prev_;
-    dst_last->next_ = first;
-    first->prev_ = dst_last;
+    IntrusiveListHook *position = mutable_hook(pos);
+    IntrusiveListHook *before = position->prev_;
+    before->next_ = first;
+    first->prev_ = before;
+    last->next_ = position;
+    position->prev_ = last;
+  }
+
+  // Transfer item from source before pos in O(1), matching the conventional
+  // intrusive-list splice shape. Iterators to the node remain valid. The same
+  // list is allowed; moving immediately before itself/its successor is a no-op.
+  // Preconditions: pos belongs to this list; item is dereferenceable and
+  // belongs to source.
+  iterator splice(const_iterator pos, IntrusiveList &source,
+                  const_iterator item) noexcept {
+    HYLE_ASSUME(item.hook_ != &source.sentinel_);
+    if (pos.hook_ == item.hook_ || pos.hook_ == item.hook_->next_)
+      return iterator(mutable_hook(item));
+    IntrusiveListHook *hook = mutable_hook(item);
+    unlink_unchecked(hook);
+    insert_before(mutable_hook(pos), hook);
+    return iterator(hook);
+  }
+
+  // Concatenate source onto this list in O(1). This is the radix/timing-wheel
+  // bucket-splice primitive and is also useful for completion batches.
+  void append(IntrusiveList &source) noexcept {
+    HYLE_ASSUME(&source != this);
+    if (source.empty())
+      return;
+
+    IntrusiveListHook *first = source.sentinel_.next_;
+    IntrusiveListHook *last = source.sentinel_.prev_;
+    source.sentinel_.prev_ = &source.sentinel_;
+    source.sentinel_.next_ = &source.sentinel_;
+
+    IntrusiveListHook *destination_last = sentinel_.prev_;
+    destination_last->next_ = first;
+    first->prev_ = destination_last;
     last->next_ = &sentinel_;
     sentinel_.prev_ = last;
+  }
+
+  void swap(IntrusiveList &other) noexcept {
+    if (this == &other)
+      return;
+    IntrusiveList temporary;
+    temporary.append(*this);
+    append(other);
+    other.append(temporary);
   }
 
   // Visit linked nodes without changing membership or lifetime. If `fn`
@@ -230,7 +372,7 @@ public:
              std::is_nothrow_invocable_v<OnMove &, T *>)
   std::size_t move_prefix_to(IntrusiveList &dst, Pred &&pred,
                              OnMove &&on_move) noexcept {
-    HYLE_FATAL_ASSERT(&dst != this);
+    HYLE_ASSUME(&dst != this);
     IntrusiveListHook *first = sentinel_.next_;
     IntrusiveListHook *after = first;
     std::size_t count = 0;
@@ -263,6 +405,10 @@ public:
   void remove(T *node) noexcept { unlink_unchecked(hook_of(node)); }
 
 private:
+  static IntrusiveListHook *mutable_hook(const_iterator position) noexcept {
+    return const_cast<IntrusiveListHook *>(position.hook_);
+  }
+
   static IntrusiveListHook *hook_of(T *node) noexcept { return &(node->*Hook); }
 
   // C++ has no standard inverse for an arbitrary pointer-to-data-member.

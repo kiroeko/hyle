@@ -27,11 +27,11 @@ core 不依赖 error/platform/mem/time，也不创建资源，因此没有 Statu
 |---|---|---|
 | header version | `kVersion*` / `HYLE_VERSION_*` | 编译期 feature/log 标记，无 DLL 调用 |
 | linked runtime version | `version()` / `version_string()` | plugin、FFI、动态加载后诊断 header/runtime 是否匹配 |
-| static cache layout | `core::k*InterferenceSize` / `HYLE_STATIC_CACHE_LINE_SIZE` | `alignas`、结构体 ABI、伪共享隔离；Apple Silicon 128B，其余当前支持目标 64B |
+| static cache layout | `core::k*InterferenceSize` / 两个 `HYLE_STATIC_*_INTERFERENCE_SIZE` | `alignas`、结构体 ABI；constructive 64B 下界，destructive 128B 上界 |
 | runtime cache fact | `platform::cache_line_size()` | 算法按当前 CPU 精确取值，不参与稳定类型布局 |
 | cache hints | `prefetch_read` / `prefetch_read_non_temporal` / `prefetch_write` | 有复用读、一次性流式读、即将修改三种真实 memory-access intent；只在 profile 后使用，且 compiler builtin 不越过 TU ISA baseline |
-| compiler/fatal macros | `macros.h` / `hyle/c/compiler.h` / `visibility.h` | C/C++ restrict、assume、flatten、unroll 与 C++ inline/noinline、branch、EBO、导出、不可恢复合同；主要供 HYLE 实现和高级 kernel 用户 |
-| intrusive batch/list | `IntrusiveListHook` + `IntrusiveList<T, Hook>` | stable-address、调用方拥有节点、O(1) arm/cancel/splice；time delivery/bucket 是生产消费者 |
+| compiler/fatal macros | `macros.h` / `hyle/c/compiler.h` / `visibility.h` | C/C++ must-use、restrict、assume、flatten、unroll、inline/noinline、branch、EBO、导出与不可恢复合同；主要供 HYLE 实现和高级 kernel 用户 |
+| intrusive list/batch | `IntrusiveListHook` + `IntrusiveList<T, Hook>` | stable-address、调用方拥有节点、双向 range、O(1) arm/cancel/insert/erase/splice；time delivery/bucket 是生产消费者 |
 
 ### 语法与语义消费者账本
 
@@ -51,10 +51,10 @@ StringInterner shard 属 core 职责，并已采用 destructive-interference 常
 
 | 参考 | 借鉴的问题/形状 | HYLE 裁决 |
 |---|---|---|
-| oneTBB | compile/runtime version identity 与底层信息分层 | 版本单源；不引未发布阶段的函数表协商 |
+| oneTBB | compile/runtime version identity、128B `max_nfs_size` 上界 | 版本单源；destructive 取稳定上界；不引未发布阶段的函数表协商 |
 | Abseil | local、NTA、for-write 三种 prefetch intent | C/C++ header-inline 对齐；不增加 cache residency 承诺 |
-| Highway | noinline/assume/restrict/flatten/unroll 的 kernel compiler contract | 收为 core source seam；hint 无独立产品 benchmark |
-| Boost/Folly intrusive | member hook、auto-unlink、无 owner/size 的 O(1) hot path | stable-node batch 采用；不扩成 owning/STL container |
+| Highway | 优化构建 force-inline；Debug 普通 inline；noinline/assume/restrict/flatten/unroll | 收为 core source seam；hint 无独立产品 benchmark |
+| Boost/Folly intrusive | member hook、auto-unlink、双向 iterator、无 owner/size 的 O(1) hot path | 保留一个紧凑通用 non-owning sequence；不扩成 owning/counted 容器家族 |
 
 这张表用于查漏和裁决算法/类型，不按参考库 feature 数量扩 core。runtime topology 留 platform，
 owning container 留 container，error/clock/logging 留各自模块。
@@ -64,17 +64,24 @@ owning container 留 container，error/clock/logging 留各自模块。
 `version_string()` 返回字面量静态存储，不分配、不使用 guard variable。
 
 三种 prefetch 对齐 Abseil 的 local/NTA/for-write 形状，在 GCC/Clang、MSVC x86 与 MSVC ARM64
-分别映射 builtin/intrinsic；不支持时安全退化。C++ 与 C 的 force-inline、noinline、branch
+分别映射 builtin/intrinsic；不支持时安全退化。C++ 与 C 的 must-use、force-inline、noinline、branch
 hint、unreachable、assume、restrict、flatten、unroll 共用 `compiler_defs.h` 的工具链判断；
 两种语言另各提供 release-surviving fatal assert。它们只表达编译器/程序合同，不
 增加运行时状态。C++ 形状由 SIMD/vqsort 的 ported kernel 真实消费；纯 C 形状让外部 C kernel
 取得同档 source contract，而不复制 compiler branches。assume/restrict 的错误承诺是调用方
-bug；unroll 与 prefetch 都是可忽略的性能 hint。Clang 在未优化/sanitizer TU 中不发 unroll
-pragma，避免无法执行的 transform 通过 `-Wpass-failed` 破坏 `-Werror` consumer build；Release
-非 sanitizer TU 仍保留同一 hint。
+bug；未定义 `NDEBUG` 时 unreachable 会先诊断并 abort，定义后才成为 optimizer UB；unroll 与 prefetch
+都是可忽略的性能 hint。GCC/Clang 的 force-inline 在 `-O0` 退为普通 inline，避免大量模板叶函数
+拖垮未优化编译，优化构建仍保留 always-inline。Clang 在未优化/sanitizer TU 中不发 unroll
+pragma，避免无法执行的 transform 通过 `-Wpass-failed` 破坏 `-Werror` consumer build；优化且
+非 sanitizer 的 TU 仍保留同一 hint。通常 CMake Debug/Release 对应这些状态，但 source consumer
+若自定义 `NDEBUG`、优化或 sanitizer flags，宏按其 translation unit 的真实状态选择。
 
 cache-layout 语义消费者必须使用 core 常量，不能硬编码 64B；container 的 queue/map/interner、
-mem pool 与 scheduler 状态据此在 Apple Silicon 使用 128B。SIMD lane scratch、AVX-512 table 和
+mem pool 与 scheduler 状态据此使用 128B destructive upper bound。64B constructive lower bound
+保证放入该 span 的数据在当前认证目标上不跨 L1 line；128B destructive spacing 覆盖当前认证的
+64/128B cache-line/sector 家族，也避免 Rosetta 的编译期身份歧义。runtime exact 超出 `[64,128]`
+的 generic/RV64 机器仍可由 platform 如实探测，但该二进制的静态 layout 认证必须失败，重新裁决
+常量与 ABI 后才能发布。SIMD lane scratch、AVX-512 table 和
 “最多接受 64B aligned entry”的局部缓冲仍保留 `alignas(64)`：它们表达向量/对象 alignment，
 不是 cache residency 或 false-sharing spacing，不能机械替换成 cache-line 常量。
 
@@ -100,21 +107,29 @@ assert 对更复杂的 inheritance representation fail closed。实现用 `bit_c
 保持不变。`move_prefix_to` 的 predicate/on_move 都必须 `noexcept`，扫描期间节点仍属于 source，
 两者不得摘链、销毁或重链；全部 callback 完成后才 O(1) splice 整段。
 
+`begin/end` 是无状态双向 iterator，支持 range-for 与 reverse traversal；insert/erase、单节点
+splice 的 position/item 采用 mature-container 的 `const_iterator` 形状（iterator 可隐式转换），
+整链 splice 和 swap 也不增加 list/node 元数据。除被 erase/unlink/销毁的节点外，节点
+iterator 在插入、整链/单节点 splice 与 swap 后继续指向同一节点；旧 list 的 `end()` sentinel
+不能跨 move/splice 保存。遍历中摘除当前节点时先取得 successor，或使用返回 successor 的
+`erase(const_iterator)`。并发读写仍需外部同步。
+
 | 操作 | 复杂度 |
 |---|---:|
-| push/front/back/pop/remove/move-front | O(1) |
-| append / list move | O(1) |
-| clear / consume_all / for_each | O(n) |
+| begin/end/front/back/push/pop/remove/insert/erase | O(1) |
+| single/whole-list splice、append、swap、list move | O(1) |
+| iteration / clear / consume_all / for_each | O(n) |
 | move_prefix | O(k) 扫描 + O(1) 区间重链 |
 
-不加 O(1) `size()`：它会给每次修改增加常态元数据，而 time/batch 消费者不需要。需要 owning
-元素、迭代器生态、随机访问或线程安全时应选 container 的相应类型，不把 core primitive
-扩成另一个 Boost.Container。
+不加 O(1) `size()`：它会给每次修改增加常态元数据，而 time/batch 消费者不需要；偶发计数可用
+`std::ranges::distance` 支付 O(n)。不存 owner，checked insert 只拒绝 NULL/already-linked，erase/
+splice 的 list-membership 是前置条件。需要 owning 元素、随机访问、常量时间 size 或线程安全时
+选 container/标准容器，不把 core primitive 扩成另一个 Boost.Container 家族。
 
 ## C/C++ 双面
 
-C++ 使用 auto-unlink RAII 模板；C 头提供同算法的可见 hook/list 与 header-inline
-push/pop/unlink/append，不产生 DLL 热路。C 无析构器，因此释放节点前必须显式 unlink，销毁
+C++ 使用 auto-unlink RAII 模板；C 头提供同算法的可见 hook/list、静态 initializer、const-safe
+entry/traversal 与 header-inline push/pop/unlink/append，不产生 DLL 热路。C 无析构器，因此释放节点前必须显式 unlink，销毁
 list 前必须 clear 或逐个 pop。缓存布局宏由 C/C++ 共用 `cache_defs.h`，compiler contract 共用
 `compiler_defs.h`，避免跨语言判断漂移；C 的 compiler 宏与三种 prefetch 同样 header-inline，
 不引入动态 ABI 或热路调用。
@@ -128,8 +143,8 @@ inline 原语，导出函数反而会增加调用成本且不能改善 ABI 表�
 |---|---|---|---|
 | compile/runtime version | constexpr + 两个 runtime 函数 | 同一 defs + 两个 C 符号 | plugin/loader 需要动态 identity |
 | cache layout/prefetch | typed constexpr + inline 函数 | macro + inline 函数 | 布局跨语言一致，热路无 DLL hop |
-| compiler contract | inline/noinline/branch/unreachable/assume/restrict/flatten/unroll + fatal | 同名 `HYLE_C_*` 集合 | 源码级 promise/hint；共用 backend，不存在有意义的动态调用 ABI |
-| intrusive list | typed member hook + RAII/callback 便利 | 可见 hook/sentinel + inline 指针原语 | C 显式 lifetime；batch/遍历可同复杂度组合 |
+| compiler contract | must-use/inline/noinline/branch/unreachable/assume/restrict/flatten/unroll + fatal | 同名 `HYLE_C_*` 集合 | 源码级 promise/hint；共用 backend，不存在有意义的动态调用 ABI |
+| intrusive list | typed member hook + RAII/range/callback | 可见 hook/sentinel + init/const traversal/inline 指针原语 | C 显式 lifetime；batch/遍历可同复杂度组合 |
 
 因此“C 能力完整”指版本、cache intent、compiler contract、stable-node queue 等自然 C 用户
 任务都有同档通路，不表示把 C++ 析构或模板 callback 逐符号翻译一遍。compiler contract 单独
@@ -142,7 +157,7 @@ inline 原语，导出函数反而会增加调用成本且不能改善 ABI 表�
 - 组合旅程：time 直接以 typed intrusive list 组合；container/mem/sched 直接消费 cache 常量，
   没有 C ABI 往返或 adapter 链。
 - C 旅程：kernel-only 可单独 include compiler 头；版本为两个动态 identity 符号，其余热路
-  header-inline；显式 init/unlink/clear 对应 C 生命周期，batch/遍历可由基础原语保持同一复杂度组合。
+  header-inline；静态/动态 init、const 遍历和显式 unlink/clear 对应 C 生命周期。
 
 上述默认/高级/组合路径分别由 core C++ tests、SIMD/vqsort 消费编译和 pure-C smoke 机械覆盖；
 shared/static 安装后还由 `samples/package/core/{c,cpp}` 只请求 `core` 组件独立复证。guide
@@ -153,8 +168,10 @@ core 重新长成杂项 umbrella。
 
 - runtime CPU/OS 信息归 platform；core 不重复 CPUID/sysctl。
 - allocator、error、logging、clock 不进入零依赖根。
-- 不提供拥有型 list、通用 iterator/ranges 或同步包装。
+- 不提供拥有型/counted/owner-checked list、随机访问或同步包装。
 - 不提供显式 L1/L2/L3 cache 对象或 portable cache residency 保证；prefetch locality 只是 hint，
   runtime cache 拓扑仍归 platform。
 - 不使用 `std::hardware_destructive_interference_size` 参与公共布局：其值受编译参数/标准库
   影响，可能让不同 TU 得到不同 ABI；HYLE 用受支持平台的稳定常量，精确值另走 platform。
+- 不把 Git revision 放入 core 版本 ABI：source archive、vendored/dirty tree 与 reproducible build
+  没有统一 Git 语义；可选 source provenance 由 build/package manifest 或未来 opt-in build-info 承担。

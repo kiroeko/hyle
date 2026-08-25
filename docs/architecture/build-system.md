@@ -410,6 +410,35 @@ ABI compatibility，不证明 frontend 是 cl.exe。编译选项、intrinsic fea
 以 compiler ID 分流，Clang target flags 通过 `/clang:` 精确转发。CI 以独立 clang-cl build tree
 持续覆盖已收口 foundation roots 与 SIMD，不用 MSVC cache 或“参数被忽略也算通过”的 flag-only
 探针冒充支持。
+
+core 的 public compiler contract 是一条显式的 source-consumer 边，而不是 HYLE 自身 target 的
+私有 flag。这里有两条不能混称为“Release 开关”的轴：`NDEBUG` 选择 assume/unreachable 的
+诊断或 optimizer-UB 语义；编译器的真实优化/插桩状态选择 force-inline/unroll 是强 hint 还是
+安全退化。常规 CMake Debug 不定义 `NDEBUG`，Release/RelWithDebInfo 定义它，但自定义 toolchain
+或下游手写 flag 仍由该 translation unit 自己负责。GCC/Clang 的 must-use 走
+`warn_unused_result`，native MSVC C 则以 SAL 在 `/analyze` 下报告。
+头文件必须自行选择正确 frontend 分支；build system 负责用 Debug/Release/RelWithDebInfo、
+sanitizer、MSVC、clang-cl、GCC 与 AppleClang 的正负 compile probe 证明合同，并在
+installed/source consumer 中复验，不能
+PUBLIC 传播 `/analyze`、`-Werror` 或 HYLE 私有宏来替用户决定 warning policy。用户可以选择是否
+把诊断升级为 error，但 HYLE 的验证门必须证明 capable compiler 确实能观察到该合同。
+
+同一个 exported `hyle::_build_contract` 还传播所有 public headers 的 C17 floor，以及 native
+MSVC 展开 `__VA_OPT__`/variadic macro 所需的 `/Zc:preprocessor`；它们是 source semantics，不能
+塞进 HYLE target 的 PRIVATE warnings。focused C consumer 会故意先声明 C11，再通过链接
+`hyle::core` 被提升到 C17，以免编译器默认模式恰好够新而制造假绿。
+
+`header-self-contained.py` 的直接 compiler invocation 只证明空 TU 可包含头，以及 must-use
+诊断确实存在；它刻意不伪造 CMake 的 configuration flags，因而不能证明 Release lowering。
+Debug/Release 的 assume/unreachable 行为由真实 `hyle_core_test` / pure-C target 证明，安装后的
+usage requirements 则由 focused child-CMake consumer 证明。per-commit CI 仍须补齐轻量 Debug
+与 multi-config consumer 门；在该门进入流水线前，人工 closure 证据不能冒充持续回归能力。
+
+同理，core 的 64B constructive/128B destructive 静态 layout 只认证 runtime coherency line
+落在 `[64,128]` 的目标。platform 仍可如实探测 16–256B 的 generic hardware，但三平台/新架构
+发布测试必须比较 runtime exact 与静态上下界；超界表示该 artifact 未认证，不能因“能编译”就
+发布，须先重新裁决常量及受影响公共类型 ABI。
+
 CI 对 Windows/Linux/macOS 运行全部 15 个产品组件（含 header-only `util_core`）的确定性 CPU
 验证面：TLS、HTTP/2、CUDA、ggml 与
 Vulkan 显式关闭，构建聚合 `hyle_tests` 并运行全部 C++、pure-C、header/surface/ABI 门。它不冒充

@@ -7,14 +7,40 @@
 #ifndef HYLE_CORE_COMPILER_DEFS_H_
 #define HYLE_CORE_COMPILER_DEFS_H_
 
-#if defined(_MSC_VER)
-#  define HYLE_DETAIL_COMPILER_FORCE_INLINE __forceinline
-#  define HYLE_DETAIL_COMPILER_NOINLINE __declspec(noinline)
+/* A source-level "the result carries information that must be inspected"
+ * contract.  C++ has a standard spelling; GCC/Clang expose the equivalent in
+ * C17, while native MSVC's C frontend records the contract for /analyze
+ * through SAL. c/compiler.h includes sal.h before exposing that spelling. */
+#if defined(__cplusplus)
+#  define HYLE_DETAIL_COMPILER_NODISCARD [[nodiscard]]
 #elif defined(__GNUC__) || defined(__clang__)
-#  define HYLE_DETAIL_COMPILER_FORCE_INLINE __attribute__((always_inline)) inline
-#  define HYLE_DETAIL_COMPILER_NOINLINE __attribute__((noinline))
+#  define HYLE_DETAIL_COMPILER_NODISCARD __attribute__((warn_unused_result))
+#elif defined(_MSC_VER)
+#  define HYLE_DETAIL_COMPILER_NODISCARD _Check_return_
+#else
+#  define HYLE_DETAIL_COMPILER_NODISCARD
+#endif
+
+#if defined(_MSC_VER) && !defined(__clang__)
+#  define HYLE_DETAIL_COMPILER_FORCE_INLINE __forceinline
+#elif defined(__GNUC__) || defined(__clang__)
+#  if defined(__OPTIMIZE__)
+#    define HYLE_DETAIL_COMPILER_FORCE_INLINE __attribute__((always_inline)) inline
+#  else
+/* At -O0, forcing thousands of SIMD/template leaves to inline dramatically
+ * inflates compile time and can trigger compiler timeouts while providing no
+ * useful optimized code.  Match Highway's debug-friendly source contract. */
+#    define HYLE_DETAIL_COMPILER_FORCE_INLINE inline
+#  endif
 #else
 #  define HYLE_DETAIL_COMPILER_FORCE_INLINE inline
+#endif
+
+#if defined(_MSC_VER)
+#  define HYLE_DETAIL_COMPILER_NOINLINE __declspec(noinline)
+#elif defined(__GNUC__) || defined(__clang__)
+#  define HYLE_DETAIL_COMPILER_NOINLINE __attribute__((noinline))
+#else
 #  define HYLE_DETAIL_COMPILER_NOINLINE
 #endif
 

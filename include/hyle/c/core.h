@@ -37,13 +37,7 @@ extern "C" {
 #define HYLE_CORE_C_API
 #endif
 
-#if defined(_MSC_VER)
-#define HYLE_CORE_C_INLINE static __forceinline
-#elif defined(__GNUC__) || defined(__clang__)
-#define HYLE_CORE_C_INLINE static inline __attribute__((always_inline))
-#else
-#define HYLE_CORE_C_INLINE static inline
-#endif
+#define HYLE_CORE_C_INLINE static HYLE_C_FORCE_INLINE
 
 /* Runtime version of the linked hyle_core. Compare with HYLE_VERSION_PACKED to
  * diagnose a header/runtime mismatch after dlopen or across an FFI boundary. */
@@ -120,8 +114,15 @@ typedef struct hyle_intrusive_list {
   hyle_intrusive_list_hook sentinel;
 } hyle_intrusive_list;
 
+#define HYLE_INTRUSIVE_HOOK_INIT                                             \
+  { NULL, NULL }
+#define HYLE_INTRUSIVE_LIST_INIT(name)                                       \
+  { { &(name).sentinel, &(name).sentinel } }
+
 #define HYLE_INTRUSIVE_ENTRY(hook, type, member)                               \
   ((type *)((char *)(hook) - offsetof(type, member)))
+#define HYLE_INTRUSIVE_CONST_ENTRY(hook, type, member)                         \
+  ((const type *)((const char *)(hook) - offsetof(type, member)))
 
 static inline void hyle_intrusive_hook_init(hyle_intrusive_list_hook *hook) {
   if (hook != NULL) {
@@ -173,7 +174,7 @@ hyle_intrusive_list_push_front(hyle_intrusive_list *list,
   list->sentinel.next = hook;
 }
 
-static inline int
+HYLE_C_NODISCARD static inline int
 hyle_intrusive_list_try_push_back(hyle_intrusive_list *list,
                                   hyle_intrusive_list_hook *hook) {
   if (list == NULL || hook == NULL || hyle_intrusive_hook_linked(hook))
@@ -182,7 +183,7 @@ hyle_intrusive_list_try_push_back(hyle_intrusive_list *list,
   return 1;
 }
 
-static inline int
+HYLE_C_NODISCARD static inline int
 hyle_intrusive_list_try_push_front(hyle_intrusive_list *list,
                                    hyle_intrusive_list_hook *hook) {
   if (list == NULL || hook == NULL || hyle_intrusive_hook_linked(hook))
@@ -201,29 +202,100 @@ hyle_intrusive_list_back(hyle_intrusive_list *list) {
   return hyle_intrusive_list_empty(list) ? NULL : list->sentinel.prev;
 }
 
+static inline const hyle_intrusive_list_hook *
+hyle_intrusive_list_front_const(const hyle_intrusive_list *list) {
+  return hyle_intrusive_list_empty(list) ? NULL : list->sentinel.next;
+}
+
+static inline const hyle_intrusive_list_hook *
+hyle_intrusive_list_back_const(const hyle_intrusive_list *list) {
+  return hyle_intrusive_list_empty(list) ? NULL : list->sentinel.prev;
+}
+
+/* Traversal helpers return NULL at the list boundary. `hook` must be NULL or
+ * belong to `list`; capture next before unlinking the current hook. */
 static inline hyle_intrusive_list_hook *
-hyle_intrusive_list_pop_front(hyle_intrusive_list *list) {
-  hyle_intrusive_list_hook *hook = hyle_intrusive_list_front(list);
-  hyle_intrusive_hook_unlink(hook);
-  return hook;
+hyle_intrusive_list_next(hyle_intrusive_list *list,
+                         hyle_intrusive_list_hook *hook) {
+  if (list == NULL || hook == NULL || hook->next == &list->sentinel)
+    return NULL;
+  return hook->next;
 }
 
 static inline hyle_intrusive_list_hook *
+hyle_intrusive_list_prev(hyle_intrusive_list *list,
+                         hyle_intrusive_list_hook *hook) {
+  if (list == NULL || hook == NULL || hook->prev == &list->sentinel)
+    return NULL;
+  return hook->prev;
+}
+
+static inline const hyle_intrusive_list_hook *
+hyle_intrusive_list_next_const(const hyle_intrusive_list *list,
+                               const hyle_intrusive_list_hook *hook) {
+  if (list == NULL || hook == NULL || hook->next == &list->sentinel)
+    return NULL;
+  return hook->next;
+}
+
+static inline const hyle_intrusive_list_hook *
+hyle_intrusive_list_prev_const(const hyle_intrusive_list *list,
+                               const hyle_intrusive_list_hook *hook) {
+  if (list == NULL || hook == NULL || hook->prev == &list->sentinel)
+    return NULL;
+  return hook->prev;
+}
+
+HYLE_C_NODISCARD static inline hyle_intrusive_list_hook *
+hyle_intrusive_list_pop_front(hyle_intrusive_list *list) {
+  hyle_intrusive_list_hook *hook;
+  hyle_intrusive_list_hook *next;
+  if (hyle_intrusive_list_empty(list))
+    return NULL;
+  hook = list->sentinel.next;
+  next = hook->next;
+  list->sentinel.next = next;
+  next->prev = &list->sentinel;
+  hook->prev = NULL;
+  hook->next = NULL;
+  return hook;
+}
+
+HYLE_C_NODISCARD static inline hyle_intrusive_list_hook *
 hyle_intrusive_list_pop_back(hyle_intrusive_list *list) {
-  hyle_intrusive_list_hook *hook = hyle_intrusive_list_back(list);
-  hyle_intrusive_hook_unlink(hook);
+  hyle_intrusive_list_hook *hook;
+  hyle_intrusive_list_hook *prev;
+  if (hyle_intrusive_list_empty(list))
+    return NULL;
+  hook = list->sentinel.prev;
+  prev = hook->prev;
+  list->sentinel.prev = prev;
+  prev->next = &list->sentinel;
+  hook->prev = NULL;
+  hook->next = NULL;
   return hook;
 }
 
 static inline void hyle_intrusive_list_clear(hyle_intrusive_list *list) {
-  while (hyle_intrusive_list_pop_front(list) != NULL) {
+  hyle_intrusive_list_hook *current;
+  if (list == NULL)
+    return;
+  current = list->sentinel.next;
+  while (current != &list->sentinel) {
+    hyle_intrusive_list_hook *next = current->next;
+    current->prev = NULL;
+    current->next = NULL;
+    current = next;
   }
+  list->sentinel.prev = &list->sentinel;
+  list->sentinel.next = &list->sentinel;
 }
 
 /* Splice source onto destination in O(1), preserving order. Returns zero for
  * invalid/self input and one for a successful no-op or transfer. */
-static inline int hyle_intrusive_list_append(hyle_intrusive_list *destination,
-                                             hyle_intrusive_list *source) {
+HYLE_C_NODISCARD static inline int
+hyle_intrusive_list_append(hyle_intrusive_list *destination,
+                           hyle_intrusive_list *source) {
   hyle_intrusive_list_hook *first;
   hyle_intrusive_list_hook *last;
   hyle_intrusive_list_hook *destination_last;
