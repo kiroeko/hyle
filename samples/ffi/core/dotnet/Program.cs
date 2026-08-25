@@ -94,6 +94,19 @@ internal static class Program
         {
             HyleCoreNative.BindExactLibrary(args[0]);
             uint ffiAbi = HyleCoreNative.FfiAbiVersion();
+            uint requiredMajor = ExpectedFfiAbi >> 16;
+            uint requiredMinor = ExpectedFfiAbi & 0xffffU;
+            uint runtimeMajor = ffiAbi >> 16;
+            uint runtimeMinor = ffiAbi & 0xffffU;
+            if (runtimeMajor != requiredMajor || runtimeMinor < requiredMinor)
+            {
+                throw new InvalidOperationException(
+                    $"Incompatible HYLE FFI ABI: runtime=0x{ffiAbi:x8}, " +
+                    $"binding requires major={requiredMajor}, minor>={requiredMinor}.");
+            }
+
+            // LibraryImport resolves these entry points lazily on first call;
+            // do not touch them until the global ABI bootstrap has succeeded.
             uint productVersion = HyleCoreNative.ProductVersion();
             IntPtr productStringPointer = HyleCoreNative.ProductVersionString();
             if (productStringPointer == IntPtr.Zero)
@@ -103,16 +116,15 @@ internal static class Program
             }
 
             string? productString = Marshal.PtrToStringUTF8(productStringPointer);
-            if (ffiAbi != ExpectedFfiAbi ||
-                productVersion != ExpectedProductVersion ||
+            if (productVersion != ExpectedProductVersion ||
                 !string.Equals(
                     productString, ExpectedProductString, StringComparison.Ordinal))
             {
                 throw new InvalidOperationException(
-                    $"HYLE core ABI mismatch: ffi=0x{ffiAbi:x8}, " +
+                    $"HYLE core product mismatch: ffi=0x{ffiAbi:x8}, " +
                     $"product=0x{productVersion:x8}, " +
                     $"string={productString ?? "<null>"}; expected " +
-                    "ffi=0x00010000, product=0x00000100, string=0.1.0.");
+                    "product=0x00000100, string=0.1.0.");
             }
 
             Console.WriteLine(

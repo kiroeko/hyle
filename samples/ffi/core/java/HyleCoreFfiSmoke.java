@@ -45,6 +45,21 @@ public final class HyleCoreFfiSmoke {
                     lookup,
                     "hyle_ffi_abi_version",
                     FunctionDescriptor.of(ValueLayout.JAVA_INT));
+
+            int ffiAbi = (int) ffiAbiFunction.invokeExact();
+            int requiredMajor = EXPECTED_FFI_ABI >>> 16;
+            int requiredMinor = EXPECTED_FFI_ABI & 0xffff;
+            int runtimeMajor = ffiAbi >>> 16;
+            int runtimeMinor = ffiAbi & 0xffff;
+            if (runtimeMajor != requiredMajor || runtimeMinor < requiredMinor) {
+                throw new IllegalStateException(String.format(
+                        "Incompatible HYLE FFI ABI: runtime=0x%08x, "
+                                + "binding requires major=%d, minor>=%d.",
+                        ffiAbi, requiredMajor, requiredMinor));
+            }
+
+            // Resolve the remaining required symbols only after the global ABI
+            // bootstrap has accepted this exact native artifact.
             MethodHandle productVersionFunction = bind(
                     lookup,
                     "hyle_version",
@@ -54,7 +69,6 @@ public final class HyleCoreFfiSmoke {
                     "hyle_version_string",
                     FunctionDescriptor.of(ValueLayout.ADDRESS));
 
-            int ffiAbi = (int) ffiAbiFunction.invokeExact();
             int productVersion = (int) productVersionFunction.invokeExact();
             MemorySegment productStringPointer =
                     (MemorySegment) productStringFunction.invokeExact();
@@ -66,13 +80,12 @@ public final class HyleCoreFfiSmoke {
             // A native address return has zero spatial bounds. Reinterpret only
             // enough borrowed storage to read this tiny NUL-terminated version.
             String productString = productStringPointer.reinterpret(64).getString(0);
-            if (ffiAbi != EXPECTED_FFI_ABI
-                    || productVersion != EXPECTED_PRODUCT_VERSION
+            if (productVersion != EXPECTED_PRODUCT_VERSION
                     || !EXPECTED_PRODUCT_STRING.equals(productString)) {
                 throw new IllegalStateException(String.format(
-                        "HYLE core ABI mismatch: ffi=0x%08x, "
+                        "HYLE core product mismatch: ffi=0x%08x, "
                                 + "product=0x%08x, string=%s; expected "
-                                + "ffi=0x00010000, product=0x00000100, "
+                                + "product=0x00000100, "
                                 + "string=0.1.0.",
                         ffiAbi, productVersion, productString));
             }

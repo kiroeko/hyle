@@ -7,7 +7,10 @@ can load one exact native artifact, resolve the stable Native FFI bootstrap
 symbols, and reject a binding/package version mismatch before using a wider
 module surface.
 
-Both probes call and validate:
+Both probes first validate the global ABI bootstrap using the compatibility
+rule “same major and runtime minor greater than or equal to the binding's
+required minor”; only then do they resolve/call the product-identity symbols.
+For the current source tree the expected values are:
 
 - `hyle_ffi_abi_version()` = `0x00010000`;
 - `hyle_version()` = `0x00000100`;
