@@ -3,8 +3,8 @@
 
 // Public compile-time product version of the headers. This identifies the HYLE
 // release; it is deliberately independent from the Native FFI ABI version
-// below. Managed bindings must check both before resolving the rest of their
-// required symbols.
+// below. Managed bindings may use it for diagnostics after the FFI ABI
+// handshake; it does not participate in compatibility negotiation.
 #define HYLE_VERSION_MAJOR 0
 #define HYLE_VERSION_MINOR 1
 #define HYLE_VERSION_PATCH 0

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build and run direct .NET/Java probes against one exact hyle_core library."""
+"""Run positive and incompatible direct .NET/Java core FFI probes."""
 
 from __future__ import annotations
 
@@ -40,6 +40,15 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         help="exact path to hyle_core.dll, libhyle_core.so, or libhyle_core.dylib",
     )
     parser.add_argument(
+        "--incompatible-library",
+        required=True,
+        type=Path,
+        help=(
+            "exact path to the test-only shared fixture that exports ABI major "
+            "2 and no product symbols"
+        ),
+    )
+    parser.add_argument(
         "--only",
         choices=("all", "dotnet", "java"),
         default="all",
@@ -48,16 +57,16 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def exact_library_path(path: Path) -> Path:
+def exact_library_path(path: Path, description: str) -> Path:
     try:
         resolved = path.expanduser().resolve(strict=True)
     except FileNotFoundError as error:
         raise SmokeFailure(
-            f"the requested hyle_core shared library does not exist: {path}"
+            f"the requested {description} does not exist: {path}"
         ) from error
     if not resolved.is_file():
         raise SmokeFailure(
-            f"the requested hyle_core path is not a regular file: {resolved}"
+            f"the requested {description} is not a regular file: {resolved}"
         )
     return resolved
 
@@ -147,7 +156,12 @@ def java_tools() -> tuple[str, str]:
     return compiler, runtime
 
 
-def run_dotnet(executable: str, library: Path, temporary_root: Path) -> None:
+def run_dotnet(
+    executable: str,
+    library: Path,
+    incompatible_library: Path,
+    temporary_root: Path,
+) -> None:
     project = temporary_root / "dotnet"
     output = temporary_root / "dotnet-output"
     shutil.copytree(SAMPLE_ROOT / "dotnet", project)
@@ -174,10 +188,23 @@ def run_dotnet(executable: str, library: Path, temporary_root: Path) -> None:
         ),
         cwd=temporary_root,
     )
+    run(
+        (
+            executable,
+            str(output / "HyleCoreFfiSmoke.dll"),
+            str(incompatible_library),
+            "--expect-incompatible",
+        ),
+        cwd=temporary_root,
+    )
 
 
 def run_java(
-    compiler: str, runtime: str, library: Path, temporary_root: Path
+    compiler: str,
+    runtime: str,
+    library: Path,
+    incompatible_library: Path,
+    temporary_root: Path,
 ) -> None:
     source_root = temporary_root / "java"
     classes = temporary_root / "java-classes"
@@ -205,25 +232,47 @@ def run_java(
         ),
         cwd=temporary_root,
     )
+    run(
+        (
+            runtime,
+            "--enable-native-access=ALL-UNNAMED",
+            "-cp",
+            str(classes),
+            "HyleCoreFfiSmoke",
+            str(incompatible_library),
+            "--expect-incompatible",
+        ),
+        cwd=temporary_root,
+    )
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
     try:
-        library = exact_library_path(args.library)
+        library = exact_library_path(args.library, "hyle_core shared library")
+        incompatible_library = exact_library_path(
+            args.incompatible_library, "incompatible FFI fixture"
+        )
         dotnet = dotnet_tool() if args.only in ("all", "dotnet") else None
         java = java_tools() if args.only in ("all", "java") else None
 
         with tempfile.TemporaryDirectory(prefix="hyle-core-ffi-smoke-") as name:
             temporary_root = Path(name)
             if dotnet is not None:
-                run_dotnet(dotnet, library, temporary_root)
+                run_dotnet(dotnet, library, incompatible_library, temporary_root)
             if java is not None:
-                run_java(java[0], java[1], library, temporary_root)
+                run_java(
+                    java[0],
+                    java[1],
+                    library,
+                    incompatible_library,
+                    temporary_root,
+                )
 
         print(
             f"HYLE core managed FFI smoke passed ({args.only}) "
-            f"against exact library: {library}"
+            f"against exact library: {library}; incompatible fixture: "
+            f"{incompatible_library}"
         )
         return 0
     except ToolMissingError as error:

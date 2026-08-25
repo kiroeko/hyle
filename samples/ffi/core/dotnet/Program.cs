@@ -83,12 +83,17 @@ internal static class Program
 
     private static int Main(string[] args)
     {
-        if (args.Length != 1)
+        if (args.Length < 1 || args.Length > 2 ||
+            (args.Length == 2 &&
+             !string.Equals(
+                 args[1], "--expect-incompatible", StringComparison.Ordinal)))
         {
             Console.Error.WriteLine(
-                "usage: HyleCoreFfiSmoke <absolute-path-to-hyle_core-shared-library>");
+                "usage: HyleCoreFfiSmoke <absolute-path-to-shared-library> " +
+                "[--expect-incompatible]");
             return 2;
         }
+        bool expectIncompatible = args.Length == 2;
 
         try
         {
@@ -98,11 +103,26 @@ internal static class Program
             uint requiredMinor = ExpectedFfiAbi & 0xffffU;
             uint runtimeMajor = ffiAbi >> 16;
             uint runtimeMinor = ffiAbi & 0xffffU;
-            if (runtimeMajor != requiredMajor || runtimeMinor < requiredMinor)
+            bool compatible = runtimeMajor == requiredMajor &&
+                              runtimeMinor >= requiredMinor;
+            if (!compatible)
             {
+                if (expectIncompatible)
+                {
+                    Console.WriteLine(
+                        ".NET correctly rejected incompatible HYLE FFI ABI: " +
+                        $"runtime=0x{ffiAbi:x8}, required=0x{ExpectedFfiAbi:x8}");
+                    return 0;
+                }
                 throw new InvalidOperationException(
                     $"Incompatible HYLE FFI ABI: runtime=0x{ffiAbi:x8}, " +
                     $"binding requires major={requiredMajor}, minor>={requiredMinor}.");
+            }
+            if (expectIncompatible)
+            {
+                throw new InvalidOperationException(
+                    "Expected an incompatible HYLE FFI ABI, but runtime " +
+                    $"0x{ffiAbi:x8} is compatible.");
             }
 
             // LibraryImport resolves these entry points lazily on first call;

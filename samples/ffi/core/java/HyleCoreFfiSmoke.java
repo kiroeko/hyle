@@ -25,12 +25,15 @@ public final class HyleCoreFfiSmoke {
     }
 
     public static void main(String[] args) throws Throwable {
-        if (args.length != 1) {
+        if (args.length < 1 || args.length > 2
+                || (args.length == 2 && !"--expect-incompatible".equals(args[1]))) {
             System.err.println(
                     "usage: HyleCoreFfiSmoke "
-                            + "<absolute-path-to-hyle_core-shared-library>");
+                            + "<absolute-path-to-shared-library> "
+                            + "[--expect-incompatible]");
             System.exit(2);
         }
+        boolean expectIncompatible = args.length == 2;
 
         Path library = Path.of(args[0]).toAbsolutePath().normalize();
         if (!Files.isRegularFile(library)) {
@@ -51,11 +54,26 @@ public final class HyleCoreFfiSmoke {
             int requiredMinor = EXPECTED_FFI_ABI & 0xffff;
             int runtimeMajor = ffiAbi >>> 16;
             int runtimeMinor = ffiAbi & 0xffff;
-            if (runtimeMajor != requiredMajor || runtimeMinor < requiredMinor) {
+            boolean compatible = runtimeMajor == requiredMajor
+                    && runtimeMinor >= requiredMinor;
+            if (!compatible) {
+                if (expectIncompatible) {
+                    System.out.printf(
+                            "Java correctly rejected incompatible HYLE FFI ABI: "
+                                    + "runtime=0x%08x, required=0x%08x%n",
+                            ffiAbi, EXPECTED_FFI_ABI);
+                    return;
+                }
                 throw new IllegalStateException(String.format(
                         "Incompatible HYLE FFI ABI: runtime=0x%08x, "
                                 + "binding requires major=%d, minor>=%d.",
                         ffiAbi, requiredMajor, requiredMinor));
+            }
+            if (expectIncompatible) {
+                throw new IllegalStateException(String.format(
+                        "Expected an incompatible HYLE FFI ABI, but runtime "
+                                + "0x%08x is compatible.",
+                        ffiAbi));
             }
 
             // Resolve the remaining required symbols only after the global ABI

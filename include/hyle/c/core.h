@@ -39,7 +39,7 @@ extern "C" {
 #endif
 
 /* Native FFI protocol version of the linked HYLE runtime. Bindings compare
- * this with HYLE_FFI_ABI_VERSION before resolving any newer required symbol.
+ * this with HYLE_FFI_ABI_VERSION before resolving any other required symbol.
  * The high 16 bits are major and the low 16 bits are minor. */
 HYLE_CORE_C_API uint32_t HYLE_CORE_C_CALL hyle_ffi_abi_version(void);
 

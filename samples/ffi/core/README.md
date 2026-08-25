@@ -4,8 +4,7 @@ These samples verify the smallest real managed-runtime boundary of the shared
 `hyle_core` library. They are deliberately **not C product examples** and are
 not full .NET or Java bindings. Their job is to prove that a foreign runtime
 can load one exact native artifact, resolve the stable Native FFI bootstrap
-symbols, and reject a binding/package version mismatch before using a wider
-module surface.
+symbol, and reject an incompatible ABI before using a wider module surface.
 
 Both probes first validate the global ABI bootstrap using the compatibility
 rule “same major and runtime minor greater than or equal to the binding's
@@ -16,6 +15,10 @@ For the current source tree the expected values are:
 - `hyle_version()` = `0x00000100`;
 - `hyle_version_string()` = `0.1.0`.
 
+Exact product-version equality is only this repository probe's artifact-identity
+assertion. It is not the compatibility rule; production bindings negotiate only
+with `hyle_ffi_abi_version` and may read product identity for diagnostics.
+
 The .NET 8 probe uses source-generated `LibraryImport` stubs plus a
 `DllImportResolver`. The Java 25 probe uses the final Foreign Function & Memory
 API and `SymbolLookup.libraryLookup(Path, Arena)`. Neither probe searches for a
@@ -25,16 +28,22 @@ test accidentally.
 
 ## Run
 
-Build a shared `hyle_core` first, then run from the HYLE repository root:
+Build shared `hyle_core` and the test-only
+`hyle_core_ffi_incompatible_fixture` target first, then run from the HYLE
+repository root. The fixture exports ABI major 2 and deliberately omits both
+product symbols, so a passing negative probe proves bootstrap rejection happened
+before wider symbol resolution. It is never installed.
 
 ```powershell
 python scripts/run-core-ffi-smoke.py `
-  --library C:\absolute\path\to\hyle_core.dll
+  --library C:\absolute\path\to\hyle_core.dll `
+  --incompatible-library C:\absolute\path\to\hyle_core_ffi_incompatible_fixture.dll
 ```
 
 ```sh
 python3 scripts/run-core-ffi-smoke.py \
-  --library /absolute/path/to/libhyle_core.so
+  --library /absolute/path/to/libhyle_core.so \
+  --incompatible-library /absolute/path/to/libhyle_core_ffi_incompatible_fixture.so
 ```
 
 Use `--only dotnet` or `--only java` to select one probe. The default is
