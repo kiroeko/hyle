@@ -61,12 +61,14 @@
     },
     {
       "module": "container_intrusive",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "round_id": "container-intrusive-v3",
       "closure_task": "docs/implementation/tasks/container_intrusive/container-intrusive-v3-resume.md",
       "scope": "Current auto/safe member-hook intrusive-list capability, C++ API, implementation, direct consumer/dependency, delivery, documentation and P1 engineering evidence.",
       "non_goals": "Full owning container, time/scheduler algorithms, reclamation or full intrusive policy matrix, C API/native FFI and Formal release certification.",
       "baseline_commit": "a5c74e2be31d258c67e3d6244c8a24d3abeb21c0",
+      "candidate_commit": "b5816b810d536f2041520e4b370c1e17d3ac7a4a",
+      "candidate_tree": "3bf043c40dbb5e4b49aba563f23f71b3c2d7caf3",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -85,7 +87,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "v3 能力与 negative space 已审计；有限 FIX 已冻结，正在实现并重新绑定 correctness、交付与 P1 证据。"
+      "summary": "v3 产品候选已绑定；typed membership transfer、PMD fail-closed 边界、correctness 与三种交付形状均已复核，正在签署 P1 工程证据。"
     },
     {
       "module": "util_core",

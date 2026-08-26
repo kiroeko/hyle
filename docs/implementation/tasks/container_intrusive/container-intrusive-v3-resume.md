@@ -6,7 +6,7 @@
 > [`module-status.json`](../../module-status.json)；v2 的 `HISTORICAL` 记录只提供旧候选和阻塞事实，
 > 不授权本轮修改，也不产生当前结论。
 
-## Closure card（`AUDITED`）
+## Closure card（`CANDIDATE`）
 
 - component / owner / round ID：`container_intrusive` / container owner / `container-intrusive-v3`
 - task kind：`RESUME`
@@ -95,19 +95,43 @@
 
 ## Candidate
 
-尚未进入 `CANDIDATE`。能力、negative space 与有限 `FIX` 已冻结；v2 product identity 只作为审计
-输入，本轮必须在上述项目完成后重新绑定当前 commit/tree。
+当前产品候选固定为：
+
+- commit：`b5816b810d536f2041520e4b370c1e17d3ac7a4a`
+- tree：`3bf043c40dbb5e4b49aba563f23f71b3c2d7caf3`
+
+候选只实现冻结 ledger：auto list 的 membership transfer 现在只能通过
+`IntrusiveList<T, Hook>::swap_nodes(T*, T*)` 进入，raw hook surgery 保持 private，因此同一对象的
+ready/timeout 等不同 member contract 不能互换；safe list 不提供该入口。操作只交换 hook topology，
+不替调用方更新 owner/count/state/deadline 等业务镜像；这些镜像和 move-assignment policy 必须由消费方
+在同一外部锁/事务中维护。该路径保持 O(1)、零分配、零常态 metadata。
+
+direct member hook 不再用 `standard_layout<T>` 粗暴排除 mixed-access 类型；实现只接受能够由当前
+64-bit 编译器 ABI 安全解码的 pointer-to-data-member representation，对未知/复杂表示编译期
+fail closed。合同仍要求 live complete object、direct member 与 stable address。
+
+测试补齐同链 range-splice 边界、确定性 swap topology 和 4000-step 固定种子 owning-model differential；
+交付说明明确独立组件由直接消费者选择/链接，`time` 的 PUBLIC edge 自动传播，而完整 `container`
+不聚合该 target。benchmark 只校正为冻结的真实 replay 形状：HYLE `consume_all` 对 Boost
+`clear_and_dispose`；产品 API/layout 没有由 benchmark 反推。
+
+候选绑定验证：Windows MSVC Debug/Release 与 clang-cl Release focused gate、WSL GCC 14 Release +
+ASan/UBSan、macOS AppleClang Debug + WERROR 均通过；intrusive 与直接 `time` 消费者的 source、relocated
+static/shared SDK smoke 均通过。header-only intrusive SDK 为 13 个文件、0 个 binary artifact；parser、
+contract、docs 与 closure checker 通过。上述验证均绑定本段 commit/tree，性能 instrument identity
+另由最终 manifest 绑定，不能混作 product identity。
 
 第一次实现尝试 `e172d24df9cd3afd324f6b700d222c8e9fca27b9` 没有进入 registry candidate：最终红队发现
 public untyped `IntrusiveListHook::swap_nodes` 能把同一 node 的 ready/timeout 等不同 member contract
 互换，链仍完整但后续 `node_of` 使用错误 offset；同时测试未兑现 ledger 的 randomized swap differential。
-因此该 identity 被拒绝，正在按 INTR-AUTO-SWAP-01/CORR-01 改为 typed list surface。它已经启动的
+因此该 identity 被拒绝，随后按 INTR-AUTO-SWAP-01/CORR-01 改为上述 typed list surface。它已经启动的
 W1 n=31 在发现产品 blocker 后终止，不能作为当前轮性能证据，也不消耗 replacement candidate 的
 唯一 fresh qualification。
 
 ## Verification manifest
 
-尚未进入 `VERIFIED`；不得继承 v2 的点值或 dirty 平台结果。
+尚未进入 `VERIFIED`；不得继承 v2 的点值或 dirty 平台结果。fresh W1-WIN qualification 已完成采样，
+在独立 manifest 审计签署前不把工具的初步 verdict 写入 registry。
 
 ## 独立红队
 
@@ -115,4 +139,4 @@ W1 n=31 在发现产品 blocker 后终止，不能作为当前轮性能证据，
 
 ## Closure decision
 
-当前为 `AUDITED`，没有 terminal receipt；不得实现 ledger 外扩面。
+当前为 `CANDIDATE`，没有 terminal receipt；不得实现 ledger 外扩面。

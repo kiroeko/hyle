@@ -11,7 +11,7 @@
 | Component | Product | Tier | Engineering performance | Formal | Current record | Summary |
 |---|---|---|---|---|---|---|
 | core | CLOSED | P0 | PASS / STRUCTURAL | NONE | [task](tasks/core/core-rebuild.md) | P0 基础层已关闭；消费者性能声明由所属模块承担。 |
-| container_intrusive | AUDITED | P1 | PLANNED / P1_ENGINEERING / 5% | PENDING | [task](tasks/container_intrusive/container-intrusive-v3-resume.md) | v3 能力与 negative space 已审计；有限 FIX 已冻结，正在实现并重新绑定 correctness、交付与 P1 证据。 |
+| container_intrusive | CANDIDATE | P1 | PLANNED / P1_ENGINEERING / 5% | PENDING | [task](tasks/container_intrusive/container-intrusive-v3-resume.md) | v3 产品候选已绑定；typed membership transfer、PMD fail-closed 边界、correctness 与三种交付形状均已复核，正在签署 P1 工程证据。 |
 | util_core | QUEUED | — | — | — | — | 现有实现只作输入；尚未启动 v1 收口。 |
 | error | QUEUED | — | — | — | — | 现有实现与历史审查只作输入。 |
 | obs | QUEUED | — | — | — | — | 现有实现与历史审查只作输入。 |
@@ -37,11 +37,10 @@ resume:  BLOCKED -> SCOPED
 reopen:  CLOSED -> REOPENED -> SCOPED
 ```
 
-`container_intrusive` 已按旧 blocker 创建新的 `RESUME` round并进入 `AUDITED`。本轮能力、API、
-依赖/消费者、交付与 negative space 已形成有限 ledger，只允许实现冻结的两项产品修复以及相应测试、
-文档和证据修正；随后用统一 `closure-perf-v1` 完成 W1-WIN P1 工程门和最终 candidate-bound 独立红队。
-旧 v2 task 保持历史事实，不被回写。`formal-release-v1` 的跨平台证书仍为独立 `PENDING`，不能拿来
-替代或重复阻塞 P1 工程门。
+`container_intrusive` 已按旧 blocker 创建新的 `RESUME` round并进入 `CANDIDATE`。有限 ledger 的
+产品修复、correctness、三平台可移植性和 source/static/shared 交付均已绑定到当前 commit/tree；正在
+签署统一 `closure-perf-v1` 的 W1-WIN P1 工程证据。旧 v2 task 保持历史事实，不被回写。
+`formal-release-v1` 的跨平台证书仍为独立 `PENDING`，不能拿来替代或重复阻塞 P1 工程门。
 
 Build/package 是所有模块持续复用的交付 workstream，不是组件状态；Native FFI 仍按准入策略为
 `N/A`，也不伪装成模块。完整进入/退出、停止和重开规则见
