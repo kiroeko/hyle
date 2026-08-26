@@ -279,8 +279,9 @@ Linux x64 和 macOS arm64 的当轮验证命令与结果记录在本文末尾。
   非阻塞入口都用 `try_*`，并由名称显式区分 owner bottom/top 与 FIFO back/front。
 - ConcurrentVector：消除 capacity data race，限制 segment shift/address-space
   上界，OOM 返回 `SIZE_MAX`。
-- sched/graph 已消费队列和 append-only 能力。IntrusiveList 已归 core，避免
-  error/time 对 container 的反向依赖。
+- sched/graph 已消费队列和 append-only 能力。IntrusiveList 已归独立 header-only
+  `container_intrusive` 组件，避免 time 为一项轻量链接原语反向依赖完整 container；sched waiter
+  经后续合同/性能复审保留专用链，不机械消费通用 intrusive list。
 
 ## 红队发现并修复
 

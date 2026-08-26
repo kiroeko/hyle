@@ -4,7 +4,7 @@
 |---|---|
 | 阶段 | P2 |
 | 模块 | time/ |
-| 前置 | time-01；`core/intrusive_list.h` |
+| 前置 | time-01；历史 `core/intrusive_list.h`，现为 `hyle::container_intrusive` |
 | 状态 | ✅ 2026-07-25 重新收口 |
 
 > 文件名保留 `timer-wheel` 是为了不破坏 milestone 历史链接；当前产品已经没有
@@ -12,6 +12,13 @@
 > [`TimerQueue`](../../../../include/hyle/time/timer_queue.h) 替换了早期 8×64、1ms tick wheel。
 > 当前架构只见 [`time-design`](../../../architecture/time-design.md)，数字只见
 > [`benchmarks-time`](../../evidence/performance/benchmarks-time.md)。
+
+> **依赖迁移注记（2026-08-26）：** 上表的 `core/intrusive_list.h` 是原任务路径，不再表示当前
+> ownership。侵入式链表现由独立 header-only 组件 `hyle::container_intrusive` 拥有，公开头为
+> `<hyle/container/intrusive_list.h>`；`time` 以 `PUBLIC` target edge 消费它。当前边界见
+> [`container-intrusive-design`](../../../architecture/container-intrusive-design.md)，用法见
+> [`container_intrusive` 用户指南](../../../user/container-intrusive.md)。本页的历史完成状态只认证
+> time-02 当时的收口，不能替代 `container_intrusive` 当前 `CANDIDATE / 复审中`的独立签署。
 
 ## 原任务与复审结果
 

@@ -116,6 +116,27 @@ digest/manifest/legal payload, extracts it, and builds the all-component CPU gra
 checkout. The stable validation layers and module handoff rules are documented in
 `docs/architecture/build-system.md`.
 
+## `container-intrusive-codegen-audit.py` — intrusive-list structural gate
+
+The `container_intrusive` CTest graph builds a maintenance-only noinline object
+and passes it to this script. The script runs a native operation/layout probe
+in every ordinary configuration, locates all stable probe symbols in MSVC COFF,
+ELF or Mach-O, and applies the strict optimizer checks in NDEBUG builds. Those
+checks lock the 64-bit hook/list/iterator footprint at 16/16/8 bytes, reject
+allocation or out-of-line helper calls, require `node_of` to remain a constant
+hook-offset adjustment, and compare the distinct-owner `HYLE_ASSUME` probe with
+a same-signature constant control. It intentionally does not gate absolute
+instruction counts: benchmark acceptance and constant-factor review remain
+separate evidence.
+
+Run it through CTest so the configured compiler, architecture, object and
+runner stay bound together:
+
+```bash
+ctest --test-dir build --output-on-failure \
+  -R hyle_container_intrusive_codegen
+```
+
 `cmake/toolchains/linux-aarch64-gcc.cmake` plus the `linux-aarch64-cross` preset provides the
 whole-project cross-build entry. It never runs a target executable during configure; the SVE/RVV
 QEMU scripts below remain ISA-specific product tests rather than substitutes for CMake migration.
@@ -252,6 +273,26 @@ cmake --build build-bench --target hyle_queue_sota_bench
 ./build-bench/bin/hyle_queue_sota_bench
 ```
 
+## `run-container-intrusive-bench-evidence.py` — sole certificate entry
+
+This fail-closed runner is the only entry that may produce a
+`container_intrusive` module performance certificate. It configures only the
+component, builds primary/control and per-platform placement images, runs the
+complete 2x2 execution/allocation strata for all nine exact product contracts, qualifies
+A/A plus near/large known deltas, enforces both fixed-floor budgets, audits the
+actual lifetime object and no-IPO build metadata, and binds source, peer,
+inputs, artifacts, logs and host controls before and after sampling. Its formal
+commands and resampling rule live in
+[`benchmarks-container-intrusive.md`](../docs/implementation/evidence/performance/benchmarks-container-intrusive.md).
+Formal mode also rejects unapproved generators, non-Release target compile
+metadata, wrong executable/object architectures, changed `llvm-objdump`
+identity, and an n=31 escalation whose complete n=15 controls were invalid
+rather than merely underpowered.
+
+Calling `bench-stat.py` directly remains useful while developing one workload,
+but it deliberately bypasses those module-level gates and can never be cited
+as clean `container_intrusive` evidence.
+
 ## `bench-stat.py` — paired process-level performance evidence
 
 `bench-stat.py` repeats one nanobench executable in fresh processes and computes same-process
@@ -278,17 +319,19 @@ also need the perturbation gate described in
 Default order, peer-first, and every applicable shape gate must each pass before review can compose
 a SOTA `PASS`. Absolute per-variant spread and the sign-test p-value are diagnostics only.
 
-A diagnostic run may omit provenance gates. A clean evidence run uses `--require-clean`, declares
+A diagnostic run may omit provenance gates. A generic clean pair run uses `--require-clean`, declares
 the workload-specific margin before sampling, and names every external Git peer that contributes
-comparison code. For the `container_intrusive` benchmark:
+comparison code. The following direct `container_intrusive` commands are **provisional diagnostics
+only**: they omit its exact 9-contract composition, controls, actual-object/no-IPO, floors, placement
+and artifact-freeze gates. Use the dedicated runner above for any certificate.
 
 ```bash
-python scripts/bench-stat.py build-bench/bin/hyle_container_intrusive_bench -n 31 --require-clean \
+python scripts/bench-stat.py build-bench/bin/hyle_container_intrusive_bench -n 31 \
   --peer boost=../boost --equivalence-margin-pct 3 \
   --pair "HYLE IntrusiveList" "boost::intrusive auto_unlink"
 
 HYLE_BENCH_RIVAL_FIRST=1 python scripts/bench-stat.py \
-  build-bench/bin/hyle_container_intrusive_bench -n 31 --require-clean \
+  build-bench/bin/hyle_container_intrusive_bench -n 31 \
   --peer boost=../boost --equivalence-margin-pct 3 \
   --pair "HYLE IntrusiveList" "boost::intrusive auto_unlink"
 ```

@@ -10,7 +10,7 @@ container 能力。
 | 范围 | 状态 | 说明 |
 |---|---|---|
 | core | `SIGNED` | `b241a22`：header-only compiler/invariant 与 cache primitive；版本归 build/package，Core FFI 为 N/A；三平台、codegen/symbol、sanitizer、三种交付与独立红队证据已由 `b923105` 绑定 |
-| container_intrusive | `NOT_REVIEWED_V2` | 已形成独立 header-only target 和公开容器归属；time/完整 container 的依赖边已明确，正确性、API 与性能证书仍需单独复审 |
+| container_intrusive | `CANDIDATE` | auto/safe 双生命周期、通用 O(1) relink 边界、time 消费与 sched 特化裁决已冻结；Windows/WSL/macOS correctness、sanitizer、component/codegen dirty 预检已通过。旧 n=31 性能轮因仪器继续收紧而 superseded；等待当前 harness 完整 qualification、clean candidate 三平台性能/evidence 与最终红队后签署 |
 | error / platform / mem / time / obs / util | `NOT_REVIEWED_V2` | 有多轮旧实现与证据，可作输入，不能继承旧证书 |
 | build/package | `NOT_REVIEWED_V2` | 已有组件化与三种 C++ 交付形状，需随每个模块持续做闭包回归 |
 | container / simd / math / sched / io | `NOT_REVIEWED_V2` | 已实现程度不同，等前置模块稳定后逐一审查 |

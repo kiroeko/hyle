@@ -92,6 +92,15 @@ source/static/shared 交付本身不要求制造 FFI parity。
 模块微基准不能代替这张表。它只能隔离 allocator、原子、dispatch、数据结构或 codegen 的根因；
 最终产品结论必须回到使用正常公开入口或正常内部 seam 的消费者 workload。
 
+每个适用 workload 还必须记录能耗与拓扑口径：package/TDP 只可作明确标注的归一化输入，不能冒充
+整机实测功耗；能够取得 wall/rack power 时报告 joules/token。低延迟交互与峰值 batch 吞吐分别画
+Pareto 点，至少包含 TTFT、TBT/ITL、tokens/s/user 和 aggregate tokens/s，不能用峰值吞吐掩盖
+单用户停顿，也不能把某一 matched-latency 点的比例外推到整条曲线。权重、KV 和 activation 的
+host/device/NUMA placement、复制字节、跨 device 通信及 idle time 属于必记 workload 身份。
+Backend 矩阵至少区分离散 device memory 与大容量 unified-memory 系统；后者加入一个超过普通离散
+显存、但可完整驻留统一内存的模型档位，同时记录 resident/committed memory、memory pressure、
+CPU/GPU handoff 和跨 die 行为。统一地址空间不得被记作“天然零复制”或“天然单 NUMA domain”。
+
 ## 5. 泛化与留出协议
 
 开发集和资格留出集必须分离：

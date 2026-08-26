@@ -34,9 +34,9 @@ class TimerEntry {
   ~TimerEntry() {
     // An armed node is still referenced by its source, and a fired node must
     // outlive its delivery list. Destroying the list first is safe because the
-    // container_intrusive list detaches all hooks during destruction.
+    // container_intrusive list detaches all hooks during destruction. The safe
+    // hook independently diagnoses a linked-node lifetime violation in Debug.
     HYLE_FATAL_ASSERT(owner_ == nullptr);
-    HYLE_FATAL_ASSERT(!hook_.linked());
   }
 
   [[nodiscard]] bool scheduled() const noexcept { return owner_ != nullptr; }
@@ -63,7 +63,7 @@ class TimerEntry {
   }
   void set_owner(const void* source) noexcept { owner_ = source; }
 
-  container::IntrusiveListHook hook_;
+  container::SafeIntrusiveListHook hook_;
   std::uint64_t deadline_ns_ = 0;
   void* payload_ = nullptr;
   FireCallback fire_callback_ = nullptr;
@@ -84,7 +84,7 @@ struct TimerEntryAccess {
 };
 
 struct TimerEntryListAccess {
-  using Type = container::IntrusiveList<TimerEntry, &TimerEntry::hook_>;
+  using Type = container::SafeIntrusiveList<TimerEntry, &TimerEntry::hook_>;
 };
 }  // namespace detail
 

@@ -159,12 +159,20 @@ class CommonTimeoutQueue {
   // order, since the list is sorted). Stops at the first not-yet-due entry --
   // O(#fired), never scans the tail.
   std::size_t advance(std::uint64_t now_ns, EntryList& out) noexcept {
-    const std::size_t moved = list_.move_prefix_to(
-        out,
-        [now_ns](const TimerEntry* entry) noexcept {
-          return entry->deadline_ns_ <= now_ns;
-        },
-        [](TimerEntry* entry) noexcept { entry->set_owner(nullptr); });
+    auto first = list_.begin();
+    auto after = first;
+    std::size_t moved = 0;
+    while (after != list_.end() && after->deadline_ns_ <= now_ns) {
+      after->set_owner(nullptr);
+      ++after;
+      ++moved;
+    }
+    if (moved != 0) {
+      // Prefix selection and TimerEntry owner bookkeeping are time policy, not
+      // an intrusive-container primitive. The generic range splice keeps the
+      // structural handoff O(1) after the required O(#fired) scan.
+      out.splice(out.end(), list_, first, after);
+    }
     HYLE_FATAL_ASSERT(moved <= count_);
     count_ -= moved;
     return moved;

@@ -34,6 +34,7 @@ target_link_libraries(your_app PRIVATE hyle::container hyle::mem)  # 按需选�
 | [`03_sched_fibers/`](03_sched_fibers/) | sched | `Scheduler::spawn_detached` 自持 guarded fiber：`yield()` 协作、stack 回收、`shutdown()` 排空 |
 | [`04_prebuilt_lib/`](04_prebuilt_lib/) | 构建/集成 | install + `find_package(Hyle COMPONENTS simd mem)`；同一 consumer 验证 shared/static、传递依赖、mimalloc 私有后端和 Windows DLL staging |
 | [`07_installed_compute/`](07_installed_compute/) | compute C++ API | 消费 CPU/CUDA、shared/static compute package；枚举真实 backend，并验证 ggml/volk/CUDA 传递闭包无需源码 checkout |
+| [`package/container_intrusive/cpp/`](package/container_intrusive/cpp/) | container_intrusive | source-independent C++ package consumer：auto/safe member hook、显式 retirement、insert/erase、整链 splice 与 caller-owned lifetime |
 
 > 01-03 用源码 `add_subdirectory` 集成；04 与 07 用安装包集成。
 

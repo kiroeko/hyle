@@ -12,7 +12,7 @@
 | HYLE 模块 | 首要本地参考 | 本轮主要核对什么 |
 |---|---|---|
 | core | C++ 标准库、oneTBB、Abseil、Highway、folly | compiler/invariant、cache layout/prefetch 的最小可移植面；build-owned 编译期版本边界 |
-| container_intrusive | Boost.Intrusive、folly | caller-owned node、hook 生命周期、O(1) relink 与零分配形状 |
+| container_intrusive | Boost.Intrusive、folly | caller-owned node、auto/safe hook 生命周期、O(1) relink 与零分配形状 |
 | error | `std::expected`、Abseil Status、folly Expected | 值大小、context、传播与 OS/GPU 叶错误 |
 | platform | folly portability、libuv、Abseil、llama.cpp | thread/affinity、wait、VM/fs/dynlib、CPU dispatch 与平台忠实语义 |
 | mem | mimalloc、oneTBB allocator/pool、folly、seastar | 通用/专用分配边界、arena/pool/cache/NUMA/huge page、复杂度与跨线程 free |
@@ -53,6 +53,8 @@ Native FFI 当前为 `N/A`，不存在 C 或 managed 用户面；旧 C/managed f
 | **kompute** | 参考（compute-06 Vulkan 后端骨架）| Vulkan compute 封装，**纯 Vulkan 零隐藏运行时**（无 std::thread/事件循环，唯一同步=可选 submit mutex + 每 Sequence 一个 vk::Fence），合"不引入第二调度器"铁律。抄其 Manager 初始化链 / Algorithm 的 SPIR-V→pipeline→descriptor / Tensor 的 memory-type 选择+staging 双缓冲+barrier 编排；**丢**阻塞 `waitForFences`（换非阻塞 `getFenceStatus` 轮询接 fiber，= Event::query 语义，fence=Vulkan Event 的 native handle）、shared_ptr 所有权、logger、OpBase 虚基类。详见 compute-design「compute-06 kompute 映射」节 |
 | **vitamin-cuda** | **参考（compute 自造 kernel）** | 教学级 CUDA kernel 库（`C:\public\project-hyle\vitamin-cuda`），SGEMM/HGEMM/flash_attn/softmax/rope/reduce 等，含中英“beating cuBLAS”逐步优化 writeup（`posts/`）。它是 ggml 显存边界之外 HYLE 自造 kernel 的优化参考，不是 HYLE kernel 的性能证明。SGEMM 展示 naive → block tiling+共享内存 → 转置写 smem+float4 → swizzle → 合并写回 → double buffer 的阶梯；采用前仍须在 HYLE 的真实合同上复证 |
 | **llama.cpp** | 参考 | 多变体 DLL+score dispatch、CMake ISA 处理、探测器隔离（-fno-LTO）、推理引擎工程范式；compute-05 显存归属边界（host 归调用方/device 归 ggml gallocr）的权威范本 |
+| **OpenAI Jalapeño / InferenceX 结果** | 行业方向证据，不是 HYLE peer | inference-only 全栈 co-design 对 prefill/decode、KV locality、memory/network placement 与 latency-throughput-power Pareto 的公开案例；只使用其公开 workload/口径反查需求，不把厂商自测或封闭硬件当 HYLE SOTA 证明。见 [`motivation`](motivation.md#2026-08-的外部事实推理正在成为全栈系统问题) |
+| **Apple M5 Ultra** | 可获得统一内存平台方向，不是仅凭规格成立的性能 peer | 最高 512 GB unified memory、1.2 TB/s memory bandwidth 与 quad-die interconnect 使超出普通离散显存的本地量化模型成为正式 workload；HYLE 仍须实测 residency、跨 die locality、Metal/kernel 与端到端 token 指标。见 [`motivation`](motivation.md#2026-08-的外部事实推理正在成为全栈系统问题) |
 | **oneDNN** | **借（算子库）** | **Intel DL 原语 + AMX/VNNI 加速正主**；运行时 cpuid dispatch + Xbyak JIT。定位是**算子库（ggml 同级 CPU 算子供应商，接 bridge）**，非 device/stream 后端——它自带 JIT 不暴露 raw kernel launch |
 | **oneMath** | **仅参考（不借）** | Intel 数学（前 oneMKL）：BLAS/FFT。**SYCL 重依赖**（引它=引整条 SYCL/DPC++ 工具链），HYLE 已有 ggml BLAS；仅参考其 domain×device×library 三级分发表 |
 | **oneDAL** | **边界外**（深读校正）| 经典 ML（kmeans/PCA/knn/forest）是 L1/L2 应用层，非 infra 原语 |
@@ -76,7 +78,7 @@ Native FFI 当前为 `N/A`，不存在 C 或 managed 用户面；旧 C/managed f
 | **folly** | 参考 | F14 hashmap + 并发原语/SmallVector 等；透明 string policy 与 seeded fast hash 形状用于易用性/正常 workload 对账 |
 | **moodycamel-ConcurrentQueue** | 参考(bench 对照)| lock-free MPMC 队列，sched global 注入队列参考与同族成熟对照 |
 | **rigtorp-MPMCQueue** / **MPMCQueue** | 参考(bench 对照)| 定长环形 MPMC(Vyukov 序号法);BoundedQueue 设计参考 + queue bench-02b 对标 |
-| **boost**(intrusive) | 参考 | 侵入式 list/map（sched run-queue/waiter 链）|
+| **boost**(intrusive) | 参考 | 通用 caller-owned 稳定节点的 intrusive list/map；auto/safe link、member hook 与 O(1) relink 用于 `container_intrusive` 对账。sched waiter 曾作为迁移候选，后因 link-storage 复用与锁内写/footprint 退化而保留专用链 |
 
 ### time/（Tier 2 必要基质）
 | 库 | 角色 | 说明 |

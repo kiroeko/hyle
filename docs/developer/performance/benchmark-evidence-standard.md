@@ -77,10 +77,14 @@ minimum detectable effect（MDE）。预计差异小于 MDE 时，先扩大真�
 
 ### 4.5 Order 与 placement
 
-- 运行 A/B、B/A 或进程级随机顺序；预声明时可用 ABBA block 抵消漂移。
+- 运行完整的 A/B 与 B/A strata，或使用记录 seed 的进程级随机顺序；预声明时也可用 ABBA block
+  抵消漂移。不得只保留一个固定顺序。完整固定 strata 与随机化是二选一的实验设计，不重复强求。
 - 分别报告 order strata；方向不一致不得池化成有利结论。
-- 对亚纳秒/少指令路径，改变函数链接顺序、代码 padding、heap 预热和对象地址至少各做一个
-  合理扰动。结论若跟 placement 翻转，标 `INCONCLUSIVE`，除非 placement 本身是产品合同。
+- 对亚纳秒/少指令路径先写 placement 风险矩阵：**代码位置**至少做 link order、padding 或 function
+  alignment 中一种；**数据位置**至少做 allocation order、对象地址 stratum 或 heap preheat 中一种。
+  若 allocation 本身在计费合同内，再额外做 cold/preheated heap；caller-owned 且 allocation 明确在
+  epoch 外时，不为凑门重复增加无消费含义的 heap 维度。结论若跟任一适用 placement 翻转，标
+  `INCONCLUSIVE`，除非 placement 本身是产品合同。
 - ASLR 开/关、same-process 与 separate-process 的选择写入 manifest，不择优。
 
 ### 4.6 Host 与调度
@@ -113,7 +117,8 @@ mimalloc、Highway、absl 等才是用户真实替代品时，赢 std 不能完�
 
 - 优先使用 release、最终 linkage 和真实 target；先 warm-up，再测 steady state。
 - 默认至少 15 个独立进程级 paired samples；更少或更多必须由预声明 power/成本解释。
-- 每个进程内保持相同输入与环境，进程间随机 order；保存每个 raw sample，不只保存均值。
+- 每个进程内保持相同输入与环境；进程间使用记录 seed 的随机 order，或分别运行完整的固定
+  A/B、B/A strata。保存每个 raw sample，不只保存均值。
 - 主统计使用 paired ratio/delta 的 median 与分布无关或 bootstrap confidence interval；sign test
   可作诊断，不能替 practical margin。
 - latency distribution 报 median 与适用 tail；吞吐不能抵偿 tail、内存、错误率或公平性退化。

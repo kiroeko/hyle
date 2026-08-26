@@ -10,8 +10,9 @@
 3. [调用安全合同](usage-contract.md)：热路径、线程、生命周期和内存边界。
 4. [`samples/`](../../samples/README.md)：可编译的 C++ 消费者工程。
 
-HYLE 尚未正式发布，并正从 core 开始按新标准重审。模块页只描述当前真实 C++ surface；标为
-`provisional` 的页面可以用于试验，但不构成稳定性承诺。当前状态见
+HYLE 尚未正式发布，并正按新标准逐模块重审；Core 已完成首个签署，后续模块仍需分别取证。
+模块页只描述当前真实 C++ surface；标为 `provisional` 或 `CANDIDATE` 的页面可以用于试验，但不
+构成稳定性承诺。当前状态见
 [施工状态](../implementation/status.md)。
 
 ## 模块指南
@@ -23,7 +24,8 @@ HYLE 尚未正式发布，并正从 core 开始按新标准重审。模块页只
 - [time](time.md)
 - [obs](obs.md)
 - [util](util.md)
-- [container](container.md)：包括独立轻量的 `hyle::container_intrusive` target
+- [container_intrusive](container-intrusive.md)：稳定节点、零分配、auto/safe-link 双向链表
+- [container](container.md)：完整数据结构模块，并聚合轻量 intrusive target
 - [simd](simd-usage.md)
 - [io](io.md)
 

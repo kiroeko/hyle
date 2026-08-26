@@ -64,6 +64,7 @@ import sys
 
 BT = chr(96)  # backtick; nanobench wraps variant names in `...`
 PAIR_RAW_PREFIX = "# HYLE_BENCH_PAIR_RAW "
+CHILD_TELEMETRY_PREFIX = "# HYLE_BENCH_CHILD_TELEMETRY "
 
 
 def _run_text(command, cwd=None):
@@ -569,6 +570,26 @@ def parse_sleep_telemetry(text):
     return out
 
 
+def extract_required_child_telemetry(text, prefix):
+    """Return the unique child line for a caller-declared telemetry prefix."""
+    matches = [line for line in text.splitlines() if line.startswith(prefix)]
+    if len(matches) != 1:
+        raise ValueError(
+            f"required child telemetry {prefix!r} occurred "
+            f"{len(matches)} times")
+    return matches[0]
+
+
+def format_child_telemetry_record(run, prefix, line):
+    return CHILD_TELEMETRY_PREFIX + json.dumps({
+        "record": "hyle_bench_child_telemetry",
+        "schema": 1,
+        "run": run,
+        "prefix": prefix,
+        "line": line,
+    }, sort_keys=True, separators=(",", ":"))
+
+
 def main():
     ap = argparse.ArgumentParser(description="aggregate a nanobench exe across N runs")
     ap.add_argument("exe", help="path to the nanobench executable")
@@ -589,6 +610,11 @@ def main():
     ap.add_argument("--equivalence-margin-pct", type=float,
                     help="predeclared practical equivalence margin in percent; "
                          "required with --pair for formal --require-clean evidence")
+    ap.add_argument(
+        "--require-telemetry-prefix", action="append", default=[],
+        metavar="PREFIX",
+        help="require exactly one matching child line per process and emit "
+             "a structured run-tagged record; repeatable")
     args = ap.parse_args()
 
     if args.runs <= 0:
@@ -605,6 +631,12 @@ def main():
         map(tuple, args.not_comparable_pair))
     if duplicate_pairs:
         ap.error("the same pair cannot be both comparable and not comparable")
+    if len(set(args.require_telemetry_prefix)) != len(
+            args.require_telemetry_prefix):
+        ap.error("required telemetry prefixes must be unique")
+    if any(not prefix or "\n" in prefix or "\r" in prefix
+           for prefix in args.require_telemetry_prefix):
+        ap.error("required telemetry prefixes must be non-empty single lines")
 
     # Normalize to an absolute path: on Windows, CreateProcess won't resolve a
     # forward-slash relative path like "build/bin/foo.exe" (the shell would, but
@@ -616,6 +648,7 @@ def main():
     cmd = (["setarch", "-R"] if args.setarch else []) + [exe]
     runs = []
     sleep_runs = []
+    child_telemetry = []
     for run_index in range(1, args.runs + 1):
         r = subprocess.run(cmd, capture_output=True, text=True)
         if r.returncode != 0:
@@ -626,11 +659,21 @@ def main():
         except ValueError as error:
             sys.exit(f"cannot parse nanobench run {run_index}: {error}")
         sleep_runs.append(parse_sleep_telemetry(output))
+        for prefix in args.require_telemetry_prefix:
+            try:
+                line = extract_required_child_telemetry(output, prefix)
+            except ValueError as error:
+                sys.exit(f"run {run_index}: {error}")
+            child_telemetry.append(
+                format_child_telemetry_record(run_index, prefix, line))
 
     try:
         keys = require_consistent_rows(runs)
     except ValueError as error:
         sys.exit(str(error))
+
+    for record in child_telemetry:
+        print(record)
 
     agg = {}
     print(f"N={args.runs} runs\n")

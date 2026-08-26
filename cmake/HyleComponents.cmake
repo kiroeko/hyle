@@ -50,8 +50,10 @@ endfunction()
 
 set(HYLE_KNOWN_COMPONENTS "")
 set(_hyle_optional_sched_dep "")
+set(_hyle_optional_io_time_dep "")
 if(HYLE_FCONTEXT_SUPPORTED)
   set(_hyle_optional_sched_dep sched)
+  set(_hyle_optional_io_time_dep time)
 endif()
 
 # Declaration order is construction order and must remain topological.  The
@@ -83,7 +85,8 @@ _hyle_declare_component(sched
 # consumers that link hyle::io alone must see
 # the corresponding import libraries and runtime DLLs.
 _hyle_declare_component(io
-  PUBLIC_DEPS core error mem container ${_hyle_optional_sched_dep})
+  PUBLIC_DEPS core error mem container ${_hyle_optional_io_time_dep}
+              ${_hyle_optional_sched_dep})
 # compute publicly exposes error/mem and, where available, sched Waker types;
 # platform and simd stay compiled implementation details.
 _hyle_declare_component(compute
@@ -94,6 +97,7 @@ _hyle_declare_component(graph
   PUBLIC_DEPS core error mem container ${_hyle_optional_sched_dep})
 
 unset(_hyle_optional_sched_dep)
+unset(_hyle_optional_io_time_dep)
 
 function(_hyle_component_public_headers name out_var)
   if(name STREQUAL "container_intrusive")

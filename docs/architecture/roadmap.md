@@ -42,7 +42,7 @@ failure、concurrency 和复杂度的最低合理层，但不能把上层策略�
 | container | core, error, mem, container_intrusive | platform |
 | util | core, error, mem, container, util_core | — |
 | sched | core, error, platform, mem, container, util_core | time |
-| io | core, error, mem, container, optional sched | — |
+| io | core, error, mem, container, optional time, optional sched | — |
 | compute | core, error, mem, optional sched | platform, simd |
 | graph | core, error, mem, container, optional sched | util_core |
 
@@ -50,8 +50,10 @@ failure、concurrency 和复杂度的最低合理层，但不能把上层策略�
 
 `container_intrusive` 的公开头是 `<hyle/container/intrusive_list.h>`，公开类型位于
 `hyle::container`；target 名称为 `hyle::container_intrusive`。`time` 的公开 `TimerEntry` 与
-`TimerList` 暴露该类型，所以它是 `PUBLIC` 依赖；完整 `hyle::container` 同样以 `PUBLIC` 边聚合
-这项容器能力。二者都不把 `time` 拉入完整 container 的 mem/platform 闭包。
+`TimerList` 暴露该类型，所以它是 `PUBLIC` 依赖；完整 `hyle::container` 也以 `PUBLIC` 边聚合这项
+容器能力。sched waiter 在摘链后复用 link storage 作锁外 wake chain，保留专用实现且不登记虚假
+direct edge。这些消费者都不会把 `time` 拉入完整 container 的 mem/platform
+闭包。组件自己的边界见 [`container-intrusive-design`](container-intrusive-design.md)。
 
 `core`、`container_intrusive` 与 `util_core` 都是正式 `INTERFACE` 产品组件。公开头直接 include
 `<hyle/core/**>` 或 `<hyle/version.h>` 的模块必须直接声明 `PUBLIC core`，即使没有 binary symbol

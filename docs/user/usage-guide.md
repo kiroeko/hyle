@@ -53,6 +53,7 @@ target_link_libraries(my_app PRIVATE hyle::container)
 | clock、deadline、sleep 与 timer queue | [time](time.md) |
 | log、trace、counter 与 sink 接缝 | [obs](obs.md) |
 | 通用 RAII、registry、random 等工具 | [util](util.md) |
+| caller-owned 稳定节点的零分配链、auto/safe retirement、O(1) 摘链/range handoff | [container_intrusive](container-intrusive.md) |
 | flat/small/concurrent 等通用数据结构 | [container](container.md) |
 | 向量、转换、bitpack 和向量算法 | [simd](simd-usage.md) |
 | 异步文件、网络和 protocol 机制 | [io](io.md) |

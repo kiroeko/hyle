@@ -21,7 +21,7 @@ container 提供性能敏感的基础数据结构、借用字符串/路径算法
 | 最大容量是协议/实时合同，整个生命周期禁止分配 | `StaticVector<T,N>`（别名 `InplaceVector`） | storage 全在对象内，data 地址不变；满时 `try_*` 返回 false，普通入口 fail-fast |
 | trivially-copyable 数据、C-friendly layout | `PodVector<T>` | 只做字节 relocation；默认 system allocator，也可注入运行时 allocator |
 | 普通长寿命非平凡动态序列 | `std::vector` + 可选 mem PMR adapter | HYLE 不造第二个通用 vector |
-| 节点已有稳定 storage，需要零分配、O(1) 摘链或整链转移 | `IntrusiveList<T, &T::hook>` | non-owning；每条同时 membership 一个 hook；地址稳定；外部同步 |
+| 节点已有稳定 storage，需要零分配、O(1) 摘链或整链转移 | `IntrusiveList`（node 可自动摘链）或 `SafeIntrusiveList`（必须显式摘链） | non-owning；每条同时 membership 一个 hook；地址稳定；外部同步 |
 | 高频 key→value lookup | `FlatHashMap<K,V>`（实现名 `SwissTable`） | flat slot、expected O(1)、引用在 grow/erase 后失效 |
 | 高频 membership / 去重 | `FlatHashSet<K>` | 真正 set slot，不为 empty mapped value 付空间；expected O(1) |
 | 查多改少、批量装载后要有序点查/遍历 | `FlatMap<K,V>` / `FlatSet<K>` | 排序连续 storage；查找 O(log N)、遍历 cache-friendly，位置 mutation O(N) |
@@ -58,70 +58,14 @@ container 提供性能敏感的基础数据结构、借用字符串/路径算法
 
 ## 侵入式链表：独立轻量组件
 
-当节点本来就由任务、连接、timer 或对象池拥有，并且节点地址可以保持稳定时，
-`IntrusiveList` 可以避免容器自己的 node allocation，并提供 O(1) push/pop、任意节点摘除、
-单节点 splice 和整链 handoff。普通应用只需要 owning sequence 时仍优先用 `std::list`、
-`std::vector` 或本文其他容器；不要为了少一次分配把生命周期责任扩散给调用者。
+当 task、timer、连接或对象池已经拥有稳定地址的节点，并需要零分配、O(1) 任意摘链、node→iterator
+或整段 handoff 时，选择独立的 `hyle::container_intrusive`。完整 container 会传递聚合该 target；
+只用链表的消费者不必取得 mem/platform 闭包。
 
-只消费该能力时直接请求轻量 target：
-
-```cmake
-find_package(Hyle 0.1 REQUIRED COMPONENTS container_intrusive)
-target_link_libraries(my_target PRIVATE hyle::container_intrusive)
-```
-
-可直接构建的安装包消费工程见
-[`samples/package/container_intrusive/cpp`](../../samples/package/container_intrusive/cpp)。
-
-源码组装同样可以设置 `HYLE_COMPONENTS=container_intrusive`。链接 `hyle::time` 或完整
-`hyle::container` 时，CMake 会传递该依赖，不需要重复手工链接。
-
-```cpp
-#include <hyle/container/intrusive_list.h>
-
-struct Request {
-  int id;
-  hyle::container::IntrusiveListHook ready_hook{};
-  hyle::container::IntrusiveListHook timeout_hook{};
-};
-
-using ReadyList =
-    hyle::container::IntrusiveList<Request, &Request::ready_hook>;
-using TimeoutList =
-    hyle::container::IntrusiveList<Request, &Request::timeout_hook>;
-
-Request first{1};
-Request second{2};
-ReadyList ready;
-ReadyList incoming;
-
-if (!ready.try_push_back(&first)) return 1;
-incoming.push_back(&second);          // 调用方已经证明该 hook 未链接
-ready.splice(ready.end(), incoming); // O(1) 整链转移
-
-while (Request* request = ready.pop_front()) {
-  request->id += 10;                 // 已摘链；ownership 仍属于调用方
-}
-```
-
-它的关键合同也是最容易踩坑的地方：
-
-- list **不拥有节点、不分配，也不销毁 node storage**；owner 必须活到节点摘链之后；
-- linked node 的地址必须稳定，放在可能 grow/relocate 的 `std::vector` 中不安全；
-- 一个 hook 同一时刻只能属于一条 list；需要同时加入 ready/timeout 等多种 membership 时，必须像
-  示例一样为每种 membership 嵌入不同 hook；
-- hook 的 copy/move construction 会产生未链接的新 hook，assignment 会保留目标 hook 当前的
-  membership；复制或移动整个 node 不会转移链表身份。带 identity 的 node 通常应直接禁止 copy/move；
-- node 必须是 standard-layout；hook 可以不是第一个成员；
-- 类型本身不提供同步。任何并发 insert/remove/iteration/destruction 都必须由调用方建立外部同步；
-- unchecked `push_*`、`insert`、`remove` 和 splice position 要求 membership 前置条件已经成立。
-  null 或 already-linked 是正常输入时，使用 `try_push_*`/`try_insert`；
-- hook 析构会自动摘除该 membership，list 析构会摘除剩余 hooks，但这不能替代 owner 的析构顺序；
-- 它不存 owner 或 size，因此没有 owner check 或 O(1) `size()`；需要这些语义时选择 owning 容器。
-
-iterator 是 bidirectional；`erase` 返回 successor。`consume_all` 要求 `noexcept` callback，并在
-回调前摘除当前节点；`for_each` callback 不得改变所遍历节点的 membership 或 lifetime。
-这些低层前置条件若不能在类型边界清楚证明，说明该场景不适合 intrusive container。
+auto/safe retirement 选择、接入、multi-hook 示例、`try_*` 的有限检查边界、range splice、callback、外部同步以及完整
+iterator/lifetime 失效矩阵见独立的
+[`container_intrusive` 用户指南](container-intrusive.md)。它当前为 `CANDIDATE / 复审中`；普通
+owning sequence 仍优先使用标准或本页其他 owning container。
 
 ## 连续容器
 
@@ -556,8 +500,8 @@ range，因为它对 reservation count 取快照，并不额外发布仍在构�
 
 ## 常见坑
 
-- `IntrusiveList` 不拥有节点且不提供内部同步；linked 地址、每 membership 独立 hook 和 owner 析构
-  顺序是调用者合同，不能依赖容器替你延长生命周期。
+- 独立 `IntrusiveList` 的 ownership、同步与失效陷阱统一见
+  [`container_intrusive` 用户指南](container-intrusive.md)，本页不重复维护其合同。
 - allocator 必须活到容器销毁；storage 必须由创建它的 allocator 释放。
 - `StringView`、flat map/set find 返回值和 vector data 都是借用地址，分别受来源/grow/erase 失效。
 - flat map/set 平均 O(1) 不等于 adversarial hash 安全；业务 Hash 必须提供足够熵且与 Eq 一致。

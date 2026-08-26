@@ -10,6 +10,14 @@
 | **骨架?** | 否 |
 | **状态** | ✅ 完成（Win x64 MSVC + Linux x64 GCC14.2 双平台，container 36→45 case）|
 
+> **历史迁移注记（2026-08-26）：** 本页保留原 `container-05` 合并任务及当时验收事实，不是
+> `container_intrusive` 的 v2 签署。侵入式链表现已从完整 `container` 拆成独立、header-only 的
+> `hyle::container_intrusive` 组件，公开头仍为 `<hyle/container/intrusive_list.h>`，类型仍在
+> `hyle::container` namespace。当前候选边界见
+> [`container-intrusive-design`](../../../architecture/container-intrusive-design.md)，使用方法见
+> [`container_intrusive` 用户指南](../../../user/container-intrusive.md)；当前状态是
+> `CANDIDATE / 复审中`，不能从本页的历史“完成”或旧 LOC/test 数推导为 `SIGNED`。
+
 ## 前置依赖
 
 - 硬前置：`mem-02`（两者显式注入/不需分配器，但 SmallVector spill 走 `Allocator`）。
@@ -22,9 +30,11 @@
 
 clay 无这两者，设计标"新增，抄 folly 设计（non-code）"，无 clay 同名文件可 diff。
 
-## 在架构中的位置
+## 在架构中的位置（原任务）
 
-T0 容器，header-only 模板。是 sched（T0）的原语供应商——依赖故事干净：container 提供数据结构 → sched 组合成调度器。
+原任务把两种类型都记为 T0 container、header-only 模板。当前归属已经细化：SmallVector 仍属于完整
+container；侵入式链表由 `container_intrusive` 独立交付，并由 time 及完整 container 通过真实 target
+依赖消费。sched waiter 后来因 detached wake-link 状态复用保留专用链；这一当前裁决不改写本页历史验收。
 
 ## 具体事务（做什么）
 
@@ -40,7 +50,10 @@ T0 容器，header-only 模板。是 sched（T0）的原语供应商——依赖
 
 - **编译**：✅ 双平台。
 - **正确性**：✅ container 36→45 case。SmallVector spill 后数据完整（100 元素跨 spill）、move inline vs heap 两路径分别测；IntrusiveList O(1) 中间删除 + hook 非首成员时偏移正确还原节点。
-- **诚实边界**：单线程结构，不需 TSan。`node_of` 的偏移技巧 UBSan 会标 null-ptr-member（boost.intrusive 同样），可接受、已注。
+- **诚实边界（历史实现）**：当时的 `node_of` 偏移技巧会被 UBSan 标记 null-ptr-member，本页曾将其
+  记录为可接受。当前候选不再求值 null member expression，而是只解码已支持的 MSVC / Itanium
+  data-member-pointer representation，并对未知/复杂 representation 编译期 fail closed；现行边界以
+  独立架构页和本轮 sanitizer 证据为准。
 
 ## 对抗式自审
 
@@ -49,4 +62,5 @@ SmallVector 的 inline↔heap 迁移是错误高发区——分别测了"未 spi
 ## 参考
 
 - folly `small_vector` / `IntrusiveList`（设计参考，非抄代码）。
-- `container-design.md`（SmallVector/intrusive 供 sched 的决策）。
+- [`container-design`](../../../architecture/container-design.md)（完整 container 聚合摘要）。
+- [`container-intrusive-design`](../../../architecture/container-intrusive-design.md)（侵入式组件当前归属与边界）。

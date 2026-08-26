@@ -37,6 +37,30 @@ function(_hyle_contract_run label expect_success)
   set(HYLE_CONTRACT_LAST_OUTPUT "${_output}" PARENT_SCOPE)
 endfunction()
 
+set(_hyle_direct_public_edge_helper
+  "${_hyle_contract_root}/HyleRequireDirectPublicEdge.cmake")
+file(WRITE "${_hyle_direct_public_edge_helper}" [=[
+function(hyle_contract_require_direct_public_edge consumer dependency)
+  if(NOT TARGET "${consumer}")
+    message(FATAL_ERROR
+      "cannot inspect missing consumer target '${consumer}'")
+  endif()
+  if(NOT TARGET "${dependency}")
+    message(FATAL_ERROR
+      "cannot inspect missing dependency target '${dependency}'")
+  endif()
+  get_target_property(
+    _hyle_direct_public_links "${consumer}" INTERFACE_LINK_LIBRARIES)
+  list(FIND _hyle_direct_public_links "${dependency}"
+    _hyle_direct_public_index)
+  if(_hyle_direct_public_index EQUAL -1)
+    message(FATAL_ERROR
+      "target '${consumer}' has no direct PUBLIC edge to '${dependency}'; "
+      "INTERFACE_LINK_LIBRARIES='${_hyle_direct_public_links}'")
+  endif()
+endfunction()
+]=])
+
 # An explicitly empty -D value is almost always a lost shell/CI variable.  The
 # ordinary unspecified default remains `all`, but explicit empty must fail.
 _hyle_contract_run("explicit-empty component selection" FALSE
@@ -209,6 +233,7 @@ file(WRITE "${_intrusive_source}/CMakeLists.txt"
 "set(HYLE_BUILD_BENCH OFF)\n"
 "set(HYLE_INSTALL OFF)\n"
 "add_subdirectory(\"${HYLE_SOURCE_DIR}\" hyle)\n"
+"include(\"${_hyle_direct_public_edge_helper}\")\n"
 "if(NOT TARGET hyle::container_intrusive)\n"
 "  message(FATAL_ERROR \"missing hyle::container_intrusive\")\n"
 "endif()\n"
@@ -221,68 +246,143 @@ file(WRITE "${_intrusive_source}/CMakeLists.txt"
 "    message(FATAL_ERROR \"\${_required} is not header-only: \${_type}\")\n"
 "  endif()\n"
 "endforeach()\n"
-"foreach(_forbidden IN ITEMS error time mem platform container)\n"
+"hyle_contract_require_direct_public_edge(hyle_container_intrusive hyle_core)\n"
+"foreach(_forbidden IN ITEMS util_core error obs math platform time mem simd container util sched io compute graph)\n"
 "  if(TARGET hyle::\${_forbidden})\n"
 "    message(FATAL_ERROR \"unexpected target hyle::\${_forbidden}\")\n"
 "  endif()\n"
-"endforeach()\n")
+"endforeach()\n"
+"add_executable(hyle_container_intrusive_source_consumer\n"
+"  \"${HYLE_SOURCE_DIR}/samples/package/container_intrusive/cpp/main.cc\")\n"
+"target_link_libraries(hyle_container_intrusive_source_consumer\n"
+"  PRIVATE hyle::container_intrusive)\n"
+"enable_testing()\n"
+"add_test(NAME hyle_container_intrusive_source_consumer\n"
+"  COMMAND hyle_container_intrusive_source_consumer)\n")
 _hyle_contract_run("standalone container_intrusive closure" TRUE
   "${CMAKE_COMMAND}" -S "${_intrusive_source}"
   -B "${_hyle_contract_root}/intrusive-build"
   ${_hyle_generator_args}
   -DCMAKE_BUILD_TYPE=Release)
+_hyle_contract_run("build standalone container_intrusive source consumer" TRUE
+  "${CMAKE_COMMAND}" --build "${_hyle_contract_root}/intrusive-build"
+  --config Release --parallel 2)
+_hyle_contract_run("run standalone container_intrusive source consumer" TRUE
+  "${CMAKE_CTEST_COMMAND}" --test-dir
+  "${_hyle_contract_root}/intrusive-build"
+  -C Release --output-on-failure)
 
 # The target is also an independently deliverable installed component.  Build
 # an isolated SDK rather than testing against an all-component prefix: the
 # latter installs every public header and can hide a missing export or an
-# accidental binary dependency.
-set(_intrusive_sdk_build "${_hyle_contract_root}/intrusive-sdk-build")
-set(_intrusive_sdk_prefix "${_hyle_contract_root}/intrusive-sdk-prefix")
-_hyle_contract_run("configure isolated container_intrusive SDK" TRUE
-  "${CMAKE_COMMAND}" -S "${HYLE_SOURCE_DIR}"
-  -B "${_intrusive_sdk_build}"
-  ${_hyle_generator_args}
-  -DCMAKE_BUILD_TYPE=Release
-  -DCMAKE_INSTALL_PREFIX=${_intrusive_sdk_prefix}
-  -DHYLE_COMPONENTS=container_intrusive
-  -DHYLE_BUILD_TESTS=OFF
-  -DHYLE_BUILD_BENCH=OFF
-  -DHYLE_INSTALL=ON
-  -DHYLE_IO_TLS=OFF
-  -DHYLE_COMPUTE_CUDA=OFF)
-_hyle_contract_run("install isolated container_intrusive SDK" TRUE
-  "${CMAKE_COMMAND}" --install "${_intrusive_sdk_build}" --config Release)
-file(GLOB_RECURSE _intrusive_binary_artifacts LIST_DIRECTORIES FALSE
-  "${_intrusive_sdk_prefix}/*.a"
-  "${_intrusive_sdk_prefix}/*.dll"
-  "${_intrusive_sdk_prefix}/*.dylib"
-  "${_intrusive_sdk_prefix}/*.lib"
-  "${_intrusive_sdk_prefix}/*.so"
-  "${_intrusive_sdk_prefix}/*.so.*")
-if(_intrusive_binary_artifacts)
-  message(FATAL_ERROR
-    "header-only container_intrusive SDK installed binary artifacts: "
-    "${_intrusive_binary_artifacts}")
-endif()
-set(_intrusive_consumer_build
-    "${_hyle_contract_root}/intrusive-consumer-build")
-_hyle_contract_run("configure isolated container_intrusive consumer" TRUE
-  "${CMAKE_COMMAND}"
-  -S "${HYLE_SOURCE_DIR}/samples/package/container_intrusive/cpp"
-  -B "${_intrusive_consumer_build}"
-  ${_hyle_generator_args}
-  -DCMAKE_BUILD_TYPE=Release
-  -DCMAKE_PREFIX_PATH=${_intrusive_sdk_prefix})
-_hyle_contract_run("build isolated container_intrusive consumer" TRUE
-  "${CMAKE_COMMAND}" --build "${_intrusive_consumer_build}"
-  --config Release --parallel 2)
-_hyle_contract_run("run isolated container_intrusive consumer" TRUE
-  "${CMAKE_CTEST_COMMAND}" --test-dir "${_intrusive_consumer_build}"
-  -C Release --output-on-failure)
+# accidental binary dependency.  The installed consumer also inspects the
+# imported target graph, because a package can be source-correct but export an
+# incomplete or over-broad usage contract.
+set(_intrusive_installed_consumer
+  "${_hyle_contract_root}/intrusive-installed-consumer")
+file(MAKE_DIRECTORY "${_intrusive_installed_consumer}")
+file(WRITE "${_intrusive_installed_consumer}/CMakeLists.txt"
+"cmake_minimum_required(VERSION 3.25)\n"
+"project(hyle_intrusive_installed_consumer LANGUAGES CXX)\n"
+"find_package(Hyle 0.1 REQUIRED COMPONENTS container_intrusive)\n"
+"include(\"${_hyle_direct_public_edge_helper}\")\n"
+"foreach(_required IN ITEMS core container_intrusive)\n"
+"  if(NOT TARGET hyle::\${_required})\n"
+"    message(FATAL_ERROR \"missing installed target hyle::\${_required}\")\n"
+"  endif()\n"
+"endforeach()\n"
+"hyle_contract_require_direct_public_edge(\n"
+"  hyle::container_intrusive hyle::core)\n"
+"foreach(_forbidden IN ITEMS util_core error obs math platform time mem simd container util sched io compute graph)\n"
+"  if(TARGET hyle::\${_forbidden})\n"
+"    message(FATAL_ERROR \"unexpected installed target hyle::\${_forbidden}\")\n"
+"  endif()\n"
+"endforeach()\n"
+"add_executable(hyle_container_intrusive_installed_consumer\n"
+"  \"${HYLE_SOURCE_DIR}/samples/package/container_intrusive/cpp/main.cc\")\n"
+"target_link_libraries(hyle_container_intrusive_installed_consumer\n"
+"  PRIVATE hyle::container_intrusive)\n"
+"enable_testing()\n"
+"add_test(NAME hyle_container_intrusive_installed_consumer\n"
+"  COMMAND hyle_container_intrusive_installed_consumer)\n")
+
+foreach(_intrusive_linkage IN ITEMS shared static)
+  if(_intrusive_linkage STREQUAL "static")
+    set(_intrusive_static ON)
+  else()
+    set(_intrusive_static OFF)
+  endif()
+  set(_intrusive_sdk_build
+    "${_hyle_contract_root}/intrusive-${_intrusive_linkage}-sdk-build")
+  set(_intrusive_sdk_staging_prefix
+    "${_hyle_contract_root}/intrusive-${_intrusive_linkage}-sdk-staging")
+  set(_intrusive_sdk_prefix
+    "${_hyle_contract_root}/intrusive-${_intrusive_linkage}-sdk-relocated")
+  _hyle_contract_run(
+    "configure isolated ${_intrusive_linkage} container_intrusive SDK" TRUE
+    "${CMAKE_COMMAND}" -S "${HYLE_SOURCE_DIR}"
+    -B "${_intrusive_sdk_build}"
+    ${_hyle_generator_args}
+    -DCMAKE_BUILD_TYPE=Release
+    -DCMAKE_INSTALL_PREFIX=${_intrusive_sdk_staging_prefix}
+    -DHYLE_COMPONENTS=container_intrusive
+    -DHYLE_BUILD_TESTS=OFF
+    -DHYLE_BUILD_BENCH=OFF
+    -DHYLE_INSTALL=ON
+    -DHYLE_STATIC=${_intrusive_static}
+    -DHYLE_IO_TLS=OFF
+    -DHYLE_COMPUTE_CUDA=OFF)
+  _hyle_contract_run(
+    "install isolated ${_intrusive_linkage} container_intrusive SDK" TRUE
+    "${CMAKE_COMMAND}" --install "${_intrusive_sdk_build}" --config Release)
+  file(RENAME "${_intrusive_sdk_staging_prefix}" "${_intrusive_sdk_prefix}"
+       RESULT _intrusive_relocate_result)
+  if(NOT _intrusive_relocate_result STREQUAL "0")
+    message(FATAL_ERROR
+      "could not relocate isolated ${_intrusive_linkage} "
+      "container_intrusive SDK: ${_intrusive_relocate_result}")
+  endif()
+  file(GLOB_RECURSE _intrusive_binary_artifacts LIST_DIRECTORIES FALSE
+    "${_intrusive_sdk_prefix}/*.a"
+    "${_intrusive_sdk_prefix}/*.dll"
+    "${_intrusive_sdk_prefix}/*.dylib"
+    "${_intrusive_sdk_prefix}/*.lib"
+    "${_intrusive_sdk_prefix}/*.so"
+    "${_intrusive_sdk_prefix}/*.so.*")
+  if(_intrusive_binary_artifacts)
+    message(FATAL_ERROR
+      "header-only ${_intrusive_linkage} container_intrusive SDK installed "
+      "binary artifacts: ${_intrusive_binary_artifacts}")
+  endif()
+  set(_intrusive_consumer_build
+    "${_hyle_contract_root}/intrusive-${_intrusive_linkage}-consumer-build")
+  _hyle_contract_run(
+    "configure isolated ${_intrusive_linkage} container_intrusive consumer"
+    TRUE
+    "${CMAKE_COMMAND}"
+    -S "${_intrusive_installed_consumer}"
+    -B "${_intrusive_consumer_build}"
+    ${_hyle_generator_args}
+    -DCMAKE_BUILD_TYPE=Release
+    -DCMAKE_PREFIX_PATH=${_intrusive_sdk_prefix})
+  _hyle_contract_run(
+    "build isolated ${_intrusive_linkage} container_intrusive consumer" TRUE
+    "${CMAKE_COMMAND}" --build "${_intrusive_consumer_build}"
+    --config Release --parallel 2)
+  _hyle_contract_run(
+    "run isolated ${_intrusive_linkage} container_intrusive consumer" TRUE
+    "${CMAKE_CTEST_COMMAND}" --test-dir "${_intrusive_consumer_build}"
+    -C Release --output-on-failure)
+endforeach()
 unset(_intrusive_binary_artifacts)
 unset(_intrusive_consumer_build)
+unset(_intrusive_installed_consumer)
+unset(_intrusive_linkage)
+unset(_intrusive_relocate_result)
 unset(_intrusive_sdk_build)
 unset(_intrusive_sdk_prefix)
+unset(_intrusive_sdk_staging_prefix)
+unset(_intrusive_static)
 
 # time publicly exposes TimerList, so selecting time must carry the lightweight
 # intrusive target but must not pull the compiled container/mem/platform stack.
@@ -296,6 +396,7 @@ file(WRITE "${_time_source}/CMakeLists.txt"
 "set(HYLE_BUILD_BENCH OFF)\n"
 "set(HYLE_INSTALL OFF)\n"
 "add_subdirectory(\"${HYLE_SOURCE_DIR}\" hyle)\n"
+"include(\"${_hyle_direct_public_edge_helper}\")\n"
 "foreach(_required IN ITEMS core error container_intrusive time)\n"
 "  if(NOT TARGET hyle::\${_required})\n"
 "    message(FATAL_ERROR \"missing time-closure target hyle::\${_required}\")\n"
@@ -305,7 +406,8 @@ file(WRITE "${_time_source}/CMakeLists.txt"
 "  if(TARGET hyle::\${_forbidden})\n"
 "    message(FATAL_ERROR \"unexpected time-closure target hyle::\${_forbidden}\")\n"
 "  endif()\n"
-"endforeach()\n")
+"endforeach()\n"
+"hyle_contract_require_direct_public_edge(hyle_time hyle_container_intrusive)\n")
 _hyle_contract_run("time uses lightweight intrusive closure" TRUE
   "${CMAKE_COMMAND}" -S "${_time_source}"
   -B "${_hyle_contract_root}/time-build"
@@ -330,6 +432,7 @@ file(WRITE "${_embed_source}/CMakeLists.txt"
 "set(HYLE_DEPS_DIR \"\${CMAKE_BINARY_DIR}/hyle-dependencies\")\n"
 "set(FETCHCONTENT_BASE_DIR \"\${CMAKE_BINARY_DIR}/parent-dependencies\")\n"
 "add_subdirectory(\"${HYLE_SOURCE_DIR}\" hyle)\n"
+"include(\"${_hyle_direct_public_edge_helper}\")\n"
 "if(NOT FETCHCONTENT_BASE_DIR STREQUAL \"\${CMAKE_BINARY_DIR}/parent-dependencies\")\n"
 "  message(FATAL_ERROR \"HYLE rewrote its embedding parent's FetchContent cache\")\n"
 "endif()\n"
@@ -346,10 +449,52 @@ file(WRITE "${_embed_source}/CMakeLists.txt"
 "  if(TARGET hyle::\${_forbidden})\n"
 "    message(FATAL_ERROR \"unexpected target hyle::\${_forbidden}\")\n"
 "  endif()\n"
-"endforeach()\n")
+"endforeach()\n"
+"hyle_contract_require_direct_public_edge(\n"
+"  hyle_container hyle_container_intrusive)\n")
 _hyle_contract_run("source-embedded component/cache agreement" TRUE
   "${CMAKE_COMMAND}" -S "${_embed_source}"
   -B "${_hyle_contract_root}/embed-build"
+  ${_hyle_generator_args}
+  -DCMAKE_BUILD_TYPE=Release)
+
+# On a host with HYLE's fcontext implementation, io exposes coroutine
+# transport backed by sched/time.  Assert the public edges themselves rather
+# than only the closure derived from the same component manifest.
+set(_transport_source "${_hyle_contract_root}/transport-source")
+file(MAKE_DIRECTORY "${_transport_source}")
+file(WRITE "${_transport_source}/CMakeLists.txt"
+"cmake_minimum_required(VERSION 3.25)\n"
+"project(hyle_transport_component LANGUAGES C CXX)\n"
+"if(APPLE)\n"
+"  set(CMAKE_OSX_DEPLOYMENT_TARGET 14.4 CACHE STRING \"\" FORCE)\n"
+"endif()\n"
+"set(HYLE_COMPONENTS io)\n"
+"set(HYLE_BUILD_TESTS OFF)\n"
+"set(HYLE_BUILD_BENCH OFF)\n"
+"set(HYLE_INSTALL OFF)\n"
+"set(HYLE_IO_TLS OFF)\n"
+"set(HYLE_IO_HTTP2 OFF)\n"
+"set(HYLE_COMPUTE_CUDA OFF)\n"
+"set(HYLE_COMPUTE_GGML OFF)\n"
+"set(HYLE_COMPUTE_VULKAN OFF)\n"
+"add_subdirectory(\"${HYLE_SOURCE_DIR}\" hyle)\n"
+"include(\"${_hyle_direct_public_edge_helper}\")\n"
+"get_directory_property(_hyle_fcontext_supported\n"
+"  DIRECTORY \"\${CMAKE_CURRENT_BINARY_DIR}/hyle\"\n"
+"  DEFINITION HYLE_FCONTEXT_SUPPORTED)\n"
+"if(_hyle_fcontext_supported)\n"
+"  foreach(_required IN ITEMS container_intrusive time sched io)\n"
+"    if(NOT TARGET hyle::\${_required})\n"
+"      message(FATAL_ERROR \"missing transport target hyle::\${_required}\")\n"
+"    endif()\n"
+"  endforeach()\n"
+"  hyle_contract_require_direct_public_edge(hyle_io hyle_time)\n"
+"  hyle_contract_require_direct_public_edge(hyle_io hyle_sched)\n"
+"endif()\n")
+_hyle_contract_run("supported transport direct PUBLIC edges" TRUE
+  "${CMAKE_COMMAND}" -S "${_transport_source}"
+  -B "${_hyle_contract_root}/transport-build"
   ${_hyle_generator_args}
   -DCMAKE_BUILD_TYPE=Release)
 

@@ -50,6 +50,33 @@ def main():
     else:
         raise AssertionError("partial cross-process samples were accepted")
 
+    telemetry_line = (
+        "# HYLE_CONTAINER_INTRUSIVE_RUN formal_only=1 "
+        "execution_order=candidate-first")
+    telemetry_output = telemetry_line + "\nother output\n"
+    if bench_stat.extract_required_child_telemetry(
+            telemetry_output,
+            "# HYLE_CONTAINER_INTRUSIVE_RUN ") != telemetry_line:
+        raise AssertionError("child telemetry extraction changed")
+    encoded_telemetry = bench_stat.format_child_telemetry_record(
+        3, "# HYLE_CONTAINER_INTRUSIVE_RUN ", telemetry_line)
+    if not encoded_telemetry.startswith(bench_stat.CHILD_TELEMETRY_PREFIX):
+        raise AssertionError("structured child telemetry marker missing")
+    decoded_telemetry = json.loads(
+        encoded_telemetry[len(bench_stat.CHILD_TELEMETRY_PREFIX):])
+    if (decoded_telemetry["run"], decoded_telemetry["line"]) != (
+            3, telemetry_line):
+        raise AssertionError("structured child telemetry did not round-trip")
+    for invalid_output in ("no marker", telemetry_line + "\n" + telemetry_line):
+        try:
+            bench_stat.extract_required_child_telemetry(
+                invalid_output, "# HYLE_CONTAINER_INTRUSIVE_RUN ")
+        except ValueError:
+            pass
+        else:
+            raise AssertionError(
+                "missing/duplicate child telemetry was accepted")
+
     if bench_stat.parse_peer_spec("highway=../highway") != (
             "highway", str((pathlib.Path.cwd() / "../highway").resolve())):
         raise AssertionError("NAME=PATH peer parsing changed")

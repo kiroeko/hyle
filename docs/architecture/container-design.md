@@ -67,7 +67,7 @@ Tier 0 dependencies: container_intrusive + core cache geometry +
 
 | 能力 | C++ 源码面 | C/FFI 动态面 | 关键合同 |
 |---|---|---|---|
-| intrusive list | `IntrusiveListHook`、`IntrusiveList<T, &T::hook>` | 不导出 | caller-owned 稳定节点；零分配；单节点/整链 O(1) 重链；外部同步；独立 `container_intrusive` target |
+| intrusive list | [`IntrusiveListHook` / `IntrusiveList<T, &T::hook>`（auto）与 `SafeIntrusiveListHook` / `SafeIntrusiveList<T, &T::hook>`（explicit retirement）](container-intrusive-design.md) | `N/A` | caller-owned 稳定节点；零分配；node→iterator、单节点/整段 O(1) 重链；外部同步；独立 `container_intrusive` target |
 | flat map | `FlatHashMap<K,V>`（实现名 `SwissTable`） | erased POD hash map | C++ 支持 non-trivial ownership 与异构查找；C 面按字节存 POD；ctrl+连续 slots；SIMD group probe |
 | flat set | `FlatHashSet<K>` | erased POD hash set | 真 set API/slot；canonical-key find；只读 key 迭代；C 面不要求 dummy mapped value |
 | sorted flat map / set | `FlatMap<K,V>` / `FlatSet<K>` | 不机械新增 | lookup-heavy/mutation-light；unique-key；连续有序迭代；`sorted_unique` O(N) bulk；位置 mutation O(N) |
@@ -90,21 +90,15 @@ Tier 0 dependencies: container_intrusive + core cache geometry +
 
 ## 独立侵入式容器组件
 
-`<hyle/container/intrusive_list.h>` 与 `hyle::container::{IntrusiveListHook, IntrusiveList}` 由
-`hyle::container_intrusive` 承载。该类型不拥有节点、不分配、不保存 size/owner，也不提供内部
-同步；一个节点按每条同时 membership 嵌入一个 hook，并在 linked 期间保持地址稳定。完整
-`hyle::container` 以 `PUBLIC` 依赖聚合它，因此普通 container 用户无需理解内部 target 拆分。
+侵入式链接由独立的 `hyle::container_intrusive` header-only target 承载，完整
+`hyle::container` 只以 `PUBLIC` 依赖聚合它。它不拥有节点、不分配、不保存 owner/count，也不提供
+内部同步；time 的稳定 timer node 是 safe-link 真实消费者，sched 的 wake-link 状态复用则是保留
+专用结构的反证。
 
-`time` 的公开 `TimerEntry` 与 `TimerList` 直接暴露 hook/list 类型，所以 `time` 同样 `PUBLIC`
-依赖轻量 target，但不依赖完整 container 的 mem/platform 闭包。项目尚未发布，不保留旧
-`hyle::core::IntrusiveList` 名称或 `<hyle/core/intrusive_list.h>` 转发头。当前 target/API/依赖
-归属是正式架构决定；正确性、易用性与性能仍要在 `container_intrusive` 的 v2 轮次重新签署。
-
-当前算法边界为：front/back、push/pop、insert/erase/remove、单节点/整链 splice、append、swap
-和 list move 的重链是 O(1)；iteration、clear、`consume_all`、`for_each` 是 O(n)；
-`move_prefix_to` 是 O(k) 扫描加 O(1) 重链。这些是代码复杂度，不是 SOTA 证书。性能验收必须用
-真实 time/scheduler workload，并和相同 hook ownership、auto-unlink、检查与 teardown 合同的
-Boost.Intrusive/Folly peer 比较。
+Auto/safe member hook、`iterator_to`、range splice、生命周期/iterator 失效矩阵、复杂度、明确
+负空间和 Native FFI=`N/A` 的长期合同统一见
+[`container_intrusive` 架构](container-intrusive-design.md)。本页不复制独立组件的公开 API；该组件
+当前仍是 `CANDIDATE / 复审中`，不能从聚合关系推断已经 `SIGNED`。
 
 ### 成熟库能力对账：仍不冒充“容器全集”
 
@@ -611,8 +605,9 @@ pointer/count 的 `try_append/try_insert/try_resize/erase/try_shrink_to_fit` 覆
 
 - sched 使用 ShardedQueue、WsFifoQueue、WorkStealingDeque 等调度原语。
 - graph/sched 使用 ConcurrentVector 类 append-only 发布结构。
-- time 通过 `hyle::container_intrusive` 使用共享侵入式原语；它不依赖完整 container，因而没有
-  `time -> container -> mem/platform` 的反向闭包。
+- time 直接通过 `hyle::container_intrusive` 使用 safe-link 原语，不经完整 container 取得该能力；
+  sched 因 detached wake-link 复用保留专用链，裁决见
+  [`container-intrusive-design`](container-intrusive-design.md)。
 - 其他模块可使用 `hash_bytes`，但 hash 模块不依赖 `hyle_simd` runtime；≤16B typed key
   走 inline mix，17–128B 使用公开头内的紧凑 multiply stream，较长字节串走库内
   wyhash 与 platform-gated 宽 XXH3。公开头不暴露 vendor 实现头；中等输入内联是产品
@@ -627,8 +622,8 @@ pointer/count 的 `try_append/try_insert/try_resize/erase/try_shrink_to_fit` 覆
   增加常态元数据或 benchmark API；
 - PodVector、SmallVector、bitset、sparse set 与各类队列只和相同 ownership/capacity/concurrency
   合同的 peer 比较；
-- IntrusiveList 同时验证直接容器操作与真实 time/scheduler 消费，且只和相同 hook、auto-unlink、
-  mutation 与 teardown 合同的 peer 比较；
+- 独立 `container_intrusive` 的性能合同与真实消费者验收不由完整 container 的结果代签，见
+  [`container-intrusive-design`](container-intrusive-design.md)；
 - path 的零分配结构优势不能外推为同形 string-view 扫描优势；
 - StringInterner 的逐条、batch、长串增长、可回收生命周期和并发分片必须分别验收；高吞吐
   导入优先 batch，但不能用 batch 隐藏逐条入口的真实代价；

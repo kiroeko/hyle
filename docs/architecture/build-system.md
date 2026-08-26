@@ -72,7 +72,7 @@ simd        -> PUBLIC core error platform
 container   -> PUBLIC core error mem container_intrusive; PRIVATE platform
 util        -> PUBLIC core error mem container util_core
 sched       -> PUBLIC core error platform mem container util_core; PRIVATE time
-io          -> PUBLIC core error mem container; optional sched
+io          -> PUBLIC core error mem container; optional time, sched
 compute     -> PUBLIC core error mem; PRIVATE platform simd; optional sched
 graph       -> PUBLIC core error mem container; PRIVATE util_core; optional sched
 ```
@@ -80,7 +80,9 @@ graph       -> PUBLIC core error mem container; PRIVATE util_core; optional sche
 `PUBLIC` 表示消费者编译或链接本模块时也需要该依赖；`PRIVATE` 表示只服务本模块实现。这里记录的
 是实际 target/link 契约。`container_intrusive` 证明 header-only 能力也应在公开类型穿过模块边界
 时拥有真实 target：`time` 暴露 `TimerList`，故不能把这条边藏成 include-path 偶然可见；完整
-`container` 则公开聚合该轻量目标。
+`container` 则公开聚合该轻量目标。sched 的 waiter 链因 detached wake-link 复用而保留私有特化，
+不伪造一条未直接使用的依赖。支持 fcontext transport 时，io 的公开 timeout/coroutine 头还直接暴露 time 与 sched
+类型，因此二者都是条件成立时的直接 `PUBLIC` 边，不能只依赖 sched 间接带入 time。
 
 Core 的 source contract 不再是 target-neutral 例外。公开头直接 include `<hyle/core/**>` 或
 `<hyle/version.h>` 的组件必须直接声明 `PUBLIC core`，即使 `hyle::core` 是 `INTERFACE`、没有
