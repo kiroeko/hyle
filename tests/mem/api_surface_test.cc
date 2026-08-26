@@ -6,8 +6,6 @@
 #include <span>
 #include <type_traits>
 
-#include "hyle/c/error_helpers.h"
-#include "hyle/c/mem.h"
 #include "hyle/mem/alignment.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/mem/fiber_stack.h"
@@ -169,24 +167,6 @@ TEST(MemApiSurface, PublicCapabilityFamiliesCompileTogether) {
   EXPECT_EQ(kFiberStackDefault, 64u * 1024u);
   EXPECT_EQ(kFiberStackLarge, 256u * 1024u);
   EXPECT_GE(kDefaultAlignment, alignof(void*));
-}
-
-TEST(MemApiSurface, CFactoriesReturnStructuredStatus) {
-  hyle_allocator invalid{};
-  hyle_shared_pool* pool = nullptr;
-  hyle_status status = hyle_shared_pool_create(&pool, invalid, 64, 4, 0);
-  EXPECT_TRUE(hyle_status_is_invalid_argument(status));
-  EXPECT_EQ(pool, nullptr);
-  EXPECT_TRUE(hyle_status_has_message(status));
-  hyle_status_free(&status);
-
-  hyle_huge_region* region = nullptr;
-  status = hyle_huge_region_open(&region, 0, HYLE_HUGE_NONE,
-                                 HYLE_NUMA_ANY);
-  EXPECT_TRUE(hyle_status_is_invalid_argument(status));
-  EXPECT_EQ(region, nullptr);
-  EXPECT_TRUE(hyle_status_has_message(status));
-  hyle_status_free(&status);
 }
 
 // Compile-checked user recipes. Keep these deliberately short and mirrored in

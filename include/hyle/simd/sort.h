@@ -3,8 +3,8 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "hyle/c/simd_types.h"
 #include "hyle/simd/dispatch.h"  // Isa, HYLE_SIMD_API
+#include "hyle/simd/types.h"
 
 // sort.h -- in-place vectorized sort / partial_sort / select (simd-09 line②, "算法级能力").
 // The accelerated path is a HYLE port of Highway's verified vqsort (VQSortStatic /

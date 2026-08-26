@@ -57,8 +57,7 @@ class HYLE_SCHED_API Scheduler {
   Scheduler(unsigned num_workers, mem::Allocator alloc,
             std::size_t queue_capacity, SchedulerOptions options);
   // Recoverable construction path for runtimes that treat allocation or
-  // OS-thread creation failure as an operational error. It may also support a
-  // future task-driven FFI adapter. On failure `status`
+  // OS-thread creation failure as an operational error. On failure `status`
   // is non-OK and valid()==false; the object remains destructible but no other
   // operation may be called. The three-argument convenience constructor keeps
   // the native fail-fast contract and asserts construction succeeded.

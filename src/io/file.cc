@@ -118,7 +118,8 @@ std::int64_t file_stat_sync(std::intptr_t fd,
       info.ftLastWriteTime.dwLowDateTime;
   out->modified_time =
       time::unix_timestamp_from_windows_filetime_ticks(ft);
-  out->is_dir = (info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
+  out->is_directory =
+      (info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
   return 0;
 }
 
@@ -211,7 +212,7 @@ std::int64_t file_stat_sync(std::intptr_t fd,
       static_cast<std::uint32_t>(st.st_mtim.tv_nsec));
 #  endif
   out->mode = static_cast<std::uint32_t>(st.st_mode);
-  out->is_dir = S_ISDIR(st.st_mode);
+  out->is_directory = S_ISDIR(st.st_mode);
   return 0;
 }
 
@@ -331,7 +332,7 @@ bool FileStatOp::await_suspend(std::coroutine_handle<>) noexcept {
 
 bool FileSyncOp::await_suspend(std::coroutine_handle<>) noexcept {
   Proactor& p = io->proactor_for_current();
-  if (p.backend_kind() == HYLE_IO_BACKEND_IO_URING) {
+  if (p.backend_kind() == BackendKind::kIoUring) {
     return submit_and_suspend(op_, submitted_, [&](std::uint64_t token) {
       return p.submit_fsync(fd, datasync, token);
     });
@@ -344,7 +345,7 @@ bool FileSyncOp::await_suspend(std::coroutine_handle<>) noexcept {
 
 bool FileAllocOp::await_suspend(std::coroutine_handle<>) noexcept {
   Proactor& p = io->proactor_for_current();
-  if (p.backend_kind() == HYLE_IO_BACKEND_IO_URING) {
+  if (p.backend_kind() == BackendKind::kIoUring) {
     return submit_and_suspend(op_, submitted_, [&](std::uint64_t token) {
       return p.submit_fallocate(fd, mode, offset, len, token);
     });
@@ -363,7 +364,7 @@ bool File::CloseAwaitable::await_suspend(std::coroutine_handle<>) noexcept {
   Proactor& p = self->io_->proactor_for_current();
   const std::intptr_t fd = self->fd_;
   self->fd_ = -1;
-  if (p.backend_kind() == HYLE_IO_BACKEND_IO_URING) {
+  if (p.backend_kind() == BackendKind::kIoUring) {
     op_.waker = sched::current_waker();
     submitted_ = p.submit_close(fd, to_token(&op_));
     if (!submitted_) {
@@ -385,7 +386,7 @@ bool OpenAwaitable::await_suspend(std::coroutine_handle<>) noexcept {
   HYLE_FATAL_ASSERT(owner < io->num_workers() &&
                     sched::current_worker_index() == static_cast<int>(owner));
   Proactor& p = io->proactor(owner);
-  if (p.backend_kind() == HYLE_IO_BACKEND_IO_URING) {
+  if (p.backend_kind() == BackendKind::kIoUring) {
     return submit_and_suspend(op_, submitted_, [&](std::uint64_t token) {
       return p.submit_open(path, flags, mode, token);
     });

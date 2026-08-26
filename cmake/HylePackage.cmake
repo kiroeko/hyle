@@ -60,14 +60,43 @@ function(hyle_install_package)
             NAMELINK_COMPONENT Hyle_Development
     ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}" COMPONENT Hyle_Development)
 
-  # Install the reviewed public tree as one versioned API surface. Each public
-  # include dependency must still be expressed by its component's imported
-  # target (for example util -> core); installing the full tree must never mask
-  # a missing target edge. Component availability is governed by imported
-  # targets, not by fragile header-copy filtering.
-  install(DIRECTORY "${HYLE_SOURCE_DIR}/include/hyle"
-    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
-    COMPONENT Hyle_Development)
+  # Install exactly the selected component closure. Copying the whole public
+  # tree made a platform-only SDK appear usable even when its target graph had
+  # omitted a direct header dependency. HyleComponents owns the header boundary
+  # for ordinary and split components; its configure-time include audit ensures
+  # every copied cross-component header is backed by a PUBLIC imported edge.
+  set(_hyle_installed_headers "")
+  foreach(_hyle_package_component IN LISTS _hyle_package_components)
+    _hyle_component_public_headers(
+      "${_hyle_package_component}" _hyle_component_headers)
+    list(APPEND _hyle_installed_headers ${_hyle_component_headers})
+  endforeach()
+  # obs/trace.h belongs to the hyle_trace foundation target and is consumed by
+  # TRACE-declaring modules such as mem even when obs is absent. Do not leak it
+  # into a Core-only SDK when no selected module consumes that foundation seam.
+  get_property(_hyle_trace_consumed GLOBAL PROPERTY HYLE_TRACE_CONSUMED)
+  if(_hyle_trace_consumed)
+    list(APPEND _hyle_installed_headers
+      "${HYLE_SOURCE_DIR}/include/hyle/obs/trace.h")
+  endif()
+  list(REMOVE_DUPLICATES _hyle_installed_headers)
+  foreach(_hyle_public_header IN LISTS _hyle_installed_headers)
+    file(RELATIVE_PATH _hyle_public_header_relative
+      "${HYLE_SOURCE_DIR}/include" "${_hyle_public_header}")
+    get_filename_component(_hyle_public_header_directory
+      "${_hyle_public_header_relative}" DIRECTORY)
+    install(FILES "${_hyle_public_header}"
+      DESTINATION
+        "${CMAKE_INSTALL_INCLUDEDIR}/${_hyle_public_header_directory}"
+      COMPONENT Hyle_Development)
+  endforeach()
+  unset(_hyle_component_headers)
+  unset(_hyle_installed_headers)
+  unset(_hyle_package_component)
+  unset(_hyle_public_header)
+  unset(_hyle_public_header_directory)
+  unset(_hyle_public_header_relative)
+  unset(_hyle_trace_consumed)
   install(FILES "${HYLE_SOURCE_DIR}/LICENSE"
     DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/Hyle"
     RENAME HYLE-LICENSE
@@ -83,14 +112,13 @@ function(hyle_install_package)
   set(_hyle_package_dir "${CMAKE_INSTALL_LIBDIR}/cmake/Hyle")
   set(HYLE_PACKAGE_COMPONENTS "${_hyle_package_components}")
   set(HYLE_PACKAGE_STATIC "${HYLE_STATIC}")
-  set(HYLE_PACKAGE_NEEDS_CXX_LINKER "${HYLE_STATIC}")
 
   configure_package_config_file(
     "${HYLE_SOURCE_DIR}/cmake/HyleConfig.cmake.in"
     "${HYLE_BINARY_DIR}/HyleConfig.cmake"
     INSTALL_DESTINATION "${_hyle_package_dir}")
   if(PROJECT_VERSION_MAJOR EQUAL 0)
-    set(_hyle_package_compatibility SameMinorVersion)
+    set(_hyle_package_compatibility ExactVersion)
   else()
     set(_hyle_package_compatibility SameMajorVersion)
   endif()

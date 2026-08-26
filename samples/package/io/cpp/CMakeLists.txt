@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.25)
 project(hyle_package_io_cpp LANGUAGES CXX)
 
-find_package(Hyle 0.1 REQUIRED COMPONENTS io)
+find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS io)
 
 add_executable(hyle_package_io_cpp main.cc)
 target_compile_features(hyle_package_io_cpp PRIVATE cxx_std_23)

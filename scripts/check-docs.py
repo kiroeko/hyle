@@ -211,6 +211,39 @@ def check_retired_ffi_symbol(errors: list[str]) -> None:
                 )
 
 
+def check_retired_product_surface(errors: list[str]) -> None:
+    """Keep the removed public C/managed experiment from regrowing by accident."""
+    forbidden_trees = (
+        REPO_ROOT / "include" / "hyle" / "c",
+        REPO_ROOT / "samples" / "ffi",
+        REPO_ROOT / "samples" / "05_installed_c",
+    )
+    for root in forbidden_trees:
+        if not root.is_dir():
+            continue
+        for path in sorted(item for item in root.rglob("*") if item.is_file()):
+            errors.append(
+                f"{relative_display(path)}: retired public C/managed product surface "
+                "must not be reintroduced without Native FFI admission"
+            )
+
+    package_root = REPO_ROOT / "samples" / "package"
+    if package_root.is_dir():
+        for path in sorted(package_root.glob("*/c/**/*")):
+            if path.is_file():
+                errors.append(
+                    f"{relative_display(path)}: retired C package fixture is forbidden"
+                )
+
+    source_root = REPO_ROOT / "src"
+    if source_root.is_dir():
+        for path in sorted(source_root.glob("*/c_*.cc")):
+            errors.append(
+                f"{relative_display(path)}: retired public C bridge is forbidden; "
+                "internal C/assembly ABI seams must use a purpose-specific name"
+            )
+
+
 def check_relative_links(paths: list[Path], errors: list[str]) -> int:
     checked = 0
     root_resolved = REPO_ROOT.resolve()
@@ -260,6 +293,7 @@ def main() -> int:
     errors: list[str] = []
     check_structure(errors)
     check_retired_ffi_symbol(errors)
+    check_retired_product_surface(errors)
     files = markdown_files()
     links = check_relative_links(files, errors)
 

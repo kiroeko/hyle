@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.25)
-project(hyle_sample_simd LANGUAGES C CXX)
+project(hyle_sample_simd LANGUAGES CXX)
 
 option(HYLE_SAMPLE_SIMD_USE_INSTALLED "Consume an installed HYLE SIMD package" OFF)
 if(HYLE_SAMPLE_SIMD_USE_INSTALLED)
-  find_package(Hyle 0.1 REQUIRED COMPONENTS simd)
+  find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS simd)
 else()
   set(HYLE_BUILD_TESTS OFF)
   set(HYLE_BUILD_BENCH OFF)
@@ -14,12 +14,6 @@ endif()
 add_executable(simd_sample main.cc)
 target_link_libraries(simd_sample PRIVATE hyle::simd)
 hyle_stage_runtime_dependencies(simd_sample)
-
-# Compiler/link hygiene for the old C-shaped FFI candidate. This target is not
-# a native-C customer sample and does not certify Java/.NET direct binding.
-add_executable(simd_c_sample main.c)
-target_link_libraries(simd_c_sample PRIVATE hyle::simd)
-hyle_stage_runtime_dependencies(simd_c_sample)
 
 # OPTIONAL exact target for this consumer TU. Native calls then have no CPUID or function pointer.
 # To bind all ordinary HYLE batch APIs too, also configure HYLE_SIMD_EXACT_TARGET=AVX2.

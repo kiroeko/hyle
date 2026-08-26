@@ -51,7 +51,7 @@ TEST(StringRef, PtrSizeCtorBitHonored) {
 }
 
 TEST(StringRef, Layout16Bytes) {
-  // The C-ABI contract: a string_ref must stay a 16-byte POD across the seam.
+  // The compact view contract: string_ref stays a 16-byte POD.
   EXPECT_EQ(sizeof(string_ref), 16u);
 }
 

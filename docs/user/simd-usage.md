@@ -3,7 +3,8 @@
 > **`provisional / NOT_REVIEWED_V2`。** SIMD 当前只提供 C++ 产品面，可通过完整源码、headers + static libraries 或
 > headers + shared libraries 使用。`hyle/simd/*.h` 中的 whole-buffer 算法供普通 C++ 用户
 > 使用，寄存器 DSL/native 头属于 expert tier；预编译交付遵守其明确的 C++ 工具链合同，
-> 不承诺任意编译器之间的 C++ ABI。本页不描述 C API 或跨语言调用层。
+> 本页适用于 C++23 source/static/shared 三种交付，不承诺任意编译器之间的 C++ ABI，
+> 也不描述 C API 或跨语言调用层。
 
 HYLE SIMD 不要求普通用户认识 300 多个寄存器原语。那些原语主要用于实现 kernel、移植 ISA 和做
 Highway parity。应用通常只应调用处理整段连续数据的语义接口，让预编译库在运行时选择当前 CPU

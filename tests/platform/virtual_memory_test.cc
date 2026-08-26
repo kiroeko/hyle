@@ -304,7 +304,7 @@ TEST(VirtualMemory, SizeRoundingOverflowFails) {
 
 // ---- VmRegion::adopt (C++ side) --------------------------------------------
 // adopt() wraps an existing raw vm_reserve* reservation in a managed region that
-// releases it on destruction. Only the C ABI exercised this before; these cover
+// releases it on destruction. Only the retired adapter exercised this before; these cover
 // the C++ handle directly: take-ownership + use, the NULL guard, move transfer,
 // and that release()/destruction free the adopted block exactly once.
 

@@ -52,8 +52,7 @@ public:
   std::size_t block_size() const noexcept { return block_size_; }
   std::uint32_t capacity() const noexcept { return count_; }
   // False iff a construction-time allocation (slab / link array / heads) hit
-  // OOM. An invalid pool hands out nothing; the C ABI checks this and returns
-  // NULL instead of exposing a dead handle.
+  // OOM. An invalid pool hands out nothing instead of exposing a dead handle.
   bool valid() const noexcept { return valid_; }
 
 protected:

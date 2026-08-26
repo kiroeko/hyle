@@ -31,10 +31,11 @@ cd ~/hyle
 /opt/homebrew/bin/cmake --build --preset macos --parallel 2
 ```
 
-- 默认 `all` + tests + HTTP/2/ggml/Vulkan 形状首次配置会把 googletest、nghttp2、ggml、
-  Vulkan-Headers、volk、glslang 自动拉到 `build-macos/_deps`；关闭对应 component/feature/test 后只取得
-  实际闭包，且每个 build tree 保持自己的 `_deps`。
-- CUDA 显式 OFF，配置不会探测 Toolkit；HYLE 将 ggml 收窄为 CPU-only，不构建未消费的 Metal/BLAS backend。
+- 默认 preset 是 `all` + tests 的 CPU baseline；TLS、HTTP/2、ggml、Vulkan、CUDA 和 trace 都是
+  `OFF`，首次配置只通过 FetchContent 取得 googletest。显式开启 HTTP/2、ggml 或 Vulkan 后才会把
+  对应锁定源码放到 `build-macos/_deps`，且每个 build tree 保持自己的 `_deps`。
+- CUDA 保持 `OFF`，配置不会探测 Toolkit；ggml 默认也不构建。显式开启 ggml 时，macOS 形状是
+  CPU-only，且不构建未消费的 Metal/BLAS backend。
 
 ## 三、测试
 
@@ -112,8 +113,11 @@ Apple 无原生 Vulkan——**MoltenVK 是 Vulkan-over-Metal 的 ICD**（把 Vul
 ```bash
 export PATH=/opt/homebrew/bin:$PATH
 cd ~/hyle
-/opt/homebrew/bin/cmake --build build --target hyle_compute_vulkan_test -j8
-./build/bin/hyle_compute_vulkan_test        # VulkanCompute.SaxpyEndToEnd
+/opt/homebrew/bin/cmake --preset macos -B build-macos-vulkan \
+  -DHYLE_COMPUTE_VULKAN=ON
+/opt/homebrew/bin/cmake --build build-macos-vulkan \
+  --target hyle_compute_vulkan_test --parallel 2
+./build-macos-vulkan/bin/hyle_compute_vulkan_test  # VulkanCompute.SaxpyEndToEnd
 ```
 
 - ⚠️ **loader 找不到 ICD**（vulkaninfo 报 0 device / 测试 SKIP）时，显式指 ICD：

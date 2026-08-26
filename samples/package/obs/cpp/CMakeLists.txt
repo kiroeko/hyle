@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.25)
 project(hyle_package_obs_cpp LANGUAGES CXX)
 
-find_package(Hyle 0.1 REQUIRED COMPONENTS obs)
+find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS obs)
 
 add_executable(hyle_package_obs_cpp main.cc)
 target_link_libraries(hyle_package_obs_cpp PRIVATE hyle::obs)

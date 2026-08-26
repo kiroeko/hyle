@@ -11,23 +11,29 @@ HYLE 支持三种 C++ 产品形状。技术形状与商业许可分开：闭源�
 
 三种形状都面向 C++23。它们不是 Native FFI，也不承诺不同编译器、标准库、runtime、build mode
 之间的 C++ ABI 兼容。预发布阶段应把 HYLE、编译器/stdlib、linkage、ISA/backend 和关键依赖视为
-一个版本化构建合同。
+一个版本化构建合同。早期公开 C schema/bridge 已移除，不能从 shared artifact 的存在推断 C 或
+managed 调用入口。
 
 ## 1. 完整源码
 
 父工程在 `add_subdirectory` 前选择产品根：
 
 ```cmake
-set(HYLE_COMPONENTS "mem;container" CACHE STRING "" FORCE)
-set(HYLE_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-set(HYLE_BUILD_BENCH OFF CACHE BOOL "" FORCE)
+set(HYLE_COMPONENTS "mem;container")
+set(HYLE_BUILD_TESTS OFF)
+set(HYLE_BUILD_BENCH OFF)
 add_subdirectory(path/to/hyle hyle-build)
 
 target_link_libraries(my_app PRIVATE hyle::container)
 ```
 
-`HYLE_COMPONENTS` 是分号或逗号分隔的根组件；省略或设为 `all` 会构建完整产品，显式空值会报错。
-依赖闭包由中央组件图解析，但用户 target 仍只链接实际使用的 `hyle::<module>`。
+`HYLE_COMPONENTS` 是分号或逗号分隔的根组件。HYLE 作为顶层工程时，省略或设为 `all` 会构建
+完整产品；通过 `add_subdirectory()` 嵌入时父工程必须显式设置，防止一次依赖意外构建整库。
+显式空值会报错。依赖闭包由中央组件图解析，但用户 target 仍只链接实际使用的
+`hyle::<module>`。
+
+HYLE 根工程只要求 C++23 编译器；若所选闭包包含 mem，其内部 mimalloc 实现会按需启用 C 编译器。
+这不建立 C 产品 surface，也不要求 core/error 等纯 C++ 闭包安装 C 工具链。
 
 源码接收者需要按 [开发环境](../developer/setup/README.md)准备工具链和依赖。没有网络的环境见
 [离线依赖指南](../developer/setup/offline.md)。不要把本机构建缓存、FetchContent working tree 或
@@ -59,7 +65,9 @@ cmake --install build-sdk-static --config Release
 ```
 
 static package 会通过 imported targets 传播必要的库顺序、公开 compile definitions 和可重定位的
-依赖信息。消费者不应手工枚举 `.a`/`.lib` 或猜依赖顺序。
+依赖信息。安装只包含所选组件闭包拥有的公开头；trace foundation header 也只有闭包存在 trace
+consumer 时才安装，不会复制整棵 HYLE 公开头树。消费者不应手工枚举 `.a`/`.lib`、猜依赖顺序
+或从未安装组件借头。
 
 ## 3. 安装 headers + shared libraries
 
@@ -76,14 +84,15 @@ cmake --install build-sdk-shared --config Release
 
 shared package 仍是 C++ SDK。运行时必须能找到动态库闭包；Linux/macOS 使用正常的 rpath/loader
 策略，Windows consumer 可使用 package 提供的 `hyle_stage_runtime_dependencies()` 把 imported DLL
-闭包复制到 executable 旁。示例见 [`samples/04_prebuilt_lib`](../../samples/04_prebuilt_lib/README.md)。
+闭包复制到 executable 旁。它与 static SDK 使用同一 selected-closure header 规则。示例见
+[`samples/04_prebuilt_lib`](../../samples/04_prebuilt_lib/README.md)。
 
 ## 4. 消费安装包
 
 static 和 shared consumer 的 CMake 写法相同：
 
 ```cmake
-find_package(Hyle 0.1 REQUIRED COMPONENTS mem container)
+find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS mem container)
 target_link_libraries(my_app PRIVATE hyle::container)
 
 if(WIN32)
@@ -96,6 +105,13 @@ endif()
 
 `find_package` 会拒绝不存在或未打包的 component。imported target 负责公开头、C++23 floor、
 传递组件和必要第三方依赖；若用户必须手工补 link/include 参数，应视为 package bug。
+
+预发布 `0.y.z` 包只接受完整精确版本；`find_package(Hyle 0.y.z EXACT ...)` 中 patch 也属于构建
+合同，shared loader identity 同样使用完整版本。1.0 后才按 major compatibility 演进。
+
+IO TLS、HTTP/2、CUDA、ggml、Vulkan 和 trace 等昂贵能力默认关闭，并且只有 owner 组件/gate
+成立时才出现对应 cache 项。需要某项能力时显式开启；当前 trace 只有 Tracy，不存在
+`HYLE_TRACE_BACKEND` 选择项。
 
 ## 5. 配置合同
 

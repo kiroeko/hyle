@@ -11,8 +11,9 @@ C++ 交付形式；shared library 的存在不自动产生稳定 C++ ABI，也�
 无限期延后，直到出现一个已命名的外语消费者、可运行 journey、负责维护的 owner 和明确收益。
 预发布阶段不为旧 C-shaped surface 保留兼容性。
 
-仓库仍有早期 `include/hyle/c/`、`c_*.cc`、符号测试和 sample；它们是待逐模块清理的历史实验，
-不是产品 API，也不是 FFI 证书。入口文档、包 manifest 和版本说明不得把它们宣传为可用能力。
+早期 `include/hyle/c/`、公开 `c_*.cc` bridge、C surface/export fixture 和 managed probe 已从当前
+产品树移除。它们曾是未经消费者验证的历史实验，不是保留 API，也不构成未来 FFI 的设计起点。
+入口文档、包 manifest 和版本说明不得重新把这些名字宣传为可用能力。
 
 ## 为什么不是“把全部 C++ API 导出一遍”
 
@@ -68,4 +69,4 @@ C calling convention 只能解决函数调用和简单布局，不能自动表�
 
 真实消费者出现时建立独立实施任务，从 journey 和威胁模型开始，不复活整套旧 C API。该任务
 必须明确哪些能力导出、哪些仍只属于 C++，并用目标语言从精确 shared-library 路径完成正负
-旅程。未经这次审查，旧符号没有兼容承诺。
+旅程。已删除的旧符号和名称没有兼容或保留承诺。

@@ -39,8 +39,7 @@ public:
   }
 
   // False iff the ctor's slab allocation hit OOM. An invalid StackAllocator
-  // hands out nothing (allocate -> nullptr); the C ABI checks this and returns
-  // NULL.
+  // hands out nothing (allocate -> nullptr).
   bool valid() const noexcept { return base_ != nullptr; }
 
   ~StackAllocator() {

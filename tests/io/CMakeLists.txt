@@ -1,5 +1,4 @@
 hyle_add_test(io SOURCES proactor_test.cc)
-hyle_add_c_test(io c_io_test.c hyle_mem)
 if(WIN32 AND TARGET hyle_io_test)
   # The io test itself calls Winsock directly (WSASocketW/bind/getsockname/... in
   # the IOCP TCP round-trip test), so it needs ws2_32 linked into the test exe.

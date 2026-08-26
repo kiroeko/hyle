@@ -1,6 +1,6 @@
 // container misc bench (task #19 breadth + gap-fill #34/#35): the claim-bearing containers.
 // performance.md 桶A: SmallVector "小 N 省 malloc（大赢）";
-// PodVector = the POD dynamic array (C-ABI-friendly header-before-data).
+// PodVector = the compact POD dynamic array (header-before-data).
 //
 // SOTA rivals (not just std -- "只赢 std 不算价值"):
 //   * SmallVector  -> absl::InlinedVector (THE small-vector SOTA), gated -DHYLE_BENCH_ABSL

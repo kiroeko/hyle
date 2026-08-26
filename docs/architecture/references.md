@@ -31,9 +31,9 @@
 [实现证据](../implementation/evidence/)；这里仅维护“应该读谁、读什么”。参考库的名声、代码量
 或单个 benchmark 结果都不能替代 HYLE 自己的同合同证据。
 
-Native FFI 当前为 `N/A`，不存在 C 或 managed 用户面；旧 C/managed fixture 是待删除历史债，
-不能扩张产品能力。未来只有满足 [Native FFI 准入策略](native-ffi-policy.md)后，才为已命名消费者
-选择并验证相应运行时参考。
+Native FFI 当前为 `N/A`，不存在 C 或 managed 用户面；旧 C/managed fixture 已从当前产品树移除，
+其名称和形状不构成兼容合同。未来只有满足 [Native FFI 准入策略](native-ffi-policy.md)后，才为
+已命名消费者选择并验证相应运行时参考。
 
 ## 按模块映射
 

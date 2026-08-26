@@ -265,8 +265,8 @@ function(_hyle_feature_smoke_shape shape is_static)
   file(MAKE_DIRECTORY "${_consumer_source}")
   file(WRITE "${_consumer_source}/CMakeLists.txt"
 "cmake_minimum_required(VERSION 3.25)\n"
-"project(hyle_locked_feature_consumer LANGUAGES C CXX)\n"
-"find_package(Hyle 0.1 REQUIRED COMPONENTS io compute)\n"
+"project(hyle_locked_feature_consumer LANGUAGES CXX)\n"
+"find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS io compute)\n"
 "if(NOT Hyle_STATIC STREQUAL \"${is_static}\")\n"
 "  message(FATAL_ERROR \"installed linkage mismatch: Hyle_STATIC=\${Hyle_STATIC}\")\n"
 "endif()\n"
@@ -288,37 +288,35 @@ function(_hyle_feature_smoke_shape shape is_static)
 "  endif()\n"
 "endforeach()\n"
 "add_executable(hyle_locked_feature_consumer main.cc)\n"
+"target_compile_features(hyle_locked_feature_consumer PRIVATE cxx_std_23)\n"
 "target_link_libraries(hyle_locked_feature_consumer PRIVATE hyle::io hyle::compute)\n"
 "hyle_stage_runtime_dependencies(hyle_locked_feature_consumer)\n"
 "enable_testing()\n"
 "add_test(NAME hyle_locked_feature_consumer COMMAND hyle_locked_feature_consumer)\n")
   file(WRITE "${_consumer_source}/main.cc"
-"#include <hyle/c/io.h>\n"
+"#include <hyle/io/http2.h>\n"
+"#include <hyle/mem/allocator.h>\n"
 "#include <hyle/compute/device.h>\n"
 "#include <hyle/compute/ggml_bridge.h>\n"
 "#include <cstddef>\n"
 "#include <cstring>\n"
+"#if !defined(HYLE_IO_HTTP2)\n"
+"#error installed io_http2 feature did not propagate its public compile contract\n"
+"#endif\n"
 "int main() {\n"
-"  if (hyle_io_http2_available() != 1) return 1;\n"
-"  hyle_io_http2_session* session = hyle_io_http2_session_create(\n"
-"      hyle_allocator{}, HYLE_IO_HTTP2_CLIENT);\n"
-"  if (session == nullptr || !hyle_io_http2_session_valid(session)) return 2;\n"
-"  const void* settings = nullptr;\n"
-"  const std::size_t settings_size = hyle_io_http2_next_output(session, &settings);\n"
-"  const bool settings_ok = settings_size != static_cast<std::size_t>(-1) &&\n"
-"                           settings_size != 0 && settings != nullptr;\n"
-"  hyle_io_http2_session_destroy(session);\n"
-"  if (!settings_ok) return 3;\n"
+"  hyle::io::Http2ClientConn client(hyle::mem::system_allocator(),\n"
+"                                   hyle::io::TcpStream{});\n"
+"  if (client.valid()) return 1;\n"
 "  hyle::compute::Device devices[32];\n"
 "  const auto count = hyle::compute::enumerate(devices, 32);\n"
-"  if (count == 0 || hyle::compute::enumerate(nullptr, 7) != count) return 4;\n"
+"  if (count == 0 || hyle::compute::enumerate(nullptr, 7) != count) return 2;\n"
 "  const hyle::compute::Device* host = nullptr;\n"
 "  for (std::size_t i = 0; i < count && i < 32; ++i) {\n"
 "    if (std::strcmp(devices[i].backend(), \"host\") == 0) host = &devices[i];\n"
 "  }\n"
-"  if (host == nullptr) return 5;\n"
+"  if (host == nullptr) return 3;\n"
 "  auto backend = hyle::compute::GgmlBackend::create(*host, 1);\n"
-"  if (!backend.has_value() || !backend->valid()) return 6;\n"
+"  if (!backend.has_value() || !backend->valid()) return 4;\n"
 "  return 0;\n"
 "}\n")
 
@@ -355,7 +353,6 @@ function(_hyle_feature_smoke_tracy shape is_static)
     -DHYLE_STATIC=${is_static}
     -DHYLE_WERROR=ON
     -DHYLE_TRACE=ON
-    -DHYLE_TRACE_BACKEND=tracy
     -DHYLE_TRACY_DIR=${_tracy_source}
     -DHYLE_IO_TLS=OFF
     -DHYLE_IO_HTTP2=OFF
@@ -386,7 +383,7 @@ function(_hyle_feature_smoke_tracy shape is_static)
   file(WRITE "${_consumer_source}/CMakeLists.txt"
 "cmake_minimum_required(VERSION 3.25)\n"
 "project(hyle_locked_trace_consumer LANGUAGES CXX)\n"
-"find_package(Hyle 0.1 REQUIRED COMPONENTS obs)\n"
+"find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS obs)\n"
 "if(NOT Hyle_STATIC STREQUAL \"${is_static}\")\n"
 "  message(FATAL_ERROR \"installed trace linkage mismatch: Hyle_STATIC=\${Hyle_STATIC}\")\n"
 "endif()\n"
@@ -403,7 +400,6 @@ function(_hyle_feature_smoke_tracy shape is_static)
 "enable_testing()\n"
 "add_test(NAME hyle_locked_trace_consumer COMMAND hyle_locked_trace_consumer)\n")
   file(WRITE "${_consumer_source}/main.cc"
-"#include <hyle/c/obs.h>\n"
 "#include <hyle/obs/trace.h>\n"
 "#if !defined(HYLE_TRACE) || !defined(HYLE_TRACE_TRACY)\n"
 "#error trace-on package did not propagate its public compile contract\n"
@@ -413,11 +409,10 @@ function(_hyle_feature_smoke_tracy shape is_static)
 "  HYLE_TRACE_ZONE();\n"
 "  HYLE_TRACE_MESSAGE_LITERAL(\"installed Tracy consumer\");\n"
 "  HYLE_TRACE_PLOT(\"installed.value\", value);\n"
+"  HYLE_TRACE_COUNTER(\"installed.counter\", value);\n"
 "  HYLE_TRACE_ALLOC(&value, sizeof(value));\n"
 "  HYLE_TRACE_FREE(&value);\n"
-"  hyle_obs_trace_message(\"installed FFI-candidate trace fixture\");\n"
-"  hyle_obs_trace_counter(\"installed.counter\", value);\n"
-"  return hyle_obs_trace_enabled() == 1 ? 0 : 1;\n"
+"  return 0;\n"
 "}\n")
 
   _hyle_feature_smoke_run("configure locked Tracy ${shape} SDK consumer"

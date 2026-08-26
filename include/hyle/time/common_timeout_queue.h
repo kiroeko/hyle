@@ -89,7 +89,7 @@ class CommonTimeoutQueue {
     ++count_;
   }
 
-  // Non-fatal form for FFI/system boundaries. On an ordering violation a new
+  // Non-fatal form for recoverable system boundaries. On an ordering violation a new
   // entry stays unscheduled and a rescheduled entry preserves its prior arm.
   // Use TimerQueue for mixed/non-monotonic deadlines.
   bool try_schedule(TimerEntry* e, std::uint64_t deadline_ns) noexcept {

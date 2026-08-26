@@ -47,9 +47,10 @@ cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
 cmake --build build
 ```
 
-- 这条默认 `all` + tests + HTTP/2/ggml/Vulkan 命令首次配置会把 googletest、nghttp2、ggml、
-  Vulkan-Headers、volk、glslang 自动拉到 `build/_deps`；关闭对应 component/feature/test 后只取得实际
-  闭包。删除 build 会一并删除，避免跨 toolchain 污染。
+- 这条命令使用默认 `all` + tests，显式开启 CUDA；TLS、HTTP/2、ggml、Vulkan 和 trace 仍保持
+  默认 `OFF`。首次配置只通过 FetchContent 取得 googletest，CUDA Toolkit 由系统安装提供。
+  显式开启 HTTP/2、ggml 或 Vulkan 后才会取得各自的锁定源码。删除 build 会一并删除 `_deps`，
+  避免跨 toolchain 污染。
 - `wsl.exe` 从 Windows 侧驱动的坑：`wsl.exe -e bash -lc '...'` 外层 git-bash 会吃掉 `$VAR`；把逻辑写成 `.sh`（在 WSL 原生 bash 里跑变量才正常）。传 `/mnt/c/x.sh` 路径给 wsl.exe 会被 git-bash 改写 → 用 `wsl.exe -e bash -lc 'bash /root/x.sh'`，脚本直接在 `/root` 用 heredoc 生成、别 cp。
 
 ## 四、测试
@@ -60,7 +61,9 @@ cd /root/hyle
 ctest --test-dir build --output-on-failure   # 全部
 ```
 
-- **GPU 测试**：WSL 有 CUDA 直通（RTX 4070），`hyle_compute_ggml_bridge_test` 真跑零拷贝 matmul。运行前 `export PATH=/usr/local/cuda/bin:$PATH`。
+- **GPU 测试**：WSL 有 CUDA 直通（RTX 4070）。只有配置时另加
+  `-DHYLE_COMPUTE_GGML=ON` 才会生成 `hyle_compute_ggml_bridge_test` 并真跑零拷贝 matmul；运行前
+  `export PATH=/usr/local/cuda/bin:$PATH`。
 
 ## 五、TSan（lock-free / 并发改动必过）
 
@@ -78,7 +81,9 @@ setarch -R ./build-tsan/bin/hyle_sched_test    # -R 关 ASLR，稳定 TSan
   `-fsanitize=thread` 编译；并发压力测试直接使用 shipping
   `system_allocator()`，不再绕到 malloc。旧版的启动断言和回收地址假 race 已在升级复验中消失，
   因此新的 sanitizer 报告不能按历史 KI-2/KI-3 自动忽略，必须按真实缺陷调查。
-- **TSan 用无 CUDA 构建更干净**（CUDA + TSan 不合）：`-DCMAKE_DISABLE_FIND_PACKAGE_CUDAToolkit=ON` 让 ggml 走 CPU-only，TSan 只验 HYLE 的 host 侧协调（spawn_blocking/fiber 唤醒）。
+- **TSan 用无 CUDA 构建更干净**（CUDA + TSan 不合）：显式设置
+  `-DHYLE_COMPUTE_CUDA=OFF`。若该轮还要验证 ggml bridge，再加 `-DHYLE_COMPUTE_GGML=ON`，此时
+  ggml 保持 CPU-only；TSan 只验 HYLE 的 host 侧协调（spawn_blocking/fiber 唤醒）。
 
 ## 六、性能测试（bench）
 
@@ -102,9 +107,11 @@ cmake --build build-bench --target hyle_sched_bench
 
 ## 七、可选依赖
 
-### OpenSSL（零配置）
+### OpenSSL（显式开启 TLS）
 ```bash
-sudo apt install libssl-dev          # 24.04 上 3.0.13，装完重配即启用 TLS
+sudo apt install libssl-dev          # 24.04 上 3.0.13
+CC=gcc-14 CXX=g++-14 cmake --preset linux -B build-linux-tls \
+  -DHYLE_COMPONENTS=io -DHYLE_IO_TLS=ON
 ```
 
 ### CUDA（GPU 后端）

@@ -1,12 +1,8 @@
 # HYLE sched/ 设计
 
 > **V2 状态：`NOT_REVIEWED`。** 本页暂作既有设计输入，不代表当前功能、性能或 API 证书。
-> 当前 Native FFI 为 `N/A`；正文旧 C/FFI surface 与验收叙事待 sched 轮次重写。
-
-> **Native FFI 状态校正（2026-08-25）**：HYLE 没有 native-C 客户。本文关于 C/C++、C/FFI
-> 或 C 用户的旧表述只记录待复审的 ABI surface，不是当前跨语言证书。先从真实外语任务裁决
-> FFI 是否为 `N/A`；只有保留 direct FFI 时，sched 才必须通过 Java FFM + .NET P/Invoke、真实导出、
-> task/callback/close 生命周期与 batch 旅程后冻结。
+> 当前只提供 C++23 source/static/shared，Native FFI 为 `N/A`。BUILD-03 已删除旧 C schema、
+> bridge、动态导出和 fixture；正文的其他验收叙事仍待 sched 轮次重裁决。
 
 > 统一调度器：把「线程 / 进程 / 纤程 / 协程」收敛成一张调度表，是 `io/`、`compute/` completion 机制的共同地基。上游约束见 [`hyle-scope.md`](hyle-scope.md)、[`engineering-charter.md`](../developer/standards/engineering-charter.md)。
 > clay 现状：thread_pool 真实现但单全局锁（长不出统一调度器，须重写），catomics 原子层扎实可继承，fiber 零实现。详见 [`clay-asset-liability.md`](clay-asset-liability.md) 第五节。
@@ -295,14 +291,13 @@ worker 调度循环（2.2）的第 0 步插入"收割 completion"：
 早期章节保留了设计演进。维护生产代码时以本节为当前真相：
 
 ```text
- C++ typed surface                           pure C / FFI surface
- ┌─────────────────────────────┐            ┌─────────────────────────────┐
- │ schedule(fn,ctx)            │            │ hyle_sched_schedule         │
- │ spawn_detached[_on]         │            │ hyle_sched_spawn[_on]       │
- │ spawn_task<T> / JoinHandle  │            │ opaque handles + callbacks  │
- │ sync / channel / cancel     │            │ hyle/c/sched.h (114 funcs)  │
- └──────────────┬──────────────┘            └──────────────┬──────────────┘
-                └────────────────────┬──────────────────────┘
+ C++23 typed source/static/shared
+ ┌─────────────────────────────┐
+ │ schedule(fn,ctx)            │
+ │ spawn_detached[_on]         │
+ │ spawn_task<T> / JoinHandle  │
+ │ sync / channel / cancel     │
+ └──────────────┬──────────────┘
                                      v
                ┌──────────────── admission + lifecycle ────────────────┐
                │ Fiber: closed + count combined CAS state              │
@@ -386,8 +381,7 @@ cache-line、park/unpark 和 fcontext；批量 SIMD 扫队列既改变并发语�
 4. timer/CV 的 waiter 数据必须先完整发布再 arm，notify-vs-timeout 只有一个
    胜者负责 unlink/wake。
 5. `Waker` 每 episode 恰消费一次；外部完成源先发布 Waker，再允许 completion。
-6. C ABI 只能输出 POD/opaque/callback；外部计数/容量错误必须可恢复，不把恶意
-   FFI 输入升级成进程 abort。
+6. Native FFI 保持 `N/A`；普通 sched 修改不得恢复 BUILD-03 已删除的 C schema/bridge。
 
 ## 参考
 

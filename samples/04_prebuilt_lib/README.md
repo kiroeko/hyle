@@ -2,7 +2,8 @@
 
 Samples 01–03 embed HYLE source with `add_subdirectory`; this sample validates the other
 supported assembly path: install HYLE, then consume it through
-`find_package(Hyle COMPONENTS simd mem)` and namespaced imported targets.
+`find_package(Hyle 0.1.0 EXACT COMPONENTS simd mem)` and namespaced imported
+targets. Pre-1.0 package consumption deliberately requires the complete version.
 
 The imported targets carry the public headers, C++23 floor, static/shared visibility
 definition, module dependency closure and mem's private mimalloc backing. The consumer never

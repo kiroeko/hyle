@@ -1,7 +1,7 @@
 // Normal public-entry benchmark for time. The algorithm-only N=4096/rival
 // certificate stays in timer_queue_bench.cc; this executable covers the shapes
 // users actually write: embedded/scattered nodes, incremental event-loop work,
-// schedule_after including its clock read, the opaque C ABI, and sleep latency.
+// schedule_after including its clock read, and sleep latency.
 #include <nanobench.h>
 
 #include <algorithm>
@@ -21,8 +21,6 @@
 #include <pthread.h>
 #endif
 
-#include "hyle/c/error_helpers.h"
-#include "hyle/c/time.h"
 #include "hyle/time/timer_queue.h"
 
 namespace {
@@ -102,51 +100,6 @@ void run_incremental_epoch(TimerQueue& queue,
   base += (entries.size() + 8) * kTickNs;
   nb::doNotOptimizeAway(fired);
   nb::doNotOptimizeAway(cancelled);
-}
-
-void require_ok(hyle_status status) noexcept {
-  if (!hyle_status_is_ok(status)) std::abort();
-  hyle_status_free(&status);
-}
-
-void count_due(hyle_time_timer*, void* context) {
-  ++*static_cast<std::uint64_t*>(context);
-}
-
-struct MutationVisitContext {
-  hyle_time_queue* queue = nullptr;
-  std::array<hyle_time_timer*, 4>* timers = nullptr;
-  hyle_time_timer* rearmed = nullptr;
-  std::uint64_t next_deadline = 0;
-  std::size_t visited = 0;
-  bool mutated = false;
-};
-
-void mutate_due_peers(hyle_time_timer* current, void* context) {
-  auto& state = *static_cast<MutationVisitContext*>(context);
-  ++state.visited;
-  if (state.mutated) return;
-
-  hyle_time_timer* cancel_target = nullptr;
-  hyle_time_timer* rearm_target = nullptr;
-  for (hyle_time_timer* timer : *state.timers) {
-    if (timer == current) continue;
-    if (cancel_target == nullptr) {
-      cancel_target = timer;
-    } else {
-      rearm_target = timer;
-      break;
-    }
-  }
-  if (cancel_target == nullptr || rearm_target == nullptr) std::abort();
-
-  int cancelled = 0;
-  require_ok(hyle_time_queue_cancel(&cancelled, state.queue, cancel_target));
-  if (cancelled != 1) std::abort();
-  require_ok(hyle_time_queue_schedule(state.queue, rearm_target,
-                                      state.next_deadline));
-  state.rearmed = rearm_target;
-  state.mutated = true;
 }
 
 template <class Sleep>
@@ -272,129 +225,6 @@ int main() {
 
   {
     nb::Bench bench = make_bench();
-    bench.title("C ABI normal timer operations")
-        .relative(true)
-        .batch(1)
-        .minEpochIterations(50'000);
-    TimerQueue cpp_queue(0);
-    TimerEntry cpp_entry;
-    hyle_time_queue* c_queue = nullptr;
-    hyle_time_timer* c_timer = nullptr;
-    require_ok(hyle_time_queue_create_at(&c_queue, 0));
-    require_ok(hyle_time_timer_create(&c_timer, nullptr));
-    bench.run("C++ schedule+cancel", [&] {
-      cpp_queue.schedule(&cpp_entry, 1);
-      nb::doNotOptimizeAway(cpp_queue.cancel(&cpp_entry));
-    });
-    bench.run("C ABI schedule+cancel+Status", [&] {
-      require_ok(hyle_time_queue_schedule(c_queue, c_timer, 1));
-      int cancelled = 0;
-      require_ok(hyle_time_queue_cancel(&cancelled, c_queue, c_timer));
-      nb::doNotOptimizeAway(cancelled);
-    });
-    bench.run("C ABI schedule_after clock+cancel+Status", [&] {
-      require_ok(hyle_time_queue_schedule_after(c_queue, c_timer,
-                                                30'000'000'000u));
-      int cancelled = 0;
-      require_ok(hyle_time_queue_cancel(&cancelled, c_queue, c_timer));
-      nb::doNotOptimizeAway(cancelled);
-    });
-    require_ok(hyle_time_timer_destroy(c_timer));
-    require_ok(hyle_time_queue_destroy(c_queue));
-  }
-
-  {
-    nb::Bench bench = make_bench();
-    bench.title("C ABI schedule+advance+visitor")
-        .relative(false)
-        .batch(1)
-        .minEpochIterations(50'000);
-    hyle_time_queue* queue = nullptr;
-    hyle_time_timer* timer = nullptr;
-    require_ok(hyle_time_queue_create_at(&queue, 0));
-    require_ok(hyle_time_timer_create(&timer, nullptr));
-    std::uint64_t now = 0;
-    std::uint64_t visited = 0;
-    bench.run("C ABI fire one timer", [&] {
-      require_ok(hyle_time_queue_schedule(queue, timer, now + 1));
-      std::size_t fired = 0;
-      require_ok(hyle_time_queue_advance(&fired, queue, now + 1, count_due,
-                                         &visited));
-      ++now;
-      nb::doNotOptimizeAway(fired);
-    });
-    nb::doNotOptimizeAway(visited);
-    require_ok(hyle_time_timer_destroy(timer));
-    require_ok(hyle_time_queue_destroy(queue));
-  }
-
-  {
-    // Exercise the real mutation-safe delivery contract: while four timers are
-    // pending in one synchronous batch, the first callback cancels one peer and
-    // rearms another.  A benchmark that only visits one timer cannot detect the
-    // bookkeeping cost or a regression that delivers a suppressed peer.
-    nb::Bench bench = make_bench();
-    bench.title("C ABI mutation-safe timer delivery")
-        .relative(false)
-        .batch(1)
-        .minEpochIterations(20'000);
-    hyle_time_queue* plain_queue = nullptr;
-    hyle_time_queue* mutation_queue = nullptr;
-    std::array<hyle_time_timer*, 4> plain_timers{};
-    std::array<hyle_time_timer*, 4> mutation_timers{};
-    require_ok(hyle_time_queue_create_at(&plain_queue, 0));
-    require_ok(hyle_time_queue_create_at(&mutation_queue, 0));
-    for (std::size_t i = 0; i < plain_timers.size(); ++i) {
-      require_ok(hyle_time_timer_create(&plain_timers[i], nullptr));
-      require_ok(hyle_time_timer_create(&mutation_timers[i], nullptr));
-    }
-    std::uint64_t plain_now = 0;
-    std::uint64_t mutation_now = 0;
-    bench.run("C ABI fire four timers", [&] {
-      for (hyle_time_timer* timer : plain_timers) {
-        require_ok(hyle_time_queue_schedule(plain_queue, timer, plain_now + 1));
-      }
-      std::size_t fired = 0;
-      std::uint64_t visited = 0;
-      require_ok(hyle_time_queue_advance(&fired, plain_queue, plain_now + 1,
-                                         count_due, &visited));
-      if (fired != plain_timers.size() || visited != plain_timers.size()) {
-        std::abort();
-      }
-      ++plain_now;
-      nb::doNotOptimizeAway(fired);
-    });
-    bench.run("C ABI cancel+reschedule pending peers", [&] {
-      for (hyle_time_timer* timer : mutation_timers) {
-        require_ok(
-            hyle_time_queue_schedule(mutation_queue, timer, mutation_now + 1));
-      }
-      MutationVisitContext context{mutation_queue, &mutation_timers, nullptr,
-                                   mutation_now + 2, 0, false};
-      std::size_t fired = 0;
-      require_ok(hyle_time_queue_advance(&fired, mutation_queue,
-                                         mutation_now + 1, mutate_due_peers,
-                                         &context));
-      if (fired != 2 || context.visited != 2 || context.rearmed == nullptr) {
-        std::abort();
-      }
-      int cancelled = 0;
-      require_ok(hyle_time_queue_cancel(&cancelled, mutation_queue,
-                                        context.rearmed));
-      if (cancelled != 1) std::abort();
-      ++mutation_now;
-      nb::doNotOptimizeAway(fired);
-    });
-    for (std::size_t i = 0; i < plain_timers.size(); ++i) {
-      require_ok(hyle_time_timer_destroy(plain_timers[i]));
-      require_ok(hyle_time_timer_destroy(mutation_timers[i]));
-    }
-    require_ok(hyle_time_queue_destroy(plain_queue));
-    require_ok(hyle_time_queue_destroy(mutation_queue));
-  }
-
-  {
-    nb::Bench bench = make_bench();
     bench.title("timer object creation")
         .relative(true)
         .batch(1)
@@ -403,29 +233,6 @@ int main() {
       auto* entry = new TimerEntry();
       nb::doNotOptimizeAway(entry);
       delete entry;
-    });
-    bench.run("C opaque timer create/destroy+Status", [] {
-      hyle_time_timer* timer = nullptr;
-      require_ok(hyle_time_timer_create(&timer, nullptr));
-      nb::doNotOptimizeAway(timer);
-      require_ok(hyle_time_timer_destroy(timer));
-    });
-    const std::size_t storage_size = hyle_time_timer_storage_size();
-    const std::size_t storage_alignment =
-        hyle_time_timer_storage_alignment();
-    std::vector<std::byte> storage(storage_size + storage_alignment - 1);
-    void* storage_ptr = storage.data();
-    std::size_t storage_space = storage.size();
-    if (std::align(storage_alignment, storage_size, storage_ptr,
-                   storage_space) == nullptr) {
-      std::abort();
-    }
-    bench.run("C caller-storage timer init/deinit+Status", [&] {
-      hyle_time_timer* timer = nullptr;
-      require_ok(hyle_time_timer_init(&timer, storage_ptr, storage_size,
-                                      nullptr));
-      nb::doNotOptimizeAway(timer);
-      require_ok(hyle_time_timer_deinit(timer));
     });
   }
 

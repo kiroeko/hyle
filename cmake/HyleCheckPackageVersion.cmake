@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.25)
 
-foreach(_required IN ITEMS HYLE_VERSION_FILE HYLE_EXACT_VERSION HYLE_COMPATIBLE_VERSION
+foreach(_required IN ITEMS HYLE_VERSION_FILE HYLE_EXACT_VERSION
                            HYLE_INCOMPATIBLE_VERSION)
   if(NOT DEFINED ${_required} OR "${${_required}}" STREQUAL "")
     message(FATAL_ERROR "Pass -D${_required}=...")
@@ -42,9 +42,15 @@ function(_hyle_check_version requested expected expected_exact)
 endfunction()
 
 _hyle_check_version("${HYLE_EXACT_VERSION}" TRUE TRUE)
-_hyle_check_version("${HYLE_COMPATIBLE_VERSION}" TRUE FALSE)
+if(DEFINED HYLE_COMPATIBLE_VERSION AND
+   NOT HYLE_COMPATIBLE_VERSION STREQUAL "")
+  _hyle_check_version("${HYLE_COMPATIBLE_VERSION}" TRUE FALSE)
+  set(_hyle_compatible_summary "accepts ${HYLE_COMPATIBLE_VERSION}, ")
+else()
+  set(_hyle_compatible_summary "accepts no non-exact pre-1.0 version, ")
+endif()
 _hyle_check_version("${HYLE_INCOMPATIBLE_VERSION}" FALSE FALSE)
 message(STATUS
   "HYLE package version contract: exact ${HYLE_EXACT_VERSION}, "
-  "accepts ${HYLE_COMPATIBLE_VERSION}, "
+  "${_hyle_compatible_summary}"
   "rejects ${HYLE_INCOMPATIBLE_VERSION}")

@@ -6,8 +6,9 @@
 # mem (Allocator) + container (SmallVector), builds ANYWHERE (no fiber asm needed).
 # step-2 (parallel_eval.cc): PARALLEL evaluate over the sched work-stealing pool -- added
 # only under HYLE_HAS_FCONTEXT (spawn_task/when_all/fiber suspend need sched), exactly as
-# compute's gpu_poller.cc is. Adds hyle_sched to graph's deps only on that path; the
-# serial core stays sched-free.
+# compute's gpu_poller.cc is. The current public graph root exposes Scheduler in
+# parallel headers and therefore always selects sched; a serial-only product
+# would require a future component/header split.
 set(_graph_sources taskgraph.cc)
 
 if(HYLE_HAS_FCONTEXT)

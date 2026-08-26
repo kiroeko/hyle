@@ -1,43 +1,21 @@
 include_guard(GLOBAL)
 
-# Declare the product-shape controls even when io is not selected. This keeps
-# command-line presets and embedding parents able to preconfigure a later io
-# build without causing any dependency discovery by itself.
+# This file is included only when io belongs to the selected component closure,
+# so its product controls do not pollute unrelated caches.
 hyle_auto_feature_option(HYLE_IO_TLS
-  "Build the io TLS capability using OpenSSL")
-set(_hyle_io_http2_default ${HYLE_FCONTEXT_SUPPORTED})
+  "Build the io TLS capability using OpenSSL" DEFAULT OFF)
 option(HYLE_IO_HTTP2 "io-11: HTTP/2 via nghttp2 protocol core"
-  ${_hyle_io_http2_default})
-unset(_hyle_io_http2_default)
+  OFF)
 set(HYLE_IO_TLS_ENABLED OFF)
 
 function(hyle_configure_io_dependencies)
-  # TLS and HTTP/2 are coroutine transports, not capabilities of the standalone
-  # proactor/pre-release FFI stub. Do not fetch or advertise protocol dependencies on a
-  # target where sched cannot be built.  Explicit ON remains a hard contract;
-  # AUTO is the only mode allowed to degrade to the availability=0 candidate.
+  # The current io product root exposes sched types in public headers. A raw
+  # proactor implementation exists, but it is not yet a separately selectable
+  # product component and must not be advertised as one by the build graph.
   if(NOT HYLE_FCONTEXT_SUPPORTED)
-    if(HYLE_IO_HTTP2)
-      message(FATAL_ERROR
-        "HYLE_IO_HTTP2=ON requires sched/fcontext, but HYLE has no fcontext "
-        "assembly for ${CMAKE_SYSTEM_NAME}/${HYLE_TARGET_PROCESSOR}. Select "
-        "HYLE_IO_HTTP2=OFF; the pre-release FFI stub remains available and reports 0.")
-    endif()
-    if(HYLE_IO_TLS STREQUAL "ON")
-      message(FATAL_ERROR
-        "HYLE_IO_TLS=ON requires sched/fcontext, but HYLE has no fcontext "
-        "assembly for ${CMAKE_SYSTEM_NAME}/${HYLE_TARGET_PROCESSOR}. Select "
-        "HYLE_IO_TLS=AUTO/OFF; AUTO keeps the no-TLS candidate surface without "
-        "probing OpenSSL.")
-    endif()
-    if(HYLE_IO_TLS STREQUAL "AUTO")
-      message(STATUS
-        "HYLE: io TLS AUTO -- target has no sched/fcontext; dependency probe skipped")
-    else()
-      message(STATUS "HYLE: io TLS OFF -- dependency probe skipped")
-    endif()
-    set(HYLE_IO_TLS_ENABLED OFF PARENT_SCOPE)
-    return()
+    message(FATAL_ERROR
+      "The io component currently requires sched/fcontext. The standalone "
+      "proactor is not a separately deliverable component.")
   endif()
 
   # AUTO preserves convenient source builds; ON makes TLS part of the requested

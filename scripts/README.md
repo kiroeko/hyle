@@ -35,10 +35,10 @@ native implementation file.
 
 `core`, `container-intrusive`, `util-core`, and `util-runtime` have explicit
 logical boundaries in the script. Other native modules use
-`include/hyle/<module>`, all matching `include/hyle/c/<module>*.h`, and
-`src/<module>`. If a future closure unit does not fit either shape, repeat
-`--module-path REPO_PATH`; the exact override is printed in the report so the
-certificate cannot hide its counting boundary.
+`include/hyle/<module>` and `src/<module>`. The retired public C schema tree is
+not a second module boundary. If a future closure unit does not fit either
+shape, repeat `--module-path REPO_PATH`; the exact override is printed in the
+report so the certificate cannot hide its counting boundary.
 `--self-check` also verifies the fixed core boundary and the expected subset
 relations. `cloc` and Python 3 must be available on `PATH`.
 
@@ -203,11 +203,34 @@ scripts/hyle-windows.ps1 -Action Configure -Preset windows-ninja
 scripts/hyle-windows.ps1 -Action Build -Preset windows-ninja --parallel 2
 scripts/hyle-windows.ps1 -Action Test -Preset windows-ninja --output-on-failure
 scripts/hyle-windows.ps1 -Action ComponentContract -SmokeRoot C:\hyle-scratch\component
+scripts/hyle-windows.ps1 -Action SelectedComponentSmoke `
+  -SmokeRoot C:\hyle-scratch\delivery -Component time
 scripts/hyle-windows.ps1 -Action Workflow -Preset windows-ninja-check
 scripts/hyle-windows.ps1 -Action PackageSmoke -SmokeRoot "$env:TEMP/hyle-package-smoke"
 scripts/hyle-windows.ps1 -Action ProductShapeSmoke -SmokeRoot "$env:TEMP/hyle-shipping-smoke"
 scripts/hyle-windows.ps1 -Action SourcePackageSmoke -SmokeRoot "$env:TEMP/hyle-source-smoke"
 ```
+
+For module work, never share a preset's fixed build tree between agents or
+sessions. Give each checkout task one absolute scratch directory; `-Component`
+is accepted only on the isolated configure step, and Build/Test reuse the same
+cache explicitly:
+
+```powershell
+$scratch = 'C:\hyle-scratch\agent-a-time'
+scripts/hyle-windows.ps1 -Action Configure -Preset windows-ninja `
+  -BinaryDir $scratch -Component time
+scripts/hyle-windows.ps1 -Action Build -BinaryDir $scratch `
+  --target hyle_time_tests --parallel 2
+scripts/hyle-windows.ps1 -Action Test -BinaryDir $scratch `
+  -L time --output-on-failure
+```
+
+The cross-platform equivalent is the standard CMake form
+`cmake --preset <configure-preset> -B <unique-absolute-scratch>
+-DHYLE_COMPONENTS=<root>`, followed by `cmake --build <scratch>` and
+`ctest --test-dir <scratch>`. The wrapper imports the Windows toolchain; it does
+not create a second component graph or delete an existing tree.
 
 The same imported Windows SDK/MSVC ABI environment can drive clang-cl in a separate tree. Install
 Clang 18+ first (for example the Visual Studio **C++ Clang tools for Windows** component) and make
@@ -239,14 +262,14 @@ It installs nothing and does not persistently change the caller's environment. A
 ## Build/package verification automation
 
 `.github/workflows/build-system.yml` runs on every pull request, every push to `main`, and manual
-dispatch. Every event gets the all-component deterministic CPU baseline on Windows/Linux/macOS,
-Linux component/source-embed contracts, Linux production/package/complete-source checks, an
-all-component Linux AArch64 cross build, a selected-module Windows clang-cl strict gate, and one
-Linux locked-feature job for HTTP/2/ggml/Vulkan adapters, static/shared SDKs, and Tracy consumers.
-Windows/macOS production-layout and installed-package checks run only on `main`/manual events; they
-do not repeat complete-source/source-embed. This is a current-graph regression, not an acceptance
-certificate for every module. TLS/CUDA and real Vulkan loader/driver/device matrices remain separate
-periodic/release checks; the hosted workflow does not claim them.
+dispatch. Pull requests and `main` pushes run the high-signal Linux gate: documentation contracts,
+the deterministic all-component CPU build/tests, and component/source-embed contracts. A manual
+dispatch is the explicit full gate: it expands the CPU baseline to Windows and macOS, enables the
+production/package/complete-source checks, and runs Linux AArch64 cross, Windows clang-cl strict,
+and locked-feature jobs for HTTP/2/ggml/Vulkan adapters, static/shared SDKs, and Tracy consumers.
+This is a current-graph regression, not an acceptance certificate for every module. TLS/CUDA and
+real Vulkan loader/driver/device matrices remain separate periodic/release checks; the hosted
+workflow does not claim them.
 
 The three smoke actions above import the selected MSVC environment and keep their work under the
 explicit scratch root. `PackageSmoke` builds shared/static CPU packages and runs focused mem plus

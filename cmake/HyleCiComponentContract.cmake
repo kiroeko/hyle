@@ -59,7 +59,51 @@ function(hyle_contract_require_direct_public_edge consumer dependency)
       "INTERFACE_LINK_LIBRARIES='${_hyle_direct_public_links}'")
   endif()
 endfunction()
+function(hyle_contract_require_direct_private_edge consumer dependency)
+  if(NOT TARGET "${consumer}" OR NOT TARGET "${dependency}")
+    message(FATAL_ERROR
+      "cannot inspect PRIVATE edge '${consumer}' -> '${dependency}'")
+  endif()
+  get_target_property(_hyle_direct_links "${consumer}" LINK_LIBRARIES)
+  set(_hyle_direct_found FALSE)
+  foreach(_hyle_direct_link IN LISTS _hyle_direct_links)
+    if(_hyle_direct_link MATCHES
+       "(^|[^A-Za-z0-9_])${dependency}([^A-Za-z0-9_]|$)")
+      set(_hyle_direct_found TRUE)
+      break()
+    endif()
+  endforeach()
+  if(NOT _hyle_direct_found)
+    message(FATAL_ERROR
+      "target '${consumer}' has no direct PRIVATE edge to '${dependency}'; "
+      "LINK_LIBRARIES='${_hyle_direct_links}'")
+  endif()
+endfunction()
 ]=])
+
+# A tri-state supplied by an embedding parent as a normal boolean variable must
+# be canonicalized in both the real directory scope and the displayed cache.
+set(_feature_normal_source
+  "${_hyle_contract_root}/feature-normal-source")
+file(MAKE_DIRECTORY "${_feature_normal_source}")
+file(WRITE "${_feature_normal_source}/CMakeLists.txt"
+"cmake_minimum_required(VERSION 3.25)\n"
+"project(hyle_feature_normal_contract LANGUAGES NONE)\n"
+"list(APPEND CMAKE_MODULE_PATH \"${HYLE_SOURCE_DIR}/cmake\")\n"
+"set(HYLE_CONTRACT_FEATURE TRUE)\n"
+"include(HyleFeatureOption)\n"
+"hyle_auto_feature_option(HYLE_CONTRACT_FEATURE \"contract\" DEFAULT OFF)\n"
+"if(NOT HYLE_CONTRACT_FEATURE STREQUAL \"ON\")\n"
+"  message(FATAL_ERROR \"normal value was not canonicalized: '\${HYLE_CONTRACT_FEATURE}'\")\n"
+"endif()\n"
+"get_property(_cached CACHE HYLE_CONTRACT_FEATURE PROPERTY VALUE)\n"
+"if(NOT _cached STREQUAL \"ON\")\n"
+"  message(FATAL_ERROR \"cache value was not canonicalized: '\${_cached}'\")\n"
+"endif()\n")
+_hyle_contract_run("normal-variable tri-state canonicalization" TRUE
+  "${CMAKE_COMMAND}" -S "${_feature_normal_source}"
+  -B "${_hyle_contract_root}/feature-normal-build"
+  ${_hyle_generator_args})
 
 # An explicitly empty -D value is almost always a lost shell/CI variable.  The
 # ordinary unspecified default remains `all`, but explicit empty must fail.
@@ -78,6 +122,26 @@ if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES "HYLE_COMPONENTS is explicitly empty")
     "${HYLE_CONTRACT_LAST_OUTPUT}")
 endif()
 
+# A source-embedding parent owns product assembly and must name its roots. An
+# omitted subproject option must not silently compile the complete library.
+set(_implicit_all_source "${_hyle_contract_root}/implicit-all-source")
+file(MAKE_DIRECTORY "${_implicit_all_source}")
+file(WRITE "${_implicit_all_source}/CMakeLists.txt"
+"cmake_minimum_required(VERSION 3.25)\n"
+"project(hyle_implicit_all_contract LANGUAGES CXX)\n"
+"add_subdirectory(\"${HYLE_SOURCE_DIR}\" hyle)\n")
+_hyle_contract_run("embedding parent omits component roots" FALSE
+  "${CMAKE_COMMAND}" -S "${_implicit_all_source}"
+  -B "${_hyle_contract_root}/implicit-all-build"
+  ${_hyle_generator_args}
+  -DCMAKE_BUILD_TYPE=Release)
+if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES
+   "embedding parent must set HYLE_COMPONENTS")
+  message(FATAL_ERROR
+    "omitted embedding roots failed for the wrong reason:\n"
+    "${HYLE_CONTRACT_LAST_OUTPUT}")
+endif()
+
 # A cross-cutting feature cannot silently become a second product root. Core
 # has no trace sites, so requesting trace with a Core-only closure must fail
 # before configuring or registering a profiler backend.
@@ -93,7 +157,7 @@ _hyle_contract_run("Core rejects unconsumed trace feature" FALSE
   -DHYLE_IO_TLS=OFF
   -DHYLE_COMPUTE_CUDA=OFF)
 if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES
-   "selected component closure has no target")
+   "selected component closure has no trace-aware")
   message(FATAL_ERROR
     "Core-only trace request failed for the wrong reason:\n"
     "${HYLE_CONTRACT_LAST_OUTPUT}")
@@ -105,7 +169,7 @@ set(_core_source "${_hyle_contract_root}/core-source")
 file(MAKE_DIRECTORY "${_core_source}")
 file(WRITE "${_core_source}/CMakeLists.txt"
 "cmake_minimum_required(VERSION 3.25)\n"
-"project(hyle_core_component LANGUAGES C CXX)\n"
+"project(hyle_core_component LANGUAGES CXX)\n"
 "set(HYLE_COMPONENTS core)\n"
 "set(HYLE_BUILD_TESTS OFF)\n"
 "set(HYLE_BUILD_BENCH OFF)\n"
@@ -130,8 +194,12 @@ file(WRITE "${_core_source}/CMakeLists.txt"
 "    message(FATAL_ERROR \"unexpected target hyle::\${_forbidden}\")\n"
 "  endif()\n"
 "endforeach()\n"
+"if(TARGET hyle_simd_vec_headers)\n"
+"  message(FATAL_ERROR \"Core-only closure leaked container's build-only SIMD header seam\")\n"
+"endif()\n"
 "add_executable(hyle_core_source_consumer\n"
 "  \"${HYLE_SOURCE_DIR}/samples/package/core/cpp/main.cc\")\n"
+"target_compile_features(hyle_core_source_consumer PRIVATE cxx_std_23)\n"
 "target_link_libraries(hyle_core_source_consumer PRIVATE hyle::core)\n"
 "enable_testing()\n"
 "add_test(NAME hyle_core_source_consumer COMMAND hyle_core_source_consumer)\n")
@@ -146,6 +214,31 @@ _hyle_contract_run("build standalone Core source consumer" TRUE
 _hyle_contract_run("run standalone Core source consumer" TRUE
   "${CMAKE_CTEST_COMMAND}" --test-dir "${_hyle_contract_root}/core-build"
   -C Release --output-on-failure)
+
+# Benchmark peer switches are owned by the selected benchmark consumers. A
+# Core-only benchmark build has a real integration/control runner, but no TBB
+# or Abseil comparison target and therefore must not advertise either switch.
+set(_core_bench_source "${_hyle_contract_root}/core-bench-source")
+file(MAKE_DIRECTORY "${_core_bench_source}")
+file(WRITE "${_core_bench_source}/CMakeLists.txt"
+"cmake_minimum_required(VERSION 3.25)\n"
+"project(hyle_core_bench_owner_contract LANGUAGES CXX)\n"
+"set(HYLE_COMPONENTS core)\n"
+"set(HYLE_BUILD_TESTS OFF)\n"
+"set(HYLE_BUILD_BENCH ON)\n"
+"set(HYLE_INSTALL OFF)\n"
+"add_subdirectory(\"${HYLE_SOURCE_DIR}\" hyle)\n"
+"foreach(_peer IN ITEMS HYLE_BENCH_TBB HYLE_BENCH_ABSL)\n"
+"  get_property(_peer_type CACHE \${_peer} PROPERTY TYPE)\n"
+"  if(_peer_type)\n"
+"    message(FATAL_ERROR \"Core-only benchmark cache leaked \${_peer}\")\n"
+"  endif()\n"
+"endforeach()\n")
+_hyle_contract_run("Core benchmark peer options are owner-scoped" TRUE
+  "${CMAKE_COMMAND}" -S "${_core_bench_source}"
+  -B "${_hyle_contract_root}/core-bench-build"
+  ${_hyle_generator_args}
+  -DCMAKE_BUILD_TYPE=Release)
 
 foreach(_core_linkage IN ITEMS shared static)
   if(_core_linkage STREQUAL "static")
@@ -181,6 +274,14 @@ foreach(_core_linkage IN ITEMS shared static)
       "could not relocate isolated ${_core_linkage} Core SDK: "
       "${_core_relocate_result}")
   endif()
+  foreach(_core_unselected_header IN ITEMS
+          "hyle/obs/trace.h" "hyle/mem/allocator.h" "hyle/time/clock.h")
+    if(EXISTS "${_core_sdk_prefix}/include/${_core_unselected_header}")
+      message(FATAL_ERROR
+        "isolated ${_core_linkage} Core SDK leaked unselected header "
+        "${_core_unselected_header}")
+    endif()
+  endforeach()
   file(GLOB_RECURSE _core_binary_artifacts LIST_DIRECTORIES FALSE
     "${_core_sdk_prefix}/*.a"
     "${_core_sdk_prefix}/*.dll"
@@ -217,6 +318,7 @@ unset(_core_sdk_prefix)
 unset(_core_sdk_staging_prefix)
 unset(_core_relocate_result)
 unset(_core_static)
+unset(_core_unselected_header)
 
 # A caller that wants only the allocation-free intrusive container gets Core's
 # header-only source contracts as its sole dependency and no compiled HYLE
@@ -227,7 +329,7 @@ set(_intrusive_source "${_hyle_contract_root}/intrusive-source")
 file(MAKE_DIRECTORY "${_intrusive_source}")
 file(WRITE "${_intrusive_source}/CMakeLists.txt"
 "cmake_minimum_required(VERSION 3.25)\n"
-"project(hyle_intrusive_component LANGUAGES C CXX)\n"
+"project(hyle_intrusive_component LANGUAGES CXX)\n"
 "set(HYLE_COMPONENTS container_intrusive)\n"
 "set(HYLE_BUILD_TESTS OFF)\n"
 "set(HYLE_BUILD_BENCH OFF)\n"
@@ -254,6 +356,8 @@ file(WRITE "${_intrusive_source}/CMakeLists.txt"
 "endforeach()\n"
 "add_executable(hyle_container_intrusive_source_consumer\n"
 "  \"${HYLE_SOURCE_DIR}/samples/package/container_intrusive/cpp/main.cc\")\n"
+"target_compile_features(\n"
+"  hyle_container_intrusive_source_consumer PRIVATE cxx_std_23)\n"
 "target_link_libraries(hyle_container_intrusive_source_consumer\n"
 "  PRIVATE hyle::container_intrusive)\n"
 "enable_testing()\n"
@@ -284,7 +388,7 @@ file(MAKE_DIRECTORY "${_intrusive_installed_consumer}")
 file(WRITE "${_intrusive_installed_consumer}/CMakeLists.txt"
 "cmake_minimum_required(VERSION 3.25)\n"
 "project(hyle_intrusive_installed_consumer LANGUAGES CXX)\n"
-"find_package(Hyle 0.1 REQUIRED COMPONENTS container_intrusive)\n"
+"find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS container_intrusive)\n"
 "include(\"${_hyle_direct_public_edge_helper}\")\n"
 "foreach(_required IN ITEMS core container_intrusive)\n"
 "  if(NOT TARGET hyle::\${_required})\n"
@@ -300,6 +404,8 @@ file(WRITE "${_intrusive_installed_consumer}/CMakeLists.txt"
 "endforeach()\n"
 "add_executable(hyle_container_intrusive_installed_consumer\n"
 "  \"${HYLE_SOURCE_DIR}/samples/package/container_intrusive/cpp/main.cc\")\n"
+"target_compile_features(\n"
+"  hyle_container_intrusive_installed_consumer PRIVATE cxx_std_23)\n"
 "target_link_libraries(hyle_container_intrusive_installed_consumer\n"
 "  PRIVATE hyle::container_intrusive)\n"
 "enable_testing()\n"
@@ -390,14 +496,14 @@ set(_time_source "${_hyle_contract_root}/time-source")
 file(MAKE_DIRECTORY "${_time_source}")
 file(WRITE "${_time_source}/CMakeLists.txt"
 "cmake_minimum_required(VERSION 3.25)\n"
-"project(hyle_time_component LANGUAGES C CXX)\n"
+"project(hyle_time_component LANGUAGES CXX)\n"
 "set(HYLE_COMPONENTS time)\n"
 "set(HYLE_BUILD_TESTS OFF)\n"
 "set(HYLE_BUILD_BENCH OFF)\n"
 "set(HYLE_INSTALL OFF)\n"
 "add_subdirectory(\"${HYLE_SOURCE_DIR}\" hyle)\n"
 "include(\"${_hyle_direct_public_edge_helper}\")\n"
-"foreach(_required IN ITEMS core error container_intrusive time)\n"
+"foreach(_required IN ITEMS core container_intrusive time)\n"
 "  if(NOT TARGET hyle::\${_required})\n"
 "    message(FATAL_ERROR \"missing time-closure target hyle::\${_required}\")\n"
 "  endif()\n"
@@ -420,7 +526,7 @@ set(_embed_source "${_hyle_contract_root}/embed-source")
 file(MAKE_DIRECTORY "${_embed_source}")
 file(WRITE "${_embed_source}/CMakeLists.txt"
 "cmake_minimum_required(VERSION 3.25)\n"
-"project(hyle_component_embed LANGUAGES C CXX)\n"
+"project(hyle_component_embed LANGUAGES CXX)\n"
 "if(APPLE)\n"
 "  set(CMAKE_OSX_DEPLOYMENT_TARGET 14.4 CACHE STRING \"\" FORCE)\n"
 "endif()\n"
@@ -429,6 +535,7 @@ file(WRITE "${_embed_source}/CMakeLists.txt"
 "set(HYLE_BUILD_BENCH OFF)\n"
 "set(HYLE_IO_TLS OFF)\n"
 "set(HYLE_COMPUTE_CUDA OFF)\n"
+"set(HYLE_SANITIZER NONE)\n"
 "set(HYLE_DEPS_DIR \"\${CMAKE_BINARY_DIR}/hyle-dependencies\")\n"
 "set(FETCHCONTENT_BASE_DIR \"\${CMAKE_BINARY_DIR}/parent-dependencies\")\n"
 "add_subdirectory(\"${HYLE_SOURCE_DIR}\" hyle)\n"
@@ -440,7 +547,18 @@ file(WRITE "${_embed_source}/CMakeLists.txt"
 "if(NOT _cached STREQUAL \"container\")\n"
 "  message(FATAL_ERROR \"cache says '\${_cached}', expected container\")\n"
 "endif()\n"
-"foreach(_required IN ITEMS core error platform mem container_intrusive container)\n"
+"get_property(_deps_cached CACHE HYLE_DEPS_DIR PROPERTY VALUE)\n"
+"get_directory_property(_deps_effective DIRECTORY \"\${CMAKE_CURRENT_BINARY_DIR}/hyle\" DEFINITION HYLE_DEPS_DIR)\n"
+"if(NOT _deps_cached STREQUAL \"\${CMAKE_BINARY_DIR}/hyle-dependencies\" OR\n"
+"   NOT _deps_effective STREQUAL \"\${CMAKE_BINARY_DIR}/hyle-dependencies\")\n"
+"  message(FATAL_ERROR \"HYLE_DEPS_DIR cache/effective split: cache='\${_deps_cached}', effective='\${_deps_effective}'\")\n"
+"endif()\n"
+"get_property(_sanitizer_cached CACHE HYLE_SANITIZER PROPERTY VALUE)\n"
+"get_directory_property(_sanitizer_effective DIRECTORY \"\${CMAKE_CURRENT_BINARY_DIR}/hyle\" DEFINITION HYLE_SANITIZER)\n"
+"if(NOT _sanitizer_cached STREQUAL \"off\" OR NOT _sanitizer_effective STREQUAL \"off\")\n"
+"  message(FATAL_ERROR \"HYLE_SANITIZER cache/effective split: cache='\${_sanitizer_cached}', effective='\${_sanitizer_effective}'\")\n"
+"endif()\n"
+"foreach(_required IN ITEMS core error container_intrusive time platform util_core mem container)\n"
 "  if(NOT TARGET hyle::\${_required})\n"
 "    message(FATAL_ERROR \"missing selected-closure target hyle::\${_required}\")\n"
 "  endif()\n"
@@ -450,11 +568,37 @@ file(WRITE "${_embed_source}/CMakeLists.txt"
 "    message(FATAL_ERROR \"unexpected target hyle::\${_forbidden}\")\n"
 "  endif()\n"
 "endforeach()\n"
-"hyle_contract_require_direct_public_edge(\n"
-"  hyle_container hyle_container_intrusive)\n")
+"hyle_contract_require_direct_public_edge(hyle_container hyle_core)\n"
+"hyle_contract_require_direct_public_edge(hyle_container hyle_mem)\n"
+"hyle_contract_require_direct_private_edge(hyle_container hyle_simd_vec_headers)\n")
 _hyle_contract_run("source-embedded component/cache agreement" TRUE
   "${CMAKE_COMMAND}" -S "${_embed_source}"
   -B "${_hyle_contract_root}/embed-build"
+  ${_hyle_generator_args}
+  -DCMAKE_BUILD_TYPE=Release)
+
+# Exact-ISA spelling is one shared input to SIMD codegen and optional GGML
+# configuration. Normalize a parent normal variable once so those consumers
+# cannot silently interpret lowercase values differently.
+set(_simd_exact_source "${_hyle_contract_root}/simd-exact-source")
+file(MAKE_DIRECTORY "${_simd_exact_source}")
+file(WRITE "${_simd_exact_source}/CMakeLists.txt"
+"cmake_minimum_required(VERSION 3.25)\n"
+"project(hyle_simd_exact_contract LANGUAGES CXX)\n"
+"set(HYLE_COMPONENTS simd)\n"
+"set(HYLE_BUILD_TESTS OFF)\n"
+"set(HYLE_BUILD_BENCH OFF)\n"
+"set(HYLE_INSTALL OFF)\n"
+"set(HYLE_SIMD_EXACT_TARGET scalar)\n"
+"add_subdirectory(\"${HYLE_SOURCE_DIR}\" hyle)\n"
+"get_property(_exact_cached CACHE HYLE_SIMD_EXACT_TARGET PROPERTY VALUE)\n"
+"get_directory_property(_exact_effective DIRECTORY \"\${CMAKE_CURRENT_BINARY_DIR}/hyle\" DEFINITION HYLE_SIMD_EXACT_TARGET)\n"
+"if(NOT _exact_cached STREQUAL \"SCALAR\" OR NOT _exact_effective STREQUAL \"SCALAR\")\n"
+"  message(FATAL_ERROR \"SIMD exact target cache/effective split: cache='\${_exact_cached}', effective='\${_exact_effective}'\")\n"
+"endif()\n")
+_hyle_contract_run("SIMD exact target canonicalization" TRUE
+  "${CMAKE_COMMAND}" -S "${_simd_exact_source}"
+  -B "${_hyle_contract_root}/simd-exact-build"
   ${_hyle_generator_args}
   -DCMAKE_BUILD_TYPE=Release)
 
@@ -465,7 +609,7 @@ set(_transport_source "${_hyle_contract_root}/transport-source")
 file(MAKE_DIRECTORY "${_transport_source}")
 file(WRITE "${_transport_source}/CMakeLists.txt"
 "cmake_minimum_required(VERSION 3.25)\n"
-"project(hyle_transport_component LANGUAGES C CXX)\n"
+"project(hyle_transport_component LANGUAGES CXX)\n"
 "if(APPLE)\n"
 "  set(CMAKE_OSX_DEPLOYMENT_TARGET 14.4 CACHE STRING \"\" FORCE)\n"
 "endif()\n"
@@ -483,15 +627,16 @@ file(WRITE "${_transport_source}/CMakeLists.txt"
 "get_directory_property(_hyle_fcontext_supported\n"
 "  DIRECTORY \"\${CMAKE_CURRENT_BINARY_DIR}/hyle\"\n"
 "  DEFINITION HYLE_FCONTEXT_SUPPORTED)\n"
-"if(_hyle_fcontext_supported)\n"
-"  foreach(_required IN ITEMS container_intrusive time sched io)\n"
-"    if(NOT TARGET hyle::\${_required})\n"
-"      message(FATAL_ERROR \"missing transport target hyle::\${_required}\")\n"
-"    endif()\n"
-"  endforeach()\n"
-"  hyle_contract_require_direct_public_edge(hyle_io hyle_time)\n"
-"  hyle_contract_require_direct_public_edge(hyle_io hyle_sched)\n"
-"endif()\n")
+"if(NOT _hyle_fcontext_supported)\n"
+"  message(FATAL_ERROR \"test host unexpectedly lacks supported fcontext\")\n"
+"endif()\n"
+"foreach(_required IN ITEMS container_intrusive time sched io)\n"
+"  if(NOT TARGET hyle::\${_required})\n"
+"    message(FATAL_ERROR \"missing transport target hyle::\${_required}\")\n"
+"  endif()\n"
+"endforeach()\n"
+"hyle_contract_require_direct_public_edge(hyle_io hyle_time)\n"
+"hyle_contract_require_direct_public_edge(hyle_io hyle_sched)\n")
 _hyle_contract_run("supported transport direct PUBLIC edges" TRUE
   "${CMAKE_COMMAND}" -S "${_transport_source}"
   -B "${_hyle_contract_root}/transport-build"
@@ -574,7 +719,7 @@ file(WRITE "${_first_declare_source}/CMakeLists.txt"
 "project(not_locked_googletest LANGUAGES NONE)\n")
 file(WRITE "${_first_declare_parent}/CMakeLists.txt"
 "cmake_minimum_required(VERSION 3.25)\n"
-"project(hyle_fetchcontent_first_declare LANGUAGES C CXX)\n"
+"project(hyle_fetchcontent_first_declare LANGUAGES CXX)\n"
 "include(FetchContent)\n"
 "FetchContent_Declare(googletest SOURCE_DIR \"${_first_declare_source}\")\n"
 "set(HYLE_COMPONENTS core)\n"
@@ -598,6 +743,31 @@ if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES
     "FetchContent first-declaration bypass failed for the wrong reason:\n"
     "${HYLE_CONTRACT_LAST_OUTPUT}")
 endif()
+
+# A source-embedding parent may already own the canonical GoogleTest target.
+# HYLE must reuse it instead of populating a second project whose unnamespaced
+# gtest/gtest_main targets collide with the parent's copy.
+set(_parent_gtest_source
+  "${_hyle_contract_root}/parent-gtest-source")
+file(MAKE_DIRECTORY "${_parent_gtest_source}")
+file(WRITE "${_parent_gtest_source}/CMakeLists.txt"
+"cmake_minimum_required(VERSION 3.25)\n"
+"project(hyle_parent_gtest_contract LANGUAGES CXX)\n"
+"add_library(parent_gtest_main INTERFACE)\n"
+"add_library(GTest::gtest_main ALIAS parent_gtest_main)\n"
+"set(HYLE_COMPONENTS core)\n"
+"set(HYLE_BUILD_TESTS ON)\n"
+"set(HYLE_BUILD_BENCH OFF)\n"
+"set(HYLE_INSTALL OFF)\n"
+"add_subdirectory(\"${HYLE_SOURCE_DIR}\" hyle)\n"
+"if(TARGET gtest OR TARGET gtest_main)\n"
+"  message(FATAL_ERROR \"HYLE populated a second GoogleTest target set\")\n"
+"endif()\n")
+_hyle_contract_run("reuse parent-provided GoogleTest target" TRUE
+  "${CMAKE_COMMAND}" -S "${_parent_gtest_source}"
+  -B "${_hyle_contract_root}/parent-gtest-build"
+  ${_hyle_generator_args}
+  -DCMAKE_BUILD_TYPE=Release)
 
 # Lock projection must not require an unused in-tree snapshot.  A selected
 # dependency and the complete-audit script entry point must still fail closed.
@@ -914,6 +1084,14 @@ file(WRITE "${_fake_gtest_source}/LICENSE" "fixture license\n")
 file(WRITE "${_fake_gtest_source}/CMakeLists.txt"
 "cmake_minimum_required(VERSION 3.25)\n"
 "project(fake_googletest LANGUAGES CXX)\n"
+"option(BUILD_GMOCK \"fixture gmock switch\" ON)\n"
+"option(INSTALL_GTEST \"fixture install switch\" ON)\n"
+"option(GTEST_HAS_ABSL \"fixture Abseil switch\" ON)\n"
+"option(gtest_build_samples \"fixture sample switch\" ON)\n"
+"option(gtest_build_tests \"fixture self-test switch\" ON)\n"
+"if(BUILD_GMOCK OR INSTALL_GTEST OR GTEST_HAS_ABSL OR gtest_build_samples OR gtest_build_tests)\n"
+"  message(FATAL_ERROR \"HYLE did not suppress GoogleTest optional products\")\n"
+"endif()\n"
 "add_library(gtest INTERFACE)\n"
 "add_library(GTest::gtest ALIAS gtest)\n"
 "add_library(gtest_main INTERFACE)\n"
@@ -967,6 +1145,19 @@ endif()
 if(IS_DIRECTORY "${_error_test_build}/_deps")
   message(FATAL_ERROR
     "error-only tests leaked FetchContent state into '${_error_test_build}/_deps'")
+endif()
+file(STRINGS "${_error_test_build}/CMakeCache.txt" _gtest_cache_leaks
+  REGEX "^(BUILD_GMOCK|INSTALL_GTEST|GTEST_HAS_ABSL|gtest_build_samples|gtest_build_tests):")
+if(_gtest_cache_leaks)
+  message(FATAL_ERROR
+    "GoogleTest implementation options leaked into HYLE cache: ${_gtest_cache_leaks}")
+endif()
+file(STRINGS "${_error_test_build}/CMakeCache.txt" _instrumentation_default
+  REGEX "^HYLE_TEST_INSTRUMENTATION:BOOL=")
+if(NOT _instrumentation_default STREQUAL
+   "HYLE_TEST_INSTRUMENTATION:BOOL=OFF")
+  message(FATAL_ERROR
+    "HYLE_TEST_INSTRUMENTATION default is not OFF: ${_instrumentation_default}")
 endif()
 
 message(STATUS "HYLE component contracts passed")

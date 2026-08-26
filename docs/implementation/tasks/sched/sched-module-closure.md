@@ -164,7 +164,7 @@ Highway pool 会丢失这些能力，也会制造第二套线程所有权。
 
 实现：
 
-- 纯 C 头 [`hyle/c/sched.h`](../../../../include/hyle/c/sched.h)；
+- 纯 C 头 `hyle/c/sched.h`（该历史 schema 已在 BUILD-03 删除）；
 - 单一 `.cc` 类型擦除层；
 - 纯 C 编译/链接测试；
 - 用户指南 [`c-sched.md`](../../../architecture/native-ffi-policy.md)。

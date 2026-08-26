@@ -16,8 +16,8 @@
 | error | QUEUED | — | — | — | — | 现有实现与历史审查只作输入。 |
 | obs | QUEUED | — | — | — | — | 现有实现与历史审查只作输入。 |
 | math | QUEUED | — | — | — | — | 现有实现只作输入；尚需裁决与 SIMD 的边界。 |
-| platform | QUEUED | — | — | — | — | 现有实现与历史审查只作输入。 |
 | time | QUEUED | — | — | — | — | 现有实现与历史审查只作输入。 |
+| platform | QUEUED | — | — | — | — | 现有实现与历史审查只作输入。 |
 | mem | QUEUED | — | — | — | — | 现有实现与历史审查只作输入。 |
 | simd | QUEUED | — | — | — | — | 现有实现与历史审查只作输入。 |
 | container | QUEUED | — | — | — | — | 完整容器模块仍未审查；不能继承 intrusive 子组件的候选结论。 |

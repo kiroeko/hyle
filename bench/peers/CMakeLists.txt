@@ -1,10 +1,21 @@
 # Benchmark-only peers shared by more than one product module. Keep only
 # dependency configuration here; target wiring belongs to each module fragment.
 
-# Optional oneTBB rivals. Keep discovery outside any product-component guard:
-# platform-only builds need NUMA allocation, while container/mem builds attach
-# their own peers only when those benchmark targets exist.
-option(HYLE_BENCH_TBB "build relevant benchmarks vs oneTBB" OFF)
+# Optional oneTBB rivals. Declare the switch only when at least one selected
+# benchmark owner can consume it; a Core-only benchmark cache must not advertise
+# unrelated peer libraries.
+set(_hyle_bench_tbb_owner FALSE)
+foreach(_hyle_owner IN ITEMS platform mem container util_core)
+  string(TOUPPER "${_hyle_owner}" _hyle_owner_upper)
+  if(HYLE_BUILD_${_hyle_owner_upper})
+    set(_hyle_bench_tbb_owner TRUE)
+  endif()
+endforeach()
+if(_hyle_bench_tbb_owner)
+  option(HYLE_BENCH_TBB "build relevant benchmarks vs oneTBB" OFF)
+else()
+  set(HYLE_BENCH_TBB OFF)
+endif()
 if(HYLE_BENCH_TBB)
   set(HYLE_TBB_DIR "${HYLE_SOURCE_DIR}/../oneTBB" CACHE PATH
       "local oneTBB source snapshot")
@@ -23,10 +34,20 @@ if(HYLE_BENCH_TBB)
     EXCLUDE_FROM_ALL SYSTEM)
 endif()
 
-# Optional SOTA parity bench: SwissTable vs absl::flat_hash_map. Off by default
-# (abseil is a heavy external build). Enable with -DHYLE_BENCH_ABSL=ON; point
-# HYLE_ABSL_DIR at a cloned abseil-cpp (defaults to a sibling of the repo).
-option(HYLE_BENCH_ABSL "build the SwissTable-vs-absl parity bench" OFF)
+# Optional Abseil rivals are likewise owner-scoped. They cover more than the
+# original SwissTable comparison today, but remain benchmark-only dependencies.
+set(_hyle_bench_absl_owner FALSE)
+foreach(_hyle_owner IN ITEMS container error obs util)
+  string(TOUPPER "${_hyle_owner}" _hyle_owner_upper)
+  if(HYLE_BUILD_${_hyle_owner_upper})
+    set(_hyle_bench_absl_owner TRUE)
+  endif()
+endforeach()
+if(_hyle_bench_absl_owner)
+  option(HYLE_BENCH_ABSL "build relevant benchmarks vs Abseil" OFF)
+else()
+  set(HYLE_BENCH_ABSL OFF)
+endif()
 if(HYLE_BENCH_ABSL)
   set(HYLE_ABSL_DIR "${HYLE_SOURCE_DIR}/../abseil-cpp" CACHE PATH "cloned abseil-cpp")
   if(NOT EXISTS "${HYLE_ABSL_DIR}/CMakeLists.txt")
@@ -52,3 +73,8 @@ if(HYLE_BENCH_ABSL)
     endif()
   endfunction()
 endif()
+
+unset(_hyle_bench_tbb_owner)
+unset(_hyle_bench_absl_owner)
+unset(_hyle_owner)
+unset(_hyle_owner_upper)

@@ -1,7 +1,7 @@
 # HYLE time：什么情况选择什么
 
-> **`provisional / NOT_REVIEWED_V2`。** time 当前只提供 C++ 产品面，可通过完整源码、headers + static libraries 或
-> headers + shared libraries 使用。本页不描述 C API 或跨语言调用层。
+> **`provisional / NOT_REVIEWED_V2`。** time 当前只提供 C++ 产品面。
+> 本页适用于 C++23 source/static/shared 三种交付，不描述 C API 或跨语言调用层。
 
 `time` 提供时钟、deadline、OS 线程 sleep 和无分配 timer 数据结构。它不替 event loop 执行
 callback，也不替业务决定周期 timer 的补发策略。

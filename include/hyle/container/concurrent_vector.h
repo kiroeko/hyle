@@ -246,7 +246,7 @@ class ConcurrentVector {
     HYLE_FATAL_ASSERT(try_reserve(count));
   }
 
-  // Fallible append for allocator-aware/FFI paths. SIZE_MAX means capacity
+  // Fallible append for allocator-aware paths. SIZE_MAX means capacity
   // allocation failed before any index was claimed.
   template <class... Args>
     requires std::is_nothrow_constructible_v<T, Args...>

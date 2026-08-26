@@ -6,9 +6,9 @@
 # ship in the product: it is compiled ONLY when tests are being built.
 #
 # HYLE_TESTING is that gate. It requires both HYLE_BUILD_TESTS and the explicit
-# HYLE_TEST_INSTRUMENTATION option.  The default instrumented test build reaches
-# fault-injection/structural diagnostics; a second OFF build runs the ordinary
-# suite with the exact shipping layout and hot paths.  Shipping builds have
+# HYLE_TEST_INSTRUMENTATION option. The default OFF test build exercises the
+# exact shipping layout and hot paths; an explicit ON build reaches
+# fault-injection/structural diagnostics. Shipping builds have
 # HYLE_BUILD_TESTS=OFF, so every block vanishes with zero product cost.
 #
 # ODR: a test-only MEMBER changes a class's layout, so the production .cc that compiles

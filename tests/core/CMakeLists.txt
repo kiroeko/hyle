@@ -1,5 +1,5 @@
 hyle_add_test(core SOURCES core_test.cc)
-hyle_add_header_self_contained_test(core NO_C)
+hyle_add_header_self_contained_test(core)
 
 add_test(NAME hyle_core_codegen_audit_parser_test
   COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/codegen_audit_test.py")

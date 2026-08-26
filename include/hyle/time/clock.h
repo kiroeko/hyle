@@ -35,7 +35,7 @@ using MonotonicTimePoint =
 using RealtimeClock = std::chrono::system_clock;
 using RealtimeTimePoint = std::chrono::time_point<RealtimeClock, Duration>;
 
-// Typed C++ clock views. Raw *_ns functions remain the compact hot-path/C ABI
+// Typed C++ clock views. Raw *_ns functions remain the compact hot-path
 // representation; normal C++ callers can use standard chrono types and avoid
 // mixing a wall timestamp, duration and monotonic deadline by accident.
 HYLE_FORCE_INLINE MonotonicTimePoint monotonic_now() noexcept {
@@ -52,9 +52,8 @@ HYLE_FORCE_INLINE UnixTimestamp realtime_timestamp() noexcept {
 
 // Steady monotonic counter in ns from an unspecified zero. The native C++ path
 // is header-inline over std::chrono, avoiding an extra hyle_time shared-library
-// hop before the standard library reaches CLOCK_MONOTONIC/QPC. The current FFI
-// schema candidate retains an exported wrapper, but it is not frozen. This is
-// the only clock for deadlines/timeouts.
+// hop before the standard library reaches CLOCK_MONOTONIC/QPC. This is the only
+// clock for deadlines/timeouts.
 HYLE_FORCE_INLINE std::uint64_t monotonic_ns() noexcept {
   const auto value = monotonic_now().time_since_epoch().count();
   return value > 0 ? static_cast<std::uint64_t>(value) : 0;
@@ -149,7 +148,7 @@ HYLE_TIME_API void sleep_for_ns(std::uint64_t ns) noexcept;
 // carry an absolute deadline.
 HYLE_TIME_API void sleep_until_ns(std::uint64_t deadline_ns) noexcept;
 
-// Saturating deadline arithmetic shared by sched/io and FFI consumers. Keeping
+// Saturating deadline arithmetic shared by sched/io consumers. Keeping
 // this here avoids every timeout caller open-coding `monotonic_ns() + timeout`
 // and accidentally wrapping a very large duration into the past.
 constexpr std::uint64_t saturating_add_ns(std::uint64_t base,

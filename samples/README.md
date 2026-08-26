@@ -3,10 +3,7 @@
 当前用户面只支持 C++23，交付形式有三种：完整源码、headers + static libraries、headers +
 shared libraries。这里的产品示例只演示这三种 C++ 接入；shared library 不等于 Native FFI，
 当前 Native FFI 状态是 `N/A`。
-
-仓库中仍残留少量早期 C 语法 package/schema fixture 和 managed probe。它们是**待删除的历史
-conformance 债**，不是 native-C 产品示例，也不是 Java/.NET 可用性证书，不能据此推断任何
-外语能力。
+早期 C schema/package fixture 与 managed probe 已移除；本目录没有 native-C 或外语产品示例。
 
 每个 C++ 示例都是独立 CMake project。源码 sample 用 `add_subdirectory`，安装包 sample 用
 `find_package`；消费者均链接同名 `hyle::<module>` target。
@@ -30,21 +27,16 @@ target_link_libraries(your_app PRIVATE hyle::container hyle::mem)  # 按需选�
 | 目录 | 模块 | 演示什么 |
 |---|---|---|
 | [`01_mem_container/`](01_mem_container/) | mem + container | 默认 `SystemAllocator` + 公开形状 `FlatHashMap`；运行时 allocator 只在 quota/stats/自定义 backing 时显式 opt-in |
-| [`02_simd/`](02_simd/) | simd | C++ 运行期 ISA 派发的 `dot`/`saxpy` + 直接用 `vec<T,N>` D-tag 写宽度无关 kernel + 打印选中的 ISA 变体；同目录旧 `simd_c_sample` 属待删除历史债，不是用户入口 |
+| [`02_simd/`](02_simd/) | simd | C++ 运行期 ISA 派发的 `dot`/`saxpy` + 直接用 `vec<T,N>` D-tag 写宽度无关 kernel + 打印选中的 ISA 变体 |
 | [`03_sched_fibers/`](03_sched_fibers/) | sched | `Scheduler::spawn_detached` 自持 guarded fiber：`yield()` 协作、stack 回收、`shutdown()` 排空 |
 | [`04_prebuilt_lib/`](04_prebuilt_lib/) | 构建/集成 | install + `find_package(Hyle COMPONENTS simd mem)`；同一 consumer 验证 shared/static、传递依赖、mimalloc 私有后端和 Windows DLL staging |
+| [`05_installed_sdk/`](05_installed_sdk/) | 构建/集成 | source-independent C++ package consumer：普通 mem/STL/PMR journey 与全部 advertised imported targets |
+| [`06_installed_io_http2/`](06_installed_io_http2/) | io + HTTP/2 | source-independent C++ feature consumer：原生 HTTP/2 seam 与 static/shared 私有协议依赖闭包 |
 | [`07_installed_compute/`](07_installed_compute/) | compute C++ API | 消费 CPU/CUDA、shared/static compute package；枚举真实 backend，并验证 ggml/volk/CUDA 传递闭包无需源码 checkout |
 | [`package/container_intrusive/cpp/`](package/container_intrusive/cpp/) | container_intrusive | source-independent C++ package consumer：auto/safe member hook、显式 retirement、insert/erase、整链 splice 与 caller-owned lifetime |
 
-> 01-03 用源码 `add_subdirectory` 集成；04 与 07 用安装包集成。
-
-## 待删除的历史 conformance 债（非用户产品示例）
-
-| 目录 | 验证内容 |
-|---|---|
-| [`05_installed_c/`](05_installed_c/) | 旧 error/mem C-shaped fixture 待删除；同目录 C++ `SystemAllocator` probe 仍是正常 package consumer |
-| [`06_installed_io_http2/`](06_installed_io_http2/) | 旧 io C-shaped fixture 待删除；HTTP/2 feature manifest 与 C++ package 闭包验证仍可保留 |
-| [`package/`](package/) | source-independent C++ consumer 是有效测试；其中 C/managed schema/compiler/link fixture 属待删除历史债 |
+> 01-03 用源码 `add_subdirectory` 集成；04-07 与 `package/*/cpp` 用安装包集成。
+> `package/*/cpp` 是构建回归 fixture，不是额外的产品 API。
 
 ## 构建单个示例
 

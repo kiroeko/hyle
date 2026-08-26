@@ -6,9 +6,9 @@
 #
 # compute depends on error (Status/Result) + mem (public kernel helpers use mem alignment)
 # PUBLICLY. As of compute-03 it also depends on sched (gpu_await.h's co_await uses sched
-# Waker/suspend) -- but ONLY where fcontext (hence sched) exists, exactly as io_context.cc
-# did. The host/device/buffer/pool layer (compute-01/02/02c) needs no sched and builds
-# anywhere; gpu_poller.cc (compute-03) is added only under HYLE_HAS_FCONTEXT.
+# Waker/suspend). The current compute product therefore requires sched/fcontext.
+# Host/device/buffer/pool internals could support a future smaller component, but
+# are not currently a separately selectable sched-free product root.
 # compute-07: host_ops.cc = the CPU operator backend (simd-backed Kernel::HostFn library).
 # Always built (any platform, no GPU); links hyle_simd PRIVATE (simd cores are called inside
 # the .cc, never named in a public compute header).
@@ -30,8 +30,7 @@ endif()
 
 if(HYLE_HAS_FCONTEXT)
   # compute-03 GPU completion -> fiber: gpu_poller.cc uses sched Waker/suspend to wake
-  # a fiber awaiting a GPU event. Only buildable where sched exists (same gate as io's
-  # io_context.cc). Adds sched to compute's PUBLIC deps (gpu_await.h includes
+  # a fiber awaiting a GPU event. Adds sched to compute's PUBLIC deps (gpu_await.h includes
   # sched/waker.h, so a consumer of that header needs sched).
   list(APPEND _compute_sources gpu_poller.cc)
 endif()

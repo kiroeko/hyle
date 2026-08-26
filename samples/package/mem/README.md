@@ -2,12 +2,10 @@
 
 These are source-independent consumers of an installed HYLE SDK:
 
-- `c/` requests only `mem` and exercises the default allocator plus the
-  advanced `QuotaAllocator -> Region` composition through opaque handles and
-  shared `hyle_status` ownership.
 - `cpp/` requests only `mem` and exercises the normal process-lifetime PMR
   resource plus the same bounded scratch composition with native RAII types.
 
-The package smoke discovers both projects automatically and runs them against
-shared and static SDKs. They intentionally do not include HYLE through
-`add_subdirectory()` or read files from its source tree.
+The package smoke discovers the C++ project automatically and runs it against
+shared and static SDKs. It intentionally does not include HYLE through
+`add_subdirectory()` or read files from its source tree. The retired C-shaped
+fixture is not part of the current product; Native FFI remains `N/A`.

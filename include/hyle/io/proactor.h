@@ -3,9 +3,9 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "hyle/c/io.h"
 #include "hyle/core/compiler.h"
 #include "hyle/platform.h"
+#include "hyle/time/unix_timestamp.h"
 #include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
@@ -35,8 +35,61 @@
 
 namespace hyle::io {
 
-using BackendKind = hyle_io_backend;
-using ProactorCapabilities = hyle_io_capabilities;
+enum class BackendKind : std::uint8_t {
+  kNone = 0,
+  kIocp,
+  kIoUring,
+  kEpoll,
+  kKqueue,
+};
+
+enum class ProactorCapability : std::uint64_t {
+  kNone = 0,
+  kNativeMultishotAccept = 1ull << 0,
+  kEmulatedMultishotAccept = 1ull << 1,
+  kProvidedBufferRing = 1ull << 2,
+  kFixedFiles = 1ull << 3,
+  kDirectAccept = 1ull << 4,
+  kAsyncFileData = 1ull << 5,
+  kAsyncFileMetadata = 1ull << 6,
+  kTls = 1ull << 7,
+  kHttp2 = 1ull << 8,
+};
+
+constexpr ProactorCapability operator|(ProactorCapability left,
+                                       ProactorCapability right) noexcept {
+  return static_cast<ProactorCapability>(
+      static_cast<std::uint64_t>(left) | static_cast<std::uint64_t>(right));
+}
+
+constexpr ProactorCapability& operator|=(ProactorCapability& left,
+                                         ProactorCapability right) noexcept {
+  left = left | right;
+  return left;
+}
+
+constexpr bool has_proactor_capability(
+    ProactorCapability capabilities, ProactorCapability capability) noexcept {
+  return (static_cast<std::uint64_t>(capabilities) &
+          static_cast<std::uint64_t>(capability)) != 0;
+}
+
+struct ProactorCapabilities {
+  BackendKind backend = BackendKind::kNone;
+  ProactorCapability supported = ProactorCapability::kNone;
+
+  [[nodiscard]] constexpr bool has(
+      ProactorCapability capability) const noexcept {
+    return has_proactor_capability(supported, capability);
+  }
+};
+
+struct FileStat {
+  std::uint64_t size = 0;
+  time::UnixTimestamp modified_time{};
+  std::uint32_t mode = 0;
+  bool is_directory = false;
+};
 
 class IoUringExtension;
 
@@ -212,8 +265,8 @@ class Proactor {
   // ---- file ops (io-05, capability C5) --------------------------------------
   // Neutral, backend-filled file metadata (the statx subset a file server needs).
   // Bytes/times are the cross-platform intersection; `mode` is the POSIX st_mode
-  // (0 on Windows -- use is_dir). One struct both backends fill on a stat op.
-  using FileStat = hyle_io_file_stat;
+  // (0 on Windows -- use is_directory). One struct both backends fill on a stat op.
+  using FileStat = io::FileStat;
 
   // Neutral open flags (mapped to O_* on POSIX, to CreateFileW's disposition/access
   // on Windows). A file server needs read, write, create, truncate, append. `mode`
@@ -243,8 +296,8 @@ class Proactor {
   // negative errno. io_uring issues a real IORING_OP_STATX and converts its native
   // result to this POD before delivery. IOCP/epoll/kqueue synthesize a completion
   // from a synchronous metadata query; the ordinary File facade offloads those
-  // paths so a scheduler worker is not blocked. Raw Proactor users and future
-  // FFI adapters can inspect has_async_file_metadata() or the capability bit.
+  // paths so a scheduler worker is not blocked. Raw Proactor users can inspect
+  // has_async_file_metadata() or the capability bit.
   HYLE_IO_API bool submit_statx(std::intptr_t fd, FileStat* out,
                                 std::uint64_t user_data) noexcept;
   // Flush `fd`'s data to disk. `datasync` = fdatasync (data only, skip metadata) vs
@@ -518,7 +571,7 @@ class IoUringExtension {
 };
 
 inline IoUringExtension Proactor::io_uring_extension() noexcept {
-  return backend_kind() == HYLE_IO_BACKEND_IO_URING
+  return backend_kind() == BackendKind::kIoUring
              ? IoUringExtension(this)
              : IoUringExtension();
 }

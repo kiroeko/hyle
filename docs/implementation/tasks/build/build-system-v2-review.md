@@ -1,8 +1,8 @@
 # Build/package system v2 review
 
-<!-- PROJECT UNIT REVIEW: ACTIVE -->
+<!-- PROJECT UNIT REVIEW: IMPLEMENTED -->
 
-> 状态：`AUDITED`。Build/package 是独立开发单元，但不是可链接产品组件；它不进入
+> 状态：`IMPLEMENTED`，等待 clean-commit source-package smoke 后转 `VERIFIED`。Build/package 是独立开发单元，但不是可链接产品组件；它不进入
 > `HyleComponents.cmake` 或 `module-status.json`。本页按模块收口协议保存本轮冻结范围、有限
 > `FIX` 集与证据，长期设计仍归 [`build-system.md`](../../../architecture/build-system.md)。
 
@@ -34,15 +34,15 @@
 
 | ID | demand / normal shape | verdict | severity | 本轮裁决与验证 |
 |---|---|---|---|---|
-| BUILD-01 | 一份中央组件图同时产生选择闭包与真实 `PUBLIC/PRIVATE` target 边 | `KEEP` | P0 | 保留 `HyleComponents` + final target graph audit；component contract |
-| BUILD-02 | C++ source/static/shared 三种交付、relocation、runtime staging | `KEEP` | P0 | 保留；用 C++ installed consumers 复证 |
-| BUILD-03 | 当前产品没有 native-C API 或 Native FFI | `FIX` | P0 | 先把 time/obs/io/simd 的原生类型移出 C schema，再删 `include/hyle/c`、`c_*.cc`、C/managed fixtures、符号审计与伪 package journey；加入防复发合同 |
-| BUILD-04 | 模块公开头的所有权与直接依赖可机械对账 | `FIX` | P0 | 中央 manifest 登记 owned headers；扫描所有直接 `hyle/<owner>` include，不再只特判 Core；安装只投影 selected closure headers |
-| BUILD-05 | 两个模块/agent 可并行开发 | `FIX` | P1 | 提供显式 module + 独占 scratch root 的跨平台入口；禁止把固定 preset build tree 当共享 cache |
-| BUILD-06 | 单组件根能独立 source build/test 及 static/shared package consume | `FIX` | P1 | 参数化 selected-root smoke；all-component smoke 仍是整图门，不能替代该证据 |
-| BUILD-07 | option 表达产品选择且默认配置确定、轻量 | `FIX` | P1 | 昂贵可选 backend 默认 OFF；普通测试默认 shipping layout，instrumentation 显式开启且不得污染 benchmark；嵌入默认不隐式组装 all；只在 owner 组件入图时声明 feature option |
-| BUILD-08 | CI 反馈与额度匹配风险 | `FIX` | P1 | push/PR 保留基线与文档合同；cross、clang-cl exact、locked-feature/package 改为手工扩展门；不把未运行门写成 PASS |
-| BUILD-09 | 0.x 不承诺未冻结的 C++ binary compatibility | `FIX` | P1 | package version 使用 exact compatibility；每个 pre-1.0 release 使用完整 loader identity |
+| BUILD-01 | 一份中央组件图同时产生选择闭包与真实 `PUBLIC/PRIVATE` target 边 | `KEEP` | P0 | 保留并加严：manifest 生成真实 target 边，配置阶段复核最终 target 图；component contract PASS |
+| BUILD-02 | C++ source/static/shared 三种交付、relocation、runtime staging | `KEEP` | P0 | C++ selected-root source/shared/static + relocation consumer 均 PASS |
+| BUILD-03 | 当前产品没有 native-C API 或 Native FFI | `FIX` | P0 | 原生 C++ 类型不再借 C schema；旧 C header/bridge/fixture/managed probe/package journey 已删除，防复发扫描已加入 |
+| BUILD-04 | 模块公开头的所有权与直接依赖可机械对账 | `FIX` | P0 | manifest 精确登记特殊 owner；公开头和实现 `.cc/.cu/.inc/...` 的直接 include 对账；安装仅投影 selected closure headers |
+| BUILD-05 | 两个模块/agent 可并行开发 | `FIX` | P1 | Windows wrapper 接受绝对独占 `-BinaryDir` 与 `-Component`；core/error 两个 scratch 同时配置 PASS |
+| BUILD-06 | 单组件根能独立 source build/test 及 static/shared package consume | `FIX` | P1 | 新增参数化 selected-root smoke；container 的三种交付、relocation 与不引入 compiled simd 均 PASS |
+| BUILD-07 | option 表达产品选择且默认配置确定、轻量 | `FIX` | P1 | 后端默认 OFF、测试默认 shipping layout；owner-scoped cache、父 normal/cache 规范化、exact ISA 与 benchmark peer scope 均有合同 |
+| BUILD-08 | CI 反馈与额度匹配风险 | `FIX` | P1 | PR/main 只留 Linux 高信号基线；cross/clang-cl/三平台/package/feature 为手工扩展门；本轮未消耗托管额度 |
+| BUILD-09 | 0.x 不承诺未冻结的 C++ binary compatibility | `FIX` | P1 | package 使用 `ExactVersion`；pre-1.0 shared loader identity 使用完整 `0.y.z` |
 | BUILD-10 | 依赖来源、哈希、许可证及 offline 投影 | `KEEP` | P0 | 本轮只复证，不借机重写锁系统 |
 | BUILD-11 | CMake 调用方不可信时的 attestation/token 防护 | `DEFER` | P2 | 当前没有可复现产品缺陷；另开 dependency-lock 简化任务才允许改，不能与 C/组件迁移混在一起 |
 | BUILD-12 | 把 build/package 放进产品 component registry | `REJECT` | P0 | 它不可链接且没有产品 artifact；本任务即受检开发单元记录，不伪造 target/component |
@@ -56,21 +56,30 @@
 
 批次外的新发现只在 correctness、security 或当前构建阻断时进入本轮；其他内容写入 backlog。
 
-## Verification manifest（待执行）
+## Verification manifest
 
-- [ ] `include/hyle/c`、产品 `c_*.cc`、旧 C/managed fixtures 不存在；合法的 vendored C/assembly/
+- [x] `include/hyle/c`、产品 `c_*.cc`、旧 C/managed fixtures 不存在；合法的 vendored C/assembly/
   OS `extern "C"` 不受影响。
-- [ ] 受影响模块 C++ tests，至少 Windows selected roots；公开头 self-contained。
-- [ ] 两个不同 scratch root 并行配置不同组件，cache/依赖目录互不覆盖。
-- [ ] selected-root source + static/shared installed C++ consumer；relocation。
-- [ ] all-component CPU configure/build 回归（昂贵 feature 显式 OFF）。
-- [ ] option 负向合同、pre-1.0 exact package version、CI workflow syntax/分层检查。
-- [ ] `python scripts/check-module-closure.py` 与 `python scripts/check-docs.py`。
+- [x] Windows all-component shipping layout `62/62`、显式 instrumentation `63/63`；公开头 self-contained。
+- [x] core/error 两个不同 scratch root 同时配置，分别只解析 `core` 与 `core,error`。
+- [x] container selected-root source + static/shared installed C++ consumer；两种包 relocation 后运行通过。
+- [x] all-component CPU configure/build 回归（昂贵 feature 显式 OFF）。
+- [x] option 负向/规范化、GTest 复用、pre-1.0 exact package、target platform 与 CI 分层合同通过。
+- [x] `python scripts/check-module-closure.py` 与 `python scripts/check-docs.py`。
 - [ ] terminal immutable snapshot 四项 LOC；build/package 使用文档定义的专用边界。
+
+本地最终门使用 MSVC 19.50 + Ninja、CMake 4.4.0；`HyleCiComponentContract.cmake`、selected
+container delivery smoke、all-component 两种测试布局与文档/闭包/LOC self-check 均通过。Linux、macOS、
+AArch64 与 locked optional backend 本轮只静态复核 workflow，未把未运行的托管门写成 PASS。
 
 ## Reopen triggers / accepted limits（终态填写）
 
 - Native FFI 只有在具名跨语言 consumer、窄运行时对象模型和绑定 owner 同时存在时另立开发单元；
   不恢复整库镜像式 C API。
 - compute、graph 仍未完成；本轮只保证其现有构建形状未被伪 C 清理意外破坏，不签其产品能力。
-
+- container 当前通过仅在 build tree 存在的 `simd_vec_headers` target 借用 fixed-ISA header，不把 compiled
+  simd 伪装成产品依赖。把 expert Vec DSL 正式拆成 `simd_vec` 产品组件是可行的，但还需要独立 consumer
+  shape、可安装 exact-ISA target helper 与 SIMD 模块审查，不能在 build/package 单元里替 SIMD 做决定。
+- io/compute/graph 的当前公开头直接暴露 sched 类型，因此这些根在无 fcontext target 上诚实失败；只有
+  后续模块审查拆出真正 sched-free 的公开形状后，组件图才允许变成条件边。
+- BUILD-11 的 dependency attestation 简化保持 `DEFER`；现有锁、离线与许可证 fail-closed 合同继续保留。

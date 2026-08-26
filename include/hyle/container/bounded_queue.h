@@ -21,7 +21,7 @@ namespace hyle::container {
 // (https://www.1024cores.net/home/lock-free-algorithms/queues/bounded-mpmc-queue),
 // the same design used by rigtorp/MPMCQueue and folly. NOT a HYLE invention:
 // per coding-conventions, lock-free queues are borrowed/ported (famously hard to
-// get right; no C-ABI reason to self-write), while container/ self-builds only
+// get right), while container/ self-builds only
 // hashmap/carray/string. The per-slot sequence protocol and memory orders below
 // match the canonical implementation exactly -- do not "simplify" them.
 //

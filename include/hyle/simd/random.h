@@ -96,9 +96,8 @@ static_assert(alignof(RandomState) == 64);
 
 namespace detail {
 
-// Internal bridge for the separately compiled native kernels. RandomState remains opaque to C++
-// callers, and close-01 can expose it as an allocated `hyle_simd_random_o` without freezing this
-// C++ class layout as the public C ABI.
+// Internal bridge for separately compiled native kernels. RandomState remains
+// opaque to callers so its C++ layout is not part of the public source contract.
 struct RandomStateAccess {
   static std::uint64_t (&words(RandomState& state) noexcept)[4][RandomState::kStreams] {
     return state.state_;

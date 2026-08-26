@@ -10,7 +10,6 @@ instead measures the immutable tree named by a recorded closure snapshot.
 from __future__ import annotations
 
 import argparse
-import fnmatch
 import json
 import os
 from pathlib import Path, PurePosixPath
@@ -23,17 +22,20 @@ from typing import Iterable, Sequence
 
 
 NATIVE_LANGUAGES = ("C++", "C/C++ Header", "C", "CUDA")
+BUILD_PACKAGE_LANGUAGES = ("CMake", "Python", "PowerShell", "JSON", "YAML")
 SELF_WITH_TESTS_ROOTS = ("include/hyle", "src", "tests")
 SELF_WITHOUT_TESTS_ROOTS = ("include/hyle", "src")
 
 # Some closure units do not match the ordinary
-# include/hyle/<module> + include/hyle/c/<module>*.h + src/<module> layout.
+# include/hyle/<module> + src/<module> layout.
 # Keep these semantic boundaries explicit: directory proximity is not module
 # ownership. These lists are the boundaries recorded by their closure audits.
 MODULE_BOUNDARIES = {
     "core": (
         "include/hyle/core",
+        "include/hyle/platform.h",
         "include/hyle/version.h",
+        "include/hyle/visibility.h",
         "src/core",
     ),
     "container-intrusive": (
@@ -49,13 +51,21 @@ MODULE_BOUNDARIES = {
     "util-runtime": (
         "include/hyle/util/demangle.h",
         "include/hyle/util/registry.h",
-        "include/hyle/c/util.h",
         "src/util",
     ),
     "util": (
         "include/hyle/util",
-        "include/hyle/c/util.h",
         "src/util",
+    ),
+    "build-package": (
+        ".github/workflows/build-system.yml",
+        "CMakeLists.txt",
+        "CMakePresets.json",
+        "cmake",
+        "hyle-offline-deps.cmake",
+        "scripts/check-docs.py",
+        "scripts/header-self-contained.py",
+        "scripts/hyle-windows.ps1",
     ),
 }
 
@@ -194,11 +204,6 @@ def module_scope(module: str, files: Sequence[str]) -> tuple[list[str], list[str
                 for path in files
             )
         ]
-        c_pattern = f"include/hyle/c/{directory_name}*.h"
-        c_headers = sorted(
-            path for path in files if fnmatch.fnmatchcase(path, c_pattern)
-        )
-        specs.extend(c_headers)
         if not specs:
             raise ReportError(
                 f"no conventional implementation boundary found for module {module!r}; "
@@ -349,6 +354,12 @@ def build_report(args: argparse.Namespace) -> dict[str, object]:
         boundary_kind = (
             "canonical" if normalized_module in MODULE_BOUNDARIES else "conventional"
         )
+    normalized_module = args.module.strip().lower().replace("_", "-")
+    module_languages = (
+        BUILD_PACKAGE_LANGUAGES
+        if normalized_module == "build-package"
+        else NATIVE_LANGUAGES
+    )
 
     self_with_tests = files_under(tracked, SELF_WITH_TESTS_ROOTS)
     self_without_tests = files_under(tracked, SELF_WITHOUT_TESTS_ROOTS)
@@ -368,7 +379,7 @@ def build_report(args: argparse.Namespace) -> dict[str, object]:
                 (tracked, None),
                 (self_with_tests, NATIVE_LANGUAGES),
                 (self_without_tests, NATIVE_LANGUAGES),
-                (module_files, NATIVE_LANGUAGES),
+                (module_files, module_languages),
             ),
         )
     else:
@@ -380,7 +391,7 @@ def build_report(args: argparse.Namespace) -> dict[str, object]:
             cloc, root, self_without_tests, NATIVE_LANGUAGES
         )
         module_code, module_code_files = cloc_measure(
-            cloc, root, module_files, NATIVE_LANGUAGES
+            cloc, root, module_files, module_languages
         )
     metrics = [
         {
@@ -421,7 +432,7 @@ def build_report(args: argparse.Namespace) -> dict[str, object]:
             "files": module_code_files,
             "selected_files": len(module_files),
             "paths": module_specs,
-            "languages": list(NATIVE_LANGUAGES),
+            "languages": list(module_languages),
         },
     ]
 
@@ -449,7 +460,11 @@ def build_report(args: argparse.Namespace) -> dict[str, object]:
                 "cmake/build/package scripts",
                 "all build/cache/scratch directories",
             ],
-            "module_excludes": ["tests", "bench", "docs", "third_party", "CMake"],
+            "module_excludes": (
+                ["tests", "bench", "docs", "third_party", "samples"]
+                if normalized_module == "build-package"
+                else ["tests", "bench", "docs", "third_party", "CMake"]
+            ),
         },
         "tool": {"cloc": cloc_version(cloc, root)},
         "module": {
@@ -465,7 +480,9 @@ def build_report(args: argparse.Namespace) -> dict[str, object]:
 def self_check(report: dict[str, object]) -> None:
     expected_core = (
         "include/hyle/core",
+        "include/hyle/platform.h",
         "include/hyle/version.h",
+        "include/hyle/visibility.h",
         "src/core",
     )
     if MODULE_BOUNDARIES["core"] != expected_core:
@@ -482,7 +499,8 @@ def self_check(report: dict[str, object]) -> None:
     values = {metric["id"]: metric["code"] for metric in metrics}
     if not (
         values["repository"] >= values["self_with_tests"]
-        >= values["self_without_tests"] >= values["module"] >= 0
+        >= values["self_without_tests"] >= 0
+        and values["repository"] >= values["module"] >= 0
     ):
         raise ReportError("LOC subset ordering is inconsistent")
 
@@ -490,6 +508,13 @@ def self_check(report: dict[str, object]) -> None:
     assert isinstance(module, dict)
     module_paths = module["paths"]
     assert isinstance(module_paths, list)
+    normalized_module = str(module["name"]).strip().lower().replace("_", "-")
+    if normalized_module == "build-package":
+        expected_build = MODULE_BOUNDARIES["build-package"]
+        if tuple(module_paths) != expected_build:
+            raise ReportError("the canonical build-package boundary has drifted")
+        return
+
     excluded_roots = ("tests", "bench", "docs", "third_party")
     if any(under_roots(posix_path(path), excluded_roots) for path in module_paths):
         raise ReportError("module implementation boundary includes an excluded tree")
@@ -535,9 +560,13 @@ def print_human(report: dict[str, object], passed_self_check: bool) -> None:
         "  self-written - tests: include/hyle, src; "
         + ", ".join(NATIVE_LANGUAGES)
     )
+    module_metric = next(metric for metric in metrics if metric["id"] == "module")
     print(
-        "  self/module exclude bench, docs, third_party, samples, CMake and "
+        "  self-written excludes bench, docs, third_party, samples, CMake and "
         "build/cache/scratch trees"
+    )
+    print(
+        "  current unit languages: " + ", ".join(module_metric["languages"])
     )
     print(f"  module boundary ({module['boundary']}):")
     for path in module["paths"]:

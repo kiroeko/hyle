@@ -1,7 +1,8 @@
 # util 架构：两个依赖层，一个产品边界
 
 > **V2 状态：`NOT_REVIEWED`。** 本页暂作既有设计输入，不代表当前功能、性能或 API 证书。
-> 当前 Native FFI 为 `N/A`；正文旧 C/FFI surface 与验收叙事待 util 轮次重写。
+> 当前只提供 C++23 source/static/shared，Native FFI 为 `N/A`。BUILD-03 已删除旧 C schema、
+> bridge、动态导出和 fixture；正文的其他验收叙事仍待 util 轮次重裁决。
 
 > 用户当前选型见 [user/util](../user/util.md)，上一轮性能输入见
 > [historical util evidence](../implementation/evidence/performance/benchmarks-util.md)，施工历史见
@@ -17,7 +18,7 @@ P0 hyle::util_core（INTERFACE，无 binary artifact）
                     └──► C++ 用户
 
 P4 hyle::util（hyle_util binary；严格收口波次 R2）
-   demangle / Registry / C-shaped type-erased adapter（Native FFI 候选）
+   demangle / Registry
                     │
                     └──► error + mem + container + util_core
 ```
@@ -87,27 +88,19 @@ factory：missing 和 factory 返回 NULL 都是 NULL。会因设备、驱动、
   material handoff regression；这是 ISA/codegen 合同，不以抽象模型的最弱合法序替代实测。
   具体点值与 freshness 只见 [`benchmarks-util`](../implementation/evidence/performance/benchmarks-util.md)。
 
-## Native FFI 候选原则
+## 交付与 Native FFI 边界
 
-`hyle/c/util.h` 是 util-runtime 现有 C-syntax schema 候选，使用 `hyle_status` 和
-`hyle_allocator`，不发明模块私有错误槽或 allocator。HYLE 没有 C 产品或已发布 managed binding；
-先从真实 foreign-runtime 任务决定整个候选面是保留、缩小还是 `N/A`。若保留，RNG 以 POD
-state/batch 映射；Ref、Registry、SpinLock 以 opaque handle/callback 擦除；demangle 使用 caller
-buffer，字符串采用 length-aware view。编译期能力不为 parity 导出。
-
-当前候选账本有 47 个动态符号和 10 个 header-inline 便利入口；这只是实现盘点，不是兼容或
-完整性承诺。候选 Registry creator 直接返回对象，
-并接收可选 `out_status`：checked create 传入已初始化的 OK Status，nullable hot create 传 NULL，
-让 fallible creator 跳过诊断构造；两条路不增加每项元数据。C++ 的 template/cast 语法与静态
-type-name 有意不伪造。ScopeGuard 也不应机械变成 heap handle：它无法提供离开词法作用域自动
-cleanup 的语义；foreign host 应使用本语言 defer/finally。这叫任务语义覆盖，而不是把每个 C++
-函数名机械翻译成导出符号。
+util 当前只交付 C++23 source/static/shared。BUILD-03 已删除早期 C-syntax schema、bridge、动态
+导出和 fixture；Native FFI 为 `N/A`，没有 C ABI 兼容面。HYLE 模块直接使用 typed RNG、Ref、
+Registry、SpinLock 和 demangle API。未来只有已命名的 foreign-runtime consumer 通过全局
+[Native FFI 准入策略](native-ffi-policy.md)后，才按任务设计窄的 runtime 类型擦除边界；不会把
+template/cast、ScopeGuard 或编译期 type-name 机械翻译成动态符号。
 
 ## 内部采用与依赖检查
 
 mem 的短固定状态/指针转移、sched 等待细节和 graph 首错槽显式依赖 `hyle::util_core` 的
 SpinLock/cpu_relax。会 allocate/rehash/执行未知用户代码的 mem LeakTracker 与 container
-ConcurrentVector 使用 mutex。Registry 的 binary/C adapter 显式链接 error、mem、container 和
+ConcurrentVector 使用 mutex。Registry binary 显式链接 error、mem、container 和
 util_core；这些依赖同时由中央 component graph 与 target link 生成/验证。
 
 下游审查仍按实际临界区和生命周期判断，不能把类型名当证据。sched 内锁下 move/construct
@@ -117,11 +110,9 @@ util_core；这些依赖同时由中央 component graph 与 target link 生成/�
 
 1. util-core 公开头必须逐头 self-contained，并可由安装包单独请求；禁止 include runtime 头。
 2. Registry 修改必须复验 raw nullable/`Result<T>`、mutable/frozen、reentrant callback、freeze
-   race、allocator failure、TSan 和 installed shared/static C++ consumer；只有保留 Registry direct
-   FFI 时，才追加候选 checked/nullable 形状及 Java/.NET handle/callback/lifetime 旅程。
+   race、allocator failure、TSan 和 installed source/shared/static C++23 consumer。
 3. RNG 算法/状态布局变化更新固定序列；默认 TLS seed 变化不能破坏显式 seed 的可复现流。
 4. Ref/SpinLock 并发修改跑 TSan；布局修改在 MSVC/GCC/AppleClang 和真实下游 owner 上复验。
-5. 先裁决真实 foreign-runtime 任务；无任务可记录 `FFI=N/A` 并删除候选。保留 direct FFI 时，
-   动态符号、header-inline、纯 C smoke 与 guide 的机械对账只算 hygiene，还必须通过 Java FFM +
-   .NET P/Invoke 的精确 shared-library smoke；错误统一走 error。
+5. Native FFI 保持 `N/A`；若出现已命名的 foreign-runtime 任务，先按全局准入策略独立立项，
+   不能在 util 修改中顺手恢复旧 C schema。
 6. benchmark 只验证同合同实现与选择边界，不反向制造 API、常态元数据或 workload 特化。

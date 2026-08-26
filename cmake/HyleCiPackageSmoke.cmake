@@ -1,9 +1,9 @@
 # Cross-platform binary-package smoke used by CI and maintainers. It creates
 # shared and static all-component CPU SDKs, then configures/builds/runs
 # source-independent consumers against each install prefix. The general sample
-# exercises mem C/C++ APIs and every exported target; module-owned focused
-# probes under samples/package are discovered automatically and exercise each
-# strictly closed module's real installed API and language boundary.
+# exercises the native mem C++ API and every exported target; module-owned
+# focused probes under samples/package are discovered automatically and
+# exercise each strictly closed module's real installed API and package edge.
 # Optional SDK/hardware feature matrices remain release checks, not per-commit
 # fan heaters.
 
@@ -32,15 +32,16 @@ foreach(_part IN ITEMS MAJOR MINOR PATCH)
     message(FATAL_ERROR "Cannot read HYLE_VERSION_${_part} from hyle/version.h")
   endif()
 endforeach()
-set(_hyle_compatible_version
-  "${_hyle_version_MAJOR}.${_hyle_version_MINOR}")
 set(_hyle_exact_version
   "${_hyle_version_MAJOR}.${_hyle_version_MINOR}.${_hyle_version_PATCH}")
 if(_hyle_version_MAJOR EQUAL 0)
-  math(EXPR _hyle_next_minor "${_hyle_version_MINOR} + 1")
+  set(_hyle_compatible_version "")
+  math(EXPR _hyle_next_patch "${_hyle_version_PATCH} + 1")
   set(_hyle_incompatible_version
-    "${_hyle_version_MAJOR}.${_hyle_next_minor}")
+    "${_hyle_version_MAJOR}.${_hyle_version_MINOR}.${_hyle_next_patch}")
 else()
+  set(_hyle_compatible_version
+    "${_hyle_version_MAJOR}.${_hyle_version_MINOR}")
   math(EXPR _hyle_next_major "${_hyle_version_MAJOR} + 1")
   set(_hyle_incompatible_version "${_hyle_next_major}.0")
 endif()
@@ -118,7 +119,7 @@ foreach(_linkage IN ITEMS shared static)
   set(_prefix "${_relocated_prefix}")
 
   _hyle_smoke_run("configure ${_linkage} installed consumers"
-    "${CMAKE_COMMAND}" -S "${HYLE_SOURCE_DIR}/samples/05_installed_c"
+    "${CMAKE_COMMAND}" -S "${HYLE_SOURCE_DIR}/samples/05_installed_sdk"
     -B "${_consumer}"
     ${_hyle_generator_args}
     -DCMAKE_BUILD_TYPE=Release

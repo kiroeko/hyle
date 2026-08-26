@@ -279,7 +279,7 @@ TEST(ComputeKernel, HostFallbackLaunch) {
   float* pc = c.data();
   int n = kN;
   // Host test uses raw host pointers (not Buffer), so build KernelArgs explicitly and
-  // call the C-ABI core launch (the typed shell is for Buffer args; this exercises the
+  // call the type-erased core launch (the typed shell is for Buffer args; this exercises the
   // raw form + host_vecadd reading buffers[]/scalar blob).
   void* bufs[] = {const_cast<float*>(pa), const_cast<float*>(pb), pc};
   ScalarField fields[] = {{0, sizeof(int)}};

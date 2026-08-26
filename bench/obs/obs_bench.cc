@@ -11,8 +11,6 @@
 #include <thread>
 #include <vector>
 
-#include "hyle/c/error_helpers.h"
-#include "hyle/c/obs.h"
 #include "hyle/obs/log.h"
 
 #if defined(__APPLE__)
@@ -73,11 +71,6 @@ struct Counter {
                                                     std::memory_order_relaxed);
   }
 };
-
-void c_write(void* state, const hyle_obs_log_record*) {
-  static_cast<Counter*>(state)->writes.fetch_add(1,
-                                                 std::memory_order_relaxed);
-}
 
 #if defined(HYLE_BENCH_ABSL)
 class AbslCounterSink final : public absl::LogSink {
@@ -195,39 +188,6 @@ int main() {
 
   if (!hyle::obs::remove_sink(counter.sink()).ok()) return 1;
 
-  {
-    hyle_obs_sink* sink = nullptr;
-    hyle_status status =
-        hyle_obs_sink_create(&sink, &c_write, nullptr, &counter);
-    if (!hyle_status_is_ok(status)) {
-      hyle_status_free(&status);
-      return 1;
-    }
-    nb::Bench bench;
-    bench.title("obs C ABI preformatted single sink")
-        .relative(true)
-        .batch(1)
-        .minEpochIterations(100'000);
-    bench.run("C hyle_obs_log + Status", [] {
-      int emitted = 0;
-      hyle_status result =
-          hyle_obs_log(&emitted, HYLE_OBS_LOG_INFO, "ready");
-      nb::doNotOptimizeAway(result);
-      nb::doNotOptimizeAway(emitted);
-    });
-    bench.run("C hyle_obs_log_n + Status", [] {
-      int emitted = 0;
-      hyle_status result =
-          hyle_obs_log_n(&emitted, HYLE_OBS_LOG_INFO, "ready", 5);
-      nb::doNotOptimizeAway(result);
-      nb::doNotOptimizeAway(emitted);
-    });
-    status = hyle_obs_sink_destroy(sink);
-    if (!hyle_status_is_ok(status)) {
-      hyle_status_free(&status);
-      return 1;
-    }
-  }
 
   for (std::size_t sink_count : {std::size_t{1}, std::size_t{4},
                                  std::size_t{16}}) {

@@ -1210,8 +1210,8 @@ HYLE_FORCE_INLINE V MulHigh64Unsigned(V a, V b) noexcept {
 }  // namespace detail
 
 // Full-width integer product split. MulHighLow returns the LOW lane half and writes the HIGH lane
-// half. This is a target-bound register operation: vector values never cross the C ABI and no
-// per-op runtime dispatch pointer is introduced.
+// half. This is a target-bound register operation: vector values do not cross a
+// runtime boundary and no per-op dispatch pointer is introduced.
 template <class V>
 HYLE_FORCE_INLINE V MulHighLow(V a, V b, V& high) noexcept {
   using D = DFromV<V>;

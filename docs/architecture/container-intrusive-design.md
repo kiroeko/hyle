@@ -34,7 +34,7 @@ runtime artifact，也不拉入完整 `container`、`mem`、`error` 或 `platfor
 | 用户节点允许先于 list 析构，希望析构自动撤销 membership | auto hook；FIFO、任意摘链与批量 handoff | `IntrusiveListHook` / `IntrusiveList` |
 | 用户状态机要求在 owner lock 下显式摘链，漏摘必须被诊断 | safe hook；同一 list 操作面 | `SafeIntrusiveListHook` / `SafeIntrusiveList`；Release 不为析构检查付常态分支 |
 | sched ConditionVariable / Semaphore 的 stack waiter | 摘链后复用原 `next` 作锁外 wake chain | 保留 sched 专用链；通用 list 会增加 waiter footprint 和锁内写，且不能表达 link storage 的状态复用 |
-| 完整 container 用户需要同一轻量能力 | 传递公开 target | `container -> PUBLIC container_intrusive`，但模块仍独立可选 |
+| 完整 container 用户同时需要该能力 | 显式再选 target | `container` 不聚合 `container_intrusive`；调用方按需求分别链接，避免无关闭包 |
 
 语义重复不按“看见 next/prev 就迁移”处理。Windows IOCP `IoOp` 保留内部特化链：`OVERLAPPED`
 必须是对象首成员，完成时还要把同一个对象从 inflight 双链切换到 owner-thread free-list 并复用 link

@@ -57,8 +57,8 @@ HYLE_CONTAINER_API std::uint32_t str_find_substr(const char* data,
 // Non-owning string view = pointer + length + a `null_terminated` bit. The bit
 // is the real increment over std::string_view (conventions §7): when set,
 // `data[size] == 0` is guaranteed, so the view can be handed to a C API as a
-// C string with zero copy. clay's cstring.h ABI (16 bytes, C layout) is kept so
-// the struct passes a C-ABI seam unchanged; the algorithms are reimplemented in
+// C string with zero copy. clay's compact 16-byte layout is kept so the struct
+// remains trivially copyable across internal erased seams; the algorithms are reimplemented in
 // C++23 instead of delegating to std::string_view -- string_ref IS the std
 // replacement. It uses only the non-owning <string_view> algorithms where the
 // platform STL provides a measured faster primitive; no owning string or stream

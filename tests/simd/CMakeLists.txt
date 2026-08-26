@@ -1,13 +1,14 @@
-# C-compiler/schema/link fixture for the pre-release whole-buffer SIMD FFI
-# candidate. Register/native C++ types never cross this edge.
 option(HYLE_TEST_SIMD_AVX512_RUNNABLE
   "register AVX-512 SIMD tests for direct execution on this host" OFF)
 option(HYLE_TEST_SIMD_SVE
   "build the opt-in SVE test variant on an SVE-capable AArch64 toolchain" OFF)
 option(HYLE_TEST_SIMD_RVV
   "build the opt-in RVV test variant on an RVV-capable RISC-V toolchain" OFF)
+mark_as_advanced(
+  HYLE_TEST_SIMD_AVX512_RUNNABLE
+  HYLE_TEST_SIMD_SVE
+  HYLE_TEST_SIMD_RVV)
 
-hyle_add_c_test(simd c_simd_test.c)
 # simd: the scalar test (dispatch + vec floor) always builds. The vec op suite is ALSO
 # compiled per real ISA backend (sse4 / avx2) -- SAME source, different HYLE_SIMD_TARGET_*
 # + -march, each pairing the backend against the naive reference. GCC/Clang need the

@@ -5,8 +5,7 @@ hyle_add_header_self_contained_test(util_core
     ref_counted.h
     scope_guard.h
     spin_lock.h
-    type_name.h
-  NO_C)
+    type_name.h)
 hyle_add_test(util_core
   SOURCES
     random_test.cc

@@ -1,7 +1,7 @@
 # HYLE mem：什么情况选择什么
 
-> **`provisional / NOT_REVIEWED_V2`。** mem 当前只提供 C++ 产品面，可通过完整源码、headers + static libraries 或
-> headers + shared libraries 使用。本页不描述 C API 或跨语言调用层。
+> **`provisional / NOT_REVIEWED_V2`。** mem 当前只提供 C++ 产品面。
+> 本页适用于 C++23 source/static/shared 三种交付，不描述 C API 或跨语言调用层。
 
 mem 是 host RAM 的基础原语层。它不替业务猜生命周期，也不把某个 benchmark 的最优
 形状包装成通用 allocator；使用者先确定 ownership、并发、容量和释放方式，再选择类型。

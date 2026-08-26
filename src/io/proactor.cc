@@ -195,24 +195,24 @@ bool Proactor::init(unsigned /*entries*/, bool /*defer_worker_thread*/) noexcept
 }
 
 BackendKind Proactor::backend_kind() const noexcept {
-  return impl_ != nullptr ? HYLE_IO_BACKEND_IOCP : HYLE_IO_BACKEND_NONE;
+  return impl_ != nullptr ? BackendKind::kIocp : BackendKind::kNone;
 }
 const char* Proactor::backend_name() const noexcept {
   return impl_ != nullptr ? "iocp" : "none";
 }
 ProactorCapabilities Proactor::capabilities() const noexcept {
-  std::uint64_t bits = 0;
+  ProactorCapability supported = ProactorCapability::kNone;
   if (impl_ != nullptr) {
-    bits |= HYLE_IO_CAP_EMULATED_MULTISHOT_ACCEPT |
-            HYLE_IO_CAP_ASYNC_FILE_DATA;
+    supported |= ProactorCapability::kEmulatedMultishotAccept |
+                 ProactorCapability::kAsyncFileData;
   }
 #if defined(HYLE_IO_TLS)
-  bits |= HYLE_IO_CAP_TLS;
+  supported |= ProactorCapability::kTls;
 #endif
 #if defined(HYLE_IO_HTTP2)
-  bits |= HYLE_IO_CAP_HTTP2;
+  supported |= ProactorCapability::kHttp2;
 #endif
-  return {sizeof(ProactorCapabilities), backend_kind(), bits};
+  return {backend_kind(), supported};
 }
 bool Proactor::has_async_file_data() const noexcept {
   return impl_ != nullptr;
@@ -698,7 +698,8 @@ bool Proactor::submit_statx(std::intptr_t fd, FileStat* out,
                      info.ftLastWriteTime.dwLowDateTime;
   out->modified_time =
       time::unix_timestamp_from_windows_filetime_ticks(ft);
-  out->is_dir = (info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
+  out->is_directory =
+      (info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
   out->mode = 0;  // no POSIX mode on Windows
   return iocp_post_meta(impl_, 0, user_data);
 }
@@ -1268,34 +1269,35 @@ bool Proactor::init(unsigned entries, bool defer_worker_thread) noexcept {
 }
 
 BackendKind Proactor::backend_kind() const noexcept {
-  if (impl_ == nullptr) return HYLE_IO_BACKEND_NONE;
-  return impl_->backend == Impl::kUring ? HYLE_IO_BACKEND_IO_URING
-                                        : HYLE_IO_BACKEND_EPOLL;
+  if (impl_ == nullptr) return BackendKind::kNone;
+  return impl_->backend == Impl::kUring ? BackendKind::kIoUring
+                                        : BackendKind::kEpoll;
 }
 const char* Proactor::backend_name() const noexcept {
   if (impl_ == nullptr) return "none";
   return impl_->backend == Impl::kUring ? "io_uring" : "epoll";
 }
 ProactorCapabilities Proactor::capabilities() const noexcept {
-  std::uint64_t bits = 0;
+  ProactorCapability supported = ProactorCapability::kNone;
   if (impl_ != nullptr) {
     if (impl_->backend == Impl::kUring) {
-      bits |= HYLE_IO_CAP_NATIVE_MULTISHOT_ACCEPT |
-              HYLE_IO_CAP_PROVIDED_BUFFER_RING |
-              HYLE_IO_CAP_FIXED_FILES | HYLE_IO_CAP_DIRECT_ACCEPT |
-              HYLE_IO_CAP_ASYNC_FILE_DATA |
-              HYLE_IO_CAP_ASYNC_FILE_METADATA;
+      supported |= ProactorCapability::kNativeMultishotAccept |
+                   ProactorCapability::kProvidedBufferRing |
+                   ProactorCapability::kFixedFiles |
+                   ProactorCapability::kDirectAccept |
+                   ProactorCapability::kAsyncFileData |
+                   ProactorCapability::kAsyncFileMetadata;
     } else {
-      bits |= HYLE_IO_CAP_EMULATED_MULTISHOT_ACCEPT;
+      supported |= ProactorCapability::kEmulatedMultishotAccept;
     }
   }
 #if defined(HYLE_IO_TLS)
-  bits |= HYLE_IO_CAP_TLS;
+  supported |= ProactorCapability::kTls;
 #endif
 #if defined(HYLE_IO_HTTP2)
-  bits |= HYLE_IO_CAP_HTTP2;
+  supported |= ProactorCapability::kHttp2;
 #endif
-  return {sizeof(ProactorCapabilities), backend_kind(), bits};
+  return {backend_kind(), supported};
 }
 bool Proactor::has_async_file_data() const noexcept {
   return impl_ != nullptr && impl_->backend == Impl::kUring;
@@ -1666,7 +1668,7 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
             static_cast<std::int64_t>(pending->native.stx_mtime.tv_sec),
             static_cast<std::uint32_t>(pending->native.stx_mtime.tv_nsec));
         value.mode = pending->native.stx_mode;
-        value.is_dir = (pending->native.stx_mode & S_IFMT) == S_IFDIR;
+        value.is_directory = (pending->native.stx_mode & S_IFMT) == S_IFDIR;
         *pending->output = value;
       }
       delete pending;
@@ -1817,7 +1819,7 @@ bool Proactor::post(std::uint64_t user_data, std::int64_t result) noexcept {
   // post() is owner-thread-only; wake() is the cross-thread primitive. Keep the
   // synthetic completion in user space for BOTH io_uring and epoll so its signed
   // 64-bit result is preserved. An io_uring NOP CQE always reports res=0, which
-  // previously discarded `result` and made the Linux FFI candidate differ from IOCP.
+  // previously discarded `result` and made the Linux backend differ from IOCP.
   impl_->posted.push_back({user_data, result});
   return true;
 }
@@ -2509,7 +2511,7 @@ bool Proactor::submit_statx(std::intptr_t fd, FileStat* out,
           static_cast<std::int64_t>(st.st_mtim.tv_sec),
           static_cast<std::uint32_t>(st.st_mtim.tv_nsec));
       out->mode = static_cast<std::uint32_t>(st.st_mode);
-      out->is_dir = S_ISDIR(st.st_mode);
+      out->is_directory = S_ISDIR(st.st_mode);
     }
     impl_->posted.push_back(
         {user_data, r < 0 ? -static_cast<std::int64_t>(errno) : 0});
@@ -2826,21 +2828,22 @@ bool Proactor::init(unsigned entries, bool /*defer_worker_thread*/) noexcept {
 }
 
 BackendKind Proactor::backend_kind() const noexcept {
-  return impl_ != nullptr ? HYLE_IO_BACKEND_KQUEUE : HYLE_IO_BACKEND_NONE;
+  return impl_ != nullptr ? BackendKind::kKqueue : BackendKind::kNone;
 }
 const char* Proactor::backend_name() const noexcept {
   return impl_ != nullptr ? "kqueue" : "none";
 }
 ProactorCapabilities Proactor::capabilities() const noexcept {
-  std::uint64_t bits =
-      impl_ != nullptr ? HYLE_IO_CAP_EMULATED_MULTISHOT_ACCEPT : 0;
+  ProactorCapability supported =
+      impl_ != nullptr ? ProactorCapability::kEmulatedMultishotAccept
+                       : ProactorCapability::kNone;
 #if defined(HYLE_IO_TLS)
-  bits |= HYLE_IO_CAP_TLS;
+  supported |= ProactorCapability::kTls;
 #endif
 #if defined(HYLE_IO_HTTP2)
-  bits |= HYLE_IO_CAP_HTTP2;
+  supported |= ProactorCapability::kHttp2;
 #endif
-  return {sizeof(ProactorCapabilities), backend_kind(), bits};
+  return {backend_kind(), supported};
 }
 bool Proactor::has_async_file_data() const noexcept {
   return false;
@@ -3247,7 +3250,7 @@ bool Proactor::submit_statx(std::intptr_t fd, FileStat* out,
         static_cast<std::int64_t>(st.st_mtimespec.tv_sec),
         static_cast<std::uint32_t>(st.st_mtimespec.tv_nsec));
     out->mode = static_cast<std::uint32_t>(st.st_mode);
-    out->is_dir = S_ISDIR(st.st_mode);
+    out->is_directory = S_ISDIR(st.st_mode);
   }
   impl_->posted.push_back(
       {user_data, r < 0 ? -static_cast<std::int64_t>(errno) : 0});

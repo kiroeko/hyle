@@ -1,7 +1,7 @@
 # HYLE container：什么情况选择什么
 
-> **`provisional / NOT_REVIEWED_V2`。** container 当前只提供 C++ 产品面，可通过完整源码、headers + static libraries 或
-> headers + shared libraries 使用。本页不描述 C API 或跨语言调用层。
+> **`provisional / NOT_REVIEWED_V2`。** container 当前只提供 C++ 产品面。
+> 本页适用于 C++23 source/static/shared 三种交付，不描述 C API 或跨语言调用层。
 
 container 提供性能敏感的基础数据结构、借用字符串/路径算法和调度队列。它不是为了
 替换全部 STL，也不因为某个 microbenchmark 赢就要求用户改类型：先按 ownership、元素
@@ -11,7 +11,7 @@ container 提供性能敏感的基础数据结构、借用字符串/路径算法
 
 侵入式链表在语义上属于 container，但单独作为 header-only `container_intrusive` 组件交付。
 因此 time 等底层模块和只需要零分配链表的用户无需拉入完整 container 及其 mem/platform 闭包；
-选择完整 `container` 时则会传递获得这个轻量组件。
+选择完整 `container` 不会自动取得这个独立组件，需要两者时应同时选择并链接。
 
 ## 一页选择表
 
@@ -59,8 +59,8 @@ container 提供性能敏感的基础数据结构、借用字符串/路径算法
 ## 侵入式链表：独立轻量组件
 
 当 task、timer、连接或对象池已经拥有稳定地址的节点，并需要零分配、O(1) 任意摘链、node→iterator
-或整段 handoff 时，选择独立的 `hyle::container_intrusive`。完整 container 会传递聚合该 target；
-只用链表的消费者不必取得 mem/platform 闭包。
+或整段 handoff 时，选择独立的 `hyle::container_intrusive`。完整 container 不聚合该 target；只用
+链表的消费者不必取得 mem/platform 闭包，需要两套能力的消费者显式选择两个 component。
 
 auto/safe retirement 选择、接入、multi-hook 示例、`try_*` 的有限检查边界、range splice、callback、外部同步以及完整
 iterator/lifetime 失效矩阵见独立的

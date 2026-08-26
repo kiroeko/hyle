@@ -11,8 +11,7 @@ namespace hyle::simd {
 class RandomState;
 
 struct Runtime {
-  // Version of this C++ convenience table, independent of the pre-release FFI
-  // schema candidate under include/hyle/c/.
+  // Version of this C++ convenience table.
   static constexpr std::uint32_t kTableVersion = 7;
 
   struct Ops {
@@ -81,7 +80,7 @@ struct Runtime {
 
   // Module-wide selection metadata. Some modules choose individual implementations by precise
   // feature (for example F16C or AVX512-BF16), so `isa` is the broad tier and `features` records
-  // the non-hierarchical choices. This remains a C++ diagnostic/control surface, not the C ABI.
+  // the non-hierarchical choices. This is a C++ diagnostic/control surface.
   struct Module {
     Isa isa;
     std::uint64_t features;

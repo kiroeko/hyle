@@ -2,7 +2,7 @@
 
 > **`provisional / NOT_REVIEWED_V2`。** error 是 HYLE 的共享失败模型。当前产品只提供 C++
 > `Status` / `Result<T>`；完整源码、static 与 shared SDK 使用相同的 C++ 语义。项目没有原生
-> C 产品或受支持的 Native FFI。
+> C 产品或受支持的 Native FFI，早期 error C schema/bridge 已移除。
 
 ## 一页选择表
 
@@ -115,7 +115,7 @@ errno。CUDA/Vulkan 等 SDK-specific translator 由对应模块提供，再通�
 ### `std::error_code` 与 custom category
 
 HYLE 不保存 `std::error_category*`，也没有一个假装能无损接收任意 category 的通用构造器。
-category identity 可能属于某个动态库，不能成为跨 DLL、卸载边界或 managed ABI 的长期状态。
+category identity 可能属于某个动态库，不能成为跨 DLL、卸载边界或未来 managed ABI 的长期状态。
 在拥有外部调用的边界、category 仍然有效时完成转换：
 
 - `std::generic_category()` / POSIX system error 映到 `status_from_errno`；
@@ -127,7 +127,7 @@ category identity 可能属于某个动态库，不能成为跨 DLL、卸载边�
 
 `error_code::message()` 可能分配，返回的本地化字节也不保证满足 HYLE 的 UTF-8 合同；不要在
 `noexcept` 边界盲目调用并直接塞入 Status。抛出 `std::system_error` 的 API 应在拥有该调用的
-异常边界捕获并按上面规则转换，异常绝不能越过 HYLE `noexcept` 或 FFI 边界。若两个以上真实
+异常边界捕获并按上面规则转换，异常绝不能越过 HYLE `noexcept` 或未来 FFI 边界。若两个以上真实
 模块反复需要同一组 std/Boost 映射，再把它收成独立的冷路径 adapter header；不要增加普通
 Status 的常态字段。
 

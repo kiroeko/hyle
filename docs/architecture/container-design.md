@@ -1,12 +1,8 @@
 # HYLE container 架构
 
 > **V2 状态：`NOT_REVIEWED`。** 本页暂作既有设计输入，不代表当前功能、性能或 API 证书。
-> 当前 Native FFI 为 `N/A`；正文旧 C/FFI surface 与验收叙事待 container 轮次重写。
-
-> **Native FFI 状态校正（2026-08-25）**：HYLE 没有 native-C 客户。本文关于 C/C++、C/FFI
-> 或 C 用户的旧表述只记录待复审的 ABI surface，不是当前跨语言证书。先从真实外语任务裁决
-> FFI 是否为 `N/A`；只有保留 direct FFI 时，container 才必须通过 Java FFM + .NET P/Invoke、
-> 真实导出、opaque ownership 与 batch 旅程后冻结该边界。
+> 当前只提供 C++23 source/static/shared，Native FFI 为 `N/A`。BUILD-03 已删除旧 C schema、
+> bridge、动态导出和 fixture；正文的其他验收叙事仍待 container 轮次重裁决。
 
 container 是 Tier 0 数据结构层：提供侵入式链接、平坦 hash、连续数组、字符串/路径、驻留池和
 调度器所需并发容器。侵入式链接单独形成轻量 header-only target；其余编译型能力由完整
@@ -16,17 +12,9 @@ container target 承载。性能核心自行维护；abseil、boost、TBB、rigt
 ## 分层与依赖
 
 ```text
-稳定发布面
-  include/hyle/c/container.h
-    POD + pointer/count + buffer-fill + opaque handles
-                      |
-                      v
-C ABI 类型擦除层
-  src/container/c_container.cc + c_btree.cc
-    vector/map erased metadata, allocator-preserving handles,
-    pointer-payload concurrent facades, shared hyle_status cold failures
-                      |
-          +-----------+-----------+
+C++23 source/static/shared
+          |
+          +-----------------------+
           |                       |
           v                       v
 C++ typed / source surface      compiled cold cores
@@ -46,52 +34,57 @@ C++ typed / source surface      compiled cold cores
           +-----------+-----------+
                       |
                       v
-Tier 0 dependencies: container_intrusive + core cache geometry +
-                     error + mem allocator + platform CPU discovery
+Tier 0 dependencies: core cache geometry + mem allocator
+                     + private platform CPU discovery
+Build-only seam:     simd_vec_headers register DSL
 ```
 
-- 完整 `container -> PUBLIC {core, container_intrusive, error, mem}`、`PRIVATE {platform}`；error 是
-  旧 C/FFI 冷失败候选的直接合同，不再藏在 mem 的传递依赖或模块私有 TLS 中，platform 只服务
-  编译实现的 CPU/OS dispatch。
+- 完整 `container -> PUBLIC {core, mem}`、`PRIVATE {platform}`；platform 只服务
+  编译实现的 CPU/OS dispatch。per-ISA TU 对寄存器 DSL 的借用另由 build-private
+  `simd_vec_headers` target seam 登记，不扩大产品闭包。
 - `container_intrusive` 是只 `PUBLIC core` 的轻量 `INTERFACE` 组件；它不拉入完整 container、mem、
-  error 或 platform。Core 同样是 INTERFACE，所以这条公开源码依赖没有 binary artifact。
+  error 或 platform，完整 container 也不聚合它。Core 同样是 INTERFACE，所以这条公开源码依赖
+  没有 binary artifact。
 - 完整 container 对 `<hyle/core/cache.h>`/compiler contract 的使用由直接 `PUBLIC core` 边表达；
   中央图与公开头扫描会拒绝靠安装 include tree 隐藏这条依赖。
-- container 不链接 `hyle_simd` 模块，避免 Tier 0→Tier 1 倒挂。
 - 字符串批处理的每 ISA TU 复用 `hyle/simd/vec.h` 的 header-only 寄存器 DSL；
-  这不会调用 SIMD runtime，也不会把 SIMD 公共 ABI带入 container。
+  当前不调用 SIMD runtime，也不会把 SIMD 公共 API 带给 container 消费者；中央 manifest 用直接
+  `PRIVATE_BUILD_DEPS simd_vec_headers` 投影真实 build-interface target 边，避免共享 include root
+  隐藏耦合，同时避免为 container 单独编译完整 simd runtime。
 - Swiss control group 仍在 `probe.h` 自包含实现：x86 16-byte group、NEON/portable
   8-byte group。它必须可被 typed `SwissTable` hot path 内联。
 
 ## 数据结构面
 
-| 能力 | C++ 源码面 | C/FFI 动态面 | 关键合同 |
-|---|---|---|---|
-| intrusive list | [`IntrusiveListHook` / `IntrusiveList<T, &T::hook>`（auto）与 `SafeIntrusiveListHook` / `SafeIntrusiveList<T, &T::hook>`（explicit retirement）](container-intrusive-design.md) | `N/A` | caller-owned 稳定节点；零分配；node→iterator、单节点/整段 O(1) 重链；外部同步；独立 `container_intrusive` target |
-| flat map | `FlatHashMap<K,V>`（实现名 `SwissTable`） | erased POD hash map | C++ 支持 non-trivial ownership 与异构查找；C 面按字节存 POD；ctrl+连续 slots；SIMD group probe |
-| flat set | `FlatHashSet<K>` | erased POD hash set | 真 set API/slot；canonical-key find；只读 key 迭代；C 面不要求 dummy mapped value |
-| sorted flat map / set | `FlatMap<K,V>` / `FlatSet<K>` | 不机械新增 | lookup-heavy/mutation-light；unique-key；连续有序迭代；`sorted_unique` O(N) bulk；位置 mutation O(N) |
-| ordered map / set | `BTreeMap<K,V>` / `BTreeSet<K>` | erased POD B-tree map/set | unique-key；双向有序迭代；lower/upper/range visit/range erase；成功 mutation 后引用与 iterator 失效 |
-| concurrent flat map | `ConcurrentFlatHashMap<K,V>`（短名 `ConcurrentHashMap`） | sharded erased POD concurrent map | 独立 cache-line shard + Swiss table；shared/exclusive accessor；紧凑、高吞吐；rehash 后地址不稳定 |
-| concurrent node map | `ConcurrentNodeHashMap<K,V>` | 不机械导出 node 指针 | bucket RW accessor；node 地址跨 rehash 稳定；表增长保留旧 bucket array，销毁前要求 quiescent |
-| POD dynamic array | `PodVector<T>` | erased POD vector | 默认可用或注入 allocator；copy/move 值语义；header-before-data；allocator/alignment 随 allocation 记录 |
-| inline array | `SmallVector<T,N>` | 不单独导出 | 通用 owning value semantics；POD 保留 memcpy relocation；N 是编译期类型，C 动态需求由 erased vector 覆盖 |
-| strict fixed-capacity sequence | `StaticVector<T,N>`（`InplaceVector` alias） | 不导出 | storage 全内嵌、永不分配、data 地址固定；容量失败可恢复；N=0 可用；紧凑 size metadata |
-| dynamic bitset | `DynamicBitSet` | opaque dynamic bitset | allocator-aware 值类型；canonical zero padding；set algebra/shift/popcount/set-bit iteration；长 mask runtime ISA dispatch |
-| bounded sparse IDs | `SparseSet<Id>` | opaque sparse u32 set | dense+sparse 双数组；固定 universe；insert/erase/contains/clear O(1)；dense iteration O(active)；swap erase 不保序 |
-| single-thread ring | `RingDeque<T>` / `ByteRingBuffer` | opaque byte ring | 前者是可增长/显式 bounded 的 owning 双端序列；后者为流式字节 staging 提供 copy 与至多两段 zero-copy spans；均非线程安全 |
-| bounded SPSC FIFO | `SpscQueue<T>` | opaque `void*` SPSC handle | exact usable capacity；单 producer / 单 consumer；非平凡 typed 值或 caller-owned C pointer；无 CAS/逐 slot atomic |
-| string view | `StringView`（实现名 `string_ref`） | `hyle_container_string_view` | ptr+u32 length+NUL bit；借用、不拥有 |
-| interner | `StringInterner` | opaque StringInterner | generation-tagged direct ID；内容相等才同一条目 |
-| path/text algorithms | typed view/buffer-fill | pointer/count/buffer-fill | 无 STL 所有权跨边界 |
-| bounded/sharded queues | typed payload | `void*` payload opaque handle | HYLE 不拥有 payload |
-| work steal/share | typed payload | `void*` payload opaque handle | owner/thief 契约不同，不能混用 |
-| concurrent vector | typed append-only + random-access iterator | named `concurrent_ptr_vector` | caller-owned `void*` payload；多 writer 并行领取 index；地址稳定；quiesce 后读取；`size()` 不是 in-flight 完成栅栏；fallible path 分配失败不留洞 |
+| 能力 | C++23 产品面 | 关键合同 |
+|---|---|---|
+| intrusive list | [`IntrusiveListHook` / `IntrusiveList<T, &T::hook>`（auto）与 `SafeIntrusiveListHook` / `SafeIntrusiveList<T, &T::hook>`（explicit retirement）](container-intrusive-design.md) | caller-owned 稳定节点；零分配；node→iterator、单节点/整段 O(1) 重链；外部同步；独立 `container_intrusive` target |
+| flat map | `FlatHashMap<K,V>`（实现名 `SwissTable`） | non-trivial ownership 与异构查找；ctrl+连续 slots；SIMD group probe |
+| flat set | `FlatHashSet<K>` | 真 set API/slot；canonical-key find；只读 key 迭代 |
+| sorted flat map / set | `FlatMap<K,V>` / `FlatSet<K>` | lookup-heavy/mutation-light；unique-key；连续有序迭代；`sorted_unique` O(N) bulk；位置 mutation O(N) |
+| ordered map / set | `BTreeMap<K,V>` / `BTreeSet<K>` | unique-key；双向有序迭代；lower/upper/range visit/range erase；成功 mutation 后引用与 iterator 失效 |
+| concurrent flat map | `ConcurrentFlatHashMap<K,V>`（短名 `ConcurrentHashMap`） | 独立 cache-line shard + Swiss table；shared/exclusive accessor；紧凑、高吞吐；rehash 后地址不稳定 |
+| concurrent node map | `ConcurrentNodeHashMap<K,V>` | bucket RW accessor；node 地址跨 rehash 稳定；表增长保留旧 bucket array，销毁前要求 quiescent |
+| POD dynamic array | `PodVector<T>` | 默认可用或注入 allocator；copy/move 值语义；header-before-data；allocator/alignment 随 allocation 记录 |
+| inline array | `SmallVector<T,N>` | 通用 owning value semantics；POD 保留 memcpy relocation；N 是编译期类型 |
+| strict fixed-capacity sequence | `StaticVector<T,N>`（`InplaceVector` alias） | storage 全内嵌、永不分配、data 地址固定；容量失败可恢复；N=0 可用；紧凑 size metadata |
+| dynamic bitset | `DynamicBitSet` | allocator-aware 值类型；canonical zero padding；set algebra/shift/popcount/set-bit iteration；长 mask runtime ISA dispatch |
+| bounded sparse IDs | `SparseSet<Id>` | dense+sparse 双数组；固定 universe；insert/erase/contains/clear O(1)；dense iteration O(active)；swap erase 不保序 |
+| single-thread ring | `RingDeque<T>` / `ByteRingBuffer` | 前者是可增长/显式 bounded 的 owning 双端序列；后者为流式字节 staging 提供 copy 与至多两段 zero-copy spans；均非线程安全 |
+| bounded SPSC FIFO | `SpscQueue<T>` | exact usable capacity；单 producer / 单 consumer；无 CAS/逐 slot atomic |
+| string view | `StringView`（实现名 `string_ref`） | ptr+u32 length+NUL bit；借用、不拥有 |
+| interner | `StringInterner` | generation-tagged direct ID；内容相等才同一条目 |
+| path/text algorithms | typed view/buffer-fill | 借用输入与 caller-owned 输出边界明确 |
+| bounded/sharded queues | typed payload | container 不拥有 payload |
+| work steal/share | typed payload | owner/thief 契约不同，不能混用 |
+| concurrent vector | typed append-only + random-access iterator | 多 writer 并行领取 index；地址稳定；quiesce 后读取；`size()` 不是 in-flight 完成栅栏；fallible path 分配失败不留洞 |
+
+上表全部能力的 Native FFI 当前均为 `N/A`。
 
 ## 独立侵入式容器组件
 
 侵入式链接由独立的 `hyle::container_intrusive` header-only target 承载，完整
-`hyle::container` 只以 `PUBLIC` 依赖聚合它。它不拥有节点、不分配、不保存 owner/count，也不提供
+`hyle::container` 不聚合它。它不拥有节点、不分配、不保存 owner/count，也不提供
 内部同步；time 的稳定 timer node 是 safe-link 真实消费者，sched 的 wake-link 状态复用则是保留
 专用结构的反证。
 
@@ -123,7 +116,7 @@ Auto/safe member hook、`iterator_to`、range splice、生命周期/iterator 失
 
 因此当前结论不是“行数已经等价主流全集”，也不是按对手 LOC 补代码。dynamic bitset/
 sparse set、单线程 ring、ordered/range 与 concurrent associative 已通过 C++ 正常入口、
-C ABI、复杂度与实际 graph/active-ID/stream-staging/time-index/shared-registry workload。
+复杂度与实际 graph/active-ID/stream-staging/time-index/shared-registry workload。
 明确负空间仍是 single-thread node extraction/merge 与 ordered multi；候选能力轴还包括
 带完整策略的并发 priority/unbounded
 机制。它们都需要真实消费者触发，不能用薄 wrapper 追成熟库类型数量。
@@ -150,9 +143,7 @@ construction。整容器 throwing move 提供 basic guarantee，构造失败会�
 `memcpy`/`memmove`。push/pop O(1)，insert/erase O(suffix+inserted)，已经是连续 storage 的
 下界。data 本身永不迁移；位置 mutation 前的地址保持，从位置起的元素 identity 视为失效。
 
-该类型不进入 C ABI：N、T 构造/析构和对象内布局本来就是 C++ source contract。若 C/FFI
-需要动态 element size/capacity，应使用 erased POD vector；若需要 C 固定 buffer，则由调用方
-直接拥有 pointer/count/capacity，导出模板生命周期 callback 只会冻结错误的 ABI。
+N、T 构造/析构和对象内布局是 C++ source contract；它没有 runtime 类型擦除产品面。
 
 ### 排序连续关联容器的实际使用形状
 
@@ -181,8 +172,7 @@ size；任一列异常/OOM 都销毁已完成前缀。这个 seam 不进入 Smal
 用户任意修改 size/uninitialized storage。map 与 set 的 binary-search core 分开，避免让
 直接存 K 的 set 缴 map proxy/projection 税。
 
-C ABI 有意不增加：现有 erased POD B-tree 已覆盖 runtime comparator/range，纯 C 也能直接
-管理排序 POD buffer；新增 flat-sorted handle 会复制动态能力，却仍无法表达任意 C++ K/V
+这里不增加 runtime 类型擦除 handle：它会复制动态能力，却仍无法表达任意 C++ K/V
 构造析构。typed shape 保持 source surface，内部 allocator 继续遵守 mem 契约。
 
 ### 有序 B-tree 的实际使用形状
@@ -202,15 +192,12 @@ size、rank、finger 或预取 metadata。短数值 key 在 node 内线性搜索
 销毁。满页先尝试把 entry 向有余量的兄弟页平衡；边界写入会填满旧页、把新页留给后续有序
 数据。分裂前会预留必要 sibling/root，OOM 时结构保持不变。trivially-copyable entry 使用
 `memmove`，非平凡 entry 执行 nothrow move construction/destruction；两条路径共享同一公开
-合同，不是 benchmark 特化。C insert 的非 NULL result slot 在校验/分配前固定初始化为
-already-present sentinel，invalid/OOM 既不改变树，也不把 caller-stale result 当作有效输出。
+合同，不是 benchmark 特化。
 
 成功 mutation 可能搬移一个 node 内的 slot，因而统一失效既有 iterator/reference/pointer。
 这是 cache-packed storage 的必要代价；需要 grow 后稳定地址的用户选 node-based 结构。
 map iterator 保持 key 只读、value 可写，set iterator 为 `const K&`。公开面只做 unique-key；
 multimap/multiset、node handle、extract/merge、stable reference 与 rank/select 都是明确负空间。
-C ABI 用 runtime size/alignment/comparator/allocator 擦除 POD，并提供 trivial cursor、range
-visitor 与 `[lower,upper)` erase；不冻结 typed C++ node 布局。
 
 ### 两种并发关联容器的实际使用形状
 
@@ -239,9 +226,7 @@ accessor 是并发安全合同本身：`ConstAccessor` 持共享锁，`Accessor`
 accessor 前 find/insert 会先 release 旧绑定。每线程对同一 map 最多保留一个 accessor；
 flat 调用 `size/reserve/clear/for_each`、node 调用 `reserve/clear/for_each` 前也必须释放它，
 callback 不得 re-enter 同一 map。Hash/Eq/allocator 必须能被
-多线程安全调用，析构必须等待所有调用和 accessor quiescent。C ABI 不返回无法携带 RAII
-锁的裸 value pointer，而提供锁内 `find_copy` 与 `update(callback)`；这完整覆盖安全的 POD
-读写，同时不冻结 C++ node/accessor 布局。
+多线程安全调用，析构必须等待所有调用和 accessor quiescent。
 
 ### RingDeque / ByteRingBuffer 的实际使用形状
 
@@ -274,9 +259,8 @@ usable capacity，内部只多一个 sentinel slot 来区分满/空，所以任�
 取整。push/pop 为 O(1)，构造时唯一一次 allocation 为 O(capacity)。
 
 typed 面在 producer 发布前原位构造 `T`，consumer 释放 slot 前销毁它，因此支持非平凡与
-move-only 值；不可 move-assign 的值通过 callback 消费。C 面固定承载 caller-owned `void*`，
-不冻结 element stride 或 C++ ctor/dtor callback。两个面都要求 producer/consumer 角色各自
-只有一个线程，析构前 quiesce；`size_approx` 只用于 telemetry，不是跨线程完成栅栏。
+move-only 值；不可 move-assign 的值通过 callback 消费。producer/consumer 角色各自只能有一个
+线程，析构前必须 quiesce；`size_approx` 只用于 telemetry，不是跨线程完成栅栏。
 这是一种常用并发架构能力，不是为 benchmark 保存的旁路或常态 metadata。
 
 ### DynamicBitSet / SparseSet 的实际使用形状
@@ -287,7 +271,9 @@ shift、count/any/all、find-first/find-next 和 set-bit range。没有照抄 st
 stream operator 等非基础加速职责。storage 是 allocator-owned `uint64_t` blocks；最后一块
 的非逻辑 bit 永远清零，所有 bulk kernel 因此不需要额外 mask 每个 lane，只在 mutation
 结束 sanitize 一次。大块集合运算通过 platform `best_isa()` 选独立 variant TU，container
-仍只链接 platform/mem/error，不依赖 `hyle_simd` runtime。
+通过 `PRIVATE platform` 与 build-private `simd_vec_headers` 登记实现依赖；当前只使用
+`hyle/simd/vec.h` 的编译期 DSL，
+不调用 `hyle_simd` 的 runtime 函数，也不把 SIMD 类型暴露给 container 消费者。
 
 `SparseSet<Id>` 采用 Folly `SparseByteSet` 与经典 dense+sparse set 的共同算法：sparse[id]
 记录 dense position，membership 再验证 `dense[position] == id`，因此 `clear()` 只需 size=0，
@@ -329,7 +315,7 @@ push/read microbenchmark 数字宣称新的性能结论。
 count/range/initializer-list 构造、copy/move、front/back、正反迭代、reserve、push_back、
 resize、count/range insert、assign、单项/范围 erase、clear、swap、shrink-to-fit 与值比较；
 `try_reserve/try_push_back/try_resize/try_shrink_to_fit` 保留 HYLE allocator 的可恢复 OOM
-通路。它刻意只接受 trivially-copyable T：这是 C/FFI-friendly byte relocation 合同，
+通路。它刻意只接受 trivially-copyable T：这是明确的 byte-relocation 合同，
 不是第二个通用 `std::vector`。非平凡值用 SmallVector 或标准 vector。byte relocation
 不额外要求 T 的 C++ copy constructor；增长前的别名值以对齐 byte snapshot 保存。
 
@@ -488,7 +474,7 @@ per-table/process salt 目标相同但粒度更粗，只保证跨独立启动破
 会继承 seed，`exec` 才重新派生；显式 `StringHash(seed)` 保留确定性复现。
 
 不可信字符串另有显式 `HardenedStringHash`：SipHash-2-4 持有调用方注入的 128-bit secret，
-无默认构造，C 面用 stateless `hyle_container_siphash24`。HYLE 的 ASLR/clock process seed 不
+且无默认构造。HYLE 的 ASLR/clock process seed 不
 冒充 CSPRNG，也不自动生成 hardened key；应用必须从自己的安全随机源/secret manager 获取、
 保密并按隔离边界轮换。hardened policy 仍只在调用期间借 view，与 `StringEqual` 保持同一
 owning/heterogeneous 等价关系。正常短串和整表 hit/miss workload 分开记录 fast/salted 与
@@ -507,99 +493,19 @@ keyed SipHash 成本，不能用 raw byte microbench 隐藏安全策略代价。
 C literal 的即时 byte view，使 owning key 的异构 find/contains/erase 不要求消费者
 复制测试私有 boilerplate，也不保存借用指针。
 
-## C ABI 边界
+## 交付与 Native FFI 边界
 
-`include/hyle/c/container.h` 当前遵守统一 C ABI 机械合同。HYLE 尚未发布、C ABI 尚未
-冻结，因此本轮没有为兼容保留错误名字；动态面已按真实 C/FFI 能力复审为 234 个声明，
-并由符号 manifest、纯 C17 调用覆盖和 header-self-contained 门逐项守住。它不是把每个
-C++ 成员机械导出：模板编译期属性、非平凡对象生命周期和跨锁裸指针有意不进入 C ABI。
-当前原则是：
+container 当前只交付 C++23 source/static/shared。BUILD-03 已删除早期 C-syntax 容器 schema、
+runtime-erased bridge、动态导出、symbol manifest 和 C/managed fixture；Native FFI 为 `N/A`，
+这些旧函数与布局没有兼容义务。HYLE 模块和同工具链用户直接使用 typed API。
 
-| C ABI 能力组 | 当前判定 | 重审方向 |
-|---|---|---|
-| string view/hash/search/path buffer-fill | 保留能力 | 都是 FFI-native POD/无状态入口；合并重复命名与错误哨兵，不按 C++ 每个成员机械导出 |
-| StringInterner | 保留 opaque 能力 | permanent 与 refcounted lifecycle 都有真实跨语言用途；batch/result 形状已按实际分片重审 |
-| erased POD vector | 保留能力 | C 没有模板，size/alignment + allocator 是合理动态形状；不加入 C++ ctor/dtor callback |
-| erased POD flat map/set | 保留能力、形状已重塑 | map 拆分 insert/insert_or_assign；set 用独立最小 handle，共享 value_size=0 raw policy，但不暴露伪 value |
-| erased POD B-tree map/set | 保留能力、形状已审定 | C/FFI 确有 runtime ordered index；comparator+ctx、trivial cursor、range visit/erase 覆盖动态消费，不导出 node 布局或 C++ ctor/dtor callback |
-| erased POD concurrent map | 保留能力、形状已审定 | sharded Swiss storage；只返回锁内 copy 或执行 exclusive update callback，不导出无法携带锁的裸 pointer/node accessor |
-| 五类 pointer queue | 保留能力、角色已审定 | C 热路径统一 `try_*`；pointer 是跨 FFI 的 caller-owned work handle，不增加 runtime stride/copy callback；SPSC 明示唯一 producer/consumer，Chase-Lev 明示 owner bottom/thief top，WsFifo 明示 back/front |
-| concurrent pointer vector | 保留能力、形状已重塑 | 明确命名 `concurrent_ptr_vector`；reserve 预分配 stable segments；`try_get(out)` 区分越界与合法 NULL payload；不冒充 erased POD vector |
-| dynamic bitset / sparse u32 set | 保留 opaque 能力 | 两者是语言无关的 runtime-universe 数据结构；C 面覆盖 resize/algebra/iteration 与 dense active IDs，不暴露 C++ 布局 |
+未来只有已命名的 foreign-runtime consumer 通过全局
+[Native FFI 准入策略](native-ffi-policy.md)后，才按该任务另行设计窄的 runtime 类型擦除边界；
+不会因为 container 模板很多，就预先恢复 erased vector/map/queue parity surface。
 
-跨导出边界传递的 `hyle_container_insert_result` 与
-`hyle_container_steal_status` 都是明确的 `uint32_t` typedef；命名常量不使用 ABI 宽度未定的
-`typedef enum`。纯 C gate 在 GCC/Clang 下额外启用 `-fshort-enums`，保证该开关不能改变参数/
-out-pointer 布局。
-
-“保留能力”不等于冻结当前函数列表；未发布阶段仍可在真实消费证据出现时修正。当前 C
-面已经覆盖全部跨边界仍成立的动态能力，HYLE 内部 C++ 模块继续直接使用 typed API。
-
-2026-07-25 的消费审计确认：仓内生产代码只直接使用 typed queue（sched），没有任何
-模块通过 container C queue/ConcurrentVector facade 回调自己。因而早期含糊的
-`push/pop` 没有兼容理由：C queue 已统一为非阻塞 `try_*`，并把 owner/thief 与
-front/back 角色写进函数名。能力是否长期保留仍由真实 FFI 消费决定，不能因已重命名就
-自动冻结。
-
-2026-07-26 对照本地 rigtorp/Vyukov、oneTBB、crossbeam 与 moodycamel 后，pointer
-queue 能力转为保留：work item/foreign object 本来就由调用方拥有，固定 `void*` 能让
-lock-free hot path 保持定宽搬运，不引入运行时 element stride、copy callback 或逐项
-分配。五类并非同一 benchmark 的重复品，而是 strict SPSC FIFO、strict MPMC FIFO、
-sharded relaxed FIFO、owner-LIFO/thief-FIFO 与 owner-FIFO/batch-share 五种不同合同。
-
-同一轮也把 typed work-stealing 面从早期算法名收束为公开合同：所有可能失败的热操作
-统一 `try_*`，方法名编码 bottom/top、back/front；pop/steal 通过 out 参数只在成功时
-写值。Chase-Lev 的第三态命名为 `kRetry`，与 Crossbeam 的竞态语义一致，不再用容易被
-理解为取消/终止的 `abort`。这只重塑调用面，底层内存序、定宽 slot 和复杂度不变。
-`BoundedQueue` 的值合同只要求 trivially-copyable，slot 只保存对象表示，不需要先默认
-构造 T。两种 stealing ring 的 slot 则必须是 atomic，避免环回写与旧 thief read 构成
-C++ data race；因此明确继承预分配 `std::atomic<T>` 的默认构造及 copy/move
-constructible/assignable 限制，并要求 always lock-free，宽 task 通过 pointer/word-sized
-handle 间接承载。
-
-C concurrent facade 则确有旧形状问题：它只存 pointer 却叫通用 concurrent vector，且
-旧 `at()` 无法区分越界与合法 NULL payload。现改名 `concurrent_ptr_vector`，以
-`try_get(out)` 返回 presence，并补 typed/oneTBB 都有的 cold `reserve`。create 的
-`first_segment_capacity` 只决定首段粒度、不偷偷分配；真实预热必须显式 reserve。
-
-2026-07-26 又按本地 Abseil/Folly/simdutf 的字符串边界回审早期 Clay facade：
-`capitalize(C-ident -> UI title)` 是应用展示策略，已从 C++/C 公共面删除；旧
-`utf8_icmp` 只折叠 ASCII，却用名称暗示 Unicode case folding，也已删除。保留的
-UTF-8 基元只承诺 validate/count；C escaping 则改为明确的 `string_c_escape`，对 NUL、
-控制字节和非 UTF-8 byte 都产生完整转义。这里删的是错误抽象，不是为了缩符号数。
-C++/C 暂不冻结 UTF-8↔UTF-16/32 transcode：HYLE 的跨模块文本规范是 UTF-8，当前 UTF-16
-消费者只位于 Windows platform/IO 的 OS 边界并需要 Win32 特有的 NUL/path/native-error
-合同，UTF-32 没有真实产品消费者。仅因 simdutf 已带 codec 就导出，会提前冻结 endian、
-strict-vs-replacement、size query、短 buffer/partial-write 等一组尚无消费者裁决的合同。
-将来出现非 platform 的语言 runtime/协议消费者时，应一次补齐对称的 fixed-code-unit、
-strict buffer-fill C++/C 面；这项是登记的 scope expansion，不是 validate-only 缺口的替代品。
-C hash traversal 同样不再冒充标准 `for_each`：提前停止的 callback 形状改名为
-`map/set_visit`，返回 1 表示完整遍历、0 表示 visitor 停止或参数无效。
-
-同一命名规则也覆盖线性容器：erased POD vector 使用 `try_push_back/try_pop_back`，并以
-pointer/count 的 `try_append/try_insert/try_resize/erase/try_shrink_to_fit` 覆盖真正的 C
-批量序列需求；concurrent pointer vector 使用 `try_push_back` 并返回稳定 index。不再让
-一个裸 `push` 掩盖尾部方向或可失败的 allocation，也不要求 FFI 用户逐项跨 ABI。
-
-- options 带 `struct_size`；allocator 按值捕获但 state 生命周期由调用方保证。
-- 对象只经 create/destroy；不导出 C++ 类布局、STL、模板或异常。
-- create/reserve/insert/intern 等冷失败走共享 `hyle_status + out`；队列满空、map miss、
-  stale ID 等正常热控制流不构造错误对象。
-- String/path 产出使用借用 view 或 buffer-fill。
-- PodVector/FlatHashMap 通过运行时 item size/alignment/hash/equal 类型擦除；erased vector
-  的 batch mutation 是 O(搬移尾部+输入字节)，自别名 insert 仅在必要时申请 scratch，
-  OOM/越界不修改旧 size/data/capacity。
-- C flat map 与 typed mutation 语义一致：insert 不覆盖，insert_or_assign 才覆盖；
-  三态结果明确区分 inserted/already-present/assigned。
-- C erased map/set 的默认 byte hash 与 `memcmp` 必须成对；自定义 equal 会改变等价类，因而
-  `create` 只在同时提供 compatible hash 时接受，机械保持 `Eq(a,b) => same hash`。
-- C B-tree 与 typed unique-key/range 语义一致；NULL bound 表示无界，成功 mutation 统一
-  使 cursor/pointer 失效，OOM 不改变旧结构。
-- 并发 queue/vector 的稳定最小共同面使用 pointer payload；并发 map 则按 options 擦除
-  POD key/value，并用 `find_copy/update` 保住锁的生命周期。
-
-上表只记录旧 C surface 的历史形状；当前 Native FFI 为 `N/A`。上一轮施工证据见
-[`container-module-closure.md`](../implementation/tasks/container/container-module-closure.md)，不能作为 v2 证书。
+旧 C surface 的逐项裁决与命名演进只保留在
+[`container-module-closure.md`](../implementation/tasks/container/container-module-closure.md) 作为历史证据，
+不再混入当前架构合同，也不能作为 v2 证书。
 
 ## 下游利用
 
@@ -633,13 +539,13 @@ pointer/count 的 `try_append/try_insert/try_resize/erase/try_shrink_to_fit` 覆
 [`benchmarks-container`](../implementation/evidence/performance/benchmarks-container.md) 维护；本架构页只固定比较合同与
 不允许为 benchmark 扭曲产品形状的原则。
 
-测试矩阵包括 typed 单测、纯 C 调用覆盖、C++ C-ABI 并发测试、allocator
-故障注入、三平台构建/运行、ASan/UBSan/TSan，以及独立 SOTA benchmark。
+测试矩阵包括 typed 单测、allocator 故障注入、三平台构建/运行、source/static/shared C++23
+consumer、ASan/UBSan/TSan，以及独立 SOTA benchmark。
 
 ## 维护红线
 
 1. 新分配路径必须保存并使用原 allocator/alignment，且有 OOM 状态保持测试。
-2. 新 C API 必须进入纯 C test、指南和动态导出机械核对。
+2. 不得在普通 container 改动中恢复旧 C schema；Native FFI 只能由已准入的独立消费任务建立。
 3. 修改共享 per-ISA header 后，所有 variant TU 都必须重编译；Windows 还要验证
    import library，而不只运行库内部测试。
 4. 不为复用 `hyle_simd` runtime 制造 Tier 倒挂；批量 kernel 可复用 header DSL，
@@ -651,5 +557,4 @@ pointer/count 的 `try_append/try_insert/try_resize/erase/try_shrink_to_fit` 覆
 - [abseil Swiss Tables design](https://abseil.io/about/design/swisstables)
 - [SwissTable control-byte overview](https://faultlore.com/blah/hashbrown-tldr)
 - 本地 `abseil-cpp/absl/container/internal/btree.h`（cache-packed B-tree 对照）
-- [C ABI design](native-ffi-policy.md)
-- [C ABI authoring guide](native-ffi-policy.md)
+- [Native FFI 准入策略](native-ffi-policy.md)

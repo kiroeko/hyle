@@ -1,7 +1,7 @@
 # IO 使用指南
 
-> **`provisional / NOT_REVIEWED_V2`。** IO 当前只提供 C++ 产品面，可通过完整源码、headers + static libraries 或
-> headers + shared libraries 使用。本页不描述 C API 或跨语言调用层。
+> **`provisional / NOT_REVIEWED_V2`。** IO 当前只提供 C++ 产品面。
+> 本页适用于 C++23 source/static/shared 三种交付，不描述 C API 或跨语言调用层。
 
 HYLE IO 有两层。普通 C++ 程序优先用 `IoContext` 与 RAII/`co_await`
 封装；需要精确控制后端或自己管理状态机时才直接用 `Proactor`。

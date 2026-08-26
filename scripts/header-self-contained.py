@@ -17,14 +17,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--module", required=True)
     parser.add_argument("--header-dir", default="")
     parser.add_argument("--header", action="append", default=[])
-    parser.add_argument("--c-header", default="")
-    parser.add_argument("--no-c-header", action="store_true")
     parser.add_argument("--include-dir", required=True, type=Path)
-    parser.add_argument("--cc", required=True)
     parser.add_argument("--cxx", required=True)
-    parser.add_argument("--c-compiler-id", required=True)
     parser.add_argument("--cxx-compiler-id", required=True)
-    parser.add_argument("--c-frontend", default="")
     parser.add_argument("--cxx-frontend", default="")
     parser.add_argument("--vs-instance", default="")
     parser.add_argument("--vs-platform", default="x64")
@@ -34,8 +29,6 @@ def parse_args() -> argparse.Namespace:
         parser.error("--module must be a lowercase C identifier")
     if args.header_dir and re.fullmatch(r"[a-z][a-z0-9_]*", args.header_dir) is None:
         parser.error("--header-dir must be a lowercase C identifier")
-    if args.no_c_header and args.c_header:
-        parser.error("--no-c-header and --c-header are mutually exclusive")
     return args
 
 
@@ -50,15 +43,15 @@ def compile_header(
     sysroot: str,
     compiler_env: dict[str, str] | None,
 ) -> None:
-    suffix = ".c" if language == "c" else ".cc"
+    suffix = ".cc"
     stem = header.replace("/", "_").replace(".", "_")
     source = work_dir / f"{stem}{suffix}"
     source.write_text(f'#include "{header}"\n', encoding="utf-8")
 
     msvc_frontend = compiler_id == "MSVC" or frontend == "MSVC"
     if msvc_frontend:
-        standard = "/std:c11" if language == "c" else "/std:c++latest"
-        mode = "/TC" if language == "c" else "/TP"
+        standard = "/std:c++latest"
+        mode = "/TP"
         command = [
             compiler,
             "/nologo",
@@ -70,15 +63,14 @@ def compile_header(
             f"/Fo{work_dir / (stem + '.obj')}",
             "/utf-8",
         ]
-        if language == "c++":
-            # Mirror hyle_build_contract: public inline adapters translate
-            # allocation exceptions into Status and therefore require the
-            # standard C++ unwind model under both cl.exe and clang-cl.
-            command.append("/EHsc")
-            if compiler_id == "MSVC":
-                command.append("/Zc:__cplusplus")
+        # Mirror hyle_build_contract: public inline adapters translate
+        # allocation exceptions into Status and therefore require the
+        # standard C++ unwind model under both cl.exe and clang-cl.
+        command.append("/EHsc")
+        if compiler_id == "MSVC":
+            command.append("/Zc:__cplusplus")
     else:
-        standard = "-std=c11" if language == "c" else "-std=c++23"
+        standard = "-std=c++23"
         command = [compiler, standard, "-fsyntax-only", f"-I{include_dir}"]
         if sysroot:
             command.extend(["-isysroot", sysroot])
@@ -228,27 +220,7 @@ def main() -> int:
                 sysroot,
                 compiler_env,
             )
-        c_header_count = 0
-        if not args.no_c_header:
-            c_header = args.c_header or f"hyle/c/{args.module}.h"
-            if not (include_dir / c_header).is_file():
-                raise RuntimeError(f"selected C header does not exist: {c_header}")
-            compile_header(
-                args.cc,
-                args.c_compiler_id,
-                args.c_frontend,
-                include_dir,
-                c_header,
-                "c",
-                work_dir,
-                sysroot,
-                compiler_env,
-            )
-            c_header_count = 1
-    print(
-        f"{args.module} headers self-contained: "
-        f"{len(headers)} C++ + {c_header_count} C"
-    )
+    print(f"{args.module} C++ headers self-contained: {len(headers)}")
     return 0
 
 

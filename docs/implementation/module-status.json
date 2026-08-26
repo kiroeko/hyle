@@ -142,12 +142,12 @@
       "summary": "现有实现只作输入；尚需裁决与 SIMD 的边界。"
     },
     {
-      "module": "platform",
+      "module": "time",
       "product_state": "QUEUED",
       "summary": "现有实现与历史审查只作输入。"
     },
     {
-      "module": "time",
+      "module": "platform",
       "product_state": "QUEUED",
       "summary": "现有实现与历史审查只作输入。"
     },

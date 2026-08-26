@@ -1,7 +1,7 @@
 # HYLE platform：什么情况选择什么
 
-> **`provisional / NOT_REVIEWED_V2`。** platform 当前只提供 C++ 产品面，可通过完整源码、headers + static libraries 或
-> headers + shared libraries 使用。本页不描述 C API 或跨语言调用层。
+> **`provisional / NOT_REVIEWED_V2`。** platform 当前只提供 C++ 产品面。
+> 本页适用于 C++23 source/static/shared 三种交付，不描述 C API 或跨语言调用层。
 
 platform 是 HYLE 的跨 OS 原语层。它服务两类调用者：HYLE 内部模块需要稳定、可组合的
 线程/等待/页内存地基；库用户需要在 Windows、Linux、macOS 上表达同一资源合同。它不把

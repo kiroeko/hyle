@@ -20,14 +20,8 @@ namespace hyle {
 
 // ---- status code table (single source of truth) ----------------------------
 // X-macro: each row is X(PascalName, SCREAMING_NAME, value). The C++ StatusCode
-// enum, name table, factories and Is<Code>() predicates are generated from it.
-// The C ABI's fixed-width hyle_status_code constants (hyle/c/error.h) are
-// hand-written for a clean FFI header, but c_error.cc static_asserts every row
-// against it -- a value drift or a missing/renamed C code fails to compile.
-// Adding a code = one row here + the matching fixed constant in
-// hyle/c/error.h and source-helper predicate in hyle/c/error_helpers.h. The
-// direct FFI intentionally has no foreign-side Status factories. Code set
-// follows the abseil/gRPC canonical taxonomy.
+// enum, name table, factories and Is<Code>() predicates are generated from this
+// single source. The code set follows the Abseil/gRPC canonical taxonomy.
 //   X(PascalName, SCREAMING_NAME, value)
 #define HYLE_FOREACH_ERROR_STATUS_CODE(X)                                      \
   X(Cancelled, CANCELLED, 1)                                                   \

@@ -15,8 +15,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include "hyle/c/error_helpers.h"
-#include "hyle/c/util.h"
 #include "hyle/container/string_ref.h"
 #include "hyle/platform/cpu.h"
 #include "hyle/platform/thread.h"
@@ -147,10 +145,6 @@ void* create_token() {
 
 hyle::Result<void*> create_result_token() { return create_token(); }
 
-void* create_c_token(hyle_status*, void*, const void*) {
-  return create_token();
-}
-
 struct TransparentHash {
   using is_transparent = void;
   std::size_t operator()(std::string_view value) const noexcept {
@@ -194,7 +188,6 @@ struct RegistryFixture {
   static constexpr std::size_t kEntries = 256;
   std::array<std::string, kEntries> keys;
   std::array<hyle::container::string_ref, kEntries> hyle_keys;
-  std::array<hyle_container_string_view, kEntries> c_keys;
   std::array<std::string_view, kEntries> std_keys;
   hyle::util::Registry<void*> mutable_hyle;
   hyle::util::Registry<void*> frozen_hyle;
@@ -206,7 +199,6 @@ struct RegistryFixture {
   absl::flat_hash_map<std::string, PeerEntry> frozen_absl;
   absl::flat_hash_map<std::string, ResultPeerEntry> fallible_absl;
 #endif
-  hyle_util_registry* frozen_c = nullptr;
   mutable std::mutex std_mutex;
 
   RegistryFixture() {
@@ -220,15 +212,11 @@ struct RegistryFixture {
     frozen_absl.reserve(kEntries);
     fallible_absl.reserve(kEntries);
 #endif
-    check(hyle_util_registry_create(&frozen_c, hyle_system_allocator()));
-    check(hyle_util_registry_reserve(frozen_c, kEntries));
     for (std::size_t i = 0; i < kEntries; ++i) {
       char text[32];
       std::snprintf(text, sizeof(text), "backend-%03zu", i);
       keys[i] = text;
       hyle_keys[i] = hyle::container::string_ref(keys[i]);
-      c_keys[i] = hyle_container_view(
-          keys[i].data(), static_cast<std::uint32_t>(keys[i].size()));
       std_keys[i] = keys[i];
       check(mutable_hyle.register_creator(
           hyle_keys[i], &create_token, hyle::util::RegistryPriority::kDefault,
@@ -253,28 +241,15 @@ struct RegistryFixture {
           keys[i],
           ResultPeerEntry{&create_result_token, 2, "benchmark backend"});
 #endif
-      check(hyle_util_registry_register(
-          frozen_c, c_keys[i], &create_c_token, nullptr,
-          HYLE_UTIL_REGISTRY_DEFAULT,
-          hyle_container_cstr("benchmark backend")));
     }
     (void)frozen_hyle.freeze();
     (void)fallible_hyle.freeze();
-    check(hyle_util_registry_freeze(frozen_c));
   }
-
-  ~RegistryFixture() { hyle_util_registry_destroy(frozen_c); }
 
   static void check(hyle::Status status) {
     if (!status.ok()) std::abort();
   }
 
-  static void check(hyle_status status) {
-    if (!hyle_status_is_ok(status)) {
-      hyle_status_free(&status);
-      std::abort();
-    }
-  }
 };
 
 template <class Lookup>
@@ -305,29 +280,6 @@ int main() {
   const auto frozen_hyle_view = fixture.frozen_hyle.freeze();
   const auto fallible_hyle_view = fixture.fallible_hyle.freeze();
   std::size_t index = 0;
-
-  {
-    constexpr std::size_t kBatch = 1024;
-    std::array<std::uint64_t, kBatch> output{};
-    hyle::util::Rng native_rng{12345};
-    hyle_util_rng c_rng{};
-    if (!hyle_util_rng_seed(&c_rng, 12345)) std::abort();
-    nb::Bench bench;
-    bench.title("util-runtime C RNG adapter, 1024-value batch")
-        .relative(true)
-        .batch(kBatch)
-        .minEpochIterations(20'000);
-    bench.run("C++ Rng fill loop", [&] {
-      for (auto& value : output) value = native_rng.next_u64();
-      nb::doNotOptimizeAway(output.data());
-    });
-    bench.run("C ABI rng_fill_u64", [&] {
-      if (!hyle_util_rng_fill_u64(&c_rng, output.data(), output.size())) {
-        std::abort();
-      }
-      nb::doNotOptimizeAway(output.data());
-    });
-  }
 
   {
     nb::Bench bench;
@@ -404,19 +356,6 @@ int main() {
       nb::doNotOptimizeAway(
           frozen_hyle_view.create(fixture.hyle_keys[index++ & 255]));
     });
-    index = 0;
-    bench.run("HYLE C Registry frozen", [&] {
-      nb::doNotOptimizeAway(hyle_util_registry_create_or_null(
-          fixture.frozen_c, fixture.c_keys[index++ & 255], nullptr));
-    });
-    index = 0;
-    bench.run("HYLE C Registry frozen checked", [&] {
-      void* result = nullptr;
-      hyle_status status = hyle_util_registry_create_object(
-          &result, fixture.frozen_c, fixture.c_keys[index++ & 255], nullptr);
-      if (!hyle_status_is_ok(status)) std::abort();
-      nb::doNotOptimizeAway(result);
-    });
   }
 
   {
@@ -489,14 +428,6 @@ int main() {
       nb::doNotOptimizeAway(parallel_reads(
           [&](std::size_t at) {
             return frozen_hyle_view.create(fixture.hyle_keys[at]);
-          },
-          kThreads, kIterations));
-    });
-    bench.run("HYLE C Registry frozen", [&] {
-      nb::doNotOptimizeAway(parallel_reads(
-          [&](std::size_t at) {
-            return hyle_util_registry_create_or_null(
-                fixture.frozen_c, fixture.c_keys[at], nullptr);
           },
           kThreads, kIterations));
     });

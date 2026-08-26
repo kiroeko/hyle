@@ -1,19 +1,14 @@
-# Fixture 06 — installed io package/schema with HTTP/2
+# Fixture 06 — installed C++ io package with HTTP/2
 
-This C-syntax conformance fixture—not a native-C product consumer—requests the installed `io`
-component, audits the package's
-`io_http2` feature manifest, links `hyle::io`, and verifies the HTTP/2 protocol core at
-runtime. It uses only the installed prefix; neither nghttp2's checkout nor HYLE's source
-tree is visible to the consumer. GNU/Clang builds deliberately enable
-`-fshort-enums`; compile-time checks prove that the installed backend and HTTP/2 role
-parameters remain fixed 32-bit typedefs and that the by-value capabilities snapshot keeps
-its historical v1 candidate layout. io direct FFI remains unreviewed; these checks prove only
-schema/compiler/package hygiene and may be changed or removed before a real binding release.
+This C++ consumer requests the installed `io` component, audits the package's
+`io_http2` feature manifest, constructs the native HTTP/2 client seam and links
+the complete private protocol dependency closure. It uses only the installed
+prefix; neither nghttp2's checkout nor HYLE's source tree is visible.
 
 ```bash
 cmake -S . -B build -DCMAKE_PREFIX_PATH=/path/to/hyle-prefix
 cmake --build build
-./build/installed_io_http2_schema_fixture
+./build/installed_io_http2_consumer
 ```
 
 The same project consumes shared and static HYLE packages. A shared `hyle_io` contains the

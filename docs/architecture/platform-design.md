@@ -1,7 +1,8 @@
 # HYLE platform/ 设计
 
 > **V2 状态：`NOT_REVIEWED`。** 本页暂作既有设计输入，不代表当前功能、性能或 API 证书。
-> 当前 Native FFI 为 `N/A`；正文旧 C/FFI surface 与验收叙事待 platform 轮次重写。
+> 当前只提供 C++23 source/static/shared，Native FFI 为 `N/A`。BUILD-03 已删除旧 C schema、
+> bridge、动态导出和 fixture；正文的其他验收叙事仍待 platform 轮次重裁决。
 
 > 用户当前选型见 [user/platform](../user/platform.md)，上一轮性能输入见
 > [historical platform evidence](../implementation/evidence/performance/benchmarks-platform.md)，施工历史见
@@ -11,30 +12,29 @@
 
 platform 把 Windows、Linux 和 macOS 的不同系统调用收敛成可组合的**机制**，供 HYLE
 内部地基层和需要直接控制 OS 资源的库用户共同使用。它位于共享 `error` 之上、
-`mem/simd/container/sched/io/compute` 之下；`time` 是不经过 platform 的平行底层分支，
-其 native 核只借 core 头，C adapter 依赖 error：
+`mem/simd/container/sched/io/compute` 之下；公开文件元数据复用 `time::UnixTimestamp`，因此
+中央图与真实 target 都声明 `platform -> PUBLIC {core, error, time}`：
 
 ```text
-error -------------------------------+------ time
-  |                                  |  clock/sleep/timer semantics
-platform  -- CPU/OS facts, thread, wait, VM, file, dynlib
-  |\                                         |
-  | +------ simd/container        runtime ISA and cache facts
-  +-------- mem                  VM, huge page, NUMA, guarded stack backing
-  +-------- sched <---------------- timed deadlines
-  +-------- io/compute           native file/plugin/backend foundations
+core + error + time
+          |
+       platform  -- CPU/OS facts, thread, wait, VM, file, dynlib
+          |\
+          | +------ simd/container  runtime ISA and cache facts
+          +-------- mem            VM, huge page, NUMA, guarded stack backing
+          +-------- sched          thread/wait mechanisms
+          +-------- io/compute     native file/plugin/backend foundations
 ```
 
 platform 不拥有调度策略、通用堆、异步 completion 或设备内存。它回答“OS 能做什么、怎样
 可靠地做”，上层回答“何时做、为哪个 workload 做”。这是避免底层 API 被某个 benchmark
 或单一内部消费者扭曲的首要边界。`Parker::park_timeout` 提供等待机制，但 clock/sleep 与
-deadline 的时间语义仍归 time/sched；不能因为 OS 同时实现二者就伪造一条 `platform → time`
-构建依赖。
+deadline 的时间语义仍归 time/sched；`platform -> time` 只由公开 `FileInfo::modified_time` 类型产生，
+不授权 platform 接管 clock、sleep、deadline 或 timer 行为。
 
 `hyle/platform.h` 只是跨编译器的 `HYLE_OS_*`/属性宏头；包含它不等于链接 platform 模块。
-`FileInfo::modified_time` 与 C `hyle_file_info` 复用 time 的自包含 `UnixTimestamp` /
-`hyle_unix_timestamp` 值头，以免 OS metadata 与时间转换产生两种表示；它不取得 clock、sleep、
-deadline 或 timer 行为，因此是公开 header-only 边，不是 `hyle_platform -> hyle_time` target 边。
+`FileInfo::modified_time` 复用 time 的 `UnixTimestamp`，以免 OS metadata 与时间转换产生两种表示；
+这既是公开 header include，也是 `hyle_platform -> hyle_time` 的真实 `PUBLIC` target 边。
 只有直接调用本模块符号的实现才声明 private 依赖，公开头若命名 `CpuOrder`、`ThreadPriority`、
 `VmRegion` 等 platform 类型则声明 public 依赖。不得依靠 mem/sched 的传递链接掩盖直接消费，
 也不得因一个预处理宏虚构二进制依赖。
@@ -76,7 +76,8 @@ worker 数、轮转、超订和 NUMA-aware stealing 都是 sched 或应用策略
 ## 4. Thread 只表达 OS 线程机制
 
 `Thread` 是 move-only OS handle，不用 `std::thread` 暴露 ABI，也不接受 `std::function`。
-入口使用 function pointer + context，既能服务内部 runtime，也能在任务成立时映射到 Native FFI 候选。
+入口使用 function pointer + context 服务内部 runtime；若未来 foreign-runtime 任务独立准入，
+该形状可作为新边界的设计输入，但当前不是 FFI surface。
 
 `ThreadOpts` 只承载 OS 在创建边界可执行的配置：name、stack size、单 CPU/CPU 集合 affinity、
 portable priority 和配置策略。view 参数在 `spawn()` 返回前同步复制；用户无需为短期配置
@@ -191,7 +192,7 @@ link、目录 visitor、cwd/temp/home/env、同步 open/read/write 和原子临�
 platform 不拥有 path 字符串算法、glob、watcher、高层 directory object、async stream 或虚拟
 文件系统。纯词法 path 操作属于 container/string，变化通知和异步数据流属于 io。
 
-## 8. 错误、所有权与 Native FFI 候选
+## 8. 错误、所有权与交付边界
 
 platform 可以依赖最底层 error。资源创建和有值查询返回 `Result<T>`，状态变更返回
 `Status`；错误保存 HYLE code、operation 和原生系统诊断。成功热路径不分配，模块不维护
@@ -209,42 +210,18 @@ C++ 资源 owner（`Thread`、`VmRegion`、`FileHandle`、`MappedFile`、`DynLib
 RAII；借出的 pointer、symbol、native handle 或 view 不得活过 owner。需要转移回收责任时必须
 使用显式 release/close 语义。
 
-现有 `include/hyle/c/platform.h` 与 `c_platform.cc` 只是 C-syntax ABI 候选账本，不是独立的
-native-C 产品面，也不承诺与 C++ API 做 1:1 parity。先以真实 Java/.NET 等任务决定整块边界是
-保留、缩小还是 `N/A`；只有保留 direct FFI 时，下面的形状才成为待验合同：
-
-- 小型 POD facts 和 fixed-width tag/flag 可直接值传递；tag 使用 `int32_t`/`uint32_t` typedef +
-  integer constants，不让 C `-fshort-enums` 改变参数、返回或 POD 布局；资源用 opaque handle
-  或一字宽 native handle。
-- fixed typedef 必须贯穿导出参数/返回、callback 与 POD 字段；`hyle_thread_opts` 在
-  `struct_size` 后把旧 padding 显式命名为必须为 0 的 `reserved`，业务字段全部可选；保留到
-  `config_policy` 为止的当前候选顺序，数组 affinity 只追加在尾部。当前 64-bit fixture 断言 size 72、
-  priority/policy/array/count offset 44/48/56/64，mandatory readable size 8；满足显式
-  `reserved=0` 合同的字段前缀 56 可读。`hyle_cpu_info` 当前断言 size 12、kind offset 8；这些
-  数字在首个 managed binding 发布前不是兼容承诺。
-  裸 `int` 只保留 C bool/callback truth 与显式 sentinel，裸 `unsigned` 只保留 CPU id/count。
-- 会随新 ISA 扩展的 `hyle_cpu_features` 不按值跨 ABI：调用方用 INIT 提供
-  `struct_size + reserved` 版本前缀和可写容量，adapter 只写已知前缀、保留 future tail，且在
-  参数错误时也先把可写的已知 feature 字段初始化为 false。已知短前缀可继续使用，旧库也能
-  接受更大的未来结构；这类大型可演进 snapshot 统一返回 owning Status + out。
-- 所有可恢复失败返回 opaque `hyle_status` + out 参数；`NULL` 是 OK，每个非 NULL owning
-  handle 由调用方恰好一次传给 `hyle_status_destroy`。
-- callback 使用 function pointer + `void*` context；字符串/数组使用 pointer + count/view。
-- C thread opts 以 `struct_size` 开头并提供初始化宏/setter；全零不冒充有效初始化。桥接先以
-  当前默认值构造本地结构，再只 memcpy 调用方声明且本库已知的前缀：过短必需前缀拒绝、
-  缺失尾字段取默认、未知未来尾部忽略。pointer+count 等成对扩展仅在两字段都完整可读时启用，
-  防止部分字段复制后形成伪造 view 或越界读取。
-- 不机械复制 C++ 模板/RAII 名称。只有已选中的 foreign-runtime 任务要求能力可达；未选中的
-  编译期、RAII 或同工具链能力可以明确不导出，不能为 parity 制造符号。
+platform 当前只交付 C++23 source/static/shared。BUILD-03 已删除早期 C-syntax schema、bridge、
+动态导出和 fixture；Native FFI 为 `N/A`，没有 C ABI layout 或符号兼容承诺。HYLE 模块和同工具链
+用户直接使用 typed facts、`Status`/`Result<T>` 与 move-only RAII owner，不绕 opaque C handle。
+将来只有已命名的 foreign-runtime consumer 通过
+[Native FFI 准入策略](native-ffi-policy.md)后，才按任务设计窄的 runtime 类型擦除 adapter；不为
+C++ API parity 预埋 POD、callback 或资源句柄 schema。
 
 C++ 在同一个无分配 core 上提供两种显式便利形状：`Thread::spawn(callable, opts)` 拥有 capturing/
 move-only callable；`platform/convenience.h` 以 header-only overload 返回 owning
 `std::string/std::vector`。后者负责 count/fill、动态视图重试与 STL 分配异常到 `Status` 的
-adapter 转换，但不进入 DLL/direct FFI 候选，也不让 `fs.h/cpu.h` 的 core 被迫引入 owning 类型。这样普通
-C++ 使用不重复样板，allocator/arena/FFI 与热调用者仍能控制每次分配。
-
-这段 C-shaped adapter 是上一轮历史输入，不属于当前产品。platform v2 轮次应删除旧 schema、
-bridge 与 fixture，除非新的真实外语任务重新通过 [FFI policy](native-ffi-policy.md)准入。
+adapter 转换，也不让 `fs.h/cpu.h` 的 core 被迫引入 owning 类型。这样普通 C++ 使用不重复样板，
+allocator/arena 与热调用者仍能控制每次分配。
 
 ## 9. 性能架构
 
@@ -257,7 +234,7 @@ platform 的 SOTA 标准不是“比系统调用快”，而是同合同下不�
   也不按可能稀疏且很大的 opaque id 分配 bitmap。
 - Thread 默认路径不为未请求的强保证增加握手/refcount；required 才支付同步配置成本。
 - callable 线程入口只在用户选择 owning 便利重载时多一次冷路径 heap 状态分配；OS thread 创建仍是
-  主成本，runtime/sched 与 C adapter 继续使用 allocation-minimal `entry + void*` core。
+  主成本，runtime/sched 继续使用 allocation-minimal `entry + void*` core。
 - `wait_on_address` 直接落 OS 原语，Parker 只加一个原子状态机，不增 mutex/heap allocation。
 - `allocate_rw` 使用最少 OS mapping 操作；staged reserve+commit 的额外 syscall 是不同合同，
   不能拿来宣称普通分配性能。
@@ -310,8 +287,8 @@ platform 的 SOTA 标准不是“比系统调用快”，而是同合同下不�
 
 1. 这是可复用 OS 机制，还是某个上层 workload 的策略？
 2. 系统事实、动态进程事实和用户偏好是否被不同类型表达？
-3. 是否存在真实 foreign-runtime 任务？没有时是否明确 `FFI=N/A`；保留 direct FFI 时，Java/.NET
-   是否都能完成该任务，且所有权和失败可见？
+3. 当前是否仍保持 `Native FFI=N/A`；若出现已命名 foreign-runtime 任务，是否先按全局准入策略
+   单独立项，而不是在 platform 修改中顺手恢复旧 C schema？
 4. 新调用是否给默认热路径增加 syscall、分配、握手或间接层？
 5. Windows/Linux/macOS 的能力差异是显式结果，还是被静默吞掉？
 6. 是否有真实内部或外部消费者，而非只为 benchmark 制造形状？

@@ -56,7 +56,7 @@ hyle::core ──PUBLIC──► every component whose public headers consume Co
 这条边不是为了链接一个 DLL，而是让 include directory、C++23/build contract、安装组件闭包和
 公开源码依赖成为 target 的机器事实。中央组件图负责唯一声明，真实 target link 从同一记录
 生成；配置合同还扫描公开头，拒绝“直接 include Core 却没有直接 `PUBLIC core`”以及没有实际
-include 的冗余边。安装整棵 header tree 不再掩盖缺失依赖。
+include 的冗余边。安装只投影 selected closure 的 owned headers，不再掩盖缺失依赖。
 
 Core 只传播 build-owned C++/platform compile contract，不链接 `hyle_trace` 或 `hyle_testing`：它的
 源码与头都不消费这些 gate。即使工程打开 profiling，链接 `hyle::core` 也不能凭空给消费者增加

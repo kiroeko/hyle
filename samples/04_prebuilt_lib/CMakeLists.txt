@@ -3,7 +3,7 @@ project(hyle_sample_installed_package LANGUAGES CXX)
 
 # CMAKE_PREFIX_PATH (or Hyle_DIR) points at an installed HYLE prefix. The package
 # supplies headers, linkage mode, transitive module dependencies and C++23.
-find_package(Hyle 0.1 REQUIRED COMPONENTS simd mem)
+find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS simd mem)
 
 add_executable(installed_package_consumer consumer.cc)
 target_link_libraries(installed_package_consumer PRIVATE hyle::simd hyle::mem)

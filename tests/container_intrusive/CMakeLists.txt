@@ -1,7 +1,6 @@
 hyle_add_header_self_contained_test(container_intrusive
   HEADER_DIR container
-  HEADERS intrusive_list.h
-  NO_C)
+  HEADERS intrusive_list.h)
 hyle_add_test(container_intrusive SOURCES intrusive_list_test.cc)
 
 # Compile the header-only list through stable noinline C probes, then inspect

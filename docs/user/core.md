@@ -20,7 +20,7 @@ Core 没有 umbrella header；只 include 当前任务需要的头。
 安装后的 SDK：
 
 ```cmake
-find_package(Hyle 0.1 REQUIRED COMPONENTS core)
+find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS core)
 target_link_libraries(my_target PRIVATE hyle::core)
 ```
 

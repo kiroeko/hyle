@@ -1,8 +1,7 @@
 # SIMD native/runtime 双轨指南
 
 > **当前状态**：本页只维护 C++ SIMD 派发与 ISA 形状。Native FFI 已裁决为 `N/A`；旧
-> `include/hyle/c/simd.h`、bridge、入口计数和 managed 设想是待 SIMD 轮次删除的历史债，不参与
-> 当前架构、用户面或证书。
+> C schema、bridge、入口计数和 managed fixture 已由 BUILD-03 删除，不参与当前架构、用户面或证书。
 
 HYLE 的派发边界按**类型契约**划分，不按“头文件还是 `.cc`”划分。一个函数只要让
 target-dependent vector/mask 类型穿过边界，就只能在编译期确定 target；一个函数若只有指针、标量、
@@ -36,7 +35,6 @@ target-dependent vector/mask 类型穿过边界，就只能在编译期确定 ta
              scalar / SSE4 / AVX2 / AVX512 / NEON / SVE / RVV
 
      custom kernel: hyle_add_fat_kernel -> per-ISA entries -> HYLE_SIMD_SELECT_FAT_KERNEL
-     old FFI candidate: free C functions + POD + opaque RNG -> task review pending
 ```
 
 fat 与 exact 的 generated TU、手写产品 TU、Runtime table 和 exact suffix 都由
@@ -256,7 +254,7 @@ Highway 通过 `foreach_target.h` 重包含 TU、target namespace 与 `HWY_EXPOR
 
 ## Native FFI
 
-当前为 `N/A`。旧 SIMD shim 不属于产品，并将在模块重审时删除。未来只有通过全局
+当前为 `N/A`。旧 SIMD shim 已由 BUILD-03 删除。未来只有通过全局
 [准入策略](../../architecture/native-ffi-policy.md)的真实任务才另建窄的 batch 边界；本页的 C++
 `Runtime`、D-tag、register/mask、模板和类布局都不会由此自动导出。
 

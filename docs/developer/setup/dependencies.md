@@ -10,8 +10,8 @@
 | **ggml** | **自动拉取**（FetchContent） | compute + sched/fcontext 且启用 bridge 时取得；严格离线 bundle 缺源码则配置失败 | lock pin `v0.21.0` |
 | **googletest** | **自动拉取**（FetchContent） | 同上（仅影响测试，`-DHYLE_BUILD_TESTS=OFF` 可跳） | lock pin `v1.18.0` |
 | **nghttp2** | **自动拉取**（FetchContent） | io + sched/fcontext 且启用 HTTP/2 时取得 | lock pin `v1.70.0` |
-| **volk + Vulkan-Headers** | **自动拉取**（FetchContent，compute-06） | 同属 `vulkan-sdk-1.4.357.0`；缺网首配失败 | lock 内两个精确 commit |
-| **glslang** | 测试/benchmark shader 工具 | 只在 compute tests/bench 打开时拉取；生产 SDK 不需要 | 同属 `vulkan-sdk-1.4.357.0` |
+| **volk + Vulkan-Headers** | **按需拉取**（FetchContent，compute-06） | 仅 `HYLE_COMPUTE_VULKAN=ON` 时取得；此时缺网且无离线源码会配置失败 | 同属 `vulkan-sdk-1.4.357.0`，lock 内两个精确 commit |
+| **glslang** | 测试/benchmark shader 工具 | Vulkan 已开启且 compute tests/bench 打开时才拉取；生产 SDK 不需要 | 同属 `vulkan-sdk-1.4.357.0` |
 | **Tracy** | 启用 trace 时的外部源码树 | `HYLE_TRACE=ON` 才编译；任意/脏/被改写的源码会配置失败 | lock pin `v0.14.1`，`HYLE_TRACY_DIR` |
 | **Vulkan loader + ICD/driver** | 可选能力（compute-06 运行时） | 无则 Vulkan 后端运行时禁用（`vulkan_vtable()` 返 null），不改变其他已配置能力 | volk 运行时 dlopen `vulkan-1.dll`/`libvulkan.so`/`libvulkan.dylib` |
 | **OpenSSL** | 可选能力 | `HYLE_IO_TLS=AUTO/OFF` 可无 TLS；ON 时缺失即配置失败 | `find_package(OpenSSL QUIET)` |
@@ -114,8 +114,10 @@ cmake -C hyle-offline-deps.cmake \
 **任何** symlink（即便目标看似是安全相对路径），避免多级链接把词法根内目标重新导向根外。普通 direct
 override 也不能自我声明为已证明。
 完整准备命令和风险边界见 [`offline.md`](offline.md)。
-不触达 FetchContent/Tracy 的 core/error-only 选择允许没有 `deps/`；这不是降级，所需源码集合为空且
-断网门仍为 ON。若后来启用 tests/io/compute/trace，对应预期本地路径缺失会立即失败。
+`HYLE_BUILD_TESTS=OFF` 且不触达 Tracy 的 core/error-only 选择允许没有 `deps/`；这不是降级，所需
+源码集合为空且断网门仍为 ON。后来启用 tests、trace，或显式开启 HTTP/2、ggml、Vulkan 等
+FetchContent feature 时，对应预期本地路径缺失会立即失败；只选择默认 feature-OFF 的 io/compute
+根不会取得这些可选依赖。
 
 OpenSSL、CUDA Toolkit、Vulkan loader/driver 属于宿主 SDK/运行时：它们由 `find_package()`、toolchain、
 sysroot 或 driver 提供，不能用某个源码 commit 冒充机器环境 pin。正式构建应固定 feature ON/OFF，并在
@@ -132,19 +134,22 @@ FA/NCCL/ccache，避免引入 HYLE 不消费的运行时。`GGML_CUDA` 跟随最
 SSE4.2 baseline。已知部署 CPU 用 `HYLE_SIMD_EXACT_TARGET=AVX2/AVX512` 同步提高 HYLE 与 ggml ISA。
 
 **关掉 ggml（无 compute 需求时）**：`-DHYLE_COMPUTE_GGML=OFF` → 不拉 ggml、不编 ggml_bridge，compute 其余（01–04）照编。
-ggml bridge 与 HTTP/2/TLS transport 都依赖 sched/fcontext。无 fcontext 目标上 HTTP/2/ggml 默认 OFF、
-显式 ON 失败；TLS AUTO 不探测 OpenSSL、TLS ON 失败。稳定 stub 继续返回 unavailable，但不会向安装包
-登记虚假的 feature。compute host/CUDA/Vulkan 仍可独立构建。
+io 与 compute 的当前公开头都暴露 sched 类型，因此中央组件图无条件把 sched/fcontext 纳入这两个
+产品根。目标平台没有已接线的 fcontext 时，选择 io、compute 或 graph 会在 feature 探测前直接配置
+失败；`OFF` 只关闭相应可选 backend，不能生成删掉 sched 公开依赖的 host-only/stub SDK。未来若要
+交付 raw proactor 或 host-only compute，必须先拆出拥有独立公开头与 consumer journey 的真实组件。
 
 ---
 
 ## OpenSSL（io-08 TLS，可选）
 
-TLS 是三态能力：有 sched/fcontext 时 `HYLE_IO_TLS=AUTO` 自动发现，`ON` 要求 OpenSSL，`OFF` 不探测且保持零 OpenSSL
+TLS 是三态能力，当前默认 `OFF`：`AUTO` 自动发现，`ON` 要求 OpenSSL，`OFF` 不探测且保持零 OpenSSL
 依赖。启用后编 `tls.cc` 并对消费者公开同名编译宏。OpenSSL 使用动态链（安全库应跟随系统 CVE
-更新，不静态焊死）。无 fcontext 时 AUTO 直接禁用且不探测，显式 ON 是不可能合同并失败。
+更新，不静态焊死）。这项 option 只在可构建的 io 闭包中存在；无 fcontext 目标会拒绝 io 根，
+不会退化成 TLS stub。
 
-- **Linux/WSL**：`sudo apt install libssl-dev`（系统包，零配置，装完重配即启用）。
+- **Linux/WSL**：`sudo apt install libssl-dev`，再显式配置 `-DHYLE_IO_TLS=ON`；本地探索也可用
+  `AUTO`，但正式 SDK/CI 应固定为 `ON` 或 `OFF`。
 - **Windows**：无系统级 MSVC OpenSSL 开发库，用 **vcpkg**（详见 [`windows.md`](windows.md) 依赖节）。
 - 运行 TLS 测试要 OpenSSL 的 DLL 在 PATH（Windows）——见平台文件。
 

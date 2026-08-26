@@ -24,7 +24,6 @@
 #include <thread>
 #include <vector>
 
-#include "hyle/c/util.h"
 #include "hyle/time/clock.h"
 #include "hyle/util/random.h"
 #include "hyle/util/ref_counted.h"
@@ -72,44 +71,6 @@ int main() {
     b.run("HYLE Rng (xoshiro256++)", [&] {
       static hyle::util::Rng rng(12345);
       nb::doNotOptimizeAway(rng.next_u64());
-    });
-  }
-  // The current pre-release FFI candidate's scalar call crosses a DLL seam;
-  // batch fill below shows how a future binding could amortize that tax.
-  {
-    hyle_util_rng c_rng{};
-    if (!hyle_util_rng_seed(&c_rng, 12345)) return 1;
-    nb::Bench b;
-    b.title("PRNG FFI-candidate scalar next_u64")
-        .relative(true)
-        .batch(1)
-        .minEpochIterations(1000000);
-    b.run("C++ Rng::next_u64", [&] {
-      static hyle::util::Rng rng(12345);
-      nb::doNotOptimizeAway(rng.next_u64());
-    });
-    b.run("C ABI hyle_util_rng_next_u64", [&] {
-      nb::doNotOptimizeAway(hyle_util_rng_next_u64(&c_rng));
-    });
-  }
-  {
-    constexpr std::size_t kBatch = 256;
-    std::uint64_t values[kBatch];
-    hyle_util_rng c_rng{};
-    if (!hyle_util_rng_seed(&c_rng, 12345)) return 1;
-    nb::Bench b;
-    b.title("PRNG fill 256 u64")
-        .relative(true)
-        .batch(kBatch)
-        .minEpochIterations(5000);
-    b.run("C++ inline loop", [&] {
-      static hyle::util::Rng rng(12345);
-      for (std::uint64_t& value : values) value = rng.next_u64();
-      nb::doNotOptimizeAway(values);
-    });
-    b.run("C ABI fill_u64", [&] {
-      if (!hyle_util_rng_fill_u64(&c_rng, values, kBatch)) std::abort();
-      nb::doNotOptimizeAway(values);
     });
   }
   // bounded range: HYLE Lemire unbiased vs std::uniform_int_distribution

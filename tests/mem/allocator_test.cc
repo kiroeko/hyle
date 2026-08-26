@@ -8,7 +8,6 @@
 #include <thread>
 #include <vector>
 
-#include "hyle/c/mem.h"
 #include "hyle/mem/allocator.h"
 #include "system_internal.h"
 #include "hyle/mem/pmr.h"
@@ -184,11 +183,6 @@ TEST(SystemAllocatorAlignmentDeathTest, RuntimeHandleRejectsZeroAndNonPowerOfTwo
 #if !defined(NDEBUG)
   EXPECT_DEATH(allocator.deallocate(nullptr, 0, 3), ".*");
 #endif
-}
-
-TEST(SystemAllocatorAlignmentDeathTest, CConvenienceFreeRejectsNonPowerOfTwo) {
-  hyle_allocator allocator = hyle_system_allocator();
-  EXPECT_DEATH(hyle_free(&allocator, nullptr, 0, 3), ".*");
 }
 
 #if defined(HYLE_MEM_TEST_ASAN)

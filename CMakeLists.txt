@@ -36,7 +36,7 @@ endif()
 project(hyle
   VERSION "${_hyle_project_version}"
   DESCRIPTION "HYbrid LEvels - general-purpose high-performance C++ infra"
-  LANGUAGES C CXX)
+  LANGUAGES CXX)
 
 # Keep IDE projects navigable without imposing folder policy when HYLE is
 # embedded in a larger parent project. Individual HYLE targets still declare
@@ -54,14 +54,12 @@ unset(_hyle_version_MAJOR)
 unset(_hyle_version_MINOR)
 unset(_hyle_version_PATCH)
 
-# This is the shared-object loader/SOVERSION identity, not the independently
-# reviewed Native FFI generation handshake. A pre-1.0 minor release may change
-# the C++ ABI. Give each 0.x minor
-# its own loader identity instead of claiming that every 0.x package is binary
-# compatible.  Once the project reaches 1.0, the conventional major-only ABI
-# identity applies.
+# This is the shared-object loader/SOVERSION identity for the C++ SDK. HYLE has
+# no Native FFI. Before 1.0 every release may change C++ layout or mangling, so
+# the full version is the honest loader identity; after 1.0 the conventional
+# major-only identity applies.
 if(PROJECT_VERSION_MAJOR EQUAL 0)
-  set(HYLE_ABI_VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}")
+  set(HYLE_ABI_VERSION "${PROJECT_VERSION}")
 else()
   set(HYLE_ABI_VERSION "${PROJECT_VERSION_MAJOR}")
 endif()
@@ -72,11 +70,10 @@ list(APPEND CMAKE_MODULE_PATH "${HYLE_SOURCE_DIR}/cmake")
 include(HyleTargetPlatform)
 include(HyleDependencyVersions)
 
-# Resolve platform capability before the component graph.  io/compute/graph
-# have useful sched-free product shapes on targets for which HYLE does not yet
-# ship fcontext assembly; making sched an unconditional graph edge made those
-# implementations unreachable even though their module CMakeLists supported
-# them.  This is a capability fact, not a "selected target exists" fact.
+# Resolve platform capability before the component graph. The current public
+# io/compute/graph surfaces expose sched types, so selecting any of them also
+# selects sched. A future review may split genuinely sched-free product roots;
+# the present graph must not advertise a partial shape its headers cannot ship.
 set(HYLE_FCONTEXT_SUPPORTED FALSE)
 if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   if(MSVC OR CMAKE_SYSTEM_NAME STREQUAL "Linux" OR APPLE)
@@ -89,7 +86,22 @@ elseif(HYLE_TARGET_PROCESSOR MATCHES "arm64|aarch64|ARM64")
 endif()
 
 include(HyleComponents)
+if(HYLE_BUILD_SCHED AND NOT HYLE_FCONTEXT_SUPPORTED)
+  message(FATAL_ERROR
+    "The selected component closure requires sched, but HYLE has no fcontext "
+    "assembly for ${CMAKE_SYSTEM_NAME}/${HYLE_TARGET_PROCESSOR}/"
+    "${CMAKE_CXX_COMPILER_ID}. Select a sched-free component root; splitting "
+    "io/compute/graph into smaller product roots is a future module decision.")
+endif()
 include(HyleFeatureOption)
+
+# C is an internal implementation language, not a product surface. A selected
+# mem closure needs it for mimalloc (and every current C-backed protocol/kernel
+# closure already reaches mem); C++-only foundation builds should not require a
+# C compiler merely because unrelated components can vendor C sources.
+if(HYLE_BUILD_MEM)
+  enable_language(C)
+endif()
 
 if(APPLE AND HYLE_BUILD_PLATFORM)
   if(NOT DEFINED CMAKE_OSX_DEPLOYMENT_TARGET OR
@@ -111,12 +123,13 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# C baseline. HYLE's own C-ABI surface (extern "C" vtables) is compiled as C++;
-# this only governs real .c/.S translation units (vendored C deps like liburing/
-# XXH3, fcontext asm shims) so they don't fall back to compiler-default C.
-set(CMAKE_C_STANDARD 17)
-set(CMAKE_C_STANDARD_REQUIRED ON)
-set(CMAKE_C_EXTENSIONS OFF)
+# Internal C baseline. HYLE has no public C source contract; this governs only
+# selected vendored protocol/allocator translation units.
+if(CMAKE_C_COMPILER_LOADED)
+  set(CMAKE_C_STANDARD 17)
+  set(CMAKE_C_STANDARD_REQUIRED ON)
+  set(CMAKE_C_EXTENSIONS OFF)
+endif()
 
 # Toolchain gate (charter: GCC14+ / Clang18+ / MSVC19.43+ for C++23 std::expected etc.)
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 14)
@@ -129,8 +142,12 @@ endif()
 
 # ---- global options ---------------------------------------------------------
 option(HYLE_BUILD_TESTS "build unit tests (GoogleTest)" ${PROJECT_IS_TOP_LEVEL})
-option(HYLE_TEST_INSTRUMENTATION
-  "compile test-only fault injection and structural diagnostics" ON)
+if(HYLE_BUILD_TESTS)
+  option(HYLE_TEST_INSTRUMENTATION
+    "compile test-only fault injection and structural diagnostics" OFF)
+else()
+  set(HYLE_TEST_INSTRUMENTATION OFF)
+endif()
 option(HYLE_BUILD_BENCH "build microbenchmarks (nanobench)" OFF)
 option(HYLE_INSTALL "generate install rules and a relocatable CMake package" OFF)
 if(HYLE_INSTALL AND HYLE_BUILD_TESTS)
@@ -179,10 +196,27 @@ if(HYLE_INSTALL)
   endforeach()
   unset(_hyle_install_dir)
 endif()
-set(HYLE_SIMD_EXACT_TARGET "" CACHE STRING
-    "Build hyle_simd for one required ISA; empty enables runtime dispatch")
-set_property(CACHE HYLE_SIMD_EXACT_TARGET PROPERTY STRINGS
-             "" SCALAR SSE4 AVX2 AVX512 NEON SVE RVV)
+if(HYLE_BUILD_SIMD)
+  set(HYLE_SIMD_EXACT_TARGET "${HYLE_SIMD_EXACT_TARGET}" CACHE STRING
+      "Build hyle_simd for one required ISA; empty enables runtime dispatch")
+  string(TOUPPER "${HYLE_SIMD_EXACT_TARGET}" _hyle_simd_exact_target)
+  if(NOT _hyle_simd_exact_target MATCHES
+     "^(|SCALAR|SSE4|AVX2|AVX512|NEON|SVE|RVV)$")
+    message(FATAL_ERROR
+      "HYLE_SIMD_EXACT_TARGET='${HYLE_SIMD_EXACT_TARGET}' is invalid. Use an "
+      "empty value or SCALAR, SSE4, AVX2, AVX512, NEON, SVE, or RVV.")
+  endif()
+  set(HYLE_SIMD_EXACT_TARGET "${_hyle_simd_exact_target}" CACHE STRING
+      "Build hyle_simd for one required ISA; empty enables runtime dispatch" FORCE)
+  # As with other normalized HYLE controls, override an inherited parent normal
+  # variable in this directory so all module/feature logic sees the cache value.
+  set(HYLE_SIMD_EXACT_TARGET "${_hyle_simd_exact_target}")
+  set_property(CACHE HYLE_SIMD_EXACT_TARGET PROPERTY STRINGS
+               "" SCALAR SSE4 AVX2 AVX512 NEON SVE RVV)
+  unset(_hyle_simd_exact_target)
+else()
+  set(HYLE_SIMD_EXACT_TARGET "")
+endif()
 option(HYLE_STATIC      "build static lib (default SHARED)" OFF)
 option(HYLE_WERROR      "treat warnings as errors (CI on, local off)" OFF)
 set(HYLE_SANITIZER "off" CACHE STRING "off|asan|tsan|ubsan")
@@ -210,6 +244,10 @@ if(NOT _san_lc MATCHES "^(off|asan|tsan|ubsan)$")
     "WITHOUT instrumentation -- that would make a sanitizer run a false pass.")
 endif()
 set(HYLE_SANITIZER "${_san_lc}" CACHE STRING "off|asan|tsan|ubsan" FORCE)
+# CMP0126=NEW preserves an embedding parent's normal variable when the cache is
+# updated. Mirror the normalized spelling into this directory as well so later
+# HYLE logic cannot still observe THREAD while the cache/GUI says tsan.
+set(HYLE_SANITIZER "${_san_lc}")
 message(STATUS "HYLE_SANITIZER = ${HYLE_SANITIZER}")
 
 # Build configurations. Multi-config generators (VS, Xcode, Ninja Multi-Config)
@@ -250,19 +288,32 @@ include(HyleTesting)  # HYLE_TESTING gate: optional test-only instrumentation
 # ---- module-owned optional dependencies -------------------------------------
 # Keep cache controls declarable for presets/embedding parents, but perform SDK
 # discovery and source fetching only for components in the resolved closure.
-set(HYLE_DEPS_DIR "${HYLE_BINARY_DIR}/_deps" CACHE PATH
-    "Build-tree directory for dependencies fetched by HYLE")
+if(DEFINED HYLE_DEPS_DIR)
+  set(_hyle_deps_dir_input "${HYLE_DEPS_DIR}")
+else()
+  set(_hyle_deps_dir_input "${HYLE_BINARY_DIR}/_deps")
+endif()
+cmake_path(ABSOLUTE_PATH _hyle_deps_dir_input
+  BASE_DIRECTORY "${HYLE_BINARY_DIR}" NORMALIZE
+  OUTPUT_VARIABLE _hyle_deps_dir_normalized)
+set(HYLE_DEPS_DIR "${_hyle_deps_dir_normalized}" CACHE PATH
+    "Build-tree directory for dependencies fetched by HYLE" FORCE)
+# Keep the effective directory value and its cache description identical for
+# add_subdirectory() consumers that supplied a normal variable.
+set(HYLE_DEPS_DIR "${_hyle_deps_dir_normalized}")
+unset(_hyle_deps_dir_input)
+unset(_hyle_deps_dir_normalized)
+mark_as_advanced(HYLE_DEPS_DIR)
 # FetchContent is directory-scoped, so keep this as a normal variable owned by
 # the HYLE subproject.  Every HYLE dependency (including test-only GoogleTest)
 # now observes HYLE_DEPS_DIR without rewriting an embedding parent's cache.
 set(FETCHCONTENT_BASE_DIR "${HYLE_DEPS_DIR}")
-include(HyleIoDependencies)
-include(HyleComputeDependencies)
-
 if(HYLE_BUILD_IO)
+  include(HyleIoDependencies)
   hyle_configure_io_dependencies()
 endif()
 if(HYLE_BUILD_COMPUTE)
+  include(HyleComputeDependencies)
   hyle_configure_compute_dependencies()
 endif()
 
@@ -273,11 +324,6 @@ endif()
 # an explicit unsupported sched request still fails here with a useful error.
 set(HYLE_HAS_FCONTEXT FALSE)
 if(HYLE_BUILD_SCHED)
-  if(NOT HYLE_FCONTEXT_SUPPORTED)
-    message(FATAL_ERROR
-      "The selected component set requires sched, but HYLE has no fcontext assembly for "
-      "${CMAKE_SYSTEM_NAME}/${HYLE_TARGET_PROCESSOR}/${CMAKE_CXX_COMPILER_ID}")
-  endif()
   set(HYLE_HAS_FCONTEXT TRUE)
   if(MSVC)
     enable_language(ASM_MASM)

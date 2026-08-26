@@ -23,7 +23,7 @@ HYLE 尚未正式发布，并按统一标准逐模块取证。模块页描述当
 - [obs](obs.md)
 - [util](util.md)
 - [container_intrusive](container-intrusive.md)：稳定节点、零分配、auto/safe-link 双向链表
-- [container](container.md)：完整数据结构模块，并聚合轻量 intrusive target
+- [container](container.md)：完整数据结构模块；轻量 intrusive target 独立选择
 - [simd](simd-usage.md)
 - [io](io.md)
 
@@ -32,5 +32,6 @@ HYLE 尚未正式发布，并按统一标准逐模块取证。模块页描述当
 用户 journey。
 
 当前产品没有面向原生 C 程序的独立 API，也没有可承诺的 Java、.NET、Python 或 Rust FFI。
-source/static/shared 都是 C++ 交付形式；未来只有在出现已命名外语消费者后，才按
+早期公开 C schema/bridge 已移除；source/static/shared 都是 C++ 交付形式。未来只有在出现已命名
+外语消费者后，才按
 [Native FFI 准入策略](../architecture/native-ffi-policy.md)增加窄而真实的运行时边界。

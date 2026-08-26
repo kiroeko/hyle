@@ -9,13 +9,14 @@
 # io_context.cc is the io<->sched integration (io-04): it plugs the proactor into
 # the sched worker loop, so it depends on hyle_sched. sched only exists where
 # fcontext does (HYLE_HAS_FCONTEXT), so io_context.cc is compiled into the module
-# only there -- proactor.cc itself never depends on sched, keeping the proactor
-# usable on any platform.
-set(_io_sources proactor.cc c_io.cc shared_memory.cc)
+# only there. proactor.cc itself never depends on sched, but the current public
+# io component does; a standalone proactor would require a future real component
+# split rather than a conditional omission from the dependency graph.
+set(_io_sources proactor.cc shared_memory.cc)
 if(HYLE_HAS_FCONTEXT)
   # The co_await layers (net/tcp/udp/file/signal) and the DNS offload need sched
   # (the scheduler drives the reap; dns uses spawn_blocking). Only buildable where
-  # fcontext (hence sched) exists. proactor.cc itself never depends on sched.
+  # fcontext (hence sched) exists. The root rejects io where it does not.
   list(APPEND _io_sources io_context.cc tcp.cc udp.cc file.cc signal.cc dns.cc)
   # io-10 HTTP/1.1: integration layer (read loop -> feed parser -> Request/Response
   # -> write) over co_await TcpStream, so it needs sched too. Protocol PARSING is
@@ -26,12 +27,6 @@ if(HYLE_HAS_FCONTEXT)
   # http2.cc supplies HYLE's TcpStream/TlsStream coroutine transport.
   if(HYLE_IO_HTTP2)
     list(APPEND _io_sources http2.cc)
-  else()
-    # Keep the current pre-release FFI candidate's symbol set uniform when the
-    # optional protocol core is disabled. The stub reports availability=0 and
-    # fails every operation. This is build-shape hygiene, not compatibility with
-    # an already released binding.
-    list(APPEND _io_sources http2_stub.cc)
   endif()
   # io-08 TLS: only when OpenSSL is available (optional capability). TlsStream is a
   # co_await layer over TcpStream, so it also needs sched. Guarded by HYLE_IO_TLS so
@@ -48,11 +43,6 @@ if(HYLE_HAS_FCONTEXT)
       "${PROJECT_SOURCE_DIR}/third_party/picohttpparser/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|picohttpparser-LICENSE")
 endif()
 
-# Platforms without fcontext do not build the coroutine transport or the real
-# HTTP/2 session. They still export the feature-probe/stub FFI candidate.
-if(NOT HYLE_HAS_FCONTEXT)
-  list(APPEND _io_sources http2_stub.cc)
-endif()
 set(_io_module_options "")
 if(HYLE_HAS_FCONTEXT)
   list(APPEND _io_module_options TRACE)
@@ -60,10 +50,9 @@ endif()
 hyle_add_module(io ${_io_module_options} SOURCES ${_io_sources})
 unset(_io_module_options)
 
-# Public headers are installed as one reviewed tree, so capability cannot be
-# inferred from header presence.  Export the exact product fact on hyle::io in
-# both source-embedded and installed-package use; net.h turns value 0 into an
-# actionable diagnostic while proactor/shared_memory and the C stub stay valid.
+# Export the exact coroutine-transport product fact on hyle::io in both
+# source-embedded and installed-package use. net.h turns value 0 into an
+# actionable diagnostic while proactor/shared_memory remain available.
 if(HYLE_HAS_FCONTEXT)
   target_compile_definitions(hyle_io
     PUBLIC HYLE_IO_HAS_COROUTINE_TRANSPORT=1)

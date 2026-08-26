@@ -178,7 +178,7 @@ class Stream {
   // inlining keeps record() to a single vtable indirect.
   // kernel.h's launch() needs native_ to submit to this stream (defined in the same
   // .cc dispatch layer); friend it rather than exposing the backend handle publicly.
-  // This is the C-ABI core launch taking a KernelArgs (the variadic typed shell in
+  // This is the type-erased core launch taking KernelArgs (the variadic typed shell in
   // kernel.h builds the KernelArgs then calls this, so only this one needs friending).
   friend HYLE_COMPUTE_API Status launch(Stream&, const class Kernel&,
                                         const struct LaunchConfig&,

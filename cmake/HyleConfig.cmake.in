@@ -2,15 +2,6 @@
 
 include(CMakeFindDependencyMacro)
 
-# A static HYLE archive contains C++ implementation objects even when a
-# C-syntax FFI fixture or future binding shim supplies the entry TU. Enable CXX
-# as the link driver in that package shape so CMake selects the toolchain's
-# matching C++ ABI/runtime. Hard-coding
-# stdc++/c++ would be wrong across GNU, libc++, MSVC, and custom toolchains.
-if(@HYLE_PACKAGE_NEEDS_CXX_LINKER@ AND NOT CMAKE_CXX_COMPILER_LOADED)
-  enable_language(CXX)
-endif()
-
 set(_Hyle_find_dependency_specs "@HYLE_PACKAGE_FIND_DEPENDENCIES@")
 foreach(_Hyle_find_dependency_spec IN LISTS _Hyle_find_dependency_specs)
   string(REPLACE "|" ";" _Hyle_find_dependency_args

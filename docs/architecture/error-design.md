@@ -1,8 +1,8 @@
-# error 设计：值语义失败与跨运行时接缝
+# error 设计：值语义失败与模块接缝
 
 > **V2 状态：`NOT_REVIEWED`。** 本页是上一轮 error 设计输入，不是当前模块证书。当前产品只
-> 提供 C++ source/static/shared；Native FFI 为 `N/A`。正文中的旧 FFI、验收状态与性能叙事在
-> error 轮次必须删除或重新裁决。用户当前写法见 [user/error](../user/error.md)，施工状态见
+> 提供 C++23 source/static/shared；Native FFI 为 `N/A`。BUILD-03 已删除旧 C schema、bridge、
+> 动态导出和 managed fixture。用户当前写法见 [user/error](../user/error.md)，施工状态见
 > [implementation/status](../implementation/status.md)。
 
 > 上一轮性能输入见 [historical error evidence](../implementation/evidence/performance/benchmarks-error.md)。
@@ -10,16 +10,15 @@
 
 ## 0. 职责与依赖位置
 
-error 位于运行时依赖图底部，负责把**可恢复的运营失败**作为值在函数、模块、线程以及被选中的
-foreign-runtime 边界上传递。其公开头直接使用 Core 编译期合同，因此中央图声明
+error 位于运行时依赖图底部，负责把**可恢复的运营失败**作为值在函数、模块和线程之间传递。
+其公开头直接使用 Core 编译期合同，因此中央图声明
 `error -> PUBLIC core`；`hyle::core` 是 INTERFACE，没有 Core DLL 或 runtime state。
 
-真实场景只有四类：
+真实场景只有三类：
 
 1. OS、文件、内存、设备或协议叶子把原生失败转成稳定错误码和诊断；
 2. 中间层在传播时增加“正在做什么”的语义上下文；
-3. 上层按稳定错误码恢复，并在需要时读取一个原生 domain/code；
-4. Java/.NET 等调用下游 HYLE shared artifact 后，直接接收同一个 owning error handle，查询并释放。
+3. 上层按稳定错误码恢复，并在需要时读取一个原生 domain/code。
 
 error 不负责日志、trace、异常层级、崩溃报告、取消状态机、RPC 序列化或任意 payload registry。
 
@@ -105,9 +104,9 @@ domain 才保留原生数值。category identity 若仍参与机器恢复，就�
 公共文本合同是 UTF-8。调用方传入的 message/context 必须已经是 UTF-8；error 不在热错误路径
 重新验证。Windows 原生描述使用 `FormatMessageW` 后转换为 UTF-8，不能把当前 ANSI code page
 字节送入 managed runtime。`strerror_r`/Windows CRT errno 文本受进程 locale 影响：error 在该
-冷路径验证 UTF-8，非法时退化为确定性 ASCII `errno N`，native errno 仍完整保留。C++ `string_view` 与
-Native FFI caller-buffer 都保留精确长度，允许嵌入 NUL；只有显式需要 C-string 的消费方才可把
-它当 NUL 结尾文本。caller-buffer 截断是 byte prefix，可能切断多字节 code point，完整解码必须
+冷路径验证 UTF-8，非法时退化为确定性 ASCII `errno N`，native errno 仍完整保留。C++
+`string_view` 与 caller-buffer 格式化都保留精确长度，允许嵌入 NUL；只有显式需要 C-string 的
+消费方才可把它当 NUL 结尾文本。caller-buffer 截断是 byte prefix，可能切断多字节 code point，完整解码必须
 按返回长度重试。
 
 叶子 message 回答“底层为什么失败”，中间层只在增加用户可理解语义时前置 context：
@@ -195,62 +194,15 @@ HYLE_ASSIGN_OR_RETURN(auto value, expr);  // Result<T>
 obs。只有多个真实模块重复同一 bounded collection/ordering 合同时才重开公共 `MultiError`，不要
 把 Status 变成全局 error list 或自动 logger。
 
-## 3. Direct Native FFI
+## 3. 交付与 Native FFI 边界
 
-### 3.1 真实任务与边界
+error 当前只提供 C++23 source/static/shared 交付。HYLE 模块和同工具链消费者直接使用
+`Status`/`Result<T>`；source/header 与对应 artifact 是一个版本化交付单元。
 
-HYLE 没有 native-C 产品。C header 只描述让 Java/.NET 等直接调用 shared artifacts 的稳定
-calling convention。error 的真实任务不是让 foreign runtime 重建整套 C++ Status API，而是：
-
-1. 下游模块调用成功时收到 NULL；失败时收到一个 owning handle；
-2. 查询 code、精确 UTF-8 message 和可选 native detail；
-3. 必要时取得统一的人读 `to_string`；
-4. 恰好释放一次；卸载下游与 error artifact 前不再持有 handle。
-
-因此 `hyle_status` 是 opaque pointer，NULL 是完整 OK 表示。code-only error 映射到
-`hyle_error` 内 process-lifetime sentinel，仍为零分配；message/native error 直接转移内部 rep
-所有权，不再公开 raw tagged word。非 NULL handle 不可解引用、做指针运算或复制成第二个 owner。
-
-### 3.2 唯一导出面
-
-| export | 任务 |
-|---|---|
-| `hyle_error_ffi_abi_version` | 在解析其他 error symbol 前验证这个 artifact 的 ABI generation |
-| `hyle_status_destroy` | 释放一个 owning handle；NULL 安全 |
-| `hyle_status_get_code` | NULL→OK；其余返回 fixed-width canonical code |
-| `hyle_status_get_native_error` | caller-owned POD outputs；无 detail 时写 NONE/0 |
-| `hyle_status_message` | caller-buffer 精确 UTF-8 bytes；返回所需长度 |
-| `hyle_status_to_string` | caller-buffer `Code[: message]`；返回所需长度 |
-
-所有符号显式使用 C linkage、artifact export macro 与 Windows `__cdecl`。length/capacity 使用
-`uint64_t`；HYLE 产品 ABI 只支持 64 位目标。buffer 规则等同 snprintf：capacity>0 时最多写
-`capacity-1` bytes 并写 NUL；返回值不含终止 NUL。message 可以包含嵌入 NUL，绑定必须按长度
-解码，不能先 `strlen`。
-
-不导出 factory、clone、move、context、Update、predicate、code-name、borrowed cstr 或 OS
-adapter：当前 managed receiver 任务不需要它们，暴露会制造 owning raw-handle 误用和无消费者
-兼容负担。将来 managed callback 真要向 HYLE 返回 Status 时，按那条回调任务另设计，不预埋
-通用构造器。
-
-当前未收口的 util Native FFI 候选已有一个具体触发点：Registry creator 接收
-`hyle_status* out_status`，但 receiving-only error FFI 只能让 foreign callback 转移另一个 HYLE
-producer 给出的 owner，不能构造任意 managed failure。util review 若保留 Java/.NET callback，
-必须在 `FFI=N/A`、模块级 fixed code + borrowed UTF-8 bytes（native 同步复制）与重开 error
-factory/必要 ownership 操作之间作真实任务裁决，并补 OOM、异常、同步/异步生命周期和 managed
-负向证据；候选头与 native-C fixture 不能冒充这项能力已经完成。
-
-`include/hyle/c/error_helpers.h` 只是仓库 C 编译/package fixture 可选的 source-inline 便利层，
-提供 NULL/predicate/`destroy-and-clear` spelling；它没有动态符号，不能计作 direct FFI 或 C 产品。
-HYLE C++ 模块之间始终传 `Status/Result`，只在各模块 FFI bridge 最后一层调用内部
-`status_to_ffi`。
-
-### 3.3 artifact 与托管生命周期
-
-binding 必须精确加载同一 SDK 中的下游 artifact 与 `hyle_error`，分别先验证各自 bootstrap；
-一个 core 版本查询不能替 error 或下游 DLL/so/dylib 背书。.NET 用 zero-invalid `SafeHandle`，
-Java 用受控 owner/`finally` 或 `AutoCloseable`，并确保 query 与 destroy 期间 artifact 保持加载。
-ABI mismatch 必须在查找/调用普通业务 symbol 前拒绝。static/source 交付只能证明 native link；
-direct managed FFI 的产品证据来自真实 shared artifact。
+Native FFI 当前为 `N/A`。BUILD-03 已删除早期 `hyle_status` schema、helper、bridge、动态导出以及
+C/Java/.NET fixture；它们不是兼容面，也不能作为新模块绕回 C handle 的理由。将来只有已命名的
+foreign-runtime consumer 通过全局 [Native FFI 准入策略](native-ffi-policy.md) 后，才设计满足该
+任务的窄 runtime 类型擦除边界；不预埋 Status parity exports。
 
 ## 4. 算法与复杂度合同
 
@@ -287,26 +239,25 @@ native detail 不同合同，只能作机制诊断，不能宣称产品输赢。
 
 以下只有真实消费者出现才重开：多独立机器 detail、可遍历/序列化的 structured cause、公共
 multi-error、跨进程序列化、WinSock Status 冷路径、`Result<T&>` 专用 monadic 形状、重复的
-std/Boost error-code adapter、managed-to-native error construction/callback。当前 util Registry
-FFI 候选是最后一项的显式待裁决触发点，不是已交付能力。参考库 API 更多、LOC 更大或某个微基准
+std/Boost error-code adapter、managed-to-native error construction/callback。参考库 API 更多、
+LOC 更大或某个微基准
 容易赢都不是功能授权。
 
 ## 6. 采用与模块边界
 
-已严格审查的底座消费者（platform、mem、time、obs、util）必须直接使用 C++ Status/Result，
-不得保留私有 TLS last-error、bool+诊断或 C FFI 内绕。CUDA/Vulkan translator 归 compute，
+已严格审查且存在可恢复失败面的底座消费者（platform、mem、obs、util）必须直接使用 C++ Status/Result；
+time 当前没有需要 error carrier 的公开失败面，不增加伪依赖。
+不得保留私有 TLS last-error 或 bool+诊断。CUDA/Vulkan translator 归 compute，
 syscall operation override 归 platform/io，error 只拥有公共 taxonomy 和 value carrier。
 
-尚未严格收口的 sched/io C schema 中仍有历史 TLS last-error；它们不是 error 的第二个产品面，
-也不能凭现状取得 managed FFI 证书。其冷 factory/control path 必须在各自模块复审时迁移到共享
-opaque `hyle_status + out`；queue empty/full、poll pending、async completion 等正常协议状态继续
-用紧凑值/枚举。这个已知下游债务不授权扩大 error API。
+下游冷 factory/control path 应直接使用共享 `Status`/`Result<T>`；queue empty/full、poll pending、
+async completion 等正常协议状态继续用紧凑值/枚举。旧模块私有 TLS last-error 或 bool+诊断若在
+模块复审中被发现，应迁移到这套 C++ 错误系统；这不授权扩大 error API。
 
 ## 7. 冻结与重开
 
-error 签署必须同时具备：C++ correctness/三平台、同合同性能 non-inferiority、六符号 export
-manifest、真实 Java/.NET exact-artifact 正负旅程、shared/static/source 交付、已审底座 adoption、
-正确文档和可追踪 raw evidence。纯 C 编译或旧点值不能替代上述门。
+error 签署必须同时具备：C++ correctness/三平台、同合同性能 non-inferiority、
+shared/static/source C++ 交付、已审底座 adoption、正确文档和可追踪 raw evidence。
 
 签署后只因 correctness/security/ABI bug、真实 consumer 能力缺口、同合同强 peer 证明实质算法/
 性能落后，或发布形状改变而局部重开。

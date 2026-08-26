@@ -1,5 +1,30 @@
 include_guard(GLOBAL)
 
+# Build-only header seams are created only when the selected product closure
+# consumes them. They are real target edges for source composition, while
+# BUILD_INTERFACE prevents them from leaking into static/shared package
+# metadata or masquerading as independently delivered product components.
+set(_hyle_active_build_dependencies "")
+foreach(_hyle_component IN LISTS HYLE_KNOWN_COMPONENTS)
+  string(TOUPPER "${_hyle_component}" _hyle_component_upper)
+  if(HYLE_BUILD_${_hyle_component_upper})
+    list(APPEND _hyle_active_build_dependencies
+      ${_HYLE_PRIVATE_BUILD_DEPS_${_hyle_component_upper}})
+  endif()
+endforeach()
+list(REMOVE_DUPLICATES _hyle_active_build_dependencies)
+if(simd_vec_headers IN_LIST _hyle_active_build_dependencies)
+  add_library(hyle_simd_vec_headers INTERFACE)
+  target_include_directories(hyle_simd_vec_headers INTERFACE
+    "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>")
+  target_compile_features(hyle_simd_vec_headers INTERFACE cxx_std_23)
+  set_target_properties(hyle_simd_vec_headers PROPERTIES
+    FOLDER "hyle/foundation/internal")
+endif()
+unset(_hyle_active_build_dependencies)
+unset(_hyle_component)
+unset(_hyle_component_upper)
+
 # Keep the executable component manifest in HyleComponents.cmake as the single
 # source of truth. Its PUBLIC/PRIVATE lists generate both the pre-target
 # component closure and hyle_add_module()'s real link edges. The validator below
@@ -13,7 +38,8 @@ function(_hyle_validate_module_dependencies name)
 
   set(_declared_dependencies "")
   foreach(_dependency IN LISTS ARGN)
-    if(_dependency MATCHES "^hyle_(.+)$")
+    if(_dependency MATCHES "^hyle_(.+)$" AND
+       CMAKE_MATCH_1 IN_LIST HYLE_KNOWN_COMPONENTS)
       list(APPEND _declared_dependencies "${CMAKE_MATCH_1}")
     endif()
   endforeach()
@@ -31,6 +57,21 @@ function(_hyle_validate_module_dependencies name)
       "HyleComponents.cmake; target declares '${_declared_dependencies}', "
       "component graph declares '${_graph_dependencies}'")
   endif()
+endfunction()
+
+function(_hyle_manifest_private_build_dependencies name out_var)
+  string(TOUPPER "${name}" _component_upper)
+  set(_targets "")
+  foreach(_dependency IN LISTS
+      _HYLE_PRIVATE_BUILD_DEPS_${_component_upper})
+    if(NOT TARGET hyle_${_dependency})
+      message(FATAL_ERROR
+        "hyle_add_module(${name}): PRIVATE_BUILD_DEPS target "
+        "'hyle_${_dependency}' does not exist")
+    endif()
+    list(APPEND _targets "$<BUILD_INTERFACE:hyle_${_dependency}>")
+  endforeach()
+  set(${out_var} "${_targets}" PARENT_SCOPE)
 endfunction()
 
 function(_hyle_validate_module_public_dependencies name)
@@ -109,6 +150,30 @@ function(hyle_validate_final_module_graph)
     list(REMOVE_DUPLICATES _actual_public_dependencies)
     _hyle_validate_module_public_dependencies(
       "${_name}" ${_actual_public_dependencies})
+
+    string(TOUPPER "${_name}" _component_upper)
+    set(_expected_build_dependencies
+      "${_HYLE_PRIVATE_BUILD_DEPS_${_component_upper}}")
+    set(_actual_build_dependencies "")
+    get_target_property(_direct_links hyle_${_name} LINK_LIBRARIES)
+    foreach(_build_dependency IN LISTS HYLE_KNOWN_BUILD_DEPENDENCIES)
+      foreach(_item IN LISTS _direct_links)
+        if(_item MATCHES
+           "(^|[^A-Za-z0-9_])hyle_${_build_dependency}([^A-Za-z0-9_]|$)")
+          list(APPEND _actual_build_dependencies "${_build_dependency}")
+        endif()
+      endforeach()
+    endforeach()
+    list(REMOVE_DUPLICATES _actual_build_dependencies)
+    list(SORT _actual_build_dependencies)
+    list(SORT _expected_build_dependencies)
+    if(NOT "${_actual_build_dependencies}" STREQUAL
+           "${_expected_build_dependencies}")
+      message(FATAL_ERROR
+        "hyle_${_name}: build-only header dependencies disagree with the "
+        "component manifest; target has '${_actual_build_dependencies}', "
+        "manifest declares '${_expected_build_dependencies}'")
+    endif()
   endforeach()
 endfunction()
 
@@ -158,6 +223,17 @@ function(hyle_add_module name)
       "${ARG_KEYWORDS_MISSING_VALUES}")
   endif()
 
+  string(TOUPPER "${name}" _hyle_component_upper)
+  if(ARG_TRACE AND NOT _HYLE_TRACE_${_hyle_component_upper})
+    message(FATAL_ERROR
+      "hyle_add_module(${name} TRACE): the central component manifest does "
+      "not declare this trace consumer")
+  elseif(_HYLE_TRACE_${_hyle_component_upper} AND NOT ARG_TRACE)
+    message(FATAL_ERROR
+      "hyle_add_module(${name}): the central component manifest declares a "
+      "TRACE consumer but the real target omitted TRACE")
+  endif()
+
   _hyle_module_uses_gate(
     "${name}" "HYLE_TRACE" _hyle_uses_trace ${ARG_SOURCES})
   if(ARG_TRACE AND NOT _hyle_uses_trace)
@@ -185,6 +261,8 @@ function(hyle_add_module name)
     "${name}" PRIVATE _hyle_private_dependencies)
   _hyle_manifest_target_dependencies(
     "${name}" PUBLIC _hyle_public_dependencies)
+  _hyle_manifest_private_build_dependencies(
+    "${name}" _hyle_private_build_dependencies)
   _hyle_validate_module_dependencies(
     "${name}" ${_hyle_private_dependencies} ${_hyle_public_dependencies})
   _hyle_validate_module_public_dependencies(
@@ -222,6 +300,7 @@ function(hyle_add_module name)
     # didn't set the standard failed on `concept` until this was added).
     target_compile_features(${target} PUBLIC cxx_std_23)
     target_link_libraries(${target}
+      PRIVATE ${_hyle_private_build_dependencies}
       PRIVATE ${_hyle_private_dependencies}
       PUBLIC ${_hyle_public_dependencies})
     # Trace-aware modules see one gate (defines + tracy include when ON). PUBLIC
@@ -246,10 +325,11 @@ function(hyle_add_module name)
       target_compile_definitions(${target} PUBLIC "HYLE_STATIC")
     endif()
   else()
-    if(_hyle_private_dependencies)
+    if(_hyle_private_dependencies OR _hyle_private_build_dependencies)
       message(FATAL_ERROR
         "hyle_add_module(${name}): header-only modules cannot have PRIVATE "
-        "component dependencies: ${_hyle_private_dependencies}")
+        "product/build dependencies: ${_hyle_private_dependencies};"
+        "${_hyle_private_build_dependencies}")
     endif()
     target_include_directories(${target} INTERFACE
       "$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>"

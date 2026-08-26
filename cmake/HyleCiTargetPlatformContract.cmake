@@ -97,80 +97,30 @@ _hyle_processor_identity_probe(
 _hyle_processor_identity_probe(
   "toolchain-riscv64" "" "" "riscv64" "riscv64")
 
-# A platform without fcontext still supports the sched-free io proactor and
-# host/CUDA/Vulkan compute.  Coroutine-only protocol/ggml features default OFF,
-# AUTO TLS skips OpenSSL discovery, and an explicit impossible ON must fail
-# rather than being written into installed feature metadata.
-set(_hyle_unsupported_feature_script
-  "${HYLE_SMOKE_ROOT}/unsupported-fcontext-feature-contract.cmake")
-file(WRITE "${_hyle_unsupported_feature_script}"
+# io/compute/graph currently expose sched types in their public API. Even on a
+# target without fcontext, the graph must select sched so root configuration can
+# reject the unsupported product honestly instead of installing a partial SDK.
+set(_hyle_fcontext_graph_source
+  "${HYLE_SMOKE_ROOT}/unsupported-fcontext-graph-source")
+file(MAKE_DIRECTORY "${_hyle_fcontext_graph_source}")
+file(WRITE "${_hyle_fcontext_graph_source}/CMakeLists.txt"
 "cmake_minimum_required(VERSION 3.25)\n"
-"list(APPEND CMAKE_MODULE_PATH \"${HYLE_SOURCE_DIR}/cmake\")\n"
+"project(hyle_unsupported_fcontext_graph LANGUAGES NONE)\n"
+"set(HYLE_SOURCE_DIR \"${HYLE_SOURCE_DIR}\")\n"
 "set(HYLE_FCONTEXT_SUPPORTED FALSE)\n"
-"set(CMAKE_SYSTEM_NAME ContractOS)\n"
-"set(CMAKE_SYSTEM_PROCESSOR rv64)\n"
-"include(HyleFeatureOption)\n"
-"if(HYLE_FEATURE_CASE STREQUAL \"http2-on\")\n"
-"  set(HYLE_IO_HTTP2 ON CACHE BOOL \"\")\n"
-"elseif(HYLE_FEATURE_CASE STREQUAL \"tls-on\")\n"
-"  set(HYLE_IO_TLS ON CACHE STRING \"\")\n"
-"elseif(HYLE_FEATURE_CASE STREQUAL \"ggml-on\")\n"
-"  set(HYLE_COMPUTE_GGML ON CACHE BOOL \"\")\n"
-"endif()\n"
-"set(HYLE_COMPUTE_CUDA OFF CACHE STRING \"\")\n"
-"set(HYLE_COMPUTE_VULKAN OFF CACHE BOOL \"\")\n"
-"include(HyleIoDependencies)\n"
-"include(HyleComputeDependencies)\n"
-"if(HYLE_FEATURE_CASE STREQUAL \"defaults\")\n"
-"  if(HYLE_IO_HTTP2 OR HYLE_COMPUTE_GGML)\n"
-"    message(FATAL_ERROR \"unsupported fcontext features did not default OFF\")\n"
-"  endif()\n"
-"  hyle_configure_io_dependencies()\n"
-"  hyle_configure_compute_dependencies()\n"
-"  if(HYLE_IO_TLS_ENABLED)\n"
-"    message(FATAL_ERROR \"TLS AUTO was advertised without fcontext\")\n"
-"  endif()\n"
-"elseif(HYLE_FEATURE_CASE MATCHES \"^(http2-on|tls-on)$\")\n"
-"  hyle_configure_io_dependencies()\n"
-"elseif(HYLE_FEATURE_CASE STREQUAL \"ggml-on\")\n"
-"  hyle_configure_compute_dependencies()\n"
-"else()\n"
-"  message(FATAL_ERROR \"unknown feature contract case\")\n"
+"set(HYLE_COMPONENTS \"io;compute;graph\")\n"
+"include(\"${HYLE_SOURCE_DIR}/cmake/HyleComponents.cmake\")\n"
+"if(NOT HYLE_BUILD_SCHED)\n"
+"  message(FATAL_ERROR \"public sched dependency was dropped\")\n"
 "endif()\n")
+_hyle_target_contract_run("unsupported target retains honest sched edge" TRUE
+  "${CMAKE_COMMAND}" -S "${_hyle_fcontext_graph_source}"
+  -B "${HYLE_SMOKE_ROOT}/unsupported-fcontext-graph-build"
+  ${_hyle_generator_args})
 
-function(_hyle_unsupported_feature_probe case expect_success expected_message)
-  execute_process(
-    COMMAND "${CMAKE_COMMAND}" -DHYLE_FEATURE_CASE=${case}
-      -P "${_hyle_unsupported_feature_script}"
-    RESULT_VARIABLE _result
-    OUTPUT_VARIABLE _stdout
-    ERROR_VARIABLE _stderr)
-  set(_output "${_stdout}\n${_stderr}")
-  if(expect_success AND NOT _result EQUAL 0)
-    message(FATAL_ERROR
-      "unsupported-fcontext '${case}' unexpectedly failed:\n${_output}")
-  elseif(NOT expect_success AND _result EQUAL 0)
-    message(FATAL_ERROR
-      "unsupported-fcontext '${case}' unexpectedly succeeded")
-  elseif(NOT expect_success AND NOT _output MATCHES "${expected_message}")
-    message(FATAL_ERROR
-      "unsupported-fcontext '${case}' failed for the wrong reason:\n${_output}")
-  endif()
-endfunction()
-
-_hyle_unsupported_feature_probe(defaults TRUE "")
-_hyle_unsupported_feature_probe(http2-on FALSE
-  "HYLE_IO_HTTP2=ON requires sched/fcontext")
-_hyle_unsupported_feature_probe(tls-on FALSE
-  "HYLE_IO_TLS=ON requires sched/fcontext")
-_hyle_unsupported_feature_probe(ggml-on FALSE
-  "HYLE_COMPUTE_GGML=ON requires sched/fcontext")
-
-# The public io header tree is intentionally installed as one surface.  Prove
-# that raw headers+library consumption derives the supported native capability,
-# that the no-transport target contract leaves standalone surfaces usable, and
-# that a sched-dependent header fails immediately for an incompatible/0-valued
-# product definition instead of deferring to a missing linker symbol.
+# Keep the internal raw-proactor header seam coherent, without claiming it is a
+# separately installable component. A sched-dependent header must still fail
+# immediately if an internal build supplies an incompatible capability value.
 set(_hyle_io_header_source
   "${HYLE_SMOKE_ROOT}/io-capability-header-source")
 set(_hyle_io_header_build
@@ -179,7 +129,7 @@ file(REMOVE_RECURSE "${_hyle_io_header_source}" "${_hyle_io_header_build}")
 file(MAKE_DIRECTORY "${_hyle_io_header_source}")
 file(WRITE "${_hyle_io_header_source}/CMakeLists.txt"
 "cmake_minimum_required(VERSION 3.25)\n"
-"project(hyle_io_capability_header_contract LANGUAGES C CXX)\n"
+"project(hyle_io_capability_header_contract LANGUAGES CXX)\n"
 "add_library(raw_supported OBJECT raw_supported.cc)\n"
 "target_compile_features(raw_supported PRIVATE cxx_std_23)\n"
 "target_include_directories(raw_supported PRIVATE \"${HYLE_SOURCE_DIR}/include\")\n"
@@ -198,11 +148,20 @@ file(WRITE "${_hyle_io_header_source}/raw_supported.cc"
 "using CompleteFn = void (*)(const hyle::io::Completion&) noexcept;\n"
 "CompleteFn raw_supported_complete = &hyle::io::complete;\n")
 file(WRITE "${_hyle_io_header_source}/no_transport_surfaces.cc"
-"#include <hyle/c/io.h>\n"
 "#include <hyle/io/proactor.h>\n"
 "#include <hyle/io/shared_memory.h>\n"
-"static_assert(sizeof(hyle::io::Completion) != 0);\n"
-"static_assert(sizeof(hyle_io_completion) != 0);\n")
+"#include <type_traits>\n"
+"using hyle::io::BackendKind;\n"
+"using hyle::io::Completion;\n"
+"using hyle::io::ProactorCapabilities;\n"
+"using hyle::io::ProactorCapability;\n"
+"static_assert(std::is_trivially_copyable_v<Completion>);\n"
+"static_assert(sizeof(Completion) != 0);\n"
+"constexpr ProactorCapabilities capabilities{\n"
+"    BackendKind::kNone, ProactorCapability::kAsyncFileData};\n"
+"static_assert(capabilities.backend == BackendKind::kNone);\n"
+"static_assert(capabilities.has(ProactorCapability::kAsyncFileData));\n"
+"static_assert(!capabilities.has(ProactorCapability::kHttp2));\n")
 file(WRITE "${_hyle_io_header_source}/raw_unsupported.cc"
 "#include <hyle/io/net.h>\n")
 

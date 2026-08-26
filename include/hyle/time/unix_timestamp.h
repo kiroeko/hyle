@@ -5,17 +5,24 @@
 #include <ctime>
 #include <limits>
 #include <optional>
+#include <type_traits>
 #include <utility>
-
-#include "hyle/c/time_types.h"
 
 namespace hyle::time {
 
-// One value representation is shared with OS metadata APIs and the current
-// pre-release FFI schema candidate. It is deliberately timespec-shaped rather
-// than a single nanosecond integer:
+// Deliberately timespec-shaped rather than a single nanosecond integer:
 // pre-epoch values stay negative and the range is not limited to ~292 years.
-using UnixTimestamp = ::hyle_unix_timestamp;
+// reserved must be zero so the representation can grow without silently
+// accepting values that a newer implementation may interpret differently.
+struct UnixTimestamp {
+  std::int64_t seconds;
+  std::uint32_t nanoseconds;
+  std::uint32_t reserved;
+};
+
+static_assert(sizeof(UnixTimestamp) == 16);
+static_assert(std::is_standard_layout_v<UnixTimestamp>);
+static_assert(std::is_trivially_copyable_v<UnixTimestamp>);
 using UnixTimePoint =
     std::chrono::time_point<std::chrono::system_clock,
                             std::chrono::nanoseconds>;

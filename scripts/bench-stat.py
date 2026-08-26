@@ -140,7 +140,6 @@ def _cmake_contract(exe):
         "HYLE_STATIC",
         "HYLE_SANITIZER",
         "HYLE_TRACE",
-        "HYLE_TRACE_BACKEND",
         "HYLE_TEST_INSTRUMENTATION",
         "HYLE_SIMD_EXACT_TARGET",
         "HYLE_WERROR",

@@ -1,7 +1,7 @@
 # obs 选型与 C++ 使用指南
 
-> **`provisional / NOT_REVIEWED_V2`。** obs 当前只提供 C++ 产品面，可通过完整源码、headers + static libraries 或
-> headers + shared libraries 使用。本页不描述 C API 或跨语言调用层。
+> **`provisional / NOT_REVIEWED_V2`。** obs 当前只提供 C++ 产品面。
+> 本页适用于 C++23 source/static/shared 三种交付，不描述 C API 或跨语言调用层。
 
 obs 有两条彼此独立的通路：**log** 是用户主动产出的同步诊断 record，**trace** 是
 profiling build 才存在的纳秒级时间线。它们都不是 error 的替代品，也不是一套日志

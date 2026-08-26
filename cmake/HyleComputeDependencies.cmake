@@ -1,24 +1,26 @@
 include_guard(GLOBAL)
 
-# Product-shape controls are declared independently from discovery so presets
-# and embedding parents can preconfigure compute without probing a GPU SDK.
+# This file is included only when compute belongs to the selected component
+# closure. Declaration remains separate from discovery so OFF never probes.
 hyle_auto_feature_option(HYLE_COMPUTE_CUDA
-  "Build the compute CUDA backend")
-set(_hyle_compute_ggml_default ${HYLE_FCONTEXT_SUPPORTED})
+  "Build the compute CUDA backend" DEFAULT OFF)
 option(HYLE_COMPUTE_GGML
   "compute-05: borrow ggml operators via ggml_bridge"
-  ${_hyle_compute_ggml_default})
-unset(_hyle_compute_ggml_default)
-set(_hyle_ggml_native_default ON)
-if(HYLE_INSTALL)
-  set(_hyle_ggml_native_default OFF)
+  OFF)
+if(HYLE_COMPUTE_GGML)
+  set(_hyle_ggml_native_default ON)
+  if(HYLE_INSTALL)
+    set(_hyle_ggml_native_default OFF)
+  endif()
+  option(HYLE_COMPUTE_GGML_NATIVE
+    "Tune ggml CPU kernels for the build CPU (not portable across CPUs)"
+    ${_hyle_ggml_native_default})
+  unset(_hyle_ggml_native_default)
+else()
+  set(HYLE_COMPUTE_GGML_NATIVE OFF)
 endif()
-option(HYLE_COMPUTE_GGML_NATIVE
-  "Tune ggml CPU kernels for the build CPU (not portable across CPUs)"
-  ${_hyle_ggml_native_default})
-unset(_hyle_ggml_native_default)
 option(HYLE_COMPUTE_VULKAN
-  "compute-06: self-authored Vulkan compute SPIR-V kernels" ON)
+  "compute-06: self-authored Vulkan compute SPIR-V kernels" OFF)
 
 set(HYLE_COMPUTE_CUDA_ENABLED OFF)
 set(HYLE_COMPUTE_VULKAN_ENABLED OFF)
@@ -29,14 +31,13 @@ function(hyle_configure_compute_dependencies)
   set(_hyle_compute_vulkan_enabled OFF)
   set(_hyle_compute_shader_tools_enabled OFF)
 
-  # ggml_bridge completes blocking operator work through sched.  Host, CUDA and
-  # Vulkan backends remain useful without fcontext, but an explicit ggml request
-  # cannot silently become an installed package that advertises no real bridge.
-  if(HYLE_COMPUTE_GGML AND NOT HYLE_FCONTEXT_SUPPORTED)
+  # The current compute product root exposes sched::Waker in public headers.
+  # Host/GPU internals may be separable later, but no sched-free component is
+  # currently declared or installable.
+  if(NOT HYLE_FCONTEXT_SUPPORTED)
     message(FATAL_ERROR
-      "HYLE_COMPUTE_GGML=ON requires sched/fcontext, but HYLE has no fcontext "
-      "assembly for ${CMAKE_SYSTEM_NAME}/${HYLE_TARGET_PROCESSOR}. Select "
-      "HYLE_COMPUTE_GGML=OFF; host/CUDA/Vulkan compute remain available.")
+      "The compute component currently requires sched/fcontext. Host/CUDA/"
+      "Vulkan internals are not separately deliverable component roots.")
   endif()
 
   # CUDA has a deterministic AUTO/ON/OFF contract. The distinct *_ENABLED

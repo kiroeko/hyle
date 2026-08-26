@@ -142,7 +142,6 @@ endif()
 # X3: product simd no longer links third_party/highway (vqsort ported to HYLE D-tag).
 hyle_add_module(simd SOURCES
   runtime.cc
-  c_simd.cc
   ops/dispatch_ops.cc
   random/random_dispatch.cc
   search/search_dispatch.cc

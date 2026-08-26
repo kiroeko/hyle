@@ -1,6 +1,6 @@
 # container: owning/concurrent templates plus compiled algorithms. The
-# allocation-free intrusive-list surface is aggregated transitively through the
-# public hyle::container_intrusive dependency declared in HyleComponents.cmake.
+# allocation-free intrusive-list surface remains a separately selectable
+# hyle::container_intrusive component; full container does not aggregate it.
 # SPSC / bounded_queue / ws_fifo / ws deque remain header-only here; the
 # compiled hash unit (container-02). hash.cc privately includes the vendored
 # xxhash + wyhash single-headers (best-of-breed byte hasher: XXH3 short-mid, wyhash
@@ -34,7 +34,7 @@ elseif(HYLE_TARGET_PROCESSOR MATCHES "arm64|aarch64|ARM64")
 endif()
 hyle_add_module(container
   SOURCES hash.cc carray.cc string_buf.cc path.cc swiss_table.cc string_algo.cc
-          string_ref.cc dynamic_bitset.cc c_container.cc c_btree.cc str_search_scalar.cc
+          string_ref.cc dynamic_bitset.cc str_search_scalar.cc
           bitset_ops_scalar.cc ${_container_arch_sources})
 target_include_directories(hyle_container PRIVATE
   "${PROJECT_SOURCE_DIR}/third_party/xxhash"

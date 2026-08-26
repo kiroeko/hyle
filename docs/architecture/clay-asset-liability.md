@@ -1,5 +1,9 @@
 # clay 资产负债表
 
+> **历史输入。** 本页只记录 clay 原始源码审计与当时的迁移裁决，不是当前 HYLE 产品面。
+> 其中 C-ABI 表述描述 clay 的旧设计；HYLE 当前只交付 C++23 source/static/shared，Native FFI
+> 为 `N/A`，旧 C schema/bridge 已由 BUILD-03 删除。
+>
 > 本文档是 HYLE 重构的依据：把 clay infra 层逐子系统盘点为「直接继承 / 改后继承 / 推倒重写 / 从零造」，每条结论附代码证据（`file_path:line`）。
 >
 > 盘点对象：`C:\public\project-hyle\slate-render\slate\infra\`（与 `iron\infra\` 为镜像拷贝，命名空间 `clay::`）。

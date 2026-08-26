@@ -1,5 +1,5 @@
 # time: C++ monotonic/realtime reads stay header-inline over std::chrono (one
 # system-clock hop); sleep/coarse/TSC paths live in clock.cc. Timer structures
-# use the lightweight container_intrusive component. Core supplies header-only
-# compiler contracts; recoverable boundary failures use the shared error value.
-hyle_add_module(time TESTING SOURCES clock.cc c_time.cc)
+# use the lightweight container_intrusive component. Core supplies the only
+# other public source contract; time has no recoverable Status-returning edge.
+hyle_add_module(time TESTING SOURCES clock.cc)

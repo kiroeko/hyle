@@ -48,9 +48,7 @@
 #  include <pthread.h>
 #endif
 
-#include "hyle/c/error_helpers.h"
 #include "hyle/platform/fs.h"
-#include "hyle/c/platform.h"
 #include "hyle/platform/mapped_file.h"
 #include "hyle/platform/numa.h"
 #include "hyle/platform/thread.h"
@@ -96,12 +94,6 @@ void noop_entry(void*) {}
 
 void require_benchmark(bool condition, const char* operation) {
   if (!condition) benchmark_failed(operation);
-}
-
-void require_c_status(hyle_status status, const char* operation) {
-  const bool ok = hyle_status_is_ok(status) != 0;
-  hyle_status_free(&status);
-  require_benchmark(ok, operation);
 }
 
 constexpr std::uint64_t patterned_checksum(std::size_t bytes) noexcept {
@@ -172,16 +164,6 @@ int main() {
       }
       nb::doNotOptimizeAway(&parker);
     });
-    hyle_parker_o* c_parker = nullptr;
-    require_c_status(hyle_parker_create(&c_parker), "hyle_parker_create");
-    b.run("HYLE C Parker unpark()+park()", [&] {
-      for (int i = 0; i < kIters; ++i) {
-        hyle_parker_unpark(c_parker);
-        hyle_parker_park(c_parker);
-      }
-      nb::doNotOptimizeAway(c_parker);
-    });
-    hyle_parker_destroy(c_parker);
   }
 
   // ---- 2. Parker round-trip: 2-thread ping-pong (REAL block+wake) ------------
@@ -268,14 +250,6 @@ int main() {
         r.value().join();
       }
     });
-    b.run("HYLE C thread spawn+join+Status", [&] {
-      for (int i = 0; i < kSpawns; ++i) {
-        hyle_thread_o* thread = nullptr;
-        require_c_status(hyle_thread_spawn(&thread, &noop_entry, nullptr, nullptr),
-                         "hyle_thread_spawn");
-        hyle_thread_join(thread);
-      }
-    });
   }
 
   // ---- 4. directory_iterate: visitor scan of a directory (vs std::filesystem) -
@@ -346,15 +320,6 @@ int main() {
         require_benchmark(allocated.has_value(), "vm_allocate_rw");
         void* p = *allocated;
         require_benchmark(vm_release(p, pg).ok(), "vm_release(allocated)");
-        nb::doNotOptimizeAway(p);
-      }
-    });
-    b.run("HYLE C vm_alloc_rw+free_rw+Status", [&] {
-      for (int i = 0; i < kIters; ++i) {
-        void* p = nullptr;
-        require_c_status(hyle_vm_alloc_rw(&p, pg), "hyle_vm_alloc_rw");
-        require_benchmark(p != nullptr, "hyle_vm_alloc_rw output");
-        require_c_status(hyle_vm_free_rw(p, pg), "hyle_vm_free_rw");
         nb::doNotOptimizeAway(p);
       }
     });
@@ -581,15 +546,6 @@ int main() {
       }
       nb::doNotOptimizeAway(base);
     });
-    b.run("HYLE C vm_protect+Status", [&] {
-      for (int i = 0; i < kIters; ++i) {
-        require_c_status(hyle_vm_protect(base, pg, HYLE_PROTECT_READ),
-                         "hyle_vm_protect(read-only)");
-        require_c_status(hyle_vm_protect(base, pg, HYLE_PROTECT_READ_WRITE),
-                         "hyle_vm_protect(read-write)");
-      }
-      nb::doNotOptimizeAway(base);
-    });
     require_benchmark(vm_release(base, pg).ok(), "vm_release(protect)");
   }
 
@@ -701,23 +657,6 @@ int main() {
           static_cast<const unsigned char*>(mapped->data());
       for (std::size_t i = 0; i < mapped->size(); ++i) s += d[i];
       require_benchmark(s == kExpectedSum, "MappedFile checksum");
-      nb::doNotOptimizeAway(s);
-    });
-    b.run("HYLE C MappedFile open+sum+Status", [&] {
-      std::uint64_t s = 0;
-      hyle_mapped_file_o* mapped = nullptr;
-      require_c_status(hyle_mapped_file_open(&mapped, path.c_str(),
-                                             HYLE_MAP_READ_ONLY, 0, 0),
-                       "hyle_mapped_file_open");
-      require_benchmark(mapped != nullptr && hyle_mapped_file_valid(mapped) != 0,
-                        "hyle_mapped_file_valid");
-      require_benchmark(hyle_mapped_file_size(mapped) == kBytes,
-                        "hyle_mapped_file_size");
-      const auto* data =
-          static_cast<const unsigned char*>(hyle_mapped_file_data(mapped));
-      for (std::size_t i = 0; i < kBytes; ++i) s += data[i];
-      require_benchmark(s == kExpectedSum, "C MappedFile checksum");
-      hyle_mapped_file_destroy(mapped);
       nb::doNotOptimizeAway(s);
     });
     std::error_code ec;
@@ -886,26 +825,6 @@ int main() {
       std::uint64_t s = 0;
       for (std::size_t i = 0; i < total; ++i) s += buffer[i];
       require_benchmark(s == kExpectedSum, "FileHandle checksum");
-      nb::doNotOptimizeAway(s);
-    });
-    b.run("HYLE C file open+read+close+Status", [&] {
-      hyle_file_handle file = HYLE_FILE_HANDLE_INVALID;
-      require_c_status(hyle_fs_open(&file, path.c_str(), HYLE_OPEN_READ),
-                       "hyle_fs_open");
-      std::size_t total = 0;
-      while (total < buffer.size()) {
-        std::size_t moved = 0;
-        require_c_status(hyle_fs_read(&moved, file, buffer.data() + total,
-                                      buffer.size() - total),
-                         "hyle_fs_read");
-        if (moved == 0) break;
-        total += moved;
-      }
-      require_benchmark(total == buffer.size(), "hyle_fs_read(short read)");
-      require_c_status(hyle_fs_close(file), "hyle_fs_close");
-      std::uint64_t s = 0;
-      for (std::size_t i = 0; i < total; ++i) s += buffer[i];
-      require_benchmark(s == kExpectedSum, "C FileHandle checksum");
       nb::doNotOptimizeAway(s);
     });
     std::error_code ec;

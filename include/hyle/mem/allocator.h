@@ -34,8 +34,8 @@ inline constexpr std::size_t kDefaultAlignment = alignof(std::max_align_t);
 // hot path. Splitting remains ABI-clean for one matching build (three C
 // function pointers, trivially copyable -- the same basic shape used by
 // jemalloc/pmr/cudaMalloc) AND register-friendly: alloc is 3 args (all in
-// registers), free is 4 (all in registers), no dispatch branch. No released
-// foreign binding freezes this layout. Measured: removes the spill + branch tax.
+// registers), free is 4 (all in registers), no dispatch branch. This C++ source
+// contract is not a cross-runtime ABI. Measured: removes the spill + branch tax.
 // Returns nullptr on OOM (allocation is a hot path; failure is a value, not a
 // Status).
 //   AllocFn  (state, size, alignment)                 -> ptr (nullptr on
@@ -109,7 +109,7 @@ public:
     return realloc_fn_(state_, ptr, old_size, new_size, alignment);
   }
 
-  // Raw vtable accessors (for handing the seam across a C-ABI boundary).
+  // Raw vtable accessors for internal runtime type erasure.
   // alloc_fn() doubles as the identity for comparing two handles to the same
   // backing (pmr).
   AllocFn alloc_fn() const noexcept { return alloc_fn_; }

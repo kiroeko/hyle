@@ -1,7 +1,5 @@
 #include "hyle/time/clock.h"
 
-#include "hyle/c/time.h"
-
 #include "clock_internal.h"
 
 #if defined(HYLE_TESTING)
@@ -620,30 +618,3 @@ std::uint64_t profiling_measurement_stop_ns() noexcept {
 }
 
 }  // namespace hyle::time
-
-// Keep the C hardware/coarse-clock thunks in the implementation TU that owns
-// the corresponding C++ functions.  This lets release/LTO builds fold the
-// private call instead of crossing a second exported-function seam inside the
-// same shared library.
-extern "C" {
-
-uint64_t hyle_time_profiling_clock_ns(void) {
-  return hyle::time::profiling_clock_ns();
-}
-uint64_t hyle_time_profiling_measurement_start_ns(void) {
-  return hyle::time::profiling_measurement_start_ns();
-}
-uint64_t hyle_time_profiling_measurement_stop_ns(void) {
-  return hyle::time::profiling_measurement_stop_ns();
-}
-int hyle_time_profiling_clock_available(void) {
-  return hyle::time::profiling_clock_available() ? 1 : 0;
-}
-uint64_t hyle_time_coarse_realtime_ns(void) {
-  return hyle::time::coarse_realtime_ns_impl();
-}
-int hyle_time_coarse_realtime_available(void) {
-  return hyle::time::coarse_realtime_available() ? 1 : 0;
-}
-
-}  // extern "C"

@@ -10,36 +10,26 @@ permissions:
   contents: read
 
 concurrency:
-  group: build-system-${{ github.ref }}
+  # A routine push must not cancel an explicitly requested full validation.
+  group: build-system-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   platform-and-package-smoke:
-    name: ${{ matrix.label }} CPU baseline + distribution smoke
+    name: ${{ matrix.os == 'ubuntu-latest' && 'Linux' || matrix.os == 'windows-latest' && 'Windows' || 'macOS' }} CPU baseline + distribution smoke
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - label: Windows
-            os: windows-latest
-            preset: windows-ninja
-            generator: Ninja
-            timeout: 90
-          - label: Linux
-            os: ubuntu-latest
-            preset: linux
-            generator: Unix Makefiles
-            timeout: 60
-          - label: macOS
-            os: macos-latest
-            preset: macos
-            generator: Unix Makefiles
-            timeout: 75
+        # Pull requests and main pushes are the high-signal Linux gate. A
+        # manual dispatch deliberately expands this same job to all hosts.
+        os: ${{ fromJSON(github.event_name == 'workflow_dispatch' && '["ubuntu-latest","windows-latest","macos-latest"]' || '["ubuntu-latest"]') }}
     runs-on: ${{ matrix.os }}
-    timeout-minutes: ${{ matrix.timeout }}
+    timeout-minutes: ${{ matrix.os == 'windows-latest' && 90 || matrix.os == 'macos-latest' && 75 || 60 }}
     env:
       CMAKE_BUILD_PARALLEL_LEVEL: 2
       CTEST_PARALLEL_LEVEL: 2
+      HYLE_CI_PRESET: ${{ matrix.os == 'windows-latest' && 'windows-ninja' || matrix.os == 'macos-latest' && 'macos' || 'linux' }}
+      HYLE_CI_GENERATOR: ${{ matrix.os == 'windows-latest' && 'Ninja' || 'Unix Makefiles' }}
     steps:
       - uses: actions/checkout@v6
 
@@ -58,9 +48,10 @@ jobs:
       - name: Configure all CPU modules (Unix)
         if: runner.os != 'Windows'
         run: >-
-          cmake --preset ${{ matrix.preset }}
+          cmake --preset ${{ env.HYLE_CI_PRESET }}
           -DHYLE_COMPONENTS=all
           -DHYLE_BUILD_TESTS=ON
+          -DHYLE_TEST_INSTRUMENTATION=OFF
           -DHYLE_BUILD_BENCH=OFF
           -DHYLE_INSTALL=OFF
           -DHYLE_WERROR=ON
@@ -76,6 +67,7 @@ jobs:
           ./scripts/hyle-windows.ps1 -Action Configure -Preset windows-ninja
           -DHYLE_COMPONENTS=all
           -DHYLE_BUILD_TESTS=ON
+          -DHYLE_TEST_INSTRUMENTATION=OFF
           -DHYLE_BUILD_BENCH=OFF
           -DHYLE_INSTALL=OFF
           -DHYLE_WERROR=ON
@@ -87,7 +79,7 @@ jobs:
 
       - name: Build all CPU module tests (Unix)
         if: runner.os != 'Windows'
-        run: cmake --build --preset ${{ matrix.preset }} --target hyle_tests --parallel 2
+        run: cmake --build --preset ${{ env.HYLE_CI_PRESET }} --target hyle_tests --parallel 2
 
       - name: Build all CPU module tests (Windows selected MSVC)
         if: runner.os == 'Windows'
@@ -95,7 +87,7 @@ jobs:
 
       - name: Run all CPU module tests (Unix)
         if: runner.os != 'Windows'
-        run: ctest --preset ${{ matrix.preset }} --output-on-failure
+        run: ctest --preset ${{ env.HYLE_CI_PRESET }} --output-on-failure
 
       - name: Run all CPU module tests (Windows selected MSVC)
         if: runner.os == 'Windows'
@@ -112,44 +104,45 @@ jobs:
         run: >-
           cmake -DHYLE_SOURCE_DIR=${{ github.workspace }}
           -DHYLE_SMOKE_ROOT=${{ runner.temp }}/hyle-component-contract
-          "-DHYLE_SMOKE_GENERATOR=${{ matrix.generator }}"
+          "-DHYLE_SMOKE_GENERATOR=${{ env.HYLE_CI_GENERATOR }}"
           -P cmake/HyleCiComponentContract.cmake
 
       - name: Verify production-shape tests (Unix)
-        if: runner.os == 'Linux' || (runner.os == 'macOS' && github.event_name != 'pull_request')
+        if: github.event_name == 'workflow_dispatch' && runner.os != 'Windows'
         run: >-
           cmake -DHYLE_SOURCE_DIR=${{ github.workspace }}
           -DHYLE_SMOKE_ROOT=${{ runner.temp }}/hyle-product-shape-smoke
-          "-DHYLE_SMOKE_GENERATOR=${{ matrix.generator }}"
-          -DHYLE_GOOGLETEST_SOURCE=${{ github.workspace }}/build-${{ matrix.preset }}/_deps/googletest-src
+          "-DHYLE_SMOKE_GENERATOR=${{ env.HYLE_CI_GENERATOR }}"
+          -DHYLE_GOOGLETEST_SOURCE=${{ github.workspace }}/build-${{ env.HYLE_CI_PRESET }}/_deps/googletest-src
           -P cmake/HyleCiProductShapeSmoke.cmake
 
       - name: Verify production-shape tests (Windows selected MSVC)
-        if: runner.os == 'Windows' && github.event_name != 'pull_request'
+        if: github.event_name == 'workflow_dispatch' && runner.os == 'Windows'
         run: >-
           ./scripts/hyle-windows.ps1 -Action ProductShapeSmoke
           -SmokeRoot ${{ runner.temp }}/hyle-product-shape-smoke
           -GTestSource ${{ github.workspace }}/build-windows-ninja/_deps/googletest-src
 
       - name: Verify installed package consumers (Unix)
-        if: runner.os == 'Linux' || (runner.os == 'macOS' && github.event_name != 'pull_request')
-        run: cmake -DHYLE_SOURCE_DIR=${{ github.workspace }} -DHYLE_SMOKE_ROOT=${{ runner.temp }}/hyle-package-smoke "-DHYLE_SMOKE_GENERATOR=${{ matrix.generator }}" -P cmake/HyleCiPackageSmoke.cmake
+        if: github.event_name == 'workflow_dispatch' && runner.os != 'Windows'
+        run: cmake -DHYLE_SOURCE_DIR=${{ github.workspace }} -DHYLE_SMOKE_ROOT=${{ runner.temp }}/hyle-package-smoke "-DHYLE_SMOKE_GENERATOR=${{ env.HYLE_CI_GENERATOR }}" -P cmake/HyleCiPackageSmoke.cmake
 
       - name: Verify installed package consumers (Windows selected MSVC)
-        if: runner.os == 'Windows' && github.event_name != 'pull_request'
+        if: github.event_name == 'workflow_dispatch' && runner.os == 'Windows'
         run: ./scripts/hyle-windows.ps1 -Action PackageSmoke -SmokeRoot ${{ runner.temp }}/hyle-package-smoke
 
       - name: Verify complete-source package
-        if: runner.os == 'Linux'
+        if: github.event_name == 'workflow_dispatch' && runner.os == 'Linux'
         run: >-
           cmake -DHYLE_SOURCE_DIR=${{ github.workspace }}
-          -DHYLE_PACKAGE_BUILD=${{ github.workspace }}/build-${{ matrix.preset }}
+          -DHYLE_PACKAGE_BUILD=${{ github.workspace }}/build-${{ env.HYLE_CI_PRESET }}
           -DHYLE_SMOKE_ROOT=${{ runner.temp }}/hyle-source-package-smoke
-          "-DHYLE_SMOKE_GENERATOR=${{ matrix.generator }}"
+          "-DHYLE_SMOKE_GENERATOR=${{ env.HYLE_CI_GENERATOR }}"
           -P cmake/HyleCiSourcePackageSmoke.cmake
 
   linux-aarch64-cross:
     name: Linux AArch64 all-component cross build
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
@@ -170,6 +163,7 @@ jobs:
 
   windows-clangcl-foundation:
     name: Windows clang-cl foundation + SIMD strict
+    if: github.event_name == 'workflow_dispatch'
     runs-on: windows-latest
     timeout-minutes: 45
     env:
@@ -183,6 +177,7 @@ jobs:
           ./scripts/hyle-windows.ps1 -Action Configure -Preset windows-clangcl
           '-DHYLE_COMPONENTS=core,error,obs,platform,time,mem,container,util,simd'
           -DHYLE_BUILD_TESTS=ON
+          -DHYLE_TEST_INSTRUMENTATION=ON
           -DHYLE_BUILD_BENCH=OFF
           -DHYLE_INSTALL=OFF
           -DHYLE_WERROR=ON
@@ -208,6 +203,7 @@ jobs:
 
   linux-locked-feature-package:
     name: Linux locked adapters + feature SDK + Tracy smoke
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 75
     env:

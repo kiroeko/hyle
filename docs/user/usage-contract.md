@@ -9,7 +9,7 @@
 >
 > 每条边界都附 **为什么**（机制）+ **怎么调**（安全模式）+ **违反的后果**。带 ⚡ 的是为性能刻意保留的约束。
 > 本契约适用于完整源码、headers + static libraries、headers + shared libraries 三种 C++ 交付；
-> 当前 Native FFI 为 `N/A`。
+> 当前 Native FFI 为 `N/A`，也没有可调用的公开 C schema 或 bridge。
 
 ---
 

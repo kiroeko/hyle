@@ -138,7 +138,7 @@ class Kernel {
   int ordinal_ = 0;
 };
 
-// ---- C-ABI CORE (exported, one compiled copy) -------------------------------
+// ---- TYPE-ERASED OUT-OF-LINE CORE (exported, one compiled copy) -------------
 // Submit `kernel` to `stream` with `config` and pre-built `args` (KernelArgs, types.h)
 // -- the UNIFIED launch ABI that lowers to BOTH backends: on CUDA `order` preserves an
 // optional mixed pointer/scalar source order (omitting it retains the raw API's legacy
@@ -253,8 +253,8 @@ class RecordedLaunch {
 // ---- TYPED SHELL (header-only, compile-time, zero heap) ----------------------
 // The ergonomic launch: pass kernel arguments DIRECTLY and in source order, including
 // mixed pointer/scalar signatures such as `launch(s,k,cfg,a,n,b,alpha)`.
-// A variadic fold classifies each arg at COMPILE TIME (conventions §7 typed shell over a
-// type-erased C-ABI core, same as PodVector): a `Buffer` -> its native_handle() appended to an
+// A variadic fold classifies each arg at COMPILE TIME (conventions §7 typed shell over an
+// out-of-line type-erased core): a `Buffer` -> its native_handle() appended to an
 // ordered buffer list (position = binding index); anything trivially-copyable -> memcpy'd
 // into a naturally-aligned byte blob (with a {offset,size} descriptor) and emits an
 // argument-order table so CUDA reconstructs the exact original signature. Vulkan pushes
@@ -277,7 +277,7 @@ inline constexpr bool is_kernel_scalar_v =
 inline constexpr std::size_t kMaxScalarBlob = 256;
 }  // namespace detail
 
-// Constrained so a SINGLE KernelArgs arg never matches here (it must bind the C-ABI core
+// Constrained so a SINGLE KernelArgs arg never matches here (it must bind the erased core
 // above) -- without this, `launch(s,k,cfg, ka)` would re-match the template as
 // Args=KernelArgs& and recurse forever. Any other arg list (buffers/scalars) uses the shell.
 template <class... Args>
@@ -321,7 +321,7 @@ Status launch(Stream& stream, const Kernel& kernel, const LaunchConfig& config,
 
   KernelArgs ka{buffers, nb, nf ? blob : nullptr, blob_off,
                 nf ? fields : nullptr, nf, na ? order : nullptr, na};
-  return launch(stream, kernel, config, ka);   // -> C-ABI core (one indirect + backend)
+  return launch(stream, kernel, config, ka);   // -> erased core (one indirect + backend)
 }
 
 }  // namespace hyle::compute

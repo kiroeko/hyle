@@ -8,7 +8,6 @@
 #include <string_view>
 #include <utility>
 
-#include "hyle/c/obs.h"
 #include "hyle/error/result.h"
 #include "hyle/error/status.h"
 #include "hyle/core/compiler.h"
@@ -20,6 +19,13 @@
 #  define HYLE_OBS_API HYLE_EXPORT
 #else
 #  define HYLE_OBS_API HYLE_IMPORT
+#endif
+
+#ifndef HYLE_OBS_COMPILED_MIN_LEVEL
+#  define HYLE_OBS_COMPILED_MIN_LEVEL 0
+#endif
+#if HYLE_OBS_COMPILED_MIN_LEVEL < 0 || HYLE_OBS_COMPILED_MIN_LEVEL > 5
+#  error "HYLE_OBS_COMPILED_MIN_LEVEL must be in [0, 5]"
 #endif
 
 // Synchronous structured-log production. Aggregation, storage and alerting stay
@@ -35,7 +41,10 @@ enum class LogLevel : int {
   Off = 5,  // threshold-only sentinel; never a record level
 };
 
-using LogField = hyle_obs_log_field;
+struct LogField {
+  const char* key;
+  const char* value;
+};
 
 // Borrowed for the synchronous duration of log_record(). message is a byte
 // view (embedded NUL is preserved); field strings are NUL-terminated UTF-8.

@@ -1,14 +1,14 @@
 # util：什么情况选什么
 
-> **`provisional / NOT_REVIEWED_V2`。** util 当前只提供 C++ 产品面，可通过完整源码、headers + static libraries 或
-> headers + shared libraries 使用。本页不描述 C API 或跨语言调用层。
+> **`provisional / NOT_REVIEWED_V2`。** util 当前只提供 C++ 产品面。
+> 本页适用于 C++23 source/static/shared 三种交付，不描述 C API 或跨语言调用层。
 
 `util` 提供几种彼此独立的基础能力，不存在一个需要整体 include 的“万能工具箱”。C++ 用户
 按场景包含 `hyle/util/<capability>.h`，并链接可安装的 header-only target
 `hyle::util_core`；只有 `demangle`、Registry 等 runtime 能力需要改为链接 `hyle::util`。
 
 ```cmake
-find_package(Hyle REQUIRED COMPONENTS util_core)
+find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS util_core)
 target_link_libraries(my_target PRIVATE hyle::util_core)
 ```
 

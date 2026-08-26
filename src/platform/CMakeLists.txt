@@ -23,7 +23,7 @@ set_target_properties(hyle_platform_cpu_probe PROPERTIES
 
 hyle_add_module(platform TESTING SOURCES
   wait.cc thread.cc dynlib.cc fs.cc virtual_memory.cc numa.cc mapped_file.cc
-  c_platform.cc $<TARGET_OBJECTS:hyle_platform_cpu_probe>)
+  $<TARGET_OBJECTS:hyle_platform_cpu_probe>)
 
 # WaitOnAddress / WakeByAddress* are exported from Synchronization.lib (API set).
 if(WIN32)

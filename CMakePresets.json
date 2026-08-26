@@ -8,9 +8,7 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "HYLE_BUILD_TESTS": "ON",
-        "HYLE_BUILD_BENCH": "OFF",
-        "HYLE_IO_TLS": "OFF",
-        "HYLE_COMPUTE_CUDA": "OFF"
+        "HYLE_BUILD_BENCH": "OFF"
       }
     },
     {

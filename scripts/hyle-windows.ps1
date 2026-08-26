@@ -1,8 +1,10 @@
 [CmdletBinding(PositionalBinding = $false)]
 param(
-    [ValidateSet('Configure', 'Build', 'Test', 'Workflow', 'ComponentContract', 'PackageSmoke', 'ProductShapeSmoke', 'SourcePackageSmoke')]
+    [ValidateSet('Configure', 'Build', 'Test', 'Workflow', 'ComponentContract', 'SelectedComponentSmoke', 'PackageSmoke', 'ProductShapeSmoke', 'SourcePackageSmoke')]
     [string]$Action = 'Configure',
     [string]$Preset = 'windows-ninja',
+    [string]$BinaryDir,
+    [string]$Component,
     [string]$SmokeRoot,
     [string]$GTestSource,
     [Parameter(ValueFromRemainingArguments = $true)]
@@ -10,6 +12,29 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+
+$sourceDir = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
+$resolvedBinaryDir = $null
+if ($BinaryDir) {
+    if ($Action -notin @('Configure', 'Build', 'Test')) {
+        throw '-BinaryDir is supported only by Configure, Build, and Test.'
+    }
+    if (-not [System.IO.Path]::IsPathFullyQualified($BinaryDir)) {
+        throw '-BinaryDir must be an absolute, session-owned scratch path.'
+    }
+    $resolvedBinaryDir = [System.IO.Path]::GetFullPath($BinaryDir)
+}
+if ($Component) {
+    if ([string]::IsNullOrWhiteSpace($Component)) {
+        throw '-Component cannot be empty.'
+    }
+    if ($Action -eq 'Configure' -and -not $resolvedBinaryDir) {
+        throw '-Component requires Configure together with an explicit -BinaryDir.'
+    }
+    if ($Action -notin @('Configure', 'SelectedComponentSmoke')) {
+        throw '-Component is supported only by isolated Configure or SelectedComponentSmoke.'
+    }
+}
 
 $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
 if (-not (Test-Path -LiteralPath $vswhere)) {
@@ -107,8 +132,11 @@ if (($Action -eq 'Configure' -and $Preset -eq 'windows') -or
         # CMake forbids changing a generator toolset in-place. Refresh only its
         # generated cache when an older/default v143 cache is already present;
         # sources, dependencies, build outputs and user files remain untouched.
-        $sourceDir = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
-        $cachePath = Join-Path $sourceDir 'build-windows\CMakeCache.txt'
+        $cachePath = if ($resolvedBinaryDir) {
+            Join-Path $resolvedBinaryDir 'CMakeCache.txt'
+        } else {
+            Join-Path $sourceDir 'build-windows\CMakeCache.txt'
+        }
         if (Test-Path -LiteralPath $cachePath) {
             $cachedToolset = Get-Content -LiteralPath $cachePath |
                 Where-Object { $_ -like 'CMAKE_GENERATOR_TOOLSET:INTERNAL=*' } |
@@ -134,9 +162,32 @@ if ($Preset -in @('windows-clangcl', 'windows-clangcl-check') -and
 }
 
 switch ($Action) {
-    'Configure' { & cmake --preset $Preset @effectiveExtraArgs }
-    'Build'     { & cmake --build --preset $Preset @effectiveExtraArgs }
-    'Test'      { & ctest --preset $Preset @effectiveExtraArgs }
+    'Configure' {
+        if ($resolvedBinaryDir) {
+            $componentArg = @()
+            if ($Component) {
+                $componentArg = @("-DHYLE_COMPONENTS=$Component")
+            }
+            Write-Host "HYLE isolated configure: $resolvedBinaryDir"
+            & cmake --preset $Preset -B $resolvedBinaryDir @componentArg @effectiveExtraArgs
+        } else {
+            & cmake --preset $Preset @effectiveExtraArgs
+        }
+    }
+    'Build' {
+        if ($resolvedBinaryDir) {
+            & cmake --build $resolvedBinaryDir @effectiveExtraArgs
+        } else {
+            & cmake --build --preset $Preset @effectiveExtraArgs
+        }
+    }
+    'Test' {
+        if ($resolvedBinaryDir) {
+            & ctest --test-dir $resolvedBinaryDir @effectiveExtraArgs
+        } else {
+            & ctest --preset $Preset @effectiveExtraArgs
+        }
+    }
     'Workflow'  {
         if ($Preset -eq 'windows-check' -and $vs2022Toolset) {
             # A workflow preset cannot forward a dynamically discovered -T
@@ -153,16 +204,23 @@ switch ($Action) {
         if (-not $SmokeRoot) {
             throw 'Action ComponentContract requires -SmokeRoot <scratch-directory>.'
         }
-        $sourceDir = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
         $smokeScript = Join-Path $sourceDir 'cmake\HyleCiComponentContract.cmake'
         & cmake "-DHYLE_SOURCE_DIR=$sourceDir" "-DHYLE_SMOKE_ROOT=$SmokeRoot" `
             -DHYLE_SMOKE_GENERATOR=Ninja -P $smokeScript
+    }
+    'SelectedComponentSmoke' {
+        if (-not $SmokeRoot -or -not $Component) {
+            throw 'Action SelectedComponentSmoke requires -SmokeRoot and -Component.'
+        }
+        $smokeScript = Join-Path $sourceDir 'cmake\HyleCiSelectedComponentSmoke.cmake'
+        & cmake "-DHYLE_SOURCE_DIR=$sourceDir" "-DHYLE_SMOKE_ROOT=$SmokeRoot" `
+            "-DHYLE_SMOKE_COMPONENT=$Component" -DHYLE_SMOKE_GENERATOR=Ninja `
+            -P $smokeScript
     }
     'PackageSmoke' {
         if (-not $SmokeRoot) {
             throw 'Action PackageSmoke requires -SmokeRoot <scratch-directory>.'
         }
-        $sourceDir = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
         $smokeScript = Join-Path $sourceDir 'cmake\HyleCiPackageSmoke.cmake'
         & cmake "-DHYLE_SOURCE_DIR=$sourceDir" "-DHYLE_SMOKE_ROOT=$SmokeRoot" `
             -DHYLE_SMOKE_GENERATOR=Ninja -P $smokeScript
@@ -171,7 +229,6 @@ switch ($Action) {
         if (-not $SmokeRoot) {
             throw 'Action ProductShapeSmoke requires -SmokeRoot <scratch-directory>.'
         }
-        $sourceDir = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
         $smokeScript = Join-Path $sourceDir 'cmake\HyleCiProductShapeSmoke.cmake'
         $gtestArg = @()
         if ($GTestSource) {
@@ -184,7 +241,6 @@ switch ($Action) {
         if (-not $SmokeRoot) {
             throw 'Action SourcePackageSmoke requires -SmokeRoot <scratch-directory>.'
         }
-        $sourceDir = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
         $packageBuild = Join-Path $SmokeRoot 'package-driver'
         $smokeScript = Join-Path $sourceDir 'cmake\HyleCiSourcePackageSmoke.cmake'
         & cmake -S $sourceDir -B $packageBuild -G Ninja `

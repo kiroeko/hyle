@@ -29,8 +29,10 @@
 
 #include "hyle/io/proactor.h"
 
+using hyle::io::BackendKind;
 using hyle::io::Completion;
 using hyle::io::Proactor;
+using hyle::io::ProactorCapability;
 
 // io-01 is the completion-reaping seam; these tests prove the mechanism the real
 // backends (io_uring / IOCP) drive: attach a 64-bit token to an operation, get it
@@ -85,21 +87,20 @@ TEST(Proactor, CapabilitiesMatchSelectedBackend) {
   Proactor p;
   ASSERT_TRUE(p.init());
   const auto caps = p.capabilities();
-  EXPECT_EQ(caps.struct_size, sizeof(caps));
   EXPECT_EQ(caps.backend, p.backend_kind());
   const auto uring = p.io_uring_extension();
-  EXPECT_EQ(uring.valid(), caps.backend == HYLE_IO_BACKEND_IO_URING);
-  if (caps.backend == HYLE_IO_BACKEND_IO_URING) {
-    EXPECT_NE(caps.bits & HYLE_IO_CAP_NATIVE_MULTISHOT_ACCEPT, 0u);
-    EXPECT_NE(caps.bits & HYLE_IO_CAP_PROVIDED_BUFFER_RING, 0u);
-    EXPECT_NE(caps.bits & HYLE_IO_CAP_FIXED_FILES, 0u);
-    EXPECT_NE(caps.bits & HYLE_IO_CAP_ASYNC_FILE_METADATA, 0u);
+  EXPECT_EQ(uring.valid(), caps.backend == BackendKind::kIoUring);
+  if (caps.backend == BackendKind::kIoUring) {
+    EXPECT_TRUE(caps.has(ProactorCapability::kNativeMultishotAccept));
+    EXPECT_TRUE(caps.has(ProactorCapability::kProvidedBufferRing));
+    EXPECT_TRUE(caps.has(ProactorCapability::kFixedFiles));
+    EXPECT_TRUE(caps.has(ProactorCapability::kAsyncFileMetadata));
     EXPECT_TRUE(p.has_async_file_metadata());
   } else {
-    EXPECT_NE(caps.bits & HYLE_IO_CAP_EMULATED_MULTISHOT_ACCEPT, 0u);
-    EXPECT_EQ(caps.bits & HYLE_IO_CAP_PROVIDED_BUFFER_RING, 0u);
-    EXPECT_EQ(caps.bits & HYLE_IO_CAP_FIXED_FILES, 0u);
-    EXPECT_EQ(caps.bits & HYLE_IO_CAP_ASYNC_FILE_METADATA, 0u);
+    EXPECT_TRUE(caps.has(ProactorCapability::kEmulatedMultishotAccept));
+    EXPECT_FALSE(caps.has(ProactorCapability::kProvidedBufferRing));
+    EXPECT_FALSE(caps.has(ProactorCapability::kFixedFiles));
+    EXPECT_FALSE(caps.has(ProactorCapability::kAsyncFileMetadata));
     EXPECT_FALSE(p.has_async_file_metadata());
     EXPECT_FALSE(uring.register_file_table(1));
     EXPECT_FALSE(uring.release_fixed_file(0));
@@ -148,7 +149,7 @@ TEST(Proactor, ReadinessBackendRejectsSecondSameDirectionOp) {
 TEST(Proactor, NativeStatxCompletesAsynchronously) {
   Proactor p;
   ASSERT_TRUE(p.init());
-  if (p.backend_kind() != HYLE_IO_BACKEND_IO_URING)
+  if (p.backend_kind() != BackendKind::kIoUring)
     GTEST_SKIP() << "native STATX requires io_uring";
 
   char path[] = "/tmp/hyle-statx-XXXXXX";
@@ -169,7 +170,7 @@ TEST(Proactor, NativeStatxCompletesAsynchronously) {
   EXPECT_EQ(completion.user_data, 0x57A7u);
   EXPECT_EQ(completion.result, 0);
   EXPECT_EQ(stat.size, sizeof(kBytes));
-  EXPECT_FALSE(stat.is_dir);
+  EXPECT_FALSE(stat.is_directory);
   EXPECT_GT(stat.modified_time.seconds, 1'577'836'800);  // after 2020-01-01
   EXPECT_LT(stat.modified_time.nanoseconds, 1'000'000'000u);
   ::close(fd);

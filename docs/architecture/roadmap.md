@@ -25,7 +25,8 @@ failure、concurrency 和复杂度的最低合理层，但不能把上层策略�
 ## 2. 组件图
 
 下表是当前中央声明的直接边。`PUBLIC` 表示公开头/链接合同泄露该依赖；`PRIVATE` 只属于编译实现。
-`sched` 边只在当前平台支持 fcontext 时存在。
+当前 io、compute 与 graph 的公开面都暴露 sched 类型，因此它们无条件选择 sched；目标平台缺少
+fcontext 时配置会拒绝这些根，而不是生成删掉公开依赖的残缺 SDK。
 
 | Component | Public deps | Private deps |
 |---|---|---|
@@ -35,31 +36,33 @@ failure、concurrency 和复杂度的最低合理层，但不能把上层策略�
 | error | core | — |
 | obs | core, error | — |
 | math | — | — |
-| platform | core, error | — |
-| time | core, error, container_intrusive | — |
+| time | core, container_intrusive | — |
+| platform | core, error, time | — |
 | mem | core, error, platform, util_core | — |
-| simd | core, error, platform | — |
-| container | core, error, mem, container_intrusive | platform |
+| simd | core, platform | — |
+| container | core, mem | platform |
 | util | core, error, mem, container, util_core | — |
 | sched | core, error, platform, mem, container, util_core | time |
-| io | core, error, mem, container, optional time, optional sched | — |
-| compute | core, error, mem, optional sched | platform, simd |
-| graph | core, error, mem, container, optional sched | util_core |
+| io | core, error, mem, container, time, sched | — |
+| compute | core, error, mem, sched | platform, simd |
+| graph | core, error, mem, container, sched | util_core |
 
 声明顺序必须是拓扑序，闭包必须无环。外部第三方依赖由所属模块登记，不出现在内部组件图中。
+container 另有不进入产品闭包的 build-private `simd_vec_headers` seam：它让 per-ISA 实现复用
+`hyle/simd/vec.h` 时留下真实 build-interface target 边，但不会为 container 用户构建或安装完整 simd。
 
 `container_intrusive` 的公开头是 `<hyle/container/intrusive_list.h>`，公开类型位于
 `hyle::container`；target 名称为 `hyle::container_intrusive`。`time` 的公开 `TimerEntry` 与
-`TimerList` 暴露该类型，所以它是 `PUBLIC` 依赖；完整 `hyle::container` 也以 `PUBLIC` 边聚合这项
-容器能力。sched waiter 在摘链后复用 link storage 作锁外 wake chain，保留专用实现且不登记虚假
-direct edge。这些消费者都不会把 `time` 拉入完整 container 的 mem/platform
-闭包。组件自己的边界见 [`container-intrusive-design`](container-intrusive-design.md)。
+`TimerList` 暴露该类型，所以它是 `PUBLIC` 依赖；完整 `hyle::container` 不聚合这项独立能力。
+sched waiter 在摘链后复用 link storage 作锁外 wake chain，保留专用实现且不登记虚假 direct edge。
+这些消费者都不会把 `time` 拉入完整 container 的 mem/platform 闭包。组件自己的边界见
+[`container-intrusive-design`](container-intrusive-design.md)。
 
 `core`、`container_intrusive` 与 `util_core` 都是正式 `INTERFACE` 产品组件。公开头直接 include
 `<hyle/core/**>` 或 `<hyle/version.h>` 的模块必须直接声明 `PUBLIC core`，即使没有 binary symbol
 需要链接；这条边传播 include/build/package contract。当前除 `math` 外的组件都有真实 Core
 公开消费者并显式登记该边，`math` 没有 include 就不增加伪依赖。配置合同会把公开头扫描与中央
-声明对账，安装整棵 include tree 不能再充当隐藏依赖。
+声明对账，selected-header 安装或共享源码 include root 都不能充当隐藏依赖。
 
 中央图和 target link 并不是两份人工事实：`HyleComponents.cmake` 的同一声明同时用于选择闭包和
 向 `hyle_add_module()` 投影真实 `PUBLIC/PRIVATE` link edge。模块 CMakeLists 只声明源文件与模块

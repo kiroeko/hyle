@@ -1,6 +1,0 @@
-hyle_error_ffi_abi_version
-hyle_status_destroy
-hyle_status_get_code
-hyle_status_get_native_error
-hyle_status_message
-hyle_status_to_string

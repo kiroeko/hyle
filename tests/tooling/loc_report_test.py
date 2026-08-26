@@ -49,15 +49,32 @@ def main() -> None:
 
     evolving_io = (
         "include/hyle/io/file.h",
-        "include/hyle/c/io.h",
-        "include/hyle/c/io_compat.h",
+        "include/hyle/io/proactor.h",
         "src/io/file.cc",
     )
     io_specs, io_files = reporter.module_scope("io", evolving_io)
-    if "include/hyle/c/io_compat.h" not in io_specs:
-        raise AssertionError("a newly added conventional C header escaped IO scope")
+    if io_specs != ["include/hyle/io", "src/io"]:
+        raise AssertionError(f"conventional IO boundary drifted: {io_specs!r}")
     if "src/io/file.cc" not in io_files:
         raise AssertionError("a newly added conventional source root escaped IO scope")
+
+    build_specs, build_files = reporter.module_scope(
+        "build-package",
+        (
+            ".github/workflows/build-system.yml",
+            "CMakeLists.txt",
+            "CMakePresets.json",
+            "cmake/HylePackage.cmake",
+            "hyle-offline-deps.cmake",
+            "scripts/check-docs.py",
+            "scripts/header-self-contained.py",
+            "scripts/hyle-windows.ps1",
+        ),
+    )
+    if tuple(build_specs) != reporter.MODULE_BOUNDARIES["build-package"]:
+        raise AssertionError("build/package canonical boundary drifted")
+    if "cmake/HylePackage.cmake" not in build_files:
+        raise AssertionError("build/package boundary lost package implementation")
 
 
 if __name__ == "__main__":

@@ -1,12 +1,8 @@
 # HYLE simd/ 设计
 
 > **V2 状态：`NOT_REVIEWED`。** 本页暂作既有设计输入，不代表当前功能、性能或 API 证书。
-> 当前 Native FFI 为 `N/A`；正文旧 C/FFI、LOC 与阶段验收叙事待 simd 轮次重写。
-
-> **Native FFI 状态校正（2026-08-25）**：HYLE 没有 native-C 客户。本文关于 C/C++、C/FFI
-> 或 C 用户的旧表述只记录待复审的 ABI surface，不是当前跨语言证书。先从真实外语任务裁决
-> FFI 是否为 `N/A`；只有保留 direct FFI 时，simd 才必须通过 Java FFM + .NET P/Invoke、真实导出、
-> whole-buffer ownership 与 batch 旅程后冻结该边界。
+> 当前只提供 C++23 source/static/shared，Native FFI 为 `N/A`。BUILD-03 已删除旧 C schema、
+> bridge、动态导出和 fixture；正文的其他 LOC 与阶段验收叙事仍待 simd 轮次重裁决。
 
 > SIMD 抽象层（Tier 1，性能焦点 #1）。clay 这块基本空白。早期「净新 ~5–8k」已作废：2026-07-17 实测 **~34k 生产**（`src/simd`+`include/hyle/simd`），约占全库生产 **~64%**。体量与终态见 [`hyle-scope.md`](hyle-scope.md) 规模节。上游约束见同文档与 [`engineering-charter.md`](../developer/standards/engineering-charter.md)。
 >
@@ -80,9 +76,9 @@ CMake 为 ops/random/scan/search 从同一 `kernel_impl.h` 生成 scalar/SSE4/AV
 因为 feature gate、per-op winner 和算法阈值属于模块语义；同一 manifest 仍过滤它们的 source、Runtime
 table 和 exact suffix，防止手写策略退回 fat 符号依赖。`Runtime::Module::isa` 表示主产品 tier，v6
 feature bits 明示 AVX-VNNI/AVX512-VNNI、exact-libm/fp8 scalar、lower-tier winner、capped network 与
-logical-128 bitpack。预发布 Native FFI 候选在 `include/hyle/c/simd.h`，当前 243 个导出符号只转发 whole-buffer
-产品，不把寄存器向量放进 Runtime 或 C 边界；可恢复 runtime-info/RNG-create 失败返回共享
-owning `hyle_status`，没有模块私有 TLS 错误槽。
+logical-128 bitpack。Runtime 与 compiled per-ISA entry 只接受 whole-buffer pointer/size/scalar
+形状，不让寄存器向量穿过编译边界；可恢复 runtime-info/RNG-create 失败使用共享 C++ error，
+没有模块私有 TLS 错误槽。Native FFI 当前为 `N/A`。
 完整 ASCII 图和维护规则见
 [`simd-dispatch-guide.md`](../developer/maintenance/simd-dispatch-guide.md)。
 
@@ -183,7 +179,7 @@ total-order sorted check。不增加逐元素 callback。
 5. ✅ `ops/`：dot/saxpy/add 的 f32/f64 及 i8/i16 dot 共享 native body跨
    scalar/SSE4/AVX2/AVX512/NEON/SVE/RVV；i8 dot 在 fat x86 上有独立
    AVX-VNNI（VEX）和 AVX512-VNNI（EVEX）per-op override。
-   普通 API/C ABI 走 Runtime，exact build 编译期直连，用户 TU 可走 `native::` 内联。
+   普通 C++ API 走 Runtime，exact build 编译期直连，用户 TU 可走 `native::` 内联。
 6. ✅ 单测：每后端对拍 scalar 参考值、数学函数 ULP 测试、benchmark 对标 Highway/xsimd。定宽后端共享 partial correctness 门：每个低于原生宽度的 power-of-two tag 做 exact-byte Store sentinel + Load guard-page，每个可二分形状做 half/combine scalar oracle；Windows SSE4 294/294、AVX2 325/325，WSL GCC14 partial 专项 SSE4 69/69、AVX2 99/99、AVX512-SDE 129/129。SSE4/AVX2/NEON 有真机性能数据；AVX512-SDE 与 SVE/RVV QEMU 只作正确性门，不作性能证据。math ULP vs libm 约 3.5，best-of 由真机 bench 决策。
 
 ### AVX512 后端：已实现并由 Intel SDE 真跑

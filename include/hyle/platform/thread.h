@@ -18,9 +18,7 @@ namespace hyle::platform {
 
 // Options a raw std::thread cannot express but the work-stealing scheduler needs
 // (sched-design §3.3 per-core pinning; std::thread can't even set stack size).
-// This is the natural C++ surface. A future cross-compiler/FFI adapter may use
-// the pre-release schema in hyle/c/platform.h after task review. `name` is a
-// view: spawn() copies it synchronously, so the
+// This is the natural C++ surface. `name` is a view: spawn() copies it synchronously, so the
 // caller only needs to keep the backing buffer alive through the call.
 // Portable 5-level priority. OS priority models diverge wildly (Windows discrete
 // levels vs POSIX nice vs SCHED_FIFO), so we expose a small portable ladder and
@@ -102,8 +100,7 @@ class HYLE_PLATFORM_API Thread {
   // Owning C++ convenience: move a zero-argument callable into the new thread.
   // This is the normal shape for capturing and move-only lambdas. It pays one
   // extra cold-path allocation for the callable; the function-pointer overload
-  // above remains the allocation-minimal core used by sched and any future FFI
-  // adapter.
+  // above remains the allocation-minimal core used by sched.
   // As with std::thread, an exception escaping the callable terminates the
   // process. A spawn/configuration failure destroys the callable without
   // invoking it and is returned through Result.

@@ -13,7 +13,7 @@
 只需要侵入式链表时选择轻量组件，不必链接完整 container：
 
 ```cmake
-find_package(Hyle 0.1 REQUIRED COMPONENTS container_intrusive)
+find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS container_intrusive)
 target_link_libraries(my_target PRIVATE hyle::container_intrusive)
 ```
 

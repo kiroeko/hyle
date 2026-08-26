@@ -21,6 +21,11 @@
 启用汇编语言。x86_64 Windows 的 cl.exe 与 clang-cl 都走 MSVC ABI + MASM（ml64）实现。两者都不是
 用户可写的 cache 选项；要不要 sched 由 `HYLE_COMPONENTS` 和依赖闭包决定。
 
+根 `project()` 只启用 CXX。在 `HYLE_BUILD_TESTS=OFF` 的产品/source 形状中，C 是内部实现语言，
+只有所选闭包含 mem/mimalloc 时才按需启用；core/error 等纯 C++ 产品闭包不要求 C frontend。
+测试形状会进入 GoogleTest 自己的 CMake project，并可能同时探测 C compiler，因此运行
+`hyle_core_tests` 等验证仍应准备完整的 MSVC C/C++ workload。
+
 ## 二、环境初始化（关键，每个构建 shell 都要先做）
 
 Visual Studio generator 会选择对应 IDE 实例，但在同一 VS 内并存多套 v143 时不保证选择数值最高
@@ -45,6 +50,28 @@ scripts/hyle-windows.ps1 -Action Configure -Preset windows-vs2026 -DHYLE_COMPONE
 scripts/hyle-windows.ps1 -Action Configure -Preset windows -DHYLE_COMPONENTS=core
 scripts/hyle-windows.ps1 -Action Build -Preset windows --target hyle_core_tests --parallel 2
 ```
+
+多个 agent/session 并行时不得复用上述 preset 的固定 build tree。为每个会话分配独占绝对路径：
+
+```powershell
+$scratch = 'C:\hyle-scratch\core-<session-id>'
+scripts/hyle-windows.ps1 -Action Configure -Preset windows-ninja `
+  -BinaryDir $scratch -Component core `
+  -DHYLE_BUILD_TESTS=ON -DHYLE_BUILD_BENCH=OFF
+scripts/hyle-windows.ps1 -Action Build -BinaryDir $scratch `
+  --target hyle_core_tests --parallel 2
+scripts/hyle-windows.ps1 -Action Test -BinaryDir $scratch --output-on-failure
+```
+
+模块交接再用独立 scratch 跑 source/shared/static/relocated consumer 全旅程：
+
+```powershell
+scripts/hyle-windows.ps1 -Action SelectedComponentSmoke `
+  -Component core -SmokeRoot C:\hyle-scratch\core-delivery-<session-id>
+```
+
+`-BinaryDir` 只用于 Configure/Build/Test，且必须是绝对、由当前会话拥有的路径；
+`SelectedComponentSmoke` 的 `-SmokeRoot` 同样不得与其他任务共享。
 
 也可手工初始化：
 
@@ -104,6 +131,9 @@ clang-cl --version  # 必须为 18+
 
 wrapper 只验证并使用已安装的 frontend，不替用户安装 LLVM；不要让 `windows-clangcl` 复用任何 cl.exe
 build tree。
+
+IO/compute 的 TLS、HTTP/2、CUDA、ggml、Vulkan 都默认 OFF，且仅在 owner 组件被选时声明；trace
+默认 OFF，开启时直接使用 Tracy 和 `HYLE_TRACY_DIR`，没有 `HYLE_TRACE_BACKEND`。
 
 - 目标名：`hyle_add_test(<mod>)` → `hyle_<mod>_test`；带 NAME 的 → `hyle_<mod>_<name>_test`（如 `hyle_compute_ggml_bridge_test`）。
 - MSVC 默认 /W4；改导出宏/类布局注意 C4251/C4273。全局已加 `/Zc:__cplusplus`（否则 C++23 feature-test 宏误触发）+ `/utf-8`（杀 C4819）。
