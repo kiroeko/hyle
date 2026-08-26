@@ -95,7 +95,7 @@ def _run(executable: pathlib.Path) -> dict[str, object]:
         "graph": "PASS",
         "message": "PASS",
         "context": "PASS",
-        "result": "PASS",
+        "result_external_fixture": "PASS",
         "format": "PASS",
         "update": "PASS",
         "source_location": "PASS",

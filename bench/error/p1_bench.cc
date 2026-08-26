@@ -135,18 +135,15 @@ void initialize_graph_nodes(std::array<Node, kGraphNodes> &nodes,
   }
 }
 
-const Status &hyle_prebuilt_error() {
-  static const Status status = Status::NotFound("resource not found");
-  return status;
-}
-
-HYLE_NOINLINE Result<int> hyle_info_leaf(int value) {
-  return value >= 0 ? Result<int>(hyle::make_unexpected(hyle_prebuilt_error()))
+HYLE_NOINLINE Result<int> hyle_info_leaf(int value,
+                                        const Status &prebuilt_error) {
+  return value >= 0 ? Result<int>(hyle::make_unexpected(prebuilt_error))
                     : Result<int>(value);
 }
 
-HYLE_NOINLINE Result<int> hyle_info_chain(int value) {
-  HYLE_ASSIGN_OR_RETURN(int result, hyle_info_leaf(value));
+HYLE_NOINLINE Result<int> hyle_info_chain(int value,
+                                         const Status &prebuilt_error) {
+  HYLE_ASSIGN_OR_RETURN(int result, hyle_info_leaf(value, prebuilt_error));
   return result;
 }
 
@@ -159,20 +156,15 @@ HYLE_NOINLINE Status hyle_update_second_prvalue() {
 }
 
 #if defined(HYLE_BENCH_ABSL)
-const absl::Status &peer_prebuilt_error() {
-  static const absl::Status status(absl::StatusCode::kNotFound,
-                                   "resource not found",
-                                   absl::SourceLocation());
-  return status;
-}
-
-HYLE_NOINLINE absl::StatusOr<int> peer_info_leaf(int value) {
-  return value >= 0 ? absl::StatusOr<int>(peer_prebuilt_error())
+HYLE_NOINLINE absl::StatusOr<int> peer_info_leaf(
+    int value, const absl::Status &prebuilt_error) {
+  return value >= 0 ? absl::StatusOr<int>(prebuilt_error)
                     : absl::StatusOr<int>(value);
 }
 
-HYLE_NOINLINE absl::StatusOr<int> peer_info_chain(int value) {
-  auto result = peer_info_leaf(value);
+HYLE_NOINLINE absl::StatusOr<int> peer_info_chain(
+    int value, const absl::Status &prebuilt_error) {
+  auto result = peer_info_leaf(value, prebuilt_error);
   if (!result.ok()) return result.status();
   return *result;
 }
@@ -337,13 +329,21 @@ int validate_contract() {
   context_ok = hyle_context.message() == kExpectedContext &&
                same_view(peer_context.message(), kExpectedContext);
 
-  const auto hyle_result = hyle_info_chain(1);
-  const auto peer_result = peer_info_chain(1);
+  constexpr std::string_view kValidatorResultMessage =
+      "validator-owned external fixture";
+  const Status hyle_result_error = Status::NotFound(kValidatorResultMessage);
+  const absl::Status peer_result_error(absl::StatusCode::kNotFound,
+                                       kValidatorResultMessage,
+                                       absl::SourceLocation());
+  const auto hyle_result = hyle_info_chain(1, hyle_result_error);
+  const auto peer_result = peer_info_chain(1, peer_result_error);
   result_ok = !hyle_result.has_value() && !peer_result.ok() &&
               hyle_result.error().status().IsNotFound() &&
-              hyle_result.error().status().message() == "resource not found" &&
+              hyle_result.error().status().message() ==
+                  kValidatorResultMessage &&
               peer_result.status().code() == absl::StatusCode::kNotFound &&
-              same_view(peer_result.status().message(), "resource not found");
+              same_view(peer_result.status().message(),
+                        kValidatorResultMessage);
 
   const Status hyle_format_status =
       Status::Unavailable(kShortFormatMessage);
@@ -381,7 +381,8 @@ int validate_contract() {
       "hyle_success_checksum=%" PRIu64 " peer_success_checksum=%" PRIu64
       " hyle_error_checksum=%" PRIu64 " peer_error_checksum=%" PRIu64 " "
       "hyle_failure_index=%zu peer_failure_index=%zu graph=%s message=%s "
-      "context=%s result=%s format=%s update=%s source_location=%s "
+      "context=%s result_external_fixture=%s format=%s update=%s "
+      "source_location=%s "
       "verdict=%s\n",
       kGraphNodes, hyle_success_trace.calls, peer_success_calls,
       hyle_error_trace.calls, peer_error_calls, hyle_success_trace.checksum,
@@ -665,8 +666,12 @@ void run_information_bearing_benchmarks([[maybe_unused]] bool rival_first) {
 
   {
     int hyle_value = 1;
+    const Status hyle_result_error = Status::NotFound("resource not found");
 #if defined(HYLE_BENCH_ABSL)
     int peer_value = 1;
+    const absl::Status peer_result_error(absl::StatusCode::kNotFound,
+                                         "resource not found",
+                                         absl::SourceLocation());
 #endif
     nb::Bench bench;
     bench
@@ -679,16 +684,16 @@ void run_information_bearing_benchmarks([[maybe_unused]] bool rival_first) {
     run_candidate_peer_pair(
         bench, rival_first, "HYLE Result message error (2 noinline frames)",
         [&] {
-          auto result = hyle_info_chain(hyle_value++);
+          auto result = hyle_info_chain(hyle_value++, hyle_result_error);
           nb::doNotOptimizeAway(result.has_value());
         },
         "absl::StatusOr message error (2 noinline frames)", [&] {
-          auto result = peer_info_chain(peer_value++);
+          auto result = peer_info_chain(peer_value++, peer_result_error);
           nb::doNotOptimizeAway(result.ok());
         });
 #else
     bench.run("HYLE Result message error (2 noinline frames)", [&] {
-      auto result = hyle_info_chain(hyle_value++);
+      auto result = hyle_info_chain(hyle_value++, hyle_result_error);
       nb::doNotOptimizeAway(result.has_value());
     });
 #endif
