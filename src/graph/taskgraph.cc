@@ -87,7 +87,10 @@ Status TaskGraph::evaluate() noexcept {
   for (std::uint32_t i = 0; i < n_nodes; ++i) {
     if (!dirty_[i]) continue;
     Status s = fn_[i](ctx_[i]);
-    HYLE_RETURN_IF_ERROR(s);  // node i stays dirty (retried next evaluate)
+    // This local is dead on failure. Transfer its error backing instead of
+    // asking the generic macro to preserve an externally observable lvalue.
+    // The failed node stays dirty and will be retried on the next evaluate.
+    HYLE_RETURN_IF_ERROR(std::move(s));
     dirty_[i] = false;
   }
   return Status();
@@ -122,7 +125,8 @@ Status TaskGraph::evaluate_node(NodeId target) noexcept {
   for (std::uint32_t i = 0; i <= t; ++i) {
     if (!needed[i] || !dirty_[i]) continue;
     Status s = fn_[i](ctx_[i]);
-    HYLE_RETURN_IF_ERROR(s);  // node i stays dirty (retried next evaluate)
+    // The failed node stays dirty and will be retried on the next evaluate.
+    HYLE_RETURN_IF_ERROR(std::move(s));
     dirty_[i] = false;
   }
   return Status();

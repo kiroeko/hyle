@@ -172,9 +172,8 @@ HYLE_ERROR_API void status_test_force_oom(bool enable) noexcept;
 } // namespace detail
 
 // ---- Status -----------------------------------------------------------------
-// 8-byte error carrier (clay-style tagged pointer). Encoding of rep_:
-//   0                       -> OK            (most common; single compare)
-//   (code << 2) | 1         -> inline code   (low bit set; NO heap, zero alloc)
+// 8-byte error carrier (mature low-bit tagged pointer). Encoding of rep_:
+//   (code << 2) | 1         -> inline code, including OK (low bit set)
 //   pointer (low 2 bits 00) -> heap StatusRep (only when a message is attached)
 // So OK and message-less errors never touch the heap. Copyable: heap reps are
 // ref-counted (retain/release in the DLL). Public surface is a single uintptr_t
@@ -201,10 +200,10 @@ public:
   }
 
   explicit Status(StatusCode code) noexcept
-      : rep_((code = detail::normalize_status_code(code)) == StatusCode::Ok
-                 ? 0
-                 : (static_cast<std::uintptr_t>(code) << kCodeShift) |
-                       kInlineTag) {}
+      : rep_((static_cast<std::uintptr_t>(
+                  detail::normalize_status_code(code))
+              << kCodeShift) |
+             kInlineTag) {}
 
   // Attach one machine-readable native/backend code without growing the
   // one-word Status object. OOM preserves the canonical code and drops only
@@ -261,11 +260,9 @@ public:
       detail::status_release(rep_);
   }
 
-  bool ok() const noexcept { return rep_ == 0; }
+  bool ok() const noexcept { return rep_ == kOkRep; }
 
   StatusCode code() const noexcept {
-    if (rep_ == 0)
-      return StatusCode::Ok;
     if (rep_ & kInlineTag)
       return static_cast<StatusCode>(rep_ >> kCodeShift);
     return detail::status_heap_code(rep_);
@@ -369,20 +366,16 @@ private:
 
   static constexpr std::uintptr_t kInlineTag = 1;
   static constexpr std::uintptr_t kCodeShift = 2;
+  static constexpr std::uintptr_t kOkRep = kInlineTag;
   static constexpr std::uintptr_t kMovedFromRep =
       (static_cast<std::uintptr_t>(StatusCode::Unknown) << kCodeShift) |
       kInlineTag;
-  static constexpr std::uintptr_t kMaxInlineRep =
-      (static_cast<std::uintptr_t>(StatusCode::Unauthenticated) << kCodeShift) |
-      kInlineTag;
+  // All valid inline representations have the low bit set; allocations satisfy
+  // at least two-byte alignment. One bit-test therefore distinguishes every
+  // OK/code-only value from heap ownership without address-range assumptions.
+  bool is_heap() const noexcept { return (rep_ & kInlineTag) == 0; }
 
-  // Every valid inline representation is <= kMaxInlineRep; process heap
-  // addresses are above it. This single comparison covers OK (0), code-only
-  // errors and heap reps without the two dependent tests needed by
-  // `rep_ != 0 && (rep_ & 3) == 0` on AArch64.
-  bool is_heap() const noexcept { return rep_ > kMaxInlineRep; }
-
-  std::uintptr_t rep_ = 0; // 0 = OK
+  std::uintptr_t rep_ = kOkRep;
 };
 
 static_assert(sizeof(Status) == sizeof(std::uintptr_t),

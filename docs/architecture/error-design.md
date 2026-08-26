@@ -47,8 +47,8 @@ Status failed = Status::Unavailable("device lost");
 
 长期合同：
 
-- 64 位目标上 `sizeof(Status) == 8`；OK 为零；
-- code-only error 以内联 tagged word 表示，构造、复制、销毁均不分配、不做原子操作；
+- 64 位目标上 `sizeof(Status) == 8`；OK 与 code-only error 都是 low-bit tagged inline word，
+  构造、复制、销毁均不分配、不做原子操作；
 - message/native error 使用一个不可变、单块分配、intrusive-refcounted representation；
 - 复制 heap Status 是 O(1) retain，移动只转移一个 word；moved-from 对象成为 code-only
   `Unknown`，不会伪装成 OK；可把不同 Status 对象跨线程传递；
@@ -56,7 +56,13 @@ Status failed = Status::Unavailable("device lost");
 - `StatusCode::Ok` 不携带消息；非法 code/domain 在受信边界归一为 `Unknown`；
 - message 是借用 `std::string_view`，随 owning Status 存活；不把 owning STL 类型跨 DLL 接缝。
 
-为了让常见 heap copy 与成熟 intrusive carrier 同档，consumer header 内联一次 relaxed retain。
+inline representation 的 low bit 为 1（包括 OK），aligned heap pointer 的 low bit 为 0；这与成熟
+`Status` carrier 的 tagged-pointer 形状一致，使 copy/destroy 只需一次 bit-test，不依赖进程地址范围。
+live `Status` 的内部 word 永不为 0；0 只供 allocation helper 表示 OOM/overflow，不能被 adopt 成
+对象。原始 tag 值不是公开 API 或稳定 ABI。为了让常见 heap copy 与成熟 intrusive carrier 同档，
+consumer header 内联一次 relaxed retain。
+因此更换 tag 编码必须原子更新匹配版本的 header/artifact，并全量重编直接消费者；不得混用旧 header
+与新 shared library。项目尚未承诺稳定 C++ ABI，ExactVersion 交付允许这次预发布迁移。
 因此 `StatusRepHeader::refcount` 位于 allocation offset 0 是明确的**已编译代码前缀合同**；不是
 “representation 完全不暴露”。allocation、flags、message/native/context layout 和 final free
 仍只在 `hyle_error` 内。匹配版本的 header 与 artifact 是一个交付单元。
@@ -183,7 +189,9 @@ HYLE_ASSIGN_OR_RETURN(auto value, expr);  // Result<T>
 
 表达式只求值一次；rvalue 移动、命名 lvalue 复制；外层可返回 Status 或 Result。宏局部名由
 `__COUNTER__` 唯一化。声明型 `ASSIGN_OR_RETURN` 展开为多条语句，在无花括号 if/loop 下不得使用。
-宏不自动加 context、日志或 source location。
+宏不自动加 context、日志或 source location。若一个命名局部在失败分支随函数返回而结束生命周期，
+调用方应显式写 `HYLE_RETURN_IF_ERROR(std::move(local_status))`：这表达所有权转移并避免 heap error 的
+retain/release；成员、引用参数或仍需保留的 lvalue 不得这样移动。
 
 ### 2.6 组合与格式化
 

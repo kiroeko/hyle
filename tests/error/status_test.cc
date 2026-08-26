@@ -698,6 +698,26 @@ Status chain_status_with_user_named_temporary(bool fail) {
                            : Status::Internal("local was overwritten");
 }
 
+Status chain_status_from_lvalue(Status& status) {
+  HYLE_RETURN_IF_ERROR(status);
+  return Status{};
+}
+
+Status chain_status_from_moved_local(Status& status) {
+  HYLE_RETURN_IF_ERROR(std::move(status));
+  return Status{};
+}
+
+Result<int> chain_result_from_moved_status(Status& status) {
+  HYLE_RETURN_IF_ERROR(std::move(status));
+  return 11;
+}
+
+Result<int> chain_result_from_moved_void_result(Result<void>& result) {
+  HYLE_RETURN_IF_ERROR(std::move(result));
+  return 13;
+}
+
 }  // namespace
 
 TEST(ReturnIfError, PropagatesInStatusFunction) {
@@ -731,6 +751,38 @@ TEST(ReturnIfError, AcceptsResultVoidIntoResultFunction) {
 TEST(ReturnIfError, DoesNotCollideWithCallerLocalNames) {
   EXPECT_TRUE(chain_status_with_user_named_temporary(false).ok());
   EXPECT_TRUE(chain_status_with_user_named_temporary(true).IsPermissionDenied());
+}
+
+TEST(ReturnIfError, PreservesLvaluesAndTransfersExplicitRvalues) {
+  Status preserved = Status::FromNative(
+      StatusCode::Unavailable,
+      {hyle::NativeErrorDomain::Vulkan, -4}, "device lost");
+  Status copied = chain_status_from_lvalue(preserved);
+  EXPECT_TRUE(copied.IsUnavailable());
+  EXPECT_EQ(copied.message(), "device lost");
+  EXPECT_EQ(copied.native_error(), preserved.native_error());
+  EXPECT_TRUE(preserved.IsUnavailable());
+
+  Status moved_to_status = Status::NotFound("model.bin");
+  Status status_result = chain_status_from_moved_local(moved_to_status);
+  EXPECT_TRUE(status_result.IsNotFound());
+  EXPECT_EQ(status_result.message(), "model.bin");
+  EXPECT_TRUE(moved_to_status.IsUnknown());
+
+  Status moved_to_result = Status::PermissionDenied("weights");
+  Result<int> result = chain_result_from_moved_status(moved_to_result);
+  ASSERT_FALSE(result.has_value());
+  EXPECT_TRUE(result.error().IsPermissionDenied());
+  EXPECT_EQ(result.error().message(), "weights");
+  EXPECT_TRUE(moved_to_result.IsUnknown());
+
+  Result<void> void_error =
+      hyle::make_unexpected(Status::DataLoss("checksum"));
+  Result<int> propagated = chain_result_from_moved_void_result(void_error);
+  ASSERT_FALSE(propagated.has_value());
+  EXPECT_TRUE(propagated.error().IsDataLoss());
+  EXPECT_EQ(propagated.error().message(), "checksum");
+  EXPECT_TRUE(void_error.error().IsUnknown());
 }
 
 // ---- propagation macros: HYLE_ASSIGN_OR_RETURN ------------------------------

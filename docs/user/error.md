@@ -42,6 +42,17 @@ hyle::Result<Model> load_model(std::string_view path) {
 }
 ```
 
+传播宏保留值类别：prvalue/rvalue 会移动，lvalue 会复制。若你先把错误放进一个命名局部，而失败时
+函数立即返回、之后不会再观察该局部，可显式转移它：
+
+```cpp
+hyle::Status status = run_step();
+HYLE_RETURN_IF_ERROR(std::move(status));
+```
+
+这会把 owning message backing 直接交给调用者；不要对成员、引用参数或失败返回后仍需由其他对象观察
+的 Status 使用 `std::move`。
+
 `Result<T>` 有标准 `std::expected` 的 observers 和 monadic 操作。错误槽是 Status-compatible 的
 受检类型：任何 `std::unexpected(Status::Ok())` 都会在构造或赋值 Result 时 fail-fast，而不会
 形成“既是 error 又是 OK”的非法值。`result.error()` 直接提供常用只读观察和 `WithContext`，但
@@ -244,6 +255,8 @@ message/context OOM 时 HYLE 保留 code，可能丢可选诊断。因此恢复�
 - message 可包含嵌入 NUL；需要精确 bytes 时使用 `string_view::size()`，不要 `strlen`。
 - `HYLE_ASSIGN_OR_RETURN` 可声明变量但展开为多条语句；裸 `if/else/loop` 必须加花括号。
 - `HYLE_RETURN_IF_ERROR` 不自动加 context；在有新语义的边界显式 `WithContext`。
+- `HYLE_RETURN_IF_ERROR(named_status)` 会复制 lvalue；只有该局部在失败时生命周期确实结束，才写
+  `HYLE_RETURN_IF_ERROR(std::move(named_status))` 转移所有权。
 - `Status::Ok()` 不能放进 Result error arm；这是程序错误，会 fail-fast。
 - 不要用异常承载 HYLE operational failure；标准 allocator/用户 callback 的标准异常合同应在所属
   模块边界处理，而不是污染 Status。

@@ -337,6 +337,8 @@ struct StatusRep {
   NativeErrorDomain native_domain;
   std::uint32_t len;
 };
+static_assert(alignof(StatusRep) >= 4,
+              "Status requires two free low pointer bits");
 static_assert(sizeof(StatusRep) == 12,
               "native domain must consume the StatusRep's former padding");
 

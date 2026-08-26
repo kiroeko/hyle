@@ -85,7 +85,9 @@ HYLE_NOINLINE Status hyle_taskgraph_evaluate_replay(
     const HyleGraphNode *nodes, std::size_t size) noexcept {
   for (std::size_t index = 0; index < size; ++index) {
     Status status = nodes[index].function(nodes[index].context);
-    HYLE_RETURN_IF_ERROR(status);
+    // The local dies on failure, matching TaskGraph::evaluate's ownership
+    // transfer rather than the macro's preserve-an-external-lvalue form.
+    HYLE_RETURN_IF_ERROR(std::move(status));
   }
   return Status{};
 }

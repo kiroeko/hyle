@@ -2,6 +2,7 @@
 
 #include <cstdint>
 
+#include "hyle/core/assert.h"
 #include "hyle/error/status.h"
 
 namespace hyle::detail {
@@ -17,6 +18,9 @@ class StatusAccess {
   }
 
   static Status adopt(std::uintptr_t rep) noexcept {
+    // Allocation helpers use zero as their failure sentinel; it is never a
+    // live Status representation. Adopt accepts only an aligned heap rep.
+    HYLE_FATAL_ASSERT(rep != 0 && (rep & std::uintptr_t{1}) == 0);
     Status status;
     status.rep_ = rep;
     return status;

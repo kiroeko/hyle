@@ -213,7 +213,7 @@ int main() {
     run_candidate_peer_pair(
         b, rival_first, "HYLE Status::Ok",
         [&] {
-          Status s;  // rep_ = 0
+          Status s;  // inline OK rep
           nb::doNotOptimizeAway(s.ok());
         },
         "absl::OkStatus", [&] {
@@ -222,7 +222,7 @@ int main() {
         });
 #else
     b.run("HYLE Status::Ok", [&] {
-      Status s;  // rep_ = 0
+      Status s;  // inline OK rep
       nb::doNotOptimizeAway(s.ok());
     });
 #endif
