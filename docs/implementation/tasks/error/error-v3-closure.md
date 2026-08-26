@@ -86,6 +86,8 @@
 | ERR-PERF-BOUNDARY-01 | MUST | invalid evidence classification | 7/256B construct、16-layer context、512B format、runtime-code primitive、native/errno rows | correctness/机制/边界诊断，不冒充 P1 consumer 总分 | error tests/diagnostic bench | native 与 Abseil payload 非同合同；lvalue x16 是刻意保留历史 | 结构与绝对成本可记录，不形成同能力胜负 | `FIX` | P0 | 从 required P1 contract 移出；保留 bounded diagnostic coverage |
 | ERR-PERF-VALIDATOR-01 | MUST | instrument gap | unified runner 与旧专用 runner 的窄结构检查 | actual-object DCE/call-edge、placement authenticity、semantic setup oracle | error benchmark plugin | validator 不改变 workload/统计；SourceLocation 为空；输出语义/长度锁定 | fail closed；contract hash/peer/product/artifact 全绑定 | `FIX` | P1 | module command validators；不复活旧 3% runner/统计核心 |
 | ERR-PERF-RESULT-SETUP-01 | MUST | candidate red-team defect | `result-message-error` 宣称 callback 外预建 error，首个候选却通过函数内 lazy static accessor 取得 | 两侧 owning error 在 measured callback 外显式构造，并沿两 frame 以 const reference 传入 | error benchmark | 不计费 lazy initialization、guard 或隐藏 accessor；两侧参数拓扑对称 | 不改变产品，只校正 charged phase | `FIX` | P1 | replacement validator/构建；拒绝首个 candidate 与其已启动样本 |
+| ERR-PERF-TAG-01 | MUST | qualified consumer + peer/codegen defect | shared owning-message copy；固定 Abseil low-bit inline representation | OK/code-only 都是 low-bit tagged inline rep，aligned heap pointer 的 low bit 为 0 | error public | 不改变一字 carrier、ownership、分配或公开能力；内部 C++ ABI 尚未发布 | retain/release 判别 O(1)，MSVC 正常复制循环与 peer 使用同形 bit-test | `FIX` | P1 | replacement n=15 四 strata 均约慢 8%；汇编为两次 range-compare，对手为 bit-test；采用成熟 tagged-pointer 不增加 benchmark metadata |
+| ERR-PERF-TRANSFER-01 | MUST | qualified direct-consumer/codegen defect | `TaskGraph::evaluate` 的局部 `Status` 在失败即返回 | 生命周期结束的局部错误显式 move；外部/member lvalue 仍由通用宏复制 | graph integration + replay | 不改变 `HYLE_RETURN_IF_ERROR` 的 lvalue-copy/rvalue-move 合同；失败后不再读取局部 | success loop 与直接 `if/return` 同形；heap error 不做无意义 retain/release | `FIX` | P1 | replacement success 四 strata 约慢 6%；MSVC 133B lvalue 形状改为 104B move 形状，与 direct 相同；同步真实 TaskGraph 与 replay |
 | ERR-DOC-01 | MUST | stale current documentation | architecture/user/performance pages | 当前能力选择、成本、pitfalls、negative space、peer pins 与本轮证据 | docs | architecture 讲设计，user 讲用法，evidence 只讲当前结果 | 不复制历史 task 数字 | `FIX` | P0 | 去掉 `NOT_REVIEWED_V2`；旧页明确历史或替换为当前证据 |
 | ERR-REF-01 | GENERAL | mature-library gap scan | Abseil `StatusOr<T&>`；Folly legacy `Expected` 拒绝引用、新 `result` 有 deep-const | 当前用 `reference_wrapper`/pointer/span/string_view | future error | borrowed value 不延长 owner lifetime | 只有具名 non-null borrow consumer 才重开 | `DEFER` | P2 | 不为 API 数量另造 `expected` |
 | ERR-DETAIL-01 | GENERAL | backend gap scan | future Metal/HIP/foreign category | 新稳定 domain 或第二 typed detail | owning backend/future error | enum 防碰撞；跨 DLL category pointer 不进入 carrier | 不预装 map/第二 block | `DEFER` | P2 | 真实 backend/两个同时恢复字段触发 |
@@ -106,16 +108,18 @@
   日志/trace、异步状态机、backend-specific mapping、聚合排序和异常捕获属于上层 owner。
 - 本轮冻结 `FIX` 集：`ERR-DEFAULT-01`、`ERR-INCLUDE-01`、`ERR-WORDING-01`、
   `ERR-PERF-REPLAY-01`、`ERR-PERF-NORMAL-01`、`ERR-PERF-BOUNDARY-01`、
-  `ERR-PERF-VALIDATOR-01`、`ERR-PERF-RESULT-SETUP-01`、`ERR-DOC-01`。后加的 setup 项来自首个
-  candidate 的独立红队，不授权扩面。**Status/Result 产品 API、layout 与实现算法的 FIX 集为空。**
+  `ERR-PERF-VALIDATOR-01`、`ERR-PERF-RESULT-SETUP-01`、`ERR-PERF-TAG-01`、
+  `ERR-PERF-TRANSFER-01`、`ERR-DOC-01`。setup 项来自首个 candidate 的独立红队；后两个产品项只由
+  replacement 的合格 n=15 与唯一 codegen 诊断加入，范围限于成熟 low-bit tag 和直接消费者的局部所有权
+  转移，不授权新增 API、metadata 或 workload。
 - 相邻模块 backlog：`IO-ADOPT-01`、`SC-ADOPT-01`；不得据此替尚未收口模块签署 adoption。
 - 审计身份：HYLE baseline 如 closure card；Abseil/Folly pins 如 closure card；三路只读审计分别覆盖
   peer/能力与复杂度、全库消费者/交付/FFI、性能合同/仪器。Boost superproject 的 System/LEAF/
   Outcome 子模块未初始化，未冒充本轮可读证据。
 
-## Candidate
+## Rejected candidates
 
-当前 replacement candidate 固定为：
+第二个（replacement）candidate 为：
 
 - commit：`a4ba5a14cdd46a7b9c6e33c06211ce2d6c7a760f`
 - tree：`4a2ca7977241080a41b5eb5ab79a6fd37d71db04`
@@ -123,6 +127,10 @@
 它在首个候选的冻结产品形状上，只修正 `ERR-PERF-RESULT-SETUP-01`：两侧 owning error 在 measured
 callback 外显式构造，沿两个 noinline frame 以 `const&` 传入；validator 使用内容不同的外部 sentinel，
 证明 frame 消费传入 fixture，而不是隐藏 static/accessor。产品代码、公开 API、layout 与性能合同均未改。
+该 candidate 已由 W1-WIN 合格 n=15 驳回：9 项中 7 项 WIN、末节点 code-only error 通过非劣门，但
+`taskgraph-active-success-64` 四 strata 的候选优势中位比为 0.940--0.942，
+`status-message-copy` 为 0.917--0.923，均未通过 5% non-inferiority gate。A/A、delta、timer-floor、
+placement、semantic 与 error-codegen controls 全部通过，不能把结果解释为仪器噪声。
 
 首个候选已被拒绝：
 
@@ -151,15 +159,33 @@ charged phases。即使一次初始化会摊薄、两侧也近似对称，这仍
 已启动的 clean n=15 立即终止且全部作废；它不消耗 replacement candidate 的唯一 fresh qualification。
 replacement 必须显式在 callback 外构造两侧 error，并以对称 const reference 沿两 frame 传入。
 
-## Verification manifest
+## Rejected replacement verification manifest
 
-尚未运行 candidate 验证。
+- identity：HYLE `a4ba5a14cdd46a7b9c6e33c06211ce2d6c7a760f` / tree
+  `4a2ca7977241080a41b5eb5ab79a6fd37d71db04`；Abseil
+  `81c993af4fb88b3a51829a796df02251fa27102f` / tree
+  `b8e8bdc41d9f13b8894b4540b910ed8dc2ced66c`；两侧 clean。
+- W1-WIN：contract `82cf325480a85d7ea76e17fcf526d12c36619b7089ec81d4c947fa56aea215d7`；
+  `qualification_gate=PASS`、`performance_gate=FAIL`；统一 verifier 返回 `QUALIFIED`，说明证据有效但产品
+  未通过工程性能门。primary artifact `8d9179d608976f02582c414e0d40f77439bd1786423ea3ec19cded04322b71a1`，
+  placement artifact `85def6f9e3018a8b0e38bdf8566f3f03f604f942d2827ba9b5a66babe963d533`。
+- M1-MAC：同一 identity 的 Release/Debug WERROR、68 gtests、header 与 source/shared/static relocated
+  consumers 通过；shared DSO 只有 18 个 C++ exports、旧 C error symbols 为 0；P1 semantic/placement
+  validator 通过，未采性能数据。
+- W1-WSL：因 W1-WIN 是唯一性能裁决机，Windows 机制诊断期间主动停止并发 sanitizer/build；新
+  candidate 形成后重跑，不继承未完成产物。
+- 唯一 codegen 诊断：shared-copy 循环只有 HYLE `cmpq $0x41` 与 Abseil `testb $1` 的标签判别差异；
+  low-bit inline tag 的临时编译使两循环逐指令同形。TaskGraph 局部 lvalue 传播为 133B，并在 heap
+  failure 做 retain/release；显式转移该生命周期结束的局部后为 104B，与直接 `if/return` 同形。
 
 ## 独立红队
 
-尚未对 candidate 签署。
+产品/API red-team 通过，但其发现性能页仍写成旧 `AUDITED/no candidate`；在性能失败后该措辞将与本节
+一起校正。失败 candidate 不可签署。
 
 ## Closure decision
 
-当前为 `CANDIDATE`；只允许对上述 replacement identity 运行候选绑定验证，不得继承被拒绝候选的
-样本或提前写入 terminal 结论。
+当前退回 `AUDITED`。产品性能假设只允许一次：采用成熟 low-bit inline tag，并在真实 TaskGraph/replay
+中显式转移失败即返回的局部 `Status`；保持一字 carrier、公开能力、通用宏语义、peer、9 项 workload、
+5% margin 和仪器不变。实现、正确性与文档形成新 candidate 后只允许一次 fresh qualification；失败即按
+closure card 进入 `BLOCKED`，不得再换姿势或放宽门槛。

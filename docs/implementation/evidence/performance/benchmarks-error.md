@@ -1,7 +1,8 @@
 # error 性能证据
 
-> **error-v3：`PENDING QUALIFICATION`。** 当前状态是 `AUDITED`，candidate 尚未形成，也没有本轮
-> P1 性能 verdict。本页下方 2026-07 点值只保留为历史输入，不是当前模块证书；现行状态只看
+> **error-v3：`AUDITED AFTER QUALIFIED FAILURE`。** replacement candidate 已通过证据资格门、但未通过
+> P1 工程性能门，因而被驳回并退回 `AUDITED` 实施唯一机制修复。本页下方 2026-07 点值只保留为历史
+> 输入，不是当前模块证书；现行状态只看
 > [`module status`](../../status.md)。
 
 本页是 [performance 总账](README.md) 的 error 模块详节。稳定设计见
@@ -17,8 +18,8 @@ C++23 `std::expected` 是标准合同和较弱成本下界，不冒充第三个�
 
 | workload family | 正常消费者任务与计费边界 | 当前资格状态 |
 |---|---|---|
-| graph replay | 64 个 stable node 的一次 `TaskGraph::evaluate`；全成功与末节点 code-only 失败，对称消费最终结果 | `PENDING`；替代可被 DCE 的常量 OK/短传播微形状 |
-| normal diagnostic | 29B owning message construct/shared copy、1/3 层 context、两 frame message Result、54B owning format、fresh-prvalue Update | `PENDING`；每项独立通过同合同、timer-floor、双 order/placement 门 |
+| graph replay | 64 个 stable node 的一次 `TaskGraph::evaluate`；全成功与末节点 code-only 失败，对称消费最终结果 | replacement：末错误非劣；全成功四 strata 约慢 6%，候选已驳回 |
+| normal diagnostic | 29B owning message construct/shared copy、1/3 层 context、两 frame message Result、54B owning format、fresh-prvalue Update | replacement：除 shared copy 外 6 项均 WIN；copy 四 strata 约慢 8%，候选已驳回 |
 | boundary diagnostics | 7/256B construct、16 层 context、512B format、runtime-code primitive、native/errno | `NOT_P1_GATING`；只记录 correctness、复杂度或绝对成本 |
 | native detail / payload | HYLE 固定 `{domain,int64}`，Abseil 可携带任意多 payload | `NOT_COMPARABLE`；不得写成同能力胜负 |
 
@@ -28,7 +29,17 @@ A/A 与 semantic setup oracle 必须同时完整；任一 required 门缺失即�
 不能换 benchmark 姿势或放宽 margin。shared 交付只做绝对回归与 package/correctness 验证，不与
 静态 peer 结果混成算法胜负。
 
-当前尚未采样，因此本节没有 WIN/TIE/LOSE，也不能把下方历史数字升级为 v3 结论。
+replacement 已完成一次 clean n=15，但其结论是有效的产品失败，不是当前性能证书。9 项中 message
+construct、context 1/3、两 frame Result、format 和 Update 共 7 项 WIN，末节点 code-only error 通过
+5% non-inferiority；全成功 graph replay 的候选优势中位比为 0.940--0.942，shared message copy 为
+0.917--0.923。全部 A/A、delta、timer-floor、placement、semantic 和 error-codegen controls 通过。
+
+唯一 codegen 诊断把两个失败分别归到真实产品形状：当前 range-based heap 判别令 shared-copy 循环比
+固定 Abseil low-bit tag 多两个更宽的 compare；TaskGraph 把失败即返回的局部 `Status` 当 lvalue 交给
+传播宏，保留了不需要的复制语义。临时编译采用 mature low-bit inline tag 后复制循环逐指令同形；局部
+显式 move 后 MSVC 函数由 133B 收敛到与直接 `if/return` 相同的 104B。修复不新增公开 API、常驻
+metadata 或 benchmark-only 分支，且真实 `TaskGraph` 与 replay 必须同步。新 candidate 仍使用完全相同
+的 9 项合同、peer、5% margin 与统一仪器，只允许一次 fresh qualification。
 
 ## 历史证据（2026-07-29，三平台 n=15）
 
@@ -127,8 +138,16 @@ backtrace 或异常系统；参考库有而 HYLE 用户没有需求的能力，�
 
 ## error-v3 运行记录
 
-尚无 candidate，因此这里不发布可复制的资格命令或 artifact 路径。正式运行必须由冻结的
-`bench/contracts/error-p1-v1.json`、`closure-perf-v1` runner 和 candidate verification manifest
-共同生成，并把实际 machine/affinity/power、source/peer/build/binary hash、双 order/placement、
-timer-floor、A/A 与 raw samples 一起归档。旧专用 runner 命令不再是 v3 入口，不能从历史参数手工
-拼出一张当前证书。
+被驳回 replacement 绑定 HYLE `a4ba5a14cdd46a7b9c6e33c06211ce2d6c7a760f` / tree
+`4a2ca7977241080a41b5eb5ab79a6fd37d71db04`、Abseil
+`81c993af4fb88b3a51829a796df02251fa27102f` / tree
+`b8e8bdc41d9f13b8894b4540b910ed8dc2ced66c`，contract hash 为
+`82cf325480a85d7ea76e17fcf526d12c36619b7089ec81d4c947fa56aea215d7`。W1-WIN retained evidence 位于
+`C:/hyle-scratch/error-v3-replacement-win-perf-evidence`；统一 verifier 为 `QUALIFIED`、
+`qualification_gate=PASS`、`performance_gate=FAIL`。这个路径是本机可追溯证据，不是可发布 artifact；
+task manifest 另记二进制 hash 和跨平台结果。
+
+新 candidate 的正式运行仍必须由冻结的 `bench/contracts/error-p1-v1.json`、`closure-perf-v1` runner
+和 candidate verification manifest 共同生成，并把 machine/affinity/power、source/peer/build/binary
+hash、双 order/placement、timer-floor、A/A 与 raw samples 一起归档。旧专用 runner 命令不是 v3
+入口，不能从历史参数手工拼出当前证书。
