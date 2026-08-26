@@ -61,7 +61,7 @@
     },
     {
       "module": "container_intrusive",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "round_id": "container-intrusive-v3",
       "closure_task": "docs/implementation/tasks/container_intrusive/container-intrusive-v3-resume.md",
       "scope": "Current auto/safe member-hook intrusive-list capability, C++ API, implementation, direct consumer/dependency, delivery, documentation and P1 engineering evidence.",
@@ -76,7 +76,7 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "PASS",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
@@ -87,7 +87,16 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "v3 产品候选已绑定；typed membership transfer、PMD fail-closed 边界、correctness 与三种交付形状均已复核，正在签署 P1 工程证据。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
+      "summary": "v3 候选的范围、架构、正确性、交付、易用性/文档、独立红队与 W1-WIN P1 工程性能均已验证。"
     },
     {
       "module": "util_core",

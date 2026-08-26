@@ -150,12 +150,15 @@ commit hash。staging 快照的四项 LOC 为：
 `include/hyle + src` 的 native module boundary，因此明确用同一 staging 快照的 all-language `cloc`
 口径；contracts、tests、module adapter 和文档未计入该实现数。
 
-## 未完成事项
+## 本工作流交付时的未完成事项
+
+> 下列是 2026-08-26 工具任务结束时的历史快照，不声明产品模块当前状态；后续变化只见中央
+> registry 和各模块当前 task/evidence。
 
 - 两个首批消费者的 current diagnostic manifests 已深重放；它们尚无 engineering qualified
   manifests，这是各产品模块的性能 blocker，不再反向阻塞公共仪器；
 - error 的若干短操作仍被 20x timer-floor 门拒绝，必须修正测量合同或保持 diagnostic；
 - live artifact bundle 尚无不可变 retention/signing；pilot profiles 尚无 exact `formal_toolchain`，
   M1 也尚无稳定机器身份，Formal 当前按设计保持 PENDING；
-- `container_intrusive` 当前仍为 `BLOCKED`，不能因产品形状已冻结提前改为 `VERIFIED/CLOSED`；
+- `container_intrusive` 当时仍为 `BLOCKED`，不能因产品形状已冻结提前改为 `VERIFIED/CLOSED`；
 - push 记录将在候选提交实际推送后由 Git 历史提供；本文不制造循环自引用的 commit hash。

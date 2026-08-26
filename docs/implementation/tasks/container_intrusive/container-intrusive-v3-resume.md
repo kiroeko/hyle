@@ -6,7 +6,7 @@
 > [`module-status.json`](../../module-status.json)；v2 的 `HISTORICAL` 记录只提供旧候选和阻塞事实，
 > 不授权本轮修改，也不产生当前结论。
 
-## Closure card（`CANDIDATE`）
+## Closure card（`VERIFIED`）
 
 - component / owner / round ID：`container_intrusive` / container owner / `container-intrusive-v3`
 - task kind：`RESUME`
@@ -130,13 +130,87 @@ W1 n=31 在发现产品 blocker 后终止，不能作为当前轮性能证据，
 
 ## Verification manifest
 
-尚未进入 `VERIFIED`；不得继承 v2 的点值或 dirty 平台结果。fresh W1-WIN qualification 已完成采样，
-在独立 manifest 审计签署前不把工具的初步 verdict 写入 registry。
+所有记录均绑定 candidate `b5816b810d536f2041520e4b370c1e17d3ac7a4a` / tree
+`3bf043c40dbb5e4b49aba563f23f71b3c2d7caf3`；不得继承 v2 点值、dirty 结果或被拒绝的 `e172d24`。
+
+| correctness risk | verdict | candidate-bound evidence |
+|---|---|---|
+| normal/empty、auto/safe lifetime、move/list swap、typed node swap | PASS | Windows MSVC Debug/Release、clang-cl Release focused suite 各 5/5；单元测试覆盖 self/unlinked/singleton/adjacent/same-list/cross-list |
+| range 与 same-list boundary | PASS | deterministic prefix/suffix/empty/boundary 表格 + fixed-seed differential |
+| wrong member contract | PASS | public raw hook swap 不可调用；公开 typed static API 同时绑定 `T` 与 member hook；safe negative concept test |
+| random topology/state | PASS | 4000-step owning-model differential 覆盖两条 list、linked/unlinked、same/cross-list swap 与移动 |
+| mixed-access/non-standard-layout member recovery | PASS | MSVC、clang-cl、GCC 14、AppleClang 的 mixed-access live complete-object test；未知 PMD representation 编译期 fail closed |
+| callback/lifetime reentrancy | PASS | `consume_all` 在 callback 前摘当前 node；callback `noexcept`；owner teardown 与 node retirement 的 opaque phase observation + actual-object codegen gate |
+| misuse diagnostics | PASS | Debug safe linked destruction/reinsert 前置条件 fail-fast；Release 正常 safe destruction 无常态检查路径 |
+| sanitizer | PASS | WSL GCC 14 ASan 4/4、UBSan 4/4；instrumented build 不运行无意义的 disassembly gate |
+| header/ABI/codegen | PASS | public-header self-containment；MSVC/clang-cl/GCC/AppleClang；64-bit/two-pointer layout 与 supported PMD ABI gate |
+| concurrency | NOT_APPLICABLE | primitive 明确外部同步、无内部 atomic/lock；同步和 reclamation 属 owner module |
+| allocation/failure | NOT_APPLICABLE | caller-owned、零分配、无返回失败；无效 owner/range/lifetime 是调用方前置条件违反 |
+
+平台结果：
+
+- Windows：MSVC Debug/Release 与 clang-cl Release focused gate 各 5/5；benchmark primary/placement
+  build、23 个 intrusive evidence parser case、`bench-stat` parser、contract/schema/docs/closure checks 通过。
+- WSL：GCC/G++ 14.2.0 Release + WERROR 5/5；ASan 4/4；UBSan 4/4；scratch
+  `/root/hyle-scratch/container-intrusive-b5816b8-wsl-20260827-0355`。
+- macOS：Mac16,12 arm64、AppleClang 21.0.0.21000101、Debug + WERROR focused 5/5，unit 33/33；
+  focused log SHA-256 `57b78e77233b45c230e291ef14e36f3aea4d170b688cd86d0e47f4108b6453cc`。
+
+交付结果：
+
+| closure | source | relocated shared | relocated static | artifact contract |
+|---|---|---|---|---|
+| `core,container_intrusive` | PASS | PASS | PASS | 13-file SDK，0 binary；direct consumer 选择/链接 target |
+| `core,container_intrusive,time` | PASS | PASS | PASS | `time` PUBLIC edge 传播；真实 `TimerEntry` consumer 编译/运行 |
+
+Windows scratch 为
+`C:\hyle-scratch\container-intrusive-v3-b5816b8-win-delivery` 与
+`C:\hyle-scratch\container-intrusive-v3-b5816b8-win-time-delivery`。macOS source/shared/static logs 的
+SHA-256 分别为 intrusive
+`b15b6ad1bcf8321748263122f89ada78699e249b94f78f4d736e8c2c7a687723` /
+`8fc07d16c91fd9950b530b980af3aeeed0b581851efd1995ece319a6edc8bae8` /
+`060e9c55a748b1b06dd5ed0b9f626c6f962dbe050aa6ff9cce89e34b9f531780`，time
+`c67380f2901ef70de3efba0fe2958b148ba70765f613823bda885dce7667b4de` /
+`69a5d06edbe942a261c93c33e41e89f9beca5645787d7d78982d123a97112521` /
+`f8e5bf93dc704cbbb582c052432a22783aeb339cc130e8390dd2a5069936e52d`。
+
+P1 工程性能：
+
+- contract SHA-256：`5a0f4fb64811616a472988fa6480ff2b61cd5a9593e88cfaa522e345f4e0f2a8`；
+- manifest：`C:\hyle-scratch\container-intrusive-v3\perf-qualify-b5816b8-output\manifest.json`，
+  SHA-256 `3f081670022973a1b07ea6b4c04ab93b8d8fcbad61feef8bc6c584f30a10bd70`；
+- W1-WIN、fresh MSVC x64 Release/static、portable ISA、LTO off；Boost commit/tree 与 candidate identity
+  均 clean/stable；artifact/build validator 均 PASS；
+- A/A、5%/10% known delta、timer floor、placement controls 全 PASS；n=15 只按停止规则因功效扩成
+  fresh n=31，两阶段不合并；
+- 9 个 required replay workload × 8 strata 全部 comparable，5% non-inferiority 9/9 PASS；六项 combined
+  exact PARITY，三项 INCONCLUSIVE，无 required NI fail；summary/observations SHA-256 分别为
+  `f7c0b557fe81009c286f0f97b56d7b1dab7d274bd546efe08fd46d18e9db6fb4` /
+  `a6d1af6b796f586d89aded4afd89d792b29e66769bd15daa7728758cc55480d0`；
+- `python scripts/hyle-perf.py verify --contract bench/contracts/container-intrusive-p1-v1.json
+  --manifest <path>` 返回 `qualification=QUALIFIED`、`paths_verified=true`。详细表和证据保留边界见
+  [performance evidence](../../evidence/performance/benchmarks-container-intrusive.md)。
+
+易用性/文档：architecture、user guide、component/package guide、性能页与本 task 已同步；决策表明确
+何时选 auto/safe、pointer mutation、typed swap、callback、owner 镜像、iterator invalidation、私有 hook
+friend adapter、缺少 `.size()`/safe swap 的理由及 Native FFI=`N/A`。`check-docs.py` 和
+`check-module-closure.py` 通过。
 
 ## 独立红队
 
-能力审计已由两路只读 reviewer 独立完成；最终仍须由未参与实现的 reviewer 攻击冻结 candidate identity。
+能力/consumer/peer 审计由两路只读 reviewer 独立完成。被拒绝的第一候选没有被“修文档”放行；替换候选
+`b5816b8` 的最终独立红队 verdict 为 `PASS`：确认 raw hook swap 私有化、typed API、random differential、
+owner/state 责任、v2/v3 证据隔离和 benchmark/contract/parser labels 全部一致；未发现新的产品、测试、
+target/build、文档或性能合同 regression，也未发现 ledger 外扩面或 benchmark shaping。
+
+性能 manifest 另由未参与采样/实现的 reviewer 对 candidate/peer/contract/host/build/artifact identity、
+controls、validators、9×8 verdict、hash 与 n=15→31 停止规则做只读复核，verdict 为 `PASS`：n=15
+controls 全 PASS，仅 auto/safe cancel 的 combined NI 为 `UNRESOLVED`，其余七项 PASS 且没有 FAIL，
+所以完整 fresh n=31 合法；最终 72/72 strata NI PASS，2,232 observations 的 run key 完整唯一；473 个
+证据引用零缺失、零 hash mismatch。最接近边界的 CI lower 为 `0.956264795`，仍高于 5% NI 阈值
+`0.952380952`。该签署只证明 P1 engineering，不签 Formal 或“全面快于 Boost”。
 
 ## Closure decision
 
-当前为 `CANDIDATE`，没有 terminal receipt；不得实现 ledger 外扩面。
+当前为 `VERIFIED`，七项 aggregate gate 均为 `PASS`，没有 terminal receipt。下一步只记录 closure
+限制、reopen triggers、immutable candidate LOC 与 receipt；不得再改产品或证据合同。

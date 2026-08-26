@@ -93,8 +93,10 @@ roles are registered in `scripts/perf-machines.json` and explained in
 `bench/contracts/error-p1-v1.json`; their implementation history and remaining
 qualification work are tracked in
 [`closure-system-v1`](../docs/implementation/tasks/build/closure-system-v1.md).
-The contracts and runner existing does not close either module: neither pilot
-currently has a candidate-bound engineering `QUALIFIED` manifest.
+The contracts and runner existing does not by itself close either module.
+`container_intrusive` now has a candidate-bound engineering `QUALIFIED`
+manifest recorded in its performance evidence page; `error` remains governed
+by its own current registry/task and must not inherit that result.
 
 Validate the immutable contract before building:
 
@@ -440,11 +442,13 @@ cmake --build build-bench --target hyle_queue_sota_bench
 
 `run-container-intrusive-bench-evidence.py` preserves useful module-specific
 artifact, placement, no-IPO, and lifetime-object checks from the pre-v1
-instrument. It is now a **legacy diagnostic / possible Formal plugin**, not the
-sole module certificate entry and not a template to copy. Its old 3% statistics,
-host policy, resampling, and `RIVAL/BASELINE` ratio do not override the v1 common
-core. The `container_intrusive` P1 engineering gate remains open until a frozen
-5% `closure-perf-v1` contract produces a candidate-bound qualified manifest.
+instrument. It is now a **legacy diagnostic**, not a certificate entry and not
+a template to copy. A future Formal adapter may reuse a narrowly reviewed
+validator, but must freeze a new Formal contract instead of promoting this
+runner. Its old 3% statistics, host policy, resampling, and `RIVAL/BASELINE`
+ratio do not override the v1 common core. The current `container_intrusive` P1
+engineering evidence comes only from its frozen 5% `closure-perf-v1` contract
+and candidate-bound qualified manifest.
 
 The same rule applies to other `run-*-bench-evidence.py` and module `*-stat.py`
 drivers: retain narrow validators or parsers when useful, but migrate shared
