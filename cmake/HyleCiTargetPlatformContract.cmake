@@ -59,6 +59,44 @@ endfunction()
 _hyle_pointer_width_probe(8 TRUE)
 _hyle_pointer_width_probe(4 FALSE)
 
+# Visual Studio's multi-platform generator reports the host through
+# CMAKE_SYSTEM_PROCESSOR even when `-A` selected a different compiler target.
+# Keep the normalized project identity under a script-level regression gate so
+# later source/component decisions cannot silently fall back to the host ISA.
+function(_hyle_processor_identity_probe label compiler_arch generator_arch
+         system_arch expected)
+  string(MAKE_C_IDENTIFIER "${label}" _label_id)
+  set(_probe "${HYLE_SMOKE_ROOT}/target-identity-${_label_id}.cmake")
+  file(WRITE "${_probe}"
+"cmake_minimum_required(VERSION 3.25)\n"
+"set(CMAKE_SIZEOF_VOID_P 8)\n"
+"set(MSVC_CXX_ARCHITECTURE_ID \"${compiler_arch}\")\n"
+"set(CMAKE_GENERATOR_PLATFORM \"${generator_arch}\")\n"
+"set(CMAKE_SYSTEM_PROCESSOR \"${system_arch}\")\n"
+"include(\"${HYLE_SOURCE_DIR}/cmake/HyleTargetPlatform.cmake\")\n"
+"if(NOT HYLE_TARGET_PROCESSOR STREQUAL \"${expected}\")\n"
+"  message(FATAL_ERROR \"expected target '${expected}', got '\${HYLE_TARGET_PROCESSOR}'\")\n"
+"endif()\n")
+  execute_process(
+    COMMAND "${CMAKE_COMMAND}" -P "${_probe}"
+    RESULT_VARIABLE _result
+    OUTPUT_VARIABLE _stdout
+    ERROR_VARIABLE _stderr)
+  if(NOT _result EQUAL 0)
+    message(FATAL_ERROR
+      "target identity '${label}' failed:\n${_stdout}\n${_stderr}")
+  endif()
+endfunction()
+
+_hyle_processor_identity_probe(
+  "vs-arm64-over-amd64-host" "ARM64" "ARM64" "AMD64" "aarch64")
+_hyle_processor_identity_probe(
+  "vs-x64" "AMD64" "x64" "AMD64" "x86_64")
+_hyle_processor_identity_probe(
+  "generator-arm64" "" "ARM64" "AMD64" "aarch64")
+_hyle_processor_identity_probe(
+  "toolchain-riscv64" "" "" "riscv64" "riscv64")
+
 # A platform without fcontext still supports the sched-free io proactor and
 # host/CUDA/Vulkan compute.  Coroutine-only protocol/ggml features default OFF,
 # AUTO TLS skips OpenSSL discovery, and an explicit impossible ON must fail

@@ -9,8 +9,8 @@
 > 不是当前发布 SOTA 证书。
 
 > 历史段落中的 `HYLE_CACHE_LINE_SIZE` 是当时实现名；当前 dense queue
-> cells 使用 target-family `core::kDestructiveInterferenceSize`（x86-64/ARM64EC 64B，native
-> Apple ARM64 128B，未认证 native Windows ARM64/generic ARM64 conservative 128B），少量持续
+> cells 使用 target-family `core::kDestructiveInterferenceSize`（x86-64 与非 Apple
+> AArch64 64B，Apple ARM64 128B；其他未知 target 仍 conservative 128B），少量持续
 > 跨线程写的 control atomics 可显式使用
 > `core::kMaxDestructiveInterferenceSize` 的 128B 上界。当前数字仍须随 sched
 > 正式收口重签，本页的历史“平”也不自动等于新合同下的 `EQUIVALENT`。
@@ -255,8 +255,8 @@ CancelToken 树是 shard-local、(几乎)无锁结构——唯一原子是 per-n
 
    上述 `capacity×64B` 是该历史提交的布局与点值。当前 x86-64 的 dense slots
    仍是 `capacity×64B`，native Apple ARM64 是
-   `capacity×128B`；ARM64EC 按 x64 ABI 使用 64B，未认证的 native Windows ARM64/generic
-   ARM64 先使用 conservative 128B
+   `capacity×128B`；native Windows/Linux AArch64 也使用 64B，其他未知 target 先使用
+   conservative 128B
    destructive spacing。这些都是 target-family 产品形状，不再为跨平台相同 `sizeof`
    强制 x86 付出双倍 footprint。当前候选仍需 direct-consumer 复证，不能把历史
    64B 的 SOTA 结论直接搬到当前树。

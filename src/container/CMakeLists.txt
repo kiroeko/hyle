@@ -18,17 +18,17 @@
 # AVX-512 is covered from one source (arm64 previously fell to scalar). Each variant TU is
 # its own -march, entered only when best_isa() confirms the ISA.
 #
-# ARCH SPLIT (Apple-Silicon 真机纪律): wide variant TUs gated by CMAKE_SYSTEM_PROCESSOR --
+# ARCH SPLIT (Apple-Silicon 真机纪律): wide variant TUs gated by HYLE_TARGET_PROCESSOR --
 # x86 ships scalar+sse4+avx2+avx512, aarch64 ships scalar+neon. Feeding -mavx2 to arm64 (or the
 # x86 intrinsic headers) errors, so non-host-arch TUs are never compiled. SwissTable's NEON
 # group lives in probe.h (pulled by swiss_table.cc), so container-04b NEON compiles auto on arm64.
 set(_container_arch_sources "")
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   set(HYLE_CONTAINER_X64 TRUE)
   list(APPEND _container_arch_sources
     hash_xxh3_avx2.cc str_search_sse4.cc str_search_avx2.cc str_search_avx512.cc
     bitset_ops_sse4.cc bitset_ops_avx2.cc bitset_ops_avx512.cc)
-elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
+elseif(HYLE_TARGET_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   set(HYLE_CONTAINER_ARM64 TRUE)
   list(APPEND _container_arch_sources str_search_neon.cc bitset_ops_neon.cc)
 endif()

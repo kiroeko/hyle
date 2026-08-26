@@ -20,13 +20,13 @@ function(hyle_configure_io_dependencies)
     if(HYLE_IO_HTTP2)
       message(FATAL_ERROR
         "HYLE_IO_HTTP2=ON requires sched/fcontext, but HYLE has no fcontext "
-        "assembly for ${CMAKE_SYSTEM_NAME}/${CMAKE_SYSTEM_PROCESSOR}. Select "
+        "assembly for ${CMAKE_SYSTEM_NAME}/${HYLE_TARGET_PROCESSOR}. Select "
         "HYLE_IO_HTTP2=OFF; the pre-release FFI stub remains available and reports 0.")
     endif()
     if(HYLE_IO_TLS STREQUAL "ON")
       message(FATAL_ERROR
         "HYLE_IO_TLS=ON requires sched/fcontext, but HYLE has no fcontext "
-        "assembly for ${CMAKE_SYSTEM_NAME}/${CMAKE_SYSTEM_PROCESSOR}. Select "
+        "assembly for ${CMAKE_SYSTEM_NAME}/${HYLE_TARGET_PROCESSOR}. Select "
         "HYLE_IO_TLS=AUTO/OFF; AUTO keeps the no-TLS candidate surface without "
         "probing OpenSSL.")
     endif()

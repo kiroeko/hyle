@@ -77,10 +77,10 @@ _hyle_declare_component(util PUBLIC_DEPS core error mem container util_core)
 _hyle_declare_component(sched
   PRIVATE_DEPS time
   PUBLIC_DEPS core error platform mem container util_core)
-# io's C ABI exposes allocator and owning Status values, while its C++ headers
-# expose container value types and header-inline sched calls (for example
-# complete()/await_suspend()).  These are consumer usage requirements, not only
-# implementation closure: installed consumers that link hyle::io alone must see
+# io's C++ public headers expose allocator/status/container value types and
+# header-inline sched calls (for example complete()/await_suspend()). These are
+# consumer usage requirements, not only implementation closure: installed
+# consumers that link hyle::io alone must see
 # the corresponding import libraries and runtime DLLs.
 _hyle_declare_component(io
   PUBLIC_DEPS core error mem container ${_hyle_optional_sched_dep})
@@ -95,6 +95,24 @@ _hyle_declare_component(graph
 
 unset(_hyle_optional_sched_dep)
 
+function(_hyle_component_public_headers name out_var)
+  if(name STREQUAL "container_intrusive")
+    set(_headers
+      "${HYLE_SOURCE_DIR}/include/hyle/container/intrusive_list.h")
+  elseif(name STREQUAL "util_core")
+    set(_headers
+      "${HYLE_SOURCE_DIR}/include/hyle/util/random.h"
+      "${HYLE_SOURCE_DIR}/include/hyle/util/ref_counted.h"
+      "${HYLE_SOURCE_DIR}/include/hyle/util/scope_guard.h"
+      "${HYLE_SOURCE_DIR}/include/hyle/util/spin_lock.h"
+      "${HYLE_SOURCE_DIR}/include/hyle/util/type_name.h")
+  else()
+    file(GLOB_RECURSE _headers CONFIGURE_DEPENDS
+      "${HYLE_SOURCE_DIR}/include/hyle/${name}/*.h")
+  endif()
+  set(${out_var} "${_headers}" PARENT_SCOPE)
+endfunction()
+
 # Public headers that directly consume Core source contracts must expose the
 # header-only component as a direct PUBLIC edge. This closes the old loophole
 # where installing the whole include tree made an undeclared dependency appear
@@ -103,20 +121,9 @@ unset(_hyle_optional_sched_dep)
 foreach(_hyle_component IN LISTS HYLE_KNOWN_COMPONENTS)
   if(_hyle_component STREQUAL "core")
     continue()
-  elseif(_hyle_component STREQUAL "container_intrusive")
-    set(_hyle_public_headers
-      "${HYLE_SOURCE_DIR}/include/hyle/container/intrusive_list.h")
-  elseif(_hyle_component STREQUAL "util_core")
-    set(_hyle_public_headers
-      "${HYLE_SOURCE_DIR}/include/hyle/util/random.h"
-      "${HYLE_SOURCE_DIR}/include/hyle/util/ref_counted.h"
-      "${HYLE_SOURCE_DIR}/include/hyle/util/scope_guard.h"
-      "${HYLE_SOURCE_DIR}/include/hyle/util/spin_lock.h"
-      "${HYLE_SOURCE_DIR}/include/hyle/util/type_name.h")
-  else()
-    file(GLOB_RECURSE _hyle_public_headers CONFIGURE_DEPENDS
-      "${HYLE_SOURCE_DIR}/include/hyle/${_hyle_component}/*.h")
   endif()
+  _hyle_component_public_headers(
+    "${_hyle_component}" _hyle_public_headers)
 
   set(_hyle_direct_core_include FALSE)
   foreach(_hyle_header IN LISTS _hyle_public_headers)

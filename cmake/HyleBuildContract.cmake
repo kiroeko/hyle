@@ -32,7 +32,7 @@ if(MSVC)
     "$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:MSVC>>:/Zc:preprocessor>")
 endif()
 
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   # HYLE's x86-64-v2 public baseline enables the SSSE3 path in header-inline
   # container probes. Propagate it so those functions cannot acquire two ODR
   # shapes between the library and its consumer. Compiler selection must stay

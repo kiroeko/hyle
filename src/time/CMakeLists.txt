@@ -2,4 +2,4 @@
 # system-clock hop); sleep/coarse/TSC paths live in clock.cc. Timer structures
 # use the lightweight container_intrusive component. Core supplies header-only
 # compiler contracts; recoverable boundary failures use the shared error value.
-hyle_add_module(time SOURCES clock.cc c_time.cc)
+hyle_add_module(time TESTING SOURCES clock.cc c_time.cc)

@@ -22,6 +22,9 @@ namespace hyle {
 inline constexpr std::uint32_t kVersionMajor = HYLE_VERSION_MAJOR;
 inline constexpr std::uint32_t kVersionMinor = HYLE_VERSION_MINOR;
 inline constexpr std::uint32_t kVersionPatch = HYLE_VERSION_PATCH;
+static_assert(kVersionMajor <= 0xffu && kVersionMinor <= 0xffu &&
+              kVersionPatch <= 0xffu,
+              "HYLE packed version fields are 8-bit values");
 inline constexpr std::uint32_t kVersionPacked =
     ((kVersionMajor & 0xffu) << 16u) | ((kVersionMinor & 0xffu) << 8u) |
     (kVersionPatch & 0xffu);

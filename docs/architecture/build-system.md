@@ -14,15 +14,26 @@
 
 构建系统证明“这些源码能按声明的契约组装和消费”，不代替模块的功能、API 或性能收口。
 
+目标架构由 `HyleTargetPlatform.cmake` 在编译器识别后归一化为
+`HYLE_TARGET_PROCESSOR`，源码、ISA 与组件能力选择只读取这一事实。不能直接依赖
+`CMAKE_SYSTEM_PROCESSOR`：Visual Studio 多平台生成器在 `-A ARM64` 时仍可能把它保留为宿主
+`AMD64`，从而让 ARM64 产物错误选择 x86 源码。
+
 ## Target 与组件所有权
 
 一个公开组件对应一个 CMake target：
 
 - 构建树名称：`hyle_<module>`。
 - 构建树和安装树的消费名称：`hyle::<module>`。
-- `util_core` 与 `container_intrusive` 是可选择、可安装的 `INTERFACE` 组件；其余组件通常是
-  编译型 target。
+- `core`、`util_core` 与 `container_intrusive` 是可选择、可安装的 `INTERFACE` 组件；其余组件
+  通常是编译型 target。
 - `hyle_build_contract`、`hyle_testing`、`hyle_trace` 是横切构建 target，不是产品组件根。
+- 横切 target 也必须遵守真实消费边：模块只有在源码或公开头读取 trace/testing gate 时才传播
+  对应 target，并通过 `TRACE`/`TESTING` 显式 opt-in；配置会把声明与当前 selected sources/公开头
+  反向对账。纯编译/布局地基 `core` 不声明这两个 gate，不能因全局开关无故携带 profiler runtime
+  或 test-only ABI definition。
+- Trace backend 在模块图声明后才建立；`HYLE_TRACE=ON` 而所选闭包没有 trace consumer 会配置失败，
+  不会把 Tracy 悄悄变成第二个产品根。
 
 各层只拥有一类事实：
 
@@ -49,18 +60,21 @@
 当前图的关键关系是：
 
 ```text
-core, container_intrusive, util_core, error, math    leaves
-obs        -> PUBLIC error
-platform   -> PUBLIC error
-time       -> PUBLIC error container_intrusive
-mem        -> PUBLIC error platform util_core
-simd       -> PUBLIC error platform
-container  -> PUBLIC error mem container_intrusive; PRIVATE platform
-util       -> PUBLIC error mem container util_core
-sched      -> PUBLIC error platform mem container util_core; PRIVATE time
-io         -> PUBLIC error mem container; optional sched
-compute    -> PUBLIC error mem; PRIVATE platform simd; optional sched
-graph      -> PUBLIC error mem container; PRIVATE util_core; optional sched
+core, math  leaves
+container_intrusive -> PUBLIC core
+util_core   -> PUBLIC core
+error       -> PUBLIC core
+obs         -> PUBLIC core error
+platform    -> PUBLIC core error
+time        -> PUBLIC core error container_intrusive
+mem         -> PUBLIC core error platform util_core
+simd        -> PUBLIC core error platform
+container   -> PUBLIC core error mem container_intrusive; PRIVATE platform
+util        -> PUBLIC core error mem container util_core
+sched       -> PUBLIC core error platform mem container util_core; PRIVATE time
+io          -> PUBLIC core error mem container; optional sched
+compute     -> PUBLIC core error mem; PRIVATE platform simd; optional sched
+graph       -> PUBLIC core error mem container; PRIVATE util_core; optional sched
 ```
 
 `PUBLIC` 表示消费者编译或链接本模块时也需要该依赖；`PRIVATE` 表示只服务本模块实现。这里记录的
@@ -68,12 +82,15 @@ graph      -> PUBLIC error mem container; PRIVATE util_core; optional sched
 时拥有真实 target：`time` 暴露 `TimerList`，故不能把这条边藏成 include-path 偶然可见；完整
 `container` 则公开聚合该轻量目标。
 
-当前有一个明确的全局例外：根级 `hyle/macros.h` 及其 compiler-definition 支撑头被当作
-target-neutral foundation headers，包含它们不等于依赖编译型 `hyle::core`。因此
-`container_intrusive` 当前没有 `core` target 边。这个约定只覆盖全库基础编译合同，不能泛化为
-“header include 无需登记”。现有 Core cache headers 等其他纯头源码依赖是否应形成 target 边仍
-需逐项治理；Core/build 全局复审必须统一定义“target-neutral foundation”与“独立公开能力”的
-界线，不能由单个模块临时决定。
+Core 的 source contract 不再是 target-neutral 例外。公开头直接 include `<hyle/core/**>` 或
+`<hyle/version.h>` 的组件必须直接声明 `PUBLIC core`，即使 `hyle::core` 是 `INTERFACE`、没有
+binary symbol。配置阶段会扫描各组件公开头并与中央 manifest 对账：漏边和没有真实 include 的
+多余边都失败。`container_intrusive`/`util_core` 这样的 header-only target 同样遵守这条规则；
+复制整棵 include tree 不能使未登记依赖合法。
+
+`<hyle/version.h>` 是 build/package 拥有的 checked-in 产品元数据，并由 Core include contract
+交付；Core 本身不拥有 linked version query。`<hyle/visibility.h>` 的 export/import policy 也由
+build/package 拥有，随各 compiled module 的 static/shared 形状维护，而不是 Core capability。
 
 ## 外部依赖：单点登记，多路投影
 
@@ -123,6 +140,11 @@ target-neutral foundation headers，包含它们不等于依赖编译型 `hyle::
 
 获得授权源码的使用者通过 `add_subdirectory()` 组装所需组件，并链接 `hyle::<module>`。父工程拥有生成器、工具链、输出目录和标准 CMake 策略；Hyle option 只描述 Hyle 自身。嵌入模式不创建源码发行 target。
 
+请求 `core` 时唯一的产品组件 target 是 `hyle::core` INTERFACE target；构建树仍有无 artifact 的
+内部 build/trace/testing foundation targets，但 Core 不链接 trace/testing，也不产生
+object/archive/runtime。请求其他组件会通过中央图取得它所需的 Core source contract，不能靠父工程
+的 include path 偶然可见。
+
 ### 静态 SDK
 
 以 `HYLE_INSTALL=ON`、`HYLE_STATIC=ON` 安装后，消费者使用：
@@ -133,12 +155,17 @@ target_link_libraries(app PRIVATE hyle::mem)
 ```
 
 导出 target 必须传播静态链接所需的私有闭包、系统库和已登记的 `find_dependency()`。
+若只安装/消费 `core`，package 只提供 headers 与 imported INTERFACE target，不存在 Core archive。
 
 ### 共享 SDK
 
 以 `HYLE_INSTALL=ON`、`HYLE_STATIC=OFF` 安装，消费语法相同。Unix 安装 target 使用相对同级 RPATH；Windows 消费 target 可调用 `hyle_stage_runtime_dependencies(target)` 把所需 DLL 放到运行目录。
 
 安装前缀和 GNUInstallDirs 必须保持相对、可搬迁；绝对安装子目录会失败。由于现有公开头存在跨组件引用，SDK 目前安装整个 `include/hyle`，可用组件以导入 target 和 `Hyle_AVAILABLE_COMPONENTS` 为准。源码授权与静态/共享产物形态是两个独立维度。
+
+Core-only shared SDK 同样没有 Core DSO/DLL 和 runtime staging；`HYLE_STATIC` 只影响请求到的编译型
+模块。Core helper 已内联进 consumer，header 变化后必须重编，不能靠替换其他 shared artifact
+更新。
 
 ## 源码包与离线构建
 
@@ -194,10 +221,9 @@ CI 不把所有平台、后端和性能门塞进一次任务：
 - `include/hyle/c/**`、相应 `c_*.cc`、C surface/export fixtures、package C/FFI fixtures，以及 managed 样例和脚本，是逐模块待删除或重新分类的历史债；CI 暂时编译它们不构成 C 或跨语言产品承诺。
 - 根工程仍启用 `LANGUAGES C CXX`，因为 vendored C、`.c` 实现和汇编桥接仍需要 C 编译器；这不代表存在 C 产品 API。
 - `SOURCE-MANIFEST.txt`、部分 CMake 注释和组件依赖理由仍有旧 C ABI 叙事，需随模块复审清理。
-- `hyle/macros.h` 与 compiler-definition 支撑头当前仍是 target-neutral foundation headers；
-  是否把这组全库编译合同进一步建模为独立 target 尚待 Core/build 全局复审。Core cache headers
-  等其他纯头依赖也还没有统一分类；`container_intrusive` 只确立了一条可复用原则：独立公开
-  能力穿过模块边界时，应优先拥有真实组件边，而不是靠安装整棵 include tree 掩盖依赖。
+- 历史 `hyle/macros.h`/compiler-definition target-neutral 例外已经删除；后续新 header-only 公共
+  能力必须有明确 owner target 和真实依赖边。公开头扫描当前只机械覆盖 Core contract，其他模块
+  的同类自动化仍应随各模块 v2 review 扩展。
 - production-shape 根列表仍含已重新打开审查的模块；它是回归集合，不是“已冻结”声明。
 - 可选特性语义尚未统一：TLS/CUDA 使用 `AUTO/ON/OFF`，其他后端仍是布尔值；应由所属模块复审后统一。
 - 托管 CI 尚未覆盖 sanitizer、真实加速设备及 SVE/RVV 运行；Windows/macOS 的完整交付矩阵也不是每个 PR 都运行。

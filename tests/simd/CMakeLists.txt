@@ -27,11 +27,11 @@ hyle_add_fat_kernel(
   TARGETS scalar sse4 avx2 avx512 neon sve rvv)
 # vec_test compiled per ISA variant: same source, different HYLE_SIMD_TARGET_* + the
 # matching codegen flags from the single-source hyle_isa_flags (no MSVC/else drift here).
-# Arch-gated (mirrors src/simd's CMAKE_SYSTEM_PROCESSOR split): x86 builds the sse4/avx2
+# Arch-gated (mirrors src/simd's HYLE_TARGET_PROCESSOR split): x86 builds the sse4/avx2
 # variants, aarch64 builds the neon variant -- feeding -mavx2 to an ARM build (or the ARM
 # neon.h to an x86 build) would fail. Each variant runs on the build host, so it must be
 # the host's real ISA (the variant-DLL test model).
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   hyle_isa_flags(_sse4_flags SSE42)
   hyle_isa_flags(_avx2_flags AVX2)
   set(_sse4_options "")
@@ -110,7 +110,7 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
     hyle_isa_flags(_avx512dl_flags AVX512_DL)
     hyle_add_test(simd NAME avx512_dl SOURCES vec_test.cc native_test.cc narrow_float_test.cc DEFINES HYLE_SIMD_TARGET_AVX512 OPTIONS ${_avx512dl_flags} ${_avx512_autorun})
   endif()
-elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
+elseif(HYLE_TARGET_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   hyle_isa_flags(_neon_flags NEON)
   set(_neon_options "")
   if(_neon_flags)
@@ -141,7 +141,7 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
                   DEFINES HYLE_SIMD_TARGET_SVE HYLE_SIMD_HAS_SVE_VARIANT=1
                   OPTIONS -march=armv8-a+sve)
   endif()
-elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "riscv64|riscv")
+elseif(HYLE_TARGET_PROCESSOR MATCHES "riscv64|riscv")
   # RVV variant (backend/rvv.h), the SECOND scalable backend. Same gating rationale as SVE:
   # RVV needs -march=rv64gcv + a CPU/emulator with the V extension. On a real RVV host ctest runs
   # it; on a non-RVV box it is cross-compiled (riscv64-linux-gnu-g++ -march=rv64gcv) and run under

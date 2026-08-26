@@ -1,5 +1,6 @@
 #pragma once
 
+#include <bit>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
@@ -204,12 +205,12 @@ class NeonBitMask {
   explicit NeonBitMask(std::uint64_t mask) noexcept : mask_(mask) {}
   explicit operator bool() const noexcept { return mask_ != 0; }
   std::uint32_t lowest() const noexcept {
-    return static_cast<std::uint32_t>(__builtin_ctzll(mask_) >> 3);
+    return static_cast<std::uint32_t>(std::countr_zero(mask_) >> 3);
   }
   std::uint32_t trailing_zeros() const noexcept { return lowest(); }
   std::uint32_t leading_zeros(unsigned width) const noexcept {
     (void)width;
-    return static_cast<std::uint32_t>(__builtin_clzll(mask_) >> 3);
+    return static_cast<std::uint32_t>(std::countl_zero(mask_) >> 3);
   }
   NeonBitMask begin() const noexcept { return *this; }
   NeonBitMask end() const noexcept { return NeonBitMask(0); }

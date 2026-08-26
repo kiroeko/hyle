@@ -45,6 +45,9 @@ TEST(CoreCache, StaticLayoutContractIsUsable) {
 #if defined(__APPLE__) && (defined(__aarch64__) || defined(__arm64__))
   static_assert(hyle::core::kConstructiveInterferenceSize == 128);
   static_assert(hyle::core::kDestructiveInterferenceSize == 128);
+#elif defined(__aarch64__) || defined(__arm64__) || defined(_M_ARM64)
+  static_assert(hyle::core::kConstructiveInterferenceSize == 64);
+  static_assert(hyle::core::kDestructiveInterferenceSize == 64);
 #elif defined(__x86_64__) || defined(_M_X64)
   static_assert(hyle::core::kConstructiveInterferenceSize == 64);
   static_assert(hyle::core::kDestructiveInterferenceSize == 64);
@@ -74,6 +77,15 @@ TEST(CoreCompiler, PortableContractsPreserveValidInputs) {
   EXPECT_EQ(restrict_sum(values, 4), 10);
 }
 
+TEST(CoreAssert, ConditionsEvaluateOnceAndSuccessSkipsMessage) {
+  int conditions = 0;
+  int messages = 0;
+  HYLE_FATAL_ASSERT(++conditions == 1);
+  HYLE_FATAL_ASSERT_MSG(++conditions == 2, (++messages, "unused"));
+  EXPECT_EQ(conditions, 2);
+  EXPECT_EQ(messages, 0);
+}
+
 #if !defined(NDEBUG)
 TEST(CoreCompilerDeath, AssumeDiagnosesFalseInDebugBuilds) {
   EXPECT_DEATH({ HYLE_ASSUME(false); }, "HYLE fatal");
@@ -86,4 +98,9 @@ TEST(CoreCompilerDeath, UnreachableDiagnosesTripsInDebugBuilds) {
 
 TEST(CoreAssertDeath, FatalAssertAbortsOnFalse) {
   EXPECT_DEATH({ HYLE_FATAL_ASSERT(1 == 2); }, "HYLE fatal");
+}
+
+TEST(CoreAssertDeath, FatalAssertMessageIsReported) {
+  EXPECT_DEATH({ HYLE_FATAL_ASSERT_MSG(false, "consumer context"); },
+               "consumer context");
 }

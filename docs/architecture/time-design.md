@@ -19,13 +19,13 @@
 `time` 是独立底层模块：拥有“现在是什么时间、如何形成 deadline、如何保存大量
 deadline”这些产品语义。原生 C++ timer 通过独立 header-only 目标
 `hyle::container_intrusive` 使用 `<hyle/container/intrusive_list.h>`；C adapter 依赖最底层
-`error` 提供可恢复 `hyle_status`。因此中央图记录
-`time -> PUBLIC {error, container_intrusive}`。整个模块不依赖 `platform` 二进制模块、完整
-`container`、`sched` 或 `io`；`hyle/platform.h` 与 `hyle/macros.h` 是零链接代价的
-target-neutral foundation headers。
+`error` 提供可恢复失败。time 的公开头也直接使用 Core compiler/invariant contract，因此中央图
+记录 `time -> PUBLIC {core, error, container_intrusive}`。整个模块不依赖 `platform` 二进制模块、
+完整 `container`、`sched` 或 `io`；Core 与 container_intrusive 都是有真实 target 边的
+header-only INTERFACE 组件，不是 target-neutral include 例外。
 
 ```text
-container_intrusive ──► native time ── clock / deadline / sleep
+core + container_intrusive ──► native time ── clock / deadline / sleep
   (header-only)               └─ TimerEntry + TimerQueue + CommonTimeoutQueue
 native time + error/status ──────────────► Native FFI 候选（opaque timer/queue + Status；可 N/A）
 native time ──────────────────────────► sched（fiber sleep、timed wait）

@@ -54,6 +54,27 @@ if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES "HYLE_COMPONENTS is explicitly empty")
     "${HYLE_CONTRACT_LAST_OUTPUT}")
 endif()
 
+# A cross-cutting feature cannot silently become a second product root. Core
+# has no trace sites, so requesting trace with a Core-only closure must fail
+# before configuring or registering a profiler backend.
+_hyle_contract_run("Core rejects unconsumed trace feature" FALSE
+  "${CMAKE_COMMAND}" -S "${HYLE_SOURCE_DIR}"
+  -B "${_hyle_contract_root}/core-unconsumed-trace"
+  ${_hyle_generator_args}
+  -DHYLE_COMPONENTS=core
+  -DHYLE_TRACE=ON
+  -DHYLE_BUILD_TESTS=OFF
+  -DHYLE_BUILD_BENCH=OFF
+  -DHYLE_INSTALL=ON
+  -DHYLE_IO_TLS=OFF
+  -DHYLE_COMPUTE_CUDA=OFF)
+if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES
+   "selected component closure has no target")
+  message(FATAL_ERROR
+    "Core-only trace request failed for the wrong reason:\n"
+    "${HYLE_CONTRACT_LAST_OUTPUT}")
+endif()
+
 # Core is a self-contained, header-only product component. Selecting and
 # installing it alone must never manufacture a version-only runtime artifact.
 set(_core_source "${_hyle_contract_root}/core-source")
@@ -73,16 +94,34 @@ file(WRITE "${_core_source}/CMakeLists.txt"
 "if(NOT _type STREQUAL \"INTERFACE_LIBRARY\")\n"
 "  message(FATAL_ERROR \"core is not header-only: \${_type}\")\n"
 "endif()\n"
+"get_target_property(_core_links hyle_core INTERFACE_LINK_LIBRARIES)\n"
+"foreach(_forbidden_link IN ITEMS hyle_trace hyle_testing)\n"
+"  list(FIND _core_links \"\${_forbidden_link}\" _forbidden_index)\n"
+"  if(NOT _forbidden_index EQUAL -1)\n"
+"    message(FATAL_ERROR \"Core leaks \${_forbidden_link}: \${_core_links}\")\n"
+"  endif()\n"
+"endforeach()\n"
 "foreach(_forbidden IN ITEMS container_intrusive util_core error obs math platform time mem simd container util sched io compute graph)\n"
 "  if(TARGET hyle::\${_forbidden})\n"
 "    message(FATAL_ERROR \"unexpected target hyle::\${_forbidden}\")\n"
 "  endif()\n"
-"endforeach()\n")
+"endforeach()\n"
+"add_executable(hyle_core_source_consumer\n"
+"  \"${HYLE_SOURCE_DIR}/samples/package/core/cpp/main.cc\")\n"
+"target_link_libraries(hyle_core_source_consumer PRIVATE hyle::core)\n"
+"enable_testing()\n"
+"add_test(NAME hyle_core_source_consumer COMMAND hyle_core_source_consumer)\n")
 _hyle_contract_run("standalone core closure" TRUE
   "${CMAKE_COMMAND}" -S "${_core_source}"
   -B "${_hyle_contract_root}/core-build"
   ${_hyle_generator_args}
   -DCMAKE_BUILD_TYPE=Release)
+_hyle_contract_run("build standalone Core source consumer" TRUE
+  "${CMAKE_COMMAND}" --build "${_hyle_contract_root}/core-build"
+  --config Release --parallel 2)
+_hyle_contract_run("run standalone Core source consumer" TRUE
+  "${CMAKE_CTEST_COMMAND}" --test-dir "${_hyle_contract_root}/core-build"
+  -C Release --output-on-failure)
 
 foreach(_core_linkage IN ITEMS shared static)
   if(_core_linkage STREQUAL "static")
@@ -92,14 +131,16 @@ foreach(_core_linkage IN ITEMS shared static)
   endif()
   set(_core_sdk_build
     "${_hyle_contract_root}/core-${_core_linkage}-sdk-build")
+  set(_core_sdk_staging_prefix
+    "${_hyle_contract_root}/core-${_core_linkage}-sdk-staging")
   set(_core_sdk_prefix
-    "${_hyle_contract_root}/core-${_core_linkage}-sdk-prefix")
+    "${_hyle_contract_root}/core-${_core_linkage}-sdk-relocated")
   _hyle_contract_run("configure isolated ${_core_linkage} Core SDK" TRUE
     "${CMAKE_COMMAND}" -S "${HYLE_SOURCE_DIR}"
     -B "${_core_sdk_build}"
     ${_hyle_generator_args}
     -DCMAKE_BUILD_TYPE=Release
-    -DCMAKE_INSTALL_PREFIX=${_core_sdk_prefix}
+    -DCMAKE_INSTALL_PREFIX=${_core_sdk_staging_prefix}
     -DHYLE_COMPONENTS=core
     -DHYLE_BUILD_TESTS=OFF
     -DHYLE_BUILD_BENCH=OFF
@@ -109,6 +150,13 @@ foreach(_core_linkage IN ITEMS shared static)
     -DHYLE_COMPUTE_CUDA=OFF)
   _hyle_contract_run("install isolated ${_core_linkage} Core SDK" TRUE
     "${CMAKE_COMMAND}" --install "${_core_sdk_build}" --config Release)
+  file(RENAME "${_core_sdk_staging_prefix}" "${_core_sdk_prefix}"
+       RESULT _core_relocate_result)
+  if(NOT _core_relocate_result STREQUAL "0")
+    message(FATAL_ERROR
+      "could not relocate isolated ${_core_linkage} Core SDK: "
+      "${_core_relocate_result}")
+  endif()
   file(GLOB_RECURSE _core_binary_artifacts LIST_DIRECTORIES FALSE
     "${_core_sdk_prefix}/*.a"
     "${_core_sdk_prefix}/*.dll"
@@ -142,6 +190,8 @@ unset(_core_consumer_build)
 unset(_core_linkage)
 unset(_core_sdk_build)
 unset(_core_sdk_prefix)
+unset(_core_sdk_staging_prefix)
+unset(_core_relocate_result)
 unset(_core_static)
 
 # A caller that wants only the allocation-free intrusive container gets Core's

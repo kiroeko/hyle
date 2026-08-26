@@ -44,7 +44,7 @@ cd ~/hyle
 /opt/homebrew/bin/ctest --preset macos --output-on-failure
 ```
 
-- **NEON simd 变体**：`tests/simd/CMakeLists.txt` 按 `CMAKE_SYSTEM_PROCESSOR` 分支——arm64 建 `hyle_simd_neon_test`（x86 建 sse4/avx2）。这是 neon.h 全 op 对拍 scalar 的真闸门。
+- **NEON simd 变体**：`tests/simd/CMakeLists.txt` 按归一化后的 `HYLE_TARGET_PROCESSOR` 分支——arm64 建 `hyle_simd_neon_test`（x86 建 sse4/avx2）。这是 neon.h 全 op 对拍 scalar 的真闸门。
 - **kqueue io 后端**：mac 的 io proactor 走 kqueue，`hyle_io_*` 测试真跑该路径。
 - **独立头检查**：非登录 SSH 下直接调用 AppleClang 必须带 macOS SDK sysroot；
   `header-self-contained.py` 会通过 `/usr/bin/xcrun --sdk macosx --show-sdk-path`

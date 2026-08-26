@@ -1,5 +1,9 @@
 # error 模块严格复审（2026-08）
 
+> **历史 / superseded：**本页绑定当轮 tree，只作 Jira 式追溯，不代表 v2 当前状态。其中
+> `hyle/macros.h`、compiled `hyle_core` 与旧 FFI 名称是历史实现；现行 Core 路线见
+> [`core-rebuild`](../core/core-rebuild.md)，当前模块状态只看 [`status`](../../status.md)。
+
 > Jira 式施工与证据记录。稳定设计见
 > [`../architecture/error-design.md`](../../../architecture/error-design.md)，用户写法见
 > [`../guide/error.md`](../../../user/error.md)，FFI 见 [`../guide/c-error.md`](../../../architecture/native-ffi-policy.md)，

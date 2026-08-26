@@ -891,7 +891,7 @@ private:
         return;
       }
     }
-    HYLE_FATAL_ASSERT(false && "decrementing begin() is invalid");
+    HYLE_FATAL_ASSERT_MSG(false, "decrementing begin() is invalid");
   }
 
   static void insert_entry(Node *node, std::uint16_t index,

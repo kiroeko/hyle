@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: LicenseRef-HYLE-Proprietary */
 #pragma once
 
 #include <cstddef>
@@ -17,6 +18,9 @@ namespace hyle::core {
 #if defined(__APPLE__) && (defined(__aarch64__) || defined(__arm64__))
 inline constexpr std::size_t kConstructiveInterferenceSize = 128;
 inline constexpr std::size_t kDestructiveInterferenceSize = 128;
+#elif defined(__aarch64__) || defined(__arm64__) || defined(_M_ARM64)
+inline constexpr std::size_t kConstructiveInterferenceSize = 64;
+inline constexpr std::size_t kDestructiveInterferenceSize = 64;
 #elif defined(__x86_64__) || defined(_M_X64)
 inline constexpr std::size_t kConstructiveInterferenceSize = 64;
 inline constexpr std::size_t kDestructiveInterferenceSize = 64;
@@ -63,20 +67,21 @@ prefetch_read_non_temporal(const void* address) noexcept {
 // Best-effort prefetch with intent to modify. This can request exclusive cache
 // ownership and therefore should be used more selectively than read prefetch.
 HYLE_FORCE_INLINE void prefetch_write(const void* address) noexcept {
-#if defined(__GNUC__) || defined(__clang__)
-  // Let the compiler choose an instruction valid for the translation unit's
-  // target. On baseline x86 this may be a read-prefetch or no-op; spelling
-  // PREFETCHW in inline assembly would bypass -march and could SIGILL on a
-  // distributable binary running on an older CPU.
+#if defined(_MSC_VER) && !defined(__clang__) && \
+    (defined(_M_IX86) || defined(_M_X64))
+  // Modern MSVC exposes PREFETCHW directly. HYLE's minimum toolchain is newer
+  // than the historical MSVC versions for which peer libraries disabled this
+  // intrinsic.
+  _m_prefetchw(address);
+#elif (defined(__GNUC__) || defined(__clang__)) && \
+    (defined(__x86_64__) || defined(_M_X64)) && !defined(__PRFCHW__)
+  // GCC/Clang otherwise lower write=1 to PREFETCHT0 on baseline x86-64.
+  // PREFETCHW is a recognized no-op on older Intel CPUs and has existed on AMD
+  // since K6-2, so this is safe for the distributable x86-64 baseline. This is
+  // the same compatibility route used by Abseil's write-prefetch primitive.
+  asm("prefetchw %0" : : "m"(*reinterpret_cast<const char*>(address)));
+#elif defined(__GNUC__) || defined(__clang__)
   __builtin_prefetch(address, 1, 3);
-#elif defined(_MSC_VER) && (defined(_M_IX86) || defined(_M_X64))
-#  if defined(_MM_HINT_ET0)
-  _mm_prefetch(static_cast<const char*>(address), _MM_HINT_ET0);
-#  else
-  // Older MSVC headers cannot express exclusive intent; retain the useful
-  // read hint instead of manufacturing a non-portable instruction sequence.
-  _mm_prefetch(static_cast<const char*>(address), _MM_HINT_T0);
-#  endif
 #elif defined(_MSC_VER) && defined(_M_ARM64)
   __prefetch2(address, 0x10); // PST L1 KEEP
 #else

@@ -105,7 +105,7 @@ if(HYLE_BENCH_HIGHWAY)
   target_compile_definitions(hyle_math_bench PRIVATE HYLE_BENCH_HIGHWAY)
   target_include_directories(hyle_math_bench SYSTEM PRIVATE "${_hyle_bench_highway_dir}")
 endif()
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   if(HYLE_BENCH_XSIMD OR HYLE_BENCH_HIGHWAY)
     hyle_set_highway_isa(math_bench.cc)
   endif()
@@ -122,7 +122,7 @@ target_link_libraries(hyle_math_scaling_bench PRIVATE hyle_simd nanobench)
 target_include_directories(hyle_math_scaling_bench PRIVATE "${PROJECT_SOURCE_DIR}")
 target_include_directories(hyle_math_scaling_bench SYSTEM PRIVATE
   "${_hyle_bench_xsimd_dir}/include")
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   hyle_set_isa(math_scaling_bench.cc AVX2)
 endif()
 hyle_apply_warnings(hyle_math_scaling_bench)
@@ -134,11 +134,11 @@ target_include_directories(hyle_bitpack_bench SYSTEM PRIVATE
   "${_hyle_bench_highway_dir}")
 # The direct vendor comparison remains AVX2-fixed. Compile the HYLE u16 correction benchmark at
 # the same ISA and select its matching D-tag backend, avoiding an inline/vector-width asymmetry.
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   hyle_set_highway_isa(bitpack_bench.cc)
   set_source_files_properties(bitpack_bench.cc PROPERTIES
     COMPILE_DEFINITIONS "HYLE_SIMD_TARGET_AVX2")
-elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
+elseif(HYLE_TARGET_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   hyle_set_isa(bitpack_bench.cc NEON)
   set_source_files_properties(bitpack_bench.cc PROPERTIES
     COMPILE_DEFINITIONS "HYLE_SIMD_TARGET_NEON")
@@ -151,7 +151,7 @@ hyle_apply_warnings(hyle_bitpack_bench)
 # default 128-bit backend makes VectorXoshiro look slower than std::mt19937).
 add_executable(hyle_activation_bench activation_bench.cc)
 target_link_libraries(hyle_activation_bench PRIVATE hyle_simd nanobench)
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   target_compile_definitions(hyle_activation_bench PRIVATE HYLE_SIMD_TARGET_AVX2)
   hyle_set_isa(activation_bench.cc AVX2)
 endif()
@@ -166,9 +166,9 @@ add_executable(hyle_search_bench search_bench.cc)
 target_link_libraries(hyle_search_bench PRIVATE hyle_simd nanobench)
 target_include_directories(hyle_search_bench SYSTEM PRIVATE
   "${_hyle_bench_highway_dir}")
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   hyle_set_highway_isa(search_bench.cc)
-elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
+elseif(HYLE_TARGET_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   hyle_set_isa(search_bench.cc NEON)
 endif()
 hyle_apply_warnings(hyle_search_bench)
@@ -182,11 +182,11 @@ target_include_directories(hyle_native_algorithm_bench PRIVATE
   "${PROJECT_SOURCE_DIR}/include")
 target_include_directories(hyle_native_algorithm_bench SYSTEM PRIVATE
   "${_hyle_bench_highway_dir}")
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   target_compile_definitions(hyle_native_algorithm_bench PRIVATE
     HYLE_SIMD_TARGET_AVX2)
   hyle_set_highway_isa(native_algorithm_bench.cc)
-elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
+elseif(HYLE_TARGET_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   target_compile_definitions(hyle_native_algorithm_bench PRIVATE
     HYLE_SIMD_TARGET_NEON)
   hyle_set_isa(native_algorithm_bench.cc NEON)
@@ -197,11 +197,11 @@ add_executable(hyle_mixed_dot_bench mixed_dot_bench.cc)
 target_link_libraries(hyle_mixed_dot_bench PRIVATE hyle_simd nanobench)
 target_include_directories(hyle_mixed_dot_bench SYSTEM PRIVATE
   "${_hyle_bench_highway_dir}")
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   hyle_set_highway_isa(mixed_dot_bench.cc)
   set_source_files_properties(mixed_dot_bench.cc PROPERTIES
     COMPILE_DEFINITIONS "HYLE_SIMD_TARGET_AVX2")
-elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
+elseif(HYLE_TARGET_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   hyle_set_isa(mixed_dot_bench.cc NEON)
   set_source_files_properties(mixed_dot_bench.cc PROPERTIES
     COMPILE_DEFINITIONS "HYLE_SIMD_TARGET_NEON")
@@ -213,7 +213,7 @@ target_link_libraries(hyle_sort_bench PRIVATE hyle_simd nanobench)
 target_include_directories(hyle_sort_bench PRIVATE "${PROJECT_SOURCE_DIR}")
 target_include_directories(hyle_sort_bench SYSTEM PRIVATE
   "${_hyle_bench_highway_dir}")
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   hyle_set_highway_isa(sort_bench.cc)
 endif()
 hyle_apply_warnings(hyle_sort_bench)
@@ -226,7 +226,7 @@ hyle_apply_warnings(hyle_radix_sort_bench)
 # gather/compress native-vs-emulated bench (simd-09 #66/#69, "measure don't assume"). Header-only
 # (includes vec.h at a fixed ISA target), so per-ISA exes like the vec_test variants: avx2 runs on
 # an AVX2 host, avx512 under Intel SDE. Only x86 (native gather/compress are x86 intrinsics).
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   # The parity translation units intentionally use a benchmark-size `kN` and
   # instantiate header-only HYLE/Highway templates that use the same local
   # spelling. MSVC C4459 diagnoses that caller/header name coincidence even
@@ -360,7 +360,7 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   hyle_apply_warnings(hyle_crypto_bench_avx2)
 endif()
 
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
+if(HYLE_TARGET_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   add_executable(hyle_op_parity_full_bench_neon op_parity_full_bench.cc)
   target_link_libraries(hyle_op_parity_full_bench_neon PRIVATE nanobench)
   target_include_directories(hyle_op_parity_full_bench_neon PRIVATE "${PROJECT_SOURCE_DIR}/include")
@@ -436,7 +436,7 @@ set(_hyle_simd_bench_targets
   hyle_sort_bench
   hyle_radix_sort_bench
   hyle_dtype_bench)
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   list(APPEND _hyle_simd_bench_targets
     hyle_gather_bench_avx2
     hyle_gather_bench_avx512
@@ -447,7 +447,7 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
     hyle_op_parity_widen_bench_avx2
     hyle_stream_bench_avx2
     hyle_crypto_bench_avx2)
-elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
+elseif(HYLE_TARGET_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   list(APPEND _hyle_simd_bench_targets
     hyle_op_parity_full_bench_neon
     hyle_op_parity_bench_neon

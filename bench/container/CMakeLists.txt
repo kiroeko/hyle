@@ -58,7 +58,7 @@ add_executable(hyle_hash_bench hash_bench.cc)
 target_link_libraries(hyle_hash_bench PRIVATE hyle_container hyle_platform nanobench)
 target_include_directories(hyle_hash_bench SYSTEM PRIVATE "${PROJECT_SOURCE_DIR}/third_party/xxhash")
 hyle_apply_warnings(hyle_hash_bench)
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   target_sources(hyle_hash_bench PRIVATE
     hash_xxh3_avx2_peer.cc hash_xxh3_avx512_peer.cc)
   target_compile_definitions(hyle_hash_bench PRIVATE

@@ -111,6 +111,9 @@
 
 // Debug diagnoses a broken optimizer promise. Release makes the promise
 // available to code generation; a false expression is then undefined behavior.
+// `cond` must be free of side effects: compiler spellings are permitted to
+// discard its evaluation, while the Debug diagnostic and GCC fallback evaluate
+// it. This is an optimizer contract, never a way to perform required work.
 #if !defined(NDEBUG)
 #  define HYLE_ASSUME(cond) HYLE_FATAL_ASSERT(cond)
 #  define HYLE_UNREACHABLE() HYLE_FATAL_ASSERT(false)

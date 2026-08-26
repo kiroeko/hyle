@@ -50,13 +50,13 @@ Tier 0 dependencies: container_intrusive + core cache geometry +
                      error + mem allocator + platform CPU discovery
 ```
 
-- 完整 `container -> PUBLIC {container_intrusive, error, mem}`、`PRIVATE {platform}`；error 是
+- 完整 `container -> PUBLIC {core, container_intrusive, error, mem}`、`PRIVATE {platform}`；error 是
   旧 C/FFI 冷失败候选的直接合同，不再藏在 mem 的传递依赖或模块私有 TLS 中，platform 只服务
   编译实现的 CPU/OS dispatch。
-- `container_intrusive` 是零产品组件依赖的 `INTERFACE` 组件；它只使用标准库和全库
-  target-neutral foundation macros，不拉入完整 container、mem、error 或 platform。
-- 完整 container 对 `hyle/core/cache.h` 的使用是尚待 Core/build 统一分类的纯头源码依赖，当前
-  机器图不把它投影成 `hyle::core` target 边；不能据此把普通公开类型依赖也藏进 include tree。
+- `container_intrusive` 是只 `PUBLIC core` 的轻量 `INTERFACE` 组件；它不拉入完整 container、mem、
+  error 或 platform。Core 同样是 INTERFACE，所以这条公开源码依赖没有 binary artifact。
+- 完整 container 对 `<hyle/core/cache.h>`/compiler contract 的使用由直接 `PUBLIC core` 边表达；
+  中央图与公开头扫描会拒绝靠安装 include tree 隐藏这条依赖。
 - container 不链接 `hyle_simd` 模块，避免 Tier 0→Tier 1 倒挂。
 - 字符串批处理的每 ISA TU 复用 `hyle/simd/vec.h` 的 header-only 寄存器 DSL；
   这不会调用 SIMD runtime，也不会把 SIMD 公共 ABI带入 container。

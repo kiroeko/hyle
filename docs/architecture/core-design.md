@@ -1,121 +1,158 @@
-# Core 架构：待裁决边界
+# Core 架构：header-only 编译与布局地基
 
-> **状态：`DRAFT / OPEN`。** 本页只描述仓库中当前存在的实现，不是收口证书。v2 复审施工见
-> [`core-rebuild`](../implementation/tasks/core/core-rebuild.md)，历史性能输入见
-> [`benchmarks-core`](../implementation/evidence/performance/benchmarks-core.md)，当前 C++ 用法见
+> 本页描述当前长期设计，不是验收证书。施工与尚未完成的三平台、codegen、package 和红队证据见
+> [`core-rebuild`](../implementation/tasks/core/core-rebuild.md)，性能结论边界见
+> [`benchmarks-core`](../implementation/evidence/performance/benchmarks-core.md)，用法见
 > [`user/core`](../user/core.md)。
 
 ## 定位
 
-Core 是 HYLE 最底层的源码基础。它目前没有 HYLE runtime 上游，承载 error、platform、mem、
-container、sched 和 SIMD 建立前就要可用的机制。这个位置要求 Core 尽量小、无状态、合同稳定；
-但“位于最底层”本身不能证明当前放在 Core 的每项能力都归属正确。
+Core 是 HYLE 组件图最底层的 C++ header-only 组件。它只承载两类在任何 runtime 建立前就必须
+可用、没有 owning state、且需要跨模块保持一致的 primitive：
 
-公开实现目前包含三个能力族：
+1. 编译器合同与程序不变量失败，包括 inline/noinline、aliasing、branch、loop/layout hint，
+   optimizer promise，以及 release-surviving fatal assertion；
+2. 编译期 cache layout recommendation 与三种 best-effort prefetch intent。
 
-| 能力族 | 当前文件与形状 | 已观察到的消费者 | 尚未裁决的归属问题 |
+产品版本位于根级 `<hyle/version.h>`。它是 build/package 拥有的 checked-in 产品元数据，经
+`hyle::core` 的 include contract 交付，但不是第三个 Core runtime 能力。symbol export/import
+策略位于根级 `<hyle/visibility.h>`，由 build/package 拥有；它也不是 Core API。
+
+这个边界刻意很小。Core 不因为“很多模块都可能用”而吸收容器、分配、时钟、CPU 探测、错误值、
+日志或同步；这些能力需要各自完整表达 ownership、failure、concurrency 与复杂度。
+
+## 公开面与归属
+
+| 用户任务 | 公开头 | 当前形状 | 语义 owner |
 |---|---|---|---|
-| 产品身份 | `version_defs.h`、`version.h`、`version.cc`；编译期常量，加 linked `version()` 与借用的 `version_string()` | 根 CMake 与 Core package sample；普通产品模块没有调用 linked query | linked 产品身份应归 Core 还是 build/package；FFI generation 常量尤其像 build/package 职责 |
-| 编译器与二进制形状合同 | `compiler_defs.h`、根级 `macros.h`、根级 `visibility.h`；attribute、optimizer promise、fail-fast 与 symbol visibility | 全库广泛使用，SIMD 和其他热 header 尤其多 | compiler hint 很可能属于地基；export/import policy 属 build/package；`HYLE_FATAL_ASSERT` 需明确属于 Core 还是 error/diagnostics |
-| cache 合同 | `cache_defs.h`、`cache.h`；目标家族 layout 常量与三种 inline prefetch intent | container、mem、sched、SIMD/vqsort | 稳定 layout 常量可归 Core、runtime topology 归 platform；prefetch 是 Core primitive 还是 SIMD/消费者内部机制 |
+| 违反程序不变量时立即终止并给出位置/静态上下文 | `<hyle/core/assert.h>` | `HYLE_FATAL_ASSERT`、`HYLE_FATAL_ASSERT_MSG` | core |
+| 在已测 native hot path 表达编译器合同 | `<hyle/core/compiler.h>` | `HYLE_FORCE_INLINE`、`HYLE_NOINLINE`、`HYLE_RESTRICT`、`HYLE_FLATTEN`、`HYLE_UNROLL`、`HYLE_DEFAULT_UNROLL`、`HYLE_NO_UNIQUE_ADDRESS`、`HYLE_LIKELY`、`HYLE_UNLIKELY`、`HYLE_ASSUME`、`HYLE_UNREACHABLE` | core |
+| 设计 false-sharing/constructive layout | `<hyle/core/cache.h>` | constructive/destructive/max-destructive 常量 | core |
+| 为已知访问模式给出 cache hint | `<hyle/core/cache.h>` | read、one-shot read、write intent prefetch | core |
+| 识别编译当前 TU 的 HYLE headers | `<hyle/version.h>` | major/minor/patch、packed、string 编译期常量 | build/package |
+| 为 compiled target 选择 export/import decoration | `<hyle/visibility.h>` | build-owned symbol visibility contract | build/package |
 
-这三项裁决完成前，Core 模块边界仍是暂定的。
+旧的 `<hyle/macros.h>`、`compiler_defs.h`、`cache_defs.h`、`<hyle/core/version.h>`、linked
+`version()/version_string()` 与 version-only `hyle_core` binary 已退出当前产品面。项目尚未发布，
+不保留转发头或兼容别名，避免让两个 owner 长期并存。
 
-侵入式稳定节点链表的归属已经裁决：公开头迁到
-`<hyle/container/intrusive_list.h>`，类型位于 `hyle::container`，并由独立 header-only target
-`hyle::container_intrusive` 承载。`time` 公开依赖这个轻量 target，完整 `hyle::container` 公开
-聚合它；二者都不要求 `time` 依赖完整 container。项目尚未发布，因此不保留
-`hyle::core::IntrusiveList` 别名或旧路径转发头，避免形成两个 owner。
-
-## 当前依赖与交付形状
+## 依赖与组件图
 
 ```text
-compiler/cache headers ───────► 编进每个 C++ consumer TU
-version.h ────────────────────► hyle_core (version.cc)
+<hyle/core/assert.h> ──────────────┐
+                                  ├──► hyle::core (INTERFACE, no artifact)
+<hyle/core/compiler.h> ───────────┤
+<hyle/core/cache.h> ──────────────┤
+<hyle/version.h> ─────────────────┘
 
-cache 消费者：container、mem、sched、simd/vqsort
-macro 消费者：几乎全部 HYLE 模块
-
-container/intrusive_list.h ──► hyle::container_intrusive ──► time
-                                                └──────────► container
+hyle::core ──PUBLIC──► every component whose public headers consume Core
 ```
 
-中央组件图把 `core` 声明为零依赖组件。多数下游虽不链接 `hyle_core`，却直接消费
-`hyle/macros.h`、compiler definitions 或 cache headers。当前构建合同把根级宏及其 compiler
-definition 支撑头视为 target-neutral foundation headers；包含它们不形成 `hyle::core` 链接边。
-这是待 Core/build 全局复审的明确边界，不是允许普通模块隐藏任意 header dependency 的通例。
-cache headers 当前同样被多个未链接 `hyle::core` 的模块包含，但它们是否也属于 target-neutral
-合同仍未裁决，不能从 macro 例外自动推出。
-相比之下，侵入式链表是独立公开数据结构，已经用真实 `container_intrusive` target 和
-`PUBLIC` 边建模。
+`core` 自身没有 HYLE 依赖。当前所有真实公开头消费者——`container_intrusive`、`util_core`、
+`error`、`obs`、`platform`、`time`、`mem`、`simd`、`container`、`util`、`sched`、`io`、
+`compute`、`graph`——都直接声明 `PUBLIC core`；`math` 没有 Core include，因此没有伪依赖。
 
-需要分别验收三种 C++ 交付：
+这条边不是为了链接一个 DLL，而是让 include directory、C++23/build contract、安装组件闭包和
+公开源码依赖成为 target 的机器事实。中央组件图负责唯一声明，真实 target link 从同一记录
+生成；配置合同还扫描公开头，拒绝“直接 include Core 却没有直接 `PUBLIC core`”以及没有实际
+include 的冗余边。安装整棵 header tree 不再掩盖缺失依赖。
 
-| 交付 | 当前行为 | 复审要求 |
+Core 只传播 build-owned C++/platform compile contract，不链接 `hyle_trace` 或 `hyle_testing`：它的
+源码与头都不消费这些 gate。即使工程打开 profiling，链接 `hyle::core` 也不能凭空给消费者增加
+Tracy runtime；测试专用 layout definition 同样不能污染这个公共地基。
+
+## 设计裁决
+
+### 编译器合同：标准 C++ 优先，wrapper 只补可移植缺口
+
+Highway、Abseil、Folly 等成熟底层库都把 compiler-specific attribute/pragma 收在很小的 portability
+层，而不会让业务模块到处复制 builtin。HYLE 采用相同原则，但不为已有自然标准形状制造别名：
+
+- must-use 直接写 `[[nodiscard]]`；
+- 禁止 copy/move 直接写 `= delete`；
+- 已知对齐使用 `std::assume_aligned<N>`；
+- token 拼接只保留在 `<hyle/core/detail/preprocessor.h>`，不是公共用户能力。
+
+保留的 macro 都处理受支持编译器之间仍存在的语法或退化差异。hint 在未知 compiler 上可以安全
+退化；`ASSUME`、`RESTRICT` 和 release `UNREACHABLE` 则是语义承诺，违约为 undefined behavior，
+不能被当成 validation。
+
+### Fatal assertion 与 error 的边界
+
+`HYLE_FATAL_ASSERT` 与 `HYLE_FATAL_ASSERT_MSG` 在 Debug 和 Release 都检查，失败写入最小诊断后
+`abort()`。消息版本只在失败时求值一次；它借用一个在 `abort()` 前仍有效的 NUL-terminated
+`const char*`，不承担 ownership，也不做 formatting。失败 sink 是
+header-inline、ODR-safe、noinline，并在有对应 compiler spelling 时标为 cold；它借用 build-owned
+`HYLE_HIDDEN`，不能成为每个下游 shared module 都可抢占的动态符号。这样成功路径不复制格式化
+逻辑。它只处理 HYLE 或调用者已经证明的程序不变量；OOM、输入、文件、设备和协议失败必须用
+error 模块的 `Status/Result`。失败诊断使用 stdio/`abort()`，不承诺 async-signal-safe，也不替代
+crash reporter。
+
+`HYLE_ASSUME` 在 Debug 借 fatal assertion 尽早暴露错误，在 Release 才向 optimizer 作承诺；
+`HYLE_UNREACHABLE` 同理。assumption 表达式必须无副作用：Debug/GCC fallback 会求值，而其他
+Release spelling 可以丢弃求值。这不改变“错误条件必须先由正常控制流验证”的规则。
+
+### Cache layout 与 runtime topology 的边界
+
+Core 常量是按编译 target family 选择的稳定 recommendation，会进入公开对象的 `alignof/sizeof`
+和 ABI。runtime CPU/cache observation 属 platform；它可以帮助算法选择或分片，但不能替换一个
+已经参与类型布局的编译期常量。
+
+`kDestructiveInterferenceSize` 用于常态 false-sharing spacing；
+`kConstructiveInterferenceSize` 用于确有证据的共同访问 packing；
+`kMaxDestructiveInterferenceSize` 是稀疏、独立写控制字的跨 target 保守上界，不应成为密集容器
+的默认 stride。当前编译期表是 Apple arm64 `128/128`、其他 AArch64 与 x86-64 `64/64`、未知
+target `64/128`；独立的 max-destructive 常量始终为 128。这个区别保留 Apple 的真实 128-byte
+coherency line，同时避免在 Windows/Linux AArch64 的普通密集布局上无依据地翻倍 footprint。
+Core 不公开 L1/L2/L3 selector：prefetch 层级不是可移植合同，runtime cache
+hierarchy 也不是 Core 的静态类型属性。
+
+三种 prefetch 都是单地址、O(1)、best-effort hint。它们不读取值、不延长对象 lifetime、不建立
+同步、不保证 residency；编译器或目标不支持时可以改变具体 hint 或成为 no-op。是否调用只能由
+拥有访问模式的 consumer 决定。
+
+### Version、visibility 与 runtime artifact
+
+`<hyle/version.h>` 描述“这些 headers 声称自己是哪一版”，供 root CMake、package metadata、
+编译期诊断和 release manifest 使用。HYLE 的 Core 没有真实 runtime state；为版本查询单独制造
+library 只能确认 version library 自己，而不能证明进程内其他 HYLE artifact、inline 类型或编译
+选项兼容。因此 Core 不提供 linked version query。
+
+常态 constant-evaluated use 没有 runtime call；若用户显式取得某个 `inline constexpr` 变量的地址，
+compiler 可以按 C++ ODR 规则物化 inline/weak storage。这不等于独立 Core runtime，也不承诺“目标
+文件绝对没有任何 version symbol”。
+
+同理，`HYLE_*_API`/hidden visibility 决定 compiled module 如何导出符号，必须随 static/shared、
+platform loader 和 package 一起维护。把它放进 Core 会混淆 source semantics 与 binary delivery。
+
+### Native FFI
+
+Core 的 Native FFI 为 `N/A`。foreign runtime 无法通过一次动态调用复用调用方 TU 的 compiler
+attribute、类型 layout 或 inline prefetch；版本常量也不足以构成真实外语任务。当前没有
+`<hyle/c/core.h>`、Core C exports、managed Core smoke 或 Core ABI generation。
+
+未来若出现真实 loader/bootstrap 需求，应按
+[Native FFI 准入规则](native-ffi-policy.md)建立窄的 runtime 类型擦除面，由拥有实际 runtime
+artifact 的模块或 package loader 持有；不恢复“C++ header parity”式 Core ABI。
+
+## 三种 C++ 交付
+
+| 交付 | `hyle::core` 的实际形状 | 用户需要知道的事 |
 |---|---|---|
-| 整体源码 | `add_subdirectory(hyle)` 产生 `hyle::core`；inline 能力编进消费者，linked identity 来自 `version.cc` | parent options、compile features 与 component selection 必须可组合 |
-| 静态 SDK | 消费者链接 `hyle::core`；`HYLE_STATIC` 去掉 import/export decoration | installed headers 与 archive 必须来自同一个一致 build，包含全部 inline 合同 |
-| 动态 SDK | 消费者链接 import library/DSO 并 stage `hyle_core`；只有 linked identity 随 DSO 替换 | inline macro 或常量改变时必须重编消费者；只替换 DSO 不够 |
+| 整体源码 | `add_subdirectory()` 产生 `INTERFACE` target | 链接 target 取得 include/build contract；没有 Core object library |
+| 静态 SDK | installed imported `INTERFACE` target | 没有 `hyle_core.a/.lib`；能力编进 consumer TU |
+| 共享 SDK | installed imported `INTERFACE` target | 没有 `hyle_core.so/.dylib/.dll`，也没有 Core runtime 需要 stage |
 
-**当前 Core 产品复审把 Native FFI 裁决为 `N/A`。** foreign runtime 没有合理任务需要为
-compiler attribute、单地址 prefetch 或 layout 常量支付动态调用。仓库里仍实际
-存在预发布候选 `include/hyle/c/core.h`、`src/core/c_core.cc`、三个 C exports、测试与 FFI package
-probe；它们是待处理的实现历史，不是已接受产品面。Core 签署前必须删除这些内容，或把真实的
-全局 loader/bootstrap 任务迁给正确 owner；不能仅因符号已经存在就宣称 Java/.NET/Rust/Python
-能力完整。
+三种形状使用同一公开头。改变 compiler/cache/version header 后必须重编消费者；替换其他 shared
+module 不能更新已经内联进 consumer 的 Core 代码。
 
-## 暂定合同
+## 明确负空间与重开条件
 
-### 产品身份
+Core 不拥有 runtime CPU/cache/NUMA/OS discovery、allocator、container、clock、同步、日志、
+recoverable error、crash reporter、ABI compatibility probe 或 foreign-language binding。它不承诺
+具体 cache residency、精确机器 cache-line size、force-inline 必然发生，或对失效地址安全 prefetch。
 
-当前 C++ header 提供 packed/text 产品版本常量；linked 函数返回编入 `hyle_core` 的版本，以及
-指向模块静态存储的借用指针。动态模块卸载后该指针失效。这些都是当前实现事实，还不是稳定
-ABI 承诺。
-
-待裁决问题包括：runtime version query 是否在 package mismatch 诊断之外有真实价值；source
-provenance 是否更应属于 release manifest；产品版本是否与 build/package compatibility 混为一谈。
-
-### 编译器与二进制形状合同
-
-当前 macro 覆盖 force/no-inline、must-use、aliasing、flatten/unroll、branch hint、empty-member
-layout、copy suppression、fail-fast、assume 与 unreachable。它们没有 runtime 状态。有些只是可
-安全降级的 hint；`HYLE_ASSUME`、`HYLE_RESTRICT` 和 Release `HYLE_UNREACHABLE()` 是 optimizer
-合同，违约会进入 undefined behavior。`HYLE_FATAL_ASSERT` 终止进程，不是可恢复输入验证。
-
-v2 复审必须拿当前 Highway、Abseil、Folly 和受支持 compiler 文档复核命名、Debug/sanitizer
-退化及 codegen，还要把 compiler semantics 与 CMake 所有的 symbol visibility 分开。全库已经
-大量使用只能证明迁移成本，不能证明模块归属正确。
-
-### Cache 合同
-
-当前常量是编译期 target-family recommendation。它们进入公开对象 layout，因此成为 consumer
-ABI；它们不是 runtime observation，不能与 platform cache probe 混用。prefetch 函数是
-best-effort inline hint，不建立地址有效性、cache residency 或同步关系，且允许退化为 no-op。
-
-签署前，每个 layout 使用都要区分 false-sharing spacing、constructive packing 与无关的 SIMD/
-对象 alignment；永久 padding 必须由 consumer footprint 与 contention 证据支撑。prefetch 必须
-在拥有访问模式的正常 workload 中验证，不能靠单独计时一条 hint 签证书。
-
-## 暂定负空间
-
-下列能力当前不属于 Core，但在 open review 结束前仍只是边界假设：
-
-- runtime CPU/cache/NUMA/OS discovery 归 platform；
-- owning container、侵入式容器、同步、分配、clock、logging 与可恢复错误归各自模块；
-- Core 不承诺 cache residency、portable exact cache-line size，或对无效地址安全 prefetch；
-- Core 当前不提供 managed-language container 或 compiler-hint ABI；
-
-真实消费者、成熟 peer 的更好算法/形状，或依赖环审计都可能在 `core-rebuild` 中改变这些裁决；
-因此它们还不是签署后的 non-goal。
-
-## 签署条件
-
-Core 保持 `OPEN`，直到下列内容绑定同一 candidate commit/tree：
-
-- 外部场景、语法消费者与语义重复账本；
-- 三个能力族的成熟库对账与明确归属；
-- C++ source/static/shared 的默认、高级与组合旅程；
-- Native FFI 的最终 `N/A` 或真实任务裁决，以及相应删除/迁移或完整 direct-binding 证据；
-- Windows、Linux、macOS 的 correctness/toolchain/package 证据；
-- complexity 与合格正常 workload 性能证据；旧 Core benchmark 在重签前只作 historical input；
-- 同一 candidate 的文档、依赖图、测试、sample、LOC、commit 与 push。
+只有以下事实足以重开这个边界：真实 consumer 需要一种在所有 runtime 之前可用的跨模块 primitive；
+受支持 compiler/target 使现有合同错误；直接消费者出现 material codegen/correctness 问题；或成熟
+peer 在相同语义下证明更好的复杂度/可移植形状。LOC、macro 数量、单条 hint benchmark 或亚纳秒
+差异不是重开理由。

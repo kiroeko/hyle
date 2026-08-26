@@ -15,7 +15,7 @@ namespace detail {
 // Invalid Result construction is a caller bug. Keep its diagnostics out of
 // every normal construction/propagation frame while preserving the loud trap.
 [[noreturn]] HYLE_NOINLINE inline void result_from_ok_abort() noexcept {
-  HYLE_FATAL_ASSERT(false && "Result error arm cannot contain OK Status");
+  HYLE_FATAL_ASSERT_MSG(false, "Result error arm cannot contain OK Status");
   HYLE_UNREACHABLE();
 }
 

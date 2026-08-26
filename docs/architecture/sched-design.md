@@ -44,7 +44,7 @@
 | Linux x64 | `*_x86_64_sysv_elf` | System V AMD64 |
 | Linux arm64 | `*_arm64_aapcs_elf` | AAPCS64 |
 | Windows x64 | `*_x86_64_ms_pe` | Windows x64（含 SEH/栈信息）|
-| Windows arm64 | `*_arm64_aapcs_pe` | AAPCS64 + MS |
+| Windows arm64 | `*_arm64_aapcs_pe` | vendored/设计输入；当前构建图尚未接线支持 |
 | macOS x64 | `*_x86_64_sysv_macho` | System V AMD64 |
 | macOS arm64 | `*_arm64_aapcs_macho` | AAPCS64（Apple 变体）|
 

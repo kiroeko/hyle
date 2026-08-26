@@ -60,10 +60,11 @@ function(hyle_install_package)
             NAMELINK_COMPONENT Hyle_Development
     ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}" COMPONENT Hyle_Development)
 
-  # Headers are small and cross-reference header-only foundations outside the
-  # binary component closure (for example util -> core/cache.h). Install the
-  # reviewed public tree as one versioned API surface; component availability is
-  # governed by imported targets, not by fragile header-copy filtering.
+  # Install the reviewed public tree as one versioned API surface. Each public
+  # include dependency must still be expressed by its component's imported
+  # target (for example util -> core); installing the full tree must never mask
+  # a missing target edge. Component availability is governed by imported
+  # targets, not by fragile header-copy filtering.
   install(DIRECTORY "${HYLE_SOURCE_DIR}/include/hyle"
     DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
     COMPONENT Hyle_Development)

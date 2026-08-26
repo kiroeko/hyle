@@ -28,14 +28,22 @@ int hyle_core_probe_force_inline_caller(int value) noexcept {
   return force_inline_body(value);
 }
 
+int hyle_core_probe_identity(int value) noexcept { return value; }
+
 int hyle_core_probe_assume(int value) noexcept {
   HYLE_ASSUME(value > 0);
   return value > 0 ? value : 0;
 }
 
-void hyle_core_probe_prefetch(const void* address) noexcept {
+void hyle_core_probe_prefetch_read(const void* address) noexcept {
   hyle::core::prefetch_read(address);
+}
+
+void hyle_core_probe_prefetch_read_non_temporal(const void* address) noexcept {
   hyle::core::prefetch_read_non_temporal(address);
+}
+
+void hyle_core_probe_prefetch_write(const void* address) noexcept {
   hyle::core::prefetch_write(address);
 }
 

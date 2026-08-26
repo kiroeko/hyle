@@ -35,7 +35,7 @@ function(hyle_configure_compute_dependencies)
   if(HYLE_COMPUTE_GGML AND NOT HYLE_FCONTEXT_SUPPORTED)
     message(FATAL_ERROR
       "HYLE_COMPUTE_GGML=ON requires sched/fcontext, but HYLE has no fcontext "
-      "assembly for ${CMAKE_SYSTEM_NAME}/${CMAKE_SYSTEM_PROCESSOR}. Select "
+      "assembly for ${CMAKE_SYSTEM_NAME}/${HYLE_TARGET_PROCESSOR}. Select "
       "HYLE_COMPUTE_GGML=OFF; host/CUDA/Vulkan compute remain available.")
   endif()
 
@@ -114,7 +114,7 @@ function(hyle_configure_compute_dependencies)
       # Portable binary SDKs use the x86-64-v2/SSE4 floor unless an exact HYLE
       # ISA package deliberately raises both HYLE and ggml together.
       if(NOT HYLE_COMPUTE_GGML_NATIVE AND
-         CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+         HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
         set(GGML_SSE42 ON)
         set(GGML_AVX OFF)
         set(GGML_AVX2 OFF)

@@ -29,10 +29,10 @@ endif()
 # ARCH SPLIT (Apple-Silicon 真机暴露:此前 simd 构建是 x86 写死): the per-ISA kernel TUs are
 # architecture-specific -- x86 ships scalar+sse4+avx2+avx512, aarch64 ships scalar+neon. The
 # scalar TU + all dispatch/dtype/math dispatcher TUs are portable (compiled every arch); only
-# the WIDE variant TUs are gated by CMAKE_SYSTEM_PROCESSOR so we never feed -mavx2 to a
+# the WIDE variant TUs are gated by HYLE_TARGET_PROCESSOR so we never feed -mavx2 to a
 # non-x86 compiler (clang errors "unsupported option") nor compile x86 intrinsic headers there.
 set(_simd_arch_sources "")
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   set(HYLE_SIMD_X64 TRUE)
   # Official Highway excludes every AVX3 target under cl.exe. The HYLE vqsort
   # port has the same correctness boundary, while clang-cl is known-good and
@@ -105,7 +105,7 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   if(HYLE_SIMD_BUILD_FAT AND HYLE_CXX_HAS_AVX10_2_INTRINSICS)
     list(APPEND _simd_arch_sources dtype/cvt_avx10_2.cc)
   endif()
-elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
+elseif(HYLE_TARGET_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   set(HYLE_SIMD_ARM64 TRUE)
   # ops NEON kernel reuses the neon.h D-tag backend (dot/saxpy) -- the simd-03 real-run
   # target. dtype NEON (cvt_neon.cc) is hand-written per-backend intrinsics: fp16 via native
@@ -128,7 +128,7 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
       math/transcendental_highway_scalable.cc
       sort/vqsort_hyle_sve.cc)
   endif()
-elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "riscv64|RISCV64")
+elseif(HYLE_TARGET_PROCESSOR MATCHES "riscv64|RISCV64")
   set(HYLE_SIMD_RISCV64 TRUE)
   if(HYLE_SIMD_BUILD_RVV)
     list(APPEND _simd_arch_sources

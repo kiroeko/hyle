@@ -1,3 +1,4 @@
+#include <hyle/core/assert.h>
 #include <hyle/core/cache.h>
 #include <hyle/core/compiler.h>
 #include <hyle/version.h>
@@ -28,6 +29,8 @@ HYLE_NOINLINE int consume(int value) {
 
 int main() {
   const int values[] = {20, 22};
+  HYLE_FATAL_ASSERT_MSG(values[0] + values[1] == 42,
+                        "Core package sample invariant");
   hyle::core::prefetch_read(values);
   return hyle::kVersionPacked != 0 && consume(42) == 42 &&
                  sum_values(values, 2) == 42

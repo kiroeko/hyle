@@ -22,15 +22,26 @@ set_property(CACHE HYLE_TRACE_BACKEND PROPERTY STRINGS tracy)
 # in-tree; point this at the sibling clone when enabling trace.
 set(HYLE_TRACY_DIR "" CACHE PATH "path to a tracy checkout (contains public/tracy/Tracy.hpp)")
 
-# hyle_trace is an INTERFACE target every module links (PUBLIC). It carries the
-# trace include path + gate defines. OFF => it carries nothing but the (always
-# available) hyle include dir is already public, so trace.h resolves and expands
-# empty. This target exists unconditionally so module CMakeLists can link it
-# without an if() at every call site.
+# hyle_trace is the INTERFACE target used by trace-aware modules. It carries the
+# trace include path + gate defines. OFF => it carries nothing. Backend setup is
+# deferred until module declarations prove at least one selected target consumes
+# the gate, so an unrelated component closure cannot manufacture a profiler.
 add_library(hyle_trace INTERFACE)
 set_target_properties(hyle_trace PROPERTIES FOLDER "hyle/foundation")
 
-if(HYLE_TRACE)
+function(hyle_finalize_trace)
+  if(NOT HYLE_TRACE)
+    message(STATUS "HYLE_TRACE = OFF (hooks compile to nothing -- zero cost)")
+    return()
+  endif()
+
+  get_property(_hyle_trace_consumed GLOBAL PROPERTY HYLE_TRACE_CONSUMED)
+  if(NOT _hyle_trace_consumed)
+    message(FATAL_ERROR
+      "HYLE_TRACE=ON, but the selected component closure has no target that "
+      "consumes the trace gate. Select a trace-aware component or disable "
+      "HYLE_TRACE; refusing to create an unrelated profiler runtime.")
+  endif()
   if(HYLE_TRACE_BACKEND STREQUAL "tracy")
     if(NOT HYLE_TRACY_DIR OR NOT EXISTS "${HYLE_TRACY_DIR}/public/tracy/Tracy.hpp")
       message(FATAL_ERROR
@@ -99,7 +110,5 @@ if(HYLE_TRACE)
   else()
     message(FATAL_ERROR "HYLE_TRACE_BACKEND='${HYLE_TRACE_BACKEND}' unknown (only 'tracy').")
   endif()
-else()
-  message(STATUS "HYLE_TRACE = OFF (hooks compile to nothing -- zero cost)")
-endif()
+endfunction()
 set_target_properties(hyle_trace PROPERTIES EXPORT_NAME "_trace_config")

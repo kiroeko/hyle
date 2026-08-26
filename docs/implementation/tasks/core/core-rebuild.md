@@ -1,164 +1,149 @@
 # Core v2 重建与收口记录
 
-> **状态：`OPEN` / 黄色。** 本任务取代已经删除的历史
-> `core-module-closure.md`，不继承该文档的绿色状态。建立本轮初始账本时检查的产品基线为
-> `87c831d228e4e2f7844e60a3e9fd167cef4992b9`；目前没有冻结 v2 candidate commit/tree。
+> **状态：`AUDITED / CANDIDATE PREPARATION`。** 本任务不继承已删除旧 closure 文档的
+> 绿色状态。建立账本时检查的基线为 `87c831d228e4e2f7844e60a3e9fd167cef4992b9`；最终 candidate、
+> 三平台、性能、package、红队与结束 commit 仍待绑定，不能据本文提前宣称 `SIGNED`。
 
-## 目标
-
-从真实 C++ 消费者重新建立 Core 产品边界，再按当前模块收口方法审查功能、形状、复杂度、易用
-性、依赖、三种交付和合格性能。现有代码与历史证据只能作为输入；全部门绑定同一 candidate 前，
-Core 必须保持 open。
-
-最终稳定设计归 [`core-design`](../../../architecture/core-design.md)，当前暂定 C++ 用法归
-[`user/core`](../../../user/core.md)，性能证据归
+稳定设计见 [`core-design`](../../../architecture/core-design.md)，用户写法见
+[`user/core`](../../../user/core.md)，性能资格见
 [`benchmarks-core`](../../evidence/performance/benchmarks-core.md)。
 
-## 审查单元
+## 目标与范围
 
-目录名不是产品边界。本轮包括：
+本轮从推理引擎/工程计算消费者反推 Core，不按原目录或旧 benchmark 形状冻结 API。审查范围包括：
 
-- `include/hyle/core/{version_defs,version,cache_defs,cache,compiler_defs}.h`；
-- 逻辑上由 Core 持有的根级 `include/hyle/{macros,visibility}.h`；
-- `src/core/{version,c_core}.cc` 与 `hyle_core` target；
-- Core tests、package samples、managed samples、export manifest 与 benchmark；
-- Core source/static/shared 消费需要的 component graph 与 package 行为；
-- time、sched、container、mem、SIMD 与 build system 中的直接调用者和语义重复实现。
+- 旧 product identity、compiler macro、fatal assertion、cache layout/prefetch 与 visibility；
+- `src/core` runtime、Core C/managed fixtures、tests、sample、component/package contract；
+- 全库公开头的语法消费者，以及 raw builtin、alignment、prefetch、fail-fast 的语义重复；
+- source/static/shared C++ 交付和 Native FFI 准入；
+- 被边界变化直接触碰的 container_intrusive、util_core、error、obs、platform、time、mem、simd、
+  container、util、sched、io、compute、graph。
 
-Build/package 是相邻模块，不是 Core 的实现细节。symbol visibility、export ownership、package
-component、runtime staging 或源码组装发生变化时，必须共同回审 build/package。
+Build/package 是相邻 owner：版本、visibility、组件图、安装和 runtime staging 改变时共同回审，
+但不把这些职责塞回 Core。其他模块只修直接依赖/编译阻断，不在本任务宣称重新收口。
 
-## 开工时实现账本
+## Demand/capability ledger
 
-仓库当前有三个 Core 能力族。下表只登记事实与问题，不批准现有位置：
+| ID | Consumer task / normal shape | 处置与公开路线 | Owner / 复杂度 | 强 peer 与裁决 |
+|---|---|---|---|---|
+| CORE-INV-01 | HYLE hot/cold path 发现不可能继续的程序不变量，并可附静态上下文 | `MUST`：`HYLE_FATAL_ASSERT` / `HYLE_FATAL_ASSERT_MSG`，Debug/Release 都 fail-fast | core；成功 O(1)，失败 terminal | Abseil/Folly/标准 assert practice；可恢复失败仍走 error；消息只在失败时求值且借用 NTS |
+| CORE-COMP-01 | 跨 MSVC/GCC/Clang 表达 inline/noinline/restrict/branch/loop/layout hint | `MUST`：单一 `<hyle/core/compiler.h>` | core；compile-time，hint 可退化 | Highway/Abseil/Folly 与 compiler docs；只保留标准 C++ 尚不能自然覆盖的 portability seam |
+| CORE-OPT-01 | 已证明条件供 optimizer 消除不可能路径 | `MUST`：Debug 诊断、Release `HYLE_ASSUME/UNREACHABLE` | core；Release 预期零 validation cost | 违约 UB；表达式必须无副作用；拒绝把 optimizer promise 当输入 validation |
+| CORE-LAYOUT-01 | 并发结构隔离独立写字段或打包共同读字段 | `GENERAL`：三项 interference 常量 | core；compile-time，无 metadata | oneTBB/标准 interference practice；runtime probe 归 platform |
+| CORE-PREFETCH-01 | Swiss/vqsort 等拥有明确未来访问的 hot loop 发出 hint | `GENERAL`：read/one-shot-read/write intent | core primitive、consumer policy；O(1) | compiler builtin/Highway/Folly practice；不公开 cache-level selector |
+| PKG-VERSION-01 | build、release manifest 与用户识别编译 headers | `BORROW/ADJACENT`：根 `<hyle/version.h>` 常量 | build/package；compile-time | runtime peer 有真实 artifact 才提供 linked query；Core version-only DSO 被拒绝 |
+| BUILD-VIS-01 | compiled module 选择 static/shared export/import | `ADJACENT`：根 `<hyle/visibility.h>` | build/package | 与 compiler source semantics 分离 |
+| CORE-FFI-01 | foreign runtime 调用 Core compiler/layout/prefetch | `REJECT/N/A`：没有可成立的 runtime task | 无 Core FFI | 动态调用不能改变调用方 TU codegen/layout；版本号不足以制造 ABI |
+| CORE-INTR-01 | time 需要零分配侵入链表但不能依赖完整 container | `MOVED`：`hyle::container_intrusive` | container owner | 独立 INTERFACE target，已从 Core 迁出 |
 
-| 能力族 | 当前实现 | 当前直接或语义消费者 | 必须作出的裁决 |
-|---|---|---|---|
-| 产品身份 | 编译期 product/FFI 常量与 linked C++ 产品版本查询 | 根 CMake、package probe；普通 HYLE 模块不调用 linked query | Core 与 build/package 的归属；linked identity 是否是真实产品能力 |
-| compiler/binary 合同 | compiler detail macros、根级 public macros、symbol visibility、fail-fast | 全库广泛使用；SIMD 与热 container 是主要 codegen 消费者 | 分开 compiler semantics 与 build-owned visibility；裁决 fatal assertion 及 public/internal macro |
-| cache 合同 | target-family layout 常量与 inline local/NTA/write prefetch | container、mem、sched、SIMD/vqsort | Core/platform/consumer-private 归属；按语义分类全部 64/128 alignment |
+### 公开入口反向追踪
 
-2026-08-26 已完成第一项归属裁决：intrusive list 的语义 owner 是 container，但让 time 依赖完整
-container 会引入 mem/platform 的伪闭包。因此它迁到正式的 header-only 产品组件
-`container_intrusive`（target `hyle::container_intrusive`、头
-`<hyle/container/intrusive_list.h>`、命名空间 `hyle::container`）。time 对轻量 target 建立 PUBLIC
-边，完整 container PUBLIC 聚合它；Core 不再拥有、测试或 benchmark 该能力。其历史证据单独保留在
-[`benchmarks-container-intrusive`](../../evidence/performance/benchmarks-container-intrusive.md)。
-
-### 2026-08-26 边界迁移交付事实（不等于模块签署）
-
-- list 实现只迁移公开路径/namespace 与 owner 注释，算法体和对象 metadata 未改；benchmark 仅补
-  Boost 关闭时参数的 `[[maybe_unused]]`，修复 MSVC `/WX` 的既有构建缺口；
-- 中央图、真实 target、单测/header-self-contained test、benchmark、安装消费 sample、Core sample
-  和 LOC 边界已经同时迁移；隔离安装合同证明只安装该组件时没有 HYLE binary artifact；
-- Windows MSVC 19.50/Ninja 的 Release target/time 回归、Debug self-transfer death test、Boost
-  ON/OFF benchmark 编译、isolated static/shared consumer 与最终 component contract 均通过；
-- WSL GCC 14.2 的 Release、ASan、UBSan 三种形状各 6/6 通过且 sanitizer 无报告；macOS arm64
-  AppleClang 21 的 Release/WERROR 为 6/6；两者实际闭包均为
-  `container_intrusive,error,time`，没有完整 container/mem/platform；
-- 文档合同为 250 个 Markdown、641 个相对链接通过。因为算法没有改变且新 owner 尚未进入 v2
-  审查，本轮不运行计时 benchmark，也不把旧非劣数据升级为当前性能证书。
-
-### 初始语法消费者账本
-
-- container public headers 用 Core destructive-interference 常量布局 queue state、map shard、vector
-  与 work-stealing structures；compiled container 也用于 raw shard 和 string-buffer shard；
-- `mem/shared_pool.h` 在 public header-defined layout 中使用 destructive-interference 常量；
-- scheduler compiled code 使用 maximum destructive-interference 常量；
-- SwissTable 与 SIMD/vqsort 调用 `prefetch_read`；
-- 根 CMake 读取 `version_defs.h`；installed C++ sample 调用 linked `version()` 并覆盖其他能力族；
-- compiler/fatal/visibility macro 遍布全库，必须生成完整账本，不能靠人工挑几处代表。
-
-### 初始语义重复问题
-
-- raw compiler builtin/attribute 与 ported vendor macro 都要分类，包括没有 include `hyle/macros.h`
-  的复制实现；
-- `alignas(64/128)` 要分成 false-sharing layout、SIMD/object alignment、lookup-table alignment 与
-  偶然 stack layout；
-- platform runtime cache observation 不能误算成 Core 稳定 layout 常量的重复；
-- package/version manifest 可能已经能解决 linked-version 任务，无需 Core runtime API。
-
-两份账本目前都只是初稿；完成归属迁移后还要重新扫描。
-
-## 产品面与交付裁决
-
-本轮产品是三种交付形状下的 C++：
-
-| 形状 | 必须跑通的旅程 | 当前状态 |
+| 公开入口 | Demand ID | 保留理由 |
 |---|---|---|
-| 整体源码 | 配置 Core-only source subtree，链接 `hyle::core`，编译运行默认/高级/组合 C++ 用户 | 尚未按 v2 重签 |
-| 静态 SDK | relocate installed static package，只消费其 exported target | 尚未按 v2 重签 |
-| 动态 SDK | relocate installed shared package，stage runtime dependency，同时消费 inline 与 linked Core 行为 | 尚未按 v2 重签 |
+| `HYLE_FATAL_ASSERT` / `HYLE_FATAL_ASSERT_MSG` | CORE-INV-01 | 全库程序不变量统一 fail-fast；消息版本提供零成功路径求值的静态上下文，不依赖 runtime error/logging |
+| compiler.h 中 10 类 portability macro | CORE-COMP-01 / CORE-OPT-01 | 处理受支持 compiler 的真实语法/退化差异 |
+| 三项 interference constants | CORE-LAYOUT-01 | 公开对象布局需要稳定 compile-target contract |
+| 三项 `prefetch_*` | CORE-PREFETCH-01 | 多个真实 hot consumer 使用相同单地址 primitive |
+| `hyle::kVersion*` / `HYLE_VERSION_*` | PKG-VERSION-01 | build/package/header identity，不是 runtime API |
 
-Native FFI 目前明确为 **Core 产品要求的 `N/A`**：尚未发现 foreign runtime 对 compiler hint、cache
-常量或单地址 prefetch 的真实任务。只有 product identity 并不足以制造
-一套 Core FFI surface。
+删除项也完成反向追踪：`HYLE_NODISCARD` 可被 `[[nodiscard]]` 覆盖；copy-disable macro 可被显式
+`= delete` 覆盖；public concat 只有宏实现使用；`HYLE_TRAP` 没有独立于 fatal invariant 的用户任务；
+assume-aligned 使用 `std::assume_aligned<N>`；linked version 和 Core FFI 没有真实 runtime demand。
 
-这个裁决暴露的是清理任务，而不是给当前树签证书。树中仍有 `include/hyle/c/core.h`、
-`src/core/c_core.cc`、三个 exports、C/export tests、installed C probe 与 Java/.NET Core smoke。
-candidate 冻结前必须删除它们，或把它们迁给已经证明真实需求的全局 loader/bootstrap owner。
-`HYLE_FFI_ABI_VERSION` 还被其他模块 schema 消费，因此要一致迁移 ownership，不能只在 Core
-局部删除。完成前，这些符号只是 legacy pre-release candidate，不是受支持 API。
+## 依赖与消费者账本
 
-## 功能与架构审计计划
+公开头扫描确认 14 个实际 consumer 直接使用 Core/root version contract：
 
-### Gate A — 场景与归属
+| Consumer group | 直接 `PUBLIC core` | 代表语义 |
+|---|---|---|
+| 轻量叶子 | container_intrusive、util_core、error | compiler/invariant/detail contract |
+| runtime 底层 | obs、platform、time、mem | compiler/invariant/cache contract |
+| data/compute | simd、container、util | compiler/cache/prefetch contract |
+| 组合层 | sched、io、compute、graph | 公开 header inline/compiler contract |
 
-- [ ] 为三个能力族分别写外部/内部场景，包含 ownership、lifetime、concurrency、failure、正常
-      scale 与 platform；
-- [ ] 完成语法消费者和语义重复账本；
-- [ ] 裁决每个能力族和每个根级文件的 owning module；
-- [ ] 写清负空间与 reopen trigger；
-- [ ] 更新中央组件图，或明确证明为何 header/source dependency 应与 link dependency 不同。
+`math` 没有 Core public include，保留零边。中央 `HyleComponents.cmake` 既声明唯一依赖又生成真实
+target link，并扫描公开头拒绝漏边或多余边。旧安装整棵 include tree、传递 include、所谓
+target-neutral macro 例外都不再充当依赖机制。
 
-### Gate B — 成熟库对账
+语义重复扫描的裁决：
 
-- [ ] 用 oneTBB 及当前 package/loader practice 对比 version/build identity，而不只比较版本号格式；
-- [ ] 用当前 Highway、Abseil、Folly 与受支持 compiler 合同对比 compiler、assume、visibility、
-      prefetch 形状；
-- [ ] 先调查更好的算法、metadata trade-off 或 toolchain strategy，再做纳秒优化。
+- 已确认 false-sharing layout 的真实消费者使用 Core 常量，没有以 raw 64/128 复制同一语义；
+- Swiss/vqsort 的相同 prefetch 任务走 Core helper；vendor port 内部机制不冒充 HYLE public API；
+- 19 个依赖旧 transitive macro include、14 个依赖 transitive type visibility 的公开头改为直接
+  include，header-self-contained/组件合同负责防回归；
+- 多处 `cpu_relax` 是 util-core 后续审查事项，不扩张 Core；
+- linked version 没有 production consumer，删除而不是为 sample/benchmark 维持 runtime。
 
-### Gate C — API 与正确性
+## 架构与 API 裁决
 
-- [ ] 分别审查 C++ 名称、include、默认路径、高级路径与组合路径；删除 benchmark-shaped 或只供
-      维护者使用的 public entry；
-- [ ] 在 MSVC、GCC、AppleClang 上重建 compiler/cache codegen 与 sanitizer/Debug 退化测试；
-- [ ] 在 source、tests、samples、exports、build/package 与文档中一致解决 legacy Native FFI。
+- [x] Core 改为零源码、零 artifact 的 `INTERFACE` component；
+- [x] 合并旧 `macros.h`/`compiler_defs.h` 为 C++-only `<hyle/core/compiler.h>`；
+- [x] 新增 `<hyle/core/assert.h>`，用 ODR-safe noinline、可用时 cold 且 hidden 的 sink 保持成功路径小；
+- [x] 提供失败时才求值的 borrowed-message assertion，并迁移 Error `Result` 与 Container B-tree 的
+  两处手写 `false && "message"`；
+- [x] 删除可由标准 C++ 自然覆盖或无独立 demand 的 public macro；
+- [x] `cache.h` 直接持有 target-family 常量与三个 intent，不再维护 C defs 镜像；
+- [x] 产品版本迁到 `<hyle/version.h>`，删除 linked C++ query 与 version-only runtime；
+- [x] visibility 明确留在 build/package，不算 Core capability；
+- [x] Core Native FFI 定为 `N/A`，删除 Core C header、exports、tests、package/Java/.NET fixture；
+- [x] legacy Error FFI 的 schema version 暂由 Error 自己拥有；本任务不借机宣称 Error FFI 已清理；
+- [x] source/static/shared Core sample 统一为编译期版本、compiler 与 cache 的正常 C++ 旅程；
+- [x] 所有真实 consumer 建立直接 `PUBLIC core`，并补公开头的 self-contained include。
+- [x] Core target 从无实际消费者的 trace/testing 横切边退出；source 与 installed contract 均拒绝
+  profiler/test gate 经 `hyle::core` 传递。
 
-### Gate D — 交付与集成
+项目尚未发布，不保留旧路径/符号兼容层。HYLE 自身仍直接使用 C++ API，不绕经任何 FFI。
 
-- [ ] fresh Windows、Linux、macOS Core-only correctness/header build；
-- [ ] relocated C++ source/static/shared consumers；若保留 linked identity，还要覆盖 shared-runtime
-      mismatch 与 borrowed lifetime；
-- [ ] 只回审被触碰的 time、container、mem、sched、SIMD 依赖边，不无故重开无关模块；
-- [ ] 验证 component selection、installed target closure、visibility、runtime staging、offline/source
-      bundle 与 license/package metadata。
+## 正确性、交付与性能门
 
-## 复杂度与性能门
+以下表格必须由最终执行者绑定同一 candidate；本页不把“正在运行”写成通过。
 
-version query 及 compiler/cache helper 都是 O(1) 机制，但不能为了表格完整制造单指令/getter
-SOTA benchmark。intrusive list 的复杂度与性能资格已经随 owner 一并迁出 Core。
+| Gate | 必须覆盖 | 当前记录 |
+|---|---|---|
+| Windows | MSVC `/WX` Core-only Release/Debug、header self-contained、direct consumers、component contract | 待最终 candidate 绑定 |
+| Linux | GCC Release + ASan/UBSan，Core-only 与受影响 consumers | 待执行/绑定 |
+| macOS | AppleClang arm64 Release/Debug、header/package consumer | 待执行/绑定 |
+| source delivery | Core-only parent `add_subdirectory`，只出现 INTERFACE Core | 待最终日志绑定 |
+| static SDK | relocated installed consumer；没有 Core archive/runtime | 待最终日志绑定 |
+| shared SDK | relocated installed consumer；没有 Core DSO/runtime staging | 待最终日志绑定 |
+| codegen/symbol | inline/noinline/assume/prefetch/fatal hot path；shared export 不得泄漏 Core detail；普通 version value use 不链接 getter/runtime | 计划见性能页，待 raw evidence |
+| consumer performance | 只有受本轮 code shape 影响的正常 workload，按两把钥匙裁决 | 待 owning module evidence；不制造 Core 纳秒榜 |
+| docs | stale symbol/path scan、relative-link contract、四类文档职责 | 待 final tree `check-docs` |
+| red team | API/能力/复杂度/依赖/交付/性能反证 | 待 candidate 后独立复核 |
 
-- [ ] 冻结 candidate 与 claim-bearing source/harness identity；
-- [ ] 以 codegen 加 owning consumer workload 验证 compiler/prefetch，不单独计时 hint；
-- [ ] 覆盖代表规模、default/peer-first、必要 placement/code-shape perturbation、三平台、逐进程 raw
-      evidence、exact 五态与独立 non-inferiority gate；
-- [ ] 调查每个 `LOSE`、`UNRESOLVED` 或 shape-sensitive 结果；不得为赢 benchmark 改 public
-      metadata 或 API。
+## 成熟库对账结论
 
-上述门完成前，所有旧 Core benchmark 都是 `HISTORICAL/UNQUALIFIED`。
+- Highway、Abseil、Folly 与 compiler 文档支持“小 portability layer + 标准 C++ 优先”的形状；
+  HYLE 不复制各库全部宏，只覆盖当前 compiler/consumer 需求。
+- oneTBB/标准库的 interference/cache-aligned practice 支持稳定 layout recommendation；runtime
+  topology 与静态 ABI layout 必须分开；Abseil/Folly 的 AArch64 64-byte 裁决也证明不能把 Apple
+  arm64 的 128-byte coherency line 泛化到 Windows/Linux AArch64。
+- oneTBB、ggml、llama.cpp 等 runtime version query 都附着于真实 runtime artifact。HYLE Core 没有
+  runtime state，因此只为 query 造 binary 不能诊断整个产品。
+- peer 的 prefetch API 都不能替拥有访问模式的 consumer 做策略决定；SOTA 证据必须回到正常
+  workload，而不是单 hint benchmark。
 
-## 文档与签署清单
+## LOC、candidate 与签署字段
 
-- [x] 用本 open rebuild 记录取代继承绿色的旧 closure 文档；
-- [x] architecture 与 C++ user guide 标为 provisional；
-- [x] 旧性能 claim 降级为 historical/unqualified；
-- [ ] 归属裁决后，修复相邻 build/FFI methodology 与 samples 中过时 Core FFI claim；这些文件不在
-      本文档 patch 获准的范围内；
-- [ ] 把 Windows/Linux/macOS evidence、package consumer、performance 与 docs 绑定同一 candidate；
-- [ ] 报告四项 LOC 并解释边界变化；
-- [ ] 红队复核最终 API/dependency/performance 证据；
-- [ ] commit、push，并记录 required CI 或明确 waiver。
+| 字段 | 值 |
+|---|---|
+| Candidate commit/tree | 待最终实现、文档和验证冻结后填写 |
+| 全库代码 | 待运行 `python scripts/loc-report.py --module core --self-check` |
+| 自实现包含测试 | 待填写 |
+| 自实现不包含测试 | 待填写 |
+| Core 实现代码 | 待填写；边界为 `include/hyle/core/**`、`include/hyle/version.h`、`src/core/**` |
+| Raw evidence | 待填写根级 `evidence/` 路径与 manifest |
+| Red-team verdict | 待填写 `fixed / disproved / accepted limitation / out of scope` 结果 |
+| End commit / push | 待填写 |
 
-只有三个 Core 能力族的归属裁决与两份消费者账本都完成，任务才可从 `OPEN` 进入 `AUDITED`；只有剩余 checkbox
-全部完成，才可进入 `SIGNED`。历史绿色文字不能作为状态迁移证据。
+## 剩余限制与停止规则
+
+Core 不保证某 hint 被 compiler 接受、某 cache 层级命中、runtime 精确 cache-line size，或跨 compiler/
+stdlib/build-mode ABI。`HYLE_ASSUME/RESTRICT/UNREACHABLE` 仍要求调用者证明前置条件，且 assume
+表达式必须无副作用。fatal sink 使用 stdio/`abort()`，不承诺 async-signal-safe；出现真实 crash
+reporter 消费者时由正确 owner 重开，而不是给常态断言热路径预付复杂度。
+
+完成上表的三平台、三种交付、codegen、文档和红队门，且没有未知 material 问题后，才可依次进入
+`EVIDENCE_COMPLETE` 与 `SIGNED`。签署后只有真实 consumer 缺口、correctness/security、直接依赖
+语义改变、新 compiler/target，或强 peer 在同合同正常 workload 证明 material advantage 才重开；
+LOC、feature 数、命名偏好和亚纳秒 benchmark 不构成理由。

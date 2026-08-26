@@ -8,7 +8,7 @@ HYLE 正以真实推理消费者为首要需求锚，从底层开始重新建立
 
 | 范围 | 状态 | 说明 |
 |---|---|---|
-| core | `OPEN` | 新方法的试点；侵入链表已迁出，剩余产品身份、编译器/二进制合同与 cache 三个能力族仍需重新签署 |
+| core | `AUDITED` | 边界已收敛为 header-only compiler/invariant 与 cache primitive；版本归 build/package，Core FFI 为 N/A；candidate、三平台、codegen、交付与红队证据仍在准备 |
 | container_intrusive | `NOT_REVIEWED_V2` | 已形成独立 header-only target 和公开容器归属；time/完整 container 的依赖边已明确，正确性、API 与性能证书仍需单独复审 |
 | error / platform / mem / time / obs / util | `NOT_REVIEWED_V2` | 有多轮旧实现与证据，可作输入，不能继承旧证书 |
 | build/package | `NOT_REVIEWED_V2` | 已有组件化与三种 C++ 交付形状，需随每个模块持续做闭包回归 |

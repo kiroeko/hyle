@@ -35,14 +35,14 @@ function(hyle_simd_target_manifest)
       "hyle_simd_target_manifest requires OUT_VARIANTS and OUT_HEADER")
   endif()
 
-  if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+  if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
     set(_supported scalar sse4 avx2 avx512)
-  elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
+  elseif(HYLE_TARGET_PROCESSOR MATCHES "arm64|aarch64|ARM64")
     set(_supported scalar neon)
     if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
       list(APPEND _supported sve)
     endif()
-  elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "riscv64|RISCV64")
+  elseif(HYLE_TARGET_PROCESSOR MATCHES "riscv64|RISCV64")
     set(_supported scalar rvv)
   else()
     set(_supported scalar)
@@ -54,7 +54,7 @@ function(hyle_simd_target_manifest)
     if(_exact_index EQUAL -1)
       message(FATAL_ERROR
         "HYLE_SIMD_EXACT_TARGET='${HYLE_SIMD_EXACT_TARGET}' is incompatible with "
-        "${CMAKE_SYSTEM_NAME}/${CMAKE_SYSTEM_PROCESSOR}; supported: ${_supported}")
+        "${CMAKE_SYSTEM_NAME}/${HYLE_TARGET_PROCESSOR}; supported: ${_supported}")
     endif()
     set(_compiled "${_exact}")
   else()
@@ -150,11 +150,11 @@ function(hyle_target_simd)
   set(_is_x64 FALSE)
   set(_is_arm64 FALSE)
   set(_is_riscv64 FALSE)
-  if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+  if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
     set(_is_x64 TRUE)
-  elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
+  elseif(HYLE_TARGET_PROCESSOR MATCHES "arm64|aarch64|ARM64")
     set(_is_arm64 TRUE)
-  elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "riscv64|RISCV64")
+  elseif(HYLE_TARGET_PROCESSOR MATCHES "riscv64|RISCV64")
     set(_is_riscv64 TRUE)
   endif()
 
@@ -163,7 +163,7 @@ function(hyle_target_simd)
      (_isa STREQUAL "SVE" AND NOT CMAKE_SYSTEM_NAME STREQUAL "Linux") OR
      (_isa STREQUAL "RVV" AND NOT _is_riscv64))
     message(FATAL_ERROR
-      "hyle_target_simd: ISA '${_isa}' is incompatible with ${CMAKE_SYSTEM_PROCESSOR}")
+      "hyle_target_simd: ISA '${_isa}' is incompatible with ${HYLE_TARGET_PROCESSOR}")
   endif()
 
   set(_define "")
@@ -219,13 +219,13 @@ function(hyle_exact_simd_library)
   endif()
   string(TOUPPER "${ARG_ISA}" _isa)
   if((_isa MATCHES "^(SSE4|AVX2|AVX512)$" AND
-      NOT CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64") OR
+      NOT HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64") OR
      (_isa MATCHES "^(NEON|SVE)$" AND
-      NOT CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64") OR
+      NOT HYLE_TARGET_PROCESSOR MATCHES "arm64|aarch64|ARM64") OR
      (_isa STREQUAL "SVE" AND NOT CMAKE_SYSTEM_NAME STREQUAL "Linux") OR
-     (_isa STREQUAL "RVV" AND NOT CMAKE_SYSTEM_PROCESSOR MATCHES "riscv64|RISCV64"))
+     (_isa STREQUAL "RVV" AND NOT HYLE_TARGET_PROCESSOR MATCHES "riscv64|RISCV64"))
     message(FATAL_ERROR
-      "hyle_exact_simd_library: ISA '${_isa}' is incompatible with ${CMAKE_SYSTEM_PROCESSOR}")
+      "hyle_exact_simd_library: ISA '${_isa}' is incompatible with ${HYLE_TARGET_PROCESSOR}")
   endif()
   if(_isa STREQUAL "SSE4")
     set(_tier SSE42)
@@ -237,12 +237,12 @@ function(hyle_exact_simd_library)
   target_compile_definitions(${ARG_TARGET} PRIVATE
     HYLE_SIMD_EXACT=1 HYLE_SIMD_EXACT_TARGET_${_isa}=1)
   if(MSVC AND CMAKE_CXX_COMPILER_ID STREQUAL "MSVC" AND
-     CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64" AND
+     HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64" AND
      (_isa STREQUAL "SCALAR" OR _isa STREQUAL "SSE4"))
     # CL 19.50 may otherwise emit guarded AVX loop versions even without /arch:AVX. Exact
     # scalar/SSE artifacts promise that higher-tier instructions are absent, not merely guarded.
     target_compile_options(${ARG_TARGET} PRIVATE /arch:SSE2)
-  elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64" AND
+  elseif(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64" AND
          _isa STREQUAL "SCALAR")
     set(_scalar_flags -march=x86-64 -mssse3 -mno-avx -mno-avx2
                       -mno-avx512f)
@@ -286,11 +286,11 @@ function(hyle_add_dispatched_kernel)
   set(_is_x64 FALSE)
   set(_is_arm64 FALSE)
   set(_is_riscv64 FALSE)
-  if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+  if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
     set(_is_x64 TRUE)
-  elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
+  elseif(HYLE_TARGET_PROCESSOR MATCHES "arm64|aarch64|ARM64")
     set(_is_arm64 TRUE)
-  elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "riscv64|RISCV64")
+  elseif(HYLE_TARGET_PROCESSOR MATCHES "riscv64|RISCV64")
     set(_is_riscv64 TRUE)
   endif()
   get_property(_manifest_variants GLOBAL PROPERTY HYLE_SIMD_COMPILED_VARIANTS)
@@ -414,21 +414,21 @@ function(hyle_add_fat_kernel)
     endif()
   else()
     set(_required scalar)
-    if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+    if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
       list(APPEND _required sse4 avx2 avx512)
-    elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
+    elseif(HYLE_TARGET_PROCESSOR MATCHES "arm64|aarch64|ARM64")
       list(APPEND _required neon)
       if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
         list(APPEND _required sve)
       endif()
-    elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "riscv64|RISCV64")
+    elseif(HYLE_TARGET_PROCESSOR MATCHES "riscv64|RISCV64")
       list(APPEND _required rvv)
     endif()
     foreach(_variant IN LISTS _required)
       list(FIND ARG_TARGETS "${_variant}" _variant_index)
       if(_variant_index EQUAL -1)
         message(FATAL_ERROR
-          "hyle_add_fat_kernel: fat ${CMAKE_SYSTEM_NAME}/${CMAKE_SYSTEM_PROCESSOR} "
+          "hyle_add_fat_kernel: fat ${CMAKE_SYSTEM_NAME}/${HYLE_TARGET_PROCESSOR} "
           "build requires '${_variant}' in TARGETS")
       endif()
     endforeach()

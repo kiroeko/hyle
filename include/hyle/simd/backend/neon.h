@@ -2129,17 +2129,29 @@ namespace detail {
 // movemask, so the idiom is: AND with per-lane bit-weights {1,2,4,...}, then horizontal-add.
 // The sum's set bits ARE the lane bitmask (each lane contributes its weight or 0, weights
 // are disjoint powers of two). Generalized per lane width; the 8-bit case is the trap.
+// Load the weights from scalar arrays instead of aggregate-initializing NEON vector
+// typedefs. AppleClang accepts the latter extension, but MSVC's ARM64 intrinsic types do
+// not. Namespace-scope inline constants also give optimized builds the same literal-pool
+// shape as an aggregate vector constant without manufacturing instructions per call.
+alignas(16) inline constexpr std::uint32_t kMaskWeights32[4] = {1u, 2u, 4u, 8u};
+alignas(16) inline constexpr std::uint64_t kMaskWeights64[2] = {1u, 2u};
+alignas(16) inline constexpr std::uint16_t kMaskWeights16[8] = {
+    1u, 2u, 4u, 8u, 16u, 32u, 64u, 128u};
+alignas(16) inline constexpr std::uint8_t kMaskWeights8[16] = {
+    1u, 2u, 4u, 8u, 16u, 32u, 64u, 128u,
+    1u, 2u, 4u, 8u, 16u, 32u, 64u, 128u};
+
 HYLE_FORCE_INLINE unsigned mask_bits_4(uint32x4_t m) noexcept {  // 4x 32-bit lanes
-  const uint32x4_t w = {1u, 2u, 4u, 8u};
+  const uint32x4_t w = vld1q_u32(kMaskWeights32);
   return static_cast<unsigned>(vaddvq_u32(vandq_u32(m, w)));  // aarch64 vaddvq
 }
 HYLE_FORCE_INLINE unsigned mask_bits_2(uint64x2_t m) noexcept {  // 2x 64-bit lanes
-  const uint64x2_t w = {1u, 2u};
+  const uint64x2_t w = vld1q_u64(kMaskWeights64);
   return static_cast<unsigned>(vaddvq_u64(vandq_u64(m, w)));
 }
 HYLE_FORCE_INLINE unsigned mask_bits_8(uint16x8_t m) noexcept {  // 8x 16-bit lanes
   // weights 1..128 sum to <=255, fits a u16 accumulator -> single vaddvq_u16.
-  const uint16x8_t w = {1u, 2u, 4u, 8u, 16u, 32u, 64u, 128u};
+  const uint16x8_t w = vld1q_u16(kMaskWeights16);
   return static_cast<unsigned>(vaddvq_u16(vandq_u16(m, w)));
 }
 HYLE_FORCE_INLINE unsigned mask_bits_16(uint8x16_t m) noexcept {  // 16x 8-bit lanes
@@ -2147,8 +2159,7 @@ HYLE_FORCE_INLINE unsigned mask_bits_16(uint8x16_t m) noexcept {  // 16x 8-bit l
   // sum all 16 into one wraparound byte. So use per-8-lane weights {1..128} (repeated in
   // both halves), then reduce each 8-lane half separately (vaddv_u8 -> u8, max 255 fits),
   // giving low byte = bits 0..7 and high byte = bits 8..15; combine as lo | (hi<<8).
-  const uint8x16_t w = {1u, 2u, 4u, 8u, 16u, 32u, 64u, 128u,
-                        1u, 2u, 4u, 8u, 16u, 32u, 64u, 128u};
+  const uint8x16_t w = vld1q_u8(kMaskWeights8);
   const uint8x16_t masked = vandq_u8(m, w);
   const unsigned lo = vaddv_u8(vget_low_u8(masked));
   const unsigned hi = vaddv_u8(vget_high_u8(masked));

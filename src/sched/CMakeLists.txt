@@ -10,7 +10,7 @@ if(MSVC)
     "${_fctx}/jump_x86_64_ms_pe_masm.asm"
     "${_fctx}/make_x86_64_ms_pe_masm.asm"
     "${_fctx}/ontop_x86_64_ms_pe_masm.asm")
-elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
+elseif(HYLE_TARGET_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   # arm64 AAPCS GAS (.S). macho on Apple Silicon, ELF on arm64 Linux. Symbols exported via
   # .globl in-file -- no define needed (same as the x86 GAS flavors).
   if(APPLE)
@@ -39,7 +39,7 @@ else()
     "${_fctx}/ontop_x86_64_sysv_elf_gas.S")
 endif()
 
-hyle_add_module(sched
+hyle_add_module(sched TRACE
   SOURCES
     fiber.cc
     worker.cc

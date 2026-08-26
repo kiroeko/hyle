@@ -1,7 +1,10 @@
 # build/package system 严格收口任务（2026-07-25）
 
-> **历史证据提示（2026-08-25）：**本页的绿色结论绑定文中日期/commit，不是依赖升级后
-> working tree 的当前证书。现行状态只看 [`pre-release-readiness`](../../status.md)。
+> **历史证据提示（2026-08-26）：**本页正文是当轮 immutable 施工记录，`version_defs.h`、
+> compiled `hyle_core`、Core benchmark/FFI 等名称只描述当时 tree，已由
+> [`core-rebuild`](../core/core-rebuild.md) 取代，不能当作当前 API 或 target。当前 Core 是
+> header-only INTERFACE，产品版本位于 `<hyle/version.h>`；现行状态只看
+> [`implementation/status`](../../status.md)。
 
 > 本页是施工与验收记录。收口后，稳定的项目组织模型归
 > `docs/architecture/build-system.md`，用户迁移与组装 recipe 归 guide；本页不长期兼任用户手册。

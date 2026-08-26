@@ -78,11 +78,11 @@ include(HyleDependencyVersions)
 # implementations unreachable even though their module CMakeLists supported
 # them.  This is a capability fact, not a "selected target exists" fact.
 set(HYLE_FCONTEXT_SUPPORTED FALSE)
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   if(MSVC OR CMAKE_SYSTEM_NAME STREQUAL "Linux" OR APPLE)
     set(HYLE_FCONTEXT_SUPPORTED TRUE)
   endif()
-elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
+elseif(HYLE_TARGET_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   if(APPLE OR CMAKE_SYSTEM_NAME STREQUAL "Linux")
     set(HYLE_FCONTEXT_SUPPORTED TRUE)
   endif()
@@ -276,7 +276,7 @@ if(HYLE_BUILD_SCHED)
   if(NOT HYLE_FCONTEXT_SUPPORTED)
     message(FATAL_ERROR
       "The selected component set requires sched, but HYLE has no fcontext assembly for "
-      "${CMAKE_SYSTEM_NAME}/${CMAKE_SYSTEM_PROCESSOR}/${CMAKE_CXX_COMPILER_ID}")
+      "${CMAKE_SYSTEM_NAME}/${HYLE_TARGET_PROCESSOR}/${CMAKE_CXX_COMPILER_ID}")
   endif()
   set(HYLE_HAS_FCONTEXT TRUE)
   if(MSVC)
@@ -294,6 +294,11 @@ foreach(_component IN LISTS HYLE_KNOWN_COMPONENTS)
 endforeach()
 unset(_component)
 unset(_component_upper)
+
+# Trace backend construction is deliberately deferred until the selected
+# module graph has declared whether any target consumes the gate. This keeps a
+# Core-only package from manufacturing/registering an unrelated Tracy runtime.
+hyle_finalize_trace()
 
 # Module CMakeLists may add external/private implementation libraries after
 # hyle_add_module().  Audit the completed HYLE-to-HYLE link graph here so a

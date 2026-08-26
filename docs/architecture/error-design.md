@@ -11,8 +11,8 @@
 ## 0. 职责与依赖位置
 
 error 位于运行时依赖图底部，负责把**可恢复的运营失败**作为值在函数、模块、线程以及被选中的
-foreign-runtime 边界上传递。它没有 binary upstream；`result.h` 使用 core 拥有的编译期宏，
-但不会因此依赖 `hyle_core` DLL。
+foreign-runtime 边界上传递。其公开头直接使用 Core 编译期合同，因此中央图声明
+`error -> PUBLIC core`；`hyle::core` 是 INTERFACE，没有 Core DLL 或 runtime state。
 
 真实场景只有四类：
 

@@ -112,13 +112,41 @@ function(hyle_validate_final_module_graph)
   endforeach()
 endfunction()
 
-# hyle_add_module(<name> [SOURCES ...])
+function(_hyle_module_uses_gate name token out_var)
+  _hyle_component_public_headers("${name}" _hyle_gate_files)
+  foreach(_hyle_module_source IN LISTS ARGN)
+    if(_hyle_module_source MATCHES "^\\$<")
+      continue()
+    elseif(IS_ABSOLUTE "${_hyle_module_source}")
+      set(_hyle_gate_file "${_hyle_module_source}")
+    else()
+      set(_hyle_gate_file "${CMAKE_CURRENT_SOURCE_DIR}/${_hyle_module_source}")
+    endif()
+    if(EXISTS "${_hyle_gate_file}")
+      list(APPEND _hyle_gate_files "${_hyle_gate_file}")
+    endif()
+  endforeach()
+  set(_hyle_gate_used FALSE)
+  foreach(_hyle_gate_file IN LISTS _hyle_gate_files)
+    file(READ "${_hyle_gate_file}" _hyle_gate_contents)
+    string(FIND "${_hyle_gate_contents}" "${token}" _hyle_gate_position)
+    if(NOT _hyle_gate_position EQUAL -1)
+      set(_hyle_gate_used TRUE)
+      break()
+    endif()
+  endforeach()
+  set(${out_var} "${_hyle_gate_used}" PARENT_SCOPE)
+endfunction()
+
+# hyle_add_module(<name> [TRACE] [TESTING] [SOURCES ...])
 # Declares a HYLE module as a library target `hyle_<name>` with conventional
 # include dirs, manifest-derived internal links, warnings, sanitizer flags, and
-# a tri-state export macro. External implementation links stay in the owning
-# module CMakeLists via ordinary target_link_libraries().
+# a tri-state export macro. TRACE/TESTING are explicit opt-ins and must match the
+# checked-in module sources/public headers; this prevents a pure target from
+# acquiring an unrelated profiler runtime or test ABI. External links stay in the
+# owning module CMakeLists via ordinary target_link_libraries().
 function(hyle_add_module name)
-  cmake_parse_arguments(ARG "" "" "SOURCES" ${ARGN})
+  cmake_parse_arguments(ARG "TRACE;TESTING" "" "SOURCES" ${ARGN})
   if(ARG_UNPARSED_ARGUMENTS)
     message(FATAL_ERROR
       "hyle_add_module(${name}): unrecognized arguments: "
@@ -128,6 +156,29 @@ function(hyle_add_module name)
     message(FATAL_ERROR
       "hyle_add_module(${name}): keywords missing values: "
       "${ARG_KEYWORDS_MISSING_VALUES}")
+  endif()
+
+  _hyle_module_uses_gate(
+    "${name}" "HYLE_TRACE" _hyle_uses_trace ${ARG_SOURCES})
+  if(ARG_TRACE AND NOT _hyle_uses_trace)
+    message(FATAL_ERROR
+      "hyle_add_module(${name} TRACE): no HYLE_TRACE use exists in its "
+      "selected sources or public headers")
+  elseif(_hyle_uses_trace AND NOT ARG_TRACE)
+    message(FATAL_ERROR
+      "hyle_add_module(${name}): sources/public headers use HYLE_TRACE but "
+      "the module did not declare TRACE")
+  endif()
+  _hyle_module_uses_gate(
+    "${name}" "HYLE_TESTING" _hyle_uses_testing ${ARG_SOURCES})
+  if(ARG_TESTING AND NOT _hyle_uses_testing)
+    message(FATAL_ERROR
+      "hyle_add_module(${name} TESTING): no HYLE_TESTING use exists in its "
+      "selected sources or public headers")
+  elseif(_hyle_uses_testing AND NOT ARG_TESTING)
+    message(FATAL_ERROR
+      "hyle_add_module(${name}): sources/public headers use HYLE_TESTING but "
+      "the module did not declare TESTING")
   endif()
 
   _hyle_manifest_target_dependencies(
@@ -140,6 +191,14 @@ function(hyle_add_module name)
     "${name}" ${_hyle_public_dependencies})
 
   set(target "hyle_${name}")
+  set(_hyle_module_contract_targets hyle_build_contract)
+  if(ARG_TRACE)
+    list(APPEND _hyle_module_contract_targets hyle_trace)
+    set_property(GLOBAL PROPERTY HYLE_TRACE_CONSUMED TRUE)
+  endif()
+  if(ARG_TESTING)
+    list(APPEND _hyle_module_contract_targets hyle_testing)
+  endif()
   if(ARG_SOURCES)
     if(HYLE_STATIC)
       add_library(${target} STATIC ${ARG_SOURCES})
@@ -165,16 +224,15 @@ function(hyle_add_module name)
     target_link_libraries(${target}
       PRIVATE ${_hyle_private_dependencies}
       PUBLIC ${_hyle_public_dependencies})
-    # obs-02: every module sees the trace gate (defines + tracy include when ON).
-    # PUBLIC so consumers that include our headers (trace.h is inlined, e.g. the
-    # RAII zone object) agree on whether the hooks are real or empty -- an ODR
-    # requirement. OFF (default) => hyle_trace carries nothing, zero cost.
-    target_link_libraries(${target} PUBLIC hyle_build_contract hyle_trace)
-    # HYLE_TESTING gate (same PUBLIC/ODR rationale as hyle_trace): carries the
-    # HYLE_TESTING define in an instrumented test build so a module's own sources,
-    # its test exe, and consumers all agree on whether test-only members exist. Empty
-    # (zero cost) in a production-shape test or shipped build.
-    target_link_libraries(${target} PUBLIC hyle_testing)
+    # Trace-aware modules see one gate (defines + tracy include when ON). PUBLIC
+    # propagation makes headers that inline trace state agree with consumers --
+    # an ODR requirement. Only modules that explicitly declare TRACE acquire
+    # this edge; OFF (default) carries nothing and has zero product cost.
+    target_link_libraries(${target} PUBLIC ${_hyle_module_contract_targets})
+    # HYLE_TESTING uses the same PUBLIC/ODR rationale: an instrumented module's
+    # sources, test executable and consumers must agree on test-only members.
+    # Only modules that explicitly declare TESTING acquire it; shipped builds
+    # carry no definition.
     hyle_apply_warnings(${target})
     hyle_apply_sanitizer(${target})
     # tri-state export macro: HYLE_<NAME>_API
@@ -199,8 +257,12 @@ function(hyle_add_module name)
     target_compile_features(${target} INTERFACE cxx_std_23)  # header-only modules too
     target_link_libraries(${target} INTERFACE
       ${_hyle_public_dependencies}
-      hyle_build_contract hyle_trace hyle_testing)
+      ${_hyle_module_contract_targets})
   endif()
+
+  unset(_hyle_module_contract_targets)
+  unset(_hyle_uses_trace)
+  unset(_hyle_uses_testing)
 
   set_target_properties(${target} PROPERTIES
     EXPORT_NAME "${name}"

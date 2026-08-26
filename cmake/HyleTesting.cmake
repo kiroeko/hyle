@@ -13,18 +13,19 @@
 #
 # ODR: a test-only MEMBER changes a class's layout, so the production .cc that compiles
 # the class and the test TU that includes the same header MUST agree on whether the hook
-# exists. So the define is carried by an INTERFACE target every module links PUBLIC (like
-# hyle_trace) -- the module's own sources, the test exe, and any consumer all see the same
-# HYLE_TESTING state. A per-target private define would be an ODR hazard.
+# exists. So the define is carried by a PUBLIC INTERFACE edge for each module
+# with such a test surface: its sources, test executable and consumers all see
+# the same HYLE_TESTING state. Modules opt in only when this seam exists; a
+# private define on a consuming module would be an ODR hazard.
 #
 # CONTRACT for code behind this gate (see usage-guide "test-only interfaces"):
 #   1. wrap the declaration AND definition in `#if defined(HYLE_TESTING)`;
 #   2. the function/member comment MUST start with "TEST-ONLY:" stating why it is not
 #      production API -- an ungated raw/helper API with no such note is a bug, not a hook.
 
-# hyle_testing is an INTERFACE target every module links (PUBLIC), mirroring hyle_trace.
-# It exists unconditionally so module CMakeLists can link it with no if() at the call site;
-# it carries the HYLE_TESTING define only for an instrumented test build.
+# hyle_testing is the INTERFACE target used by modules with test-only product
+# seams. It exists unconditionally so declarations remain simple; it carries
+# HYLE_TESTING only for an instrumented test build.
 add_library(hyle_testing INTERFACE)
 set_target_properties(hyle_testing PROPERTIES FOLDER "hyle/foundation")
 

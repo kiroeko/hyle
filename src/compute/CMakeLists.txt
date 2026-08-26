@@ -45,7 +45,15 @@ if(HYLE_COMPUTE_GGML AND HYLE_HAS_FCONTEXT)
   list(APPEND _compute_sources ggml_bridge.cc)
 endif()
 
-hyle_add_module(compute SOURCES ${_compute_sources})
+set(_compute_module_options "")
+if(HYLE_HAS_FCONTEXT)
+  list(APPEND _compute_module_options TRACE)
+endif()
+if(HYLE_COMPUTE_VULKAN_ENABLED)
+  list(APPEND _compute_module_options TESTING)
+endif()
+hyle_add_module(compute ${_compute_module_options} SOURCES ${_compute_sources})
+unset(_compute_module_options)
 
 if(HYLE_HAS_FCONTEXT)
   # compute.cc uses Fiber::current() to keep heavyweight CUDA/Vulkan first-use

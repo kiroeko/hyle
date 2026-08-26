@@ -53,7 +53,12 @@ endif()
 if(NOT HYLE_HAS_FCONTEXT)
   list(APPEND _io_sources http2_stub.cc)
 endif()
-hyle_add_module(io SOURCES ${_io_sources})
+set(_io_module_options "")
+if(HYLE_HAS_FCONTEXT)
+  list(APPEND _io_module_options TRACE)
+endif()
+hyle_add_module(io ${_io_module_options} SOURCES ${_io_sources})
+unset(_io_module_options)
 
 # Public headers are installed as one reviewed tree, so capability cannot be
 # inferred from header presence.  Export the exact product fact on hyle::io in

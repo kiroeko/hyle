@@ -52,29 +52,6 @@ python scripts/check-docs.py
 The Linux baseline CI runs the same command. Content correctness still requires
 module review; this script prevents structural and navigation drift.
 
-## `run-core-ffi-smoke.py` — retired FFI experiment
-
-This script belongs to the pre-v2 Core FFI experiment. Native FFI is now `N/A`;
-the script, managed fixtures and three Core exports are technical debt scheduled
-for removal during Core rebuild. Do not run it as a product gate or cite it as a
-supported Java/.NET capability. Its historical invocation was:
-
-```bash
-python scripts/run-core-ffi-smoke.py --library /absolute/path/to/libhyle_core.so \
-  --incompatible-library /absolute/path/to/libhyle_core_ffi_incompatible_fixture.so
-python scripts/run-core-ffi-smoke.py --library /absolute/path/to/libhyle_core.dylib \
-  --incompatible-library /absolute/path/to/libhyle_core_ffi_incompatible_fixture.dylib
-```
-
-```powershell
-python scripts/run-core-ffi-smoke.py `
-  --library C:\absolute\path\to\hyle_core.dll `
-  --incompatible-library C:\absolute\path\to\hyle_core_ffi_incompatible_fixture.dll
-```
-
-`--only dotnet` and `--only java` selected one historical diagnostic. The current
-policy is [`docs/architecture/native-ffi-policy.md`](../docs/architecture/native-ffi-policy.md).
-
 ## `hyle-windows.ps1` — select an installed Windows C++ environment
 
 CMake may know the VS 2022 generator but not a newer installed Visual Studio generation.
@@ -85,6 +62,7 @@ imports its transient `VsDevCmd` environment, then invokes the `windows-ninja` p
 scripts/hyle-windows.ps1 -Action Configure -Preset windows-ninja
 scripts/hyle-windows.ps1 -Action Build -Preset windows-ninja --parallel 2
 scripts/hyle-windows.ps1 -Action Test -Preset windows-ninja --output-on-failure
+scripts/hyle-windows.ps1 -Action ComponentContract -SmokeRoot C:\hyle-scratch\component
 scripts/hyle-windows.ps1 -Action Workflow -Preset windows-ninja-check
 scripts/hyle-windows.ps1 -Action PackageSmoke -SmokeRoot "$env:TEMP/hyle-package-smoke"
 scripts/hyle-windows.ps1 -Action ProductShapeSmoke -SmokeRoot "$env:TEMP/hyle-shipping-smoke"
