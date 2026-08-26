@@ -62,6 +62,8 @@ def main() -> None:
         record for record in p1_false_close["modules"]
         if record["module"] == "container_intrusive")
     intrusive["product_state"] = "CLOSED"
+    intrusive["engineering_performance"]["verdict"] = "PLANNED"
+    intrusive["gate_verdicts"]["engineering_performance"] = "PLANNED"
     intrusive["end_commit"] = intrusive["candidate_commit"]
     errors = checker.validate_registry(p1_false_close, root)
     require_error(errors, "CLOSED requires engineering verdict PASS")
