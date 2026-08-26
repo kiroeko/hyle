@@ -85,6 +85,7 @@
 | ERR-PERF-NORMAL-01 | MUST | P1 normal diagnostic path | 当前 29B message、shared copy、context 1/3、2-frame message Result、54B owning format、fresh-prvalue Update | 真实普通诊断创建/传播/消费，不交叉 size/depth 矩阵 | error benchmark | HYLE/Abseil 同 code/message/context 与 ownership；allocator order 可诊断一次 | 每项 5% NI 且独立过 20x floor | `FIX` | P1 | contract 只保留这些 normal rows；任一无资格即按冻结停止条件 BLOCKED，不换姿势 |
 | ERR-PERF-BOUNDARY-01 | MUST | invalid evidence classification | 7/256B construct、16-layer context、512B format、runtime-code primitive、native/errno rows | correctness/机制/边界诊断，不冒充 P1 consumer 总分 | error tests/diagnostic bench | native 与 Abseil payload 非同合同；lvalue x16 是刻意保留历史 | 结构与绝对成本可记录，不形成同能力胜负 | `FIX` | P0 | 从 required P1 contract 移出；保留 bounded diagnostic coverage |
 | ERR-PERF-VALIDATOR-01 | MUST | instrument gap | unified runner 与旧专用 runner 的窄结构检查 | actual-object DCE/call-edge、placement authenticity、semantic setup oracle | error benchmark plugin | validator 不改变 workload/统计；SourceLocation 为空；输出语义/长度锁定 | fail closed；contract hash/peer/product/artifact 全绑定 | `FIX` | P1 | module command validators；不复活旧 3% runner/统计核心 |
+| ERR-PERF-RESULT-SETUP-01 | MUST | candidate red-team defect | `result-message-error` 宣称 callback 外预建 error，首个候选却通过函数内 lazy static accessor 取得 | 两侧 owning error 在 measured callback 外显式构造，并沿两 frame 以 const reference 传入 | error benchmark | 不计费 lazy initialization、guard 或隐藏 accessor；两侧参数拓扑对称 | 不改变产品，只校正 charged phase | `FIX` | P1 | replacement validator/构建；拒绝首个 candidate 与其已启动样本 |
 | ERR-DOC-01 | MUST | stale current documentation | architecture/user/performance pages | 当前能力选择、成本、pitfalls、negative space、peer pins 与本轮证据 | docs | architecture 讲设计，user 讲用法，evidence 只讲当前结果 | 不复制历史 task 数字 | `FIX` | P0 | 去掉 `NOT_REVIEWED_V2`；旧页明确历史或替换为当前证据 |
 | ERR-REF-01 | GENERAL | mature-library gap scan | Abseil `StatusOr<T&>`；Folly legacy `Expected` 拒绝引用、新 `result` 有 deep-const | 当前用 `reference_wrapper`/pointer/span/string_view | future error | borrowed value 不延长 owner lifetime | 只有具名 non-null borrow consumer 才重开 | `DEFER` | P2 | 不为 API 数量另造 `expected` |
 | ERR-DETAIL-01 | GENERAL | backend gap scan | future Metal/HIP/foreign category | 新稳定 domain 或第二 typed detail | owning backend/future error | enum 防碰撞；跨 DLL category pointer 不进入 carrier | 不预装 map/第二 block | `DEFER` | P2 | 真实 backend/两个同时恢复字段触发 |
@@ -105,7 +106,8 @@
   日志/trace、异步状态机、backend-specific mapping、聚合排序和异常捕获属于上层 owner。
 - 本轮冻结 `FIX` 集：`ERR-DEFAULT-01`、`ERR-INCLUDE-01`、`ERR-WORDING-01`、
   `ERR-PERF-REPLAY-01`、`ERR-PERF-NORMAL-01`、`ERR-PERF-BOUNDARY-01`、
-  `ERR-PERF-VALIDATOR-01`、`ERR-DOC-01`。**Status/Result 产品 API、layout 与实现算法的 FIX 集为空。**
+  `ERR-PERF-VALIDATOR-01`、`ERR-PERF-RESULT-SETUP-01`、`ERR-DOC-01`。后加的 setup 项来自首个
+  candidate 的独立红队，不授权扩面。**Status/Result 产品 API、layout 与实现算法的 FIX 集为空。**
 - 相邻模块 backlog：`IO-ADOPT-01`、`SC-ADOPT-01`；不得据此替尚未收口模块签署 adoption。
 - 审计身份：HYLE baseline 如 closure card；Abseil/Folly pins 如 closure card；三路只读审计分别覆盖
   peer/能力与复杂度、全库消费者/交付/FFI、性能合同/仪器。Boost superproject 的 System/LEAF/
@@ -113,12 +115,12 @@
 
 ## Candidate
 
-当前产品候选固定为：
+当前没有可验证 candidate。首个候选已被拒绝：
 
 - commit：`462db32c9b6a364f233a89a2da541c2daca37bea`
 - tree：`9e886667c861a43bd9b9e6c83cf055c16a3ed54a`
 
-候选没有修改 `Status` / `Result<T>` 的产品 API、layout 或算法；peer/复杂度审计没有找到需要产品
+该候选没有修改 `Status` / `Result<T>` 的产品 API、layout 或算法；peer/复杂度审计没有找到需要产品
 修改的 MUST 缺陷。它只实施冻结 FIX：明确并测试 `Result<T>{}` 的标准成功语义；补齐公开头直接
 include 和过时 FFI/C bridge 措辞；补回 UTF-8、embedded-NUL、native detail、context 与 caller-buffer
 格式化的完整 C++ 字节旅程；重写 architecture/user/performance 当前文档。
@@ -132,7 +134,13 @@ context 1/3、两 frame message Result、54B owning format、fresh-prvalue Updat
 
 候选前的 dirty probe 只证明合同可运行，不是候选证据：9/9 workload 通过 batch=1 的 20x timer-floor
 门（最小 55.43x，最大 391.17x），semantic/call-topology/placement validator 通过；n=1 的 A/A 与 delta
-控制按设计保持 FAIL/DIAGNOSTIC。正式性能判决必须从上述 clean candidate 重新运行。
+控制按设计保持 FAIL/DIAGNOSTIC。
+
+独立红队随后发现 `result-message-error` 虽在合同中声明 prebuilt error 位于 callback 外，首个实现却由
+measured leaf 内的函数局部 lazy static accessor 取得；首次初始化和每次 guard/accessor 都没有列入
+charged phases。即使一次初始化会摊薄、两侧也近似对称，这仍是证据合同违约，不能用性能点值解释掉。
+已启动的 clean n=15 立即终止且全部作废；它不消耗 replacement candidate 的唯一 fresh qualification。
+replacement 必须显式在 callback 外构造两侧 error，并以对称 const reference 沿两 frame 传入。
 
 ## Verification manifest
 
@@ -144,4 +152,5 @@ context 1/3、两 frame message Result、54B owning format、fresh-prvalue Updat
 
 ## Closure decision
 
-当前为 `AUDITED`；只允许实施上述冻结 `FIX` 集，不得提前写入 candidate 或 terminal 结论。
+当前退回 `AUDITED`；只允许实施上述冻结 `FIX` 集中的 replacement setup 修复，不得继承被拒绝候选的
+样本或提前写入 terminal 结论。
