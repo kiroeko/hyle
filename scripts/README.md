@@ -44,9 +44,9 @@ relations. `cloc` and Python 3 must be available on `PATH`.
 
 ## `check-docs.py` — documentation contract
 
-Runs without third-party packages. It enforces the four human-documentation
-roots, rejects retired directories/C-language user guides and checks relative
-Markdown links across the repository documentation surfaces:
+Runs without third-party packages. It enforces the root agent entry and four
+human-documentation roots, rejects retired directories/C-language user guides
+and checks relative Markdown links across the repository documentation surfaces:
 
 ```bash
 python scripts/check-docs.py

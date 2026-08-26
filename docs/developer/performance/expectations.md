@@ -26,7 +26,7 @@ SOTA”证书。
 | 级别 | 正常含义 | 工程收口门 |
 |---|---|---|
 | `P0` | 未被 profile 证明为热点的冷路径、编译/布局 primitive | 复杂度、allocation/lock/syscall/metadata 和适用 codegen/size 结构检查 |
-| `P1` | 高频 runtime primitive、容器、allocator adapter、queue/timer 操作 | 锁定性能机上的同合同正常 workload/replay non-inferiority；默认 material margin `M=5%` |
+| `P1` | 高频 runtime primitive、容器、allocator adapter、queue/timer 操作 | 锁定性能机上的正常 workload/replay 工程门；有同合同 peer 时增加 non-inferiority；默认 material margin `M=5%` |
 | `P2` | profile 已证明影响端到端 KPI 的热点 | 真实 consumer/trace 的 latency/throughput/resource 门及机制归因；更小阈值必须由贡献预算证明 |
 
 P1/P2 的工程性能 `PASS` 是模块进入 `CLOSED` 的硬门；缺资格或功效不足应写 `BLOCKED`，不能写成
@@ -59,6 +59,8 @@ lower-is-better 用 `peer/candidate`。给定预声明 margin `m`，双边等价
 合同无法对齐时分别报告绝对成本和必要语义税，不把功能更少的一方宣称为 SOTA。P1 默认 5% 是
 普通工程行动阈值，不是所有产品、指标或发布声明的自然常数；P2 可以用消费者预算预声明不同
 阈值。
+完全没有同合同 peer 时，P1 必须预先声明真实 consumer 的 latency/throughput/resource 预算；通过
+该预算可以签工程 `PASS`，但 comparability 保持 `NOT_COMPARABLE`，不得产生 peer/SOTA 声明。
 
 ## 时间、空间与部署
 

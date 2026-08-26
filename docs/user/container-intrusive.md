@@ -1,7 +1,7 @@
 # HYLE container_intrusive：稳定节点的零分配链表
 
-> **`CANDIDATE / 复审中`。** 本页描述当前 C++23 候选 API，尚不是稳定性或性能签署。
-> 当前施工状态见 [implementation/status](../implementation/status.md)。
+> 本页描述当前 C++23 API 和使用合同，不是稳定性或性能签署。唯一施工状态见
+> [implementation/status](../implementation/status.md)。
 
 `IntrusiveList` / `SafeIntrusiveList` 适合节点已经由 task、timer、连接、对象池或 stack frame 拥有，
 并且需要零分配、O(1) 任意摘链或整段 handoff 的场景。List 不拥有 node；把普通 owning sequence 改成 intrusive

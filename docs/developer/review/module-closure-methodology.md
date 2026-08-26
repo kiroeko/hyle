@@ -5,6 +5,11 @@
 > [`module-status.json`](../../implementation/module-status.json)，人读投影见
 > [`implementation/status`](../../implementation/status.md)。
 
+新模块和重构使用同一状态流。新模块先在中央 component graph 与状态表中以 `QUEUED` 登记，再冻结
+语义、依赖和交付边界；重构把既有实现当审计输入并绑定 baseline，不把旧 API、历史任务或旧 benchmark
+自动当成需求。无论代码多少，都不得在 `SCOPED/AUDITED` 前先写产品实现。历史 task/evidence 中的
+命令式文字只记录当时工作，不是新会话的授权或待办。
+
 ## 1. 两条互不冒充的状态轴
 
 ### 1.1 产品收口轴
@@ -12,15 +17,15 @@
 产品状态固定为：
 
 ```text
-QUEUED -> SCOPED -> AUDITED -> CANDIDATE -> VERIFIED -> CLOSED
-              \         \          \           \-> BLOCKED
-               \---------\----------\---------------------->
-CLOSED -> REOPENED -> SCOPED
+normal:  QUEUED -> SCOPED -> AUDITED -> CANDIDATE -> VERIFIED -> CLOSED
+stop:    SCOPED | AUDITED | CANDIDATE | VERIFIED -> BLOCKED
+resume:  BLOCKED -> SCOPED
+reopen:  CLOSED -> REOPENED -> SCOPED
 ```
 
 | 状态 | 含义 | 进入时必须已有的输出 |
 |---|---|---|
-| `QUEUED` | 尚未启动本轮 | 唯一 component ID、优先级说明 |
+| `QUEUED` | 尚未启动本轮 | 唯一 component ID、排队/现状摘要 |
 | `SCOPED` | 决策合同冻结 | baseline、真实需求/缺陷、范围/非目标、P0/P1/P2、预算、机器与仪器 ID、适用门 |
 | `AUDITED` | 差距已裁决 | capability/gap ledger；每项为 `KEEP/FIX/BORROW/DEFER/REJECT`，本轮 `FIX` 集冻结 |
 | `CANDIDATE` | 产品形状冻结 | product commit/tree、合同与复杂度变化、直接消费者迁移、候选测试 |
@@ -38,6 +43,10 @@ Git 防篡改、工作流账本或 CMake 解释器。从 `SCOPED` 起，同一�
 `QUEUED/REOPENED/BLOCKED -> SCOPED` 才可重新设定。`CANDIDATE -> VERIFIED -> CLOSED/BLOCKED`
 期间 candidate commit/tree 也冻结，产品变化必须先退回 `AUDITED`。这些是 reviewer 执行的工程规则，
 不是把整个开发过程编码成状态机。中央 component graph 新增模块时，以 `QUEUED` 进入 registry。
+
+从 `BLOCKED` 恢复时不得把旧 terminal task 改回活动状态：创建新的 round 与 `ACTIVE` task，标为
+`RESUME`，引用前一 blocker/resume condition，并让 registry 指向新 task 后进入 `SCOPED`。产品 identity
+未变时可以复用旧 candidate，但仍须在新轮重新绑定并验证；旧 `HISTORICAL` task 永不回写。
 
 ### 1.2 性能声明轴
 
@@ -100,7 +109,8 @@ verification | negative space
 ```
 
 - 每个公开入口反向指向一个 demand；只被 benchmark 使用的入口删除或私有化。
-- 每个当前 `MUST` 有实现、自然组合、成熟依赖或明确裁决。
+- 每个当前 `MUST`（本轮冻结范围内由真实 consumer、缺陷、标准或成熟 peer 支持的必需能力）有实现、
+  自然组合、成熟依赖或明确裁决。
 - `GENERAL` 是查漏输入，不自动扩大本轮；没有真实阻断的新增能力默认进入后续 backlog。
 - `demand kind` 至少区分真实 consumer、可复现 defect、成熟 peer、语言/平台标准和 build/package
   契约；peer-derived `GENERAL` 不能伪装成已有生产消费者。
@@ -117,12 +127,16 @@ verification | negative space
 每个保留形状回答 ownership、borrow invalidation、move/destroy、并发/进展、容量/OOM、取消/关闭、
 正常 metadata、时间/空间复杂度和平台 fallback。公开 C++ API 以任务为中心，优先 RAII、清楚的
 owner/view、span/range、strong type 与 `Status/Result`。可恢复失败走 error；程序不变量才
-fail-fast。OS/CPU 机制走 platform，allocator/placement 走 mem，clock/deadline 走 time。
+fail-fast。该依赖规则只在层级允许时适用：error 自身及比 error 更低的 bootstrap primitive 不得为了
+统一表面制造循环依赖，应使用其已裁决的本地失败形状。OS/CPU 机制走 platform，allocator/placement
+走 mem，clock/deadline 走 time。
 
 Correctness 证据按风险从以下矩阵选择，并在 closure card 中预声明适用项：正常、空/零、容量边界、
 溢出、OOM/系统失败、错误输入、move/destroy、并发/重入、取消/关闭、property/differential/fuzz、
-stress、ASan/UBSan/TSan、真实 ISA/backend。未运行只能写 `NOT_APPLICABLE` 或 `BLOCKED`，不能写
-`PASS`。任务记录必须逐行保留这些 verdict；一个汇总 `correctness=PASS` 不能隐藏未运行项。
+stress、ASan/UBSan/TSan、真实 ISA/backend。风险项 verdict 为
+`PASS/FAIL/NOT_APPLICABLE/BLOCKED`；只有语义上确实不适用才写 `NOT_APPLICABLE`，适用但未运行写
+`BLOCKED`，不能写 `PASS`。任务记录必须逐行保留这些 verdict；一个汇总 `correctness=PASS` 不能
+隐藏未运行项。
 
 公开头必须 self-contained；组件能独立构建。source、installed static、installed shared 的公共闭包由
 中央 component/package 合同验证；header-only 或不适用形状只运行有实际产物的 journey，不为凑数
@@ -135,12 +149,15 @@ stress、ASan/UBSan/TSan、真实 ISA/backend。未运行只能写 `NOT_APPLICAB
 | 级别 | 适用 | `CLOSED` 的工程性能硬门 |
 |---|---|---|
 | `P0` | 未被 profile 证明为热点的冷路径、编译/布局 primitive | 复杂度同档；无意外 allocation/lock/syscall/metadata；适用的 release codegen/size 结构检查 `PASS`。peer 计时可为 N/A |
-| `P1` | 可能高频的 runtime primitive、容器、allocator adapter、queue/timer 操作 | 在 `closure-perf-v1` 与锁定性能机上，对正常 consumer/replay 和同合同 peer 通过预声明工程 non-inferiority 门；默认 material margin 为 **5%** |
+| `P1` | 可能高频的 runtime primitive、容器、allocator adapter、queue/timer 操作 | 在 `closure-perf-v1` 与锁定性能机上，对正常 consumer/replay 通过预声明工程门；存在同合同 peer 时还须通过 non-inferiority。默认 material margin 为 **5%** |
 | `P2` | profile 已证明影响端到端 KPI 的热点 | 在真实 consumer/trace 上通过按贡献预算声明的 latency/throughput/resource 门，并有机制归因；小于 5% 的阈值必须由端到端预算证明 |
 
-P1/P2 的工程 verdict 固定为 `PASS/FAIL/INCONCLUSIVE/NOT_COMPARABLE`。`CLOSED` 必须为 `PASS`；
+P1/P2 的聚合工程 verdict 固定为 `PASS/FAIL/INCONCLUSIVE`。`CLOSED` 必须为 `PASS`；
 `INCONCLUSIVE` 或仪器无资格时进入 `BLOCKED` 或重新降级为没有热点证据的、重新 `SCOPED` 的 P0，
 不得原地把未知写成平局。降级必须基于 consumer/profile 事实，不能因为跑分不利。
+
+没有同合同 peer 时，独立的 comparability 轴可以是 `NOT_COMPARABLE`，但必须在看结果前冻结可验证的 consumer
+latency/throughput/resource 预算；满足该预算可形成工程 `PASS`，只是不得产生 peer/SOTA 声明。
 
 P0 固定使用 [`closure-correctness-v1`](correctness-profile-v1.md)；它是候选身份、结构 codegen、
 correctness、交付和代表消费者的可重放 profile，不是纳秒计时器。P1/P2 才进入共享性能仪器和锁定
@@ -207,12 +224,14 @@ finding，不能把它描述成完整 terminal record 的逐字段副本。这�
 legacy `BLOCKED` 的证据纠正必须在 task 中说明。候选 commit/tree、end、anchor 和 receipt 由 reviewer
 使用 Git 的普通只读命令核对，不在 closure checker 中复制一套 Git 审计系统。
 
-Product boundary 不等于 LOC boundary。模块审查直接比较 candidate→end/current 的实现路径；组件依赖、CMake 语义与 package/source delivery 由
-build/package 的真实 configure/build/install/source-package contracts 负责，模块 task 记录这些门的
-结果；closure checker 不重新实现 CMake 解释器，也不从文本 diff 猜测交付语义。
-对当前 `CLOSED/BLOCKED` 还会比较 candidate→HEAD+tracked/untracked worktree 的同一 product boundary；
-签后漂移必须 reopen，不能靠旧 reviewed commit 自证。历史 audit 的 product-identity anchor 会从 Git
-打开 registry，核对当时确为对应 `CLOSED` round/candidate，并单独核验 end receipt。
+Product boundary 不等于 LOC boundary。terminal review/replay 以及后来确实触碰该 boundary 的改动，
+由 reviewer 用普通 Git diff 比较 candidate→end/current 的实现路径；不是每次打开仓库都重审全部
+`CLOSED/BLOCKED` 模块。签后产品漂移必须按 trigger reopen，不能靠旧 reviewed commit 自证。
+组件依赖、CMake 语义与 package/source delivery 由 build/package 的真实
+configure/build/install/source-package contracts 负责，模块 task 记录这些门的结果；closure checker
+不扫描 Git 历史、不重新实现 CMake 解释器，也不从文本 diff 猜测交付语义。历史 audit 的
+product-identity anchor 由 reviewer 从 Git 打开 registry，核对当时确为对应状态/round/candidate，并
+单独核验 end receipt。
 
 ## 9. 终止输出与四项 LOC
 

@@ -23,7 +23,7 @@ source bundle 没有 `.git` 时只验证当前文件与 registry 结构，不冒
 | Gate | 最低证据 | 失败含义 |
 |---|---|---|
 | capability / API | demand-kind 账本、每个公开入口的来源与 negative space、ownership/failure/并发/复杂度 | `FAIL` 或回到 `AUDITED` |
-| correctness | 风险矩阵逐项 `PASS/NOT_APPLICABLE/BLOCKED`；公开头 self-contained；适用 sanitizer/target | correctness blocker |
+| correctness | 风险矩阵逐项 `PASS/FAIL/NOT_APPLICABLE/BLOCKED`；公开头 self-contained；适用 sanitizer/target | correctness blocker |
 | cost structure | 同复杂度档；正常路径无意外 allocation、lock、syscall、copy、registry 或常态 metadata | P0 `FAIL`；若实际是热点则重新 scope 为 P1/P2 |
 | release structure | 对受 source hint/layout 影响的入口检查 codegen、symbol、object size 或调用边；不适用时写理由 | `FAIL/INCONCLUSIVE` |
 | delivery | 真实适用的 source、relocated static、relocated shared journey；header-only 不制造虚构 binary | delivery blocker |
@@ -38,7 +38,8 @@ source bundle 没有 `.git` 时只验证当前文件与 registry 结构，不冒
 
 旧证据仅在以下条件同时成立时可复用：产品候选文件与公开合同未变；相关 compiler/dependency/build
 变化不会改变被证明事实；原始证据 hash 匹配；本轮重新执行受影响的机械门。平台或 toolchain
-改变但无法重跑时写 `NOT_APPLICABLE` 或 `INCONCLUSIVE`，不能把历史 PASS 改写为当前真机 PASS。
+改变且该门仍适用但无法重跑时写 `INCONCLUSIVE`，不能用 `NOT_APPLICABLE` 绕过，也不能把历史
+PASS 改写为当前真机 PASS。只有合同上确实不适用才写 `NOT_APPLICABLE`。
 
 P0 最终 verdict 为 `PASS/FAIL/INCONCLUSIVE`。只有全部适用门 `PASS`、其余明确
 `NOT_APPLICABLE`、无 blocker 时才可支持产品 `CLOSED`。这个 verdict 只证明 P0 结构合同；具体

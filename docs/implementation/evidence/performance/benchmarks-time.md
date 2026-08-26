@@ -266,7 +266,7 @@ application-level 证书。
 |---|---|
 | exact duration conversion | 整数路径精确饱和并覆盖 bool Rep；Windows/WSL/Apple 正确性门已通过 |
 | 默认/opt-in clock | 语义形状已定；默认路径同 OS primitive，opt-in availability 合同不变 |
-| TimerQueue 算法 | SOTA-class radix、O(1) arm/cancel；旧三平台证据是回归输入，当前五态重签待 time 复审 |
+| TimerQueue 算法 | SOTA-class radix、O(1) arm/cancel；旧三平台证据只作回归输入，后续 time 复审须按当前 comparability/qualification/exact-performance 分轴重签 |
 | 正常 event-loop | 三平台真实 clock 成本已单列；M4 scattered 优于 packed contiguous |
 | Native FFI 候选 | 旧 C-shaped schema 曾覆盖当时能力并公开正常操作常数税；time 当前仍为黄色，须先由真实 foreign-runtime 任务裁决 `FFI=N/A` 或重做/重证候选，不能把旧覆盖称为现行产品完整度 |
 | thread sleep | Windows 高分辨率路径明显优于 std；Linux/M4 与 std 同档；三平台 early=0 |

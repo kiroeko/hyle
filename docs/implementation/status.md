@@ -31,9 +31,10 @@
 产品状态流固定为：
 
 ```text
-QUEUED -> SCOPED -> AUDITED -> CANDIDATE -> VERIFIED -> CLOSED
-                                      \                 \-> BLOCKED
-CLOSED -> REOPENED -> SCOPED
+normal:  QUEUED -> SCOPED -> AUDITED -> CANDIDATE -> VERIFIED -> CLOSED
+stop:    SCOPED | AUDITED | CANDIDATE | VERIFIED -> BLOCKED
+resume:  BLOCKED -> SCOPED
+reopen:  CLOSED -> REOPENED -> SCOPED
 ```
 
 `container_intrusive` 的 auto/safe API 与产品布局已经冻结，但当前 candidate 尚无

@@ -2,6 +2,9 @@
 
 <!-- MODULE CLOSURE RECORD: HISTORICAL -->
 
+> **导入分类：`LEGACY_IMPORT`。** 本轮在 v1 exact receipt marker 生效前已经以 `BLOCKED` 写入 registry；
+> 原 end commit 不含后来新增的 `MODULE CLOSURE RECEIPT` marker，不能倒写成当时已存在。
+
 > **记录性质：`HISTORICAL TASK EVIDENCE`。** 本页只记录本轮施工事实，不声明当前状态；
 > [`module-status.json`](../../module-status.json) 的 `container_intrusive` 记录是唯一权威。本记录快照中，
 > 产品形状已经冻结，但 P1 工程性能与最终独立红队 identity 尚未签署。稳定边界见

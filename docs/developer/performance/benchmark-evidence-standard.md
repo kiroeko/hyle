@@ -34,10 +34,11 @@ size distribution 上，操作 X 相对 peer Y 的同合同路径通过 5% non-i
 单指令会把固定开销无限放大，不能冒充消费影响。
 
 模块的工程性能级别与证据形状相关但不相同：`P0` 以复杂度、资源和适用 codegen/size 结构门
-收口；`P1` 必须在锁定性能机上以正常 workload/replay 通过同合同工程 non-inferiority，默认
-material margin 为 5%；`P2` 必须由真实 consumer/trace KPI 和贡献预算守门。P1/P2 工程 `PASS`
-是产品进入 `CLOSED` 的硬门。Formal 发布证书是独立状态轴，不应成为普通模块每次重构的重复
-三平台门。
+收口；`P1` 必须在锁定性能机上以正常 workload/replay 通过预声明工程门，存在同合同 peer 时还须
+通过 non-inferiority，默认 material margin 为 5%；`P2` 必须由真实 consumer/trace KPI 和贡献预算
+守门。没有同合同 peer 的 P1 以预冻结的 consumer latency/throughput/resource 预算裁决，不能产生
+peer/SOTA 声明。P1/P2 工程 `PASS` 是产品进入 `CLOSED` 的硬门。Formal 发布证书是独立状态轴，
+不应成为普通模块每次重构的重复三平台门。
 
 ## 3. 测量前的合同卡
 
@@ -46,7 +47,8 @@ material margin 为 5%；`P2` 必须由真实 consumer/trace KPI 和贡献预算
 - candidate commit、依赖 lock、编译器、flags、linkage、LTO/ISA/backend；
 - 能力、公开/内部入口、ownership、failure 与线程合同；
 - 正常输入分布与至少一个边界规模，不能只选最有利 size；
-- 强 peer、版本、配置以及为什么语义等价；
+- 强 peer、版本、配置以及为什么语义等价；没有同合同 peer 时记录查找范围、`NOT_COMPARABLE` 和
+  预冻结的 consumer 预算；
 - setup、steady-state、teardown 哪些计费；allocation/copy/cache 是否包含；
 - latency、throughput、峰值/常驻内存、fragmentation、tail、CPU/energy 等适用指标；
 - 预声明 practical/material margin 和 non-inferiority margin；

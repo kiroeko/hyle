@@ -39,8 +39,9 @@ HYLE 面向 C++ 用户提供三种交付形式：
 - [developer](docs/developer/README.md)：维护规则、review、构建测试、性能仪器和排障；
 - [user](docs/user/README.md)：C++ 用户的选型、用法、生命周期与陷阱。
 
-当前从 Core 开始重建模块证书，唯一状态表见
-[implementation/status](docs/implementation/status.md)。模块审查方法见
+自动化维护者先读仓库级 [agent 入口](AGENTS.md)。模块当前状态只以
+[implementation/status](docs/implementation/status.md) 及其机器源为准；不要从本页推断当前施工模块。
+模块审查方法见
 [module closure methodology](docs/developer/review/module-closure-methodology.md)，真实消费者边界见
 [inference engine north star](docs/architecture/inference-engine-north-star.md)。
 

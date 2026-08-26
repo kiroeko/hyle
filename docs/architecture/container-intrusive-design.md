@@ -1,7 +1,7 @@
 # container_intrusive 架构：零分配侵入式双向链表
 
-> **产品形状：`CANDIDATE / 复审中`。** 本页记录当前候选的长期边界，不是模块签署证书。
-> 正确性、性能、交付与独立红队仍须绑定同一 candidate；唯一施工状态见
+> 本页记录该组件的长期边界，不是模块状态或签署证书。正确性、性能、交付与独立红队必须绑定
+> 对应 closure candidate；唯一施工状态见
 > [implementation/status](../implementation/status.md)。
 
 ## 定位

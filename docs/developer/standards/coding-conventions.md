@@ -48,8 +48,8 @@
 
 ## 5. 错误处理
 
-- 可恢复失败返回 `Status`/`Result<T>`，使用 `HYLE_RETURN_IF_ERROR` 与
-  `HYLE_ASSIGN_OR_RETURN` 传播。
+- 依赖层级允许时，可恢复失败返回 `Status`/`Result<T>`，使用 `HYLE_RETURN_IF_ERROR` 与
+  `HYLE_ASSIGN_OR_RETURN` 传播。error 自身及更低 bootstrap 层使用各自已审定、无循环依赖的失败形状。
 - 只有增加用户语义时才 `WithContext`；不要每层重复拼接同一句上下文。
 - OS/backend translator 保留 operation、原生错误类别/数值与必要路径；不要只返 `false/-1`。
 - HYLE 自身不变量用 `HYLE_FATAL_ASSERT` 等 fail-fast，不能 catch 后继续。
@@ -91,13 +91,15 @@
 - feature option 表达用户能力，不表达某台维护机器是否恰好安装依赖；auto-detection 要 fail closed
   或明确报告。
 - 新依赖同时覆盖 pin/hash、online/offline、install/export、license 和受影响 CI。
-- source/static/shared 都必须由独立 consumer 验证，不能从 producer build tree 偶然取文件。
+- source/static/shared 的实际交付形状由独立 consumer 验证，不能从 producer build tree 偶然取文件；
+  header-only 或未产生某类 binary 的组件将该 journey 明确记为 `NOT_APPLICABLE`，不制造虚构产物。
 
 ## 10. 测试与提交
 
 - 测试覆盖正常、边界、失败和生命周期；并发/解析/算法按风险加 sanitizer、stress、fuzz、property
   或 differential oracle。
 - benchmark 不提供测试专用 public API；性能 harness 使用正常入口或明确 internal seam。
-- 修改底层模块同时运行直接消费者与 package closure，不能只跑本模块单测。
+- 修改底层模块不能只跑本模块单测；运行 closure card 按公开头暴露、语义调用、本轮 diff 和失败半径
+  预选的代表性直接消费者，以及适用的 package closure。
 - 提交前运行 `git diff --check`、受影响测试、`python scripts/check-docs.py` 和适用机器合同。
 - 保留用户无关的既有修改；提交只包含本轮能够解释和验证的文件。

@@ -64,8 +64,9 @@ container 提供性能敏感的基础数据结构、借用字符串/路径算法
 
 auto/safe retirement 选择、接入、multi-hook 示例、`try_*` 的有限检查边界、range splice、callback、外部同步以及完整
 iterator/lifetime 失效矩阵见独立的
-[`container_intrusive` 用户指南](container-intrusive.md)。它当前为 `CANDIDATE / 复审中`；普通
-owning sequence 仍优先使用标准或本页其他 owning container。
+[`container_intrusive` 用户指南](container-intrusive.md)。其收口状态只见
+[施工状态](../implementation/status.md)；普通 owning sequence 仍优先使用标准或本页其他 owning
+container。
 
 ## 连续容器
 

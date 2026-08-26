@@ -14,8 +14,10 @@
 
 ## 写代码时
 
-- C++23；公开形状优先 RAII、owner/view、span/range、strong type、`Status/Result`。
-- 可恢复失败走 error，不变量才 fail-fast；外来异常只在 adapter 转换。
+- C++23；公开形状优先 RAII、owner/view、span/range、strong type；依赖层级允许时使用
+  `Status/Result`。
+- 可恢复失败走 error，不变量才 fail-fast；error/bootstrap 层不得制造循环依赖；外来异常只在
+  adapter 转换。
 - OS/CPU/topology/VM/thread 机制走 platform；allocator/placement 走 mem；clock/deadline 走 time。
 - HYLE 内部直接使用 C++ API，不绕旧 C bridge。Native FFI 默认 `N/A`。
 - 中央 component manifest 是内部依赖源；真实 target edge由它投影，外部依赖由模块一处登记。
@@ -35,11 +37,14 @@
 
 - 正常、边界、OOM/系统失败、move/destroy、并发/取消/关闭按风险测试。
 - 跑适用 sanitizer、property/differential/fuzz/stress 和真 ISA/backend。
-- 验证 public headers、component-only build、source、installed static、installed shared C++ consumer。
+- 验证 public headers、component-only build 及真实适用的 source/installed static/installed shared
+  C++ consumer；header-only 不制造 binary journey。
 - 扫描上下游是否绕过 error/platform/mem/time 等底座，检查中央图与 package 闭包。
 - 更新四类文档各自唯一事实，运行 `python scripts/check-docs.py`。
 - 独立红队逐项 `fixed/disproved/accepted/out-of-scope`。
-- 运行 `python scripts/loc-report.py --module <name> --self-check`，记录四个 LOC。
+- 终止轮使用
+  `python scripts/loc-report.py --module <name> --commit <full-snapshot-commit> --self-check --json`
+  记录四个 LOC；不带 `--commit` 只观察当前工作树，不能写入 terminal 记录。
 - `git status --short`、`git diff --check`、提交真实文件；低 CI 价值的纯文档提交使用 `[skip ci]`。
 
 ## 环境提醒

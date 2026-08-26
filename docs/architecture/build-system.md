@@ -215,7 +215,8 @@ CI 不把所有平台、后端和性能门塞进一次任务：
 3. 增加 `tests/<module>/CMakeLists.txt` 及模块聚合测试；需要时再增加 benchmark。
 4. 若引入外部源码，先更新 dependency lock，再在模块包登记中声明唯一 owner、feature、导出 target、资产和许可证投影。
 5. 增加 C++ 源码消费和 static/shared 安装消费样例；确认 relocation。
-6. 让 all-component、依赖图、离线、源码包和适用的 feature CI 失败一次，再修到通过，证明门确实覆盖新模块。
+6. 运行 all-component、依赖图、离线、源码包和适用的 feature 合同并修到通过；新增合同测试时，
+   用隔离的负向 fixture 证明它能拒绝缺边/缺资产，不能故意破坏产品树或共享 CI 来“失败一次”。
 7. 更新 architecture、user guide、task/evidence；构建通过不等于模块收口。
 
 ## 已知遗留

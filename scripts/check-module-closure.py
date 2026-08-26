@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import datetime
 import json
 import posixpath
 import re
@@ -28,7 +29,6 @@ ENGINEERING_VERDICTS = {
     "PASS",
     "FAIL",
     "INCONCLUSIVE",
-    "NOT_COMPARABLE",
 }
 ENGINEERING_MODES = {"STRUCTURAL", "P1_ENGINEERING", "P2_CONSUMER"}
 FORMAL_STATES = {"NONE", "PENDING", "CERTIFIED", "FAILED", "EXPIRED"}
@@ -41,7 +41,7 @@ GATE_NAMES = {
     "red_team",
     "engineering_performance",
 }
-GATE_VERDICTS = {"PASS", "FAIL", "INCONCLUSIVE", "NOT_APPLICABLE"}
+GATE_VERDICTS = {"PASS", "FAIL", "INCONCLUSIVE"}
 LOC_FIELDS = {
     "repository_code",
     "self_with_tests",
@@ -50,18 +50,18 @@ LOC_FIELDS = {
 }
 STATUS_TABLE_BEGIN = "<!-- BEGIN GENERATED MODULE STATUS -->"
 STATUS_TABLE_END = "<!-- END GENERATED MODULE STATUS -->"
-COMMIT_RE = re.compile(r"^[0-9a-f]{7,40}$")
+COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
 COMPONENT_RE = re.compile(r"_hyle_declare_component\(\s*([a-z][a-z0-9_]*)")
 
 ALLOWED_TRANSITIONS = {
-    "QUEUED": {"QUEUED", "SCOPED", "BLOCKED"},
+    "QUEUED": {"QUEUED", "SCOPED"},
     "SCOPED": {"SCOPED", "AUDITED", "BLOCKED"},
     "AUDITED": {"AUDITED", "CANDIDATE", "BLOCKED"},
     "CANDIDATE": {"CANDIDATE", "AUDITED", "VERIFIED", "BLOCKED"},
     "VERIFIED": {"VERIFIED", "CANDIDATE", "CLOSED", "BLOCKED"},
     "CLOSED": {"CLOSED", "REOPENED"},
     "BLOCKED": {"BLOCKED", "SCOPED"},
-    "REOPENED": {"REOPENED", "SCOPED", "BLOCKED"},
+    "REOPENED": {"REOPENED", "SCOPED"},
 }
 
 
@@ -100,6 +100,23 @@ def declared_performance_profiles(root: Path) -> tuple[set[str], set[str]]:
         raise ValueError(f"invalid instrument_profiles in {registry}")
     if not isinstance(machines, dict):
         raise ValueError(f"invalid machine_profiles in {registry}")
+    docs = value.get("instrument_profile_docs")
+    if not isinstance(docs, dict) or set(docs) != set(instruments):
+        raise ValueError(
+            f"instrument_profile_docs in {registry} must map every instrument exactly")
+    for profile, path in docs.items():
+        if not isinstance(path, str) or not path or Path(path).is_absolute():
+            raise ValueError(
+                f"invalid documentation path for instrument {profile!r} in {registry}")
+        resolved = (root / path).resolve()
+        try:
+            resolved.relative_to(root.resolve())
+        except ValueError as error:
+            raise ValueError(
+                f"instrument documentation for {profile!r} escapes the repository") from error
+        if not resolved.is_file():
+            raise ValueError(
+                f"instrument documentation for {profile!r} is not a file: {path}")
     return set(instruments), set(machines)
 
 
@@ -118,7 +135,7 @@ def _check_commit(
         errors: list[str]) -> None:
     value = _require_string(record, field, prefix, errors)
     if value is not None and COMMIT_RE.fullmatch(value) is None:
-        errors.append(f"{prefix}: '{field}' is not a 7-40 digit lowercase Git id")
+        errors.append(f"{prefix}: '{field}' is not a full 40-digit lowercase Git id")
 
 
 def _check_repo_path(
@@ -139,6 +156,17 @@ def _check_repo_path(
         return
     if not resolved.exists():
         errors.append(f"{prefix}: '{field}' does not exist: {value}")
+
+
+def _check_repo_file(
+        root: Path, value: Any, field: str, prefix: str,
+        errors: list[str]) -> None:
+    before = len(errors)
+    _check_repo_path(root, value, field, prefix, errors)
+    if len(errors) != before or not isinstance(value, str):
+        return
+    if not (root / value).resolve().is_file():
+        errors.append(f"{prefix}: '{field}' must name a repository file: {value}")
 
 
 def _contains_tbd(value: Any) -> bool:
@@ -200,7 +228,7 @@ def validate_module(
 
     for field in ("round_id", "closure_task", "scope", "non_goals"):
         _require_string(record, field, prefix, errors)
-    _check_repo_path(root, record.get("closure_task"), "closure_task", prefix, errors)
+    _check_repo_file(root, record.get("closure_task"), "closure_task", prefix, errors)
     _check_commit(record, "baseline_commit", prefix, errors)
 
     tier = record.get("performance_tier")
@@ -232,12 +260,23 @@ def validate_module(
             _check_repo_path(
                 root, engineering.get("evidence"),
                 "engineering_performance.evidence", prefix, errors)
+            if verdict == "PLANNED":
+                errors.append(
+                    f"{prefix}: {effective_state} cannot retain a PLANNED engineering verdict")
         if tier in {"P1", "P2"}:
             margin = engineering.get("material_margin_pct")
             if not isinstance(margin, (int, float)) or margin <= 0:
                 errors.append(
                     f"{prefix}: {tier} requires a positive material_margin_pct")
-            _require_string(engineering, "machine_profile", prefix, errors)
+            machine = _require_string(
+                engineering, "machine_profile", prefix, errors)
+            if machine is not None and machine not in machine_profiles:
+                errors.append(f"{prefix}: unknown engineering machine profile {machine!r}")
+            if (machine is not None and isinstance(profiles, list) and
+                    machine not in profiles):
+                errors.append(
+                    f"{prefix}: engineering machine profile {machine!r} is absent "
+                    "from validation_machine_profiles")
         if tier == "P0" and mode != "STRUCTURAL":
             errors.append(f"{prefix}: P0 engineering mode must be STRUCTURAL")
         if tier == "P0" and instrument != "closure-correctness-v1":
@@ -249,6 +288,8 @@ def validate_module(
             errors.append(f"{prefix}: P1 must use closure-perf-v1")
         if tier == "P2" and mode != "P2_CONSUMER":
             errors.append(f"{prefix}: P2 engineering mode must be P2_CONSUMER")
+        if tier == "P2" and instrument != "closure-perf-v1":
+            errors.append(f"{prefix}: P2 must use closure-perf-v1")
 
     formal = record.get("formal_performance")
     if not isinstance(formal, dict):
@@ -292,6 +333,7 @@ def validate_module(
 
     if state in {"CLOSED", "BLOCKED"}:
         _check_commit(record, "end_commit", prefix, errors)
+        _check_commit(record, "registry_anchor_commit", prefix, errors)
         _check_repo_path(
             root, record.get("closure_evidence"),
             "closure_evidence", prefix, errors)
@@ -319,7 +361,7 @@ def validate_module(
         if isinstance(gates, dict):
             blockers = [
                 gate for gate, verdict in gates.items()
-                if verdict not in {"PASS", "NOT_APPLICABLE"}
+                if verdict != "PASS"
             ]
             if blockers:
                 errors.append(
@@ -341,6 +383,11 @@ def validate_registry(data: dict[str, Any], root: Path) -> list[str]:
     updated = data.get("updated_at")
     if not isinstance(updated, str) or re.fullmatch(r"\d{4}-\d{2}-\d{2}", updated) is None:
         errors.append("registry updated_at must be YYYY-MM-DD")
+    else:
+        try:
+            datetime.date.fromisoformat(updated)
+        except ValueError:
+            errors.append("registry updated_at must be a valid calendar date")
 
     modules = data.get("modules")
     if not isinstance(modules, list):

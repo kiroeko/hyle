@@ -75,6 +75,70 @@ def main() -> None:
     errors = checker.validate_registry(missing_loc, root)
     require_error(errors, "missing LOC fields")
 
+    missing_anchor = copy.deepcopy(data)
+    core = next(
+        record for record in missing_anchor["modules"]
+        if record["module"] == "core")
+    del core["registry_anchor_commit"]
+    errors = checker.validate_registry(missing_anchor, root)
+    require_error(errors, "registry_anchor_commit")
+
+    short_identity = copy.deepcopy(data)
+    core = next(
+        record for record in short_identity["modules"]
+        if record["module"] == "core")
+    core["baseline_commit"] = core["baseline_commit"][:7]
+    errors = checker.validate_registry(short_identity, root)
+    require_error(errors, "full 40-digit lowercase Git id")
+
+    ghost_machine = copy.deepcopy(data)
+    intrusive = next(
+        record for record in ghost_machine["modules"]
+        if record["module"] == "container_intrusive")
+    intrusive["engineering_performance"]["machine_profile"] = "GHOST"
+    errors = checker.validate_registry(ghost_machine, root)
+    require_error(errors, "unknown engineering machine profile")
+
+    wrong_p2_instrument = copy.deepcopy(data)
+    intrusive = next(
+        record for record in wrong_p2_instrument["modules"]
+        if record["module"] == "container_intrusive")
+    intrusive["performance_tier"] = "P2"
+    intrusive["engineering_performance"]["mode"] = "P2_CONSUMER"
+    intrusive["engineering_performance"]["instrument_profile"] = (
+        "closure-correctness-v1")
+    errors = checker.validate_registry(wrong_p2_instrument, root)
+    require_error(errors, "P2 must use closure-perf-v1")
+
+    verified_planned = copy.deepcopy(data)
+    intrusive = next(
+        record for record in verified_planned["modules"]
+        if record["module"] == "container_intrusive")
+    intrusive["engineering_performance"]["verdict"] = "PLANNED"
+    errors = checker.validate_registry(verified_planned, root)
+    require_error(errors, "cannot retain a PLANNED engineering verdict")
+
+    closed_red_team_na = copy.deepcopy(p1_engineering_close)
+    intrusive = next(
+        record for record in closed_red_team_na["modules"]
+        if record["module"] == "container_intrusive")
+    intrusive["gate_verdicts"]["red_team"] = "NOT_APPLICABLE"
+    errors = checker.validate_registry(closed_red_team_na, root)
+    require_error(errors, "CLOSED has non-passing gates: red_team")
+
+    task_is_directory = copy.deepcopy(data)
+    core = next(
+        record for record in task_is_directory["modules"]
+        if record["module"] == "core")
+    core["closure_task"] = "docs/implementation/tasks/core"
+    errors = checker.validate_registry(task_is_directory, root)
+    require_error(errors, "must name a repository file")
+
+    invalid_date = copy.deepcopy(data)
+    invalid_date["updated_at"] = "2026-99-99"
+    errors = checker.validate_registry(invalid_date, root)
+    require_error(errors, "valid calendar date")
+
     duplicate = copy.deepcopy(data)
     duplicate["modules"].append(copy.deepcopy(duplicate["modules"][0]))
     errors = checker.validate_registry(duplicate, root)
@@ -96,6 +160,14 @@ def main() -> None:
     core["product_state"] = "QUEUED"
     errors = checker.validate_transitions(data, illegal)
     require_error(errors, "illegal transition 'CLOSED' -> 'QUEUED'")
+
+    queued_to_blocked = copy.deepcopy(data)
+    error = next(
+        record for record in queued_to_blocked["modules"]
+        if record["module"] == "error")
+    error["product_state"] = "BLOCKED"
+    errors = checker.validate_transitions(data, queued_to_blocked)
+    require_error(errors, "illegal transition 'QUEUED' -> 'BLOCKED'")
 
     drifted_status = status_path.read_text(encoding="utf-8").replace(
         "| core | CLOSED |", "| core | QUEUED |", 1)

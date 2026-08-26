@@ -1,14 +1,17 @@
 # 模块重构与收口任务模板 v1
 
-<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+<!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-> 复制到 `docs/implementation/tasks/<module>/`。状态只写入
-> [`module-status.json`](../../implementation/module-status.json)；本页记录该轮事实，不复制当前状态。
-> 完整判据见 [模块收口协议](module-closure-methodology.md)。
+> 复制到 `docs/implementation/tasks/<module>/`。权威状态文件是
+> `docs/implementation/module-status.json`，完整判据是
+> `docs/developer/review/module-closure-methodology.md`。本页记录该轮事实，不复制当前状态；真正进入
+> `CLOSED/BLOCKED` 的 terminal end commit 才把顶部 `ACTIVE` 改为 `HISTORICAL` 并写 receipt marker。
 
 ## Closure card（进入 `SCOPED` 前冻结）
 
 - component / owner / round ID：
+- task kind：`NEW / REFACTOR / REOPEN / RESUME`
+- `RESUME` 前一 round / blocker / resume condition：
 - baseline commit：
 - 进入原因与 demand/defect ID：
 - 真实 consumer task / normal workload：
@@ -21,14 +24,18 @@
 - machine profile：
 - instrument profile：
 - strong peers（每项 capability 最多两个，绑定版本/commit/source）：
+- 无同合同 peer 时的 consumer latency/throughput/resource 预算及禁止声明：
 - 适用 correctness / delivery / performance gates：
 - 预期输出：
 - 停止条件 / 可接受限制：
 
 ## Capability / gap ledger
 
-| ID | demand kind | exact consumer / peer / standard source | normal shape | semantic / artifact / delivery owner | ownership/failure/concurrency | complexity/resource target | `KEEP/FIX/BORROW/DEFER/REJECT` | severity | verification / negative space |
-|---|---|---|---|---|---|---|---|---|---|
+| ID | requirement class | demand kind | exact consumer / peer / standard source | normal shape | semantic / artifact / delivery owner | ownership/failure/concurrency | complexity/resource target | `KEEP/FIX/BORROW/DEFER/REJECT` | severity | verification / negative space |
+|---|---|---|---|---|---|---|---|---|---|---|
+
+`requirement class` 只用 `MUST/GENERAL`：`MUST` 属本轮冻结范围，必须有实现、自然组合、成熟依赖或
+明确裁决；`GENERAL` 只用于成熟库查漏，不会自动扩大本轮。
 
 - 公开入口反向追踪：
 - 语法消费者 / 语义重复扫描：
@@ -65,7 +72,7 @@
 | ASan / UBSan / TSan |  |  |  |
 | real ISA / backend |  |  |  |
 
-| Gate | `PASS/FAIL/INCONCLUSIVE/NOT_APPLICABLE` | 命令 / 证据 | 限制 |
+| Aggregate gate | `PASS/FAIL/INCONCLUSIVE` | 命令 / 证据 | 限制 |
 |---|---|---|---|
 | correctness / sanitizer |  |  |  |
 | component / source / static / shared |  |  |  |
@@ -100,10 +107,12 @@ P1/P2 补充：
 - blocker，或无 blocker 的依据：
 - 已知限制：
 - reopen triggers：
-- terminal receipt / end commit：
-- terminal receipt marker：只在真正终止的 end commit 把 `<STATE>` 替换为 `CLOSED` 或 `BLOCKED`：
+- terminal receipt 内容（完整 end commit ID 只由后续 registry 提交记录）：
+- terminal receipt marker：只在真正终止的 end commit 把顶部 marker 改为 `HISTORICAL`，并把下方
+  `<STATE>` 替换为 `CLOSED` 或 `BLOCKED`：
   `<!-- MODULE CLOSURE RECEIPT: <STATE> -->`
-- registry anchor commit：
+- registry anchor commit：end commit 保存 receipt 内容，不能在该提交内写入自己的 hash；提交产生后，
+  由后续 registry 提交记录完整 40 位 end/anchor identity。
 - raw evidence：
 - 四项 LOC snapshot commit：
 - 全库代码：

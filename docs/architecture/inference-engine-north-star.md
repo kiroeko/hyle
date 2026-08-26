@@ -130,7 +130,8 @@ CPU/GPU handoff 和跨 die 行为。统一地址空间不得被记作“天然�
 4. **正确性门**：固定 token 输入下的 logits/token oracle、所有权与释放、OOM/取消/迟到完成、
    sanitizer 和三平台适用门全部明确通过或登记不适用。
 5. **性能门**：同一模型文件、量化、token 输入、精度、backend、线程/亲和、NUMA、batch、KV、
-   冷热状态和计费边界与强 peer 对拍；按性能证据标准保存原始数据和五态判定。
+   冷热状态和计费边界与强 peer 对拍；按性能证据标准分别保存 comparability、qualification、
+   exact-performance 与 non-inferiority 结论及原始数据。
 6. **泛化门**：开发集和所有适用留出项分别通过预声明 non-inferiority/SLO；不得池化有利项
    掩盖单项 material regression。
 7. **资源门**：吞吐不能代偿峰值 host/device memory、碎片、复制量、tail latency、公平性、

@@ -102,7 +102,9 @@ PLT/IAT、stack spill 或不同 inlining。counter 可辅助确认 instructions/
 2. 每个顺序运行独立进程 paired samples；默认至少 15 个，Mac 高噪声形状可预声明更多。
 3. A/B 与 B/A 分开报告；多个 layout bank/replica 先分层，再按预声明方法合成。
 4. 保存逐进程 raw JSON、host metadata、calibration 和 artifact identity。
-5. 使用五态 `WIN/PARITY/LOSE/INCONCLUSIVE/NOT_COMPARABLE`；non-inferiority 另设单边 gate。
+5. 分别记录 comparability（`COMPARABLE/NOT_COMPARABLE`）、qualification
+   （`QUALIFIED/DIAGNOSTIC`）和 exact performance（`WIN/PARITY/LOSE/INCONCLUSIVE`）；
+   non-inferiority 另设单边 gate。
 6. 在未用于开发调参的 ISA、类型、规模或 consumer kernel 上做 holdout。
 
 Windows、Linux 和 macOS 的具体 preset/工具链只看 [setup](../setup/README.md) 与脚本 README，避免

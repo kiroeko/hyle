@@ -44,7 +44,7 @@ Native FFI 当前为 `N/A`，不存在 C 或 managed 用户面；旧 C/managed f
 | **xsimd** | 参考 + bench 对照 | 数学 best-of 与精度/性能 oracle；simd-20 后不进产品构建 |
 | **simdutf** | 借（container 直接编入） | vendored v9.1 amalgamation 无条件编入 `hyle_container`；`utf8_validate` 借其单遍 validate，`utf8_length` 借 validate/count，二者复用内部 runtime ISA dispatch，公开头不泄露 vendor 类型 |
 | **sleef** | **已退役(clone 留存)** | 曾评估作 transcendental 核,选定 highway+xsimd 后退役;仍 clone 供对照,不进构建 |
-| **nanobench** | 借（测试期） | 微基准框架，vendored 在 `third_party/`；`scripts/bench-stat.py` 在其上做至少 n=15 的跨进程同进程配对：预声明 margin、分布无关中位数 CI、五态 exact verdict、同合同 non-inferiority gate、逐进程 raw JSON 与正反序/shape 合成；sign p 值只作诊断 |
+| **nanobench** | 借（测试期） | 微基准框架，vendored 在 `third_party/`；统一性能仪器在其上做跨进程同进程配对：预声明 margin、分布无关中位数 CI、comparability/qualification/exact-performance 分轴、同合同 non-inferiority gate、逐进程 raw JSON 与正反序/shape 合成；sign p 值只作诊断 |
 
 ### compute/（Tier 1，含 Intel 计算加速）
 | 库 | 角色 | 说明 |

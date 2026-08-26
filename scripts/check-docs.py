@@ -28,6 +28,7 @@ LEGACY_DOCS_DIRECTORIES = {
     "setup",
 }
 REQUIRED_READMES = (
+    "AGENTS.md",
     "docs/README.md",
     "docs/architecture/README.md",
     "docs/implementation/README.md",
@@ -114,9 +115,10 @@ def link_destination(body: str) -> str:
 
 def markdown_files() -> list[Path]:
     paths: set[Path] = set()
-    root_readme = REPO_ROOT / "README.md"
-    if root_readme.is_file():
-        paths.add(root_readme)
+    for name in ("README.md", "AGENTS.md"):
+        root_page = REPO_ROOT / name
+        if root_page.is_file():
+            paths.add(root_page)
 
     for directory in ("docs", "evidence", "scripts", "samples"):
         root = REPO_ROOT / directory
