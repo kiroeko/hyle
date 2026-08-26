@@ -468,8 +468,8 @@ class Channel {
   Channel& operator=(Channel&&) = delete;
 
   // Allocation failure leaves a closed/empty invalid channel. Check this once
-  // after construction; send/recv also fail safely so an FFI factory can
-  // convert OOM into the shared Status channel.
+  // after construction; send/recv also fail safely. This low-level constructor
+  // has no hidden last-error side channel.
   bool valid() const noexcept { return buf_ != nullptr; }
 
   // Enqueue `v`, blocking the fiber while the buffer is full. Returns false if

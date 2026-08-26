@@ -1,12 +1,12 @@
 # error 设计：值语义失败与模块接缝
 
-> **V2 状态：`NOT_REVIEWED`。** 本页是上一轮 error 设计输入，不是当前模块证书。当前产品只
-> 提供 C++23 source/static/shared；Native FFI 为 `N/A`。BUILD-03 已删除旧 C schema、bridge、
-> 动态导出和 managed fixture。用户当前写法见 [user/error](../user/error.md)，施工状态见
-> [implementation/status](../implementation/status.md)。
+> **error-v3 当前设计合同。** 本页描述本轮 `AUDITED` 后冻结的产品边界，不提前充当候选或
+> 收口证书。当前只提供 C++23 source/static/shared；Native FFI 为 `N/A`。BUILD-03 已删除旧
+> C schema、bridge、C-shaped 动态导出和 managed fixture。用户写法见
+> [user/error](../user/error.md)，施工状态只看 [implementation/status](../implementation/status.md)。
 
-> 上一轮性能输入见 [historical error evidence](../implementation/evidence/performance/benchmarks-error.md)。
-> 正文尚未按新的四类文档职责拆净。
+> error-v3 的待资格合同与上一轮历史输入分账见
+> [performance evidence](../implementation/evidence/performance/benchmarks-error.md)。
 
 ## 0. 职责与依赖位置
 
@@ -162,6 +162,10 @@ construction/assignment 都会 fail-fast 拒绝 `Status::Ok()`，调用方也不
 同时把“错误槽不得为 OK”从传播宏的迟到检查提升为不可绕过的类型不变量。HYLE 未发布，不为此前
 “直接以 `Status` 作为 error type”的 type identity 保留兼容层。
 
+它也保留标准 `expected` 的默认构造语义：当 `T` 可默认构造时，`Result<T>{}` 是**成功**并包含
+value-initialized `T`，不是 empty、unknown 或未设置的错误；当 `T` 不可默认构造时该写法不可用。
+这属于 C++23 value contract，不能为了减少一个易用性陷阱而给 carrier 增加第三状态。
+
 C++23 `std::expected` 禁止 reference value，因此 `Result<T&>` 不是当前产品形状。非空对象借用用
 `Result<std::reference_wrapper<T>>`，nullable 对象用有明确 NULL 合同的 `Result<T*>`，连续范围/
 文本用 `Result<std::span<T>>` / `Result<std::string_view>`；这些成功值都不延长 owner 生命周期。
@@ -230,18 +234,24 @@ native detail 不同合同，只能作机制诊断，不能宣称产品输赢。
 
 ## 5. 成熟实现裁决
 
+error-v3 的可复查 peer 身份固定为 Abseil commit
+`81c993af4fb88b3a51829a796df02251fa27102f`（本地
+`C:/public/project-hyle/abseil-cpp`）与 Folly commit
+`423fd7f8d97fd7bf52fc4c986dfd20320c4de8f9`（本地
+`C:/public/project-hyle/folly`）；C++23 `std::expected` 是标准合同，不算第三个性能 peer。
+本轮没有把未初始化的 Boost.System/Outcome/LEAF 源码冒充已读 peer 证据。
+
 | 参考 | 借鉴 | 明确差异 |
 |---|---|---|
-| Abseil `Status/StatusOr` | canonical taxonomy、intrusive shared rep、unique-release fast path、非 OK error-arm invariant、errno mapping；审查 `StatusOr<T&>` lifetime guards | 不引入任意 payload/StatusBuilder；context 保留扁平渐进表示；当前借用值保持 C++23 expected wrapper 形状 |
-| Folly `Expected` | 标准 expected-shaped value/error 组合、零成功分配 | 不引入 exception_wrapper 作为 HYLE operational channel |
-| Boost.System/Outcome/LEAF | domain+code、checked failure 与动态 typed detail 的取舍 | HYLE 当前只需一个固定 native detail，不做动态 category/slot |
+| 上述固定 Abseil `Status/StatusOr` | canonical taxonomy、intrusive shared rep、unique-release fast path、非 OK error-arm invariant、errno mapping；审查 `StatusOr<T&>` lifetime guards | 不引入任意 payload/StatusBuilder；context 保留扁平渐进表示；当前借用值保持 C++23 expected wrapper 形状 |
+| 上述固定 Folly `Expected` | 标准 expected-shaped value/error 组合、零成功分配 | 不引入 exception_wrapper 作为 HYLE operational channel |
 | C++23 `std::expected` | observers 与 monadic surface | 用零状态 `ResultError` 补 Status 的非 OK 不变量 |
 
-以下只有真实消费者出现才重开：多独立机器 detail、可遍历/序列化的 structured cause、公共
-multi-error、跨进程序列化、WinSock Status 冷路径、`Result<T&>` 专用 monadic 形状、重复的
-std/Boost error-code adapter、managed-to-native error construction/callback。参考库 API 更多、
-LOC 更大或某个微基准
-容易赢都不是功能授权。
+本轮负空间固定为：多独立 machine detail、可遍历/序列化的 structured cause、公共 MultiError、
+跨进程序列化、WinSock/任意第三方 category adapter、`Result<T&>` 专用实现、source location/
+backtrace、异常层级与 Native FFI construction/callback。只有具名消费者证明当前 code/native/
+context、caller-owned aggregate 或 borrowed-result 组合无法表达需求时才重开；参考库 API 更多、
+LOC 更大或某个微基准容易赢都不是功能授权。
 
 ## 6. 采用与模块边界
 

@@ -1,60 +1,34 @@
-# error 实测铁证
+# error 性能证据
 
-> **V2：`HISTORICAL / UNQUALIFIED`。** error 尚未按当前真实消费者与仪器资格标准重审；
-> 本页数字只解释旧 candidate，不是当前模块证书。
+> **error-v3：`PENDING QUALIFICATION`。** 当前状态是 `AUDITED`，candidate 尚未形成，也没有本轮
+> P1 性能 verdict。本页下方 2026-07 点值只保留为历史输入，不是当前模块证书；现行状态只看
+> [`module status`](../../status.md)。
 
-> **2026-08-25 freshness gate：**本页点值绑定下述 2026-07 commit，只是本轮重签的历史输入。
-> error 的产品收口状态未改变；相同 source identity、peer pin、编译合同与三平台 n=15 完成前，
-> 这些点值不是当前依赖组合的发布证书。现行状态只看
-> [`pre-release-readiness`](../../status.md)。
+本页是 [performance 总账](README.md) 的 error 模块详节。稳定设计见
+[error-design](../../../architecture/error-design.md)，用户选型见
+[error guide](../../../user/error.md)。benchmark 只验证消费者会使用的产品形状，不定义 API。
 
-> 本页是 [performance 总账](README.md) 的 error 模块详节。稳定设计见
-> [error-design](../../../architecture/error-design.md)，用户选型见
-> [error guide](../../../user/error.md)。benchmark 只验证消费者会使用的产品形状，不定义 API。
+## error-v3 待资格合同
 
-## 2026-08-25 当前重签合同（采样前声明）
+工程裁决机固定为 `W1-WIN`，仪器为 `closure-perf-v1`。required comparable workload 对固定
+Abseil commit `81c993af4fb88b3a51829a796df02251fa27102f`，使用 5% material/non-inferiority
+margin。Folly commit `423fd7f8d97fd7bf52fc4c986dfd20320c4de8f9` 只用于 Expected/API/实现查漏；
+C++23 `std::expected` 是标准合同和较弱成本下界，不冒充第三个同合同性能 peer。
 
-本轮先重签 Windows x64/MSVC，预声明所有同合同 hot pair 的等价预算为 `m=3%`，即
-`[L,U]=[1/1.03,1.03]`；exact verdict 使用 `bench-stat.py` 的 paired
-`RIVAL/HYLE` ratio 总体中位数 exact order-statistic CI，另行保留同一 CI 的单边
-non-inferiority gate。每个执行顺序至少 15 个独立进程，candidate-first 与 peer-first 分开
-采样、分别保存逐进程 schema-1 raw JSON。看见结果后不更换 margin。
+| workload family | 正常消费者任务与计费边界 | 当前资格状态 |
+|---|---|---|
+| graph replay | 64 个 stable node 的一次 `TaskGraph::evaluate`；全成功与末节点 code-only 失败，对称消费最终结果 | `PENDING`；替代可被 DCE 的常量 OK/短传播微形状 |
+| normal diagnostic | 29B owning message construct/shared copy、1/3 层 context、两 frame message Result、54B owning format、fresh-prvalue Update | `PENDING`；每项独立通过同合同、timer-floor、双 order/placement 门 |
+| boundary diagnostics | 7/256B construct、16 层 context、512B format、runtime-code primitive、native/errno | `NOT_P1_GATING`；只记录 correctness、复杂度或绝对成本 |
+| native detail / payload | HYLE 固定 `{domain,int64}`，Abseil 可携带任意多 payload | `NOT_COMPARABLE`；不得写成同能力胜负 |
 
-| workload family | 正常消费者任务与计费边界 | ownership / 数据形状 | peer 与资格 |
-|---|---|---|---|
-| Status success / code-only failure propagation | leaf → layer1 → layer2 → chain 四个对称 `noinline` frame；成功链逐层检查后继续，失败链逐层立即传播，caller 消费最终 `ok()`/`code()` | OK 或 runtime-selected canonical code；无 message/context/payload、无分配 | Abseil `Status`，同合同、同调用拓扑与最终消费 |
-| runtime code-only / Cancelled factory | 从运行时 canonical code 或常用 factory 构造 carrier；整个对象 escape，caller 查询 code | 无 message/context/payload；runtime code 在 `InvalidArgument`/`NotFound` 间变化 | Abseil empty/no-location `Status`，同合同；`std::error_code` 只是较弱成本下界 |
-| Result success / code-only failure | leaf + layer1 + layer2 + chain 四个对称 `noinline` frame，caller 检查并消费 | 成功值或 canonical code，无 message | Abseil `StatusOr<int>`，同合同；`std::expected` 是较弱下界 |
-| owning message construct/copy | 从 borrowed view 构造 owning status，或复制共享表示 | 7B（SSO-sized）、29B（跨 SSO）、256B long；copy 固定 29B | Abseil no-location `Status`，同合同 |
-| context | 给 message error 前置 1/3 层；另以 16 层分别测 fresh unique-rvalue 与每层 lvalue-derived chain | 相同 seed/context/final text；构造、增长和释放都计费 | Abseil `StatusBuilder::SetPrepend`，同消费者语义；unique 与 lvalue 不跨表合并 |
-| message Result / Update | 两个真实 frame 传播预建 message error；首错聚合分别使用 stored lvalue 和两个 fresh noinline factory prvalue | 相同 code/message、调用边界及临时对象生命周期 | Abseil `StatusOr` / `Status::Update`，同合同 |
-| owning format | 生成完整 owning 人读字符串 | 54B 与 512B message，分配/释放计费 | Abseil `Status::ToString`，同合同；HYLE caller-buffer 128B 行只报绝对成本 |
-| native detail / payload | 构造、errno 转换或查询一个 machine-readable native value | HYLE 固定 `{domain,int64}`；Abseil 可携带多项任意 payload | 能力与 storage contract 不同，机械标 `NOT_COMPARABLE`，SOTA gate `N/A` |
+资格流程至多一次 probe、一次 fresh n=15 `qualify-platform`；只有统一仪器停止规则允许时才自动进入
+n=31。candidate/peer/source/build/artifact identity、真实 batch timer-floor、双执行顺序、placement、
+A/A 与 semantic setup oracle 必须同时完整；任一 required 门缺失即保持 `INCONCLUSIVE`/`BLOCKED`，
+不能换 benchmark 姿势或放宽 margin。shared 交付只做绝对回归与 package/correctness 验证，不与
+静态 peer 结果混成算法胜负。
 
-`Status success / code-only failure propagation` 来自 `fs`、`graph`、`compute` 等生产代码中
-逐层 `HYLE_RETURN_IF_ERROR` 的正常控制流；例如 `fs` 的 path/frame helper 会先调用下层操作，
-检查返回的 value-less `Status`，成功时继续、失败时立即向上返回。成功链始终返回 OK；失败链
-由 runtime token 在 `NotFound`/`InvalidArgument` 间选择并始终走错误路径。HYLE 与 Abseil
-benchmark 都保留 leaf → layer1 → layer2 → chain 四条 `noinline` 调用边，并由 caller 对称消费
-最终 `ok()`；失败链还对称消费 `code()`。它不与 message workload 交叉。旧 `Status::Ok` 常量
-构造和 OK 常量复制只测到编译器常量传播/barrier 的微形状，已从
-当前 peer gate 删除。本轮 candidate 首批证据先暴露了它们的超宽 CI，随后的消费者/反汇编审计才确认
-被测操作已被常量传播消去。这是在下一个 candidate 采样前修正无效合同，没有修改产品 API/实现；
-旧行本就无法给出有效胜负，不得把删除它们写成性能改善。下文历史表中的旧两行仅保留旧证据出处，
-不属于当前重签合同。
-
-默认序由同一 binary 先运行 HYLE、再运行 Abseil；设置
-`HYLE_BENCH_RIVAL_FIRST=1` 只交换两侧的执行顺序，不改变 lambda 定义、输入、分配 setup 或
-函数 placement。几乎所有 error aggregate 都低于 100ns，Windows 另从完全相同的两个 source
-生成 placement targets。SOTA peer claim 明确绑定 `HYLE_STATIC=ON` 的 shipping shape，使 HYLE
-与静态 Abseil 进入同一最终 PE；唯一的 build 差异是 MSVC LINK `/FUNCTIONPADMIN:64`，对两侧
-对称插入函数间 padding，不改变 compiler options、inlining、产品 API 或计费逻辑。shared 默认
-形状由 ABI/package/correctness 与绝对回归覆盖，不把 DLL 边界差异写成算法 peer 胜负。
-runner 对 primary/placement 各自执行 candidate-first 与 peer-first，并核验 placement PE 的
-`.text` 确实增长、两种对象均保留四帧调用边和 opaque/barrier relocation。四个 order gate 只要
-一个 `FAIL/UNRESOLVED`，SOTA 就不能 `PASS`；shape 间 exact verdict 不一致则为
-`INCONCLUSIVE/placement-sensitive`。当前共享 checkout 仍处于 dirty 集成状态，正式证书必须在
-candidate commit 后 fresh build 并使用 `--require-clean` 重跑。
+当前尚未采样，因此本节没有 WIN/TIE/LOSE，也不能把下方历史数字升级为 v3 结论。
 
 ## 历史证据（2026-07-29，三平台 n=15）
 
@@ -151,45 +125,10 @@ backtrace 或异常系统；参考库有而 HYLE 用户没有需求的能力，�
   文本和控制流。M4 栈帧从 112B 降到与 Abseil 相同的 80B，这是冷热路径架构修正，不增加
   产品状态。
 
-## 复跑命令
+## error-v3 运行记录
 
-Windows 正式复跑使用 error 专用 fail-closed wrapper。输出必须在 source tree 外，否则创建证据文件
-本身会使 `--require-clean` 失败；完成评审后再归档整个目录。wrapper 从不存在的 build tree 开始，
-固定 `HYLE_BUILD_TESTS=OFF`、`HYLE_TEST_INSTRUMENTATION=OFF` 与 `HYLE_STATIC=ON` 的
-static shipping shape，只配置 `error`，只构建 primary/placement 的四个 error benchmark，顺序执行
-2 shapes × 2 executables × 2 orders，每格 15 个独立进程；固定 19 个同合同 pair 与 3 个
-`NOT_COMPARABLE` pair，并核对每个 pair 的 run id 与 raw 记录总数。它还保存四门合并摘要、
-输入/二进制/build 哈希、PE layout 和压缩反汇编；任一门缺失时不会把局部点值升级为证书。
-
-```powershell
-$errorWorkRoot = 'C:\bench-work\hyle-error-msvc-clean'
-$errorBuild = Join-Path $errorWorkRoot 'build'
-$errorEvidence = Join-Path $errorWorkRoot 'evidence'
-$llvmObjdump = 'C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Tools\Llvm\x64\bin\llvm-objdump.exe'
-
-python scripts/run-error-bench-evidence.py `
-  --build $errorBuild `
-  --absl-dir C:\path\to\abseil-cpp `
-  --output-dir $errorEvidence `
-  --config Release `
-  --fresh-configure `
-  --generator 'Visual Studio 18 2026' `
-  --architecture x64 `
-  --llvm-objdump $llvmObjdump `
-  --placement `
-  --affinity-mask 0x4 `
-  --priority-class above-normal `
-  --runs 15 `
-  --equivalence-margin-pct 3 `
-  --require-clean
-```
-
-上例的 `0x4` 是本机采样前选定的单个 P-core logical CPU，不是跨机器默认值；其他主机必须先
-按拓扑预声明 mask，不能看过结果后挑核。CPU mask 与 priority 只在四目标构建和反汇编完成后
-应用，由 `bench-stat.py` 和 benchmark 子进程继承；manifest 同时记录实际 mask、priority 与
-Windows active power scheme。
-
-诊断 dirty 集成树时去掉 `--require-clean`，但必须在结果页和 evidence 目录名中写明
-`diagnostic`；它不能替代 clean candidate commit 的正式复跑。不要单独手抄 `bench-stat.py`
-pair 名：固定 manifest 在 wrapper 中，名称过期、方向颠倒、任一 pair 漏匹配或记录数不等都会
-fail closed。ratio 始终定义为 `RIVAL op/s / HYLE(BASELINE) op/s`。
+尚无 candidate，因此这里不发布可复制的资格命令或 artifact 路径。正式运行必须由冻结的
+`bench/contracts/error-p1-v1.json`、`closure-perf-v1` runner 和 candidate verification manifest
+共同生成，并把实际 machine/affinity/power、source/peer/build/binary hash、双 order/placement、
+timer-floor、A/A 与 raw samples 一起归档。旧专用 runner 命令不再是 v3 入口，不能从历史参数手工
+拼出一张当前证书。

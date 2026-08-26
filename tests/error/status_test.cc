@@ -508,6 +508,31 @@ TEST(Status, ToStringNullBufferWithCapacityIsSizeQuery) {
   EXPECT_EQ(s.ToString(nullptr, 128), 20u);
 }
 
+TEST(Status, PreservesUtf8AndEmbeddedNullBytesAcrossThePublicJourney) {
+  const std::string message{"GPU \xE5\xA4\xB1\xE8\xB4\xA5\0lost", 15};
+  const hyle::NativeError native{hyle::NativeErrorDomain::Vulkan, -4};
+  Status status =
+      Status::FromNative(StatusCode::Unavailable, native, message)
+          .WithContext("graph");
+
+  const std::string expected_message = "graph: " + message;
+  EXPECT_EQ(status.message(),
+            std::string_view(expected_message.data(), expected_message.size()));
+  EXPECT_EQ(status.native_error(), native);
+
+  const std::string expected_text = "Unavailable: " + expected_message;
+  char full[64]{};
+  const std::size_t need = status.ToString(full, sizeof(full));
+  ASSERT_EQ(need, expected_text.size());
+  EXPECT_EQ(std::memcmp(full, expected_text.data(), expected_text.size()), 0);
+  EXPECT_EQ(full[need], '\0');
+
+  char tiny[10]{};
+  EXPECT_EQ(status.ToString(tiny, sizeof(tiny)), expected_text.size());
+  EXPECT_EQ(std::memcmp(tiny, expected_text.data(), sizeof(tiny) - 1), 0);
+  EXPECT_EQ(tiny[sizeof(tiny) - 1], '\0');
+}
+
 #if SIZE_MAX > UINT32_MAX
 TEST(Status, OversizedHeapMessageIsRejectedBeforeAllocation) {
   const std::size_t too_large =
@@ -523,6 +548,14 @@ TEST(Result, HoldsValue) {
   Result<int> r = 42;
   ASSERT_TRUE(r.has_value());
   EXPECT_EQ(*r, 42);
+}
+
+TEST(Result, DefaultConstructionIsValueInitializedSuccess) {
+  // Result follows the C++23 std::expected contract: this is a successful
+  // value-initialized int, not an empty or Unknown result.
+  Result<int> result;
+  ASSERT_TRUE(result.has_value());
+  EXPECT_EQ(*result, 0);
 }
 
 TEST(Result, HoldsError) {

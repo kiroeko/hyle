@@ -250,7 +250,7 @@ class Rng {
   }
 
   // Natural C++ range spelling. Keep the count+swap overload as the storage-
-  // agnostic primitive (and C callback bridge), but do not make ordinary users
+  // agnostic callback primitive, but do not make ordinary users
   // manufacture index callbacks just to shuffle a contiguous/random-access
   // range. This preserves HYLE's fast Lemire map instead of routing through a
   // standard-library implementation with different bounded-draw costs.

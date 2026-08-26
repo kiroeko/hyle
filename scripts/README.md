@@ -98,6 +98,13 @@ The contracts and runner existing does not by itself close either module.
 manifest recorded in its performance evidence page; `error` remains governed
 by its own current registry/task and must not inherit that result.
 
+The error contract runs only the dedicated `hyle_error_p1_bench` primary and
+placement targets. Its command validator, `validate-error-p1-bench.py`, executes
+those exact replay functions in validation mode and fail-closes on semantic,
+64-node call/checksum, empty-source-location, noinline-function identity, or
+placement-layout drift. The older error executables and module-specific runner
+remain boundary diagnostics; they cannot contribute rows or verdicts to v1.
+
 Validate the immutable contract before building:
 
 ```bash

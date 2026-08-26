@@ -8,6 +8,7 @@
 #include <utility>
 #include <vector>
 
+#include "hyle/error/result.h"
 #include "hyle/platform/cpu.h"
 #include "hyle/platform/fs.h"
 

@@ -7,6 +7,7 @@
 #endif
 
 #include "hyle/core/compiler.h"
+#include "hyle/error/result.h"
 #include "hyle/mem/fiber_stack.h"
 #include "hyle/visibility.h"
 
