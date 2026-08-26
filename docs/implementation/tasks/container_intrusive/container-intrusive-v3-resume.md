@@ -1,12 +1,13 @@
 # container_intrusive v3 收口恢复记录
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
 > 本页是当前 `RESUME` 轮的施工记录。权威状态是
 > [`module-status.json`](../../module-status.json)；v2 的 `HISTORICAL` 记录只提供旧候选和阻塞事实，
 > 不授权本轮修改，也不产生当前结论。
 
-## Closure card（`VERIFIED`）
+## Closure card（`CLOSED`）
 
 - component / owner / round ID：`container_intrusive` / container owner / `container-intrusive-v3`
 - task kind：`RESUME`
@@ -212,5 +213,34 @@ controls 全 PASS，仅 auto/safe cancel 的 combined NI 为 `UNRESOLVED`，其�
 
 ## Closure decision
 
-当前为 `VERIFIED`，七项 aggregate gate 均为 `PASS`，没有 terminal receipt。下一步只记录 closure
-限制、reopen triggers、immutable candidate LOC 与 receipt；不得再改产品或证据合同。
+本轮 `CLOSED`。scope、architecture、correctness、delivery、usability/docs、独立 red-team 和
+engineering performance 七项 aggregate gate 均为 `PASS`；没有 correctness/security blocker，也没有
+ledger 内未处置的能力缺口。Formal release certificate 是独立 `PENDING` 轴，不重复阻塞工程收口。
+
+可接受限制：
+
+- 64-bit、direct member、stable address，只支持能由当前 gate 安全解码的 pointer-to-data-member ABI；
+- 不保存 owner/count/allocator/lock/reclamation；调用方维护 storage、同步和 owner/count/state/deadline
+  等业务镜像；
+- safe membership transfer、counted list 与完整 Boost.Intrusive policy matrix 没有当前消费者，保持
+  negative space；
+- P1 PASS 只覆盖冻结 W1-WIN/Boost/replay 合同和仍可深重放的 live bundle；不外推 Formal、跨平台性能
+  或“所有姿势更快”。
+
+重开条件：具名消费者暴露本 primitive 边界内的 correctness/security/缺失能力；算法/API/layout/
+compiler ABI/依赖/交付形状变化；成熟同合同 peer 在正常 workload 证明更优复杂度或可复现 material
+优势；engineering bundle 丢失，或 contract/peer/machine/instrument identity 改变且需要续签声明。
+
+四项 LOC 均从 immutable candidate
+`b5816b810d536f2041520e4b370c1e17d3ac7a4a` 以
+`python scripts/loc-report.py --module container-intrusive --commit <candidate> --self-check --json`
+计算，self-check PASS：
+
+1. 全库代码：292,991；
+2. 自实现包含测试：121,955；
+3. 自实现不包含测试：82,133；
+4. `container_intrusive` 实现：564（仅 `include/hyle/container/intrusive_list.h`）。
+
+Raw engineering evidence、manifest/hash、平台/交付日志和独立审计均在上文 Verification manifest；
+performance page 只保存人读结论，registry 保存终态 machine truth。产品候选仍是 `b5816b8` / `3bf043c`，
+终态状态提交不得冒充新的产品 candidate。

@@ -61,7 +61,7 @@
     },
     {
       "module": "container_intrusive",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "round_id": "container-intrusive-v3",
       "closure_task": "docs/implementation/tasks/container_intrusive/container-intrusive-v3-resume.md",
       "scope": "Current auto/safe member-hook intrusive-list capability, C++ API, implementation, direct consumer/dependency, delivery, documentation and P1 engineering evidence.",
@@ -96,7 +96,27 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "summary": "v3 候选的范围、架构、正确性、交付、易用性/文档、独立红队与 W1-WIN P1 工程性能均已验证。"
+      "closure_evidence": "docs/implementation/tasks/container_intrusive/container-intrusive-v3-resume.md",
+      "loc": {
+        "snapshot_commit": "b5816b810d536f2041520e4b370c1e17d3ac7a4a",
+        "repository_code": 292991,
+        "self_with_tests": 121955,
+        "self_without_tests": 82133,
+        "module_implementation": 564
+      },
+      "known_limitations": [
+        "The component is a 64-bit direct-member, stable-address primitive and fails closed for unsupported pointer-to-data-member representations.",
+        "It stores no owner, count, allocator, lock or reclamation metadata; callers own storage, synchronization and business-state mirrors.",
+        "Safe-link membership transfer, counted lists and the full Boost.Intrusive policy matrix remain outside the frozen consumer contract.",
+        "Engineering performance is qualified only for the frozen W1-WIN contract and retained live artifact bundle; Formal remains PENDING."
+      ],
+      "reopen_triggers": [
+        "A named consumer exposes a correctness, security or missing-capability defect within this primitive's ownership boundary.",
+        "The algorithm, public API, layout, supported compiler ABI, dependency edge or delivery shape changes.",
+        "A mature same-contract peer proves a better complexity class or a reproducible material advantage on a normal consumer workload.",
+        "The engineering evidence bundle becomes unavailable, or the frozen contract, peer, machine or instrument identity changes and the claim must be renewed."
+      ],
+      "summary": "v3 已关闭：真实消费者形状、typed membership transfer、correctness/交付/文档和 Boost 同合同 5% P1 工程非劣门均已签署；Formal 独立待办。"
     },
     {
       "module": "util_core",

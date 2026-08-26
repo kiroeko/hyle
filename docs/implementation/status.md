@@ -11,7 +11,7 @@
 | Component | Product | Tier | Engineering performance | Formal | Current record | Summary |
 |---|---|---|---|---|---|---|
 | core | CLOSED | P0 | PASS / STRUCTURAL | NONE | [task](tasks/core/core-rebuild.md) | P0 基础层已关闭；消费者性能声明由所属模块承担。 |
-| container_intrusive | VERIFIED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/container_intrusive/container-intrusive-v3-resume.md) | v3 候选的范围、架构、正确性、交付、易用性/文档、独立红队与 W1-WIN P1 工程性能均已验证。 |
+| container_intrusive | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/container_intrusive/container-intrusive-v3-resume.md) | v3 已关闭：真实消费者形状、typed membership transfer、correctness/交付/文档和 Boost 同合同 5% P1 工程非劣门均已签署；Formal 独立待办。 |
 | util_core | QUEUED | — | — | — | — | 现有实现只作输入；尚未启动 v1 收口。 |
 | error | QUEUED | — | — | — | — | 现有实现与历史审查只作输入。 |
 | obs | QUEUED | — | — | — | — | 现有实现与历史审查只作输入。 |
@@ -37,8 +37,8 @@ resume:  BLOCKED -> SCOPED
 reopen:  CLOSED -> REOPENED -> SCOPED
 ```
 
-`container_intrusive` 已按旧 blocker 创建新的 `RESUME` round并进入 `VERIFIED`。有限 ledger 的产品
-修复、correctness、三平台可移植性和 source/static/shared 交付均绑定当前 candidate；统一
+`container_intrusive` 已按旧 blocker 创建新的 `RESUME` round并进入 `CLOSED`。有限 ledger 的产品
+修复、correctness、三平台可移植性和 source/static/shared 交付均绑定 immutable candidate；统一
 `closure-perf-v1` 的 W1-WIN P1 工程证据通过 9×8 workload/strata 的冻结 5% non-inferiority gate，
 并经独立重放审计。旧 v2 task 保持历史事实，不被回写。`formal-release-v1` 的跨平台证书仍为独立
 `PENDING`，不能拿来替代或重复阻塞 P1 工程门。
