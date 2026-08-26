@@ -113,7 +113,26 @@
 
 ## Candidate
 
-尚未形成。
+当前产品候选固定为：
+
+- commit：`462db32c9b6a364f233a89a2da541c2daca37bea`
+- tree：`9e886667c861a43bd9b9e6c83cf055c16a3ed54a`
+
+候选没有修改 `Status` / `Result<T>` 的产品 API、layout 或算法；peer/复杂度审计没有找到需要产品
+修改的 MUST 缺陷。它只实施冻结 FIX：明确并测试 `Result<T>{}` 的标准成功语义；补齐公开头直接
+include 和过时 FFI/C bridge 措辞；补回 UTF-8、embedded-NUL、native detail、context 与 caller-buffer
+格式化的完整 C++ 字节旅程；重写 architecture/user/performance 当前文档。
+
+性能合同从会被 DCE 或落入 timer floor 的常量/原语矩阵，收缩为 9 个正常消费者 replay：64 节点
+active function-pointer stream 的全成功/末节点 code-only failure，以及 29B message construct/copy、
+context 1/3、两 frame message Result、54B owning format、fresh-prvalue Update。旧 short/boundary/native
+行仍可作诊断，不进入 P1 verdict。窄 validator 对同一 primary/placement binary 的实际 replay 函数执行
+64-call/checksum/语义/source-location oracle，并验证 noinline identity 与 placement 真实改变；统一统计
+核心没有分叉。
+
+候选前的 dirty probe 只证明合同可运行，不是候选证据：9/9 workload 通过 batch=1 的 20x timer-floor
+门（最小 55.43x，最大 391.17x），semantic/call-topology/placement validator 通过；n=1 的 A/A 与 delta
+控制按设计保持 FAIL/DIAGNOSTIC。正式性能判决必须从上述 clean candidate 重新运行。
 
 ## Verification manifest
 

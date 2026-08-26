@@ -127,12 +127,14 @@
     },
     {
       "module": "error",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "round_id": "error-v3",
       "closure_task": "docs/implementation/tasks/error/error-v3-closure.md",
       "scope": "Status/Result value model, native adapters, real consumer adoption, C++ source/static/shared delivery, usability/docs and current P1 engineering evidence.",
       "non_goals": "Logging, exceptions, arbitrary payload/cause/source-location systems, MultiError, full foreign-category adapters, downstream module closure, native FFI/C API and Formal certification.",
       "baseline_commit": "8b37eb42635fcf89505b7a2d9cad006d57664ba1",
+      "candidate_commit": "462db32c9b6a364f233a89a2da541c2daca37bea",
+      "candidate_tree": "9e886667c861a43bd9b9e6c83cf055c16a3ed54a",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -150,7 +152,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "error-v3 有限 ledger 已冻结：Status/Result 产品算法保持，实施性能合同、易用性/文档与直接 include 修复。"
+      "summary": "error-v3 候选已冻结：Status/Result 产品算法保持；真实 P1 replay、易用性/文档、公开头与字节合同测试已落实，等待候选绑定验证。"
     },
     {
       "module": "obs",
