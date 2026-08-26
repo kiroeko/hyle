@@ -12,13 +12,16 @@ and the current module implementation. Run it from anywhere inside the checkout:
 
 ```bash
 python scripts/loc-report.py --module core --self-check
+python scripts/loc-report.py --module core --commit <candidate-commit> --self-check
 python scripts/loc-report.py --module mem --json
 python scripts/loc-report.py --module container_intrusive --self-check
 ```
 
-The snapshot is the current content of Git-tracked files. Modified/staged files
-are therefore counted and reported as dirty; untracked files are not counted but
-also make the report dirty. The repository total includes every language `cloc`
+Without `--commit`, the snapshot is the current content of Git-tracked files.
+Modified/staged files are therefore counted and reported as dirty; untracked files
+are not counted but also make the report dirty. `--commit` instead asks Git/`cloc`
+to materialize and count that immutable tree, which is the required form when
+checking a recorded terminal LOC snapshot. The repository total includes every language `cloc`
 recognizes, including tracked docs, benchmarks, and in-tree third-party code.
 The two self-written totals count only `C++`, `C/C++ Header`, `C`, and `CUDA`
 under `include/hyle`, `src`, and (for the first total) `tests`; consequently
@@ -64,6 +67,14 @@ but they must link to that registry instead of declaring a competing current
 python scripts/check-module-closure.py
 python scripts/check-docs.py
 ```
+
+The first command is the fast editing loop. It validates the current registry's
+schema, paths, component set, and generated status projection. It is an
+engineering consistency check, not a Git anti-tamper system; use `--previous`
+only for an explicit before/after state comparison. Candidate/tree/receipt checks
+use ordinary read-only Git commands in the module review. CMake dependency and
+delivery semantics stay with the real build/package contract tests rather than a
+second parser here.
 
 `scripts/hyle_perf/` is the shared schema/statistics/evidence/machine core for
 performance instrument v1. It owns contract locking, canonical observations,

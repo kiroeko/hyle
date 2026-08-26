@@ -1,9 +1,10 @@
 # container_intrusive v2 模块收口记录
 
-> 本页只记录本轮施工事实，不声明当前状态。当前机器状态以
-> [`module-status.json`](../../module-status.json) 的 `container_intrusive` 记录为唯一权威；截至
-> 2026-08-26，产品形状已经冻结，但 P1 工程性能与最终独立红队 identity 尚未签署，因此当前为
-> `BLOCKED`，而不是旧的 `AUDITED` 或“已经收口”。稳定边界见
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+
+> **记录性质：`HISTORICAL TASK EVIDENCE`。** 本页只记录本轮施工事实，不声明当前状态；
+> [`module-status.json`](../../module-status.json) 的 `container_intrusive` 记录是唯一权威。本记录快照中，
+> 产品形状已经冻结，但 P1 工程性能与最终独立红队 identity 尚未签署。稳定边界见
 > [`container-intrusive-design`](../../../architecture/container-intrusive-design.md)，用户写法见
 > [`user/container-intrusive`](../../../user/container-intrusive.md)，性能资格见
 > [`benchmarks-container-intrusive`](../../evidence/performance/benchmarks-container-intrusive.md)。
@@ -169,7 +170,7 @@ stores，Semaphore release 从约 `6N` 增至 `10N+1` persistent writes；摘链
 | 自实现不包含测试 | `96244`（candidate 快照） |
 | container_intrusive 实现代码 | `497`（candidate 快照；public header + `src/container_intrusive/**`） |
 | 独立红队 | 初审 findings 已修；最终 candidate identity verdict 未签 |
-| End commit / push | `79c644c2b7cef51786862a5bf0dd6b565305a308`；这是本轮阻塞记录，不是 `CLOSED` 签署 |
+| End commit / push | `1a465e23ea69a6e613840cf8d30d33054463ae1c`；这是首次把 candidate `79c644c2` 记为 `BLOCKED` 的 registry receipt，不是 `CLOSED` 签署 |
 
 ## 剩余限制与重开条件
 

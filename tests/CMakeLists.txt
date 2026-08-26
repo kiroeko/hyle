@@ -218,6 +218,11 @@ add_test(NAME hyle_module_closure_registry_test
                  "${HYLE_SOURCE_DIR}/scripts/check-module-closure.py")
 set_tests_properties(hyle_module_closure_registry_test PROPERTIES
   LABELS "tooling;documentation;closure")
+add_test(NAME hyle_loc_report_test
+         COMMAND "${Python3_EXECUTABLE}"
+                 "${CMAKE_CURRENT_SOURCE_DIR}/tooling/loc_report_test.py")
+set_tests_properties(hyle_loc_report_test PROPERTIES
+  LABELS "tooling;closure")
 if(WIN32)
   get_filename_component(_hyle_linker_dir "${CMAKE_LINKER}" DIRECTORY)
   get_filename_component(_hyle_compiler_dir "${CMAKE_C_COMPILER}" DIRECTORY)

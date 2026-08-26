@@ -91,5 +91,5 @@ HYLE 是 C++23 基础加速库，服务 AI 推理和工程计算。它提供可�
 - architecture、implementation、developer、user 四类文档各守职责；原始数据放根级 `evidence/`。
 - 每个产品变更有 demand/defect、owner module、验证与 task 记录，不能只有 benchmark 名称。
 - 候选冻结后进行独立红队；问题逐项裁决。
-- 达到 `SIGNED` 后停止无证据重构，只按明确 reopen trigger 重新开启。
+- 达到 `CLOSED` 后停止无证据重构，只按明确 reopen trigger 重新开启。
 - 每轮运行文档/构建机器合同并记录四个 LOC；LOC 只描述规模，不代表完成度。

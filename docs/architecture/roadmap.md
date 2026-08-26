@@ -97,7 +97,7 @@ demand/任务并等待其轮次；只有 correctness 或构建阻断允许立即
 14. compute；
 15. graph。
 
-前一个模块 `SIGNED` 后再冻结下一个，以免下层 API 反复击穿上层证据。研究成熟库、准备 workload
+前一个模块 `CLOSED` 后再冻结下一个，以免下层 API 反复击穿上层证据。研究成熟库、准备 workload
 和独立红队可以并行；会修改同一依赖边或公开面的实现不得在共享分支并行合并。
 
 compute 与 graph 的产品形状仍可能由真实推理引擎推翻，在其前置模块稳定前只修 correctness、

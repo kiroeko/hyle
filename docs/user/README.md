@@ -31,7 +31,7 @@ HYLE 尚未正式发布，并正按新标准逐模块重审；Core 已完成首�
 
 当前没有合格用户页的范围：sched 尚未做 v2 易用性审查；math 的模块边界仍待裁决；compute 与
 graph 尚未完成。仓库中的 header、sample 或历史任务只供内部试验，不能替代用户合同。它们轮到
-审查时必须先补正常用户 journey，再进入 `SIGNED`。
+审查时必须先补正常用户 journey，再进入 `CLOSED`。
 
 当前产品没有面向原生 C 程序的独立 API，也没有可承诺的 Java、.NET、Python 或 Rust FFI。
 source/static/shared 都是 C++ 交付形式；未来只有在出现已命名外语消费者后，才按

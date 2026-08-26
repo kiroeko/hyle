@@ -97,8 +97,8 @@ Tier 0 dependencies: container_intrusive + core cache geometry +
 
 Auto/safe member hook、`iterator_to`、range splice、生命周期/iterator 失效矩阵、复杂度、明确
 负空间和 Native FFI=`N/A` 的长期合同统一见
-[`container_intrusive` 架构](container-intrusive-design.md)。本页不复制独立组件的公开 API；该组件
-当前仍是 `CANDIDATE / 复审中`，不能从聚合关系推断已经 `SIGNED`。
+[`container_intrusive` 架构](container-intrusive-design.md)。本页不复制独立组件的公开 API 或当前
+状态；是否已满足工程门只以 [`module-status.json`](../implementation/module-status.json) 为准。
 
 ### 成熟库能力对账：仍不冒充“容器全集”
 

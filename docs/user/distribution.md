@@ -118,5 +118,5 @@ endif()
 - 需要多个同工具链 C++ 程序共享库或独立替换 artifact：shared SDK。
 - 需要 Java/.NET/Python/Rust：当前没有产品 FFI；不要把 shared SDK 的 C++ symbols 当成稳定边界。
 
-项目尚未发布。模块在新标准下达到 `SIGNED` 前，artifact 可以用于内部试验，但不应对外宣称该
+项目尚未发布。模块在新标准下达到 `CLOSED` 前，artifact 可以用于内部试验，但不应对外宣称该
 模块拥有稳定 API/ABI 或完整性能证书。

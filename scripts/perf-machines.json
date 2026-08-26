@@ -5,6 +5,11 @@
     "closure-perf-v1",
     "formal-release-v1"
   ],
+  "instrument_profile_docs": {
+    "closure-correctness-v1": "docs/developer/review/correctness-profile-v1.md",
+    "closure-perf-v1": "docs/developer/performance/instrument-v1.md",
+    "formal-release-v1": "docs/developer/performance/benchmark-evidence-standard.md"
+  },
   "machine_profiles": {
     "W1-WIN": {
       "id": "W1-WIN",

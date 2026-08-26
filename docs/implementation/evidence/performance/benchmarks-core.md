@@ -1,9 +1,13 @@
 # Core 性能资格与证据边界
 
-> **状态：`QUALIFIED / STRUCTURAL CONTRACT SIGNED`。** Core v2 候选
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+
+> **记录性质：`HISTORICAL STRUCTURAL EVIDENCE`。** 本页当时使用
+> `QUALIFIED / STRUCTURAL CONTRACT SIGNED` 描述 Core v2 候选
 > `b241a228d3311f0faa65cde68123de7da3688c2f` 的三平台 codegen、symbol、sanitizer 与交付证据已由
 > [verification manifest](../../../../evidence/core/manifest-b241a22.md) 绑定。该结论签署零成本结构和
-> 精确意图，不宣称“整个 Core 全局 SOTA”或脱离消费者的普适加速倍数。施工记录见
+> 精确意图，不是当前状态声明，也不宣称“整个 Core 全局 SOTA”或脱离消费者的普适加速倍数。
+> 当前机械状态只见 [`module-status.json`](../../module-status.json)。施工记录见
 > [`core-rebuild`](../../tasks/core/core-rebuild.md)。
 
 ## 可以证明什么

@@ -3,7 +3,8 @@
 
 The report deliberately counts the current contents of Git-tracked files.  It
 therefore describes a dirty working tree honestly without letting untracked
-build directories, caches, or scratch files change the result.
+build directories, caches, or scratch files change the result.  ``--commit``
+instead measures the immutable tree named by a recorded closure snapshot.
 """
 
 from __future__ import annotations
@@ -16,6 +17,7 @@ from pathlib import Path, PurePosixPath
 import shutil
 import subprocess
 import sys
+import tarfile
 import tempfile
 from typing import Iterable, Sequence
 
@@ -125,6 +127,23 @@ def tracked_worktree_files(root: Path) -> tuple[list[str], list[str]]:
             # working snapshot.  Record it so the report remains auditable.
             missing.append(name)
     return sorted(set(files)), sorted(set(missing))
+
+
+def tracked_commit_files(root: Path, commit: str) -> tuple[str, list[str]]:
+    resolved = run(("git", "rev-parse", "--verify", f"{commit}^{{commit}}"), root)
+    assert isinstance(resolved, str)
+    output = run(
+        ("git", "ls-tree", "-r", "--name-only", "-z", resolved.strip()),
+        root, binary=True)
+    assert isinstance(output, bytes)
+    try:
+        names = output.decode("utf-8").split("\0")
+    except UnicodeDecodeError as exc:
+        raise ReportError("Git returned a committed path that is not UTF-8") from exc
+    files = sorted({posix_path(name) for name in names if name})
+    if not files:
+        raise ReportError(f"commit {commit!r} has no tracked files")
+    return resolved.strip(), files
 
 
 def under_roots(path: str, roots: Iterable[str]) -> bool:
@@ -248,6 +267,53 @@ def cloc_measure(
                 pass
 
 
+def cloc_measure_commit_sets(
+    cloc: str,
+    root: Path,
+    commit: str,
+    measurements: Sequence[tuple[Sequence[str], Sequence[str] | None]],
+) -> list[tuple[int, int]]:
+    """Measure exact repository-relative file sets from an immutable tree.
+
+    ``cloc --git`` only offers path-regex filters. Those filters cannot
+    distinguish a repository root such as ``src`` from a nested path such as
+    ``third_party/vendor/src`` after cloc prepends its extraction directory.
+    Materialize once and feed cloc exact file lists so commit and worktree
+    reports obey the same ownership boundaries.
+    """
+
+    with tempfile.TemporaryDirectory(prefix="hyle-loc-") as temp_name:
+        temp_root = Path(temp_name)
+        archive = temp_root / "snapshot.tar"
+        snapshot = temp_root / "tree"
+        snapshot.mkdir()
+        run(
+            (
+                "git",
+                "archive",
+                "--format=tar",
+                f"--output={archive}",
+                commit,
+            ),
+            root,
+        )
+        with tarfile.open(archive, mode="r:") as git_archive:
+            for member in git_archive.getmembers():
+                name = PurePosixPath(member.name)
+                if name.is_absolute() or ".." in name.parts:
+                    raise ReportError(
+                        f"Git archive contains an unsafe path: {member.name!r}")
+            if hasattr(tarfile, "data_filter"):
+                git_archive.extractall(snapshot, filter="data")
+            else:  # Python < 3.12; paths were validated above.
+                git_archive.extractall(snapshot)
+
+        return [
+            cloc_measure(cloc, snapshot, files, languages)
+            for files, languages in measurements
+        ]
+
+
 def repository_identity(root: Path) -> tuple[str, bool]:
     commit_output = run(("git", "rev-parse", "HEAD"), root)
     status_output = run(
@@ -262,7 +328,15 @@ def repository_identity(root: Path) -> tuple[str, bool]:
 
 def build_report(args: argparse.Namespace) -> dict[str, object]:
     root = repository_root(Path.cwd())
-    tracked, missing = tracked_worktree_files(root)
+    if args.commit:
+        commit, tracked = tracked_commit_files(root, args.commit)
+        missing: list[str] = []
+        dirty = False
+        snapshot_policy = "immutable Git commit tree"
+    else:
+        tracked, missing = tracked_worktree_files(root)
+        commit, dirty = repository_identity(root)
+        snapshot_policy = "current contents of Git-tracked regular files"
     if not tracked:
         raise ReportError("the repository has no tracked working-tree files")
 
@@ -280,16 +354,34 @@ def build_report(args: argparse.Namespace) -> dict[str, object]:
     self_without_tests = files_under(tracked, SELF_WITHOUT_TESTS_ROOTS)
 
     cloc = find_cloc()
-    repository_code, repository_files = cloc_measure(cloc, root, tracked, None)
-    self_with_tests_code, self_with_tests_files = cloc_measure(
-        cloc, root, self_with_tests, NATIVE_LANGUAGES
-    )
-    self_without_tests_code, self_without_tests_files = cloc_measure(
-        cloc, root, self_without_tests, NATIVE_LANGUAGES
-    )
-    module_code, module_code_files = cloc_measure(
-        cloc, root, module_files, NATIVE_LANGUAGES
-    )
+    if args.commit:
+        (
+            (repository_code, repository_files),
+            (self_with_tests_code, self_with_tests_files),
+            (self_without_tests_code, self_without_tests_files),
+            (module_code, module_code_files),
+        ) = cloc_measure_commit_sets(
+            cloc,
+            root,
+            commit,
+            (
+                (tracked, None),
+                (self_with_tests, NATIVE_LANGUAGES),
+                (self_without_tests, NATIVE_LANGUAGES),
+                (module_files, NATIVE_LANGUAGES),
+            ),
+        )
+    else:
+        repository_code, repository_files = cloc_measure(cloc, root, tracked, None)
+        self_with_tests_code, self_with_tests_files = cloc_measure(
+            cloc, root, self_with_tests, NATIVE_LANGUAGES
+        )
+        self_without_tests_code, self_without_tests_files = cloc_measure(
+            cloc, root, self_without_tests, NATIVE_LANGUAGES
+        )
+        module_code, module_code_files = cloc_measure(
+            cloc, root, module_files, NATIVE_LANGUAGES
+        )
     metrics = [
         {
             "id": "repository",
@@ -297,7 +389,11 @@ def build_report(args: argparse.Namespace) -> dict[str, object]:
             "code": repository_code,
             "files": repository_files,
             "selected_files": len(tracked),
-            "paths": ["Git-tracked regular files (current working tree)"],
+            "paths": [
+                "Git-tracked files at immutable commit"
+                if args.commit else
+                "Git-tracked regular files (current working tree)"
+            ],
             "languages": ["all languages recognized by cloc"],
         },
         {
@@ -320,7 +416,7 @@ def build_report(args: argparse.Namespace) -> dict[str, object]:
         },
         {
             "id": "module",
-            "label": f"current module implementation ({args.module})",
+            "label": f"module implementation ({args.module})",
             "code": module_code,
             "files": module_code_files,
             "selected_files": len(module_files),
@@ -329,7 +425,6 @@ def build_report(args: argparse.Namespace) -> dict[str, object]:
         },
     ]
 
-    commit, dirty = repository_identity(root)
     report: dict[str, object] = {
         "schema": 2,
         "repository": {
@@ -340,8 +435,11 @@ def build_report(args: argparse.Namespace) -> dict[str, object]:
             "tracked_missing_files": missing,
         },
         "policy": {
-            "snapshot": "current contents of Git-tracked regular files",
-            "untracked": "not counted; still makes dirty=true",
+            "snapshot": snapshot_policy,
+            "untracked": (
+                "not applicable to immutable commit tree" if args.commit else
+                "not counted; still makes dirty=true"
+            ),
             "self_written_languages": list(NATIVE_LANGUAGES),
             "self_written_excludes": [
                 "bench",
@@ -427,7 +525,8 @@ def print_human(report: dict[str, object], passed_self_check: bool) -> None:
 
     print()
     print("path/language policy:")
-    print("  full repository: current Git-tracked files; every cloc language")
+    snapshot = report["policy"]["snapshot"]
+    print(f"  full repository: {snapshot}; every cloc language")
     print(
         "  self-written + tests: include/hyle, src, tests; "
         + ", ".join(NATIVE_LANGUAGES)
@@ -463,6 +562,10 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
         ),
     )
     parser.add_argument("--json", action="store_true", help="emit machine-readable JSON")
+    parser.add_argument(
+        "--commit",
+        help="measure an immutable Git commit instead of the current tracked worktree",
+    )
     parser.add_argument(
         "--self-check",
         action="store_true",

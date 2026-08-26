@@ -1,6 +1,10 @@
 # Core v2 重建与收口记录
 
-> **状态：`SIGNED`。** 本任务不继承已删除旧 closure 文档的绿色状态。建立账本时检查的基线为
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+
+> **记录性质：`HISTORICAL CLOSURE EVIDENCE`。** 本任务当时使用 `SIGNED` 作为结果词，不代表
+> 当前机械状态；当前状态只见 [`module-status.json`](../../module-status.json)。本任务不继承已删除
+> 旧 closure 文档的绿色状态。建立账本时检查的基线为
 > `87c831d228e4e2f7844e60a3e9fd167cef4992b9`；最终产品候选为
 > `b241a228d3311f0faa65cde68123de7da3688c2f`，证据提交为
 > `b9231054b8eaa2f46850cb8b203b6056ae71b6a7`。
@@ -130,13 +134,13 @@ target-neutral macro 例外都不再充当依赖机制。
 | 字段 | 值 |
 |---|---|
 | Candidate commit/tree | `b241a228d3311f0faa65cde68123de7da3688c2f` / `e73472e2cefedd70e41eca6243871b2343db7d74` |
-| 全库代码 | 297,471（含本轮已跟踪 raw evidence） |
+| 全库代码 | 296,932（`cloc 2.08` 对同一 candidate 复算；旧登记 297,471 混入了其他快照，已由方法回放纠正） |
 | 自实现包含测试 | 141,867 |
 | 自实现不包含测试 | 96,105 |
 | Core 实现代码 | 233；边界为 `include/hyle/core/**`、`include/hyle/version.h`、`src/core/**` |
 | Raw evidence | [`evidence/core/manifest-b241a22.md`](../../../../evidence/core/manifest-b241a22.md)；证据提交 `b923105` |
 | Red-team verdict | high/medium findings fixed；缺口反证完成；限制/out-of-scope 已接受；剩余 MEDIUM+ = 0 |
-| End commit / push | `main`；最终 handoff 报告远端提交 |
+| End commit / push | `49512b77434c4f15fec355e4bd6d6ab5a8b9b650`；该提交把已绑定证据写成历史 `SIGNED` 结论 |
 
 ## 剩余限制与停止规则
 
@@ -145,6 +149,6 @@ stdlib/build-mode ABI。`HYLE_ASSUME/RESTRICT/UNREACHABLE` 仍要求调用者证
 表达式必须无副作用。fatal sink 使用 stdio/`abort()`，不承诺 async-signal-safe；出现真实 crash
 reporter 消费者时由正确 owner 重开，而不是给常态断言热路径预付复杂度。
 
-上述门已完成，Core v2 进入 `SIGNED`。此后只有真实 consumer 缺口、correctness/security、直接依赖
+上述门在该轮完成，当时记录结果为 `SIGNED`（`HISTORICAL`）。此后只有真实 consumer 缺口、correctness/security、直接依赖
 语义改变、新 compiler/target，或强 peer 在同合同正常 workload 证明 material advantage 才重开；
 LOC、feature 数、命名偏好和亚纳秒 benchmark 不构成理由。

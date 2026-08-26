@@ -13,7 +13,8 @@
       "baseline_commit": "87c831d228e4e2f7844e60a3e9fd167cef4992b9",
       "candidate_commit": "b241a228d3311f0faa65cde68123de7da3688c2f",
       "candidate_tree": "e73472e2cefedd70e41eca6243871b2343db7d74",
-      "end_commit": "b9231054b8eaa2f46850cb8b203b6056ae71b6a7",
+      "end_commit": "49512b77434c4f15fec355e4bd6d6ab5a8b9b650",
+      "registry_anchor_commit": "1a465e23ea69a6e613840cf8d30d33054463ae1c",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -41,7 +42,7 @@
       "closure_evidence": "docs/implementation/tasks/core/core-rebuild.md",
       "loc": {
         "snapshot_commit": "b241a228d3311f0faa65cde68123de7da3688c2f",
-        "repository_code": 297471,
+        "repository_code": 296932,
         "self_with_tests": 141867,
         "self_without_tests": 96105,
         "module_implementation": 233
@@ -51,9 +52,10 @@
         "Runtime topology and crash-reporting policy remain with their owning modules."
       ],
       "reopen_triggers": [
-        "A real consumer exposes a correctness or missing-foundation defect.",
+        "A real consumer exposes a correctness, security or missing-foundation defect.",
         "A supported compiler or target invalidates the frozen code-generation contract.",
-        "The public component or delivery boundary changes."
+        "A direct dependency changes Core semantics, or the public component/delivery boundary changes.",
+        "A strong peer proves a better complexity class or a reproducible material advantage for the same consumer contract."
       ],
       "summary": "P0 基础层已关闭；消费者性能声明由所属模块承担。"
     },
@@ -61,14 +63,15 @@
       "module": "container_intrusive",
       "product_state": "BLOCKED",
       "blocked_from": "VERIFIED",
-      "round_id": "container-intrusive-v1",
+      "round_id": "container-intrusive-v2",
       "closure_task": "docs/implementation/tasks/container_intrusive/container-intrusive-v2-closure.md",
       "scope": "Header-only caller-owned auto/safe member-hook intrusive doubly linked list and direct consumer boundary.",
       "non_goals": "Full container module, scheduler-private link state machines, native FFI and Formal release certification.",
       "baseline_commit": "49512b77434c4f15fec355e4bd6d6ab5a8b9b650",
       "candidate_commit": "79c644c2b7cef51786862a5bf0dd6b565305a308",
       "candidate_tree": "8588225e17ab4deecfbe7916a3f1d6ca7fe9a246",
-      "end_commit": "79c644c2b7cef51786862a5bf0dd6b565305a308",
+      "end_commit": "1a465e23ea69a6e613840cf8d30d33054463ae1c",
+      "registry_anchor_commit": "1a465e23ea69a6e613840cf8d30d33054463ae1c",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",

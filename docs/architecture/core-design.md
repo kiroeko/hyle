@@ -1,7 +1,8 @@
 # Core 架构：header-only 编译与布局地基
 
-> 本页描述当前长期设计，不是验收证书。施工与尚未完成的三平台、codegen、package 和红队证据见
-> [`core-rebuild`](../implementation/tasks/core/core-rebuild.md)，性能结论边界见
+> 本页描述当前长期设计，不是验收证书。当前产品状态只见
+> [`module-status.json`](../implementation/module-status.json)；历史施工与三平台、codegen、package、
+> 红队证据见 [`core-rebuild`](../implementation/tasks/core/core-rebuild.md)，性能结论边界见
 > [`benchmarks-core`](../implementation/evidence/performance/benchmarks-core.md)，用法见
 > [`user/core`](../user/core.md)。
 

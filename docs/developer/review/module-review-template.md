@@ -1,5 +1,7 @@
 # 模块重构与收口任务模板 v1
 
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+
 > 复制到 `docs/implementation/tasks/<module>/`。状态只写入
 > [`module-status.json`](../../implementation/module-status.json)；本页记录该轮事实，不复制当前状态。
 > 完整判据见 [模块收口协议](module-closure-methodology.md)。
@@ -18,14 +20,15 @@
 - 最多复现、机制诊断、产品修改次数：
 - machine profile：
 - instrument profile：
-- strong peers（最多两个）：
+- strong peers（每项 capability 最多两个，绑定版本/commit/source）：
 - 适用 correctness / delivery / performance gates：
+- 预期输出：
 - 停止条件 / 可接受限制：
 
 ## Capability / gap ledger
 
-| ID | consumer / 来源 | normal shape | ownership/failure/concurrency | complexity/resource target | `KEEP/FIX/BORROW/DEFER/REJECT` | severity | verification |
-|---|---|---|---|---|---|---|---|
+| ID | demand kind | exact consumer / peer / standard source | normal shape | semantic / artifact / delivery owner | ownership/failure/concurrency | complexity/resource target | `KEEP/FIX/BORROW/DEFER/REJECT` | severity | verification / negative space |
+|---|---|---|---|---|---|---|---|---|---|
 
 - 公开入口反向追踪：
 - 语法消费者 / 语义重复扫描：
@@ -43,7 +46,24 @@
 - candidate tests：
 - harness / tool identity（与 product identity 分开）：
 
+所有 commit/tree/anchor 字段使用完整 40 位 Git object ID；不得在不可变证据中混用短 hash。
+
 ## Verification manifest
+
+### Correctness risk matrix
+
+| Risk | `PASS/FAIL/NOT_APPLICABLE/BLOCKED` | 命令 / 证据 | 不适用理由 / 限制 |
+|---|---|---|---|
+| normal |  |  |  |
+| empty / zero |  |  |  |
+| capacity / boundary / overflow |  |  |  |
+| OOM / system failure / invalid input |  |  |  |
+| move / destroy / lifetime |  |  |  |
+| concurrency / reentrancy |  |  |  |
+| cancellation / close |  |  |  |
+| property / differential / fuzz / stress |  |  |  |
+| ASan / UBSan / TSan |  |  |  |
+| real ISA / backend |  |  |  |
 
 | Gate | `PASS/FAIL/INCONCLUSIVE/NOT_APPLICABLE` | 命令 / 证据 | 限制 |
 |---|---|---|---|
@@ -80,7 +100,10 @@ P1/P2 补充：
 - blocker，或无 blocker 的依据：
 - 已知限制：
 - reopen triggers：
-- end commit：
+- terminal receipt / end commit：
+- terminal receipt marker：只在真正终止的 end commit 把 `<STATE>` 替换为 `CLOSED` 或 `BLOCKED`：
+  `<!-- MODULE CLOSURE RECEIPT: <STATE> -->`
+- registry anchor commit：
 - raw evidence：
 - 四项 LOC snapshot commit：
 - 全库代码：
@@ -94,5 +117,7 @@ P1/P2 补充：
 ```text
 python scripts/check-module-closure.py
 python scripts/check-docs.py
-python scripts/loc-report.py --module <component> --self-check
+python scripts/loc-report.py --module <component> --commit <full-snapshot-commit> --self-check --json
 ```
+
+不带 `--commit` 的命令只用于查看当前工作树规模，不能回填 terminal candidate 记录。

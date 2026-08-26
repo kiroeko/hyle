@@ -1,9 +1,11 @@
 # container_intrusive 性能资格
 
-> 本页是证据解释，不声明当前模块状态。当前状态以
-> [`module-status.json`](../../module-status.json) 为唯一权威：截至 2026-08-26，auto/safe API、算法与
-> layout 已冻结为 product candidate，但 `closure-perf-v1` 的 W1-WIN P1 工程门（预声明 5% margin）
-> 尚无 candidate-bound `PASS`，最终独立红队 identity 也未签，因此模块为 `BLOCKED`。Formal 发布
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+
+> **记录性质：`HISTORICAL PERFORMANCE EVIDENCE`。** 本页只解释证据，不声明当前模块状态；
+> [`module-status.json`](../../module-status.json) 是唯一权威。本记录快照中，auto/safe API、算法与 layout
+> 已冻结为 product candidate，但 `closure-perf-v1` 的 W1-WIN P1 工程门（预声明 5% margin）尚无
+> candidate-bound `PASS`，最终独立红队 identity 也未签。Formal 发布
 > 证书是独立 `PENDING`，不替代工程门。
 >
 > 本页后列的专用 3% runner、dirty 表格和本地 control 校准均先于
