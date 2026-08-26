@@ -69,7 +69,7 @@
 | INTR-LIFE-01 | capability | direct consumer + peer parity | `time::TimerEntry`；Boost.Intrusive auto/safe member hook；Folly `IntrusiveList`/`SafeIntrusiveList` | auto-unlink 用于 unknown-owner cancellation；safe-link 用于 owner-lock 下显式 retirement | public | caller owns storage；stable address；外部同步；safe 违反析构前摘链合同即程序错误 | 两 pointer/hook；mutation O(1)；零分配 | `KEEP` | P0 | normal/empty/lifetime/Debug misuse；不增加 owner metadata |
 | INTR-LINK-01 | capability | timer/completion handoff | `TimerQueue`、scheduler due drain；Boost range splice/clear-and-dispose | push/pop/remove/iterator、单项/整链/range splice、append、`consume_all`、遍历、list move/swap | public | callback 合同逐入口表达；list 不拥有或销毁 node | known-node/range relink O(1)；drain/traversal O(n) | `KEEP` | P0 | deterministic + random differential、codegen；不扩成 owning list |
 | INTR-ABI-01 | API/implementation | peer defect | Boost `parent_from_member` 不要求 standard-layout；Folly `TimedMutex::MutexWaiter` 是 public hook + private payload | direct member hook 可位于 non-standard-layout complete object；只要所选 PMD representation 可解码 | public | live complete object、stable address；未知/复杂 PMD ABI 编译期 fail closed | node recovery O(1)，无常态 metadata | `FIX` | P0 | 删除 blanket `is_standard_layout<T>`；三编译器 mixed-access node test |
-| INTR-AUTO-SWAP-01 | capability/API | real peer consumer | Boost hook `swap_nodes`；Folly movable `ChannelCallbackHandleHolder` | auto hook 显式 O(1) 交换 membership/链上位置；不改变默认 move 语义 | public | self、linked/unlinked、相邻、同链/异链均定义；被交换 node 的 iterator 失效 | O(1)，零分配 | `FIX` | P1 | table + random differential；safe hook 不获得该入口 |
+| INTR-AUTO-SWAP-01 | capability/API | real peer consumer | Boost hook `swap_nodes`；Folly movable `ChannelCallbackHandleHolder` | auto list specialization 提供 typed static O(1) `swap_nodes(T*,T*)`，交换同一 selected member contract 的 membership/链上位置；不改变默认 move 语义 | public | self、linked/unlinked、相邻、同链/异链均定义；类型系统阻止 ready/timeout 等不同 member hook 误换；被交换 node 的 iterator 失效 | O(1)，零分配 | `FIX` | P1 | table + random differential；hook/safe list 不获得 public untyped 入口 |
 | INTR-SAFE-SWAP-01 | negative space | lifecycle boundary | safe hook 只能经 owner list/state machine 改 membership | 不提供 hook-level safe swap；未来真实 movable-safe consumer 可设计 list-level `replace` | public future | 不允许绕过 owner state machine | 若重开必须 O(1) 且无 owner tax | `REJECT` hook / `DEFER` list replace | P1 | concept negative test；本轮无 consumer |
 | INTR-SIZE-01 | negative space | peer scan | Folly counted/uncounted list；Boost constant-time-size policy | 不提供 linear `.size()`；冷路径用 `ranges::distance`；counted safe list 等独立 consumer | public future | auto unlink 与 hidden count 冲突；range splice 需 scan 或 caller count | 不让所有 list 支付 word/write；不伪造 `sized_range` | `REJECT` linear / `DEFER` counted | P2 | time/sched 当前计数都不是通用 list membership count |
 | INTR-API-01 | usability | current consumers | time/sched 持有 node pointer；nullable front/pop 与 `try_*` | mutation 保持 pointer API；不复制一套 reference overload | public | 普通入口前置条件；`try_*` 只处理 null/already-linked | 无额外分支或 metadata | `KEEP` | P1 | user guide decision table；不把 `try_*` 伪装成 owner validator |
@@ -97,6 +97,13 @@
 
 尚未进入 `CANDIDATE`。能力、negative space 与有限 `FIX` 已冻结；v2 product identity 只作为审计
 输入，本轮必须在上述项目完成后重新绑定当前 commit/tree。
+
+第一次实现尝试 `e172d24df9cd3afd324f6b700d222c8e9fca27b9` 没有进入 registry candidate：最终红队发现
+public untyped `IntrusiveListHook::swap_nodes` 能把同一 node 的 ready/timeout 等不同 member contract
+互换，链仍完整但后续 `node_of` 使用错误 offset；同时测试未兑现 ledger 的 randomized swap differential。
+因此该 identity 被拒绝，正在按 INTR-AUTO-SWAP-01/CORR-01 改为 typed list surface。它已经启动的
+W1 n=31 在发现产品 blocker 后终止，不能作为当前轮性能证据，也不消耗 replacement candidate 的
+唯一 fresh qualification。
 
 ## Verification manifest
 
