@@ -240,8 +240,10 @@ struct AutoPolicy {
   using PeerList = BoostList;
 #endif
   static constexpr const char *label = "auto-unlink";
-  static constexpr const char *fifo_hyle = "HYLE IntrusiveList";
-  static constexpr const char *fifo_peer = "boost::intrusive auto_unlink";
+  static constexpr const char *fifo_hyle =
+      "HYLE IntrusiveList::consume_all";
+  static constexpr const char *fifo_peer =
+      "boost::intrusive auto_unlink clear_and_dispose";
   static constexpr const char *cancel_hyle = "HYLE IntrusiveList::remove";
   static constexpr const char *cancel_peer = "boost::intrusive::erase";
   static constexpr const char *iteration_hyle = "HYLE IntrusiveList iteration";
@@ -262,8 +264,10 @@ struct SafePolicy {
   using PeerList = BoostSafeList;
 #endif
   static constexpr const char *label = "safe-link";
-  static constexpr const char *fifo_hyle = "HYLE SafeIntrusiveList";
-  static constexpr const char *fifo_peer = "boost::intrusive safe_link";
+  static constexpr const char *fifo_hyle =
+      "HYLE SafeIntrusiveList::consume_all";
+  static constexpr const char *fifo_peer =
+      "boost::intrusive safe_link clear_and_dispose";
   static constexpr const char *cancel_hyle = "HYLE SafeIntrusiveList::remove";
   static constexpr const char *cancel_peer = "boost::intrusive safe_link erase";
   static constexpr const char *iteration_hyle =
@@ -305,7 +309,7 @@ void bench_fifo([[maybe_unused]] bool rival_first,
   nb::Bench bench = make_bench();
   bench
       .title(std::string("intrusive ") + Policy::label +
-             " FIFO batch N=" + std::to_string(Count))
+             " FIFO callback batch drain N=" + std::to_string(Count))
       .relative(true)
       .batch(Count)
       .minEpochIterations(Count < 256 ? 200000 : 2000);
@@ -316,8 +320,9 @@ void bench_fifo([[maybe_unused]] bool rival_first,
     nb::doNotOptimizeAway(hyle_container_intrusive_observe_storage_phase(
         nodes.get(), Count * sizeof(HyleNode)));
     std::size_t checksum = 0;
-    while (HyleNode *node = list.pop_front())
+    list.consume_all([&checksum](HyleNode *node) noexcept {
       checksum += static_cast<std::size_t>(node->value);
+    });
     nb::doNotOptimizeAway(hyle_container_intrusive_observe_storage_phase(
         nodes.get(), Count * sizeof(HyleNode)));
     nb::doNotOptimizeAway(checksum);
@@ -330,10 +335,9 @@ void bench_fifo([[maybe_unused]] bool rival_first,
     nb::doNotOptimizeAway(hyle_container_intrusive_observe_storage_phase(
         boost_nodes.get(), Count * sizeof(PeerNode)));
     std::size_t checksum = 0;
-    while (!list.empty()) {
-      checksum += static_cast<std::size_t>(list.front().value);
-      list.pop_front();
-    }
+    list.clear_and_dispose([&checksum](PeerNode *node) noexcept {
+      checksum += static_cast<std::size_t>(node->value);
+    });
     nb::doNotOptimizeAway(hyle_container_intrusive_observe_storage_phase(
         boost_nodes.get(), Count * sizeof(PeerNode)));
     nb::doNotOptimizeAway(checksum);

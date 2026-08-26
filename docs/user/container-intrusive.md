@@ -17,9 +17,10 @@ find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS container_intrusive)
 target_link_libraries(my_target PRIVATE hyle::container_intrusive)
 ```
 
-源码集成可在 `add_subdirectory` 前设置 `HYLE_COMPONENTS=container_intrusive`。若已经链接
-`hyle::time` 或完整 `hyle::container`，对应 target 会传播依赖，不需要手工添加
-include directory。独立安装包 consumer 见
+源码集成可在 `add_subdirectory` 前设置 `HYLE_COMPONENTS=container_intrusive`。`hyle::time`
+会传播这个依赖；完整 `hyle::container` 不拥有或聚合该组件。直接使用本页类型的 target 必须显式选择并
+链接 `hyle::container_intrusive`，不要依赖其他组件碰巧形成的传递路径，也不需要手工添加 include
+directory。独立安装包 consumer 见
 [`samples/package/container_intrusive/cpp`](../../samples/package/container_intrusive/cpp)。
 
 ## 先选择析构合同
@@ -90,9 +91,32 @@ timers.push_back(&timer);
 timers.remove(&timer); // timer 析构前必须完成；Safe hook 没有 unlink()
 ```
 
-Node 必须是 standard-layout；hook 可以不是首成员。Linked 期间 node 地址必须稳定，不能放在可能
-grow/relocate 的 `std::vector<Request>` 中。一个 hook 同一时刻只能属于一条 list；要同时处于
-ready/timeout 两种 membership，就像示例一样嵌入两个 hook。
+Hook 必须是 node 的直接非静态数据成员，但不要求 node 是 standard-layout，hook 也不必是首成员。
+定义 list alias 时 `T` 必须完整，`&T::hook` 必须在该位置可访问；把 hook 设为 public 最简单。若业务
+必须隐藏 hook，可像 `time::TimerEntry` 一样给一个只负责形成 alias 的命名 adapter 授予 friendship：
+
+```cpp
+struct PrivateNodeListAccess;
+
+class PrivateNode {
+public:
+  PrivateNode() = default;
+
+private:
+  friend struct PrivateNodeListAccess;
+  hyle::container::IntrusiveListHook hook_{};
+};
+
+struct PrivateNodeListAccess {
+  using Type = hyle::container::IntrusiveList<PrivateNode, &PrivateNode::hook_>;
+};
+using PrivateNodeList = PrivateNodeListAccess::Type;
+```
+
+链中的 hook 必须始终属于一个仍存活的完整 node，且 node 地址稳定；不能把 linked node 放进可能
+grow/relocate 的 `std::vector<Request>`。HYLE 只接受已验证的 data-member-pointer ABI 表示，未知或
+更复杂的表示会编译期 fail closed，而不会猜测 enclosing object 地址。一个 hook 同一时刻只能属于一条
+list；要同时处于 ready/timeout 两种 membership，就像示例一样嵌入两个 hook。
 
 ## 所有权与析构
 
@@ -101,10 +125,14 @@ ready/timeout 两种 membership，就像示例一样嵌入两个 hook。
   hooks 都恢复为未链接，但不调用 node destructor。
 - hook copy/move construction 得到新的未链接 hook，source membership 保持；hook assignment 保留
   destination membership，不会导入 source membership。
+- auto hook 的 `swap_nodes(other)` 是显式例外：它在 O(1) 内交换两个 hook 的链中位置。两者都 linked
+  时交换位置；只有一个 linked 时 membership 转移给原先未链接的 hook；两者都未链接时无变化。
+  它只交换 membership，不移动 payload，也不会让 hook 的普通 move 自动转移 membership。
 - 因此复制或移动整个 node 不会“转移链表身份”。有稳定 identity 的 node 通常应像示例一样直接
   删除 copy/move，避免把 payload 从仍在链中的原 node 移走。
 - `linked()` 只回答“该 hook 是否在某条 list”，不能识别是哪一条。模块不保存 owner pointer；只有
-  auto hook 提供幂等 `unlink()`，safe hook 必须由 list 明确摘除。
+  auto hook 提供幂等 `unlink()` 和 `swap_nodes()`；safe hook 必须由 list 明确改变 membership，因而
+  不提供 `swap_nodes()`。
 
 Auto-unlink 不是并发 reclamation。若一个线程遍历而另一线程析构 node，即使析构会摘链也仍是 data
 race/UAF；insert、remove、iteration、hook/list destruction 必须使用同一个外部同步协议。
@@ -124,6 +152,7 @@ race/UAF；insert、remove、iteration、hook/list destruction 必须使用同�
 | iterator 摘链 | `erase(pos)` | O(1)，返回 successor |
 | 单项/整链/range 转移 | `splice(...)` | O(1)，不访问 transferred nodes |
 | 尾接整链 | `append(source)` | O(1)，source 变空 |
+| 交换两个 auto hook 的位置/membership | `node->hook.swap_nodes(other->hook)` | O(1)；不移动 payload；safe hook 不提供 |
 | 交换/移动 list | `swap`、move construction/assignment | O(1) pointer relink |
 | 全部摘链 | `clear()` | O(n)，不销毁 node |
 
@@ -155,6 +184,7 @@ Iterator 是 bidirectional。把摘链后仍存活的 hook pointer 当作 iterat
 |---|---|
 | push/insert | 既有 node iterator 保持有效 |
 | erase/remove/pop/auto `hook.unlink()` | 被摘链 node 的 iterator 失效；其他 node iterator 有效 |
+| auto `hook.swap_nodes(other)` | 指向这两个 node 的 iterator 失效；其他 node iterator 有效 |
 | 单项、整链或 range splice/append | transferred-node iterator 保持有效，并开始在 destination 中遍历 |
 | move construction | source node iterator 跟随 nodes，source 变空；source/destination 的 `end()` 不随 nodes 转移 |
 | move assignment | 两条 membership O(1) 交换；source nodes 进入 destination，旧 destination nodes 进入 moved-from source；source 有效但不保证为空；两个 `end()` 均不转移 |
@@ -185,8 +215,9 @@ iterator 保持稳定，sentinel iterator 始终属于具体 list 对象。
 - 始终 O(1) count、exact owner/contains：选择保存相应 metadata 的上层类型；
 - O(1) counted list：当前没有同语义消费者，且会增加 list metadata 与每次 mutation 写；需要时先确认
   count 是 membership 数而非业务/发布状态；
-- normal-link、polymorphic/base/function hook、shared-memory offset pointer 等完整策略矩阵：使用
-  Boost.Intrusive；
+- normal-link、base/function hook、shared-memory offset pointer 等完整策略矩阵：使用
+  Boost.Intrusive；node 本身是否 polymorphic/standard-layout 不是 HYLE 的独立限制，但其直接 member
+  hook 必须通过当前编译器的 data-member-pointer ABI gate；
 - 单指针 intrusive slist/hlist：使用由真实状态机拥有的专用结构，当前没有公共 slist；
 - 需要 sort/merge/reverse/unique/remove-if 等完整 `std::list` 风格算法：使用 Boost.Intrusive 或 owning
   标准容器；

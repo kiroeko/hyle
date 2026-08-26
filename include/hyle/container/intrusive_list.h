@@ -27,16 +27,18 @@ template <class T, auto Hook, class PublicList> class IntrusiveListImpl;
 
 } // namespace detail
 
-// Allocation-free intrusive linking primitive shared by time and the full
-// container module.  It is its own lightweight component so low-level users do
-// not acquire the owning container/mem/platform dependency closure.
+// Allocation-free intrusive linking primitive shared by low-level consumers
+// such as time. It is its own lightweight component so users do not acquire
+// the owning container/mem/platform dependency closure.
 //
-// Embed one hook in a stable-address node, then list it via
-// IntrusiveList<Node, &Node::hook>. The list owns no nodes and allocates
-// nothing. Like folly::IntrusiveList's auto-unlink hook, destroying a node
-// detaches it. Construction by copy/move always creates an unlinked hook;
-// assignment deliberately preserves the destination hook's membership and
-// never imports the source hook's membership.
+// Embed one direct hook data member in a complete, stable-address node, then
+// list it via IntrusiveList<Node, &Node::hook>. The hook must be accessible
+// where that list specialization is formed. A node need not be standard-layout;
+// the supported pointer-to-data-member ABI is checked on instantiation. The
+// list owns no nodes and allocates nothing. Like folly::IntrusiveList's
+// auto-unlink hook, destroying a node detaches it. Construction by copy/move
+// always creates an unlinked hook; assignment deliberately preserves the
+// destination hook's membership and never imports the source membership.
 struct IntrusiveListHook {
   IntrusiveListHook() noexcept = default;
   IntrusiveListHook(const IntrusiveListHook &) noexcept {}
@@ -57,6 +59,78 @@ struct IntrusiveListHook {
     next->prev = previous;
     link_.next = nullptr;
     link_.prev = nullptr;
+  }
+
+  // Exchange this hook's membership and position with other's in O(1). The
+  // hooks may be unlinked, in the same list, or in different lists. If exactly
+  // one is linked, the other takes its position. Iterators to the two nodes are
+  // invalidated; references and iterators to other nodes remain valid. This is
+  // explicit rather than hook move behavior so ordinary object moves never
+  // transfer hidden container membership. External synchronization is
+  // required when either list is shared between threads.
+  void swap_nodes(IntrusiveListHook &other) noexcept {
+    if (this == &other)
+      return;
+
+    const bool this_linked = linked();
+    const bool other_linked = other.linked();
+    if (!this_linked && !other_linked)
+      return;
+
+    if (!this_linked) {
+      detail::IntrusiveListLink *previous = other.link_.prev;
+      detail::IntrusiveListLink *next = other.link_.next;
+      previous->next = &link_;
+      next->prev = &link_;
+      link_.prev = previous;
+      link_.next = next;
+      other.link_.prev = nullptr;
+      other.link_.next = nullptr;
+      return;
+    }
+    if (!other_linked) {
+      detail::IntrusiveListLink *previous = link_.prev;
+      detail::IntrusiveListLink *next = link_.next;
+      previous->next = &other.link_;
+      next->prev = &other.link_;
+      other.link_.prev = previous;
+      other.link_.next = next;
+      link_.prev = nullptr;
+      link_.next = nullptr;
+      return;
+    }
+
+    detail::IntrusiveListLink *this_previous = link_.prev;
+    detail::IntrusiveListLink *this_next = link_.next;
+    detail::IntrusiveListLink *other_previous = other.link_.prev;
+    detail::IntrusiveListLink *other_next = other.link_.next;
+    if (this_next == &other.link_) {
+      this_previous->next = &other.link_;
+      other.link_.prev = this_previous;
+      other.link_.next = &link_;
+      link_.prev = &other.link_;
+      link_.next = other_next;
+      other_next->prev = &link_;
+      return;
+    }
+    if (other_next == &link_) {
+      other_previous->next = &link_;
+      link_.prev = other_previous;
+      link_.next = &other.link_;
+      other.link_.prev = &link_;
+      other.link_.next = this_next;
+      this_next->prev = &other.link_;
+      return;
+    }
+
+    this_previous->next = &other.link_;
+    this_next->prev = &other.link_;
+    other_previous->next = &link_;
+    other_next->prev = &link_;
+    link_.prev = other_previous;
+    link_.next = other_next;
+    other.link_.prev = this_previous;
+    other.link_.next = this_next;
   }
 
 private:
@@ -107,8 +181,6 @@ template <class T, auto Hook, class PublicList> class IntrusiveListImpl {
 public:
   using HookType =
       std::remove_reference_t<decltype(std::declval<T &>().*Hook)>;
-  static_assert(std::is_standard_layout_v<T>,
-                "intrusive container_of requires a standard-layout node");
   static_assert(std::is_same_v<HookType, IntrusiveListHook> ||
                     std::is_same_v<HookType, SafeIntrusiveListHook>,
                 "unsupported intrusive-list hook policy");
@@ -531,11 +603,12 @@ private:
   }
 
   // C++ has no standard inverse for an arbitrary pointer-to-data-member.
-  // HYLE's supported compilers use one of the two documented data-member
-  // pointer ABIs below for standard-layout classes. Decode the representation
-  // without the traditional null-pointer member expression, which is UB even
-  // for a standard-layout T. The size assertions fail closed if a compiler
-  // selects a richer inheritance representation.
+  // HYLE's supported compilers use one of the two documented direct data-member
+  // pointer ABIs below. Decode the representation without the traditional
+  // null-pointer member expression, which is UB. The size assertions fail
+  // closed if a compiler selects a richer inheritance representation; this is
+  // the actual ABI boundary, rather than an unnecessary standard-layout<T>
+  // restriction.
   static std::ptrdiff_t hook_offset() noexcept {
 #if defined(_MSC_VER)
     static_assert(sizeof(Hook) == sizeof(int),

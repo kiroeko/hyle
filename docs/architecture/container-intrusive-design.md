@@ -54,14 +54,25 @@ kernel-lifetime 合同。Cancellation callback 的 `next + prev_next` hlist、po
   owner；copy/move construction 创建新的未链接 hook，assignment 保留 destination membership，
   不导入 source membership。
 
-node 必须是 standard-layout，linked 期间地址稳定；hook 可以不是首成员。同一对象需要同时加入 ready、
-timeout 等多条 list 时，必须为每条 membership 使用不同 hook。带 identity 的 node 通常应删除自身的
-copy/move，避免“payload 已移动、原地址仍在链中”这种虽符合 hook 规则却不符合业务直觉的状态。
+hook 必须是 node 的直接非静态数据成员，但可以不是首成员；node 不要求 standard-layout。linked 期间
+hook 必须属于一个仍存活的完整 node，且 node 地址稳定。同一对象需要同时加入 ready、timeout 等多条
+list 时，必须为每条 membership 使用不同 hook。带 identity 的 node 通常应删除自身的 copy/move，
+避免“payload 已移动、原地址仍在链中”这种虽符合 hook 规则却不符合业务直觉的状态。形成 list alias
+的位置必须能访问 `&T::hook`；public hook 最直接，private hook 则由 node 给命名 list-adapter 授予
+friendship，`time::detail::TimerEntryListAccess` 是现有消费实例。
 
 从 member hook 恢复 enclosing `T` 没有标准 C++ 逆运算。候选只支持已登记的 MSVC data-member
-pointer ABI 与 GCC/Clang 使用的 Itanium 形状，并对未知或更复杂 representation 编译期 fail closed；
-standard-layout 限制和三平台编译/sanitizer 证据必须在签署前保留。该限制不是允许调用方 relocation
-linked node 的理由。
+pointer ABI 与 GCC/Clang 使用的 Itanium 形状，并对未知或更复杂 representation 编译期 fail closed。
+支持与否由 pointer-to-data-member representation gate 决定，而不是由 `std::is_standard_layout_v<T>`
+替代判断；混合访问控制或 polymorphic node 只要满足 direct-member、完整对象、稳定地址与 ABI gate
+即可。三平台编译/sanitizer 证据必须在签署前保留；支持非 standard-layout 也绝不允许 relocation
+linked node。
+
+auto hook 额外提供显式 `swap_nodes(other)`：两者都 linked 时交换它们在同一条或不同链中的位置；仅
+一者 linked 时把该位置/membership 转移给原先未链接的 hook；两者都未链接或同一对象自交换时不改变
+状态。操作不移动 payload，普通 hook/node move 仍不自动转移 membership。safe hook 刻意不提供该
+入口，因为在 list/owner 状态机之外转移 membership 会绕过显式 retirement 合同；出现真实 safe
+consumer 后应先设计能同步 owner 状态的 list-level replace，而不是复制 auto API。
 
 list 始终可以先销毁：析构会逐项清空 membership 而不销毁 node。只有 auto hook 的 node 可以在
 同步得到保证时先于 list 析构并自动摘链；safe hook 的 node 必须先显式摘链。任何 iterator/reference
@@ -75,6 +86,7 @@ list 始终可以先销毁：析构会逐项清空 membership 而不销毁 node�
 | `iterator_to(node)` | O(1) | node 必须非 null、已链接且属于该 list；不做 owner scan |
 | 单节点、整链及 `[first,last)` range splice | O(1) | range 不访问 node；transferred-node iterator 保持有效 |
 | `append`、list move、`swap` | O(1) | 只重连 sentinel 与边界 hook |
+| auto hook `swap_nodes` | O(1) | 交换两个 node 的位置/membership；不移动 payload；safe hook 不提供 |
 | iteration、`clear`、list destruction | O(n) | 离开 list 的每个 auto/safe hook 都恢复未链接状态 |
 | `consume_all(fn)` | O(n) | 当前 node 在 callback 前摘链；callback 必须 `noexcept`，可销毁或重链当前 node |
 | `for_each(fn)` | O(n) | 结构不变；callback 不得改变被遍历 node 的 membership/lifetime |
@@ -111,6 +123,7 @@ iterator 即使 node storage 尚在且偶然仍可解引用，也必须视为失
 |---|---|---|---|
 | push/insert | 新 iterator 有效；既有 iterator 不变 | 有效 | 仍绑定同一 sentinel |
 | erase/remove/pop/`hook.unlink()` | 被摘链者失效 | 有效 | 有效 |
+| auto `hook.swap_nodes(other)` | 指向两个被交换 node 的 iterator 均失效 | 有效 | 各 list 的 end 仍绑定原 sentinel |
 | 单节点、整链、range splice/append | transferred-node iterator 有效，之后遍历进入 destination | 有效 | source/destination 的 end 各自仍绑定原 list，不随 node 转移 |
 | list move construction | transferred-node iterator 有效，之后遍历进入新 list | source 变空 | 旧 source end 与新 destination end 是不同 sentinel |
 | list move assignment | source node iterator 转入 destination；原 destination node iterator 转入 moved-from source | 两组 membership O(1) 交换；source 有效但不保证为空 | 两个 list 的 end 均不转移 |
@@ -141,7 +154,7 @@ lock-free 声明；类型的 thread compatibility 不会因 safe policy 而变�
 | counted list | `TimerQueue` 的 count 跨 bucket，sched waiter count 属原子发布协议；`CommonTimeoutQueue` 的 count 虽等于单链 membership，却是 time 专用 `size()` 状态，不能独自确定 auto/safe、range splice 的通用 counted 合同。count 会令所有 list 增加一个 word 与 mutation 写，range splice 还需 scan 或 caller 提供 n，故 `DEFER` |
 | normal-link / 任意 hook policy | auto 与 safe 已覆盖常见生命周期；无检查/不初始化的 normal link 及完整策略矩阵借用 Boost.Intrusive，直到出现独立任务 |
 | exact owner/`contains(node)` | 两指针 hook 无法 O(1) 回答具体 owner；不为罕见诊断向所有 node 加 owner pointer |
-| base hook、function/value traits、fancy/offset pointer | 当前需求只要求 standard-layout member hook；polymorphic/shared-memory 等高级形状直接借用 Boost.Intrusive |
+| base hook、function/value traits、fancy/offset pointer | 当前需求只要求 direct member hook；node 可为 non-standard-layout，但不绕过已支持的 data-member-pointer ABI gate。base/function/shared-memory 等高级形状直接借用 Boost.Intrusive |
 | intrusive `slist` / hlist | 单指针 footprint、tail/cache 与 unlink 合同是另一算法；当前 cancellation/free-list 特化不证明一个公共 slist 产品 |
 | range erase convenience | safe/auto hook 都要逐项恢复未链接状态，循环 `erase` 已是相同 O(k)，没有复杂度缺口 |
 | sort/merge/reverse/unique/remove-if 全套 | 本模块是链接 primitive，不是 `std::list` replacement；需要完整 STL-like intrusive algorithms 时借用 Boost，owning 数据优先标准容器 |
@@ -162,8 +175,9 @@ iterator 都没有自然的窄 C ABI；当前也没有已命名外语消费者�
 
 源码、installed static 与 installed shared SDK 中，`hyle::container_intrusive` 都是同一个
 header-only imported/interface target；static/shared 选择不会产生 intrusive DLL、导出符号或运行时
-stage。完整 container 与 time 通过真实 target edge 传播该依赖；sched 的专用 waiter 链不建立一条
-虚假的 direct dependency。
+stage。`time` 通过真实 PUBLIC target edge 传播该依赖；完整 `container` 不拥有或聚合它，直接消费者
+必须显式选择并链接 `hyle::container_intrusive`，不得依赖当前其他组件可能形成的传递闭包。sched 的
+专用 waiter 链不建立一条虚假的 direct dependency。
 
 只有真实消费者要求新 hook/link policy、受支持 compiler ABI 使 member recovery 不成立、发现
 lifetime/correctness 缺陷，或同合同 peer 证明 material 的复杂度/消费者性能优势时才重开产品

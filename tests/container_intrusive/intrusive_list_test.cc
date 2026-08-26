@@ -36,8 +36,84 @@ struct SafeNode {
 };
 using SafeNodeList = SafeIntrusiveList<SafeNode, &SafeNode::hook>;
 
+class MixedAccessNode {
+private:
+  int value_;
+
+public:
+  IntrusiveListHook hook;
+
+  explicit MixedAccessNode(int value) noexcept : value_(value) {}
+  int value() const noexcept { return value_; }
+};
+using MixedAccessNodeList =
+    IntrusiveList<MixedAccessNode, &MixedAccessNode::hook>;
+
 template <class Hook>
 concept HasPublicUnlink = requires(Hook &hook) { hook.unlink(); };
+
+template <class Hook>
+concept HasSwapNodes =
+    requires(Hook &left, Hook &right) { left.swap_nodes(right); };
+
+template <class NodeType, class ListType>
+void expect_same_list_range_splice_matches_model() {
+  constexpr std::size_t kNodeCount = 6;
+  for (std::size_t first = 0; first <= kNodeCount; ++first) {
+    for (std::size_t last = first; last <= kNodeCount; ++last) {
+      for (std::size_t position = 0; position <= kNodeCount; ++position) {
+        // The public contract excludes a position strictly inside the range.
+        if (first < position && position < last)
+          continue;
+        SCOPED_TRACE(::testing::Message()
+                     << "first=" << first << " last=" << last
+                     << " position=" << position);
+
+        std::vector<std::unique_ptr<NodeType>> storage;
+        storage.reserve(kNodeCount);
+        ListType actual;
+        std::vector<NodeType *> expected;
+        expected.reserve(kNodeCount);
+        for (std::size_t index = 0; index < kNodeCount; ++index) {
+          storage.push_back(
+              std::make_unique<NodeType>(static_cast<int>(index)));
+          actual.push_back(storage.back().get());
+          expected.push_back(storage.back().get());
+        }
+
+        auto actual_at = [&](std::size_t index) {
+          return index == kNodeCount
+                     ? actual.end()
+                     : actual.iterator_to(storage[index].get());
+        };
+        const bool no_op = first == last || position == first ||
+                           position == last;
+        auto result = actual.splice(actual_at(position), actual,
+                                    actual_at(first), actual_at(last));
+        if (!no_op) {
+          std::vector<NodeType *> moved(expected.begin() + first,
+                                        expected.begin() + last);
+          expected.erase(expected.begin() + first, expected.begin() + last);
+          std::size_t adjusted_position = position;
+          if (position > last)
+            adjusted_position -= last - first;
+          expected.insert(expected.begin() + adjusted_position, moved.begin(),
+                          moved.end());
+          EXPECT_EQ(&*result, storage[first].get());
+        } else if (position == kNodeCount) {
+          EXPECT_EQ(result, actual.end());
+        } else {
+          EXPECT_EQ(&*result, storage[position].get());
+        }
+
+        std::vector<NodeType *> observed;
+        for (NodeType &node : actual)
+          observed.push_back(&node);
+        EXPECT_EQ(observed, expected);
+      }
+    }
+  }
+}
 
 static_assert(std::bidirectional_iterator<NodeList::iterator>);
 static_assert(std::bidirectional_iterator<NodeList::const_iterator>);
@@ -53,6 +129,10 @@ static_assert(!std::ranges::sized_range<SafeNodeList>);
 static_assert(!std::ranges::sized_range<const SafeNodeList>);
 static_assert(HasPublicUnlink<IntrusiveListHook>);
 static_assert(!HasPublicUnlink<SafeIntrusiveListHook>);
+static_assert(HasSwapNodes<IntrusiveListHook>);
+static_assert(!HasSwapNodes<SafeIntrusiveListHook>);
+static_assert(!std::is_standard_layout_v<MixedAccessNode>);
+static_assert(std::ranges::bidirectional_range<MixedAccessNodeList>);
 static_assert(sizeof(IntrusiveListHook) == 2 * sizeof(void *));
 static_assert(sizeof(SafeIntrusiveListHook) == 2 * sizeof(void *));
 static_assert(sizeof(NodeList) == 2 * sizeof(void *));
@@ -180,6 +260,14 @@ TEST(IntrusiveList, IteratorToAndRangeSplicePreserveNodeIterators) {
   EXPECT_EQ(&*view.iterator_to(&g), &g);
 }
 
+TEST(IntrusiveList, SameListRangeSpliceMatchesFiniteOwningSequenceModel) {
+  expect_same_list_range_splice_matches_model<Node, NodeList>();
+}
+
+TEST(SafeIntrusiveList, SameListRangeSpliceMatchesFiniteOwningSequenceModel) {
+  expect_same_list_range_splice_matches_model<SafeNode, SafeNodeList>();
+}
+
 TEST(IntrusiveList, SwapAndMoveKeepNodeIteratorsButNotSentinelIdentity) {
   Node a(1), b(2), c(3);
   NodeList first;
@@ -230,6 +318,90 @@ TEST(IntrusiveList, SwapHandlesEmptyListsWithoutChangingMembership) {
   empty.swap(another_empty);
   EXPECT_TRUE(empty.empty());
   EXPECT_TRUE(another_empty.empty());
+}
+
+TEST(IntrusiveListHook, SwapNodesHandlesSelfAndUnlinkedMembership) {
+  Node first(1), second(2), tail(3);
+  first.hook.swap_nodes(first.hook);
+  first.hook.swap_nodes(second.hook);
+  EXPECT_FALSE(first.hook.linked());
+  EXPECT_FALSE(second.hook.linked());
+
+  NodeList list;
+  list.push_back(&first);
+  list.push_back(&tail);
+  first.hook.swap_nodes(first.hook);
+  EXPECT_EQ(list.front(), &first);
+
+  first.hook.swap_nodes(second.hook);
+  EXPECT_FALSE(first.hook.linked());
+  EXPECT_TRUE(second.hook.linked());
+  EXPECT_EQ(list.front(), &second);
+  EXPECT_EQ(list.back(), &tail);
+
+  // Exercise the symmetric path with the unlinked hook as the receiver.
+  first.hook.swap_nodes(second.hook);
+  EXPECT_TRUE(first.hook.linked());
+  EXPECT_FALSE(second.hook.linked());
+  EXPECT_EQ(list.front(), &first);
+}
+
+TEST(IntrusiveListHook, SwapNodesHandlesEveryLinkedTopology) {
+  Node a(1), b(2), c(3), d(4);
+  NodeList same;
+  for (Node *node : {&a, &b, &c, &d})
+    same.push_back(node);
+
+  // Adjacent in caller-before-other orientation.
+  a.hook.swap_nodes(b.hook);
+  std::vector<Node *> observed;
+  for (Node &node : same)
+    observed.push_back(&node);
+  EXPECT_EQ(observed, (std::vector<Node *>{&b, &a, &c, &d}));
+
+  // Adjacent in other-before-caller orientation.
+  c.hook.swap_nodes(a.hook);
+  observed.clear();
+  for (Node &node : same)
+    observed.push_back(&node);
+  EXPECT_EQ(observed, (std::vector<Node *>{&b, &c, &a, &d}));
+
+  // Non-adjacent positions in one list.
+  b.hook.swap_nodes(d.hook);
+  observed.clear();
+  for (Node &node : same)
+    observed.push_back(&node);
+  EXPECT_EQ(observed, (std::vector<Node *>{&d, &c, &a, &b}));
+
+  Node e(5), f(6), g(7), h(8);
+  NodeList first;
+  NodeList second;
+  first.push_back(&e);
+  first.push_back(&f);
+  second.push_back(&g);
+  second.push_back(&h);
+  f.hook.swap_nodes(g.hook);
+  EXPECT_EQ(first.front(), &e);
+  EXPECT_EQ(first.back(), &g);
+  EXPECT_EQ(second.front(), &f);
+  EXPECT_EQ(second.back(), &h);
+}
+
+TEST(IntrusiveList, NonStandardLayoutNodeUsesSupportedMemberPointerAbi) {
+  MixedAccessNode first(1), second(2);
+  MixedAccessNodeList list;
+  list.push_back(&first);
+  list.push_back(&second);
+  EXPECT_EQ(list.front(), &first);
+  EXPECT_EQ(list.back(), &second);
+  EXPECT_EQ(list.iterator_to(&second)->value(), 2);
+
+  int sum = 0;
+  for (const MixedAccessNode &node : list)
+    sum += node.value();
+  EXPECT_EQ(sum, 3);
+  EXPECT_EQ(list.pop_front(), &first);
+  EXPECT_EQ(list.pop_front(), &second);
 }
 
 TEST(IntrusiveList, PushPopAndRemovePreserveOrder) {

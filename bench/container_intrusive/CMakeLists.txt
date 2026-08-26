@@ -1,4 +1,4 @@
-# Allocation-free intrusive primitive: FIFO batch, refill + arbitrary
+# Allocation-free intrusive primitive: FIFO callback batch drain, refill + arbitrary
 # cancel, read-only traversal, whole-batch handoff, non-owning teardown, and
 # auto-unlink node retirement. Boost uses matching member-hook auto_unlink and
 # safe_link contracts with constant-time size disabled. Whole-batch handoff is
