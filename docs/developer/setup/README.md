@@ -11,7 +11,7 @@
 | 平台 | 文件 | 角色 |
 |---|---|---|
 | Windows（MSVC / clang-cl） | [`windows.md`](windows.md) | MSVC 主构建 + clang-cl 可移植性门；GPU（CUDA）真机 |
-| Linux / WSL（GCC14） | [`linux-wsl.md`](linux-wsl.md) | **lock-free TSan 唯一闸门**；GPU（CUDA）真机；9p 铁律 |
+| Linux / WSL（GCC14） | [`linux-wsl.md`](linux-wsl.md) | **lock-free TSan 唯一闸门**；Linux 执行环境与 GPU 路径；不是独立物理性能机；9p 铁律 |
 | macOS（Apple Silicon） | [`macos.md`](macos.md) | ARM/NEON + kqueue 真机；CUDA-free，仍可构建 Vulkan backend |
 
 依赖（跨平台，可选能力）单独一文件：
@@ -59,3 +59,5 @@ MSVC，改用 `scripts/hyle-windows.ps1` + `windows-ninja`；安装 clang-cl 18+
 - 看配置日志确认可选能力状态：`io TLS <AUTO|ON|OFF>` / `compute CUDA <AUTO|ON|OFF>` / `ggml via FetchContent`。
 - lock-free 改动**必须**过 WSL TSan（[`linux-wsl.md`](linux-wsl.md)）。
 - 性能数字**必须**在原生文件系统（非 9p / 非网络盘）跑，见各平台「性能测试」节。
+- correctness、engineering 与 formal 的机器角色以
+  [性能机器合同](../performance/machines.md)为准；“三个执行环境”不等于“三台独立性能机器”。

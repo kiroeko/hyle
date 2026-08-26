@@ -1,0 +1,224 @@
+{
+  "schema": "hyle-perf-machine-registry-v1",
+  "instrument_profiles": [
+    "closure-correctness-v1",
+    "closure-perf-v1",
+    "formal-release-v1"
+  ],
+  "machine_profiles": {
+    "W1-WIN": {
+      "id": "W1-WIN",
+      "physical_host_id": "W1",
+      "environment": "windows",
+      "provisioned": true,
+      "independent_hardware": true,
+      "roles": [
+        "correctness",
+        "engineering",
+        "formal"
+      ],
+      "formal_claims": [
+        "windows"
+      ],
+      "host_binding": {
+        "status": "registered",
+        "unregistered_engineering_policy": "deny",
+        "stable_machine_id": {
+          "source": "windows-machine-guid-sha256",
+          "sha256": "b4bbf09e3db097cf433da14a4ff16bef366dec28d42b27f8b303524267af5e97"
+        },
+        "required_host_facts": {
+          "system": "Windows",
+          "os_release": "11",
+          "os_version": "10.0.26200",
+          "architecture": "AMD64",
+          "logical_cpu_count": 32,
+          "processor_identifier": "Intel64 Family 6 Model 183 Stepping 1",
+          "cpu_model": "13th Gen Intel(R) Core(TM) i9-13900K",
+          "cpu_vendor": "GenuineIntel",
+          "bios_version": "3001",
+          "system_manufacturer": "ASUS",
+          "system_product": "System Product Name",
+          "baseboard_manufacturer": "ASUSTeK COMPUTER INC.",
+          "baseboard_product": "ROG STRIX Z790-E GAMING WIFI",
+          "installed_memory_bytes": 68719476736
+        }
+      },
+      "baseline": {
+        "cpu": "Intel Core i9-13900K, 24C/32T",
+        "memory": "64 GiB DDR5-4800",
+        "storage": "Samsung 990 PRO 2 TB NVMe",
+        "os": "Windows 11 Pro for Workstations 10.0.26200",
+        "bios": "3001"
+      },
+      "filesystem": {
+        "required": "NTFS",
+        "require_local_fixed": true
+      },
+      "power": {
+        "require_ac": true,
+        "active_scheme_guid": "e9a42b02-d5df-448d-aa00-03f14749eb61"
+      },
+      "scheduler": {
+        "single_thread_logical_cpu": 2,
+        "single_thread_cpu_set_id": 258,
+        "smt_sibling_logical_cpu": 3,
+        "required_efficiency_class": "maximum",
+        "priority": "above-normal"
+      },
+      "sampling_mutex": {
+        "key": "W1",
+        "shared_storage_id": "W1-NTFS-C",
+        "paths": {
+          "windows": "C:\\hyle-perf-locks\\W1.sampling.lock",
+          "wsl2": "/mnt/c/hyle-perf-locks/W1.sampling.lock"
+        },
+        "stale_policy": "fail-closed-manual-recovery"
+      },
+      "toolchain": {
+        "performance": "MSVC 19.50.35728 / v145 / Windows SDK 10.0.26100.0",
+        "correctness_secondary": "clang-cl 20.1.8"
+      }
+    },
+    "W1-WSL": {
+      "id": "W1-WSL",
+      "physical_host_id": "W1",
+      "environment": "wsl2",
+      "provisioned": true,
+      "independent_hardware": false,
+      "roles": [
+        "correctness",
+        "engineering"
+      ],
+      "formal_claims": [],
+      "formal_prohibited_reason": "WSL2 shares W1 hardware and cannot verify physical P/E-core affinity or represent native Linux",
+      "host_binding": {
+        "status": "unregistered",
+        "unregistered_engineering_policy": "allow-explicitly-unbound"
+      },
+      "baseline": {
+        "distribution": "Ubuntu 24.04.4 LTS",
+        "kernel": "6.18.33.2-microsoft-standard-WSL2",
+        "guest_cpu_count": 32,
+        "guest_memory": "32 GiB"
+      },
+      "filesystem": {
+        "required": "ext4",
+        "forbidden_prefix": "/mnt/c"
+      },
+      "power": {
+        "managed_by_physical_host": "W1"
+      },
+      "scheduler": {
+        "guest_affinity_only": true,
+        "physical_core_class_verifiable": false
+      },
+      "sampling_mutex": {
+        "key": "W1",
+        "shared_storage_id": "W1-NTFS-C",
+        "paths": {
+          "windows": "C:\\hyle-perf-locks\\W1.sampling.lock",
+          "wsl2": "/mnt/c/hyle-perf-locks/W1.sampling.lock"
+        },
+        "stale_policy": "fail-closed-manual-recovery"
+      },
+      "toolchain": {
+        "performance": "GCC 14.2 / binutils 2.42 / glibc 2.39"
+      }
+    },
+    "M1-MAC": {
+      "id": "M1-MAC",
+      "physical_host_id": "M1",
+      "environment": "macos",
+      "provisioned": true,
+      "independent_hardware": true,
+      "roles": [
+        "correctness",
+        "engineering",
+        "formal"
+      ],
+      "formal_claims": [
+        "macos-qos"
+      ],
+      "host_binding": {
+        "status": "unregistered",
+        "unregistered_engineering_policy": "allow-explicitly-unbound"
+      },
+      "baseline": {
+        "model": "MacBook Air Mac16,12",
+        "cpu": "Apple M4, 4 performance + 6 efficiency cores",
+        "memory": "16 GiB",
+        "os": "macOS 26.5.2 build 25F84"
+      },
+      "filesystem": {
+        "required": "APFS",
+        "require_local_fixed": true
+      },
+      "power": {
+        "require_ac": true,
+        "require_low_power_mode_off": true
+      },
+      "scheduler": {
+        "hard_affinity_supported": false,
+        "default_qos": "interactive",
+        "utility_is_separate_contract": true
+      },
+      "sampling_mutex": {
+        "key": "M1",
+        "shared_storage_id": "M1-APFS",
+        "paths": {
+          "macos": "/Users/Shared/HYLE/perf-locks/M1.sampling.lock"
+        },
+        "stale_policy": "fail-closed-manual-recovery"
+      },
+      "toolchain": {
+        "performance": "AppleClang 21.0.0 / SDK 26.5 / ld 1267"
+      }
+    },
+    "L1-LINUX": {
+      "id": "L1-LINUX",
+      "physical_host_id": "L1",
+      "environment": "native-linux",
+      "provisioned": false,
+      "independent_hardware": true,
+      "roles": [
+        "correctness",
+        "engineering",
+        "formal"
+      ],
+      "formal_claims": [
+        "native-linux"
+      ],
+      "host_binding": {
+        "status": "unregistered",
+        "unregistered_engineering_policy": "deny"
+      },
+      "filesystem": {
+        "required": "ext4",
+        "require_local_fixed": true
+      },
+      "power": {
+        "require_ac": true,
+        "required_governor": "performance"
+      },
+      "scheduler": {
+        "hard_physical_affinity_verifiable": true
+      },
+      "sampling_mutex": {
+        "key": "L1",
+        "shared_storage_id": "L1-LOCAL",
+        "paths": {
+          "native-linux": "/var/tmp/hyle-perf-locks/L1.sampling.lock"
+        },
+        "stale_policy": "fail-closed-manual-recovery"
+      },
+      "admission_contract": {
+        "bare_metal": true,
+        "local_filesystem": "ext4",
+        "power_governor": "performance",
+        "physical_affinity_verifiable": true,
+        "toolchain": "exact GCC 14.x compiler/linker/stdlib identity"
+      }
+    }
+  }
+}

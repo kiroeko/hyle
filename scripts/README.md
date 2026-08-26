@@ -52,6 +52,135 @@ python scripts/check-docs.py
 The Linux baseline CI runs the same command. Content correctness still requires
 module review; this script prevents structural and navigation drift.
 
+## Module closure and performance evidence v1
+
+`check-module-closure.py` validates the canonical current-state registry at
+`docs/implementation/module-status.json` and its generated human projection.
+Task, architecture, user, and performance pages may describe historical facts,
+but they must link to that registry instead of declaring a competing current
+`AUDITED`, `CLOSED`, or `PRODUCT LOCKED` state.
+
+```bash
+python scripts/check-module-closure.py
+python scripts/check-docs.py
+```
+
+`scripts/hyle_perf/` is the shared schema/statistics/evidence/machine core for
+performance instrument v1. It owns contract locking, canonical observations,
+`advantage_ratio` (greater than one always favors HYLE), the independent
+comparability/qualification/exact-performance axes, non-inferiority, manifest
+binding, and registered-machine probes. Module integrations may only supply
+workload/row mapping and genuinely module-specific artifact validators; they do
+not fork the estimator, margin, controls, verdict, or stopping rule. The normative
+protocol is
+[`instrument-v1.md`](../docs/developer/performance/instrument-v1.md), and machine
+roles are registered in `scripts/perf-machines.json` and explained in
+[`machines.md`](../docs/developer/performance/machines.md).
+
+`hyle-perf.py` is now the single v1 orchestrator. The first mappings are
+`bench/contracts/container-intrusive-p1-v1.json` and
+`bench/contracts/error-p1-v1.json`; their implementation history and remaining
+qualification work are tracked in
+[`closure-system-v1`](../docs/implementation/tasks/build/closure-system-v1.md).
+The contracts and runner existing does not close either module: neither pilot
+currently has a candidate-bound engineering `QUALIFIED` manifest.
+
+Validate the immutable contract before building:
+
+```bash
+python scripts/hyle-perf.py validate \
+  --contract bench/contracts/error-p1-v1.json
+```
+
+`probe` configures/builds the declared targets but permits a dirty candidate,
+dirty peer and a reusable build tree. It runs exactly one fresh child process
+per required product stratum and one per control order, always emits
+`DIAGNOSTIC`, and returns no performance qualification regardless of attractive
+ratios. The output directory must be absent or empty; the peer checkout must
+still be at the exact revision pinned by the contract:
+
+```bash
+python scripts/hyle-perf.py probe \
+  --contract bench/contracts/error-p1-v1.json \
+  --machine W1-WIN --peer abseil=../abseil-cpp \
+  --build .scratch/perf-probe-error-build \
+  --output .scratch/perf-probe-error-evidence
+```
+
+Every emitted bundle can be replayed while all referenced files are retained.
+`verify` strictly parses the manifest and contract lock; rehashes every file;
+reparses the exact raw-log index, child telemetry and nanobench rows back into
+observations and controls; recomputes an n=15 escalation decision; independently
+replays the actual CMake cache, compiler/linker and product artifacts; and
+rebinds the registered host gate. Every launched child reports a unique
+`run_nonce`, so copying one process log into multiple sample slots is rejected.
+A diagnostic manifest may verify successfully; integrity and product
+performance are intentionally separate axes:
+
+```bash
+python scripts/hyle-perf.py verify \
+  --contract bench/contracts/error-p1-v1.json \
+  --manifest .scratch/perf-probe-error-evidence/manifest.json
+```
+
+`qualify-platform` requires clean candidate and peer checkouts, an absent/empty
+fresh build tree, Release, all required controls/strata, stable inputs/host/
+artifacts and passing validators. It always starts with n=15. A complete n=31
+replacement run occurs only when the contract predeclares it, every required
+control passed, at least one comparable non-inferiority gate is `UNRESOLVED`
+solely for statistical power, and all other such gates are `PASS`:
+
+```bash
+python scripts/hyle-perf.py qualify-platform \
+  --contract bench/contracts/error-p1-v1.json \
+  --machine W1-WIN --peer abseil=../abseil-cpp \
+  --build .scratch/perf-qualify-error-build \
+  --output .scratch/perf-qualify-error-evidence
+```
+
+CPU v1 runs A/A, 5% and 10% known-delta controls in both orders. Its timer floor
+is matched to each product executable's declared `measurement_batch`; the
+faster side must be at least 20 times the most conservative same-batch floor.
+The 20x check is a harness-qualification guard, not a 5% product margin and not
+a switch to relax when a sub-nanosecond operation fails. The error plumbing
+pilot exposed several batch=1 rows at only about 1.5x--9.8x floor. Those ratios
+remain harness-dominated diagnostics until a consumer-valid replay or another
+instrument passes the gate.
+
+Before every child, the runner clears ambient `HYLE_BENCH_*`/`HYLE_PERF_*`,
+sanitizer/profiler, loader, allocator and affinity-tuning variables; it fixes
+common math runtimes to one thread and then applies only contract-reviewed
+environment additions. This is a sanitizer, not a fully empty environment:
+ordinary variables remain and the evidence stores a `PATH` hash rather than raw
+environment contents.
+
+The nanobench adapter v1 accepts static linkage only and verifies the actual
+CMake cache has `HYLE_STATIC=ON`. This is an instrument limitation while shared
+runtime dependency closure is unimplemented, not a restriction on HYLE's
+static/shared/source delivery shapes. It also binds actual generator,
+architecture, configuration, ISA/LTO, compiler/linker hashes, SDK/stdlib and
+product artifact hashes.
+
+The v1 bundle is unsigned mechanical evidence, not an authenticity proof
+against an author who can coherently regenerate every raw file and manifest.
+It also references live build/toolchain files: rebuilding them makes later
+verification fail closed. Engineering use is valid while those references are
+retained; Formal release remains unavailable until a trusted runner writes a
+content-addressed immutable archive (and signing/provenance where required).
+
+`qualify-platform --formal` is deliberately stricter: the machine registry
+must already bind a matching stable host identity and independent hardware, and
+the contract profile must already pin exact compiler/linker ID, version, binary
+hash, SDK and stdlib values. Observed values cannot self-certify as expected.
+W1-WIN has a registered host identity; W1-WSL is not independent, M1-MAC is not
+yet identity-registered, and L1-LINUX is unprovisioned. The two pilot contracts
+also do not yet pin `formal_toolchain`, so Formal currently fails closed by
+design. `certify` only composes already-Formal manifests and rejects reused
+physical hosts or mismatched candidate/contract/peer identities.
+
+Old raw results therefore remain diagnostics or historical evidence; the
+presence of a module-specific runner is not a module engineering `PASS`.
+
 ## `hyle-windows.ps1` — select an installed Windows C++ environment
 
 CMake may know the VS 2022 generator but not a newer installed Visual Studio generation.
@@ -182,9 +311,9 @@ still points at those in-tree paths. Run after any simd vendor-port change:
 scripts/check-no-vendor.sh
 ```
 
-## `setup-bench-libs.sh` — fetch other gated SOTA references
+## `setup-bench-libs.sh` — fetch opt-in peer references
 
-HYLE's headline claim is *SOTA performance*, so the benchmarks compare against
+HYLE performance work compares a frozen capability contract against strong,
 real references (abseil, folly, mimalloc, marl, moodycamel, oneTBB,
 crossbeam-deque, wyhash) — not just `std`. These heavy, opt-in rivals are not
 vendored, so this script clones them. Highway/xsimd use the separate pinned
@@ -209,7 +338,7 @@ HYLE_BENCH_DEPS_DIR=/custom/path scripts/setup-bench-libs.sh
   `-DHYLE_MARL_DIR=$HYLE_BENCH_DEPS_DIR/marl` etc. This name is deliberately distinct from CMake's
   `HYLE_DEPS_DIR`, which owns one build tree's FetchContent population.
 
-## Running the gated SOTA benchmarks
+## Running opt-in peer comparison benchmarks
 
 Product builds have no external benchmark dependency. Any `HYLE_BUILD_BENCH=ON` build first needs the pinned Highway/xsimd checkouts above; individual comparison rows remain opt-in:
 
@@ -273,57 +402,58 @@ cmake --build build-bench --target hyle_queue_sota_bench
 ./build-bench/bin/hyle_queue_sota_bench
 ```
 
-## `run-container-intrusive-bench-evidence.py` — sole certificate entry
+## Legacy module runners
 
-This fail-closed runner is the only entry that may produce a
-`container_intrusive` module performance certificate. It configures only the
-component, builds primary/control and per-platform placement images, runs the
-complete 2x2 execution/allocation strata for all nine exact product contracts, qualifies
-A/A plus near/large known deltas, enforces both fixed-floor budgets, audits the
-actual lifetime object and no-IPO build metadata, and binds source, peer,
-inputs, artifacts, logs and host controls before and after sampling. Its formal
-commands and resampling rule live in
-[`benchmarks-container-intrusive.md`](../docs/implementation/evidence/performance/benchmarks-container-intrusive.md).
-Formal mode also rejects unapproved generators, non-Release target compile
-metadata, wrong executable/object architectures, changed `llvm-objdump`
-identity, and an n=31 escalation whose complete n=15 controls were invalid
-rather than merely underpowered.
+`run-container-intrusive-bench-evidence.py` preserves useful module-specific
+artifact, placement, no-IPO, and lifetime-object checks from the pre-v1
+instrument. It is now a **legacy diagnostic / possible Formal plugin**, not the
+sole module certificate entry and not a template to copy. Its old 3% statistics,
+host policy, resampling, and `RIVAL/BASELINE` ratio do not override the v1 common
+core. The `container_intrusive` P1 engineering gate remains open until a frozen
+5% `closure-perf-v1` contract produces a candidate-bound qualified manifest.
+
+The same rule applies to other `run-*-bench-evidence.py` and module `*-stat.py`
+drivers: retain narrow validators or parsers when useful, but migrate shared
+machine, controls, statistics, status, and evidence composition into
+`scripts/hyle_perf/`. New modules add a contract/plugin; they must not start by
+copying an old module runner.
 
 Calling `bench-stat.py` directly remains useful while developing one workload,
-but it deliberately bypasses those module-level gates and can never be cited
-as clean `container_intrusive` evidence.
+but it bypasses module-level contract/control/artifact gates and cannot advance
+the canonical module state.
 
 ## `bench-stat.py` — paired process-level performance evidence
 
-`bench-stat.py` repeats one nanobench executable in fresh processes and computes same-process
-`RIVAL/BASELINE` throughput ratios. `BASELINE` is the HYLE candidate: ratio below one favors HYLE.
-The runner uses an exact, distribution-free interval for the population median ratio. Given a
-predeclared multiplicative margin `m`, it reports one execution order as `WIN`, `EQUIVALENT`,
-`LOSE`, or `INCONCLUSIVE`; an explicitly unequal-contract informational pair is
-`NOT_COMPARABLE`. Failure to prove a material difference is never called equivalent.
+`bench-stat.py` is a legacy measurement adapter. It repeats one nanobench executable in fresh
+processes and emits same-process `RIVAL/BASELINE` throughput ratios, where ratio below one favors
+HYLE. The v1 adapter must invert that value into canonical `advantage_ratio` before aggregation;
+never mix the two directions in one table. Its historical `EQUIVALENT` spelling maps to current
+`PARITY`; its informational `NOT_COMPARABLE` marker belongs to the separate comparability axis.
 
-The same predeclared margin also produces a separate SOTA non-inferiority gate. Its upper
+The legacy script also produces a separate non-inferiority gate. Its upper
 limit is `U=1+m`: a median-ratio CI whose upper bound is at most `U` is `PASS`, a CI wholly
 beyond `U` is `FAIL`, and a CI that still crosses `U` is `UNRESOLVED`. This gate answers only
 whether a material loss has been excluded. It never turns an exact `INCONCLUSIVE` result that
 crosses the WIN/EQUIVALENT boundary into either exact verdict, and it cannot use a second or
 post-hoc margin.
 
-The equivalence band is reciprocal: `[1/(1+m), 1+m]`. At the default evidence size of 15
+The equivalence band is reciprocal: `[1/(1+m), 1+m]`. At an evidence size of 15
 independent processes and tail alpha `.01`, the interval is the third through thirteenth ordered
-ratio (actual coverage about 99.26%). A formal result must independently run the default and
-peer-first orders and obtain compatible classifications; short/code-placement-sensitive kernels
+ratio (actual coverage about 99.26%). A historical Formal input ran the default and
+peer-first orders and required compatible classifications; short/code-placement-sensitive kernels
 also need the perturbation gate described in
 [`benchmark-evidence-standard.md`](../docs/developer/performance/benchmark-evidence-standard.md). The script's
 `[order_verdict]` and `[order_sota_gate]` are therefore evidence inputs, not a module certificate.
-Default order, peer-first, and every applicable shape gate must each pass before review can compose
-a SOTA `PASS`. Absolute per-variant spread and the sign-test p-value are diagnostics only.
+Default order, peer-first, and every applicable shape gate remain useful raw inputs. Only the v1
+contract and common core may compose the current three axes and engineering gate. Absolute
+per-variant spread and the sign-test p-value are diagnostics only.
 
 A diagnostic run may omit provenance gates. A generic clean pair run uses `--require-clean`, declares
 the workload-specific margin before sampling, and names every external Git peer that contributes
 comparison code. The following direct `container_intrusive` commands are **provisional diagnostics
-only**: they omit its exact 9-contract composition, controls, actual-object/no-IPO, floors, placement
-and artifact-freeze gates. Use the dedicated runner above for any certificate.
+only**: they omit its frozen v1 contract, common controls, actual-object/no-IPO, placement and
+artifact-freeze gates. Neither these commands nor the legacy dedicated runner alone is a current
+engineering certificate.
 
 ```bash
 python scripts/bench-stat.py build-bench/bin/hyle_container_intrusive_bench -n 31 \

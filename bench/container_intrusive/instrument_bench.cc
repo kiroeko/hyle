@@ -13,6 +13,8 @@
 
 #include "hyle/core/compiler.h"
 
+#include "../common/perf_process.h"
+
 namespace {
 namespace nb = ankerl::nanobench;
 
@@ -189,9 +191,9 @@ int main() {
   std::fprintf(stderr,
                "# HYLE_CONTAINER_INTRUSIVE_INSTRUMENT_RUN "
                "execution_order=%s apple_qos=%s qos_ok=%s "
-               "affinity=external\n",
+               "affinity=external run_nonce=%s\n",
                rival_first ? "peer-first" : "candidate-first", qos.name,
-               qos.ok);
+               qos.ok, hyle::bench::perf::run_nonce());
   bench_timer_floor(values, rival_first);
   bench_phase_observer_floor(values, rival_first);
   bench_aa(values, rival_first);

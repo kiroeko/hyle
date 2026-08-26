@@ -18,6 +18,8 @@
 
 #include "hyle/container/intrusive_list.h"
 
+#include "../common/perf_process.h"
+
 #if defined(HYLE_BENCH_BOOST)
 #include <boost/intrusive/list.hpp>
 #endif
@@ -746,11 +748,11 @@ int main() {
   std::fprintf(
       stderr,
       "# HYLE_CONTAINER_INTRUSIVE_RUN formal_only=%d execution_order=%s "
-      "allocation_order=%s apple_qos=%s qos_ok=%s affinity=external\n",
+      "allocation_order=%s apple_qos=%s qos_ok=%s affinity=external "
+      "run_nonce=%s\n",
       formal_only ? 1 : 0, rival_first ? "peer-first" : "candidate-first",
-      peer_allocation_first ? "peer-allocation-first"
-                            : "candidate-allocation-first",
-      qos.name, qos.ok);
+      peer_allocation_first ? "peer-first" : "candidate-first",
+      qos.name, qos.ok, hyle::bench::perf::run_nonce());
   run_policy_benches<AutoPolicy>(rival_first, formal_only,
                                  peer_allocation_first, true);
   run_policy_benches<SafePolicy>(rival_first, formal_only,

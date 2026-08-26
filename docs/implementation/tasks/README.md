@@ -5,7 +5,7 @@
 
 | 范围 | 任务记录 |
 |---|---|
-| 构建、安装与发布 | [`build/`](build/) |
+| 构建、安装、发布与公共仪器 | [`build/README.md`](build/README.md) |
 | 异构计算 | [`compute/`](compute/) |
 | 容器与数据结构 | [`container/`](container/) |
 | 最小基础层 | [`core/`](core/) |

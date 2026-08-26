@@ -1,12 +1,15 @@
 # container_intrusive 性能资格
 
-> **状态：`PRODUCT LOCKED / STRUCTURAL PASS / INSTRUMENT LOCALLY CALIBRATED / FORMAL SOTA CERTIFICATE PENDING`。**
-> 产品收口不再被证书基础设施阻塞；正式三平台数字签署作为独立性能基础设施任务继续。
-> 2026-08-26 的 auto/safe 产品形状可以冻结；但加入双 phase observer、near-MDE control、双 fixed-floor
-> budget、地址分配顺序 strata 及更严格 actual-object parser 后，所有较早 dirty 数字都与当前仪器
-> identity 不同，统一降为 `HISTORICAL / UNQUALIFIED`。在当前工具完成新的完整资格轮之前，本页不宣称
-> 当前 9 个产品 gate 已通过，更不宣称 clean/三平台 SOTA。Windows clean n=63 以及同 candidate 的
-> Linux/macOS manifests 仍是正式硬门；旧 Core 内类型和旧 auto-only 数据也不自动继承。
+> 本页是证据解释，不声明当前模块状态。当前状态以
+> [`module-status.json`](../../module-status.json) 为唯一权威：截至 2026-08-26，auto/safe API、算法与
+> layout 已冻结为 product candidate，但 `closure-perf-v1` 的 W1-WIN P1 工程门（预声明 5% margin）
+> 尚无 candidate-bound `PASS`，最终独立红队 identity 也未签，因此模块为 `BLOCKED`。Formal 发布
+> 证书是独立 `PENDING`，不替代工程门。
+>
+> 本页后列的专用 3% runner、dirty 表格和本地 control 校准均先于
+> [统一性能仪器协议 v1](../../../developer/performance/instrument-v1.md)，统一标为
+> `HISTORICAL / UNQUALIFIED`。它们能解释为何冻结产品形状和为何重做公共仪器，但不产生当前 P1、
+> clean 平台或 SOTA 结论。
 
 稳定产品边界见 [container-intrusive design](../../../architecture/container-intrusive-design.md)，
 本轮施工与消费者裁决见
@@ -80,7 +83,20 @@ whole-list splice 每轮只做固定数量指针重链，是 O(1) 机制探针�
 MSVC/clang-cl/GCC/AppleClang 的严格 probe 锁 auto/safe hot operations 的 opcode 形状一致、safe 正常
 析构零工作；纳秒 peer benchmark 不替代这项结构证据。
 
-## 仪器资格
+## 当前 P1 工程门
+
+当前工程合同必须走公共 `closure-perf-v1`：comparability、qualification 与 exact performance 分轴，
+non-inferiority 单列；统一 `advantage_ratio > 1` 有利于 HYLE；W1-WIN 是锁定工程性能机；P1 默认
+material margin 为 5%。普通 n=15 只有在 controls 已通过且唯一问题是功效不足时，才按预声明完整
+重跑 n=31。当前缺少的正是这份 candidate-bound qualified manifest，不能用下面的旧 runner 数字
+填补。
+
+产品专有 plugin 只需保留确有必要的 lifetime-object/no-IPO/codegen、execution/allocation-order mapping；
+A/A、known-delta、floor、machine probe、统计、verdict、停止规则和 evidence composition 归公共核心。
+旧 `run-container-intrusive-bench-evidence.py` 是 legacy diagnostic/可能的 Formal plugin，不是新模块
+runner 模板。
+
+## 旧专用仪器资格设计（历史/迁移输入）
 
 HYLE 与 peer 始终在同一个 executable 中。`HYLE_BENCH_RIVAL_FIRST=1` 只交换执行顺序；独立的
 `HYLE_BENCH_PEER_ALLOCATION_FIRST=1` 只交换两侧 node array/raw-storage 的物理分配先后。正式产品
@@ -112,9 +128,10 @@ resolved path、binary SHA-256 与 version output 也在采样前后冻结，不
 - host：Windows runner 通过 `GetSystemCpuSetInformation` 拒绝非最高 efficiency-class affinity；
   Linux 要求显式 CPU mask；macOS 无可靠 hard affinity，正式 manifest 必须显式记录 interactive 或
   utility QoS；
-- 统计：每个 shape/order 使用独立进程 paired samples；ratio 固定为
+- 统计：每个 shape/order 使用独立进程 paired samples；旧 ratio 固定为
   `Boost op/s / HYLE op/s`，使用 98%+ distribution-free median CI，预声明 practical/NI margin 为
-  3%。exact 五态与单边 non-inferiority 分开，不能把“不显著”写成等价。
+  3%。该 ratio 小于 1 才有利于 HYLE，与当前 canonical direction 相反；迁移时必须取倒数，且旧
+  3% 结论不能冒充当前冻结 5% P1 合同。
 
 2026-08-26 曾预声明并只跑 instrument-only n=31 的稀疏分支 control：nominal `1/32` 事件在两个
 顺序实际都是约 `0.715` throughput ratio（慢约 40%），甚至比 nominal `1/4` 的约 `0.906` 更慢；
@@ -194,9 +211,13 @@ backlog；不得改 list API、layout 或 metadata 来迎合。sched 的 waiter 
 wake chain，已裁决保留专用状态机；被拒绝的迁移诊断只记在 implementation task，不保留为长期
 container benchmark。
 
-## Clean 三平台证书
+## 旧专用 runner 的 Formal 草案（历史）
 
-Windows 正式实验必须从不存在的 build/output 目录开始，以预声明 n=63 运行 primary/placement、
+> 下列命令只保留旧 instrument 的排障与迁移事实，不是当前 P1 收口配方，也不能绕过公共
+> contract/machine/manifest 核心。当前 Formal 若恢复，必须组合相同 contract hash 和 candidate 的
+> qualified 平台 manifests；跨平台样本不池化，且 Formal 状态与模块 `CLOSED` 独立。
+
+旧 Windows 草案要求从不存在的 build/output 目录开始，以预声明 n=63 运行 primary/placement、
 2×2 execution/allocation strata 及全部 controls：
 
 ```powershell
@@ -214,7 +235,7 @@ python scripts/run-container-intrusive-bench-evidence.py `
   --runs 63 --equivalence-margin-pct 3 --require-clean
 ```
 
-Linux GCC14 与 macOS AppleClang 最少各运行 n=15；若 A/A 或产品 CI 功效不足，保留整轮结果并以
+旧草案中 Linux GCC14 与 macOS AppleClang 最少各运行 n=15；若 A/A 或产品 CI 功效不足，保留整轮结果并以
 预声明 n=31 开新实验，不合并、不追加到“刚好通过”。Linux 必须在原生 ext4 clone 上运行并选择该
 主机自己的固定性能核；macOS 必须显式选择 QoS：
 
@@ -238,20 +259,20 @@ python3 scripts/run-container-intrusive-bench-evidence.py \
   --runs 15 --equivalence-margin-pct 3 --require-clean
 ```
 
-`0x4` 只对已经核对 topology 的示例主机有效。三平台都要求 primary/placement、2×2
+`0x4` 只对当时已核对 topology 的示例主机有效。旧草案对三平台要求 primary/placement、2×2
 execution/allocation strata 与 controls；Windows 用 link padding，ELF/Mach-O 用对称 function
 alignment。node allocation 在 epoch 外，故不把 heap allocator 吞吐伪装成 list 成本；独立 allocation
 order 已承担 caller-owned object-address 风险矩阵的数据位置腿。
 
-若 Linux/macOS 的 n=15 为 `INCONCLUSIVE`，n=31 runner 还会验证旧 manifest：structural/fixed-floor
+旧草案规定，若 Linux/macOS 的 n=15 为 `INCONCLUSIVE`，n=31 runner 还会验证旧 manifest：structural/fixed-floor
 必须已通过；A/A 只能是在 band 内但 CI 功效不足；known-delta 必须方向正确，near median 已处于
 3%–6% 窗口且 large/near 单调；任何 product `FAIL` 均不得靠增样覆盖。三个 manifest 必须绑定同一 HYLE candidate
 commit、Boost commit 和 product/harness input hashes；
 每个平台的 `platform-summary.json`、raw logs、compiler/binary identity、execution controls、no-IPO
 记录与实际 benchmark-object lifetime-loop audit 都完整，且 controls、structural gate 和 9 个 NI gate
-全 `PASS` 后，才能在汇总记录中把 `cross_platform_gate_complete` 写成 true。每个 child 的 structured
+全 `PASS` 后，才会在旧汇总记录中把 `cross_platform_gate_complete` 写成 true。每个 child 的 structured
 telemetry 必须逐 run 精确绑定 formal/order/allocation/QoS；source/build/output/peer 在 Linux 必须是
-native ext4、macOS 必须是 APFS；affinity/power/governor/topology 在采样前后必须稳定。正式 evidence
+native ext4、macOS 必须是 APFS；affinity/power/governor/topology 在采样前后必须稳定。旧 Formal evidence
 目录还归档实际 executables、objects、build metadata 与完整 lifetime disassembly，而不是只留不可
 重放的绝对路径和 hash。Windows manifest 不能
 代替 Linux/macOS，正确性构建也不能代替 peer performance。

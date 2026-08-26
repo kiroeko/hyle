@@ -63,6 +63,9 @@ scripts/fetch-bench-vendors.sh
 ```
 
 - mac 是本地磁盘（APFS），性能数字可信；ARM 侧数字与 x86 不直接可比（架构不同）。
+- macOS 无受支持的 hard affinity；工程/formal 数据必须记录实际 process QoS、交流电与 low-power
+  状态。默认 `interactive` 与 `utility` 是不同合同，不冒充 P/E-core pin；见
+  [性能机器合同](../performance/machines.md)。
 - SIMD bench 只从 `~/vendor/{highway,xsimd}` 取对照；产品使用已经迁入并修改的 HYLE port，
   不再依赖 `third_party/{highway,xsimd}` checkout。
 

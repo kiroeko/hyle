@@ -141,6 +141,8 @@ cd build-bench\bin && hyle_sched_bench.exe
   `C:/public/project-hyle`，改目录时 CMake 也传 `-DHYLE_BENCH_VENDOR_DIR=<root>`。
 - bench 目标名：`hyle_add_bench(<mod>)` → `hyle_<mod>_bench`。
 - **Windows 性能数字注意**：Release + 关掉后台干扰；nanobench 自带统计。跨平台对标以 Linux 原生 ext4 为准（Windows NTFS 亦可信，但重 IO 对比看 Linux）。
+- 当前 Windows 与 WSL 是同一 `W1` 物理主机，性能采样必须互斥；Windows 的工程/formal 角色、
+  P-core、NTFS 与电源合同见[性能机器合同](../performance/machines.md)。
 
 ## 七、可选依赖：OpenSSL（TLS）+ CUDA
 

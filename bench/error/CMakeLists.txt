@@ -27,25 +27,35 @@ set(HYLE_ERROR_BENCH_TARGETS
   hyle_error_bench
   hyle_error_normal_bench)
 
-# The evidence standard requires a contract-equivalent placement perturbation
-# for these short aggregates. /FUNCTIONPADMIN changes only inter-function
-# padding in the final PE image: sources, compiler options, operations, and the
-# HYLE/Abseil treatment stay identical to the primary targets.
-if(MSVC AND HYLE_STATIC)
+# These short aggregates opt into one contract-equivalent code-placement
+# perturbation. Both sides remain in the same translation unit and receive the
+# same final-link/function-alignment treatment.
+if(HYLE_STATIC)
   add_executable(hyle_error_bench_placement status_bench.cc)
   target_link_libraries(hyle_error_bench_placement PRIVATE
     hyle_error
     nanobench)
-  target_link_options(hyle_error_bench_placement PRIVATE /FUNCTIONPADMIN:64)
   hyle_apply_warnings(hyle_error_bench_placement)
 
   add_executable(hyle_error_normal_bench_placement normal_bench.cc)
   target_link_libraries(hyle_error_normal_bench_placement PRIVATE
     hyle_error
     nanobench)
-  target_link_options(hyle_error_normal_bench_placement PRIVATE
-    /FUNCTIONPADMIN:64)
   hyle_apply_warnings(hyle_error_normal_bench_placement)
+
+  if(MSVC)
+    target_link_options(hyle_error_bench_placement PRIVATE /FUNCTIONPADMIN:64)
+    target_link_options(hyle_error_normal_bench_placement PRIVATE
+      /FUNCTIONPADMIN:64)
+  elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(hyle_error_bench_placement PRIVATE
+      -falign-functions=64)
+    target_compile_options(hyle_error_normal_bench_placement PRIVATE
+      -falign-functions=64)
+  else()
+    message(FATAL_ERROR
+      "error benchmark placement perturbation is unsupported by this compiler")
+  endif()
 
   if(HYLE_BENCH_ABSL)
     target_compile_definitions(hyle_error_bench_placement PRIVATE

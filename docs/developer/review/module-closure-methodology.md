@@ -1,208 +1,195 @@
-# HYLE 模块审查与收口方法 v2
+# HYLE 模块重构与收口协议 v1
 
-> 本方法适用于每个模块及 build/package system。目标不是把 checklist 打绿，而是建立可追溯、
-> 可复现、能停止也能正确重开的模块证书。当前施工状态见
-> [implementation/status](../../implementation/status.md)。
+> 本协议是普通模块工程决策的唯一方法。它回答“本轮是否应继续改、能否停止并进入下一模块”，
+> 不把发布级性能声明绑到每次重构。当前机械状态见
+> [`module-status.json`](../../implementation/module-status.json)，人读投影见
+> [`implementation/status`](../../implementation/status.md)。
 
-## 1. “收口”意味着什么
+## 1. 两条互不冒充的状态轴
 
-一个 `SIGNED` 模块必须同时满足：
+### 1.1 产品收口轴
 
-1. 常见且属于本层的需求都有明确去向，没有被 benchmark 形状代替；
-2. 类型、ownership、lifetime、并发、失败、复杂度和依赖方向适合真实消费者；
-3. 正确性与边界经过独立反证，构建/交付闭包真实可用；
-4. 性能仪器先被证明能分辨真实差异，再对正常 workload 与强 peer 给出有限范围的结论；
-5. C++ 用户能自然完成任务，文档职责清楚且与代码一致；
-6. 没有未知的 material 风险；剩余非目标、限制和重新开启条件已经登记。
-
-收口不表示功能永远不增加，也不表示每个纳秒点值都领先。它表示在已登记需求与证据范围内，
-继续重构没有足够理由，应停止扰动。
-
-## 2. 状态机
-
-| 状态 | 含义 | 进入条件 |
-|---|---|---|
-| `OPEN` | 范围与旧结论均可质疑 | 开始新审查或证书失效 |
-| `AUDITED` | 需求、能力、消费者、依赖和差距已盘清 | 账本可追溯，红队问题有去向 |
-| `CANDIDATE` | 本轮产品形状冻结 | 实现、公开面、合同和测试已冻结；只修证据发现的缺陷 |
-| `EVIDENCE_COMPLETE` | 所有适用门已有可复现 verdict | 正确性、性能、交付、文档和红队报告齐全 |
-| `SIGNED` | 本轮停止关注 | 无未知 material 问题；限制与 reopen trigger 明确 |
-| `REOPENED` | 已签证书被新事实击穿 | 真实缺口、缺陷、依赖变化或同合同实质落后 |
-
-不得从 `OPEN` 直接写“已完成”。旧里程碑的完成状态不继承为 v2 证书。
-
-## 3. 本轮必须产生的最小证据
-
-每个模块只有一份当前工作项，至少包含：
-
-- 起始 commit、owner、范围与非目标；
-- capability ledger 与 demand ID；
-- public/internal/borrow/higher-layer 的归属裁决；
-- 语法消费者、语义重复和依赖边扫描；
-- 类型与复杂度表；
-- correctness、performance、delivery、usability 和 docs verdict；
-- candidate commit、依赖/工具链 manifest、原始证据位置；
-- 独立红队报告、剩余限制、结束 commit 与 reopen trigger。
-
-实施页保存本轮事实；architecture、developer、user 只接收仍然有效的沉淀。原始 CSV/JSON/log 放
-根级 `evidence/`，且必须由实施页精确引用。没有 candidate/合同/环境绑定的原始文件只是历史档案。
-
-## 4. 需求和能力完整性
-
-### 4.1 两轴分类
-
-每个候选需求先给稳定 ID，并同时记录来源优先级和处置：
-
-| 处置 | 含义 |
-|---|---|
-| `MUST` | 当前真实消费者或 HYLE 正确运行所必需 |
-| `GENERAL` | 成熟库普遍提供、基础用户经常需要，且有清楚的通用形状 |
-| `INTERNAL` | 只服务 HYLE 内部，公开会泄露策略或不稳定实现 |
-| `BORROW` | 成熟依赖已正确解决，HYLE 只需自然组合或 adapter |
-| `DEFER` | 有可能但无当前证据，先不增加实现或常态成本 |
-| `REJECT` | 属于消费方、上层模块或明确不在范围 |
-
-推理引擎的 `ENGINE_BLOCKER/COMPETITIVE/GENERALIZATION_GATE/...` 是需求优先级；本表是基础模块的
-处置。两者不可互相替代。
-
-### 4.2 Capability ledger
-
-不要按现有类和 benchmark 名称盘点。先按用户任务列能力，例如“有界 arena 批量释放”“获取
-单调 deadline”“保存错误上下文”。每项至少记录：
+产品状态固定为：
 
 ```text
-demand_id | consumer task | normal scale/distribution | module owner
-disposition | public/internal route | strong peers | failure/lifetime/concurrency
-complexity target | verification | negative space
+QUEUED -> SCOPED -> AUDITED -> CANDIDATE -> VERIFIED -> CLOSED
+              \         \          \           \-> BLOCKED
+               \---------\----------\---------------------->
+CLOSED -> REOPENED -> SCOPED
 ```
 
-基础库的“功能尽量多”不等于每项都自造类型。一个常见需求只要有以下一种自然路径即可算覆盖：
+| 状态 | 含义 | 进入时必须已有的输出 |
+|---|---|---|
+| `QUEUED` | 尚未启动本轮 | 唯一 component ID、优先级说明 |
+| `SCOPED` | 决策合同冻结 | baseline、真实需求/缺陷、范围/非目标、P0/P1/P2、预算、机器与仪器 ID、适用门 |
+| `AUDITED` | 差距已裁决 | capability/gap ledger；每项为 `KEEP/FIX/BORROW/DEFER/REJECT`，本轮 `FIX` 集冻结 |
+| `CANDIDATE` | 产品形状冻结 | product commit/tree、合同与复杂度变化、直接消费者迁移、候选测试 |
+| `VERIFIED` | 本轮适用工程门完成 | correctness、delivery、docs/usability、red-team 与分级工程性能 verdict |
+| `CLOSED` | 工程上应停止 | 无未决 blocker，限制与 reopen trigger 明确，结束 commit 和四项 LOC 齐全 |
+| `BLOCKED` | 已停止但不能签 | 一个可点名的 blocker、owner、恢复所需的新证据；不得用“继续研究”代替 blocker |
+| `REOPENED` | 新事实击穿已关闭结论 | trigger ID、复现证据、受影响范围；随后只对受影响部分重新 `SCOPED` |
 
-- 模块直接提供；
-- 现有原语可以无陷阱地组合；
-- 成熟依赖已提供且 HYLE 正确暴露/适配；
-- 明确归属于更高层或消费方；
-- 有理由地 `DEFER/REJECT`。
+不得跳过状态。公开合同、算法、对象布局或正常 workload 在 `CANDIDATE` 后改变，退回 `AUDITED`；
+只补测试、说明或证据不会改变 product candidate identity。`BLOCKED` 是一次有效裁决，不是无限调查的
+许可。
 
-成熟库有某能力是重要查漏信号，但不是复制许可。若多个成熟库反复出现同一种通用形状，即使
-HYLE 暂无消费者，也必须认真裁决 `GENERAL`，不能简单用“没人用”跳过。
+### 1.2 性能声明轴
 
-### 4.3 反向追踪
+发布/对外性能声明独立记录为：
 
-- 每个公开类型/函数必须反向指向至少一个 demand ID；只有 benchmark 使用即删除或私有化。
-- 每个 `MUST/GENERAL` 必须正向指向实现、组合路线、依赖或明确裁决。
-- 搜索不仅看 include 和符号，还看语义重复：手写 error、allocator、clock、CPU probe、queue、
-  cache hint 等都可能是绕过模块。
-- 检查上下游两边：本模块是否错误依赖上层；下游是否该用本模块却各自发明。
+```text
+NONE | PENDING | CERTIFIED | FAILED | EXPIRED
+```
 
-## 5. 类型与架构审查
+`CLOSED` 不等于 `CERTIFIED`。Formal 证书失败或过期会撤销相应声明；只有它同时暴露真实 material
+产品缺口时才重开产品。Formal 资格遵守
+[性能证据标准](../performance/benchmark-evidence-standard.md)，不得把该标准的发布级归档、三平台
+矩阵或 SOTA/non-inferiority 证书重新变成普通模块的默认收口门。
 
-每个保留形状都回答：
+## 2. 启动输入：一张冻结的 closure card
 
-1. 谁拥有资源，谁借用，move/copy/destroy 后状态是什么？
-2. lifetime 能否从类型和命名看出；callback、异步与晚到完成如何保活？
-3. 单线程、thread-compatible、thread-safe 或 lock-free 的合同是什么？
-4. 容量、OOM、partial progress、取消、重试和程序不变量如何表达？
-5. 常态对象大小、常态 metadata、allocation、indirection 和 branch 是多少？
-6. 平均/摊还/最坏时间与空间复杂度是什么；进展保证是什么？
-7. 一次一个和 batch 两种正常调用是否自然；默认值是否代表多数用户？
-8. 可选优化是否显式 opt-in，而不是让所有用户承担税？
+写代码前，当前 implementation task 必须写清：
 
-优先参考成熟库已被真实用户验证的形状与算法，再根据 HYLE 的统一 error/platform/mem/time 等
-底座调整。不能为了让基准更短而暴露 unnatural handle、拆散一次用户操作、隐藏必要语义或增加
-benchmark-only metadata；也不能以“不是为了 benchmark”为由拒绝业界常用、能改善复杂度档的
-索引、cache 或批处理结构。
+- component ID、owner、round ID、baseline commit；
+- 一个真实 consumer task、可复现 defect，或成熟实现反复证明的通用基础需求；
+- 范围、非目标、直接依赖和直接消费者；
+- `P0/P1/P2` 及理由，正常 workload、资源预算和 material margin；
+- 总调查预算、性能预算、最多实验/修复次数；
+- 中央 `machine_profile`、`instrument_profile` 及适用 correctness/delivery gates；
+- 最多两个预先选择的 strong peers；
+- 预期输出、停止条件和可接受限制。
 
-公开 C++ API 以任务为中心，采用惯用 RAII、view/owner、range/span、Result、strong type 与
-合理 overload；热路径内部可特化。HYLE 自身源码直接使用 C++ API，不绕经产品 FFI。
+没有真实输入时保持 `QUEUED`。没有 P1/P2 workload、阈值、机器或仪器 ID 时不得开始计时。模块任务
+不得一边看结果一边修改中央统计规则、机器配置或 material margin；公共仪器缺口另开 project/perf
+任务。
 
-Native FFI 默认 `N/A`。source/static/shared 是 C++ 交付。只有通过
-[FFI 准入策略](../../architecture/native-ffi-policy.md)的真实外语任务才建立窄的运行时类型擦除面，
-不要求 C++ parity。
+## 3. 有界审计及其输出
 
-## 6. 实现质量与正确性
+审计先按用户任务而不是现有 API 或 benchmark 名称列 capability。每项至少记录：
 
-### 6.1 算法与实现
+```text
+demand/defect ID | consumer/来源 | normal shape | owner module
+ownership/lifetime/concurrency/failure | complexity/resource target
+KEEP/FIX/BORROW/DEFER/REJECT | severity | verification | negative space
+```
 
-- 对每个非平凡操作列当前算法、强 peer、复杂度、常态成本和平台 fast/fallback path。
-- 先寻找复杂度档、数据搬运、syscall、allocation、contention 与向量化差距，再做指令级优化。
-- 检查最终 release codegen 和链接产物，不以源代码“看起来零成本”代替证据。
-- 平台差异通过 platform 能力和编译期/运行期 dispatch 表达，避免模块各自 probe。
-- 可恢复失败走 error；程序不变量才 fail-fast。不得在每个模块发明另一套 status/string code。
-- 依赖组件既登记在中央 component graph，也由真实 target link 表达，并用机器合同对账。
+- 每个公开入口反向指向一个 demand；只被 benchmark 使用的入口删除或私有化。
+- 每个当前 `MUST` 有实现、自然组合、成熟依赖或明确裁决。
+- `GENERAL` 是查漏输入，不自动扩大本轮；没有真实阻断的新增能力默认进入后续 backlog。
+- 同时扫描语法消费者、语义重复和直接依赖边，但只修本模块与必要直接边。
+- 优先检查错误复杂度档、额外 allocation/copy/syscall/lock、错误 ownership 和交付断边，再看常数。
 
-### 6.2 Correctness matrix
+审计结束必须冻结有限 `FIX` 集。发现相邻模块问题时登记任务；只有 correctness/security 或当前构建
+阻断允许越界修复。
 
-至少覆盖：正常、空/零、边界容量、溢出、OOM/系统失败、错误输入、move/destroy、并发/重入、
-取消/关闭、平台 fallback。按风险加入 fault injection、property/differential/fuzz、stress、ASan、
-UBSan、TSan 和真实 ISA/backend。测试不得只调用 benchmark 方便面。
+## 4. 类型、实现与 correctness 门
 
-公开头必须 self-contained；所选组件必须能独立构建。source、installed static、installed shared
-三种 C++ 消费者都验证最小正常 journey 和依赖闭包。平台不适用必须写理由，不能用未运行冒充通过。
+每个保留形状回答 ownership、borrow invalidation、move/destroy、并发/进展、容量/OOM、取消/关闭、
+正常 metadata、时间/空间复杂度和平台 fallback。公开 C++ API 以任务为中心，优先 RAII、清楚的
+owner/view、span/range、strong type 与 `Status/Result`。可恢复失败走 error；程序不变量才
+fail-fast。OS/CPU 机制走 platform，allocator/placement 走 mem，clock/deadline 走 time。
 
-## 7. 性能证据
+Correctness 证据按风险从以下矩阵选择，并在 closure card 中预声明适用项：正常、空/零、容量边界、
+溢出、OOM/系统失败、错误输入、move/destroy、并发/重入、取消/关闭、property/differential/fuzz、
+stress、ASan/UBSan/TSan、真实 ISA/backend。未运行只能写 `NOT_APPLICABLE` 或 `BLOCKED`，不能写
+`PASS`。
 
-先阅读 [性能证据标准](../performance/benchmark-evidence-standard.md)。顺序固定：
+公开头必须 self-contained；组件能独立构建。source、installed static、installed shared 的公共闭包由
+中央 component/package 合同验证；header-only 或不适用形状只运行有实际产物的 journey，不为凑数
+重复同一事实。
 
-1. 预声明能力合同、正常 workload、强 peer、计费边界、资源指标与 material margin；
-2. 冻结 candidate 和输入 manifest；
-3. 用 A/A、known-delta positive control、timer floor、order/placement 等证明仪器有资格；
-4. 先跑真实消费者/trace replay，再用 microbench 归因；
-5. 保存原始数据、codegen、环境和五态 verdict；
-6. 在留出 workload 上验证没有为开发集过拟合。
+## 5. 分级工程性能门
 
-产品改动需要“两把钥匙”：存在可解释的机制/算法/codegen 差异，并且在真实消费者中观察到或
-可防御地放大为 material 影响。仅有稳定的 0.5 ns、换顺序输赢或地址布局敏感结果，不足以改变
-API、对象布局或常态 metadata。
+工程性能是产品收口证据；Formal 是独立声明。每轮在 `SCOPED` 时冻结一级，不能因结果不好而改级。
 
-性能结论必须限定为 `(capability, contract, hardware, delivery, candidate)`。复杂度同档、
-non-inferior、某 workload 胜出和全局 SOTA 是不同命题；禁止写没有边界的“模块 SOTA”。
+| 级别 | 适用 | `CLOSED` 的工程性能硬门 |
+|---|---|---|
+| `P0` | 未被 profile 证明为热点的冷路径、编译/布局 primitive | 复杂度同档；无意外 allocation/lock/syscall/metadata；适用的 release codegen/size 结构检查 `PASS`。peer 计时可为 N/A |
+| `P1` | 可能高频的 runtime primitive、容器、allocator adapter、queue/timer 操作 | 在 `closure-perf-v1` 与锁定性能机上，对正常 consumer/replay 和同合同 peer 通过预声明工程 non-inferiority 门；默认 material margin 为 **5%** |
+| `P2` | profile 已证明影响端到端 KPI 的热点 | 在真实 consumer/trace 上通过按贡献预算声明的 latency/throughput/resource 门，并有机制归因；小于 5% 的阈值必须由端到端预算证明 |
 
-## 8. 用户易用性与文档
+P1/P2 的工程 verdict 固定为 `PASS/FAIL/INCONCLUSIVE/NOT_COMPARABLE`。`CLOSED` 必须为 `PASS`；
+`INCONCLUSIVE` 或仪器无资格时进入 `BLOCKED` 或重新降级为没有热点证据的、重新 `SCOPED` 的 P0，
+不得原地把未知写成平局。降级必须基于 consumer/profile 事实，不能因为跑分不利。
 
-在只看用户页和 public headers 的条件下，用一个未参与实现的人完成至少：创建、正常操作、失败、
-组合、并发/取消（适用时）和销毁。记录必须阅读源码、容易选错、默认慢、生命周期含糊或错误难
-处理的点；这些是产品缺陷，不是“用户水平问题”。
+产品改动仍需两把钥匙：可复核的复杂度/指令/allocation/copy/syscall/contention/codegen 机制，以及
+可传播到正常 consumer 的 material 影响。只有亚纳秒 microbench、顺序/地址翻转或总体 profile 不可见
+的差异不允许改变 API、layout 或常态 metadata。
 
-文档分工固定：
+## 6. 固定预算与硬停止
 
-- architecture：需求、长期边界、决策及为什么；
-- implementation：本轮任务、实验、结果、commit 和历史事实；
-- developer：可重复的规则、工具、review、debug 与 troubleshooting；
-- user：怎么选、怎么用、ownership/concurrency/failure 和坑；
-- `evidence/`：原始机器数据，不承担解释。
+- scope card 预声明总调查预算和性能预算；超过预算只能 `CLOSED`、`BLOCKED` 或由 owner 显式重新
+  scope，不能默默继续。
+- 普通约千行及以下的 P0/P1 模块，默认审查与取证预算不超过两小时；计划实现超过一个工作日时先
+  拆成可独立验证的 defect/demand。
+- P1 异常最多允许：一次复现/反序、一次 codegen/profile 机制检查、一个产品修改与一次重跑。
+- 同一轮不得发明第五种 benchmark 姿势。中央仪器失败时记录 instrument issue；模块按硬门进入
+  `BLOCKED`，不在模块任务内扩建统计平台。
+- 红队 P0/P1 默认 30 分钟，只攻击已冻结的能力、合同、correctness、依赖和工程性能门。新发现的
+  通用仪器增强进入下一版工具；除非已证明当前 material verdict 无效，不追溯移动本轮终点。
 
-文档不得互相复制当前状态或 benchmark 数字。修改后运行 `python scripts/check-docs.py`。
+稳定 material `FAIL` 在一次机制诊断后仍未解决时，记录具体性能缺口并 `BLOCKED`。这比八小时后仍
+写“继续调查”更完整，也不会阻止不依赖该结论的其他模块准备工作。
 
-## 9. 独立红队与签署
+## 7. Candidate、验证与独立红队
 
-进入 `CANDIDATE` 后，由未主导实现的人或独立 agent 从反方向审查：
+`CANDIDATE` 同时冻结 product commit/tree、公开合同、算法、normal workload 和 tier；harness/tool
+identity 单独记录。验证 manifest 至少给出：
 
-- 找缺失的常见能力和更强 peer；
-- 找 benchmark-only shape、隐藏常态税和复杂度退化；
-- 找 ownership、OOM、取消、并发和平台失败；
-- 找绕过 error/platform/mem/time 等底座的重复实现；
-- 找 component graph、真实链接、安装包和文档不一致；
-- 尝试使性能仪器在 A/A、order、placement、positive control 上失败。
+- correctness 与 sanitizer/平台 verdict；
+- 直接消费者 smoke 和中央 component/package verdict；
+- P0/P1/P2 工程性能 verdict、机器/仪器 ID 和证据；
+- user journey 与文档检查；
+- 独立红队问题的 `fixed/disproved/accepted/out-of-scope`；
+- 已知限制、结束 commit 与 reopen triggers。
 
-红队问题必须逐项 `fixed / disproved / accepted limitation / out of scope`。修复导致公开合同、算法、
-对象布局或正常 workload 改变时，candidate 失效并回到相应门。
+Blocker 是 correctness/security、合同/ownership 错误、构建/交付断裂，或本 tier 工程性能未通过。
+非 material 命名、风格、feature 愿望和 Formal 待办不是 blocker。
 
-只有所有适用门有 verdict、没有未知 material 问题、限制与 reopen trigger 写明时才能 `SIGNED`。
-签署后停止无证据重构。
+## 8. 文档与机械状态
 
-## 10. 重开条件与回归预算
+- architecture：长期需求、边界和决策原因；
+- implementation task：本轮输入、审计、变更、证据、限制和历史；
+- developer：可复用方法、机器、工具与排障；
+- user：选型、用法、ownership/concurrency/failure 与坑；
+- 根级 `evidence/`：原始机器输出，不承担解释。
 
-只有以下事实重开受影响部分：真实消费者暴露缺口或难用形状；correctness/security 缺陷；直接
-依赖改变算法/语义；公开边界或交付形状变化；新平台/ISA/backend；强 peer 在同合同正常 workload
-证明复杂度更优或可复现 material advantage。LOC、feature 数、命名偏好、新 benchmark、单次跑分
-或亚纳秒差异不是重开理由。
+只有 `docs/implementation/module-status.json` 保存当前产品/性能状态；`status.md` 是它的受检人读投影。
+其他页面不得手写当前状态，历史状态必须明确标为 `HISTORICAL`。运行：
 
-每轮结束运行受影响模块测试、直接上下游 smoke、三种交付闭包和文档检查，并记录四个 LOC：
+```text
+python scripts/check-module-closure.py
+python scripts/check-docs.py
+```
+
+## 9. 终止输出与四项 LOC
+
+只有所有适用工程门有 verdict、P1/P2 工程性能为 `PASS`、没有 blocker，且限制/reopen trigger 写明时
+才能 `CLOSED`。每轮在 `CLOSED` 或 `BLOCKED` 终止时仍必须运行：
+
+```text
+python scripts/loc-report.py --module <component> --self-check
+```
+
+并绑定同一快照记录四项 `code`：
 
 1. 全库代码；
 2. 自实现包含测试；
 3. 自实现不包含测试；
 4. 当前模块实现代码。
 
-使用 `python scripts/loc-report.py --module <name> --self-check`，把结果写入实施任务而不是架构页。
+LOC 只用于规模与过程复盘，不是完成度、优先级或重开依据。
+
+## 10. 重开条件
+
+只有以下新事实重开受影响部分：
+
+- 可复现 correctness/security、OOM、取消、并发生命周期或交付缺陷；
+- 真实消费者暴露缺失能力、错误 ownership、难用接口或重复机制；
+- 锁定同合同正常 workload 出现 material regression，或 profile 将模块提升为 P2；
+- 直接依赖、compiler、平台、ISA/backend 改变实际语义、算法或 codegen；
+- 公开 API、组件依赖或交付形状改变；
+- 强 peer 证明更好的复杂度档或可复现 material consumer advantage。
+
+新 benchmark、新 peer 发布但没有 material 证据、LOC/API 数、命名偏好、单次点值、地址翻转、
+亚纳秒差异或 Formal 证书单独过期都不重开产品。

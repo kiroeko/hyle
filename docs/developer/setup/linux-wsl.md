@@ -24,7 +24,9 @@ ctest --preset linux --output-on-failure
 
 ## 二、⚠️ 9p 铁律（血泪，最重要）
 
-**把 WSL 当一台独立机器，用它自己的原生 ext4，绝不在 `/mnt/c` 上构建/测试。**
+**把 WSL 当一个独立执行环境，用它自己的原生 ext4，绝不在 `/mnt/c` 上构建/测试。** 它与
+Windows 共享同一物理主机，不是独立性能机，也不能替代 native-Linux formal 证书；角色边界见
+[性能机器合同](../performance/machines.md)。
 
 - `/mnt/c/...` 是 **9p 网络挂载**（Windows 盘），不稳、慢、CPU 打不饱和——重 IO / 构建 / 压力测试在上面**性能数字全废**，还可能触发诡异卡顿。
 - **唯一权威源是 Windows 工作树** `C:\public\project-hyle\hyle`；`/root/hyle` 只是可丢弃、可覆盖的原生 ext4 执行镜像，不从 WSL 目录反向恢复或合并代码。
@@ -92,6 +94,8 @@ cmake --build build-bench --target hyle_sched_bench
 ```
 
 - **必须原生 ext4**（见 9p 铁律）——`/mnt/c` 上 bench 数字无效（CPU 打不饱和）。
+- guest CPU affinity 只用于工程重复性，不能证明固定到物理 P/E core；Windows 与 WSL 必须使用同一
+  `W1` 主机互斥锁，禁止并行采样。
 - SIMD bench 将 `HYLE_BENCH_VENDOR_DIR` 的固定版 Highway/xsimd 当对照；它们只供 bench，
   产品使用已经迁入并修改的 HYLE port，不再依赖 `third_party/{highway,xsimd}` checkout。
 - 统计对标用 `scripts/bench-stat.py`（多遍取统计，防单遍噪声）。

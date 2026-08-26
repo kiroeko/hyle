@@ -3,6 +3,10 @@
 > 本页规定何时一个性能结果有资格影响产品。没有通过仪器资格的测量仍可用于探索，但只能标为
 > `DIAGNOSTIC`，不得写入当前证书、SOTA 结论或驱动公共形状。
 
+统一 schema、ratio、统计、controls、运行模式与停止规则以
+[统一性能仪器协议 v1](instrument-v1.md)为唯一权威。本页补充如何选择命题、同合同 peer 和
+Formal 发布证据，不允许模块 runner 重新定义这些公共语义。
+
 ## 1. 先限定命题
 
 性能结论的最小主语是：
@@ -18,7 +22,7 @@ size distribution 上，操作 X 相对 peer Y 的同合同路径通过 5% non-i
 算法复杂度与纳秒点值分开审查。若强 peer 在正常规模拥有更好的渐进复杂度、进展保证或显著
 更少的搬运/分配/syscall，不能用小 N 的一次领先掩盖。
 
-## 2. 三层证据
+## 2. 三种证据形状
 
 | 层 | 回答的问题 | 例子 | 能否单独签产品结论 |
 |---|---|---|---|
@@ -28,6 +32,12 @@ size distribution 上，操作 X 相对 peer Y 的同合同路径通过 5% non-i
 
 从真实消费者抽取 replay 时，必须保留数据分布、并发、生命周期、冷热状态和计费边界。人为重复
 单指令会把固定开销无限放大，不能冒充消费影响。
+
+模块的工程性能级别与证据形状相关但不相同：`P0` 以复杂度、资源和适用 codegen/size 结构门
+收口；`P1` 必须在锁定性能机上以正常 workload/replay 通过同合同工程 non-inferiority，默认
+material margin 为 5%；`P2` 必须由真实 consumer/trace KPI 和贡献预算守门。P1/P2 工程 `PASS`
+是产品进入 `CLOSED` 的硬门。Formal 发布证书是独立状态轴，不应成为普通模块每次重构的重复
+三平台门。
 
 ## 3. 测量前的合同卡
 
@@ -49,7 +59,9 @@ size distribution 上，操作 X 相对 peer Y 的同合同路径通过 5% non-i
 ## 4. 仪器资格门
 
 参考代码存在并不保证能测出实现差异。地址分布、链接顺序、分支预测、DVFS、大小核迁移、ASLR、
-allocator 状态和 timer floor 都可能产生稳定但无产品意义的偏移。每类极短测量必须先过以下门。
+allocator 状态和 timer floor 都可能产生稳定但无产品意义的偏移。极短 CPU 路径的公共基础门是
+A/A 双顺序、near/large known-delta 单调性和 timer/empty floor；其余 controls 必须由合同中的风险
+选择，不能为了“看起来严格”机械堆满每种 workload。
 
 ### 4.1 A/A negative control
 
@@ -69,22 +81,26 @@ atomic 或固定字节 copy，并设置多个 delta。仪器必须随 delta 单�
 minimum detectable effect（MDE）。预计差异小于 MDE 时，先扩大真实工作量、改用 hardware counter
 或消费者 replay；不得靠增加 loop 次数把一个不真实调用形状包装成高分辨率。
 
+当前 CPU nanobench v1 的机械门以[统一仪器协议 §6](instrument-v1.md)为准：floor 必须与产品
+`measurement_batch` 相同，并要求 pair 较快一侧至少为四组保守 floor 中位数的 20 倍。20x 不是
+产品 margin 或可估计的精确误差率。只有消费合同本身就是自然 batch 时才能改变 batch；单操作未过门
+应保持 `DIAGNOSTIC`，不能为取得资格调低阈值。
+
 ### 4.4 最终 artifact 与 codegen
 
 保存被执行 binary/library hash、符号反汇编和关键 counter。确认双方都没有被常量折叠、死码删除、
 内联差异、PLT/IAT、sanitizer、debug iterator 或意外不同 ISA 改变。只看源码或 benchmark 可执行
 的名字不算确认。
 
-### 4.5 Order 与 placement
+### 4.5 Order 与适用的 placement
 
 - 运行完整的 A/B 与 B/A strata，或使用记录 seed 的进程级随机顺序；预声明时也可用 ABBA block
   抵消漂移。不得只保留一个固定顺序。完整固定 strata 与随机化是二选一的实验设计，不重复强求。
 - 分别报告 order strata；方向不一致不得池化成有利结论。
-- 对亚纳秒/少指令路径先写 placement 风险矩阵：**代码位置**至少做 link order、padding 或 function
-  alignment 中一种；**数据位置**至少做 allocation order、对象地址 stratum 或 heap preheat 中一种。
-  若 allocation 本身在计费合同内，再额外做 cold/preheated heap；caller-owned 且 allocation 明确在
-  epoch 外时，不为凑门重复增加无消费含义的 heap 维度。结论若跟任一适用 placement 翻转，标
-  `INCONCLUSIVE`，除非 placement 本身是产品合同。
+- 极短代码且存在 code-placement 风险时，至少选择 link order、padding 或 function alignment 中
+  一种；caller-owned 且地址敏感时，至少选择 allocation order、对象地址 stratum 或 heap preheat
+  中一种。allocation 在计费合同时才加入 cold/preheated heap；没有对应风险就不为凑门增加维度。
+  结论若跟任一适用 placement 翻转，标 `INCONCLUSIVE`，除非 placement 本身是产品合同。
 - ASLR 开/关、same-process 与 separate-process 的选择写入 manifest，不择优。
 
 ### 4.6 Host 与调度
@@ -116,7 +132,8 @@ mimalloc、Highway、absl 等才是用户真实替代品时，赢 std 不能完�
 ## 6. 运行与统计
 
 - 优先使用 release、最终 linkage 和真实 target；先 warm-up，再测 steady state。
-- 默认至少 15 个独立进程级 paired samples；更少或更多必须由预声明 power/成本解释。
+- `qualify-platform` 默认 15 个独立进程级 paired samples。只有合同预声明、controls 已通过且唯一
+  问题是 power 不足时，才允许从 n=15 升级到一轮全新的 n=31；不能追加、挑样或跑到刚好通过。
 - 每个进程内保持相同输入与环境；进程间使用记录 seed 的随机 order，或分别运行完整的固定
   A/B、B/A strata。保存每个 raw sample，不只保存均值。
 - 主统计使用 paired ratio/delta 的 median 与分布无关或 bootstrap confidence interval；sign test
@@ -124,18 +141,31 @@ mimalloc、Highway、absl 等才是用户真实替代品时，赢 std 不能完�
 - latency distribution 报 median 与适用 tail；吞吐不能抵偿 tail、内存、错误率或公平性退化。
 - 不从多个平台、规模、order 或 shape 中挑最好项。每个必需 stratum 先判，再按预声明规则合成。
 
-五态 verdict 固定：
+结果是三条独立轴，不是一张混合“五态”表：
+
+| 轴 | 值 | 含义 |
+|---|---|---|
+| comparability | `COMPARABLE | NOT_COMPARABLE` | 两侧语义合同能否合理对齐 |
+| qualification | `QUALIFIED | DIAGNOSTIC` | 当前机器、harness、controls 是否有资格影响产品 |
+| exact performance | `WIN | PARITY | LOSE | INCONCLUSIVE` | 统计区间相对预声明 material band 的位置 |
+
+统一使用 `advantage_ratio`，且大于 1 永远有利于 HYLE candidate：higher-is-better 为
+`candidate/peer`，lower-is-better 为 `peer/candidate`。给定 margin `m`，等价带固定为
+`[1/(1+m), 1+m]`：
 
 | Verdict | 含义 |
 |---|---|
-| `WIN` | CI 与 practical margin 支持 HYLE 有 material 优势 |
-| `PARITY` | 通过预声明双边 equivalence 区间 |
-| `LOSE` | CI 与 practical margin 支持 material 劣势 |
-| `INCONCLUSIVE` | 数据、power、order/placement 或资格不足，不能判方向 |
-| `NOT_COMPARABLE` | 语义合同无法合理对齐 |
+| `WIN` | CI 完全高于 `1+m` |
+| `PARITY` | CI 完全位于 reciprocal band 内 |
+| `LOSE` | CI 完全低于 `1/(1+m)` |
+| `INCONCLUSIVE` | CI 跨越 exact verdict 边界，不能判方向 |
 
-SOTA/non-inferiority 是独立单边门：所有必需平台、规模、order 和资源 shape 均通过才 `PASS`；
-任一 `FAIL` 即失败；资格不足为 `INCONCLUSIVE`，不得把统计平局自动写成 non-inferior。
+non-inferiority 是独立单边门，固定为 `PASS | FAIL | UNRESOLVED | N/A`。所有必需 strata 均通过
+才 `PASS`；任一 material `FAIL` 即失败；功效不足为 `UNRESOLVED`。`NOT_COMPARABLE`、
+`DIAGNOSTIC` 和 `INCONCLUSIVE` 各留在自己的轴上，不能被平局或单边门覆盖。
+
+旧工具的 `RIVAL/BASELINE` throughput ratio 小于 1 才有利于 HYLE；它属于 legacy raw 格式，必须
+由 adapter 取倒数并标注来源，不能与当前 `advantage_ratio` 混列。
 
 ## 7. 哪些结果可以改产品
 
@@ -154,6 +184,10 @@ API、对象布局、常态 metadata、分支或依赖的性能改动需要两�
 
 ## 8. 证据包与有效期
 
+`probe` 永远只产生诊断；`qualify-platform` 产生模块 P1/P2 工程证据；`certify` 只校验和合成同一
+contract hash/candidate 的平台 manifests，且从不池化跨平台样本。Formal 可增加平台矩阵、归档、
+holdout 与发布声明要求，但不能改写统一统计或反向替代模块工程门。
+
 有效报告至少链接：
 
 - contract card 与 workload manifest；
@@ -161,13 +195,18 @@ API、对象布局、常态 metadata、分支或依赖的性能改动需要两�
 - host/affinity/QoS/NUMA/backend 信息；
 - binary hash、适用 codegen/counter；
 - controls 与资格 verdict；
-- 所有 raw samples、分析命令和五态/单边 gate 输出；
+- 所有 raw samples、分析命令、三轴结果和单边 gate 输出；
 - consumer correlation、holdout 和资源结果；
 - 已知限制与 reopen trigger。
 
 人读结论放 `docs/implementation/evidence/performance/`，原始数据放根级 `evidence/performance/`。
 依赖、工具链、算法、合同、正常 workload、硬件或 artifact 变化会使相应结论过期；未绑定当前
 candidate 的旧表统一是 `HISTORICAL`。
+
+当前统一仪器 v1 的 hash/replay 证明 bundle 内部机械一致且引用文件未漂移，不是密码学真实性证明。
+engineering 证据可在 live artifact 保留期内使用；Formal 发布必须先把所有受许可约束允许保存的
+artifact、raw stage 与 build provenance 放进受信的内容寻址不可变存储，并按发布策略签名。缺少该
+retention 层时应 fail closed 或标 `PENDING`，不得把“当前还能 verify”写成长期可审计。
 
 模块签署后，不再为无消费者的亚纳秒波动反复优化。只有真实 material 缺口、正确性问题、
 复杂度更优的强 peer 或合同/平台变化才重开。

@@ -168,6 +168,56 @@ add_test(NAME hyle_bench_stat_parser_test
                  "${CMAKE_CURRENT_SOURCE_DIR}/tooling/bench_stat_parser_test.py")
 set_tests_properties(hyle_bench_stat_parser_test PROPERTIES
   LABELS "tooling;benchmark")
+add_test(NAME hyle_perf_machine_test
+         COMMAND "${Python3_EXECUTABLE}"
+                 "${CMAKE_CURRENT_SOURCE_DIR}/tooling/perf_machine_test.py")
+set_tests_properties(hyle_perf_machine_test PROPERTIES
+  LABELS "tooling;benchmark")
+add_test(NAME hyle_perf_core_test
+         COMMAND "${Python3_EXECUTABLE}"
+                 "${CMAKE_CURRENT_SOURCE_DIR}/tooling/hyle_perf_core_test.py")
+set_tests_properties(hyle_perf_core_test PROPERTIES
+  LABELS "tooling;benchmark")
+add_test(NAME hyle_perf_nanobench_test
+         COMMAND "${Python3_EXECUTABLE}"
+                 "${CMAKE_CURRENT_SOURCE_DIR}/tooling/hyle_perf_nanobench_test.py")
+set_tests_properties(hyle_perf_nanobench_test PROPERTIES
+  LABELS "tooling;benchmark")
+add_test(NAME hyle_perf_runner_test
+         COMMAND "${Python3_EXECUTABLE}"
+                 "${CMAKE_CURRENT_SOURCE_DIR}/tooling/hyle_perf_runner_test.py")
+set_tests_properties(hyle_perf_runner_test PROPERTIES
+  LABELS "tooling;benchmark")
+add_test(NAME hyle_perf_controls_test
+         COMMAND "${Python3_EXECUTABLE}"
+                 "${CMAKE_CURRENT_SOURCE_DIR}/tooling/hyle_perf_controls_test.py")
+set_tests_properties(hyle_perf_controls_test PROPERTIES
+  LABELS "tooling;benchmark")
+add_test(NAME hyle_perf_evidence_runner_test
+         COMMAND "${Python3_EXECUTABLE}"
+                 "${CMAKE_CURRENT_SOURCE_DIR}/tooling/hyle_perf_evidence_runner_test.py")
+set_tests_properties(hyle_perf_evidence_runner_test PROPERTIES
+  LABELS "tooling;benchmark")
+add_test(NAME hyle_perf_raw_replay_test
+         COMMAND "${Python3_EXECUTABLE}"
+                 "${CMAKE_CURRENT_SOURCE_DIR}/tooling/hyle_perf_raw_replay_test.py")
+set_tests_properties(hyle_perf_raw_replay_test PROPERTIES
+  LABELS "tooling;benchmark")
+add_test(NAME hyle_perf_build_replay_test
+         COMMAND "${Python3_EXECUTABLE}"
+                 "${CMAKE_CURRENT_SOURCE_DIR}/tooling/hyle_perf_build_replay_test.py")
+set_tests_properties(hyle_perf_build_replay_test PROPERTIES
+  LABELS "tooling;benchmark")
+add_test(NAME hyle_module_closure_contract_test
+         COMMAND "${Python3_EXECUTABLE}"
+                 "${CMAKE_CURRENT_SOURCE_DIR}/tooling/check_module_closure_test.py")
+set_tests_properties(hyle_module_closure_contract_test PROPERTIES
+  LABELS "tooling;documentation;closure")
+add_test(NAME hyle_module_closure_registry_test
+         COMMAND "${Python3_EXECUTABLE}"
+                 "${HYLE_SOURCE_DIR}/scripts/check-module-closure.py")
+set_tests_properties(hyle_module_closure_registry_test PROPERTIES
+  LABELS "tooling;documentation;closure")
 if(WIN32)
   get_filename_component(_hyle_linker_dir "${CMAKE_LINKER}" DIRECTORY)
   get_filename_component(_hyle_compiler_dir "${CMAKE_C_COMPILER}" DIRECTORY)

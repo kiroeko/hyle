@@ -1,0 +1,219 @@
+# HYLE 统一性能仪器协议 v1
+
+本协议是模块工程性能收口的唯一统计与证据入口。模块可以新增 workload contract、benchmark
+adapter 和窄的结构 validator，但不得复制 runner，亦不得改变统计、margin、停止规则或 verdict
+语义。发布级证据的附加要求见
+[性能证据标准](benchmark-evidence-standard.md)。机器角色见
+[性能机器合同](machines.md)。
+
+## 1. 三个相互独立的结论
+
+每项 workload 分别记录：
+
+1. comparability：`COMPARABLE | NOT_COMPARABLE`；
+2. qualification：`QUALIFIED | DIAGNOSTIC`；
+3. performance：`WIN | PARITY | LOSE | INCONCLUSIVE`。
+
+同合同的单边 non-inferiority 门另记为
+`PASS | FAIL | UNRESOLVED | N/A`。`NOT_COMPARABLE` 不是统计结果；缺失资格也不能伪装成
+`PARITY`。
+
+内部统一使用 `advantage_ratio`，且 **大于 1 永远有利于 HYLE candidate**：
+
+- higher-is-better：`candidate / peer`；
+- lower-is-better：`peer / candidate`。
+
+给定预声明 margin `m`，等价带固定为 `[1/(1+m), 1+m]`：
+
+- CI 完全高于上界：`WIN`；
+- CI 完全位于带内：`PARITY`；
+- CI 完全低于下界：`LOSE`；
+- 其他：`INCONCLUSIVE`。
+
+required strata 逐项裁决。exact verdict 只有在各 stratum 一致时合成；`WIN + PARITY` 所表达的
+“没有输”由 non-inferiority gate 表达，不强行合成成某个 exact verdict。
+
+## 2. 产品阈值与仪器分辨率
+
+每个合同在运行前声明 material margin `M`。仪器用 A/A、known-delta 和实际样本证明当前
+machine/harness 的可检测差异 `D`；产品行动阈值是 `max(M, D)`。P1 默认 `M=5%`，但真实消费者
+可以预声明其他值。P2 的 1%--3% 必须由端到端 profile/KPI 证明，不能由 microbench 自封。
+
+CPU v1 的 timer-floor `20x` 门不是另一个 material margin，也不是“误差已被精确证明为 5%”。它是
+更早的一道 harness 资格筛选：被测 pair 的较快一侧仍须至少达到同一 measurement batch 下保守空
+harness floor 的 20 倍。未过该门时，仪器明确回答“当前计费边界太接近地板”，而不是回答谁快。
+
+- 测不到低于 `M` 的差异不是失败；单边最坏界仍在 `M` 内即可通过 non-inferiority。
+- 允许超过 `M` 且 power 不足时才是 `UNRESOLVED`。
+- 稳定 `LOSE` 只有同时具备机制证据和消费影响，才能改变产品 API、layout 或常态 metadata。
+
+## 3. 机器合同
+
+正式运行先选择 machine profile。profile 定义物理主机、OS/toolchain、filesystem、电源、affinity
+或 QoS、允许的运行模式与互斥键。运行时 probe 必须证明实际环境满足 profile；CLI 不能覆盖
+profile 的安全条件。
+
+Windows 与同机 WSL 使用同一物理互斥键，不能并行采样。WSL2 结果只能声明 WSL2 环境，不能
+冒充独立硬件或 native-Linux Formal。Formal 还必须匹配 registry 预先登记的稳定机器摘要与
+CPU/内存/主板/OS/BIOS facts，不能由本次 probe 自报 expected identity。macOS 无受支持的 hard
+affinity，合同必须明确 QoS；当前 M1 尚未登记稳定身份，所以只允许显式 unbound engineering，
+Formal fail closed。
+
+## 4. Experiment contract v1
+
+正式 experiment contract 至少冻结：
+
+- stable experiment/module/claim/workload ID 与证据 tier；
+- candidate target、delivery、peer revision/config；
+- semantic contract 与 comparability；
+- metric、unit、direction、输入分布和规模；
+- setup、steady-state、teardown 的计费边界；
+- candidate/peer row mapping；
+- material/equivalence/non-inferiority margin；
+- 显式 required strata，不由 runner 擅自做笛卡尔积；
+- estimator、固定样本数和唯一允许的升级计划；
+- required controls、artifact validators 和 host requirements；
+- compiler、ISA、LTO、linkage 与资源预算。
+
+运行前生成 immutable experiment-lock hash。CLI 只允许提供 checkout/build/output/peer 路径和
+machine profile，不能覆盖 pair、margin、规模或停止条件。
+
+## 5. 通用核心与插件边界
+
+统一核心负责：
+
+- contract/schema/lock 校验；
+- process 与显式 strata 调度；
+- Observation 规范化；
+- paired process median CI 与 SIMD clustered estimator；
+- 四态、non-inferiority 和 strata 合成；
+- source/peer/build/artifact/host 的前后稳定性；
+- `observations.jsonl`、`summary.json`、`manifest.json`；
+- 任一必需记录缺失时 fail closed。
+
+measurement adapter 只把 nanobench/结构化 telemetry 转为 Observation。platform backend 只负责
+machine probe、affinity/QoS 与 artifact 身份。模块 plugin 只能声明 target、row mapping 和确实特有
+的 codegen、DSE、资源守恒 validator。
+
+## 6. CPU v1 controls 与按风险扩展
+
+当前 nanobench CPU adapter 对每个 workload 强制要求公共 A/A、5% delta、10% delta 和 timer-floor，
+并分别执行 candidate-first 与 peer-first。正式 qualification 每个 order 至少 15 个独立进程：
+
+- A/A 使用同实现的等价两侧，固定 5% reciprocal band；两个 order 都必须裁决为 `PARITY`；
+- 5%/10% positive control 的区间下界都必须大于 1，中位数须分别落在 2.5%--7.5% 与
+  5%--15% 的预注册容忍带，且每个 order 的 10% 响应必须大于 5%；
+- timer-floor 同时采集 batch `1..4096` 的二次幂档；每个产品 executable 必须声明自己的
+  `measurement_batch`，评价时只取同 batch 数据，不能拿大 batch 的地板替单操作辩护。
+
+timer-floor 对两个 order、floor candidate/peer 四组中位数取最大值作为 conservative floor；产品 pair
+则取 candidate/peer 中较快一侧的中位成本。只有
+`faster_side_ns_per_op / conservative_floor_ns_per_op >= 20` 才通过。20x 是固定的 v1 harness-dominance
+警戒线；不能因某个模块的短操作未通过就调低，也不能只修改 `measurement_batch` 来“过门”。只有真实
+消费者本来就以该 batch/replay 为一次自然任务时，才建立对应合同；否则应改用更合适的 replay、
+counter/aggregate 仪器，或把该 microbench 保持为诊断。
+
+以下 control 只在合同风险适用时加入：
+
+- opaque callback/observer：phase floor；
+- DCE 风险：实际对象 codegen gate；
+- 极短指令：一种 code-placement sensitivity；
+- caller-owned 且地址敏感：一种 data/allocation sensitivity；
+- 并发：affinity/migration/工作量守恒；
+- allocator、IO、GPU：各 measurement family 的资源/同步 control。
+
+不得为每个 workload 机械加入所有风险维度。新增通用 control 或改变上述固定阈值必须升级
+instrument version；模块任务内不能移动冻结终点。`probe` 的公共 controls 也会执行，但一次样本不足
+以形成区间，出现 control `FAIL` 不等于一次正式校准失败；它本来就只能帮助排查 plumbing、row mapping
+和显然的地板问题。
+
+## 7. 三种运行模式
+
+| 模式 | 用途 | 资格 |
+|---|---|---|
+| `probe` | dirty/可复用 build；每个 required stratum/order **恰好 n=1**，检查 plumbing、映射与明显地板问题 | 永远 `DIAGNOSTIC` |
+| `qualify-platform` | 模块 P1/P2 工程收口；clean、fresh isolated Release、全部 required controls/strata；默认 n=15 | 可产生工程 verdict |
+| `certify` | 发布时只校验并合成同 contract hash/candidate 的平台 manifests | 协议上产生 Formal claim；当前受 retention blocker 阻止发布 |
+
+`validate` 只冻结并报告 contract hash。`verify` 则严格重放一个已有 manifest：复核 contract lock 与
+全部文件 hash；从 `raw-log-index` 按 stage/stratum/executable/order/run 精确闭包重新解析 nanobench
+原始日志、telemetry、observations 与 controls；从实际 CMakeCache、compiler/linker 和 product artifact
+重算 build/artifact gates；并从 registry 与 host probe 重算机器门。每次 child 都有 runner 生成的唯一
+`run_nonce`，索引拒绝重复 nonce 或完全相同的日志字节，因此复制一份 n=1 输出不能伪装成 n=15。一个
+`DIAGNOSTIC` manifest 可以完整通过 `verify`；这只证明证据未漂移且裁决可复现，不会把它升级为性能
+`QUALIFIED`。
+
+n=1 probe 不读取合同的 n=15 作为缩小版统计，也不会因结果好看升级资格。`qualify-platform` 固定先跑
+完整 n=15；升级 n=31 只允许合同预声明、n=15 全部 required controls 已通过，而且 comparable
+workload 的 non-inferiority gates 至少一个为统计功效 `UNRESOLVED`、其余均为 `PASS`（不存在
+material `FAIL` 或其他门失败）。n=31
+必须重新运行完整产品 strata 与 controls，并以新 31 个样本替代统计输入；不得向原 15 个追加、挑样或
+跑到刚好通过。证据仍保留 n=15 完整原始阶段；`verify` 会独立重算 n=15 controls、summary 与
+内建 build/artifact gates，并把 command validator 的日志 hash、整数 exit code 和 gate 绑定后重放
+停止决策，证明当时确实应当（或不应当）升级。跨平台样本永不池化。
+
+## 8. 子进程环境、构建和 Formal 边界
+
+runner 不继承未经审查的性能开关。启动每个 benchmark child 前，它会清除 sanitizer/profiler、
+`LD_PRELOAD`/`DYLD_*`、allocator tuning、OpenMP affinity 等 blocklist，以及所有 ambient
+`HYLE_BENCH_*`/`HYLE_PERF_*`；随后把常见数学/OMP 线程数固定为 1，只恢复合同声明并列入
+`controlled_environment` 的 stratum 值和登记的 macOS QoS。该策略仍保留普通进程环境，并记录
+`PATH` 的 SHA-256 而不是原始环境，所以它是明确的 sanitizer，不是假称完全 hermetic sandbox。
+runner 还为每次启动加入 128-bit `HYLE_PERF_RUN_NONCE`；benchmark 只把它原样写回 telemetry，
+它用于证明样本集合的进程边界与防止误复制，不是密码学签名。
+macOS orchestrator 还会在整个加锁运行作用域内应用并恢复 profile 的 QoS，使 build 前后 host probe
+与合同一致；每个 benchmark child 仍必须自行应用并通过 telemetry 证明同一 class。
+
+nanobench runner v1 只接受 `machine-profile-bound` toolchain、fresh Release qualification 和
+**静态链接**：合同必须是 `linkage=static`，实际 CMake cache 必须证明 `HYLE_STATIC=ON`，并同时核验
+generator/architecture、LTO、ISA、compiler ID/version、实际 compiler/linker 路径与 hash、SDK/stdlib
+记录和最终 artifact hash；engineering 会保留 SDK/stdlib 观测，只有 Formal 要求它们预注册且 exact
+match。这里的 static 是 v1 仪器尚未实现 shared runtime dependency closure 的
+边界，不是 HYLE 产品或交付系统只支持静态库；shared 性能证据需要未来的新 adapter/版本，不能在
+当前合同中假装等价。
+
+普通 `qualify-platform` 使用 engineering 机器角色和工具链 profile。`--formal` 还要求运行前已在
+registry 登记并匹配的稳定主机摘要、CPU/内存/主板/OS/BIOS facts、独立物理机器，以及 profile 中
+**预先钉死**的 compiler/linker ID、version、binary hash、SDK 和 stdlib 八项 exact
+`formal_toolchain`。observed toolchain 不能反向成为 expected。当前 W1-WIN 已登记主机身份；W1-WSL
+不是独立硬件，M1-MAC 尚未登记稳定身份，L1-LINUX 未 provision。首批 pilot contracts 也尚未钉死
+Formal toolchain，因此它们当前只能走 engineering；这些缺项必须 fail closed。
+
+`certify` 不重新跑 benchmark；它只接受 Formal manifests，复核相同 candidate/contract/peer 身份、
+登记主机绑定与不同 `physical_host_key`，再覆盖合同要求的全部 certification platforms。工程
+`QUALIFIED` manifest 不能被事后改名成 Formal。
+
+### 8.1 信任与保留边界
+
+v1 的本地 JSON、raw log 和 hash 是**机械一致性证据**，不是签名或硬件证明。它能拒绝缺文件、漂移、
+重复样本、伪造 gate、错误停止规则和彼此不一致的记录；不能对抗一个有权同时重写全部日志、索引与
+manifest 的恶意证据作者。需要这种真实性时，必须由受信 runner 把 bundle 签名并进入访问受控、
+内容寻址的不可变存储。
+
+当前 engineering bundle 仍引用 live build/toolchain artifact；后续 rebuild 会使 `verify` fail closed，
+不会产生假 PASS，但它不是长期档案。产品发布的 Formal 流程在加入 artifact retention/signing 层前
+保持未就绪；compiler/linker 本体若受再分发许可限制，应存内部 CAS 或以受信 toolchain provenance
+替代，不能悄悄省略。
+
+## 9. 调查与停止预算
+
+P1 异常最多允许：一次正常运行、一次反序/布局复现、一次 codegen/profile 机制检查、一个产品假设
+及重跑。随后必须裁决；不得继续发明第五种 benchmark 姿势。红队只能攻击冻结合同。通用仪器缺陷
+进入独立 instrument task；除非证明会跨过 material 门，不追溯移动已完成模块的终点。
+
+## 10. v1 非目标与验收
+
+v1 不建设数据库、网页 dashboard、远程调度、自动 margin/MDE、顺序贝叶斯、通用反汇编 DSL、
+模块 SOTA 总分，也不一次迁移全部旧 benchmark。
+
+v1 完成必须满足：
+
+- schema 缺字段、未知版本、重复/缺失 row、NaN 均 fail closed；
+- synthetic A/A、5%、10%、batch-matched timer floor 和双顺序可机械重放与裁决；
+- 每 child 唯一 nonce，raw logs 可重建 observations/controls/n=15 停止决策；相同 raw evidence
+  确定地产生相同 summary；
+- build/host/artifact/environment 漂移以及未登记 Formal 身份/工具链均 fail closed；
+- intrusive 与 error 两个不同消费者只通过 contract/mapping/窄 validator 接入；
+- 新普通 CPU 模块无需修改统计核心或复制 runner；
+- `probe` 由 n=1 机械限界；`qualify-platform` 的实际耗时按 workload/strata 数和合同资源预算报告，
+  不用一个虚假的全局分钟数换取少跑必需证据。

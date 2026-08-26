@@ -17,6 +17,8 @@
 #include "hyle/error/result.h"
 #include "hyle/error/status.h"
 
+#include "../common/perf_process.h"
+
 #if defined(HYLE_BENCH_ABSL)
 #  include "absl/status/status.h"
 #  include "absl/status/statusor.h"
@@ -188,9 +190,16 @@ HYLE_NOINLINE absl::StatusOr<int> absl_chain_error(int x) {
 
 int main() {
   int seed = 0;
+  const auto qos = hyle::bench::perf::configure_thread_qos();
   const bool rival_first = rival_first_requested();
   std::fprintf(stderr, "# HYLE_ERROR_BENCH order=%s\n",
                rival_first ? "peer-first" : "candidate-first");
+  std::fprintf(stderr,
+               "# HYLE_PERF_CHILD_RUN benchmark=error-status "
+               "execution_order=%s apple_qos=%s qos_ok=%s "
+               "affinity=external run_nonce=%s\n",
+               rival_first ? "peer-first" : "candidate-first", qos.name,
+               qos.ok, hyle::bench::perf::run_nonce());
 
   // ---- (1) OK construct + ok() check: THE hot path (every success returns
   // this) ----

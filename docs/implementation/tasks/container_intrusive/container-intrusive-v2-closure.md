@@ -1,6 +1,9 @@
 # container_intrusive v2 模块收口记录
 
-> **状态：`AUDITED`，正在冻结 candidate。** 本页记录本轮施工事实；稳定边界见
+> 本页只记录本轮施工事实，不声明当前状态。当前机器状态以
+> [`module-status.json`](../../module-status.json) 的 `container_intrusive` 记录为唯一权威；截至
+> 2026-08-26，产品形状已经冻结，但 P1 工程性能与最终独立红队 identity 尚未签署，因此当前为
+> `BLOCKED`，而不是旧的 `AUDITED` 或“已经收口”。稳定边界见
 > [`container-intrusive-design`](../../../architecture/container-intrusive-design.md)，用户写法见
 > [`user/container-intrusive`](../../../user/container-intrusive.md)，性能资格见
 > [`benchmarks-container-intrusive`](../../evidence/performance/benchmarks-container-intrusive.md)。
@@ -16,7 +19,9 @@
 | 直接产品依赖 | `PUBLIC core`；无 runtime artifact |
 | 本轮必要消费者回审 | time、sched；完整 container 聚合；Windows IOCP 特化反证 |
 | 非目标 | 完整 container、time、sched、io 的模块签署；Native FFI；32-bit ABI |
-| candidate / evidence / end commit | 待本轮冻结、取证和签署后填写 |
+| product candidate | commit `79c644c2b7cef51786862a5bf0dd6b565305a308`；tree `8588225e17ab4deecfbe7916a3f1d6ca7fe9a246` |
+| 当前工程性能 | P1 `INCONCLUSIVE`；等待 `closure-perf-v1`、W1-WIN、预声明 5% margin 的 candidate-bound manifest |
+| Formal | 独立 `PENDING`；不替代也不重复阻塞工程门 |
 
 目标不是把它扩成 Boost.Intrusive 全集，而是确认一个真实用户能够自然使用的最小双向 member-hook
 primitive：零分配、caller-owned 稳定节点、auto/safe 两种常用 retirement 合同、O(1) 任意摘链和
@@ -144,26 +149,27 @@ stores，Semaphore release 从约 `6N` 增至 `10N+1` persistent writes；摘链
 - Windows 旧 harness 的 dirty n=31 曾报告 A/A、known-delta、floor 与 9 个 peer workload 通过；随后
   红队加入 near-MDE control、双 fixed-floor budget、双 phase observer、allocation-order strata、实际
   artifact architecture/Release/tool identity 门，因此该轮已整体标为 `SUPERSEDED / UNQUALIFIED`，
-  不能被写作当前 harness 资格。新的完整 qualification 与 clean 三平台证书仍待执行。
-  它只批准 candidate，不冒充 clean SOTA 证书。
-- 文档合同（253 个 Markdown、673 条相对链接）与 `git diff --check` 通过。
-- clean candidate 的三平台正式性能 manifest、LOC 与最终独立红队尚待完成，不能从预检提前写
-  `SIGNED`。time consumer 的 N=1/8 peer sanity 仍有 time-owned 小批量差距，但 auto/safe layout 与
+  不能被写作当前 harness 资格。新的 `closure-perf-v1` P1 qualification 尚未执行；Formal 跨平台
+  证书是完成工程门之后的独立任务。旧专用 runner 只保留为 diagnostic/可能的 Formal plugin。
+- 当时的文档合同（253 个 Markdown、673 条相对链接）与 `git diff --check` 通过；这些计数是历史
+  快照，不冒充当前工作树的复验。
+- 当前 P1 manifest 与最终独立红队 identity 尚待完成，不能从预检提前写 `VERIFIED/CLOSED`。
+  time consumer 的 N=1/8 peer sanity 仍有 time-owned 小批量差距，但 auto/safe layout 与
   hot-op codegen 同形，N=64/4096 未退化；不以 container 修改迎合该上层算法/仪器问题。
 
 ## Candidate、证据与 LOC
 
 | 字段 | 值 |
 |---|---|
-| Candidate commit/tree | `TBD` |
-| Peer identity | Boost.Intrusive checkout + compiler/binary identity，待 manifest 冻结 |
-| Raw evidence | `TBD: evidence/container_intrusive/**` 与 performance raw samples |
-| 全库代码 | `TBD` |
-| 自实现包含测试 | `TBD` |
-| 自实现不包含测试 | `TBD` |
-| container_intrusive 实现代码 | `TBD`；边界为 public header + `src/container_intrusive/**` |
-| 独立红队 | 初审 findings 已修；candidate 后最终 verdict 待填 |
-| End commit / push | `TBD` |
+| Candidate commit/tree | `79c644c2b7cef51786862a5bf0dd6b565305a308` / `8588225e17ab4deecfbe7916a3f1d6ca7fe9a246` |
+| Peer identity | Boost.Intrusive `df8eeb90846648464e3c8e378e312f0cec772e83`；当前 v1 manifest 尚未绑定 compiler/binary identity |
+| Current P1 evidence | `TBD`；性能页中的旧 raw 均为 `HISTORICAL / UNQUALIFIED` |
+| 全库代码 | `303442`（candidate 快照） |
+| 自实现包含测试 | `142952`（candidate 快照） |
+| 自实现不包含测试 | `96244`（candidate 快照） |
+| container_intrusive 实现代码 | `497`（candidate 快照；public header + `src/container_intrusive/**`） |
+| 独立红队 | 初审 findings 已修；最终 candidate identity verdict 未签 |
+| End commit / push | `79c644c2b7cef51786862a5bf0dd6b565305a308`；这是本轮阻塞记录，不是 `CLOSED` 签署 |
 
 ## 剩余限制与重开条件
 

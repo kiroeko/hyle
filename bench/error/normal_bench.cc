@@ -17,6 +17,8 @@
 #include "hyle/error/result.h"
 #include "hyle/error/status.h"
 
+#include "../common/perf_process.h"
+
 #if defined(HYLE_BENCH_ABSL)
 #  include "absl/status/status.h"
 #  include "absl/status/status_builder.h"
@@ -184,9 +186,16 @@ void run_message_construct_benchmark(bool rival_first,
 }  // namespace
 
 int main() {
+  const auto qos = hyle::bench::perf::configure_thread_qos();
   const bool rival_first = rival_first_requested();
   std::fprintf(stderr, "# HYLE_ERROR_NORMAL_BENCH order=%s\n",
                rival_first ? "peer-first" : "candidate-first");
+  std::fprintf(stderr,
+               "# HYLE_PERF_CHILD_RUN benchmark=error-normal "
+               "execution_order=%s apple_qos=%s qos_ok=%s "
+               "affinity=external run_nonce=%s\n",
+               rival_first ? "peer-first" : "candidate-first", qos.name,
+               qos.ok, hyle::bench::perf::run_nonce());
 
   // Owning human-readable error construction: same canonical code and message,
   // with Abseil source-location capture explicitly disabled on the rival.  A
