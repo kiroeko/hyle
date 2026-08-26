@@ -11,7 +11,7 @@
 | Component | Product | Tier | Engineering performance | Formal | Current record | Summary |
 |---|---|---|---|---|---|---|
 | core | CLOSED | P0 | PASS / STRUCTURAL | NONE | [task](tasks/core/core-rebuild.md) | P0 基础层已关闭；消费者性能声明由所属模块承担。 |
-| container_intrusive | BLOCKED | P1 | INCONCLUSIVE / P1_ENGINEERING / 5% | PENDING | [task](tasks/container_intrusive/container-intrusive-v2-closure.md) | 产品形状已冻结；P1 工程性能与最终红队 identity 尚未签署，Formal 独立待办。 |
+| container_intrusive | SCOPED | P1 | PLANNED / P1_ENGINEERING / 5% | PENDING | [task](tasks/container_intrusive/container-intrusive-v3-resume.md) | v3 RESUME 范围已冻结；正在重新审计当前能力/API/依赖/交付，并解决统一 P1 工程性能与最终红队门。 |
 | util_core | QUEUED | — | — | — | — | 现有实现只作输入；尚未启动 v1 收口。 |
 | error | QUEUED | — | — | — | — | 现有实现与历史审查只作输入。 |
 | obs | QUEUED | — | — | — | — | 现有实现与历史审查只作输入。 |
@@ -37,10 +37,10 @@ resume:  BLOCKED -> SCOPED
 reopen:  CLOSED -> REOPENED -> SCOPED
 ```
 
-`container_intrusive` 的 auto/safe API 与产品布局已经冻结，但当前 candidate 尚无
-`closure-perf-v1` 的 P1 工程 `PASS`，最终独立红队也尚未签 candidate identity，因此机械状态是
-`BLOCKED`；恢复条件和四项 LOC 已记录在 JSON。`formal-release-v1` 的跨平台证书仍为独立
-`PENDING`，不能拿来替代或重复阻塞 P1 工程门。
+`container_intrusive` 已按旧 blocker 创建新的 `RESUME` round 并进入 `SCOPED`。本轮重新绑定当前
+实现、依赖与交付 identity，先冻结 capability/gap ledger，再用统一 `closure-perf-v1` 完成 W1-WIN
+P1 工程门和最终独立红队；旧 v2 task 保持历史事实，不被回写。`formal-release-v1` 的跨平台证书仍为
+独立 `PENDING`，不能拿来替代或重复阻塞 P1 工程门。
 
 Build/package 是所有模块持续复用的交付 workstream，不是组件状态；Native FFI 仍按准入策略为
 `N/A`，也不伪装成模块。完整进入/退出、停止和重开规则见

@@ -61,17 +61,12 @@
     },
     {
       "module": "container_intrusive",
-      "product_state": "BLOCKED",
-      "blocked_from": "VERIFIED",
-      "round_id": "container-intrusive-v2",
-      "closure_task": "docs/implementation/tasks/container_intrusive/container-intrusive-v2-closure.md",
-      "scope": "Header-only caller-owned auto/safe member-hook intrusive doubly linked list and direct consumer boundary.",
-      "non_goals": "Full container module, scheduler-private link state machines, native FFI and Formal release certification.",
-      "baseline_commit": "49512b77434c4f15fec355e4bd6d6ab5a8b9b650",
-      "candidate_commit": "79c644c2b7cef51786862a5bf0dd6b565305a308",
-      "candidate_tree": "8588225e17ab4deecfbe7916a3f1d6ca7fe9a246",
-      "end_commit": "1a465e23ea69a6e613840cf8d30d33054463ae1c",
-      "registry_anchor_commit": "1a465e23ea69a6e613840cf8d30d33054463ae1c",
+      "product_state": "SCOPED",
+      "round_id": "container-intrusive-v3",
+      "closure_task": "docs/implementation/tasks/container_intrusive/container-intrusive-v3-resume.md",
+      "scope": "Current auto/safe member-hook intrusive-list capability, C++ API, implementation, direct consumer/dependency, delivery, documentation and P1 engineering evidence.",
+      "non_goals": "Full owning container, time/scheduler algorithms, reclamation or full intrusive policy matrix, C API/native FFI and Formal release certification.",
+      "baseline_commit": "a5c74e2be31d258c67e3d6244c8a24d3abeb21c0",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -79,7 +74,7 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "INCONCLUSIVE",
+        "verdict": "PLANNED",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
@@ -90,36 +85,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "gate_verdicts": {
-        "scope": "PASS",
-        "architecture": "PASS",
-        "correctness": "PASS",
-        "delivery": "PASS",
-        "usability_docs": "PASS",
-        "red_team": "INCONCLUSIVE",
-        "engineering_performance": "INCONCLUSIVE"
-      },
-      "blocker": "The frozen candidate has no closure-perf-v1 P1 engineering PASS, and the independent red team has not signed the candidate identity.",
-      "blocker_owner": "container_intrusive owner plus independent reviewer",
-      "resume_condition": "Produce one candidate-bound W1-WIN P1 engineering manifest at the frozen 5% margin, then obtain the final candidate identity/red-team verdict without changing the product shape.",
-      "closure_evidence": "docs/implementation/tasks/container_intrusive/container-intrusive-v2-closure.md",
-      "loc": {
-        "snapshot_commit": "79c644c2b7cef51786862a5bf0dd6b565305a308",
-        "repository_code": 303442,
-        "self_with_tests": 142952,
-        "self_without_tests": 96244,
-        "module_implementation": 497
-      },
-      "known_limitations": [
-        "The product is limited to 64-bit standard-layout stable-address nodes with external synchronization.",
-        "It does not provide reclamation, exact owner tracking, offset pointers or a full STL-like intrusive algorithm suite."
-      ],
-      "reopen_triggers": [
-        "A consumer exposes a lifetime or correctness defect.",
-        "A supported compiler ABI invalidates member recovery.",
-        "A same-contract peer proves a material consumer or complexity advantage after closure."
-      ],
-      "summary": "产品形状已冻结；P1 工程性能与最终红队 identity 尚未签署，Formal 独立待办。"
+      "summary": "v3 RESUME 范围已冻结；正在重新审计当前能力/API/依赖/交付，并解决统一 P1 工程性能与最终红队门。"
     },
     {
       "module": "util_core",
