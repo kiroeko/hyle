@@ -1,8 +1,9 @@
 # Core 性能资格与证据边界
 
-> **状态：`UNQUALIFIED / EVIDENCE PENDING`。** 当前 Core 设计已经收敛为 header-only compiler/invariant
-> 与 cache primitive，但最终 candidate commit、三平台 codegen 和 consumer workload 证据尚未在
-> 本页绑定，因此不宣称性能已签署或“整个 Core SOTA”。施工状态见
+> **状态：`QUALIFIED / STRUCTURAL CONTRACT SIGNED`。** Core v2 候选
+> `b241a228d3311f0faa65cde68123de7da3688c2f` 的三平台 codegen、symbol、sanitizer 与交付证据已由
+> [verification manifest](../../../../evidence/core/manifest-b241a22.md) 绑定。该结论签署零成本结构和
+> 精确意图，不宣称“整个 Core 全局 SOTA”或脱离消费者的普适加速倍数。施工记录见
 > [`core-rebuild`](../../tasks/core/core-rebuild.md)。
 
 ## 可以证明什么
@@ -39,18 +40,19 @@ candidate)`；同复杂度 non-inferior 不能外推为全局 SOTA。
 
 ## 本轮证据登记
 
-下表由最终执行者在签署前绑定同一 candidate；空缺表示未签，不表示默认通过。
+下表绑定同一 candidate；完整命令、环境和 SHA-256 见 manifest。
 
 | 项目 | Candidate / environment | Raw evidence | Verdict |
 |---|---|---|---|
-| Windows MSVC optimized/debug Core probe | 待绑定 | 待绑定 | `PENDING` |
-| Linux GCC optimized + ASan/UBSan probe | 待绑定 | 待绑定 | `PENDING` |
-| macOS AppleClang optimized/debug probe | 待绑定 | 待绑定 | `PENDING` |
-| source/static/shared isolated consumer | 待绑定 | 待绑定 | `PENDING` |
-| 受影响 direct-consumer regression | 待绑定 | 待绑定 | `PENDING` |
+| Windows MSVC optimized/debug Core probe | `b241a22`; MSVC 19.50 x64 + ARM64 cross；clang-cl 20.1.8 x64 | `core-v2-ctest-*msvc*`、`*clangcl*`、`core-v2-codegen-msvc*`、`core-v2-symbol-visibility-msvc*` | `PASS` |
+| Linux GCC optimized + ASan/UBSan probe | `b241a22`; Ubuntu 24.04 WSL；GCC 14.2 | `core-v2-ctest-release-gcc*`、`core-v2-codegen-gcc*`、`core-v2-symbol-visibility-gcc*`、`core-v2-{a,u}bsan-gcc*` | `PASS` |
+| macOS AppleClang optimized/debug probe | `b241a22`; Apple M4；AppleClang 21 | `core-v2-ctest*-appleclang*`、`core-v2-codegen-appleclang*`、`core-v2-symbol-visibility-appleclang*` | `PASS` |
+| source/static/shared isolated consumer | `b241a22`; Windows + macOS relocated contracts | `core-v2-component-contract-{msvc,appleclang}*` | `PASS` |
+| 受影响 direct-consumer regression | `b241a22`; Windows Release/Werror | `core-v2-direct-consumers-msvc*`：66/66 | `PASS`；不等于下游模块签署 |
 
-在这些行具备可复现 command、compiler/flags、source hash 和 raw output 前，当前唯一性能 verdict 是：
-**Core 的算法复杂度与预期常态成本已经限定，但 v2 性能资格尚未完成。**
+当前性能 verdict 是：**Core v2 的复杂度、常态成本和支持工具链上的代码形状已签署。** `prefetch`、
+padding、branch/loop hint 是否改善吞吐仍必须由拥有访问分布的 container/mem/sched/SIMD 正常 workload
+签署；没有该第二把钥匙时，Core 不单独声称收益，也不因纳秒 microbench 修改 API 或常态元数据。
 
 ## 历史证据如何处理
 

@@ -1,8 +1,9 @@
 # Core v2 重建与收口记录
 
-> **状态：`AUDITED / CANDIDATE PREPARATION`。** 本任务不继承已删除旧 closure 文档的
-> 绿色状态。建立账本时检查的基线为 `87c831d228e4e2f7844e60a3e9fd167cef4992b9`；最终 candidate、
-> 三平台、性能、package、红队与结束 commit 仍待绑定，不能据本文提前宣称 `SIGNED`。
+> **状态：`SIGNED`。** 本任务不继承已删除旧 closure 文档的绿色状态。建立账本时检查的基线为
+> `87c831d228e4e2f7844e60a3e9fd167cef4992b9`；最终产品候选为
+> `b241a228d3311f0faa65cde68123de7da3688c2f`，证据提交为
+> `b9231054b8eaa2f46850cb8b203b6056ae71b6a7`。
 
 稳定设计见 [`core-design`](../../../architecture/core-design.md)，用户写法见
 [`user/core`](../../../user/core.md)，性能资格见
@@ -96,20 +97,21 @@ target-neutral macro 例外都不再充当依赖机制。
 
 ## 正确性、交付与性能门
 
-以下表格必须由最终执行者绑定同一 candidate；本页不把“正在运行”写成通过。
+以下表格均绑定同一 candidate；原始日志和哈希见
+[`manifest-b241a22`](../../../../evidence/core/manifest-b241a22.md)。
 
 | Gate | 必须覆盖 | 当前记录 |
 |---|---|---|
-| Windows | MSVC `/WX` Core-only Release/Debug、header self-contained、direct consumers、component contract | 待最终 candidate 绑定 |
-| Linux | GCC Release + ASan/UBSan，Core-only 与受影响 consumers | 待执行/绑定 |
-| macOS | AppleClang arm64 Release/Debug、header/package consumer | 待执行/绑定 |
-| source delivery | Core-only parent `add_subdirectory`，只出现 INTERFACE Core | 待最终日志绑定 |
-| static SDK | relocated installed consumer；没有 Core archive/runtime | 待最终日志绑定 |
-| shared SDK | relocated installed consumer；没有 Core DSO/runtime staging | 待最终日志绑定 |
-| codegen/symbol | inline/noinline/assume/prefetch/fatal hot path；shared export 不得泄漏 Core detail；普通 version value use 不链接 getter/runtime | 计划见性能页，待 raw evidence |
-| consumer performance | 只有受本轮 code shape 影响的正常 workload，按两把钥匙裁决 | 待 owning module evidence；不制造 Core 纳秒榜 |
-| docs | stale symbol/path scan、relative-link contract、四类文档职责 | 待 final tree `check-docs` |
-| red team | API/能力/复杂度/依赖/交付/性能反证 | 待 candidate 后独立复核 |
+| Windows | MSVC `/WX` Core-only Release/Debug、clang-cl Release、header self-contained、component contract | `PASS`；MSVC/clang-cl 各 6/6，Core label 5 项；Debug optimized codegen 按设计 skip |
+| Linux | GCC Release + ASan/UBSan、Core-only；AArch64 cross compile/codegen | `PASS`；Release 6/6，ASan/UBSan 各 5/5；cross 不冒充真机运行 |
+| macOS | AppleClang arm64 Release/Debug、header/package consumer | `PASS`；Release/Debug 各 Core 5/5 |
+| source delivery | Core-only parent `add_subdirectory`，唯一产品组件 target 为 INTERFACE Core | `PASS` |
+| static SDK | relocated installed consumer；没有 Core archive/runtime | `PASS` |
+| shared SDK | relocated installed consumer；没有 Core DSO/runtime staging | `PASS` |
+| codegen/symbol | inline/noinline/assume/prefetch/fatal hot path；shared export 不得泄漏 Core detail；普通 version value use 不链接 getter/runtime | `PASS`；9 functions、3 exact prefetch intents，parser 红队 14/14 |
+| consumer performance | 正常 workload 按两把钥匙裁决 | Core 只签署 primitive 结构；具体收益留给 owning module，不制造纳秒榜 |
+| docs | stale symbol/path scan、relative-link contract、四类文档职责 | `PASS`；设计、用户、性能、任务与 manifest 分工明确 |
+| red team | API/能力/复杂度/依赖/交付/性能反证 | `PASS`；无剩余 MEDIUM+，限制与 out-of-scope 已登记 |
 
 ## 成熟库对账结论
 
@@ -127,14 +129,14 @@ target-neutral macro 例外都不再充当依赖机制。
 
 | 字段 | 值 |
 |---|---|
-| Candidate commit/tree | 待最终实现、文档和验证冻结后填写 |
-| 全库代码 | 待运行 `python scripts/loc-report.py --module core --self-check` |
-| 自实现包含测试 | 待填写 |
-| 自实现不包含测试 | 待填写 |
-| Core 实现代码 | 待填写；边界为 `include/hyle/core/**`、`include/hyle/version.h`、`src/core/**` |
-| Raw evidence | 待填写根级 `evidence/` 路径与 manifest |
-| Red-team verdict | 待填写 `fixed / disproved / accepted limitation / out of scope` 结果 |
-| End commit / push | 待填写 |
+| Candidate commit/tree | `b241a228d3311f0faa65cde68123de7da3688c2f` / `e73472e2cefedd70e41eca6243871b2343db7d74` |
+| 全库代码 | 297,471（含本轮已跟踪 raw evidence） |
+| 自实现包含测试 | 141,867 |
+| 自实现不包含测试 | 96,105 |
+| Core 实现代码 | 233；边界为 `include/hyle/core/**`、`include/hyle/version.h`、`src/core/**` |
+| Raw evidence | [`evidence/core/manifest-b241a22.md`](../../../../evidence/core/manifest-b241a22.md)；证据提交 `b923105` |
+| Red-team verdict | high/medium findings fixed；缺口反证完成；限制/out-of-scope 已接受；剩余 MEDIUM+ = 0 |
+| End commit / push | `main`；最终 handoff 报告远端提交 |
 
 ## 剩余限制与停止规则
 
@@ -143,7 +145,6 @@ stdlib/build-mode ABI。`HYLE_ASSUME/RESTRICT/UNREACHABLE` 仍要求调用者证
 表达式必须无副作用。fatal sink 使用 stdio/`abort()`，不承诺 async-signal-safe；出现真实 crash
 reporter 消费者时由正确 owner 重开，而不是给常态断言热路径预付复杂度。
 
-完成上表的三平台、三种交付、codegen、文档和红队门，且没有未知 material 问题后，才可依次进入
-`EVIDENCE_COMPLETE` 与 `SIGNED`。签署后只有真实 consumer 缺口、correctness/security、直接依赖
+上述门已完成，Core v2 进入 `SIGNED`。此后只有真实 consumer 缺口、correctness/security、直接依赖
 语义改变、新 compiler/target，或强 peer 在同合同正常 workload 证明 material advantage 才重开；
 LOC、feature 数、命名偏好和亚纳秒 benchmark 不构成理由。

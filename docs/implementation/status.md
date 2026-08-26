@@ -3,12 +3,13 @@
 > 更新时间：2026-08-26。这里是模块重审状态的唯一入口；历史任务中的绿色勾或“已收口”不再
 > 代表新标准下的结论。
 
-HYLE 正以真实推理消费者为首要需求锚，从底层开始重新建立模块证书。当前主审 core；本轮为
-修复其能力归属与直接依赖，把侵入链表迁为独立轻量组件，但这不等于提前签署 container 能力。
+HYLE 正以真实推理消费者为首要需求锚，从底层开始重新建立模块证书。Core v2 已完成首个严格
+签署；本轮为修复其能力归属与直接依赖，把侵入链表迁为独立轻量组件，但这不等于提前签署
+container 能力。
 
 | 范围 | 状态 | 说明 |
 |---|---|---|
-| core | `AUDITED` | 边界已收敛为 header-only compiler/invariant 与 cache primitive；版本归 build/package，Core FFI 为 N/A；candidate、三平台、codegen、交付与红队证据仍在准备 |
+| core | `SIGNED` | `b241a22`：header-only compiler/invariant 与 cache primitive；版本归 build/package，Core FFI 为 N/A；三平台、codegen/symbol、sanitizer、三种交付与独立红队证据已由 `b923105` 绑定 |
 | container_intrusive | `NOT_REVIEWED_V2` | 已形成独立 header-only target 和公开容器归属；time/完整 container 的依赖边已明确，正确性、API 与性能证书仍需单独复审 |
 | error / platform / mem / time / obs / util | `NOT_REVIEWED_V2` | 有多轮旧实现与证据，可作输入，不能继承旧证书 |
 | build/package | `NOT_REVIEWED_V2` | 已有组件化与三种 C++ 交付形状，需随每个模块持续做闭包回归 |
