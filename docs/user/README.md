@@ -23,7 +23,7 @@ HYLE 尚未正式发布，并正从 core 开始按新标准重审。模块页只
 - [time](time.md)
 - [obs](obs.md)
 - [util](util.md)
-- [container](container.md)
+- [container](container.md)：包括独立轻量的 `hyle::container_intrusive` target
 - [simd](simd-usage.md)
 - [io](io.md)
 

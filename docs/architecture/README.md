@@ -34,7 +34,8 @@ sampling、KV 策略与 serving policy 留在推理引擎。第二类工程计�
 - [time](time-design.md)
 - [obs](obs-design.md)
 - [util](util-design.md)
-- [container](container-design.md)
+- [container](container-design.md)，含独立轻量组件
+  [`container_intrusive`](container-design.md#独立侵入式容器组件)
 - [simd](simd-design.md) 与 [vendor 边界](simd-vendor-surface.md)
 - [math 边界](math-design.md)
 - [sched](sched-design.md)
@@ -46,5 +47,7 @@ sampling、KV 策略与 serving policy 留在推理引擎。第二类工程计�
 
 2026-08-26 起，项目按新的真实消费者标准从 core 开始逐模块重审。core 为当前 `OPEN` 试点；
 其他模块设计页暂时描述现有实现和既有决策输入，不代表已取得新标准的功能、性能或易用性证书。
+Core 复审已经裁决侵入链表归 container 语义并拆成独立 header-only target；这只是边界与依赖
+决策，`container_intrusive` 仍未取得 v2 模块证书。
 唯一施工状态见 [implementation/status](../implementation/status.md)。模块轮到重审时，应删去其
 设计页中的历史验收、旧点值和施工叙事，只保留仍约束实现的内容。

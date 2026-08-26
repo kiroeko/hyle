@@ -1,4 +1,7 @@
-# container: header-only templates (SPSC / bounded_queue / ws_fifo / ws deque) + the
+# container: owning/concurrent templates plus compiled algorithms. The
+# allocation-free intrusive-list surface is aggregated transitively through the
+# public hyle::container_intrusive dependency declared in HyleComponents.cmake.
+# SPSC / bounded_queue / ws_fifo / ws deque remain header-only here; the
 # compiled hash unit (container-02). hash.cc privately includes the vendored
 # xxhash + wyhash single-headers (best-of-breed byte hasher: XXH3 short-mid, wyhash
 # long); those include dirs are PRIVATE so neither leaks to consumers.

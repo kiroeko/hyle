@@ -57,19 +57,20 @@ endif()
 # Declaration order is construction order and must remain topological.  The
 # visibility here is the visibility of the real hyle_<module> target edge.
 _hyle_declare_component(core)
+_hyle_declare_component(container_intrusive)
 _hyle_declare_component(util_core)
 _hyle_declare_component(error)
 _hyle_declare_component(obs PUBLIC_DEPS error)
 _hyle_declare_component(math)
 _hyle_declare_component(platform PUBLIC_DEPS error)
-_hyle_declare_component(time PUBLIC_DEPS error)
+_hyle_declare_component(time PUBLIC_DEPS error container_intrusive)
 _hyle_declare_component(mem PUBLIC_DEPS error platform util_core)
 _hyle_declare_component(simd PUBLIC_DEPS error platform)
 # container headers expose error/mem types; platform is used only by compiled
 # implementation paths such as topology/cache-aware concurrency support.
 _hyle_declare_component(container
   PRIVATE_DEPS platform
-  PUBLIC_DEPS error mem)
+  PUBLIC_DEPS error mem container_intrusive)
 _hyle_declare_component(util PUBLIC_DEPS error mem container util_core)
 # SchedulerOptions publicly names platform types, while time is consumed only
 # by scheduler implementation TUs.

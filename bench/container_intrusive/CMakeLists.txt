@@ -1,8 +1,8 @@
-# Core's allocation-free intrusive primitive: FIFO batch, refill + arbitrary
+# Allocation-free intrusive primitive: FIFO batch, refill + arbitrary
 # cancel, read-only traversal, whole-batch handoff, and non-owning teardown.
 # Boost uses the same member-hook auto-unlink contract. Whole-batch handoff is an
 # O(1) mechanism diagnostic; std::list remains an owning/allocating floor only.
-hyle_add_bench(core SOURCES core_bench.cc)
+hyle_add_bench(container_intrusive SOURCES intrusive_list_bench.cc)
 
 # boost::intrusive::list -- the canonical intrusive-container SOTA (header-only).
 # Enable with -DHYLE_BENCH_BOOST=ON; point HYLE_BOOST_DIR at a boost tree (the
@@ -17,14 +17,14 @@ if(HYLE_BENCH_BOOST)
   # pulls a small dep closure (config/assert/core/move/static_assert) -- add each
   # lib's include/ dir in the modular case.
   if(EXISTS "${HYLE_BOOST_DIR}/boost/intrusive/list.hpp")
-    target_include_directories(hyle_core_bench SYSTEM PRIVATE "${HYLE_BOOST_DIR}")
+    target_include_directories(hyle_container_intrusive_bench SYSTEM PRIVATE "${HYLE_BOOST_DIR}")
   elseif(EXISTS "${HYLE_BOOST_DIR}/libs/intrusive/include/boost/intrusive/list.hpp")
     foreach(_bl intrusive config assert core move static_assert)
-      target_include_directories(hyle_core_bench SYSTEM PRIVATE
+      target_include_directories(hyle_container_intrusive_bench SYSTEM PRIVATE
         "${HYLE_BOOST_DIR}/libs/${_bl}/include")
     endforeach()
   else()
     message(FATAL_ERROR "HYLE_BENCH_BOOST=ON but no boost/intrusive/list.hpp at ${HYLE_BOOST_DIR} (checked monolithic + modular libs/ layout; run `git submodule update --init` in the boost tree)")
   endif()
-  target_compile_definitions(hyle_core_bench PRIVATE HYLE_BENCH_BOOST)
+  target_compile_definitions(hyle_container_intrusive_bench PRIVATE HYLE_BENCH_BOOST)
 endif()

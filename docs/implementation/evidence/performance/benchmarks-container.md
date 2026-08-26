@@ -5,7 +5,7 @@
 
 > 本页是 [performance 总账](README.md) 的 **container 模块**入口。
 > **历史模块收口**（正确性/C ABI，非性能全表）：[../milestones/container-module-closure.md](../../tasks/container/container-module-closure.md)（上次签署 2026-07-27）。2026-08-25 的 hash/string API 修正与 simdutf 9.1 升级已重开受影响边；本页旧三平台点值在复跑前不是当前整模块证书。
-> 调度队列的 SOTA 对标多在 sched 消费路径 + `queue_sota_bench`；并发关联容器已在本页按 shared-registry 正常合同单列。IntrusiveList 已归 core，见 [`benchmarks-core`](benchmarks-core.md)。
+> 调度队列的 SOTA 对标多在 sched 消费路径 + `queue_sota_bench`；并发关联容器已在本页按 shared-registry 正常合同单列。轻量 IntrusiveList 现为独立组件，见 [`benchmarks-container-intrusive`](benchmarks-container-intrusive.md)。
 
 ## 0. 数据新鲜度（先看这个）
 

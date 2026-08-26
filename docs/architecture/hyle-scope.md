@@ -27,7 +27,7 @@ HYLE 关注四类可以重复利用的加速：
 |---|---|---|
 | 最小地基 | core, error, util-core | 编译/布局 primitive、统一失败、极小无状态工具 |
 | OS 与资源 | platform, time, mem, obs | 平台机制、时钟/定时、host memory、可观测机制 |
-| 数据与计算 | container, util, simd, math | 数据结构、通用 runtime 工具、向量与少量标量补位 |
+| 数据与计算 | container_intrusive, container, util, simd, math | 轻量侵入式与完整数据结构、通用 runtime 工具、向量与少量标量补位 |
 | 执行与 I/O | sched, io | 任务/纤程/协程、取消/唤醒、文件/网络/protocol 机制 |
 | 异构与编排 | compute, graph | device/backend/operator 执行与通用依赖/数据并行机制 |
 | 贯穿合同 | build/package | 组件闭包、依赖、feature、三种 C++ 交付与验证 |

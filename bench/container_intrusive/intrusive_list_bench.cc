@@ -14,7 +14,7 @@
 #  include <pthread.h>
 #endif
 
-#include "hyle/core/intrusive_list.h"
+#include "hyle/container/intrusive_list.h"
 
 #if defined(HYLE_BENCH_BOOST)
 #  include <boost/intrusive/list.hpp>
@@ -22,8 +22,8 @@
 
 namespace {
 namespace nb = ankerl::nanobench;
-using hyle::core::IntrusiveList;
-using hyle::core::IntrusiveListHook;
+using hyle::container::IntrusiveList;
+using hyle::container::IntrusiveListHook;
 
 nb::Bench make_bench() {
   nb::Bench bench;
@@ -49,7 +49,7 @@ void configure_main_benchmark_thread() {
   } else if (requested != nullptr &&
              std::strcmp(requested, "interactive") != 0) {
     std::fprintf(stderr,
-                 "hyle_core_bench: HYLE_BENCH_APPLE_QOS must be "
+                 "hyle_container_intrusive_bench: HYLE_BENCH_APPLE_QOS must be "
                  "interactive or utility (got %s)\n",
                  requested);
     std::abort();
@@ -98,7 +98,7 @@ using BoostList =
 #endif
 
 template <std::size_t Count>
-void bench_fifo(bool rival_first) {
+void bench_fifo([[maybe_unused]] bool rival_first) {
   auto nodes = std::make_unique<Node[]>(Count);
   for (std::size_t index = 0; index < Count; ++index)
     nodes[index].value = static_cast<int>(index);
@@ -158,7 +158,7 @@ void bench_fifo(bool rival_first) {
 }
 
 template <std::size_t Count>
-void bench_unlink(bool rival_first) {
+void bench_unlink([[maybe_unused]] bool rival_first) {
   static_assert((Count & (Count - 1)) == 0,
                 "multiplicative permutation requires a power of two");
   auto nodes = std::make_unique<Node[]>(Count);
@@ -209,7 +209,7 @@ void bench_unlink(bool rival_first) {
 }
 
 template <std::size_t Count>
-void bench_iteration(bool rival_first) {
+void bench_iteration([[maybe_unused]] bool rival_first) {
   auto nodes = std::make_unique<Node[]>(Count);
   NodeList list;
   for (std::size_t index = 0; index < Count; ++index) {
@@ -256,7 +256,7 @@ void bench_iteration(bool rival_first) {
 }
 
 template <std::size_t Count>
-void bench_splice(bool rival_first) {
+void bench_splice([[maybe_unused]] bool rival_first) {
   auto nodes = std::make_unique<Node[]>(Count);
   NodeList source;
   NodeList destination;
@@ -299,7 +299,7 @@ void bench_splice(bool rival_first) {
 }
 
 template <std::size_t Count>
-void bench_discard(bool rival_first) {
+void bench_discard([[maybe_unused]] bool rival_first) {
   auto nodes = std::make_unique<Node[]>(Count);
 #if defined(HYLE_BENCH_BOOST)
   auto boost_nodes = std::make_unique<BoostNode[]>(Count);

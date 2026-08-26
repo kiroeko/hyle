@@ -9,11 +9,11 @@
 
 #include "hyle/macros.h"
 
-namespace hyle::core {
+namespace hyle::container {
 
-// Lowest-level intrusive linking primitive shared by time/ and container/.
-// Keeping it in core avoids the false time -> container module dependency that
-// existed when timer_entry.h included hyle/container/intrusive_list.h.
+// Allocation-free intrusive linking primitive shared by time and the full
+// container module.  It is its own lightweight component so low-level users do
+// not acquire the owning container/mem/platform dependency closure.
 //
 // Embed one hook in a stable-address node, then list it via
 // IntrusiveList<Node, &Node::hook>. The list owns no nodes and allocates
@@ -460,4 +460,4 @@ private:
   IntrusiveListHook sentinel_;
 };
 
-} // namespace hyle::core
+} // namespace hyle::container

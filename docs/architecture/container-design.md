@@ -8,8 +8,9 @@
 > FFI 是否为 `N/A`；只有保留 direct FFI 时，container 才必须通过 Java FFM + .NET P/Invoke、
 > 真实导出、opaque ownership 与 batch 旅程后冻结该边界。
 
-container 是 Tier 0 数据结构层：提供平坦 hash、连续数组、字符串/路径、驻留池和
-调度器所需并发容器。其性能核心自行维护；abseil、boost、TBB、rigtorp 和
+container 是 Tier 0 数据结构层：提供侵入式链接、平坦 hash、连续数组、字符串/路径、驻留池和
+调度器所需并发容器。侵入式链接单独形成轻量 header-only target；其余编译型能力由完整
+container target 承载。性能核心自行维护；abseil、boost、TBB、rigtorp 和
 `std::*` 只作为 benchmark/oracle，不进入产品依赖。
 
 ## 分层与依赖
@@ -45,12 +46,17 @@ C++ typed / source surface      compiled cold cores
           +-----------+-----------+
                       |
                       v
-Tier 0 dependencies: core cache geometry + error + mem allocator +
-                     platform CPU discovery
+Tier 0 dependencies: container_intrusive + core cache geometry +
+                     error + mem allocator + platform CPU discovery
 ```
 
-- `container -> {error, mem, platform}` 是允许的基础依赖；error 是 C ABI 冷失败
-  的直接合同，不再藏在 mem 的传递依赖或模块私有 TLS 中。
+- 完整 `container -> PUBLIC {container_intrusive, error, mem}`、`PRIVATE {platform}`；error 是
+  旧 C/FFI 冷失败候选的直接合同，不再藏在 mem 的传递依赖或模块私有 TLS 中，platform 只服务
+  编译实现的 CPU/OS dispatch。
+- `container_intrusive` 是零产品组件依赖的 `INTERFACE` 组件；它只使用标准库和全库
+  target-neutral foundation macros，不拉入完整 container、mem、error 或 platform。
+- 完整 container 对 `hyle/core/cache.h` 的使用是尚待 Core/build 统一分类的纯头源码依赖，当前
+  机器图不把它投影成 `hyle::core` target 边；不能据此把普通公开类型依赖也藏进 include tree。
 - container 不链接 `hyle_simd` 模块，避免 Tier 0→Tier 1 倒挂。
 - 字符串批处理的每 ISA TU 复用 `hyle/simd/vec.h` 的 header-only 寄存器 DSL；
   这不会调用 SIMD runtime，也不会把 SIMD 公共 ABI带入 container。
@@ -61,6 +67,7 @@ Tier 0 dependencies: core cache geometry + error + mem allocator +
 
 | 能力 | C++ 源码面 | C/FFI 动态面 | 关键合同 |
 |---|---|---|---|
+| intrusive list | `IntrusiveListHook`、`IntrusiveList<T, &T::hook>` | 不导出 | caller-owned 稳定节点；零分配；单节点/整链 O(1) 重链；外部同步；独立 `container_intrusive` target |
 | flat map | `FlatHashMap<K,V>`（实现名 `SwissTable`） | erased POD hash map | C++ 支持 non-trivial ownership 与异构查找；C 面按字节存 POD；ctrl+连续 slots；SIMD group probe |
 | flat set | `FlatHashSet<K>` | erased POD hash set | 真 set API/slot；canonical-key find；只读 key 迭代；C 面不要求 dummy mapped value |
 | sorted flat map / set | `FlatMap<K,V>` / `FlatSet<K>` | 不机械新增 | lookup-heavy/mutation-light；unique-key；连续有序迭代；`sorted_unique` O(N) bulk；位置 mutation O(N) |
@@ -81,8 +88,23 @@ Tier 0 dependencies: core cache geometry + error + mem allocator +
 | work steal/share | typed payload | `void*` payload opaque handle | owner/thief 契约不同，不能混用 |
 | concurrent vector | typed append-only + random-access iterator | named `concurrent_ptr_vector` | caller-owned `void*` payload；多 writer 并行领取 index；地址稳定；quiesce 后读取；`size()` 不是 in-flight 完成栅栏；fallible path 分配失败不留洞 |
 
-IntrusiveList 已下沉 core，因为 error/time/sched 都需要它；它不再属于 container
-库或 container C ABI。
+## 独立侵入式容器组件
+
+`<hyle/container/intrusive_list.h>` 与 `hyle::container::{IntrusiveListHook, IntrusiveList}` 由
+`hyle::container_intrusive` 承载。该类型不拥有节点、不分配、不保存 size/owner，也不提供内部
+同步；一个节点按每条同时 membership 嵌入一个 hook，并在 linked 期间保持地址稳定。完整
+`hyle::container` 以 `PUBLIC` 依赖聚合它，因此普通 container 用户无需理解内部 target 拆分。
+
+`time` 的公开 `TimerEntry` 与 `TimerList` 直接暴露 hook/list 类型，所以 `time` 同样 `PUBLIC`
+依赖轻量 target，但不依赖完整 container 的 mem/platform 闭包。项目尚未发布，不保留旧
+`hyle::core::IntrusiveList` 名称或 `<hyle/core/intrusive_list.h>` 转发头。当前 target/API/依赖
+归属是正式架构决定；正确性、易用性与性能仍要在 `container_intrusive` 的 v2 轮次重新签署。
+
+当前算法边界为：front/back、push/pop、insert/erase/remove、单节点/整链 splice、append、swap
+和 list move 的重链是 O(1)；iteration、clear、`consume_all`、`for_each` 是 O(n)；
+`move_prefix_to` 是 O(k) 扫描加 O(1) 重链。这些是代码复杂度，不是 SOTA 证书。性能验收必须用
+真实 time/scheduler workload，并和相同 hook ownership、auto-unlink、检查与 teardown 合同的
+Boost.Intrusive/Folly peer 比较。
 
 ### 成熟库能力对账：仍不冒充“容器全集”
 
@@ -589,7 +611,8 @@ pointer/count 的 `try_append/try_insert/try_resize/erase/try_shrink_to_fit` 覆
 
 - sched 使用 ShardedQueue、WsFifoQueue、WorkStealingDeque 等调度原语。
 - graph/sched 使用 ConcurrentVector 类 append-only 发布结构。
-- error/time 等共享 intrusive 基础设施已归 core，不制造反向 container 依赖。
+- time 通过 `hyle::container_intrusive` 使用共享侵入式原语；它不依赖完整 container，因而没有
+  `time -> container -> mem/platform` 的反向闭包。
 - 其他模块可使用 `hash_bytes`，但 hash 模块不依赖 `hyle_simd` runtime；≤16B typed key
   走 inline mix，17–128B 使用公开头内的紧凑 multiply stream，较长字节串走库内
   wyhash 与 platform-gated 宽 XXH3。公开头不暴露 vendor 实现头；中等输入内联是产品
@@ -604,6 +627,8 @@ pointer/count 的 `try_append/try_insert/try_resize/erase/try_shrink_to_fit` 覆
   增加常态元数据或 benchmark API；
 - PodVector、SmallVector、bitset、sparse set 与各类队列只和相同 ownership/capacity/concurrency
   合同的 peer 比较；
+- IntrusiveList 同时验证直接容器操作与真实 time/scheduler 消费，且只和相同 hook、auto-unlink、
+  mutation 与 teardown 合同的 peer 比较；
 - path 的零分配结构优势不能外推为同形 string-view 扫描优势；
 - StringInterner 的逐条、batch、长串增长、可回收生命周期和并发分片必须分别验收；高吞吐
   导入优先 batch，但不能用 batch 隐藏逐条入口的真实代价；

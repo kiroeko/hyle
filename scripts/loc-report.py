@@ -27,7 +27,7 @@ SELF_WITHOUT_TESTS_ROOTS = ("include/hyle", "src")
 # Some closure units do not match the ordinary
 # include/hyle/<module> + include/hyle/c/<module>*.h + src/<module> layout.
 # Keep these semantic boundaries explicit: directory proximity is not module
-# ownership.  The core list is the boundary recorded by its closure audit.
+# ownership. These lists are the boundaries recorded by their closure audits.
 MODULE_BOUNDARIES = {
     "core": (
         "include/hyle/core",
@@ -35,6 +35,9 @@ MODULE_BOUNDARIES = {
         "include/hyle/macros.h",
         "include/hyle/visibility.h",
         "src/core",
+    ),
+    "container-intrusive": (
+        "include/hyle/container/intrusive_list.h",
     ),
     "util-core": (
         "include/hyle/util/random.h",
@@ -270,7 +273,10 @@ def build_report(args: argparse.Namespace) -> dict[str, object]:
         boundary_kind = "explicit"
     else:
         module_specs, module_files = module_scope(args.module, tracked)
-        boundary_kind = "canonical" if args.module in MODULE_BOUNDARIES else "conventional"
+        normalized_module = args.module.strip().lower().replace("_", "-")
+        boundary_kind = (
+            "canonical" if normalized_module in MODULE_BOUNDARIES else "conventional"
+        )
 
     self_with_tests = files_under(tracked, SELF_WITH_TESTS_ROOTS)
     self_without_tests = files_under(tracked, SELF_WITHOUT_TESTS_ROOTS)
@@ -370,6 +376,12 @@ def self_check(report: dict[str, object]) -> None:
     )
     if MODULE_BOUNDARIES["core"] != expected_core:
         raise ReportError("the canonical core boundary has drifted")
+
+    expected_container_intrusive = (
+        "include/hyle/container/intrusive_list.h",
+    )
+    if MODULE_BOUNDARIES["container-intrusive"] != expected_container_intrusive:
+        raise ReportError("the canonical container-intrusive boundary has drifted")
 
     metrics = report["metrics"]
     assert isinstance(metrics, list)

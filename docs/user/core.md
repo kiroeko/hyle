@@ -3,16 +3,19 @@
 > **API 暂定。** Core 正在进行 v2 `OPEN` 复审。下列例子只描述当前确实存在的代码，不构成
 > compatibility 或 SOTA 承诺；正式发布前，归属、命名和组件位置都可能改变。
 
-Core 目前给 C++ 用户提供四组底层工具：
+Core 目前给 C++ 用户提供三组底层工具：
 
 | 需求 | include | 当前入口 |
 |---|---|---|
 | 编译期或 linked 产品身份 | `<hyle/core/version.h>` | `kVersion*`、`version()`、`version_string()` |
 | cache layout 常量或 inline prefetch hint | `<hyle/core/cache.h>` | `k*InterferenceSize`、`prefetch_*` |
-| 非 owning 稳定节点链表 | `<hyle/core/intrusive_list.h>` | `IntrusiveListHook`、`IntrusiveList` |
 | HYLE/compiler 合同 | `<hyle/macros.h>` | `HYLE_NODISCARD`、`HYLE_ASSUME`、`HYLE_RESTRICT`、inline/unroll/fatal helpers |
 
 Core 没有 umbrella header；只 include 当前任务需要的头。
+
+侵入式链表属于 container 语义，已经迁到独立的轻量
+[`hyle::container_intrusive`](container.md#侵入式链表独立轻量组件) target。需要它的用户不应再通过
+Core 获取，也不必因此链接完整 `hyle::container`。
 
 ## 把 Core 加入 C++ 构建
 
@@ -38,7 +41,7 @@ target_link_libraries(my_target PRIVATE hyle::core)
 ```
 
 如果 enclosing build 需要静态库，在配置 HYLE 时一致地选择 `HYLE_STATIC`。三种交付下，cache/
-list/compiler 逻辑都由 header inline 编进 consumer；只更新 shared library 不能替换这些代码，
+compiler 逻辑都由 header inline 编进 consumer；只更新 shared library 不能替换这些代码，
 相应 header 或常量变化后必须重编消费者。target 会传播当前 C++23 要求。
 
 Core 当前没有受支持的 Native FFI 产品。源码树里的 C-linkage version 候选只是未发布实现历史，
@@ -95,60 +98,6 @@ observation 属 platform，使用时需另外请求该组件。
 它们允许退化成其他 hint 或 no-op，不会验证 `p`、延长对象生命、读取值、建立同步或保证 cache
 residency。先依赖普通访问和硬件 prefetcher；只有拥有该访问模式的正常 workload 证明有稳定
 收益时才加 hint。永久 cache-line padding 也会消耗内存，不能默认加到所有对象上。
-
-## 侵入式稳定节点链表
-
-节点本来就有稳定 native storage，而且任务需要频繁 O(1) insert/cancel/whole-list handoff、又不
-希望容器分配时，才考虑当前 list：
-
-```cpp
-#include <hyle/core/intrusive_list.h>
-
-struct Request {
-  int id;
-  hyle::core::IntrusiveListHook ready_hook{};
-};
-
-using ReadyList =
-    hyle::core::IntrusiveList<Request, &Request::ready_hook>;
-
-Request first{1};
-Request second{2};
-ReadyList ready;
-ReadyList incoming;
-
-if (!ready.try_push_back(&first)) {
-  return 1;
-}
-incoming.push_back(&second);          // 前置条件已经由调用方证明
-ready.splice(ready.end(), incoming); // O(1) 整链转移
-
-while (Request* request = ready.pop_front()) {
-  // 节点已经摘链，ownership 仍属于调用方。
-  request->id += 10;
-}
-```
-
-必须注意以下 lifetime 合同：
-
-- list 不拥有节点，也不分配；
-- linked node 不能移动地址，因此 vector growth 不安全；
-- 每条同时 membership 使用不同 hook；
-- node type 必须是 standard-layout；
-- 并发访问需要外部同步；
-- unchecked `push_*`、`insert`、`remove` 与 splice position 依赖其 membership 前置条件；只有
-  null 或 already-linked 输入确实可能出现时才选 `try_push_*`/`try_insert`；
-- 空 list 的 `front`、`back`、`pop_*` 返回 `nullptr`；
-- hook 析构会摘除该节点，list 析构会摘除剩余 hooks，但都不会销毁 node storage；
-- 没有 O(1) `size()` 或 owner check；需要这些语义时应选 owning/container 类型。
-
-iterator 是 bidirectional；删除当前节点时使用 `erase` 返回的 successor。`consume_all` 要求
-`noexcept` callback，且在回调前已摘除当前节点。`for_each` 可以传播异常，但 callback 不得改变
-membership 或 lifetime。使用 `move_prefix_to` 或 same-list splice 前应直接核对 header；这些
-callback/membership 前置条件很底层，仍在复审中。
-
-Core rebuild 可能把这个类型迁至 util-core、container 或 time-private seam；当前 namespace 不代表
-长期位置承诺。
 
 ## 编译器合同
 

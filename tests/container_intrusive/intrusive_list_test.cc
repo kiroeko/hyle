@@ -1,4 +1,4 @@
-#include "hyle/core/intrusive_list.h"
+#include "hyle/container/intrusive_list.h"
 
 #include <gtest/gtest.h>
 
@@ -8,8 +8,8 @@
 #include <utility>
 #include <vector>
 
-using hyle::core::IntrusiveList;
-using hyle::core::IntrusiveListHook;
+using hyle::container::IntrusiveList;
+using hyle::container::IntrusiveListHook;
 
 namespace {
 struct Node {

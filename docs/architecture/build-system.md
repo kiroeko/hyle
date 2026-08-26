@@ -20,7 +20,8 @@
 
 - 构建树名称：`hyle_<module>`。
 - 构建树和安装树的消费名称：`hyle::<module>`。
-- `util_core` 是可选择、可安装的 `INTERFACE` 组件；其余组件通常是编译型 target。
+- `util_core` 与 `container_intrusive` 是可选择、可安装的 `INTERFACE` 组件；其余组件通常是
+  编译型 target。
 - `hyle_build_contract`、`hyle_testing`、`hyle_trace` 是横切构建 target，不是产品组件根。
 
 各层只拥有一类事实：
@@ -48,13 +49,13 @@
 当前图的关键关系是：
 
 ```text
-core, util_core, error, math                         leaves
+core, container_intrusive, util_core, error, math    leaves
 obs        -> PUBLIC error
 platform   -> PUBLIC error
-time       -> PUBLIC error
+time       -> PUBLIC error container_intrusive
 mem        -> PUBLIC error platform util_core
 simd       -> PUBLIC error platform
-container  -> PUBLIC error mem; PRIVATE platform
+container  -> PUBLIC error mem container_intrusive; PRIVATE platform
 util       -> PUBLIC error mem container util_core
 sched      -> PUBLIC error platform mem container util_core; PRIVATE time
 io         -> PUBLIC error mem container; optional sched
@@ -62,7 +63,17 @@ compute    -> PUBLIC error mem; PRIVATE platform simd; optional sched
 graph      -> PUBLIC error mem container; PRIVATE util_core; optional sched
 ```
 
-`PUBLIC` 表示消费者编译或链接本模块时也需要该依赖；`PRIVATE` 表示只服务本模块实现。这里记录的是实际 target/link 契约。纯头文件源码依赖是否也应形成独立图，仍是已知遗留问题。
+`PUBLIC` 表示消费者编译或链接本模块时也需要该依赖；`PRIVATE` 表示只服务本模块实现。这里记录的
+是实际 target/link 契约。`container_intrusive` 证明 header-only 能力也应在公开类型穿过模块边界
+时拥有真实 target：`time` 暴露 `TimerList`，故不能把这条边藏成 include-path 偶然可见；完整
+`container` 则公开聚合该轻量目标。
+
+当前有一个明确的全局例外：根级 `hyle/macros.h` 及其 compiler-definition 支撑头被当作
+target-neutral foundation headers，包含它们不等于依赖编译型 `hyle::core`。因此
+`container_intrusive` 当前没有 `core` target 边。这个约定只覆盖全库基础编译合同，不能泛化为
+“header include 无需登记”。现有 Core cache headers 等其他纯头源码依赖是否应形成 target 边仍
+需逐项治理；Core/build 全局复审必须统一定义“target-neutral foundation”与“独立公开能力”的
+界线，不能由单个模块临时决定。
 
 ## 外部依赖：单点登记，多路投影
 
@@ -183,7 +194,10 @@ CI 不把所有平台、后端和性能门塞进一次任务：
 - `include/hyle/c/**`、相应 `c_*.cc`、C surface/export fixtures、package C/FFI fixtures，以及 managed 样例和脚本，是逐模块待删除或重新分类的历史债；CI 暂时编译它们不构成 C 或跨语言产品承诺。
 - 根工程仍启用 `LANGUAGES C CXX`，因为 vendored C、`.c` 实现和汇编桥接仍需要 C 编译器；这不代表存在 C 产品 API。
 - `SOURCE-MANIFEST.txt`、部分 CMake 注释和组件依赖理由仍有旧 C ABI 叙事，需随模块复审清理。
-- 内部 manifest 当前主要表达 target/link 边；Core 复审暴露了未显式建模的纯头文件源码依赖，需要决定扩展 manifest 还是消除这些依赖。
+- `hyle/macros.h` 与 compiler-definition 支撑头当前仍是 target-neutral foundation headers；
+  是否把这组全库编译合同进一步建模为独立 target 尚待 Core/build 全局复审。Core cache headers
+  等其他纯头依赖也还没有统一分类；`container_intrusive` 只确立了一条可复用原则：独立公开
+  能力穿过模块边界时，应优先拥有真实组件边，而不是靠安装整棵 include tree 掩盖依赖。
 - production-shape 根列表仍含已重新打开审查的模块；它是回归集合，不是“已冻结”声明。
 - 可选特性语义尚未统一：TLS/CUDA 使用 `AUTO/ON/OFF`，其他后端仍是布尔值；应由所属模块复审后统一。
 - 托管 CI 尚未覆盖 sanitizer、真实加速设备及 SVE/RVV 运行；Windows/macOS 的完整交付矩阵也不是每个 PR 都运行。

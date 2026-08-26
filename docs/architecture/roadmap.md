@@ -11,6 +11,8 @@ HYLE 是推理引擎与工程计算消费者下面的通用 C++ 加速底座。�
 failure、concurrency 和复杂度的最低合理层，但不能把上层策略塞进底层：
 
 - core 只承载极小、稳定、跨模块必要的编译与布局 primitive；
+- `container_intrusive` 单独承载零分配、header-only 的侵入式容器原语，避免底层消费者
+  为一个链表类型拉入完整 container 实现；
 - error 统一可恢复失败；platform 统一 OS/硬件机制；
 - mem/time/obs/util/container/simd 提供可组合基础能力；
 - sched/io/compute/graph 组合底层机制，但不反向渗漏策略；
@@ -28,15 +30,16 @@ failure、concurrency 和复杂度的最低合理层，但不能把上层策略�
 | Component | Public deps | Private deps |
 |---|---|---|
 | core | — | — |
+| container_intrusive | — | — |
 | util_core | — | — |
 | error | — | — |
 | obs | error | — |
 | math | — | — |
 | platform | error | — |
-| time | error | — |
+| time | error, container_intrusive | — |
 | mem | error, platform, util_core | — |
 | simd | error, platform | — |
-| container | error, mem | platform |
+| container | error, mem, container_intrusive | platform |
 | util | error, mem, container, util_core | — |
 | sched | error, platform, mem, container, util_core | time |
 | io | error, mem, container, optional sched | — |
@@ -44,6 +47,16 @@ failure、concurrency 和复杂度的最低合理层，但不能把上层策略�
 | graph | error, mem, container, optional sched | util_core |
 
 声明顺序必须是拓扑序，闭包必须无环。外部第三方依赖由所属模块登记，不出现在内部组件图中。
+
+`container_intrusive` 的公开头是 `<hyle/container/intrusive_list.h>`，公开类型位于
+`hyle::container`；target 名称为 `hyle::container_intrusive`。`time` 的公开 `TimerEntry` 与
+`TimerList` 暴露该类型，所以它是 `PUBLIC` 依赖；完整 `hyle::container` 同样以 `PUBLIC` 边聚合
+这项容器能力。二者都不把 `time` 拉入完整 container 的 mem/platform 闭包。
+
+当前 `hyle/macros.h` 及其 compiler-definition 支撑头被全库视作 target-neutral foundation
+header；包含它们不产生 `hyle::core` 链接边。因此 `container_intrusive` 当前仍是零产品组件依赖。
+这是全局构建边界，不是允许模块忽略任意公开头依赖的通例；是否进一步把 foundation headers
+建模为独立 target，应在 Core/build 全局治理中一次裁决，不能由单个模块私造第二套规则。
 
 中央图和 target link 并不是两份人工事实：`HyleComponents.cmake` 的同一声明同时用于选择闭包和
 向 `hyle_add_module()` 投影真实 `PUBLIC/PRIVATE` link edge。模块 CMakeLists 只声明源文件与模块
@@ -69,16 +82,17 @@ demand/任务并等待其轮次；只有 correctness 或构建阻断允许立即
 2. error；
 3. util_core；
 4. platform；
-5. time；
-6. mem；
-7. obs；
-8. container；
-9. util-runtime；
-10. simd 与 math 边界；
-11. sched；
-12. io；
-13. compute；
-14. graph。
+5. container_intrusive；
+6. time；
+7. mem；
+8. obs；
+9. container；
+10. util-runtime；
+11. simd 与 math 边界；
+12. sched；
+13. io；
+14. compute；
+15. graph。
 
 前一个模块 `SIGNED` 后再冻结下一个，以免下层 API 反复击穿上层证据。研究成熟库、准备 workload
 和独立红队可以并行；会修改同一依赖边或公开面的实现不得在共享分支并行合并。

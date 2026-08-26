@@ -13,6 +13,7 @@ and the current module implementation. Run it from anywhere inside the checkout:
 ```bash
 python scripts/loc-report.py --module core --self-check
 python scripts/loc-report.py --module mem --json
+python scripts/loc-report.py --module container_intrusive --self-check
 ```
 
 The snapshot is the current content of Git-tracked files. Modified/staged files
@@ -29,11 +30,12 @@ by `cloc`; `selected_files` is the wider tracked-path selection before language
 filtering. This keeps a selected `CMakeLists.txt` from being mislabeled as a
 native implementation file.
 
-`core`, `util-core`, and `util-runtime` have explicit logical boundaries in the
-script. Other native modules use `include/hyle/<module>`, all matching
-`include/hyle/c/<module>*.h`, and `src/<module>`. If a future closure unit does
-not fit either shape, repeat `--module-path REPO_PATH`; the exact override is
-printed in the report so the certificate cannot hide its counting boundary.
+`core`, `container-intrusive`, `util-core`, and `util-runtime` have explicit
+logical boundaries in the script. Other native modules use
+`include/hyle/<module>`, all matching `include/hyle/c/<module>*.h`, and
+`src/<module>`. If a future closure unit does not fit either shape, repeat
+`--module-path REPO_PATH`; the exact override is printed in the report so the
+certificate cannot hide its counting boundary.
 `--self-check` also verifies the fixed core boundary and the expected subset
 relations. `cloc` and Python 3 must be available on `PATH`.
 
@@ -222,7 +224,7 @@ Product builds have no external benchmark dependency. Any `HYLE_BUILD_BENCH=ON` 
 | `-DHYLE_BENCH_XSIMD=ON` | math exp/log/tanh vs pinned external xsimd at the same ISA | `hyle_math_bench` |
 | `-DHYLE_BENCH_SIMDUTF=ON` | utf8 validate+count vs vendored simdutf | `hyle_string_algo_bench` |
 | `-DHYLE_BENCH_MARL=ON` | fiber sync vs marl | `hyle_sched_marl_bench` |
-| `-DHYLE_BENCH_BOOST=ON` | IntrusiveList vs `boost::intrusive::list` (needs boost submodule checked out) | `hyle_container_misc_bench` |
+| `-DHYLE_BENCH_BOOST=ON` | IntrusiveList vs `boost::intrusive::list` (needs boost submodule checked out) | `hyle_container_intrusive_bench` |
 | `-DHYLE_BENCH_WYHASH=ON` | hash_bytes vs wyhash | `hyle_hash_bench` |
 
 **10 gates total.** Highway and xsimd are **pinned external** rivals rooted at
@@ -300,15 +302,15 @@ a SOTA `PASS`. Absolute per-variant spread and the sign-test p-value are diagnos
 
 A diagnostic run may omit provenance gates. A clean evidence run uses `--require-clean`, declares
 the workload-specific margin before sampling, and names every external Git peer that contributes
-comparison code. For the core intrusive-list benchmark:
+comparison code. For the `container_intrusive` benchmark:
 
 ```bash
-python scripts/bench-stat.py build-bench/bin/hyle_core_bench -n 31 --require-clean \
+python scripts/bench-stat.py build-bench/bin/hyle_container_intrusive_bench -n 31 --require-clean \
   --peer boost=../boost --equivalence-margin-pct 3 \
   --pair "HYLE IntrusiveList" "boost::intrusive auto_unlink"
 
 HYLE_BENCH_RIVAL_FIRST=1 python scripts/bench-stat.py \
-  build-bench/bin/hyle_core_bench -n 31 --require-clean \
+  build-bench/bin/hyle_container_intrusive_bench -n 31 --require-clean \
   --peer boost=../boost --equivalence-margin-pct 3 \
   --pair "HYLE IntrusiveList" "boost::intrusive auto_unlink"
 ```

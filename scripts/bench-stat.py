@@ -42,8 +42,8 @@ USAGE
 -----
     scripts/bench-stat.py <exe> [-n N] [--pair BASELINE RIVAL] ...
 
-    # core: classify one execution order of HYLE vs Boost.
-    scripts/bench-stat.py build-bench/bin/hyle_core_bench -n 15 \
+    # container_intrusive: classify one execution order of HYLE vs Boost.
+    scripts/bench-stat.py build-bench/bin/hyle_container_intrusive_bench -n 15 \
         --equivalence-margin-pct 3 \
         --pair "HYLE IntrusiveList" "boost::intrusive auto_unlink"
 

@@ -18,7 +18,7 @@ Core 必须保持 open。
 
 目录名不是产品边界。本轮包括：
 
-- `include/hyle/core/{version_defs,version,cache_defs,cache,compiler_defs,intrusive_list}.h`；
+- `include/hyle/core/{version_defs,version,cache_defs,cache,compiler_defs}.h`；
 - 逻辑上由 Core 持有的根级 `include/hyle/{macros,visibility}.h`；
 - `src/core/{version,c_core}.cc` 与 `hyle_core` target；
 - Core tests、package samples、managed samples、export manifest 与 benchmark；
@@ -30,18 +30,37 @@ component、runtime staging 或源码组装发生变化时，必须共同回审 
 
 ## 开工时实现账本
 
-仓库当前有四个能力族。下表只登记事实与问题，不批准现有位置：
+仓库当前有三个 Core 能力族。下表只登记事实与问题，不批准现有位置：
 
 | 能力族 | 当前实现 | 当前直接或语义消费者 | 必须作出的裁决 |
 |---|---|---|---|
 | 产品身份 | 编译期 product/FFI 常量与 linked C++ 产品版本查询 | 根 CMake、package probe；普通 HYLE 模块不调用 linked query | Core 与 build/package 的归属；linked identity 是否是真实产品能力 |
 | compiler/binary 合同 | compiler detail macros、根级 public macros、symbol visibility、fail-fast | 全库广泛使用；SIMD 与热 container 是主要 codegen 消费者 | 分开 compiler semantics 与 build-owned visibility；裁决 fatal assertion 及 public/internal macro |
 | cache 合同 | target-family layout 常量与 inline local/NTA/write prefetch | container、mem、sched、SIMD/vqsort | Core/platform/consumer-private 归属；按语义分类全部 64/128 alignment |
-| intrusive list | header-only、非 owning member-hook list，含 iterator 与 batch 操作 | time timer entry/queue；sched/io 间接消费 | Core、util-core、container 或 time-private；不能只因规避依赖环就保留公开通用类型 |
+
+2026-08-26 已完成第一项归属裁决：intrusive list 的语义 owner 是 container，但让 time 依赖完整
+container 会引入 mem/platform 的伪闭包。因此它迁到正式的 header-only 产品组件
+`container_intrusive`（target `hyle::container_intrusive`、头
+`<hyle/container/intrusive_list.h>`、命名空间 `hyle::container`）。time 对轻量 target 建立 PUBLIC
+边，完整 container PUBLIC 聚合它；Core 不再拥有、测试或 benchmark 该能力。其历史证据单独保留在
+[`benchmarks-container-intrusive`](../../evidence/performance/benchmarks-container-intrusive.md)。
+
+### 2026-08-26 边界迁移交付事实（不等于模块签署）
+
+- list 实现只迁移公开路径/namespace 与 owner 注释，算法体和对象 metadata 未改；benchmark 仅补
+  Boost 关闭时参数的 `[[maybe_unused]]`，修复 MSVC `/WX` 的既有构建缺口；
+- 中央图、真实 target、单测/header-self-contained test、benchmark、安装消费 sample、Core sample
+  和 LOC 边界已经同时迁移；隔离安装合同证明只安装该组件时没有 HYLE binary artifact；
+- Windows MSVC 19.50/Ninja 的 Release target/time 回归、Debug self-transfer death test、Boost
+  ON/OFF benchmark 编译、isolated static/shared consumer 与最终 component contract 均通过；
+- WSL GCC 14.2 的 Release、ASan、UBSan 三种形状各 6/6 通过且 sanitizer 无报告；macOS arm64
+  AppleClang 21 的 Release/WERROR 为 6/6；两者实际闭包均为
+  `container_intrusive,error,time`，没有完整 container/mem/platform；
+- 文档合同为 250 个 Markdown、641 个相对链接通过。因为算法没有改变且新 owner 尚未进入 v2
+  审查，本轮不运行计时 benchmark，也不把旧非劣数据升级为当前性能证书。
 
 ### 初始语法消费者账本
 
-- `time/timer_entry.h` 嵌入 `IntrusiveListHook`，并定义 timer queue 使用的 list；
 - container public headers 用 Core destructive-interference 常量布局 queue state、map shard、vector
   与 work-stealing structures；compiled container 也用于 raw shard 和 string-buffer shard；
 - `mem/shared_pool.h` 在 public header-defined layout 中使用 destructive-interference 常量；
@@ -57,8 +76,6 @@ component、runtime staging 或源码组装发生变化时，必须共同回审 
 - `alignas(64/128)` 要分成 false-sharing layout、SIMD/object alignment、lookup-table alignment 与
   偶然 stack layout；
 - platform runtime cache observation 不能误算成 Core 稳定 layout 常量的重复；
-- 当前没有明显第二套 intrusive doubly-list，但仍要比较 timer/scheduler 私有链接和 container
-  structure 的真实职责；
 - package/version manifest 可能已经能解决 linked-version 任务，无需 Core runtime API。
 
 两份账本目前都只是初稿；完成归属迁移后还要重新扫描。
@@ -74,7 +91,7 @@ component、runtime staging 或源码组装发生变化时，必须共同回审 
 | 动态 SDK | relocate installed shared package，stage runtime dependency，同时消费 inline 与 linked Core 行为 | 尚未按 v2 重签 |
 
 Native FFI 目前明确为 **Core 产品要求的 `N/A`**：尚未发现 foreign runtime 对 compiler hint、cache
-常量、单地址 prefetch 或 native intrusive hook 的真实任务。只有 product identity 并不足以制造
+常量或单地址 prefetch 的真实任务。只有 product identity 并不足以制造
 一套 Core FFI surface。
 
 这个裁决暴露的是清理任务，而不是给当前树签证书。树中仍有 `include/hyle/c/core.h`、
@@ -87,7 +104,7 @@ candidate 冻结前必须删除它们，或把它们迁给已经证明真实需�
 
 ### Gate A — 场景与归属
 
-- [ ] 为四个能力族分别写外部/内部场景，包含 ownership、lifetime、concurrency、failure、正常
+- [ ] 为三个能力族分别写外部/内部场景，包含 ownership、lifetime、concurrency、failure、正常
       scale 与 platform；
 - [ ] 完成语法消费者和语义重复账本；
 - [ ] 裁决每个能力族和每个根级文件的 owning module；
@@ -99,16 +116,12 @@ candidate 冻结前必须删除它们，或把它们迁给已经证明真实需�
 - [ ] 用 oneTBB 及当前 package/loader practice 对比 version/build identity，而不只比较版本号格式；
 - [ ] 用当前 Highway、Abseil、Folly 与受支持 compiler 合同对比 compiler、assume、visibility、
       prefetch 形状；
-- [ ] 用当前 Boost.Intrusive 与 Folly 消费者对比 intrusive ownership、hook policy、iterator、
-      splice、teardown 与复杂度；
 - [ ] 先调查更好的算法、metadata trade-off 或 toolchain strategy，再做纳秒优化。
 
 ### Gate C — API 与正确性
 
 - [ ] 分别审查 C++ 名称、include、默认路径、高级路径与组合路径；删除 benchmark-shaped 或只供
       维护者使用的 public entry；
-- [ ] 从合同重新推导 intrusive-list lifetime、member-pointer portability、callback、iterator、
-      self-operation、exception 与 concurrency 测试；
 - [ ] 在 MSVC、GCC、AppleClang 上重建 compiler/cache codegen 与 sanitizer/Debug 退化测试；
 - [ ] 在 source、tests、samples、exports、build/package 与文档中一致解决 legacy Native FFI。
 
@@ -123,12 +136,10 @@ candidate 冻结前必须删除它们，或把它们迁给已经证明真实需�
 
 ## 复杂度与性能门
 
-当前 intrusive-list 源码看起来提供 O(1) single-node/whole-list relink、O(n) traversal/clear 与
-O(k) prefix scan；需要以合同和强 peer 复核。version query 及 compiler/cache helper 都是 O(1)
-机制，但不能为了表格完整制造单指令/getter SOTA benchmark。
+version query 及 compiler/cache helper 都是 O(1) 机制，但不能为了表格完整制造单指令/getter
+SOTA benchmark。intrusive list 的复杂度与性能资格已经随 owner 一并迁出 Core。
 
 - [ ] 冻结 candidate 与 claim-bearing source/harness identity；
-- [ ] 只用同合同的正常 intrusive workload 和真实 time/scheduler consumer；把语义成本归因分开；
 - [ ] 以 codegen 加 owning consumer workload 验证 compiler/prefetch，不单独计时 hint；
 - [ ] 覆盖代表规模、default/peer-first、必要 placement/code-shape perturbation、三平台、逐进程 raw
       evidence、exact 五态与独立 non-inferiority gate；
@@ -149,5 +160,5 @@ O(k) prefix scan；需要以合同和强 peer 复核。version query 及 compile
 - [ ] 红队复核最终 API/dependency/performance 证据；
 - [ ] commit、push，并记录 required CI 或明确 waiver。
 
-只有四项归属裁决与两份消费者账本都完成，任务才可从 `OPEN` 进入 `AUDITED`；只有剩余 checkbox
+只有三个 Core 能力族的归属裁决与两份消费者账本都完成，任务才可从 `OPEN` 进入 `AUDITED`；只有剩余 checkbox
 全部完成，才可进入 `SIGNED`。历史绿色文字不能作为状态迁移证据。

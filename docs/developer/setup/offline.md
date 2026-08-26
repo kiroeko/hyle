@@ -180,7 +180,8 @@ Homebrew cellar 目录不是可迁移 SDK 包。若要 TLS/Vulkan 等可选能�
 
 ## 最小、确定的离线验收
 
-下面验证全部 15 个 HYLE 产品组件（含 header-only `util_core`）的 CPU 基线，不启用需要系统 SDK
+下面验证中央 component manifest 当前登记的全部 HYLE 产品组件（包括 header-only `util_core` 与
+`container_intrusive`）的 CPU 基线，不启用需要系统 SDK
 或额外协议/计算后端的 feature；
 因为 tests 打开，bundle 只需 `deps/googletest/`：
 

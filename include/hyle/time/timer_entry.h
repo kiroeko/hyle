@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <type_traits>
 
-#include "hyle/core/intrusive_list.h"
+#include "hyle/container/intrusive_list.h"
 #include "hyle/macros.h"
 
 namespace hyle::time {
@@ -34,7 +34,7 @@ class TimerEntry {
   ~TimerEntry() {
     // An armed node is still referenced by its source, and a fired node must
     // outlive its delivery list. Destroying the list first is safe because the
-    // core intrusive list detaches all hooks during destruction.
+    // container_intrusive list detaches all hooks during destruction.
     HYLE_FATAL_ASSERT(owner_ == nullptr);
     HYLE_FATAL_ASSERT(!hook_.linked());
   }
@@ -63,7 +63,7 @@ class TimerEntry {
   }
   void set_owner(const void* source) noexcept { owner_ = source; }
 
-  core::IntrusiveListHook hook_;
+  container::IntrusiveListHook hook_;
   std::uint64_t deadline_ns_ = 0;
   void* payload_ = nullptr;
   FireCallback fire_callback_ = nullptr;
@@ -84,7 +84,7 @@ struct TimerEntryAccess {
 };
 
 struct TimerEntryListAccess {
-  using Type = core::IntrusiveList<TimerEntry, &TimerEntry::hook_>;
+  using Type = container::IntrusiveList<TimerEntry, &TimerEntry::hook_>;
 };
 }  // namespace detail
 
