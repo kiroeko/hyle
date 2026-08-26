@@ -12,7 +12,7 @@
 #include "backend.h"
 #include "hyle/compute/types.h"
 #include "hyle/error/status.h"
-#include "hyle/macros.h"  // HYLE_FATAL_ASSERT (VMM pool LIFO-free invariant)
+#include "hyle/core/compiler.h"  // HYLE_FATAL_ASSERT (VMM pool LIFO-free invariant)
 
 // The CUDA backend (coding-conventions §10: an independent composition unit -- one
 // TU, filling the manual vtable -- NOT a switch in a god object). Compiled by nvcc

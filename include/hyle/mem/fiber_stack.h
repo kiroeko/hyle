@@ -4,7 +4,7 @@
 #include <utility>
 
 #include "hyle/error/result.h"
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/platform/virtual_memory.h"
 #include "hyle/util/spin_lock.h"
 
@@ -41,7 +41,8 @@ class FiberStack {
     if (this != &o) region_ = std::move(o.region_);
     return *this;
   }
-  HYLE_DISABLE_COPY(FiberStack);
+  FiberStack(const FiberStack&) = delete;
+  FiberStack& operator=(const FiberStack&) = delete;
 
   bool valid() const noexcept { return region_.valid(); }
   explicit operator bool() const noexcept { return valid(); }
@@ -82,7 +83,8 @@ class FiberStackPool {
       : usable_tier_(usable_tier),
         cache_cap_(cache_cap < kMaxCacheCap ? cache_cap : kMaxCacheCap) {}
 
-  HYLE_DISABLE_COPY(FiberStackPool);
+  FiberStackPool(const FiberStackPool&) = delete;
+  FiberStackPool& operator=(const FiberStackPool&) = delete;
 
   std::size_t usable_tier() const noexcept { return usable_tier_; }
   // The effective retention bound. A requested cap above the fixed inline

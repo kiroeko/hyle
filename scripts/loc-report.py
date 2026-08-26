@@ -31,9 +31,7 @@ SELF_WITHOUT_TESTS_ROOTS = ("include/hyle", "src")
 MODULE_BOUNDARIES = {
     "core": (
         "include/hyle/core",
-        "include/hyle/c/core.h",
-        "include/hyle/macros.h",
-        "include/hyle/visibility.h",
+        "include/hyle/version.h",
         "src/core",
     ),
     "container-intrusive": (
@@ -369,9 +367,7 @@ def build_report(args: argparse.Namespace) -> dict[str, object]:
 def self_check(report: dict[str, object]) -> None:
     expected_core = (
         "include/hyle/core",
-        "include/hyle/c/core.h",
-        "include/hyle/macros.h",
-        "include/hyle/visibility.h",
+        "include/hyle/version.h",
         "src/core",
     )
     if MODULE_BOUNDARIES["core"] != expected_core:

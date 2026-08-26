@@ -9,6 +9,7 @@
 #include "hyle/mem/allocator.h"
 #include "hyle/sched/coro.h"
 #include "hyle/sched/waker.h"
+#include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
 #  define HYLE_IO_API
@@ -81,7 +82,8 @@ class RecvBuf {
     }
     return *this;
   }
-  HYLE_DISABLE_COPY(RecvBuf);
+  RecvBuf(const RecvBuf&) = delete;
+  RecvBuf& operator=(const RecvBuf&) = delete;
 
   const void* data() const noexcept { return data_; }
   std::uint32_t size() const noexcept { return len_; }
@@ -256,7 +258,8 @@ struct MultishotRecvStream {
   MultishotRecvStream(IoUringExtension uring, std::intptr_t fd, int bgid,
                       mem::Allocator alloc) noexcept
       : uring(uring), fd(fd), bgid(bgid), alloc(alloc) {}
-  HYLE_DISABLE_COPY(MultishotRecvStream);
+  MultishotRecvStream(const MultishotRecvStream&) = delete;
+  MultishotRecvStream& operator=(const MultishotRecvStream&) = delete;
   MultishotRecvStream(MultishotRecvStream&& o) noexcept
       : uring(o.uring), fd(o.fd), bgid(o.bgid), alloc(o.alloc),
         slot_(o.slot_), ended_(o.ended_) {

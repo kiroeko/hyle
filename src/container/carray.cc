@@ -3,7 +3,7 @@
 #include <cstring>
 #include <limits>
 
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 
 namespace hyle::container::detail {
 namespace {

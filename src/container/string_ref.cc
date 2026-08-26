@@ -3,7 +3,7 @@
 #include <string_view>  // membership/substring family forwards to std's SOTA (see below)
 
 #include "hyle/container/string_algo.h"
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/platform.h"
 #include "hyle/platform/cpu.h"  // best_isa() -> pick the widest compiled count/rfind kernel
 #include "src/container/str_search.h"  // per-ISA str_count/str_rfind_char variant symbols

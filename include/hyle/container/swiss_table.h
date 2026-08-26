@@ -15,7 +15,7 @@
 #include "hyle/container/hash.h"
 #include "hyle/container/probe.h"
 #include "hyle/core/cache.h"
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/mem/system_inline.h"
 

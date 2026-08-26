@@ -15,7 +15,7 @@
 #  include <wmmintrin.h>
 #endif
 
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/simd/backend/crypto_soft.h"  // shared AES/CLMul software reference
 
 // backend/crypto_x86.h -- ONE-per-128-bit-block crypto workers shared by the sse4 / avx2 /

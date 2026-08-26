@@ -9,7 +9,7 @@
 #include <type_traits>
 
 #include "hyle/core/cache.h"
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/mem/system_inline.h"
 
@@ -79,7 +79,10 @@ class WorkStealingDeque {
     alloc_.deallocate(buf_, sizeof(Slot) * capacity, alignof(Slot));
   }
 
-  HYLE_DISABLE_COPY_AND_MOVE(WorkStealingDeque);
+  WorkStealingDeque(const WorkStealingDeque&) = delete;
+  WorkStealingDeque& operator=(const WorkStealingDeque&) = delete;
+  WorkStealingDeque(WorkStealingDeque&&) = delete;
+  WorkStealingDeque& operator=(WorkStealingDeque&&) = delete;
 
   // Allocation failure leaves an invalid object; check once after construction.
   // Owner/thief hot paths assume valid() and pay no repeated branch.

@@ -4,7 +4,7 @@
 #include <type_traits>
 
 #include "hyle/container/intrusive_list.h"
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 
 namespace hyle::time {
 

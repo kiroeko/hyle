@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstring> // std::memcpy for as_allocator()'s realloc
 
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/mem/alignment.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/mem/region.h"
@@ -48,7 +48,10 @@ public:
       alloc_.deallocate(base_, size_, alignof(std::max_align_t));
   }
 
-  HYLE_DISABLE_COPY_AND_MOVE(StackAllocator);
+  StackAllocator(const StackAllocator&) = delete;
+  StackAllocator& operator=(const StackAllocator&) = delete;
+  StackAllocator(StackAllocator&&) = delete;
+  StackAllocator& operator=(StackAllocator&&) = delete;
 
   // Bump `bytes` aligned to `alignment` (power of two). nullptr if it won't fit
   // (no heap fallback -- give a bigger slab instead).

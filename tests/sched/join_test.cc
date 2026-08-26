@@ -47,7 +47,8 @@ struct MoveOnlyResult {
   MoveOnlyResult(MoveOnlyResult&& other) noexcept
       : destroyed(std::exchange(other.destroyed, nullptr)) {}
   MoveOnlyResult& operator=(MoveOnlyResult&&) = delete;
-  HYLE_DISABLE_COPY(MoveOnlyResult);
+  MoveOnlyResult(const MoveOnlyResult&) = delete;
+  MoveOnlyResult& operator=(const MoveOnlyResult&) = delete;
   ~MoveOnlyResult() {
     if (destroyed != nullptr) destroyed->fetch_add(1, std::memory_order_relaxed);
   }

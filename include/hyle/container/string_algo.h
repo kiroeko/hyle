@@ -5,7 +5,7 @@
 #include <limits>
 
 #include "hyle/container/string_ref.h"
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 
 // Allocation-free byte-string foundations for parsers, protocols, configuration,
 // and path helpers. Inputs are non-owning string_ref values; transforms use

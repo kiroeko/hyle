@@ -11,6 +11,7 @@
 #include "hyle/mem/allocator.h"
 #include "hyle/mem/region.h"
 #include "hyle/sched/coro.h"
+#include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
 #  define HYLE_IO_API
@@ -96,7 +97,8 @@ class HttpTransport {
 #endif
   HttpTransport(HttpTransport&&) noexcept = default;
   HttpTransport& operator=(HttpTransport&&) noexcept = default;
-  HYLE_DISABLE_COPY(HttpTransport);
+  HttpTransport(const HttpTransport&) = delete;
+  HttpTransport& operator=(const HttpTransport&) = delete;
 
   bool valid() const noexcept {
 #if defined(HYLE_IO_TLS)
@@ -252,7 +254,8 @@ class HttpServerConn {
   HYLE_IO_API ~HttpServerConn();
   HttpServerConn(HttpServerConn&&) noexcept;
   HttpServerConn& operator=(HttpServerConn&&) noexcept;
-  HYLE_DISABLE_COPY(HttpServerConn);
+  HttpServerConn(const HttpServerConn&) = delete;
+  HttpServerConn& operator=(const HttpServerConn&) = delete;
 
   bool valid() const noexcept { return impl_ != nullptr && transport_.valid(); }
   HttpTransport& transport() noexcept { return transport_; }
@@ -367,7 +370,8 @@ class HttpClientConn {
   HYLE_IO_API ~HttpClientConn();
   HttpClientConn(HttpClientConn&&) noexcept;
   HttpClientConn& operator=(HttpClientConn&&) noexcept;
-  HYLE_DISABLE_COPY(HttpClientConn);
+  HttpClientConn(const HttpClientConn&) = delete;
+  HttpClientConn& operator=(const HttpClientConn&) = delete;
 
   bool valid() const noexcept { return impl_ != nullptr && transport_.valid(); }
 

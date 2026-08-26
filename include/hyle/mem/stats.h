@@ -5,7 +5,7 @@
 #include <cstdint>
 
 #include "hyle/error/result.h"
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/visibility.h"
 
@@ -40,7 +40,8 @@ struct AllocStatsSnapshot {
 class AllocStats {
  public:
   AllocStats() noexcept = default;
-  HYLE_DISABLE_COPY(AllocStats);
+  AllocStats(const AllocStats&) = delete;
+  AllocStats& operator=(const AllocStats&) = delete;
 
   // Successful allocate of `bytes` (>0). size==0 allocate is a no-op for stats.
   void record_alloc(std::size_t bytes) noexcept {
@@ -161,7 +162,8 @@ class HYLE_MEM_API LeakTracker {
   static Result<LeakTracker> create(
       Allocator metadata = system_allocator()) noexcept;
   ~LeakTracker();
-  HYLE_DISABLE_COPY(LeakTracker);
+  LeakTracker(const LeakTracker&) = delete;
+  LeakTracker& operator=(const LeakTracker&) = delete;
   LeakTracker(LeakTracker&& o) noexcept;
   LeakTracker& operator=(LeakTracker&& o) noexcept;
 
@@ -211,7 +213,8 @@ class HYLE_MEM_API StatsAllocator {
                                        Allocator metadata =
                                            system_allocator()) noexcept;
   ~StatsAllocator();
-  HYLE_DISABLE_COPY(StatsAllocator);
+  StatsAllocator(const StatsAllocator&) = delete;
+  StatsAllocator& operator=(const StatsAllocator&) = delete;
   StatsAllocator(StatsAllocator&& o) noexcept;
   StatsAllocator& operator=(StatsAllocator&& o) noexcept;
 

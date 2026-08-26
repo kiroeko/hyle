@@ -8,6 +8,7 @@
 #include "hyle/sched/cancel.h"
 #include "hyle/sched/coro.h"
 #include "hyle/sched/waker.h"
+#include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
 #  define HYLE_IO_API

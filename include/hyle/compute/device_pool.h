@@ -4,7 +4,7 @@
 
 #include "hyle/compute/device.h"
 #include "hyle/error/result.h"
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
@@ -58,7 +58,8 @@ struct ComputeBackend;  // internal vtable (backend.h); forward-declared, not ex
 class DevicePool {
  public:
   DevicePool() noexcept = default;
-  HYLE_DISABLE_COPY(DevicePool);
+  DevicePool(const DevicePool&) = delete;
+  DevicePool& operator=(const DevicePool&) = delete;
   HYLE_COMPUTE_API DevicePool(DevicePool&& o) noexcept;
   HYLE_COMPUTE_API DevicePool& operator=(DevicePool&& o) noexcept;
   HYLE_COMPUTE_API ~DevicePool();
@@ -104,7 +105,8 @@ class PoolAlloc {
     ptr_ = r.has_value() ? static_cast<T*>(*r) : nullptr;
     if (ptr_ == nullptr) bytes_ = 0;  // alloc failed -> empty (valid()==false)
   }
-  HYLE_DISABLE_COPY(PoolAlloc);
+  PoolAlloc(const PoolAlloc&) = delete;
+  PoolAlloc& operator=(const PoolAlloc&) = delete;
   PoolAlloc(PoolAlloc&& o) noexcept
       : pool_(o.pool_), ptr_(o.ptr_), bytes_(o.bytes_) {
     o.pool_ = nullptr;

@@ -9,7 +9,7 @@
 #include "hyle/compute/kernel.h"
 #include "hyle/compute/stream.h"
 #include "hyle/error/result.h"
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/mem/allocator.h"
 #if defined(HYLE_HAS_FCONTEXT)
 #  include "hyle/platform/thread.h"

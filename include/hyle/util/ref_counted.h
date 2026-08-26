@@ -9,7 +9,7 @@
 #include <type_traits>
 #include <utility>
 
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 
 // Intrusive reference counting (clay ref_counted). The count lives INSIDE the
 // object (CRTP base), so a Ref<T> is one pointer with no separate control block.
@@ -44,7 +44,10 @@ class RefCounted {
   using hyle_refcounted_subtype = Sub;
 
   RefCounted() noexcept : refcount_(1) {}
-  HYLE_DISABLE_COPY_AND_MOVE(RefCounted);
+  RefCounted(const RefCounted&) = delete;
+  RefCounted& operator=(const RefCounted&) = delete;
+  RefCounted(RefCounted&&) = delete;
+  RefCounted& operator=(RefCounted&&) = delete;
 
   // New reference. relaxed: forming a ref requires already holding one, and
   // handing a ref across threads carries its own synchronization. The common

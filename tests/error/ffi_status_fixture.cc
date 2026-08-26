@@ -22,7 +22,7 @@ extern "C" {
 // accept its bootstrap before resolving any of the deliberate failure sources.
 HYLE_ERROR_FFI_FIXTURE_API std::uint32_t HYLE_ERROR_FFI_FIXTURE_CALL
 hyle_error_status_fixture_ffi_abi_version(void) {
-  return HYLE_FFI_ABI_VERSION;
+  return HYLE_ERROR_FFI_ABI_VERSION;
 }
 
 HYLE_ERROR_FFI_FIXTURE_API hyle_status HYLE_ERROR_FFI_FIXTURE_CALL

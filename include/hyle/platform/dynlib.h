@@ -3,7 +3,7 @@
 #include <utility>
 
 #include "hyle/error/result.h"
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
@@ -66,7 +66,8 @@ class DynLib {
     o.owns_ = false;
   }
   HYLE_PLATFORM_API DynLib& operator=(DynLib&& o) noexcept;
-  HYLE_DISABLE_COPY(DynLib);
+  DynLib(const DynLib&) = delete;
+  DynLib& operator=(const DynLib&) = delete;
 
   bool valid() const noexcept { return handle_ != nullptr; }
   explicit operator bool() const noexcept { return valid(); }

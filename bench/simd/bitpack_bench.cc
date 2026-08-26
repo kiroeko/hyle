@@ -10,7 +10,7 @@
 #include <string>
 #include <vector>
 
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/simd/bitpack.h"
 #include "hyle/simd/runtime.h"
 #include "hyle/simd/vec.h"

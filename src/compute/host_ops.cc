@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <cstring>  // std::memcpy (unpack scalar field from the packed blob)
 
-#include "hyle/macros.h"     // HYLE_FATAL_ASSERT (contract fail-fast, like the GPU launch path)
+#include "hyle/core/compiler.h"     // HYLE_FATAL_ASSERT (contract fail-fast, like the GPU launch path)
 #include "hyle/simd/math.h"  // exp_f32_batch / exp_f64_batch
 #include "hyle/simd/ops.h"   // dot/saxpy/add f32/f64
 

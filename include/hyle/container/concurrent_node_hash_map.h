@@ -11,7 +11,7 @@
 
 #include "hyle/container/detail/adaptive_rw_lock.h"
 #include "hyle/container/hash.h"
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/mem/system_inline.h"
 
@@ -87,7 +87,8 @@ public:
 
   public:
     ConstAccessor() noexcept = default;
-    HYLE_DISABLE_COPY(ConstAccessor);
+    ConstAccessor(const ConstAccessor&) = delete;
+    ConstAccessor& operator=(const ConstAccessor&) = delete;
     ConstAccessor(ConstAccessor &&other) noexcept { move_from(other); }
     ConstAccessor &operator=(ConstAccessor &&other) noexcept {
       if (this != &other) {
@@ -136,7 +137,8 @@ public:
 
   public:
     Accessor() noexcept = default;
-    HYLE_DISABLE_COPY(Accessor);
+    Accessor(const Accessor&) = delete;
+    Accessor& operator=(const Accessor&) = delete;
     Accessor(Accessor &&other) noexcept { move_from(other); }
     Accessor &operator=(Accessor &&other) noexcept {
       if (this != &other) {
@@ -195,7 +197,10 @@ public:
   }
 
   ~ConcurrentNodeHashMap() { destroy_all(); }
-  HYLE_DISABLE_COPY_AND_MOVE(ConcurrentNodeHashMap);
+  ConcurrentNodeHashMap(const ConcurrentNodeHashMap&) = delete;
+  ConcurrentNodeHashMap& operator=(const ConcurrentNodeHashMap&) = delete;
+  ConcurrentNodeHashMap(ConcurrentNodeHashMap&&) = delete;
+  ConcurrentNodeHashMap& operator=(ConcurrentNodeHashMap&&) = delete;
 
   bool valid() const noexcept {
     return current_.load(std::memory_order_relaxed) != nullptr;

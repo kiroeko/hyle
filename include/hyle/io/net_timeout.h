@@ -10,6 +10,7 @@
 #include "hyle/sched/timer.h"
 #include "hyle/sched/waker.h"
 #include "hyle/time/timer_entry.h"
+#include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
 #  define HYLE_IO_API

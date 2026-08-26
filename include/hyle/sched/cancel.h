@@ -5,12 +5,13 @@
 #include <new>
 #include <utility>
 
+#include "hyle/core/compiler.h"
 #include "hyle/error/status.h"
-#include "hyle/macros.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/sched/coro.h"
 #include "hyle/sched/fiber.h"
 #include "hyle/sched/waker.h"
+#include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
 #  define HYLE_SCHED_API
@@ -169,7 +170,8 @@ class CancelToken {
     }
     return *this;
   }
-  HYLE_DISABLE_COPY(CancelToken);
+  CancelToken(const CancelToken&) = delete;
+  CancelToken& operator=(const CancelToken&) = delete;
   ~CancelToken() { reset(); }
 
   bool valid() const noexcept { return node_ != nullptr; }
@@ -238,7 +240,10 @@ class CancelScope {
     HYLE_FATAL_ASSERT(f != nullptr);
     f->set_cancel_flag(prev_);
   }
-  HYLE_DISABLE_COPY_AND_MOVE(CancelScope);
+  CancelScope(const CancelScope&) = delete;
+  CancelScope& operator=(const CancelScope&) = delete;
+  CancelScope(CancelScope&&) = delete;
+  CancelScope& operator=(CancelScope&&) = delete;
 
  private:
   void* prev_ = nullptr;
@@ -276,7 +281,10 @@ class CancelCallback {
     n->first_cb = &cb_;
   }
   ~CancelCallback() { unregister(); }
-  HYLE_DISABLE_COPY_AND_MOVE(CancelCallback);
+  CancelCallback(const CancelCallback&) = delete;
+  CancelCallback& operator=(const CancelCallback&) = delete;
+  CancelCallback(CancelCallback&&) = delete;
+  CancelCallback& operator=(CancelCallback&&) = delete;
 
   // Detach without firing (idempotent). Called by the destructor; safe to call
   // during the node's own cancel walk (fire_callbacks detaches before invoking, so

@@ -5,6 +5,7 @@
 #include <cstring>
 #include <type_traits>
 
+#include "hyle/core/compiler.h"
 #include "hyle/mem/alignment.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/obs/trace.h"

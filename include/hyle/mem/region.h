@@ -8,7 +8,7 @@
 #include <span>
 #include <utility>
 
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/mem/alignment.h"
 #include "hyle/mem/allocator.h"
 
@@ -105,7 +105,10 @@ public:
 
   // A bitwise move would leave two active cursors over the same external
   // storage.
-  HYLE_DISABLE_COPY_AND_MOVE(FixedRegion);
+  FixedRegion(const FixedRegion&) = delete;
+  FixedRegion& operator=(const FixedRegion&) = delete;
+  FixedRegion(FixedRegion&&) = delete;
+  FixedRegion& operator=(FixedRegion&&) = delete;
 
   bool valid() const noexcept { return cursor_.valid(); }
   void *allocate(std::size_t bytes,
@@ -174,7 +177,8 @@ public:
   }
 
   ~Region() { release(); }
-  HYLE_DISABLE_COPY(Region);
+  Region(const Region&) = delete;
+  Region& operator=(const Region&) = delete;
   Region(Region &&other) noexcept { steal(other); }
   Region &operator=(Region &&other) noexcept {
     if (this != &other) {

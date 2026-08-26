@@ -6,6 +6,7 @@
 #include <limits>
 #include <type_traits>
 
+#include "hyle/core/compiler.h"
 #include "hyle/simd/vec.h"
 
 namespace hyle::simd::native {

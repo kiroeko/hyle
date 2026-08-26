@@ -6,7 +6,7 @@
 
 #include "hyle/container/pod_vector.h"   // PodVector<string_ref> split result
 #include "hyle/container/string_ref.h"   // string_ref + dup/concat (+HYLE_CONTAINER_API)
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/mem/allocator.h"
 
 // Path string manipulation (clay sys/path.h `path_api_t` -- the pure-string half:

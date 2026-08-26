@@ -9,7 +9,7 @@
 #include <type_traits>
 
 #include "hyle/core/cache.h"
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/mem/system_inline.h"
 
@@ -56,7 +56,10 @@ class BoundedQueue {
     alloc_.deallocate(buffer_, sizeof(Cell) * capacity, alignof(Cell));
   }
 
-  HYLE_DISABLE_COPY_AND_MOVE(BoundedQueue);
+  BoundedQueue(const BoundedQueue&) = delete;
+  BoundedQueue& operator=(const BoundedQueue&) = delete;
+  BoundedQueue(BoundedQueue&&) = delete;
+  BoundedQueue& operator=(BoundedQueue&&) = delete;
 
   // Allocation failure leaves an invalid object; check once after construction.
   // Hot queue operations deliberately do not repeat this cold-path check.

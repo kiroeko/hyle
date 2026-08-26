@@ -15,7 +15,7 @@
 #include <type_traits>
 #include <vector>
 
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/simd/sort.h"
 #include "hyle/simd/runtime.h"
 #if defined(HYLE_OS_MACOS) && defined(HYLE_ARCH_ARM64)

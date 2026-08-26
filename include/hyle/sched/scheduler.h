@@ -4,7 +4,7 @@
 #include <optional>
 
 #include "hyle/error/status.h"
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/platform/cpu.h"
 #include "hyle/platform/thread.h"
@@ -68,7 +68,10 @@ class HYLE_SCHED_API Scheduler {
             std::size_t queue_capacity, SchedulerOptions options,
             Status* status) noexcept;
   ~Scheduler();
-  HYLE_DISABLE_COPY_AND_MOVE(Scheduler);
+  Scheduler(const Scheduler&) = delete;
+  Scheduler& operator=(const Scheduler&) = delete;
+  Scheduler(Scheduler&&) = delete;
+  Scheduler& operator=(Scheduler&&) = delete;
 
   // Submit a runnable fiber. Lands on the caller's local queue if called from a
   // worker, else on the global queue. The scheduler does NOT own the Fiber; the

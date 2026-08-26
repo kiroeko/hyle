@@ -1,12 +1,12 @@
 #pragma once
 
-#include "hyle/io/coroutine_transport.h"
-
 #include <cstdint>
 
+#include "hyle/io/coroutine_transport.h"
 #include "hyle/io/proactor.h"
 #include "hyle/sched/coro.h"
 #include "hyle/sched/waker.h"
+#include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
 #  define HYLE_IO_API

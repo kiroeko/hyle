@@ -7,7 +7,7 @@
 
 #include "hyle/error/result.h"
 #include "hyle/error/status.h"
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/mem/fiber_stack.h"
 #include "hyle/sched/coro.h"
@@ -263,7 +263,8 @@ class JoinHandle {
     }
     return *this;
   }
-  HYLE_DISABLE_COPY(JoinHandle);
+  JoinHandle(const JoinHandle&) = delete;
+  JoinHandle& operator=(const JoinHandle&) = delete;
   ~JoinHandle() {
     if (state_) state_->release();  // detach: task runs on, result discarded
   }
@@ -328,7 +329,8 @@ class JoinHandle<void> {
     }
     return *this;
   }
-  HYLE_DISABLE_COPY(JoinHandle);
+  JoinHandle(const JoinHandle&) = delete;
+  JoinHandle& operator=(const JoinHandle&) = delete;
   ~JoinHandle() {
     if (state_) state_->release();
   }

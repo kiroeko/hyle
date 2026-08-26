@@ -7,7 +7,7 @@
 #include <cstring>
 #include <limits>
 
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/platform.h"
 #include "hyle/platform/virtual_memory.h"
 

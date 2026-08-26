@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <thread>
 
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 
 #if defined(_MSC_VER)
 #  include <intrin.h>
@@ -77,7 +77,10 @@ class SpinBackoff {
 class SpinLock {
  public:
   SpinLock() noexcept = default;
-  HYLE_DISABLE_COPY_AND_MOVE(SpinLock);
+  SpinLock(const SpinLock&) = delete;
+  SpinLock& operator=(const SpinLock&) = delete;
+  SpinLock(SpinLock&&) = delete;
+  SpinLock& operator=(SpinLock&&) = delete;
 
   void lock() noexcept {
     detail::SpinBackoff backoff;

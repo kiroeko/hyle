@@ -4,7 +4,7 @@
 #include <cstdint>
 
 #include "hyle/c/io.h"
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/platform.h"
 #include "hyle/visibility.h"
 
@@ -83,7 +83,10 @@ struct Completion {
 class Proactor {
  public:
   Proactor() noexcept = default;
-  HYLE_DISABLE_COPY_AND_MOVE(Proactor);
+  Proactor(const Proactor&) = delete;
+  Proactor& operator=(const Proactor&) = delete;
+  Proactor(Proactor&&) = delete;
+  Proactor& operator=(Proactor&&) = delete;
   HYLE_IO_API ~Proactor();
 
   // Create the backend's completion object (IOCP port / io_uring ring). Returns

@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <cstring>
 
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/platform.h"
 
 // SwissTable control-byte group probing. Self-contained: hand-written baseline-ISA SIMD, NOT

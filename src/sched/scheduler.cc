@@ -18,7 +18,7 @@
 #include "hyle/container/sharded_queue.h"
 #include "hyle/container/ws_fifo_queue.h"
 #include "hyle/core/cache.h"
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/mem/fiber_stack.h"
 #include "hyle/obs/trace.h"
 #include "hyle/platform/cpu.h"

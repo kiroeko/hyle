@@ -1,10 +1,8 @@
 cmake_minimum_required(VERSION 3.25)
 
-# The checked-in C/C++ header is the single version source, including for a
-# component package that does not build hyle_core.  Read it before project() so
-# package metadata, loader identities and runtime assertions cannot drift from
-# the public macros.
-file(STRINGS "${CMAKE_CURRENT_LIST_DIR}/include/hyle/core/version_defs.h"
+# The checked-in C++ product header is the single version source. Read it before
+# project() so package metadata and public compile-time identity cannot drift.
+file(STRINGS "${CMAKE_CURRENT_LIST_DIR}/include/hyle/version.h"
   _hyle_version_lines REGEX
   "^#define HYLE_VERSION_(MAJOR|MINOR|PATCH) [0-9]+$")
 foreach(_hyle_version_part IN ITEMS MAJOR MINOR PATCH)
@@ -16,7 +14,7 @@ foreach(_hyle_version_part IN ITEMS MAJOR MINOR PATCH)
   endforeach()
   if(NOT DEFINED _hyle_version_${_hyle_version_part})
     message(FATAL_ERROR
-      "Cannot read HYLE_VERSION_${_hyle_version_part} from version_defs.h")
+      "Cannot read HYLE_VERSION_${_hyle_version_part} from hyle/version.h")
   endif()
 endforeach()
 set(_hyle_project_version

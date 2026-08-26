@@ -6,7 +6,7 @@
 #include "hyle/compute/device.h"
 #include "hyle/compute/types.h"
 #include "hyle/error/result.h"
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
@@ -92,7 +92,8 @@ HYLE_COMPUTE_API BufferType host_buffer_type(const Device& device) noexcept;
 class Buffer {
  public:
   Buffer() noexcept = default;
-  HYLE_DISABLE_COPY(Buffer);
+  Buffer(const Buffer&) = delete;
+  Buffer& operator=(const Buffer&) = delete;
   HYLE_COMPUTE_API Buffer(Buffer&& o) noexcept;
   HYLE_COMPUTE_API Buffer& operator=(Buffer&& o) noexcept;
   HYLE_COMPUTE_API ~Buffer();

@@ -7,7 +7,7 @@
 #include <string_view>
 
 #include "hyle/container/hash.h"  // Hash<> primary template (+ HYLE_CONTAINER_API)
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/mem/allocator.h"
 
 namespace hyle::container {

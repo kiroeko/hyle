@@ -7,7 +7,7 @@
 #include <vector>
 
 #include "hyle/compute/stream.h"
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/obs/trace.h"
 #include "hyle/platform/thread.h"
 #include "hyle/platform/wait.h"

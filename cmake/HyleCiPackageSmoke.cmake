@@ -19,7 +19,7 @@ endif()
 get_filename_component(HYLE_SOURCE_DIR "${HYLE_SOURCE_DIR}" ABSOLUTE)
 get_filename_component(HYLE_SMOKE_ROOT "${HYLE_SMOKE_ROOT}" ABSOLUTE)
 
-file(STRINGS "${HYLE_SOURCE_DIR}/include/hyle/core/version_defs.h"
+file(STRINGS "${HYLE_SOURCE_DIR}/include/hyle/version.h"
   _hyle_version_lines REGEX
   "^#define HYLE_VERSION_(MAJOR|MINOR|PATCH) [0-9]+$")
 foreach(_part IN ITEMS MAJOR MINOR PATCH)
@@ -29,7 +29,7 @@ foreach(_part IN ITEMS MAJOR MINOR PATCH)
     endif()
   endforeach()
   if(NOT DEFINED _hyle_version_${_part})
-    message(FATAL_ERROR "Cannot read HYLE_VERSION_${_part} from version_defs.h")
+    message(FATAL_ERROR "Cannot read HYLE_VERSION_${_part} from hyle/version.h")
   endif()
 endforeach()
 set(_hyle_compatible_version

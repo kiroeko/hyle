@@ -2,7 +2,7 @@
 
 #include <atomic>
 
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/platform.h"  // HYLE_OS_WINDOWS (Mutex backend split)
 #include "hyle/platform/wait.h"
 #include "hyle/sched/fiber.h"

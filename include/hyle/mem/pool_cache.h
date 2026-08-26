@@ -5,7 +5,7 @@
 #include <limits>
 #include <span>
 
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/mem/shared_pool.h"
 
@@ -74,7 +74,10 @@ public:
       metadata_.deallocate_n(indices_, capacity_);
   }
 
-  HYLE_DISABLE_COPY_AND_MOVE(SharedPoolCache);
+  SharedPoolCache(const SharedPoolCache&) = delete;
+  SharedPoolCache& operator=(const SharedPoolCache&) = delete;
+  SharedPoolCache(SharedPoolCache&&) = delete;
+  SharedPoolCache& operator=(SharedPoolCache&&) = delete;
 
   bool valid() const noexcept { return valid_; }
   std::uint32_t capacity() const noexcept { return capacity_; }

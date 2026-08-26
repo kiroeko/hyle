@@ -8,7 +8,7 @@
 #include <limits>
 #include <type_traits>  // conditional_t (MakeSigned/MakeUnsigned lane-type rebind)
 
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/platform.h"
 
 // vec.h -- the portable vector abstraction (simd-design "vec<T,N> D-tag abstraction").

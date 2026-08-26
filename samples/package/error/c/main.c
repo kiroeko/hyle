@@ -24,7 +24,7 @@ int main(void) {
 
   const int ok =
       sizeof(hyle_status) == sizeof(void*) &&
-      hyle_error_ffi_abi_version() == HYLE_FFI_ABI_VERSION &&
+      hyle_error_ffi_abi_version() == HYLE_ERROR_FFI_ABI_VERSION &&
       hyle_status_get_code(status) == HYLE_STATUS_OK &&
       hyle_status_get_native_error(status, &domain, &native_code) == 0 &&
       domain == HYLE_NATIVE_ERROR_NONE && native_code == 0 &&

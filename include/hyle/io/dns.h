@@ -7,6 +7,7 @@
 #include "hyle/io/net.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/sched/blocking.h"  // BlockingPool, spawn_blocking, JoinHandle
+#include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
 #  define HYLE_IO_API

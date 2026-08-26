@@ -14,7 +14,7 @@
 #include "hyle/container/string_ref.h"
 #include "hyle/container/swiss_table.h"
 #include "hyle/error/status.h"
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/mem/region.h"
 #include "hyle/util/demangle.h"
@@ -154,7 +154,10 @@ class CRegistrySnapshotStorage {
                             alignof(CRegistrySnapshot));
     }
   }
-  HYLE_DISABLE_COPY_AND_MOVE(CRegistrySnapshotStorage);
+  CRegistrySnapshotStorage(const CRegistrySnapshotStorage&) = delete;
+  CRegistrySnapshotStorage& operator=(const CRegistrySnapshotStorage&) = delete;
+  CRegistrySnapshotStorage(CRegistrySnapshotStorage&&) = delete;
+  CRegistrySnapshotStorage& operator=(CRegistrySnapshotStorage&&) = delete;
 
   bool allocate(std::size_t count) noexcept {
     capacity_ = count;

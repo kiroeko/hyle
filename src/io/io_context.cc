@@ -3,7 +3,7 @@
 #include "hyle/io/net.h"
 #include "hyle/io/net_multishot.h"  // io-07b: complete_multishot + multishot-token routing
 #include "hyle/io/net_timeout.h"  // io-06: complete_timed + timed-token routing
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/obs/trace.h"
 #include "hyle/sched/waker.h"  // current_worker_index()
 

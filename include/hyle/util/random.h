@@ -7,7 +7,7 @@
 #include <limits>
 #include <random>
 
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 
 #if defined(_MSC_VER)
 #  include <intrin.h>  // _umul128 for the 64x64->128 multiply in Lemire's map

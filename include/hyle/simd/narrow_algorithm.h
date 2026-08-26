@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <type_traits>
 
+#include "hyle/core/compiler.h"
 #include "hyle/simd/narrow_float.h"
 
 // Target-bound whole-range algorithms for f16/bf16 storage. These keep the

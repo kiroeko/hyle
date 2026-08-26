@@ -4,6 +4,7 @@
 #include <memory_resource>
 #include <new>
 
+#include "hyle/core/assert.h"
 #include "hyle/mem/alignment.h"
 #include "hyle/mem/allocator.h"
 

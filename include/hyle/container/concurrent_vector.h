@@ -12,7 +12,7 @@
 #include <utility>
 
 #include "hyle/core/cache.h"
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/mem/system_inline.h"
 
@@ -216,7 +216,10 @@ class ConcurrentVector {
     }
   }
 
-  HYLE_DISABLE_COPY_AND_MOVE(ConcurrentVector);
+  ConcurrentVector(const ConcurrentVector&) = delete;
+  ConcurrentVector& operator=(const ConcurrentVector&) = delete;
+  ConcurrentVector(ConcurrentVector&&) = delete;
+  ConcurrentVector& operator=(ConcurrentVector&&) = delete;
 
   // Preallocate enough stable segments for count values. Concurrent with
   // append; only this cold path serializes. Failure preserves existing state.

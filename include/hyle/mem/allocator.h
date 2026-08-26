@@ -8,7 +8,7 @@
 #include <type_traits>
 #include <utility>
 
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)

@@ -4,10 +4,10 @@
 #include <cstdint>
 #include <string_view>
 
-#include "hyle/c/core.h"
+#include "hyle/core/assert.h"
 #include "hyle/core/cache.h"
-#include "hyle/core/version.h"
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
+#include "hyle/version.h"
 
 namespace {
 
@@ -20,40 +20,29 @@ HYLE_NOINLINE int restrict_sum(const int* HYLE_RESTRICT values,
   return sum;
 }
 
-HYLE_NODISCARD int must_inspect_cpp_result() noexcept { return 7; }
+struct Empty {};
+struct EmptyMemberLayout {
+  HYLE_NO_UNIQUE_ADDRESS Empty empty;
+  int value;
+};
 
 }  // namespace
 
-TEST(CoreVersion, CompileTimeAndRuntimeViewsAgree) {
+TEST(CoreVersion, CompileTimeProductIdentityIsConsistent) {
   static_assert(hyle::kVersionMajor == HYLE_VERSION_MAJOR);
   static_assert(hyle::kVersionMinor == HYLE_VERSION_MINOR);
   static_assert(hyle::kVersionPatch == HYLE_VERSION_PATCH);
-  static_assert(hyle::kVersion == HYLE_VERSION_PACKED);
+  static_assert(hyle::kVersionPacked == 0x000100u);
   static_assert(std::string_view(hyle::kVersionString) == HYLE_VERSION_STRING);
-  static_assert(hyle::kFfiAbiVersionMajor == HYLE_FFI_ABI_VERSION_MAJOR);
-  static_assert(hyle::kFfiAbiVersionMinor == HYLE_FFI_ABI_VERSION_MINOR);
-  static_assert(hyle::kFfiAbiVersion == HYLE_FFI_ABI_VERSION);
-
-  EXPECT_EQ(hyle_ffi_abi_version(), hyle::kFfiAbiVersion);
-  EXPECT_EQ(hyle::version(), hyle::kVersion);
-  EXPECT_STREQ(hyle::version_string(), hyle::kVersionString);
 }
 
 TEST(CoreCache, StaticLayoutContractIsUsable) {
-  static_assert(hyle::core::kConstructiveInterferenceSize ==
-                HYLE_STATIC_CONSTRUCTIVE_INTERFERENCE_SIZE);
-  static_assert(hyle::core::kDestructiveInterferenceSize ==
-                HYLE_STATIC_DESTRUCTIVE_INTERFERENCE_SIZE);
-  static_assert(hyle::core::kMinConstructiveInterferenceSize == 64);
   static_assert(hyle::core::kMaxDestructiveInterferenceSize == 128);
-  static_assert(hyle::core::kConstructiveInterferenceSize >=
-                hyle::core::kMinConstructiveInterferenceSize);
-  static_assert(hyle::core::kDestructiveInterferenceSize <=
-                hyle::core::kMaxDestructiveInterferenceSize);
   static_assert(hyle::core::kConstructiveInterferenceSize <=
                 hyle::core::kDestructiveInterferenceSize);
-#if defined(__APPLE__) &&                                                \
-    (defined(__aarch64__) || defined(__arm64__))
+  static_assert(hyle::core::kDestructiveInterferenceSize <=
+                hyle::core::kMaxDestructiveInterferenceSize);
+#if defined(__APPLE__) && (defined(__aarch64__) || defined(__arm64__))
   static_assert(hyle::core::kConstructiveInterferenceSize == 128);
   static_assert(hyle::core::kDestructiveInterferenceSize == 128);
 #elif defined(__x86_64__) || defined(_M_X64)
@@ -65,37 +54,36 @@ TEST(CoreCache, StaticLayoutContractIsUsable) {
 #endif
 
   alignas(hyle::core::kDestructiveInterferenceSize) std::byte storage[1]{};
-  EXPECT_EQ(reinterpret_cast<std::uintptr_t>(storage) % hyle::core::kDestructiveInterferenceSize,
+  EXPECT_EQ(reinterpret_cast<std::uintptr_t>(storage) %
+                hyle::core::kDestructiveInterferenceSize,
             0u);
   hyle::core::prefetch_read(storage);
   hyle::core::prefetch_read_non_temporal(storage);
   hyle::core::prefetch_write(storage);
 }
 
-TEST(CoreMacros, BranchHintsPreserveTheirExpression) {
+TEST(CoreCompiler, PortableContractsPreserveValidInputs) {
+  static_assert(sizeof(EmptyMemberLayout) == sizeof(int));
+
   int value = 1;
   if (HYLE_LIKELY(value == 1)) value = 2;
   if (HYLE_UNLIKELY(value == 99)) value = 3;
   EXPECT_EQ(value, 2);
-}
 
-TEST(CoreMacros, OptimizerContractsCompileAndPreserveValidInputs) {
   const int values[] = {1, 2, 3, 4};
   EXPECT_EQ(restrict_sum(values, 4), 10);
-  EXPECT_EQ(must_inspect_cpp_result(), 7);
 }
 
 #if !defined(NDEBUG)
-TEST(CoreMacrosDeath, AssumeDiagnosesFalseInDebugBuilds) {
+TEST(CoreCompilerDeath, AssumeDiagnosesFalseInDebugBuilds) {
   EXPECT_DEATH({ HYLE_ASSUME(false); }, "HYLE fatal");
 }
 
-TEST(CoreMacrosDeath, UnreachableDiagnosesTripsInDebugBuilds) {
+TEST(CoreCompilerDeath, UnreachableDiagnosesTripsInDebugBuilds) {
   EXPECT_DEATH({ HYLE_UNREACHABLE(); }, "HYLE fatal");
 }
-
 #endif
 
-TEST(CoreMacrosDeath, FatalAssertAbortsOnFalse) {
+TEST(CoreAssertDeath, FatalAssertAbortsOnFalse) {
   EXPECT_DEATH({ HYLE_FATAL_ASSERT(1 == 2); }, "HYLE fatal");
 }

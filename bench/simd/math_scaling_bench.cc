@@ -13,7 +13,7 @@
 #include <string>
 #include <vector>
 
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/simd/math.h"
 #include "hyle/simd/runtime.h"
 #include "src/simd/math/complex_hyle-inl.h"

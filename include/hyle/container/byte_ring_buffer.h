@@ -6,7 +6,7 @@
 #include <span>
 #include <utility>
 
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/mem/allocator.h"
 
 namespace hyle::container {

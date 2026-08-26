@@ -93,7 +93,10 @@ public:
     g_injected_symlink_target = nullptr;
     g_injected_symlink_target_size = 0;
   }
-  HYLE_DISABLE_COPY_AND_MOVE(ScopedInjectedReadlink);
+  ScopedInjectedReadlink(const ScopedInjectedReadlink&) = delete;
+  ScopedInjectedReadlink& operator=(const ScopedInjectedReadlink&) = delete;
+  ScopedInjectedReadlink(ScopedInjectedReadlink&&) = delete;
+  ScopedInjectedReadlink& operator=(ScopedInjectedReadlink&&) = delete;
 };
 #endif
 } // namespace

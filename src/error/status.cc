@@ -10,7 +10,7 @@
 #include <new>
 
 #include "hyle/error/result.h"
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "status_access.h"
 
 #if defined(_WIN32)

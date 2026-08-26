@@ -11,7 +11,7 @@
 #include "hyle/container/hash.h"
 #include "hyle/container/swiss_table.h"
 #include "hyle/core/cache.h"
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/mem/system_inline.h"
 
@@ -61,7 +61,8 @@ public:
 
   public:
     ConstAccessor() noexcept = default;
-    HYLE_DISABLE_COPY(ConstAccessor);
+    ConstAccessor(const ConstAccessor&) = delete;
+    ConstAccessor& operator=(const ConstAccessor&) = delete;
     ConstAccessor(ConstAccessor &&other) noexcept { move_from(other); }
     ConstAccessor &operator=(ConstAccessor &&other) noexcept {
       if (this != &other) {
@@ -114,7 +115,8 @@ public:
 
   public:
     Accessor() noexcept = default;
-    HYLE_DISABLE_COPY(Accessor);
+    Accessor(const Accessor&) = delete;
+    Accessor& operator=(const Accessor&) = delete;
     Accessor(Accessor &&other) noexcept { move_from(other); }
     Accessor &operator=(Accessor &&other) noexcept {
       if (this != &other) {
@@ -175,7 +177,10 @@ public:
   }
 
   ~ConcurrentHashMap() { destroy_shards(); }
-  HYLE_DISABLE_COPY_AND_MOVE(ConcurrentHashMap);
+  ConcurrentHashMap(const ConcurrentHashMap&) = delete;
+  ConcurrentHashMap& operator=(const ConcurrentHashMap&) = delete;
+  ConcurrentHashMap(ConcurrentHashMap&&) = delete;
+  ConcurrentHashMap& operator=(ConcurrentHashMap&&) = delete;
 
   bool valid() const noexcept { return shards_ != nullptr; }
   std::size_t shard_count() const noexcept { return shard_count_; }

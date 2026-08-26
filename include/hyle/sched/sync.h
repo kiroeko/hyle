@@ -9,7 +9,7 @@
 
 #include "hyle/error/result.h"
 #include "hyle/error/status.h"
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/platform.h"  // HYLE_OS_WINDOWS (Mutex backend split)
 #include "hyle/sched/waker.h"
@@ -73,7 +73,10 @@ namespace hyle::sched {
 class ConditionVariable {
  public:
   ConditionVariable() noexcept = default;
-  HYLE_DISABLE_COPY_AND_MOVE(ConditionVariable);
+  ConditionVariable(const ConditionVariable&) = delete;
+  ConditionVariable& operator=(const ConditionVariable&) = delete;
+  ConditionVariable(ConditionVariable&&) = delete;
+  ConditionVariable& operator=(ConditionVariable&&) = delete;
 
   // Atomically release `lock` and block until notified, then re-acquire `lock`.
   // Precondition: the caller holds `lock`. Spurious wakeups are possible only via
@@ -257,7 +260,10 @@ class ConditionVariable {
 class Mutex {
  public:
   Mutex() noexcept = default;
-  HYLE_DISABLE_COPY_AND_MOVE(Mutex);
+  Mutex(const Mutex&) = delete;
+  Mutex& operator=(const Mutex&) = delete;
+  Mutex(Mutex&&) = delete;
+  Mutex& operator=(Mutex&&) = delete;
 
   // All out-of-line: SRWLOCK's own acquire/release ARE function calls (same as
   // std::mutex, which wraps AcquireSRWLockExclusive) -- so this is apples-to-apples.
@@ -272,7 +278,10 @@ class Mutex {
 class Mutex {
  public:
   Mutex() noexcept = default;
-  HYLE_DISABLE_COPY_AND_MOVE(Mutex);
+  Mutex(const Mutex&) = delete;
+  Mutex& operator=(const Mutex&) = delete;
+  Mutex(Mutex&&) = delete;
+  Mutex& operator=(Mutex&&) = delete;
 
   void lock() noexcept {
     std::uint32_t expected = 0;
@@ -317,7 +326,10 @@ class WaitGroup {
   explicit WaitGroup(long initial) noexcept : count_(initial) {
     HYLE_FATAL_ASSERT(initial >= 0);
   }
-  HYLE_DISABLE_COPY_AND_MOVE(WaitGroup);
+  WaitGroup(const WaitGroup&) = delete;
+  WaitGroup& operator=(const WaitGroup&) = delete;
+  WaitGroup(WaitGroup&&) = delete;
+  WaitGroup& operator=(WaitGroup&&) = delete;
 
   bool try_add(long n = 1) noexcept {
     // add is the uncommon control-plane operation and remains serialized with
@@ -378,7 +390,10 @@ class Latch {
   explicit Latch(long count) noexcept : count_(count) {
     HYLE_FATAL_ASSERT(count >= 0);
   }
-  HYLE_DISABLE_COPY_AND_MOVE(Latch);
+  Latch(const Latch&) = delete;
+  Latch& operator=(const Latch&) = delete;
+  Latch(Latch&&) = delete;
+  Latch& operator=(Latch&&) = delete;
 
   bool try_count_down(long n = 1) noexcept {
     long count = count_.load(std::memory_order_acquire);
@@ -447,7 +462,10 @@ class Channel {
     alloc_.deallocate(buf_, sizeof(T) * cap_, alignof(T));
   }
 
-  HYLE_DISABLE_COPY_AND_MOVE(Channel);
+  Channel(const Channel&) = delete;
+  Channel& operator=(const Channel&) = delete;
+  Channel(Channel&&) = delete;
+  Channel& operator=(Channel&&) = delete;
 
   // Allocation failure leaves a closed/empty invalid channel. Check this once
   // after construction; send/recv also fail safely so an FFI factory can
@@ -614,7 +632,10 @@ class Channel {
 class Semaphore {
  public:
   explicit Semaphore(std::size_t permits) noexcept : permits_(permits) {}
-  HYLE_DISABLE_COPY_AND_MOVE(Semaphore);
+  Semaphore(const Semaphore&) = delete;
+  Semaphore& operator=(const Semaphore&) = delete;
+  Semaphore(Semaphore&&) = delete;
+  Semaphore& operator=(Semaphore&&) = delete;
 
   // Acquire `n` permits, blocking (fiber-aware) until available. Returns false if
   // the semaphore was closed before n could be granted (permits already handed to
@@ -658,7 +679,8 @@ class Semaphore {
       }
       return *this;
     }
-    HYLE_DISABLE_COPY(Permit);
+    Permit(const Permit&) = delete;
+    Permit& operator=(const Permit&) = delete;
     ~Permit() { reset(); }
     bool owns() const noexcept { return sem_ != nullptr; }
 
@@ -718,7 +740,10 @@ class Semaphore {
 class RwLock {
  public:
   RwLock() noexcept : sem_(kMaxReaders) {}
-  HYLE_DISABLE_COPY_AND_MOVE(RwLock);
+  RwLock(const RwLock&) = delete;
+  RwLock& operator=(const RwLock&) = delete;
+  RwLock(RwLock&&) = delete;
+  RwLock& operator=(RwLock&&) = delete;
 
   // RAII read guard: holds 1 permit; releases it on destruction.
   class ReadGuard {
@@ -733,7 +758,8 @@ class RwLock {
       }
       return *this;
     }
-    HYLE_DISABLE_COPY(ReadGuard);
+    ReadGuard(const ReadGuard&) = delete;
+    ReadGuard& operator=(const ReadGuard&) = delete;
     ~ReadGuard() { reset(); }
     bool owns_lock() const noexcept { return rw_ != nullptr; }
 
@@ -758,7 +784,8 @@ class RwLock {
       }
       return *this;
     }
-    HYLE_DISABLE_COPY(WriteGuard);
+    WriteGuard(const WriteGuard&) = delete;
+    WriteGuard& operator=(const WriteGuard&) = delete;
     ~WriteGuard() { reset(); }
     bool owns_lock() const noexcept { return rw_ != nullptr; }
 
@@ -881,7 +908,8 @@ class OneshotSender {
     }
     return *this;
   }
-  HYLE_DISABLE_COPY(OneshotSender);
+  OneshotSender(const OneshotSender&) = delete;
+  OneshotSender& operator=(const OneshotSender&) = delete;
   ~OneshotSender() { reset_(); }
 
   // Send the one value. Returns the value back (as an error payload) if the
@@ -954,7 +982,8 @@ class OneshotReceiver {
     }
     return *this;
   }
-  HYLE_DISABLE_COPY(OneshotReceiver);
+  OneshotReceiver(const OneshotReceiver&) = delete;
+  OneshotReceiver& operator=(const OneshotReceiver&) = delete;
   ~OneshotReceiver() { reset_(); }
 
   // Block (fiber-aware) until the value arrives or the Sender is dropped. Consumes

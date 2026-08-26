@@ -4,8 +4,9 @@
 #include <type_traits>
 #include <utility>
 
+#include "hyle/core/compiler.h"
+#include "hyle/core/detail/preprocessor.h"
 #include "hyle/error/status.h"
-#include "hyle/macros.h"
 
 namespace hyle {
 
@@ -197,7 +198,7 @@ class FailReturn {
 // Evaluate a Status or Result<void> expression; if not OK, return its Status
 // (converted) immediately.
 #define HYLE_RETURN_IF_ERROR(expr)                                           \
-  HYLE_RETURN_IF_ERROR_IMPL(HYLE_CONCAT(hyle_status_, __COUNTER__), expr)
+  HYLE_RETURN_IF_ERROR_IMPL(HYLE_DETAIL_CONCAT(hyle_status_, __COUNTER__), expr)
 
 #define HYLE_RETURN_IF_ERROR_IMPL(tmp, expr)                                 \
   do {                                                                       \
@@ -215,7 +216,7 @@ class FailReturn {
 // Like other declaration-capable propagation macros, this expands to multiple
 // statements: use braces when it appears under if/else/for/while.
 #define HYLE_ASSIGN_OR_RETURN(lhs, expr) \
-  HYLE_ASSIGN_OR_RETURN_IMPL(HYLE_CONCAT(hyle_or_, __COUNTER__), lhs, expr)
+  HYLE_ASSIGN_OR_RETURN_IMPL(HYLE_DETAIL_CONCAT(hyle_or_, __COUNTER__), lhs, expr)
 
 #define HYLE_ASSIGN_OR_RETURN_IMPL(tmp, lhs, expr)                          \
   auto&& tmp = (expr);                                                      \

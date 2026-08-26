@@ -6,7 +6,7 @@
 #include "hyle/container/small_vector.h"
 #include "hyle/error/result.h"
 #include "hyle/error/status.h"
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/visibility.h"
 
@@ -102,7 +102,8 @@ class TaskGraph {
  public:
   HYLE_GRAPH_API explicit TaskGraph(mem::Allocator alloc) noexcept;
   HYLE_GRAPH_API ~TaskGraph();
-  HYLE_DISABLE_COPY(TaskGraph);
+  TaskGraph(const TaskGraph&) = delete;
+  TaskGraph& operator=(const TaskGraph&) = delete;
   HYLE_GRAPH_API TaskGraph(TaskGraph&& o) noexcept;
   HYLE_GRAPH_API TaskGraph& operator=(TaskGraph&& o) noexcept;
 

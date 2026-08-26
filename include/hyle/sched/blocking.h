@@ -5,7 +5,7 @@
 #include <utility>
 
 #include "hyle/error/status.h"
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/sched/join.h"
 #include "hyle/visibility.h"
@@ -88,7 +88,10 @@ class HYLE_SCHED_API BlockingPool {
   explicit BlockingPool(mem::Allocator alloc, unsigned max_threads = 512,
                         unsigned long long keep_alive_ns = 10ull * 1000 * 1000 * 1000);
   ~BlockingPool();
-  HYLE_DISABLE_COPY_AND_MOVE(BlockingPool);
+  BlockingPool(const BlockingPool&) = delete;
+  BlockingPool& operator=(const BlockingPool&) = delete;
+  BlockingPool(BlockingPool&&) = delete;
+  BlockingPool& operator=(BlockingPool&&) = delete;
 
   // Stop accepting work, wake all threads, and join them. Jobs still RUNNING
   // finish; jobs still QUEUED (not yet started) are dropped -- their JoinHandle

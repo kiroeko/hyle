@@ -6,7 +6,7 @@
 #include <new>
 #include <utility>
 
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/platform.h"
 
 #if defined(HYLE_OS_WINDOWS)

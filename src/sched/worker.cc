@@ -1,6 +1,6 @@
 #include "hyle/sched/worker.h"
 
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/sched/fiber.h"
 
 namespace hyle::sched {

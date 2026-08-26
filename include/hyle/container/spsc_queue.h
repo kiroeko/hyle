@@ -9,7 +9,7 @@
 #include <utility>
 
 #include "hyle/core/cache.h"
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/mem/system_inline.h"
 
 namespace hyle::container {
@@ -59,7 +59,10 @@ class SpscQueue {
     alloc_.deallocate(slots_, sizeof(Slot) * storage_size_, alignof(Slot));
   }
 
-  HYLE_DISABLE_COPY_AND_MOVE(SpscQueue);
+  SpscQueue(const SpscQueue&) = delete;
+  SpscQueue& operator=(const SpscQueue&) = delete;
+  SpscQueue(SpscQueue&&) = delete;
+  SpscQueue& operator=(SpscQueue&&) = delete;
 
   // Allocation failure leaves an invalid object. Capacity preconditions are
   // programmer errors and are checked once during construction.

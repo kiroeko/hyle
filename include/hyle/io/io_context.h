@@ -8,6 +8,7 @@
 #include "hyle/io/proactor.h"
 #include "hyle/sched/blocking.h"
 #include "hyle/sched/scheduler.h"
+#include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
 #  define HYLE_IO_API
@@ -55,7 +56,10 @@ class IoContext {
   HYLE_IO_API IoContext(sched::Scheduler& sched, unsigned num_workers,
                         bool defer_taskrun = false) noexcept;
   HYLE_IO_API ~IoContext();
-  HYLE_DISABLE_COPY_AND_MOVE(IoContext);
+  IoContext(const IoContext&) = delete;
+  IoContext& operator=(const IoContext&) = delete;
+  IoContext(IoContext&&) = delete;
+  IoContext& operator=(IoContext&&) = delete;
 
   bool valid() const noexcept { return valid_; }
 

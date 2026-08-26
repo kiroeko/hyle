@@ -26,7 +26,7 @@
 #include <limits>
 #include <type_traits>
 
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/simd/backend/crypto_soft.h"  // base-RVV AES software capability floor
 
 namespace hyle::simd {

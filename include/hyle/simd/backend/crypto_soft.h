@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <cstring>  // std::memcpy (Vec<->16-byte state pun)
 
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 
 // backend/crypto_soft.h -- shared SOFTWARE reference for the crypto op face (AES round
 // primitives + carryless multiply), factored out of backend/scalar.h so ALL five backends

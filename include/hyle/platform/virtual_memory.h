@@ -5,7 +5,7 @@
 #include <span>
 
 #include "hyle/error/result.h"
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/platform/numa.h"
 #include "hyle/visibility.h"
 
@@ -146,7 +146,8 @@ class VmRegion {
   HYLE_PLATFORM_API ~VmRegion();
   HYLE_PLATFORM_API VmRegion(VmRegion&& o) noexcept;
   HYLE_PLATFORM_API VmRegion& operator=(VmRegion&& o) noexcept;
-  HYLE_DISABLE_COPY(VmRegion);
+  VmRegion(const VmRegion&) = delete;
+  VmRegion& operator=(const VmRegion&) = delete;
 
   bool valid() const noexcept { return base_ != nullptr; }
   explicit operator bool() const noexcept { return valid(); }

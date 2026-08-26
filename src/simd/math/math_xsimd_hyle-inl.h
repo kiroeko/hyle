@@ -40,7 +40,7 @@
 #include <limits>
 #include <type_traits>
 
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/simd/vec.h"
 #include "src/simd/math/math_hyle-inl.h"
 

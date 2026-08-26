@@ -8,7 +8,7 @@
 #  include <cstdlib>
 #endif
 
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/platform.h"  // HYLE_OS_* (project convention over raw _WIN32)
 
 #if defined(HYLE_OS_WINDOWS)

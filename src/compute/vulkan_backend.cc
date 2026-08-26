@@ -43,7 +43,7 @@
 #include "backend.h"
 #include "hyle/compute/types.h"
 #include "hyle/error/status.h"
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/platform/convenience.h"
 #include "hyle/platform/fs.h"
 #if defined(HYLE_TESTING)

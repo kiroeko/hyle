@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <limits>
 
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/mem/allocator.h"
 
 namespace hyle::mem {
@@ -34,7 +34,10 @@ public:
     HYLE_FATAL_ASSERT(live_.load(std::memory_order_relaxed) == 0);
   }
 
-  HYLE_DISABLE_COPY_AND_MOVE(QuotaAllocator);
+  QuotaAllocator(const QuotaAllocator&) = delete;
+  QuotaAllocator& operator=(const QuotaAllocator&) = delete;
+  QuotaAllocator(QuotaAllocator&&) = delete;
+  QuotaAllocator& operator=(QuotaAllocator&&) = delete;
 
   Allocator get() noexcept {
     return Allocator(&quota_alloc, &quota_free, &quota_realloc, this);

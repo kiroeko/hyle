@@ -15,7 +15,7 @@
 #  include <intrin.h>  // _umul128 / __umulh for the 128-bit fold mixer
 #endif
 
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/platform.h"
 #include "hyle/visibility.h"
 

@@ -8,7 +8,7 @@
 #include <type_traits>
 #include <utility>
 
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/sched/waker.h"
 
@@ -130,7 +130,8 @@ class Task {
     }
     return *this;
   }
-  HYLE_DISABLE_COPY(Task);
+  Task(const Task&) = delete;
+  Task& operator=(const Task&) = delete;
   ~Task() {
     if (h_) h_.destroy();
   }
@@ -200,7 +201,8 @@ class Task<void> {
     }
     return *this;
   }
-  HYLE_DISABLE_COPY(Task);
+  Task(const Task&) = delete;
+  Task& operator=(const Task&) = delete;
   ~Task() {
     if (h_) h_.destroy();
   }

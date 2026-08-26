@@ -13,6 +13,7 @@
 #include <system_error>
 #include <utility>
 
+#include "hyle/core/compiler.h"
 #include "hyle/error/result.h"
 #include "hyle/error/status.h"
 

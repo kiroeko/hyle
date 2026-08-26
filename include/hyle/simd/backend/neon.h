@@ -12,7 +12,7 @@
 
 #include <arm_neon.h>
 
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/simd/backend/crypto_soft.h"  // shared AES/CLMul software fallback (Crypto op face)
 
 // backend/neon.h -- 128-bit aarch64 NEON backend (simd-design landing list #2, ARM half).

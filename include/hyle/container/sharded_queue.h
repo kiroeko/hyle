@@ -7,7 +7,7 @@
 #include <type_traits>
 
 #include "hyle/container/bounded_queue.h"
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/mem/system_inline.h"
 
@@ -74,7 +74,10 @@ class ShardedQueue {
                       alignof(BoundedQueue<T, Alloc>));
   }
 
-  HYLE_DISABLE_COPY_AND_MOVE(ShardedQueue);
+  ShardedQueue(const ShardedQueue&) = delete;
+  ShardedQueue& operator=(const ShardedQueue&) = delete;
+  ShardedQueue(ShardedQueue&&) = delete;
+  ShardedQueue& operator=(ShardedQueue&&) = delete;
 
   // Allocation failure leaves an invalid object; check once after construction.
   // Push/pop assume valid() so the hot path has no resource-state branch.

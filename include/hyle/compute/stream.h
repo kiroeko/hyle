@@ -5,7 +5,7 @@
 #include "hyle/compute/device.h"
 #include "hyle/compute/types.h"
 #include "hyle/error/result.h"
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
@@ -75,7 +75,8 @@ struct ComputeBackend;
 class Event {
  public:
   Event() noexcept = default;
-  HYLE_DISABLE_COPY(Event);
+  Event(const Event&) = delete;
+  Event& operator=(const Event&) = delete;
   HYLE_COMPUTE_API Event(Event&& o) noexcept;
   HYLE_COMPUTE_API Event& operator=(Event&& o) noexcept;
   HYLE_COMPUTE_API ~Event();
@@ -147,7 +148,8 @@ class Event {
 class Stream {
  public:
   Stream() noexcept = default;
-  HYLE_DISABLE_COPY(Stream);
+  Stream(const Stream&) = delete;
+  Stream& operator=(const Stream&) = delete;
   HYLE_COMPUTE_API Stream(Stream&& o) noexcept;
   HYLE_COMPUTE_API Stream& operator=(Stream&& o) noexcept;
   HYLE_COMPUTE_API ~Stream();

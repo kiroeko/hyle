@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <optional>
 
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/time/clock.h"
 #include "hyle/time/timer_entry.h"
 

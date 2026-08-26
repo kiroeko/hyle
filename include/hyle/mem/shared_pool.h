@@ -8,7 +8,7 @@
 #include <utility>
 
 #include "hyle/core/cache.h"
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/mem/alignment.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/platform/cpu.h" // process-available parallelism -> shard count
@@ -214,7 +214,10 @@ protected:
   }
 #endif
 
-  HYLE_DISABLE_COPY_AND_MOVE(ShardedSlab);
+  ShardedSlab(const ShardedSlab&) = delete;
+  ShardedSlab& operator=(const ShardedSlab&) = delete;
+  ShardedSlab(ShardedSlab&&) = delete;
+  ShardedSlab& operator=(ShardedSlab&&) = delete;
 
   // idx <-> pointer.
   void *block_at(std::uint32_t idx) const noexcept {
@@ -883,7 +886,10 @@ public:
 
   ~PooledRegion() { pool_->deallocate(block_); }
 
-  HYLE_DISABLE_COPY_AND_MOVE(PooledRegion);
+  PooledRegion(const PooledRegion&) = delete;
+  PooledRegion& operator=(const PooledRegion&) = delete;
+  PooledRegion(PooledRegion&&) = delete;
+  PooledRegion& operator=(PooledRegion&&) = delete;
 
   // Bump `bytes` aligned to `alignment`. nullptr if the block is full.
   void *allocate(std::size_t bytes,

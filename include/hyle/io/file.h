@@ -2,9 +2,11 @@
 
 #include <cstdint>
 
+#include "hyle/core/assert.h"
 #include "hyle/io/io_context.h"
 #include "hyle/io/net.h"  // IoOperation, to_token, sched bridge
 #include "hyle/io/proactor.h"
+#include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
 #  define HYLE_IO_API
@@ -134,7 +136,8 @@ class File {
   HYLE_IO_API ~File();
   HYLE_IO_API File(File&& o) noexcept;
   HYLE_IO_API File& operator=(File&& o) noexcept;
-  HYLE_DISABLE_COPY(File);
+  File(const File&) = delete;
+  File& operator=(const File&) = delete;
 
   bool valid() const noexcept { return fd_ >= 0; }
   std::intptr_t fd() const noexcept { return fd_; }

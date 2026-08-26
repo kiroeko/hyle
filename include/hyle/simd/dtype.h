@@ -5,7 +5,7 @@
 #include <cstring>
 
 #include "hyle/c/simd_types.h"
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 
 // dtype.h -- AI numeric storage types fp16 (IEEE-754 binary16) and bf16 (bfloat16) +
 // their scalar <-> fp32 conversions (simd-design dtype layer). bf16 is the AI training/

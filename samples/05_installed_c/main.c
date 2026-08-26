@@ -22,7 +22,7 @@ int main(void) {
   hyle_allocator allocator = hyle_system_allocator();
   void *block = hyle_alloc(&allocator, 64, 0);
   const int ok =
-      hyle_error_ffi_abi_version() == HYLE_FFI_ABI_VERSION &&
+      hyle_error_ffi_abi_version() == HYLE_ERROR_FFI_ABI_VERSION &&
       status != (hyle_status)0 &&
       hyle_status_get_code(status) == HYLE_STATUS_INVALID_ARGUMENT &&
       hyle_status_get_native_error(status, &domain, &native_code) == 0 &&

@@ -57,43 +57,98 @@ endif()
 # Declaration order is construction order and must remain topological.  The
 # visibility here is the visibility of the real hyle_<module> target edge.
 _hyle_declare_component(core)
-_hyle_declare_component(container_intrusive)
-_hyle_declare_component(util_core)
-_hyle_declare_component(error)
-_hyle_declare_component(obs PUBLIC_DEPS error)
+_hyle_declare_component(container_intrusive PUBLIC_DEPS core)
+_hyle_declare_component(util_core PUBLIC_DEPS core)
+_hyle_declare_component(error PUBLIC_DEPS core)
+_hyle_declare_component(obs PUBLIC_DEPS core error)
 _hyle_declare_component(math)
-_hyle_declare_component(platform PUBLIC_DEPS error)
-_hyle_declare_component(time PUBLIC_DEPS error container_intrusive)
-_hyle_declare_component(mem PUBLIC_DEPS error platform util_core)
-_hyle_declare_component(simd PUBLIC_DEPS error platform)
+_hyle_declare_component(platform PUBLIC_DEPS core error)
+_hyle_declare_component(time PUBLIC_DEPS core error container_intrusive)
+_hyle_declare_component(mem PUBLIC_DEPS core error platform util_core)
+_hyle_declare_component(simd PUBLIC_DEPS core error platform)
 # container headers expose error/mem types; platform is used only by compiled
 # implementation paths such as topology/cache-aware concurrency support.
 _hyle_declare_component(container
   PRIVATE_DEPS platform
-  PUBLIC_DEPS error mem container_intrusive)
-_hyle_declare_component(util PUBLIC_DEPS error mem container util_core)
+  PUBLIC_DEPS core error mem container_intrusive)
+_hyle_declare_component(util PUBLIC_DEPS core error mem container util_core)
 # SchedulerOptions publicly names platform types, while time is consumed only
 # by scheduler implementation TUs.
 _hyle_declare_component(sched
   PRIVATE_DEPS time
-  PUBLIC_DEPS error platform mem container util_core)
+  PUBLIC_DEPS core error platform mem container util_core)
 # io's C ABI exposes allocator and owning Status values, while its C++ headers
 # expose container value types and header-inline sched calls (for example
 # complete()/await_suspend()).  These are consumer usage requirements, not only
 # implementation closure: installed consumers that link hyle::io alone must see
 # the corresponding import libraries and runtime DLLs.
 _hyle_declare_component(io
-  PUBLIC_DEPS error mem container ${_hyle_optional_sched_dep})
+  PUBLIC_DEPS core error mem container ${_hyle_optional_sched_dep})
 # compute publicly exposes error/mem and, where available, sched Waker types;
 # platform and simd stay compiled implementation details.
 _hyle_declare_component(compute
   PRIVATE_DEPS platform simd
-  PUBLIC_DEPS error mem ${_hyle_optional_sched_dep})
+  PUBLIC_DEPS core error mem ${_hyle_optional_sched_dep})
 _hyle_declare_component(graph
   PRIVATE_DEPS util_core
-  PUBLIC_DEPS error mem container ${_hyle_optional_sched_dep})
+  PUBLIC_DEPS core error mem container ${_hyle_optional_sched_dep})
 
 unset(_hyle_optional_sched_dep)
+
+# Public headers that directly consume Core source contracts must expose the
+# header-only component as a direct PUBLIC edge. This closes the old loophole
+# where installing the whole include tree made an undeclared dependency appear
+# to work. Special split components name their exact header boundary; ordinary
+# components own include/hyle/<name> recursively.
+foreach(_hyle_component IN LISTS HYLE_KNOWN_COMPONENTS)
+  if(_hyle_component STREQUAL "core")
+    continue()
+  elseif(_hyle_component STREQUAL "container_intrusive")
+    set(_hyle_public_headers
+      "${HYLE_SOURCE_DIR}/include/hyle/container/intrusive_list.h")
+  elseif(_hyle_component STREQUAL "util_core")
+    set(_hyle_public_headers
+      "${HYLE_SOURCE_DIR}/include/hyle/util/random.h"
+      "${HYLE_SOURCE_DIR}/include/hyle/util/ref_counted.h"
+      "${HYLE_SOURCE_DIR}/include/hyle/util/scope_guard.h"
+      "${HYLE_SOURCE_DIR}/include/hyle/util/spin_lock.h"
+      "${HYLE_SOURCE_DIR}/include/hyle/util/type_name.h")
+  else()
+    file(GLOB_RECURSE _hyle_public_headers CONFIGURE_DEPENDS
+      "${HYLE_SOURCE_DIR}/include/hyle/${_hyle_component}/*.h")
+  endif()
+
+  set(_hyle_direct_core_include FALSE)
+  foreach(_hyle_header IN LISTS _hyle_public_headers)
+    file(READ "${_hyle_header}" _hyle_header_text)
+    if(_hyle_header_text MATCHES
+       "#[ \t]*include[ \t]*[<\"]hyle/(core/[^>\"]+|version\\.h)[>\"]")
+      set(_hyle_direct_core_include TRUE)
+      break()
+    endif()
+  endforeach()
+
+  string(TOUPPER "${_hyle_component}" _hyle_component_upper)
+  set(_hyle_public_deps
+    "${_HYLE_PUBLIC_DEPS_${_hyle_component_upper}}")
+  if(_hyle_direct_core_include AND NOT "core" IN_LIST _hyle_public_deps)
+    message(FATAL_ERROR
+      "component '${_hyle_component}' directly includes a Core public header "
+      "but does not declare PUBLIC_DEPS core")
+  elseif(NOT _hyle_direct_core_include AND "core" IN_LIST _hyle_public_deps)
+    message(FATAL_ERROR
+      "component '${_hyle_component}' declares PUBLIC_DEPS core but no public "
+      "header directly consumes Core; remove the edge or document an explicit "
+      "aggregation exception in this contract")
+  endif()
+endforeach()
+unset(_hyle_component)
+unset(_hyle_component_upper)
+unset(_hyle_direct_core_include)
+unset(_hyle_header)
+unset(_hyle_header_text)
+unset(_hyle_public_deps)
+unset(_hyle_public_headers)
 
 # A source-embedding parent commonly sets this as a normal variable before
 # add_subdirectory().  Capture that effective value before creating the cache

@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <type_traits>
 
+#include "hyle/core/compiler.h"
 #include "hyle/simd/dtype.h"
 #include "hyle/simd/vec.h"
 

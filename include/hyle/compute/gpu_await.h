@@ -7,7 +7,7 @@
 #include "hyle/compute/device.h"
 #include "hyle/compute/stream.h"
 #include "hyle/error/status.h"
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/sched/waker.h"
 #include "hyle/visibility.h"
 

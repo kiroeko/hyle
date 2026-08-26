@@ -8,7 +8,7 @@
 #include <new>
 #include <span>
 
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/mem/alignment.h"
 #include "hyle/mem/allocator.h"
 
@@ -32,7 +32,10 @@ public:
   }
   FixedPool(void *data, std::size_t size) noexcept { init(data, size); }
 
-  HYLE_DISABLE_COPY_AND_MOVE(FixedPool);
+  FixedPool(const FixedPool&) = delete;
+  FixedPool& operator=(const FixedPool&) = delete;
+  FixedPool(FixedPool&&) = delete;
+  FixedPool& operator=(FixedPool&&) = delete;
 
   bool valid() const noexcept { return begin_ != nullptr; }
 

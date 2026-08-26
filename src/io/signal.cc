@@ -4,7 +4,7 @@
 #include <mutex>
 #include <utility>
 
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/platform.h"
 #include "hyle/sched/coro.h"   // sched::suspend
 #include "hyle/sched/waker.h"  // sched::current_waker

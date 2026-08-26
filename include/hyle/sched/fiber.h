@@ -6,7 +6,7 @@
 #  include <memory>
 #endif
 
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/mem/fiber_stack.h"
 #include "hyle/visibility.h"
 
@@ -76,7 +76,8 @@ class Fiber {
 
   HYLE_SCHED_API Fiber(Fiber&& other) noexcept;
   HYLE_SCHED_API Fiber& operator=(Fiber&& other) noexcept;
-  HYLE_DISABLE_COPY(Fiber);
+  Fiber(const Fiber&) = delete;
+  Fiber& operator=(const Fiber&) = delete;
 
   // Enter (or continue) the fiber. Returns when the fiber yields or finishes.
   // Precondition: !done().

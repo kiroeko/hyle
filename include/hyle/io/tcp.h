@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "hyle/core/assert.h"
 #include "hyle/io/io_context.h"
 #include "hyle/io/net.h"
 #include "hyle/io/net_cancel.h"
@@ -10,6 +11,7 @@
 #include "hyle/io/net_timeout.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/sched/coro.h"
+#include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
 #  define HYLE_IO_API
@@ -43,7 +45,8 @@ class TcpStream {
   HYLE_IO_API ~TcpStream();
   HYLE_IO_API TcpStream(TcpStream&& o) noexcept;
   HYLE_IO_API TcpStream& operator=(TcpStream&& o) noexcept;
-  HYLE_DISABLE_COPY(TcpStream);
+  TcpStream(const TcpStream&) = delete;
+  TcpStream& operator=(const TcpStream&) = delete;
 
   bool valid() const noexcept { return fd_ >= 0; }
   std::intptr_t fd() const noexcept { return fd_; }
@@ -154,7 +157,8 @@ class TcpListener {
   HYLE_IO_API ~TcpListener();
   HYLE_IO_API TcpListener(TcpListener&& o) noexcept;
   HYLE_IO_API TcpListener& operator=(TcpListener&& o) noexcept;
-  HYLE_DISABLE_COPY(TcpListener);
+  TcpListener(const TcpListener&) = delete;
+  TcpListener& operator=(const TcpListener&) = delete;
 
   bool valid() const noexcept { return fd_ >= 0; }
   std::intptr_t fd() const noexcept { return fd_; }

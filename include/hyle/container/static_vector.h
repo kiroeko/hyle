@@ -13,7 +13,7 @@
 #include <type_traits>
 #include <utility>
 
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 
 namespace hyle::container {
 

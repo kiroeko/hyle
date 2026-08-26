@@ -2,6 +2,7 @@
 
 #include <cstddef>
 
+#include "hyle/core/compiler.h"
 #include "hyle/simd/vec.h"
 
 // Target-bound whole-range algorithm helpers. These are intentionally part of

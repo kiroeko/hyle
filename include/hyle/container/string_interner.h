@@ -5,7 +5,7 @@
 
 #include "hyle/container/hash.h"  // HYLE_CONTAINER_API
 #include "hyle/container/string_ref.h"
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/mem/allocator.h"
 
 namespace hyle::container {
@@ -46,7 +46,10 @@ class StringInterner {
   HYLE_CONTAINER_API explicit StringInterner(
       mem::Allocator alloc = mem::system_allocator());
   HYLE_CONTAINER_API ~StringInterner();
-  HYLE_DISABLE_COPY_AND_MOVE(StringInterner);
+  StringInterner(const StringInterner&) = delete;
+  StringInterner& operator=(const StringInterner&) = delete;
+  StringInterner(StringInterner&&) = delete;
+  StringInterner& operator=(StringInterner&&) = delete;
 
   // Acquires one reference to `s` (bumping its refcount if already present).
   // Returns its StringId for lookup()/retain()/release(). The empty string maps

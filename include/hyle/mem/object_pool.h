@@ -8,7 +8,7 @@
 #include <type_traits>
 #include <utility>
 
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/mem/pool_loan.h"
 #include "hyle/mem/pool_cache.h"
@@ -44,7 +44,10 @@ public:
   BasicObjectPool(Allocator alloc, std::uint32_t capacity)
       : pool_(alloc, sizeof(T), capacity, alignof(T)) {}
 
-  HYLE_DISABLE_COPY_AND_MOVE(BasicObjectPool);
+  BasicObjectPool(const BasicObjectPool&) = delete;
+  BasicObjectPool& operator=(const BasicObjectPool&) = delete;
+  BasicObjectPool(BasicObjectPool&&) = delete;
+  BasicObjectPool& operator=(BasicObjectPool&&) = delete;
 
   // Construct a T in a pooled slot. Returns nullptr if the pool is exhausted.
   template <class... Args> T *create(Args &&...args) {
@@ -125,7 +128,10 @@ public:
           SharedPoolCache::kDefaultTransferBatch) noexcept
       : cache_(pool.shared_pool(), capacity, transfer_batch) {}
 
-  HYLE_DISABLE_COPY_AND_MOVE(ObjectPoolCache);
+  ObjectPoolCache(const ObjectPoolCache&) = delete;
+  ObjectPoolCache& operator=(const ObjectPoolCache&) = delete;
+  ObjectPoolCache(ObjectPoolCache&&) = delete;
+  ObjectPoolCache& operator=(ObjectPoolCache&&) = delete;
 
   template <class... Args> T *create(Args &&...args) {
     void *slot = cache_.allocate();
@@ -221,7 +227,10 @@ public:
     cleanup_constructed();
   }
 
-  HYLE_DISABLE_COPY_AND_MOVE(BasicPreservingObjectPool);
+  BasicPreservingObjectPool(const BasicPreservingObjectPool&) = delete;
+  BasicPreservingObjectPool& operator=(const BasicPreservingObjectPool&) = delete;
+  BasicPreservingObjectPool(BasicPreservingObjectPool&&) = delete;
+  BasicPreservingObjectPool& operator=(BasicPreservingObjectPool&&) = delete;
 
   bool valid() const noexcept { return valid_; }
   std::uint32_t capacity() const noexcept { return capacity_; }

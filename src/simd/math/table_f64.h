@@ -11,7 +11,7 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/simd/vec.h"
 
 namespace hyle::simd::detail::table_f64 {

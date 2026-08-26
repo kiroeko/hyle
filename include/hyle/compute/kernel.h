@@ -11,7 +11,7 @@
 #include "hyle/compute/stream.h"
 #include "hyle/compute/types.h"
 #include "hyle/error/result.h"
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/mem/alignment.h"   // align_up (scalar blob field alignment)
 #include "hyle/visibility.h"
 
@@ -61,7 +61,8 @@ constexpr unsigned blocks_for(std::size_t n, unsigned block_size) noexcept {
 class Kernel {
  public:
   Kernel() noexcept = default;
-  HYLE_DISABLE_COPY(Kernel);
+  Kernel(const Kernel&) = delete;
+  Kernel& operator=(const Kernel&) = delete;
   HYLE_COMPUTE_API Kernel(Kernel&& o) noexcept;
   HYLE_COMPUTE_API Kernel& operator=(Kernel&& o) noexcept;
   HYLE_COMPUTE_API ~Kernel();
@@ -222,7 +223,8 @@ HYLE_COMPUTE_API Status launch_batch(Stream& stream, const BatchItem* items,
 class RecordedLaunch {
  public:
   RecordedLaunch() noexcept = default;
-  HYLE_DISABLE_COPY(RecordedLaunch);
+  RecordedLaunch(const RecordedLaunch&) = delete;
+  RecordedLaunch& operator=(const RecordedLaunch&) = delete;
   HYLE_COMPUTE_API RecordedLaunch(RecordedLaunch&& o) noexcept;
   HYLE_COMPUTE_API RecordedLaunch& operator=(RecordedLaunch&& o) noexcept;
   HYLE_COMPUTE_API ~RecordedLaunch();

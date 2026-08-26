@@ -4,7 +4,7 @@
 #include <cstdint>
 
 #include "hyle/error/result.h"
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
@@ -66,7 +66,8 @@ class MappedFile {
   HYLE_PLATFORM_API ~MappedFile();
   HYLE_PLATFORM_API MappedFile(MappedFile&& o) noexcept;
   HYLE_PLATFORM_API MappedFile& operator=(MappedFile&& o) noexcept;
-  HYLE_DISABLE_COPY(MappedFile);
+  MappedFile(const MappedFile&) = delete;
+  MappedFile& operator=(const MappedFile&) = delete;
 
   bool valid() const noexcept { return addr_ != nullptr; }
   explicit operator bool() const noexcept { return valid(); }

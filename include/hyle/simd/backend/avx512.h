@@ -10,7 +10,7 @@
 
 #include <immintrin.h>
 
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/simd/backend/crypto_x86.h"  // shared 128-bit AES-NI/PCLMUL workers (Crypto op face)
 #include "hyle/simd/backend/x86_detail.h"  // shared lane-type predicates (kSupported/kI*/kSigned)
 // Layered include (simd-17 batch0): pull in the 256-bit backend (which transitively pulls the

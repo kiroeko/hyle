@@ -1,6 +1,6 @@
 [CmdletBinding(PositionalBinding = $false)]
 param(
-    [ValidateSet('Configure', 'Build', 'Test', 'Workflow', 'PackageSmoke', 'ProductShapeSmoke', 'SourcePackageSmoke')]
+    [ValidateSet('Configure', 'Build', 'Test', 'Workflow', 'ComponentContract', 'PackageSmoke', 'ProductShapeSmoke', 'SourcePackageSmoke')]
     [string]$Action = 'Configure',
     [string]$Preset = 'windows-ninja',
     [string]$SmokeRoot,
@@ -148,6 +148,15 @@ switch ($Action) {
         } else {
             & cmake --workflow --preset $Preset @effectiveExtraArgs
         }
+    }
+    'ComponentContract' {
+        if (-not $SmokeRoot) {
+            throw 'Action ComponentContract requires -SmokeRoot <scratch-directory>.'
+        }
+        $sourceDir = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
+        $smokeScript = Join-Path $sourceDir 'cmake\HyleCiComponentContract.cmake'
+        & cmake "-DHYLE_SOURCE_DIR=$sourceDir" "-DHYLE_SMOKE_ROOT=$SmokeRoot" `
+            -DHYLE_SMOKE_GENERATOR=Ninja -P $smokeScript
     }
     'PackageSmoke' {
         if (-not $SmokeRoot) {

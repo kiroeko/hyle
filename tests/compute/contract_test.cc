@@ -13,8 +13,8 @@
 // loudly, it is NOT a recoverable Status). These tests prove the contracts actually
 // fire -- the error-path coverage the positive tests never reach.
 //
-// MECHANISM: HYLE_FATAL_ASSERT (macros.h:104) is NOT compiled out by NDEBUG -- it
-// fprintf's + HYLE_TRAP()s in Debug AND Release, so EXPECT_DEATH catches it either way
+// MECHANISM: HYLE_FATAL_ASSERT (core/assert.h) is not compiled out by NDEBUG; its
+// noinline failure sink prints diagnostics and aborts in Debug and Release, so EXPECT_DEATH catches it
 // (same as util/registry_test.cc:116, sched/fiber_test.cc:114). We force the THREADSAFE
 // death-test style: on a GPU machine a prior test may have initialized CUDA, and the
 // default "fast" style fork()s that state into the child (fork-after-CUDA-init is

@@ -7,7 +7,7 @@
 #include <new>
 #include <type_traits>
 
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 
 namespace hyle::container {
 
@@ -168,13 +168,13 @@ public:
     insert_before(sentinel_.next_, hook_of(node));
   }
 
-  HYLE_NODISCARD bool try_push_back(T *node) noexcept {
+  [[nodiscard]] bool try_push_back(T *node) noexcept {
     if (node == nullptr || hook_of(node)->linked())
       return false;
     push_back(node);
     return true;
   }
-  HYLE_NODISCARD bool try_push_front(T *node) noexcept {
+  [[nodiscard]] bool try_push_front(T *node) noexcept {
     if (node == nullptr || hook_of(node)->linked())
       return false;
     push_front(node);
@@ -189,7 +189,7 @@ public:
     return iterator(hook);
   }
 
-  HYLE_NODISCARD bool try_insert(const_iterator pos, T *node) noexcept {
+  [[nodiscard]] bool try_insert(const_iterator pos, T *node) noexcept {
     if (node == nullptr || hook_of(node)->linked())
       return false;
     (void)insert(pos, node);
@@ -205,7 +205,7 @@ public:
     return empty() ? nullptr : node_of(sentinel_.prev_);
   }
 
-  HYLE_NODISCARD T *pop_front() noexcept {
+  [[nodiscard]] T *pop_front() noexcept {
     if (empty())
       return nullptr;
     IntrusiveListHook *h = sentinel_.next_;
@@ -218,7 +218,7 @@ public:
     h->next_ = nullptr;
     return node_of(h);
   }
-  HYLE_NODISCARD T *pop_back() noexcept {
+  [[nodiscard]] T *pop_back() noexcept {
     if (empty())
       return nullptr;
     IntrusiveListHook *h = sentinel_.prev_;

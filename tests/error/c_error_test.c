@@ -29,7 +29,7 @@ int main(void) {
   CHECK(sizeof(hyle_status_code) == sizeof(uint16_t));
   CHECK(sizeof(hyle_native_error_domain) == sizeof(uint16_t));
   CHECK(sizeof(hyle_status) == sizeof(void *));
-  CHECK(hyle_error_ffi_abi_version() == HYLE_FFI_ABI_VERSION);
+  CHECK(hyle_error_ffi_abi_version() == HYLE_ERROR_FFI_ABI_VERSION);
   CHECK(hyle_status_get_code(status) == HYLE_STATUS_OK);
   CHECK(hyle_status_get_native_error(status, &domain, &native_code) == 0);
   CHECK(domain == HYLE_NATIVE_ERROR_NONE);

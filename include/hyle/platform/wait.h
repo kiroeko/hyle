@@ -3,7 +3,7 @@
 #include <atomic>
 #include <cstdint>
 
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
@@ -55,7 +55,10 @@ HYLE_PLATFORM_API void wake_all(const std::atomic<std::uint32_t>* addr) noexcept
 class Parker {
  public:
   Parker() noexcept = default;
-  HYLE_DISABLE_COPY_AND_MOVE(Parker);
+  Parker(const Parker&) = delete;
+  Parker& operator=(const Parker&) = delete;
+  Parker(Parker&&) = delete;
+  Parker& operator=(Parker&&) = delete;
 
   // Block until a token is available, then consume it. Re-checks state in a
   // loop, so a spurious low-level wake just re-sleeps (never a false return).

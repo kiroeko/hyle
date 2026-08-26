@@ -17,7 +17,8 @@
 #include "hyle/container/swiss_table.h"
 #include "hyle/error/result.h"
 #include "hyle/error/status.h"
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
+#include "hyle/core/detail/preprocessor.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/mem/region.h"
 #include "hyle/util/ref_counted.h"
@@ -163,7 +164,10 @@ class Registry {
       : alloc_(alloc), keys_(alloc, string_region_options()),
         metadata_(alloc, string_region_options()), entries_(alloc) {}
   ~Registry() = default;
-  HYLE_DISABLE_COPY_AND_MOVE(Registry);
+  Registry(const Registry&) = delete;
+  Registry& operator=(const Registry&) = delete;
+  Registry(Registry&&) = delete;
+  Registry& operator=(Registry&&) = delete;
 
   // Register `creator` under `key`. Higher priority wins; on equal priority for
   // the same key returns AlreadyExists. Lower priority is a successful no-op.
@@ -396,7 +400,10 @@ class Registry {
                           alignof(EntryView));
       }
     }
-    HYLE_DISABLE_COPY_AND_MOVE(SnapshotStorage);
+    SnapshotStorage(const SnapshotStorage&) = delete;
+    SnapshotStorage& operator=(const SnapshotStorage&) = delete;
+    SnapshotStorage(SnapshotStorage&&) = delete;
+    SnapshotStorage& operator=(SnapshotStorage&&) = delete;
 
     bool allocate(std::size_t count) noexcept {
       capacity_ = count;
@@ -590,12 +597,14 @@ struct Registerer {
 
 // Register a stateless creator function under a stringized key.
 #define HYLE_REGISTER_CREATOR(RegistryName, key, ...)                         \
-  static Registerer##RegistryName HYLE_CONCAT(g_##RegistryName##_, __LINE__)( \
+  static Registerer##RegistryName HYLE_DETAIL_CONCAT(                         \
+      g_##RegistryName##_, __LINE__)(                                         \
       #key, RegistryName(), __VA_ARGS__)
 
 // Register class `Derived` under a stringized key, with type_name as help.
 #define HYLE_REGISTER_CLASS(RegistryName, key, Derived)                       \
-  static Registerer##RegistryName HYLE_CONCAT(g_##RegistryName##_, __LINE__)( \
+  static Registerer##RegistryName HYLE_DETAIL_CONCAT(                         \
+      g_##RegistryName##_, __LINE__)(                                         \
       #key, RegistryName(),                                                   \
       Registerer##RegistryName::default_creator<Derived>,                     \
       ::hyle::util::type_name<Derived>())

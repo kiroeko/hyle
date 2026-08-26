@@ -3,7 +3,7 @@
 #include <atomic>
 #include <cstdint>
 
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 
 #if defined(_MSC_VER)
 #include <intrin.h>
@@ -23,7 +23,10 @@ namespace hyle::container::detail {
 class AdaptiveRwLock {
 public:
   AdaptiveRwLock() noexcept = default;
-  HYLE_DISABLE_COPY_AND_MOVE(AdaptiveRwLock);
+  AdaptiveRwLock(const AdaptiveRwLock&) = delete;
+  AdaptiveRwLock& operator=(const AdaptiveRwLock&) = delete;
+  AdaptiveRwLock(AdaptiveRwLock&&) = delete;
+  AdaptiveRwLock& operator=(AdaptiveRwLock&&) = delete;
 
   void lock() noexcept {
     std::uint32_t spins = 0;

@@ -5,7 +5,7 @@
 #include <iterator>
 
 #include "hyle/container/hash.h"  // HYLE_CONTAINER_API
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/mem/allocator.h"
 
 namespace hyle::container {

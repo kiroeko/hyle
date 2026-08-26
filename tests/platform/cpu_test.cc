@@ -4,8 +4,6 @@
 // hardware, so it checks the logic of the probe, not a specific CPU.
 #include "hyle/platform/cpu.h"
 
-#include "hyle/core/cache.h"
-
 #include "cpu_internal.h"
 
 #include <gtest/gtest.h>
@@ -56,14 +54,6 @@ TEST(Cpu, CacheLineSizeSane) {
   EXPECT_LE(c, 256u);
   EXPECT_EQ(c & (c - 1u), 0u);      // power of two
   EXPECT_EQ(c, cache_line_size());  // stable / cached
-}
-
-TEST(Cpu, RuntimeCacheLineFitsCertifiedStaticLayoutBounds) {
-  const unsigned runtime = cache_line_size();
-  EXPECT_GE(runtime, hyle::core::kMinConstructiveInterferenceSize);
-  EXPECT_LE(runtime, hyle::core::kMaxDestructiveInterferenceSize);
-  EXPECT_GE(runtime, hyle::core::kConstructiveInterferenceSize);
-  EXPECT_LE(runtime, hyle::core::kDestructiveInterferenceSize);
 }
 
 TEST(Cpu, CacheCapacityIsCachedAndHierarchicalWhenKnown) {

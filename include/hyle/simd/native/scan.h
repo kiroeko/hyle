@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "hyle/core/compiler.h"
 #include "hyle/simd/vec.h"
 
 namespace hyle::simd::native {

@@ -19,7 +19,7 @@
 #endif
 
 #include "hyle/core/cache.h"
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/simd/vec.h"
 
 // Must be included only from a TU that already defined HYLE_SIMD_TARGET_*.

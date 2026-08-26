@@ -8,7 +8,7 @@
 
 #include "hyle/mem/system_inline.h"
 
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/obs/trace.h"
 
 #include <cerrno>

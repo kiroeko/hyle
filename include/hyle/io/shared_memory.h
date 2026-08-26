@@ -4,7 +4,7 @@
 #include <cstdint>
 
 #include "hyle/error/status.h"
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
@@ -26,7 +26,8 @@ class SharedMemory {
   HYLE_IO_API ~SharedMemory();
   HYLE_IO_API SharedMemory(SharedMemory&&) noexcept;
   HYLE_IO_API SharedMemory& operator=(SharedMemory&&) noexcept;
-  HYLE_DISABLE_COPY(SharedMemory);
+  SharedMemory(const SharedMemory&) = delete;
+  SharedMemory& operator=(const SharedMemory&) = delete;
 
   HYLE_IO_API static SharedMemory create(const char* name,
                                          std::size_t size) noexcept;

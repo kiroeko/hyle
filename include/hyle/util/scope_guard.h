@@ -3,7 +3,8 @@
 #include <type_traits>
 #include <utility>
 
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
+#include "hyle/core/detail/preprocessor.h"
 
 // Go-style `defer`: run a cleanup callable when the enclosing scope exits (clay
 // scope_guard). C++23 still has no std defer; this stays. Unlike clay we need NO
@@ -50,7 +51,8 @@ class [[nodiscard("a temporary ScopeGuard runs immediately; bind it to a name")]
 
   bool active() const noexcept { return active_; }
 
-  HYLE_DISABLE_COPY(ScopeGuard);
+  ScopeGuard(const ScopeGuard&) = delete;
+  ScopeGuard& operator=(const ScopeGuard&) = delete;
   ScopeGuard& operator=(ScopeGuard&&) = delete;
 
  private:
@@ -67,6 +69,7 @@ ScopeGuard(F&&) -> ScopeGuard<std::decay_t<F>>;  // deduce stored type by value
 // lets multiple defers coexist in one scope. `[&]` captures by reference -- the
 // statement runs before the captured locals leave scope.
 #define HYLE_DEFER(...)                                                        \
-  ::hyle::util::ScopeGuard HYLE_CONCAT(hyle_defer_, __COUNTER__) {             \
+  ::hyle::util::ScopeGuard HYLE_DETAIL_CONCAT(                                 \
+      hyle_defer_, __COUNTER__) {                                              \
     [&]() noexcept { __VA_ARGS__; }                                           \
   }

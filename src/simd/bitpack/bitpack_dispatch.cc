@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "hyle/macros.h"  // HYLE_FATAL_ASSERT (fail-fast on bits-contract violation)
+#include "hyle/core/compiler.h"  // HYLE_FATAL_ASSERT (fail-fast on bits-contract violation)
 #include "hyle/platform.h"
 #include "hyle/simd/runtime.h"
 #include "src/simd/bitpack/bitstream.h"

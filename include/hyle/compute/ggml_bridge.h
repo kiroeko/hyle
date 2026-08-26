@@ -5,7 +5,7 @@
 #include "hyle/compute/device.h"
 #include "hyle/error/result.h"
 #include "hyle/error/status.h"
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/sched/blocking.h"  // BlockingPool, spawn_blocking, JoinHandle
 #include "hyle/visibility.h"
@@ -69,7 +69,8 @@ namespace hyle::compute {
 class HYLE_COMPUTE_API GgmlBackend {
  public:
   GgmlBackend() noexcept = default;
-  HYLE_DISABLE_COPY(GgmlBackend);
+  GgmlBackend(const GgmlBackend&) = delete;
+  GgmlBackend& operator=(const GgmlBackend&) = delete;
   GgmlBackend(GgmlBackend&& o) noexcept : be_(o.be_), galloc_(o.galloc_) {
     o.be_ = nullptr; o.galloc_ = nullptr;
   }
@@ -218,7 +219,8 @@ HYLE_COMPUTE_API sched::JoinHandle<Status> ggml_mul_f32(
 class HYLE_COMPUTE_API FfnBlock {
  public:
   FfnBlock() noexcept = default;
-  HYLE_DISABLE_COPY(FfnBlock);
+  FfnBlock(const FfnBlock&) = delete;
+  FfnBlock& operator=(const FfnBlock&) = delete;
   FfnBlock(FfnBlock&& o) noexcept;
   FfnBlock& operator=(FfnBlock&& o) noexcept;
   ~FfnBlock();

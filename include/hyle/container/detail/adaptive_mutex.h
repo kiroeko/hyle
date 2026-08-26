@@ -3,7 +3,7 @@
 #include <atomic>
 #include <cstdint>
 
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 
 #if defined(_MSC_VER)
 #include <intrin.h>
@@ -20,7 +20,10 @@ namespace hyle::container::detail {
 class AdaptiveMutex {
 public:
   AdaptiveMutex() noexcept = default;
-  HYLE_DISABLE_COPY_AND_MOVE(AdaptiveMutex);
+  AdaptiveMutex(const AdaptiveMutex&) = delete;
+  AdaptiveMutex& operator=(const AdaptiveMutex&) = delete;
+  AdaptiveMutex(AdaptiveMutex&&) = delete;
+  AdaptiveMutex& operator=(AdaptiveMutex&&) = delete;
 
   void lock() noexcept {
     if (!locked_.test_and_set(std::memory_order_acquire))

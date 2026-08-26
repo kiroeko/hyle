@@ -6,7 +6,7 @@
 #include <utility>
 
 #include "hyle/error/result.h"
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/platform/numa.h"
 #include "hyle/platform/virtual_memory.h"
 #include "hyle/visibility.h"
@@ -273,7 +273,8 @@ public:
     }
     return *this;
   }
-  HYLE_DISABLE_COPY(HugeRegion);
+  HugeRegion(const HugeRegion&) = delete;
+  HugeRegion& operator=(const HugeRegion&) = delete;
 
   bool valid() const noexcept { return region_.valid(); }
   explicit operator bool() const noexcept { return valid(); }

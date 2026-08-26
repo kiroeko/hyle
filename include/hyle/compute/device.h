@@ -4,7 +4,7 @@
 #include <cstdint>
 
 #include "hyle/compute/types.h"
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)

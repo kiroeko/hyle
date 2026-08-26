@@ -2,7 +2,7 @@
 
 #include <cstring>
 
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 
 namespace hyle::container {
 namespace {

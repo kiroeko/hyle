@@ -30,7 +30,7 @@
 #include <limits>
 #include <type_traits>
 
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/simd/backend/crypto_soft.h"  // shared AES/CLMul software fallback (Crypto op face)
 
 namespace hyle::simd {

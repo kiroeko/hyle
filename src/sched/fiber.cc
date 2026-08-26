@@ -5,7 +5,7 @@
 #include <utility>
 
 #include "fcontext.h"
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/obs/trace.h"  // obs-02: HYLE_TRACE_FIBER_* (compile-time gated, OFF=0 code)
 
 // ---- ThreadSanitizer fiber integration --------------------------------------

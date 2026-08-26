@@ -29,7 +29,10 @@ struct ByteBuf {
   ~ByteBuf() {
     if (data != nullptr) alloc.deallocate(data, cap, kAllocAlign);
   }
-  HYLE_DISABLE_COPY_AND_MOVE(ByteBuf);
+  ByteBuf(const ByteBuf&) = delete;
+  ByteBuf& operator=(const ByteBuf&) = delete;
+  ByteBuf(ByteBuf&&) = delete;
+  ByteBuf& operator=(ByteBuf&&) = delete;
 
   bool reserve(std::uint32_t want) noexcept {
     if (want <= cap) return true;

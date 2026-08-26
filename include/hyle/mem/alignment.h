@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 
 // Compile-time alignment helpers (clay alignment.h, generalized). All take a
 // power-of-two alignment; bit tricks below are only valid for powers of two, so

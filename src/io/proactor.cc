@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "hyle/container/swiss_table.h"
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/platform.h"
 #include "hyle/time/unix_timestamp.h"
 

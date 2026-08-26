@@ -2,10 +2,12 @@
 
 #include <cstdint>
 
+#include "hyle/core/assert.h"
 #include "hyle/io/io_context.h"
 #include "hyle/io/net.h"
 #include "hyle/io/net_cancel.h"
 #include "hyle/io/net_timeout.h"
+#include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
 #  define HYLE_IO_API
@@ -38,7 +40,8 @@ class UdpSocket {
   HYLE_IO_API ~UdpSocket();
   HYLE_IO_API UdpSocket(UdpSocket&& o) noexcept;
   HYLE_IO_API UdpSocket& operator=(UdpSocket&& o) noexcept;
-  HYLE_DISABLE_COPY(UdpSocket);
+  UdpSocket(const UdpSocket&) = delete;
+  UdpSocket& operator=(const UdpSocket&) = delete;
 
   bool valid() const noexcept { return fd_ >= 0; }
   std::intptr_t fd() const noexcept { return fd_; }

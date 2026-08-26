@@ -9,7 +9,7 @@
 
 #include "hyle/c/error.h"
 #include "hyle/error/status.h"
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "status_access.h"
 
 struct hyle_status_handle {
@@ -126,7 +126,7 @@ hyle_status status_to_ffi(Status &&status) noexcept {
 extern "C" {
 
 uint32_t HYLE_ERROR_C_CALL hyle_error_ffi_abi_version(void) {
-  return HYLE_FFI_ABI_VERSION;
+  return HYLE_ERROR_FFI_ABI_VERSION;
 }
 
 void HYLE_ERROR_C_CALL hyle_status_destroy(hyle_status status) {

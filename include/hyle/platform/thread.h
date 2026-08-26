@@ -89,7 +89,8 @@ class HYLE_PLATFORM_API Thread {
   Thread() noexcept = default;
   Thread(Thread&& other) noexcept : handle_(other.handle_) { other.handle_ = 0; }
   Thread& operator=(Thread&& other) noexcept;
-  HYLE_DISABLE_COPY(Thread);
+  Thread(const Thread&) = delete;
+  Thread& operator=(const Thread&) = delete;
   ~Thread();
 
   // entry(ctx) runs on the new thread; ctx must outlive the thread's execution.

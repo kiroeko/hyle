@@ -4,6 +4,7 @@
 
 #include "hyle/io/io_context.h"
 #include "hyle/io/net.h"  // IoOperation, current_waker/suspend bridge
+#include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
 #  define HYLE_IO_API
@@ -70,7 +71,8 @@ class SignalSet {
   HYLE_IO_API ~SignalSet();
   HYLE_IO_API SignalSet(SignalSet&& o) noexcept;
   HYLE_IO_API SignalSet& operator=(SignalSet&& o) noexcept;
-  HYLE_DISABLE_COPY(SignalSet);
+  SignalSet(const SignalSet&) = delete;
+  SignalSet& operator=(const SignalSet&) = delete;
 
   bool valid() const noexcept { return valid_; }
   unsigned owner_worker() const noexcept { return owner_; }

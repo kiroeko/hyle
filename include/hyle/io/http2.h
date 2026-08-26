@@ -4,6 +4,7 @@
 #include <cstdint>
 
 #include "hyle/io/http.h"
+#include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
 #  define HYLE_IO_API
@@ -108,7 +109,8 @@ class Http2ServerConn {
   HYLE_IO_API ~Http2ServerConn();
   HYLE_IO_API Http2ServerConn(Http2ServerConn&&) noexcept;
   HYLE_IO_API Http2ServerConn& operator=(Http2ServerConn&&) noexcept;
-  HYLE_DISABLE_COPY(Http2ServerConn);
+  Http2ServerConn(const Http2ServerConn&) = delete;
+  Http2ServerConn& operator=(const Http2ServerConn&) = delete;
 
   bool valid() const noexcept { return impl_ != nullptr && transport_.valid(); }
 
@@ -167,7 +169,8 @@ class Http2ClientConn {
   HYLE_IO_API ~Http2ClientConn();
   HYLE_IO_API Http2ClientConn(Http2ClientConn&&) noexcept;
   HYLE_IO_API Http2ClientConn& operator=(Http2ClientConn&&) noexcept;
-  HYLE_DISABLE_COPY(Http2ClientConn);
+  Http2ClientConn(const Http2ClientConn&) = delete;
+  Http2ClientConn& operator=(const Http2ClientConn&) = delete;
 
   bool valid() const noexcept { return impl_ != nullptr && transport_.valid(); }
 

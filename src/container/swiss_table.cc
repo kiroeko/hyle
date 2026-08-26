@@ -3,7 +3,7 @@
 #include <cstring>
 
 #include "hyle/container/probe.h"
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 
 // Type-erased cold path for SwissTable (conventions §7). The heavy resize loop
 // (allocate, memset, rehash-reinsert, free) is compiled exactly ONCE here rather

@@ -25,10 +25,11 @@
 #include <cstdint>
 
 #include "hyle/io/tcp.h"
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/sched/coro.h"
 #include "hyle/container/string_ref.h"
+#include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
 #  define HYLE_IO_API
@@ -54,7 +55,8 @@ class TlsContext {
   HYLE_IO_API ~TlsContext();
   HYLE_IO_API TlsContext(TlsContext&& o) noexcept;
   HYLE_IO_API TlsContext& operator=(TlsContext&& o) noexcept;
-  HYLE_DISABLE_COPY(TlsContext);
+  TlsContext(const TlsContext&) = delete;
+  TlsContext& operator=(const TlsContext&) = delete;
 
   bool valid() const noexcept { return ctx_ != nullptr; }
   ssl_ctx_st* native() const noexcept { return ctx_; }
@@ -97,7 +99,8 @@ class TlsStream {
   HYLE_IO_API ~TlsStream();
   HYLE_IO_API TlsStream(TlsStream&& o) noexcept;
   HYLE_IO_API TlsStream& operator=(TlsStream&& o) noexcept;
-  HYLE_DISABLE_COPY(TlsStream);
+  TlsStream(const TlsStream&) = delete;
+  TlsStream& operator=(const TlsStream&) = delete;
 
   bool valid() const noexcept { return ssl_ != nullptr; }
   unsigned owner_worker() const noexcept { return sock_.owner_worker(); }

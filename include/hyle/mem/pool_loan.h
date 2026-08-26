@@ -2,7 +2,7 @@
 
 #include <utility>
 
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 
 namespace hyle::mem {
 
@@ -18,7 +18,8 @@ public:
   }
   ~PoolLoan() { reset(); }
 
-  HYLE_DISABLE_COPY(PoolLoan);
+  PoolLoan(const PoolLoan&) = delete;
+  PoolLoan& operator=(const PoolLoan&) = delete;
   PoolLoan(PoolLoan &&other) noexcept
       : owner_(std::exchange(other.owner_, nullptr)),
         ptr_(std::exchange(other.ptr_, nullptr)) {}

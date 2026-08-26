@@ -7,7 +7,7 @@
 #include <new>
 #include <vector>
 
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/platform/thread.h"
 
 namespace hyle::sched {

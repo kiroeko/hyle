@@ -13,7 +13,10 @@
 
 #include <stdint.h>
 
-#include "hyle/core/version_defs.h"
+// Legacy pre-release generation of this error artifact's provisional FFI.
+// It is intentionally error-local: Core has no Native FFI product, and this
+// schema will be removed or redesigned when Error receives its own v2 review.
+#define HYLE_ERROR_FFI_ABI_VERSION UINT32_C(0x00010000)
 
 #ifdef __cplusplus
 extern "C" {

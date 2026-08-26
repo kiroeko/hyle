@@ -7,7 +7,7 @@
 #include <type_traits>
 #include <utility>
 
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/mem/alignment.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/mem/pool_loan.h"
@@ -98,7 +98,8 @@ public:
     free_blocks();
   }
 
-  HYLE_DISABLE_COPY(GrowablePoolCore);
+  GrowablePoolCore(const GrowablePoolCore&) = delete;
+  GrowablePoolCore& operator=(const GrowablePoolCore&) = delete;
   GrowablePoolCore(GrowablePoolCore &&o) noexcept { steal(o); }
   GrowablePoolCore &operator=(GrowablePoolCore &&o) noexcept {
     if (this != &o) {
@@ -280,7 +281,8 @@ public:
     }
   }
 
-  HYLE_DISABLE_COPY(GrowablePool);
+  GrowablePool(const GrowablePool&) = delete;
+  GrowablePool& operator=(const GrowablePool&) = delete;
   GrowablePool(GrowablePool &&o) noexcept : core_(std::move(o.core_)) {}
   GrowablePool &operator=(GrowablePool &&o) noexcept {
     if (this != &o) {

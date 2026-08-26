@@ -16,7 +16,7 @@
 #include <utility>
 
 #include "backend.h"
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 
 // ggml headers -- CONFINED to this .cc (never in ggml_bridge.h). ggml-cuda.h is pure
 // C declarations (no CUDA toolkit headers), safe to include from this plain C++ TU.

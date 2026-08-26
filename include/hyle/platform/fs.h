@@ -5,7 +5,7 @@
 #include <cstdint>
 
 #include "hyle/error/result.h"
-#include "hyle/macros.h"
+#include "hyle/core/compiler.h"
 #include "hyle/time/unix_timestamp.h"
 #include "hyle/visibility.h"
 
@@ -49,7 +49,8 @@ public:
   HYLE_PLATFORM_API ~FileHandle();
   FileHandle(FileHandle &&o) noexcept : raw_(o.raw_) { o.raw_ = kInvalid; }
   HYLE_PLATFORM_API FileHandle &operator=(FileHandle &&o) noexcept;
-  HYLE_DISABLE_COPY(FileHandle);
+  FileHandle(const FileHandle&) = delete;
+  FileHandle& operator=(const FileHandle&) = delete;
 
   bool valid() const noexcept { return raw_ != kInvalid; }
   explicit operator bool() const noexcept { return valid(); }

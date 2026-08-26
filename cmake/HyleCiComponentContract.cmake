@@ -54,8 +54,99 @@ if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES "HYLE_COMPONENTS is explicitly empty")
     "${HYLE_CONTRACT_LAST_OUTPUT}")
 endif()
 
-# A caller that wants only the allocation-free intrusive container must get one
-# header-only target and no compiled HYLE runtime closure.  This prevents an
+# Core is a self-contained, header-only product component. Selecting and
+# installing it alone must never manufacture a version-only runtime artifact.
+set(_core_source "${_hyle_contract_root}/core-source")
+file(MAKE_DIRECTORY "${_core_source}")
+file(WRITE "${_core_source}/CMakeLists.txt"
+"cmake_minimum_required(VERSION 3.25)\n"
+"project(hyle_core_component LANGUAGES C CXX)\n"
+"set(HYLE_COMPONENTS core)\n"
+"set(HYLE_BUILD_TESTS OFF)\n"
+"set(HYLE_BUILD_BENCH OFF)\n"
+"set(HYLE_INSTALL OFF)\n"
+"add_subdirectory(\"${HYLE_SOURCE_DIR}\" hyle)\n"
+"if(NOT TARGET hyle::core)\n"
+"  message(FATAL_ERROR \"missing hyle::core\")\n"
+"endif()\n"
+"get_target_property(_type hyle_core TYPE)\n"
+"if(NOT _type STREQUAL \"INTERFACE_LIBRARY\")\n"
+"  message(FATAL_ERROR \"core is not header-only: \${_type}\")\n"
+"endif()\n"
+"foreach(_forbidden IN ITEMS container_intrusive util_core error obs math platform time mem simd container util sched io compute graph)\n"
+"  if(TARGET hyle::\${_forbidden})\n"
+"    message(FATAL_ERROR \"unexpected target hyle::\${_forbidden}\")\n"
+"  endif()\n"
+"endforeach()\n")
+_hyle_contract_run("standalone core closure" TRUE
+  "${CMAKE_COMMAND}" -S "${_core_source}"
+  -B "${_hyle_contract_root}/core-build"
+  ${_hyle_generator_args}
+  -DCMAKE_BUILD_TYPE=Release)
+
+foreach(_core_linkage IN ITEMS shared static)
+  if(_core_linkage STREQUAL "static")
+    set(_core_static ON)
+  else()
+    set(_core_static OFF)
+  endif()
+  set(_core_sdk_build
+    "${_hyle_contract_root}/core-${_core_linkage}-sdk-build")
+  set(_core_sdk_prefix
+    "${_hyle_contract_root}/core-${_core_linkage}-sdk-prefix")
+  _hyle_contract_run("configure isolated ${_core_linkage} Core SDK" TRUE
+    "${CMAKE_COMMAND}" -S "${HYLE_SOURCE_DIR}"
+    -B "${_core_sdk_build}"
+    ${_hyle_generator_args}
+    -DCMAKE_BUILD_TYPE=Release
+    -DCMAKE_INSTALL_PREFIX=${_core_sdk_prefix}
+    -DHYLE_COMPONENTS=core
+    -DHYLE_BUILD_TESTS=OFF
+    -DHYLE_BUILD_BENCH=OFF
+    -DHYLE_INSTALL=ON
+    -DHYLE_STATIC=${_core_static}
+    -DHYLE_IO_TLS=OFF
+    -DHYLE_COMPUTE_CUDA=OFF)
+  _hyle_contract_run("install isolated ${_core_linkage} Core SDK" TRUE
+    "${CMAKE_COMMAND}" --install "${_core_sdk_build}" --config Release)
+  file(GLOB_RECURSE _core_binary_artifacts LIST_DIRECTORIES FALSE
+    "${_core_sdk_prefix}/*.a"
+    "${_core_sdk_prefix}/*.dll"
+    "${_core_sdk_prefix}/*.dylib"
+    "${_core_sdk_prefix}/*.lib"
+    "${_core_sdk_prefix}/*.so"
+    "${_core_sdk_prefix}/*.so.*")
+  if(_core_binary_artifacts)
+    message(FATAL_ERROR
+      "header-only ${_core_linkage} Core SDK installed binary artifacts: "
+      "${_core_binary_artifacts}")
+  endif()
+  set(_core_consumer_build
+    "${_hyle_contract_root}/core-${_core_linkage}-consumer-build")
+  _hyle_contract_run("configure isolated ${_core_linkage} Core consumer" TRUE
+    "${CMAKE_COMMAND}"
+    -S "${HYLE_SOURCE_DIR}/samples/package/core/cpp"
+    -B "${_core_consumer_build}"
+    ${_hyle_generator_args}
+    -DCMAKE_BUILD_TYPE=Release
+    -DCMAKE_PREFIX_PATH=${_core_sdk_prefix})
+  _hyle_contract_run("build isolated ${_core_linkage} Core consumer" TRUE
+    "${CMAKE_COMMAND}" --build "${_core_consumer_build}"
+    --config Release --parallel 2)
+  _hyle_contract_run("run isolated ${_core_linkage} Core consumer" TRUE
+    "${CMAKE_CTEST_COMMAND}" --test-dir "${_core_consumer_build}"
+    -C Release --output-on-failure)
+endforeach()
+unset(_core_binary_artifacts)
+unset(_core_consumer_build)
+unset(_core_linkage)
+unset(_core_sdk_build)
+unset(_core_sdk_prefix)
+unset(_core_static)
+
+# A caller that wants only the allocation-free intrusive container gets Core's
+# header-only source contracts as its sole dependency and no compiled HYLE
+# runtime closure. This prevents an
 # installed-all-headers layout from hiding a missing or accidentally widened
 # component edge.
 set(_intrusive_source "${_hyle_contract_root}/intrusive-source")
@@ -71,11 +162,16 @@ file(WRITE "${_intrusive_source}/CMakeLists.txt"
 "if(NOT TARGET hyle::container_intrusive)\n"
 "  message(FATAL_ERROR \"missing hyle::container_intrusive\")\n"
 "endif()\n"
-"get_target_property(_type hyle_container_intrusive TYPE)\n"
-"if(NOT _type STREQUAL \"INTERFACE_LIBRARY\")\n"
-"  message(FATAL_ERROR \"container_intrusive is not header-only: \${_type}\")\n"
-"endif()\n"
-"foreach(_forbidden IN ITEMS core error time mem platform container)\n"
+"foreach(_required IN ITEMS core container_intrusive)\n"
+"  if(NOT TARGET hyle::\${_required})\n"
+"    message(FATAL_ERROR \"missing intrusive-closure target hyle::\${_required}\")\n"
+"  endif()\n"
+"  get_target_property(_type hyle_\${_required} TYPE)\n"
+"  if(NOT _type STREQUAL \"INTERFACE_LIBRARY\")\n"
+"    message(FATAL_ERROR \"\${_required} is not header-only: \${_type}\")\n"
+"  endif()\n"
+"endforeach()\n"
+"foreach(_forbidden IN ITEMS error time mem platform container)\n"
 "  if(TARGET hyle::\${_forbidden})\n"
 "    message(FATAL_ERROR \"unexpected target hyle::\${_forbidden}\")\n"
 "  endif()\n"
@@ -150,7 +246,7 @@ file(WRITE "${_time_source}/CMakeLists.txt"
 "set(HYLE_BUILD_BENCH OFF)\n"
 "set(HYLE_INSTALL OFF)\n"
 "add_subdirectory(\"${HYLE_SOURCE_DIR}\" hyle)\n"
-"foreach(_required IN ITEMS error container_intrusive time)\n"
+"foreach(_required IN ITEMS core error container_intrusive time)\n"
 "  if(NOT TARGET hyle::\${_required})\n"
 "    message(FATAL_ERROR \"missing time-closure target hyle::\${_required}\")\n"
 "  endif()\n"
@@ -173,6 +269,9 @@ file(MAKE_DIRECTORY "${_embed_source}")
 file(WRITE "${_embed_source}/CMakeLists.txt"
 "cmake_minimum_required(VERSION 3.25)\n"
 "project(hyle_component_embed LANGUAGES C CXX)\n"
+"if(APPLE)\n"
+"  set(CMAKE_OSX_DEPLOYMENT_TARGET 14.4 CACHE STRING \"\" FORCE)\n"
+"endif()\n"
 "set(HYLE_COMPONENTS container)\n"
 "set(HYLE_BUILD_TESTS OFF)\n"
 "set(HYLE_BUILD_BENCH OFF)\n"
@@ -188,7 +287,7 @@ file(WRITE "${_embed_source}/CMakeLists.txt"
 "if(NOT _cached STREQUAL \"container\")\n"
 "  message(FATAL_ERROR \"cache says '\${_cached}', expected container\")\n"
 "endif()\n"
-"foreach(_required IN ITEMS error platform mem container_intrusive container)\n"
+"foreach(_required IN ITEMS core error platform mem container_intrusive container)\n"
 "  if(NOT TARGET hyle::\${_required})\n"
 "    message(FATAL_ERROR \"missing selected-closure target hyle::\${_required}\")\n"
 "  endif()\n"
