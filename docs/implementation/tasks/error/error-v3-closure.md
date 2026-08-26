@@ -117,6 +117,23 @@
   peer/能力与复杂度、全库消费者/交付/FFI、性能合同/仪器。Boost superproject 的 System/LEAF/
   Outcome 子模块未初始化，未冒充本轮可读证据。
 
+## Current candidate
+
+唯一产品性能假设形成的新 candidate：
+
+- commit：`9595724a0a284cbc3502f1c9e9e3ec9c9cf9e2b9`
+- tree：`a828fb4cdf1cd7f72aaea098b44fd42e0d966d2d`
+
+它保持公开 API、8B carrier、heap metadata、错误能力和 9 项性能合同不变，只实施两个由 replacement
+合格失败和唯一 codegen 诊断共同证明的修复：借用成熟 peer 的 low-bit inline tag（OK/code-only 为
+odd inline、aligned heap pointer 为 even），并在真实 TaskGraph 与 replay 中显式移动失败即返回的局部
+`Status`。0 继续只是内部 allocation failure sentinel，`StatusAccess::adopt(0)` fail-fast；moved-from
+仍为 code-only `Unknown`。这是 header-inline semantic ABI 变化，必须使用匹配版本 header/artifact 并
+全量重编，不继承 replacement 的 build/package artifact。
+
+候选前 Windows MSVC Release/Debug WERROR error tests 18/18 通过，真实 graph message-error/retry test
+通过；这些只说明产品可冻结，不替代候选绑定的完整 correctness、delivery 或 P1 qualification。
+
 ## Rejected candidates
 
 第二个（replacement）candidate 为：
@@ -185,7 +202,6 @@ replacement 必须显式在 callback 外构造两侧 error，并以对称 const 
 
 ## Closure decision
 
-当前退回 `AUDITED`。产品性能假设只允许一次：采用成熟 low-bit inline tag，并在真实 TaskGraph/replay
-中显式转移失败即返回的局部 `Status`；保持一字 carrier、公开能力、通用宏语义、peer、9 项 workload、
-5% margin 和仪器不变。实现、正确性与文档形成新 candidate 后只允许一次 fresh qualification；失败即按
-closure card 进入 `BLOCKED`，不得再换姿势或放宽门槛。
+当前为 `CANDIDATE`，绑定 `9595724a` / `a828fb4c`。只允许在保持 peer、9 项 workload、5% margin、
+机器和仪器不变的前提下做一次 fresh qualification，并完成该 identity 的 correctness、三平台、交付与
+red-team；失败即按 closure card 进入 `BLOCKED`，不得再换姿势、改产品或放宽门槛。

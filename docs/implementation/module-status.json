@@ -127,12 +127,14 @@
     },
     {
       "module": "error",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "round_id": "error-v3",
       "closure_task": "docs/implementation/tasks/error/error-v3-closure.md",
       "scope": "Status/Result value model, native adapters, real consumer adoption, C++ source/static/shared delivery, usability/docs and current P1 engineering evidence.",
       "non_goals": "Logging, exceptions, arbitrary payload/cause/source-location systems, MultiError, full foreign-category adapters, downstream module closure, native FFI/C API and Formal certification.",
       "baseline_commit": "8b37eb42635fcf89505b7a2d9cad006d57664ba1",
+      "candidate_commit": "9595724a0a284cbc3502f1c9e9e3ec9c9cf9e2b9",
+      "candidate_tree": "a828fb4cdf1cd7f72aaea098b44fd42e0d966d2d",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -140,18 +142,17 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "FAIL",
+        "verdict": "PLANNED",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-error.md"
+        "instrument_profile": "closure-perf-v1"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "error-v3 replacement 通过证据资格但未通过 P1 工程门；已退回 AUDITED，仅实施 low-bit tag 与 TaskGraph 局部所有权转移后形成新候选。"
+      "summary": "error-v3 新 candidate 已冻结：low-bit Status tag 与 TaskGraph 局部所有权转移均有 peer、consumer 和 codegen 证据，等待一次候选绑定复签。"
     },
     {
       "module": "obs",

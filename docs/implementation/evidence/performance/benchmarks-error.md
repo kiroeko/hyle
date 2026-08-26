@@ -1,8 +1,8 @@
 # error 性能证据
 
-> **error-v3：`AUDITED AFTER QUALIFIED FAILURE`。** replacement candidate 已通过证据资格门、但未通过
-> P1 工程性能门，因而被驳回并退回 `AUDITED` 实施唯一机制修复。本页下方 2026-07 点值只保留为历史
-> 输入，不是当前模块证书；现行状态只看
+> **error-v3：`CANDIDATE / PENDING REQUALIFICATION`。** replacement candidate 已通过证据资格门、
+> 但未通过 P1 工程性能门；唯一机制修复形成 `9595724a` / `a828fb4c` 新 candidate，尚无新 verdict。
+> 本页下方 2026-07 点值只保留为历史输入，不是当前模块证书；现行状态只看
 > [`module status`](../../status.md)。
 
 本页是 [performance 总账](README.md) 的 error 模块详节。稳定设计见
