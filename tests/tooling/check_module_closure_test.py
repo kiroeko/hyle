@@ -63,8 +63,8 @@ def main() -> None:
         if record["module"] == "container_intrusive")
     intrusive["product_state"] = "CLOSED"
     intrusive["engineering_performance"]["verdict"] = "PLANNED"
-    intrusive["gate_verdicts"]["engineering_performance"] = "PLANNED"
-    intrusive["end_commit"] = intrusive["candidate_commit"]
+    intrusive["gate_verdicts"]["engineering_performance"] = "INCONCLUSIVE"
+    intrusive["gate_verdicts"]["red_team"] = "PASS"
     errors = checker.validate_registry(p1_false_close, root)
     require_error(errors, "CLOSED requires engineering verdict PASS")
     require_error(errors, "CLOSED has non-passing gates")
@@ -116,6 +116,7 @@ def main() -> None:
     intrusive = next(
         record for record in verified_planned["modules"]
         if record["module"] == "container_intrusive")
+    intrusive["product_state"] = "VERIFIED"
     intrusive["engineering_performance"]["verdict"] = "PLANNED"
     errors = checker.validate_registry(verified_planned, root)
     require_error(errors, "cannot retain a PLANNED engineering verdict")
@@ -163,12 +164,17 @@ def main() -> None:
     errors = checker.validate_transitions(data, illegal)
     require_error(errors, "illegal transition 'CLOSED' -> 'QUEUED'")
 
-    queued_to_blocked = copy.deepcopy(data)
+    queued_before = copy.deepcopy(data)
+    error = next(
+        record for record in queued_before["modules"]
+        if record["module"] == "error")
+    error["product_state"] = "QUEUED"
+    queued_to_blocked = copy.deepcopy(queued_before)
     error = next(
         record for record in queued_to_blocked["modules"]
         if record["module"] == "error")
     error["product_state"] = "BLOCKED"
-    errors = checker.validate_transitions(data, queued_to_blocked)
+    errors = checker.validate_transitions(queued_before, queued_to_blocked)
     require_error(errors, "illegal transition 'QUEUED' -> 'BLOCKED'")
 
     drifted_status = status_path.read_text(encoding="utf-8").replace(
