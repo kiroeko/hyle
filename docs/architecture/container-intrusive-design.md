@@ -68,11 +68,22 @@ pointer ABI 与 GCC/Clang 使用的 Itanium 形状，并对未知或更复杂 re
 即可。三平台编译/sanitizer 证据必须在签署前保留；支持非 standard-layout 也绝不允许 relocation
 linked node。
 
-auto hook 额外提供显式 `swap_nodes(other)`：两者都 linked 时交换它们在同一条或不同链中的位置；仅
-一者 linked 时把该位置/membership 转移给原先未链接的 hook；两者都未链接或同一对象自交换时不改变
-状态。操作不移动 payload，普通 hook/node move 仍不自动转移 membership。safe hook 刻意不提供该
-入口，因为在 list/owner 状态机之外转移 membership 会绕过显式 retirement 合同；出现真实 safe
+auto list 额外提供静态 typed `swap_nodes(T *left, T *right)`。两者都 linked 时交换该 list 类型所选
+hook 在同一条或不同链中的位置；仅一者 linked 时把该位置/membership 转移给另一 node 的同名 hook；
+两者都未链接或同一 node 自交换时不改变状态，且两个指针均有非 null 前置条件。操作不移动 payload，
+普通 hook/node move 仍不自动转移 membership。
+
+入口属于 `IntrusiveList<T, Hook>` 而不是未类型化的 hook：例如
+`ReadyList::swap_nodes(&a, &b)` 在编译期把两个 operand 同时绑定为 `T` 和 `&T::ready_hook`，调用方没有
+办法把 `a.ready_hook` 与 `b.timeout_hook` 传入同一次交换。公开 hook-level swap 被拒绝，因为同一 node
+的不同 membership 使用相同 hook 类型，仅靠函数签名无法区分其业务合同。safe list 也刻意不提供
+typed swap，因为在 owner 状态机之外转移 membership 会绕过显式 retirement 合同；出现真实 safe
 consumer 后应先设计能同步 owner 状态的 list-level replace，而不是复制 auto API。
+
+Typed surface 只证明 node/member contract 相同，不保存或修改 owner pointer、count、state、deadline
+等业务镜像。若上层维护这些状态，topology swap 与镜像更新必须在同一外部锁/事务中完成；因此本能力
+也不会被悄悄塞进通用 node move assignment。movable holder 必须由自身所有权合同明确处理旧
+destination membership 后再显式调用它。
 
 list 始终可以先销毁：析构会逐项清空 membership 而不销毁 node。只有 auto hook 的 node 可以在
 同步得到保证时先于 list 析构并自动摘链；safe hook 的 node 必须先显式摘链。任何 iterator/reference
@@ -86,7 +97,7 @@ list 始终可以先销毁：析构会逐项清空 membership 而不销毁 node�
 | `iterator_to(node)` | O(1) | node 必须非 null、已链接且属于该 list；不做 owner scan |
 | 单节点、整链及 `[first,last)` range splice | O(1) | range 不访问 node；transferred-node iterator 保持有效 |
 | `append`、list move、`swap` | O(1) | 只重连 sentinel 与边界 hook |
-| auto hook `swap_nodes` | O(1) | 交换两个 node 的位置/membership；不移动 payload；safe hook 不提供 |
+| auto list `swap_nodes(left,right)` | O(1) | 非 null nodes；只交换该 typed list 所选 membership；不移动 payload；safe list 不提供 |
 | iteration、`clear`、list destruction | O(n) | 离开 list 的每个 auto/safe hook 都恢复未链接状态 |
 | `consume_all(fn)` | O(n) | 当前 node 在 callback 前摘链；callback 必须 `noexcept`，可销毁或重链当前 node |
 | `for_each(fn)` | O(n) | 结构不变；callback 不得改变被遍历 node 的 membership/lifetime |
@@ -123,7 +134,7 @@ iterator 即使 node storage 尚在且偶然仍可解引用，也必须视为失
 |---|---|---|---|
 | push/insert | 新 iterator 有效；既有 iterator 不变 | 有效 | 仍绑定同一 sentinel |
 | erase/remove/pop/`hook.unlink()` | 被摘链者失效 | 有效 | 有效 |
-| auto `hook.swap_nodes(other)` | 指向两个被交换 node 的 iterator 均失效 | 有效 | 各 list 的 end 仍绑定原 sentinel |
+| auto `NodeList::swap_nodes(left,right)` | 该 list 所选 hook 对应的两个 node iterator 均失效 | 有效 | 各 list 的 end 仍绑定原 sentinel |
 | 单节点、整链、range splice/append | transferred-node iterator 有效，之后遍历进入 destination | 有效 | source/destination 的 end 各自仍绑定原 list，不随 node 转移 |
 | list move construction | transferred-node iterator 有效，之后遍历进入新 list | source 变空 | 旧 source end 与新 destination end 是不同 sentinel |
 | list move assignment | source node iterator 转入 destination；原 destination node iterator 转入 moved-from source | 两组 membership O(1) 交换；source 有效但不保证为空 | 两个 list 的 end 均不转移 |
@@ -152,6 +163,7 @@ lock-free 声明；类型的 thread compatibility 不会因 safe policy 而变�
 |---|---|
 | `.size()`，包括 linear size | 不保存 count，也避免线性 member `size()` 让 C++23 range 错误建模为 amortized-O(1) `sized_range`；冷路径显式用 `std::ranges::distance` |
 | counted list | `TimerQueue` 的 count 跨 bucket，sched waiter count 属原子发布协议；`CommonTimeoutQueue` 的 count 虽等于单链 membership，却是 time 专用 `size()` 状态，不能独自确定 auto/safe、range splice 的通用 counted 合同。count 会令所有 list 增加一个 word 与 mutation 写，range splice 还需 scan 或 caller 提供 n，故 `DEFER` |
+| hook-level `swap_nodes` | `IntrusiveListHook` 同时可作为 ready、timeout 等不同 membership；裸 hook 参数不能在编译期阻止跨合同交换，故只公开绑定 `T` 与 member hook 的 auto-list static API |
 | normal-link / 任意 hook policy | auto 与 safe 已覆盖常见生命周期；无检查/不初始化的 normal link 及完整策略矩阵借用 Boost.Intrusive，直到出现独立任务 |
 | exact owner/`contains(node)` | 两指针 hook 无法 O(1) 回答具体 owner；不为罕见诊断向所有 node 加 owner pointer |
 | base hook、function/value traits、fancy/offset pointer | 当前需求只要求 direct member hook；node 可为 non-standard-layout，但不绕过已支持的 data-member-pointer ABI gate。base/function/shared-memory 等高级形状直接借用 Boost.Intrusive |

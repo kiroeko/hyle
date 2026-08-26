@@ -53,8 +53,12 @@ template <class Hook>
 concept HasPublicUnlink = requires(Hook &hook) { hook.unlink(); };
 
 template <class Hook>
-concept HasSwapNodes =
+concept HasUntypedSwapNodes =
     requires(Hook &left, Hook &right) { left.swap_nodes(right); };
+
+template <class List, class NodeType>
+concept HasTypedSwapNodes =
+    requires(NodeType *left, NodeType *right) { List::swap_nodes(left, right); };
 
 template <class NodeType, class ListType>
 void expect_same_list_range_splice_matches_model() {
@@ -129,8 +133,14 @@ static_assert(!std::ranges::sized_range<SafeNodeList>);
 static_assert(!std::ranges::sized_range<const SafeNodeList>);
 static_assert(HasPublicUnlink<IntrusiveListHook>);
 static_assert(!HasPublicUnlink<SafeIntrusiveListHook>);
-static_assert(HasSwapNodes<IntrusiveListHook>);
-static_assert(!HasSwapNodes<SafeIntrusiveListHook>);
+static_assert(!HasUntypedSwapNodes<IntrusiveListHook>);
+static_assert(!HasUntypedSwapNodes<SafeIntrusiveListHook>);
+static_assert(HasTypedSwapNodes<NodeList, Node>);
+static_assert(HasTypedSwapNodes<MixedAccessNodeList, MixedAccessNode>);
+static_assert(!HasTypedSwapNodes<SafeNodeList, SafeNode>);
+static_assert(!HasTypedSwapNodes<NodeList, SafeNode>);
+static_assert(noexcept(NodeList::swap_nodes(static_cast<Node *>(nullptr),
+                                           static_cast<Node *>(nullptr))));
 static_assert(!std::is_standard_layout_v<MixedAccessNode>);
 static_assert(std::ranges::bidirectional_range<MixedAccessNodeList>);
 static_assert(sizeof(IntrusiveListHook) == 2 * sizeof(void *));
@@ -320,54 +330,56 @@ TEST(IntrusiveList, SwapHandlesEmptyListsWithoutChangingMembership) {
   EXPECT_TRUE(another_empty.empty());
 }
 
-TEST(IntrusiveListHook, SwapNodesHandlesSelfAndUnlinkedMembership) {
+TEST(IntrusiveList, TypedSwapNodesHandlesSelfAndUnlinkedMembership) {
   Node first(1), second(2), tail(3);
-  first.hook.swap_nodes(first.hook);
-  first.hook.swap_nodes(second.hook);
+  NodeList::swap_nodes(&first, &first);
+  NodeList::swap_nodes(&first, &second);
   EXPECT_FALSE(first.hook.linked());
   EXPECT_FALSE(second.hook.linked());
 
   NodeList list;
   list.push_back(&first);
-  list.push_back(&tail);
-  first.hook.swap_nodes(first.hook);
+  NodeList::swap_nodes(&first, &first);
   EXPECT_EQ(list.front(), &first);
 
-  first.hook.swap_nodes(second.hook);
+  NodeList::swap_nodes(&first, &second);
   EXPECT_FALSE(first.hook.linked());
   EXPECT_TRUE(second.hook.linked());
   EXPECT_EQ(list.front(), &second);
-  EXPECT_EQ(list.back(), &tail);
+  EXPECT_EQ(list.back(), &second);
 
-  // Exercise the symmetric path with the unlinked hook as the receiver.
-  first.hook.swap_nodes(second.hook);
+  // Exercise the symmetric path with an unlinked receiver and the singleton
+  // sentinel serving as both predecessor and successor.
+  NodeList::swap_nodes(&first, &second);
   EXPECT_TRUE(first.hook.linked());
   EXPECT_FALSE(second.hook.linked());
   EXPECT_EQ(list.front(), &first);
+  list.push_back(&tail);
+  EXPECT_EQ(list.back(), &tail);
 }
 
-TEST(IntrusiveListHook, SwapNodesHandlesEveryLinkedTopology) {
+TEST(IntrusiveList, TypedSwapNodesHandlesEveryLinkedTopology) {
   Node a(1), b(2), c(3), d(4);
   NodeList same;
   for (Node *node : {&a, &b, &c, &d})
     same.push_back(node);
 
   // Adjacent in caller-before-other orientation.
-  a.hook.swap_nodes(b.hook);
+  NodeList::swap_nodes(&a, &b);
   std::vector<Node *> observed;
   for (Node &node : same)
     observed.push_back(&node);
   EXPECT_EQ(observed, (std::vector<Node *>{&b, &a, &c, &d}));
 
   // Adjacent in other-before-caller orientation.
-  c.hook.swap_nodes(a.hook);
+  NodeList::swap_nodes(&c, &a);
   observed.clear();
   for (Node &node : same)
     observed.push_back(&node);
   EXPECT_EQ(observed, (std::vector<Node *>{&b, &c, &a, &d}));
 
   // Non-adjacent positions in one list.
-  b.hook.swap_nodes(d.hook);
+  NodeList::swap_nodes(&b, &d);
   observed.clear();
   for (Node &node : same)
     observed.push_back(&node);
@@ -380,11 +392,119 @@ TEST(IntrusiveListHook, SwapNodesHandlesEveryLinkedTopology) {
   first.push_back(&f);
   second.push_back(&g);
   second.push_back(&h);
-  f.hook.swap_nodes(g.hook);
+  NodeList::swap_nodes(&f, &g);
   EXPECT_EQ(first.front(), &e);
   EXPECT_EQ(first.back(), &g);
   EXPECT_EQ(second.front(), &f);
   EXPECT_EQ(second.back(), &h);
+
+  Node i(9), j(10);
+  NodeList left_singleton;
+  NodeList right_singleton;
+  left_singleton.push_back(&i);
+  right_singleton.push_back(&j);
+  NodeList::swap_nodes(&i, &j);
+  EXPECT_EQ(left_singleton.front(), &j);
+  EXPECT_EQ(left_singleton.back(), &j);
+  EXPECT_EQ(right_singleton.front(), &i);
+  EXPECT_EQ(right_singleton.back(), &i);
+}
+
+TEST(IntrusiveList, RandomizedTypedSwapNodesMatchOwningModel) {
+  constexpr std::size_t kNodeCount = 32;
+  constexpr std::size_t kSteps = 4000;
+  std::vector<std::unique_ptr<Node>> storage;
+  storage.reserve(kNodeCount);
+  for (std::size_t index = 0; index < kNodeCount; ++index)
+    storage.push_back(std::make_unique<Node>(static_cast<int>(index)));
+
+  NodeList actual[2];
+  std::list<Node *> model[2];
+  for (std::size_t index = 0; index < 10; ++index) {
+    actual[0].push_back(storage[index].get());
+    model[0].push_back(storage[index].get());
+  }
+  for (std::size_t index = 10; index < 20; ++index) {
+    actual[1].push_back(storage[index].get());
+    model[1].push_back(storage[index].get());
+  }
+
+  auto locate = [&](Node *node) {
+    for (int list_index = 0; list_index < 2; ++list_index) {
+      auto position = std::find(model[list_index].begin(),
+                                model[list_index].end(), node);
+      if (position != model[list_index].end())
+        return std::pair{list_index, position};
+    }
+    return std::pair{-1, model[0].end()};
+  };
+  auto verify = [&] {
+    for (int list_index = 0; list_index < 2; ++list_index) {
+      auto expected = model[list_index].begin();
+      for (Node &node : actual[list_index]) {
+        ASSERT_NE(expected, model[list_index].end());
+        EXPECT_EQ(&node, *expected);
+        ++expected;
+      }
+      EXPECT_EQ(expected, model[list_index].end());
+
+      auto reverse_expected = model[list_index].rbegin();
+      for (auto position = actual[list_index].rbegin();
+           position != actual[list_index].rend(); ++position) {
+        ASSERT_NE(reverse_expected, model[list_index].rend());
+        EXPECT_EQ(&*position, *reverse_expected);
+        ++reverse_expected;
+      }
+      EXPECT_EQ(reverse_expected, model[list_index].rend());
+    }
+    for (const auto &node : storage) {
+      const bool linked = std::find(model[0].begin(), model[0].end(),
+                                    node.get()) != model[0].end() ||
+                          std::find(model[1].begin(), model[1].end(),
+                                    node.get()) != model[1].end();
+      EXPECT_EQ(node->hook.linked(), linked);
+    }
+  };
+
+  std::size_t self_count = 0;
+  std::size_t both_unlinked_count = 0;
+  std::size_t one_linked_count = 0;
+  std::size_t same_list_count = 0;
+  std::size_t cross_list_count = 0;
+  std::mt19937 random(0x53574150u);
+  for (std::size_t step = 0; step < kSteps; ++step) {
+    Node *left = storage[random() % kNodeCount].get();
+    Node *right = storage[random() % kNodeCount].get();
+    auto left_location = locate(left);
+    auto right_location = locate(right);
+
+    if (left == right) {
+      ++self_count;
+    } else if (left_location.first < 0 && right_location.first < 0) {
+      ++both_unlinked_count;
+    } else if (left_location.first < 0 || right_location.first < 0) {
+      ++one_linked_count;
+    } else if (left_location.first == right_location.first) {
+      ++same_list_count;
+    } else {
+      ++cross_list_count;
+    }
+
+    NodeList::swap_nodes(left, right);
+    if (left != right) {
+      if (left_location.first >= 0)
+        *left_location.second = right;
+      if (right_location.first >= 0)
+        *right_location.second = left;
+    }
+    verify();
+  }
+
+  EXPECT_GT(self_count, 0u);
+  EXPECT_GT(both_unlinked_count, 0u);
+  EXPECT_GT(one_linked_count, 0u);
+  EXPECT_GT(same_list_count, 0u);
+  EXPECT_GT(cross_list_count, 0u);
 }
 
 TEST(IntrusiveList, NonStandardLayoutNodeUsesSupportedMemberPointerAbi) {
@@ -1036,6 +1156,18 @@ TEST(SafeIntrusiveList, DestroyingLinkedNodeFailsFastInDebug) {
 }
 
 TEST(IntrusiveList, DiagnosesUncheckedMembershipViolationsInDebug) {
+  EXPECT_DEATH(
+      {
+        Node node(1);
+        NodeList::swap_nodes(nullptr, &node);
+      },
+      "");
+  EXPECT_DEATH(
+      {
+        Node node(1);
+        NodeList::swap_nodes(&node, nullptr);
+      },
+      "");
   EXPECT_DEATH(
       {
         NodeList list;

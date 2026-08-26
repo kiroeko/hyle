@@ -492,12 +492,14 @@ engineering certificate.
 ```bash
 python scripts/bench-stat.py build-bench/bin/hyle_container_intrusive_bench -n 31 \
   --peer boost=../boost --equivalence-margin-pct 3 \
-  --pair "HYLE IntrusiveList" "boost::intrusive auto_unlink"
+  --pair "HYLE IntrusiveList::consume_all" \
+         "boost::intrusive auto_unlink clear_and_dispose"
 
 HYLE_BENCH_RIVAL_FIRST=1 python scripts/bench-stat.py \
   build-bench/bin/hyle_container_intrusive_bench -n 31 \
   --peer boost=../boost --equivalence-margin-pct 3 \
-  --pair "HYLE IntrusiveList" "boost::intrusive auto_unlink"
+  --pair "HYLE IntrusiveList::consume_all" \
+         "boost::intrusive auto_unlink clear_and_dispose"
 ```
 
 Use `--not-comparable-pair BASELINE RIVAL` when an absolute cost comparison is useful but the two

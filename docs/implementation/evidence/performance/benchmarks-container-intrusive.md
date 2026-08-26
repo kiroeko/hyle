@@ -50,11 +50,17 @@ Boost checkout 固定为 `df8eeb90846648464e3c8e378e312f0cec772e83`。`std::list
 
 | Policy / workload | 正常消费者形状 | epoch 内计费 | 复杂度目标 |
 |---|---|---|---|
-| auto + safe FIFO | completion/timer batch 入队并依次 drain | 全部 `push_back`、`front/pop_front`、checksum | 每节点 O(1)，整批 O(n) |
+| v2 historical auto + safe FIFO pop loop | completion/timer batch 入队并依次 drain | 全部 `push_back`、`front/pop_front`、checksum | 每节点 O(1)，整批 O(n) |
 | auto + safe arbitrary cancel | 已知 node 以固定非顺序取消 | refill、node-to-iterator 等价恢复、remove/erase | 每节点 O(1)，整批 O(n) |
 | auto + safe traversal | 已链接稳定节点只读扫描 | 每节点访问与 checksum | O(n) |
 | auto + safe list-owner teardown | list owner 先结束，node storage 继续存在 | refill 与 list 析构时逐项 reset hook | O(n) |
 | auto node retirement | node 先结束且仍 linked | raw storage 上 construct、link、固定顺序 node 析构及 auto-unlink | 每节点 O(1)，整批 O(n) |
+
+上表和本页后续旧数字属于 v2 的 `front/pop_front` workload，不能改名后冒充新测量。v3 当前合同把
+FIFO replay 校正为真实消费者使用的批量入口：HYLE `consume_all(noexcept callback)` 对 Boost
+`clear_and_dispose(noexcept callback)`，仍对称计费 refill、两个 storage observer、逐 node callback 与
+checksum；其 workload tier 是 `replay`，不是实际应用 trace。v3 的 fresh candidate-bound 资格完成前，
+本页只登记合同差异，不从 v2 数字推导新结论。
 
 数组/raw-storage 分配和 cancel order 构造在 epoch 外。node-retirement 使用无 live object 跨 callback
 边界的 raw storage owner；不会让 `unique_ptr<T[]>` 长期指向已手工析构的数组。HYLE 与 Boost 的

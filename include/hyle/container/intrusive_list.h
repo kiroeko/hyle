@@ -61,14 +61,12 @@ struct IntrusiveListHook {
     link_.prev = nullptr;
   }
 
-  // Exchange this hook's membership and position with other's in O(1). The
-  // hooks may be unlinked, in the same list, or in different lists. If exactly
-  // one is linked, the other takes its position. Iterators to the two nodes are
-  // invalidated; references and iterators to other nodes remain valid. This is
-  // explicit rather than hook move behavior so ordinary object moves never
-  // transfer hidden container membership. External synchronization is
-  // required when either list is shared between threads.
-  void swap_nodes(IntrusiveListHook &other) noexcept {
+private:
+  template <class, auto, class> friend class detail::IntrusiveListImpl;
+
+  // Raw link surgery is deliberately private. The typed IntrusiveList entry
+  // point proves that both nodes use the same value type and selected hook.
+  void swap_position_with(IntrusiveListHook &other) noexcept {
     if (this == &other)
       return;
 
@@ -132,9 +130,6 @@ struct IntrusiveListHook {
     other.link_.prev = this_previous;
     other.link_.next = this_next;
   }
-
-private:
-  template <class, auto, class> friend class detail::IntrusiveListImpl;
 
   detail::IntrusiveListLink link_;
 };
@@ -651,6 +646,13 @@ private:
   }
 
 protected:
+  static void swap_auto_nodes(T *left, T *right) noexcept
+      requires std::is_same_v<HookType, IntrusiveListHook> {
+    HYLE_ASSUME(left != nullptr);
+    HYLE_ASSUME(right != nullptr);
+    (left->*Hook).swap_position_with(right->*Hook);
+  }
+
   IntrusiveListImpl() noexcept {
     sentinel_.next = &sentinel_;
     sentinel_.prev = &sentinel_;
@@ -674,6 +676,18 @@ class IntrusiveList
   using Base = detail::IntrusiveListImpl<T, Hook, IntrusiveList<T, Hook>>;
 
 public:
+  // Exchange left's and right's membership and position in O(1). Both nodes
+  // are compile-time bound to this value type and selected hook. They may be
+  // unlinked, in the same list, or in different lists; if exactly one is
+  // linked, the other takes its position. Iterators to the two nodes are
+  // invalidated, while references and iterators to other nodes remain valid.
+  // This is explicit rather than hook move behavior so ordinary object moves
+  // never transfer hidden membership. Preconditions: left and right are
+  // non-null. External synchronization is required for shared lists.
+  static void swap_nodes(T *left, T *right) noexcept {
+    Base::swap_auto_nodes(left, right);
+  }
+
   IntrusiveList() noexcept = default;
   IntrusiveList(const IntrusiveList &) = delete;
   IntrusiveList &operator=(const IntrusiveList &) = delete;

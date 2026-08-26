@@ -45,7 +45,8 @@ USAGE
     # container_intrusive: classify one execution order of HYLE vs Boost.
     scripts/bench-stat.py build-bench/bin/hyle_container_intrusive_bench -n 15 \
         --equivalence-margin-pct 3 \
-        --pair "HYLE IntrusiveList" "boost::intrusive auto_unlink"
+        --pair "HYLE IntrusiveList::consume_all" \
+               "boost::intrusive auto_unlink clear_and_dispose"
 
 Run under `setarch -R` on Linux if the exe is built with a sanitizer. Per the
 9p rule, run from a native-ext4 checkout, never /mnt/c.

@@ -125,14 +125,24 @@ list；要同时处于 ready/timeout 两种 membership，就像示例一样嵌�
   hooks 都恢复为未链接，但不调用 node destructor。
 - hook copy/move construction 得到新的未链接 hook，source membership 保持；hook assignment 保留
   destination membership，不会导入 source membership。
-- auto hook 的 `swap_nodes(other)` 是显式例外：它在 O(1) 内交换两个 hook 的链中位置。两者都 linked
-  时交换位置；只有一个 linked 时 membership 转移给原先未链接的 hook；两者都未链接时无变化。
-  它只交换 membership，不移动 payload，也不会让 hook 的普通 move 自动转移 membership。
+- auto list 的静态 `swap_nodes(left, right)` 是显式例外：它在 O(1) 内交换该 list 类型所选 hook 的
+  链中位置。两者都 linked 时交换位置；只有一个 linked 时 membership 转移给另一 node 的同名 hook；
+  两者都未链接时无变化。两个参数必须非 null。它只交换 membership，不移动 payload，也不会让 hook
+  的普通 move 自动转移 membership。
 - 因此复制或移动整个 node 不会“转移链表身份”。有稳定 identity 的 node 通常应像示例一样直接
   删除 copy/move，避免把 payload 从仍在链中的原 node 移走。
 - `linked()` 只回答“该 hook 是否在某条 list”，不能识别是哪一条。模块不保存 owner pointer；只有
-  auto hook 提供幂等 `unlink()` 和 `swap_nodes()`；safe hook 必须由 list 明确改变 membership，因而
-  不提供 `swap_nodes()`。
+  auto hook 提供幂等 `unlink()`。只有 auto list 提供 typed `swap_nodes()`；safe list 必须由 owner
+  明确改变 membership，因而没有该入口。
+
+例如 `ReadyList::swap_nodes(&first, &second)` 只会交换两个 `ready_hook`。API 不接收裸 hook，因而不能把
+`first.ready_hook` 与 `second.timeout_hook` 混在一次调用里；node 类型或 list 所选 member 不一致时也
+没有可调用的重载。这是编译期 membership 边界，不是运行时 owner 检查。
+
+`swap_nodes` 只修改 hook topology，不会同步业务侧的 owner pointer、count、state、deadline 或其他
+membership 镜像。存在这些状态时，调用方必须在同一把外部锁/同一事务中一起更新。不要把它机械放进
+通用 node move assignment：movable holder 必须先明确旧 destination membership 是摘除、保留还是交换，
+再显式调用对应 `NodeList::swap_nodes`。
 
 Auto-unlink 不是并发 reclamation。若一个线程遍历而另一线程析构 node，即使析构会摘链也仍是 data
 race/UAF；insert、remove、iteration、hook/list destruction 必须使用同一个外部同步协议。
@@ -152,7 +162,7 @@ race/UAF；insert、remove、iteration、hook/list destruction 必须使用同�
 | iterator 摘链 | `erase(pos)` | O(1)，返回 successor |
 | 单项/整链/range 转移 | `splice(...)` | O(1)，不访问 transferred nodes |
 | 尾接整链 | `append(source)` | O(1)，source 变空 |
-| 交换两个 auto hook 的位置/membership | `node->hook.swap_nodes(other->hook)` | O(1)；不移动 payload；safe hook 不提供 |
+| 交换两个 auto membership 的位置 | `NodeList::swap_nodes(left,right)` | O(1)；两指针非 null；绑定同一 `T` 和 member hook；safe list 不提供 |
 | 交换/移动 list | `swap`、move construction/assignment | O(1) pointer relink |
 | 全部摘链 | `clear()` | O(n)，不销毁 node |
 
@@ -184,7 +194,7 @@ Iterator 是 bidirectional。把摘链后仍存活的 hook pointer 当作 iterat
 |---|---|
 | push/insert | 既有 node iterator 保持有效 |
 | erase/remove/pop/auto `hook.unlink()` | 被摘链 node 的 iterator 失效；其他 node iterator 有效 |
-| auto `hook.swap_nodes(other)` | 指向这两个 node 的 iterator 失效；其他 node iterator 有效 |
+| auto `NodeList::swap_nodes(left,right)` | 该 list 所选 hook 对应的两个 node iterator 失效；其他 node iterator 有效 |
 | 单项、整链或 range splice/append | transferred-node iterator 保持有效，并开始在 destination 中遍历 |
 | move construction | source node iterator 跟随 nodes，source 变空；source/destination 的 `end()` 不随 nodes 转移 |
 | move assignment | 两条 membership O(1) 交换；source nodes 进入 destination，旧 destination nodes 进入 moved-from source；source 有效但不保证为空；两个 `end()` 均不转移 |
@@ -215,6 +225,8 @@ iterator 保持稳定，sentinel iterator 始终属于具体 list 对象。
 - 始终 O(1) count、exact owner/contains：选择保存相应 metadata 的上层类型；
 - O(1) counted list：当前没有同语义消费者，且会增加 list metadata 与每次 mutation 写；需要时先确认
   count 是 membership 数而非业务/发布状态；
+- untyped `hook.swap_nodes(other_hook)`：两个 ready/timeout hook 具有同一 C++ hook 类型，裸 hook 入口
+  无法阻止跨 membership 合同混用；使用绑定 `T` 与 member hook 的 `NodeList::swap_nodes(left,right)`；
 - normal-link、base/function hook、shared-memory offset pointer 等完整策略矩阵：使用
   Boost.Intrusive；node 本身是否 polymorphic/standard-layout 不是 HYLE 的独立限制，但其直接 member
   hook 必须通过当前编译器的 data-member-pointer ABI gate；

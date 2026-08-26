@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Build and sample the isolated container_intrusive performance contract.
+"""Build and sample the legacy container_intrusive diagnostic instrument.
 
 The runner fails closed on missing rows, changed inputs, incomplete execution
 orders, unqualified A/A or known-delta controls, and unverified lifetime-loop
 object code. Windows additionally qualifies a second MSVC placement image. It
-never configures or builds unrelated HYLE components.
+never configures or builds unrelated HYLE components. Its output is diagnostic
+and cannot replace the current v1 contract and common performance runner.
 """
 
 import argparse
@@ -37,8 +38,9 @@ LARGE_DELTA_RATIO_MIN = 0.75
 LARGE_DELTA_RATIO_MAX = 0.85
 FORMAL_BOOST_HEAD = "df8eeb90846648464e3c8e378e312f0cec772e83"
 PRODUCT_CONTRACTS = [
-    ("intrusive auto-unlink FIFO batch N=4096",
-     "HYLE IntrusiveList", "boost::intrusive auto_unlink", True),
+    ("intrusive auto-unlink FIFO callback batch drain N=4096",
+     "HYLE IntrusiveList::consume_all",
+     "boost::intrusive auto_unlink clear_and_dispose", True),
     ("intrusive auto-unlink refill + arbitrary cancel N=4096",
      "HYLE IntrusiveList::remove", "boost::intrusive::erase", True),
     ("intrusive auto-unlink read-only traversal N=4096",
@@ -49,8 +51,9 @@ PRODUCT_CONTRACTS = [
     ("intrusive auto-unlink linked-node retirement N=4096",
      "HYLE IntrusiveList linked node retirement",
      "boost::intrusive auto_unlink node retirement", True),
-    ("intrusive safe-link FIFO batch N=4096",
-     "HYLE SafeIntrusiveList", "boost::intrusive safe_link", True),
+    ("intrusive safe-link FIFO callback batch drain N=4096",
+     "HYLE SafeIntrusiveList::consume_all",
+     "boost::intrusive safe_link clear_and_dispose", True),
     ("intrusive safe-link refill + arbitrary cancel N=4096",
      "HYLE SafeIntrusiveList::remove",
      "boost::intrusive safe_link erase", True),
@@ -2288,7 +2291,9 @@ def verify_placement(host_system, tool, build, primary_executable,
 
 def main():
     parser = argparse.ArgumentParser(
-        description="isolated container_intrusive benchmark certificate")
+        description=(
+            "legacy container_intrusive benchmark diagnostic; not a current "
+            "module certificate"))
     parser.add_argument("--build", required=True)
     parser.add_argument("--boost-dir", required=True)
     parser.add_argument("--output-dir", required=True)
