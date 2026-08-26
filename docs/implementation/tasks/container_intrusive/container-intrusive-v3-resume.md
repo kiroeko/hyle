@@ -6,7 +6,7 @@
 > [`module-status.json`](../../module-status.json)；v2 的 `HISTORICAL` 记录只提供旧候选和阻塞事实，
 > 不授权本轮修改，也不产生当前结论。
 
-## Closure card（`SCOPED`）
+## Closure card（`AUDITED`）
 
 - component / owner / round ID：`container_intrusive` / container owner / `container-intrusive-v3`
 - task kind：`RESUME`
@@ -58,25 +58,45 @@
 - 预期输出：有限 capability/gap ledger 与 `FIX` 集；当前 candidate commit/tree；correctness、delivery、
   docs/usability、red-team 与 P1 manifest；四项 LOC、限制和 reopen triggers。
 - 停止条件 / 可接受限制：所有适用工程门通过则 `CLOSED`；仪器/机器/功效仍不能产生 P1 `PASS` 则写
-  一个可点名 blocker 后 `BLOCKED`。可接受限制是 64-bit、standard-layout、stable-address、外部同步、
-  caller-owned raw-pointer member-hook；没有真实独立需求时不扩成完整 intrusive framework。
+  一个可点名 blocker 后 `BLOCKED`。可接受限制是 64-bit、stable-address、外部同步、caller-owned
+  direct-member hook，以及编译器受支持的 pointer-to-data-member ABI；没有真实独立需求时不扩成完整
+  intrusive framework。
 
 ## Capability / gap ledger
 
-本节在 `AUDITED` 前保持为空；本轮只允许实现这里冻结为 `FIX` 的项目。
-
 | ID | requirement class | demand kind | exact source | normal shape | owner | ownership/failure/concurrency | complexity/resource target | verdict | severity | verification / negative space |
 |---|---|---|---|---|---|---|---|---|---|---|
+| INTR-LIFE-01 | capability | direct consumer + peer parity | `time::TimerEntry`；Boost.Intrusive auto/safe member hook；Folly `IntrusiveList`/`SafeIntrusiveList` | auto-unlink 用于 unknown-owner cancellation；safe-link 用于 owner-lock 下显式 retirement | public | caller owns storage；stable address；外部同步；safe 违反析构前摘链合同即程序错误 | 两 pointer/hook；mutation O(1)；零分配 | `KEEP` | P0 | normal/empty/lifetime/Debug misuse；不增加 owner metadata |
+| INTR-LINK-01 | capability | timer/completion handoff | `TimerQueue`、scheduler due drain；Boost range splice/clear-and-dispose | push/pop/remove/iterator、单项/整链/range splice、append、`consume_all`、遍历、list move/swap | public | callback 合同逐入口表达；list 不拥有或销毁 node | known-node/range relink O(1)；drain/traversal O(n) | `KEEP` | P0 | deterministic + random differential、codegen；不扩成 owning list |
+| INTR-ABI-01 | API/implementation | peer defect | Boost `parent_from_member` 不要求 standard-layout；Folly `TimedMutex::MutexWaiter` 是 public hook + private payload | direct member hook 可位于 non-standard-layout complete object；只要所选 PMD representation 可解码 | public | live complete object、stable address；未知/复杂 PMD ABI 编译期 fail closed | node recovery O(1)，无常态 metadata | `FIX` | P0 | 删除 blanket `is_standard_layout<T>`；三编译器 mixed-access node test |
+| INTR-AUTO-SWAP-01 | capability/API | real peer consumer | Boost hook `swap_nodes`；Folly movable `ChannelCallbackHandleHolder` | auto hook 显式 O(1) 交换 membership/链上位置；不改变默认 move 语义 | public | self、linked/unlinked、相邻、同链/异链均定义；被交换 node 的 iterator 失效 | O(1)，零分配 | `FIX` | P1 | table + random differential；safe hook 不获得该入口 |
+| INTR-SAFE-SWAP-01 | negative space | lifecycle boundary | safe hook 只能经 owner list/state machine 改 membership | 不提供 hook-level safe swap；未来真实 movable-safe consumer 可设计 list-level `replace` | public future | 不允许绕过 owner state machine | 若重开必须 O(1) 且无 owner tax | `REJECT` hook / `DEFER` list replace | P1 | concept negative test；本轮无 consumer |
+| INTR-SIZE-01 | negative space | peer scan | Folly counted/uncounted list；Boost constant-time-size policy | 不提供 linear `.size()`；冷路径用 `ranges::distance`；counted safe list 等独立 consumer | public future | auto unlink 与 hidden count 冲突；range splice 需 scan 或 caller count | 不让所有 list 支付 word/write；不伪造 `sized_range` | `REJECT` linear / `DEFER` counted | P2 | time/sched 当前计数都不是通用 list membership count |
+| INTR-API-01 | usability | current consumers | time/sched 持有 node pointer；nullable front/pop 与 `try_*` | mutation 保持 pointer API；不复制一套 reference overload | public | 普通入口前置条件；`try_*` 只处理 null/already-linked | 无额外分支或 metadata | `KEEP` | P1 | user guide decision table；不把 `try_*` 伪装成 owner validator |
+| INTR-CORR-01 | correctness | red-team gap | randomized differential 目前只在两条 list 间移动 | 增加同链 range splice 的 empty、boundary、prefix/suffix、前移/后移表格和有限随机差分 | tests | 无效的 inside-range position 仍是前置条件违反 | 不改产品复杂度 | `FIX` | P0 | deterministic + differential tests；sanitizer |
+| INTR-DELIVERY-01 | delivery/docs | direct target audit | component graph：`time -> container_intrusive`；完整 `container` 没有直接 edge 且不安装该 header | direct consumer 必须选择/链接 `hyle::container_intrusive`；只有 `time` 自动传播 | build/docs | 不能依赖 `container -> mem -> platform -> time` 的偶然传递闭包 | exact selected closure，无 binary artifact | `FIX` | P0 | source/static/shared relocated component + time consumer smoke |
+| INTR-USE-01 | usability/docs | real C++ type shape | `TimerEntryListAccess` friend adapter；public-hook peer nodes | pointer-to-member alias 形成处必须能访问 hook；公开 hook 最简单，私有 hook 用具名 friend adapter | public docs | adapter 只暴露 hook selector，不改变 storage ownership | compile-time only | `FIX` | guide sample/note + mixed-access compile test |
+| INTR-PERF-01 | performance evidence | real consumer replay | `TimerQueue::inspect`、scheduler due list 使用 `consume_all`；Boost `clear_and_dispose` | 4096 stable-address preallocated batch replay；HYLE/peer 都使用各自正常批量 drain API | evidence | 不把合成 component replay 标成 actual consumer benchmark | 5% P1 non-inferiority；统一 8 strata/controls | `FIX` | workload tier 改为 `replay`；FIFO drain 改为 `consume_all` vs `clear_and_dispose`；fresh W1 n=15 |
+| INTR-POLICY-01 | negative space | peer breadth scan | Boost base/function/offset hooks、完整 list algorithms | 保持窄 member-hook linking primitive；高级 intrusive framework 直接用 Boost | external/public future | reclamation、allocator、内部同步归 owning/concurrent layer | 不因 peer API 数量或 LOC 扩面 | `REJECT` | P2 | 只有具名 consumer/更优复杂度才重开 |
+| INTR-FFI-01 | delivery boundary | Native FFI policy | template + pointer-to-member + caller-owned C++ lifetime | 仅 C++ source/static/shared；Native FFI=`N/A` | public | 不导出 raw hook/list layout | header-only | `KEEP` | P0 | component smoke；没有 C/FFI symbol |
+| TIME-BACKLOG-01 | adjacent module | semantic consumer scan | time 内旧 `TimerEntryAccess`/`CommonTimeoutQueueAccess` 与 C-adapter 注释 | 在 time 自身 round 删除死 seam/过时注释 | time | 不改变本轮 intrusive candidate | N/A | `DEFER` | P2 | 登记但禁止跨 owner 顺手修改 |
 
-- 公开入口反向追踪：审计中。
-- 语法消费者 / 语义重复扫描：审计中。
-- public/internal/higher-layer 裁决：审计中。
-- 本轮冻结 `FIX` 集：尚未进入 `AUDITED`，不得改产品实现。
-- 相邻模块 backlog：审计中。
+- 公开入口反向追踪：`IntrusiveListHook`/`SafeIntrusiveListHook`、两种 list 的全部 mutation、iterator、
+  callback 与 lifetime 入口均落入 INTR-LIFE/LINK/AUTO-SWAP/API；没有无法归属的公开入口。
+- 语法消费者 / 语义重复扫描：唯一直接通用 consumer 是 `time`；sched waiter、IOCP、cancellation hlist
+  与 pool free-list 的 storage/state-machine 合同不同，保留特化，不建立虚假依赖。
+- public/internal/higher-layer 裁决：本组件只拥有通用 caller-owned 双向 member-hook primitive；deadline
+  prefix、wake chain、reclamation、同步、allocator 和 owning algorithms 归上层。
+- 本轮冻结 `FIX` 集：INTR-ABI-01、INTR-AUTO-SWAP-01、INTR-CORR-01、INTR-DELIVERY-01、
+  INTR-USE-01、INTR-PERF-01。只有 correctness/security/当前构建阻断可进入本轮；其他发现登记 backlog。
+- 产品修改只有前两项；其余是测试、交付说明或证据合同修正。总计仍受 closure card 的一次机制归因和
+  一轮 fresh qualification 约束。
+- 相邻模块 backlog：TIME-BACKLOG-01 留给 time round，不在本轮修改。
 
 ## Candidate
 
-尚未进入 `CANDIDATE`。v2 product identity 只作为审计输入，本轮必须重新绑定当前 commit/tree。
+尚未进入 `CANDIDATE`。能力、negative space 与有限 `FIX` 已冻结；v2 product identity 只作为审计
+输入，本轮必须在上述项目完成后重新绑定当前 commit/tree。
 
 ## Verification manifest
 
@@ -84,8 +104,8 @@
 
 ## 独立红队
 
-在 capability ledger 和有限 `FIX` 集冻结后，由独立 reviewer 攻击当前 round/candidate identity。
+能力审计已由两路只读 reviewer 独立完成；最终仍须由未参与实现的 reviewer 攻击冻结 candidate identity。
 
 ## Closure decision
 
-当前为 `SCOPED`，没有 terminal receipt。
+当前为 `AUDITED`，没有 terminal receipt；不得实现 ledger 外扩面。

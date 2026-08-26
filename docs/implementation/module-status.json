@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "methodology": "module-closure-v1",
-  "updated_at": "2026-08-26",
+  "updated_at": "2026-08-27",
   "modules": [
     {
       "module": "core",
@@ -61,7 +61,7 @@
     },
     {
       "module": "container_intrusive",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "round_id": "container-intrusive-v3",
       "closure_task": "docs/implementation/tasks/container_intrusive/container-intrusive-v3-resume.md",
       "scope": "Current auto/safe member-hook intrusive-list capability, C++ API, implementation, direct consumer/dependency, delivery, documentation and P1 engineering evidence.",
@@ -85,7 +85,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "v3 RESUME 范围已冻结；正在重新审计当前能力/API/依赖/交付，并解决统一 P1 工程性能与最终红队门。"
+      "summary": "v3 能力与 negative space 已审计；有限 FIX 已冻结，正在实现并重新绑定 correctness、交付与 P1 证据。"
     },
     {
       "module": "util_core",
