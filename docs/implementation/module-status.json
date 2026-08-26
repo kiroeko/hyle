@@ -127,7 +127,7 @@
     },
     {
       "module": "error",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "round_id": "error-v3",
       "closure_task": "docs/implementation/tasks/error/error-v3-closure.md",
       "scope": "Status/Result value model, native adapters, real consumer adoption, C++ source/static/shared delivery, usability/docs and current P1 engineering evidence.",
@@ -150,7 +150,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "error-v3 已冻结真实消费者、C++ 产品/交付边界与 P1 验证预算；正在形成有限审计 ledger。"
+      "summary": "error-v3 有限 ledger 已冻结：Status/Result 产品算法保持，实施性能合同、易用性/文档与直接 include 修复。"
     },
     {
       "module": "obs",
