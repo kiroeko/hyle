@@ -115,7 +115,16 @@
 
 ## Candidate
 
-当前没有可验证 candidate。首个候选已被拒绝：
+当前 replacement candidate 固定为：
+
+- commit：`a4ba5a14cdd46a7b9c6e33c06211ce2d6c7a760f`
+- tree：`4a2ca7977241080a41b5eb5ab79a6fd37d71db04`
+
+它在首个候选的冻结产品形状上，只修正 `ERR-PERF-RESULT-SETUP-01`：两侧 owning error 在 measured
+callback 外显式构造，沿两个 noinline frame 以 `const&` 传入；validator 使用内容不同的外部 sentinel，
+证明 frame 消费传入 fixture，而不是隐藏 static/accessor。产品代码、公开 API、layout 与性能合同均未改。
+
+首个候选已被拒绝：
 
 - commit：`462db32c9b6a364f233a89a2da541c2daca37bea`
 - tree：`9e886667c861a43bd9b9e6c83cf055c16a3ed54a`
@@ -152,5 +161,5 @@ replacement 必须显式在 callback 外构造两侧 error，并以对称 const 
 
 ## Closure decision
 
-当前退回 `AUDITED`；只允许实施上述冻结 `FIX` 集中的 replacement setup 修复，不得继承被拒绝候选的
+当前为 `CANDIDATE`；只允许对上述 replacement identity 运行候选绑定验证，不得继承被拒绝候选的
 样本或提前写入 terminal 结论。

@@ -127,12 +127,14 @@
     },
     {
       "module": "error",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "round_id": "error-v3",
       "closure_task": "docs/implementation/tasks/error/error-v3-closure.md",
       "scope": "Status/Result value model, native adapters, real consumer adoption, C++ source/static/shared delivery, usability/docs and current P1 engineering evidence.",
       "non_goals": "Logging, exceptions, arbitrary payload/cause/source-location systems, MultiError, full foreign-category adapters, downstream module closure, native FFI/C API and Formal certification.",
       "baseline_commit": "8b37eb42635fcf89505b7a2d9cad006d57664ba1",
+      "candidate_commit": "a4ba5a14cdd46a7b9c6e33c06211ce2d6c7a760f",
+      "candidate_tree": "4a2ca7977241080a41b5eb5ab79a6fd37d71db04",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -150,7 +152,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "error-v3 首个候选因 Result replay 的 prebuilt setup 与计费合同不一致被拒绝；产品算法不变，正在形成 replacement candidate。"
+      "summary": "error-v3 replacement candidate 已冻结：产品算法不变，Result replay setup 已与 callback 外预建合同严格一致，等待候选绑定验证。"
     },
     {
       "module": "obs",
