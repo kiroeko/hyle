@@ -1,0 +1,161 @@
+candidate=b241a228d3311f0faa65cde68123de7da3688c2f
+host=Apple M4 arm64 macOS 26.5.2
+Apple clang version 21.0.0 (clang-2100.1.1.101)
+Target: arm64-apple-darwin25.5.0
+Thread model: posix
+InstalledDir: /Library/Developer/CommandLineTools/usr/bin
+cmake version 4.3.4
+
+CMake suite maintained and supported by Kitware (kitware.com/cmake).
+=== configure Debug Core-only Release-independent validation ===
+-- The C compiler identification is AppleClang 21.0.0.21000101
+-- The CXX compiler identification is AppleClang 21.0.0.21000101
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- HYLE components: requested='core' resolved='core'
+-- HYLE_SANITIZER = off
+-- HYLE_TESTING = ON (test-only interfaces compiled; not for shipped builds)
+-- HYLE_TRACE = OFF (hooks compile to nothing -- zero cost)
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+-- Found Threads: TRUE
+-- Found Python3: /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9 (found version "3.9.6") found components: Interpreter
+-- HYLE 0.1.0 | AppleClang 21.0.0.21000101 | C++23 | sanitizer=off | linkage=shared | components=core
+-- Configuring done (0.7s)
+-- Generating done (0.0s)
+-- Build files have been written to: /tmp/hyle-core-v2-debug-b241a22
+=== build Debug Core-only ===
+[  7%] Building CXX object tests/core/CMakeFiles/hyle_core_symbol_visibility_probe.dir/symbol_visibility_probe.cc.o
+[ 15%] Building CXX object /Users/kiro/hyle/.deps/googletest-build/googletest/CMakeFiles/gtest.dir/src/gtest-all.cc.o
+[ 23%] Linking CXX shared library ../../bin/libhyle_core_symbol_visibility_probe.dylib
+[ 23%] Built target hyle_core_symbol_visibility_probe
+[ 30%] Building CXX object tests/core/CMakeFiles/hyle_core_codegen_probe.dir/codegen_probe.cc.o
+[ 30%] Built target hyle_core_codegen_probe
+[ 38%] Linking CXX static library /tmp/hyle-core-v2-debug-b241a22/lib/libgtest.a
+[ 38%] Built target gtest
+[ 46%] Building CXX object /Users/kiro/hyle/.deps/googletest-build/googletest/CMakeFiles/gtest_main.dir/src/gtest_main.cc.o
+[ 53%] Building CXX object /Users/kiro/hyle/.deps/googletest-build/googlemock/CMakeFiles/gmock.dir/src/gmock-all.cc.o
+[ 61%] Linking CXX static library /tmp/hyle-core-v2-debug-b241a22/lib/libgtest_main.a
+[ 61%] Built target gtest_main
+[ 69%] Building CXX object tests/core/CMakeFiles/hyle_core_test.dir/core_test.cc.o
+[ 76%] Linking CXX static library /tmp/hyle-core-v2-debug-b241a22/lib/libgmock.a
+[ 76%] Built target gmock
+[ 84%] Building CXX object /Users/kiro/hyle/.deps/googletest-build/googlemock/CMakeFiles/gmock_main.dir/src/gmock_main.cc.o
+[ 92%] Linking CXX executable ../../bin/hyle_core_test
+[ 92%] Built target hyle_core_test
+[100%] Linking CXX static library /tmp/hyle-core-v2-debug-b241a22/lib/libgmock_main.a
+[100%] Built target gmock_main
+=== CTest Debug Core-only ===
+UpdateCTestConfiguration  from :/tmp/hyle-core-v2-debug-b241a22/DartConfiguration.tcl
+Test project /tmp/hyle-core-v2-debug-b241a22
+Constructing a list of tests
+Done constructing a list of tests
+Updating test list for fixtures
+Added 0 tests to meet fixture requirements
+Checking test dependency graph...
+Checking test dependency graph end
+test 2
+    Start 2: hyle_core_test
+
+2: Test command: /tmp/hyle-core-v2-debug-b241a22/bin/hyle_core_test
+2: Working Directory: /tmp/hyle-core-v2-debug-b241a22/tests/core
+2: Test timeout computed to be: 10000000
+2: Running main() from /Users/kiro/hyle/.deps/googletest-src/googletest/src/gtest_main.cc
+2: [==========] Running 8 tests from 6 test suites.
+2: [----------] Global test environment set-up.
+2: [----------] 1 test from CoreVersion
+2: [ RUN      ] CoreVersion.CompileTimeProductIdentityIsConsistent
+2: [       OK ] CoreVersion.CompileTimeProductIdentityIsConsistent (0 ms)
+2: [----------] 1 test from CoreVersion (0 ms total)
+2:
+2: [----------] 1 test from CoreCache
+2: [ RUN      ] CoreCache.StaticLayoutContractIsUsable
+2: [       OK ] CoreCache.StaticLayoutContractIsUsable (0 ms)
+2: [----------] 1 test from CoreCache (0 ms total)
+2:
+2: [----------] 1 test from CoreCompiler
+2: [ RUN      ] CoreCompiler.PortableContractsPreserveValidInputs
+2: [       OK ] CoreCompiler.PortableContractsPreserveValidInputs (0 ms)
+2: [----------] 1 test from CoreCompiler (0 ms total)
+2:
+2: [----------] 1 test from CoreAssert
+2: [ RUN      ] CoreAssert.ConditionsEvaluateOnceAndSuccessSkipsMessage
+2: [       OK ] CoreAssert.ConditionsEvaluateOnceAndSuccessSkipsMessage (0 ms)
+2: [----------] 1 test from CoreAssert (0 ms total)
+2:
+2: [----------] 2 tests from CoreCompilerDeath
+2: [ RUN      ] CoreCompilerDeath.AssumeDiagnosesFalseInDebugBuilds
+2: [       OK ] CoreCompilerDeath.AssumeDiagnosesFalseInDebugBuilds (1 ms)
+2: [ RUN      ] CoreCompilerDeath.UnreachableDiagnosesTripsInDebugBuilds
+2: [       OK ] CoreCompilerDeath.UnreachableDiagnosesTripsInDebugBuilds (1 ms)
+2: [----------] 2 tests from CoreCompilerDeath (3 ms total)
+2:
+2: [----------] 2 tests from CoreAssertDeath
+2: [ RUN      ] CoreAssertDeath.FatalAssertAbortsOnFalse
+2: [       OK ] CoreAssertDeath.FatalAssertAbortsOnFalse (1 ms)
+2: [ RUN      ] CoreAssertDeath.FatalAssertMessageIsReported
+2: [       OK ] CoreAssertDeath.FatalAssertMessageIsReported (1 ms)
+2: [----------] 2 tests from CoreAssertDeath (2 ms total)
+2:
+2: [----------] Global test environment tear-down
+2: [==========] 8 tests from 6 test suites ran. (6 ms total)
+2: [  PASSED  ] 8 tests.
+1/5 Test #2: hyle_core_test .........................   Passed    0.51 sec
+test 3
+    Start 3: hyle_core_header_self_contained_test
+
+3: Test command: /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9 "/Users/kiro/hyle/scripts/header-self-contained.py" "--module" "core" "--include-dir" "/Users/kiro/hyle/include" "--cc" "/usr/bin/cc" "--cxx" "/usr/bin/c++" "--c-compiler-id" "AppleClang" "--cxx-compiler-id" "AppleClang" "--c-frontend" "GNU" "--cxx-frontend" "GNU" "--no-c-header"
+3: Working Directory: /tmp/hyle-core-v2-debug-b241a22/tests/core
+3: Test timeout computed to be: 10000000
+3: core headers self-contained: 3 C++ + 0 C
+2/5 Test #3: hyle_core_header_self_contained_test ...   Passed    0.12 sec
+test 4
+    Start 4: hyle_core_codegen_audit_parser_test
+
+4: Test command: /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9 "/Users/kiro/hyle/tests/core/codegen_audit_test.py"
+4: Working Directory: /tmp/hyle-core-v2-debug-b241a22/tests/core
+4: Test timeout computed to be: 10000000
+4: ..............
+4: ----------------------------------------------------------------------
+4: Ran 14 tests in 0.002s
+4:
+4: OK
+3/5 Test #4: hyle_core_codegen_audit_parser_test ....   Passed    0.03 sec
+test 5
+    Start 5: hyle_core_symbol_visibility_test
+
+5: Test command: /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9 "/Users/kiro/hyle/scripts/core-symbol-visibility-audit.py" "--library" "/tmp/hyle-core-v2-debug-b241a22/bin/libhyle_core_symbol_visibility_probe.dylib"
+5: Working Directory: /tmp/hyle-core-v2-debug-b241a22/tests/core
+5: Test timeout computed to be: 10000000
+5: Core symbol visibility OK: tool=nm library=libhyle_core_symbol_visibility_probe.dylib
+4/5 Test #5: hyle_core_symbol_visibility_test .......   Passed    0.03 sec
+test 6
+    Start 6: hyle_core_codegen_test
+
+6: Test command: /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9 "/Users/kiro/hyle/scripts/core-codegen-audit.py" "--object" "/tmp/hyle-core-v2-debug-b241a22/tests/core/CMakeFiles/hyle_core_codegen_probe.dir/codegen_probe.cc.o" "--architecture" "aarch64" "--configuration" "Debug"
+6: Working Directory: /tmp/hyle-core-v2-debug-b241a22/tests/core
+6: Test timeout computed to be: 10000000
+6: Core codegen audit skipped for Debug; Release is required
+5/5 Test #6: hyle_core_codegen_test .................***Skipped   0.02 sec
+
+100% tests passed, 0 tests failed out of 5
+
+Label Time Summary:
+codegen    =   0.06 sec*proc (2 tests)
+core       =   0.72 sec*proc (5 tests)
+headers    =   0.12 sec*proc (1 test)
+symbols    =   0.03 sec*proc (1 test)
+tooling    =   0.03 sec*proc (1 test)
+
+Total Test time (real) =   0.72 sec
+
+The following tests did not run:
+	  6 - hyle_core_codegen_test (Skipped)

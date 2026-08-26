@@ -1,0 +1,20 @@
+Host: Apple M4 arm64
+ProductName:		macOS
+ProductVersion:		26.5.2
+BuildVersion:		25F84
+Apple clang version 21.0.0 (clang-2100.1.1.101)
+Target: arm64-apple-darwin25.5.0
+Thread model: posix
+InstalledDir: /Library/Developer/CommandLineTools/usr/bin
+cmake version 4.3.4
+
+CMake suite maintained and supported by Kitware (kitware.com/cmake).
+Probe dynamic exports:
+0000000000001048 T _hyle_core_visibility_probe
+Probe local records:
+0000000000001060 (__TEXT,__text) non-external (was a private external) __ZN4hyle4core6detail19fatal_assert_failedEPKcS3_S3_i
+0000000000001048 (__TEXT,__text) external _hyle_core_visibility_probe
+00000000000010ac (__TEXT,__text) non-external _hyle_core_visibility_probe.cold.1
+hyle_time dynamic fatal search (must be empty):
+hyle_time local fatal record:
+0000000000003b80 (__TEXT,__text) non-external (was a private external) __ZN4hyle4core6detail19fatal_assert_failedEPKcS3_S3_i

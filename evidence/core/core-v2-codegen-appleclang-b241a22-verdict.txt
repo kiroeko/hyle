@@ -1,0 +1,1 @@
+Core codegen OK: tool=otool arch=aarch64 functions=9 prefetch=3

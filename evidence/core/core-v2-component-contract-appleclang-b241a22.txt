@@ -1,0 +1,47 @@
+HYLE component/package contracts passed
+Normalized processor evidence:
+Installed shared Core target:
+add_library(hyle::core INTERFACE IMPORTED)
+
+set_target_properties(hyle::core PROPERTIES
+  INTERFACE_COMPILE_FEATURES "cxx_std_23"
+  INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/include"
+  INTERFACE_LINK_LIBRARIES "hyle::_build_contract"
+)
+
+# Load information for each installed configuration.
+Installed static Core target:
+add_library(hyle::core INTERFACE IMPORTED)
+
+set_target_properties(hyle::core PROPERTIES
+  INTERFACE_COMPILE_FEATURES "cxx_std_23"
+  INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/include"
+  INTERFACE_LINK_LIBRARIES "hyle::_build_contract"
+)
+
+# Load information for each installed configuration.
+Forbidden installed instrumentation references (must be empty):
+Source consumer:
+Test project /tmp/hyle-core-v2-mac-component-final7/component-contract/core-build
+    Start 1: hyle_core_source_consumer
+1/1 Test #1: hyle_core_source_consumer ........   Passed    0.00 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   0.00 sec
+Relocated shared consumer:
+Test project /tmp/hyle-core-v2-mac-component-final7/component-contract/core-shared-consumer-build
+    Start 1: hyle_package_core_cpp
+1/1 Test #1: hyle_package_core_cpp ............   Passed    0.00 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   0.00 sec
+Relocated static consumer:
+Test project /tmp/hyle-core-v2-mac-component-final7/component-contract/core-static-consumer-build
+    Start 1: hyle_package_core_cpp
+1/1 Test #1: hyle_package_core_cpp ............   Passed    0.00 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   0.00 sec

@@ -1,0 +1,95 @@
+UpdateCTestConfiguration  from :/tmp/hyle-core-v2-mac-final7/DartConfiguration.tcl
+Test project /tmp/hyle-core-v2-mac-final7
+Constructing a list of tests
+Done constructing a list of tests
+Updating test list for fixtures
+Added 0 tests to meet fixture requirements
+Checking test dependency graph...
+Checking test dependency graph end
+test 2
+    Start 2: hyle_core_test
+
+2: Test command: /tmp/hyle-core-v2-mac-final7/bin/hyle_core_test
+2: Working Directory: /tmp/hyle-core-v2-mac-final7/tests/core
+2: Test timeout computed to be: 10000000
+2: Running main() from /Users/kiro/hyle/.deps/googletest-src/googletest/src/gtest_main.cc
+2: [==========] Running 6 tests from 5 test suites.
+2: [----------] Global test environment set-up.
+2: [----------] 1 test from CoreVersion
+2: [ RUN      ] CoreVersion.CompileTimeProductIdentityIsConsistent
+2: [       OK ] CoreVersion.CompileTimeProductIdentityIsConsistent (0 ms)
+2: [----------] 1 test from CoreVersion (0 ms total)
+2:
+2: [----------] 1 test from CoreCache
+2: [ RUN      ] CoreCache.StaticLayoutContractIsUsable
+2: [       OK ] CoreCache.StaticLayoutContractIsUsable (0 ms)
+2: [----------] 1 test from CoreCache (0 ms total)
+2:
+2: [----------] 1 test from CoreCompiler
+2: [ RUN      ] CoreCompiler.PortableContractsPreserveValidInputs
+2: [       OK ] CoreCompiler.PortableContractsPreserveValidInputs (0 ms)
+2: [----------] 1 test from CoreCompiler (0 ms total)
+2:
+2: [----------] 1 test from CoreAssert
+2: [ RUN      ] CoreAssert.ConditionsEvaluateOnceAndSuccessSkipsMessage
+2: [       OK ] CoreAssert.ConditionsEvaluateOnceAndSuccessSkipsMessage (0 ms)
+2: [----------] 1 test from CoreAssert (0 ms total)
+2:
+2: [----------] 2 tests from CoreAssertDeath
+2: [ RUN      ] CoreAssertDeath.FatalAssertAbortsOnFalse
+2: [       OK ] CoreAssertDeath.FatalAssertAbortsOnFalse (0 ms)
+2: [ RUN      ] CoreAssertDeath.FatalAssertMessageIsReported
+2: [       OK ] CoreAssertDeath.FatalAssertMessageIsReported (0 ms)
+2: [----------] 2 tests from CoreAssertDeath (1 ms total)
+2:
+2: [----------] Global test environment tear-down
+2: [==========] 6 tests from 5 test suites ran. (1 ms total)
+2: [  PASSED  ] 6 tests.
+1/5 Test #2: hyle_core_test .........................   Passed    0.00 sec
+test 3
+    Start 3: hyle_core_header_self_contained_test
+
+3: Test command: /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9 "/Users/kiro/hyle/scripts/header-self-contained.py" "--module" "core" "--include-dir" "/Users/kiro/hyle/include" "--cc" "/usr/bin/cc" "--cxx" "/usr/bin/c++" "--c-compiler-id" "AppleClang" "--cxx-compiler-id" "AppleClang" "--c-frontend" "GNU" "--cxx-frontend" "GNU" "--no-c-header"
+3: Working Directory: /tmp/hyle-core-v2-mac-final7/tests/core
+3: Test timeout computed to be: 10000000
+3: core headers self-contained: 3 C++ + 0 C
+2/5 Test #3: hyle_core_header_self_contained_test ...   Passed    0.10 sec
+test 4
+    Start 4: hyle_core_codegen_audit_parser_test
+
+4: Test command: /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9 "/Users/kiro/hyle/tests/core/codegen_audit_test.py"
+4: Working Directory: /tmp/hyle-core-v2-mac-final7/tests/core
+4: Test timeout computed to be: 10000000
+4: ..............
+4: ----------------------------------------------------------------------
+4: Ran 14 tests in 0.002s
+4:
+4: OK
+3/5 Test #4: hyle_core_codegen_audit_parser_test ....   Passed    0.03 sec
+test 5
+    Start 5: hyle_core_symbol_visibility_test
+
+5: Test command: /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9 "/Users/kiro/hyle/scripts/core-symbol-visibility-audit.py" "--library" "/tmp/hyle-core-v2-mac-final7/bin/libhyle_core_symbol_visibility_probe.dylib"
+5: Working Directory: /tmp/hyle-core-v2-mac-final7/tests/core
+5: Test timeout computed to be: 10000000
+5: Core symbol visibility OK: tool=nm library=libhyle_core_symbol_visibility_probe.dylib
+4/5 Test #5: hyle_core_symbol_visibility_test .......   Passed    0.03 sec
+test 6
+    Start 6: hyle_core_codegen_test
+
+6: Test command: /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3.9 "/Users/kiro/hyle/scripts/core-codegen-audit.py" "--object" "/tmp/hyle-core-v2-mac-final7/tests/core/CMakeFiles/hyle_core_codegen_probe.dir/codegen_probe.cc.o" "--architecture" "aarch64" "--configuration" "Release"
+6: Working Directory: /tmp/hyle-core-v2-mac-final7/tests/core
+6: Test timeout computed to be: 10000000
+6: Core codegen OK: tool=otool arch=aarch64 functions=9 prefetch=3
+5/5 Test #6: hyle_core_codegen_test .................   Passed    0.04 sec
+
+100% tests passed, 0 tests failed out of 5
+
+Label Time Summary:
+codegen    =   0.08 sec*proc (2 tests)
+core       =   0.21 sec*proc (5 tests)
+headers    =   0.10 sec*proc (1 test)
+symbols    =   0.03 sec*proc (1 test)
+tooling    =   0.03 sec*proc (1 test)
+
+Total Test time (real) =   0.22 sec

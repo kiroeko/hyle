@@ -1,0 +1,162 @@
+Test project C:/public/project-hyle/hyle/build-core-v2-all-final
+      Start 40: hyle_container_header_self_contained_test
+      Start 48: hyle_sched_test
+      Start 32: hyle_mem_header_self_contained_test
+      Start 26: hyle_time_header_self_contained_test
+ 1/66 Test #26: hyle_time_header_self_contained_test ..................   Passed    4.47 sec
+      Start 23: hyle_platform_header_self_contained_test
+ 2/66 Test #32: hyle_mem_header_self_contained_test ...................   Passed    5.33 sec
+      Start  5: hyle_core_symbol_visibility_test
+ 3/66 Test #48: hyle_sched_test .......................................   Passed    6.17 sec
+      Start  6: hyle_core_codegen_test
+ 4/66 Test  #5: hyle_core_symbol_visibility_test ......................   Passed    2.46 sec
+      Start 44: hyle_util_header_self_contained_test
+ 5/66 Test  #6: hyle_core_codegen_test ................................   Passed    2.50 sec
+      Start  9: hyle_util_core_header_self_contained_test
+ 6/66 Test #23: hyle_platform_header_self_contained_test ..............   Passed    4.32 sec
+      Start 14: hyle_error_header_self_contained_test
+ 7/66 Test #40: hyle_container_header_self_contained_test .............   Passed    9.40 sec
+      Start 16: hyle_obs_header_self_contained_test
+ 8/66 Test #14: hyle_error_header_self_contained_test .................   Passed    2.15 sec
+      Start  3: hyle_core_header_self_contained_test
+ 9/66 Test #44: hyle_util_header_self_contained_test ..................   Passed    3.23 sec
+      Start  7: hyle_container_intrusive_header_self_contained_test
+10/66 Test  #9: hyle_util_core_header_self_contained_test .............   Passed    2.64 sec
+      Start 24: hyle_platform_test
+11/66 Test #16: hyle_obs_header_self_contained_test ...................   Passed    1.96 sec
+      Start 33: hyle_mem_test
+12/66 Test #33: hyle_mem_test .........................................   Passed    0.68 sec
+      Start 41: hyle_container_test
+13/66 Test #41: hyle_container_test ...................................   Passed    0.50 sec
+      Start 35: hyle_simd_test
+14/66 Test #24: hyle_platform_test ....................................   Passed    1.32 sec
+      Start 62: hyle_compute_test
+15/66 Test #35: hyle_simd_test ........................................   Passed    0.25 sec
+      Start 27: hyle_time_test
+16/66 Test  #3: hyle_core_header_self_contained_test ..................   Passed    1.95 sec
+      Start 58: hyle_io_timeout_test
+17/66 Test #62: hyle_compute_test .....................................   Passed    0.28 sec
+      Start 49: hyle_sched_c_test
+18/66 Test  #7: hyle_container_intrusive_header_self_contained_test ...   Passed    1.94 sec
+      Start 65: hyle_graph_parallel_test
+19/66 Test #65: hyle_graph_parallel_test ..............................   Passed    0.03 sec
+      Start 10: hyle_util_core_test
+20/66 Test #49: hyle_sched_c_test .....................................   Passed    0.17 sec
+      Start 56: hyle_io_dns_test
+21/66 Test #56: hyle_io_dns_test ......................................   Passed    0.02 sec
+      Start 37: hyle_simd_avx2_test
+22/66 Test #27: hyle_time_test ........................................   Passed    0.31 sec
+      Start 54: hyle_io_udp_test
+23/66 Test #37: hyle_simd_avx2_test ...................................   Passed    0.02 sec
+      Start 60: hyle_io_net_cancel_test
+24/66 Test #54: hyle_io_udp_test ......................................   Passed    0.02 sec
+      Start 17: hyle_obs_test
+25/66 Test #10: hyle_util_core_test ...................................   Passed    0.14 sec
+      Start 45: hyle_util_test
+26/66 Test #58: hyle_io_timeout_test ..................................   Passed    0.25 sec
+      Start 29: hyle_time_tsc_calibration_test
+27/66 Test #60: hyle_io_net_cancel_test ...............................   Passed    0.06 sec
+      Start 64: hyle_graph_test
+28/66 Test #17: hyle_obs_test .........................................   Passed    0.06 sec
+      Start 11: hyle_error_test
+29/66 Test #45: hyle_util_test ........................................   Passed    0.07 sec
+      Start 21: hyle_platform_c_test
+30/66 Test #64: hyle_graph_test .......................................   Passed    0.03 sec
+      Start 31: hyle_mem_c_surface_test
+31/66 Test #11: hyle_error_test .......................................   Passed    0.05 sec
+      Start 22: hyle_platform_c_surface_test
+32/66 Test #21: hyle_platform_c_test ..................................   Passed    0.04 sec
+      Start 25: hyle_time_c_surface_test
+33/66 Test #29: hyle_time_tsc_calibration_test ........................   Passed    0.11 sec
+      Start  4: hyle_core_codegen_audit_parser_test
+34/66 Test #31: hyle_mem_c_surface_test ...............................   Passed    0.09 sec
+      Start 61: hyle_io_http_cancel_test
+35/66 Test #61: hyle_io_http_cancel_test ..............................   Passed    0.01 sec
+      Start 13: hyle_error_c_surface_test
+36/66 Test #22: hyle_platform_c_surface_test ..........................   Passed    0.09 sec
+      Start 15: hyle_obs_c_surface_test
+37/66 Test #25: hyle_time_c_surface_test ..............................   Passed    0.09 sec
+      Start 39: hyle_container_c_surface_test
+38/66 Test  #4: hyle_core_codegen_audit_parser_test ...................   Passed    0.08 sec
+      Start 59: hyle_io_http_test
+39/66 Test #13: hyle_error_c_surface_test .............................   Passed    0.08 sec
+      Start 30: hyle_mem_c_test
+40/66 Test #59: hyle_io_http_test .....................................   Passed    0.06 sec
+      Start 47: hyle_util_c_surface_test
+41/66 Test #15: hyle_obs_c_surface_test ...............................   Passed    0.08 sec
+      Start  1: hyle_bench_stat_parser_test
+42/66 Test #39: hyle_container_c_surface_test .........................   Passed    0.08 sec
+      Start 66: hyle_graph_data_parallel_test
+43/66 Test #30: hyle_mem_c_test .......................................   Passed    0.02 sec
+      Start 50: hyle_io_test
+44/66 Test #50: hyle_io_test ..........................................   Passed    0.02 sec
+      Start 43: hyle_container_hash_seed_process_test
+45/66 Test #66: hyle_graph_data_parallel_test .........................   Passed    0.05 sec
+      Start 34: hyle_simd_c_test
+46/66 Test #34: hyle_simd_c_test ......................................   Passed    0.01 sec
+      Start 55: hyle_io_file_test
+47/66 Test  #1: hyle_bench_stat_parser_test ...........................   Passed    0.08 sec
+      Start  2: hyle_core_test
+48/66 Test #47: hyle_util_c_surface_test ..............................   Passed    0.09 sec
+49/66 Test #43: hyle_container_hash_seed_process_test .................   Passed    0.05 sec
+      Start 52: hyle_io_net_test
+      Start 63: hyle_compute_gpu_await_test
+50/66 Test #55: hyle_io_file_test .....................................   Passed    0.03 sec
+      Start 53: hyle_io_tcp_test
+51/66 Test #63: hyle_compute_gpu_await_test ...........................   Passed    0.01 sec
+      Start 57: hyle_io_signal_test
+52/66 Test  #2: hyle_core_test ........................................   Passed    0.03 sec
+      Start 38: hyle_simd_sse4_aes_test
+53/66 Test #53: hyle_io_tcp_test ......................................   Passed    0.02 sec
+      Start 28: hyle_time_c_test
+54/66 Test #52: hyle_io_net_test ......................................   Passed    0.03 sec
+      Start 42: hyle_container_c_test
+55/66 Test #28: hyle_time_c_test ......................................   Passed    0.01 sec
+      Start 20: hyle_math_test
+56/66 Test #42: hyle_container_c_test .................................   Passed    0.01 sec
+      Start 46: hyle_util_c_test
+57/66 Test #38: hyle_simd_sse4_aes_test ...............................   Passed    0.03 sec
+      Start 18: hyle_obs_compiled_level_test
+58/66 Test #20: hyle_math_test ........................................   Passed    0.02 sec
+      Start  8: hyle_container_intrusive_test
+59/66 Test #46: hyle_util_c_test ......................................   Passed    0.01 sec
+      Start 51: hyle_io_c_test
+60/66 Test #18: hyle_obs_compiled_level_test ..........................   Passed    0.02 sec
+      Start 19: hyle_obs_c_test
+61/66 Test  #8: hyle_container_intrusive_test .........................   Passed    0.02 sec
+      Start 12: hyle_error_c_test
+62/66 Test #51: hyle_io_c_test ........................................   Passed    0.02 sec
+      Start 36: hyle_simd_sse4_test
+63/66 Test #19: hyle_obs_c_test .......................................   Passed    0.01 sec
+64/66 Test #12: hyle_error_c_test .....................................   Passed    0.01 sec
+65/66 Test #36: hyle_simd_sse4_test ...................................   Passed    0.01 sec
+66/66 Test #57: hyle_io_signal_test ...................................   Passed    0.13 sec
+
+100% tests passed out of 66
+
+Label Time Summary:
+benchmark              =   0.08 sec*proc (1 test)
+c-abi                  =   0.91 sec*proc (17 tests)
+codegen                =   2.58 sec*proc (2 tests)
+compute                =   0.29 sec*proc (2 tests)
+container              =  10.04 sec*proc (5 tests)
+container_intrusive    =   1.95 sec*proc (2 tests)
+core                   =   7.03 sec*proc (5 tests)
+error                  =   2.29 sec*proc (4 tests)
+graph                  =   0.11 sec*proc (3 tests)
+hash                   =   0.05 sec*proc (1 test)
+headers                =  37.38 sec*proc (10 tests)
+io                     =   0.66 sec*proc (12 tests)
+math                   =   0.02 sec*proc (1 test)
+mem                    =   6.12 sec*proc (4 tests)
+obs                    =   2.13 sec*proc (5 tests)
+platform               =   5.77 sec*proc (4 tests)
+sched                  =   6.34 sec*proc (2 tests)
+simd                   =   0.31 sec*proc (5 tests)
+symbols                =   2.46 sec*proc (1 test)
+time                   =   4.98 sec*proc (5 tests)
+tooling                =   0.16 sec*proc (2 tests)
+util                   =   3.39 sec*proc (4 tests)
+util_core              =   2.77 sec*proc (2 tests)
+
+Total Test time (real) =  13.65 sec

@@ -1,0 +1,55 @@
+Core v2 GCC exact-intent codegen evidence for b241a228d3311f0faa65cde68123de7da3688c2f
+Captured: 2026-08-26 Asia/Shanghai
+Object:
+  build-core-v2-final3-gcc/tests/core/CMakeFiles/hyle_core_codegen_probe.dir/codegen_probe.cc.o
+
+Synthetic parser/anti-spoofing contract:
+  python3 tests/core/codegen_audit_test.py -v
+  Ran 14 tests in 0.002s
+  OK
+
+Real object audit:
+  python3 scripts/core-codegen-audit.py \
+    --object build-core-v2-final3-gcc/tests/core/CMakeFiles/hyle_core_codegen_probe.dir/codegen_probe.cc.o \
+    --architecture x86_64 --configuration Release
+
+  Core codegen OK: tool=objdump arch=x86_64 functions=9 prefetch=3
+
+Key objdump -drC evidence:
+  0000000000000010 <hyle_core_probe_noinline_caller>:
+    14: eb ea                 jmp    0 <hyle_core_probe_noinline_body>
+
+  0000000000000020 <hyle_core_probe_force_inline_caller>:
+    24: 8d 44 7f 01           lea    0x1(%rdi,%rdi,2),%eax
+    28: c3                    ret
+
+  0000000000000040 <hyle_core_probe_assume>:
+    44: 89 f8                 mov    %edi,%eax
+    46: c3                    ret
+
+  0000000000000050 <hyle_core_probe_prefetch_read>:
+    54: 0f 18 0f              prefetcht0 (%rdi)
+
+  0000000000000060 <hyle_core_probe_prefetch_read_non_temporal>:
+    64: 0f 18 07              prefetchnta (%rdi)
+
+  0000000000000070 <hyle_core_probe_prefetch_write>:
+    74: 0f 0d 0f              prefetchw (%rdi)
+
+  0000000000000080 <hyle_core_probe_fatal_hot>:
+    84: 48 85 ff              test   %rdi,%rdi
+    87: 0f 84 00 00 00 00     je     8d <hyle_core_probe_fatal_hot+0xd>
+        89: R_X86_64_PC32      .text.unlikely-0x4
+
+  Disassembly of section .text.unlikely:
+  0000000000000000 <hyle_core_probe_fatal_hot.cold>:
+    16: e8 00 00 00 00        call   1b
+        17: R_X86_64_PLT32     hyle::core::detail::fatal_assert_failed(char const*, char const*, char const*, int)-0x4
+
+Interpretation enforced by the audit, not inferred from instruction counts:
+  - noinline retains an edge to the body;
+  - force-inline has no helper edge;
+  - assume removes the impossible conditional result/branch;
+  - read, non-temporal read, and write preserve distinct x86 intent;
+  - the hot failure branch relocates to .text.unlikely and only the cold path
+    relocates to fatal_assert_failed; the hot segment has no fprintf/abort edge.

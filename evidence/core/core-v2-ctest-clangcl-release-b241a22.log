@@ -1,0 +1,25 @@
+Test project C:/public/project-hyle/hyle/build-windows-clangcl
+    Start 5: hyle_core_symbol_visibility_test
+    Start 6: hyle_core_codegen_test
+    Start 3: hyle_core_header_self_contained_test
+    Start 4: hyle_core_codegen_audit_parser_test
+1/6 Test #4: hyle_core_codegen_audit_parser_test ....   Passed    0.08 sec
+    Start 1: hyle_bench_stat_parser_test
+2/6 Test #1: hyle_bench_stat_parser_test ............   Passed    0.07 sec
+    Start 2: hyle_core_test
+3/6 Test #2: hyle_core_test .........................   Passed    0.03 sec
+4/6 Test #3: hyle_core_header_self_contained_test ...   Passed    1.76 sec
+5/6 Test #5: hyle_core_symbol_visibility_test .......   Passed    2.71 sec
+6/6 Test #6: hyle_core_codegen_test .................   Passed    2.71 sec
+
+100% tests passed out of 6
+
+Label Time Summary:
+benchmark    =   0.07 sec*proc (1 test)
+codegen      =   2.78 sec*proc (2 tests)
+core         =   7.28 sec*proc (5 tests)
+headers      =   1.76 sec*proc (1 test)
+symbols      =   2.71 sec*proc (1 test)
+tooling      =   0.15 sec*proc (2 tests)
+
+Total Test time (real) =   2.72 sec

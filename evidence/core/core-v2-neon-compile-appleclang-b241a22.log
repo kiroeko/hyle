@@ -1,0 +1,20 @@
+Fresh hyle_simd_neon_test target build completed with exit_code=0
+No test execution was requested or performed
+Target binary:
+/tmp/hyle-core-v2-mac-neon-final7/bin/hyle_simd_neon_test: Mach-O 64-bit executable arm64
+/tmp/hyle-core-v2-mac-neon-final7/bin/hyle_simd_neon_test:
+Mach header
+      magic  cputype cpusubtype  caps    filetype ncmds sizeofcmds      flags
+MH_MAGIC_64    ARM64        ALL  0x00     EXECUTE    23       2128   NOUNDEFS DYLDLINK TWOLEVEL WEAK_DEFINES BINDS_TO_WEAK PIE MH_HAS_TLV_DESCRIPTORS
+Compile definitions/options:
+CXX_DEFINES = -DHYLE_SIMD_TARGET_NEON -DHYLE_TESTING
+CXX_FLAGSarm64 = -O3 -DNDEBUG -std=c++23 -arch arm64 -mmacosx-version-min=14.4 -Wall -Wextra -Wpedantic -Werror
+CXX_FLAGS = -O3 -DNDEBUG -std=c++23 -arch arm64 -mmacosx-version-min=14.4 -Wall -Wextra -Wpedantic -Werror
+No-op target confirmation after the one fresh compile:
+[  3%] Built target hyle_error
+[  7%] Built target gtest
+[ 11%] Built target gtest_main
+[ 12%] Built target hyle_platform_cpu_probe
+[ 27%] Built target hyle_platform
+[ 87%] Built target hyle_simd
+[100%] Built target hyle_simd_neon_test

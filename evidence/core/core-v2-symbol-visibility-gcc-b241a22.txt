@@ -1,0 +1,25 @@
+Core v2 ELF symbol-visibility evidence for b241a228d3311f0faa65cde68123de7da3688c2f
+Captured: 2026-08-26 Asia/Shanghai
+
+Probe:
+  build-core-v2-final3-gcc/bin/libhyle_core_symbol_visibility_probe.so
+
+Command:
+  nm -D --defined-only -C \
+    build-core-v2-final3-gcc/bin/libhyle_core_symbol_visibility_probe.so
+
+Output:
+  00000000000011c0 T hyle_core_visibility_probe
+
+Negative lookup:
+  nm -D -C build-core-v2-final3-gcc/bin/libhyle_core_symbol_visibility_probe.so \
+    | grep -E 'fatal_assert_failed|hyle::core::detail'
+
+Output:
+  <empty>
+
+CTest contract:
+  hyle_core_symbol_visibility_test ............ Passed
+
+Verdict: the intended positive control is exported; the internal assertion sink
+and hyle::core::detail symbols are absent from the ELF dynamic symbol table.

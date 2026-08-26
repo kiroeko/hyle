@@ -1,0 +1,31 @@
+Core v2 target-platform CMake contract for b241a228d3311f0faa65cde68123de7da3688c2f
+Captured: 2026-08-26 Asia/Shanghai
+
+Command:
+  CC=gcc-14 CXX=g++-14 cmake \
+    -DHYLE_SOURCE_DIR=/root/hyle \
+    -DHYLE_SMOKE_ROOT=/root/hyle/build-core-v2-final-target-contract-gcc \
+    -DHYLE_SMOKE_GENERATOR=Ninja \
+    -P cmake/HyleCiTargetPlatformContract.cmake
+
+Output:
+  -- HYLE target-platform contract passed
+
+Covered fixtures include native 64-bit width, unsupported 32-bit rejection,
+Visual Studio ARM64 target over AMD64 host normalization, Visual Studio x64,
+generator ARM64, riscv64, and unsupported fcontext feature handling.
+
+Mechanical target-architecture branch audit:
+  rg -n \
+    'CMAKE_(SYSTEM|HOST_SYSTEM)_PROCESSOR|MSVC_CXX_ARCHITECTURE_ID|CMAKE_GENERATOR_PLATFORM|CMAKE_VS_PLATFORM_NAME|CMAKE_OSX_ARCHITECTURES' \
+    --glob '*.cmake' --glob 'CMakeLists.txt' .
+
+Remaining raw CMAKE_SYSTEM_PROCESSOR uses are restricted to:
+  - third_party/mimalloc upstream logic;
+  - cmake/toolchains/linux-aarch64-gcc.cmake target declaration;
+  - cmake/HyleTargetPlatform.cmake raw-input normalization;
+  - cmake/HyleCiTargetPlatformContract.cmake fixtures;
+  - tests/CMakeLists.txt Visual Studio platform forwarding.
+
+No HYLE-owned source/ISA selection branch was found using host architecture in
+place of HYLE_TARGET_PROCESSOR.

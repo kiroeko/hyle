@@ -1,0 +1,44 @@
+Commit: b241a228d3311f0faa65cde68123de7da3688c2f
+Core-only ASan validation; WSL Ubuntu 24.04 x86_64; GCC 14.2.0; CMake 3.28.3; Ninja 1.11.1
+Source was extracted directly with `git archive` from the commit above into a disposable WSL directory.
+
+Configure:
+  cmake -S /root/hyle-core-candidate-b241a22 \
+    -B /root/hyle-core-candidate-b241a22-build-asan -G Ninja \
+    -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+    -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14 \
+    -DHYLE_COMPONENTS=core -DHYLE_BUILD_TESTS=ON \
+    -DHYLE_BUILD_BENCH=OFF -DHYLE_WERROR=ON \
+    -DHYLE_STATIC=OFF -DHYLE_SANITIZER=asan -DHYLE_TRACE=OFF \
+    -DHYLE_IO_TLS=OFF -DHYLE_IO_HTTP2=OFF \
+    -DHYLE_COMPUTE_CUDA=OFF -DHYLE_COMPUTE_GGML=OFF \
+    -DHYLE_COMPUTE_VULKAN=OFF
+
+Configure contract:
+  -- HYLE components: requested='core' resolved='core'
+  -- HYLE_SANITIZER = asan
+  -- HYLE_TESTING = ON (test-only interfaces compiled; not for shipped builds)
+  -- HYLE_TRACE = OFF (hooks compile to nothing -- zero cost)
+  -- HYLE 0.1.0 | GNU 14.2.0 | C++23 | sanitizer=asan | linkage=shared | components=core
+
+Build:
+  cmake --build /root/hyle-core-candidate-b241a22-build-asan \
+    --target hyle_core_tests --parallel 2
+  [9/9] Linking CXX executable bin/hyle_core_test
+
+Test:
+  ASAN_OPTIONS=detect_leaks=1:halt_on_error=1:abort_on_error=1 \
+    ctest --test-dir /root/hyle-core-candidate-b241a22-build-asan \
+      --output-on-failure -j 2
+
+  hyle_bench_stat_parser_test ................. Passed
+  hyle_core_test .............................. Passed
+  hyle_core_header_self_contained_test ........ Passed
+  hyle_core_codegen_audit_parser_test ......... Passed
+  hyle_core_symbol_visibility_test ............ Passed
+
+  100% tests passed, 0 tests failed out of 5
+  Total Test time (real) = 0.70 sec
+
+No AddressSanitizer or LeakSanitizer diagnostic was emitted.
+The optimized real-object codegen test is intentionally not registered for a sanitizer configuration.

@@ -1,0 +1,70 @@
+Core v2 Linux AArch64 cross evidence for b241a228d3311f0faa65cde68123de7da3688c2f
+Captured: 2026-08-26 Asia/Shanghai
+Host: WSL Ubuntu 24.04 x86_64
+Cross compiler: aarch64-linux-gnu-g++-14 14.2.0
+
+All-component configure/build command:
+  cmake --preset linux-aarch64-cross \
+    -B build-core-v2-final-aarch64-all-gcc
+  cmake --build build-core-v2-final-aarch64-all-gcc --parallel 2
+
+Result: configure and complete all-component compile/link passed with Werror.
+The preset disables tests/bench and optional TLS, HTTP2, CUDA, GGML, and Vulkan.
+
+Representative product artifact:
+  file build-core-v2-final-aarch64-all-gcc/bin/libhyle_simd.so.0.1.0
+  ELF 64-bit LSB shared object, ARM aarch64, version 1 (GNU/Linux)
+
+Selected product SIMD objects:
+  bitpack_hyle_neon.cc.o
+  bitpack_hyle_scalable.cc.o
+  cvt_neon.cc.o
+  cvt_scalable.cc.o
+  narrow_neon.cc.o
+  narrow_sve.cc.o
+  ops_neon.cc.o
+  ops_sve.cc.o
+  random_neon.cc.o
+  random_sve.cc.o
+  scan_neon.cc.o
+  scan_sve.cc.o
+  search_neon.cc.o
+  search_sve.cc.o
+  transcendental_highway_neon.cc.o
+  transcendental_highway_scalable.cc.o
+  transcendental_xsimd_neon.cc.o
+  vqsort_hyle_neon.cc.o
+  vqsort_hyle_sve.cc.o
+
+Product hyle_simd object-name count matching avx|sse: 0
+Verdict: the cross target selected AArch64 NEON/SVE/scalable sources, not host
+x86 ISA sources.
+
+Core static-layout compile contract:
+  cmake --preset linux-aarch64-cross \
+    -B build-core-v2-final-aarch64-coretest-gcc \
+    -DHYLE_COMPONENTS=core -DHYLE_BUILD_TESTS=ON
+  cmake --build build-core-v2-final-aarch64-coretest-gcc \
+    --target hyle_core_tests --parallel 2
+
+  file build-core-v2-final-aarch64-coretest-gcc/bin/hyle_core_test
+  ELF 64-bit LSB pie executable, ARM aarch64
+
+  aarch64-linux-gnu-nm -C .../bin/hyle_core_test
+  000000000000a044 T CoreCache_StaticLayoutContractIsUsable_Test::TestBody()
+
+That compiled test body contains the non-Apple AArch64 contracts:
+  static_assert(kConstructiveInterferenceSize == 64);
+  static_assert(kDestructiveInterferenceSize == 64);
+
+AArch64 exact prefetch disassembly:
+  hyle_core_probe_prefetch_read:
+    prfm pldl1keep, [x0]
+  hyle_core_probe_prefetch_read_non_temporal:
+    prfm pldl1strm, [x0]
+  hyle_core_probe_prefetch_write:
+    prfm pstl1keep, [x0]
+
+Limitation: qemu-aarch64 is not installed, so this evidence is compile, link,
+static-assert, object-selection, and disassembly validation only; no AArch64
+runtime execution is claimed.

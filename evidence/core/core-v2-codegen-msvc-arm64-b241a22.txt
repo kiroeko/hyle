@@ -1,0 +1,27 @@
+UpdateCTestConfiguration  from :C:/public/project-hyle/hyle/build-core-v2-arm64/DartConfiguration.tcl
+Test project C:/public/project-hyle/hyle/build-core-v2-arm64
+Constructing a list of tests
+Done constructing a list of tests
+Updating test list for fixtures
+Added 0 tests to meet fixture requirements
+Checking test dependency graph...
+Checking test dependency graph end
+test 6
+    Start 6: hyle_core_codegen_test
+
+6: Test command: "C:\Program Files\Python312\python.exe" "C:/public/project-hyle/hyle/scripts/core-codegen-audit.py" "--object" "C:/public/project-hyle/hyle/build-core-v2-arm64/tests/core/hyle_core_codegen_probe.dir/Release/codegen_probe.obj" "--architecture" "aarch64" "--configuration" "Release"
+6: Working Directory: C:/public/project-hyle/hyle/build-core-v2-arm64/tests/core
+6: Test timeout computed to be: 10000000
+6: Core codegen OK: tool=dumpbin arch=aarch64 functions=9 prefetch=3
+1/1 Test #6: hyle_core_codegen_test ...........   Passed    2.53 sec
+
+The following tests passed:
+	hyle_core_codegen_test
+
+100% tests passed out of 1
+
+Label Time Summary:
+codegen    =   2.53 sec*proc (1 test)
+core       =   2.53 sec*proc (1 test)
+
+Total Test time (real) =   2.56 sec

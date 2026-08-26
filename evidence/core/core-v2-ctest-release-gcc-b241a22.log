@@ -1,0 +1,37 @@
+Core v2 Linux/GCC candidate evidence for b241a228d3311f0faa65cde68123de7da3688c2f
+Captured: 2026-08-26 Asia/Shanghai
+Canonical source: C:\public\project-hyle\hyle, one-way rsync to disposable /root/hyle
+Host: WSL Ubuntu 24.04, x86_64
+Compiler: g++-14 (Ubuntu 14.2.0-4ubuntu2~24.04.1) 14.2.0
+CMake: 3.28.3
+Ninja: 1.11.1
+
+Fresh configure command:
+  cmake -S . -B build-core-v2-final3-gcc -G Ninja \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14 \
+    -DHYLE_COMPONENTS=core -DHYLE_BUILD_TESTS=ON \
+    -DHYLE_BUILD_BENCH=OFF -DHYLE_WERROR=ON \
+    -DHYLE_STATIC=OFF -DHYLE_SANITIZER=off -DHYLE_TRACE=OFF \
+    -DHYLE_IO_TLS=OFF -DHYLE_IO_HTTP2=OFF \
+    -DHYLE_COMPUTE_CUDA=OFF -DHYLE_COMPUTE_GGML=OFF \
+    -DHYLE_COMPUTE_VULKAN=OFF
+
+Final current-source rebuild check:
+  cmake --build build-core-v2-final3-gcc --target hyle_core_tests --parallel 2
+  [0/2] Re-checking globbed directories...
+  ninja: no work to do.
+
+Final CTest command:
+  ctest --test-dir build-core-v2-final3-gcc --output-on-failure -j 2
+
+Result:
+  hyle_bench_stat_parser_test ................. Passed
+  hyle_core_test .............................. Passed
+  hyle_core_header_self_contained_test ........ Passed
+  hyle_core_codegen_audit_parser_test ......... Passed
+  hyle_core_symbol_visibility_test ............ Passed
+  hyle_core_codegen_test ...................... Passed
+
+  100% tests passed, 0 tests failed out of 6
+  Total Test time (real) = 0.29 sec
