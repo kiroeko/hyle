@@ -1,8 +1,8 @@
 # Build/package system v2 review
 
-<!-- PROJECT UNIT REVIEW: IMPLEMENTED -->
+<!-- PROJECT UNIT REVIEW: VERIFIED -->
 
-> 状态：`IMPLEMENTED`，等待 clean-commit source-package smoke 后转 `VERIFIED`。Build/package 是独立开发单元，但不是可链接产品组件；它不进入
+> 状态：`VERIFIED`。Build/package 是独立开发单元，但不是可链接产品组件；它不进入
 > `HyleComponents.cmake` 或 `module-status.json`。本页按模块收口协议保存本轮冻结范围、有限
 > `FIX` 集与证据，长期设计仍归 [`build-system.md`](../../../architecture/build-system.md)。
 
@@ -66,7 +66,8 @@
 - [x] all-component CPU configure/build 回归（昂贵 feature 显式 OFF）。
 - [x] option 负向/规范化、GTest 复用、pre-1.0 exact package、target platform 与 CI 分层合同通过。
 - [x] `python scripts/check-module-closure.py` 与 `python scripts/check-docs.py`。
-- [ ] terminal immutable snapshot 四项 LOC；build/package 使用文档定义的专用边界。
+- [x] clean commit `42a6747` 生成完整源码包；解压后的 all-component、WERROR、feature-OFF build 通过。
+- [x] terminal immutable snapshot 四项 LOC；build/package 使用文档定义的专用边界。
 
 本地最终门使用 MSVC 19.50 + Ninja、CMake 4.4.0；`HyleCiComponentContract.cmake`、selected
 container delivery smoke、all-component 两种测试布局与文档/闭包/LOC self-check 均通过。Linux、macOS、
