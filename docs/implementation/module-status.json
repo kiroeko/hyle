@@ -278,7 +278,7 @@
     },
     {
       "module": "util",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "round_id": "util-runtime-v1",
       "closure_task": "docs/implementation/tasks/util/util-runtime-v1-closure.md",
       "scope": "Registry and demangle runtime capabilities, their C++ API, ownership/lifetime/concurrency/failure and complexity, component dependency and source/static/shared delivery, direct consumer boundary, documentation and P0 cost structure.",
@@ -286,6 +286,8 @@
       "baseline_commit": "d6ff8735f81d891050ddef90d4eee10600f43ab2",
       "candidate_commit": "469356394a185b5201675fd76ff1a10a4050528b",
       "candidate_tree": "eabcba1fe1cffb484b20c377af0423028e2f9062",
+      "end_commit": "b2a07d8a60f8687ea8b305eda004e7bf2a003707",
+      "registry_anchor_commit": "b2a07d8a60f8687ea8b305eda004e7bf2a003707",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -311,6 +313,13 @@
         "engineering_performance": "PASS"
       },
       "closure_evidence": "docs/implementation/tasks/util/util-runtime-v1-closure.md",
+      "loc": {
+        "snapshot_commit": "469356394a185b5201675fd76ff1a10a4050528b",
+        "repository_code": 297318,
+        "self_with_tests": 122237,
+        "self_without_tests": 82124,
+        "module_implementation": 522
+      },
       "known_limitations": [
         "Keys are case-sensitive, enumeration order is unspecified, and FrozenView plus returned string views borrow Registry lifetime.",
         "Registry does not own dynamic-module unload or quiescence; the module manager must drain objects and readers before destroying it.",
@@ -324,7 +333,7 @@
         "A direct dependency changes actual util-runtime semantics, or a mature same-contract peer proves a better complexity class.",
         "A profile establishes material runtime impact, or a demangle-only consumer proves the current component closure materially wasteful."
       ],
-      "summary": "util-runtime-v1 VERIFIED：显式/no-throw/事务式 Registry 与诊断型 demangle 已通过三平台 correctness/sanitizer、source/static/shared 交付、文档、红队和 P0 成本结构门；等待 terminal receipt/LOC 后关闭。"
+      "summary": "util-runtime-v1 CLOSED：显式/no-throw/事务式 Registry 与诊断型 demangle 已通过三平台 correctness/sanitizer、source/static/shared 交付、文档、红队和 P0 成本结构门；无端到端 timing/SOTA 冒充。"
     },
     {
       "module": "sched",
