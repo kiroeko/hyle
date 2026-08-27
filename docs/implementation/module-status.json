@@ -127,17 +127,12 @@
     },
     {
       "module": "error",
-      "product_state": "BLOCKED",
-      "blocked_from": "CANDIDATE",
-      "round_id": "error-v3",
-      "closure_task": "docs/implementation/tasks/error/error-v3-closure.md",
-      "scope": "Status/Result value model, native adapters, real consumer adoption, C++ source/static/shared delivery, usability/docs and current P1 engineering evidence.",
+      "product_state": "SCOPED",
+      "round_id": "error-v4",
+      "closure_task": "docs/implementation/tasks/error/error-v4-resume.md",
+      "scope": "Resume the unchanged error product candidate against a corrected source-primary consumer performance contract, then rebind current architecture, correctness, delivery, usability/docs and red-team evidence.",
       "non_goals": "Logging, exceptions, arbitrary payload/cause/source-location systems, MultiError, full foreign-category adapters, downstream module closure, native FFI/C API and Formal certification.",
-      "baseline_commit": "8b37eb42635fcf89505b7a2d9cad006d57664ba1",
-      "candidate_commit": "9595724a0a284cbc3502f1c9e9e3ec9c9cf9e2b9",
-      "candidate_tree": "a828fb4cdf1cd7f72aaea098b44fd42e0d966d2d",
-      "end_commit": "49ee805e2db99d0cb53caf978fec24b0deffa514",
-      "registry_anchor_commit": "021180e8cb69d3f6b28e3b1e4ae51a8b00abf9fa",
+      "baseline_commit": "d9644548bf1690a4a1c86f205936cd857b1b92e8",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -145,50 +140,17 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "INCONCLUSIVE",
+        "verdict": "PLANNED",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-error.md"
+        "instrument_profile": "closure-perf-v1"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "gate_verdicts": {
-        "scope": "PASS",
-        "architecture": "PASS",
-        "correctness": "PASS",
-        "delivery": "PASS",
-        "usability_docs": "PASS",
-        "red_team": "PASS",
-        "engineering_performance": "INCONCLUSIVE"
-      },
-      "blocker": "ERR-PERF-CONSUMER-KEY-01: error-p1-v1 misclassified a fixed-backing atomic microbench as replay and contains asymmetric Result peer ownership; no valid source-primary consumer product verdict exists.",
-      "blocker_owner": "performance-contract/instrument owner plus future source-consumer owner; error product owner only after a material consumer regression is proven",
-      "resume_condition": "Freeze and execute a new source-primary contract in the same parent build graph with natural and symmetric ownership plus an actual or faithful consumer trace distribution, lifetime, hot/cold and concurrency profile, and material contribution budget. Mechanism microbench rows may diagnose causes but cannot gate the product. Qualified non-inferiority resumes the same candidate for verification/closure; a qualified material regression instead resumes bounded error product diagnosis.",
-      "closure_evidence": "docs/implementation/tasks/error/error-v3-closure.md",
-      "loc": {
-        "snapshot_commit": "9595724a0a284cbc3502f1c9e9e3ec9c9cf9e2b9",
-        "repository_code": 293909,
-        "self_with_tests": 122027,
-        "self_without_tests": 82135,
-        "module_implementation": 1350
-      },
-      "known_limitations": [
-        "A fixed-fixture shared owning-message copy microbench is reproducibly about 8% slower than the fixed peer, but its cause and consumer materiality are unknown; it is diagnostic evidence and supports no product inference.",
-        "The result-message-error absolute samples are retained, but the original-contract computed WIN/product comparison is rejected because HYLE moves from a temporary while the peer copies from a named lvalue.",
-        "TaskGraph all-success propagation retains two UNRESOLVED order/placement strata and has no binding to the chief source-consumer contribution budget.",
-        "The low-bit header-inline representation requires exactly matching headers and artifacts plus a full consumer rebuild; HYLE does not promise stable C++ ABI or Native FFI in this round.",
-        "io and selected sched/container cold-factory adoption decisions remain owned by those module closure rounds."
-      ],
-      "reopen_triggers": [
-        "A source-primary consumer contract and qualified evidence prove a material error-path regression or establish non-inferiority under the corrected evidence standard.",
-        "A reproducible correctness, security, ownership, consumer-usability or source/static/shared delivery defect is found within the error boundary.",
-        "A direct dependency or supported compiler changes carrier semantics, or a mature same-contract peer proves a better complexity class."
-      ],
-      "summary": "error-v3 的功能、API、正确性、交付和文档通过；post-terminal 审计撤回了有缺陷合同产生的产品性能裁决，当前等待有效的 source-primary consumer 证据，不能据 fixed-backing microbench 修改产品。"
+      "summary": "error-v4 RESUME 已进入 SCOPED：只验证 source-primary consumer 性能恢复条件并重新绑定未变化的 v3 产品候选，不扩功能或按 benchmark 改产品。"
     },
     {
       "module": "obs",
