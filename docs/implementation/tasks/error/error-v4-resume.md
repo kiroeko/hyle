@@ -6,7 +6,7 @@
 > [`module-status.json`](../../module-status.json)；已终止的
 > [`error-v3`](error-v3-closure.md) 只保留历史事实，不在本轮改写。
 
-## Closure card（`AUDITED`）
+## Closure card（`CANDIDATE`）
 
 - component / owner / round ID：`error` / error owner / `error-v4`；task kind：`RESUME`。
 - 前一 round / blocker：`error-v3` / `ERR-PERF-CONSUMER-KEY-01`。旧合同把 fixed-backing atomic
@@ -66,3 +66,15 @@
   validators 全部 `PASS`。
 - 旧 fixed-backing shared-copy 约 8% 慢只保留机制诊断；旧 `Result` rvalue/lvalue 非对称行的 derived
   product verdict 继续拒绝。审计没有产生产品 `FIX`，也没有发现恢复 ledger 外的新功能/API 缺口。
+
+## Candidate
+
+本轮复用且仅复用未变化的 error 产品候选：
+
+- commit：`9595724a0a284cbc3502f1c9e9e3ec9c9cf9e2b9`；
+- tree：`a828fb4cdf1cd7f72aaea098b44fd42e0d966d2d`；
+- current identity check：`include/hyle/error` 与 `src/error` 相对该 commit 的 diff 为空。
+
+`d9644548` 及以后新增的 source-consumer benchmark/contract/validator 只负责证明候选，不属于候选产品
+实现，也不改变 API、layout、ownership、复杂度或交付 closure。故本轮不制造一个仅含证据文件的伪产品
+candidate；若后续 identity check 发现产品 drift，必须退回 `AUDITED`。

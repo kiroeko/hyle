@@ -127,12 +127,14 @@
     },
     {
       "module": "error",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "round_id": "error-v4",
       "closure_task": "docs/implementation/tasks/error/error-v4-resume.md",
       "scope": "Resume the unchanged error product candidate against a corrected source-primary consumer performance contract, then rebind current architecture, correctness, delivery, usability/docs and red-team evidence.",
       "non_goals": "Logging, exceptions, arbitrary payload/cause/source-location systems, MultiError, full foreign-category adapters, downstream module closure, native FFI/C API and Formal certification.",
       "baseline_commit": "d9644548bf1690a4a1c86f205936cd857b1b92e8",
+      "candidate_commit": "9595724a0a284cbc3502f1c9e9e3ec9c9cf9e2b9",
+      "candidate_tree": "a828fb4cdf1cd7f72aaea098b44fd42e0d966d2d",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -150,7 +152,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "error-v4 RESUME 已完成 AUDITED：产品实现相对 v3 candidate 零漂移，source consumer/ownership/provenance 合同有效，冻结 FIX 集仅为证据与状态同步。"
+      "summary": "error-v4 RESUME 已进入 CANDIDATE：复用实现与公开 surface 均零漂移的 9595724a/a828fb4c；新 benchmark 只证明产品，不构成产品修改。"
     },
     {
       "module": "obs",
