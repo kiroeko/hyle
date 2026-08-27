@@ -7,7 +7,7 @@
 - [构建与包系统收口](build-package-system-closure.md)
 - [构建验证迭代](build-validation-iteration.md)
 - [Build/package system v2 review（历史 VERIFIED 输入）](build-system-v2-review.md)
-- [Build/package system v3 current-tree 收口（当前活动单元）](build-system-v3-current-tree.md)
+- [Build/package system v3 current-tree 收口（CLOSED）](build-system-v3-current-tree.md)
 - [模块收口状态机与统一性能仪器 v1](closure-system-v1.md)
 - [Formal 性能证据保留层 v1](perf-evidence-retention-v1.md)
 

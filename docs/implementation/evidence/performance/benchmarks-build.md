@@ -1,13 +1,29 @@
 # build/package system 历史性能证据
 
-> **2026-08-25 freshness gate：**本页只记录 2026-07-29 `75a8d3f` 的结构诊断。依赖 lock、
-> component/package/CI 图已继续演进；build/package 的架构收口状态未改变，但同一当前图的三平台重签完成前，
-> 下列数字与勾选不是当前发布证书。现行状态只看
-> [`pre-release-readiness`](../../status.md)。
+> **2026-08-27 current-tree gate：**build/package 实现候选 `42a6747d` 到本轮现树的专用 43 文件
+> 边界零漂移；Windows、WSL、macOS 已对同一当前 CPU 图完成三平台重签，见
+> [`build-system-v3-current-tree`](../../tasks/build/build-system-v3-current-tree.md)。下列 2026-07-29
+> 点值仍只作历史结构诊断，不冒充本轮重新采样或构建系统 SOTA 数字。
 
 构建系统没有运行时 ns/op，但它仍有用户可感知的正常路径性能：clean configure、无源码变化的
 reconfigure/no-op build、改一个模块后的失效范围，以及依赖获取。这里单独记录点值；architecture
 只解释 target 图，milestone 只记录施工结论。
+
+## 2026-08-27 现树结构复签
+
+本轮没有为追逐冷启动点值修改构建实现；性能门只判断是否出现数量级回归、常态重编或失效范围泄漏。
+`HYLE_COMPONENTS=all`、tests ON、昂贵 feature OFF、并发 2 的结果如下：
+
+| 平台 | 构建/测试 | 紧接的 `hyle_tests` no-op |
+|---|---|---:|
+| Windows / MSVC 19.50 / Ninja | 305 build steps；62/62 | 0.163s，`no work to do` |
+| WSL / GCC 14.2 / Ninja | 322 build steps；62/62 | 0.09s，`no work to do` |
+| Apple M4 / AppleClang 21 / Unix Makefiles | 60/60 | 1.08s，遍历 target、零编译 |
+
+Windows scratch source package 中只更新时间戳 `src/util/demangle.cc` 后，全量 product build 仅重编该
+TU 并重链 `hyle_util`；没有把 leaf 改动传播成全图重编。commit `0fbb5ac8` 生成的完整 source zip
+也已在脱离 Git 的目录中以 all-component、WERROR、feature-OFF 成功构建。以上只证明现树构建复杂度
+和失效边界正常；不同 generator 的遍历开销不作跨平台输赢比较。
 
 ## 方法
 

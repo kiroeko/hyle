@@ -1,12 +1,12 @@
 # Build/package system v3 current-tree 收口
 
-<!-- PROJECT UNIT REVIEW: AUDITED -->
+<!-- PROJECT UNIT REVIEW: CLOSED -->
 
 > Build/package 是贯穿所有组件的开发单元，不是可链接产品组件，因此不伪造
 > `module-status.json` 条目。本页按模块收口方法保存当前轮状态与证据；长期合同仍归
 > [`build-system.md`](../../../architecture/build-system.md)。v2 的 `VERIFIED` 记录只作历史输入。
 
-## Closure card（`AUDITED`）
+## Closure card（`CLOSED`）
 
 - unit / owner / round：`build-package` / build/package maintainers / `build-v3-01`；kind：`REFACTOR`
   （current-tree evidence rebind，不预设产品实现修改）。
@@ -51,7 +51,7 @@
 | BUILD-V3-SUPPLY-01 | lock、offline、license、source package 同源且 fail closed | component contract 的 offline positive/negative、lock/license 门通过；commit `0fbb5ac8` 的完整 source zip 脱离 Git、WERROR、all-component feature-OFF 构建通过 | `KEEP / PASS` |
 | BUILD-V3-CI-01 | 当前 CI 分层覆盖现有组件且不无故消耗额度 | workflow YAML 可解析且合同检查通过；push/PR 只跑 Linux 高信号门，三平台/package/feature 只在 full dispatch；最近一次托管成功为 `a8db371c`，本轮因额度不用旧绿灯冒充现树运行 | `KEEP / ACCEPTED LIMIT` |
 | BUILD-V3-PERF-01 | configure/no-op/invalidation 无数量级或全图泄漏 | all-component no-op：Windows Ninja 0.163s、WSL Ninja 0.09s 且均为 `no work to do`；macOS Makefiles 1.08s、零编译；scratch 中只 touch `util/demangle.cc` 后仅重编该 TU 并重链 `hyle_util` | `KEEP / PASS` |
-| BUILD-V3-DOC-01 | architecture/developer/user/历史证据各守职责 | architecture、distribution、三平台/offline setup 与历史性能页完成职责审计；265 个 Markdown、746 个相对链接合同通过；性能页只需绑定本轮 freshness receipt | `DOC FIX` |
+| BUILD-V3-DOC-01 | architecture/developer/user/历史证据各守职责 | architecture、distribution、三平台/offline setup 与历史性能页完成职责审计；265 个 Markdown、746 个相对链接合同通过；性能页已绑定本轮 freshness receipt | `FIXED / PASS` |
 
 ## Audit freeze
 
@@ -66,3 +66,30 @@
 
 旧 v2 数字、GitHub 绿灯或历史完整构建均未单独充当 current-tree `PASS`；本页的 verdict 来自上述
 现树合同、当前三平台 CPU 组装和当前源码包旅程。
+
+## Verification manifest
+
+- [x] Windows current-tree `HyleCiComponentContract.cmake`：组件 schema/拓扑、真实 target 边、header
+  owner、option/feature、offline positive/negative 与 dependency lock 合同通过。
+- [x] Windows selected roots `core`、`error`、`container_intrusive`：source embedding、shared、static、
+  relocated installed consumer 全通过；两个独占 scratch 不共享 CMake cache。
+- [x] all-component CPU shipping graph：Windows 62/62、WSL 62/62、macOS 60/60；WERROR，昂贵 feature
+  显式 OFF。这里只签构建形状，不替未收口产品模块签能力。
+- [x] 当前 source package：commit `0fbb5ac8cacb14f7fb0fe3e1b3101ff1c9996a7a` 生成 zip，解包后脱离
+  Git，以 all-component、WERROR、feature-OFF 成功构建。
+- [x] no-op 与 invalidation：Windows/WSL Ninja 零工作；macOS Makefiles 零编译；leaf `util` TU 只触发
+  一次 TU 编译和 `hyle_util` 重链。
+- [x] workflow YAML 解析、CI 分层静态合同、265 Markdown / 746 links、LOC self-check 通过；为保留
+  GitHub Actions 额度，本轮没有启动托管 full dispatch。
+
+## Closure decision
+
+状态：`CLOSED`。当前没有 build/package 产品实现修改；本轮只是把最后实现候选 `42a6747d` 重新绑定到
+依赖升级与模块施工后的现树。source/static/shared 三种 C++ 交付、模块独立施工、中央 manifest 投影、
+offline/lock/license/source package、增量构建和 CI 分层仍满足冻结合同。
+
+保留边界：真实 optional backend、AArch64 cross、clang-cl 与托管 full dispatch 没有在本轮重跑，不能
+把 CPU 三平台结果写成这些形状的证书；compute/graph 只通过了当前 CPU build shape，产品仍由各自模块
+收口。以下任一事件重开本单元：43 文件专用实现边界变化；组件/公开头/target 边变化；依赖 lock 或
+license/source-package 投影变化；新增交付形式、工具链、平台或具名 Native FFI 消费者；CI runner/action
+升级；出现 selected root、relocation、no-op/invalidation、offline 或并行 cache 的可复现失败。
