@@ -264,7 +264,7 @@ API/layout/metadata、workload 或 5% margin。
 
 - 已通过：范围/功能/API/架构、三平台 correctness/sanitizer、直接消费者、source/static/shared 交付、
   用户与架构文档、独立红队；9 个 P1 workload 中 6 个 `WIN`、1 个 `PARITY`。
-- blocker `ERR-PERF-SHARED-COPY-01`：`status-message-copy` 在四个 order/placement strata 均稳定
+- blocker `ERR-PERF-NORMAL-01 / status-message-copy`：在四个 order/placement strata 均稳定
   `LOSE` 且 5% NI `FAIL`；`taskgraph-active-success-64` 另有两个 strata `UNRESOLVED`。因此不能签署
   error 整体工程性能 `PASS` 或 SOTA。
 - blocker owner：独立 performance-instrument owner；只有下述新证据成立后，future error resume owner
