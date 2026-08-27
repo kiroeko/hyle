@@ -6,7 +6,7 @@
 > [`module-status.json`](../../module-status.json)；已终止的
 > [`error-v3`](error-v3-closure.md) 只保留历史事实，不在本轮改写。
 
-## Closure card（`SCOPED`）
+## Closure card（`AUDITED`）
 
 - component / owner / round ID：`error` / error owner / `error-v4`；task kind：`RESUME`。
 - 前一 round / blocker：`error-v3` / `ERR-PERF-CONSUMER-KEY-01`。旧合同把 fixed-backing atomic
@@ -40,11 +40,29 @@
 
 | ID | requirement | evidence owner | required verdict | current disposition |
 |---|---|---|---|---|
-| ERR-V4-IDENTITY-01 | v3 error 产品实现与 public surface 未漂移 | git candidate/tree + current diff | exact match | audit pending |
-| ERR-V4-CONSUMER-01 | source-primary、自然且对称的 consumer 合同 | contract/source validator | PASS | audit pending |
+| ERR-V4-IDENTITY-01 | v3 error 产品实现与 public surface 未漂移 | git candidate/tree + current diff | exact match | `PASS` |
+| ERR-V4-CONSUMER-01 | source-primary、自然且对称的 consumer 合同 | contract/source validator | PASS | `PASS` |
 | ERR-V4-PERF-01 | 四个 source consumer workload 的全部 order/placement strata | unified W1 qualification | 5% NI PASS | verification pending |
-| ERR-V4-DOC-01 | 不再把旧 fixed-backing 8% 或不对称 Result 行当产品结论 | architecture/performance/task docs | PASS | verification pending |
-| ERR-V4-GATES-01 | correctness、delivery、API/usability、red-team 仍绑定相同产品 | v3 evidence + current identity checks | PASS | verification pending |
+| ERR-V4-DOC-01 | 不再把旧 fixed-backing 8% 或不对称 Result 行当产品结论 | architecture/performance/task docs | PASS | `FIX`（只改证据状态） |
+| ERR-V4-GATES-01 | correctness、delivery、API/usability、red-team 仍绑定相同产品 | v3 evidence + current identity checks | PASS | audit `PASS`，candidate 绑定待签 |
 
 除以上五项外无本轮 `FIX` 集。旧 benchmark 仍可保留为 mechanism diagnostic，但不能触发产品修改或
 “SOTA/全面胜出”声明。
+
+## Audit result
+
+- `git diff 9595724a -- include/hyle/error src/error` 为空；error 产品实现和公开 surface 仍是 candidate
+  `9595724a0a284cbc3502f1c9e9e3ec9c9cf9e2b9` / tree
+  `a828fb4cdf1cd7f72aaea098b44fd42e0d966d2d`。本轮 benchmark、合同、validator 和文档不进入产品树。
+- 新合同 ID/hash 为 `error-source-consumer-v1` /
+  `dde5b9a2e8c85d11014d2bb8312a948da422af1b1d339f09ef1046f9e1ec6f97`；benchmark source hash 为
+  `ebb8c919a1d5236138cbd865d442e87d8f7f9167b02946b795df463259c96466`。
+- source provenance 固定为 `src/graph/taskgraph.cc`
+  `9adb3f42e9cf9fd11c4edf961f2d121fe06341f6b6417b79ee4c8ecb9a2078f5`、
+  `src/graph/parallel_eval.cc` `5a4888eab4a46f670f81f8a112587cc5c2f5b0872592b5b132f1a2e8ee0f7fb4`、
+  `include/hyle/sched/join.h` `29d1ac248c8ee3fbf9e9e8ba8f7cd3c22f8b900c7182508f12f471b88065eb3e`。
+- HYLE 与 Abseil 共用同一模板 consumer algorithm；fresh owning failure、copy/move handoff、source
+  location、最终 observable 与顺序/placement strata 都由合同锁定。pre-sampling artifact/build/source
+  validators 全部 `PASS`。
+- 旧 fixed-backing shared-copy 约 8% 慢只保留机制诊断；旧 `Result` rvalue/lvalue 非对称行的 derived
+  product verdict 继续拒绝。审计没有产生产品 `FIX`，也没有发现恢复 ledger 外的新功能/API 缺口。

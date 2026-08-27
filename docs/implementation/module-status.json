@@ -127,7 +127,7 @@
     },
     {
       "module": "error",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "round_id": "error-v4",
       "closure_task": "docs/implementation/tasks/error/error-v4-resume.md",
       "scope": "Resume the unchanged error product candidate against a corrected source-primary consumer performance contract, then rebind current architecture, correctness, delivery, usability/docs and red-team evidence.",
@@ -150,7 +150,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "error-v4 RESUME 已进入 SCOPED：只验证 source-primary consumer 性能恢复条件并重新绑定未变化的 v3 产品候选，不扩功能或按 benchmark 改产品。"
+      "summary": "error-v4 RESUME 已完成 AUDITED：产品实现相对 v3 candidate 零漂移，source consumer/ownership/provenance 合同有效，冻结 FIX 集仅为证据与状态同步。"
     },
     {
       "module": "obs",
