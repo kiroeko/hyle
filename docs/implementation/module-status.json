@@ -278,12 +278,14 @@
     },
     {
       "module": "util",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "round_id": "util-runtime-v1",
       "closure_task": "docs/implementation/tasks/util/util-runtime-v1-closure.md",
       "scope": "Registry and demangle runtime capabilities, their C++ API, ownership/lifetime/concurrency/failure and complexity, component dependency and source/static/shared delivery, direct consumer boundary, documentation and P0 cost structure.",
       "non_goals": "Reopening util_core or closing dependencies, model/device semantics, dynamic module discovery/load/unload/quiescence, unregister, arbitrary captured factories, op/kernel dispatch policy, Native FFI/C API, benchmark-driven metadata and Formal certification.",
       "baseline_commit": "d6ff8735f81d891050ddef90d4eee10600f43ab2",
+      "candidate_commit": "469356394a185b5201675fd76ff1a10a4050528b",
+      "candidate_tree": "eabcba1fe1cffb484b20c377af0423028e2f9062",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -298,7 +300,7 @@
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "util-runtime-v1 已完成有限审计并冻结一个产品批次：修复 Registry OOM 原子性/no-throw factory，删除旧静态宏/default new，补 demangle C++ 易用入口与真实成本文档，并移除不再存在的 util_core 依赖。"
+      "summary": "util-runtime-v1 产品候选已冻结：Registry 显式/no-throw/事务式登记，demangle 自然 C++ 入口与真实成本合同，直接组件依赖和 source/static/shared sample 均已迁移；正在做三平台与红队签证。"
     },
     {
       "module": "sched",

@@ -109,7 +109,22 @@ lock、常态 metadata、binary dependency 与 code structure。旧 N=256 数字
 
 ## Candidate
 
-`AUDITED` 冻结有限 FIX 并实现后填写。
+- product candidate commit：`469356394a185b5201675fd76ff1a10a4050528b`；tree：
+  `eabcba1fe1cffb484b20c377af0423028e2f9062`。
+- 该候选完整实现冻结批次：
+  - Registry 只保留显式、可恢复的 startup registration；creator 类型强制 `noexcept`，旧
+    self-registration macros、Registerer/default creator 与 util_core 直接依赖删除；
+  - absent registration 先准备 Swiss capacity，再以一个 Region allocation 提交
+    Entry/key/help；replacement help 失败保留旧 creator/priority/help；
+  - demangle 增加 `type_info`/固定数组 C++ overload，平台内部 allocation/serialization 成本在
+    public header、architecture、user 与 performance 文档一致；
+  - package sample、tests、历史 benchmark compile surface 和中央 component graph 已迁移。
+- freeze 前 sanity：W1-WIN 独立 util closure 37/37、public-header self-containment、util benchmark
+  compile，以及 selected util source/relocated shared/relocated static consumer 均通过；docs
+  267 Markdown / 757 links、module registry contract 通过。这些会在 verification manifest 按
+  candidate identity 记最终 verdict，不借预跑跳过三平台/红队。
+- 候选后若需产品代码变化，状态退回 `AUDITED`；verification 期间只允许补证据、task/registry
+  事实和非产品性命令修正。
 
 ## Verification manifest
 

@@ -21,7 +21,7 @@
 | mem | QUEUED | — | — | — | — | 现有实现与历史审查只作输入。 |
 | simd | QUEUED | — | — | — | — | 现有实现与历史审查只作输入。 |
 | container | QUEUED | — | — | — | — | 完整容器模块仍未审查；不能继承 intrusive 子组件的候选结论。 |
-| util | AUDITED | P0 | PLANNED / STRUCTURAL | NONE | [task](tasks/util/util-runtime-v1-closure.md) | util-runtime-v1 已完成有限审计并冻结一个产品批次：修复 Registry OOM 原子性/no-throw factory，删除旧静态宏/default new，补 demangle C++ 易用入口与真实成本文档，并移除不再存在的 util_core 依赖。 |
+| util | CANDIDATE | P0 | PLANNED / STRUCTURAL | NONE | [task](tasks/util/util-runtime-v1-closure.md) | util-runtime-v1 产品候选已冻结：Registry 显式/no-throw/事务式登记，demangle 自然 C++ 入口与真实成本合同，直接组件依赖和 source/static/shared sample 均已迁移；正在做三平台与红队签证。 |
 | sched | QUEUED | — | — | — | — | 现有实现只作输入；特化 waiter 链仍归 scheduler。 |
 | io | QUEUED | — | — | — | — | 现有实现只作输入；尚未启动 v1 收口。 |
 | compute | QUEUED | — | — | — | — | 实现尚不完整；前置与真实 consumer slice 建立前保持可变。 |
