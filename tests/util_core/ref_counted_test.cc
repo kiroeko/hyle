@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <limits>
+#include <set>
 #include <unordered_set>
 #include <thread>
 #include <type_traits>
@@ -215,6 +216,17 @@ TEST(RefCounted, HashUsesPointerIdentity) {
   EXPECT_TRUE(owners.contains(widget));
   EXPECT_TRUE(owners.contains(retain_ref(widget.get())));
   EXPECT_EQ(owners.size(), 1u);
+}
+
+TEST(RefCounted, OrderedContainersUsePointerIdentity) {
+  Ref<Widget> first = make_ref<Widget>(1);
+  Ref<Widget> second = make_ref<Widget>(2);
+  std::set<Ref<Widget>> owners;
+  owners.insert(first);
+  owners.insert(second);
+  owners.insert(retain_ref(first.get()));
+  EXPECT_EQ(owners.size(), 2u);
+  EXPECT_TRUE((first <=> nullptr) == std::strong_ordering::greater);
 }
 
 // Concurrent incref/decref must not corrupt the count (TSan gate on WSL). Many

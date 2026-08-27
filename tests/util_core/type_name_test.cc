@@ -10,6 +10,7 @@ using hyle::util::type_name;
 
 namespace {
 struct MyWidget {};
+struct Incomplete;
 enum class Color { Red };
 }  // namespace
 
@@ -41,6 +42,14 @@ TEST(TypeName, QualifiersDistinguished) {
   EXPECT_NE(type_name<int>(), type_name<int*>());
   EXPECT_NE(type_name<int>(), type_name<const int>());
   EXPECT_NE(type_name<int*>(), type_name<int**>());
+  EXPECT_NE(type_name<int>(), type_name<int&>());
+}
+
+TEST(TypeName, ArraysFunctionsAndIncompleteTypesAreSupported) {
+  using Function = int(double);
+  EXPECT_NE(type_name<int[3]>(), type_name<int*>());
+  EXPECT_NE(type_name<Function>(), type_name<Function*>());
+  EXPECT_NE(type_name<Incomplete>().find("Incomplete"), std::string_view::npos);
 }
 
 TEST(TypeHash, StableAcrossCalls) {

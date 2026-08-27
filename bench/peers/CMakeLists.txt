@@ -28,6 +28,11 @@ if(HYLE_BENCH_TBB)
   set(TBB_TEST OFF)
   set(TBBMALLOC_BUILD ON)
   set(TBB_EXAMPLES OFF)
+  # Recent oneTBB defaults the optional Thread Composability Manager ON. Its
+  # second configure then treats that cached default as an explicit request and
+  # hard-requires HWLOC. Benchmarks only need normal oneTBB targets.
+  set(TCM_BUILD OFF)
+  set(TCM_TEST OFF)
   add_subdirectory(
     "${HYLE_TBB_DIR}"
     "${HYLE_BINARY_DIR}/bench/peers/onetbb"
@@ -76,5 +81,51 @@ endif()
 
 unset(_hyle_bench_tbb_owner)
 unset(_hyle_bench_absl_owner)
+unset(_hyle_owner)
+unset(_hyle_owner_upper)
+
+# Optional Boost header-only rivals. Keep source discovery and the modular
+# superproject include closure in one place: individual benchmark directories
+# only decide which targets instantiate which peer capability.
+set(_hyle_bench_boost_owner FALSE)
+foreach(_hyle_owner IN ITEMS container_intrusive util_core)
+  string(TOUPPER "${_hyle_owner}" _hyle_owner_upper)
+  if(HYLE_BUILD_${_hyle_owner_upper})
+    set(_hyle_bench_boost_owner TRUE)
+  endif()
+endforeach()
+if(_hyle_bench_boost_owner)
+  option(HYLE_BENCH_BOOST "build relevant benchmarks vs Boost" OFF)
+else()
+  set(HYLE_BENCH_BOOST OFF)
+endif()
+if(HYLE_BENCH_BOOST)
+  set(HYLE_BOOST_DIR "${HYLE_SOURCE_DIR}/../boost" CACHE PATH
+      "local Boost source snapshot")
+  if(NOT EXISTS "${HYLE_BOOST_DIR}/boost/config.hpp" AND
+     NOT EXISTS "${HYLE_BOOST_DIR}/libs/config/include/boost/config.hpp")
+    message(FATAL_ERROR
+      "HYLE_BENCH_BOOST=ON but no monolithic or modular Boost tree exists at "
+      "${HYLE_BOOST_DIR}")
+  endif()
+
+  add_library(hyle_bench_boost_headers INTERFACE)
+  if(EXISTS "${HYLE_BOOST_DIR}/boost/config.hpp")
+    target_include_directories(hyle_bench_boost_headers SYSTEM INTERFACE
+      "${HYLE_BOOST_DIR}")
+  else()
+    foreach(_hyle_boost_library IN ITEMS
+        assert config core intrusive move smart_ptr static_assert)
+      if(EXISTS
+          "${HYLE_BOOST_DIR}/libs/${_hyle_boost_library}/include")
+        target_include_directories(hyle_bench_boost_headers SYSTEM INTERFACE
+          "${HYLE_BOOST_DIR}/libs/${_hyle_boost_library}/include")
+      endif()
+    endforeach()
+    unset(_hyle_boost_library)
+  endif()
+endif()
+
+unset(_hyle_bench_boost_owner)
 unset(_hyle_owner)
 unset(_hyle_owner_upper)

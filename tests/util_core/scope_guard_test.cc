@@ -6,8 +6,34 @@
 
 using hyle::util::ScopeGuard;
 
-static_assert(std::is_nothrow_destructible_v<
-              ScopeGuard<decltype([]() noexcept {})>>);
+using EmptyGuard = ScopeGuard<decltype([]() noexcept {})>;
+static_assert(std::is_nothrow_destructible_v<EmptyGuard>);
+static_assert(sizeof(EmptyGuard) == sizeof(bool),
+              "an empty cleanup must overlap the active flag");
+
+namespace {
+
+struct CopyFallbackAction {
+  int* runs;
+  int* copies;
+  bool* throw_on_copy;
+
+  CopyFallbackAction(int* runs_in, int* copies_in,
+                     bool* throw_on_copy_in) noexcept
+      : runs(runs_in), copies(copies_in), throw_on_copy(throw_on_copy_in) {}
+  CopyFallbackAction(const CopyFallbackAction& other)
+      : runs(other.runs),
+        copies(other.copies),
+        throw_on_copy(other.throw_on_copy) {
+    ++*copies;
+    if (*throw_on_copy) throw 17;
+  }
+  CopyFallbackAction(CopyFallbackAction&&) noexcept(false) { throw 19; }
+
+  void operator()() noexcept { ++*runs; }
+};
+
+}  // namespace
 
 TEST(ScopeGuard, RunsOnScopeExit) {
   int ran = 0;
@@ -55,6 +81,56 @@ TEST(ScopeGuard, MoveFiresExactlyOnce) {
     ScopeGuard moved = std::move(g);  // moved-from is dismissed
   }
   EXPECT_EQ(ran, 1);  // not 0 (lost) and not 2 (double-fire)
+}
+
+TEST(ScopeGuard, ConstructionFailureRunsOriginalCleanup) {
+  int runs = 0;
+  int copies = 0;
+  bool throw_on_copy = true;
+  CopyFallbackAction action{&runs, &copies, &throw_on_copy};
+
+  EXPECT_THROW(
+      ([&] {
+        ScopeGuard guard{action};
+        (void)guard;
+      }()),
+      int);
+  EXPECT_EQ(copies, 1);
+  EXPECT_EQ(runs, 1);
+}
+
+TEST(ScopeGuard, ThrowingMoveUsesCopyFallback) {
+  int runs = 0;
+  int copies = 0;
+  bool throw_on_copy = false;
+  CopyFallbackAction action{&runs, &copies, &throw_on_copy};
+  {
+    ScopeGuard source{action};
+    ScopeGuard moved{std::move(source)};
+    EXPECT_FALSE(source.active());  // NOLINT(bugprone-use-after-move)
+    EXPECT_TRUE(moved.active());
+    EXPECT_EQ(copies, 2);
+  }
+  EXPECT_EQ(runs, 1);
+}
+
+TEST(ScopeGuard, FailedTransferLeavesSourceOwningCleanup) {
+  int runs = 0;
+  int copies = 0;
+  bool throw_on_copy = false;
+  CopyFallbackAction action{&runs, &copies, &throw_on_copy};
+  {
+    ScopeGuard source{action};
+    throw_on_copy = true;
+    EXPECT_THROW(
+        ([&] {
+          ScopeGuard moved{std::move(source)};
+          (void)moved;
+        }()),
+        int);
+    EXPECT_TRUE(source.active());  // NOLINT(bugprone-use-after-move)
+  }
+  EXPECT_EQ(runs, 1);
 }
 
 TEST(ScopeGuard, DeferMacro) {

@@ -22,31 +22,16 @@ hyle_register_bench(container_intrusive
   hyle_container_intrusive_instrument_bench)
 
 # boost::intrusive::list -- the canonical intrusive-container SOTA (header-only).
-# Enable with -DHYLE_BENCH_BOOST=ON; point HYLE_BOOST_DIR at a boost tree (the
-# superproject root with boost/intrusive/list.hpp reachable, e.g. a full boost
-# clone or system boost). Header-only -> just an include path, no link/build.
-option(HYLE_BENCH_BOOST "build IntrusiveList bench vs boost::intrusive::list" OFF)
+# Enable with -DHYLE_BENCH_BOOST=ON; bench/peers owns discovery of the
+# monolithic or modular Boost include closure.
 if(HYLE_BENCH_BOOST)
-  set(HYLE_BOOST_DIR "${PROJECT_SOURCE_DIR}/../boost" CACHE PATH "boost tree root")
-  # Accept BOTH boost layouts: monolithic (boost/intrusive/list.hpp at root, e.g.
-  # system boost) OR modular superproject (libs/<lib>/include/boost/...; a fresh
-  # boostorg clone with submodules checked out). boost::intrusive is header-only but
-  # pulls a small dep closure (config/assert/core/move/static_assert) -- add each
-  # lib's include/ dir in the modular case.
   if(NOT EXISTS "${HYLE_BOOST_DIR}/boost/intrusive/list.hpp" AND
      NOT EXISTS "${HYLE_BOOST_DIR}/libs/intrusive/include/boost/intrusive/list.hpp")
     message(FATAL_ERROR "HYLE_BENCH_BOOST=ON but no boost/intrusive/list.hpp at ${HYLE_BOOST_DIR} (checked monolithic + modular libs/ layout; run `git submodule update --init` in the boost tree)")
   endif()
 
   function(_hyle_configure_container_intrusive_peer target)
-    if(EXISTS "${HYLE_BOOST_DIR}/boost/intrusive/list.hpp")
-      target_include_directories(${target} SYSTEM PRIVATE "${HYLE_BOOST_DIR}")
-    else()
-      foreach(_bl intrusive config assert core move static_assert)
-        target_include_directories(${target} SYSTEM PRIVATE
-          "${HYLE_BOOST_DIR}/libs/${_bl}/include")
-      endforeach()
-    endif()
+    target_link_libraries(${target} PRIVATE hyle_bench_boost_headers)
     target_compile_definitions(${target} PRIVATE HYLE_BENCH_BOOST)
   endfunction()
 

@@ -171,6 +171,15 @@ TEST(Rng, JumpDiverges) {
   EXPECT_LT(same, 5);
 }
 
+TEST(Rng, JumpMatchesPinnedXoshiroSequence) {
+  Rng rng(1);
+  rng.jump();
+  constexpr std::uint64_t expected[] = {
+      0xdafd92f1adffc5b9ull, 0x89d5ed6828f5becfull,
+      0xc81a7b85673e9dacull, 0xe3ed98a07ef5a746ull};
+  for (std::uint64_t value : expected) EXPECT_EQ(rng.next_u64(), value);
+}
+
 TEST(Rng, LongJumpDivergesFromJumpAndOriginal) {
   Rng original(777);
   Rng jumped(777);
@@ -180,6 +189,15 @@ TEST(Rng, LongJumpDivergesFromJumpAndOriginal) {
   EXPECT_NE(original.next_u64(), jumped.next_u64());
   EXPECT_NE(original.next_u64(), long_jumped.next_u64());
   EXPECT_NE(jumped.next_u64(), long_jumped.next_u64());
+}
+
+TEST(Rng, LongJumpMatchesPinnedXoshiroSequence) {
+  Rng rng(1);
+  rng.long_jump();
+  constexpr std::uint64_t expected[] = {
+      0xc6e0f3d2b09d8eecull, 0x55ad95eef7a40e42ull,
+      0x8cc0e5594cb97ab0ull, 0x708019a0cb2b42e8ull};
+  for (std::uint64_t value : expected) EXPECT_EQ(rng.next_u64(), value);
 }
 
 TEST(Rng, StateSnapshotRestoresExactContinuation) {

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <concepts>
 #include <type_traits>
 #include <utility>
 
@@ -13,6 +14,18 @@
 
 namespace hyle::util {
 
+template <class Fn>
+class ScopeGuard;
+
+namespace detail {
+
+template <class Stored, class Source>
+concept ScopeGuardSource =
+    !std::same_as<std::remove_cvref_t<Source>, ScopeGuard<Stored>> &&
+    std::constructible_from<Stored, Source> && std::invocable<Source&>;
+
+}  // namespace detail
+
 // Owns a callable and invokes it once at destruction unless dismissed. Move-only
 // (a moved-from guard is dismissed so the action fires exactly once). The action
 // must be noexcept-callable in practice -- it runs in a destructor.
@@ -22,16 +35,34 @@ class [[nodiscard("a temporary ScopeGuard runs immediately; bind it to a name")]
   static_assert(!std::is_reference_v<Fn>,
                 "ScopeGuard owns its callable by value (use CTAD on a temporary "
                 "lambda, not an lvalue reference)");
+  static_assert(std::invocable<Fn&>,
+                "ScopeGuard callable must be invocable with no arguments");
  public:
   template <class F>
+    requires detail::ScopeGuardSource<Fn, F>
   explicit ScopeGuard(F&& fn) noexcept(
-      std::is_nothrow_constructible_v<Fn, F>)
-      : fn_(std::forward<F>(fn)) {}
-
-  ScopeGuard(ScopeGuard&& o) noexcept(std::is_nothrow_move_constructible_v<Fn>)
-      : fn_(std::move(o.fn_)), active_(o.active_) {
-    o.active_ = false;
+      std::is_nothrow_constructible_v<Fn, F&>)
+  try : fn_(fn) {
+  } catch (...) {
+    // Match scope_exit/Folly: once resource acquisition has handed us a
+    // cleanup, failure to store it must not silently leak the resource.
+    fn();
   }
+
+  template <class F>
+    requires detail::ScopeGuardSource<Fn, F> &&
+             (!std::is_lvalue_reference_v<F>) &&
+             std::is_nothrow_constructible_v<Fn, F>
+  explicit ScopeGuard(F&& fn) noexcept : fn_(std::forward<F>(fn)) {}
+
+  ScopeGuard(ScopeGuard&& o) noexcept
+    requires std::is_nothrow_move_constructible_v<Fn>
+      : fn_(std::move(o.fn_)), active_(std::exchange(o.active_, false)) {}
+
+  ScopeGuard(ScopeGuard&& o) noexcept(std::is_nothrow_copy_constructible_v<Fn>)
+    requires (!std::is_nothrow_move_constructible_v<Fn>) &&
+             std::copy_constructible<Fn>
+      : fn_(o.fn_), active_(std::exchange(o.active_, false)) {}
 
   ~ScopeGuard() noexcept {
     if (active_) fn_();
@@ -56,7 +87,7 @@ class [[nodiscard("a temporary ScopeGuard runs immediately; bind it to a name")]
   ScopeGuard& operator=(ScopeGuard&&) = delete;
 
  private:
-  Fn fn_;
+  HYLE_NO_UNIQUE_ADDRESS Fn fn_;
   bool active_ = true;
 };
 
