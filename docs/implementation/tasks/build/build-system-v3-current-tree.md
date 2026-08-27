@@ -1,12 +1,12 @@
 # Build/package system v3 current-tree 收口
 
-<!-- PROJECT UNIT REVIEW: SCOPED -->
+<!-- PROJECT UNIT REVIEW: AUDITED -->
 
 > Build/package 是贯穿所有组件的开发单元，不是可链接产品组件，因此不伪造
 > `module-status.json` 条目。本页按模块收口方法保存当前轮状态与证据；长期合同仍归
 > [`build-system.md`](../../../architecture/build-system.md)。v2 的 `VERIFIED` 记录只作历史输入。
 
-## Closure card（`SCOPED`）
+## Closure card（`AUDITED`）
 
 - unit / owner / round：`build-package` / build/package maintainers / `build-v3-01`；kind：`REFACTOR`
   （current-tree evidence rebind，不预设产品实现修改）。
@@ -46,12 +46,23 @@
 
 | ID | requirement | current evidence | disposition |
 |---|---|---|---|
-| BUILD-V3-GRAPH-01 | 单一组件 manifest 同时产生选择闭包和真实 target 边 | audit pending | pending |
-| BUILD-V3-DELIVERY-01 | source/static/shared、selected roots、relocation、并行独占 cache | audit pending | pending |
-| BUILD-V3-SUPPLY-01 | lock、offline、license、source package 同源且 fail closed | audit pending | pending |
-| BUILD-V3-CI-01 | 当前 CI 分层覆盖现有组件且不无故消耗额度 | audit pending | pending |
-| BUILD-V3-PERF-01 | configure/no-op/invalidation 无数量级或全图泄漏 | audit pending | pending |
-| BUILD-V3-DOC-01 | architecture/developer/user/历史证据各守职责 | audit pending | pending |
+| BUILD-V3-GRAPH-01 | 单一组件 manifest 同时产生选择闭包和真实 target 边 | Windows current-tree component contract 验证 schema、拓扑、header owner、最终 target 边与 selected closure；`core` fresh configure 只解析 `core` | `KEEP / PASS` |
+| BUILD-V3-DELIVERY-01 | source/static/shared、selected roots、relocation、并行独占 cache | `core`、`error`、`container_intrusive` 的 source/shared/static/relocated smoke 全通过；Windows/WSL 为 62/62、macOS 为 60/60 的 all-component CPU 回归通过 | `KEEP / PASS` |
+| BUILD-V3-SUPPLY-01 | lock、offline、license、source package 同源且 fail closed | component contract 的 offline positive/negative、lock/license 门通过；commit `0fbb5ac8` 的完整 source zip 脱离 Git、WERROR、all-component feature-OFF 构建通过 | `KEEP / PASS` |
+| BUILD-V3-CI-01 | 当前 CI 分层覆盖现有组件且不无故消耗额度 | workflow YAML 可解析且合同检查通过；push/PR 只跑 Linux 高信号门，三平台/package/feature 只在 full dispatch；最近一次托管成功为 `a8db371c`，本轮因额度不用旧绿灯冒充现树运行 | `KEEP / ACCEPTED LIMIT` |
+| BUILD-V3-PERF-01 | configure/no-op/invalidation 无数量级或全图泄漏 | all-component no-op：Windows Ninja 0.163s、WSL Ninja 0.09s 且均为 `no work to do`；macOS Makefiles 1.08s、零编译；scratch 中只 touch `util/demangle.cc` 后仅重编该 TU 并重链 `hyle_util` | `KEEP / PASS` |
+| BUILD-V3-DOC-01 | architecture/developer/user/历史证据各守职责 | architecture、distribution、三平台/offline setup 与历史性能页完成职责审计；265 个 Markdown、746 个相对链接合同通过；性能页只需绑定本轮 freshness receipt | `DOC FIX` |
 
-本轮尚未冻结 `FIX`；任何实现修改必须先完成审计并把相应行裁决为 `FIX`。旧 v2 数字、GitHub 绿灯或
-历史完整构建都不能单独充当 current-tree `PASS`。
+## Audit freeze
+
+- build/package 实现候选：`42a6747d345c5f908648bc2e904ac942bc81a4c9`；完整 tree
+  `0ba864aee7d52d22ea1b46063d28a56c9fbaae0e`。
+- 从该候选到本轮 scoped HEAD，专用 43 文件边界（workflow、根 CMake/presets、`cmake/`、offline
+  init 与三个 build/tooling 入口）`git diff` 为空；依赖升级和后续模块施工没有偷偷改动构建产品。
+- 冻结的产品 `FIX` 集为空。唯一 `DOC FIX` 是把历史性能页的 freshness gate 绑定到本轮 current-tree
+  复签；不得为了得到新点值而改 CMake，也不启动托管 CI 消耗余额。
+- `ACCEPTED LIMIT`：本轮没有运行真实 CUDA/Vulkan/TLS/HTTP2、AArch64 cross、clang-cl 或托管 full
+  dispatch。相应机制未发生实现漂移，仍由手工 workflow 保留；任一实现/lock/runner 变化即重开。
+
+旧 v2 数字、GitHub 绿灯或历史完整构建均未单独充当 current-tree `PASS`；本页的 verdict 来自上述
+现树合同、当前三平台 CPU 组装和当前源码包旅程。
