@@ -122,7 +122,7 @@
     },
     {
       "module": "util_core",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "round_id": "util-core-v1",
       "closure_task": "docs/implementation/tasks/util/util-core-v1-closure.md",
       "scope": "Five header-only util_core primitives: random stream, intrusive strong ownership, lexical cleanup, compact spin locking and compiler-local type identity; including direct consumers, C++ API, delivery, documentation and tiered engineering performance.",
@@ -148,7 +148,16 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "util-core-v1 最终候选已冻结：ScopeGuard 失败安全与 Ref 标准指针全序修复绑定 27d73a61/6f84e0b4，W1-WIN 同合同 P1 工程门已取得 PASS，等待统一登记全部验收门。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
+      "summary": "util-core-v1 候选已验证：范围、架构、correctness、三平台交付、C++ 易用性/文档、独立红队与 W1-WIN P1 工程性能门全部 PASS。"
     },
     {
       "module": "error",
