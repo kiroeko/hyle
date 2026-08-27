@@ -1,6 +1,7 @@
 # util-runtime v1 严格收口
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
 > 本页是 `util-runtime-v1` 当前轮的冻结卡与施工事实。旧 util task、2026-07 点值和 C adapter
 > 只作审计输入；当前状态只看 [`module-status.json`](../../module-status.json)。
@@ -204,5 +205,19 @@ lock、常态 metadata、binary dependency 与 code structure。旧 N=256 数字
 - reopen triggers：真实消费者暴露本边界内 correctness/ownership/API 缺口；Registry/demangle 算法、
   公开合同、直接依赖或交付形状改变；依赖模块改变实际语义；成熟同合同 peer 证明更好复杂度档；
   profile 证明此处成为 material 热点；demangle-only consumer 证明当前 component closure 成本 material。
-- terminal receipt：尚未写入；本提交只建议机械状态进入 `VERIFIED`。
-- 建议机械状态：`VERIFIED`。
+- terminal receipt：`util-runtime-v1` 对 product candidate
+  `469356394a185b5201675fd76ff1a10a4050528b` / tree
+  `eabcba1fe1cffb484b20c377af0423028e2f9062` 的全部适用门为 `PASS`，无 blocker；本页所在提交是
+  terminal end receipt，完整 commit ID 由后续 registry 提交记录。
+- registry anchor commit：由后续 `CLOSED` registry 提交绑定本 receipt。
+- raw evidence：W1-WIN
+  `C:\hyle-scratch\util-runtime-v1\{build-win,delivery-win-product}`；W1-WSL
+  `/root/hyle-scratch/util-runtime-v1-46935639/{release,asan,ubsan,tsan,delivery}`；M1-MAC
+  `/Users/kiro/hyle-scratch/util-runtime-v1-46935639/{release-make,delivery-make}`。这些是本地可重放工程
+  artifact，不冒充长期签名 Formal bundle。
+- 四项 LOC snapshot commit：`469356394a185b5201675fd76ff1a10a4050528b`；`self-check=pass`。
+- 全库代码：**297,318**。
+- 自实现包含测试：**122,237**。
+- 自实现不包含测试：**82,124**。
+- 当前模块实现代码（`util-runtime`）：**522**。
+- 建议机械状态：`CLOSED`。
