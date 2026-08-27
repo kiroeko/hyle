@@ -122,7 +122,7 @@
     },
     {
       "module": "util_core",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "round_id": "util-core-v1",
       "closure_task": "docs/implementation/tasks/util/util-core-v1-closure.md",
       "scope": "Five header-only util_core primitives: random stream, intrusive strong ownership, lexical cleanup, compact spin locking and compiler-local type identity; including direct consumers, C++ API, delivery, documentation and tiered engineering performance.",
@@ -130,6 +130,8 @@
       "baseline_commit": "c5e26e71b1b5d11d8d36913ab5c3930c849495fb",
       "candidate_commit": "27d73a610b13e6c07a3c3a32f491f8af32252ee1",
       "candidate_tree": "6f84e0b4c78f3cbc9a27781ff2d6e9d6aac75e95",
+      "end_commit": "8d32916d2e29a2f914d8862f88538c110b5b229f",
+      "registry_anchor_commit": "8d32916d2e29a2f914d8862f88538c110b5b229f",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -157,7 +159,26 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "summary": "util-core-v1 候选已验证：范围、架构、correctness、三平台交付、C++ 易用性/文档、独立红队与 W1-WIN P1 工程性能门全部 PASS。"
+      "closure_evidence": "docs/implementation/tasks/util/util-core-v1-closure.md",
+      "loc": {
+        "snapshot_commit": "27d73a610b13e6c07a3c3a32f491f8af32252ee1",
+        "repository_code": 296920,
+        "self_with_tests": 122157,
+        "self_without_tests": 82159,
+        "module_implementation": 670
+      },
+      "known_limitations": [
+        "The P1 claim covers only the frozen W1-WIN Ref owning-handoff and short SpinLock consumer workloads; RNG remains correctness/diagnostic, the M1-MAC ultra-short diagnostic is order-confounded, and Formal remains PENDING.",
+        "Rng is non-cryptographic; Ref has one intrusive strong count without weak or aliasing ownership; SpinLock is unfair and only for very short low-contention regions; type identity is compiler-build-local.",
+        "The engineering bundle remains a live local artifact pending project-level retention and signing."
+      ],
+      "reopen_triggers": [
+        "A real consumer exposes a correctness, security, ownership, API-usability or missing-capability defect within the util_core boundary.",
+        "Any of the five headers changes algorithm, layout, public API, direct dependency, supported compiler contract or delivery shape.",
+        "A mature same-contract peer proves a better complexity class or a reproducible material advantage beyond the frozen 5% margin on a normal consumer workload.",
+        "The engineering claim must be renewed after source, peer, contract, machine, instrument or evidence identity changes, or the retained bundle can no longer be replayed."
+      ],
+      "summary": "util-core-v1 CLOSED：五项 header-only primitive 的能力边界、异常/ownership、三平台 correctness/交付、C++ 易用性、依赖与 W1-WIN 同合同 5% P1 工程非劣门均已签署；util runtime 与 Formal 仍独立待办。"
     },
     {
       "module": "error",
