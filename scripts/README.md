@@ -88,16 +88,17 @@ protocol is
 roles are registered in `scripts/perf-machines.json` and explained in
 [`machines.md`](../docs/developer/performance/machines.md).
 
-`hyle-perf.py` is now the single v1 orchestrator. The first mappings are
-`bench/contracts/container-intrusive-p1-v1.json` and
-`bench/contracts/error-p1-v1.json`; their implementation history is tracked in
+`hyle-perf.py` is now the single v1 orchestrator. The registered mappings are
+the historical `bench/contracts/container-intrusive-p1-v1.json` and
+`bench/contracts/error-p1-v1.json`, plus the current
+`bench/contracts/error-source-consumer-v1.json`; their implementation history is tracked in
 [`closure-system-v1`](../docs/implementation/tasks/build/closure-system-v1.md).
 The contracts and runner existing does not by itself close either module.
 `container_intrusive` now has a candidate-bound engineering `QUALIFIED`
 manifest recorded in its performance evidence page; `error` remains governed
 by its own current registry/task and must not inherit that result.
 
-Both checked-in v1 contracts predate `consumer-evidence-v1`. Their retained
+Both historical P1 contracts predate `consumer-evidence-v1`. Their retained
 manifests remain mechanically verifiable, but neither contract can be refreshed
 or newly certified under the current product policy. Container-intrusive keeps
 its historical engineering closure; any refresh/Formal work must freeze a new
@@ -108,8 +109,8 @@ contract ID with explicit gate roles and consumer evidence keys.
 > hashes/bundles or run explicitly non-qualifying mechanism diagnostics. Its raw
 > samples/statistics are retained, but its derived
 > comparison/product verdict is rejected. It must not produce a new current error
-> qualification; any future error qualification requires a new contract ID with
-> source-primary consumer provenance/materiality and ownership symmetry.
+> qualification. Current error work uses the separate
+> `error-source-consumer-v1` contract; the old ID and raw bundle stay unchanged.
 
 The historical error contract runs only the dedicated `hyle_error_p1_bench` primary and
 placement targets. Its command validator, `validate-error-p1-bench.py`, executes
@@ -118,6 +119,16 @@ the frozen functions originally labelled as replays and fail-closes on semantic,
 placement-layout drift. That validation proves execution integrity, not current
 consumer qualification. The older error executables and module-specific runner
 remain boundary diagnostics; they cannot contribute current product verdicts.
+
+The current `error-source-consumer-v1` contract replays ownership traces frozen
+from `TaskGraph::evaluate`, the parallel evaluator's first-error handoff, and
+`JoinState`'s failed producer/consumer handoff. Candidate and peer instantiate
+one shared algorithm with identical value categories and charged lifetimes; the
+peer disables Abseil source-location capture. Its command validator checks the
+semantic/call oracle, binds the benchmark source hash, and proves that the
+declared placement target actually changes relative function layout. The
+contract declares literal per-component contribution only; it does not invent a
+future inference-engine workload mix or failure rate.
 
 Validate the immutable contract only for historical bundle/raw-diagnostic work:
 
@@ -170,8 +181,16 @@ control passed, at least one comparable non-inferiority gate is `UNRESOLVED`
 solely for statistical power, and all other such gates are `PASS`.
 
 Do not run `qualify-platform` with `error-p1-v1.json`: it is not eligible for a
-new current qualification. Once reviewed and registered, a future error contract
-must use a new ID and may then use this generic command.
+new current qualification. Use the reviewed source-consumer contract with clean
+candidate and Abseil checkouts and fresh paths:
+
+```bash
+python scripts/hyle-perf.py qualify-platform \
+  --contract bench/contracts/error-source-consumer-v1.json \
+  --machine W1-WIN --peer abseil=../abseil-cpp \
+  --build .scratch/perf-error-source-build \
+  --output .scratch/perf-error-source-evidence
+```
 
 CPU v1 runs A/A, 5% and 10% known-delta controls in both orders. Its timer floor
 is matched to each product executable's declared `measurement_batch`; the

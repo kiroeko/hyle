@@ -190,3 +190,10 @@ placement、timer-floor、A/A 与 raw samples。该 contract 现为 immutable hi
 error qualification 必须使用新 contract ID，
 并增加受检的 consumer provenance/materiality 与 ownership topology，不能再由 workload 自报
 `tier=replay` 获得产品门。
+
+当前 replacement 是 `bench/contracts/error-source-consumer-v1.json`。它不复用上述历史结论，而是把
+`TaskGraph::evaluate`、parallel evaluator first-error 和 `JoinState` failed handoff 的当前源码 hash、
+ownership topology 与逐组件 material contribution 冻结进新契约；HYLE/Abseil 由同一模板算法实例化，
+source location、值类别、生命周期、执行顺序和 placement strata 对称。契约/语义 oracle 已在 W1-WIN
+编译验证，正式 `qualify-platform` 证据尚未产生，因此本段不提前给出产品性能结论，error registry 仍为
+`BLOCKED`。
