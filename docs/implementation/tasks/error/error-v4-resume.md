@@ -6,7 +6,7 @@
 > [`module-status.json`](../../module-status.json)；已终止的
 > [`error-v3`](error-v3-closure.md) 只保留历史事实，不在本轮改写。
 
-## Closure card（`CANDIDATE`）
+## Closure card（`VERIFIED`）
 
 - component / owner / round ID：`error` / error owner / `error-v4`；task kind：`RESUME`。
 - 前一 round / blocker：`error-v3` / `ERR-PERF-CONSUMER-KEY-01`。旧合同把 fixed-backing atomic
@@ -42,9 +42,9 @@
 |---|---|---|---|---|
 | ERR-V4-IDENTITY-01 | v3 error 产品实现与 public surface 未漂移 | git candidate/tree + current diff | exact match | `PASS` |
 | ERR-V4-CONSUMER-01 | source-primary、自然且对称的 consumer 合同 | contract/source validator | PASS | `PASS` |
-| ERR-V4-PERF-01 | 四个 source consumer workload 的全部 order/placement strata | unified W1 qualification | 5% NI PASS | verification pending |
-| ERR-V4-DOC-01 | 不再把旧 fixed-backing 8% 或不对称 Result 行当产品结论 | architecture/performance/task docs | PASS | `FIX`（只改证据状态） |
-| ERR-V4-GATES-01 | correctness、delivery、API/usability、red-team 仍绑定相同产品 | v3 evidence + current identity checks | PASS | audit `PASS`，candidate 绑定待签 |
+| ERR-V4-PERF-01 | 四个 source consumer workload 的全部 order/placement strata | unified W1 qualification | 5% NI PASS | `PASS` |
+| ERR-V4-DOC-01 | 不再把旧 fixed-backing 8% 或不对称 Result 行当产品结论 | architecture/performance/task docs | PASS | `PASS` |
+| ERR-V4-GATES-01 | correctness、delivery、API/usability、red-team 仍绑定相同产品 | v3 evidence + current identity checks | PASS | `PASS` |
 
 除以上五项外无本轮 `FIX` 集。旧 benchmark 仍可保留为 mechanism diagnostic，但不能触发产品修改或
 “SOTA/全面胜出”声明。
@@ -78,3 +78,36 @@
 `d9644548` 及以后新增的 source-consumer benchmark/contract/validator 只负责证明候选，不属于候选产品
 实现，也不改变 API、layout、ownership、复杂度或交付 closure。故本轮不制造一个仅含证据文件的伪产品
 candidate；若后续 identity check 发现产品 drift，必须退回 `AUDITED`。
+
+## Verification manifest
+
+所有产品门重新绑定 candidate `9595724a0a284cbc3502f1c9e9e3ec9c9cf9e2b9` / tree
+`a828fb4cdf1cd7f72aaea098b44fd42e0d966d2d`。产品路径 diff 为空，所以 v3 已通过的三平台
+correctness、public-header、source/static/shared delivery、API/usability 和底座 adoption 证据仍证明完全
+相同的机器码来源；v4 没有用新文档冒充新产品验证。
+
+P1 engineering bundle：
+
+- W1-WIN，fresh MSVC x64 Release/static、portable ISA、LTO off；Abseil
+  `81c993af4fb88b3a51829a796df02251fa27102f`；n=15，未触发 n=31；
+- contract SHA-256：`dde5b9a2e8c85d11014d2bb8312a948da422af1b1d339f09ef1046f9e1ec6f97`；
+- retained manifest：
+  `C:/hyle-scratch/error-source-consumer-v1-d9644548-win-rerun02-evidence/manifest.json`，SHA-256
+  `0afe6d46813cab7c6b949b1f4478544c99b7f040054d579f6839bc19307b7c13`；summary/observations SHA-256
+  为 `97873ce6a55d96792a3a269984488f95afa4233f5b2d1976a6259bd9b566d39f` /
+  `6cc1921740edf57feecda19f4c0e15c96533cfa724ad6c133a1b63414611c408`；
+- artifact/build/source-consumer validators、A/A、known delta、timer floor、placement controls 全
+  `PASS`；4 workload × 4 strata 全部 comparable、5% NI `PASS`；
+- TaskGraph success combined `PARITY`（ratio 0.9984–1.0018）；fresh owning last failure `WIN`
+ （1.1950–1.2160）；parallel first-error handoff `WIN`（1.4083–1.4181）；Join failed handoff `WIN`
+ （1.5030–1.5221）；
+- deep verifier：`qualification=QUALIFIED`、`paths_verified=true`、
+  `current_certification_policy_eligible=true`。
+
+当前复核：70 个 tooling tests、module closure contract、264 Markdown/744 relative-link docs contract、
+source-consumer deep replay 和 product-path identity check 全部 `PASS`。独立于旧 v3 computed verdict 的
+post-terminal red-team finding 已被 fail-closed contract policy、source provenance 和 ownership validator
+覆盖；旧合同的 fixed-backing 8% 与不对称 Result 比较仍明确拒绝为产品裁决。
+
+aggregate gates：scope、architecture、correctness、delivery、usability/docs、red-team、engineering
+performance 均为 `PASS`。Formal 为独立 `PENDING`，不属于本轮工程验证。

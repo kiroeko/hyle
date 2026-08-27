@@ -1,15 +1,47 @@
 # error 性能证据
 
-> **error-v3：`BLOCKED / PRODUCT VERDICT WITHDRAWN`。** exact candidate `9595724a` / `a828fb4c`
-> 的 raw evidence、统计和 controls 对原合同有效，但 post-terminal 审计证明合同把 atomic microbench
-> 错标为 replay，且一项 Result peer ownership 不对称；engineering verdict 已更正为 `INCONCLUSIVE`。
-> 本页下方 2026-07 点值只保留为历史输入，不是当前模块证书；现行状态只看
+> **error-v4 current engineering evidence：`QUALIFIED / PASS`。** 未变化的 exact product candidate
+> `9595724a` / `a828fb4c` 已通过新的 source-primary consumer 合同和冻结的 5% P1 non-inferiority
+> gate。该结论只覆盖下列四个真实 consumer workload；不宣称所有 error 操作或跨平台 Formal SOTA。
+> error-v3 的错误合同和历史点值保留在下文，不能覆盖当前裁决。产品状态只看
 > [`module status`](../../status.md)。
 
 本页是 [performance 总账](README.md) 的 error 模块详节。稳定设计见
 [error-design](../../../architecture/error-design.md)，用户选型见
 [error guide](../../../user/error.md)。只有绑定 consumer provenance/materiality 的 benchmark 才能裁决产品；
-benchmark 本身不定义 API，旧 v3 合同也没有取得这项资格。
+benchmark 本身不定义 API；v4 合同通过受检 source provenance、ownership topology 和 material
+contribution 取得产品门资格，旧 v3 合同没有。
+
+## error-v4 source-consumer qualification
+
+合同 `error-source-consumer-v1` 的 SHA-256 为
+`dde5b9a2e8c85d11014d2bb8312a948da422af1b1d339f09ef1046f9e1ec6f97`，benchmark source SHA-256 为
+`ebb8c919a1d5236138cbd865d442e87d8f7f9167b02946b795df463259c96466`。HYLE/Abseil 使用同一模板
+consumer algorithm，并锁定 source location、值类别、ownership/lifetime、最终 observable、双执行顺序
+和 primary/placement。peer 是 Abseil commit `81c993af4fb88b3a51829a796df02251fa27102f`。
+
+W1-WIN fresh MSVC x64 Release/static、portable ISA、LTO off 的 n=15 qualification 未触发 n=31：
+artifact/build/source-consumer validators、A/A、known delta、timer floor 和 placement controls 全部
+`PASS`；4 workload × 4 strata 全部 comparable 且 5% non-inferiority `PASS`。
+
+| source consumer workload | combined exact verdict | 四 strata advantage ratio | 最低 99.26% CI lower | 产品解释 |
+|---|---|---:|---:|---|
+| `TaskGraph::evaluate` 64-node success | `PARITY` | 0.9984–1.0018 | 0.9945 | 成功热路同档，NI PASS |
+| 64-node fresh owning last failure | `WIN` | 1.1950–1.2160 | 1.1627 | HYLE 约 1.20x，NI PASS |
+| parallel evaluator first-error owning handoff | `WIN` | 1.4083–1.4181 | 1.3933 | HYLE 约 1.41x，NI PASS |
+| `JoinState` failed owning handoff | `WIN` | 1.5030–1.5221 | 1.4550 | HYLE 约 1.50x，NI PASS |
+
+ratio 大于 1 有利于 HYLE；5% NI 下限是 `1/1.05 = 0.95238`。成功路径的结论是统计等价，不把亚百分比
+地址/顺序摆动解释成产品缺陷；三个失败路径的优势来自真实 owning transfer 形状，不外推到未测能力。
+
+retained bundle 位于
+`C:/hyle-scratch/error-source-consumer-v1-d9644548-win-rerun02-evidence`；manifest/summary/
+observations SHA-256 分别为
+`0afe6d46813cab7c6b949b1f4478544c99b7f040054d579f6839bc19307b7c13` /
+`97873ce6a55d96792a3a269984488f95afa4233f5b2d1976a6259bd9b566d39f` /
+`6cc1921740edf57feecda19f4c0e15c96533cfa724ad6c133a1b63414611c408`。当前 verifier 返回
+`qualification=QUALIFIED`、`paths_verified=true`、`current_certification_policy_eligible=true`。
+这是本机可深重放的工程证据，不是发布 artifact 或 Formal certificate。
 
 ## error-v3 证据纠正
 
@@ -194,6 +226,5 @@ error qualification 必须使用新 contract ID，
 当前 replacement 是 `bench/contracts/error-source-consumer-v1.json`。它不复用上述历史结论，而是把
 `TaskGraph::evaluate`、parallel evaluator first-error 和 `JoinState` failed handoff 的当前源码 hash、
 ownership topology 与逐组件 material contribution 冻结进新契约；HYLE/Abseil 由同一模板算法实例化，
-source location、值类别、生命周期、执行顺序和 placement strata 对称。契约/语义 oracle 已在 W1-WIN
-编译验证，正式 `qualify-platform` 证据尚未产生，因此本段不提前给出产品性能结论，error registry 仍为
-`BLOCKED`。
+source location、值类别、生命周期、执行顺序和 placement strata 对称。它已经产生上文 v4 的 current
+qualification；本段保留在 v3 历史区，只用于说明旧 blocker 如何被满足。

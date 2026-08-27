@@ -1,13 +1,13 @@
 # error 设计：值语义失败与模块接缝
 
-> **error-v3 当前设计合同。** 本页描述本轮 `AUDITED` 后冻结的产品边界，不提前充当候选或
-> 收口证书。当前只提供 C++23 source/static/shared；Native FFI 为 `N/A`。BUILD-03 已删除旧
+> **error-v4 当前设计合同。** 本页描述未变化的 `9595724a` 产品边界；候选、验证或终态仍只由
+> machine-readable registry 裁决。当前只提供 C++23 source/static/shared；Native FFI 为 `N/A`。BUILD-03 已删除旧
 > C schema、bridge、C-shaped 动态导出和 managed fixture。用户写法见
 > [user/error](../user/error.md)，施工状态只看 [implementation/status](../implementation/status.md)。
 
 > `error-p1-v1` 是 immutable historical/raw-diagnostic contract，只可重放既有 raw bundle 或运行明确不具
 > 资格的 mechanism diagnostic；其 derived comparison/product verdict 已拒绝，禁止用它产生新的 current
-> qualification。未来 error qualification 必须使用新的 contract ID。分账与恢复条件见
+> qualification。current P1 engineering qualification 使用 `error-source-consumer-v1`。分账、结果与边界见
 > [performance evidence](../implementation/evidence/performance/benchmarks-error.md)。
 
 ## 0. 职责与依赖位置
@@ -244,7 +244,7 @@ native detail 不同合同，只能作机制诊断，不能宣称产品输赢。
 
 ## 5. 成熟实现裁决
 
-error-v3 的可复查 peer 身份固定为 Abseil commit
+error-v4 的可复查 peer 身份固定为 Abseil commit
 `81c993af4fb88b3a51829a796df02251fa27102f`（本地
 `C:/public/project-hyle/abseil-cpp`）与 Folly commit
 `423fd7f8d97fd7bf52fc4c986dfd20320c4de8f9`（本地
@@ -278,6 +278,11 @@ async completion 等正常协议状态继续用紧凑值/枚举。旧模块私�
 
 error 签署必须同时具备：C++ correctness/三平台、同合同性能 non-inferiority、
 shared/static/source C++ 交付、已审底座 adoption、正确文档和可追踪 raw evidence。
+
+当前 `error-source-consumer-v1` 已在 W1-WIN 对四个 source-primary consumer workload 取得 5% P1
+engineering non-inferiority `PASS`：TaskGraph 成功路径为 `PARITY`，fresh owning failure、parallel
+first-error handoff 和 Join failed handoff 为 `WIN`。这只签署冻结 consumer 合同；旧 fixed-backing
+shared-copy 约 8% 慢仍是 mechanism diagnostic，不授权改变 Status 的正常产品形状。
 
 签署后只因 correctness/security/ABI bug、真实 consumer 能力缺口、同合同强 peer 证明实质算法/
 性能落后，或发布形状改变而局部重开。
