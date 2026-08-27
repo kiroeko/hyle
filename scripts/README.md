@@ -90,29 +90,44 @@ roles are registered in `scripts/perf-machines.json` and explained in
 
 `hyle-perf.py` is now the single v1 orchestrator. The first mappings are
 `bench/contracts/container-intrusive-p1-v1.json` and
-`bench/contracts/error-p1-v1.json`; their implementation history and remaining
-qualification work are tracked in
+`bench/contracts/error-p1-v1.json`; their implementation history is tracked in
 [`closure-system-v1`](../docs/implementation/tasks/build/closure-system-v1.md).
 The contracts and runner existing does not by itself close either module.
 `container_intrusive` now has a candidate-bound engineering `QUALIFIED`
 manifest recorded in its performance evidence page; `error` remains governed
 by its own current registry/task and must not inherit that result.
 
-The error contract runs only the dedicated `hyle_error_p1_bench` primary and
-placement targets. Its command validator, `validate-error-p1-bench.py`, executes
-those exact replay functions in validation mode and fail-closes on semantic,
-64-node call/checksum, empty-source-location, noinline-function identity, or
-placement-layout drift. The older error executables and module-specific runner
-remain boundary diagnostics; they cannot contribute rows or verdicts to v1.
+Both checked-in v1 contracts predate `consumer-evidence-v1`. Their retained
+manifests remain mechanically verifiable, but neither contract can be refreshed
+or newly certified under the current product policy. Container-intrusive keeps
+its historical engineering closure; any refresh/Formal work must freeze a new
+contract ID with explicit gate roles and consumer evidence keys.
 
-Validate the immutable contract before building:
+> **Historical error notice:** `bench/contracts/error-p1-v1.json` is an immutable
+> historical/raw-diagnostic contract retained to validate/replay existing
+> hashes/bundles or run explicitly non-qualifying mechanism diagnostics. Its raw
+> samples/statistics are retained, but its derived
+> comparison/product verdict is rejected. It must not produce a new current error
+> qualification; any future error qualification requires a new contract ID with
+> source-primary consumer provenance/materiality and ownership symmetry.
+
+The historical error contract runs only the dedicated `hyle_error_p1_bench` primary and
+placement targets. Its command validator, `validate-error-p1-bench.py`, executes
+the frozen functions originally labelled as replays and fail-closes on semantic,
+64-node call/checksum, empty-source-location, noinline-function identity, or
+placement-layout drift. That validation proves execution integrity, not current
+consumer qualification. The older error executables and module-specific runner
+remain boundary diagnostics; they cannot contribute current product verdicts.
+
+Validate the immutable contract only for historical bundle/raw-diagnostic work:
 
 ```bash
 python scripts/hyle-perf.py validate \
   --contract bench/contracts/error-p1-v1.json
 ```
 
-`probe` configures/builds the declared targets but permits a dirty candidate,
+For this historical error contract, `probe` is diagnostic only. It configures/builds
+the declared targets but permits a dirty candidate,
 dirty peer and a reusable build tree. It runs exactly one fresh child process
 per required product stratum and one per control order, always emits
 `DIAGNOSTIC`, and returns no performance qualification regardless of attractive
@@ -127,7 +142,7 @@ python scripts/hyle-perf.py probe \
   --output .scratch/perf-probe-error-evidence
 ```
 
-Every emitted bundle can be replayed while all referenced files are retained.
+Every retained historical bundle can be replayed while all referenced files are retained.
 `verify` strictly parses the manifest and contract lock; rehashes every file;
 reparses the exact raw-log index, child telemetry and nanobench rows back into
 observations and controls; recomputes an n=15 escalation decision; independently
@@ -143,20 +158,20 @@ python scripts/hyle-perf.py verify \
   --manifest .scratch/perf-probe-error-evidence/manifest.json
 ```
 
-`qualify-platform` requires clean candidate and peer checkouts, an absent/empty
+For `error-p1-v1`, recomputed gates remain original-contract computed fields;
+verification retains raw evidence but cannot restore a current product verdict.
+
+For contracts eligible for current qualification, `qualify-platform` requires clean
+candidate and peer checkouts, an absent/empty
 fresh build tree, Release, all required controls/strata, stable inputs/host/
 artifacts and passing validators. It always starts with n=15. A complete n=31
 replacement run occurs only when the contract predeclares it, every required
 control passed, at least one comparable non-inferiority gate is `UNRESOLVED`
-solely for statistical power, and all other such gates are `PASS`:
+solely for statistical power, and all other such gates are `PASS`.
 
-```bash
-python scripts/hyle-perf.py qualify-platform \
-  --contract bench/contracts/error-p1-v1.json \
-  --machine W1-WIN --peer abseil=../abseil-cpp \
-  --build .scratch/perf-qualify-error-build \
-  --output .scratch/perf-qualify-error-evidence
-```
+Do not run `qualify-platform` with `error-p1-v1.json`: it is not eligible for a
+new current qualification. Once reviewed and registered, a future error contract
+must use a new ID and may then use this generic command.
 
 CPU v1 runs A/A, 5% and 10% known-delta controls in both orders. Its timer floor
 is matched to each product executable's declared `measurement_batch`; the

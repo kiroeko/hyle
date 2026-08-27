@@ -13,7 +13,12 @@ import sys
 SCRIPT_DIRECTORY = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIRECTORY))
 
-from hyle_perf.contract import load_contract, make_contract_lock  # noqa: E402
+from hyle_perf.contract import (  # noqa: E402
+    PRODUCT_GATE_POLICY,
+    load_contract,
+    make_contract_lock,
+    product_evidence_contract_ready,
+)
 from hyle_perf.evidence import load_and_validate_manifest  # noqa: E402
 from hyle_perf.model import ValidationError  # noqa: E402
 from hyle_perf.runner import (  # noqa: E402
@@ -119,10 +124,21 @@ def main() -> int:
             validate_runner_extension(contract)
             manifest = load_and_validate_manifest(
                 args.manifest, contract, verify_paths=True)
+            policy = manifest.get("extensions", {}).get("product_gate_policy")
+            current_policy_eligible = (
+                manifest["qualification"] == "QUALIFIED" and
+                policy == PRODUCT_GATE_POLICY and
+                product_evidence_contract_ready(contract))
             print(json.dumps({
+                "current_certification_policy_eligible":
+                    current_policy_eligible,
                 "contract_sha256": manifest["contract_sha256"],
                 "manifest": str(args.manifest.resolve()),
                 "paths_verified": True,
+                "product_gate_policy": policy,
+                "product_interpretation": (
+                    "CURRENT_POLICY_EVIDENCE_REQUIRES_GATE_REPLAY"
+                    if current_policy_eligible else "INCONCLUSIVE"),
                 "qualification": manifest["qualification"],
             }, sort_keys=True, indent=2))
             return 0

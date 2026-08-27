@@ -308,6 +308,40 @@
     "workload": {
       "type": "object",
       "additionalProperties": false,
+      "dependentRequired": {
+        "consumer_key": ["provenance", "ownership_topology", "material_contribution"],
+        "provenance": ["consumer_key", "ownership_topology", "material_contribution"],
+        "ownership_topology": ["consumer_key", "provenance", "material_contribution"],
+        "material_contribution": ["consumer_key", "provenance", "ownership_topology"]
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": ["gate_role"],
+            "properties": {
+              "tier": {"const": "mechanism"}
+            }
+          },
+          "then": {
+            "properties": {
+              "gate_role": {"const": "diagnostic"}
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "gate_role": {"const": "product"}
+            },
+            "required": ["gate_role"]
+          },
+          "then": {
+            "properties": {
+              "comparability": {"const": "COMPARABLE"}
+            }
+          }
+        }
+      ],
       "required": [
         "id",
         "tier",
@@ -331,6 +365,72 @@
         },
         "tier": {
           "enum": ["consumer", "replay", "mechanism"]
+        },
+        "gate_role": {
+          "enum": ["product", "diagnostic"]
+        },
+        "consumer_key": {
+          "$ref": "#/$defs/identifier"
+        },
+        "provenance": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["path", "sha256"],
+          "properties": {
+            "path": {
+              "allOf": [
+                {"$ref": "#/$defs/nonemptyString"},
+                {
+                  "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\\\]+$"
+                }
+              ]
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          }
+        },
+        "ownership_topology": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["candidate", "peer", "equivalence"],
+          "properties": {
+            "candidate": {
+              "$ref": "#/$defs/nonemptyString"
+            },
+            "peer": {
+              "$ref": "#/$defs/nonemptyString"
+            },
+            "equivalence": {
+              "$ref": "#/$defs/nonemptyString"
+            }
+          }
+        },
+        "material_contribution": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["frequency", "value", "unit", "budget", "denominator", "derivation"],
+          "properties": {
+            "frequency": {
+              "$ref": "#/$defs/positiveNumber"
+            },
+            "value": {
+              "$ref": "#/$defs/positiveNumber"
+            },
+            "unit": {
+              "$ref": "#/$defs/nonemptyString"
+            },
+            "budget": {
+              "$ref": "#/$defs/positiveNumber"
+            },
+            "denominator": {
+              "$ref": "#/$defs/nonemptyString"
+            },
+            "derivation": {
+              "$ref": "#/$defs/nonemptyString"
+            }
+          }
         },
         "semantic_contract": {
           "$ref": "#/$defs/nonemptyString"

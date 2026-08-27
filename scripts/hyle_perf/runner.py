@@ -32,9 +32,13 @@ from hyle_perf import (
     sampling_mutex,
 )
 from hyle_perf.contract import (
+    PRODUCT_GATE_POLICY,
     canonical_json_bytes,
     load_contract,
     make_contract_lock,
+    product_evidence_contract_ready,
+    product_workloads,
+    workload_has_product_evidence,
 )
 from hyle_perf.controls import (
     SUPPORTED_TIMER_BATCHES,
@@ -1586,21 +1590,121 @@ def _probe_stability_view(probe: Mapping[str, Any]) -> dict[str, Any]:
             if key != "observed_at_utc"}
 
 
-def _all_performance_gates_pass(summary: Mapping[str, Any]) -> bool:
+def _evaluate_product_evidence(
+        contract: Mapping[str, Any], source: pathlib.Path) -> list[dict[str, Any]]:
+    """Bind every consumer/replay key to a retained source file.
+
+    Mechanism rows are intentionally absent.  They remain sampled and reported
+    through observations/summary, but cannot acquire product eligibility by
+    carrying consumer-shaped metadata.
+    """
+    source = source.resolve()
+    rows = []
+    for workload in product_workloads(contract, require_evidence=False):
+        errors = []
+        provenance_file = None
+        if not workload_has_product_evidence(workload):
+            errors.append(
+                "consumer_key/provenance/ownership/materiality are incomplete")
+        else:
+            relative_path = pathlib.PurePosixPath(
+                workload["provenance"]["path"])
+            path = source.joinpath(*relative_path.parts).resolve()
+            try:
+                path.relative_to(source)
+            except ValueError:
+                errors.append("provenance path resolves outside candidate source")
+            else:
+                if not path.is_file():
+                    errors.append("provenance path is not a retained file")
+                else:
+                    actual_digest = _sha256_file(path)
+                    provenance_file = {
+                        "path": str(path),
+                        "sha256": actual_digest,
+                    }
+                    if actual_digest != workload["provenance"]["sha256"]:
+                        errors.append("provenance file hash differs from contract")
+        rows.append({
+            "id": workload["id"],
+            "tier": workload["tier"],
+            "gate": "PASS" if not errors else "FAIL",
+            "errors": errors,
+            "provenance_path": (
+                workload.get("provenance", {}).get("path")),
+            "provenance_file": provenance_file,
+        })
+    return rows
+
+
+def _product_evidence_pass(rows: Iterable[Mapping[str, Any]]) -> bool:
+    rows = list(rows)
+    return bool(rows) and all(row.get("gate") == "PASS" for row in rows)
+
+
+def _product_gate_workloads(
+        contract: Mapping[str, Any],
+        product_evidence: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
+    evidence_gates = {row["id"]: row["gate"] for row in product_evidence}
+    eligible = []
+    excluded = []
+    for workload in contract["workloads"]:
+        if workload["tier"] == "mechanism":
+            excluded.append({"id": workload["id"],
+                             "reason": "mechanism-diagnostic-only"})
+        elif workload.get("gate_role") == "diagnostic":
+            excluded.append({"id": workload["id"],
+                             "reason": "gate-role-diagnostic"})
+        elif workload.get("gate_role") != "product":
+            excluded.append({"id": workload["id"],
+                             "reason": "gate-role-not-declared"})
+        elif evidence_gates.get(workload["id"]) != "PASS":
+            excluded.append({"id": workload["id"],
+                             "reason": "consumer-evidence-not-qualified"})
+        elif workload["comparability"] != "COMPARABLE":
+            excluded.append({"id": workload["id"],
+                             "reason": "comparison-not-comparable"})
+        else:
+            eligible.append(workload["id"])
+    return {"eligible": eligible, "excluded": excluded}
+
+
+def _performance_gate(
+        summary: Mapping[str, Any], contract: Mapping[str, Any],
+        product_evidence: Iterable[Mapping[str, Any]],
+        qualification: Qualification | str) -> str:
+    if (not product_evidence_contract_ready(contract) or
+            not _product_evidence_pass(product_evidence) or
+            Qualification(qualification) is not Qualification.QUALIFIED):
+        return "INCONCLUSIVE"
+    product_ids = {
+        workload["id"] for workload in product_workloads(
+            contract, comparable_only=True)}
     comparable = [
         workload for workload in summary["workloads"]
-        if workload["comparability"] == "COMPARABLE"]
-    return bool(comparable) and all(
-        workload["combined_noninferiority_gate"] == "PASS"
-        for workload in comparable)
+        if workload.get("id") in product_ids and
+        workload["comparability"] == "COMPARABLE"]
+    if not comparable:
+        return "INCONCLUSIVE"
+    gates = {
+        workload["combined_noninferiority_gate"] for workload in comparable}
+    if "FAIL" in gates:
+        return "FAIL"
+    if gates == {"PASS"}:
+        return "PASS"
+    return "INCONCLUSIVE"
 
 
 def _eligible_for_sample_escalation(
         summary: Mapping[str, Any], controls: Iterable[Mapping[str, Any]],
         contract: Mapping[str, Any]) -> bool:
     """Return true only when statistical power is the sole unresolved gate."""
+    if not product_evidence_contract_ready(contract):
+        return False
+    eligible = product_workloads(contract)
+    eligible_ids = {workload["id"] for workload in eligible}
     required_controls = {
-        control_id for workload in contract["workloads"]
+        control_id for workload in eligible
         for control_id in workload["required_controls"]}
     control_gates = {control["id"]: control["gate"] for control in controls}
     if any(control_gates.get(control_id) != "PASS"
@@ -1609,7 +1713,8 @@ def _eligible_for_sample_escalation(
     gates = [
         workload["combined_noninferiority_gate"]
         for workload in summary["workloads"]
-        if workload["comparability"] == "COMPARABLE"]
+        if workload.get("id") in eligible_ids and
+        workload["comparability"] == "COMPARABLE"]
     return (bool(gates) and "UNRESOLVED" in gates and
             all(gate in {"PASS", "UNRESOLVED"} for gate in gates))
 
@@ -1674,6 +1779,16 @@ def _run_contract_locked(
 
     contract = load_contract(contract_path)
     runner = validate_runner_extension(contract)
+    product_evidence = _evaluate_product_evidence(contract, source)
+    product_evidence_ready = (
+        product_evidence_contract_ready(contract) and
+        _product_evidence_pass(product_evidence))
+    product_gate_workloads = _product_gate_workloads(contract, product_evidence)
+    if formal and not product_evidence_ready:
+        raise ValidationError(
+            "Formal qualification requires every product-gating "
+            "consumer/replay workload to bind a named consumer, retained "
+            "provenance, natural ownership topology, and material contribution")
     expected_peers = {peer["id"]: peer for peer in contract["peers"]}
     if set(peer_paths) != set(expected_peers):
         raise ValidationError(
@@ -1807,7 +1922,8 @@ def _run_contract_locked(
                 first_controls, pre_sampling_validators)
             first_summary = summarize_observations(
                 contract, observations, qualification=Qualification.DIAGNOSTIC)
-            if (all(result["gate"] == "PASS"
+            if (product_evidence_ready and
+                    all(result["gate"] == "PASS"
                     for result in pre_sampling_validators) and
                     _eligible_for_sample_escalation(
                         first_summary, first_controls, contract)):
@@ -1859,14 +1975,15 @@ def _run_contract_locked(
     _apply_delegated_control_gates(controls, validators)
 
     hard_qualification = (
-        requested_qualified and build_record["fresh"] and inputs_stable and
+        requested_qualified and product_evidence_ready and
+        build_record["fresh"] and inputs_stable and
         artifacts_stable and host_stable and source_after["clean"] and
         all(record["clean"] for record in peer_after.values()) and
         all(validator["gate"] == "PASS"
             for validator in pre_sampling_validators) and
         all(control["gate"] == "PASS" for control in controls
             if any(control["id"] in workload["required_controls"]
-                   for workload in contract["workloads"])) and
+                   for workload in product_workloads(contract))) and
         all(validator["gate"] == "PASS" for validator in validators))
     qualification = (Qualification.QUALIFIED if hard_qualification
                      else Qualification.DIAGNOSTIC)
@@ -1941,6 +2058,9 @@ def _run_contract_locked(
             "formal": formal,
             "runs": runs,
             "sample_stages": sample_stages,
+            "product_gate_policy": PRODUCT_GATE_POLICY,
+            "product_evidence": product_evidence,
+            "product_gate_workloads": product_gate_workloads,
             "pre_sampling_validator_gates": [
                 {"id": result["id"], "gate": result["gate"]}
                 for result in pre_sampling_validators],
@@ -1961,8 +2081,8 @@ def _run_contract_locked(
         "summary": summary,
         "qualification_gate": ("PASS" if qualification is Qualification.QUALIFIED
                                else "FAIL"),
-        "performance_gate": ("PASS" if _all_performance_gates_pass(summary)
-                             else "FAIL"),
+        "performance_gate": _performance_gate(
+            summary, contract, product_evidence, qualification),
     }
 
 

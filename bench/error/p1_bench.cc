@@ -1,7 +1,9 @@
-// Qualified error P1 workflows.  This executable intentionally contains only
-// the frozen normal/replay rows from error-p1-v1.json.  Primitive and boundary
-// diagnostics remain in status_bench.cc and normal_bench.cc, but are not paid
-// for by every qualification child.
+// Immutable historical/raw-diagnostic fixture for error-p1-v1.json. It remains
+// buildable only to replay retained bundles and investigate mechanisms; the
+// frozen "replay" labels do not qualify current product evidence. Any future
+// current error qualification must use a new contract ID and consumer-correct
+// workload. Primitive and boundary diagnostics remain in status_bench.cc and
+// normal_bench.cc.
 #include <nanobench.h>
 
 #include <array>

@@ -113,10 +113,13 @@ python scripts/hyle-perf.py verify `
   --manifest C:\hyle-scratch\container-intrusive-v3\perf-qualify-b5816b8-output\manifest.json
 ```
 
-结果为 `qualification=QUALIFIED`、`paths_verified=true`。engineering closure 允许引用受控工作目录中
-仍可深重放的 live artifact bundle；它不是不可变签名归档。若该目录丢失，当前文档仍保留结论与
-identity，但深重放能力失效并触发 engineering evidence refresh。Formal 必须重新冻结并保留可独立
-获取的签名 artifact bundle，不能把这些绝对路径或 Windows 一机证据改名为发布证书。
+历史机械结果为 `qualification=QUALIFIED`、`paths_verified=true`；新 CLI 还会明确输出
+`product_gate_policy=null`、`current_certification_policy_eligible=false` 和
+`product_interpretation=INCONCLUSIVE`。这不撤销 v3 当时签署的 engineering closure，但说明旧合同只可
+deep verify，不能按当前 consumer-key policy 续签或进入 Formal。若 live bundle 丢失或需要 refresh，
+必须冻结带显式 `gate_role`、consumer provenance、ownership 和 material contribution 的新 contract ID。
+Formal 还必须保留可独立获取的签名 artifact bundle，不能把这些绝对路径或 Windows 一机证据改名为
+发布证书。
 
 ## 正确性与结构证据边界
 
@@ -136,8 +139,10 @@ identity，但深重放能力失效并触发 engineering evidence refresh。Form
 v2 使用 `front/pop_front` FIFO loop、旧 3% margin、旧 ratio direction、专用 runner、dirty candidate
 和不完整 controls。其数表、旧本机命令和 Formal 草案已从当前页面删除，避免误读；可追溯事实仍在
 [v2 closure task](../../tasks/container_intrusive/container-intrusive-v2-closure.md)。
-`scripts/run-container-intrusive-bench-evidence.py` 仅保留为 legacy module diagnostic；当前资格入口只有
-统一 `hyle-perf.py` + frozen JSON contract。任何 v2 点值都不得与 v3 样本合并或用于当前结论。
+`scripts/run-container-intrusive-bench-evidence.py` 仅保留为 legacy module diagnostic；统一
+`hyle-perf.py` 仍是唯一仪器，但 frozen `container-intrusive-p1-v1.json` 现在也只是 legacy verify 入口，
+不是新 qualification/Formal 入口。任何续签使用新 contract ID；任何 v2 点值都不得与 v3 样本合并或
+用于当前结论。
 
 ## 消费者边界与重开
 

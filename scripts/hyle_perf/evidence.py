@@ -12,12 +12,16 @@ from typing import Any, Iterable, Mapping, Optional
 
 from hyle_perf.contract import (
     CONTRACT_LOCK_SCHEMA,
+    PRODUCT_GATE_POLICY,
     RUNTIME_BOUND_REVISION,
     canonical_json_bytes,
     canonical_sha256,
     make_contract_lock,
+    product_evidence_contract_ready,
+    product_workloads,
     validate_contract,
     validate_contract_lock,
+    workload_has_product_evidence,
 )
 from hyle_perf.build_replay import validate_build_artifact_replay
 from hyle_perf.controls import (
@@ -90,10 +94,21 @@ def _qualification(value: Qualification | str) -> Qualification:
 
 def _eligible_for_sample_escalation(
         summary: Mapping[str, Any], controls: Iterable[Mapping[str, Any]],
-        contract: Mapping[str, Any]) -> bool:
+        contract: Mapping[str, Any], *,
+        product_gate_policy: Optional[str] = PRODUCT_GATE_POLICY) -> bool:
     """Replay the frozen n=15 -> n=31 stop rule without runner state."""
+    if product_gate_policy is None:
+        eligible = contract["workloads"]
+    elif product_gate_policy == PRODUCT_GATE_POLICY:
+        if not product_evidence_contract_ready(contract):
+            return False
+        eligible = product_workloads(contract)
+    else:
+        raise ValidationError(
+            f"unsupported product gate policy: {product_gate_policy!r}")
+    eligible_ids = {workload["id"] for workload in eligible}
     required_controls = {
-        control_id for workload in contract["workloads"]
+        control_id for workload in eligible
         for control_id in workload["required_controls"]}
     control_gates = {control["id"]: control["gate"] for control in controls}
     if any(control_gates.get(control_id) != "PASS"
@@ -102,7 +117,8 @@ def _eligible_for_sample_escalation(
     gates = [
         workload["combined_noninferiority_gate"]
         for workload in summary["workloads"]
-        if workload["comparability"] == Comparability.COMPARABLE.value]
+        if workload.get("id") in eligible_ids and
+        workload["comparability"] == Comparability.COMPARABLE.value]
     return (bool(gates) and NonInferiorityGate.UNRESOLVED.value in gates and
             all(gate in {NonInferiorityGate.PASS.value,
                          NonInferiorityGate.UNRESOLVED.value}
@@ -730,6 +746,129 @@ def _validate_file_reference(record: Any, field_name: str, *,
     return data
 
 
+def _validate_product_evidence_extension(
+        extensions: Mapping[str, Any], contract: Mapping[str, Any], *,
+        qualification: Qualification,
+        verify_paths: bool) -> Optional[list[dict[str, Any]]]:
+    """Validate the current product-gate policy without rewriting v1 history."""
+    policy = extensions.get("product_gate_policy")
+    if policy is None:
+        if "product_evidence" in extensions:
+            raise ValidationError(
+                "manifest product_evidence requires a product_gate_policy")
+        return None
+    if policy != PRODUCT_GATE_POLICY:
+        raise ValidationError(f"unsupported product gate policy: {policy!r}")
+
+    raw_rows = extensions.get("product_evidence")
+    if not isinstance(raw_rows, list):
+        raise ValidationError("manifest product_evidence must be an array")
+    expected = product_workloads(contract, require_evidence=False)
+    if len(raw_rows) != len(expected) or any(
+            not isinstance(row, Mapping) for row in raw_rows):
+        raise ValidationError(
+            "manifest product_evidence must contain exactly one object per "
+            "product workload")
+    if [row.get("id") for row in raw_rows] != [
+            workload["id"] for workload in expected]:
+        raise ValidationError(
+            "manifest product_evidence order/set differs from product workloads")
+
+    rows = []
+    for index, (raw_row, workload) in enumerate(zip(raw_rows, expected)):
+        name = f"manifest.extensions.product_evidence[{index}]"
+        row = require_json_object(raw_row, name)
+        fields = {
+            "id", "tier", "gate", "errors", "provenance_path",
+            "provenance_file",
+        }
+        if set(row) != fields:
+            raise ValidationError(f"{name} has invalid fields")
+        if row["id"] != workload["id"] or row["tier"] != workload["tier"]:
+            raise ValidationError(f"{name} identity differs from contract")
+        declared_path = workload.get("provenance", {}).get("path")
+        if row["provenance_path"] != declared_path:
+            raise ValidationError(
+                f"{name}.provenance_path differs from the frozen contract")
+        if row["gate"] not in {"PASS", "FAIL"}:
+            raise ValidationError(f"{name}.gate is unsupported")
+        errors = row["errors"]
+        if (not isinstance(errors, list) or
+                any(not isinstance(error, str) or not error.strip()
+                    for error in errors)):
+            raise ValidationError(f"{name}.errors must contain non-empty strings")
+        if (row["gate"] == "PASS") == bool(errors):
+            raise ValidationError(f"{name}.gate and errors disagree")
+
+        provenance_file = row["provenance_file"]
+        if provenance_file is not None:
+            provenance_file = _validate_file_reference(
+                provenance_file, name + ".provenance_file",
+                verify_path=verify_paths)
+            if verify_paths:
+                actual_parts = pathlib.Path(
+                    provenance_file["path"]).resolve().parts
+                declared_parts = pathlib.PurePosixPath(
+                    row["provenance_path"]).parts
+                if (len(actual_parts) < len(declared_parts) or
+                        tuple(actual_parts[-len(declared_parts):]) !=
+                        tuple(declared_parts)):
+                    raise ValidationError(
+                        f"{name}.provenance_file path does not end in the "
+                        "frozen repository-relative provenance path")
+        if row["gate"] == "PASS":
+            if not workload_has_product_evidence(workload):
+                raise ValidationError(
+                    f"{name} passes without all consumer evidence keys")
+            if (provenance_file is None or
+                    provenance_file["sha256"] !=
+                    workload["provenance"]["sha256"]):
+                raise ValidationError(
+                    f"{name} PASS is not bound to the frozen provenance hash")
+        rows.append({**row, "provenance_file": provenance_file})
+
+    if qualification is Qualification.QUALIFIED and (
+            not product_evidence_contract_ready(contract) or not rows or
+            any(row["gate"] != "PASS" for row in rows)):
+        raise ValidationError(
+            "QUALIFIED manifest lacks complete consumer provenance, ownership "
+            "topology, or material contribution")
+
+    selection = require_json_object(
+        extensions.get("product_gate_workloads"),
+        "manifest.extensions.product_gate_workloads")
+    if set(selection) != {"eligible", "excluded"}:
+        raise ValidationError(
+            "manifest product_gate_workloads has invalid fields")
+    evidence_gates = {row["id"]: row["gate"] for row in rows}
+    expected_eligible = []
+    expected_excluded = []
+    for workload in contract["workloads"]:
+        if workload["tier"] == "mechanism":
+            expected_excluded.append({
+                "id": workload["id"], "reason": "mechanism-diagnostic-only"})
+        elif workload.get("gate_role") == "diagnostic":
+            expected_excluded.append({
+                "id": workload["id"], "reason": "gate-role-diagnostic"})
+        elif workload.get("gate_role") != "product":
+            expected_excluded.append({
+                "id": workload["id"], "reason": "gate-role-not-declared"})
+        elif evidence_gates.get(workload["id"]) != "PASS":
+            expected_excluded.append({
+                "id": workload["id"],
+                "reason": "consumer-evidence-not-qualified"})
+        elif workload["comparability"] != Comparability.COMPARABLE.value:
+            expected_excluded.append({
+                "id": workload["id"], "reason": "comparison-not-comparable"})
+        else:
+            expected_eligible.append(workload["id"])
+    if (selection["eligible"] != expected_eligible or
+            selection["excluded"] != expected_excluded):
+        raise ValidationError(
+            "manifest product_gate_workloads differs from the frozen policy")
+    return rows
+
+
 def validate_manifest(
         record: Mapping[str, Any], contract_or_lock: Mapping[str, Any], *,
         verify_paths: bool = False) -> dict[str, Any]:
@@ -893,6 +1032,13 @@ def validate_manifest(
     if "extensions" in data:
         extensions = require_json_object(
             data["extensions"], "manifest.extensions")
+    product_evidence_rows = _validate_product_evidence_extension(
+        extensions, contract, qualification=qualification,
+        verify_paths=verify_paths)
+    if extensions.get("product_gate_policy") == PRODUCT_GATE_POLICY:
+        required_controls = {
+            control_id for workload in product_workloads(contract)
+            for control_id in workload["required_controls"]}
 
     runner_schema = contract.get("extensions", {}).get(
         "runner", {}).get("schema")
@@ -1225,10 +1371,18 @@ def validate_manifest(
                 first_summary = summarize_observations(
                     contract, first_observations,
                     qualification=Qualification.DIAGNOSTIC)
+                product_policy = extensions.get("product_gate_policy")
+                product_gate_ready = (
+                    product_policy is None or
+                    bool(product_evidence_rows) and all(
+                        row["gate"] == "PASS"
+                        for row in product_evidence_rows))
                 should_escalate = (
+                    product_gate_ready and
                     all(gate == "PASS" for gate in pre_gates.values()) and
                     _eligible_for_sample_escalation(
-                        first_summary, first_controls, contract))
+                        first_summary, first_controls, contract,
+                        product_gate_policy=product_policy))
                 did_escalate = extensions["sample_stages"] == list(schedule)
                 if should_escalate != did_escalate:
                     raise ValidationError(
@@ -1333,6 +1487,22 @@ def validate_certification_manifests(
            for manifest in manifests):
         raise ValidationError(
             "cross-platform certification accepts only QUALIFIED manifests")
+    if any(manifest.get("extensions", {}).get("product_gate_policy") !=
+           PRODUCT_GATE_POLICY for manifest in manifests):
+        raise ValidationError(
+            "performance certification rejects legacy manifests without the "
+            "current product gate policy")
+    if not product_evidence_contract_ready(contract):
+        raise ValidationError(
+            "performance certification requires complete named consumer "
+            "provenance, ownership topology, and material contribution")
+    comparable_ids = {
+        workload["id"] for workload in product_workloads(
+            contract, comparable_only=True)}
+    if not comparable_ids:
+        raise ValidationError(
+            "performance certification requires at least one product-eligible "
+            "COMPARABLE consumer/replay workload")
     if verify_paths:
         expected_lock = make_contract_lock(contract)
         for manifest in manifests:
@@ -1340,19 +1510,21 @@ def validate_certification_manifests(
                 manifest, expected_lock, Qualification.QUALIFIED)
             comparable = [
                 workload for workload in summary["workloads"]
-                if workload["comparability"] == Comparability.COMPARABLE.value]
+                if workload["id"] in comparable_ids and
+                workload["comparability"] == Comparability.COMPARABLE.value]
             if not comparable:
                 raise ValidationError(
                     "performance certification requires at least one "
-                    "COMPARABLE workload")
+                    "product-eligible COMPARABLE consumer/replay workload")
             failed = [
                 workload["id"] for workload in comparable
                 if workload["combined_noninferiority_gate"] !=
                 NonInferiorityGate.PASS.value]
             if failed:
                 raise ValidationError(
-                    "performance certification requires every comparable "
-                    "workload to PASS non-inferiority; failed=" + repr(failed))
+                    "performance certification requires every product-eligible "
+                    "comparable workload to PASS non-inferiority; failed=" +
+                    repr(failed))
     if any(
             manifest["host"].get("evidence_role") != "formal" or
             not isinstance(manifest["host"].get("formal_claim"), str) or

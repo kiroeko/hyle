@@ -145,7 +145,7 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "FAIL",
+        "verdict": "INCONCLUSIVE",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
@@ -163,11 +163,11 @@
         "delivery": "PASS",
         "usability_docs": "PASS",
         "red_team": "PASS",
-        "engineering_performance": "FAIL"
+        "engineering_performance": "INCONCLUSIVE"
       },
-      "blocker": "ERR-PERF-NORMAL-01 / status-message-copy: qualified non-inferiority FAIL in all four required strata; the remaining mechanism was not localized after the single permitted product hypothesis. TaskGraph success also retains two UNRESOLVED strata.",
-      "blocker_owner": "performance-instrument owner for placement diagnosis; error owner only after a concrete product mechanism is proven",
-      "resume_condition": "A separately scoped instrument task must, without changing the shared-copy copy/destruct charged phase or product API/layout/metadata, produce fail-closed actual heap-address/cache-line and allocation-order sensitivity evidence that either proves a placement confound and freezes a revised contract, or names one concrete product mechanism for a new scoped error RESUME round. n=31 alone, workload substitution, margin relaxation or a second product guess does not resume this module.",
+      "blocker": "ERR-PERF-CONSUMER-KEY-01: error-p1-v1 misclassified a fixed-backing atomic microbench as replay and contains asymmetric Result peer ownership; no valid source-primary consumer product verdict exists.",
+      "blocker_owner": "performance-contract/instrument owner plus future source-consumer owner; error product owner only after a material consumer regression is proven",
+      "resume_condition": "Freeze and execute a new source-primary contract in the same parent build graph with natural and symmetric ownership plus an actual or faithful consumer trace distribution, lifetime, hot/cold and concurrency profile, and material contribution budget. Mechanism microbench rows may diagnose causes but cannot gate the product. Qualified non-inferiority resumes the same candidate for verification/closure; a qualified material regression instead resumes bounded error product diagnosis.",
       "closure_evidence": "docs/implementation/tasks/error/error-v3-closure.md",
       "loc": {
         "snapshot_commit": "9595724a0a284cbc3502f1c9e9e3ec9c9cf9e2b9",
@@ -177,17 +177,18 @@
         "module_implementation": 1350
       },
       "known_limitations": [
-        "Qualified shared owning-message copy is about 8% slower than the fixed same-contract Abseil peer and fails the 5% P1 non-inferiority gate; no whole-module SOTA claim is valid.",
-        "TaskGraph all-success propagation retains two UNRESOLVED order/placement strata even though the other two strata pass non-inferiority.",
+        "A fixed-fixture shared owning-message copy microbench is reproducibly about 8% slower than the fixed peer, but its cause and consumer materiality are unknown; it is diagnostic evidence and supports no product inference.",
+        "The result-message-error absolute samples are retained, but the original-contract computed WIN/product comparison is rejected because HYLE moves from a temporary while the peer copies from a named lvalue.",
+        "TaskGraph all-success propagation retains two UNRESOLVED order/placement strata and has no binding to the chief source-consumer contribution budget.",
         "The low-bit header-inline representation requires exactly matching headers and artifacts plus a full consumer rebuild; HYLE does not promise stable C++ ABI or Native FFI in this round.",
         "io and selected sched/container cold-factory adoption decisions remain owned by those module closure rounds."
       ],
       "reopen_triggers": [
-        "The resume-condition instrument evidence causally classifies the shared-copy gap and supplies either a frozen corrected contract or one concrete product mechanism.",
+        "A source-primary consumer contract and qualified evidence prove a material error-path regression or establish non-inferiority under the corrected evidence standard.",
         "A reproducible correctness, security, ownership, consumer-usability or source/static/shared delivery defect is found within the error boundary.",
         "A direct dependency or supported compiler changes carrier semantics, or a mature same-contract peer proves a better complexity class."
       ],
-      "summary": "error-v3 在 candidate 9595724a/a828fb4c 停止：功能、API、正确性、交付和文档均通过，但合格 P1 工程证据在 shared owning-message copy 上失败；不授权第二次产品猜测。"
+      "summary": "error-v3 的功能、API、正确性、交付和文档通过；post-terminal 审计撤回了有缺陷合同产生的产品性能裁决，当前等待有效的 source-primary consumer 证据，不能据 fixed-backing microbench 修改产品。"
     },
     {
       "module": "obs",

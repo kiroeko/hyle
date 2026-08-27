@@ -31,6 +31,12 @@ RUNTIME_BOUND_REVISION = "runtime-bound"
 
 _DELIVERY_SHAPES = {"header-only", "static", "shared", "source", "executable"}
 _EVIDENCE_TIERS = {"consumer", "replay", "mechanism"}
+PRODUCT_EVIDENCE_TIERS = frozenset({"consumer", "replay"})
+PRODUCT_GATE_POLICY = "consumer-evidence-v1"
+_PRODUCT_EVIDENCE_FIELDS = {
+    "consumer_key", "provenance", "ownership_topology",
+    "material_contribution",
+}
 _ORDER_POLICIES = {"fixed-dual", "randomized", "abba"}
 _CONTROL_KINDS = {
     "aa", "known-delta", "timer-floor", "phase-floor", "codegen",
@@ -105,6 +111,45 @@ def _require_unique_ids(records: list[Any], field_name: str) -> dict[str, dict[s
                 f"{field_name} contains duplicate id {identifier!r}")
         result[identifier] = data
     return result
+
+
+def workload_has_product_evidence(workload: Mapping[str, Any]) -> bool:
+    """Return whether a consumer/replay row carries every consumer key.
+
+    This deliberately does not inspect ``tier``: callers must first select a
+    product evidence tier.  Keeping the two checks separate prevents a
+    self-declared tier from becoming the consumer key by itself.
+    """
+    return _PRODUCT_EVIDENCE_FIELDS.issubset(workload)
+
+
+def product_workloads(
+        contract: Mapping[str, Any], *, require_evidence: bool = True,
+        comparable_only: bool = False) -> list[Mapping[str, Any]]:
+    """Select workloads that may participate in a product performance gate."""
+    result = []
+    for workload in contract["workloads"]:
+        if workload.get("tier") not in PRODUCT_EVIDENCE_TIERS:
+            continue
+        if workload.get("gate_role") != "product":
+            continue
+        if require_evidence and not workload_has_product_evidence(workload):
+            continue
+        if comparable_only and workload.get("comparability") != \
+                Comparability.COMPARABLE.value:
+            continue
+        result.append(workload)
+    return result
+
+
+def product_evidence_contract_ready(contract: Mapping[str, Any]) -> bool:
+    """Fail closed unless roles are explicit and product rows have all keys."""
+    declared = product_workloads(contract, require_evidence=False)
+    roles_declared = all(
+        workload.get("gate_role") in {"product", "diagnostic"}
+        for workload in contract["workloads"])
+    return (roles_declared and bool(declared) and all(
+        workload_has_product_evidence(workload) for workload in declared))
 
 
 def _validate_estimator(record: Any, field_name: str) -> int:
@@ -223,13 +268,74 @@ def validate_contract(record: Mapping[str, Any]) -> dict[str, Any]:
              "metric", "input", "setup", "charged_phases", "pair",
              "practical_margin_percent", "noninferiority_margin_percent",
              "estimator", "required_strata", "required_controls"},
-            set(), name)
+            _PRODUCT_EVIDENCE_FIELDS | {"gate_role"}, name)
         if workload["tier"] not in _EVIDENCE_TIERS:
             raise ValidationError(f"{name}.tier is unsupported")
+        if "gate_role" in workload:
+            if workload["gate_role"] not in {"product", "diagnostic"}:
+                raise ValidationError(f"{name}.gate_role is unsupported")
+            if (workload["tier"] == "mechanism" and
+                    workload["gate_role"] != "diagnostic"):
+                raise ValidationError(
+                    f"{name}: mechanism tier must use gate_role=diagnostic")
+        present_evidence_fields = _PRODUCT_EVIDENCE_FIELDS.intersection(workload)
+        if present_evidence_fields and present_evidence_fields != \
+                _PRODUCT_EVIDENCE_FIELDS:
+            raise ValidationError(
+                f"{name} must declare consumer_key, provenance, "
+                "ownership_topology, and material_contribution together")
+        if present_evidence_fields:
+            require_identifier(workload["consumer_key"], name + ".consumer_key")
+            provenance = require_json_object(
+                workload["provenance"], name + ".provenance")
+            _require_fields(
+                provenance, {"path", "sha256"}, set(), name + ".provenance")
+            provenance_path = require_nonempty_string(
+                provenance["path"], name + ".provenance.path")
+            pure_path = pathlib.PurePosixPath(provenance_path)
+            if (pure_path.is_absolute() or ".." in pure_path.parts or
+                    "\\" in provenance_path):
+                raise ValidationError(
+                    f"{name}.provenance.path must be a repository-relative "
+                    "POSIX path without parent traversal")
+            digest = provenance["sha256"]
+            if not isinstance(digest, str) or not _HEX_SHA256_RE.fullmatch(digest):
+                raise ValidationError(f"{name}.provenance.sha256 is invalid")
+
+            ownership = require_json_object(
+                workload["ownership_topology"], name + ".ownership_topology")
+            _require_fields(
+                ownership,
+                {"candidate", "peer", "equivalence"}, set(),
+                name + ".ownership_topology")
+            for field in ("candidate", "peer", "equivalence"):
+                require_nonempty_string(
+                    ownership[field], name + f".ownership_topology.{field}")
+
+            materiality = require_json_object(
+                workload["material_contribution"],
+                name + ".material_contribution")
+            _require_fields(
+                materiality,
+                {"frequency", "value", "unit", "budget", "denominator",
+                 "derivation"}, set(),
+                name + ".material_contribution")
+            for field in ("frequency", "value", "budget"):
+                require_positive_finite(
+                    materiality[field],
+                    name + f".material_contribution.{field}")
+            for field in ("unit", "denominator", "derivation"):
+                require_nonempty_string(
+                    materiality[field],
+                    name + f".material_contribution.{field}")
         require_nonempty_string(
             workload["semantic_contract"], name + ".semantic_contract")
         enum_value(Comparability, workload["comparability"],
                    name + ".comparability")
+        if (workload.get("gate_role") == "product" and
+                workload["comparability"] != Comparability.COMPARABLE.value):
+            raise ValidationError(
+                f"{name}: gate_role=product requires COMPARABLE semantics")
         peer_id = require_identifier(workload["peer_id"], name + ".peer_id")
         if peer_id not in peers:
             raise ValidationError(f"{name}.peer_id references unknown peer {peer_id!r}")

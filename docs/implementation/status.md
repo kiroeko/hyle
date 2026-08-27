@@ -13,7 +13,7 @@
 | core | CLOSED | P0 | PASS / STRUCTURAL | NONE | [task](tasks/core/core-rebuild.md) | P0 基础层已关闭；消费者性能声明由所属模块承担。 |
 | container_intrusive | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/container_intrusive/container-intrusive-v3-resume.md) | v3 已关闭：真实消费者形状、typed membership transfer、correctness/交付/文档和 Boost 同合同 5% P1 工程非劣门均已签署；Formal 独立待办。 |
 | util_core | QUEUED | — | — | — | — | 现有实现只作输入；尚未启动 v1 收口。 |
-| error | BLOCKED | P1 | FAIL / P1_ENGINEERING / 5% | PENDING | [task](tasks/error/error-v3-closure.md) | error-v3 在 candidate 9595724a/a828fb4c 停止：功能、API、正确性、交付和文档均通过，但合格 P1 工程证据在 shared owning-message copy 上失败；不授权第二次产品猜测。 |
+| error | BLOCKED | P1 | INCONCLUSIVE / P1_ENGINEERING / 5% | PENDING | [task](tasks/error/error-v3-closure.md) | error-v3 的功能、API、正确性、交付和文档通过；post-terminal 审计撤回了有缺陷合同产生的产品性能裁决，当前等待有效的 source-primary consumer 证据，不能据 fixed-backing microbench 修改产品。 |
 | obs | QUEUED | — | — | — | — | 现有实现与历史审查只作输入。 |
 | math | QUEUED | — | — | — | — | 现有实现只作输入；尚需裁决与 SIMD 的边界。 |
 | time | QUEUED | — | — | — | — | 现有实现与历史审查只作输入。 |

@@ -5,7 +5,9 @@
 > C schema、bridge、C-shaped 动态导出和 managed fixture。用户写法见
 > [user/error](../user/error.md)，施工状态只看 [implementation/status](../implementation/status.md)。
 
-> error-v3 的待资格合同与上一轮历史输入分账见
+> `error-p1-v1` 是 immutable historical/raw-diagnostic contract，只可重放既有 raw bundle 或运行明确不具
+> 资格的 mechanism diagnostic；其 derived comparison/product verdict 已拒绝，禁止用它产生新的 current
+> qualification。未来 error qualification 必须使用新的 contract ID。分账与恢复条件见
 > [performance evidence](../implementation/evidence/performance/benchmarks-error.md)。
 
 ## 0. 职责与依赖位置

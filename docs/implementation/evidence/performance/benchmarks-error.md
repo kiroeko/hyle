@@ -1,57 +1,66 @@
 # error 性能证据
 
-> **error-v3：`BLOCKED / QUALIFIED PRODUCT FAILURE`。** exact candidate `9595724a` / `a828fb4c`
-> 的证据资格与所有 controls 通过，但 shared owning-message copy 的四个 strata 均未通过 5%
-> non-inferiority；TaskGraph success 另有两个 strata 未决。本页下方 2026-07 点值只保留为历史输入，
-> 不是当前模块证书；现行状态只看
+> **error-v3：`BLOCKED / PRODUCT VERDICT WITHDRAWN`。** exact candidate `9595724a` / `a828fb4c`
+> 的 raw evidence、统计和 controls 对原合同有效，但 post-terminal 审计证明合同把 atomic microbench
+> 错标为 replay，且一项 Result peer ownership 不对称；engineering verdict 已更正为 `INCONCLUSIVE`。
+> 本页下方 2026-07 点值只保留为历史输入，不是当前模块证书；现行状态只看
 > [`module status`](../../status.md)。
 
 本页是 [performance 总账](README.md) 的 error 模块详节。稳定设计见
 [error-design](../../../architecture/error-design.md)，用户选型见
-[error guide](../../../user/error.md)。benchmark 只验证消费者会使用的产品形状，不定义 API。
+[error guide](../../../user/error.md)。只有绑定 consumer provenance/materiality 的 benchmark 才能裁决产品；
+benchmark 本身不定义 API，旧 v3 合同也没有取得这项资格。
 
-## error-v3 工程裁决
+## error-v3 证据纠正
 
-工程裁决机固定为 `W1-WIN`，仪器为 `closure-perf-v1`。required comparable workload 对固定
+原 v3 合同当时把工程裁决机固定为 `W1-WIN`，仪器为 `closure-perf-v1`，并声明 required comparable
+workload 对固定
 Abseil commit `81c993af4fb88b3a51829a796df02251fa27102f`，使用 5% material/non-inferiority
 margin。Folly commit `423fd7f8d97fd7bf52fc4c986dfd20320c4de8f9` 只用于 Expected/API/实现查漏；
 C++23 `std::expected` 是标准合同和较弱成本下界，不冒充第三个同合同性能 peer。
 
-| workload family | 正常消费者任务与计费边界 | exact candidate verdict |
+| workload family | 原合同计费边界 | post-terminal verdict |
 |---|---|---|
-| graph replay | 64 个 stable node 的一次 `TaskGraph::evaluate`；全成功与末节点 code-only 失败，对称消费最终结果 | 末错误 `PARITY/PASS`；全成功 `INCONCLUSIVE/UNRESOLVED` |
-| normal diagnostic | 29B owning message construct/shared copy、1/3 层 context、两 frame message Result、54B owning format、fresh-prvalue Update | 6 项 `WIN/PASS`；shared copy `LOSE/FAIL` |
+| graph replay | 64 个 stable node 的一次 `TaskGraph::evaluate`；全成功与末节点 code-only 失败 | raw samples/statistics retained；原合同 computed `PARITY`/`INCONCLUSIVE` 不足以签首席 source consumer |
+| fixed-backing copy micro | 同一个预建 29B owning message backing 的 copy+destroy | raw samples/statistics retained；原合同 computed `LOSE` 只作机制诊断，comparison/product verdict rejected |
+| synthetic diagnostic | message construct、context 1/3、两 frame Result、format、Update | raw samples/statistics retained；`result-message-error` 的原合同 comparison/product verdict 因 ownership 不对称 rejected |
 | boundary diagnostics | 7/256B construct、16 层 context、512B format、runtime-code primitive、native/errno | `NOT_P1_GATING`；只记录 correctness、复杂度或绝对成本 |
 | native detail / payload | HYLE 固定 `{domain,int64}`，Abseil 可携带任意多 payload | `NOT_COMPARABLE`；不得写成同能力胜负 |
 
-资格流程至多一次 probe、一次 fresh n=15 `qualify-platform`；只有统一仪器停止规则允许时才自动进入
+原 v3 资格流程至多一次 probe、一次 fresh n=15 `qualify-platform`；只有统一仪器停止规则允许时才自动进入
 n=31。candidate/peer/source/build/artifact identity、真实 batch timer-floor、双执行顺序、placement、
 A/A 与 semantic setup oracle 必须同时完整；任一 required 门缺失即保持 `INCONCLUSIVE`/`BLOCKED`，
 不能换 benchmark 姿势或放宽 margin。shared 交付只做绝对回归与 package/correctness 验证，不与
 静态 peer 结果混成算法胜负。
 
-exact candidate 已完成允许的 fresh clean n=15。全部 A/A、delta、timer-floor、placement、semantic、
-artifact/build identity 与 error-codegen controls 通过，统一 verifier 返回 `QUALIFIED`；因此以下是有效
-产品裁决，不是“仪器没资格”或单次点值：
+exact candidate 已完成 fresh clean n=15。全部 A/A、delta、timer-floor、placement、semantic、
+artifact/build identity 与 error-codegen controls 通过，统一 verifier 返回 `QUALIFIED`；这证明 raw
+样本忠实执行了原合同，不证明原合同具备 consumer/materiality 资格。下表必须按“原合同的统计观察”
+阅读：
 
-| required comparable workload | HYLE / Abseil 中位 ns | exact verdict | 5% NI gate |
+| 原合同 workload | HYLE / Abseil 中位 ns | original-contract computed verdict | 当前产品解释 |
 |---|---:|---|---|
-| `taskgraph-active-success-64` | 79.119 / 76.388 | `INCONCLUSIVE` | `UNRESOLVED`；4 strata 中 2 PASS、2 UNRESOLVED |
-| `taskgraph-active-last-error-64` | 78.644 / 77.716 | `PARITY` | `PASS` |
-| `status-message-29` | 23.821 / 48.054 | `WIN` | `PASS` |
-| `status-message-copy` | 11.841 / 10.923 | `LOSE` | `FAIL`；4 strata ratio 0.920057/0.925041/0.920034/0.920214 |
-| `status-context-1` | 41.891 / 265.869 | `WIN` | `PASS` |
-| `status-context-3` | 74.750 / 879.920 | `WIN` | `PASS` |
-| `result-message-error` | 10.892 / 21.971 | `WIN` | `PASS` |
-| `status-format-54` | 34.599 / 43.811 | `WIN` | `PASS` |
-| `status-update-prvalue` | 48.148 / 54.826 | `WIN` | `PASS` |
+| `taskgraph-active-success-64` | 79.119 / 76.388 | `INCONCLUSIVE` | 4 strata 中 2 PASS、2 UNRESOLVED；需要 source-consumer 贡献合同 |
+| `taskgraph-active-last-error-64` | 78.644 / 77.716 | `PARITY` | 可保留的 component observation，不能单独签首席消费者 |
+| `status-message-29` | 23.821 / 48.054 | `WIN` | diagnostic observation |
+| `status-message-copy` | 11.841 / 10.923 | `LOSE` | raw samples/statistics retained（4 strata ratio 0.920057/0.925041/0.920034/0.920214）；mechanism diagnostic；comparison/product verdict rejected |
+| `status-context-1` | 41.891 / 265.869 | `WIN` | diagnostic observation |
+| `status-context-3` | 74.750 / 879.920 | `WIN` | diagnostic observation |
+| `result-message-error` | 10.892 / 21.971 | `WIN` | raw samples/statistics retained；comparison/product verdict rejected：HYLE move，peer lvalue copy |
+| `status-format-54` | 34.599 / 43.811 | `WIN` | diagnostic observation |
+| `status-update-prvalue` | 48.148 / 54.826 | `WIN` | diagnostic observation |
 
-最小 timer-floor multiple 为 53.96x。candidate 采用成熟 aligned low-bit tag 后 shared-copy 循环与 peer
-逐指令同形，真实 TaskGraph 也以显式 move 消除了生命周期结束局部值的无意义复制；这些仍是合理产品
-修复。但 shared-copy material 差距继续存在，说明原 codegen 假设不足，不能据此再猜第二个产品缺陷。
-合同目前没有辨识动态 heap backing 的实际地址/cache-line/allocation-order sensitivity；先由独立仪器
-task 补充不改变 charged phase 的 fail-closed 因果诊断，才可能创建下一 error round。已有 material
-`FAIL` 禁止单独升级 n=31、换 workload、放宽 margin 或继续调产品。
+最小 timer-floor multiple 为 53.96x，所以 fixed fixture 的 copy 差距不是随机噪声。但该行反复复制同一
+cache-hot backing，HYLE/peer allocation 顺序固定，合同没有记录 heap address/cache-line/page offset；
+它只能提出 heap size-class/data-placement 或产品机制的归因问题。candidate 的 mature low-bit tag 和
+真实 TaskGraph ownership transfer 仍是合理产品修复，不因证据分类错误而回滚。
+
+更严重的是 `result-message-error`：HYLE 从临时 `Result` move error，peer 却从命名 lvalue 调用
+`result.status()`，即使固定 Abseil 已有 `status() &&`。absolute/raw samples retained；原合同 computed
+约 2x `WIN` 及其 comparison/product verdict rejected。v3 的
+统计仪器正确执行了错误合同；当前不得用任何一侧点值宣布产品胜负，也不得以 isolated copy 改产品。
+恢复条件是新的 source-primary consumer 合同、自然且对称的 ownership、保真 workload/trace 分布和
+material contribution budget；microbench 只作机制诊断。
 
 ## 历史证据（2026-07-29，三平台 n=15）
 
@@ -158,19 +167,26 @@ terminal candidate 绑定 HYLE `9595724a0a284cbc3502f1c9e9e3ec9c9cf9e2b9` / tree
 `C:/hyle-scratch/error-v3-final-win-perf-evidence`；manifest/summary SHA-256 分别为
 `4cd3627d134be6d44835c7ac976554a3f65d963532af155fd28b21044a728b85` /
 `68dc98addc69a00007a1be0f88a605a495d3c4fa120a666646fa1c5b817740c6`；统一 verifier 为
-`QUALIFIED`、`paths_verified=true`，产品 engineering gate 为 `FAIL`。该本机路径不是发布 artifact；
-task receipt 记录三平台 correctness/delivery、二进制 hash 与恢复条件。
+`QUALIFIED`、`paths_verified=true`，manifest 的 original-contract computed gate 为 `FAIL`。post-terminal
+consumer/ownership 审计保留 raw samples/statistics，拒绝 derived comparison/product verdict，并把当前
+engineering state 更正为 `INCONCLUSIVE`；
+原 manifest 和 hash 不倒写。该本机路径不是发布 artifact；task receipt 记录三平台 correctness/
+delivery、二进制 hash、审计 finding 与恢复条件。
 
 被驳回 replacement 历史绑定 HYLE `a4ba5a14cdd46a7b9c6e33c06211ce2d6c7a760f` / tree
 `4a2ca7977241080a41b5eb5ab79a6fd37d71db04`、Abseil
 `81c993af4fb88b3a51829a796df02251fa27102f` / tree
 `b8e8bdc41d9f13b8894b4540b910ed8dc2ced66c`，contract hash 为
 `82cf325480a85d7ea76e17fcf526d12c36619b7089ec81d4c947fa56aea215d7`。W1-WIN retained evidence 位于
-`C:/hyle-scratch/error-v3-replacement-win-perf-evidence`；统一 verifier 为 `QUALIFIED`、
-`qualification_gate=PASS`、`performance_gate=FAIL`。这个路径是本机可追溯证据，不是可发布 artifact；
+`C:/hyle-scratch/error-v3-replacement-win-perf-evidence`；统一 verifier 的 original-contract computed
+fields 为 `qualification_gate=PASS`、`performance_gate=FAIL`、`QUALIFIED`。这个路径是本机可追溯证据，
+不是当前产品 qualification 或可发布 artifact；
 task manifest 另记二进制 hash 和跨平台结果。
 
-本轮只接受由冻结 `bench/contracts/error-p1-v1.json`、`closure-perf-v1` runner 与 candidate manifest
-共同生成的证据，并已归档 machine/affinity/power、source/peer/build/binary hash、双 order/placement、
-timer-floor、A/A 与 raw samples。旧专用 runner 命令不是 v3 入口，不能从历史参数手工拼出证书；
-terminal `FAIL` 也不能由旧历史 WIN 覆盖。
+原 v3 round 当时只接受由冻结 `bench/contracts/error-p1-v1.json`、`closure-perf-v1` runner 与 candidate
+manifest 共同生成的证据，并归档 machine/affinity/power、source/peer/build/binary hash、双 order/
+placement、timer-floor、A/A 与 raw samples。该 contract 现为 immutable historical/raw diagnostic，只能
+重放既有 bundle 或运行明确不具资格的 mechanism diagnostic，禁止产生新的 current qualification；未来
+error qualification 必须使用新 contract ID，
+并增加受检的 consumer provenance/materiality 与 ownership topology，不能再由 workload 自报
+`tier=replay` 获得产品门。

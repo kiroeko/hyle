@@ -33,6 +33,16 @@ size distribution 上，操作 X 相对 peer Y 的同合同路径通过 5% non-i
 从真实消费者抽取 replay 时，必须保留数据分布、并发、生命周期、冷热状态和计费边界。人为重复
 单指令会把固定开销无限放大，不能冒充消费影响。
 
+统一合同中的证据 `tier` 与 `gate_role` 正交：mechanism 永远是 diagnostic；consumer/replay 也可以
+显式作为 diagnostic，用于保真度或归因而不抬高为产品门。只有 `consumer/replay + product` 才可进入
+产品聚合，并须具名 consumer、哈希绑定 retained provenance、逐侧陈述 candidate/peer ownership 与
+equivalence，以及用 frequency/value/unit/budget/denominator/derivation 冻结 material contribution。
+这些是 structured declarations 和审查输入，不是机器生成的真实性证明；独立 reviewer 仍须核对引用
+确实对应自然 consumer、相同 value category/生命周期和可防御的调用频率或 trace weight。
+声明必须成组出现；当前 NI 产品 adapter 只接受 `COMPARABLE` product 行。runner validators 是 bundle
+全局完整性门，某条 diagnostic/mechanism 特有的风险必须归到该行 control 或独立 diagnostic contract，
+不得借全局 validator 间接取得产品否决权。
+
 模块的工程性能级别与证据形状相关但不相同：`P0` 以复杂度、资源和适用 codegen/size 结构门
 收口；`P1` 必须在锁定性能机上以正常 workload/replay 通过预声明工程门，存在同合同 peer 时还须
 通过 non-inferiority，默认 material margin 为 5%；`P2` 必须由真实 consumer/trace KPI 和贡献预算

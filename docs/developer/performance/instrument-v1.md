@@ -63,7 +63,8 @@ Formal fail closed。
 
 正式 experiment contract 至少冻结：
 
-- stable experiment/module/claim/workload ID 与证据 tier；
+- stable experiment/module/claim/workload ID、证据 `tier` 与正交的
+  `gate_role=product|diagnostic`；
 - candidate target、delivery、peer revision/config；
 - semantic contract 与 comparability；
 - metric、unit、direction、输入分布和规模；
@@ -77,6 +78,26 @@ Formal fail closed。
 
 运行前生成 immutable experiment-lock hash。CLI 只允许提供 checkout/build/output/peer 路径和
 machine profile，不能覆盖 pair、margin、规模或停止条件。
+
+`tier` 说明测量形状，`gate_role` 说明它是否参加产品裁决，两者不能互相冒充。当前新运行要求每个
+workload 显式声明 `gate_role`：`mechanism` 只能是 `diagnostic`；`consumer/replay + diagnostic`
+可以保留归因、保真度或绝对成本结果而不承担产品门；只有 `consumer/replay + product` 才进入产品
+non-inferiority 聚合，且当前 NI adapter 要求这类 product 行为 `COMPARABLE`；无同合同 peer 的绝对
+consumer budget 必须使用以后具名的 adapter，不能把 `NOT_COMPARABLE` 行塞进当前产品聚合。product
+行还必须冻结以下 structured declarations：具名 `consumer_key`、由仓库
+相对路径与 SHA-256 绑定的 retained provenance、分别陈述 candidate/peer/equivalence 的
+`ownership_topology`，以及含 numeric `frequency/value/budget`、`unit`、`denominator` 和非空
+`derivation` 的 `material_contribution`。这些字段使审查项不能被省略，但不机器证明语义真实；冻结前的
+独立审查和适用 validator 仍负责确认 consumer、双边 ownership 与 material 推导有效。
+四项 product declaration 是一个原子记录，不能只填其中几项；manifest 同时保存合同中的仓库相对路径
+和 retained file hash，deep verify 会拒绝路径身份或内容漂移。
+P1 的 denominator/value 可以表达组件 replay fidelity 与预冻结 non-inferiority 预算；这不会把 P1
+自动抬成端到端消费者 KPI。P2 仍须按性能证据标准绑定真实 consumer/trace KPI 与贡献预算。
+
+旧 v1 contract 可以缺少这些可选字段，以保持既有 contract hash 和 manifest 的只读 `verify`。新
+`probe/qualify-platform` 总会写入 `consumer-evidence-v1` policy 及逐项 eligible/excluded workload；
+缺少显式角色或任一 product 行消费声明时，qualification 为 `DIAGNOSTIC`，聚合
+`performance_gate=INCONCLUSIVE`，不能写成产品 `FAIL`。
 
 ## 5. 通用核心与插件边界
 
@@ -94,6 +115,11 @@ machine profile，不能覆盖 pair、margin、规模或停止条件。
 measurement adapter 只把 nanobench/结构化 telemetry 转为 Observation。platform backend 只负责
 machine probe、affinity/QoS 与 artifact 身份。模块 plugin 只能声明 target、row mapping 和确实特有
 的 codegen、DSE、资源守恒 validator。
+
+runner validator 是整个 artifact bundle 的全局完整性门，不存在“只影响某一 diagnostic row”的隐含
+scope；所以它只能检查 build/artifact/合同整体。某个 mechanism 或 diagnostic replay 特有的风险应放在
+该 workload 的 required control，或拆到独立 diagnostic contract，不能用一个可能失败的全局 command
+validator 间接否决无关产品行。
 
 ## 6. CPU v1 controls 与按风险扩展
 
@@ -141,12 +167,15 @@ instrument version；模块任务内不能移动冻结终点。`probe` 的公共
 重算 build/artifact gates；并从 registry 与 host probe 重算机器门。每次 child 都有 runner 生成的唯一
 `run_nonce`，索引拒绝重复 nonce 或完全相同的日志字节，因此复制一份 n=1 输出不能伪装成 n=15。一个
 `DIAGNOSTIC` manifest 可以完整通过 `verify`；这只证明证据未漂移且裁决可复现，不会把它升级为性能
-`QUALIFIED`。
+产品资格。CLI 因此同时输出机械 `qualification`、`product_gate_policy`、
+`current_certification_policy_eligible` 和 `product_interpretation`；历史 manifest 即使机械重放为
+`QUALIFIED`，后两项仍明确为 `false` / `INCONCLUSIVE`。
 
 n=1 probe 不读取合同的 n=15 作为缩小版统计，也不会因结果好看升级资格。`qualify-platform` 固定先跑
 完整 n=15；升级 n=31 只允许合同预声明、n=15 全部 required controls 已通过，而且 comparable
-workload 的 non-inferiority gates 至少一个为统计功效 `UNRESOLVED`、其余均为 `PASS`（不存在
-material `FAIL` 或其他门失败）。n=31
+`gate_role=product` workload 的 non-inferiority gates 至少一个为统计功效 `UNRESOLVED`、其余均为
+`PASS`（不存在 material `FAIL` 或其他门失败）。`mechanism` 和其他 diagnostic 行仍完整采样、保存和
+报告，但它们的 verdict 与专属 controls 不触发 n=31，也不进入产品 `performance_gate`。n=31
 必须重新运行完整产品 strata 与 controls，并以新 31 个样本替代统计输入；不得向原 15 个追加、挑样或
 跑到刚好通过。证据仍保留 n=15 完整原始阶段；`verify` 会独立重算 n=15 controls、summary 与
 内建 build/artifact gates，并把 command validator 的日志 hash、整数 exit code 和 gate 绑定后重放
@@ -181,7 +210,10 @@ Formal toolchain，因此它们当前只能走 engineering；这些缺项必须 
 
 `certify` 不重新跑 benchmark；它只接受 Formal manifests，复核相同 candidate/contract/peer 身份、
 登记主机绑定与不同 `physical_host_key`，再覆盖合同要求的全部 certification platforms。工程
-`QUALIFIED` manifest 不能被事后改名成 Formal。
+`QUALIFIED` manifest 不能被事后改名成 Formal。Formal comparable gate 只组合当前 policy 中明确
+eligible 的 `consumer/replay + product` 行；mechanism/diagnostic 行即使是 `COMPARABLE` 也不能让证书
+PASS 或 FAIL。没有当前 policy 标记的历史 manifest 仍可按原停止规则 `verify`，但新的 `certify`
+明确拒绝它，避免旧的自报 replay 绕过消费钥匙。
 
 ### 8.1 信任与保留边界
 

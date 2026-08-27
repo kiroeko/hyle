@@ -1,11 +1,20 @@
 # error v3 重构与收口记录
 
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+
 <!-- MODULE CLOSURE RECEIPT: BLOCKED -->
 
-> 本页只记录 `error-v3` 这一轮的冻结合同、事实和证据。权威状态是
+> **记录性质：`HISTORICAL TASK EVIDENCE`。** 本页只记录 `error-v3` 这一轮的冻结合同、事实和证据，
+> 不单独声明当前状态。权威状态是
 > [`module-status.json`](../../module-status.json)；旧 error task 与性能页均为历史输入，不能替代本轮
 > 结论。本轮已在 candidate `9595724a` 终止为 `BLOCKED`；下文 `SCOPED/AUDITED/CANDIDATE`
 > 标题保留的是阶段历史，不表示当前仍活动。
+>
+> **2026-08-27 post-terminal evidence correction：**后续审计发现本轮把固定 backing 的一次
+> retain/release microbench 错标为 consumer replay，并在另一 required row 中给予 HYLE rvalue move、
+> Abseil lvalue copy 的不对称 ownership。`raw samples/statistics retained`；原合同据此派生的 comparison/
+> product verdict rejected。当前 blocker 是缺少有效的首席 source-consumer 性能合同，而不是已证明产品
+> 慢 8%。
 
 ## Closure card（`SCOPED`）
 
@@ -67,7 +76,11 @@
   MultiError、reference-result、WinSock/任意 category adapter 和 Native FFI 均可接受地留在 negative
   space，不因参考库 API 数量或 LOC 扩面。
 
-## Capability / gap ledger（`AUDITED`，已冻结）
+## Capability / gap ledger（历史 `AUDITED` 合同；性能分类已被下文纠正）
+
+本表保留 terminal round 当时冻结的判断，供追溯产品改动来源；其中 `ERR-PERF-*` 的 consumer/
+replay 资格不是现行结论，必须连同文末 post-terminal correction 阅读。功能、API、正确性与交付行
+仍有效。
 
 | ID | requirement class | demand kind | exact consumer / peer / standard source | normal shape | owner | ownership/failure/concurrency | complexity/resource target | verdict | severity | verification / negative space |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -87,8 +100,8 @@
 | ERR-PERF-BOUNDARY-01 | MUST | invalid evidence classification | 7/256B construct、16-layer context、512B format、runtime-code primitive、native/errno rows | correctness/机制/边界诊断，不冒充 P1 consumer 总分 | error tests/diagnostic bench | native 与 Abseil payload 非同合同；lvalue x16 是刻意保留历史 | 结构与绝对成本可记录，不形成同能力胜负 | `FIX` | P0 | 从 required P1 contract 移出；保留 bounded diagnostic coverage |
 | ERR-PERF-VALIDATOR-01 | MUST | instrument gap | unified runner 与旧专用 runner 的窄结构检查 | actual-object DCE/call-edge、placement authenticity、semantic setup oracle | error benchmark plugin | validator 不改变 workload/统计；SourceLocation 为空；输出语义/长度锁定 | fail closed；contract hash/peer/product/artifact 全绑定 | `FIX` | P1 | module command validators；不复活旧 3% runner/统计核心 |
 | ERR-PERF-RESULT-SETUP-01 | MUST | candidate red-team defect | `result-message-error` 宣称 callback 外预建 error，首个候选却通过函数内 lazy static accessor 取得 | 两侧 owning error 在 measured callback 外显式构造，并沿两 frame 以 const reference 传入 | error benchmark | 不计费 lazy initialization、guard 或隐藏 accessor；两侧参数拓扑对称 | 不改变产品，只校正 charged phase | `FIX` | P1 | replacement validator/构建；拒绝首个 candidate 与其已启动样本 |
-| ERR-PERF-TAG-01 | MUST | qualified consumer + peer/codegen defect | shared owning-message copy；固定 Abseil low-bit inline representation | OK/code-only 都是 low-bit tagged inline rep，aligned heap pointer 的 low bit 为 0 | error public | 不改变一字 carrier、ownership、分配或公开能力；内部 C++ ABI 尚未发布 | retain/release 判别 O(1)，MSVC 正常复制循环与 peer 使用同形 bit-test | `FIX` | P1 | replacement n=15 四 strata 均约慢 8%；汇编为两次 range-compare，对手为 bit-test；采用成熟 tagged-pointer 不增加 benchmark metadata |
-| ERR-PERF-TRANSFER-01 | MUST | qualified direct-consumer/codegen defect | `TaskGraph::evaluate` 的局部 `Status` 在失败即返回 | 生命周期结束的局部错误显式 move；外部/member lvalue 仍由通用宏复制 | graph integration + replay | 不改变 `HYLE_RETURN_IF_ERROR` 的 lvalue-copy/rvalue-move 合同；失败后不再读取局部 | success loop 与直接 `if/return` 同形；heap error 不做无意义 retain/release | `FIX` | P1 | replacement success 四 strata 约慢 6%；MSVC 133B lvalue 形状改为 104B move 形状，与 direct 相同；同步真实 TaskGraph 与 replay |
+| ERR-PERF-TAG-01 | MUST | original-contract qualified consumer + peer/codegen defect（历史） | shared owning-message copy；固定 Abseil low-bit inline representation | OK/code-only 都是 low-bit tagged inline rep，aligned heap pointer 的 low bit 为 0 | error public | 不改变一字 carrier、ownership、分配或公开能力；内部 C++ ABI 尚未发布 | retain/release 判别 O(1)，MSVC 正常复制循环与 peer 使用同形 bit-test | `FIX` | P1 | original-contract computed：replacement n=15 四 strata 均约慢 8%；汇编为两次 range-compare，对手为 bit-test；采用成熟 tagged-pointer 不增加 benchmark metadata |
+| ERR-PERF-TRANSFER-01 | MUST | original-contract qualified direct-consumer/codegen defect（历史） | `TaskGraph::evaluate` 的局部 `Status` 在失败即返回 | 生命周期结束的局部错误显式 move；外部/member lvalue 仍由通用宏复制 | graph integration + replay | 不改变 `HYLE_RETURN_IF_ERROR` 的 lvalue-copy/rvalue-move 合同；失败后不再读取局部 | success loop 与直接 `if/return` 同形；heap error 不做无意义 retain/release | `FIX` | P1 | original-contract computed：replacement success 四 strata 约慢 6%；MSVC 133B lvalue 形状改为 104B move 形状，与 direct 相同；同步真实 TaskGraph 与 replay |
 | ERR-DOC-01 | MUST | stale current documentation | architecture/user/performance pages | 当前能力选择、成本、pitfalls、negative space、peer pins 与本轮证据 | docs | architecture 讲设计，user 讲用法，evidence 只讲当前结果 | 不复制历史 task 数字 | `FIX` | P0 | 去掉 `NOT_REVIEWED_V2`；旧页明确历史或替换为当前证据 |
 | ERR-REF-01 | GENERAL | mature-library gap scan | Abseil `StatusOr<T&>`；Folly legacy `Expected` 拒绝引用、新 `result` 有 deep-const | 当前用 `reference_wrapper`/pointer/span/string_view | future error | borrowed value 不延长 owner lifetime | 只有具名 non-null borrow consumer 才重开 | `DEFER` | P2 | 不为 API 数量另造 `expected` |
 | ERR-DETAIL-01 | GENERAL | backend gap scan | future Metal/HIP/foreign category | 新稳定 domain 或第二 typed detail | owning backend/future error | enum 防碰撞；跨 DLL category pointer 不进入 carrier | 不预装 map/第二 block | `DEFER` | P2 | 真实 backend/两个同时恢复字段触发 |
@@ -110,23 +123,23 @@
 - 本轮冻结 `FIX` 集：`ERR-DEFAULT-01`、`ERR-INCLUDE-01`、`ERR-WORDING-01`、
   `ERR-PERF-REPLAY-01`、`ERR-PERF-NORMAL-01`、`ERR-PERF-BOUNDARY-01`、
   `ERR-PERF-VALIDATOR-01`、`ERR-PERF-RESULT-SETUP-01`、`ERR-PERF-TAG-01`、
-  `ERR-PERF-TRANSFER-01`、`ERR-DOC-01`。setup 项来自首个 candidate 的独立红队；后两个产品项只由
-  replacement 的合格 n=15 与唯一 codegen 诊断加入，范围限于成熟 low-bit tag 和直接消费者的局部所有权
-  转移，不授权新增 API、metadata 或 workload。
+  `ERR-PERF-TRANSFER-01`、`ERR-DOC-01`。setup 项来自首个 candidate 的独立红队；后两个产品项是原合同
+  当时按 n=15 computed output 与唯一 codegen 诊断加入的历史施工来源，范围限于成熟 low-bit tag 和直接
+  消费者的局部所有权转移，不授权新增 API、metadata 或 workload，也不代表当前产品性能裁决。
 - 相邻模块 backlog：`IO-ADOPT-01`、`SC-ADOPT-01`；不得据此替尚未收口模块签署 adoption。
 - 审计身份：HYLE baseline 如 closure card；Abseil/Folly pins 如 closure card；三路只读审计分别覆盖
   peer/能力与复杂度、全库消费者/交付/FFI、性能合同/仪器。Boost superproject 的 System/LEAF/
   Outcome 子模块未初始化，未冒充本轮可读证据。
 
-## Current candidate
+## Historical terminal candidate
 
-唯一产品性能假设形成的新 candidate：
+原轮唯一产品性能假设当时形成的 terminal candidate：
 
 - commit：`9595724a0a284cbc3502f1c9e9e3ec9c9cf9e2b9`
 - tree：`a828fb4cdf1cd7f72aaea098b44fd42e0d966d2d`
 
-它保持公开 API、8B carrier、heap metadata、错误能力和 9 项性能合同不变，只实施两个由 replacement
-合格失败和唯一 codegen 诊断共同证明的修复：借用成熟 peer 的 low-bit inline tag（OK/code-only 为
+它保持公开 API、8B carrier、heap metadata、错误能力和 9 项性能合同不变，只实施两个由原合同当时的
+computed failure 与唯一 codegen 诊断触发的修复：借用成熟 peer 的 low-bit inline tag（OK/code-only 为
 odd inline、aligned heap pointer 为 even），并在真实 TaskGraph 与 replay 中显式移动失败即返回的局部
 `Status`。0 继续只是内部 allocation failure sentinel，`StatusAccess::adopt(0)` fail-fast；moved-from
 仍为 code-only `Unknown`。这是 header-inline semantic ABI 变化，必须使用匹配版本 header/artifact 并
@@ -134,10 +147,14 @@ odd inline、aligned heap pointer 为 even），并在真实 TaskGraph 与 repla
 
 该产品实现保留：low-bit tag 是成熟的 aligned-pointer 不变量，移除了“heap 地址必然大于某个小整数”
 这一非语言保证，并使常态判别更简单；TaskGraph 的显式 move 则准确表达失败即返回局部值的所有权。
-但后续 P1 结果证明，这两个修复并没有解决 shared-copy 的全部 material 差距。因此保留架构修复，
-同时不把它写成性能修复成功，也不再授权第二个产品猜测。
+原合同的后续 raw observations 显示 fixed-fixture shared-copy ratio gap 仍存在；它不证明该差距对首席
+consumer material。因而保留架构修复，同时不把它写成性能修复成功，也不再授权第二个产品猜测。
 
-## Candidate verification manifest
+## Historical candidate verification manifest（原合同 raw/computed 记录）
+
+本节冻结 exact artifact、raw samples/statistics 与 original-contract computed fields，供 hash replay 和
+审计。raw samples/statistics retained；由旧 workload 分类派生的 comparison/product verdict rejected，
+不得把下表单独摘作当前资格或产品 `FAIL`。
 
 - identity：HYLE `9595724a0a284cbc3502f1c9e9e3ec9c9cf9e2b9` / tree
   `a828fb4cdf1cd7f72aaea098b44fd42e0d966d2d`；Abseil
@@ -168,9 +185,10 @@ W1-WIN P1 retained evidence 位于
 artifact SHA-256 分别为 `43a9e28636a24a1a6179bd47e6d90bb772ab5a7ae8cab08ad4ca7b3298686926` /
 `df54840477ee6b5c1f0f146ed01d2114244c89493d5ee25ffeb541e47e31e3fa`。统一 verifier 返回
 `paths_verified=true`、`qualification=QUALIFIED`；A/A、delta 5/10、timer-floor、placement、
-artifact/build/semantic/codegen controls 全部 `PASS`，所以这是有效产品失败，不是无资格样本。
+artifact/build/semantic/codegen controls 全部 `PASS`。这证明 raw samples 忠实执行了原合同，不证明原合同
+具备 consumer/materiality 产品资格；以下 WIN/LOSE/PASS/FAIL 均为 original-contract computed output。
 
-| required comparable workload | HYLE / peer 中位 ns | combined exact | 5% non-inferiority |
+| 原合同声明的 workload | HYLE / peer 中位 ns | original-contract computed exact | original-contract computed 5% NI |
 |---|---:|---|---|
 | `taskgraph-active-success-64` | 79.119 / 76.388 | `INCONCLUSIVE` | `UNRESOLVED`（4 strata 中 2 PASS、2 UNRESOLVED） |
 | `taskgraph-active-last-error-64` | 78.644 / 77.716 | `PARITY` | `PASS` |
@@ -182,10 +200,11 @@ artifact/build/semantic/codegen controls 全部 `PASS`，所以这是有效产�
 | `status-format-54` | 34.599 / 43.811 | `WIN` | `PASS` |
 | `status-update-prvalue` | 48.148 / 54.826 | `WIN` | `PASS` |
 
-最小 timer-floor multiple 为 53.96x，不能用亚纳秒或计时器分辨率解释 shared-copy。冻结规则也禁止
-在已有 material `FAIL` 时从 n=15 自动升级 n=31。
+原 runner 的最小 timer-floor multiple 为 53.96x，因此 fixed-fixture raw gap 不是 timer-floor 噪声。
+按原合同 stopping rule，当时 computed `FAIL` 也禁止从 n=15 自动升级 n=31；这两项都不构成当前
+产品 `FAIL`。
 
-## Rejected candidates
+## Historical rejected candidates
 
 第二个（replacement）candidate 为：
 
@@ -195,10 +214,12 @@ artifact/build/semantic/codegen controls 全部 `PASS`，所以这是有效产�
 它在首个候选的冻结产品形状上，只修正 `ERR-PERF-RESULT-SETUP-01`：两侧 owning error 在 measured
 callback 外显式构造，沿两个 noinline frame 以 `const&` 传入；validator 使用内容不同的外部 sentinel，
 证明 frame 消费传入 fixture，而不是隐藏 static/accessor。产品代码、公开 API、layout 与性能合同均未改。
-该 candidate 已由 W1-WIN 合格 n=15 驳回：9 项中 7 项 WIN、末节点 code-only error 通过非劣门，但
+原合同当时由 W1-WIN n=15 computed output 驳回该 candidate：9 项中 7 项 WIN、末节点 code-only error
+通过非劣门，但
 `taskgraph-active-success-64` 四 strata 的候选优势中位比为 0.940--0.942，
 `status-message-copy` 为 0.917--0.923，均未通过 5% non-inferiority gate。A/A、delta、timer-floor、
-placement、semantic 与 error-codegen controls 全部通过，不能把结果解释为仪器噪声。
+placement、semantic 与 error-codegen controls 全部通过，说明 raw samples 不是仪器随机噪声；旧分类所
+派生的 candidate/product verdict 已被文末 correction 拒绝。
 
 首个候选已被拒绝：
 
@@ -210,32 +231,36 @@ placement、semantic 与 error-codegen controls 全部通过，不能把结果�
 include 和过时 FFI/C bridge 措辞；补回 UTF-8、embedded-NUL、native detail、context 与 caller-buffer
 格式化的完整 C++ 字节旅程；重写 architecture/user/performance 当前文档。
 
-性能合同从会被 DCE 或落入 timer floor 的常量/原语矩阵，收缩为 9 个正常消费者 replay：64 节点
-active function-pointer stream 的全成功/末节点 code-only failure，以及 29B message construct/copy、
-context 1/3、两 frame message Result、54B owning format、fresh-prvalue Update。旧 short/boundary/native
-行仍可作诊断，不进入 P1 verdict。窄 validator 对同一 primary/placement binary 的实际 replay 函数执行
-64-call/checksum/语义/source-location oracle，并验证 noinline identity 与 placement 真实改变；统一统计
-核心没有分叉。
+原合同当时把 9 行标作“正常消费者 replay”：64 节点 active function-pointer stream 的全成功/末节点
+code-only failure，以及 29B message construct/copy、context 1/3、两 frame message Result、54B owning
+format、fresh-prvalue Update。post-terminal correction 后，copy 行只具 mechanism-micro 资格，Result 行
+存在 ownership 不对称；其余 synthetic rows 也没有自动取得首席 consumer provenance/materiality。窄
+validator 忠实执行原合同声明的函数并验证 64-call/checksum/语义/source-location oracle、noinline identity
+与 placement 真实改变；它没有验证上述 consumer/ownership 合同，统一统计核心本身没有分叉。
 
-候选前的 dirty probe 只证明合同可运行，不是候选证据：9/9 workload 通过 batch=1 的 20x timer-floor
+原合同下候选前的 dirty probe 只证明合同可运行，不是候选证据：9/9 workload 通过 batch=1 的 20x timer-floor
 门（最小 55.43x，最大 391.17x），semantic/call-topology/placement validator 通过；n=1 的 A/A 与 delta
 控制按设计保持 FAIL/DIAGNOSTIC。
 
-独立红队随后发现 `result-message-error` 虽在合同中声明 prebuilt error 位于 callback 外，首个实现却由
+原轮独立红队随后发现 `result-message-error` 虽在合同中声明 prebuilt error 位于 callback 外，首个实现却由
 measured leaf 内的函数局部 lazy static accessor 取得；首次初始化和每次 guard/accessor 都没有列入
 charged phases。即使一次初始化会摊薄、两侧也近似对称，这仍是证据合同违约，不能用性能点值解释掉。
 已启动的 clean n=15 立即终止且全部作废；它不消耗 replacement candidate 的唯一 fresh qualification。
 replacement 必须显式在 callback 外构造两侧 error，并以对称 const reference 沿两 frame 传入。
 
-## Rejected replacement verification manifest
+## Historical rejected replacement verification manifest（原合同 raw/computed 记录）
+
+本节的 `QUALIFIED`/`PASS`/`FAIL` 是原合同字段，不是当前产品资格；raw samples/statistics retained，
+derived comparison/product verdict rejected。
 
 - identity：HYLE `a4ba5a14cdd46a7b9c6e33c06211ce2d6c7a760f` / tree
   `4a2ca7977241080a41b5eb5ab79a6fd37d71db04`；Abseil
   `81c993af4fb88b3a51829a796df02251fa27102f` / tree
   `b8e8bdc41d9f13b8894b4540b910ed8dc2ced66c`；两侧 clean。
 - W1-WIN：contract `82cf325480a85d7ea76e17fcf526d12c36619b7089ec81d4c947fa56aea215d7`；
-  `qualification_gate=PASS`、`performance_gate=FAIL`；统一 verifier 返回 `QUALIFIED`，说明证据有效但产品
-  未通过工程性能门。primary artifact `8d9179d608976f02582c414e0d40f77439bd1786423ea3ec19cded04322b71a1`，
+  `qualification_gate=PASS`、`performance_gate=FAIL`；统一 verifier 返回 `QUALIFIED`。这些是
+  original-contract computed fields，只证明 bundle identity/integrity 与声明的执行门；不证明产品未通过
+  当前工程性能门。primary artifact `8d9179d608976f02582c414e0d40f77439bd1786423ea3ec19cded04322b71a1`，
   placement artifact `85def6f9e3018a8b0e38bdf8566f3f03f604f942d2827ba9b5a66babe963d533`。
 - M1-MAC：同一 identity 的 Release/Debug WERROR、68 gtests、header 与 source/shared/static relocated
   consumers 通过；shared DSO 只有 18 个 C++ exports、旧 C error symbols 为 0；P1 semantic/placement
@@ -246,27 +271,35 @@ replacement 必须显式在 callback 外构造两侧 error，并以对称 const 
   low-bit inline tag 的临时编译使两循环逐指令同形。TaskGraph 局部 lvalue 传播为 133B，并在 heap
   failure 做 retain/release；显式转移该生命周期结束的局部后为 104B，与直接 `if/return` 同形。
 
-## 独立红队
+## Original red-team finding（已被 post-terminal correction 取代）
 
-产品/API、correctness、delivery 与文档审计通过。性能证据审计重算并核对 candidate/peer/contract/
+以下红队结论准确重放了原 artifact/raw statistics，但遗漏 consumer provenance/materiality 与 Result
+value-category 对称性；只作历史审计记录。产品/API、correctness、delivery 与文档审计通过。性能证据
+审计重算并核对 candidate/peer/contract/
 artifact identity、90/90 raw logs、summary/observations/controls/validator hashes，结果一致；统一 verifier
-仍为 `QUALIFIED`。红队确认 low-bit tag 与 TaskGraph ownership transfer 都不是 benchmark-only 形状，
+按原合同仍为 `QUALIFIED`。红队当时确认 low-bit tag 与 TaskGraph ownership transfer 都不是
+benchmark-only 形状，
 但汇编循环同形后 shared-copy 仍约 0.92，只能证明先前 codegen 假设不足，不能推出第二个产品缺陷，
 也不能在 controls 全过时宣布仪器失效。
 
-当前合同没有辨识动态 heap backing 的实际 allocation 地址、cache-line placement 与 allocation-order
-sensitivity。它是下一轮仪器任务需要补的因果诊断，不授权本轮改变 copy/destruct charged phase、公开
-API/layout/metadata、workload 或 5% margin。
+原合同没有辨识动态 heap backing 的实际 allocation 地址、cache-line placement 与 allocation-order
+sensitivity。这是原红队当时提出的下一轮仪器建议，不授权本轮改变 copy/destruct charged phase、公开
+API/layout/metadata、workload 或 5% margin；现已由 `ERR-PERF-CONSUMER-KEY-01` correction 取代，不是
+当前 resume condition。
 
-## Closure decision
+## Original closure decision（已被 post-terminal evidence correction 取代）
+
+以下是原合同下当时实际作出的流程决定，不能作为当前产品性能结论；现行 blocker、owner 与恢复条件
+以文末 correction 和中央 registry 为准。
 
 `BLOCKED`，从 `CANDIDATE` 终止，绑定 `9595724a` / `a828fb4c`。
 
-- 已通过：范围/功能/API/架构、三平台 correctness/sanitizer、直接消费者、source/static/shared 交付、
-  用户与架构文档、独立红队；9 个 P1 workload 中 6 个 `WIN`、1 个 `PARITY`。
-- blocker `ERR-PERF-NORMAL-01 / status-message-copy`：在四个 order/placement strata 均稳定
-  `LOSE` 且 5% NI `FAIL`；`taskgraph-active-success-64` 另有两个 strata `UNRESOLVED`。因此不能签署
-  error 整体工程性能 `PASS` 或 SOTA。
+- 原合同当时记录为通过：范围/功能/API/架构、三平台 correctness/sanitizer、直接消费者、source/static/
+  shared 交付、用户与架构文档、独立红队；9 个 P1 workload 的 original-contract computed output 为
+  6 个 `WIN`、1 个 `PARITY`。
+- 原 blocker `ERR-PERF-NORMAL-01 / status-message-copy`：四个 order/placement strata 的 raw ratios 稳定，
+  原合同 computed `LOSE` 且 5% NI `FAIL`；`taskgraph-active-success-64` 另有两个 strata `UNRESOLVED`。
+  “因此产品不能签署工程性能 `PASS` 或 SOTA”是已被 correction 拒绝的 original-contract product verdict。
 - blocker owner：独立 performance-instrument owner；只有下述新证据成立后，future error resume owner
   才能接手产品工作。
 - 恢复条件：先在独立仪器 task 中，在不改变 shared copy/destruct charged phase、产品 API/layout/
@@ -284,3 +317,52 @@ API/layout/metadata、workload 或 5% margin。
 
 本轮在这里停止；保留候选产品改进，但不把 `BLOCKED` 写成 `CLOSED`，也不继续用 error 消耗无边界
 调研预算。
+
+## Post-terminal evidence correction（2026-08-27）
+
+- correction red-team finding / review date：`ERR-PERF-CONSUMER-KEY-01` / `2026-08-27`
+- finding class / disposition：`METHOD_GAP / ACCEPTED`；raw samples/statistics retained，derived comparison/
+  product verdict rejected。
+
+产品 owner 明确首席消费者是未来推理引擎在同一 build graph 中直接编译 HYLE 源码。按
+[`benchmark-evidence-standard`](../../../developer/performance/benchmark-evidence-standard.md) 的
+“消费者 workload / 组件 replay / 机制 microbench”分层和机制、消费两把钥匙重新审计后，发现原
+P1 合同虽然统计与 artifact identity 合格，但不具备产品裁决资格：
+
+1. `status-message-copy` 在每个进程内反复约 2,000,000 次复制同一个预建、cache-hot backing；它没有
+   真实 consumer trace、调用频率、冷热/并发/lifetime 分布或端到端贡献预算。HYLE source 始终先
+   allocation、Abseil 后 allocation；双执行顺序不反转 fixture 构造，placement control 也只改变代码
+   布局，没有记录或平衡 heap address/cache-line/page offset。该行是 mechanism microbench，却在
+   `error-p1-v1` 中被自报为 `replay` 并错误获得产品否决权。
+2. `result-message-error` 的 peer ownership 不对称。HYLE 宏从即将销毁的临时 `Result` 移出 error；
+   Abseil replay 使用 `return result.status()` 从命名 lvalue 复制，尽管固定 peer 已提供
+   `StatusOr::status() &&`。absolute/raw samples retained；原合同 computed 约 2x `WIN` 及其 comparison/
+   product verdict rejected，不能作为真实传播优势。
+3. validator 证明了输出语义、call topology、静态 placement、DCE 与统计控制，却没有验证 workload
+   的 consumer provenance、material contribution 或 value-category/retain-release 对称性。合同冻结
+   只阻止测后换姿势，不能把测前定义错误变成产品事实。
+
+流程根因不是缺少书面标准，而是标准没有进入机器合同：当首席 source consumer 尚无可核对 trace 时，
+施工流程用“常见 API 操作”填补了 consumer evidence 空位；`tier=replay` 又是 workload 自报字段，
+runner 对所有 `COMPARABLE` 行一律聚合，因而严谨地执行了一个语义上无资格的合同。正确的 fail-closed
+动作本应在采样前就是 `INCONCLUSIVE/BLOCKED`。
+
+修正后的裁决如下：
+
+- candidate 产品/API/correctness/delivery 结论不变，不回滚 low-bit representation 或 TaskGraph move。
+- `status-message-copy` 的四 strata 约 0.92 只保留为“固定 fixture 上稳定、机制未知”的诊断；它既不是
+  随机噪声，也未证明产品缺陷或 compact representation 的必要取舍。
+- `result-message-error` 的 absolute/raw samples retained；ownership 不对称使 original-contract computed
+  `WIN` 与 comparison/product verdict rejected，不得继续引用约 2x 产品优势。
+- v3 engineering performance 从 `FAIL` 更正为 `INCONCLUSIVE`。模块仍 `BLOCKED`，但 blocker 改为
+  `ERR-PERF-CONSUMER-KEY-01`：缺少以首席 source consumer 为中心、ownership 对称且有 material
+  contribution 的有效性能合同，而不是“产品已证慢 8%”。
+- 恢复不要求先改 Status 产品。新性能合同必须绑定同一父 build graph 的 source-primary profile、自然
+  ownership、真实或保真 trace 的分布/lifetime/冷热/并发及贡献预算；mechanism microbench 只能解释
+  原因，不能独立 PASS/FAIL 产品。若新 consumer 证据显示 material regression，才重新进入产品归因与
+  有限 FIX。
+
+这是 terminal evidence 字段的审计纠正，不倒写原始 raw manifest；raw samples/statistics retained，
+derived comparison/product verdict rejected。它也不改变 product candidate、
+receipt/end commit 或 registry product-identity anchor。原 `Closure decision` 记录当时按错误合同作出的
+流程裁决；本节与中央 registry 是当前解释。

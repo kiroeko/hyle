@@ -9,6 +9,7 @@ import importlib.util
 import json
 import math
 import pathlib
+import re
 import sys
 import tempfile
 import unittest
@@ -19,8 +20,11 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from hyle_perf.contract import (  # noqa: E402
     CONTRACT_SCHEMA,
+    PRODUCT_GATE_POLICY,
     canonical_sha256,
     make_contract_lock,
+    product_evidence_contract_ready,
+    product_workloads,
     validate_contract,
     validate_contract_lock,
 )
@@ -53,6 +57,10 @@ from hyle_perf.stats import (  # noqa: E402
     normalize_exact_verdict,
     process_median_estimate,
 )
+
+
+PROVENANCE_PAYLOAD = b"synthetic named-consumer provenance\n"
+PROVENANCE_SHA256 = hashlib.sha256(PROVENANCE_PAYLOAD).hexdigest()
 
 
 def sample_contract() -> dict:
@@ -92,6 +100,25 @@ def sample_contract() -> dict:
             {
                 "id": "throughput",
                 "tier": "replay",
+                "gate_role": "product",
+                "consumer_key": "inference-engine/synthetic-throughput",
+                "provenance": {
+                    "path": "consumer-provenance.txt",
+                    "sha256": PROVENANCE_SHA256,
+                },
+                "ownership_topology": {
+                    "candidate": "rvalue result transfers the owned value",
+                    "peer": "rvalue peer result transfers the owned value",
+                    "equivalence": "same value category and destruction boundary",
+                },
+                "material_contribution": {
+                    "frequency": 1.0,
+                    "value": 3.0,
+                    "unit": "percent non-inferiority margin",
+                    "budget": 3.0,
+                    "denominator": "operation in the retained component replay",
+                    "derivation": "retained trace count times measured operation",
+                },
                 "semantic_contract": "same batch and ownership contract",
                 "comparability": "COMPARABLE",
                 "peer_id": "peer",
@@ -113,6 +140,7 @@ def sample_contract() -> dict:
             {
                 "id": "clustered-latency",
                 "tier": "mechanism",
+                "gate_role": "diagnostic",
                 "semantic_contract": "same instruction and call boundary",
                 "comparability": "COMPARABLE",
                 "peer_id": "peer",
@@ -139,6 +167,7 @@ def sample_contract() -> dict:
             {
                 "id": "informational",
                 "tier": "mechanism",
+                "gate_role": "diagnostic",
                 "semantic_contract": "different ownership; absolute cost only",
                 "comparability": "NOT_COMPARABLE",
                 "peer_id": "peer",
@@ -212,6 +241,57 @@ def file_ref(name: str, *, count: int | None = None) -> dict:
     return result
 
 
+def product_gate_extensions(contract: dict) -> dict:
+    evidence = []
+    evidence_gates = {}
+    for workload in contract["workloads"]:
+        if (workload["tier"] not in {"consumer", "replay"} or
+                workload.get("gate_role") != "product"):
+            continue
+        gate = "PASS" if "consumer_key" in workload else "FAIL"
+        evidence_gates[workload["id"]] = gate
+        evidence.append({
+            "id": workload["id"],
+            "tier": workload["tier"],
+            "gate": gate,
+            "errors": [] if gate == "PASS" else ["consumer evidence missing"],
+            "provenance_path": (
+                workload.get("provenance", {}).get("path")),
+            "provenance_file": ({
+                "path": "consumer-provenance.txt",
+                "sha256": workload["provenance"]["sha256"],
+            } if gate == "PASS" else None),
+        })
+    eligible = []
+    excluded = []
+    for workload in contract["workloads"]:
+        if workload["tier"] == "mechanism":
+            excluded.append({"id": workload["id"],
+                             "reason": "mechanism-diagnostic-only"})
+        elif workload.get("gate_role") == "diagnostic":
+            excluded.append({"id": workload["id"],
+                             "reason": "gate-role-diagnostic"})
+        elif workload.get("gate_role") != "product":
+            excluded.append({"id": workload["id"],
+                             "reason": "gate-role-not-declared"})
+        elif evidence_gates.get(workload["id"]) != "PASS":
+            excluded.append({"id": workload["id"],
+                             "reason": "consumer-evidence-not-qualified"})
+        elif workload["comparability"] != "COMPARABLE":
+            excluded.append({"id": workload["id"],
+                             "reason": "comparison-not-comparable"})
+        else:
+            eligible.append(workload["id"])
+    return {
+        "product_gate_policy": PRODUCT_GATE_POLICY,
+        "product_evidence": evidence,
+        "product_gate_workloads": {
+            "eligible": eligible,
+            "excluded": excluded,
+        },
+    }
+
+
 def sample_manifest(contract: dict, platform: str) -> dict:
     digest = canonical_sha256(validate_contract(contract))
     return {
@@ -253,6 +333,7 @@ def sample_manifest(contract: dict, platform: str) -> dict:
         "raw_logs": [file_ref("raw.log")],
         "observations": file_ref("observations.jsonl", count=75),
         "summary": file_ref("summary.json"),
+        "extensions": product_gate_extensions(contract),
     }
 
 
@@ -286,6 +367,10 @@ def materialize_manifest(
         lock, observations, qualification=Qualification.QUALIFIED)
     controls = copy.deepcopy(sample_manifest(contract, "Windows")["controls"])
     manifest = sample_manifest(contract, "Windows")
+    provenance_reference = write_file_reference(
+        directory, "consumer-provenance.txt", PROVENANCE_PAYLOAD)
+    manifest["extensions"]["product_evidence"][0][
+        "provenance_file"] = provenance_reference
     manifest["contract_lock"] = write_json_reference(
         directory, "contract-lock.json", lock)
     observation_payload = "".join(
@@ -325,10 +410,10 @@ def materialize_manifest(
         "child_policy": child_policy,
         "probe_sha256": host_probe_reference["sha256"],
     })
-    manifest["extensions"] = {
+    manifest["extensions"].update({
         "controls_file": controls_reference,
         "host_probe_file": host_probe_reference,
-    }
+    })
     manifest["artifacts"] = [{
         "id": "benchmark",
         "file": write_file_reference(directory, "bench.exe", b"synthetic"),
@@ -446,12 +531,87 @@ class ContractTest(unittest.TestCase):
         with self.assertRaisesRegex(ValidationError, "must be a subset"):
             validate_contract(contract)
 
+    def test_product_gate_role_and_consumer_declarations_fail_closed(self):
+        legacy = sample_contract()
+        for workload in legacy["workloads"]:
+            workload.pop("gate_role", None)
+        for field in (
+                "consumer_key", "provenance", "ownership_topology",
+                "material_contribution"):
+            legacy["workloads"][0].pop(field)
+        self.assertEqual(validate_contract(legacy)["id"], legacy["id"])
+        self.assertFalse(product_evidence_contract_ready(legacy))
+
+        partial = copy.deepcopy(legacy)
+        partial["workloads"][0]["gate_role"] = "product"
+        partial["workloads"][0]["consumer_key"] = "consumer/only"
+        with self.assertRaisesRegex(ValidationError, "declare consumer_key"):
+            validate_contract(partial)
+
+        mechanism_product = sample_contract()
+        mechanism_product["workloads"][1]["gate_role"] = "product"
+        with self.assertRaisesRegex(ValidationError, "mechanism tier"):
+            validate_contract(mechanism_product)
+
+        empty_peer = sample_contract()
+        empty_peer["workloads"][0]["ownership_topology"]["peer"] = ""
+        with self.assertRaisesRegex(ValidationError, "must be a non-empty string"):
+            validate_contract(empty_peer)
+
+        missing_frequency = sample_contract()
+        del missing_frequency["workloads"][0]["material_contribution"][
+            "frequency"]
+        with self.assertRaisesRegex(ValidationError, "missing fields"):
+            validate_contract(missing_frequency)
+
+        non_comparable_product = sample_contract()
+        non_comparable_product["workloads"][0]["comparability"] = \
+            "NOT_COMPARABLE"
+        with self.assertRaisesRegex(
+                ValidationError, "gate_role=product requires COMPARABLE"):
+            validate_contract(non_comparable_product)
+
+        for path in ("/absolute/consumer", "../consumer", "a/../consumer",
+                     "windows\\consumer"):
+            invalid_path = sample_contract()
+            invalid_path["workloads"][0]["provenance"]["path"] = path
+            with self.assertRaisesRegex(
+                    ValidationError, "repository-relative POSIX path"):
+                validate_contract(invalid_path)
+
+    def test_diagnostic_replay_does_not_require_product_keys(self):
+        contract = sample_contract()
+        workload = copy.deepcopy(contract["workloads"][0])
+        workload["id"] = "throughput-diagnostic"
+        workload["gate_role"] = "diagnostic"
+        for field in (
+                "consumer_key", "provenance", "ownership_topology",
+                "material_contribution"):
+            del workload[field]
+        contract["workloads"].append(workload)
+        self.assertEqual(validate_contract(contract)["id"], contract["id"])
+        self.assertTrue(product_evidence_contract_ready(contract))
+        self.assertEqual(
+            [row["id"] for row in product_workloads(contract)], ["throughput"])
+        selection = product_gate_extensions(contract)["product_gate_workloads"]
+        self.assertEqual(selection["eligible"], ["throughput"])
+        self.assertIn(
+            {"id": "throughput-diagnostic", "reason": "gate-role-diagnostic"},
+            selection["excluded"])
+
     def test_checked_in_json_schema_matches_v1_identity(self):
         schema = json.loads((
             ROOT / "scripts" / "perf-contract-schema-v1.json").read_text(
                 encoding="utf-8"))
         self.assertEqual(schema["properties"]["schema"]["const"], CONTRACT_SCHEMA)
         self.assertFalse(schema["additionalProperties"])
+        provenance_path = schema["$defs"]["workload"]["properties"][
+            "provenance"]["properties"]["path"]
+        pattern = provenance_path["allOf"][1]["pattern"]
+        self.assertIsNotNone(re.search(pattern, "src/graph/taskgraph.cc"))
+        for path in ("/absolute/consumer", "../consumer", "a/../consumer",
+                     "windows\\consumer"):
+            self.assertIsNone(re.search(pattern, path))
 
 
 class EvidenceTest(unittest.TestCase):
@@ -498,12 +658,41 @@ class EvidenceTest(unittest.TestCase):
         broken["controls"][0]["gate"] = "UNRESOLVED"
         with self.assertRaisesRegex(ValidationError, "controls"):
             validate_manifest(broken, contract)
+        mechanism_control = copy.deepcopy(manifest)
+        mechanism_control["controls"][2]["gate"] = "FAIL"
+        self.assertEqual(
+            validate_manifest(mechanism_control, contract)["qualification"],
+            "QUALIFIED")
         diagnostic = copy.deepcopy(manifest)
         diagnostic["qualification"] = "DIAGNOSTIC"
         diagnostic["source"]["clean"] = False
         diagnostic["inputs_stable"] = False
         self.assertEqual(
             validate_manifest(diagnostic, contract)["qualification"], "DIAGNOSTIC")
+
+        trailing = copy.deepcopy(manifest)
+        trailing["extensions"]["product_evidence"].append(123)
+        with self.assertRaisesRegex(
+                ValidationError, "exactly one object per product workload"):
+            validate_manifest(trailing, contract)
+
+    def test_legacy_manifest_verifies_but_cannot_be_newly_certified(self):
+        legacy_contract = sample_contract()
+        for workload in legacy_contract["workloads"]:
+            workload.pop("gate_role", None)
+        for field in (
+                "consumer_key", "provenance", "ownership_topology",
+                "material_contribution"):
+            legacy_contract["workloads"][0].pop(field)
+        legacy_manifest = sample_manifest(legacy_contract, "Windows")
+        del legacy_manifest["extensions"]
+        self.assertEqual(
+            validate_manifest(legacy_manifest, legacy_contract)["qualification"],
+            "QUALIFIED")
+        with self.assertRaisesRegex(ValidationError, "legacy manifests"):
+            validate_certification_manifests(
+                [legacy_manifest], legacy_contract,
+                require_all_platforms=False)
 
     def test_verified_manifest_recomputes_all_semantic_evidence(self):
         contract = sample_contract()
@@ -517,6 +706,17 @@ class EvidenceTest(unittest.TestCase):
             self.assertEqual(validated["summary"]["sha256"],
                              manifest["summary"]["sha256"])
             self.assertEqual(summary["qualification"], "QUALIFIED")
+
+            wrong_path = directory / "same-bytes-wrong-path.txt"
+            wrong_path.write_bytes(PROVENANCE_PAYLOAD)
+            manifest["extensions"]["product_evidence"][0][
+                "provenance_file"] = {
+                    "path": str(wrong_path.resolve()),
+                    "sha256": PROVENANCE_SHA256,
+                }
+            with self.assertRaisesRegex(
+                    ValidationError, "repository-relative provenance path"):
+                validate_manifest(manifest, contract, verify_paths=True)
 
     def test_verified_manifest_rejects_lock_observation_and_summary_tampering(self):
         contract = sample_contract()
@@ -571,6 +771,15 @@ class EvidenceTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = pathlib.Path(temporary)
 
+            directory = root / "mechanism-control"
+            manifest, _, _ = materialize_manifest(directory, contract)
+            manifest["controls"][2]["gate"] = "FAIL"
+            manifest["extensions"]["controls_file"] = write_json_reference(
+                directory, "controls.json", manifest["controls"])
+            self.assertEqual(validate_manifest(
+                manifest, contract, verify_paths=True)["qualification"],
+                "QUALIFIED")
+
             directory = root / "controls"
             manifest, _, _ = materialize_manifest(directory, contract)
             stored_controls = copy.deepcopy(manifest["controls"])
@@ -607,6 +816,30 @@ class EvidenceTest(unittest.TestCase):
     def test_certification_uses_recomputed_noninferiority_results(self):
         contract = sample_contract()
         with tempfile.TemporaryDirectory() as temporary:
+            directory = pathlib.Path(temporary) / "mechanism-fail"
+            manifest, observations, _ = materialize_manifest(directory, contract)
+            mechanism_losing: list[Observation] = []
+            for observation in observations:
+                record = observation.to_dict()
+                if observation.workload_id == "clustered-latency":
+                    record["candidate_value"] = 120.0
+                    record.pop("advantage_ratio")
+                mechanism_losing.append(Observation.from_dict(record))
+            payload = "".join(
+                json.dumps(observation.to_dict(), sort_keys=True,
+                           separators=(",", ":"), allow_nan=False) + "\n"
+                for observation in mechanism_losing).encode("utf-8")
+            manifest["observations"] = write_file_reference(
+                directory, "observations.jsonl", payload,
+                count=len(mechanism_losing))
+            manifest["summary"] = write_json_reference(
+                directory, "summary.json", summarize_observations(
+                    make_contract_lock(contract), mechanism_losing,
+                    qualification=Qualification.QUALIFIED))
+            self.assertEqual(len(validate_certification_manifests(
+                [manifest], contract, verify_paths=True,
+                require_all_platforms=False)), 1)
+
             directory = pathlib.Path(temporary) / "noninferior-fail"
             manifest, observations, _ = materialize_manifest(directory, contract)
             losing: list[Observation] = []
@@ -636,17 +869,6 @@ class EvidenceTest(unittest.TestCase):
                     [manifest], contract, verify_paths=True,
                     require_all_platforms=False)
 
-            no_comparison = copy.deepcopy(contract)
-            for workload in no_comparison["workloads"]:
-                workload["comparability"] = "NOT_COMPARABLE"
-            directory = pathlib.Path(temporary) / "no-comparison"
-            manifest, _, _ = materialize_manifest(directory, no_comparison)
-            with self.assertRaisesRegex(
-                    ValidationError, "at least one COMPARABLE"):
-                validate_certification_manifests(
-                    [manifest], no_comparison, verify_paths=True,
-                    require_all_platforms=False)
-
     def test_runtime_bound_candidate_is_bound_during_cross_platform_composition(self):
         contract = sample_contract()
         windows = sample_manifest(contract, "Windows")
@@ -654,6 +876,11 @@ class EvidenceTest(unittest.TestCase):
         manifests = validate_certification_manifests(
             [windows, linux], contract)
         self.assertEqual(len(manifests), 2)
+        legacy = copy.deepcopy(windows)
+        del legacy["extensions"]
+        with self.assertRaisesRegex(ValidationError, "legacy manifests"):
+            validate_certification_manifests(
+                [legacy], contract, require_all_platforms=False)
         mismatched = copy.deepcopy(linux)
         mismatched["source"]["tree"] = "d" * 40
         with self.assertRaisesRegex(ValidationError, "same candidate revision and tree"):

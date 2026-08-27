@@ -25,6 +25,9 @@ from hyle_perf.environment import (  # noqa: E402
     child_environment_policy_record,
     validate_child_environment_policy_record,
 )
+from hyle_perf.evidence import (  # noqa: E402
+    _eligible_for_sample_escalation as _replay_sample_escalation,
+)
 from hyle_perf.nanobench import NanobenchRow  # noqa: E402
 from hyle_perf.runner import (  # noqa: E402
     _CONTROL_ROWS,
@@ -32,17 +35,20 @@ from hyle_perf.runner import (  # noqa: E402
     _apply_delegated_control_gates,
     _attested_build_artifact_paths,
     _eligible_for_sample_escalation,
+    _evaluate_product_evidence,
     _evaluate_controls,
     _evaluate_validators,
     _find_executable,
     _read_cmake_cache,
     _read_strict_json_snapshot,
+    _performance_gate,
+    _product_gate_workloads,
     _required_telemetry,
     _validate_variant_artifacts,
     run_contract,
     validate_runner_extension,
 )
-from hyle_perf.model import ValidationError  # noqa: E402
+from hyle_perf.model import Qualification, ValidationError  # noqa: E402
 
 
 def row_set(aa_ratio=1.0, delta5_ratio=1.05, delta10_ratio=1.10):
@@ -97,6 +103,39 @@ def product_observations():
         1_000_000_000.0, 1_000_000_000.0, metric,
         metadata={"measurement_batch": 1})
         for run in range(1, 16)]
+
+
+def consumer_keys(*, sha256="0" * 64):
+    return {
+        "consumer_key": "inference-engine/error-path",
+        "provenance": {"path": "consumer.txt", "sha256": sha256},
+        "ownership_topology": {
+            "candidate": "rvalue Result transfers its owning error",
+            "peer": "rvalue peer result transfers its owning error",
+            "equivalence": "both sides transfer from the same value category",
+        },
+        "material_contribution": {
+            "frequency": 1.0,
+            "value": 5.0,
+            "unit": "percent non-inferiority margin",
+            "budget": 5.0,
+            "denominator": "failed request in the retained trace",
+            "derivation": "consumer trace frequency times operation cost",
+        },
+    }
+
+
+def gate_workload(identifier, control, *, tier="replay"):
+    workload = {
+        "id": identifier,
+        "tier": tier,
+        "gate_role": "diagnostic" if tier == "mechanism" else "product",
+        "comparability": "COMPARABLE",
+        "required_controls": [control],
+    }
+    if tier != "mechanism":
+        workload.update(consumer_keys())
+    return workload
 
 
 class RunnerControlsTest(unittest.TestCase):
@@ -185,27 +224,65 @@ class RunnerControlsTest(unittest.TestCase):
 
     def test_escalation_requires_power_to_be_the_only_problem(self):
         closure_contract = {
-            "workloads": [{
-                "required_controls": ["aa"],
-            }],
+            "workloads": [gate_workload("product", "aa")],
         }
         controls = [{"id": "aa", "gate": "PASS"}]
         summary = {"workloads": [{
+            "id": "product",
             "comparability": "COMPARABLE",
             "combined_noninferiority_gate": "UNRESOLVED",
         }]}
         self.assertTrue(_eligible_for_sample_escalation(
             summary, controls, closure_contract))
         summary["workloads"].append({
+            "id": "second-product",
             "comparability": "COMPARABLE",
             "combined_noninferiority_gate": "FAIL",
         })
+        closure_contract["workloads"].append(
+            gate_workload("second-product", "aa"))
         self.assertFalse(_eligible_for_sample_escalation(
             summary, controls, closure_contract))
 
+    def test_mechanism_rows_do_not_drive_escalation(self):
+        closure_contract = {"workloads": [
+            gate_workload("product", "aa"),
+            gate_workload("atomic-micro", "micro-control", tier="mechanism"),
+        ]}
+        controls = [
+            {"id": "aa", "gate": "PASS"},
+            {"id": "micro-control", "gate": "FAIL"},
+        ]
+        summary = {"workloads": [
+            {"id": "product", "comparability": "COMPARABLE",
+             "combined_noninferiority_gate": "UNRESOLVED"},
+            {"id": "atomic-micro", "comparability": "COMPARABLE",
+             "combined_noninferiority_gate": "FAIL"},
+        ]}
+        self.assertTrue(_eligible_for_sample_escalation(
+            summary, controls, closure_contract))
+
+    def test_legacy_replay_uses_its_frozen_stop_policy(self):
+        legacy_contract = {"workloads": [{
+            "id": "legacy-micro",
+            "tier": "mechanism",
+            "comparability": "COMPARABLE",
+            "required_controls": ["aa"],
+        }]}
+        controls = [{"id": "aa", "gate": "PASS"}]
+        summary = {"workloads": [{
+            "id": "legacy-micro",
+            "comparability": "COMPARABLE",
+            "combined_noninferiority_gate": "UNRESOLVED",
+        }]}
+        self.assertTrue(_replay_sample_escalation(
+            summary, controls, legacy_contract, product_gate_policy=None))
+        self.assertFalse(_replay_sample_escalation(
+            summary, controls, legacy_contract))
+
     def test_delegated_validator_gate_participates_in_stop_rule(self):
         closure_contract = {
-            "workloads": [{"required_controls": ["placement"]}],
+            "workloads": [gate_workload("product", "placement")],
         }
         controls = [{
             "id": "placement",
@@ -213,6 +290,7 @@ class RunnerControlsTest(unittest.TestCase):
             "details": {"delegated_validator_id": "artifact-identity"},
         }]
         summary = {"workloads": [{
+            "id": "product",
             "comparability": "COMPARABLE",
             "combined_noninferiority_gate": "UNRESOLVED",
         }]}
@@ -230,6 +308,61 @@ class RunnerControlsTest(unittest.TestCase):
         controls[0]["gate"] = "FAIL"
         self.assertFalse(_eligible_for_sample_escalation(
             summary, controls, closure_contract))
+
+    def test_product_evidence_is_file_bound_and_mechanism_is_excluded(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            source = pathlib.Path(temporary)
+            payload = b"named consumer evidence\n"
+            (source / "consumer.txt").write_bytes(payload)
+            value = {"workloads": [
+                gate_workload("product", "aa"),
+                gate_workload("atomic-micro", "aa", tier="mechanism"),
+            ]}
+            value["workloads"][0].update(consumer_keys(
+                sha256=hashlib.sha256(payload).hexdigest()))
+            rows = _evaluate_product_evidence(value, source)
+            self.assertEqual([row["id"] for row in rows], ["product"])
+            self.assertEqual(rows[0]["gate"], "PASS")
+            value["workloads"][0]["provenance"]["sha256"] = "f" * 64
+            self.assertEqual(
+                _evaluate_product_evidence(value, source)[0]["gate"], "FAIL")
+
+    def test_performance_gate_requires_qualified_consumer_evidence(self):
+        value = {"workloads": [
+            gate_workload("product", "aa"),
+            gate_workload("atomic-micro", "aa", tier="mechanism"),
+        ]}
+        evidence = [{"id": "product", "gate": "PASS"}]
+        summary = {"workloads": [
+            {"id": "product", "comparability": "COMPARABLE",
+             "combined_noninferiority_gate": "PASS"},
+            {"id": "atomic-micro", "comparability": "COMPARABLE",
+             "combined_noninferiority_gate": "FAIL"},
+        ]}
+        self.assertEqual(
+            _performance_gate(summary, value, evidence, Qualification.QUALIFIED),
+            "PASS")
+        summary["workloads"][0]["combined_noninferiority_gate"] = "UNRESOLVED"
+        self.assertEqual(
+            _performance_gate(summary, value, evidence, Qualification.QUALIFIED),
+            "INCONCLUSIVE")
+        summary["workloads"][0]["combined_noninferiority_gate"] = "FAIL"
+        self.assertEqual(
+            _performance_gate(summary, value, evidence, Qualification.QUALIFIED),
+            "FAIL")
+        summary["workloads"][0]["combined_noninferiority_gate"] = "PASS"
+        self.assertEqual(
+            _performance_gate(summary, value, evidence, Qualification.DIAGNOSTIC),
+            "INCONCLUSIVE")
+        evidence[0]["gate"] = "FAIL"
+        self.assertEqual(
+            _performance_gate(summary, value, evidence, Qualification.QUALIFIED),
+            "INCONCLUSIVE")
+        selection = _product_gate_workloads(value, evidence)
+        self.assertEqual(selection["eligible"], [])
+        self.assertEqual(
+            {row["id"] for row in selection["excluded"]},
+            {"product", "atomic-micro"})
 
     def test_child_telemetry_is_bound_to_the_stratum(self):
         text = ("# HYLE_PERF_CHILD_RUN execution_order=candidate-first "
