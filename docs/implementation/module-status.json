@@ -122,12 +122,14 @@
     },
     {
       "module": "util_core",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "round_id": "util-core-v1",
       "closure_task": "docs/implementation/tasks/util/util-core-v1-closure.md",
       "scope": "Five header-only util_core primitives: random stream, intrusive strong ownership, lexical cleanup, compact spin locking and compiler-local type identity; including direct consumers, C++ API, delivery, documentation and tiered engineering performance.",
       "non_goals": "util-runtime Registry/demangle, blocking or fiber synchronization, cryptographic randomness, weak/aliasing ownership, runtime-stable type IDs, downstream module closure, Native FFI/C API and Formal certification.",
       "baseline_commit": "c5e26e71b1b5d11d8d36913ab5c3930c849495fb",
+      "candidate_commit": "27d73a610b13e6c07a3c3a32f491f8af32252ee1",
+      "candidate_tree": "6f84e0b4c78f3cbc9a27781ff2d6e9d6aac75e95",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -135,17 +137,18 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "PASS",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1"
+        "instrument_profile": "closure-perf-v1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-util.md"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "util-core-v1 已完成能力与依赖审计并冻结有限 FIX：ScopeGuard 异常安全/布局、针对性回归、同合同 P1 证据和 current 文档；不扩张 weak ownership、bulk RNG 或 exception-only guard。"
+      "summary": "util-core-v1 最终候选已冻结：ScopeGuard 失败安全与 Ref 标准指针全序修复绑定 27d73a61/6f84e0b4，W1-WIN 同合同 P1 工程门已取得 PASS，等待统一登记全部验收门。"
     },
     {
       "module": "error",

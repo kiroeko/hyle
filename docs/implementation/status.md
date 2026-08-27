@@ -12,7 +12,7 @@
 |---|---|---|---|---|---|---|
 | core | CLOSED | P0 | PASS / STRUCTURAL | NONE | [task](tasks/core/core-rebuild.md) | P0 基础层已关闭；消费者性能声明由所属模块承担。 |
 | container_intrusive | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/container_intrusive/container-intrusive-v3-resume.md) | v3 已关闭：真实消费者形状、typed membership transfer、correctness/交付/文档和 Boost 同合同 5% P1 工程非劣门均已签署；Formal 独立待办。 |
-| util_core | AUDITED | P1 | PLANNED / P1_ENGINEERING / 5% | PENDING | [task](tasks/util/util-core-v1-closure.md) | util-core-v1 已完成能力与依赖审计并冻结有限 FIX：ScopeGuard 异常安全/布局、针对性回归、同合同 P1 证据和 current 文档；不扩张 weak ownership、bulk RNG 或 exception-only guard。 |
+| util_core | CANDIDATE | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/util/util-core-v1-closure.md) | util-core-v1 最终候选已冻结：ScopeGuard 失败安全与 Ref 标准指针全序修复绑定 27d73a61/6f84e0b4，W1-WIN 同合同 P1 工程门已取得 PASS，等待统一登记全部验收门。 |
 | error | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/error/error-v4-resume.md) | error-v4 CLOSED：未变化的 9595724a/a828fb4c 产品已绑定有效 source-consumer 合同；四个真实 workload 的全部 strata 通过 5% P1 工程非劣门，Formal 独立 PENDING。 |
 | obs | QUEUED | — | — | — | — | 现有实现与历史审查只作输入。 |
 | math | QUEUED | — | — | — | — | 现有实现只作输入；尚需裁决与 SIMD 的边界。 |
@@ -42,6 +42,11 @@ reopen:  CLOSED -> REOPENED -> SCOPED
 `closure-perf-v1` 的 W1-WIN P1 工程证据通过 9×8 workload/strata 的冻结 5% non-inferiority gate，
 并经独立重放审计。旧 v2 task 保持历史事实，不被回写。`formal-release-v1` 的跨平台证书仍为独立
 `PENDING`，不能拿来替代或重复阻塞 P1 工程门。
+
+`util_core` 已按同一状态机关闭：最终候选修复 ScopeGuard 失败安全和 `Ref` 标准指针全序，三平台
+source/static/shared 交付通过；W1-WIN 的 Ref owning handoff 与短 SpinLock 同合同 workload 通过 5%
+工程非劣门。该结论不覆盖仍为 `QUEUED` 的 util runtime，也不把 order-confounded 的 Mac 超短诊断
+或 RNG diagnostic 冒充跨平台 SOTA 证书。
 
 Build/package 是所有模块持续复用的交付 workstream，不是组件状态；Native FFI 仍按准入策略为
 `N/A`，也不伪装成模块。完整进入/退出、停止和重开规则见
