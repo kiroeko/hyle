@@ -6,7 +6,7 @@
 
 namespace {
 
-hyle::Result<void*> create_value(bool available) {
+hyle::Result<void*> create_value(bool available) noexcept {
   if (!available) {
     return hyle::make_unexpected(
         hyle::Status::Unavailable("sample backend unavailable"));

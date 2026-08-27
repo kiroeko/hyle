@@ -71,7 +71,7 @@ platform    -> PUBLIC core error time
 mem         -> PUBLIC core error platform util_core
 simd        -> PUBLIC core platform
 container   -> PUBLIC core mem; PRIVATE platform; BUILD_PRIVATE simd_vec_headers
-util        -> PUBLIC core error mem container util_core
+util        -> PUBLIC core error mem container
 sched       -> PUBLIC core error platform mem container util_core; PRIVATE time
 io          -> PUBLIC core error mem container time sched
 compute     -> PUBLIC core error mem sched; PRIVATE platform simd

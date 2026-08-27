@@ -1,8 +1,9 @@
 # util 架构：两个依赖层，一个产品边界
 
-> **当前边界（2026-08-27）：**`util_core` v1 已 `CLOSED`；`util` runtime（Registry/demangle）仍为
-> `QUEUED`。因此本页关于五个 header-only primitive 的边界是当前设计，关于 Registry/demangle
-> 的正文只是下一轮设计输入，不是当前功能、性能或 API 证书。当前只提供 C++23
+> **当前边界（2026-08-27）：**`util_core` v1 已 `CLOSED`；`util` runtime（Registry/demangle）
+> 已冻结 v1 能力与有限修复，施工/签证状态只看中央
+> [`module status`](../implementation/status.md)。本页描述当前设计，不把旧 benchmark 点值当作
+> runtime 发布证书。当前只提供 C++23
 > source/static/shared，Native FFI 为 `N/A`；BUILD-03 已删除旧 C schema、bridge、动态导出和 fixture。
 
 > 用户当前选型见 [user/util](../user/util.md)，current util-core 与历史 util 证据见
@@ -21,7 +22,7 @@ P0 hyle::util_core（INTERFACE，无 binary artifact）
 P4 hyle::util（hyle_util binary；严格收口波次 R2）
    demangle / Registry
                     │
-                    └──► error + mem + container + util_core
+                    └──► core + error + mem + container
 ```
 
 Registry 是模板头，但公开形状直接使用 container 的 `string_ref/SwissTable`，并借 mem allocator/
@@ -50,7 +51,7 @@ Region；它因此属于 util-runtime，不能反塞进 P0。container 不依赖
 mutable startup
   mutex-protected register/reserve/read
   creator + visitor outside lock; reentrant
-  one Swiss index + owned key Region + cold metadata Region
+  one Swiss index + transactional owned entry storage Region
              │ freeze(): O(1), zero allocation, idempotent
              ▼
 immutable service
@@ -60,11 +61,13 @@ immutable service
 ```
 
 旧形状若在 freeze 时复制/重建第二张表，会让启动延迟、峰值内存和 OOM surface 随注册规模增长；
-当前一表两阶段直接发布。lookup value 内联 creator，热 key 与冷 help/priority/Entry 分区，避免
-dispatch 为诊断元数据触碰额外 cache line。这些是正常 init-heavy/read-heavy 消费形状的架构
-优化，不是按 benchmark 的 key 数量或线程数特化。
+当前一表两阶段直接发布。lookup value 内联 creator，所以 create 不读取 Entry 的冷 help/priority；
+初次注册把 Entry、owned key 与 owned help 作为一个 Region allocation 提交，并在此前准备好唯一
+仍可能分配的 Swiss capacity。这样 OOM 不会在单调 arena 留下不可达 key/help，普通 4--32 项
+startup 也只需一个小 storage Region，而不是预留两个独立 4 KiB arena。这些是正常
+init-heavy/read-heavy 消费形状的架构优化，不是按 benchmark 的 key 数量或线程数特化。
 
-Registry 拥有 key/help，priority 保证静态初始化/链接顺序不成为隐式策略：更高覆盖、更低忽略、
+Registry 拥有 key/help，priority 保证显式组合顺序不成为隐式策略：更高覆盖、更低忽略、
 同级冲突报错。可变枚举在锁内复制时间点快照，锁外执行 callback；冻结枚举直接遍历不可变表。
 `FrozenView` 不拥有表，Registry 必须活过 view 和所有在途 operation。没有 unregister 是安全
 边界：module unload 需要追踪 created object、函数指针与并发 reader quiescence，应由独立 module
@@ -74,6 +77,12 @@ manager 负责，而不是让通用名字表猜测。
 factory：missing 和 factory 返回 NULL 都是 NULL。会因设备、驱动、配置或资源失败的 factory 应
 使用 `Registry<Result<T*>, Args...>`：missing 自动成为 `NotFound`，creator 的 `Status` 原样
 传播。该策略不增加每项元数据，也不要求 benchmark-only API。
+
+creator 是 `noexcept` function pointer，而不是 captured/type-erased callable。运营失败必须进入
+返回的 `Result`；需要状态时通过 Registry 的显式 `Args...` 或生命周期清楚的 owner 传递。旧
+Clay 静态注册宏和 default-`new` creator 已删除：archive 中只有静态初始化副作用的 TU 可能被
+dead-strip，而且构造器无法把 collision/OOM 可靠交还 startup owner。内建与动态 backend 都由
+明确的启动代码调用 `register_creator()` 并处理 `Status`。
 
 ## 复杂度与布局合同
 
@@ -103,8 +112,9 @@ template/cast、ScopeGuard 或编译期 type-name 机械翻译成动态符号。
 
 mem 的短固定状态/指针转移、sched 等待细节和 graph 首错槽显式依赖 `hyle::util_core` 的
 SpinLock/cpu_relax。会 allocate/rehash/执行未知用户代码的 mem LeakTracker 与 container
-ConcurrentVector 使用 mutex。Registry binary 显式链接 error、mem、container 和
-util_core；这些依赖同时由中央 component graph 与 target link 生成/验证。
+ConcurrentVector 使用 mutex。Registry runtime 显式链接 core、error、mem 和 container；
+删除静态注册/default creator 后不再依赖 util_core。这些依赖同时由中央 component graph 与
+target link 生成/验证。
 
 下游审查仍按实际临界区和生命周期判断，不能把类型名当证据。sched 内锁下 move/construct
 泛型 `T` 的路径仍由 sched 自己收口，不反向污染 util 结论。

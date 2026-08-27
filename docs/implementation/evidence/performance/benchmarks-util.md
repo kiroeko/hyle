@@ -53,6 +53,23 @@ M1-MAC 针对同一 current oneTBB 的手工超短诊断按顺序完全翻转：
 所有争用形状都达到 SOTA。Formal 跨平台发布证书仍为 `PENDING`，live bundle 的 retention/signing
 也仍是项目级待办。
 
+## util-runtime v1 当前性能合同（2026-08-28）
+
+Registry/demangle 本轮定为 **P0 / STRUCTURAL**，不是 P1 timing task。需求锚是 inference engine
+启动期约 4--32 个 backend factory 的登记/冻结/枚举，以及日志/backtrace 冷路径 demangle；仓内
+尚无已完成的 engine consumer 或 profile 证明它们影响 token/kernel 端到端 KPI。因此当前不把
+旧 N=256 lookup 点值刷新成“模块 SOTA”，也不以它驱动 API/layout。
+
+当前结构门是：register 为 O(|key|+|help|)+expected-amortized O(1)，OOM 不在单调 storage 留下
+不可达 entry；freeze O(1)、零 allocation；缓存 FrozenView 后 lookup 为 O(|key|)+expected O(1)、
+无锁/零 allocation；frozen enumeration O(n) 时间/O(1) 额外空间。creator 是 `noexcept` function
+pointer，不支付 type-erasure/capture 常态成本。demangle 为 O(input+output)，允许 Itanium ABI
+内部 malloc/free、Windows DbgHelp serialization 与超长符号有界 temporary，但明确排除计算热路。
+
+本轮候选、fault-injection/code-structure 与三种交付 verdict 见
+[`util-runtime-v1 closure`](../../tasks/util/util-runtime-v1-closure.md)。以下 2026-07 runtime 数字
+全部只是历史诊断；当前 P0 verdict 不继承其中 WIN/TIE/LOSE。
+
 ## 2026-07 历史证据
 
 > **2026-08-25 freshness gate：**本页固定于下述 2026-07 commit。util 的产品收口状态未改变；

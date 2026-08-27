@@ -1,16 +1,21 @@
 # util：什么情况选什么
 
-> **当前边界（2026-08-27）：**本页前半的 `util_core` 五项能力已完成 v1 收口；后半的
-> Registry/demangle 是尚待重审的 `util` runtime 既有使用合同。util 当前只提供 C++ 产品面，
+> **当前边界（2026-08-27）：**本页前半的 `util_core` 五项能力已完成 v1 收口；后半是当前
+> Registry/demangle v1 合同，签证状态只看中央 [`module status`](../implementation/status.md)。
+> util 当前只提供 C++ 产品面，
 > 适用于 C++23 source/static/shared 三种交付，不描述 C API 或跨语言调用层。
 
 `util` 提供几种彼此独立的基础能力，不存在一个需要整体 include 的“万能工具箱”。C++ 用户
-按场景包含 `hyle/util/<capability>.h`，并链接可安装的 header-only target
-`hyle::util_core`；只有 `demangle`、Registry 等 runtime 能力需要改为链接 `hyle::util`。
+按场景包含 `hyle/util/<capability>.h`。五个 header-only primitive 链接
+`hyle::util_core`；demangle/Registry 链接 `hyle::util`。两个 target 彼此独立，同时使用时都要列出。
 
 ```cmake
 find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS util_core)
 target_link_libraries(my_target PRIVATE hyle::util_core)
+
+# runtime registry/demangle（若也用 util_core，COMPONENTS/links 同时列出）
+find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS util)
+target_link_libraries(my_runtime_target PRIVATE hyle::util)
 ```
 
 源码嵌入时同样设置 `HYLE_COMPONENTS=util_core` 后链接该 target；不要靠手写 include path
@@ -139,8 +144,10 @@ fiber-aware。临界区可能分配、rehash、调用未知 callback、等待或
 持久 ID 应使用显式 schema/UUID，不要用 type hash。
 
 `demangle(mangled, out, cap)` 是 snprintf 风格：返回完整所需长度，`cap>0` 时总是 NUL 终止；
-返回值大于等于 cap 表示已截断。它服务日志/backtrace 等冷路径，在 Itanium ABI 下底层
-demangler 必然可能临时分配。
+返回值大于等于 cap 表示已截断。固定数组可直接写 `demangle(name, buffer)`，运行期类型可写
+`demangle(typeid(object), buffer)`，无需手写 `.name()`/`sizeof`。它服务日志/backtrace 等冷路径：
+Itanium ABI 的 `__cxa_demangle` 会内部 malloc/free；Windows DbgHelp 调用会串行化，超长 decorated
+symbol 还可能使用有界 temporary。caller 从不接管这些 allocation，不代表函数本身零分配/无锁。
 
 ## Registry：注册阶段可变，服务阶段冻结
 
@@ -150,6 +157,9 @@ demangler 必然可能临时分配。
 using EngineRegistry =
     hyle::util::Registry<hyle::Result<Engine*>, const Config&>;
 EngineRegistry engines;
+
+hyle::Result<Engine*> make_cpu_engine(const Config&) noexcept;
+hyle::Result<Engine*> make_cuda_engine(const Config&) noexcept;
 
 HYLE_RETURN_IF_ERROR(engines.reserve(16));
 HYLE_RETURN_IF_ERROR(engines.register_creator(
@@ -172,8 +182,14 @@ Registry 会复制并拥有 key/help；调用者无需保留传入字符串。�
 返回值应贴合 factory 的真实失败模型。`Registry<T*>` 是 infallible/nullable 形状，missing 与
 creator 返回 NULL 都得到 NULL。`Registry<Result<T*>>` 是推荐的 fallible backend 形状：missing
 得到 `NotFound`，设备、驱动、配置或资源错误由 creator 原样返回。两者共用同一张表、相同
-lookup value 和复杂度；Result 不是额外的 per-entry 元数据。默认 creator 也支持
-`Result<Ref<T>>` 等 owning value。
+lookup value 和复杂度；Result 不是额外的 per-entry 元数据。Registry 不替用户 `new` 对象；
+factory 必须是 `noexcept` function pointer，`Result<Ref<T>>` 等 owning value 由 factory 显式构造，
+OOM/设备/驱动失败都通过 `Result` 返回。
+
+启动登记必须显式执行并检查 `Status`。不要把“只靠全局构造器副作用的 registration TU”塞进
+static archive：链接器可以直接丢弃该 TU，静态初始化也没有自然位置向应用返回 collision/OOM。
+需要动态 shared-library backend 时，由上层 module manager 完成 load、调用明确的 registration
+entry、排空在途对象和 unload；Registry 本身不猜这些生命周期。
 
 可变阶段的查询受 mutex 保护。creator 和 `for_each` visitor 都在锁外运行，可以重入同一个
 Registry；可变阶段枚举会为时间点快照分配一次，冻结阶段则无锁、无分配。`Registry::create()`
@@ -189,8 +205,8 @@ manager 管理 quiescence，再销毁整个 Registry。Registry 必须活过所�
 ## 分层与证据入口
 
 header-only util-core 作为独立 `util_core` 组件交付，当前 v1 收口记录见
-[`util-core-v1`](../implementation/tasks/util/util-core-v1-closure.md)；Registry 和 demangle 属于仍为
-`QUEUED` 的 `util` runtime component。`1b148ef`/`70fa4e8` 只是在旧代码树上得到的历史输入，
-不代表当前 runtime 已恢复绿证；唯一当前状态见
+[`util-core-v1`](../implementation/tasks/util/util-core-v1-closure.md)；Registry 和 demangle 属于
+独立 `util` runtime component。`1b148ef`/`70fa4e8` 只是在旧代码树上得到的历史输入，
+不代表当前 runtime 证书；唯一当前状态见
 [`module status`](../implementation/status.md)。分层仍然保留：它避免低层 mem/container 为一个
 运行时 Registry 反向链接 `hyle_util`。

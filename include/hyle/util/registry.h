@@ -1,10 +1,8 @@
 #pragma once
 
 #include <atomic>
-#include <concepts>
 #include <cstddef>
 #include <cstdint>
-#include <cstdio>
 #include <cstring>
 #include <functional>
 #include <limits>
@@ -18,28 +16,23 @@
 #include "hyle/error/result.h"
 #include "hyle/error/status.h"
 #include "hyle/core/compiler.h"
-#include "hyle/core/detail/preprocessor.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/mem/region.h"
-#include "hyle/util/ref_counted.h"
-#include "hyle/util/type_name.h"
 
-// Self-registration registry (clay registry.h): map a name -> a factory, so
-// plugins register themselves at static-init time and code creates objects by
-// name without a compile-time dependency on the concrete types. Used for
-// backend/plugin selection (conventions §9).
+// Explicit startup registry: map a name -> a factory so an owner can compose
+// compiled backends and create one without a compile-time dependency on its
+// concrete type. Registration is deliberately explicit: static-init macros are
+// unreliable in archives (the TU can be dead-stripped) and cannot propagate a
+// recoverable startup error to the application.
 //
 // Divergences from clay (deliberate, per conventions §1/§9):
 //  - mutable storage is a compact HYLE flat index, NOT std::unordered_map
 //    (clay used THREE of them). §1 铁律: no std hash containers in production.
-//  - Creator is a FUNCTION POINTER, not std::function. So Entry is trivially
-//    copyable and lives INLINE in the table (no heap, no type-erasure alloc),
-//    and it is ABI-friendlier (§4). Registry creators are stateless type
-//    constructors (`new Derived(args...)`) -- they never need capture.
-//  - normal registration returns Status, so dynamic/plugin wiring can recover.
-//    The static REGISTER macros still fail fast because static initialization
-//    has no caller to receive an error.
-//  - help text uses type_name<T>() (util-02), not clay's demangle.
+//  - Creator is a noexcept FUNCTION POINTER, not std::function. Entry is
+//    trivially copyable and no type-erasure allocation/lifetime is added.
+//    Fallible factories express failure in Ptr (normally Result<T>).
+//  - registration returns Status so startup wiring can recover from invalid
+//    configuration, collision, or allocation failure.
 //
 // The registry owns copies of keys and help strings. Returned views stay valid
 // until registry destruction, including after a higher-priority replacement.
@@ -62,36 +55,12 @@ namespace detail {
 template <class FactoryResult>
 struct RegistryResultTraits {
   static FactoryResult missing() { return FactoryResult{}; }
-
-  template <class Derived, class... Args>
-  static FactoryResult default_create(Args&&... args) {
-    if constexpr (std::is_pointer_v<FactoryResult>) {
-      return new Derived(std::forward<Args>(args)...);
-    } else if constexpr (requires {
-                           FactoryResult{
-                               new Derived(std::forward<Args>(args)...)};
-                         }) {
-      return FactoryResult{new Derived(std::forward<Args>(args)...)};
-    } else {
-      static_assert(
-          std::convertible_to<Ref<Derived>, FactoryResult>,
-          "Registry result must own a Derived* or accept Ref<Derived>");
-      return make_ref<Derived>(std::forward<Args>(args)...);
-    }
-  }
 };
 
 template <class Value>
 struct RegistryResultTraits<Result<Value>> {
   static Result<Value> missing() {
     return make_unexpected(Status::NotFound("registry key is not registered"));
-  }
-
-  template <class Derived, class... Args>
-  static Result<Value> default_create(Args&&... args) {
-    Value value = RegistryResultTraits<Value>::template default_create<Derived>(
-        std::forward<Args>(args)...);
-    return Result<Value>{std::in_place, std::move(value)};
   }
 };
 
@@ -110,7 +79,9 @@ class Registry {
   struct IndexValue;
 
  public:
-  using Creator = Ptr (*)(Args...);  // function pointer (no capture, no alloc)
+  // Factory code is part of HYLE's no-throw boundary. Operational failure is a
+  // value (normally Result<T>); captured state belongs in explicit Args/owners.
+  using Creator = Ptr (*)(Args...) noexcept;
 
   struct EntryView {
     container::string_ref key;
@@ -161,8 +132,8 @@ class Registry {
   };
 
   explicit Registry(mem::Allocator alloc = mem::system_allocator())
-      : alloc_(alloc), keys_(alloc, string_region_options()),
-        metadata_(alloc, string_region_options()), entries_(alloc) {}
+      : alloc_(alloc), storage_(alloc, storage_region_options()),
+        entries_(alloc) {}
   ~Registry() = default;
   Registry(const Registry&) = delete;
   Registry& operator=(const Registry&) = delete;
@@ -198,7 +169,7 @@ class Registry {
       Entry* e = index->entry;
       if (priority > e->priority) {
         container::string_ref owned_help;
-        if (!copy_string(help, &owned_help, metadata_)) {
+        if (!copy_string(help, &owned_help)) {
           return Status::ResourceExhausted(
               "registry help allocation failed");
         }
@@ -212,24 +183,22 @@ class Registry {
       }
       return Status::Ok();
     } else {
-      container::string_ref owned_key;
-      container::string_ref owned_help;
-      if (!copy_string(key, &owned_key, keys_) ||
-          !copy_string(help, &owned_help, metadata_)) {
-        return Status::ResourceExhausted(
-            "registry string allocation failed");
-      }
-      Entry* entry =
-          allocate_entry(owned_key, creator, priority, owned_help);
-      if (entry == nullptr) {
-        return Status::ResourceExhausted("registry entry allocation failed");
-      }
-      using InsertResult = typename Table::InsertResult;
-      if (entries_.try_insert_or_assign(
-              owned_key, IndexValue{entry, creator}) ==
-          InsertResult::kOutOfMemory) {
+      // Prepare the only independently allocating structure first. Once this
+      // succeeds, one arena allocation owns Entry+key+help and insertion cannot
+      // fail. A rejected registration therefore never leaves unreachable bytes
+      // in the monotonic registry storage.
+      if (!entries_.try_prepare_insert()) {
         return Status::ResourceExhausted("registry table allocation failed");
       }
+      Entry* entry = allocate_entry(key, creator, priority, help);
+      if (entry == nullptr) {
+        return Status::ResourceExhausted(
+            "registry entry storage allocation failed");
+      }
+      using InsertResult = typename Table::InsertResult;
+      const InsertResult result = entries_.try_insert_or_assign(
+          entry->key, IndexValue{entry, creator});
+      HYLE_FATAL_ASSERT(result == InsertResult::kInserted);
     }
     return Status::Ok();
   }
@@ -378,6 +347,7 @@ class Registry {
     RegistryPriority priority;
     container::string_ref help;
   };
+  static_assert(std::is_trivially_destructible_v<Entry>);
 
   // The same value shape serves startup mutation and frozen reads. Creator is
   // inline on the lookup path; Entry retains cold priority/help metadata.
@@ -437,7 +407,7 @@ class Registry {
            priority <= RegistryPriority::kPreferred;
   }
 
-  static constexpr mem::RegionOptions string_region_options() noexcept {
+  static constexpr mem::RegionOptions storage_region_options() noexcept {
     mem::RegionOptions options;
     options.initial_block_size = 4 * 1024;
     options.max_block_size = 64 * 1024;
@@ -445,15 +415,16 @@ class Registry {
     return options;
   }
 
-  static bool copy_string(container::string_ref source,
-                          container::string_ref* out,
-                          mem::Region& region) noexcept {
+  bool copy_string(container::string_ref source,
+                   container::string_ref* out) noexcept {
     if (source.size == 0) {
       *out = container::string_ref{"", 0, true};
       return true;
     }
-    const std::size_t bytes = static_cast<std::size_t>(source.size) + 1;
-    auto* storage = static_cast<char*>(region.allocate(bytes, 1));
+    std::size_t bytes = static_cast<std::size_t>(source.size);
+    if (bytes == (std::numeric_limits<std::size_t>::max)()) return false;
+    ++bytes;
+    auto* storage = static_cast<char*>(storage_.allocate(bytes, 1));
     if (storage == nullptr) return false;
     std::memcpy(storage, source.data, source.size);
     storage[source.size] = '\0';
@@ -464,9 +435,37 @@ class Registry {
   Entry* allocate_entry(container::string_ref key, Creator creator,
                         RegistryPriority priority,
                         container::string_ref help) noexcept {
-    void* storage = metadata_.allocate(sizeof(Entry), alignof(Entry));
-    if (storage == nullptr) return nullptr;
-    return ::new (storage) Entry{key, creator, priority, help};
+    const std::size_t maximum = (std::numeric_limits<std::size_t>::max)();
+    std::size_t key_bytes = static_cast<std::size_t>(key.size);
+    std::size_t help_bytes = static_cast<std::size_t>(help.size);
+    if (key_bytes == maximum || (help_bytes != 0 && help_bytes == maximum)) {
+      return nullptr;
+    }
+    ++key_bytes;  // owned keys are always NUL-terminated
+    if (help_bytes != 0) ++help_bytes;
+
+    std::size_t total = sizeof(Entry);
+    if (key_bytes > maximum - total) return nullptr;
+    total += key_bytes;
+    if (help_bytes > maximum - total) return nullptr;
+    total += help_bytes;
+
+    void* allocation = storage_.allocate(total, alignof(Entry));
+    if (allocation == nullptr) return nullptr;
+    auto* cursor = static_cast<char*>(allocation) + sizeof(Entry);
+    std::memcpy(cursor, key.data, key.size);
+    cursor[key.size] = '\0';
+    const container::string_ref owned_key{cursor, key.size, true};
+    cursor += key_bytes;
+
+    container::string_ref owned_help{"", 0, true};
+    if (help.size != 0) {
+      std::memcpy(cursor, help.data, help.size);
+      cursor[help.size] = '\0';
+      owned_help = container::string_ref{cursor, help.size, true};
+    }
+    return ::new (allocation)
+        Entry{owned_key, creator, priority, owned_help};
   }
 
   static const Table* frozen_table(const void* index) noexcept {
@@ -538,73 +537,14 @@ class Registry {
 
   mem::Allocator alloc_;
   mutable std::mutex mu_;
-  // Lookup touches key bytes but not help/priority metadata. Separate arenas
-  // keep short names densely packed instead of interleaving each key with cold
-  // diagnostics and Entry objects.
-  mem::Region keys_;
-  mem::Region metadata_;
+  // Each initial registration owns Entry+key+help in one allocation. This keeps
+  // failure transactional and the normal 4--32-entry startup working set in one
+  // small region instead of eagerly reserving two independent 4 KiB arenas.
+  // Replacement help remains append-only so previously returned views stay
+  // valid until Registry destruction.
+  mem::Region storage_;
   Table entries_;
   mutable std::atomic<const Table*> frozen_index_{nullptr};
 };
 
-// Helper whose constructor registers a creator -- the static-init hook the
-// REGISTER macros instantiate. DefaultCreator<Derived> news a Derived.
-template <class Ptr, class... Args>
-struct Registerer {
-  Registerer(container::string_ref key, Registry<Ptr, Args...>* registry,
-             typename Registry<Ptr, Args...>::Creator creator,
-             container::string_ref help = {},
-             RegistryPriority priority = RegistryPriority::kDefault) {
-    Status status = registry->register_creator(key, creator, priority, help);
-    if (!status.ok()) {
-      char message[256];
-      status.ToString(message, sizeof(message));
-      std::fprintf(stderr, "HYLE static registry registration failed: %s\n",
-                   message);
-      HYLE_FATAL_ASSERT(false);
-    }
-  }
-
-  template <class Derived>
-  static Ptr default_creator(Args... args) {
-    return detail::RegistryResultTraits<Ptr>::template default_create<Derived>(
-        std::forward<Args>(args)...);
-  }
-};
-
 }  // namespace hyle::util
-
-// ---- declare/define macros --------------------------------------------------
-// A registry is accessed through a function returning Registry*. DECLARE goes in
-// a header (dllimport), DEFINE in exactly one .cc (dllexport, Meyers singleton).
-// The export/import is explicit (not HYLE_<MOD>_API) because a registry is used
-// across downstream shared libs -- same rationale as clay.
-
-#define HYLE_DECLARE_REGISTRY(ExportAPI, RegistryName, Ptr, ...)              \
-  ExportAPI ::hyle::util::Registry<Ptr __VA_OPT__(,) __VA_ARGS__>*            \
-  RegistryName();                                                              \
-  using Registerer##RegistryName =                                             \
-      ::hyle::util::Registerer<Ptr __VA_OPT__(,) __VA_ARGS__>
-
-// Meyers function-local static (conventions §6: drop clay's leaky `new`). Thread-
-// safe init since C++11; destroyed at exit (frees the indexes and bulk-owned
-// entry/string region).
-#define HYLE_DEFINE_REGISTRY(RegistryName, Ptr, ...)                          \
-  ::hyle::util::Registry<Ptr __VA_OPT__(,) __VA_ARGS__>* RegistryName() {      \
-    static ::hyle::util::Registry<Ptr __VA_OPT__(,) __VA_ARGS__> instance;     \
-    return &instance;                                                         \
-  }
-
-// Register a stateless creator function under a stringized key.
-#define HYLE_REGISTER_CREATOR(RegistryName, key, ...)                         \
-  static Registerer##RegistryName HYLE_DETAIL_CONCAT(                         \
-      g_##RegistryName##_, __LINE__)(                                         \
-      #key, RegistryName(), __VA_ARGS__)
-
-// Register class `Derived` under a stringized key, with type_name as help.
-#define HYLE_REGISTER_CLASS(RegistryName, key, Derived)                       \
-  static Registerer##RegistryName HYLE_DETAIL_CONCAT(                         \
-      g_##RegistryName##_, __LINE__)(                                         \
-      #key, RegistryName(),                                                   \
-      Registerer##RegistryName::default_creator<Derived>,                     \
-      ::hyle::util::type_name<Derived>())

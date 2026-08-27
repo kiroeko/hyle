@@ -41,7 +41,7 @@ fcontext 时配置会拒绝这些根，而不是生成删掉公开依赖的残�
 | mem | core, error, platform, util_core | — |
 | simd | core, platform | — |
 | container | core, mem | platform |
-| util | core, error, mem, container, util_core | — |
+| util | core, error, mem, container | — |
 | sched | core, error, platform, mem, container, util_core | time |
 | io | core, error, mem, container, time, sched | — |
 | compute | core, error, mem, sched | platform, simd |

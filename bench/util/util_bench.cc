@@ -138,12 +138,12 @@ void configure_worker_benchmark_thread(std::size_t worker) {
 #endif
 }
 
-void* create_token() {
+void* create_token() noexcept {
   static std::uint64_t token = 7;
   return &token;
 }
 
-hyle::Result<void*> create_result_token() { return create_token(); }
+hyle::Result<void*> create_result_token() noexcept { return create_token(); }
 
 struct TransparentHash {
   using is_transparent = void;

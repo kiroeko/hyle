@@ -42,7 +42,7 @@ std::size_t demangle(const char* mangled, char* out, std::size_t cap) noexcept {
   int status = -1;
   // __cxa_demangle mallocs the result; the ABI gives no in-place buffer variant
   // that avoids it, so we let it allocate and free here -- the malloc is not
-  // observable on our API surface (no Allocator, no closure deleter).
+  // transferred to our caller (no Allocator or closure deleter in the API).
   char* d = abi::__cxa_demangle(mangled, nullptr, nullptr, &status);
   if (status == 0 && d != nullptr) {
     std::size_t n = fill(d, out, cap);
