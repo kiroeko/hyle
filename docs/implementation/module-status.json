@@ -127,7 +127,8 @@
     },
     {
       "module": "error",
-      "product_state": "CANDIDATE",
+      "product_state": "BLOCKED",
+      "blocked_from": "CANDIDATE",
       "round_id": "error-v3",
       "closure_task": "docs/implementation/tasks/error/error-v3-closure.md",
       "scope": "Status/Result value model, native adapters, real consumer adoption, C++ source/static/shared delivery, usability/docs and current P1 engineering evidence.",
@@ -135,6 +136,8 @@
       "baseline_commit": "8b37eb42635fcf89505b7a2d9cad006d57664ba1",
       "candidate_commit": "9595724a0a284cbc3502f1c9e9e3ec9c9cf9e2b9",
       "candidate_tree": "a828fb4cdf1cd7f72aaea098b44fd42e0d966d2d",
+      "end_commit": "49ee805e2db99d0cb53caf978fec24b0deffa514",
+      "registry_anchor_commit": "49ee805e2db99d0cb53caf978fec24b0deffa514",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -142,17 +145,49 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "FAIL",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1"
+        "instrument_profile": "closure-perf-v1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-error.md"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "error-v3 新 candidate 已冻结：low-bit Status tag 与 TaskGraph 局部所有权转移均有 peer、consumer 和 codegen 证据，等待一次候选绑定复签。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "FAIL"
+      },
+      "blocker": "ERR-PERF-NORMAL-01 / status-message-copy: qualified non-inferiority FAIL in all four required strata; the remaining mechanism was not localized after the single permitted product hypothesis. TaskGraph success also retains two UNRESOLVED strata.",
+      "blocker_owner": "performance-instrument owner for placement diagnosis; error owner only after a concrete product mechanism is proven",
+      "resume_condition": "A separately scoped instrument task must, without changing the shared-copy copy/destruct charged phase or product API/layout/metadata, produce fail-closed actual heap-address/cache-line and allocation-order sensitivity evidence that either proves a placement confound and freezes a revised contract, or names one concrete product mechanism for a new scoped error RESUME round. n=31 alone, workload substitution, margin relaxation or a second product guess does not resume this module.",
+      "closure_evidence": "docs/implementation/tasks/error/error-v3-closure.md",
+      "loc": {
+        "snapshot_commit": "9595724a0a284cbc3502f1c9e9e3ec9c9cf9e2b9",
+        "repository_code": 293909,
+        "self_with_tests": 122027,
+        "self_without_tests": 82135,
+        "module_implementation": 1350
+      },
+      "known_limitations": [
+        "Qualified shared owning-message copy is about 8% slower than the fixed same-contract Abseil peer and fails the 5% P1 non-inferiority gate; no whole-module SOTA claim is valid.",
+        "TaskGraph all-success propagation retains two UNRESOLVED order/placement strata even though the other two strata pass non-inferiority.",
+        "The low-bit header-inline representation requires exactly matching headers and artifacts plus a full consumer rebuild; HYLE does not promise stable C++ ABI or Native FFI in this round.",
+        "io and selected sched/container cold-factory adoption decisions remain owned by those module closure rounds."
+      ],
+      "reopen_triggers": [
+        "The resume-condition instrument evidence causally classifies the shared-copy gap and supplies either a frozen corrected contract or one concrete product mechanism.",
+        "A reproducible correctness, security, ownership, consumer-usability or source/static/shared delivery defect is found within the error boundary.",
+        "A direct dependency or supported compiler changes carrier semantics, or a mature same-contract peer proves a better complexity class."
+      ],
+      "summary": "error-v3 在 candidate 9595724a/a828fb4c 停止：功能、API、正确性、交付和文档均通过，但合格 P1 工程证据在 shared owning-message copy 上失败；不授权第二次产品猜测。"
     },
     {
       "module": "obs",
