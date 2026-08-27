@@ -180,6 +180,8 @@ TEST(RefCounted, HeterogeneousIdentityComparisonDoesNotRetain) {
   const auto count = base->use_count();
   EXPECT_EQ(base, derived);
   EXPECT_EQ(derived, base);
+  EXPECT_EQ(base <=> derived,
+            std::compare_three_way{}(base.get(), derived.get()));
   EXPECT_EQ(base->use_count(), count);
 }
 
@@ -227,6 +229,8 @@ TEST(RefCounted, OrderedContainersUsePointerIdentity) {
   owners.insert(retain_ref(first.get()));
   EXPECT_EQ(owners.size(), 2u);
   EXPECT_TRUE((first <=> nullptr) == std::strong_ordering::greater);
+  EXPECT_EQ(first <=> second,
+            std::compare_three_way{}(first.get(), second.get()));
 }
 
 // Concurrent incref/decref must not corrupt the count (TSan gate on WSL). Many

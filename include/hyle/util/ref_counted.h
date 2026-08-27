@@ -267,7 +267,10 @@ HYLE_FORCE_INLINE bool operator==(const Ref<T>& left,
 template <RefCompatible T, RefCompatible U>
 HYLE_FORCE_INLINE std::strong_ordering operator<=>(
     const Ref<T>& left, const Ref<U>& right) noexcept {
-  return left.get() <=> right.get();
+  // std::compare_three_way gives object pointers the implementation-defined
+  // strict total order required by associative containers. Built-in pointer
+  // <=> leaves unrelated complete objects unordered by a portable contract.
+  return std::compare_three_way{}(left.get(), right.get());
 }
 
 template <RefCompatible T>
@@ -279,7 +282,7 @@ HYLE_FORCE_INLINE bool operator==(const Ref<T>& ref,
 template <RefCompatible T>
 HYLE_FORCE_INLINE std::strong_ordering operator<=>(
     const Ref<T>& ref, std::nullptr_t) noexcept {
-  return ref.get() <=> static_cast<T*>(nullptr);
+  return std::compare_three_way{}(ref.get(), static_cast<T*>(nullptr));
 }
 
 template <RefCompatible T, class U>
