@@ -1,12 +1,13 @@
 # error v4 收口恢复记录
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
 > 本页是 `error-v4` 的 `RESUME` 施工记录。权威状态是
 > [`module-status.json`](../../module-status.json)；已终止的
 > [`error-v3`](error-v3-closure.md) 只保留历史事实，不在本轮改写。
 
-## Closure card（`VERIFIED`）
+## Closure card（`CLOSED`）
 
 - component / owner / round ID：`error` / error owner / `error-v4`；task kind：`RESUME`。
 - 前一 round / blocker：`error-v3` / `ERR-PERF-CONSUMER-KEY-01`。旧合同把 fixed-backing atomic
@@ -111,3 +112,37 @@ post-terminal red-team finding 已被 fail-closed contract policy、source prove
 
 aggregate gates：scope、architecture、correctness、delivery、usability/docs、red-team、engineering
 performance 均为 `PASS`。Formal 为独立 `PENDING`，不属于本轮工程验证。
+
+## Closure decision
+
+本轮 `CLOSED`。旧 `ERR-PERF-CONSUMER-KEY-01` 的恢复条件已由新的 source-primary contract 完整满足；
+没有改产品实现，也没有把 fixed-backing microbenchmark 的约 8% 差距转成产品 shape。四个真实消费者
+workload 的所有 order/placement strata 都通过冻结的 5% P1 engineering non-inferiority gate，候选的
+correctness、delivery、API/usability、architecture/docs 与 red-team 门因 exact product identity 不变而
+重新绑定并通过。
+
+可接受限制：
+
+- P1 `PASS` 只覆盖 W1-WIN、固定 Abseil peer 和四个 source consumer workload；Formal、跨平台性能和
+  “所有 error 操作都更快/SOTA”均未签署；
+- fixed-fixture shared owning-message copy microbenchmark 仍可复现约 8% 慢，但 consumer materiality 与
+  原因未成立，只是 mechanism diagnostic；
+- low-bit header-inline representation 要求 header/artifact 完全匹配和 full consumer rebuild；当前不承诺
+  稳定 C++ ABI 或 Native FFI；
+- graph/sched consumer source hash、合同、peer、machine、instrument 或交付形状变化时，当前工程声明必须
+  重新资格化；io 与其他未收口模块的冷失败通道 adoption 仍归其 owner。
+
+重开条件：真实消费者发现 correctness/security/ownership/API-usability/交付缺陷或本边界内缺失能力；
+Status/Result 算法、layout、公开 surface、直接依赖或受支持编译器语义变化；成熟同合同 peer 证明更优
+复杂度或正常 consumer workload 上可复现的 material regression；retained bundle 不再可深重放，或合同、
+peer、machine、instrument identity 改变而仍需续签声明。
+
+终态 identity 绑定 VERIFIED commit/anchor
+`26679f1b2a1987b39cdf302eb95ed3e5fefeb168`；产品候选仍为 `9595724a` / `a828fb4c`，终态文档提交
+不冒充产品 candidate。四项 LOC 从 immutable candidate 运行
+`python scripts/loc-report.py --module error --commit <candidate> --self-check --json`，self-check `PASS`：
+
+1. 全库代码：293,909；
+2. 自实现包含测试：122,027；
+3. 自实现不包含测试：82,135；
+4. error 实现：1,350（`include/hyle/error` + `src/error`）。
