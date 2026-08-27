@@ -5,7 +5,7 @@
 > 本页是 `util-runtime-v1` 当前轮的冻结卡与施工事实。旧 util task、2026-07 点值和 C adapter
 > 只作审计输入；当前状态只看 [`module-status.json`](../../module-status.json)。
 
-## Closure card（`SCOPED`）
+## Closure card（`AUDITED`）
 
 - component / owner / round ID：`util` / util-runtime maintainers / `util-runtime-v1`。
 - task kind：`REFACTOR`；baseline commit：
@@ -67,7 +67,45 @@
 
 ## Capability / gap ledger
 
-进入 `AUDITED` 前填写；每项公开入口必须反向指向 consumer/peer/standard，而不是 benchmark 名称。
+审计基线为 `585a64959f2d4106b0c5984a07c70edaacf96065`。W1-WIN 的独立
+`HYLE_COMPONENTS=util` source build 完成 121 个 build steps，37/37 tests 通过；这只是现状
+基线，不是候选签证。源码调用扫描确认 Registry 与静态注册宏只有 tests/benchmark/package sample，
+尚无 HYLE 产品调用点；demangle 也只在 tests/sample。因此下表用已命名的 inference 启动任务、
+强 peer 和工程章程裁决能力，不允许测试自己成为需求。
+
+| ID | 能力/缺口 | consumer / peer / standard | 裁决 | 本轮边界与验证 |
+|---|---|---|---|---|
+| UR-REG-01 | 显式按名登记 function-pointer factory；nullable 与 `Result<T>` 两种失败合同 | inference backend startup；ggml 显式 backend registration；HYLE error contract | `KEEP + FIX` | 保留一张 typed Registry 和 `Status` 注册；creator 改为编译期 `noexcept`，可失败 factory 必须返回 `Result`，不让用户异常越过 HYLE API |
+| UR-REG-02 | mutable startup → immutable service；`freeze()` 与 `FrozenView` | inference init/read lifecycle；Abseil flat index 下界 | `KEEP` | freeze O(1)、零 allocation、幂等；frozen lookup O(|key|)+expected O(1)、无锁/无 allocation；view 是 borrow |
+| UR-REG-03 | Registry 拥有 key/help，registration OOM 保持状态 | 普通动态配置字符串；HYLE recoverable-OOM rule | `FIX` | 当前 absent insert 先消耗两个 monotonic Region、最后 table 仍可 OOM，失败会留下不可达 arena 空间；改为先准备 table capacity，再以一次 arena allocation 提交 Entry+key+help，失败时 size/旧 entry 不变 |
+| UR-REG-04 | duplicate 与 fallback/default/preferred resolution | 多 backend composition；链接顺序不得偷偷决定 winner | `KEEP` | 高 priority 覆盖、低 priority 成功 no-op、同级 `AlreadyExists`；旧 help view 在 owner 析构前稳定 |
+| UR-REG-05 | mutable snapshot / frozen direct enumeration；callback 可重入 | backend list/help UI；C++ callback contract | `KEEP` | mutable O(n) temporary、锁外 callback；frozen O(1) extra space；顺序不指定，visitor 不持内部锁 |
+| UR-REG-06 | `DECLARE/DEFINE/REGISTER_CLASS` 宏、`Registerer::default_creator` 与静态初始化 fail-fast | 仅旧 Clay 与 HYLE tests；ggml 真实 registry 采用显式登记 | `REMOVE` | 静态 archive TU 可被 dead-strip，宏隐藏 startup 顺序/错误路径；默认 `new/make_ref` 绕过 allocator 与 `Result` 失败合同。用户显式创建 Registry、显式登记 factory |
+| UR-REG-07 | arbitrary captured callable | 无当前 consumer；function pointer 是 ggml/HYLE backend 最小形状 | `REJECT` | 不为假想消费引入 type-erasure allocation、对象状态或 lifetime；状态通过显式 factory 参数/owner 表达，出现具名消费者才 reopen |
+| UR-REG-08 | unregister、DSO discover/load/unload 与 quiescence | ggml module manager 分层；函数指针/对象/reader 生命周期 | `DEFER / HIGHER LAYER` | Registry 只拥有名字表；动态模块 owner 必须排空对象与在途调用后整体销毁 Registry |
+| UR-DEM-01 | runtime symbol → caller buffer，required-size/truncation/pass-through | logging/backtrace；Folly/Boost demangle | `KEEP` | O(input+output)，冷路径；失败回显原名，`cap>0` 总 NUL；不增加 owning `std::string`/allocator policy |
+| UR-DEM-02 | C++ `type_info` 与固定数组易用入口 | `typeid(x)` 是普通使用；Folly 提供 type-info convenience | `FIX` | 添加 `type_info` 与 array overload，避免用户重复 `.name()`/`sizeof`；仍汇聚到一个 compiled symbol |
+| UR-DEM-03 | 实际平台资源成本 | Itanium `__cxa_demangle`；Windows DbgHelp contract | `FIX DOC` | 明确 Itanium 内部 malloc/free、Windows 全局 serialization 与超长符号有界 temporary；“caller 不拥有 allocation”不等于“没有 allocation” |
+| UR-BUILD-01 | runtime component 闭包 | public include owner + central component graph | `FIX` | 删除旧宏/default creator 后 Registry 不再使用 util_core；`util` 的真实 PUBLIC deps 缩为 core/error/mem/container，并复验 source/static/shared relocated consumer |
+| UR-BUILD-02 | Registry template 与单个 demangle binary 是否再拆 target | 当前用户同时选择 runtime discovery/diagnostics；一个 binary symbol | `KEEP` | 本轮不为一个冷符号增加 component；若 demangle-only consumer 证明 util 闭包 material，再独立立项 |
+
+### 冻结的产品修复批次
+
+本轮只允许以下一次产品批次；其外发现进入 backlog/reopen trigger，不临场扩大范围：
+
+1. `registry.h` 删除静态注册宏、默认 allocation factory 和 util_core/preprocessor 依赖；`Creator`
+   类型强制 `noexcept`，并更新显式注册 sample/tests。
+2. absent registration 先完成 Swiss capacity 准备，再用单次 Region allocation 构造
+   `Entry + owned key + owned help`；补逐 allocation fault injection、retry、replacement 保留旧值及
+   freeze 后零 allocation 结构门。
+3. demangle 增加 `std::type_info`/固定数组 convenience overload；不新增 owning string API，修正
+   平台 allocation/serialization 和 truncation/lifetime 文档与测试。
+4. 中央 component manifest 删除 `util -> util_core`，同步 architecture/user/performance 当前结论，
+   并跑 public-header、component-only、source/static/shared installed consumer。
+
+明确不运行 timing benchmark：本轮是 P0 startup/diagnostic 能力，性能门只裁决复杂度、allocation、
+lock、常态 metadata、binary dependency 与 code structure。旧 N=256 数字保留为历史原始输入，
+不得写成当前候选 SOTA 证书。
 
 ## Candidate
 
