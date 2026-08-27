@@ -1,25 +1,26 @@
 # error 性能证据
 
-> **error-v3：`CANDIDATE / PENDING REQUALIFICATION`。** replacement candidate 已通过证据资格门、
-> 但未通过 P1 工程性能门；唯一机制修复形成 `9595724a` / `a828fb4c` 新 candidate，尚无新 verdict。
-> 本页下方 2026-07 点值只保留为历史输入，不是当前模块证书；现行状态只看
+> **error-v3：`BLOCKED / QUALIFIED PRODUCT FAILURE`。** exact candidate `9595724a` / `a828fb4c`
+> 的证据资格与所有 controls 通过，但 shared owning-message copy 的四个 strata 均未通过 5%
+> non-inferiority；TaskGraph success 另有两个 strata 未决。本页下方 2026-07 点值只保留为历史输入，
+> 不是当前模块证书；现行状态只看
 > [`module status`](../../status.md)。
 
 本页是 [performance 总账](README.md) 的 error 模块详节。稳定设计见
 [error-design](../../../architecture/error-design.md)，用户选型见
 [error guide](../../../user/error.md)。benchmark 只验证消费者会使用的产品形状，不定义 API。
 
-## error-v3 待资格合同
+## error-v3 工程裁决
 
 工程裁决机固定为 `W1-WIN`，仪器为 `closure-perf-v1`。required comparable workload 对固定
 Abseil commit `81c993af4fb88b3a51829a796df02251fa27102f`，使用 5% material/non-inferiority
 margin。Folly commit `423fd7f8d97fd7bf52fc4c986dfd20320c4de8f9` 只用于 Expected/API/实现查漏；
 C++23 `std::expected` 是标准合同和较弱成本下界，不冒充第三个同合同性能 peer。
 
-| workload family | 正常消费者任务与计费边界 | 当前资格状态 |
+| workload family | 正常消费者任务与计费边界 | exact candidate verdict |
 |---|---|---|
-| graph replay | 64 个 stable node 的一次 `TaskGraph::evaluate`；全成功与末节点 code-only 失败，对称消费最终结果 | replacement：末错误非劣；全成功四 strata 约慢 6%，候选已驳回 |
-| normal diagnostic | 29B owning message construct/shared copy、1/3 层 context、两 frame message Result、54B owning format、fresh-prvalue Update | replacement：除 shared copy 外 6 项均 WIN；copy 四 strata 约慢 8%，候选已驳回 |
+| graph replay | 64 个 stable node 的一次 `TaskGraph::evaluate`；全成功与末节点 code-only 失败，对称消费最终结果 | 末错误 `PARITY/PASS`；全成功 `INCONCLUSIVE/UNRESOLVED` |
+| normal diagnostic | 29B owning message construct/shared copy、1/3 层 context、两 frame message Result、54B owning format、fresh-prvalue Update | 6 项 `WIN/PASS`；shared copy `LOSE/FAIL` |
 | boundary diagnostics | 7/256B construct、16 层 context、512B format、runtime-code primitive、native/errno | `NOT_P1_GATING`；只记录 correctness、复杂度或绝对成本 |
 | native detail / payload | HYLE 固定 `{domain,int64}`，Abseil 可携带任意多 payload | `NOT_COMPARABLE`；不得写成同能力胜负 |
 
@@ -29,17 +30,28 @@ A/A 与 semantic setup oracle 必须同时完整；任一 required 门缺失即�
 不能换 benchmark 姿势或放宽 margin。shared 交付只做绝对回归与 package/correctness 验证，不与
 静态 peer 结果混成算法胜负。
 
-replacement 已完成一次 clean n=15，但其结论是有效的产品失败，不是当前性能证书。9 项中 message
-construct、context 1/3、两 frame Result、format 和 Update 共 7 项 WIN，末节点 code-only error 通过
-5% non-inferiority；全成功 graph replay 的候选优势中位比为 0.940--0.942，shared message copy 为
-0.917--0.923。全部 A/A、delta、timer-floor、placement、semantic 和 error-codegen controls 通过。
+exact candidate 已完成允许的 fresh clean n=15。全部 A/A、delta、timer-floor、placement、semantic、
+artifact/build identity 与 error-codegen controls 通过，统一 verifier 返回 `QUALIFIED`；因此以下是有效
+产品裁决，不是“仪器没资格”或单次点值：
 
-唯一 codegen 诊断把两个失败分别归到真实产品形状：当前 range-based heap 判别令 shared-copy 循环比
-固定 Abseil low-bit tag 多两个更宽的 compare；TaskGraph 把失败即返回的局部 `Status` 当 lvalue 交给
-传播宏，保留了不需要的复制语义。临时编译采用 mature low-bit inline tag 后复制循环逐指令同形；局部
-显式 move 后 MSVC 函数由 133B 收敛到与直接 `if/return` 相同的 104B。修复不新增公开 API、常驻
-metadata 或 benchmark-only 分支，且真实 `TaskGraph` 与 replay 必须同步。新 candidate 仍使用完全相同
-的 9 项合同、peer、5% margin 与统一仪器，只允许一次 fresh qualification。
+| required comparable workload | HYLE / Abseil 中位 ns | exact verdict | 5% NI gate |
+|---|---:|---|---|
+| `taskgraph-active-success-64` | 79.119 / 76.388 | `INCONCLUSIVE` | `UNRESOLVED`；4 strata 中 2 PASS、2 UNRESOLVED |
+| `taskgraph-active-last-error-64` | 78.644 / 77.716 | `PARITY` | `PASS` |
+| `status-message-29` | 23.821 / 48.054 | `WIN` | `PASS` |
+| `status-message-copy` | 11.841 / 10.923 | `LOSE` | `FAIL`；4 strata ratio 0.920057/0.925041/0.920034/0.920214 |
+| `status-context-1` | 41.891 / 265.869 | `WIN` | `PASS` |
+| `status-context-3` | 74.750 / 879.920 | `WIN` | `PASS` |
+| `result-message-error` | 10.892 / 21.971 | `WIN` | `PASS` |
+| `status-format-54` | 34.599 / 43.811 | `WIN` | `PASS` |
+| `status-update-prvalue` | 48.148 / 54.826 | `WIN` | `PASS` |
+
+最小 timer-floor multiple 为 53.96x。candidate 采用成熟 aligned low-bit tag 后 shared-copy 循环与 peer
+逐指令同形，真实 TaskGraph 也以显式 move 消除了生命周期结束局部值的无意义复制；这些仍是合理产品
+修复。但 shared-copy material 差距继续存在，说明原 codegen 假设不足，不能据此再猜第二个产品缺陷。
+合同目前没有辨识动态 heap backing 的实际地址/cache-line/allocation-order sensitivity；先由独立仪器
+task 补充不改变 charged phase 的 fail-closed 因果诊断，才可能创建下一 error round。已有 material
+`FAIL` 禁止单独升级 n=31、换 workload、放宽 margin 或继续调产品。
 
 ## 历史证据（2026-07-29，三平台 n=15）
 
@@ -138,7 +150,18 @@ backtrace 或异常系统；参考库有而 HYLE 用户没有需求的能力，�
 
 ## error-v3 运行记录
 
-被驳回 replacement 绑定 HYLE `a4ba5a14cdd46a7b9c6e33c06211ce2d6c7a760f` / tree
+terminal candidate 绑定 HYLE `9595724a0a284cbc3502f1c9e9e3ec9c9cf9e2b9` / tree
+`a828fb4cdf1cd7f72aaea098b44fd42e0d966d2d`、Abseil
+`81c993af4fb88b3a51829a796df02251fa27102f` / tree
+`b8e8bdc41d9f13b8894b4540b910ed8dc2ced66c`，contract hash 为
+`82cf325480a85d7ea76e17fcf526d12c36619b7089ec81d4c947fa56aea215d7`。W1-WIN retained evidence 位于
+`C:/hyle-scratch/error-v3-final-win-perf-evidence`；manifest/summary SHA-256 分别为
+`4cd3627d134be6d44835c7ac976554a3f65d963532af155fd28b21044a728b85` /
+`68dc98addc69a00007a1be0f88a605a495d3c4fa120a666646fa1c5b817740c6`；统一 verifier 为
+`QUALIFIED`、`paths_verified=true`，产品 engineering gate 为 `FAIL`。该本机路径不是发布 artifact；
+task receipt 记录三平台 correctness/delivery、二进制 hash 与恢复条件。
+
+被驳回 replacement 历史绑定 HYLE `a4ba5a14cdd46a7b9c6e33c06211ce2d6c7a760f` / tree
 `4a2ca7977241080a41b5eb5ab79a6fd37d71db04`、Abseil
 `81c993af4fb88b3a51829a796df02251fa27102f` / tree
 `b8e8bdc41d9f13b8894b4540b910ed8dc2ced66c`，contract hash 为
@@ -147,7 +170,7 @@ backtrace 或异常系统；参考库有而 HYLE 用户没有需求的能力，�
 `qualification_gate=PASS`、`performance_gate=FAIL`。这个路径是本机可追溯证据，不是可发布 artifact；
 task manifest 另记二进制 hash 和跨平台结果。
 
-新 candidate 的正式运行仍必须由冻结的 `bench/contracts/error-p1-v1.json`、`closure-perf-v1` runner
-和 candidate verification manifest 共同生成，并把 machine/affinity/power、source/peer/build/binary
-hash、双 order/placement、timer-floor、A/A 与 raw samples 一起归档。旧专用 runner 命令不是 v3
-入口，不能从历史参数手工拼出当前证书。
+本轮只接受由冻结 `bench/contracts/error-p1-v1.json`、`closure-perf-v1` runner 与 candidate manifest
+共同生成的证据，并已归档 machine/affinity/power、source/peer/build/binary hash、双 order/placement、
+timer-floor、A/A 与 raw samples。旧专用 runner 命令不是 v3 入口，不能从历史参数手工拼出证书；
+terminal `FAIL` 也不能由旧历史 WIN 覆盖。

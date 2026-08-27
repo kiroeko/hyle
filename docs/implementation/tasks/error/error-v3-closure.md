@@ -1,10 +1,11 @@
 # error v3 重构与收口记录
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECEIPT: BLOCKED -->
 
 > 本页只记录 `error-v3` 这一轮的冻结合同、事实和证据。权威状态是
 > [`module-status.json`](../../module-status.json)；旧 error task 与性能页均为历史输入，不能替代本轮
-> 结论。
+> 结论。本轮已在 candidate `9595724a` 终止为 `BLOCKED`；下文 `SCOPED/AUDITED/CANDIDATE`
+> 标题保留的是阶段历史，不表示当前仍活动。
 
 ## Closure card（`SCOPED`）
 
@@ -131,8 +132,58 @@ odd inline、aligned heap pointer 为 even），并在真实 TaskGraph 与 repla
 仍为 code-only `Unknown`。这是 header-inline semantic ABI 变化，必须使用匹配版本 header/artifact 并
 全量重编，不继承 replacement 的 build/package artifact。
 
-候选前 Windows MSVC Release/Debug WERROR error tests 18/18 通过，真实 graph message-error/retry test
-通过；这些只说明产品可冻结，不替代候选绑定的完整 correctness、delivery 或 P1 qualification。
+该产品实现保留：low-bit tag 是成熟的 aligned-pointer 不变量，移除了“heap 地址必然大于某个小整数”
+这一非语言保证，并使常态判别更简单；TaskGraph 的显式 move 则准确表达失败即返回局部值的所有权。
+但后续 P1 结果证明，这两个修复并没有解决 shared-copy 的全部 material 差距。因此保留架构修复，
+同时不把它写成性能修复成功，也不再授权第二个产品猜测。
+
+## Candidate verification manifest
+
+- identity：HYLE `9595724a0a284cbc3502f1c9e9e3ec9c9cf9e2b9` / tree
+  `a828fb4cdf1cd7f72aaea098b44fd42e0d966d2d`；Abseil
+  `81c993af4fb88b3a51829a796df02251fa27102f` / tree
+  `b8e8bdc41d9f13b8894b4540b910ed8dc2ced66c`；两侧 clean。
+- W1-WIN / MSVC 19.44：exact candidate 的 Release/Debug WERROR error CTest 各 2/2；header
+  self-containment 通过。MSVC 19.50 的 P1 static artifacts 由下述 manifest 绑定。
+- W1-WIN / clang-cl 20.1.8：shared Release WERROR 完整 19/19 CTest 通过。
+- W1-WIN delivery：selected-component source/shared/static relocated consumer 3/3；shared DLL SHA-256
+  `947313e90b284fb35e295c82f8246c1fbb29bb26df3e949dde1b08d0f6d983fc`，只含 18 个 decorated
+  C++ exports，旧 C error/FFI exports 为 0。
+- W1-WSL / GCC 14.2：Release/Debug WERROR 各 2/2，完整 error 69/69，Debug misuse 3/3（4 个
+  death assertions），ASan/UBSan 各 2/2，TSan 在 `setarch x86_64 -R` 下实际执行 1/1；source/shared/
+  static relocated 3/3；graph build 与三个 `evaluate/evaluate_node` failure-propagation tests 3/3；
+  warning、sanitizer diagnostic、skip 均为 0。
+- M1-MAC / AppleClang 21：Release/Debug WERROR 各 2/2，完整 error 69/69，source/shared/static
+  relocated 3/3；graph focused 3/3、完整 graph 19/19；shared exports 18 个 C++、旧 C/FFI 为 0；
+  warning、skip、failure 均为 0。
+- 文档/API：architecture 与 user guide 已覆盖能力选型、`Result<T>{}`、lvalue-copy/rvalue-move、
+  context/OOM/native/格式化、ownership/concurrency、low-bit 交付 ABI 限制和 Native FFI=`N/A`；
+  public entry 反向追踪完整。
+
+W1-WIN P1 retained evidence 位于
+`C:/hyle-scratch/error-v3-final-win-perf-evidence`。manifest SHA-256 为
+`4cd3627d134be6d44835c7ac976554a3f65d963532af155fd28b21044a728b85`，summary SHA-256 为
+`68dc98addc69a00007a1be0f88a605a495d3c4fa120a666646fa1c5b817740c6`；contract SHA-256 为
+`82cf325480a85d7ea76e17fcf526d12c36619b7089ec81d4c947fa56aea215d7`。primary/placement
+artifact SHA-256 分别为 `43a9e28636a24a1a6179bd47e6d90bb772ab5a7ae8cab08ad4ca7b3298686926` /
+`df54840477ee6b5c1f0f146ed01d2114244c89493d5ee25ffeb541e47e31e3fa`。统一 verifier 返回
+`paths_verified=true`、`qualification=QUALIFIED`；A/A、delta 5/10、timer-floor、placement、
+artifact/build/semantic/codegen controls 全部 `PASS`，所以这是有效产品失败，不是无资格样本。
+
+| required comparable workload | HYLE / peer 中位 ns | combined exact | 5% non-inferiority |
+|---|---:|---|---|
+| `taskgraph-active-success-64` | 79.119 / 76.388 | `INCONCLUSIVE` | `UNRESOLVED`（4 strata 中 2 PASS、2 UNRESOLVED） |
+| `taskgraph-active-last-error-64` | 78.644 / 77.716 | `PARITY` | `PASS` |
+| `status-message-29` | 23.821 / 48.054 | `WIN` | `PASS` |
+| `status-message-copy` | 11.841 / 10.923 | `LOSE` | `FAIL`（4 strata 全 FAIL，ratio 0.920057/0.925041/0.920034/0.920214） |
+| `status-context-1` | 41.891 / 265.869 | `WIN` | `PASS` |
+| `status-context-3` | 74.750 / 879.920 | `WIN` | `PASS` |
+| `result-message-error` | 10.892 / 21.971 | `WIN` | `PASS` |
+| `status-format-54` | 34.599 / 43.811 | `WIN` | `PASS` |
+| `status-update-prvalue` | 48.148 / 54.826 | `WIN` | `PASS` |
+
+最小 timer-floor multiple 为 53.96x，不能用亚纳秒或计时器分辨率解释 shared-copy。冻结规则也禁止
+在已有 material `FAIL` 时从 n=15 自动升级 n=31。
 
 ## Rejected candidates
 
@@ -197,11 +248,39 @@ replacement 必须显式在 callback 外构造两侧 error，并以对称 const 
 
 ## 独立红队
 
-产品/API red-team 通过，但其发现性能页仍写成旧 `AUDITED/no candidate`；在性能失败后该措辞将与本节
-一起校正。失败 candidate 不可签署。
+产品/API、correctness、delivery 与文档审计通过。性能证据审计重算并核对 candidate/peer/contract/
+artifact identity、90/90 raw logs、summary/observations/controls/validator hashes，结果一致；统一 verifier
+仍为 `QUALIFIED`。红队确认 low-bit tag 与 TaskGraph ownership transfer 都不是 benchmark-only 形状，
+但汇编循环同形后 shared-copy 仍约 0.92，只能证明先前 codegen 假设不足，不能推出第二个产品缺陷，
+也不能在 controls 全过时宣布仪器失效。
+
+当前合同没有辨识动态 heap backing 的实际 allocation 地址、cache-line placement 与 allocation-order
+sensitivity。它是下一轮仪器任务需要补的因果诊断，不授权本轮改变 copy/destruct charged phase、公开
+API/layout/metadata、workload 或 5% margin。
 
 ## Closure decision
 
-当前为 `CANDIDATE`，绑定 `9595724a` / `a828fb4c`。只允许在保持 peer、9 项 workload、5% margin、
-机器和仪器不变的前提下做一次 fresh qualification，并完成该 identity 的 correctness、三平台、交付与
-red-team；失败即按 closure card 进入 `BLOCKED`，不得再换姿势、改产品或放宽门槛。
+`BLOCKED`，从 `CANDIDATE` 终止，绑定 `9595724a` / `a828fb4c`。
+
+- 已通过：范围/功能/API/架构、三平台 correctness/sanitizer、直接消费者、source/static/shared 交付、
+  用户与架构文档、独立红队；9 个 P1 workload 中 6 个 `WIN`、1 个 `PARITY`。
+- blocker `ERR-PERF-SHARED-COPY-01`：`status-message-copy` 在四个 order/placement strata 均稳定
+  `LOSE` 且 5% NI `FAIL`；`taskgraph-active-success-64` 另有两个 strata `UNRESOLVED`。因此不能签署
+  error 整体工程性能 `PASS` 或 SOTA。
+- blocker owner：独立 performance-instrument owner；只有下述新证据成立后，future error resume owner
+  才能接手产品工作。
+- 恢复条件：先在独立仪器 task 中，在不改变 shared copy/destruct charged phase、产品 API/layout/
+  metadata 的前提下，加入 fail-closed 的实际 heap address/cache-line 与 allocation-order sensitivity
+  诊断并形成因果分类。只有它证明 placement/instrument confound 并冻结新版合同，或点名一个具体产品
+  机制并允许新 round 的一次范围化修复，才能创建 `error-v4` 从 `SCOPED` 恢复。单独跑 n=31、换 workload/
+  顺序、放宽 margin 或第二次产品猜测都不满足恢复条件。
+- 已知限制：low-bit header-inline semantic ABI 仍要求匹配 header/artifact 并全量重编；当前没有稳定 C++
+  ABI 或 Native FFI；io 与少数 sched/container cold factory 的 adoption 仍由所属模块裁决。
+- 四项 LOC（candidate `9595724a` immutable tree）：全库 293,909；自实现含测试 122,027；自实现不含
+  测试 82,135；error 实现 1,350。
+- reopen/resume trigger：上述窄性能因果证据；或新的可复现 correctness/security/consumer/API/交付
+  缺陷、直接依赖/编译器改变 carrier 语义、强 peer 证明更好复杂度档。新 API 数、LOC、命名偏好或
+  单次 benchmark 点值不构成 trigger。
+
+本轮在这里停止；保留候选产品改进，但不把 `BLOCKED` 写成 `CLOSED`，也不继续用 error 消耗无边界
+调研预算。
