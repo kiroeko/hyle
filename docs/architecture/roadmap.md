@@ -86,10 +86,10 @@ demand/任务并等待其轮次；只有 correctness 或构建阻断允许立即
 
 1. core；
 2. error；
-3. util_core；
-4. platform；
-5. container_intrusive；
-6. time；
+3. container_intrusive；
+4. util_core；
+5. time；
+6. platform；
 7. mem；
 8. obs；
 9. container；

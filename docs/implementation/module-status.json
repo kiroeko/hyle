@@ -122,8 +122,30 @@
     },
     {
       "module": "util_core",
-      "product_state": "QUEUED",
-      "summary": "现有实现只作输入；尚未启动 v1 收口。"
+      "product_state": "SCOPED",
+      "round_id": "util-core-v1",
+      "closure_task": "docs/implementation/tasks/util/util-core-v1-closure.md",
+      "scope": "Five header-only util_core primitives: random stream, intrusive strong ownership, lexical cleanup, compact spin locking and compiler-local type identity; including direct consumers, C++ API, delivery, documentation and tiered engineering performance.",
+      "non_goals": "util-runtime Registry/demangle, blocking or fiber synchronization, cryptographic randomness, weak/aliasing ownership, runtime-stable type IDs, downstream module closure, Native FFI/C API and Formal certification.",
+      "baseline_commit": "c5e26e71b1b5d11d8d36913ab5c3930c849495fb",
+      "performance_tier": "P1",
+      "validation_machine_profiles": [
+        "W1-WIN",
+        "W1-WSL",
+        "M1-MAC"
+      ],
+      "engineering_performance": {
+        "verdict": "PLANNED",
+        "mode": "P1_ENGINEERING",
+        "material_margin_pct": 5,
+        "machine_profile": "W1-WIN",
+        "instrument_profile": "closure-perf-v1"
+      },
+      "formal_performance": {
+        "state": "PENDING",
+        "instrument_profile": "formal-release-v1"
+      },
+      "summary": "util-core-v1 已冻结范围：五个 header-only primitive 将按真实消费者、成熟 peer、三平台 correctness/交付和分层 P1/P0 性能门重新审查。"
     },
     {
       "module": "error",
