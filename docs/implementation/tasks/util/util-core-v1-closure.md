@@ -1,11 +1,11 @@
 # util_core v1 严格收口
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
 > 本页是当前 `util_core-v1` 轮的冻结卡与施工事实。2026-07 的 util-core 任务、点值和绿色结论只作
 > 审计输入；当前状态只看 [`module-status.json`](../../module-status.json)。
 
-## Closure card（`AUDITED`）
+## Closure card（`CLOSED`）
 
 - component / owner / round ID：`util_core` / util-core maintainers / `util-core-v1`。
 - task kind：`REFACTOR`；baseline commit：
@@ -104,16 +104,91 @@
 
 ## Candidate
 
-`AUDITED` 冻结有限 FIX 并实现后填写。
+第一次实现提交 `7fd6b704` 完成 ScopeGuard 异常安全/布局、回归测试与同合同 P1 harness。独立红队
+随后发现 `Ref::operator<=>` 直接使用 built-in pointer spaceship：对无关对象地址，语言合同不能
+保证关联容器所需的 strict total order。最终候选因此前移到：
+
+- candidate commit：`27d73a610b13e6c07a3c3a32f491f8af32252ee1`；
+- candidate tree：`6f84e0b4c78f3cbc9a27781ff2d6e9d6aac75e95`；
+- 产品实现：五个公开 header，**670** 行；`Ref` 排序改用 `std::compare_three_way`，没有增加对象
+  元数据、分配或热路状态；
+- benchmark source SHA-256：
+  `b67a1b2741538334e494cef07680c17df7bce6126afefe7cb5eb01abb3a2f392`；
+- contract SHA-256：
+  `1cb8e6a6941acf597f6f9f1553588374ac62dce8316f058c2cabbee7bbaf5145`；
+- source peers：Boost `df8eeb90846648464e3c8e378e312f0cec772e83`、oneTBB
+  `e349c15263bbb1d6b48f2b514c06201e1b90eea3`。
+
+冻结实现相对 baseline 的产品变化只对应 ledger 中的 FIX：ScopeGuard 的 failsafe/copy fallback 与
+空 callable 布局、`Ref` 的标准全序、针对性 contract tests；RNG/SpinLock/type-name 算法未为点值
+改形状。中央 Boost peer target 和 oneTBB 的 TCM-off 配置是 source-pinned benchmark build 修复；
+已用 container-intrusive 的 primary/placement benchmark 独立配置编译，未回归既有 consumer。
 
 ## Verification manifest
 
-候选冻结后逐风险填写；未运行项不得写 `PASS`。
+| 风险/门 | 候选证据 | verdict |
+|---|---|---|
+| Windows correctness/header | MSVC Release：`hyle_util_core_header_self_contained_test`、`hyle_util_core_test` 2/2 | PASS |
+| ScopeGuard ownership/failure | construction storage failure 执行原 cleanup；throwing move copy fallback；失败 transfer 保留 source；empty callable 精确布局 | PASS |
+| Ref ownership/order | lifetime/cast/concurrency 既有集 + ordered container、heterogeneous spaceship、标准 pointer total order | PASS |
+| RNG/type identity | pinned jump/long-jump；array/function/incomplete/ref type-name；contract validation | PASS |
+| W1-WIN P1 engineering | final manifest deep replay `QUALIFIED`，Ref/Spin 两布局×两顺序全部 PARITY，5% NI 全 PASS | PASS |
+| WSL GCC 14 | Release header/test 2/2；ASan 1/1；UBSan 1/1；完整候选 TSan 64/64，v2 受影响 Ref/Spin 20/20 | PASS |
+| AppleClang 21 | M1-MAC Release header/test 2/2 | PASS |
+| source/package delivery | Windows、WSL、macOS 的 selected `util_core` source consumer、relocated shared SDK、relocated static SDK 全部通过 | PASS |
+| dependency/build | 中央 graph 与 target link 仍为 util_core→core；mem/sched PUBLIC、graph PRIVATE、util PUBLIC 的直接边合法；无 runtime 反向 include | PASS |
+| docs/status/tooling | architecture、user、performance、task 与中央 registry 一致；closure/docs checker、`git diff --check` 通过 | PASS |
+
+W1 最终 evidence：
+`C:\hyle-scratch\util-core-v1\perf-win-engineering-evidence-27d73a61\manifest.json`。manifest、summary、
+observations 的 SHA-256 分别为
+`7027954068A7B5C1DDFC1ED2D83A3646F951694B90A19939FFD445ADF88FFEFB`、
+`F5AA7929521A101646D8DFFFF3A75C78AF4B7B7F4889F1629B1C6422894726D2`、
+`6BCB2FAD9541F08371DCB1ED7524AF6C9AF853C55F233BB188BE3352E9A880C7`。精确 ratios/CI 与 claim
+边界见 [`benchmarks-util`](../../evidence/performance/benchmarks-util.md)。
+
+M1-MAC 的超短手工 SpinLock 诊断在反转执行顺序后也反转约两倍输赢，首执行项始终显著更慢；该
+结果按仪器规则为 **INCONCLUSIVE**，既不是产品 blocker，也不能作为修改实现的证据。Formal
+发布证书仍为 `PENDING`，不冒充本轮工程门。
 
 ## 独立红队
 
-候选冻结后在 20 分钟预算内执行。
+- **FIXED：**无关对象指针的 built-in `<=>` 没有给出产品承诺的 total order；改用标准
+  `std::compare_three_way` 并增加关联容器/异构回归。该修复改变最终候选 identity，所以正确性、
+  sanitizer、三平台交付与 W1 证据均绑定/复核到 v2。
+- **DISPROVED：**一次 W1 单点曾显示 Spin 约慢 4%，正式双顺序、两布局 n=15 后落在 parity；没有
+  可归因的 material regression，未修改产品。
+- **ACCEPTED：**M1-MAC 手工超短行被 order/QoS/layout confound，保留 inconclusive 事实；不发明
+  新 benchmark 姿势，也不降低中央资格门。
+- **OUT-OF-SCOPE：**container 的私有 adaptive pause 重复与 sched 锁内泛型构造分别进入
+  `CONT-UTIL-CPU-RELAX-01`、`SCHED-SPIN-HOLD-01`；它们属于 owning module，不是 util-core blocker。
+- source/static/shared、header self-containment、candidate→current 产品路径与中央 component graph
+  复查后无未处理 HIGH。
+
+本轮 wall-clock 超过最初调查预算，原因包括一次误选 Formal 模式和红队发现真实 correctness
+缺陷后依法生成 v2；最终没有继续追加 benchmark 姿势或为噪声调产品。这个偏差作为施工事实保留，
+不能改写成“预算内完成”。
 
 ## Closure decision
 
-当前为 `SCOPED`，尚无 terminal verdict。
+**`CLOSED`（2026-08-27）。** 五项能力都有 consumer/成熟合同依据；适用 correctness、ownership、
+concurrency、复杂度、C++ 易用性、三平台编译/交付、依赖、文档、独立红队与 W1-WIN 5% P1 工程
+非劣门均通过。没有 C API/Native FFI；`util` runtime 仍是单独 `QUEUED` 单元，不能继承本结论。
+
+已知限制：
+
+- 当前 P1 claim 只覆盖 W1-WIN 的 Ref owning handoff 与短 SpinLock consumer shape；RNG 只有
+  correctness/diagnostic，M1-MAC 超短性能为 inconclusive，Formal 为 PENDING；
+- RNG 非密码学；Ref 只有一份 intrusive strong count，没有 weak/aliasing；SpinLock 不公平且只适合
+  极短低争用区；type ID 只在当前 compiler build 内有意义；
+- engineering bundle 仍是本机 live artifact，项目级 retention/signing 尚未完成。
+
+重新打开触发器：
+
+1. 真实 consumer 暴露本边界内的 correctness/security/ownership/API 易用性或常用能力缺口；
+2. 五个 header 的算法、布局、公开 API、直接依赖、compiler 合同或交付形态变化；
+3. 同合同成熟 peer 在普通消费 workload 上证明更优复杂度，或可复现超过 5% 的 material 优势；
+4. 当前 claim 需要续签而 source/peer/contract/machine/instrument/evidence identity 已变化或不可重放。
+
+候选 `27d73a61` 的 canonical LOC self-check：全库代码 **296,920**；自实现包含测试
+**122,157**；自实现不包含测试 **82,159**；当前 `util_core` 实现 **670** 行。

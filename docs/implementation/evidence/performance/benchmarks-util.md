@@ -1,4 +1,59 @@
-# util 历史性能证据（2026-07-30）
+# util 性能证据
+
+## util-core v1 当前工程证据（2026-08-27）
+
+本节是 `util_core` 当前 v1 的 P1 工程证据；下方 2026-07 各节全部是 **HISTORICAL**。产品候选为
+`27d73a610b13e6c07a3c3a32f491f8af32252ee1`，tree 为
+`6f84e0b4c78f3cbc9a27781ff2d6e9d6aac75e95`。合同
+`bench/contracts/util-core-p1-v1.json` 的 SHA-256 为
+`1cb8e6a6941acf597f6f9f1553588374ac62dce8316f058c2cabbee7bbaf5145`，benchmark source hash 为
+`b67a1b2741538334e494cef07680c17df7bce6126afefe7cb5eb01abb3a2f392`。外部源码固定为 Boost
+`df8eeb90846648464e3c8e378e312f0cec772e83` 与 oneTBB
+`e349c15263bbb1d6b48f2b514c06201e1b90eea3`。
+
+当前正式 P1 claim 只包含两个能由仓内 pinned peer 真正编译、且与直接消费者同合同的 workload：
+
+- `Ref`：预建 intrusive owner 跨函数 owning handoff，对 Boost `intrusive_ptr`；
+- `SpinLock`：`FiberStackPool` 形状的极短状态转移，对 oneTBB `spin_mutex`。
+
+RNG 的固定流、同算法 bounded draw 与 shuffle 仍运行 correctness/diagnostic，但本轮没有把不同 PRNG
+或不同语义的标准设施伪装成 exact peer，因此不进入胜负门。ScopeGuard 与 type-name 按 P0
+异常安全、布局、constexpr 和 codegen 结构门验收。多线程持续争用也只是选型诊断：W1 runner
+为消除迁核固定一个 logical CPU，不能用它签并发伸缩结论。
+
+W1-WIN 使用 `closure-perf-v1`，两种布局、两种执行顺序、每个 stratum 15 个独立进程；公共 A/A、
+known-delta、timer-floor、placement 和 provenance 资格门全部通过。`advantage ratio > 1` 有利于 HYLE；
+以下 99.26% distribution-free CI 全落在冻结的 5% non-inferiority 门内：
+
+| workload | stratum / order | advantage ratio median | CI | verdict |
+|---|---|---:|---:|---|
+| Ref owning handoff | primary / candidate-first | 1.0004 | [0.9965, 1.0080] | PARITY / NI PASS |
+| Ref owning handoff | primary / peer-first | 0.9996 | [0.9948, 1.0035] | PARITY / NI PASS |
+| Ref owning handoff | placement / candidate-first | 0.9962 | [0.9917, 1.0003] | PARITY / NI PASS |
+| Ref owning handoff | placement / peer-first | 0.9997 | [0.9953, 1.0057] | PARITY / NI PASS |
+| short locked transition | primary / candidate-first | 0.9988 | [0.9643, 1.0045] | PARITY / NI PASS |
+| short locked transition | primary / peer-first | 0.9961 | [0.9601, 1.0002] | PARITY / NI PASS |
+| short locked transition | placement / candidate-first | 0.9972 | [0.9639, 1.0028] | PARITY / NI PASS |
+| short locked transition | placement / peer-first | 0.9950 | [0.9670, 1.0081] | PARITY / NI PASS |
+
+最终 engineering bundle 位于 W1 本地
+`C:\hyle-scratch\util-core-v1\perf-win-engineering-evidence-27d73a61\manifest.json`；独立 deep replay
+得到 `qualification=QUALIFIED`、`paths_verified=true`、`performance_gate=PASS`。文件 SHA-256：
+
+- manifest：`7027954068A7B5C1DDFC1ED2D83A3646F951694B90A19939FFD445ADF88FFEFB`；
+- summary：`F5AA7929521A101646D8DFFFF3A75C78AF4B7B7F4889F1629B1C6422894726D2`；
+- observations：`6BCB2FAD9541F08371DCB1ED7524AF6C9AF853C55F233BB188BE3352E9A880C7`。
+
+M1-MAC 针对同一 current oneTBB 的手工超短诊断按顺序完全翻转：candidate-first 时 HYLE/TBB
+约为 2.49/1.37 ns，peer-first 时 TBB/HYLE 约为 2.68/1.39 ns，且首项误差很大。也就是说无论谁
+先执行谁都约慢两倍；它只能证明当前手工 harness 被顺序/QoS/布局因素支配，结论为
+**INCONCLUSIVE**，不能把差值归因于 SpinLock，也不能据此继续修改产品。
+
+本节只证明冻结 W1-WIN 普通消费形状的 5% 工程非劣，不声称所有 util-core 操作、所有平台或
+所有争用形状都达到 SOTA。Formal 跨平台发布证书仍为 `PENDING`，live bundle 的 retention/signing
+也仍是项目级待办。
+
+## 2026-07 历史证据
 
 > **2026-08-25 freshness gate：**本页固定于下述 2026-07 commit。util 的产品收口状态未改变；
 > mem/container 下游变化只触发相应边回归。相同 source identity、peer pin、编译合同与三平台重跑完成前，

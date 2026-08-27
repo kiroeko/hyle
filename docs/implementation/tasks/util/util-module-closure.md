@@ -1,8 +1,9 @@
-# util 两层严格收口
+# util 两层严格收口（HISTORICAL，2026-07）
 
-> **历史证据提示（2026-08-25）：**本页的绿色结论绑定文中日期/commit，不是 mem/container
-> 升级后 working tree 的当前证书。现行状态只看
-> [`pre-release-readiness`](../../status.md)。
+> **历史记录，不是当前 API 或证书。** 本页忠实记录 2026-07 当时存在的 util-core、util-runtime
+> 与纯 C adapter；BUILD-03 后旧 C schema/bridge/动态导出已经删除。当前 `util_core` v1 的结论见
+> [`util-core-v1`](util-core-v1-closure.md)，`util` runtime 仍为 `QUEUED`。唯一当前状态只看
+> [`module status`](../../status.md)。下文的 C ABI、动态符号和旧跑分不得作为当前使用说明。
 
 ## 当前状态（2026-07-30）
 
@@ -11,9 +12,11 @@
 | `util-core`：Ref/ScopeGuard/Rng/type-name/SpinLock | ✅ `3c32be6`：独立组件、成熟形状、三平台正确性/TSan/性能收口 |
 | `util-runtime`：Registry/demangle/纯 C adapter | ✅ `1b148ef`/`70fa4e8`：fallible/raw 双形状、共享 error/mem、完整 C ABI、三平台正确性/TSan/性能与 package 收口 |
 
-完整 util 已按 [`module-closure-methodology.md`](../../../developer/review/module-closure-methodology.md) 暂时结束关注。
+当时完整 util 曾按旧方法暂时结束关注；这不是当前结论。当前方法见
+[`module-closure-methodology.md`](../../../developer/review/module-closure-methodology.md)。
 长期边界见 [`../architecture/util-design.md`](../../../architecture/util-design.md)，用户选型见
-[`../guide/util.md`](../../../user/util.md)，C ABI 见 [`../guide/c-util.md`](../../../architecture/native-ffi-policy.md)，
+[`user/util.md`](../../../user/util.md)，Native FFI 当前准入边界见
+[`native-ffi-policy.md`](../../../architecture/native-ffi-policy.md)，
 三平台性能证据见 [`../performance/benchmarks-util.md`](../../evidence/performance/benchmarks-util.md)。
 
 ## 为什么分两层

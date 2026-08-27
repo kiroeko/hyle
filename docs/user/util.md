@@ -1,7 +1,8 @@
 # util：什么情况选什么
 
-> **`provisional / NOT_REVIEWED_V2`。** util 当前只提供 C++ 产品面。
-> 本页适用于 C++23 source/static/shared 三种交付，不描述 C API 或跨语言调用层。
+> **当前边界（2026-08-27）：**本页前半的 `util_core` 五项能力已完成 v1 收口；后半的
+> Registry/demangle 是尚待重审的 `util` runtime 既有使用合同。util 当前只提供 C++ 产品面，
+> 适用于 C++23 source/static/shared 三种交付，不描述 C API 或跨语言调用层。
 
 `util` 提供几种彼此独立的基础能力，不存在一个需要整体 include 的“万能工具箱”。C++ 用户
 按场景包含 `hyle/util/<capability>.h`，并链接可安装的 header-only target
@@ -50,6 +51,11 @@ close.invoke();
 `invoke()` 会先消费 guard，再把 callback 异常传给调用者；析构期间 callback 抛异常则按
 ScopeGuard/Folly/Abseil 同类合同终止进程，因此析构 cleanup 通常应写成 `noexcept`。
 
+构造 guard 时，若存储 callable 失败，原始 callable 会立即执行，已经取得的资源不会因构造异常
+泄漏。转移一个 callable move 可能抛异常的 guard 时，若 callable 可复制则使用 copy fallback；
+只有目标构造成功后源 guard 才失效，失败时 cleanup 仍由源对象持有。不可复制且 move 可能抛异常
+的 callable 会在编译期被拒绝；不要用“先 dismiss 再 move”绕过 ownership 合同。
+
 ## Ref：侵入式共享所有权
 
 ```cpp
@@ -73,8 +79,9 @@ auto base = hyle::util::static_pointer_cast<const Buffer>(writable);
 不能拿来证明“接下来仍唯一”。需要 weak reference、环检测、aliasing constructor 或对象不能
 嵌计数时，使用 `std::shared_ptr/weak_ptr` 或更贴领域的 handle。
 
-`Ref<Base>`/`Ref<Derived>` 可直接按对象地址比较、排序和放入 `std::unordered_*`；不会为了比较
-临时 retain/release。`static_pointer_cast`、`dynamic_pointer_cast`、`const_pointer_cast`
+`Ref<Base>`/`Ref<Derived>` 可直接按对象地址比较、排序和放入 `std::unordered_*`；排序使用标准
+指针全序，即使两个对象无关也适合关联容器，不会为了比较临时 retain/release。
+`static_pointer_cast`、`dynamic_pointer_cast`、`const_pointer_cast`
 均有 lvalue/rvalue 形状：成功的 rvalue cast 转移现有 ownership，不做额外原子往返；失败的
 dynamic rvalue cast 保留源引用，避免把一次探测变成意外释放。
 
@@ -181,8 +188,9 @@ manager 管理 quiescence，再销毁整个 Registry。Registry 必须活过所�
 
 ## 分层与证据入口
 
-header-only util-core 作为独立 `util_core` 组件交付；Registry 和 demangle 属于 `util`
-runtime component。`1b148ef`/`70fa4e8` 是上一轮功能、并发、性能与 package 复证的历史输入，
-不代表当前 working tree 已恢复绿证；现行状态只看
-[`pre-release-readiness`](../implementation/status.md)。分层仍然保留：它避免低层
-mem/container 为一个运行时 Registry 反向链接 `hyle_util`。
+header-only util-core 作为独立 `util_core` 组件交付，当前 v1 收口记录见
+[`util-core-v1`](../implementation/tasks/util/util-core-v1-closure.md)；Registry 和 demangle 属于仍为
+`QUEUED` 的 `util` runtime component。`1b148ef`/`70fa4e8` 只是在旧代码树上得到的历史输入，
+不代表当前 runtime 已恢复绿证；唯一当前状态见
+[`module status`](../implementation/status.md)。分层仍然保留：它避免低层 mem/container 为一个
+运行时 Registry 反向链接 `hyle_util`。

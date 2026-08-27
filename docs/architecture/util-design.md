@@ -1,11 +1,12 @@
 # util 架构：两个依赖层，一个产品边界
 
-> **V2 状态：`NOT_REVIEWED`。** 本页暂作既有设计输入，不代表当前功能、性能或 API 证书。
-> 当前只提供 C++23 source/static/shared，Native FFI 为 `N/A`。BUILD-03 已删除旧 C schema、
-> bridge、动态导出和 fixture；正文的其他验收叙事仍待 util 轮次重裁决。
+> **当前边界（2026-08-27）：**`util_core` v1 已 `CLOSED`；`util` runtime（Registry/demangle）仍为
+> `QUEUED`。因此本页关于五个 header-only primitive 的边界是当前设计，关于 Registry/demangle
+> 的正文只是下一轮设计输入，不是当前功能、性能或 API 证书。当前只提供 C++23
+> source/static/shared，Native FFI 为 `N/A`；BUILD-03 已删除旧 C schema、bridge、动态导出和 fixture。
 
-> 用户当前选型见 [user/util](../user/util.md)，上一轮性能输入见
-> [historical util evidence](../implementation/evidence/performance/benchmarks-util.md)，施工历史见
+> 用户当前选型见 [user/util](../user/util.md)，current util-core 与历史 util 证据见
+> [util performance evidence](../implementation/evidence/performance/benchmarks-util.md)，施工历史见
 > [util tasks](../implementation/tasks/util/)。
 
 `util` 不是随手堆 helper 的杂物目录。它是一个产品模块，但按依赖切成两个可组装层：
@@ -86,7 +87,9 @@ factory：missing 和 factory 返回 NULL 都是 NULL。会因设备、驱动、
   profile 证明伪共享的 owner 显式添加，不能让所有实例无条件付费。
 - SpinLock 成功 RMW 保留 acquire-release。历史 M4 真机证据表明机械削为 acquire-only 会造成
   material handoff regression；这是 ISA/codegen 合同，不以抽象模型的最弱合法序替代实测。
-  具体点值与 freshness 只见 [`benchmarks-util`](../implementation/evidence/performance/benchmarks-util.md)。
+  当前 v1 的 W1-WIN 同合同工程门为非劣 PASS；M1-MAC 的超短手工诊断被执行顺序完全翻转，按仪器
+  规则只能记为 inconclusive，不能驱动产品。具体身份、点值与 freshness 只见
+  [`benchmarks-util`](../implementation/evidence/performance/benchmarks-util.md)。
 
 ## 交付与 Native FFI 边界
 
@@ -109,6 +112,8 @@ util_core；这些依赖同时由中央 component graph 与 target link 生成/�
 ## 维护闸门
 
 1. util-core 公开头必须逐头 self-contained，并可由安装包单独请求；禁止 include runtime 头。
+   当前收口证据与 reopen triggers 见
+   [`util-core-v1`](../implementation/tasks/util/util-core-v1-closure.md)。
 2. Registry 修改必须复验 raw nullable/`Result<T>`、mutable/frozen、reentrant callback、freeze
    race、allocator failure、TSan 和 installed source/shared/static C++23 consumer。
 3. RNG 算法/状态布局变化更新固定序列；默认 TLS seed 变化不能破坏显式 seed 的可复现流。
