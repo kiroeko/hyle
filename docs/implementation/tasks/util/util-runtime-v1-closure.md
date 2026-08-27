@@ -128,12 +128,81 @@ lock、常态 metadata、binary dependency 与 code structure。旧 N=256 数字
 
 ## Verification manifest
 
-候选冻结后逐风险填写；未运行项不得写 `PASS`。
+验证对象始终是 product commit
+`469356394a185b5201675fd76ff1a10a4050528b` / tree
+`eabcba1fe1cffb484b20c377af0423028e2f9062`；后续 task/registry 提交只记录证据，未改变产品树。
+
+### Correctness risk matrix
+
+| Risk | verdict | 命令 / 证据 | 限制 |
+|---|---|---|---|
+| normal | `PASS` | W1-WIN、W1-WSL、M1-MAC 的 `HYLE_COMPONENTS=util` Release closure 均为 37/37；三平台 `hyle_util_test` 均通过 | 仓内消费者仍是 package sample，不冒充完整 inference engine |
+| empty / zero | `PASS` | Registry empty/missing、empty help、freeze；demangle null/empty/zero-capacity 测试 | nullable factory 的 missing 与 creator-null 按公开合同都返回 null |
+| capacity / boundary / overflow | `PASS` | reserve/freeze-after-reserve、demangle truncation/required-size、`MaximumStringLengthWidensBeforeNulByteAllocation` | `string_ref` 的公开长度上限仍由 container 拥有 |
+| OOM / system failure / invalid input | `PASS` | fault injector 穷举 initial backing call；replacement OOM、retry、null key/help/creator、priority 和 platform demangle fallback | DbgHelp/Itanium 不提供可恢复的 demangler allocation error，按合同回显原名 |
+| move / destroy / lifetime | `PASS` | move-only factory argument、owned dynamic key/help、replacement 后旧 help view、三 sanitizer | `FrozenView` 是 borrow，owner 析构前必须由调用方排空 reader |
+| concurrency / reentrancy | `PASS` | concurrent registration/read、creator reentry、snapshot visitor reentry、freeze/read race；W1-WSL TSan | registry 析构与 operation 并发不受支持；已在用户文档明确 |
+| cancellation / close | `NOT_APPLICABLE` | 同步 startup registry 与 pure diagnostic demangle 没有异步 operation | `freeze()` 是单向 publication，不是 cancellation/close protocol |
+| property / differential / fuzz / stress | `PASS` | allocation-boundary sweep、multi-thread registration/read stress 与三平台完整测试 | 本轮风险由穷举 fault boundary/stress 覆盖，未单独运行 fuzz |
+| ASan / UBSan / TSan | `PASS` | W1-WSL GCC 14.2 三个独立 build；`hyle_util_test` 各 1/1；TSan 用 `setarch $(uname -m) -R` 关闭 ASLR 后运行 | sanitizer 由 WSL native-ext4 承担，Mac 不重复冒充 sanitizer 证据 |
+| real ISA / backend | `NOT_APPLICABLE` | Registry 无 ISA/backend 分支；demangle 的 MSVC ABI、GCC Itanium ABI 与 AppleClang Itanium ABI 已由三平台 correctness 覆盖 | 不产生真实 GPU/backend 功能声明 |
+
+### Aggregate gates
+
+| Aggregate gate | verdict | 命令 / 证据 | 限制 |
+|---|---|---|---|
+| correctness / sanitizer | `PASS` | W1-WIN MSVC 14.50、W1-WSL GCC 14.2、M1-MAC AppleClang 21；各平台 37/37，WSL ASan/UBSan/TSan 各 1/1 | 不把下游未关闭模块的正确性并入本结论 |
+| component / source / static / shared | `PASS` | 三平台 selected-component smoke；源码嵌入、relocated shared SDK、relocated static SDK consumer 全通过 | Mac consumer 按项目合同显式设 `MACOSX_DEPLOYMENT_TARGET=14.4`；缺少 Ninja 时用系统 Makefiles |
+| direct consumer | `PASS` | `samples/package/util/cpp` 同时走 fallible Registry、freeze/create/help 与 demangle；三种交付运行通过 | 这是独立 C++ package journey，不是端到端 inference profile |
+| P0 engineering performance | `PASS` | fault injection/zero-allocation assertions、源码结构审查；M1 `nm -gU` 仅导出一个 demangle symbol，`otool -L` 与声明闭包一致 | 不运行 timing benchmark，不声明全平台纳秒 SOTA |
+| usability / docs | `PASS` | public-header self-containment；`docs/user/util.md` 选择表、完整 journey、ownership/failure/concurrency/坑；`check-docs.py` 267 Markdown / 757 relative links | Native FFI/C API 明确 N/A |
+| independent red team | `PASS` | 下节冻结合同攻击；module checker、consumer scan、symbol/load-command 检查 | 只攻击本轮范围，未重开 util_core 或依赖模块 |
+
+### Reproduction summary
+
+- W1-WIN：Ninja Release、MSVC 14.50、`HYLE_COMPONENTS=util`，37/37；public-header、
+  `hyle_util_bench` compile-only，以及 selected source/shared/static consumer 通过。
+- W1-WSL：GCC 14.2 Release 37/37；ASan、UBSan、TSan 的 `hyle_util_test` 各 1/1；selected
+  source/shared/static consumer 通过。系统默认 GCC 13.3 不满足项目编译器合同后，显式使用
+  `CC=gcc-14 CXX=g++-14`，这是环境纠正而非产品改动。
+- M1-MAC：AppleClang 21 / CMake 4.3.4 / Unix Makefiles，Release 37/37；设置项目规定的
+  `MACOSX_DEPLOYMENT_TARGET=14.4` 后 selected source/shared/static consumer 全通过。Mac 缺少 Ninja
+  的首次 configure 未产生产品 verdict，改用系统 Makefiles 的独立目录后通过。
+- P0 symbol/dependency structure：M1 `nm -gU` 的 `libhyle_util.dylib` 只有
+  `hyle::util::demangle(char const*, char*, unsigned long)` 一个公开 binary symbol；`otool -L`
+  显示 core-header + error/mem/container 的实际 transitively loaded closure，未出现 util 反向依赖。
 
 ## 独立红队
 
-候选冻结后在 30 分钟预算内执行。
+- 审查者 / 日期 / 时间预算：独立冻结候选复检 / 2026-08-28 / 30 分钟上限。
+- capability / contract / complexity：逐项反向追踪 public Registry/demangle；无 benchmark-only API；
+  registration、lookup、freeze、enumeration 与 demangle 均在冻结复杂度档内。
+- correctness / lifetime / concurrency：检查 absent/replacement OOM commit 点、key/help ownership、
+  mutable/frozen publication、creator/visitor 锁外重入和 owner/view 生命周期；sanitizer 与压力测试支持结论。
+- dependency / build / delivery：扫描当前调用点和旧静态宏；核对中央 component edge、公开头、真实 target、
+  source/static/shared relocation，以及 Mach-O export/load commands。
+- engineering performance validity：P0 只签复杂度、allocation/lock/metadata/symbol structure；拒绝沿用旧
+  N=256 timing 数字或以它签 SOTA。
+
+| 问题 | severity | verdict | 证据 |
+|---|---|---|---|
+| 静态注册 TU 在 archive 中可被 dead-strip，且 init 失败无自然接收方 | high | `fixed` | 旧宏/Registerer/default-new 已删除；sample/tests 走显式、可检查的 registration |
+| absent registration 的多段 monotonic allocation 会在末段 OOM 后留下不可达 bytes | high | `fixed` | table capacity 先准备，随后 Entry+key+help 单 allocation；逐 backing call fault sweep + retry 通过 |
+| freeze/read 或 callback 重入可能持锁调用用户代码 | high | `disproved` | creator 与 visitor 锁外；release/acquire publish；race/reentry/TSan 均通过 |
+| demangle 文档可能把 caller-owned allocation-free 误写成实现零分配 | medium | `fixed` | public/user/architecture/performance 均明确 Itanium malloc/free 与 Windows serialization/temporary |
+| 一个 demangle symbol 仍使 shared `hyle_util` 带上 Registry 的 public dependency closure | low | `accepted` | `otool -L` 实证；当前 sample 同时消费两项且没有 material demangle-only consumer，出现该消费者即 reopen |
+| Mac selected smoke 首次未声明 14.4 deployment target | low | `disproved` | 这是已公开的父工程契约；设置 `MACOSX_DEPLOYMENT_TARGET=14.4` 后三种 journey 全通过 |
 
 ## Closure decision
 
-当前为 `SCOPED`，尚无 terminal verdict。
+- 各适用门最终 verdict：scope、architecture、correctness、delivery、usability/docs、red-team、P0
+  engineering performance 全部 `PASS`；Formal 为 `NONE`。
+- blocker：无。候选没有未裁决的 correctness/security/ownership/交付或 P0 cost-structure blocker。
+- 已知限制：case-sensitive key；枚举顺序未指定；`FrozenView`/返回 view 是 owner-bounded borrow；无
+  unregister/dynamic unload/quiescence；demangle 可能回显原名并在平台内部 allocation/serialization；
+  util shared component 当前仍带完整 Registry 依赖闭包；没有端到端 inference 性能证书。
+- reopen triggers：真实消费者暴露本边界内 correctness/ownership/API 缺口；Registry/demangle 算法、
+  公开合同、直接依赖或交付形状改变；依赖模块改变实际语义；成熟同合同 peer 证明更好复杂度档；
+  profile 证明此处成为 material 热点；demangle-only consumer 证明当前 component closure 成本 material。
+- terminal receipt：尚未写入；本提交只建议机械状态进入 `VERIFIED`。
+- 建议机械状态：`VERIFIED`。

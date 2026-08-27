@@ -21,7 +21,7 @@
 | mem | QUEUED | — | — | — | — | 现有实现与历史审查只作输入。 |
 | simd | QUEUED | — | — | — | — | 现有实现与历史审查只作输入。 |
 | container | QUEUED | — | — | — | — | 完整容器模块仍未审查；不能继承 intrusive 子组件的候选结论。 |
-| util | CANDIDATE | P0 | PLANNED / STRUCTURAL | NONE | [task](tasks/util/util-runtime-v1-closure.md) | util-runtime-v1 产品候选已冻结：Registry 显式/no-throw/事务式登记，demangle 自然 C++ 入口与真实成本合同，直接组件依赖和 source/static/shared sample 均已迁移；正在做三平台与红队签证。 |
+| util | VERIFIED | P0 | PASS / STRUCTURAL | NONE | [task](tasks/util/util-runtime-v1-closure.md) | util-runtime-v1 VERIFIED：显式/no-throw/事务式 Registry 与诊断型 demangle 已通过三平台 correctness/sanitizer、source/static/shared 交付、文档、红队和 P0 成本结构门；等待 terminal receipt/LOC 后关闭。 |
 | sched | QUEUED | — | — | — | — | 现有实现只作输入；特化 waiter 链仍归 scheduler。 |
 | io | QUEUED | — | — | — | — | 现有实现只作输入；尚未启动 v1 收口。 |
 | compute | QUEUED | — | — | — | — | 实现尚不完整；前置与真实 consumer slice 建立前保持可变。 |

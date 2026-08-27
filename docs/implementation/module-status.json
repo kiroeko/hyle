@@ -278,7 +278,7 @@
     },
     {
       "module": "util",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "round_id": "util-runtime-v1",
       "closure_task": "docs/implementation/tasks/util/util-runtime-v1-closure.md",
       "scope": "Registry and demangle runtime capabilities, their C++ API, ownership/lifetime/concurrency/failure and complexity, component dependency and source/static/shared delivery, direct consumer boundary, documentation and P0 cost structure.",
@@ -293,14 +293,38 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "PASS",
         "mode": "STRUCTURAL",
-        "instrument_profile": "closure-correctness-v1"
+        "instrument_profile": "closure-correctness-v1",
+        "evidence": "docs/implementation/tasks/util/util-runtime-v1-closure.md"
       },
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "util-runtime-v1 产品候选已冻结：Registry 显式/no-throw/事务式登记，demangle 自然 C++ 入口与真实成本合同，直接组件依赖和 source/static/shared sample 均已迁移；正在做三平台与红队签证。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
+      "closure_evidence": "docs/implementation/tasks/util/util-runtime-v1-closure.md",
+      "known_limitations": [
+        "Keys are case-sensitive, enumeration order is unspecified, and FrozenView plus returned string views borrow Registry lifetime.",
+        "Registry does not own dynamic-module unload or quiescence; the module manager must drain objects and readers before destroying it.",
+        "Demangle is diagnostic-only and may pass through the original name or allocate/serialize inside the platform ABI.",
+        "The shared util component currently carries Registry's public dependency closure even though demangle is its only binary symbol; no material demangle-only consumer currently justifies another target.",
+        "P0 closure proves cost structure rather than end-to-end inference performance or timing SOTA."
+      ],
+      "reopen_triggers": [
+        "A real consumer exposes a correctness, security, ownership, API-usability or missing-capability defect within the util-runtime boundary.",
+        "Registry or demangle changes algorithm, public API, direct dependency, supported ABI/compiler semantics or delivery shape.",
+        "A direct dependency changes actual util-runtime semantics, or a mature same-contract peer proves a better complexity class.",
+        "A profile establishes material runtime impact, or a demangle-only consumer proves the current component closure materially wasteful."
+      ],
+      "summary": "util-runtime-v1 VERIFIED：显式/no-throw/事务式 Registry 与诊断型 demangle 已通过三平台 correctness/sanitizer、source/static/shared 交付、文档、红队和 P0 成本结构门；等待 terminal receipt/LOC 后关闭。"
     },
     {
       "module": "sched",
