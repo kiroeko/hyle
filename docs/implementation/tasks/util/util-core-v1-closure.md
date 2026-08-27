@@ -5,7 +5,7 @@
 > 本页是当前 `util_core-v1` 轮的冻结卡与施工事实。2026-07 的 util-core 任务、点值和绿色结论只作
 > 审计输入；当前状态只看 [`module-status.json`](../../module-status.json)。
 
-## Closure card（`SCOPED`）
+## Closure card（`AUDITED`）
 
 - component / owner / round ID：`util_core` / util-core maintainers / `util-core-v1`。
 - task kind：`REFACTOR`；baseline commit：
@@ -64,16 +64,43 @@
 
 ## Capability / gap ledger
 
-`AUDITED` 前逐项填写；当前不得因历史实现或 benchmark 名称预判 `KEEP/FIX`。
+本轮只把真实 consumer、标准/成熟实现的共同形状和可复现缺陷提升为 `MUST`；单个 peer 独有能力
+保留为 `GENERAL` 查漏项，不因“别的库有”自动扩张产品面。
 
 | ID | requirement class | demand kind | exact consumer / peer / standard source | normal shape | semantic / artifact / delivery owner | ownership/failure/concurrency | complexity/resource target | disposition | severity | verification / negative space |
 |---|---|---|---|---|---|---|---|---|---|---|
-| UC-RNG-01 | MUST | consumer + peer + standard | inference sampling/randomized algorithms；Folly xoshiro；C++ URBG | deterministic stream、bounded draw、shuffle、explicit/TLS stream | util_core / header / build-package | instance/thread owns mutable state；not crypto | scalar O(1)、shuffle O(n)、32B、零分配 | audit pending | P1 | state/property/peer/codegen；不承诺 secure entropy |
-| UC-REF-01 | MUST | direct consumer + peer | util Registry；Folly intrusive pointer shape | explicit adopt/retain、copy/move/cast、custom teardown | util_core / header / build-package | one strong count；borrow 必须有 live owner | copy/drop O(1)、一 pointer owner | audit pending | P1 | lifetime/concurrency/codegen；无 weak/aliasing |
-| UC-GUARD-01 | MUST | general C++ task + peer | acquisition rollback；Abseil/Folly guard | move-only once cleanup、dismiss/explicit invoke | util_core / header / build-package | callable value owned；destructor throw terminates | O(1)、栈内、零分配 | audit pending | P0 | exception/move/codegen；优先资源 RAII |
-| UC-SPIN-01 | MUST | direct consumer + peer | mem/sched/graph；oneTBB/Folly | compact unfair TTAS for a few-instruction critical state | util_core / header / build-package | thread-blocking；external owner lifetime | O(wait)、1B、零分配；短低争用 | audit pending | P1 | mutual exclusion/TSan/peer/ARM holdout；非长临界区 |
-| UC-TYPE-01 | MUST | direct consumer + peer/compiler | util Registry；Boost/compiler | constexpr borrowed compiler-local spelling/hash | util_core / header / build-package | static storage borrow；collision possible | compile-time O(name length)、零 runtime state | audit pending | P0 | compiler/qualifier/codegen；非 ABI/serialization ID |
-| UC-ADOPT-01 | MUST | dependency audit | mem/sched/graph/util-runtime source | 合法直连且无同义复制 | owning downstream / util_core / build-package | 各 consumer 保留自身状态机 | 不扩大依赖闭包 | audit pending | P0 | syntax/semantic duplicate/build graph |
+| UC-RNG-01 | MUST | consumer + peer + standard | inference sampling/randomized algorithms；Folly xoshiro；C++ URBG | deterministic stream、bounded draw、shuffle、explicit/TLS stream | util_core / header / build-package | instance/thread owns mutable state；not crypto | scalar O(1)、bounded expected O(1)、shuffle O(n)、32B、零分配 | KEEP | P1 | 固定序列/state/jump/property/同引擎 bounded+shuffle/codegen；不承诺 secure entropy |
+| UC-REF-01 | MUST | direct consumer + peer + standard | util Registry；Folly/Boost intrusive pointer；`shared_ptr` ownership surface | explicit adopt/retain、copy/move/cast、custom teardown、identity compare/hash | util_core / header / build-package | one strong count；borrow 必须有 live owner；失败 dynamic rvalue cast 不消费 owner | copy/drop/cast O(1)、一 pointer owner、对象内 32-bit count | KEEP | P1 | lifetime/concurrency/layout/codegen；无 weak/aliasing；普通单份计数以前置条件换最短原子路 |
+| UC-GUARD-01 | MUST | defect + general C++ task + peer/standard | acquisition rollback；libstdc++ scope_exit；Abseil/Folly guard | move-only once cleanup、dismiss/explicit invoke；构造/转移失败不丢 cleanup | util_core / header / build-package | callable value owned；析构 throw 终止；失败 move 后 source 仍拥有动作 | O(1)、栈内、零分配；empty callable 不付无谓 byte | FIX | P0 | 用标准 copy fallback/failsafe 语义修复可抛 callable；move/throw/size/codegen |
+| UC-SPIN-01 | MUST | direct consumer + peer | mem/sched/graph；oneTBB/Folly | compact unfair TTAS for a few-instruction critical state | util_core / header / build-package | thread-blocking；external owner lifetime | O(wait)、1B、零分配；短低争用 | KEEP | P1 | mutual exclusion/TSan/同合同 handoff/ARM holdout；八线程持续争用只诊断选择边界 |
+| UC-TYPE-01 | MUST | direct consumer + peer/compiler | util Registry；Boost/compiler | constexpr borrowed compiler-local spelling/hash | util_core / header / build-package | static storage borrow；collision possible | compile-time O(name length)、零 runtime state | KEEP | P0 | compiler/qualifier/array/function/incomplete type；非 ABI/serialization ID |
+| UC-ADOPT-01 | MUST | dependency audit | mem/sched/graph/util-runtime source + component graph | 每个真实使用点有合法直接边；专用下游状态机不强改成通用 primitive | owning downstream / util_core / build-package | 各 consumer 保留自身状态机 | 当前 component closure 不扩大 | KEEP | P0 | mem/sched PUBLIC、graph PRIVATE、util PUBLIC util_core 均正确；相邻专用实现见 backlog |
+| UC-RNG-G1 | GENERAL | peer | Folly SeedSeq/batched xoshiro | richer seed material / bulk generation | future consumer / util or algorithm owner | caller-owned output/state | bulk O(n)，可能 SIMD | DEFER | P2 | 当前 consumer 没有 bulk/SeedSeq demand；显式 state + jump 已覆盖可复现拆流，不能为行数扩 API |
+| UC-REF-G1 | GENERAL | peer + standard | Boost/std reinterpret/weak/aliasing surfaces | unrelated cast 或 control-block ownership | different ownership type | 需要额外 lifetime identity/metadata | 不得破坏一指针 Ref 合同 | REJECT | P0 | reinterpret 会让 CRTP decref/destroy 落到无关静态类型；weak/aliasing 应选 shared_ptr 或另立模型 |
+| UC-GUARD-G1 | GENERAL | peer + TS standard | Folly/libstdc++ scope_fail/scope_success/unique_resource | exception-count conditional action / generic resource pair | future named consumer | exception-only outcome 与 Status return 不同 | O(1) | REJECT | P0 | HYLE 主失败流是 Status/Result；typed RAII 优先，不能让 exception-only guard 冒充 error-return rollback |
+| UC-PERF-01 | MUST | evidence defect | `closure-perf-v1`；当前 util_core bench | current consumer-shaped P1 evidence | bench contract / perf instrument | candidate/peer 同算法、同计费边界、反序与 qualification controls | 5% non-inferiority；Scope/type 用 P0 structural | FIX | P1 | RNG 不再用不同 engine 冒充同合同；Ref 不让 shared_ptr 冒充 exact peer；SpinLock 不把线程创建混进 handoff |
+| UC-DOC-01 | MUST | user + architecture contract | util architecture/user guide/current registry | 选择表、坑、边界、当前状态和证据入口一致 | docs / util_core / build-package | 明示 borrow/TLS/spin/destructor 限制 | 无运行时成本 | FIX | P0 | 去掉 current 页 provisional 误导；历史页仍保持 HISTORICAL |
+
+- 公开入口反向追踪：`SpinLock/cpu_relax` 落到 mem、sched、graph；`Ref/type_name` 落到
+  util-runtime Registry；`Rng` 落到推理采样/随机算法普通任务；`ScopeGuard` 落到 acquisition 后多早退
+  rollback。没有入口只由 benchmark 命名。
+- 语法消费者 / 语义重复扫描：真实直连边均与中央 component graph 一致。container 的两个 adaptive
+  lock 私有复制了 pause hint，但它们还拥有 park/wait 策略且 container 尚未收口；登记
+  `CONT-UTIL-CPU-RELAX-01`，不在 util_core 轮越界改变其依赖/API。sched 锁内构造/移动泛型 `T` 是
+  `SCHED-SPIN-HOLD-01`，由 sched 判断 blocking/exception contract，不能据此污染 SpinLock 本身。
+- public/internal/higher-layer 裁决：五个公开 header 与 `hyle::util_core` target 保留；secure random、
+  distributions/bulk algorithms、weak ownership、blocking/fiber lock、runtime-stable type identity 留在上层或
+  独立能力，不塞入本 target。
+- 本轮冻结 `FIX` 集：
+  1. `ScopeGuard` 对齐 scope_exit/Folly 的构造失败 failsafe、throwing-move copy fallback 与成功后才移交
+     ownership，并用 `[[no_unique_address]]` 消除 empty callable 的无谓布局字节；
+  2. 补齐相关异常/布局、Ref 排序、RNG jump、type-name 复杂类型和 direct-include 回归测试；产品头只做
+     被测试证明需要的直接 include 修正；
+  3. 将 util_core P1 harness/contract 改成冻结的同引擎/同算法 normal shapes，并使用现有中央
+     `closure-perf-v1` controls；旧不同 PRNG 和 thread-construction 点值只可作历史诊断；
+  4. 更新 util architecture/user/current task，明确选择、坑、负空间、证据与当前状态。
+- 相邻模块 backlog：`CONT-UTIL-CPU-RELAX-01`、`SCHED-SPIN-HOLD-01`。二者都没有证明当前 util_core
+  correctness/delivery blocker，因此不扩大本轮产品修改。
 
 ## Candidate
 

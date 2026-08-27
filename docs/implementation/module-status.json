@@ -122,7 +122,7 @@
     },
     {
       "module": "util_core",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "round_id": "util-core-v1",
       "closure_task": "docs/implementation/tasks/util/util-core-v1-closure.md",
       "scope": "Five header-only util_core primitives: random stream, intrusive strong ownership, lexical cleanup, compact spin locking and compiler-local type identity; including direct consumers, C++ API, delivery, documentation and tiered engineering performance.",
@@ -145,7 +145,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "util-core-v1 已冻结范围：五个 header-only primitive 将按真实消费者、成熟 peer、三平台 correctness/交付和分层 P1/P0 性能门重新审查。"
+      "summary": "util-core-v1 已完成能力与依赖审计并冻结有限 FIX：ScopeGuard 异常安全/布局、针对性回归、同合同 P1 证据和 current 文档；不扩张 weak ownership、bulk RNG 或 exception-only guard。"
     },
     {
       "module": "error",
