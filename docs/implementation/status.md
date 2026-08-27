@@ -21,7 +21,7 @@
 | mem | QUEUED | — | — | — | — | 现有实现与历史审查只作输入。 |
 | simd | QUEUED | — | — | — | — | 现有实现与历史审查只作输入。 |
 | container | QUEUED | — | — | — | — | 完整容器模块仍未审查；不能继承 intrusive 子组件的候选结论。 |
-| util | QUEUED | — | — | — | — | runtime utility 尚未启动收口。 |
+| util | SCOPED | P0 | PLANNED / STRUCTURAL | NONE | [task](tasks/util/util-runtime-v1-closure.md) | util-runtime-v1 已冻结范围：按推理 backend 启动注册与诊断 demangle 审计功能、C++ 易用性、依赖/交付和 P0 成本结构；不再用旧 N=256 微基准自证热点。 |
 | sched | QUEUED | — | — | — | — | 现有实现只作输入；特化 waiter 链仍归 scheduler。 |
 | io | QUEUED | — | — | — | — | 现有实现只作输入；尚未启动 v1 收口。 |
 | compute | QUEUED | — | — | — | — | 实现尚不完整；前置与真实 consumer slice 建立前保持可变。 |

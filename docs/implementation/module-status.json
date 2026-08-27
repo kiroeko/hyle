@@ -278,8 +278,27 @@
     },
     {
       "module": "util",
-      "product_state": "QUEUED",
-      "summary": "runtime utility 尚未启动收口。"
+      "product_state": "SCOPED",
+      "round_id": "util-runtime-v1",
+      "closure_task": "docs/implementation/tasks/util/util-runtime-v1-closure.md",
+      "scope": "Registry and demangle runtime capabilities, their C++ API, ownership/lifetime/concurrency/failure and complexity, component dependency and source/static/shared delivery, direct consumer boundary, documentation and P0 cost structure.",
+      "non_goals": "Reopening util_core or closing dependencies, model/device semantics, dynamic module discovery/load/unload/quiescence, unregister, arbitrary captured factories, op/kernel dispatch policy, Native FFI/C API, benchmark-driven metadata and Formal certification.",
+      "baseline_commit": "d6ff8735f81d891050ddef90d4eee10600f43ab2",
+      "performance_tier": "P0",
+      "validation_machine_profiles": [
+        "W1-WIN",
+        "W1-WSL",
+        "M1-MAC"
+      ],
+      "engineering_performance": {
+        "verdict": "PLANNED",
+        "mode": "STRUCTURAL",
+        "instrument_profile": "closure-correctness-v1"
+      },
+      "formal_performance": {
+        "state": "NONE"
+      },
+      "summary": "util-runtime-v1 已冻结范围：按推理 backend 启动注册与诊断 demangle 审计功能、C++ 易用性、依赖/交付和 P0 成本结构；不再用旧 N=256 微基准自证热点。"
     },
     {
       "module": "sched",
