@@ -61,10 +61,10 @@ TLS、HTTP/2、CUDA、ggml、Vulkan 和 trace 等昂贵能力默认关闭；相�
 | 通用 RAII、registry、random 等工具 | [util](util.md) |
 | caller-owned 稳定节点的零分配链、auto/safe retirement、O(1) 摘链/range handoff | [container_intrusive](container-intrusive.md) |
 | flat/small/concurrent 等通用数据结构 | [container](container.md) |
+| 非负整数 ceil-division 与可表示 multiple round-up | [math](math.md) |
 | 向量、转换、bitpack 和向量算法 | [simd](simd-usage.md) |
 | 异步文件、网络和 protocol 机制 | [io](io.md) |
 | task/fiber/coroutine 与同步 | sched；尚无 v2 用户指南，仅供内部试验 |
-| 标量 math 补位 | [模块边界仍待裁决](../architecture/math-design.md) |
 | device/backend/operator 与 graph | compute/graph 尚未完成，不作为已支持用户面 |
 
 模块页应告诉你何时使用、何时不要使用、ownership、线程安全、失败语义和常见坑。若页面没有

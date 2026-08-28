@@ -35,7 +35,7 @@ fcontext 时配置会拒绝这些根，而不是生成删掉公开依赖的残�
 | util_core | core | — |
 | error | core | — |
 | obs | core, error | — |
-| math | — | — |
+| math | core | — |
 | time | core, container_intrusive | — |
 | platform | core, error, time | — |
 | mem | core, error, platform, util_core | — |
@@ -58,10 +58,10 @@ sched waiter 在摘链后复用 link storage 作锁外 wake chain，保留专用
 这些消费者都不会把 `time` 拉入完整 container 的 mem/platform 闭包。组件自己的边界见
 [`container-intrusive-design`](container-intrusive-design.md)。
 
-`core`、`container_intrusive` 与 `util_core` 都是正式 `INTERFACE` 产品组件。公开头直接 include
+`core`、`container_intrusive`、`util_core` 与 `math` 都是正式 `INTERFACE` 产品组件。公开头直接 include
 `<hyle/core/**>` 或 `<hyle/version.h>` 的模块必须直接声明 `PUBLIC core`，即使没有 binary symbol
-需要链接；这条边传播 include/build/package contract。当前除 `math` 外的组件都有真实 Core
-公开消费者并显式登记该边，`math` 没有 include 就不增加伪依赖。配置合同会把公开头扫描与中央
+需要链接；这条边传播 include/build/package contract。`math` 使用 Core 的 release-surviving fail-fast
+primitive，因此同样声明真实 `PUBLIC core` 边。配置合同会把公开头扫描与中央
 声明对账，selected-header 安装或共享源码 include root 都不能充当隐藏依赖。
 
 中央图和 target link 并不是两份人工事实：`HyleComponents.cmake` 的同一声明同时用于选择闭包和

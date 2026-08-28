@@ -1,67 +1,74 @@
-#include <gtest/gtest.h>
+#include "hyle/math/scalar.h"
 
+#include <gtest/gtest.h>
 #include <cstdint>
 #include <limits>
 
-#include "hyle/math/scalar.h"
-
-using hyle::math::approx_eq;
-using hyle::math::div_ceil;
+using hyle::math::ceil_div;
 using hyle::math::round_up_to_multiple;
-using hyle::math::sgn;
+using hyle::math::try_ceil_div;
+using hyle::math::try_round_up_to_multiple;
 
-TEST(DivCeil, Basic) {
-  EXPECT_EQ(div_ceil<unsigned>(0, 32), 0u);
-  EXPECT_EQ(div_ceil<unsigned>(1, 32), 1u);   // rounds up
-  EXPECT_EQ(div_ceil<unsigned>(32, 32), 1u);  // exact, no extra
-  EXPECT_EQ(div_ceil<unsigned>(33, 32), 2u);
-  EXPECT_EQ(div_ceil<unsigned>(65, 64), 2u);
+TEST(CeilDiv, NormalAndSignedCounts) {
+  EXPECT_EQ(ceil_div<unsigned>(0, 32), 0u);
+  EXPECT_EQ(ceil_div<unsigned>(1, 32), 1u);
+  EXPECT_EQ(ceil_div<unsigned>(32, 32), 1u);
+  EXPECT_EQ(ceil_div<unsigned>(33, 32), 2u);
+  EXPECT_EQ(ceil_div<std::int64_t>(65, 64), 2);
 }
 
-// The reason we don't use (a+b-1)/b: it overflows near the max. a/b+(a%b!=0)
-// does not -- max/1 must be max exactly, not wrap to 0.
-TEST(DivCeil, NoOverflowNearMax) {
+TEST(CeilDiv, CheckedBoundaryAndNoOverflowNearMax) {
   constexpr std::uint64_t kMax = std::numeric_limits<std::uint64_t>::max();
-  EXPECT_EQ(div_ceil<std::uint64_t>(kMax, 1), kMax);
-  EXPECT_EQ(div_ceil<std::uint64_t>(kMax, kMax), 1u);
+  EXPECT_EQ(ceil_div<std::uint64_t>(kMax, 1), kMax);
+  EXPECT_EQ(ceil_div<std::uint64_t>(kMax, 2), kMax / 2 + 1);
+  EXPECT_EQ(ceil_div<std::uint64_t>(kMax, kMax), 1u);
+  EXPECT_FALSE(try_ceil_div<unsigned>(1, 0).has_value());
+  EXPECT_FALSE(try_ceil_div<int>(-1, 2).has_value());
+  EXPECT_FALSE(try_ceil_div<int>(1, -2).has_value());
 }
 
-TEST(RoundUpToMultiple, NonPowerOfTwo) {
+TEST(RoundUpToMultiple, CheckedNonPowerOfTwo) {
   EXPECT_EQ(round_up_to_multiple<unsigned>(0, 6), 0u);
   EXPECT_EQ(round_up_to_multiple<unsigned>(1, 6), 6u);
   EXPECT_EQ(round_up_to_multiple<unsigned>(6, 6), 6u);
   EXPECT_EQ(round_up_to_multiple<unsigned>(7, 6), 12u);
   EXPECT_EQ(round_up_to_multiple<unsigned>(100, 10), 100u);
+  EXPECT_EQ(round_up_to_multiple<int>(7, 6), 12);
+  EXPECT_FALSE(try_round_up_to_multiple<unsigned>(1, 0).has_value());
+  EXPECT_FALSE(try_round_up_to_multiple<int>(-1, 2).has_value());
+  EXPECT_FALSE(try_round_up_to_multiple<int>(1, -2).has_value());
 }
 
-TEST(Sgn, DeadZone) {
-  EXPECT_EQ(sgn(1.0), 1);
-  EXPECT_EQ(sgn(-1.0), -1);
-  EXPECT_EQ(sgn(0.0), 0);
-  EXPECT_EQ(sgn(1e-9), 0);   // inside default eps band -> zero
-  EXPECT_EQ(sgn(-1e-9), 0);
-  EXPECT_EQ(sgn(1e-3), 1);   // outside band
+TEST(RoundUpToMultiple, RejectsUnrepresentableResult) {
+  constexpr std::uint64_t kMax = std::numeric_limits<std::uint64_t>::max();
+  EXPECT_EQ(round_up_to_multiple<std::uint64_t>(kMax, 1), kMax);
+  EXPECT_EQ(round_up_to_multiple<std::uint64_t>(kMax - 1, 2), kMax - 1);
+  EXPECT_FALSE(try_round_up_to_multiple<std::uint64_t>(kMax, 2).has_value());
+  EXPECT_FALSE(try_round_up_to_multiple<std::int64_t>(
+                   std::numeric_limits<std::int64_t>::max(), 2)
+                   .has_value());
 }
 
-TEST(ApproxEq, ScalesWithMagnitude) {
-  EXPECT_TRUE(approx_eq(1.0, 1.0));
-  EXPECT_FALSE(approx_eq(1.0, 2.0));
-  // The point of relative epsilon: the SAME absolute gap (1.0) is "equal" at
-  // large magnitude but "not equal" at small, under the SAME relative tolerance.
-  EXPECT_TRUE(approx_eq(1e8, 1e8 + 1.0, 1e-6));  // threshold 1e8*1e-6=100 >> 1
-  EXPECT_FALSE(approx_eq(1.0, 2.0, 1e-6));        // threshold 1e-6 << diff 1
-  // Tunable tolerance.
-  EXPECT_TRUE(approx_eq(1.0, 1.05, 0.1));
-  EXPECT_FALSE(approx_eq(1.0, 1.2, 0.1));
-  // Default eps is ~1 ulp (the tightest): a multi-ulp gap is NOT equal.
-  EXPECT_FALSE(approx_eq(1e15, 1e15 + 1.0));
+TEST(ScalarIntegerMath, PropertyAgainstSmallExactOracle) {
+  for (std::uint32_t value = 0; value != 256; ++value) {
+    for (std::uint32_t divisor = 1; divisor != 32; ++divisor) {
+      const std::uint32_t expected_ceil =
+          (value + divisor - 1) / divisor;
+      EXPECT_EQ(ceil_div(value, divisor), expected_ceil);
+      EXPECT_EQ(round_up_to_multiple(value, divisor),
+                expected_ceil * divisor);
+    }
+  }
 }
 
-// Everything here is usable in constant expressions.
 TEST(Scalar, Constexpr) {
-  static_assert(div_ceil<unsigned>(65, 64) == 2u);
+  static_assert(ceil_div<unsigned>(65, 64) == 2u);
+  static_assert(ceil_div<std::int64_t>(65, 64) == 2);
+  static_assert(try_ceil_div<unsigned>(1, 0) == std::nullopt);
   static_assert(round_up_to_multiple<unsigned>(7, 6) == 12u);
-  static_assert(sgn(2.0) == 1);
-  static_assert(approx_eq(1.0, 1.0));
+  static_assert(try_round_up_to_multiple<unsigned>(7, 6) == 12u);
+  static_assert(!try_round_up_to_multiple<std::uint64_t>(
+                     std::numeric_limits<std::uint64_t>::max(), 2)
+                     .has_value());
   SUCCEED();
 }

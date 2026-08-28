@@ -1,5 +1,10 @@
 # math-01：scalar 标量数学助手
 
+> **HISTORICAL。** 本页只记录当时的 clay 迁移。当前 API、边界与状态分别见
+> [`math-v1-closure.md`](math-v1-closure.md)、
+> [`math-design.md`](../../../architecture/math-design.md) 与
+> [`module-status.json`](../../module-status.json)；下文旧符号不是现行使用指南。
+
 | 字段 | 值 |
 |---|---|
 | **阶段** | P3 |

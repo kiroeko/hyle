@@ -79,7 +79,7 @@ _hyle_declare_component(container_intrusive PUBLIC_DEPS core)
 _hyle_declare_component(util_core PUBLIC_DEPS core)
 _hyle_declare_component(error PUBLIC_DEPS core)
 _hyle_declare_component(obs TRACE PUBLIC_DEPS core error)
-_hyle_declare_component(math)
+_hyle_declare_component(math PUBLIC_DEPS core)
 _hyle_declare_component(time PUBLIC_DEPS core container_intrusive)
 # fs.h exposes time::UnixTimestamp, so time is a real public SDK edge rather
 # than a header made accidentally available by installing the whole tree.

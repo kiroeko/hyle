@@ -26,7 +26,8 @@
 
 - 构建树名称：`hyle_<module>`。
 - 构建树和安装树的消费名称：`hyle::<module>`。
-- `core`、`util_core` 与 `container_intrusive` 是可选择、可安装的 `INTERFACE` 组件；其余组件
+- `core`、`util_core`、`container_intrusive` 与 `math` 是可选择、可安装的 `INTERFACE`
+  组件；其余组件
   通常是编译型 target。
 - `hyle_build_contract`、`hyle_testing`、`hyle_trace` 是横切构建 target，不是产品组件根。
 - 横切 target 也必须遵守真实消费边：模块只有在源码或公开头读取 trace/testing gate 时才传播
@@ -64,7 +65,8 @@ manifest 做轻量元数据验证，依赖闭包按已验证的拓扑单次反�
 当前图的关键关系是：
 
 ```text
-core, math  leaves
+core        leaf
+math        -> PUBLIC core
 container_intrusive -> PUBLIC core
 util_core   -> PUBLIC core
 error       -> PUBLIC core
