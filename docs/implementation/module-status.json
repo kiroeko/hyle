@@ -316,7 +316,7 @@
     },
     {
       "module": "platform",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "round_id": "platform-v1",
       "closure_task": "docs/implementation/tasks/platform/platform-v1-closure.md",
       "scope": "CPU/topology, thread/wait, VM/NUMA, filesystem/file mapping and dynamic-loader mechanisms; C++ API, direct dependencies/consumers, delivery, documentation and bounded P1 engineering evidence.",
@@ -324,6 +324,8 @@
       "baseline_commit": "780bf5b69249cf17df0344b1e40ceb7cf8797c6a",
       "candidate_commit": "5b8dab7012e9f7c6cdaf97f863c0b83b4e8a5064",
       "candidate_tree": "24a68b0ab3314902a765c6bf60f8ccb760d290f4",
+      "end_commit": "2160e274bab3cdbed7021e6a65edca00800bad76",
+      "registry_anchor_commit": "2160e274bab3cdbed7021e6a65edca00800bad76",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -351,7 +353,29 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "summary": "platform-v1 candidate 的功能/API、三平台正确性与 sanitizer、三种交付、文档、红队和 W1-WIN 5% P1 工程性能门均已验证。"
+      "closure_evidence": "docs/implementation/tasks/platform/platform-v1-closure.md",
+      "loc": {
+        "snapshot_commit": "5b8dab7012e9f7c6cdaf97f863c0b83b4e8a5064",
+        "repository_code": 301073,
+        "self_with_tests": 123120,
+        "self_without_tests": 82713,
+        "module_implementation": 6624
+      },
+      "known_limitations": [
+        "Engineering performance covers only the frozen W1-WIN cross-physical-core worker handoff and warm persistent-mapping contracts; forced same-logical-CPU handoff is an explicitly excluded slower topology and Formal remains PENDING.",
+        "Only single-node NUMA hardware was available, so multi-socket physical placement and local/remote bandwidth are not certified.",
+        "CPU cache/topology facts are best-effort representative hints rather than exact per-core/cache-domain placement policy; AMX/SME families remain consumer-gated.",
+        "Partial unmap/range lock/prefault, async/direct I/O, JIT/shared-memory/process/watch policy and exotic loader modes remain routed or deferred negative space.",
+        "Native FFI/C API is N/A; the current delivery contract is C++23 source, static SDK and shared SDK."
+      ],
+      "reopen_triggers": [
+        "A named consumer exposes a correctness, security, usability or common-capability defect within platform's ownership boundary.",
+        "A platform algorithm, public API/layout, direct dependency, supported OS primitive or source/static/shared delivery shape changes.",
+        "A mature same-contract peer proves a better complexity class or a reproducible material advantage on a normal consumer workload.",
+        "The engineering evidence bundle becomes unavailable, or the frozen contract, peer, machine or instrument identity changes and the claim must be renewed.",
+        "Multi-node NUMA, exact placement, JIT/shared-memory, foreign-runtime or another deferred capability family is admitted through a separately scoped decision."
+      ],
+      "summary": "platform-v1 CLOSED：完整底层 OS/CPU 能力面、自然 C++ API、三平台正确性与 sanitizer、三种交付、文档、红队及 W1-WIN 5% P1 工程性能门均已签署；Formal 独立 PENDING。"
     },
     {
       "module": "mem",

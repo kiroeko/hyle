@@ -1,13 +1,13 @@
 # platform-v1 重构与收口记录
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
-> 当前阶段：`VERIFIED`。本文是 platform 当前轮唯一 closure card 与施工记录；既有 platform task、
+> 当前阶段：`CLOSED`。本文是 platform 当前轮唯一 closure card 与 terminal receipt；既有 platform task、
 > architecture、guide 和性能页只作审计输入，不继承旧 `SIGNED`、C ABI 或 SOTA 结论。权威机械状态见
 > [`module-status.json`](../../module-status.json)。product candidate 保持
 > `5b8dab7012e9f7c6cdaf97f863c0b83b4e8a5064` / tree
-> `24a68b0ab3314902a765c6bf60f8ccb760d290f4`；全部适用工程门已经 `PASS`，待 terminal receipt
-> 登记后进入 `CLOSED`。
+> `24a68b0ab3314902a765c6bf60f8ccb760d290f4`；全部适用工程门已经 `PASS`，Formal 独立
+> `PENDING`。
 
 ## Closure card（`SCOPED`）
 
@@ -258,6 +258,41 @@ candidate 的 canonical LOC self-check（`python scripts/loc-report.py --module 
 
 ## Closure decision
 
-九项 ledger FIX 全部关闭，七项 aggregate gate 全部 `PASS`，无 blocker；candidate 满足 `VERIFIED`。
-Formal、多节点 NUMA 与强制同核 handoff 等限制不阻止 engineering closure。下一步只登记 terminal
-receipt、known limitations、reopen triggers 与中央 registry anchor，不再修改产品 candidate。
+本轮 `CLOSED`。九项 ledger FIX 全部关闭，七项 aggregate gate 全部 `PASS`，无 correctness、security、
+delivery、usability 或 P1 blocker。产品 candidate 仍为 `5b8dab7012e9f7c6cdaf97f863c0b83b4e8a5064` /
+tree `24a68b0ab3314902a765c6bf60f8ccb760d290f4`；candidate 后没有 platform 产品源码变化。
+
+- terminal end / registry anchor：
+  `2160e274bab3cdbed7021e6a65edca00800bad76`，该不可变快照保存 `VERIFIED`、candidate identity、
+  七项 gate、完整验证矩阵、性能 bundle identity 与 red-team 事实；terminal 提交只登记状态、限制与
+  receipt；
+- raw local evidence：W1-WIN
+  `C:\hyle-scratch\platform-{verify-535e5820-msvc,verify-535e5820-clang-asan,verify-msvc-asan-20260828,delivery-floor-contract-20260828}`
+  及性能 bundle；W1-WSL `/root/hyle/build-platform-verify-20260828-{gcc14,asan,ubsan,tsan}` 与
+  `/root/hyle-scratch/platform-delivery-1fb6724e`；M1-MAC
+  `/Users/kiro/hyle/build-platform-verify-63487a61-{make,asan}` 与
+  `/Users/kiro/hyle-scratch/platform-delivery-1fb6724e`。它们是可重放本地 artifact，不冒充长期签名
+  Formal 证书；
+- Formal：`PENDING`；W1-WIN engineering 结论不能外推为跨平台、跨 topology 或所有 OS wrapper
+  的发布级 SOTA 声明。
+
+可接受限制：
+
+- P1 数字只覆盖冻结的跨物理核 worker handoff 与 warm persistent mapping；强制同逻辑核时 oneTBB
+  SRWLOCK path 约快 3.5x，HYLE 不声明该不同 topology 的非劣；
+- 当前只有单节点 NUMA 真机，只签 API、复杂度、错误、rollback 与 single-node floor，不签多 socket
+  placement/local-remote bandwidth；
+- cache/topology 是 best-effort representative facts，不是精确 per-core/cache-domain placement policy；
+  AMX/SME/SME2 在有具名 kernel consumer 时与 simd 同轮准入；
+- partial unmap/range mlock/prefault/collapse、direct/scatter/positional async I/O、JIT executable VM、
+  shared-memory protocol、process/watch/VFS 与 exotic dynlib policy 保持 routed/deferred negative space；
+- Native FFI/C API 仍为 N/A；当前交付合同仅为 C++23 source/static/shared。
+
+重开条件：
+
+1. 具名消费者暴露 platform 边界内的 correctness、security、usability 或常用能力缺口；
+2. platform 算法、公开 API/layout、直接依赖、支持的 OS primitive 或三种交付形状发生变化；
+3. 成熟同合同 peer 证明更好的复杂度档，或在正常消费者 workload 上出现可复现 material 劣势；
+4. 工程 evidence bundle 丢失，或 contract/peer/machine/instrument identity 变化且性能声明需要续签；
+5. 多节点 NUMA、精确 placement、JIT/shared-memory、foreign-runtime 或其他 deferred family 经独立能力
+   决策正式准入。
