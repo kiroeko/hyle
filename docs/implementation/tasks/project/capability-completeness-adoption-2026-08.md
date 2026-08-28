@@ -31,7 +31,7 @@
 | `util_core` | `CLOSED` | RNG/Ref/ScopeGuard/SpinLock/type-name 五族、peer/consumer/复杂度和 public trace | 新回放已签署每族取得、组合、失败、边界、teardown 与完整 owner route；校准四项易用性陷阱和概率测试 | [`util-core capability replay`](../util/util-core-capability-replay-v1.md)；`CONFIRMED`，API/算法/布局改动 0 |
 | `util` | `CLOSED` (`util-runtime-v2`) | Registry/demangle 的用户旅程、peer、复杂度、资源和负空间 | 回放确认 Registry 完整，同时发现 owning demangled-text 与两处文档缺口；v2 已补齐并通过三平台正确性、交付、易用性、红队和 P0 结构门 | [`util runtime capability replay`](../util/util-runtime-capability-replay-v1.md) 得到 `PRODUCT_TRIGGER`；[`v2`](../util/util-runtime-v2-closure.md) 已 `CLOSED`，Registry 产品零改动 |
 | `container_intrusive` | `CLOSED` | caller-owned list、auto/safe hook、membership transfer、public trace、Boost 同合同证据 | 新回放已签署 construction/retirement/mutation/handoff/cardinality/algorithm route、迭代失效、交付和全部公开入口 | [`container_intrusive capability replay`](../container_intrusive/container-intrusive-capability-replay-v1.md)；`CONFIRMED`，实现改动 0 |
-| build/package | v2 unit `VERIFIED`，持续 workstream | component graph、source/static/shared、offline、并行 scratch、options/CI/version/依赖锁合同 | 旧 unit ledger 没有 family coverage 轴；后续 v3/v4 变更需汇入当前 capability map，不能只复用 v2 表 | read-only development-unit replay；`PENDING` |
+| build/package | v4 unit `CLOSED`，持续 workstream | component graph、source/static/shared、offline、并行 scratch、options/CI/version/依赖锁合同 | 新回放确认大部分交付族完整，但复现 selected-root configure 会扫描并受未选模块源码阻断 | [`build/package capability replay`](../build/build-package-capability-replay-v1.md) 得到 `PRODUCT_TRIGGER`；建立有限 v5 selected-closure round |
 | `time` | `AUDITED` | 已按新标准建立 family map/public trace，冻结十项 ledger FIX | 实现、candidate 与全部验证尚未完成 | 继续正常 `AUDITED -> CANDIDATE`，不另做 replay |
 | `platform` / `mem` / `obs` | `QUEUED` | 旧实现和历史审查只作输入 | 全部新标准证据尚未建立 | 轮到时走完整正常状态流，不补签旧结论 |
 
@@ -60,5 +60,6 @@
 owning-text 常用路线；其 v2 易用性切片现已修复并 `CLOSED`。`time-v1` 已直接使用新
 capability-family 格式。
 `container_intrusive` 已完成回放并 `CONFIRMED`：counted/完整算法/并发能力都有明确 route、owner 与
-触发条件，没有把 peer API 求并集。build/package 在 development-unit 回放完成前，仍不能描述成已经
-按新标准证明完整；其既有状态也不会仅因方法差异自动失效。
+触发条件，没有把 peer API 求并集。build/package 回放得到 `PRODUCT_TRIGGER`：其三种交付、package、
+offline/lock/license、option/CI 等结论保留，但 source configure 在解析 roots 前全量扫描未选源码，破坏
+模块独立施工并使成本随 `S_all` 增长。该缺口进入独立 v5 round，不在回放记录中偷偷修复。
