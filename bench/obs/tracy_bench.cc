@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <iostream>
 #include <string_view>
 #include <utility>
 
@@ -37,6 +38,21 @@ bool rival_first_requested() {
   return present;
 #else
   return std::getenv("HYLE_BENCH_RIVAL_FIRST") != nullptr;
+#endif
+}
+
+bool skip_trace_drain_requested() {
+#if defined(_WIN32)
+  char *value = nullptr;
+  std::size_t size = 0;
+  const bool requested =
+      _dupenv_s(&value, &size, "HYLE_BENCH_SKIP_TRACE_DRAIN") == 0 &&
+      value != nullptr && value[0] == '1' && value[1] == '\0';
+  std::free(value);
+  return requested;
+#else
+  const char *value = std::getenv("HYLE_BENCH_SKIP_TRACE_DRAIN");
+  return value != nullptr && value[0] == '1' && value[1] == '\0';
 #endif
 }
 
@@ -148,13 +164,25 @@ void bench_annotation(bool rival_first) {
 int main() {
   const auto qos = hyle::bench::perf::configure_thread_qos();
   const bool rival_first = rival_first_requested();
+  const bool skip_trace_drain = skip_trace_drain_requested();
   std::fprintf(stderr,
                "# HYLE_OBS_TRACE_RUN execution_order=%s apple_qos=%s "
-               "qos_ok=%s affinity=external run_nonce=%s\n",
+               "qos_ok=%s affinity=external trace_shutdown=%s run_nonce=%s\n",
                rival_first ? "peer-first" : "candidate-first", qos.name, qos.ok,
+               skip_trace_drain ? "skip-drain" : "normal",
                hyle::bench::perf::run_nonce());
   bench_counter(rival_first);
   bench_zone(rival_first);
   bench_annotation(rival_first);
+  if (skip_trace_drain) {
+    // This certificate measures the event-enqueue seam. Tracy's process-global
+    // destructor may spend seconds discarding the intentionally unconsumed
+    // event queue after every independent sample; that teardown is outside all
+    // charged phases. Flush retained evidence before bypassing static teardown.
+    std::cout.flush();
+    std::cerr.flush();
+    std::fflush(nullptr);
+    std::_Exit(0);
+  }
   return 0;
 }

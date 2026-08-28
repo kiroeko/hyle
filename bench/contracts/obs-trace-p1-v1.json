@@ -25,25 +25,25 @@
     {
       "id": "primary-candidate-first",
       "dimensions": {"placement": "primary", "execution_order": "candidate-first"},
-      "environment": {"TRACY_ONLY_LOCALHOST": "1"},
+      "environment": {"HYLE_BENCH_SKIP_TRACE_DRAIN": "1", "TRACY_ONLY_LOCALHOST": "1"},
       "target_variant": "primary"
     },
     {
       "id": "primary-peer-first",
       "dimensions": {"placement": "primary", "execution_order": "peer-first"},
-      "environment": {"HYLE_BENCH_RIVAL_FIRST": "1", "TRACY_ONLY_LOCALHOST": "1"},
+      "environment": {"HYLE_BENCH_RIVAL_FIRST": "1", "HYLE_BENCH_SKIP_TRACE_DRAIN": "1", "TRACY_ONLY_LOCALHOST": "1"},
       "target_variant": "primary"
     },
     {
       "id": "placement-candidate-first",
       "dimensions": {"placement": "perturbed", "execution_order": "candidate-first"},
-      "environment": {"TRACY_ONLY_LOCALHOST": "1"},
+      "environment": {"HYLE_BENCH_SKIP_TRACE_DRAIN": "1", "TRACY_ONLY_LOCALHOST": "1"},
       "target_variant": "placement"
     },
     {
       "id": "placement-peer-first",
       "dimensions": {"placement": "perturbed", "execution_order": "peer-first"},
-      "environment": {"HYLE_BENCH_RIVAL_FIRST": "1", "TRACY_ONLY_LOCALHOST": "1"},
+      "environment": {"HYLE_BENCH_RIVAL_FIRST": "1", "HYLE_BENCH_SKIP_TRACE_DRAIN": "1", "TRACY_ONLY_LOCALHOST": "1"},
       "target_variant": "placement"
     }
   ],
@@ -219,7 +219,7 @@
         }
       ],
       "control_executable": {"target": "hyle_perf_control_bench", "stem": "hyle_perf_control_bench"},
-      "controlled_environment": ["HYLE_BENCH_RIVAL_FIRST", "HYLE_BENCH_APPLE_QOS", "HYLE_PERF_APPLE_QOS", "TRACY_ONLY_LOCALHOST"],
+      "controlled_environment": ["HYLE_BENCH_RIVAL_FIRST", "HYLE_BENCH_SKIP_TRACE_DRAIN", "HYLE_BENCH_APPLE_QOS", "HYLE_PERF_APPLE_QOS", "TRACY_ONLY_LOCALHOST"],
       "validators": [
         {"id": "artifact-identity", "kind": "artifact-identity"},
         {"id": "build-contract", "kind": "build-contract"}
