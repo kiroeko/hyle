@@ -88,7 +88,7 @@ struct TimerEntryListAccess {
 }  // namespace detail
 
 // Intrusive delivery list of fired/cancelled entries. A source hands nodes back
-// without running callbacks; sched/io/C adapters decide how and where user work
+// without running callbacks; sched/io consumers decide how and where user work
 // executes. TimerQueue preserves insertion order within one radix bucket, but
 // callers must not rely on ordering across different deadlines/buckets.
 using TimerList = detail::TimerEntryListAccess::Type;
