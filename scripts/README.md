@@ -593,31 +593,38 @@ cargo run --release --config \
 - **macOS (AppleClang 18+)**: `macos` leaves generator selection to CMake and uses
   its own `build-macos`; it is the Apple Silicon/NEON and kqueue runtime gate.
 
-## `mem-cert-stat.py` — whole-request mem latency
+## Legacy mem statistic helpers
+
+The three helpers below reproduce pre-v1 diagnostic formats. They remain useful
+for local mechanism investigation, but they do **not** produce current module
+qualification evidence by themselves. Current mem engineering evidence is owned
+by `hyle-perf.py` plus `bench/contracts/mem-owner-consumer-v1.json` and
+`bench/contracts/mem-handoff-consumer-v1.json`; see
+`docs/implementation/evidence/performance/benchmarks-mem.md` for the exact replay.
+
+### `mem-cert-stat.py` — whole-request mem latency
 
 Runs section G of `hyle_mem_scenarios_bench` in independent processes and
 aggregates p50/p95/p99 for complete 4096-operation requests. It preserves
 paired reference/HYLE ratios, records the Git commit and dirty state, and can
 write every raw row with `--raw`. On macOS it also records the requested QoS,
 whether the QoS call succeeded, and the unsupported hard-affinity boundary;
-an unsuccessful QoS request rejects the certificate. Use at least
-`-n 15 --samples 4096` for a certificate; short runs are harness smoke tests only. See
-`docs/implementation/evidence/performance/benchmarks-mem.md` §8 for the historical
-commands and interpretation. A new certificate must also satisfy the current
-instrument qualification standard.
+an unsuccessful QoS request rejects the legacy result. Short runs are harness
+smoke tests only; a current claim must be expressed as a frozen unified-runner
+contract and pass the instrument qualification standard.
 
-## `mem-fiber-stack-stat.py` — scheduler-owned fiber stack latency
+### `mem-fiber-stack-stat.py` — scheduler-owned fiber stack latency
 
 Runs `hyle_mem_fiber_stack_bench` in independent processes and aggregates the
 p50/p95/p99 latency of complete 32-fiber create/run/drain/destroy batches. The
 paired variants are scheduler-owned `FiberStackPool` reuse and direct guarded
 VM reserve/release. It records commit, dirty state, compiler/platform, Linux CPU
 binding and Apple QoS; dirty runs or a failed macOS QoS request are not release
-evidence. Formal runs use `-n 15 --samples 2048` on Windows/Linux and `-n 31`
-for each macOS QoS. See
-`docs/implementation/evidence/performance/benchmarks-mem.md` §5.
+evidence. Its historical `-n 15 --samples 2048` Windows/Linux and `-n 31`
+macOS conventions do not replace the current unified runner's controls, stopping
+rule, source identity or product-evidence gate.
 
-## `mem-shared-link-stat.py` — mem shared standard-adapter certificate
+### `mem-shared-link-stat.py` — mem shared standard-adapter diagnostic
 
 Runs section `L` of `hyle_mem_bench` with one variant per fresh process, alternating
 forward/reverse order, and writes the raw CSV used by the mem same-link table. It covers

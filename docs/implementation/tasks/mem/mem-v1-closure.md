@@ -7,7 +7,7 @@
 > [`module-status.json`](../../module-status.json)。能力族、全部公开入口、真实消费者与绑定版本的成熟
 > 源码已经双向核对；本轮只实现下方冻结的九项 `FIX`，不得边施工扩面。产品/API 修复已落在
 > `0943c747`，三种交付 sample 对新冷快照的实调用落在 `2c71dfae`；产品/API candidate 已冻结，
-> 当前只剩统一性能资格化、exact-candidate 复签、最终文档/红队和机械状态迁移。
+> 当前统一性能资格化已通过，只剩 exact-candidate correctness/delivery 复签、最终红队和机械状态迁移。
 
 ## Closure card（`SCOPED`）
 
@@ -148,9 +148,9 @@ backend seam 未被误算成用户能力。现有公开面没有 C schema、Nati
 | `MEM-RESET-01` | MUST / existing public lifecycle | bulk clear/reset/release vocabulary and cache invalidation rules；mem/docs | reset requires operation quiescence, not prior individual free；attached cache must publish/empty | cold O(1) fixed pool or O(shards/blocks) owner reset | `COMPLETE` | `FIXED` | FixedPool/SharedPool comments、guide 与 cache-reset pitfall test 对齐 |
 | `MEM-LEGACY-01` | MUST / accepted delivery policy | pure C++ source/static/shared terminology；mem/build/docs | no stable ABI/foreign schema | zero extra surface | `COMPLETE` | `FIXED` | active allocator 注释与 guide 去除候选 C schema 叙事；Win/Linux 产物仅导出 HYLE C++，无 `mi_*` 泄漏 |
 | `MEM-ADOPT-01` | MUST / direct consumer audit | allocator in container/util/sched/io/graph/compute；fiber stack in sched；Region in graph/io/util；mem + consumers | preserve dependency direction and owner-specific OOM policy | no extra wrapper/translation | `COMPLETE` | `KEEP` | central `mem PUBLIC core error platform util_core` equals target edge；candidate seam compile/tests |
-| `MEM-PERF-01` | MUST / current evidence invalidation | four frozen consumer families under `closure-perf-v1`；bench/perf owner | same source-primary contract、backing、lifetime、touch、capacity semantics | W1-WIN 5% NI；resource/tail separate；no all-mem aggregate | `MISSING` | `FIX` / BLOCKER | build qualified bundle；legacy point tables remain history until replaced |
+| `MEM-PERF-01` | MUST / current evidence invalidation | four frozen consumer families under `closure-perf-v1`；bench/perf owner | same source-primary contract、backing、lifetime、touch、capacity semantics | W1-WIN 5% NI；resource/tail separate；no all-mem aggregate | `COMPLETE` | `FIXED` | 两份 clean n=15 bundle 均 QUALIFIED/PASS 并通过离线深重放；旧 821 行点值表已删除 |
 | `MEM-DELIVERY-01` | MUST / build-package contract | mem-only source + relocated static/shared SDK + mimalloc lock/license/offline；build/package | C++23 only；vendor symbol private except static link implementation | exact selected closure | `COMPLETE` | `KEEP` / blocker-at-verification | component/header/package/manifest checks on candidate |
-| `MEM-DOC-01` | MUST / user discoverability | architecture decisions、scenario guide/pitfalls、current performance evidence；docs | N/A | no duplicated fragile point claims | `PARTIAL` | `FIX` / BLOCKER | remove provisional/stale reset/C text；document snapshot, request-fit and NUMA failures |
+| `MEM-DOC-01` | MUST / user discoverability | architecture decisions、scenario guide/pitfalls、current performance evidence；docs | N/A | no duplicated fragile point claims | `COMPLETE` | `FIXED` | architecture/guide 已覆盖 snapshot、request-fit、reset/cache、NUMA failure；性能页只保留当前合同与诚实边界 |
 | `MEM-THREAD-ARENA-01` | GENERAL / Folly ThreadCachedArena | worker-owned Region registry/merge；sched/runtime owner | thread exit/zombie lifetime and global teardown require runtime owner | default Region keeps zero TLS registry | `ROUTED` | `DEFER` | admit only with named runtime owner; do not hide TLS in mem |
 | `MEM-EXT-SYNC-01` | GENERAL / oneTBB preview fixed_pool | synchronized external variable heap；caller or future wrapper | mutex/owner policy explicit | caller lock adds O(1) serialization | `ROUTED` | `DEFER` | current FixedPool + caller synchronization is natural；second source/consumer can trigger named wrapper |
 | `MEM-DEVICE-01` | GENERAL / ggml/llama.cpp | device/pinned/coherent buffers and allocation planner；compute/graph | backend handle、mapping、completion lifetime | backend-specific | `OUT_OF_SCOPE` | `REJECT` | compute/graph closure owns it；host mem must not infer device policy |
@@ -259,7 +259,34 @@ backend seam 未被误算成用户能力。现有公开面没有 C schema、Nati
 
 ## Verification manifest
 
-尚未执行；未运行项不得写成 `PASS`。
+### W1-WIN P1 engineering 性能
+
+2026-08-28 在 clean source `094b6cd1525df3363e174c3db27014c40d34d152` 上完成两份 fresh
+`qualify-platform`，该 source 相对 product candidate 只增加性能 harness、文档与机械状态记录，
+没有 mem 产品实现变化：
+
+- owner bundle：`C:/hyle-scratch/mem-v1-owner-engineering-output/manifest.json`，SHA-256
+  `be87b13ec7116e900b4415742e48a6aae27182fb1bf6f496d902904f6c282e8a`；contract SHA-256
+  `911787ec1f4cc0b7c61d508cd2fea52a9baebbcb57ec29ebb19833e8df8e577e`；`QUALIFIED / PASS`；
+- handoff bundle：`C:/hyle-scratch/mem-v1-handoff-engineering-output/manifest.json`，SHA-256
+  `b082c033061973b1a50d6d24122670d21798df5849e6b4b99cee51ce4ef194fb`；contract SHA-256
+  `415619a7875f77744444cb306c3214726291496370de605dc3e688768b202dd8`；`QUALIFIED / PASS`；
+- 两份 manifest 都由独立 `hyle-perf.py verify` 深重放通过；artifact/build/source/peer identity、
+  A/A、5%/10% known delta、batch-matched floor、placement 与模块资源 validator 全部 `PASS`；
+- runtime allocator、Region、fiber lifecycle 与 cross-core ObjectPool handoff 的全部 strata 均为
+  `WIN` 且 5% NI `PASS`；具体区间、资源/tail 数据与诚实外推边界只记录在
+  [当前 mem 性能页](../../evidence/performance/benchmarks-mem.md)，不在 task 复制易漂移表格；
+- runtime `Allocator` 对 compile-time direct baseline 仍是 `NOT_COMPARABLE` mechanism diagnostic；
+  measured direct throughput 高 11.1%–13.4%，由一次间接分派解释，用户已有自然 direct route，
+  不触发产品修改；
+- 一次加 `--formal` 的 owner 运行按设计降为 `DIAGNOSTIC/FAIL`，唯一原因是 runner profile 未预先
+  固定 exact `formal_toolchain`；其产品行和全部工程 controls 都通过。该包未被复用或签署。Formal
+  本来就是 closure card 明确的非目标和独立 `PENDING` 轴，不能为本轮临时改合同或反向阻塞 P1。
+
+### 尚待最终复签
+
+Candidate 前 correctness/三平台/三交付已经通过，但最终 exact-candidate manifest、文档/tooling
+总检与独立红队尚未完成；这些项目完成前不得把本节改写为整体 `VERIFIED`。
 
 ## 独立红队
 

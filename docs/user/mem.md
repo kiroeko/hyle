@@ -414,11 +414,12 @@ selected overload 的 flags 默认 `kNone`：精确小条带与 THP 粒度可能
 
 ## 如何看性能
 
-benchmark 以场景和合同分组，入口是 `hyle_mem_scenarios_bench`；用
-`HYLE_BENCH_SECTIONS=F` 跑正常 request workload，用 `HYLE_BENCH_SECTIONS=J` 跑长寿命
-Region retained-block scaling。正式性能表只维护在
-[`../performance/benchmarks-mem.md`](../implementation/evidence/performance/benchmarks-mem.md)，本指南不复制点值、
-win/loss 或待补证据。性能结果用来帮助选型，不改变前述 ownership/capacity 合同。
+当前资格化 workload 由 `bench/contracts/mem-owner-consumer-v1.json` 和
+`bench/contracts/mem-handoff-consumer-v1.json` 冻结，并统一通过 `scripts/hyle-perf.py` 运行；旧的
+`HYLE_BENCH_SECTIONS=*` 与专用统计脚本只能作历史或机制诊断。正式工程性能表只维护在
+[`benchmarks-mem.md`](../implementation/evidence/performance/benchmarks-mem.md)，本指南不复制点值、
+win/loss 或待补证据。性能结果用来帮助选型，不改变前述 ownership/capacity 合同；表中未出现的
+类型也不等于功能缺失，只表示没有发布对应数值声明。
 
 当前设计边界见 [`../architecture/mem-design.md`](../architecture/mem-design.md)，当前签署状态只看
 [`../milestones/pre-release-readiness.md`](../implementation/status.md)。

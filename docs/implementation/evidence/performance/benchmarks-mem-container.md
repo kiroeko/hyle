@@ -5,7 +5,7 @@
 
 - container 历史三平台数据、当前 freshness、方法、诚实边界与复跑命令：
   [`benchmarks-container.md`](benchmarks-container.md)
-- mem 性能唯一详页（当前新鲜度见页首）：[`benchmarks-mem.md`](benchmarks-mem.md)
+- mem 当前 P1 工程证据与诚实边界：[`benchmarks-mem.md`](benchmarks-mem.md)
 - 实现演进与被否决实验：
   [`../milestones/container-module-closure.md`](../../tasks/container/container-module-closure.md)
 

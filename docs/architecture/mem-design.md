@@ -336,7 +336,9 @@ mem 进入预发布冻结必须同时满足：
 - diagnostics：membership fail-fast 保留；`HYLE_TESTING` 已覆盖 shared/cached/object/growable pool 的 double return/destroy、foreign pointer 与 outstanding allocation，shipping 构建完全剥离额外状态和指令；LeakTracker metadata OOM 必须留下 dropped/complete 证据，不能静默伪称完整。
 - performance workload 必须描述 request batch、producer/consumer handoff、quota、expensive-context reuse 等用户行为，并扫描线程、工作集、容量和批次；不能围绕内部阈值造场景。
 
-当前固定池实测见 [`../performance/benchmarks-mem.md`](../implementation/evidence/performance/benchmarks-mem.md)。
+当前冻结 consumer/replay 的工程性能证据见
+[`benchmarks-mem.md`](../implementation/evidence/performance/benchmarks-mem.md)；未进入该合同的固定池
+能力只签复杂度、资源、correctness 与交付门，不冒充数值 SOTA。
 
 ## 参考
 
