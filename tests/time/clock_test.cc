@@ -6,6 +6,7 @@
 #include <limits>
 #include <ratio>
 #include <time.h>
+#include <type_traits>
 
 #include "hyle/platform.h"
 #if defined(HYLE_OS_WINDOWS)
@@ -40,6 +41,19 @@ using hyle::time::sleep_until_ns;
 using hyle::time::ThreadCpuClock;
 
 namespace {
+
+template <class Clock>
+consteval bool is_steady_chrono_clock_shape() {
+  return Clock::is_steady &&
+         std::is_same_v<typename Clock::duration,
+                        std::chrono::duration<typename Clock::rep,
+                                              typename Clock::period>> &&
+         std::is_same_v<typename Clock::time_point,
+                        std::chrono::time_point<Clock,
+                                                typename Clock::duration>> &&
+         std::is_same_v<decltype(Clock::now()), typename Clock::time_point> &&
+         noexcept(Clock::now());
+}
 
 bool force_tsc_timing_calibration_requested() noexcept {
 #if defined(HYLE_OS_WINDOWS)
@@ -332,8 +346,8 @@ TEST(Clock, CoarseRealtimeHasTypedAndTimestampViews) {
 }
 
 TEST(Clock, CpuAccountingClocksAreTypedMonotonicAndExcludeSleep) {
-  static_assert(std::chrono::is_clock_v<ThreadCpuClock>);
-  static_assert(std::chrono::is_clock_v<ProcessCpuClock>);
+  static_assert(is_steady_chrono_clock_shape<ThreadCpuClock>());
+  static_assert(is_steady_chrono_clock_shape<ProcessCpuClock>());
   static_assert(!std::is_same_v<ThreadCpuClock, hyle::time::MonotonicClock>);
   static_assert(!std::is_same_v<ProcessCpuClock, hyle::time::RealtimeClock>);
 
