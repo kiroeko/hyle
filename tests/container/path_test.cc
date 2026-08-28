@@ -13,17 +13,17 @@ using namespace hyle::container;
 using namespace hyle::container::literals;
 using hyle::mem::system_allocator;
 
-// normalize() mutates a buffer in place; this copies a literal into a buffer,
-// normalizes, and returns the result so tests can read like a truth table.
+// normalize_path() writes into caller storage and returns a borrowed view, so
+// tests can read like a truth table without any hidden allocation.
 static std::string norm(const char* in) {
   char buf[256];
-  std::size_t len = std::strlen(in);
-  if (len > sizeof(buf) - 1) len = sizeof(buf) - 1;
-  std::memcpy(buf, in, len);
-  buf[len] = '\0';
-  std::uint32_t n = normalize(buf);
-  EXPECT_EQ(n, std::strlen(buf));  // returned length matches the C string
-  return std::string(buf, n);
+  const auto normalized = normalize_path(string_ref{in}, buf);
+  EXPECT_TRUE(normalized.has_value());
+  if (!normalized) return {};
+  EXPECT_EQ(normalized->data, buf);
+  EXPECT_TRUE(normalized->null_terminated);
+  EXPECT_EQ(normalized->size, std::strlen(buf));
+  return std::string(normalized->data, normalized->size);
 }
 
 // ---- extension (splitext semantics) -----------------------------------------
@@ -147,36 +147,35 @@ TEST(Path, NormalizeEdges) {
   EXPECT_EQ(norm("a/.."), ".");          // collapses to nothing -> "."
 }
 
-// ---- allocating helpers ------------------------------------------------------
+// ---- caller-owned producing helpers ------------------------------------------
 TEST(Path, Join) {
-  string_ref r = join("a"_sr, "b"_sr, system_allocator());
-  EXPECT_TRUE(r == "a/b"_sr);
-  EXPECT_TRUE(r.null_terminated);
-  system_allocator().deallocate(const_cast<char*>(r.data), r.size + 1);
+  char output[32];
+  EXPECT_EQ(join_path("a"_sr, "b"_sr, output), 3u);
+  EXPECT_STREQ(output, "a/b");
 
-  string_ref r2 = join("/usr"_sr, "bin"_sr, system_allocator());
-  EXPECT_TRUE(r2 == "/usr/bin"_sr);
-  system_allocator().deallocate(const_cast<char*>(r2.data), r2.size + 1);
+  EXPECT_EQ(join_path("/usr"_sr, "bin"_sr, output), 8u);
+  EXPECT_STREQ(output, "/usr/bin");
 }
 
-TEST(Path, JoinArray) {
+TEST(Path, JoinPathRange) {
   char buf[64];
   string_ref parts[] = {"/usr"_sr, "local"_sr, "bin"_sr};
-  std::size_t n = join_array(buf, sizeof(buf), parts, 3);
+  std::size_t n = join_path(parts, buf);
   EXPECT_EQ(n, std::strlen(buf));
   EXPECT_STREQ(buf, "/usr/local/bin");
 
   // Interior separators collapse; leading on [0] and trailing on last kept.
   string_ref parts2[] = {"a/"_sr, "/b/"_sr, "c/"_sr};
-  join_array(buf, sizeof(buf), parts2, 3);
+  join_path(parts2, buf);
   EXPECT_STREQ(buf, "a/b/c/");
 }
 
-TEST(Path, JoinArrayTruncates) {
+TEST(Path, JoinPathReportsRequiredSizeWhenTruncated) {
   char buf[8];
   string_ref parts[] = {"/usr"_sr, "local"_sr, "bin"_sr};
-  std::size_t need = join_array(buf, sizeof(buf), parts, 3);
+  std::size_t need = join_path(parts, buf);
   EXPECT_EQ(need, 14u);                   // full "/usr/local/bin"
+  EXPECT_EQ(join_path(parts, std::span<char>{}), need);  // size query
   EXPECT_EQ(std::strlen(buf), 7u);        // 7 written + NUL
   EXPECT_EQ(std::strncmp(buf, "/usr/lo", 7), 0);
 }
@@ -192,19 +191,35 @@ TEST(Path, SplitAll) {
 }
 
 TEST(Path, ReplaceExtension) {
-  string_ref r = replace_extension("test.jpg"_sr, ".png"_sr, system_allocator());
-  EXPECT_TRUE(r == "test.png"_sr);
-  system_allocator().deallocate(const_cast<char*>(r.data), r.size + 1);
+  char output[32];
+  EXPECT_EQ(replace_extension("test.jpg"_sr, ".png"_sr, output), 8u);
+  EXPECT_STREQ(output, "test.png");
 
   // No existing extension: ext is appended (clay returned null; HYLE appends).
-  string_ref r2 = replace_extension("test"_sr, ".png"_sr, system_allocator());
-  EXPECT_TRUE(r2 == "test.png"_sr);
-  system_allocator().deallocate(const_cast<char*>(r2.data), r2.size + 1);
+  EXPECT_EQ(replace_extension("test"_sr, ".png"_sr, output), 8u);
+  EXPECT_STREQ(output, "test.png");
+  EXPECT_EQ(replace_extension("test"_sr, ".png"_sr, std::span<char>{}), 8u);
 }
 
-TEST(Path, ParentDir) {
-  string_ref r = parent_dir("/foo/bar.txt"_sr, system_allocator());
-  EXPECT_TRUE(r == "/foo"_sr);
-  EXPECT_TRUE(r.null_terminated);
-  system_allocator().deallocate(const_cast<char*>(r.data), r.size + 1);
+TEST(Path, NormalizePathRejectsSmallStorageAndSupportsExactOverlap) {
+  char too_small[4];
+  EXPECT_FALSE(normalize_path("a/../b"_sr, too_small).has_value());
+
+  char in_place[] = "a/../b";
+  const auto normalized = normalize_path(string_ref{in_place}, in_place);
+  ASSERT_TRUE(normalized.has_value());
+  EXPECT_EQ(normalized->data, in_place);
+  EXPECT_TRUE(*normalized == "b"_sr);
+}
+
+TEST(Path, NormalizePathUsesViewLengthPastEmbeddedNul) {
+  const char input[] = {'a', '\0', 'b', '/', '.', '/', 'c'};
+  char output[sizeof(input) + 1];
+  const auto normalized =
+      normalize_path(string_ref{input, sizeof(input), false}, output);
+  ASSERT_TRUE(normalized.has_value());
+  const char expected[] = {'a', '\0', 'b', '/', 'c'};
+  EXPECT_EQ(normalized->size, sizeof(expected));
+  EXPECT_EQ(std::memcmp(normalized->data, expected, sizeof(expected)), 0);
+  EXPECT_EQ(output[sizeof(expected)], '\0');
 }

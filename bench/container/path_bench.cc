@@ -11,14 +11,13 @@
 // HYLE ~= (2) means the scan algorithm is already optimal (no more to squeeze);
 // (2)&(3) both crushing (1) is the "view-only vs must-allocate" STRUCTURAL gap,
 // not cleverer scanning. NOTE: this measures LEXICAL ops only (no filesystem
-// touch); normalize/join_array have no zero-alloc std::string_view peer (they
+// touch); normalize_path/join_path have no zero-alloc std::string_view peer (they
 // PRODUCE a path), so those two stay two-way vs std::filesystem.
 
 #include <nanobench.h>
 
 #include <cstddef>
 #include <cstdint>
-#include <cstring>
 #include <filesystem>
 #include <string>
 #include <string_view>
@@ -29,8 +28,8 @@
 using hyle::container::base;
 using hyle::container::directory;
 using hyle::container::extension;
-using hyle::container::join_array;
-using hyle::container::normalize;
+using hyle::container::join_path;
+using hyle::container::normalize_path;
 using hyle::container::string_ref;
 
 namespace {
@@ -151,30 +150,28 @@ int bench_path() {
     });
   }
 
-  // ---- normalize(): in-place lexical folding ('.' / '..' / separator runs) ----
+  // ---- normalize_path(): caller-buffer lexical folding -----------------------
   // The heaviest pure-string path op: a component-walk that resolves "." / ".." and
   // collapses separators IN PLACE (zero allocation). Rival std::filesystem::path::
   // lexically_normal() does the same lexically but constructs a path object (heap).
-  // normalize MUTATES its buffer, so each iteration works on a FRESH copy of a
-  // messy path (redundant seps + . + .. to actually exercise the folding).
+  // Each call writes a fresh normalized result into caller-owned storage.
   {
     constexpr const char* kMessy =
         "/usr//local/./share/../share/hyle/./include/../include/container/";
     char buf[128];
     const std::string std_messy{kMessy};
     nb::Bench b;
-    b.title("path normalize() lexical fold").relative(true).minEpochIterations(200000);
+    b.title("path normalize_path() lexical fold").relative(true).minEpochIterations(200000);
     b.run("std::filesystem::path::lexically_normal", [&] {
       std::filesystem::path p{std_messy};
       nb::doNotOptimizeAway(p.lexically_normal().native().size());
     });
-    b.run("HYLE path::normalize (in-place)", [&] {
-      std::memcpy(buf, kMessy, std::strlen(kMessy) + 1);  // fresh mutable copy
-      nb::doNotOptimizeAway(normalize(buf));
+    b.run("HYLE path::normalize_path (caller storage)", [&] {
+      nb::doNotOptimizeAway(normalize_path(string_ref{kMessy}, buf));
     });
   }
 
-  // ---- join_array(): assemble N parts with single '/' separators (no alloc) ---
+  // ---- join_path(): assemble N parts with single '/' separators (no alloc) ----
   // Buffer-fill token walk that collapses interior separator runs + honors lead/
   // trail seps, snprintf-style. The no-alloc producing op of path's allocating
   // class (parallel to normalize). Rival: std::filesystem::path operator/=
@@ -183,18 +180,17 @@ int bench_path() {
     const string_ref parts[] = {string_ref{"usr"}, string_ref{"local"},
                                 string_ref{"share"}, string_ref{"hyle"},
                                 string_ref{"include"}, string_ref{"container"}};
-    constexpr std::size_t kParts = sizeof(parts) / sizeof(parts[0]);
     char dst[128];
     const char* std_parts[] = {"usr", "local", "share", "hyle", "include", "container"};
     nb::Bench b;
-    b.title("path join_array 6 parts (no alloc)").relative(true).minEpochIterations(200000);
+    b.title("path join_path 6 parts (no alloc)").relative(true).minEpochIterations(200000);
     b.run("std::filesystem::path operator/= x6", [&] {
       std::filesystem::path p;
       for (const char* part : std_parts) p /= part;
       nb::doNotOptimizeAway(p.native().size());
     });
-    b.run("HYLE path::join_array (buffer-fill)", [&] {
-      nb::doNotOptimizeAway(join_array(dst, sizeof(dst), parts, kParts));
+    b.run("HYLE path::join_path (span buffer-fill)", [&] {
+      nb::doNotOptimizeAway(join_path(parts, dst));
     });
   }
 

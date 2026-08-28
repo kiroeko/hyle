@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <span>
 
 #include "hyle/container/hash.h"  // HYLE_CONTAINER_API
 #include "hyle/container/string_ref.h"
@@ -23,12 +24,10 @@ namespace hyle::container {
 // hardware parallelism, so unrelated strings and IDs do not serialize on one
 // process-wide pool lock and the hot path does no repeated topology detection.
 //
-// The SwissTable reverse index + the lock live in the .cc via a pimpl, so this
-// header stays ABI-clean (no std::mutex / SwissTable in the layout) and pulls in
-// no <mutex>. Export is per-METHOD (not the whole class): the class holds a
-// mem::Allocator (a header-only, non-exported type), so exporting the class
-// whole would trip MSVC C4251. Methods that cross the DLL carry the macro; the
-// layout is instantiated client-side (conventions §3.5).
+// The SwissTable reverse index + lock live in the .cc via a pimpl, keeping this
+// public header small and avoiding implementation containers in each source
+// consumer. Compiled methods carry the component visibility macro for shared
+// C++ delivery; HYLE does not promise a stable cross-version C++ ABI.
 // Opaque handle to an interned string, returned by StringInterner::acquire and
 // consumed by retain/release/lookup. It is a pool-local generation-tagged slot
 // id, not a content hash: hash values are not identities and may collide. A
@@ -54,14 +53,13 @@ class StringInterner {
   // Acquires one reference to `s` (bumping its refcount if already present).
   // Returns its StringId for lookup()/retain()/release(). The empty string maps
   // to StringId{0}; for non-empty input StringId{0} reports allocation failure.
-  HYLE_CONTAINER_API StringId acquire(string_ref s) noexcept;
+  HYLE_CONTAINER_API StringId acquire(StringView s) noexcept;
 
-  // Batch acquire. `output` must have `count` slots. Returns the completed
-  // prefix; a short result reports allocation failure. Bounded chunks hash each
-  // input once and lock only the shards actually touched by that chunk.
-  HYLE_CONTAINER_API std::size_t acquire_many(const string_ref* input,
-                                              StringId* output,
-                                              std::size_t count) noexcept;
+  // Batch acquire. Input and output spans must have equal size. Returns the
+  // completed prefix; a short result reports allocation failure. Bounded chunks
+  // hash each input once and lock only the shards touched by that chunk.
+  HYLE_CONTAINER_API std::size_t acquire_many(
+      std::span<const StringView> input, std::span<StringId> output) noexcept;
 
   // Bumps the refcount of an already-interned string by its handle (== acquire
   // of the same content, without needing the bytes again).
@@ -69,32 +67,33 @@ class StringInterner {
 
   // Batch retain/release return the completed prefix. A short result means the
   // next handle was stale, absent, or could not be retained.
-  HYLE_CONTAINER_API std::size_t retain_many(const StringId* ids,
-                                             std::size_t count) noexcept;
+  HYLE_CONTAINER_API std::size_t retain_many(
+      std::span<const StringId> ids) noexcept;
 
   // Releases one reference. When the count reaches zero, the string's storage is
   // reclaimed and its pointer becomes invalid unless it was permanently
   // interned.
   HYLE_CONTAINER_API bool release(StringId id) noexcept;
-  HYLE_CONTAINER_API std::size_t release_many(const StringId* ids,
-                                              std::size_t count) noexcept;
+  HYLE_CONTAINER_API std::size_t release_many(
+      std::span<const StringId> ids) noexcept;
 
   // String for `id`, or empty if absent. The result is always null-terminated.
-  HYLE_CONTAINER_API string_ref lookup(StringId id) noexcept;
+  HYLE_CONTAINER_API StringView lookup(StringId id) noexcept;
 
   // Permanently interns `s` until pool destruction and returns its stable,
   // null-terminated view. Repeated calls do not grow a hidden refcount. Use
   // acquire()/release() instead when individual lifetime reclamation is
   // required.
-  HYLE_CONTAINER_API string_ref intern(string_ref s) noexcept;
+  HYLE_CONTAINER_API StringView intern(StringView s) noexcept;
 
-  // Permanently intern a batch. Bounded chunks lock only involved shards.
-  // `output` may be null when the caller only wants to prewarm the pool. Returns the
-  // processed count; a short result reports allocation failure after preserving
-  // the completed prefix.
-  HYLE_CONTAINER_API std::size_t intern_many(const string_ref* input,
-                                             string_ref* output,
-                                             std::size_t count) noexcept;
+  // Permanently intern a batch. Input and output spans must have equal size;
+  // returned views borrow stable interner-owned bytes. `prewarm` is the explicit
+  // no-output form. Both return the completed prefix, with a short result
+  // reporting allocation failure after preserving that prefix.
+  HYLE_CONTAINER_API std::size_t intern_many(
+      std::span<const StringView> input, std::span<StringView> output) noexcept;
+  HYLE_CONTAINER_API std::size_t prewarm(
+      std::span<const StringView> input) noexcept;
 
   // Number of distinct strings currently held (excludes the implicit empty).
   HYLE_CONTAINER_API std::uint32_t size() const noexcept;
@@ -105,6 +104,8 @@ class StringInterner {
   mem::Allocator allocator() const noexcept { return alloc_; }
 
  private:
+  std::size_t intern_many_impl(std::span<const StringView> input,
+                               std::span<StringView> output) noexcept;
   struct Impl;
   mem::Allocator alloc_;
   Impl* impl_;

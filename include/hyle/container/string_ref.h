@@ -4,11 +4,11 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <span>
 #include <string_view>
 
 #include "hyle/container/hash.h"  // Hash<> primary template (+ HYLE_CONTAINER_API)
 #include "hyle/core/compiler.h"
-#include "hyle/mem/allocator.h"
 
 namespace hyle::container {
 
@@ -119,8 +119,10 @@ struct string_ref {
   }
   constexpr bool empty() const noexcept { return size == 0; }
 
-  // Returns data only if it is safe as a C string; fail-fast otherwise (a bug:
-  // the caller must check null_terminated or use the allocating c_str(s,alloc)).
+  // Returns data only if an end terminator is known; fail-fast otherwise. This
+  // does not prove that the logical bytes contain no earlier NUL. Validate that
+  // separately when a C API must observe exactly `size` bytes. To obtain
+  // ownership, copy into std::string/std::pmr::string or caller storage.
   const char* c_str() const noexcept {
     HYLE_FATAL_ASSERT(data == nullptr || null_terminated);
     return data;
@@ -299,13 +301,14 @@ struct string_ref {
     return substr(b, e - b + 1);
   }
 
-  // Copy into a caller buffer of `cap` bytes; always NUL-terminates. Returns the
-  // number of chars written (excluding the terminator). Truncates if cap is too
-  // small (cap==0 writes nothing).
-  std::uint32_t copy_to(char* dst, std::uint32_t cap) const noexcept {
-    if (cap == 0) return 0;
-    std::uint32_t n = size < (cap - 1) ? size : (cap - 1);
-    if (n != 0) std::memcpy(dst, data, n);
+  // Copy into caller-owned storage and always NUL-terminate when non-empty.
+  // Returns bytes written (excluding the terminator); compare with size to
+  // detect truncation. The returned bytes remain owned by `dst`'s owner.
+  std::size_t copy_to(std::span<char> dst) const noexcept {
+    if (dst.empty()) return 0;
+    const std::size_t n =
+        static_cast<std::size_t>(size) < dst.size() - 1 ? size : dst.size() - 1;
+    if (n != 0) std::memmove(dst.data(), data, n);
     dst[n] = '\0';
     return n;
   }
@@ -355,49 +358,6 @@ inline bool equal_ignore_case(string_ref a, string_ref b) noexcept {
   for (std::uint32_t i = 0; i < a.size; ++i)
     if (lower(a.data[i]) != lower(b.data[i])) return false;
   return true;
-}
-
-// ---- allocator-backed helpers (clay cstring parity) -------------------------
-
-// To a C string: returns data directly when already null-terminated (zero copy),
-// otherwise allocates a NUL-terminated copy via `alloc` (caller owns it).
-inline const char* c_str(string_ref s, mem::Allocator alloc) {
-  if (s.null_terminated) return s.data;
-  const std::size_t bytes = static_cast<std::size_t>(s.size) + 1;
-  char* p = static_cast<char*>(alloc.allocate(bytes));
-  if (p == nullptr) return nullptr;
-  if (s.size != 0) std::memcpy(p, s.data, s.size);
-  p[s.size] = '\0';
-  return p;
-}
-
-// Owning, NUL-terminated copy via `alloc`. Free with the same allocator and
-// size+1 (the result's null_terminated bit is set).
-inline string_ref dup(string_ref s, mem::Allocator alloc) {
-  const std::size_t bytes = static_cast<std::size_t>(s.size) + 1;
-  char* p = static_cast<char*>(alloc.allocate(bytes));
-  if (p == nullptr) return string_ref{};
-  if (s.size) std::memcpy(p, s.data, s.size);
-  p[s.size] = '\0';
-  return string_ref{p, s.size, true};
-}
-
-// Owning concatenation a+b, NUL-terminated, via `alloc` (clay cstrcat).
-inline string_ref concat(string_ref a, string_ref b, mem::Allocator alloc) {
-  // CONTRACT: a.size + b.size fits in u32 (a string_ref's size type). This is a
-  // caller obligation, asserted (not defensively branched) -- same discipline as
-  // mem/'s pow2-alignment asserts: a perf library constrains callers by contract,
-  // and a silent under-allocated result would only hide a >4GiB-concat caller bug.
-  // The u64 sum exists solely to feed the assert without itself wrapping.
-  HYLE_FATAL_ASSERT(static_cast<std::uint64_t>(a.size) + b.size <= 0xFFFFFFFFull);
-  std::uint32_t n = a.size + b.size;
-  const std::size_t bytes = static_cast<std::size_t>(n) + 1;
-  char* p = static_cast<char*>(alloc.allocate(bytes));
-  if (p == nullptr) return string_ref{};
-  if (a.size) std::memcpy(p, a.data, a.size);
-  if (b.size) std::memcpy(p + a.size, b.data, b.size);
-  p[n] = '\0';
-  return string_ref{p, n, true};
 }
 
 // Tail of `s` from `start` (no allocation). Empty if start past the end. Keeps

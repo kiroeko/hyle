@@ -134,11 +134,11 @@ TEST(StringInterner, InternManyReturnsStableViewsAndCanPrewarm) {
   const string_ref input[] = {string_ref{"alpha"}, string_ref{"beta"},
                               string_ref{"alpha"}};
   string_ref output[3];
-  EXPECT_EQ(buf.intern_many(input, output, 3), 3u);
+  EXPECT_EQ(buf.intern_many(input, output), 3u);
   EXPECT_EQ(output[0].data, output[2].data);
   EXPECT_TRUE(output[1] == string_ref{"beta"});
   EXPECT_EQ(buf.size(), 2u);
-  EXPECT_EQ(buf.intern_many(input, nullptr, 3), 3u);
+  EXPECT_EQ(buf.prewarm(input), 3u);
   EXPECT_EQ(buf.size(), 2u);
 }
 
@@ -147,15 +147,15 @@ TEST(StringInterner, BatchLifecyclePreservesOrderAndReclaims) {
   const string_ref input[] = {string_ref{"alpha"}, string_ref{"beta"},
                               string_ref{"alpha"}, string_ref{""}};
   StringId ids[4];
-  EXPECT_EQ(buf.acquire_many(input, ids, 4), 4u);
+  EXPECT_EQ(buf.acquire_many(input, ids), 4u);
   EXPECT_EQ(ids[0], ids[2]);
   EXPECT_TRUE(ids[3].empty());
   EXPECT_EQ(buf.size(), 2u);
 
-  EXPECT_EQ(buf.retain_many(ids, 4), 4u);
-  EXPECT_EQ(buf.release_many(ids, 4), 4u);
+  EXPECT_EQ(buf.retain_many(ids), 4u);
+  EXPECT_EQ(buf.release_many(ids), 4u);
   EXPECT_EQ(buf.size(), 2u);
-  EXPECT_EQ(buf.release_many(ids, 3), 3u);
+  EXPECT_EQ(buf.release_many(std::span{ids}.first(3)), 3u);
   EXPECT_EQ(buf.size(), 0u);
   EXPECT_TRUE(buf.lookup(ids[0]).empty());
 }
@@ -165,8 +165,8 @@ TEST(StringInterner, BatchLifecycleStopsAtStaleHandle) {
   StringId ids[] = {buf.acquire("one"), buf.acquire("two")};
   ASSERT_TRUE(buf.release(ids[0]));
   const StringId sequence[] = {ids[1], ids[0], ids[1]};
-  EXPECT_EQ(buf.retain_many(sequence, 3), 1u);
-  EXPECT_EQ(buf.release_many(sequence, 3), 1u);
+  EXPECT_EQ(buf.retain_many(sequence), 1u);
+  EXPECT_EQ(buf.release_many(sequence), 1u);
   EXPECT_TRUE(buf.lookup(ids[1]) == string_ref{"two"});
 }
 
@@ -184,7 +184,7 @@ TEST(StringInterner, LongStringsSurviveGrowthAndEraseWithoutIdentityLoss) {
   EXPECT_EQ(buf.size(), ids.size());
   for (std::size_t i = 0; i < ids.size(); ++i)
     EXPECT_TRUE(buf.lookup(ids[i]) == string_ref{storage[i]});
-  EXPECT_EQ(buf.release_many(ids.data(), ids.size()), ids.size());
+  EXPECT_EQ(buf.release_many(ids), ids.size());
   EXPECT_EQ(buf.size(), 0u);
 }
 

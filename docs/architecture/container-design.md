@@ -418,6 +418,31 @@ probe 的指令路径。
 - insert 输入若别名当前 slots，增长前复制到 allocator-backed scratch。
 - C callback 不得抛异常或在遍历中修改同一 map。
 
+## StringView、path 与 owner 边界
+
+`StringView` 是固定 16-byte 的 borrowed byte-text view，永远不拥有 `data`。`null_terminated`
+只携带 `data[size] == 0` 的来源事实；它不是释放协议，也不证明 `[0,size)` 没有 embedded
+NUL。C-shaped OS/third-party API 必须看到全部逻辑 bytes 时，调用方还要先排除 embedded NUL。
+旧 `c_str(view, alloc)`、`dup`、`concat`、allocator-returning path `join/replace_extension/
+parent_dir` 会把新 allocation 装进同一个 borrowed 类型，调用方无法从返回值知道是否以及如何
+释放，已经删除。普通 owning text 直接使用 `std::string/std::pmr::string`；固定或复用 storage
+使用 `StringView::copy_to(std::span<char>)`。
+
+path 只拥有词法算法，不拥有字符串 storage：
+
+- `extension/strip_extension/base/directory/pop_*` 返回输入的 sub-view；输入失效即失效；
+- `join_path(parts, output)` 与 `replace_extension(path, ext, output)` 写 caller-owned span，采用
+  snprintf-style full-size return，非空 output 总是 NUL-terminated；
+- `normalize_path(input, output)` 需要 `max(input.size,1)+1` bytes，返回借用 output 的
+  `optional<StringView>`；容量不足不写，精确 in-place overlap 合法；
+- `split_all` 的 `PodVector` 只拥有 view 数组，数组元素仍借用原 path bytes。
+
+这些 producing operation 均为 O(输入+输出 bytes)、零 hidden allocation。`join_path` 的连续
+token copy 使用 bulk `memmove`，不是逐 byte 调用 seam；normalize 复制到 caller storage 后按
+view length 原地做单次 component walk，不会在 embedded NUL 处偷偷截断。filesystem
+canonicalization、symlink、case 与 native policy 仍属于
+platform，不由纯字符串 path 猜测。
+
 ## StringInterner 身份与生命周期
 
 StringInterner 有两个正交用法：
@@ -463,8 +488,9 @@ OOM 落进 fatal assert。
 | `size()` | O(S)，硬上界 O(1) | 不扫描条目 |
 | 短串重复 churn | O(N) | 达到高水位后 slab/ID slot 复用，无逐条 allocator 调用 |
 
-吞吐/生命周期用户应使用 `intern_many`、`acquire_many`、`retain_many`、
-`release_many`。每个有界块先算一次 hash，只按升序获取实际涉及的 shard lock；
+吞吐/生命周期用户应使用 span-shaped `intern_many`、`acquire_many`、`retain_many`、
+`release_many`；只预热永久集合时用显式 `prewarm`，不再用 nullable output pointer 暗示另一种
+操作。每个有界块先算一次 hash，只按升序获取实际涉及的 shard lock；
 既避免全池冻结也避免重复 hash。性能结论见
 [`benchmarks-container.md`](../implementation/evidence/performance/benchmarks-container.md)。
 

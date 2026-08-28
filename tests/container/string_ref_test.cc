@@ -5,17 +5,13 @@
 
 #include "hyle/container/string_ref.h"
 #include "hyle/container/swiss_table.h"
-#include "hyle/mem/allocator.h"
 
-using hyle::container::concat;
-using hyle::container::dup;
 using hyle::container::equal_ignore_case;
 using hyle::container::rsplit;
 using hyle::container::slice;
 using hyle::container::split;
 using hyle::container::string_ref;
 using hyle::container::SwissTable;
-using hyle::mem::system_allocator;
 using namespace hyle::container::literals;
 
 TEST(StringRef, DefaultIsEmpty) {
@@ -330,10 +326,10 @@ TEST(StringRef, Comparison) {
 TEST(StringRef, CopyTo) {
   char buf[8];
   string_ref s = "hello world";
-  auto n = s.copy_to(buf, sizeof(buf));
+  auto n = s.copy_to(buf);
   EXPECT_EQ(n, 7u);                 // truncated to cap-1
   EXPECT_STREQ(buf, "hello w");     // always NUL-terminated
-  EXPECT_EQ(string_ref{"hi"}.copy_to(buf, sizeof(buf)), 2u);
+  EXPECT_EQ(string_ref{"hi"}.copy_to(buf), 2u);
   EXPECT_STREQ(buf, "hi");
 }
 
@@ -344,29 +340,17 @@ TEST(StringRef, Literal) {
   EXPECT_TRUE(s == string_ref{"literal"});
 }
 
-TEST(StringRef, AllocatorHelpers) {
-  auto a = system_allocator();
-  // c_str on a non-terminated view must allocate a copy.
+TEST(StringRef, CallerOwnedCopyMakesExplicitCString) {
   const char raw[] = {'h', 'i', '!'};
   string_ref nt(raw, 3, false);
-  const char* c = hyle::container::c_str(nt, a);
-  EXPECT_NE(c, raw);             // a fresh allocation
-  EXPECT_STREQ(c, "hi!");
-  a.deallocate(const_cast<char*>(c), 4);
+  char storage[4];
+  EXPECT_EQ(nt.copy_to(storage), 3u);
+  EXPECT_NE(storage, raw);
+  EXPECT_STREQ(storage, "hi!");
 
-  // c_str on a terminated view returns the same pointer (zero copy).
+  // A view already known to be terminated remains a zero-copy C string.
   string_ref t = "term";
-  EXPECT_EQ(hyle::container::c_str(t, a), t.data);
-
-  string_ref d = dup("copyme", a);
-  EXPECT_TRUE(d == string_ref{"copyme"});
-  EXPECT_TRUE(d.null_terminated);
-  a.deallocate(const_cast<char*>(d.data), d.size + 1);
-
-  string_ref cat = concat("foo", "bar", a);
-  EXPECT_TRUE(cat == string_ref{"foobar"});
-  EXPECT_STREQ(cat.c_str(), "foobar");
-  a.deallocate(const_cast<char*>(cat.data), cat.size + 1);
+  EXPECT_EQ(t.c_str(), t.data);
 }
 
 TEST(StringRef, SliceAndSplit) {

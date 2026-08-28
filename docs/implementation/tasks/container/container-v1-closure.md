@@ -218,7 +218,8 @@ family 的证据；功能缺口集中在已有 family 的不完整生命周期�
 | `CONTAINER-MPMC-01` | Bounded/Sharded MPMC 以既有 sequence 作为 lifetime state，新增 noexcept placement `try_emplace`、move pop 与 callback consume；move-only stress/lifetime tests 通过；MSVC 19.50.35728 `/O2` trivial-u64 probe 对比 parent `3d094e84`：queue object 均为 `0x180`，外部 push/pop 的指令数与控制流不变；实际 `sched` target 编译及 21 项 RunQueue/Scheduler replay 通过 | 随完整 candidate 执行 TSan 与同合同 rigtorp 门 |
 | `CONTAINER-CVECTOR-01` | 采用 3-pointer embedded + on-demand extended table；table promotion OOM 保持旧 capacity/value；quiescent `clear()` 销毁 live T 并保留 segment capacity 复用；Windows 14 项定向测试通过 | 随完整 candidate 执行 TSan、跨平台与 append/index/iterate 资源/NI 门 |
 | `CONTAINER-CMAP-01` | reader admission 的 fetch-add 线性化点同时拒绝 writer/pending，关闭 writer 发布 pending 后的 reader barging；AArch64 spin hint 从 pipeline-serializing `isb` 改为 `yield`；两种并发 map 统一为 fallible `try_reserve` / fail-fast `reserve` | Windows 定向与完整 container tests 后，随完整 candidate 执行 TSan、AArch64 compile/runtime 与并发 map replay |
-| 其余两个冻结批次 | 尚未实现 | 只能按上方冻结顺序施工，不得扩面 |
+| `CONTAINER-TEXT-01` | 删除把 raw allocation 装进 borrowed `StringView` 的 helper；普通 owner 路由标准 string，path producing ops 写 caller-owned spans，normalize 按 view length 返回借用 output 的 optional view；interner batch 改为 spans 并以 `prewarm` 取代 nullable output；Windows 64 项 text/path/interner、完整 container、header 与更新后的 benchmark source build 通过 | 随完整 candidate 执行 OOM/sanitizer、直接 consumer、package 与 hash-text-intern P1 门 |
+| 最后一个冻结批次 | 尚未实现 | 只能按上方冻结顺序施工，不得扩面 |
 
 ## Candidate
 

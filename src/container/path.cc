@@ -1,6 +1,8 @@
 #include "hyle/container/path.h"
 
+#include <algorithm>
 #include <cstring>
+#include <limits>
 
 #include "hyle/core/compiler.h"
 
@@ -11,6 +13,9 @@ namespace {
 // while `need` counts every byte that SHOULD be written so the caller learns the
 // untruncated length. cap==0 writes nothing.
 struct BufWriter {
+  explicit BufWriter(std::span<char> output) noexcept
+      : dst(output.data()), cap(output.size()) {}
+
   char* dst;
   std::size_t cap;
   std::size_t w = 0;
@@ -21,7 +26,16 @@ struct BufWriter {
     if (need != static_cast<std::size_t>(-1)) ++need;
   }
   void put(const char* p, std::size_t n) noexcept {
-    for (std::size_t i = 0; i < n; ++i) put(p[i]);
+    const std::size_t available = cap > w + 1 ? cap - w - 1 : 0;
+    const std::size_t copied = std::min(available, n);
+    if (copied != 0) {
+      std::memmove(dst + w, p, copied);
+      w += copied;
+    }
+    if (n > (std::numeric_limits<std::size_t>::max)() - need)
+      need = (std::numeric_limits<std::size_t>::max)();
+    else
+      need += n;
   }
   std::size_t finish() noexcept {
     if (cap > 0) dst[w] = '\0';
@@ -29,28 +43,32 @@ struct BufWriter {
   }
 };
 
-}  // namespace
-
-std::uint32_t normalize(char* path) noexcept {
-  const bool is_abs = is_separator(path[0]);
+std::uint32_t normalize_in_place(char* path,
+                                 std::uint32_t input_size) noexcept {
+  const bool is_abs = input_size != 0 && is_separator(path[0]);
   std::uint32_t w = 0;     // write cursor (output is path[0, w))
   std::uint32_t base = 0;  // floor: a ".." may not pop a component before this
   std::uint32_t r = 0;     // read cursor
 
   if (is_abs) {
     path[w++] = '/';
-    while (is_separator(path[r])) ++r;  // collapse the leading separator run
+    while (r < input_size && is_separator(path[r]))
+      ++r;  // collapse the leading separator run
     base = w;                           // = 1; never pop the root
   }
 
-  while (path[r] != '\0') {
+  while (r < input_size) {
     const std::uint32_t s = r;
-    while (path[r] != '\0' && !is_separator(path[r])) ++r;  // component [s, r)
+    while (r < input_size && !is_separator(path[r]))
+      ++r;  // component [s, r)
     const std::uint32_t len = r - s;
-    while (is_separator(path[r])) ++r;  // consume trailing separator run
+    while (r < input_size && is_separator(path[r]))
+      ++r;  // consume trailing separator run
 
+    const bool parent =
+        len == 2 && path[s] == '.' && path[s + 1] == '.';
     if (len == 1 && path[s] == '.') continue;  // drop "."
-    if (len == 2 && path[s] == '.' && path[s + 1] == '.') {
+    if (parent) {
       if (w > base) {  // pop the previous component
         std::uint32_t p = w;
         if (p > base && path[p - 1] == '/') --p;  // step over a left-over sep
@@ -67,7 +85,7 @@ std::uint32_t normalize(char* path) noexcept {
     if (w > 0 && path[w - 1] != '/') path[w++] = '/';
     std::memmove(path + w, path + s, len);  // w <= s always; memmove for overlap
     w += len;
-    if (len == 2 && path[s] == '.' && path[s + 1] == '.') {
+    if (parent) {
       base = w;  // lift the floor: a leading ".." can never be popped later
     }
   }
@@ -78,38 +96,23 @@ std::uint32_t normalize(char* path) noexcept {
   return w;
 }
 
-string_ref join(string_ref a, string_ref b, mem::Allocator alloc) {
-  // Accumulate in size_t and check the uint32 result range: a.size+b.size can
-  // exceed 4 GiB (each is a separate <=4 GiB view), which would wrap the uint32
-  // length into an undersized allocation and a heap overflow on the memcpy.
-  std::size_t need = static_cast<std::size_t>(a.size) + 1 + b.size;
-  if (need > string_ref::npos) return string_ref{};  // result would not fit a view
-  const std::uint32_t n = static_cast<std::uint32_t>(need);
-  char* s = static_cast<char*>(
-      alloc.allocate(static_cast<std::size_t>(n) + 1));
-  if (s == nullptr) return string_ref{};
-  if (a.size) std::memcpy(s, a.data, a.size);
-  s[a.size] = '/';
-  if (b.size) std::memcpy(s + a.size + 1, b.data, b.size);
-  s[n] = '\0';
-  return string_ref{s, n, true};
-}
+}  // namespace
 
-std::size_t join_array(char* dst, std::size_t cap, const string_ref* parts,
-                       std::size_t n) {
-  BufWriter out{dst, cap};
+std::size_t join_path(std::span<const StringView> parts,
+                      std::span<char> output) noexcept {
+  BufWriter out(output);
   // A leading separator is honored only on the first part (an absolute / UNC
   // root); a trailing separator only on the last part. Interior separators are
   // collapsed to one '/' between tokens.
   const bool lead =
-      n > 0 && parts[0].size > 0 && is_separator(parts[0].data[0]);
-  const bool trail = n > 0 && parts[n - 1].size > 0 &&
-                     is_separator(parts[n - 1].data[parts[n - 1].size - 1]);
+      !parts.empty() && parts.front().size > 0 &&
+      is_separator(parts.front().data[0]);
+  const bool trail = !parts.empty() && parts.back().size > 0 &&
+                     is_separator(parts.back().data[parts.back().size - 1]);
 
   if (lead) out.put('/');
   bool first_tok = true;
-  for (std::size_t i = 0; i < n; ++i) {
-    const string_ref& p = parts[i];
+  for (const StringView p : parts) {
     std::uint32_t j = 0;
     while (j < p.size) {
       while (j < p.size && is_separator(p.data[j])) ++j;
@@ -133,9 +136,28 @@ PodVector<string_ref> split_all(string_ref path, mem::Allocator alloc) {
   return out;
 }
 
-string_ref replace_extension(string_ref path, string_ref ext,
-                             mem::Allocator alloc) {
-  return concat(strip_extension(path), ext, alloc);
+std::size_t replace_extension(StringView path, StringView ext,
+                              std::span<char> output) noexcept {
+  BufWriter out(output);
+  const StringView stem = strip_extension(path);
+  out.put(stem.data, stem.size);
+  out.put(ext.data, ext.size);
+  return out.finish();
+}
+
+std::optional<StringView> normalize_path(StringView path,
+                                         std::span<char> output) noexcept {
+  const std::size_t input_size = path.size;
+  if (input_size == (std::numeric_limits<std::size_t>::max)())
+    return std::nullopt;
+  const std::size_t required = std::max<std::size_t>(input_size, 1) + 1;
+  if (output.size() < required) return std::nullopt;
+  if (input_size != 0)
+    std::memmove(output.data(), path.data, input_size);
+  output[input_size] = '\0';
+  const std::uint32_t normalized_size =
+      normalize_in_place(output.data(), path.size);
+  return StringView{output.data(), normalized_size, true};
 }
 
 }  // namespace hyle::container

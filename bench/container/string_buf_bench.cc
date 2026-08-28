@@ -138,7 +138,7 @@ int bench_string_buf() {
 
   b.run("HYLE StringInterner intern_many (involved shards / chunks)", [&] {
     StringInterner buf(system_allocator());
-    const std::size_t done = buf.intern_many(stream_views.data(), nullptr, stream_views.size());
+    const std::size_t done = buf.prewarm(stream_views);
     ankerl::nanobench::doNotOptimizeAway(done);
     ankerl::nanobench::doNotOptimizeAway(buf.size());
   });
@@ -173,7 +173,7 @@ int bench_string_buf() {
     });
     growth.run("HYLE StringInterner intern_many (cached hash)", [&] {
       StringInterner buf(system_allocator());
-      const std::size_t done = buf.intern_many(long_views.data(), nullptr, long_views.size());
+      const std::size_t done = buf.prewarm(long_views);
       ankerl::nanobench::doNotOptimizeAway(done);
       ankerl::nanobench::doNotOptimizeAway(buf.size());
     });
@@ -326,11 +326,10 @@ int bench_string_buf() {
 
     b2.run("HYLE StringInterner batch lifecycle", [&] {
       StringInterner buf(system_allocator());
-      const std::size_t added =
-          buf.acquire_many(lifecycle_views.data(), lifecycle_ids.data(), lifecycle_ids.size());
-      const std::size_t retained = buf.retain_many(lifecycle_ids.data(), lifecycle_ids.size());
-      const std::size_t removed1 = buf.release_many(lifecycle_ids.data(), lifecycle_ids.size());
-      const std::size_t removed2 = buf.release_many(lifecycle_ids.data(), lifecycle_ids.size());
+      const std::size_t added = buf.acquire_many(lifecycle_views, lifecycle_ids);
+      const std::size_t retained = buf.retain_many(lifecycle_ids);
+      const std::size_t removed1 = buf.release_many(lifecycle_ids);
+      const std::size_t removed2 = buf.release_many(lifecycle_ids);
       ankerl::nanobench::doNotOptimizeAway(added);
       ankerl::nanobench::doNotOptimizeAway(retained);
       ankerl::nanobench::doNotOptimizeAway(removed1);

@@ -442,7 +442,24 @@ lock-free 1P/1C 角色应选后文 `SpscQueue`。
 
 `StringView` 不拥有字节。`null_terminated` 只说明 `data[size]` 确实可读且为 NUL，不能
 因为原始来源“看起来像字符串”就手填。默认 view 和空切片可安全查询；所有长度按 bytes，
-只有 UTF-8 入口按 code point 解释。
+只有 UTF-8 入口按 code point 解释。该 bit 不保证 `[0,size)` 没有 embedded NUL；需要让 C API
+看到全部逻辑文本/路径时，先确认 `view.find('\0') == StringView::npos`。
+
+需要拥有结果时使用 `std::string` 或接入 mem PMR 的 `std::pmr::string`；不要把
+`StringView::data` 当成待释放 pointer。需要把未终止 view 临时交给 C-shaped API 时，可复用
+caller storage：
+
+```cpp
+char c_text[256];
+hyle::container::StringView text = parser_field;
+const std::size_t written = text.copy_to(c_text);
+if (written != text.size) {
+  // storage 不足；改用按 text.size + 1 预留的 owning string/buffer
+}
+```
+
+`copy_to` 的结果和原 view 无 owner 关联；字节仍由 `c_text` 的 owner 管理。HYLE 不再提供
+“有时借用、有时 allocator 分配”或“分配后仍返回 StringView”的 helper。
 
 协议/parser 边界只需判断输入是否合法时调用 `utf8_validate(view)`：它只做一遍 validate。
 确实需要 code-point 数量时才调用 `utf8_length(view)`；非法返回 -1，合法输入需要 validate
@@ -455,9 +472,11 @@ backend。
 - `acquire` 返回 generation-tagged `StringId`，用 `retain`/`release` 管引用；最后一份释放后内容可
   回收，旧 ID 不会命中新复用的 slot。
 
-高吞吐导入优先 `acquire_many` / `intern_many`；实现按有界块只锁该块实际涉及的
-shard，并按 shard 序加锁，不会因单 shard 批量工作冻结整个 interner。返回 view 都由
-interner 拥有，不得 free。interner 必须比 view/ID 的所有使用者长寿。
+高吞吐导入优先 span-shaped `acquire_many(input, ids)` / `intern_many(input, views)`；两侧
+span size 必须相同。只希望把永久字符串预热进池时调用 `prewarm(input)`，不传 nullable output
+pointer。实现按有界块只锁该块实际涉及的 shard，并按 shard 序加锁，不会因单 shard 批量工作
+冻结整个 interner。返回 view 都由 interner 拥有，不得 free。interner 必须比 view/ID 的所有
+使用者长寿。
 
 性能选择也与合同一致：共享/回收需求明确时选 interner，高吞吐导入优先 batch；单线程
 一次性导入用 `intern_many`，完全不需要跨线程共享时则直接用普通 flat set/map。分片会让
@@ -465,8 +484,28 @@ interner 拥有，不得 free。interner 必须比 view/ID 的所有使用者长
 新鲜度、具体对手和点值只见
 [`benchmarks-container`](../implementation/evidence/performance/benchmarks-container.md)。
 
-`path.h` 只做词法操作。`normalize("a/../b")` 不查询磁盘，所以不能证明结果与真实文件、
-symlink 或 Windows case rules 等价；需要真实 filesystem 行为时使用 platform 模块。
+`path.h` 只做词法操作，read-only 函数返回输入 sub-view，producing 函数写 caller-owned span：
+
+```cpp
+using hyle::container::StringView;
+StringView parts[]{"models", "qwen", "weights.bin"};
+char joined[256];
+const std::size_t required = hyle::container::join_path(parts, joined);
+if (required >= sizeof(joined)) {
+  // joined 是 NUL-terminated prefix；换成 required + 1 bytes 后重试
+}
+
+char normalized_storage[256];
+auto normalized = hyle::container::normalize_path(joined, normalized_storage);
+if (!normalized) {
+  // storage 至少需要 max(input.size, 1) + 1 bytes
+}
+```
+
+`replace_extension` 与 `join_path` 使用同样的 full-size/truncation 合同；`directory(path)` 已经
+是 parent-dir view，需要 owning copy 时构造标准 string。`normalize_path("a/../b", ...)` 不查询
+磁盘，所以不能证明结果与真实文件、symlink 或 Windows case rules 等价；需要真实 filesystem
+行为时使用 platform 模块。
 
 ## 并发容器按角色选择
 

@@ -415,11 +415,11 @@ template <class Impl> auto lock_all(Impl& impl) {
 constexpr std::size_t kBatchChunk = 1024;
 
 template <class Impl, class Operation>
-std::size_t update_many(Impl& impl, const StringId* ids, std::size_t count,
+std::size_t update_many(Impl& impl, std::span<const StringId> ids,
                         Operation&& operation) noexcept {
   std::size_t completed = 0;
-  while (completed < count) {
-    const std::size_t chunk = std::min(kBatchChunk, count - completed);
+  while (completed < ids.size()) {
+    const std::size_t chunk = std::min(kBatchChunk, ids.size() - completed);
     std::size_t usable = chunk;
     std::uint64_t shard_mask = 0;
     for (std::size_t i = 0; i < chunk; ++i) {
@@ -446,7 +446,7 @@ std::size_t update_many(Impl& impl, const StringId* ids, std::size_t count,
 
 } // namespace
 
-StringId StringInterner::acquire(string_ref text) noexcept {
+StringId StringInterner::acquire(StringView text) noexcept {
   if (text.size == 0) return StringId{0};
   if (impl_ == nullptr) return StringId{0};
   const HashedText input = prepare(text, impl_->shard_bits, impl_->hash_seed);
@@ -455,15 +455,15 @@ StringId StringInterner::acquire(string_ref text) noexcept {
   return entry == nullptr ? StringId{0} : entry->id;
 }
 
-std::size_t StringInterner::acquire_many(const string_ref* input, StringId* output,
-                                         std::size_t count) noexcept {
-  if (count == 0) return 0;
-  HYLE_FATAL_ASSERT(input != nullptr && output != nullptr);
+std::size_t StringInterner::acquire_many(
+    std::span<const StringView> input, std::span<StringId> output) noexcept {
+  HYLE_FATAL_ASSERT(input.size() == output.size());
+  if (input.empty()) return 0;
   if (impl_ == nullptr) return 0;
   std::size_t completed = 0;
   HashedText prepared[kBatchChunk]{};
-  while (completed < count) {
-    const std::size_t chunk = std::min(kBatchChunk, count - completed);
+  while (completed < input.size()) {
+    const std::size_t chunk = std::min(kBatchChunk, input.size() - completed);
     std::uint64_t shard_mask = 0;
     for (std::size_t i = 0; i < chunk; ++i) {
       if (input[completed + i].size == 0) continue;
@@ -493,12 +493,11 @@ bool StringInterner::retain(StringId id) noexcept {
   return retain_locked(*impl_, id);
 }
 
-std::size_t StringInterner::retain_many(const StringId* ids,
-                                        std::size_t count) noexcept {
-  if (count == 0) return 0;
-  HYLE_FATAL_ASSERT(ids != nullptr);
+std::size_t StringInterner::retain_many(
+    std::span<const StringId> ids) noexcept {
+  if (ids.empty()) return 0;
   if (impl_ == nullptr) return 0;
-  return update_many(*impl_, ids, count,
+  return update_many(*impl_, ids,
                      [&](StringId id) { return retain_locked(*impl_, id); });
 }
 
@@ -509,17 +508,16 @@ bool StringInterner::release(StringId id) noexcept {
   return release_locked(*impl_, alloc_, id);
 }
 
-std::size_t StringInterner::release_many(const StringId* ids,
-                                         std::size_t count) noexcept {
-  if (count == 0) return 0;
-  HYLE_FATAL_ASSERT(ids != nullptr);
+std::size_t StringInterner::release_many(
+    std::span<const StringId> ids) noexcept {
+  if (ids.empty()) return 0;
   if (impl_ == nullptr) return 0;
-  return update_many(*impl_, ids, count, [&](StringId id) {
+  return update_many(*impl_, ids, [&](StringId id) {
     return release_locked(*impl_, alloc_, id);
   });
 }
 
-string_ref StringInterner::lookup(StringId id) noexcept {
+StringView StringInterner::lookup(StringId id) noexcept {
   if (id.value == 0) return string_ref{"", 0, true};
   if (impl_ == nullptr || id_shard(id) >= impl_->shard_count) return string_ref{};
   std::lock_guard lock(impl_->shards[id_shard(id)].mu);
@@ -528,7 +526,7 @@ string_ref StringInterner::lookup(StringId id) noexcept {
   return string_ref{};
 }
 
-string_ref StringInterner::intern(string_ref text) noexcept {
+StringView StringInterner::intern(StringView text) noexcept {
   if (text.size == 0) return string_ref{"", 0, true};
   if (impl_ == nullptr) return string_ref{};
   const HashedText input = prepare(text, impl_->shard_bits, impl_->hash_seed);
@@ -538,15 +536,26 @@ string_ref StringInterner::intern(string_ref text) noexcept {
                           : string_ref{entry_data(entry), entry->size, true};
 }
 
-std::size_t StringInterner::intern_many(const string_ref* input, string_ref* output,
-                                        std::size_t count) noexcept {
-  if (count == 0) return 0;
-  HYLE_FATAL_ASSERT(input != nullptr);
+std::size_t StringInterner::intern_many(
+    std::span<const StringView> input, std::span<StringView> output) noexcept {
+  HYLE_FATAL_ASSERT(input.size() == output.size());
+  return intern_many_impl(input, output);
+}
+
+std::size_t StringInterner::prewarm(
+    std::span<const StringView> input) noexcept {
+  return intern_many_impl(input, {});
+}
+
+std::size_t StringInterner::intern_many_impl(
+    std::span<const StringView> input, std::span<StringView> output) noexcept {
+  HYLE_FATAL_ASSERT(output.empty() || input.size() == output.size());
+  if (input.empty()) return 0;
   if (impl_ == nullptr) return 0;
   std::size_t completed = 0;
   HashedText prepared[kBatchChunk]{};
-  while (completed < count) {
-    const std::size_t chunk = std::min(kBatchChunk, count - completed);
+  while (completed < input.size()) {
+    const std::size_t chunk = std::min(kBatchChunk, input.size() - completed);
     std::uint64_t shard_mask = 0;
     for (std::size_t i = 0; i < chunk; ++i) {
       if (input[completed + i].size == 0) continue;
@@ -564,7 +573,7 @@ std::size_t StringInterner::intern_many(const string_ref* input, string_ref* out
         if (entry == nullptr) return completed + i;
         result = string_ref{entry_data(entry), entry->size, true};
       }
-      if (output != nullptr) output[completed + i] = result;
+      if (!output.empty()) output[completed + i] = result;
     }
     completed += chunk;
   }
