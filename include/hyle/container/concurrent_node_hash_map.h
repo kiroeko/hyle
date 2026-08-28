@@ -394,7 +394,9 @@ public:
     }
   }
 
-  bool reserve(std::size_t count) {
+  // The try_ form reports table-allocation failure without moving any node;
+  // the ordinary form follows HYLE's fail-fast allocation convention.
+  bool try_reserve(std::size_t count) {
     HYLE_FATAL_ASSERT(valid());
     const std::size_t target = normalize_bucket_count(count);
     if (target == 0)
@@ -404,6 +406,10 @@ public:
     if (target <= table->bucket_count)
       return true;
     return rehash_locked(table, target);
+  }
+
+  void reserve(std::size_t count) {
+    HYLE_FATAL_ASSERT(try_reserve(count));
   }
 
   void clear() noexcept {

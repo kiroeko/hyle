@@ -72,7 +72,11 @@ public:
       if ((state & (kWriter | kWriterPending)) == 0) {
         const std::uintptr_t previous =
             state_.fetch_add(kOneReader, std::memory_order_acquire);
-        if ((previous & kWriter) == 0)
+        // A writer can publish kWriterPending between the optimistic load and
+        // this fetch_add.  Treat the fetch_add as the admission linearization
+        // point: readers that arrive after the pending bit must roll back, or
+        // a continuous reader stream can indefinitely barge ahead of a writer.
+        if ((previous & (kWriter | kWriterPending)) == 0)
           return;
         remove_reader();
       }
@@ -88,7 +92,7 @@ public:
       return false;
     const std::uintptr_t previous =
         state_.fetch_add(kOneReader, std::memory_order_acquire);
-    if ((previous & kWriter) == 0)
+    if ((previous & (kWriter | kWriterPending)) == 0)
       return true;
     remove_reader();
     return false;
@@ -112,7 +116,7 @@ private:
 #elif defined(__x86_64__) || defined(__i386__)
     __builtin_ia32_pause();
 #elif defined(__aarch64__) || defined(__arm__)
-    __asm__ __volatile__("isb" ::: "memory");
+    __asm__ __volatile__("yield");
 #endif
   }
 

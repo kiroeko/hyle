@@ -103,8 +103,8 @@ TEST(ConcurrentNodeHashMap, RehashPreservesValuesAndWaitsForAccessor) {
   Map::ConstAccessor held;
   ASSERT_TRUE(map.find(held, 7));
   const int *stable_address = &*held;
-  std::future<bool> reserved =
-      std::async(std::launch::async, [&] { return map.reserve(8192); });
+  std::future<bool> reserved = std::async(
+      std::launch::async, [&] { return map.try_reserve(8192); });
   EXPECT_EQ(reserved.wait_for(std::chrono::milliseconds(20)),
             std::future_status::timeout);
   EXPECT_EQ(*stable_address, 14);
@@ -177,6 +177,32 @@ TEST(ConcurrentNodeHashMap, FallibleNodeAllocationLeavesMapUsable) {
   EXPECT_TRUE(map.empty());
   state.fail.store(false);
   EXPECT_EQ(map.try_emplace(accessor, 1, 2), Map::InsertResult::kInserted);
+}
+
+TEST(ConcurrentNodeHashMap, TryReserveReportsFailureAndPreservesEntries) {
+  NodeToggleAllocatorState state;
+  Allocator allocator(&node_toggle_allocate, &node_toggle_deallocate,
+                      &node_toggle_reallocate, &state);
+  using Map = ConcurrentNodeHashMap<int, int, hyle::container::Hash<int>,
+                                    std::equal_to<>, Allocator>;
+  Map map(16, allocator);
+  ASSERT_TRUE(map.valid());
+  Map::Accessor inserted;
+  ASSERT_TRUE(map.emplace(inserted, 7, 70));
+  inserted.release();
+  const std::size_t old_buckets = map.bucket_count();
+
+  state.fail.store(true);
+  EXPECT_FALSE(map.try_reserve(4096));
+  EXPECT_EQ(map.bucket_count(), old_buckets);
+  Map::ConstAccessor found;
+  ASSERT_TRUE(map.find(found, 7));
+  EXPECT_EQ(*found, 70);
+  found.release();
+
+  state.fail.store(false);
+  EXPECT_TRUE(map.try_reserve(4096));
+  EXPECT_GE(map.bucket_count(), 4096u);
 }
 
 TEST(ConcurrentNodeHashMap, ForEachVisitsEveryStableNode) {

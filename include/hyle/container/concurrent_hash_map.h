@@ -304,7 +304,8 @@ public:
   // Reserves approximately count/shards entries in every shard. With HYLE's
   // mixed 64-bit hash this is the useful total-size reserve contract; a custom
   // hasher that maps most keys to one shard can still force that shard to grow.
-  bool reserve(std::size_t count) {
+  // The try_ form reports allocation failure; the ordinary form is fail-fast.
+  bool try_reserve(std::size_t count) {
     HYLE_FATAL_ASSERT(valid());
     if (count > static_cast<std::size_t>(-1) - (shard_count_ - 1))
       return false;
@@ -318,6 +319,10 @@ public:
         return false;
     }
     return true;
+  }
+
+  void reserve(std::size_t count) {
+    HYLE_FATAL_ASSERT(try_reserve(count));
   }
 
   std::size_t size() const noexcept {

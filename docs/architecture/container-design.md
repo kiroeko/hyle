@@ -223,11 +223,15 @@ lookup 不写全局 hazard/refcount。已存在 key 的 insert/assign 在判断�
 两者共享一个 compact、writer-preferring adaptive RW lock。状态布局参考 oneTBB
 `spin_rw_mutex`，短竞争 bounded spin，flat rehash 等长等待则用 C++20 `atomic::wait` park。
 reader-waiting hint 只在真 waiter 存在时 notify，避免 libstdc++ shared waiter pool 把互不
-相关的 shard 串成全局热点。这是正常并发使用的机制，不是 benchmark-only metadata。
+相关的 shard 串成全局热点。reader 以原子加计数作为 admission linearization point，并同时
+检查 writer/pending bits；已经发布 pending 的 writer 因而不会被新 reader 越过。x86 spin
+使用 `pause`，AArch64 使用轻量 `yield` hint，不用序列化流水线的 `isb`。这是正常并发使用的
+机制，不是 benchmark-only metadata。
 
 accessor 是并发安全合同本身：`ConstAccessor` 持共享锁，`Accessor` 持独占锁；复用同一
 accessor 前 find/insert 会先 release 旧绑定。每线程对同一 map 最多保留一个 accessor；
-flat 调用 `size/reserve/clear/for_each`、node 调用 `reserve/clear/for_each` 前也必须释放它，
+flat 调用 `size/try_reserve/reserve/clear/for_each`、node 调用
+`try_reserve/reserve/clear/for_each` 前也必须释放它，
 callback 不得 re-enter 同一 map。Hash/Eq/allocator 必须能被
 多线程安全调用，析构必须等待所有调用和 accessor quiescent。
 

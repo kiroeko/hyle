@@ -342,16 +342,18 @@ device.release();
 
 `ConstAccessor` 持共享锁，`Accessor` 持独占锁；同一 accessor 传入下一次 find/insert 前会自动
 release 旧绑定，但显式尽早 `release()` 更容易看出临界区。每线程对同一 map 最多保留一个
-live accessor；不要拿着一个 accessor 再用另一个访问同 map。flat 的 `size/reserve/clear/
-for_each` 与 node 的 `reserve/clear/for_each` 也要求先 release；不要从 callback re-enter 同一
-map，否则会等待自己。析构前必须 join/quiesce 所有调用者；自定义 Hash/Eq 与 allocator
+live accessor；不要拿着一个 accessor 再用另一个访问同 map。flat 的
+`size/try_reserve/reserve/clear/for_each` 与 node 的
+`try_reserve/reserve/clear/for_each` 也要求先 release；不要从 callback re-enter 同一 map，
+否则会等待自己。析构前必须 join/quiesce 所有调用者；自定义 Hash/Eq 与 allocator
 也必须允许不同线程并发调用。
 
 两者的 `contains()` 只是瞬时快照：返回后其他线程可以立即 erase。需要读出并继续使用值，
 应持有 `ConstAccessor`；需要 read-modify-write，直接用 `Accessor`，不要先 contains 再 find。
-自动增长或 `reserve` 可能 OOM：可恢复路径使用返回 `InsertResult::kOutOfMemory` 的 `try_*`，
-普通 `emplace/insert_or_assign` 沿用 HYLE fail-fast OOM 合同。flat 的 `size()` 要逐 shard 取
-快照，node 的 `size()` 是 O(1) atomic；两者都不是跨 key 的事务快照。已知最终规模时先
+自动增长或预留可能 OOM：可恢复 insertion 使用返回
+`InsertResult::kOutOfMemory` 的 `try_*`，可恢复预留使用返回 `bool` 的 `try_reserve`；普通
+`emplace/insert_or_assign/reserve` 沿用 HYLE fail-fast OOM 合同。flat 的 `size()` 要逐 shard
+取快照，node 的 `size()` 是 O(1) atomic；两者都不是跨 key 的事务快照。已知最终规模时先
 reserve，既把 cold allocation 移出服务热路径，也缩短写锁持有时间。
 
 ## DynamicBitSet、SparseSet 与 FlatHashSet 怎么选

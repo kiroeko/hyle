@@ -135,7 +135,7 @@ TEST(ConcurrentHashMap, ConcurrentDisjointInsertAndSharedUpdate) {
   constexpr int kThreads = 8;
   constexpr int kPerThread = 4000;
   Map map(64);
-  ASSERT_TRUE(map.reserve(kThreads * kPerThread));
+  ASSERT_TRUE(map.try_reserve(kThreads * kPerThread));
 
   std::vector<std::thread> threads;
   for (int thread = 0; thread < kThreads; ++thread) {
@@ -201,7 +201,7 @@ TEST(ConcurrentHashMap, LongKeyLookupHashesOnlyOnce) {
                                 StringEqual>;
   Map map(8, hyle::mem::SystemAllocator{}, CountingStringHash{&calls},
           StringEqual{});
-  ASSERT_TRUE(map.reserve(32));
+  map.reserve(32);
   Map::Accessor inserted;
   EXPECT_EQ(map.try_emplace(inserted, std::string(200, 'x'), 3),
             Map::InsertResult::kInserted);
@@ -212,4 +212,27 @@ TEST(ConcurrentHashMap, LongKeyLookupHashesOnlyOnce) {
   ASSERT_TRUE(map.find(found, std::string_view(std::string(200, 'x'))));
   EXPECT_EQ(*found, 3);
   EXPECT_EQ(calls.load(), 1u);
+}
+
+TEST(ConcurrentHashMap, TryReserveReportsFailureAndPreservesEntries) {
+  ToggleAllocatorState state;
+  Allocator allocator(&toggle_allocate, &toggle_deallocate, &toggle_reallocate,
+                      &state);
+  using Map = ConcurrentHashMap<int, int, hyle::container::Hash<int>,
+                                std::equal_to<>, Allocator>;
+  Map map(8, allocator);
+  ASSERT_TRUE(map.valid());
+  Map::Accessor inserted;
+  ASSERT_TRUE(map.emplace(inserted, 7, 70));
+  inserted.release();
+
+  state.fail.store(true);
+  EXPECT_FALSE(map.try_reserve(4096));
+  Map::ConstAccessor found;
+  ASSERT_TRUE(map.find(found, 7));
+  EXPECT_EQ(*found, 70);
+  found.release();
+
+  state.fail.store(false);
+  EXPECT_TRUE(map.try_reserve(4096));
 }
