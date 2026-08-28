@@ -17,7 +17,7 @@
 | obs | QUEUED | — | — | — | — | 现有实现与历史审查只作输入。 |
 | math | QUEUED | — | — | — | — | 现有实现只作输入；尚需裁决与 SIMD 的边界。 |
 | time | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/time/time-v1-closure.md) | time-v1 CLOSED：完整 clock/timestamp/deadline/timer 能力、自然 C++ API、三平台正确性与三种交付、直接消费者、文档和 Seastar 同合同 5% P1 工程非劣门均已签署；Formal 独立 PENDING。 |
-| platform | QUEUED | — | — | — | — | 现有实现与历史审查只作输入。 |
+| platform | SCOPED | P1 | PLANNED / P1_ENGINEERING / 5% | PENDING | [task](tasks/platform/platform-v1-closure.md) | platform-v1 已冻结范围、消费者、peer、P1 family、预算与停止规则；下一阶段只读完成能力/public-surface/依赖审计并冻结有限 FIX。 |
 | mem | QUEUED | — | — | — | — | 现有实现与历史审查只作输入。 |
 | simd | QUEUED | — | — | — | — | 现有实现与历史审查只作输入。 |
 | container | QUEUED | — | — | — | — | 完整容器模块仍未审查；不能继承 intrusive 子组件的候选结论。 |

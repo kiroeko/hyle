@@ -316,8 +316,30 @@
     },
     {
       "module": "platform",
-      "product_state": "QUEUED",
-      "summary": "现有实现与历史审查只作输入。"
+      "product_state": "SCOPED",
+      "round_id": "platform-v1",
+      "closure_task": "docs/implementation/tasks/platform/platform-v1-closure.md",
+      "scope": "CPU/topology, thread/wait, VM/NUMA, filesystem/file mapping and dynamic-loader mechanisms; C++ API, direct dependencies/consumers, delivery, documentation and bounded P1 engineering evidence.",
+      "non_goals": "Scheduler/executor policy, async I/O, path-string algorithms, device memory, cross-process shared-memory protocols, Native FFI/C API, stable C++ ABI and Formal certification.",
+      "baseline_commit": "780bf5b69249cf17df0344b1e40ceb7cf8797c6a",
+      "performance_tier": "P1",
+      "validation_machine_profiles": [
+        "W1-WIN",
+        "W1-WSL",
+        "M1-MAC"
+      ],
+      "engineering_performance": {
+        "verdict": "PLANNED",
+        "mode": "P1_ENGINEERING",
+        "material_margin_pct": 5,
+        "machine_profile": "W1-WIN",
+        "instrument_profile": "closure-perf-v1"
+      },
+      "formal_performance": {
+        "state": "PENDING",
+        "instrument_profile": "formal-release-v1"
+      },
+      "summary": "platform-v1 已冻结范围、消费者、peer、P1 family、预算与停止规则；下一阶段只读完成能力/public-surface/依赖审计并冻结有限 FIX。"
     },
     {
       "module": "mem",
