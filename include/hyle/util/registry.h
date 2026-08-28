@@ -11,8 +11,8 @@
 #include <type_traits>
 #include <utility>
 
+#include "hyle/container/flat_hash_map.h"
 #include "hyle/container/string_ref.h"
-#include "hyle/container/swiss_table.h"
 #include "hyle/error/result.h"
 #include "hyle/error/status.h"
 #include "hyle/core/compiler.h"
@@ -210,7 +210,7 @@ class Registry {
     if (frozen_index_.load(std::memory_order_relaxed) != nullptr) {
       return Status::FailedPrecondition("registry is frozen");
     }
-    return entries_.reserve(count)
+    return entries_.try_reserve(count)
                ? Status::Ok()
                : Status::ResourceExhausted("registry reserve failed");
   }

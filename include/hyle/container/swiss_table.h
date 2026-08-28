@@ -351,7 +351,7 @@ class SwissTable {
   const_iterator cbegin() const noexcept { return begin(); }
   const_iterator cend() const noexcept { return end(); }
 
-  bool reserve(std::size_t count) {
+  bool try_reserve(std::size_t count) {
     if (cap_ != 0) {
       const std::size_t max_live = cap_ - cap_ / 8;
       if (count <= max_live) {
@@ -375,8 +375,12 @@ class SwissTable {
     return resize_to(new_cap);
   }
 
+  void reserve(std::size_t count) {
+    HYLE_FATAL_ASSERT(try_reserve(count));
+  }
+
   // Explicit fallible convenience for callers that need one allocation-free
-  // absent-key insert. reserve() itself honors the same tombstone-aware
+  // absent-key insert. try_reserve() honors the same tombstone-aware
   // guarantee; this method derives the required final size for the caller.
   bool needs_prepare_insert() const noexcept {
     return cap_ == 0 || growth_left_ == 0;
@@ -385,7 +389,7 @@ class SwissTable {
   bool try_prepare_insert() {
     if (!needs_prepare_insert()) return true;
     if (size_ == static_cast<std::size_t>(-1)) return false;
-    return reserve(size_ + 1);
+    return try_reserve(size_ + 1);
   }
 
   void clear() noexcept {
@@ -549,7 +553,7 @@ class SwissTable {
         HYLE_FATAL_ASSERT(additional != static_cast<std::size_t>(-1) - size_);
         ++additional;
       }
-      HYLE_FATAL_ASSERT(reserve(size_ + additional));
+      reserve(size_ + additional);
     }
     for (; first != last; ++first) {
       auto&& item = *first;
@@ -672,7 +676,7 @@ class SwissTable {
   }
 
   void copy_entries(const SwissTable& other) {
-    HYLE_FATAL_ASSERT(reserve(other.size_));
+    reserve(other.size_);
     insert(other.begin(), other.end());
   }
 
@@ -1004,7 +1008,8 @@ class FlatHashSet {
   std::size_t size() const noexcept { return table_.size(); }
   std::size_t capacity() const noexcept { return table_.capacity(); }
   bool empty() const noexcept { return table_.empty(); }
-  bool reserve(std::size_t count) { return table_.reserve(count); }
+  bool try_reserve(std::size_t count) { return table_.try_reserve(count); }
+  void reserve(std::size_t count) { table_.reserve(count); }
   bool needs_prepare_insert() const noexcept {
     return table_.needs_prepare_insert();
   }
@@ -1052,7 +1057,7 @@ class FlatHashSet {
             additional != static_cast<std::size_t>(-1) - size());
         ++additional;
       }
-      HYLE_FATAL_ASSERT(reserve(size() + additional));
+      reserve(size() + additional);
     }
     for (; first != last; ++first) insert(K(*first));
   }

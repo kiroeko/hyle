@@ -7,7 +7,9 @@ container 提供性能敏感的基础数据结构、借用字符串/路径算法
 替换全部 STL，也不因为某个 microbenchmark 赢就要求用户改类型：先按 ownership、元素
 生命周期、并发角色、顺序保证和容量上限选形状，再看性能证书。
 
-本文是 C++ 产品的选型入口，示例使用自然的 typed API。
+本文是 C++ 产品的选型入口，示例使用自然的 typed API。公开类型都有按类型名可发现的
+入口头（例如 `flat_hash_map.h`、`btree_map.h`、`string_view.h`）；
+`swiss_table.h`、`flat_sorted.h` 等 family/实现头只供一次取得同族类型或维护实现时使用。
 
 侵入式链表在语义上属于 container，但单独作为 header-only `container_intrusive` 组件交付。
 因此 time 等底层模块和只需要零分配链表的用户无需拉入完整 container 及其 mem/platform 闭包；
@@ -152,7 +154,8 @@ element pointer 失效。普通操作把 OOM 当 fatal；需要恢复时使用 `
 ## FlatHashMap 与 FlatHashSet
 
 ```cpp
-#include "hyle/container/swiss_table.h"
+#include "hyle/container/flat_hash_map.h"
+#include "hyle/container/flat_hash_set.h"
 
 hyle::container::FlatHashMap<std::string, std::unique_ptr<Node>,
                               hyle::container::StringHash,
@@ -201,9 +204,11 @@ Abseil/Folly/std 的熟悉语义一致：`insert` 不覆盖已有 value；
 `try_emplace` 只在 key 不存在时构造 value，并返回 `{value_pointer, inserted}`；
 `insert_or_assign` 明确表示覆盖；默认构造 value 的常用计数/缓存可用 `operator[]`。
 这些普通入口把 OOM 当 fatal。需要恢复时用 `try_insert_or_assign`，或先
-`try_prepare_insert` 把可能的 grow/tombstone rehash 移到冷路径。`reserve(final_size)`
-本身也遵守熟悉的后续插入保证：若 tombstone 已吃光 growth budget，它会同容量 rehash，
-不会只看 slot capacity 就虚假成功。Hash/Eq、元素 move/destroy 以及 `try_emplace` 的
+`try_prepare_insert` 把一次 absent-key insert 可能需要的 grow/tombstone rehash 移到冷路径。
+批量容量准备若需要报告 OOM，使用 `try_reserve(final_size)`；熟悉的
+`reserve(final_size)` 是同一工作的 fail-fast 入口。两者都遵守后续插入保证：若 tombstone
+已吃光 growth budget，它们会同容量 rehash，不会只看 slot capacity 就虚假成功。
+Hash/Eq、元素 move/destroy 以及 `try_emplace` 的
 value 构造必须 noexcept，保证失败不留下半迁移 table。
 
 slot 是 flat storage；grow、rehash、erase 都会使相关 pointer/reference 失效。不要在
@@ -231,7 +236,7 @@ forward range 会先 reserve 一次；input iterator 只读取一次。move-only
 淘汰或维护大范围索引时应改用 `BTreeMap/Set`。
 
 ```cpp
-#include "hyle/container/flat_sorted.h"
+#include "hyle/container/flat_map.h"
 
 std::vector<std::pair<std::uint64_t, Route>> rows = load_sorted_routes();
 hyle::container::FlatMap<std::uint64_t, Route> routes(
@@ -272,7 +277,7 @@ mutation 点及其后的 iterator/reference 失效；若发生 reallocation 则�
 而 `std::map` 的每元素 node 形状会为短 key/value 支付更多 allocation 与 pointer chase。
 
 ```cpp
-#include "hyle/container/btree.h"
+#include "hyle/container/btree_map.h"
 
 hyle::container::BTreeMap<std::uint64_t, Job> deadline_index;
 deadline_index.try_emplace(deadline_ns, Job{id});
@@ -321,7 +326,7 @@ comparator 必须 noexcept。
 - 根本不需要并发：仍用 `FlatHashMap`；并发类型的锁和 accessor 不是免费保险。
 
 ```cpp
-#include "hyle/container/concurrent_hash_map.h"
+#include "hyle/container/concurrent_flat_hash_map.h"
 #include "hyle/container/concurrent_node_hash_map.h"
 
 using Counters =

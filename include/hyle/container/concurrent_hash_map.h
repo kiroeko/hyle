@@ -313,7 +313,7 @@ public:
     for (std::size_t i = 0; i < shard_count_; ++i) {
       Shard &shard = shards_[i];
       shard.lock.lock();
-      const bool ok = shard.table.reserve(per_shard);
+      const bool ok = shard.table.try_reserve(per_shard);
       shard.lock.unlock();
       if (!ok)
         return false;

@@ -392,10 +392,9 @@ hash -> H1 起始 group + H2 七位指纹
 
 erase 在安全时把 tombstone 恢复成 empty，否则保留 deleted。resize/free 是
 type-erased cold core；typed find/insert/erase 保持 header-inline，避免廉价 key
-每 probe 一次函数指针。C map/set 使用同一 ctrl/group/resize 机制，slot layout
-分别在运行时计算为 `[stored hash][aligned key][aligned value]` 与
-`[stored hash][aligned key]`；不是每元素分配的链表，也不让 set 用户用 map +
-dummy value 模拟 membership。
+每 probe 一次函数指针。公开产品面只有 typed C++ `FlatHashMap` / `FlatHashSet`；不保留
+历史 C map/set 或伪 FFI layout。类型名入口头转发到同一个 family implementation，既让
+用户能从 `flat_hash_map.h` / `flat_hash_set.h` 自然发现类型，也不复制 probing core。
 `FlatHashSet` 共享这一 probing/resize core，但 empty mapped policy 不占 slot 空间；
 map/set iterator 都用 control-group full mask 跳转 occupied lane。map entry 的 key
 只读、value 可写，set iterator 只读 key，因此不会经 iterator 破坏 hash 不变量。
@@ -414,9 +413,9 @@ probe 的指令路径。
 边界原则：
 
 - 所有容量乘法、对齐和 power-of-two 扩张先做 overflow 检查。
-- 增长失败保留旧状态并返回失败。
+- `try_reserve` 在增长失败时保留旧状态并返回 false；`reserve` 是同一算法的 fail-fast 入口。
 - insert 输入若别名当前 slots，增长前复制到 allocator-backed scratch。
-- C callback 不得抛异常或在遍历中修改同一 map。
+- `for_each` callback 不得在遍历中修改同一 map/set。
 
 ## StringView、path 与 owner 边界
 

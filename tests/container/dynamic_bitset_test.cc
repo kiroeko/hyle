@@ -74,6 +74,26 @@ TEST(DynamicBitSet, CopyMoveAndAllEmptySemantics) {
   EXPECT_TRUE(copy.empty());
 }
 
+TEST(DynamicBitSet, EqualityUsesLogicalValueNotReservedCapacity) {
+  DynamicBitSet empty;
+  DynamicBitSet reserved_empty;
+  reserved_empty.reserve(4096);
+  EXPECT_EQ(empty, reserved_empty);
+
+  DynamicBitSet left(130);
+  left.set(0).set(64).set(129);
+  DynamicBitSet same = left;
+  same.reserve(8192);
+  EXPECT_EQ(left, same);
+
+  same.flip(129);
+  EXPECT_NE(left, same);
+
+  DynamicBitSet different_size(131);
+  different_size.set(0).set(64).set(129);
+  EXPECT_NE(left, different_size);
+}
+
 TEST(DynamicBitSet, ShiftAndAppendCrossWordBoundaries) {
   DynamicBitSet bits;
   for (std::size_t i = 0; i < 130; ++i) bits.push_back(false);

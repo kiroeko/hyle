@@ -373,7 +373,7 @@ nghttp2_ssize read_outbound(nghttp2_session*, std::int32_t, std::uint8_t* buf,
 }
 
 bool SessionState::initialize() noexcept {
-  if (!streams.reserve(kHttp2DefaultMaxConcurrentStreams * 2) ||
+  if (!streams.try_reserve(kHttp2DefaultMaxConcurrentStreams * 2) ||
       !input.reserve(16 * 1024))
     return false;
 

@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <iterator>
 
 #include "hyle/container/hash.h"  // HYLE_CONTAINER_API
@@ -37,6 +38,13 @@ class DynamicBitSet {
   bool empty() const noexcept { return size_bits_ == 0; }
   size_type block_count() const noexcept { return words_for(size_bits_); }
   const block_type* blocks() const noexcept { return words_; }
+
+  friend bool operator==(const DynamicBitSet& left,
+                         const DynamicBitSet& right) noexcept {
+    if (left.size_bits_ != right.size_bits_) return false;
+    const size_type bytes = left.block_count() * sizeof(block_type);
+    return bytes == 0 || std::memcmp(left.words_, right.words_, bytes) == 0;
+  }
 
   HYLE_CONTAINER_API bool try_reserve(size_type bit_count) noexcept;
   void reserve(size_type bit_count) { HYLE_FATAL_ASSERT(try_reserve(bit_count)); }

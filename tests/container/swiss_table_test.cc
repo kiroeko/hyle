@@ -28,6 +28,17 @@ using hyle::mem::system_allocator;
 static_assert(std::forward_iterator<FlatHashMap<int, int>::iterator>);
 static_assert(std::forward_iterator<FlatHashMap<int, int>::const_iterator>);
 static_assert(std::forward_iterator<FlatHashSet<int>::iterator>);
+static_assert(std::is_same_v<
+              decltype(std::declval<FlatHashMap<int, int>&>().reserve(1)),
+              void>);
+static_assert(std::is_same_v<
+              decltype(std::declval<FlatHashMap<int, int>&>().try_reserve(1)),
+              bool>);
+static_assert(std::is_same_v<
+              decltype(std::declval<FlatHashSet<int>&>().reserve(1)), void>);
+static_assert(std::is_same_v<
+              decltype(std::declval<FlatHashSet<int>&>().try_reserve(1)),
+              bool>);
 static_assert(std::is_copy_constructible_v<FlatHashMap<int, std::string>>);
 static_assert(!std::is_copy_constructible_v<
               FlatHashMap<int, std::unique_ptr<int>>>);
@@ -367,7 +378,7 @@ TEST(SwissTable, MoveConstructionPreservesProbeMask) {
 
 TEST(SwissTable, ReserveClearMoveAssignAndConstTraversal) {
   SwissTable<int, int> source;
-  ASSERT_TRUE(source.reserve(1000));
+  source.reserve(1000);
   EXPECT_GE(source.capacity() - source.capacity() / 8, 1000u);
   for (int i = 0; i < 100; ++i) source.insert(i, i + 1);
 
@@ -395,7 +406,7 @@ TEST(SwissTable, FallibleReserveRejectsOverflowWithoutChangingState) {
   SwissTable<int, int> table;
   ASSERT_TRUE(table.insert(7, 9));
   const std::size_t old_capacity = table.capacity();
-  EXPECT_FALSE(table.reserve(static_cast<std::size_t>(-1)));
+  EXPECT_FALSE(table.try_reserve(static_cast<std::size_t>(-1)));
   EXPECT_EQ(table.capacity(), old_capacity);
   ASSERT_NE(table.find(7), nullptr);
   EXPECT_EQ(*table.find(7), 9);
@@ -424,7 +435,7 @@ TEST(SwissTable, ReserveReclaimsTombstonesForItsInsertionGuarantee) {
   using CollisionMap =
       FlatHashMap<int, int, ConstantIntHash, std::equal_to<>, Allocator>;
   CollisionMap table(allocator, ConstantIntHash{}, std::equal_to<>{});
-  ASSERT_TRUE(table.reserve(28));
+  ASSERT_TRUE(table.try_reserve(28));
   ASSERT_EQ(table.capacity(), 32u);
   for (int i = 0; i < 28; ++i) ASSERT_TRUE(table.insert(i, i));
   ASSERT_TRUE(table.needs_prepare_insert());
@@ -432,7 +443,7 @@ TEST(SwissTable, ReserveReclaimsTombstonesForItsInsertionGuarantee) {
   ASSERT_TRUE(table.needs_prepare_insert());
 
   const std::size_t capacity = table.capacity();
-  ASSERT_TRUE(table.reserve(table.size() + 1));
+  ASSERT_TRUE(table.try_reserve(table.size() + 1));
   EXPECT_EQ(table.capacity(), capacity);
   EXPECT_FALSE(table.needs_prepare_insert());
 
@@ -641,6 +652,7 @@ TEST(FlatHashSet, FallibleInsertDoesNotChangeStateOnAllocationFailure) {
       FlatHashSet<int, hyle::container::Hash<int>, std::equal_to<>,
                   hyle::mem::Allocator>;
   FallibleSet set(failing);
+  EXPECT_FALSE(set.try_reserve(1));
   EXPECT_EQ(set.try_insert(1), FallibleSet::InsertResult::kOutOfMemory);
   EXPECT_TRUE(set.empty());
 }

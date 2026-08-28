@@ -1225,8 +1225,8 @@ Proactor::Impl* Proactor::try_init_epoll(unsigned entries) noexcept {
   }
   impl->backend = Proactor::Impl::kEpoll;
   impl->epfd = ep;
-  if (!impl->pending_in.reserve(entries) ||
-      !impl->pending_out.reserve(entries)) {
+  if (!impl->pending_in.try_reserve(entries) ||
+      !impl->pending_out.try_reserve(entries)) {
     delete impl;
     ::close(ep);
     return nullptr;
@@ -2802,8 +2802,8 @@ Proactor::Impl* Proactor::try_init_epoll(unsigned entries) noexcept {
     return nullptr;
   }
   impl->kq = kq;
-  if (!impl->pending_in.reserve(entries) ||
-      !impl->pending_out.reserve(entries)) {
+  if (!impl->pending_in.try_reserve(entries) ||
+      !impl->pending_out.try_reserve(entries)) {
     delete impl;
     ::close(kq);
     return nullptr;

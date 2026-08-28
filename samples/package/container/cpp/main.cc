@@ -3,7 +3,7 @@
 #include <string_view>
 
 #include "hyle/container/string_algo.h"
-#include "hyle/container/swiss_table.h"
+#include "hyle/container/flat_hash_map.h"
 
 int main() {
   using hyle::container::FlatHashMap;

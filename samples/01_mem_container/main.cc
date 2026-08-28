@@ -10,7 +10,7 @@
 #include <cstdint>
 #include <cstdio>
 
-#include "hyle/container/swiss_table.h"
+#include "hyle/container/flat_hash_map.h"
 
 using hyle::container::FlatHashMap;
 
