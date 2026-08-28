@@ -9,7 +9,7 @@
 > [`module-status.json`](../../module-status.json)。在 capability map、public-surface trace 与有限
 > `FIX` 集进入 `AUDITED` 前，不修改 container 产品实现。
 
-## Closure card（`CANDIDATE`）
+## Closure card（`AUDITED`）
 
 - component / owner / round ID：`container` / data-structure owner / `container-v1`
 - task kind：`REFACTOR`
@@ -109,14 +109,14 @@
   node extraction/merge、Native FFI 与 Formal 可在证据不足时保持具名负空间；任何 material `MUST`、
   correctness、交付或统一性能门不能在预算内裁决时进入具名 `BLOCKED`，不无限研究。
 
-## Capability-family coverage map（`CANDIDATE`）
+## Capability-family coverage map（`AUDITED`）
 
 本表先从推理与工程计算任务、标准问题域和 pinned peers 自顶向下枚举能力，再反向追踪现有公开
 入口。`container_intrusive` 是独立组件；这里不会为凑“完整 container”重新聚合它。
 
 | Family | admitted user journeys / evidence | required semantic variants | lifecycle / boundary / ownership dimensions | current route | coverage | missing edge / negative space |
 |---|---|---|---|---|---|---|
-| inline / fixed / POD sequence | shape、短 dependency/batch、trivial staging；Abseil/Boost/CCCL | 可增长 SBO、严格不分配、trivial relocation、普通长序列路由 | copy/move/range/insert/erase/reserve/OOM/teardown；连续 storage 与失效规则 | `SmallVector`、`StaticVector`/`InplaceVector`、`PodVector`；普通长寿命序列用 `std::vector` + mem PMR | `COMPLETE` | `PodVector` allocation 只含 elements；非平凡长序列继续路由标准容器 |
+| inline / fixed / POD sequence | shape、短 dependency/batch、trivial staging；Abseil/Boost/CCCL | 可增长 SBO、严格不分配、trivial relocation、普通长序列路由 | copy/move/range/insert/erase/reserve/OOM/teardown；连续 storage 与失效规则 | `SmallVector`、`StaticVector`/`InplaceVector`、`PodVector`；普通长寿命序列用 `std::vector` + mem PMR | `PARTIAL` | `SmallVector<T,0>` empty inline move 的 zero-byte memcpy 仍形成 null pointer argument；`PodVector` allocation 形状已完成 |
 | flat hash index | token/metadata/registry hit/miss/build/erase；Abseil Swiss table | map/set、透明 lookup、fast/hardened string policy、可恢复 OOM | owning values；grow/erase 失效；expected O(1)；tombstone-aware reserve | `FlatHashMap`/`FlatHashSet`，实现核为 `SwissTable` | `COMPLETE` | `try_reserve` 可恢复、`reserve` fail-fast；稳定引用路由 node map |
 | sorted / ordered unique index | read-mostly sorted metadata、range expiry；Boost flat/tree | flat SoA unique 与 mutation-friendly B-tree unique | bulk sorted build、range lookup/erase、OOM、iterator/reference invalidation | `FlatMap/FlatSet`、`BTreeMap/BTreeSet` | `COMPLETE` | flat 空对象不嵌 K/V；multi/node-handle 未准入 |
 | concurrent associative index | cache/counter 与稳定 object registry；oneTBB/Folly | flat accessor 与 node-stable accessor | shard/bucket lock、grow/clear/quiescence、OOM、accessor lifetime | `ConcurrentFlatHashMap`、`ConcurrentNodeHashMap` | `COMPLETE` | pending writer 阻止新 reader；两类 reserve 失败形状一致 |
@@ -133,7 +133,7 @@
 
 | public surface | family / audit decision |
 |---|---|
-| `small_vector.h`、`static_vector.h`、`inplace_vector.h` | inline/fixed sequence `KEEP`；flat storage 复用合法 `N==0`，不改变 N>0 用户合同 |
+| `small_vector.h`、`static_vector.h`、`inplace_vector.h` | inline/fixed sequence `FIX`；`N==0` empty move 必须在编译期排除 null-pointer memcpy，不改变 N>0 用户合同 |
 | `pod_vector.h` | typed trivial sequence `KEEP`；旧 `carray.h`、`CArrayHeader/carray_*` 与 allocation prefix 已删除 |
 | `flat_hash_map.h`、`flat_hash_set.h`、`flat_map.h`、`flat_set.h`、`btree_map.h`、`btree_set.h` | 三种 associative cost model `KEEP`；自然入口转发同一 family core，reserve failure 与 flat normal metadata 已统一 |
 | `concurrent_flat_hash_map.h`、`concurrent_hash_map.h`、`concurrent_node_hash_map.h` | accessor ownership与两种引用稳定性 `KEEP`；writer preference 与 reserve naming 已修复 |
@@ -153,11 +153,12 @@ borrowed HTTP/TLS views 与 flat hash，且在初始化路径传播 reserve OOM�
 “统一使用 HYLE”强制替换。container 经 public `core/mem`、private runtime `platform` 与 build-private
 SIMD header seam 的依赖方向正确，xxhash/wyhash/simdutf 仍由 container artifact 私有拥有。
 
-## Capability / gap ledger（`CANDIDATE`）
+## Capability / gap ledger（`AUDITED`）
 
 | ID | requirement / exact evidence | normal owner、failure / concurrency | complexity / normal resource | coverage | action / severity | verification / negative space |
 |---|---|---|---|---|---|---|
 | `CONTAINER-SEQ-01` | MUST；shape/batch consumer + Abseil/Boost/CCCL | owning sequence；显式 allocator；fallible `try_*` / ordinary fail-fast | append amortized O(1)，fixed hot path O(1)/零 heap | `COMPLETE` | `KEEP` | non-trivial long sequence路由 std::vector；N>0 codegen/生命周期回归 |
+| `CONTAINER-CORR-01` | MUST；rejected candidate 的 GCC 14 fortified/WERROR 可复现诊断 | `SmallVector<T,0>` empty inline owner；move/swap 不向 byte primitive 传 null pointer | O(1)、零分配；`N==0` 编译期无 memcpy，N>0 codegen 不变 | `PARTIAL` | `FIX` / CORRECTNESS | GCC 14 WERROR、三平台 normal tests、ASan/UBSan；只修 `move_from`，不改 layout/API |
 | `CONTAINER-POD-01` | MUST；旧 C product 已删除，但 `CArrayHeader` 重复 allocator/size/capacity 并同步写 header | `PodVector` 唯一 owner；直接 block reallocate/free；size type 使用 `size_t` | 同样 amortized O(1)；去掉每 allocation header/padding 与 size sync | `COMPLETE` | `KEEP` | OOM、over-align、alias/range/copy/move 已覆盖；交付/性能随 candidate 验证 |
 | `CONTAINER-HASHMAP-01` | MUST；util/io consumer；Abseil Swiss family | map/set owning；`try_reserve` 可恢复，`reserve` fail-fast；grow/erase 失效 | expected O(1)，7/8 load，零额外常态 metadata | `COMPLETE` | `KEEP` | tombstone/OOM/property、util/io 迁移与自然头已覆盖；不做 node stability |
 | `CONTAINER-FLAT-01` | MUST；read-mostly index + Boost default vector storage | flat SoA owner；`SmallVector<T,0>` internal sequence；普通/try failure 保持 | lookup O(log n)，insert O(n)；空对象不按 sizeof(K/V) 增长 | `COMPLETE` | `KEEP` | object-size、non-trivial/OOM/bulk/range 已覆盖；正常 workload 随 P1 验证 |
@@ -209,7 +210,7 @@ current 文档工作。新的 correctness/security blocker 必须先回到 ledge
 孤立 benchmark 点值和未具名上层 policy 不得扩面。审计预算内没有发现必须新增另一种核心 container
 family 的证据；功能缺口集中在已有 family 的不完整生命周期与错误成本形状。
 
-### Implementation progress（`CANDIDATE`）
+### Implementation progress（`AUDITED`）
 
 | batch | current fact | remaining verdict |
 |---|---|---|
@@ -220,11 +221,13 @@ family 的证据；功能缺口集中在已有 family 的不完整生命周期�
 | `CONTAINER-CMAP-01` | reader admission 的 fetch-add 线性化点同时拒绝 writer/pending，关闭 writer 发布 pending 后的 reader barging；AArch64 spin hint 从 pipeline-serializing `isb` 改为 `yield`；两种并发 map 统一为 fallible `try_reserve` / fail-fast `reserve` | Windows 定向与完整 container tests 后，随完整 candidate 执行 TSan、AArch64 compile/runtime 与并发 map replay |
 | `CONTAINER-TEXT-01` | 删除把 raw allocation 装进 borrowed `StringView` 的 helper；普通 owner 路由标准 string，path producing ops 写 caller-owned spans，normalize 按 view length 返回借用 output 的 optional view；interner batch 改为 spans 并以 `prewarm` 取代 nullable output；Windows 64 项 text/path/interner、完整 container、header 与更新后的 benchmark source build 通过 | 随完整 candidate 执行 OOM/sanitizer、直接 consumer、package 与 hash-text-intern P1 门 |
 | `CONTAINER-ACTIVE-01` + `CONTAINER-HASHMAP-01` + `CONTAINER-API-01` | `DynamicBitSet` value equality 比较逻辑 size 与 canonical blocks；Swiss map/set 统一 `try_reserve` 可恢复、`reserve` fail-fast，并迁移 util/io；九个类型名入口头由现有 family header 零实现转发；Windows 完整 container/header、util consumer 与 IO 编译闭包、benchmark source build 通过 | 产品 FIX 集已耗尽；只执行 candidate 的跨平台/sanitizer、delivery、P1、文档和红队门 |
+| `CONTAINER-CORR-01` | WSL GCC 14.2 Release + WERROR 在 `SmallVector<T,0>::move_from` 拒绝可能的 `memcpy(nullptr, nullptr, 0)`；Windows 未诊断不能覆盖此语言/fortify 风险 | 唯一修复为 `N==0` 编译期排除 byte copy；修复前不得重建 candidate |
 
-## Candidate
+## Rejected candidate
 
-- product commit / tree：`8c5d036e5ff7819974a93eae86efc8f536ab38fc` /
-  `b7407252b0b093b6b2a5549427b6b3173c9e254c`。
+- rejected product commit / tree：`8c5d036e5ff7819974a93eae86efc8f536ab38fc` /
+  `b7407252b0b093b6b2a5549427b6b3173c9e254c`。该 identity 因 `CONTAINER-CORR-01` 不再是当前 candidate，
+  后续证据不得绑定或继承它。
 - 公开合同与 user journey 变化：旧 C-era PodVector 外壳删除；flat/sorted/ordered/concurrent 类型有自然
   include；哈希 reserve 失败语义与其他 HYLE 容器一致；typed MPMC、quiescent concurrent-vector reuse、
   bitset equality、borrowed text + caller-owned output/span batch 已形成完整 C++ journey。
@@ -247,15 +250,14 @@ family 的证据；功能缺口集中在已有 family 的不完整生命周期�
 
 ## Verification manifest
 
-正式 candidate verification 尚未执行。上方 pre-freeze smoke 只证明候选可构建并进入验证；下列未运行
-风险和聚合门均不得写为 `PASS`。
+正式 candidate verification 在 W1-WSL GCC 14 + WERROR build 阶段发现 `CONTAINER-CORR-01` 并停止。
+该门为 `FAIL`，其余未运行风险和聚合门均不得写为 `PASS`；修复并形成新 candidate 后全部重新执行。
 
 ## 独立红队
 
-尚未开始；只在 candidate 冻结后，以 30 分钟预算攻击已冻结合同。
+尚未开始；只在 replacement candidate 冻结后，以 30 分钟预算攻击已冻结合同。
 
 ## Closure decision
 
-本轮已完成七个冻结产品批次并形成上述不可变 `CANDIDATE`。交付、统一 P1、最终文档和独立红队尚无
-verdict，因此没有 terminal decision；后续不得新增产品能力，除非 candidate 验证发现
-correctness/security blocker 并先回写 ledger。
+首个 candidate 已因可复现 correctness/portability blocker 退回 `AUDITED`；没有 terminal decision。
+只允许完成 `CONTAINER-CORR-01` 的单点修复并重建 candidate，不恢复一般功能调查，也不借此改 layout/API。
