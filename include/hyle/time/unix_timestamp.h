@@ -1,6 +1,7 @@
 #pragma once
 
 #include <chrono>
+#include <compare>
 #include <cstdint>
 #include <ctime>
 #include <limits>
@@ -12,15 +13,15 @@ namespace hyle::time {
 
 // Deliberately timespec-shaped rather than a single nanosecond integer:
 // pre-epoch values stay negative and the range is not limited to ~292 years.
-// reserved must be zero so the representation can grow without silently
-// accepting values that a newer implementation may interpret differently.
+// This is a C++ value type, not a frozen wire/FFI layout; serialization belongs
+// at the consuming protocol boundary.
 struct UnixTimestamp {
-  std::int64_t seconds;
-  std::uint32_t nanoseconds;
-  std::uint32_t reserved;
+  std::int64_t seconds = 0;
+  std::uint32_t nanoseconds = 0;
+
+  constexpr auto operator<=>(const UnixTimestamp&) const noexcept = default;
 };
 
-static_assert(sizeof(UnixTimestamp) == 16);
 static_assert(std::is_standard_layout_v<UnixTimestamp>);
 static_assert(std::is_trivially_copyable_v<UnixTimestamp>);
 using UnixTimePoint =
@@ -28,12 +29,12 @@ using UnixTimePoint =
                             std::chrono::nanoseconds>;
 
 constexpr bool unix_timestamp_valid(UnixTimestamp value) noexcept {
-  return value.nanoseconds < 1'000'000'000u && value.reserved == 0;
+  return value.nanoseconds < 1'000'000'000u;
 }
 
 constexpr UnixTimestamp unix_timestamp(std::int64_t seconds,
                                        std::uint32_t nanoseconds = 0) noexcept {
-  return UnixTimestamp{seconds, nanoseconds, 0};
+  return UnixTimestamp{seconds, nanoseconds};
 }
 
 // Convert the finite range of std::chrono::nanoseconds to canonical floor
@@ -145,6 +146,45 @@ constexpr UnixTimestamp unix_timestamp_from_windows_filetime_ticks(
   return unix_timestamp(
       -static_cast<std::int64_t>(whole) - 1,
       static_cast<std::uint32_t>((kTicksPerSecond - remainder) * 100));
+}
+
+// Convert to Windows FILETIME's unsigned 100ns ticks since 1601 without
+// exposing windows.h in the public header. FILETIME cannot represent instants
+// before 1601 or beyond UINT64_MAX ticks; those return nullopt. Nanoseconds that
+// are not 100ns-aligned are floored to the preceding FILETIME tick. In
+// particular, Unix -1ns becomes the tick at Unix -100ns rather than being
+// truncated toward the epoch. Every value produced by the forward conversion
+// is aligned and therefore round-trips exactly.
+constexpr std::optional<std::uint64_t>
+unix_timestamp_to_windows_filetime_ticks(UnixTimestamp value) noexcept {
+  if (!unix_timestamp_valid(value)) return std::nullopt;
+
+  constexpr std::uint64_t kTicksPerSecond = 10'000'000;
+  constexpr std::uint64_t kUnixEpochTicks = 116'444'736'000'000'000;
+  const std::uint64_t fraction_ticks = value.nanoseconds / 100u;
+
+  if (value.seconds >= 0) {
+    const std::uint64_t seconds = static_cast<std::uint64_t>(value.seconds);
+    if (seconds >
+        (UINT64_MAX - kUnixEpochTicks - fraction_ticks) / kTicksPerSecond) {
+      return std::nullopt;
+    }
+    return kUnixEpochTicks + seconds * kTicksPerSecond + fraction_ticks;
+  }
+
+  // -(seconds + 1) is representable even for INT64_MIN. The timestamp is
+  // `-(whole_seconds + 1) + fraction`, so its distance before the Unix epoch is
+  // `whole_seconds + (1 - fraction)` in 100ns ticks.
+  const std::uint64_t whole_seconds =
+      static_cast<std::uint64_t>(-(value.seconds + 1));
+  const std::uint64_t partial_ticks = kTicksPerSecond - fraction_ticks;
+  if (whole_seconds >
+      (kUnixEpochTicks - partial_ticks) / kTicksPerSecond) {
+    return std::nullopt;
+  }
+  const std::uint64_t before_epoch =
+      whole_seconds * kTicksPerSecond + partial_ticks;
+  return kUnixEpochTicks - before_epoch;
 }
 
 }  // namespace hyle::time

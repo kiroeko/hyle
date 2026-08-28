@@ -172,6 +172,20 @@ TEST(Clock, UnixTimestampIsCanonicalAndRoundTripsChronoRange) {
       (std::numeric_limits<std::int64_t>::max)(), 0)));
 }
 
+TEST(Clock, UnixTimestampHasNaturalValueSemantics) {
+  using hyle::time::UnixTimestamp;
+  using hyle::time::unix_timestamp;
+  using hyle::time::unix_timestamp_valid;
+
+  constexpr UnixTimestamp epoch;
+  static_assert(epoch == unix_timestamp(0));
+  static_assert(unix_timestamp(-1, 999'999'999u) < epoch);
+  static_assert(epoch < unix_timestamp(0, 1u));
+  static_assert(unix_timestamp(1) > unix_timestamp(0, 999'999'999u));
+  EXPECT_TRUE(unix_timestamp_valid(epoch));
+  EXPECT_FALSE(unix_timestamp_valid(unix_timestamp(0, 1'000'000'000u)));
+}
+
 TEST(Clock, UnixTimestampConvertsOsRepresentationsWithoutEpochClamp) {
   using hyle::time::unix_timestamp_from_timespec;
   using hyle::time::unix_timestamp_from_windows_filetime_ticks;
@@ -204,6 +218,48 @@ TEST(Clock, UnixTimestampConvertsOsRepresentationsWithoutEpochClamp) {
 
   native.tv_nsec = -1;
   EXPECT_FALSE(unix_timestamp_from_timespec(native));
+}
+
+TEST(Clock, UnixTimestampConvertsToWindowsFiletimeCheckedAndFloored) {
+  using hyle::time::unix_timestamp;
+  using hyle::time::unix_timestamp_from_windows_filetime_ticks;
+  using hyle::time::unix_timestamp_to_windows_filetime_ticks;
+
+  constexpr std::uint64_t kUnixEpochTicks =
+      116'444'736'000'000'000ull;
+  for (const std::uint64_t ticks : {
+           std::uint64_t{0}, kUnixEpochTicks - 1, kUnixEpochTicks,
+           kUnixEpochTicks + 1, (std::numeric_limits<std::uint64_t>::max)()}) {
+    const auto timestamp =
+        unix_timestamp_from_windows_filetime_ticks(ticks);
+    ASSERT_TRUE(
+        unix_timestamp_to_windows_filetime_ticks(timestamp).has_value());
+    EXPECT_EQ(*unix_timestamp_to_windows_filetime_ticks(timestamp), ticks);
+  }
+
+  // Explicit floor policy, including the easy-to-get-wrong pre-epoch side.
+  EXPECT_EQ(*unix_timestamp_to_windows_filetime_ticks(unix_timestamp(0, 99u)),
+            kUnixEpochTicks);
+  EXPECT_EQ(
+      *unix_timestamp_to_windows_filetime_ticks(unix_timestamp(0, 199u)),
+      kUnixEpochTicks + 1);
+  EXPECT_EQ(*unix_timestamp_to_windows_filetime_ticks(
+                unix_timestamp(-1, 999'999'999u)),
+            kUnixEpochTicks - 1);
+
+  const auto minimum = unix_timestamp_from_windows_filetime_ticks(0);
+  EXPECT_FALSE(unix_timestamp_to_windows_filetime_ticks(
+      unix_timestamp(minimum.seconds - 1, 999'999'999u)));
+  EXPECT_FALSE(unix_timestamp_to_windows_filetime_ticks(
+      unix_timestamp(0, 1'000'000'000u)));
+
+  const auto maximum = unix_timestamp_from_windows_filetime_ticks(
+      (std::numeric_limits<std::uint64_t>::max)());
+  const auto beyond_maximum =
+      maximum.nanoseconds <= 999'999'899u
+          ? unix_timestamp(maximum.seconds, maximum.nanoseconds + 100u)
+          : unix_timestamp(maximum.seconds + 1, 0);
+  EXPECT_FALSE(unix_timestamp_to_windows_filetime_ticks(beyond_maximum));
 }
 
 TEST(Clock, RealtimeAdvances) {
