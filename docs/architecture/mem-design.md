@@ -1,11 +1,11 @@
 # HYLE mem/ 设计
 
-> **V2 状态：`NOT_REVIEWED`。** 本页暂作既有设计输入，不代表当前功能、性能或 API 证书。
-> 当前只提供 C++23 source/static/shared，Native FFI 为 `N/A`。BUILD-03 已删除旧 C schema、
-> bridge、动态导出和 fixture；正文的其他验收叙事仍待 mem 轮次重裁决。
+> 本页是 `mem-v1` 的当前设计边界。mem 只提供 C++23 source/static/shared，Native FFI 为
+> `N/A`；BUILD-03 已删除旧 C schema、bridge、动态导出和 fixture。机械收口状态见
+> [`module-status.json`](../implementation/module-status.json)，本文不另造状态轴。
 
-> 用户当前选型见 [user/mem](../user/mem.md)，上一轮性能输入见
-> [historical mem evidence](../implementation/evidence/performance/benchmarks-mem.md)，施工历史见
+> 用户当前选型见 [user/mem](../user/mem.md)，性能证据见
+> [mem evidence](../implementation/evidence/performance/benchmarks-mem.md)，施工历史见
 > [mem tasks](../implementation/tasks/mem/)。
 
 ## 1. 边界
@@ -126,6 +126,12 @@ VM/NUMA 的 C++ Status，成功零分配，热分配路径不构造 Status。Fix
 complete bit 使不完整 inventory 可观察。PMR、typed ctor/dtor 与 fiber RAII 没有
 自然 C 形状，不为追求符号 1:1 而导出。
 
+进程级 pressure observation 由 `system_memory_snapshot()` 提供稳定 POD：allocator
+reserved/committed 与 process RSS/commit 各有 current/peak。它在实现内部读取锁定的 mimalloc
+统计/进程查询，不导出 vendor struct、option registry 或 reset；这是冷 O(number of allocator
+heaps) 查询，默认 allocation/free 热路不增加 requested-byte 计数。需要精确 owner-local
+requested-live 时显式组合 `StatsAllocator`，两种统计不能互相冒充。
+
 ## 5. 固定块池
 
 `SharedPool` 独占 `detail::ShardedSlab`；`SharedPoolCache` 通过 narrow batch hooks 组合在 hard core 上，不复制 slab，也不另建 TLS registry。
@@ -210,7 +216,8 @@ external 能力按 allocation model 分成两个类型：
    metadata 使插入、删除与邻块合并也是 O(1)。一个 recent-free cursor 只作为时间局部性快路，
    未命中后至多取得一个 bitmap-selected list head。realloc 优先复用 retained span 或后一空闲
    邻块，常见 shrink/regrow 与 adjacent grow 均为 O(1)；只有必须搬移时复制
-   O(min(old,new))，并留在 noinline 冷路。`reset()` 在无 live allocation 时一次失效全部旧指针，
+   O(min(old,new))，并留在 noinline 冷路。`reset()` 在 quiescent phase 边界一次失效全部旧指针，
+   不要求先逐块 free；调用后旧指针不得再访问或归还，
    因而这已经是 **variable-size + individual free/realloc + bulk reset**。它单线程、无 fallback；约 4 KiB 的显式 control
    是长寿命通用固定堆为 bounded lookup 支付的常量成本，不适合作为每个 request 的临时对象。
 
@@ -257,7 +264,7 @@ external 能力按 allocation model 分成两个类型：
 |---|---|---|---|
 | 默认/注入分配 | `SystemAllocator`、`Allocator`、typed helpers | `N/A` | 默认 direct path；运行时注入保留 backing identity |
 | allocator-template adapter | `SystemStdAllocator<T>` / `StdAllocator<T>` | `N/A` | 默认 empty/always-equal 静态 system 形状；注入形状无默认构造，支持 rebind、完整 backing equality、借用生命周期；标准 OOM exception boundary |
-| heap size/pressure | `system_good_size/usable_size/collect` | `N/A` | 显式查询与回收，不隐藏周期线程 |
+| heap size/pressure | `system_good_size/usable_size/collect`、`system_memory_snapshot()` | `N/A` | 显式查询/回收；冷 snapshot 报 allocator reserved/committed 与 process RSS/commit current+peak；不隐藏周期线程、不污染默认热路 |
 | byte admission | `QuotaAllocator` | `N/A` | strict live requested-byte budget |
 | 统计/泄漏诊断 | `StatsAllocator::create(backing,track,metadata)`、`LeakTracker::create(metadata)` | `N/A` | opt-in；被测/诊断域分离；metadata OOM 的 dropped/complete 可观察；默认 system 热路零统计税 |
 | owned request scratch | `Region` | `N/A` | growable、bulk clear、可设 reserved-byte hard limit |

@@ -111,13 +111,8 @@ if(HYLE_HAS_FCONTEXT)
   hyle_apply_warnings(hyle_sched_ext_bench)
 endif()
 
-# -DHYLE_BENCH_MARL=ON; point HYLE_MARL_DIR at a cloned marl (sibling default).
-option(HYLE_BENCH_MARL "build the fiber-sync-vs-marl parity bench" OFF)
+# bench/peers owns the shared HYLE_BENCH_MARL checkout contract.
 if(HYLE_BENCH_MARL)
-  set(HYLE_MARL_DIR "${PROJECT_SOURCE_DIR}/../marl" CACHE PATH "cloned marl")
-  if(NOT EXISTS "${HYLE_MARL_DIR}/CMakeLists.txt")
-    message(FATAL_ERROR "HYLE_BENCH_MARL=ON but no marl at ${HYLE_MARL_DIR}")
-  endif()
   # Marl declares the generic ASM language unconditionally, even though its
   # MSVC source list contains only C++. CMake 4.4's CMP0194 correctly stops
   # treating cl.exe as a generic assembler, so adding Marl's project directly

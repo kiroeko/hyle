@@ -1,0 +1,313 @@
+{
+  "schema": "hyle.perf.contract/v1",
+  "id": "mem-owner-consumer-v1",
+  "module": "mem",
+  "claim": "Engineering non-inferiority of runtime host allocation and phase Region against same-contract mature routes, plus scheduler guarded-stack reuse against an attested direct-VM baseline; compile-time versus runtime dispatch remains diagnostic",
+  "candidate": {
+    "target": "hyle_mem",
+    "delivery_shape": "source",
+    "revision": "runtime-bound",
+    "component": "mem",
+    "entrypoint": "hyle/mem/allocator.h, hyle/mem/region.h and hyle/mem/fiber_stack.h"
+  },
+  "peers": [
+    {
+      "id": "hyle-baseline",
+      "revision": "2c71dfae9f4fb43ff0d68e5c1a4c55099fc0f101",
+      "configuration": {
+        "role": "same-product direct control, not an external SOTA peer",
+        "delivery_shape": "source",
+        "identity": "the allocator/system/fiber/scheduler implementation files are required by CMake to be byte-identical to this clean product snapshot",
+        "link_shape": "candidate and direct control compile into the same executable without LTO"
+      }
+    },
+    {
+      "id": "onetbb",
+      "revision": "e349c15263bbb1d6b48f2b514c06201e1b90eea3",
+      "configuration": {
+        "route": "oneapi::tbb::scalable_memory_resource",
+        "delivery_shape": "source",
+        "runtime_erasure": "memory_resource provider is isolated in a separate translation unit with LTO disabled"
+      }
+    },
+    {
+      "id": "boost",
+      "revision": "df8eeb90846648464e3c8e378e312f0cec772e83",
+      "configuration": {
+        "route": "boost::container::pmr::monotonic_buffer_resource",
+        "delivery_shape": "source",
+        "autolink": "disabled",
+        "upstream": "the same HYLE runtime Allocator used by candidate Region"
+      }
+    }
+  ],
+  "strata": [
+    {
+      "id": "primary-candidate-first",
+      "dimensions": {"placement": "primary", "execution_order": "candidate-first"},
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-peer-first",
+      "dimensions": {"placement": "primary", "execution_order": "peer-first"},
+      "environment": {"HYLE_BENCH_RIVAL_FIRST": "1"},
+      "target_variant": "primary"
+    },
+    {
+      "id": "placement-candidate-first",
+      "dimensions": {"placement": "perturbed", "execution_order": "candidate-first"},
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-peer-first",
+      "dimensions": {"placement": "perturbed", "execution_order": "peer-first"},
+      "environment": {"HYLE_BENCH_RIVAL_FIRST": "1"},
+      "target_variant": "placement"
+    }
+  ],
+  "controls": [
+    {"id": "aa", "kind": "aa", "parameters": {"maximum_bias_percent": 5}},
+    {"id": "delta5", "kind": "known-delta", "parameters": {"nominal_percent": 5}},
+    {"id": "delta10", "kind": "known-delta", "parameters": {"nominal_percent": 10}},
+    {"id": "timer-floor", "kind": "timer-floor", "parameters": {"minimum_workload_floor_multiple": 20}},
+    {"id": "placement", "kind": "placement", "parameters": {}},
+    {"id": "mem-owner-resource", "kind": "resource", "parameters": {"validator_id": "mem-owner-contract"}}
+  ],
+  "workloads": [
+    {
+      "id": "runtime-allocator-direct-diagnostic-64",
+      "tier": "mechanism",
+      "gate_role": "diagnostic",
+      "semantic_contract": "Measure the dynamic injection tax of HYLE Allocator over the exact same mimalloc-backed successful allocation batch used by compile-time SystemAllocator",
+      "comparability": "NOT_COMPARABLE",
+      "peer_id": "hyle-baseline",
+      "metric": {"name": "operations-per-second", "unit": "op/s", "direction": "higher-is-better"},
+      "input": {"distribution": "64 deterministic size/alignment pairs", "scale": {"allocations_per_callback": 64}},
+      "setup": "Both routes are warmed and share one process allocator; the direct baseline is attested source-identical to the frozen product snapshot",
+      "charged_phases": ["64 successful allocations", "first and last byte touches", "64 reverse-order deallocations"],
+      "pair": {"candidate": "HYLE runtime Allocator batch N=64", "peer": "HYLE SystemAllocator direct batch N=64"},
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {"kind": "process-median", "minimum_independent_samples": 15, "tail_alpha": 0.01},
+      "required_strata": ["primary-candidate-first", "primary-peer-first", "placement-candidate-first", "placement-peer-first"],
+      "required_controls": ["aa", "delta5", "delta10", "timer-floor", "placement"]
+    },
+    {
+      "id": "runtime-allocator-batch-64",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "northstar/mem/runtime-allocator-batch",
+      "provenance": {
+        "path": "bench/mem/consumer_shapes_v1.json",
+        "sha256": "c72e00527ea82d5e32431fd29d996faa7fecb6d58c2d2514281c41a471a43b32"
+      },
+      "ownership_topology": {
+        "candidate": "A borrowed HYLE Allocator value performs one function-pointer dispatch per successful allocate/free while preserving runtime backing identity and sized-free information",
+        "peer": "A borrowed oneTBB std::pmr::memory_resource pointer performs one virtual dispatch per successful allocate/free over the scalable allocator",
+        "equivalence": "Both warmed runtime-erased handles allocate the same 64 size/alignment pairs, expose the same live byte range, charge identical touches and reverse-order destruction, and exclude OOM from this successful steady-state row"
+      },
+      "material_contribution": {
+        "frequency": 64,
+        "value": 1,
+        "unit": "successful-allocation-lifecycle",
+        "budget": 5,
+        "denominator": "one frozen runtime-injected host-allocation aggregate",
+        "derivation": "The retained consumer-shapes manifest binds current runtime injection and explicitly labels the 64-item distribution as a representative north-star aggregate rather than a captured production trace"
+      },
+      "semantic_contract": "Allocate, touch and reverse-free one 64-object successful host batch through a runtime-erased allocator with explicit alignment",
+      "comparability": "COMPARABLE",
+      "peer_id": "onetbb",
+      "metric": {"name": "operations-per-second", "unit": "op/s", "direction": "higher-is-better"},
+      "input": {"distribution": "8 deterministic sizes from 24 B to 16 KiB crossed with 16/32/64-byte alignment", "scale": {"allocations_per_callback": 64, "maximum_request_bytes": 16384}},
+      "setup": "Both process allocators and erased handles are constructed and warmed outside measurement; oneTBB's concrete resource cannot be devirtualized in the benchmark translation unit",
+      "charged_phases": ["64 successful runtime-erased allocations", "first and last byte touches", "64 reverse-order runtime-erased deallocations"],
+      "pair": {"candidate": "HYLE runtime Allocator batch N=64", "peer": "oneTBB scalable memory_resource batch N=64"},
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {"kind": "process-median", "minimum_independent_samples": 15, "tail_alpha": 0.01},
+      "required_strata": ["primary-candidate-first", "primary-peer-first", "placement-candidate-first", "placement-peer-first"],
+      "required_controls": ["aa", "delta5", "delta10", "timer-floor", "placement"]
+    },
+    {
+      "id": "request-region-epoch-64",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "io/http/request-region-epoch",
+      "provenance": {
+        "path": "bench/mem/consumer_shapes_v1.json",
+        "sha256": "c72e00527ea82d5e32431fd29d996faa7fecb6d58c2d2514281c41a471a43b32"
+      },
+      "ownership_topology": {
+        "candidate": "One long-lived HYLE Region lazily grows and retains ordinary blocks across request clears while returning the 64 KiB dedicated outlier",
+        "peer": "One long-lived Boost monotonic resource starts at 4 KiB and releases its upstream blocks at the same bulk-invalidation boundary",
+        "equivalence": "Both borrow the same HYLE runtime upstream, return the same aligned writable ranges, charge the same 64 allocations/touches and bulk invalidation; retained bytes are reported separately because retention strategy is a deliberate product resource difference"
+      },
+      "material_contribution": {
+        "frequency": 64,
+        "value": 1,
+        "unit": "phase-allocation",
+        "budget": 5,
+        "denominator": "one keep-alive request scratch epoch",
+        "derivation": "Current http_serve owns one Region per connection and clears after each response; the retained manifest binds its exact block policy and labels allocation sizes as a frozen request/inference distribution"
+      },
+      "semantic_contract": "Serve one phase-lifetime scratch epoch with 63 ordinary allocations, one 64 KiB outlier, observable touches and one bulk invalidation",
+      "comparability": "COMPARABLE",
+      "peer_id": "boost",
+      "metric": {"name": "operations-per-second", "unit": "op/s", "direction": "higher-is-better"},
+      "input": {"distribution": "63 deterministic 24 B to 8 KiB ordinary requests followed by one 64 KiB dedicated outlier", "scale": {"allocations_per_epoch": 64, "initial_block_bytes": 4096, "maximum_ordinary_block_bytes": 65536, "dedicated_threshold_bytes": 65536, "retention_cap_bytes": 262144}},
+      "setup": "Both owners and their common runtime upstream are warmed before measured epochs; owner construction and final process teardown are outside measurement",
+      "charged_phases": ["bulk invalidation", "63 ordinary aligned allocations and touches", "one 64 KiB allocation and touches", "candidate dedicated-block return or peer release work"],
+      "pair": {"candidate": "HYLE Region clear/reuse N=64", "peer": "Boost monotonic release N=64"},
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {"kind": "process-median", "minimum_independent_samples": 15, "tail_alpha": 0.01},
+      "required_strata": ["primary-candidate-first", "primary-peer-first", "placement-candidate-first", "placement-peer-first"],
+      "required_controls": ["aa", "delta5", "delta10", "timer-floor", "placement", "mem-owner-resource"]
+    },
+    {
+      "id": "scheduler-fiber-lifecycle-16",
+      "tier": "consumer",
+      "gate_role": "product",
+      "consumer_key": "sched/fiber/guarded-stack-lifecycle",
+      "provenance": {
+        "path": "bench/mem/consumer_shapes_v1.json",
+        "sha256": "c72e00527ea82d5e32431fd29d996faa7fecb6d58c2d2514281c41a471a43b32"
+      },
+      "ownership_topology": {
+        "candidate": "The scheduler owns a bounded FiberStackPool; each Fiber takes one guarded stack, runs, destroys and returns it to that owner",
+        "peer": "The identical Scheduler/Fiber lifecycle takes a fresh guarded FiberStack mapping and destroys it directly after drain",
+        "equivalence": "The same source-identical Scheduler, Fiber, callback, stack size, guard semantics, spawn/drain checks and vector lifetime are charged; only warm bounded reuse versus direct VM reserve/release differs"
+      },
+      "material_contribution": {
+        "frequency": 16,
+        "value": 1,
+        "unit": "guarded-fiber-lifecycle",
+        "budget": 5,
+        "denominator": "one scheduler batch of 16 fibers",
+        "derivation": "The current scheduler owns exactly these stack pools and routes fiber destruction back to them; the direct route is the same public fallback for an unsupported tier"
+      },
+      "semantic_contract": "Create, spawn, run, drain and destroy 16 default-tier guarded fibers with identical scheduler semantics",
+      "comparability": "COMPARABLE",
+      "peer_id": "hyle-baseline",
+      "metric": {"name": "operations-per-second", "unit": "op/s", "direction": "higher-is-better"},
+      "input": {"distribution": "16 independent one-shot callbacks", "scale": {"fibers_per_callback": 16, "stack_tier": "default", "warmed_cached_stacks": 16, "pool_capacity": 64}},
+      "setup": "One single-worker Scheduler is constructed outside measurement; both routes are warmed and relevant implementation files must match the frozen direct baseline",
+      "charged_phases": ["16 stack acquisitions or VM reserves", "16 Fiber constructions", "16 scheduler spawns and one drain", "16 callbacks and checksum", "16 Fiber destructions and pool returns or VM releases"],
+      "pair": {"candidate": "HYLE scheduler pooled guarded stacks N=16", "peer": "HYLE scheduler direct guarded VM stacks N=16"},
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {"kind": "process-median", "minimum_independent_samples": 15, "tail_alpha": 0.01},
+      "required_strata": ["primary-candidate-first", "primary-peer-first", "placement-candidate-first", "placement-peer-first"],
+      "required_controls": ["aa", "delta5", "delta10", "timer-floor", "placement", "mem-owner-resource"]
+    }
+  ],
+  "experiment": {
+    "sample_schedule": [15, 31],
+    "order_policy": "fixed-dual",
+    "holdout": false
+  },
+  "build": {
+    "configuration": "Release",
+    "fresh": true,
+    "linkage": "static",
+    "lto": "off",
+    "isa": "portable",
+    "toolchain": "machine-profile-bound"
+  },
+  "artifacts": {
+    "validators": ["artifact-identity", "build-contract", "mem-owner-contract"]
+  },
+  "hosts": {
+    "allowed_platforms": ["windows"],
+    "certification_platforms": ["windows"],
+    "requirements": {
+      "machine_profiles": ["W1-WIN"],
+      "qualified_role": "engineering",
+      "formal_independent_hardware": true
+    }
+  },
+  "extensions": {
+    "runner": {
+      "schema": "hyle.perf.nanobench-runner/v1",
+      "cmake": {
+        "cache": {
+          "BUILD_SHARED_LIBS": "ON",
+          "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+          "HYLE_BENCH_BOOST": "ON",
+          "HYLE_BENCH_TBB": "ON",
+          "HYLE_BUILD_BENCH": "ON",
+          "HYLE_BUILD_TESTS": "OFF",
+          "HYLE_COMPONENTS": "sched",
+          "HYLE_INSTALL": "OFF",
+          "HYLE_SANITIZER": "off",
+          "HYLE_SIMD_EXACT_TARGET": "",
+          "HYLE_STATIC": "ON",
+          "HYLE_TEST_INSTRUMENTATION": "OFF",
+          "HYLE_TRACE": "OFF"
+        },
+        "peer_cache": {
+          "hyle-baseline": "HYLE_MEM_BASELINE_DIR",
+          "onetbb": "HYLE_TBB_DIR",
+          "boost": "HYLE_BOOST_DIR"
+        }
+      },
+      "profiles": {
+        "W1-WIN": {"generator": "Visual Studio 18 2026", "architecture": "x64", "compiler_id": "MSVC", "compiler_version_prefix": "19.50", "cache": {}}
+      },
+      "executables": [
+        {
+          "id": "mem-owner-consumer-primary",
+          "target": "hyle_mem_owner_consumer_bench",
+          "stem": "hyle_mem_owner_consumer_bench",
+          "target_variant": "primary",
+          "measurement_batch": 1,
+          "telemetry_prefixes": ["# HYLE_MEM_OWNER_CONSUMER_RUN "],
+          "workloads": [
+            {"id": "runtime-allocator-direct-diagnostic-64", "title": "runtime allocator consumer aggregate N=64 versus direct"},
+            {"id": "runtime-allocator-batch-64", "title": "runtime allocator consumer aggregate N=64 versus oneTBB"},
+            {"id": "request-region-epoch-64", "title": "request region epoch aggregate N=64"},
+            {"id": "scheduler-fiber-lifecycle-16", "title": "scheduler guarded fiber lifecycle aggregate N=16"}
+          ]
+        },
+        {
+          "id": "mem-owner-consumer-placement",
+          "target": "hyle_mem_owner_consumer_bench_placement",
+          "stem": "hyle_mem_owner_consumer_bench_placement",
+          "target_variant": "placement",
+          "measurement_batch": 1,
+          "telemetry_prefixes": ["# HYLE_MEM_OWNER_CONSUMER_RUN "],
+          "workloads": [
+            {"id": "runtime-allocator-direct-diagnostic-64", "title": "runtime allocator consumer aggregate N=64 versus direct"},
+            {"id": "runtime-allocator-batch-64", "title": "runtime allocator consumer aggregate N=64 versus oneTBB"},
+            {"id": "request-region-epoch-64", "title": "request region epoch aggregate N=64"},
+            {"id": "scheduler-fiber-lifecycle-16", "title": "scheduler guarded fiber lifecycle aggregate N=16"}
+          ]
+        }
+      ],
+      "control_executable": {"target": "hyle_perf_control_bench", "stem": "hyle_perf_control_bench"},
+      "controlled_environment": ["HYLE_BENCH_RIVAL_FIRST", "HYLE_BENCH_APPLE_QOS", "HYLE_PERF_APPLE_QOS"],
+      "validators": [
+        {"id": "artifact-identity", "kind": "artifact-identity"},
+        {"id": "build-contract", "kind": "build-contract"},
+        {
+          "id": "mem-owner-contract",
+          "kind": "command",
+          "command": [
+            "{python}",
+            "scripts/validate-mem-consumer-bench.py",
+            "--mode",
+            "owner",
+            "--source",
+            "{source}",
+            "--build",
+            "{build}",
+            "--output",
+            "{output}",
+            "--expected-shapes-sha256",
+            "c72e00527ea82d5e32431fd29d996faa7fecb6d58c2d2514281c41a471a43b32"
+          ]
+        }
+      ]
+    }
+  }
+}

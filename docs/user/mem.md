@@ -1,7 +1,8 @@
 # HYLE mem：什么情况选择什么
 
-> **`provisional / NOT_REVIEWED_V2`。** mem 当前只提供 C++ 产品面。
-> 本页适用于 C++23 source/static/shared 三种交付，不描述 C API 或跨语言调用层。
+> 本页描述 `mem-v1` 当前 C++ 产品面，适用于 C++23 source/static/shared
+> 三种交付；不描述 C API 或跨语言调用层。机械收口状态见
+> [`module-status.json`](../implementation/module-status.json)。
 
 mem 是 host RAM 的基础原语层。它不替业务猜生命周期，也不把某个 benchmark 的最优
 形状包装成通用 allocator；使用者先确定 ownership、并发、容量和释放方式，再选择类型。
@@ -16,6 +17,7 @@ mem 是 host RAM 的基础原语层。它不替业务猜生命周期，也不把
 | 接入 STL PMR | 默认 system heap 用 `system_memory_resource()`；运行时 backing 用 `PmrResource`；显式高对齐用 `AlignedPmrResource` | 默认形状单层 PMR dispatch；注入形状借用 `Allocator` |
 | 任意 backing 的严格 live-byte admission | `QuotaAllocator` | 线程安全；按 requested bytes 精确计量 |
 | opt-in allocation 计数 / 泄漏诊断 | `StatsAllocator::create(backing,track,metadata)` | 被测 backing 与诊断 metadata 分域；计数线程安全，leak inventory 是慢路 |
+| 进程级 system heap / RSS 压力快照 | `system_memory_snapshot()` | 冷查询；allocator reserved/committed 与 process RSS/commit current+peak；不冒充精确 requested-live |
 | request/frame/graph phase 临时对象 | `Region` | owned、单线程、growable、bulk `clear()` |
 | 调用方 buffer 中的临时对象 | `FixedRegion` | external、单线程、bump、无 fallback |
 | 从共享硬池借一个 scratch block | `PooledRegion` | 单线程、固定容量、整体归还 |
@@ -49,7 +51,8 @@ foreign ABI adapter。`allocate_n<T>` / `allocate_zeroed<T>` / `reallocate_n<T>`
 原生 C++ allocate/deallocate/reallocate 的 alignment 必须是非零 2 次幂；allocate/reallocate 的
 非法值会 fail-fast。deallocate 还必须带回成功分配时相同的 size/alignment，和标准 allocator/PMR
 一样属于调用方前置条件：Debug 会诊断，Release 热路不重复检查。未来 binding wrapper 若接收
-不可信外部参数，必须在进入这条 C++ 热路前完成校验，不能依赖当前候选 C schema 的偶然形状。
+不可信外部参数，必须在进入这条 C++ 热路前完成校验，不能依赖未来某个 foreign-runtime
+binding 的偶然形状。
 
 ```cpp
 hyle::mem::Allocator alloc = hyle::mem::system_allocator();
@@ -190,6 +193,10 @@ copy/move，避免两个 cursor 无意间在同一 buffer 上重叠分配。
 - `SharedPoolCache` 是附着到 `SharedPool` 的单 owner L1。storage、容量、transfer batch 和
   生命周期都由用户显式选择；本地 free slot 只有在 `publish()`/析构后才回到共享 core。
 
+`SharedPool::reset()` 是另一条 quiescent bulk-invalidation 路径：先停止所有 core/cache 操作，
+再对每个仍附着的 cache 调 `publish()`（或销毁 cache），最后 reset core。否则 cache 中仍保存的
+局部 free index 会与 reset 后重新可见的 slot 重复。reset 后任何旧 block 都不能再访问或归还。
+
 typed `ObjectPoolCache<T>` 同样附着到 `ObjectPool<T>`，只增加 placement-new/显式析构的
 typed shell。Cache 指 slot visibility，不代表对象状态被保留。
 
@@ -234,9 +241,13 @@ if (payload != nullptr) {
   if (void* grown = pool.reallocate(payload, 1536, 4096, 64)) payload = grown;
 }
 // 任一返回 nullptr 都表示 bounded capacity exhausted；reallocate 失败保留旧 allocation。
+// 路径 A：逐块归还，指针随各自 deallocate 失效。
 pool.deallocate(header);
 pool.deallocate(payload);
-pool.reset();  // 此时无 live allocation；整池恢复
+
+// 路径 B：在 phase 边界直接 reset；它会批量使所有尚存旧指针失效，
+// 不要求先逐块 deallocate。二者不要对同一指针重复使用。
+pool.reset();
 ```
 
 `FixedPool` 把 block/allocation metadata 放进调用方 storage；two-level segregated free lists、
@@ -246,8 +257,9 @@ pool.reset();  // 此时无 live allocation；整池恢复
 因此 allocate/free/邻块合并的索引工作都是 O(1)，不会因长期碎片化退化。它支持变长
 allocate/deallocate/reallocate、精确 requested `used/peak`；realloc 在当前物理 span 足够或后一
 邻块空闲时 O(1) 原地 grow，shrink 保留 span 供后续 O(1) regrow；只有搬移时复制
-O(min(old,new))。没有隐藏 payload heap，也不会 fallback。`reset()` 会一次性使所有旧指针
-失效，调用前必须保证无 live allocation。
+O(min(old,new))。没有隐藏 payload heap，也不会 fallback。`reset()` 是 quiescent bulk
+invalidation：调用前必须停止并发访问；调用后所有旧指针都失效，既不能再访问，也不能再
+`deallocate`。它不要求先逐块 free，否则就失去了 bulk-release 的意义。
 
 这个 bounded lookup 需要约 4 KiB 的显式 control。把它放进 arena/cache/device owner 等
 长寿命对象，或通过 control allocator 创建一次并复用；不要为每个 request 在小栈帧上构造。
@@ -260,6 +272,24 @@ O(min(old,new))。没有隐藏 payload heap，也不会 fallback。`reset()` 会
 - 通用 growable malloc（用 system allocator）。
 
 ## Quota、统计与失败
+
+长寿推理进程若只需要回答“system allocator 预留/提交了多少地址空间、整个进程的 RSS/commit
+是多少”，使用冷路径 `system_memory_snapshot()`：
+
+```cpp
+auto observed = hyle::mem::system_memory_snapshot();
+if (!observed) return observed.error();
+const auto& memory = *observed;
+report(memory.allocator_committed_bytes,
+       memory.allocator_peak_committed_bytes,
+       memory.process_resident_bytes,
+       memory.process_peak_resident_bytes);
+```
+
+这是进程级时间切片：并发分配时 current 字段不保证来自同一个原子瞬间；process 字段还包括
+非 HYLE allocation domain。它刻意不报告精确 requested-live，因为在默认分配热路维护该数会
+增加常态计数成本。需要 owner-local 精确 live bytes 时，显式给该 owner 套
+`StatsAllocator`。
 
 ```cpp
 hyle::mem::QuotaAllocator quota(hyle::mem::system_allocator(),
@@ -288,7 +318,8 @@ complete。只要计数、不需要逐指针报告时不要启用 leak tracking�
 并发调用期间 `snapshot()` 的每个字段都是 race-free atomic observation，但多个字段不是一个
 加锁/序列锁保护的共同瞬间；调用方 quiesce 所有借用 allocator 后，整份 snapshot 才可作为一致
 结论。并发 peak 使用本次 `fetch_add` 的线性化结果更新，不会因另一线程随后 free 而漏掉高水位。
-`reset`、销毁或 move 覆盖目标都要求 quiescent 且 balanced，违反时 fail-fast。
+`StatsAllocator`/`LeakTracker` 的 reset、销毁或 move 覆盖目标要求 quiescent 且 balanced，违反时
+fail-fast。不要把这个诊断 wrapper 合同误套到 `FixedPool::reset()` 的 bulk invalidation 上。
 
 ## 三份最短组合
 

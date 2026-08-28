@@ -1,0 +1,232 @@
+{
+  "schema": "hyle.perf.contract/v1",
+  "id": "mem-handoff-consumer-v1",
+  "module": "mem",
+  "claim": "Engineering non-inferiority of HYLE's hard-capacity move-only ObjectPool loan in a pinned two-core producer-to-consumer return lifecycle against Marl's bounded non-blocking scoped loan",
+  "candidate": {
+    "target": "hyle_mem",
+    "delivery_shape": "source",
+    "revision": "runtime-bound",
+    "component": "mem",
+    "entrypoint": "hyle/mem/object_pool.h"
+  },
+  "peers": [
+    {
+      "id": "marl",
+      "revision": "b8406ab0a82524170ead6dd6c371b579bbc28b3e",
+      "configuration": {
+        "route": "marl::BoundedPool<Slot, 256>::tryBorrow with reconstruct policy",
+        "delivery_shape": "source",
+        "source_pool_header_sha256": "28b696dac0dcfd663db473df728760abf4e47f5f01ab04a2e97de7204764f6cb",
+        "compatibility_overlay_sha256": "612a0c7177732448372c90e66a592284426fc28547fda66cd1c9191b23d3c517",
+        "compatibility_patch": "remove the single stale item->pool assignment to a nonexistent member and rewrite three sibling includes for the build-local overlay; no pool algorithm or synchronization change"
+      }
+    }
+  ],
+  "strata": [
+    {
+      "id": "primary-candidate-first-candidate-allocation-first",
+      "dimensions": {"placement": "primary", "execution_order": "candidate-first", "allocation_order": "candidate-first"},
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-candidate-first-peer-allocation-first",
+      "dimensions": {"placement": "primary", "execution_order": "candidate-first", "allocation_order": "peer-first"},
+      "environment": {"HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"},
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-peer-first-candidate-allocation-first",
+      "dimensions": {"placement": "primary", "execution_order": "peer-first", "allocation_order": "candidate-first"},
+      "environment": {"HYLE_BENCH_RIVAL_FIRST": "1"},
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-peer-first-peer-allocation-first",
+      "dimensions": {"placement": "primary", "execution_order": "peer-first", "allocation_order": "peer-first"},
+      "environment": {"HYLE_BENCH_RIVAL_FIRST": "1", "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"},
+      "target_variant": "primary"
+    },
+    {
+      "id": "placement-candidate-first-candidate-allocation-first",
+      "dimensions": {"placement": "perturbed", "execution_order": "candidate-first", "allocation_order": "candidate-first"},
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-candidate-first-peer-allocation-first",
+      "dimensions": {"placement": "perturbed", "execution_order": "candidate-first", "allocation_order": "peer-first"},
+      "environment": {"HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"},
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-peer-first-candidate-allocation-first",
+      "dimensions": {"placement": "perturbed", "execution_order": "peer-first", "allocation_order": "candidate-first"},
+      "environment": {"HYLE_BENCH_RIVAL_FIRST": "1"},
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-peer-first-peer-allocation-first",
+      "dimensions": {"placement": "perturbed", "execution_order": "peer-first", "allocation_order": "peer-first"},
+      "environment": {"HYLE_BENCH_RIVAL_FIRST": "1", "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"},
+      "target_variant": "placement"
+    }
+  ],
+  "controls": [
+    {"id": "aa", "kind": "aa", "parameters": {"maximum_bias_percent": 5}},
+    {"id": "delta5", "kind": "known-delta", "parameters": {"nominal_percent": 5}},
+    {"id": "delta10", "kind": "known-delta", "parameters": {"nominal_percent": 10}},
+    {"id": "timer-floor", "kind": "timer-floor", "parameters": {"minimum_workload_floor_multiple": 20}},
+    {"id": "placement", "kind": "placement", "parameters": {}},
+    {"id": "mem-handoff-resource", "kind": "resource", "parameters": {"validator_id": "mem-handoff-contract"}}
+  ],
+  "workloads": [
+    {
+      "id": "fixed-slot-cross-core-handoff-64",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "northstar/mem/fixed-slot-cross-core-handoff",
+      "provenance": {
+        "path": "bench/mem/consumer_shapes_v1.json",
+        "sha256": "c72e00527ea82d5e32431fd29d996faa7fecb6d58c2d2514281c41a471a43b32"
+      },
+      "ownership_topology": {
+        "candidate": "A pinned producer takes 64 move-only HYLE PoolLoan values from a 256-slot hard ObjectPool and a pinned consumer observes and destroys them, returning slots remotely",
+        "peer": "The same roles move 64 Marl Loan values from a 256-slot BoundedPool through its repaired published non-blocking tryBorrow route and return them on the consumer",
+        "equivalence": "Both pools reconstruct Slot, expose unique scoped ownership in the charged path, retain exactly 256 slots, reject the 257th outstanding non-blocking request, transfer the same payload and charge producer acquisition plus consumer observation/return"
+      },
+      "material_contribution": {
+        "frequency": 64,
+        "value": 1,
+        "unit": "producer-consumer-slot-lifecycle",
+        "budget": 5,
+        "denominator": "one pinned two-role handoff batch",
+        "derivation": "The retained manifest marks this as an admitted inference-foundation replay with no current HYLE product caller; 64 of 256 slots preserves normal non-exhausted operation while capacity failure is verified outside timing"
+      },
+      "semantic_contract": "Acquire, populate, transfer, observe and remotely return 64 uniquely owned fixed-capacity slots without blocking or exhaustion",
+      "comparability": "COMPARABLE",
+      "peer_id": "marl",
+      "metric": {"name": "operations-per-second", "unit": "op/s", "direction": "higher-is-better"},
+      "input": {"distribution": "64 sequential Slot payloads per batch", "scale": {"pool_capacity": 256, "loans_per_callback": 64, "threads": 2}},
+      "setup": "Both pools are constructed in both allocation orders, capacity-tested, warmed for 32 paired batches and held for the process; caller and worker are pinned by the cross-core machine contract",
+      "charged_phases": ["64 non-blocking scoped acquisitions", "64 payload writes", "one release/acquire command handoff", "64 consumer observations", "64 remote scoped returns", "producer completion wait"],
+      "pair": {"candidate": "HYLE hard ObjectPool handoff N=64", "peer": "Marl BoundedPool handoff N=64"},
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {"kind": "process-median", "minimum_independent_samples": 15, "tail_alpha": 0.01},
+      "required_strata": [
+        "primary-candidate-first-candidate-allocation-first",
+        "primary-candidate-first-peer-allocation-first",
+        "primary-peer-first-candidate-allocation-first",
+        "primary-peer-first-peer-allocation-first",
+        "placement-candidate-first-candidate-allocation-first",
+        "placement-candidate-first-peer-allocation-first",
+        "placement-peer-first-candidate-allocation-first",
+        "placement-peer-first-peer-allocation-first"
+      ],
+      "required_controls": ["aa", "delta5", "delta10", "timer-floor", "placement", "mem-handoff-resource"]
+    }
+  ],
+  "experiment": {
+    "sample_schedule": [15, 31],
+    "order_policy": "fixed-dual",
+    "holdout": false
+  },
+  "build": {
+    "configuration": "Release",
+    "fresh": true,
+    "linkage": "static",
+    "lto": "off",
+    "isa": "portable",
+    "toolchain": "machine-profile-bound"
+  },
+  "artifacts": {
+    "validators": ["artifact-identity", "build-contract", "mem-handoff-contract"]
+  },
+  "hosts": {
+    "allowed_platforms": ["windows"],
+    "certification_platforms": ["windows"],
+    "requirements": {
+      "machine_profiles": ["W1-WIN"],
+      "qualified_role": "engineering",
+      "formal_independent_hardware": true
+    }
+  },
+  "extensions": {
+    "runner": {
+      "schema": "hyle.perf.nanobench-runner/v1",
+      "sampling_topology": "cross-core-pair",
+      "cmake": {
+        "cache": {
+          "BUILD_SHARED_LIBS": "ON",
+          "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+          "HYLE_BENCH_MARL": "ON",
+          "HYLE_BUILD_BENCH": "ON",
+          "HYLE_BUILD_TESTS": "OFF",
+          "HYLE_COMPONENTS": "mem",
+          "HYLE_INSTALL": "OFF",
+          "HYLE_SANITIZER": "off",
+          "HYLE_SIMD_EXACT_TARGET": "",
+          "HYLE_STATIC": "ON",
+          "HYLE_TEST_INSTRUMENTATION": "OFF",
+          "HYLE_TRACE": "OFF"
+        },
+        "peer_cache": {"marl": "HYLE_MARL_DIR"}
+      },
+      "profiles": {
+        "W1-WIN": {"generator": "Visual Studio 18 2026", "architecture": "x64", "compiler_id": "MSVC", "compiler_version_prefix": "19.50", "cache": {}}
+      },
+      "executables": [
+        {
+          "id": "mem-handoff-consumer-primary",
+          "target": "hyle_mem_handoff_consumer_bench",
+          "stem": "hyle_mem_handoff_consumer_bench",
+          "target_variant": "primary",
+          "measurement_batch": 1,
+          "telemetry_prefixes": ["# HYLE_MEM_HANDOFF_CONSUMER_RUN "],
+          "workloads": [
+            {"id": "fixed-slot-cross-core-handoff-64", "title": "fixed object slot cross-core handoff aggregate N=64"}
+          ]
+        },
+        {
+          "id": "mem-handoff-consumer-placement",
+          "target": "hyle_mem_handoff_consumer_bench_placement",
+          "stem": "hyle_mem_handoff_consumer_bench_placement",
+          "target_variant": "placement",
+          "measurement_batch": 1,
+          "telemetry_prefixes": ["# HYLE_MEM_HANDOFF_CONSUMER_RUN "],
+          "workloads": [
+            {"id": "fixed-slot-cross-core-handoff-64", "title": "fixed object slot cross-core handoff aggregate N=64"}
+          ]
+        }
+      ],
+      "control_executable": {"target": "hyle_perf_control_bench", "stem": "hyle_perf_control_bench"},
+      "controlled_environment": ["HYLE_BENCH_RIVAL_FIRST", "HYLE_BENCH_PEER_ALLOCATION_FIRST", "HYLE_BENCH_APPLE_QOS", "HYLE_PERF_APPLE_QOS"],
+      "validators": [
+        {"id": "artifact-identity", "kind": "artifact-identity"},
+        {"id": "build-contract", "kind": "build-contract"},
+        {
+          "id": "mem-handoff-contract",
+          "kind": "command",
+          "command": [
+            "{python}",
+            "scripts/validate-mem-consumer-bench.py",
+            "--mode",
+            "handoff",
+            "--source",
+            "{source}",
+            "--build",
+            "{build}",
+            "--output",
+            "{output}",
+            "--expected-shapes-sha256",
+            "c72e00527ea82d5e32431fd29d996faa7fecb6d58c2d2514281c41a471a43b32",
+            "--expected-marl-source-sha256",
+            "28b696dac0dcfd663db473df728760abf4e47f5f01ab04a2e97de7204764f6cb",
+            "--expected-marl-overlay-sha256",
+            "612a0c7177732448372c90e66a592284426fc28547fda66cd1c9191b23d3c517"
+          ]
+        }
+      ]
+    }
+  }
+}

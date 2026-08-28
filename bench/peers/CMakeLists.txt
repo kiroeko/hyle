@@ -41,6 +41,26 @@ if(HYLE_BENCH_TBB)
     "${HYLE_TBB_DIR}"
     "${HYLE_BINARY_DIR}/bench/peers/onetbb"
     EXCLUDE_FROM_ALL SYSTEM)
+
+  # oneTBB's Windows targets are DLLs even when the HYLE candidate is static.
+  # Contract runners launch build-tree executables from bin/<config>, so stage
+  # the exact linked peer runtimes beside each consumer instead of relying on a
+  # developer's PATH.
+  function(hyle_stage_tbb_benchmark_runtime target)
+    if(NOT TARGET ${target})
+      message(FATAL_ERROR
+        "hyle_stage_tbb_benchmark_runtime: unknown target '${target}'")
+    endif()
+    if(WIN32)
+      add_custom_command(TARGET ${target} POST_BUILD
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+                "$<TARGET_FILE:TBB::tbb>"
+                "$<TARGET_FILE:TBB::tbbmalloc>"
+                "$<TARGET_FILE_DIR:${target}>"
+        COMMAND_EXPAND_LISTS
+        VERBATIM)
+    endif()
+  endfunction()
 endif()
 
 # Optional Abseil rivals are likewise owner-scoped. They cover more than the
@@ -92,7 +112,7 @@ unset(_hyle_owner_upper)
 # superproject include closure in one place: individual benchmark directories
 # only decide which targets instantiate which peer capability.
 set(_hyle_bench_boost_owner FALSE)
-foreach(_hyle_owner IN ITEMS container_intrusive platform util_core)
+foreach(_hyle_owner IN ITEMS container_intrusive platform util_core mem)
   string(TOUPPER "${_hyle_owner}" _hyle_owner_upper)
   if(HYLE_BUILD_${_hyle_owner_upper})
     set(_hyle_bench_boost_owner TRUE)
@@ -132,5 +152,33 @@ if(HYLE_BENCH_BOOST)
 endif()
 
 unset(_hyle_bench_boost_owner)
+unset(_hyle_owner)
+unset(_hyle_owner_upper)
+
+# Marl supplies the bounded object-pool peer for mem and the scheduler/fiber
+# peers for sched. Discover the checkout once; module fragments own the exact
+# source adapter/target they need.
+set(_hyle_bench_marl_owner FALSE)
+foreach(_hyle_owner IN ITEMS mem sched)
+  string(TOUPPER "${_hyle_owner}" _hyle_owner_upper)
+  if(HYLE_BUILD_${_hyle_owner_upper})
+    set(_hyle_bench_marl_owner TRUE)
+  endif()
+endforeach()
+if(_hyle_bench_marl_owner)
+  option(HYLE_BENCH_MARL "build relevant benchmarks vs Marl" OFF)
+else()
+  set(HYLE_BENCH_MARL OFF)
+endif()
+if(HYLE_BENCH_MARL)
+  set(HYLE_MARL_DIR "${HYLE_SOURCE_DIR}/../marl" CACHE PATH
+      "local Marl source snapshot")
+  if(NOT EXISTS "${HYLE_MARL_DIR}/CMakeLists.txt")
+    message(FATAL_ERROR
+      "HYLE_BENCH_MARL=ON but no Marl checkout at ${HYLE_MARL_DIR}")
+  endif()
+endif()
+
+unset(_hyle_bench_marl_owner)
 unset(_hyle_owner)
 unset(_hyle_owner_upper)

@@ -1,0 +1,99 @@
+{
+  "schema": "hyle.bench.consumer-shapes/v1",
+  "id": "mem-v1-consumer-shapes",
+  "status": "frozen-input",
+  "purpose": "Retained provenance for mem-v1 engineering replays; this file distinguishes literal current consumers from explicitly admitted inference north-star shapes.",
+  "source_evidence": [
+    {
+      "role": "runtime-allocator-injection",
+      "path": "src/container/dynamic_bitset.cc",
+      "sha256": "26659dfe37d2bb76abe9254e26faace64c695f37c6e1a38ed87126986afb8b75",
+      "fact": "DynamicBitSet stores an injected mem::Allocator and routes growth and teardown through it."
+    },
+    {
+      "role": "request-region-owner",
+      "path": "include/hyle/io/http.h",
+      "sha256": "8fcf4ed64c9701e591989219f739e07751c151d23e4be55b8c0f220e332b54fd",
+      "fact": "HttpServeOptions freezes a 4 KiB initial block, 64 KiB maximum ordinary block and 64 KiB dedicated-allocation threshold."
+    },
+    {
+      "role": "request-region-lifecycle",
+      "path": "src/io/http.cc",
+      "sha256": "2f98756a2a0470c3813ae7e8816be4a781cd1e6a7c9c7c6f0b3de2e190a68d34",
+      "fact": "One keep-alive owner reuses ordinary blocks, clears after handler/response destruction and releases pathological retained capacity."
+    },
+    {
+      "role": "scheduler-runtime-allocation-and-fiber-owner",
+      "path": "src/sched/scheduler.cc",
+      "sha256": "d7ffc29eb6051cae3e723d6dfc67c6a860dbea3b4310f3d154adb282404f19a2",
+      "fact": "Scheduler owns three guarded-stack pools and uses its injected allocator for detached-driver storage."
+    },
+    {
+      "role": "hard-slot-public-contract",
+      "path": "include/hyle/mem/object_pool.h",
+      "sha256": "fc77c6b403fc3248e51f689414b3185f85d1e81239b92c31024b09f85f2dcdef",
+      "fact": "ObjectPool exposes fixed hard capacity, non-blocking acquisition and move-only scoped return over the thread-safe SharedPool core."
+    },
+    {
+      "role": "north-star-boundary",
+      "path": "docs/architecture/inference-engine-north-star.md",
+      "sha256": "b5fff5122770998f3907a973d328725c03ae8ec7fad324c05f63e012b2977dff",
+      "fact": "The inference engine consumes host allocator/arena/pool mechanisms while model, KV and serving policy remain above mem."
+    }
+  ],
+  "workloads": [
+    {
+      "id": "runtime-allocator-batch-64",
+      "demand_kind": "current-consumer-mechanism-plus-north-star-distribution",
+      "consumer": "Injected host allocation used by current container/scheduler code and future model-loader/control-object batches",
+      "shape": {
+        "allocations_per_epoch": 64,
+        "sizes_bytes": [24, 40, 72, 128, 320, 1024, 4096, 16384],
+        "alignments_bytes": [16, 16, 32, 64],
+        "lifecycle": "allocate all, first/last-byte touch, reverse-order free",
+        "oom": "outside measured successful steady state"
+      },
+      "honesty_boundary": "The exact 64-item distribution is a frozen representative aggregate, not a claim that an existing HYLE consumer emits this literal trace."
+    },
+    {
+      "id": "request-region-epoch-64",
+      "demand_kind": "current-http-owner-plus-north-star-request-distribution",
+      "consumer": "Long-lived keep-alive/request or graph-evaluation owner with phase-lifetime scratch",
+      "shape": {
+        "allocations_per_epoch": 64,
+        "ordinary_sizes_bytes": [24, 64, 128, 320, 1024, 2048, 4096, 8192],
+        "dedicated_outlier_bytes": 65536,
+        "region_initial_block_bytes": 4096,
+        "region_max_ordinary_block_bytes": 65536,
+        "region_dedicated_threshold_bytes": 65536,
+        "lifecycle": "bulk invalidate each epoch, retain ordinary blocks, return dedicated outlier"
+      },
+      "honesty_boundary": "The owner lifecycle and Region policy are literal current HTTP behavior; allocation sizes are a frozen request/inference scratch distribution rather than a captured production trace."
+    },
+    {
+      "id": "scheduler-fiber-lifecycle-16",
+      "demand_kind": "current-source-consumer",
+      "consumer": "Scheduler-owned guarded fiber stacks",
+      "shape": {
+        "fibers_per_epoch": 16,
+        "stack_tier": "kFiberStackDefault",
+        "lifecycle": "acquire, construct, spawn, drain, destroy and return",
+        "baseline": "the identical scheduler lifecycle with direct guarded VM reserve/release"
+      },
+      "honesty_boundary": "This is an internal same-product reuse baseline, not an external all-allocator SOTA claim."
+    },
+    {
+      "id": "fixed-slot-cross-core-handoff-64",
+      "demand_kind": "admitted-north-star-foundation",
+      "consumer": "Fixed-capacity async state/node producer-to-consumer handoff",
+      "shape": {
+        "pool_capacity": 256,
+        "loans_per_epoch": 64,
+        "roles": "one pinned producer allocates and one pinned consumer observes and returns",
+        "failure": "both routes are verified non-blocking and empty at the 257th outstanding loan",
+        "ownership": "unique scoped loan; no copy or shared-loan operation"
+      },
+      "honesty_boundary": "No current HYLE product source consumes ObjectPool; this row is explicitly north-star-derived and cannot be cited as an existing production trace."
+    }
+  ]
+}
