@@ -9,6 +9,8 @@
 #include "hyle/platform.h"
 #include "hyle/time/unix_timestamp.h"
 
+#include "timeout_internal.h"
+
 // io proactor backend: the per-OS Impl behind proactor.h. Both platforms carry
 // real IO: Windows IOCP (ReadFile/WriteFile/WSARecv/WSASend/AcceptEx/ConnectEx
 // with per-op OVERLAPPED) and Linux io_uring (raw syscalls, no liburing link) +
@@ -234,8 +236,8 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
   } else if (timeout_ns == UINT64_MAX) {
     ms = INFINITE;
   } else {
-    std::uint64_t rounded = (timeout_ns + 999'999ull) / 1'000'000ull;
-    ms = rounded >= INFINITE ? (INFINITE - 1) : static_cast<DWORD>(rounded);
+    ms = static_cast<DWORD>(detail::finite_timeout_milliseconds(
+        timeout_ns, static_cast<std::uint64_t>(INFINITE - 1)));
   }
 
   // Batch dequeue -- one syscall pulls up to `max` finished ops (io_uring
@@ -1332,8 +1334,8 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
     } else if (timeout_ns == UINT64_MAX) {
       ms = -1;  // block
     } else {
-      std::uint64_t r = (timeout_ns + 999'999ull) / 1'000'000ull;
-      ms = r > 2'000'000'000ull ? 2'000'000'000 : static_cast<int>(r);
+      ms = static_cast<int>(detail::finite_timeout_milliseconds(
+          timeout_ns, 2'000'000'000ull));
     }
     epoll_event evs[64];
     int want = static_cast<int>(max < 64 ? max : 64);

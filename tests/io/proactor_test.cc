@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <cstdint>
+#include <limits>
 #include <thread>
 #include <vector>
 
@@ -29,10 +30,24 @@
 
 #include "hyle/io/proactor.h"
 
+#include "timeout_internal.h"
+
 using hyle::io::BackendKind;
 using hyle::io::Completion;
 using hyle::io::Proactor;
 using hyle::io::ProactorCapability;
+
+static_assert(hyle::io::detail::finite_timeout_milliseconds(0, 100) == 0);
+static_assert(hyle::io::detail::finite_timeout_milliseconds(1, 100) == 1);
+static_assert(
+    hyle::io::detail::finite_timeout_milliseconds(999'999, 100) == 1);
+static_assert(
+    hyle::io::detail::finite_timeout_milliseconds(1'000'000, 100) == 1);
+static_assert(
+    hyle::io::detail::finite_timeout_milliseconds(1'000'001, 100) == 2);
+static_assert(hyle::io::detail::finite_timeout_milliseconds(
+                  (std::numeric_limits<std::uint64_t>::max)() - 1, 100) ==
+              100);
 
 // io-01 is the completion-reaping seam; these tests prove the mechanism the real
 // backends (io_uring / IOCP) drive: attach a 64-bit token to an operation, get it

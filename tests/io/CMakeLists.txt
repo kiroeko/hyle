@@ -1,4 +1,8 @@
 hyle_add_test(io SOURCES proactor_test.cc)
+if(TARGET hyle_io_test)
+  target_include_directories(hyle_io_test PRIVATE
+    "${PROJECT_SOURCE_DIR}/src/io")
+endif()
 if(WIN32 AND TARGET hyle_io_test)
   # The io test itself calls Winsock directly (WSASocketW/bind/getsockname/... in
   # the IOCP TCP round-trip test), so it needs ws2_32 linked into the test exe.
