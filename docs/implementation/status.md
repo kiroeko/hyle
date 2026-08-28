@@ -28,6 +28,12 @@
 | graph | QUEUED | — | — | — | — | 实现尚不完整；前置与真实 consumer slice 建立前保持可变。 |
 <!-- END GENERATED MODULE STATUS -->
 
+新接受的能力完整性标准正在通过
+[存量采用记录](tasks/project/capability-completeness-adoption-2026-08.md)回放到
+`core/error/util_core/util/container_intrusive/build-package`。这项只读审计不会批量改写上表状态；只有
+发现真实 `PRODUCT_TRIGGER` 的单元才依法重开。`time` 已直接使用新格式，`platform/mem/obs` 将在各自
+正常轮次使用，不补签历史结论。
+
 产品状态流固定为：
 
 ```text
