@@ -154,9 +154,48 @@ capability request returns the task to scope; it is not appended to this batch.
 
 只使用 closure card 预声明的 gates；未运行项不记 `PASS`。
 
+| Gate / risk | Evidence | Verdict |
+|---|---|---|
+| normal / zero / signed / max / overflow | deterministic unit matrix；checked zero/negative/unrepresentable 返回 `nullopt`；normal representable boundaries 返回 oracle 值 | `PASS` |
+| property / constexpr | `[0,255] x [1,31]` exact integer oracle；compile-time valid/invalid/boundary assertions | `PASS` |
+| ownership / allocation / OOM | stateless value-only header，无 owner、borrow、allocation 或常态 metadata；OOM 语义不适用 | `NOT_APPLICABLE` |
+| move/lifetime/cancellation | 无对象、挂起工作或取消协议 | `NOT_APPLICABLE` |
+| concurrency / reentrancy | 纯局部值计算且无共享状态；任意线程并发调用不互相影响 | `PASS` |
+| sanitizers / target execution | W1-WSL GCC 14.2 RelWithDebInfo + UBSan 2/2；无内存 ownership，ASan 不增加有效风险覆盖；无共享状态，TSan 不适用 | `PASS`（UBSan）；ASan/TSan `NOT_APPLICABLE` |
+| compiler / ISA | W1-WIN MSVC 19.50 x64、W1-WSL GCC 14.2 x86-64、M1-MAC AppleClang 21 arm64 均真实编译并运行 unit/header tests | `PASS` |
+| public header | `hyle_math_header_self_contained_test` 三平台 1/1 | `PASS` |
+| component / source delivery | isolated `HYLE_COMPONENTS=math` resolves `core,math`；中央 component contract；真实 source package sample | `PASS` |
+| installed static/shared delivery | relocated selected-component package sample 对 static/shared 各 1/1；math 保持真实 INTERFACE target，不虚构 archive | `PASS` |
+| direct consumer | 当前产品 consumer 为 0；package fixture 验证公开 journey，未伪造下游回归 | `PASS`（fixture）；产品 consumer `NOT_APPLICABLE` |
+| P0 performance | tracked no-IPO object probe；三工具链每个形状一次 divide，checked 0 call，normal 仅 invalid cold sink，零 heap/lock/indirect | `PASS`；见 [`benchmarks-math`](../../evidence/performance/benchmarks-math.md) |
+| usability / docs | architecture boundary、user selection/checked/fail-fast pitfalls、component delivery 与样例同步 | `PASS` |
+| stale/duplicate surface | 当前产品与用户文档无 `div_ceil/sgn/approx_eq`；clay 历史债务页只作具名历史说明 | `PASS` |
+
+验证绑定 product candidate `753ad5f304f52727c3ba925c9aac0a30f941502e` / tree
+`93f7bf1a996d6beabebe2b42801b086c483a18e6`；测试探针 commit
+`897263755564e3b5ef39024901d20bee9f54ac56` 不改产品 identity。Windows source/static/shared 与
+macOS source/static/shared relocated journey 均在候选冻结后完成；WSL 新隔离目录使用 lock-matched
+GoogleTest 源树，错误 HEAD override 被构建系统按预期拒绝，未被记成产品失败或假通过。
+
 ## 独立红队
 
-在 candidate 冻结后执行，30 分钟上限。
+候选冻结后在 30 分钟上限内按 baseline-to-candidate 与 candidate-to-HEAD 两个方向复核：
+
+- `try_ceil_div` 在 divide 前拒绝 zero/negative divisor 与负 signed value；合法 ceiling quotient
+  不会溢出；
+- `try_round_up_to_multiple` 先求 remainder，再以 `max-increment` 判定可表示性，加法前不发生
+  unsigned/signed overflow；
+- same-type、non-bool integral constraint 消除旧 API 的 signed/unsigned promotion 猜测；负数 rounding、
+  mixed-type 与 floating tolerance 被明确留在 negative space，不是漏测 overload；
+- header 对 Core 的直接使用同时投影为中央 `PUBLIC core` edge 和真实 target link；math 没有反向依赖
+  SIMD，source/static/shared 交付没有虚构 header-only binary；
+- candidate 之后产品路径零漂移；唯一新增是不可安装的 test-only codegen object。旧公开名称只在
+  closure/history 中作为删除事实出现；
+- MSVC 普通 fail-fast wrapper 的 ABI shadow-space 是已说明的编译器形状；没有 profile 或 material
+  consumer contribution，不能用点值测试删掉输入合同。
+
+红队 verdict：`PASS`。没有发现越界产品修改、未声明常态资源、错误复杂度、交付缺口或需退回
+`AUDITED` 的新能力事实。
 
 ## Closure decision
 
