@@ -611,6 +611,11 @@ TEST(LogContracts, InvalidNativeInputsFailFast) {
                "");
 }
 
+TEST(LogContracts, NullSinkCallbackIsARecoverableInvalidArgument) {
+  EXPECT_EQ(add_sink(LogSink{}).code(), hyle::StatusCode::InvalidArgument);
+  EXPECT_EQ(remove_sink(LogSink{}).code(), hyle::StatusCode::InvalidArgument);
+}
+
 TEST(LogDefaultSink, StateSetterIsIdempotentAndReportsSuccess) {
   EXPECT_TRUE(set_default_sink_enabled(false).ok());
   EXPECT_TRUE(set_default_sink_enabled(false).ok());
@@ -710,5 +715,24 @@ TEST(TraceBackend, CurrentZoneAnnotationsAndFullWidthCounterCompile) {
   HYLE_TRACE_COUNTER("hyle.obs.uint64",
                      std::numeric_limits<std::uint64_t>::max());
   HYLE_TRACE_MESSAGE(std::string_view(text));
+}
+
+TEST(TraceBackend, DynamicTextIsBoundedBeforeEnteringTracy) {
+  std::string text(hyle::obs::detail::kTraceDynamicTextMax + 17, 'x');
+  const std::string_view bounded_view =
+      hyle::obs::detail::bounded_trace_text(std::string_view(text));
+  EXPECT_EQ(bounded_view.data(), text.data());
+  EXPECT_EQ(bounded_view.size(), hyle::obs::detail::kTraceDynamicTextMax);
+
+  text.push_back('\0');
+  const std::string_view bounded_c_string =
+      hyle::obs::detail::bounded_trace_text(text.c_str());
+  EXPECT_EQ(bounded_c_string.data(), text.data());
+  EXPECT_EQ(bounded_c_string.size(), hyle::obs::detail::kTraceDynamicTextMax);
+
+  HYLE_TRACE_ZONE_NAMED("hyle.obs.long-text-test");
+  HYLE_TRACE_ZONE_TEXT(bounded_view);
+  HYLE_TRACE_ZONE_NAME(bounded_view);
+  HYLE_TRACE_MESSAGE(bounded_view);
 }
 #endif

@@ -158,9 +158,9 @@ ID、refcount 或拥有型字符串。需要时间戳、线程 ID 等 enrich 时
 旧 runtime trace bridge 已由 BUILD-03 删除。极热 C++ 源码路径只使用原生宏；OFF 时参数不求值，
 也没有函数级 no-op 调用。
 Tracy copied text 使用 16-bit byte count，且上游只在 debug assert 长度；adapter 必须先做
-bounded scan。message/zone text 截到 65534 bytes，动态 source-location 的
-name/file/function 各截到 21841 bytes，使 header + 三段 payload 总长始终可表示，不能在
-release 把 full `strlen` 与 truncated allocation length 同时交给后端。
+bounded scan。动态 message、zone text 与 zone name 截到 65534 bytes，不能在 release 把
+full `strlen` 与 truncated allocation length 同时交给后端。source location 属于同步 log record，
+当前 native trace seam 不提供另一套 source-location bridge。
 
 当前真实下游：
 

@@ -1,8 +1,8 @@
 # obs-v1 重构与收口记录
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
 
-> 当前阶段：`CANDIDATE`。本文是 obs 当前轮唯一 closure card 与施工记录；既有 obs task、architecture、
+> 本轮终态：`BLOCKED`（从 `CANDIDATE` 停止）。本文是 obs 本轮 closure card 与 terminal record；既有 obs task、architecture、
 > guide、旧 C/FFI 叙事和历史 benchmark 只作审计输入，不继承旧“已收口”或 SOTA 结论。机械状态只看
 > [`module-status.json`](../../module-status.json)。在 capability map 与有限 `FIX` 集进入 `AUDITED`
 > 前，不修改 obs 产品实现。
@@ -184,6 +184,59 @@ message/memory/thread-name 以及 build gate。没有入口落在表外，也没
 
 ## Verification manifest
 
+候选之后的 repository diff 只包含 benchmark、post-candidate correctness tests、performance
+tool/task 与文档；
+`git diff 2c784d9d6a925529995c6a5582d9bc373d91535d..HEAD -- include/hyle/obs src/obs`
+为空，产品 commit/tree 没有漂移。
+
+### Correctness risk matrix
+
+| Risk | verdict | command / evidence | limitation / rationale |
+|---|---|---|---|
+| normal | `PASS` | W1-WIN、W1-WSL、M1-MAC 的 `ctest -L obs`，trace OFF/ON 各适用形状均为 3/3 | 当前同步 log 与 native trace seam |
+| empty / zero | `PASS` | empty span/view、zero timestamp、zero sink、trace OFF no-eval 测试 | zero timestamp 表示 caller 未提供 |
+| capacity / boundary / overflow | `PASS` | 64-slot/full registry、1 KiB truncation、embedded NUL、control-byte escape、Tracy 16-bit text bound、full-width `uint64_t` | sink capacity 是公开固定合同 |
+| OOM / system failure / invalid input | `PASS` | registry full 返回 `ResourceExhausted`；null callback 返回 `InvalidArgument`；invalid level/null C string fail-fast | emit/registry 不做 module-owned heap allocation；default stderr 是 best-effort sink，不返回 durability receipt |
+| move / destroy / lifetime | `PASS` | RAII create/reset/destructor、move construction/assignment、late static teardown | callback state 仍由调用方拥有 |
+| concurrency / reentrancy | `PASS` | parallel emit/churn、remove-waits、自摘、跨摘拒绝、nested log/flush、concurrent flush remove；WSL TSan | callback 可并发且必须 `noexcept` |
+| cancellation / close | `PASS` | quiescent `remove_sink`、idempotent `SinkRegistration::reset`、default sink state setter | obs 没有异步 service/cancellation owner |
+| property / differential / fuzz / stress | `PASS` | callback count 精确核对、parallel log/churn stress、default byte-preservation/escape checks | 无 parser 或无界 owning structure，fuzz 不适用 |
+| ASan / UBSan / TSan | `PASS` | `/root/hyle-scratch/obs-v1-{asan,ubsan,tsan}-20260829`；各 3/3，TSan 用 `setarch x86_64 -R` | GCC 14 WSL；没有把 sanitizer 未运行写成 PASS |
+| real ISA / backend | `PASS` | W1-WIN x64 与 M1-MAC ARM64 真 Tracy 0.14.1 trace-on tests；M1 同时真实构建 mem/sched/io/compute | performance 只由 W1-WIN 裁决 |
+
+### Platform, component and delivery evidence
+
+- **W1-WIN / MSVC 19.50**：`build-win` trace-OFF static 与 `build-win-trace` trace-ON static 的
+  `hyle_obs_header_self_contained_test`、`hyle_obs_test`、`hyle_obs_compiled_level_test` 各 3/3；
+  `C:\hyle-scratch\obs-v1\delivery-win-20260829` 的 selected-component source embedding、relocated
+  shared、relocated static consumers 各 1/1。
+- **W1-WSL / GCC 14**：ASan、UBSan、TSan 各 3/3；
+  `/root/hyle-scratch/obs-v1-delivery-20260829` 的 source/shared/static relocated consumers 各 1/1。
+- **M1-MAC / AppleClang 21 / ARM64 / deployment target 14.4**：trace-OFF shared 与锁定 Tracy
+  `30997d5ca6bb632cc10807a1da8a6d3de0aeeb3c` trace-ON shared 各 3/3；
+  `/Users/kiro/hyle-scratch/obs-v1-delivery-20260829` 的 source/shared/static relocated consumers
+  各 1/1；`HyleCiFeaturePackageSmoke.cmake` 的 `trace` scope 对 trace-ON static/shared SDK、搬迁后
+  consumer、Tracy header/license 资产全部 PASS。官方归档 SHA-256 为
+  `E9D527343623435DE954A72AD211A1AE4B205CB877D5CC81B8BD505AAC0A2CDE`。
+- M1 的 `/Users/kiro/hyle-scratch/obs-v1-trace-consumers-20260829` 以 trace ON、shared 同时真实构建
+  `mem,sched,io,compute`；四个 dylib 都只依赖同一份 `libhyle_tracy_client.dylib`，不依赖
+  `hyle_obs` log runtime。
+- 中央 graph 在 selected configure 中机械解析为 `obs PUBLIC core error`。全树产品扫描没有其他模块
+  include/call runtime log；trace 源码消费者只为上述四个 owner。Windows trace-OFF DLL 的 24 个导出
+  均为 C++ decorated symbol，没有 `hyle_obs_*` C/FFI symbol；Windows/macOS trace-OFF SDK 均没有
+  `hyle/c/obs.h`、Tracy headers/license/backend dependency。
+
+### Aggregate gates
+
+| Aggregate gate | verdict | evidence | limitation |
+|---|---|---|---|
+| correctness / sanitizer | `PASS` | 三平台 obs tests + WSL ASan/UBSan/TSan | M1/W1 不冒充 sanitizer run |
+| component / source / static / shared | `PASS` | 三平台 selected-component smoke；M1 trace feature package smoke | trace-on static 只支持一个 final link image |
+| direct consumer | `PASS` | package sample + mem/sched/io/compute native trace seam build/link scan | 下游模块整体收口不在本轮 |
+| P1 engineering performance | `INCONCLUSIVE` | 下述三份冻结 bundle 与独立 multicore tool blocker | 8-core baseline NI 尚无合格中央仪器 verdict |
+| usability / docs | `PASS` | architecture/user/performance/task 对账；`check-docs.py` | Native FFI 为明确 `N/A` |
+| independent red team | `PASS` | 2026-08-29、20 分钟 frozen-capability 攻击；见下表 | performance blocker 保留，未被改写成 PASS |
+
 ### P1 performance（部分完成，聚合 `INCONCLUSIVE`）
 
 - trace native seam：W1-WIN fresh `qualify-platform` n=15 完成；A/A、5%/10% delta、timer-floor、
@@ -228,8 +281,56 @@ message/memory/thread-name 以及 build gate。没有入口落在表外，也没
 
 ## 独立红队
 
-尚未执行。
+审查者 / 日期 / 预算：post-candidate reviewer / 2026-08-29 / 20 分钟。攻击范围只含冻结 capability、
+public contract、复杂度、lifetime、依赖/交付与既有性能 verdict；到预算即停止，没有扩建仪器或新增
+benchmark 姿势。
+
+| finding | severity | decision | evidence |
+|---|---|---|---|
+| architecture 仍声称已删除的 trace source-location bridge 有三段截断策略 | documentation | `fixed` | `obs-design` 改为当前 message/zone text/name 65534-byte native seam，并明确 source location 属 log record |
+| direct membership 并发 remove 的 `NotFound` 不是 callback-drain receipt，guide 未直说 | usability | `fixed` | guide 要求同一 membership 单 owner 串行控制；只有成功 remover 持有 quiescence receipt |
+| `log_record` 的 true 可能被误读为持久化成功 | usability | `fixed` | guide 明确它只表示同步 callback 被调用，durability/ack 归上层 sink |
+| 旧 C schema/bridge/fixture/native FFI 可能仍由 binary/package 暴露 | blocker if true | `disproved` | source/package scan + Windows exports + macOS symbols/dependencies 均无旧面 |
+| 多生产者点值能否用外部 sampler 直接签 5% baseline NI | performance | `accepted blocker` | CI 穿越单边界且中央工具没有 N-worker controls；保留 `INCONCLUSIVE`，不动 API/layout |
+
+未发现新的产品 correctness、ownership、复杂度档、常态 metadata、依赖方向或 source/static/shared
+交付缺陷。红队后的改动只有上述 architecture/user 文档，不改变候选产品 identity。
 
 ## Closure decision
 
-尚未裁决。
+本轮从 `CANDIDATE` 终止为 **`BLOCKED`**，而不是 `VERIFIED/CLOSED`。scope、architecture、
+correctness、delivery、usability/docs 与 red-team gate 均为 `PASS`；single-thread logging、1-sink
+绝对多核预算和 direct-Tracy seam 也已通过。唯一 blocker 是 8-producer × 1/4/16-sink baseline
+non-inferiority 没有由合格的 `closure-perf-v1` N-worker topology instrument 给出 verdict，故聚合
+engineering performance 必须保持 `INCONCLUSIVE`。
+
+blocker owner：[`performance/perf-multicore-topology-v1`](../performance/perf-multicore-topology-v1.md)。
+恢复条件：中央工具在 fresh W1-WIN 通过自身测试并能对**同一冻结 workload**给出 A/A、known-delta、
+timer-floor、双顺序、n=15→31 和 deep-replay verdict；恢复后只能重放，不得改变 margin、API、record
+layout、callback、chunk 或同步语义。
+
+已知限制：
+
+- 当前不能宣称 obs 全面 SOTA、跨平台固定纳秒数或多生产者 baseline NI PASS；
+- log 是最多 64 sink 的同步 borrowed fan-out，异步复制、持久化、backpressure 与 ack 归上层 adapter；
+- trace-on static SDK 只支持所有 HYLE archive 进入一个 final link image；多 DLL/plugin host 使用 shared；
+- Native FFI/C API、category/config tree、日志服务、metrics/OTLP、GPU profiler 与 Formal 仍为明确负空间。
+
+产品重开 trigger：真实 consumer 暴露本边界 correctness/security/lifetime/usability 或缺失能力；log/trace
+算法、public API/layout、直接依赖、Tracy 语义或三种交付形状改变；强 peer 证明更优复杂度档或正常
+consumer 上 material advantage。当前 blocker 满足 resume condition 时按 `BLOCKED -> SCOPED` 开新
+resume round；它不是无新事实重开产品的许可。
+
+四项 LOC 从 immutable candidate
+`2c784d9d6a925529995c6a5582d9bc373d91535d` 运行
+`python scripts/loc-report.py --module obs --commit <candidate> --self-check --json`，self-check `PASS`：
+
+1. 全库代码：303,621；
+2. 自实现包含测试：123,512；
+3. 自实现不包含测试：82,884；
+4. obs 实现：887（`include/hyle/obs` + `src/obs`）。
+
+raw performance evidence 仍为三份已列 bundle/hash；correctness/delivery artifact 在本节列出的 W1/M1
+隔离 scratch 中。terminal end/registry anchor 的完整 commit identity 由后续 registry transition 记录。
+
+<!-- MODULE CLOSURE RECEIPT: BLOCKED -->

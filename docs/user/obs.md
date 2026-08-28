@@ -75,7 +75,9 @@ message、field key/value 都是 exact byte view；例如
 `log_message(level, std::string_view(data, size))` 不需要 NUL 结尾并保留内嵌 NUL。
 `const char*` 便利重载会寻找结尾 NUL。record、span 和所有 view 都只在同步调用期间借用；悬空或
 无效 view 是 C++ 前置条件违反。`false` 表示被 gate 或没有 sink，不是错误。从不可信来源构造
-record 的上层代码必须先验证 pointer/length，再进入 obs 核心。
+record 的上层代码必须先验证 pointer/length，再进入 obs 核心。`true` 只表示至少一个同步 sink
+callback 被调用，不是文件落盘、网络送达或 `stderr` I/O 成功的 durability receipt；需要这类保证时
+由上层 sink 自己的 flush/ack 协议负责。
 
 用户自定义 `std::formatter` 可能抛异常；obs 会在这个外来 adapter 边界把异常变成静态
 `[log formatting failed]` record，诊断失败不会改变业务控制流。HYLE invariant 仍然 fail-fast，
@@ -120,6 +122,11 @@ callback 返回；callback 内摘除另一个 sink 会返回 `FailedPrecondition
 同一 dispatch snapshot 中等待当前线程调用。sink 内再次产生日志不会重入注册 sink 图：
 默认 stderr 仍启用时 nested record 直接落 stderr，否则报告未投递。这个规则避免诊断
 backend 递归到栈溢出。
+
+同一个 membership 的控制操作应由一个 owner 串行执行。两个线程同时调用 `remove_sink` 时，只有
+返回成功的调用持有“旧 callback 已排空”的 quiescence receipt；另一个线程可能得到 `NotFound`，
+不能据此提前销毁仍由成功调用者负责排空的 callback state。普通代码使用 move-only
+`SinkRegistration` 即可自然满足这个 owner 规则。
 
 不要在一个 sink callback 内析构另一个仍注册的 `SinkRegistration`：它的 quiescent remove
 会被拒绝，而析构无法返回错误，因此按生命周期合同 fail-fast。应调用 `reset()` 获取 Status，
