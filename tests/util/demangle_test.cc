@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <cstring>
+#include <string>
 #include <typeinfo>
 
 #include "hyle/util/demangle.h"
@@ -18,6 +19,30 @@ TEST(Demangle, RoundTripsTypeName) {
   std::size_t n = demangle(typeid(DemangleWidget), buf);
   EXPECT_LT(n, sizeof(buf));  // not truncated
   EXPECT_NE(std::strstr(buf, "DemangleWidget"), nullptr);
+}
+
+TEST(Demangle, OwningStringRoundTripsTypeName) {
+  const std::string text = demangle(typeid(DemangleWidget));
+  EXPECT_NE(text.find("DemangleWidget"), std::string::npos);
+}
+
+TEST(Demangle, OwningStringPassesThroughPlainAndNullNames) {
+  EXPECT_EQ(demangle("main"), "main");
+  EXPECT_TRUE(demangle(static_cast<const char*>(nullptr)).empty());
+}
+
+TEST(Demangle, OwningStringDemanglesPlatformSymbol) {
+#if defined(_WIN32)
+  constexpr const char* kMangled = "?foo@@YAHH@Z";
+#elif defined(__GNUC__) || defined(__clang__)
+  constexpr const char* kMangled = "_Z3fooi";
+#else
+  constexpr const char* kMangled = "";
+  GTEST_SKIP() << "toolchain has no supported runtime demangler";
+#endif
+  const std::string text = demangle(kMangled);
+  EXPECT_NE(text, kMangled);
+  EXPECT_NE(text.find("foo"), std::string::npos);
 }
 
 // A name outside the platform mangling scheme passes through unchanged.
@@ -56,6 +81,20 @@ TEST(Demangle, ZeroCapWritesNothing) {
 
 TEST(DemangleDeathTest, NonZeroCapacityRequiresOutputBuffer) {
   EXPECT_DEATH((void)demangle("main", nullptr, 1), "");
+}
+
+TEST(Demangle, BufferMayExactlyOverlapInput) {
+  char text[32] = "ordinary_symbol";
+  const std::size_t size = demangle(text, text, sizeof(text));
+  EXPECT_EQ(size, 15u);
+  EXPECT_STREQ(text, "ordinary_symbol");
+}
+
+TEST(Demangle, BufferMayPartiallyOverlapInput) {
+  char storage[32] = "xxordinary_symbol";
+  const std::size_t size = demangle(storage + 2, storage, sizeof(storage));
+  EXPECT_EQ(size, 15u);
+  EXPECT_STREQ(storage, "ordinary_symbol");
 }
 
 // Distinct types demangle to distinct names.

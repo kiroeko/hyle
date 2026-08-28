@@ -1,8 +1,8 @@
 # util 架构：两个依赖层，一个产品边界
 
 > **当前边界（2026-08-28）：**`util_core` v1 已 `CLOSED` 并通过新版能力完整性回放；`util`
-> runtime（Registry/demangle）
-> 已冻结 v1 能力与有限修复，施工/签证状态只看中央
+> runtime 的 Registry v1 结论经回放保持成立，demangle owning-text 易用性切片已进入 v2。施工/签证
+> 状态只看中央
 > [`module status`](../implementation/status.md)。本页描述当前设计，不把旧 benchmark 点值当作
 > runtime 发布证书。当前只提供 C++23
 > source/static/shared，Native FFI 为 `N/A`；BUILD-03 已删除旧 C schema、bridge、动态导出和 fixture。
@@ -28,8 +28,9 @@ P4 hyle::util（hyle_util binary；严格收口波次 R2）
 
 Registry 是模板头，但公开形状直接使用 container 的 `string_ref/SwissTable`，并借 mem allocator/
 Region；它因此属于 util-runtime，不能反塞进 P0。container 不依赖 `hyle_util`，从而没有
-`container ↔ util` binary 环。demangle 只有一个冷路径动态符号，本身不依赖 container；为它
-新增 binary component 会增加发布和消费选择而没有形成独立能力族，因此与 runtime 共用 target。
+`container ↔ util` binary 环。demangle 只有 buffer entry 和服务 header-inline owning convenience 的
+internal sink 两个冷路径动态符号，本身不依赖 container；为它新增 binary component 会增加发布和
+消费选择而没有形成独立能力族，因此与 runtime 共用 target。
 
 ## 能力与负空间
 
@@ -40,7 +41,7 @@ Region；它因此属于 util-runtime，不能反塞进 P0。container 不依赖
 | `Rng` | 仿真、采样、shuffle、可复现并行流 | xoshiro256++ URBG、Lemire range、显式 jump 拆流；TLS 仅 best-effort convenience | 密码学安全随机；默认 TLS 流的唯一/不重叠保证 |
 | `type_name/hash` | 编译期诊断、受控构建内标签 | pretty-function constexpr probe；hash 允许碰撞 | 持久/唯一 correctness ID、跨编译器/plugin/wire ID |
 | `SpinLock` / `cpu_relax` | 几条指令的低争用临界区/atomic 自旋 | oneTBB/Folly 紧凑 TTAS/backoff | 高争用、阻塞、fiber-aware wait |
-| `demangle` | 日志、backtrace、诊断 UI | caller buffer + required-size | 热路径无分配保证 |
+| `demangle` | 日志、backtrace、诊断 UI | 完整 caller-owned `std::string`；或 caller buffer + required-size | 热路径、async-signal-safe、无内部 allocation/lock 保证 |
 | `Registry<Value, Args...>` | backend/plugin factory 在启动期组合，服务期按名创建 | raw nullable 或 `Result<T>` fallible factory、owned names、priority resolution、mutable→immutable publication | 动态库 unregister/unload、依赖求解、对象排空 |
 
 没有内部消费者不等于应删除用户能力，也不能为了“采用率”把它硬塞进不合适的热路径。反过来，
@@ -85,6 +86,12 @@ Clay 静态注册宏和 default-`new` creator 已删除：archive 中只有静�
 dead-strip，而且构造器无法把 collision/OOM 可靠交还 startup owner。内建与动态 backend 都由
 明确的启动代码调用 `register_creator()` 并处理 `Status`。
 
+demangle 的 owning overload 是 header-inline `std::string` convenience。它通过一个窄 internal sink
+让 caller TU 构造标准字符串，不把 DLL-owned STL layout/heap ownership交给调用方；sink 在 transient
+platform result 有效期内同步执行。Itanium ABI 仍可能先由 `__cxa_demangle` malloc，再复制进
+`std::string`；Windows DbgHelp 仍需要全局串行调用。buffer overload 是 `noexcept` 且支持输入/输出
+重叠，但也不等于无内部 allocation，更不能在 signal handler 中调用。
+
 ## 复杂度与布局合同
 
 - ScopeGuard 操作、Ref copy/drop/cast、SpinLock 无争用和 RNG scalar draw 是 O(1)。
@@ -100,6 +107,9 @@ dead-strip，而且构造器无法把 collision/OOM 可靠交还 startup owner�
   当前 v1 的 W1-WIN 同合同工程门为非劣 PASS；M1-MAC 的超短手工诊断被执行顺序完全翻转，按仪器
   规则只能记为 inconclusive，不能驱动产品。具体身份、点值与 freshness 只见
   [`benchmarks-util`](../implementation/evidence/performance/benchmarks-util.md)。
+- 两种 demangle 形状都是 O(input+output)，一次 public 调用只执行一次平台 demangler（Windows 因
+  DbgHelp 不返回 required size，超长 decorated symbol 可能做有界容量重试）。owning shape 另有一个
+  caller-owned string，buffer shape 不增加 API-owned storage。
 
 ## 交付与 Native FFI 边界
 
@@ -132,6 +142,9 @@ target link 生成/验证。
 5. Native FFI 保持 `N/A`；若出现已命名的 foreign-runtime 任务，先按全局准入策略独立立项，
    不能在 util 修改中顺手恢复旧 C schema。
 6. benchmark 只验证同合同实现与选择边界，不反向制造 API、常态元数据或 workload 特化。
+7. demangle 修改必须同时复验 owning/buffer、plain/fallback/truncation/overlap、异常 cleanup、internal
+   sink 的 shared-CRT ownership 边界以及 source/static/shared consumer；caller buffer 不得被描述为
+   async-signal-safe。
 
 新版 capability-family/public-surface 双向复检及当前 owner routes 见
 [`util-core capability replay`](../implementation/tasks/util/util-core-capability-replay-v1.md)。

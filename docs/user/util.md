@@ -1,8 +1,8 @@
 # util：什么情况选什么
 
 > **当前边界（2026-08-28）：**本页前半的 `util_core` 五项能力已完成 v1 收口并通过新版能力
-> 完整性回放；后半是当前
-> Registry/demangle v1 合同，签证状态只看中央 [`module status`](../implementation/status.md)。
+> 完整性回放；后半是当前 Registry 合同和 demangle v2 owning/buffer 形状，签证状态只看中央
+> [`module status`](../implementation/status.md)。
 > util 当前只提供 C++ 产品面，
 > 适用于 C++23 source/static/shared 三种交付，不描述 C API 或跨语言调用层。
 
@@ -19,8 +19,8 @@ find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS util)
 target_link_libraries(my_runtime_target PRIVATE hyle::util)
 ```
 
-源码嵌入时同样设置 `HYLE_COMPONENTS=util_core` 后链接该 target；不要靠手写 include path
-绕过组件与安装包合同。
+源码嵌入时按实际根设置 `HYLE_COMPONENTS=util_core`、`util` 或二者，再链接对应 target；不要靠手写
+include path 绕过组件与安装包合同。
 
 ## 先看选择表
 
@@ -33,10 +33,11 @@ target_link_libraries(my_runtime_target PRIVATE hyle::util)
 | 每线程普通非安全随机流 | `thread_rng()` | 保存其地址跨线程使用；依赖默认流可复现 |
 | 极短、低争用临界区 | `SpinLock` + `std::lock_guard` | 锁内分配、rehash、I/O、等待或在 fiber 中长期持有 |
 | 编译期静态类型名/受控构建诊断标签 | `type_name<T>()` / `type_hash<T>()` | 当唯一类型 ID、存数据库、写 wire format、跨编译器/plugin 比较 |
-| 运行期 mangled symbol | `demangle()` | 把它当热路径或假定绝不发生内部临时分配 |
+| 需要保留完整的运行期 mangled symbol | owning `std::string demangle(name/type_info)` | 手工先 sizing、分配，再把同一个 symbol demangle 第二次 |
+| 已有固定日志字段/栈 buffer | buffer `demangle(name, out)` | 以为 caller buffer 让实现无分配、无锁或可在 signal handler 调用 |
 | 启动期注册、factory 不会失败或 NULL 已是完整语义 | `Registry<T*, Args...>` | 需要诊断时仍让 NULL 同时表示 missing、初始化失败和成功空值 |
 | 启动期注册、backend 初始化可能失败 | `Registry<Result<T*>, Args...>` | 用旁路 thread-local/ctx 保存 error，或丢掉设备/驱动失败原因 |
-| Registry 初始化完成后的高频 dispatch | `auto view = registry.freeze()`，缓存 `FrozenView` | 每次 dispatch 后继续注册，或让 view 活过 registry |
+| Registry 初始化后的反复按名查询/创建 | `auto view = registry.freeze()`，缓存 `FrozenView` | 在 kernel/op 热循环重复字符串 dispatch，或让 view 活过 registry |
 
 ## ScopeGuard：只处理临时控制流
 
@@ -158,11 +159,19 @@ fiber-aware。临界区可能分配、rehash、调用未知 callback、等待或
 编译器版本、flags、plugin 或类型拼写变化都可能改变结果。正确性分派应能处理碰撞，跨模块持久 ID
 应使用显式 schema/UUID，不要用 type hash。
 
+需要完整 owning 文本时直接写 `std::string text = demangle(name)`；运行期类型可写
+`demangle(typeid(object))`。它只执行一次平台 demangler，返回的字符串由调用方自己的 C++ runtime
+拥有；standard string 分配失败会像其他 owning C++ convenience 一样抛异常。
+
 `demangle(mangled, out, cap)` 是 snprintf 风格：返回完整所需长度，`cap>0` 时总是 NUL 终止；
 返回值大于等于 cap 表示已截断。固定数组可直接写 `demangle(name, buffer)`，运行期类型可写
-`demangle(typeid(object), buffer)`，无需手写 `.name()`/`sizeof`。它服务日志/backtrace 等冷路径：
-Itanium ABI 的 `__cxa_demangle` 会内部 malloc/free；Windows DbgHelp 调用会串行化，超长 decorated
-symbol 还可能使用有界 temporary。caller 从不接管这些 allocation，不代表函数本身零分配/无锁。
+`demangle(typeid(object), buffer)`，无需手写 `.name()`/`sizeof`。输入可以与输出完全或部分重叠。
+
+两种形状都只服务日志/backtrace 等冷路径：Itanium ABI 的 `__cxa_demangle` 会内部 malloc/free；
+Windows DbgHelp 调用会串行化，超长 decorated symbol 还可能使用有界 temporary。caller-buffer 从不
+接管这些 allocation，不代表函数本身零分配/无锁。尤其不要从 POSIX signal handler 或 Windows
+exception handler 的受限上下文调用；需要 async-signal-safe crash capture 时先保存原始地址/符号，
+回到正常执行上下文再反修饰。
 
 ## Registry：注册阶段可变，服务阶段冻结
 
@@ -203,14 +212,17 @@ OOM/设备/驱动失败都通过 `Result` 返回。
 
 启动登记必须显式执行并检查 `Status`。不要把“只靠全局构造器副作用的 registration TU”塞进
 static archive：链接器可以直接丢弃该 TU，静态初始化也没有自然位置向应用返回 collision/OOM。
-需要动态 shared-library backend 时，由上层 module manager 完成 load、调用明确的 registration
-entry、排空在途对象和 unload；Registry 本身不猜这些生命周期。
+需要动态 shared-library backend 时，HYLE 的 `platform::DynLib` 只负责 loader handle。调用方自己的
+module owner 必须完成 load、调用明确的 registration entry、排空创建对象/在途 reader、销毁
+Registry，最后 unload；HYLE 当前没有可直接实例化的通用 `ModuleManager`，Registry 本身也不猜这些
+生命周期。
 
 可变阶段的查询受 mutex 保护。creator 和 `for_each` visitor 都在锁外运行，可以重入同一个
 Registry；可变阶段枚举会为时间点快照分配一次，冻结阶段则无锁、无分配。`Registry::create()`
 在冻结后只多一次生命周期 acquire load，适合普通调用；dispatch 热路径缓存 `FrozenView`，直接
 查不可变 Swiss 索引。两种形状都是 O(key length) hash + expected O(1) probes，creator 自身
-成本另计。
+成本另计。若 backend/op 已经能在初始化时解析成 typed handle 或 function pointer，应缓存解析结果，
+不要在每个 kernel/token 内重复按字符串 dispatch。
 
 Registry 不提供 unregister：已经创建对象、函数指针和并发 reader 的代码/数据生命周期无法由
 一个名字表安全推断。需要动态装卸 shared library、依赖排序或在途调用排空时，应由 module
@@ -223,7 +235,8 @@ header-only util-core 作为独立 `util_core` 组件交付，当前 v1 收口�
 [`util-core-v1`](../implementation/tasks/util/util-core-v1-closure.md)，新版完整性复检见
 [`util-core capability replay`](../implementation/tasks/util/util-core-capability-replay-v1.md)；Registry
 和 demangle 属于
-独立 `util` runtime component。`1b148ef`/`70fa4e8` 只是在旧代码树上得到的历史输入，
+独立 `util` runtime component；v2 owning-text 任务见
+[`util-runtime-v2`](../implementation/tasks/util/util-runtime-v2-closure.md)。`1b148ef`/`70fa4e8` 只是在旧代码树上得到的历史输入，
 不代表当前 runtime 证书；唯一当前状态见
 [`module status`](../implementation/status.md)。分层仍然保留：它避免低层 mem/container 为一个
 运行时 Registry 反向链接 `hyle_util`。

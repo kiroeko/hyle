@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <cstring>
+#include <string>
 
 namespace {
 
@@ -40,5 +41,9 @@ int main() {
   char readable[32];
   const std::size_t required =
       hyle::util::demangle("plain_name", readable, sizeof(readable));
-  return required == 10 && std::strcmp(readable, "plain_name") == 0 ? 0 : 4;
+  if (required != 10 || std::strcmp(readable, "plain_name") != 0) {
+    return 4;
+  }
+  const std::string owned = hyle::util::demangle("plain_name");
+  return owned == "plain_name" ? 0 : 5;
 }
