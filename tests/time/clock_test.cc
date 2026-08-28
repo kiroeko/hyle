@@ -19,9 +19,14 @@
 
 using hyle::time::coarse_realtime_available;
 using hyle::time::coarse_realtime_ns;
+using hyle::time::coarse_monotonic_available;
+using hyle::time::coarse_monotonic_ns;
+using hyle::time::current_thread_cpu_ns;
 using hyle::time::Instant;
 using hyle::time::MonotonicTimePoint;
 using hyle::time::monotonic_ns;
+using hyle::time::process_cpu_ns;
+using hyle::time::ProcessCpuClock;
 using hyle::time::profiling_clock_available;
 using hyle::time::profiling_clock_ns;
 using hyle::time::profiling_measurement_start_ns;
@@ -32,6 +37,7 @@ using hyle::time::saturating_add_ns;
 using hyle::time::sleep_for_ms;
 using hyle::time::sleep_for_ns;
 using hyle::time::sleep_until_ns;
+using hyle::time::ThreadCpuClock;
 
 namespace {
 
@@ -46,31 +52,6 @@ bool force_tsc_timing_calibration_requested() noexcept {
   const char* value =
       std::getenv("HYLE_TIME_FORCE_TSC_TIMING_CALIBRATION");
   return value != nullptr && value[0] == '1' && value[1] == '\0';
-#endif
-}
-
-std::uint64_t current_thread_cpu_ns() noexcept {
-#if defined(HYLE_OS_WINDOWS)
-  FILETIME created;
-  FILETIME exited;
-  FILETIME kernel;
-  FILETIME user;
-  if (!::GetThreadTimes(::GetCurrentThread(), &created, &exited, &kernel,
-                        &user)) {
-    return 0;
-  }
-  const auto ticks = [](FILETIME value) noexcept {
-    return (static_cast<std::uint64_t>(value.dwHighDateTime) << 32) |
-           value.dwLowDateTime;
-  };
-  return (ticks(kernel) + ticks(user)) * 100u;
-#elif defined(CLOCK_THREAD_CPUTIME_ID)
-  struct timespec value;
-  if (clock_gettime(CLOCK_THREAD_CPUTIME_ID, &value) != 0) return 0;
-  return static_cast<std::uint64_t>(value.tv_sec) * 1'000'000'000u +
-         static_cast<std::uint64_t>(value.tv_nsec);
-#else
-  return 0;
 #endif
 }
 
@@ -259,6 +240,74 @@ TEST(Clock, CoarseRealtimeAvailabilityMatchesFallbackContract) {
 #else
   EXPECT_FALSE(coarse_realtime_available());
 #endif
+}
+
+TEST(Clock, CoarseMonotonicSharesPreciseClockDomain) {
+  const std::uint64_t precise = monotonic_ns();
+  const std::uint64_t coarse = coarse_monotonic_ns();
+  const std::uint64_t diff = precise > coarse ? precise - coarse
+                                               : coarse - precise;
+  EXPECT_LT(diff, 100'000'000ull)
+      << "precise=" << precise << " coarse=" << coarse;
+
+  const auto typed = hyle::time::coarse_monotonic_now();
+  const std::uint64_t typed_ns = hyle::time::to_monotonic_ns(typed);
+  const std::uint64_t typed_diff =
+      typed_ns > coarse ? typed_ns - coarse : coarse - typed_ns;
+  EXPECT_LT(typed_diff, 100'000'000ull);
+
+#if defined(HYLE_OS_WINDOWS) || defined(CLOCK_MONOTONIC_COARSE)
+  EXPECT_TRUE(coarse_monotonic_available());
+#else
+  EXPECT_FALSE(coarse_monotonic_available());
+#endif
+}
+
+TEST(Clock, CoarseRealtimeHasTypedAndTimestampViews) {
+  const auto typed = hyle::time::coarse_realtime_now();
+  const auto timestamp = hyle::time::coarse_realtime_timestamp();
+  EXPECT_TRUE(hyle::time::unix_timestamp_valid(timestamp));
+
+  const std::uint64_t raw = coarse_realtime_ns();
+  const std::uint64_t typed_ns = hyle::time::to_realtime_ns(typed);
+  const std::uint64_t diff = raw > typed_ns ? raw - typed_ns
+                                            : typed_ns - raw;
+  EXPECT_LT(diff, 100'000'000ull);
+}
+
+TEST(Clock, CpuAccountingClocksAreTypedMonotonicAndExcludeSleep) {
+  static_assert(std::chrono::is_clock_v<ThreadCpuClock>);
+  static_assert(std::chrono::is_clock_v<ProcessCpuClock>);
+  static_assert(!std::is_same_v<ThreadCpuClock, hyle::time::MonotonicClock>);
+  static_assert(!std::is_same_v<ProcessCpuClock, hyle::time::RealtimeClock>);
+
+  const std::uint64_t thread_before_sleep = current_thread_cpu_ns();
+  const std::uint64_t process_before_sleep = process_cpu_ns();
+  sleep_for_ms(30);
+  const std::uint64_t thread_after_sleep = current_thread_cpu_ns();
+  const std::uint64_t process_after_sleep = process_cpu_ns();
+  ASSERT_GE(thread_after_sleep, thread_before_sleep);
+  ASSERT_GE(process_after_sleep, process_before_sleep);
+
+  const std::uint64_t thread_before_busy = current_thread_cpu_ns();
+  const std::uint64_t process_before_busy = process_cpu_ns();
+  const std::uint64_t wall_start = monotonic_ns();
+  while (monotonic_ns() - wall_start < 80'000'000ull) {
+    // The native monotonic reads are observable calls and keep this a real
+    // executing interval without adding unrelated allocation or synchronization.
+  }
+  const std::uint64_t thread_after_busy = current_thread_cpu_ns();
+  const std::uint64_t process_after_busy = process_cpu_ns();
+
+  const std::uint64_t sleep_thread =
+      thread_after_sleep - thread_before_sleep;
+  const std::uint64_t busy_thread = thread_after_busy - thread_before_busy;
+  const std::uint64_t busy_process = process_after_busy - process_before_busy;
+  EXPECT_GT(busy_thread, sleep_thread);
+  EXPECT_GT(busy_thread, 5'000'000ull);
+  EXPECT_GT(busy_process, 5'000'000ull);
+  EXPECT_GE(ThreadCpuClock::now().time_since_epoch().count(), 0);
+  EXPECT_GE(ProcessCpuClock::now().time_since_epoch().count(), 0);
 }
 
 TEST(Clock, SleepForNsSleepsAtLeastRequested) {

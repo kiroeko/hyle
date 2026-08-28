@@ -114,6 +114,26 @@ HYLE_FORCE_INLINE std::uint64_t coarse_realtime_ns_impl() noexcept {
   return scale_add_saturated(unix_ticks, 100ull, 0);
 }
 
+HYLE_FORCE_INLINE std::uint64_t coarse_monotonic_ns_impl() noexcept {
+  constexpr std::uint64_t kNsPerMs = 1'000'000ull;
+  const std::uint64_t milliseconds = ::GetTickCount64();
+  return milliseconds > UINT64_MAX / kNsPerMs
+             ? UINT64_MAX
+             : milliseconds * kNsPerMs;
+}
+
+std::uint64_t filetime_pair_ns(FILETIME kernel, FILETIME user) noexcept {
+  const auto ticks = [](FILETIME value) noexcept {
+    return (static_cast<std::uint64_t>(value.dwHighDateTime) << 32) |
+           value.dwLowDateTime;
+  };
+  const std::uint64_t kernel_ticks = ticks(kernel);
+  const std::uint64_t user_ticks = ticks(user);
+  if (user_ticks > UINT64_MAX - kernel_ticks) return UINT64_MAX;
+  const std::uint64_t total_ticks = kernel_ticks + user_ticks;
+  return total_ticks > UINT64_MAX / 100u ? UINT64_MAX : total_ticks * 100u;
+}
+
 void coarse_sleep_for_ns(std::uint64_t ns) noexcept {
   // Sleep takes ms (coarse, ~15ms granularity by default). Round up so we never
   // under-sleep. DWORD_MAX is INFINITE, so cap each finite chunk one below it.
@@ -210,6 +230,19 @@ HYLE_FORCE_INLINE std::uint64_t coarse_realtime_ns_impl() noexcept {
                              static_cast<std::uint64_t>(ts.tv_nsec));
 }
 
+HYLE_FORCE_INLINE std::uint64_t coarse_monotonic_ns_impl() noexcept {
+#if defined(CLOCK_MONOTONIC_COARSE)
+  struct timespec ts;
+  HYLE_FATAL_ASSERT(clock_gettime(CLOCK_MONOTONIC_COARSE, &ts) == 0);
+  HYLE_FATAL_ASSERT(ts.tv_sec >= 0);
+  return scale_add_saturated(static_cast<std::uint64_t>(ts.tv_sec),
+                             1'000'000'000ull,
+                             static_cast<std::uint64_t>(ts.tv_nsec));
+#else
+  return monotonic_ns();
+#endif
+}
+
 }  // namespace
 
 void sleep_for_ns(std::uint64_t ns) noexcept {
@@ -236,6 +269,60 @@ bool coarse_realtime_available() noexcept {
   return true;
 #else
   return false;
+#endif
+}
+
+std::uint64_t coarse_monotonic_ns() noexcept {
+  return coarse_monotonic_ns_impl();
+}
+
+bool coarse_monotonic_available() noexcept {
+#if defined(HYLE_OS_WINDOWS) || defined(CLOCK_MONOTONIC_COARSE)
+  return true;
+#else
+  return false;
+#endif
+}
+
+std::uint64_t current_thread_cpu_ns() noexcept {
+#if defined(HYLE_OS_WINDOWS)
+  FILETIME created;
+  FILETIME exited;
+  FILETIME kernel;
+  FILETIME user;
+  HYLE_FATAL_ASSERT(::GetThreadTimes(::GetCurrentThread(), &created, &exited,
+                                    &kernel, &user) != 0);
+  return filetime_pair_ns(kernel, user);
+#elif defined(CLOCK_THREAD_CPUTIME_ID)
+  struct timespec value;
+  HYLE_FATAL_ASSERT(clock_gettime(CLOCK_THREAD_CPUTIME_ID, &value) == 0);
+  HYLE_FATAL_ASSERT(value.tv_sec >= 0);
+  return scale_add_saturated(static_cast<std::uint64_t>(value.tv_sec),
+                             1'000'000'000ull,
+                             static_cast<std::uint64_t>(value.tv_nsec));
+#else
+#  error "HYLE current-thread CPU clock needs a supported native clock"
+#endif
+}
+
+std::uint64_t process_cpu_ns() noexcept {
+#if defined(HYLE_OS_WINDOWS)
+  FILETIME created;
+  FILETIME exited;
+  FILETIME kernel;
+  FILETIME user;
+  HYLE_FATAL_ASSERT(::GetProcessTimes(::GetCurrentProcess(), &created, &exited,
+                                     &kernel, &user) != 0);
+  return filetime_pair_ns(kernel, user);
+#elif defined(CLOCK_PROCESS_CPUTIME_ID)
+  struct timespec value;
+  HYLE_FATAL_ASSERT(clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &value) == 0);
+  HYLE_FATAL_ASSERT(value.tv_sec >= 0);
+  return scale_add_saturated(static_cast<std::uint64_t>(value.tv_sec),
+                             1'000'000'000ull,
+                             static_cast<std::uint64_t>(value.tv_nsec));
+#else
+#  error "HYLE process CPU clock needs a supported native clock"
 #endif
 }
 

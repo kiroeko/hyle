@@ -139,6 +139,78 @@ HYLE_TIME_API std::uint64_t coarse_realtime_ns() noexcept;
 // realtime_ns(), allowing a logging pipeline to make an informed choice.
 HYLE_TIME_API bool coarse_realtime_available() noexcept;
 
+// Coarse monotonic time in the SAME domain/epoch as monotonic_ns(). This lets
+// event loops, rate limiters and diagnostic paths trade resolution for a
+// cheaper read without making their deadlines incomparable. Linux uses
+// CLOCK_MONOTONIC_COARSE, Windows uses the system tick counter, and platforms
+// without a native coarse source preserve semantics by falling back to the
+// precise monotonic clock.
+HYLE_TIME_API std::uint64_t coarse_monotonic_ns() noexcept;
+HYLE_TIME_API bool coarse_monotonic_available() noexcept;
+
+inline MonotonicTimePoint coarse_monotonic_now() noexcept {
+  constexpr auto max = static_cast<std::uint64_t>(Duration::max().count());
+  const std::uint64_t value = coarse_monotonic_ns();
+  return MonotonicTimePoint(
+      Duration(value > max ? Duration::max().count()
+                           : static_cast<Duration::rep>(value)));
+}
+
+inline RealtimeTimePoint coarse_realtime_now() noexcept {
+  constexpr auto max = static_cast<std::uint64_t>(Duration::max().count());
+  const std::uint64_t value = coarse_realtime_ns();
+  return RealtimeTimePoint(
+      Duration(value > max ? Duration::max().count()
+                           : static_cast<Duration::rep>(value)));
+}
+
+inline UnixTimestamp coarse_realtime_timestamp() noexcept {
+  return unix_timestamp_from_time_point(coarse_realtime_now());
+}
+
+// CPU accounting clocks measure execution consumed by the current thread or
+// the whole process. They deliberately have distinct chrono clock types: CPU
+// time pauses while the subject is not executing and is never a valid wall
+// timestamp or timeout deadline. The compact entries are useful for profiling
+// telemetry; the clock types compose naturally with std::chrono.
+HYLE_TIME_API std::uint64_t current_thread_cpu_ns() noexcept;
+HYLE_TIME_API std::uint64_t process_cpu_ns() noexcept;
+
+class ThreadCpuClock {
+ public:
+  using rep = Duration::rep;
+  using period = Duration::period;
+  using duration = Duration;
+  using time_point = std::chrono::time_point<ThreadCpuClock, duration>;
+  static constexpr bool is_steady = true;
+
+  static time_point now() noexcept {
+    constexpr auto max = static_cast<std::uint64_t>(duration::max().count());
+    const std::uint64_t value = current_thread_cpu_ns();
+    return time_point(duration(value > max ? duration::max().count()
+                                           : static_cast<rep>(value)));
+  }
+};
+
+class ProcessCpuClock {
+ public:
+  using rep = Duration::rep;
+  using period = Duration::period;
+  using duration = Duration;
+  using time_point = std::chrono::time_point<ProcessCpuClock, duration>;
+  static constexpr bool is_steady = true;
+
+  static time_point now() noexcept {
+    constexpr auto max = static_cast<std::uint64_t>(duration::max().count());
+    const std::uint64_t value = process_cpu_ns();
+    return time_point(duration(value > max ? duration::max().count()
+                                           : static_cast<rep>(value)));
+  }
+};
+
+using ThreadCpuTimePoint = ThreadCpuClock::time_point;
+using ProcessCpuTimePoint = ProcessCpuClock::time_point;
+
 // Sleep at least `ns` (the OS may round up / wake late). 0 is an immediate
 // no-op; yielding is deliberately left to the scheduling API.
 HYLE_TIME_API void sleep_for_ns(std::uint64_t ns) noexcept;
