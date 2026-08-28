@@ -253,7 +253,7 @@
     },
     {
       "module": "time",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "round_id": "time-v1",
       "closure_task": "docs/implementation/tasks/time/time-v1-closure.md",
       "scope": "Clock, Unix timestamp, deadline/sleep and intrusive timer capabilities; C++ API, direct dependencies/consumers, delivery, documentation and P1 engineering evidence.",
@@ -306,6 +306,8 @@
       "scope": "Owning std::string runtime demangle and type_info convenience, single platform-demangler execution per public call, affected correctness/usability/docs and current source/static/shared delivery.",
       "non_goals": "Registry product changes, dynamic module lifecycle or ModuleManager, async-signal-safe parsing, allocator-aware string types, util target split, dependency closure, Native FFI/C API, timing/SOTA claims and adjacent-module closure.",
       "baseline_commit": "c9d8e9e60a2897ab672194e20f21665e2a26e2e7",
+      "candidate_commit": "f3b341cb2ae81154f81bc45052a651e773c5e2b3",
+      "candidate_tree": "c3141ccfd2902a450eb271f867a2ee8aacc5cbb9",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -320,7 +322,7 @@
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "util-runtime-v2 AUDITED：owning demangle、single-visit/internal sink、overlap 与文档/交付 FIX 已冻结；Registry 产品零改动，timing benchmark 不适用。"
+      "summary": "util-runtime-v2 CANDIDATE：owning demangle 以 caller-side std::string + internal sink 补齐，buffer overlap 与 Windows 锁范围已修；Registry 产品零改动，进入三平台/交付验证。"
     },
     {
       "module": "sched",

@@ -96,3 +96,24 @@
 
 仓库生产扫描仍没有第二套 demangler 或通用 Registry，也没有 util runtime 的内部产品调用；tests/bench/
 sample 不冒充需求。current central dependency graph 与 public include trace 一致，不需要新增依赖。
+
+## Candidate
+
+- product commit / tree：
+  `f3b341cb2ae81154f81bc45052a651e773c5e2b3` /
+  `c3141ccfd2902a450eb271f867a2ee8aacc5cbb9`；
+- public C++ contract：新增 header-inline `std::string demangle(const char*)` 与 `type_info` overload；
+  buffer overload ABI 保持且明确支持 overlap。owning overload 抛出 caller-side standard string 的
+  allocation/length exception，平台 demangle failure 仍回显输入；
+- compiled ABI：新增 exported `detail::demangle_visit_internal` sink；MSVC shared DLL 的导出检查只见
+  buffer symbol 与该 sink，没有导出 STL-returning symbol。sink callback 为 `noexcept`，在 caller TU
+  捕获 exception，compiled seam 自身不传播异常；
+- algorithm / resources：同一 internal visit 执行一次 platform demangle；Itanium temporary 由 RAII
+  `free`，Windows 每次 DbgHelp 调用单独持有全局 mutex，allocation/copy/string construction 均在锁外。
+  buffer fallback 使用 `memmove`；复杂度保持 O(input+output)，无常态 metadata；
+- Registry：公开声明、算法、layout 和 tests 之外的实现均为零改动；只校准用户指南的 lookup/module
+  lifecycle 边界；
+- direct consumer：package sample 同时执行 raw/fallible Registry、buffer demangle 与 owning
+  demangle。W1-WIN source/shared/static relocated consumer 各 1/1；
+- candidate correctness：W1-WIN Release/Werror build 通过，`hyle_util_test` 31/31，其中 demangle
+  11 项；util public-header self-contained 1/1；完整跨平台和最终门见 verification manifest。

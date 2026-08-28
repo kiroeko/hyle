@@ -21,7 +21,7 @@
 | mem | QUEUED | — | — | — | — | 现有实现与历史审查只作输入。 |
 | simd | QUEUED | — | — | — | — | 现有实现与历史审查只作输入。 |
 | container | QUEUED | — | — | — | — | 完整容器模块仍未审查；不能继承 intrusive 子组件的候选结论。 |
-| util | AUDITED | P0 | PLANNED / STRUCTURAL | NONE | [task](tasks/util/util-runtime-v2-closure.md) | util-runtime-v2 AUDITED：owning demangle、single-visit/internal sink、overlap 与文档/交付 FIX 已冻结；Registry 产品零改动，timing benchmark 不适用。 |
+| util | CANDIDATE | P0 | PLANNED / STRUCTURAL | NONE | [task](tasks/util/util-runtime-v2-closure.md) | util-runtime-v2 CANDIDATE：owning demangle 以 caller-side std::string + internal sink 补齐，buffer overlap 与 Windows 锁范围已修；Registry 产品零改动，进入三平台/交付验证。 |
 | sched | QUEUED | — | — | — | — | 现有实现只作输入；特化 waiter 链仍归 scheduler。 |
 | io | QUEUED | — | — | — | — | 现有实现只作输入；尚未启动 v1 收口。 |
 | compute | QUEUED | — | — | — | — | 实现尚不完整；前置与真实 consumer slice 建立前保持可变。 |
