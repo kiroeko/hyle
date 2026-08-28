@@ -507,12 +507,14 @@
     },
     {
       "module": "container",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "round_id": "container-v1",
       "closure_task": "docs/implementation/tasks/container/container-v1-closure.md",
       "scope": "Full non-intrusive C++ container component: sequences, associative indexes, concurrent structures and queues, active sets, rings, hash/text/interner algorithms, direct dependencies/consumers, delivery, documentation and bounded P1 engineering evidence.",
       "non_goals": "The separately closed container_intrusive component, model/tensor/KV/serving policy, scheduler wait services, cache/eviction policy, full std/Boost parity, device memory, Native FFI/C API, stable C++ ABI, downstream closure and Formal certification.",
       "baseline_commit": "2866c7df73c6bd36cc4808226d370ff0ea338da2",
+      "candidate_commit": "8c5d036e5ff7819974a93eae86efc8f536ab38fc",
+      "candidate_tree": "b7407252b0b093b6b2a5549427b6b3173c9e254c",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -530,7 +532,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "container-v1 已完成自顶向下能力图与全部公开面反查，冻结七个产品批次及 delivery/performance/docs 证据批次；施工不得扩出 ledger。"
+      "summary": "container-v1 七个冻结产品批次已完成并绑定 8c5d036e/b7407252；当前只执行跨平台/sanitizer、source/static/shared 交付、五族 P1、文档与独立红队验证，不再扩产品能力。"
     },
     {
       "module": "util",

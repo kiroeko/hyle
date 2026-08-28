@@ -20,7 +20,7 @@
 | platform | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/platform/platform-v1-closure.md) | platform-v1 CLOSED：完整底层 OS/CPU 能力面、自然 C++ API、三平台正确性与 sanitizer、三种交付、文档、红队及 W1-WIN 5% P1 工程性能门均已签署；Formal 独立 PENDING。 |
 | mem | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/mem/mem-v1-closure.md) | mem-v1 CLOSED：完整 host-memory 能力与自然 C++ API、三平台正确性/sanitizer、source/static/shared 交付、依赖、文档、红队及两份 W1-WIN 5% P1 工程性能合同全部签署；产品绑定 2c71dfae/fc023635，Formal 独立 PENDING。 |
 | simd | QUEUED | — | — | — | — | 现有实现与历史审查只作输入。 |
-| container | AUDITED | P1 | PLANNED / P1_ENGINEERING / 5% | PENDING | [task](tasks/container/container-v1-closure.md) | container-v1 已完成自顶向下能力图与全部公开面反查，冻结七个产品批次及 delivery/performance/docs 证据批次；施工不得扩出 ledger。 |
+| container | CANDIDATE | P1 | PLANNED / P1_ENGINEERING / 5% | PENDING | [task](tasks/container/container-v1-closure.md) | container-v1 七个冻结产品批次已完成并绑定 8c5d036e/b7407252；当前只执行跨平台/sanitizer、source/static/shared 交付、五族 P1、文档与独立红队验证，不再扩产品能力。 |
 | util | CLOSED | P0 | PASS / STRUCTURAL | NONE | [task](tasks/util/util-runtime-v2-closure.md) | util-runtime-v2 CLOSED：owning/buffer demangle、caller-CRT 边界、三平台正确性与 source/static/shared 交付、文档和 P0 结构门全部通过；Registry 产品零改动。 |
 | sched | QUEUED | — | — | — | — | 现有实现只作输入；特化 waiter 链仍归 scheduler。 |
 | io | QUEUED | — | — | — | — | 现有实现只作输入；尚未启动 v1 收口。 |
