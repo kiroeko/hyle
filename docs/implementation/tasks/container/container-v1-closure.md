@@ -1,6 +1,6 @@
 # container-v1 重构与收口记录
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECEIPT: BLOCKED -->
 
 > 本页是完整 `container` 组件的当前 closure card。既有
 > [`container-module-closure.md`](container-module-closure.md)、architecture、guide 与 benchmark
@@ -9,7 +9,7 @@
 > [`module-status.json`](../../module-status.json)。在 capability map、public-surface trace 与有限
 > `FIX` 集进入 `AUDITED` 前，不修改 container 产品实现。
 
-## Closure card（`CANDIDATE`）
+## Closure card（`BLOCKED` from `CANDIDATE`）
 
 - component / owner / round ID：`container` / data-structure owner / `container-v1`
 - task kind：`REFACTOR`
@@ -90,8 +90,9 @@
   move-only lifetime；producer/consumer/accessor/rehash/quiescence progress；property/differential/random stress；
   ASan/UBSan/TSan；x86 scalar/SSE/AVX 与 arm64 scalar/NEON runtime dispatch；public-header self-containment。
 - delivery gates：中央依赖/include-owner 对账；xxhash/wyhash/simdutf pin、license、offline 与 package
-  projection；container-only source embedding、relocated static/shared C++23 consumer；不安装 intrusive
-  product header 为 full-container ownership 假象；无旧 C schema/bridge/fixture/Native FFI symbol。
+  projection；container-only source embedding、relocated static/shared C++23 consumer；传递安装的独立
+  `container_intrusive` target/header 不得被文档描述为 `hyle::container` ownership；无旧 C
+  schema/bridge/fixture/Native FFI symbol。
 - performance gates：冻结五组正常 family，不把不同语义池化：
   1. `sequence-and-inline-batch`：短 append/iterate、spill/grow、strict bounded batch 与非平凡 lifetime；
   2. `associative-index`：integral/string flat hit/miss/build/erase、read-mostly sorted lookup/bulk、ordered range
@@ -172,9 +173,9 @@ SIMD header seam 的依赖方向正确，xxhash/wyhash/simdutf 仍由 container 
 | `CONTAINER-TEXT-01` | MUST；HTTP/registry/path + standard owner/view rule | `StringView` 永远 non-owning；拥有结果由 caller storage/std::pmr::string；span batch/buffer | search/hash O(n)，path lexical O(n)；不隐藏 allocation/free | `COMPLETE` | `KEEP` | owned helper 已删除，path/interner span 与 borrow/NUL tests 已覆盖；sanitizer/consumer 随 candidate |
 | `CONTAINER-HASH-01` | MUST；table/interner + xxHash/simdutf pins | fast process seed / deterministic seed / caller-secret hardened policy | bytes O(n)，integral O(1)，无 hidden allocation | `COMPLETE` | `KEEP` | source-primary code-size、short/long hash与 UTF-8 differential；不声称 cryptographic fast hash |
 | `CONTAINER-API-01` | MUST；公开 discoverability 与当前 C++ failure convention | natural type-named headers；普通 `reserve` fail-fast、`try_reserve` recoverable；无 C ABI | forwarding header零运行成本；不增加 duplicate implementation | `COMPLETE` | `KEEP` | header self-containment、sample/consumer 编译与 stale API scan 已通过；package journey 随 delivery |
-| `CONTAINER-DELIVERY-01` | MUST；central graph/package contract | C++23 source/static/shared；private vendors；无 Native FFI/C API | exact selected closure；不安装错误 owner header | `PARTIAL` | `FIX` / BLOCKER-at-verification | container-only source embedding、relocated static/shared、license/offline/pin、direct consumers |
-| `CONTAINER-PERF-01` | MUST；旧性能页不满足当前统一仪器 | 五个 frozen family分别资格化；peer语义/allocator/layout等价 | W1-WIN 5% NI；同时记录 object/slot/resident bytes 与 progress | `MISSING` | `FIX` / BLOCKER | A/A、known delta、order、floor、source identity；无 peer只签 baseline NI，不写全面 SOTA |
-| `CONTAINER-DOC-01` | MUST；architecture/user/performance仍 provisional/旧 C 叙事 | architecture=边界；user=选型/陷阱；performance=当前证据；task=事实 | 不复制易腐点值、旧 milestone 或 benchmark 形状 | `PARTIAL` | `FIX` / BLOCKER | current surface/negative space/依赖/三交付对账 + docs checker |
+| `CONTAINER-DELIVERY-01` | MUST；central graph/package contract | C++23 source/static/shared；private vendors；无 Native FFI/C API | exact selected closure；独立 target ownership 不被传递安装混淆 | `COMPLETE` | `KEEP` | source embedding、relocated static/shared 各 1/1；offline/pin/license、17 个 direct-consumer replay 与 target ownership 对账通过 |
+| `CONTAINER-PERF-01` | MUST；旧性能页不满足当前统一仪器 | 五个 frozen family分别资格化；peer语义/allocator/layout等价 | W1-WIN 5% NI；同时记录 object/slot/resident bytes 与 progress | `PARTIAL` | `BLOCKER` | 五项具体 slice 全部 8/8 strata NI PASS；但冻结卡还要求的 sorted/ordered/concurrent/ring/text/interner 等轴未进统一仪器，未运行不能写 PASS |
+| `CONTAINER-DOC-01` | MUST；architecture/user/performance仍 provisional/旧 C 叙事 | architecture=边界；user=选型/陷阱；performance=当前证据；task=事实 | 不复制易腐点值、旧 milestone 或 benchmark 形状 | `COMPLETE` | `KEEP` | provisional 标记、旧性能总账与 intrusive 交付歧义已移除；current 边界、选型/陷阱、证据与 blocker 对账并通过 docs checker |
 
 ### `GENERAL` / negative space
 
@@ -214,14 +215,14 @@ family 的证据；功能缺口集中在已有 family 的不完整生命周期�
 
 | batch | current fact | remaining verdict |
 |---|---|---|
-| `CONTAINER-POD-01` | 已删除 C-era `carray.h`/header-before-data；`PodVector` allocation 只含 elements，typed owner 保存 allocator/size/capacity；Windows 定向与完整 container tests 已通过 | 随完整 candidate 执行 source/static/shared、跨平台、consumer replay 与统一性能/资源门 |
-| `CONTAINER-FLAT-01` | `SmallVector<T,0>` 具有无 dummy element 的合法空 storage；`FlatMap/Set` 空对象不再内嵌 K/V，增量 mutation 使用几何容量；Windows 定向、对象资源断言与完整 container tests 已通过 | 随完整 candidate 执行 sanitizer、跨平台、consumer replay 与统一 flat normal-workload 门 |
-| `CONTAINER-MPMC-01` | Bounded/Sharded MPMC 以既有 sequence 作为 lifetime state，新增 noexcept placement `try_emplace`、move pop 与 callback consume；move-only stress/lifetime tests 通过；MSVC 19.50.35728 `/O2` trivial-u64 probe 对比 parent `3d094e84`：queue object 均为 `0x180`，外部 push/pop 的指令数与控制流不变；实际 `sched` target 编译及 21 项 RunQueue/Scheduler replay 通过 | 随完整 candidate 执行 TSan 与同合同 rigtorp 门 |
-| `CONTAINER-CVECTOR-01` | 采用 3-pointer embedded + on-demand extended table；table promotion OOM 保持旧 capacity/value；quiescent `clear()` 销毁 live T 并保留 segment capacity 复用；Windows 14 项定向测试通过 | 随完整 candidate 执行 TSan、跨平台与 append/index/iterate 资源/NI 门 |
-| `CONTAINER-CMAP-01` | reader admission 的 fetch-add 线性化点同时拒绝 writer/pending，关闭 writer 发布 pending 后的 reader barging；AArch64 spin hint 从 pipeline-serializing `isb` 改为 `yield`；两种并发 map 统一为 fallible `try_reserve` / fail-fast `reserve` | Windows 定向与完整 container tests 后，随完整 candidate 执行 TSan、AArch64 compile/runtime 与并发 map replay |
-| `CONTAINER-TEXT-01` | 删除把 raw allocation 装进 borrowed `StringView` 的 helper；普通 owner 路由标准 string，path producing ops 写 caller-owned spans，normalize 按 view length 返回借用 output 的 optional view；interner batch 改为 spans 并以 `prewarm` 取代 nullable output；Windows 64 项 text/path/interner、完整 container、header 与更新后的 benchmark source build 通过 | 随完整 candidate 执行 OOM/sanitizer、直接 consumer、package 与 hash-text-intern P1 门 |
-| `CONTAINER-ACTIVE-01` + `CONTAINER-HASHMAP-01` + `CONTAINER-API-01` | `DynamicBitSet` value equality 比较逻辑 size 与 canonical blocks；Swiss map/set 统一 `try_reserve` 可恢复、`reserve` fail-fast，并迁移 util/io；九个类型名入口头由现有 family header 零实现转发；Windows 完整 container/header、util consumer 与 IO 编译闭包、benchmark source build 通过 | 产品 FIX 集已耗尽；只执行 candidate 的跨平台/sanitizer、delivery、P1、文档和红队门 |
-| `CONTAINER-CORR-01` | `SmallVector<T,0>::move_from` 以 `if constexpr` 排除 inline byte copy；新增 trivial empty move/swap regression；原失败 WSL GCC 14.2 Release + WERROR 与 Windows 完整 container 各 3/3 通过 | 已完成；replacement candidate 重新执行全部验证，不继承 rejected identity 的 gate verdict |
+| `CONTAINER-POD-01` | 已删除 C-era `carray.h`/header-before-data；`PodVector` allocation 只含 elements，typed owner 保存 allocator/size/capacity；Windows 定向与完整 container tests 已通过 | correctness/sanitizer/三交付 PASS；仍随聚合 P1 blocker 保持本轮未关闭 |
+| `CONTAINER-FLAT-01` | `SmallVector<T,0>` 具有无 dummy element 的合法空 storage；`FlatMap/Set` 空对象不再内嵌 K/V，增量 mutation 使用几何容量；Windows 定向、对象资源断言与完整 container tests 已通过 | correctness/资源与现有 sequence replay PASS；sorted/ordered P1 轴仍属 blocker |
+| `CONTAINER-MPMC-01` | Bounded/Sharded MPMC 以既有 sequence 作为 lifetime state，新增 noexcept placement `try_emplace`、move pop 与 callback consume；move-only stress/lifetime tests通过；MSVC 19.50.35728 `/O2` trivial-u64 probe 对比 parent `3d094e84`：queue object 均为 `0x180`，外部 push/pop 的指令数与控制流不变；实际 `sched` target 编译及 21 项 RunQueue/Scheduler replay 通过 | WSL TSan 与 rigtorp 同合同 W1-WIN 8/8 strata NI PASS；其他 role queue 性能轴仍属 blocker |
+| `CONTAINER-CVECTOR-01` | 采用 3-pointer embedded + on-demand extended table；table promotion OOM 保持旧 capacity/value；quiescent `clear()` 销毁 live T 并保留 segment capacity 复用；Windows 14 项定向测试通过 | sanitizer/跨平台 PASS；append/index/iterate P1 轴仍属 blocker |
+| `CONTAINER-CMAP-01` | reader admission 的 fetch-add 线性化点同时拒绝 writer/pending，关闭 writer 发布 pending 后的 reader barging；AArch64 spin hint 从 pipeline-serializing `isb` 改为 `yield`；两种并发 map 统一为 fallible `try_reserve` / fail-fast `reserve` | WSL TSan、M4 AArch64 runtime 与 direct consumer PASS；concurrent map P1 轴仍属 blocker |
+| `CONTAINER-TEXT-01` | 删除把 raw allocation 装进 borrowed `StringView` 的 helper；普通 owner 路由标准 string，path producing ops 写 caller-owned spans，normalize 按 view length 返回借用 output 的 optional view；interner batch改为 spans并以 `prewarm` 取代 nullable output；Windows 64 项 text/path/interner、完整 container、header 与更新后的 benchmark source build 通过 | OOM/sanitizer/direct consumer/package PASS；text/interner P1 轴仍属 blocker |
+| `CONTAINER-ACTIVE-01` + `CONTAINER-HASHMAP-01` + `CONTAINER-API-01` | `DynamicBitSet` value equality 比较逻辑 size 与 canonical blocks；Swiss map/set 统一 `try_reserve` 可恢复、`reserve` fail-fast，并迁移 util/io；九个类型名入口头由现有 family header 零实现转发；Windows 完整 container/header、util consumer 与 IO 编译闭包、benchmark source build 通过 | bitset count 与 flat integral lookup slice PASS；其余冻结 family P1 轴仍属 blocker |
+| `CONTAINER-CORR-01` | `SmallVector<T,0>::move_from` 以 `if constexpr` 排除 inline byte copy；新增 trivial empty move/swap regression；原失败 WSL GCC 14.2 Release + WERROR 与 Windows 完整 container 各 3/3 通过 | replacement candidate 三平台与 sanitizer 已重验；PASS |
 
 ## Candidate
 
@@ -239,10 +240,10 @@ family 的证据；功能缺口集中在已有 family 的不完整生命周期�
 - 直接消费者迁移：sched 的 RunQueue/Scheduler 已消费 typed MPMC；`util::Registry` 与 IO readiness/HTTP2
   表使用可恢复 reserve；package/sample 使用自然 flat-hash 入口。下游模块只验证这些直接合同，不继承
   container 的闭包结论。
-- candidate tests：W1-WIN 上 `hyle_container_tests` 构建；精确三项 container CTest（含全部公开头
-  self-contained）及 `hyle_util_test` 通过；`hyle_util_tests hyle_io_tests` 完整编译；container-only
-  `hyle_container_bench` 源码编译；两项 repository checker 通过。这些是 candidate smoke，不替代下方
-  尚未运行的 sanitizer、跨平台、delivery 与 P1 verdict。
+- candidate tests：W1-WIN、W1-WSL GCC 14 与 M1-MAC 的精确 container 三项 CTest 均 3/3；WSL
+  ASan/UBSan/TSan 共 324/324。公开头 self-contained、util/sched/io/graph 17/17 direct-consumer replay、
+  container-only offline configure/build 及 source/shared/static relocated consumer 全部通过。五项 P1
+  slice 的 bundle 通过，但不能替代冻结卡其余未运行性能轴。
 - harness / tool identity：correctness/delivery 使用 `closure-correctness-v1` 与中央 component/package
   contracts；P1 使用 `closure-perf-v1`、`W1-WIN` 和本卡冻结五个 family。harness/evidence commit 在各门
   运行时单独记录，不改变上述 product identity。
@@ -252,14 +253,75 @@ family 的证据；功能缺口集中在已有 family 的不完整生命周期�
 
 ## Verification manifest
 
-replacement candidate 的 Windows 与 W1-WSL GCC 14 + WERROR pre-freeze smoke 已通过；正式 correctness、
-sanitizer、跨平台、delivery 与 P1 聚合门继续执行。未运行项不得写为 `PASS`。
+| gate | evidence / verdict |
+|---|---|
+| Windows correctness/header | MSVC 19.50 Release + WERROR；container 精确 3/3 `PASS` |
+| W1-WSL correctness/sanitizer | GCC 14 Release + WERROR 3/3；ASan/UBSan/TSan 324/324 `PASS` |
+| M1-MAC correctness/ISA | AppleClang 21 Release + WERROR 3/3；AArch64 scalar/NEON TUs build/runtime `PASS` |
+| direct consumers | util/sched/io/graph 17/17 `PASS`；只验证其实际 container 合同 |
+| delivery | selected container source embedding、relocated shared SDK、relocated static SDK 各 1/1；offline configure/build、pin/license projection `PASS` |
+| dependency/ownership | `PUBLIC core mem`、`PRIVATE platform`、`PRIVATE_BUILD simd_vec_headers` 对账；selected SDK 因传递闭包安装独立 `container_intrusive`，但 target ownership 不混淆；`PASS` |
+| selected P1 slice | clean harness `9f3fa43a`，contract SHA-256 `f46e4e4a...f3a4`；五项各 8/8 strata NI `PASS`，全部 controls/validators与 deep replay `PASS` |
+| aggregate P1 | 冻结卡的其余正常轴未运行；`INCONCLUSIVE` / blocker |
+| current documents | architecture/user/performance/task 职责对账；旧总账与 provisional 叙事移除；repository docs checker `PASS` |
 
 ## 独立红队
 
-尚未开始；只在当前 replacement candidate 完成其他验证后，以 30 分钟预算攻击已冻结合同。
+审查者 / 日期 / 预算：post-candidate reviewer / 2026-08-29 / 30 分钟上限。只攻击冻结的 capability、
+public surface、复杂度、ownership/lifetime、依赖/交付、文档与工程性能门；发现硬停止后不扩建公共
+仪器、不新增产品功能或第六种 benchmark 姿势。
+
+| finding | severity | decision | evidence |
+|---|---|---|---|
+| user/architecture 仍带 provisional/NOT_REVIEWED，且把“独立 target”误写成选择完整组件时不会随 SDK 取得 | documentation/usability | `fixed` | current guide/architecture 区分 target ownership 与中央传递安装；docs checker PASS |
+| 旧 C array/schema/Native FFI 或隐藏 product drift 仍可能存在 | blocker if true | `disproved` | `carray_`/`CArrayHeader`/旧 bridge scan 无产品命中；candidate→harness 的 `include/hyle/container`、`src/container` diff 为空；三交付 smoke 无旧符号需求 |
+| 五项 qualified replay 能否代签冻结卡的完整五个 family | performance/blocker | `accepted blocker` | contract 只有 sequence mixed、integral flat lookup、MPMC、bitset count、64B hash；冻结卡另要求 sorted/ordered/concurrent/ring/text/interner 等正常轴及无 peer baseline NI，未运行不得 PASS |
+| 第一版 MPMC 的 31-sample 双峰是否证明产品慢 | instrument | `fixed/disproved` | adapter 把 wait/notify/yield 放入计时；改为同一常驻 worker + busy-pause 后 8 个 diagnostic strata 稳定，clean n=15 的 8/8 strata NI PASS；产品实现未改 |
+| public header family、direct dependency 与 consumer owner 是否遗漏 | architecture | `disproved` | 36 个 header/public-surface trace 对账；intrusive 只有 time 与独立 sample 直接 include；util/sched/io/graph 17/17 replay 与中央 edge 对账 PASS |
+
+未发现新的产品 correctness/security、OOM、lifetime、复杂度档、常态 metadata、API ownership 或
+source/static/shared 交付缺陷。红队唯一未解决项是冻结 P1 覆盖不足；因此 red-team 流程本身完成，
+但不能把聚合 engineering-performance gate 写成通过。
 
 ## Closure decision
 
-`CONTAINER-CORR-01` 已完成并形成 replacement `CANDIDATE`；没有 terminal decision。后续只执行冻结的
-correctness/sanitizer、delivery、P1、文档和红队门，不恢复一般功能调查。
+本轮从 `CANDIDATE` 终止为 **`BLOCKED`**，而不是 `VERIFIED/CLOSED`。scope、architecture、
+correctness、delivery、usability/docs 与 red-team 执行均为 `PASS`；全部 `MUST` 产品能力为
+`COMPLETE` 或完整 `ROUTED`，产品 candidate 没有新 blocker。唯一 blocker 是冻结卡的 P1 正常轴只完成
+五项具体 qualification，剩余轴未运行，故聚合 engineering performance 必须为 `INCONCLUSIVE`。
+
+blocker owner：`container/container-v1-p1-coverage`。恢复条件：按 `BLOCKED -> SCOPED` 创建新的
+`RESUME` round，复用未变化的 product candidate，并在 `closure-perf-v1` / W1-WIN、5% margin 下为以下
+有限集合取得合格 verdict：strict fixed/non-trivial sequence；string/sorted/ordered associative；
+SPSC/sharded/work-steal/concurrent vector/concurrent maps；bitset algebra/SparseSet/rings；short/long hash、
+UTF-8/search/case/interner。无同合同 peer 的轴使用 immutable candidate baseline。恢复轮不得继承旧
+2026-07 点值，不得缩窄 ownership/concurrency 语义，也不得因为结果不利修改公开 API/layout/常态 metadata。
+
+已知限制：
+
+- 当前只能声明已列五项 consumer slice 在 W1-WIN 通过 5% NI，不能声明 container 聚合 P1、全面
+  SOTA、跨平台固定点值或 Formal；
+- `SmallVector` 在该 slice 快于 Abseil，但 owner object 为 88 B 对 72 B，资源 trade-off 必须保留；
+- ordinary long sequence/owning string/node-stable single-thread map 继续路由标准/PMR；cache、blocking
+  service、ordered multi、node extraction/merge、compressed bitmap/rank-select 与 Native FFI 仍是具名负空间；
+- independent `container_intrusive` 不属于本产品面；selected SDK 的传递安装不改变 target ownership。
+
+产品重开 trigger：真实 consumer 暴露本边界 correctness/security/OOM/lifetime/usability 或缺失能力；
+container 算法、public API/layout、直接依赖、vendor/ISA 语义或 source/static/shared 交付改变；强 peer
+证明更优复杂度档或正常 consumer 上 material advantage。当前 performance blocker 满足 resume
+condition 时是恢复本轮证据，不是无新事实重开产品的许可。
+
+四项 LOC 从 immutable product candidate
+`19a1e9b515522ad74872fb963a3b3260cf915bab` 运行
+`python scripts/loc-report.py --module container --commit <candidate> --self-check --json`，self-check `PASS`：
+
+1. 全库代码：305,616；
+2. 自实现包含测试：124,208；
+3. 自实现不包含测试：83,088；
+4. container 实现：11,591（`include/hyle/container` + `src/container`，不含独立
+   `container_intrusive`）。
+
+clean selected-slice performance bundle、hash 与复现命令见
+[`benchmarks-container.md`](../../evidence/performance/benchmarks-container.md)；correctness、delivery 与
+consumer verdict 见上方 verification manifest。terminal end/registry anchor 的完整 commit identity 由
+后续 registry transition 记录。

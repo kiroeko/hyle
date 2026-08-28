@@ -1,8 +1,8 @@
 # HYLE container 架构
 
-> **V2 状态：`NOT_REVIEWED`。** 本页暂作既有设计输入，不代表当前功能、性能或 API 证书。
-> 当前只提供 C++23 source/static/shared，Native FFI 为 `N/A`。BUILD-03 已删除旧 C schema、
-> bridge、动态导出和 fixture；正文的其他验收叙事仍待 container 轮次重裁决。
+本页固定 container 的长期产品边界、类型形状与依赖原则；当前工程状态只看
+[`module-status.json`](../implementation/module-status.json)。产品交付是 C++23
+source/static/shared，Native FFI 为 `N/A`；旧 C schema、bridge、动态导出和 fixture 已删除。
 
 container 是 Tier 0 数据结构层：提供侵入式链接、平坦 hash、连续数组、字符串/路径、驻留池和
 调度器所需并发容器。侵入式链接单独形成轻量 header-only target；其余编译型能力由完整
@@ -43,8 +43,10 @@ Build-only seam:     simd_vec_headers register DSL
   编译实现的 CPU/OS dispatch。per-ISA TU 对寄存器 DSL 的借用另由 build-private
   `simd_vec_headers` target seam 登记，不扩大产品闭包。
 - `container_intrusive` 是只 `PUBLIC core` 的轻量 `INTERFACE` 组件；它不拉入完整 container、mem、
-  error 或 platform，完整 container 也不聚合它。Core 同样是 INTERFACE，所以这条公开源码依赖
-  没有 binary artifact。
+  error 或 platform，`hyle::container` target 也不聚合它。当前中央 component graph 选择完整
+  container 时，会因 `mem -> platform -> time -> container_intrusive` 的传递交付闭包安装该独立
+  target/header；这是 package resolution，不改变 ownership 或 target 的真实 link edge。Core 同样是
+  INTERFACE，所以这条公开源码依赖没有 binary artifact。
 - 完整 container 对 `<hyle/core/cache.h>`/compiler contract 的使用由直接 `PUBLIC core` 边表达；
   中央图与公开头扫描会拒绝靠安装 include tree 隐藏这条依赖。
 - 字符串批处理的每 ISA TU 复用 `hyle/simd/vec.h` 的 header-only 寄存器 DSL；

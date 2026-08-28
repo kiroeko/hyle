@@ -1,7 +1,8 @@
 # HYLE container：什么情况选择什么
 
-> **`provisional / NOT_REVIEWED_V2`。** container 当前只提供 C++ 产品面。
-> 本页适用于 C++23 source/static/shared 三种交付，不描述 C API 或跨语言调用层。
+本页是当前 C++23 source/static/shared 产品面的选型与陷阱指南。container 没有 C API 或
+Native FFI；模块当前收口状态只看
+[`module-status.json`](../implementation/module-status.json)，不由本文复制。
 
 container 提供性能敏感的基础数据结构、借用字符串/路径算法和调度队列。它不是为了
 替换全部 STL，也不因为某个 microbenchmark 赢就要求用户改类型：先按 ownership、元素
@@ -11,9 +12,11 @@ container 提供性能敏感的基础数据结构、借用字符串/路径算法
 入口头（例如 `flat_hash_map.h`、`btree_map.h`、`string_view.h`）；
 `swiss_table.h`、`flat_sorted.h` 等 family/实现头只供一次取得同族类型或维护实现时使用。
 
-侵入式链表在语义上属于 container，但单独作为 header-only `container_intrusive` 组件交付。
-因此 time 等底层模块和只需要零分配链表的用户无需拉入完整 container 及其 mem/platform 闭包；
-选择完整 `container` 不会自动取得这个独立组件，需要两者时应同时选择并链接。
+侵入式链表在语义上属于 container，但单独作为 header-only `container_intrusive` target 交付。
+因此 time 等底层模块和只需要零分配链表的用户无需链接完整 container 及其 mem/platform 闭包。
+当前中央 component graph 选择完整 `container` 时，会因其传递依赖闭包一并安装
+`container_intrusive` target/header；这不表示 `hyle::container` 聚合或拥有它。代码直接使用链表时
+仍应显式链接 `hyle::container_intrusive`；只需要链表时只选择该轻量组件。
 
 ## 一页选择表
 
