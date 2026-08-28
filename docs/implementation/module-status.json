@@ -316,12 +316,14 @@
     },
     {
       "module": "platform",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "round_id": "platform-v1",
       "closure_task": "docs/implementation/tasks/platform/platform-v1-closure.md",
       "scope": "CPU/topology, thread/wait, VM/NUMA, filesystem/file mapping and dynamic-loader mechanisms; C++ API, direct dependencies/consumers, delivery, documentation and bounded P1 engineering evidence.",
       "non_goals": "Scheduler/executor policy, async I/O, path-string algorithms, device memory, cross-process shared-memory protocols, Native FFI/C API, stable C++ ABI and Formal certification.",
       "baseline_commit": "780bf5b69249cf17df0344b1e40ceb7cf8797c6a",
+      "candidate_commit": "5b8dab7012e9f7c6cdaf97f863c0b83b4e8a5064",
+      "candidate_tree": "24a68b0ab3314902a765c6bf60f8ccb760d290f4",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -339,7 +341,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform-v1 已完成双向能力/public-surface/依赖审计并冻结 8 组 FIX；下一阶段只实现同步 file、mapping owner/view、huge-page、NUMA checked query、dynlib lifecycle、Duration park 及对应证据，不扩展 GENERAL。"
+      "summary": "platform-v1 产品候选 5b8dab70/24a68b0a 已冻结：9 组 FIX、当前 C++ API/文档、真实 package consumer 与 P1 合同就位；正在对不可变候选执行三平台、sanitizer、交付和 W1-WIN 性能验证。"
     },
     {
       "module": "mem",

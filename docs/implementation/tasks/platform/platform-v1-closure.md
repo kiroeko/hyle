@@ -2,7 +2,7 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-> 当前阶段：`AUDITED`。本文是 platform 当前轮唯一 closure card 与施工记录；既有 platform task、
+> 当前阶段：`CANDIDATE`。本文是 platform 当前轮唯一 closure card 与施工记录；既有 platform task、
 > architecture、guide 和性能页只作审计输入，不继承旧 `SIGNED`、C ABI 或 SOTA 结论。权威机械状态见
 > [`module-status.json`](../../module-status.json)。
 
@@ -187,7 +187,22 @@ native-code translation、obs 的 terminal write 和 util 的 demangler 都是�
 
 ## Candidate
 
-进入 `CANDIDATE` 时填写。
+- product commit / tree：`5b8dab7012e9f7c6cdaf97f863c0b83b4e8a5064` /
+  `24a68b0ab3314902a765c6bf60f8ccb760d290f4`。
+- 冻结公开合同：`FileHandle` 具有 short/exact/all、single-cursor seek/position、显式 sync/close；
+  `MappedFile` 可消费 file owner，并区分 const/checked writable span 与 range flush；Parker 使用
+  `time::Duration`；NUMA fallible facts、DynLib pin/close/type contract 和真实 large-page query 均已落地。
+- 直接消费者迁移：sched/compute 使用 `park_for(Duration)`；mem 对 checked NUMA query 选择显式
+  `kNumaAny` fallback；platform package sample 固定 open/validate owner→read-only model mapping 旅程。
+- correctness blocker `FIX-09` 已用 Windows `min/max` 宏组合 TU 锁住，time/platform public headers
+  不要求消费者控制 include order。
+- 冻结性能合同：`platform-consumer-v1`，SHA-256
+  `bb4f25a066b8a9eed2b2149b22f45a6196a28b84be5c7a6c1d4253d76163b7ce`；同行为 clean pinned
+  oneTBB `e349c152...` 与 Boost `df8eeb90...`，双方 LTO 关闭。
+- 候选前 Windows 门：time/platform unit + public-header self-containment PASS；mem/sched/compute 直接
+  seam compile PASS；source、relocated shared、relocated static platform consumer PASS；文档、closure
+  registry、合同 validator 与 diff hygiene PASS。候选后只补验证证据；任何公开合同/算法/正常 workload
+  改动退回 `AUDITED`。
 
 ## Verification manifest
 
