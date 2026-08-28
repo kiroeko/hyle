@@ -507,7 +507,11 @@
     },
     {
       "module": "container",
-      "product_state": "CANDIDATE",
+      "product_state": "BLOCKED",
+      "blocked_from": "CANDIDATE",
+      "blocker": "The frozen container-v1 card includes normal P1 sequence, associative, concurrent, queue/ring, active-set, hash/text and interner axes that are not covered by the current five-workload qualified contract; unrun applicable axes prevent an aggregate engineering-performance verdict.",
+      "blocker_owner": "container/container-v1-p1-coverage",
+      "resume_condition": "Resume through a new BLOCKED-to-SCOPED RESUME round only after the unchanged product candidate can qualify the finite remaining strict fixed/non-trivial sequence; string/sorted/ordered associative; SPSC/sharded/work-steal/concurrent-vector/concurrent-map; bitset-algebra/SparseSet/ring; and short/long-hash, UTF-8/search/case/interner axes on W1-WIN with closure-perf-v1 and a 5% margin, using the immutable candidate baseline where no same-contract peer exists.",
       "round_id": "container-v1",
       "closure_task": "docs/implementation/tasks/container/container-v1-closure.md",
       "scope": "Full non-intrusive C++ container component: sequences, associative indexes, concurrent structures and queues, active sets, rings, hash/text/interner algorithms, direct dependencies/consumers, delivery, documentation and bounded P1 engineering evidence.",
@@ -515,6 +519,8 @@
       "baseline_commit": "2866c7df73c6bd36cc4808226d370ff0ea338da2",
       "candidate_commit": "19a1e9b515522ad74872fb963a3b3260cf915bab",
       "candidate_tree": "68d456382352d2d81fdd41e4d1c725440424336a",
+      "end_commit": "21383446f8f9e390d46972cb27edd0e0ae39cc23",
+      "registry_anchor_commit": "21383446f8f9e390d46972cb27edd0e0ae39cc23",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -522,17 +528,47 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "INCONCLUSIVE",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1"
+        "instrument_profile": "closure-perf-v1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-container.md"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "replacement container-v1 candidate 绑定 19a1e9b5/68d45638；首个 identity 因 GCC 14 blocker 被拒绝且不得继承证据，当前只执行跨平台/sanitizer、交付、五族 P1、文档与红队验证。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "INCONCLUSIVE"
+      },
+      "closure_evidence": "docs/implementation/tasks/container/container-v1-closure.md",
+      "loc": {
+        "snapshot_commit": "19a1e9b515522ad74872fb963a3b3260cf915bab",
+        "repository_code": 305616,
+        "self_with_tests": 124208,
+        "self_without_tests": 83088,
+        "module_implementation": 11591
+      },
+      "known_limitations": [
+        "Only the qualified sequence-mixed, integral-flat-lookup, bounded-MPMC, bitset-count and 64-byte-hash slices currently pass the W1-WIN 5% engineering non-inferiority gate; aggregate container P1, comprehensive SOTA, cross-platform fixed timing and Formal claims are not established.",
+        "SmallVector wins its qualified slice but its owner object is 88 bytes versus Abseil's 72 bytes, so that resource trade-off remains part of the result.",
+        "Ordinary long sequences, owning strings and node-stable single-thread maps remain routed to standard or PMR facilities; cache policy, blocking services, ordered multi containers, node extraction/merge, compressed bitmap/rank-select and Native FFI remain outside this round.",
+        "container_intrusive is an independent closed component; selected-SDK transitive installation does not make it part of the hyle::container target."
+      ],
+      "reopen_triggers": [
+        "A real consumer exposes a correctness, security, OOM, lifetime, usability or missing-capability defect within the container boundary.",
+        "A container algorithm, public API/layout, direct dependency, vendor/ISA semantics or source/static/shared delivery shape changes.",
+        "A mature same-contract peer proves a better complexity class or a reproducible material advantage on a normal consumer workload.",
+        "The retained engineering evidence becomes unavailable or its frozen product, baseline, contract, machine or instrument identity changes while the claim must be renewed."
+      ],
+      "summary": "container-v1 BLOCKED：功能/API、correctness、三平台交付、文档与红队均通过；已资格化的五项 P1 slice 全部通过 5% NI，但冻结卡其余正常性能轴未运行，聚合工程性能保持 INCONCLUSIVE。"
     },
     {
       "module": "util",
