@@ -7,7 +7,7 @@
 > runtime 发布证书。当前只提供 C++23
 > source/static/shared，Native FFI 为 `N/A`；BUILD-03 已删除旧 C schema、bridge、动态导出和 fixture。
 
-> 用户当前选型见 [user/util](../user/util.md)，current util-core 与历史 util 证据见
+> 用户当前选型见 [user/util](../user/util.md)，current util-core/runtime 与历史 util 证据见
 > [util performance evidence](../implementation/evidence/performance/benchmarks-util.md)，施工历史见
 > [util tasks](../implementation/tasks/util/)。
 
@@ -146,5 +146,6 @@ target link 生成/验证。
    sink 的 shared-CRT ownership 边界以及 source/static/shared consumer；caller buffer 不得被描述为
    async-signal-safe。
 
-新版 capability-family/public-surface 双向复检及当前 owner routes 见
-[`util-core capability replay`](../implementation/tasks/util/util-core-capability-replay-v1.md)。
+新版 capability-family/public-surface 双向复检及当前 owner routes 分别见
+[`util-core capability replay`](../implementation/tasks/util/util-core-capability-replay-v1.md) 与
+[`util-runtime v2`](../implementation/tasks/util/util-runtime-v2-closure.md)。

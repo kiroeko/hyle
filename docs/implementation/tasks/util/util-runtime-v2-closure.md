@@ -115,5 +115,99 @@ sample 不冒充需求。current central dependency graph 与 public include tra
   lifecycle 边界；
 - direct consumer：package sample 同时执行 raw/fallible Registry、buffer demangle 与 owning
   demangle。W1-WIN source/shared/static relocated consumer 各 1/1；
-- candidate correctness：W1-WIN Release/Werror build 通过，`hyle_util_test` 31/31，其中 demangle
-  11 项；util public-header self-contained 1/1；完整跨平台和最终门见 verification manifest。
+- candidate correctness：W1-WIN Release/Werror build 通过，`hyle_util_test` 32/32，其中 demangle
+  12 项；util public-header self-contained 1/1；完整跨平台和最终门见 verification manifest。
+
+## Verification manifest
+
+验证始终绑定 product commit
+`f3b341cb2ae81154f81bc45052a651e773c5e2b3` / tree
+`c3141ccfd2902a450eb271f867a2ee8aacc5cbb9`；后续 task/registry 文档提交不改变候选产品树。
+
+### Correctness risk matrix
+
+| Risk | verdict | 命令 / 证据 | 限制 |
+|---|---|---|---|
+| normal | `PASS` | W1-WIN、W1-WSL、M1-MAC 的 Release `hyle_util_test` 均 32/32；plain、真实平台 mangled symbol、`type_info`、owning/buffer 两形状均通过 | 仓内直接消费者是 package sample，不冒充完整 inference engine |
+| empty / zero | `PASS` | null、empty、zero-capacity 与 buffer NUL 合同继续通过；owning null/plain 回显通过 | owning empty string 仍遵循标准库自己的 empty-string 实现策略 |
+| capacity / boundary / overflow | `PASS` | required-size、truncation、long symbol、exact/partial input-output overlap；fallback 改用 `memmove` | Windows decorated symbol 重试上限保持 1 MiB，超限按合同回显原名 |
+| OOM / system failure / invalid input | `PASS` | Itanium temporary 由 RAII `free`；平台失败回显；caller sink 捕获 `std::string` exception 后在 caller 侧重抛；WSL ASan/UBSan 通过 | 未对标准库 string allocator 或系统 demangler 做强制 fault injection；owning allocation failure 按标准异常合同处理 |
+| move / destroy / lifetime | `PASS` | owning result 独立于 platform temporary；sink 只在 temporary 有效期内同步调用；Windows/macOS source/shared/static relocated consumer 通过 | `detail` sink 是 implementation seam，不是用户可保存的异步 callback |
+| concurrency / reentrancy | `PASS` | Registry 产品零 diff；现有并发 Registry tests 随三平台 32/32 通过；Windows mutex 仅包住每次 HYLE DbgHelp 调用 | HYLE 的 mutex 不替直接调用 DbgHelp 的外部代码协调；应用混用时必须统一串行化 |
+| cancellation / close | `NOT_APPLICABLE` | 同步 demangle 与本轮未改的 startup Registry 没有异步 operation | dynamic unload/quiescence 仍由调用方 module owner 负责 |
+| property / differential / fuzz / stress | `PASS` | 两个真实 ABI symbol、plain fallback、边界/overlap 与既有 Registry stress 构成本轮风险覆盖 | 冷诊断 helper 没有单独建立 fuzz campaign |
+| ASan / UBSan | `PASS` | W1-WSL GCC 14.2 独立 Debug sanitizer build，`hyle_util_test` 各 32/32 | sanitizer 在 WSL native ext4 候选 worktree 运行 |
+| TSan | `NOT_APPLICABLE` | v2 没有改变 Registry 或新增共享 product state；Windows DbgHelp serialization 由平台分支 mutex 结构审查覆盖 | Registry v1 已有 TSan 证据；本轮不重复运行并冒充新增证据 |
+| real ISA / backend | `NOT_APPLICABLE` | MSVC DbgHelp、GCC Itanium ABI、AppleClang Itanium ABI 均以真实 symbol 测试；没有 ISA dispatch | 不产生 GPU/backend 功能或性能声明 |
+
+### Aggregate gates
+
+| Aggregate gate | verdict | 证据 | 限制 |
+|---|---|---|---|
+| scope | `PASS` | 冻结四项 FIX 全部落地；Registry 产品零改动；没有扩张 string/module-manager/perf 仪器 | 新需求按 reopen trigger 独立立项 |
+| architecture | `PASS` | owning string 在 caller TU 构造；compiled seam 只传 transient bytes；buffer 与 owning 共用 single-visit 路径 | internal sink 是 shared C++ SDK 实现边，不是 Native FFI |
+| correctness | `PASS` | 三平台 Release 32/32；W1-WSL ASan/UBSan 各 32/32；public header self-contained 1/1 | TSan 按上表 N/A，不改写为已运行 |
+| delivery | `PASS` | W1-WIN 与 M1-MAC selected source、relocated shared、relocated static consumer 各 1/1；三平台 util component build 通过 | macOS 按项目合同使用 deployment target 14.4 |
+| usability / docs | `PASS` | owning/buffer 选择、exception、overlap、signal-handler、Registry typed-handle 与 caller module owner 陷阱均写入 architecture/user guide | 没有 C API/Native FFI |
+| red team | `PASS` | 见下节；导出、ownership、异常、overlap、锁和误导文档逐项攻击 | 只裁决本轮冻结范围 |
+| engineering performance | `PASS` | P0：O(input+output)、一次 platform demangler、无常态 metadata；锁/temporary/allocation 事实公开；三平台动态符号均只有 buffer + sink | 未运行 timing benchmark，不声明纳秒或跨平台 SOTA |
+
+### Reproduction summary
+
+- W1-WIN：Visual Studio 18 2026 / MSVC 19.50，Release、warnings-as-errors，selected `util`；
+  `hyle_util_test` 32/32，public-header 1/1。selected source/shared/static relocated sample 各 1/1；
+  `dumpbin /exports` 只见 buffer demangle 与 internal sink，没有 STL-returning symbol。
+- W1-WSL：Ubuntu 24.04 native-ext4 candidate worktree，GCC 14.2 Release/Werror 32/32，public-header
+  1/1；ASan 与 UBSan 独立 build 各 32/32。`nm -D --defined-only | c++filt` 只见 buffer demangle
+  与 internal sink 两个 util demangle symbol。
+- M1-MAC：AppleClang 21、Unix Makefiles、deployment target 14.4，Release 32/32，public-header 1/1；
+  selected source/shared/static relocated sample 各 1/1。`nm -gU | c++filt` 只见上述两个符号，
+  `otool -L` 的实际 closure 与 util 声明依赖一致。
+- P0 不运行 timing；完整当前解释集中在
+  [`benchmarks-util`](../../evidence/performance/benchmarks-util.md)，旧 2026-07 点值不进入本轮 verdict。
+
+## 独立红队
+
+| 攻击 | severity | verdict | 证据 / 裁决 |
+|---|---|---|---|
+| 从 shared library 直接返回 DLL-owned `std::string` | high | `fixed` | owning overload header-inline，compiled sink 只传指针/长度；三平台符号检查无 STL-returning export |
+| owning convenience 先 sizing、再第二次调用 platform demangler | high | `fixed` | common visit 一次取得结果并同步送入 caller sink；Windows 只有 API 无 required-size 时的有界容量重试 |
+| string allocation exception 穿过 `noexcept` compiled seam，或 callback 保存临时指针 | high | `disproved` | caller callback 捕获 `exception_ptr`，sink 返回后 caller 重抛；callback 同步且不公开给用户 |
+| fallback 在 input/output 重叠时 `memcpy` 触发 UB | medium | `fixed` | 改为 `memmove`，exact/partial overlap tests 三平台通过 |
+| caller buffer 被误读为 allocation-free、lock-free 或 signal-safe | medium | `fixed` | public/user/architecture 明写 Itanium allocation、Windows serialization 和受限上下文禁用 |
+| HYLE mutex 能自动协调应用直接调用的所有 DbgHelp | medium | `accepted` | HYLE 只序列化自己的 DbgHelp 调用；用户指南要求混用方统一串行化，不增加进程级 hook |
+| Registry 被推荐为每 token/kernel 字符串 dispatch，或文档冒充已有 `ModuleManager` | medium | `fixed` | 指南改为启动期 service discovery/按名查询，热路缓存 typed handle；动态生命周期归调用方具名 owner |
+| 两个冷 binary symbols 值得拆成独立 component | low | `accepted` | 当前直接 consumer 同时用 Registry/demangle，拆分只增加交付选择；material demangle-only consumer 才重开 |
+
+红队未发现未处理 HIGH；没有为 P0 冷路径增加 benchmark-only API、常态 metadata 或 workload 特化。
+
+## Verification decision
+
+所有当前 `MUST` 已从 `MISSING/PARTIAL` 变为 `COMPLETE`，Registry 的 v1 能力结论未漂移；scope、
+architecture、correctness、delivery、usability/docs、red-team 与 P0 engineering performance 七门均
+`PASS`，Formal 为 `NONE`，无 blocker。因此候选满足 `VERIFIED`，并可在 terminal receipt 与中央
+registry 锚定后进入 `CLOSED`。
+
+已知限制：
+
+- demangle 是诊断冷路，不是 async-signal-safe；Itanium 可能内部 malloc/free，Windows DbgHelp
+  串行且超长 symbol 有 1 MiB 重试上限，失败回显原名；
+- owning convenience 返回 `std::string` 并可抛标准分配/长度异常；buffer convenience 为
+  `noexcept`，但不保证平台内部零分配或无锁；
+- Registry 仍为 case-sensitive、枚举顺序未指定、`FrozenView` owner-bounded borrow，且不负责
+  unregister、动态 unload 或 reader quiescence；shared util component 仍带 Registry 的依赖闭包；
+- 本轮只有 P0 结构签证，没有端到端 inference profile、timing SOTA 或 Formal 发布证书。
+
+重新打开触发器：
+
+1. 真实消费者暴露本边界内 correctness、ownership、异常、API 易用性或常用能力缺口；
+2. demangle/Registry 的公开合同、算法、布局、直接依赖、compiler/platform ABI 或交付形状变化；
+3. 成熟同合同 peer 证明更好复杂度档，或 profile 证明 demangle/按名 Registry lookup 成为 material 热点；
+4. 真实 demangle-only consumer 证明当前 util component closure 成本 material；
+5. 需要 async-signal-safe symbolization 或动态 module unload/quiescence 时，由相应 owner 另立能力单元。
+
+候选的 canonical LOC self-check（snapshot
+`f3b341cb2ae81154f81bc45052a651e773c5e2b3`）：全库代码 **298,478**；自实现包含测试
+**122,321**；自实现不包含测试 **82,176**；当前 `util` 实现 **1,244** 行。这里的模块边界按
+canonical `include/hyle/util + src/util`，包含同目录下已独立签结的 util-core 公开头；LOC 只用于规模
+复盘，不作为完成度证据。

@@ -42,7 +42,7 @@
 | `sys/sprintf.h` + `.cc` | 96+69 | ♻️ std::format | ♻️ | clay sprintf=`stb_sprintf` 薄封装;头广告的 "UTF-8 安全截断" **实为注释掉未实现**(.cc 行42/54,clay 美化现状一例)。HYLE:格式化→`std::format`/`std::format_to_n`(类型安全 `{}`+编译期查错=no-throw+buffer-fill 截断等同 snprintf,conventions §8);printf-`%`/va_list 转发→`std::snprintf`(C 标准已有)。不投机 vendor stb_sprintf(快 printf 属实测决定);真 UTF-8 安全截断归 container-06b string_utils |
 | `sys/scope_guard.h` | 74 | util-01 | ✅ | `ScopeGuard` CTAD(省 clay scope_guard/finally 工厂) + `HYLE_DEFER`;单向 dismiss(enable 重启用未做,非缺口) |
 | `sys/alignment.h` | 37 | mem-aux | ✅ | `align_up/align_down/is_aligned`(size + `_ptr` 变体)+ is_pow2 + kMaxSimdAlignment;升级 clay 只有 align_size(独立头已建,mem/alignment.h) |
-| `sys/demangle.h` + `.cc` | 28+45 | container/util type_name | ✅ | **util-06**：运行期 demangle(`__cxa_demangle`/`UnDecorateSymbolName`)。改进:caller buffer+required-size（底层 ABI demangler仍可能临时分配）、MSVC 真反修饰(clay 只回显)。`demangle_type<T>` gap→`type_name<T>`(util-02)更优替代(无 RTTI) |
+| `sys/demangle.h` + `.cc` | 28+45 | container/util type_name | ✅ | 运行期 demangle 现有 caller-owned `std::string` 与 caller buffer+required-size 两种 C++ 形状，并有 `type_info` convenience、single-platform-demangler 路径、MSVC 真反修饰和 overlap-safe fallback；底层 ABI 仍可能临时分配/串行。编译期静态类型继续选 `type_name<T>`；无 C bridge/Native FFI |
 | `sys/murmur_hash.h` | (见上) | | | |
 | `sys/assert.cc` | 31 | macros.h | ✅ | HYLE_FATAL_ASSERT 已覆盖等价 |
 | `sys/types.h`/`decls.h`/`version.h` | 67/72/55 | 00-scaffolding | 🔶 | platform.h/visibility.h/version.h 覆盖思路；decls.h include 纪律待坐实 |
@@ -57,7 +57,7 @@
 | `utils/stack_allocator.h` | 122 | mem-04 | ✅ | 修 bug#4(禁拷贝、无堆回退) |
 | `utils/memory_pool.h` | 170 | mem-07 | ✅ | **`GrowablePool<T>`**:growable+single-threaded 池(无原子,填 ObjectPool 固定+lock-free 之外的空位)。几何块+侵入 free-list。**修 clay move-assign bug**(从不转移 allocator_) |
 | `utils/ref_counted.h` | 317 | util-01 | ✅ | 侵入式 `RefCounted<Sub>` CRTP + `Ref<T>` + make/adopt/retain_ref。**改进**:修 clay destroy() CRTP bug、release+末次 acquire fence、批量计数 fail-fast、危险非虚基类析构形状编译期拒绝；另有 type-erased C strong handle |
-| `utils/registry.h` | 340 | util-03 | ✅ | 自注册 + DECLARE/DEFINE 宏。**改进**:拥有 key/help、priority resolution、mutable 阶段同步、creator/visitor 锁外可重入；同一 Swiss index 经 O(1) 零分配 freeze 发布，FrozenView 供高频 dispatch；另有共享 Status/allocator 的完整 C registry。动态 unload 明确归 module manager |
+| `utils/registry.h` | 340 | util-03 | ✅ | 旧自注册宏已由显式、可检查的 startup registration 取代；拥有 key/help、priority resolution、raw nullable/`Result` factory、callback 锁外可重入；同一 Swiss index 经 O(1) 零分配 freeze 发布，反复按名 service lookup 可借 `FrozenView`，kernel/token 热路应缓存 typed handle。无 C registry；dynamic unload/quiescence 归调用方 module owner |
 | `utils/type_traits.h` | 240 | (编译期) | 🔶♻️ | 多数被 C++23 concepts 取代；保留底层兼容部分待评 |
 | `utils/type_name.h` | 146 | util-02 | ✅ | 编译期 type_name<T>()(probe 派生偏移,比 clay 硬编码签名矩阵 robust) + type_hash<T>()(FNV-1a constexpr) |
 | `utils/func_traits.h`/`meta_funcs.h`/`C++17.h`/`comparable.h` | 105/80/253/53 | (编译期) | ♻️ | 多数被 C++23(concepts/`<=>`)取代,按需保留 |

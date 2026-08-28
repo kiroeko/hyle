@@ -2,7 +2,7 @@
 
 > **HISTORICAL（2026-07-19）：**本文件只保留首次实现史；纯 C buffer-fill、旧行数和旧状态均已
 > 废止。当前 demangle API、复杂度和交付只见
-> [`util-runtime-v1 closure`](util-runtime-v1-closure.md) 与用户指南。
+> [`util-runtime-v2 closure`](util-runtime-v2-closure.md) 与用户指南。
 
 | 字段 | 值 |
 |---|---|

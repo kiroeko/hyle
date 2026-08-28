@@ -53,9 +53,31 @@ M1-MAC 针对同一 current oneTBB 的手工超短诊断按顺序完全翻转：
 所有争用形状都达到 SOTA。Formal 跨平台发布证书仍为 `PENDING`，live bundle 的 retention/signing
 也仍是项目级待办。
 
-## util-runtime v1 当前性能合同（2026-08-28）
+## util-runtime v2 当前 P0 结构证据（2026-08-28）
 
-Registry/demangle 本轮定为 **P0 / STRUCTURAL**，不是 P1 timing task。需求锚是 inference engine
+当前产品候选是 `f3b341cb2ae81154f81bc45052a651e773c5e2b3`，tree 为
+`c3141ccfd2902a450eb271f867a2ee8aacc5cbb9`。本轮真实需求是日志、异常诊断和 backtrace UI 的完整
+owning symbol text，以及已有固定 buffer 的 bounded text；两者都是冷诊断路径，性能等级冻结为
+**P0 / STRUCTURAL**，没有运行 timing benchmark，也不发布纳秒或跨平台 SOTA 声明。
+
+结构门全部通过：两种 public 形状均为 O(input+output)，每次 public 调用只执行一次平台 demangler
+（Windows API 不提供 required size，超长 symbol 只做有界容量重试）；owning `std::string` 在 caller
+TU/CRT 内构造，compiled shared seam 只同步传递 bytes；buffer fallback 支持 overlap。没有常态
+metadata。Itanium ABI 的临时 malloc/free、caller string allocation、Windows DbgHelp serialization
+与 1 MiB 临时上限都是公开成本，不被“caller buffer”隐藏。
+
+候选在 MSVC 19.50、GCC 14.2、AppleClang 21 的 Release/Werror 路径均 32/32，公开头 1/1；WSL
+ASan/UBSan 各 32/32；Windows 与 macOS 的 selected source/shared/static relocated consumer 均通过。
+Windows `dumpbin`、Linux `nm -D` 与 macOS `nm -gU` 都只见 buffer demangle 和 internal sink 两个
+compiled symbol，没有 STL-returning export。Registry 产品代码、布局和算法为零改动，沿用 v1
+已签的 startup/discovery 复杂度结论。本轮完整 gate、红队与限制见
+[`util-runtime-v2 closure`](../../tasks/util/util-runtime-v2-closure.md)。
+
+## util-runtime v1 基线性能合同（已由 v2 supersede）
+
+> **HISTORICAL BASELINE：**本节保存 v1 的结构依据；当前 runtime verdict 只看上方 v2。
+
+Registry/demangle 当轮定为 **P0 / STRUCTURAL**，不是 P1 timing task。需求锚是 inference engine
 启动期约 4--32 个 backend factory 的登记/冻结/枚举，以及日志/backtrace 冷路径 demangle；仓内
 尚无已完成的 engine consumer 或 profile 证明它们影响 token/kernel 端到端 KPI。因此当前不把
 旧 N=256 lookup 点值刷新成“模块 SOTA”，也不以它驱动 API/layout。

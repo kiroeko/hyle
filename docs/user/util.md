@@ -171,7 +171,8 @@ fiber-aware。临界区可能分配、rehash、调用未知 callback、等待或
 Windows DbgHelp 调用会串行化，超长 decorated symbol 还可能使用有界 temporary。caller-buffer 从不
 接管这些 allocation，不代表函数本身零分配/无锁。尤其不要从 POSIX signal handler 或 Windows
 exception handler 的受限上下文调用；需要 async-signal-safe crash capture 时先保存原始地址/符号，
-回到正常执行上下文再反修饰。
+回到正常执行上下文再反修饰。HYLE 的 mutex 只协调 HYLE 发起的 DbgHelp 调用；应用若还直接调用
+DbgHelp，必须在应用层把所有 DbgHelp 使用统一串行化。
 
 ## Registry：注册阶段可变，服务阶段冻结
 
@@ -219,14 +220,14 @@ Registry，最后 unload；HYLE 当前没有可直接实例化的通用 `ModuleM
 
 可变阶段的查询受 mutex 保护。creator 和 `for_each` visitor 都在锁外运行，可以重入同一个
 Registry；可变阶段枚举会为时间点快照分配一次，冻结阶段则无锁、无分配。`Registry::create()`
-在冻结后只多一次生命周期 acquire load，适合普通调用；dispatch 热路径缓存 `FrozenView`，直接
-查不可变 Swiss 索引。两种形状都是 O(key length) hash + expected O(1) probes，creator 自身
+在冻结后只多一次生命周期 acquire load，适合普通调用；反复按名的 service lookup 可缓存
+`FrozenView`，直接查不可变 Swiss 索引。两种形状都是 O(key length) hash + expected O(1) probes，creator 自身
 成本另计。若 backend/op 已经能在初始化时解析成 typed handle 或 function pointer，应缓存解析结果，
 不要在每个 kernel/token 内重复按字符串 dispatch。
 
 Registry 不提供 unregister：已经创建对象、函数指针和并发 reader 的代码/数据生命周期无法由
-一个名字表安全推断。需要动态装卸 shared library、依赖排序或在途调用排空时，应由 module
-manager 管理 quiescence，再销毁整个 Registry。Registry 必须活过所有 `FrozenView` 和在途操作；
+一个名字表安全推断。需要动态装卸 shared library、依赖排序或在途调用排空时，应由调用方具名的
+module owner 管理 quiescence，再销毁整个 Registry。Registry 必须活过所有 `FrozenView` 和在途操作；
 析构前由调用方让使用者静止。
 
 ## 分层与证据入口

@@ -4,7 +4,7 @@
 > 与纯 C adapter；BUILD-03 后旧 C schema/bridge/动态导出已经删除。当前 `util_core` v1 的结论见
 > [`util-core-v1`](util-core-v1-closure.md) 与
 > [`capability replay`](util-core-capability-replay-v1.md)，当前 `util` runtime 记录见
-> [`util-runtime-v1`](util-runtime-v1-closure.md)。唯一当前状态只看
+> [`util-runtime-v2`](util-runtime-v2-closure.md)。唯一当前状态只看
 > [`module status`](../../status.md)。下文的 C ABI、动态符号和旧跑分不得作为当前使用说明。
 
 ## 当前状态（2026-07-30）
