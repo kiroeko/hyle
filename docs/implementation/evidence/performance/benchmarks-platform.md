@@ -12,15 +12,14 @@ The closure decision and bounded investigation log live in
 
 ## Current verdict
 
-`PENDING` while platform is `CANDIDATE`. A development smoke run is useful only
-to prove that the benchmark executes and validates its results; it is not a
-performance verdict. The page is updated to `PASS`, `BLOCKED`, or a named
-limitation only from runner-produced independent-process manifests.
+`PASS` for the frozen W1-WIN P1 engineering contract. This is not a Formal,
+cross-machine, or all-platform SOTA certificate. The two admitted families
+passed independently; neither result is pooled into a platform-wide score.
 
 | family | consumer-shaped charged lifecycle | pinned peer | material / NI margin | current status |
 | --- | --- | --- | --- | --- |
-| worker idle handoff | one persistent caller and worker, pinned to two distinct same-class physical cores, exchange 64 request/response tokens; threads and mailbox owners remain outside measurement | oneTBB production `binary_semaphore` used by `concurrent_monitor` | 5% / 5% | `PENDING` |
-| model loader mapping | open and map one warm 16 MiB file, probe and validate 64 fixed page-distributed bytes, then unmap and close | Boost.Interprocess `file_mapping` + `mapped_region` | 5% / 5% | `PENDING` |
+| worker idle handoff | one persistent caller and worker, pinned to two distinct same-class physical cores, exchange 64 request/response tokens; threads and mailbox owners remain outside measurement | oneTBB production `binary_semaphore` used by `concurrent_monitor` | 5% / 5% | `WIN`; 8/8 strata NI `PASS` |
+| model loader mapping | open and map one warm 16 MiB file, probe and validate 64 fixed page-distributed bytes, then unmap and close | Boost.Interprocess `file_mapping` + `mapped_region` | 5% / 5% | `PARITY`; 8/8 strata NI `PASS` |
 
 The two families are independent gates and are never pooled into a “platform
 score.” The contract runs primary and function-placement variants, both
@@ -39,6 +38,32 @@ contract therefore uses the general `cross-core-pair` adapter: W1 selects CPU
 the process to mask `0x14`, pins both roles, and rejects missing telemetry.
 The same-core result remains a documented mechanism characteristic; it is not
 silently relabelled as the scheduler's normal cross-core worker topology.
+
+## Qualified evidence
+
+- product candidate: `5b8dab7012e9f7c6cdaf97f863c0b83b4e8a5064`, tree
+  `24a68b0ab3314902a765c6bf60f8ccb760d290f4`;
+- evidence source/harness revision: `535e5820ec3b2beda5326dd3d41364d8d43116f4`, tree
+  `e676563c0c4146afdb3e761bc9ec8177a907e49e`;
+- contract SHA-256:
+  `3a66896e30eeaa6eb645a88a63fd02be9cc90654129f6c7f3bc5e21687c360b3`;
+- retained engineering bundle:
+  `C:\hyle-scratch\platform-perf-qualify-535e5820-evidence`; manifest SHA-256
+  `2c0fdc3d650a49d18e3af298b910a25f1152ef72b296b98b943ca0c3cd4ea1c6`, summary
+  SHA-256 `3bf1fd3ec40dac45418000bde08a927ba4f8648f17717fb0585af91b752b21d2`;
+- runner/verifier verdict: `QUALIFIED`, `paths_verified=true`, current engineering
+  policy eligible. Artifact identity, MSVC 19.50 Release/static/LTO-off build,
+  clean pinned peers, registered host, child affinity telemetry, A/A, 5%/10%
+  known deltas, timer floor and placement controls all passed.
+
+The n=15 run escalated by the frozen power rule to 31 independent process
+clusters. Handoff's eight median advantage ratios span 19.0693--23.1283; the
+worst 98.93% confidence lower bound is 18.1863. Mapping's eight medians span
+0.991584--0.997888; the worst lower bound is 0.983392, inside the predeclared
+5% non-inferiority limit. Later commits change sanitizer/test/delivery tooling
+and documents only: platform product sources and the frozen performance
+contract/harness are unchanged, so they do not renew or overwrite this exact
+bundle identity.
 
 ## Structural performance gates
 
@@ -100,8 +125,20 @@ python scripts/hyle-perf.py probe `
   --peer boost=C:\public\project-hyle\boost `
   --build C:\hyle-scratch\platform-perf-probe-build `
   --output C:\hyle-scratch\platform-perf-probe-evidence
+
+python scripts/hyle-perf.py qualify-platform `
+  --contract bench/contracts/platform-consumer-v1.json `
+  --machine W1-WIN `
+  --peer onetbb=C:\public\project-hyle\oneTBB `
+  --peer boost=C:\public\project-hyle\boost `
+  --build C:\hyle-scratch\platform-perf-qualify-build `
+  --output C:\hyle-scratch\platform-perf-qualify-evidence
+
+python scripts/hyle-perf.py verify `
+  --manifest C:\hyle-scratch\platform-perf-qualify-evidence\manifest.json `
+  --contract bench/contracts/platform-consumer-v1.json
 ```
 
-`probe` only qualifies the instrument and estimates wall time. The closure task
-records the exact `qualify-platform` command and manifest paths after the
-candidate is frozen; hand-written nanobench tables are not accepted evidence.
+`probe` only qualifies the instrument and estimates wall time. Only the
+independent-process `qualify-platform` manifest and a successful deep replay
+can carry the verdict; hand-written nanobench tables are not accepted evidence.

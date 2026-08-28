@@ -2,9 +2,12 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-> 当前阶段：`CANDIDATE`。本文是 platform 当前轮唯一 closure card 与施工记录；既有 platform task、
+> 当前阶段：`VERIFIED`。本文是 platform 当前轮唯一 closure card 与施工记录；既有 platform task、
 > architecture、guide 和性能页只作审计输入，不继承旧 `SIGNED`、C ABI 或 SOTA 结论。权威机械状态见
-> [`module-status.json`](../../module-status.json)。
+> [`module-status.json`](../../module-status.json)。product candidate 保持
+> `5b8dab7012e9f7c6cdaf97f863c0b83b4e8a5064` / tree
+> `24a68b0ab3314902a765c6bf60f8ccb760d290f4`；全部适用工程门已经 `PASS`，待 terminal receipt
+> 登记后进入 `CLOSED`。
 
 ## Closure card（`SCOPED`）
 
@@ -212,8 +215,49 @@ native-code translation、obs 的 terminal write 和 util 的 demangler 都是�
 
 ## Verification manifest
 
-候选冻结后按 closure card 的适用矩阵填写，不把未运行项写成 PASS。
+candidate 到当前 `1fb6724e1afb0aa2abc9ee4096ef94793457f8e3` 的
+`include/hyle/platform + src/platform` diff 为空。候选后的改动仅包括冻结性能合同/仪器、Windows
+sanitizer 构建修复、测试可移植性、macOS delivery smoke 和 current 文档，不改变 platform API、算法、
+layout 或正常运行时成本。
+
+| Gate | Verdict | 证据与边界 |
+| --- | --- | --- |
+| scope / capability | `PASS` | 全部 public capability family 均已反向追踪；九项冻结 FIX 全部关闭，GENERAL/ROUTED/REJECT 有 owner 与触发条件，没有 benchmark 为导向的常态 metadata |
+| architecture / API | `PASS` | CPU/thread/wait/VM/NUMA/fs/mapping/dynlib owner/view/failure/复杂度边界写入 architecture；C++23 API 与 `error`/`time` 类型组合自然，Native FFI/C API 明确 N/A |
+| correctness | `PASS` | W1-WIN MSVC Release/shared 2/2；MSVC ASan 与 clang-cl ASan 各 2/2；W1-WSL GCC 14.2 Release、ASan、UBSan 各 2/2，TSan 197/197；M1-MAC AppleClang 21 Release 与 ASan 各 2/2；public-header self-containment 同平台通过 |
+| delivery | `PASS` | Windows、WSL、macOS 均由 `HyleCiSelectedComponentSmoke` 通过 source embedding、relocated shared SDK、relocated static SDK 与各自 consumer；安装闭包为 `core,container_intrusive,error,time,platform` |
+| usability / docs | `PASS` | architecture 与 user guide 覆盖选型、ownership、failure、concurrency、单位、OS capability 与坑；`check-docs.py` 为 280 Markdown / 826 links，公开面无伪 C schema/symbol/option |
+| engineering performance | `PASS` | W1-WIN `closure-perf-v1`、5% NI、n=31：Parker 8/8 `WIN+NI PASS`，MappedFile 8/8 `PARITY+NI PASS`；A/A、5/10% delta、floor、placement、host/build/source/artifact/peer identity 全 PASS，deep verifier `QUALIFIED` |
+| red team | `PASS` | 下表全部 finding 已修复、接受或限界，无未处理 correctness/security/material blocker |
+
+性能 bundle 位于
+`C:\hyle-scratch\platform-perf-qualify-535e5820-evidence`：source revision
+`535e5820ec3b2beda5326dd3d41364d8d43116f4`，contract SHA-256
+`3a66896e30eeaa6eb645a88a63fd02be9cc90654129f6c7f3bc5e21687c360b3`，manifest SHA-256
+`2c0fdc3d650a49d18e3af298b910a25f1152ef72b296b98b943ca0c3cd4ea1c6`，summary SHA-256
+`3bf1fd3ec40dac45418000bde08a927ba4f8648f17717fb0585af91b752b21d2`。Formal 仍为
+`PENDING`，不得外推为跨机器、跨 topology 或所有 platform API 的 SOTA 证书。
+
+### Final red-team
+
+| finding | severity | disposition / evidence |
+| --- | --- | --- |
+| 默认单 CPU launcher 把 caller/worker 同核，Parker 方向反转 | material instrument defect | `FIXED` at `535e5820`：冻结 `cross-core-pair`，process mask 与 caller/worker telemetry 机械验证；强制同核慢约 3.5x 保留为限制，不改产品迎合点值 |
+| Windows ASan 只编译插桩，最终 DLL/EXE 未正确链接 runtime | high validation false-pass | `FIXED` at `63487a61`：cl.exe/clang-cl 动态 runtime/thunk、SEH、PDB、DLL staging 与 HYLE-owned GTest 同形状；两编译器真实运行通过并检查 ASan imports |
+| 两个无捕获 Thread callback 依赖 MSVC 接受 automatic constexpr odr-use | material portability | `FIXED` at `63487a61`：常量改为 static storage；clang-cl、GCC、AppleClang 与 sanitizer 门通过 |
+| macOS selected-component source parent 未声明 14.4 floor | material delivery false-fail | `FIXED` at `1fb6724e`：中央 platform requirement 同时驱动顶层与三种 delivery shape；三平台 smoke 全绿 |
+| 单节点开发机可能把 NUMA API 通过误写成多 socket placement/SOTA | claim integrity | `ACCEPTED LIMITATION`：只签 API、复杂度、rollback/single-node floor；多节点物理 placement/bandwidth 未认证 |
+| Native FFI/C API 缺失 | intended negative space | `N/A`：无已准入 foreign-runtime consumer；source/static/shared 均为 C++23 产品，不保留伪符号 |
+
+产品 candidate 后未发现新的 platform 实现/API 缺陷；本轮新增发现均属于仪器、sanitizer 或 delivery
+验证系统，并已在其 owner 中修复。没有为性能点值改变 platform 形状。
+
+candidate 的 canonical LOC self-check（`python scripts/loc-report.py --module platform --commit
+5b8dab7012e9f7c6cdaf97f863c0b83b4e8a5064 --self-check --json`）为：全库代码 **301,073**；
+自实现包含测试 **123,120**；自实现不包含测试 **82,713**；platform 实现 **6,624** 行。
 
 ## Closure decision
 
-尚未裁决。
+九项 ledger FIX 全部关闭，七项 aggregate gate 全部 `PASS`，无 blocker；candidate 满足 `VERIFIED`。
+Formal、多节点 NUMA 与强制同核 handoff 等限制不阻止 engineering closure。下一步只登记 terminal
+receipt、known limitations、reopen triggers 与中央 registry anchor，不再修改产品 candidate。

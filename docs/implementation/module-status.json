@@ -316,7 +316,7 @@
     },
     {
       "module": "platform",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "round_id": "platform-v1",
       "closure_task": "docs/implementation/tasks/platform/platform-v1-closure.md",
       "scope": "CPU/topology, thread/wait, VM/NUMA, filesystem/file mapping and dynamic-loader mechanisms; C++ API, direct dependencies/consumers, delivery, documentation and bounded P1 engineering evidence.",
@@ -331,17 +331,27 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "PASS",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1"
+        "instrument_profile": "closure-perf-v1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-platform.md"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "platform-v1 产品候选 5b8dab70/24a68b0a 已冻结：9 组 FIX、当前 C++ API/文档、真实 package consumer 与 P1 合同就位；正在对不可变候选执行三平台、sanitizer、交付和 W1-WIN 性能验证。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
+      "summary": "platform-v1 candidate 的功能/API、三平台正确性与 sanitizer、三种交付、文档、红队和 W1-WIN 5% P1 工程性能门均已验证。"
     },
     {
       "module": "mem",
