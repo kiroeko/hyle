@@ -300,7 +300,7 @@
     },
     {
       "module": "util",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "round_id": "util-runtime-v2",
       "closure_task": "docs/implementation/tasks/util/util-runtime-v2-closure.md",
       "scope": "Owning std::string runtime demangle and type_info convenience, single platform-demangler execution per public call, affected correctness/usability/docs and current source/static/shared delivery.",
@@ -315,14 +315,24 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "PASS",
         "mode": "STRUCTURAL",
-        "instrument_profile": "closure-correctness-v1"
+        "instrument_profile": "closure-correctness-v1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-util.md"
       },
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "util-runtime-v2 CANDIDATE：owning demangle 以 caller-side std::string + internal sink 补齐，buffer overlap 与 Windows 锁范围已修；Registry 产品零改动，进入三平台/交付验证。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
+      "summary": "util-runtime-v2 VERIFIED：owning/buffer demangle、caller-CRT 边界、三平台正确性与 source/static/shared 交付、文档和 P0 结构门全部通过；Registry 产品零改动，等待 terminal receipt。"
     },
     {
       "module": "sched",
