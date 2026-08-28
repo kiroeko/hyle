@@ -1,5 +1,10 @@
 # Dependency upgrade impact ledger — 2026-08
 
+> **HISTORICAL WORK LOG：**下表记录依赖升级当时实际触碰过、因而必须复验的 surface，不是当前
+> API/ABI 清单。后续 BUILD-03 已删除旧 C schema、adapter、Native FFI 动态符号与 fixture；当前产品
+> 状态只看 [`module-status.json`](../../module-status.json)，当前接口只看 architecture/user 文档与
+> public C++23 headers。保留下列 C/FFI 行是为了追溯当时为何触发复验，不能据此恢复旧接口。
+
 This ledger binds the dependency refresh to real HYLE consumers and release
 evidence.  The machine-readable authority is
 [`../../cmake/HyleDependencyLock.json`](../../../../cmake/HyleDependencyLock.json);
