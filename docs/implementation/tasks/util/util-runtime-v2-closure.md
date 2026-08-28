@@ -1,6 +1,7 @@
 # util-runtime v2：owning demangle 易用性切片
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
 > 本轮由
 > [`util runtime capability replay`](util-runtime-capability-replay-v1.md) 的
@@ -211,3 +212,17 @@ registry 锚定后进入 `CLOSED`。
 **122,321**；自实现不包含测试 **82,176**；当前 `util` 实现 **1,244** 行。这里的模块边界按
 canonical `include/hyle/util + src/util`，包含同目录下已独立签结的 util-core 公开头；LOC 只用于规模
 复盘，不作为完成度证据。
+
+## Terminal receipt
+
+- terminal verdict：`CLOSED`；product candidate
+  `f3b341cb2ae81154f81bc45052a651e773c5e2b3` / tree
+  `c3141ccfd2902a450eb271f867a2ee8aacc5cbb9` 的全部适用门为 `PASS`，无 blocker；
+- 本页所在提交是 terminal end receipt；完整 `end_commit` 由后续中央 registry 提交记录；
+- registry anchor：由后续首个 `CLOSED` registry 快照绑定本 receipt；
+- raw local evidence：W1-WIN `C:\public\project-hyle\_validation\util-v2-win`；W1-WSL
+  `/root/hyle-scratch/util-v2-{f3b341cb,build-release-f3b341cb,build-asan-f3b341cb,build-ubsan-f3b341cb}`；
+  M1-MAC `/Users/kiro/hyle-scratch/{util-v2-f3b341cb,util-v2-delivery-f3b341cb}`。这些是本地可重放
+  artifact，不冒充长期签名 Formal bundle；
+- LOC snapshot：`f3b341cb2ae81154f81bc45052a651e773c5e2b3`，`self-check=pass`；四项数值见上节；
+- 后续只按本页 reopen triggers 重开，旧 v1 与 2026-07 task/evidence 不再承担当前状态。
