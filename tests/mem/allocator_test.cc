@@ -33,6 +33,7 @@ using hyle::mem::StatsAllocator;
 using hyle::mem::system_allocator;
 using hyle::mem::system_collect;
 using hyle::mem::system_good_size;
+using hyle::mem::system_memory_snapshot;
 using hyle::mem::system_usable_size;
 using hyle::mem::SystemAllocator;
 #if defined(HYLE_TESTING)
@@ -104,6 +105,38 @@ TEST(Allocator, SystemCollectPreservesLiveAllocations) {
   EXPECT_EQ(live[0], 0x123456789abcdef0ULL);
   allocator.deallocate_n(live, 128);
   system_collect(true);
+}
+
+TEST(Allocator, SystemMemorySnapshotIsStableAndSelfConsistent) {
+  const auto before = system_memory_snapshot();
+  ASSERT_TRUE(before);
+
+  constexpr std::size_t kProbeBytes = 8u * 1024u * 1024u;
+  Allocator allocator = system_allocator();
+  void *probe = allocator.allocate(kProbeBytes, 64);
+  ASSERT_NE(probe, nullptr);
+  std::memset(probe, 0xA7, kProbeBytes);
+
+  const auto during = system_memory_snapshot();
+  ASSERT_TRUE(during);
+  EXPECT_GE(during->allocator_peak_reserved_bytes,
+            during->allocator_reserved_bytes);
+  EXPECT_GE(during->allocator_peak_committed_bytes,
+            during->allocator_committed_bytes);
+  EXPECT_GE(during->process_peak_resident_bytes,
+            during->process_resident_bytes);
+  EXPECT_GE(during->process_peak_committed_bytes,
+            during->process_committed_bytes);
+  EXPECT_GE(during->allocator_peak_reserved_bytes,
+            before->allocator_peak_reserved_bytes);
+  EXPECT_GE(during->allocator_peak_committed_bytes,
+            before->allocator_peak_committed_bytes);
+  EXPECT_GE(during->process_peak_resident_bytes,
+            before->process_peak_resident_bytes);
+  EXPECT_GE(during->process_peak_committed_bytes,
+            before->process_peak_committed_bytes);
+
+  allocator.deallocate(probe, kProbeBytes, 64);
 }
 
 TEST(Allocator, CrossThreadSystemFreeThenOwnerCollectIsSafe) {

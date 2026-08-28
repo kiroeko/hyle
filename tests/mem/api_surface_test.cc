@@ -40,6 +40,7 @@ static_assert(std::allocator_traits<SystemStdAllocator<int>>::is_always_equal::v
 static_assert(std::is_standard_layout_v<RegionOptions>);
 static_assert(RegionOptions{}.max_block_size == 4u * 1024u * 1024u);
 static_assert(std::is_standard_layout_v<AllocStatsSnapshot>);
+static_assert(std::is_standard_layout_v<SystemMemorySnapshot>);
 static_assert(std::derived_from<PmrResource, std::pmr::memory_resource>);
 static_assert(
     std::derived_from<AlignedPmrResource, std::pmr::memory_resource>);
@@ -54,6 +55,8 @@ static_assert(std::same_as<
               SystemStdAllocator<double>>);
 static_assert(std::same_as<decltype(system_memory_resource()),
                            std::pmr::memory_resource*>);
+static_assert(std::same_as<decltype(system_memory_snapshot()),
+                           hyle::Result<SystemMemorySnapshot>>);
 
 template <class A>
 concept AllocatorSurface = requires(A a, void* p, std::size_t n) {

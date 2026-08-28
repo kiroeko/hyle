@@ -157,6 +157,9 @@ private:
   }
 
 public:
+  // Quiescent bulk reset. Every pointer returned before this call is
+  // invalidated at once and must not be read, written, or deallocated
+  // afterward; callers do not need to return each allocation first.
   void reset() noexcept {
     if (!valid())
       return;

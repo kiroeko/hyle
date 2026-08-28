@@ -22,7 +22,9 @@ namespace hyle::mem {
 // `pool` must outlive the cache and every block acquired through it. One cache
 // is owner-thread-only; different caches over the same SharedPool may be used
 // concurrently. Destroying a cache publishes its locally free blocks but does
-// not reclaim blocks that are still checked out by the user.
+// not reclaim blocks that are still checked out by the user. Before resetting
+// the core pool, quiesce users and call publish() on every attached cache;
+// cached indices surviving a core reset would duplicate newly reset slots.
 class SharedPoolCache {
 public:
   static constexpr std::uint32_t kDefaultCapacity = 128;
@@ -154,7 +156,8 @@ private:
     // Keep the allocator handle complete and consistently always-failing.
     if (!self->valid_)
       return nullptr;
-    HYLE_FATAL_ASSERT(self->pool_->cache_request_fits(size, alignment));
+    if (!self->pool_->cache_request_fits(size, alignment))
+      return nullptr;
     return self->allocate();
   }
 

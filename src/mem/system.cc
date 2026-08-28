@@ -1,10 +1,12 @@
 #include "hyle/mem/allocator.h"
 #include "hyle/mem/hugepage.h"
 #include "hyle/mem/pmr.h"
+#include "hyle/mem/stats.h"
 
 #include "system_internal.h"
 
 #include <mimalloc.h> // PRIVATE include -- mi_* types never leak to a header
+#include <mimalloc-stats.h>
 
 #include "hyle/mem/system_inline.h"
 
@@ -188,6 +190,41 @@ std::size_t system_good_size(std::size_t size) noexcept {
 }
 
 void system_collect(bool force) noexcept { mi_collect(force); }
+
+Result<SystemMemorySnapshot> system_memory_snapshot() noexcept {
+  mi_stats_t_decl(stats);
+  if (!mi_stats_get(&stats)) {
+    return std::unexpected(Status::Internal(
+        "system memory snapshot: allocator statistics contract mismatch"));
+  }
+  if (stats.reserved.current < 0 || stats.reserved.peak < 0 ||
+      stats.committed.current < 0 || stats.committed.peak < 0) {
+    return std::unexpected(Status::Internal(
+        "system memory snapshot: allocator returned negative byte counts"));
+  }
+
+  std::size_t current_rss = 0;
+  std::size_t peak_rss = 0;
+  std::size_t current_commit = 0;
+  std::size_t peak_commit = 0;
+  mi_process_info(nullptr, nullptr, nullptr, &current_rss, &peak_rss,
+                  &current_commit, &peak_commit, nullptr);
+
+  SystemMemorySnapshot out;
+  out.allocator_reserved_bytes =
+      static_cast<std::uint64_t>(stats.reserved.current);
+  out.allocator_peak_reserved_bytes =
+      static_cast<std::uint64_t>(stats.reserved.peak);
+  out.allocator_committed_bytes =
+      static_cast<std::uint64_t>(stats.committed.current);
+  out.allocator_peak_committed_bytes =
+      static_cast<std::uint64_t>(stats.committed.peak);
+  out.process_resident_bytes = static_cast<std::uint64_t>(current_rss);
+  out.process_peak_resident_bytes = static_cast<std::uint64_t>(peak_rss);
+  out.process_committed_bytes = static_cast<std::uint64_t>(current_commit);
+  out.process_peak_committed_bytes = static_cast<std::uint64_t>(peak_commit);
+  return out;
+}
 
 #if defined(HYLE_TESTING)
 int system_backend_version_for_testing() noexcept { return mi_version(); }

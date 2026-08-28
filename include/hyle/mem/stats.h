@@ -22,6 +22,32 @@
 
 namespace hyle::mem {
 
+// Cold process-memory observation for long-lived services and local inference
+// runtimes. The allocator fields describe address space reserved/committed by
+// HYLE's process-wide system allocator; the process fields include every
+// allocation domain in the process. Current values are temporal when other
+// threads allocate concurrently, while peaks are monotonic for the process.
+//
+// This intentionally does NOT claim exact live requested payload: the shipping
+// allocator can provide that only by adding accounting to every hot allocation.
+// Use StatsAllocator around a named owner when exact owner-local live bytes are
+// required. Taking a snapshot is a cold O(number of allocator heaps) operation
+// plus the platform process-memory query; it adds no work to allocation/free.
+struct SystemMemorySnapshot {
+  std::uint64_t allocator_reserved_bytes = 0;
+  std::uint64_t allocator_peak_reserved_bytes = 0;
+  std::uint64_t allocator_committed_bytes = 0;
+  std::uint64_t allocator_peak_committed_bytes = 0;
+  std::uint64_t process_resident_bytes = 0;
+  std::uint64_t process_peak_resident_bytes = 0;
+  std::uint64_t process_committed_bytes = 0;
+  std::uint64_t process_peak_committed_bytes = 0;
+};
+
+// Internal backing/version failure is reported instead of returning a partial
+// or vendor-shaped record. The public POD remains independent of mimalloc.
+HYLE_MEM_API Result<SystemMemorySnapshot> system_memory_snapshot() noexcept;
+
 // Plain POD copy of the atomic fields. During concurrent mutation each field is
 // individually race-free but the fields need not describe one coherent instant.
 // After callers quiesce the wrapper, the snapshot is exact and live_* should be

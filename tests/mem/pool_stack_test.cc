@@ -792,6 +792,22 @@ TEST(FixedPool, RecentFreeMissPublishesBlockAndResetReclaimsEverything) {
   EXPECT_NE(pool.allocate(3000, 64), nullptr);
 }
 
+TEST(FixedPool, ResetBulkInvalidatesOutstandingAllocations) {
+  alignas(64) std::byte storage[4096];
+  FixedPool pool(storage, sizeof(storage));
+  void *first = pool.allocate(512, 64);
+  void *second = pool.allocate(768, 32);
+  ASSERT_NE(first, nullptr);
+  ASSERT_NE(second, nullptr);
+  ASSERT_EQ(pool.used(), 1280u);
+
+  // No individual deallocate is required. Both old pointers become invalid at
+  // this quiescent boundary and are deliberately never touched again.
+  pool.reset();
+  EXPECT_EQ(pool.used(), 0u);
+  EXPECT_NE(pool.allocate(3000, 64), nullptr);
+}
+
 TEST(FixedPool, SplitRemainderCursorCoalescesAcrossAdjacentReturns) {
   alignas(64) std::byte storage[4096];
   FixedPool pool(storage, sizeof(storage));

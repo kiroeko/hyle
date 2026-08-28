@@ -710,7 +710,10 @@ protected:
 // measured hot spot and the pool is over-provisioned, attach SharedPoolCache.
 //
 // Lifetime contract: every live block is returned exactly once to the SAME pool
-// before reset/destruction, with alloc/free externally quiesced.
+// before destruction. reset() is a distinct quiescent bulk-invalidation
+// boundary: no concurrent operation may run, and no old pointer may be touched
+// or returned afterward. Every attached SharedPoolCache must first publish its
+// locally free indices; otherwise reset would make the same slots visible twice.
 // Foreign/misaligned pointers fail-fast in every build. HYLE_TESTING adds
 // per-slot liveness, double-return and outstanding-allocation diagnostics;
 // shipping builds carry no per-slot diagnostic state or instructions.
@@ -826,8 +829,9 @@ private:
     auto *self = static_cast<SharedPool *>(state);
     if (size == 0)
       return nullptr;
-    HYLE_FATAL_ASSERT(is_pow2(alignment) && size <= self->block_size_ &&
-                      alignment <= self->alignment_);
+    if (!is_pow2(alignment) || size > self->block_size_ ||
+        alignment > self->alignment_)
+      return nullptr;
     return self->allocate();
   }
   static void pool_free(void *state, void *ptr, std::size_t,

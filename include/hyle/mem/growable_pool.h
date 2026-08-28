@@ -90,9 +90,6 @@ public:
   }
 
   ~GrowablePoolCore() {
-#if defined(HYLE_TESTING)
-    HYLE_FATAL_ASSERT(live_ == 0);
-#endif
     free_blocks();
   }
 

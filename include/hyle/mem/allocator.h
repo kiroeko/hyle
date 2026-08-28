@@ -25,17 +25,17 @@ namespace hyle::mem {
 // fundamental scalar; backends never return less than this).
 inline constexpr std::size_t kDefaultAlignment = alignof(std::max_align_t);
 
-// ---- ABI-clean allocator vtable --------------------------------------------
+// ---- runtime-erased allocator callbacks ------------------------------------
 // THREE function pointers (alloc/free/realloc), each carrying alignment. clay
 // used ONE 5-arg realloc_func for all three "to minimize symbols" -- but that
 // is a PERFORMANCE bug, not a virtue: on the Win64 ABI only 4 integer args land
 // in registers, so the 5th (alignment) SPILLS TO THE STACK on every call, and
 // one-function-does-three forces a dispatch branch (ptr==null? new==0?) on the
-// hot path. Splitting remains ABI-clean for one matching build (three C
-// function pointers, trivially copyable -- the same basic shape used by
-// jemalloc/pmr/cudaMalloc) AND register-friendly: alloc is 3 args (all in
-// registers), free is 4 (all in registers), no dispatch branch. This C++ source
-// contract is not a cross-runtime ABI. Measured: removes the spill + branch tax.
+// hot path. Splitting remains trivially copyable within one matching C++ build
+// (the same basic erased shape used by jemalloc/pmr/cudaMalloc) AND
+// register-friendly: alloc is 3 args (all in registers), free is 4 (all in
+// registers), no dispatch branch. This is a source-level C++ contract, not a
+// stable foreign ABI. Measured: removes the spill + branch tax.
 // Returns nullptr on OOM (allocation is a hot path; failure is a value, not a
 // Status).
 //   AllocFn  (state, size, alignment)                 -> ptr (nullptr on
@@ -57,10 +57,10 @@ using ReallocFn = void *(*)(void *state, void *ptr, std::size_t old_size,
                             std::size_t alignment) noexcept;
 
 // ---- injectable allocator handle --------------------------------------------
-// {fn, state}: trivially copyable, ABI-clean (function pointer + void*). Passed
-// by value through every allocating API (charter: explicit injection, no hidden
-// global heap). Methods are inline pure-forwarders -- zero overhead, the
-// wrapper never costs a DLL call; only the backing fn lives in a TU.
+// {fn, state}: trivially copyable runtime type erasure. Passed by value through
+// every allocating API (charter: explicit injection, no hidden global heap).
+// Methods are inline pure-forwarders -- zero overhead, the wrapper never costs
+// a DLL call; only the backing fn lives in a TU.
 class Allocator {
 public:
   Allocator() noexcept = default; // null/invalid allocator

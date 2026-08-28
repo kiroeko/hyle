@@ -84,6 +84,11 @@ TEST(HugeRegion, RejectsUnknownAndContradictoryPlacementFlags) {
   ASSERT_FALSE(conflict);
   EXPECT_TRUE(conflict.error().IsInvalidArgument());
 
+  auto bind_without_node =
+      HugeRegion::allocate(page_size(), HugeFlags::kNumaBind);
+  ASSERT_FALSE(bind_without_node);
+  EXPECT_TRUE(bind_without_node.error().IsInvalidArgument());
+
   auto named_node_interleave = HugeRegion::allocate(
       page_size(), HugeFlags::kNumaInterleave,
       static_cast<int>(hyle::platform::numa_nodes().front()));

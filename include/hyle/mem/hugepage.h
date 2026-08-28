@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <span>
 #include <utility>
 
@@ -104,6 +105,11 @@ public:
           Status::OutOfRange("HugeRegion allocate: size overflow"));
     }
     const bool interleave = any(flags & HugeFlags::kNumaInterleave);
+    if (any(flags & HugeFlags::kNumaBind) &&
+        numa_node == platform::kNumaAny) {
+      return std::unexpected(Status::InvalidArgument(
+          "HugeRegion allocate: hard bind requires an explicit NUMA node"));
+    }
     if (interleave && numa_node != platform::kNumaAny) {
       return std::unexpected(Status::InvalidArgument(
           "HugeRegion allocate: interleave requires NUMA-any"));
@@ -180,11 +186,16 @@ public:
       return std::unexpected(Status::InvalidArgument(
           "HugeRegion allocate_local: interleave is not local placement"));
     }
-    int node = platform::kNumaAny;
-    if (auto current = platform::numa_current_node(); current) {
-      node = static_cast<int>(*current);
+    auto current = platform::numa_current_node();
+    if (!current) {
+      return std::unexpected(std::move(current).error().WithContext(
+          "HugeRegion allocate_local current NUMA node"));
     }
-    return allocate(bytes, flags, node);
+    if (*current > static_cast<unsigned>((std::numeric_limits<int>::max)())) {
+      return std::unexpected(Status::OutOfRange(
+          "HugeRegion allocate_local: NUMA node does not fit int"));
+    }
+    return allocate(bytes, flags, static_cast<int>(*current));
   }
 
   // Shared multi-MB arena: interleave + THP.

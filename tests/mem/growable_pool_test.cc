@@ -138,6 +138,19 @@ TEST(GrowablePool, ClearReclaimsAndReusable) {
   pool.destroy(q);
 }
 
+TEST(GrowablePool, TrivialLiveObjectsMayBeBulkReleasedAtDestruction) {
+  StatsAllocator stats = StatsAllocator::create(system_allocator()).value();
+  {
+    GrowablePool<int> pool(stats.get(), 2);
+    ASSERT_NE(pool.create(7), nullptr);
+    ASSERT_NE(pool.create(9), nullptr);
+    EXPECT_EQ(pool.live(), 2u);
+    // Trivially destructible values require no per-object cleanup. Pool
+    // destruction bulk-invalidates their slots and releases every block.
+  }
+  EXPECT_TRUE(stats.balanced());
+}
+
 #if defined(HYLE_TESTING)
 TEST(GrowablePoolDiagnosticsDeathTest, DoubleDestroyTraps) {
   EXPECT_DEATH(
@@ -164,7 +177,12 @@ TEST(GrowablePoolDiagnosticsDeathTest, ForeignPointerTraps) {
 TEST(GrowablePoolDiagnosticsDeathTest, OutstandingObjectAtDestructionTraps) {
   EXPECT_DEATH(
       {
-        GrowablePool<int> pool(system_allocator(), 1);
+        struct NeedsDestruction {
+          explicit NeedsDestruction(int v) : value(v) {}
+          ~NeedsDestruction() { value = 0; }
+          int value;
+        };
+        GrowablePool<NeedsDestruction> pool(system_allocator(), 1);
         (void)pool.create(7);
       },
       ".*");

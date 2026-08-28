@@ -318,12 +318,42 @@ TEST(SharedPoolCache, AllocatorViewKeepsFixedBlockContract) {
   SharedPoolCache cache(pool, storage, 2);
   Allocator alloc = cache.as_allocator();
 
+  EXPECT_EQ(alloc.allocate(129, 64), nullptr);
+  EXPECT_EQ(alloc.allocate(1, 128), nullptr);
+  EXPECT_EQ(alloc.reallocate(nullptr, 0, 129, 64), nullptr);
+  EXPECT_EQ(cache.cached(), 0u);
   void *p = alloc.allocate(96, 64);
   ASSERT_NE(p, nullptr);
   EXPECT_EQ(alloc.reallocate(p, 96, 128, 64), p);
   EXPECT_EQ(alloc.reallocate(p, 128, 256, 64), nullptr);
   alloc.deallocate(p, 128, 64);
   cache.publish();
+}
+
+TEST(SharedPoolCache, PublishMakesCoreResetSafe) {
+  SharedPool pool(system_allocator(), 64, 8);
+  std::array<std::uint32_t, 4> storage{};
+  SharedPoolCache cache(pool, storage, 2);
+
+  void *p = cache.allocate();
+  ASSERT_NE(p, nullptr);
+  cache.deallocate(p);
+  ASSERT_GT(cache.cached(), 0u);
+
+  // Every attached cache must be empty before the quiescent bulk reset.
+  cache.publish();
+  ASSERT_EQ(cache.cached(), 0u);
+  pool.reset();
+
+  std::vector<void *> all;
+  for (std::uint32_t i = 0; i < pool.capacity(); ++i) {
+    void *block = pool.allocate();
+    ASSERT_NE(block, nullptr) << i;
+    all.push_back(block);
+  }
+  EXPECT_EQ(pool.allocate(), nullptr);
+  for (void *block : all)
+    pool.deallocate(block);
 }
 
 TEST(SharedPoolCache, OwnedMetadataOomLeavesInvalidEmptyCache) {
@@ -753,6 +783,9 @@ TEST(SharedPool, AllocatorReallocateObeysCompleteContract) {
   SharedPool pool(system_allocator(), 128, 1, 64);
   auto alloc = pool.as_allocator();
 
+  EXPECT_EQ(alloc.allocate(129, 64), nullptr);
+  EXPECT_EQ(alloc.allocate(1, 128), nullptr);
+  EXPECT_EQ(alloc.reallocate(nullptr, 0, 129, 64), nullptr);
   EXPECT_EQ(alloc.reallocate(nullptr, 0, 0, 16), nullptr);
   auto *p = static_cast<unsigned char *>(
       alloc.reallocate(nullptr, 0, 32, 16));
