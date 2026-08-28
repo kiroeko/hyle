@@ -2,12 +2,12 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-> 当前阶段：`AUDITED`。本文是 mem 当前轮唯一 closure card 与施工记录；既有 mem task、设计页、
+> 当前阶段：`CANDIDATE`。本文是 mem 当前轮唯一 closure card 与施工记录；既有 mem task、设计页、
 > guide 和性能页只作审计输入，不继承旧 `SIGNED`、Native FFI 或 SOTA 叙事。权威机械状态见
 > [`module-status.json`](../../module-status.json)。能力族、全部公开入口、真实消费者与绑定版本的成熟
 > 源码已经双向核对；本轮只实现下方冻结的九项 `FIX`，不得边施工扩面。产品/API 修复已落在
-> `0943c747`，三种交付 sample 对新冷快照的实调用落在 `2c71dfae`；尚未冻结 candidate，当前只剩
-> 统一性能证据、最终文档/红队和机械状态迁移。
+> `0943c747`，三种交付 sample 对新冷快照的实调用落在 `2c71dfae`；产品/API candidate 已冻结，
+> 当前只剩统一性能资格化、exact-candidate 复签、最终文档/红队和机械状态迁移。
 
 ## Closure card（`SCOPED`）
 
@@ -241,7 +241,21 @@ backend seam 未被误算成用户能力。现有公开面没有 C schema、Nati
 
 ## Candidate
 
-尚未冻结。
+- product commit：`2c71dfae9f4fb43ff0d68e5c1a4c55099fc0f101`
+- product tree：`fc02363512a0807f4d46bb57427eae4137ea39fd`
+- performance harness/docs commit：`dc9d4cb13d3893cb5bcc2adf5542c30f4df8ee8c`
+- 产品冻结内容：`0943c747` 的八项实现/合同修复与 `2c71dfae` 的三交付实调用；其后没有修改
+  `include/hyle/mem/**`、`src/mem/**` 的公开合同、layout、算法或正常 workload。性能合同、replay、
+  validator 与用户/设计说明不改变 product identity。
+- complexity/resource delta：新增冷 snapshot 为 O(number of allocator heaps/process query)；默认
+  allocation/free 无新增 field、branch、atomic、lock、TLS 或 syscall。其余 FIX 是 failure/lifecycle
+  合同收正，不改变已登记的正常复杂度档。
+- 当前 runtime-erased `Allocator` 相对同一 backing 的 compile-time direct route 有可解释的一次
+  indirect dispatch 税；两条用户形状已经分开提供且 direct route 无损。该行冻结为机制诊断，不能
+  在 qualification 后改成产品 peer，也不能为点值扩大 handle/layout。
+- `AUDITED -> CANDIDATE` 的前态快照保存于
+  `C:/hyle-scratch/mem-v1/module-status-before-candidate.json`，SHA-256
+  `711616A7F96A13E89E7D0865987E333D95653E8AF8121E1FF3C724B5691622BB`。
 
 ## Verification manifest
 
