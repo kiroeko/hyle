@@ -22,7 +22,7 @@ namespace hyle::container {
 // the same design used by rigtorp/MPMCQueue and folly. NOT a HYLE invention:
 // per coding-conventions, lock-free queues are borrowed/ported (famously hard to
 // get right), while container/ self-builds only
-// hashmap/carray/string. The per-slot sequence protocol and memory orders below
+// hashmap/PodVector/string. The per-slot sequence protocol and memory orders below
 // match the canonical implementation exactly -- do not "simplify" them.
 //
 // T must be trivially copyable (skeleton scope: fiber handles / pointers / PODs)

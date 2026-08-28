@@ -3,6 +3,7 @@
 #include <array>
 #include <cstdint>
 #include <iterator>
+#include <limits>
 #include <numeric>
 #include <sstream>
 #include <type_traits>
@@ -12,7 +13,6 @@
 #include "hyle/mem/allocator.h"
 
 using hyle::container::PodVector;
-using hyle::container::carray_header;
 using hyle::mem::Allocator;
 using hyle::mem::system_allocator;
 
@@ -27,17 +27,23 @@ void* fail_realloc(void*, void*, std::size_t, std::size_t,
 struct ToggleAllocatorState {
   Allocator backing = system_allocator();
   bool fail = false;
+  std::size_t allocated_size = 0;
+  std::size_t reallocate_old_size = 0;
+  std::size_t reallocate_new_size = 0;
+  std::size_t freed_size = 0;
 };
 
 void* toggle_alloc(void* raw_state, std::size_t size,
                    std::size_t alignment) noexcept {
   auto* state = static_cast<ToggleAllocatorState*>(raw_state);
+  state->allocated_size = size;
   return state->fail ? nullptr : state->backing.allocate(size, alignment);
 }
 
 void toggle_free(void* raw_state, void* pointer, std::size_t size,
                  std::size_t alignment) noexcept {
   auto* state = static_cast<ToggleAllocatorState*>(raw_state);
+  state->freed_size = size;
   state->backing.deallocate(pointer, size, alignment);
 }
 
@@ -45,6 +51,8 @@ void* toggle_realloc(void* raw_state, void* pointer, std::size_t old_size,
                      std::size_t new_size,
                      std::size_t alignment) noexcept {
   auto* state = static_cast<ToggleAllocatorState*>(raw_state);
+  state->reallocate_old_size = old_size;
+  state->reallocate_new_size = new_size;
   return state->fail ? nullptr : state->backing.reallocate(
                                      pointer, old_size, new_size, alignment);
 }
@@ -78,17 +86,12 @@ TEST(PodVector, PushBackGrowsAndIndexes) {
   for (int i = 0; i < 100; ++i) EXPECT_EQ(a[i], i * 3);  // a[i] zero-indirection
 }
 
-TEST(PodVector, HeaderBeforeDataLayout) {
+TEST(PodVector, DataPointerIsDirectNativeRange) {
   PodVector<int> a(system_allocator());
   a.push_back(7);
-  // The element pointer IS the data; header sits immediately before it.
   EXPECT_EQ(a.data()[0], 7);
-  EXPECT_EQ(carray_header(a.data())->size, 1u);
   a.push_back(9);
-  EXPECT_EQ(carray_header(a.data())->size, 2u);
   a.pop_back();
-  EXPECT_EQ(carray_header(a.data())->size, 1u);
-  // data can be passed straight to a C API expecting int* -- prove it reads.
   int* raw = a.data();
   EXPECT_EQ(raw[0], 7);
 }
@@ -122,8 +125,6 @@ TEST(PodVector, OverAlignedElement) {
   PodVector<Cacheline> a(system_allocator());
   a.push_back(Cacheline{});
   a.push_back(Cacheline{});
-  // header-before-data must still leave the elements 64-aligned (clay's fixed
-  // max_align_t header would have broken this).
   EXPECT_EQ(reinterpret_cast<std::uintptr_t>(a.data()) % 64, 0u);
 }
 
@@ -153,17 +154,18 @@ TEST(PodVector, PushBackMayAliasElementAcrossGrowth) {
   EXPECT_EQ(a.back(), 11);
 }
 
-TEST(PodVector, ExistingStorageKeepsRecordedAlignmentOnTypeErasedGrow) {
-  void* data = hyle::container::detail::carray_set_capacity_internal(
-      nullptr, 4, sizeof(int), 64, system_allocator());
-  ASSERT_NE(data, nullptr);
-  ASSERT_EQ(reinterpret_cast<std::uintptr_t>(data) % 64, 0u);
-  data = hyle::container::detail::carray_set_capacity_internal(
-      data, 16, sizeof(int), alignof(int), system_allocator());
-  ASSERT_NE(data, nullptr);
-  EXPECT_EQ(reinterpret_cast<std::uintptr_t>(data) % 64, 0u);
-  EXPECT_EQ(carray_header(data)->align, 64u);
-  hyle::container::detail::carray_free_internal(data, sizeof(int));
+TEST(PodVector, AllocationContainsOnlyElementStorage) {
+  ToggleAllocatorState state;
+  Allocator allocator(toggle_alloc, toggle_free, toggle_realloc, &state);
+  {
+    PodVector<std::uint32_t> values(allocator);
+    ASSERT_TRUE(values.try_reserve(4));
+    EXPECT_EQ(state.allocated_size, 4 * sizeof(std::uint32_t));
+    ASSERT_TRUE(values.try_reserve(8));
+    EXPECT_EQ(state.reallocate_old_size, 4 * sizeof(std::uint32_t));
+    EXPECT_EQ(state.reallocate_new_size, 8 * sizeof(std::uint32_t));
+  }
+  EXPECT_EQ(state.freed_size, 8 * sizeof(std::uint32_t));
 }
 
 TEST(PodVector, FallibleGrowthPreservesStateOnFailure) {
@@ -178,7 +180,8 @@ TEST(PodVector, FallibleGrowthPreservesStateOnFailure) {
 
 TEST(PodVector, FallibleReserveRejectsAddressSpaceOverflow) {
   PodVector<std::uint64_t> a(system_allocator());
-  EXPECT_FALSE(a.try_reserve(UINT64_MAX));
+  EXPECT_FALSE(
+      a.try_reserve((std::numeric_limits<std::size_t>::max)()));
   EXPECT_EQ(a.data(), nullptr);
 }
 
@@ -289,7 +292,7 @@ TEST(PodVector, FailedShrinkPreservesStorageAndEmptyShrinkReleasesIt) {
   PodVector<int> values(allocator, 5, 7);
   values.reserve(16);
   int* const data_before = values.data();
-  const std::uint64_t capacity_before = values.capacity();
+  const std::size_t capacity_before = values.capacity();
 
   state.fail = true;
   EXPECT_FALSE(values.try_shrink_to_fit());

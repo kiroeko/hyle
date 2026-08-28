@@ -33,7 +33,7 @@ elseif(HYLE_TARGET_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   list(APPEND _container_arch_sources str_search_neon.cc bitset_ops_neon.cc)
 endif()
 hyle_add_module(container
-  SOURCES hash.cc carray.cc string_buf.cc path.cc swiss_table.cc string_algo.cc
+  SOURCES hash.cc pod_vector.cc string_buf.cc path.cc swiss_table.cc string_algo.cc
           string_ref.cc dynamic_bitset.cc str_search_scalar.cc
           bitset_ops_scalar.cc ${_container_arch_sources})
 target_include_directories(hyle_container PRIVATE

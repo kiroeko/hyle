@@ -19,7 +19,7 @@ container 提供性能敏感的基础数据结构、借用字符串/路径算法
 |---|---|---|
 | 元素通常很少，希望避免首个 heap allocation | `SmallVector<T,N>` | owning、连续、支持非平凡/ move-only T；超过 N 后整体迁移 |
 | 最大容量是协议/实时合同，整个生命周期禁止分配 | `StaticVector<T,N>`（别名 `InplaceVector`） | storage 全在对象内，data 地址不变；满时 `try_*` 返回 false，普通入口 fail-fast |
-| trivially-copyable 数据、C-friendly layout | `PodVector<T>` | 只做字节 relocation；默认 system allocator，也可注入运行时 allocator |
+| trivially-copyable 连续数据、要直接取得 element span/pointer | `PodVector<T>` | 只做字节 relocation；allocation 只含 elements；默认 system allocator，也可注入运行时 allocator |
 | 普通长寿命非平凡动态序列 | `std::vector` + 可选 mem PMR adapter | HYLE 不造第二个通用 vector |
 | 节点已有稳定 storage，需要零分配、O(1) 摘链或整链转移 | `IntrusiveList`（node 可自动摘链）或 `SafeIntrusiveList`（必须显式摘链） | non-owning；每条同时 membership 一个 hook；地址稳定；外部同步 |
 | 高频 key→value lookup | `FlatHashMap<K,V>`（实现名 `SwissTable`） | flat slot、expected O(1)、引用在 grow/erase 后失效 |
@@ -142,6 +142,10 @@ copy/move 值语义、count/range 构造与 assign/insert、范围 erase、resiz
 element pointer 失效。普通操作把 OOM 当 fatal；需要恢复时使用 `try_reserve`、
 `try_push_back`、`try_resize` 或 `try_shrink_to_fit`。和 SmallVector 一样，当前没有在全库
 越界策略确定前机械加入 `at()`。
+
+`data()` 指向一块只含 `T` elements 的普通 allocation，可直接交给需要 `T*`/span 的原生 API；
+它不是 C ABI handle，指针前方没有可供外部读取的 header。allocator、size 与 capacity 只由
+`PodVector` owner 保存，因此不要从裸 `T*` 猜测容量或单独释放它。
 
 ## FlatHashMap 与 FlatHashSet
 

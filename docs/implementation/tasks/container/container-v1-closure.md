@@ -9,7 +9,7 @@
 > [`module-status.json`](../../module-status.json)。在 capability map、public-surface trace 与有限
 > `FIX` 集进入 `AUDITED` 前，不修改 container 产品实现。
 
-## Closure card（`SCOPED`）
+## Closure card（`AUDITED`）
 
 - component / owner / round ID：`container` / data-structure owner / `container-v1`
 - task kind：`REFACTOR`
@@ -209,6 +209,13 @@ current 文档工作。新的 correctness/security blocker 必须先回到 ledge
 孤立 benchmark 点值和未具名上层 policy 不得扩面。审计预算内没有发现必须新增另一种核心 container
 family 的证据；功能缺口集中在已有 family 的不完整生命周期与错误成本形状。
 
+### Implementation progress（`AUDITED`）
+
+| batch | current fact | remaining verdict |
+|---|---|---|
+| `CONTAINER-POD-01` | 已删除 C-era `carray.h`/header-before-data；`PodVector` allocation 只含 elements，typed owner 保存 allocator/size/capacity；Windows 定向与完整 container tests 已通过 | 随完整 candidate 执行 source/static/shared、跨平台、consumer replay 与统一性能/资源门 |
+| 其余六个冻结批次 | 尚未实现 | 只能按上方冻结顺序施工，不得扩面 |
+
 ## Candidate
 
 - product commit / tree：尚未形成。
@@ -229,4 +236,5 @@ family 的证据；功能缺口集中在已有 family 的不完整生命周期�
 
 ## Closure decision
 
-本轮当前只完成 `SCOPED`，没有 candidate 或 terminal verdict。
+本轮已完成 `AUDITED` 并冻结有限 `FIX` 集；第一批产品修复已经实现，但完整 candidate 尚未形成，
+没有 terminal verdict。

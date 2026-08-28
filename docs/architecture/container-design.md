@@ -18,7 +18,7 @@ C++23 source/static/shared
           |                       |
           v                       v
 C++ typed / source surface      compiled cold cores
-  PodVector<T> / SmallVector /  hash_bytes, carray grow,
+  PodVector<T> / SmallVector /  hash_bytes, PodVector grow,
   StaticVector<T,N>
   FlatHashMap<K,V> /            Swiss resize/free,
   FlatHashSet<K>
@@ -65,7 +65,7 @@ Build-only seam:     simd_vec_headers register DSL
 | ordered map / set | `BTreeMap<K,V>` / `BTreeSet<K>` | unique-key；双向有序迭代；lower/upper/range visit/range erase；成功 mutation 后引用与 iterator 失效 |
 | concurrent flat map | `ConcurrentFlatHashMap<K,V>`（短名 `ConcurrentHashMap`） | 独立 cache-line shard + Swiss table；shared/exclusive accessor；紧凑、高吞吐；rehash 后地址不稳定 |
 | concurrent node map | `ConcurrentNodeHashMap<K,V>` | bucket RW accessor；node 地址跨 rehash 稳定；表增长保留旧 bucket array，销毁前要求 quiescent |
-| POD dynamic array | `PodVector<T>` | 默认可用或注入 allocator；copy/move 值语义；header-before-data；allocator/alignment 随 allocation 记录 |
+| POD dynamic array | `PodVector<T>` | 默认可用或注入 allocator；copy/move 值语义；allocation 只含 elements，owner 保存 allocator/size/capacity |
 | inline array | `SmallVector<T,N>` | 通用 owning value semantics；POD 保留 memcpy relocation；N 是编译期类型 |
 | strict fixed-capacity sequence | `StaticVector<T,N>`（`InplaceVector` alias） | storage 全内嵌、永不分配、data 地址固定；容量失败可恢复；N=0 可用；紧凑 size metadata |
 | dynamic bitset | `DynamicBitSet` | allocator-aware 值类型；canonical zero padding；set algebra/shift/popcount/set-bit iteration；长 mask runtime ISA dispatch |
@@ -319,8 +319,9 @@ resize、count/range insert、assign、单项/范围 erase、clear、swap、shri
 不是第二个通用 `std::vector`。非平凡值用 SmallVector 或标准 vector。byte relocation
 不额外要求 T 的 C++ copy constructor；增长前的别名值以对齐 byte snapshot 保存。
 
-header-before-data、recorded allocator/alignment 和 type-erased reallocate core 仍是内部
-实现，新增接口没有改变 indexed read 的单次寻址或增长时利用 backing realloc 的能力。
+allocation 只保存 elements；allocator、size 与 capacity 只由 typed owner 保存，不在每块
+allocation 前重复一份 C-era header，也不要求 `data()` 写回 shadow size。type-erased
+reallocate/free core 仍只编译一次，indexed read 仍是单次寻址，增长仍可利用 backing realloc。
 contiguous range 直接批量 memcpy；single-pass input range 只消费一次。range insert 先
 物化输入，再以一次 memmove 搬后缀和一次 memcpy 写入；复杂度
 O(size-position+inserted-count)，达到连续存储下界。缩短 resize 为 O(1)，不会构造无用

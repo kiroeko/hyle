@@ -12,7 +12,7 @@
 #include <cstdint>
 #include <vector>
 
-#include "hyle/container/carray.h"
+#include "hyle/container/pod_vector.h"
 #include "hyle/container/small_vector.h"
 #include "hyle/mem/allocator.h"
 
