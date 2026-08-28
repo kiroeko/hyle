@@ -507,12 +507,14 @@
     },
     {
       "module": "container",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "round_id": "container-v1",
       "closure_task": "docs/implementation/tasks/container/container-v1-closure.md",
       "scope": "Full non-intrusive C++ container component: sequences, associative indexes, concurrent structures and queues, active sets, rings, hash/text/interner algorithms, direct dependencies/consumers, delivery, documentation and bounded P1 engineering evidence.",
       "non_goals": "The separately closed container_intrusive component, model/tensor/KV/serving policy, scheduler wait services, cache/eviction policy, full std/Boost parity, device memory, Native FFI/C API, stable C++ ABI, downstream closure and Formal certification.",
       "baseline_commit": "2866c7df73c6bd36cc4808226d370ff0ea338da2",
+      "candidate_commit": "19a1e9b515522ad74872fb963a3b3260cf915bab",
+      "candidate_tree": "68d456382352d2d81fdd41e4d1c725440424336a",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -530,7 +532,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "首个 container-v1 candidate 8c5d036e/b7407252 被 WSL GCC 14 WERROR 的 SmallVector<T,0> null-pointer zero-byte memcpy blocker 拒绝；当前 AUDITED 只允许完成 CONTAINER-CORR-01 后重建 candidate。"
+      "summary": "replacement container-v1 candidate 绑定 19a1e9b5/68d45638；首个 identity 因 GCC 14 blocker 被拒绝且不得继承证据，当前只执行跨平台/sanitizer、交付、五族 P1、文档与红队验证。"
     },
     {
       "module": "util",
