@@ -1,10 +1,8 @@
 #include "hyle/platform/virtual_memory.h"
 
-#include <cerrno>
+#include "virtual_memory_internal.h"
+
 #include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <limits>
 
 #include "hyle/core/compiler.h"
 #include "hyle/platform.h"
@@ -112,12 +110,6 @@ bool align_nonempty_size(std::size_t requested, std::size_t& aligned) noexcept {
 }
 
 #if defined(HYLE_OS_LINUX)
-bool valid_large_page_size(std::uint64_t value) noexcept {
-  return value >= page_size_cached() &&
-         value <= (std::numeric_limits<std::size_t>::max)() &&
-         (value & (value - 1)) == 0;
-}
-
 std::size_t linux_large_page_size() noexcept {
   // The THP PMD size is the kernel's actual promotion granularity. Do not infer
   // it from ISA: Linux supports different base/huge-page configurations on the
@@ -128,17 +120,9 @@ std::size_t linux_large_page_size() noexcept {
     const bool read = std::fgets(text, sizeof(text), file) != nullptr;
     std::fclose(file);
     if (read) {
-      char* end = nullptr;
-      errno = 0;
-      const unsigned long long raw = std::strtoull(text, &end, 10);
-      while (end != nullptr && (*end == ' ' || *end == '\t' || *end == '\r' ||
-                                *end == '\n')) {
-        ++end;
-      }
-      if (errno == 0 && end != text && end != nullptr && *end == '\0' &&
-          valid_large_page_size(raw)) {
-        return static_cast<std::size_t>(raw);
-      }
+      const std::size_t parsed =
+          detail::parse_linux_thp_size(text, page_size_cached());
+      if (parsed != 0) return parsed;
     }
   }
 
@@ -147,21 +131,12 @@ std::size_t linux_large_page_size() noexcept {
   if (std::FILE* file = std::fopen("/proc/meminfo", "rb")) {
     char line[256];
     while (std::fgets(line, sizeof(line), file) != nullptr) {
-      constexpr char kPrefix[] = "Hugepagesize:";
-      if (std::strncmp(line, kPrefix, sizeof(kPrefix) - 1) != 0) continue;
-      char* value = line + sizeof(kPrefix) - 1;
-      char* end = nullptr;
-      errno = 0;
-      const unsigned long long kib = std::strtoull(value, &end, 10);
-      while (end != nullptr && (*end == ' ' || *end == '\t')) ++end;
-      const bool unit_ok = end != nullptr && end[0] == 'k' && end[1] == 'B';
-      std::fclose(file);
-      if (errno != 0 || end == value || !unit_ok ||
-          kib > UINT64_MAX / 1024u) {
-        return 0;
+      const std::size_t parsed = detail::parse_linux_meminfo_huge_page_size(
+          line, page_size_cached());
+      if (parsed != 0) {
+        std::fclose(file);
+        return parsed;
       }
-      const std::uint64_t bytes = static_cast<std::uint64_t>(kib) * 1024u;
-      return valid_large_page_size(bytes) ? static_cast<std::size_t>(bytes) : 0;
     }
     std::fclose(file);
   }

@@ -553,8 +553,8 @@ std::uint64_t get_id() noexcept {
   // ~275ns uncached -> ~2ns cached. 0 is never a valid tid, so it doubles as the
   // "not yet fetched" sentinel (lazy init on first call per thread).
   // FORK CAVEAT: a value cached in the parent would be stale in a fork() child (new
-  // tid). HYLE ships NO fork/spawn (process mgmt is out of scope -- clay-asset-liability
-  // §进程), so there is no atfork reset; if fork support is ever added, this needs a
+  // tid). HYLE ships no process-management contract, so there is no atfork reset;
+  // if fork support is ever admitted, this needs a
   // fork epoch (folly's approach) or a pthread_atfork handler to clear the cache.
   static thread_local std::uint64_t cached = 0;
   if (cached != 0) return cached;

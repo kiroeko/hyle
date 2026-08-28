@@ -45,7 +45,7 @@ Result<std::string> query_string(Query query) noexcept {
   // Four retries bound adversarial process-global churn without returning a
   // silently truncated value.
   for (unsigned attempt = 0; attempt != 4; ++attempt) {
-    if (*count == std::numeric_limits<std::size_t>::max()) {
+    if (*count == (std::numeric_limits<std::size_t>::max)()) {
       return std::unexpected(owning_size_error());
     }
     try {

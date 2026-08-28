@@ -19,15 +19,10 @@
 #define HYLE_PLATFORM_API HYLE_IMPORT
 #endif
 
-// Filesystem + environment syscalls (clay sys/os.h `file_system_api_t` + the
-// portable helpers in os.shared.cc). This is the syscall half of clay's
-// path/os; the pure-string half landed in container/path.h (platform-03a).
-//
 // LAYERING: every path-returning call is BUFFER-FILL (char* dst, cap) and
 // directory iteration is a VISITOR -- so this header pulls in neither mem nor
-// container, and fs stays in `platform` (P1, depends only on error). That is a
-// real improvement over clay, which allocated every result through an
-// Allocator* and returned a `strings_t*` blob for directory listings.
+// container, and filesystem mechanisms stay in platform. Pure lexical path
+// algorithms belong to container/string rather than this OS boundary.
 // Buffer-fill calls follow snprintf semantics: they always NUL-terminate when
 // cap>0 and return the FULL length that would be written (a return >= cap means
 // the path was truncated).
@@ -341,7 +336,7 @@ HYLE_PLATFORM_API Result<std::size_t> temp_directory(char *dst,
                                                      std::size_t cap) noexcept;
 
 // User home directory (Win: %USERPROFILE%; POSIX: $HOME, else the passwd entry)
-// into dst[cap]. The Result value is the full length. clay's `app_folder`.
+// into dst[cap]. The Result value is the full length.
 HYLE_PLATFORM_API Result<std::size_t> home_directory(char *dst,
                                                      std::size_t cap) noexcept;
 

@@ -15,10 +15,10 @@
 #  define HYLE_PLATFORM_API HYLE_IMPORT
 #endif
 
-// Dynamic library loading (clay dynlib). Cross-platform dlopen/LoadLibrary. RAII
-// over clay's manual open/close: a DynLib closes on destruction, so a forgotten
-// close can't leak the OS handle. Recoverable loader failures are returned as
-// Result values; there is no module-local last-error side channel.
+// Cross-platform dlopen/LoadLibrary ownership. DynLib closes its loader
+// reference on destruction, so a forgotten explicit close cannot leak the OS
+// handle. Recoverable loader failures are returned as Result values; there is
+// no module-local last-error side channel.
 //
 // This is an in-process optional-native-backend/plugin primitive. It does not
 // define a plugin ABI, an FFI surface, or an out-of-process protocol; those
@@ -35,7 +35,7 @@ class DynLib {
   // Load the library at `path`.
   HYLE_PLATFORM_API static Result<DynLib> open(const char* path) noexcept;
 
-  // Attach to a library ALREADY mapped into this process (clay dynlib_get).
+  // Attach to a library ALREADY mapped into this process.
   // Does NOT load if absent -- returns NotFound (Win GetModuleHandle / POSIX
   // dlopen(RTLD_NOLOAD)). Use when another component already loaded the DLL and
   // you only need a handle for symbol lookup.

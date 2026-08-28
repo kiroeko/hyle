@@ -1,11 +1,11 @@
 # HYLE platform/ 设计
 
-> **V2 状态：`NOT_REVIEWED`。** 本页暂作既有设计输入，不代表当前功能、性能或 API 证书。
-> 当前只提供 C++23 source/static/shared，Native FFI 为 `N/A`。BUILD-03 已删除旧 C schema、
-> bridge、动态导出和 fixture；正文的其他验收叙事仍待 platform 轮次重裁决。
+> 本页是 platform 当前设计依据。模块只提供 C++23 source/static/shared；Native FFI 当前为
+> `N/A`，早期 C schema、bridge、动态导出和 fixture 已删除。验收状态与一次性事实由
+> implementation 记录维护，不写进架构真相。
 
-> 用户当前选型见 [user/platform](../user/platform.md)，上一轮性能输入见
-> [historical platform evidence](../implementation/evidence/performance/benchmarks-platform.md)，施工历史见
+> 用户当前选型见 [user/platform](../user/platform.md)，当前性能证据见
+> [platform evidence](../implementation/evidence/performance/benchmarks-platform.md)，施工历史见
 > [platform tasks](../implementation/tasks/platform/)。
 
 ## 1. 定位与依赖
@@ -28,7 +28,7 @@ core + error + time
 
 platform 不拥有调度策略、通用堆、异步 completion 或设备内存。它回答“OS 能做什么、怎样
 可靠地做”，上层回答“何时做、为哪个 workload 做”。这是避免底层 API 被某个 benchmark
-或单一内部消费者扭曲的首要边界。`Parker::park_timeout` 提供等待机制，但 clock/sleep 与
+或单一内部消费者扭曲的首要边界。`Parker::park_for(time::Duration)` 提供等待机制，但 clock/sleep 与
 deadline 的时间语义仍归 time/sched；`platform -> time` 只由公开 `FileInfo::modified_time` 类型产生，
 不授权 platform 接管 clock、sleep、deadline 或 timer 行为。
 
@@ -48,9 +48,9 @@ deadline 的时间语义仍归 time/sched；`platform -> time` 只由公开 `Fil
 | 地址等待 | `detail::wait_on_address*`、`Parker`、`Unparker` | mutex/worker parking/waker 地基 | 裸等待允许伪唤醒；Parker 保存一个 token，解决 unpark-before-park |
 | 虚拟内存 | `VmRegion` 与 `vm_*` | staged commit、guard page、大块地址保留、自定义 owner | 页粒度；reserve 与 commit 分离；RAII 优先，裸函数供底层组合 |
 | NUMA/大页 | `numa_nodes/capabilities`、`vm_*numa*`、huge-page advice | 大块 arena、per-node/selected-node backing、THP 提示 | node id 可稀疏；只有 Linux bind 是严格节点集合；interleave/preferred 是 OS placement policy；建议失败不破坏 mapping |
-| 文件系统与环境 | `FileInfo`、`FileHandle`、无 owning 结果的 visitor、buffer-fill 查询 | 配置、资源、目录扫描、临时文件、部署环境 | UTF-8 路径；短读写正常；打开 owner 不阻塞原子替换路径；长路径 scratch OOM 显式返回 |
-| 文件映射 | `MappedFile` + `Advice`/`prefetch`/`lock` | 大文件随机访问、权重/数据集、COW、显式 warm-up/驻留 | RO/RW/COW；任意 offset；hint 与 residency 不隐式发生 |
-| 动态库 | `DynLib` | 插件、用户 backend、FFI 宿主符号 | open/get/current 语义分开；符号签名由调用方承担 |
+| 文件系统与环境 | `FileInfo`、`FileHandle`、无 owning 结果的 visitor、buffer-fill 查询 | 配置、资源、目录扫描、临时文件、部署环境 | UTF-8 路径；短读写与 exact/all 并存；单 cursor seek；显式 sync/close；打开 owner 不阻塞原子替换路径 |
+| 文件映射 | `MappedFile` + `Advice`/`prefetch`/`lock` | 大文件随机访问、权重/数据集、COW、显式 warm-up/驻留 | path 或消费已打开 owner；RO const view、checked writable view、range flush；hint 与 residency 不隐式发生 |
+| 动态库 | `DynLib` | 插件、可选系统库、用户 native backend | open/get/current 语义分开；`get` 持有 loader 引用；显式 close 可观察错误；符号签名由调用方承担 |
 
 这些能力共同遵循“窄机制 + 明确 owner + 可恢复错误”的形状。platform 不提供一个巨型
 `PlatformApi` 对象，也不把无关系统调用堆进单一 namespace facade；能力按头文件和资源类型
@@ -75,9 +75,9 @@ worker 数、轮转、超订和 NUMA-aware stealing 都是 sched 或应用策略
 
 ## 4. Thread 只表达 OS 线程机制
 
-`Thread` 是 move-only OS handle，不用 `std::thread` 暴露 ABI，也不接受 `std::function`。
-入口使用 function pointer + context 服务内部 runtime；若未来 foreign-runtime 任务独立准入，
-该形状可作为新边界的设计输入，但当前不是 FFI surface。
+`Thread` 是 move-only OS handle，公开类型不包含 `std::thread` 或 `std::function`。入口使用
+function pointer + context 服务 allocation-minimal 的内部 runtime，C++ 用户使用拥有
+capturing/move-only callable 的重载。两者都是当前 C++ 产品面，不暗示跨语言 ABI。
 
 `ThreadOpts` 只承载 OS 在创建边界可执行的配置：name、stack size、单 CPU/CPU 集合 affinity、
 portable priority 和配置策略。view 参数在 `spawn()` 返回前同步复制；用户无需为短期配置
@@ -101,7 +101,8 @@ portable priority 和配置策略。view 参数在 `spawn()` 返回前同步复�
 `Parker` 在其上实现经过验证的三态 token 协议：unpark 可以先于 park，重复 unpark 合并成
 一个 token。它适合 worker 睡眠与外部线程唤醒，但不是计数 semaphore、condition variable
 或 fiber-aware wait；这些带队列/取消/期限语义的类型归 `sched`。timed park 是 single-shot，
-调用方在自己的 deadline loop 中重新检查条件并计算剩余时间。
+调用方传 `time::Duration`，在自己的 deadline loop 中重新检查条件并计算剩余时间；非正 duration
+是纯用户态非阻塞 token 检查。一个 Parker 只允许一个等待消费者，多个线程同时 park 不在合同内。
 
 ## 6. VM、mem、io 与 compute 的边界
 
@@ -185,7 +186,10 @@ link、目录 visitor、cwd/temp/home/env、同步 open/read/write 和原子临�
 - `copy_file` 只把 regular-file copy 作为成功合同。POSIX 在 open 后按 descriptor 分类并按 EOF
   驱动，不能依赖 `st_size`；若 non-regular destination 在 open 阶段先以 `ENXIO` 等失败则保留
   native error。Windows 的 reparse follow/replace 行为由 `CopyFileW` 定义，不伪造 POSIX 等价。
-- `FileHandle` 的短读/短写是成功；需要观察 close/flush 失败时必须显式 close。
+- `FileHandle::read/write` 的短传输是成功；普通完整传输使用零分配的
+  `read_exact/write_all`，共享 cursor 的位置使用 `seek/position`。durability 需要显式 `sync`，
+  需要观察关闭失败时显式 `close`。并发 positional/async I/O 归 `io::File`，不在一字 owner 中
+  加隐式锁或 OVERLAPPED 状态。
 - Windows `FileHandle`/`MappedFile` 以 `FILE_SHARE_DELETE` 打开，使 rename/delete 与 POSIX
   一样只替换目录项、已有 owner 继续持有文件对象；这也是原子模型/缓存更新的必要合同。
 
@@ -208,7 +212,9 @@ SDK-specific recovery，仍由 compute owner 保留 translator；不能硬套 er
 
 C++ 资源 owner（`Thread`、`VmRegion`、`FileHandle`、`MappedFile`、`DynLib`）均为 move-only
 RAII；借出的 pointer、symbol、native handle 或 view 不得活过 owner。需要转移回收责任时必须
-使用显式 release/close 语义。
+使用显式 release/close 语义。`MappedFile::map(FileHandle, ...)` 消费已验证的 file owner，避免
+第二次 path lookup；只读访问始终是 const span，只有 RW/COW mapping 能取得 checked writable span。
+`DynLib::get` 在每个平台都取得/pin 一份 loader reference，避免借用 handle 与并发 unload 竞争。
 
 platform 当前只交付 C++23 source/static/shared。BUILD-03 已删除早期 C-syntax schema、bridge、
 动态导出和 fixture；Native FFI 为 `N/A`，没有 C ABI layout 或符号兼容承诺。HYLE 模块和同工具链
@@ -244,8 +250,10 @@ platform 的 SOTA 标准不是“比系统调用快”，而是同合同下不�
 - `MappedFile::advise`、`lock`、`unlock` 是 O(1) 参数检查 + 至多一个 native call，零 heap
   allocation；成本由 range 大小导致的 kernel page work 决定，不伪装成纳秒用户态原语。
 
-基准必须比较相同语义：HYLE wrapper 对 raw OS、目录 visitor 对同等 metadata 的 std/OS
-形状、MappedFile 同时对 buffered stream 和 raw mmap。点值、样本和平台输赢只维护在
+基准必须比较相同语义。当前 P1 合同冻结为持久 scheduler worker 的 Parker request/response
+handoff 对 oneTBB production binary semaphore，以及模型 loader 的 open/map/64 固定页探测/close
+对 Boost mapped_region；双执行顺序、双 allocation order、代码 placement 和 A/A/delta/floor
+共同裁决。raw OS 和旧微基准只可解释机制，不能替代消费者结论。点值、样本和平台输赢只维护在
 [`../performance/benchmarks-platform.md`](../implementation/evidence/performance/benchmarks-platform.md)。
 
 ## 10. 平台差异必须显式保留
@@ -294,4 +302,4 @@ platform 的 SOTA 标准不是“比系统调用快”，而是同合同下不�
 6. 是否有真实内部或外部消费者，而非只为 benchmark 制造形状？
 
 稳定设计更新本页；用户选择和坑更新 guide；实测更新 performance；一次性验收和提交记录
-更新 milestone。
+更新 implementation task/evidence。

@@ -1,7 +1,7 @@
 # HYLE platform：什么情况选择什么
 
-> **`provisional / NOT_REVIEWED_V2`。** platform 当前只提供 C++ 产品面。
-> 本页适用于 C++23 source/static/shared 三种交付，不描述 C API 或跨语言调用层。
+> platform 当前只提供 C++23 source/static/shared 产品面；没有 C API 或跨语言调用层。
+> 本页按实际资源生命周期说明选择、错误与平台差异。
 
 platform 是 HYLE 的跨 OS 原语层。它服务两类调用者：HYLE 内部模块需要稳定、可组合的
 线程/等待/页内存地基；库用户需要在 Windows、Linux、macOS 上表达同一资源合同。它不把
@@ -22,20 +22,20 @@ macOS 使用 platform component 时部署目标必须是 14.4 或更新版本；
 | 大块页内存偏好某 NUMA node | `reserve_numa` / `vm_bind_numa` | 把 soft preferred 当硬保证 | 检查 `NumaPlacement` |
 | 连续地址按选定 NUMA nodes/chunk 条带 | `VmRegion::allocate_numa_interleaved` | 调用方逐页手写迁移 | 已提交；node id 可稀疏/可重复加权；整段 release，不 decommit |
 | 普通小对象、容器 backing | mem 的 `Allocator` / `Region` | platform VM | platform 不替代 malloc |
-| 顺序读写普通文件 | `FileHandle` | `MappedFile` | move-only；短读/短写正常；显式 close 可观察错误 |
+| 顺序读写普通文件 | `FileHandle`；完整传输用 `read_exact/write_all` | `MappedFile` | move-only、单 cursor；显式 `sync` 买 durability，显式 close 可观察错误 |
 | 原子创建临时文件 | `create_temp_file` | 先生成名字再 open | 返回已打开 handle，避免 TOCTOU |
 | 只需低成本枚举目录名和类型 | `for_each_entry` | 每项都 `stat` | entry 类型不跟随 symlink；常见路径零额外 stat |
 | 需要完整单项元数据 | `stat` | 把目录遍历的 entry type 当完整 stat | 跟随 symlink，并另报 path 自身是否 symlink |
-| 大文件随机访问/共享映射 | `MappedFile` | 小文件必然 mmap | RO/RW/COW；Linux 小文件顺扫未必赢 read |
+| 大文件随机访问/共享映射 | `MappedFile::open`；已有 handle 用 `map(std::move(file))` | 小文件必然 mmap | RO/RW/COW；const bytes / checked writable bytes；range flush；Linux 小文件顺扫未必赢 read |
 | 映射权重/数据集的显式 warm-up | `MappedFile::prefetch` / `advise` | `open()` 自动触碰全文件 | hint 不影响正确性；Windows 仅 will-need |
 | 映射页必须驻留以压低 fault 尾延迟 | `MappedFile::lock`，检查 Status | 把 prefetch 当驻留保证 | 受权限/memlock quota 限制；用后 unlock |
 | 查询 cwd/temp/home | `convenience.h` owning 重载；自管存储用 buffer-fill | 猜环境变量/固定 `/tmp` | owning 返回 `std::string`；core 返回完整长度 |
 | 读取/修改进程环境 | owning `get_env_var(name)` 或 buffer-fill；`set/unset` | 把 unset 和空值都当 0 | unset=`NotFound`；写操作仅应在启动期做 |
 | 一次性启动 OS 线程 | `Thread::spawn(callable, opts)` | sched task/fiber | callable 状态由线程拥有；join 回收；可选 required |
 | 大量轻量任务 | sched | 每任务一个 `Thread` | platform 只提供线程地基 |
-| token 不丢失的线程 park/unpark | `Parker` | 裸 condition variable 拼状态 | unpark-before-park 可消费 token |
+| token 不丢失的线程 park/unpark | `Parker` / `park_for(Duration)` | 裸 condition variable 拼状态 | unpark-before-park 可消费 token；一个 Parker 只有一个等待者 |
 | 等待调用方已有的原子字 | `wait_on_address` | `Parker` 再包一层 | 允许伪唤醒，必须循环检查谓词 |
-| 插件/可选系统库 | `DynLib` | 裸 `dlopen`/`LoadLibrary` 分叉 | `Result` 保留原生 loader 诊断 |
+| 插件/可选系统库 | `DynLib` | 裸 `dlopen`/`LoadLibrary` 分叉 | `get` 会 pin；symbol 借用不活过 owner；显式 close 可观察错误 |
 | 运行时 ISA 派发 | `cpu_features` / `supports` | 编译机宏代替运行机探测 | 只调用当前进程可执行的 ISA |
 | 决定当前 worker 数/绑核 | owning `available_cpu_ids()` 或 buffer-fill core | `hardware_concurrency` / `cpu_topology` | 动态遵守 affinity、cgroup/cpuset、Windows CPU Sets；id 可稀疏 |
 | cache 容量提示、P/E 总量 | `cache_info` / `cpu_topology` | 假定探测值永远存在 | 未知 cache 为 0；P/E 不做频率猜测 |
@@ -62,7 +62,7 @@ HYLE_ASSIGN_OR_RETURN(std::vector<unsigned> cpus,
 
 owning 查询是初始化/重配路径的易用入口，不应放进每 task 热路径；需要复用存储时直接用
 buffer-fill core。`convenience.h` 是显式 opt-in，原有 platform 头不会因此拉入 owning STL
-类型或改变已编译库 ABI。
+类型或改变核心调用路径。
 
 ## 页内存
 
@@ -102,12 +102,19 @@ HYLE_ASSIGN_OR_RETURN(
     hyle::platform::open_file("state.bin",
         hyle::platform::kOpenWrite | hyle::platform::kOpenCreate |
         hyle::platform::kOpenTruncate));
-HYLE_ASSIGN_OR_RETURN(std::size_t moved, file.write(data, size));
-if (moved != size) { /* 继续写剩余部分 */ }
+HYLE_RETURN_IF_ERROR(file.write_all(data, size));
+// 只有崩溃/断电后的持久性属于合同，才支付这次 OS flush。
+HYLE_RETURN_IF_ERROR(file.sync());
 HYLE_RETURN_IF_ERROR(file.close());
 ```
 
-read 返回 0 才是 EOF；read/write 返回短计数仍是成功。`MappedFile` 适合映射本身带来价值的
+read 返回 0 才是 EOF；read/write 返回短计数仍是成功。已知必须完整的普通文件传输直接使用
+`read_exact/write_all`：前者提前 EOF 返回 `DataLoss`，后者处理短写，两者都不分配。`seek` 返回
+移动后的绝对位置，`position()` 查询当前共享 cursor；同一 handle 的并发 positional I/O 不在该
+合同内，应使用 `io::File` 或独立 handle。close 不等于 durability，只有显式 `sync` 才请求落到
+OS storage boundary。
+
+`MappedFile` 适合映射本身带来价值的
 场景，例如大模型权重、随机访问、共享页和 COW；不要假设 64 KiB 顺序全扫也会比缓冲 read
 快。默认优先使用返回 `Result<size_t>` 的安全 read/write；只有 profile 已确认这层成为瓶颈，
 才借 `FileHandle::get()` 调 native I/O。`get()` 不转移所有权，不得关闭借出的 raw handle；
@@ -159,12 +166,16 @@ native iterator frame 做后序 DFS，不让目录深度增长进程调用栈：
 fault：
 
 ```cpp
+HYLE_ASSIGN_OR_RETURN(auto file,
+                      open_file("weights.bin", kOpenRead));
+// map() 消费 owner；成功和失败都不会把 handle 留给调用方。
 HYLE_ASSIGN_OR_RETURN(auto weights,
-                      MappedFile::open("weights.bin", MappedFile::Mode::kReadOnly));
+                      MappedFile::map(std::move(file),
+                                      MappedFile::Mode::kReadOnly));
 HYLE_RETURN_IF_ERROR(weights.prefetch());
 // 只有尾延迟确实要求常驻时才购买这一资源合同。
 HYLE_RETURN_IF_ERROR(weights.lock());
-// ... use weights.data() ...
+for (std::byte value : weights.bytes()) { /* read-only model access */ }
 HYLE_RETURN_IF_ERROR(weights.unlock());
 ```
 
@@ -172,18 +183,25 @@ HYLE_RETURN_IF_ERROR(weights.unlock());
 will-need 可对等实现，其余返回 `Unimplemented`，调用方可选择忽略 hint 继续使用 mapping。
 `lock` 则是明确请求，失败通常表示权限或进程 quota，不应静默当成功。打开的 FileHandle/
 MappedFile 在三平台都不会阻止 rename/delete，因此可先原子替换路径，让旧 owner 自然读完。
+`bytes()` 始终只读；只有 `kReadWrite`/`kCopyOnWrite` mapping 的 `writable_bytes()` 成功。
+`flush(offset,length)` 只对 read-write shared mapping 请求回写，`length==0` 表示直到末尾；COW/RO
+没有需要落回原文件的 dirty data。offset/length 越界会显式失败，不会把错误 range 对齐成别处。
 
 ## 等待与线程
 
 `Parker` 是一个 token mailbox：`unpark()` 先发生也不会丢，下一次 `park()` 会消费 token。
 它不是计数 semaphore，多次 unpark 可以合并成一个 token。`wait_on_address` 更底层，适合
 对象已经拥有原子状态字的内部同步原语；伪唤醒允许发生，因此始终循环检查业务谓词。
+`park_for(time::Duration)` 是单次等待；非正 duration 只是无 syscall 的 token poll，正值返回前
+仍可能因 deadline 或竞态醒来。业务 timeout 应在 deadline loop 中重查谓词和剩余时间。不要让
+两个线程同时在同一个 Parker 上等待；需要多 waiter/取消/队列公平性时使用 sched 同步类型。
 
 `Thread` 适合少量长寿命 OS 线程、runtime worker 或必须设置 stack/name/affinity 的边界；
 任务级并发用 sched。`ThreadOpts` 默认 `kBestEffort`，适合“能设则设、失败仍可运行”的
 可移植 runtime。普通 C++ 调用直接传 capturing/move-only lambda；线程拥有 callable，
 spawn/config 失败时销毁而不调用。未捕获异常与 `std::thread` 相同会 fail-fast。内部 runtime、
-C adapter 或需要自己管理 context 的代码仍可使用零额外 callable 分配的 `entry + void*` core。
+或需要自己管理 context 的 C++ 代码仍可使用零额外 callable 分配的 `entry + void*` core；它不是
+跨语言 ABI。
 确实依赖设置（隔离核、基准控制线程、实时服务线程）时改成 required：
 
 ```cpp
@@ -268,6 +286,11 @@ logical-id 硬绑映射，所以 per-CPU rank 明确 unknown；低延迟/强核�
 `cache_info()` 仍只是容量提示，不猜 cache sharing。NUMA/cache-aware stealing 属于 sched
 策略；platform 只提供可组合的 CPU 事实、排序与 affinity 机制。
 
+`numa_current_node()` 与 `numa_node_of_cpu(cpu)` 返回 `Result<unsigned>`。查询失败、无效 CPU、
+或 OS 不提供可信映射都不是节点 0；必须处理错误后再决定是否显式退化到 `kNumaAny`。如果 worker
+已 required-pin 到某 CPU，先用 `numa_node_of_cpu` 选 arena node；没有硬 affinity 时 current-node
+只是瞬时事实，不应缓存成线程永久归属。
+
 NUMA preferred 是软策略：分配成功而 placement 为 `Unavailable` 仍是一块可用内存。Linux
 bind 是严格节点集合；interleave/selected interleave 的 `Applied` 只说明 OS 接受 policy，
 Windows 和 Linux 都可能在目标节点内存压力下回退，不能把它当成逐页 residency 证明。
@@ -316,6 +339,11 @@ I/O 错误。platform 的公开可恢复失败全部直接携带共享 error，�
 
 所有 RAII owner 都是 move-only。借出的 `data()`、symbol pointer、raw handle 或 unparker
 视图不得活过 owner；`release()` 明确把回收责任转给调用方。
+
+`DynLib::open(path)` 加载新引用；`get(path)` 只附着到已经加载的 image，但成功后同样持有/pin
+一份 loader reference，所以不会与另一个 owner 的 unload 竞争。`symbol_as<Pointer>` 只接受指针
+类型，函数签名仍由调用方负责；指针在 `close`/析构后失效。相对路径和搜索名属于进程加载信任
+边界，外部输入不得未经验证直接传入。需要观察 unload 诊断时显式检查 `close()`，析构只做兜底。
 
 性能证据和仍存在的平台差异见
 [`benchmarks-platform.md`](../implementation/evidence/performance/benchmarks-platform.md)，不要把单个平台点值外推到

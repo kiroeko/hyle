@@ -1,4 +1,5 @@
 #include "hyle/platform/virtual_memory.h"
+#include "virtual_memory_internal.h"
 
 #include <gtest/gtest.h>
 
@@ -233,6 +234,27 @@ TEST(VirtualMemory, LargePageSizeIsSaneOrZero) {
     // Fallback align uses base page.
     EXPECT_EQ(large_page_align_up(1), page_size());
   }
+}
+
+TEST(VirtualMemory, LinuxLargePageTextParsingIsStrict) {
+  using hyle::platform::detail::parse_linux_meminfo_huge_page_size;
+  using hyle::platform::detail::parse_linux_thp_size;
+  constexpr std::size_t kBasePage = 4096;
+  EXPECT_EQ(parse_linux_thp_size("2097152\n", kBasePage), 2u * 1024u * 1024u);
+  EXPECT_EQ(parse_linux_thp_size(" 1073741824 ", kBasePage),
+            1024u * 1024u * 1024u);
+  EXPECT_EQ(parse_linux_thp_size("2097153", kBasePage), 0u);
+  EXPECT_EQ(parse_linux_thp_size("2048", kBasePage), 0u);
+  EXPECT_EQ(parse_linux_thp_size("2MiB", kBasePage), 0u);
+  EXPECT_EQ(parse_linux_meminfo_huge_page_size(
+                "Hugepagesize:       2048 kB\n", kBasePage),
+            2u * 1024u * 1024u);
+  EXPECT_EQ(parse_linux_meminfo_huge_page_size(
+                "Hugepagesize:       2048 MB\n", kBasePage),
+            0u);
+  EXPECT_EQ(parse_linux_meminfo_huge_page_size(
+                "Other:              2048 kB\n", kBasePage),
+            0u);
 }
 
 TEST(VirtualMemory, AdviseHugepageSoft) {

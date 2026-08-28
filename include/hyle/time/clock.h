@@ -149,18 +149,18 @@ HYLE_TIME_API std::uint64_t coarse_monotonic_ns() noexcept;
 HYLE_TIME_API bool coarse_monotonic_available() noexcept;
 
 inline MonotonicTimePoint coarse_monotonic_now() noexcept {
-  constexpr auto max = static_cast<std::uint64_t>(Duration::max().count());
+  constexpr auto max = static_cast<std::uint64_t>((Duration::max)().count());
   const std::uint64_t value = coarse_monotonic_ns();
   return MonotonicTimePoint(
-      Duration(value > max ? Duration::max().count()
+      Duration(value > max ? (Duration::max)().count()
                            : static_cast<Duration::rep>(value)));
 }
 
 inline RealtimeTimePoint coarse_realtime_now() noexcept {
-  constexpr auto max = static_cast<std::uint64_t>(Duration::max().count());
+  constexpr auto max = static_cast<std::uint64_t>((Duration::max)().count());
   const std::uint64_t value = coarse_realtime_ns();
   return RealtimeTimePoint(
-      Duration(value > max ? Duration::max().count()
+      Duration(value > max ? (Duration::max)().count()
                            : static_cast<Duration::rep>(value)));
 }
 
@@ -185,9 +185,9 @@ class ThreadCpuClock {
   static constexpr bool is_steady = true;
 
   static time_point now() noexcept {
-    constexpr auto max = static_cast<std::uint64_t>(duration::max().count());
+    constexpr auto max = static_cast<std::uint64_t>((duration::max)().count());
     const std::uint64_t value = current_thread_cpu_ns();
-    return time_point(duration(value > max ? duration::max().count()
+    return time_point(duration(value > max ? (duration::max)().count()
                                            : static_cast<rep>(value)));
   }
 };
@@ -201,9 +201,9 @@ class ProcessCpuClock {
   static constexpr bool is_steady = true;
 
   static time_point now() noexcept {
-    constexpr auto max = static_cast<std::uint64_t>(duration::max().count());
+    constexpr auto max = static_cast<std::uint64_t>((duration::max)().count());
     const std::uint64_t value = process_cpu_ns();
-    return time_point(duration(value > max ? duration::max().count()
+    return time_point(duration(value > max ? (duration::max)().count()
                                            : static_cast<rep>(value)));
   }
 };
@@ -416,15 +416,15 @@ inline std::uint64_t to_realtime_ns(RealtimeTimePoint point) noexcept {
 
 HYLE_FORCE_INLINE MonotonicTimePoint monotonic_time_point(
     std::uint64_t value_ns) noexcept {
-  constexpr auto max = static_cast<std::uint64_t>(Duration::max().count());
-  const auto clamped = value_ns > max ? Duration::max().count()
+  constexpr auto max = static_cast<std::uint64_t>((Duration::max)().count());
+  const auto clamped = value_ns > max ? (Duration::max)().count()
                                       : static_cast<Duration::rep>(value_ns);
   return MonotonicTimePoint(Duration(clamped));
 }
 
 inline RealtimeTimePoint realtime_time_point(std::uint64_t value_ns) noexcept {
-  constexpr auto max = static_cast<std::uint64_t>(Duration::max().count());
-  const auto clamped = value_ns > max ? Duration::max().count()
+  constexpr auto max = static_cast<std::uint64_t>((Duration::max)().count());
+  const auto clamped = value_ns > max ? (Duration::max)().count()
                                       : static_cast<Duration::rep>(value_ns);
   return RealtimeTimePoint(Duration(clamped));
 }

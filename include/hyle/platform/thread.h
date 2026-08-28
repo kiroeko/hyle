@@ -66,9 +66,8 @@ class CpuAffinity {
 };
 
 struct ThreadOpts {
-  // This natural C++ value type has no layout/version contract. The C adapter's
-  // hyle_thread_opts is a separate versioned POD: it preserves the historical
-  // name/stack/single-affinity/priority/policy prefix and appends later fields.
+  // Natural C++ configuration value. It has no cross-toolchain layout/version
+  // contract and is not a foreign-runtime ABI record.
   std::string_view name;                     // <=15 bytes effective on Linux
   std::optional<std::size_t> stack_size;     // bytes; honored via native attrs
   // Empty means unrestricted. Windows CPU ids are flattened across processor
@@ -79,7 +78,7 @@ struct ThreadOpts {
 };
 
 // Owning thread handle. Move-only. Stores the raw OS handle (no std::thread in
-// the public surface): ABI-clean and lets spawn honor stack_size/affinity via
+// the public representation), and lets spawn honor stack_size/affinity via
 // native CreateThread / pthread_attr. ~Thread fails-fast if still joinable
 // (charter: forgotten join is a bug, surface it -- mirrors std::thread).
 class HYLE_PLATFORM_API Thread {
@@ -92,7 +91,8 @@ class HYLE_PLATFORM_API Thread {
   ~Thread();
 
   // entry(ctx) runs on the new thread; ctx must outlive the thread's execution.
-  // Function-pointer + void* (not std::function): ABI-clean + zero type erasure.
+  // Function-pointer + void* (not std::function): allocation-minimal and no
+  // type-erasure dispatch. This remains a C++ API, not a foreign-runtime ABI.
   // Returns a structured OS creation failure. With kRequired it also returns
   // configuration failures and guarantees entry was not called.
   static Result<Thread> spawn(void (*entry)(void*), void* ctx, ThreadOpts opts = {});

@@ -28,6 +28,10 @@ if(HYLE_BENCH_TBB)
   set(TBB_TEST OFF)
   set(TBBMALLOC_BUILD ON)
   set(TBB_EXAMPLES OFF)
+  # HYLE performance contracts disable LTO for both sides. oneTBB owns a
+  # separate IPO switch and otherwise enables it even when the parent cache
+  # sets CMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF.
+  set(TBB_ENABLE_IPO OFF)
   # Recent oneTBB defaults the optional Thread Composability Manager ON. Its
   # second configure then treats that cached default as an explicit request and
   # hard-requires HWLOC. Benchmarks only need normal oneTBB targets.
@@ -88,7 +92,7 @@ unset(_hyle_owner_upper)
 # superproject include closure in one place: individual benchmark directories
 # only decide which targets instantiate which peer capability.
 set(_hyle_bench_boost_owner FALSE)
-foreach(_hyle_owner IN ITEMS container_intrusive util_core)
+foreach(_hyle_owner IN ITEMS container_intrusive platform util_core)
   string(TOUPPER "${_hyle_owner}" _hyle_owner_upper)
   if(HYLE_BUILD_${_hyle_owner_upper})
     set(_hyle_bench_boost_owner TRUE)
@@ -115,7 +119,8 @@ if(HYLE_BENCH_BOOST)
       "${HYLE_BOOST_DIR}")
   else()
     foreach(_hyle_boost_library IN ITEMS
-        assert config core intrusive move smart_ptr static_assert)
+        assert config container core interprocess intrusive move predef smart_ptr
+        static_assert winapi)
       if(EXISTS
           "${HYLE_BOOST_DIR}/libs/${_hyle_boost_library}/include")
         target_include_directories(hyle_bench_boost_headers SYSTEM INTERFACE

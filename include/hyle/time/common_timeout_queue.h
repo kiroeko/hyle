@@ -194,9 +194,9 @@ class CommonTimeoutQueue {
   std::size_t size() const noexcept { return count_; }
   std::uint64_t duration_ns() const noexcept { return duration_ns_; }
   Duration duration() const noexcept {
-    constexpr auto max = static_cast<std::uint64_t>(Duration::max().count());
+    constexpr auto max = static_cast<std::uint64_t>((Duration::max)().count());
     return Duration(duration_ns_ > max
-                        ? Duration::max().count()
+                        ? (Duration::max)().count()
                         : static_cast<Duration::rep>(duration_ns_));
   }
 

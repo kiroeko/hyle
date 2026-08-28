@@ -154,6 +154,7 @@ native-code translation、obs 的 terminal write 和 util 的 demangler 都是�
 | `PLATFORM-FIX-06` | 当前 sched/compute timed park；time 已冻结 `Duration`；裸 ns 是跨模块单位陷阱 | platform semantic，time type contract；`park_for(Duration)`，non-positive poll，正值按现有 native bound 转换；算法/state 不变、零新 metadata/syscall | `MUST / PARTIAL -> FIX`；race/stress/zero/negative/large；direct consumers compile/test；P1 replay复用同一生命周期 |
 | `PLATFORM-FIX-07` | current docs/public comments 含已删除 C adapter、FFI/out-of-process、clay milestone、cache 精度与旧证书叙事 | architecture/user/public docs；只写 current C++23 source/static/shared、选择指南、trap/negative space | `MUST / DOC -> FIX`；docs checker、header self-containment、全 public surface 可发现性人工清单 |
 | `PLATFORM-FIX-08` | 本轮 P1/交付缺证；旧 platform benchmark 混合不同合同与历史点值 | platform + build/perf evidence；冻结 Parker handoff 与 persistent mapping 两 family，不能池化；直接组件 seam 和 platform-only 三交付 | `MUST / EVIDENCE -> FIX`；统一仪器资格、5% NI、correctness/delivery manifest；不因点值修改 API |
+| `PLATFORM-FIX-09` | pinned Boost Interprocess 先包含 Windows loader 头后，公开 `time/clock.h` 的 `Duration::max()` 被 SDK `max(a,b)` 宏改写，platform 依赖头无法组合 | time public dependency + platform convenience；采用标准 parenthesized static-member 调用，不要求消费者控制 include order 或全局定义 `NOMINMAX` | `MUST / CORRECTNESS -> FIX`；保留模拟 Windows min/max 的独立组合 TU，并重跑 time/platform public-header 与 package consumer |
 
 ### `GENERAL` / negative-space ledger
 
@@ -179,7 +180,8 @@ native-code translation、obs 的 terminal write 和 util 的 demangler 都是�
 
 ### 冻结施工边界
 
-产品代码只允许实现 `PLATFORM-FIX-01..06`；`FIX-07..08` 只改 current 文档、测试、交付与统一性能证据。
+产品代码只允许实现 `PLATFORM-FIX-01..06` 与审计后由真实 peer 组合触发的 correctness blocker
+`PLATFORM-FIX-09`；`FIX-07..08` 只改 current 文档、测试、交付与统一性能证据。
 若实现中发现新的 correctness/security blocker，可按协议点名重开 ledger；命名偏好、单个 peer feature、
 新 benchmark 点值或“顺便完整 hwloc”不得扩面。完成上述 FIX 后冻结 candidate，再做三平台和 P1 裁决。
 

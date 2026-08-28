@@ -17,13 +17,12 @@
 #  define HYLE_PLATFORM_API HYLE_IMPORT
 #endif
 
-// Host virtual memory (platform-02b): reserve/commit/decommit/release + protect.
-// Real consumer = fiber stack guard pages (mem-design fiber_stack / sched-design §1).
+// Host virtual memory: reserve/commit/decommit/release + protect.
+// Real consumers include guarded fiber stacks and large allocator backing.
 // Not device/VRAM, not general malloc (mimalloc), not cross-process shmem (io-05).
 //
 // Windows: VirtualAlloc MEM_RESERVE / MEM_COMMIT / MEM_DECOMMIT / MEM_RELEASE +
 // VirtualProtect. POSIX: mmap PROT_NONE + mprotect + munmap (+ madvise for decommit).
-// clay has no virtual_memory API -- this is net-new.
 
 namespace hyle::platform {
 
