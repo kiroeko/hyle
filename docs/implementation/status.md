@@ -1,6 +1,6 @@
 # 当前模块施工状态
 
-> 更新时间：2026-08-27。机器真相是 [`module-status.json`](module-status.json)；本页的表格是受
+> 更新时间：2026-08-28。机器真相是 [`module-status.json`](module-status.json)；本页的表格是受
 > `python scripts/check-module-closure.py` 校验的人读投影。历史任务、architecture、user 或性能页中的
 > `SIGNED/AUDITED/CANDIDATE/PRODUCT LOCKED` 字样都不是当前模块状态。
 
@@ -12,7 +12,7 @@
 |---|---|---|---|---|---|---|
 | core | CLOSED | P0 | PASS / STRUCTURAL | NONE | [task](tasks/core/core-rebuild.md) | P0 基础层已关闭；消费者性能声明由所属模块承担。 |
 | container_intrusive | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/container_intrusive/container-intrusive-v3-resume.md) | v3 已关闭：真实消费者形状、typed membership transfer、correctness/交付/文档和 Boost 同合同 5% P1 工程非劣门均已签署；Formal 独立待办。 |
-| util_core | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/util/util-core-v1-closure.md) | util-core-v1 CLOSED：五项 header-only primitive 的能力边界、异常/ownership、三平台 correctness/交付、C++ 易用性、依赖与 W1-WIN 同合同 5% P1 工程非劣门均已签署；util runtime 与 Formal 仍独立待办。 |
+| util_core | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/util/util-core-v1-closure.md) | util-core-v1 CLOSED：五项 header-only primitive 的能力边界、异常/ownership、三平台 correctness/交付、C++ 易用性、依赖与 W1-WIN 同合同 5% P1 工程非劣门均已签署；util runtime 已独立关闭，Formal 仍独立待办。 |
 | error | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/error/error-v4-resume.md) | error-v4 CLOSED：未变化的 9595724a/a828fb4c 产品已绑定有效 source-consumer 合同；四个真实 workload 的全部 strata 通过 5% P1 工程非劣门，Formal 独立 PENDING。 |
 | obs | QUEUED | — | — | — | — | 现有实现与历史审查只作输入。 |
 | math | QUEUED | — | — | — | — | 现有实现只作输入；尚需裁决与 SIMD 的边界。 |
@@ -45,8 +45,9 @@ reopen:  CLOSED -> REOPENED -> SCOPED
 
 `util_core` 已按同一状态机关闭：最终候选修复 ScopeGuard 失败安全和 `Ref` 标准指针全序，三平台
 source/static/shared 交付通过；W1-WIN 的 Ref owning handoff 与短 SpinLock 同合同 workload 通过 5%
-工程非劣门。该结论不覆盖仍为 `QUEUED` 的 util runtime，也不把 order-confounded 的 Mac 超短诊断
-或 RNG diagnostic 冒充跨平台 SOTA 证书。
+工程非劣门。util runtime 随后已按自己的 P0 startup/diagnostic 合同独立关闭；它没有真实 profile
+证明进入 token/kernel 热路，因此不继承 util-core 的 P1 计时声明，也不把旧 lookup 微基准冒充当前
+SOTA 证书。util-core 同样不把 order-confounded 的 Mac 超短诊断或 RNG diagnostic 冒充跨平台证书。
 
 Build/package 是所有模块持续复用的交付 workstream，不是组件状态；Native FFI 仍按准入策略为
 `N/A`，也不伪装成模块。完整进入/退出、停止和重开规则见

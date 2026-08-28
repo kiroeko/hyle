@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "methodology": "module-closure-v1",
-  "updated_at": "2026-08-27",
+  "updated_at": "2026-08-28",
   "modules": [
     {
       "module": "core",
@@ -178,7 +178,7 @@
         "A mature same-contract peer proves a better complexity class or a reproducible material advantage beyond the frozen 5% margin on a normal consumer workload.",
         "The engineering claim must be renewed after source, peer, contract, machine, instrument or evidence identity changes, or the retained bundle can no longer be replayed."
       ],
-      "summary": "util-core-v1 CLOSED：五项 header-only primitive 的能力边界、异常/ownership、三平台 correctness/交付、C++ 易用性、依赖与 W1-WIN 同合同 5% P1 工程非劣门均已签署；util runtime 与 Formal 仍独立待办。"
+      "summary": "util-core-v1 CLOSED：五项 header-only primitive 的能力边界、异常/ownership、三平台 correctness/交付、C++ 易用性、依赖与 W1-WIN 同合同 5% P1 工程非劣门均已签署；util runtime 已独立关闭，Formal 仍独立待办。"
     },
     {
       "module": "error",

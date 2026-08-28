@@ -1,15 +1,35 @@
 # build/package system 历史性能证据
 
-> **2026-08-27 current-tree gate：**build/package 实现候选 `42a6747d` 到本轮现树的专用 43 文件
-> 边界零漂移；Windows、WSL、macOS 已对同一当前 CPU 图完成三平台重签，见
-> [`build-system-v3-current-tree`](../../tasks/build/build-system-v3-current-tree.md)。下列 2026-07-29
-> 点值仍只作历史结构诊断，不冒充本轮重新采样或构建系统 SOTA 数字。
+> **2026-08-28 current-tree gate：**util-runtime candidate `46935639` 删除了已经不存在的
+> `util -> util_core` direct edge，命中 build/package reopen trigger。Windows、WSL、macOS 已对
+> 同一当前 CPU 图、selected util 交付、source package 与增量失效完成 bounded replay，见
+> [`build-system-v4-util-edge-replay`](../../tasks/build/build-system-v4-util-edge-replay.md)。下列
+> 2026-07-29 点值仍只作历史结构诊断，不冒充本轮重新采样或构建系统 SOTA 数字。
 
 构建系统没有运行时 ns/op，但它仍有用户可感知的正常路径性能：clean configure、无源码变化的
 reconfigure/no-op build、改一个模块后的失效范围，以及依赖获取。这里单独记录点值；architecture
 只解释 target 图，milestone 只记录施工结论。
 
-## 2026-08-27 现树结构复签
+## 2026-08-28 util direct-edge 现树复签
+
+本轮相对 v3 的 build/package 专用 43 文件边界仅有中央 manifest 一行变化：删除 util 已不再使用的
+`util_core` 直接依赖。没有修改 option、dependency lock、offline/package、tool wrapper 或 workflow；
+性能门仍只判断数量级、常态重编和失效泄漏。
+
+`HYLE_COMPONENTS=all`、tests ON、昂贵 feature OFF、并发 2 的当前结果如下：
+
+| 平台 | 构建/测试 | 紧接的 `hyle_tests` no-op |
+|---|---|---:|
+| Windows / MSVC 19.50 / Ninja | 305 build steps；62/62 | 0.146/0.088/0.086s，`no work to do` |
+| WSL / GCC 14.2 / Ninja | 322 build steps；62/62 | 0.02/0.02/0.02s，`no work to do` |
+| Apple M4 / AppleClang 21 / Unix Makefiles | 60/60 | 1.03/0.77/0.78s，遍历 target、零编译 |
+
+commit `16dd7d80` 生成的 clean complete-source zip 通过 digest/manifest/license 检查，并在脱离 Git 的
+目录完成 125-step all-component product build。只更新时间戳 `src/util/demangle.cc` 后，仅重编该 TU
+并重链 `hyle_util`。这证明 direct edge 删除没有引入常态重编、错误 selected target 或 leaf 失效扩散；
+不同 generator 的 target 遍历开销仍不作跨平台输赢比较。
+
+## 2026-08-27 v3 现树结构复签（历史）
 
 本轮没有为追逐冷启动点值修改构建实现；性能门只判断是否出现数量级回归、常态重编或失效范围泄漏。
 `HYLE_COMPONENTS=all`、tests ON、昂贵 feature OFF、并发 2 的结果如下：
