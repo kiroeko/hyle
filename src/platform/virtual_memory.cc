@@ -1,5 +1,11 @@
 #include "hyle/platform/virtual_memory.h"
 
+#include <cerrno>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <limits>
+
 #include "hyle/core/compiler.h"
 #include "hyle/platform.h"
 #include "hyle/platform/numa.h"
@@ -105,6 +111,64 @@ bool align_nonempty_size(std::size_t requested, std::size_t& aligned) noexcept {
   return requested == 0 || aligned != 0;
 }
 
+#if defined(HYLE_OS_LINUX)
+bool valid_large_page_size(std::uint64_t value) noexcept {
+  return value >= page_size_cached() &&
+         value <= (std::numeric_limits<std::size_t>::max)() &&
+         (value & (value - 1)) == 0;
+}
+
+std::size_t linux_large_page_size() noexcept {
+  // The THP PMD size is the kernel's actual promotion granularity. Do not infer
+  // it from ISA: Linux supports different base/huge-page configurations on the
+  // same architecture.
+  if (std::FILE* file =
+          std::fopen("/sys/kernel/mm/transparent_hugepage/hpage_pmd_size", "rb")) {
+    char text[64]{};
+    const bool read = std::fgets(text, sizeof(text), file) != nullptr;
+    std::fclose(file);
+    if (read) {
+      char* end = nullptr;
+      errno = 0;
+      const unsigned long long raw = std::strtoull(text, &end, 10);
+      while (end != nullptr && (*end == ' ' || *end == '\t' || *end == '\r' ||
+                                *end == '\n')) {
+        ++end;
+      }
+      if (errno == 0 && end != text && end != nullptr && *end == '\0' &&
+          valid_large_page_size(raw)) {
+        return static_cast<std::size_t>(raw);
+      }
+    }
+  }
+
+  // Hosts without THP sysfs may still expose hugetlb pages. `/proc/meminfo`
+  // reports the default HugeTLB size in kB.
+  if (std::FILE* file = std::fopen("/proc/meminfo", "rb")) {
+    char line[256];
+    while (std::fgets(line, sizeof(line), file) != nullptr) {
+      constexpr char kPrefix[] = "Hugepagesize:";
+      if (std::strncmp(line, kPrefix, sizeof(kPrefix) - 1) != 0) continue;
+      char* value = line + sizeof(kPrefix) - 1;
+      char* end = nullptr;
+      errno = 0;
+      const unsigned long long kib = std::strtoull(value, &end, 10);
+      while (end != nullptr && (*end == ' ' || *end == '\t')) ++end;
+      const bool unit_ok = end != nullptr && end[0] == 'k' && end[1] == 'B';
+      std::fclose(file);
+      if (errno != 0 || end == value || !unit_ok ||
+          kib > UINT64_MAX / 1024u) {
+        return 0;
+      }
+      const std::uint64_t bytes = static_cast<std::uint64_t>(kib) * 1024u;
+      return valid_large_page_size(bytes) ? static_cast<std::size_t>(bytes) : 0;
+    }
+    std::fclose(file);
+  }
+  return 0;
+}
+#endif
+
 }  // namespace
 
 std::size_t page_size() noexcept { return page_size_cached(); }
@@ -123,13 +187,11 @@ std::size_t large_page_size() noexcept {
     if (fn == nullptr) return 0;
     SIZE_T s = fn();
     return s > 0 ? static_cast<std::size_t>(s) : 0;
-#elif defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || \
-    defined(__aarch64__) || defined(_M_ARM64) || defined(__riscv)
-    // Architectural default huge/THP size used by seastar/linux x86&arm.
-    return static_cast<std::size_t>(2u) * 1024u * 1024u;
-#elif defined(__PPC__)
-    return static_cast<std::size_t>(16u) * 1024u * 1024u;
+#elif defined(HYLE_OS_LINUX)
+    return linux_large_page_size();
 #else
+    // macOS has no anonymous huge-page advice contract corresponding to Linux
+    // THP or Windows large pages. Unknown is more truthful than an ISA guess.
     return 0;
 #endif
   }();

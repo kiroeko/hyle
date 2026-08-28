@@ -6,9 +6,11 @@
 #include <cstdio>
 #include <cstring>
 #include <limits>
+#include <new>
 
 #include "hyle/core/compiler.h"
 #include "hyle/platform.h"
+#include "hyle/platform/cpu.h"
 #include "hyle/platform/virtual_memory.h"
 
 #if defined(HYLE_OS_WINDOWS)
@@ -343,6 +345,41 @@ bool topology_has_node(unsigned node) noexcept {
           (std::uint64_t{1} << (node % kTopologyWordBits))) != 0;
 }
 
+Result<bool> process_cpu_available(unsigned cpu) noexcept {
+  unsigned stack[256];
+  for (unsigned attempt = 0; attempt < 4; ++attempt) {
+    auto count = available_cpu_ids(stack, std::size(stack));
+    if (!count) return std::unexpected(std::move(count).error());
+    const std::size_t stack_count =
+        *count < std::size(stack) ? *count : std::size(stack);
+    for (std::size_t i = 0; i < stack_count; ++i) {
+      if (stack[i] == cpu) return true;
+    }
+    if (*count <= std::size(stack)) return false;
+
+    auto* ids = new (std::nothrow) unsigned[*count];
+    if (ids == nullptr) {
+      return std::unexpected(Status::ResourceExhausted(
+          "NUMA CPU lookup allocation failed"));
+    }
+    auto filled = available_cpu_ids(ids, *count);
+    if (!filled) {
+      delete[] ids;
+      return std::unexpected(std::move(filled).error());
+    }
+    if (*filled > *count) {
+      delete[] ids;
+      continue;
+    }
+    bool found = false;
+    for (std::size_t i = 0; i < *filled; ++i) found |= ids[i] == cpu;
+    delete[] ids;
+    return found;
+  }
+  return std::unexpected(Status::Unavailable(
+      "NUMA CPU lookup changed repeatedly during snapshot"));
+}
+
 #if defined(HYLE_OS_LINUX)
 Result<unsigned> make_numa_mask(std::span<const unsigned> nodes,
                                 NumaMask& mask) noexcept {
@@ -404,66 +441,93 @@ unsigned numa_node_count() noexcept {
   return static_cast<unsigned>(topology().count);
 }
 
-unsigned numa_current_node() noexcept {
+Result<unsigned> numa_current_node() noexcept {
   const auto nodes = numa_nodes();
-  const unsigned fallback = nodes.front();
+  if (nodes.size() == 1u) return nodes.front();
 #if defined(HYLE_OS_WINDOWS)
   auto& f = win_fns();
-  if (f.get_cpu_ex && f.get_node_ex) {
-    PROCESSOR_NUMBER pnum{};
-    f.get_cpu_ex(&pnum);
-    USHORT node = 0;
-    if (f.get_node_ex(&pnum, &node)) {
-      unsigned n = static_cast<unsigned>(node);
-      return numa_node_available(n) ? n : fallback;
-    }
+  if (!f.get_cpu_ex || !f.get_node_ex) {
+    return std::unexpected(Status::Unimplemented(
+        "current NUMA node query is unavailable on Windows"));
   }
-  return fallback;
+  PROCESSOR_NUMBER pnum{};
+  f.get_cpu_ex(&pnum);
+  USHORT node = 0;
+  if (!f.get_node_ex(&pnum, &node)) {
+    return std::unexpected(numa_native_status(
+        "GetNumaProcessorNodeEx(current CPU)", ::GetLastError()));
+  }
+  const unsigned result = static_cast<unsigned>(node);
+  if (!numa_node_available(result)) {
+    return std::unexpected(Status::FailedPrecondition(
+        "current CPU belongs to a process-unavailable NUMA node"));
+  }
+  return result;
 #elif defined(HYLE_OS_LINUX)
 #  if defined(SYS_getcpu)
   unsigned cpu = 0;
   unsigned node = 0;
   if (::syscall(SYS_getcpu, &cpu, &node, nullptr) == 0) {
-    return numa_node_available(node) ? node : fallback;
+    if (numa_node_available(node)) return node;
+    return std::unexpected(Status::FailedPrecondition(
+        "current CPU belongs to a process-unavailable NUMA node"));
   }
+  return std::unexpected(numa_native_status("getcpu", errno));
+#  else
+  return std::unexpected(
+      Status::Unimplemented("current NUMA node query is unavailable"));
 #  endif
-  return fallback;
 #else
-  return fallback;
+  return nodes.front();
 #endif
 }
 
-unsigned numa_node_of_cpu(unsigned cpu) noexcept {
+Result<unsigned> numa_node_of_cpu(unsigned cpu) noexcept {
   const auto nodes = numa_nodes();
-  const unsigned fallback = nodes.front();
-  if (nodes.size() <= 1u) return fallback;
+  auto available = process_cpu_available(cpu);
+  if (!available) return std::unexpected(std::move(available).error());
+  if (!*available) {
+    return std::unexpected(
+        Status::OutOfRange("NUMA CPU is unavailable to this process"));
+  }
+  if (nodes.size() <= 1u) return nodes.front();
 #if defined(HYLE_OS_WINDOWS)
   auto& f = win_fns();
-  if (f.get_node_ex) {
-    WORD target_group = 0;
-    unsigned number_in_group = cpu;
-    const WORD groups = ::GetActiveProcessorGroupCount();
-    bool found = false;
-    for (WORD group = 0; group < groups; ++group) {
-      const DWORD active = ::GetActiveProcessorCount(group);
-      if (number_in_group < active) {
-        target_group = group;
-        found = true;
-        break;
-      }
-      number_in_group -= active;
-    }
-    if (!found || number_in_group > 0xFFu) return fallback;
-    PROCESSOR_NUMBER pnum{};
-    pnum.Group = target_group;
-    pnum.Number = static_cast<BYTE>(number_in_group);
-    USHORT node = 0;
-    if (f.get_node_ex(&pnum, &node)) {
-      const unsigned n = static_cast<unsigned>(node);
-      return numa_node_available(n) ? n : fallback;
-    }
+  if (!f.get_node_ex) {
+    return std::unexpected(Status::Unimplemented(
+        "CPU NUMA node query is unavailable on Windows"));
   }
-  return fallback;
+  WORD target_group = 0;
+  unsigned number_in_group = cpu;
+  const WORD groups = ::GetActiveProcessorGroupCount();
+  bool found = false;
+  for (WORD group = 0; group < groups; ++group) {
+    const DWORD active = ::GetActiveProcessorCount(group);
+    if (number_in_group < active) {
+      target_group = group;
+      found = true;
+      break;
+    }
+    number_in_group -= active;
+  }
+  if (!found || number_in_group > 0xFFu) {
+    return std::unexpected(
+        Status::OutOfRange("NUMA CPU is not online"));
+  }
+  PROCESSOR_NUMBER pnum{};
+  pnum.Group = target_group;
+  pnum.Number = static_cast<BYTE>(number_in_group);
+  USHORT node = 0;
+  if (!f.get_node_ex(&pnum, &node)) {
+    return std::unexpected(numa_native_status(
+        "GetNumaProcessorNodeEx", ::GetLastError()));
+  }
+  const unsigned result = static_cast<unsigned>(node);
+  if (!numa_node_available(result)) {
+    return std::unexpected(Status::FailedPrecondition(
+        "CPU belongs to a process-unavailable NUMA node"));
+  }
+  return result;
 #elif defined(HYLE_OS_LINUX)
   // sysfs exposes one symlink /sys/devices/system/node/nodeN/cpuM per
   // (node,cpu) membership; find the node whose directory contains this cpu.
@@ -473,10 +537,10 @@ unsigned numa_node_of_cpu(unsigned cpu) noexcept {
                   cpu);
     if (path_exists(buf)) return nd;
   }
-  return fallback;
+  return std::unexpected(
+      Status::Unavailable("NUMA node for CPU could not be discovered"));
 #else
-  (void)cpu;
-  return fallback;
+  return nodes.front();
 #endif
 }
 

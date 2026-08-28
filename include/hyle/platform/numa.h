@@ -104,15 +104,16 @@ HYLE_PLATFORM_API bool numa_node_available(unsigned node) noexcept;
 // Number of NUMA nodes with memory/CPUs, always >= 1.
 HYLE_PLATFORM_API unsigned numa_node_count() noexcept;
 
-// Home node of the calling thread. On failure/unsupported, returns the first
-// logical ID in numa_nodes(); the result is always an available node ID.
-HYLE_PLATFORM_API unsigned numa_current_node() noexcept;
+// Home node of the calling thread. A single logical-node host returns that node
+// without an OS query. On a real multi-node host, discovery failures remain a
+// Status instead of silently selecting a different placement.
+HYLE_PLATFORM_API Result<unsigned> numa_current_node() noexcept;
 
-// NUMA node owning logical CPU `cpu` (first available node on failure,
-// single-node, unsupported, or out-of-range cpu). Lets a caller that pinned a
-// worker to a core (ThreadOpts::affinity) place that worker's arena on the
-// core's node via vm_reserve_numa. Not a hot path (a /sys walk on Linux).
-HYLE_PLATFORM_API unsigned numa_node_of_cpu(unsigned cpu) noexcept;
+// NUMA node owning process-available logical CPU `cpu`. An unavailable CPU is
+// OutOfRange; a topology-query failure remains an error. Lets a caller that
+// pinned a worker to a core (ThreadOpts::affinity) place that worker's arena on
+// the core's node via vm_reserve_numa. Not a hot path (a /sys walk on Linux).
+HYLE_PLATFORM_API Result<unsigned> numa_node_of_cpu(unsigned cpu) noexcept;
 
 // Bind an existing page-aligned mapping.
 //   kPreferred + node: soft home (node==kNumaAny -> kNotNeeded)

@@ -180,8 +180,11 @@ public:
       return std::unexpected(Status::InvalidArgument(
           "HugeRegion allocate_local: interleave is not local placement"));
     }
-    return allocate(bytes, flags,
-                    static_cast<int>(platform::numa_current_node()));
+    int node = platform::kNumaAny;
+    if (auto current = platform::numa_current_node(); current) {
+      node = static_cast<int>(*current);
+    }
+    return allocate(bytes, flags, node);
   }
 
   // Shared multi-MB arena: interleave + THP.

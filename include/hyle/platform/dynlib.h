@@ -1,5 +1,6 @@
 #pragma once
 
+#include <type_traits>
 #include <utility>
 
 #include "hyle/error/result.h"
@@ -19,14 +20,9 @@
 // close can't leak the OS handle. Recoverable loader failures are returned as
 // Result values; there is no module-local last-error side channel.
 //
-// STATUS (platform-audit followup #21): the original motivation — dlopen the
-// CPUID-scored best SIMD backend as a separate loadable unit (conventions §10) —
-// did NOT materialize. SIMD dispatch is in-process: compile-time variant TUs
-// selected by the cpu_features() runtime table (simd/runtime.cc), no dlopen. So
-// dynlib now stands as (1) a general FFI-embedder primitive — load a host plugin
-// or user-supplied backend at runtime — and (2) groundwork for any future
-// out-of-process backend. Kept because it's a clean, tested platform capability
-// with real FFI use, not because SIMD needs it.
+// This is an in-process optional-native-backend/plugin primitive. It does not
+// define a plugin ABI, an FFI surface, or an out-of-process protocol; those
+// contracts belong to the consumer that chooses to load a library.
 
 namespace hyle::platform {
 
@@ -43,8 +39,9 @@ class DynLib {
   // Does NOT load if absent -- returns NotFound (Win GetModuleHandle / POSIX
   // dlopen(RTLD_NOLOAD)). Use when another component already loaded the DLL and
   // you only need a handle for symbol lookup.
-  // Ownership: Windows handle is non-owning (GetModuleHandle does not pin);
-  // POSIX NOLOAD bumps the dlopen refcount so the DynLib owns a close.
+  // A successful get pins/increments the loader reference on every platform,
+  // so symbol lookup cannot race another owner unloading the image. The
+  // returned DynLib owns that reference and balances it in close/destruction.
   // NAME MATCHING: RTLD_NOLOAD matches an already-loaded image by its INSTALL
   // NAME / canonical path, NOT by the search aliases a plain open() accepts. On
   // macOS especially, pass the install-name (e.g. "libSystem.B.dylib", not
@@ -79,15 +76,18 @@ class DynLib {
 
   // Typed symbol lookup: dl.symbol_as<int(*)(void)>("foo"). Caller asserts the
   // signature (the loader cannot check it).
-  template <class Fn>
-  Result<Fn> symbol_as(const char* name) const noexcept {
+  template <class Pointer>
+    requires std::is_pointer_v<Pointer>
+  Result<Pointer> symbol_as(const char* name) const noexcept {
     Result<void*> address = symbol(name);
     if (!address) return std::unexpected(std::move(address).error());
-    return reinterpret_cast<Fn>(*address);
+    return reinterpret_cast<Pointer>(*address);
   }
 
   // Close early (also done by the destructor). Safe to call on an invalid lib.
-  HYLE_PLATFORM_API void close() noexcept;
+  // The object is empty after the call even if the native loader reports an
+  // unload failure; use this explicit form when that diagnostic matters.
+  HYLE_PLATFORM_API Status close() noexcept;
 
  private:
   void* handle_ = nullptr;  // HMODULE on Windows, void* from dlopen on POSIX

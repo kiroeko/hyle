@@ -56,6 +56,14 @@ Status posix_loader_error(const char* operation, const char* detail) noexcept {
                 detail == nullptr ? "" : detail);
   return Status::NotFound(message);
 }
+
+Status posix_loader_close_error(const char* detail) noexcept {
+  char message[320];
+  std::snprintf(message, sizeof(message), "posix dlclose failed%s%s",
+                detail == nullptr || detail[0] == '\0' ? "" : ": ",
+                detail == nullptr ? "" : detail);
+  return Status::Unavailable(message);
+}
 #endif
 }  // namespace
 
@@ -106,7 +114,9 @@ Result<DynLib> DynLib::get(const char* path) noexcept {
     return std::unexpected(Status::InvalidArgument("dynlib get: empty path"));
   }
 #if defined(HYLE_OS_WINDOWS)
-  // Already-mapped modules only; does not load and does not bump the refcount.
+  // Already-mapped modules only. GetModuleHandleEx pins the returned image by
+  // incrementing its loader refcount, closing the unload-vs-symbol race present
+  // with a borrowed GetModuleHandleW result.
   WideString w(path);
   if (!w.ptr) {
     return std::unexpected(
@@ -114,13 +124,13 @@ Result<DynLib> DynLib::get(const char* path) noexcept {
             ? Status::ResourceExhausted("dynlib get: path conversion allocation failed")
             : Status::InvalidArgument("dynlib get: path is not valid UTF-8"));
   }
-  HMODULE h = GetModuleHandleW(w.ptr);
-  if (h == nullptr) {
+  HMODULE h = nullptr;
+  if (!::GetModuleHandleExW(0, w.ptr, &h)) {
     return std::unexpected(
-        win32_loader_error("GetModuleHandleW", ::GetLastError()));
+        win32_loader_error("GetModuleHandleExW", ::GetLastError()));
   }
   lib.handle_ = reinterpret_cast<void*>(h);
-  lib.owns_ = false;  // must not FreeLibrary a GetModuleHandle result
+  lib.owns_ = true;
 #else
   // RTLD_NOLOAD: succeed only if already loaded; never map a new image.
   // A successful NOLOAD still increments the dlopen refcount -> we own a close.
@@ -184,23 +194,30 @@ Result<void*> DynLib::symbol(const char* name) const noexcept {
 #endif
 }
 
-void DynLib::close() noexcept {
-  if (handle_ != nullptr && owns_) {
-#if defined(HYLE_OS_WINDOWS)
-    FreeLibrary(reinterpret_cast<HMODULE>(handle_));
-#else
-    dlclose(handle_);
-#endif
-  }
+Status DynLib::close() noexcept {
+  void* handle = handle_;
+  const bool owns = owns_;
   handle_ = nullptr;
   owns_ = false;
+  if (handle != nullptr && owns) {
+#if defined(HYLE_OS_WINDOWS)
+    if (!::FreeLibrary(reinterpret_cast<HMODULE>(handle))) {
+      return win32_loader_error("FreeLibrary", ::GetLastError());
+    }
+#else
+    if (::dlclose(handle) != 0) {
+      return posix_loader_close_error(::dlerror());
+    }
+#endif
+  }
+  return Status::Ok();
 }
 
-DynLib::~DynLib() { close(); }
+DynLib::~DynLib() { (void)close(); }
 
 DynLib& DynLib::operator=(DynLib&& o) noexcept {
   if (this != &o) {
-    close();
+    (void)close();
     handle_ = o.handle_;
     owns_ = o.owns_;
     o.handle_ = nullptr;

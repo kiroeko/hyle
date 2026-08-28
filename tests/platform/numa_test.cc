@@ -5,6 +5,7 @@
 #include <utility>
 
 #include "hyle/platform.h"
+#include "hyle/platform/cpu.h"
 #include "hyle/platform/numa.h"
 #include "hyle/platform/virtual_memory.h"
 #include "numa_internal.h"
@@ -44,17 +45,24 @@ TEST(Numa, NodeCountAtLeastOne) {
 }
 
 TEST(Numa, CurrentNodeInRange) {
-  unsigned cur = numa_current_node();
-  EXPECT_TRUE(numa_node_available(cur));
+  auto cur = numa_current_node();
+  ASSERT_TRUE(cur.has_value()) << cur.error().message();
+  EXPECT_TRUE(numa_node_available(*cur));
 }
 
 TEST(Numa, NodeOfCpuInRange) {
   const unsigned count = numa_node_count();
-  EXPECT_TRUE(numa_node_available(numa_node_of_cpu(0)));
-  EXPECT_TRUE(numa_node_available(numa_node_of_cpu(1u << 20)));
-  // On a single-node box every CPU falls back to the sole available node ID.
+  unsigned cpu = 0;
+  auto available = hyle::platform::available_cpu_ids(&cpu, 1);
+  ASSERT_TRUE(available.has_value()) << available.error().message();
+  ASSERT_GT(*available, 0u);
+  auto node = numa_node_of_cpu(cpu);
+  ASSERT_TRUE(node.has_value()) << node.error().message();
+  EXPECT_TRUE(numa_node_available(*node));
+  EXPECT_TRUE(numa_node_of_cpu(1u << 20).error().IsOutOfRange());
+  // On a single-node box every valid CPU belongs to the sole available node.
   if (count == 1u) {
-    EXPECT_EQ(numa_node_of_cpu(0), numa_nodes().front());
+    EXPECT_EQ(*node, numa_nodes().front());
   }
 }
 
@@ -130,7 +138,9 @@ TEST(Numa, VmRegionReserveNuma) {
 }
 
 TEST(Numa, CurrentNodeLocalReserve) {
-  int home = static_cast<int>(numa_current_node());
+  auto current = numa_current_node();
+  ASSERT_TRUE(current.has_value()) << current.error().message();
+  int home = static_cast<int>(*current);
   std::size_t p = page_size();
   auto reservation = vm_reserve_numa(p, home).value();
   void* base = reservation.data;

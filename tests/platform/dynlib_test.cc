@@ -132,9 +132,9 @@ TEST(DynLib, MoveTransfersOwnership) {
 TEST(DynLib, CloseInvalidates) {
   DynLib lib = open_system_library();
   ASSERT_TRUE(lib.valid());
-  lib.close();
+  EXPECT_TRUE(lib.close().ok());
   EXPECT_FALSE(lib.valid());
-  lib.close();  // double close is safe
+  EXPECT_TRUE(lib.close().ok());  // double close is safe
   auto symbol = lib.symbol(kSysSym);
   ASSERT_FALSE(symbol.has_value());
   EXPECT_TRUE(symbol.error().IsFailedPrecondition());
@@ -187,9 +187,9 @@ TEST(DynLib, GetEmptyPathFails) {
 TEST(DynLib, DoubleCloseSafeAfterGet) {
   DynLib lib = get_system_library();
   ASSERT_TRUE(lib.valid());
-  lib.close();
+  EXPECT_TRUE(lib.close().ok());
   EXPECT_FALSE(lib.valid());
-  lib.close();
+  EXPECT_TRUE(lib.close().ok());
 }
 
 TEST(DynLib, CurrentCanBeClosed) {
@@ -197,6 +197,6 @@ TEST(DynLib, CurrentCanBeClosed) {
   ASSERT_TRUE(result.has_value());
   DynLib self = *std::move(result);
   ASSERT_TRUE(self.valid());
-  self.close();  // POSIX balances dlopen(nullptr); Windows drops its view only.
+  EXPECT_TRUE(self.close().ok());
   EXPECT_FALSE(self.valid());
 }
