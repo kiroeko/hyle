@@ -1,14 +1,15 @@
 # math-v1 边界重构与收口记录
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
-> 本页是 `math` 的当前 closure card。旧
+> **终态：`CLOSED`。** 本页是 `math-v1` 的施工与验收记录。旧
 > [`math-01-scalar.md`](math-01-scalar.md) 只记录 clay 迁移史，不证明当前四个公开函数的需求、
-> 边界或正确性。机械状态只看
-> [`module-status.json`](../../module-status.json)。本轮先裁决 scalar math 与 SIMD 的边界；
-> capability map 和有限 `FIX` 集进入 `AUDITED` 前不改产品代码。
+> 边界或正确性。机械状态只看 [`module-status.json`](../../module-status.json)。产品候选固定为
+> `753ad5f304f52727c3ba925c9aac0a30f941502e` / tree
+> `93f7bf1a996d6beabebe2b42801b086c483a18e6`；全部适用 gate 为 `PASS`。
 
-## Closure card（`VERIFIED`，scope 与 candidate 不变）
+## Closure card（冻结合同）
 
 - component / owner / round ID：`math` / scalar numeric primitive owner / `math-v1`
 - task kind：`REFACTOR`
@@ -199,6 +200,40 @@ GoogleTest 源树，错误 HEAD override 被构建系统按预期拒绝，未被
 
 ## Closure decision
 
-`VERIFIED`：全部适用 gate 为 `PASS`，没有 `FAIL/INCONCLUSIVE`。下一步只记录 immutable candidate
-的四项 LOC、terminal commit/limitations/reopen triggers，再执行 `VERIFIED -> CLOSED`；此阶段不授权
-产品修改。
+本轮 `CLOSED`。能力、architecture/API、correctness、delivery、usability/docs、red-team 与 P0
+engineering performance 七项 aggregate gate 全为 `PASS`；四项 frozen `FIX` 全部完成，不存在
+`PARTIAL + KEEP`、`FAIL`、`INCONCLUSIVE` 或未命名 blocker。Formal 为 `NONE`：本轮只签署复杂度、
+资源与三工具链 code shape，不产生跨 workload 或模块级 SOTA 声明。
+
+可接受限制：
+
+- 只接受同类型、非 bool、非负 integral task；mixed-type 和负数 rounding policy 由 caller 显式处理；
+- C++23 已有的普通 scalar math 直接用标准库，lane/vector/buffer math 由 SIMD 审查，不扩张本模块；
+- 当前没有 HYLE 产品 syntax consumer；真实 package fixture 证明可用交付，但不冒充下游性能收益；
+- 普通入口保留 invalid-input fail-fast branch，MSVC 还为可能的 direct sink call 保留 ABI shadow-space；
+  未被 profile 证明 material，处理不可信输入时应使用无 sink call 的 `try_` 路线；
+- 组件是 header-only C++ 产品，不制造 binary、稳定 C++ ABI 或无消费者的 Native FFI。
+
+重开条件：具名消费者暴露 math 边界内的 correctness/security/usability/缺失能力；公开 API、算法、
+Core 依赖或 source/static/shared 交付形状变化；受支持 compiler/ISA 使正常路径产生重复除法、动态资源或
+material consumer regression；成熟同合同 peer 证明更优复杂度或可复现的 material consumer 优势；
+需要续签结论而冻结 probe/candidate/toolchain identity 已不可重放。API 数、LOC、命名偏好、新 benchmark、
+单次点值或亚纳秒/placement 波动本身不构成 trigger。
+
+四项 LOC 来自 immutable product candidate
+`753ad5f304f52727c3ba925c9aac0a30f941502e`：
+
+```text
+python scripts/loc-report.py --module math \
+  --commit 753ad5f304f52727c3ba925c9aac0a30f941502e --self-check --json
+```
+
+self-check `PASS`：
+
+1. 全库代码：306,687；
+2. 自实现包含测试：124,254；
+3. 自实现不包含测试：83,119；
+4. `math` 实现：59（`include/hyle/math` + `src/math`；不含 tests/bench/docs/CMake）。
+
+候选后的 tracked codegen probe、验证记录与 terminal 文档不改变 product identity；registry 的
+`end_commit/registry_anchor_commit` 指向包含本 receipt 的不可变历史快照。
