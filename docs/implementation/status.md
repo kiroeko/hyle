@@ -30,9 +30,11 @@
 
 新接受的能力完整性标准正在通过
 [存量采用记录](tasks/project/capability-completeness-adoption-2026-08.md)回放到
-`core/error/util_core/util/container_intrusive/build-package`。`core` 与 `error` 的回放已经分别
+`core/error/util_core/util/container_intrusive/build-package`。`core`、`error` 与 `util_core` 的回放已经分别
 [`CONFIRMED`](tasks/core/core-capability-replay-v2.md) /
-[`CONFIRMED`](tasks/error/error-capability-replay-v1.md)，均无产品改动；其余单元仍按清单顺序进行。
+[`CONFIRMED`](tasks/error/error-capability-replay-v1.md) /
+[`CONFIRMED`](tasks/util/util-core-capability-replay-v1.md)，均无 API、算法或布局改动；其余单元仍按
+清单顺序进行。
 这项只读审计不会批量改写上表状态，只有发现真实 `PRODUCT_TRIGGER` 的单元才依法重开。`time` 已
 直接使用新格式，`platform/mem/obs` 将在各自正常轮次使用，不补签历史结论。
 
@@ -55,7 +57,9 @@ reopen:  CLOSED -> REOPENED -> SCOPED
 source/static/shared 交付通过；W1-WIN 的 Ref owning handoff 与短 SpinLock 同合同 workload 通过 5%
 工程非劣门。util runtime 随后已按自己的 P0 startup/diagnostic 合同独立关闭；它没有真实 profile
 证明进入 token/kernel 热路，因此不继承 util-core 的 P1 计时声明，也不把旧 lookup 微基准冒充当前
-SOTA 证书。util-core 同样不把 order-confounded 的 Mac 超短诊断或 RNG diagnostic 冒充跨平台证书。
+SOTA 证书。util-core 的新版能力回放已 `CONFIRMED`：五个 primitive 没有半项 `MUST`，只校准
+throwing factory/TLS seed/type hash 等合同陷阱；同样不把 order-confounded 的 Mac 超短诊断或 RNG
+diagnostic 冒充跨平台证书。
 
 Build/package 是所有模块持续复用的交付 workstream，不是组件状态；Native FFI 仍按准入策略为
 `N/A`，也不伪装成模块。完整进入/退出、停止和重开规则见

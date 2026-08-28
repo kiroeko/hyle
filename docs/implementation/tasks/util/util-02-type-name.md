@@ -1,8 +1,9 @@
 # util-02：编译期 type_name + 类型哈希
 
-> **2026-07-19 收口复审**：实现仍成立。它是 util 唯一有意不做运行时 C ABI
-> 的能力：`T` 来自编译器静态模板替换，`void*` 无法恢复。完整归类见
-> [`util-module-closure.md`](util-module-closure.md)。
+> **HISTORICAL（2026-07-19）：**本文件只保留首次实现史；旧“稳定类型 ID”、行数和 C ABI
+> 对比不是当前合同。当前 API 是允许碰撞的 compiler-build-local 诊断 name/hash，边界见
+> [`util-core-v1 closure`](util-core-v1-closure.md) 与
+> [`capability replay`](util-core-capability-replay-v1.md)。
 
 | 字段 | 值 |
 |---|---|

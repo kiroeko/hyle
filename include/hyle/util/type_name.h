@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <string_view>
 
-// Compile-time type name + stable type ID without RTTI (clay type_name). The
+// Compile-time type name + diagnostic hash without RTTI (clay type_name). The
 // name is sliced out of the compiler's pretty-function string. clay hardcoded
 // the FULL per-compiler signature as the prefix/suffix to strip -- brittle:
 // renaming the function or namespace silently breaks the slice. HYLE instead
@@ -15,8 +15,9 @@
 // Returns std::string_view (a borrowed view into the compiler's static string)
 // -- the conventions-approved view use, and it keeps util independent of
 // container/string_ref (whose placement is a deferred architecture decision).
-// The exact spelling differs per compiler (MSVC prefixes "class"/"struct"); use
-// it for stable IDs and diagnostics, not for cross-compiler string equality.
+// The exact spelling differs per compiler (MSVC prefixes "class"/"struct").
+// Use it for diagnostics or a controlled build-local label, never as a unique
+// correctness, persistence, plugin, wire, or cross-compiler identity.
 
 namespace hyle::util {
 
@@ -62,10 +63,11 @@ constexpr std::string_view type_name() noexcept {
   }
 }
 
-// Stable 64-bit type ID = FNV-1a of type_name<T>(). constexpr (XXH3, HYLE's
-// runtime hash, is not constexpr; FNV-1a is trivially so and fine for type IDs).
-// Two distinct types almost surely differ; the same type always agrees, within
-// one compiler build. NOT stable across compilers (the name spelling differs).
+// 64-bit diagnostic hash = FNV-1a of type_name<T>(). constexpr (XXH3, HYLE's
+// runtime hash, is not constexpr). Hash collisions remain possible; local and
+// anonymous type spellings can also be ambiguous across translation units.
+// The same spelling agrees within one controlled compiler build, but the value
+// is NOT stable across compilers, flags, plugins, or releases.
 template <class T>
 constexpr std::uint64_t type_hash() noexcept {
   std::string_view n = type_name<T>();

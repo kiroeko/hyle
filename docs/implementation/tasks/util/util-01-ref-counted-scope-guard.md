@@ -1,9 +1,9 @@
 # util-01：ref_counted (Ref<T>) + scope_guard (HYLE_DEFER)
 
-> **2026-07-19 收口复审**：本文件保留首次里程碑的实现史；当前合同与验证以
-> [`util-module-closure.md`](util-module-closure.md) 为准。复审新增批量计数
-> 零/溢出/下溢 fail-fast、危险 CRTP 析构形状的编译期拒绝，以及 Ref/ScopeGuard
-> 类型擦除 C ABI。
+> **HISTORICAL（2026-07-19）：**本文件只保留首次里程碑的实现史；其中 C ABI、旧行数与
+> “当前”措辞均已废止，不能作为产品说明。当前合同见
+> [`util-core-v1 closure`](util-core-v1-closure.md) 与
+> [`capability replay`](util-core-capability-replay-v1.md)。
 
 | 字段 | 值 |
 |---|---|

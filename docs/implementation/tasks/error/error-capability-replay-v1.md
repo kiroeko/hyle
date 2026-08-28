@@ -17,7 +17,7 @@
   `a828fb4cdf1cd7f72aaea098b44fd42e0d966d2d` /
   `26679f1b2a1987b39cdf302eb95ed3e5fefeb168` /
   `26679f1b2a1987b39cdf302eb95ed3e5fefeb168`；
-- actual replay commit：`c47af6965ae83139d4cdebf71f6b70ee93d04daf`；reviewer：Codex；日期：
+- replay base：`c47af6965ae83139d4cdebf71f6b70ee93d04daf`；reviewer：Codex；日期：
   2026-08-28；
 - normal consumer：HYLE native C++ 模块和 source/static/shared SDK 用户，把可恢复运营失败作为值在
   函数、线程和模块间构造、传播、增加语义上下文、观察并最终销毁；

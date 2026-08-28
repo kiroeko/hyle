@@ -16,7 +16,7 @@
   `b241a228d3311f0faa65cde68123de7da3688c2f` /
   `49512b77434c4f15fec355e4bd6d6ab5a8b9b650` /
   `1a465e23ea69a6e613840cf8d30d33054463ae1c`；
-- actual replay commit：`2cc6ec26d80af9d7e69f36555f0ac0c9cf5dc6b1`；日期：2026-08-28；
+- replay base：`2cc6ec26d80af9d7e69f36555f0ac0c9cf5dc6b1`；日期：2026-08-28；
 - normal consumer：HYLE native C++ 模块和源码/静态/共享 SDK 用户，在自己的 TU 中使用 fail-fast、
   compiler/optimizer、cache-layout 和 prefetch primitive；
 - tier / instrument：`P0 / closure-correctness-v1`。这些 primitive 没有可独立计时的用户任务，

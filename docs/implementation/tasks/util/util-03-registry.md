@@ -1,9 +1,8 @@
 # util-03：registry 自注册 + DECLARE/DEFINE 宏
 
-> **历史任务页**：本文件保留首次实现史，行数和测试数不是当前快照。2026-07-30 的当前合同
-> 只见 [`util-module-closure.md`](util-module-closure.md)：Registry 现在拥有 key/help，
-> creator/visitor 均在锁外可重入，同一 Swiss index 经 O(1) freeze 发布，并有 FrozenView 与
-> 共享 Status/allocator 的类型擦除 C ABI。
+> **HISTORICAL：**本文件保留首次实现史；行数、测试数、静态注册形状和 C ABI 均不是当前产品。
+> 当前 Registry 合同只见
+> [`util-runtime-v1 closure`](util-runtime-v1-closure.md) 与用户指南。
 
 | 字段 | 值 |
 |---|---|

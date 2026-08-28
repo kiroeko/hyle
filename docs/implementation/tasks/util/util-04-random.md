@@ -1,9 +1,9 @@
 # util-04：random（xoshiro256++ PRNG）
 
-> **2026-07-19 收口复审**：当前能力已扩为 state snapshot/restore、原生 u32
-> Lemire、`long_jump`、极端有限 double range、进程唯一 TLS seed，并提供 POD
-> + batch 的纯 C ABI。当前真相见
-> [`util-module-closure.md`](util-module-closure.md)。
+> **HISTORICAL（2026-07-19）：**本文件只保留首次实现史；旧 C ABI、行数和“进程唯一 TLS
+> seed”不属于当前合同。当前默认流只是 best-effort 非安全 convenience；能力与陷阱见
+> [`util-core-v1 closure`](util-core-v1-closure.md) 与
+> [`capability replay`](util-core-capability-replay-v1.md)。
 
 | 字段 | 值 |
 |---|---|

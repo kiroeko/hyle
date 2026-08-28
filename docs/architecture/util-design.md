@@ -1,6 +1,7 @@
 # util 架构：两个依赖层，一个产品边界
 
-> **当前边界（2026-08-27）：**`util_core` v1 已 `CLOSED`；`util` runtime（Registry/demangle）
+> **当前边界（2026-08-28）：**`util_core` v1 已 `CLOSED` 并通过新版能力完整性回放；`util`
+> runtime（Registry/demangle）
 > 已冻结 v1 能力与有限修复，施工/签证状态只看中央
 > [`module status`](../implementation/status.md)。本页描述当前设计，不把旧 benchmark 点值当作
 > runtime 发布证书。当前只提供 C++23
@@ -35,9 +36,9 @@ Region；它因此属于 util-runtime，不能反塞进 P0。container 不依赖
 | 能力 | 正常消费者需求 | 成熟形状 | 明确不做 |
 |---|---|---|---|
 | `ScopeGuard` / `HYLE_DEFER` | rollback、C API cleanup、多个早退 | Abseil/Folly：栈内、move-only、一次执行、dismiss/invoke | 代替已有资源 RAII；析构期异常恢复 |
-| `RefCounted<T>` + `Ref<T>` | 对象内计数、单指针侵入式共享所有权、定制 destroy | Boost/Folly/std 同形 retain/release、比较/hash/casts | weak ref、环检测、aliasing control block |
-| `Rng` | 仿真、采样、shuffle、可复现并行流 | xoshiro256++ URBG、Lemire range、jump 拆流 | 密码学安全随机 |
-| `type_name/hash` | 编译期诊断、进程内标签 | pretty-function constexpr probe | 持久/跨编译器/plugin/wire ID |
+| `RefCounted<T>` + `Ref<T>` | 对象内计数、单指针侵入式共享所有权、定制 destroy | Boost/Folly/std 同形 retain/release、比较/hash/casts；普通 `make_ref` 可抛 | weak ref、环检测、aliasing control block；owner-specific fallible allocation factory |
+| `Rng` | 仿真、采样、shuffle、可复现并行流 | xoshiro256++ URBG、Lemire range、显式 jump 拆流；TLS 仅 best-effort convenience | 密码学安全随机；默认 TLS 流的唯一/不重叠保证 |
+| `type_name/hash` | 编译期诊断、受控构建内标签 | pretty-function constexpr probe；hash 允许碰撞 | 持久/唯一 correctness ID、跨编译器/plugin/wire ID |
 | `SpinLock` / `cpu_relax` | 几条指令的低争用临界区/atomic 自旋 | oneTBB/Folly 紧凑 TTAS/backoff | 高争用、阻塞、fiber-aware wait |
 | `demangle` | 日志、backtrace、诊断 UI | caller buffer + required-size | 热路径无分配保证 |
 | `Registry<Value, Args...>` | backend/plugin factory 在启动期组合，服务期按名创建 | raw nullable 或 `Result<T>` fallible factory、owned names、priority resolution、mutable→immutable publication | 动态库 unregister/unload、依赖求解、对象排空 |
@@ -131,3 +132,6 @@ target link 生成/验证。
 5. Native FFI 保持 `N/A`；若出现已命名的 foreign-runtime 任务，先按全局准入策略独立立项，
    不能在 util 修改中顺手恢复旧 C schema。
 6. benchmark 只验证同合同实现与选择边界，不反向制造 API、常态元数据或 workload 特化。
+
+新版 capability-family/public-surface 双向复检及当前 owner routes 见
+[`util-core capability replay`](../implementation/tasks/util/util-core-capability-replay-v1.md)。

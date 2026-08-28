@@ -1,9 +1,9 @@
 # util-05：spin_lock（TTAS + pause + padding）
 
-> **2026-07-19 收口复审**：补齐 MSVC x86/ARM intrinsic 分叉、三平台基准和
-> opaque C ABI。结论不是“总比 mutex 快”：它只适合极短低争用区，Linux
-> 无争用与 Apple M4 八线程高争用都观察到 mutex 更快。完整数据见
-> [`util-module-closure.md`](util-module-closure.md)。
+> **HISTORICAL（2026-07-19）：**本文件只保留首次实现和旧仪器事实；opaque C ABI、旧点值与行数
+> 均不是当前产品或证书。当前选择边界和工程证据见
+> [`util-core-v1 closure`](util-core-v1-closure.md)、
+> [`capability replay`](util-core-capability-replay-v1.md) 与 current performance page。
 
 | 字段 | 值 |
 |---|---|

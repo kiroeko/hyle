@@ -85,11 +85,12 @@ HYLE_FORCE_INLINE std::uint64_t mul128_hi_lo(std::uint64_t a, std::uint64_t b,
 inline std::atomic<std::uint64_t> g_thread_seed_sequence{
     0xA0761D6478BD642Full};
 
-// One relaxed RMW and one OS-backed std::random_device sample per thread, only
-// at its first thread_rng() call. The sequence preserves in-process uniqueness;
-// entropy makes ordinary runs differ across process starts. Failure falls back
-// to process ASLR salt + the still-unique sequence. None of this makes xoshiro
-// cryptographically secure: it only seeds a fast statistical PRNG.
+// One relaxed RMW and one best-effort std::random_device seed per thread, only
+// at its first thread_rng() call. The C++ standard does not require
+// random_device to be backed by OS entropy, and the inline sequence is not a
+// cross-DSO stream-identity service. Together with an address salt these inputs
+// make accidental stream reuse unlikely; they do not guarantee unique or
+// disjoint streams. None of this makes xoshiro cryptographically secure.
 inline std::uint64_t next_thread_seed() noexcept {
   constexpr std::uint64_t kStep = 0x9E3779B97F4A7C15ull;
   const std::uint64_t sequence =
@@ -101,7 +102,7 @@ inline std::uint64_t next_thread_seed() noexcept {
     entropy = (entropy << 32) ^ static_cast<std::uint64_t>(source());
   } catch (...) {
     // random_device construction/call is allowed to throw. thread_rng() is a
-    // noexcept convenience path, so retain a distinct but lower-entropy seed.
+    // noexcept convenience path, so retain a varying but lower-entropy seed.
   }
   const auto process_salt = static_cast<std::uint64_t>(
       reinterpret_cast<std::uintptr_t>(&g_thread_seed_sequence));
@@ -317,8 +318,9 @@ class Rng {
 };
 
 // Thread-local default generator: a per-thread Rng so the common case needs no
-// instance and no steady-state locking. A process-wide sequence makes new
-// thread streams distinct even when the OS reuses a departed thread's stack.
+// instance and no steady-state locking. Default streams are convenience-only:
+// use an explicit seed plus jump()/long_jump() when replay or deliberate stream
+// partitioning matters.
 inline Rng& thread_rng() noexcept {
   static thread_local Rng rng{detail::next_thread_seed()};
   return rng;

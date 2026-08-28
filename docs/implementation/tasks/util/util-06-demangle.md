@@ -1,8 +1,8 @@
 # util-06：demangle 运行期符号反修饰
 
-> **2026-07-19 收口复审**：Windows 对超过 1 KiB 的合法 `?` decorated symbol
-> 现会有界扩容重试到 1 MiB；buffer 合同统一 fail-fast，并提供纯 C buffer-fill
-> 入口。完整归档见 [`util-module-closure.md`](util-module-closure.md)。
+> **HISTORICAL（2026-07-19）：**本文件只保留首次实现史；纯 C buffer-fill、旧行数和旧状态均已
+> 废止。当前 demangle API、复杂度和交付只见
+> [`util-runtime-v1 closure`](util-runtime-v1-closure.md) 与用户指南。
 
 | 字段 | 值 |
 |---|---|

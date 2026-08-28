@@ -28,7 +28,7 @@
 |---|---|---|---|---|
 | `core` | `CLOSED` | v2 demand ledger、全部公开入口反向追踪、P0 cost/delivery；另有一次只读 methodology replay | 新回放已显式覆盖 family map、public trace、成熟 peer 差异、重复 compiler seam 与三种当前交付 | [`core-capability-replay-v2`](../core/core-capability-replay-v2.md)；`CONFIRMED`，实现改动 0 |
 | `error` | `CLOSED` | v3 对 Status/Result/context/native/format/OOM/lifetime 的宽 ledger 与 public trace；v4 有合格 source-consumer 性能恢复 | 新回放已逐族签署构造、传播、组合、失败、teardown、边界与负空间；WinSock/typed rich error 等均有 owner route/trigger | [`error-capability-replay-v1`](../error/error-capability-replay-v1.md)；`CONFIRMED`，实现改动 0 |
-| `util_core` | `CLOSED` | RNG/Ref/ScopeGuard/SpinLock/type-name 五族、peer/consumer/复杂度和 public trace | 五族内部的取得、组合、失败、边界和 teardown 未用独立覆盖轴签署；deferred breadth 需重新走准入规则 | read-only capability replay；`PENDING` |
+| `util_core` | `CLOSED` | RNG/Ref/ScopeGuard/SpinLock/type-name 五族、peer/consumer/复杂度和 public trace | 新回放已签署每族取得、组合、失败、边界、teardown 与完整 owner route；校准四项易用性陷阱和概率测试 | [`util-core capability replay`](../util/util-core-capability-replay-v1.md)；`CONFIRMED`，API/算法/布局改动 0 |
 | `util` | `CLOSED` | Registry/demangle 的用户旅程、peer、复杂度、资源和负空间 | 需证明现有 Registry/demangle 各自不是半项能力，并确认 higher-layer route 对 unregister/DSO lifetime 可发现 | read-only capability replay；`PENDING` |
 | `container_intrusive` | `CLOSED` | caller-owned list、auto/safe hook、membership transfer、public trace、Boost 同合同证据 | 需把 list family 的 lifecycle/边界/迭代失效与更宽 intrusive framework route 显式判为覆盖状态 | read-only capability replay；`PENDING` |
 | build/package | v2 unit `VERIFIED`，持续 workstream | component graph、source/static/shared、offline、并行 scratch、options/CI/version/依赖锁合同 | 旧 unit ledger 没有 family coverage 轴；后续 v3/v4 变更需汇入当前 capability map，不能只复用 v2 表 | read-only development-unit replay；`PENDING` |
@@ -42,7 +42,8 @@
 
 1. `core`：最小控制样本，验证新 family map 能从既有证据快速形成，而不会再次重构几百行 primitive；
 2. `error`：检查基础失败值的既有能力是否真的完整，并重新确认 negative space；
-3. `util_core`、`util`：分别审五个 header-only primitives 与 Registry/demangle，禁止再混成一个 util；
+3. `util_core`（已 `CONFIRMED`）、`util`：分别审五个 header-only primitives 与 Registry/demangle，
+   禁止再混成一个 util；
 4. `container_intrusive`：在 `time` 进入 candidate 前复核其唯一通用直接依赖；
 5. build/package：汇总 v2 以后当前交付系统，而不是把模块表面错误解释成交付能力。
 
@@ -53,7 +54,8 @@
 
 ## 当前项目结论
 
-`core` 与 `error` 已分别完成存量回放，verdict 都为 `CONFIRMED`；二者都没有因方法升级重构产品。
-`time-v1` 也已直接使用新 capability-family 格式。`util_core/util/container_intrusive/build-package`
-的旧证据质量普遍较高，但在逐项回放完成前，不能把它们描述成“已经按 2026-08-28 新功能标准证明
-完整”。它们当前 `CLOSED/VERIFIED` 状态也不会仅因这项方法差异自动失效。
+`core`、`error`、`util_core` 已分别完成存量回放，verdict 都为 `CONFIRMED`；三者都没有因方法升级
+重构产品。util_core 只校准 installed contract/user guide 与一个概率测试，API、算法、布局和运行时代码
+不变。`time-v1` 也已直接使用新 capability-family 格式。`util/container_intrusive/build-package` 的旧
+证据质量普遍较高，但在逐项回放完成前，不能把它们描述成“已经按 2026-08-28 新功能标准证明完整”。
+它们当前 `CLOSED/VERIFIED` 状态也不会仅因这项方法差异自动失效。

@@ -112,6 +112,7 @@ class RefCounted {
   ~RefCounted() = default;  // non-virtual: destroy through the Sub type
   // Default teardown: delete as the concrete type. Subclasses that allocate
   // through a HYLE Allocator override this to free through the same allocator.
+  // destroy() must not throw: it is reached from noexcept ownership release.
   void destroy() { delete static_cast<Sub*>(this); }
 
  private:
@@ -292,7 +293,8 @@ HYLE_FORCE_INLINE bool operator==(const Ref<T>& ref, U* pointer) noexcept {
 }
 
 // Construct a T and adopt its initial +1 (RefCounted starts at 1, so NO extra
-// incref). The common way to mint a reference-counted object.
+// incref). The common way to mint a reference-counted object. This is the
+// ordinary C++ `new` path, so allocation and T's constructor may throw.
 template <RefCompatible T, class... Args>
 HYLE_FORCE_INLINE Ref<T> make_ref(Args&&... args) {
   return adopt_ref(new T(std::forward<Args>(args)...));

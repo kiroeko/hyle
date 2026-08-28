@@ -3,7 +3,8 @@
 <!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
 > 本页是当前 `util_core-v1` 轮的冻结卡与施工事实。2026-07 的 util-core 任务、点值和绿色结论只作
-> 审计输入；当前状态只看 [`module-status.json`](../../module-status.json)。
+> 审计输入；当前状态只看 [`module-status.json`](../../module-status.json)。2026-08-28 新版完整性
+> 回放见 [`util-core capability replay`](util-core-capability-replay-v1.md)，它不回写本页历史事实。
 
 ## Closure card（`CLOSED`）
 
@@ -173,7 +174,8 @@ M1-MAC 的超短手工 SpinLock 诊断在反转执行顺序后也反转约两倍
 
 **`CLOSED`（2026-08-27）。** 五项能力都有 consumer/成熟合同依据；适用 correctness、ownership、
 concurrency、复杂度、C++ 易用性、三平台编译/交付、依赖、文档、独立红队与 W1-WIN 5% P1 工程
-非劣门均通过。没有 C API/Native FFI；`util` runtime 仍是单独 `QUEUED` 单元，不能继承本结论。
+非劣门均通过。没有 C API/Native FFI；`util` runtime 在本轮关闭时仍是单独 `QUEUED` 单元，不能
+继承本结论；其后续独立结论只看中央状态与自己的 closure record。
 
 已知限制：
 

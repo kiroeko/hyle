@@ -1,6 +1,7 @@
 # util：什么情况选什么
 
-> **当前边界（2026-08-27）：**本页前半的 `util_core` 五项能力已完成 v1 收口；后半是当前
+> **当前边界（2026-08-28）：**本页前半的 `util_core` 五项能力已完成 v1 收口并通过新版能力
+> 完整性回放；后半是当前
 > Registry/demangle v1 合同，签证状态只看中央 [`module status`](../implementation/status.md)。
 > util 当前只提供 C++ 产品面，
 > 适用于 C++23 source/static/shared 三种交付，不描述 C API 或跨语言调用层。
@@ -31,7 +32,7 @@ target_link_libraries(my_runtime_target PRIVATE hyle::util)
 | 可复现仿真、采样、测试、shuffle | 显式 seed 的 `Rng` | 用于 token、key、nonce 或任何安全材料 |
 | 每线程普通非安全随机流 | `thread_rng()` | 保存其地址跨线程使用；依赖默认流可复现 |
 | 极短、低争用临界区 | `SpinLock` + `std::lock_guard` | 锁内分配、rehash、I/O、等待或在 fiber 中长期持有 |
-| 编译期静态类型名/进程内标签 | `type_name<T>()` / `type_hash<T>()` | 存数据库、写 wire format、跨编译器/plugin 比较 |
+| 编译期静态类型名/受控构建诊断标签 | `type_name<T>()` / `type_hash<T>()` | 当唯一类型 ID、存数据库、写 wire format、跨编译器/plugin 比较 |
 | 运行期 mangled symbol | `demangle()` | 把它当热路径或假定绝不发生内部临时分配 |
 | 启动期注册、factory 不会失败或 NULL 已是完整语义 | `Registry<T*, Args...>` | 需要诊断时仍让 NULL 同时表示 missing、初始化失败和成功空值 |
 | 启动期注册、backend 初始化可能失败 | `Registry<Result<T*>, Args...>` | 用旁路 thread-local/ctx 保存 error，或丢掉设备/驱动失败原因 |
@@ -61,6 +62,11 @@ ScopeGuard/Folly/Abseil 同类合同终止进程，因此析构 cleanup 通常�
 只有目标构造成功后源 guard 才失效，失败时 cleanup 仍由源对象持有。不可复制且 move 可能抛异常
 的 callable 会在编译期被拒绝；不要用“先 dismiss 再 move”绕过 ownership 合同。
 
+HYLE 的运营失败通常用 `Status/Result` 表达，因此 failure-only cleanup 的自然写法是先建立 guard，
+成功提交后 `dismiss()`；exception-only 的 `scope_fail/scope_success` 可直接选工具链可用的标准
+`<scope>` 设施。文件、锁、内存等已有明确资源类型时，仍使用其 owning RAII；`ScopeGuard` 不替代
+`unique_resource` 或领域 handle。
+
 ## Ref：侵入式共享所有权
 
 ```cpp
@@ -78,11 +84,16 @@ auto base = hyle::util::static_pointer_cast<const Buffer>(writable);
 
 新对象从计数 1 开始：通常用 `make_ref<T>()`。已有“调用方拥有的 +1”用 `adopt_ref(ptr)`；
 只有借用裸指针并要新增一份所有权时才用 `retain_ref(ptr)`。三者不能凭感觉互换。
+`make_ref<T>()` 走普通 C++ `new`，因此 OOM 和 `T` 的构造异常会抛出；它不是 `Result` factory。
+需要无异常 OOM、显式 HYLE allocator 或领域初始化错误时，由 owning module 的 factory 分配/构造，
+把失败转成 `Result<Ref<T>>`，成功后再 `adopt_ref`，并让自定义 `destroy()` 通过同一 allocator 释放。
 
 `Ref<T>` 只有一个指针，没有独立 control block；计数在对象里。若对象不是普通 `delete` 释放，
 在派生类实现 `destroy()` 并允许 `RefCounted<Derived>` 调用。`use_count/is_unique` 是并发快照，
 不能拿来证明“接下来仍唯一”。需要 weak reference、环检测、aliasing constructor 或对象不能
 嵌计数时，使用 `std::shared_ptr/weak_ptr` 或更贴领域的 handle。
+自定义 `destroy()` 以及 duck-typed `incref/decref` 都不得抛异常；ownership release 是
+`noexcept` 边界，抛出会终止进程。
 
 `Ref<Base>`/`Ref<Derived>` 可直接按对象地址比较、排序和放入 `std::unordered_*`；排序使用标准
 指针全序，即使两个对象无关也适合关联容器，不会为了比较临时 retain/release。
@@ -114,8 +125,11 @@ double sample = normal(rng);
 `range_double(lo, hi)` 是半开区间。`discard(n)` 逐项前进，复杂度 O(n)。并行可复现流应显式
 seed，然后用 `jump()`（2^128）或 `long_jump()`（2^192）拆分；不要让 worker 共享同一个 Rng。
 
-`thread_rng()` 每线程首次使用时从系统熵、进程 salt 和唯一序列播种，之后无锁；它不承诺
-复现，也仍然不是 CSPRNG。安全随机数必须使用 OS/vetted crypto 提供的 secure-random API。
+`thread_rng()` 每线程首次使用时组合 best-effort `std::random_device`、地址 salt 和递增序列，之后
+无锁。C++ 标准不保证 `random_device` 一定来自 OS 熵，这个 header-only convenience 也不保证跨
+线程、跨 shared library 的 stream ID 唯一或区间不重叠；它只用于不要求复现的普通统计随机。
+需要可复现或有意分区时使用显式 `Rng` + `jump/long_jump`；安全随机必须使用 OS/vetted crypto
+提供的 secure-random API。
 
 ## SpinLock：默认紧凑，适用面很窄
 
@@ -140,8 +154,9 @@ fiber-aware。临界区可能分配、rehash、调用未知 callback、等待或
 ## type_name 与 demangle
 
 `type_name<T>()` 返回编译器静态字符串的 view，`type_hash<T>()` 是其 constexpr FNV-1a。
-二者只在同一编译器构建内稳定；编译器版本、flags 或类型拼写变化都可能改变结果。跨模块
-持久 ID 应使用显式 schema/UUID，不要用 type hash。
+二者只适合作为受控构建内的诊断标签：hash 可能碰撞，本地/匿名类型在不同 TU 也可能得到含混拼写；
+编译器版本、flags、plugin 或类型拼写变化都可能改变结果。正确性分派应能处理碰撞，跨模块持久 ID
+应使用显式 schema/UUID，不要用 type hash。
 
 `demangle(mangled, out, cap)` 是 snprintf 风格：返回完整所需长度，`cap>0` 时总是 NUL 终止；
 返回值大于等于 cap 表示已截断。固定数组可直接写 `demangle(name, buffer)`，运行期类型可写
@@ -205,7 +220,9 @@ manager 管理 quiescence，再销毁整个 Registry。Registry 必须活过所�
 ## 分层与证据入口
 
 header-only util-core 作为独立 `util_core` 组件交付，当前 v1 收口记录见
-[`util-core-v1`](../implementation/tasks/util/util-core-v1-closure.md)；Registry 和 demangle 属于
+[`util-core-v1`](../implementation/tasks/util/util-core-v1-closure.md)，新版完整性复检见
+[`util-core capability replay`](../implementation/tasks/util/util-core-capability-replay-v1.md)；Registry
+和 demangle 属于
 独立 `util` runtime component。`1b148ef`/`70fa4e8` 只是在旧代码树上得到的历史输入，
 不代表当前 runtime 证书；唯一当前状态见
 [`module status`](../implementation/status.md)。分层仍然保留：它避免低层 mem/container 为一个

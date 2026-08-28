@@ -6,7 +6,6 @@
 #include <cstdint>
 #include <limits>
 #include <random>
-#include <set>
 #include <thread>
 #include <vector>
 
@@ -249,15 +248,16 @@ TEST(Rng, ThreadRngWorks) {
   EXPECT_NE(a, b);  // advances on the same thread
 }
 
-TEST(Rng, SequentialThreadsReceiveDistinctDefaultStreams) {
-  std::set<std::uint64_t> first_values;
-  for (int i = 0; i < 32; ++i) {
-    std::uint64_t value = 0;
-    std::thread thread([&] { value = thread_rng().next_u64(); });
-    thread.join();  // encourages the OS to reuse the same stack address
-    first_values.insert(value);
-  }
-  EXPECT_EQ(first_values.size(), 32u);
+TEST(Rng, ThreadRngStateIsThreadLocal) {
+  Rng& local = thread_rng();
+  Rng expected = Rng::from_state(local.state());
+
+  std::thread other([] {
+    for (int i = 0; i < 32; ++i) (void)thread_rng().next_u64();
+  });
+  other.join();
+
+  EXPECT_EQ(local.next_u64(), expected.next_u64());
 }
 
 TEST(RngDeathTest, RejectsInvalidBoundsAndAllZeroState) {
