@@ -26,7 +26,7 @@
 
 | Unit | current product/unit state | 已有证据 | 新标准尚缺什么 | 采用路径 / 当前 verdict |
 |---|---|---|---|---|
-| `core` | `CLOSED` | v2 demand ledger、全部公开入口反向追踪、P0 cost/delivery；另有一次只读 methodology replay | 没有显式 family map 与 `COMPLETE/PARTIAL/...` 覆盖轴，旧 `KEEP` 仍可能只表示“保留” | read-only capability replay；`PENDING` |
+| `core` | `CLOSED` | v2 demand ledger、全部公开入口反向追踪、P0 cost/delivery；另有一次只读 methodology replay | 新回放已显式覆盖 family map、public trace、成熟 peer 差异、重复 compiler seam 与三种当前交付 | [`core-capability-replay-v2`](../core/core-capability-replay-v2.md)；`CONFIRMED`，实现改动 0 |
 | `error` | `CLOSED` | v3 对 Status/Result/context/native/format/OOM/lifetime 的宽 ledger 与 public trace；v4 有合格 source-consumer 性能恢复 | v4 只恢复性能，既有 error families 尚未按完整旅程重新判覆盖；旧 negative space 也需确认仍有自然 route | read-only capability replay；`PENDING` |
 | `util_core` | `CLOSED` | RNG/Ref/ScopeGuard/SpinLock/type-name 五族、peer/consumer/复杂度和 public trace | 五族内部的取得、组合、失败、边界和 teardown 未用独立覆盖轴签署；deferred breadth 需重新走准入规则 | read-only capability replay；`PENDING` |
 | `util` | `CLOSED` | Registry/demangle 的用户旅程、peer、复杂度、资源和负空间 | 需证明现有 Registry/demangle 各自不是半项能力，并确认 higher-layer route 对 unregister/DSO lifetime 可发现 | read-only capability replay；`PENDING` |
@@ -53,7 +53,8 @@
 
 ## 当前项目结论
 
-截至 baseline，只有 `time-v1` 已显式符合新 capability-family 格式。`core/error/util_core/util/
-container_intrusive/build-package` 的旧证据质量普遍较高，但在逐项回放完成前，不能把它们描述成
-“已经按 2026-08-28 新功能标准证明完整”。它们当前 `CLOSED/VERIFIED` 状态也不会仅因这项方法差异
-自动失效。
+`core` 已在 `2cc6ec26d80af9d7e69f36555f0ac0c9cf5dc6b1` 的实际产品上完成第一项存量回放，verdict
+为 `CONFIRMED`；它没有因方法升级重构产品。`time-v1` 也已直接使用新 capability-family 格式。
+`error/util_core/util/container_intrusive/build-package` 的旧证据质量普遍较高，但在逐项回放完成前，
+不能把它们描述成“已经按 2026-08-28 新功能标准证明完整”。它们当前 `CLOSED/VERIFIED` 状态也不会
+仅因这项方法差异自动失效。
