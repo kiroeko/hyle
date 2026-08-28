@@ -56,7 +56,10 @@
 2. `hyle_add_module()` 从同一记录生成真实的 `target_link_libraries(... PUBLIC|PRIVATE ...)` 边。
 
 配置结束时 `hyle_validate_final_module_graph()` 再核对 target 的 `LINK_LIBRARIES` 和
-`INTERFACE_LINK_LIBRARIES`，防止后续手工链接绕过 manifest。
+`INTERFACE_LINK_LIBRARIES`，防止后续手工链接绕过 manifest。组件 schema、名称与拓扑始终按完整
+manifest 做轻量元数据验证，依赖闭包按已验证的拓扑单次反向传播；随后只对本次 selected closure
+读取公开头和实现源码。这样 all-component CI 仍审完整树，而单模块源码消费者不会被另一个未选模块
+的施工中状态阻断，include audit 成本也从全库 `S_all` 收束到 `S_selected`。
 
 当前图的关键关系是：
 
@@ -97,6 +100,11 @@ declaration 暴露外部类型的边用显式 `PUBLIC_TYPE_DEPS` 注释；不进
 `PRIVATE_BUILD_DEPS` seam。漏边、多余公开边和未注释 type/build edge 都失败。
 `container_intrusive`/`util_core` 这样的 header-only target 同样遵守这条规则；共享源码
 include root 或复制整棵 include tree 都不能使未登记依赖合法。
+
+该 include-owner 检查只裁决正在组装的 selected closure，不把未选模块重新耦合进 source journey。
+选择某组件时，它和全部传递依赖都会被检查；CI 的 `HYLE_COMPONENTS=all` 因而仍机械覆盖每个组件。
+组件 manifest 自身的 unknown edge、重复、PUBLIC/PRIVATE 冲突和非拓扑顺序无论选择什么 root 都会
+失败，因为这些属于轻量全局 schema，而不是未选源码内容。
 
 `<hyle/version.h>` 是 build/package 拥有的 checked-in 产品元数据，并由 Core include contract
 交付；Core 本身不拥有 linked version query。`<hyle/visibility.h>` 的 export/import policy 也由

@@ -142,6 +142,64 @@ if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES
     "${HYLE_CONTRACT_LAST_OUTPUT}")
 endif()
 
+# Source-edge auditing follows the selected closure. An unrelated module may
+# be in an intermediate edit state in another session without breaking a Core
+# configure, while the same undeclared edge inside Core must still fail closed.
+set(_selected_audit_fixture
+  "${_hyle_contract_root}/selected-audit-fixture")
+file(MAKE_DIRECTORY
+  "${_selected_audit_fixture}/include/hyle"
+  "${_selected_audit_fixture}/src/graph")
+foreach(_core_root_header IN ITEMS platform.h version.h visibility.h)
+  file(WRITE
+    "${_selected_audit_fixture}/include/hyle/${_core_root_header}" "")
+endforeach()
+file(WRITE "${_selected_audit_fixture}/src/graph/probe.cc"
+  "#include <hyle/obs/log.h>\n")
+file(WRITE "${_selected_audit_fixture}/CMakeLists.txt"
+"cmake_minimum_required(VERSION 3.25)\n"
+"project(hyle_unselected_audit_contract LANGUAGES NONE)\n"
+"set(HYLE_SOURCE_DIR \"${_selected_audit_fixture}\")\n"
+"set(HYLE_COMPONENTS core)\n"
+"include(\"${HYLE_SOURCE_DIR}/cmake/HyleComponents.cmake\")\n")
+_hyle_contract_run("unselected source is outside the selected audit" TRUE
+  "${CMAKE_COMMAND}" -S "${_selected_audit_fixture}"
+  -B "${_hyle_contract_root}/selected-audit-build"
+  ${_hyle_generator_args})
+
+set(_selected_invalid_fixture
+  "${_hyle_contract_root}/selected-invalid-fixture")
+file(MAKE_DIRECTORY
+  "${_selected_invalid_fixture}/include/hyle"
+  "${_selected_invalid_fixture}/src/core")
+foreach(_core_root_header IN ITEMS platform.h version.h visibility.h)
+  file(WRITE
+    "${_selected_invalid_fixture}/include/hyle/${_core_root_header}" "")
+endforeach()
+file(WRITE "${_selected_invalid_fixture}/src/core/probe.cc"
+  "#include <hyle/obs/log.h>\n")
+file(WRITE "${_selected_invalid_fixture}/CMakeLists.txt"
+"cmake_minimum_required(VERSION 3.25)\n"
+"project(hyle_selected_audit_contract LANGUAGES NONE)\n"
+"set(HYLE_SOURCE_DIR \"${_selected_invalid_fixture}\")\n"
+"set(HYLE_COMPONENTS core)\n"
+"include(\"${HYLE_SOURCE_DIR}/cmake/HyleComponents.cmake\")\n")
+_hyle_contract_run("selected source keeps direct-edge fail-closed" FALSE
+  "${CMAKE_COMMAND}" -S "${_selected_invalid_fixture}"
+  -B "${_hyle_contract_root}/selected-invalid-build"
+  ${_hyle_generator_args})
+if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES
+     "component 'core' implementation" OR
+   NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES
+     "has no direct product")
+  message(FATAL_ERROR
+    "selected invalid source failed for the wrong reason:\n"
+    "${HYLE_CONTRACT_LAST_OUTPUT}")
+endif()
+unset(_core_root_header)
+unset(_selected_audit_fixture)
+unset(_selected_invalid_fixture)
+
 # A cross-cutting feature cannot silently become a second product root. Core
 # has no trace sites, so requesting trace with a Core-only closure must fail
 # before configuring or registering a profiler backend.

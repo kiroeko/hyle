@@ -118,6 +118,139 @@ _hyle_declare_component(graph
   PUBLIC_DEPS core error mem container sched
   PUBLIC_TYPE_DEPS sched)
 
+# Resolve the requested product roots before inspecting source text. The
+# manifest schema is global metadata and is always validated, but a source
+# consumer selecting Core must not be coupled to an unselected module that
+# another maintainer is editing in parallel.
+if(DEFINED HYLE_COMPONENTS)
+  set(_hyle_components_input "${HYLE_COMPONENTS}")
+elseif(PROJECT_IS_TOP_LEVEL)
+  set(_hyle_components_input "all")
+else()
+  message(FATAL_ERROR
+    "An embedding parent must set HYLE_COMPONENTS before add_subdirectory(). "
+    "HYLE will not turn an omitted subproject option into an accidental "
+    "all-component build.")
+endif()
+set(HYLE_COMPONENTS "${_hyle_components_input}" CACHE STRING
+    "HYLE product roots to build (all or a semicolon/comma-separated component list)"
+    FORCE)
+unset(_hyle_components_input)
+
+set(_hyle_requested "${HYLE_COMPONENTS}")
+string(REPLACE "," ";" _hyle_requested "${_hyle_requested}")
+list(TRANSFORM _hyle_requested STRIP)
+list(TRANSFORM _hyle_requested TOLOWER)
+list(REMOVE_ITEM _hyle_requested "")
+
+if("all" IN_LIST _hyle_requested)
+  list(LENGTH _hyle_requested _hyle_requested_count)
+  if(NOT _hyle_requested_count EQUAL 1)
+    message(FATAL_ERROR
+      "HYLE_COMPONENTS='${HYLE_COMPONENTS}' mixes 'all' with explicit names; "
+      "use 'all' alone or list only the requested product roots")
+  endif()
+  set(_hyle_requested_roots ${HYLE_KNOWN_COMPONENTS})
+elseif(NOT _hyle_requested)
+  message(FATAL_ERROR
+    "HYLE_COMPONENTS is explicitly empty. Omit it (or use 'all') for the full "
+    "product, or provide one or more component roots. Refusing to turn an empty "
+    "script/CI argument into an accidental all-component build.")
+else()
+  set(_hyle_requested_roots "")
+  foreach(_component IN LISTS _hyle_requested)
+    if(NOT _component IN_LIST HYLE_KNOWN_COMPONENTS)
+      list(JOIN HYLE_KNOWN_COMPONENTS ", " _hyle_known_text)
+      message(FATAL_ERROR
+        "Unknown HYLE component '${_component}'. Known components: ${_hyle_known_text}")
+    endif()
+    list(APPEND _hyle_requested_roots "${_component}")
+  endforeach()
+endif()
+
+# HYLE_KNOWN_COMPONENTS is also construction order. Validate every manifest
+# edge even for an unselected component: this is bounded manifest metadata work
+# and does not read unrelated product source.
+foreach(_component IN LISTS HYLE_KNOWN_COMPONENTS)
+  string(TOUPPER "${_component}" _component_upper)
+  list(FIND HYLE_KNOWN_COMPONENTS "${_component}" _component_index)
+  foreach(_dependency IN LISTS _HYLE_DEPS_${_component_upper})
+    if(NOT _dependency IN_LIST HYLE_KNOWN_COMPONENTS)
+      message(FATAL_ERROR
+        "HYLE component '${_component}' names unknown dependency '${_dependency}'")
+    endif()
+    list(FIND HYLE_KNOWN_COMPONENTS "${_dependency}" _dependency_index)
+    if(_dependency_index GREATER_EQUAL _component_index)
+      message(FATAL_ERROR
+        "HYLE component order is not topological: '${_component}' depends on "
+        "'${_dependency}', which is not listed before it")
+    endif()
+  endforeach()
+endforeach()
+unset(_component_index)
+unset(_dependency_index)
+
+# The manifest has just been proven topological. A single reverse pass reaches
+# every transitive dependency, avoiding a fixed-point rescan of the growing
+# selected set.
+foreach(_component IN LISTS _hyle_requested_roots)
+  string(TOUPPER "${_component}" _component_upper)
+  set(_HYLE_SELECTED_${_component_upper} TRUE)
+endforeach()
+set(_hyle_resolution_order ${HYLE_KNOWN_COMPONENTS})
+list(REVERSE _hyle_resolution_order)
+foreach(_component IN LISTS _hyle_resolution_order)
+  string(TOUPPER "${_component}" _component_upper)
+  if(_HYLE_SELECTED_${_component_upper})
+    foreach(_dependency IN LISTS _HYLE_DEPS_${_component_upper})
+      string(TOUPPER "${_dependency}" _dependency_upper)
+      set(_HYLE_SELECTED_${_dependency_upper} TRUE)
+    endforeach()
+  endif()
+endforeach()
+
+# Preserve architectural/topological order for target construction, audit and
+# configure diagnostics.
+set(_hyle_resolved "")
+foreach(_component IN LISTS HYLE_KNOWN_COMPONENTS)
+  string(TOUPPER "${_component}" _component_upper)
+  if(_HYLE_SELECTED_${_component_upper})
+    set(HYLE_BUILD_${_component_upper} TRUE)
+    list(APPEND _hyle_resolved "${_component}")
+  else()
+    set(HYLE_BUILD_${_component_upper} FALSE)
+  endif()
+endforeach()
+
+# Owner-scope the trace option: a fresh Core-only/cache-light configure must not
+# advertise a switch which cannot affect any selected target.
+set(HYLE_TRACE_AVAILABLE FALSE)
+foreach(_component IN LISTS _hyle_resolved)
+  string(TOUPPER "${_component}" _component_upper)
+  if(_HYLE_TRACE_${_component_upper})
+    set(HYLE_TRACE_AVAILABLE TRUE)
+    break()
+  endif()
+endforeach()
+
+list(JOIN _hyle_resolved "," HYLE_RESOLVED_COMPONENTS)
+message(STATUS
+  "HYLE components: requested='${HYLE_COMPONENTS}' resolved='${HYLE_RESOLVED_COMPONENTS}'")
+
+foreach(_component IN LISTS HYLE_KNOWN_COMPONENTS)
+  string(TOUPPER "${_component}" _component_upper)
+  unset(_HYLE_SELECTED_${_component_upper})
+endforeach()
+unset(_hyle_requested)
+unset(_hyle_requested_count)
+unset(_hyle_requested_roots)
+unset(_hyle_resolution_order)
+unset(_hyle_known_text)
+unset(_component)
+unset(_component_upper)
+unset(_dependency)
+unset(_dependency_upper)
+
 function(_hyle_component_public_headers name out_var)
   set(_hyle_util_core_headers
     "${HYLE_SOURCE_DIR}/include/hyle/util/random.h"
@@ -194,11 +327,10 @@ function(_hyle_source_include_build_dependency include_path out_var)
   set(${out_var} "${_dependency}" PARENT_SCOPE)
 endfunction()
 
-# Every direct cross-component include in a public header must have a direct
-# PUBLIC target edge. This generalizes the former Core-only check and prevents a
-# partial installed SDK from working merely because unrelated headers happened
-# to be copied beside it.
-foreach(_hyle_component IN LISTS HYLE_KNOWN_COMPONENTS)
+# Every direct cross-component include in a selected public header must have a
+# direct PUBLIC target edge. An all-component build checks the whole tree; a
+# selected source consumer stays independent from unrelated in-progress code.
+foreach(_hyle_component IN LISTS _hyle_resolved)
   _hyle_component_public_headers(
     "${_hyle_component}" _hyle_public_headers)
   string(TOUPPER "${_hyle_component}" _hyle_component_upper)
@@ -260,11 +392,10 @@ unset(_hyle_public_deps)
 unset(_hyle_public_headers)
 unset(_hyle_public_type_deps)
 
-# Source-only coupling must be just as explicit as an exported header edge.
-# Every implementation include of another HYLE component needs a direct
-# PUBLIC/PRIVATE manifest dependency; the shared source include root must not
-# make an undeclared dependency look independent.
-foreach(_hyle_component IN LISTS HYLE_KNOWN_COMPONENTS)
+# Source-only coupling inside the selected closure must be just as explicit as
+# an exported header edge. The shared include root must not make an undeclared
+# dependency look independent, while unselected modules remain isolated.
+foreach(_hyle_component IN LISTS _hyle_resolved)
   string(TOUPPER "${_hyle_component}" _hyle_component_upper)
   set(_hyle_direct_deps "${_HYLE_DEPS_${_hyle_component_upper}}")
   set(_hyle_private_build_deps
@@ -330,135 +461,4 @@ unset(_hyle_source_include)
 unset(_hyle_source_includes)
 unset(_hyle_source_relative)
 unset(_hyle_source_text)
-
-# A source-embedding parent commonly sets this as a normal variable before
-# add_subdirectory().  Capture that effective value before creating the cache
-# entry, then mirror it into the cache so CMake GUI/diagnostic output describes
-# the graph that is actually being generated.  Without this step CMake can keep
-# a shadowed `all` cache entry while the normal variable selects one component.
-if(DEFINED HYLE_COMPONENTS)
-  set(_hyle_components_input "${HYLE_COMPONENTS}")
-elseif(PROJECT_IS_TOP_LEVEL)
-  set(_hyle_components_input "all")
-else()
-  message(FATAL_ERROR
-    "An embedding parent must set HYLE_COMPONENTS before add_subdirectory(). "
-    "HYLE will not turn an omitted subproject option into an accidental "
-    "all-component build.")
-endif()
-set(HYLE_COMPONENTS "${_hyle_components_input}" CACHE STRING
-    "HYLE product roots to build (all or a semicolon/comma-separated component list)"
-    FORCE)
-unset(_hyle_components_input)
-
-set(_hyle_requested "${HYLE_COMPONENTS}")
-string(REPLACE "," ";" _hyle_requested "${_hyle_requested}")
-list(TRANSFORM _hyle_requested STRIP)
-list(TRANSFORM _hyle_requested TOLOWER)
-list(REMOVE_ITEM _hyle_requested "")
-
-if("all" IN_LIST _hyle_requested)
-  list(LENGTH _hyle_requested _hyle_requested_count)
-  if(NOT _hyle_requested_count EQUAL 1)
-    message(FATAL_ERROR
-      "HYLE_COMPONENTS='${HYLE_COMPONENTS}' mixes 'all' with explicit names; "
-      "use 'all' alone or list only the requested product roots")
-  endif()
-  set(_hyle_selected ${HYLE_KNOWN_COMPONENTS})
-elseif(NOT _hyle_requested)
-  message(FATAL_ERROR
-    "HYLE_COMPONENTS is explicitly empty. Omit it (or use 'all') for the full "
-    "product, or provide one or more component roots. Refusing to turn an empty "
-    "script/CI argument into an accidental all-component build.")
-else()
-  set(_hyle_selected "")
-  foreach(_component IN LISTS _hyle_requested)
-    if(NOT _component IN_LIST HYLE_KNOWN_COMPONENTS)
-      list(JOIN HYLE_KNOWN_COMPONENTS ", " _hyle_known_text)
-      message(FATAL_ERROR
-        "Unknown HYLE component '${_component}'. Known components: ${_hyle_known_text}")
-    endif()
-    list(APPEND _hyle_selected "${_component}")
-  endforeach()
-endif()
-
-# HYLE_KNOWN_COMPONENTS is also the construction order. Validate the graph at
-# configure time so a typo, cycle, or dependency added after its consumer cannot
-# degrade into a missing linker input much later in the build.
-foreach(_component IN LISTS HYLE_KNOWN_COMPONENTS)
-  string(TOUPPER "${_component}" _component_upper)
-  list(FIND HYLE_KNOWN_COMPONENTS "${_component}" _component_index)
-  foreach(_dependency IN LISTS _HYLE_DEPS_${_component_upper})
-    if(NOT _dependency IN_LIST HYLE_KNOWN_COMPONENTS)
-      message(FATAL_ERROR
-        "HYLE component '${_component}' names unknown dependency '${_dependency}'")
-    endif()
-    list(FIND HYLE_KNOWN_COMPONENTS "${_dependency}" _dependency_index)
-    if(_dependency_index GREATER_EQUAL _component_index)
-      message(FATAL_ERROR
-        "HYLE component order is not topological: '${_component}' depends on "
-        "'${_dependency}', which is not listed before it")
-    endif()
-  endforeach()
-endforeach()
-
-unset(_component_index)
-unset(_dependency_index)
-
-# Resolve the transitive closure. The graph is intentionally small enough that a
-# fixed-point loop is clearer and safer than encoding directory order as meaning.
-set(_hyle_changed TRUE)
-while(_hyle_changed)
-  set(_hyle_changed FALSE)
-  foreach(_component IN LISTS _hyle_selected)
-    string(TOUPPER "${_component}" _component_upper)
-    foreach(_dependency IN LISTS _HYLE_DEPS_${_component_upper})
-      if(NOT _dependency IN_LIST _hyle_selected)
-        list(APPEND _hyle_selected "${_dependency}")
-        set(_hyle_changed TRUE)
-      endif()
-    endforeach()
-  endforeach()
-endwhile()
-
-foreach(_component IN LISTS HYLE_KNOWN_COMPONENTS)
-  string(TOUPPER "${_component}" _component_upper)
-  if(_component IN_LIST _hyle_selected)
-    set(HYLE_BUILD_${_component_upper} TRUE)
-  else()
-    set(HYLE_BUILD_${_component_upper} FALSE)
-  endif()
-endforeach()
-
-# Owner-scope the trace option: a fresh Core-only/cache-light configure must not
-# advertise a switch which cannot affect any selected target.
-set(HYLE_TRACE_AVAILABLE FALSE)
-foreach(_component IN LISTS HYLE_KNOWN_COMPONENTS)
-  string(TOUPPER "${_component}" _component_upper)
-  if(HYLE_BUILD_${_component_upper} AND _HYLE_TRACE_${_component_upper})
-    set(HYLE_TRACE_AVAILABLE TRUE)
-    break()
-  endif()
-endforeach()
-
-# Print in architectural/topological order rather than request order so configure
-# logs double as a concise assembly manifest.
-set(_hyle_resolved "")
-foreach(_component IN LISTS HYLE_KNOWN_COMPONENTS)
-  string(TOUPPER "${_component}" _component_upper)
-  if(HYLE_BUILD_${_component_upper})
-    list(APPEND _hyle_resolved "${_component}")
-  endif()
-endforeach()
-list(JOIN _hyle_resolved "," HYLE_RESOLVED_COMPONENTS)
-message(STATUS "HYLE components: requested='${HYLE_COMPONENTS}' resolved='${HYLE_RESOLVED_COMPONENTS}'")
-
-unset(_hyle_requested)
-unset(_hyle_requested_count)
-unset(_hyle_selected)
-unset(_hyle_changed)
 unset(_hyle_resolved)
-unset(_hyle_known_text)
-unset(_component)
-unset(_component_upper)
-unset(_dependency)

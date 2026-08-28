@@ -127,6 +127,18 @@ IO TLS、HTTP/2、CUDA、ggml、Vulkan 和 trace 等昂贵能力默认关闭，�
 不要依赖 producer build tree 中的绝对路径。安装包必须可搬迁，且离开源码 checkout 后仍能被一个
 独立最小 C++ 工程 `find_package`、编译、链接和运行。
 
+### 非 CMake 工程与发布归档
+
+HYLE 当前不发布 pkg-config、Bazel 或 Meson 的第二份依赖图。非 CMake 主工程可以用一个很薄的 CMake
+bridge 生成/导入 HYLE target，再把最终 native artifact 接入自己的构建；不要手抄 static archive
+顺序、CUDA/system library 或 compile definition。出现具名非 CMake 消费者后，才会以该消费者的
+static/shared 完整闭包为门增加原生入口，而不是先生成只能链接简单组件的半接口。
+
+`cmake --install` 产生的 relocatable prefix 就是受检 binary SDK 内容。zip/tar、代码签名、SBOM 和
+artifact repository 属发行流水线：对这个 prefix 归档并随附上面的配置合同即可，不需要在 HYLE 中
+复制一个供应商或操作系统专用打包开关。解包后仍应运行一次独立 `find_package` consumer smoke；只把
+若干 `.lib/.a/.dll/.so` 拿走不构成完整 SDK。
+
 ## 6. 如何选择
 
 - 需要修改底层 kernel、审计全部实现、做全程序 LTO/PGO 或适配特殊平台：完整源码。
