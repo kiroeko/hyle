@@ -507,7 +507,7 @@
     },
     {
       "module": "container",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "round_id": "container-v1",
       "closure_task": "docs/implementation/tasks/container/container-v1-closure.md",
       "scope": "Full non-intrusive C++ container component: sequences, associative indexes, concurrent structures and queues, active sets, rings, hash/text/interner algorithms, direct dependencies/consumers, delivery, documentation and bounded P1 engineering evidence.",
@@ -530,7 +530,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "container-v1 已冻结完整非 intrusive 组件的真实消费者、能力审计、依赖/交付与五组 P1 工程合同；AUDITED 前不改产品实现。"
+      "summary": "container-v1 已完成自顶向下能力图与全部公开面反查，冻结七个产品批次及 delivery/performance/docs 证据批次；施工不得扩出 ledger。"
     },
     {
       "module": "util",

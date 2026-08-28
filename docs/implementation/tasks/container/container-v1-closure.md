@@ -109,22 +109,105 @@
   node extraction/merge、Native FFI 与 Formal 可在证据不足时保持具名负空间；任何 material `MUST`、
   correctness、交付或统一性能门不能在预算内裁决时进入具名 `BLOCKED`，不无限研究。
 
-## Capability-family coverage map（待 `AUDITED`）
+## Capability-family coverage map（`AUDITED`）
+
+本表先从推理与工程计算任务、标准问题域和 pinned peers 自顶向下枚举能力，再反向追踪现有公开
+入口。`container_intrusive` 是独立组件；这里不会为凑“完整 container”重新聚合它。
 
 | Family | admitted user journeys / evidence | required semantic variants | lifecycle / boundary / ownership dimensions | current route | coverage | missing edge / negative space |
 |---|---|---|---|---|---|---|
+| inline / fixed / POD sequence | shape、短 dependency/batch、trivial staging；Abseil/Boost/CCCL | 可增长 SBO、严格不分配、trivial relocation、普通长序列路由 | copy/move/range/insert/erase/reserve/OOM/teardown；连续 storage 与失效规则 | `SmallVector`、`StaticVector`/`InplaceVector`、`PodVector`；普通长寿命序列用 `std::vector` + mem PMR | `PARTIAL` | `PodVector` 仍携带已删除 C ABI 所需的 header-before-data，allocation metadata 与 owner 对象重复 |
+| flat hash index | token/metadata/registry hit/miss/build/erase；Abseil Swiss table | map/set、透明 lookup、fast/hardened string policy、可恢复 OOM | owning values；grow/erase 失效；expected O(1)；tombstone-aware reserve | `FlatHashMap`/`FlatHashSet`，实现核为 `SwissTable` | `PARTIAL` | `reserve()->bool` 与全模块 `try_reserve` 约定相反；自然 include 入口不可发现；不做稳定引用 |
+| sorted / ordered unique index | read-mostly sorted metadata、range expiry；Boost flat/tree | flat SoA unique 与 mutation-friendly B-tree unique | bulk sorted build、range lookup/erase、OOM、iterator/reference invalidation | `FlatMap/FlatSet`、`BTreeMap/BTreeSet` | `PARTIAL` | flat 类型把一个完整 K/V 永久嵌进每个空对象，只为 singleton 无分配；multi/node-handle 不准入 |
+| concurrent associative index | cache/counter 与稳定 object registry；oneTBB/Folly | flat accessor 与 node-stable accessor | shard/bucket lock、grow/clear/quiescence、OOM、accessor lifetime | `ConcurrentFlatHashMap`、`ConcurrentNodeHashMap` | `PARTIAL` | writer-pending 竞争窗口仍允许 reader barging；reserve 失败形状不一致 |
+| concurrent append sequence | 多 writer 构建 metadata，join 后遍历；oneTBB `concurrent_vector` | stable segmented address、fallible/fail-fast append、quiescent reuse | reservation count 不是 completion fence；OOM 不留洞；destroy/clear 只在 quiescence | `ConcurrentVector` | `PARTIAL` | 空对象固定携带 48 个段指针且没有 `clear()`，与成熟 embedded→extended table/lifecycle 有实质差距 |
+| active membership | dirty mask、frontier、active ID；Boost/Folly | dense bits 与 sparse bounded universe | resize/OOM、algebra/count/set-bit iteration、O(1) sparse insert/erase/clear | `DynamicBitSet`、`SparseSet`、`FlatHashSet` | `PARTIAL` | bitset 缺普通 value equality；rank/select/compressed bitmap 无任务证据 |
+| single-thread ring / byte staging | parser/I/O staging、两端 deque；Boost/std problem domain | growable/bounded object ring、zero-copy byte spans | wrap、partial read/write、reserve、non-trivial lifetime、clear | `RingDeque`、`ByteRingBuffer` | `COMPLETE` | persistent/multithreaded byte pipe 归 io/sched，不给 ring 塞 wait/close policy |
+| concurrent handoff / work sharing | scheduler stage handoff、owner/thief；Folly/rigtorp/crossbeam family | SPSC、strict MPMC、sharded non-global FIFO、LIFO/FIFO stealing | bounded allocation、full/empty/retry、role/progress、quiescent destroy | `SpscQueue`、`BoundedQueue`、`ShardedQueue`、`WorkStealingDeque`、`WsFifoQueue` | `PARTIAL` | MPMC/sharded 只接 trivially-copyable payload，缺成熟队列已有的 placement lifetime 与 move-only route |
+| borrowed text / path | HTTP、registry key、loader/path preprocessing；standard string-view problem domain | borrowed view、search/case/UTF-8、lexical path、caller-owned output | borrow invalidation、embedded NUL、NUL requirement、OOM、batch spans | `StringView`（16-byte `string_ref` implementation）、`string_algo`、`path` | `PARTIAL` | `c_str/dup/concat/join/replace_extension/parent_dir` 把 owned allocation 装进 non-owning view，释放责任无法从返回类型辨认 |
+| hash / interning | metadata hash、防碰撞策略、稳定 deduplicated strings；xxHash/simdutf | primitive/byte/string hash，fast/secret policy，refcounted/intern-only ids | seed/key ownership、collision equality、acquire/find/release/lookup lifetime、batch | `Hash`/`StringHash`/`HardenedStringHash`、`StringInterner` | `PARTIAL` | 算法核完整；interner batch 仍只有 pointer/count 公开形状，和 text/path 一起补 span facade |
+| intrusive membership | timer/task 已有稳定 owner 的零分配挂链 | auto/safe retirement、multi-hook、splice | non-owning、外部同步、node/list 双向 lifetime | 独立 `container_intrusive` target | `ROUTED` | 已 CLOSED；完整 container 不重新拥有该 header 或状态 |
+| cache/eviction、blocking/unbounded service、ordered multi | 模型 cache、异步 channel 等上层需求 | policy、quota、wait/cancel/close 与 duplicate-key 语义 | owner 必须是具体 runtime/service，而非裸机制 | std/Boost 或未来 sched/engine owner | `OUT_OF_SCOPE` | 没有具名 policy consumer 前不复制 LRU、priority queue service、multimap/multiset 全面 API |
 
-## Capability / gap ledger（待 `AUDITED`）
+### Public-surface trace
 
-| ID | requirement class | demand kind | exact source | normal shape | semantic / artifact / delivery owner | ownership/failure/concurrency | complexity/resource target | coverage | action | severity | verification / negative space |
-|---|---|---|---|---|---|---|---|---|---|---|---|
+| public surface | family / audit decision |
+|---|---|
+| `small_vector.h`、`static_vector.h` | inline/fixed sequence `KEEP`；为 flat storage 增加合法 `N==0` internal reuse，不改变 N>0 用户合同 |
+| `pod_vector.h` / `carray.h` | typed trivial sequence `KEEP`；`CArrayHeader/carray_*` 与 C-era public filename/layout `FIX` |
+| `swiss_table.h`、`flat_sorted.h`、`btree.h` | 三种 associative cost model `KEEP`；natural include、reserve failure 与 flat normal metadata `FIX` |
+| `concurrent_hash_map.h`、`concurrent_node_hash_map.h` | accessor ownership与两种引用稳定性 `KEEP`；writer preference/reserve naming `FIX` |
+| `concurrent_vector.h` | stable segmented append `KEEP`；compact segment table 与 quiescent reuse `FIX` |
+| `dynamic_bitset.h`、`sparse_set.h` | dense/sparse membership `KEEP`；bitset equality `FIX` |
+| `ring_deque.h`、`byte_ring_buffer.h` | object/byte ring `KEEP` |
+| `spsc_queue.h`、`bounded_queue.h`、`sharded_queue.h`、`work_stealing_deque.h`、`ws_fifo_queue.h` | role-specific queues `KEEP`；MPMC non-trivial lifetime `FIX`，不把 stealing queue 扩成宽原子 payload |
+| `string_ref.h`、`string_algo.h`、`path.h` | borrowed text/search/path mechanism `KEEP`；raw owning returns、batch/buffer discoverability `FIX`；16-byte view 与 <=4 GiB text contract保留，超大 binary 用 byte span/mapping |
+| `hash.h`、`string_interner.h` | hash/security/interner algorithm `KEEP`；batch span facade随 text `FIX` |
+| `probe.h`、`detail/adaptive_*` | container implementation mechanism；不作为独立用户能力；AArch64 relax 与 pending race `FIX` |
+| `intrusive_list.h` | 本轮 `OUT_OF_SCOPE`；安装/组件 owner 只属于 `container_intrusive` |
 
-- 现有公开入口反向追踪：待完成。
-- 已有能力完整性检查：待完成。
-- 语法消费者 / 语义重复扫描：待完成。
-- public/internal/higher-layer 裁决：待完成。
-- 本轮冻结 `FIX` 集：只有完成两遍审计后填写；当前不得改产品实现。
-- 相邻模块 backlog：待审计；只记录，不顺手修改未关闭下游。
+语法与语义消费扫描结论：`util::Registry` 真实消费 `StringView`、`FlatHashMap` 与可恢复 reserve；`sched`
+真实消费 pointer/POD 的 MPMC、sharded 与 work-sharing 队列并在构造后检查 `valid()`；`io` 真实消费
+borrowed HTTP/TLS views 与 flat hash，且在初始化路径传播 reserve OOM；`graph` 真实消费
+`SmallVector`。这些调用都属于正确 owner；下游局部 `std::vector/std::string` 是普通 owning value，不能为
+“统一使用 HYLE”强制替换。container 经 public `core/mem`、private runtime `platform` 与 build-private
+SIMD header seam 的依赖方向正确，xxhash/wyhash/simdutf 仍由 container artifact 私有拥有。
+
+## Capability / gap ledger（`AUDITED`）
+
+| ID | requirement / exact evidence | normal owner、failure / concurrency | complexity / normal resource | coverage | action / severity | verification / negative space |
+|---|---|---|---|---|---|---|
+| `CONTAINER-SEQ-01` | MUST；shape/batch consumer + Abseil/Boost/CCCL | owning sequence；显式 allocator；fallible `try_*` / ordinary fail-fast | append amortized O(1)，fixed hot path O(1)/零 heap | `COMPLETE` | `KEEP` | non-trivial long sequence路由 std::vector；N>0 codegen/生命周期回归 |
+| `CONTAINER-POD-01` | MUST；旧 C product 已删除，但 `CArrayHeader` 重复 allocator/size/capacity 并同步写 header | `PodVector` 唯一 owner；直接 block reallocate/free；size type 使用 `size_t` | 同样 amortized O(1)；去掉每 allocation header/padding 与 size sync | `PARTIAL` | `FIX` / MATERIAL | OOM、over-align、alias/range/copy/move；source/static/shared；对 frozen baseline resource/perf |
+| `CONTAINER-HASHMAP-01` | MUST；util/io consumer；Abseil Swiss family | map/set owning；`try_reserve` 可恢复，`reserve` fail-fast；grow/erase 失效 | expected O(1)，7/8 load，零额外常态 metadata | `PARTIAL` | `FIX` / MATERIAL API | tombstone/OOM/property；迁移 util/io；自然 forwarding header；不做 node stability |
+| `CONTAINER-FLAT-01` | MUST；read-mostly index + Boost default vector storage | flat SoA owner；`SmallVector<T,0>` internal sequence；普通/try failure 保持 | lookup O(log n)，insert O(n)；空对象不按 sizeof(K/V) 增长 | `PARTIAL` | `FIX` / MATERIAL RESOURCE | object-size static tests、non-trivial/OOM/bulk/range、正常 n>=8 workload；singleton 不支配裁决 |
+| `CONTAINER-BTREE-01` | MUST；ordered mutation/range + Boost | unique owning tree；fail-fast/InsertResult OOM；外部同步 | O(log n) lookup/mutation，O(n) copy/range | `COMPLETE` | `KEEP` | multi、stable ref、node handle/rank-select 不准入；property/differential即可 |
+| `CONTAINER-CMAP-01` | MUST；registry/cache + oneTBB/Folly；可复现 writer-pending窗口 | accessor owns lock；flat/node stable variants；quiescent management | expected O(1)；无 reader 在 pending writer 后新进入；AArch64 spin 用 `yield` | `PARTIAL` | `FIX` / CORRECTNESS+PERF | pending race/progress/TSan；两 map replay；不把 lock 公开成通用 mutex |
+| `CONTAINER-CVECTOR-01` | MUST；parallel append + oneTBB 3-entry embedded table/clear | stable segmented owner；append completion contract不变；clear只允许 writers quiesced | append amortized O(1)；空对象 O(embedded table)，extended table只在 grow时分配 | `PARTIAL` | `FIX` / MATERIAL RESOURCE | clear/reuse/non-trivial/OOM/stress；sizeof、append/index/iterate NI |
+| `CONTAINER-MPMC-01` | MUST；typed stage handoff；rigtorp `try_emplace` placement lifecycle | bounded MPMC owns live slots；nothrow construct/destruct；move/callback pop；quiescent destroy | O(1) lock-free；trivial payload codegen/slot metadata不回退 | `PARTIAL` | `FIX` / CAPABILITY | move-only/nonassignable/destructor/OOM/stress/TSan；Sharded传播；同合同 rigtorp perf |
+| `CONTAINER-ROLEQUEUE-01` | MUST；sched consumer + mature owner/thief algorithms | SPSC 与两种 stealing role显式；full/empty/retry；quiescent teardown | O(1)，预分配，SPSC无 CAS | `COMPLETE` | `KEEP` | wide/non-lock-free stealing payload传稳定 pointer；blocking/cancel在 sched |
+| `CONTAINER-ACTIVE-01` | MUST；mask/frontier/active IDs + Boost dynamic_bitset | dense/sparse owners；size match是调用合同；补 value equality | O(words) algebra/equality、O(1) sparse mutation | `PARTIAL` | `FIX` / USABILITY | tail padding/equality/ISA differential；compressed bitmap/rank-select defer |
+| `CONTAINER-RING-01` | MUST；stream staging/deque | single-thread owner；bounded/grow、partial I/O、span invalidation | both-end O(1)，grow O(n)，byte path零中间 copy | `COMPLETE` | `KEEP` | current correctness + consumer replay；不加入 wait/close metadata |
+| `CONTAINER-TEXT-01` | MUST；HTTP/registry/path + standard owner/view rule | `StringView` 永远 non-owning；拥有结果由 caller storage/std::pmr::string；span batch/buffer | search/hash O(n)，path lexical O(n)；不隐藏 allocation/free | `PARTIAL` | `FIX` / OWNERSHIP | 删除 borrowed-return-owned helpers；span join/replace/normalize/interner batch；borrow/NUL/OOM tests |
+| `CONTAINER-HASH-01` | MUST；table/interner + xxHash/simdutf pins | fast process seed / deterministic seed / caller-secret hardened policy | bytes O(n)，integral O(1)，无 hidden allocation | `COMPLETE` | `KEEP` | source-primary code-size、short/long hash与 UTF-8 differential；不声称 cryptographic fast hash |
+| `CONTAINER-API-01` | MUST；公开 discoverability 与当前 C++ failure convention | natural type-named headers；普通 `reserve` fail-fast、`try_reserve` recoverable；无 C ABI | forwarding header零运行成本；不增加 duplicate implementation | `PARTIAL` | `FIX` / USABILITY | header self-containment、package samples、全树 stale API scan |
+| `CONTAINER-DELIVERY-01` | MUST；central graph/package contract | C++23 source/static/shared；private vendors；无 Native FFI/C API | exact selected closure；不安装错误 owner header | `PARTIAL` | `FIX` / BLOCKER-at-verification | container-only source embedding、relocated static/shared、license/offline/pin、direct consumers |
+| `CONTAINER-PERF-01` | MUST；旧性能页不满足当前统一仪器 | 五个 frozen family分别资格化；peer语义/allocator/layout等价 | W1-WIN 5% NI；同时记录 object/slot/resident bytes 与 progress | `MISSING` | `FIX` / BLOCKER | A/A、known delta、order、floor、source identity；无 peer只签 baseline NI，不写全面 SOTA |
+| `CONTAINER-DOC-01` | MUST；architecture/user/performance仍 provisional/旧 C 叙事 | architecture=边界；user=选型/陷阱；performance=当前证据；task=事实 | 不复制易腐点值、旧 milestone 或 benchmark 形状 | `PARTIAL` | `FIX` / BLOCKER | current surface/negative space/依赖/三交付对账 + docs checker |
+
+### `GENERAL` / negative space
+
+- **owning string、普通长序列、单线程 node-stable map：`ROUTED`。** 分别使用 `std::string`/
+  `std::pmr::string`、`std::vector`/mem PMR 与 `std::map/std::unordered_map`。HYLE 只有 profile 证明标准
+  shape 的算法或 allocator seam 不够时才另立能力，不能让 non-owning `StringView` 冒充 owner。
+- **ordered multi、node extraction/merge、rank/select、compressed bitmap：`DEFER`。** 单个成熟库存在不足以
+  准入；需要第二个独立来源或具名推理/工程消费者，并在同轮交付完整生命周期和成本模型。
+- **LRU/cache/eviction、persistent containers：`REJECT` 本模块。** 它们需要 quota、I/O、serialization、
+  invalidation 与 service policy，owner 是 engine/io/上层库。
+- **blocking/unbounded/priority queue service：`ROUTED` 到 sched。** container 只提供预分配机制；等待、
+  shutdown、cancel、backpressure 和 callback owner 必须同 runtime 一起设计。
+- **完整 Unicode transform/normalization/regex：`ROUTED` 到专用 text/上层 adapter。** container 保留
+  byte/ASCII 与 UTF-8 validate/count/decode mechanism；不复制 ICU。
+- **Native FFI/C API：`REJECT`。** 当前无已准入 foreign-runtime consumer；source/static/shared 都是
+  typed C++ 产品，不恢复旧 carray schema、handle 或动态符号。
+
+### 冻结施工边界
+
+本轮产品修改只允许以下七个批次：
+
+1. `CONTAINER-POD-01`：去掉 C-era allocation header，保留 typed `PodVector`；
+2. `CONTAINER-FLAT-01`：合法的 zero-inline sequence core 与 flat normal-object layout；
+3. `CONTAINER-MPMC-01`：non-trivial/move-only placement lifecycle，并传播到 sharded 组合；
+4. `CONTAINER-CVECTOR-01`：小 embedded table、按需 extended table 与 quiescent `clear()`；
+5. `CONTAINER-CMAP-01`：writer-pending race、AArch64 relax 与 concurrent reserve failure形状；
+6. `CONTAINER-TEXT-01`：owner/view 分离和 span-oriented path/interner facade；
+7. `CONTAINER-ACTIVE-01` + `CONTAINER-HASHMAP-01` + `CONTAINER-API-01`：bitset equality、reserve
+   一致性与自然 include 入口。
+
+随后只允许 `CONTAINER-DELIVERY-01`、`CONTAINER-PERF-01`、`CONTAINER-DOC-01` 的测试、仪器、交付和
+current 文档工作。新的 correctness/security blocker 必须先回到 ledger；命名偏好、单个 peer feature、
+孤立 benchmark 点值和未具名上层 policy 不得扩面。审计预算内没有发现必须新增另一种核心 container
+family 的证据；功能缺口集中在已有 family 的不完整生命周期与错误成本形状。
 
 ## Candidate
 
