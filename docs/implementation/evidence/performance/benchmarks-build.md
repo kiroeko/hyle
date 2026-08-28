@@ -1,5 +1,12 @@
 # build/package system 历史性能证据
 
+> **2026-08-28 v5 structural gate：**能力完整性回放发现 source configure 在 root 解析前读取全库
+> public/source text，使未选模块中间态也能阻断 selected root。candidate `83bfa556` 已先验证完整
+> manifest，再以单次拓扑反向传播解析闭包，并只扫描 `S_selected`；all-component 仍扫描全树。Windows、
+> WSL、macOS current component contract 和 Windows Core 三种交付通过，见
+> [`build-system-v5-selected-closure`](../../tasks/build/build-system-v5-selected-closure.md)。本轮没有运行
+> 新 build-time 排名或用一次 cold 毫秒点值塑形；以下 v4/v3 数值继续只作历史结构诊断。
+
 > **2026-08-28 current-tree gate：**util-runtime candidate `46935639` 删除了已经不存在的
 > `util -> util_core` direct edge，命中 build/package reopen trigger。Windows、WSL、macOS 已对
 > 同一当前 CPU 图、selected util 交付、source package 与增量失效完成 bounded replay，见

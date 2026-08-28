@@ -1,13 +1,13 @@
 # Build/package v5：selected-closure 独立施工修复
 
-<!-- PROJECT UNIT REVIEW: ACTIVE -->
+<!-- PROJECT UNIT REVIEW: CLOSED -->
 
 > Build/package 是开发单元，不是可链接组件，因此不进入 `module-status.json`。本轮由
 > [`build/package capability replay`](build-package-capability-replay-v1.md) 的真实
 > `PRODUCT_TRIGGER` 启动；长期合同仍归
 > [`build-system.md`](../../../architecture/build-system.md)。
 
-## Closure card（`CANDIDATE`）
+## Closure card（`CLOSED`）
 
 - unit / owner / round / kind：`build-package` / build/package maintainers /
   `build-v5-selected-closure` / `REOPEN`；
@@ -71,7 +71,45 @@ regression/文档。不得修改 component edge、option、package、dependency 
 Candidate 后若改变以上算法、作用域或正常 source journey，退回 `AUDITED`。后续只允许补验证、receipt
 和 LOC。
 
-## Verification / terminal receipt
+## Verification manifest
 
-待当前 candidate 的 macOS portable configure、最终 Windows current-tree replay、文档/闭包与 immutable
-LOC 完成后填写。
+| Gate | Verdict | 当前 candidate 证据 |
+|---|---|---|
+| selected/unselected regression | `PASS` | 三平台 component contract 都确认：未选 graph 的非法 include 不阻断 core；selected core 的同类漏边仍命中 direct-edge fail-closed 诊断 |
+| complete manifest / selected closure | `PASS` | W1-WIN、W1-WSL、M1-MAC 的 current `HyleCiComponentContract.cmake` 全部通过；unknown/empty/normal-cache、拓扑、owner、target edge、offline/lock/license 等既有门未回退 |
+| source/static/shared delivery | `PASS` | W1-WIN fresh Core selected smoke：source、relocated shared、relocated static consumer 各 `1/1`；Core 保持 header-only、零 binary artifact |
+| all-component audit | `PASS` | W1-WIN fresh feature-OFF configure 解析全部 16 个组件；all root 仍读取/审计完整 public/source tree，optional backend 零探测 |
+| cross-platform CMake semantics | `PASS` | W1-WSL CMake 3.28/GCC 14 + Ninja；M1-MAC CMake 4.3/AppleClang 21 + Unix Makefiles。Mac 显式 `MACOSX_DEPLOYMENT_TARGET=14.4`，符合既有 embedding-parent 合同 |
+| P0 cost structure | `PASS` | dependency marks 单次 topological reverse propagation；source audit 只读 `S_selected`；无 runtime 路径、allocation、lock、syscall、metadata 或计时驱动修改 |
+| product identity | `PASS` | candidate 后 canonical 43 文件 build/package boundary 零 diff；component edge、option、package、lock、offline 与 workflow 均未改变 |
+| docs / closure | `PASS` | architecture/user route 已更新；279 个 Markdown、825 个相对链接和 16-component closure schema 全部通过 |
+| immutable LOC | `PASS` | candidate `83bfa5566325e679da11528f93e50a46d2512abd` 由 canonical boundary self-check 复算 |
+
+Mac 首次直接运行 contract 未设置父工程 deployment floor，按设计在 platform 配置期拒绝；显式提供
+文档要求的 14.4 后同一 candidate 全通过。这不是重试调参或掩盖失败，而是验证 source-embedding parent
+必须声明已有 public OS floor。真实 CUDA/Vulkan/TLS/HTTP2、AArch64/clang-cl、完整 source package 和
+hosted Actions 本轮未重跑：对应实现边界零 diff，也不受 selected source audit 顺序影响；它们保持 v4
+证据/手工 workflow 的 accepted limit，不能由本轮 CPU 合同外推。
+
+## Closure decision
+
+状态：`CLOSED`。`BUILD-CAP-PARALLEL-01` 已修复：manifest 本身仍全局 fail closed，product source
+只按 selected closure 审计，all-component CI 仍覆盖全树。这样独占 scratch 现在同时提供 cache 隔离和
+语义隔离；一个未选模块的施工中 include 不再阻断另一个模块，selected 模块漏边也没有被放过。
+
+能力回放中的其余结论维持：三种 C++ 交付、relocatable package、dependency lock/offline/license、
+source bundle、owner-scoped option、CI 分层、exact pre-1.0 version 与 Native FFI `N/A` 均没有新缺口。
+非 CMake/package archive 任务已有用户可发现 route，不因 oneTBB/Abseil feature 数量制造半接口。
+
+重开条件：canonical build/package boundary、组件/公开头/target edge、option/lock/workflow 或交付形状
+改变；selected root 再次受未选源码/cache/依赖阻断；selected 漏边不再 fail closed；具名非 CMake/
+Native FFI/新平台消费者出现；或正常构建出现可复现的数量级/全图 invalidation 回归。一次 cold 点值、
+CI 额度、pkg-config/CPack 的存在或未收口产品模块本身不能单独重开。
+
+terminal receipt：`build-v5-selected-closure` 对 candidate
+`83bfa5566325e679da11528f93e50a46d2512abd` / tree
+`4d5c2455d23400ad9db66047410c65d62d844598` 的全部适用门为 `PASS`，无 blocker；本页所在提交保存
+terminal end receipt。
+
+Candidate immutable LOC：全库代码 **299,028**；自实现包含测试 **122,321**；自实现不包含测试
+**82,176**；build/package 实现 **7,782** 行。LOC 只说明规模，不形成完成度或性能证书。
