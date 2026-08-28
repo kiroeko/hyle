@@ -7,10 +7,25 @@
 #include <chrono>
 #include <condition_variable>
 #include <cstdint>
+#include <limits>
 #include <mutex>
+#include <stdexcept>
 #include <string>
 #include <thread>
 #include <vector>
+
+struct ThrowingFormatValue {};
+
+template <> struct std::formatter<ThrowingFormatValue, char> {
+  constexpr auto parse(std::format_parse_context &context) {
+    return context.begin();
+  }
+
+  auto format(const ThrowingFormatValue &, std::format_context &) const
+      -> std::format_context::iterator {
+    throw std::runtime_error("formatter failure");
+  }
+};
 
 using namespace hyle::obs;
 
@@ -23,9 +38,9 @@ struct LateRegistryAccess {
   ~LateRegistryAccess() { (void)sink_count(); }
 } g_late_registry_access;
 
-// A capture sink: records (level, msg) into a vector so tests assert on what was
-// emitted, without touching stderr. One instance per test; registered as a sink
-// via its {this, &write} pair.
+// A capture sink: records (level, msg) into a vector so tests assert on what
+// was emitted, without touching stderr. One instance per test; registered as a
+// sink via its {this, &write} pair.
 struct Capture {
   struct Rec {
     LogLevel level;
@@ -34,30 +49,30 @@ struct Capture {
   std::vector<Rec> recs;
 
   LogSink as_sink() { return LogSink{this, &write}; }
-  static void write(void* state, const LogRecord& record) noexcept {
-    static_cast<Capture*>(state)->recs.push_back(
+  static void write(void *state, const LogRecord &record) noexcept {
+    static_cast<Capture *>(state)->recs.push_back(
         {record.level, std::string(record.message)});
   }
 };
 
-// Each test runs with ONLY a capture sink installed (default stderr sink removed)
-// and a known level, then restores global state on teardown.
+// Each test runs with ONLY a capture sink installed (default stderr sink
+// removed) and a known level, then restores global state on teardown.
 class LogTest : public ::testing::Test {
- protected:
+protected:
   Capture cap;
   void SetUp() override {
-    ASSERT_TRUE(remove_sink(default_sink()).ok());  // silence console
+    ASSERT_TRUE(remove_sink(default_sink()).ok()); // silence console
     ASSERT_TRUE(add_sink(cap.as_sink()).ok());
     set_level(LogLevel::Trace);
   }
   void TearDown() override {
     EXPECT_TRUE(remove_sink(cap.as_sink()).ok());
-    set_level(LogLevel::Info);     // restore default
-    EXPECT_TRUE(add_sink(default_sink()).ok());  // restore console
+    set_level(LogLevel::Info);                  // restore default
+    EXPECT_TRUE(add_sink(default_sink()).ok()); // restore console
   }
 };
 
-}  // namespace
+} // namespace
 
 TEST_F(LogTest, MessageReachesSink) {
   log_message(LogLevel::Info, "hello");
@@ -68,8 +83,8 @@ TEST_F(LogTest, MessageReachesSink) {
 
 TEST_F(LogTest, MessageViewPreservesEmbeddedNullWithoutCopy) {
   constexpr char bytes[] = {'a', '\0', 'b'};
-  EXPECT_TRUE(log_message(LogLevel::Info,
-                          std::string_view(bytes, sizeof(bytes))));
+  EXPECT_TRUE(
+      log_message(LogLevel::Info, std::string_view(bytes, sizeof(bytes))));
   ASSERT_EQ(cap.recs.size(), 1u);
   EXPECT_EQ(cap.recs[0].msg.size(), sizeof(bytes));
   EXPECT_EQ(cap.recs[0].msg[0], 'a');
@@ -119,11 +134,10 @@ TEST_F(LogTest, MacroCapturesCallerSourceLocation) {
     std::string file;
     std::string function;
     std::uint32_t line = 0;
-    static void write(void* state, const LogRecord& record) noexcept {
-      auto* capture = static_cast<SourceCapture*>(state);
+    static void write(void *state, const LogRecord &record) noexcept {
+      auto *capture = static_cast<SourceCapture *>(state);
       capture->file = record.file != nullptr ? record.file : "";
-      capture->function =
-          record.function != nullptr ? record.function : "";
+      capture->function = record.function != nullptr ? record.function : "";
       capture->line = record.line;
     }
   } source;
@@ -139,15 +153,25 @@ TEST_F(LogTest, MacroCapturesCallerSourceLocation) {
 }
 
 TEST_F(LogTest, StructuredRecordCarriesFieldsAndSource) {
-  LogField fields[] = {{"request_id", "abc"}, {"peer", "127.0.0.1"}};
+  constexpr char exact_key[] = {'r', 'e', 'q', '\0', 'i', 'd'};
+  constexpr char exact_value[] = {'a', 'b', 'c', '\0', 'x'};
+  LogField fields[] = {
+      {std::string_view(exact_key, sizeof(exact_key)),
+       std::string_view(exact_value, sizeof(exact_value))},
+      {"peer", "127.0.0.1"},
+  };
   struct StructuredCapture {
     std::size_t fields = 0;
+    std::string first_key;
+    std::string first_value;
     std::string file;
     std::uint32_t line = 0;
     std::uint64_t timestamp = 0;
-    static void write(void* state, const LogRecord& record) noexcept {
-      auto* capture = static_cast<StructuredCapture*>(state);
-      capture->fields = record.field_count;
+    static void write(void *state, const LogRecord &record) noexcept {
+      auto *capture = static_cast<StructuredCapture *>(state);
+      capture->fields = record.fields.size();
+      capture->first_key.assign(record.fields.front().key);
+      capture->first_value.assign(record.fields.front().value);
       capture->file = record.file != nullptr ? record.file : "";
       capture->line = record.line;
       capture->timestamp = record.timestamp_ns;
@@ -159,7 +183,6 @@ TEST_F(LogTest, StructuredRecordCarriesFieldsAndSource) {
       .level = LogLevel::Warn,
       .message = "slow request",
       .fields = fields,
-      .field_count = 2,
       .file = "server.cc",
       .function = "serve",
       .line = 42,
@@ -168,6 +191,9 @@ TEST_F(LogTest, StructuredRecordCarriesFieldsAndSource) {
   EXPECT_TRUE(log_record(record));
   EXPECT_TRUE(remove_sink(sink).ok());
   EXPECT_EQ(structured.fields, 2u);
+  EXPECT_EQ(structured.first_key, std::string(exact_key, sizeof(exact_key)));
+  EXPECT_EQ(structured.first_value,
+            std::string(exact_value, sizeof(exact_value)));
   EXPECT_EQ(structured.file, "server.cc");
   EXPECT_EQ(structured.line, 42u);
   EXPECT_EQ(structured.timestamp, 123u);
@@ -176,9 +202,16 @@ TEST_F(LogTest, StructuredRecordCarriesFieldsAndSource) {
 TEST_F(LogTest, LogFmtSkipsFormattingWhenGated) {
   set_level(LogLevel::Error);
   // If this formatted despite the gate, a throwing formatter would fire; the
-  // point is it must NOT format. Use a value that's cheap; assert nothing logged.
+  // point is it must NOT format. Use a value that's cheap; assert nothing
+  // logged.
   log_fmt(LogLevel::Debug, "expensive {}", 123);
   EXPECT_TRUE(cap.recs.empty());
+}
+
+TEST_F(LogTest, LogFmtContainsForeignFormatterExceptions) {
+  EXPECT_NO_THROW(HYLE_LOG_INFO("value={}", ThrowingFormatValue{}));
+  ASSERT_EQ(cap.recs.size(), 1u);
+  EXPECT_EQ(cap.recs[0].msg, "[log formatting failed]");
 }
 
 TEST_F(LogTest, MacrosRouteToLevels) {
@@ -212,8 +245,7 @@ TEST_F(LogTest, SinkRegistrationOwnsMembershipAndMoves) {
     ASSERT_EQ(scoped.recs.size(), 1u);
   }
 
-  EXPECT_EQ(remove_sink(scoped.as_sink()).code(),
-            hyle::StatusCode::NotFound);
+  EXPECT_EQ(remove_sink(scoped.as_sink()).code(), hyle::StatusCode::NotFound);
 }
 
 TEST_F(LogTest, SinkRegistrationResetIsIdempotent) {
@@ -225,17 +257,57 @@ TEST_F(LogTest, SinkRegistrationResetIsIdempotent) {
   EXPECT_FALSE(result->registered());
 }
 
+TEST_F(LogTest, TypedSinkAdapterWritesFlushesAndOwnsMembership) {
+  struct Backend {
+    std::size_t writes = 0;
+    std::size_t flushes = 0;
+    void write(const LogRecord &) noexcept { ++writes; }
+    void flush() noexcept { ++flushes; }
+  } backend;
+
+  auto result = SinkRegistration::create(backend);
+  ASSERT_TRUE(result.has_value());
+  EXPECT_TRUE(log_message(LogLevel::Info, "typed"));
+  EXPECT_EQ(flush_sinks(), 1u);
+  EXPECT_EQ(backend.writes, 1u);
+  EXPECT_EQ(backend.flushes, 1u);
+}
+
+TEST_F(LogTest, SinkRegistrationMoveAssignmentReleasesLiveTarget) {
+  Capture first_capture;
+  Capture second_capture;
+  auto first = SinkRegistration::create(first_capture.as_sink());
+  auto second = SinkRegistration::create(second_capture.as_sink());
+  ASSERT_TRUE(first.has_value());
+  ASSERT_TRUE(second.has_value());
+
+  *first = std::move(*second);
+  EXPECT_TRUE(first->registered());
+  EXPECT_FALSE(second->registered());
+  EXPECT_EQ(remove_sink(first_capture.as_sink()).code(),
+            hyle::StatusCode::NotFound);
+  EXPECT_TRUE(log_message(LogLevel::Info, "after move assignment"));
+  EXPECT_TRUE(first_capture.recs.empty());
+  EXPECT_EQ(second_capture.recs.size(), 1u);
+}
+
+TEST_F(LogTest, SinkRegistrationCreateReportsDuplicate) {
+  auto duplicate = SinkRegistration::create(cap.as_sink());
+  ASSERT_FALSE(duplicate.has_value());
+  EXPECT_EQ(duplicate.error().code(), hyle::StatusCode::AlreadyExists);
+}
+
 TEST_F(LogTest, DuplicateSinkIsRejectedWithoutDuplicateDelivery) {
   EXPECT_EQ(add_sink(cap.as_sink()).code(), hyle::StatusCode::AlreadyExists);
   log_message(LogLevel::Info, "once");
-  EXPECT_EQ(cap.recs.size(), 1u);  // not 2
+  EXPECT_EQ(cap.recs.size(), 1u); // not 2
 }
 
 TEST_F(LogTest, RemoveSinkStopsDelivery) {
   ASSERT_TRUE(remove_sink(cap.as_sink()).ok());
   log_message(LogLevel::Info, "gone");
   EXPECT_TRUE(cap.recs.empty());
-  ASSERT_TRUE(add_sink(cap.as_sink()).ok());  // balance TearDown
+  ASSERT_TRUE(add_sink(cap.as_sink()).ok()); // balance TearDown
 }
 
 // Default level is Info: a fresh process drops Trace/Debug. Verified by reading
@@ -249,17 +321,16 @@ TEST(LogDefault, DefaultLevelIsInfo) {
 
 // Concurrency stress: many threads log_message in parallel while another churns
 // add_sink/remove_sink. Validates immutable snapshots and quiescent retirement
-// stay race-free -- the hard assertion is "no crash, no TSan race, no hang, every
-// logger's message delivered".
+// stay race-free -- the hard assertion is "no crash, no TSan race, no hang,
+// every logger's message delivered".
 TEST(LogConcurrency, ParallelLogVsChurn) {
   set_level(LogLevel::Trace);
   std::atomic<std::uint64_t> calls{0};
   struct Counter {
-    std::atomic<std::uint64_t>* c;
+    std::atomic<std::uint64_t> *c;
   } counter{&calls};
-  LogSink counting{&counter,
-                   [](void* s, const LogRecord&) noexcept {
-                     static_cast<Counter*>(s)->c->fetch_add(
+  LogSink counting{&counter, [](void *s, const LogRecord &) noexcept {
+                     static_cast<Counter *>(s)->c->fetch_add(
                          1, std::memory_order_relaxed);
                    }};
   ASSERT_TRUE(remove_sink(default_sink()).ok());
@@ -272,7 +343,8 @@ TEST(LogConcurrency, ParallelLogVsChurn) {
   std::vector<std::thread> ts;
   for (int t = 0; t < kLoggers; ++t)
     ts.emplace_back([&] {
-      for (int i = 0; i < kPerThread; ++i) log_message(LogLevel::Info, "x");
+      for (int i = 0; i < kPerThread; ++i)
+        log_message(LogLevel::Info, "x");
     });
   // Churn thread: repeatedly add/remove a second sink to republish snapshots.
   Counter c2{&calls};
@@ -287,12 +359,14 @@ TEST(LogConcurrency, ParallelLogVsChurn) {
     }
   });
 
-  for (auto& th : ts) th.join();
+  for (auto &th : ts)
+    th.join();
   stop.store(true, std::memory_order_relaxed);
   churner.join();
 
   // At least the counting sink saw every message from every logger (the churn
-  // sink may have added more; we only assert a sane lower bound + no crash/hang).
+  // sink may have added more; we only assert a sane lower bound + no
+  // crash/hang).
   EXPECT_GE(calls.load(), static_cast<std::uint64_t>(kLoggers) * kPerThread);
   EXPECT_TRUE(registry_ok.load(std::memory_order_relaxed));
 
@@ -310,13 +384,12 @@ TEST(LogConcurrency, RemoveWaitsForConcurrentCallback) {
     std::condition_variable release_cv;
     bool entered = false;
     bool release = false;
-    static void write(void* state, const LogRecord&) noexcept {
-      auto* blocking = static_cast<Blocking*>(state);
+    static void write(void *state, const LogRecord &) noexcept {
+      auto *blocking = static_cast<Blocking *>(state);
       std::unique_lock<std::mutex> lock(blocking->mutex);
       blocking->entered = true;
       blocking->entered_cv.notify_one();
-      blocking->release_cv.wait(lock,
-                                [&] { return blocking->release; });
+      blocking->release_cv.wait(lock, [&] { return blocking->release; });
     }
   } blocking;
   LogSink sink{&blocking, &Blocking::write};
@@ -352,8 +425,8 @@ TEST(LogConcurrency, CallbackCanRemoveItselfWithoutDeadlock) {
   struct SelfRemoving {
     LogSink sink{};
     bool removed = false;
-    static void write(void* state, const LogRecord&) noexcept {
-      auto* self = static_cast<SelfRemoving*>(state);
+    static void write(void *state, const LogRecord &) noexcept {
+      auto *self = static_cast<SelfRemoving *>(state);
       self->removed = remove_sink(self->sink).ok();
     }
   } state;
@@ -372,19 +445,17 @@ TEST(LogConcurrency, CallbackCannotCrossRemovePendingSink) {
   struct CrossRemoving {
     LogSink target{};
     bool result = true;
-    static void write(void* state, const LogRecord&) noexcept {
-      auto* self = static_cast<CrossRemoving*>(state);
+    static void write(void *state, const LogRecord &) noexcept {
+      auto *self = static_cast<CrossRemoving *>(state);
       self->result = remove_sink(self->target).ok();
     }
   } remover;
   std::atomic<std::size_t> target_calls{0};
   LogSink first{&remover, &CrossRemoving::write};
-  LogSink target{
-      &target_calls,
-      [](void* state, const LogRecord&) noexcept {
-        static_cast<std::atomic<std::size_t>*>(state)->fetch_add(
-            1, std::memory_order_relaxed);
-      }};
+  LogSink target{&target_calls, [](void *state, const LogRecord &) noexcept {
+                   static_cast<std::atomic<std::size_t> *>(state)->fetch_add(
+                       1, std::memory_order_relaxed);
+                 }};
   remover.target = target;
   ASSERT_TRUE(add_sink(first).ok());
   ASSERT_TRUE(add_sink(target).ok());
@@ -402,8 +473,8 @@ TEST_F(LogTest, NestedLogFromSinkDoesNotReenterSinkGraph) {
   struct Recursive {
     std::size_t calls = 0;
     bool nested_delivered = true;
-    static void write(void* state, const LogRecord&) noexcept {
-      auto* self = static_cast<Recursive*>(state);
+    static void write(void *state, const LogRecord &) noexcept {
+      auto *self = static_cast<Recursive *>(state);
       ++self->calls;
       if (self->calls < 32) {
         self->nested_delivered =
@@ -416,7 +487,8 @@ TEST_F(LogTest, NestedLogFromSinkDoesNotReenterSinkGraph) {
 
   EXPECT_TRUE(log_message(LogLevel::Info, "outer"));
   EXPECT_EQ(recursive.calls, 1u);
-  EXPECT_FALSE(recursive.nested_delivered);  // default sink is disabled in fixture
+  EXPECT_FALSE(
+      recursive.nested_delivered); // default sink is disabled in fixture
   ASSERT_EQ(cap.recs.size(), 1u);
   EXPECT_EQ(cap.recs[0].msg, "outer");
   EXPECT_TRUE(remove_sink(sink).ok());
@@ -426,11 +498,11 @@ TEST_F(LogTest, FlushInvokesOptionalCallbackWithoutNestedFanout) {
   struct Buffered {
     std::size_t writes = 0;
     std::size_t flushes = 0;
-    static void write(void* state, const LogRecord&) noexcept {
-      ++static_cast<Buffered*>(state)->writes;
+    static void write(void *state, const LogRecord &) noexcept {
+      ++static_cast<Buffered *>(state)->writes;
     }
-    static void flush(void* state) noexcept {
-      auto* self = static_cast<Buffered*>(state);
+    static void flush(void *state) noexcept {
+      auto *self = static_cast<Buffered *>(state);
       ++self->flushes;
       (void)log_message(LogLevel::Debug, "nested during flush");
     }
@@ -445,9 +517,73 @@ TEST_F(LogTest, FlushInvokesOptionalCallbackWithoutNestedFanout) {
   EXPECT_TRUE(remove_sink(sink).ok());
 }
 
+TEST_F(LogTest, FlushCallbackCanRemoveItselfAndNestedFlushIsSuppressed) {
+  struct SelfRemoving {
+    LogSink sink{};
+    bool removed = false;
+    std::size_t nested_flushes = 1;
+    static void write(void *, const LogRecord &) noexcept {}
+    static void flush(void *state) noexcept {
+      auto *self = static_cast<SelfRemoving *>(state);
+      self->nested_flushes = flush_sinks();
+      self->removed = remove_sink(self->sink).ok();
+    }
+  } state;
+  state.sink = LogSink{&state, &SelfRemoving::write, &SelfRemoving::flush};
+  ASSERT_TRUE(add_sink(state.sink).ok());
+
+  EXPECT_EQ(flush_sinks(), 1u);
+  EXPECT_EQ(state.nested_flushes, 0u);
+  EXPECT_TRUE(state.removed);
+  EXPECT_EQ(remove_sink(state.sink).code(), hyle::StatusCode::NotFound);
+}
+
+TEST(LogConcurrency, RemoveWaitsForConcurrentFlushCallback) {
+  ASSERT_TRUE(remove_sink(default_sink()).ok());
+  struct BlockingFlush {
+    std::mutex mutex;
+    std::condition_variable entered_cv;
+    std::condition_variable release_cv;
+    bool entered = false;
+    bool release = false;
+    static void write(void *, const LogRecord &) noexcept {}
+    static void flush(void *state) noexcept {
+      auto *self = static_cast<BlockingFlush *>(state);
+      std::unique_lock<std::mutex> lock(self->mutex);
+      self->entered = true;
+      self->entered_cv.notify_one();
+      self->release_cv.wait(lock, [&] { return self->release; });
+    }
+  } blocking;
+  LogSink sink{&blocking, &BlockingFlush::write, &BlockingFlush::flush};
+  ASSERT_TRUE(add_sink(sink).ok());
+
+  std::thread flusher([] { (void)flush_sinks(); });
+  {
+    std::unique_lock<std::mutex> lock(blocking.mutex);
+    blocking.entered_cv.wait(lock, [&] { return blocking.entered; });
+  }
+  std::atomic<bool> removed{false};
+  std::thread remover([&] {
+    EXPECT_TRUE(remove_sink(sink).ok());
+    removed.store(true, std::memory_order_release);
+  });
+  std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  EXPECT_FALSE(removed.load(std::memory_order_acquire));
+  {
+    std::lock_guard<std::mutex> lock(blocking.mutex);
+    blocking.release = true;
+  }
+  blocking.release_cv.notify_one();
+  flusher.join();
+  remover.join();
+  EXPECT_TRUE(removed.load(std::memory_order_acquire));
+  EXPECT_TRUE(add_sink(default_sink()).ok());
+}
+
 TEST(LogRegistry, ReportsCapacityAndRejectsOverflow) {
   ASSERT_TRUE(remove_sink(default_sink()).ok());
-  auto noop = +[](void*, const LogRecord&) noexcept {};
+  auto noop = +[](void *, const LogRecord &) noexcept {};
   std::vector<std::uintptr_t> identities(sink_capacity());
   for (std::size_t i = 0; i < identities.size(); ++i) {
     EXPECT_TRUE(add_sink(LogSink{&identities[i], noop}).ok());
@@ -471,17 +607,8 @@ TEST(LogLevelValidation, OffIsThresholdOnly) {
 
 TEST(LogContracts, InvalidNativeInputsFailFast) {
   EXPECT_DEATH(set_level(static_cast<LogLevel>(99)), "");
-  EXPECT_DEATH(
-      ([] {
-        LogRecord record{
-            .level = LogLevel::Info,
-            .message = "fields",
-            .fields = nullptr,
-            .field_count = 1,
-        };
-        (void)log_record(record);
-      }()),
-      "");
+  EXPECT_DEATH(log_message(LogLevel::Info, static_cast<const char *>(nullptr)),
+               "");
 }
 
 TEST(LogDefaultSink, StateSetterIsIdempotentAndReportsSuccess) {
@@ -496,14 +623,13 @@ TEST(LogDefaultSink, StateSetterIsIdempotentAndReportsSuccess) {
 TEST(LogDefaultSink, EscapesControlsAndKeepsOnePhysicalRecord) {
   ASSERT_TRUE(set_default_sink_enabled(true).ok());
   set_level(LogLevel::Info);
-  constexpr char message[] = {'l', 'i', 'n', 'e', '1', '\n', 'l', 'i', 'n',
-                              'e', '2', '\0', '\x1b', '[', '3', '1', 'm'};
+  constexpr char message[] = {'l', 'i', 'n',  'e',    '1', '\n', 'l', 'i', 'n',
+                              'e', '2', '\0', '\x1b', '[', '3',  '1', 'm'};
   LogField field{"key\t", "value\r"};
   LogRecord record{
       .level = LogLevel::Info,
       .message = std::string_view(message, sizeof(message)),
-      .fields = &field,
-      .field_count = 1,
+      .fields = std::span<const LogField>(&field, 1),
       .file = "source\nfile\x1b",
       .line = 9,
   };
@@ -529,7 +655,8 @@ TEST(LogDefaultSink, ConcurrentSameDirectionSettersAreIdempotent) {
       }
     });
   }
-  for (auto& thread : threads) thread.join();
+  for (auto &thread : threads)
+    thread.join();
   EXPECT_TRUE(all_ok.load(std::memory_order_relaxed));
   EXPECT_FALSE(default_sink_enabled());
 
@@ -541,7 +668,8 @@ TEST(LogDefaultSink, ConcurrentSameDirectionSettersAreIdempotent) {
       }
     });
   }
-  for (auto& thread : threads) thread.join();
+  for (auto &thread : threads)
+    thread.join();
   EXPECT_TRUE(all_ok.load(std::memory_order_relaxed));
   EXPECT_TRUE(default_sink_enabled());
 }
@@ -551,6 +679,10 @@ TEST(TraceGate, DisabledMacrosDoNotEvaluateArguments) {
   int evaluated = 0;
   HYLE_TRACE_ZONE();
   HYLE_TRACE_ZONE_NAMED((++evaluated, "zone"));
+  HYLE_TRACE_ZONE_TEXT((++evaluated, "zone text"));
+  HYLE_TRACE_ZONE_NAME((++evaluated, "zone name"));
+  HYLE_TRACE_ZONE_VALUE(++evaluated);
+  HYLE_TRACE_ZONE_COLOR(++evaluated);
   HYLE_TRACE_PLOT((++evaluated, "plot"), ++evaluated);
   HYLE_TRACE_COUNTER((++evaluated, "counter"), ++evaluated);
   HYLE_TRACE_MESSAGE((++evaluated, "message"));
@@ -559,13 +691,24 @@ TEST(TraceGate, DisabledMacrosDoNotEvaluateArguments) {
   HYLE_TRACE_FREE((++evaluated, &evaluated));
   HYLE_TRACE_ALLOC_NAMED((++evaluated, &evaluated), ++evaluated,
                          (++evaluated, "pool"));
-  HYLE_TRACE_FREE_NAMED((++evaluated, &evaluated),
-                        (++evaluated, "pool"));
+  HYLE_TRACE_FREE_NAMED((++evaluated, &evaluated), (++evaluated, "pool"));
   HYLE_TRACE_THREAD_NAME((++evaluated, "thread"));
   HYLE_TRACE_FIBER_ENTER((++evaluated, "fiber"));
   HYLE_TRACE_FIBER_LEAVE();
   HYLE_TRACE_FRAME();
   HYLE_TRACE_FRAME_NAMED((++evaluated, "frame"));
   EXPECT_EQ(evaluated, 0);
+}
+#else
+TEST(TraceBackend, CurrentZoneAnnotationsAndFullWidthCounterCompile) {
+  HYLE_TRACE_ZONE_NAMED("hyle.obs.test");
+  const std::string text = "operator=qwen attention";
+  HYLE_TRACE_ZONE_TEXT(std::string_view(text));
+  HYLE_TRACE_ZONE_NAME(text);
+  HYLE_TRACE_ZONE_VALUE(std::numeric_limits<std::uint64_t>::max());
+  HYLE_TRACE_ZONE_COLOR(0x22aaffu);
+  HYLE_TRACE_COUNTER("hyle.obs.uint64",
+                     std::numeric_limits<std::uint64_t>::max());
+  HYLE_TRACE_MESSAGE(std::string_view(text));
 }
 #endif
