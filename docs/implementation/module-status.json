@@ -300,7 +300,7 @@
     },
     {
       "module": "util",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "round_id": "util-runtime-v2",
       "closure_task": "docs/implementation/tasks/util/util-runtime-v2-closure.md",
       "scope": "Owning std::string runtime demangle and type_info convenience, single platform-demangler execution per public call, affected correctness/usability/docs and current source/static/shared delivery.",
@@ -320,7 +320,7 @@
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "util-runtime-v2 已由 UR-REPLAY-OWNING-TEXT-01 进入 SCOPED：只补 owning demangle 与相关易用性/正确性/交付，不重构 Registry 或运行 timing benchmark。"
+      "summary": "util-runtime-v2 AUDITED：owning demangle、single-visit/internal sink、overlap 与文档/交付 FIX 已冻结；Registry 产品零改动，timing benchmark 不适用。"
     },
     {
       "module": "sched",

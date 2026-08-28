@@ -35,9 +35,11 @@
   是已声明 north-star，不冒充已完成产品调用；
 - tier / instrument：**P0 / `closure-correctness-v1`**。demangle 是诊断冷路径，timing budget 为 0；
   只验证 O(input+output)、一次平台 demangle、无常态 metadata，以及公开的 allocation/lock 事实；
-- resource target：owning overload 返回独立 `std::string`，可因标准字符串分配抛异常；Itanium
-  `__cxa_demangle` 仍可有一次内部 malloc，随后复制到 standard string；Windows 短 symbol 使用栈
-  temporary，超长 symbol 的现有有界重试保持。不得先调用 buffer API sizing 再调用第二次；
+- resource target：owning overload 返回独立 `std::string`，可因标准字符串分配抛异常；它必须是
+  header-inline convenience，通过窄 internal sink seam 在 caller CRT 中构造字符串，不能从 DLL 返回
+  DLL-owned STL。Itanium `__cxa_demangle` 仍可有一次内部 malloc，随后复制到 standard string；
+  Windows 短 symbol 使用栈 temporary，超长 symbol 的现有有界重试保持。不得先调用 buffer API
+  sizing 再调用第二次；
 - total budget：45 分钟；结构/实现检查 10 分钟；红队 15 分钟；最多一个实现批次和一次受影响重跑，
   不扩建性能仪器；
 - machine profiles：W1-WIN、W1-WSL、M1-MAC；instrument profile：
@@ -53,7 +55,44 @@
 - stop condition：owning 与 buffer 两条 admitted journey 都 `COMPLETE`，Registry 回放结论未被本轮
   改动，所有适用 P0/correctness/delivery/docs/red-team 门通过；否则用具名 blocker 停止。
 
-## Capability / gap ledger（待 `AUDITED` 冻结）
+## Capability / gap ledger（`AUDITED`）
 
-本节将在 public-surface、实现和两份 peer 的有限审计完成后冻结；`SCOPED` 阶段不预写产品结论。
+回放已给出完整 util-runtime capability-family map；本轮只重新审计触发族、其 ABI/交付边和直接相邻
+文档。Registry 的实现与 public contract 不进入 FIX。
 
+| ID | demand / current coverage | exact source / normal shape | semantic / artifact / delivery owner | lifecycle、failure 与复杂度 | action / severity / verification / negative space |
+|---|---|---|---|---|---|
+| U2-DM-01 | `MUST` owning runtime symbol text；`MISSING` | Folly/Boost 两份 pinned peer；`std::string demangle(name/type_info)` | util / `demangle.h` inline + `hyle_util` internal sink / util component | 返回独立 string；平台失败回显；caller-side allocation 可抛；O(input+output) | `FIX / high`；null/plain/real symbol/type_info/long tests；不新增 allocator-aware HYLE string |
+| U2-DM-02 | `MUST` 一次 public 调用只执行一次 platform demangler；`MISSING` 于 owning 路线 | north-star 完整诊断文本；不能把 buffer sizing+second call 冒充自然组合 | util / `demangle.cc` common visit / util component | platform temporary 在 sink 返回/异常前有效；RAII cleanup；一次 platform call（Windows 只有容量重试） | `FIX / high`；结构审查与 callback counter；不做 timing benchmark |
+| U2-ABI-01 | `MUST` shared C++ SDK 的 owning convenience；直接导出 STL 为错误 route | build/package C++ source/static/shared；Error 已明确不让 DLL-owned STL 跨 CRT | util semantics / header-inline `std::string` + exported `detail` sink / build-package smoke | sink 在 caller TU 构造 string；catch/rethrow 发生在 caller，异常不穿过 compiled seam；无 STL layout/heap ownership跨 DLL | `FIX / high`；relocated shared/static/source sample；internal seam 不是 Native FFI |
+| U2-DM-03 | 现有 bounded buffer 的 input/output overlap 边界未定义；`PARTIAL` | caller 可能原地清理 backtrace symbol；支持只需 overlap-safe copy | util / `fill` / util component | 先取得完整长度，再 `memmove` 并 NUL；O(n)，无新增 allocation/metadata | `FIX / medium`；exact/partial overlap tests；不承诺 arbitrary non-NUL input |
+| U2-DM-04 | signal-handler demangle；无跨平台路线 | Folly 仅可选 libiberty buffer path，Boost/平台 ABI 不共同支持 | crash/symbolizer owner | 需要 async-signal-safe parser；当前 Itanium allocation、Windows mutex 明确不满足 | `DEFER / OUT_OF_SCOPE`；user trap 必须直说；不假装 caller buffer 等于 signal-safe |
+| U2-REG-01 | Registry 六族均 `COMPLETE` | v1 closure + capability replay；推理 backend startup/discovery | util / `registry.h` / util component | 合同、布局、算法、依赖均未漂移 | `KEEP / no product change`；只把“高频 dispatch”改成按名 service lookup，kernel/op 初始化后缓存 typed handle |
+| U2-MOD-01 | dynamic module lifecycle 不属于 Registry | ggml owner-specific manager；HYLE 当前只有 `platform::DynLib` | caller/module owner；platform 只拥有 loader handle | drain objects/readers → destroy registry → close library | `REJECT from Registry / DOC FIX`；不得把不存在的 HYLE `ModuleManager` 写成现有完整 route |
+| U2-BUILD-01 | util component 与 symbol closure | current central graph/public includes | util + build/package | direct deps 保持 core/error/mem/container；compiled symbol 从一个变两个，不拆 target | `KEEP + VERIFY`；只有 material demangle-only consumer 才考虑 component split |
+
+所有本轮 `MUST` 在候选前必须由 `MISSING/PARTIAL -> COMPLETE`；没有 `PARTIAL + KEEP`。冻结 FIX 只有：
+
+1. public header 增加 owning string/type-info inline overload和 internal sink 声明；sink callback 捕获并在
+   caller 侧重抛 allocation/length exception，compiled seam 保持 no-throw；
+2. `demangle.cc` 抽取一次 platform-demangle/visit 路径；所有 temporary 使用 RAII，Windows mutex 只
+   覆盖 DbgHelp 调用，不覆盖 string construction/copy；buffer fallback 改为 overlap-safe copy；
+3. tests/package sample 覆盖 owning、type_info、原地/部分 overlap、现有 bounded contract 与三种交付；
+4. architecture/user 文档写清 owning vs fixed-buffer 选择、异常、内部 allocation/lock、非
+   async-signal-safe、Registry 不用于 kernel/op string dispatch，以及 caller-owned module lifecycle。
+
+其外发现进入下轮 trigger，不在 v2 扩张 Registry、string/container、module manager 或性能仪器。
+
+## Public-surface trace
+
+| 入口 | capability / 当前状态 | 本轮裁决 |
+|---|---|---|
+| `demangle(const char*, char*, size_t) noexcept` | bounded full-length/truncation/pass-through；`COMPLETE`，overlap edge `PARTIAL` | 保留 ABI；共用 single-visit 实现并补 overlap |
+| buffer `type_info` / fixed-array overload | 自然固定存储入口；`COMPLETE` | `KEEP` |
+| owning `demangle(const char*)` | 完整 owning text；`MISSING` | header-inline `std::string` `FIX` |
+| owning `demangle(const type_info&)` | runtime type convenience；`MISSING` | header-inline forwarder `FIX` |
+| `detail::demangle_visit` | source/static/shared 不跨 STL ownership 的 implementation seam；`MISSING` | exported internal ABI `FIX`；用户不直接调用 |
+| `RegistryPriority`、`Registry`、`EntryView/FrozenView` 及全部 register/query/enumerate 入口 | startup/discovery 六族；`COMPLETE` | 产品零改动；仅校准选型文字 |
+
+仓库生产扫描仍没有第二套 demangler 或通用 Registry，也没有 util runtime 的内部产品调用；tests/bench/
+sample 不冒充需求。current central dependency graph 与 public include trace 一致，不需要新增依赖。
