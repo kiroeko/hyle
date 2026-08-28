@@ -308,7 +308,7 @@
     },
     {
       "module": "math",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "round_id": "math-v1",
       "closure_task": "docs/implementation/tasks/math/math-v1-closure.md",
       "scope": "The scalar numeric math component, all four current public helpers, its component and package journey, and the scalar-versus-SIMD ownership boundary.",
@@ -328,7 +328,7 @@
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "math-v1 SCOPED：先裁决四个 clay 迁移剩余符号与 SIMD/C++23 的边界，再冻结有限修复集；当前产品消费者为 0，已有溢出与 exceptional-value 语义需审计。"
+      "summary": "math-v1 AUDITED：准入并补全 integer ceil/round 的 checked + fail-fast 路线，删除无消费者且语义含混的 sgn/approx_eq；C++23 标量与 SIMD 分工、PUBLIC core 依赖及交付集已冻结。"
     },
     {
       "module": "time",

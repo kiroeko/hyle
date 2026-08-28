@@ -8,7 +8,7 @@
 > [`module-status.json`](../../module-status.json)。本轮先裁决 scalar math 与 SIMD 的边界；
 > capability map 和有限 `FIX` 集进入 `AUDITED` 前不改产品代码。
 
-## Closure card（`SCOPED`）
+## Closure card（`AUDITED`，scope 不变）
 
 - component / owner / round ID：`math` / scalar numeric primitive owner / `math-v1`
 - task kind：`REFACTOR`
@@ -62,13 +62,66 @@
 
 ## Capability-family coverage map
 
-`SCOPED`：下一阶段从用户任务与上述 strong peers 自顶向下建图，再将现有四个公开符号
-逐一反向映射。本节尚未给出 `KEEP/FIX` 授权。
+| Family | admitted user journeys / evidence | required semantic variants | lifecycle / boundary / ownership | current route | coverage | missing edge / negative space |
+|---|---|---|---|---|---|---|
+| C++ scalar constants, bit and elementary math | C++23 defines the ordinary scalar route | integral/floating overloads and standard exceptional values | value-only; standard library owns semantics and implementation | `<bit>/<cmath>/<numbers>/<limits>` | `ROUTED` | HYLE must not rename or mirror this surface |
+| Non-negative integral ceiling division | tensor/block partition; CCCL; 76 ggml SYCL call sites plus a signed llama shape use | same-type signed or unsigned, excluding bool; checked input and fail-fast normal route | no state; divisor must be positive and signed dividend non-negative | current unsigned `div_ceil` | `PARTIAL` | zero divisor is undiscoverable; signed shape requires ad-hoc helper/cast; name diverges from selected peer |
+| Integral round-up to a representable multiple | padded extents, storage/block sizing; CCCL | same-type signed/unsigned; zero divisor and unrepresentable result | no state; checked and fail-fast routes; one division, no allocation | current unsigned `round_up_to_multiple` | `PARTIAL` | multiplication silently wraps although its comment calls the path overflow-safe |
+| Threshold sign classification | no admitted product consumer; threshold is domain policy | NaN, signed zero and tolerance policy would be required | consumer owns tolerance and invalid-value policy | current `sgn(x, eps)` | `PARTIAL` | NaN becomes zero; arbitrary default epsilon; route to explicit consumer comparison |
+| Approximate floating comparison | existing public symbol only; Eigen demonstrates one of several incompatible policies | absolute/relative/ULP choice, zero, NaN, infinity and tolerance validation | numerical algorithm/test owner chooses error model | current multiplicative `approx_eq` | `PARTIAL` | name hides zero behavior; equal infinities compare false; no consumer justifies choosing this policy globally |
+| Lane/vector/whole-buffer math | SIMD user journeys | fixed/scalable vector, runtime/exact dispatch, dtype and accuracy tier | `simd` owns implementation and delivery | `hyle::simd` | `OUT_OF_SCOPE` | completeness is adjudicated in simd-v1, not copied into scalar math |
+| Linear algebra, FFT, geometry, special functions and model operators | domain libraries and upper layers | domain-specific | mature dependency, compute or consumer owns policy | outside math | `OUT_OF_SCOPE` | no generic wrapper or umbrella module |
+
+### Public-surface trace
+
+| Current symbol | reverse demand | audit verdict |
+|---|---|---|
+| `div_ceil<T>(a,b)` | `MATH-INT-01` | `PARTIAL -> FIX` as `ceil_div` plus checked route; no compatibility alias because the project is pre-release and has no consumer |
+| `round_up_to_multiple<T>(n,m)` | `MATH-ROUND-01` | `PARTIAL -> FIX`; add checked overflow/invalid-input route and fail-fast normal route |
+| `sgn<T>(x,eps)` | clay migration only | `REJECT`; threshold classification remains explicit consumer policy |
+| `approx_eq<T>(a,b,tol)` | clay migration only | `REJECT`; route to the consumer's absolute/relative/ULP contract or a domain library |
+
+Repository syntax scan at baseline found no product include or call of `hyle::math`; only
+`tests/math/scalar_test.cc` consumes the header. By contrast, the pinned llama/ggml source contains repeated
+ceil-division in tensor, block and launch-shape calculations. This is north-star and mature-domain evidence, not a
+claim that HYLE already has a production caller.
 
 ## Capability / gap ledger
 
-`SCOPED`：未冻结。已复现的 overflow 与 exceptional-value 问题是审计输入，只有 ledger 完成后
-才能决定是修复、重塑、路由还是删除。
+| ID | class | demand kind / exact source | normal shape | owner / failure | complexity/resource | coverage | action / severity | verification / negative space |
+|---|---|---|---|---|---|---|---|---|
+| `MATH-STD-01` | `MUST` | language standard: C++23 scalar numeric facilities | user calls the standard facility directly | standard library owns semantics/artifact; math docs own routing | standard complexity; zero HYLE cost | `ROUTED` | `KEEP` route | stale-wrapper scan; do not mirror standard names |
+| `MATH-INT-01` | `MUST` | north-star shape partition; CCCL `132670eb`; llama/ggml `75844307` | `ceil_div(value, divisor)` and `try_ceil_div` for untrusted values | math header; normal invalid input is invariant/fail-fast, checked route returns `optional` | O(1), one quotient/remainder operation, zero metadata | `PARTIAL` | `FIX` / correctness+usability | zero/max/signed/property/codegen; no mixed-type or negative-rounding policy |
+| `MATH-ROUND-01` | `MUST` | padded extent/block sizing; CCCL `round_up` | `round_up_to_multiple` plus checked `try_` | math header; checked route rejects zero/negative divisor, negative value and unrepresentable result | O(1), one quotient/remainder operation, zero metadata | `PARTIAL` | `FIX` / correctness | max-boundary/property/codegen; arbitrary alignment ownership remains mem when power-of-two address alignment is intended |
+| `MATH-FLOAT-01` | `GENERAL` | existing clay-derived public surface; Eigen `26f009db` semantic counterexample | consumer chooses explicit threshold/tolerance model | consumer/domain library | O(1), but no common correctness contract | `PARTIAL` | `REJECT` / API correctness | remove both symbols/tests; user guide explains std/domain/SIMD routes |
+| `MATH-SIMD-01` | `GENERAL` | module boundary and existing SIMD product | lane or batch task names its accuracy/dispatch contract | simd semantic/artifact/delivery owner | vector/backend-specific | `OUT_OF_SCOPE` | `REJECT` from math | no math-to-simd dependency; simd-v1 audits completeness |
+| `MATH-DELIVERY-01` | `MUST` | central component/package contract | select `math`, include public header, link `hyle::math` | math target; build/package delivers selected closure | header-only, no fabricated archive | `PARTIAL` | `FIX` / delivery | add real sample; source and relocated static/shared SDK journeys; declare real `PUBLIC core` edge |
+
+- **Existing capability completeness.** The two integer tasks are admitted but incomplete at invalid/overflow
+  boundaries. The two floating helpers are not incomplete requirements to expand: their only source is old public
+  code, and the correct action is removal because tolerance policy has no universal owner.
+- **Syntax consumers / semantic duplicates.** Product syntax consumers: none. Standard replacements are already
+  documented; `mem::align_up` remains the power-of-two address-alignment owner and is not a substitute for arbitrary
+  numeric multiple rounding. SIMD owns vectors and buffer kernels.
+- **Public/internal/higher-layer decision.** Retained integer functions stay public scalar value primitives. No hidden
+  internal implementation or compiled artifact is needed. Floating threshold/comparison policy moves upward; vector
+  math never moves downward.
+- **Adjacent backlog.** SIMD completeness and accuracy remain wholly in simd-v1. No core product change is requested;
+  math merely acquires a real `PUBLIC core` target edge to use the already-closed invariant primitive.
+
+### Frozen `FIX` set
+
+Exactly one product batch is authorized:
+
+1. replace `div_ceil` with same-type non-bool integral `ceil_div` and `try_ceil_div`;
+2. make `round_up_to_multiple` fail-fast on invalid/unrepresentable input and add
+   `try_round_up_to_multiple` without overflow;
+3. remove `sgn` and `approx_eq` with no compatibility aliases;
+4. declare `math -> PUBLIC core`, rewrite correctness/property tests, add the installed consumer and current
+   architecture/user guidance.
+
+No SIMD source, backend, benchmark, central instrument or unrelated build option may change in this round. A new
+capability request returns the task to scope; it is not appended to this batch.
 
 ## Candidate
 
