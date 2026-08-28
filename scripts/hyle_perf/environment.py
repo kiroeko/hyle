@@ -25,9 +25,17 @@ PERF_ENVIRONMENT_BLOCKLIST = frozenset({
     "MALLOC_CONF",
     "MIMALLOC_OPTIONS",
     "TSAN_OPTIONS",
+    "TRACY_ONLY_LOCALHOST",
     "UBSAN_OPTIONS",
 })
 PERF_ENVIRONMENT_PREFIXES = ("HYLE_BENCH_", "HYLE_PERF_")
+PERF_VENDOR_RUNTIME_CONTROLS = {
+    # Tracy otherwise listens on wildcard interfaces and can trigger one
+    # Windows Firewall consent dialog per fresh benchmark artifact path.  The
+    # value is deliberately exact: other Tracy switches can change event
+    # availability or the measured enqueue path and require a new review.
+    "TRACY_ONLY_LOCALHOST": frozenset({"1"}),
+}
 PERF_ENVIRONMENT_FIXED = {
     "OMP_NUM_THREADS": "1",
     "OPENBLAS_NUM_THREADS": "1",

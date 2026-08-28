@@ -49,6 +49,7 @@ from hyle_perf.environment import (
     PERF_ENVIRONMENT_BLOCKLIST,
     PERF_ENVIRONMENT_FIXED,
     PERF_ENVIRONMENT_PREFIXES,
+    PERF_VENDOR_RUNTIME_CONTROLS,
     child_environment_policy_record,
 )
 from hyle_perf.evidence import (
@@ -250,11 +251,13 @@ def validate_runner_extension(contract: Mapping[str, Any]) -> dict[str, Any]:
     invalid_controlled = [
         name for name in config["controlled_environment"]
         if not re.fullmatch(
-            r"HYLE_(?:PERF_[A-Z0-9_]+|[A-Z0-9_]*BENCH[A-Z0-9_]*)", name)]
+            r"HYLE_(?:PERF_[A-Z0-9_]+|[A-Z0-9_]*BENCH[A-Z0-9_]*)", name)
+        and name not in PERF_VENDOR_RUNTIME_CONTROLS]
     if invalid_controlled:
         raise ValidationError(
             "runner controlled environment is limited to reviewed HYLE "
-            f"benchmark namespaces: {invalid_controlled!r}")
+            "benchmark namespaces or exact vendor runtime controls: "
+            f"{invalid_controlled!r}")
 
     contract_workloads = {workload["id"]: workload
                           for workload in contract["workloads"]}
@@ -424,11 +427,21 @@ def validate_runner_extension(contract: Mapping[str, Any]) -> dict[str, Any]:
         canonical_strata.add(stratum_id.casefold())
     controlled_names = set(config["controlled_environment"])
     for stratum_id, stratum in strata.items():
-        unexpected_environment = set(stratum.get("environment", {})) - controlled_names
+        stratum_environment = stratum.get("environment", {})
+        unexpected_environment = set(stratum_environment) - controlled_names
         if unexpected_environment:
             raise ValidationError(
                 f"stratum {stratum_id!r} sets uncontrolled environment names: "
                 f"{sorted(unexpected_environment)!r}")
+        invalid_vendor_values = {
+            name: value for name, value in stratum_environment.items()
+            if (name in PERF_VENDOR_RUNTIME_CONTROLS and
+                value not in PERF_VENDOR_RUNTIME_CONTROLS[name])
+        }
+        if invalid_vendor_values:
+            raise ValidationError(
+                f"stratum {stratum_id!r} sets invalid exact vendor runtime "
+                f"controls: {invalid_vendor_values!r}")
     for workload_id, workload in contract_workloads.items():
         for stratum_id in workload["required_strata"]:
             target_variant = strata[stratum_id].get("target_variant", "primary")

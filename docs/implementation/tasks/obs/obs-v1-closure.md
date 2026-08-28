@@ -2,7 +2,7 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-> 当前阶段：`AUDITED`。本文是 obs 当前轮唯一 closure card 与施工记录；既有 obs task、architecture、
+> 当前阶段：`CANDIDATE`。本文是 obs 当前轮唯一 closure card 与施工记录；既有 obs task、architecture、
 > guide、旧 C/FFI 叙事和历史 benchmark 只作审计输入，不继承旧“已收口”或 SOTA 结论。机械状态只看
 > [`module-status.json`](../../module-status.json)。在 capability map 与有限 `FIX` 集进入 `AUDITED`
 > 前，不修改 obs 产品实现。
@@ -162,7 +162,25 @@ message/memory/thread-name 以及 build gate。没有入口落在表外，也没
 
 ## Candidate
 
-尚未冻结。
+- product commit：`2c784d9d6a925529995c6a5582d9bc373d91535d`
+- product tree：`bff512b2fd644b3a88bce55be419dadad43c6a89`
+- 产品形状：
+  - `LogField` 以 exact `string_view` 表达 key/value，`LogRecord` 以 `span<const LogField>` 同步借用字段；
+  - `LogSink::from` / `SinkRegistration::create` 提供无分配 typed backend adapter，同时保留高级
+    function-table seam；
+  - formatting helper 为 `noexcept`，只在外来 formatter 边界把异常转成静态失败记录；
+  - sink registry 保留 fixed-capacity snapshot、递归抑制与 quiescent remove，并补齐 move/flush/unregister
+    生命周期回归；
+  - native trace seam 补齐 current-zone text/name/value/color、bounded message slice 与 full-width unsigned
+    counter normalization，OFF 仍零求值。
+- 候选验证：Windows trace-OFF static 与 Tracy trace-ON static 的 obs tests 已通过；新增测试覆盖
+  embedded-NUL、typed sink、formatter throw、move/duplicate、flush self-remove/nested、concurrent remove
+  wait、OFF no-eval 与 ON annotation/uint64。完整矩阵仍按下节执行。
+- `AUDITED -> CANDIDATE` 前态 registry 快照：
+  `C:\hyle-scratch\obs-v1\transitions\module-status-before-candidate.json`，SHA-256 为
+  `0221DFD04F5058792EE19934B078CDA999E144070CF344754F177C08F4A31993`。
+- 候选之后的 `4c0fd8734386d20ef7a52f8a7dc860d18259377b` 只增加 obs P1 benchmark/contract，
+  不改变上述产品 identity。
 
 ## Verification manifest
 

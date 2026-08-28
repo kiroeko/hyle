@@ -527,6 +527,24 @@ class RunnerBuildArtifactTest(unittest.TestCase):
         with self.assertRaisesRegex(ValidationError, "uncontrolled environment"):
             validate_runner_extension(value)
 
+    def test_runner_v1_admits_only_exact_reviewed_vendor_runtime_control(self):
+        value = pilot_contract()
+        runner = value["extensions"]["runner"]
+        runner["controlled_environment"].append("TRACY_ONLY_LOCALHOST")
+        value["strata"][0].setdefault("environment", {})[
+            "TRACY_ONLY_LOCALHOST"] = "1"
+        validate_runner_extension(value)
+
+        value["strata"][0]["environment"]["TRACY_ONLY_LOCALHOST"] = "true"
+        with self.assertRaisesRegex(ValidationError, "invalid exact vendor"):
+            validate_runner_extension(value)
+
+        value = pilot_contract()
+        value["extensions"]["runner"]["controlled_environment"].append(
+            "TRACY_NO_BROADCAST")
+        with self.assertRaisesRegex(ValidationError, "exact vendor runtime"):
+            validate_runner_extension(value)
+
     def test_runner_v1_admits_only_reviewed_sampling_topologies(self):
         value = pilot_contract()
         value["extensions"]["runner"]["sampling_topology"] = "cross-core-pair"

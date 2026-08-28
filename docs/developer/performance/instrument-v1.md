@@ -198,6 +198,10 @@ runner 不继承未经审查的性能开关。启动每个 benchmark child 前�
 `HYLE_BENCH_*`/`HYLE_PERF_*`；随后把常见数学/OMP 线程数固定为 1，只恢复合同声明并列入
 `controlled_environment` 的 stratum 值和登记的 macOS QoS。该策略仍保留普通进程环境，并记录
 `PATH` 的 SHA-256 而不是原始环境，所以它是明确的 sanitizer，不是假称完全 hermetic sandbox。
+第三方 runtime 开关默认同样不能进入证据进程。v1 唯一精确 allowlist 是
+`TRACY_ONLY_LOCALHOST=1`：runner 先清除 ambient 值，只有合同同时声明 name/value 时才恢复；它把
+Tracy profiler listener 限制在 loopback，避免 Windows 为每个新 benchmark artifact 请求局域网防火墙
+例外。`TRACY_NO_BROADCAST`、`TRACY_ON_DEMAND` 等会改变 runtime 机制的开关仍被拒绝，不能借此调分。
 runner 还为每次启动加入 128-bit `HYLE_PERF_RUN_NONCE`；benchmark 只把它原样写回 telemetry，
 它用于证明样本集合的进程边界与防止误复制，不是密码学签名。
 macOS orchestrator 还会在整个加锁运行作用域内应用并恢复 profile 的 QoS，使 build 前后 host probe
