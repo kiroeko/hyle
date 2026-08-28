@@ -507,8 +507,30 @@
     },
     {
       "module": "container",
-      "product_state": "QUEUED",
-      "summary": "完整容器模块仍未审查；不能继承 intrusive 子组件的候选结论。"
+      "product_state": "SCOPED",
+      "round_id": "container-v1",
+      "closure_task": "docs/implementation/tasks/container/container-v1-closure.md",
+      "scope": "Full non-intrusive C++ container component: sequences, associative indexes, concurrent structures and queues, active sets, rings, hash/text/interner algorithms, direct dependencies/consumers, delivery, documentation and bounded P1 engineering evidence.",
+      "non_goals": "The separately closed container_intrusive component, model/tensor/KV/serving policy, scheduler wait services, cache/eviction policy, full std/Boost parity, device memory, Native FFI/C API, stable C++ ABI, downstream closure and Formal certification.",
+      "baseline_commit": "2866c7df73c6bd36cc4808226d370ff0ea338da2",
+      "performance_tier": "P1",
+      "validation_machine_profiles": [
+        "W1-WIN",
+        "W1-WSL",
+        "M1-MAC"
+      ],
+      "engineering_performance": {
+        "verdict": "PLANNED",
+        "mode": "P1_ENGINEERING",
+        "material_margin_pct": 5,
+        "machine_profile": "W1-WIN",
+        "instrument_profile": "closure-perf-v1"
+      },
+      "formal_performance": {
+        "state": "PENDING",
+        "instrument_profile": "formal-release-v1"
+      },
+      "summary": "container-v1 已冻结完整非 intrusive 组件的真实消费者、能力审计、依赖/交付与五组 P1 工程合同；AUDITED 前不改产品实现。"
     },
     {
       "module": "util",
