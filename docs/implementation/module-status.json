@@ -379,7 +379,7 @@
     },
     {
       "module": "mem",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "round_id": "mem-v1",
       "closure_task": "docs/implementation/tasks/mem/mem-v1-closure.md",
       "scope": "Host-memory allocation and lifecycle primitives: allocator/PMR adapters, quota/stats, regions, fixed/growable/shared/typed pools, guarded fiber stacks and explicit huge-page/NUMA owners; C++ API, dependencies/consumers, delivery, documentation and bounded P1 engineering evidence.",
@@ -402,7 +402,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "mem-v1 已冻结 host-memory 边界、真实消费者形状、peer、P1 family、预算与停止规则；下一阶段只读完成能力/public-surface/依赖审计并冻结有限 FIX。"
+      "summary": "mem-v1 已完成能力族、全部公开面、真实消费者、依赖与成熟源码双向审计；冻结九项 FIX，尚未形成 candidate。"
     },
     {
       "module": "simd",
