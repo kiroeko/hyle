@@ -253,7 +253,7 @@
     },
     {
       "module": "time",
-      "product_state": "CANDIDATE",
+      "product_state": "AUDITED",
       "round_id": "time-v1",
       "closure_task": "docs/implementation/tasks/time/time-v1-closure.md",
       "scope": "Clock, Unix timestamp, deadline/sleep and intrusive timer capabilities; C++ API, direct dependencies/consumers, delivery, documentation and P1 engineering evidence.",
@@ -300,7 +300,7 @@
     },
     {
       "module": "util",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "round_id": "util-runtime-v2",
       "closure_task": "docs/implementation/tasks/util/util-runtime-v2-closure.md",
       "scope": "Owning std::string runtime demangle and type_info convenience, single platform-demangler execution per public call, affected correctness/usability/docs and current source/static/shared delivery.",
