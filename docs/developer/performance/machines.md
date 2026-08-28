@@ -64,8 +64,10 @@ native-Linux 或“第二台独立机器”的 formal gate。以后若把 WSL �
 
 - 单线程默认 logical CPU 2 / CPU set 258，属于最高 efficiency class；SMT sibling CPU 3 保持空闲；
   priority 为 `above-normal`。
-- 多线程由 workload manifest 逐 worker 固定，一物理 P-core 一线程；SMT、E-core、mixed-core 是
-  独立合同，不混合汇总。
+- 多线程合同可选择 `cross-core-pair`：caller 保持 logical CPU 2，runner 从实时 CPU Set 选择下一颗
+  同为最高 efficiency class 且 physical-core 不同的逻辑 CPU（当前为 CPU 4 / set 260）；进程 mask、
+  caller/worker thread pin 和 child telemetry 三层都必须一致。一物理 P-core 一线程；SMT、E-core、
+  mixed-core 是独立合同，不混合汇总。
 - 使用交流电与登记的“卓越性能”scheme；source、peer、build、output 均位于本地 fixed NTFS。
 - 工程性能工具链为 MSVC 19.50.35728 / v145 / Windows SDK 10.0.26100.0；clang-cl 只作
   correctness/codegen 复核。Release 为 `/O2 /Ob2 /DNDEBUG`，ISA/linkage/LTO 由 workload 明示。
@@ -108,6 +110,8 @@ engineering/formal probe 会 fail closed。
 Windows 的 engineering 与 formal verdict 都会证明登记的 CPU set 258 / logical CPU 2 仍存在且属于
 最大 efficiency class；probe 不要求父 Python 已绑定。`expected_child_policy` 明确返回 affinity
 `0x4`、`above-normal` 和空闲 sibling 3，由 benchmark child launcher 实际应用并写入运行记录。
+`cross-core-pair` 合同则基于同一 host probe 派生并记录完整双核 mask 与两个 CPU Set id，且要求
+benchmark 回报 caller/worker 的实际角色 pin；这不修改默认单线程机器合同。
 
 ## 采样互斥锁
 

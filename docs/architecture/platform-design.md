@@ -251,9 +251,10 @@ platform 的 SOTA 标准不是“比系统调用快”，而是同合同下不�
   allocation；成本由 range 大小导致的 kernel page work 决定，不伪装成纳秒用户态原语。
 
 基准必须比较相同语义。当前 P1 合同冻结为持久 scheduler worker 的 Parker request/response
-handoff 对 oneTBB production binary semaphore，以及模型 loader 的 open/map/64 固定页探测/close
-对 Boost mapped_region；双执行顺序、双 allocation order、代码 placement 和 A/A/delta/floor
-共同裁决。raw OS 和旧微基准只可解释机制，不能替代消费者结论。点值、样本和平台输赢只维护在
+handoff 对 oneTBB production binary semaphore；caller/worker 按真实 worker placement 固定在两颗
+同级但不同 physical core，并机械回报角色落点，因为同核等待是另一个性能合同。第二族是模型 loader
+的 open/map/64 固定页探测/close 对 Boost mapped_region；双执行顺序、双 allocation order、代码
+placement 和 A/A/delta/floor 共同裁决。raw OS 和旧微基准只可解释机制，不能替代消费者结论。点值、样本和平台输赢只维护在
 [`../performance/benchmarks-platform.md`](../implementation/evidence/performance/benchmarks-platform.md)。
 
 ## 10. 平台差异必须显式保留

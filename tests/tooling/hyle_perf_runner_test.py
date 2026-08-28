@@ -527,6 +527,15 @@ class RunnerBuildArtifactTest(unittest.TestCase):
         with self.assertRaisesRegex(ValidationError, "uncontrolled environment"):
             validate_runner_extension(value)
 
+    def test_runner_v1_admits_only_reviewed_sampling_topologies(self):
+        value = pilot_contract()
+        value["extensions"]["runner"]["sampling_topology"] = "cross-core-pair"
+        runner = validate_runner_extension(value)
+        self.assertEqual(runner["sampling_topology"], "cross-core-pair")
+        value["extensions"]["runner"]["sampling_topology"] = "let-os-decide"
+        with self.assertRaisesRegex(ValidationError, "sampling topology"):
+            validate_runner_extension(value)
+
     def test_runner_v1_rejects_unbound_toolchain_and_shared_linkage(self):
         value = pilot_contract()
         value["build"]["toolchain"] = "whatever-was-observed"

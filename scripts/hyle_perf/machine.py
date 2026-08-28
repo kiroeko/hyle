@@ -603,13 +603,58 @@ def get_machine_profile(
     return profile
 
 
-def expected_child_policy(profile: Mapping[str, Any]) -> dict[str, Any]:
+def _windows_cross_core_pair(
+    profile: Mapping[str, Any], probe: Mapping[str, Any]
+) -> tuple[Mapping[str, Any], Mapping[str, Any]]:
+    """Select a deterministic second P-core from the observed Windows topology.
+
+    The registered single-thread CPU remains the caller anchor.  The worker is
+    the next higher logical CPU in the same processor group and efficiency
+    class but on a different physical core.  Falling back to a lower index is
+    deterministic and keeps this an observed topology fact rather than a new
+    mutable machine-registry promise.
+    """
+    scheduler = profile.get("scheduler", {})
+    caller_cpu = scheduler.get("single_thread_logical_cpu")
+    cpu_sets = probe.get("scheduler", {}).get("cpu_sets", [])
+    caller = [
+        item for item in cpu_sets
+        if item.get("group") == 0
+        and item.get("logical_processor_index") == caller_cpu
+    ]
+    if len(caller) != 1:
+        raise ValueError("registered Windows caller CPU is absent or ambiguous")
+    anchor = caller[0]
+    candidates = [
+        item for item in cpu_sets
+        if item.get("group") == anchor.get("group")
+        and item.get("efficiency_class") == anchor.get("efficiency_class")
+        and item.get("core_index") != anchor.get("core_index")
+        and isinstance(item.get("logical_processor_index"), int)
+    ]
+    if not candidates:
+        raise ValueError("Windows host has no distinct same-class physical core")
+    higher = [
+        item for item in candidates
+        if item["logical_processor_index"] > caller_cpu
+    ]
+    worker = min(
+        higher or candidates, key=lambda item: item["logical_processor_index"]
+    )
+    return anchor, worker
+
+
+def expected_child_policy(
+    profile: Mapping[str, Any], *,
+    sampling_topology: str = "single-logical-cpu",
+    probe: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
     """Describe controls the benchmark launcher must apply to each child."""
     environment = profile.get("environment")
     scheduler = profile.get("scheduler", {})
     if environment == "windows":
         logical_cpu = scheduler.get("single_thread_logical_cpu")
-        return {
+        policy = {
             "environment": environment,
             "affinity_mask": (
                 None if not isinstance(logical_cpu, int) else hex(1 << logical_cpu)
@@ -625,6 +670,32 @@ def expected_child_policy(profile: Mapping[str, Any]) -> dict[str, Any]:
             "priority": scheduler.get("priority"),
             "applied_by": "benchmark-child-launcher",
         }
+        if sampling_topology == "single-logical-cpu":
+            return policy
+        if sampling_topology != "cross-core-pair":
+            raise ValueError(
+                f"unsupported Windows sampling topology: {sampling_topology!r}"
+            )
+        if probe is None:
+            raise ValueError("cross-core-pair sampling requires a host probe")
+        caller, worker = _windows_cross_core_pair(profile, probe)
+        caller_cpu = int(caller["logical_processor_index"])
+        worker_cpu = int(worker["logical_processor_index"])
+        policy.update({
+            "affinity_mask": hex((1 << caller_cpu) | (1 << worker_cpu)),
+            "sampling_topology": sampling_topology,
+            "logical_cpus": [caller_cpu, worker_cpu],
+            "cpu_set_ids": [caller.get("id"), worker.get("id")],
+            "caller_logical_cpu": caller_cpu,
+            "worker_logical_cpu": worker_cpu,
+            "distinct_physical_cores": True,
+        })
+        return policy
+    if sampling_topology != "single-logical-cpu":
+        raise ValueError(
+            f"sampling topology {sampling_topology!r} is unsupported on "
+            f"{environment!r}"
+        )
     if environment == "macos":
         return {
             "environment": environment,
@@ -1312,6 +1383,7 @@ def evaluate_machine_profile(
     *,
     role: str,
     formal_claim: str | None = None,
+    sampling_topology: str = "single-logical-cpu",
 ) -> dict[str, Any]:
     errors: list[str] = []
     warnings: list[str] = []
@@ -1436,6 +1508,19 @@ def evaluate_machine_profile(
             item.get("id") != expected_cpu_set_id for item in selected
         ):
             errors.append("registered Windows CPU-set identity changed")
+        if sampling_topology == "cross-core-pair":
+            try:
+                caller, worker = _windows_cross_core_pair(profile, probe)
+            except ValueError as error:
+                errors.append(str(error))
+            else:
+                if caller.get("core_index") == worker.get("core_index"):
+                    errors.append("Windows cross-core pair shares one physical core")
+                if (scheduler_contract.get("required_efficiency_class") ==
+                        "maximum" and worker.get("efficiency_class") != maximum):
+                    errors.append(
+                        "Windows cross-core worker is not maximum efficiency class"
+                    )
     if role in {"engineering", "formal"} and environment == "macos":
         expected_qos = scheduler_contract.get("default_qos")
         qos = probe.get("scheduler", {}).get("qos", {})
@@ -1444,13 +1529,25 @@ def evaluate_machine_profile(
         ):
             errors.append(f"macOS process QoS does not match {expected_qos!r}")
 
+    try:
+        child_policy = expected_child_policy(
+            profile, sampling_topology=sampling_topology, probe=probe
+        )
+    except ValueError as error:
+        errors.append(str(error))
+        child_policy = {
+            "environment": environment,
+            "sampling_topology": sampling_topology,
+            "unavailable": True,
+        }
+
     return {
         "gate": "PASS" if not errors else "FAIL",
         "profile_id": profile.get("id"),
         "role": role,
         "formal_claim": formal_claim,
         "physical_host_identity": identity,
-        "expected_child_policy": expected_child_policy(profile),
+        "expected_child_policy": child_policy,
         "errors": errors,
         "warnings": warnings,
     }

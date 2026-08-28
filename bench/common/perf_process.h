@@ -4,6 +4,12 @@
 #include <cstdlib>
 #include <cstring>
 
+#if defined(_WIN32)
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <windows.h>
+#endif
+
 #if defined(__APPLE__)
 #include <pthread.h>
 #endif
@@ -14,6 +20,40 @@ struct ThreadQosState {
   const char *name;
   const char *ok;
 };
+
+struct ThreadAffinityState {
+  const char *topology;
+  const char *cpu;
+  const char *ok;
+};
+
+// Multi-thread contracts let the launcher constrain the process to a reviewed
+// CPU set, then ask each benchmark role to pin itself inside that set. Process
+// affinity alone is insufficient: Windows may place both threads on one CPU,
+// which changes a park/unpark experiment by an order of magnitude. The role
+// assignment is setup-only and its exact values are emitted as child telemetry.
+inline ThreadAffinityState configure_thread_affinity(
+    const char *environment_name) {
+  const char *requested = std::getenv(environment_name);
+  const char *topology = std::getenv("HYLE_PERF_SAMPLING_TOPOLOGY");
+  if (requested == nullptr || requested[0] == '\0')
+    return {"external", "external", "not-applicable"};
+#if defined(_WIN32)
+  char *end = nullptr;
+  const unsigned long cpu = std::strtoul(requested, &end, 10);
+  if (end == requested || *end != '\0' || cpu >= sizeof(DWORD_PTR) * 8)
+    std::abort();
+  const DWORD_PTR previous = ::SetThreadAffinityMask(
+      ::GetCurrentThread(), DWORD_PTR{1} << cpu);
+  if (previous == 0) std::abort();
+  return {topology != nullptr ? topology : "instrument", requested, "1"};
+#else
+  // The v1 cross-core launcher currently admits Windows only. Fail closed if a
+  // future runner injects the role contract on a backend that cannot prove it.
+  (void)topology;
+  std::abort();
+#endif
+}
 
 // Darwin has no supported hard P/E-core affinity API. Every benchmark using
 // the common qualification runner therefore selects and reports an explicit

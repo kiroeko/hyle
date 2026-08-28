@@ -59,6 +59,14 @@ CPU/内存/主板/OS/BIOS facts，不能由本次 probe 自报 expected identity
 affinity，合同必须明确 QoS；当前 M1 尚未登记稳定身份，所以只允许显式 unbound engineering，
 Formal fail closed。
 
+CPU adapter 默认使用 machine profile 的单逻辑 CPU policy。真实并发 workload 可以在 runner
+extension 中声明 `sampling_topology=cross-core-pair`：Windows launcher 从实时 CPU Set 中保留登记的
+caller CPU，并确定下一颗同 efficiency class、不同 physical-core 的 worker CPU；进程 affinity 只开放
+这两颗 CPU，benchmark 还必须把 caller/worker 角色分别 pin 并由 telemetry 回报 CPU id 与成功状态。
+只给进程一个双核 mask 不算证明，因为 OS 仍可能把两个线程同时放到一个核。当前该拓扑只在 Windows
+adapter 准入；其他 OS 会 fail closed，而不是伪造 hard affinity。旧合同省略该字段时仍保持原有单核
+policy 和 contract/manifest replay 语义。
+
 ## 4. Experiment contract v1
 
 正式 experiment contract 至少冻结：
@@ -75,6 +83,8 @@ Formal fail closed。
 - estimator、固定样本数和唯一允许的升级计划；
 - required controls、artifact validators 和 host requirements；
 - compiler、ISA、LTO、linkage 与资源预算。
+- 对并发负载，冻结 `single-logical-cpu` 或 `cross-core-pair` sampling topology，并由角色 telemetry
+  证明实际落点；不得用“进程允许两个 CPU”代替线程角色归属。
 
 运行前生成 immutable experiment-lock hash。CLI 只允许提供 checkout/build/output/peer 路径和
 machine profile，不能覆盖 pair、margin、规模或停止条件。
@@ -145,7 +155,7 @@ counter/aggregate 仪器，或把该 microbench 保持为诊断。
 - DCE 风险：实际对象 codegen gate；
 - 极短指令：一种 code-placement sensitivity；
 - caller-owned 且地址敏感：一种 data/allocation sensitivity；
-- 并发：affinity/migration/工作量守恒；
+- 并发：caller/worker role affinity、physical-core 区分、migration 与工作量守恒；
 - allocator、IO、GPU：各 measurement family 的资源/同步 control。
 
 不得为每个 workload 机械加入所有风险维度。新增通用 control 或改变上述固定阈值必须升级

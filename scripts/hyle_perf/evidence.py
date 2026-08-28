@@ -601,7 +601,8 @@ def _canonical_equal(left: Any, right: Any) -> bool:
 
 
 def _replay_registered_machine_gate(
-        stored_probe: Mapping[str, Any], host: Mapping[str, Any]) -> None:
+        stored_probe: Mapping[str, Any], host: Mapping[str, Any],
+        contract: Mapping[str, Any]) -> None:
     """Re-evaluate qualified host eligibility from the registry trust root."""
     profile_id = require_identifier(
         host.get("machine_profile"), "manifest.host.machine_profile")
@@ -623,10 +624,14 @@ def _replay_registered_machine_gate(
         stored_probe.get("before"), "host-probe.before")
     after = require_json_object(
         stored_probe.get("after"), "host-probe.after")
+    sampling_topology = contract.get("extensions", {}).get(
+        "runner", {}).get("sampling_topology", "single-logical-cpu")
     recomputed_before = evaluate_machine_profile(
-        profile, before, role=role, formal_claim=formal_claim)
+        profile, before, role=role, formal_claim=formal_claim,
+        sampling_topology=sampling_topology)
     recomputed_after = evaluate_machine_profile(
-        profile, after, role=role, formal_claim=formal_claim)
+        profile, after, role=role, formal_claim=formal_claim,
+        sampling_topology=sampling_topology)
     if (recomputed_before.get("gate") != "PASS" or
             recomputed_after.get("gate") != "PASS"):
         raise ValidationError(
@@ -646,7 +651,9 @@ def _replay_registered_machine_gate(
 
     applied_policy = require_json_object(
         stored_probe.get("child_policy"), "host-probe.child_policy")
-    for key, value in expected_child_policy(profile).items():
+    for key, value in expected_child_policy(
+            profile, sampling_topology=sampling_topology,
+            probe=before).items():
         if applied_policy.get(key) != value:
             raise ValidationError(
                 f"host child policy differs from machine profile at {key!r}")
@@ -1298,7 +1305,7 @@ def validate_manifest(
                     "manifest.host_stable differs from the host-probe file")
             if (qualification is Qualification.QUALIFIED and
                     runner_schema == "hyle.perf.nanobench-runner/v1"):
-                _replay_registered_machine_gate(stored_probe, host)
+                _replay_registered_machine_gate(stored_probe, host, contract)
 
         if (runner_schema == "hyle.perf.nanobench-runner/v1" and
                 "raw_log_index_file" in extensions):

@@ -66,7 +66,9 @@ void run_pair(nb::Bench& bench, bool peer_first,
 
 class HyleHandoff {
  public:
-  HyleHandoff() : worker_([this] { worker_loop(); }) {}
+  HyleHandoff() : worker_([this] { worker_loop(); }) {
+    while (!ready_.load(std::memory_order_acquire)) std::this_thread::yield();
+  }
   ~HyleHandoff() {
     stopping_.store(true, std::memory_order_release);
     request_.unpark();
@@ -82,6 +84,9 @@ class HyleHandoff {
 
  private:
   void worker_loop() noexcept {
+    (void)hyle::bench::perf::configure_thread_affinity(
+        "HYLE_PERF_WORKER_CPU");
+    ready_.store(true, std::memory_order_release);
     for (;;) {
       request_.park();
       if (stopping_.load(std::memory_order_acquire)) return;
@@ -90,6 +95,7 @@ class HyleHandoff {
   }
 
   std::atomic<bool> stopping_{false};
+  std::atomic<bool> ready_{false};
   hyle::platform::Parker request_;
   hyle::platform::Parker response_;
   std::thread worker_;
@@ -97,7 +103,9 @@ class HyleHandoff {
 
 class TbbHandoff {
  public:
-  TbbHandoff() : worker_([this] { worker_loop(); }) {}
+  TbbHandoff() : worker_([this] { worker_loop(); }) {
+    while (!ready_.load(std::memory_order_acquire)) std::this_thread::yield();
+  }
   ~TbbHandoff() {
     stopping_.store(true, std::memory_order_release);
     request_.V();
@@ -113,6 +121,9 @@ class TbbHandoff {
 
  private:
   void worker_loop() noexcept {
+    (void)hyle::bench::perf::configure_thread_affinity(
+        "HYLE_PERF_WORKER_CPU");
+    ready_.store(true, std::memory_order_release);
     for (;;) {
       request_.P();
       if (stopping_.load(std::memory_order_acquire)) return;
@@ -121,6 +132,7 @@ class TbbHandoff {
   }
 
   std::atomic<bool> stopping_{false};
+  std::atomic<bool> ready_{false};
   tbb::detail::r1::binary_semaphore request_;
   tbb::detail::r1::binary_semaphore response_;
   std::thread worker_;
@@ -220,16 +232,23 @@ nb::Bench make_bench(const char* title) {
 int main() {
   const auto qos = hyle::bench::perf::configure_thread_qos(
       "HYLE_BENCH_APPLE_QOS");
+  const auto affinity = hyle::bench::perf::configure_thread_affinity(
+      "HYLE_PERF_CALLER_CPU");
+  const char* worker_cpu = std::getenv("HYLE_PERF_WORKER_CPU");
   const bool peer_first = environment_present("HYLE_BENCH_RIVAL_FIRST");
   const bool peer_allocation_first =
       environment_present("HYLE_BENCH_PEER_ALLOCATION_FIRST");
   std::fprintf(
       stderr,
       "# HYLE_PLATFORM_CONSUMER_RUN execution_order=%s allocation_order=%s "
-      "apple_qos=%s qos_ok=%s affinity=external run_nonce=%s\n",
+      "apple_qos=%s qos_ok=%s affinity_topology=%s caller_cpu=%s "
+      "worker_cpu=%s affinity_ok=%s run_nonce=%s\n",
       peer_first ? "peer-first" : "candidate-first",
       peer_allocation_first ? "peer-first" : "candidate-first", qos.name,
-      qos.ok, hyle::bench::perf::run_nonce());
+      qos.ok, affinity.topology, affinity.cpu,
+      worker_cpu != nullptr ? worker_cpu : "external",
+      worker_cpu != nullptr ? affinity.ok : "not-applicable",
+      hyle::bench::perf::run_nonce());
 
   HandoffPair handoffs(peer_allocation_first);
   handoffs.hyle->run();

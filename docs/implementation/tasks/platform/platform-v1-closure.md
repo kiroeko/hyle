@@ -197,8 +197,14 @@ native-code translation、obs 的 terminal write 和 util 的 demangler 都是�
 - correctness blocker `FIX-09` 已用 Windows `min/max` 宏组合 TU 锁住，time/platform public headers
   不要求消费者控制 include order。
 - 冻结性能合同：`platform-consumer-v1`，SHA-256
-  `bb4f25a066b8a9eed2b2149b22f45a6196a28b84be5c7a6c1d4253d76163b7ce`；同行为 clean pinned
+  `3a66896e30eeaa6eb645a88a63fd02be9cc90654129f6c7f3bc5e21687c360b3`；同行为 clean pinned
   oneTBB `e349c152...` 与 Boost `df8eeb90...`，双方 LTO 关闭。
+- 首次 n=1 probe 发现默认单线程 launcher 把 caller/worker 一起限制在 CPU 2：同核 HYLE Parker
+  约慢 3.5x，而允许 CPU 2/4 后只要 OS 分到不同物理核，HYLE 即快 12x 以上；OS 偶尔重新同核时方向
+  立即再反转。该 bounded diagnosis 证明是并发拓扑合同缺失。产品 candidate 未改；统一 runner 增加
+  通用 `cross-core-pair` policy，当前 W1 机械选择 CPU 2/set 258 与 CPU 4/set 260，process mask=`0x14`，
+  benchmark 再逐角色 pin 并回报 telemetry。修正后 probe 八个 strata 全部自证拓扑，Parker 点估计为
+  oneTBB 的 16.96x--27.64x；mapping 为 0.93x--1.03x，必须由正式 n=15 裁决，不能用 probe 宣布 PASS。
 - 候选前 Windows 门：time/platform unit + public-header self-containment PASS；mem/sched/compute 直接
   seam compile PASS；source、relocated shared、relocated static platform consumer PASS；文档、closure
   registry、合同 validator 与 diff hygiene PASS。候选后只补验证证据；任何公开合同/算法/正常 workload

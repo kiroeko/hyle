@@ -445,8 +445,23 @@ AC Power:
                     {
                         "group": 0,
                         "logical_processor_index": 2,
+                        "core_index": 2,
                         "efficiency_class": 1,
                         "id": 258,
+                    },
+                    {
+                        "group": 0,
+                        "logical_processor_index": 3,
+                        "core_index": 2,
+                        "efficiency_class": 1,
+                        "id": 259,
+                    },
+                    {
+                        "group": 0,
+                        "logical_processor_index": 4,
+                        "core_index": 4,
+                        "efficiency_class": 1,
+                        "id": 260,
                     }
                 ],
             },
@@ -463,6 +478,25 @@ AC Power:
     if windows_engineering["gate"] != "PASS":
         raise AssertionError(
             f"valid Windows engineering profile failed: {windows_engineering}"
+        )
+    cross_core = machine.expected_child_policy(
+        profiles["W1-WIN"], sampling_topology="cross-core-pair",
+        probe=windows_probe)
+    if (
+        cross_core["affinity_mask"] != "0x14"
+        or cross_core["logical_cpus"] != [2, 4]
+        or cross_core["cpu_set_ids"] != [258, 260]
+        or cross_core["distinct_physical_cores"] is not True
+    ):
+        raise AssertionError(
+            f"Windows cross-core child policy drifted: {cross_core}"
+        )
+    cross_core_gate = machine.evaluate_machine_profile(
+        profiles["W1-WIN"], windows_probe, role="engineering",
+        sampling_topology="cross-core-pair")
+    if cross_core_gate["gate"] != "PASS":
+        raise AssertionError(
+            f"valid Windows cross-core profile failed: {cross_core_gate}"
         )
     identity_record = windows_formal["physical_host_identity"]
     if (

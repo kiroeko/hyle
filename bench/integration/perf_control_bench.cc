@@ -113,6 +113,8 @@ void bench_known_delta(const std::uint64_t *values, bool peer_first) {
 
 int main() {
   const auto qos = hyle::bench::perf::configure_thread_qos();
+  const auto affinity = hyle::bench::perf::configure_thread_affinity(
+      "HYLE_PERF_CALLER_CPU");
   auto *values = new std::uint64_t[kLogicalOperationCount];
   for (std::size_t index = 0; index < kLogicalOperationCount; ++index)
     values[index] = static_cast<std::uint64_t>(index + 1);
@@ -120,10 +122,12 @@ int main() {
   const bool peer_first = peer_first_requested();
   std::fprintf(stderr,
                "# HYLE_PERF_CONTROL_RUN execution_order=%s apple_qos=%s "
-               "qos_ok=%s affinity=external base_work=%zu delta5_work=%zu "
+               "qos_ok=%s affinity_topology=%s caller_cpu=%s affinity_ok=%s "
+               "base_work=%zu delta5_work=%zu "
                "delta10_work=%zu run_nonce=%s\n",
                peer_first ? "peer-first" : "candidate-first", qos.name,
-               qos.ok, kBaseWorkCount, kFivePercentWorkCount,
+               qos.ok, affinity.topology, affinity.cpu, affinity.ok,
+               kBaseWorkCount, kFivePercentWorkCount,
                kTenPercentWorkCount, hyle::bench::perf::run_nonce());
   bench_timer_floor<1>(values, peer_first);
   bench_timer_floor<2>(values, peer_first);

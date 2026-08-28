@@ -169,10 +169,16 @@ def validate_runner_extension(contract: Mapping[str, Any]) -> dict[str, Any]:
         extensions.get("runner", {}),
         {"schema", "cmake", "profiles", "executables", "control_executable",
          "controlled_environment", "validators"},
-        set(), "contract.extensions.runner")
+        {"sampling_topology"}, "contract.extensions.runner")
     if config["schema"] != RUNNER_SCHEMA:
         raise ValidationError(
             f"unsupported runner extension schema: {config['schema']!r}")
+    sampling_topology = config.get(
+        "sampling_topology", "single-logical-cpu")
+    if sampling_topology not in {"single-logical-cpu", "cross-core-pair"}:
+        raise ValidationError(
+            f"unsupported runner sampling topology: {sampling_topology!r}")
+    config["sampling_topology"] = sampling_topology
 
     cmake = _exact_fields(
         config["cmake"], {"cache", "peer_cache"}, set(), "runner.cmake")
@@ -1034,7 +1040,8 @@ def _probe_child_policy(policy: Mapping[str, Any], creationflags: int) -> dict[s
 
 def _child_environment(
         controlled_names: Iterable[str], additions: Mapping[str, str],
-        profile: Mapping[str, Any]) -> dict[str, str]:
+        profile: Mapping[str, Any],
+        child_policy: Mapping[str, Any] | None = None) -> dict[str, str]:
     environment = dict(os.environ)
     for name in list(environment):
         if (name in PERF_ENVIRONMENT_BLOCKLIST or
@@ -1045,6 +1052,16 @@ def _child_environment(
         environment.pop(name, None)
     environment.update(PERF_ENVIRONMENT_FIXED)
     environment.update(additions)
+    if child_policy is not None:
+        caller_cpu = child_policy.get("caller_logical_cpu")
+        worker_cpu = child_policy.get("worker_logical_cpu")
+        if isinstance(caller_cpu, int):
+            environment["HYLE_PERF_CALLER_CPU"] = str(caller_cpu)
+        if isinstance(worker_cpu, int):
+            environment["HYLE_PERF_WORKER_CPU"] = str(worker_cpu)
+        if child_policy.get("sampling_topology"):
+            environment["HYLE_PERF_SAMPLING_TOPOLOGY"] = str(
+                child_policy["sampling_topology"])
     if profile.get("environment") == "macos":
         qos = profile.get("scheduler", {}).get("default_qos")
         if qos:
@@ -1123,6 +1140,7 @@ def _sample_executable(
 def _collect_product_observations(
         contract: Mapping[str, Any], runner: Mapping[str, Any],
         executable_paths: Mapping[str, pathlib.Path], profile: Mapping[str, Any],
+        child_policy: Mapping[str, Any],
         *, runs: int, creationflags: int,
         raw_directory: pathlib.Path) -> tuple[list[Observation], list[pathlib.Path]]:
     workloads = {workload["id"]: workload for workload in contract["workloads"]}
@@ -1148,7 +1166,7 @@ def _collect_product_observations(
             covered.update(mapping["id"] for mapping in mappings)
             environment = _child_environment(
                 runner["controlled_environment"],
-                stratum.get("environment", {}), profile)
+                stratum.get("environment", {}), profile, child_policy)
             telemetry_expectations = {
                 key: stratum["dimensions"][key]
                 for key in ("execution_order", "allocation_order")
@@ -1157,6 +1175,13 @@ def _collect_product_observations(
                 telemetry_expectations.update({
                     "apple_qos": "user-interactive",
                     "qos_ok": "1",
+                })
+            if child_policy.get("sampling_topology") == "cross-core-pair":
+                telemetry_expectations.update({
+                    "affinity_topology": "cross-core-pair",
+                    "caller_cpu": str(child_policy["caller_logical_cpu"]),
+                    "worker_cpu": str(child_policy["worker_logical_cpu"]),
+                    "affinity_ok": "1",
                 })
             parsed_runs, paths = _sample_executable(
                 executable_paths[executable["id"]], runs=runs,
@@ -1197,7 +1222,8 @@ def _collect_product_observations(
 
 
 def _collect_control_runs(
-        executable: pathlib.Path, profile: Mapping[str, Any], *, runs: int,
+        executable: pathlib.Path, profile: Mapping[str, Any],
+        child_policy: Mapping[str, Any], *, runs: int,
         creationflags: int, raw_directory: pathlib.Path) -> tuple[
             dict[str, list[dict[Any, Any]]], list[pathlib.Path]]:
     grouped = {}
@@ -1205,7 +1231,7 @@ def _collect_control_runs(
     for order, peer_first in (("candidate-first", False), ("peer-first", True)):
         additions = {"HYLE_PERF_PEER_FIRST": "1"} if peer_first else {}
         environment = _child_environment(
-            ["HYLE_PERF_PEER_FIRST"], additions, profile)
+            ["HYLE_PERF_PEER_FIRST"], additions, profile, child_policy)
         parsed, paths = _sample_executable(
             executable, runs=runs, environment=environment,
             creationflags=creationflags, raw_directory=raw_directory,
@@ -1213,6 +1239,12 @@ def _collect_control_runs(
             telemetry_prefixes=[CONTROL_TELEMETRY_PREFIX],
             telemetry_expectations={
                 "execution_order": order,
+                **({
+                    "affinity_topology": "cross-core-pair",
+                    "caller_cpu": str(child_policy["caller_logical_cpu"]),
+                    "affinity_ok": "1",
+                } if child_policy.get("sampling_topology") ==
+                    "cross-core-pair" else {}),
                 **({"apple_qos": "user-interactive", "qos_ok": "1"}
                    if profile.get("environment") == "macos" else {}),
             })
@@ -1836,10 +1868,12 @@ def _run_contract_locked(
         paths=probed_paths,
         expected_qos=expected_qos)
     host_identity = physical_host_identity_record(profile, host_before)
+    sampling_topology = runner["sampling_topology"]
     machine_gate = evaluate_machine_profile(
         profile, host_before,
         role=evidence_role,
-        formal_claim=formal_claim)
+        formal_claim=formal_claim,
+        sampling_topology=sampling_topology)
     if machine_gate["gate"] != "PASS":
         raise ValidationError(
             "machine profile gate failed: " + "; ".join(machine_gate["errors"]))
@@ -1898,7 +1932,8 @@ def _run_contract_locked(
     # process per stratum keeps it bounded; statistical qualification starts at
     # the frozen n=15 schedule only in qualify-platform.
     runs = schedule[0] if requested_qualified else 1
-    policy = expected_child_policy(profile)
+    policy = expected_child_policy(
+        profile, sampling_topology=sampling_topology, probe=host_before)
     child_environment_policy = _child_environment_policy_record()
     with _apply_sampling_policy(policy) as applied_policy:
         flags = _creation_flags(policy)
@@ -1906,10 +1941,12 @@ def _run_contract_locked(
         stage_directory = raw_directory / f"n-{runs}"
         stage_directory.mkdir()
         observations, product_logs = _collect_product_observations(
-            contract, runner, executable_paths, profile, runs=runs,
+            contract, runner, executable_paths, profile, applied_policy,
+            runs=runs,
             creationflags=flags, raw_directory=stage_directory)
         control_runs, control_logs = _collect_control_runs(
-            control_path, profile, runs=runs, creationflags=flags,
+            control_path, profile, applied_policy, runs=runs,
+            creationflags=flags,
             raw_directory=stage_directory)
 
         sample_stages = [runs]
@@ -1931,10 +1968,12 @@ def _run_contract_locked(
                 stage_directory = raw_directory / f"n-{runs}"
                 stage_directory.mkdir()
                 observations, product_logs = _collect_product_observations(
-                    contract, runner, executable_paths, profile, runs=runs,
+                    contract, runner, executable_paths, profile,
+                    applied_policy, runs=runs,
                     creationflags=flags, raw_directory=stage_directory)
                 control_runs, control_logs = _collect_control_runs(
-                    control_path, profile, runs=runs, creationflags=flags,
+                    control_path, profile, applied_policy, runs=runs,
+                    creationflags=flags,
                     raw_directory=stage_directory)
                 sample_stages.append(runs)
                 all_product_logs.extend(product_logs)

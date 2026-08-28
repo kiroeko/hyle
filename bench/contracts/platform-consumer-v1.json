@@ -2,7 +2,7 @@
   "schema": "hyle.perf.contract/v1",
   "id": "platform-consumer-v1",
   "module": "platform",
-  "claim": "P1 engineering non-inferiority for a persistent scheduler worker handoff and a model-loader mapping lifecycle against source-pinned oneTBB and Boost peers, with identical event sequences, charged phases, execution-order, allocation-order, and code-placement strata",
+  "claim": "P1 engineering non-inferiority for a persistent scheduler worker handoff on two distinct same-class physical cores and a model-loader mapping lifecycle against source-pinned oneTBB and Boost peers, with identical event sequences, charged phases, execution-order, allocation-order, and code-placement strata",
   "candidate": {
     "target": "hyle_platform",
     "delivery_shape": "source",
@@ -100,7 +100,7 @@
       "ownership_topology": {
         "candidate": "Two caller-owned HYLE Parker mailboxes connect one persistent caller thread and one persistent worker thread",
         "peer": "Two caller-owned oneTBB binary_semaphore mailboxes connect the same persistent caller/worker topology",
-        "equivalence": "Threads and synchronization objects are constructed outside measurement; each iteration posts one request, blocks for one response, and leaves no outstanding token"
+        "equivalence": "Threads and synchronization objects are constructed outside measurement; the caller and worker are mechanically pinned to two distinct same-class physical cores; each iteration posts one request, blocks for one response, and leaves no outstanding token"
       },
       "material_contribution": {
         "frequency": 64,
@@ -189,6 +189,7 @@
   "extensions": {
     "runner": {
       "schema": "hyle.perf.nanobench-runner/v1",
+      "sampling_topology": "cross-core-pair",
       "cmake": {
         "cache": {
           "BUILD_SHARED_LIBS": "ON",

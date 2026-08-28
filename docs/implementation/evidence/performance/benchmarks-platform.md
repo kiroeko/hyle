@@ -12,14 +12,14 @@ The closure decision and bounded investigation log live in
 
 ## Current verdict
 
-`PENDING` while platform is `AUDITED`. A development smoke run is useful only
+`PENDING` while platform is `CANDIDATE`. A development smoke run is useful only
 to prove that the benchmark executes and validates its results; it is not a
 performance verdict. The page is updated to `PASS`, `BLOCKED`, or a named
 limitation only from runner-produced independent-process manifests.
 
 | family | consumer-shaped charged lifecycle | pinned peer | material / NI margin | current status |
 | --- | --- | --- | --- | --- |
-| worker idle handoff | one persistent caller and worker exchange 64 request/response tokens; threads and mailbox owners remain outside measurement | oneTBB production `binary_semaphore` used by `concurrent_monitor` | 5% / 5% | `PENDING` |
+| worker idle handoff | one persistent caller and worker, pinned to two distinct same-class physical cores, exchange 64 request/response tokens; threads and mailbox owners remain outside measurement | oneTBB production `binary_semaphore` used by `concurrent_monitor` | 5% / 5% | `PENDING` |
 | model loader mapping | open and map one warm 16 MiB file, probe and validate 64 fixed page-distributed bytes, then unmap and close | Boost.Interprocess `file_mapping` + `mapped_region` | 5% / 5% | `PENDING` |
 
 The two families are independent gates and are never pooled into a “platform
@@ -27,6 +27,18 @@ score.” The contract runs primary and function-placement variants, both
 execution orders, both allocation orders, A/A, known 5% and 10% deltas, and a
 timer-floor control. W1-WIN is the engineering verdict machine; Linux and
 macOS correctness results do not get averaged into Windows performance.
+
+The first diagnostic probe exposed an instrument error rather than a product
+verdict: the default single-thread policy constrained both handoff threads to
+logical CPU 2. HYLE `Parker` then measured about 3.5x slower than the Windows
+SRWLOCK peer, while allowing two physical cores reversed the result by more
+than an order of magnitude. A bounded affinity experiment reproduced the
+direction switch whenever Windows co-located or separated the threads. The
+contract therefore uses the general `cross-core-pair` adapter: W1 selects CPU
+2 / CPU set 258 for the caller and CPU 4 / CPU set 260 for the worker, limits
+the process to mask `0x14`, pins both roles, and rejects missing telemetry.
+The same-core result remains a documented mechanism characteristic; it is not
+silently relabelled as the scheduler's normal cross-core worker topology.
 
 ## Structural performance gates
 
@@ -57,6 +69,10 @@ consumer profile shows material contribution and a same-contract peer exists.
 
 - `Parker` is compared as a no-loss single-consumer worker mailbox. It is not a
   counting semaphore or a multi-waiter fairness benchmark.
+- The P1 handoff claim is specifically the scheduler's cross-physical-core
+  worker wake topology. On W1, a forced same-logical-CPU ping-pong favors
+  oneTBB's Windows SRWLOCK path by roughly 3.5x; HYLE does not claim
+  non-inferiority for that different topology.
 - Mapping is compared for a model-loader lifecycle with a warm page cache and
   fixed random probes. It does not claim mmap wins for small sequential files.
 - oneTBB is built in its supported shared-library form from the pinned source;
