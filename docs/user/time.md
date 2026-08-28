@@ -1,37 +1,39 @@
 # HYLE time：什么情况选择什么
 
-> **`provisional / NOT_REVIEWED_V2`。** time 当前只提供 C++ 产品面。
-> 本页适用于 C++23 source/static/shared 三种交付，不描述 C API 或跨语言调用层。
-
-`time` 提供时钟、deadline、OS 线程 sleep 和无分配 timer 数据结构。它不替 event loop 执行
-callback，也不替业务决定周期 timer 的补发策略。
+`time` 面向 C++23 source/static/shared 用户，提供时钟、deadline、Unix 时间互操作、OS 线程 sleep
+和无分配 timer 容器。它不提供 C API/Native FFI，也不替 scheduler 执行 callback。
 
 ## 一页选择表
 
-| 需求 | 选择 | 不要选择 | 关键合同 |
-|---|---|---|---|
-| elapsed、timeout、deadline | `monotonic_now()` / `monotonic_ns()` | realtime | 单调、零点无意义 |
-| 日志、协议、Unix epoch | `realtime_now()` / `realtime_timestamp()` | monotonic 当日期 | 可因校时跳变；跨边界优先分离秒/纳秒 |
-| 普通 C++ duration/deadline | chrono typed 入口 | 手写 ns 乘法与加法 | 转换向上取整并饱和 |
-| 简单作用域耗时 | `Instant::now()` + `elapsed()` | profiling clock 默认化 | 类型安全、差值可为负 |
-| 高频低成本 profiling 采样 | `profiling_clock_ns()` | timeout / 精确边界 | 先查 availability；不序列化周围指令 |
-| 精确 profiling 区间 | `profiling_measurement_start_ns()` / `stop_ns()` | 两次 raw sampling | 阻止编译器/CPU 跨边界重排；仍不是 deadline clock |
-| 高频粗粒度日志时间戳 | `coarse_realtime_ns()` | 精确事件排序 | coarse 源可能一个 tick 内不变 |
-| 阻塞当前 OS 线程 | `sleep_for` / `sleep_until` | sched worker 上调用 | 至少睡到 deadline；0 是 no-op |
-| 挂起 HYLE fiber | `hyle::sched::sleep_*` | `time::sleep_*` | 不阻塞 worker |
-| 混合/任意 deadline，大量 cancel | `TimerQueue` | heap / common queue | O(1) arm/cancel；single-owner |
-| 海量相同 duration timeout | `CommonTimeoutQueue` | general queue 当最紧特化 | arm 顺序必须形成非递减 deadline |
-| 多种固定 duration | 每种一个 Common queue + 业务路由 | 一个 queue 混装 | 路由策略属于消费者 |
-| 周期 timer | 一次性 timer 到期后按业务策略 re-arm | 底层隐式 repeating | 明确 skip/catch-up/drift/cancel 语义 |
+| 需求 | 选择 | 主要陷阱 |
+|---|---|---|
+| elapsed、timeout、deadline | `monotonic_now/ns` | 不要用 realtime |
+| 日志、协议、Unix epoch | `realtime_now/timestamp` | 墙钟会因校时跳变 |
+| 普通 C++ duration/deadline | typed chrono 入口 | 不要手写 ns 乘法或 `now + timeout` |
+| 简单作用域耗时 | `Instant::now().elapsed()` | raw subtraction 可能为负 |
+| 可接受粗分辨率的 rate-limit/event-loop time | `coarse_monotonic_*` | 先看 availability；多个 tick 可相同 |
+| 高频粗粒度日志 stamp | `coarse_realtime_*` | 仍是会跳变的墙钟 |
+| 高频局部 profiling sample | `profiling_clock_ns()` | 不能用于 timeout；raw read 不排序周围指令 |
+| 精确 profiling 区间边界 | `profiling_measurement_start/stop_ns` | 不是同步或持久化 fence |
+| 当前线程实际 CPU 消耗 | `ThreadCpuClock` / `current_thread_cpu_ns` | sleep/blocked 时间基本不累计 |
+| 当前进程实际 CPU 消耗 | `ProcessCpuClock` / `process_cpu_ns` | 多线程 CPU 时间可快于 wall elapsed |
+| 阻塞当前 OS 线程 | `sleep_for/until` | scheduler worker 上不要调用 |
+| 挂起 HYLE fiber | `hyle::sched::sleep_*` | 不要阻塞整个 worker |
+| 混合 deadline、大量 cancel | `TimerQueue` | caller 保证节点地址和 owner thread |
+| 海量相同 duration timeout | `CommonTimeoutQueue` | arm deadline 必须非递减 |
+| 日历、时区、RFC 文本 | 标准库或协议 owner | time 不带 timezone DB/parser |
+| 周期任务 | executor 明示 skip/catch-up/fixed-delay | 不存在含糊的底层 repeating timer |
 
-## 时钟和 deadline
+## Precise clock 与安全 deadline
 
-日常 C++ 代码优先 typed 形状：
+日常 C++ 优先 typed 入口：
 
 ```cpp
+#include <chrono>
 #include "hyle/time/clock.h"
 
 using namespace std::chrono_literals;
+
 const auto started = hyle::time::Instant::now();
 const auto deadline = hyle::time::deadline_after(25ms);
 do_work();
@@ -39,79 +41,109 @@ const hyle::time::Duration elapsed = started.elapsed();
 const hyle::time::Duration left = hyle::time::remaining(deadline);
 ```
 
-系统边界、wire format 或极热代码可用 `uint64_t` ns：
+系统边界或已采用 compact storage 的热路可用 ns：
 
 ```cpp
 const std::uint64_t deadline = hyle::time::deadline_after_ns(timeout_ns);
 const std::uint64_t left = hyle::time::remaining_ns(deadline);
 ```
 
-不要写 `monotonic_ns() + timeout_ns`，因为大 timeout 会 wrap 到过去。chrono integral duration
-用精确 ratio 算术转换，包含 2^53 以上的 ns；浮点 duration 的 NaN/非正数转 0，正值向上取整到
-ns，超范围饱和。`Instant` 的 `elapsed()`/`until()` 是非负便利入口：反向为 0，正向差值超出
-`Duration::rep` 时饱和到 `Duration::max()`。`later - earlier` 与 `std::chrono` 一样保留方向，
-可能为负，并沿用 chrono 的 representability 前置条件；对任意外部/极值 time point 应使用
-前两个 checked convenience。
+不要写 `monotonic_ns() + timeout_ns`：大 timeout 会 wrap 到过去。HYLE 对 integral duration 做精确
+ratio 换算，对正值向上取整到 ns 并饱和；NaN/非正值为 0，正无穷和超范围为最大值。这样转换不会
+让请求的等待变短。
 
-`profiling_clock_ns` 返回缩放到 ns 的硬件 counter 采样：x86 使用 invariant TSC，GCC/Clang
-ARM64 使用 architected virtual counter。x86 跨核迁移、suspend 或 VM migration 可能让差值
-失真，所以它只适合同一 pinned/近邻热路径；任何平台都不能把它写进 timeout。raw 入口追求
-最低读取成本，不保证周围待测指令没有被重排。真正量一段代码时使用有序 pair：
+`Instant::elapsed()`/`until()` 是非负便利入口：反向为 0，过大的正差饱和。`later - earlier`
+保留 `std::chrono` 的有符号语义，可能为负；对外部或极值 time point 优先用便利入口。
+
+## Coarse、profiling 与 CPU time
+
+coarse clock 的 value 与对应 precise clock 在同一 domain：
+
+```cpp
+if (hyle::time::coarse_monotonic_available()) {
+  const auto event_loop_tick = hyle::time::coarse_monotonic_now();
+}
+
+const auto log_stamp = hyle::time::coarse_realtime_timestamp();
+```
+
+availability 为 false 时仍返回正确 domain 的 precise fallback；它只说明当前机器没有真正 coarse
+快路。不要因为函数名带 ns 就假定分辨率是 1 ns，也不要把 coarse realtime 用作 elapsed。
+
+profiling raw sample 追求最低读钟成本，有序 pair 才适合测一段代码：
 
 ```cpp
 const auto start = hyle::time::profiling_measurement_start_ns();
 hot_operation();
 const auto stop = hyle::time::profiling_measurement_stop_ns();
-if (stop >= start) record_sample(stop - start); // x86 跨核反向样本应丢弃
+if (stop >= start) record_sample(stop - start);
 ```
 
-有序 pair 阻止编译器与 CPU 把普通指令/load 移过边界，但不会等待先前 store 全局可见；设备
-I/O、持久化和跨核同步仍使用各自的 fence/protocol。availability 为 false 时 raw 与 pair 都
-安全回退到 monotonic，只是不再有硬件快路。`coarse_realtime_ns` 是粗粒度日志时间戳；coarse
-是稳定语义；是否更快只由 [`benchmarks-time`](../implementation/evidence/performance/benchmarks-time.md) 的 freshness
-状态和当前平台同合同证据说明。
+先用 `profiling_clock_available()` 决定是否值得采用。x86 上跨核迁移、suspend 或 VM migration
+可能破坏局部差值；raw 入口也不阻止周围指令重排。任何情况下都不得把 profiling clock 接入 timer。
 
-### Unix 时间与 OS/持久化互操作
+CPU accounting 用来判断“真的执行了多久”，不是“过去了多久”：
 
-持久化、文件元数据或协议数据不要把 Unix 时间压成无符号纳秒。它会让 1970 年前的值 wrap，且
-`int64_t` 纳秒也只能覆盖约 1677--2262。HYLE 使用 canonical `UnixTimestamp{seconds,
-nanoseconds}`：seconds 有符号，nanoseconds 总在 `[0, 1e9)`，因此 `-1ns` 表示为
-`{-1, 999999999}`。
+```cpp
+const auto cpu_begin = hyle::time::ThreadCpuClock::now();
+do_cpu_work();
+const hyle::time::Duration cpu_used =
+    hyle::time::ThreadCpuClock::now() - cpu_begin;
+
+const std::uint64_t process_cpu = hyle::time::process_cpu_ns();
+```
+
+线程等待时 thread CPU time 基本停止；多线程进程可同时累计，所以 process CPU delta 可能大于 wall
+elapsed。接口只计当前线程或当前进程，不接受外部 thread handle，也不聚合 child process。
+
+## Unix 时间与 OS/持久化互操作
+
+持久化、文件元数据或协议值使用 `UnixTimestamp{seconds, nanoseconds}`，不要压成无符号 epoch ns：
+pre-1970 会 wrap，signed 64-bit ns 的范围也远窄于拆分表示。`nanoseconds` 必须在 `[0, 1e9)`，
+所以 -1 ns 的 canonical 表示是 `{-1, 999999999}`。
 
 ```cpp
 #include "hyle/time/unix_timestamp.h"
 
 const hyle::time::UnixTimestamp stamp = hyle::time::realtime_timestamp();
-const auto chrono_value = hyle::time::unix_time_point(stamp); // 超范围为 nullopt
-const auto native = hyle::time::unix_timestamp_to_timespec(stamp);
+const auto chrono_value = hyle::time::unix_time_point(stamp);
+const auto posix = hyle::time::unix_timestamp_to_timespec(stamp);
+const auto filetime_ticks =
+    hyle::time::unix_timestamp_to_windows_filetime_ticks(stamp);
 ```
 
-提供与 `std::chrono::system_clock`、`time_t`、POSIX `timespec` 及 raw Windows FILETIME ticks
-的 checked/exact 转换。`platform::FileInfo::modified_time` 和 `io::FileStat::modified_time`
-复用同一表示，保留 pre-epoch 与亚秒精度。`realtime_ns()` 仍是当前时间的紧凑热路径入口，
-不是通用存储格式。
+system-clock time point、`time_t`、POSIX `timespec` 和 raw Windows FILETIME ticks 都有双向转换。
+不能表示或不 canonical 的输入返回 `std::nullopt`。FILETIME 只有 100 ns 分辨率：timestamp 转 ticks
+会把纳秒部分向下取整到 100 ns，只有 100 ns 对齐值精确 round-trip。`platform::FileInfo` 与
+`io::FileStat` 使用同一个 value type。
+
+`realtime_ns()` 适合当前非负 epoch 的 compact 热路，不是通用 wire/storage format。日历、时区和
+RFC3339/RFC1123 文本仍交给标准/协议层处理。
 
 ## sleep：先问“谁在睡”
 
 ```cpp
-hyle::time::sleep_for(250us);                 // 阻塞 OS thread
+using namespace std::chrono_literals;
+
+hyle::time::sleep_for(250us);  // 阻塞当前 OS thread
 hyle::time::sleep_until(hyle::time::deadline_after(2ms));
 ```
 
-这些入口用于裸线程、工具程序和不在 HYLE scheduler 上的控制面。fiber 中使用
-`hyle::sched::sleep_for_ns/sleep_until_ns`，它把 `TimerEntry` arm 到 worker queue 后 suspend；
-调用 `time::sleep_*` 会把整个 worker 阻塞。0 时长立即返回，不承担 yield 语义。
+这些入口用于裸线程、工具程序和 scheduler 外的控制面；保证 HYLE 不主动早于 deadline 返回，但 OS
+仍可晚醒。0/past 立即返回，不承担 yield 语义。在 HYLE fiber 中使用 `hyle::sched::sleep_*`，否则
+整个 worker 都会被阻塞。
 
 ## 任意 deadline：TimerQueue
 
 ```cpp
 #include "hyle/time/timer_queue.h"
 
+using namespace std::chrono_literals;
+
 hyle::time::TimerQueue timers;
 hyle::time::TimerEntry request_timer(&request, on_timeout);
 timers.schedule_after(&request_timer, 30s);
 
-// event-loop owner thread
 hyle::time::TimerList due;
 timers.advance(hyle::time::monotonic_now(), due);
 due.consume_all([](hyle::time::TimerEntry* timer) noexcept {
@@ -119,61 +151,54 @@ due.consume_all([](hyle::time::TimerEntry* timer) noexcept {
 });
 ```
 
-一个 event-loop tick 批量 arm 时先采一次 `now`，再把它传给每个 `schedule_after`；这样所有
-timer 属于同一时域并省去重复读钟，而不是缓存一个跨 tick 的旧时间：
+一个 event-loop tick 批量 arm 时只采一次 `now`：
 
 ```cpp
 const auto now = hyle::time::monotonic_now();
-for (auto* timer : request_timers) timers.schedule_after(timer, 30s, now);
+for (auto* timer : request_timers) {
+  timers.schedule_after(timer, 30s, now);
+}
 ```
 
-queue 不分配、不执行 callback。`TimerEntry` 的地址在 linked 期间必须稳定；armed entry 必须先
-cancel 才能销毁，delivery list 中的 entry 必须活到 list 被 drain 或销毁。list 析构会自动摘除
-剩余节点，因此可以直接丢弃整个 delivery batch；节点随后可重新 arm。`cancel` 对 idle entry
-返回 false；已在同 queue 的 entry 再 schedule 是 reschedule；另一个 queue 的 entry 是合同
-错误。`advance` 时间必须非递减，仍在输出 list 中的节点不可直接 re-arm/destroy。
+queue 不分配、不执行 callback。`TimerEntry` 的地址在 linked 期间必须稳定；一个节点同时最多属于
+一个 queue。idle entry 的 `cancel` 返回 false，同 queue 再 schedule 是 reschedule，另一个 queue
+操作是合同错误。`advance` 的 now 必须非递减。
 
-`next_deadline()` 返回 optional chrono time point，适合正常 C++ event loop；紧凑系统边界可用
-`next_deadline_ns()`，空时为 `UINT64_MAX`。取消当前 minimum 后 next 允许保守地早醒一次，
-这是用一次无害 early wake 换取 cancel O(1)，不是漏发。跨 bucket 的 delivery 不保证总序。
+`next_deadline()` 返回 optional typed time point；`next_deadline_ns()` 空时返回 `UINT64_MAX`。
+cancel 当前 minimum 后允许保守 early wake 一次，这是保持 cancel O(1) 的取舍，不会漏发。跨 bucket
+delivery 不保证总序；需要全序的消费者自行排序该批。
 
-极小队列不必期待 radix 永远是最快常数：单 timer 时 indexed heap 可以更快；正常 per-worker
-多 timeout 形状才会摊薄 radix 固定成本并体现 O(1) arm/cancel。HYLE 不为单 timer benchmark
-给每个节点增加第二套索引元数据；具体 cardinality 边界只看性能证书。
+radix queue 针对正常 per-worker 多 timeout/high-cancel 负载；单 timer 时更小的 heap 常数可能更低。
+不要根据一个微型 cardinality 给节点增加第二套索引 metadata。
 
 ## 单一 duration：CommonTimeoutQueue
 
 ```cpp
+using namespace std::chrono_literals;
+
 hyle::time::CommonTimeoutQueue idle_timeout(30s);
 hyle::time::TimerEntry idle(&connection, close_idle_connection);
-idle_timeout.schedule(&idle);  // 内部采 monotonic now + 30s
+idle_timeout.schedule(&idle);
 ```
 
-它适合“每个连接都是 30 秒 idle timeout”这类真实负载。若一个循环要批量 arm，先采一次
-`monotonic_now()`，再对每个节点 `try_schedule_after(entry, now)`，既少读钟又保持相同 deadline
-FIFO。显式 deadline 用 `try_schedule`；false 表示顺序不成立且旧 arm 未丢失，此时应改用
-`TimerQueue`。
+它适合“每个连接都是 30 秒 idle timeout”。批量 arm 时先采一次 `monotonic_now()`，再逐个
+`try_schedule_after(entry, now)`。显式 deadline 用 `try_schedule`；返回 false 表示非递减顺序
+不成立且旧 arm 未丢失，此时改用 `TimerQueue`。
 
-Common queue 同样 single-owner。它不是 thread-safe timeout service；线程安全/跨核命令、
-callback 执行上下文、取消仲裁属于 sched/io。
+多种固定 duration 建立多个 Common queue 并由消费者路由。该类型和 `TimerQueue` 都是
+single-owner，不是带锁的跨线程 timeout service。
 
-## 周期 timer 的正确写法
+## Shutdown、生命周期与失败
 
-底层故意不提供一个含糊的 `repeat=true`。例如固定速率任务需要先选策略：
+正常 owner-first shutdown 有两种选择：
 
-- skip：下一次从“现在 + period”算，过载不补发；
-- catch-up：从上一个目标 deadline 累加，可能连续补发；
-- bounded catch-up：最多补 N 次再跳过；
-- fixed delay：callback 完成后再等待 period。
+- 需要拿回节点：`cancel_all(out)` 后 drain `out`；
+- 只需放弃剩余 timer：直接析构 queue；它会 O(n) detach，既不 fire callback，也不销毁 caller-owned
+  entry，entry 随后可复用或销毁。
 
-选择后在 delivery callback 中重新 schedule 即可。HYLE scheduler 若将来提供周期任务，应在
-executor API 暴露这些 policy，而不是改变 `TimerQueue`。
+反过来的 entry-first shutdown 仍是 bug：armed entry 或仍链接在 delivery list 的 entry 不能先析构。
+delivery 后必须先 pop/drain 再 re-arm 或 destroy。wrong owner、倒退的 advance 和违反这些 lifetime
+合同会 fail-fast；不可信输入应由上层先验证，不能把程序员合同当 recoverable parsing error。
 
-## shutdown 与失败
-
-正常 shutdown 调 `cancel_all(out)`，drain 返回节点，再销毁 queue/entry。C++ 对程序员合同
-错误 fail-fast；从不可信来源构造 timer 操作的上层代码必须先验证 cross-source、顺序和
-非空 destroy 等输入，再进入 time 核心。
-
-架构和维护不变量见 [`time-design.md`](../architecture/time-design.md)，唯一正式性能表见
-[`benchmarks-time.md`](../implementation/evidence/performance/benchmarks-time.md)。
+稳定设计见 [`time-design`](../architecture/time-design.md)，当前性能边界见
+[`benchmarks-time`](../implementation/evidence/performance/benchmarks-time.md)。

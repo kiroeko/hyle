@@ -2,9 +2,10 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-> **当前阶段：`AUDITED`。** 本页是 `time-v1` 的唯一活动施工记录；既有 time task 与旧性能表只作
+> **当前阶段：`IMPLEMENTED`。** 本页是 `time-v1` 的唯一活动施工记录；既有 time task 与旧性能表只作
 > 历史输入。权威状态见 [`module-status.json`](../../module-status.json)。本轮不继承旧的 C ABI、
-> `SIGNED` 或 SOTA 结论；capability-family map 与有限 `FIX` 集已经冻结，尚未形成 product candidate。
+> `SIGNED` 或 SOTA 结论；冻结的十项 `FIX` 已全部实现，P1 engineering performance 已
+> `QUALIFIED/PASS`，尚待 immutable candidate 上完成三平台 correctness/delivery/red-team 后关闭。
 
 ## Closure card（`SCOPED`）
 
@@ -158,3 +159,43 @@ benchmark-only public family；`CommonTimeoutQueueAccess` 是无人消费的旧 
   `TIME-IO-ROUND-01`、`TIME-PERF-01`、`TIME-DOC-01`。其中 timer/common 两个 family 由同一个
   queue-lifecycle 实现批次补齐，因此实际是八个施工批次。实现只允许这一批；新发现项必须先回到
   ledger 重裁决，不能边施工扩面。
+
+## 实现与证据（`IMPLEMENTED`）
+
+| Batch / commit | 关闭的 FIX | 实际结果 |
+|---|---|---|
+| `6dfbb4de` | `TIME-COARSE-01`、`TIME-CPU-01` | 补 coarse monotonic、两个 coarse typed facade 与独立 availability；补 current-thread/process CPU compact + chrono clocks，Windows/Linux/macOS 使用原生 accounting clock |
+| `f45c1658` | `TIME-UNIX-01` | 删除伪 ABI `reserved`，补自然 defaults/comparison 和 checked timestamp→FILETIME；100ns floor、对齐 round-trip 与上下界测试 |
+| `03f558a3` | `TIME-TIMER-01`、`TIME-QUEUE-LIFE-01`、`TIME-COMMON-01` | 两种 queue 的 owner-first 非空析构改为 O(n) detach、零分配、不执行 callback；entry-first/delivery-list misuse 仍 fail-fast；节点可复用 |
+| `ab126c68` | `TIME-LEGACY-01` | 删除无人消费的 `CommonTimeoutQueueAccess` 和旧 C-adapter 叙事；产品面保持纯 C++ |
+| `4292b329` | `TIME-IO-ROUND-01` | Windows IOCP/Linux epoll 的有限 ns→ms ceil 改为 quotient/remainder + clamp，最大有限 timeout 不再 wrap 成 poll |
+| `0ef2544c` | `TIME-PERF-01` | 冻结 `scheduler-timer-lifecycle-64` source-consumer replay、faithful Seastar peer、双 execution/allocation order 与 primary/placement |
+| 当前文档批次 | `TIME-DOC-01` | architecture、guide、performance 只描述当前能力/决策/证据；删除 current C ABI、`NOT_REVIEWED` 和历史点值叙事 |
+
+实现批次没有为了 benchmark 增加 public API、queue node metadata 或常态分支。新增 coarse/CPU clock 来自
+能力族审计；queue teardown 来自正常所有权旅程和 mature peer；IO rounding 是直接消费者的边界正确性
+修复。唯一 benchmark 新增是 test/bench artifact 和机器合同，不进入产品 header/layout。
+
+### 已完成的窄正确性与性能门
+
+- Windows MSVC time-only shared build、public-header self-containment 与 `hyle_time_test` 已通过；新增 CPU
+  busy-vs-sleep、coarse domain/fallback、Unix/FILETIME 边界、两类 queue teardown/reuse/death 覆盖。
+- Windows selected `io` build 与 `hyle_io_test` 已通过；两个 backend 共享的 overflow-safe rounding helper
+  有 constexpr boundary coverage。
+- contract `time-source-consumer-v1` semantic SHA-256 为
+  `ab4223b7066e8540f15bbc6ad586ef7e37cf678feb877f408162e7d08bec2356`；candidate
+  `0ef2544c` / tree `104a4b6d` 在 W1-WIN fresh MSVC Release/static、5% margin 上从 n=15 合法升级
+  到独立 n=31。
+- 8/8 product strata 均为 `PARITY` 且 5% non-inferiority `PASS`；A/A、5%/10% known delta、
+  batch-matched floor、placement、artifact/build/source identity 全部 `PASS`。统一 verifier 返回
+  `QUALIFIED`、`paths_verified=true`、`current_certification_policy_eligible=true`。详见
+  [`benchmarks-time`](../../evidence/performance/benchmarks-time.md)。
+
+### 形成 candidate 前剩余工作
+
+1. 对当前文档/API 做链接、stale C/FFI、旧 teardown 和 public-header scan；提交文档批次。
+2. 记录 immutable candidate commit/tree；在该 candidate 上执行 W1-WIN、W1-WSL、M1-MAC 的适用
+   correctness/sanitizer/ISA 门。
+3. 验证 time-only source build、relocated static/shared SDK consumer，以及 platform/sched/io 代表性直接
+   消费者；执行 final red-team、clean-tree 与四项 LOC。
+4. 只有全部适用门通过，才把 `module-status.json` 和本页转为 `CLOSED`；Formal 保持 `PENDING`。
