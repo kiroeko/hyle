@@ -387,8 +387,8 @@
       "baseline_commit": "c04e12c7dd65ea5858314d9ebfbea841119225ae",
       "candidate_commit": "2c71dfae9f4fb43ff0d68e5c1a4c55099fc0f101",
       "candidate_tree": "fc02363512a0807f4d46bb57427eae4137ea39fd",
-      "end_commit": "6f582f5289a9b72dfc6679a282dcf356f35530b9",
-      "registry_anchor_commit": "6f582f5289a9b72dfc6679a282dcf356f35530b9",
+      "end_commit": "89841ab006433bceac39ba8083b01c634a641404",
+      "registry_anchor_commit": "89841ab006433bceac39ba8083b01c634a641404",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",

@@ -348,8 +348,9 @@ usability/docs、engineering performance 与 red-team 八项 aggregate gate 全�
 `2c71dfae9f4fb43ff0d68e5c1a4c55099fc0f101` / tree
 `fc02363512a0807f4d46bb57427eae4137ea39fd`；Formal 保持独立 `PENDING`。
 
-- VERIFIED precursor：`6f582f5289a9b72dfc6679a282dcf356f35530b9`；terminal end 与 registry
-  anchor 由紧随本 receipt 的状态锚提交回填，避免在一个提交内容里伪造自身 hash；
+- VERIFIED precursor：`6f582f5289a9b72dfc6679a282dcf356f35530b9`；terminal end / registry
+  anchor：`89841ab006433bceac39ba8083b01c634a641404`。该不可变快照首次同时保存本 terminal
+  receipt、`CLOSED` registry state 与 candidate identity；后续提交只回填它无法在自身内容中预写的 hash；
 - 可接受限制：P1 工程数字只覆盖两份冻结的 W1-WIN 合同，不代表所有 mem 类型、平台或 topology
   全面 SOTA；runtime-erased allocator 有一次间接分派，默认热点有无损 direct route；当前只在单节点
   机器签 NUMA API/rollback/fallback，不签跨 socket bandwidth；TLS arena merge、concurrent external
