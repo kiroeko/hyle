@@ -169,6 +169,9 @@ race/UAF；insert、remove、iteration、hook/list destruction 必须使用同�
 模块有意没有 `.size()`。它不保存 count，也不能让线性 member `size()` 使 C++23 range 错误建模为
 amortized-O(1) `sized_range`；确需冷路径计数时显式使用 `std::ranges::distance(list)`。需要始终
 O(1) size/owner check 时，应选择拥有这些 metadata 的上层类型，而不是让每次 mutation 付计数税。
+若需求确实是通用 counted intrusive list，可在定义 node/hook 时选择 Boost.Intrusive 的
+`constant_time_size<true>`；不要在 HYLE list 旁机械维护一份看似通用、却未与 range splice/move/swap
+共同定义的 shadow count。出现具名 HYLE consumer 后，才会评估不影响默认形状的独立 counted type。
 
 ## `try_*` 能检查什么
 
@@ -223,8 +226,9 @@ iterator 保持稳定，sentinel iterator 始终属于具体 list 对象。
 
 - owning sequence、需要容器销毁元素：使用标准或 HYLE owning container；
 - 始终 O(1) count、exact owner/contains：选择保存相应 metadata 的上层类型；
-- O(1) counted list：当前没有同语义消费者，且会增加 list metadata 与每次 mutation 写；需要时先确认
-  count 是 membership 数而非业务/发布状态；
+- O(1) counted list：当前没有同语义 HYLE 消费者，且会增加 list metadata 与每次 mutation 写；先确认
+  count 是 membership 数而非业务/发布状态，通用需求直接选 Boost.Intrusive
+  `constant_time_size<true>`；
 - untyped `hook.swap_nodes(other_hook)`：两个 ready/timeout hook 具有同一 C++ hook 类型，裸 hook 入口
   无法阻止跨 membership 合同混用；使用绑定 `T` 与 member hook 的 `NodeList::swap_nodes(left,right)`；
 - normal-link、base/function hook、shared-memory offset pointer 等完整策略矩阵：使用

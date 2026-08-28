@@ -162,7 +162,7 @@ lock-free 声明；类型的 thread compatibility 不会因 safe policy 而变�
 | 未提供能力 | 裁决与理由 |
 |---|---|
 | `.size()`，包括 linear size | 不保存 count，也避免线性 member `size()` 让 C++23 range 错误建模为 amortized-O(1) `sized_range`；冷路径显式用 `std::ranges::distance` |
-| counted list | `TimerQueue` 的 count 跨 bucket，sched waiter count 属原子发布协议；`CommonTimeoutQueue` 的 count 虽等于单链 membership，却是 time 专用 `size()` 状态，不能独自确定 auto/safe、range splice 的通用 counted 合同。count 会令所有 list 增加一个 word 与 mutation 写，range splice 还需 scan 或 caller 提供 n，故 `DEFER` |
+| counted list | `TimerQueue` 的 count 跨 bucket，sched waiter count 属原子发布协议；`CommonTimeoutQueue` 的 count 虽等于单链 membership，却是 time 专用 `size()` 状态，不能独自确定 auto/safe、range splice 的通用 counted 合同。count 会令所有 list 增加一个 word 与 mutation 写，range splice 还需 scan 或 caller 提供 n，故 HYLE 自实现 `DEFER`。通用 O(1) intrusive count 可从类型定义时选择 Boost.Intrusive `constant_time_size<true>`；出现独立、不愿引入 Boost 的具名 HYLE consumer 时再设计单独 counted type，不给默认 list 加税 |
 | hook-level `swap_nodes` | `IntrusiveListHook` 同时可作为 ready、timeout 等不同 membership；裸 hook 参数不能在编译期阻止跨合同交换，故只公开绑定 `T` 与 member hook 的 auto-list static API |
 | normal-link / 任意 hook policy | auto 与 safe 已覆盖常见生命周期；无检查/不初始化的 normal link 及完整策略矩阵借用 Boost.Intrusive，直到出现独立任务 |
 | exact owner/`contains(node)` | 两指针 hook 无法 O(1) 回答具体 owner；不为罕见诊断向所有 node 加 owner pointer |

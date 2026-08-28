@@ -30,7 +30,7 @@
 | `error` | `CLOSED` | v3 对 Status/Result/context/native/format/OOM/lifetime 的宽 ledger 与 public trace；v4 有合格 source-consumer 性能恢复 | 新回放已逐族签署构造、传播、组合、失败、teardown、边界与负空间；WinSock/typed rich error 等均有 owner route/trigger | [`error-capability-replay-v1`](../error/error-capability-replay-v1.md)；`CONFIRMED`，实现改动 0 |
 | `util_core` | `CLOSED` | RNG/Ref/ScopeGuard/SpinLock/type-name 五族、peer/consumer/复杂度和 public trace | 新回放已签署每族取得、组合、失败、边界、teardown 与完整 owner route；校准四项易用性陷阱和概率测试 | [`util-core capability replay`](../util/util-core-capability-replay-v1.md)；`CONFIRMED`，API/算法/布局改动 0 |
 | `util` | `CLOSED` (`util-runtime-v2`) | Registry/demangle 的用户旅程、peer、复杂度、资源和负空间 | 回放确认 Registry 完整，同时发现 owning demangled-text 与两处文档缺口；v2 已补齐并通过三平台正确性、交付、易用性、红队和 P0 结构门 | [`util runtime capability replay`](../util/util-runtime-capability-replay-v1.md) 得到 `PRODUCT_TRIGGER`；[`v2`](../util/util-runtime-v2-closure.md) 已 `CLOSED`，Registry 产品零改动 |
-| `container_intrusive` | `CLOSED` | caller-owned list、auto/safe hook、membership transfer、public trace、Boost 同合同证据 | 需把 list family 的 lifecycle/边界/迭代失效与更宽 intrusive framework route 显式判为覆盖状态 | read-only capability replay；`PENDING` |
+| `container_intrusive` | `CLOSED` | caller-owned list、auto/safe hook、membership transfer、public trace、Boost 同合同证据 | 新回放已签署 construction/retirement/mutation/handoff/cardinality/algorithm route、迭代失效、交付和全部公开入口 | [`container_intrusive capability replay`](../container_intrusive/container-intrusive-capability-replay-v1.md)；`CONFIRMED`，实现改动 0 |
 | build/package | v2 unit `VERIFIED`，持续 workstream | component graph、source/static/shared、offline、并行 scratch、options/CI/version/依赖锁合同 | 旧 unit ledger 没有 family coverage 轴；后续 v3/v4 变更需汇入当前 capability map，不能只复用 v2 表 | read-only development-unit replay；`PENDING` |
 | `time` | `AUDITED` | 已按新标准建立 family map/public trace，冻结十项 ledger FIX | 实现、candidate 与全部验证尚未完成 | 继续正常 `AUDITED -> CANDIDATE`，不另做 replay |
 | `platform` / `mem` / `obs` | `QUEUED` | 旧实现和历史审查只作输入 | 全部新标准证据尚未建立 | 轮到时走完整正常状态流，不补签旧结论 |
@@ -59,5 +59,6 @@
 不变。`util` 回放得到 `PRODUCT_TRIGGER`：Registry 维持原结论，demangle 缺两个成熟来源共同提供的
 owning-text 常用路线；其 v2 易用性切片现已修复并 `CLOSED`。`time-v1` 已直接使用新
 capability-family 格式。
-`container_intrusive/build-package` 在逐项回放完成前，不能描述成已经按新标准证明完整；其既有状态也
-不会仅因方法差异自动失效。
+`container_intrusive` 已完成回放并 `CONFIRMED`：counted/完整算法/并发能力都有明确 route、owner 与
+触发条件，没有把 peer API 求并集。build/package 在 development-unit 回放完成前，仍不能描述成已经
+按新标准证明完整；其既有状态也不会仅因方法差异自动失效。

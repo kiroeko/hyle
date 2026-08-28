@@ -30,11 +30,14 @@
 
 新接受的能力完整性标准正在通过
 [存量采用记录](tasks/project/capability-completeness-adoption-2026-08.md)回放到
-`core/error/util_core/util/container_intrusive/build-package`。`core`、`error` 与 `util_core` 的回放已经分别
+`core/error/util_core/util/container_intrusive/build-package`。`core`、`error`、`util_core` 与
+`container_intrusive` 的回放已经分别
 [`CONFIRMED`](tasks/core/core-capability-replay-v2.md) /
 [`CONFIRMED`](tasks/error/error-capability-replay-v1.md) /
-[`CONFIRMED`](tasks/util/util-core-capability-replay-v1.md)，均无 API、算法或布局改动；其余单元仍按
-清单顺序进行。
+[`CONFIRMED`](tasks/util/util-core-capability-replay-v1.md) /
+[`CONFIRMED`](tasks/container_intrusive/container-intrusive-capability-replay-v1.md)，均无 API、算法或
+布局改动。`util` 回放发现 owning-demangle `PRODUCT_TRIGGER` 后已经由 v2 修复并重新 `CLOSED`；
+build/package 仍按清单顺序进行。
 这项只读审计不会批量改写上表状态，只有发现真实 `PRODUCT_TRIGGER` 的单元才依法重开。`time` 已
 直接使用新格式，`platform/mem/obs` 将在各自正常轮次使用，不补签历史结论。
 
