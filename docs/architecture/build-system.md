@@ -254,6 +254,8 @@ CI 不把所有平台、后端和性能门塞进一次任务：
 1. 本模块及其传递依赖的 source build/test。
 2. 用独占 scratch 跑该根的 `HyleCiSelectedComponentSmoke.cmake`：source embedding、shared、static
    及搬迁后 installed consumer；Windows 可用 `hyle-windows.ps1 -Action SelectedComponentSmoke`。
+   smoke 生成的 Darwin 父工程从中央 platform requirement 取得 deployment target；不得让 source 与
+   SDK 两种形状偶然使用不同的 macOS loader floor。
 3. 涉及外部依赖时的锁、离线和许可证投影。
 4. 涉及 ABI 或运行时装载时的 relocated consumer。
 5. 涉及性能时的独立、可复现性能门；普通 CI 不替代性能证据。

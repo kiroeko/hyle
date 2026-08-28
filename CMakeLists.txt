@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.25)
 
+include("${CMAKE_CURRENT_LIST_DIR}/cmake/HylePlatformRequirements.cmake")
+
 # The checked-in C++ product header is the single version source. Read it before
 # project() so package metadata and public compile-time identity cannot drift.
 file(STRINGS "${CMAKE_CURRENT_LIST_DIR}/include/hyle/version.h"
@@ -29,7 +31,8 @@ if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin" AND
    CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR AND
    (NOT DEFINED CMAKE_OSX_DEPLOYMENT_TARGET OR
     CMAKE_OSX_DEPLOYMENT_TARGET STREQUAL ""))
-  set(CMAKE_OSX_DEPLOYMENT_TARGET "14.4" CACHE STRING
+  set(CMAKE_OSX_DEPLOYMENT_TARGET
+      "${HYLE_PLATFORM_MACOS_DEPLOYMENT_TARGET_MIN}" CACHE STRING
       "Minimum macOS version for HYLE's native platform wait backend")
 endif()
 
@@ -108,11 +111,14 @@ if(APPLE AND HYLE_BUILD_PLATFORM)
      CMAKE_OSX_DEPLOYMENT_TARGET STREQUAL "")
     message(FATAL_ERROR
       "HYLE's platform component requires an explicit macOS deployment target "
-      "of 14.4 or newer. An embedding parent must set "
+      "of ${HYLE_PLATFORM_MACOS_DEPLOYMENT_TARGET_MIN} or newer. An embedding "
+      "parent must set "
       "CMAKE_OSX_DEPLOYMENT_TARGET before adding HYLE.")
-  elseif(CMAKE_OSX_DEPLOYMENT_TARGET VERSION_LESS "14.4")
+  elseif(CMAKE_OSX_DEPLOYMENT_TARGET VERSION_LESS
+         "${HYLE_PLATFORM_MACOS_DEPLOYMENT_TARGET_MIN}")
     message(FATAL_ERROR
-      "HYLE's platform component requires macOS 14.4+ for the public "
+      "HYLE's platform component requires macOS "
+      "${HYLE_PLATFORM_MACOS_DEPLOYMENT_TARGET_MIN}+ for the public "
       "os_sync_wait_on_address backend; got "
       "CMAKE_OSX_DEPLOYMENT_TARGET='${CMAKE_OSX_DEPLOYMENT_TARGET}'.")
   endif()

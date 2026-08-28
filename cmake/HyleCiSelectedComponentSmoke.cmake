@@ -16,6 +16,7 @@ endif()
 
 get_filename_component(HYLE_SOURCE_DIR "${HYLE_SOURCE_DIR}" ABSOLUTE)
 get_filename_component(HYLE_SMOKE_ROOT "${HYLE_SMOKE_ROOT}" ABSOLUTE)
+include("${HYLE_SOURCE_DIR}/cmake/HylePlatformRequirements.cmake")
 set(_sample
   "${HYLE_SOURCE_DIR}/samples/package/${HYLE_SMOKE_COMPONENT}/cpp")
 if(NOT EXISTS "${_sample}/CMakeLists.txt" OR
@@ -39,6 +40,16 @@ endfunction()
 set(_generator_args "")
 if(DEFINED HYLE_SMOKE_GENERATOR AND NOT HYLE_SMOKE_GENERATOR STREQUAL "")
   list(APPEND _generator_args -G "${HYLE_SMOKE_GENERATOR}")
+endif()
+
+# The source-embedding shape deliberately behaves like a real parent project.
+# On macOS that parent must choose the deployment floor before add_subdirectory;
+# use the same central value for all three delivery shapes so the smoke cannot
+# accidentally test different loader contracts.
+set(_platform_args "")
+if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+  list(APPEND _platform_args
+    -DCMAKE_OSX_DEPLOYMENT_TARGET=${HYLE_PLATFORM_MACOS_DEPLOYMENT_TARGET_MIN})
 endif()
 
 set(_root
@@ -66,7 +77,7 @@ file(WRITE "${_source_parent}/CMakeLists.txt"
 "add_test(NAME hyle_selected_source_consumer COMMAND hyle_selected_source_consumer)\n")
 _hyle_selected_run("configure ${HYLE_SMOKE_COMPONENT} source consumer"
   "${CMAKE_COMMAND}" -S "${_source_parent}" -B "${_source_build}"
-  ${_generator_args} -DCMAKE_BUILD_TYPE=Release)
+  ${_generator_args} ${_platform_args} -DCMAKE_BUILD_TYPE=Release)
 _hyle_selected_run("build ${HYLE_SMOKE_COMPONENT} source consumer"
   "${CMAKE_COMMAND}" --build "${_source_build}" --config Release --parallel 2)
 _hyle_selected_run("run ${HYLE_SMOKE_COMPONENT} source consumer"
@@ -86,7 +97,7 @@ foreach(_linkage IN ITEMS shared static)
 
   _hyle_selected_run("configure ${_linkage} ${HYLE_SMOKE_COMPONENT} SDK"
     "${CMAKE_COMMAND}" -S "${HYLE_SOURCE_DIR}" -B "${_sdk_build}"
-    ${_generator_args}
+    ${_generator_args} ${_platform_args}
     -DCMAKE_BUILD_TYPE=Release
     -DCMAKE_INSTALL_PREFIX=${_staging}
     -DHYLE_COMPONENTS=${HYLE_SMOKE_COMPONENT}
@@ -107,7 +118,7 @@ foreach(_linkage IN ITEMS shared static)
 
   _hyle_selected_run("configure ${_linkage} ${HYLE_SMOKE_COMPONENT} consumer"
     "${CMAKE_COMMAND}" -S "${_sample}" -B "${_consumer}"
-    ${_generator_args}
+    ${_generator_args} ${_platform_args}
     -DCMAKE_BUILD_TYPE=Release
     -DCMAKE_PREFIX_PATH=${_prefix})
   _hyle_selected_run("build ${_linkage} ${HYLE_SMOKE_COMPONENT} consumer"
