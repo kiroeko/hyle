@@ -1,14 +1,14 @@
 # mem-v1 重构与收口记录
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
-> 当前阶段：`VERIFIED`。本文是 mem 当前轮唯一 closure card 与施工记录；既有 mem task、设计页、
+> 终态：`CLOSED`。本文是 mem 当前轮唯一 closure card、施工记录与 terminal receipt；既有 mem task、设计页、
 > guide 和性能页只作审计输入，不继承旧 `SIGNED`、Native FFI 或 SOTA 叙事。权威机械状态见
 > [`module-status.json`](../../module-status.json)。能力族、全部公开入口、真实消费者与绑定版本的成熟
 > 源码已经双向核对；本轮只实现下方冻结的九项 `FIX`，不得边施工扩面。产品/API 修复已落在
 > `0943c747`，三种交付 sample 对新冷快照的实调用落在 `2c71dfae`；产品/API candidate 已冻结，
 > 当前统一性能资格化、exact-candidate correctness/delivery、最终红队均已通过；产品实现仍绑定
-> `2c71dfae`，只剩单独的 terminal receipt 与 `CLOSED` 机械状态迁移。
+> `2c71dfae`。本轮已经停止，Formal 继续作为独立 `PENDING` 轴。
 
 ## Closure card（`SCOPED`）
 
@@ -342,11 +342,32 @@ Region 共用同一 runtime upstream 并单列 retention；handoff 两边都是 
 
 ## Closure decision
 
-本轮已满足 `VERIFIED`：scope、architecture/API、correctness、delivery/dependencies、direct consumer、
+本轮 `CLOSED`：scope、architecture/API、correctness、delivery/dependencies、direct consumer、
 usability/docs、engineering performance 与 red-team 八项 aggregate gate 全部 `PASS`，九项 ledger
 `FIX` 全部关闭，没有 material `MUST`、正确性、安全、交付或 P1 blocker。产品 candidate 仍为
 `2c71dfae9f4fb43ff0d68e5c1a4c55099fc0f101` / tree
 `fc02363512a0807f4d46bb57427eae4137ea39fd`；Formal 保持独立 `PENDING`。
 
-下一提交只登记 terminal receipt、可接受限制、reopen trigger、candidate LOC 与中央 `CLOSED`；不得
-再修改产品、正常 workload 或性能合同。
+- VERIFIED precursor：`6f582f5289a9b72dfc6679a282dcf356f35530b9`；terminal end 与 registry
+  anchor 由紧随本 receipt 的状态锚提交回填，避免在一个提交内容里伪造自身 hash；
+- 可接受限制：P1 工程数字只覆盖两份冻结的 W1-WIN 合同，不代表所有 mem 类型、平台或 topology
+  全面 SOTA；runtime-erased allocator 有一次间接分派，默认热点有无损 direct route；当前只在单节点
+  机器签 NUMA API/rollback/fallback，不签跨 socket bandwidth；TLS arena merge、concurrent external
+  variable pool、device/pinned/KV/staging 与 Native FFI 保持 routed/out-of-scope；Formal 为 `PENDING`；
+- reopen trigger：具名消费者复现 mem 边界内 correctness/security/OOM/ownership/usability/常用能力
+  缺陷；公开 API/layout/算法、直接依赖、OS placement primitive 或 source/static/shared 交付改变；
+  成熟同合同 peer 证明更好复杂度档或正常 consumer 的 material 优势；现有 evidence/contract/peer/
+  machine/instrument identity 改变且需要续签；或多节点 NUMA、foreign runtime、device/pinned 等能力经
+  独立准入进入 mem 边界。
+
+四项 LOC 由 immutable product candidate
+`2c71dfae9f4fb43ff0d68e5c1a4c55099fc0f101` 运行
+`python scripts/loc-report.py --module mem --commit <candidate> --self-check --json` 得到，self-check
+`PASS`：
+
+1. 全库代码：301,961；
+2. 自实现包含测试：123,268；
+3. 自实现不包含测试：82,768；
+4. `mem` 实现：4,079（`include/hyle/mem` + `src/mem`，不含 tests/bench/docs/CMake）。
+
+终态不再修改产品、正常 workload 或性能合同；只有上述 trigger 能重开受影响部分。

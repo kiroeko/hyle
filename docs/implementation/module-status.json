@@ -379,7 +379,7 @@
     },
     {
       "module": "mem",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "round_id": "mem-v1",
       "closure_task": "docs/implementation/tasks/mem/mem-v1-closure.md",
       "scope": "Host-memory allocation and lifecycle primitives: allocator/PMR adapters, quota/stats, regions, fixed/growable/shared/typed pools, guarded fiber stacks and explicit huge-page/NUMA owners; C++ API, dependencies/consumers, delivery, documentation and bounded P1 engineering evidence.",
@@ -387,6 +387,8 @@
       "baseline_commit": "c04e12c7dd65ea5858314d9ebfbea841119225ae",
       "candidate_commit": "2c71dfae9f4fb43ff0d68e5c1a4c55099fc0f101",
       "candidate_tree": "fc02363512a0807f4d46bb57427eae4137ea39fd",
+      "end_commit": "6f582f5289a9b72dfc6679a282dcf356f35530b9",
+      "registry_anchor_commit": "6f582f5289a9b72dfc6679a282dcf356f35530b9",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -415,7 +417,28 @@
         "engineering_performance": "PASS"
       },
       "closure_evidence": "docs/implementation/tasks/mem/mem-v1-closure.md",
-      "summary": "mem-v1 VERIFIED：host-memory 能力/API、三平台正确性与 source/static/shared 交付、依赖、文档、红队及两份 W1-WIN 5% P1 工程性能合同全部通过；产品仍绑定 2c71dfae/fc023635，Formal 独立 PENDING，只待 terminal receipt。"
+      "loc": {
+        "snapshot_commit": "2c71dfae9f4fb43ff0d68e5c1a4c55099fc0f101",
+        "repository_code": 301961,
+        "self_with_tests": 123268,
+        "self_without_tests": 82768,
+        "module_implementation": 4079
+      },
+      "known_limitations": [
+        "The P1 engineering claim covers only the two frozen W1-WIN owner and cross-core handoff contracts; it is not an all-operation, cross-platform, cross-topology or Formal SOTA certificate.",
+        "Runtime-erased Allocator deliberately pays one indirect dispatch for backing injection; default hot users have direct SystemAllocator, SystemStdAllocator and system_memory_resource routes.",
+        "Only single-node NUMA API, rollback, complexity and fallback are signed; physical multi-socket placement and local/remote bandwidth remain unverified.",
+        "Hidden TLS arena merge and a synchronized external variable-size pool remain routed to an explicit runtime owner or caller synchronization until a named consumer admits them.",
+        "Device, pinned/registered host memory, coherence, KV/graph/io/scheduler policy and Native FFI remain outside host mem v1."
+      ],
+      "reopen_triggers": [
+        "A named consumer reproduces a correctness, security, OOM, ownership, API-usability or common-capability defect within mem's host-memory boundary.",
+        "A public API/layout, algorithm, direct dependency, OS placement primitive or source/static/shared delivery shape changes.",
+        "A mature same-contract peer proves a better complexity class or a reproducible material advantage on a normal mem consumer workload.",
+        "The engineering evidence bundle becomes unavailable, or the frozen contract, peer, machine or instrument identity changes and the claim must be renewed.",
+        "Multi-node NUMA, foreign-runtime, device/pinned memory or another deferred family is admitted through a separately scoped capability decision."
+      ],
+      "summary": "mem-v1 CLOSED：完整 host-memory 能力与自然 C++ API、三平台正确性/sanitizer、source/static/shared 交付、依赖、文档、红队及两份 W1-WIN 5% P1 工程性能合同全部签署；产品绑定 2c71dfae/fc023635，Formal 独立 PENDING。"
     },
     {
       "module": "simd",
