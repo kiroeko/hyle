@@ -557,8 +557,30 @@
     },
     {
       "module": "simd",
-      "product_state": "QUEUED",
-      "summary": "现有实现与历史审查只作输入。"
+      "product_state": "SCOPED",
+      "round_id": "simd-v1",
+      "closure_task": "docs/implementation/tasks/simd/simd-v1-closure.md",
+      "scope": "The complete CPU SIMD component: whole-buffer algorithms, runtime and exact dispatch, native/fat-kernel source seams, D-tag backends, direct dependencies and consumers, delivery, usability, correctness and P1 evidence.",
+      "non_goals": "GPU backends, matrix/attention/model operators, complete BLAS/FFT/linear algebra, container UTF-8 policy, cryptographic protocols, C API or Native FFI, stable cross-toolchain C++ ABI, per-ISA DLLs and Formal certification.",
+      "baseline_commit": "29b77897c0a14c92dd1baa49dccb41033dc835cd",
+      "performance_tier": "P1",
+      "validation_machine_profiles": [
+        "W1-WIN",
+        "W1-WSL",
+        "M1-MAC"
+      ],
+      "engineering_performance": {
+        "verdict": "PLANNED",
+        "mode": "P1_ENGINEERING",
+        "material_margin_pct": 5,
+        "machine_profile": "W1-WIN",
+        "instrument_profile": "closure-perf-v1"
+      },
+      "formal_performance": {
+        "state": "PENDING",
+        "instrument_profile": "formal-release-v1"
+      },
+      "summary": "simd-v1 SCOPED：38,024 行 CPU SIMD 大组件按真实推理/工程任务重建能力、API、后端、交付和 P1 证据；旧 benchmark 勾选与全局 SOTA 结论不继承。"
     },
     {
       "module": "container",
