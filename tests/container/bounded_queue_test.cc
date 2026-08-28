@@ -3,9 +3,11 @@
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <thread>
 #include <type_traits>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include "hyle/container/bounded_queue.h"
@@ -63,6 +65,45 @@ struct RecordingAllocator {
     state->deallocated_alignment = alignment;
     system_allocator().deallocate(pointer, size, alignment);
   }
+};
+
+struct MoveOnlyNonAssignable {
+  explicit MoveOnlyNonAssignable(int input) noexcept : value(input) {
+    ++alive;
+    ++constructed;
+  }
+  MoveOnlyNonAssignable(const MoveOnlyNonAssignable&) = delete;
+  MoveOnlyNonAssignable& operator=(const MoveOnlyNonAssignable&) = delete;
+  MoveOnlyNonAssignable(MoveOnlyNonAssignable&& other) noexcept
+      : value(std::exchange(other.value, -1)) {
+    ++alive;
+    ++constructed;
+  }
+  MoveOnlyNonAssignable& operator=(MoveOnlyNonAssignable&&) = delete;
+  ~MoveOnlyNonAssignable() noexcept { --alive; }
+
+  static inline int alive = 0;
+  static inline int constructed = 0;
+  int value;
+};
+
+struct ConcurrentMoveOnly {
+  explicit ConcurrentMoveOnly(std::uint64_t input) noexcept : value(input) {
+    alive.fetch_add(1, std::memory_order_relaxed);
+  }
+  ConcurrentMoveOnly(const ConcurrentMoveOnly&) = delete;
+  ConcurrentMoveOnly& operator=(const ConcurrentMoveOnly&) = delete;
+  ConcurrentMoveOnly(ConcurrentMoveOnly&& other) noexcept
+      : value(std::exchange(other.value, 0)) {
+    alive.fetch_add(1, std::memory_order_relaxed);
+  }
+  ConcurrentMoveOnly& operator=(ConcurrentMoveOnly&&) = delete;
+  ~ConcurrentMoveOnly() noexcept {
+    alive.fetch_sub(1, std::memory_order_relaxed);
+  }
+
+  static inline std::atomic<int> alive{0};
+  std::uint64_t value;
 };
 
 }  // namespace
@@ -137,6 +178,44 @@ TEST(BoundedQueue, TriviallyCopyablePayloadNeedNotBeAssignable) {
   TriviallyCopyableNonAssignable out{0};
   ASSERT_TRUE(q.try_pop(out));
   EXPECT_EQ(out.value, 42u);
+}
+
+TEST(BoundedQueue, OwnsMoveOnlyNonAssignableSlotLifetimes) {
+  EXPECT_EQ(MoveOnlyNonAssignable::alive, 0);
+  MoveOnlyNonAssignable::constructed = 0;
+  {
+    BoundedQueue<MoveOnlyNonAssignable> queue(2);
+    ASSERT_TRUE(queue.try_emplace(10));
+    ASSERT_TRUE(queue.try_emplace(20));
+    EXPECT_EQ(MoveOnlyNonAssignable::alive, 2);
+
+    const int constructed_before_full = MoveOnlyNonAssignable::constructed;
+    EXPECT_FALSE(queue.try_emplace(30));
+    EXPECT_EQ(MoveOnlyNonAssignable::constructed, constructed_before_full);
+
+    int sum = 0;
+    ASSERT_TRUE(queue.try_consume(
+        [&sum](MoveOnlyNonAssignable& item) noexcept { sum += item.value; }));
+    EXPECT_EQ(sum, 10);
+    EXPECT_EQ(MoveOnlyNonAssignable::alive, 1);
+    // The remaining live slot is destroyed by the quiescent queue destructor.
+  }
+  EXPECT_EQ(MoveOnlyNonAssignable::alive, 0);
+}
+
+TEST(BoundedQueue, MoveAssignablePayloadUsesNaturalPopShape) {
+  BoundedQueue<std::unique_ptr<int>> queue(2);
+  ASSERT_TRUE(queue.try_push(std::make_unique<int>(7)));
+  std::unique_ptr<int> output;
+  ASSERT_TRUE(queue.try_pop(output));
+  ASSERT_NE(output, nullptr);
+  EXPECT_EQ(*output, 7);
+
+  ASSERT_TRUE(queue.try_emplace(new int(11)));
+  ASSERT_TRUE(queue.try_emplace(new int(13)));
+  auto rejected = std::make_unique<int>(17);
+  EXPECT_FALSE(queue.try_push(std::move(rejected)));
+  EXPECT_NE(rejected, nullptr);
 }
 
 // Lock-free correctness gate (Windows stress; TSan deferred to Linux CI).
@@ -226,4 +305,55 @@ TEST(BoundedQueue, MpmcStressConservation) {
   }
   EXPECT_EQ(count, static_cast<std::size_t>(kTotal));
   EXPECT_EQ(seen.size(), static_cast<std::size_t>(kTotal));
+}
+
+TEST(BoundedQueue, MoveOnlyMpmcStressBalancesLifetimeAndConservesValues) {
+  constexpr int kProducers = 2;
+  constexpr int kConsumers = 2;
+  constexpr int kPerProducer = 25000;
+  constexpr int kTotal = kProducers * kPerProducer;
+
+  ConcurrentMoveOnly::alive.store(0, std::memory_order_relaxed);
+  BoundedQueue<ConcurrentMoveOnly, Allocator> queue(system_allocator(), 1024);
+  std::atomic<int> producers_done{0};
+  std::atomic<int> popped_count{0};
+  std::vector<std::vector<std::uint64_t>> received(kConsumers);
+  for (auto& values : received) values.reserve(kTotal);
+
+  std::vector<std::thread> threads;
+  for (int producer = 0; producer < kProducers; ++producer) {
+    threads.emplace_back([&, producer] {
+      const std::uint64_t base =
+          1 + static_cast<std::uint64_t>(producer) * kPerProducer;
+      for (int index = 0; index < kPerProducer; ++index) {
+        while (!queue.try_emplace(base + static_cast<std::uint64_t>(index)))
+          std::this_thread::yield();
+      }
+      producers_done.fetch_add(1, std::memory_order_release);
+    });
+  }
+  for (int consumer = 0; consumer < kConsumers; ++consumer) {
+    threads.emplace_back([&, consumer] {
+      for (;;) {
+        if (queue.try_consume([&](ConcurrentMoveOnly& item) noexcept {
+              received[consumer].push_back(item.value);
+              popped_count.fetch_add(1, std::memory_order_relaxed);
+            })) {
+          continue;
+        }
+        if (producers_done.load(std::memory_order_acquire) == kProducers &&
+            popped_count.load(std::memory_order_relaxed) == kTotal)
+          break;
+        std::this_thread::yield();
+      }
+    });
+  }
+  for (auto& thread : threads) thread.join();
+
+  std::unordered_set<std::uint64_t> seen;
+  seen.reserve(kTotal * 2);
+  for (const auto& values : received)
+    for (std::uint64_t value : values) EXPECT_TRUE(seen.insert(value).second);
+  EXPECT_EQ(seen.size(), static_cast<std::size_t>(kTotal));
+  EXPECT_EQ(ConcurrentMoveOnly::alive.load(std::memory_order_relaxed), 0);
 }

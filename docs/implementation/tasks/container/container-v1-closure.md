@@ -215,7 +215,8 @@ family 的证据；功能缺口集中在已有 family 的不完整生命周期�
 |---|---|---|
 | `CONTAINER-POD-01` | 已删除 C-era `carray.h`/header-before-data；`PodVector` allocation 只含 elements，typed owner 保存 allocator/size/capacity；Windows 定向与完整 container tests 已通过 | 随完整 candidate 执行 source/static/shared、跨平台、consumer replay 与统一性能/资源门 |
 | `CONTAINER-FLAT-01` | `SmallVector<T,0>` 具有无 dummy element 的合法空 storage；`FlatMap/Set` 空对象不再内嵌 K/V，增量 mutation 使用几何容量；Windows 定向、对象资源断言与完整 container tests 已通过 | 随完整 candidate 执行 sanitizer、跨平台、consumer replay 与统一 flat normal-workload 门 |
-| 其余五个冻结批次 | 尚未实现 | 只能按上方冻结顺序施工，不得扩面 |
+| `CONTAINER-MPMC-01` | Bounded/Sharded MPMC 以既有 sequence 作为 lifetime state，新增 noexcept placement `try_emplace`、move pop 与 callback consume；move-only stress/lifetime tests 通过；MSVC 19.50.35728 `/O2` trivial-u64 probe 对比 parent `3d094e84`：queue object 均为 `0x180`，外部 push/pop 的指令数与控制流不变；实际 `sched` target 编译及 21 项 RunQueue/Scheduler replay 通过 | 随完整 candidate 执行 TSan 与同合同 rigtorp 门 |
+| 其余四个冻结批次 | 尚未实现 | 只能按上方冻结顺序施工，不得扩面 |
 
 ## Candidate
 

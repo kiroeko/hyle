@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <new>
 #include <type_traits>
+#include <utility>
 
 #include "hyle/container/bounded_queue.h"
 #include "hyle/core/compiler.h"
@@ -45,14 +46,15 @@ namespace hyle::container {
 //     owns; the queue scans shards from it and updates it to where it found an item
 //     (spreads consumers across shards, avoids all consumers hammering shard 0).
 //
-// T must be trivially copyable (same constraint as the underlying BoundedQueue).
+// T has the same placement-lifetime and noexcept destruction/extraction contract
+// as the underlying BoundedQueue.
 // Alloc defaults to compile-time SystemAllocator ([[no_unique_address]] -> 0 bytes); each
 // shard is a BoundedQueue<T,Alloc> so the choice propagates. Pass mem::Allocator to opt in
 // (the scheduler does for its global inject queue).
 template <class T, class Alloc = mem::SystemAllocator>
 class ShardedQueue {
-  static_assert(std::is_trivially_copyable_v<T>,
-                "ShardedQueue<T>: T must be trivially copyable");
+  static_assert(std::is_nothrow_destructible_v<T>,
+                "ShardedQueue<T>: T must be nothrow destructible");
 
  public:
   // `num_shards` rings, each holding `cap_per_shard` (power of two >= 2) items.
@@ -86,18 +88,53 @@ class ShardedQueue {
   // Push `item` onto the shard chosen by `producer_hint`. Returns false if THAT
   // shard is full (a bounded-queue semantic: under skew one shard may fill while
   // others have room -- the caller retries / spills, same as the single ring).
-  bool try_push(std::size_t producer_hint, T item) noexcept {
+  template <class... Args>
+    requires std::is_nothrow_constructible_v<T, Args&&...>
+  bool try_emplace(std::size_t producer_hint, Args&&... args) noexcept {
+    return shards_[shard_index(producer_hint)].try_emplace(
+        std::forward<Args>(args)...);
+  }
+
+  bool try_push(std::size_t producer_hint, const T& item) noexcept
+    requires(std::is_trivially_copyable_v<T> ||
+             std::is_nothrow_copy_constructible_v<T>)
+  {
     return shards_[shard_index(producer_hint)].try_push(item);
+  }
+
+  bool try_push(std::size_t producer_hint, T&& item) noexcept
+    requires(std::is_trivially_copyable_v<T> ||
+             std::is_nothrow_move_constructible_v<T>)
+  {
+    return shards_[shard_index(producer_hint)].try_push(std::move(item));
   }
 
   // Pop the next item, scanning shards round-robin from `cursor`. On success
   // `cursor` advances PAST the shard that yielded, preserving round-robin
   // fairness even when one shard is continuously fed. Returns false only if
   // EVERY shard was empty at its check.
-  bool try_pop(std::size_t& cursor, T& out) noexcept {
+  bool try_pop(std::size_t& cursor, T& out) noexcept
+    requires(std::is_trivially_copyable_v<T> ||
+             std::is_nothrow_assignable_v<T&, T&&>)
+  {
     std::size_t s = shard_index(cursor);
     for (std::size_t i = 0; i < num_shards_; ++i) {
       if (shards_[s].try_pop(out)) {
+        cursor = s + 1;
+        if (cursor == num_shards_) cursor = 0;
+        return true;
+      }
+      if (++s == num_shards_) s = 0;
+    }
+    return false;
+  }
+
+  template <class Fn>
+    requires std::is_nothrow_invocable_v<Fn&&, T&>
+  bool try_consume(std::size_t& cursor, Fn&& consumer) noexcept {
+    std::size_t s = shard_index(cursor);
+    for (std::size_t i = 0; i < num_shards_; ++i) {
+      if (shards_[s].try_consume(std::forward<Fn>(consumer))) {
         cursor = s + 1;
         if (cursor == num_shards_) cursor = 0;
         return true;

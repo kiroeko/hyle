@@ -491,11 +491,18 @@ slot 上处理。析构前必须 join/quiesce 两端。
 `StealStatus::kOk/kEmpty/kRetry`，其中 retry 只是输掉本次竞争，不是取消。
 WsFifo 使用 `try_push_back`、`try_pop_front(out)`、`try_steal_into(target, out)`。
 失败时 out 保持原值；方向和 owner/thief 角色直接写在名称中，不再依靠记住实现细节。
-`BoundedQueue` 的 payload 只需 trivially-copyable，slot 保存对象表示，不额外要求默认
-构造或 copy assignment。两种 stealing queue 为保证环回 slot 的并发访问无数据竞争而
-使用 `std::atomic<T>`，并要求它 always lock-free；常见 pointer、整数和 word-sized handle
-满足，宽 task struct 请放在稳定 storage 中并传指针。它们的预分配 atomic slot 还要求 T
-可默认构造并满足标准 atomic 的 copy/move constructible/assignable 合同。
+`BoundedQueue` / `ShardedQueue` 在 producer 发布前原位构造 payload，在 winner consumer
+释放 slot 前销毁它，所以支持非平凡、move-only 且不可默认构造的 T。producer 使用
+`try_emplace` 或 `try_push`；可 move-assign 的 T 用 `try_pop(out)`，不可赋值的 T 用
+`try_consume(noexcept callback)`。MPMC 一旦 CAS 领取 position 就不能回滚，因此构造、析构和
+callback 必须 noexcept；full/empty 返回 false 时不构造、不移动参数。trivially-copyable T
+继续走 byte-copy 快路径，也不额外要求 assignment。析构前必须让全部 producer/consumer
+quiesce，queue 会销毁仍未取出的 live items。
+
+两种 stealing queue 为保证环回 slot 的并发访问无数据竞争而使用 `std::atomic<T>`，并要求它
+always lock-free；常见 pointer、整数和 word-sized handle 满足，宽 task struct 请放在稳定
+storage 中并传指针。它们的预分配 atomic slot 还要求 T 可默认构造并满足标准 atomic 的
+copy/move constructible/assignable 合同。
 
 `ConcurrentVector` 与 oneTBB 一样允许 writers 原子领取不同索引并并行构造，只有跨
 segment allocation 进入冷锁。安全模式是：writers join/quiesce 后遍历；append 返回后
@@ -520,6 +527,8 @@ range，因为它对 reservation count 取快照，并不额外发布仍在构�
   trait 仍不能证明自定义 Eq 比较每个 byte，故调用方必须另行保证
   `Eq(a,b) => bytes(a)==bytes(b)`。
 - `ShardedQueue` 不保证 global FIFO；work-stealing 两种队列也不提供 MPMC 的任意角色语义。
+- MPMC `try_consume` callback 必须 `noexcept` 且不能保存 slot 地址；CAS 已领取 dequeue
+  position，无法像 SPSC 那样在 callback 抛出后保留原 item。
 - `SpscQueue` 的 producer/consumer 角色不能各自增加第二个线程；`size_approx()` 只是监控
   快照，不是发布 fence，也不能代替 push/pop 成功值做控制流。
 - `RingDeque` / `ByteRingBuffer` 没有原子同步；不能用“只有一个 producer/consumer”作为

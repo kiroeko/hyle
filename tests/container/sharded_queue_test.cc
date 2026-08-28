@@ -2,7 +2,9 @@
 
 #include <atomic>
 #include <cstdint>
+#include <memory>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include "hyle/container/sharded_queue.h"
@@ -12,6 +14,25 @@
 using hyle::container::ShardedQueue;
 using hyle::mem::Allocator;
 using hyle::mem::system_allocator;
+
+namespace {
+
+struct ShardedMoveOnly {
+  explicit ShardedMoveOnly(int input) noexcept : value(input) { ++alive; }
+  ShardedMoveOnly(const ShardedMoveOnly&) = delete;
+  ShardedMoveOnly& operator=(const ShardedMoveOnly&) = delete;
+  ShardedMoveOnly(ShardedMoveOnly&& other) noexcept
+      : value(std::exchange(other.value, -1)) {
+    ++alive;
+  }
+  ShardedMoveOnly& operator=(ShardedMoveOnly&&) = delete;
+  ~ShardedMoveOnly() noexcept { --alive; }
+
+  static inline int alive = 0;
+  int value;
+};
+
+}  // namespace
 
 // ---- single-thread structure ------------------------------------------------
 
@@ -95,6 +116,37 @@ TEST(ShardedQueue, SingleShardDegeneratesToBoundedQueue) {
     EXPECT_EQ(v, i);  // FIFO
   }
   EXPECT_FALSE(q.try_pop(cur, v));  // empty
+}
+
+TEST(ShardedQueue, PropagatesMoveOnlyPlacementAndCallbackConsumption) {
+  EXPECT_EQ(ShardedMoveOnly::alive, 0);
+  {
+    ShardedQueue<ShardedMoveOnly> queue(2, 2);
+    ASSERT_TRUE(queue.try_emplace(0, 10));
+    ASSERT_TRUE(queue.try_emplace(1, 20));
+    std::size_t cursor = 0;
+    int sum = 0;
+    ASSERT_TRUE(queue.try_consume(
+        cursor, [&sum](ShardedMoveOnly& item) noexcept { sum += item.value; }));
+    ASSERT_TRUE(queue.try_consume(
+        cursor, [&sum](ShardedMoveOnly& item) noexcept { sum += item.value; }));
+    EXPECT_EQ(sum, 30);
+    EXPECT_EQ(ShardedMoveOnly::alive, 0);
+
+    ASSERT_TRUE(queue.try_emplace(0, 30));
+    // A live item left in any shard is owned and destroyed at quiescent teardown.
+  }
+  EXPECT_EQ(ShardedMoveOnly::alive, 0);
+}
+
+TEST(ShardedQueue, MoveAssignablePayloadUsesNaturalPopShape) {
+  ShardedQueue<std::unique_ptr<int>> queue(2, 2);
+  ASSERT_TRUE(queue.try_push(1, std::make_unique<int>(42)));
+  std::size_t cursor = 0;
+  std::unique_ptr<int> output;
+  ASSERT_TRUE(queue.try_pop(cursor, output));
+  ASSERT_NE(output, nullptr);
+  EXPECT_EQ(*output, 42);
 }
 
 // ---- MPMC conservation stress (the lock-free correctness gate) --------------

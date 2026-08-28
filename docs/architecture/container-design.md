@@ -266,6 +266,26 @@ move-only 值；不可 move-assign 的值通过 callback 消费。producer/consu
 线程，析构前必须 quiesce；`size_approx` 只用于 telemetry，不是跨线程完成栅栏。
 这是一种常用并发架构能力，不是为 benchmark 保存的旁路或常态 metadata。
 
+### BoundedQueue / ShardedQueue 的 typed MPMC 形状
+
+`BoundedQueue<T>` 保留 Vyukov/rigtorp 同族的 bounded MPMC sequence protocol：每次成功
+push/pop 以一个 position CAS 领取 slot，逐 slot sequence 的 acquire/release 发布对象生命期；
+capacity 是 power-of-two hard bound，构造后热路径不分配。`ShardedQueue<T>` 只组合多个同样
+的 ring，以 producer hint 分散 CAS cache line；代价是只有 shard 内 FIFO，不承诺 global FIFO。
+两者操作仍是 O(1) lock-free，sharded pop 最坏扫描 O(shards)。
+
+slot 的既有 raw storage 现在在 producer 发布前 placement-construct `T`，winner consumer 在
+释放 slot 前 destroy；sequence number 本身就是 lifetime 状态，没有新增 flag、pointer 或常态
+metadata。trivially-copyable payload 继续走原有 memcpy 路径；queue object/slot layout 和
+push/pop code shape 必须经过结构门，不能因泛化增加 hot lifetime 分支。non-trivial
+`try_emplace` 只在成功领取 slot 后构造，所以 full 不消费参数；构造与析构必须 noexcept。assignable T 可用
+`try_pop(out)`，不可赋值的 move-only T 用 `try_consume(noexcept callback)` 在 live slot 上处理。
+
+MPMC 与 SPSC 的异常边界不同：SPSC consumer 独占 read index，callback 抛出时可以不发布 pop；
+MPMC 一旦赢得 dequeue CAS 就不能回滚，因此 callback 必须 noexcept。两种 queue 都要求析构前
+producer/consumer quiesce；quiescent teardown 会销毁仍在 ring 中的 live T。stealing queue 的
+并发 slot 仍使用 `std::atomic<T>`，不能由这项能力推导成任意宽 payload。
+
 ### DynamicBitSet / SparseSet 的实际使用形状
 
 `DynamicBitSet` 对照 Boost dynamic_bitset 的常用面与 Folly 内部 frontier bitset 形状，保留
