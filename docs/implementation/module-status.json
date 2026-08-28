@@ -308,7 +308,7 @@
     },
     {
       "module": "math",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "round_id": "math-v1",
       "closure_task": "docs/implementation/tasks/math/math-v1-closure.md",
       "scope": "The scalar numeric math component, all four current public helpers, its component and package journey, and the scalar-versus-SIMD ownership boundary.",
@@ -323,14 +323,24 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "PASS",
         "mode": "STRUCTURAL",
-        "instrument_profile": "closure-correctness-v1"
+        "instrument_profile": "closure-correctness-v1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-math.md"
       },
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "math-v1 CANDIDATE 绑定 753ad5f3/93f7bf1a：integer ceil/round 已重塑为 checked + fail-fast 路线，无需求的浮点策略 helper 已删除；Windows correctness、自包含头、三交付、组件图与 P0 codegen 初验通过。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
+      "summary": "math-v1 VERIFIED：scalar integer 能力边界、checked/fail-fast API、正确性、三平台与三交付形状、文档、红队和 P0 结构性能均已通过；产品候选保持 753ad5f3/93f7bf1a。"
     },
     {
       "module": "time",

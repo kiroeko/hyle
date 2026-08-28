@@ -8,7 +8,7 @@
 > [`module-status.json`](../../module-status.json)。本轮先裁决 scalar math 与 SIMD 的边界；
 > capability map 和有限 `FIX` 集进入 `AUDITED` 前不改产品代码。
 
-## Closure card（`CANDIDATE`，scope 不变）
+## Closure card（`VERIFIED`，scope 与 candidate 不变）
 
 - component / owner / round ID：`math` / scalar numeric primitive owner / `math-v1`
 - task kind：`REFACTOR`
@@ -199,4 +199,6 @@ GoogleTest 源树，错误 HEAD override 被构建系统按预期拒绝，未被
 
 ## Closure decision
 
-尚未裁决。
+`VERIFIED`：全部适用 gate 为 `PASS`，没有 `FAIL/INCONCLUSIVE`。下一步只记录 immutable candidate
+的四项 LOC、terminal commit/limitations/reopen triggers，再执行 `VERIFIED -> CLOSED`；此阶段不授权
+产品修改。
