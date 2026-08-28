@@ -308,12 +308,14 @@
     },
     {
       "module": "math",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "round_id": "math-v1",
       "closure_task": "docs/implementation/tasks/math/math-v1-closure.md",
       "scope": "The scalar numeric math component, all four current public helpers, its component and package journey, and the scalar-versus-SIMD ownership boundary.",
       "non_goals": "SIMD lane/backend/batch implementation, linear algebra, FFT, geometry, random facilities, special-function libraries, model operators, C++23 standard-library mirrors, Native FFI/C API, stable C++ ABI and Formal certification.",
       "baseline_commit": "8652aa53c46ee28ff002bf301906c5ab4a148765",
+      "candidate_commit": "753ad5f304f52727c3ba925c9aac0a30f941502e",
+      "candidate_tree": "93f7bf1a996d6beabebe2b42801b086c483a18e6",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -328,7 +330,7 @@
       "formal_performance": {
         "state": "NONE"
       },
-      "summary": "math-v1 AUDITED：准入并补全 integer ceil/round 的 checked + fail-fast 路线，删除无消费者且语义含混的 sgn/approx_eq；C++23 标量与 SIMD 分工、PUBLIC core 依赖及交付集已冻结。"
+      "summary": "math-v1 CANDIDATE 绑定 753ad5f3/93f7bf1a：integer ceil/round 已重塑为 checked + fail-fast 路线，无需求的浮点策略 helper 已删除；Windows correctness、自包含头、三交付、组件图与 P0 codegen 初验通过。"
     },
     {
       "module": "time",

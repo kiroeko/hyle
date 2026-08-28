@@ -8,7 +8,7 @@
 > [`module-status.json`](../../module-status.json)。本轮先裁决 scalar math 与 SIMD 的边界；
 > capability map 和有限 `FIX` 集进入 `AUDITED` 前不改产品代码。
 
-## Closure card（`AUDITED`，scope 不变）
+## Closure card（`CANDIDATE`，scope 不变）
 
 - component / owner / round ID：`math` / scalar numeric primitive owner / `math-v1`
 - task kind：`REFACTOR`
@@ -125,7 +125,30 @@ capability request returns the task to scope; it is not appended to this batch.
 
 ## Candidate
 
-尚未形成。
+- product commit / tree：`753ad5f304f52727c3ba925c9aac0a30f941502e` /
+  `93f7bf1a996d6beabebe2b42801b086c483a18e6`。
+- 公开合同与 user journey：删除 `div_ceil/sgn/approx_eq`；新增同类型非 bool integral
+  `ceil_div/try_ceil_div`，保留并补全 `round_up_to_multiple`，新增
+  `try_round_up_to_multiple`。普通入口用于已验证程序不变量，checked 入口处理不可信
+  shape/count 并返回 `std::optional<T>`。
+- ownership / lifetime / concurrency / failure：全部是 stateless `constexpr` value function，没有 borrow、
+  allocation 或共享状态。负 signed value、非正 divisor/multiple 与不可表示 round-up 在
+  `try_` 路线返回 `nullopt`，普通路线使用 Core release-surviving fail-fast。
+- 算法 / 复杂度 / 常态 metadata：O(1)；quotient/remainder 避免 `a+b-1` 先行溢出，round-up
+  在加法前比较 `max-increment`。MSVC 19.50 `/O2` consumer 的 ceil、round 与 checked-round
+  每条路径均只有一次 `div`，零 heap/lock/indirect dispatch；普通路径只保留到 cold fail-fast
+  sink 的失败分支。
+- 直接消费者 / 依赖：产品消费者仍为 0；新 package sample 是交付 fixture。公开头直接
+  include Core assert，中央图与真实 target 同时投影 `math -> PUBLIC core`；没有 math-to-simd 边。
+- candidate tests：W1-WIN MSVC 19.50 Release + WERROR 组件闭包配置/构建通过；math normal +
+  header-self-contained 2/2；selected source/shared/static relocated consumer 各1/1；全中央组件图合同
+  `PASS`。WSL/Mac 与候选后最终门尚未在本节写成通过。
+- harness / tool identity：`closure-correctness-v1`；Windows build root
+  `C:\hyle-scratch\math-v1-win-60811bab`，selected/package root
+  `C:\hyle-scratch\math-v1-selected-smoke-60811bab`；一次性 codegen probe/source SHA-256
+  `c6dacce2afe6f31fc31951a7f18910a3e5841739f0ab9f8fcec33be58380cc58`，assembly SHA-256
+  `15f7f0f6dda07b74fd316158f6d870212d32411ff06a0bd94d33c886dd20f244`。这些 harness 事实不改变
+  product identity。
 
 ## Verification manifest
 
