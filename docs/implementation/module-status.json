@@ -308,7 +308,7 @@
     },
     {
       "module": "math",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "round_id": "math-v1",
       "closure_task": "docs/implementation/tasks/math/math-v1-closure.md",
       "scope": "The scalar numeric math component, all four current public helpers, its component and package journey, and the scalar-versus-SIMD ownership boundary.",
@@ -316,6 +316,8 @@
       "baseline_commit": "8652aa53c46ee28ff002bf301906c5ab4a148765",
       "candidate_commit": "753ad5f304f52727c3ba925c9aac0a30f941502e",
       "candidate_tree": "93f7bf1a996d6beabebe2b42801b086c483a18e6",
+      "end_commit": "8b7c55e6661994be08661eb13022fde9627cb6bb",
+      "registry_anchor_commit": "8b7c55e6661994be08661eb13022fde9627cb6bb",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -340,7 +342,29 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "summary": "math-v1 VERIFIED：scalar integer 能力边界、checked/fail-fast API、正确性、三平台与三交付形状、文档、红队和 P0 结构性能均已通过；产品候选保持 753ad5f3/93f7bf1a。"
+      "closure_evidence": "docs/implementation/tasks/math/math-v1-closure.md",
+      "loc": {
+        "snapshot_commit": "753ad5f304f52727c3ba925c9aac0a30f941502e",
+        "repository_code": 306687,
+        "self_with_tests": 124254,
+        "self_without_tests": 83119,
+        "module_implementation": 59
+      },
+      "known_limitations": [
+        "The component admits only same-type non-boolean non-negative integral tasks; callers own mixed-type conversion and negative rounding policy.",
+        "C++23 scalar math routes directly to the standard library, while lane, vector and buffer math remain owned by simd.",
+        "There is no current HYLE product syntax consumer; the package fixture proves delivery but carries no downstream performance claim.",
+        "Normal APIs retain an invalid-input fail-fast branch and MSVC may reserve ABI shadow space; untrusted values should use the checked try_ APIs.",
+        "Math is a header-only C++ component and provides no fabricated binary artifact, stable C++ ABI or consumerless Native FFI surface."
+      ],
+      "reopen_triggers": [
+        "A named consumer exposes a correctness, security, usability or missing-capability defect within the scalar math boundary.",
+        "The public API, algorithm, direct Core dependency or source, static or shared delivery shape changes.",
+        "A supported compiler or ISA introduces duplicate division, dynamic resources or a reproducible material regression in a normal consumer workload.",
+        "A mature same-contract peer proves a better complexity class or a reproducible material consumer advantage.",
+        "The frozen candidate or structural probe identity becomes unavailable when the engineering conclusion must be renewed."
+      ],
+      "summary": "math-v1 CLOSED：scalar integer 能力边界、checked/fail-fast API、正确性、三平台与三交付形状、文档、红队和 P0 结构性能全部签署；产品候选为 753ad5f3/93f7bf1a，SIMD 能力另行收口。"
     },
     {
       "module": "time",
