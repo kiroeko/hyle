@@ -21,7 +21,7 @@
 | mem | QUEUED | — | — | — | — | 现有实现与历史审查只作输入。 |
 | simd | QUEUED | — | — | — | — | 现有实现与历史审查只作输入。 |
 | container | QUEUED | — | — | — | — | 完整容器模块仍未审查；不能继承 intrusive 子组件的候选结论。 |
-| util | REOPENED | P0 | PASS / STRUCTURAL | NONE | [task](tasks/util/util-runtime-capability-replay-v1.md) | util-runtime-v1 的 Registry 结论经能力回放保持成立；demangle 缺两个成熟来源共同提供的 owning-text 常用路线，触发 UR-REPLAY-OWNING-TEXT-01，当前只重开该易用性切片。 |
+| util | SCOPED | P0 | PLANNED / STRUCTURAL | NONE | [task](tasks/util/util-runtime-v2-closure.md) | util-runtime-v2 已由 UR-REPLAY-OWNING-TEXT-01 进入 SCOPED：只补 owning demangle 与相关易用性/正确性/交付，不重构 Registry 或运行 timing benchmark。 |
 | sched | QUEUED | — | — | — | — | 现有实现只作输入；特化 waiter 链仍归 scheduler。 |
 | io | QUEUED | — | — | — | — | 现有实现只作输入；尚未启动 v1 收口。 |
 | compute | QUEUED | — | — | — | — | 实现尚不完整；前置与真实 consumer slice 建立前保持可变。 |

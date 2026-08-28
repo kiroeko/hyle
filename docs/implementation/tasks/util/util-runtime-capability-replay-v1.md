@@ -17,8 +17,9 @@
   `eabcba1fe1cffb484b20c377af0423028e2f9062` /
   `b2a07d8a60f8687ea8b305eda004e7bf2a003707` /
   `b2a07d8a60f8687ea8b305eda004e7bf2a003707`；
-- replay base：`5ca422c9f8041a613f6af7e7d47f56c30dc81c80`；reviewer：Codex；日期：
-  2026-08-28；
+- replay base / evidence commit：
+  `5ca422c9f8041a613f6af7e7d47f56c30dc81c80` /
+  `c9d8e9e60a2897ab672194e20f21665e2a26e2e7`；reviewer：Codex；日期：2026-08-28；
 - normal consumer：C++23 source/static/shared 用户在启动期登记和冻结少量 backend factory，在服务期
   按名查询/创建；日志、异常诊断和 backtrace 把运行期 mangled name 变成人可读文本；
 - north-star journey：量化推理引擎显式登记 CPU/GPU backend，初始化时解析一次实现并保留 typed

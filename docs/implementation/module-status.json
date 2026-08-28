@@ -300,18 +300,12 @@
     },
     {
       "module": "util",
-      "product_state": "REOPENED",
-      "reopen_trigger_id": "UR-REPLAY-OWNING-TEXT-01",
-      "reopen_evidence": "docs/implementation/tasks/util/util-runtime-capability-replay-v1.md",
-      "round_id": "util-runtime-v1",
-      "closure_task": "docs/implementation/tasks/util/util-runtime-capability-replay-v1.md",
-      "scope": "Registry and demangle runtime capabilities, their C++ API, ownership/lifetime/concurrency/failure and complexity, component dependency and source/static/shared delivery, direct consumer boundary, documentation and P0 cost structure.",
-      "non_goals": "Reopening util_core or closing dependencies, model/device semantics, dynamic module discovery/load/unload/quiescence, unregister, arbitrary captured factories, op/kernel dispatch policy, Native FFI/C API, benchmark-driven metadata and Formal certification.",
-      "baseline_commit": "d6ff8735f81d891050ddef90d4eee10600f43ab2",
-      "candidate_commit": "469356394a185b5201675fd76ff1a10a4050528b",
-      "candidate_tree": "eabcba1fe1cffb484b20c377af0423028e2f9062",
-      "end_commit": "b2a07d8a60f8687ea8b305eda004e7bf2a003707",
-      "registry_anchor_commit": "b2a07d8a60f8687ea8b305eda004e7bf2a003707",
+      "product_state": "SCOPED",
+      "round_id": "util-runtime-v2",
+      "closure_task": "docs/implementation/tasks/util/util-runtime-v2-closure.md",
+      "scope": "Owning std::string runtime demangle and type_info convenience, single platform-demangler execution per public call, affected correctness/usability/docs and current source/static/shared delivery.",
+      "non_goals": "Registry product changes, dynamic module lifecycle or ModuleManager, async-signal-safe parsing, allocator-aware string types, util target split, dependency closure, Native FFI/C API, timing/SOTA claims and adjacent-module closure.",
+      "baseline_commit": "c9d8e9e60a2897ab672194e20f21665e2a26e2e7",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -319,45 +313,14 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PASS",
+        "verdict": "PLANNED",
         "mode": "STRUCTURAL",
-        "instrument_profile": "closure-correctness-v1",
-        "evidence": "docs/implementation/tasks/util/util-runtime-v1-closure.md"
+        "instrument_profile": "closure-correctness-v1"
       },
       "formal_performance": {
         "state": "NONE"
       },
-      "gate_verdicts": {
-        "scope": "PASS",
-        "architecture": "PASS",
-        "correctness": "PASS",
-        "delivery": "PASS",
-        "usability_docs": "PASS",
-        "red_team": "PASS",
-        "engineering_performance": "PASS"
-      },
-      "closure_evidence": "docs/implementation/tasks/util/util-runtime-v1-closure.md",
-      "loc": {
-        "snapshot_commit": "469356394a185b5201675fd76ff1a10a4050528b",
-        "repository_code": 297318,
-        "self_with_tests": 122237,
-        "self_without_tests": 82124,
-        "module_implementation": 522
-      },
-      "known_limitations": [
-        "Keys are case-sensitive, enumeration order is unspecified, and FrozenView plus returned string views borrow Registry lifetime.",
-        "Registry does not own dynamic-module unload or quiescence; the module manager must drain objects and readers before destroying it.",
-        "Demangle is diagnostic-only and may pass through the original name or allocate/serialize inside the platform ABI.",
-        "The shared util component currently carries Registry's public dependency closure even though demangle is its only binary symbol; no material demangle-only consumer currently justifies another target.",
-        "P0 closure proves cost structure rather than end-to-end inference performance or timing SOTA."
-      ],
-      "reopen_triggers": [
-        "A real consumer exposes a correctness, security, ownership, API-usability or missing-capability defect within the util-runtime boundary.",
-        "Registry or demangle changes algorithm, public API, direct dependency, supported ABI/compiler semantics or delivery shape.",
-        "A direct dependency changes actual util-runtime semantics, or a mature same-contract peer proves a better complexity class.",
-        "A profile establishes material runtime impact, or a demangle-only consumer proves the current component closure materially wasteful."
-      ],
-      "summary": "util-runtime-v1 的 Registry 结论经能力回放保持成立；demangle 缺两个成熟来源共同提供的 owning-text 常用路线，触发 UR-REPLAY-OWNING-TEXT-01，当前只重开该易用性切片。"
+      "summary": "util-runtime-v2 已由 UR-REPLAY-OWNING-TEXT-01 进入 SCOPED：只补 owning demangle 与相关易用性/正确性/交付，不重构 Registry 或运行 timing benchmark。"
     },
     {
       "module": "sched",
