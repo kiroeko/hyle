@@ -39,7 +39,8 @@
 布局改动。`util` 回放发现 owning-demangle `PRODUCT_TRIGGER` 后已经由 v2 修复并重新 `CLOSED`；
 build/package 回放也已发现
 [`PRODUCT_TRIGGER`](tasks/build/build-package-capability-replay-v1.md)：selected-root configure 会扫描并
-受未选模块源码阻断，现进入有限 v5 修复轮。
+受未选模块源码阻断；[`v5`](tasks/build/build-system-v5-selected-closure.md) 已进入 `AUDITED` 并冻结
+selected-closure 局部修复。
 这项只读审计不会批量改写上表状态，只有发现真实 `PRODUCT_TRIGGER` 的单元才依法重开。`time` 已
 直接使用新格式，`platform/mem/obs` 将在各自正常轮次使用，不补签历史结论。
 

@@ -10,6 +10,7 @@
 - [Build/package system v3 current-tree 收口（CLOSED）](build-system-v3-current-tree.md)
 - [Build/package system v4 util 依赖边现树复签（CLOSED）](build-system-v4-util-edge-replay.md)
 - [Build/package 能力完整性存量回放（PRODUCT_TRIGGER）](build-package-capability-replay-v1.md)
+- [Build/package v5 selected-closure 修复（ACTIVE）](build-system-v5-selected-closure.md)
 - [模块收口状态机与统一性能仪器 v1](closure-system-v1.md)
 - [Formal 性能证据保留层 v1](perf-evidence-retention-v1.md)
 
