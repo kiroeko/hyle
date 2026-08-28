@@ -379,8 +379,30 @@
     },
     {
       "module": "mem",
-      "product_state": "QUEUED",
-      "summary": "现有实现与历史审查只作输入。"
+      "product_state": "SCOPED",
+      "round_id": "mem-v1",
+      "closure_task": "docs/implementation/tasks/mem/mem-v1-closure.md",
+      "scope": "Host-memory allocation and lifecycle primitives: allocator/PMR adapters, quota/stats, regions, fixed/growable/shared/typed pools, guarded fiber stacks and explicit huge-page/NUMA owners; C++ API, dependencies/consumers, delivery, documentation and bounded P1 engineering evidence.",
+      "non_goals": "Device/pinned/registered memory and coherence, KV/graph/io/scheduler policy, generic MemorySpace, stable C++ ABI, Native FFI/C API, downstream closure and Formal certification.",
+      "baseline_commit": "c04e12c7dd65ea5858314d9ebfbea841119225ae",
+      "performance_tier": "P1",
+      "validation_machine_profiles": [
+        "W1-WIN",
+        "W1-WSL",
+        "M1-MAC"
+      ],
+      "engineering_performance": {
+        "verdict": "PLANNED",
+        "mode": "P1_ENGINEERING",
+        "material_margin_pct": 5,
+        "machine_profile": "W1-WIN",
+        "instrument_profile": "closure-perf-v1"
+      },
+      "formal_performance": {
+        "state": "PENDING",
+        "instrument_profile": "formal-release-v1"
+      },
+      "summary": "mem-v1 已冻结 host-memory 边界、真实消费者形状、peer、P1 family、预算与停止规则；下一阶段只读完成能力/public-surface/依赖审计并冻结有限 FIX。"
     },
     {
       "module": "simd",
