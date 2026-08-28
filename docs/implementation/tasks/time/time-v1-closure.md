@@ -2,10 +2,12 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-> **当前阶段：`IMPLEMENTED`。** 本页是 `time-v1` 的唯一活动施工记录；既有 time task 与旧性能表只作
+> **当前阶段：`CANDIDATE`。** 本页是 `time-v1` 的唯一活动施工记录；既有 time task 与旧性能表只作
 > 历史输入。权威状态见 [`module-status.json`](../../module-status.json)。本轮不继承旧的 C ABI、
-> `SIGNED` 或 SOTA 结论；冻结的十项 `FIX` 已全部实现，P1 engineering performance 已
-> `QUALIFIED/PASS`，尚待 immutable candidate 上完成三平台 correctness/delivery/red-team 后关闭。
+> `SIGNED` 或 SOTA 结论；冻结的十项 `FIX` 已全部实现。product candidate 为
+> `0ef2544ceece030bb522857854285d280e368d36` / tree
+> `104a4b6dc904e5b261010ace820ec2c474374c31`；P1 engineering performance 已
+> `QUALIFIED/PASS`，三平台 correctness/delivery 已执行，待登记为 `VERIFIED`。
 
 ## Closure card（`SCOPED`）
 
@@ -170,7 +172,8 @@ benchmark-only public family；`CommonTimeoutQueueAccess` 是无人消费的旧 
 | `ab126c68` | `TIME-LEGACY-01` | 删除无人消费的 `CommonTimeoutQueueAccess` 和旧 C-adapter 叙事；产品面保持纯 C++ |
 | `4292b329` | `TIME-IO-ROUND-01` | Windows IOCP/Linux epoll 的有限 ns→ms ceil 改为 quotient/remainder + clamp，最大有限 timeout 不再 wrap 成 poll |
 | `0ef2544c` | `TIME-PERF-01` | 冻结 `scheduler-timer-lifecycle-64` source-consumer replay、faithful Seastar peer、双 execution/allocation order 与 primary/placement |
-| 当前文档批次 | `TIME-DOC-01` | architecture、guide、performance 只描述当前能力/决策/证据；删除 current C ABI、`NOT_REVIEWED` 和历史点值叙事 |
+| `b7c8bc41` | `TIME-DOC-01` | architecture、guide、performance 只描述当前能力/决策/证据；删除 current C ABI、`NOT_REVIEWED` 和历史点值叙事 |
+| `3b759eb6` | correctness artifact | Apple libc++ 不提供测试原先依赖的 `std::chrono::is_clock_v`；改为直接验证标准 Clock 必需 nested types、`now()` 返回类型、`noexcept` 与 steady contract，产品代码不变 |
 
 实现批次没有为了 benchmark 增加 public API、queue node metadata 或常态分支。新增 coarse/CPU clock 来自
 能力族审计；queue teardown 来自正常所有权旅程和 mature peer；IO rounding 是直接消费者的边界正确性
@@ -191,11 +194,12 @@ benchmark-only public family；`CommonTimeoutQueueAccess` 是无人消费的旧 
   `QUALIFIED`、`paths_verified=true`、`current_certification_policy_eligible=true`。详见
   [`benchmarks-time`](../../evidence/performance/benchmarks-time.md)。
 
-### 形成 candidate 前剩余工作
+### Candidate 后验证（已执行，待终态登记）
 
-1. 对当前文档/API 做链接、stale C/FFI、旧 teardown 和 public-header scan；提交文档批次。
-2. 记录 immutable candidate commit/tree；在该 candidate 上执行 W1-WIN、W1-WSL、M1-MAC 的适用
-   correctness/sanitizer/ISA 门。
-3. 验证 time-only source build、relocated static/shared SDK consumer，以及 platform/sched/io 代表性直接
-   消费者；执行 final red-team、clean-tree 与四项 LOC。
-4. 只有全部适用门通过，才把 `module-status.json` 和本页转为 `CLOSED`；Formal 保持 `PENDING`。
+1. 文档链接、stale C/FFI、旧 teardown、public-header 与 candidate→current product drift scan 已通过。
+2. W1-WIN MSVC、W1-WSL GCC 14.2 ASan/UBSan、M1-MAC AppleClang 21/ARM64 的适用 time tests 已通过；
+   TSan 对 single-owner queue 不适用，clock shared state 为标准线程安全初始化后的 immutable value，
+   不把现有单线程 test 的无意义 TSan 运行登记为 PASS。
+3. Windows/WSL/macOS 的 time-only source、relocated shared/static SDK consumer 均已通过；Windows/WSL
+   的 platform/sched/io 代表性测试各 4/4 通过。
+4. 四项 LOC、final red-team、registry/status/receipt 仍须写入；Formal 保持 `PENDING`。

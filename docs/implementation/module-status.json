@@ -253,12 +253,14 @@
     },
     {
       "module": "time",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "round_id": "time-v1",
       "closure_task": "docs/implementation/tasks/time/time-v1-closure.md",
       "scope": "Clock, Unix timestamp, deadline/sleep and intrusive timer capabilities; C++ API, direct dependencies/consumers, delivery, documentation and P1 engineering evidence.",
       "non_goals": "Calendar/time-zone/formatting, executor and periodic policy, cross-thread timer service, downstream closure, Native FFI/C API, stable C++ ABI and Formal certification.",
       "baseline_commit": "cb46d1183b7ed11757ab0661db893cdfd98b9f65",
+      "candidate_commit": "0ef2544ceece030bb522857854285d280e368d36",
+      "candidate_tree": "104a4b6dc904e5b261010ace820ec2c474374c31",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -276,7 +278,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "time-v1 已按能力族与现有公开面双向审计，发现既有能力的部分覆盖并冻结十项 ledger FIX（归并八个施工批次）；尚未形成 candidate。"
+      "summary": "time-v1 十项 FIX 已实现并冻结为 product candidate；后续只追加文档与测试，产品/API/性能合同未漂移。"
     },
     {
       "module": "platform",
