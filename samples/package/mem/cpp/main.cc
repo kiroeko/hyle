@@ -1,6 +1,7 @@
 #include <hyle/mem/pmr.h>
 #include <hyle/mem/quota_allocator.h>
 #include <hyle/mem/region.h>
+#include <hyle/mem/stats.h>
 
 #include <cstdint>
 #include <memory_resource>
@@ -21,5 +22,17 @@ int main() {
   table[1023] = 42;
   const bool wrote = table[1023] == 42;
   scratch.release();
-  return !wrote || quota.used() != 0 ? 3 : 0;
+  if (!wrote || quota.used() != 0) return 3;
+
+  const auto memory = hyle::mem::system_memory_snapshot();
+  if (!memory ||
+      memory->allocator_peak_reserved_bytes <
+          memory->allocator_reserved_bytes ||
+      memory->allocator_peak_committed_bytes <
+          memory->allocator_committed_bytes ||
+      memory->process_peak_resident_bytes < memory->process_resident_bytes ||
+      memory->process_peak_committed_bytes < memory->process_committed_bytes) {
+    return 4;
+  }
+  return 0;
 }
