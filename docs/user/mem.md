@@ -48,6 +48,11 @@ foreign ABI adapter。`allocate_n<T>` / `allocate_zeroed<T>` / `reallocate_n<T>`
 并允许显式 alignment；用同一个 alignment 调 `deallocate_n`。`reallocate_n` 失败或溢出时
 旧 allocation 仍然有效；因为底层 resize 可能按字节搬移，它只接受 trivially-copyable `T`，
 带构析/自引用状态的对象应新建 storage 后逐对象 move/销毁。
+`Allocator{}` 是刻意保留的 **invalid sentinel**，只能先检查 `valid()`、赋入一个有效 backing 或直接
+销毁；不能对它调用 allocate/deallocate/reallocate。普通默认 backing 应显式取
+`system_allocator()`。句柄还借用 callback state，所有经它取得的 allocation 都必须在该 state
+失效前归还。运行时注入会支付一次间接分派；不需要注入时，热点代码优先用
+`SystemAllocator`、`SystemStdAllocator<T>` 或 `system_memory_resource()` 的直接形状。
 原生 C++ allocate/deallocate/reallocate 的 alignment 必须是非零 2 次幂；allocate/reallocate 的
 非法值会 fail-fast。deallocate 还必须带回成功分配时相同的 size/alignment，和标准 allocator/PMR
 一样属于调用方前置条件：Debug 会诊断，Release 热路不重复检查。未来 binding wrapper 若接收

@@ -2,12 +2,13 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-> 当前阶段：`CANDIDATE`。本文是 mem 当前轮唯一 closure card 与施工记录；既有 mem task、设计页、
+> 当前阶段：`VERIFIED`。本文是 mem 当前轮唯一 closure card 与施工记录；既有 mem task、设计页、
 > guide 和性能页只作审计输入，不继承旧 `SIGNED`、Native FFI 或 SOTA 叙事。权威机械状态见
 > [`module-status.json`](../../module-status.json)。能力族、全部公开入口、真实消费者与绑定版本的成熟
 > 源码已经双向核对；本轮只实现下方冻结的九项 `FIX`，不得边施工扩面。产品/API 修复已落在
 > `0943c747`，三种交付 sample 对新冷快照的实调用落在 `2c71dfae`；产品/API candidate 已冻结，
-> 当前统一性能资格化已通过，只剩 exact-candidate correctness/delivery 复签、最终红队和机械状态迁移。
+> 当前统一性能资格化、exact-candidate correctness/delivery、最终红队均已通过；产品实现仍绑定
+> `2c71dfae`，只剩单独的 terminal receipt 与 `CLOSED` 机械状态迁移。
 
 ## Closure card（`SCOPED`）
 
@@ -283,15 +284,69 @@ backend seam 未被误算成用户能力。现有公开面没有 C schema、Nati
   固定 exact `formal_toolchain`；其产品行和全部工程 controls 都通过。该包未被复用或签署。Formal
   本来就是 closure card 明确的非目标和独立 `PENDING` 轴，不能为本轮临时改合同或反向阻塞 P1。
 
-### 尚待最终复签
+### Exact-candidate correctness 与交付复签
 
-Candidate 前 correctness/三平台/三交付已经通过，但最终 exact-candidate manifest、文档/tooling
-总检与独立红队尚未完成；这些项目完成前不得把本节改写为整体 `VERIFIED`。
+最终复签在 clean `af991e1890eae742161415419ee2af6584255184` 上完成；该 HEAD 相对 product
+candidate 只增加 benchmark、validator、文档与机械状态记录，`git diff 2c71dfae..af991e18 --
+include/hyle/mem src/mem samples/package/mem` 为空：
 
-## 独立红队
+- **W1-WIN / MSVC 19.50：**全新 shipping shared 与 `HYLE_TESTING=ON` instrumented build 的 mem
+  public-header/unit 2/2 PASS；source、relocated shared、relocated static 三种 consumer PASS；shared
+  DLL 有 HYLE snapshot 入口、零 `mi_*` vendor export，安装树含 HYLE/mimalloc notice；
+- **W1-WSL / GCC 14：**Release shared、ASan static、UBSan static 的 mem public-header/unit 2/2
+  PASS；mimalloc `MI_TSAN=1` 的 TSan static 运行 201 个非 death tests、33 suites PASS 且无 race；
+  death subprocess 只因 TSan runner 合同排除，已由 Windows instrumented 与 WSL Release 执行；
+  source、relocated shared、relocated static consumer PASS，ELF 零 `mi_*` vendor export；
+- **M1-MAC / AppleClang 21 arm64：**Release shared 与 ASan static 的 mem public-header/unit 2/2
+  PASS；Apple ASan 不支持 `detect_leaks=1`，同一二进制按平台能力用
+  `detect_leaks=0:abort_on_error=1` 重跑 PASS，不把不支持的 leak option 伪记为产品失败；source、
+  relocated shared、relocated static consumer PASS，deployment target 14.4、Mach-O 零 `_mi_*` export；
+- 三平台交付 sample 都实调用 `system_memory_snapshot()`；中央 `mem PUBLIC core error platform
+  util_core` 与 public include owner 对账，mimalloc 仍是 private implementation dependency；
+- `check-module-closure.py`、`check-docs.py`、两份 contract validate 和两份 bundle 的独立 deep
+  verify 全部 PASS。原始本地输出位于 closure card 已登记的 W1/M1 scratch；它们是可重放工程
+  artifact，不冒充 Formal 发布证书。
 
-尚未执行。
+## 验证矩阵（`VERIFIED`，2026-08-28）
+
+| Gate | Verdict | 证据与边界 |
+|---|---|---|
+| scope / capability | `PASS` | 十个能力族全部 public surface 已双向追踪；本轮九项 `FIX` 全部关闭；通用 growable variable pool 有完整标准 PMR route，device/KV/staging/runtime policy 有明确 owner |
+| architecture / API | `PASS` | host/device、semantic/artifact/delivery owner 分开；C++ owner/view、OOM、sized-free、reset、cache publish、NUMA soft/hard 与 direct/runtime 选型在头文件、architecture 和 guide 一致；candidate 后无产品 drift |
+| correctness | `PASS` | W1-WIN shipping/instrumented，W1-WSL Release/ASan/UBSan/TSan，M1-MAC Release/ASan 的适用 mem suite 与 public headers PASS；边界/OOM/lifetime/fragmentation/remote-free/NUMA fallback 均有对应测试 |
+| delivery / dependencies | `PASS` | 三平台 source、relocated static/shared consumer PASS；中央 direct edge 与真实 target/public include 对账；mimalloc lock/license/offline 投影与动态 vendor-symbol hiding PASS |
+| direct consumers | `PASS` | package sample 实调用新 snapshot；container/util/sched/io/compute/graph seam 在 candidate 施工期编译/测试，最终产品 diff 为零；不替尚未收口的上层组件签整体结论 |
+| usability / docs | `PASS` | 选择表覆盖全部能力族；guide 明示 invalid allocator、borrow lifetime、direct/runtime 成本、异常/null、bulk invalidation、cache、NUMA 与统计陷阱；当前性能页不保留旧总分或泛化 SOTA |
+| engineering performance | `PASS` | W1-WIN `closure-perf-v1`、5% NI；owner 4 strata 与 handoff 8 strata 的全部 product row 为 `WIN + NI PASS`，A/A、5/10% delta、floor、placement、artifact/build/source/peer/resource validators 全 PASS |
+| red team | `PASS` | 下表 finding 全部 fixed/disproved/accepted，无 correctness、security、delivery、usability 或 P1 blocker；没有为点值改 API/layout/metadata |
+
+## Final red-team
+
+- reviewer / date / budget：Codex（root）/ 2026-08-28 / 30 分钟只读终审；没有新增 workload、peer、
+  第五种 benchmark 姿势或产品修改；
+- 检查面：candidate→HEAD product drift、全部 public family、ownership/failure/concurrency、依赖与
+  三种交付、性能同合同/controls/resource、用户陷阱、过时 C/Native FFI 与泛化 SOTA 叙事。
+
+| Finding | Severity | Disposition | Evidence |
+|---|---|---|---|
+| `Allocator{}` 的 invalid sentinel 与 backing 借用寿命只在头文件隐含，guide 不够直接 | usability documentation | `FIXED`；guide 明示先 `valid()`/赋有效 backing、不得调用 invalid handle，并给出 direct/runtime 选型 | `docs/user/mem.md`；实现/API/layout 不变 |
+| runtime-erased `Allocator` 相对同 backing direct route 慢 11.1%–13.4% | expected mechanism cost | `ACCEPTED/NOT_COMPARABLE`；一次 indirect dispatch，有 runtime injection 才使用；三条自然 direct API 已公开 | owner bundle mechanism row；未为 benchmark 放大 handle 或增加 metadata |
+| Marl 锁定 header 的公开 `tryBorrow()` 含一行写入已删除 field | peer build integrity | `FIXED IN HARNESS`；build-local overlay 只删陈旧赋值并改 sibling include，算法/同步不变，source 与 overlay hash 均 fail-closed | handoff contract、validator 与 clean peer checkout |
+| 全新 Windows static consumer 未自动找到 oneTBB runtime DLL | harness delivery | `FIXED IN HARNESS`；精确 `TBB::tbb`/`TBB::tbbmalloc` runtime stage 到 benchmark 旁后全新目录通过 | owner probe r1 fail-closed、r2 与正式 fresh bundle PASS |
+| `--formal` 被误用于没有 exact formal toolchain 的工程 profile | operator/profile mismatch | `DISPROVED AS PRODUCT FAILURE`；该包按设计 `DIAGNOSTIC/FAIL` 且未签署，正确 engineering run 独立 PASS | Formal 是 closure card 非目标及独立 `PENDING` 轴 |
+| 只有单节点开发机，无法证明跨 socket placement/bandwidth | claim integrity | `ACCEPTED LIMITATION`；只签 selected-node/chunk API、rollback、复杂度和 single-node fallback | guide/architecture/performance 均明确不外推物理多节点 SOTA |
+
+没有未解决的产品或证据 blocker。owner 比较的 candidate/peer 使用相同尺寸、对齐、触碰和释放；
+Region 共用同一 runtime upstream 并单列 retention；handoff 两边都是 256 hard slots、64 个 scoped loan
+和远端析构；fiber 使用相同 scheduler/callback/guard/stack tier，仅改变 bounded reuse 与 direct VM。
 
 ## Closure decision
 
-尚未裁决。
+本轮已满足 `VERIFIED`：scope、architecture/API、correctness、delivery/dependencies、direct consumer、
+usability/docs、engineering performance 与 red-team 八项 aggregate gate 全部 `PASS`，九项 ledger
+`FIX` 全部关闭，没有 material `MUST`、正确性、安全、交付或 P1 blocker。产品 candidate 仍为
+`2c71dfae9f4fb43ff0d68e5c1a4c55099fc0f101` / tree
+`fc02363512a0807f4d46bb57427eae4137ea39fd`；Formal 保持独立 `PENDING`。
+
+下一提交只登记 terminal receipt、可接受限制、reopen trigger、candidate LOC 与中央 `CLOSED`；不得
+再修改产品、正常 workload 或性能合同。
