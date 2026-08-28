@@ -514,6 +514,11 @@ oneTBB 同级的常用快路径。writers quiesce 后可直接 range-for；itera
 iterator，并在 `++` 时缓存当前 segment 指针。不要在 writers 活跃时创建全量 iterator
 range，因为它对 reservation count 取快照，并不额外发布仍在构造的 tail。
 
+空 `ConcurrentVector` 只嵌入三个 segment pointers；需要第四个 segment 时才分配 extended
+pointer table。该 table 是增长实现细节，不改变元素地址。writers quiesce 后可调用 `clear()`：
+它销毁全部 live T、令 `size()==0`，但保留 capacity 供下一轮 append 复用；所有旧 pointer/
+reference/iterator 都失效。`clear()` 与析构都不能和任何 reader/writer 并发。
+
 ## 常见坑
 
 - 独立 `IntrusiveList` 的 ownership、同步与失效陷阱统一见

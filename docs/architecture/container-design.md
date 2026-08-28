@@ -286,6 +286,24 @@ MPMC 一旦赢得 dequeue CAS 就不能回滚，因此 callback 必须 noexcept�
 producer/consumer quiesce；quiescent teardown 会销毁仍在 ring 中的 live T。stealing queue 的
 并发 slot 仍使用 `std::atomic<T>`，不能由这项能力推导成任意宽 payload。
 
+### ConcurrentVector 的 stable segmented append
+
+`ConcurrentVector<T>` 对照 oneTBB 的 stable segmented address 与 reservation-count publication
+模型：writer 先取得唯一 index，跨 capacity 时才进入冷 grow lock；segment 一旦分配永不移动，
+所以 append 为摊还 O(1)，按 index 访问 O(1)。`size()` 是 reservation count，不是完成 fence；
+writers 活跃时只能读取已知完成的 prefix，或读取自己已返回的 append index，完整遍历必须先
+join/quiesce。
+
+空 owner 不再固定携带 48 个 pointers。前三个 segment pointers 嵌入对象，只有申请 segment 3
+时才一次性分配完整 pointer table；table、新 segment 与 capacity 在同一个 release publication
+前完成，既不移动旧元素，也不向每个 append 增加 metadata/atomic。prefix reader 只读取对应的
+immutable segment slot，不读取 grow-lock-owned segment count。fallible growth 仍先完成 table/
+segment allocation 再领取 index，任何 OOM 都不会留下永久洞。
+
+`clear()` 只允许 writers quiesced 后调用：它销毁 `[0,size())` 的 live elements 并把 reservation
+count 归零，但保留 segments/table 以便后续 append 不重新分配；旧 iterator/reference 全部失效。
+析构同样要求 quiescence，并在 clear 后释放全部 segment 与 extended table。
+
 ### DynamicBitSet / SparseSet 的实际使用形状
 
 `DynamicBitSet` 对照 Boost dynamic_bitset 的常用面与 Folly 内部 frontier bitset 形状，保留
@@ -536,7 +554,8 @@ runtime-erased bridge、动态导出、symbol manifest 和 C/managed fixture；N
 ## 下游利用
 
 - sched 使用 ShardedQueue、WsFifoQueue、WorkStealingDeque 等调度原语。
-- graph/sched 使用 ConcurrentVector 类 append-only 发布结构。
+- `ConcurrentVector` 当前没有仓库内产品直接消费者；其准入来自并行 metadata/tensor-index build
+  的已命名推理/工程 workload，不能把 benchmark 当成下游使用证明。
 - time 直接通过 `hyle::container_intrusive` 使用 safe-link 原语，不经完整 container 取得该能力；
   sched 因 detached wake-link 复用保留专用链，裁决见
   [`container-intrusive-design`](container-intrusive-design.md)。

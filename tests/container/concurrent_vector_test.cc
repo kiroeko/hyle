@@ -3,9 +3,11 @@
 #include <gtest/gtest.h>
 
 #include <atomic>
+#include <iterator>
 #include <memory>
 #include <thread>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include "hyle/mem/allocator.h"
@@ -17,6 +19,7 @@ using hyle::mem::system_allocator;
 static_assert(std::random_access_iterator<ConcurrentVector<int>::iterator>);
 static_assert(
     std::random_access_iterator<ConcurrentVector<int>::const_iterator>);
+static_assert(sizeof(ConcurrentVector<int>) < 48 * sizeof(int*));
 
 namespace {
 void* fail_alloc(void*, std::size_t, std::size_t) noexcept { return nullptr; }
@@ -25,12 +28,127 @@ void* fail_realloc(void*, void*, std::size_t, std::size_t,
                    std::size_t) noexcept {
   return nullptr;
 }
+
+struct TrackingAllocatorState {
+  Allocator backing = system_allocator();
+  std::size_t allocation_calls = 0;
+  std::size_t fail_on_call = static_cast<std::size_t>(-1);
+  std::size_t live_allocations = 0;
+  std::size_t sizes[16]{};
+};
+
+void* tracking_allocate(void* raw, std::size_t size,
+                        std::size_t alignment) noexcept {
+  auto* state = static_cast<TrackingAllocatorState*>(raw);
+  const std::size_t call = ++state->allocation_calls;
+  if (call <= std::size(state->sizes)) state->sizes[call - 1] = size;
+  if (call == state->fail_on_call) return nullptr;
+  void* result = state->backing.allocate(size, alignment);
+  if (result != nullptr) ++state->live_allocations;
+  return result;
+}
+
+void tracking_free(void* raw, void* pointer, std::size_t size,
+                   std::size_t alignment) noexcept {
+  auto* state = static_cast<TrackingAllocatorState*>(raw);
+  if (pointer != nullptr) --state->live_allocations;
+  state->backing.deallocate(pointer, size, alignment);
+}
+
+void* tracking_reallocate(void* raw, void* pointer, std::size_t old_size,
+                          std::size_t new_size,
+                          std::size_t alignment) noexcept {
+  auto* state = static_cast<TrackingAllocatorState*>(raw);
+  return state->backing.reallocate(pointer, old_size, new_size, alignment);
+}
+
+Allocator tracking_allocator(TrackingAllocatorState& state) {
+  return Allocator(tracking_allocate, tracking_free, tracking_reallocate,
+                   &state);
+}
+
+struct ClearCounted {
+  explicit ClearCounted(int input) noexcept : value(input) { ++alive; }
+  ClearCounted(const ClearCounted&) = delete;
+  ClearCounted& operator=(const ClearCounted&) = delete;
+  ClearCounted(ClearCounted&& other) noexcept
+      : value(std::exchange(other.value, -1)) {
+    ++alive;
+  }
+  ClearCounted& operator=(ClearCounted&&) = delete;
+  ~ClearCounted() noexcept { --alive; }
+
+  static inline int alive = 0;
+  int value;
+};
 }  // namespace
 
 TEST(ConcurrentVector, EmptyOnConstruction) {
   ConcurrentVector<int> v;
   EXPECT_EQ(v.size(), 0u);
   EXPECT_TRUE(v.empty());
+}
+
+TEST(ConcurrentVector, SegmentTablePromotesOnlyAfterThreeSegments) {
+  TrackingAllocatorState state;
+  {
+    ConcurrentVector<int, Allocator> values(tracking_allocator(state), 1);
+    EXPECT_EQ(state.allocation_calls, 0u);
+    ASSERT_TRUE(values.try_reserve(7));
+    ASSERT_EQ(state.allocation_calls, 3u);
+    EXPECT_EQ(state.sizes[0], sizeof(int));
+    EXPECT_EQ(state.sizes[1], 2 * sizeof(int));
+    EXPECT_EQ(state.sizes[2], 4 * sizeof(int));
+
+    ASSERT_TRUE(values.try_reserve(8));
+    ASSERT_EQ(state.allocation_calls, 5u);
+    EXPECT_GT(state.sizes[3], 3 * sizeof(int*));
+    EXPECT_EQ(state.sizes[4], 8 * sizeof(int));
+  }
+  EXPECT_EQ(state.live_allocations, 0u);
+}
+
+TEST(ConcurrentVector, FailedTablePromotionPreservesCapacityAndValues) {
+  TrackingAllocatorState state;
+  ConcurrentVector<int, Allocator> values(tracking_allocator(state), 1);
+  ASSERT_TRUE(values.try_reserve(7));
+  for (int value = 0; value < 7; ++value) values.emplace_back(value);
+
+  state.fail_on_call = state.allocation_calls + 1;
+  EXPECT_FALSE(values.try_reserve(8));
+  EXPECT_EQ(values.capacity(), 7u);
+  EXPECT_EQ(values.size(), 7u);
+  for (int value = 0; value < 7; ++value) EXPECT_EQ(values[value], value);
+
+  state.fail_on_call = static_cast<std::size_t>(-1);
+  EXPECT_TRUE(values.try_reserve(8));
+  EXPECT_GE(values.capacity(), 8u);
+}
+
+TEST(ConcurrentVector, ClearDestroysValuesAndRetainsReusableSegments) {
+  ClearCounted::alive = 0;
+  TrackingAllocatorState state;
+  {
+    ConcurrentVector<ClearCounted, Allocator> values(tracking_allocator(state),
+                                                      1);
+    for (int value = 0; value < 40; ++value) values.emplace_back(value);
+    const std::size_t capacity = values.capacity();
+    const std::size_t allocation_calls = state.allocation_calls;
+    EXPECT_EQ(ClearCounted::alive, 40);
+
+    values.clear();
+    EXPECT_TRUE(values.empty());
+    EXPECT_EQ(values.capacity(), capacity);
+    EXPECT_EQ(ClearCounted::alive, 0);
+
+    for (int value = 0; value < 40; ++value) values.emplace_back(value + 100);
+    EXPECT_EQ(state.allocation_calls, allocation_calls);
+    EXPECT_EQ(ClearCounted::alive, 40);
+    for (int value = 0; value < 40; ++value)
+      EXPECT_EQ(values[value].value, value + 100);
+  }
+  EXPECT_EQ(ClearCounted::alive, 0);
+  EXPECT_EQ(state.live_allocations, 0u);
 }
 
 TEST(ConcurrentVector, AppendAndIndex) {

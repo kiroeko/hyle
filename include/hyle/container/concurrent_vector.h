@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <iterator>
+#include <memory>
 #include <mutex>
 #include <new>
 #include <type_traits>
@@ -95,7 +96,7 @@ class ConcurrentVector {
         ++segment_;
         segment_begin_ = segment_end_;
         segment_end_ += owner_->segment_capacity(segment_);
-        pointer_ = owner_->segments_[segment_];
+        pointer_ = owner_->segment_at(segment_);
       } else {
         ++pointer_;
       }
@@ -177,7 +178,7 @@ class ConcurrentVector {
       segment_ = segment;
       segment_begin_ = index_ - offset;
       segment_end_ = segment_begin_ + owner_->segment_capacity(segment_);
-      pointer_ = owner_->segments_[segment_] + offset;
+      pointer_ = owner_->segment_at(segment_) + offset;
     }
 
     Owner* owner_ = nullptr;
@@ -206,14 +207,14 @@ class ConcurrentVector {
   }
 
   ~ConcurrentVector() {
-    const std::size_t count = size_.load(std::memory_order_relaxed);
-    if constexpr (!std::is_trivially_destructible_v<T>) {
-      for (std::size_t i = 0; i < count; ++i) (*this)[i].~T();
-    }
+    clear();
     for (std::uint32_t k = 0; k < num_segments_; ++k) {
-      if (segments_[k] != nullptr)
-        alloc_.deallocate_n(segments_[k], segment_capacity(k));
+      T* segment = segment_at(k);
+      if (segment != nullptr)
+        alloc_.deallocate_n(segment, segment_capacity(k));
     }
+    if (extended_segments_ != nullptr)
+      alloc_.deallocate_n(extended_segments_, max_segments());
   }
 
   ConcurrentVector(const ConcurrentVector&) = delete;
@@ -232,9 +233,30 @@ class ConcurrentVector {
       if (k >= max_segments()) return false;
       const std::size_t segment_count = segment_capacity(k);
       if (segment_count > static_cast<std::size_t>(-1) - current) return false;
+
+      T** promoted_table = nullptr;
+      if (k == kEmbeddedSegments && extended_segments_ == nullptr) {
+        const std::size_t table_size = max_segments();
+        promoted_table = alloc_.template allocate_n<T*>(table_size);
+        if (promoted_table == nullptr) return false;
+        for (std::size_t i = 0; i < table_size; ++i)
+          std::construct_at(promoted_table + i, nullptr);
+        for (std::uint32_t i = 0; i < kEmbeddedSegments; ++i)
+          promoted_table[i] = embedded_segments_[i];
+      }
+
       T* values = alloc_.template allocate_n<T>(segment_count);
-      if (values == nullptr) return false;
-      segments_[k] = values;
+      if (values == nullptr) {
+        if (promoted_table != nullptr)
+          alloc_.deallocate_n(promoted_table, max_segments());
+        return false;
+      }
+      if (promoted_table != nullptr) {
+        promoted_table[k] = values;
+        extended_segments_ = promoted_table;
+      } else {
+        store_segment(k, values);
+      }
       num_segments_ = k + 1;
       current += segment_count;
       capacity_.store(current, std::memory_order_release);
@@ -254,7 +276,7 @@ class ConcurrentVector {
     const std::size_t index = reserve_index();
     if (index == npos) return npos;
     const auto [segment, offset] = locate(index);
-    ::new (static_cast<void*>(segments_[segment] + offset))
+    ::new (static_cast<void*>(segment_at(segment) + offset))
         T(std::forward<Args>(args)...);
     return index;
   }
@@ -270,7 +292,7 @@ class ConcurrentVector {
     if (HYLE_UNLIKELY(index >= capacity_.load(std::memory_order_acquire)))
       reserve(index + 1);
     const auto [segment, offset] = locate(index);
-    ::new (static_cast<void*>(segments_[segment] + offset))
+    ::new (static_cast<void*>(segment_at(segment) + offset))
         T(std::forward<Args>(args)...);
     return index;
   }
@@ -296,11 +318,11 @@ class ConcurrentVector {
   // synchronization described above; indexing itself is a plain read.
   T& operator[](std::size_t index) noexcept {
     const auto [segment, offset] = locate(index);
-    return segments_[segment][offset];
+    return segment_at(segment)[offset];
   }
   const T& operator[](std::size_t index) const noexcept {
     const auto [segment, offset] = locate(index);
-    return segments_[segment][offset];
+    return segment_at(segment)[offset];
   }
 
   // Iteration snapshots the reservation count. Use it only after writers have
@@ -337,9 +359,26 @@ class ConcurrentVector {
     return capacity_.load(std::memory_order_acquire);
   }
 
+  // Destroy every completed element after all writers have quiesced. Segment
+  // allocations and the promoted pointer table are retained, so subsequent
+  // appends reuse capacity without allocation. All prior references/iterators
+  // become invalid even when their addresses are reused.
+  void clear() noexcept {
+    std::lock_guard<std::mutex> guard(grow_lock_);
+    const std::size_t count = size_.load(std::memory_order_relaxed);
+    if constexpr (!std::is_trivially_destructible_v<T>) {
+      for (std::size_t i = count; i != 0; --i)
+        std::destroy_at(std::addressof((*this)[i - 1]));
+    }
+    size_.store(0, std::memory_order_relaxed);
+  }
+
  private:
-  // 48 doubling segments cover >2^48 values from a one-element base while
-  // keeping the fixed pointer table modest. 32-bit builds clamp earlier.
+  // Match oneTBB's normal object shape: three segment pointers cover the common
+  // small vector, and a complete table is allocated only when segment 3 is
+  // needed. 48 doubling segments cover >2^48 values from a one-element base;
+  // 32-bit builds clamp earlier.
+  static constexpr std::uint32_t kEmbeddedSegments = 3;
   static constexpr std::uint32_t kMaxSegments = 48;
 
   void init_first_segment(std::size_t initial_capacity) noexcept {
@@ -374,6 +413,23 @@ class ConcurrentVector {
     return {segment, index - prefix};
   }
 
+  T* segment_at(std::uint32_t segment) const noexcept {
+    // Do not validate against num_segments_: readers of a completed prefix may
+    // run while a writer grows a different segment, and num_segments_ is owned
+    // by the cold growth lock. The index contract plus locate() proves this
+    // compile-time table bound without adding a racing hot read.
+    HYLE_ASSUME(segment < kMaxSegments);
+    return segment < kEmbeddedSegments ? embedded_segments_[segment]
+                                       : extended_segments_[segment];
+  }
+
+  void store_segment(std::uint32_t segment, T* values) noexcept {
+    if (segment < kEmbeddedSegments)
+      embedded_segments_[segment] = values;
+    else
+      extended_segments_[segment] = values;
+  }
+
   std::size_t reserve_index() noexcept {
     std::size_t candidate = size_.load(std::memory_order_relaxed);
     for (;;) {
@@ -397,7 +453,8 @@ class ConcurrentVector {
   std::mutex grow_lock_;
   std::uint32_t first_shift_ = 0;
   std::uint32_t num_segments_ = 0;
-  T* segments_[kMaxSegments] = {};
+  T* embedded_segments_[kEmbeddedSegments] = {};
+  T** extended_segments_ = nullptr;
 };
 
 }  // namespace hyle::container
