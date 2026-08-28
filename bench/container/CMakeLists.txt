@@ -152,3 +152,80 @@ hyle_register_benches(container
 hyle_register_benches(container
   hyle_container_spsc_bench
   hyle_container_flat_sorted_bench)
+
+# Current closure-perf-v1 adapter. Legacy breadth benchmarks above remain
+# useful diagnostics; this target contains only the five frozen normal-use
+# replays admitted by container-v1. It is opt-in because all four source-pinned
+# peers must be present and clean for the unified runner.
+option(HYLE_CONTAINER_P1_BENCH
+  "build the container-v1 closure-perf adapter" OFF)
+if(HYLE_CONTAINER_P1_BENCH)
+  if(NOT HYLE_STATIC OR NOT HYLE_BENCH_ABSL OR NOT HYLE_BENCH_BOOST OR
+     NOT HYLE_BENCH_RIGTORP)
+    message(FATAL_ERROR
+      "HYLE_CONTAINER_P1_BENCH requires HYLE_STATIC plus the Abseil, Boost, "
+      "and rigtorp benchmark peers")
+  endif()
+
+  set(HYLE_XXHASH_PEER_DIR "${PROJECT_SOURCE_DIR}/../xxHash" CACHE PATH
+      "source-pinned upstream xxHash checkout for container P1")
+  if(NOT EXISTS "${HYLE_XXHASH_PEER_DIR}/xxhash.h")
+    message(FATAL_ERROR
+      "HYLE_CONTAINER_P1_BENCH requires xxhash.h in "
+      "${HYLE_XXHASH_PEER_DIR}")
+  endif()
+  if(NOT EXISTS
+      "${HYLE_BOOST_DIR}/libs/dynamic_bitset/include/boost/dynamic_bitset.hpp")
+    message(FATAL_ERROR
+      "HYLE_CONTAINER_P1_BENCH requires Boost.DynamicBitset in "
+      "${HYLE_BOOST_DIR}")
+  endif()
+
+  function(_hyle_configure_container_p1_bench target)
+    target_link_libraries(${target} PRIVATE
+      hyle_container
+      nanobench
+      hyle_bench_boost_headers
+      absl::flat_hash_map
+      absl::inlined_vector)
+    target_include_directories(${target} SYSTEM PRIVATE
+      "${HYLE_BOOST_DIR}/libs/dynamic_bitset/include"
+      "${HYLE_BOOST_DIR}/libs/container_hash/include"
+      "${HYLE_BOOST_DIR}/libs/describe/include"
+      "${HYLE_BOOST_DIR}/libs/mp11/include"
+      "${HYLE_BOOST_DIR}/libs/throw_exception/include"
+      "${HYLE_BOOST_DIR}/libs/type_traits/include"
+      "${HYLE_RIGTORP_DIR}/include")
+    target_include_directories(${target} SYSTEM BEFORE PRIVATE
+      "${HYLE_XXHASH_PEER_DIR}")
+    target_compile_definitions(${target} PRIVATE
+      HYLE_BENCH_ABSL
+      HYLE_BENCH_BOOST
+      HYLE_BENCH_RIGTORP
+      HYLE_BENCH_XXHASH)
+    set_property(TARGET ${target} PROPERTY INTERPROCEDURAL_OPTIMIZATION FALSE)
+    hyle_mark_absl_benchmark_consumer(${target})
+    hyle_apply_warnings(${target})
+  endfunction()
+
+  add_executable(hyle_container_p1_bench p1_bench.cc)
+  _hyle_configure_container_p1_bench(hyle_container_p1_bench)
+
+  add_executable(hyle_container_p1_bench_placement p1_bench.cc)
+  _hyle_configure_container_p1_bench(
+    hyle_container_p1_bench_placement)
+  if(MSVC)
+    target_link_options(hyle_container_p1_bench_placement PRIVATE
+      /FUNCTIONPADMIN:64)
+  elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(hyle_container_p1_bench_placement PRIVATE
+      -falign-functions=64)
+  else()
+    message(FATAL_ERROR
+      "container P1 placement perturbation is unsupported")
+  endif()
+
+  hyle_register_benches(container
+    hyle_container_p1_bench
+    hyle_container_p1_bench_placement)
+endif()

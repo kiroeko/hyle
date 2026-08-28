@@ -1,0 +1,401 @@
+{
+  "schema": "hyle.perf.contract/v1",
+  "id": "container-p1-v1",
+  "module": "container",
+  "claim": "P1 engineering non-inferiority for five normal source-consumer container families against source-pinned Abseil, rigtorp, Boost, and xxHash peers under balanced execution, allocation, and code-placement strata",
+  "candidate": {
+    "target": "hyle_container",
+    "delivery_shape": "source",
+    "revision": "runtime-bound",
+    "component": "container",
+    "entrypoint": "hyle/container/small_vector.h, flat_hash_map.h, bounded_queue.h, dynamic_bitset.h, and hash.h"
+  },
+  "peers": [
+    {
+      "id": "abseil",
+      "revision": "81c993af4fb88b3a51829a796df02251fa27102f",
+      "configuration": {
+        "delivery_shape": "source-built static and header-only",
+        "algorithms": "absl::InlinedVector and absl::flat_hash_map",
+        "source": "clean external checkout"
+      }
+    },
+    {
+      "id": "boost",
+      "revision": "df8eeb90846648464e3c8e378e312f0cec772e83",
+      "configuration": {
+        "delivery_shape": "header-only",
+        "algorithm": "boost::dynamic_bitset with uint64_t blocks",
+        "source": "clean external checkout with exact required submodules"
+      }
+    },
+    {
+      "id": "rigtorp",
+      "revision": "b9808ede08f26fa9df4df4e081d19cace8f6c6ea",
+      "configuration": {
+        "delivery_shape": "header-only",
+        "algorithm": "rigtorp::mpmc::Queue strict bounded Vyukov MPMC ring",
+        "source": "clean external checkout"
+      }
+    },
+    {
+      "id": "xxhash",
+      "revision": "e573d4d2aaeaba0f3e5a0a9a54144a1f2b4b56e7",
+      "configuration": {
+        "delivery_shape": "header-only XXH_INLINE_ALL",
+        "algorithm": "XXH3_64bits_withSeed over varied 64-byte keys",
+        "source": "clean external checkout"
+      }
+    }
+  ],
+  "strata": [
+    {
+      "id": "primary-candidate-first-candidate-allocation-first",
+      "dimensions": {"placement": "primary", "execution_order": "candidate-first", "allocation_order": "candidate-first"},
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-candidate-first-peer-allocation-first",
+      "dimensions": {"placement": "primary", "execution_order": "candidate-first", "allocation_order": "peer-first"},
+      "environment": {"HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"},
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-peer-first-candidate-allocation-first",
+      "dimensions": {"placement": "primary", "execution_order": "peer-first", "allocation_order": "candidate-first"},
+      "environment": {"HYLE_BENCH_RIVAL_FIRST": "1"},
+      "target_variant": "primary"
+    },
+    {
+      "id": "primary-peer-first-peer-allocation-first",
+      "dimensions": {"placement": "primary", "execution_order": "peer-first", "allocation_order": "peer-first"},
+      "environment": {"HYLE_BENCH_RIVAL_FIRST": "1", "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"},
+      "target_variant": "primary"
+    },
+    {
+      "id": "placement-candidate-first-candidate-allocation-first",
+      "dimensions": {"placement": "perturbed", "execution_order": "candidate-first", "allocation_order": "candidate-first"},
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-candidate-first-peer-allocation-first",
+      "dimensions": {"placement": "perturbed", "execution_order": "candidate-first", "allocation_order": "peer-first"},
+      "environment": {"HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"},
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-peer-first-candidate-allocation-first",
+      "dimensions": {"placement": "perturbed", "execution_order": "peer-first", "allocation_order": "candidate-first"},
+      "environment": {"HYLE_BENCH_RIVAL_FIRST": "1"},
+      "target_variant": "placement"
+    },
+    {
+      "id": "placement-peer-first-peer-allocation-first",
+      "dimensions": {"placement": "perturbed", "execution_order": "peer-first", "allocation_order": "peer-first"},
+      "environment": {"HYLE_BENCH_RIVAL_FIRST": "1", "HYLE_BENCH_PEER_ALLOCATION_FIRST": "1"},
+      "target_variant": "placement"
+    }
+  ],
+  "controls": [
+    {"id": "aa", "kind": "aa", "parameters": {"maximum_bias_percent": 5}},
+    {"id": "delta5", "kind": "known-delta", "parameters": {"nominal_percent": 5}},
+    {"id": "delta10", "kind": "known-delta", "parameters": {"nominal_percent": 10}},
+    {"id": "timer-floor", "kind": "timer-floor", "parameters": {"minimum_workload_floor_multiple": 20}},
+    {"id": "placement", "kind": "placement", "parameters": {}},
+    {"id": "container-resource", "kind": "resource", "parameters": {"validator_id": "container-p1-contract"}}
+  ],
+  "workloads": [
+    {
+      "id": "sequence-inline-spill-batch-4096",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "graph/parallel-eval/short-batch",
+      "provenance": {
+        "path": "src/graph/parallel_eval.cc",
+        "sha256": "5a4888eab4a46f670f81f8a112587cc5c2f5b0872592b5b132f1a2e8ee0f7fb4"
+      },
+      "ownership_topology": {
+        "candidate": "Each callback constructs caller-owned HYLE SmallVector<uint32_t,16> batches, appends 4096 total values across inline and spill cases, scans them, and destroys every batch",
+        "peer": "Each callback constructs caller-owned Abseil InlinedVector<uint32_t,16> batches with the identical value sequence, inline/spill split, scan, and teardown",
+        "equivalence": "Both sides own contiguous growable SBO sequences, use their normal default allocator only for identical spill cases, and charge construction, append, iteration, spill allocation, and destruction"
+      },
+      "material_contribution": {
+        "frequency": 4096,
+        "value": 1,
+        "unit": "batch-element-lifecycle",
+        "budget": 5,
+        "denominator": "one callback containing 256 eight-value inline batches and 32 sixty-four-value spill batches",
+        "derivation": "Graph parallel evaluation repeatedly materializes short level/frontier vectors and occasionally exceeds the inline budget; 4096 elements amortize the timer without changing those ownership phases"
+      },
+      "semantic_contract": "Build, consume, and destroy a mixed normal batch of inline and spilled uint32_t sequences containing 4096 total elements",
+      "comparability": "COMPARABLE",
+      "peer_id": "abseil",
+      "metric": {"name": "operations-per-second", "unit": "op/s", "direction": "higher-is-better"},
+      "input": {"distribution": "runtime array of 64 uint32_t values reused through 256 inline and 32 spill owners", "scale": {"elements_per_callback": 4096, "inline_batches": 256, "spill_batches": 32}},
+      "setup": "The common runtime value array exists before measurement; every sequence owner and spill allocation remains inside the charged callback",
+      "charged_phases": ["288 owner constructions", "4096 appends", "4096 element visits", "32 spill lifecycles", "288 owner destructions"],
+      "pair": {"candidate": "HYLE SmallVector batch N=4096", "peer": "Abseil InlinedVector batch N=4096"},
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {"kind": "process-median", "minimum_independent_samples": 15, "tail_alpha": 0.01},
+      "required_strata": ["primary-candidate-first-candidate-allocation-first", "primary-candidate-first-peer-allocation-first", "primary-peer-first-candidate-allocation-first", "primary-peer-first-peer-allocation-first", "placement-candidate-first-candidate-allocation-first", "placement-candidate-first-peer-allocation-first", "placement-peer-first-candidate-allocation-first", "placement-peer-first-peer-allocation-first"],
+      "required_controls": ["aa", "delta5", "delta10", "timer-floor", "placement", "container-resource"]
+    },
+    {
+      "id": "associative-metadata-lookup-4096",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "util/registry/metadata-index",
+      "provenance": {
+        "path": "include/hyle/util/registry.h",
+        "sha256": "3253bb5299ab917fa23cc1c10639d0e1e1955d2f8341edb4cc5a504b32aec4eb"
+      },
+      "ownership_topology": {
+        "candidate": "One caller-owned prebuilt HYLE FlatHashMap holds 32768 integral metadata entries at its normal reserved capacity and serves 4096 mixed hit/miss queries",
+        "peer": "One caller-owned prebuilt Abseil flat_hash_map holds the identical entries at its normal reserved capacity and serves the identical query stream",
+        "equivalence": "Build and allocation are setup-only; both tables own equivalent keys and values, use their production hash/probe policy, expose expected O(1) lookup, and charge only query hashing/probing/equality plus checksum"
+      },
+      "material_contribution": {
+        "frequency": 4096,
+        "value": 1,
+        "unit": "metadata-lookup",
+        "budget": 5,
+        "denominator": "one callback containing 2048 hits and 2048 in-domain misses against 32768 entries",
+        "derivation": "The retained Registry implementation uses FlatHashMap as its frozen name-to-entry index; mixed lookup dominates its normal read path while build and reserve are cold"
+      },
+      "semantic_contract": "Resolve 4096 deterministic 50-percent-hit integral metadata queries in a prebuilt 32768-entry flat hash index",
+      "comparability": "COMPARABLE",
+      "peer_id": "abseil",
+      "metric": {"name": "operations-per-second", "unit": "op/s", "direction": "higher-is-better"},
+      "input": {"distribution": "deterministic alternating hit/miss integral keys", "scale": {"entries": 32768, "queries_per_callback": 4096, "hit_percent": 50}},
+      "setup": "Both tables are reserved, populated, and validated outside measurement in controlled allocation order",
+      "charged_phases": ["4096 table hashes", "4096 probe sequences", "2048 value reads", "checksum"],
+      "pair": {"candidate": "HYLE FlatHashMap lookup N=4096", "peer": "Abseil flat_hash_map lookup N=4096"},
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {"kind": "process-median", "minimum_independent_samples": 15, "tail_alpha": 0.01},
+      "required_strata": ["primary-candidate-first-candidate-allocation-first", "primary-candidate-first-peer-allocation-first", "primary-peer-first-candidate-allocation-first", "primary-peer-first-peer-allocation-first", "placement-candidate-first-candidate-allocation-first", "placement-candidate-first-peer-allocation-first", "placement-peer-first-candidate-allocation-first", "placement-peer-first-peer-allocation-first"],
+      "required_controls": ["aa", "delta5", "delta10", "timer-floor", "placement", "container-resource"]
+    },
+    {
+      "id": "bounded-mpmc-handoff-4096",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "sched/global-queue/pipeline-handoff",
+      "provenance": {
+        "path": "src/sched/scheduler.cc",
+        "sha256": "d7ffc29eb6051cae3e723d6dfc67c6a860dbea3b4310f3d154adb282404f19a2"
+      },
+      "ownership_topology": {
+        "candidate": "One preallocated HYLE BoundedQueue connects a persistent caller producer and persistent worker consumer pinned to distinct same-class physical cores during its isolated measurement phase",
+        "peer": "One preallocated rigtorp MPMCQueue with the same nominal 1024 capacity connects the identical persistent caller/worker topology during its isolated measurement phase",
+        "equivalence": "Both are strict bounded Vyukov-style lock-free rings, carry uint64_t values, allocate once before measurement, transfer exactly 4096 values without loss, use identical setup-only epoch signaling, and never retain a competing idle peer worker on the measured worker core"
+      },
+      "material_contribution": {
+        "frequency": 4096,
+        "value": 1,
+        "unit": "queue-item-handoff",
+        "budget": 5,
+        "denominator": "one callback transferring 4096 values through a 1024-slot ring between two persistent cores",
+        "derivation": "The scheduler's global, pinned, and inline-job queues use this bounded placement-lifetime mechanism; batching amortizes the identical epoch signal while retaining the real producer/consumer queue path"
+      },
+      "semantic_contract": "Transfer exactly 4096 uint64_t values without loss or duplication from one persistent producer to one persistent consumer through a preallocated strict bounded MPMC ring",
+      "comparability": "COMPARABLE",
+      "peer_id": "rigtorp",
+      "metric": {"name": "operations-per-second", "unit": "op/s", "direction": "higher-is-better"},
+      "input": {"distribution": "ascending values 1 through 4096 with checksum conservation", "scale": {"capacity": 1024, "items_per_callback": 4096, "producers": 1, "consumers": 1}},
+      "setup": "Both queues are constructed outside measurement in controlled allocation order; each persistent worker is then created, pinned, warmed, measured, and joined in execution order so an idle peer worker cannot perturb the shared worker core",
+      "charged_phases": ["4096 lock-free enqueue attempts", "4096 lock-free dequeue attempts", "full/empty retry", "checksum conservation", "one symmetric setup-only epoch completion boundary"],
+      "pair": {"candidate": "HYLE BoundedQueue handoff N=4096", "peer": "rigtorp MPMCQueue handoff N=4096"},
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {"kind": "process-median", "minimum_independent_samples": 15, "tail_alpha": 0.01},
+      "required_strata": ["primary-candidate-first-candidate-allocation-first", "primary-candidate-first-peer-allocation-first", "primary-peer-first-candidate-allocation-first", "primary-peer-first-peer-allocation-first", "placement-candidate-first-candidate-allocation-first", "placement-candidate-first-peer-allocation-first", "placement-peer-first-candidate-allocation-first", "placement-peer-first-peer-allocation-first"],
+      "required_controls": ["aa", "delta5", "delta10", "timer-floor", "placement", "container-resource"]
+    },
+    {
+      "id": "active-mask-count-blocks-4096",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "package/container/dense-active-mask",
+      "provenance": {
+        "path": "samples/package/container/cpp/main.cc",
+        "sha256": "c0e0130da1a5500204c34dcb1b037d4f2f2724b852ef98390a2ea8f326f92267"
+      },
+      "ownership_topology": {
+        "candidate": "One caller-owned prebuilt HYLE DynamicBitSet contains a deterministic active-ID mask in 4096 uint64_t blocks",
+        "peer": "One caller-owned prebuilt Boost dynamic_bitset with uint64_t blocks contains the identical mask",
+        "equivalence": "Both own exactly 262144 logical bits and 32768 payload bytes; allocation and population are setup-only and count scans all blocks with identical value semantics"
+      },
+      "material_contribution": {
+        "frequency": 4096,
+        "value": 1,
+        "unit": "active-mask-block",
+        "budget": 5,
+        "denominator": "one callback counting one 262144-bit dense mask represented by 4096 uint64_t blocks",
+        "derivation": "The retained package consumer proves the public dense active-ID owner; block aggregation is the natural unit for graph/frontier and dirty-mask scans"
+      },
+      "semantic_contract": "Count every set bit in one prebuilt deterministic dense active-ID mask containing 4096 uint64_t blocks",
+      "comparability": "COMPARABLE",
+      "peer_id": "boost",
+      "metric": {"name": "operations-per-second", "unit": "op/s", "direction": "higher-is-better"},
+      "input": {"distribution": "deterministic approximately 4/11-density mask", "scale": {"bits": 262144, "blocks_per_callback": 4096}},
+      "setup": "Both bitsets are allocated, populated, and equality-checked outside measurement in controlled allocation order",
+      "charged_phases": ["4096 block loads", "population count", "count reduction"],
+      "pair": {"candidate": "HYLE DynamicBitSet count N=4096", "peer": "Boost dynamic_bitset count N=4096"},
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {"kind": "process-median", "minimum_independent_samples": 15, "tail_alpha": 0.01},
+      "required_strata": ["primary-candidate-first-candidate-allocation-first", "primary-candidate-first-peer-allocation-first", "primary-peer-first-candidate-allocation-first", "primary-peer-first-peer-allocation-first", "placement-candidate-first-candidate-allocation-first", "placement-candidate-first-peer-allocation-first", "placement-peer-first-candidate-allocation-first", "placement-peer-first-peer-allocation-first"],
+      "required_controls": ["aa", "delta5", "delta10", "timer-floor", "placement", "container-resource"]
+    },
+    {
+      "id": "metadata-byte-hash-64b-4096",
+      "tier": "replay",
+      "gate_role": "product",
+      "consumer_key": "package/container/trusted-string-index",
+      "provenance": {
+        "path": "samples/package/container/cpp/main.cc",
+        "sha256": "c0e0130da1a5500204c34dcb1b037d4f2f2724b852ef98390a2ea8f326f92267"
+      },
+      "ownership_topology": {
+        "candidate": "HYLE hash_bytes reads caller-owned varied 64-byte metadata keys with an explicit deterministic table seed and retains no storage",
+        "peer": "Upstream XXH3_64bits_withSeed reads the same caller-owned keys with the same seed schedule and retains no storage",
+        "equivalence": "Both provide non-cryptographic seeded 64-bit table hashes over the complete byte range; output identity is not required, while bytes, lengths, calls, seed schedule, and observable checksum topology are identical"
+      },
+      "material_contribution": {
+        "frequency": 4096,
+        "value": 64,
+        "unit": "metadata-key-byte",
+        "budget": 5,
+        "denominator": "one callback hashing 4096 varied 64-byte keys from a 256-key warm metadata working set",
+        "derivation": "The retained installed consumer uses StringHash in its trusted FlatHashMap; 64-byte varied keys exercise the normal inline medium byte core without a single constant-key cache artifact"
+      },
+      "semantic_contract": "Compute 4096 seeded non-cryptographic 64-bit table hashes over varied caller-owned 64-byte metadata keys",
+      "comparability": "COMPARABLE",
+      "peer_id": "xxhash",
+      "metric": {"name": "operations-per-second", "unit": "op/s", "direction": "higher-is-better"},
+      "input": {"distribution": "256 deterministic varied binary keys revisited for 16 passes with a pass-specific seed", "scale": {"key_bytes": 64, "keys_per_callback": 4096, "working_set_keys": 256}},
+      "setup": "All key bytes are generated once outside measurement; neither implementation allocates or retains key storage",
+      "charged_phases": ["4096 complete 64-byte reads", "4096 seeded table hashes", "checksum reduction"],
+      "pair": {"candidate": "HYLE hash_bytes 64B N=4096", "peer": "xxHash XXH3 64B N=4096"},
+      "practical_margin_percent": 5,
+      "noninferiority_margin_percent": 5,
+      "estimator": {"kind": "process-median", "minimum_independent_samples": 15, "tail_alpha": 0.01},
+      "required_strata": ["primary-candidate-first-candidate-allocation-first", "primary-candidate-first-peer-allocation-first", "primary-peer-first-candidate-allocation-first", "primary-peer-first-peer-allocation-first", "placement-candidate-first-candidate-allocation-first", "placement-candidate-first-peer-allocation-first", "placement-peer-first-candidate-allocation-first", "placement-peer-first-peer-allocation-first"],
+      "required_controls": ["aa", "delta5", "delta10", "timer-floor", "placement", "container-resource"]
+    }
+  ],
+  "experiment": {
+    "sample_schedule": [15, 31],
+    "order_policy": "fixed-dual",
+    "holdout": false
+  },
+  "build": {
+    "configuration": "Release",
+    "fresh": true,
+    "linkage": "static",
+    "lto": "off",
+    "isa": "portable",
+    "toolchain": "machine-profile-bound"
+  },
+  "artifacts": {
+    "validators": ["artifact-identity", "build-contract", "container-p1-contract"]
+  },
+  "hosts": {
+    "allowed_platforms": ["windows"],
+    "certification_platforms": ["windows"],
+    "requirements": {
+      "machine_profiles": ["W1-WIN"],
+      "qualified_role": "engineering",
+      "formal_independent_hardware": true
+    }
+  },
+  "extensions": {
+    "runner": {
+      "schema": "hyle.perf.nanobench-runner/v1",
+      "sampling_topology": "cross-core-pair",
+      "cmake": {
+        "cache": {
+          "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+          "HYLE_BENCH_ABSL": "ON",
+          "HYLE_BENCH_BOOST": "ON",
+          "HYLE_BENCH_RIGTORP": "ON",
+          "HYLE_BUILD_BENCH": "ON",
+          "HYLE_BUILD_TESTS": "OFF",
+          "HYLE_COMPONENTS": "container",
+          "HYLE_CONTAINER_P1_BENCH": "ON",
+          "HYLE_INSTALL": "OFF",
+          "HYLE_SANITIZER": "off",
+          "HYLE_SIMD_EXACT_TARGET": "",
+          "HYLE_STATIC": "ON",
+          "HYLE_TEST_INSTRUMENTATION": "OFF",
+          "HYLE_TRACE": "OFF",
+          "HYLE_WERROR": "ON"
+        },
+        "peer_cache": {
+          "abseil": "HYLE_ABSL_DIR",
+          "boost": "HYLE_BOOST_DIR",
+          "rigtorp": "HYLE_RIGTORP_DIR",
+          "xxhash": "HYLE_XXHASH_PEER_DIR"
+        }
+      },
+      "profiles": {
+        "W1-WIN": {
+          "generator": "Visual Studio 18 2026",
+          "architecture": "x64",
+          "compiler_id": "MSVC",
+          "compiler_version_prefix": "19.50",
+          "cache": {}
+        }
+      },
+      "executables": [
+        {
+          "id": "container-p1-primary",
+          "target": "hyle_container_p1_bench",
+          "stem": "hyle_container_p1_bench",
+          "target_variant": "primary",
+          "measurement_batch": 4096,
+          "telemetry_prefixes": ["# HYLE_CONTAINER_P1_RUN "],
+          "workloads": [
+            {"id": "sequence-inline-spill-batch-4096", "title": "container inline and spill batch aggregate N=4096"},
+            {"id": "associative-metadata-lookup-4096", "title": "container metadata flat lookup aggregate N=4096"},
+            {"id": "bounded-mpmc-handoff-4096", "title": "container bounded MPMC handoff aggregate N=4096"},
+            {"id": "active-mask-count-blocks-4096", "title": "container dense active mask count blocks N=4096"},
+            {"id": "metadata-byte-hash-64b-4096", "title": "container metadata byte hash aggregate N=4096"}
+          ]
+        },
+        {
+          "id": "container-p1-placement",
+          "target": "hyle_container_p1_bench_placement",
+          "stem": "hyle_container_p1_bench_placement",
+          "target_variant": "placement",
+          "measurement_batch": 4096,
+          "telemetry_prefixes": ["# HYLE_CONTAINER_P1_RUN "],
+          "workloads": [
+            {"id": "sequence-inline-spill-batch-4096", "title": "container inline and spill batch aggregate N=4096"},
+            {"id": "associative-metadata-lookup-4096", "title": "container metadata flat lookup aggregate N=4096"},
+            {"id": "bounded-mpmc-handoff-4096", "title": "container bounded MPMC handoff aggregate N=4096"},
+            {"id": "active-mask-count-blocks-4096", "title": "container dense active mask count blocks N=4096"},
+            {"id": "metadata-byte-hash-64b-4096", "title": "container metadata byte hash aggregate N=4096"}
+          ]
+        }
+      ],
+      "control_executable": {
+        "target": "hyle_perf_control_bench",
+        "stem": "hyle_perf_control_bench"
+      },
+      "controlled_environment": [
+        "HYLE_BENCH_RIVAL_FIRST",
+        "HYLE_BENCH_PEER_ALLOCATION_FIRST",
+        "HYLE_BENCH_APPLE_QOS",
+        "HYLE_PERF_APPLE_QOS"
+      ],
+      "validators": [
+        {"id": "artifact-identity", "kind": "artifact-identity"},
+        {"id": "build-contract", "kind": "build-contract"},
+        {"id": "container-p1-contract", "kind": "command", "command": ["{python}", "scripts/validate-container-p1-bench.py", "--build", "{build}"]}
+      ]
+    }
+  }
+}
