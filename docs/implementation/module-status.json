@@ -333,7 +333,7 @@
         "engineering_performance": "PASS"
       },
       "end_commit": "25cff0db8478e9adf59b7dbd8a85e7bff684d947",
-      "registry_anchor_commit": "25cff0db8478e9adf59b7dbd8a85e7bff684d947",
+      "registry_anchor_commit": "2a47768f8a038590d81f33a218efb2d83b86e2d5",
       "closure_evidence": "docs/implementation/tasks/util/util-runtime-v2-closure.md",
       "loc": {
         "snapshot_commit": "f3b341cb2ae81154f81bc45052a651e773c5e2b3",

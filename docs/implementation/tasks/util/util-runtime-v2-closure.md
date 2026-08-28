@@ -218,8 +218,10 @@ canonical `include/hyle/util + src/util`，包含同目录下已独立签结的 
 - terminal verdict：`CLOSED`；product candidate
   `f3b341cb2ae81154f81bc45052a651e773c5e2b3` / tree
   `c3141ccfd2902a450eb271f867a2ee8aacc5cbb9` 的全部适用门为 `PASS`，无 blocker；
-- 本页所在提交是 terminal end receipt；完整 `end_commit` 由后续中央 registry 提交记录；
-- registry anchor：由后续首个 `CLOSED` registry 快照绑定本 receipt；
+- terminal end receipt commit：`25cff0db8478e9adf59b7dbd8a85e7bff684d947`；
+- registry anchor commit：`2a47768f8a038590d81f33a218efb2d83b86e2d5`，这是首个确实保存本
+  `CLOSED` state/candidate 的中央 registry 快照。提交不能在自身内容中预写自身 hash，故紧随其后的
+  evidence-only 提交只校准 `registry_anchor_commit` 字段；产品、状态、候选和 verdict 均未变化；
 - raw local evidence：W1-WIN `C:\public\project-hyle\_validation\util-v2-win`；W1-WSL
   `/root/hyle-scratch/util-v2-{f3b341cb,build-release-f3b341cb,build-asan-f3b341cb,build-ubsan-f3b341cb}`；
   M1-MAC `/Users/kiro/hyle-scratch/{util-v2-f3b341cb,util-v2-delivery-f3b341cb}`。这些是本地可重放
