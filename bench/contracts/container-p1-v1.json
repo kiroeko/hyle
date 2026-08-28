@@ -187,9 +187,9 @@
         "sha256": "d7ffc29eb6051cae3e723d6dfc67c6a860dbea3b4310f3d154adb282404f19a2"
       },
       "ownership_topology": {
-        "candidate": "One preallocated HYLE BoundedQueue connects a persistent caller producer and persistent worker consumer pinned to distinct same-class physical cores during its isolated measurement phase",
-        "peer": "One preallocated rigtorp MPMCQueue with the same nominal 1024 capacity connects the identical persistent caller/worker topology during its isolated measurement phase",
-        "equivalence": "Both are strict bounded Vyukov-style lock-free rings, carry uint64_t values, allocate once before measurement, transfer exactly 4096 values without loss, use identical setup-only epoch signaling, and never retain a competing idle peer worker on the measured worker core"
+        "candidate": "One preallocated HYLE BoundedQueue connects the persistent caller producer to one persistent worker consumer pinned to a distinct same-class physical core",
+        "peer": "One preallocated rigtorp MPMCQueue with the same nominal 1024 capacity connects the same persistent caller and worker roles",
+        "equivalence": "Both are strict bounded Vyukov-style lock-free rings, carry uint64_t values, allocate once before measurement, transfer exactly 4096 values without loss, and share one busy-pause batch-generation boundary so OS park/unpark policy cannot dominate either queue"
       },
       "material_contribution": {
         "frequency": 4096,
@@ -204,8 +204,8 @@
       "peer_id": "rigtorp",
       "metric": {"name": "operations-per-second", "unit": "op/s", "direction": "higher-is-better"},
       "input": {"distribution": "ascending values 1 through 4096 with checksum conservation", "scale": {"capacity": 1024, "items_per_callback": 4096, "producers": 1, "consumers": 1}},
-      "setup": "Both queues are constructed outside measurement in controlled allocation order; each persistent worker is then created, pinned, warmed, measured, and joined in execution order so an idle peer worker cannot perturb the shared worker core",
-      "charged_phases": ["4096 lock-free enqueue attempts", "4096 lock-free dequeue attempts", "full/empty retry", "checksum conservation", "one symmetric setup-only epoch completion boundary"],
+      "setup": "Both queues are constructed outside measurement in controlled allocation order; one persistent worker is created and pinned once, then both paths receive 32 paired warmup batches before measurement",
+      "charged_phases": ["4096 lock-free enqueue attempts", "4096 lock-free dequeue attempts", "full/empty busy-pause retry", "checksum conservation", "one symmetric amortized batch-generation boundary"],
       "pair": {"candidate": "HYLE BoundedQueue handoff N=4096", "peer": "rigtorp MPMCQueue handoff N=4096"},
       "practical_margin_percent": 5,
       "noninferiority_margin_percent": 5,

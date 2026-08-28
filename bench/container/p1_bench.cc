@@ -22,6 +22,10 @@
 #include <thread>
 #include <utility>
 
+#if defined(_M_X64) || defined(__x86_64__)
+#include <immintrin.h>
+#endif
+
 #include "../common/perf_process.h"
 #include "hyle/container/bounded_queue.h"
 #include "hyle/container/dynamic_bitset.h"
@@ -64,6 +68,14 @@ bool environment_present(const char* name) {
   return present;
 #else
   return std::getenv(name) != nullptr;
+#endif
+}
+
+inline void spin_pause() noexcept {
+#if defined(_M_X64) || defined(__x86_64__)
+  _mm_pause();
+#else
+  std::this_thread::yield();
 #endif
 }
 
@@ -182,84 +194,109 @@ class AssociativeReplay {
   std::array<std::uint64_t, kBatch> queries_{};
 };
 
-template <class Queue>
-class QueueHandoff {
+class QueueReplay {
  public:
-  explicit QueueHandoff(std::size_t capacity) : queue_(capacity) {
-    if constexpr (requires(const Queue& queue) { queue.valid(); }) {
-      if (!queue_.valid()) std::abort();
+  explicit QueueReplay(bool peer_allocation_first) {
+    if (peer_allocation_first) {
+      peer_ = std::make_unique<PeerQueue>(kQueueCapacity);
+      candidate_ = std::make_unique<CandidateQueue>(kQueueCapacity);
+    } else {
+      candidate_ = std::make_unique<CandidateQueue>(kQueueCapacity);
+      peer_ = std::make_unique<PeerQueue>(kQueueCapacity);
     }
-  }
-
-  ~QueueHandoff() { stop(); }
-
-  QueueHandoff(const QueueHandoff&) = delete;
-  QueueHandoff& operator=(const QueueHandoff&) = delete;
-
-  void start() {
-    if (worker_.joinable()) std::abort();
+    if (!candidate_->valid()) std::abort();
     worker_ = std::thread([this] { worker_loop(); });
     while (!ready_.load(std::memory_order_acquire))
-      ready_.wait(false, std::memory_order_relaxed);
+      spin_pause();
   }
 
-  void stop() noexcept {
-    if (!worker_.joinable()) return;
-    stopping_.store(true, std::memory_order_release);
-    request_.fetch_add(1, std::memory_order_release);
-    request_.notify_one();
+  ~QueueReplay() {
+    command_.store(Command::kStop, std::memory_order_relaxed);
+    const std::uint64_t generation =
+        issued_.fetch_add(1, std::memory_order_release) + 1;
+    while (completed_.load(std::memory_order_acquire) != generation)
+      spin_pause();
     worker_.join();
   }
 
-  HYLE_NOINLINE std::uint64_t run() noexcept {
-    const std::uint64_t generation =
-        request_.fetch_add(1, std::memory_order_release) + 1;
-    request_.notify_one();
-    for (std::uint64_t value = 1; value <= kBatch; ++value) {
-      while (!queue_.try_push(value)) std::this_thread::yield();
-    }
-    for (;;) {
-      const std::uint64_t completed = done_.load(std::memory_order_acquire);
-      if (completed == generation) break;
-      done_.wait(completed, std::memory_order_relaxed);
-    }
-    const std::uint64_t checksum = checksum_.load(std::memory_order_relaxed);
-    if (checksum != kQueueExpected) std::abort();
-    return checksum;
+  QueueReplay(const QueueReplay&) = delete;
+  QueueReplay& operator=(const QueueReplay&) = delete;
+
+  HYLE_NOINLINE std::uint64_t run_candidate() noexcept {
+    return dispatch(Command::kCandidate, *candidate_);
+  }
+
+  HYLE_NOINLINE std::uint64_t run_peer() noexcept {
+    return dispatch(Command::kPeer, *peer_);
   }
 
  private:
+  using CandidateQueue =
+      hyle::container::BoundedQueue<std::uint64_t>;
+  using PeerQueue = rigtorp::mpmc::Queue<std::uint64_t>;
+  enum class Command : unsigned char { kNone, kCandidate, kPeer, kStop };
+
+  template <class Queue>
+  std::uint64_t dispatch(Command command, Queue& queue) noexcept {
+    command_.store(command, std::memory_order_relaxed);
+    const std::uint64_t generation =
+        issued_.fetch_add(1, std::memory_order_release) + 1;
+    for (std::uint64_t value = 1; value <= kBatch; ++value) {
+      while (!queue.try_push(value)) spin_pause();
+    }
+    while (completed_.load(std::memory_order_acquire) != generation)
+      spin_pause();
+    if (last_checksum_ != kQueueExpected) std::abort();
+    return last_checksum_;
+  }
+
+  template <class Queue>
+  static std::uint64_t consume(Queue& queue) noexcept {
+    std::uint64_t checksum = 0;
+    for (std::size_t index = 0; index < kBatch; ++index) {
+      std::uint64_t value = 0;
+      while (!queue.try_pop(value)) spin_pause();
+      checksum += value;
+    }
+    return checksum;
+  }
+
   void worker_loop() noexcept {
     (void)hyle::bench::perf::configure_thread_affinity(
         "HYLE_PERF_WORKER_CPU");
     ready_.store(true, std::memory_order_release);
-    ready_.notify_one();
     std::uint64_t observed = 0;
     for (;;) {
-      request_.wait(observed, std::memory_order_acquire);
-      const std::uint64_t generation =
-          request_.load(std::memory_order_acquire);
-      if (stopping_.load(std::memory_order_acquire)) return;
-      std::uint64_t checksum = 0;
-      for (std::size_t index = 0; index < kBatch; ++index) {
-        std::uint64_t value = 0;
-        while (!queue_.try_pop(value)) std::this_thread::yield();
-        checksum += value;
+      std::uint64_t generation = issued_.load(std::memory_order_acquire);
+      while (generation == observed) {
+        spin_pause();
+        generation = issued_.load(std::memory_order_acquire);
       }
-      checksum_.store(checksum, std::memory_order_relaxed);
-      done_.store(generation, std::memory_order_release);
-      done_.notify_one();
       observed = generation;
+      const Command command = command_.load(std::memory_order_relaxed);
+      if (command == Command::kStop) {
+        completed_.store(observed, std::memory_order_release);
+        return;
+      }
+      if (command == Command::kCandidate) {
+        last_checksum_ = consume(*candidate_);
+      } else if (command == Command::kPeer) {
+        last_checksum_ = consume(*peer_);
+      } else {
+        std::abort();
+      }
+      completed_.store(observed, std::memory_order_release);
     }
   }
 
-  Queue queue_;
-  std::atomic<bool> ready_{false};
-  std::atomic<bool> stopping_{false};
-  std::atomic<std::uint64_t> request_{0};
-  std::atomic<std::uint64_t> done_{0};
-  std::atomic<std::uint64_t> checksum_{0};
+  std::unique_ptr<CandidateQueue> candidate_;
+  std::unique_ptr<PeerQueue> peer_;
   std::thread worker_;
+  alignas(64) std::atomic<std::uint64_t> issued_{0};
+  alignas(64) std::atomic<std::uint64_t> completed_{0};
+  std::atomic<Command> command_{Command::kNone};
+  std::atomic<bool> ready_{false};
+  std::uint64_t last_checksum_ = 0;
 };
 
 class ActiveSetReplay {
@@ -368,16 +405,10 @@ int validate_contract() {
   AssociativeReplay associative;
   const bool map = associative.candidate() == associative.peer();
 
-  QueueHandoff<hyle::container::BoundedQueue<std::uint64_t>> candidate_queue(
-      kQueueCapacity);
-  QueueHandoff<rigtorp::mpmc::Queue<std::uint64_t>> peer_queue(
-      kQueueCapacity);
-  candidate_queue.start();
-  const std::uint64_t candidate_queue_checksum = candidate_queue.run();
-  candidate_queue.stop();
-  peer_queue.start();
-  const std::uint64_t peer_queue_checksum = peer_queue.run();
-  peer_queue.stop();
+  QueueReplay queue_replay(false);
+  const std::uint64_t candidate_queue_checksum =
+      queue_replay.run_candidate();
+  const std::uint64_t peer_queue_checksum = queue_replay.run_peer();
   const bool queue = candidate_queue_checksum == peer_queue_checksum;
 
   ActiveSetReplay active;
@@ -424,43 +455,18 @@ void bench_associative(bool peer_first, bool peer_allocation_first) {
 }
 
 void bench_queue(bool peer_first, bool peer_allocation_first) {
-  using Candidate =
-      QueueHandoff<hyle::container::BoundedQueue<std::uint64_t>>;
-  using Peer = QueueHandoff<rigtorp::mpmc::Queue<std::uint64_t>>;
-  std::unique_ptr<Candidate> candidate;
-  std::unique_ptr<Peer> peer;
-  if (peer_allocation_first) {
-    peer = std::make_unique<Peer>(kQueueCapacity);
-    candidate = std::make_unique<Candidate>(kQueueCapacity);
-  } else {
-    candidate = std::make_unique<Candidate>(kQueueCapacity);
-    peer = std::make_unique<Peer>(kQueueCapacity);
+  QueueReplay replay(peer_allocation_first);
+  for (int index = 0; index < 32; ++index) {
+    (void)replay.run_candidate();
+    (void)replay.run_peer();
   }
   nb::Bench bench = make_bench(
       "container bounded MPMC handoff aggregate N=4096");
-  if (peer_first) {
-    peer->start();
-    (void)peer->run();
-    bench.run("rigtorp MPMCQueue handoff N=4096",
-              [&] { nb::doNotOptimizeAway(peer->run()); });
-    peer->stop();
-    candidate->start();
-    (void)candidate->run();
-    bench.run("HYLE BoundedQueue handoff N=4096",
-              [&] { nb::doNotOptimizeAway(candidate->run()); });
-    candidate->stop();
-  } else {
-    candidate->start();
-    (void)candidate->run();
-    bench.run("HYLE BoundedQueue handoff N=4096",
-              [&] { nb::doNotOptimizeAway(candidate->run()); });
-    candidate->stop();
-    peer->start();
-    (void)peer->run();
-    bench.run("rigtorp MPMCQueue handoff N=4096",
-              [&] { nb::doNotOptimizeAway(peer->run()); });
-    peer->stop();
-  }
+  run_pair(
+      bench, peer_first, "HYLE BoundedQueue handoff N=4096",
+      [&] { nb::doNotOptimizeAway(replay.run_candidate()); },
+      "rigtorp MPMCQueue handoff N=4096",
+      [&] { nb::doNotOptimizeAway(replay.run_peer()); });
 }
 
 void bench_active_set(bool peer_first, bool peer_allocation_first) {
