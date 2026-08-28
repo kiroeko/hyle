@@ -74,6 +74,50 @@ void* toggle_reallocate(void* raw_state, void* pointer, std::size_t old_size,
 
 // ---- SmallVector ------------------------------------------------------------
 
+using LargeZeroInlineValue = std::array<std::byte, 512>;
+static_assert(SmallVector<LargeZeroInlineValue, 0>::inline_capacity() == 0);
+static_assert(sizeof(SmallVector<LargeZeroInlineValue, 0>) <
+              sizeof(LargeZeroInlineValue));
+
+TEST(SmallVector, ZeroInlineStartsEmptyAndAllocatesOnDemand) {
+  SmallVector<std::string, 0> values;
+  EXPECT_TRUE(values.empty());
+  EXPECT_TRUE(values.inline_storage());
+  EXPECT_EQ(values.capacity(), 0u);
+  EXPECT_EQ(values.data(), nullptr);
+  EXPECT_EQ(values.begin(), values.end());
+  EXPECT_EQ(values, (SmallVector<std::string, 0>{}));
+
+  values.emplace_back("alpha");
+  values.emplace_back("beta");
+  EXPECT_FALSE(values.inline_storage());
+  EXPECT_GE(values.capacity(), 2u);
+  EXPECT_EQ(values.front(), "alpha");
+  EXPECT_EQ(values.back(), "beta");
+
+  SmallVector<std::string, 0> moved(std::move(values));
+  EXPECT_TRUE(values.inline_storage());
+  EXPECT_EQ(values.data(), nullptr);
+  EXPECT_EQ(moved.size(), 2u);
+  moved.clear();
+  moved.shrink_to_fit();
+  EXPECT_TRUE(moved.inline_storage());
+  EXPECT_EQ(moved.capacity(), 0u);
+  EXPECT_EQ(moved.data(), nullptr);
+}
+
+TEST(SmallVector, ZeroInlineAllocationFailurePreservesEmptyState) {
+  ToggleAllocatorState state;
+  state.fail = true;
+  Allocator allocator(toggle_allocate, toggle_deallocate, toggle_reallocate,
+                      &state);
+  SmallVector<int, 0, Allocator> values(allocator);
+  EXPECT_FALSE(values.try_push_back(7));
+  EXPECT_TRUE(values.empty());
+  EXPECT_TRUE(values.inline_storage());
+  EXPECT_EQ(values.capacity(), 0u);
+}
+
 TEST(SmallVector, StaysInlineUnderN) {
   SmallVector<int, 4> v;  // default = compile-time SystemAllocator (zero-overhead path)
   v.push_back(1);

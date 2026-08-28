@@ -151,10 +151,13 @@ N、T 构造/析构和对象内布局是 C++ source contract；它没有 runtime
 binary search 点查，不为 node、rank/finger 或 benchmark 保存常态 metadata。`FlatMap`
 采用成熟的 split storage（连续 keys + 连续 values），只查 key 或只扫 mapped value 时不会
 把另一列拖进 cache；`FlatSet` 使用独立的单数组 core，不为 map proxy/values 支付结构税。
-异构 lookup 只要求 comparator 能对 K/Q 双向 noexcept 比较。
+异构 lookup 只要求 comparator 能对 K/Q 双向比较；comparator 抛出的异常会在 mutation
+前传播，不会留下半排序状态。
 
-两列都复用已审查的 `SmallVector<...,1>` allocator-aware sequence engine；singleton 不分配，
-SBO 大小不是公开 knob。map iterator 是 random-access proxy，提供标准 `.first/.second`，
+两列都复用已审查的 `SmallVector<...,0>` allocator-aware sequence engine；空 map/set 不按
+`sizeof(K/V)` 嵌入元素 storage，首次插入才分配，后续增量插入按几何容量增长。这里的
+zero-inline 是 storage policy，不是另一个 vector，也没有为 singleton benchmark 保存特殊
+layout。map iterator 是 random-access proxy，提供标准 `.first/.second`，
 同时保留 `key()/value()` 便利访问；key 只读、value 可写。`keys()` 与 `values()` 暴露各自
 真正连续的 span，但 map 的 `value_type` 逻辑上仍是 `pair<K,V>`，不能把 iterator 当成
 contiguous pair pointer。已知大表可先 reserve，分配与释放仍走 mem 的 sized-free/alignment
@@ -304,6 +307,8 @@ single-pass input range 只消费一次。range/count insert 先建立 replaceme
 
 `try_shrink_to_fit()` 能把短序列从 heap 收回 inline storage，也能报告 heap 精确收缩的
 OOM 且保持原状态；普通 `shrink_to_fit()` 沿用本容器无错误返回入口的 fatal OOM 合同。
+`N==0` 是合法的 zero-inline storage policy：空对象不携带 dummy `T`，首次插入才分配；
+它主要供需要同一成熟 sequence engine、但不应把任意 `T` 嵌入 owner 的组合容器复用。
 `at()` 没有机械照抄：HYLE 构建可关闭异常，必须先决定是 Status/nullable 访问还是
 fatal checked access，不能用一个异常形状破坏全库合同。新增普通序列接口没有借旧
 push/read microbenchmark 数字宣称新的性能结论。

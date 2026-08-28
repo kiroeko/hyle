@@ -122,8 +122,10 @@ public:
     return copy;
   }
   FlatMapIterator &operator+=(difference_type offset) noexcept {
-    key_ += offset;
-    value_ += offset;
+    if (offset != 0) {
+      key_ += offset;
+      value_ += offset;
+    }
     return *this;
   }
   FlatMapIterator &operator-=(difference_type offset) noexcept {
@@ -149,7 +151,7 @@ public:
   template <bool OtherConst>
   difference_type
   operator-(const FlatMapIterator<K, V, OtherConst> &other) const noexcept {
-    return key_ - other.key_;
+    return key_ == other.key_ ? 0 : key_ - other.key_;
   }
   template <bool OtherConst>
   bool operator==(
@@ -159,7 +161,8 @@ public:
   template <bool OtherConst>
   auto operator<=>(
       const FlatMapIterator<K, V, OtherConst> &other) const noexcept {
-    return key_ <=> other.key_;
+    return key_ == other.key_ ? std::strong_ordering::equal
+                              : key_ <=> other.key_;
   }
 
 private:
@@ -201,10 +204,10 @@ concept FlatMapRangeValue =
 
 template <class K, class Compare, class Alloc>
 class FlatSetStorage {
-  // Reuse the established non-trivial sequence engine. One inline key keeps
-  // the empty/singleton registry allocation-free without inventing a second
-  // vector or relying on a zero-capacity raw-pointer sentinel.
-  using Sequence = SmallVector<K, 1, Alloc>;
+  // Reuse the established non-trivial sequence engine without embedding an
+  // arbitrary K in every empty set. Flat ordered containers optimize normal
+  // read-mostly indexes, not the singleton benchmark shape.
+  using Sequence = SmallVector<K, 0, Alloc>;
 
   static_assert(std::is_nothrow_move_constructible_v<K> &&
                     std::is_nothrow_destructible_v<K>,
@@ -241,6 +244,10 @@ public:
   }
   size_type iterator_index(const K *position,
                            bool allow_end) const noexcept {
+    if (data() == nullptr) {
+      HYLE_FATAL_ASSERT(position == nullptr && allow_end);
+      return 0;
+    }
     HYLE_FATAL_ASSERT(position >= data() &&
                       (allow_end ? position <= data() + size()
                                  : position < data() + size()));
@@ -311,7 +318,7 @@ public:
   bool try_insert_at(size_type index, K candidate) {
     HYLE_FATAL_ASSERT(index <= size());
     if (size() == std::numeric_limits<size_type>::max() ||
-        !entries_.try_reserve(size() + 1))
+        !SmallVectorAccess::try_reserve_growth(entries_, size() + 1))
       return false;
     auto position = index == 0 ? entries_.begin() : entries_.begin() + index;
     entries_.emplace(position, std::move(candidate));
@@ -358,8 +365,8 @@ private:
 
 template <class K, class V, class Compare, class Alloc>
 class FlatMapStorage {
-  using Keys = SmallVector<K, 1, Alloc>;
-  using Values = SmallVector<V, 1, Alloc>;
+  using Keys = SmallVector<K, 0, Alloc>;
+  using Values = SmallVector<V, 0, Alloc>;
 
   static_assert(std::is_nothrow_move_constructible_v<K> &&
                     std::is_nothrow_destructible_v<K>,
@@ -475,10 +482,14 @@ public:
   bool try_insert_at(size_type index, K key, V value) {
     HYLE_FATAL_ASSERT(index <= size());
     if (size() == std::numeric_limits<size_type>::max() ||
-        !try_reserve(size() + 1))
+        !SmallVectorAccess::try_reserve_growth(keys_, size() + 1) ||
+        !SmallVectorAccess::try_reserve_growth(values_, size() + 1))
       return false;
-    keys_.emplace(keys_.begin() + index, std::move(key));
-    values_.emplace(values_.begin() + index, std::move(value));
+    auto *key_position = index == 0 ? keys_.begin() : keys_.begin() + index;
+    auto *value_position =
+        index == 0 ? values_.begin() : values_.begin() + index;
+    keys_.emplace(key_position, std::move(key));
+    values_.emplace(value_position, std::move(value));
     return true;
   }
 
@@ -520,13 +531,19 @@ public:
 
   void erase_index(size_type index) noexcept {
     HYLE_FATAL_ASSERT(index < size());
-    keys_.erase(keys_.begin() + index);
-    values_.erase(values_.begin() + index);
+    keys_.erase(index == 0 ? keys_.begin() : keys_.begin() + index);
+    values_.erase(index == 0 ? values_.begin() : values_.begin() + index);
   }
   void erase_indices(size_type first, size_type last) noexcept {
     HYLE_FATAL_ASSERT(first <= last && last <= size());
-    keys_.erase(keys_.begin() + first, keys_.begin() + last);
-    values_.erase(values_.begin() + first, values_.begin() + last);
+    auto *keys_first = first == 0 ? keys_.begin() : keys_.begin() + first;
+    auto *keys_last = last == 0 ? keys_.begin() : keys_.begin() + last;
+    auto *values_first =
+        first == 0 ? values_.begin() : values_.begin() + first;
+    auto *values_last =
+        last == 0 ? values_.begin() : values_.begin() + last;
+    keys_.erase(keys_first, keys_last);
+    values_.erase(values_first, values_last);
   }
 
   void swap(FlatMapStorage &other) noexcept {
@@ -856,13 +873,17 @@ public:
 private:
   iterator iterator_at(size_type index) noexcept {
     HYLE_FATAL_ASSERT(index <= size());
-    return iterator(core_.keys_data() + index,
-                    core_.values_data() + index);
+    auto *keys = core_.keys_data();
+    auto *values = core_.values_data();
+    return iterator(index == 0 ? keys : keys + index,
+                    index == 0 ? values : values + index);
   }
   const_iterator iterator_at(size_type index) const noexcept {
     HYLE_FATAL_ASSERT(index <= size());
-    return const_iterator(core_.keys_data() + index,
-                          core_.values_data() + index);
+    const auto *keys = core_.keys_data();
+    const auto *values = core_.values_data();
+    return const_iterator(index == 0 ? keys : keys + index,
+                          index == 0 ? values : values + index);
   }
 
   Core core_{};
@@ -1044,7 +1065,8 @@ public:
     requires std::equality_comparable<K>
   {
     return left.size() == right.size() &&
-           std::equal(left.begin(), left.end(), right.begin());
+           (left.empty() ||
+            std::equal(left.begin(), left.end(), right.begin()));
   }
 
 private:

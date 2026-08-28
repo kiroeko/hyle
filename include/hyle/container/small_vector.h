@@ -19,6 +19,26 @@ namespace hyle::container {
 
 namespace detail {
 struct SmallVectorAccess;
+
+// Keep a real inactive T[N] array boundary without constructing elements.
+// The N==0 specialization deliberately has no dummy T-sized/aligned storage;
+// a zero-inline vector starts with a null data pointer and allocates before the
+// first element lifetime begins.
+template <class T, std::size_t N>
+union SmallVectorElements {
+  constexpr SmallVectorElements() noexcept {}
+  ~SmallVectorElements() noexcept {}
+
+  T values[N];
+};
+
+template <class T, std::size_t N, bool = (N == 0)>
+struct SmallVectorInlineStorage {
+  SmallVectorElements<T, N> elements;
+};
+
+template <class T, std::size_t N>
+struct SmallVectorInlineStorage<T, N, true> {};
 }
 
 // Vector with storage for the first N elements embedded in the object. It is a
@@ -38,7 +58,6 @@ struct SmallVectorAccess;
 // operations fail fast because they have no error return channel.
 template <class T, std::size_t N, class Alloc = mem::SystemAllocator>
 class SmallVector {
-  static_assert(N >= 1, "SmallVector requires non-zero inline capacity");
   static_assert(std::is_nothrow_move_constructible_v<T>,
                 "SmallVector requires nothrow move construction");
   static_assert(std::is_nothrow_destructible_v<T>,
@@ -64,11 +83,15 @@ public:
 
   SmallVector() noexcept(std::is_nothrow_default_constructible_v<Alloc>)
     requires std::is_default_constructible_v<Alloc>
-      : data_(inline_ptr()), cap_(N) {}
+      : cap_(N) {
+    data_ = inline_ptr();
+  }
 
   explicit SmallVector(Alloc alloc) noexcept(
       std::is_nothrow_move_constructible_v<Alloc>)
-      : alloc_(std::move(alloc)), data_(inline_ptr()), cap_(N) {}
+      : alloc_(std::move(alloc)), cap_(N) {
+    data_ = inline_ptr();
+  }
 
   explicit SmallVector(size_type count)
     requires std::is_default_constructible_v<Alloc> &&
@@ -184,9 +207,9 @@ public:
   iterator begin() noexcept { return data_; }
   const_iterator begin() const noexcept { return data_; }
   const_iterator cbegin() const noexcept { return data_; }
-  iterator end() noexcept { return data_ + size_; }
-  const_iterator end() const noexcept { return data_ + size_; }
-  const_iterator cend() const noexcept { return data_ + size_; }
+  iterator end() noexcept { return pointer_at(size_); }
+  const_iterator end() const noexcept { return pointer_at(size_); }
+  const_iterator cend() const noexcept { return pointer_at(size_); }
   reverse_iterator rbegin() noexcept { return reverse_iterator(end()); }
   const_reverse_iterator rbegin() const noexcept {
     return const_reverse_iterator(end());
@@ -271,8 +294,7 @@ public:
 
   template <class... Args>
   iterator emplace(const_iterator position, Args &&...args) {
-    HYLE_FATAL_ASSERT(position >= cbegin() && position <= cend());
-    const size_type index = static_cast<size_type>(position - cbegin());
+    const size_type index = position_index(position, true);
     if (index == size_) {
       emplace_back(std::forward<Args>(args)...);
       return data_ + index;
@@ -300,8 +322,7 @@ public:
   }
 
   iterator insert(const_iterator position, size_type count, const T &value) {
-    HYLE_FATAL_ASSERT(position >= cbegin() && position <= cend());
-    const size_type index = static_cast<size_type>(position - cbegin());
+    const size_type index = position_index(position, true);
     SmallVector inserted(alloc_);
     inserted.resize(count, value);
     return insert_prepared(index, inserted);
@@ -309,8 +330,7 @@ public:
 
   template <std::input_iterator It, std::sentinel_for<It> Sentinel>
   iterator insert(const_iterator position, It first, Sentinel last) {
-    HYLE_FATAL_ASSERT(position >= cbegin() && position <= cend());
-    const size_type index = static_cast<size_type>(position - cbegin());
+    const size_type index = position_index(position, true);
     // Materialize first so self-ranges remain valid across reserve/shift and
     // input iterators are consumed exactly once.
     SmallVector inserted(alloc_);
@@ -424,7 +444,8 @@ public:
     requires std::equality_comparable<T>
   {
     return left.size_ == right.size_ &&
-           std::equal(left.begin(), left.end(), right.begin());
+           (left.size_ == 0 ||
+            std::equal(left.begin(), left.end(), right.begin()));
   }
 
   friend auto operator<=>(const SmallVector &left, const SmallVector &right)
@@ -435,16 +456,17 @@ public:
   }
 
   iterator erase(const_iterator position) noexcept {
-    HYLE_FATAL_ASSERT(position >= cbegin() && position < cend());
-    return erase(position, position + 1);
+    const size_type index = position_index(position, false);
+    return erase(pointer_at(index), pointer_at(index + 1));
   }
 
   iterator erase(const_iterator first, const_iterator last) noexcept {
-    HYLE_FATAL_ASSERT(first >= cbegin() && first <= last && last <= cend());
-    const size_type first_index = static_cast<size_type>(first - cbegin());
-    const size_type count = static_cast<size_type>(last - first);
+    const size_type first_index = position_index(first, true);
+    const size_type last_index = position_index(last, true);
+    HYLE_FATAL_ASSERT(first_index <= last_index);
+    const size_type count = last_index - first_index;
     if (count == 0)
-      return data_ + first_index;
+      return pointer_at(first_index);
 
     if constexpr (std::is_trivially_copyable_v<T>) {
       std::memmove(data_ + first_index, data_ + first_index + count,
@@ -457,15 +479,43 @@ public:
       }
     }
     size_ -= count;
-    return data_ + first_index;
+    return pointer_at(first_index);
   }
 
 private:
   friend struct detail::SmallVectorAccess;
 
-  pointer inline_ptr() noexcept { return reinterpret_cast<pointer>(inline_); }
+  pointer inline_ptr() noexcept {
+    if constexpr (N == 0)
+      return nullptr;
+    else
+      return inline_.elements.values;
+  }
   const_pointer inline_ptr() const noexcept {
-    return reinterpret_cast<const_pointer>(inline_);
+    if constexpr (N == 0)
+      return nullptr;
+    else
+      return inline_.elements.values;
+  }
+
+  pointer pointer_at(size_type index) noexcept {
+    HYLE_FATAL_ASSERT(index <= size_);
+    return data_ == nullptr ? nullptr : data_ + index;
+  }
+  const_pointer pointer_at(size_type index) const noexcept {
+    HYLE_FATAL_ASSERT(index <= size_);
+    return data_ == nullptr ? nullptr : data_ + index;
+  }
+
+  size_type position_index(const_iterator position,
+                           bool allow_end) const noexcept {
+    if (data_ == nullptr) {
+      HYLE_FATAL_ASSERT(position == nullptr && allow_end);
+      return 0;
+    }
+    HYLE_FATAL_ASSERT(position >= cbegin() &&
+                      (allow_end ? position <= cend() : position < cend()));
+    return static_cast<size_type>(position - cbegin());
   }
 
   static void destroy_range(pointer first, size_type count) noexcept {
@@ -487,7 +537,7 @@ private:
   iterator insert_prepared(size_type index, SmallVector &inserted) noexcept {
     const size_type count = inserted.size_;
     if (count == 0)
-      return data_ + index;
+      return pointer_at(index);
     HYLE_FATAL_ASSERT(
         count <= static_cast<size_type>(-1) / sizeof(T) - size_);
     const size_type requested = size_ + count;
@@ -498,7 +548,7 @@ private:
       ::new (static_cast<void *>(data_ + index + i))
           T(std::move(inserted.data_[i]));
     size_ = requested;
-    return data_ + index;
+    return pointer_at(index);
   }
 
   void open_gap(size_type index, size_type count) noexcept {
@@ -667,10 +717,10 @@ private:
   }
 
   HYLE_NO_UNIQUE_ADDRESS Alloc alloc_{};
-  pointer data_;
+  pointer data_ = nullptr;
   size_type size_ = 0;
-  size_type cap_;
-  alignas(T) std::byte inline_[N * sizeof(T)];
+  size_type cap_ = N;
+  HYLE_NO_UNIQUE_ADDRESS detail::SmallVectorInlineStorage<T, N> inline_{};
 };
 
 namespace detail {
@@ -686,6 +736,13 @@ struct SmallVectorAccess {
       Construct construct) {
     return vector.try_append_construct_unaliased(
         std::move(first), std::move(last), std::move(construct));
+  }
+
+  template <class T, std::size_t N, class Alloc>
+  static bool try_reserve_growth(SmallVector<T, N, Alloc> &vector,
+                                 std::size_t required) noexcept {
+    return required <= vector.cap_ ||
+           vector.grow_to(vector.next_capacity(required));
   }
 };
 

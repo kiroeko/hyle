@@ -93,6 +93,8 @@ nothrow move-construct/destruct；POD 仍走 memcpy relocation。`try_reserve`�
 无 `try_` 的熟悉入口以及 count/range mutation 把 OOM 当 fatal。当前不提供 `at()`：
 项目还没有选择跨异常/无异常构建一致的越界返回策略；需要检查时先比较 `size()`。
 若序列经常远超 N，inline bytes 只会放大每个 owner，对它使用普通 `std::vector`。
+`N==0` 也是合法形状：空容器没有 dummy `T` storage，第一次插入才分配；它适合组合另一个
+container core 时复用同一套值语义，不是避免普通 `std::vector` 的默认理由。
 
 ### 严格不分配的小序列用 StaticVector
 
@@ -243,8 +245,10 @@ for (auto it = routes.lower_bound(first); it != routes.upper_bound(last); ++it)
 
 两个类型为 allocator-aware、owning、unique-key 容器。`FlatMap` 采用 C++23 同类的
 split storage：key 与 mapped value 各自连续；`keys()`/`values()` 可在只需一列时避免读入
-另一列。`FlatSet` 是独立单数组 core。两者复用 `SmallVector<...,1>`，singleton 不分配，
-也没有另造第二个通用 vector。公开面包括
+另一列。`FlatSet` 是独立单数组 core。两者复用 zero-inline 的成熟 sequence engine：空对象
+不会按任意 `sizeof(K/V)` 嵌入元素，第一次插入才分配，增量插入按几何容量增长；已知规模仍可
+先 `reserve`。它没有另造第二个通用 vector，也没有为 singleton benchmark 保存特殊 layout。
+公开面包括
 异构 `find/contains/count/lower_bound/upper_bound/equal_range`、insert/erase、map 的
 `try_emplace`/`insert_or_assign`/`operator[]`、reserve/shrink、copy/move 和有序迭代；map
 iterator 是 random-access proxy，标准 `.first` key 只读、`.second` value 可写，亦可用

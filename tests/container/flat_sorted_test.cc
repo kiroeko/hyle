@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <algorithm>
+#include <array>
 #include <cstddef>
 #include <iterator>
 #include <map>
@@ -27,12 +28,14 @@ using hyle::container::sorted_unique;
 struct ToggleAllocatorState {
   hyle::mem::Allocator backing = hyle::mem::system_allocator();
   bool fail = false;
+  std::size_t allocation_calls = 0;
   std::size_t live_allocations = 0;
 };
 
 void *toggle_allocate(void *raw, std::size_t size,
                       std::size_t alignment) noexcept {
   auto *state = static_cast<ToggleAllocatorState *>(raw);
+  ++state->allocation_calls;
   if (state->fail)
     return nullptr;
   void *result = state->backing.allocate(size, alignment);
@@ -140,6 +143,27 @@ struct ThrowingLess {
   }
 };
 
+struct LargeFlatKey {
+  int order = 0;
+  std::array<std::byte, 512> payload{};
+
+  friend bool operator==(const LargeFlatKey &, const LargeFlatKey &) = default;
+};
+
+struct LargeFlatValue {
+  std::array<std::byte, 512> payload{};
+
+  friend bool operator==(const LargeFlatValue &,
+                         const LargeFlatValue &) = default;
+};
+
+struct LargeFlatLess {
+  bool operator()(const LargeFlatKey &left,
+                  const LargeFlatKey &right) const noexcept {
+    return left.order < right.order;
+  }
+};
+
 template <class Map>
 void expect_same_map(const Map &actual,
                      const std::map<int, int> &expected) {
@@ -168,6 +192,39 @@ static_assert(!std::is_const_v<std::remove_reference_t<decltype(
                   std::declval<FlatMap<int, int>::iterator>()->value())>>);
 static_assert(std::is_const_v<std::remove_reference_t<decltype(
                   *std::declval<FlatSet<int>::iterator>())>>);
+static_assert(sizeof(FlatSet<LargeFlatKey, LargeFlatLess>) <
+              sizeof(LargeFlatKey));
+static_assert(sizeof(FlatMap<LargeFlatKey, LargeFlatValue, LargeFlatLess>) <
+              sizeof(LargeFlatKey));
+
+TEST(FlatSorted, EmptyObjectDoesNotEmbedKeyOrMappedValue) {
+  FlatSet<LargeFlatKey, LargeFlatLess> set;
+  FlatMap<LargeFlatKey, LargeFlatValue, LargeFlatLess> map;
+  EXPECT_EQ(set.data(), nullptr);
+  EXPECT_EQ(map.keys().data(), nullptr);
+  EXPECT_EQ(map.values().data(), nullptr);
+  EXPECT_EQ(set, (FlatSet<LargeFlatKey, LargeFlatLess>{}));
+  EXPECT_EQ(map, (FlatMap<LargeFlatKey, LargeFlatValue, LargeFlatLess>{}));
+
+  EXPECT_TRUE(set.insert(LargeFlatKey{.order = 7}).second);
+  EXPECT_TRUE(map.insert(LargeFlatKey{.order = 9}, LargeFlatValue{}).second);
+  EXPECT_EQ(set.begin()->order, 7);
+  EXPECT_EQ(map.begin()->key().order, 9);
+}
+
+TEST(FlatSorted, IncrementalInsertUsesGeometricStorageGrowth) {
+  ToggleAllocatorState state;
+  {
+    FlatMap<int, int, std::less<>, hyle::mem::Allocator> map(
+        std::less<>{}, toggle_allocator(state));
+    for (int value = 0; value < 64; ++value)
+      ASSERT_TRUE(map.insert(value, value).second);
+    EXPECT_GE(map.capacity(), 64u);
+    EXPECT_LE(state.allocation_calls, 16u);
+    EXPECT_EQ(state.live_allocations, 2u);
+  }
+  EXPECT_EQ(state.live_allocations, 0u);
+}
 
 TEST(FlatMap, ProvidesOrderedSoaMapOperations) {
   FlatMap<std::string, int> map;
@@ -417,11 +474,12 @@ TEST(FlatSorted, AllocationFailurePreservesExistingContainer) {
     FlatMap<int, int, std::less<>, hyle::mem::Allocator> singleton(
         std::less<>{}, toggle_allocator(state));
     state.fail = true;
-    EXPECT_EQ(singleton.try_insert(1, 10), FlatInsertResult::kInserted);
-    EXPECT_EQ(singleton.try_insert(2, 20), FlatInsertResult::kOutOfMemory);
-    EXPECT_EQ(singleton.size(), 1u);
+    EXPECT_EQ(singleton.try_insert(1, 10), FlatInsertResult::kOutOfMemory);
+    EXPECT_TRUE(singleton.empty());
     EXPECT_EQ(state.live_allocations, 0u);
     state.fail = false;
+    EXPECT_EQ(singleton.try_insert(1, 10), FlatInsertResult::kInserted);
+    EXPECT_EQ(singleton.size(), 1u);
   }
   {
     FlatMap<int, int, std::less<>, hyle::mem::Allocator> map(
