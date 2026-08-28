@@ -7,7 +7,7 @@
 > `PRODUCT_TRIGGER` 启动；长期合同仍归
 > [`build-system.md`](../../../architecture/build-system.md)。
 
-## Closure card（`AUDITED`）
+## Closure card（`CANDIDATE`）
 
 - unit / owner / round / kind：`build-package` / build/package maintainers /
   `build-v5-selected-closure` / `REOPEN`；
@@ -51,6 +51,27 @@
 冻结产品 `FIX` 只有 `BUILD-V5-SELECT-01` 与 `BUILD-V5-COMPLEXITY-01` 的同一局部重排；其余为
 regression/文档。不得修改 component edge、option、package、dependency 或 workflow。
 
-## Candidate / verification / terminal receipt
+## Candidate freeze
 
-待实现后填写。若产品候选冻结后再改变上述算法或正常 source journey，退回本页 `AUDITED`。
+- product candidate / tree：`83bfa5566325e679da11528f93e50a46d2512abd` /
+  `4d5c2455d23400ad9db66047410c65d62d844598`；
+- product delta：`HyleComponents.cmake` 先验证 manifest/解析 roots，以已验证的 topological order 单次
+  反向传播 dependency marks，再只对 `_hyle_resolved` 做 public/source include audit；组件名、edge、
+  `HYLE_BUILD_*`、target、option 和 package surface 不变；
+- regression delta：component contract 增加两个最小 child-project fixture；未选 graph 的非法 include
+  配置 core 必须成功，selected core 的同类漏边必须命中原 fail-closed 诊断；
+- documentation delta：architecture 说明全局 manifest 与 selected source audit 的边界；用户指南明确
+  非 CMake bridge 和 binary install-prefix 归档路线；
+- P0 mechanism：dependency propagation 从 growing-set fixed point 改成一次 topological reverse pass；
+  source text 从 `S_all` 收束为 `S_selected`。没有计时调参、常态 runtime metadata 或产品 API 变化；
+- pre-freeze evidence：W1-WIN current component contract `PASS`；Core source/shared/static/relocated consumer
+  各 `1/1 PASS`；W1-WSL CMake 3.28/GCC 14 同一 current component contract `PASS`；docs/closure/diff
+  checks `PASS`。
+
+Candidate 后若改变以上算法、作用域或正常 source journey，退回 `AUDITED`。后续只允许补验证、receipt
+和 LOC。
+
+## Verification / terminal receipt
+
+待当前 candidate 的 macOS portable configure、最终 Windows current-tree replay、文档/闭包与 immutable
+LOC 完成后填写。
