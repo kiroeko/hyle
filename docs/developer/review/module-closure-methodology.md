@@ -3,7 +3,8 @@
 > 本协议是普通模块工程决策的唯一方法。它回答“本轮是否应继续改、能否停止并进入下一模块”，
 > 不把发布级性能声明绑到每次重构。当前机械状态见
 > [`module-status.json`](../../implementation/module-status.json)，人读投影见
-> [`implementation/status`](../../implementation/status.md)。
+> [`implementation/status`](../../implementation/status.md)。功能准入和“完整”的产品定义见
+> [基础库能力完整性决策](../../architecture/capability-completeness.md)；本协议只把该决策变成施工门。
 
 新模块和重构使用同一状态流。新模块先在中央 component graph 与状态表中以 `QUEUED` 登记，再冻结
 语义、依赖和交付边界；重构把既有实现当审计输入并绑定 baseline，不把旧 API、历史任务或旧 benchmark
@@ -27,7 +28,7 @@ reopen:  CLOSED -> REOPENED -> SCOPED
 |---|---|---|
 | `QUEUED` | 尚未启动本轮 | 唯一 component ID、排队/现状摘要 |
 | `SCOPED` | 决策合同冻结 | baseline、真实需求/缺陷、范围/非目标、P0/P1/P2、预算、机器与仪器 ID、适用门 |
-| `AUDITED` | 差距已裁决 | capability/gap ledger；每项为 `KEEP/FIX/BORROW/DEFER/REJECT`，本轮 `FIX` 集冻结 |
+| `AUDITED` | 能力覆盖与差距已裁决 | capability-family map、现有 public-surface trace、覆盖状态与 capability/gap ledger；本轮 `FIX` 集冻结 |
 | `CANDIDATE` | 产品形状冻结 | product commit/tree、合同与复杂度变化、直接消费者迁移、候选测试 |
 | `VERIFIED` | 本轮适用工程门完成 | correctness、delivery、docs/usability、red-team 与分级工程性能 verdict |
 | `CLOSED` | 工程上应停止 | 无未决 blocker，限制与 reopen trigger 明确，结束 receipt、registry anchor 和四项 LOC 齐全 |
@@ -86,6 +87,7 @@ CONFIRMED | METHOD_GAP | PRODUCT_TRIGGER
 
 - component ID、owner、round ID、baseline commit；
 - 一个真实 consumer task、可复现 defect，或成熟实现反复证明的通用基础需求；
+- 初始问题域与用户旅程；不能从现有类名、函数名或 benchmark case 反推完整范围；
 - 范围、非目标、直接依赖和直接消费者；
 - `P0/P1/P2` 及理由，正常 workload、资源预算和 material margin；
 - 总调查预算、性能预算、最多实验/修复次数；
@@ -99,27 +101,50 @@ CONFIRMED | METHOD_GAP | PRODUCT_TRIGGER
 
 ## 3. 有界审计及其输出
 
-审计先按用户任务而不是现有 API 或 benchmark 名称列 capability。每项至少记录：
+审计固定做两遍，并以
+[能力完整性决策](../../architecture/capability-completeness.md)为判据：
+
+1. **自顶向下：**从定义性任务、当前消费者、具名北极星旅程、标准和最多两个 strong peers 建立
+   capability-family map；逐族检查取得/构造、正常操作、组合/互操作、更新/取消/关闭/销毁、边界、
+   ownership/concurrency、复杂度/资源、交付与易用性。没有证据的 peer feature 只作 `GENERAL` 输入。
+2. **自底向上：**枚举现有全部 public 类型、函数、常量和用户可观察行为，把每个入口映射回能力族、
+   demand 和具体旅程。存在本身不构成保留理由；只有单向转换、缺少正常 teardown、只支持 benchmark
+   生命周期或关键边界未定义的既有能力必须标为 `PARTIAL`，不能写成 `KEEP`。
+
+capability-family map 至少记录：
+
+```text
+family | admitted user journeys | semantic variants | lifecycle/boundaries
+current route | COMPLETE/PARTIAL/MISSING/ROUTED/OUT_OF_SCOPE | missing edge
+```
+
+覆盖状态描述“当前做到了多少”；施工动作描述“本轮怎么办”。两者不得合并。随后每项 ledger 至少记录：
 
 ```text
 demand/defect ID | demand kind | exact consumer/peer/standard source | normal shape
 semantic/artifact/delivery owner | ownership/lifetime/concurrency/failure
-complexity/resource target | KEEP/FIX/BORROW/DEFER/REJECT | severity
+complexity/resource target | coverage state | KEEP/FIX/BORROW/DEFER/REJECT | severity
 verification | negative space
 ```
 
 - 每个公开入口反向指向一个 demand；只被 benchmark 使用的入口删除或私有化。
-- 每个当前 `MUST`（本轮冻结范围内由真实 consumer、缺陷、标准或成熟 peer 支持的必需能力）有实现、
-  自然组合、成熟依赖或明确裁决。
-- `GENERAL` 是查漏输入，不自动扩大本轮；没有真实阻断的新增能力默认进入后续 backlog。
+- 每个当前 `MUST`（本轮冻结范围内由真实 consumer、具名北极星旅程、缺陷、定义性任务、标准或
+  成熟 peer 支持的必需能力）在结案时必须为 `COMPLETE`，或拥有用户可发现且同样完整的 `ROUTED`
+  路线；`PARTIAL/MISSING + KEEP` 非法。
+- `GENERAL` 是查漏输入，不自动扩大本轮；未通过能力准入、但值得保留触发条件的新增能力进入后续
+  backlog。
+- 反复出现的通用基础需求若满足能力准入规则，就从 `GENERAL` 提升为 `MUST`；不得仅因当前仓库尚未
+  调用而永久延后。反之，单个 peer 的独有 feature 不自动扩大范围。
 - `demand kind` 至少区分真实 consumer、可复现 defect、成熟 peer、语言/平台标准和 build/package
-  契约；peer-derived `GENERAL` 不能伪装成已有生产消费者。
+  契约，并把已声明北极星消费者单列；peer-derived 或 north-star-derived demand 不能伪装成已有生产
+  消费者。
 - 一个能力跨边界时分别登记 semantic owner（语义决策）、artifact owner（代码/二进制所在）与
   delivery owner（组件图、安装和装载）；不得用“归某模块”掩盖这些边界不同的事实。
 - 同时扫描语法消费者、语义重复和直接依赖边，但只修本模块与必要直接边。
 - 优先检查错误复杂度档、额外 allocation/copy/syscall/lock、错误 ownership 和交付断边，再看常数。
 
-审计结束必须冻结有限 `FIX` 集。发现相邻模块问题时登记任务；只有 correctness/security 或当前构建
+审计结束必须冻结有限 `FIX` 集，并留下 capability-family map、public-surface trace 和每个
+`PARTIAL/MISSING` 的明确去向。发现相邻模块问题时登记任务；只有 correctness/security 或当前构建
 阻断允许越界修复。
 
 ## 4. 类型、实现与 correctness 门
@@ -235,8 +260,9 @@ product-identity anchor 由 reviewer 从 Git 打开 registry，核对当时确�
 
 ## 9. 终止输出与四项 LOC
 
-只有所有适用工程门有 verdict、P1/P2 工程性能为 `PASS`、没有 blocker，且限制/reopen trigger 写明时
-才能 `CLOSED`。每轮在 `CLOSED` 或 `BLOCKED` 终止时仍必须运行：
+只有所有适用工程门有 verdict、所有 `MUST` 能力为 `COMPLETE` 或完整 `ROUTED`、不存在
+`PARTIAL + KEEP`、P1/P2 工程性能为 `PASS`、没有 blocker，且限制/reopen trigger 写明时才能
+`CLOSED`。每轮在 `CLOSED` 或 `BLOCKED` 终止时仍必须运行：
 
 ```text
 python scripts/loc-report.py --module <component> --commit <full-snapshot-commit> --self-check --json

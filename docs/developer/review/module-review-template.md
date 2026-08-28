@@ -29,15 +29,28 @@
 - 预期输出：
 - 停止条件 / 可接受限制：
 
+## Capability-family coverage map
+
+| Family | admitted user journeys / evidence | required semantic variants | lifecycle / boundary / ownership dimensions | current route | `COMPLETE/PARTIAL/MISSING/ROUTED/OUT_OF_SCOPE` | missing edge / negative space |
+|---|---|---|---|---|---|---|
+
+先从用户任务、定义性能力、当前/北极星消费者和 mature peers 自顶向下填写；再枚举全部现有公开入口
+反向追踪。一个函数存在不等于能力完整；单向互操作、缺 teardown、关键边界未定义或 benchmark-only
+lifecycle 必须记为 `PARTIAL`。
+
 ## Capability / gap ledger
 
-| ID | requirement class | demand kind | exact consumer / peer / standard source | normal shape | semantic / artifact / delivery owner | ownership/failure/concurrency | complexity/resource target | `KEEP/FIX/BORROW/DEFER/REJECT` | severity | verification / negative space |
-|---|---|---|---|---|---|---|---|---|---|---|
+| ID | requirement class | demand kind | exact consumer / peer / standard source | normal shape | semantic / artifact / delivery owner | ownership/failure/concurrency | complexity/resource target | coverage state | `KEEP/FIX/BORROW/DEFER/REJECT` | severity | verification / negative space |
+|---|---|---|---|---|---|---|---|---|---|---|---|
 
 `requirement class` 只用 `MUST/GENERAL`：`MUST` 属本轮冻结范围，必须有实现、自然组合、成熟依赖或
 明确裁决；`GENERAL` 只用于成熟库查漏，不会自动扩大本轮。
 
-- 公开入口反向追踪：
+`coverage state` 只用 `COMPLETE/PARTIAL/MISSING/ROUTED/OUT_OF_SCOPE`。覆盖状态和施工动作是两个轴；
+`KEEP` 只能用于 `COMPLETE` 或已证明完整的 `ROUTED`，不得出现 `PARTIAL/MISSING + KEEP`。
+
+- 现有公开入口反向追踪：
+- 已有能力完整性检查（语义变体 / lifecycle / boundary / ownership / interop / delivery / usability）：
 - 语法消费者 / 语义重复扫描：
 - public/internal/higher-layer 裁决：
 - 本轮冻结 `FIX` 集：

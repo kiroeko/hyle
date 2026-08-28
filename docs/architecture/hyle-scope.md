@@ -46,7 +46,9 @@ HYLE 关注四类可以重复利用的加速：
 - 因缺少证据而延后，或因违反范围而拒绝。
 
 多个成熟库反复出现的通用能力必须进入 capability ledger 评估。LOC、公开 symbol 数和 benchmark
-case 数都不是完整度指标。
+case 数都不是完整度指标。完整判据与能力准入、已有能力反向审计规则见
+[基础库能力完整性决策](capability-completeness.md)。特别地，“已经有一个公开 API”不等于该能力完整；
+单向互操作、缺少正常关闭/销毁路径或只覆盖 benchmark 生命周期都必须标为 `PARTIAL`。
 
 ## 当前不属于 HYLE 的产品
 

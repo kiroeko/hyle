@@ -6,9 +6,10 @@
 
 ## 写代码前
 
-1. 写 demand/defect ID、真实消费者任务和正常规模。
+1. 先按用户任务列能力族和正常旅程，再写 demand/defect ID、真实/北极星消费者与正常规模。
 2. 裁决 owner module、public/internal、直接依赖和不做什么。
-3. 查成熟 peer 的能力与算法，不从现有 benchmark 反推 API。
+3. 查成熟 peer 的能力与算法；同时反向枚举现有公开面，已有函数也要检查语义变体、互操作、边界和
+   teardown 是否完整，不从现有 benchmark 反推 API。
 4. 写 ownership、lifetime、concurrency、failure、capacity、复杂度和常态 metadata。
 5. 确认该需求不是自然组合、成熟依赖或更高层策略已经覆盖。
 

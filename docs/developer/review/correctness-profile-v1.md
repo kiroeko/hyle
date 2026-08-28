@@ -22,7 +22,7 @@ source bundle 没有 `.git` 时只验证当前文件与 registry 结构，不冒
 
 | Gate | 最低证据 | 失败含义 |
 |---|---|---|
-| capability / API | demand-kind 账本、每个公开入口的来源与 negative space、ownership/failure/并发/复杂度 | `FAIL` 或回到 `AUDITED` |
+| capability / API | 自顶向下 capability-family map、全部现有公开入口反向追踪；每个 `MUST` 为 `COMPLETE` 或完整 `ROUTED`，不存在 `PARTIAL + KEEP`；ownership/failure/并发/复杂度/negative space 齐全 | `FAIL` 或回到 `AUDITED` |
 | correctness | 风险矩阵逐项 `PASS/FAIL/NOT_APPLICABLE/BLOCKED`；公开头 self-contained；适用 sanitizer/target | correctness blocker |
 | cost structure | 同复杂度档；正常路径无意外 allocation、lock、syscall、copy、registry 或常态 metadata | P0 `FAIL`；若实际是热点则重新 scope 为 P1/P2 |
 | release structure | 对受 source hint/layout 影响的入口检查 codegen、symbol、object size 或调用边；不适用时写理由 | `FAIL/INCONCLUSIVE` |

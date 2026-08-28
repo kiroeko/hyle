@@ -253,7 +253,7 @@
     },
     {
       "module": "time",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "round_id": "time-v1",
       "closure_task": "docs/implementation/tasks/time/time-v1-closure.md",
       "scope": "Clock, Unix timestamp, deadline/sleep and intrusive timer capabilities; C++ API, direct dependencies/consumers, delivery, documentation and P1 engineering evidence.",
@@ -276,7 +276,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "time-v1 已冻结范围、真实消费者、预算、peer 与 P1 门；有限 gap ledger 尚在审计。"
+      "summary": "time-v1 已按能力族与现有公开面双向审计，发现既有能力的部分覆盖并冻结十项 ledger FIX（归并八个施工批次）；尚未形成 candidate。"
     },
     {
       "module": "platform",

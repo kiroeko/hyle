@@ -10,7 +10,9 @@
    `REOPENED`，还是不应触碰的 `CLOSED` 模块。
 2. 在 `docs/implementation/tasks/<module>/` 复制模板，冻结 baseline、真实需求、范围/非目标、依赖、
    tier、机器/仪器、预算和停止条件，才进入 `SCOPED`。
-3. 从用户任务和成熟实现建立 capability/gap ledger，裁决并冻结有限 `FIX` 集，才进入 `AUDITED`。
+3. 按[能力完整性决策](../../architecture/capability-completeness.md)先做自顶向下的 capability-family
+   map，再从现有公开面反向追踪；把覆盖状态与施工动作分开，裁决并冻结有限 `FIX` 集，才进入
+   `AUDITED`。
 4. 实现、冻结 candidate，完成适用 correctness、交付、消费者、性能、文档和限时红队门。
 5. 结案为 `CLOSED` 或带明确恢复条件的 `BLOCKED`；不要用“继续调查”保持无限进行中。
 

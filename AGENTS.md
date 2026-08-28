@@ -5,10 +5,11 @@
 1. [README](README.md)：产品与交付边界；
 2. [当前状态](docs/implementation/module-status.json)：唯一当前模块状态；
 3. [模块收口方法](docs/developer/review/module-closure-methodology.md)：状态、预算、验证和停止规则；
-4. [任务模板](docs/developer/review/module-review-template.md)：当前轮任务记录格式；
-5. [工程章程](docs/developer/standards/engineering-charter.md)与
+4. [能力完整性决策](docs/architecture/capability-completeness.md)：基础库功能准入、已有能力完整度与边界；
+5. [任务模板](docs/developer/review/module-review-template.md)：当前轮任务记录格式；
+6. [工程章程](docs/developer/standards/engineering-charter.md)与
    [编码规范](docs/developer/standards/coding-conventions.md)：长期实现规则；
-6. 涉及模块顺序、组件、依赖或交付时阅读[架构路线](docs/architecture/roadmap.md)和
+7. 涉及模块顺序、组件、依赖或交付时阅读[架构路线](docs/architecture/roadmap.md)和
    [构建系统](docs/architecture/build-system.md)。
 
 ## 权威边界

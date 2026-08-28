@@ -110,7 +110,9 @@ compute 与 graph 的产品形状仍可能由真实推理引擎推翻，在其�
 
 每个模块按 [审查方法](../developer/review/module-closure-methodology.md)完成：
 
-- capability/demand ledger，覆盖实现、组合、借用、上移、延后与拒绝；
+- 自顶向下 capability-family map 与现有公开面反向追踪，区分
+  `COMPLETE/PARTIAL/MISSING/ROUTED/OUT_OF_SCOPE`，再用 capability/demand ledger 裁决实现、组合、
+  借用、上移、延后与拒绝；
 - public/internal 与 owner module 裁决；
 - ownership/lifetime/concurrency/failure/complexity 类型表；
 - 消费者与依赖双向扫描；
@@ -120,7 +122,8 @@ compute 与 graph 的产品形状仍可能由真实推理引擎推翻，在其�
 
 推理引擎提供首要 demand 与 workload，第二种工程计算形状作为泛化留出。基础 API 必须通过语义
 擦除：去掉模型、token、服务和 backend 名称后仍然是自然的通用任务。详见
-[推理引擎北极星](inference-engine-north-star.md)。
+[推理引擎北极星](inference-engine-north-star.md)与
+[能力完整性决策](capability-completeness.md)。
 
 ## 6. 停止规则
 
