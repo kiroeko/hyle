@@ -694,7 +694,13 @@ private:
       other.cap_ = N;
       return;
     }
-    if constexpr (std::is_trivially_copyable_v<T>) {
+    if constexpr (N == 0) {
+      // An inline N==0 vector is necessarily empty and both inline pointers are
+      // null. Do not form memcpy(nullptr, nullptr, 0): besides being needless,
+      // fortified libc headers correctly reject its pointer preconditions.
+      size_ = 0;
+      other.size_ = 0;
+    } else if constexpr (std::is_trivially_copyable_v<T>) {
       if (other.size_ != 0)
         std::memcpy(data_, other.data_, other.size_ * sizeof(T));
       size_ = other.size_;

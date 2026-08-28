@@ -80,6 +80,14 @@ static_assert(sizeof(SmallVector<LargeZeroInlineValue, 0>) <
               sizeof(LargeZeroInlineValue));
 
 TEST(SmallVector, ZeroInlineStartsEmptyAndAllocatesOnDemand) {
+  SmallVector<int, 0> empty_trivial;
+  SmallVector<int, 0> moved_empty_trivial(std::move(empty_trivial));
+  SmallVector<int, 0> swapped_empty_trivial;
+  swap(moved_empty_trivial, swapped_empty_trivial);
+  EXPECT_TRUE(empty_trivial.empty());
+  EXPECT_TRUE(moved_empty_trivial.empty());
+  EXPECT_TRUE(swapped_empty_trivial.empty());
+
   SmallVector<std::string, 0> values;
   EXPECT_TRUE(values.empty());
   EXPECT_TRUE(values.inline_storage());
