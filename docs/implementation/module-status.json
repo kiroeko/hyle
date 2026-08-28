@@ -243,8 +243,30 @@
     },
     {
       "module": "obs",
-      "product_state": "QUEUED",
-      "summary": "现有实现与历史审查只作输入。"
+      "product_state": "SCOPED",
+      "round_id": "obs-v1",
+      "closure_task": "docs/implementation/tasks/obs/obs-v1-closure.md",
+      "scope": "Synchronous structured-log production and sink lifecycle plus the compile-time native trace seam; C++ API, dependencies/consumers, Tracy integration, source/static/shared delivery, documentation and bounded P1 engineering evidence.",
+      "non_goals": "Async logging services, file/network/aggregation/alerting, metrics registry, full category/config trees, crash/signal logging, fatal control flow, OpenTelemetry/viewer protocols, GPU profiling policy, Native FFI/C API, stable C++ ABI, downstream closure and Formal certification.",
+      "baseline_commit": "f305b9d3fed87a065d300145e5d9e8de3f5a77a0",
+      "performance_tier": "P1",
+      "validation_machine_profiles": [
+        "W1-WIN",
+        "W1-WSL",
+        "M1-MAC"
+      ],
+      "engineering_performance": {
+        "verdict": "PLANNED",
+        "mode": "P1_ENGINEERING",
+        "material_margin_pct": 5,
+        "machine_profile": "W1-WIN",
+        "instrument_profile": "closure-perf-v1"
+      },
+      "formal_performance": {
+        "state": "PENDING",
+        "instrument_profile": "formal-release-v1"
+      },
+      "summary": "obs-v1 SCOPED：审查同步 log/sink 生命周期与 native trace seam；冻结两小时级预算、四类真实 workload、三平台正确性/交付及 W1-WIN 5% P1 工程门，尚未修改产品实现。"
     },
     {
       "module": "math",
