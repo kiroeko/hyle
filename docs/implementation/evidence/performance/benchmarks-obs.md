@@ -1,100 +1,104 @@
-# obs-runtime 历史性能证据（2026-07-29，`06cec5a`）
+# obs-v1 工程性能证据（2026-08-28）
 
-> **2026-08-25 freshness gate：**本页只覆盖旧 gate/record/fan-out 热路。Tracy 0.14.1、
-> 当前 29-symbol C 面与 caller-storage sink 不在该次采样合同内；obs 产品收口状态未改变。
-> 相同 source identity、peer pin、编译合同与三平台重跑完成前，这些点值不是当前发布证书。现行状态只看
-> [`pre-release-readiness`](../../status.md)。
+本页只描述当前 `obs-v1` 候选及其仍未通过的门。产品 identity 为
+`2c784d9d6a925529995c6a5582d9bc373d91535d` / tree
+`bff512b2fd644b3a88bce55be419dadad43c6a89`；基线为 `f305b9d3`。旧 C ABI、旧 runtime
+trace bridge 和 2026-07 的三平台点值已经删除，不能用于当前裁决。
 
-本页只测 obs 的真实生产形状：运行期 level gate、同步结构化 fan-out、C ABI seam 和多
-producer。文件 I/O、异步队列、滚动与上传属于 sink/应用；把它们混进 producer
-microbenchmark 既不能解释 registry 复杂度，也会让 OS I/O 淹没这里要守的成本。
+## 1. 合同与复杂度
 
-## 1. 公开合同与复杂度
+| 操作 | 时间 / 资源合同 |
+|---|---|
+| 编译期 floor 以下的 `HYLE_LOG_*`、trace OFF | O(0)；参数不求值、无产品符号或 backend |
+| `should_log` / runtime drop | O(1)；一次 relaxed threshold load |
+| `log_record` / `log_message(string_view)` | O(S)，S 为同步 sink 数；不扫描 exact slice、不分配、不拿 mutation mutex |
+| `log_message(const char*)` | O(M + S)，M 为 NUL 前消息长度 |
+| format helper | O(formatted bytes + S)；调用方固定 1 KiB 栈缓冲，外来 formatter 异常转静态失败记录 |
+| add/remove/flush | O(S)，S≤64；控制面 mutation mutex，remove 等待旧 reader/callback 排空 |
+| trace ON native seam | 与相同 direct Tracy event 同阶；无 HYLE runtime adapter |
 
-| 操作 | 时间复杂度 | 分配 / 同步 |
-|---|---|---|
-| 编译期 floor 以下的 `HYLE_LOG_*` / `HYLE_OBS_EMIT_*` | O(0) | 参数不求值；目标文件没有 obs 未定义符号 |
-| `should_log` / 运行期被 gate 的宏 | O(1) | 一次 relaxed atomic load；参数不求值 |
-| `log_record` / 长度已知的 view、`hyle_obs_log_n` | O(S)，S 为当前 sink 数 | 不分配、不扫描 message；不拿 mutation mutex；短 reader epoch + per-slot active ref |
-| NUL convenience `log_message(const char*)` / `hyle_obs_log` | O(M + S) | M 为消息首个 NUL 前字节数；之后与 exact-length 路径相同 |
-| `add_sink` / `remove_sink` | O(S)，且 S ≤ 64 | 冷路径 mutation mutex；remove 另等待旧 reader/callback 排空 |
-| `SinkRegistration` create/reset/destruct | 与 add/remove 同阶 | 只在控制面；不给 record/sink 增加热路径字段 |
-| `flush_sinks` | O(S) | 同步调用支持 flush 的 sink；同 emit 的安全引用合同 |
-| C record / sink trampoline | 与 native 同阶 | owning `hyle_status` 只在失败时拥有错误对象 |
-| 默认 sink | O(M + fields + I/O) | 控制字节流式转义；Windows debugger mirror 为固定 4 KiB，无 heap |
+emit 的 O(S) 是必须逐 sink callback 的下界。registry 使用固定 64 槽、两份进程期 immutable
+snapshot 和 per-sink active reference；热路没有 heap、retired list 或 mutation mutex。并发基准中的
+线程、sample vector、barrier 和 sink 注册均在计时区外；每轮精确核对
+`workers × iterations × sinks` 个 callback。
 
-registry 使用两份进程期、原地 immutable snapshot。mutation 串行发布新代；producer
-只复制已发布快照并取得 active reference，因此注册/注销不把共享 mutex 塞进所有正常
-日志。64 槽是显式能力上限，不存在随日志量增长的 retired list 或热路径 heap traffic。
+## 2. W1-WIN 单线程与 fan-out 支持证据
 
-## 2. 方法
+相同 benchmark 源码分别链接当前库和冻结基线；W1-WIN、MSVC 19.50、Release、trace OFF、static，
+每个顺序 15 个独立配对进程。共享机器 profile、采样锁、affinity、priority 与
+distribution-free process-median 统计均复用 `hyle_perf`。bundle：
 
-- 实现：runtime/API 为 `4d31bcf`，采样稳定性调整后证书绑定 `06cec5a`；
-- runner：`hyle_obs_bench` / nanobench，Release，15 个独立进程运行的中位数；sink 只做
-  relaxed atomic counter，不做 I/O；
-- normal：单 sink preformatted、4-field structured、`std::format` 宏与 C Status seam；
-- fan-out：1/4/16 sink，表中按每次 callback 归一化；
-- concurrent：2/8 producer 各发 100,000 条，按每条 emit 归一化；
-- Windows x64 MSVC 19.50、WSL2 GCC 14.2、Apple M4 AppleClang 21；
-- M4 不宣称物理 P/E 核绑定。interactive 与 utility 都测；utility 组波动更低，故表中用
-  utility 作该轮稳定证据，interactive 只作异构调度敏感性审计。
+`C:\hyle-scratch\obs-v1\logging-regression-20260828e\result.json`
+（SHA-256 `E1B9DC2B2AFFF482D72A9312FF04C12CDC71AE012C5CD4CE098754A85B66104D`）。
 
-所有点值单位均为 ns/op；并发行为 ns/emit，fan-out 行为 ns/sink callback。
+| workload | 当前中位数（candidate-first / baseline-first） | 结果 |
+|---|---:|---|
+| runtime gate | 0.651 / 0.675 ns | 两顺序 5% baseline NI PASS |
+| preformatted，1 sink | 42.616 / 43.837 ns/emit | NI PASS；≤100 ns PASS |
+| structured 4 fields | 38.510 / 39.642 ns/emit | NI PASS |
+| `std::format` macro | 93.802 / 97.817 ns/emit | NI PASS；≤150 ns PASS |
+| fan-out 1 sink | 42.717 / 43.863 ns/callback | NI PASS |
+| fan-out 4 sinks | 19.289 / 19.853 ns/callback | NI PASS |
+| fan-out 16 sinks | 13.542 / 13.747 ns/callback | NI PASS |
 
-## 3. 三平台 n=15
+这些行支持当前正常同步 producer 没有材料级 baseline 回退。它们不是完整日志平台与
+Abseil/Folly 的点值排名，也不是 Formal 证书。原 bundle 中的 2/8 producer 行继承了单逻辑 CPU
+process mask，不能证明真正并行，已明确排除。
 
-| 场景 | Windows | WSL2 | M4 utility | 结论 |
-|---|---:|---:|---:|---|
-| `HYLE_LOG_INFO` runtime gated | 2.160 | 0.910 | 1.100 | O(1) 单次 relaxed gate；不格式化 |
-| native preformatted view，1 sink | 42.070 | 38.970 | 23.910 | exact byte view + immutable snapshot + 安全 active ref |
-| structured，4 fields | 38.450 | 34.500 | 23.560 | 直接 record 与旧证书同档；字段仍 borrowed |
-| `std::format` 宏，1 sink | 89.190 | 87.260 | 63.210 | 宏已从两次 runtime gate 减为一次 |
-| C NUL `hyle_obs_log` + Status | 44.610 | 40.230 | 26.790 | 含 `strlen` convenience 与 checked Status seam |
-| C exact `hyle_obs_log_n` + Status | 44.430 | 39.790 | 27.090 | slice 不扫描；短 literal 点值与 NUL 行同档 |
-| fan-out 1 sink | 41.680 | 38.200 | 24.340 | 与 normal view 交叉核对 |
-| fan-out 4 sinks，per sink | 18.790 | 18.600 | 8.170 | 固定 snapshot 成本被摊薄 |
-| fan-out 16 sinks，per sink | 13.140 | 13.640 | 4.280 | 总工作仍严格 O(S) |
-| 2 producer，per emit | 108.800 | 89.040 | 79.390 | 无 producer mutex；sink atomic counter 有共享争用 |
-| 8 producer，per emit | 93.690 | 62.950 | 124.390 | 平台 cache/调度不同；无复杂度退化 |
+## 3. 8-P-core 多生产者证据与 blocker
 
-Windows normal/structured/format spread 为 9.5%/8.6%/6.3%；M4 加长 epoch 后为
-0.5%/5.1%/4.3%，fan-out 1/4/16 为 3.3%/6.4%/4.9%。WSL 受宿主负载影响仍较明显，normal
-spread 23.6%，所以它只支持“同历史档/无 material regression”，不拿单个最好点作胜负。
-M4 runtime gate 的绝对值极小，1.04–1.74 ns 对应 63.6% spread；复杂度/codegen 成立，点值
-只记中位数。QoS 不是物理 P/E 核绑定，表保留全部独立进程样本的中位数，不挑最好点。
+`hyle_obs_concurrent_bench` 使用真实 `log_message` + relaxed-atomic adapter callback，8 个 worker
+分别固定到 W1 的逻辑 CPU `0,2,4,6,8,10,12,14`：它们来自 8 个不同、最高 efficiency class 的
+P-core，排除了 SMT sibling。1/4/16 sink 使用相同源码、编译器和链接合同对拍当前/基线；每个顺序
+15 个独立进程。分块 p99 以连续 256 次 emit 为一个 sample，避免让单次 clock read 主导热路；max
+仅作 OS 中断诊断，不进入产品门。
 
-编译期 floor 另由 consumer test 证明参数不求值；Windows `dumpbin /imports`、WSL
-`nm -uC`、M4 `nm -u` 均未找到被裁剪 translation unit 的 obs 未定义符号。它是 O(0)
-source/codegen 合同，不需要制造一行“0.00 ns”benchmark。
+证据：
+`C:\hyle-scratch\obs-v1\concurrent-regression-20260828a\result-classified.json`
+（SHA-256 `D81D444324909AE3B479C7F473F111B434D1481526E3CE81E1556B0C88080A06`）。
 
-## 4. 架构 A/B，而非 benchmark API
+| sinks | 当前 throughput ns/emit | 当前 ns/callback | 当前 chunk p99 ns/emit | 5% baseline NI |
+|---:|---:|---:|---:|---|
+| 1 | 65.299 / 63.313 | 同左 | 668.750 / 666.406 | `UNRESOLVED` |
+| 4 | 106.562 / 105.925 | 26.641 / 26.481 | 1080.078 / 1087.891 | `UNRESOLVED` |
+| 16 | 224.434 / 225.502 | 14.027 / 14.094 | 2407.422 / 2269.922 | `UNRESOLVED` |
 
-审查中实现过一个 `shared_mutex`/exclusive snapshot 版本，再用相同 normal workload 对拍。
-Windows 代表值：mutex 版单 producer约 43.9 ns、2 producer约 108 ns、8 producer约
-205 ns；最终 immutable snapshot 单 producer约 40 ns、2 producer约 92–109 ns、8
-producer约 93–100 ns。最终形状不是为了增加一条易赢的 API，而是删除正常 emit 的
-registry lock，在保持 quiescent unregister 的前提下把 8 producer 成本约减半。
+斜线两侧仍是 candidate-first / baseline-first。1-sink 当前 30 个进程的合并中位数为
+64.339 ns/emit，预声明 ≤150 ns 的绝对门为 `PASS`；4/16 sink 必须同步执行更多 callback，未把
+1-sink 的 per-emit 上限错误套到它们。所有 callback count、线程 singleton affinity、机器与锁门均
+通过。
 
-## 5. 成熟库对照与 SOTA 判定
+baseline NI 不能签署：全部主行的 99.26% process-median CI 穿过 5% 单边界，因此正确聚合结果是
+`INCONCLUSIVE`，不是 `FAIL` 或 `PASS`。一次机制检查确认两版 snapshot/callback 指令逐条相同；
+当前 `span` record 的空字段初始化在 MSVC 下比旧 pointer/count 入口多几条 store，但四种自然初始化
+写法生成相同 codegen。破坏 exact `span` API、quiescence 或常态 layout 来迎合这一同步争用仪器
+不成立。
 
-本地 Abseil 可选行在 Windows 同一 runner 测得 gated 约 439 ns、stream +
-`ToSinkOnly` 约 892 ns。**它们不是同合同排名**：Abseil 同时构造完整 `LogEntry`、类别/
-配置元数据并承载更重的全功能日志语义；HYLE 是基础加速库的低层 structured producer
-seam。这里引用 Abseil 的价值是 recursion suppression、Flush 和 process-lifetime registry
-形状，而不是拿 payload 较轻的 HYLE 宣称“快几十倍”。Folly 同样用于同步 handler、flush
-与终端转义的设计核对，Tracy用于 compile-time trace/backend 边界。
+当前统一仪器只登记单逻辑 CPU 与双核 pair，无法对 8-core 自定义结果执行同一套 A/A、5%/10%
+positive control、timer-floor、n=15→31 停止规则与深重放。独立 blocker 见
+[`perf-multicore-topology-v1`](../../tasks/performance/perf-multicore-topology-v1.md)。因此
+`multi-producer-fanout` 工程门及 obs 聚合 P1 门保持 `INCONCLUSIVE`，模块不得进入 `VERIFIED`。
 
-因此该轮严格结论是：
+## 4. Trace native seam
 
-- gate O(1)，emit/flush O(S)，mutation O(S≤64)，复杂度与成熟同步 sink registry 同档；
-- 正常 emit 无分配、无 mutation mutex，多 producer A/B 已关闭旧架构争用；
-- exact-length message 将 slice 从 O(M+S) 收回 O(S)；短 NUL convenience 与 `_n` 点值同档，
-  没有为 benchmark 删除边界检查；
-- structured 直接 record 与 2026-07-25 历史证据三平台同档，fan-out/multi-producer 未见 material
-  regression；view convenience 的额外 pointer+length 是保留内嵌 NUL/避免 slice copy 的产品合同；
-- 暂无一个与 HYLE **相同 metadata、ownership、quiescent-unregister** 合同的成熟 peer 数字，
-  所以不伪造全胜表；该轮只支持“没有已知复杂度或正常用法性能缺口”，不能认证跨合同
-  的倍数胜利。
+clean fresh `qualify-platform` bundle：
+`C:\hyle-scratch\obs-v1\perf-qualify-skip-drain-20260828d-output\summary.json`
+（SHA-256 `1BF35D31C8F4F9E4817977D27E68D82A8F7CFA9215FC2CCE7D2B5D31AF2A0575`）。
+W1-WIN、Tracy `30997d5c`、n=15 的 A/A、5%/10% delta、timer-floor、placement、build contract、
+artifact identity 与深重放全部 PASS。counter、named zone 和 annotation diagnostic 共 12 个
+strata 对 direct Tracy 同 event 均为 5% NI PASS；产品 performance gate 为 PASS。
 
-若真实消费者以后要求 category routing、per-sink filtering 或异步队列，必须先定义同合同
-workload 再重开；不能为了 benchmark 再向每条 record 添加常态元数据。
+该证据只说明 native macro seam 没有材料级 adapter tax。HYLE 宏直接展开为 Tracy event，不能从
+微小点值方向宣称“HYLE 比 Tracy 更快”。
+
+## 5. 当前裁决
+
+- 复杂度和热路资源：同成熟同步 sink registry 档，未发现更优复杂度方案；
+- single-adapter、format、单线程 fan-out：绝对门与冻结 baseline NI 均 PASS；
+- trace native seam：统一 P1 qualification PASS；
+- 8-producer × 1/4/16 sink：绝对 1-sink 门 PASS，但 baseline NI 与 p99 尾部为
+  `INCONCLUSIVE`；
+- obs-v1 聚合工程性能：`INCONCLUSIVE`。不能宣称“obs 全面 SOTA”、跨平台固定纳秒或已完成收口。
+
+恢复后只允许在独立工具任务提供合格 8-core profile/controls 后重放同一 workload；不得改变 API、
+margin、sink callback、分块大小或同步语义来追分。

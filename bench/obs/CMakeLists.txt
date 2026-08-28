@@ -1,8 +1,19 @@
 # obs uses its own actual-workload certificate: gated formatting, structured
-# records, fanout scaling, C Status seam and multi-producer registry reads.
+# records, fanout scaling, Status failure reporting and registry reads.
 add_executable(hyle_obs_bench obs_bench.cc)
 target_link_libraries(hyle_obs_bench PRIVATE hyle_obs nanobench)
 hyle_apply_warnings(hyle_obs_bench)
+
+set(_hyle_obs_benches hyle_obs_bench)
+if(WIN32)
+  # The ordinary nanobench process is pinned to one logical CPU by the shared
+  # instrument.  Keep the W1-WIN concurrent contract separate so its eight
+  # workers can each prove and retain a distinct physical-core placement.
+  add_executable(hyle_obs_concurrent_bench concurrent_bench.cc)
+  target_link_libraries(hyle_obs_concurrent_bench PRIVATE hyle_obs)
+  hyle_apply_warnings(hyle_obs_concurrent_bench)
+  list(APPEND _hyle_obs_benches hyle_obs_concurrent_bench)
+endif()
 
 # Tracy-upgrade evidence exists only in a trace-on build.  It compares HYLE's
 # public macro seam with direct Tracy 0.14.1 macros under identical event
@@ -42,7 +53,7 @@ if(HYLE_BENCH_ABSL)
   endif()
 endif()
 
-hyle_register_benches(obs hyle_obs_bench)
+hyle_register_benches(obs ${_hyle_obs_benches})
 if(TARGET hyle_obs_tracy_bench)
   hyle_register_benches(obs hyle_obs_tracy_bench)
 endif()

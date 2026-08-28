@@ -184,7 +184,34 @@ message/memory/thread-name 以及 build gate。没有入口落在表外，也没
 
 ## Verification manifest
 
-尚未执行。
+### P1 performance（部分完成，聚合 `INCONCLUSIVE`）
+
+- trace native seam：W1-WIN fresh `qualify-platform` n=15 完成；A/A、5%/10% delta、timer-floor、
+  placement、artifact/build contract、deep replay 与全部 12 个 direct-Tracy strata 通过。summary 为
+  `C:\hyle-scratch\obs-v1\perf-qualify-skip-drain-20260828d-output\summary.json`，SHA-256
+  `1BF35D31C8F4F9E4817977D27E68D82A8F7CFA9215FC2CCE7D2B5D31AF2A0575`。
+- trace benchmark operational fix：Tracy exact localhost 与 sample-only bounded queue-drain 已由独立
+  [`perf-tracy-localhost-control-v1`](../performance/perf-tracy-localhost-control-v1.md) 完成；未改变产品、
+  event workload、margin 或统计。
+- trace-OFF logging：当前/`f305b9d3` 同源码、双顺序各 n=15 的 runtime/single/structured/format/
+  fan-out 1/4/16 全部通过 5% baseline NI；preformatted ≤100 ns、format ≤150 ns。bundle
+  `C:\hyle-scratch\obs-v1\logging-regression-20260828e\result.json`，SHA-256
+  `E1B9DC2B2AFFF482D72A9312FF04C12CDC71AE012C5CD4CE098754A85B66104D`。其中继承单 CPU mask 的
+  2/8 producer 行已排除，不作并发证据。
+- 8-P-core workload：新增 benchmark-only `hyle_obs_concurrent_bench`，8 worker 分别 singleton-pin 到
+  8 个独立最高 efficiency-class P-core；1/4/16 sink callback count 全部精确。1-sink 当前合并中位
+  64.339 ns/emit，≤150 ns 绝对门 PASS；吞吐与 chunk-p99 的 baseline NI 全为统计
+  `UNRESOLVED`。classified bundle
+  `C:\hyle-scratch\obs-v1\concurrent-regression-20260828a\result-classified.json`，SHA-256
+  `D81D444324909AE3B479C7F473F111B434D1481526E3CE81E1556B0C88080A06`。
+- 唯一机制检查：两版 snapshot/callback release 指令相同；新 exact-span record 的空字段构造在 MSVC
+  多几条 store，但自然的 designated/explicit/positional/assignment 四种写法 codegen 相同。没有
+  consumer/机制钥匙支持破坏 API/layout 去追逐同步争用点值。
+- blocker：公共仪器只有单核/双核 topology，外部 8-core sampler 无法取得完整 controls/deep-replay
+  资格。已路由独立
+  [`perf-multicore-topology-v1`](../performance/perf-multicore-topology-v1.md)；当前
+  `multi-producer-fanout` 与聚合 engineering performance 均为 `INCONCLUSIVE`，不得进入
+  `VERIFIED`。
 
 ## 独立红队
 
