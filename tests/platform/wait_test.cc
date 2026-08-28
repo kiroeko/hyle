@@ -334,7 +334,11 @@ TEST(WaitOnAddress, WakeAllReleasesAllWaiters) {
 TEST(Parker, ParkForHandoffStressNoLostWakeup) {
   constexpr int kWorkers = 4;
   constexpr int kRounds = 500;
-  constexpr std::uint64_t kLongNs = 10'000'000'000ull;  // 10s: must NOT expire
+  // The worker entry must remain a non-capturing function-pointer callback.
+  // Static storage also keeps this portable to clang-cl, which correctly
+  // rejects odr-use of an automatic constexpr from a non-capturing lambda.
+  static constexpr std::uint64_t kLongNs =
+      10'000'000'000ull;  // 10s: must NOT expire
   std::array<Parker, kWorkers> parkers;  // non-movable: in place
   std::array<std::atomic<int>, kWorkers> observed{};
 
@@ -383,7 +387,8 @@ TEST(Parker, ParkForHandoffStressNoLostWakeup) {
 TEST(Parker, ParkForExpiryVsUnparkRace) {
   constexpr int kWorkers = 4;
   constexpr int kRounds = 500;
-  constexpr std::uint64_t kShortNs = 200'000ull;  // 200us: expires constantly
+  static constexpr std::uint64_t kShortNs =
+      200'000ull;  // 200us: expires constantly
   std::array<Parker, kWorkers> parkers;
   std::array<std::atomic<int>, kWorkers> observed{};
 

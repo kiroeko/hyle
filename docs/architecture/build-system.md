@@ -150,6 +150,13 @@ build/package 拥有，随各 compiled module 的 static/shared 形状维护，�
 | 布尔特性 | `HYLE_IO_HTTP2`, `HYLE_COMPUTE_GGML`, `HYLE_COMPUTE_VULKAN` | 在 fresh cache 中只由所选 owner 组件声明，昂贵能力默认 `OFF`；`HYLE_COMPUTE_GGML_NATIVE` 仅在 ggml 开启时声明 |
 | Trace | `HYLE_TRACE`, `HYLE_TRACY_DIR` | 在 fresh cache 中仅闭包有 trace consumer 时声明，默认 `OFF`；路径只在开启时声明。当前只有 Tracy，已删除无选择意义的 `HYLE_TRACE_BACKEND` |
 
+Sanitizer 是整个所选 target 图的构建形状，不是只给测试可执行文件加一个编译参数。对象库和静态库
+携带插桩；最终 executable/shared/module target 负责链接相应 runtime。Windows 的 cl.exe 与
+clang-cl 目前只支持 `asan`：HYLE 显式链接编译器自带的 dynamic-CRT runtime 和 thunk、保留
+SEH interceptor 与调试信息，并把匹配的 ASan DLL 放到最终产物旁边；请求 `tsan`/`ubsan` 会直接
+配置失败并要求转到 GCC/Clang 环境。HYLE 自己取得的 GoogleTest 会使用同一 ASan 形状，嵌入父工程
+提供的 `GTest::gtest_main` 则由父工程保证 ABI/插桩一致。
+
 顶层配置省略 `HYLE_COMPONENTS` 时默认 `all`；作为子目录嵌入时，父工程必须在
 `add_subdirectory()` 前显式设置根组件，防止一次普通依赖引入意外构建整库。在独占的 fresh build
 tree 中，测试插桩、SIMD exact、IO/compute feature 和 trace 路径等 cache 控制只在其 owner/gate

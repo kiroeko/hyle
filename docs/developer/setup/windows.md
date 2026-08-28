@@ -152,6 +152,27 @@ header-self-contained 测试会在 CTest 期间再次调用 `cl.exe`；普通 Po
 build tree 也没有 MSVC 的 `INCLUDE`。仓库 wrapper 会为该次 Test 动作重新导入环境，且不会把
 环境永久写回调用方。
 
+### ASan
+
+Windows 的 sanitizer 门只支持 ASan；TSan/UBSan 应在 WSL/Linux 的独立构建中运行。cl.exe 与
+clang-cl 都必须使用 fresh、互不复用的 build tree：
+
+```powershell
+$scratch = 'C:\hyle-scratch\platform-msvc-asan-<session-id>'
+scripts/hyle-windows.ps1 -Action Configure -Preset windows-ninja `
+  -BinaryDir $scratch -Component platform -DHYLE_SANITIZER=asan
+scripts/hyle-windows.ps1 -Action Build -BinaryDir $scratch `
+  --target hyle_platform_tests --parallel 2
+scripts/hyle-windows.ps1 -Action Test -BinaryDir $scratch `
+  --output-on-failure -L platform
+```
+
+把 preset 换成 `windows-clangcl` 即为 clang-cl 门。配置会从当前编译器安装中解析并链接匹配的
+ASan dynamic runtime/thunk，生成可符号化调试信息，并把 runtime DLL 复制到 EXE/DLL 目录；因此
+验收不能只看 `/fsanitize=address` 是否出现在编译命令中，还要确认测试实际启动且产物导入
+`clang_rt.asan_dynamic-*`。若父工程预先提供 `GTest::gtest_main`，该 GoogleTest 也必须由父工程
+按相同 ASan/MSVC STL 注解形状构建。
+
 - **GPU 测试（compute）**：CUDA runtime DLL 需在 PATH。toolkit 的 `bin` 通常已入 PATH（`where nvcc` 命中即可）。`hyle_compute_ggml_bridge_test` 在 RTX 4070 上跑零拷贝 matmul。
 - **TLS 测试**：需 OpenSSL DLL 在 PATH，见第七节。
 

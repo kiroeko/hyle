@@ -5,6 +5,7 @@ include(FetchContent)
 # copy with colliding gtest/gtest_main target names. Otherwise fetch HYLE's
 # pinned archive under HYLE_DEPS_DIR and keep generic GoogleTest options out of
 # the parent cache/install graph. HYLE does not use GMock.
+set(_hyle_owns_googletest FALSE)
 if(TARGET GTest::gtest_main)
   message(STATUS "HYLE tests: reusing parent-provided GTest::gtest_main")
 elseif(TARGET gtest OR TARGET gtest_main OR TARGET GTest::gtest)
@@ -29,7 +30,20 @@ else()
     set(gtest_hide_internal_symbols OFF)
     hyle_fetchcontent_make_available_locked(googletest)
   endblock()
+  set(_hyle_owns_googletest TRUE)
 endif()
+
+# MSVC's ASan-enabled STL records container-annotation mismatch metadata in
+# every object. A source-built GoogleTest must therefore use the same compiler
+# instrumentation as HYLE's test executables; otherwise the linker correctly
+# rejects the mixed annotated/unannotated ABI. Do not mutate a parent-owned
+# target: an embedding parent remains responsible for supplying an
+# ASan-compatible GoogleTest when it asks HYLE to build tests in that mode.
+if(_hyle_owns_googletest AND MSVC AND HYLE_SANITIZER STREQUAL "asan")
+  hyle_apply_sanitizer(gtest)
+  hyle_apply_sanitizer(gtest_main)
+endif()
+unset(_hyle_owns_googletest)
 
 add_custom_target(hyle_tests)
 set_target_properties(hyle_tests PROPERTIES FOLDER "hyle/validation")
