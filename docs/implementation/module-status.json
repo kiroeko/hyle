@@ -300,7 +300,7 @@
     },
     {
       "module": "util",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "round_id": "util-runtime-v2",
       "closure_task": "docs/implementation/tasks/util/util-runtime-v2-closure.md",
       "scope": "Owning std::string runtime demangle and type_info convenience, single platform-demangler execution per public call, affected correctness/usability/docs and current source/static/shared delivery.",
@@ -332,7 +332,30 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "summary": "util-runtime-v2 VERIFIED：owning/buffer demangle、caller-CRT 边界、三平台正确性与 source/static/shared 交付、文档和 P0 结构门全部通过；Registry 产品零改动，等待 terminal receipt。"
+      "end_commit": "25cff0db8478e9adf59b7dbd8a85e7bff684d947",
+      "registry_anchor_commit": "25cff0db8478e9adf59b7dbd8a85e7bff684d947",
+      "closure_evidence": "docs/implementation/tasks/util/util-runtime-v2-closure.md",
+      "loc": {
+        "snapshot_commit": "f3b341cb2ae81154f81bc45052a651e773c5e2b3",
+        "repository_code": 298478,
+        "self_with_tests": 122321,
+        "self_without_tests": 82176,
+        "module_implementation": 1244
+      },
+      "known_limitations": [
+        "Demangling is a diagnostic cold path, is not async-signal-safe, may allocate internally on Itanium and serializes HYLE DbgHelp calls on Windows.",
+        "The owning convenience may throw standard string allocation or length exceptions; platform demangler failure returns the original symbol.",
+        "Registry views are owner-bounded borrows and Registry does not provide unregister, dynamic module unload or reader quiescence.",
+        "The P0 verdict signs complexity and cost structure, not timing SOTA, end-to-end inference performance or Formal certification."
+      ],
+      "reopen_triggers": [
+        "A real consumer exposes a correctness, ownership, exception, usability or missing-capability defect within this boundary.",
+        "The demangle or Registry public contract, algorithm, layout, direct dependency, compiler/platform ABI or delivery shape changes.",
+        "A mature same-contract peer proves a better complexity class, or a profile proves demangle or named Registry lookup is a material hotspot.",
+        "A real demangle-only consumer proves the current util component closure is materially costly.",
+        "A named consumer requires async-signal-safe symbolization or dynamic module unload and quiescence."
+      ],
+      "summary": "util-runtime-v2 CLOSED：owning/buffer demangle、caller-CRT 边界、三平台正确性与 source/static/shared 交付、文档和 P0 结构门全部通过；Registry 产品零改动。"
     },
     {
       "module": "sched",
