@@ -253,8 +253,30 @@
     },
     {
       "module": "time",
-      "product_state": "QUEUED",
-      "summary": "现有实现与历史审查只作输入。"
+      "product_state": "SCOPED",
+      "round_id": "time-v1",
+      "closure_task": "docs/implementation/tasks/time/time-v1-closure.md",
+      "scope": "Clock, Unix timestamp, deadline/sleep and intrusive timer capabilities; C++ API, direct dependencies/consumers, delivery, documentation and P1 engineering evidence.",
+      "non_goals": "Calendar/time-zone/formatting, executor and periodic policy, cross-thread timer service, downstream closure, Native FFI/C API, stable C++ ABI and Formal certification.",
+      "baseline_commit": "cb46d1183b7ed11757ab0661db893cdfd98b9f65",
+      "performance_tier": "P1",
+      "validation_machine_profiles": [
+        "W1-WIN",
+        "W1-WSL",
+        "M1-MAC"
+      ],
+      "engineering_performance": {
+        "verdict": "PLANNED",
+        "mode": "P1_ENGINEERING",
+        "material_margin_pct": 5,
+        "machine_profile": "W1-WIN",
+        "instrument_profile": "closure-perf-v1"
+      },
+      "formal_performance": {
+        "state": "PENDING",
+        "instrument_profile": "formal-release-v1"
+      },
+      "summary": "time-v1 已冻结范围、真实消费者、预算、peer 与 P1 门；有限 gap ledger 尚在审计。"
     },
     {
       "module": "platform",
