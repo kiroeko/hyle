@@ -243,7 +243,7 @@
     },
     {
       "module": "obs",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "round_id": "obs-v1",
       "closure_task": "docs/implementation/tasks/obs/obs-v1-closure.md",
       "scope": "Synchronous structured-log production and sink lifecycle plus the compile-time native trace seam; C++ API, dependencies/consumers, Tracy integration, source/static/shared delivery, documentation and bounded P1 engineering evidence.",
@@ -266,7 +266,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "obs-v1 SCOPED：审查同步 log/sink 生命周期与 native trace seam；冻结两小时级预算、四类真实 workload、三平台正确性/交付及 W1-WIN 5% P1 工程门，尚未修改产品实现。"
+      "summary": "obs-v1 AUDITED：能力族与全部 public surface 已对账；冻结 record/span、typed sink、format no-throw、生命周期证据、current-zone/trace 数值、统一性能与文档八项 FIX，尚未修改产品实现。"
     },
     {
       "module": "math",

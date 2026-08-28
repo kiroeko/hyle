@@ -14,7 +14,7 @@
 | container_intrusive | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/container_intrusive/container-intrusive-v3-resume.md) | v3 已关闭：真实消费者形状、typed membership transfer、correctness/交付/文档和 Boost 同合同 5% P1 工程非劣门均已签署；Formal 独立待办。 |
 | util_core | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/util/util-core-v1-closure.md) | util-core-v1 CLOSED：五项 header-only primitive 的能力边界、异常/ownership、三平台 correctness/交付、C++ 易用性、依赖与 W1-WIN 同合同 5% P1 工程非劣门均已签署；后续 util runtime owning-demangle 重开不影响本组件，Formal 仍独立待办。 |
 | error | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/error/error-v4-resume.md) | error-v4 CLOSED：未变化的 9595724a/a828fb4c 产品已绑定有效 source-consumer 合同；四个真实 workload 的全部 strata 通过 5% P1 工程非劣门，Formal 独立 PENDING。 |
-| obs | SCOPED | P1 | PLANNED / P1_ENGINEERING / 5% | PENDING | [task](tasks/obs/obs-v1-closure.md) | obs-v1 SCOPED：审查同步 log/sink 生命周期与 native trace seam；冻结两小时级预算、四类真实 workload、三平台正确性/交付及 W1-WIN 5% P1 工程门，尚未修改产品实现。 |
+| obs | AUDITED | P1 | PLANNED / P1_ENGINEERING / 5% | PENDING | [task](tasks/obs/obs-v1-closure.md) | obs-v1 AUDITED：能力族与全部 public surface 已对账；冻结 record/span、typed sink、format no-throw、生命周期证据、current-zone/trace 数值、统一性能与文档八项 FIX，尚未修改产品实现。 |
 | math | QUEUED | — | — | — | — | 现有实现只作输入；尚需裁决与 SIMD 的边界。 |
 | time | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/time/time-v1-closure.md) | time-v1 CLOSED：完整 clock/timestamp/deadline/timer 能力、自然 C++ API、三平台正确性与三种交付、直接消费者、文档和 Seastar 同合同 5% P1 工程非劣门均已签署；Formal 独立 PENDING。 |
 | platform | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/platform/platform-v1-closure.md) | platform-v1 CLOSED：完整底层 OS/CPU 能力面、自然 C++ API、三平台正确性与 sanitizer、三种交付、文档、红队及 W1-WIN 5% P1 工程性能门均已签署；Formal 独立 PENDING。 |
