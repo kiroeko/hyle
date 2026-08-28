@@ -2,12 +2,12 @@
 
 <!-- MODULE CLOSURE RECORD: ACTIVE -->
 
-> **当前阶段：`CANDIDATE`。** 本页是 `time-v1` 的唯一活动施工记录；既有 time task 与旧性能表只作
+> **当前阶段：`VERIFIED`。** 本页是 `time-v1` 的唯一活动施工记录；既有 time task 与旧性能表只作
 > 历史输入。权威状态见 [`module-status.json`](../../module-status.json)。本轮不继承旧的 C ABI、
 > `SIGNED` 或 SOTA 结论；冻结的十项 `FIX` 已全部实现。product candidate 为
 > `0ef2544ceece030bb522857854285d280e368d36` / tree
-> `104a4b6dc904e5b261010ace820ec2c474374c31`；P1 engineering performance 已
-> `QUALIFIED/PASS`，三平台 correctness/delivery 已执行，待登记为 `VERIFIED`。
+> `104a4b6dc904e5b261010ace820ec2c474374c31`；全部适用工程门已 `PASS`，待写 terminal receipt、
+> LOC、限制与 reopen triggers 后转为 `CLOSED`。
 
 ## Closure card（`SCOPED`）
 
@@ -202,4 +202,41 @@ benchmark-only public family；`CommonTimeoutQueueAccess` 是无人消费的旧 
    不把现有单线程 test 的无意义 TSan 运行登记为 PASS。
 3. Windows/WSL/macOS 的 time-only source、relocated shared/static SDK consumer 均已通过；Windows/WSL
    的 platform/sched/io 代表性测试各 4/4 通过。
-4. 四项 LOC、final red-team、registry/status/receipt 仍须写入；Formal 保持 `PENDING`。
+4. final red-team 已完成；四项 LOC 与 terminal registry/status/receipt 仍须写入，Formal 保持 `PENDING`。
+
+## 验证矩阵（`VERIFIED`，2026-08-28）
+
+| Gate | Verdict | 证据与边界 |
+|---|---|---|
+| scope / capability | `PASS` | 全 public surface 已反向落入 capability-family map；十项 `FIX` 全部关闭，calendar/timezone/executor/periodic/cross-thread service 与 Native FFI 有明确 route/negative space |
+| architecture / API | `PASS` | clock domain、checked timestamp、single-owner queue、owner-first teardown、source/static/shared 与无伪 C ABI 边界已写入 architecture/guide；candidate 后 product/API 无 drift |
+| correctness | `PASS` | W1-WIN MSVC shared 2/2；W1-WSL GCC 14.2 static ASan 2/2、UBSan 2/2；M1-MAC AppleClang 21 arm64 shared 2/2；zero/past/full-range、CPU busy-vs-sleep、coarse domain、FILETIME、queue lifetime/death/random/churn 由 time suite 覆盖 |
+| delivery | `PASS` | Windows、WSL、macOS 均通过 time-only source embedding、relocated shared SDK、relocated static SDK 和各自独立 consumer；安装闭包仅为 `core,container_intrusive,time` |
+| direct consumers | `PASS` | W1-WIN 与 W1-WSL 的 `hyle_platform_test`、`hyle_sched_test`、`hyle_io_test`、`hyle_io_timeout_test` 各 4/4；IOCP 与 epoll rounding 两个受改 backend 均实测 |
+| usability / docs | `PASS` | `check-docs.py`：279 Markdown、825 relative links；guide 覆盖选型、ownership/failure/concurrency、FILETIME precision、OS-thread/fiber 和 shutdown 陷阱；源码 time surface 无旧 FFI/seam |
+| engineering performance | `PASS` | W1-WIN `closure-perf-v1`、5% NI；8/8 required strata 为 `PARITY + NI PASS`，A/A、5/10% delta、floor、placement、artifact/build/source identity 全 PASS；verifier 为 `QUALIFIED` |
+| red team | `PASS` | 下表全部 finding 已处置，无 blocker；未为点值改 API/layout/metadata |
+
+TSan disposition：两类 queue 的合同是 single-owner，跨线程 mutation 测试不合法；clock 唯一共享状态是
+C++ 线程安全初始化后的 immutable function-static scale，其余是原生无状态 read。现有 suite 没有并发
+clock workload，盲跑 TSan 只能证明单线程测试，故诚实登记为 `NOT_APPLICABLE/无有效 workload`，不是
+伪 `PASS`。将来出现具名 concurrent-clock consumer 时新增对称并发测试并重开 correctness edge。
+
+## Final red-team
+
+- reviewer / date / budget：Codex（root）/ 2026-08-28 / 20 分钟只读终审；不允许新 benchmark 姿势或
+  产品修改。
+- 检查面：candidate→current product drift、public header/API、ownership/failure/concurrency、直接依赖与
+  消费者、source/static/shared 交付、性能 comparability/controls、current docs、stale C/FFI/seam。
+
+| Finding | Severity | Disposition | Evidence |
+|---|---|---|---|
+| Apple libc++ 不提供测试使用的 `std::chrono::is_clock_v` | material test portability | `FIXED` at `3b759eb6`；直接验证标准 Clock 形状，产品不变 | AppleClang 21 初次编译失败；修复后三平台 time tests PASS |
+| 主布局约慢 2.0%–3.3%，placement 持平/略快 | performance confound, not product defect | `ACCEPTED/PASS`；8 strata 分别落入预冻结 ±5% 等价带且 NI PASS，不按单姿势改产品 | n=31 summary 与 A/A/delta controls |
+| 非空 queue 析构旧合同会让正常 owner-first shutdown abort | blocker at audit | `FIXED` at `03f558a3`；O(n) detach、零分配、不 callback；entry-first 仍 fail-fast | 两类 queue teardown/reuse/death tests |
+| Windows/Linux 大有限 timeout ceil-add 会 overflow 成 poll | blocker at audit | `FIXED` at `4292b329`；quotient/remainder + clamp | W1-WIN/W1-WSL io/proactor + timeout tests |
+| current docs 曾含旧 C ABI、旧点值和旧 teardown | docs blocker at audit | `FIXED` at `b7c8bc41`；architecture/user/performance/task 分工恢复 | docs checker + stale scan |
+| Native FFI/C API 缺失 | intended negative space | `N/A`；没有具名 foreign-runtime consumer，不保留伪 schema/symbol/option | build/package policy 与 time product scan |
+
+没有未解决的 correctness、complexity、delivery、usability 或 P1 blocker。下一状态只登记 terminal receipt；
+不再修改 product candidate。
