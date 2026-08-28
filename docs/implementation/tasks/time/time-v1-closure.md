@@ -1,13 +1,14 @@
 # time-v1 重构与收口记录
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
-> **当前阶段：`VERIFIED`。** 本页是 `time-v1` 的唯一活动施工记录；既有 time task 与旧性能表只作
+> **终态：`CLOSED`。** 本页是 `time-v1` 的施工与验收记录；既有 time task 与旧性能表只作
 > 历史输入。权威状态见 [`module-status.json`](../../module-status.json)。本轮不继承旧的 C ABI、
 > `SIGNED` 或 SOTA 结论；冻结的十项 `FIX` 已全部实现。product candidate 为
 > `0ef2544ceece030bb522857854285d280e368d36` / tree
-> `104a4b6dc904e5b261010ace820ec2c474374c31`；全部适用工程门已 `PASS`，待写 terminal receipt、
-> LOC、限制与 reopen triggers 后转为 `CLOSED`。
+> `104a4b6dc904e5b261010ace820ec2c474374c31`；全部适用工程门为 `PASS`，Formal 是独立
+> `PENDING` 轴，不阻塞工程收口。
 
 ## Closure card（`SCOPED`）
 
@@ -240,3 +241,44 @@ clock workload，盲跑 TSan 只能证明单线程测试，故诚实登记为 `N
 
 没有未解决的 correctness、complexity、delivery、usability 或 P1 blocker。下一状态只登记 terminal receipt；
 不再修改 product candidate。
+
+## Closure decision
+
+本轮 `CLOSED`。scope、architecture、correctness、delivery、usability/docs、red-team 与 engineering
+performance 七项 aggregate gate 全部为 `PASS`；十项 ledger `FIX` 全部关闭，没有 ledger 内未决能力、
+正确性、安全或交付 blocker。产品 candidate 仍为 `0ef2544c` / `104a4b6d`，candidate 之后只有文档和
+测试可移植性修改，未改变实现、API、layout、性能合同或 benchmark source。
+
+- end commit / registry anchor：
+  `85d4f1ec3c1a88eea8803271d518db8b8229f4e2`；该历史快照保存 `VERIFIED`、candidate identity、
+  七项 gate 与完整验证/红队事实，本提交只追加 terminal receipt/LOC/限制。
+- Formal：`PENDING`；不能把 W1-WIN engineering evidence 写成发布级、跨平台或全面 SOTA 证书。
+
+可接受限制：
+
+- timer queue 是 caller-owned stable-node、single-owner primitive；callback execution、跨线程路由和
+  periodic policy 属于 sched/io；
+- `CommonTimeoutQueue` 没有当前 HYLE 产品消费者，只签复杂度/正确性，不冒充 scheduler 性能收益；
+- coarse/profiling 快路按平台 capability 启用，CPU accounting 只覆盖当前线程/当前进程；
+- P1 PASS 只覆盖冻结 W1-WIN scheduler lifecycle replay 与 pinned Seastar peer；clock/sleep 等未消费族
+  不进入该聚合；
+- calendar/timezone/text protocol 与 Native FFI 仍是明确 negative space。
+
+重开条件：具名消费者暴露 time 边界内的 correctness/security/usability/缺失能力；clock/timer 算法、
+public API/layout、依赖、平台 primitive 或交付形状变化；成熟同合同 peer 证明更好复杂度或正常 workload
+的 material 优势；工程 evidence bundle 丢失或 contract/peer/machine/instrument identity 改变且需要
+续签；foreign-runtime、calendar/timezone、virtual/periodic/cross-thread timer consumer 经独立能力准入。
+
+四项 LOC 从 immutable product candidate
+`0ef2544ceece030bb522857854285d280e368d36` 运行
+`python scripts/loc-report.py --module time --commit <candidate> --self-check --json` 得到，self-check
+`PASS`：
+
+1. 全库代码：300,025；
+2. 自实现包含测试：122,633；
+3. 自实现不包含测试：82,350；
+4. `time` 实现：1,467（`include/hyle/time` + `src/time`，不含 tests/bench/docs/CMake）。
+
+post-candidate 的文档重写不属于产品代码；`3b759eb6` 的 Apple test portability 修复使当前
+self-with-tests 比 candidate 多 13 行，但 time implementation 与 self-without-tests 不变。终态 HEAD 的
+当前四项另在交付摘要重算，避免把两种快照口径混写。

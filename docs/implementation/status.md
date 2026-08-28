@@ -16,7 +16,7 @@
 | error | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/error/error-v4-resume.md) | error-v4 CLOSED：未变化的 9595724a/a828fb4c 产品已绑定有效 source-consumer 合同；四个真实 workload 的全部 strata 通过 5% P1 工程非劣门，Formal 独立 PENDING。 |
 | obs | QUEUED | — | — | — | — | 现有实现与历史审查只作输入。 |
 | math | QUEUED | — | — | — | — | 现有实现只作输入；尚需裁决与 SIMD 的边界。 |
-| time | VERIFIED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/time/time-v1-closure.md) | time-v1 candidate 的功能/API、三平台正确性、三种交付、直接消费者、文档、红队与 W1-WIN 5% P1 工程性能门均已验证。 |
+| time | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/time/time-v1-closure.md) | time-v1 CLOSED：完整 clock/timestamp/deadline/timer 能力、自然 C++ API、三平台正确性与三种交付、直接消费者、文档和 Seastar 同合同 5% P1 工程非劣门均已签署；Formal 独立 PENDING。 |
 | platform | QUEUED | — | — | — | — | 现有实现与历史审查只作输入。 |
 | mem | QUEUED | — | — | — | — | 现有实现与历史审查只作输入。 |
 | simd | QUEUED | — | — | — | — | 现有实现与历史审查只作输入。 |
