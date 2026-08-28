@@ -13,6 +13,7 @@
 #include <cstring>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <utility>
 
 #include "hyle/platform/fs.h"
@@ -75,7 +76,34 @@ TEST_F(MapTest, ReadOnlyMapsContent) {
   MappedFile m = open_map();
   ASSERT_TRUE(m.valid());
   EXPECT_EQ(m.size(), std::strlen(msg));
-  EXPECT_EQ(std::memcmp(m.data(), msg, std::strlen(msg)), 0);
+  EXPECT_EQ(m.mode(), MappedFile::Mode::kReadOnly);
+  EXPECT_EQ(m.bytes().size(), std::strlen(msg));
+  EXPECT_EQ(std::memcmp(m.bytes().data(), msg, std::strlen(msg)), 0);
+  EXPECT_TRUE(m.writable_bytes().error().IsFailedPrecondition());
+  static_assert(std::is_same_v<decltype(m.data()), const void*>);
+}
+
+TEST_F(MapTest, ConsumesExistingFileHandle) {
+  const char* msg = "already opened";
+  write_file(msg, std::strlen(msg));
+  auto file = fs::open_file(path.c_str(), fs::kOpenRead);
+  ASSERT_TRUE(file.has_value()) << file.error().message();
+
+  auto mapped = MappedFile::map(std::move(*file));
+  ASSERT_TRUE(mapped.has_value()) << mapped.error().message();
+  EXPECT_FALSE(file->valid());
+  EXPECT_EQ(std::memcmp(mapped->bytes().data(), msg, std::strlen(msg)), 0);
+}
+
+TEST_F(MapTest, MapConsumesHandleOnFailure) {
+  write_file("x", 1);
+  auto file = fs::open_file(path.c_str(), fs::kOpenRead);
+  ASSERT_TRUE(file.has_value()) << file.error().message();
+  auto mapped = MappedFile::map(
+      std::move(*file), static_cast<MappedFile::Mode>(255));
+  EXPECT_FALSE(mapped.has_value());
+  EXPECT_TRUE(mapped.error().IsInvalidArgument());
+  EXPECT_FALSE(file->valid());
 }
 
 TEST_F(MapTest, OpenMappingDoesNotBlockAtomicRenameOrDelete) {
@@ -144,9 +172,15 @@ TEST_F(MapTest, ReadWriteFlushPersists) {
     MappedFile m = open_map(MappedFile::Mode::kReadWrite);
     ASSERT_TRUE(m.valid());
     ASSERT_EQ(m.size(), 64u);
-    static_cast<char*>(m.data())[0] = 'Z';
-    static_cast<char*>(m.data())[63] = 'Y';
-    EXPECT_TRUE(m.flush().ok());
+    auto bytes = m.writable_bytes();
+    ASSERT_TRUE(bytes.has_value()) << bytes.error().message();
+    (*bytes)[0] = std::byte{'Z'};
+    (*bytes)[63] = std::byte{'Y'};
+    EXPECT_TRUE(m.flush(0, 1).ok());
+    EXPECT_TRUE(m.flush(63, 1).ok());
+    EXPECT_TRUE(m.flush(m.size(), 0).ok());
+    EXPECT_TRUE(m.flush(m.size() + 1, 0).IsOutOfRange());
+    EXPECT_TRUE(m.flush(m.size() - 1, 2).IsOutOfRange());
   }  // unmap
 
   std::string after = read_file();
@@ -162,8 +196,10 @@ TEST_F(MapTest, CopyOnWriteDoesNotTouchFile) {
   {
     MappedFile m = open_map(MappedFile::Mode::kCopyOnWrite);
     ASSERT_TRUE(m.valid());
-    static_cast<char*>(m.data())[0] = 'X';       // private write
-    EXPECT_EQ(static_cast<char*>(m.data())[0], 'X');  // visible in-process
+    auto bytes = m.writable_bytes();
+    ASSERT_TRUE(bytes.has_value()) << bytes.error().message();
+    (*bytes)[0] = std::byte{'X'};  // private write
+    EXPECT_EQ((*bytes)[0], std::byte{'X'});  // visible in-process
     EXPECT_TRUE(m.flush().ok());                  // no-op for COW
   }
 
@@ -195,7 +231,7 @@ TEST_F(MapTest, OffsetMapping) {
   MappedFile m = open_map(MappedFile::Mode::kReadOnly, pg, 0);
   ASSERT_TRUE(m.valid());
   EXPECT_EQ(m.size(), pg);
-  EXPECT_EQ(static_cast<char*>(m.data())[0], 'M');
+  EXPECT_EQ(static_cast<const char*>(m.data())[0], 'M');
 }
 
 // A NON-page-aligned offset must still work: the header rounds the offset down to
@@ -302,7 +338,7 @@ TEST_F(MapTest, MoveTransfersMapping) {
 
   MappedFile a = open_map();
   ASSERT_TRUE(a.valid());
-  void* addr = a.data();
+  const void* addr = a.data();
   MappedFile b = std::move(a);
   EXPECT_FALSE(a.valid());
   EXPECT_TRUE(b.valid());
@@ -333,7 +369,7 @@ TEST_F(MapTest, MoveAssignReleasesPrevious) {
   MappedFile dst = *std::move(dst_result);
   ASSERT_TRUE(src.valid());
   ASSERT_TRUE(dst.valid());
-  void* src_addr = src.data();
+  const void* src_addr = src.data();
   std::size_t src_size = src.size();
 
   dst = std::move(src);  // drops dst's old mapping, adopts src's
@@ -368,7 +404,8 @@ TEST(MapDeathTest, ReadOnlyWriteFaults) {
         auto result = MappedFile::open(p.c_str(), MappedFile::Mode::kReadOnly);
         if (!result) std::abort();
         MappedFile m = *std::move(result);
-        volatile auto* d = static_cast<volatile char*>(m.data());
+        volatile auto* d = static_cast<volatile char*>(
+            const_cast<void*>(m.data()));
         d[0] = 'X';  // write to a PROT_READ / PAGE_READONLY mapping -> trap
       },
       ".*");

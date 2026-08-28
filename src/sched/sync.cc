@@ -222,11 +222,11 @@ ConditionVariable::CvStatus ConditionVariable::finish_wait_timed_(
   while (!notified) {
     std::uint64_t rem = remaining_ns_(deadline);
     if (rem == 0) break;  // deadline reached
-    // park_timeout is single-shot: it may return early (spurious / real unpark).
+    // park_for is single-shot: it may return early (spurious / real unpark).
     // The loop re-checks `notified` and recomputes the remaining time, so the
     // total wait never exceeds the deadline. A real notify unparks + sets
     // notified (wake_one), so the next load observes it.
-    tok->parker.park_timeout(rem);
+    tok->parker.park_for(time::Duration(rem));
     notified = tok->notified.load(std::memory_order_acquire);
   }
   if (notified) return CvStatus::kNoTimeout;

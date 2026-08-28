@@ -192,7 +192,8 @@ void Parker::unpark() noexcept {
   }
 }
 
-bool Parker::park_timeout(std::uint64_t timeout_ns) noexcept {
+bool Parker::park_for(time::Duration timeout) noexcept {
+  const std::uint64_t timeout_ns = time::duration_ns_saturated(timeout);
   // Polling must stay entirely in user space. Parker has one consumer, so the
   // no-token path needs only a load; publishing PARKED or issuing a CAS here is
   // needless work (and an uncontended CAS is notably expensive on Apple ARM).

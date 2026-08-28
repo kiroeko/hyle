@@ -190,6 +190,9 @@ Result<std::size_t> read_raw(std::intptr_t raw, void* buf,
                              std::size_t n) noexcept;
 Result<std::size_t> write_raw(std::intptr_t raw, const void* buf,
                               std::size_t n) noexcept;
+Result<std::uint64_t> seek_raw(std::intptr_t raw, std::int64_t offset,
+                               SeekOrigin origin) noexcept;
+Status sync_raw(std::intptr_t raw, bool data_only) noexcept;
 
 }  // namespace
 
@@ -792,12 +795,55 @@ Result<std::size_t> write_raw(std::intptr_t raw, const void* buf,
   }
   return static_cast<std::size_t>(put);
 }
+Result<std::uint64_t> seek_raw(std::intptr_t raw, std::int64_t offset,
+                               SeekOrigin origin) noexcept {
+  if (raw == FileHandle::kInvalid) {
+    return std::unexpected(
+        Status::FailedPrecondition("file seek: handle is closed"));
+  }
+  DWORD method = FILE_BEGIN;
+  switch (origin) {
+    case SeekOrigin::kBegin: method = FILE_BEGIN; break;
+    case SeekOrigin::kCurrent: method = FILE_CURRENT; break;
+    case SeekOrigin::kEnd: method = FILE_END; break;
+    default:
+      return std::unexpected(
+          Status::InvalidArgument("file seek: invalid origin"));
+  }
+  if (origin == SeekOrigin::kBegin && offset < 0) {
+    return std::unexpected(
+        Status::OutOfRange("file seek: negative absolute position"));
+  }
+  LARGE_INTEGER distance{};
+  distance.QuadPart = offset;
+  LARGE_INTEGER position{};
+  if (!::SetFilePointerEx(reinterpret_cast<HANDLE>(raw), distance, &position,
+                          method)) {
+    return std::unexpected(
+        win32_fs_status("SetFilePointerEx", ::GetLastError()));
+  }
+  if (position.QuadPart < 0) {
+    return std::unexpected(
+        Status::OutOfRange("file seek: resulting position is negative"));
+  }
+  return static_cast<std::uint64_t>(position.QuadPart);
+}
+Status sync_raw(std::intptr_t raw, bool data_only) noexcept {
+  (void)data_only;
+  if (raw == FileHandle::kInvalid) {
+    return Status::FailedPrecondition("file sync: handle is closed");
+  }
+  if (!::FlushFileBuffers(reinterpret_cast<HANDLE>(raw))) {
+    return win32_fs_status("FlushFileBuffers", ::GetLastError());
+  }
+  return Status::Ok();
+}
 }  // namespace
 
 Result<FileHandle> open_file(const char* path, unsigned flags) noexcept {
   constexpr unsigned kKnown = kOpenRead | kOpenWrite | kOpenCreate |
                               kOpenTruncate | kOpenAppend;
-  if (path == nullptr || (flags & ~kKnown) != 0 ||
+  if (path == nullptr || path[0] == '\0' || (flags & ~kKnown) != 0 ||
       (flags & (kOpenRead | kOpenWrite)) == 0 ||
       ((flags & (kOpenCreate | kOpenTruncate | kOpenAppend)) != 0 &&
        (flags & kOpenWrite) == 0)) {
@@ -1539,12 +1585,54 @@ Result<std::size_t> write_raw(std::intptr_t raw, const void* buf,
     if (errno != EINTR) return std::unexpected(posix_fs_status("write", errno));
   }
 }
+Result<std::uint64_t> seek_raw(std::intptr_t raw, std::int64_t offset,
+                               SeekOrigin origin) noexcept {
+  if (raw == FileHandle::kInvalid) {
+    return std::unexpected(
+        Status::FailedPrecondition("file seek: handle is closed"));
+  }
+  int whence = SEEK_SET;
+  switch (origin) {
+    case SeekOrigin::kBegin: whence = SEEK_SET; break;
+    case SeekOrigin::kCurrent: whence = SEEK_CUR; break;
+    case SeekOrigin::kEnd: whence = SEEK_END; break;
+    default:
+      return std::unexpected(
+          Status::InvalidArgument("file seek: invalid origin"));
+  }
+  if (origin == SeekOrigin::kBegin && offset < 0) {
+    return std::unexpected(
+        Status::OutOfRange("file seek: negative absolute position"));
+  }
+  static_assert(sizeof(off_t) >= sizeof(std::int64_t));
+  const off_t position = ::lseek(static_cast<int>(raw),
+                                 static_cast<off_t>(offset), whence);
+  if (position < 0) {
+    return std::unexpected(posix_fs_status("lseek", errno));
+  }
+  return static_cast<std::uint64_t>(position);
+}
+Status sync_raw(std::intptr_t raw, bool data_only) noexcept {
+  if (raw == FileHandle::kInvalid) {
+    return Status::FailedPrecondition("file sync: handle is closed");
+  }
+  int rc = -1;
+#if defined(HYLE_OS_MACOS)
+  (void)data_only;
+  rc = ::fsync(static_cast<int>(raw));
+#else
+  rc = data_only ? ::fdatasync(static_cast<int>(raw))
+                 : ::fsync(static_cast<int>(raw));
+#endif
+  if (rc != 0) return posix_fs_status("file sync", errno);
+  return Status::Ok();
+}
 }  // namespace
 
 Result<FileHandle> open_file(const char* path, unsigned flags) noexcept {
   constexpr unsigned kKnown = kOpenRead | kOpenWrite | kOpenCreate |
                               kOpenTruncate | kOpenAppend;
-  if (path == nullptr || (flags & ~kKnown) != 0 ||
+  if (path == nullptr || path[0] == '\0' || (flags & ~kKnown) != 0 ||
       (flags & (kOpenRead | kOpenWrite)) == 0 ||
       ((flags & (kOpenCreate | kOpenTruncate | kOpenAppend)) != 0 &&
        (flags & kOpenWrite) == 0)) {
@@ -1870,6 +1958,55 @@ Result<std::size_t> FileHandle::write(const void* buf, std::size_t n) noexcept {
         Status::InvalidArgument("file write: null buffer for nonzero length"));
   }
   return write_raw(raw_, buf, n);
+}
+
+Status FileHandle::read_exact(void* buf, std::size_t n) noexcept {
+  if (n != 0 && buf == nullptr) {
+    return Status::InvalidArgument(
+        "file read exact: null buffer for nonzero length");
+  }
+  auto* bytes = static_cast<std::byte*>(buf);
+  std::size_t done = 0;
+  while (done != n) {
+    auto moved = read_raw(raw_, bytes + done, n - done);
+    if (!moved) {
+      return std::move(moved).error().WithContext("file read exact");
+    }
+    if (*moved == 0) {
+      return Status::DataLoss("file read exact: unexpected end of file");
+    }
+    done += *moved;
+  }
+  return Status::Ok();
+}
+
+Status FileHandle::write_all(const void* buf, std::size_t n) noexcept {
+  if (n != 0 && buf == nullptr) {
+    return Status::InvalidArgument(
+        "file write all: null buffer for nonzero length");
+  }
+  const auto* bytes = static_cast<const std::byte*>(buf);
+  std::size_t done = 0;
+  while (done != n) {
+    auto moved = write_raw(raw_, bytes + done, n - done);
+    if (!moved) {
+      return std::move(moved).error().WithContext("file write all");
+    }
+    if (*moved == 0) {
+      return Status::DataLoss("file write all: write made no progress");
+    }
+    done += *moved;
+  }
+  return Status::Ok();
+}
+
+Result<std::uint64_t> FileHandle::seek(std::int64_t offset,
+                                       SeekOrigin origin) noexcept {
+  return seek_raw(raw_, offset, origin);
+}
+
+Status FileHandle::sync(bool data_only) noexcept {
+  return sync_raw(raw_, data_only);
 }
 
 Result<bool> exists(const char* path) noexcept {

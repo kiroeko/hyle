@@ -43,7 +43,7 @@
 // them. The CV picks the mode per-wait from whether it runs inside a worker fiber.
 //
 // TIMED WAITS (wait_for/wait_until): a bare
-// (non-fiber) waiter parks with a bounded platform::Parker::park_timeout and
+// (non-fiber) waiter parks with a bounded platform::Parker::park_for and
 // retracts its own node on the deadline; the notify-vs-timeout race is arbitrated
 // under the CV monitor lock via the node's `linked` flag (whoever acts first
 // wins, the loser reports the other's outcome so no wake is lost). This covers
@@ -101,7 +101,7 @@ class ConditionVariable {
   // OR `timeout_ns` elapses, then re-acquire `lock`. Returns whether it returned
   // because of the timeout. Deadline keys on time::monotonic_ns().
   //
-  // Bare threads use Parker::park_timeout. Fibers arm their current worker's
+  // Bare threads use Parker::park_for. Fibers arm their current worker's
   // timer queue and are temporarily pinned to that worker for this wait episode,
   // so the notify winner resumes on the queue owner and cancels in O(1). An
   // atomic winner state prevents timer+notify from waking the same episode twice.
@@ -187,7 +187,7 @@ class ConditionVariable {
   // the Waker); thread -> park() loop on the thread-local token.
   HYLE_SCHED_API static void finish_wait_(bool fiber, void* token) noexcept;
 
-  // Timed thread-mode block: park the OS thread with a bounded park_timeout
+  // Timed thread-mode block: park the OS thread with a bounded park_for
   // until the node's token is notified or the deadline elapses. On timeout it
   // retracts `node` from the list (remove_waiter_) so a later notify can't pop a
   // dead node. Returns whether it timed out. (Out-of-line: pulls in time/ +

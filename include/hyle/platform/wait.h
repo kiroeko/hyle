@@ -4,6 +4,7 @@
 #include <cstdint>
 
 #include "hyle/core/compiler.h"
+#include "hyle/time/clock.h"
 #include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
@@ -64,15 +65,15 @@ class Parker {
   // loop, so a spurious low-level wake just re-sleeps (never a false return).
   HYLE_PLATFORM_API void park() noexcept;
 
-  // Timed park: block until a token is available OR `timeout_ns` elapses.
+  // Timed park: block until a token is available OR `timeout` elapses.
   // Returns true if a token was consumed, false otherwise (timeout OR a spurious
   // low-level wake). SINGLE-SHOT: unlike park(), it does NOT re-loop on a
   // spurious wake -- it may return false early, and the caller is expected to
   // re-check its own condition and re-park with a fresh deadline (mirrors Rust
-  // std's park_timeout). timeout_ns == 0 is a non-blocking check. This is the
+  // std's park_timeout). A non-positive timeout is a non-blocking check. This is the
   // worker's "sleep until next timer" call: its timer queue supplies the
   // deadline, and the worker's loop re-checks + recomputes the bound each pass.
-  HYLE_PLATFORM_API bool park_timeout(std::uint64_t timeout_ns) noexcept;
+  HYLE_PLATFORM_API bool park_for(time::Duration timeout) noexcept;
 
   // Make a token available; wake a parked thread if one is waiting. Idempotent:
   // repeated unparks without an intervening park collapse to a single token.

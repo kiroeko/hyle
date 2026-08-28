@@ -3,6 +3,8 @@
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
+#include <span>
+#include <type_traits>
 
 #include "hyle/error/result.h"
 #include "hyle/core/compiler.h"
@@ -31,6 +33,12 @@
 // the path was truncated).
 
 namespace hyle::platform {
+
+enum class SeekOrigin : std::uint8_t {
+  kBegin = 0,
+  kCurrent = 1,
+  kEnd = 2,
+};
 
 // ---- FileHandle
 // -------------------------------------------------------------- Zero-cost
@@ -65,8 +73,8 @@ public:
     return r;
   }
   // Close early (also done by the destructor). Safe on an empty handle. Unlike
-  // the destructor, this reports close/flush failures that may matter after a
-  // write. The handle is empty after the call even when close reports failure.
+  // the destructor, this reports close failures. Call sync() before close when
+  // durability matters. The handle is empty even when close reports failure.
   HYLE_PLATFORM_API Status close() noexcept;
 
   // Read up to `n` bytes; 0 is EOF and a short read is normal. EINTR is
@@ -77,6 +85,43 @@ public:
   // channel.
   HYLE_PLATFORM_API Result<std::size_t> write(const void *buf,
                                               std::size_t n) noexcept;
+
+  Result<std::size_t> read(std::span<std::byte> buffer) noexcept {
+    return read(buffer.data(), buffer.size());
+  }
+  Result<std::size_t> write(std::span<const std::byte> buffer) noexcept {
+    return write(buffer.data(), buffer.size());
+  }
+
+  // Complete blocking transfers for ordinary regular files. read_exact()
+  // reports DataLoss if EOF arrives before all `n` bytes; write_all() reports
+  // DataLoss if the OS makes a successful zero-byte write. Both preserve the
+  // first native failure and allocate nothing.
+  HYLE_PLATFORM_API Status read_exact(void *buf, std::size_t n) noexcept;
+  HYLE_PLATFORM_API Status write_all(const void *buf,
+                                     std::size_t n) noexcept;
+  Status read_exact(std::span<std::byte> buffer) noexcept {
+    return read_exact(buffer.data(), buffer.size());
+  }
+  Status write_all(std::span<const std::byte> buffer) noexcept {
+    return write_all(buffer.data(), buffer.size());
+  }
+
+  // Move the shared file cursor and return its resulting absolute byte
+  // position. A FileHandle is intentionally a single-cursor owner; concurrent
+  // positional I/O belongs to io::File (or separate handles), not a hidden lock
+  // or OVERLAPPED state in this one-word type.
+  HYLE_PLATFORM_API Result<std::uint64_t>
+  seek(std::int64_t offset, SeekOrigin origin = SeekOrigin::kBegin) noexcept;
+  Result<std::uint64_t> position() noexcept {
+    return seek(0, SeekOrigin::kCurrent);
+  }
+
+  // Request that buffered file data reach the OS storage boundary. `data_only`
+  // may omit metadata where the platform has fdatasync; Windows and macOS use
+  // their ordinary full-file flush. This is explicit because close alone is
+  // not a durability request.
+  HYLE_PLATFORM_API Status sync(bool data_only = false) noexcept;
 
 private:
   std::intptr_t raw_ = kInvalid;
@@ -339,8 +384,9 @@ directory_iterate(const char *path,
 // (return false to stop early) or `->void`. Inline, so no allocation and the
 // lambda body inlines into the trampoline.
 template <class Fn> Result<bool> for_each_entry(const char *path, Fn &&fn) {
+  using Callable = std::remove_reference_t<Fn>;
   auto trampoline = [](const char *name, FileType type, void *ctx) -> bool {
-    Fn &f = *static_cast<Fn *>(ctx);
+    Callable &f = *static_cast<Callable *>(ctx);
     if constexpr (requires {
                     { f(name, type) } -> std::same_as<bool>;
                   }) {

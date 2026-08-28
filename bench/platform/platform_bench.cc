@@ -32,6 +32,7 @@
 
 #include <atomic>
 #include <cerrno>
+#include <chrono>
 #include <condition_variable>
 #include <cstdio>
 #include <cstdlib>
@@ -471,8 +472,8 @@ int main() {
     });
   }
 
-  // ---- 8. park_timeout: fast path (token present) vs zero-timeout poll -------
-  // park_timeout has two hot regimes. FAST PATH: a token is already available
+  // ---- 8. park_for: fast path (token present) vs zero-timeout poll -----------
+  // park_for has two hot regimes. FAST PATH: a token is already available
   // (unpark ran first), so the fetch_sub sees NOTIFIED and returns true with NO
   // syscall -- the same ~10ns/no-syscall floor as park()'s fast path (section 1).
   // ZERO-TIMEOUT POLL: no token + timeout_ns==0 is a pure user-space load.
@@ -482,20 +483,21 @@ int main() {
     constexpr int kIters = 100000;
     Parker parker;
     nb::Bench b;
-    b.title("Parker park_timeout: fast path vs zero-timeout poll")
+    b.title("Parker park_for: fast path vs zero-timeout poll")
         .relative(true)
         .batch(kIters)
         .minEpochIterations(30);
-    b.run("park_timeout fast path (token present, no syscall)", [&] {
+    b.run("park_for fast path (token present, no syscall)", [&] {
       for (int i = 0; i < kIters; ++i) {
         parker.unpark();  // make a token available
         nb::doNotOptimizeAway(
-            parker.park_timeout(1'000'000'000ull));  // consumes it, no sleep
+            parker.park_for(std::chrono::seconds(1)));  // consumes, no sleep
       }
     });
-    b.run("park_timeout zero-timeout poll (no token, no syscall)", [&] {
+    b.run("park_for zero-timeout poll (no token, no syscall)", [&] {
       for (int i = 0; i < kIters; ++i) {
-        nb::doNotOptimizeAway(parker.park_timeout(0));  // no token -> false at once
+        nb::doNotOptimizeAway(
+            parker.park_for(hyle::time::Duration::zero()));
       }
     });
   }

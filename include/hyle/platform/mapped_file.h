@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <span>
 
 #include "hyle/error/result.h"
 #include "hyle/core/compiler.h"
@@ -29,6 +30,8 @@
 // a move-only RAII handle; the mapping is torn down on destruction.
 
 namespace hyle::platform {
+
+class FileHandle;
 
 class MappedFile {
  public:
@@ -62,6 +65,14 @@ class MappedFile {
       const char* path, Mode mode = Mode::kReadOnly, std::size_t offset = 0,
       std::size_t length = 0) noexcept;
 
+  // Consume an already-open file and map the same range. This is the natural
+  // shape when a caller has opened/validated a file once and must avoid a
+  // second path lookup. Ownership is consumed on success and failure. The
+  // handle must be readable, and kReadWrite additionally requires write access.
+  HYLE_PLATFORM_API static Result<MappedFile> map(
+      FileHandle file, Mode mode = Mode::kReadOnly, std::size_t offset = 0,
+      std::size_t length = 0) noexcept;
+
   MappedFile() noexcept = default;
   HYLE_PLATFORM_API ~MappedFile();
   HYLE_PLATFORM_API MappedFile(MappedFile&& o) noexcept;
@@ -72,14 +83,24 @@ class MappedFile {
   bool valid() const noexcept { return addr_ != nullptr; }
   explicit operator bool() const noexcept { return valid(); }
 
-  // First mapped byte (the requested offset), or nullptr if !valid().
-  void* data() const noexcept { return addr_; }
+  // First mapped byte (the requested offset), or nullptr if !valid(). Read-only
+  // access is always available; mutation requires writable_bytes(), which
+  // checks the mapping mode instead of exposing writable memory through const.
+  const void* data() const noexcept { return addr_; }
+  std::span<const std::byte> bytes() const noexcept {
+    return {static_cast<const std::byte*>(addr_), size_};
+  }
+  HYLE_PLATFORM_API Result<std::span<std::byte>> writable_bytes() noexcept;
   // Mapped length in bytes.
   std::size_t size() const noexcept { return size_; }
+  Mode mode() const noexcept { return mode_; }
 
-  // Flush dirty pages back to the file (kReadWrite only; OK no-op
-  // for kReadOnly / kCopyOnWrite). msync(MS_SYNC) / FlushViewOfFile.
-  HYLE_PLATFORM_API Status flush() noexcept;
+  // Flush dirty pages in [offset, offset+length) back to the file (kReadWrite
+  // only; OK no-op for kReadOnly / kCopyOnWrite). length==0 means through the
+  // end. Empty end ranges are successful no-ops. msync(MS_SYNC) /
+  // FlushViewOfFile + FlushFileBuffers.
+  HYLE_PLATFORM_API Status flush(std::size_t offset = 0,
+                                 std::size_t length = 0) noexcept;
 
   // Advise the kernel about [offset, offset+length). length==0 means through
   // the end of this mapping. Empty end ranges are successful no-ops. The

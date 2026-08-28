@@ -19,7 +19,7 @@
 // blocking thread per op. NOT a second scheduler -- it only observes completions and
 // re-injects fibers through sched's existing Waker spine (same role as io's reap).
 //
-// Poll cadence: when events are in flight, use Parker::park_timeout between sweeps
+// Poll cadence: when events are in flight, use Parker::park_for between sweeps
 // (cudaEventQuery is a cheap non-blocking check; a tight spin would burn a core). A
 // registration can interrupt that timeout, while a plain sleep could not. When none
 // are in flight, park until register() adds one -- zero cost idle. Thread creation,
@@ -144,11 +144,11 @@ class GpuPoller {
       if (stopping && !has_work) return;
 
       // 50us is well below typical GPU op latency and avoids a hot spin. Unlike
-      // sleep_for, park_timeout is interrupted immediately by new registration
+      // sleep_for, park_for is interrupted immediately by new registration
       // or shutdown. A token arriving before park is remembered, so there is no
       // condition-variable lost-wakeup window.
       if (has_work) {
-        (void)wake_.park_timeout(50'000);
+        (void)wake_.park_for(time::Duration(50'000));
       } else {
         wake_.park();
       }

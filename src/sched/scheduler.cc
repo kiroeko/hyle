@@ -828,7 +828,7 @@ struct Scheduler::Impl {
     return n_fired;
   }
 
-  // Absolute-deadline park bound for this worker: how long park_timeout should
+  // Absolute-deadline park bound for this worker: how long park_for should
   // sleep so it wakes for the nearest timer. UINT64_MAX (queue empty) -> caller
   // parks untimed. Clamped at 0 for an already-due timer (park returns at once).
   std::uint64_t park_timeout_ns(Worker& w) noexcept {
@@ -946,7 +946,7 @@ struct Scheduler::Impl {
       // Park until unparked OR the nearest sleep timer is due. An empty queue
       // gives UINT64_MAX -> untimed park (exactly the pre-04b behaviour, zero
       // cost when no fiber is sleeping). A pending timer bounds the park so the
-      // worker wakes to fire it; park_timeout returning false (timeout) is fine
+      // worker wakes to fire it; park_for returning false (timeout) is fine
       // -- the loop top's fire_due_timers handles the expiry uniformly.
       std::uint64_t timeout = park_timeout_ns(w);
       if (IoPollFn poll = io_poll.load(std::memory_order_acquire);
@@ -986,7 +986,7 @@ struct Scheduler::Impl {
       if (timeout == UINT64_MAX) {
         w.parker.park();
       } else {
-        w.parker.park_timeout(timeout);
+        w.parker.park_for(time::Duration(timeout));
       }
       remove_sleeper(idx);  // idempotent: a notifier may have popped us already
     }

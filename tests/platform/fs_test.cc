@@ -9,6 +9,7 @@
 
 #include <gtest/gtest.h>
 
+#include <array>
 #include <cerrno>
 #include <cstdio>
 #include <cstring>
@@ -365,13 +366,16 @@ TEST_F(FsTest, DirectoryIterateVisitsEntriesNotDotDot) {
   ASSERT_TRUE(make_directory(path("d1").c_str()).ok());
 
   std::vector<std::string> files, dirs;
-  auto completed =
-      for_each_entry(root.c_str(), [&](const char *name, FileType type) {
-        if (type == FileType::kDirectory)
-          dirs.emplace_back(name);
-        else
-          files.emplace_back(name);
-      });
+  // Keep the callable named: forwarding-reference deduction makes this an
+  // lvalue, which the type-erased trampoline must accept without forming a
+  // pointer-to-reference type.
+  auto visitor = [&](const char *name, FileType type) {
+    if (type == FileType::kDirectory)
+      dirs.emplace_back(name);
+    else
+      files.emplace_back(name);
+  };
+  auto completed = for_each_entry(root.c_str(), visitor);
   ASSERT_TRUE(completed.has_value());
   EXPECT_TRUE(*completed);
   EXPECT_EQ(files.size(), 2u);
@@ -965,6 +969,46 @@ TEST(FileHandle, OpenFileWriteThenReadRoundTrip) {
   EXPECT_TRUE(empty.read(nullptr, 1).error().IsInvalidArgument());
   EXPECT_TRUE(empty.write(nullptr, 1).error().IsInvalidArgument());
   (void)remove_file(p.c_str());
+}
+
+TEST_F(FsTest, FileHandleCompleteTransferSeekAndSync) {
+  const std::string file_path = path("cursor.bin");
+  auto opened = open_file(file_path.c_str(),
+                          kOpenRead | kOpenWrite | kOpenCreate | kOpenTruncate);
+  ASSERT_TRUE(opened.has_value()) << opened.error().message();
+
+  constexpr char payload[] = "abcdef";
+  ASSERT_TRUE(opened->write_all(payload, sizeof(payload) - 1).ok());
+  ASSERT_EQ(opened->position().value(), 6u);
+  ASSERT_TRUE(opened->sync(/*data_only=*/true).ok());
+
+  ASSERT_EQ(opened->seek(1).value(), 1u);
+  std::array<std::byte, 3> middle{};
+  ASSERT_TRUE(opened->read_exact(std::span<std::byte>(middle)).ok());
+  EXPECT_EQ(std::memcmp(middle.data(), "bcd", middle.size()), 0);
+
+  ASSERT_EQ(opened->seek(-2, SeekOrigin::kEnd).value(), 4u);
+  std::array<std::byte, 2> tail{};
+  ASSERT_TRUE(opened->read_exact(std::span<std::byte>(tail)).ok());
+  EXPECT_EQ(std::memcmp(tail.data(), "ef", tail.size()), 0);
+  EXPECT_TRUE(opened->read_exact(tail.data(), 1).IsDataLoss());
+
+  EXPECT_TRUE(opened->seek(-1).error().IsOutOfRange());
+  EXPECT_TRUE(opened->seek(0, static_cast<SeekOrigin>(99))
+                  .error()
+                  .IsInvalidArgument());
+  ASSERT_TRUE(opened->close().ok());
+  EXPECT_TRUE(opened->sync().IsFailedPrecondition());
+  EXPECT_TRUE(opened->seek(0).error().IsFailedPrecondition());
+}
+
+TEST(FileHandle, EmptyPathAndNullCompleteTransfersAreRejected) {
+  EXPECT_TRUE(open_file("", kOpenRead).error().IsInvalidArgument());
+  FileHandle empty;
+  EXPECT_TRUE(empty.read_exact(nullptr, 1).IsInvalidArgument());
+  EXPECT_TRUE(empty.write_all(nullptr, 1).IsInvalidArgument());
+  EXPECT_TRUE(empty.read_exact(nullptr, 0).ok());
+  EXPECT_TRUE(empty.write_all(nullptr, 0).ok());
 }
 
 TEST(FileHandle, OpenHandleDoesNotBlockAtomicRenameOrDelete) {

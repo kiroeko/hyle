@@ -12,6 +12,7 @@
 using hyle::platform::Parker;
 using hyle::platform::Thread;
 using hyle::platform::ThreadOpts;
+using hyle::time::Duration;
 
 // ---- Parker contract --------------------------------------------------------
 
@@ -99,10 +100,10 @@ TEST(Parker, HandoffStressNoLostWakeup) {
 
 // ---- timed park (backs the timer wheel's "sleep to next deadline") ----------
 
-TEST(Parker, ParkTimeoutReturnsFalseOnTimeout) {
+TEST(Parker, ParkForReturnsFalseOnTimeout) {
   Parker p;
   auto t0 = std::chrono::steady_clock::now();
-  bool got = p.park_timeout(20'000'000);  // 20ms, no unpark coming
+  bool got = p.park_for(std::chrono::milliseconds(20));
   auto elapsed = std::chrono::steady_clock::now() - t0;
   EXPECT_FALSE(got);  // timed out, no token
   // Slept roughly the requested time (allow generous slack for CI scheduling)...
@@ -112,27 +113,27 @@ TEST(Parker, ParkTimeoutReturnsFalseOnTimeout) {
   EXPECT_LT(elapsed, std::chrono::seconds(5));
 }
 
-TEST(Parker, ParkTimeoutConsumesExistingToken) {
+TEST(Parker, ParkForConsumesExistingToken) {
   Parker p;
   p.unpark();  // token already available
   auto t0 = std::chrono::steady_clock::now();
-  bool got = p.park_timeout(1'000'000'000);  // 1s deadline we should NOT wait
+  bool got = p.park_for(std::chrono::seconds(1));
   auto elapsed = std::chrono::steady_clock::now() - t0;
   EXPECT_TRUE(got);  // consumed the token immediately
   EXPECT_LT(elapsed, std::chrono::milliseconds(500));  // did not block
 }
 
-TEST(Parker, ParkTimeoutZeroIsNonBlockingPoll) {
+TEST(Parker, ParkForNonPositiveIsNonBlockingPoll) {
   Parker p;
   for (int i = 0; i < 1000; ++i) {
-    EXPECT_FALSE(p.park_timeout(0));  // no token; must not leave PARKED behind
+    EXPECT_FALSE(p.park_for(Duration::zero()));
   }
   p.unpark();
-  EXPECT_TRUE(p.park_timeout(0));  // token present -> immediate true
-  EXPECT_FALSE(p.park_timeout(0));  // consumed exactly once
+  EXPECT_TRUE(p.park_for(Duration::zero()));
+  EXPECT_FALSE(p.park_for(Duration(-1)));  // consumed once; negative is a poll
 }
 
-TEST(Parker, ParkTimeoutWokenByUnpark) {
+TEST(Parker, ParkForWokenByUnpark) {
   Parker p;
   std::atomic<bool> returned{false};
   std::atomic<bool> got_token{false};
@@ -146,7 +147,7 @@ TEST(Parker, ParkTimeoutWokenByUnpark) {
   auto r = Thread::spawn(
       [](void* a) {
         auto* x = static_cast<Args*>(a);
-        bool g = x->p->park_timeout(10'000'000'000ull);  // 10s -- unpark first
+        bool g = x->p->park_for(std::chrono::seconds(10));
         x->got->store(g, std::memory_order_release);
         x->returned->store(true, std::memory_order_release);
       },
@@ -260,9 +261,9 @@ TEST(Unparker, UnparkThroughHandle) {
 }
 
 TEST(Parker, TimeoutThenNeedsFreshUnpark) {
-  // After a timed-out park_timeout the state is EMPTY; next park needs a token.
+  // After a timed-out park_for the state is EMPTY; next park needs a token.
   Parker p;
-  EXPECT_FALSE(p.park_timeout(5'000'000));  // 5ms, no unpark
+  EXPECT_FALSE(p.park_for(std::chrono::milliseconds(5)));
   p.unpark();
   p.park();  // consumes the fresh token
   SUCCEED();
@@ -312,10 +313,10 @@ TEST(WaitOnAddress, WakeAllReleasesAllWaiters) {
   EXPECT_EQ(woke.load(std::memory_order_acquire), kWaiters);
 }
 
-// ---- park_timeout under concurrency: the timeout-vs-unpark race -------------
-// The functional park_timeout tests above cover the sequential contracts
+// ---- park_for under concurrency: the timeout-vs-unpark race -----------------
+// The functional park_for tests above cover the sequential contracts
 // (immediate token, zero-poll, woken-by-unpark, timeout-then-fresh-unpark). The
-// remaining gap is CONCURRENT: park_timeout is single-shot and resets the state
+// remaining gap is CONCURRENT: park_for is single-shot and resets the state
 // word with exchange(kEmpty) after its timed wait, so an unpark landing right at
 // that reset boundary must still not lose the token -- it is either consumed by
 // this call (returns true) or left as NOTIFIED for the next call, never dropped.
@@ -323,14 +324,14 @@ TEST(WaitOnAddress, WakeAllReleasesAllWaiters) {
 // every worker each round and waits for each to consume before the next round,
 // so at most one token is ever outstanding per worker. A lost wakeup would stall
 // a worker forever (join hangs -> test timeout); a double-count is impossible.
-// The worker rides park_timeout in a re-check loop (single-shot: a false return
+// The worker rides park_for in a re-check loop (single-shot: a false return
 // is a spurious/expired wake, so it just re-parks) and only a real token, i.e. a
 // true return, advances its counter -- which must end at exactly kRounds.
 
 // Long deadline (10s, never fires here): isolates the unpark-vs-timed-reset race.
 // The wake always comes from unpark, exercised through the TIMED wait path rather
 // than park(), proving the single-shot reset never drops a concurrent token.
-TEST(Parker, ParkTimeoutHandoffStressNoLostWakeup) {
+TEST(Parker, ParkForHandoffStressNoLostWakeup) {
   constexpr int kWorkers = 4;
   constexpr int kRounds = 500;
   constexpr std::uint64_t kLongNs = 10'000'000'000ull;  // 10s: must NOT expire
@@ -350,7 +351,7 @@ TEST(Parker, ParkTimeoutHandoffStressNoLostWakeup) {
           auto* x = static_cast<Args*>(a);
           int consumed = 0;
           while (consumed < kRounds) {
-            if (x->p->park_timeout(kLongNs)) {  // only a real token counts
+            if (x->p->park_for(Duration(kLongNs))) {
               ++consumed;
               x->obs->fetch_add(1, std::memory_order_acq_rel);
             }
@@ -379,7 +380,7 @@ TEST(Parker, ParkTimeoutHandoffStressNoLostWakeup) {
 // that exact boundary far more often -- the interleave the three-state machine
 // must get right. Same invariant: every per-worker counter still reaches EXACTLY
 // kRounds, because a token racing the expiry is consumed-or-left, never lost.
-TEST(Parker, ParkTimeoutExpiryVsUnparkRace) {
+TEST(Parker, ParkForExpiryVsUnparkRace) {
   constexpr int kWorkers = 4;
   constexpr int kRounds = 500;
   constexpr std::uint64_t kShortNs = 200'000ull;  // 200us: expires constantly
@@ -399,7 +400,7 @@ TEST(Parker, ParkTimeoutExpiryVsUnparkRace) {
           auto* x = static_cast<Args*>(a);
           int consumed = 0;
           while (consumed < kRounds) {
-            if (x->p->park_timeout(kShortNs)) {  // times out often -> re-park
+            if (x->p->park_for(Duration(kShortNs))) {
               ++consumed;
               x->obs->fetch_add(1, std::memory_order_acq_rel);
             }
