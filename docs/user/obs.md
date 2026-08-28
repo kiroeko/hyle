@@ -1,7 +1,8 @@
 # obs 选型与 C++ 使用指南
 
-> **`provisional / NOT_REVIEWED_V2`。** obs 当前只提供 C++ 产品面。
-> 本页适用于 C++23 source/static/shared 三种交付，不描述 C API 或跨语言调用层。
+obs 当前只提供 C++ 产品面。本页适用于 C++23 source/static/shared 三种交付，不描述 C API 或
+跨语言调用层；Native FFI 当前为 `N/A`。三种集成方式、组件选择与工具链合同见
+[`distribution`](distribution.md)。
 
 obs 有两条彼此独立的通路：**log** 是用户主动产出的同步诊断 record，**trace** 是
 profiling build 才存在的纳秒级时间线。它们都不是 error 的替代品，也不是一套日志
@@ -65,17 +66,20 @@ hyle::obs::LogRecord record{
     .level = LogLevel::Warn,
     .message = "submission delayed",
     .fields = fields,
-    .field_count = std::size(fields),
     .timestamp_ns = unix_time_ns,  // 0 表示调用方未提供
 };
 bool delivered = hyle::obs::log_record(record);
 ```
 
-message 是 exact byte view；例如 `log_message(level, std::string_view(data, size))` 不需要
-NUL 结尾并保留内嵌 NUL。`const char*` 便利重载会寻找结尾 NUL。record、字段和所有字符串
-都只在同步调用期间借用。`false` 表示被 gate 或没有 sink，不是错误。悬空 view、非空
-`field_count` 配空 fields 或空 field 字符串指针等是 C++ 合同违反，会
-fail-fast；从不可信来源构造 record 的上层代码必须先验证输入，再进入 obs 核心。
+message、field key/value 都是 exact byte view；例如
+`log_message(level, std::string_view(data, size))` 不需要 NUL 结尾并保留内嵌 NUL。
+`const char*` 便利重载会寻找结尾 NUL。record、span 和所有 view 都只在同步调用期间借用；悬空或
+无效 view 是 C++ 前置条件违反。`false` 表示被 gate 或没有 sink，不是错误。从不可信来源构造
+record 的上层代码必须先验证 pointer/length，再进入 obs 核心。
+
+用户自定义 `std::formatter` 可能抛异常；obs 会在这个外来 adapter 边界把异常变成静态
+`[log formatting failed]` record，诊断失败不会改变业务控制流。HYLE invariant 仍然 fail-fast，
+不会被这条边界吞掉。
 
 默认 sink 写 stderr。只有终端才加 HYLE 自己的 level 色码；source/message/field 中的换行、
 TAB、ESC 等控制字符会转义，所以一条 record 不会伪造额外物理行或注入 ANSI 序列。
@@ -84,20 +88,15 @@ TAB、ESC 等控制字符会转义，所以一条 record 不会伪造额外物�
 
 ```cpp
 struct Backend {
-  static void write(void* state,
-                    const hyle::obs::LogRecord& record) noexcept {
-    auto& self = *static_cast<Backend*>(state);
-    self.enqueue_copy(record);  // 异步使用必须在 callback 内复制 borrowed 数据
+  void write(const hyle::obs::LogRecord& record) noexcept {
+    enqueue_copy(record);  // 异步使用必须在 callback 内复制 borrowed 数据
   }
 
-  static void flush(void* state) noexcept {
-    static_cast<Backend*>(state)->drain();
-  }
+  void flush() noexcept { drain(); }
 };
 
 Backend backend;  // 必须比 registration 先构造、后析构
-auto registration = hyle::obs::SinkRegistration::create(
-    hyle::obs::LogSink{&backend, &Backend::write, &Backend::flush});
+auto registration = hyle::obs::SinkRegistration::create(backend);
 if (!registration) return hyle::make_unexpected(std::move(registration.error()));
 
 // ... 多线程产生日志；离开作用域时 quiescent unregister ...
@@ -108,7 +107,9 @@ hyle::obs::flush_sinks();
 ownership，便于离开 callback
 后重试。不要把 state 声明在 registration 之后，不要对同一 membership 再手工
 `remove_sink`。需要进程期注册或特殊 callback 控制时才用显式 add/remove，并保证每条退出
-路径都配对。
+路径都配对。普通 C++ adapter 直接提供 `write(record) noexcept`，可选提供 `flush() noexcept`；
+`LogSink::from(backend)` 会生成零分配 trampoline。只有高级框架已经拥有 function-table 时才手工
+构造 `LogSink{state, write, flush}`。
 
 callback 由 producer 线程同步调用，可能在多个线程并发，必须 thread-safe、`noexcept`，
 也不能长期阻塞 producer。`flush` 可与 `write` 并发。需要异步行为时，sink 在 callback
@@ -134,6 +135,8 @@ add/remove 是冷路径并返回共享 `Status`：空 callback、重复、缺失
 
 void reap() {
   HYLE_TRACE_ZONE_NAMED("app.reap");
+  HYLE_TRACE_ZONE_TEXT(request_name);
+  HYLE_TRACE_ZONE_VALUE(work_items);
   HYLE_TRACE_COUNTER("app.completions", completed_total);
 }
 ```
@@ -146,9 +149,12 @@ cmake -S . -B build-trace \
   -DHYLE_TRACY_DIR=/path/to/tracy
 ```
 
-zone 用作用域配对；fiber enter/leave 必须跟逻辑执行上下文配对。plot/frame/pool/fiber 的
+zone 用作用域配对；`ZONE_TEXT/NAME/VALUE/COLOR` 只注释当前 lexical zone，动态 text/name 会在
+宏返回前复制。fiber enter/leave 必须跟逻辑执行上下文配对。plot/frame/pool/fiber 的
 身份名要用字符串字面量或其他长期稳定存储，不能传临时 `std::string::c_str()`。动态
-message 会复制文本。共享 HYLE 的所有模块连接同一个 `hyle_tracy_client`，不能在各 DLL
+message 会复制文本；动态文本按 Tracy 的 16-bit 长度边界安全截断。完整 `uint64_t` counter 会
+规范化成 backend 可表达的数值，不会静默 wrap 成负数。共享 HYLE 的所有模块连接同一个
+`hyle_tracy_client`，不能在各 DLL
 再各编一份 TracyClient。trace-on static SDK 只支持所有 HYLE archive 最终进入一个 link image；
 多个 DLL/plugin 各自静态链接会得到多个互不相认的 Tracy singleton，不属于受支持形状。此类 host
 必须使用 shared `hyle_obs`，不能把“每个 image 一个”描述成 process-unique。

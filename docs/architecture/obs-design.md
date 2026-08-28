@@ -1,8 +1,8 @@
 # obs 设计：同步日志产出 + 编译期追踪
 
-> **V2 状态：`NOT_REVIEWED`。** 本页暂作既有设计输入，不代表当前功能、性能或 API 证书。
-> 当前只提供 C++23 source/static/shared，Native FFI 为 `N/A`。BUILD-03 已删除旧 C schema、
-> bridge、动态导出和 fixture；正文的其他验收叙事仍待 obs 轮次重裁决。
+本页定义 obs 的长期产品边界和设计理由。当前轮次与未通过的门只看
+[`module-status.json`](../implementation/module-status.json)；当前公开用法只看
+[`user/obs`](../user/obs.md)。obs 只提供 C++23 source/static/shared，Native FFI 当前为 `N/A`。
 
 obs 有两条相互独立的产出通路：
 
@@ -43,9 +43,10 @@ DLL/plugin 各自静态链接 trace-on SDK，它们必然各有 Tracy singleton�
 
 ## 2. 日志数据流与生命周期
 
-`LogRecord` 的消息、字符串和字段都是同步借用。消息使用 `std::string_view`，因此已有 slice
-不必复制或扫描，也能保留内嵌 NUL；field key/value 与可选 source 仍是 NUL 结尾字符串。调用方
-必须让所有借用数据活过同步 dispatch；sink 需要异步保存时自行复制。
+`LogRecord` 的消息和字段都是同步借用。message 与 field key/value 都使用 exact
+`std::string_view`，已有 slice 不必复制或扫描，也能保留内嵌 NUL；字段集合以
+`std::span<const LogField>` 表达。可选 source file/function 来自 `source_location`，仍是 NUL 结尾的
+稳定字符串。调用方必须让全部借用数据活过同步 dispatch；sink 需要异步保存时自行复制。
 
 ```text
 caller builds record
@@ -125,14 +126,14 @@ HYLE 的底层模块**不应为了证明 obs 被使用而主动打日常日志**
 
 ## 4. 依赖、消费者与负空间
 
-`hyle_obs` 的唯一 HYLE runtime 上游是 `hyle_error`；sink 注册的可恢复失败使用共享
-`Status/Result`。默认 stderr/debugger writer 直接拥有 TTY 和 debugger OS 交互，因为
+`hyle_obs` 在中央 component graph 中 `PUBLIC` 依赖 `core` 与 `error`：core 提供 compiler、fatal
+invariant 与 visibility 基础，sink 注册的可恢复失败使用 error 的 `Status/Result`。默认
+stderr/debugger writer 直接拥有 TTY 和 debugger OS 交互，因为
 platform 没有此抽象、obs 与 platform 同处底层且这正是 sink 的 I/O 职责，不能为消除一个
 局部 syscall 制造 `obs -> platform` 依赖。trace gate 是 header/CMake 横切 seam，不让
 mem/sched/io/compute 反向链接 log runtime。
-opaque C sink 的 allocation-domain 控制由 size/alignment query + caller storage 提供，因此
-无需为了可替换分配器引入 `obs -> mem`；保留的 `create` 是显式 system-heap convenience，
-不应在受限/插件 ABI 边界伪装成调用方 allocator ownership。
+typed C++ sink 只是借用调用方 backend，registry 也使用固定进程期存储，因此无需为了分配器引入
+`obs -> mem`。异步拥有型复制与队列由 application adapter 自己选择 allocator。
 
 语法消费者扫描没有发现 HYLE 生产模块调用 runtime `HYLE_LOG_*` 或注册 `LogSink`；这是
 基础库不擅自输出日志的正确负空间。语义扫描中的 util fatal diagnostic、core fatal macro
@@ -151,7 +152,8 @@ ID、refcount 或拥有型字符串。需要时间戳、线程 ID 等 enrich 时
 原生 `HYLE_TRACE_*` 宏用于 HYLE 热路径和同工具链源码用户：
 
 - 默认 OFF：宏参数不求值，无函数调用、无后端依赖；
-- ON：zone/plot/counter/fiber/frame/message/memory/thread-name 转发 Tracy。
+- ON：zone/当前 zone 的 text/name/value/color、plot/counter、fiber/frame、message、memory 与
+  thread-name 转发 Tracy。
 
 旧 runtime trace bridge 已由 BUILD-03 删除。极热 C++ 源码路径只使用原生宏；OFF 时参数不求值，
 也没有函数级 no-op 调用。
@@ -179,7 +181,7 @@ Tracy。plot/frame/pool 名同理应使用字面量或其他稳定存储。
 1. 正常 C++ 测试 + 编译期 floor codegen；
 2. add/remove/log 并发压力与 remove-waits、自摘、跨摘拒绝测试；
 3. WSL ASan、UBSan、TSan；
-4. 三平台 Release gated/preformatted/formatted 基准；
+4. W1-WIN `closure-perf-v1` 的冻结正常 workload；其他平台做 correctness/交付，不池化点值；
 5. Native FFI 保持 `N/A`；若出现已命名的 foreign-runtime 任务，先按全局准入策略独立立项；
 6. installed source/shared/static package 中只请求 `COMPONENTS obs` 的 C++23 consumer。
 
@@ -189,9 +191,9 @@ Tracy。plot/frame/pool 名同理应使用字面量或其他稳定存储。
 2. ON 构建 obs + 被埋点模块测试，并用超长 message/zone text/source components 验证截断；
 3. 共享构建的每个模块只依赖同一个 `hyle_tracy_client`；
 4. 名称和 zone token 的存储期/配对审计；
-5. Windows、Linux、macOS 至少各跑一次 ON 构建。
+5. Windows、Linux、macOS 各跑适用的 ON correctness/build；性能只按登记机器合同裁决。
 
 性能数与仪器见
 [`../performance/benchmarks-obs.md`](../implementation/evidence/performance/benchmarks-obs.md)，
-模块收口证据见
-[`../milestones/obs-module-closure.md`](../implementation/tasks/obs/obs-module-closure.md)。
+当前模块任务见
+[`obs-v1-closure`](../implementation/tasks/obs/obs-v1-closure.md)。

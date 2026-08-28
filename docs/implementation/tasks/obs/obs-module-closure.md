@@ -1,8 +1,9 @@
 # obs-runtime 模块严格复证（2026-07-29）
 
-> **历史证据提示（2026-08-25）：**本页的绿色结论绑定文中日期/commit，不是 Tracy 0.14.1
-> 与新 C sink/record 合同后 working tree 的当前证书。现行状态只看
-> [`pre-release-readiness`](../../status.md)。
+> **HISTORICAL WORK LOG：**本页只记录 2026-07-29 当时的实现、C ABI 和取证事实；后续
+> BUILD-03 已删除整套 C schema/symbol/fixture，正文中的“当前”“需继续”等字样没有现行授权含义。
+> 当前状态只看 [`module-status.json`](../../module-status.json)，当前任务只看
+> [`obs-v1-closure`](obs-v1-closure.md)，当前 API/用法只看 architecture/user 文档与 public headers。
 
 obs-runtime 已按当前 [`module-closure-methodology`](../../../developer/review/module-closure-methodology.md)
 重新打开并完成复证。runtime/API 实现绑定 `4d31bcf`，性能采样合同绑定 `06cec5a`；它是
@@ -10,9 +11,9 @@ obs-runtime 已按当前 [`module-closure-methodology`](../../../developer/revie
 大**的底层模块：产品面只有同步结构化日志 producer 与编译期 trace seam；生命周期、
 C ABI、构建后端和 mem/sched/io/compute 埋点会穿过全库。
 
-稳定设计见 [`../architecture/obs-design.md`](../../../architecture/obs-design.md)，用户选型见
-[`../guide/obs.md`](../../../user/obs.md)，C/FFI 精确映射见
-[`../guide/c-obs.md`](../../../architecture/native-ffi-policy.md)，性能点值只见
+现行稳定设计见 [`obs-design`](../../../architecture/obs-design.md)，用户选型见
+[`user/obs`](../../../user/obs.md)，Native FFI 边界见
+[`native-ffi-policy`](../../../architecture/native-ffi-policy.md)，当前性能证据只见
 [`../performance/benchmarks-obs.md`](../../evidence/performance/benchmarks-obs.md)。
 
 ## 0. 审查单元与消费者账本

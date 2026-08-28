@@ -1,6 +1,10 @@
 # Tracy 0.14.1：obs trace-on 升级证据
 
-本页只验证 Tracy 0.14.1 升级触及的 native trace 热路，不是 obs 模块收口。产品 API
+> **HISTORICAL UPGRADE EVIDENCE：**本页保留依赖升级当天 dirty focused replay 的事实，不是当前
+> 性能证书或复现入口。当前 clean qualification、identity、controls 与 verdict 只看
+> [`benchmarks-obs`](benchmarks-obs.md)。
+
+本页当时只验证 Tracy 0.14.1 升级触及的 native trace 热路，不是 obs 模块收口。产品 API
 保持 `HYLE_TRACE_*`；direct Tracy 宏只出现在验证 target `hyle_obs_tracy_bench` 中。
 
 ## 同合同与 codegen
@@ -55,6 +59,6 @@ python scripts/bench-stat.py `
   --pair "direct ZoneScopedN" "HYLE_TRACE_ZONE_NAMED"
 ```
 
-最终发布重签仍需在 clean 的同一提交上复跑三平台；当前页只界定升级造成的 trace-on 热路并
-保存 Windows 中间诊断，三平台结果写入前不宣称该边已经关闭，也不重签 obs 的
-logging/fan-out 全表。
+后续 obs-v1 已取得 clean W1-WIN `closure-perf-v1` trace qualification；它不会追溯改变本页当时
+dirty/diagnostic 的性质。其他平台承担适用 correctness/交付验证，不再要求把三平台点值池化成一张
+发布表。

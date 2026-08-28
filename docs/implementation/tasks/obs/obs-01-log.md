@@ -1,9 +1,9 @@
 # obs-01：结构化日志产出
 
-> **历史任务提示（2026-08-25）：**本页保留 2026-07 的施工形状；当前 obs 已改用 owning
-> `hyle_status`、caller-storage sink 并扩为 29 个动态入口。现行设计/用法与认证分别只看
-> [`obs-design`](../../../architecture/obs-design.md)、[`c-obs`](../../../architecture/native-ffi-policy.md) 和
-> [`pre-release-readiness`](../../status.md)。
+> **HISTORICAL WORK LOG：**本页保留 2026-07 的施工形状；正文中的 C ABI 后来已由 BUILD-03
+> 整体删除，不是当前接口或待办。当前状态只看 [`module-status.json`](../../module-status.json)，
+> 现行设计/用法分别只看 [`obs-design`](../../../architecture/obs-design.md) 与
+> [`user/obs`](../../../user/obs.md)。
 
 | 字段 | 值 |
 |---|---|

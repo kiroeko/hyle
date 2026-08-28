@@ -213,6 +213,19 @@ message/memory/thread-name 以及 build gate。没有入口落在表外，也没
   `multi-producer-fanout` 与聚合 engineering performance 均为 `INCONCLUSIVE`，不得进入
   `VERIFIED`。
 
+### Documentation / usability
+
+- [`obs-design`](../../../architecture/obs-design.md) 已按长期边界说明 synchronous borrowed
+  record、typed sink、quiescent registry、error/core 依赖、native trace、三种 C++ 交付与负空间；不再
+  混入 current-state 或旧 C sink 叙事。
+- [`user/obs`](../../../user/obs.md) 从真实选择开始，覆盖 format/message/structured record、typed
+  adapter、RAII/显式注销、trace annotation、storage lifetime、递归/跨摘/异步复制与常见误用；示例
+  已使用 exact `span`，不再出现删除的 `field_count`。
+- 2026-07 的 `obs-module-closure`、`obs-01-log` 与 dirty Tracy upgrade 页只保留为明确
+  `HISTORICAL WORK LOG/EVIDENCE`，其命令式或“当前”文字不再指向现行接口。
+- `python scripts/check-docs.py`：PASS（284 Markdown、809 relative links）；`OBS-DOC-01` 当前实现与
+  current docs gap 已完成，performance blocker 不改变文档本身的可用性。
+
 ## 独立红队
 
 尚未执行。
