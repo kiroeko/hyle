@@ -407,11 +407,31 @@ TEST(TimerQueue, RejectsWrongOwnerAndLinkedOutputReuse) {
   EXPECT_EQ(out.pop_front(), &linked);
 }
 
-TEST(TimerQueue, DestroyingNonEmptySourceFailsFast) {
+TEST(TimerQueue, NonEmptySourceTeardownDetachesWithoutFiring) {
+  int callbacks = 0;
+  TimerEntry a(&callbacks, [](TimerEntry* entry) noexcept {
+    ++*static_cast<int*>(entry->data());
+  });
+  TimerEntry b;
+  {
+    TimerQueue w(0);
+    w.schedule(&a, 10 * kMs);
+    w.schedule(&b, 20 * kMs);
+  }
+  EXPECT_EQ(callbacks, 0);
+  EXPECT_FALSE(a.scheduled());
+  EXPECT_FALSE(b.scheduled());
+
+  TimerQueue reuse(0);
+  reuse.schedule(&a, kMs);
+  EXPECT_TRUE(reuse.cancel(&a));
+}
+
+TEST(TimerQueue, DestroyingEntryBeforeOwningSourceFailsFast) {
   EXPECT_DEATH_IF_SUPPORTED(
       {
-        TimerEntry e;
         TimerQueue w(0);
+        TimerEntry e;
         w.schedule(&e, 10 * kMs);
       },
       "");

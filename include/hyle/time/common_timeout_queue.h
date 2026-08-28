@@ -54,7 +54,7 @@ class CommonTimeoutQueue {
   explicit CommonTimeoutQueue(
       std::chrono::duration<Rep, Period> duration) noexcept
       : duration_ns_(duration_ns_saturated(duration)) {}
-  ~CommonTimeoutQueue() { HYLE_FATAL_ASSERT(empty()); }
+  ~CommonTimeoutQueue() noexcept { detach_remaining(); }
   CommonTimeoutQueue(const CommonTimeoutQueue&) = delete;
   CommonTimeoutQueue& operator=(const CommonTimeoutQueue&) = delete;
 
@@ -222,6 +222,20 @@ class CommonTimeoutQueue {
   [[nodiscard]] bool accepts_idle_deadline(
       std::uint64_t deadline_ns) const noexcept {
     return list_.empty() || list_.back()->deadline_ns_ <= deadline_ns;
+  }
+
+  // Normal owner-first teardown. The queue neither owns nor fires entries; it
+  // only clears their source relationship and unlinks them for later reuse or
+  // destruction by the caller.
+  void detach_remaining() noexcept {
+    std::size_t detached = 0;
+    while (TimerEntry* entry = list_.pop_front()) {
+      HYLE_FATAL_ASSERT(entry->owned_by(this));
+      entry->set_owner(nullptr);
+      ++detached;
+    }
+    HYLE_FATAL_ASSERT(detached == count_);
+    count_ = 0;
   }
 
   EntryList list_;               // sorted by deadline (append-ordered)

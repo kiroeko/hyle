@@ -222,7 +222,7 @@ TEST(CommonTimeoutQueue, ScheduleNowUsesMonotonicClock) {
   q.cancel(&e);
 }
 
-TEST(CommonTimeoutQueue, RejectsWrongOwnerAndNonEmptyDestruction) {
+TEST(CommonTimeoutQueue, RejectsWrongOwner) {
   CommonTimeoutQueue first(100);
   CommonTimeoutQueue second(100);
   TimerEntry e = make_entry(1);
@@ -230,11 +230,33 @@ TEST(CommonTimeoutQueue, RejectsWrongOwnerAndNonEmptyDestruction) {
   EXPECT_DEATH_IF_SUPPORTED(second.cancel(&e), "");
   EXPECT_DEATH_IF_SUPPORTED(second.schedule(&e, 200), "");
   first.cancel(&e);
+}
 
+TEST(CommonTimeoutQueue, NonEmptySourceTeardownDetachesWithoutFiring) {
+  int callbacks = 0;
+  TimerEntry a(&callbacks, [](TimerEntry* entry) noexcept {
+    ++*static_cast<int*>(entry->data());
+  });
+  TimerEntry b;
+  {
+    CommonTimeoutQueue queue(100);
+    queue.schedule(&a, 100);
+    queue.schedule(&b, 200);
+  }
+  EXPECT_EQ(callbacks, 0);
+  EXPECT_FALSE(a.scheduled());
+  EXPECT_FALSE(b.scheduled());
+
+  CommonTimeoutQueue reuse(100);
+  reuse.schedule(&a, 300);
+  EXPECT_TRUE(reuse.cancel(&a));
+}
+
+TEST(CommonTimeoutQueue, DestroyingEntryBeforeOwningSourceFailsFast) {
   EXPECT_DEATH_IF_SUPPORTED(
       {
-        TimerEntry armed;
         CommonTimeoutQueue queue(100);
+        TimerEntry armed;
         queue.schedule(&armed, 100);
       },
       "");

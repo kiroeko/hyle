@@ -44,7 +44,7 @@ class TimerQueue {
   explicit TimerQueue(std::uint64_t now_ns) noexcept : now_ns_(now_ns) {}
   explicit TimerQueue(MonotonicTimePoint now) noexcept
       : TimerQueue(to_monotonic_ns(now)) {}
-  ~TimerQueue() { HYLE_FATAL_ASSERT(empty()); }
+  ~TimerQueue() noexcept { detach_remaining(); }
   TimerQueue(const TimerQueue&) = delete;
   TimerQueue& operator=(const TimerQueue&) = delete;
 
@@ -251,6 +251,23 @@ class TimerQueue {
     buckets_[nearest].for_each([&](const TimerEntry* entry) noexcept {
       if (entry->deadline_ns_ < next_ns_) next_ns_ = entry->deadline_ns_;
     });
+  }
+
+  // Normal owner-first teardown. Callers still own the entries, so there is no
+  // delivery list to return and no callback to run; simply make every node idle
+  // before the intrusive bucket members are destroyed. This is intentionally
+  // O(n) cold-path work and adds nothing to arm/cancel/advance metadata.
+  void detach_remaining() noexcept {
+    std::size_t detached = 0;
+    for (EntryList& bucket : buckets_) {
+      while (TimerEntry* entry = bucket.pop_front()) {
+        HYLE_FATAL_ASSERT(entry->owned_by(this));
+        entry->set_owner(nullptr);
+        ++detached;
+      }
+    }
+    HYLE_FATAL_ASSERT(detached == count_);
+    count_ = 0;
   }
 
   std::array<EntryList, kBucketCount> buckets_{};
