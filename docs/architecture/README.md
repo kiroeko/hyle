@@ -12,6 +12,7 @@ sampling、KV 策略与 serving policy 留在推理引擎。第二类工程计�
 
 - [动机与北极星](motivation.md)
 - [推理引擎需求锚](inference-engine-north-star.md)
+- [已收口单元的推理能力观察清单](inference-engine-capability-watchlist.md)
 - [项目范围](hyle-scope.md)
 - [架构方向与依赖原则](roadmap.md)
 - [clay 起源与资产判断](clay-asset-liability.md)

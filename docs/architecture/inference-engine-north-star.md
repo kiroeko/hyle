@@ -47,6 +47,10 @@ source/static/shared 交付本身不要求制造 FFI parity。
 与生命周期、并发与失败、正常规模、强 peer、计费边界、成功指标、负空间。缺任一字段不得进入
 实现阶段。
 
+已经 `CLOSED` 的基础单元仍可能存在尚未定形的推理需求。它们统一记录在
+[推理能力观察清单](inference-engine-capability-watchlist.md)；其中 `WATCH` 不是 backlog、`MUST` 或
+重开授权，只有本节的具名旅程、语义擦除、owner 和合同卡条件成立后才能进入模块状态机。
+
 ## 3. 基础模块与推理引擎的边界
 
 | 领域 | HYLE 应提供的机制 | 应留在 compute / 推理引擎的策略与语义 |
