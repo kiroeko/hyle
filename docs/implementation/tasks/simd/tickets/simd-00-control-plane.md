@@ -1,6 +1,6 @@
 # SIMD-00：专题控制面与现有草稿归属
 
-- ticket state：`ACTIVE`
+- ticket state：`DONE`
 - kind：program / product-non-mutating
 - depends on：无
 - budget：90 分钟；性能预算 0
@@ -26,11 +26,13 @@
 - epic、入口和 13 张顺序票落盘；
 - 旧 closure card 有具名 blocker、owner、resume condition 和 terminal receipt；
 - registry 使用明确 previous snapshot 验证合法 `AUDITED -> BLOCKED`；
-- 新 `RESUME` round 另用 previous snapshot 进入 `SCOPED`，且只激活 SIMD-01；
+- 模块先诚实停在 `BLOCKED`；SIMD-01/02 只读 audit 解决 peer/version/scope 输入后，新 `RESUME` round
+  再用明确 previous snapshot 进入 `SCOPED`；
 - `check-module-closure.py` 与 `check-docs.py` 通过；
 - 产品文件不进入本票提交。
 
 ## 结果
 
-- output commit：`TBD`
-- verdict：`ACTIVE`
+- terminal receipt commit：`5eef9a0630dca4315018d0e7790d6701e00cc4cb`
+- registry transition commit：`16b7913f6bcd654097103cd79288e31487fe98fd`
+- verdict：`DONE`；没有 SIMD 产品文件进入两次提交。

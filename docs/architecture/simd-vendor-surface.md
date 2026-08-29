@@ -1,41 +1,46 @@
-# SIMD vendor 借用面（现状盘点）
+# SIMD vendor ownership
 
-> **V2 状态：`NOT_REVIEWED`。** 本页盘点既有 vendor 边界，不是当前 SIMD 功能或性能证书；
-> 具体计数与“终态”字样要在 SIMD 轮次重新生成和裁决。
+本文只描述长期 ownership 和升级原则，不承担操作覆盖率、性能排名或任务状态。当前 product state 见
+[`module-status.json`](../implementation/module-status.json)，本轮版本与施工事实见
+[`SIMD/Math epic`](../implementation/tasks/simd/simd-epic-v1.md)。
 
-> 本文只回答一个问题：**有哪些地方我们直接调用 Highway / xsimd / simdutf（而非 HYLE 自造后端）？**
->
-> **覆盖率 / op 计数 / SOTA 判决不在本文** —— 唯一数据源是
-> [历史 SIMD closure](../implementation/tasks/simd/simd-module-closure.md)。数字随代码演进，跑 `scripts/simd-op-coverage.py` 取实时值。
+## 两种依赖必须分开说
 
-**关键前提**：`include/` 里**零** vendor 调用。公开 API 只吃裸指针。
+HYLE 的公开 SIMD 头不泄漏 Highway/xsimd 类型，正常产品构建也不从外部 checkout link 这两个库；但这
+不等于产品实现“零第三方”。部分 checked-in kernel 是带来源、修改和许可证的 integrated-source port：
 
-## 终态（simd-20 X4）
+| origin | HYLE product paths | ownership |
+|---|---|---|
+| Highway | `src/simd/math/math_hyle-inl.h`、Highway-named transcendental TUs、`src/simd/bitpack/**` 的 port、`src/simd/sort/vqsort_hyle/**` 与 target TUs | HYLE owns public semantics/selection/delivery；Highway is mechanism origin；HYLE owns adaptation/local delta |
+| xsimd | `src/simd/math/math_xsimd_hyle-inl.h`、shared body 与 xsimd-named target TUs | HYLE owns public accuracy/API/delivery；xsimd is mechanism origin；HYLE owns D-tag adaptation/local delta |
+| simdutf | container UTF-8 implementation，不属于 `hyle::simd` target | container owns semantics/delivery；vendored simdutf owns implementation mechanism |
 
-**库零 Highway/xsimd**：`include/` + `src/` 不 `#include` `hwy/` 或 `xsimd/`；仓库内**无** `third_party/{highway,xsimd}`。闸门：`scripts/check-no-vendor.sh`。
+中央 [`HyleDependencyLock.json`](../../cmake/HyleDependencyLock.json) 是 integrated origin、archive、内容 hash
+和许可证投影的唯一机器账本。文件名或 namespace 已改为 HYLE 并不会抹掉第三方来源。
 
-**bench 外部对拍**：`HYLE_BUILD_BENCH=ON` 时经 `HYLE_BENCH_VENDOR_DIR` + `cmake/vendor-versions.cmake` pin 的外部 checkout 引用 Highway/xsimd；`scripts/fetch-bench-vendors.{sh,ps1}` 按 SHA 拉取。产品 build 不读该目录。
+## 公共边界
 
-## 产品实现面（全 HYLE）
+- HYLE owns `types/vec`、Runtime/exact/native/fat-kernel、pointer/span batch API、accuracy/layout/alias/error
+  contract 与 Platform/build/package integration。
+- vendor 类型、target macro 和 allocator 不进入 HYLE 公开签名或持久化格式。
+- internal direct wrapper 可以使用成熟算法，只要不改变公开合同，并且 source/static/shared 与 exact/native
+  交付完整。
+- integrated port 只有在 HYLE 合同无法由稳定 wrapper 满足时保留；每次升级都要重新记录 upstream
+  identity、local delta、许可证和内容 hash。
+- HYLE 自实现只因真实 semantic/ISA/complexity/consumer gap 存在，不因 benchmark 某行获胜而复制。
 
-| 面 | 位置 | 说明 |
-|----|------|------|
-| math | `math_hyle-inl.h` / `math_xsimd_hyle-inl.h` + ISA TU | best-of 符号名保留 `*_highway_*` / `*_xsimd_*` |
-| bitpack | `bitpack_hyle-inl.h` + ISA TU | Pack8/16/32 D-tag |
-| vqsort | `vqsort_hyle/` + ISA TU | sort/partial/select + KV |
-| 核心 op | `vec.h` + scalar/x86/ARM/RISC-V 七后端 | intrinsic / 自造 |
+## 升级规则
 
-这些产品 kernel 遵循同一双轨边界：ops/random/scan 的 per-ISA wrapper 与 `native::` 复用同一 D-tag body；
-math/bitpack/vqsort 虽保留各自算法 dispatcher，也只通过 pointer/POD batch API 暴露。vendor 摘除与
-runtime/native/exact 派发彼此正交，详见 [`simd-dispatch-guide.md`](../developer/maintenance/simd-dispatch-guide.md)。
+1. 先冻结官方 commit，不追逐浮动 HEAD；同一 capability 最多两个 strong peer。
+2. 先比较语义、accuracy、layout、alias、异常与 ISA，再比较性能。
+3. 只验证受影响 capability：广 correctness + 少量正常 consumer sentinel；不重跑全部操作笛卡尔积。
+4. direct wrapper 可行时优先减少长期 port delta；若 port 必须存在，只移植与当前 origin family 有关的
+   upstream 修复。
+5. 任何不同 wire format、稳定性、NaN、dispatch 或资源合同的结果都标记 `NOT_COMPARABLE`。
+6. 内容确定后由 CMake integrated-source hash 工具机械重算，禁止手写一个“看起来更新”的 hash。
 
-## container 直接借用的成熟 SIMD 核
+## 明确负空间
 
-**UTF-8 validate/count**（`src/container/string_algo.cc`）：vendored simdutf v9.1 amalgamation 无条件编入
-`hyle_container`；`utf8_validate` 直接借单遍 `validate_utf8`，`utf8_length` 借
-`validate_utf8 + count_utf8`，并复用其 runtime ISA dispatch。
-公开 container 头不泄露 simdutf 类型；scalar decoder 保留为 constexpr/reference fallback。
-
-**一句话**：HYLE 自造核心 SIMD + math + bitpack + vqsort；仓库无 highway/xsimd；bench 用外部 pin 对拍；container 的 UTF-8 validate/count 直接借 vendored simdutf。
-
-完整阶段史见 [`../milestones/simd-20-vendor-extraction.md`](../implementation/tasks/simd/simd-20-vendor-extraction.md)。
+Benchmark checkout 是 peer，不是安装产品依赖；Native FFI、稳定跨工具链 C++ ABI、per-ISA DLL、tensor/
+model operator 和 GPU backend 不因 vendor 升级进入 SIMD。阶段性“哪个 op 曾赢”的记录只留在
+implementation/evidence，不进入本架构页。
