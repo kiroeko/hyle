@@ -25,7 +25,8 @@ HYLE 的 ordinary SIMD 头不泄漏 Highway/xsimd 类型。`simd-v2` 将 Highway
 - HYLE owns ordinary pointer/span buffer API、accuracy/layout/alias/error contract 与 Platform/build/package
   integration；这些用户合同不改成 vendor API。
 - expert register/kernel surface 优先直接使用锁定 Highway，或由极薄 adapter 提供 HYLE 需要的 target/
-  dtype glue；不把完整 Highway operation set 再复制一遍改名。
+  dtype glue；不把完整 Highway operation set 再复制一遍改名。`hyle_target_simd()` 是源码嵌入时的
+  fixed-target seam；installed static/shared SDK 不导出 vendor register headers/ABI。
 - Runtime/exact/native/fat-kernel 优先由 Highway 等成熟机制承载。Platform 仍服务其他模块；SIMD 无需为
   统一表面复制已经正确的 ISA implementation/selection。
 - xsimd/SLEEF 只补 Highway 无等价能力或不满足资格化 accuracy/resource contract 的数学 family。

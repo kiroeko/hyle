@@ -39,4 +39,10 @@ elseif(_hyle_target_processor_raw MATCHES "^(riscv64|RISCV64)$")
 else()
   set(HYLE_TARGET_PROCESSOR "${_hyle_target_processor_raw}")
 endif()
+# Source-embedding helpers can be called from the parent directory after
+# add_subdirectory(hyle), where this directory-local variable is no longer in
+# scope. Publish the same normalized fact globally instead of falling back to
+# CMAKE_SYSTEM_PROCESSOR and reintroducing the Visual Studio host/target bug.
+set_property(GLOBAL PROPERTY HYLE_TARGET_PROCESSOR
+  "${HYLE_TARGET_PROCESSOR}")
 unset(_hyle_target_processor_raw)

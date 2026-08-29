@@ -125,10 +125,12 @@ function(hyle_simd_target_manifest)
   set(${ARG_OUT_HEADER} "${_header}" PARENT_SCOPE)
 endfunction()
 
-# Bind an ordinary consumer target to one explicit native SIMD backend. This is the zero-dispatch
-# path: it defines exactly one HYLE_SIMD_TARGET_* and applies the matching compiler flags to the
-# consumer target, so calls through hyle::simd::native can inline completely. It deliberately does
-# not inspect CPUID; the produced binary requires the requested ISA.
+# Bind a source-embedding consumer target to one explicit SIMD backend. This is
+# the zero-dispatch expert path: it exposes the centrally locked Highway headers,
+# selects one static Highway target and applies the matching compiler flags.
+# HYLE target definitions remain during the internal-family migration, but new
+# consumer kernels should use Highway directly instead of hyle::simd::vec/native.
+# It deliberately does not inspect CPUID; the produced binary requires the ISA.
 #
 #   hyle_target_simd(TARGET my_app ISA AVX2)
 #
@@ -146,24 +148,38 @@ function(hyle_target_simd)
   if(NOT TARGET ${ARG_TARGET})
     message(FATAL_ERROR "hyle_target_simd: target '${ARG_TARGET}' does not exist")
   endif()
+  if(NOT TARGET hyle_simd_source_expert)
+    message(FATAL_ERROR
+      "hyle_target_simd is a source-embedding expert seam. Installed static/shared "
+      "SDKs expose HYLE whole-buffer APIs, not third-party register headers")
+  endif()
   string(TOUPPER "${ARG_ISA}" _isa)
+  set(_target_processor "${HYLE_TARGET_PROCESSOR}")
+  if(_target_processor STREQUAL "")
+    get_property(_target_processor GLOBAL PROPERTY HYLE_TARGET_PROCESSOR)
+  endif()
+  if(_target_processor STREQUAL "")
+    message(FATAL_ERROR
+      "hyle_target_simd cannot find HYLE's normalized target processor; "
+      "call it only after add_subdirectory(hyle)")
+  endif()
   set(_is_x64 FALSE)
   set(_is_arm64 FALSE)
   set(_is_riscv64 FALSE)
-  if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+  if(_target_processor MATCHES "x86_64|AMD64|amd64")
     set(_is_x64 TRUE)
-  elseif(HYLE_TARGET_PROCESSOR MATCHES "arm64|aarch64|ARM64")
+  elseif(_target_processor MATCHES "arm64|aarch64|ARM64")
     set(_is_arm64 TRUE)
-  elseif(HYLE_TARGET_PROCESSOR MATCHES "riscv64|RISCV64")
+  elseif(_target_processor MATCHES "riscv64|RISCV64")
     set(_is_riscv64 TRUE)
   endif()
 
   if((_isa MATCHES "^(SSE4|AVX2|AVX512)$" AND NOT _is_x64) OR
      (_isa MATCHES "^(NEON|SVE)$" AND NOT _is_arm64) OR
      (_isa STREQUAL "SVE" AND NOT CMAKE_SYSTEM_NAME STREQUAL "Linux") OR
-     (_isa STREQUAL "RVV" AND NOT _is_riscv64))
+    (_isa STREQUAL "RVV" AND NOT _is_riscv64))
     message(FATAL_ERROR
-      "hyle_target_simd: ISA '${_isa}' is incompatible with ${HYLE_TARGET_PROCESSOR}")
+      "hyle_target_simd: ISA '${_isa}' is incompatible with ${_target_processor}")
   endif()
 
   set(_define "")
@@ -192,11 +208,28 @@ function(hyle_target_simd)
     message(FATAL_ERROR "hyle_target_simd: unknown ISA '${ARG_ISA}'")
   endif()
 
+  # Highway intentionally blocks AVX3 under classic cl.exe. Refuse to label an
+  # AVX2 fallback as an exact AVX-512 source kernel; use clang-cl or AVX2 until
+  # the owning ticket admits a qualified specialty implementation.
+  if(_isa STREQUAL "AVX512" AND MSVC AND
+     CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    message(FATAL_ERROR
+      "hyle_target_simd(ISA AVX512) cannot use locked Highway with classic cl.exe; "
+      "use clang-cl or select AVX2 (no silent target downgrade)")
+  endif()
+
   if(_define)
     target_compile_definitions(${ARG_TARGET} PRIVATE ${_define})
   endif()
   target_compile_definitions(${ARG_TARGET} PRIVATE
-    HYLE_SIMD_EXACT=1 HYLE_SIMD_EXACT_TARGET_${_isa}=1)
+    HYLE_SIMD_EXACT=1 HYLE_SIMD_EXACT_TARGET_${_isa}=1
+    HYLE_SIMD_SOURCE_EXPERT=1)
+  if(_isa STREQUAL "SCALAR")
+    target_compile_definitions(${ARG_TARGET} PRIVATE HWY_COMPILE_ONLY_SCALAR=1)
+  else()
+    target_compile_definitions(${ARG_TARGET} PRIVATE HWY_COMPILE_ONLY_STATIC=1)
+  endif()
+  target_link_libraries(${ARG_TARGET} PRIVATE hyle_simd_source_expert)
   if(_tier)
     hyle_isa_flags(_flags "${_tier}")
     if(_flags)

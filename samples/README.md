@@ -27,7 +27,7 @@ target_link_libraries(your_app PRIVATE hyle::container hyle::mem)  # 按需选�
 | 目录 | 模块 | 演示什么 |
 |---|---|---|
 | [`01_mem_container/`](01_mem_container/) | mem + container | 默认 `SystemAllocator` + 公开形状 `FlatHashMap`；运行时 allocator 只在 quota/stats/自定义 backing 时显式 opt-in |
-| [`02_simd/`](02_simd/) | simd | C++ 运行期 ISA 派发的 `dot`/`saxpy` + 直接用 `vec<T,N>` D-tag 写宽度无关 kernel + 打印选中的 ISA 变体 |
+| [`02_simd/`](02_simd/) | simd | C++ 运行期 ISA 派发的 `dot`/`saxpy`；源码嵌入时可用 `HYLE_SAMPLE_SIMD_ISA` 绑定一个 TU 并直接使用锁定 Highway；打印选中的 ISA 变体 |
 | [`03_sched_fibers/`](03_sched_fibers/) | sched | `Scheduler::spawn_detached` 自持 guarded fiber：`yield()` 协作、stack 回收、`shutdown()` 排空 |
 | [`04_prebuilt_lib/`](04_prebuilt_lib/) | 构建/集成 | install + `find_package(Hyle COMPONENTS simd mem)`；同一 consumer 验证 shared/static、传递依赖、mimalloc 私有后端和 Windows DLL staging |
 | [`05_installed_sdk/`](05_installed_sdk/) | 构建/集成 | source-independent C++ package consumer：普通 mem/STL/PMR journey 与全部 advertised imported targets |

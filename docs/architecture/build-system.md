@@ -19,6 +19,8 @@
 `HYLE_TARGET_PROCESSOR`，源码、ISA 与组件能力选择只读取这一事实。不能直接依赖
 `CMAKE_SYSTEM_PROCESSOR`：Visual Studio 多平台生成器在 `-A ARM64` 时仍可能把它保留为宿主
 `AMD64`，从而让 ARM64 产物错误选择 x86 源码。
+归一化结果同时写入只读 global property，供 `add_subdirectory(hyle)` 返回后的父工程 helper 使用；
+父工程不得重新从 `CMAKE_SYSTEM_PROCESSOR` 猜一次目标架构。
 
 ## Target 与组件所有权
 
@@ -30,6 +32,9 @@
   组件；其余组件
   通常是编译型 target。
 - `hyle_build_contract`、`hyle_testing`、`hyle_trace` 是横切构建 target，不是产品组件根。
+- `hyle_simd_source_expert` 是仅在源码构建树存在的 `INTERFACE` seam：
+  `hyle_target_simd()` 通过它向一个固定目标 consumer TU 提供中央锁定 Highway 头。它不是产品组件、
+  不导出到 installed static/shared SDK，也不建立 vendor register ABI。
 - 横切 target 也必须遵守真实消费边：模块只有在源码或公开头读取 trace/testing gate 时才传播
   对应 target，并通过 `TRACE`/`TESTING` 显式 opt-in；配置会把声明与当前 selected sources/公开头
   反向对账。纯编译/布局地基 `core` 不声明这两个 gate，不能因全局开关无故携带 profiler runtime

@@ -2,12 +2,13 @@
 
 > **`provisional / NOT_REVIEWED_V2`。** SIMD 当前只提供 C++ 产品面，可通过完整源码、headers + static libraries 或
 > headers + shared libraries 使用。`hyle/simd/*.h` 中的 whole-buffer 算法供普通 C++ 用户
-> 使用，寄存器 DSL/native 头属于 expert tier；预编译交付遵守其明确的 C++ 工具链合同，
+> 使用；源码嵌入的固定目标 expert TU 直接使用项目锁定的 Highway。旧 `vec.h`/`native/*`
+> 只是内部 family 迁移脚手架，不再是新用户接口。预编译交付遵守其明确的 C++ 工具链合同，
 > 本页适用于 C++23 source/static/shared 三种交付，不承诺任意编译器之间的 C++ ABI，
 > 也不描述 C API 或跨语言调用层。
 
-HYLE SIMD 不要求普通用户认识 300 多个寄存器原语。那些原语主要用于实现 kernel、移植 ISA 和做
-Highway parity。应用通常只应调用处理整段连续数据的语义接口，让预编译库在运行时选择当前 CPU
+HYLE SIMD 不要求普通用户认识数百个寄存器原语，也不再复制一套平行 Highway DSL。应用通常只应
+调用处理整段连续数据的语义接口，让预编译库在运行时选择当前 CPU
 可用的 scalar、SSE4、AVX2、AVX-512 或 NEON 实现。
 
 ## 先选择使用层
@@ -17,9 +18,9 @@ Highway parity。应用通常只应调用处理整段连续数据的语义接口
 | C++ 应用发布一个二进制给未知 CPU | `hyle/simd/{ops,math,...}.h` whole-buffer source API | 是，每个模块缓存选择结果 | 同受支持工具链的 C++ source contract |
 | C++ 用户调用 whole-buffer 算法 | `hyle/simd/{ops,math,...}.h` | 是 | 原生 source API，不承诺跨工具链 ABI |
 | 整个 HYLE 只在一种已知 ISA 上运行 | `HYLE_SIMD_EXACT_TARGET` | 否，直接绑定目标实现 | 构建配置 |
-| 自己写一个固定 ISA 的 kernel TU | `hyle/simd/native.h` / `native/*.h` | 否 | expert source surface |
-| 自己写一个 kernel，仍要发布给未知 CPU | `hyle_add_fat_kernel` + `HYLE_SIMD_SELECT_FAT_KERNEL` | 是，每个完整 kernel 选一次 | source integration |
-| 实现或移植寄存器级 kernel | `hyle/simd/vec.h` | 否 | 内部 DSL，类型随 ISA 变化 |
+| 源码嵌入时自己写一个固定 ISA 的 kernel TU | `hyle_target_simd(...)` + `<hwy/highway.h>` | 否 | source-only expert surface；vendor 类型不得跨 TU |
+| 自己写一个 kernel，仍要发布给未知 CPU | 当前优先组合 HYLE whole-buffer API；自定义 fat-kernel seam 待 SIMD-06 完成 vendor 迁移 | 是 | 尚未承诺 |
+| 维护现有 HYLE 内部 family | `vec.h` / `native/*` | 否 | migration-only legacy；禁止新用户依赖 |
 
 ```text
                               C++ 普通应用
@@ -33,9 +34,9 @@ Highway parity。应用通常只应调用处理整段连续数据的语义接口
               |                                       |
  scalar / SSE4 / AVX2 / AVX-512 / NEON          直接绑定一个实现
               \                                       /
-               +---------- 共享 native kernel --------+
+               +------- HYLE pointer/count kernel -----+
                                   |
-                        vec.h 寄存器级 DSL
+                 locked Highway / minimal HYLE gap
 ```
 
 运行时选择不是每个元素做 CPUID，也不是在循环里反复判断 ISA。平台能力只探测一次；whole-buffer 调用
@@ -53,7 +54,7 @@ Highway parity。应用通常只应调用处理整段连续数据的语义接口
 | `math.h` | 实数/复数数学、激活函数、softmax | 数值计算、统计和 AI 热路径 |
 | `sort.h` | sort、partial sort、select、radix、argsort | 排序、top-k、nth element、稳定整数/浮点 radix |
 | `bitpack.h` | `pack`、`unpack`、`packed_size` | 同机内存中的定宽整数压缩 |
-| `native/algorithm.h` | generate/transform/replace/find/count/copy-if | 自定义固定目标 kernel；expert source surface |
+| `<hwy/highway.h>`（源码嵌入 + `hyle_target_simd`） | 锁定版本的 register/tag/load/store/arithmetic/reduction 等 | 自定义固定目标 kernel；source-only expert surface |
 
 ### 数学接口分组
 
@@ -258,30 +259,38 @@ cmake -S . -B build-avx2 -DHYLE_SIMD_EXACT_TARGET=AVX2
 这不是“逃避动态税”，而是另一种产品合同：二进制本来就只允许运行在 AVX2 机器上，因此可以直接绑定
 AVX2 symbol。未知客户 CPU 的发布包应使用默认 fat build。
 
-只想固定自己的一两个 kernel TU 时，使用 CMake target `hyle_target_simd`，为该 TU 设置目标 ISA，
-并调用 `hyle::simd::native`。`native` 返回的向量类型和 lane 数依赖目标；不能把它暴露到普通 TU、
-跨 translation unit 的公开函数签名或持久化格式中。直接使用 `vec.h` 也遵循同样边界，它是写 kernel 的 DSL，不是 387 个
-普通用户 API 的集合。
+只想固定自己的一两个 kernel TU 时，在**源码嵌入**构建中使用 `hyle_target_simd`，为该 TU 设置目标
+ISA。该 helper 提供中央锁定 Highway 的 include path、单目标宏和编译器 flags；安装后的 static/shared
+SDK 不交付第三方 register headers，仍使用 HYLE whole-buffer API。
 
-多数自定义 kernel 不必自己重复写整向量循环和最后一个 partial vector。`native/algorithm.h` 接管
-循环、tail 和 mask，lambda 只写寄存器表达式：
+```cmake
+hyle_target_simd(TARGET my_kernel ISA AVX2)
+```
+
+kernel 内直接使用 Highway，而不是再经一套 HYLE 寄存器转发层：
 
 ```cpp
-#include "hyle/simd/native.h"
+#include "hwy/highway.h"
 
 void bias_relu(float* values, std::size_t n, float bias) {
-  hyle::simd::native::transform(values, n, [bias](auto d, auto v) {
-    return hyle::simd::Max(hyle::simd::Add(v, hyle::simd::Set(d, bias)),
-                           hyle::simd::Zero(d));
-  });
+  namespace hn = hwy::HWY_NAMESPACE;
+  const hn::ScalableTag<float> d;
+  const auto vbias = hn::Set(d, bias);
+  const auto zero = hn::Zero(d);
+  const std::size_t lanes = hn::Lanes(d);
+  std::size_t i = 0;
+  for (; i + lanes <= n; i += lanes) {
+    const auto value = hn::LoadU(d, values + i);
+    hn::StoreU(hn::Max(hn::Add(value, vbias), zero), d, values + i);
+  }
+  for (; i < n; ++i) values[i] = std::max(values[i] + bias, 0.0f);
 }
 ```
 
-这一层还提供 `generate`、二/三输入 `transform`、`replace[_if]`、`find_if`、`count_if` 和
-stable `copy_if`。输入输出可 exact 同址（`copy_if` 也支持原地稳定压实），带偏移 overlap 不受支持。
-不足一个 vector 时，transform/predicate 的 inactive input lane 为零，`generate` 的 index lane
-继续递增；两者都只写/统计 active lane，lambda 不应把 inactive lane 当作可观察副作用。
-`generate` 的 index lane 与输出 lane 等宽，窄整数自然按其位宽回绕。
+Highway vector/mask 类型和 lane 数依赖目标，不能出现在跨 TU 的公开函数签名、shared-library ABI 或
+持久化格式中。entry 保持 pointer/span/POD；tail、alias、异常与精度合同仍由你的 kernel 明确承担。
+经典 cl.exe 被 Highway blocklist 禁止 AVX3，因此 helper 对 `ISA AVX512` 明确报错；使用 clang-cl 或
+选择 AVX2，不能把静默降级当作 exact AVX-512。
 
 要把自己的 pointer/count kernel 随 HYLE 一起多版本编译，则让 impl header 根据
 `HYLE_SIMD_VARIANT_SUFFIX` 导出 suffixed entry，再用：
@@ -297,8 +306,8 @@ vector/mask 出现在 entry 签名中。这个选择宏在默认 fat 构建中�
 `HYLE_SIMD_EXACT_TARGET` 构建中只引用唯一生成的 exact symbol；在 macOS ARM64 上也不会引用未生成的
 SVE symbol。fat `TARGETS` 必须列出本平台完整 canonical tier，CMake 会在配置期检查。
 
-`native::transform` 不提供运行时 callback 版本：逐 lane function pointer 阻断内联和向量化，
-恰好破坏这个 API 的目的。需要自定义语义时，在 fat-kernel impl 中组合上面的 C++ helper。
+不要为寄存器操作增加运行时 callback：逐 lane function pointer 会阻断内联和向量化。未知 CPU 的
+自定义 fat-kernel vendor seam 将由 SIMD-06 收口；在此之前不要依赖迁移期 `vec.h/native/*` 创建新 API。
 
 ## C++ 产品面
 

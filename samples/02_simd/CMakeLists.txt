@@ -15,9 +15,14 @@ add_executable(simd_sample main.cc)
 target_link_libraries(simd_sample PRIVATE hyle::simd)
 hyle_stage_runtime_dependencies(simd_sample)
 
-# OPTIONAL exact target for this consumer TU. Native calls then have no CPUID or function pointer.
+# OPTIONAL source-only exact target for this consumer TU. It exposes the locked
+# Highway headers and compiles the expert kernel without CPUID/function pointers.
 # To bind all ordinary HYLE batch APIs too, also configure HYLE_SIMD_EXACT_TARGET=AVX2.
-set(HYLE_SAMPLE_SIMD_ISA "" CACHE STRING "Exact target ISA for the native sample path")
+set(HYLE_SAMPLE_SIMD_ISA "" CACHE STRING "Exact target ISA for the source expert path")
 if(HYLE_SAMPLE_SIMD_ISA)
+  if(HYLE_SAMPLE_SIMD_USE_INSTALLED)
+    message(FATAL_ERROR
+      "HYLE_SAMPLE_SIMD_ISA is source-only; installed SDK consumers use whole-buffer APIs")
+  endif()
   hyle_target_simd(TARGET simd_sample ISA "${HYLE_SAMPLE_SIMD_ISA}")
 endif()

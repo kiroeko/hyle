@@ -141,7 +141,7 @@ fat dispatch。AVX-512-BF16/AVX10.2 这类非 canonical 可选扩展不因 `AVX5
 导入和 x86 对象的越级指令。当前 Windows 已覆盖 scalar/SSE4/AVX2/AVX512；SVE/RVV 用
 `scripts/simd-scalable-exact-qemu-test.sh` 检查单 suffix、无 probe 引用并执行多 VL/VLEN。
 
-若只固定自己的一个 target，并希望 kernel 跨调用内联：
+若只固定自己的一个 target，并希望 kernel 跨调用内联，必须使用源码嵌入构建：
 
 源码用户在 CMake 中把自己的 target 固定到一个 ISA：
 
@@ -149,25 +149,26 @@ fat dispatch。AVX-512-BF16/AVX10.2 这类非 canonical 可选扩展不因 `AVX5
 hyle_target_simd(TARGET my_app ISA AVX2)
 ```
 
-然后调用 `native`：
+helper 会把中央锁定 Highway 的 include path、单目标策略和 ISA flag 绑定到该 target。kernel 直接使用
+Highway：
 
 ```cpp
-#include "hyle/simd/native/ops.h"
-#include "hyle/simd/native/random.h"
+#include "hwy/highway.h"
 
-hyle::simd::native::add(x, y, out, count);
-hyle::simd::native::random_fill(state, random, count);
+namespace hn = hwy::HWY_NAMESPACE;
+const hn::ScalableTag<float> d;
+const auto sum = hn::Add(hn::LoadU(d, x), hn::LoadU(d, y));
+hn::StoreU(sum, d, out);
 ```
 
-`hyle_target_simd` 同时设置 target 宏和编译器 flag。当前 `native` 完整 kernel 面为
-ops、RNG、scan 和 search；
-函数具有 TU-local linkage 并直接使用当前
-backend，允许完全内联；它不调用 `runtime()`、不探测 CPUID、也不经过函数指针。生成的二进制要求部署
-CPU 真正支持所选 ISA。
+`hyle_target_simd` 不调用 `runtime()`、不探测 CPUID、也不经过函数指针；生成的二进制要求部署 CPU
+真正支持所选 ISA。这个 target seam 不随 installed static/shared SDK 导出，因为 vendor register 类型
+不是 HYLE ABI。经典 cl.exe 的 Highway AVX3 被上游 blocklist 禁止，helper 对 AVX512 fail-fast；应使用
+clang-cl 或 AVX2。
 
-需要组合新算法的高级用户也在固定 target 的 TU 中使用 `vec.h` 的 387 个公开/selector 积木。若同一个自定义算法要
-发布给未知 CPU，应把**整个 pointer/POD kernel**编成多个 variant，再在外层派发，不能动态调用每个
-`Add`/`Load`。
+旧 `vec.h/native/*` 只服务尚未迁移的 HYLE family 与 container build-private seam；不要新增消费者。
+若同一个自定义算法要发布给未知 CPU，应把**整个 pointer/POD kernel**编成多个 variant，再在外层派发，
+不能动态调用每个 `Add`/`Load`。当前 fat-kernel 的 Highway 迁移归 SIMD-06，在其完成前不扩张用户承诺。
 
 ## 自定义 fat kernel
 

@@ -5,9 +5,9 @@
 //      runs fast everywhere; an old CPU never executes an instruction it lacks. This is
 //      what most consumers want. runtime().isa tells you which kernel got selected.
 //
-//  (B) EXACT-TARGET KERNEL -- source users can bind the whole target to one ISA and use
-//      native APIs or compose a kernel from D-tag primitives. There is no CPUID or indirect
-//      call; the resulting binary requires that deployment ISA.
+//  (B) EXACT-TARGET KERNEL -- source users can bind this TU to one ISA and use the centrally
+//      locked Highway register API directly. There is no CPUID or indirect call; the resulting
+//      binary requires that deployment ISA. Installed SDK users stay on (A).
 //
 // Build: see ../README.md.
 
@@ -16,27 +16,29 @@
 #include <vector>
 
 #include "hyle/simd/dispatch.h"  // best_isa / isa_name
-#include "hyle/simd/native/ops.h"
 #include "hyle/simd/ops.h"       // dot / saxpy (runtime-dispatched)
 #include "hyle/simd/runtime.h"
-#include "hyle/simd/vec.h"       // vec<T,N> D-tag, for the direct kernel
 
-// (B) A direct portable kernel: sum of squares = dot(x, x). Written once against the
-// D-tag contract; vectorizes to whatever backend this TU compiled for.
+#if defined(HYLE_SIMD_SOURCE_EXPERT)
+#include "hwy/highway.h"
+
+// (B) A direct source-expert kernel: sum of squares = dot(x, x). The target-bound TU uses
+// Highway itself; HYLE does not duplicate its register surface or expose vectors across a boundary.
 static float sum_of_squares(const float* x, std::size_t n) {
-  namespace hs = hyle::simd;
-  const hs::ScalableTag<float> d;
-  const std::size_t w = hs::Lanes(d);
-  auto acc = hs::Zero(d);
+  namespace hn = hwy::HWY_NAMESPACE;
+  const hn::ScalableTag<float> d;
+  const std::size_t w = hn::Lanes(d);
+  auto acc = hn::Zero(d);
   std::size_t i = 0;
   for (; i + w <= n; i += w) {
-    auto v = hs::LoadU(d, x + i);
-    acc = hs::MulAdd(v, v, acc);  // acc += v*v
+    const auto v = hn::LoadU(d, x + i);
+    acc = hn::MulAdd(v, v, acc);
   }
-  float s = hs::ReduceSum(d, acc);
-  for (; i < n; ++i) s += x[i] * x[i];  // tail
+  float s = hn::ReduceSum(d, acc);
+  for (; i < n; ++i) s += x[i] * x[i];
   return s;
 }
+#endif
 
 int main() {
   // What ISA did the runtime dispatcher choose on THIS machine?
@@ -59,10 +61,10 @@ int main() {
   hyle::simd::saxpy(0.5f, x.data(), y.data(), n);
   std::printf("y[0] after saxpy    = %.4f  (dispatched)\n", y[0]);
 
-  // (B) direct vec kernel
-  std::printf("sum_of_squares(x)   = %.4f  (direct vec<T,N> kernel)\n",
+#if defined(HYLE_SIMD_SOURCE_EXPERT)
+  // (B) direct locked-Highway kernel, enabled only by HYLE_SAMPLE_SIMD_ISA.
+  std::printf("sum_of_squares(x)   = %.4f  (source expert: direct Highway)\n",
               sum_of_squares(x.data(), n));
-  std::printf("dot(x,x)            = %.4f  (native exact-target kernel)\n",
-              hyle::simd::native::dot(x.data(), x.data(), n));
+#endif
   return 0;
 }

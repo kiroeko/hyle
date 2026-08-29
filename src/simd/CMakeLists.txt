@@ -158,6 +158,16 @@ hyle_add_module(simd SOURCES
   bitpack/bitpack_scalar.cc
   ${_simd_arch_sources})
 
+# Source-primary expert seam. It is deliberately build-tree-only: ordinary
+# installed consumers use HYLE's pointer/count APIs, while a consumer that
+# embeds the source tree may bind one TU to an ISA and use the exact locked
+# Highway register surface without HYLE cloning that surface into a second DSL.
+add_library(hyle_simd_source_expert INTERFACE)
+add_library(hyle::simd_source_expert ALIAS hyle_simd_source_expert)
+target_compile_features(hyle_simd_source_expert INTERFACE cxx_std_23)
+target_include_directories(hyle_simd_source_expert SYSTEM INTERFACE
+  "$<BUILD_INTERFACE:${HYLE_SIMD_HIGHWAY_SOURCE_DIR}>")
+
 if(MSVC AND
    (_simd_exact_target STREQUAL "SCALAR" OR
     _simd_exact_target STREQUAL "SSE4"))
