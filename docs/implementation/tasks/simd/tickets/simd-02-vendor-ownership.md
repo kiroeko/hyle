@@ -39,12 +39,13 @@
 
 | surface | class | semantic owner | mechanism/artifact owner | frozen action |
 |---|---|---|---|---|
-| public headers、Runtime/exact/native/fat contract | HYLE product | HYLE | HYLE | `OWN`；不泄漏 vendor type/macro |
-| `backend/*.h` 与 register D-tag lowering | HYLE product | HYLE | HYLE；Highway 是 peer | `OWN/REVIEW`，不在本轮整体替换成 Highway API |
-| `math_hyle-inl.h` 与 Highway transcendental TUs | integrated source | HYLE accuracy/API | Highway origin + HYLE D-tag/special-value delta | `PORT` 到冻结 Highway identity |
-| bitpack HYLE files | integrated source | HYLE stable wire layout | Highway origin + HYLE fixed-layout/u16 delta | `PORT` 相关上游修复，不直接 wrap 不同格式 |
-| `vqsort_hyle/**` 与 target TUs | integrated source | HYLE sort/API | Highway VQSort origin + HYLE target/dtype delta | 先尝试 internal `WRAP`；若不能保持合同/ISA/交付则有限 `PORT` |
-| `math_xsimd_hyle-inl.h` 与 xsimd TUs | integrated source | HYLE accuracy/API | xsimd origin + HYLE D-tag delta | `PORT_OR_DROP`；先资格化再决定，禁止按单点 best-of |
+| ordinary buffer API 与用户合同 | HYLE product | HYLE | HYLE façade + selected vendor | `OWN CONTRACT`；不泄漏 vendor type/macro |
+| expert register/kernel surface | migration boundary | HYLE owns routing/usability | Highway preferred | `DIRECT_OR_THIN_ADAPTER`；不默认保留 387-name 平行 DSL |
+| Runtime/exact/native/fat implementation | HYLE product | HYLE batch contract | Highway preferred + HYLE glue | `WRAP/DISPLACE`，只有缺口保留 HYLE backend |
+| `math_hyle-inl.h` 与 Highway transcendental TUs | integrated source debt | HYLE accuracy/API | Highway origin + HYLE delta | `WRAP_OR_MINIMAL_PORT`；直接使用可行即删除 port |
+| bitpack HYLE files | integrated source debt | HYLE stable wire layout | Highway origin + HYLE fixed-layout/u16 delta | `WRAP` 若格式相同；否则仅保留 layout delta |
+| `vqsort_hyle/**` 与 target TUs | integrated source debt | HYLE sort/API | Highway VQSort origin + HYLE target/dtype delta | `WRAP_OR_DROP_PORT`；不默认继续手工同步 fork |
+| `math_xsimd_hyle-inl.h` 与 xsimd TUs | integrated source debt | HYLE accuracy/API | xsimd origin + HYLE D-tag delta | `DROP_OR_MINIMAL_FALLBACK`；Highway 先资格化 |
 | Highway/xsimd/SLEEF benchmark source | peer | upstream | upstream artifact | `PEER`，不进入 installed product |
 
 集成源码虽然没有外部 link/runtime dependency，仍是第三方产品路径，必须保留 revision、local delta、许可证
@@ -57,9 +58,12 @@
   hash、base64 等无关 contrib。
 - xsimd port origin 与官方 HEAD 不是可假定线性 fast-forward；SIMD-04 对 common math/trigo 做 snapshot
   语义 diff，保留本地 delta 只能靠当前 HYLE consumer/accuracy 证明。
-- wholesale 以 Highway public API 替换 HYLE facade 会同时改变用户类型、dispatch、build 和三平台交付，
-  没有当前 consumer defect，明确拒绝进入 v2；内部 algorithm wrap 仍可在不泄漏类型时采用。
+- 不把普通 HYLE buffer API 改成 Highway API；但 expert D-tag/backend 并非既定保留资产。SIMD-03 必须先
+  证明“普通 HYLE façade + expert direct/thin Highway + compiled Highway kernels”的 source/static/shared、
+  native/exact/fat、SVE/RVV、编译成本与零额外 hot-loop 开销。证明成立的 surface 在 v2 优先迁移删除。
 - SLEEF 保持 peer。只有 xsimd/Highway 两条路线都无法满足冻结 accuracy/resource contract 时才允许另行
   rescope 为产品依赖，不能在 SIMD-04 临时追加。
 
-verdict：`DONE`。新 round 可用这些固定 identity 和 action 建立 `SCOPED/AUDITED`；本票未修改产品或锁。
+verdict revision 2：`DONE`。用户明确 vendor-first 是本次重构的主要目的；新 round 必须等待 SIMD-03
+隔离 proof 冻结可迁移边界，不能先假设保留自有 backend 再机械刷新 port。本票未修改产品或锁。
+output commit：`2953e0598ff7007570de41fb82f968bbfe8f1226`。

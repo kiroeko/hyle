@@ -2,9 +2,11 @@
 
 ## 目标
 
-在不把 API 和实现扭曲成 benchmark 形状的前提下，把约 3.8 万行 CPU SIMD 产品做成可维护、可升级、
-可被通用 C++ 与未来推理引擎自然消费的基础加速层。最终只按具名 capability、consumer contract、ISA、
-交付形状和精度合同签有限性能结论，不声明无法证实的“整个 SIMD 全面 SOTA”。
+在不把 API 和实现扭曲成 benchmark 形状的前提下，把约 3.8 万行 CPU SIMD 产品迁移为“成熟 vendor
+机制优先、HYLE consumer contract 与差异化 kernel 为主”的可维护基础加速层。目标不是继续复制上游
+源码形成私有 fork，而是直接锁定并组合 Highway 等成熟实现，自动取得其 ISA/能力演进；HYLE 自实现只
+保留真实语义、交付或 consumer gap。最终只按具名 capability、consumer contract、ISA、交付形状和
+精度合同签有限性能结论，不声明无法证实的“整个 SIMD 全面 SOTA”。
 
 顶层 `math` 不并入本 epic 的产品施工。它只接受一次只读边界复核；若出现满足既有 reopen trigger 的
 新事实，另建 `math-v2`，不得借 SIMD ticket 顺手修改已关闭模块。
@@ -31,6 +33,17 @@
 SIMD 可以提供模型无关且重复出现的连续 row primitive；不得变成第二套 tensor runtime，也不得因为 ggml
 存在一个名字就机械扩张公共 API。
 
+## Vendor-first 目标形状
+
+1. 普通用户继续使用稳定、自然的 `hyle::simd` pointer/span/buffer API，不接触 vendor 宏和内部类型。
+2. expert register/kernel 用户优先直接使用锁定 Highway 能力或极薄 HYLE adapter，不再维护 387-name
+   平行 DSL；现有 D-tag surface 是否保留必须由迁移 proof 决定。
+3. compiled Runtime/exact/fat kernels 优先直接在 Highway 上实现；Platform 仍为全库提供 CPU facts，但
+   SIMD 不为“统一”而复制 Highway 已正确拥有的 ISA 选择。
+4. xsimd/SLEEF 只在 Highway 无等价能力或资格化 accuracy/performance 不满足时补位，不形成第二套完整
+   portable backend。
+5. checked-in Highway/xsimd ports 是待消减的过渡债务。能 wrap 就删除，不能 wrap 才保留最小 local delta。
+
 ## 执行合同
 
 1. ticket 严格按依赖顺序执行，同时最多一个 `ACTIVE`；canonical Windows worktree 不并行写同一产品面。
@@ -54,9 +67,9 @@ SIMD 可以提供模型无关且重复出现的连续 row primitive；不得变�
 | 00 | [控制面与草稿归属](tickets/simd-00-control-plane.md) | program | 无 | 否 | 90 分钟 |
 | 01 | [Math 边界与文档权威](tickets/simd-01-math-doc-authority.md) | audit | 00 | 默认否 | 2 小时 |
 | 02 | [vendor ownership 与升级决策](tickets/simd-02-vendor-ownership.md) | audit | 01 | 否 | 4 小时 |
-| 03 | [Highway integrated port 刷新](tickets/simd-03-highway-port.md) | product | 02 | 条件是 | 1 日 |
-| 04 | [xsimd/transcendental port 刷新](tickets/simd-04-xsimd-port.md) | product | 03 | 条件是 | 1 日 |
-| 05 | [register API 与定宽 backend](tickets/simd-05-register-fixed.md) | product | 04 | 是 | 1 日 |
+| 03 | [Highway 直接承载可行性](tickets/simd-03-highway-adoption.md) | architecture spike | 02 | 隔离 proof | 1 日 |
+| 04 | [数学 vendor 合并与 port 消减](tickets/simd-04-xsimd-port.md) | product | 03 | 条件是 | 1 日 |
+| 05 | [register API 与定宽 backend 迁移](tickets/simd-05-register-fixed.md) | product | 04 | 是 | 1 日 |
 | 06 | [scalable backend、dispatch 与交付](tickets/simd-06-scalable-dispatch.md) | product | 05 | 是 | 1 日 |
 | 07 | [dtype、narrow 与普通 row ops](tickets/simd-07-row-dtype.md) | product | 06 | 是 | 1 日 |
 | 08 | [transcendental 与 activation](tickets/simd-08-activation.md) | product | 07 | 是 | 1 日 |
@@ -65,7 +78,7 @@ SIMD 可以提供模型无关且重复出现的连续 row primitive；不得变�
 | 11 | [ordering、radix 与 top-k](tickets/simd-11-ordering.md) | product | 10 | 是 | 1 日 |
 | 12 | [集成、文档、六问与 closure](tickets/simd-12-integration-closure.md) | verification | 11 | 仅修复阻断项 | 1 日 |
 
-条件产品票允许得出 `KEEP CURRENT` 或 `DROP PORT`；“升级”不预设一定复制更多上游代码。
+条件产品票允许得出 `DIRECT WRAP / DELETE PORT / KEEP MINIMAL PORT`；“升级”不预设一定复制更多上游代码。
 
 ## 当前未提交产品改动的归属裁决
 

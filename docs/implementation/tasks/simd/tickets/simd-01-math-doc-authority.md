@@ -31,3 +31,4 @@ Core 依赖和 user routing。分类 48 份 SIMD 相关文档，找出 architect
   把 integrated-source port 错写成全自造；`simd-usage.md` 仍显式 provisional；旧性能表只可作历史输入。
 - verdict：`DONE`。文档权威分流进入 epic；vendor 事实由 SIMD-02 立即修正，完整 architecture/user rewrite
   由各产品票和 SIMD-12 按实际候选完成。
+- output commit：`2953e0598ff7007570de41fb82f968bbfe8f1226`。
