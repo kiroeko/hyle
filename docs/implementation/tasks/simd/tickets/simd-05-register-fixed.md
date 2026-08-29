@@ -1,6 +1,6 @@
 # SIMD-05：Register API 与定宽 backend 迁移
 
-- ticket state：`QUEUED`
+- ticket state：`READY`
 - kind：product review/refactor
 - depends on：SIMD-04
 - budget：1 工程日；性能预算 60 分钟

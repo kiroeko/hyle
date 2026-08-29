@@ -1,6 +1,6 @@
 # SIMD-04：数学 vendor 合并与 port 消减
 
-- ticket state：`ACTIVE`
+- ticket state：`DONE`
 - kind：conditional product
 - depends on：SIMD-03
 - budget：1 工程日；性能预算 60 分钟
@@ -61,6 +61,13 @@ shared 或公开头边界。
 - W1-WSL GCC 14.2 shared selected-component build：`PASS`；`Math.*` 30/30；AVX2/AVX-512 target TU 均编译；
 - W1-WIN MSVC 19.50 独立 SIMD consumer：源码嵌入、relocated shared SDK、relocated static SDK
   三种 journey 均 `PASS`；consumer 通过 public math/runtime API 证明实现与运行时依赖均已交付；
+- M1-MAC AppleClang 21 arm64 shared selected-component build：`PASS`；直接编译
+  `transcendental_highway_neon.cc`，Runtime property 断言 `kNeon`，`Math.*` 30/30；
 - dependency lock、直接 Highway clean identity、offline/source acquisition 与许可证路径已进入 CMake；
-- 尚需 M1-MAC NEON、文档/closure checker 和最终 immutable output commit。完成前 ticket 保持
-  `ACTIVE`，不把当前结果写成 SIMD 整模块性能证书。
+- Windows 离线依赖正/负合同、vendor-boundary gate、`check-docs.py` 与
+  `check-module-closure.py` 均 `PASS`；
+- output commit：`4fd14aee3c3900463a21b100df509c7ae56be951`。
+
+本票终止为 `DONE`：数学路径完成 `DIRECT / HYLE GAP / SCALAR FLOOR / DROP` 分工，但本结论只覆盖
+本票列出的数学合同，不外推为整个 SIMD 模块性能证书。后续 activation consumer 的 xsimd tanh 假设已
+路由 SIMD-08；register/backend 迁移进入 SIMD-05。
