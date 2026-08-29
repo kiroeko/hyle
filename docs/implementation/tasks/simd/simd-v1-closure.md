@@ -7,7 +7,7 @@
 > 不授权产品修改，也不提供当前性能证书。机械状态只看
 > [`module-status.json`](../../module-status.json)。
 
-## Closure card（`SCOPED`）
+## Closure card（`AUDITED`）
 
 - component / owner / round ID：`simd` / CPU SIMD owner / `simd-v1`
 - task kind：`REFACTOR`
@@ -95,13 +95,105 @@
 
 ## Capability-family coverage map
 
-尚未裁决。下一状态 `AUDITED` 前必须从真实任务与 peers 正向建立 family map，再把 whole-buffer、
-runtime/exact/native/fat-kernel、D-tag/backend 和 internal selector 全量反向归类。旧 task 的勾选不继承。
+| Family | admitted user journeys / evidence | variants and boundary | current route | coverage | missing edge / negative space |
+|---|---|---|---|---|---|
+| Target selection and delivery | portable fat binary, known-target exact build, source TU fixed target; current package contract and Highway dispatch model | process-wide immutable selection; no per-lane dispatch; source/static/shared C++ | `dispatch.h`, `runtime.h`, `target.h`, `fat_kernel.h` | `COMPLETE` | no per-ISA DLL, stable cross-toolchain ABI or Native FFI |
+| Register/D-tag kernel construction | expert quantization, codec, filter and transform kernels; Highway portable-register family | fixed/scalable tag, partial/tail, mask, load/store, arithmetic, conversion, swizzle, gather/compress, crypto primitive | `vec.h` plus one selected `backend/*.h` | `COMPLETE/ROUTED` | missing convenience compositions are expressible with one existing primitive composition; protocols are not owned here |
+| Native source algorithms | caller-authored fixed-target loops without reimplementing tail/control flow | unary/binary transform, generate/replace/find/count/copy-if, scan/search/random; exact alias contracts | `native/*.h`, `native.h`, `hyle_target_simd` | `COMPLETE` | runtime callbacks are rejected because they prevent inlining/vectorization |
+| Whole-buffer arithmetic and mixed dot | current compute calls add/dot/saxpy/exp; inference mixed f16/bf16/i8 dot | f32/f64 arithmetic, f16/bf16/i8/i16 dot, zero/tail/exact alias | `ops.h`, `dtype_ops.h`, runtime/exact dispatch | `COMPLETE` | GEMM, tensor layout and quant block policy belong to compute |
+| Storage dtype and narrow numeric primitives | inference storage conversion, narrow lane arithmetic/search/reduction | f16/bf16/fp8 scalar and batch conversion; f16/bf16 D-tag arithmetic/compare/total order | `dtype.h`, `dtype_ops.h`, `narrow_*.h` | `COMPLETE` | narrow model activations and top-k remain compute-policy routes until a concrete storage/rounding journey is admitted |
+| Real/complex math and AI elementwise | current compute exp plus north-star GELU/SiLU/softmax; llama.cpp CPU shapes | f32/f64 scalar-oracle accuracy, SoA complex, exact in-place where stated, no hidden allocation | `math.h`, per-target math kernels | `PARTIAL` | GELU/sigmoid/SiLU allocate O(n) hidden storage and compose multiple passes; softmax/log-softmax are not target-bound fused kernels |
+| Search and extrema | engineering find/count/min/max plus inference logits argmax; Highway `IndexOfMin/Max` and llama/ggml argmax | all ordinary scalar lane types; first tie; empty returns `n`; floating NaN propagation must identify first NaN | `search.h`, `native/search.h`, runtime table | `PARTIAL` | value extrema exist, extrema indices do not |
+| Scan | prefix processing and current expert source kernel | inclusive/exclusive, in-place/out-of-place, scalar/ISA fallback, overflow as lane modular arithmetic | `scan.h`, `native/scan.h` | `COMPLETE` | segmented/business-policy scans are higher-layer algorithms |
+| Full/top-k/select sort | engineering sort and inference score/top-k/MoE routing | integer/floating/KV/U128, ascending/descending, NaNs-last ordinary float order | `sort/partial_sort/select` and target VQSort | `COMPLETE` | stability is deliberately separate |
+| Stable radix and permutation | stable numeric ordering and argsort without moving payloads; existing public promise plus standard stable ordering | caller-reused scratch and allocating convenience; u/i16/32/64, f32/f64; first equal key preserved; 32-bit index bound explicit | current `radix_sort/argsort` | `PARTIAL` | strict-aliasing UB; OOM violates stable/noexcept contract; hidden allocation only; type family and index bound incomplete |
+| Bit packing | quantized integer block storage and transport | u8/u16/u32, 1..lane bits, fixed byte layout independent of scalable VL, non-overlap | `bitpack.h` | `COMPLETE` | compression formats/protocol framing belong to their owners |
+| Bulk non-cryptographic random | simulation/init/shuffle source data | explicit state, deterministic stream, fill u64/f32/f64, jump/split ownership | `random.h`, `native/random.h` | `COMPLETE` | entropy and cryptographic RNG are out of scope |
+| Tensor/model/GPU operations | north-star inference engine | matrix/attention/quant block/device ownership and fusion policy | compute/graph or accelerator backend | `OUT_OF_SCOPE` | SIMD supplies primitives and buffer kernels, not a second tensor runtime |
+
+### Public-surface trace
+
+| Header/surface | tier and reverse demand | audit verdict |
+|---|---|---|
+| `types.h`, `dtype.h` | ordinary public storage types/conversion oracles | `KEEP`; value-only, trivially-copyable types, no C/FFI promise |
+| `dispatch.h`, `runtime.h`, `target.h`, `fat_kernel.h` | ordinary diagnostics/control plus expert fixed-target delivery | `KEEP`; Runtime is C++ type erasure/diagnostics, not a stable ABI; table version changes with search repair |
+| `vec.h` | expert D-tag DSL; 387 deduplicated public/selector names across eight parsed headers | `KEEP/ROUTE`; 344 benchable names and 30 classified non-independent names are a mechanical inventory, not 344 independent product demands |
+| `backend/*.h` | target-selected implementation included by `vec.h` | `INTERNAL`; users do not include a backend directly; duplicate selector names are not extra public journeys |
+| `native.h`, `native/*.h`, `ops.h` | expert source loops and ordinary whole-buffer kernels | `KEEP`; each maps to kernel construction or current compute/north-star buffer work |
+| `dtype_ops.h`, `narrow_float.h`, `narrow_ops.h`, `narrow_algorithm.h` | ordinary batch conversion plus expert narrow lane algorithms | `KEEP`; narrow model operators/sort are documented routes, not silent promises |
+| `math.h` | ordinary real/complex batch and inference activation API | `PARTIAL -> FIX` for the six AI entry points; other math stays under existing accuracy/property gates |
+| `search.h` | ordinary whole-buffer find/count/extrema/order | `PARTIAL -> FIX` with `index_of_min/index_of_max` for the existing type matrix |
+| `scan.h` | ordinary whole-buffer scan | `KEEP`; native body and dispatched wrapper share one algorithm |
+| `sort.h` | ordinary sort/top-k/select and explicit stable radix/argsort | `PARTIAL -> FIX` only for stable radix/permutation ownership, failure and coverage; VQSort surface stays unchanged |
+| `bitpack.h` | ordinary stable-layout pack/unpack | `KEEP`; format and overlap contract remain explicit |
+| `random.h` | ordinary state-owned bulk PRNG | `KEEP`; not an entropy API |
+
+The baseline `scripts/simd-op-coverage.py --check` inventory is self-consistent: 387 deduplicated
+register/selector names, 344 benchable, 314 represented in source parity benches, and all 30 remaining
+names classified. This is the bottom-up trace for `vec.h`; it does not grant each spelling an independent
+benchmark row or make current performance claims.
 
 ## Capability / gap ledger
 
-尚未裁决。进入 `AUDITED` 时冻结有限 `FIX/BORROW/ROUTE/REJECT` 集；在此之前不修改产品代码、公开
-API、layout、算法或常态 metadata。
+| ID | class | exact source / normal shape | ownership, failure and resource target | coverage | action / severity | verification / negative space |
+|---|---|---|---|---|---|---|
+| `SIMD-DISPATCH-01` | `MUST` | existing fat/exact/native consumer journeys; current build/package contract | Platform owns CPU facts; SIMD owns immutable selection; one batch-boundary indirect call, no per-element metadata | `COMPLETE` | `KEEP` | source/static/shared, fat/exact/native consumers and ISA isolation |
+| `SIMD-REG-01` | `MUST` | current container target-bound consumers and north-star custom kernels | caller owns buffers/alias; compile-time target; O(n), zero allocation | `COMPLETE` | `KEEP` | header/backend/property/codegen matrix; representative same-TU Highway rows, not name-count SOTA |
+| `SIMD-REG-02` | `GENERAL` | current Highway adds `MaskedMulSub*`, `Slide*Or`, `Lookup32/64` convenience | register composition or small-table policy; no current consumer | `ROUTED/PARTIAL` | `REJECT` from v1 product batch | masked/slide forms use `IfThenElse` plus existing ops; admit LUT only with a named codec/dequant journey and second mature source/material mechanism |
+| `SIMD-INTDIV-01` | `GENERAL` | Highway current all-width/floor invariant division; HYLE existing i/u32 `Divisor` | reusable parameter object; zero divisor fail-fast; no current product consumer | `PARTIAL` | `DEFER` | i/u32 remains documented; all-width/floor requires a separately admitted consumer/second source, not peer parity alone |
+| `SIMD-OPS-01` | `MUST` | compute add/dot/saxpy/exp and inference mixed-dot | pointer/count, exact alias stated, O(n), zero allocation/lock | `COMPLETE` | `KEEP` | correctness and representative P1 rows across arithmetic/mixed dot |
+| `SIMD-DTYPE-01` | `MUST` | llama/oneDNN storage conversion and quantized inference | scalar oracle + dispatched batch; explicit rounding/special values | `COMPLETE` | `KEEP` | exhaustive fp8, sampled f16/bf16, hardware/fallback and representative P1 conversion rows |
+| `SIMD-NARROW-01` | `GENERAL` | Highway f16 sort/math and llama narrow activations; HYLE first-class storage dtype | compute owns tensor storage/accumulation/rounding policy; users can convert explicitly | `ROUTED` | `DEFER` | no v1 narrow sort/activation API; reopen when a concrete tensor journey cannot use conversion/fusion without material extra traffic |
+| `SIMD-ACT-01` | `MUST` | reproducible current source plus llama CPU GELU/SiLU/softmax shapes | exact same-buffer alias; `n==0`; O(n), O(1) extra storage, no heap/lock; scalar tail preserves stated accuracy | `PARTIAL` | `FIX` / architecture+performance+OOM | target-bound fused GELU/tanh-GELU/sigmoid/SiLU and vectorized softmax/log-softmax; allocation probe, property and qualified consumer timing |
+| `SIMD-SEARCH-01` | `MUST` | Highway `IndexOfMin/Max`; llama/ggml argmax | borrowed input; first tie; empty=`n`; first NaN for floating; O(n), O(1), no allocation | `MISSING` | `BORROW/FIX` / capability | all ten existing search types, runtime/exact/native routes, differential/property and Highway finite same-contract row |
+| `SIMD-SORT-01` | `MUST` | reproducible strict-aliasing and OOM/stability defects in existing public stable API | caller owns keys/output; scratch borrow or allocating convenience; no hidden allocation on scratch path | `PARTIAL` | `FIX` / correctness+usability | generic object-preserving digit scatter, overlap/capacity/index boundary, sanitizer/property/OOM-shape tests |
+| `SIMD-SORT-02` | `MUST` | existing sort scalar family and stable permutation journey | u/i16/32/64 and f32/f64; float finite order with all NaNs stable-last; 32-bit index means `n<=UINT32_MAX` | `PARTIAL` | `FIX` / API completeness | fill missing radix/argsort overloads; explicit workspace query/span overload; baseline/std qualified P1 rows |
+| `SIMD-SCAN-01` | `MUST` | engineering prefix workload and existing public promise | caller buffers; modular integer semantics; O(n), zero allocation | `COMPLETE` | `KEEP` | property/tail/backend plus one family P1 row |
+| `SIMD-BITPACK-01` | `MUST` | quantized storage `bits=11/13`, fixed format | non-overlap; exact byte count; O(n), zero allocation | `COMPLETE` | `KEEP` | layout oracle, scalable-VL invariance and one family P1 row |
+| `SIMD-RNG-01` | `MUST` | bulk non-crypto initialization/simulation | caller-owned state; deterministic stream; O(n), zero allocation/lock | `COMPLETE` | `KEEP` | state/property and one family P1 row |
+| `SIMD-DEP-01` | `MUST` | central component graph and real includes/calls | only `PUBLIC core,platform`; container private vec seam; compute ordinary batch seam | `COMPLETE` | `KEEP` | graph/target agreement and affected consumer builds; no error/math/mem dependency added |
+| `SIMD-DOC-01` | `MUST` | current architecture/user pages contain provisional, old C ABI/peer/LOC and historical terminal claims | architecture owns durable decision; user guide owns current selection/contracts; history stays implementation-only | `PARTIAL` | `FIX` / usability | stale-term scan and docs checker; rewrite instead of extending stage chronology |
+
+### Frozen `FIX` set
+
+Exactly one combined product batch is authorized:
+
+1. replace the six AI entry points with allocation-free target-bound kernels; fuse elementwise
+   arithmetic with the chosen per-target transcendental and vectorize softmax/log-softmax reductions
+   without changing their public numerical contract;
+2. add first-tie `index_of_min/index_of_max` to ordinary and native search, all existing scalar lane
+   types, exact/runtime dispatch and Runtime table version;
+3. rebuild stable radix/argsort around caller-owned typed scratch so no path aliases an object's
+   representation; provide throwing allocating conveniences, non-allocating `span` overloads and the
+   complete u/i16/32/64 + f32/f64 stable permutation family, with explicit 32-bit index limit and
+   stable-last NaN semantics;
+4. update affected tests/bench/build/package samples and replace the provisional SIMD architecture,
+   user and performance narratives with the current ordinary/expert/internal boundary and honest
+   per-family evidence.
+
+No integer-division width expansion, narrow tensor operator/sort, Lookup32/64, extra convenience-op
+parity, tensor/GPU/model operation, C/Native FFI, stable ABI, central instrument rewrite or unrelated
+component change is authorized. A new material finding returns the round to `SCOPED/AUDITED`; it is
+not appended while implementing.
+
+### Frozen P1 workload matrix
+
+`n=31` is a correctness/tail and dispatch-overhead check, not a timing verdict. Qualified W1-WIN
+timing uses randomized block order and the shared instrument on the following normal rows; cache-scale
+uses `n=4096`, streaming uses `n=1048576` where listed:
+
+- same-TU expert kernel: transform plus gather/compress/widen-dot at `4096`, compared with Highway;
+- whole-buffer: f32 add/dot and f16/bf16/i8 dot at `4096` and applicable streaming size;
+- dtype/math: f32↔f16/bf16 conversion, f32 exp, tanh-GELU, SiLU and in-place softmax at `4096`;
+- search/scan: f32 count-equal, f32 argmax and u32 inclusive scan at `4096` and streaming size;
+- ordering: f32 full sort, `partial_sort(n=4096,k=10)`, scratch u32 radix and f32 argsort at `4096`;
+- bitpack/random: u16 `bits=11/13` and f32 fill at `4096`.
+
+Only semantically and numerically qualified peer rows receive the 5% non-inferiority verdict. Other
+rows use the pre-frozen candidate-vs-baseline resource/throughput budget and are labelled
+`NOT_COMPARABLE`, never silently counted as a peer tie. One family row failing materially after the
+allowed mechanism diagnosis blocks the aggregate P1 verdict; 314 historical source-bench names are
+not promoted into current claims.
 
 ## Candidate
 

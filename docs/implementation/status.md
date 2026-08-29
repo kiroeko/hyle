@@ -19,7 +19,7 @@
 | time | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/time/time-v1-closure.md) | time-v1 CLOSED：完整 clock/timestamp/deadline/timer 能力、自然 C++ API、三平台正确性与三种交付、直接消费者、文档和 Seastar 同合同 5% P1 工程非劣门均已签署；Formal 独立 PENDING。 |
 | platform | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/platform/platform-v1-closure.md) | platform-v1 CLOSED：完整底层 OS/CPU 能力面、自然 C++ API、三平台正确性与 sanitizer、三种交付、文档、红队及 W1-WIN 5% P1 工程性能门均已签署；Formal 独立 PENDING。 |
 | mem | CLOSED | P1 | PASS / P1_ENGINEERING / 5% | PENDING | [task](tasks/mem/mem-v1-closure.md) | mem-v1 CLOSED：完整 host-memory 能力与自然 C++ API、三平台正确性/sanitizer、source/static/shared 交付、依赖、文档、红队及两份 W1-WIN 5% P1 工程性能合同全部签署；产品绑定 2c71dfae/fc023635，Formal 独立 PENDING。 |
-| simd | SCOPED | P1 | PLANNED / P1_ENGINEERING / 5% | PENDING | [task](tasks/simd/simd-v1-closure.md) | simd-v1 SCOPED：38,024 行 CPU SIMD 大组件按真实推理/工程任务重建能力、API、后端、交付和 P1 证据；旧 benchmark 勾选与全局 SOTA 结论不继承。 |
+| simd | AUDITED | P1 | PLANNED / P1_ENGINEERING / 5% | PENDING | [task](tasks/simd/simd-v1-closure.md) | simd-v1 AUDITED：能力族与全部 public surface 已反向归类；冻结四项真实负载/缺陷驱动的产品批次，单一 peer 新名字不机械扩张，旧 benchmark 与全局 SOTA 结论不继承。 |
 | container | BLOCKED | P1 | INCONCLUSIVE / P1_ENGINEERING / 5% | PENDING | [task](tasks/container/container-v1-closure.md) | container-v1 BLOCKED：功能/API、correctness、三平台交付、文档与红队均通过；已资格化的五项 P1 slice 全部通过 5% NI，但冻结卡其余正常性能轴未运行，聚合工程性能保持 INCONCLUSIVE。 |
 | util | CLOSED | P0 | PASS / STRUCTURAL | NONE | [task](tasks/util/util-runtime-v2-closure.md) | util-runtime-v2 CLOSED：owning/buffer demangle、caller-CRT 边界、三平台正确性与 source/static/shared 交付、文档和 P0 结构门全部通过；Registry 产品零改动。 |
 | sched | QUEUED | — | — | — | — | 现有实现只作输入；特化 waiter 链仍归 scheduler。 |
