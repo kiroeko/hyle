@@ -108,6 +108,19 @@ Highway 直接承担可表达的 f16/bf16 promotion/demotion 和 target lowering
 `narrow_ops.h` 保留用户需要的整段语义；源码寄存器 consumer 直接使用 Highway，并自行声明 numeric
 contract。
 
+### Activation 与 row reduction 合同
+
+模型无关的 f32 elementwise activation 与普通连续 row softmax/log-softmax 属于 SIMD。核心入口采用
+`src, dst, n`，允许 exact alias 或完全分离的区间，不支持任意部分 overlap；`n == 0` 允许空指针。
+它们是 O(n)、O(1) extra storage，不分配、不加锁、不建立整段临时数组。softmax 使用稳定 max-shift；
+至少存在一个 finite lane 时，`-inf` 可用作 mask。含 NaN、`+inf` 或全为 `-inf` 的 row 没有受支持的
+normalizer，整行确定写入 quiet NaN，避免静默制造概率。
+
+activation body 与数学原语在同一个 direct-Highway target TU 中组合；ordinary/fat 批次只允许一次已缓存
+目标选择，element loop 内不得再次进入 public dispatcher。attention mask、scale、bias、stride、线程、
+online/blocked 算法、backward、半精度和模型 operator fusion 由 Compute 拥有，不能为消除一个 tiny-call
+边界而把 tensor policy 倒灌到 SIMD。
+
 ## Vendor 与升级边界
 
 锁定 Highway 是 header-only product dependency，不形成第二个 runtime ABI。xsimd 当前只作独立 accuracy/

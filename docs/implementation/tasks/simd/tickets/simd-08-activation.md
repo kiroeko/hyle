@@ -1,6 +1,6 @@
 # SIMD-08：Transcendental 与 activation
 
-- ticket state：`ACTIVE / AUDITED`
+- ticket state：`DONE`
 - kind：product capability/performance
 - depends on：SIMD-07
 - budget：1 工程日；性能预算 60 分钟
@@ -72,3 +72,47 @@ transcendental 产品或扩大仪器。
 
 本票只允许上述五项。activation backward/fusion、半精度 activation、attention mask/scale/bias fusion、
 online/blocked softmax 和端到端 tensor operator 均路由 Compute；不得在本票扩张。
+
+## 实现与验证结果
+
+- elementwise activation 已在 `math.h` 补齐 exact/tanh GELU、sigmoid/SiLU、ReLU、leaky-ReLU、ELU、
+  hard-sigmoid 与 hard-swish；softmax/log-softmax 采用 out-of-place 核心加原地 convenience。zero、tail、
+  exact alias、disjoint、参数、signed zero、NaN/Inf、`-inf` mask、all-masked、概率和与 log identity 均有
+  property/differential 测试。
+- shipping body 在既有 `highway_math_kernel-inl.h` 的 target namespace 内直接组合 Highway math、
+  load/store/reduction；scalar libm 仅作总是可用 floor。原有每次 activation 分配 `std::vector`、多遍整段
+  临时流量和二次 public dispatch 已删除；ordinary/fat 入口每个完整 buffer 只作一次缓存目标调用。
+- Windows MSVC 19.50 Release shared：主 SIMD 385/386 通过加 1 个合法 AVX512BF16 skip；SSE4、AVX2、
+  SSE4-AES 的 CTest family 共 4/4 通过，activation focused Math 测试 33/33、`math.h` self-contained
+  header probe 1/1 通过。
+- WSL GCC 14 Release/WERROR：主、SSE4、AVX2、SSE4-AES 共 4/4 通过，AVX-512 compile-only targets
+  通过。macOS M4 AppleClang 21：ordinary 与 NEON 共 2/2 通过。
+- 同一 scalable binary 在 QEMU SVE VL 128/256/384/512/2048 上各 133 pass 加 1 个合法 x86-only skip，
+  在 RVV VLEN 128/256/512/1024 上各 128 pass 加同一合法 skip。首轮暴露 scalable harness 漏链接
+  activation scalar floor；该真实交付缺陷已修复后重跑。模拟器结果只签 correctness，不签性能。
+- Windows、WSL、macOS 的真实 selected-component consumer 均完成 source embedding、relocated shared
+  SDK、relocated static SDK 三种 journey，并实际执行 exp、ReLU 和 softmax；不是只证明库文件存在。
+
+## 有界性能 verdict
+
+本票签 `PASS / P1_ENGINEERING / 5% / NO MATERIAL LOSE`，不签“整个 SIMD SOTA”。W1-WIN、MSVC
+19.50、固定 AVX2 下，shipping target helper 与同 TU 独立 direct-Highway composition 对齐 ISA、公式、
+alias、tail、dispatch 和资源计费。A/A、反序、双 layout 与 certification 全部通过；9 行含 calibration
+结果为 6 `TIE`、3 `INCONCLUSIVE`、0 `LOSE`，没有 5% material regression。八条 public/body 信息行
+中心比为 0.999--1.005，未检测到可归因于 HYLE 中间层的实质损失。原始日志、hash、重放命令和未签
+范围见 [SIMD-08 performance evidence](../../../evidence/performance/simd-08-activation.md)。
+
+## 终止 receipt
+
+- product output commit：`29b248fc13b9a5061813ff682a42f1d911da5c2c`；相对 input commit 共 16 个
+  文件，1,302 additions、310 deletions。
+- 四项 LOC 由该 immutable commit 以 `cloc 2.08`、
+  `python scripts/loc-report.py --module simd --commit 29b248fc --self-check --json` 复算且
+  `self-check=pass`：全库代码 **311,895**；自实现包含测试 **121,361**；自实现不包含测试
+  **79,659**；当前 SIMD 实现 **33,976** 行。
+- known limits：SVE/RVV 未签真硅性能；attention mask/scale/bias fusion、online/blocked softmax、
+  backward、半精度 activation 和端到端 tensor operator 属于 Compute/真实 consumer；3 行
+  `INCONCLUSIVE` 不能写成胜利。下一张有限票是 SIMD-09 search/scan。
+- reopen：公开 activation/softmax 合同出现可复现正确性缺陷，热循环重新出现第二次 dispatch、heap、
+  lock 或整段临时 buffer，三种交付失效，或同合同真实 consumer 在资格化真机上复现超过 5% 的
+  material regression。

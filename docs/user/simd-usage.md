@@ -78,8 +78,9 @@ compiled target；两者可能因编译器 blocklist 或已认证的 lower-tier 
 - f32/f64 一元函数：`exp`、`log`、`sin`、`cos`、`tanh`、`exp2`、`log2`、`erf`、`atan`、
   `cbrt`、`expm1`、`log1p`、双曲函数、gamma 等，命名形如 `exp_f32_batch`。
 - 二元函数：`atan2`、`pow`、`hypot`、`fmod`、`remainder`、`nextafter`、`fdim`。
-- AI 语义：`gelu_f32_batch`、`gelu_tanh_f32_batch`、`sigmoid_f32_batch`、
-  `silu_f32_batch`、原地 `softmax_f32` 和 `log_softmax_f32`。
+- AI 语义：exact/tanh `gelu_f32_batch`、`sigmoid_f32_batch`、`silu_f32_batch`，以及
+  `relu_f32_batch`、`leaky_relu_f32_batch`、`elu_f32_batch`、`hard_sigmoid_f32_batch`、
+  `hard_swish_f32_batch`；`softmax_f32` / `log_softmax_f32` 同时提供 out-of-place 核心与原地重载。
 - 复数 SoA：f32/f64 均提供 `cexp`、`clog`、`csqrt`、`csin`、`ccos`、`ctan`、`csinh`、
   `ccosh`、`ctanh`、`cpow`；实部和虚部放在两个数组中，避免把 `std::complex` 对象布局
   固化到算法边界上。命名形如 `ctan_f32_batch` / `ctan_f64_batch`，输入输出可完全同址。
@@ -88,6 +89,18 @@ compiled target；两者可能因编译器 blocklist 或已认证的 lower-tier 
 - `exp/log_in_range_f32/f64_batch` 与 `hypot_in_range_f32_batch` 是调用者承诺输入范围的快速合同，
   不是自动检查后回退的安全版本。它们适合 softmax 等已经由上层证明范围的连续 row；不确定输入时
   使用普通入口。精确原位 `src == dst` 可用，任意部分重叠不可用。
+
+### Activation 与 softmax 怎么选
+
+- GELU 的 exact/erf 与常见 tanh approximation 是两个不同数值合同；模型指定哪一种就调用哪一种，
+  不要因为名字相近互换。SiLU 就是这里提供的 swish 形状；移动端常用的分段近似则选 hard-swish。
+- leaky-ReLU 的 `negative_slope` 和 ELU 的 `alpha` 是调用者/模型参数；HYLE 不猜训练框架默认值。
+- elementwise activation 与 softmax 核心都接受 `src, dst, n`；exact `src == dst` 或完全不相交均可，
+  带偏移的部分 overlap 不受支持。`n == 0` 时输入输出都可以是空指针。
+- softmax/log-softmax 是稳定的连续 f32 单 row 算法。至少有一个 finite lane 时，`-inf` lane 可作为 mask；
+  row 含 NaN、`+inf`，或全为 `-inf` 时没有唯一受支持的 normalizer，目标整行写 quiet NaN。
+- 这些入口不分配、不加锁，也不在元素循环里再次 dispatch。带 attention mask/scale/bias、stride、batch、
+  线程或 operator fusion 的 tensor 形状属于 Compute；不要在 SIMD 外层逐元素反复调用 whole-buffer API。
 
 ## C++ whole-buffer 示例
 
@@ -174,9 +187,13 @@ positive sNaN < positive qNaN。这是 bitwise deterministic order，不是“Na
 必须自行声明 NaN、rounding、tail 与 alias 合同。普通用户继续使用上述 HYLE whole-buffer API。
 
 ```cpp
+#include "hyle/simd/math.h"
+
 hyle::simd::exp_f32_batch(src, dst, n);
 hyle::simd::gelu_f32_batch(src, dst, n);
-hyle::simd::softmax_f32(dst, n);  // 原地
+hyle::simd::relu_f32_batch(src, dst, n);
+hyle::simd::softmax_f32(src, probabilities, n);  // out-of-place
+hyle::simd::log_softmax_f32(dst, n);             // 原地 convenience
 ```
 
 ```cpp
