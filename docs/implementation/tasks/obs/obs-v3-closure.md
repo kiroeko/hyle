@@ -114,16 +114,69 @@ These are findings to classify before `AUDITED`; they are not yet an implementat
 
 ## Capability-family coverage map
 
-To be completed at `AUDITED` after every current public entry and the peer/consumer differences are
-classified.
+| Family | admitted journeys / evidence | required variants and boundaries | current route | coverage | missing edge / negative space |
+|---|---|---|---|---|---|
+| level and conditional gating | ordinary debug/diagnostic call; llama macros avoid expensive argument evaluation | TU compile floor, process runtime level, explicit condition; disabled paths evaluate no condition/format/control argument | existing `HYLE_LOG_<LEVEL>` plus frozen conditional macro family | `PARTIAL` | no natural conditional spelling today |
+| call-site repetition control | repeated warning/progress/error sites; Abseil/Folly consensus | first + every N, exact every N where cardinality matters, first N, powers of two, chrono interval; one state per expansion; thread-safe semantics must be named | new header-only state objects plus severity-preserving macros | `MISSING` | no current suppression other than severity |
+| request/slot progress control | llama.cpp slot timing report every approximately 3 seconds | object-owned state, injected steady time to share/hoist clock reads, convenience clock read, reset, independent lifetimes, exact at-most-one interval admission | explicit `LogIntervalLimiter` | `MISSING` | a hidden static call-site state conflates simultaneous slots |
+| record production | preformatted bytes, structured fields, source metadata, fixed-buffer formatting | exact borrowed slices, optional timestamp, truncation/error policy, no allocation in native emit | `LogRecord`, `LogField`, `log_record`, `log_message`, `log_fmt*`, base macros | `COMPLETE` | owning async records remain adapter-owned |
+| sink adapter and lifecycle | one process adapter into a host/application logger; optional default CLI stderr | typed/raw adapter, synchronous concurrent callback, flush, quiescent RAII unregister, recursion policy, default takeover | `LogSink`, `SinkRegistration`, registry/default-sink functions | `PARTIAL` | API is complete; guide omits disabling default stderr during takeover |
+| profiling trace | HYLE hot paths and engine profiling build | OFF no-evaluation; ON Tracy zone/counter/fiber/frame/message/allocation/thread seams | `trace.h` macro seam | `COMPLETE` | viewer/storage and GPU policy remain outside Obs |
+| logger service / telemetry backends | async file/network logging, metrics and OTLP | owning queue, backpressure, persistence, category/config, aggregation | application adapter / future named module | `ROUTED` | must not add ownership or category metadata to every base record |
+| delivery and foreign boundary | C++ source/static/shared consumers | selected-component headers/target closure; no C schema/bridge/export | build/package system; Native FFI global policy `N/A` | `COMPLETE but affected` | reverify new public header in all real C++ journeys |
 
 ## Capability / gap ledger
 
-To be completed at `AUDITED`; product code must not change until the finite `FIX` set is frozen.
+| ID | class / demand | exact source and normal shape | owner / concurrency / complexity | state | decision / verification |
+|---|---|---|---|---|---|
+| `OBS-V3-CALLSITE-01` | `MUST` peer consensus | Abseil `LOG_IF`, every/first/pow2/time family; Folly approximate and exact count variants; ordinary repeated call site | Obs public header; one static state per expansion; O(1), no heap/lock/syscall except the selected clock read | `MISSING` | `FIX`: add severity-consistent condition and stateful macro families; verify short-circuit, independent sites, source location and concurrency semantics |
+| `OBS-V3-COUNT-SEM-01` | `MUST` semantic split | logging frequency normally tolerates lossy counts, while cardinality-sensitive users need exact admission | `LogEveryNState` and `LogEveryPow2State` use relaxed load/store and are explicitly approximate under contention; `LogEveryNExactState` uses relaxed RMW; `LogFirstNState` uses bounded CAS and never admits more than N | `MISSING` | `FIX`: expose named state types and both every-N spellings; zero N rejects without advancing; unsigned wrap restarts the sequence; tests cover exact concurrent counts |
+| `OBS-V3-INTERVAL-01` | `MUST` llama consumer | each server slot owns last progress state and checks a 3-second steady interval | `LogIntervalLimiter`; exact relaxed-CAS admission, first check passes, duration <=0 passes, saturated deadline, O(1); caller-supplied steady time avoids duplicate clock reads | `MISSING` | `FIX`: `should_log_at(steady_time_point, duration)`, `should_log(duration)`, `reset`; test boundary, independent slots, concurrency, overflow and non-monotonic-input contract |
+| `OBS-V3-MACRO-SURFACE-01` | `MUST` C++ usability | all five existing severities need the same discoverable operation order | `HYLE_LOG_<LEVEL>_IF`, `_EVERY_N`, `_EVERY_N_EXACT`, `_FIRST_N`, `_EVERY_POW_2`, `_EVERY`; compiled floor and runtime level precede condition/state/format evaluation | `MISSING` | `FIX`: one internal implementation family and thin level wrappers; combined `IF_EVERY_*` matrix is rejected because `if (condition) HYLE_LOG_*_EVERY_*` composes safely |
+| `OBS-V3-GUIDE-01` | `MUST` reproducible defect | host registers one adapter while default stderr remains a registry member | caller owns takeover sequence and error rollback | `PARTIAL` | `FIX`: guide disables default sink before registration, handles both Status failures, and explains restoration/lifetime order |
+| `OBS-V3-PERF-01` | `MUST` valid evidence | ordinary one-adapter log plus count suppression; 16 independent inference slots with deterministic injected time and one adapter | P1 W1-WIN; same semantics/resource accounting; 5% when comparable, otherwise frozen absolute/resource budget | `PARTIAL` | `FIX`: new source-consumer contract and bench; old 4/16 independent atomic sinks become diagnostic only |
+| `OBS-V3-DEPENDENCY-01` | `MUST` modularity | standard `steady_clock` is sufficient; Time already aliases that clock and its typed point composes through a template | retain `obs PUBLIC core error`; no Time/container-intrusive closure or third-party product dependency | `COMPLETE` | `KEEP`: header accepts any `steady_clock` duration; guide may show optional `time::coarse_monotonic_now()` composition |
+| `OBS-V3-RECORD-01` | `MUST` existing surface | structured and formatted one-adapter records | synchronous borrowed lifetime, O(S), S<=64 | `COMPLETE` | `KEEP + regression`: no record/layout/registry change |
+| `OBS-V3-TRACE-01` | `MUST` existing consumers | mem/sched/io/compute Tracy seam | compile-time OFF or direct Tracy ON | `COMPLETE` | `KEEP + focused regression`; no new trace capability |
+| `OBS-V3-FFI-01` | `MUST` global policy | current consumers are C++ source/static/shared | no public C header, bridge, undecorated export or managed sample | `COMPLETE` | `KEEP + scan` |
+
+- existing public-entry reverse trace:
+  - record/data: `LogLevel`, `LogField`, `LogRecord`;
+  - sink/lifecycle: `LogSinkBackend`, `LogSink::from`, add/remove/count/capacity/flush,
+    `SinkRegistration`, default-sink queries/setter;
+  - gate/emission: set/query/`should_log`, record/message overloads, `log_fmt_at`, `log_fmt`, five
+    `HYLE_LOG_<LEVEL>` macros; `detail::log_record_unchecked` remains an implementation seam;
+  - trace: zone annotation, plot/counter, fiber/frame, message, allocation and thread-name macros.
+- syntax/semantic consumer scan: HYLE product modules emit no unsolicited runtime logs; mem/sched/io/compute
+  use only the trace seam. This remains the correct library policy. Existing fatal/error/benchmark output is
+  not silently migrated to logging.
+- public/internal/higher-layer decision: control states and formatting/record production are public Obs;
+  registry mechanics stay internal; async ownership, logger configuration, metrics and persistence stay in
+  the application or a future admitted module.
+- frozen `FIX` set: exactly `OBS-V3-CALLSITE-01`, `OBS-V3-COUNT-SEM-01`,
+  `OBS-V3-INTERVAL-01`, `OBS-V3-MACRO-SURFACE-01`, `OBS-V3-GUIDE-01` and
+  `OBS-V3-PERF-01`. Product implementation is limited to a header-only control layer and its composition
+  into `log.h`; registry, record layout, compiled log implementation, trace backend, component graph and
+  build-system policy are excluded. A discovered need outside this set returns the round to `SCOPED`.
+
+The `SCOPED -> AUDITED` pre-transition snapshot is
+`C:\hyle-scratch\obs-v3\transitions\module-status-before-audited.json`, SHA-256
+`3A77EFDC1650DCA6FAFA6FBA27AE79C4072BB5AA3F1883DDBF72261B6B506AB5`.
 
 ## Owner six answers
 
-To be completed against the frozen candidate.
+Pre-candidate audit answers; final verdicts require candidate verification:
+
+1. optional Tracy v0.14.1 is the only product-path third party and only when trace is enabled; Abseil,
+   Folly and llama.cpp are peer/consumer evidence, not product dependencies;
+2. the admitted inference log/trace journeys become complete after the frozen call-site and slot-owned
+   control fixes; metrics, async logging and model policy are routed above Obs;
+3. P1 must be decided by the newly frozen one-adapter/count/inference contract, not the historical
+   multi-sink stress result;
+4. Native FFI is `N/A` and the product tree must remain free of public C artifacts;
+5. new public headers require source, installed-static and installed-shared selected-Obs revalidation;
+6. the C++ surface is natural only after both hidden call-site and explicit state ownership are documented,
+   and the default sink takeover defect is fixed.
 
 ## Candidate
 

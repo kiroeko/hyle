@@ -243,7 +243,7 @@
     },
     {
       "module": "obs",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "round_id": "obs-v3",
       "closure_task": "docs/implementation/tasks/obs/obs-v3-closure.md",
       "scope": "Add consumer-driven call-site controls and an explicit request/slot-owned interval limiter for ordinary services and long-running inference progress; correct host-adapter hand-off guidance and replace synthetic multi-sink product provenance with one-adapter ordinary/inference P1 workloads.",
@@ -266,7 +266,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "obs-v3 SCOPED：按真实普通服务与 llama.cpp 推理消费重定范围；将补齐调用点控制和请求/slot 持有的区间节流，正常性能门改为一个宿主 adapter，4/16 sink 仅保留诊断。"
+      "summary": "obs-v3 AUDITED：完成公开面与真实消费反向审计；冻结调用点条件/计数/区间控制、请求/slot interval state、默认 sink 交接和一个 adapter 的 P1 合同，registry/record/trace/依赖图不改。"
     },
     {
       "module": "math",
