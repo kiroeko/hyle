@@ -444,6 +444,20 @@ AC Power:
                 "cpu_sets": [
                     {
                         "group": 0,
+                        "logical_processor_index": 0,
+                        "core_index": 0,
+                        "efficiency_class": 1,
+                        "id": 256,
+                    },
+                    {
+                        "group": 0,
+                        "logical_processor_index": 1,
+                        "core_index": 0,
+                        "efficiency_class": 1,
+                        "id": 257,
+                    },
+                    {
+                        "group": 0,
                         "logical_processor_index": 2,
                         "core_index": 2,
                         "efficiency_class": 1,
@@ -462,7 +476,24 @@ AC Power:
                         "core_index": 4,
                         "efficiency_class": 1,
                         "id": 260,
-                    }
+                    },
+                    {
+                        "group": 0,
+                        "logical_processor_index": 5,
+                        "core_index": 4,
+                        "efficiency_class": 1,
+                        "id": 261,
+                    },
+                    *[
+                        {
+                            "group": 0,
+                            "logical_processor_index": logical_cpu,
+                            "core_index": logical_cpu,
+                            "efficiency_class": 1,
+                            "id": 256 + logical_cpu,
+                        }
+                        for logical_cpu in range(6, 16, 2)
+                    ],
                 ],
             },
         }
@@ -497,6 +528,30 @@ AC Power:
     if cross_core_gate["gate"] != "PASS":
         raise AssertionError(
             f"valid Windows cross-core profile failed: {cross_core_gate}"
+        )
+    n_worker = machine.expected_child_policy(
+        profiles["W1-WIN"], sampling_topology="n-worker-physical-cores",
+        sampling_worker_count=8, probe=windows_probe)
+    expected_worker_cpus = list(range(0, 16, 2))
+    if (
+        n_worker["affinity_mask"] != "0x5555"
+        or n_worker["worker_logical_cpus"] != expected_worker_cpus
+        or n_worker["sampling_worker_count"] != 8
+        or n_worker["worker_singleton_masks"] != [
+            hex(1 << cpu) for cpu in expected_worker_cpus]
+        or n_worker["distinct_physical_cores"] is not True
+        or n_worker["smt_siblings_excluded"] is not True
+    ):
+        raise AssertionError(
+            f"Windows N-worker child policy drifted: {n_worker}"
+        )
+    n_worker_gate = machine.evaluate_machine_profile(
+        profiles["W1-WIN"], windows_probe, role="engineering",
+        sampling_topology="n-worker-physical-cores",
+        sampling_worker_count=8)
+    if n_worker_gate["gate"] != "PASS":
+        raise AssertionError(
+            f"valid Windows N-worker profile failed: {n_worker_gate}"
         )
     identity_record = windows_formal["physical_host_identity"]
     if (
@@ -553,12 +608,15 @@ AC Power:
         "cpu_model" in error for error in wrong_cpu_gate["errors"]
     ):
         raise AssertionError("a matching ID with a drifted CPU baseline qualified")
-    windows_probe["scheduler"]["cpu_sets"][0]["efficiency_class"] = 0
+    registered_cpu_set = next(
+        item for item in windows_probe["scheduler"]["cpu_sets"]
+        if item["logical_processor_index"] == 2)
+    registered_cpu_set["efficiency_class"] = 0
     if machine.evaluate_machine_profile(
         profiles["W1-WIN"], windows_probe, role="engineering"
     )["gate"] != "FAIL":
         raise AssertionError("engineering profile accepted a non-performance CPU set")
-    windows_probe["scheduler"]["cpu_sets"][0]["efficiency_class"] = 1
+    registered_cpu_set["efficiency_class"] = 1
     windows_probe["filesystem"]["all_paths_qualified"] = False
     if machine.evaluate_machine_profile(
         profiles["W1-WIN"], windows_probe, role="formal", formal_claim="windows"

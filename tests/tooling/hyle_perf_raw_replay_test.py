@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import pathlib
+import json
 import sys
 import tempfile
 import unittest
@@ -139,6 +140,98 @@ class RawReplayTest(unittest.TestCase):
                     contract, runner, [1], [
                         pathlib.Path(reference["path"])
                         for reference in references])
+
+    def test_structured_pair_is_reconstructed_from_raw_process_logs(self):
+        contract = {
+            "id": "structured-replay",
+            "workloads": [{
+                "id": "work", "peer_id": "baseline",
+                "required_strata": ["candidate-first"],
+                "metric": {"name": "operations-per-second", "unit": "op/s",
+                           "direction": "higher-is-better"},
+            }],
+            "strata": [{
+                "id": "candidate-first", "target_variant": "primary",
+                "dimensions": {"execution_order": "candidate-first"},
+            }],
+        }
+        runner = {
+            "measurement_adapter": "structured-paired-process-v1",
+            "executables": [{
+                "id": "candidate", "target_variant": "primary",
+                "measurement_batch": 256, "pair_role": "candidate",
+                "telemetry_prefixes": ["# HYLE_PERF_STRUCTURED_RUN "],
+                "workloads": [{"id": "work", "row_id": "work"}],
+            }, {
+                "id": "peer", "target_variant": "primary",
+                "measurement_batch": 256, "pair_role": "peer",
+                "peer_id": "baseline",
+                "telemetry_prefixes": ["# HYLE_PERF_STRUCTURED_RUN "],
+                "workloads": [{"id": "work", "row_id": "work"}],
+            }],
+        }
+        child_policy = {
+            "sampling_topology": "n-worker-physical-cores",
+            "sampling_worker_count": 2,
+            "worker_logical_cpus": [0, 2],
+            "worker_singleton_masks": ["0x1", "0x4"],
+            "affinity_mask": "0x5", "priority": "above-normal",
+            "caller_logical_cpu": 0,
+        }
+
+        def product_text(value: float, nonce: str) -> str:
+            row = {
+                "record": "hyle_perf_structured_measurement",
+                "schema": "hyle.perf.structured-measurement/v1",
+                "row_id": "work", "value": value,
+                "worker_count": 2, "work_items_per_worker": 16,
+                "work_item_count": 32, "fanout": 1,
+                "callback_count": 32, "expected_callback_count": 32,
+                "affinity_ok": True,
+                "requested_logical_cpus": [0, 2],
+                "observed_logical_cpus": [0, 2],
+                "worker_singleton_masks": ["0x1", "0x4"],
+            }
+            return (
+                json.dumps(row, separators=(",", ":")) + "\n"
+                "# HYLE_PERF_STRUCTURED_RUN schema=v1 "
+                "execution_order=candidate-first "
+                "affinity_topology=n-worker-physical-cores worker_count=2 "
+                "worker_cpus=0,2 parent_mask=0x5 priority=above-normal "
+                f"affinity_ok=1 run_nonce={nonce}\n")
+
+        with tempfile.TemporaryDirectory() as temporary:
+            stage = pathlib.Path(temporary) / "n-1"
+            stage.mkdir()
+            paths = []
+            for index, (executable, value) in enumerate(
+                    (("candidate", 2000.0), ("peer", 1000.0)), start=1):
+                path = stage / (
+                    "product-candidate-first-" + executable + "-run-01.log")
+                path.write_text(
+                    product_text(value, f"{index:032x}"), encoding="utf-8")
+                paths.append(path)
+            for index, order in enumerate(
+                    ("candidate-first", "peer-first"), start=3):
+                path = stage / f"control-{order}-run-01.log"
+                text = control_text(order, f"{index:032x}").replace(
+                    "run_nonce=", "affinity_topology=n-worker-physical-cores "
+                    "caller_cpu=0 parent_mask=0x5 priority=above-normal "
+                    "affinity_ok=1 run_nonce=", 1)
+                path.write_text(text, encoding="utf-8")
+                paths.append(path)
+            index = build_raw_log_index(contract, runner, [1], paths)
+            normalized = validate_raw_log_index(
+                index, contract, runner, [1],
+                [entry["file"] for entry in index["entries"]])
+            observations, controls = replay_final_stage(
+                normalized, contract, runner, platform_name="windows",
+                child_policy=child_policy)
+            self.assertEqual(len(observations), 1)
+            self.assertEqual(observations[0].candidate_value, 2000.0)
+            self.assertEqual(observations[0].peer_value, 1000.0)
+            self.assertEqual(
+                controls["orders"]["candidate-first"]["delta10"], [1.1])
 
 
 if __name__ == "__main__":

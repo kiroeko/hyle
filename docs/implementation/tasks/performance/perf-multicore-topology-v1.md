@@ -1,6 +1,6 @@
 # 多生产者 CPU 性能仪器拓扑
 
-<!-- TOOL TASK: BLOCKED -->
+<!-- TOOL TASK: ACTIVE -->
 
 ## Finding
 
@@ -35,3 +35,15 @@ nanobench 放进单核 process mask 会产生漂亮但无效的“8 producer”�
 只有中央工具在 fresh isolated W1-WIN build 上通过自身 tooling tests，并能对冻结的
 8-producer × 1/4/16-sink workload 生成可深重放的 `closure-perf-v1` verdict，obs-v1 才可恢复其
 performance gate。未满足前，不在 obs 模块内继续发明 placement、padding、order 或 sample 实验。
+
+## 2026-08-29 implementation record
+
+- `machine.py` 已增加通用 `n-worker-physical-cores` policy：从 live Windows CPU Set 按 group、
+  efficiency class 与 physical core 选择一条 SMT sibling，并保留旧 `cross-core-pair` 的原选择语义；
+- runner 已增加 `structured-paired-process-v1` adapter。candidate/peer 使用不同 product executable，
+  但共享双顺序、A/A、5%/10% delta、batch-matched timer floor、15→31 停止规则和 Observation 统计；
+- structured row 强制校验 worker/work/callback 守恒、requested/observed CPU、singleton masks 与稳定
+  row set；raw verifier 从原始进程日志独立重建 topology、observations、controls 与停止决定；
+- W1-WIN dirty-source `probe` 已实际配置、编译当前与 `f305b9d3` baseline，运行冻结的
+  8-producer × 1/4/16-sink 双进程 mapping，并由 `hyle-perf verify` 深重放通过。probe 只证明 plumbing，
+  按协议仍是 `DIAGNOSTIC / INCONCLUSIVE`；tooling tests 与 clean/fresh n=15→31 qualification 尚待完成。

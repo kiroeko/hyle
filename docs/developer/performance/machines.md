@@ -68,6 +68,10 @@ native-Linux 或“第二台独立机器”的 formal gate。以后若把 WSL �
   同为最高 efficiency class 且 physical-core 不同的逻辑 CPU（当前为 CPU 4 / set 260）；进程 mask、
   caller/worker thread pin 和 child telemetry 三层都必须一致。一物理 P-core 一线程；SMT、E-core、
   mixed-core 是独立合同，不混合汇总。
+- 固定规模的真实并发 replay 可选择 `n-worker-physical-cores` 并声明 worker count。runner 从实时
+  CPU Set 派生同 group、同最高 efficiency class、每 physical core 一个 logical sibling 的有序集合；
+  当前 8-worker 选择为 `0,2,4,6,8,10,12,14`，但这些编号只是本机 probe 事实，不是模块硬编码。
+  parent mask、singleton masks、CPU Set/core ids、priority 及逐 worker observed CPU 都进入证据。
 - 使用交流电与登记的“卓越性能”scheme；source、peer、build、output 均位于本地 fixed NTFS。
 - 工程性能工具链为 MSVC 19.50.35728 / v145 / Windows SDK 10.0.26100.0；clang-cl 只作
   correctness/codegen 复核。Release 为 `/O2 /Ob2 /DNDEBUG`，ISA/linkage/LTO 由 workload 明示。
@@ -111,7 +115,8 @@ Windows 的 engineering 与 formal verdict 都会证明登记的 CPU set 258 / l
 最大 efficiency class；probe 不要求父 Python 已绑定。`expected_child_policy` 明确返回 affinity
 `0x4`、`above-normal` 和空闲 sibling 3，由 benchmark child launcher 实际应用并写入运行记录。
 `cross-core-pair` 合同则基于同一 host probe 派生并记录完整双核 mask 与两个 CPU Set id，且要求
-benchmark 回报 caller/worker 的实际角色 pin；这不修改默认单线程机器合同。
+benchmark 回报 caller/worker 的实际角色 pin；`n-worker-physical-cores` 同理派生并记录 N 个不同
+physical core 的 worker 集与逐 worker singleton pin。这两种 topology 都不修改默认单线程机器合同。
 
 ## 采样互斥锁
 

@@ -57,6 +57,10 @@ from hyle_perf.provenance import (  # noqa: E402
     resolve_provenance_compatibility,
     validate_provenance_renewals,
 )
+from hyle_perf.structured import (  # noqa: E402
+    parse_structured_measurements,
+    require_consistent_structured_row_sets,
+)
 
 
 def row_set(aa_ratio=1.0, delta5_ratio=1.05, delta10_ratio=1.10):
@@ -613,6 +617,75 @@ def build_validator_fixture(*, compiler_id="MSVC"):
 
 
 class RunnerBuildArtifactTest(unittest.TestCase):
+    def test_structured_pair_adapter_and_topology_are_closed(self):
+        value = json.loads(
+            (ROOT / "bench" / "contracts" /
+             "obs-concurrent-p1-v1.json").read_text(encoding="utf-8"))
+        runner = validate_runner_extension(value)
+        self.assertEqual(
+            runner["measurement_adapter"], "structured-paired-process-v1")
+        self.assertEqual(runner["sampling_worker_count"], 8)
+
+        changed = copy.deepcopy(value)
+        changed["extensions"]["runner"].pop("sampling_worker_count")
+        with self.assertRaisesRegex(ValidationError, "worker_count"):
+            validate_runner_extension(changed)
+
+        changed = copy.deepcopy(value)
+        changed["extensions"]["runner"]["executables"][1]["workloads"][0][
+            "row_id"] = "different-row"
+        with self.assertRaisesRegex(ValidationError, "different structured"):
+            validate_runner_extension(changed)
+
+    def test_structured_rows_prove_accounting_and_worker_placement(self):
+        policy = {
+            "sampling_worker_count": 2,
+            "worker_logical_cpus": [0, 2],
+            "worker_singleton_masks": ["0x1", "0x4"],
+        }
+        row = {
+            "record": "hyle_perf_structured_measurement",
+            "schema": "hyle.perf.structured-measurement/v1",
+            "row_id": "fanout-1-throughput",
+            "value": 1234.5,
+            "worker_count": 2,
+            "work_items_per_worker": 16,
+            "work_item_count": 32,
+            "fanout": 1,
+            "callback_count": 32,
+            "expected_callback_count": 32,
+            "affinity_ok": True,
+            "requested_logical_cpus": [0, 2],
+            "observed_logical_cpus": [0, 2],
+            "worker_singleton_masks": ["0x1", "0x4"],
+            "diagnostics": {"ns_per_emit": 42.0},
+        }
+        parsed = parse_structured_measurements(
+            json.dumps(row), child_policy=policy)
+        self.assertEqual(parsed["fanout-1-throughput"]["value"], 1234.5)
+        require_consistent_structured_row_sets([parsed, copy.deepcopy(parsed)])
+
+        changed = copy.deepcopy(row)
+        changed["observed_logical_cpus"] = [2, 0]
+        with self.assertRaisesRegex(ValidationError, "observed worker CPUs"):
+            parse_structured_measurements(
+                json.dumps(changed), child_policy=policy)
+
+        changed = copy.deepcopy(row)
+        changed["callback_count"] = 31
+        with self.assertRaisesRegex(ValidationError, "callback accounting"):
+            parse_structured_measurements(
+                json.dumps(changed), child_policy=policy)
+
+        second = copy.deepcopy(row)
+        second["row_id"] = "fanout-4-throughput"
+        with self.assertRaisesRegex(ValidationError, "row set changed"):
+            require_consistent_structured_row_sets([
+                parsed,
+                parse_structured_measurements(
+                    json.dumps(second), child_policy=policy),
+            ])
+
     def test_build_identity_files_are_bound_to_live_bytes(self):
         with tempfile.TemporaryDirectory() as temporary:
             build = pathlib.Path(temporary)

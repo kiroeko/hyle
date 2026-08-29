@@ -13,6 +13,7 @@
 #include <thread>
 #include <vector>
 
+#include "../common/perf_process.h"
 #include "hyle/obs/log.h"
 
 #if defined(_WIN32)
@@ -59,9 +60,9 @@ struct WorkerSample {
 }
 
 std::array<unsigned, kWorkerCount> requested_cpus() {
-  const char *value = std::getenv("HYLE_OBS_BENCH_WORKER_CPUS");
+  const char *value = std::getenv("HYLE_PERF_WORKER_CPUS");
   if (value == nullptr || *value == '\0') {
-    fail("HYLE_OBS_BENCH_WORKER_CPUS must list eight logical CPUs");
+    fail("HYLE_PERF_WORKER_CPUS must list eight logical CPUs");
   }
 
   std::array<unsigned, kWorkerCount> cpus{};
@@ -128,6 +129,8 @@ struct RunResult {
   double chunk_max_ns_per_emit = 0.0;
   std::uint64_t writes = 0;
   bool affinity_ok = false;
+  std::array<unsigned, kWorkerCount> requested_cpus{};
+  std::array<unsigned, kWorkerCount> observed_cpus{};
 };
 
 RunResult run_workers(const std::array<unsigned, kWorkerCount> &cpus,
@@ -210,6 +213,10 @@ RunResult run_workers(const std::array<unsigned, kWorkerCount> &cpus,
   result.worker_p99_ns_per_emit = percentile(worker_ns, 0.99);
   result.worker_max_ns_per_emit = *std::ranges::max_element(worker_ns);
   result.affinity_ok = affinity_ok;
+  for (std::size_t index = 0; index < kWorkerCount; ++index) {
+    result.requested_cpus[index] = samples[index].requested_cpu;
+    result.observed_cpus[index] = samples[index].observed_cpu;
+  }
   if (collect_chunks) {
     result.chunk_p50_ns_per_emit = percentile(chunk_ns, 0.50);
     result.chunk_p99_ns_per_emit = percentile(chunk_ns, 0.99);
@@ -226,6 +233,66 @@ void print_cpu_list(const std::array<unsigned, kWorkerCount> &cpus) {
   }
 }
 
+void print_json_cpu_list(const std::array<unsigned, kWorkerCount> &cpus) {
+  std::putchar('[');
+  for (std::size_t index = 0; index < cpus.size(); ++index) {
+    if (index != 0)
+      std::putchar(',');
+    std::printf("%u", cpus[index]);
+  }
+  std::putchar(']');
+}
+
+void print_json_singleton_masks(
+    const std::array<unsigned, kWorkerCount> &cpus) {
+  std::putchar('[');
+  for (std::size_t index = 0; index < cpus.size(); ++index) {
+    if (index != 0)
+      std::putchar(',');
+    const auto mask = std::uint64_t{1} << cpus[index];
+    std::printf("\"0x%llx\"", static_cast<unsigned long long>(mask));
+  }
+  std::putchar(']');
+}
+
+void print_measurement(const char *row_id, double operations_per_second,
+                       const RunResult &result, std::size_t sink_count) {
+  const std::uint64_t work_items =
+      static_cast<std::uint64_t>(kWorkerCount) * kMeasuredIterations;
+  const std::uint64_t expected_callbacks =
+      work_items * static_cast<std::uint64_t>(sink_count);
+  std::printf(
+      "{\"record\":\"hyle_perf_structured_measurement\","
+      "\"schema\":\"hyle.perf.structured-measurement/v1\","
+      "\"row_id\":\"%s\",\"value\":%.9f,\"worker_count\":%zu,"
+      "\"work_items_per_worker\":%zu,\"work_item_count\":%llu,"
+      "\"fanout\":%zu,\"callback_count\":%llu,"
+      "\"expected_callback_count\":%llu,\"affinity_ok\":true,"
+      "\"requested_logical_cpus\":",
+      row_id, operations_per_second, kWorkerCount, kMeasuredIterations,
+      static_cast<unsigned long long>(work_items), sink_count,
+      static_cast<unsigned long long>(result.writes),
+      static_cast<unsigned long long>(expected_callbacks));
+  print_json_cpu_list(result.requested_cpus);
+  std::printf(",\"observed_logical_cpus\":");
+  print_json_cpu_list(result.observed_cpus);
+  std::printf(",\"worker_singleton_masks\":");
+  print_json_singleton_masks(result.requested_cpus);
+  std::printf(
+      ",\"diagnostics\":{\"throughput_ns_per_emit\":%.9f,"
+      "\"throughput_ns_per_callback\":%.9f,"
+      "\"worker_p50_ns_per_emit\":%.9f,"
+      "\"worker_p99_ns_per_emit\":%.9f,"
+      "\"worker_max_ns_per_emit\":%.9f,"
+      "\"chunk_p50_ns_per_emit\":%.9f,"
+      "\"chunk_p99_ns_per_emit\":%.9f,"
+      "\"chunk_max_ns_per_emit\":%.9f}}\n",
+      result.throughput_ns_per_emit, result.throughput_ns_per_callback,
+      result.worker_p50_ns_per_emit, result.worker_p99_ns_per_emit,
+      result.worker_max_ns_per_emit, result.chunk_p50_ns_per_emit,
+      result.chunk_p99_ns_per_emit, result.chunk_max_ns_per_emit);
+}
+
 } // namespace
 
 int main() {
@@ -233,13 +300,6 @@ int main() {
   if (!hyle::obs::set_default_sink_enabled(false).ok())
     fail("cannot disable the default sink");
   hyle::obs::set_level(hyle::obs::LogLevel::Info);
-
-  std::printf("# HYLE_OBS_CONCURRENT_BENCH schema=v1 worker_cpus=");
-  print_cpu_list(cpus);
-  std::printf(" workers=%zu warmup_iterations=%zu measured_iterations=%zu "
-              "chunk_iterations=%zu\n",
-              kWorkerCount, kWarmupIterations, kMeasuredIterations,
-              kChunkIterations);
 
   for (const std::size_t sink_count : kSinkCounts) {
     std::array<Counter, 16> counters{};
@@ -268,28 +328,36 @@ int main() {
     if (result.writes != expected)
       fail("sink callback count does not match the workload contract");
 
-    std::printf(
-        "{\"sink_count\":%zu,\"worker_count\":%zu,"
-        "\"iterations_per_worker\":%zu,\"writes\":%llu,"
-        "\"affinity_ok\":true,\"throughput_ns_per_emit\":%.9f,"
-        "\"throughput_ns_per_callback\":%.9f,"
-        "\"worker_p50_ns_per_emit\":%.9f,"
-        "\"worker_p99_ns_per_emit\":%.9f,"
-        "\"worker_max_ns_per_emit\":%.9f,"
-        "\"chunk_p50_ns_per_emit\":%.9f,"
-        "\"chunk_p99_ns_per_emit\":%.9f,"
-        "\"chunk_max_ns_per_emit\":%.9f}\n",
-        sink_count, kWorkerCount, kMeasuredIterations,
-        static_cast<unsigned long long>(result.writes),
-        result.throughput_ns_per_emit, result.throughput_ns_per_callback,
-        result.worker_p50_ns_per_emit, result.worker_p99_ns_per_emit,
-        result.worker_max_ns_per_emit, result.chunk_p50_ns_per_emit,
-        result.chunk_p99_ns_per_emit, result.chunk_max_ns_per_emit);
+    std::array<char, 64> row_id{};
+    std::snprintf(row_id.data(), row_id.size(), "fanout-%zu-throughput",
+                  sink_count);
+    print_measurement(row_id.data(), 1e9 / result.throughput_ns_per_emit,
+                      result, sink_count);
+    std::snprintf(row_id.data(), row_id.size(), "fanout-%zu-chunk-p99",
+                  sink_count);
+    print_measurement(row_id.data(), 1e9 / result.chunk_p99_ns_per_emit,
+                      result, sink_count);
 
     for (std::size_t index = 0; index < sink_count; ++index) {
       if (!hyle::obs::remove_sink(counters[index].sink()).ok())
         fail("cannot unregister benchmark sink");
     }
   }
+  const char *execution_order = std::getenv("HYLE_PERF_EXECUTION_ORDER");
+  const char *topology = std::getenv("HYLE_PERF_SAMPLING_TOPOLOGY");
+  const char *parent_mask = std::getenv("HYLE_PERF_PARENT_MASK");
+  const char *priority = std::getenv("HYLE_PERF_PRIORITY");
+  std::printf("# HYLE_PERF_STRUCTURED_RUN schema=v1 execution_order=%s "
+              "affinity_topology=%s worker_count=%zu worker_cpus=",
+              execution_order != nullptr ? execution_order : "unmanaged",
+              topology != nullptr ? topology : "unmanaged", kWorkerCount);
+  print_cpu_list(cpus);
+  std::printf(" parent_mask=%s priority=%s affinity_ok=1 "
+              "warmup_iterations=%zu measured_iterations=%zu "
+              "chunk_iterations=%zu run_nonce=%s\n",
+              parent_mask != nullptr ? parent_mask : "unmanaged",
+              priority != nullptr ? priority : "unmanaged",
+              kWarmupIterations, kMeasuredIterations, kChunkIterations,
+              hyle::bench::perf::run_nonce());
   return 0;
 }

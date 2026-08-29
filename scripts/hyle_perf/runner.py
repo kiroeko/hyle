@@ -70,9 +70,15 @@ from hyle_perf.nanobench import (
     select_pair,
 )
 from hyle_perf.raw_replay import build_raw_log_index
+from hyle_perf.structured import (
+    parse_structured_measurements,
+    require_consistent_structured_row_sets,
+)
 
 
 RUNNER_SCHEMA = "hyle.perf.nanobench-runner/v1"
+NANOBENCH_ADAPTER = "nanobench-paired-rows-v1"
+STRUCTURED_PAIR_ADAPTER = "structured-paired-process-v1"
 CONTROL_TELEMETRY_PREFIX = "# HYLE_PERF_CONTROL_RUN "
 _HEX_REVISION_RE = re.compile(r"^[0-9a-f]{40,64}$")
 _PATH_SAFE_IDENTIFIER_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.+-]*$")
@@ -170,16 +176,40 @@ def validate_runner_extension(contract: Mapping[str, Any]) -> dict[str, Any]:
         extensions.get("runner", {}),
         {"schema", "cmake", "profiles", "executables", "control_executable",
          "controlled_environment", "validators"},
-        {"sampling_topology"}, "contract.extensions.runner")
+        {"sampling_topology", "sampling_worker_count", "measurement_adapter"},
+        "contract.extensions.runner")
     if config["schema"] != RUNNER_SCHEMA:
         raise ValidationError(
             f"unsupported runner extension schema: {config['schema']!r}")
-    sampling_topology = config.get(
-        "sampling_topology", "single-logical-cpu")
-    if sampling_topology not in {"single-logical-cpu", "cross-core-pair"}:
+    measurement_adapter = config.get("measurement_adapter", NANOBENCH_ADAPTER)
+    if measurement_adapter not in {
+            NANOBENCH_ADAPTER, STRUCTURED_PAIR_ADAPTER}:
+        raise ValidationError(
+            f"unsupported runner measurement adapter: {measurement_adapter!r}")
+    config["measurement_adapter"] = measurement_adapter
+    sampling_topology = config.get("sampling_topology", "single-logical-cpu")
+    if sampling_topology not in {
+            "single-logical-cpu", "cross-core-pair",
+            "n-worker-physical-cores"}:
         raise ValidationError(
             f"unsupported runner sampling topology: {sampling_topology!r}")
     config["sampling_topology"] = sampling_topology
+    sampling_worker_count = config.get("sampling_worker_count")
+    if sampling_topology == "n-worker-physical-cores":
+        if (isinstance(sampling_worker_count, bool) or
+                not isinstance(sampling_worker_count, int) or
+                not 2 <= sampling_worker_count <= 64):
+            raise ValidationError(
+                "n-worker-physical-cores requires sampling_worker_count in "
+                "the range 2..64")
+        if measurement_adapter != STRUCTURED_PAIR_ADAPTER:
+            raise ValidationError(
+                "n-worker-physical-cores requires the structured paired-process "
+                "adapter")
+        config["sampling_worker_count"] = sampling_worker_count
+    elif sampling_worker_count is not None:
+        raise ValidationError(
+            "sampling_worker_count is valid only for n-worker-physical-cores")
 
     cmake = _exact_fields(
         config["cmake"], {"cache", "peer_cache"}, set(), "runner.cmake")
@@ -241,10 +271,10 @@ def validate_runner_extension(contract: Mapping[str, Any]) -> dict[str, Any]:
             "runner.profiles must exactly match hosts.requirements.machine_profiles")
 
     controlled = config["controlled_environment"]
-    if (not isinstance(controlled, list) or not controlled or
+    if (not isinstance(controlled, list) or
             len(set(controlled)) != len(controlled)):
         raise ValidationError(
-            "runner.controlled_environment must be a non-empty unique array")
+            "runner.controlled_environment must be a unique array")
     config["controlled_environment"] = [
         _nonempty_string(value, "runner.controlled_environment[]")
         for value in controlled]
@@ -292,7 +322,7 @@ def validate_runner_extension(contract: Mapping[str, Any]) -> dict[str, Any]:
             raw_executable,
             {"id", "target", "stem", "target_variant", "measurement_batch",
              "workloads"},
-            {"telemetry_prefixes"}, name)
+            {"telemetry_prefixes", "pair_role", "peer_id"}, name)
         for key in ("id", "target", "stem"):
             executable[key] = _path_safe_identifier(
                 executable[key], f"{name}.{key}")
@@ -325,11 +355,15 @@ def validate_runner_extension(contract: Mapping[str, Any]) -> dict[str, Any]:
         normalized_mappings = []
         mapped_ids = set()
         for mapping_index, raw_mapping in enumerate(mappings):
-            mapping = _exact_fields(
-                raw_mapping, {"id", "title"}, set(),
-                f"{name}.workloads[{mapping_index}]")
+            mapping_name = f"{name}.workloads[{mapping_index}]"
+            if measurement_adapter == NANOBENCH_ADAPTER:
+                mapping = _exact_fields(
+                    raw_mapping, {"id", "title"}, set(), mapping_name)
+            else:
+                mapping = _exact_fields(
+                    raw_mapping, {"id", "row_id"}, set(), mapping_name)
             workload_id = _nonempty_string(
-                mapping["id"], f"{name}.workloads[{mapping_index}].id")
+                mapping["id"], mapping_name + ".id")
             if workload_id not in contract_workloads:
                 raise ValidationError(
                     f"{name} maps unknown workload {workload_id!r}")
@@ -337,12 +371,14 @@ def validate_runner_extension(contract: Mapping[str, Any]) -> dict[str, Any]:
                 raise ValidationError(
                     f"{name} repeats workload {workload_id!r}")
             mapped_ids.add(workload_id)
-            normalized_mappings.append({
-                "id": workload_id,
-                "title": _nonempty_string(
-                    mapping["title"],
-                    f"{name}.workloads[{mapping_index}].title"),
-            })
+            normalized_mapping = {"id": workload_id}
+            if measurement_adapter == NANOBENCH_ADAPTER:
+                normalized_mapping["title"] = _nonempty_string(
+                    mapping["title"], mapping_name + ".title")
+            else:
+                normalized_mapping["row_id"] = _path_safe_identifier(
+                    mapping["row_id"], mapping_name + ".row_id")
+            normalized_mappings.append(normalized_mapping)
         executable["workloads"] = normalized_mappings
         telemetry = executable.get("telemetry_prefixes", [])
         if (not isinstance(telemetry, list) or len(telemetry) != 1 or
@@ -353,6 +389,23 @@ def validate_runner_extension(contract: Mapping[str, Any]) -> dict[str, Any]:
         executable["telemetry_prefixes"] = [
             _nonempty_string(value, f"{name}.telemetry_prefixes[]")
             for value in telemetry]
+        if measurement_adapter == STRUCTURED_PAIR_ADAPTER:
+            pair_role = executable.get("pair_role")
+            if pair_role not in {"candidate", "peer"}:
+                raise ValidationError(
+                    f"{name}.pair_role must be candidate or peer")
+            if pair_role == "peer":
+                peer_id = _path_safe_identifier(
+                    executable.get("peer_id"), f"{name}.peer_id")
+                if peer_id not in peer_ids:
+                    raise ValidationError(f"{name} references unknown peer {peer_id!r}")
+                executable["peer_id"] = peer_id
+            elif "peer_id" in executable:
+                raise ValidationError(
+                    f"{name}.peer_id is valid only for a peer executable")
+        elif "pair_role" in executable or "peer_id" in executable:
+            raise ValidationError(
+                f"{name} declares structured pair fields for nanobench")
         normalized_executables.append(executable)
     config["executables"] = normalized_executables
 
@@ -450,10 +503,35 @@ def validate_runner_extension(contract: Mapping[str, Any]) -> dict[str, Any]:
                 if executable["target_variant"] == target_variant and any(
                     mapping["id"] == workload_id
                     for mapping in executable["workloads"])]
-            if len(matches) != 1:
+            expected_count = (1 if measurement_adapter == NANOBENCH_ADAPTER
+                              else 2)
+            if len(matches) != expected_count:
                 raise ValidationError(
                     f"workload {workload_id!r} / stratum {stratum_id!r} maps "
-                    f"to {len(matches)} executables; expected exactly one")
+                    f"to {len(matches)} executables; expected exactly "
+                    f"{expected_count}")
+            if measurement_adapter == STRUCTURED_PAIR_ADAPTER:
+                by_role = {executable["pair_role"]: executable
+                           for executable in matches}
+                if set(by_role) != {"candidate", "peer"}:
+                    raise ValidationError(
+                        f"workload {workload_id!r} / stratum {stratum_id!r} "
+                        "does not map one executable per pair role")
+                if by_role["peer"].get("peer_id") != workload["peer_id"]:
+                    raise ValidationError(
+                        f"workload {workload_id!r} peer executable does not "
+                        "match workload.peer_id")
+                candidate_row = next(
+                    mapping["row_id"] for mapping in
+                    by_role["candidate"]["workloads"]
+                    if mapping["id"] == workload_id)
+                peer_row = next(
+                    mapping["row_id"] for mapping in by_role["peer"]["workloads"]
+                    if mapping["id"] == workload_id)
+                if candidate_row != peer_row:
+                    raise ValidationError(
+                        f"workload {workload_id!r} pair roles map different "
+                        "structured row ids")
 
     for control_record in contract["controls"]:
         kind = control_record["kind"]
@@ -908,6 +986,24 @@ def _validate_variant_artifacts(
         executable_paths: Mapping[str, pathlib.Path],
         artifact_hashes: Mapping[str, str]) -> None:
     """Reject a placement stratum that resolves to the same product artifact."""
+    if runner.get("measurement_adapter") == STRUCTURED_PAIR_ADAPTER:
+        for workload in contract["workloads"]:
+            for stratum_id in workload["required_strata"]:
+                stratum = next(
+                    item for item in contract["strata"]
+                    if item["id"] == stratum_id)
+                variant = stratum.get("target_variant", "primary")
+                pair = [
+                    executable for executable in runner["executables"]
+                    if executable["target_variant"] == variant and any(
+                        mapping["id"] == workload["id"]
+                        for mapping in executable["workloads"])]
+                paths = {executable_paths[item["id"]] for item in pair}
+                hashes = {artifact_hashes[item["id"]] for item in pair}
+                if len(pair) != 2 or len(paths) != 2 or len(hashes) != 2:
+                    raise ValidationError(
+                        f"structured workload {workload['id']!r} does not "
+                        "resolve to two distinct product artifacts")
     placement_ids = {
         control["id"] for control in contract["controls"]
         if control["kind"] == "placement"}
@@ -1068,13 +1164,23 @@ def _child_environment(
     if child_policy is not None:
         caller_cpu = child_policy.get("caller_logical_cpu")
         worker_cpu = child_policy.get("worker_logical_cpu")
+        worker_cpus = child_policy.get("worker_logical_cpus")
         if isinstance(caller_cpu, int):
             environment["HYLE_PERF_CALLER_CPU"] = str(caller_cpu)
         if isinstance(worker_cpu, int):
             environment["HYLE_PERF_WORKER_CPU"] = str(worker_cpu)
+        if (isinstance(worker_cpus, list) and worker_cpus and
+                all(isinstance(cpu, int) for cpu in worker_cpus)):
+            environment["HYLE_PERF_WORKER_CPUS"] = ",".join(
+                str(cpu) for cpu in worker_cpus)
         if child_policy.get("sampling_topology"):
             environment["HYLE_PERF_SAMPLING_TOPOLOGY"] = str(
                 child_policy["sampling_topology"])
+        if child_policy.get("affinity_mask"):
+            environment["HYLE_PERF_PARENT_MASK"] = str(
+                child_policy["affinity_mask"])
+        if child_policy.get("priority"):
+            environment["HYLE_PERF_PRIORITY"] = str(child_policy["priority"])
     if profile.get("environment") == "macos":
         qos = profile.get("scheduler", {}).get("default_qos")
         if qos:
@@ -1150,6 +1256,167 @@ def _sample_executable(
     return parsed_runs, raw_paths
 
 
+def _product_telemetry_expectations(
+        stratum: Mapping[str, Any], profile: Mapping[str, Any],
+        child_policy: Mapping[str, Any]) -> dict[str, str]:
+    expectations = {
+        key: str(stratum["dimensions"][key])
+        for key in ("execution_order", "allocation_order")
+        if key in stratum["dimensions"]}
+    if profile.get("environment") == "macos":
+        expectations.update({
+            "apple_qos": "user-interactive",
+            "qos_ok": "1",
+        })
+    topology = child_policy.get("sampling_topology")
+    if topology == "cross-core-pair":
+        expectations.update({
+            "affinity_topology": "cross-core-pair",
+            "caller_cpu": str(child_policy["caller_logical_cpu"]),
+            "worker_cpu": str(child_policy["worker_logical_cpu"]),
+            "affinity_ok": "1",
+        })
+    elif topology == "n-worker-physical-cores":
+        expectations.update({
+            "affinity_topology": topology,
+            "worker_count": str(child_policy["sampling_worker_count"]),
+            "worker_cpus": ",".join(
+                str(cpu) for cpu in child_policy["worker_logical_cpus"]),
+            "parent_mask": str(child_policy["affinity_mask"]),
+            "priority": str(child_policy["priority"]),
+            "affinity_ok": "1",
+        })
+    return expectations
+
+
+def _run_structured_child(
+        executable: pathlib.Path, *, environment: Mapping[str, str],
+        creationflags: int, raw_path: pathlib.Path,
+        telemetry_prefixes: Iterable[str],
+        telemetry_expectations: Mapping[str, str],
+        child_policy: Mapping[str, Any]) -> tuple[
+            dict[str, dict[str, Any]], pathlib.Path]:
+    run_nonce = secrets.token_hex(16)
+    run_environment = dict(environment)
+    run_environment["HYLE_PERF_RUN_NONCE"] = run_nonce
+    result = subprocess.run(
+        [str(executable)], env=run_environment,
+        capture_output=True, text=True, encoding="utf-8", errors="replace",
+        creationflags=creationflags)
+    output = result.stdout + result.stderr
+    raw_path.write_text(output, encoding="utf-8")
+    if result.returncode != 0:
+        raise RuntimeError(
+            f"structured benchmark child exited {result.returncode}; see "
+            f"{raw_path}")
+    _required_telemetry(
+        output, telemetry_prefixes,
+        {**telemetry_expectations, "run_nonce": run_nonce})
+    return parse_structured_measurements(
+        output, child_policy=child_policy), raw_path
+
+
+def _collect_structured_product_observations(
+        contract: Mapping[str, Any], runner: Mapping[str, Any],
+        executable_paths: Mapping[str, pathlib.Path], profile: Mapping[str, Any],
+        child_policy: Mapping[str, Any], *, runs: int, creationflags: int,
+        raw_directory: pathlib.Path) -> tuple[
+            list[Observation], list[pathlib.Path]]:
+    workloads = {workload["id"]: workload for workload in contract["workloads"]}
+    observations: list[Observation] = []
+    raw_paths: list[pathlib.Path] = []
+    for stratum in contract["strata"]:
+        stratum_id = stratum["id"]
+        required_ids = {
+            workload["id"] for workload in contract["workloads"]
+            if stratum_id in workload["required_strata"]}
+        if not required_ids:
+            continue
+        target_variant = stratum.get("target_variant", "primary")
+        matching = [
+            executable for executable in runner["executables"]
+            if executable["target_variant"] == target_variant and any(
+                mapping["id"] in required_ids
+                for mapping in executable["workloads"])]
+        by_role = {executable["pair_role"]: executable
+                   for executable in matching}
+        if set(by_role) != {"candidate", "peer"}:
+            raise ValidationError(
+                f"stratum {stratum_id!r} lacks one structured executable per "
+                "pair role")
+        mapping_by_role = {
+            role: {mapping["id"]: mapping for mapping in executable["workloads"]
+                   if mapping["id"] in required_ids}
+            for role, executable in by_role.items()}
+        if any(set(mappings) != required_ids
+               for mappings in mapping_by_role.values()):
+            raise ValidationError(
+                f"stratum {stratum_id!r} structured mapping is incomplete")
+        order = stratum["dimensions"].get("execution_order")
+        sequence = (("candidate", "peer") if order == "candidate-first"
+                    else ("peer", "candidate"))
+        environment = _child_environment(
+            runner["controlled_environment"],
+            stratum.get("environment", {}), profile, child_policy)
+        environment["HYLE_PERF_EXECUTION_ORDER"] = str(order)
+        telemetry_expectations = _product_telemetry_expectations(
+            stratum, profile, child_policy)
+        parsed_by_role: dict[str, list[dict[str, dict[str, Any]]]] = {
+            "candidate": [], "peer": []}
+        for run in range(1, runs + 1):
+            for role in sequence:
+                executable = by_role[role]
+                raw_path = raw_directory / (
+                    f"product-{stratum_id}-{executable['id']}-run-{run:02d}.log")
+                parsed, path = _run_structured_child(
+                    executable_paths[executable["id"]],
+                    environment=environment, creationflags=creationflags,
+                    raw_path=raw_path,
+                    telemetry_prefixes=executable["telemetry_prefixes"],
+                    telemetry_expectations=telemetry_expectations,
+                    child_policy=child_policy)
+                parsed_by_role[role].append(parsed)
+                raw_paths.append(path)
+        for parsed_runs in parsed_by_role.values():
+            require_consistent_structured_row_sets(parsed_runs)
+        for workload_id in sorted(required_ids):
+            workload = workloads[workload_id]
+            metric = MetricSpec.from_dict(workload["metric"])
+            candidate_mapping = mapping_by_role["candidate"][workload_id]
+            peer_mapping = mapping_by_role["peer"][workload_id]
+            row_id = candidate_mapping["row_id"]
+            if peer_mapping["row_id"] != row_id:
+                raise ValidationError(
+                    f"workload {workload_id!r} pair maps different row ids")
+            for run_index in range(runs):
+                candidate = parsed_by_role["candidate"][run_index].get(row_id)
+                peer = parsed_by_role["peer"][run_index].get(row_id)
+                if candidate is None or peer is None:
+                    raise ValidationError(
+                        f"structured row {row_id!r} is missing for workload "
+                        f"{workload_id!r}")
+                observations.append(Observation(
+                    experiment_id=contract["id"],
+                    workload_id=workload_id,
+                    stratum_id=stratum_id,
+                    run=run_index + 1,
+                    candidate_value=candidate["value"],
+                    peer_value=peer["value"],
+                    metric=metric,
+                    metadata={
+                        "adapter": STRUCTURED_PAIR_ADAPTER,
+                        "candidate_executable_id": by_role["candidate"]["id"],
+                        "peer_executable_id": by_role["peer"]["id"],
+                        "row_id": row_id,
+                        "measurement_batch":
+                            by_role["candidate"]["measurement_batch"],
+                        "candidate_telemetry": candidate,
+                        "peer_telemetry": peer,
+                    },
+                ))
+    return observations, raw_paths
+
+
 def _collect_product_observations(
         contract: Mapping[str, Any], runner: Mapping[str, Any],
         executable_paths: Mapping[str, pathlib.Path], profile: Mapping[str, Any],
@@ -1180,22 +1447,8 @@ def _collect_product_observations(
             environment = _child_environment(
                 runner["controlled_environment"],
                 stratum.get("environment", {}), profile, child_policy)
-            telemetry_expectations = {
-                key: stratum["dimensions"][key]
-                for key in ("execution_order", "allocation_order")
-                if key in stratum["dimensions"]}
-            if profile.get("environment") == "macos":
-                telemetry_expectations.update({
-                    "apple_qos": "user-interactive",
-                    "qos_ok": "1",
-                })
-            if child_policy.get("sampling_topology") == "cross-core-pair":
-                telemetry_expectations.update({
-                    "affinity_topology": "cross-core-pair",
-                    "caller_cpu": str(child_policy["caller_logical_cpu"]),
-                    "worker_cpu": str(child_policy["worker_logical_cpu"]),
-                    "affinity_ok": "1",
-                })
+            telemetry_expectations = _product_telemetry_expectations(
+                stratum, profile, child_policy)
             parsed_runs, paths = _sample_executable(
                 executable_paths[executable["id"]], runs=runs,
                 environment=environment, creationflags=creationflags,
@@ -1258,6 +1511,14 @@ def _collect_control_runs(
                     "affinity_ok": "1",
                 } if child_policy.get("sampling_topology") ==
                     "cross-core-pair" else {}),
+                **({
+                    "affinity_topology": "n-worker-physical-cores",
+                    "caller_cpu": str(child_policy["caller_logical_cpu"]),
+                    "parent_mask": str(child_policy["affinity_mask"]),
+                    "priority": str(child_policy["priority"]),
+                    "affinity_ok": "1",
+                } if child_policy.get("sampling_topology") ==
+                    "n-worker-physical-cores" else {}),
                 **({"apple_qos": "user-interactive", "qos_ok": "1"}
                    if profile.get("environment") == "macos" else {}),
             })
@@ -1882,11 +2143,13 @@ def _run_contract_locked(
         expected_qos=expected_qos)
     host_identity = physical_host_identity_record(profile, host_before)
     sampling_topology = runner["sampling_topology"]
+    sampling_worker_count = runner.get("sampling_worker_count")
     machine_gate = evaluate_machine_profile(
         profile, host_before,
         role=evidence_role,
         formal_claim=formal_claim,
-        sampling_topology=sampling_topology)
+        sampling_topology=sampling_topology,
+        sampling_worker_count=sampling_worker_count)
     if machine_gate["gate"] != "PASS":
         raise ValidationError(
             "machine profile gate failed: " + "; ".join(machine_gate["errors"]))
@@ -1946,17 +2209,21 @@ def _run_contract_locked(
     # the frozen n=15 schedule only in qualify-platform.
     runs = schedule[0] if requested_qualified else 1
     policy = expected_child_policy(
-        profile, sampling_topology=sampling_topology, probe=host_before)
+        profile, sampling_topology=sampling_topology,
+        sampling_worker_count=sampling_worker_count, probe=host_before)
     child_environment_policy = _child_environment_policy_record()
     with _apply_sampling_policy(policy) as applied_policy:
         flags = _creation_flags(policy)
         applied_policy["child_canary"] = _probe_child_policy(policy, flags)
         stage_directory = raw_directory / f"n-{runs}"
         stage_directory.mkdir()
-        observations, product_logs = _collect_product_observations(
+        product_collector = (
+            _collect_structured_product_observations
+            if runner["measurement_adapter"] == STRUCTURED_PAIR_ADAPTER
+            else _collect_product_observations)
+        observations, product_logs = product_collector(
             contract, runner, executable_paths, profile, applied_policy,
-            runs=runs,
-            creationflags=flags, raw_directory=stage_directory)
+            runs=runs, creationflags=flags, raw_directory=stage_directory)
         control_runs, control_logs = _collect_control_runs(
             control_path, profile, applied_policy, runs=runs,
             creationflags=flags,
@@ -1980,7 +2247,7 @@ def _run_contract_locked(
                 runs = schedule[1]
                 stage_directory = raw_directory / f"n-{runs}"
                 stage_directory.mkdir()
-                observations, product_logs = _collect_product_observations(
+                observations, product_logs = product_collector(
                     contract, runner, executable_paths, profile,
                     applied_policy, runs=runs,
                     creationflags=flags, raw_directory=stage_directory)

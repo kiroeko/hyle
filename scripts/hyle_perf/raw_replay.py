@@ -14,6 +14,10 @@ from .controls import (
 )
 from .model import MetricSpec, Observation, ValidationError
 from .nanobench import parse_nanobench, require_consistent_row_sets, select_pair
+from .structured import (
+    parse_structured_measurements,
+    require_consistent_structured_row_sets,
+)
 
 
 RAW_INDEX_SCHEMA = "hyle.perf.nanobench-raw-index/v1"
@@ -284,6 +288,108 @@ def _telemetry(text: str, prefix: str,
     return {prefix: lines[0]}
 
 
+def _topology_telemetry_expectations(
+        child_policy: Mapping[str, Any] | None) -> dict[str, str]:
+    if not isinstance(child_policy, Mapping):
+        return {}
+    if child_policy.get("sampling_topology") != "n-worker-physical-cores":
+        return {}
+    return {
+        "affinity_topology": "n-worker-physical-cores",
+        "worker_count": str(child_policy["sampling_worker_count"]),
+        "worker_cpus": ",".join(
+            str(cpu) for cpu in child_policy["worker_logical_cpus"]),
+        "parent_mask": str(child_policy["affinity_mask"]),
+        "priority": str(child_policy["priority"]),
+        "affinity_ok": "1",
+    }
+
+
+def _replay_structured_products(
+        entries: Mapping[tuple[str, str, int], Mapping[str, Any]],
+        contract: Mapping[str, Any], runner: Mapping[str, Any], *, stage: int,
+        platform_name: str,
+        child_policy: Mapping[str, Any] | None) -> list[Observation]:
+    workloads = {workload["id"]: workload for workload in contract["workloads"]}
+    observations: list[Observation] = []
+    for stratum in contract["strata"]:
+        stratum_id = stratum["id"]
+        required_ids = {
+            workload["id"] for workload in contract["workloads"]
+            if stratum_id in workload["required_strata"]}
+        if not required_ids:
+            continue
+        variant = stratum.get("target_variant", "primary")
+        matching = [
+            executable for executable in runner["executables"]
+            if executable["target_variant"] == variant and any(
+                mapping["id"] in required_ids
+                for mapping in executable["workloads"])]
+        by_role = {executable["pair_role"]: executable
+                   for executable in matching}
+        if set(by_role) != {"candidate", "peer"}:
+            raise ValidationError(
+                f"structured replay stratum {stratum_id!r} lacks pair roles")
+        mappings = {
+            role: {mapping["id"]: mapping for mapping in executable["workloads"]
+                   if mapping["id"] in required_ids}
+            for role, executable in by_role.items()}
+        parsed_by_role: dict[str, list[dict[str, dict[str, Any]]]] = {
+            "candidate": [], "peer": []}
+        for role, executable in by_role.items():
+            for run in range(1, stage + 1):
+                entry = entries[(stratum_id, executable["id"], run)]
+                text = _read_text(entry["file"])
+                expected = {
+                    key: str(stratum["dimensions"][key])
+                    for key in ("execution_order", "allocation_order")
+                    if key in stratum["dimensions"]}
+                if platform_name == "macos":
+                    expected.update(
+                        {"apple_qos": "user-interactive", "qos_ok": "1"})
+                expected.update(_topology_telemetry_expectations(child_policy))
+                expected["run_nonce"] = entry["run_nonce"]
+                for prefix in executable["telemetry_prefixes"]:
+                    _telemetry(text, prefix, expected)
+                parsed_by_role[role].append(parse_structured_measurements(
+                    text, child_policy=child_policy))
+            require_consistent_structured_row_sets(parsed_by_role[role])
+        for workload_id in sorted(required_ids):
+            workload = workloads[workload_id]
+            metric = MetricSpec.from_dict(workload["metric"])
+            row_id = mappings["candidate"][workload_id]["row_id"]
+            if mappings["peer"][workload_id]["row_id"] != row_id:
+                raise ValidationError(
+                    f"structured replay workload {workload_id!r} maps "
+                    "different row ids")
+            for run_index in range(stage):
+                candidate = parsed_by_role["candidate"][run_index].get(row_id)
+                peer = parsed_by_role["peer"][run_index].get(row_id)
+                if candidate is None or peer is None:
+                    raise ValidationError(
+                        f"structured replay lacks row {row_id!r}")
+                observations.append(Observation(
+                    experiment_id=contract["id"],
+                    workload_id=workload_id,
+                    stratum_id=stratum_id,
+                    run=run_index + 1,
+                    candidate_value=candidate["value"],
+                    peer_value=peer["value"],
+                    metric=metric,
+                    metadata={
+                        "adapter": "structured-paired-process-v1",
+                        "candidate_executable_id": by_role["candidate"]["id"],
+                        "peer_executable_id": by_role["peer"]["id"],
+                        "row_id": row_id,
+                        "measurement_batch":
+                            by_role["candidate"]["measurement_batch"],
+                        "candidate_telemetry": candidate,
+                        "peer_telemetry": peer,
+                    },
+                ))
+    return observations
+
+
 def _structured_controls(
         grouped: Mapping[str, list[dict[Any, Any]]]) -> dict[str, Any]:
     orders = {}
@@ -323,7 +429,8 @@ def _structured_controls(
 def replay_stage(
         index: Mapping[str, Any], contract: Mapping[str, Any],
         runner: Mapping[str, Any], *, stage: int,
-        platform_name: str) -> tuple[
+        platform_name: str,
+        child_policy: Mapping[str, Any] | None = None) -> tuple[
             list[Observation], dict[str, Any]]:
     """Reconstruct one complete stage from its product and control logs."""
     if stage not in index["sample_stages"]:
@@ -337,8 +444,17 @@ def replay_stage(
         for row in entries if row["kind"] == "control"}
     workloads = {workload["id"]: workload for workload in contract["workloads"]}
     strata = {stratum["id"]: stratum for stratum in contract["strata"]}
-    observations = []
-    for stratum_id, executable in _product_shapes(contract, runner):
+    if runner.get("measurement_adapter") == \
+            "structured-paired-process-v1":
+        observations = _replay_structured_products(
+            by_product, contract, runner, stage=stage,
+            platform_name=platform_name, child_policy=child_policy)
+    else:
+        observations = []
+    for stratum_id, executable in (
+            [] if runner.get("measurement_adapter") ==
+            "structured-paired-process-v1" else
+            _product_shapes(contract, runner)):
         stratum = strata[stratum_id]
         required = {
             workload["id"] for workload in contract["workloads"]
@@ -392,6 +508,15 @@ def replay_stage(
             expected = {"execution_order": order}
             if platform_name == "macos":
                 expected.update({"apple_qos": "user-interactive", "qos_ok": "1"})
+            topology = _topology_telemetry_expectations(child_policy)
+            if topology:
+                expected.update({
+                    "affinity_topology": topology["affinity_topology"],
+                    "caller_cpu": str(child_policy["caller_logical_cpu"]),
+                    "parent_mask": topology["parent_mask"],
+                    "priority": topology["priority"],
+                    "affinity_ok": "1",
+                })
             expected["run_nonce"] = by_control[(order, run)]["run_nonce"]
             _telemetry(text, CONTROL_TELEMETRY_PREFIX, expected)
             parsed_runs.append(parse_nanobench(text))
@@ -401,9 +526,10 @@ def replay_stage(
 
 def replay_final_stage(
         index: Mapping[str, Any], contract: Mapping[str, Any],
-        runner: Mapping[str, Any], *, platform_name: str) -> tuple[
+        runner: Mapping[str, Any], *, platform_name: str,
+        child_policy: Mapping[str, Any] | None = None) -> tuple[
             list[Observation], dict[str, Any]]:
     """Reconstruct product observations and controls from final-stage logs."""
     return replay_stage(
         index, contract, runner, stage=index["sample_stages"][-1],
-        platform_name=platform_name)
+        platform_name=platform_name, child_policy=child_policy)

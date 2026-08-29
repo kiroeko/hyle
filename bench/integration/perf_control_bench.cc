@@ -115,6 +115,8 @@ int main() {
   const auto qos = hyle::bench::perf::configure_thread_qos();
   const auto affinity = hyle::bench::perf::configure_thread_affinity(
       "HYLE_PERF_CALLER_CPU");
+  const char *parent_mask = std::getenv("HYLE_PERF_PARENT_MASK");
+  const char *priority = std::getenv("HYLE_PERF_PRIORITY");
   auto *values = new std::uint64_t[kLogicalOperationCount];
   for (std::size_t index = 0; index < kLogicalOperationCount; ++index)
     values[index] = static_cast<std::uint64_t>(index + 1);
@@ -123,10 +125,13 @@ int main() {
   std::fprintf(stderr,
                "# HYLE_PERF_CONTROL_RUN execution_order=%s apple_qos=%s "
                "qos_ok=%s affinity_topology=%s caller_cpu=%s affinity_ok=%s "
+               "parent_mask=%s priority=%s "
                "base_work=%zu delta5_work=%zu "
                "delta10_work=%zu run_nonce=%s\n",
                peer_first ? "peer-first" : "candidate-first", qos.name,
                qos.ok, affinity.topology, affinity.cpu, affinity.ok,
+               parent_mask != nullptr ? parent_mask : "not-applicable",
+               priority != nullptr ? priority : "not-applicable",
                kBaseWorkCount, kFivePercentWorkCount,
                kTenPercentWorkCount, hyle::bench::perf::run_nonce());
   bench_timer_floor<1>(values, peer_first);

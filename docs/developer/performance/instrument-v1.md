@@ -67,6 +67,15 @@ caller CPU，并确定下一颗同 efficiency class、不同 physical-core 的 w
 adapter 准入；其他 OS 会 fail closed，而不是伪造 hard affinity。旧合同省略该字段时仍保持原有单核
 policy 和 contract/manifest replay 语义。
 
+固定 worker 数的并发 replay 可以声明
+`sampling_topology=n-worker-physical-cores` 与 `sampling_worker_count=N`。Windows backend 从同一次
+host probe 中，以登记 caller 的 processor group 和最高 efficiency class 为边界，每个 physical core
+只选择一个 logical sibling；选择结果、parent process mask、每个 worker 的 singleton mask、CPU Set id、
+core id 与 priority 全部进入 child policy。workload 必须逐 worker 应用 singleton mask，并在每个进程
+回报 requested/observed CPU、worker/work/callback 守恒；只继承宽 parent mask、硬编码一台机器的 CPU
+编号或仅回报“affinity 调用成功”均 fail closed。该拓扑目前同样只在 Windows 准入，不改变历史
+`cross-core-pair` 的 caller/next-core 选择语义。
+
 ## 4. Experiment contract v1
 
 正式 experiment contract 至少冻结：
@@ -83,8 +92,9 @@ policy 和 contract/manifest replay 语义。
 - estimator、固定样本数和唯一允许的升级计划；
 - required controls、artifact validators 和 host requirements；
 - compiler、ISA、LTO、linkage 与资源预算。
-- 对并发负载，冻结 `single-logical-cpu` 或 `cross-core-pair` sampling topology，并由角色 telemetry
-  证明实际落点；不得用“进程允许两个 CPU”代替线程角色归属。
+- 对并发负载，冻结 `single-logical-cpu`、`cross-core-pair` 或带固定 worker count 的
+  `n-worker-physical-cores` sampling topology，并由角色 telemetry 证明实际落点；不得用进程允许的
+  CPU 集代替线程角色归属。
 
 运行前生成 immutable experiment-lock hash。CLI 只允许提供 checkout/build/output/peer 路径和
 machine profile，不能覆盖 pair、margin、规模或停止条件。
@@ -145,9 +155,12 @@ P1 的 denominator/value 可以表达组件 replay fidelity 与预冻结 non-inf
 - `observations.jsonl`、`summary.json`、`manifest.json`；
 - 任一必需记录缺失时 fail closed。
 
-measurement adapter 只把 nanobench/结构化 telemetry 转为 Observation。platform backend 只负责
-machine probe、affinity/QoS 与 artifact 身份。模块 plugin 只能声明 target、row mapping 和确实特有
-的 codegen、DSE、资源守恒 validator。
+measurement adapter 只把 nanobench/结构化 telemetry 转为 Observation。默认 adapter 从一个
+nanobench 进程中的 candidate/peer rows 配对；`structured-paired-process-v1` 则按冻结顺序分别启动
+candidate 与 peer product executable，并要求两侧使用同一 row set、worker 拓扑与工作量守恒后再
+配对。两者共用 Observation、统计、controls、停止规则和 raw replay，模块不得复制 runner 或自行
+解释区间。platform backend 只负责 machine probe、affinity/QoS 与 artifact 身份。模块 plugin 只能
+声明 target、row mapping 和确实特有的 codegen、DSE、资源守恒 validator。
 
 runner validator 是整个 artifact bundle 的全局完整性门，不存在“只影响某一 diagnostic row”的隐含
 scope；所以它只能检查 build/artifact/合同整体。某个 mechanism 或 diagnostic replay 特有的风险应放在
@@ -156,8 +169,9 @@ validator 间接否决无关产品行。
 
 ## 6. CPU v1 controls 与按风险扩展
 
-当前 nanobench CPU adapter 对每个 workload 强制要求公共 A/A、5% delta、10% delta 和 timer-floor，
-并分别执行 candidate-first 与 peer-first。正式 qualification 每个 order 至少 15 个独立进程：
+当前 CPU v1 的 nanobench 与 structured paired-process adapter 对每个 workload 强制要求公共 A/A、
+5% delta、10% delta 和 timer-floor，并分别执行 candidate-first 与 peer-first。正式 qualification
+每个 order 至少 15 个独立进程：
 
 - A/A 使用同实现的等价两侧，固定 5% reciprocal band；两个 order 都必须裁决为 `PARITY`；
 - 5%/10% positive control 的区间下界都必须大于 1，中位数须分别落在 2.5%--7.5% 与
@@ -196,7 +210,8 @@ instrument version；模块任务内不能移动冻结终点。`probe` 的公共
 
 `validate` 只冻结并报告 contract hash。`verify` 则严格重放一个已有 manifest：复核 contract lock 与
 全部文件 hash；从 `raw-log-index` 按 stage/stratum/executable/order/run 精确闭包重新解析 nanobench
-原始日志、telemetry、observations 与 controls；从实际 CMakeCache、compiler/linker 和 product artifact
+或结构化 product 原始日志、topology/accounting telemetry、observations 与 controls；从实际
+CMakeCache、compiler/linker 和 product artifact
 重算 build/artifact gates；并从 registry 与 host probe 重算机器门。每次 child 都有 runner 生成的唯一
 `run_nonce`，索引拒绝重复 nonce 或完全相同的日志字节，因此复制一份 n=1 输出不能伪装成 n=15。一个
 `DIAGNOSTIC` manifest 可以完整通过 `verify`；这只证明证据未漂移且裁决可复现，不会把它升级为性能
@@ -307,6 +322,8 @@ v1 完成必须满足：
 - synthetic A/A、5%、10%、batch-matched timer floor 和双顺序可机械重放与裁决；
 - 每 child 唯一 nonce，raw logs 可重建 observations/controls/n=15 停止决策；相同 raw evidence
   确定地产生相同 summary；
+- N-worker 结构化进程必须证明不同 physical core、逐 worker requested/observed CPU 与
+  work/callback 守恒，且 candidate/peer row set 一致；
 - build/host/artifact/environment 漂移以及未登记 Formal 身份/工具链均 fail closed；
 - intrusive 与 error 两个不同消费者只通过 contract/mapping/窄 validator 接入；
 - 新普通 CPU 模块无需修改统计核心或复制 runner；

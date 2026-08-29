@@ -627,12 +627,16 @@ def _replay_registered_machine_gate(
         stored_probe.get("after"), "host-probe.after")
     sampling_topology = contract.get("extensions", {}).get(
         "runner", {}).get("sampling_topology", "single-logical-cpu")
+    sampling_worker_count = contract.get("extensions", {}).get(
+        "runner", {}).get("sampling_worker_count")
     recomputed_before = evaluate_machine_profile(
         profile, before, role=role, formal_claim=formal_claim,
-        sampling_topology=sampling_topology)
+        sampling_topology=sampling_topology,
+        sampling_worker_count=sampling_worker_count)
     recomputed_after = evaluate_machine_profile(
         profile, after, role=role, formal_claim=formal_claim,
-        sampling_topology=sampling_topology)
+        sampling_topology=sampling_topology,
+        sampling_worker_count=sampling_worker_count)
     if (recomputed_before.get("gate") != "PASS" or
             recomputed_after.get("gate") != "PASS"):
         raise ValidationError(
@@ -1086,6 +1090,7 @@ def validate_manifest(
 
     runner_schema = contract.get("extensions", {}).get(
         "runner", {}).get("schema")
+    child_policy: Mapping[str, Any] | None = None
     if runner_schema == "hyle.perf.nanobench-runner/v1":
         runner_validators = contract["extensions"]["runner"].get(
             "validators", [])
@@ -1366,7 +1371,7 @@ def validate_manifest(
                 verify_paths=True)
             replayed_observations, replayed_raw_controls = replay_final_stage(
                 raw_index, contract, contract["extensions"]["runner"],
-                platform_name=platform_name)
+                platform_name=platform_name, child_policy=child_policy)
             stored_observations = _load_observation_reference(
                 observation_reference, "manifest.observations", expected_lock)
             if not _canonical_equal(
@@ -1403,7 +1408,8 @@ def validate_manifest(
                 else:
                     first_observations, first_raw_controls = replay_stage(
                         raw_index, contract, contract["extensions"]["runner"],
-                        stage=schedule[0], platform_name=platform_name)
+                        stage=schedule[0], platform_name=platform_name,
+                        child_policy=child_policy)
                 first_controls = evaluate_cpu_controls(
                     contract, first_raw_controls, first_observations)
                 for control in first_controls:
