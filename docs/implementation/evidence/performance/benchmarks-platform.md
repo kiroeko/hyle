@@ -51,10 +51,19 @@ silently relabelled as the scheduler's normal cross-core worker topology.
   `C:\hyle-scratch\platform-perf-qualify-535e5820-evidence`; manifest SHA-256
   `2c0fdc3d650a49d18e3af298b910a25f1152ef72b296b98b943ca0c3cd4ea1c6`, summary
   SHA-256 `3bf1fd3ec40dac45418000bde08a927ba4f8648f17717fb0585af91b752b21d2`;
-- runner/verifier verdict: `QUALIFIED`, `paths_verified=true`, current engineering
-  policy eligible. Artifact identity, MSVC 19.50 Release/static/LTO-off build,
+- qualification-time runner/verifier verdict: `QUALIFIED`, `paths_verified=true`, engineering
+  policy eligible at that receipt. Artifact identity, MSVC 19.50 Release/static/LTO-off build,
   clean pinned peers, registered host, child affinity telemetry, A/A, 5%/10%
   known deltas, timer floor and placement controls all passed.
+
+> **Verifier compatibility on 2026-08-29.** Commit `2995286c` added
+> `TRACY_ONLY_LOCALHOST` to the global child sanitizer after this bundle was
+> sampled and initially made the verifier stop on an in-place v1 policy change.
+> The frozen contract fixes `HYLE_TRACE=OFF` and does not use the Tracy control.
+> After environment-policy versioning, today's CLI deep-replays the unchanged
+> manifest with `environment_policy_compatibility=LEGACY_COMPATIBLE_TRACE_DISABLED`,
+> `paths_verified=true`, and `qualification=QUALIFIED`. See the
+> [shared instrument rules](../../../developer/performance/instrument-v1.md).
 
 The n=15 run escalated by the frozen power rule to 31 independent process
 clusters. Handoff's eight median advantage ratios span 19.0693--23.1283; the
@@ -139,6 +148,9 @@ python scripts/hyle-perf.py verify `
   --contract bench/contracts/platform-consumer-v1.json
 ```
 
-`probe` only qualifies the instrument and estimates wall time. Only the
-independent-process `qualify-platform` manifest and a successful deep replay
-can carry the verdict; hand-written nanobench tables are not accepted evidence.
+`probe` only qualifies the instrument and estimates wall time. A new claim
+requires an independent-process `qualify-platform` manifest and a successful
+deep replay; hand-written nanobench tables are not accepted evidence. The
+exact retained path under "Qualified evidence" documents the historical receipt
+and exercises the explicit legacy-policy compatibility rule; verifying it does
+not create a new sample or renew the receipt under today's environment-policy identity.

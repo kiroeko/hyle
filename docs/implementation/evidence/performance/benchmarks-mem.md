@@ -87,6 +87,14 @@ overlay SHA-256 为 `612a0c7177732448372c90e66a592284426fc28547fda66cd1c9191b23d
 | owner | `911787ec1f4cc0b7c61d508cd2fea52a9baebbcb57ec29ebb19833e8df8e577e` | `be87b13ec7116e900b4415742e48a6aae27182fb1bf6f496d902904f6c282e8a` | `4cd891eae64846c358df8084cce90277fe20d4031a4a7c8b1ebb3512ab15d4c2` | QUALIFIED / PASS |
 | handoff | `415619a7875f77744444cb306c3214726291496370de605dc3e688768b202dd8` | `b082c033061973b1a50d6d24122670d21798df5849e6b4b99cee51ce4ef194fb` | `9f18e4837f80a7bf766f5c076f9a29b390e91fb15b2c24e5988962e475ae211e` | QUALIFIED / PASS |
 
+表中 verdict 是资格轮当时的 receipt。后续提交 `2995286c` 为 Tracy 增加了全局
+`TRACY_ONLY_LOCALHOST` sanitizer 项，曾因原地扩展 v1 让两个 bundle 的 verifier 停止。两份合同均
+明确 `HYLE_TRACE=OFF`，且 strata/controlled environment 未使用 Tracy 控制。环境策略版本化修复后，
+当前 CLI 对两份原 manifest 都返回
+`environment_policy_compatibility=LEGACY_COMPATIBLE_TRACE_DISABLED`、`paths_verified=true`、
+`qualification=QUALIFIED`。旧 manifest 与 hash 均未修改；规则见
+[统一性能仪器](../../../developer/performance/instrument-v1.md)。
+
 当前 engineering bundles 位于：
 
 ```text
@@ -103,7 +111,8 @@ python scripts/hyle-perf.py verify --contract bench/contracts/mem-owner-consumer
 python scripts/hyle-perf.py verify --contract bench/contracts/mem-handoff-consumer-v1.json --manifest C:\hyle-scratch\mem-v1-handoff-engineering-output\manifest.json
 ```
 
-重跑时必须换成全新的 build/output 路径；上面的现有路径用于核验当前 retained bundle，不应用于覆盖。
+重跑时必须换成全新的 build/output 路径；上面的 retained 路径不得覆盖。`verify` 只深回放原 receipt，
+不会生成新样本或自动续签 Formal。
 
 ## 5. 没有被本表冒充签署的内容
 

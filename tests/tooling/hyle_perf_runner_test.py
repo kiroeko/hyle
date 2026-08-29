@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import copy
 import json
 import hashlib
 import os
@@ -22,6 +23,7 @@ from hyle_perf.model import (  # noqa: E402
     Observation,
 )
 from hyle_perf.environment import (  # noqa: E402
+    child_environment_policy_compatibility,
     child_environment_policy_record,
     validate_child_environment_policy_record,
 )
@@ -49,6 +51,12 @@ from hyle_perf.runner import (  # noqa: E402
     validate_runner_extension,
 )
 from hyle_perf.model import Qualification, ValidationError  # noqa: E402
+from hyle_perf.provenance import (  # noqa: E402
+    PROVENANCE_EXACT,
+    PROVENANCE_REVIEWED_NON_MATERIAL,
+    resolve_provenance_compatibility,
+    validate_provenance_renewals,
+)
 
 
 def row_set(aa_ratio=1.0, delta5_ratio=1.05, delta10_ratio=1.10):
@@ -139,6 +147,114 @@ def gate_workload(identifier, control, *, tier="replay"):
 
 
 class RunnerControlsTest(unittest.TestCase):
+    def test_provenance_renewals_are_exact_reviewed_hash_chains(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = pathlib.Path(temporary)
+            task = root / "docs" / "review.md"
+            task.parent.mkdir(parents=True)
+            task.write_bytes(b"reviewed non-material change\n")
+            task_sha256 = hashlib.sha256(task.read_bytes()).hexdigest()
+            frozen = "1" * 64
+            middle = "2" * 64
+            current = "3" * 64
+
+            def edge(source, target):
+                return {
+                    "contract_id": "time-source-consumer-v1",
+                    "contract_sha256": "a" * 64,
+                    "workload_id": "scheduler-timer-lifecycle-64",
+                    "path": "src/sched/scheduler.cc",
+                    "from_sha256": source,
+                    "to_sha256": target,
+                    "decision": "NON_MATERIAL",
+                    "scope": "ENGINEERING_REPLAY_ONLY",
+                    "review_task": "docs/review.md",
+                    "review_task_sha256": task_sha256,
+                    "reason": "Only an adjacent API spelling changed.",
+                    "reviewed_contract_facts": [
+                        "ownership and charged phases are unchanged"],
+                }
+
+            ledger = validate_provenance_renewals({
+                "schema": "hyle.perf.provenance-renewals/v1",
+                "renewals": [edge(frozen, middle), edge(middle, current)],
+            })
+            exact = resolve_provenance_compatibility(
+                ledger, contract_id="time-source-consumer-v1",
+                contract_sha256="a" * 64,
+                workload_id="scheduler-timer-lifecycle-64",
+                provenance_path="src/sched/scheduler.cc",
+                frozen_sha256=frozen, current_sha256=frozen,
+                repository_root=root)
+            self.assertEqual(exact["compatibility"], PROVENANCE_EXACT)
+            self.assertEqual(exact["renewals"], [])
+
+            reviewed = resolve_provenance_compatibility(
+                ledger, contract_id="time-source-consumer-v1",
+                contract_sha256="a" * 64,
+                workload_id="scheduler-timer-lifecycle-64",
+                provenance_path="src/sched/scheduler.cc",
+                frozen_sha256=frozen, current_sha256=current,
+                repository_root=root)
+            self.assertEqual(
+                reviewed["compatibility"],
+                PROVENANCE_REVIEWED_NON_MATERIAL)
+            self.assertEqual(len(reviewed["renewals"]), 2)
+
+            with self.assertRaisesRegex(
+                    ValidationError, "no reviewed non-material renewal"):
+                resolve_provenance_compatibility(
+                    ledger, contract_id="different-contract",
+                    contract_sha256="a" * 64,
+                    workload_id="scheduler-timer-lifecycle-64",
+                    provenance_path="src/sched/scheduler.cc",
+                    frozen_sha256=frozen, current_sha256=current,
+                    repository_root=root)
+            with self.assertRaisesRegex(
+                    ValidationError, "Formal provenance must remain byte-exact"):
+                resolve_provenance_compatibility(
+                    ledger, contract_id="time-source-consumer-v1",
+                    contract_sha256="a" * 64,
+                    workload_id="scheduler-timer-lifecycle-64",
+                    provenance_path="src/sched/scheduler.cc",
+                    frozen_sha256=frozen, current_sha256=current,
+                    repository_root=root, allow_reviewed_renewals=False)
+
+            task.write_bytes(b"edited review\n")
+            with self.assertRaisesRegex(
+                    ValidationError, "review task file hash changed"):
+                resolve_provenance_compatibility(
+                    ledger, contract_id="time-source-consumer-v1",
+                    contract_sha256="a" * 64,
+                    workload_id="scheduler-timer-lifecycle-64",
+                    provenance_path="src/sched/scheduler.cc",
+                    frozen_sha256=frozen, current_sha256=current,
+                    repository_root=root)
+
+    def test_provenance_renewals_reject_branching_edges(self):
+        base = {
+            "contract_id": "time-source-consumer-v1",
+            "contract_sha256": "a" * 64,
+            "workload_id": "scheduler-timer-lifecycle-64",
+            "path": "src/sched/scheduler.cc",
+            "from_sha256": "1" * 64,
+            "to_sha256": "2" * 64,
+            "decision": "NON_MATERIAL",
+            "scope": "ENGINEERING_REPLAY_ONLY",
+            "review_task": "docs/review.md",
+            "review_task_sha256": "3" * 64,
+            "reason": "reviewed",
+            "reviewed_contract_facts": ["contract unchanged"],
+        }
+        branch = copy.deepcopy(base)
+        branch["to_sha256"] = "4" * 64
+        with self.assertRaisesRegex(
+                ValidationError, "duplicate/branching renewal edge"):
+            validate_provenance_renewals({
+                "schema": "hyle.perf.provenance-renewals/v1",
+                "renewals": [base, branch],
+            })
+
     def test_run_contract_holds_physical_host_mutex_for_entire_delegate(self):
         events = []
 
@@ -379,9 +495,60 @@ class RunnerControlsTest(unittest.TestCase):
     def test_child_environment_policy_cannot_be_self_reported_empty(self):
         record = child_environment_policy_record(path_value="test-path")
         self.assertEqual(
+            record["schema"], "hyle.perf.child-environment-policy/v2")
+        self.assertEqual(
             validate_child_environment_policy_record(record), record)
         with self.assertRaisesRegex(ValidationError, "invalid fields"):
             validate_child_environment_policy_record({})
+
+    def test_child_environment_policy_accepts_only_known_legacy_snapshots(self):
+        transitional = child_environment_policy_record(path_value="test-path")
+        transitional["schema"] = "hyle.perf.child-environment-policy/v1"
+        self.assertEqual(
+            validate_child_environment_policy_record(transitional),
+            transitional)
+        self.assertEqual(
+            child_environment_policy_compatibility(transitional, {}),
+            "LEGACY_SCHEMA_CURRENT_POLICY")
+
+        current = child_environment_policy_record(path_value="test-path")
+        self.assertEqual(
+            child_environment_policy_compatibility(current, {}), "CURRENT")
+
+        original = copy.deepcopy(transitional)
+        original["cleared_names"].remove("TRACY_ONLY_LOCALHOST")
+        self.assertEqual(validate_child_environment_policy_record(original),
+                         original)
+        trace_off_contract = {"extensions": {"runner": {
+            "cmake": {"cache": {"HYLE_TRACE": "OFF"}},
+            "controlled_environment": [],
+        }}, "strata": []}
+        self.assertEqual(
+            child_environment_policy_compatibility(
+                original, trace_off_contract),
+            "LEGACY_COMPATIBLE_TRACE_DISABLED")
+
+        trace_on_contract = copy.deepcopy(trace_off_contract)
+        trace_on_contract["extensions"]["runner"]["cmake"]["cache"][
+            "HYLE_TRACE"] = "ON"
+        with self.assertRaisesRegex(ValidationError, "does not prove Tracy"):
+            child_environment_policy_compatibility(
+                original, trace_on_contract)
+
+        weakened = copy.deepcopy(original)
+        weakened["cleared_names"].remove("LD_PRELOAD")
+        with self.assertRaisesRegex(ValidationError, "known .*snapshot"):
+            validate_child_environment_policy_record(weakened)
+
+        changed_fixed_value = copy.deepcopy(original)
+        changed_fixed_value["fixed_values"]["OMP_NUM_THREADS"] = "8"
+        with self.assertRaisesRegex(ValidationError, "known .*snapshot"):
+            validate_child_environment_policy_record(changed_fixed_value)
+
+        unknown = copy.deepcopy(original)
+        unknown["schema"] = "hyle.perf.child-environment-policy/v3"
+        with self.assertRaisesRegex(ValidationError, "unsupported"):
+            validate_child_environment_policy_record(unknown)
 
 
 def pilot_contract():

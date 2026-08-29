@@ -24,6 +24,7 @@ from hyle_perf.controls import (  # noqa: E402
 )
 from hyle_perf.evidence import (  # noqa: E402
     MANIFEST_SCHEMA,
+    _validate_product_evidence_extension,
     summarize_observations,
     validate_manifest,
 )
@@ -93,6 +94,8 @@ def contract():
                   "requirements": {}},
         "extensions": {"runner": {
             "schema": "hyle.perf.nanobench-runner/v1",
+            "cmake": {"cache": {"HYLE_TRACE": "OFF"}},
+            "controlled_environment": [],
             "validators": [
                 {"id": "artifact-identity", "kind": "artifact-identity"},
                 {"id": "build-contract", "kind": "build-contract"},
@@ -233,6 +236,128 @@ def materialize(directory: pathlib.Path):
 
 
 class RunnerEvidenceReplayTest(unittest.TestCase):
+    def test_product_provenance_drift_needs_exact_engineering_renewal(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = pathlib.Path(temporary)
+            provenance = root / "src" / "sched" / "scheduler.cc"
+            provenance.parent.mkdir(parents=True)
+            provenance.write_bytes(b"current consumer\n")
+            frozen_sha256 = hashlib.sha256(
+                b"frozen consumer\n").hexdigest()
+            current_sha256 = hashlib.sha256(
+                provenance.read_bytes()).hexdigest()
+            review = root / "docs" / "review.md"
+            review.parent.mkdir(parents=True)
+            review.write_bytes(b"non-material review\n")
+            review_sha256 = hashlib.sha256(review.read_bytes()).hexdigest()
+            contract_sha256 = "a" * 64
+            value = {"id": "time-source-consumer-v1", "workloads": [{
+                "id": "scheduler-timer-lifecycle-64",
+                "tier": "replay",
+                "gate_role": "product",
+                "comparability": "COMPARABLE",
+                "consumer_key": "sched/worker/timer-lifecycle",
+                "provenance": {
+                    "path": "src/sched/scheduler.cc",
+                    "sha256": frozen_sha256,
+                },
+                "ownership_topology": {},
+                "material_contribution": {},
+            }]}
+            extensions = {
+                "product_gate_policy": "consumer-evidence-v1",
+                "product_evidence": [{
+                    "id": "scheduler-timer-lifecycle-64",
+                    "tier": "replay",
+                    "gate": "PASS",
+                    "errors": [],
+                    "provenance_path": "src/sched/scheduler.cc",
+                    "provenance_file": {
+                        "path": str(provenance.resolve()),
+                        "sha256": frozen_sha256,
+                    },
+                }],
+                "product_gate_workloads": {
+                    "eligible": ["scheduler-timer-lifecycle-64"],
+                    "excluded": [],
+                },
+            }
+            ledger = {
+                "schema": "hyle.perf.provenance-renewals/v1",
+                "renewals": [{
+                    "contract_id": "time-source-consumer-v1",
+                    "contract_sha256": contract_sha256,
+                    "workload_id": "scheduler-timer-lifecycle-64",
+                    "path": "src/sched/scheduler.cc",
+                    "from_sha256": frozen_sha256,
+                    "to_sha256": current_sha256,
+                    "decision": "NON_MATERIAL",
+                    "scope": "ENGINEERING_REPLAY_ONLY",
+                    "review_task": "docs/review.md",
+                    "review_task_sha256": review_sha256,
+                    "reason": "adjacent API spelling only",
+                    "reviewed_contract_facts": [
+                        "ownership and charged phases unchanged"],
+                }],
+            }
+            compatibility = []
+            rows = _validate_product_evidence_extension(
+                extensions, value, qualification=Qualification.QUALIFIED,
+                verify_paths=True, contract_sha256=contract_sha256,
+                provenance_renewals=ledger,
+                provenance_repository_root=root,
+                provenance_compatibility=compatibility)
+            self.assertEqual(rows[0]["gate"], "PASS")
+            self.assertEqual(
+                compatibility[0]["compatibility"],
+                "REVIEWED_NON_MATERIAL")
+
+            with self.assertRaisesRegex(
+                    ValidationError, "no reviewed non-material renewal"):
+                _validate_product_evidence_extension(
+                    extensions, value,
+                    qualification=Qualification.QUALIFIED,
+                    verify_paths=True, contract_sha256=contract_sha256,
+                    provenance_repository_root=root)
+            with self.assertRaisesRegex(
+                    ValidationError, "Formal provenance must remain byte-exact"):
+                _validate_product_evidence_extension(
+                    extensions, value,
+                    qualification=Qualification.QUALIFIED,
+                    verify_paths=True, contract_sha256=contract_sha256,
+                    provenance_renewals=ledger,
+                    provenance_repository_root=root,
+                    allow_reviewed_renewals=False)
+
+    def test_known_legacy_environment_policy_replays_when_trace_is_disabled(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = pathlib.Path(temporary)
+            value, manifest = materialize(directory)
+            probe_path = pathlib.Path(
+                manifest["extensions"]["host_probe_file"]["path"])
+            probe = json.loads(probe_path.read_text(encoding="utf-8"))
+            legacy = probe["child_environment_policy"]
+            legacy["schema"] = "hyle.perf.child-environment-policy/v1"
+            legacy["cleared_names"].remove("TRACY_ONLY_LOCALHOST")
+            probe_reference = write_ref(directory, "legacy-host.json", probe)
+            manifest["extensions"]["host_probe_file"] = probe_reference
+            manifest["host"]["probe_sha256"] = probe_reference["sha256"]
+            manifest["host"]["child_environment_policy"] = legacy
+            with (mock.patch(
+                    "hyle_perf.evidence._replay_registered_machine_gate"),
+                  mock.patch(
+                    "hyle_perf.evidence.validate_build_artifact_replay",
+                    return_value={}),
+                  mock.patch("hyle_perf.evidence.validate_raw_log_index",
+                             return_value={}),
+                  mock.patch("hyle_perf.evidence.replay_final_stage",
+                             return_value=(observations(),
+                                           control_observations()))):
+                self.assertEqual(
+                    validate_manifest(manifest, value, verify_paths=True)[
+                        "qualification"],
+                    "QUALIFIED")
+
     def test_control_values_are_replayed_and_tampering_is_rejected(self):
         with tempfile.TemporaryDirectory() as temporary:
             directory = pathlib.Path(temporary)

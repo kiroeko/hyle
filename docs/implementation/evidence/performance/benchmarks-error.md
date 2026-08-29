@@ -39,9 +39,16 @@ retained bundle 位于
 observations SHA-256 分别为
 `0afe6d46813cab7c6b949b1f4478544c99b7f040054d579f6839bc19307b7c13` /
 `97873ce6a55d96792a3a269984488f95afa4233f5b2d1976a6259bd9b566d39f` /
-`6cc1921740edf57feecda19f4c0e15c96533cfa724ad6c133a1b63414611c408`。当前 verifier 返回
+`6cc1921740edf57feecda19f4c0e15c96533cfa724ad6c133a1b63414611c408`。v4 资格轮及当时的独立重放返回
 `qualification=QUALIFIED`、`paths_verified=true`、`current_certification_policy_eligible=true`。
-这是本机可深重放的工程证据，不是发布 artifact 或 Formal certificate。
+这是绑定当时 receipt 的本机工程证据，不是发布 artifact 或 Formal certificate。
+
+> **2026-08-29 回放兼容性：**后续提交 `2995286c` 为 Tracy 加入了全局
+> `TRACY_ONLY_LOCALHOST` sanitizer 项，曾因原地扩展 v1 使 verifier 停止。本合同明确
+> `HYLE_TRACE=OFF`，且 strata/controlled environment 未使用 Tracy 控制。环境策略版本化修复后，当前
+> CLI 对原 manifest 返回 `environment_policy_compatibility=LEGACY_COMPATIBLE_TRACE_DISABLED`、
+> `paths_verified=true`、`qualification=QUALIFIED`；旧 manifest 与 hash 均未修改。通用规则见
+> [统一性能仪器](../../../developer/performance/instrument-v1.md)。
 
 ## error-v3 证据纠正
 

@@ -105,7 +105,7 @@ C:\hyle-scratch\container-intrusive-v3\perf-qualify-b5816b8-output\manifest.json
 manifest SHA-256 是
 `3f081670022973a1b07ea6b4c04ab93b8d8fcbad61feef8bc6c584f30a10bd70`；summary SHA-256 是
 `f7c0b557fe81009c286f0f97b56d7b1dab7d274bd546efe08fd46d18e9db6fb4`；observations SHA-256 是
-`a6d1af6b796f586d89aded4afd89d792b29e66769bd15daa7728758cc55480d0`。严格重放命令：
+`a6d1af6b796f586d89aded4afd89d792b29e66769bd15daa7728758cc55480d0`。当前兼容性检查命令：
 
 ```powershell
 python scripts/hyle-perf.py verify `
@@ -113,13 +113,22 @@ python scripts/hyle-perf.py verify `
   --manifest C:\hyle-scratch\container-intrusive-v3\perf-qualify-b5816b8-output\manifest.json
 ```
 
-历史机械结果为 `qualification=QUALIFIED`、`paths_verified=true`；新 CLI 还会明确输出
-`product_gate_policy=null`、`current_certification_policy_eligible=false` 和
-`product_interpretation=INCONCLUSIVE`。这不撤销 v3 当时签署的 engineering closure，但说明旧合同只可
-deep verify，不能按当前 consumer-key policy 续签或进入 Formal。若 live bundle 丢失或需要 refresh，
-必须冻结带显式 `gate_role`、consumer provenance、ownership 和 material contribution 的新 contract ID。
-Formal 还必须保留可独立获取的签名 artifact bundle，不能把这些绝对路径或 Windows 一机证据改名为
-发布证书。
+该包在 v3 轮当时的机械结果为 `qualification=QUALIFIED`、`paths_verified=true`；后来加入
+consumer-key policy 的 CLI 还曾把它解释为 `product_gate_policy=null`、
+`current_certification_policy_eligible=false`、`product_interpretation=INCONCLUSIVE`。
+
+> **2026-08-29 回放兼容性：**提交 `2995286c` 为 Trace-enabled Obs 资格运行把
+> `TRACY_ONLY_LOCALHOST` 加入全局 sanitizer，曾因原地扩展 v1 让 verifier 停止。冻结合同明确
+> `HYLE_TRACE=OFF`，且 strata/controlled environment 未使用 Tracy 控制。环境策略版本化修复后，当前
+> CLI 对原 manifest 返回 `environment_policy_compatibility=LEGACY_COMPATIBLE_TRACE_DISABLED`、
+> `paths_verified=true`、`qualification=QUALIFIED`。旧 manifest 与 hash 均未修改；v3 verdict 仍只绑定
+> 原 receipt，且旧合同仍因 `product_gate_policy=null` 不能续签当前 Formal。规则见
+> [统一性能仪器](../../../developer/performance/instrument-v1.md)。
+
+这不撤销 v3 当时签署的 engineering closure，也不能把旧合同按当前 consumer-key policy 续签或送入
+Formal。若 live bundle 丢失或 owner 要求 refresh，必须冻结带显式 `gate_role`、consumer provenance、
+ownership 和 material contribution 的新 contract ID，并在兼容工具就位后重跑。Formal 还必须保留可
+独立获取的签名 artifact bundle，不能把这些绝对路径或 Windows 一机证据改名为发布证书。
 
 ## 正确性与结构证据边界
 
@@ -151,5 +160,7 @@ ownership 或 state-machine 合同不同，继续保留特化实现。TimerQueue
 模块，不能用来塑造本链表 API，也不能用本页替它们签署性能。
 
 只有以下事实重开本轮：真实 consumer 的 material regression；成熟同合同 peer 证明更优复杂度；
-算法/API/layout/compiler 或 delivery shape 变化；深重放 bundle 丢失且需要续签工程证据。LOC、API
+算法/API/layout/compiler 或 delivery shape 变化；bundle 丢失或 owner 需要用当前身份续签工程证据。
+只有 verifier 策略版本漂移、但尚无显式兼容规则证明 frozen artifact 不受影响时，才属于方法兼容缺口，
+也不单独重开产品。LOC、API
 数量、单次点值、稳定亚纳秒差或某一个 placement/order 翻转都不能单独驱动产品形状。

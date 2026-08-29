@@ -112,10 +112,24 @@ python scripts/hyle-perf.py verify `
   --manifest C:\hyle-scratch\time-v1-qualified-evidence\manifest.json
 ```
 
-当前 verifier 返回 `qualification=QUALIFIED`、`paths_verified=true`、
-`current_certification_policy_eligible=true`、`product_gate_policy=consumer-evidence-v1`。这是
-本机可深重放的工程证据，不是发布 artifact 或 Formal certificate；live bundle 丢失且需要续签时必须
-重新 qualification，不能只从本页点值恢复证书。
+资格轮当时的 verifier 返回 `qualification=QUALIFIED`、`paths_verified=true`、
+`current_certification_policy_eligible=true`、`product_gate_policy=consumer-evidence-v1`。这是绑定
+当时 candidate 与 scheduler provenance 的本机工程证据，不是发布 artifact 或 Formal certificate。
+
+> **2026-08-29 freshness：**manifest 锁定的 `src/sched/scheduler.cc` SHA-256 为
+> `f3db97bd536954082200cde1e86966083c3542daba832d72e629877213170934`，当前文件为
+> `d7ffc29eb6051cae3e723d6dfc67c6a860dbea3b4310f3d154adb282404f19a2`。逐项 diff 证明只有两处 Parker
+> API 注释改名和一处 `park_timeout(ns)`→`park_for(Duration)` 调用；它不在 replay/charged phases，
+> TimerQueue ownership、arm/cancel/advance/drain、metadata 与 contribution 均未变。独立
+> [provenance review](provenance-reviews/time-scheduler-timer-lifecycle-f3db-to-d7ff.md) 因而登记精确
+> `NON_MATERIAL / ENGINEERING_REPLAY_ONLY` 迁移。当前 CLI 报告
+> `provenance_compatibility=REVIEWED_NON_MATERIAL`、
+> `environment_policy_compatibility=LEGACY_COMPATIBLE_TRACE_DISABLED`、`paths_verified=true`、
+> `qualification=QUALIFIED`；旧 manifest 与 hash 均未修改。该 renewal 不处理 Time candidate 后另有的
+> 公开头产品身份变化，也不产生 Formal 资格。
+
+live bundle 丢失、consumer 语义/计费/贡献发生 material 变化，或需要 Formal/新声明时，必须冻结新的
+consumer identity 并重新 qualification，不能只从本页点值或 renewal 恢复证书。
 
 ## 未进入产品聚合的能力
 

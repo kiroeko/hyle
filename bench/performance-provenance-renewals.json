@@ -1,0 +1,24 @@
+{
+  "schema": "hyle.perf.provenance-renewals/v1",
+  "renewals": [
+    {
+      "contract_id": "time-source-consumer-v1",
+      "contract_sha256": "ab4223b7066e8540f15bbc6ad586ef7e37cf678feb877f408162e7d08bec2356",
+      "workload_id": "scheduler-timer-lifecycle-64",
+      "path": "src/sched/scheduler.cc",
+      "from_sha256": "f3db97bd536954082200cde1e86966083c3542daba832d72e629877213170934",
+      "to_sha256": "d7ffc29eb6051cae3e723d6dfc67c6a860dbea3b4310f3d154adb282404f19a2",
+      "decision": "NON_MATERIAL",
+      "scope": "ENGINEERING_REPLAY_ONLY",
+      "review_task": "docs/implementation/evidence/performance/provenance-reviews/time-scheduler-timer-lifecycle-f3db-to-d7ff.md",
+      "review_task_sha256": "4ddf68b2c4706d4087e41c29c9cf36c75b8ec4038346ad31703c555c9d0b7f49",
+      "reason": "Only the adjacent platform Parker API spelling and comments changed; the frozen TimerQueue ownership and arm/cancel/advance/drain replay contract is unchanged.",
+      "reviewed_contract_facts": [
+        "one single-owner TimerQueue remains owned by each scheduler worker",
+        "arm, cancel, monotonic advance and detached ready-list drain are unchanged",
+        "callback, data, owner metadata and all charged phases are unchanged",
+        "the changed Parker wait call is outside the replay and its charged phases"
+      ]
+    }
+  ]
+}

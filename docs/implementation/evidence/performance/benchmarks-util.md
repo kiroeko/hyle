@@ -37,12 +37,23 @@ known-delta、timer-floor、placement 和 provenance 资格门全部通过。`ad
 | short locked transition | placement / peer-first | 0.9950 | [0.9670, 1.0081] | PARITY / NI PASS |
 
 最终 engineering bundle 位于 W1 本地
-`C:\hyle-scratch\util-core-v1\perf-win-engineering-evidence-27d73a61\manifest.json`；独立 deep replay
-得到 `qualification=QUALIFIED`、`paths_verified=true`、`performance_gate=PASS`。文件 SHA-256：
+`C:\hyle-scratch\util-core-v1\perf-win-engineering-evidence-27d73a61\manifest.json`；资格轮当时的独立
+deep replay 得到 `qualification=QUALIFIED`、`paths_verified=true`、`performance_gate=PASS`。文件
+SHA-256：
 
 - manifest：`7027954068A7B5C1DDFC1ED2D83A3646F951694B90A19939FFD445ADF88FFEFB`；
 - summary：`F5AA7929521A101646D8DFFFF3A75C78AF4B7B7F4889F1629B1C6422894726D2`；
 - observations：`6BCB2FAD9541F08371DCB1ED7524AF6C9AF853C55F233BB188BE3352E9A880C7`。
+
+> **2026-08-29 回放兼容性：**后续提交 `2995286c` 为 Tracy 增加了全局
+> `TRACY_ONLY_LOCALHOST` sanitizer 项，并曾因原地扩展 v1 策略让当前 verifier 以
+> `child environment policy differs at 'cleared_names'` 停止。公共工具现已改为生成不可变 v2，并只
+> 接受两个已知 v1 精确指纹。本合同冻结的 runner cache 明确 `HYLE_TRACE=OFF`，且 strata/controlled
+> environment 均未使用 Tracy 控制；当前 CLI 因此报告
+> `environment_policy_compatibility=LEGACY_COMPATIBLE_TRACE_DISABLED`、`paths_verified=true`、
+> `provenance_compatibility=EXACT`、`qualification=QUALIFIED`。它的两个 provenance 是 package
+> util-core sample 与 `mem/fiber_stack.h`，不含 scheduler/Time；旧 manifest 与全部 hash 未修改。规则见
+> [统一性能仪器](../../../developer/performance/instrument-v1.md)。
 
 M1-MAC 针对同一 current oneTBB 的手工超短诊断按顺序完全翻转：candidate-first 时 HYLE/TBB
 约为 2.49/1.37 ns，peer-first 时 TBB/HYLE 约为 2.68/1.39 ns，且首项误差很大。也就是说无论谁

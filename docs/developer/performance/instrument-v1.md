@@ -109,6 +109,29 @@ P1 的 denominator/value 可以表达组件 replay fidelity 与预冻结 non-inf
 缺少显式角色或任一 product 行消费声明时，qualification 为 `DIAGNOSTIC`，聚合
 `performance_gate=INCONCLUSIVE`，不能写成产品 `FAIL`。
 
+### Consumer provenance 的非实质字节变化
+
+整文件 SHA-256 是默认的 fail-closed 地板，但“文件任何字节变化”不等于“冻结 workload 的消费者
+语义变化”。若一个大 consumer TU 只修改了与 replay 无关的注释或相邻 API，不能手改旧 manifest，
+也不应把 verifier 的停止误写成产品性能失败。当前工程回放使用
+`bench/performance-provenance-renewals.json` 的版本化精确迁移账本处理这种情况：
+
+- contract ID + semantic SHA-256、workload ID、repository-relative path、旧/新 SHA-256 必须全部
+  精确匹配；禁止 wildcard、branch 和“当前 HEAD”一类移动身份；
+- 每条 `NON_MATERIAL` 边绑定一份有自身 SHA-256 的 review record，逐项核对 semantic contract、
+  ownership topology、material contribution、charged phases、算法和 delivery；
+- verifier 只沿唯一无环 hash 链到达当前文件，并报告 `REVIEWED_NON_MATERIAL`、账本 hash 和实际
+  边；exact 文件报告 `EXACT`，没有 product provenance 报告 `NOT_APPLICABLE`；
+- 不存在精确迁移、审查记录被改、或上述任一产品事实发生变化时仍 fail closed；真实 material
+  consumer drift 必须冻结新 contract ID 并重新 qualification；
+- renewal 只允许历史 **engineering replay**。runner 生成新证据仍要求 byte-exact，Formal 也不接受
+  renewal，不能把人工 materiality review 冒充发布证书。
+
+这是一条可审计的证据兼容链，不是源文件 hash 的豁免表。它只说明旧统计结果仍对应同一个冻结消费
+命题；模块 candidate 之后另有公开头、算法或 delivery 变化时，仍按模块自己的 reopen trigger 裁决。
+首次实现与 Time 精确迁移事实见
+[`perf-provenance-renewal-v1`](../../implementation/tasks/performance/perf-provenance-renewal-v1.md)。
+
 ## 5. 通用核心与插件边界
 
 统一核心负责：
@@ -206,6 +229,32 @@ runner 还为每次启动加入 128-bit `HYLE_PERF_RUN_NONCE`；benchmark 只把
 它用于证明样本集合的进程边界与防止误复制，不是密码学签名。
 macOS orchestrator 还会在整个加锁运行作用域内应用并恢复 profile 的 QoS，使 build 前后 host probe
 与合同一致；每个 benchmark child 仍必须自行应用并通过 telemetry 证明同一 class。
+
+### 历史证据与环境策略演进
+
+`child_environment_policy` 是采样身份的一部分，但不能把“今天的 sanitizer 清单”误当成所有历史
+artifact 当时都必须记录的事实。旧 v1 曾在加入 Tracy blocklist 时被错误地原地扩展，因此仓内保留了
+“不含 Tracy”与“含 Tracy”两个真实 v1 指纹。runner 现在只生成不可变 v2；verifier 按 manifest 记录
+的 schema/完整字段验证已知精确指纹，不再拿今天生成的记录冒充旧证据当时的策略。
+
+遇到这种差异时必须：
+
+1. 保留旧 manifest、原始日志与 hash，禁止手工补字段或把今天的策略伪装成当时记录；
+2. 先比较唯一策略差异，再从 frozen contract、selected component、CMake option、链接产物和 runtime
+   dependency 证明它是否可能影响被测 artifact；
+3. 若 verifier 有显式兼容规则且 frozen contract 能证明差异与 artifact 无关，可继续深回放并单独报告
+   compatibility；若不能证明，当前回放记为 instrument compatibility `INCONCLUSIVE`；历史 verdict
+   仍绑定原 candidate/contract/instrument receipt；
+4. 若差异相关或无法排除，使用新 contract/instrument identity 重新 qualification，不继承旧产品门；
+5. 对活动收口轮，缺少所需 P1/P2 verdict 仍按硬门 `BLOCKED`；对已 `CLOSED` 模块的只读回放，按
+   `METHOD_GAP` 处理，不能仅凭工具策略漂移追溯改写产品状态。
+
+当前兼容规则只有一条：缺少 `TRACY_ONLY_LOCALHOST` 清理的原始 v1 只在 frozen runner cache 明确
+`HYLE_TRACE=OFF`，并且 controlled environment/全部 strata 都未使用该变量时，报告
+`LEGACY_COMPATIBLE_TRACE_DISABLED`。含 Tracy 的过渡 v1 报告 `LEGACY_SCHEMA_CURRENT_POLICY`，新 v2
+报告 `CURRENT`。任何其他删项、fixed value/prefix 变化或未知 schema 继续 fail closed；不得为了让旧包
+通过而放宽任意字段或重写 manifest。未来 CUDA、allocator 等策略变化必须新增不可变 schema 和明确
+兼容规则，不能再次原地修改 v2。
 
 nanobench runner v1 只接受 `machine-profile-bound` toolchain、fresh Release qualification 和
 **静态链接**：合同必须是 `linkage=static`，实际 CMake cache 必须证明 `HYLE_STATIC=ON`，并同时核验

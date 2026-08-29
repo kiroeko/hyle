@@ -20,7 +20,14 @@ from hyle_perf.contract import (  # noqa: E402
     product_evidence_contract_ready,
 )
 from hyle_perf.evidence import load_and_validate_manifest  # noqa: E402
+from hyle_perf.environment import (  # noqa: E402
+    child_environment_policy_compatibility,
+)
 from hyle_perf.model import ValidationError  # noqa: E402
+from hyle_perf.provenance import (  # noqa: E402
+    load_provenance_renewals,
+    summarize_provenance_compatibility,
+)
 from hyle_perf.runner import (  # noqa: E402
     certify_manifests,
     run_contract,
@@ -82,6 +89,11 @@ def main() -> int:
         "verify", help="strictly replay one manifest and every referenced file")
     verify.add_argument("--contract", type=pathlib.Path, required=True)
     verify.add_argument("--manifest", type=pathlib.Path, required=True)
+    verify.add_argument(
+        "--provenance-renewals", type=pathlib.Path,
+        default=SCRIPT_DIRECTORY.parent / "bench" /
+        "performance-provenance-renewals.json",
+        help="exact reviewed hash-renewal ledger for engineering replay")
 
     for name in ("probe", "qualify-platform"):
         command = subparsers.add_parser(name)
@@ -122,21 +134,49 @@ def main() -> int:
         if args.command == "verify":
             contract = load_contract(args.contract)
             validate_runner_extension(contract)
+            renewals, renewals_sha256 = load_provenance_renewals(
+                args.provenance_renewals)
+            provenance_records = []
             manifest = load_and_validate_manifest(
-                args.manifest, contract, verify_paths=True)
+                args.manifest, contract, verify_paths=True,
+                provenance_renewals=renewals,
+                provenance_repository_root=SCRIPT_DIRECTORY.parent,
+                provenance_compatibility=provenance_records)
             policy = manifest.get("extensions", {}).get("product_gate_policy")
+            runner_schema = contract.get("extensions", {}).get(
+                "runner", {}).get("schema")
+            environment_compatibility = "NOT_APPLICABLE"
+            if runner_schema == "hyle.perf.nanobench-runner/v1":
+                environment_compatibility = (
+                    child_environment_policy_compatibility(
+                        manifest["host"]["child_environment_policy"],
+                        contract))
             current_policy_eligible = (
                 manifest["qualification"] == "QUALIFIED" and
                 policy == PRODUCT_GATE_POLICY and
                 product_evidence_contract_ready(contract))
+            provenance_compatibility = summarize_provenance_compatibility(
+                provenance_records)
+            applied_renewals = [
+                record for record in provenance_records
+                if record.get("renewals")
+            ]
             print(json.dumps({
                 "current_certification_policy_eligible":
                     current_policy_eligible,
                 "contract_sha256": manifest["contract_sha256"],
+                "environment_policy_compatibility": environment_compatibility,
                 "manifest": str(args.manifest.resolve()),
                 "paths_verified": True,
+                "provenance_compatibility": provenance_compatibility,
+                "provenance_renewal_ledger_sha256": (
+                    renewals_sha256 if applied_renewals else None),
+                "provenance_renewals_applied": applied_renewals,
                 "product_gate_policy": policy,
                 "product_interpretation": (
+                    ("CURRENT_POLICY_EVIDENCE_REQUIRES_GATE_REPLAY_WITH_"
+                     "REVIEWED_NON_MATERIAL_PROVENANCE")
+                    if current_policy_eligible and applied_renewals else
                     "CURRENT_POLICY_EVIDENCE_REQUIRES_GATE_REPLAY"
                     if current_policy_eligible else "INCONCLUSIVE"),
                 "qualification": manifest["qualification"],

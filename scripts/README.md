@@ -169,6 +169,17 @@ python scripts/hyle-perf.py verify \
   --manifest .scratch/perf-probe-error-evidence/manifest.json
 ```
 
+Product provenance remains byte-exact by default. For a historical engineering
+bundle whose large consumer source changed only outside the frozen workload,
+`verify` may use the repository's
+`bench/performance-provenance-renewals.json`. Every accepted edge binds the exact
+contract/workload/path and old/new SHA-256 plus a hashed review record; output
+reports `EXACT` or `REVIEWED_NON_MATERIAL` and the applied edges. Unknown drift,
+edited reviews, and Formal evidence still fail closed. The ledger never changes
+the old manifest and is not used by `probe` or `qualify-platform` to bypass their
+byte-exact pre-sampling gate. A different ledger can be supplied explicitly with
+`--provenance-renewals PATH`.
+
 For `error-p1-v1`, recomputed gates remain original-contract computed fields;
 verification retains raw evidence but cannot restore a current product verdict.
 
@@ -207,6 +218,15 @@ common math runtimes to one thread and then applies only contract-reviewed
 environment additions. This is a sanitizer, not a fully empty environment:
 ordinary variables remain and the evidence stores a `PATH` hash rather than raw
 environment contents.
+
+New evidence records the immutable child-environment policy as
+`hyle.perf.child-environment-policy/v2`. `verify` validates the policy snapshot
+stored by the evidence rather than substituting today's blocklist, and reports
+`environment_policy_compatibility`. The only accepted pre-v2 exception is an
+exact known v1 fingerprint: an original v1 record that did not clear
+`TRACY_ONLY_LOCALHOST` additionally requires the frozen contract to prove
+`HYLE_TRACE=OFF` and no stratum/controlled environment use of that variable.
+Every other policy mutation or unknown schema fails closed.
 
 The nanobench adapter v1 accepts static linkage only and verifies the actual
 CMake cache has `HYLE_STATIC=ON`. This is an instrument limitation while shared

@@ -28,7 +28,7 @@ from hyle_perf.controls import (
     evaluate_cpu_controls,
     validate_cpu_control_observations,
 )
-from hyle_perf.environment import validate_child_environment_policy_record
+from hyle_perf.environment import child_environment_policy_compatibility
 from hyle_perf.machine import (
     evaluate_machine_profile,
     expected_child_policy,
@@ -50,6 +50,7 @@ from hyle_perf.model import (
     require_nonempty_string,
     require_positive_finite,
 )
+from hyle_perf.provenance import resolve_provenance_compatibility
 from hyle_perf.raw_replay import (
     replay_final_stage,
     replay_stage,
@@ -756,7 +757,12 @@ def _validate_file_reference(record: Any, field_name: str, *,
 def _validate_product_evidence_extension(
         extensions: Mapping[str, Any], contract: Mapping[str, Any], *,
         qualification: Qualification,
-        verify_paths: bool) -> Optional[list[dict[str, Any]]]:
+        verify_paths: bool,
+        contract_sha256: str,
+        provenance_renewals: Optional[Mapping[str, Any]] = None,
+        provenance_repository_root: Optional[pathlib.Path] = None,
+        provenance_compatibility: Optional[list[dict[str, Any]]] = None,
+        allow_reviewed_renewals: bool = True) -> Optional[list[dict[str, Any]]]:
     """Validate the current product-gate policy without rewriting v1 history."""
     policy = extensions.get("product_gate_policy")
     if policy is None:
@@ -811,10 +817,15 @@ def _validate_product_evidence_extension(
         if provenance_file is not None:
             provenance_file = _validate_file_reference(
                 provenance_file, name + ".provenance_file",
-                verify_path=verify_paths)
+                verify_path=False)
             if verify_paths:
-                actual_parts = pathlib.Path(
-                    provenance_file["path"]).resolve().parts
+                actual_path = pathlib.Path(
+                    provenance_file["path"]).resolve()
+                if not actual_path.is_file():
+                    raise ValidationError(
+                        f"{name}.provenance_file.path is not a file: "
+                        f"{actual_path}")
+                actual_parts = actual_path.parts
                 declared_parts = pathlib.PurePosixPath(
                     row["provenance_path"]).parts
                 if (len(actual_parts) < len(declared_parts) or
@@ -823,6 +834,24 @@ def _validate_product_evidence_extension(
                     raise ValidationError(
                         f"{name}.provenance_file path does not end in the "
                         "frozen repository-relative provenance path")
+                current_digest = _sha256_file(actual_path)
+                if provenance_repository_root is None:
+                    provenance_repository_root = actual_path
+                    for _ in declared_parts:
+                        provenance_repository_root = \
+                            provenance_repository_root.parent
+                compatibility = resolve_provenance_compatibility(
+                    provenance_renewals,
+                    contract_id=contract["id"],
+                    contract_sha256=contract_sha256,
+                    workload_id=workload["id"],
+                    provenance_path=row["provenance_path"],
+                    frozen_sha256=provenance_file["sha256"],
+                    current_sha256=current_digest,
+                    repository_root=provenance_repository_root,
+                    allow_reviewed_renewals=allow_reviewed_renewals)
+                if provenance_compatibility is not None:
+                    provenance_compatibility.append(compatibility)
         if row["gate"] == "PASS":
             if not workload_has_product_evidence(workload):
                 raise ValidationError(
@@ -878,7 +907,11 @@ def _validate_product_evidence_extension(
 
 def validate_manifest(
         record: Mapping[str, Any], contract_or_lock: Mapping[str, Any], *,
-        verify_paths: bool = False) -> dict[str, Any]:
+        verify_paths: bool = False,
+        provenance_renewals: Optional[Mapping[str, Any]] = None,
+        provenance_repository_root: Optional[pathlib.Path] = None,
+        provenance_compatibility: Optional[list[dict[str, Any]]] = None) \
+        -> dict[str, Any]:
     """Validate evidence binding; QUALIFIED manifests enforce every hard gate."""
     contract, digest = _contract_and_digest(contract_or_lock)
     expected_lock = make_contract_lock(contract)
@@ -1041,7 +1074,11 @@ def validate_manifest(
             data["extensions"], "manifest.extensions")
     product_evidence_rows = _validate_product_evidence_extension(
         extensions, contract, qualification=qualification,
-        verify_paths=verify_paths)
+        verify_paths=verify_paths, contract_sha256=digest,
+        provenance_renewals=provenance_renewals,
+        provenance_repository_root=provenance_repository_root,
+        provenance_compatibility=provenance_compatibility,
+        allow_reviewed_renewals=host.get("evidence_role") != "formal")
     if extensions.get("product_gate_policy") == PRODUCT_GATE_POLICY:
         required_controls = {
             control_id for workload in product_workloads(contract)
@@ -1249,8 +1286,8 @@ def validate_manifest(
                     "manifest.host.child_environment_policy differs from the "
                     "host-probe file")
             if runner_schema == "hyle.perf.nanobench-runner/v1":
-                validate_child_environment_policy_record(
-                    stored_probe.get("child_environment_policy"))
+                child_environment_policy_compatibility(
+                    stored_probe.get("child_environment_policy"), contract)
             machine_gate = require_json_object(
                 stored_probe["machine_gate"],
                 "manifest.extensions.host_probe_file.machine_gate")
@@ -1458,7 +1495,11 @@ def validate_manifest(
 
 def load_and_validate_manifest(
         path: pathlib.Path, contract_or_lock: Mapping[str, Any], *,
-        verify_paths: bool = True) -> dict[str, Any]:
+        verify_paths: bool = True,
+        provenance_renewals: Optional[Mapping[str, Any]] = None,
+        provenance_repository_root: Optional[pathlib.Path] = None,
+        provenance_compatibility: Optional[list[dict[str, Any]]] = None) \
+        -> dict[str, Any]:
     """Strictly load one manifest and replay its evidence bindings."""
     path = path.resolve()
     try:
@@ -1468,7 +1509,11 @@ def load_and_validate_manifest(
             from error
     record = require_json_object(
         _strict_json_loads(payload, f"manifest {path}"), f"manifest {path}")
-    return validate_manifest(record, contract_or_lock, verify_paths=verify_paths)
+    return validate_manifest(
+        record, contract_or_lock, verify_paths=verify_paths,
+        provenance_renewals=provenance_renewals,
+        provenance_repository_root=provenance_repository_root,
+        provenance_compatibility=provenance_compatibility)
 
 
 def validate_certification_manifests(
