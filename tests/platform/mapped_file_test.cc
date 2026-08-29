@@ -162,6 +162,9 @@ TEST_F(MapTest, PageLockGrowsMonotonicallyAndMovesWhenAvailable) {
       Status grown = m.lock_prefix(first + 1);
       if (grown.ok()) {
         EXPECT_GT(m.locked_size(), first);
+        const std::size_t grown_size = m.locked_size();
+        EXPECT_TRUE(m.lock_prefix(1).ok());
+        EXPECT_EQ(m.locked_size(), grown_size);
       } else {
         // A quota failure on the new native page must not forget the already
         // applied prefix.
@@ -189,6 +192,30 @@ TEST_F(MapTest, PageLockGrowsMonotonicallyAndMovesWhenAvailable) {
     EXPECT_TRUE(locked.IsPermissionDenied() || locked.IsResourceExhausted() ||
                 locked.IsUnavailable());
     EXPECT_FALSE(m.locked());
+  }
+}
+
+TEST_F(MapTest, PageLockSupportsEveryAccessModeAndResetClearsState) {
+  std::string init(page_size(), 'A');
+  write_file(init.data(), init.size());
+
+  constexpr MappedFile::Mode kModes[] = {
+      MappedFile::Mode::kReadOnly, MappedFile::Mode::kReadWrite,
+      MappedFile::Mode::kCopyOnWrite};
+  for (MappedFile::Mode mode : kModes) {
+    MappedFile m = open_map(mode);
+    Status locked = m.lock_prefix(1);
+    if (locked.ok()) {
+      EXPECT_TRUE(m.locked());
+      EXPECT_GE(m.locked_size(), 1u);
+      m.reset();
+      EXPECT_FALSE(m.valid());
+      EXPECT_FALSE(m.locked());
+      EXPECT_EQ(m.locked_size(), 0u);
+    } else {
+      EXPECT_TRUE(locked.IsPermissionDenied() ||
+                  locked.IsResourceExhausted() || locked.IsUnavailable());
+    }
   }
 }
 
