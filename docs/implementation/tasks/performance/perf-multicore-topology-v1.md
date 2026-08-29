@@ -1,6 +1,6 @@
 # 多生产者 CPU 性能仪器拓扑
 
-<!-- TOOL TASK: ACTIVE -->
+<!-- TOOL TASK: COMPLETE -->
 
 ## Finding
 
@@ -46,4 +46,27 @@ performance gate。未满足前，不在 obs 模块内继续发明 placement、p
   row set；raw verifier 从原始进程日志独立重建 topology、observations、controls 与停止决定；
 - W1-WIN dirty-source `probe` 已实际配置、编译当前与 `f305b9d3` baseline，运行冻结的
   8-producer × 1/4/16-sink 双进程 mapping，并由 `hyle-perf verify` 深重放通过。probe 只证明 plumbing，
-  按协议仍是 `DIAGNOSTIC / INCONCLUSIVE`；tooling tests 与 clean/fresh n=15→31 qualification 尚待完成。
+  按协议仍是 `DIAGNOSTIC / INCONCLUSIVE`。
+
+## Terminal verification
+
+- instrument commits：`63acf4a9ad71cd62fc0d566fc1e1423f9382a64d`（adapter）与
+  `8a704f7a22026a36cbc40a5efbf4a73c131ad50c`（qualified host replay 保留 worker count）；
+- 全部 `tests/tooling/*test.py`、`check-module-closure.py` 与 `check-docs.py` 通过。专门 canary 会拒绝
+  worker count/CPU/mask、observed placement、callback accounting、row set、pair mapping 或 raw replay
+  漂移；
+- clean detached source `8a704f7a`、fresh isolated W1-WIN Release build、immutable
+  `f305b9d3fed87a065d300145e5d9e8de3f5a77a0` peer 完成正式 `qualify-platform`。n=15 按冻结统计规则
+  升级并完整重跑 n=31；共保留 276 份 child raw log 与 372 条 Observation；A/A、5%/10% delta、
+  timer-floor、build/artifact、host/topology/accounting 和 deep replay gates 全部通过；
+- manifest：
+  `C:\hyle-scratch\obs-nworker-qualified-evidence-8a704f7a\manifest.json`，SHA-256
+  `3B4538580989A9665423E5C02E2C1B587E2FB75071D7223F9B71784731B05662`；独立 `hyle-perf verify`
+  报告 `QUALIFIED`、exact provenance 与 current environment policy；
+- summary SHA-256：`02DD48AC65558B78C4C2F21961D62F2F9FE74671528F4CDA3BF46B6DABFFDC72`。
+  1-sink throughput/tail 的 baseline NI 为 `PASS`；4/16-sink 部分 stratum 在 n=31 后仍为统计
+  `UNRESOLVED`，所以 Obs 产品聚合仍为 `INCONCLUSIVE`。这是该工具成功给出的产品 verdict，不是工具
+  blocker，也不得改写为 `FAIL` 或 `PASS`。
+
+本工具任务已满足原 resume condition 并停止。Obs 是否能关闭由新的产品 `RESUME` round 裁决；不得
+为了改变上述结果继续修改公共统计、margin、worker/chunk 形状或追加样本。
