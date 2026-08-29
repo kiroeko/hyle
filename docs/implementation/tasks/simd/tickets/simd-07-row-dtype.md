@@ -1,6 +1,6 @@
 # SIMD-07：Dtype、narrow 与普通 row ops
 
-- ticket state：`ACTIVE / AUDITED`
+- ticket state：`DONE`
 - kind：product capability/usability
 - depends on：SIMD-06
 - budget：1 工程日；性能预算 60 分钟
@@ -60,3 +60,49 @@ P1 只选基础 unary/binary/reduction、conversion 和 mixed-dot 代表行；�
 
 本票停止线是上述五项及 Windows/WSL/macOS、适用 SVE/RVV correctness 与三种交付门完成。activation、
 search/scan、bitpack/random、ordering 和 legacy backend 总删除分别属于 SIMD-08～12；不得在本票扩张。
+
+## 实现与验证结果
+
+- 普通 C++ row API 已补齐 f32/f64 add/subtract/multiply/divide/scale/add-scalar/affine/sum/abs/negate/
+  square/sqrt，并保留 dot/saxpy。五种公开 storage 间的 20 条不同类型有向转换统一为可发现的
+  `convert(src, dst, n)` overload；alias、zero、tail、RNE、saturation 与 NaN 合同由公共测试锁定。
+- common ops、dtype 和 narrow target TU 直接实例化锁定 Highway fixed/scalable templates；只保留 fp8、
+  f16 widen-dot、整数 modulo dot、F16C/BF16/VNNI 等具名 HYLE semantic/mechanism gap。重复 Highway
+  register DSL 的 installed `native/ops.h`、`narrow_float.h`、`narrow_algorithm.h` 已删除。
+- 固定 ISA/source expert 路线没有运行时分派；ordinary/fat 路线每个整段 buffer 只做一次缓存选择和一次
+  间接调用。`HWY_HEADER_ONLY` 避免引入第二个 Highway runtime ABI；static export 不再泄漏内部
+  `hyle_simd_source_expert` target。
+- Windows MSVC 19.50：fat shared SIMD 387/388 通过（1 个合法 AVX512BF16 skip），SSE4 301/301、AVX2
+  335/335、SSE4 AES 232/232；scalar/SSE4/AVX2 exact 的本票 filter 各 40/41 通过加 1 个合法 skip，
+  exact artifact 检查全部通过。
+- WSL GCC 14：Release/WERROR 的 fat、SSE4、AVX2、AES 结果与 Windows 对应门一致；exact-scalar ASan
+  本票 filter 40/41 通过加 1 个合法 skip且无 sanitizer finding。fat ASan 全 SIMD 因 SIMD-11 的旧
+  AVX512 VQSort object 编译超过十分钟而按票边界停止，未伪写 PASS，也不构成本票产品缺陷。
+- 同一 scalable binary 在 QEMU SVE VL 128/256/384/512/2048 与 RVV VLEN 128/256/512/1024 的本票
+  43 项 filter 均为 42 pass 加 1 个合法 x86-only skip。macOS M4 AppleClang 21 的 ordinary SIMD
+  378/378、NEON 304/304 通过；三平台 source、relocated shared、relocated static selected-component
+  consumer 均通过。
+
+## 有界性能 verdict
+
+本票签 `PASS / P1_ENGINEERING / 5% / NO MATERIAL LOSE`，不签“整个 SIMD SOTA”。W1-WIN、MSVC
+19.50、AVX2 的同 TU candidate/direct-Highway 对照通过 A/A、反序、双 layout 与 certification：工具对
+含 calibration anchor 的 15 行报告 7 `TIE`、8 `INCONCLUSIVE`、0 `LOSE`，paired center 均约在
+0–2%，没有 5% material regression。add/multiply 两边的测量主体各有 126 条完全相同的指令序列且无
+helper call；固定公开入口只尾调用 target body，ordinary/fat 只有一次 buffer-boundary 间接调用。
+完整合同、原始日志、hash 与未签范围见
+[SIMD-07 performance evidence](../../../evidence/performance/simd-07-row-dtype.md)。
+
+## 终止 receipt
+
+- product output commit：`63a1e614c9a137c140216d1f744b9e0a7074edad`；48 个文件，2,599 additions、
+  3,030 deletions。
+- 四项 LOC 由该 immutable commit 以 `cloc 2.08`、
+  `python scripts/loc-report.py --module simd --commit 63a1e614 --self-check --json` 复算且
+  `self-check=pass`：全库代码 **310,043**；自实现包含测试 **120,715**；自实现不包含测试
+  **79,229**；当前 SIMD 实现 **33,546** 行。
+- known limits：scalable ISA 未签真硅性能；classic cl.exe direct Highway AVX-512 仍受上游 blocklist
+  限制；tensor stride/fusion/quant 属于 Compute；activation/search/scan/bitpack/random/ordering 与
+  legacy 总删除按 SIMD-08～12 继续。8 行 `INCONCLUSIVE` 只表示 exact tie/win 未裁决，不能写成胜利。
+- reopen：公开 row/dtype 合同出现可复现正确性缺陷，热循环出现第二次 dispatch/整段临时转换，三种交付
+  失效，或同合同真实 consumer 在资格化真机上复现超过 5% 的 material regression。
