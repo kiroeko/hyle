@@ -102,6 +102,7 @@ printf '#define HWY_COMPILE_ONLY_STATIC 1\n#define HYLE_SIMD_VARIANT_SUFFIX sve\
 $CXX $COMMON_FLAGS -c "$REPO/src/simd/runtime.cc" -o "$OUT/runtime.o"
 $CXX $COMMON_FLAGS -c "$REPO/src/simd/math/math_dispatch.cc" -o "$OUT/math_dispatch.o"
 $CXX $COMMON_FLAGS -c "$REPO/src/simd/math/transcendental_scalar.cc" -o "$OUT/math_scalar.o"
+$CXX $COMMON_FLAGS -c "$REPO/src/simd/math/activations.cc" -o "$OUT/math_activations.o"
 $CXX $COMMON_FLAGS -c "$REPO/src/simd/math/transcendental_highway_neon.cc" -o "$OUT/math_neon.o"
 $CXX $COMMON_FLAGS -c "$REPO/src/simd/dtype/dtype_dispatch.cc" -o "$OUT/dtype_dispatch.o"
 $CXX $COMMON_FLAGS -c "$REPO/src/simd/dtype/cvt_fp8_scalar.cc" -o "$OUT/dtype_fp8_scalar.o"
@@ -154,7 +155,8 @@ $CXX $FLAGS "$OUT/sve_test.o" \
   "$OUT/scan_test.o" \
   "$OUT/fixed128_bitpack_reference.o" \
   "$OUT/math_sve.o" "$OUT/math_neon.o" \
-  "$OUT/math_scalar.o" "$OUT/math_dispatch.o" "$OUT/cpu.o" "$OUT/error_status.o" \
+  "$OUT/math_scalar.o" "$OUT/math_activations.o" "$OUT/math_dispatch.o" \
+  "$OUT/cpu.o" "$OUT/error_status.o" \
   "$OUT/thread_test_stub.o" "$OUT/fat_scalar.o" "$OUT/fat_neon.o" "$OUT/fat_sve.o" \
   "$OUT/runtime.o" \
   "$OUT/dtype_sve.o" "$OUT/dtype_neon.o" "$OUT/dtype_scalar.o" \

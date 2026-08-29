@@ -118,6 +118,7 @@ run_tier() {
   $CXX $COMMON_FLAGS -c "$REPO/src/simd/runtime.cc" -o "$OUT/runtime_${name}.o"
   $CXX $COMMON_FLAGS -c "$REPO/src/simd/math/math_dispatch.cc" -o "$OUT/math_dispatch_${name}.o"
   $CXX $COMMON_FLAGS -c "$REPO/src/simd/math/transcendental_scalar.cc" -o "$OUT/math_scalar_${name}.o"
+  $CXX $COMMON_FLAGS -c "$REPO/src/simd/math/activations.cc" -o "$OUT/math_activations_${name}.o"
   $CXX $COMMON_FLAGS -c "$REPO/src/simd/dtype/dtype_dispatch.cc" -o "$OUT/dtype_dispatch_${name}.o"
   $CXX $COMMON_FLAGS -c "$REPO/src/simd/dtype/cvt_fp8_scalar.cc" -o "$OUT/dtype_fp8_scalar_${name}.o"
   $CXX $COMMON_FLAGS -c "$REPO/src/simd/bitpack/bitpack_dispatch.cc" -o "$OUT/bitpack_dispatch_${name}.o"
@@ -160,7 +161,8 @@ run_tier() {
     "$OUT/narrow_ops_test_${name}.o" \
     "$OUT/scan_test_${name}.o" \
     "$OUT/fixed128_bitpack_reference_${name}.o" \
-    "$OUT/math_rvv_${name}.o" "$OUT/math_scalar_${name}.o" "$OUT/math_dispatch_${name}.o" \
+    "$OUT/math_rvv_${name}.o" "$OUT/math_scalar_${name}.o" \
+    "$OUT/math_activations_${name}.o" "$OUT/math_dispatch_${name}.o" \
     "$OUT/dtype_rvv_${name}.o" "$OUT/dtype_scalar_${name}.o" \
     "$OUT/dtype_fp8_scalar_${name}.o" "$OUT/dtype_dispatch_${name}.o" \
     "$OUT/bitpack_rvv_${name}.o" "$OUT/bitpack_scalar_${name}.o" "$OUT/bitpack_dispatch_${name}.o" \
