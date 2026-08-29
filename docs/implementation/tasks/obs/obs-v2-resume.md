@@ -132,7 +132,7 @@ callback 语义、中央仪器、依赖图和交付 surface 均不在产品修�
   同步说明 listener、broadcast 与受信网络边界；
 - pre-freeze Windows focused evidence：fresh MSVC 19.50、selected `obs`、static，trace OFF 与 Tracy
   v0.14.1 trace ON 均为 3/3 `PASS`；ON 生成合同明确含两条 loopback environment property，运行期间
-  未请求 Windows firewall exception；
+  CTest 未被网络权限交互中断；
 - 性能产品 identity：相对 v1 candidate，唯一 product-path 变化为 public comment；`src/obs` 和机器码
   所有者不变。已资格化 n=31 bundle 因而仍绑定相同产品实现，不允许也不需要重跑。
 
@@ -140,3 +140,95 @@ callback 语义、中央仪器、依赖图和交付 surface 均不在产品修�
 `C:\hyle-scratch\obs-v2\transitions\module-status-before-candidate.json`，SHA-256
 `6D35299527F5FCE539E16DA7403CDBB2317A2678058DF36A0EDB06DC12E7FCF5`。candidate 后若改变上述公开
 contract、CTest policy、产品实现或冻结性能合同，必须退回 `AUDITED`。
+
+## Verification manifest
+
+candidate `ff925c0053e738fb48d98993e42750b593f3db22` 的 `src/obs` 相对 v1 candidate
+`2c784d9d6a925529995c6a5582d9bc373d91535d` 零 diff；`include/hyle/obs` 唯一 diff 是 no-yield
+contract 注释，公开 token、layout、导出函数和编译后实现不变。性能 bundle 可以按实现 identity 复用，
+但 correctness、公开头和交付按 closure card 在三平台重新运行。
+
+### Correctness risk matrix
+
+| Risk | verdict | candidate evidence / limitation |
+|---|---|---|
+| normal / empty / boundary / invalid input | `PASS` | W1-WIN MSVC 19.50、W1-WSL GCC 14.2、M1-MAC AppleClang 21 的 trace OFF/ON `ctest -L obs` 各 3/3；完整 `log_test` 覆盖 empty/exact views、capacity 64、invalid level/sink、format 与 default sink |
+| ownership / move / destroy | `PASS` | 同一 suite 覆盖 `SinkRegistration` create/reset/move/destructor、duplicate 与 late teardown；实现相对 v1 零 diff |
+| concurrency / reentrancy / quiescence | `PASS` | 同一 suite 覆盖 concurrent emit/mutation、remove wait/self-remove/cross-remove rejection、nested log/flush；no-yield 是公开 backend 前置条件，不制造一个挂起后仍期望成功的伪测试 |
+| OOM / allocation / system failure | `PASS` | emit/registry 无 module-owned heap；full registry 返回 `ResourceExhausted`；stderr durability 不作成功 receipt |
+| sanitizer | `PASS (identity-retained)` | v1 WSL ASan/UBSan/TSan 证据绑定完全相同的 `src/obs` 与 public tokens；v2 只有注释和 CTest policy，未伪造一次无语义作用的 sanitizer 重跑 |
+| real ISA / backend | `PASS` | Windows x64、WSL x86-64 与 Mac ARM64 都真实构建/运行 Tracy v0.14.1 trace ON；三端生成 CTest 均把 `TRACY_ONLY_LOCALHOST=1` 只附着在两个 executable tests |
+| cancel / close | `NOT_APPLICABLE` | obs 不拥有后台 worker、queue 或 async operation；同步 callback 返回就是边界，异步 shutdown 属于 adapter |
+
+Windows scratch：`C:\hyle-scratch\obs-v2\{win-off,win-on,selected-smoke}`；WSL scratch：
+`/tmp/hyle-obs-v2/{wsl-off,wsl-on,selected-smoke}`；Mac 独立 candidate checkout/scratch：
+`/Users/kiro/hyle-scratch/obs-v2-ff925c00-20260829`。Mac 第一次指向旧的 header-only `~/tracy` 时因
+缺失锁定 `LICENSE` 在 configure 期正确失败；完整 expanded lock source 随后通过，未放松依赖校验。
+
+### Delivery / docs / red-team
+
+- W1-WIN、W1-WSL、M1-MAC 的 `HyleCiSelectedComponentSmoke` 均通过 source embedding、relocated
+  installed shared、relocated installed static consumer，各 journey 1/1；selected closure 仍为
+  `core,error,obs`，Windows DLL staging 与 Unix loader-relative lookup 均由真实 consumer 运行验证。
+- trace OFF/ON focused tests、public-header self-contained、typed sink、RAII lifetime 与 backend text
+  boundary 全通过；test-only environment 没有进入 install/export target，也没有新增 CMake option。
+- architecture 只记录同步 registry/TLS 与 trace network 决策；guide 按“何时用 log/trace、typed/explicit
+  sink、local/trusted network”给出 journey 和陷阱；performance 页已替换旧的“工具缺失”结论，绑定
+  qualified n=31 bundle。旧 task 只作历史输入。
+- 红队反向扫描了全部 Obs public surface、`extern "C"`、旧 C schema/bridge/sample/option、stale v1
+  current link、callback yield 文案和 Tracy network 文案；产品树没有 Native FFI/C ABI 遗物，没有
+  benchmark-only public seam。未发现冻结 ledger 外的 correctness/security/功能/API/交付缺口。
+
+### P1 engineering performance
+
+qualified bundle、hash、12 个 strata 与唯一机制诊断已写入
+[`benchmarks-obs.md`](../../evidence/performance/benchmarks-obs.md)。qualification、controls、placement、
+accounting、artifact/build identity 和 deep replay 全部 `PASS`；1-sink throughput/tail 的两个顺序均为
+5% NI `PASS`。4/16-sink 的部分 n=31 stratum 仍为 `UNRESOLVED`，所以聚合 engineering performance
+只能为 `INCONCLUSIVE`。candidate 没有实现变化，closure card 也禁止重复采样；本轮没有合法路径进入
+`VERIFIED`。
+
+## Owner 六问（终止直答）
+
+1. **第三方：**默认 log 产品路径不使用第三方实现，直接依赖 HYLE `core/error`、C++23 标准库与
+   Windows/POSIX OS API。`HYLE_TRACE=ON` 时直接产品依赖锁定 Tracy v0.14.1
+   `30997d5ca6bb632cc10807a1da8a6d3de0aeeb3c`：Tracy 拥有 profiler protocol/client mechanism，HYLE
+   拥有是否准入、native seam、单 client 与 package delivery 决策。GoogleTest v1.18.0
+   `063de7e9578f82b369302001269680b4b1553359` 仅为 test；Abseil `81c993af`、Folly `423fd7f8` 仅为
+   API/算法 peer；`f305b9d3` 是 HYLE 自身 immutable 性能基线，均不进入 log 产品实现。
+2. **功能：**当前推理基础设施准入的同步 structured record、compile/runtime gate、typed/explicit sink、
+   quiescent RAII、safe default sink、format 与 native trace zone/event/fiber/frame/memory/thread seam 均
+   `COMPLETE`。async queue/persistence/backpressure、application category/routing、metrics/OTLP 与 GPU
+   profiler policy 都有完整上层 owner/adapter route；当前没有未处置的 `MUST`，不声称未来永不新增。
+3. **性能：**模块仍是 `P1`。单线程正常 producer、1-sink 真并发与 native Tracy seam 通过冻结 budget/
+   baseline NI；4/16-sink qualified n=31 NI 统计未决，故聚合是 `INCONCLUSIVE`，不能回答“全面 SOTA”或
+   “已非劣”。复杂度仍为 gate O(1)、emit O(S) 下界、热路零 heap/mutation mutex。
+4. **旧 C ABI / Native FFI：**`N/A`。产品没有公开 C header/schema、`extern "C"` bridge/export、C/managed
+   sample、FFI option/target/package metadata 或为 FFI 支付的 layout/indirection；shared library 的 C++
+   decorated exports 不是 C ABI。未来只在具名 foreign-runtime consumer 通过全局准入后另行设计窄边界。
+5. **构建与导入：**三平台真实 source/static/shared consumer 全通过；中央 closure、selected headers、
+   `HYLE_STATIC`、shared export/import、runtime staging/loader path、relocation 和 exact package discovery
+   均由 consumer 而非 producer build 验证。Tracy 是显式 opt-in lock；残缺 source 会 fail closed。
+6. **C++ API 与文档：**普通用户以 `LogSink::from` + move-only `SinkRegistration` 自然管理 borrowed backend，
+   已有结构化数据使用 view/span，便利日志使用 compile/runtime gated macros；失败走 `Status/Result`，
+   teardown、并发、self/cross-remove、async copy、no-yield 和 Tracy 网络边界都能从 public header/guide
+   发现。architecture、guide、performance、task 已各守长期决策、用法、证据与历史职责。
+
+## Terminal determination
+
+功能、API、correctness、三平台交付、依赖、文档和红队门已通过，两个 v2 缺口均已完成；工程性能门
+仍为 `INCONCLUSIVE`。按冻结停止规则，本轮下一状态必须是 `BLOCKED from CANDIDATE`，不能进入
+`VERIFIED/CLOSED`，也不能继续研究或追加同合同样本。
+
+新的 blocker 不再属于公共工具：中央 N-worker 工具已完整工作。恢复只能由新的外部事实触发——具名
+推理 consumer 给出真实 4/16-sink fan-out、sink state 与 material KPI，从而允许重新 scope consumer
+合同；或出现可复现的产品机制并证明对该 consumer 有 material 影响。不得仅因换一天、换顺序或想取得
+PASS 而重放当前 n=31 合同。
+
+Candidate immutable LOC（`python scripts/loc-report.py --module obs --commit <candidate> --self-check
+--json`，self-check `PASS`）：
+
+1. 全库代码：309,831；
+2. 自实现包含测试：124,290；
+3. 自实现不包含测试：83,119；
+4. obs 实现：887（`include/hyle/obs` + `src/obs`）。

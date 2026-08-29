@@ -207,4 +207,4 @@ v0.14.1 的 runtime 开关只限制 listener；compile-time 同名宏才同时�
 性能数与仪器见
 [`../performance/benchmarks-obs.md`](../implementation/evidence/performance/benchmarks-obs.md)，
 当前模块任务见
-[`obs-v1-closure`](../implementation/tasks/obs/obs-v1-closure.md)。
+[`obs-v2-resume`](../implementation/tasks/obs/obs-v2-resume.md)。
