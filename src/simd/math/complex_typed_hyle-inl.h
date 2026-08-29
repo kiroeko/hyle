@@ -13,7 +13,12 @@
 // public D-tag vocabulary so the same body instantiates for AVX2, NEON, SVE and RVV.
 // Exceptional vectors use std::complex before any output store, preserving exact in-place use.
 
-namespace hyle_highway_math_detail {
+#ifndef HYLE_HIGHWAY_MATH_DETAIL_NAMESPACE
+#define HYLE_HIGHWAY_MATH_DETAIL_NAMESPACE hyle_highway_math_detail
+#define HYLE_HIGHWAY_MATH_DETAIL_NAMESPACE_DEFAULTED 1
+#endif
+
+namespace HYLE_HIGHWAY_MATH_DETAIL_NAMESPACE {
 using namespace hwy::HWY_NAMESPACE;
 
 template <typename T>
@@ -352,4 +357,9 @@ HYLE_FORCE_INLINE void complex_pow_typed_hyle(const T* zr, const T* zi, const T*
   }
 }
 
-}  // namespace hyle_highway_math_detail
+}  // namespace HYLE_HIGHWAY_MATH_DETAIL_NAMESPACE
+
+#if defined(HYLE_HIGHWAY_MATH_DETAIL_NAMESPACE_DEFAULTED)
+#undef HYLE_HIGHWAY_MATH_DETAIL_NAMESPACE_DEFAULTED
+#undef HYLE_HIGHWAY_MATH_DETAIL_NAMESPACE
+#endif

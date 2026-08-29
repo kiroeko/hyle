@@ -61,27 +61,29 @@ HYLE_COMPLEX_UNARY(tanh)
 
 HYLE_NOINLINE void candidate_sin(const float* sr, const float* si, float* dr, float* di,
                                  std::size_t n) noexcept {
-  hyle::simd::detail::complex_sincos_hyle<false>(sr, si, dr, di, n);
+  hyle_highway_math_detail::complex_sincos_hyle<false>(sr, si, dr, di, n);
 }
 HYLE_NOINLINE void candidate_cos(const float* sr, const float* si, float* dr, float* di,
                                  std::size_t n) noexcept {
-  hyle::simd::detail::complex_sincos_hyle<true>(sr, si, dr, di, n);
+  hyle_highway_math_detail::complex_sincos_hyle<true>(sr, si, dr, di, n);
 }
 HYLE_NOINLINE void candidate_tanh(const float* sr, const float* si, float* dr, float* di,
                                   std::size_t n) noexcept {
-  hyle::simd::detail::complex_ctanh_hyle(sr, si, dr, di, n);
+  hyle_highway_math_detail::complex_ctanh_hyle(sr, si, dr, di, n);
 }
 HYLE_NOINLINE void candidate_tan(const float* sr, const float* si, float* dr, float* di,
                                  std::size_t n) noexcept {
-  hyle::simd::detail::complex_tan_typed_hyle(sr, si, dr, di, n);
+  hyle_highway_math_detail::complex_tan_typed_hyle(sr, si, dr, di, n);
 }
 HYLE_NOINLINE void candidate_sinh(const float* sr, const float* si, float* dr, float* di,
                                   std::size_t n) noexcept {
-  hyle::simd::detail::complex_sinhcosh_typed_hyle<float, false>(sr, si, dr, di, n);
+  hyle_highway_math_detail::complex_sinhcosh_typed_hyle<float, false>(
+      sr, si, dr, di, n);
 }
 HYLE_NOINLINE void candidate_cosh(const float* sr, const float* si, float* dr, float* di,
                                   std::size_t n) noexcept {
-  hyle::simd::detail::complex_sinhcosh_typed_hyle<float, true>(sr, si, dr, di, n);
+  hyle_highway_math_detail::complex_sinhcosh_typed_hyle<float, true>(
+      sr, si, dr, di, n);
 }
 
 HYLE_NOINLINE void scalar_pow(const float* zr, const float* zi, const float* wr, const float* wi,
@@ -95,7 +97,7 @@ HYLE_NOINLINE void scalar_pow(const float* zr, const float* zi, const float* wr,
 
 HYLE_NOINLINE void candidate_pow(const float* zr, const float* zi, const float* wr, const float* wi,
                                  float* dr, float* di, std::size_t n) noexcept {
-  hyle::simd::detail::complex_cpow_hyle(zr, zi, wr, wi, dr, di, n);
+  hyle_highway_math_detail::complex_cpow_hyle(zr, zi, wr, wi, dr, di, n);
 }
 
 HYLE_NOINLINE void xsimd_pow(const float* zr, const float* zi, const float* wr, const float* wi,

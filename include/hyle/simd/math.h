@@ -118,28 +118,48 @@ HYLE_SIMD_API void tgamma_f32_batch(const float* src, float* dst, std::size_t n)
 HYLE_SIMD_API void hypot_f32_batch(const float* a, const float* b, float* dst, std::size_t n) noexcept;
 HYLE_SIMD_API void hypot_in_range_f32_batch(const float* a, const float* b, float* dst, std::size_t n) noexcept;
 
-// AI activation COMBINED cores (simd-design "AI 数学函数"). Unlike the per-op transcendentals
-// above (each borrows one vendor polynomial), these COMPOSE the vectorized cores into the shapes
-// the AI hot path needs -- HYLE-specific, not a single vendor op. They call the batch ops above
-// (which self-dispatch to the best tier), so no new per-tier wiring.
+// Model-independent f32 activation rows. Each entry selects one target-bound kernel and composes
+// the locked Highway math/register primitives inside that kernel; there is no hidden allocation,
+// full-buffer temporary, nested public dispatch, lock, or per-lane callback. All are O(n), O(1)
+// extra storage, support exact src == dst, and otherwise require disjoint ranges. n == 0 accepts
+// null pointers. NaNs propagate. ReLU maps both signed zeros to +0; the other piecewise functions
+// preserve the zero selected by their mathematical branch.
 //   gelu(x)      = 0.5 x (1 + erf(x/sqrt2))            -- exact Gaussian Error Linear Unit
 //   gelu_tanh(x) = 0.5 x (1 + tanh(sqrt(2/pi) x (1 + 0.044715 x^2)))  -- the tanh approximation
-//                  (matches ggml_gelu_f32; slightly cheaper, ~1e-3 off exact -- the common LLM form)
+//                  (the common ggml/LLM form; it is a distinct approximation contract)
 //   sigmoid(x)   = 1/(1 + exp(-x))                     -- logistic
 //   silu(x)      = x * sigmoid(x)                      -- SiLU/swish (Llama FFN gate)
-// All element-wise: dst[i] = f(src[i]). n arbitrary.
 HYLE_SIMD_API void gelu_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
 HYLE_SIMD_API void gelu_tanh_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
 HYLE_SIMD_API void sigmoid_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
 HYLE_SIMD_API void silu_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void relu_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void leaky_relu_f32_batch(const float* src, float negative_slope,
+                                        float* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void elu_f32_batch(const float* src, float alpha, float* dst,
+                                 std::size_t n) noexcept;
+// hard-sigmoid = clamp((x + 3) / 6, 0, 1); hard-swish = x * hard-sigmoid(x).
+HYLE_SIMD_API void hard_sigmoid_f32_batch(const float* src, float* dst,
+                                          std::size_t n) noexcept;
+HYLE_SIMD_API void hard_swish_f32_batch(const float* src, float* dst,
+                                        std::size_t n) noexcept;
 
-// softmax(x)[i] = exp(x[i] - max) / sum_j exp(x[j] - max)  -- IN PLACE.
-// Fused multipass: max → one vectorized exp (sum accumulated same chunks) → scale.
-// n == 0 is a no-op.
-HYLE_SIMD_API void softmax_f32(float* data, std::size_t n) noexcept;
-// log_softmax(x)[i] = (x[i] - max) - log(sum_j exp(x[j] - max))  -- in place, numerically stable.
-// max + sum-exp for logZ, then single subtract of (m + log s).
-HYLE_SIMD_API void log_softmax_f32(float* data, std::size_t n) noexcept;
+// Stable row reductions. The core is out-of-place and also supports exact src == dst; arbitrary
+// partial overlap is undefined. At least one finite lane is required. -inf mask lanes are valid
+// when another lane is finite. A row containing NaN or +inf, or an all--inf row, has no supported
+// normalizer and deterministically writes quiet NaN to every destination lane.
+HYLE_SIMD_API void softmax_f32(const float* src, float* dst,
+                               std::size_t n) noexcept;
+HYLE_SIMD_API void log_softmax_f32(const float* src, float* dst,
+                                   std::size_t n) noexcept;
+
+// Natural in-place conveniences; both route to the same exported out-of-place core.
+inline void softmax_f32(float* data, std::size_t n) noexcept {
+  softmax_f32(data, data, n);
+}
+inline void log_softmax_f32(float* data, std::size_t n) noexcept {
+  log_softmax_f32(data, data, n);
+}
 
 // ---- COMPLEX transcendentals --------------------------------------------------------------
 // Highway has no complex math surface. HYLE composes the locked Highway real primitives on

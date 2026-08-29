@@ -12,7 +12,12 @@
 // Pure HYLE SoA complex kernels. Requires HYLE_SIMD_TARGET_* defined before vec.h
 // in the including fixed-target Highway TU.
 
-namespace hyle_highway_math_detail {
+#ifndef HYLE_HIGHWAY_MATH_DETAIL_NAMESPACE
+#define HYLE_HIGHWAY_MATH_DETAIL_NAMESPACE hyle_highway_math_detail
+#define HYLE_HIGHWAY_MATH_DETAIL_NAMESPACE_DEFAULTED 1
+#endif
+
+namespace HYLE_HIGHWAY_MATH_DETAIL_NAMESPACE {
 using namespace hwy::HWY_NAMESPACE;
 
 HYLE_FORCE_INLINE bool complex_sincos_regular_lane(float real, float imag) noexcept {
@@ -276,4 +281,9 @@ HYLE_FORCE_INLINE void complex_cpow_hyle(const float* zr, const float* zi, const
   }
 }
 
-}  // namespace hyle_highway_math_detail
+}  // namespace HYLE_HIGHWAY_MATH_DETAIL_NAMESPACE
+
+#if defined(HYLE_HIGHWAY_MATH_DETAIL_NAMESPACE_DEFAULTED)
+#undef HYLE_HIGHWAY_MATH_DETAIL_NAMESPACE_DEFAULTED
+#undef HYLE_HIGHWAY_MATH_DETAIL_NAMESPACE
+#endif

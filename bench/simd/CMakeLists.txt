@@ -121,9 +121,12 @@ add_executable(hyle_math_scaling_bench math_scaling_bench.cc)
 target_link_libraries(hyle_math_scaling_bench PRIVATE hyle_simd nanobench)
 target_include_directories(hyle_math_scaling_bench PRIVATE "${PROJECT_SOURCE_DIR}")
 target_include_directories(hyle_math_scaling_bench SYSTEM PRIVATE
-  "${_hyle_bench_xsimd_dir}/include")
+  "${_hyle_bench_xsimd_dir}/include"
+  "${_hyle_bench_highway_dir}")
 if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
-  hyle_set_isa(math_scaling_bench.cc AVX2)
+  hyle_set_highway_target_isa(math_scaling_bench.cc AVX2)
+elseif(HYLE_TARGET_PROCESSOR MATCHES "arm64|aarch64|ARM64")
+  hyle_set_highway_target_isa(math_scaling_bench.cc NEON)
 endif()
 hyle_apply_warnings(hyle_math_scaling_bench)
 
@@ -145,15 +148,18 @@ elseif(HYLE_TARGET_PROCESSOR MATCHES "arm64|aarch64|ARM64")
 endif()
 hyle_apply_warnings(hyle_bitpack_bench)
 
-# AI activation + softmax + RNG throughput (directive3 P1 blind-spot fill). The activation
-# *_f32_batch come from hyle_simd (runtime-dispatched); the inline VectorXoshiro takes THIS TU's
-# vec.h backend, so pin HYLE_SIMD_TARGET_AVX2 on x86 to measure the real 256-bit RNG (else the
-# default 128-bit backend makes VectorXoshiro look slower than std::mt19937).
+# SIMD-08 bounded activation/softmax parity instrument. It instantiates the
+# shipping target helper beside an independently spelled direct Highway peer;
+# public/body rows expose the single allowed batch dispatch separately.
 add_executable(hyle_activation_bench activation_bench.cc)
 target_link_libraries(hyle_activation_bench PRIVATE hyle_simd nanobench)
+target_include_directories(hyle_activation_bench PRIVATE "${PROJECT_SOURCE_DIR}")
+target_include_directories(hyle_activation_bench SYSTEM PRIVATE
+  "${_hyle_bench_highway_dir}")
 if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
-  target_compile_definitions(hyle_activation_bench PRIVATE HYLE_SIMD_TARGET_AVX2)
-  hyle_set_isa(activation_bench.cc AVX2)
+  hyle_set_highway_target_isa(activation_bench.cc AVX2)
+elseif(HYLE_TARGET_PROCESSOR MATCHES "arm64|aarch64|ARM64")
+  hyle_set_highway_target_isa(activation_bench.cc NEON)
 endif()
 hyle_apply_warnings(hyle_activation_bench)
 

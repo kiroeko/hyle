@@ -253,6 +253,38 @@ HYLE_DEFINE_SCALAR_BINARY(float, f32, nextafter)
 HYLE_DEFINE_SCALAR_BINARY(double, f64, nextafter)
 #undef HYLE_DEFINE_SCALAR_BINARY
 
+#define HYLE_DEFINE_PUBLIC_ACTIVATION(name)                                  \
+  void name##_f32_batch(const float* src, float* dst,                        \
+                        std::size_t n) noexcept {                            \
+    HYLE_DISPATCH(name, f32, hyle, src, dst, n);                            \
+  }
+HYLE_DEFINE_PUBLIC_ACTIVATION(gelu)
+HYLE_DEFINE_PUBLIC_ACTIVATION(gelu_tanh)
+HYLE_DEFINE_PUBLIC_ACTIVATION(sigmoid)
+HYLE_DEFINE_PUBLIC_ACTIVATION(silu)
+HYLE_DEFINE_PUBLIC_ACTIVATION(relu)
+HYLE_DEFINE_PUBLIC_ACTIVATION(hard_sigmoid)
+HYLE_DEFINE_PUBLIC_ACTIVATION(hard_swish)
+#undef HYLE_DEFINE_PUBLIC_ACTIVATION
+
+void leaky_relu_f32_batch(const float* src, float negative_slope, float* dst,
+                          std::size_t n) noexcept {
+  HYLE_DISPATCH(leaky_relu, f32, hyle, src, negative_slope, dst, n);
+}
+
+void elu_f32_batch(const float* src, float alpha, float* dst,
+                   std::size_t n) noexcept {
+  HYLE_DISPATCH(elu, f32, hyle, src, alpha, dst, n);
+}
+
+void softmax_f32(const float* src, float* dst, std::size_t n) noexcept {
+  HYLE_DISPATCH(softmax, f32, hyle, src, dst, n);
+}
+
+void log_softmax_f32(const float* src, float* dst, std::size_t n) noexcept {
+  HYLE_DISPATCH(log_softmax, f32, hyle, src, dst, n);
+}
+
 #define HYLE_DEFINE_PUBLIC_COMPLEX_UNARY(type, tag, name)                    \
   void name##_##tag##_batch(const type* src_re, const type* src_im,           \
                             type* dst_re, type* dst_im,                       \

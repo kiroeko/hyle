@@ -512,58 +512,249 @@ TEST(Math, ActiveVariantReported) {
 #endif
 }
 
-// AI activation combined cores vs scalar reference. Tolerance is the ~3.5-ULP transcendental
-// class the underlying exp/tanh/erf inherit, with margin (the combine arithmetic adds a little).
-TEST(Math, Activations) {
-  std::vector<float> in;
-  for (int k = -100; k <= 100; ++k) in.push_back(static_cast<float>(k) * 0.1f);  // [-10,10]
-  const std::size_t n = in.size();
-  const float sq2inv = 0.70710678118654752440f, sq2pi = 0.79788456080286535588f, ca = 0.044715f;
-  std::vector<float> out(n);
+// Model-independent row activations are one target-bound pass: no allocation,
+// no nested public dispatch, exact alias is supported, and tails share the same
+// scalar semantic floor.
+TEST(Math, ActivationsMatchReferenceAndAlias) {
+  using Unary = void (*)(const float*, float*, std::size_t) noexcept;
+  struct UnaryCase {
+    const char* name;
+    Unary function;
+    double (*reference)(double);
+  };
+  constexpr double kSqrt2Inv = 0.70710678118654752440;
+  constexpr double kSqrt2OverPi = 0.79788456080286535588;
+  constexpr double kGeluCoefficient = 0.044715;
+  const auto gelu = [](double x) {
+    return 0.5 * x * (1.0 + std::erf(x * kSqrt2Inv));
+  };
+  const auto gelu_tanh = [](double x) {
+    return 0.5 * x *
+           (1.0 + std::tanh(kSqrt2OverPi * x *
+                            (1.0 + kGeluCoefficient * x * x)));
+  };
+  const auto sigmoid = [](double x) {
+    const double e = std::exp(-std::abs(x));
+    return x < 0.0 ? e / (1.0 + e) : 1.0 / (1.0 + e);
+  };
+  const auto silu = [](double x) {
+    const double e = std::exp(-std::abs(x));
+    const double s = x < 0.0 ? e / (1.0 + e) : 1.0 / (1.0 + e);
+    return x * s;
+  };
+  const auto relu = [](double x) { return x > 0.0 ? x : 0.0; };
+  const auto hard_sigmoid = [](double x) {
+    return std::min(1.0, std::max(0.0, (x + 3.0) / 6.0));
+  };
+  const auto hard_swish = [](double x) {
+    if (x <= -3.0) return 0.0;
+    if (x >= 3.0) return x;
+    return x * ((x + 3.0) / 6.0);
+  };
+  const UnaryCase cases[] = {
+      {"gelu", hyle::simd::gelu_f32_batch, gelu},
+      {"gelu_tanh", hyle::simd::gelu_tanh_f32_batch, gelu_tanh},
+      {"sigmoid", hyle::simd::sigmoid_f32_batch, sigmoid},
+      {"silu", hyle::simd::silu_f32_batch, silu},
+      {"relu", hyle::simd::relu_f32_batch, relu},
+      {"hard_sigmoid", hyle::simd::hard_sigmoid_f32_batch, hard_sigmoid},
+      {"hard_swish", hyle::simd::hard_swish_f32_batch, hard_swish},
+  };
 
-  hyle::simd::gelu_f32_batch(in.data(), out.data(), n);
-  for (std::size_t i = 0; i < n; ++i) {
-    const double ref = 0.5 * in[i] * (1.0 + std::erf(in[i] * (double)sq2inv));
-    EXPECT_NEAR(out[i], ref, std::abs(ref) * 1e-4 + 1e-5) << "gelu " << in[i];
+  for (std::size_t n : {std::size_t{1}, std::size_t{7}, std::size_t{8},
+                        std::size_t{9}, std::size_t{257}}) {
+    std::vector<float> input(n);
+    for (std::size_t i = 0; i < n; ++i) {
+      input[i] = -12.0f + 24.0f * static_cast<float>(i + 1) /
+                              static_cast<float>(n + 1);
+    }
+    for (const UnaryCase& op : cases) {
+      std::vector<float> output(n);
+      op.function(input.data(), output.data(), n);
+      auto in_place = input;
+      op.function(in_place.data(), in_place.data(), n);
+      for (std::size_t i = 0; i < n; ++i) {
+        const double expected = op.reference(input[i]);
+        const double tolerance = std::abs(expected) * 8e-6 + 2e-6;
+        EXPECT_NEAR(output[i], expected, tolerance)
+            << op.name << " n=" << n << " i=" << i;
+        EXPECT_FLOAT_EQ(in_place[i], output[i])
+            << op.name << " alias n=" << n << " i=" << i;
+      }
+    }
   }
-  hyle::simd::gelu_tanh_f32_batch(in.data(), out.data(), n);
-  for (std::size_t i = 0; i < n; ++i) {
-    const double x = in[i];
-    const double ref = 0.5 * x * (1.0 + std::tanh(sq2pi * x * (1.0 + ca * x * x)));
-    EXPECT_NEAR(out[i], ref, std::abs(ref) * 1e-4 + 1e-5) << "gelu_tanh " << in[i];
-  }
-  hyle::simd::sigmoid_f32_batch(in.data(), out.data(), n);
-  for (std::size_t i = 0; i < n; ++i)
-    EXPECT_NEAR(out[i], 1.0 / (1.0 + std::exp(-(double)in[i])), 1e-5) << "sigmoid " << in[i];
-  hyle::simd::silu_f32_batch(in.data(), out.data(), n);
-  for (std::size_t i = 0; i < n; ++i)
-    EXPECT_NEAR(out[i], in[i] / (1.0 + std::exp(-(double)in[i])), std::abs(in[i]) * 1e-5 + 1e-5) << "silu " << in[i];
+
+  hyle::simd::gelu_f32_batch(nullptr, nullptr, 0);
+  hyle::simd::gelu_tanh_f32_batch(nullptr, nullptr, 0);
+  hyle::simd::sigmoid_f32_batch(nullptr, nullptr, 0);
+  hyle::simd::silu_f32_batch(nullptr, nullptr, 0);
+  hyle::simd::relu_f32_batch(nullptr, nullptr, 0);
+  hyle::simd::hard_sigmoid_f32_batch(nullptr, nullptr, 0);
+  hyle::simd::hard_swish_f32_batch(nullptr, nullptr, 0);
 }
 
-// softmax / log_softmax: match a double-precision naive reference; softmax sums to 1.
-TEST(Math, Softmax) {
-  for (std::size_t n : {std::size_t{1}, std::size_t{7}, std::size_t{64}, std::size_t{1000}}) {
-    std::vector<float> x(n), sm(n);
-    for (std::size_t i = 0; i < n; ++i) x[i] = std::sin(static_cast<float>(i) * 0.7f) * 5.0f;  // spread
-    // reference (stable, double)
-    double mx = x[0];
-    for (std::size_t i = 1; i < n; ++i) mx = x[i] > mx ? x[i] : mx;
+TEST(Math, ParameterizedActivationsMatchReferenceAndAlias) {
+  std::vector<float> input(259);
+  for (std::size_t i = 0; i < input.size(); ++i) {
+    input[i] = -8.0f + 16.0f * static_cast<float>(i) /
+                           static_cast<float>(input.size() - 1);
+  }
+  std::vector<float> output(input.size());
+
+  constexpr float kSlope = 0.125f;
+  hyle::simd::leaky_relu_f32_batch(input.data(), kSlope, output.data(),
+                                   input.size());
+  auto in_place = input;
+  hyle::simd::leaky_relu_f32_batch(in_place.data(), kSlope, in_place.data(),
+                                   in_place.size());
+  for (std::size_t i = 0; i < input.size(); ++i) {
+    const float expected = input[i] >= 0.0f ? input[i] : kSlope * input[i];
+    EXPECT_FLOAT_EQ(output[i], expected) << "leaky_relu i=" << i;
+    EXPECT_FLOAT_EQ(in_place[i], output[i]) << "leaky_relu alias i=" << i;
+  }
+
+  constexpr float kAlpha = 1.25f;
+  hyle::simd::elu_f32_batch(input.data(), kAlpha, output.data(), input.size());
+  in_place = input;
+  hyle::simd::elu_f32_batch(in_place.data(), kAlpha, in_place.data(),
+                            in_place.size());
+  for (std::size_t i = 0; i < input.size(); ++i) {
+    const double expected = input[i] >= 0.0f
+                                ? input[i]
+                                : kAlpha * std::expm1(double(input[i]));
+    EXPECT_NEAR(output[i], expected, std::abs(expected) * 8e-6 + 2e-6)
+        << "elu i=" << i;
+    EXPECT_FLOAT_EQ(in_place[i], output[i]) << "elu alias i=" << i;
+  }
+
+  hyle::simd::leaky_relu_f32_batch(nullptr, kSlope, nullptr, 0);
+  hyle::simd::elu_f32_batch(nullptr, kAlpha, nullptr, 0);
+}
+
+TEST(Math, ActivationExceptionalValuesHaveStableSemantics) {
+  const float inf = std::numeric_limits<float>::infinity();
+  const float nan = std::numeric_limits<float>::quiet_NaN();
+  const std::array<float, 6> input = {-inf, -0.0f, 0.0f, inf, nan, -2.0f};
+  std::array<float, 6> output{};
+
+  const auto check_nan = [&] { EXPECT_TRUE(std::isnan(output[4])); };
+  hyle::simd::gelu_f32_batch(input.data(), output.data(), input.size());
+  EXPECT_EQ(output[0], 0.0f);
+  EXPECT_EQ(output[3], inf);
+  check_nan();
+  hyle::simd::gelu_tanh_f32_batch(input.data(), output.data(), input.size());
+  EXPECT_EQ(output[0], 0.0f);
+  EXPECT_EQ(output[3], inf);
+  check_nan();
+  hyle::simd::sigmoid_f32_batch(input.data(), output.data(), input.size());
+  EXPECT_EQ(output[0], 0.0f);
+  EXPECT_EQ(output[3], 1.0f);
+  check_nan();
+  hyle::simd::silu_f32_batch(input.data(), output.data(), input.size());
+  EXPECT_EQ(output[0], 0.0f);
+  EXPECT_EQ(output[3], inf);
+  check_nan();
+  hyle::simd::relu_f32_batch(input.data(), output.data(), input.size());
+  EXPECT_EQ(output[0], 0.0f);
+  EXPECT_EQ(output[3], inf);
+  EXPECT_FALSE(std::signbit(output[1]));
+  EXPECT_FALSE(std::signbit(output[2]));
+  check_nan();
+  hyle::simd::leaky_relu_f32_batch(input.data(), 0.25f, output.data(),
+                                   input.size());
+  EXPECT_EQ(output[0], -inf);
+  EXPECT_EQ(output[3], inf);
+  EXPECT_TRUE(std::signbit(output[1]));
+  check_nan();
+  hyle::simd::elu_f32_batch(input.data(), 0.5f, output.data(), input.size());
+  EXPECT_EQ(output[0], -0.5f);
+  EXPECT_EQ(output[3], inf);
+  EXPECT_TRUE(std::signbit(output[1]));
+  check_nan();
+  hyle::simd::hard_sigmoid_f32_batch(input.data(), output.data(),
+                                     input.size());
+  EXPECT_EQ(output[0], 0.0f);
+  EXPECT_EQ(output[3], 1.0f);
+  check_nan();
+  hyle::simd::hard_swish_f32_batch(input.data(), output.data(), input.size());
+  EXPECT_EQ(output[0], 0.0f);
+  EXPECT_EQ(output[3], inf);
+  check_nan();
+}
+
+// Stable finite rows, exact alias and disjoint output share the same core.
+TEST(Math, SoftmaxAndLogSoftmaxRows) {
+  hyle::simd::softmax_f32(static_cast<const float*>(nullptr), nullptr, 0);
+  hyle::simd::log_softmax_f32(static_cast<const float*>(nullptr), nullptr, 0);
+
+  for (std::size_t n : {std::size_t{1}, std::size_t{7}, std::size_t{8},
+                        std::size_t{9}, std::size_t{257},
+                        std::size_t{4096}}) {
+    std::vector<float> input(n);
+    for (std::size_t i = 0; i < n; ++i) {
+      input[i] = std::sin(static_cast<float>(i) * 0.7f) * 9.0f +
+                 std::cos(static_cast<float>(i) * 0.13f);
+    }
+    const double maximum =
+        *std::max_element(input.begin(), input.end());
+    std::vector<double> reference(n);
     double sum = 0.0;
-    std::vector<double> ref(n);
-    for (std::size_t i = 0; i < n; ++i) { ref[i] = std::exp((double)x[i] - mx); sum += ref[i]; }
-    for (std::size_t i = 0; i < n; ++i) ref[i] /= sum;
+    for (std::size_t i = 0; i < n; ++i) {
+      reference[i] = std::exp(double(input[i]) - maximum);
+      sum += reference[i];
+    }
+    for (double& value : reference) value /= sum;
 
-    sm = x;
-    hyle::simd::softmax_f32(sm.data(), n);
-    double got_sum = 0.0;
-    for (std::size_t i = 0; i < n; ++i) { EXPECT_NEAR(sm[i], ref[i], 1e-5) << "softmax n=" << n << " i=" << i; got_sum += sm[i]; }
-    EXPECT_NEAR(got_sum, 1.0, 1e-4) << "softmax sum n=" << n;
+    std::vector<float> softmax(n), log_softmax(n);
+    hyle::simd::softmax_f32(input.data(), softmax.data(), n);
+    hyle::simd::log_softmax_f32(input.data(), log_softmax.data(), n);
+    auto softmax_alias = input;
+    auto log_softmax_alias = input;
+    hyle::simd::softmax_f32(softmax_alias.data(), n);
+    hyle::simd::log_softmax_f32(log_softmax_alias.data(), n);
 
-    // log_softmax = log(softmax)
-    std::vector<float> ls = x;
-    hyle::simd::log_softmax_f32(ls.data(), n);
-    for (std::size_t i = 0; i < n; ++i)
-      EXPECT_NEAR(ls[i], std::log(ref[i]), 1e-4) << "log_softmax n=" << n << " i=" << i;
+    double observed_sum = 0.0;
+    for (std::size_t i = 0; i < n; ++i) {
+      EXPECT_NEAR(softmax[i], reference[i], 2e-6)
+          << "softmax n=" << n << " i=" << i;
+      EXPECT_FLOAT_EQ(softmax_alias[i], softmax[i])
+          << "softmax alias n=" << n << " i=" << i;
+      EXPECT_NEAR(log_softmax[i], std::log(reference[i]), 2e-5)
+          << "log_softmax n=" << n << " i=" << i;
+      EXPECT_FLOAT_EQ(log_softmax_alias[i], log_softmax[i])
+          << "log_softmax alias n=" << n << " i=" << i;
+      EXPECT_NEAR(log_softmax[i], std::log(double(softmax[i])), 2e-5)
+          << "softmax/log identity n=" << n << " i=" << i;
+      observed_sum += softmax[i];
+    }
+    EXPECT_NEAR(observed_sum, 1.0, 2e-5) << "softmax sum n=" << n;
+  }
+}
+
+TEST(Math, SoftmaxMasksAndRejectsUndefinedNormalizers) {
+  const float inf = std::numeric_limits<float>::infinity();
+  const float nan = std::numeric_limits<float>::quiet_NaN();
+  const std::array<float, 4> masked = {0.0f, -inf, -1.0f, -inf};
+  std::array<float, 4> softmax{}, log_softmax{};
+  hyle::simd::softmax_f32(masked.data(), softmax.data(), masked.size());
+  hyle::simd::log_softmax_f32(masked.data(), log_softmax.data(),
+                              masked.size());
+  EXPECT_EQ(softmax[1], 0.0f);
+  EXPECT_EQ(softmax[3], 0.0f);
+  EXPECT_EQ(log_softmax[1], -inf);
+  EXPECT_EQ(log_softmax[3], -inf);
+  EXPECT_NEAR(softmax[0] + softmax[2], 1.0f, 2e-6f);
+
+  const std::array<std::array<float, 4>, 3> invalid = {{
+      {0.0f, nan, -1.0f, 2.0f},
+      {0.0f, inf, -1.0f, 2.0f},
+      {-inf, -inf, -inf, -inf},
+  }};
+  for (const auto& row : invalid) {
+    hyle::simd::softmax_f32(row.data(), softmax.data(), row.size());
+    for (float value : softmax) EXPECT_TRUE(std::isnan(value));
+    hyle::simd::log_softmax_f32(row.data(), log_softmax.data(), row.size());
+    for (float value : log_softmax) EXPECT_TRUE(std::isnan(value));
   }
 }
 

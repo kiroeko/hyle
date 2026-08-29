@@ -11,17 +11,30 @@
 #include <cmath>
 #include <complex>
 #include <cstddef>
+#include <limits>
 #include <type_traits>
 
 #include "hwy/contrib/math/math-inl.h"
-#include "src/simd/math/complex_hyle-inl.h"
-#include "src/simd/math/complex_typed_hyle-inl.h"
 
 #ifndef HYLE_HIGHWAY_MATH_SUFFIX
 #error "Define HYLE_HIGHWAY_MATH_SUFFIX before including highway_math_kernel-inl.h"
 #endif
 
-namespace hyle_highway_math_detail {
+#define HYLE_HWY_DETAIL_NAMESPACE_I(suffix) \
+  hyle_highway_math_detail_##suffix
+#define HYLE_HWY_DETAIL_NAMESPACE_II(suffix) \
+  HYLE_HWY_DETAIL_NAMESPACE_I(suffix)
+#define HYLE_HWY_DETAIL_NAMESPACE \
+  HYLE_HWY_DETAIL_NAMESPACE_II(HYLE_HIGHWAY_MATH_SUFFIX)
+#define HYLE_HIGHWAY_MATH_DETAIL_NAMESPACE HYLE_HWY_DETAIL_NAMESPACE
+
+#include "src/simd/math/complex_hyle-inl.h"
+#include "src/simd/math/complex_typed_hyle-inl.h"
+
+// The detail namespace is target-qualified. This is not cosmetic: the same
+// header is instantiated into several ISA TUs, and target-dependent template
+// instantiations must never be COMDAT-folded across those TUs.
+namespace HYLE_HIGHWAY_MATH_DETAIL_NAMESPACE {
 using namespace hwy::HWY_NAMESPACE;
 
 enum class UnaryDomain {
@@ -236,10 +249,241 @@ void fdim_loop(const T* a, const T* b, T* dst, std::size_t n) noexcept {
       [](T x, T y) { return std::fdim(x, y); });
 }
 
-}  // namespace hyle_highway_math_detail
+constexpr float kActivationSqrt2Inv = 0.70710678118654752440f;
+constexpr float kActivationSqrt2OverPi = 0.79788456080286535588f;
+constexpr float kActivationGeluCoefficient = 0.044715f;
+
+HWY_INLINE float activation_sigmoid_scalar(float x) noexcept {
+  if (std::isnan(x)) return x;
+  const float e = std::exp(-std::abs(x));
+  return x < 0.0f ? e / (1.0f + e) : 1.0f / (1.0f + e);
+}
+
+HWY_INLINE float activation_gelu_scalar(float x) noexcept {
+  if (x == -std::numeric_limits<float>::infinity()) return 0.0f;
+  return 0.5f * x *
+         (1.0f + std::erf(x * kActivationSqrt2Inv));
+}
+
+HWY_INLINE float activation_gelu_tanh_scalar(float x) noexcept {
+  if (x == -std::numeric_limits<float>::infinity()) return 0.0f;
+  const float inner = kActivationSqrt2OverPi * x *
+                      std::fma(kActivationGeluCoefficient, x * x, 1.0f);
+  return 0.5f * x * (1.0f + std::tanh(inner));
+}
+
+HWY_INLINE float activation_silu_scalar(float x) noexcept {
+  if (x == -std::numeric_limits<float>::infinity()) return 0.0f;
+  return x * activation_sigmoid_scalar(x);
+}
+
+HWY_INLINE float activation_relu_scalar(float x) noexcept {
+  if (std::isnan(x)) return x;
+  return x > 0.0f ? x : 0.0f;
+}
+
+HWY_INLINE float activation_leaky_relu_scalar(float x,
+                                               float negative_slope) noexcept {
+  if (std::isnan(x)) return x;
+  return x >= 0.0f ? x : negative_slope * x;
+}
+
+HWY_INLINE float activation_elu_scalar(float x, float alpha) noexcept {
+  if (std::isnan(x)) return x;
+  return x >= 0.0f ? x : alpha * std::expm1(x);
+}
+
+HWY_INLINE float activation_hard_sigmoid_scalar(float x) noexcept {
+  if (std::isnan(x)) return x;
+  const float scaled = (x + 3.0f) / 6.0f;
+  if (scaled <= 0.0f) return 0.0f;
+  return scaled >= 1.0f ? 1.0f : scaled;
+}
+
+HWY_INLINE float activation_hard_swish_scalar(float x) noexcept {
+  if (std::isnan(x)) return x;
+  if (x <= -3.0f) return 0.0f;
+  if (x >= 3.0f) return x;
+  return x * ((x + 3.0f) / 6.0f);
+}
+
+template <class D, class V>
+HWY_INLINE V activation_gelu(const D d, const V x) noexcept {
+  const auto result =
+      Mul(Mul(Set(d, 0.5f), x),
+          Add(Set(d, 1.0f), Erf(d, Mul(x, Set(d, kActivationSqrt2Inv)))));
+  const auto negative_infinity = And(IsInf(x), Lt(x, Zero(d)));
+  return IfThenElse(negative_infinity, Zero(d), result);
+}
+
+template <class D, class V>
+HWY_INLINE V activation_gelu_tanh(const D d, const V x) noexcept {
+  const auto one = Set(d, 1.0f);
+  const auto inner =
+      Mul(Mul(Set(d, kActivationSqrt2OverPi), x),
+          MulAdd(Set(d, kActivationGeluCoefficient), Mul(x, x), one));
+  const auto result =
+      Mul(Mul(Set(d, 0.5f), x), Add(one, Tanh(d, inner)));
+  const auto negative_infinity = And(IsInf(x), Lt(x, Zero(d)));
+  return IfThenElse(negative_infinity, Zero(d), result);
+}
+
+template <class D, class V>
+HWY_INLINE V activation_sigmoid(const D d, const V x) noexcept {
+  const auto one = Set(d, 1.0f);
+  const auto e = Exp(d, Neg(Abs(x)));
+  const auto denominator = Add(one, e);
+  return IfThenElse(Lt(x, Zero(d)), Div(e, denominator),
+                    Div(one, denominator));
+}
+
+template <class D, class V>
+HWY_INLINE V activation_silu(const D d, const V x) noexcept {
+  const auto result = Mul(x, activation_sigmoid(d, x));
+  const auto negative_infinity = And(IsInf(x), Lt(x, Zero(d)));
+  return IfThenElse(negative_infinity, Zero(d), result);
+}
+
+template <class D, class V>
+HWY_INLINE V activation_relu(const D d, const V x) noexcept {
+  const auto result = IfThenElse(Gt(x, Zero(d)), x, Zero(d));
+  return IfThenElse(IsNaN(x), x, result);
+}
+
+template <class D, class V>
+HWY_INLINE V activation_leaky_relu(const D d, const V x,
+                                   float negative_slope) noexcept {
+  const auto result = IfThenElse(Ge(x, Zero(d)), x,
+                                 Mul(Set(d, negative_slope), x));
+  return IfThenElse(IsNaN(x), x, result);
+}
+
+template <class D, class V>
+HWY_INLINE V activation_elu(const D d, const V x, float alpha) noexcept {
+  // Clamp the inactive lanes to zero before Expm1 so positive infinity never
+  // enters a math approximation whose result will be discarded.
+  const auto negative = Mul(Set(d, alpha), Expm1(d, Min(x, Zero(d))));
+  const auto result = IfThenElse(Ge(x, Zero(d)), x, negative);
+  return IfThenElse(IsNaN(x), x, result);
+}
+
+template <class D, class V>
+HWY_INLINE V activation_hard_sigmoid(const D d, const V x) noexcept {
+  const auto scaled = Mul(Add(x, Set(d, 3.0f)), Set(d, 1.0f / 6.0f));
+  const auto result = Min(Set(d, 1.0f), Max(Zero(d), scaled));
+  return IfThenElse(IsNaN(x), x, result);
+}
+
+template <class D, class V>
+HWY_INLINE V activation_hard_swish(const D d, const V x) noexcept {
+  const auto middle = Mul(x, Mul(Add(x, Set(d, 3.0f)),
+                                 Set(d, 1.0f / 6.0f)));
+  const auto piecewise =
+      IfThenElse(Le(x, Set(d, -3.0f)), Zero(d),
+                 IfThenElse(Ge(x, Set(d, 3.0f)), x, middle));
+  return IfThenElse(IsNaN(x), x, piecewise);
+}
+
+HWY_INLINE void fill_invalid_row(float* dst, std::size_t n) noexcept {
+  const float value = std::numeric_limits<float>::quiet_NaN();
+  for (std::size_t i = 0; i < n; ++i) dst[i] = value;
+}
+
+HWY_INLINE bool activation_row_max(const float* src, std::size_t n,
+                                   float& maximum) noexcept {
+  const ScalableTag<float> d;
+  const std::size_t width = Lanes(d);
+  const auto positive_infinity =
+      Set(d, std::numeric_limits<float>::infinity());
+  auto maximum_v =
+      Set(d, -std::numeric_limits<float>::infinity());
+  bool invalid = false;
+  std::size_t i = 0;
+  for (; i + width <= n; i += width) {
+    const auto x = LoadU(d, src + i);
+    invalid = invalid || !AllFalse(d, Or(IsNaN(x), Eq(x, positive_infinity)));
+    maximum_v = Max(maximum_v, x);
+  }
+  maximum = ReduceMax(d, maximum_v);
+  for (; i < n; ++i) {
+    const float x = src[i];
+    if (std::isnan(x) || x == std::numeric_limits<float>::infinity()) {
+      invalid = true;
+    }
+    if (x > maximum) maximum = x;
+  }
+  return !invalid && std::isfinite(maximum);
+}
+
+HWY_INLINE void activation_softmax(const float* src, float* dst,
+                                   std::size_t n) noexcept {
+  if (n == 0) return;
+  float maximum = 0.0f;
+  if (!activation_row_max(src, n, maximum)) {
+    fill_invalid_row(dst, n);
+    return;
+  }
+
+  const ScalableTag<float> d;
+  const std::size_t width = Lanes(d);
+  const auto maximum_v = Set(d, maximum);
+  double sum = 0.0;
+  std::size_t i = 0;
+  for (; i + width <= n; i += width) {
+    const auto value = Exp(d, Sub(LoadU(d, src + i), maximum_v));
+    StoreU(value, d, dst + i);
+    sum += static_cast<double>(ReduceSum(d, value));
+  }
+  for (; i < n; ++i) {
+    const float value = std::exp(src[i] - maximum);
+    dst[i] = value;
+    sum += static_cast<double>(value);
+  }
+
+  const float inverse_scalar = static_cast<float>(1.0 / sum);
+  const auto inverse = Set(d, inverse_scalar);
+  i = 0;
+  for (; i + width <= n; i += width) {
+    StoreU(Mul(LoadU(d, dst + i), inverse), d, dst + i);
+  }
+  for (; i < n; ++i) dst[i] *= inverse_scalar;
+}
+
+HWY_INLINE void activation_log_softmax(const float* src, float* dst,
+                                       std::size_t n) noexcept {
+  if (n == 0) return;
+  float maximum = 0.0f;
+  if (!activation_row_max(src, n, maximum)) {
+    fill_invalid_row(dst, n);
+    return;
+  }
+
+  const ScalableTag<float> d;
+  const std::size_t width = Lanes(d);
+  const auto maximum_v = Set(d, maximum);
+  double sum = 0.0;
+  std::size_t i = 0;
+  for (; i + width <= n; i += width) {
+    sum += static_cast<double>(
+        ReduceSum(d, Exp(d, Sub(LoadU(d, src + i), maximum_v))));
+  }
+  for (; i < n; ++i) {
+    sum += static_cast<double>(std::exp(src[i] - maximum));
+  }
+
+  const float shift_scalar = maximum + static_cast<float>(std::log(sum));
+  const auto shift = Set(d, shift_scalar);
+  i = 0;
+  for (; i + width <= n; i += width) {
+    StoreU(Sub(LoadU(d, src + i), shift), d, dst + i);
+  }
+  for (; i < n; ++i) dst[i] = src[i] - shift_scalar;
+}
+
+}  // namespace HYLE_HIGHWAY_MATH_DETAIL_NAMESPACE
 
 namespace hyle::simd::detail {
-namespace hm = ::hyle_highway_math_detail;
+namespace hm = ::HYLE_HIGHWAY_MATH_DETAIL_NAMESPACE;
 
 #define HYLE_HWY_SYMBOL_I(name, tag, suffix) name##_##tag##_highway_##suffix
 #define HYLE_HWY_SYMBOL_II(name, tag, suffix) HYLE_HWY_SYMBOL_I(name, tag, suffix)
@@ -377,6 +621,62 @@ HYLE_DEFINE_OWNED_GAPS(float, f32)
 HYLE_DEFINE_OWNED_GAPS(double, f64)
 #undef HYLE_DEFINE_OWNED_GAPS
 
+#define HYLE_DEFINE_ACTIVATION_UNARY(name, vector_fn, scalar_fn)              \
+  void HYLE_OWNED_SYMBOL(name, f32)(const float* src, float* dst,             \
+                                    std::size_t n) noexcept {                 \
+    hm::unary_loop<hm::UnaryDomain::kDirect>(                                \
+        src, dst, n,                                                         \
+        [](auto d, auto x) { return hm::vector_fn(d, x); },                  \
+        [](float x) { return hm::scalar_fn(x); });                           \
+  }
+
+HYLE_DEFINE_ACTIVATION_UNARY(gelu, activation_gelu,
+                             activation_gelu_scalar)
+HYLE_DEFINE_ACTIVATION_UNARY(gelu_tanh, activation_gelu_tanh,
+                             activation_gelu_tanh_scalar)
+HYLE_DEFINE_ACTIVATION_UNARY(sigmoid, activation_sigmoid,
+                             activation_sigmoid_scalar)
+HYLE_DEFINE_ACTIVATION_UNARY(silu, activation_silu,
+                             activation_silu_scalar)
+HYLE_DEFINE_ACTIVATION_UNARY(relu, activation_relu,
+                             activation_relu_scalar)
+HYLE_DEFINE_ACTIVATION_UNARY(hard_sigmoid, activation_hard_sigmoid,
+                             activation_hard_sigmoid_scalar)
+HYLE_DEFINE_ACTIVATION_UNARY(hard_swish, activation_hard_swish,
+                             activation_hard_swish_scalar)
+#undef HYLE_DEFINE_ACTIVATION_UNARY
+
+void HYLE_OWNED_SYMBOL(leaky_relu, f32)(const float* src,
+                                        float negative_slope, float* dst,
+                                        std::size_t n) noexcept {
+  hm::unary_loop<hm::UnaryDomain::kDirect>(
+      src, dst, n,
+      [negative_slope](auto d, auto x) {
+        return hm::activation_leaky_relu(d, x, negative_slope);
+      },
+      [negative_slope](float x) {
+        return hm::activation_leaky_relu_scalar(x, negative_slope);
+      });
+}
+
+void HYLE_OWNED_SYMBOL(elu, f32)(const float* src, float alpha, float* dst,
+                                 std::size_t n) noexcept {
+  hm::unary_loop<hm::UnaryDomain::kDirect>(
+      src, dst, n,
+      [alpha](auto d, auto x) { return hm::activation_elu(d, x, alpha); },
+      [alpha](float x) { return hm::activation_elu_scalar(x, alpha); });
+}
+
+void HYLE_OWNED_SYMBOL(softmax, f32)(const float* src, float* dst,
+                                     std::size_t n) noexcept {
+  hm::activation_softmax(src, dst, n);
+}
+
+void HYLE_OWNED_SYMBOL(log_softmax, f32)(const float* src, float* dst,
+                                         std::size_t n) noexcept {
+  hm::activation_log_softmax(src, dst, n);
+}
+
 #define HYLE_DEFINE_COMPLEX_UNARY(type, tag, name, body)                          \
   void HYLE_OWNED_SYMBOL(name, tag)(const type* src_re, const type* src_im,        \
                                     type* dst_re, type* dst_im,                    \
@@ -450,3 +750,8 @@ void HYLE_OWNED_SYMBOL(cpow, f64)(const double* z_re, const double* z_im,
 #undef HYLE_HWY_SYMBOL_I
 
 }  // namespace hyle::simd::detail
+
+#undef HYLE_HIGHWAY_MATH_DETAIL_NAMESPACE
+#undef HYLE_HWY_DETAIL_NAMESPACE
+#undef HYLE_HWY_DETAIL_NAMESPACE_II
+#undef HYLE_HWY_DETAIL_NAMESPACE_I

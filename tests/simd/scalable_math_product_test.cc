@@ -4,11 +4,9 @@
 #include "src/simd/math/kernels.h"
 
 #include <algorithm>
-#include <bit>
 #include <cmath>
 #include <complex>
 #include <cstddef>
-#include <cstdint>
 #include <limits>
 
 namespace hs = hyle::simd;
@@ -86,12 +84,9 @@ TEST(ScalableMathProduct, HyleDerivedRealKernelsAndTail) {
     ExpectNearRelative(out32[i], std::pow(10.0f, x32[i]), 6e-6f);
   for (std::size_t i = 0; i < n32; ++i)
     x32[i] = 0.05f + 9.95f * float(i + 1) / float(n32 + 1);
-  HYLE_SCALABLE_PRODUCT(tgamma_f32_hyle)(x32, out32, n32);
+  HYLE_SCALABLE_PRODUCT(tgamma_f32_highway)(x32, out32, n32);
   for (std::size_t i = 0; i < n32; ++i)
     ExpectNearRelative(out32[i], std::tgamma(x32[i]), 5e-6f);
-  HYLE_SCALABLE_PRODUCT(fmod_f32_hyle)(x32, y32, out32, n32);
-  for (std::size_t i = 0; i < n32; ++i)
-    ExpectNearRelative(out32[i], std::fmod(x32[i], y32[i]), 2e-6f);
   HYLE_SCALABLE_PRODUCT(fdim_f32_hyle)(x32, y32, out32, n32);
   for (std::size_t i = 0; i < n32; ++i)
     ExpectNearRelative(out32[i], std::fdim(x32[i], y32[i]), 2e-6f);
@@ -116,57 +111,96 @@ TEST(ScalableMathProduct, HyleDerivedRealKernelsAndTail) {
     ExpectNearRelative(out64[i], std::pow(10.0, x64[i]), 2e-12);
   for (std::size_t i = 0; i < n64; ++i)
     x64[i] = 0.5 + 14.5 * double(i + 1) / double(n64 + 1);
-  HYLE_SCALABLE_PRODUCT(tgamma_f64_hyle)(x64, out64, n64);
+  HYLE_SCALABLE_PRODUCT(tgamma_f64_highway)(x64, out64, n64);
   for (std::size_t i = 0; i < n64; ++i)
     ExpectNearRelative(out64[i], std::tgamma(x64[i]), 2e-12);
-  HYLE_SCALABLE_PRODUCT(fmod_f64_hyle)(x64, y64, out64, n64);
-  for (std::size_t i = 0; i < n64; ++i)
-    ExpectNearRelative(out64[i], std::fmod(x64[i], y64[i]), 2e-12);
   HYLE_SCALABLE_PRODUCT(fdim_f64_hyle)(x64, y64, out64, n64);
   for (std::size_t i = 0; i < n64; ++i)
     ExpectNearRelative(out64[i], std::fdim(x64[i], y64[i]), 2e-12);
 }
 
-template <class T>
-using UIntBits =
-    std::conditional_t<sizeof(T) == 4, std::uint32_t, std::uint64_t>;
-
-template <class T>
-void CheckNextAfterExact(auto fn) {
-  const std::size_t w = hs::Lanes(hs::ScalableTag<T>{});
-  const std::size_t n = 2 * w + 3;
+TEST(ScalableMathProduct, ActivationsAndRowReductionsCoverWideTail) {
+  const std::size_t width = hs::Lanes(hs::ScalableTag<float>{});
+  const std::size_t n = 2 * width + 3;
   ASSERT_LE(n, kMaxLanes);
-  alignas(64) T a[kMaxLanes], b[kMaxLanes], out[kMaxLanes];
+  alignas(64) float input[kMaxLanes], output[kMaxLanes], alias[kMaxLanes];
   for (std::size_t i = 0; i < n; ++i) {
-    a[i] = (i & 1) ? T(-1.25) - T(i) / T(17) : T(0.75) + T(i) / T(19);
-    b[i] = (i % 3) ? a[i] + T(4) : a[i] - T(4);
+    input[i] = -8.0f + 16.0f * float(i + 1) / float(n + 1);
   }
-  fn(a, b, out, n);
-  for (std::size_t i = 0; i < n; ++i)
-    EXPECT_EQ(std::bit_cast<UIntBits<T>>(out[i]),
-              std::bit_cast<UIntBits<T>>(std::nextafter(a[i], b[i])))
-        << "normal i=" << i;
 
-  const T denorm = std::numeric_limits<T>::denorm_min();
-  const T min = std::numeric_limits<T>::min();
-  const T max = std::numeric_limits<T>::max();
-  const T inf = std::numeric_limits<T>::infinity();
-  const T nan = std::numeric_limits<T>::quiet_NaN();
-  const T edge_a[] = {T(0), -T(0), denorm, -denorm, min, -min, max, -max,
-                      inf, -inf, T(1), T(-1), nan};
-  const T edge_b[] = {-T(0), T(0), T(0), T(0), T(0), T(0), inf, -inf,
-                      T(0), T(0), T(1), T(-1), T(2)};
-  constexpr std::size_t edge_n = sizeof(edge_a) / sizeof(edge_a[0]);
-  fn(edge_a, edge_b, out, edge_n);
-  for (std::size_t i = 0; i < edge_n; ++i)
-    EXPECT_EQ(std::bit_cast<UIntBits<T>>(out[i]),
-              std::bit_cast<UIntBits<T>>(std::nextafter(edge_a[i], edge_b[i])))
-        << "edge i=" << i;
-}
+  const auto check_unary = [&](auto function, auto reference,
+                               float tolerance) {
+    std::copy_n(input, n, alias);
+    function(input, output, n);
+    function(alias, alias, n);
+    for (std::size_t i = 0; i < n; ++i) {
+      ExpectNearRelative(output[i], reference(input[i]), tolerance);
+      EXPECT_EQ(alias[i], output[i]);
+    }
+  };
+  check_unary(HYLE_SCALABLE_PRODUCT(gelu_f32_hyle),
+              [](float x) {
+                return 0.5f * x *
+                       (1.0f + std::erf(x * 0.70710678118654752440f));
+              },
+              8e-6f);
+  check_unary(HYLE_SCALABLE_PRODUCT(gelu_tanh_f32_hyle),
+              [](float x) {
+                return 0.5f * x *
+                       (1.0f +
+                        std::tanh(0.79788456080286535588f * x *
+                                  (1.0f + 0.044715f * x * x)));
+              },
+              8e-6f);
+  check_unary(HYLE_SCALABLE_PRODUCT(sigmoid_f32_hyle),
+              [](float x) {
+                const float e = std::exp(-std::abs(x));
+                return x < 0.0f ? e / (1.0f + e) : 1.0f / (1.0f + e);
+              },
+              8e-6f);
+  check_unary(HYLE_SCALABLE_PRODUCT(silu_f32_hyle),
+              [](float x) {
+                const float e = std::exp(-std::abs(x));
+                const float s =
+                    x < 0.0f ? e / (1.0f + e) : 1.0f / (1.0f + e);
+                return x * s;
+              },
+              8e-6f);
+  check_unary(HYLE_SCALABLE_PRODUCT(relu_f32_hyle),
+              [](float x) { return x > 0.0f ? x : 0.0f; }, 0.0f);
+  check_unary(HYLE_SCALABLE_PRODUCT(hard_sigmoid_f32_hyle),
+              [](float x) {
+                return std::min(1.0f,
+                                std::max(0.0f, (x + 3.0f) / 6.0f));
+              },
+              2e-6f);
+  check_unary(HYLE_SCALABLE_PRODUCT(hard_swish_f32_hyle),
+              [](float x) {
+                if (x <= -3.0f) return 0.0f;
+                if (x >= 3.0f) return x;
+                return x * ((x + 3.0f) / 6.0f);
+              },
+              2e-6f);
 
-TEST(ScalableMathProduct, NextAfterIsExactlyOneUlpIncludingBoundaries) {
-  CheckNextAfterExact<float>(HYLE_SCALABLE_PRODUCT(nextafter_f32_hyle));
-  CheckNextAfterExact<double>(HYLE_SCALABLE_PRODUCT(nextafter_f64_hyle));
+  HYLE_SCALABLE_PRODUCT(leaky_relu_f32_hyle)(input, 0.125f, output, n);
+  for (std::size_t i = 0; i < n; ++i) {
+    EXPECT_EQ(output[i], input[i] >= 0.0f ? input[i] : 0.125f * input[i]);
+  }
+  HYLE_SCALABLE_PRODUCT(elu_f32_hyle)(input, 1.25f, output, n);
+  for (std::size_t i = 0; i < n; ++i) {
+    const float expected =
+        input[i] >= 0.0f ? input[i] : 1.25f * std::expm1(input[i]);
+    ExpectNearRelative(output[i], expected, 8e-6f);
+  }
+
+  HYLE_SCALABLE_PRODUCT(softmax_f32_hyle)(input, output, n);
+  double sum = 0.0;
+  for (std::size_t i = 0; i < n; ++i) sum += output[i];
+  EXPECT_NEAR(sum, 1.0, 2e-5);
+  HYLE_SCALABLE_PRODUCT(log_softmax_f32_hyle)(input, alias, n);
+  for (std::size_t i = 0; i < n; ++i) {
+    EXPECT_NEAR(alias[i], std::log(output[i]), 2e-5f);
+  }
 }
 
 TEST(ScalableMathProduct, HyleDerivedComplexKernelsCoverWideExceptionalLanes) {

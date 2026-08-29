@@ -19,6 +19,11 @@ namespace hyle::simd::detail {
   void symbol(const type* z_re, const type* z_im, const type* w_re,            \
               const type* w_im, type* dst_re, type* dst_im,                   \
               std::size_t n) noexcept;
+#define HYLE_DECLARE_PARAM_UNARY(symbol)                                      \
+  void symbol(const float* src, float parameter, float* dst,                  \
+              std::size_t n) noexcept;
+#define HYLE_DECLARE_ROW_REDUCTION(symbol)                                    \
+  void symbol(const float* src, float* dst, std::size_t n) noexcept;
 
 #define HYLE_REAL_UNARY_LIST(M, suffix, type, tag) \
   M(exp_##tag##_##suffix, type)                       \
@@ -90,6 +95,19 @@ HYLE_COMPLEX_UNARY_LIST(HYLE_DECLARE_COMPLEX_UNARY, scalar, double, f64)
 HYLE_DECLARE_COMPLEX_POW(cpow_f32_scalar, float)
 HYLE_DECLARE_COMPLEX_POW(cpow_f64_scalar, double)
 
+// Scalar semantic floor for model-independent f32 activations.
+HYLE_DECLARE_UNARY(gelu_f32_scalar, float)
+HYLE_DECLARE_UNARY(gelu_tanh_f32_scalar, float)
+HYLE_DECLARE_UNARY(sigmoid_f32_scalar, float)
+HYLE_DECLARE_UNARY(silu_f32_scalar, float)
+HYLE_DECLARE_UNARY(relu_f32_scalar, float)
+HYLE_DECLARE_PARAM_UNARY(leaky_relu_f32_scalar)
+HYLE_DECLARE_PARAM_UNARY(elu_f32_scalar)
+HYLE_DECLARE_UNARY(hard_sigmoid_f32_scalar, float)
+HYLE_DECLARE_UNARY(hard_swish_f32_scalar, float)
+HYLE_DECLARE_ROW_REDUCTION(softmax_f32_scalar)
+HYLE_DECLARE_ROW_REDUCTION(log_softmax_f32_scalar)
+
 // Direct Highway kernels and the small HYLE semantic/composition layer for a
 // fixed target. Declarations are harmless on architectures whose TUs are not
 // built; the baseline dispatcher only references compiled variants.
@@ -116,12 +134,31 @@ HYLE_DECLARE_COMPLEX_POW(cpow_f64_scalar, double)
   HYLE_DECLARE_COMPLEX_POW(cpow_f32_hyle_##suffix, float)                         \
   HYLE_DECLARE_COMPLEX_POW(cpow_f64_hyle_##suffix, double)
 
+#define HYLE_DECLARE_ACTIVATION_VARIANT(suffix)                              \
+  HYLE_DECLARE_UNARY(gelu_f32_hyle_##suffix, float)                          \
+  HYLE_DECLARE_UNARY(gelu_tanh_f32_hyle_##suffix, float)                     \
+  HYLE_DECLARE_UNARY(sigmoid_f32_hyle_##suffix, float)                       \
+  HYLE_DECLARE_UNARY(silu_f32_hyle_##suffix, float)                          \
+  HYLE_DECLARE_UNARY(relu_f32_hyle_##suffix, float)                          \
+  HYLE_DECLARE_PARAM_UNARY(leaky_relu_f32_hyle_##suffix)                     \
+  HYLE_DECLARE_PARAM_UNARY(elu_f32_hyle_##suffix)                            \
+  HYLE_DECLARE_UNARY(hard_sigmoid_f32_hyle_##suffix, float)                  \
+  HYLE_DECLARE_UNARY(hard_swish_f32_hyle_##suffix, float)                    \
+  HYLE_DECLARE_ROW_REDUCTION(softmax_f32_hyle_##suffix)                      \
+  HYLE_DECLARE_ROW_REDUCTION(log_softmax_f32_hyle_##suffix)
+
 HYLE_DECLARE_VARIANT(avx2)
 HYLE_DECLARE_VARIANT(avx512)
 HYLE_DECLARE_VARIANT(neon)
 HYLE_DECLARE_VARIANT(sve)
 HYLE_DECLARE_VARIANT(rvv)
+HYLE_DECLARE_ACTIVATION_VARIANT(avx2)
+HYLE_DECLARE_ACTIVATION_VARIANT(avx512)
+HYLE_DECLARE_ACTIVATION_VARIANT(neon)
+HYLE_DECLARE_ACTIVATION_VARIANT(sve)
+HYLE_DECLARE_ACTIVATION_VARIANT(rvv)
 
+#undef HYLE_DECLARE_ACTIVATION_VARIANT
 #undef HYLE_DECLARE_VARIANT
 #undef HYLE_COMPLEX_UNARY_LIST
 #undef HYLE_REAL_BINARY_LIST
@@ -131,5 +168,7 @@ HYLE_DECLARE_VARIANT(rvv)
 #undef HYLE_DECLARE_SINCOS
 #undef HYLE_DECLARE_BINARY
 #undef HYLE_DECLARE_UNARY
+#undef HYLE_DECLARE_ROW_REDUCTION
+#undef HYLE_DECLARE_PARAM_UNARY
 
 }  // namespace hyle::simd::detail
