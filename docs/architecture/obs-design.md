@@ -85,6 +85,12 @@ callback 可以摘除自己。实现先把 callback/state 复制到局部变量�
 内跨摘另一个 sink 会被拒绝：目标可能已被同一 dispatch 快照持有且尚未调用，等待
 它退出会等待当前线程自己，形成死锁。
 
+callback 是 producer OS thread 上同步、执行到返回的 borrowed 边界。实现的 recursion frame 存在
+OS TLS 中，因此 callback 不能主动 yield/suspend stackful fiber，也不能在返回前迁移到另一 OS
+thread：即使稍后回到原线程，同线程上穿插运行的其他 fiber 也会继承错误的 nested 状态。普通 OS
+抢占不改变 thread identity，属于支持行为。异步 sink 必须在 callback 内复制 record 并 enqueue 后
+立即返回；不在每次 emit 上增加 thread-id 检查或 fiber metadata 来补救违反前置条件的 backend。
+
 注册 sink 内再次产生日志不会重入注册 sink 图，否则一个诊断 callback 就能无限递归。
 默认 stderr sink 仍启用时，nested record 直接落 stderr；默认 sink 已关闭时返回
 “没有 sink 收到”。`flush_sinks` 同步调用每个可选 flush callback，并使用相同的
@@ -192,6 +198,11 @@ Tracy。plot/frame/pool 名同理应使用字面量或其他稳定存储。
 3. 共享构建的每个模块只依赖同一个 `hyle_tracy_client`；
 4. 名称和 zone token 的存储期/配对审计；
 5. Windows、Linux、macOS 各跑适用的 ON correctness/build；性能只按登记机器合同裁决。
+
+trace-on 自动测试只需要本机 listener，CTest 因而给 Obs test process 设置 Tracy 上游的 runtime
+`TRACY_ONLY_LOCALHOST=1`。该变量不写入产品 target，也不改变普通 trace-on 程序的网络策略。Tracy
+v0.14.1 的 runtime 开关只限制 listener；compile-time 同名宏才同时改变 discovery broadcast 地址，
+所以维护文档不能把测试环境变量描述为“完全禁网”。
 
 性能数与仪器见
 [`../performance/benchmarks-obs.md`](../implementation/evidence/performance/benchmarks-obs.md)，

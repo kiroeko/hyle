@@ -69,7 +69,10 @@ concept LogSinkBackend = !std::is_const_v<Backend> &&
                            } noexcept -> std::same_as<void>;
                          };
 
-// A backend may be called concurrently. It must not throw. remove_sink() is a
+// A backend may be called concurrently. It must not throw. Each callback runs
+// synchronously on its producer OS thread and must return on that same thread
+// without yielding, suspending or migrating a stackful fiber. Copy/enqueue the
+// record before returning when asynchronous work is needed. remove_sink() is a
 // quiescent unregister: once it returns, no OTHER thread can still be inside
 // this callback. A callback may remove itself without deadlocking; naturally,
 // its state must remain alive until that callback returns. Removing a different
@@ -79,8 +82,8 @@ struct LogSink {
   void *state = nullptr;
   void (*write)(void *state, const LogRecord &record) noexcept = nullptr;
   // Optional. flush_sinks() invokes this synchronously; it may run concurrently
-  // with write() and therefore follows the same thread-safety/noexcept
-  // contract.
+  // with write() and therefore follows the same thread-safety, noexcept and
+  // no-suspension contract.
   void (*flush)(void *state) noexcept = nullptr;
 
   // Zero-allocation typed adapter for the normal C++ shape. Backend must expose

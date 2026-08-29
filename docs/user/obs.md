@@ -113,9 +113,11 @@ ownership，便于离开 callback
 `LogSink::from(backend)` 会生成零分配 trampoline。只有高级框架已经拥有 function-table 时才手工
 构造 `LogSink{state, write, flush}`。
 
-callback 由 producer 线程同步调用，可能在多个线程并发，必须 thread-safe、`noexcept`，
-也不能长期阻塞 producer。`flush` 可与 `write` 并发。需要异步行为时，sink 在 callback
-里复制 record 后放进自己的队列；obs 不暗中启动线程。
+callback 由 producer OS thread 同步调用，可能在多个线程并发，必须 thread-safe、`noexcept`，
+也不能长期阻塞 producer。callback 必须在同一 OS thread 上执行到返回；不要在其中 yield/suspend
+stackful fiber，也不要迁移后再返回。普通 OS 抢占没有问题。`flush` 可与 `write` 并发并遵守相同的
+no-suspension 规则。需要异步行为时，sink 在 callback 里复制 record 后放进自己的队列；obs 不暗中
+启动线程。
 
 `remove_sink` 是 quiescent unregister。callback 可以摘除自己，但 state 仍要活到本次
 callback 返回；callback 内摘除另一个 sink 会返回 `FailedPrecondition`，因为目标可能已在
@@ -156,6 +158,12 @@ cmake -S . -B build-trace \
   -DHYLE_TRACY_DIR=/path/to/tracy
 ```
 
+Tracy 默认监听全部网络接口，适合受信局域网中的 viewer。只允许本机 viewer 时，在启动被观测程序前
+设置 `TRACY_ONLY_LOCALHOST=1`；HYLE 的 trace-on CTest 已只对测试子进程设置它，因此不会为了测试申请
+Windows 防火墙入站权限。Tracy v0.14.1 的这个 runtime 变量只限制 listener，并不关闭 UDP discovery
+broadcast；网络策略禁止任何 discovery traffic 时应保持 `HYLE_TRACE=OFF`。不要在不受信网络上暴露
+默认 listener。
+
 zone 用作用域配对；`ZONE_TEXT/NAME/VALUE/COLOR` 只注释当前 lexical zone，动态 text/name 会在
 宏返回前复制。fiber enter/leave 必须跟逻辑执行上下文配对。plot/frame/pool/fiber 的
 身份名要用字符串字面量或其他长期稳定存储，不能传临时 `std::string::c_str()`。动态
@@ -173,6 +181,7 @@ native trace seam。
 
 - 不要在库失败时“打日志然后返回成功”；失败走 error，是否记录由调用方决定。
 - 不要假设 sink callback 串行；需要串行化就在 sink 内做。
+- 不要在 sink callback 内 yield/suspend stackful fiber 或迁移 OS thread；复制并 enqueue 后先返回。
 - 不要在 callback 返回后保存 borrowed record 指针；异步 sink 必须复制。
 - 不要把 `record.message.data()` 当 C string；它按 `size()` 定界并可能包含 NUL。
 - 不要让 `SinkRegistration` 比其 callback state 活得更久，或同时手工 remove 同一 sink。
