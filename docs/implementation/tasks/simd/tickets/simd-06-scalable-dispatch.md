@@ -1,6 +1,6 @@
 # SIMD-06：Scalable backend、dispatch 与交付
 
-- ticket state：`QUEUED`
+- ticket state：`READY`
 - kind：product review/refactor
 - depends on：SIMD-05
 - budget：1 工程日；性能预算 60 分钟

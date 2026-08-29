@@ -1,6 +1,6 @@
-# SIMD-05：Register API 与定宽 backend 迁移
+# SIMD-05：Register API 迁移边界与定宽 source seam
 
-- ticket state：`ACTIVE`
+- ticket state：`DONE`
 - kind：product review/refactor
 - depends on：SIMD-04
 - budget：1 工程日；性能预算 60 分钟
@@ -43,3 +43,27 @@
 
 本票不迁移 dtype、activation、search/scan、bitpack/random、ordering 的产品 body，也不修改公共 closure/
 性能仪器。它们已有顺序 owner；本票的停止线是 expert seam 与迁移边界成立，而不是提前清空全部 24k 行。
+
+## 实现与验证结果
+
+- 新增 build-tree-only `hyle_simd_source_expert`，`hyle_target_simd()` 绑定锁定 Highway include、
+  `HWY_COMPILE_ONLY_{STATIC,SCALAR}` 与单 ISA flags；归一化 target processor 通过 global property 穿过
+  `add_subdirectory()` 边界，不回退到 Visual Studio 可能错误的宿主 `CMAKE_SYSTEM_PROCESSOR`。
+- `samples/02_simd` 已迁为普通 HYLE runtime batch + 可选 direct-Highway expert kernel；Windows MSVC
+  AVX2、WSL GCC 14 AVX2、macOS AppleClang 21 NEON 均编译运行，host/runtime ISA 与 expert 数值正确。
+- installed SDK + expert ISA 明确配置失败；经典 cl.exe + AVX512 明确配置失败并建议 clang-cl/AVX2，
+  两者都没有虚构 header/ISA journey。target-platform contract、vendor-boundary gate、docs/closure checker
+  均 `PASS`。
+
+## 有界性能 verdict
+
+W1-WIN、MSVC 19.50、AVX2、4096 元素、同 TU/同 ISA；现有 pair harness 四 replica 并做
+`HYLE_FIRST/HWY_FIRST` 反序。只读取预声明的 Add、ReduceSum、GatherIndex、Compress 与
+WidenMulPairwiseAdd：五项正反序配对中位均在 5% material margin 内，判 `SAME_CLASS / DIRECT`。
+个别 placement 点和非目标 calibration anchor 有翻转/不稳定，按规则不驱动 API，也不扩写仪器。
+
+本票没有宣称已删除 24,084 行 legacy backend：它们仍被后续 family 与 container build-private seam
+消费。完成的是用户/API 与 ownership 的不可逆转向；SIMD-06～11 逐 consumer 迁移，SIMD-12 只在引用
+归零后删除。这避免为一次“大爆炸删除”跨票改写所有产品 family，也避免把遗留行数冒充终态。
+
+- output commit：`cc3db9ec7c8e2df72976f0487908d82b815d4d30`。

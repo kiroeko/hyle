@@ -69,7 +69,7 @@ SIMD 可以提供模型无关且重复出现的连续 row primitive；不得变�
 | 02 | [vendor ownership 与升级决策](tickets/simd-02-vendor-ownership.md) | audit | 01 | 否 | 4 小时 |
 | 03 | [Highway 直接承载可行性](tickets/simd-03-highway-adoption.md) | architecture spike | 02 | 隔离 proof | 1 日 |
 | 04 | [数学 vendor 合并与 port 消减](tickets/simd-04-xsimd-port.md) | product | 03 | 条件是 | 1 日 |
-| 05 | [register API 与定宽 backend 迁移](tickets/simd-05-register-fixed.md) | product | 04 | 是 | 1 日 |
+| 05 | [register API 迁移边界与定宽 source seam](tickets/simd-05-register-fixed.md) | product | 04 | 是 | 1 日 |
 | 06 | [scalable backend、dispatch 与交付](tickets/simd-06-scalable-dispatch.md) | product | 05 | 是 | 1 日 |
 | 07 | [dtype、narrow 与普通 row ops](tickets/simd-07-row-dtype.md) | product | 06 | 是 | 1 日 |
 | 08 | [transcendental 与 activation](tickets/simd-08-activation.md) | product | 07 | 是 | 1 日 |
