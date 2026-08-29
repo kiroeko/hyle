@@ -1,11 +1,10 @@
 # platform-v2 推理映射驻留定向重开
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
-> 当前阶段：`CANDIDATE`。`platform-v1` 仍是未受影响能力族的历史冻结证据；本轮只处理已经明确为
-> HYLE 北极星消费者的本地推理引擎所暴露出的 file-mapping residency 缺口，并核验与它直接相邻的
-> CPU topology / NUMA placement。权威机械状态见
-> [`module-status.json`](../../module-status.json)。
+> 历史 terminal record：`platform-v2` 已 `CLOSED`。`platform-v1` 仍是未受影响能力族的冻结证据；
+> 本轮只处理 HYLE 北极星本地推理引擎暴露的 file-mapping residency 缺口，并核验直接相邻的 CPU
+> topology / NUMA placement。当前权威机械状态见 [`module-status.json`](../../module-status.json)。
 
 ## Reopen trigger
 
@@ -215,8 +214,18 @@ candidate 的 canonical LOC self-check（`python scripts/loc-report.py --module 
 
 ## Closure decision
 
-- 当前工程证据支持 `CLOSED`；先进入 `VERIFIED` 保存完整 manifest，再以 terminal receipt/registry anchor
-  两步结束。Formal 独立保持 `PENDING`。
+- 本轮 `CLOSED`。三项 residency `MUST` 已 COMPLETE，CPU/NUMA inference route 已闭合，七项 aggregate
+  gate 全部 `PASS`；没有 correctness、security、delivery、usability 或 P1 blocker。产品 candidate 保持
+  `88085b671ac7dfb4d41e2819ceda0925d1ac0147` / tree
+  `01f2183f4cb5c029293ba6c52b15dfbc40d27e13`，candidate 后没有 Platform 产品源码变化。
+- terminal end / registry anchor：`1be5fb582b4fccb7ce5ddbd55de84b3cc01a682c`。该不可变快照保存
+  `VERIFIED`、candidate identity、七项 gate、完整验证矩阵、性能 bundle identity、LOC 与 red-team 事实；
+  terminal 提交只登记 `CLOSED` receipt、限制和 reopen triggers。
+- raw local evidence：W1-WIN
+  `C:\hyle-scratch\platform-v2\{build-win,asan-win,delivery-win-symbol,perf-qualify-evidence}`；W1-WSL
+  `/root/{hyle-platform-v2-build,hyle-scratch/platform-v2-{asan-a36,ubsan-a36,delivery-symbol-65ad}}`；M1-MAC
+  `/Users/Shared/HYLE/platform-v2-{build,asan-a36,delivery-symbol-65ad}`。这些是可重放本地 artifact，不冒充
+  长期签名 Formal 证书；Formal 独立保持 `PENDING`。
 
 - 可接受限制：P1 只覆盖冻结 W1-WIN progressive eager residency；Linux on-fault 只验语义/正确性；
   多节点 locality/bandwidth、partial unmap、同步 prefault/THP collapse、exact core/cache-domain placement、

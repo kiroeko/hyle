@@ -430,7 +430,7 @@
     },
     {
       "module": "platform",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "round_id": "platform-v2",
       "closure_task": "docs/implementation/tasks/platform/platform-v2-inference-residency.md",
       "scope": "Inference-driven mapped-file residency controls plus a bounded audit of the adjacent CPU-topology and NUMA-placement routes; affected C++ API, implementation, tests, delivery, performance and documentation only.",
@@ -438,6 +438,8 @@
       "baseline_commit": "4053c9fd6c4961df98c96ad3c6bdc45e39f2f108",
       "candidate_commit": "88085b671ac7dfb4d41e2819ceda0925d1ac0147",
       "candidate_tree": "01f2183f4cb5c029293ba6c52b15dfbc40d27e13",
+      "end_commit": "1be5fb582b4fccb7ce5ddbd55de84b3cc01a682c",
+      "registry_anchor_commit": "1be5fb582b4fccb7ce5ddbd55de84b3cc01a682c",
       "reopen_trigger_id": "PLATFORM-INF-RESIDENCY-01",
       "reopen_evidence": "docs/implementation/tasks/project/core-obs-llama-consumer-scan-2026-08.md",
       "performance_tier": "P1",
@@ -489,7 +491,7 @@
         "Multi-node placement, partial unmap/prefault, exact placement, AMX/SME, foreign runtime or another deferred family is admitted through a separate capability decision.",
         "The performance contract, peer, consumer provenance, machine, instrument or retained bundle changes while the current engineering claim must be renewed."
       ],
-      "summary": "platform-v2 VERIFIED：推理驱动的 progressive prefix、Linux on-fault 与显式 quota-adjust 已由三平台正确性/sanitizer、三种 C++ 交付、文档/红队和 W1-WIN 5% P1 工程性能门签署；待 terminal receipt。"
+      "summary": "platform-v2 CLOSED：推理驱动的 progressive prefix、Linux on-fault 与显式 quota-adjust 已由三平台正确性/sanitizer、三种 C++ 交付、文档/红队和 W1-WIN 5% P1 工程性能门全部签署；Formal 独立 PENDING。"
     },
     {
       "module": "mem",
