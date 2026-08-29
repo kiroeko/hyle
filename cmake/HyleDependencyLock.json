@@ -151,14 +151,6 @@
       "revision": "83eff39371e5e6494b305b253f8a3c06f831faf4", "git_tree": "d39e0609201e1f1361c24da7075272a157177925",
       "archive": { "url": "https://codeload.github.com/google/highway/tar.gz/83eff39371e5e6494b305b253f8a3c06f831faf4", "sha256": "ef9874b4f1f3739d409c5615f49eba4e4c9b017977141a55f9992ca10e5e6dfc" },
       "integrated": { "paths": [
-        "src/simd/bitpack/bitpack_body.inc",
-        "src/simd/bitpack/bitpack_dispatch.cc",
-        "src/simd/bitpack/bitpack_hyle-inl.h",
-        "src/simd/bitpack/bitpack_hyle_u16-inl.h",
-        "src/simd/bitpack/bitpack_hyle_avx2.cc",
-        "src/simd/bitpack/bitpack_hyle_avx512.cc",
-        "src/simd/bitpack/bitpack_hyle_neon.cc",
-        "src/simd/bitpack/bitpack_hyle_scalable.cc",
         "src/simd/sort/sort_dispatch.cc",
         "src/simd/sort/vqsort_hyle",
         "src/simd/sort/vqsort_body.inc",
@@ -167,7 +159,7 @@
         "src/simd/sort/vqsort_hyle_neon.cc",
         "src/simd/sort/vqsort_hyle_rvv.cc",
         "src/simd/sort/vqsort_hyle_sve.cc"
-      ], "content_sha256": "a70f6b3352aa199cdeff25447776c634cc0d6a80f9b0d3d01550a261b3361767" },
+      ], "content_sha256": "60253d54ea5e894ea82278e877e63d242cd120db08ba610e446a8c5368872e31" },
       "license": { "expression": "Apache-2.0", "files": [
         { "root": "hyle", "path": "third_party/ported/LICENSE-HIGHWAY", "sha256": "b8b1fae5894cfbe213b47f1378bb2269cf82de18b34447e871c0225ace0d3ad7" }
       ] }

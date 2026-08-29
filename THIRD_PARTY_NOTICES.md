@@ -29,7 +29,7 @@ license text and the notices in each source file control.
 
 | Origin | HYLE files | Selected license | Full text in source / installed package |
 |---|---|---|---|
-| Google Highway | `src/simd/sort/vqsort_hyle/` and `src/simd/bitpack/bitpack_hyle-inl.h` | Apache-2.0 option of Apache-2.0 OR BSD-3-Clause | `third_party/ported/LICENSE-HIGHWAY` / `highway-LICENSE`; source files retain upstream copyright, origin, and commit notices |
+| Google Highway | `src/simd/sort/vqsort_hyle/` | Apache-2.0 option of Apache-2.0 OR BSD-3-Clause | `third_party/ported/LICENSE-HIGHWAY` / `highway-LICENSE`; source files retain upstream copyright, origin, and commit notices |
 
 The proprietary terms for HYLE's modifications and surrounding original code do not remove
 the permissions or conditions applying to these third-party portions.

@@ -14,6 +14,8 @@
 #                                      # SIMD-07 bounded family gate
 #   HYLE_SCALABLE_SEARCH_SCAN_ONLY=1 bash scripts/sve-qemu-test.sh
 #                                      # SIMD-09 bounded family gate
+#   HYLE_SCALABLE_BITPACK_RANDOM_ONLY=1 bash scripts/sve-qemu-test.sh
+#                                      # SIMD-10 bounded family gate
 #
 # On a REAL SVE host (Graviton3, etc.) you don't need this -- configure with
 # -DHYLE_TEST_SIMD_SVE=ON
@@ -41,7 +43,8 @@ TIER=${1:-base}
 ARCH="armv8-a+sve"
 if [ "$TIER" = "crypto" ]; then ARCH="armv8-a+sve2-aes"; fi
 
-COMMON_FLAGS="-std=c++23 -O2 -march=armv8-a -DHYLE_SIMD_HAS_SVE_VARIANT=1 -pthread \
+COMMON_FLAGS="-std=c++23 -O2 -march=armv8-a -DHYLE_SIMD_HAS_SVE_VARIANT=1 \
+  -DHWY_HEADER_ONLY=1 -pthread \
   -I$REPO/include -I$REPO -I$HWY -I$GT/include -I$GT"
 FLAGS="$COMMON_FLAGS -march=$ARCH -DHYLE_SIMD_TARGET_SVE"
 
@@ -69,7 +72,8 @@ $CXX $FLAGS -c "$GT/src/gtest_main.cc" -o "$OUT/gtest-main.o"
 $CXX $FLAGS -c "$REPO/tests/simd/sve_test.cc" -o "$OUT/sve_test.o"
 SCALABLE_MATH_TEST_OBJECTS=()
 if [ "${HYLE_SCALABLE_ROW_DTYPE_ONLY:-0}" != "1" ] &&
-   [ "${HYLE_SCALABLE_SEARCH_SCAN_ONLY:-0}" != "1" ]; then
+   [ "${HYLE_SCALABLE_SEARCH_SCAN_ONLY:-0}" != "1" ] &&
+   [ "${HYLE_SCALABLE_BITPACK_RANDOM_ONLY:-0}" != "1" ]; then
   $CXX $FLAGS -c "$REPO/tests/simd/scalable_math_product_test.cc" -o "$OUT/scalable_math_product_test.o"
   $CXX $COMMON_FLAGS -c "$REPO/tests/simd/scalable_math_dispatch_test.cc" -o "$OUT/scalable_math_dispatch_test.o"
   $CXX $COMMON_FLAGS -c "$REPO/tests/simd/neon_math_product_test.cc" -o "$OUT/neon_math_product_test.o"
@@ -88,9 +92,7 @@ $CXX $COMMON_FLAGS -c "$REPO/tests/simd/dtype_test.cc" -o "$OUT/dtype_test.o"
 $CXX $COMMON_FLAGS -c "$REPO/tests/simd/search_test.cc" -o "$OUT/search_test.o"
 $CXX $COMMON_FLAGS -c "$REPO/tests/simd/narrow_ops_test.cc" -o "$OUT/narrow_ops_test.o"
 $CXX $COMMON_FLAGS -c "$REPO/tests/simd/scan_test.cc" -o "$OUT/scan_test.o"
-$CXX $COMMON_FLAGS -c "$REPO/tests/simd/fixed128_bitpack_reference.cc" -o "$OUT/fixed128_bitpack_reference.o"
 $CXX $FLAGS -c "$REPO/src/simd/math/transcendental_highway_scalable.cc" -o "$OUT/math_sve.o"
-$CXX $FLAGS -c "$REPO/src/simd/bitpack/bitpack_hyle_scalable.cc" -o "$OUT/bitpack_sve.o"
 $CXX $FLAGS -c "$REPO/src/simd/sort/vqsort_hyle_sve.cc" -o "$OUT/sort_sve.o"
 $CXX $COMMON_FLAGS -c "$REPO/src/platform/cpu.cc" -o "$OUT/cpu.o"
 $CXX $COMMON_FLAGS -DHYLE_ERROR_BUILD -c "$REPO/src/error/status.cc" -o "$OUT/error_status.o"
@@ -110,8 +112,6 @@ $CXX $COMMON_FLAGS -c "$REPO/src/simd/math/transcendental_highway_neon.cc" -o "$
 $CXX $COMMON_FLAGS -c "$REPO/src/simd/dtype/dtype_dispatch.cc" -o "$OUT/dtype_dispatch.o"
 $CXX $COMMON_FLAGS -c "$REPO/src/simd/dtype/cvt_fp8_scalar.cc" -o "$OUT/dtype_fp8_scalar.o"
 $CXX $COMMON_FLAGS -c "$REPO/src/simd/bitpack/bitpack_dispatch.cc" -o "$OUT/bitpack_dispatch.o"
-$CXX $COMMON_FLAGS -c "$REPO/src/simd/bitpack/bitpack_scalar.cc" -o "$OUT/bitpack_scalar.o"
-$CXX $COMMON_FLAGS -c "$REPO/src/simd/bitpack/bitpack_hyle_neon.cc" -o "$OUT/bitpack_neon.o"
 $CXX $COMMON_FLAGS -c "$REPO/src/simd/ops/dispatch_ops.cc" -o "$OUT/ops_dispatch.o"
 $CXX $COMMON_FLAGS -c "$REPO/src/simd/random/random_dispatch.cc" -o "$OUT/random_dispatch.o"
 $CXX $COMMON_FLAGS -c "$REPO/src/simd/search/search_dispatch.cc" -o "$OUT/search_dispatch.o"
@@ -122,15 +122,7 @@ $CXX $COMMON_FLAGS -c "$REPO/src/simd/sort/vqsort_scalar.cc" -o "$OUT/sort_scala
 $CXX $COMMON_FLAGS -c "$REPO/src/simd/sort/vqsort_hyle_neon.cc" -o "$OUT/sort_neon.o"
 $CXX $COMMON_FLAGS -c "$REPO/src/simd/sort/radix_sort.cc" -o "$OUT/radix_sort.o"
 $CXX $COMMON_FLAGS -c "$REPO/src/simd/sort/stream_topk.cc" -o "$OUT/stream_topk.o"
-for module in random; do
-  printf '#define HYLE_SIMD_VARIANT_SUFFIX scalar\n#include "src/simd/%s/kernel_impl.h"\n' "$module" |
-    $CXX $COMMON_FLAGS -x c++ -c - -o "$OUT/${module}_scalar.o"
-  printf '#define HYLE_SIMD_TARGET_NEON\n#define HYLE_SIMD_VARIANT_SUFFIX neon\n#include "src/simd/%s/kernel_impl.h"\n' "$module" |
-    $CXX $COMMON_FLAGS -x c++ -c - -o "$OUT/${module}_neon.o"
-  printf '#define HYLE_SIMD_VARIANT_SUFFIX sve\n#include "src/simd/%s/kernel_impl.h"\n' "$module" |
-    $CXX $FLAGS -x c++ -c - -o "$OUT/${module}_sve.o"
-done
-for module in ops scan search narrow; do
+for module in ops random scan search narrow; do
   printf '#define HWY_COMPILE_ONLY_SCALAR 1\n#define HYLE_SIMD_VARIANT_SUFFIX scalar\n#include "src/simd/%s/kernel_impl.h"\n' "$module" |
     $CXX $COMMON_FLAGS -x c++ -c - -o "$OUT/${module}_scalar.o"
   printf '#define HWY_COMPILE_ONLY_STATIC 1\n#define HYLE_SIMD_TARGET_NEON\n#define HYLE_SIMD_VARIANT_SUFFIX neon\n#include "src/simd/%s/kernel_impl.h"\n' "$module" |
@@ -138,6 +130,12 @@ for module in ops scan search narrow; do
   printf '#define HWY_COMPILE_ONLY_STATIC 1\n#define HYLE_SIMD_VARIANT_SUFFIX sve\n#include "src/simd/%s/kernel_impl.h"\n' "$module" |
     $CXX $FLAGS -x c++ -c - -o "$OUT/${module}_sve.o"
 done
+printf '#define HWY_COMPILE_ONLY_SCALAR 1\n#define HYLE_SIMD_VARIANT_SUFFIX scalar\n#include "src/simd/bitpack/kernel_impl.h"\n' |
+  $CXX $COMMON_FLAGS -x c++ -c - -o "$OUT/bitpack_scalar.o"
+printf '#define HWY_COMPILE_ONLY_STATIC 1\n#define HYLE_SIMD_TARGET_NEON\n#define HYLE_SIMD_VARIANT_SUFFIX neon\n#include "src/simd/bitpack/kernel_impl.h"\n' |
+  $CXX $COMMON_FLAGS -x c++ -c - -o "$OUT/bitpack_neon.o"
+printf '#define HWY_COMPILE_ONLY_STATIC 1\n#define HYLE_SIMD_VARIANT_SUFFIX sve\n#include "src/simd/bitpack/kernel_impl.h"\n' |
+  $CXX $FLAGS -x c++ -c - -o "$OUT/bitpack_sve.o"
 printf '#define HWY_COMPILE_ONLY_SCALAR 1\n#define HYLE_SIMD_VARIANT_SUFFIX scalar\n#include "src/simd/dtype/conversion_kernel_impl.h"\n' |
   $CXX $COMMON_FLAGS -x c++ -c - -o "$OUT/dtype_scalar.o"
 printf '#define HWY_COMPILE_ONLY_STATIC 1\n#define HYLE_SIMD_TARGET_NEON\n#define HYLE_SIMD_VARIANT_SUFFIX neon\n#include "src/simd/dtype/conversion_kernel_impl.h"\n' |
@@ -156,7 +154,6 @@ $CXX $FLAGS "$OUT/sve_test.o" \
   "$OUT/search_test.o" \
   "$OUT/narrow_ops_test.o" \
   "$OUT/scan_test.o" \
-  "$OUT/fixed128_bitpack_reference.o" \
   "$OUT/math_sve.o" "$OUT/math_neon.o" \
   "$OUT/math_scalar.o" "$OUT/math_activations.o" "$OUT/math_dispatch.o" \
   "$OUT/cpu.o" "$OUT/error_status.o" \
@@ -183,6 +180,8 @@ if [ "${HYLE_SCALABLE_ROW_DTYPE_ONLY:-0}" = "1" ]; then
   TEST_ARGS+=(--gtest_filter=SimdRuntime.TableMetadataAndExactTierLookup:Dispatch.*:Ops.*:DtypeBatch.*:DtypeGraph.*:NarrowOps.*:ScalableDtypeProduct.*:Sve.RuntimeVectorLengthMatchesGate)
 elif [ "${HYLE_SCALABLE_SEARCH_SCAN_ONLY:-0}" = "1" ]; then
   TEST_ARGS+=(--gtest_filter=SimdRuntime.TableMetadataAndExactTierLookup:Search.*:Scan.*:Sve.RuntimeVectorLengthMatchesGate)
+elif [ "${HYLE_SCALABLE_BITPACK_RANDOM_ONLY:-0}" = "1" ]; then
+  TEST_ARGS+=(--gtest_filter=SimdRuntime.TableMetadataAndExactTierLookup:SimdRuntime.Random*:ScalableBitpackProduct.*:Sve.RuntimeVectorLengthMatchesGate)
 fi
 if [ "$TIER" = "crypto" ]; then
   FEATURE_ENV+=(HYLE_EXPECT_SVE2=1 HYLE_EXPECT_SVE_AES=1 HYLE_EXPECT_SVE_PMULL=1)

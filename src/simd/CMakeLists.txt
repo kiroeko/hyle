@@ -51,9 +51,13 @@ if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
       dtype/cvt_f16c.cc
       dtype/cvt_avx512bf16.cc)
   endif()
-  if(HYLE_SIMD_BUILD_AVX2 OR HYLE_SIMD_BUILD_AVX512)
+  if(HYLE_SIMD_BUILD_AVX2 OR
+     (HYLE_SIMD_BUILD_AVX512 AND _hyle_simd_cl_sort_fallback))
     # Canonical AVX-512 does not imply optional BF16/AVX10.2, and several math/dtype winners
-    # intentionally remain AVX2-width. These are per-op implementation dependencies, not an
+    # intentionally remain AVX2-width. Classic cl.exe also uses this direct-Highway AVX2 math
+    # fallback because upstream disables AVX3 there. A clang/GCC exact-AVX512 build uses the
+    # dedicated AVX512 math TU below and must not also compile this AVX2-only source under the
+    # target-wide AVX512 minimum flags. These are per-op implementation dependencies, not an
     # additional runtime target.
     list(APPEND _simd_arch_sources
       math/transcendental_highway.cc)
@@ -64,14 +68,9 @@ if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
     # compiler-specific per-module fallback, not a second runtime target.
     list(APPEND _simd_arch_sources sort/vqsort_hyle_avx2.cc)
   endif()
-  if(HYLE_SIMD_BUILD_AVX2)
-    list(APPEND _simd_arch_sources
-      bitpack/bitpack_hyle_avx2.cc)
-  endif()
   if(HYLE_SIMD_BUILD_AVX512)
     list(APPEND _simd_arch_sources
-      math/transcendental_highway_avx512.cc
-      bitpack/bitpack_hyle_avx512.cc)
+      math/transcendental_highway_avx512.cc)
     if(NOT _hyle_simd_cl_sort_fallback)
       list(APPEND _simd_arch_sources sort/vqsort_hyle_avx512.cc)
     endif()
@@ -111,12 +110,10 @@ elseif(HYLE_TARGET_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   if(HYLE_SIMD_BUILD_NEON)
     list(APPEND _simd_arch_sources
       math/transcendental_highway_neon.cc
-      sort/vqsort_hyle_neon.cc
-      bitpack/bitpack_hyle_neon.cc)
+      sort/vqsort_hyle_neon.cc)
   endif()
   if(HYLE_SIMD_BUILD_SVE)
     list(APPEND _simd_arch_sources
-      bitpack/bitpack_hyle_scalable.cc
       math/transcendental_highway_scalable.cc
       sort/vqsort_hyle_sve.cc)
   endif()
@@ -124,15 +121,14 @@ elseif(HYLE_TARGET_PROCESSOR MATCHES "riscv64|RISCV64")
   set(HYLE_SIMD_RISCV64 TRUE)
   if(HYLE_SIMD_BUILD_RVV)
     list(APPEND _simd_arch_sources
-      bitpack/bitpack_hyle_scalable.cc
       math/transcendental_highway_scalable.cc
       sort/vqsort_hyle_rvv.cc)
   endif()
 endif()
 
 # Highway is a header-only product mechanism compiled into HYLE's fixed-target TUs; it does not
-# add a second runtime library ABI. Remaining VQSort/bitpack ports are tracked separately until
-# their bounded tickets decide direct adoption or a minimal local delta.
+# add a second runtime library ABI. The remaining VQSort port is tracked separately until its
+# bounded ordering ticket decides direct adoption or a minimal local delta.
 hyle_add_module(simd SOURCES
   runtime.cc
   ops/dispatch_ops.cc
@@ -150,7 +146,6 @@ hyle_add_module(simd SOURCES
   sort/radix_sort.cc
   sort/stream_topk.cc
   bitpack/bitpack_dispatch.cc
-  bitpack/bitpack_scalar.cc
   ${_simd_arch_sources})
 
 # HYLE deliberately consumes Highway without executing its upstream CMake
@@ -159,6 +154,13 @@ hyle_add_module(simd SOURCES
 # hwy::Abort; the upstream-supported header-only mode provides that tiny
 # implementation inline and keeps source/static/shared delivery self-contained.
 target_compile_definitions(hyle_simd PRIVATE HWY_HEADER_ONLY)
+if(HYLE_SIMD_X64 AND _hyle_simd_cl_sort_fallback)
+  # This is a compiler-front-end capability, not an ISA property. clang-cl
+  # defines _MSC_VER as well, but supports Highway's AVX3 targets; only the
+  # classic cl.exe front end needs the existing AVX2 math/sort fallback.
+  target_compile_definitions(hyle_simd PRIVATE
+    HYLE_SIMD_CLASSIC_CL_AVX512_FALLBACK=1)
+endif()
 
 # Source-primary expert seam. It is deliberately build-tree-only: ordinary
 # installed consumers use HYLE's pointer/count APIs, while a consumer that
@@ -224,7 +226,7 @@ hyle_add_dispatched_kernel(HIGHWAY
   NAME scan
   IMPL "src/simd/scan/kernel_impl.h"
   TARGETS scalar sse4 avx2 avx512 neon sve rvv)
-hyle_add_dispatched_kernel(
+hyle_add_dispatched_kernel(HIGHWAY
   TARGET hyle_simd
   NAME random
   IMPL "src/simd/random/kernel_impl.h"
@@ -238,6 +240,11 @@ hyle_add_dispatched_kernel(HIGHWAY
   TARGET hyle_simd
   NAME narrow
   IMPL "src/simd/narrow/kernel_impl.h"
+  TARGETS scalar sse4 avx2 avx512 neon sve rvv)
+hyle_add_dispatched_kernel(HIGHWAY
+  TARGET hyle_simd
+  NAME bitpack
+  IMPL "src/simd/bitpack/kernel_impl.h"
   TARGETS scalar sse4 avx2 avx512 neon sve rvv)
 
 # Per-ISA codegen flags via the single-source hyle_set_isa (HyleIsa.cmake) -- one tier
@@ -271,13 +278,11 @@ if(HYLE_SIMD_X64)
 elseif(HYLE_SIMD_ARM64)
   if(HYLE_SIMD_BUILD_SVE)
     hyle_set_isa(math/transcendental_highway_scalable.cc SVE)
-    hyle_set_isa(bitpack/bitpack_hyle_scalable.cc SVE)
     hyle_set_isa(sort/vqsort_hyle_sve.cc SVE)
   endif()
 elseif(HYLE_SIMD_RISCV64)
   if(HYLE_SIMD_BUILD_RVV)
     hyle_set_isa(math/transcendental_highway_scalable.cc RVV)
-    hyle_set_isa(bitpack/bitpack_hyle_scalable.cc RVV)
     hyle_set_isa(sort/vqsort_hyle_rvv.cc RVV)
   endif()
 endif()
@@ -311,17 +316,13 @@ if(HYLE_SIMD_X64)
       hyle_set_avx512_math_isa(math/transcendental_highway_avx512.cc)
     endif()
   endif()
-  # HYLE vqsort / bit-pack variants: D-tag backend selected by HYLE_SIMD_TARGET_*;
-  # hyle_set_isa supplies the AVX2 / AVX-512 codegen for their dispatcher gates.
+  # The HYLE vqsort variant still uses the migration D-tag backend selected by
+  # HYLE_SIMD_TARGET_*; hyle_set_isa supplies its target codegen.
   if(HYLE_SIMD_BUILD_AVX2 OR
      (HYLE_SIMD_BUILD_AVX512 AND _hyle_simd_cl_sort_fallback))
     hyle_set_isa(sort/vqsort_hyle_avx2.cc AVX2)
   endif()
-  if(HYLE_SIMD_BUILD_AVX2)
-    hyle_set_isa(bitpack/bitpack_hyle_avx2.cc AVX2)
-  endif()
   if(HYLE_SIMD_BUILD_AVX512)
-    hyle_set_isa(bitpack/bitpack_hyle_avx512.cc AVX512)
     if(NOT _hyle_simd_cl_sort_fallback)
       hyle_set_isa(sort/vqsort_hyle_avx512.cc AVX512)
     endif()

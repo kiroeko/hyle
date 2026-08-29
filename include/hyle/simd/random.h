@@ -2,16 +2,18 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <span>
+#include <type_traits>
 
 #include "hyle/simd/dispatch.h"  // HYLE_SIMD_API
 
-// Runtime-safe random generation. Unlike native::VectorXoshiro, this header exposes no
-// target-dependent vector type: RandomState has one fixed layout and the fill functions have a
-// pointer/POD ABI, so a prebuilt HYLE library can select the best compiled kernel at runtime.
+// Runtime-safe random generation. This header exposes no target-dependent vector type:
+// RandomState has one fixed layout and the fill functions have a pointer/POD boundary, so a
+// prebuilt HYLE library can select the best compiled kernel at runtime.
 //
 // The state contains eight jump-separated xoshiro256++ streams. Output is round-robin by stream,
 // and every ISA updates the same eight logical streams in the same order. Therefore a given seed
-// and sequence of fill calls is bit-identical across scalar/SSE4/AVX2/AVX-512/NEON.
+// and sequence of fill calls is bit-identical across scalar/SSE4/AVX2/AVX-512/NEON/SVE/RVV.
 //
 // This generator is NOT cryptographically secure. Do not use it for keys, tokens or nonces.
 
@@ -75,13 +77,31 @@ class alignas(64) RandomState {
 
   explicit constexpr RandomState(
       std::uint64_t seed = 0xd1b54a32d192ed03ull) noexcept {
+    this->seed(seed);
+  }
+
+  // Reseeding restarts the deterministic stream. Copy construction/assignment deliberately copy
+  // the current position, so filling either copy produces the same subsequent values.
+  constexpr void seed(std::uint64_t seed = 0xd1b54a32d192ed03ull) noexcept {
     std::uint64_t scalar[4];
     for (std::uint64_t& word : scalar) word = detail::random_splitmix64(seed);
     for (std::size_t stream = 0; stream < kStreams; ++stream) {
       for (std::size_t word = 0; word < 4; ++word) state_[word][stream] = scalar[word];
       detail::random_xoshiro_jump(scalar);
     }
+    layout_version_ = kLayoutVersion;
+    cursor_ = 0;
+    for (std::uint64_t& word : reserved_) word = 0;
   }
+
+  // Skips exactly the same logical outputs that random_fill would consume. This is O(count),
+  // allocation-free and does not write a throwaway output buffer.
+  HYLE_SIMD_API void advance(std::size_t count) noexcept;
+
+  // Returns the current segment as an independent child and advances this parent by one xoshiro
+  // LongJump (2^192 steps) on each of its eight streams. Create worker states before publishing
+  // them to threads; one mutable state is not safe for concurrent use.
+  [[nodiscard]] HYLE_SIMD_API RandomState split() noexcept;
 
  private:
   friend struct detail::RandomStateAccess;
@@ -96,7 +116,7 @@ static_assert(alignof(RandomState) == 64);
 
 namespace detail {
 
-// Internal bridge for separately compiled native kernels. RandomState remains
+// Internal bridge for separately compiled target kernels. RandomState remains
 // opaque to callers so its C++ layout is not part of the public source contract.
 struct RandomStateAccess {
   static std::uint64_t (&words(RandomState& state) noexcept)[4][RandomState::kStreams] {
@@ -113,5 +133,12 @@ HYLE_SIMD_API void random_fill(RandomState& state, float* dst,
                                std::size_t count) noexcept;
 HYLE_SIMD_API void random_fill(RandomState& state, double* dst,
                                std::size_t count) noexcept;
+
+template <typename T, std::size_t Extent>
+  requires(std::is_same_v<T, std::uint64_t> || std::is_same_v<T, float> ||
+           std::is_same_v<T, double>)
+inline void random_fill(RandomState& state, std::span<T, Extent> output) noexcept {
+  random_fill(state, output.data(), output.size());
+}
 
 }  // namespace hyle::simd

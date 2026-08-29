@@ -92,15 +92,3 @@ TEST(SimdNative, WholeRangeAlgorithmsOwnTailAndAliasRules) {
   EXPECT_TRUE(std::equal(in_place.begin(), in_place.begin() + in_place_count,
                          compacted.begin()));
 }
-
-TEST(SimdNative, RandomMatchesPublicWholeBufferSequence) {
-  constexpr std::size_t kCount = 73;
-  hs::RandomState native_state(555);
-  hs::RandomState scalar_state(555);
-  std::array<std::uint64_t, kCount> native{};
-  std::array<std::uint64_t, kCount> scalar{};
-
-  hs::native::random_fill(native_state, native.data(), native.size());
-  hs::random_fill(scalar_state, scalar.data(), scalar.size());
-  EXPECT_EQ(native, scalar);
-}

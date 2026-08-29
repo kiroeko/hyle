@@ -122,7 +122,7 @@ installed header 不再暴露用它绕过普通 API 或限档的入口。需要�
 | `kFeatureDtypeFp8Scalar` | fp8 基础路径仍是 scalar/可选硬件档 |
 | `kFeaturePerOpLowerTier` | 至少一个已认证 winner 有意使用较低 canonical tier |
 | `kFeatureSortCappedNetwork` | SVE partition 吃满 VL，但基础 network 有 128/256-bit cap |
-| `kFeatureBitpackLogical128` | SVE/RVV 指令可 scalable，但 logical block 固定 128 bit，字节不随 VL/VLEN 改变；不承诺跨 tier wire format |
+| `kFeatureBitpackLogical128` | bitpack full block 固定为 128 个 value；canonical-v1 字节不随 ISA、VL/VLEN 改变 |
 
 这些 bit 通过 `SelectedTarget` 的具名枚举公开，私有 table version/layout 不是用户 schema，也不是
 Native FFI 候选。
@@ -228,19 +228,21 @@ HYLE 自带 kernel 遵循：
                └─ private runtime table
 ```
 
-`ops`、`random` 与 `scan` 仍处于图中 migration-only 分支，后续 family ticket 会裁决迁移。无论 vendor
-迁移状态如何，都不得维护一份 fixed-target 算法和另一份 dynamic 算法；variant TU 只能给同一 body
-加稳定符号名和 target 编译环境。
+`ops`、`random`、`scan`、`search` 与 bitpack 已位于 direct-Highway 分支；仍保留 integrated source 的
+只有 Ordering 所属 VQSort。无论 vendor 归属如何，都不得维护一份 fixed-target 算法和另一份 dynamic
+算法；variant TU 只能给同一 body 加稳定符号名和 target 编译环境。
 
 ## 状态对象与随机数
 
-返回 native vector 的 `native::VectorXoshiro` 只服务固定宽 target-bound 代码；SVE/RVV 的向量类型
-不能作为类成员，使用同为零派发的 `native::random_fill`。普通用户使用不透明
-`RandomState + random_fill`；它维护固定的八个逻辑流，各 ISA 只改变一次并行更新几个流，因此相同 seed
-与调用序列跨 scalar/SSE4/AVX2/AVX-512/NEON 位一致。
+普通用户使用固定状态布局的 `RandomState + random_fill`。target TU 直接使用 Highway register ops，
+但状态始终维护八个 jump-separated 逻辑流；各 ISA 只改变一次并行更新几个流，因此相同 seed 与调用
+序列跨 scalar/SSE4/AVX2/AVX-512/NEON/SVE/RVV 位一致。`seed()` 重置序列，copy 复制当前位置，
+`advance(n)` 以 O(n) 丢弃同样的 logical outputs，`split()` 以固定成本把当前 segment 交给 child 并将
+parent 的八条流各 LongJump 到下一个 2^192 segment。一个 mutable state 不支持并发访问，worker 必须
+在发布前各自取得 child。
 
-这仍是非加密 xoshiro256++。若未来 dropout/分布式采样要求在 worker 数、任务切分和 GPU 之间也保持
-按元素严格复现，应增加 counter-based Philox 合同，而不是继续扩大 native vector state 的 ABI。
+这仍是非加密 xoshiro256++。若未来真实 dropout/分布式采样 consumer 要求在 worker 数、任务切分和
+GPU 之间也保持按元素严格复现，应另行准入 counter-based Philox，而不是扩大当前 state 合同。
 
 ## SVE 与 RVV
 
@@ -255,8 +257,10 @@ xsimd-derived op 也已有独立 scalable 产品 TU。只有 `lgamma/remainder` 
 边界逐 lane 回 libm。常用 dtype f16/bf16↔f32 已有真实 SVE/RVV 产品 TU；fp8 因 base scalable ISA
 没有已认证的通用转换收益而保留 scalar/可选硬件路径。
 
-bitpack 的物理指令使用 scalable backend，但 logical D-tag 固定为 128-bit，因此格式不随线程 SVE VL
-或机器 RVV VLEN 改变，并与 NEON block layout 相同。sort/partial/select 覆盖六种 scalar key 与
+bitpack 的 full block 固定为 128 个 value，并采用 Highway 128-bit logical-lane layout；宽 fixed/scalable
+寄存器只在有界 tile 内并行多个 logical block，不能改变输出次序。scalar floor 使用由同一锁定 Highway
+layout 生成并由 exhaustive cross-tier test 守护的最小 segment table。因此 canonical-v1 字节跨
+scalar/x86/NEON/SVE/RVV 一致，也不随线程 VL/VLEN 改变。sort/partial/select 覆盖六种 scalar key 与
 KV32/KV64：RVV 使用诚实的 LMUL=1 全宽 tag；SVE 的递归 partition 使用完整物理 VL，只有需要 2 的幂
 lane 数的 sorting network 保持 128/256-bit cap。
 
@@ -265,6 +269,10 @@ SIMD-06 的 direct-Highway source-fat seam 使用有界 focused 门：
 ```sh
 bash scripts/sve-qemu-test.sh fat  # VL 128/256/384/512/2048
 bash scripts/rvv-qemu-test.sh fat  # VLEN 128/256/512/1024
+
+# SIMD-10 bitpack/random bounded family gate
+HYLE_SCALABLE_BITPACK_RANDOM_ONLY=1 bash scripts/sve-qemu-test.sh base
+HYLE_SCALABLE_BITPACK_RANDOM_ONLY=1 bash scripts/rvv-qemu-test.sh base
 ```
 
 两条命令只编译同一 pointer/POD Highway body 与 exact 选择 driver，验证 sizeless 主循环、tail 和“只链接

@@ -12,7 +12,8 @@ namespace hyle::simd::detail {
 #define HYLE_RANDOM_DECLARE(suffix)                                                   \
   void random_fill_u64_##suffix(RandomState*, std::uint64_t*, std::size_t) noexcept; \
   void random_fill_f32_##suffix(RandomState*, float*, std::size_t) noexcept;         \
-  void random_fill_f64_##suffix(RandomState*, double*, std::size_t) noexcept
+  void random_fill_f64_##suffix(RandomState*, double*, std::size_t) noexcept;        \
+  void random_advance_##suffix(RandomState*, std::size_t) noexcept
 
 HYLE_RANDOM_DECLARE(scalar);
 HYLE_RANDOM_DECLARE(sse4);

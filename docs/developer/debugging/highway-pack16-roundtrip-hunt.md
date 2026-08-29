@@ -1,7 +1,10 @@
 # Highway Pack16<11>/<13> 满位宽 round-trip Hunt(vendor 算法 bug —— HYLE 对拍揪出、独立探针坐实、已绕过)
 
 > 调查日志(已结案)。触发:simd-09-bitpack 薄封装 Highway bit_pack 时,round-trip 对拍(pack→unpack 必须还原)在 u16 的 bits=11/13 失败。
-> 关联:[`bitpack_body.inc`](../../../src/simd/bitpack/bitpack_body.inc)(绕过点 `bitpack_width_borrowable`)、[`bitpack.h`](../../../include/hyle/simd/bitpack.h)。上游:`third_party/highway/hwy/contrib/bit_pack/bit_pack-inl.h` 的 `Pack16<11>`/`Pack16<13>` 手写特化。
+> 历史关联：SIMD-10 已删除当时承载绕过点的 `bitpack_body.inc`；当前产品编排见
+> [`kernel_impl.h`](../../../src/simd/bitpack/kernel_impl.h)，公开合同见
+> [`bitpack.h`](../../../include/hyle/simd/bitpack.h)。上游问题位于
+> `hwy/contrib/bit_pack/bit_pack-inl.h` 的 `Pack16<11>`/`Pack16<13>` 手写特化。
 > 结论先行:**Highway 的 `Pack16<11>` 和 `Pack16<13>` 手写特化不能对满位宽(全 11/13 位)值 round-trip**(独立探针实测 14/256、102/256 lane 不还原)。根因:Highway 自己的 `bit_pack_test.cc:55` 用 `Random32(&rng) & kBits`——把输入和**字面量位宽数**(11、13)按位与,而非 `& ((1<<kBits)-1)` mask,所以测试永远只喂 ≤kBits 数值本身那几个小值,满位宽路径从未被测,bug 未测上游就发货。其余所有宽度(Pack8 全 1..8、Pack32 全 1..32 泛型 unroller、Pack16 另外 14 个宽度)对拍全净。**处置**:对 (u16, bits∈{11,13}) 两个宽度,HYLE 整组走自己已 round-trip 验证的 scalar bit-stream 编解码器(`bitstream.h`),其余继续借 Highway。
 
 ## 0. 为什么这篇值得独立成文:借库不等于免验
@@ -45,9 +48,9 @@ return ConvertScalarTo<T>(Random32(&rng) & kBits);   // & 11, & 13 ... 字面量
 ```
 应是 `& ((1u << kBits) - 1u)`(mask 到 kBits 位)。`& kBits` 把随机数和**位宽数值本身**按位与:kBits=11 (0b1011) 只可能得到 {0,1,2,3,8,9,10,11} 这几个值,远不能覆盖 11 位满范围。于是 Pack16<11>/<13> 特化里那段错位的移位/或**从未被满位宽输入激发**,测试长绿,bug 随 release 发货。这是"测试喂的数据不够宽 → 假绿"的经典陷阱,和 HYLE 自己 simd-08 的 TruncateTo"单平台栈布局侥幸没崩"是同一类:**测试没覆盖到的路径不存在正确性保证,哪怕来自成熟库。**
 
-## 5. 修法:两个坏宽度整组回退 HYLE 自己的 oracle
+## 5. 当时修法：两个坏宽度整组回退 HYLE 自己的 oracle
 
-`bitpack_body.inc`:
+SIMD-10 重构前的 `bitpack_body.inc`：
 ```cpp
 template <typename T>
 constexpr bool bitpack_width_borrowable(unsigned bits) noexcept {
@@ -55,7 +58,10 @@ constexpr bool bitpack_width_borrowable(unsigned bits) noexcept {
   else return true;
 }
 ```
-对不可借的宽度把 `nblocks` 强制为 0 → 全数组走 `bitstream_pack/unpack`(HYLE 自写、round-trip 验证过的 LSB-first 连续位流编解码器)。pack 与 unpack **共用同一谓词**,所以 layout 恒自洽(不会 pack 用 Highway、unpack 用 bitstream)。其余宽度继续借 Highway(它们已对拍净)。**没有去"修" Highway 的特化**——借核出问题就退回自己的 oracle,不改 vendored 源(改了下次更新 Highway 又冲突);把绕过点和原因就地注释登记。
+当时对不可借的宽度把 `nblocks` 强制为 0 → 全数组走 `bitstream_pack/unpack`（HYLE 自写、
+round-trip 验证过的 LSB-first 连续位流编解码器）。SIMD-10 后，所有 tier 都改用固定 128-value、
+little-endian canonical v1 编排；11/13-bit 仍使用独立验证过的 scalar segment，而不再保留整份 vendor
+port。两代方案都没有修改 vendored 源，因此依赖升级不会产生私有补丁冲突。
 
 ## 6. 验证
 

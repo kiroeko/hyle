@@ -16,8 +16,9 @@
    `find_package()`、toolchain/sysroot 或运行环境提供，不属于 FetchContent bundle。
 
 选择 `simd` 时必须提供 `deps/highway/`：它是中央锁定、由 HYLE target TU 直接编译的产品源码，而不是
-任意系统安装。bitpack/VQSort 等尚未裁决的 Highway integrated port 已是 HYLE 源码包内的修改代码，
-不另放 checkout；完整源码审计会验证其 origin、integration paths、adapted-content hash 和许可证副本。
+任意系统安装。bitpack 直接编译这份锁定 Highway；尚待裁决的 VQSort integrated port 已是 HYLE 源码包
+内的修改代码，不另放 checkout。完整源码审计会验证其 origin、integration paths、adapted-content hash
+和许可证副本。
 benchmark 使用独立干净的 Highway/xsimd sibling checkout，避免候选与对手共用 include path；xsimd
 当前不进入产品依赖。
 

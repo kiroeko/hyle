@@ -14,7 +14,8 @@ namespace {
 
 #if defined(HYLE_ARCH_X64) &&                                      \
     (defined(HYLE_SIMD_COMPILED_AVX2) ||                           \
-     defined(HYLE_SIMD_COMPILED_AVX512))
+     (defined(HYLE_SIMD_COMPILED_AVX512) &&                        \
+      defined(HYLE_SIMD_CLASSIC_CL_AVX512_FALLBACK)))
 bool have_avx2_math() noexcept {
 #if defined(HYLE_SIMD_EXACT_TARGET_AVX2) || \
     defined(HYLE_SIMD_EXACT_TARGET_AVX512)
@@ -29,7 +30,7 @@ bool have_avx2_math() noexcept {
 #endif
 
 #if defined(HYLE_ARCH_X64) && defined(HYLE_SIMD_COMPILED_AVX512) && \
-    !defined(_MSC_VER)
+    !defined(HYLE_SIMD_CLASSIC_CL_AVX512_FALLBACK)
 bool have_avx512_math() noexcept {
 #if defined(HYLE_SIMD_EXACT_TARGET_AVX512)
   return true;
@@ -75,7 +76,7 @@ bool have_rvv_math() noexcept {
 #define HYLE_SCALAR_KERNEL(name, tag) HYLE_SCALAR_KERNEL_I(name, tag)
 
 #if defined(HYLE_ARCH_X64) && defined(HYLE_SIMD_COMPILED_AVX512) && \
-    !defined(_MSC_VER)
+    !defined(HYLE_SIMD_CLASSIC_CL_AVX512_FALLBACK)
 #define HYLE_TRY_AVX512(name, tag, owner, ...)                              \
   if (have_avx512_math()) {                                                 \
     HYLE_VARIANT_KERNEL_II(name, tag, owner, avx512)(__VA_ARGS__);          \
@@ -87,7 +88,8 @@ bool have_rvv_math() noexcept {
 
 #if defined(HYLE_ARCH_X64) &&                                      \
     (defined(HYLE_SIMD_COMPILED_AVX2) ||                           \
-     (defined(HYLE_SIMD_COMPILED_AVX512) && defined(_MSC_VER)))
+     (defined(HYLE_SIMD_COMPILED_AVX512) &&                        \
+      defined(HYLE_SIMD_CLASSIC_CL_AVX512_FALLBACK)))
 #define HYLE_TRY_AVX2(name, tag, owner, ...)                                 \
   if (have_avx2_math()) {                                                    \
     HYLE_VARIANT_KERNEL_II(name, tag, owner, avx2)(__VA_ARGS__);             \

@@ -3,7 +3,7 @@
 // part of GCC/Clang builds; MSVC intentionally uses the AVX2 math kernel.
 #include "hyle/platform.h"
 
-#if defined(HYLE_ARCH_X64) && !defined(_MSC_VER)
+#if defined(HYLE_ARCH_X64) && !defined(HYLE_SIMD_CLASSIC_CL_AVX512_FALLBACK)
 
 #define HWY_COMPILE_ONLY_STATIC 1
 #define HYLE_HIGHWAY_MATH_SUFFIX avx512
@@ -11,4 +11,4 @@
 #undef HYLE_HIGHWAY_MATH_SUFFIX
 #undef HWY_COMPILE_ONLY_STATIC
 
-#endif  // HYLE_ARCH_X64 && !_MSC_VER
+#endif // HYLE_ARCH_X64 && !HYLE_SIMD_CLASSIC_CL_AVX512_FALLBACK

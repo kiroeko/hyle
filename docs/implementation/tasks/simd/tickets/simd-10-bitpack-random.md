@@ -28,7 +28,9 @@ u16 11/13-bit 与代表性 f32 fill；优先检查 bytes moved、额外 pass 和
   Pack8/16/32 布局，按 block 顺序输出；不足一个 block的尾部按 value-order LSB-first 连续打包；所有 T word
   以 little-endian bytes 表示，最后 padding bits 为零。这样可保留成熟 bit-pack mechanism，又让 x86、
   NEON、SVE、RVV 与 scalar 共享唯一 bytes。它是无 framing 的 payload codec；type/count/bits/version 仍由
-  文件、网络或 quant-format owner 记录。
+   文件、网络或 quant-format owner 记录。资格实现同时证明 Highway 的高速 Pack 以输入已落在
+   `bits` 范围为前置条件；其官方测试也先 mask 输入。审计草案中的“自动忽略高位”会要求热路径逐值
+   mask，违背 direct-mechanism 与单遍成本目标，故在首个产品提交前校准为调用者前置条件。
 - 当前 bitpack dispatcher 在私有 Runtime 只读取 module `isa`，随后自己维护 `static bool` 与平台分支来选
   symbol；metadata 与 function pointer 不是同一 authority。候选必须让六个 type/op pointer 和 module
   metadata 同表产生，ordinary 每完整 buffer 只有一次 cached indirect call，exact route 直接绑定 suffix。
@@ -53,7 +55,8 @@ u16 11/13-bit 与代表性 f32 fill；优先检查 bytes moved、额外 pass 和
 1. 保留 u8/u16/u32、`bits=1..lane width` 与 `packed_size<T>` 的 ordinary pointer/count core；增加自然
    `std::span` convenience 和 `kBitpackFormatVersion=1`。公开 payload 使用上述 canonical fixed-128 +
    little-endian v1 layout；`count==0` 可传空指针，非空时指针有效，输入/输出不得重叠，超过 `bits` 的高位
-   被忽略。`packed_size<T>` 以 T words 计数且 O(1)，codec 为 O(n)/O(1)、无 heap/lock/whole-buffer copy。
+   必须已经落在 `bits` 范围内，codec 不执行隐式截断 pass。`packed_size<T>` 以 T words 计数且 O(1)，
+   codec 为 O(n)/O(1)、无 heap/lock/whole-buffer copy。
 2. fixed/scalable target TU 直接实例化锁定 Highway bit-pack；宽寄存器可以在有界 stack tile 内并行多个
    fixed logical block，但不得改变 bytes、建立整段临时区或增加第二遍 whole-buffer traversal。仅保留
    fixed-format 编排与已经由独立 oracle 证明的 u16 11/13 correction；删除其余 checked-in vendor port。
@@ -67,7 +70,7 @@ u16 11/13-bit 与代表性 f32 fill；优先检查 bytes moved、额外 pass 和
 5. random generated target TU 改为 direct Highway ops，删除无真实 consumer 的 `native/random.h` 与对应自测；
    stream semantic、state memory 与 float conversion 仍由 HYLE 拥有。Runtime 增加真实 random module metadata
    和 advance pointer，不使用 TLS、全局 mutable state、entropy 或逐元素 dispatch。
-6. correctness 覆盖 canonical golden bytes、所有 type/width、zero/tail/multi-block/high-bit masking/padding、
+6. correctness 覆盖 canonical golden bytes、所有 type/width、zero/tail/multi-block/input-fit/padding、
    exact/public/cross-tier bytes、SVE/RVV 多 VL/VLEN、header self-containment 与三交付 consumer；RNG 覆盖
    seed/copy/advance/split/chunk/float bounds、跨 tier sequence 和明确并发负空间。P1 只测 u16 11/13
    pack/unpack 与 f32 fill 的 4096/1M batch；candidate 与同 TU direct Highway/同合同 composition 对齐格式、

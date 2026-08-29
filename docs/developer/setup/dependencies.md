@@ -56,9 +56,9 @@ target 仍强制全量审计，防止发布介质夹带未复证快照。
 Highway/xsimd 的身份不能混为一谈：`highway` 是 `simd` 选择时取得的直接产品源码，HYLE 只编译
 自己的目标 TU，不执行上游 project，也不把 Highway 类型泄漏进 ordinary batch API；benchmark 使用
 独立、干净的 sibling checkout 作同 identity peer。`xsimd` 目前只是数学对照，不进入产品。
-`highway_port` 只登记尚待 SIMD-10/11 裁决的 bitpack/VQSort 迁入源码，绑定旧 origin、adapted-path
-内容 hash 和 Apache-2.0 payload；数学 port 已被 direct Highway 替代并从账本删除。新增 checkout 本身
-不等于完成迁移，必须同时删除等价产品 route、旧 source audit 与过期许可证投影。
+`highway_port` 只登记尚待 SIMD-11 裁决的 VQSort 迁入源码，绑定旧 origin、adapted-path 内容 hash 和
+Apache-2.0 payload；数学与 bitpack port 已被 direct Highway 替代并从账本删除。新增 checkout 本身不
+等于完成迁移，必须同时删除等价产品 route、旧 source audit 与过期许可证投影。
 
 **默认行为（开箱即用，需联网）**：新机器 clone HYLE → 跑 `cmake` → FetchContent 下载已校验 archive
 到 `<hyle-build>/_deps/<dep>-src`，生成物进入同一 build tree 的 `_deps/<dep>-build`。删除 build tree

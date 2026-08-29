@@ -1,25 +1,26 @@
+#include "hyle/platform/cpu.h"
+#include "hyle/simd/bitpack.h"
 #include "hyle/simd/math.h"
+#include "hyle/simd/random.h"
 #include "hyle/simd/runtime.h"
 #include "hyle/simd/scan.h"
 #include "hyle/simd/search.h"
-#include "hyle/platform/cpu.h"
 
 #include <array>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <span>
 
 int main() {
   std::array<float, 9> input{-4.0f, -1.0f, -0.0f, 0.0f, 0.25f,
-                             1.0f,  2.0f,  4.0f, 8.0f};
+                             1.0f,  2.0f,  4.0f,  8.0f};
   std::array<float, input.size()> output{};
 
-  hyle::simd::exp_in_range_f32_batch(input.data(), output.data(),
-                                      input.size());
+  hyle::simd::exp_in_range_f32_batch(input.data(), output.data(), input.size());
   for (std::size_t i = 0; i < input.size(); ++i) {
     const float expected = std::exp(input[i]);
-    if (std::abs(output[i] - expected) >
-        std::abs(expected) * 8e-7f + 1e-6f)
+    if (std::abs(output[i] - expected) > std::abs(expected) * 8e-7f + 1e-6f)
       return 1;
   }
 
@@ -30,8 +31,10 @@ int main() {
 
   hyle::simd::softmax_f32(input.data(), output.data(), input.size());
   float probability_sum = 0.0f;
-  for (float probability : output) probability_sum += probability;
-  if (std::abs(probability_sum - 1.0f) > 2e-6f) return 3;
+  for (float probability : output)
+    probability_sum += probability;
+  if (std::abs(probability_sum - 1.0f) > 2e-6f)
+    return 3;
 
   const std::array<std::uint32_t, 7> scan_input{3, 1, 4, 1, 5, 9, 2};
   std::array<std::uint32_t, scan_input.size()> scan_output{};
@@ -44,15 +47,50 @@ int main() {
     return 5;
 
   const std::array<float, 8> search_input{1.0f, 9.0f, -2.0f, 9.0f,
-                                          4.0f, 9.0f, 0.0f, 3.0f};
+                                          4.0f, 9.0f, 0.0f,  3.0f};
   if (hyle::simd::count_equal(search_input.data(), search_input.size(), 9.0f) !=
           3 ||
       hyle::simd::index_of_max(search_input.data(), search_input.size()) != 1)
     return 6;
 
+  constexpr unsigned kBits = 11;
+  std::array<std::uint16_t, 129> raw{};
+  for (std::size_t i = 0; i < raw.size(); ++i)
+    raw[i] = static_cast<std::uint16_t>((i * 37 + 11) & 0x7ffu);
+  std::array<std::uint16_t,
+             hyle::simd::packed_size<std::uint16_t>(raw.size(), kBits)>
+      packed{};
+  std::array<std::uint16_t, raw.size()> decoded{};
+  hyle::simd::pack(std::span<const std::uint16_t>{raw},
+                   std::span<std::uint16_t>{packed}, kBits);
+  hyle::simd::unpack(std::span<const std::uint16_t>{packed},
+                     std::span<std::uint16_t>{decoded}, kBits);
+  if (hyle::simd::kBitpackFormatVersion != 1 || decoded != raw)
+    return 7;
+
+  hyle::simd::RandomState random{12345};
+  hyle::simd::RandomState copy = random;
+  std::array<float, 33> random_a{};
+  std::array<float, random_a.size()> random_b{};
+  hyle::simd::random_fill(random, std::span<float>{random_a});
+  hyle::simd::random_fill(copy, std::span<float>{random_b});
+  if (random_a != random_b)
+    return 8;
+
+  random.seed(12345);
+  auto worker = random.split();
+  hyle::simd::RandomState expected{12345};
+  worker.advance(17);
+  std::array<float, 17> discarded{};
+  hyle::simd::random_fill(expected, std::span<float>{discarded});
+  hyle::simd::random_fill(worker, std::span<float>{random_a});
+  hyle::simd::random_fill(expected, std::span<float>{random_b});
+  if (random_a != random_b)
+    return 9;
+
   // The package must stage and load the runtime-selected implementation, not
   // merely make the public header compile.
-  const char* active = hyle::platform::isa_name(
+  const char *active = hyle::platform::isa_name(
       hyle::simd::selected_target(hyle::simd::KernelFamily::kMath).isa);
-  return active == nullptr || active[0] == '\0' ? 7 : 0;
+  return active == nullptr || active[0] == '\0' ? 10 : 0;
 }

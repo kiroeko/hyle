@@ -15,7 +15,6 @@
 
 #include "hyle/simd/vec.h"
 #include "hyle/simd/dtype.h"
-#include "hyle/simd/native/random.h"
 
 // vec_test -- WIDTH-AGNOSTIC: this ONE source is compiled three times (scalar / sse4 /
 // avx2 targets, see tests/simd/CMakeLists.txt) and validates whichever backend is compiled
@@ -2754,76 +2753,6 @@ TEST(Vec, Compare128) {
     EXPECT_EQ(out.data[p], b_lt ? ab.data[p] : bb.data[p]) << "max128u lo p=" << p;
     EXPECT_EQ(out.data[p + 1], b_lt ? ab.data[p + 1] : bb.data[p + 1]) << "max128u hi p=" << p;
   }
-}
-
-// ---- simd-09-rng: N parallel xoshiro256** streams --------------------------------------
-// Lane 0's state is the initial scalar-seeded xoshiro (before any Jump), so lane 0's Next()
-// sequence MUST match a scalar xoshiro256** seeded identically -- the correctness oracle.
-namespace {
-struct ScalarXoshiro {  // reference xoshiro256** (Blackman-Vigna), independent of the lib impl
-  std::uint64_t s[4];
-  static std::uint64_t rotl(std::uint64_t x, int k) { return (x << k) | (x >> (64 - k)); }
-  explicit ScalarXoshiro(std::uint64_t seed) {
-    std::uint64_t z = seed;  // SplitMix64 bootstrap
-    for (auto& e : s) {
-      z += 0x9e3779b97f4a7c15ull;
-      std::uint64_t t = (z ^ (z >> 30)) * 0xbf58476d1ce4e5b9ull;
-      t = (t ^ (t >> 27)) * 0x94d049bb133111ebull;
-      e = t ^ (t >> 31);
-    }
-  }
-  std::uint64_t next() {
-    const std::uint64_t r = rotl(s[0] + s[3], 23) + s[0];
-    const std::uint64_t t = s[1] << 17;
-    s[2] ^= s[0]; s[3] ^= s[1]; s[1] ^= s[2]; s[0] ^= s[3];
-    s[2] ^= t; s[3] = rotl(s[3], 45);
-    return r;
-  }
-};
-}  // namespace
-TEST(Vec, RandomXoshiro) {
-  const hs::ScalableTag<std::uint64_t> d;
-  const std::size_t n = hs::Lanes(d);
-  // Lane 0 must match the scalar oracle for many draws.
-  hs::native::VectorXoshiro rng{0xC0FFEEull};
-  ScalarXoshiro oracle{0xC0FFEEull};
-  Buf<std::uint64_t> out;
-  for (int iter = 0; iter < 32; ++iter) {
-    hs::Store(rng.Next(), d, out.data);
-    EXPECT_EQ(out.data[0], oracle.next()) << "xoshiro lane0 mismatch iter=" << iter;
-  }
-  // Streams are decorrelated (Jump per lane): no two lanes produce the same value in a draw.
-  if (n >= 2) {
-    hs::native::VectorXoshiro rng2{0x1234ull};
-    hs::Store(rng2.Next(), d, out.data);
-    for (std::size_t i = 0; i < n; ++i)
-      for (std::size_t j = i + 1; j < n; ++j)
-        EXPECT_NE(out.data[i], out.data[j]) << "lanes " << i << "," << j << " correlated";
-  }
-  // Reproducible: same seed -> identical sequence.
-  hs::native::VectorXoshiro a{42}, b{42};
-  Buf<std::uint64_t> oa, ob;
-  for (int iter = 0; iter < 8; ++iter) {
-    hs::Store(a.Next(), d, oa.data);
-    hs::Store(b.Next(), d, ob.data);
-    for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(oa.data[i], ob.data[i]) << "repro i=" << i;
-  }
-  // Uniform() in [0,1).
-  const hs::ScalableTag<double> df;
-  const std::size_t nf = hs::Lanes(df);
-  alignas(64) double u[hs::ScalableTag<double>::kMaxLanes];
-  hs::native::VectorXoshiro urng{7};
-  double sum = 0.0;
-  int count = 0;
-  for (int iter = 0; iter < 200; ++iter) {
-    hs::Store(urng.Uniform(), df, u);
-    for (std::size_t i = 0; i < nf; ++i) {
-      EXPECT_GE(u[i], 0.0) << "uniform<0";
-      EXPECT_LT(u[i], 1.0) << "uniform>=1";
-      sum += u[i]; ++count;
-    }
-  }
-  EXPECT_NEAR(sum / count, 0.5, 0.05) << "uniform mean off (n=" << count << ")";  // ~0.5 expected
 }
 
 // ---- simd-17 batch1: fixed-pattern Shuffle + byte/lane shifts ----------------------

@@ -8,6 +8,8 @@
 #   bash scripts/simd-scalable-exact-qemu-test.sh rvv
 #   HYLE_SCALABLE_SEARCH_SCAN_ONLY=1 bash scripts/simd-scalable-exact-qemu-test.sh sve
 #     # SIMD-09 bounded exact-artifact gate
+#   HYLE_SCALABLE_BITPACK_RANDOM_ONLY=1 bash scripts/simd-scalable-exact-qemu-test.sh sve
+#     # SIMD-10 bounded exact-artifact gate
 set -euo pipefail
 
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
@@ -59,7 +61,8 @@ fi
 
 COMMON=(-std=c++23 -O2 "-march=$BASE_ARCH" -pthread
   "-I$REPO/include" "-I$REPO" "-I$HWY" "-I$GT/include" "-I$GT"
-  -DHYLE_SIMD_EXACT=1 "-D$EXACT_DEFINE=1" "-D$VARIANT_DEFINE=1")
+  -DHWY_HEADER_ONLY=1 -DHYLE_SIMD_EXACT=1 "-D$EXACT_DEFINE=1"
+  "-D$VARIANT_DEFINE=1")
 TARGET=("${COMMON[@]}" "-march=$TARGET_ARCH" "-D$TARGET_DEFINE=1")
 SCALAR_COMMON=(-std=c++23 -O2 "-march=$BASE_ARCH" -pthread
   "-I$REPO/include" "-I$REPO" -DHYLE_SIMD_EXACT=1
@@ -68,10 +71,12 @@ SCALAR_COMMON=(-std=c++23 -O2 "-march=$BASE_ARCH" -pthread
 echo "[$KIND exact] compiling one runtime table and one kernel suffix ..."
 "$CXX" "${COMMON[@]}" -c "$GT/src/gtest-all.cc" -o "$OUT/gtest-all.o"
 "$CXX" "${COMMON[@]}" -c "$GT/src/gtest_main.cc" -o "$OUT/gtest-main.o"
-for test in runtime ops search scan narrow_ops; do
+for test in runtime ops search scan narrow_ops bitpack; do
   "$CXX" "${COMMON[@]}" -c "$REPO/tests/simd/${test}_test.cc" -o "$OUT/${test}_test.o"
 done
 "$CXX" "${TARGET[@]}" -c "$REPO/tests/simd/native_test.cc" -o "$OUT/native_test.o"
+"$CXX" "${TARGET[@]}" -c "$REPO/tests/simd/scalable_bitpack_product_test.cc" \
+  -o "$OUT/scalable_bitpack_product_test.o"
 
 "$CXX" "${COMMON[@]}" -c "$REPO/src/simd/runtime.cc" -o "$OUT/runtime.o"
 "$CXX" "${COMMON[@]}" -c "$REPO/src/platform/cpu.cc" -o "$OUT/cpu_test_only.o"
@@ -96,7 +101,7 @@ for module in random; do
   dispatch_source="${module}_dispatch.cc"
   "$CXX" "${COMMON[@]}" -c "$REPO/src/simd/$module/$dispatch_source" \
     -o "$OUT/${module}_dispatch.o"
-  printf '#define HYLE_SIMD_VARIANT_SUFFIX %s\n#include "src/simd/%s/kernel_impl.h"\n' \
+  printf '#define HWY_COMPILE_ONLY_STATIC 1\n#define HYLE_SIMD_VARIANT_SUFFIX %s\n#include "src/simd/%s/kernel_impl.h"\n' \
     "$SUFFIX" "$module" |
     "$CXX" "${TARGET[@]}" -x c++ -c - -o "$OUT/${module}_${SUFFIX}.o"
 done
@@ -112,6 +117,9 @@ done
 printf '#define HWY_COMPILE_ONLY_STATIC 1\n#define HYLE_SIMD_VARIANT_SUFFIX %s\n#include "src/simd/dtype/conversion_kernel_impl.h"\n' \
   "$SUFFIX" |
   "$CXX" "${TARGET[@]}" -x c++ -c - -o "$OUT/dtype_${SUFFIX}.o"
+printf '#define HWY_COMPILE_ONLY_STATIC 1\n#define HYLE_SIMD_VARIANT_SUFFIX %s\n#include "src/simd/bitpack/kernel_impl.h"\n' \
+  "$SUFFIX" |
+  "$CXX" "${TARGET[@]}" -x c++ -c - -o "$OUT/bitpack_${SUFFIX}.o"
 
 if nm -u "$OUT/runtime.o" "$OUT/"*_dispatch.o |
     grep -Eq 'cpu_features|best_isa|supports'; then
@@ -135,20 +143,24 @@ fi
 
 "$CXX" "${TARGET[@]}" "$OUT/gtest-all.o" "$OUT/gtest-main.o" \
   "$OUT/runtime_test.o" "$OUT/ops_test.o" "$OUT/search_test.o" \
-  "$OUT/scan_test.o" "$OUT/narrow_ops_test.o" "$OUT/native_test.o" "$OUT/runtime.o" \
+  "$OUT/scan_test.o" "$OUT/narrow_ops_test.o" "$OUT/bitpack_test.o" \
+  "$OUT/scalable_bitpack_product_test.o" "$OUT/native_test.o" "$OUT/runtime.o" \
   "$OUT/cpu_test_only.o" "$OUT/thread_test_stub.o" \
   "$OUT/error_status.o" "$OUT/fat_fixture.o" \
   "$OUT/ops_dispatch.o" "$OUT/random_dispatch.o" \
   "$OUT/search_dispatch.o" "$OUT/scan_dispatch.o" \
-  "$OUT/narrow_dispatch.o" \
+  "$OUT/narrow_dispatch.o" "$OUT/product_bitpack_dispatch.o" \
   "$OUT/ops_${SUFFIX}.o" "$OUT/random_${SUFFIX}.o" \
   "$OUT/search_${SUFFIX}.o" "$OUT/scan_${SUFFIX}.o" \
   "$OUT/narrow_${SUFFIX}.o" "$OUT/dtype_${SUFFIX}.o" \
+  "$OUT/bitpack_${SUFFIX}.o" \
   -static -o "$OUT/exact_gtest" -pthread
 
 RUN_ARGS=(--gtest_brief=1)
 if [ "${HYLE_SCALABLE_SEARCH_SCAN_ONLY:-0}" = "1" ]; then
   RUN_ARGS+=(--gtest_filter=SimdRuntime.TableMetadataAndExactTierLookup:Search.*:Scan.*)
+elif [ "${HYLE_SCALABLE_BITPACK_RANDOM_ONLY:-0}" = "1" ]; then
+  RUN_ARGS+=(--gtest_filter=SimdRuntime.TableMetadataAndExactTierLookup:SimdRuntime.Random*:BitPack.*:ScalableBitpackProduct.*)
 fi
 
 for bits in "${LENGTHS[@]}"; do

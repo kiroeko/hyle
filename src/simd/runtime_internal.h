@@ -14,7 +14,7 @@ class RandomState;
 // ordinary calls pay one function-pointer hop per whole buffer. Its layout and
 // per-tier accessors are deliberately not part of the installed C++ surface.
 struct Runtime {
-  static constexpr std::uint32_t kTableVersion = 9;
+  static constexpr std::uint32_t kTableVersion = 10;
 
   struct Ops {
     float (*dot_f32)(const float*, const float*, std::size_t) noexcept;
@@ -56,6 +56,7 @@ struct Runtime {
     void (*fill_u64)(RandomState*, std::uint64_t*, std::size_t) noexcept;
     void (*fill_f32)(RandomState*, float*, std::size_t) noexcept;
     void (*fill_f64)(RandomState*, double*, std::size_t) noexcept;
+    void (*advance)(RandomState*, std::size_t) noexcept;
   };
 
   struct Search {
@@ -124,6 +125,21 @@ struct Runtime {
     void (*bf16_to_f16)(const bfloat16_t*, float16_t*, std::size_t) noexcept;
   };
 
+  struct Bitpack {
+    void (*pack_u8)(const std::uint8_t*, std::size_t, std::uint8_t*,
+                    unsigned) noexcept;
+    void (*unpack_u8)(const std::uint8_t*, std::size_t, std::uint8_t*,
+                      unsigned) noexcept;
+    void (*pack_u16)(const std::uint16_t*, std::size_t, std::uint16_t*,
+                     unsigned) noexcept;
+    void (*unpack_u16)(const std::uint16_t*, std::size_t, std::uint16_t*,
+                       unsigned) noexcept;
+    void (*pack_u32)(const std::uint32_t*, std::size_t, std::uint32_t*,
+                     unsigned) noexcept;
+    void (*unpack_u32)(const std::uint32_t*, std::size_t, std::uint32_t*,
+                       unsigned) noexcept;
+  };
+
   struct Module {
     Isa isa;
     std::uint64_t features;
@@ -159,7 +175,9 @@ struct Runtime {
   Scan scan_ops;
   Narrow narrow;
   DtypeConvert dtype_convert;
+  Bitpack bitpack_ops;
   Module ops_module;
+  Module random_module;
   Module search_module;
   Module scan;
   Module narrow_module;

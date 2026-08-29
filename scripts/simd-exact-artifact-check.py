@@ -17,22 +17,20 @@ X86_FORBIDDEN_SOURCES = {
     "scalar": ("dot_f16c.cc", "dot_avx512bf16.cc", "cvt_f16c.cc",
                "cvt_avx512bf16.cc", "transcendental_highway.cc",
                "transcendental_highway_avx512.cc", "vqsort_hyle_avx2.cc",
-               "vqsort_hyle_avx512.cc", "bitpack_hyle_avx2.cc",
-               "bitpack_hyle_avx512.cc"),
+               "vqsort_hyle_avx512.cc"),
     "sse4": ("dot_f16c.cc", "dot_avx512bf16.cc", "cvt_f16c.cc",
              "cvt_avx512bf16.cc", "transcendental_highway.cc",
              "transcendental_highway_avx512.cc", "vqsort_hyle_avx2.cc",
-             "vqsort_hyle_avx512.cc", "bitpack_hyle_avx2.cc",
-             "bitpack_hyle_avx512.cc"),
+             "vqsort_hyle_avx512.cc"),
     "avx2": ("dot_f16c.cc", "dot_avx512bf16.cc", "cvt_f16c.cc",
              "cvt_avx512bf16.cc",
              "transcendental_highway_avx512.cc",
-             "vqsort_hyle_avx512.cc", "bitpack_hyle_avx512.cc"),
+             "vqsort_hyle_avx512.cc"),
     # AVX2 math files are intentional per-op implementation dependencies of the canonical
     # AVX-512 product. Compiler-specific sort handling is refined in check_build_graph below.
     "avx512": ("dot_f16c.cc", "dot_avx512bf16.cc", "cvt_f16c.cc",
                "cvt_avx512bf16.cc",
-               "vqsort_hyle_avx2.cc", "bitpack_hyle_avx2.cc"),
+               "vqsort_hyle_avx2.cc"),
 }
 
 

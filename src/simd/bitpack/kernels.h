@@ -3,85 +3,42 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "hyle/platform.h"  // HYLE_ARCH_X64 / HYLE_ARCH_ARM64 (SIMD cores are arch-specific)
-
-// kernels.h (internal) -- per-tier HYLE bitpack symbols the dispatcher takes the address of. Same
-// shape as sort/kernels.h: the scalar TU (pure contiguous bit-stream codec) is ALWAYS defined + is
-// the non-x86 / fallback floor (NOT a stub -- it is a self-consistent codec). The HYLE D-tag
-// Pack8/Pack16/Pack32 implementation is compiled per ISA tier on the matching architecture (x86
-// avx2/avx512, arm64 neon); bitpack_dispatch enters it only when the CPU supports the tier, so wide
-// codegen never runs on an older CPU. Not a public header.
-//
-// The runtime `bits` is folded to the compile-time kBits template argument inside each HYLE target
-// TU (std::index_sequence<1..B>), so one symbol per (type,op,tier) covers every width. Whole N*B
-// raw-value blocks use Pack<kBits>; the sub-block tail uses the scalar bit-stream codec (same-tier
-// round trip, see bitpack.h layout contract).
-
 namespace hyle::simd::detail {
 
-// X-macro over the three supported lane types this milestone: <C++ type>, <short tag>.
-// B (bits-per-lane = max kBits) is 8*sizeof(T): 8 / 16 / 32.
-#define HYLE_BITPACK_TYPES(X) \
-  X(std::uint8_t, u8)         \
-  X(std::uint16_t, u16)       \
+#define HYLE_BITPACK_TYPES(X)                                                  \
+  X(std::uint8_t, u8)                                                          \
+  X(std::uint16_t, u16)                                                        \
   X(std::uint32_t, u32)
 
-// Declares the pack/unpack pair for one (type, tier). `count` is in units of raw values; `bits` is
-// the per-value significant width (1..8*sizeof(T), validated fail-fast in the dispatcher). count==0
-// is a no-op. The packed buffer must hold packed_size<T>(count, bits) elements (see bitpack.h).
-#define HYLE_BITPACK_DECL_PAIR(T, tag, tier)                                                  \
-  void pack_##tag##_##tier(const T* raw, std::size_t count, T* packed, unsigned bits) noexcept;\
-  void unpack_##tag##_##tier(const T* packed, std::size_t count, T* raw, unsigned bits) noexcept;
+#define HYLE_BITPACK_DECLARE_ONE(T, tag, suffix)                               \
+  void pack_##tag##_##suffix(const T *, std::size_t, T *, unsigned) noexcept;  \
+  void unpack_##tag##_##suffix(const T *, std::size_t, T *, unsigned) noexcept;
 
-// scalar floor (bit-stream codec) -- always available, every arch.
-#define HYLE_BITPACK_DECL_SCALAR(T, tag) HYLE_BITPACK_DECL_PAIR(T, tag, scalar)
-HYLE_BITPACK_TYPES(HYLE_BITPACK_DECL_SCALAR)
-#undef HYLE_BITPACK_DECL_SCALAR
+#define HYLE_BITPACK_DECLARE_scalar(T, tag)                                    \
+  HYLE_BITPACK_DECLARE_ONE(T, tag, scalar)
+#define HYLE_BITPACK_DECLARE_sse4(T, tag) HYLE_BITPACK_DECLARE_ONE(T, tag, sse4)
+#define HYLE_BITPACK_DECLARE_avx2(T, tag) HYLE_BITPACK_DECLARE_ONE(T, tag, avx2)
+#define HYLE_BITPACK_DECLARE_avx512(T, tag)                                    \
+  HYLE_BITPACK_DECLARE_ONE(T, tag, avx512)
+#define HYLE_BITPACK_DECLARE_neon(T, tag) HYLE_BITPACK_DECLARE_ONE(T, tag, neon)
+#define HYLE_BITPACK_DECLARE_sve(T, tag) HYLE_BITPACK_DECLARE_ONE(T, tag, sve)
+#define HYLE_BITPACK_DECLARE_rvv(T, tag) HYLE_BITPACK_DECLARE_ONE(T, tag, rvv)
 
-#if defined(HYLE_ARCH_X64)
-// AVX2 (256-bit) + AVX-512 (512-bit) HYLE bitpack cores. Entered by bitpack_dispatch when
-// cpu_features().avx2 / the avx512 group. The kernels use integer shift/or/and SIMD (not FP
-// transcendentals), so the 512 core exists on MSVC too.
-#define HYLE_BITPACK_DECL_AVX2(T, tag) HYLE_BITPACK_DECL_PAIR(T, tag, avx2)
-HYLE_BITPACK_TYPES(HYLE_BITPACK_DECL_AVX2)
-#undef HYLE_BITPACK_DECL_AVX2
-#define HYLE_BITPACK_DECL_AVX512(T, tag) HYLE_BITPACK_DECL_PAIR(T, tag, avx512)
-HYLE_BITPACK_TYPES(HYLE_BITPACK_DECL_AVX512)
-#undef HYLE_BITPACK_DECL_AVX512
-#endif  // HYLE_ARCH_X64
+HYLE_BITPACK_TYPES(HYLE_BITPACK_DECLARE_scalar)
+HYLE_BITPACK_TYPES(HYLE_BITPACK_DECLARE_sse4)
+HYLE_BITPACK_TYPES(HYLE_BITPACK_DECLARE_avx2)
+HYLE_BITPACK_TYPES(HYLE_BITPACK_DECLARE_avx512)
+HYLE_BITPACK_TYPES(HYLE_BITPACK_DECLARE_neon)
+HYLE_BITPACK_TYPES(HYLE_BITPACK_DECLARE_sve)
+HYLE_BITPACK_TYPES(HYLE_BITPACK_DECLARE_rvv)
 
-#if defined(HYLE_ARCH_ARM64)
-// aarch64 NEON HYLE bitpack core (ARMv8 baseline; bitpack_dispatch enters it unconditionally,
-// no runtime gate -- NEON is guaranteed present).
-#define HYLE_BITPACK_DECL_NEON(T, tag) HYLE_BITPACK_DECL_PAIR(T, tag, neon)
-HYLE_BITPACK_TYPES(HYLE_BITPACK_DECL_NEON)
-#undef HYLE_BITPACK_DECL_NEON
-#if defined(HYLE_SIMD_HAS_SVE_VARIANT)
-#define HYLE_BITPACK_DECL_SVE(T, tag) HYLE_BITPACK_DECL_PAIR(T, tag, sve)
-HYLE_BITPACK_TYPES(HYLE_BITPACK_DECL_SVE)
-#undef HYLE_BITPACK_DECL_SVE
-// Full-VL candidate: transposes several stable 128-value logical blocks into one scalable
-// register matrix, then restores the frozen wire layout. Kept internal until real-hardware
-// throughput proves that the two transposes beat the capped production path.
-#define HYLE_BITPACK_DECL_SVE_MULTIBLOCK(T, tag)                                      \
-  void pack_##tag##_multiblock_sve(const T*, std::size_t, T*, unsigned) noexcept;     \
-  void unpack_##tag##_multiblock_sve(const T*, std::size_t, T*, unsigned) noexcept;
-HYLE_BITPACK_TYPES(HYLE_BITPACK_DECL_SVE_MULTIBLOCK)
-#undef HYLE_BITPACK_DECL_SVE_MULTIBLOCK
-#endif
-#endif  // HYLE_ARCH_ARM64
+#undef HYLE_BITPACK_DECLARE_rvv
+#undef HYLE_BITPACK_DECLARE_sve
+#undef HYLE_BITPACK_DECLARE_neon
+#undef HYLE_BITPACK_DECLARE_avx512
+#undef HYLE_BITPACK_DECLARE_avx2
+#undef HYLE_BITPACK_DECLARE_sse4
+#undef HYLE_BITPACK_DECLARE_scalar
+#undef HYLE_BITPACK_DECLARE_ONE
 
-#if defined(HYLE_ARCH_RISCV64) && defined(HYLE_SIMD_HAS_RVV_VARIANT)
-#define HYLE_BITPACK_DECL_RVV(T, tag) HYLE_BITPACK_DECL_PAIR(T, tag, rvv)
-HYLE_BITPACK_TYPES(HYLE_BITPACK_DECL_RVV)
-#undef HYLE_BITPACK_DECL_RVV
-#define HYLE_BITPACK_DECL_RVV_MULTIBLOCK(T, tag)                                      \
-  void pack_##tag##_multiblock_rvv(const T*, std::size_t, T*, unsigned) noexcept;     \
-  void unpack_##tag##_multiblock_rvv(const T*, std::size_t, T*, unsigned) noexcept;
-HYLE_BITPACK_TYPES(HYLE_BITPACK_DECL_RVV_MULTIBLOCK)
-#undef HYLE_BITPACK_DECL_RVV_MULTIBLOCK
-#endif
-
-#undef HYLE_BITPACK_DECL_PAIR
-
-}  // namespace hyle::simd::detail
+} // namespace hyle::simd::detail

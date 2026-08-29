@@ -1,6 +1,7 @@
 #include "src/simd/runtime_internal.h"
 
 #include "hyle/platform.h"
+#include "src/simd/bitpack/kernels.h"
 #include "src/simd/dispatch_internal.h"
 #include "src/simd/dtype/conversion_kernels.h"
 #include "src/simd/dtype/kernels.h"
@@ -66,6 +67,13 @@ namespace {
       &detail::neg_##tag##_##suffix, &detail::square_##tag##_##suffix,         \
       &detail::sqrt_##tag##_##suffix,
 
+#define HYLE_BITPACK_RUNTIME_ONE(tag, suffix)                                  \
+  &detail::pack_##tag##_##suffix, &detail::unpack_##tag##_##suffix,
+
+#define HYLE_BITPACK_RUNTIME(suffix)                                           \
+  {HYLE_BITPACK_RUNTIME_ONE(u8, suffix) HYLE_BITPACK_RUNTIME_ONE(u16, suffix)  \
+       HYLE_BITPACK_RUNTIME_ONE(u32, suffix)}
+
 #if defined(HYLE_SIMD_FAT_AVX512_CAPPED)
 #define HYLE_SIMD_CLASSIC_CL_HIGHWAY_FALLBACK(value)                           \
   value.ops_module.isa = Isa::kAvx2;                                          \
@@ -76,6 +84,10 @@ namespace {
   value.search_module.features |= Runtime::kFeaturePerOpLowerTier;             \
   value.scan.isa = Isa::kAvx2;                                                \
   value.scan.features |= Runtime::kFeaturePerOpLowerTier;                      \
+  value.random_module.isa = Isa::kAvx2;                                       \
+  value.random_module.features |= Runtime::kFeaturePerOpLowerTier;             \
+  value.bitpack.isa = Isa::kAvx2;                                             \
+  value.bitpack.features |= Runtime::kFeaturePerOpLowerTier;                   \
   value.dtype.isa = Isa::kAvx2;                                               \
   value.dtype.features |= Runtime::kFeaturePerOpLowerTier;
 #else
@@ -95,22 +107,25 @@ namespace {
          HYLE_OPS_ROW_RUNTIME_ONE(f32, suffix)                                      \
          HYLE_OPS_ROW_RUNTIME_ONE(f64, suffix)},                                    \
         {&detail::random_fill_u64_##suffix, &detail::random_fill_f32_##suffix,      \
-         &detail::random_fill_f64_##suffix},                                        \
+         &detail::random_fill_f64_##suffix, &detail::random_advance_##suffix},      \
         HYLE_SEARCH_RUNTIME(suffix),                                                \
         HYLE_SCAN_RUNTIME(suffix),                                                  \
         HYLE_NARROW_RUNTIME(suffix),                                                \
         {&detail::f16_to_f32_##suffix, &detail::f32_to_f16_##suffix,               \
          &detail::bf16_to_f32_##suffix, &detail::f32_to_bf16_##suffix,             \
          &detail::f16_to_bf16_##suffix, &detail::bf16_to_f16_##suffix},            \
+        HYLE_BITPACK_RUNTIME(suffix),                                              \
+        {tier, 0},                                                                  \
         {tier, 0},                                                                  \
         {tier, 0},                                                                  \
         {tier, 0},                                                                  \
         {tier, 0},                                                                  \
         {tier, Runtime::kFeatureDtypeFp8Scalar},                                    \
         {tier, Runtime::kFeatureMathExactLibmScalar},                               \
-        {tier, 0}, {tier, 0}};                                                      \
+        {tier, 0},                                                                  \
+        {tier, Runtime::kFeatureBitpackLogical128}};                                \
     if constexpr (tier == Isa::kSse42) {                                            \
-      value.math.isa = value.sort.isa = value.bitpack.isa = Isa::kScalar;           \
+      value.math.isa = value.sort.isa = Isa::kScalar;                               \
     } else if constexpr (tier == Isa::kAvx2) {                                      \
       value.dtype.features |= Runtime::kFeatureF16c;                                \
     } else if constexpr (tier == Isa::kAvx512) {                                    \
@@ -124,9 +139,6 @@ namespace {
       HYLE_SIMD_CLASSIC_CL_HIGHWAY_FALLBACK(value)                                  \
     } else if constexpr (tier == Isa::kSve) {                                       \
       value.sort.features |= Runtime::kFeatureSortCappedNetwork;                    \
-      value.bitpack.features |= Runtime::kFeatureBitpackLogical128;                 \
-    } else if constexpr (tier == Isa::kRvv) {                                       \
-      value.bitpack.features |= Runtime::kFeatureBitpackLogical128;                 \
     }                                                                               \
     return value;                                                                   \
   }()
@@ -138,6 +150,8 @@ HYLE_SIMD_FOR_EACH_COMPILED_TARGET(HYLE_DEFINE_RUNTIME)
 
 #undef HYLE_RUNTIME_TABLE
 #undef HYLE_SIMD_CLASSIC_CL_HIGHWAY_FALLBACK
+#undef HYLE_BITPACK_RUNTIME
+#undef HYLE_BITPACK_RUNTIME_ONE
 #undef HYLE_OPS_ROW_RUNTIME_ONE
 #undef HYLE_SCAN_RUNTIME
 #undef HYLE_SCAN_RUNTIME_ONE
@@ -173,7 +187,6 @@ Runtime selected_runtime() noexcept {
 #elif defined(HYLE_SIMD_EXACT_TARGET_SSE4) || defined(HYLE_SIMD_EXACT_TARGET_SCALAR)
   result.math.isa = Isa::kScalar;
   result.sort.isa = Isa::kScalar;
-  result.bitpack.isa = Isa::kScalar;
 #elif defined(HYLE_SIMD_EXACT)
   // The generated table already describes the sole compiled Highway target.
 #elif defined(HYLE_ARCH_X64)
@@ -216,7 +229,6 @@ Runtime selected_runtime() noexcept {
                                  : Isa::kScalar;
   result.math.isa = product_tier;
   result.sort.isa = detail::sort_isa_for_product_isa(product_tier);
-  result.bitpack.isa = product_tier;
   if (product_tier == Isa::kAvx512)
     result.math.features |= Runtime::kFeaturePerOpLowerTier;
   if (result.sort.isa != product_tier)
@@ -226,24 +238,20 @@ Runtime selected_runtime() noexcept {
 #endif
 
 #if defined(HYLE_ARCH_ARM64)
-  // Math, common dtype conversions, bitpack and sort have SVE product TUs. Bitpack freezes a
-  // 128-bit logical block so its bytes do not depend on the thread's VL.
+  // Math, common dtype conversions, canonical bitpack and sort have SVE product TUs.
   if (result.isa == Isa::kSve) {
     result.dtype.isa = Isa::kSve;
     result.math.isa = Isa::kSve;
     result.sort.isa = Isa::kSve;
     result.sort.features |= Runtime::kFeatureSortCappedNetwork;
     result.bitpack.isa = Isa::kSve;
-    result.bitpack.features |= Runtime::kFeatureBitpackLogical128;
   }
 #elif defined(HYLE_ARCH_RISCV64)
-  // RVV math, common dtype conversions and fixed-logical-block bitpack have product TUs.
+  // RVV math, common dtype conversions and canonical bitpack have product TUs.
   result.dtype.isa = result.isa == Isa::kRvv ? Isa::kRvv : Isa::kScalar;
   result.math.isa = result.isa == Isa::kRvv ? Isa::kRvv : Isa::kScalar;
   result.sort.isa = result.isa == Isa::kRvv ? Isa::kRvv : Isa::kScalar;
   result.bitpack.isa = result.isa == Isa::kRvv ? Isa::kRvv : Isa::kScalar;
-  if (result.isa == Isa::kRvv)
-    result.bitpack.features |= Runtime::kFeatureBitpackLogical128;
 #endif
   return result;
 }
@@ -282,7 +290,8 @@ SelectedTarget selected_target(KernelFamily family) noexcept {
     case KernelFamily::kOverall: return {selected.isa, 0};
     case KernelFamily::kOps:
       return {selected.ops_module.isa, selected.ops_module.features};
-    case KernelFamily::kRandom: return {selected.isa, 0};
+    case KernelFamily::kRandom:
+      return {selected.random_module.isa, selected.random_module.features};
     case KernelFamily::kSearch:
       return {selected.search_module.isa, selected.search_module.features};
     case KernelFamily::kNarrow:

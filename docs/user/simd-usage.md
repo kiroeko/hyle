@@ -64,13 +64,13 @@ compiled target；两者可能因编译器 blocklist 或已认证的 lower-tier 
 | 头（开发期） | 常用能力 | 适合做什么 |
 |---|---|---|
 | `ops.h` | f32/f64 row 算术、归约、同精度/混合精度 `dot`、`saxpy` | 连续 row、归一化/激活前处理与量化存储 dot |
-| `random.h` | `RandomState`、`random_fill` | 可复现、跨 ISA 位一致的批量随机数；非加密 |
+| `random.h` | `RandomState`、`seed/copy/advance/split`、`random_fill` | 可复现、跨 ISA 位一致的 worker-owned 批量随机数；非加密 |
 | `scan.h` | `inclusive_scan`、`exclusive_scan` | 输入输出分离或原地前缀和；exclusive 可指定 init；支持 u/i32、u/i64、f32、f64 |
 | `search.h` | count/find/min/max/minmax/argmin/argmax/is_sorted | 十种普通 scalar 数组的查找、归约、极值位置和有序性检查 |
 | `dtype_ops.h` | f32/f16/bf16/E4M3/E5M2 间全部异类型转换 | 模型权重、激活、KV cache 和混合精度数据搬运 |
 | `math.h` | 实数/复数数学、激活函数、softmax | 数值计算、统计和 AI 热路径 |
 | `sort.h` | sort、partial sort、select、radix、argsort | 排序、top-k、nth element、稳定整数/浮点 radix |
-| `bitpack.h` | `pack`、`unpack`、`packed_size` | 同机内存中的定宽整数压缩 |
+| `bitpack.h` | canonical-v1 `pack`、`unpack`、`packed_size` | 模型载荷、文件或网络 framing 内的定宽整数 payload |
 | `<hwy/highway.h>`（源码嵌入 + `hyle_target_simd`） | 锁定版本的 register/tag/load/store/arithmetic/reduction 等 | 自定义固定目标 kernel；source-only expert surface |
 
 ### 数学接口分组
@@ -136,10 +136,17 @@ float half_dot = hyle::simd::dot(left, right, 4096);
 hyle::simd::RandomState state{12345};
 float unit[4096];
 hyle::simd::random_fill(state, unit, 4096);  // [0, 1)
+
+state.seed(12345);       // 回到相同序列起点
+auto worker0 = state.split();
+auto worker1 = state.split();  // 与 worker0 位于不同的 2^192 segment
+worker0.advance(1024);   // O(n) 跳过，不写临时 output
 ```
 
 相同 seed 和相同的 fill 调用序列在不同 ISA 上位一致。它使用 xoshiro256++，不能生成 token、密钥、
-nonce 或其他安全材料。单个普通随机数优先使用 `hyle/util/random.h` 的标量 `Rng`；批量填充才使用这里。
+nonce 或其他安全材料。copy construction/assignment 会复制当前位置，之后两份 state 会生成相同后续
+序列；一个 mutable state 不可由多个线程并发调用。并行 worker 应在发布前各自取得 `split()` child，
+而不是共享 state。单个普通随机数优先使用 `hyle/util/random.h` 的标量 `Rng`；批量填充才使用这里。
 
 ```cpp
 #include "hyle/simd/scan.h"
@@ -242,9 +249,10 @@ hyle::simd::pack(raw, raw_count, packed, bits);
 hyle::simd::unpack(packed, raw_count, decoded, bits);
 ```
 
-`packed_size` 与 tier 无关，但 packed bytes 只保证由同一 tier 解码；x86、NEON 与 scalar
-布局可能不同。SVE/RVV 把 logical block 固定为 128 bit，因此其字节不随 VL/VLEN 改变并与
-NEON 布局一致。当前内存编码不是跨 tier 的长期文件或网络 wire format。
+`kBitpackFormatVersion == 1` 的 payload 是 canonical little-endian wire layout：每个完整块有 128 个
+value，不足一块的尾部按 value-order LSB-first 编码，最后 padding bits 为零；scalar、x86、NEON、
+SVE 与 RVV 产生相同字节，VL/VLEN 不影响格式。codec 本身不写 framing，持久化或传输时调用者必须同时
+记录 type、value count、`bits` 和 format version。只把 payload 存下来而丢掉这些字段无法可靠解码。
 
 ## 必须遵守的调用合同
 
@@ -252,12 +260,13 @@ NEON 布局一致。当前内存编码不是跨 tier 的长期文件或网络 wi
 - `n == 0` 在上述 batch/scan/search/sort 接口通常允许空 data 指针；search 的 `minmax_value` 输出仍须有效。
 - 只有头文件明确写出的 exact in-place alias 才受支持；带偏移的重叠区间通常不受支持。
 - `partial_sort` 要求 `k <= n`；`select` 在 `n > 0` 时要求 `k < n`。
-- bitpack 的 `bits` 必须在元素位宽内，输入输出不得重叠。
+- bitpack 的 `bits` 必须在元素位宽内，每个输入值必须已经能放入 `bits`；codec 不做隐式 mask pass。
+  输入输出不得重叠，输出容量至少为 `packed_size<T>(count, bits)`。
 - signed integer scan 明确定义为 modulo；浮点 scan 的结合顺序随 ISA 宽度变化，不要要求不同 ISA 得到
   逐位相同的浮点前缀和。
 - 浮点 dot 也使用多累加器/vector reduction；结果遵守数值容差而非跨 ISA 逐位相同。
 - 窄合同 `InRange` API 不做逐 lane 防御；违反范围前置条件的结果不受保证。
-- 所有批量 RNG 都是非加密随机数。
+- 所有批量 RNG 都是非加密随机数；同一个 mutable `RandomState` 不可并发调用。
 
 ## 已知目标：固定整库或固定 kernel
 
