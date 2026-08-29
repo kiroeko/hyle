@@ -110,4 +110,5 @@ kernel，不允许据此保留 1.9 万行平行 register backend。
 
 verdict：`DONE`。proof 证明 v2 应直接迁移和删除，而不是增加一个并行 Highway backend；同时冻结了
 Runtime、MSVC AVX-512、固定格式与 tail 的有限 HYLE glue。SIMD-00 的 resume condition 已满足，可以创建
-新的 `simd-v2 SCOPED` round。output commit：`PENDING`（由后续控制面提交回填）。
+新的 `simd-v2 SCOPED` round。output commit：
+`5becc37ff546e64351b00c56ac6eb39eee7fec3f`。
