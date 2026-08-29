@@ -121,6 +121,21 @@ activation body 与数学原语在同一个 direct-Highway target TU 中组合�
 online/blocked 算法、backward、半精度和模型 operator fusion 由 Compute 拥有，不能为消除一个 tiny-call
 边界而把 tensor policy 倒灌到 SIMD。
 
+### Search 与 scan 合同
+
+普通 search 覆盖 i/u8、i/u16、i/u32、i/u64、f32/f64 的 count/find、value min/max/minmax、first
+argmin/argmax 与升降序检查。空 index 返回 `n`，相同极值保留第一项；浮点 value extrema 传播任意
+NaN，index extrema 返回第一个 NaN。它们均为 O(n) time、O(1) space、无 heap/lock。Highway contrib
+直接承担 count/find/sortedness 与普通 extrema/index 机制；HYLE 只保留 NaN propagation 和单遍 combined
+minmax 等产品语义差异，不维护第二套 register/search DSL。
+
+scan 的核心是 `const T* src, T* dst, n`，inclusive 无 init，exclusive 显式接受 init；原地和 zero-init
+spelling 只是 inline convenience。支持 u/i32、u/i64、f32/f64，exact alias 或完全 disjoint，部分 overlap
+不受支持。整数按模 `2^bits` 定义且不能借 signed UB 实现；浮点结合顺序随 target。target TU 直接组合
+Highway load/add/slide/store，Runtime 的函数指针与 `selected_target` metadata 同源，每个完整 buffer 最多
+一次间接调用。custom predicate/op、segmented/parallel/tensor/GPU scan 分别归标准算法、source expert、
+Graph/Compute 或 accelerator owner。
+
 ## Vendor 与升级边界
 
 锁定 Highway 是 header-only product dependency，不形成第二个 runtime ABI。xsimd 当前只作独立 accuracy/

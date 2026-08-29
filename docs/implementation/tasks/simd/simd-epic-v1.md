@@ -80,19 +80,20 @@ SIMD 可以提供模型无关且重复出现的连续 row primitive；不得变�
 
 条件产品票允许得出 `DIRECT WRAP / DELETE PORT / KEEP MINIMAL PORT`；“升级”不预设一定复制更多上游代码。
 
-## 当前未提交产品改动的归属裁决
+## 控制面建立时的草稿归属裁决
 
-| 工作树改动 | ticket | 当前裁决 | 原因 |
+| 控制面快照中的工作树改动 | ticket | 裁决/当前结果 | 原因 |
 |---|---|---|---|
-| inference row seam 的 audit revision 2 | 00/后续审计输入 | `KEEP` | 修正了把基础 row arithmetic 误判为完整的事实错误 |
-| `index_of_min/index_of_max` 实现与 Runtime v9 草稿 | 09 | `REWORK` | 有 Qwen/ggml/Highway 需求，但尚未绑定完整边界、跨 ISA 与 P1 证据 |
+| inference row seam 的 audit revision 2 | 00/07 | `KEEP` → SIMD-07 `DONE` | 修正了把基础 row arithmetic 误判为完整的事实错误，最终由 07 的完整 row 合同吸收 |
+| `index_of_min/index_of_max` 实现与 Runtime v9 草稿 | 09 | `REWORK` → SIMD-09 `DONE` | 以 direct Highway + 最小 NaN gap 重写并完成跨 ISA、交付与 P1 证据，没有原样接受草稿 |
 | stable radix/argsort workspace/API 草稿 | 11 | `REWORK` | 修复真实 alias/OOM/API 缺陷，但 overlap、异常说明、float order 与交付仍须独立审计 |
-| allocation-free activation kernel 两个未跟踪头 | 08 | `REWORK` | 对应已准入需求，但尚未接入 build/runtime/public API/tests，不能作为候选 |
-| integrated Highway content hash 改动 | 03/11 | `REGENERATE` | hash 必须由最终接受的 port 内容机械生成，当前字面值不单独继承 |
+| allocation-free activation kernel 两个未跟踪头 | 08 | `REWORK` → SIMD-08 `DONE` | 算法意图被重写进 direct-Highway math seam，旧草稿没有原样进入候选 |
+| integrated Highway content hash 改动 | 03/11 | 03 已机械锁定；11 待最终内容后 `REGENERATE` | hash 必须由最终接受的 port 内容机械生成，控制面字面值不单独继承 |
 | core/util/methodology 等其他脏文件 | 不属于本 epic | `PRESERVE` | 不得顺手提交或覆盖 |
 
-`REWORK` 表示保留为该 ticket 的输入草稿，不代表 API、算法或代码行已经接受。任何草稿若在所属 ticket
-内无法满足合同，会记录理由后从产品树删除。
+本表保存 SIMD-00 建立控制面时的归属事实，并补记 terminal 结果；它不是当前工作树清单。`REWORK`
+表示草稿只作为所属 ticket 的输入，不代表 API、算法或代码行已经接受。任何草稿若不能满足冻结合同，
+会记录理由后重写或从产品树删除。
 
 ## 文档终态
 

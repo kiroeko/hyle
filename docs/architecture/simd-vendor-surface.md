@@ -12,7 +12,7 @@ HYLE 的 ordinary SIMD 头不泄漏 Highway/xsimd 类型。`simd-v2` 将 Highway
 
 | origin | HYLE product paths | ownership |
 |---|---|---|
-| Highway direct | `src/simd/{ops,narrow,dtype,math}` 的 direct kernel body、fixed-target source seam 与 generated source-fat TU | HYLE owns public semantics/selection/delivery；锁定 Highway owns math/register implementation；HYLE 只保留 façade 与具名 gap |
+| Highway direct | `src/simd/{ops,narrow,dtype,math,search,scan}` 的 direct kernel body、fixed-target source seam 与 generated source-fat TU | HYLE owns public semantics/selection/delivery；锁定 Highway owns math/register implementation；HYLE 只保留 façade 与具名 gap |
 | Highway integrated source | `src/simd/bitpack/**` 的 port、`src/simd/sort/vqsort_hyle/**` 与 target TUs | HYLE owns adaptation/local delta；SIMD-10/11 分别裁决 direct/minimal-port/drop |
 | xsimd | 当前只作独立数学 benchmark/accuracy peer，不进入产品或安装包 | 若未来出现 Highway 无法满足的具名 capability/accuracy gap，必须重新准入；历史 math port 已删除 |
 | simdutf | container UTF-8 implementation，不属于 `hyle::simd` target | container owns semantics/delivery；vendored simdutf owns implementation mechanism |

@@ -65,8 +65,8 @@ compiled target；两者可能因编译器 blocklist 或已认证的 lower-tier 
 |---|---|---|
 | `ops.h` | f32/f64 row 算术、归约、同精度/混合精度 `dot`、`saxpy` | 连续 row、归一化/激活前处理与量化存储 dot |
 | `random.h` | `RandomState`、`random_fill` | 可复现、跨 ISA 位一致的批量随机数；非加密 |
-| `scan.h` | `inclusive_scan`、`exclusive_scan` | 原地前缀和，支持 u/i32、u/i64、f32、f64 |
-| `search.h` | count/find/min/max/minmax/is_sorted | 连续数组查找、归约和有序性检查 |
+| `scan.h` | `inclusive_scan`、`exclusive_scan` | 输入输出分离或原地前缀和；exclusive 可指定 init；支持 u/i32、u/i64、f32、f64 |
+| `search.h` | count/find/min/max/minmax/argmin/argmax/is_sorted | 十种普通 scalar 数组的查找、归约、极值位置和有序性检查 |
 | `dtype_ops.h` | f32/f16/bf16/E4M3/E5M2 间全部异类型转换 | 模型权重、激活、KV cache 和混合精度数据搬运 |
 | `math.h` | 实数/复数数学、激活函数、softmax | 数值计算、统计和 AI 热路径 |
 | `sort.h` | sort、partial sort、select、radix、argsort | 排序、top-k、nth element、稳定整数/浮点 radix |
@@ -144,10 +144,33 @@ nonce 或其他安全材料。单个普通随机数优先使用 `hyle/util/rando
 ```cpp
 #include "hyle/simd/scan.h"
 
-std::uint32_t offsets[] = {3, 1, 4, 1, 5};
-hyle::simd::exclusive_scan(offsets, 5);
-// offsets == {0, 3, 4, 8, 9}
+const std::uint32_t counts[] = {3, 1, 4, 1, 5};
+std::uint32_t offsets[5]{};
+hyle::simd::exclusive_scan(counts, offsets, 5, 7u);
+// offsets == {7, 10, 11, 15, 16}
+
+hyle::simd::inclusive_scan(offsets, 5);  // exact in-place convenience
+// offsets == {7, 17, 28, 43, 59}
 ```
+
+选择 scan 形状时：已有只读 counts 且还要保留它，就用 `const src, dst, n` 核心；允许覆盖输入时才用
+两参数原地 convenience。exclusive 的第四个参数是第一个输出值/初始 accumulator，不是“最后再整体
+加一次”。输入输出可以完全分离或精确同址，带偏移的部分 overlap 不受支持。整数（包括 signed）按
+模 `2^bits` 求和，不触发 signed-overflow UB；浮点结果的结合顺序可以随实际 SIMD tier 改变。
+
+```cpp
+#include "hyle/simd/search.h"
+
+const float logits[] = {1.0f, 9.0f, -2.0f, 9.0f, 4.0f};
+const std::size_t first_max = hyle::simd::index_of_max(logits, 5);  // 1
+const std::size_t matches = hyle::simd::count_equal(logits, 5, 9.0f);  // 2
+```
+
+`find_equal` 和空 range 的 `index_of_min/index_of_max` 返回 `n`；相同极值取第一次出现的位置。浮点
+equality 使用 IEEE `==`，所以 NaN 永不匹配；value extrema/minmax 遇到任意 NaN 会传播 quiet NaN，
+index extrema 则返回第一个 NaN 的位置。`minmax_value` 的两个输出指针即使在 `n == 0` 时也必须有效且
+互不相同。需要自定义 predicate 或 scan operation 时用标准算法或源码 expert kernel，不要为每个元素
+增加 runtime callback。
 
 ```cpp
 #include "hyle/simd/dtype_ops.h"
@@ -226,11 +249,12 @@ NEON 布局一致。当前内存编码不是跨 tier 的长期文件或网络 wi
 ## 必须遵守的调用合同
 
 - HYLE 的 pointer/count core 不知道各容器长度。输入输出长度匹配、`n > 0` 时指针非空，由调用者保证。
-- `n == 0` 在上述 batch/scan/sort 接口通常是 no-op；具体仍以对应头注释为准。
+- `n == 0` 在上述 batch/scan/search/sort 接口通常允许空 data 指针；search 的 `minmax_value` 输出仍须有效。
 - 只有头文件明确写出的 exact in-place alias 才受支持；带偏移的重叠区间通常不受支持。
 - `partial_sort` 要求 `k <= n`；`select` 在 `n > 0` 时要求 `k < n`。
 - bitpack 的 `bits` 必须在元素位宽内，输入输出不得重叠。
-- 浮点 scan 的结合顺序随 ISA 宽度变化；不要要求不同 ISA 得到逐位相同的浮点前缀和。
+- signed integer scan 明确定义为 modulo；浮点 scan 的结合顺序随 ISA 宽度变化，不要要求不同 ISA 得到
+  逐位相同的浮点前缀和。
 - 浮点 dot 也使用多累加器/vector reduction；结果遵守数值容差而非跨 ISA 逐位相同。
 - 窄合同 `InRange` API 不做逐 lane 防御；违反范围前置条件的结果不受保证。
 - 所有批量 RNG 都是非加密随机数。

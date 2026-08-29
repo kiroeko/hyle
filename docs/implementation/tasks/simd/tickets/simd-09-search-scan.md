@@ -1,6 +1,6 @@
 # SIMD-09：Search 与 scan
 
-- ticket state：`ACTIVE / AUDITED`
+- ticket state：`DONE`
 - kind：product capability/correctness
 - depends on：SIMD-08
 - budget：1 工程日；性能预算 60 分钟
@@ -70,3 +70,49 @@ P1 仅使用 f32 count/argmax 与 u32 scan 的 cache/streaming consumer 行；�
 本票只允许上述五项。predicate/custom-op callback、contains 命名糖、parallel/segmented scan、tensor axis/
 stride/threading、top-k/order statistic、GPU prefix 与模型融合分别由标准库、source expert、Ordering、Compute
 或 accelerator owner 承担；不得在本票扩张。
+
+## 实现与验证结果
+
+- `search.h` 保留十种普通 scalar type 的 count/find/value min/max/minmax/is-sorted，并完成 first
+  `index_of_min/index_of_max`。empty identity、first tie、first floating NaN、Inf/signed-zero、长 counter
+  segment 与 Runtime variant 均有 differential/property 覆盖。
+- `scan.h` 以 `const src, dst, n` 为核心，exclusive 接受显式 init，原地/zero-init 只作 inline convenience；
+  u/i32、u/i64、f32/f64 覆盖 out-of-place、exact alias、tail、init 与 signed modular overflow。整数路径把
+  signed storage bitcast 到 unsigned accumulator，不依赖 signed UB。
+- search generated TU 直接使用锁定 Highway contrib，scan 直接组合 Highway load/add/slide/store；HYLE 只
+  保留 floating NaN propagation、single-pass minmax 与产品 glue。重复 vendor DSL 的
+  `native/search.h`、`native/scan.h` 及其自消费测试已删除。
+- Runtime table 只由本票从 version 8 升到 9，scan pointers/metadata 和 search module metadata 与真实
+  target 同源；旧 Linux-x64 scalar benchmark policy 和第二 resolver 已删除。ordinary 每个完整 buffer
+  只有一次缓存函数指针调用，exact route 直接绑定 suffix。
+- immutable `f29a34bc` 的 W1-WIN MSVC 19.50 focused gate 为 14/14；`search.h`/`scan.h` self-contained
+  2/2。相同 source-fat binary 在 QEMU SVE VL 128/256/384/512/2048 与 RVV VLEN
+  128/256/512/1024 各通过 15 项；exact binary 在相同矩阵各通过 14 项。模拟器只签 correctness。
+- Windows selected-component source embedding、relocated shared SDK、relocated static SDK 均重新构建、
+  发现并实际执行 count/argmax 与 in/out scan 示例；三种 journey 全部通过。
+
+## 有界性能 verdict
+
+本票签 `PASS / P1_ENGINEERING / 5% / NO MATERIAL LOSE`，不签“整个 SIMD/search/scan SOTA”。W1-WIN、
+MSVC 19.50、固定 AVX2 下，shipping target body 与同 TU direct Highway/同合同 composition 对齐输入域、
+ISA、alias、tail、dispatch 和资源计费。延长 count epoch 后四份日志无 instability marker；A/A、正反序、
+双 layout 与 certification 全部通过。含 anchor 的 7 行为 5 `TIE`、2 `INCONCLUSIVE`、0 `LOSE`；产品行
+只有 1M argmax 保持 `INCONCLUSIVE`。4K count 的 public/body informational center 为 0.955，诚实记录
+tiny body 的一次 batch boundary；其他五行是 0.986--0.999。完整结果、hash、重放和未签范围见
+[SIMD-09 performance evidence](../../../evidence/performance/simd-09-search-scan.md)。
+
+## 终止 receipt
+
+- product output commit：`f29a34bc6ad2e32106ab9851d486d19ce2ea1cd4`，tree
+  `30fca958a8b6e70d49584de3532d0cad4e854bcd`；产品实现 commit 为 `606bb629`，后一提交只提高 count
+  instrument epoch。相对 input commit 共 27 个文件，1,230 additions、1,037 deletions。
+- 四项 LOC 由 immutable output 以 `cloc 2.08`、
+  `python scripts/loc-report.py --module simd --commit f29a34bc --self-check --json` 复算且
+  `self-check=pass`：全库代码 **312,867**；自实现包含测试 **121,415**；自实现不包含测试
+  **79,587**；当前 SIMD 实现 **33,904** 行。
+- known limits：SVE/RVV 未签真硅性能；tiny compiled façade 仍有一次不可消除的 batch call；predicate/
+  custom-op、parallel/segmented/tensor/GPU scan 与 ordering 保持既定 owner；2 行 `INCONCLUSIVE` 不能改写
+  为胜负。下一张有限票是 SIMD-10 bitpack/random。
+- reopen：公开 search/scan 语义或复杂度出现可复现缺陷，Runtime metadata/pointer 再次分叉，热循环出现
+  第二次 dispatch/heap/lock/整段 copy，三种交付失效，或同合同真实 consumer 在资格化真机上复现超过
+  5% 的 material regression。
