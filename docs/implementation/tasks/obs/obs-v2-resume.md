@@ -1,12 +1,13 @@
 # obs v2 收口恢复记录
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+<!-- MODULE CLOSURE RECEIPT: BLOCKED -->
 
 > 本页是 `obs-v2` 的 `RESUME` 施工记录。权威状态是
 > [`module-status.json`](../../module-status.json)；已终止的
 > [`obs-v1`](obs-v1-closure.md) 只提供冻结候选、已通过门和 blocker 事实，不在本轮回写。
 
-## Closure card（`CANDIDATE`）
+## Closure card（`BLOCKED`）
 
 - component / owner / round ID：`obs` / observability owner / `obs-v2`；task kind：`RESUME`。
 - 前一 round / blocker：`obs-v1` / 公共性能仪器不能为冻结的 8-producer × 1/4/16-sink workload
@@ -217,7 +218,7 @@ accounting、artifact/build identity 和 deep replay 全部 `PASS`；1-sink thro
 ## Terminal determination
 
 功能、API、correctness、三平台交付、依赖、文档和红队门已通过，两个 v2 缺口均已完成；工程性能门
-仍为 `INCONCLUSIVE`。按冻结停止规则，本轮下一状态必须是 `BLOCKED from CANDIDATE`，不能进入
+仍为 `INCONCLUSIVE`。按冻结停止规则，本轮终止为 `BLOCKED from CANDIDATE`，不能进入
 `VERIFIED/CLOSED`，也不能继续研究或追加同合同样本。
 
 新的 blocker 不再属于公共工具：中央 N-worker 工具已完整工作。恢复只能由新的外部事实触发——具名
@@ -232,3 +233,9 @@ Candidate immutable LOC（`python scripts/loc-report.py --module obs --commit <c
 2. 自实现包含测试：124,290；
 3. 自实现不包含测试：83,119；
 4. obs 实现：887（`include/hyle/obs` + `src/obs`）。
+
+`CANDIDATE -> BLOCKED` 前态 registry 保存于
+`C:\hyle-scratch\obs-v2\transitions\module-status-before-blocked.json`，SHA-256
+`497AC9075D21D427DF6CC4746589580FA42C88C36A6EF4ECCD4B6A1E466D22C9`。terminal evidence / registry
+anchor 为 `fb4d63ed025302eceb57b619c9f27fc82d92082b` / tree
+`a426adbb1ad8d5ed01c02d210717fe60777832f5`；它已包含完整 verification、六问、性能证据和停止理由。

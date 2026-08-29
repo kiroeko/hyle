@@ -243,7 +243,11 @@
     },
     {
       "module": "obs",
-      "product_state": "CANDIDATE",
+      "product_state": "BLOCKED",
+      "blocked_from": "CANDIDATE",
+      "blocker": "The qualified dual-order n=31 W1-WIN replay still has 4/16-sink throughput and tail strata whose 98.93% process-median confidence intervals cross the frozen 5% non-inferiority boundary; the aggregate P1 engineering verdict is INCONCLUSIVE after the allowed mechanism review found no material product mechanism.",
+      "blocker_owner": "obs owner / inference consumer performance provenance",
+      "resume_condition": "Resume only after a named inference consumer establishes the real multi-sink fan-out, sink state and material KPI for a newly scoped source-consumer contract, or after a reproducible product mechanism is shown to have material impact on that consumer. Do not extend or rerun the exhausted n=31 contract merely to seek PASS.",
       "round_id": "obs-v2",
       "closure_task": "docs/implementation/tasks/obs/obs-v2-resume.md",
       "scope": "Resume the unchanged obs-v1 candidate after qualifying the frozen N-worker replay; resolve the synchronous sink/fiber contract and Tracy trace-on test network behavior, then perform one bounded mechanism review of the qualified multi-sink statistical result.",
@@ -258,17 +262,49 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "INCONCLUSIVE",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1"
+        "instrument_profile": "closure-perf-v1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-obs.md"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "obs-v2 CANDIDATE：ff925c00 明确同步 sink callback 的 no-yield/same-thread-return 契约，并把 trace-on CTest listener 限到 loopback；实现算法未变，正在复签正确性、交付与合格性能证据。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "INCONCLUSIVE"
+      },
+      "end_commit": "fb4d63ed025302eceb57b619c9f27fc82d92082b",
+      "registry_anchor_commit": "fb4d63ed025302eceb57b619c9f27fc82d92082b",
+      "closure_evidence": "docs/implementation/tasks/obs/obs-v2-resume.md",
+      "loc": {
+        "snapshot_commit": "ff925c0053e738fb48d98993e42750b593f3db22",
+        "repository_code": 309831,
+        "self_with_tests": 124290,
+        "self_without_tests": 83119,
+        "module_implementation": 887
+      },
+      "known_limitations": [
+        "The qualified 8-producer 4/16-sink baseline non-inferiority gate remains INCONCLUSIVE; obs-v2 does not claim comprehensive SOTA, cross-platform fixed nanoseconds or closure.",
+        "Logging is synchronous borrowed fan-out to at most 64 sinks; callbacks must not yield, suspend or migrate stackful fibers, and asynchronous ownership, persistence, backpressure and acknowledgement belong to the application adapter.",
+        "A trace-on static SDK is supported only when every HYLE archive enters one final link image; the runtime TRACY_ONLY_LOCALHOST setting restricts the listener but does not disable Tracy discovery broadcast.",
+        "Native FFI/C API, category/config trees, logging services, metrics/OTLP, GPU profiling policy and Formal certification remain outside this round."
+      ],
+      "reopen_triggers": [
+        "A named inference consumer supplies a material multi-sink workload and KPI, or a reproducible product mechanism is proven material to that consumer, satisfying the explicit resume condition.",
+        "A real consumer exposes a correctness, security, lifetime, no-yield contract, usability, delivery or missing-capability defect within the obs boundary.",
+        "The log or trace algorithm, public API/layout, direct dependency, Tracy semantics or source/static/shared delivery shape changes.",
+        "The retained engineering evidence becomes unavailable or its frozen product, baseline, contract, machine or instrument identity changes while the claim must be renewed."
+      ],
+      "summary": "obs-v2 BLOCKED：同步 sink/fiber 契约与 trace-on CTest 网络缺口已修，功能/API、三平台 correctness/交付、文档和红队通过；合格 n=31 的 4/16-sink 5% NI 仍统计未决，工程性能保持 INCONCLUSIVE。"
     },
     {
       "module": "math",
