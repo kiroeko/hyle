@@ -243,18 +243,12 @@
     },
     {
       "module": "obs",
-      "product_state": "BLOCKED",
-      "blocked_from": "CANDIDATE",
-      "blocker": "The qualified dual-order n=31 W1-WIN replay still has 4/16-sink throughput and tail strata whose 98.93% process-median confidence intervals cross the frozen 5% non-inferiority boundary; the aggregate P1 engineering verdict is INCONCLUSIVE after the allowed mechanism review found no material product mechanism.",
-      "blocker_owner": "obs owner / inference consumer performance provenance",
-      "resume_condition": "Resume only after a named inference consumer establishes the real multi-sink fan-out, sink state and material KPI for a newly scoped source-consumer contract, or after a reproducible product mechanism is shown to have material impact on that consumer. Do not extend or rerun the exhausted n=31 contract merely to seek PASS.",
-      "round_id": "obs-v2",
-      "closure_task": "docs/implementation/tasks/obs/obs-v2-resume.md",
-      "scope": "Resume the unchanged obs-v1 candidate after qualifying the frozen N-worker replay; resolve the synchronous sink/fiber contract and Tracy trace-on test network behavior, then perform one bounded mechanism review of the qualified multi-sink statistical result.",
-      "non_goals": "New log or trace capabilities, changes to record/layout/registry/callback/chunk/synchronous semantics or the frozen 5% contract, async logging services, file/network export, category/metrics/OTLP/GPU policy, central-statistics changes, Native FFI/C API, stable C++ ABI, downstream closure and Formal certification.",
-      "baseline_commit": "a3fc0f833f605fefb89fe904a8acaf716a4feaf8",
-      "candidate_commit": "ff925c0053e738fb48d98993e42750b593f3db22",
-      "candidate_tree": "34c5903c9a3d19bfe8542ac1f050314147c73254",
+      "product_state": "SCOPED",
+      "round_id": "obs-v3",
+      "closure_task": "docs/implementation/tasks/obs/obs-v3-closure.md",
+      "scope": "Add consumer-driven call-site controls and an explicit request/slot-owned interval limiter for ordinary services and long-running inference progress; correct host-adapter hand-off guidance and replace synthetic multi-sink product provenance with one-adapter ordinary/inference P1 workloads.",
+      "non_goals": "Category/config trees, async logging services, file/network export, metrics/OTLP, owning records, copying every peer macro permutation, registry/quiescence redesign, 4/16-sink product claims, Native FFI/C API, stable C++ ABI, downstream engine implementation and Formal certification.",
+      "baseline_commit": "1028b056501c4fc07e45924c5da8b8222cd86414",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -262,49 +256,17 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "INCONCLUSIVE",
+        "verdict": "PLANNED",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-obs.md"
+        "instrument_profile": "closure-perf-v1"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "gate_verdicts": {
-        "scope": "PASS",
-        "architecture": "PASS",
-        "correctness": "PASS",
-        "delivery": "PASS",
-        "usability_docs": "PASS",
-        "red_team": "PASS",
-        "engineering_performance": "INCONCLUSIVE"
-      },
-      "end_commit": "fb4d63ed025302eceb57b619c9f27fc82d92082b",
-      "registry_anchor_commit": "fb4d63ed025302eceb57b619c9f27fc82d92082b",
-      "closure_evidence": "docs/implementation/tasks/obs/obs-v2-resume.md",
-      "loc": {
-        "snapshot_commit": "ff925c0053e738fb48d98993e42750b593f3db22",
-        "repository_code": 309831,
-        "self_with_tests": 124290,
-        "self_without_tests": 83119,
-        "module_implementation": 887
-      },
-      "known_limitations": [
-        "The qualified 8-producer 4/16-sink baseline non-inferiority gate remains INCONCLUSIVE; obs-v2 does not claim comprehensive SOTA, cross-platform fixed nanoseconds or closure.",
-        "Logging is synchronous borrowed fan-out to at most 64 sinks; callbacks must not yield, suspend or migrate stackful fibers, and asynchronous ownership, persistence, backpressure and acknowledgement belong to the application adapter.",
-        "A trace-on static SDK is supported only when every HYLE archive enters one final link image; the runtime TRACY_ONLY_LOCALHOST setting restricts the listener but does not disable Tracy discovery broadcast.",
-        "Native FFI/C API, category/config trees, logging services, metrics/OTLP, GPU profiling policy and Formal certification remain outside this round."
-      ],
-      "reopen_triggers": [
-        "A named inference consumer supplies a material multi-sink workload and KPI, or a reproducible product mechanism is proven material to that consumer, satisfying the explicit resume condition.",
-        "A real consumer exposes a correctness, security, lifetime, no-yield contract, usability, delivery or missing-capability defect within the obs boundary.",
-        "The log or trace algorithm, public API/layout, direct dependency, Tracy semantics or source/static/shared delivery shape changes.",
-        "The retained engineering evidence becomes unavailable or its frozen product, baseline, contract, machine or instrument identity changes while the claim must be renewed."
-      ],
-      "summary": "obs-v2 BLOCKED：同步 sink/fiber 契约与 trace-on CTest 网络缺口已修，功能/API、三平台 correctness/交付、文档和红队通过；合格 n=31 的 4/16-sink 5% NI 仍统计未决，工程性能保持 INCONCLUSIVE。"
+      "summary": "obs-v3 SCOPED：按真实普通服务与 llama.cpp 推理消费重定范围；将补齐调用点控制和请求/slot 持有的区间节流，正常性能门改为一个宿主 adapter，4/16 sink 仅保留诊断。"
     },
     {
       "module": "math",
