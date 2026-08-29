@@ -368,7 +368,7 @@
     },
     {
       "module": "time",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "reopen_trigger_id": "TIME-REPLAY-WINMAX-01",
       "reopen_evidence": "docs/implementation/tasks/time/time-current-identity-replay-2026-08.md",
       "round_id": "time-v2",
@@ -376,6 +376,8 @@
       "scope": "Current Time public-header identity, Windows min/max macro composition, owned regression coverage, cross-platform source/static/shared delivery and replay of the unchanged P1 scheduler evidence.",
       "non_goals": "New Time capabilities, clock/timer algorithm or layout changes, scheduler/platform refactoring, new performance sampling, Native FFI/C API, stable C++ ABI and Formal certification.",
       "baseline_commit": "565b710fd6dad1a50588992d336dddb958326d99",
+      "candidate_commit": "565b710fd6dad1a50588992d336dddb958326d99",
+      "candidate_tree": "4534070226c16b9ba37aa7ecb189b9f447eb6892",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -393,7 +395,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "time-v2 AUDITED：公开头产品 diff 仅为 macro-safe static-member 调用；功能/API/算法/layout 不变，冻结 Time 自有回归与三平台交付/证据复签。"
+      "summary": "time-v2 CANDIDATE：当前 Time 产品绑定 565b710f/45340702；实现/API/算法/layout 零变化，等待三平台 correctness、三种交付与 P1 retained replay。"
     },
     {
       "module": "platform",

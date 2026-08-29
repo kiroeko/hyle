@@ -92,3 +92,19 @@ surface trace 因而仍完整适用；本轮受影响族只有 public-header com
    teardown 形状均未变化；宏污染 TU 不再要求用户知道 internal seam 或 `NOMINMAX`。architecture/user
    guide 的选型与陷阱仍对应当前 API；time-v1 的历史“candidate 后无漂移”由本轮记录纠正，不回写
    历史 task。最终 verdict 在三平台 journey 通过后填写。
+
+## Candidate
+
+- product commit / tree：
+  `565b710fd6dad1a50588992d336dddb958326d99` /
+  `4534070226c16b9ba37aa7ecb189b9f447eb6892`；
+- baseline 与 candidate 相同：当前产品已包含 Platform v1 落地的 macro-safe 修复，本轮没有再次修改
+  `include/hyle/time` 或 `src/time`；candidate 只重新绑定该 current identity；
+- public contract / layout / algorithm / resources：零变化；十处 parenthesized static-member call 在
+  未定义 `max` 宏时具有相同 C++ 语义和 Release codegen，在污染 TU 中从 compile failure 变为正常；
+- test artifact：`4a438c9fa0def99d0baba50faed0b53e5ada4daa` 增加 Time-owned
+  all-public-header macro-composition TU，不属于产品 candidate；
+- direct consumer / component graph：保持 platform/sched/io 与
+  `time PUBLIC core container_intrusive`；
+- harness identity：retained P1 bundle 由已提交的 provenance-renewal verifier 深回放，和 product
+  commit/tree 分开记录。
