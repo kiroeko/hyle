@@ -49,7 +49,7 @@ deadline 的时间语义仍归 time/sched；`platform -> time` 只由公开 `Fil
 | 虚拟内存 | `VmRegion` 与 `vm_*` | staged commit、guard page、大块地址保留、自定义 owner | 页粒度；reserve 与 commit 分离；RAII 优先，裸函数供底层组合 |
 | NUMA/大页 | `numa_nodes/capabilities`、`vm_*numa*`、huge-page advice | 大块 arena、per-node/selected-node backing、THP 提示 | node id 可稀疏；只有 Linux bind 是严格节点集合；interleave/preferred 是 OS placement policy；建议失败不破坏 mapping |
 | 文件系统与环境 | `FileInfo`、`FileHandle`、无 owning 结果的 visitor、buffer-fill 查询 | 配置、资源、目录扫描、临时文件、部署环境 | UTF-8 路径；短读写与 exact/all 并存；单 cursor seek；显式 sync/close；打开 owner 不阻塞原子替换路径 |
-| 文件映射 | `MappedFile` + `Advice`/`prefetch`/`lock` | 大文件随机访问、权重/数据集、COW、显式 warm-up/驻留 | path 或消费已打开 owner；RO const view、checked writable view、range flush；hint 与 residency 不隐式发生 |
+| 文件映射 | `MappedFile` + `Advice`/`prefetch`/`lock_prefix` | 大文件随机访问、权重/数据集、COW、显式 warm-up/渐进驻留 | path 或消费已打开 owner；RO const view、checked writable view、range flush；hint 与 residency 不隐式发生；已应用锁定前缀可查询 |
 | 动态库 | `DynLib` | 插件、可选系统库、用户 native backend | open/get/current 语义分开；`get` 持有 loader 引用；显式 close 可观察错误；符号签名由调用方承担 |
 
 这些能力共同遵循“窄机制 + 明确 owner + 可恢复错误”的形状。platform 不提供一个巨型
@@ -122,9 +122,25 @@ mapping。device VRAM、pinned host memory、coherence 与 GPU completion 归 `c
 
 对权重、索引和数据集，映射 owner 与访问策略分开：`Advice` 只给 kernel 访问模式提示，
 `prefetch` 是 will-need 便利入口，`lock/unlock` 才明确购买驻留。它们都作用于已有 mapping，
-不在 `open()` 时暗中 fault 全文件或消耗 memlock 配额。POSIX 使用 `madvise/mlock`；Windows
-只对 `WillNeed` 有 `PrefetchVirtualMemory` 对等能力，其它 hint 诚实返回 `Unimplemented`，
-residency 使用 `VirtualLock`。unsupported hint 不影响 mapping 的正确性。
+不在 `open()` 时暗中 fault 全文件或消耗 memlock 配额。一次性驻留用 `lock()`；模型 loader 等
+逐步确认 CPU-resident 数据的调用者用 monotonic `lock_prefix(target, options)`，它只对新覆盖的
+OS page 发一次 native lock，失败仍保留此前成功的前缀。`locked_size()` 报告页粒度实际覆盖的
+public prefix，可能大于调用者传入的 target，但不会超过 mapping size。任意重叠 range lock 没有
+清晰的 owner/refcount 语义，因此不为“更通用”引入区间 metadata。
+
+`LockMode::kEager` 在调用返回前按 OS `mlock/VirtualLock` 语义购买驻留；Linux 还可显式选择
+`kOnFault`，通过 `mlock2(MLOCK_ONFAULT)` 把未 resident page 的实际锁定推迟到 first fault。
+Windows/macOS 不会悄悄退化为 eager，而是返回 `Unimplemented`。默认
+`LockLimitPolicy::kPreserve` 不修改进程全局资源；只有调用方显式选择 `kAdjustIfNeeded`，quota
+failure 后才允许一次 POSIX soft `RLIMIT_MEMLOCK` 或 Windows working-set limit 增长和一次重试。
+调整成功后是进程级状态，不由 `unlock` 回滚。hard limit、权限或第二次 native failure 仍以共享
+`Status` 返回。
+
+POSIX advice 使用 `madvise`；Windows 只对 `WillNeed` 有 `PrefetchVirtualMemory` 对等能力，其它
+hint 诚实返回 `Unimplemented`，residency 使用 `VirtualLock`。unsupported hint 不影响 mapping
+的正确性。POSIX partial `munmap` 会把洞打进 `MappedFile::bytes()` 的连续 view，Windows 又无法
+等价实现，因此不成为公共方法；调用者用精确 subrange mapping、独立 owner 或
+`Advice::kDontNeed` 表达 unused physical pages。
 
 NUMA preferred 与 huge-page advice 是策略提示，返回值必须让用户看见是否 applied、not
 needed 或 unavailable。Linux bind 是严格节点集合；interleave/selected interleave 表示 OS 已
@@ -136,6 +152,11 @@ needed 或 unavailable。Linux bind 是严格节点集合；interleave/selected 
 topology、preferred reserve、existing-range bind/interleave 和 selected interleave。用户代码应按
 能力或操作返回的 `Status` 决策，不直接围绕 `HYLE_OS_*` 编译分叉；后者只用于 platform 内部选择
 系统实现。
+
+推理 worker 若要按 NUMA node 分组，不需要第二套固定大小 topology：枚举动态
+`available_cpu_ids()`，对每个 id 调 `numa_node_of_cpu()`，再把每组构造成 `CpuAffinity`；arena
+则用对应 node 的 preferred/bind 或 selected interleave。这个 O(CPUs) 过程属于初始化/重配，
+具体 worker 数、跨 node stealing 和 tensor/KV placement 仍由 sched/model owner 决定。
 
 `vm_allocate_numa_interleaved(size,nodes,bytes_per_chunk)` 拥有一段连续、已提交的 RW 地址区：
 空 node span 表示全部可用节点；显式 id 必须可用，可以重复，重复项像 oneTBB 一样表达 weighted
@@ -247,8 +268,10 @@ platform 的 SOTA 标准不是“比系统调用快”，而是同合同下不�
 - directory visitor 常见路径不逐项 stat、不分配；只有文件系统不给类型时才补查询。
 - VM、MappedFile、DynLib 与 FileHandle 的成功生命周期无异常和隐藏堆分配；错误消息只在
   冷失败路构造。
-- `MappedFile::advise`、`lock`、`unlock` 是 O(1) 参数检查 + 至多一个 native call，零 heap
-  allocation；成本由 range 大小导致的 kernel page work 决定，不伪装成纳秒用户态原语。
+- `MappedFile::advise`、`lock`、`lock_prefix`、`unlock` 是 O(1) 参数检查、零 heap；prefix 未跨新
+  native page 时没有 syscall，正常增长/解锁至多一个 native residency call。只有显式
+  `kAdjustIfNeeded` 的 quota failure 路允许 limit query/set 和一次重试；成本由 range 大小导致的
+  kernel page work 决定，不伪装成纳秒用户态原语。
 
 基准必须比较相同语义。当前 P1 合同冻结为持久 scheduler worker 的 Parker request/response
 handoff 对 oneTBB production binary semaphore；caller/worker 按真实 worker placement 固定在两颗
@@ -267,6 +290,9 @@ placement 和 A/A/delta/floor 共同裁决。raw OS 和旧微基准只可解释�
   component 时 deployment target 必须 ≥14.4；HYLE 顶层原生 macOS 构建未显式指定时默认 14.4，
   被父工程嵌入时若父工程选择更低 target 则 configure 失败，不得静默产出会在旧系统缺符号的库。
 - Linux process availability 受调用线程 affinity/cpuset 影响，新线程继承该视图。
+- Linux 独有 `MLOCK_ONFAULT`；macOS/Windows 对该 lock mode 返回 `Unimplemented`。允许调整锁页
+  限额时，POSIX 只提升 soft `RLIMIT_MEMLOCK` 到既有 hard limit 内，Windows 调整当前进程
+  working-set minimum/maximum；两者都不会在 unlock 时自动恢复。
 - POSIX permission bits 与 Windows readonly attribute 只能提供一个诚实的可移植子集。
 - 环境变量的空值行为、symlink 权限和 huge-page/NUMA 能力存在系统差异，返回值与 guide 必须
   讲明，而不是静默伪装成功。

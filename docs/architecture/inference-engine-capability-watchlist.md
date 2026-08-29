@@ -23,6 +23,8 @@
 本页创建时只枚举拥有当前 `CLOSED` receipt 的九个产品组件，以及不进入组件 registry、但拥有独立
 `CLOSED` receipt 的 build/package 开发单元。`obs`、`container`、`simd`、`sched`、`io`、`compute`、
 `graph` 的需求应进入各自当前/未来 closure card，不能借本页把它们伪装成已关闭模块。
+观察项被合法提升后，本页只保留尚未准入的剩余边界；当前施工范围和状态改由对应 closure task/
+registry 管理，不能继续把已经提升的部分写成“未承诺”。
 
 ## 从 WATCH 到施工
 
@@ -100,7 +102,7 @@ Core 当前没有已知推理阻断项；下列观察多数只有在多个底层
 | `PLATFORM-WATCH-01` | worker 每 physical core 一个线程、cache-domain shard、P/E/SMT 精确 placement | Platform 提供事实，`sched`/引擎拥有放置策略 | 当前 cache/topology 是 best-effort；需 engine placement trace、跨 OS 可映射 ID 和相对默认策略的 material 收益 |
 | `PLATFORM-WATCH-02` | AMX、SME/SME2 kernel 需要探测、per-thread permission/enable 和 dispatch | Platform + `simd` backend 同轮；具体 kernel dispatch 只有一个 authority | 只有 capability bool 不能完成旅程；需已准入真 kernel、真 ISA 机器和 thread enable/fallback/codegen 门 |
 | `PLATFORM-WATCH-03` | 大模型在多 socket/多 die 主机上做权重、KV 或 worker locality | Platform mechanism + mem/sched/engine policy | 当前只签单节点 API/rollback/复杂度；需多节点真机、local/remote bandwidth、migration 和 pressure workload |
-| `PLATFORM-WATCH-04` | specialized model loader 需要 partial unmap、range mlock/on-fault、prefault/collapse | Platform mapping primitive或 `io`/loader 私有 seam | 当前 subrange map、advice 和 whole lock 已满足一般路径；需 load-to-ready/RSS/page-fault 证据和第二个同语义消费者 |
+| `PLATFORM-WATCH-04` | specialized model loader 可能还需要 partial unmap 或同步 prefault/THP collapse | 连续 mapping 保持 Platform owner；洞状 tensor partition 优先 loader 私有 owner；direct/async route 归 IO | progressive prefix residency、Linux on-fault 和显式 process-limit adjustment 已由 `PLATFORM-INF-RESIDENCY-01` 提升到 `platform-v2`；剩余 partial unmap 会破坏连续 `bytes()` 且 Windows 无对等合同，prefault/collapse 仍需 load-to-ready/RSS/page-fault material 证据 |
 | `PLATFORM-WATCH-05` | direct/scatter-gather/positional async 模型读取 | `io::File` 或专用 loader | 把 OVERLAPPED/proactor 状态塞进同步 `FileHandle` 会破坏形状；需真实 loader、alignment/fallback 和 cancellation 合同 |
 | `PLATFORM-WATCH-06` | JIT kernel、named shared memory、process sandbox 或 plugin 隔离装载 | 分别归 compute/JIT、io protocol、tooling/process；Platform 仅提供必要 OS mechanism | executable permission、跨进程 ownership 和 loader search policy 都有独立安全边界；需具名产品旅程再单独设计 |
 | `PLATFORM-WATCH-07` | 动态 backend 需要 lazy/global/deep-bind/nodelete 或隔离 search path | Platform DynLib + backend owner | 当前固定 eager+local；需实际依赖解析/冲突复现，并先定义相对路径信任边界 |

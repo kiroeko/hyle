@@ -5,24 +5,28 @@ the repository-wide performance instrument. Older mixed microbenchmark tables
 used different APIs, peers, charging boundaries, and statistical rules; they
 remain recoverable from Git history but are not current product evidence.
 
-The immutable experiment definition is
-[`platform-consumer-v1.json`](../../../../bench/contracts/platform-consumer-v1.json).
-The closure decision and bounded investigation log live in
-[`platform-v1-closure.md`](../../tasks/platform/platform-v1-closure.md).
+The immutable experiment definitions are
+[`platform-consumer-v1.json`](../../../../bench/contracts/platform-consumer-v1.json)
+for the unaffected v1 families and
+[`platform-residency-p1-v2.json`](../../../../bench/contracts/platform-residency-p1-v2.json)
+for progressive model-loader residency. The corresponding closure records are
+[`platform-v1-closure.md`](../../tasks/platform/platform-v1-closure.md) and
+[`platform-v2-inference-residency.md`](../../tasks/platform/platform-v2-inference-residency.md).
 
 ## Current verdict
 
-`PASS` for the frozen W1-WIN P1 engineering contract. This is not a Formal,
-cross-machine, or all-platform SOTA certificate. The two admitted families
-passed independently; neither result is pooled into a platform-wide score.
+`PASS` for the frozen W1-WIN P1 engineering contracts. This is not a Formal,
+cross-machine, or all-platform SOTA certificate. The admitted families pass
+independently; no result is pooled into a platform-wide score.
 
 | family | consumer-shaped charged lifecycle | pinned peer | material / NI margin | current status |
 | --- | --- | --- | --- | --- |
 | worker idle handoff | one persistent caller and worker, pinned to two distinct same-class physical cores, exchange 64 request/response tokens; threads and mailbox owners remain outside measurement | oneTBB production `binary_semaphore` used by `concurrent_monitor` | 5% / 5% | `WIN`; 8/8 strata NI `PASS` |
 | model loader mapping | open and map one warm 16 MiB file, probe and validate 64 fixed page-distributed bytes, then unmap and close | Boost.Interprocess `file_mapping` + `mapped_region` | 5% / 5% | `PARITY`; 8/8 strata NI `PASS` |
+| progressive model residency | on one persistent warm 16 MiB mapping, grow the locked prefix through four disjoint 4 MiB deltas, expose the applied prefix, then unlock once | pinned llama.cpp Win32 `llama_mlock::grow_to` mechanism replayed as the same four `VirtualLock` calls and one `VirtualUnlock` | 5% / 5% | `PARITY`; 8/8 strata NI `PASS` |
 
-The two families are independent gates and are never pooled into a “platform
-score.” The contract runs primary and function-placement variants, both
+The families are independent gates and are never pooled into a “platform
+score.” Each applicable contract runs primary and function-placement variants, both
 execution orders, both allocation orders, A/A, known 5% and 10% deltas, and a
 timer-floor control. W1-WIN is the engineering verdict machine; Linux and
 macOS correctness results do not get averaged into Windows performance.
@@ -40,6 +44,36 @@ The same-core result remains a documented mechanism characteristic; it is not
 silently relabelled as the scheduler's normal cross-core worker topology.
 
 ## Qualified evidence
+
+The current v2 progressive-residency receipt is:
+
+- product candidate: `88085b671ac7dfb4d41e2819ceda0925d1ac0147`, tree
+  `01f2183f4cb5c029293ba6c52b15dfbc40d27e13`;
+- evidence source/harness revision: `a36ab184fd079a0e0652c6d4b2fa8b1fbc51a935`, tree
+  `77f1dc7493656033fee991f582b94262927ab2e5`;
+- pinned consumer peer: llama.cpp
+  `7584430716ee229751771ed0d6bbcb780d105eeb`, tree
+  `027524b2c81f6df300250aadf21ed6512e13e141`;
+- contract SHA-256:
+  `45896aa4f462bca5de1ee3e4ea8171c45111c4ecaae10153e037639f073d8e1c`;
+- retained engineering bundle:
+  `C:\hyle-scratch\platform-v2\perf-qualify-evidence`; manifest SHA-256
+  `4c019d408a287336868d99b26e529c13d800c330ce4c77cc54c43864357095bd`, summary
+  SHA-256 `0d148336277104322dc2fc8d1bd14ee332fb48290eee3ae9fea4db75ae46a65a`;
+- current verifier: `qualification=QUALIFIED`, `paths_verified=true`, exact
+  provenance, current environment policy, clean source/peer, stable host and
+  artifacts, Release/static/LTO-off MSVC 19.50, and every declared control
+  `PASS`.
+
+The v2 run used 15 independent processes per stratum. All eight exact verdicts
+are `PARITY`; median candidate/peer ratios span 0.986466--0.999315 and the worst
+99.26% confidence lower bound is 0.964334, above the predeclared reciprocal 5%
+non-inferiority limit (0.952381). Native page work dominates the roughly
+0.56--0.59 ms lifecycle. The evidence supports “no material wrapper loss for
+this normal progressive-residency shape,” not a claim that HYLE makes
+`VirtualLock` itself faster.
+
+The unaffected v1 receipt remains:
 
 - product candidate: `5b8dab7012e9f7c6cdaf97f863c0b83b4e8a5064`, tree
   `24a68b0ab3314902a765c6bf60f8ccb760d290f4`;
@@ -91,7 +125,7 @@ the absence of avoidable work, not a claim that a wrapper beats its syscall.
 | `FileHandle` short operation | one native read/write/seek/sync; one-word owner | hidden lock, heap, or a second I/O operation |
 | `read_exact` / `write_all` | O(bytes/native transfer limit), zero allocation | copying into an intermediate owning buffer |
 | `MappedFile` lifecycle | one open plus one mapping and teardown; access O(1), no normal-path metadata | implicit full-file prefault, advice, lock, or second path lookup after owner transfer |
-| range advice/flush/lock | O(1) validation plus at most the documented native operation; kernel page work may scale with range | pretending OS-dependent residency work is a nanosecond user-space primitive |
+| range advice/flush/lock | O(1) validation; progressive lock does no syscall inside the existing page coverage and one native call for a new delta; explicit quota adjustment is a cold query/set/retry path | relocking the old prefix, per-page metadata, or pretending OS-dependent residency work is a nanosecond user-space primitive |
 | directory visitor | O(entries), no owning entry allocation on the common path | unconditional per-entry `stat` or collected path list |
 | `DynLib` | one loader operation; symbol lookup delegates to the loader | private symbol cache, TLS error channel, or non-owning `get` race |
 
@@ -109,6 +143,10 @@ consumer profile shows material contribution and a same-contract peer exists.
   non-inferiority for that different topology.
 - Mapping is compared for a model-loader lifecycle with a warm page cache and
   fixed random probes. It does not claim mmap wins for small sequential files.
+- Progressive residency is compared only for the pinned Windows eager-lock
+  lifecycle after one common process working-set setup. It does not rank Linux
+  `MLOCK_ONFAULT`, page-fault/RSS outcomes, quota adjustment, partial unmap, or
+  end-to-end model load/token latency.
 - oneTBB is built in its supported shared-library form from the pinned source;
   HYLE is consumed directly from source into a static target. The DLL call
   boundary is recorded in the contract and cannot justify a near-margin win.
@@ -146,6 +184,17 @@ python scripts/hyle-perf.py qualify-platform `
 python scripts/hyle-perf.py verify `
   --manifest C:\hyle-scratch\platform-perf-qualify-evidence\manifest.json `
   --contract bench/contracts/platform-consumer-v1.json
+
+python scripts/hyle-perf.py qualify-platform `
+  --contract bench/contracts/platform-residency-p1-v2.json `
+  --machine W1-WIN `
+  --peer llama=C:\public\project-hyle\llama.cpp `
+  --build C:\hyle-scratch\platform-v2\perf-qualify-build `
+  --output C:\hyle-scratch\platform-v2\perf-qualify-evidence
+
+python scripts/hyle-perf.py verify `
+  --manifest C:\hyle-scratch\platform-v2\perf-qualify-evidence\manifest.json `
+  --contract bench/contracts/platform-residency-p1-v2.json
 ```
 
 `probe` only qualifies the instrument and estimates wall time. A new claim

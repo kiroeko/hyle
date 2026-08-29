@@ -28,7 +28,9 @@ macOS 使用 platform component 时部署目标必须是 14.4 或更新版本；
 | 需要完整单项元数据 | `stat` | 把目录遍历的 entry type 当完整 stat | 跟随 symlink，并另报 path 自身是否 symlink |
 | 大文件随机访问/共享映射 | `MappedFile::open`；已有 handle 用 `map(std::move(file))` | 小文件必然 mmap | RO/RW/COW；const bytes / checked writable bytes；range flush；Linux 小文件顺扫未必赢 read |
 | 映射权重/数据集的显式 warm-up | `MappedFile::prefetch` / `advise` | `open()` 自动触碰全文件 | hint 不影响正确性；Windows 仅 will-need |
-| 映射页必须驻留以压低 fault 尾延迟 | `MappedFile::lock`，检查 Status | 把 prefetch 当驻留保证 | 受权限/memlock quota 限制；用后 unlock |
+| 整段映射必须驻留以压低 fault 尾延迟 | `MappedFile::lock`，检查 Status | 把 prefetch 当驻留保证 | 默认不改进程限额；用后 unlock |
+| loader 逐步确认要驻留的映射前缀 | `lock_prefix(target)` + `locked_size()` | 每次重新锁 whole mapping | 单调增长、页粒度；失败保留旧前缀 |
+| 大映射只在 first fault 时锁页 | `LockMode::kOnFault` | 悄悄把 unsupported 当 eager | Linux-only；其它平台返回 `Unimplemented` |
 | 查询 cwd/temp/home | `convenience.h` owning 重载；自管存储用 buffer-fill | 猜环境变量/固定 `/tmp` | owning 返回 `std::string`；core 返回完整长度 |
 | 读取/修改进程环境 | owning `get_env_var(name)` 或 buffer-fill；`set/unset` | 把 unset 和空值都当 0 | unset=`NotFound`；写操作仅应在启动期做 |
 | 一次性启动 OS 线程 | `Thread::spawn(callable, opts)` | sched task/fiber | callable 状态由线程拥有；join 回收；可选 required |
@@ -186,6 +188,41 @@ MappedFile 在三平台都不会阻止 rename/delete，因此可先原子替换�
 `bytes()` 始终只读；只有 `kReadWrite`/`kCopyOnWrite` mapping 的 `writable_bytes()` 成功。
 `flush(offset,length)` 只对 read-write shared mapping 请求回写，`length==0` 表示直到末尾；COW/RO
 没有需要落回原文件的 dirty data。offset/length 越界会显式失败，不会把错误 range 对齐成别处。
+
+模型 loader 往往只在解析后才知道哪些权重留在 CPU。不要为了这个生命周期反复 whole-lock；按
+已完成的 public byte prefix 增长：
+
+```cpp
+using LockMode = MappedFile::LockMode;
+using LockLimitPolicy = MappedFile::LockLimitPolicy;
+
+MappedFile::LockOptions residency;
+residency.mode = LockMode::kEager;
+// 只有应用明确接受进程级 soft limit / working-set 改变时才打开。
+residency.limit_policy = LockLimitPolicy::kAdjustIfNeeded;
+
+for (std::size_t loaded_end : cpu_weight_prefixes) {
+  Status status = weights.lock_prefix(loaded_end, residency);
+  if (!status.ok()) {
+    // weights.locked_size() 仍是此前成功的前缀；应用可记录并降级。
+    report_residency_fallback(status, weights.locked_size());
+    break;
+  }
+}
+HYLE_RETURN_IF_ERROR(weights.unlock());
+```
+
+`locked_size()` 是 OS page 向前取整后的实际覆盖，可能超过最后一个 target；它不是“已经读取了
+多少模型数据”。锁定模式在非空前缀期间不能切换，先 `unlock()` 才能用另一模式重建合同。
+Linux 上 `kOnFault` 避免调用本身同步 fault 全段；Windows/macOS 明确返回 `Unimplemented`。
+`kAdjustIfNeeded` 只在 quota failure 后查询并尝试提升一次既有进程 soft limit，然后重试一次；
+它不能越过 POSIX hard limit 或系统权限，且成功调整不会被 `unlock()`/析构恢复。默认
+`kPreserve` 没有这项全局副作用。
+
+释放 offload 后不用的物理页可组合 `advise(Advice::kDontNeed, offset, length)`；它是 hint，Windows
+没有对等实现。`MappedFile` 不提供 partial unmap，因为打洞后 `bytes()` 将不再是有效连续 view，
+而 Windows 也不能提供同一合同。需要真正缩小虚拟映射时，在 loader 设计阶段建立精确 subrange
+或多个独立 mapping owner。
 
 ## 等待与线程
 
