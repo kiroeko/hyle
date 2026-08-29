@@ -368,7 +368,7 @@
     },
     {
       "module": "time",
-      "product_state": "REOPENED",
+      "product_state": "SCOPED",
       "reopen_trigger_id": "TIME-REPLAY-WINMAX-01",
       "reopen_evidence": "docs/implementation/tasks/time/time-current-identity-replay-2026-08.md",
       "round_id": "time-v2",
@@ -393,7 +393,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "time-v2 REOPENED：Windows min/max 宏组合修复改变了 time-v1 之后的公开头产品身份；仅重签当前 identity、Time 自有回归、三平台交付与不变 P1 证据回放。"
+      "summary": "time-v2 SCOPED：冻结公开头宏可组合性、Time 自有回归、三平台 source/static/shared 与不变 P1 证据回放；产品实现修改预算为零。"
     },
     {
       "module": "platform",
