@@ -16,10 +16,10 @@
    `find_package()`、toolchain/sysroot 或运行环境提供，不属于 FetchContent bundle。
 
 选择 `simd` 时必须提供 `deps/highway/`：它是中央锁定、由 HYLE target TU 直接编译的产品源码，而不是
-任意系统安装。仍未迁完的 Highway/xsimd port 已是 HYLE 源码包内的修改代码，不另放 checkout；完整
-源码审计会验证其 origin、integration paths、adapted-content hash 和许可证副本。benchmark 使用独立
-干净的 Highway/xsimd sibling checkout，避免候选与对手共用 include path。历史 Highway port 内 JPEG XL
-`Cbrt` 版权段仍由 integrated record 连同第二份许可证验证，直至对应 port 被删除。
+任意系统安装。bitpack/VQSort 等尚未裁决的 Highway integrated port 已是 HYLE 源码包内的修改代码，
+不另放 checkout；完整源码审计会验证其 origin、integration paths、adapted-content hash 和许可证副本。
+benchmark 使用独立干净的 Highway/xsimd sibling checkout，避免候选与对手共用 include path；xsimd
+当前不进入产品依赖。
 
 不要交付 `<build>/_deps`、`CMakeCache.txt`、对象文件或整棵 build tree：它们包含生成器、绝对路径、
 编译器和宿主机状态，不是可迁移依赖包。在线准备机应与离线目标的 OS、架构、发行版/SDK 大版本匹配；

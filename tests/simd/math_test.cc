@@ -17,11 +17,9 @@
 #include "hyle/simd/math.h"
 #include "hyle/simd/runtime.h"
 
-// math_test -- exp/log/tanh batch ops vs libm reference. The batch path runs whichever
-// tier is live (SLEEF AVX2 if -DHYLE_SIMD_SLEEF + AVX2 host, else scalar libm). Either
-// way the result must match std:: within tolerance: scalar is exact-libm; SLEEF exp is
-// _u10 (1-ULP), log/tanh are _u35 (3.5-ULP -- the AI-appropriate, ~2-3x faster tier; see
-// transcendental_sleef.cc). The tolerance below is set to the 3.5-ULP class with margin.
+// math_test -- ordinary batch operations vs the std::/libm oracle. Runtime routes to a
+// fixed-target locked-Highway implementation where qualified and otherwise to the scalar
+// semantic floor. The public result must satisfy the same complete-domain contract either way.
 
 using hyle::simd::exp_f32_batch;
 using hyle::simd::Isa;
@@ -31,9 +29,8 @@ using hyle::simd::tanh_f32_batch;
 namespace {
 // Relative-error tolerance vs a double-precision libm reference. Set from MEASURED worst
 // case (red team 2026-06 flagged the old 1e-5 ~= 84 ULP as toothless -- a broken
-// polynomial would pass): scalar tier worst 0.7 ULP (8.4e-8), SLEEF exp _u10 worst 0.5
-// ULP. log/tanh moved to _u35 (3.5-ULP worst, the tier xsimd/Highway also use and the
-// AI hot path needs) -- so the bound is 8e-7 ~= 6.7 ULP: ~2x margin over _u35's 3.5 ULP,
+// polynomial would pass). Qualified locked-Highway functions are in the low-single-digit
+// ULP class, so the bound is 8e-7 ~= 6.7 ULP: enough composition margin while remaining
 // still ~12x tighter than the old toothless 1e-5, so a kernel off by >=7 ULP fails.
 // Absolute floor 1e-6 covers lanes crossing zero (log(1), tanh(0)) where rel err undefined.
 constexpr double kRelTol = 8e-7;
@@ -235,8 +232,8 @@ TEST(Math, F32ExpLogInRangeAndAlias) {
         << "log in-place i=" << i;
 }
 
-// The rest of the f64 transcendentals (Highway wins all but erf; tgamma xsimd; lgamma scalar).
-// Each on its natural domain, vs long-double libm at the ~1e-14 f64 bound.
+// The remaining f64 transcendentals, each on its natural domain, against long-double libm at
+// the ~1e-14 f64 bound. Product routing is not encoded in the test name or oracle.
 namespace {
 std::vector<double> rampd(double lo, double hi, int steps) {
   std::vector<double> v;
@@ -275,9 +272,8 @@ TEST(Math, HypotF64MatchesLibm) {
   }
 }
 
-// simd-09 best-of functions vs libm. Same tolerance (both vendor cores are ~3.5-ULP class).
-// Range chosen per function's domain. The batch op routes to the bench-decided winner
-// (Highway for most, xsimd for exp2/erf) or the scalar floor -- either must match libm.
+// Breadth functions vs libm. Ranges follow each function's domain; whether the implementation is
+// a qualified Highway primitive, a minimal HYLE composition, or the scalar floor is private.
 namespace {
 std::vector<float> ramp(float lo, float hi, int steps) {
   std::vector<float> v;
@@ -484,8 +480,7 @@ TEST(Math, HypotInRangeWithinContract) {
   check(in_place_b);
 }
 
-// tail handling: n not a multiple of 8 (the SLEEF kernel's vector width). All three ops
-// exercised (red team: log/tanh tails were previously untested -- only exp).
+// Tail handling across values below, at, and above representative vector widths.
 TEST(Math, TailSizes) {
   for (std::size_t n : {std::size_t{1}, std::size_t{7}, std::size_t{8}, std::size_t{9}, std::size_t{17}}) {
     std::vector<float> in(n);
@@ -502,15 +497,12 @@ TEST(Math, TailSizes) {
   }
 }
 
-// active tier sanity. NOTE: HYLE_SIMD_SLEEF is a library-PRIVATE define (set on hyle_simd,
-// not on this test TU), so the test cannot know whether SLEEF was wired in -- it only
-// observes the runtime result. Either tier is valid: scalar libm floor, or kAvx2 when the
-// lib was built with SLEEF AND the host has AVX2. Correctness is proven by the
-// Exp/Log/Tanh-vs-libm tests above regardless of which tier ran.
+// Active-tier sanity. Correctness is proved independently above; this property ensures the
+// runtime diagnostic names the fixed target actually compiled for the host.
 TEST(Math, ActiveVariantReported) {
   const Isa v = hyle::simd::runtime().math.isa;
 #if defined(HYLE_ARCH_X64)
-  // x86: scalar floor, or AVX2 / AVX-512 borrow cores when the CPU has them.
+  // x86: scalar floor, or locked-Highway AVX2 / AVX-512 target when available.
   EXPECT_TRUE(v == Isa::kScalar || v == Isa::kAvx2 || v == Isa::kAvx512);
 #elif defined(HYLE_ARCH_ARM64)
   // aarch64: Highway NEON cores are always compiled (ARMv8 baseline) -> kNeon.
@@ -575,7 +567,7 @@ TEST(Math, Softmax) {
   }
 }
 
-// ---- COMPLEX transcendentals (xsimd-only borrow) vs std::complex oracle -------------
+// ---- COMPLEX SoA compositions over real primitives vs std::complex oracle ------------
 // SoA planar (re/im separate arrays). Ranges kept moderate (complex exp/pow overflow fast).
 // Tolerance is the ~3.5-ULP transcendental class scaled by magnitude.
 namespace {
@@ -951,7 +943,7 @@ TEST(Math, Simd18BreadthG) {
     EXPECT_NEAR(s[i], std::sin(x[i]), 1e-4f);
     EXPECT_NEAR(c[i], std::cos(x[i]), 1e-4f);
   }
-  // xsimd-only extras: assert against libm (relative/abs tolerance).
+  // Vendor-gap operations: assert the HYLE composition/scalar floor against libm.
   hyle::simd::erfc_f32_batch(x, z, n);
   for (std::size_t i = 0; i < n; ++i) EXPECT_NEAR(z[i], std::erfc(x[i]), 1e-4f) << "erfc i=" << i;
   hyle::simd::exp10_f32_batch(x, z, n);

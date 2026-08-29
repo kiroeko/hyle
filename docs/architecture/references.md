@@ -40,10 +40,10 @@ Native FFI 当前为 `N/A`，不存在 C 或 managed 用户面；旧 C/managed f
 ### simd/（Tier 1）
 | 库 | 角色 | 说明 |
 |---|---|---|
-| **highway** | 参考 + bench 对照 | D-tag/scalable/dynamic-dispatch 架构范本与同合同 oracle 候选；外部 pin checkout 仅用于 benchmark，结果仍须通过 HYLE 的证据门 |
-| **xsimd** | 参考 + bench 对照 | 数学 best-of 与精度/性能 oracle；simd-20 后不进产品构建 |
+| **highway** | 借（锁定产品源码）+ 参考 + bench 对照 | 当前直接承载 SIMD 数学实现，后续 foundation/dispatch 仍按 capability 裁决；HYLE façade 不泄漏 vendor 类型。独立 peer checkout 只用于同身份 benchmark，不能与产品 source override 混用 |
+| **xsimd** | 参考 + bench 对照 | 当前只作数学精度/性能 oracle，不进产品构建；只有 Highway 无法满足的具名 capability/accuracy gap 才重新准入 |
 | **simdutf** | 借（container 直接编入） | vendored v9.1 amalgamation 无条件编入 `hyle_container`；`utf8_validate` 借其单遍 validate，`utf8_length` 借 validate/count，二者复用内部 runtime ISA dispatch，公开头不泄露 vendor 类型 |
-| **sleef** | **已退役(clone 留存)** | 曾评估作 transcendental 核,选定 highway+xsimd 后退役;仍 clone 供对照,不进构建 |
+| **sleef** | **已退役** | 曾评估作 transcendental 核；当前不进产品或基准默认闭包，只有新的具名缺口才重新准入 |
 | **nanobench** | 借（测试期） | 微基准框架，vendored 在 `third_party/`；统一性能仪器在其上做跨进程同进程配对：预声明 margin、分布无关中位数 CI、comparability/qualification/exact-performance 分轴、同合同 non-inferiority gate、逐进程 raw JSON 与正反序/shape 合成；sign p 值只作诊断 |
 
 ### compute/（Tier 1，含 Intel 计算加速）
@@ -131,19 +131,19 @@ Native FFI 当前为 `N/A`，不存在 C 或 managed 用户面；旧 C/managed f
 
 ## 阅读优先级（按问题域）
 
-- **底层运行时**：marl（sched 精读）、moodycamel（队列）、boost.context（fcontext）、abseil/folly（container）、xxHash/wyhash（table byte hash）、highway/xsimd（SIMD 架构与外部 benchmark 对照）、simdutf（UTF-8 validate/count 借核）。
+- **底层运行时**：marl（sched 精读）、moodycamel（队列）、boost.context（fcontext）、abseil/folly（container）、xxHash/wyhash（table byte hash）、Highway（SIMD 产品机制与架构参考）、xsimd（独立 benchmark peer）、simdutf（UTF-8 validate/count 借核）。
 - **计算与 IO**：ggml + llama.cpp（compute 借核/工程参考）、oneDNN/oneMath（Intel CPU/数学后端参考）、seastar（io reactor_backend）。
 - **按真实消费者启用**：simdjson/flatbuffers/capnproto（serialize）、tracy（obs）、oneTBB/taskflow（数据并行设计）、nghttp2（HTTP/2 借核）、eigen/openvdb（CAE/几何）。oneDPL/oneDAL **边界外**（见下）。
 
 ## 借 vs 造的总原则（呼应 charter）
 
-借**多年解决的通用难题**（highway/xsimd 数学核、ggml 算子、boost.context 汇编、liburing syscall）；造**贴 HYLE 需求或差异焦点**（container 自有容器算法/API、sched 调度、simd 抽象）。container 的 byte-hash core 与 UTF-8 validate/count 明确属于上一类叶子依赖，分别借 wyhash/XXH3 与 simdutf，并不等于把容器 ownership/布局交给外部 runtime。所有借入第三方一律封 adapter / 不外露其类型（同 ggml/mimalloc 解耦原则）。
+借**多年解决的通用难题**（Highway 数学/向量机制、ggml 算子、boost.context 汇编、liburing syscall）；造**贴 HYLE 需求或差异焦点**（container 自有容器算法/API、sched 调度、HYLE SIMD 产品合同与缺口组合）。container 的 byte-hash core 与 UTF-8 validate/count 明确属于上一类叶子依赖，分别借 wyhash/XXH3 与 simdutf，并不等于把容器 ownership/布局交给外部 runtime。所有借入第三方一律封 adapter / 不外露其类型（同 ggml/mimalloc 解耦原则）。
 
 ### 关键区分：加速库分两类，只借第一类（这是 oneTBB 为何边界外的原因）
 
 | 类 | 是什么 | 例 | HYLE |
 |---|---|---|---|
-| **指令/kernel 级加速**（让单次计算更快）| 优化的算子/数学核/SIMD intrinsic；部分库仍自带不可替换的内部并行 | oneDNN(AMX/VNNI JIT)、oneMath(BLAS)、highway/xsimd 数学核、ggml 算子、XXH3 | ✅ **借**（每个 adapter 明确线程所有权；不能一概声称注入 HYLE pool）|
+| **指令/kernel 级加速**（让单次计算更快）| 优化的算子/数学核/SIMD intrinsic；部分库仍自带不可替换的内部并行 | oneDNN(AMX/VNNI JIT)、oneMath(BLAS)、Highway 数学/向量机制、ggml 算子、XXH3 | ✅ **借**（每个 adapter 明确线程所有权；不能一概声称注入 HYLE pool）|
 | **并行运行时级加速**（把任务铺到多核）| **自带 work-stealing 调度器 / task arena / 线程池** | **oneTBB**、oneDPL、OpenMP、asio io_context、boost.fiber | ❌ **不借**（这是 HYLE 自己的活）|
 
 **oneTBB 确实是加速库——但它加速的是"运行时层"，恰是 HYLE 要独占的那一层。** 它的 `parallel_for` 离不开 task arena（自带 work-stealing 调度器）；引它 = HYLE fiber 调度器 + TBB 调度器**两套在同一批核上抢线程、过度订阅、cache 争抢**——正是 HYLE 存在要消灭的"双调度器阻抗失配"（同拒 boost.fiber/asio 的理由）。所以 oneTBB scheduler/queue、oneDPL **边界外**；只 oneTBB 的 allocator pool 设计作 mem/ 参考。
@@ -154,7 +154,7 @@ Native FFI 当前为 `N/A`，不存在 C 或 managed 用户面；旧 C/managed f
    对能合批的大 graph 才让 ggml 自有并行独占该次计算，并从 blocking pool 提交。oneDNN 等未来 adapter
    也必须实证其注入接口，不能从函数名类推。
 2. **HYLE 自有 kernel 的数据并行**：work-stealing 调度器做 fork-join / parallel-for——**一个调度器同时干 IO 并发(fiber)和 CPU 数据并行**，这正是 work-stealing 的本职。
-3. **指令级加速**：借 highway/xsimd 数学核、oneDNN 的 AMX kernel（第一类），不借 TBB。
+3. **指令级加速**：当前借锁定 Highway 数学/向量机制，按需借 oneDNN 的 AMX kernel（第一类），不借 TBB；xsimd 保持独立 peer。
 
 ### 隐藏运行时清单（引依赖前必查，防"悄悄混进第二个运行时"）
 

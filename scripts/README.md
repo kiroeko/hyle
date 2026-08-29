@@ -371,9 +371,9 @@ QEMU scripts below remain ISA-specific product tests rather than substitutes for
 
 Every `HYLE_BUILD_BENCH=ON` configuration needs external, exact-revision
 `highway/` and `xsimd/` checkouts. SIMD scaling/parity harnesses compile those
-headers even when their optional comparison rows are off. Product code under
-`include/` + `src/` has **zero** in-tree Highway/xsimd (simd-20 X4); only
-benchmarks may consume these external checkouts.
+headers even when their optional comparison rows are off. These peer checkouts
+are distinct from the centrally locked Highway product source used by private
+SIMD target TUs; public HYLE headers expose neither Highway nor xsimd types.
 
 ```sh
 # Windows Git Bash: default C:/public/project-hyle
@@ -398,11 +398,13 @@ checkouts. Pass the same root via `-DHYLE_BENCH_VENDOR_DIR=<root>`; Windows and
 macOS have matching defaults, while Linux/WSL intentionally requires that
 explicit path.
 
-## `check-no-vendor.sh` — product zero-Highway/xsimd gate (simd-20 X4)
+## `check-no-vendor.sh` — SIMD vendor-boundary gate
 
-Fails if `include/` or `src/` `#include` real vendor headers (`hwy/...`,
-`xsimd/...`), if `third_party/{highway,xsimd}` still exist, or if product CMake
-still points at those in-tree paths. Run after any simd vendor-port change:
+The historical filename is retained, but the current contract is not “never use
+a vendor”. It fails if public headers expose vendor includes, xsimd enters
+product sources, locked Highway includes escape the explicit private adapter
+allowlist, `third_party/{highway,xsimd}` reappears, or CMake points at those
+in-tree paths. Run after any SIMD vendor-boundary change:
 
 ```sh
 scripts/check-no-vendor.sh
@@ -483,9 +485,10 @@ cmake --build --preset bench-all-sota
 > SIMD ISA tier). They ONLY add comparison rows to the benchmarks — they never
 > affect the shipped library. The `bench-` prefix on the preset name says so.
 
-- **Vectorized `exp/log/tanh` is always-on in the product**. External Highway/xsimd
-  checkouts are benchmark-only reference rows, never product includes. The HYLE math row remains runtime-gated by
-  `cpu_features().avx2`; older CPUs fall back to scalar libm.
+- **Vectorized `exp/log/tanh` is part of the product** through the separately locked
+  Highway source. External Highway/xsimd peer checkouts remain benchmark-only and
+  are never product include roots. HYLE runtime selects the compiled qualified target
+  (AVX2/AVX-512/NEON/scalable as available) and retains a scalar semantic floor.
 - **boost::intrusive** needs the boost `libs/intrusive` submodule checked out
   (modular-boost clones leave submodules empty); without it `-DHYLE_BENCH_BOOST`
   fails the header check at configure time.

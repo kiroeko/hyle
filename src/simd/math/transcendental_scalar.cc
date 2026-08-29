@@ -1,5 +1,5 @@
 // Scalar libm transcendentals -- the always-available reference + fallback + ULP oracle.
-// Plain std::exp/log/tanh per element. Compiled everywhere (no -march, no SLEEF).
+// Plain std:: math per element. Compiled everywhere without target-specific ISA flags.
 #include "src/simd/math/kernels.h"
 
 #include <cmath>
@@ -101,7 +101,7 @@ void asinh_f32_scalar(const float* src, float* dst, std::size_t n) noexcept {
 void acosh_f32_scalar(const float* src, float* dst, std::size_t n) noexcept {
   for (std::size_t i = 0; i < n; ++i) dst[i] = std::acosh(src[i]);
 }
-// xsimd-only borrows: scalar libm oracle + fallback (std::lgamma/tgamma per element).
+// Scalar semantic floor for operations that lack an equivalent qualified vector primitive.
 void lgamma_f32_scalar(const float* src, float* dst, std::size_t n) noexcept {
   for (std::size_t i = 0; i < n; ++i) dst[i] = std::lgamma(src[i]);
 }

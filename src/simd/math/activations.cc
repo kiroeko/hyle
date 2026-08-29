@@ -2,7 +2,7 @@
 // transcendental batch ops (exp/tanh/erf -- each self-dispatches to its best tier) into the
 // shapes the AI hot path needs. HYLE-specific combinations, not single vendor ops, so there is
 // no per-tier borrow wiring here: this TU is plain baseline C++ that calls the *_f32_batch entry
-// points (which internally route to xsimd/Highway/scalar per cpu_features). The elementwise
+// points (which route to qualified locked-Highway targets or the scalar semantic floor). The elementwise
 // combine math (the 0.5x(1+...), the 1/(1+e), the divide) runs scalar -- it is cheap relative to
 // the transcendental it wraps, and staying baseline keeps this TU SIGILL-safe with no -march.
 //

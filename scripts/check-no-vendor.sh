@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
-# check-no-vendor.sh — simd-20 X4 gate.
-# Assert product sources (include/ + src/) never #include Highway or xsimd headers.
-# Bench code under bench/ may use external HYLE_BENCH_VENDOR_DIR copies; that is fine.
+# check-no-vendor.sh — SIMD vendor-boundary gate (historical filename).
+# Public headers must never expose vendor headers or types. Product sources may
+# include locked Highway only in the explicit private math adapters below;
+# xsimd remains a benchmark peer and is forbidden from product sources.
+# Bench code under bench/ may use external HYLE_BENCH_VENDOR_DIR copies.
 #
 # Usage: scripts/check-no-vendor.sh
-# Exit 0 = clean; exit 1 = product still depends on vendor headers or in-tree third_party.
+# Exit 0 = boundary clean; exit 1 = an unowned vendor edge or in-tree copy exists.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -12,18 +14,30 @@ cd "$ROOT"
 
 fail=0
 
-echo "== product #include gate (include/ + src/) =="
-# Only real vendor header paths: "hwy/..." or "xsimd/..." (angle or quote).
-# Historical/task text may name removed ports; only actual vendor include paths are forbidden.
+echo "== public vendor include gate (include/) =="
 if hits=$(grep -RIn --include='*.h' --include='*.hh' --include='*.hpp' \
-    --include='*.cc' --include='*.cpp' --include='*.inc' \
-    -E '#[[:space:]]*include[[:space:]]*[<"](hwy/|xsimd/)' include src 2>/dev/null || true); then
+    -E '#[[:space:]]*include[[:space:]]*[<"](hwy/|xsimd/)' include 2>/dev/null || true); then
   if [[ -n "${hits}" ]]; then
-    echo "FAIL: product still includes Highway/xsimd headers:"
+    echo "FAIL: public headers expose Highway/xsimd headers:"
     echo "${hits}"
     fail=1
   else
-    echo "OK: no #include <hwy/...> or #include <xsimd/...> in include/ or src/"
+    echo "OK: public headers do not expose Highway/xsimd"
+  fi
+fi
+
+echo "== private product vendor include allowlist (src/) =="
+if hits=$(grep -RIn --include='*.h' --include='*.hh' --include='*.hpp' \
+    --include='*.cc' --include='*.cpp' --include='*.inc' \
+    -E '#[[:space:]]*include[[:space:]]*[<"](hwy/|xsimd/)' src 2>/dev/null || true); then
+  unexpected=$(printf '%s\n' "${hits}" | grep -Ev \
+    '^src/simd/math/(highway_math_kernel-inl\.h|complex_hyle-inl\.h|complex_typed_hyle-inl\.h):[0-9]+:#[[:space:]]*include[[:space:]]*"hwy/' || true)
+  if [[ -n "${unexpected}" ]]; then
+    echo "FAIL: product vendor includes escaped the explicit private adapter allowlist:"
+    echo "${unexpected}"
+    fail=1
+  else
+    echo "OK: locked Highway includes are confined to private math adapters; xsimd is absent"
   fi
 fi
 
@@ -69,9 +83,9 @@ fi
 
 if [[ "$fail" -ne 0 ]]; then
   echo
-  echo "check-no-vendor: FAILED"
+  echo "check-no-vendor (vendor-boundary): FAILED"
   exit 1
 fi
 echo
-echo "check-no-vendor: PASSED"
+echo "check-no-vendor (vendor-boundary): PASSED"
 exit 0
