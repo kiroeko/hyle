@@ -1,6 +1,6 @@
 # SIMD-07：Dtype、narrow 与普通 row ops
 
-- ticket state：`QUEUED`
+- ticket state：`READY`
 - kind：product capability/usability
 - depends on：SIMD-06
 - budget：1 工程日；性能预算 60 分钟

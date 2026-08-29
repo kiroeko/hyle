@@ -1,6 +1,6 @@
 # SIMD-06：Scalable backend、dispatch 与交付
 
-- ticket state：`ACTIVE / AUDITED`
+- ticket state：`DONE`
 - kind：product review/refactor
 - depends on：SIMD-05
 - budget：1 工程日；性能预算 60 分钟
@@ -58,3 +58,42 @@ Highway 是 SIMD kernel target 的唯一 decision authority，Platform 只拥有
 
 本票的停止线是上述五项及适用交付/正确性门完成；SVE/RVV 真硅性能、各 family 算法迁移和 legacy
 backend 删除分别留给具名后续票，不得以“继续研究 dispatch”越界。
+
+## 实现与验证结果
+
+- `hyle_target_simd()` 与 `hyle_add_fat_kernel()` 现在都使用中央 Highway target flags 和生成 TU 内的
+  `HWY_STATIC_TARGET` 编译期证明；固定目标直接实例化 vendor 模板，源码 fat 路线对整段 kernel 只选择并
+  缓存一次函数指针。经典 cl.exe 明确裁到 AVX2，显式 AVX-512 请求 fail-fast，不再静默冒充目标。
+- public function-pointer `Runtime` table 已移到 `src/simd/runtime_internal.h`；installed C++ 面只保留
+  `selected_target(family)` 诊断。SIMD 不再转发 Platform 的 CPU detector，原始机器事实与实际 kernel
+  选择各有唯一 owner。shipping DLL 的符号检查没有再导出 `runtime/runtime_for` 或 Platform aliases。
+- Windows MSVC 19.50、WSL GCC 14、macOS AppleClang 21 的 direct Highway source-fat fixture 均编译运行；
+  Windows fixed AVX2、exact AVX2 artifact、source/static/shared selected-SDK consumer 和 installed-SDK
+  source-fat fail-fast 均符合声明的交付合同。
+- 同一 direct Highway `ScalableTag` body 在 QEMU SVE VL 128/256/384/512/2048 和 RVV VLEN
+  128/256/512/1024 下通过 correctness。旧 full scalable harness 先被 SIMD-08 拥有的迁移前 math symbols
+  阻断，已作为具名后续事实登记；本票没有把未运行的全 family gate 写成 PASS，也没有声明模拟器性能。
+- 受 public Runtime 收窄影响的六个 SIMD benchmark target 均完成接口迁移；其中五个成功编译，
+  `hyle_math_scaling_bench` 的 direct Highway math include/target 缺口已路由 SIMD-08，未借本票修改 math
+  产品。文档合同、closure contract 与 staged diff check 均通过。
+
+## 有界性能 verdict
+
+本票签 `PASS / STRUCTURAL`，不制造跨算法 SOTA 点值：固定目标和 source-fat 的最终 AVX2 loop 已反汇编为
+直接 `vaddps/vmaxps/vmovups`，循环体内没有 HYLE wrapper、per-element callback 或第二次 vendor dispatch；
+fixed route 为零 runtime dispatch，fat route 和 ordinary route 分别只有一次整-buffer 函数指针调用。该机制
+与同 TU direct Highway 等价，已经排除“引用第三方导致内层抽象开销”。各 family body 的同合同 P1 结论仍
+由 SIMD-07～11 分别签署，SVE/RVV 真硅性能保持未声明。
+
+## 终止 receipt
+
+- product output commit：`3fb8e5a2b923df3b27bb98e04ae7f2f5f5ca72c3`。
+- 四项 LOC 由上述 immutable commit 以 `cloc 2.08`、
+  `python scripts/loc-report.py --module simd --commit 3fb8e5a2 --self-check --json` 复算，`self-check=pass`：
+  全库代码 **310,189**；自实现包含测试 **121,167**；自实现不包含测试 **79,583**；当前 SIMD 实现
+  **33,900** 行。
+- known limits：classic cl.exe source-fat 最高 AVX2；installed SDK 不交付 vendor register headers；
+  scalable ISA 只签 correctness；legacy family backend 要等其直接消费者在 SIMD-07～11 迁走后由
+  SIMD-12 删除。
+- reopen：编译器/Highway target 语义使静态目标证明失效，source/fat/ordinary 路线出现循环内二次派发，
+  三种交付不再满足声明合同，或真机同合同 workload 证明该 dispatch 机制有 material regression。
