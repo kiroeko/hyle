@@ -243,7 +243,7 @@
     },
     {
       "module": "obs",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "round_id": "obs-v2",
       "closure_task": "docs/implementation/tasks/obs/obs-v2-resume.md",
       "scope": "Resume the unchanged obs-v1 candidate after qualifying the frozen N-worker replay; resolve the synchronous sink/fiber contract and Tracy trace-on test network behavior, then perform one bounded mechanism review of the qualified multi-sink statistical result.",
@@ -266,7 +266,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "obs-v2 SCOPED：N-worker 仪器恢复条件已满足；本轮有限处理 sink/fiber 契约、Tracy 测试网络行为，并对合格 n=31 多 sink 统计未决只做一次机制诊断。"
+      "summary": "obs-v2 AUDITED：冻结两项有限修复（同步 sink callback 的 no-yield/same-thread-return 契约、trace-on CTest loopback listener）；唯一性能机制检查未取得产品修改双钥匙，合格 n=31 多 sink NI 仍未决。"
     },
     {
       "module": "math",

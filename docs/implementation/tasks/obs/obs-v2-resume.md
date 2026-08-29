@@ -6,7 +6,7 @@
 > [`module-status.json`](../../module-status.json)；已终止的
 > [`obs-v1`](obs-v1-closure.md) 只提供冻结候选、已通过门和 blocker 事实，不在本轮回写。
 
-## Closure card（`SCOPED`）
+## Closure card（`AUDITED`）
 
 - component / owner / round ID：`obs` / observability owner / `obs-v2`；task kind：`RESUME`。
 - 前一 round / blocker：`obs-v1` / 公共性能仪器不能为冻结的 8-producer × 1/4/16-sink workload
@@ -76,3 +76,46 @@
 `BLOCKED -> SCOPED` 前态快照：
 `C:\hyle-scratch\obs-v2\transitions\module-status-before-scoped.json`，SHA-256
 `7BD67B957782BE9D6A609EDB96BDD0C3A0D42F1A9B658A592102BDB2D2F7A869`。
+
+## Capability / gap ledger（`AUDITED`）
+
+| ID | requirement / observed fact | coverage | frozen action / verification |
+|---|---|---|---|
+| `OBS-V2-IDENTITY-01` | v1 产品候选的公开 surface、registry、snapshot 与 callback 算法在恢复前没有漂移 | `COMPLETE` | `KEEP`：实现前 `include/hyle/obs`、`src/obs` 相对 `2c784d9d` exact diff 为空；本轮不授权算法改动 |
+| `OBS-V2-PERF-01` | 合格的 8-P-core、1/4/16-sink 双顺序 n=31 replay 必须按冻结 5% NI 合同裁决 | `COMPLETE evidence / UNRESOLVED gate` | `KEEP + BLOCK`：绑定 qualified bundle 与唯一机制结论；不得追加样本、改 workload/统计或改产品追分 |
+| `OBS-V2-SINK-FIBER-01` | 同步 borrowed callback 必须在调用它的 producer OS thread 上执行到返回；stackful fiber 不得在 callback 内 yield/suspend/migrate | `PARTIAL` | `DOC/API CONTRACT FIX`：补 public header、architecture 与 guide；不增加热路 thread-id 检查或 metadata |
+| `OBS-V2-TRACY-TEST-01` | trace-on CTest 不应以 Tracy 默认 wildcard listener 请求 Windows 网络权限 | `PARTIAL` | `TEST/DOC FIX`：仅给 trace-on Obs test process 设置 `TRACY_ONLY_LOCALHOST=1`；guide 区分 loopback listener 与受信网络 viewer，不改变产品默认值 |
+| `OBS-V2-CORRECTNESS-01` | 原有 normal/nested/remove/flush、trace OFF/ON 语义不能回退 | `COMPLETE but affected` | `KEEP + VERIFY`：focused trace OFF/ON tests、公开头 self-contained；no-yield 是调用方前置条件，不制造虚假 yield test |
+| `OBS-V2-DELIVERY-01` | C++23 source/static/shared 与 selected `obs` package 仍须成立；Native FFI 继续 `N/A` | `COMPLETE but affected` | `KEEP + VERIFY`：公开头/CTest CMake 改动后重跑三种 journey；不新增导出符号、依赖或 option |
+
+冻结 `FIX` 集只有 `OBS-V2-SINK-FIBER-01` 与 `OBS-V2-TRACY-TEST-01`。性能、registry、record layout、
+callback 语义、中央仪器、依赖图和交付 surface 均不在产品修改集；新发现必须退回 `SCOPED/AUDITED`，
+不能边实现边扩张。
+
+### Audit result
+
+- clean W1 qualification 位于
+  `C:\hyle-scratch\obs-nworker-qualified-evidence-8a704f7a`。manifest / summary / controls /
+  raw-log-index SHA-256 分别为 `3B4538580989A9665423E5C02E2C1B587E2FB75071D7223F9B71784731B05662`、
+  `02DD48AC65558B78C4C2F21961D62F2F9FE74671528F4CDA3BF46B6DABFFDC72`、
+  `80A8157E9BC3B6E0DF67F06BE63968EE3004A773DD36C9B7429E68169A92B758`、
+  `6788B19471669AA2E74118C9AB6FC0A2E7A871346248BB1CE3192E5FC6CC4275`。qualification、A/A、
+  5%/10% positive control、timer floor、placement、artifact/build/accounting 与 deep replay 全部
+  `PASS`；1-sink 两项 NI `PASS`，4/16-sink 仍有 strata `UNRESOLVED`。
+- 唯一机制检查确认两版 `SinkSnapshot`、active-reference、callback loop 与 release 路径的源码算法一致；
+  MSVC 反汇编只在当前 exact-view `LogRecord` 构造处多见用于 optional fields 的 `xorps/movups`
+  零初始化。该固定每 emit 成本在 1-sink 已通过，随 sink 增多应被摊薄，不能解释 4/16-sink 方差扩大；
+  两个 artifact 的绝对分布都出现相同快慢模态，adapter 的 relaxed-atomic cache-line handoff 是双方共有
+  的争用。没有同时满足“可复现产品机制 + 真实 consumer materiality”的双钥匙，因此不授权产品修复。
+- Abseil/Folly peer 都把 sink/handler 定义为 producer 上同步、并发、返回后才继续的 borrowed callback。
+  结合 HYLE 使用 OS TLS recursion frame 的实现可推得：OS 抢占本身安全，但 callback 主动挂起 stackful
+  fiber 会让同一 OS thread 上的其他 fiber 继承错误 recursion state，迁移后还会在错误 thread TLS 上
+  恢复。因此 no-yield/same-thread-return 是公开前置条件，不是 benchmark 特化。
+- Tracy v0.14.1 默认监听所有网络接口；其 runtime `TRACY_ONLY_LOCALHOST=1` 只把 listener 限制到
+  loopback，compile-time `TRACY_ONLY_LOCALHOST` 才同时改变 discovery broadcast 地址。CTest 的缺口是
+  wildcard listener 导致的权限提示，故测试进程使用上游 runtime 开关；guide 必须避免把它误写成
+  “完全禁网”，并保留用户在受信网络上连接 viewer 的默认选择。
+
+`SCOPED -> AUDITED` 前态 registry 保存于
+`C:\hyle-scratch\obs-v2\transitions\module-status-before-audited.json`，SHA-256
+`6FE8422D23B5E75CE310C0AE2961F0D77D57E862FEB552018A30C61D9E5A1030`。
