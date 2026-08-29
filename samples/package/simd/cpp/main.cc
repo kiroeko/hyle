@@ -20,9 +20,19 @@ int main() {
       return 1;
   }
 
+  hyle::simd::relu_f32_batch(input.data(), output.data(), input.size());
+  if (output[0] != 0.0f || std::signbit(output[2]) ||
+      output.back() != input.back())
+    return 2;
+
+  hyle::simd::softmax_f32_batch(input.data(), output.data(), input.size());
+  float probability_sum = 0.0f;
+  for (float probability : output) probability_sum += probability;
+  if (std::abs(probability_sum - 1.0f) > 2e-6f) return 3;
+
   // The package must stage and load the runtime-selected implementation, not
   // merely make the public header compile.
   const char* active = hyle::platform::isa_name(
       hyle::simd::selected_target(hyle::simd::KernelFamily::kMath).isa);
-  return active == nullptr || active[0] == '\0' ? 2 : 0;
+  return active == nullptr || active[0] == '\0' ? 4 : 0;
 }
