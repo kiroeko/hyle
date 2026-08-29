@@ -1,6 +1,7 @@
 # time-v2：公开头跨平台组合与当前身份重签
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
 > 本轮由
 > [`Time current-identity replay`](time-current-identity-replay-2026-08.md) 的
@@ -164,3 +165,50 @@ python scripts/hyle-perf.py verify \
 
 没有未解决的 correctness、portability、delivery、C++ usability、文档或工程性能 blocker。Formal 仍是独立
 `PENDING` 轴，不能把本轮工程 replay 写成跨平台或全面 SOTA 证书。
+
+## Closure decision
+
+本轮裁决为 **`CLOSED`**。冻结的五个 evidence/identity `FIX` 全部完成，七项 aggregate gate 均为
+`PASS`；产品 candidate 保持
+`565b710fd6dad1a50588992d336dddb958326d99` / tree
+`4534070226c16b9ba37aa7ecb189b9f447eb6892`。本轮没有修改 Time 产品实现、公开 declaration、layout、
+算法、复杂度或常态 metadata；只新增 Time 自有宏组合回归并重新签署当前身份。terminal commit 与
+registry anchor 由后续 registry 快照记录，避免在提交内伪造自身 hash。
+
+Formal 保持 `PENDING`。工程 `PASS` 只续签冻结的 W1-WIN scheduler lifecycle source replay，不能扩写为
+全部 Time 操作、所有机器、跨平台或发布级 SOTA。
+
+### 可接受限制
+
+- timer queue 仍是 caller-owned stable-node、single-owner primitive；callback execution、跨线程路由、
+  virtual/periodic policy 属于 sched/io；
+- `CommonTimeoutQueue` 的同-duration 特化有正确性/复杂度合同，但当前没有 HYLE 产品消费者，不冒充
+  scheduler 性能收益；
+- coarse/profiling 快路按平台 capability 启用；CPU accounting 只覆盖当前线程和当前进程；
+- calendar/timezone/text protocol、foreign runtime 与 Native FFI/C API 仍是明确 negative space；
+- retained P1 bundle 依赖冻结 contract、peer、W1-WIN machine/instrument 和精确 provenance review；Formal
+  不接受 `REVIEWED_NON_MATERIAL` renewal。
+
+### 重开条件
+
+- 具名消费者复现 Time 边界内的 correctness、security、宏/include-order、API 易用性或常用能力缺口；
+- clock/timer 算法、公开 API/layout、直接依赖、支持平台 primitive 或 source/static/shared 交付形状改变；
+- 成熟同合同 peer 证明更优复杂度，或正常消费者 workload 出现可复现的 material 性能差距；
+- 工程 evidence bundle 不可用，或 contract、peer、machine、instrument、计费 phases/provenance 发生 material
+  变化且需要续签；
+- calendar/timezone、virtual/periodic/cross-thread timer、foreign runtime 或其他 deferred family 经独立
+  capability decision 准入。
+
+### 四项 LOC
+
+从 immutable product candidate
+`565b710fd6dad1a50588992d336dddb958326d99` 执行
+`python scripts/loc-report.py --module time --commit <candidate> --self-check --json`，self-check 为 `PASS`：
+
+1. 全库代码：308,006；
+2. 自实现包含测试：124,275；
+3. 自实现不包含测试：83,119；
+4. `time` 实现：1,467（`include/hyle/time` + `src/time`，不含 tests/bench/docs/CMake）。
+
+post-candidate 只增加 Time 回归测试和本轮事实文档；Time implementation 数值不变。最终工作树的当前
+四项统计在交付摘要另算，不与 immutable candidate 口径混写。
