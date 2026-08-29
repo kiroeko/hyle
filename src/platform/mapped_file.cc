@@ -17,18 +17,78 @@
 #else
 #  include <fcntl.h>
 #  include <sys/mman.h>
+#  include <sys/resource.h>
 #  include <sys/stat.h>
+#  if defined(HYLE_OS_LINUX)
+#    include <sys/syscall.h>
+#  endif
 #  include <unistd.h>
 #endif
 
 namespace hyle::platform {
 
+namespace {
+
+bool valid_lock_options(MappedFile::LockOptions options) noexcept {
+  return (options.mode == MappedFile::LockMode::kEager ||
+          options.mode == MappedFile::LockMode::kOnFault) &&
+         (options.limit_policy == MappedFile::LockLimitPolicy::kPreserve ||
+          options.limit_policy ==
+              MappedFile::LockLimitPolicy::kAdjustIfNeeded);
+}
+
+bool checked_add(std::size_t a, std::size_t b,
+                 std::size_t* result) noexcept {
+  if (a > (std::numeric_limits<std::size_t>::max)() - b) return false;
+  *result = a + b;
+  return true;
+}
+
+bool round_up(std::size_t value, std::size_t alignment,
+              std::size_t* result) noexcept {
+  if (alignment == 0) return false;
+  const std::size_t remainder = value % alignment;
+  if (remainder == 0) {
+    *result = value;
+    return true;
+  }
+  return checked_add(value, alignment - remainder, result);
+}
+
+}  // namespace
+
 #if defined(HYLE_OS_WINDOWS)
 
 // ---- Windows ----------------------------------------------------------------
 namespace {
+constexpr std::size_t kLockLimitSlack = 1u << 20;
+
 Status win32_mapping_error(const char* operation, DWORD code) noexcept {
   return status_from_win32(code, operation);
+}
+
+Status adjust_working_set_limit(std::size_t lock_bytes) noexcept {
+  SIZE_T minimum = 0;
+  SIZE_T maximum = 0;
+  HANDLE process = ::GetCurrentProcess();
+  if (!::GetProcessWorkingSetSize(process, &minimum, &maximum)) {
+    return win32_mapping_error("GetProcessWorkingSetSize(mapped file lock)",
+                               ::GetLastError());
+  }
+
+  std::size_t increment = 0;
+  if (!checked_add(lock_bytes, kLockLimitSlack, &increment) ||
+      minimum > (std::numeric_limits<SIZE_T>::max)() - increment ||
+      maximum > (std::numeric_limits<SIZE_T>::max)() - increment) {
+    return Status::OutOfRange(
+        "mapped file lock: process working-set limit would overflow");
+  }
+  if (!::SetProcessWorkingSetSize(process, minimum + increment,
+                                  maximum + increment)) {
+    return win32_mapping_error("SetProcessWorkingSetSize(mapped file lock)",
+                               ::GetLastError());
+  }
+  return Status{};
 }
 
 }  // namespace
@@ -206,15 +266,61 @@ Status MappedFile::advise(Advice advice, std::size_t offset,
   return Status{};
 }
 
-Status MappedFile::lock() noexcept {
+Status MappedFile::lock_prefix(std::size_t length,
+                               LockOptions options) noexcept {
   if (!valid()) {
     return Status::FailedPrecondition("mapped file lock: mapping is not open");
   }
-  if (locked_) return Status{};
-  if (!::VirtualLock(map_base_, map_len_)) {
-    return win32_mapping_error("VirtualLock", ::GetLastError());
+  if (!valid_lock_options(options)) {
+    return Status::InvalidArgument("mapped file lock: invalid options");
   }
-  locked_ = true;
+  if (length > size_) {
+    return Status::OutOfRange("mapped file lock: prefix is outside mapping");
+  }
+  if (length == 0) return Status{};
+  if (locked_native_size_ != 0 && options.mode != locked_mode_) {
+    return Status::FailedPrecondition(
+        "mapped file lock: cannot change mode while a prefix is locked");
+  }
+  if (options.mode == LockMode::kOnFault) {
+    return Status::Unimplemented(
+        "mapped file on-fault locking is unavailable on Windows");
+  }
+
+  SYSTEM_INFO info;
+  ::GetSystemInfo(&info);
+  const std::size_t page = info.dwPageSize;
+  const std::size_t leading = static_cast<std::size_t>(
+      reinterpret_cast<std::uintptr_t>(addr_) -
+      reinterpret_cast<std::uintptr_t>(map_base_));
+  std::size_t visible_end = 0;
+  std::size_t native_target = 0;
+  if (!checked_add(leading, length, &visible_end) ||
+      !round_up(visible_end, page, &native_target)) {
+    return Status::OutOfRange("mapped file lock: native prefix is too large");
+  }
+  if (native_target <= locked_native_size_) return Status{};
+
+  void* start = static_cast<char*>(map_base_) + locked_native_size_;
+  const std::size_t delta = native_target - locked_native_size_;
+  if (!::VirtualLock(start, delta)) {
+    DWORD code = ::GetLastError();
+    if (options.limit_policy == LockLimitPolicy::kAdjustIfNeeded &&
+        code == ERROR_WORKING_SET_QUOTA) {
+      Status adjusted = adjust_working_set_limit(delta);
+      if (!adjusted.ok()) return adjusted;
+      if (!::VirtualLock(start, delta)) {
+        code = ::GetLastError();
+      } else {
+        code = ERROR_SUCCESS;
+      }
+    }
+    if (code != ERROR_SUCCESS) {
+      return win32_mapping_error("VirtualLock", code);
+    }
+  }
+  locked_native_size_ = native_target;
+  locked_mode_ = options.mode;
   return Status{};
 }
 
@@ -222,11 +328,12 @@ Status MappedFile::unlock() noexcept {
   if (!valid()) {
     return Status::FailedPrecondition("mapped file unlock: mapping is not open");
   }
-  if (!locked_) return Status{};
-  if (!::VirtualUnlock(map_base_, map_len_)) {
+  if (locked_native_size_ == 0) return Status{};
+  if (!::VirtualUnlock(map_base_, locked_native_size_)) {
     return win32_mapping_error("VirtualUnlock", ::GetLastError());
   }
-  locked_ = false;
+  locked_native_size_ = 0;
+  locked_mode_ = LockMode::kEager;
   return Status{};
 }
 
@@ -240,7 +347,8 @@ void MappedFile::reset() noexcept {
   map_len_ = 0;
   h0_ = -1;
   h1_ = -1;
-  locked_ = false;
+  locked_native_size_ = 0;
+  locked_mode_ = LockMode::kEager;
 }
 
 #else
@@ -253,6 +361,62 @@ Status posix_mapping_error(const char* operation, int code) noexcept {
   if (code != ENOTDIR) return status;
   return Status::FromNative(StatusCode::NotFound, status.native_error(),
                             status.message());
+}
+
+Status adjust_memlock_limit(std::size_t lock_bytes, bool* changed) noexcept {
+  *changed = false;
+#if defined(RLIMIT_MEMLOCK)
+  struct ::rlimit limit;
+  if (::getrlimit(RLIMIT_MEMLOCK, &limit) != 0) {
+    return posix_mapping_error("getrlimit(RLIMIT_MEMLOCK)", errno);
+  }
+  if (limit.rlim_cur == RLIM_INFINITY) return Status{};
+
+  const std::size_t increment = lock_bytes;
+  if (increment > (std::numeric_limits<rlim_t>::max)()) {
+    return Status::OutOfRange(
+        "mapped file lock: process memlock limit would overflow");
+  }
+  rlim_t desired = limit.rlim_cur;
+  const rlim_t native_increment = static_cast<rlim_t>(increment);
+  if (desired > (std::numeric_limits<rlim_t>::max)() - native_increment) {
+    desired = RLIM_INFINITY;
+  } else {
+    desired += native_increment;
+  }
+  if (limit.rlim_max != RLIM_INFINITY && desired > limit.rlim_max) {
+    desired = limit.rlim_max;
+  }
+  if (desired <= limit.rlim_cur) return Status{};
+
+  struct ::rlimit updated{desired, limit.rlim_max};
+  if (::setrlimit(RLIMIT_MEMLOCK, &updated) != 0) {
+    return posix_mapping_error("setrlimit(RLIMIT_MEMLOCK)", errno);
+  }
+  *changed = true;
+  return Status{};
+#else
+  (void)lock_bytes;
+  return Status::Unimplemented(
+      "mapped file lock: process memlock limit is unavailable");
+#endif
+}
+
+int lock_pages(const void* address, std::size_t length,
+               MappedFile::LockMode mode) noexcept {
+  if (mode == MappedFile::LockMode::kEager) {
+    return ::mlock(address, length);
+  }
+#if defined(HYLE_OS_LINUX) && defined(SYS_mlock2)
+  // MLOCK_ONFAULT is 0x01 in the Linux UAPI. Keeping the literal here avoids
+  // requiring non-portable GNU/Linux headers in the public interface.
+  return static_cast<int>(::syscall(SYS_mlock2, address, length, 0x01));
+#else
+  (void)address;
+  (void)length;
+  errno = ENOSYS;
+  return -1;
+#endif
 }
 
 }  // namespace
@@ -414,15 +578,70 @@ Status MappedFile::advise(Advice advice, std::size_t offset,
   return Status{};
 }
 
-Status MappedFile::lock() noexcept {
+Status MappedFile::lock_prefix(std::size_t length,
+                               LockOptions options) noexcept {
   if (!valid()) {
     return Status::FailedPrecondition("mapped file lock: mapping is not open");
   }
-  if (locked_) return Status{};
-  if (::mlock(map_base_, map_len_) != 0) {
-    return posix_mapping_error("mlock", errno);
+  if (!valid_lock_options(options)) {
+    return Status::InvalidArgument("mapped file lock: invalid options");
   }
-  locked_ = true;
+  if (length > size_) {
+    return Status::OutOfRange("mapped file lock: prefix is outside mapping");
+  }
+  if (length == 0) return Status{};
+  if (locked_native_size_ != 0 && options.mode != locked_mode_) {
+    return Status::FailedPrecondition(
+        "mapped file lock: cannot change mode while a prefix is locked");
+  }
+
+  const long native_page = ::sysconf(_SC_PAGESIZE);
+  if (native_page <= 0) {
+    return Status::Unavailable("mapped file lock: page size is unavailable");
+  }
+  const std::size_t page = static_cast<std::size_t>(native_page);
+  const std::size_t leading = static_cast<std::size_t>(
+      reinterpret_cast<std::uintptr_t>(addr_) -
+      reinterpret_cast<std::uintptr_t>(map_base_));
+  std::size_t visible_end = 0;
+  std::size_t native_target = 0;
+  if (!checked_add(leading, length, &visible_end) ||
+      !round_up(visible_end, page, &native_target)) {
+    return Status::OutOfRange("mapped file lock: native prefix is too large");
+  }
+  if (native_target <= locked_native_size_) return Status{};
+
+  const void* start = static_cast<const char*>(map_base_) +
+                      locked_native_size_;
+  const std::size_t delta = native_target - locked_native_size_;
+  if (lock_pages(start, delta, options.mode) != 0) {
+    int code = errno;
+    if (options.mode == LockMode::kOnFault &&
+        (code == ENOSYS || code == EINVAL)) {
+      Status native = posix_mapping_error("mlock2(MLOCK_ONFAULT)", code);
+      return Status::FromNative(StatusCode::Unimplemented,
+                                native.native_error(), native.message());
+    }
+    if (options.limit_policy == LockLimitPolicy::kAdjustIfNeeded &&
+        (code == ENOMEM || code == EAGAIN)) {
+      bool changed = false;
+      Status adjusted = adjust_memlock_limit(delta, &changed);
+      if (!adjusted.ok()) return adjusted;
+      if (changed && lock_pages(start, delta, options.mode) == 0) {
+        code = 0;
+      } else if (changed) {
+        code = errno;
+      }
+    }
+    if (code != 0) {
+      return posix_mapping_error(options.mode == LockMode::kEager
+                                     ? "mlock"
+                                     : "mlock2(MLOCK_ONFAULT)",
+                                 code);
+    }
+  }
+  locked_native_size_ = native_target;
+  locked_mode_ = options.mode;
   return Status{};
 }
 
@@ -430,11 +649,12 @@ Status MappedFile::unlock() noexcept {
   if (!valid()) {
     return Status::FailedPrecondition("mapped file unlock: mapping is not open");
   }
-  if (!locked_) return Status{};
-  if (::munlock(map_base_, map_len_) != 0) {
+  if (locked_native_size_ == 0) return Status{};
+  if (::munlock(map_base_, locked_native_size_) != 0) {
     return posix_mapping_error("munlock", errno);
   }
-  locked_ = false;
+  locked_native_size_ = 0;
+  locked_mode_ = LockMode::kEager;
   return Status{};
 }
 
@@ -444,12 +664,17 @@ void MappedFile::reset() noexcept {
   size_ = 0;
   map_base_ = nullptr;
   map_len_ = 0;
-  locked_ = false;
+  locked_native_size_ = 0;
+  locked_mode_ = LockMode::kEager;
 }
 
 #endif
 
 // ---- portable ---------------------------------------------------------------
+
+Status MappedFile::lock(LockOptions options) noexcept {
+  return lock_prefix(size_, options);
+}
 
 Result<std::span<std::byte>> MappedFile::writable_bytes() noexcept {
   if (!valid()) {
@@ -468,14 +693,16 @@ MappedFile::~MappedFile() { reset(); }
 MappedFile::MappedFile(MappedFile&& o) noexcept
     : addr_(o.addr_), size_(o.size_), map_base_(o.map_base_),
       map_len_(o.map_len_), h0_(o.h0_), h1_(o.h1_), mode_(o.mode_),
-      locked_(o.locked_) {
+      locked_native_size_(o.locked_native_size_),
+      locked_mode_(o.locked_mode_) {
   o.addr_ = nullptr;
   o.size_ = 0;
   o.map_base_ = nullptr;
   o.map_len_ = 0;
   o.h0_ = -1;
   o.h1_ = -1;
-  o.locked_ = false;
+  o.locked_native_size_ = 0;
+  o.locked_mode_ = LockMode::kEager;
 }
 
 MappedFile& MappedFile::operator=(MappedFile&& o) noexcept {
@@ -488,14 +715,16 @@ MappedFile& MappedFile::operator=(MappedFile&& o) noexcept {
     h0_ = o.h0_;
     h1_ = o.h1_;
     mode_ = o.mode_;
-    locked_ = o.locked_;
+    locked_native_size_ = o.locked_native_size_;
+    locked_mode_ = o.locked_mode_;
     o.addr_ = nullptr;
     o.size_ = 0;
     o.map_base_ = nullptr;
     o.map_len_ = 0;
     o.h0_ = -1;
     o.h1_ = -1;
-    o.locked_ = false;
+    o.locked_native_size_ = 0;
+    o.locked_mode_ = LockMode::kEager;
   }
   return *this;
 }

@@ -54,6 +54,30 @@ class MappedFile {
     kDontNeed = 4,
   };
 
+  // How newly requested pages enter the OS locked set. kOnFault avoids
+  // synchronously faulting every page before the call returns, but is a Linux
+  // mlock2(MLOCK_ONFAULT) capability; unsupported backends return
+  // Unimplemented instead of silently changing the requested latency shape.
+  enum class LockMode : std::uint8_t {
+    kEager = 0,
+    kOnFault = 1,
+  };
+
+  // Page locking is charged against a process-wide OS limit. Preserving that
+  // limit is the unsurprising default. kAdjustIfNeeded explicitly permits one
+  // best-effort soft-limit/working-set increase after a quota failure and one
+  // retry; a successful increase is process-global and is not rolled back by
+  // unlock or destruction.
+  enum class LockLimitPolicy : std::uint8_t {
+    kPreserve = 0,
+    kAdjustIfNeeded = 1,
+  };
+
+  struct LockOptions {
+    LockMode mode = LockMode::kEager;
+    LockLimitPolicy limit_policy = LockLimitPolicy::kPreserve;
+  };
+
   // Map [offset, offset+length) of `path` (length==0 => to end of file). An
   // explicit length must NOT extend past the file's end -- mapping past EOF is
   // rejected with OutOfRange, so a read-write mapping never silently grows the
@@ -113,12 +137,41 @@ class MappedFile {
     return advise(Advice::kWillNeed, offset, length);
   }
 
-  // Keep the mapped pages resident (mlock/VirtualLock). This may fail because
-  // of process limits or privilege and therefore stays explicit. Repeated
-  // lock/unlock calls are idempotent. Unmapping also releases the OS lock.
-  HYLE_PLATFORM_API Status lock() noexcept;
+  // Keep the full mapping resident. This is the common one-shot convenience
+  // over lock_prefix(size(), options).
+  Status lock() noexcept { return lock(LockOptions{}); }
+  HYLE_PLATFORM_API Status lock(LockOptions options) noexcept;
+
+  // Monotonically grow the locked public prefix to cover at least `length`
+  // bytes. OS page rounding may make locked_size() larger than requested.
+  // Growth locks only the newly uncovered native pages; failure preserves the
+  // previously applied prefix. A non-empty prefix cannot change LockMode until
+  // unlock(). length==0 is a successful no-op; length>size() is OutOfRange.
+  // Control operations are externally synchronized, like reset/flush.
+  Status lock_prefix(std::size_t length) noexcept {
+    return lock_prefix(length, LockOptions{});
+  }
+  HYLE_PLATFORM_API Status lock_prefix(std::size_t length,
+                                       LockOptions options) noexcept;
+
+  // Release the entire applied prefix. Repeated unlock calls are idempotent;
+  // unmapping also releases the OS lock.
   HYLE_PLATFORM_API Status unlock() noexcept;
-  bool locked() const noexcept { return locked_; }
+  bool locked() const noexcept { return locked_native_size_ != 0; }
+
+  // Public prefix currently covered by the page-granular native lock, clipped
+  // to size(). Zero means no prefix is tracked as locked.
+  std::size_t locked_size() const noexcept {
+    if (locked_native_size_ == 0 || addr_ == nullptr || map_base_ == nullptr) {
+      return 0;
+    }
+    const std::uintptr_t visible = reinterpret_cast<std::uintptr_t>(addr_);
+    const std::uintptr_t native = reinterpret_cast<std::uintptr_t>(map_base_);
+    const std::size_t leading = static_cast<std::size_t>(visible - native);
+    if (locked_native_size_ <= leading) return 0;
+    const std::size_t covered = locked_native_size_ - leading;
+    return covered < size_ ? covered : size_;
+  }
 
   // Unmap early (also done by the destructor). Safe on an invalid mapping.
   HYLE_PLATFORM_API void reset() noexcept;
@@ -137,7 +190,8 @@ class MappedFile {
   std::intptr_t h0_ = -1;
   std::intptr_t h1_ = -1;
   Mode mode_ = Mode::kReadOnly;
-  bool locked_ = false;
+  std::size_t locked_native_size_ = 0;
+  LockMode locked_mode_ = LockMode::kEager;
 };
 
 }  // namespace hyle::platform

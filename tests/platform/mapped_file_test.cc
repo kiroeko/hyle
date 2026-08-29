@@ -17,6 +17,7 @@
 #include <utility>
 
 #include "hyle/platform/fs.h"
+#include "hyle/platform.h"
 #include "hyle/platform/virtual_memory.h"  // page_size()
 
 using hyle::platform::MappedFile;
@@ -139,28 +140,127 @@ TEST_F(MapTest, AdviceCoversWholeAndBoundedRanges) {
                   .IsInvalidArgument());
 }
 
-TEST_F(MapTest, PageLockIsExplicitAndIdempotentWhenAvailable) {
-  std::string init(page_size(), 'A');
+TEST_F(MapTest, PageLockGrowsMonotonicallyAndMovesWhenAvailable) {
+  std::string init(page_size() * 3, 'A');
   write_file(init.data(), init.size());
   MappedFile m = open_map();
   EXPECT_FALSE(m.locked());
+  EXPECT_EQ(m.locked_size(), 0u);
+  EXPECT_TRUE(m.lock_prefix(0).ok());
+  EXPECT_FALSE(m.locked());
 
-  Status locked = m.lock();
+  Status locked = m.lock_prefix(1);
   if (locked.ok()) {
     EXPECT_TRUE(m.locked());
-    EXPECT_TRUE(m.lock().ok());
+    ASSERT_GE(m.locked_size(), 1u);
+    ASSERT_LE(m.locked_size(), m.size());
+    const std::size_t first = m.locked_size();
+    EXPECT_TRUE(m.lock_prefix(1).ok());
+    EXPECT_EQ(m.locked_size(), first);
+
+    if (first < m.size()) {
+      Status grown = m.lock_prefix(first + 1);
+      if (grown.ok()) {
+        EXPECT_GT(m.locked_size(), first);
+      } else {
+        // A quota failure on the new native page must not forget the already
+        // applied prefix.
+        EXPECT_TRUE(grown.IsPermissionDenied() ||
+                    grown.IsResourceExhausted() || grown.IsUnavailable());
+        EXPECT_EQ(m.locked_size(), first);
+      }
+    }
+
+    MappedFile::LockOptions different_mode;
+    different_mode.mode = MappedFile::LockMode::kOnFault;
+    EXPECT_TRUE(m.lock_prefix(1, different_mode).IsFailedPrecondition());
 
     MappedFile moved = std::move(m);
     EXPECT_FALSE(m.locked());
+    EXPECT_EQ(m.locked_size(), 0u);
     EXPECT_TRUE(moved.locked());
+    EXPECT_GE(moved.locked_size(), first);
     EXPECT_TRUE(moved.unlock().ok());
     EXPECT_FALSE(moved.locked());
+    EXPECT_EQ(moved.locked_size(), 0u);
     EXPECT_TRUE(moved.unlock().ok());
   } else {
     // Containers and restricted CI commonly set a zero/small memlock quota.
     EXPECT_TRUE(locked.IsPermissionDenied() || locked.IsResourceExhausted() ||
                 locked.IsUnavailable());
     EXPECT_FALSE(m.locked());
+  }
+}
+
+TEST_F(MapTest, WholeLockRemainsTheNaturalConvenience) {
+  std::string init(page_size(), 'A');
+  write_file(init.data(), init.size());
+  MappedFile m = open_map();
+  Status locked = m.lock();
+  if (locked.ok()) {
+    EXPECT_EQ(m.locked_size(), m.size());
+    EXPECT_TRUE(m.unlock().ok());
+  } else {
+    EXPECT_TRUE(locked.IsPermissionDenied() || locked.IsResourceExhausted() ||
+                locked.IsUnavailable());
+  }
+}
+
+TEST_F(MapTest, PrefixLockAccountsForUnalignedMappingOffset) {
+  const std::size_t pg = page_size();
+  std::string init(pg * 2, 'A');
+  write_file(init.data(), init.size());
+  MappedFile m = open_map(MappedFile::Mode::kReadOnly, 100, pg);
+  Status locked = m.lock_prefix(1);
+  if (locked.ok()) {
+    EXPECT_GE(m.locked_size(), 1u);
+    EXPECT_LE(m.locked_size(), m.size());
+    EXPECT_TRUE(m.unlock().ok());
+  } else {
+    EXPECT_TRUE(locked.IsPermissionDenied() || locked.IsResourceExhausted() ||
+                locked.IsUnavailable());
+  }
+}
+
+TEST_F(MapTest, OnFaultLockIsExplicitlySupportedOrRejected) {
+  std::string init(page_size(), 'A');
+  write_file(init.data(), init.size());
+  MappedFile m = open_map();
+  MappedFile::LockOptions options;
+  options.mode = MappedFile::LockMode::kOnFault;
+  Status locked = m.lock_prefix(1, options);
+#if defined(HYLE_OS_LINUX)
+  if (locked.ok()) {
+    EXPECT_TRUE(m.locked());
+    EXPECT_GE(m.locked_size(), 1u);
+    EXPECT_TRUE(m.unlock().ok());
+  } else {
+    // Old kernels/libcs and restricted containers may lack the primitive or
+    // the memlock budget. All are observable instead of an eager fallback.
+    EXPECT_TRUE(locked.IsUnimplemented() || locked.IsPermissionDenied() ||
+                locked.IsResourceExhausted() || locked.IsUnavailable());
+  }
+#else
+  EXPECT_TRUE(locked.IsUnimplemented());
+  EXPECT_FALSE(m.locked());
+#endif
+}
+
+TEST_F(MapTest, ExplicitLimitAdjustmentPreservesStateOnFailure) {
+  std::string init(page_size() * 512, 'A');
+  write_file(init.data(), init.size());
+  MappedFile m = open_map();
+  MappedFile::LockOptions options;
+  options.limit_policy = MappedFile::LockLimitPolicy::kAdjustIfNeeded;
+  Status locked = m.lock(options);
+  if (locked.ok()) {
+    EXPECT_EQ(m.locked_size(), m.size());
+    EXPECT_TRUE(m.unlock().ok());
+  } else {
+    EXPECT_TRUE(locked.IsPermissionDenied() || locked.IsResourceExhausted() ||
+                locked.IsUnavailable() || locked.IsOutOfRange());
+    EXPECT_FALSE(m.locked());
+    EXPECT_EQ(m.locked_size(), 0u);
   }
 }
 
@@ -312,7 +412,20 @@ TEST_F(MapTest, InvalidArgumentsAndEmptyMappingReturnStatus) {
   EXPECT_TRUE(unopened.advise(MappedFile::Advice::kNormal)
                   .IsFailedPrecondition());
   EXPECT_TRUE(unopened.lock().IsFailedPrecondition());
+  EXPECT_TRUE(unopened.lock_prefix(1).IsFailedPrecondition());
   EXPECT_TRUE(unopened.unlock().IsFailedPrecondition());
+
+  write_file("abcd", 4);
+  MappedFile mapped = open_map();
+  EXPECT_TRUE(mapped.lock_prefix(mapped.size() + 1).IsOutOfRange());
+  MappedFile::LockOptions invalid_lock_mode;
+  invalid_lock_mode.mode = static_cast<MappedFile::LockMode>(255);
+  EXPECT_TRUE(
+      mapped.lock_prefix(1, invalid_lock_mode).IsInvalidArgument());
+  MappedFile::LockOptions invalid_limit;
+  invalid_limit.limit_policy =
+      static_cast<MappedFile::LockLimitPolicy>(255);
+  EXPECT_TRUE(mapped.lock_prefix(1, invalid_limit).IsInvalidArgument());
 }
 
 TEST_F(MapTest, LengthPastEofRejected) {
