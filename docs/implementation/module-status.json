@@ -368,16 +368,14 @@
     },
     {
       "module": "time",
-      "product_state": "CLOSED",
-      "round_id": "time-v1",
-      "closure_task": "docs/implementation/tasks/time/time-v1-closure.md",
-      "scope": "Clock, Unix timestamp, deadline/sleep and intrusive timer capabilities; C++ API, direct dependencies/consumers, delivery, documentation and P1 engineering evidence.",
-      "non_goals": "Calendar/time-zone/formatting, executor and periodic policy, cross-thread timer service, downstream closure, Native FFI/C API, stable C++ ABI and Formal certification.",
-      "baseline_commit": "cb46d1183b7ed11757ab0661db893cdfd98b9f65",
-      "candidate_commit": "0ef2544ceece030bb522857854285d280e368d36",
-      "candidate_tree": "104a4b6dc904e5b261010ace820ec2c474374c31",
-      "end_commit": "85d4f1ec3c1a88eea8803271d518db8b8229f4e2",
-      "registry_anchor_commit": "85d4f1ec3c1a88eea8803271d518db8b8229f4e2",
+      "product_state": "REOPENED",
+      "reopen_trigger_id": "TIME-REPLAY-WINMAX-01",
+      "reopen_evidence": "docs/implementation/tasks/time/time-current-identity-replay-2026-08.md",
+      "round_id": "time-v2",
+      "closure_task": "docs/implementation/tasks/time/time-v2-platform-macro-reanchor.md",
+      "scope": "Current Time public-header identity, Windows min/max macro composition, owned regression coverage, cross-platform source/static/shared delivery and replay of the unchanged P1 scheduler evidence.",
+      "non_goals": "New Time capabilities, clock/timer algorithm or layout changes, scheduler/platform refactoring, new performance sampling, Native FFI/C API, stable C++ ABI and Formal certification.",
+      "baseline_commit": "565b710fd6dad1a50588992d336dddb958326d99",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -385,49 +383,17 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PASS",
+        "verdict": "PLANNED",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-time.md"
+        "instrument_profile": "closure-perf-v1"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "gate_verdicts": {
-        "scope": "PASS",
-        "architecture": "PASS",
-        "correctness": "PASS",
-        "delivery": "PASS",
-        "usability_docs": "PASS",
-        "red_team": "PASS",
-        "engineering_performance": "PASS"
-      },
-      "closure_evidence": "docs/implementation/tasks/time/time-v1-closure.md",
-      "loc": {
-        "snapshot_commit": "0ef2544ceece030bb522857854285d280e368d36",
-        "repository_code": 300025,
-        "self_with_tests": 122633,
-        "self_without_tests": 82350,
-        "module_implementation": 1467
-      },
-      "known_limitations": [
-        "Timer queues are caller-owned stable-node, single-owner primitives; callback execution, cross-thread routing and periodic policy remain with sched/io.",
-        "CommonTimeoutQueue has no current HYLE product consumer, so its complexity/correctness is closed but it carries no scheduler performance claim.",
-        "Coarse and profiling fast paths are capability-gated and platform-dependent; CPU accounting is limited to the current thread or process.",
-        "The P1 performance claim covers only the frozen W1-WIN scheduler lifecycle replay against the pinned Seastar peer; Formal and unmeasured clock/sleep families remain outside it.",
-        "Calendar/time-zone/text protocol support and Native FFI remain explicit negative space until a named consumer is admitted."
-      ],
-      "reopen_triggers": [
-        "A named consumer exposes a correctness, security, usability or missing-capability defect within time's ownership boundary.",
-        "A clock algorithm, timer algorithm, public API/layout, direct dependency, supported platform primitive or source/static/shared delivery shape changes.",
-        "A mature same-contract peer proves a better complexity class or a reproducible material advantage on a normal time consumer workload.",
-        "The engineering evidence bundle becomes unavailable, or the frozen contract, peer, machine or instrument identity changes and the claim must be renewed.",
-        "A foreign-runtime, calendar/time-zone, virtual-clock, periodic or cross-thread timer consumer is admitted through a separately scoped capability decision."
-      ],
-      "summary": "time-v1 CLOSED：完整 clock/timestamp/deadline/timer 能力、自然 C++ API、三平台正确性与三种交付、直接消费者、文档和 Seastar 同合同 5% P1 工程非劣门均已签署；Formal 独立 PENDING。"
+      "summary": "time-v2 REOPENED：Windows min/max 宏组合修复改变了 time-v1 之后的公开头产品身份；仅重签当前 identity、Time 自有回归、三平台交付与不变 P1 证据回放。"
     },
     {
       "module": "platform",
