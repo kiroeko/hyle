@@ -25,7 +25,7 @@ int main() {
       output.back() != input.back())
     return 2;
 
-  hyle::simd::softmax_f32_batch(input.data(), output.data(), input.size());
+  hyle::simd::softmax_f32(input.data(), output.data(), input.size());
   float probability_sum = 0.0f;
   for (float probability : output) probability_sum += probability;
   if (std::abs(probability_sum - 1.0f) > 2e-6f) return 3;
