@@ -105,12 +105,20 @@ std::size_t epoch_iterations(std::size_t n) {
   return n == kResidentCount ? 8192 : 512;
 }
 
+std::size_t count_epoch_iterations(std::size_t n) {
+  // The first qualification set showed occasional 5--9% within-row noise for
+  // the very short Count body even though paired replicas agreed. Follow the
+  // instrument's requested epoch floor instead of treating that noise as a
+  // product result.
+  return n == kResidentCount ? 262144 : 8192;
+}
+
 template <class Candidate, class Peer>
 void run_pair(const std::string& title, std::size_t n, Candidate candidate,
-              Peer peer) {
+              Peer peer, std::size_t epochs = 0) {
   nb::Bench bench;
   bench.title(title).relative(true).batch(n).minEpochIterations(
-      epoch_iterations(n));
+      epochs == 0 ? epoch_iterations(n) : epochs);
   HYLE_RUN_PAIR(
       bench,
       [&](auto rep) {
@@ -127,10 +135,11 @@ void run_pair(const std::string& title, std::size_t n, Candidate candidate,
 
 template <class Public, class Body>
 void run_public_info(const std::string& title, std::size_t n,
-                     Public public_call, Body body_call) {
+                     Public public_call, Body body_call,
+                     std::size_t epochs = 0) {
   nb::Bench bench;
   bench.title(title).relative(true).batch(n).minEpochIterations(
-      epoch_iterations(n));
+      epochs == 0 ? epoch_iterations(n) : epochs);
   HYLE_RUN_INFO_PAIR(
       bench,
       [&](auto rep) {
@@ -174,7 +183,8 @@ void run_size(std::size_t n) {
            },
            [&] {
              nb::doNotOptimizeAway(peer_count(input.data(), n, needle));
-           });
+           },
+           count_epoch_iterations(n));
   run_pair("search argmax f32" + suffix, n,
            [&] {
              nb::doNotOptimizeAway(
@@ -201,7 +211,8 @@ void run_size(std::size_t n) {
                     nb::doNotOptimizeAway(
                         hs::detail::count_equal_f32_parity(
                             input.data(), n, needle));
-                  });
+                  },
+                  count_epoch_iterations(n));
   run_public_info("public/body search argmax" + suffix, n,
                   [&] {
                     nb::doNotOptimizeAway(
