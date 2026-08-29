@@ -5,7 +5,7 @@
 
 #include "hyle/core/compiler.h"  // HYLE_FATAL_ASSERT (fail-fast on bits-contract violation)
 #include "hyle/platform.h"
-#include "hyle/simd/runtime.h"
+#include "src/simd/runtime_internal.h"
 #include "src/simd/bitpack/bitstream.h"
 #include "src/simd/bitpack/kernels.h"
 #include "src/simd/dispatch_internal.h"

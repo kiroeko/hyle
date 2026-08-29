@@ -8,7 +8,7 @@
 #include <type_traits>
 #include <vector>
 
-#include "hyle/simd/runtime.h"
+#include "src/simd/runtime_internal.h"
 #include "hyle/simd/sort.h"
 #include "hyle/simd/vec.h"
 #include "src/simd/sort/kernels.h"

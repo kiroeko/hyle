@@ -16,7 +16,7 @@
 #include <vector>
 
 #include "hyle/mem/allocator.h"
-#include "hyle/simd/dispatch.h"
+#include "hyle/platform/cpu.h"
 #include "hyle/simd/ops.h"
 #include "hyle/simd/runtime.h"
 
@@ -33,7 +33,7 @@ int main() {
   const float dot = hyle::simd::dot(x.data(), y.data(), n);
   std::printf("linked installed hyle::simd + hyle::mem OK\n");
   std::printf("  active SIMD variant : %s\n",
-              hyle::simd::isa_name(hyle::simd::runtime().isa));
+              hyle::platform::isa_name(hyle::simd::selected_target().isa));
   std::printf("  dot(1.5*2.0 x512)   : %.1f (expect %.1f)\n", dot, 1.5f * 2.0f * n);
   return (dot == 1.5f * 2.0f * static_cast<float>(n)) ? 0 : 1;
 }

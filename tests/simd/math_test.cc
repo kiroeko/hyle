@@ -15,7 +15,7 @@
 
 #include "hyle/simd/dispatch.h"
 #include "hyle/simd/math.h"
-#include "hyle/simd/runtime.h"
+#include "src/simd/runtime_internal.h"
 
 // math_test -- ordinary batch operations vs the std::/libm oracle. Runtime routes to a
 // fixed-target locked-Highway implementation where qualified and otherwise to the scalar

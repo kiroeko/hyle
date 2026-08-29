@@ -20,6 +20,8 @@ hyle_add_test(simd SOURCES dispatch_test.cc vec_test.cc native_test.cc
               runtime_test.cc ops_test.cc search_test.cc scan_test.cc dtype_test.cc
               math_test.cc sort_test.cc radix_sort_test.cc bitpack_test.cc
               narrow_float_test.cc narrow_ops_test.cc)
+target_compile_definitions(hyle_simd PRIVATE HYLE_SIMD_INTERNAL_TESTING=1)
+target_compile_definitions(hyle_simd_test PRIVATE HYLE_SIMD_INTERNAL_TESTING=1)
 target_include_directories(hyle_simd_test PRIVATE "${PROJECT_SOURCE_DIR}")
 hyle_add_fat_kernel(
   TARGET hyle_simd_test

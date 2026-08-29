@@ -3,7 +3,7 @@
 #include <cstddef>
 
 #include "hyle/platform.h"
-#include "hyle/simd/runtime.h"
+#include "src/simd/runtime_internal.h"
 #include "src/simd/dispatch_internal.h"
 #include "src/simd/dtype/kernels.h"
 

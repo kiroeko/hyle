@@ -17,8 +17,8 @@
 // Operations outside an upstream-qualified domain fall back to scalar libm by lane/block so
 // the ordinary contract does not become a vendor precondition. Runtime selection chooses a
 // compiled AVX2/AVX-512, NEON/SVE or RVV tier once; scalar libm is the always-available floor.
-// runtime().math.isa reports the active broad tier. Backend choice is an implementation detail,
-// not a stable ABI or a promise to preserve a historical benchmark winner.
+// selected_target(KernelFamily::kMath) reports the active broad tier. Backend choice is an
+// implementation detail, not a stable ABI or a promise to preserve a historical benchmark winner.
 
 namespace hyle::simd {
 

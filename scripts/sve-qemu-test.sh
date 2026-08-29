@@ -8,7 +8,8 @@
 # Prereqs (WSL Ubuntu, already installed here):
 #   aarch64-linux-gnu-g++-14, qemu-aarch64-static, gtest source under .deps/googletest-src.
 # Usage: run from the repo root on a Linux box with the aarch64 cross toolchain:
-#   bash scripts/sve-qemu-test.sh
+#   bash scripts/sve-qemu-test.sh       # full legacy/product gate
+#   bash scripts/sve-qemu-test.sh fat   # direct-Highway source-fat seam only
 #
 # On a REAL SVE host (Graviton3, etc.) you don't need this -- configure with
 # -DHYLE_TEST_SIMD_SVE=ON
@@ -40,6 +41,24 @@ COMMON_FLAGS="-std=c++23 -O2 -march=armv8-a -DHYLE_SIMD_HAS_SVE_VARIANT=1 -pthre
   -I$REPO/include -I$REPO -I$HWY -I$GT/include -I$GT"
 FLAGS="$COMMON_FLAGS -march=$ARCH -DHYLE_SIMD_TARGET_SVE"
 
+if [ "$TIER" = "fat" ]; then
+  echo "[fat] compiling direct-Highway SVE source-fat fixture ..."
+  printf '#define HWY_COMPILE_ONLY_STATIC 1\n#define HYLE_SIMD_VARIANT_SUFFIX sve\n#include "tests/simd/fat_kernel_fixture.h"\n' |
+    $CXX $FLAGS -x c++ -c - -o "$OUT/fat_sve_only.o"
+  $CXX $COMMON_FLAGS -DHYLE_TEST_FAT_SVE=1 \
+    -DHYLE_SIMD_FAT_EXACT_VARIANT_SVE=1 -DHYLE_SIMD_EXACT_TARGET_SVE=1 \
+    -c "$REPO/tests/simd/fat_kernel_scalable_driver.cc" \
+    -o "$OUT/fat_driver_sve.o"
+  $CXX $FLAGS "$OUT/fat_driver_sve.o" "$OUT/fat_sve_only.o" \
+    -static -o "$OUT/fat_sve_only" -pthread
+  for bits in 128 256 384 512 2048; do
+    echo "----- direct Highway SVE VL=${bits}-bit -----"
+    HYLE_EXPECT_SVE_BITS="$bits" "$QEMU" -cpu "max,sve${bits}=on" \
+      -L /usr/aarch64-linux-gnu "$OUT/fat_sve_only"
+  done
+  exit 0
+fi
+
 echo "[1/3] cross-compiling register + product-math probes for aarch64 ($ARCH) ..."
 $CXX $FLAGS -c "$GT/src/gtest-all.cc"  -o "$OUT/gtest-all.o"
 $CXX $FLAGS -c "$GT/src/gtest_main.cc" -o "$OUT/gtest-main.o"
@@ -66,11 +85,11 @@ $CXX $COMMON_FLAGS -c "$REPO/src/platform/cpu.cc" -o "$OUT/cpu.o"
 $CXX $COMMON_FLAGS -DHYLE_ERROR_BUILD -c "$REPO/src/error/status.cc" -o "$OUT/error_status.o"
 printf '#include "hyle/platform/thread.h"\nnamespace hyle::platform { unsigned hardware_concurrency() noexcept { return 1; } }\n' |
   $CXX $COMMON_FLAGS -x c++ -c - -o "$OUT/thread_test_stub.o"
-printf '#define HYLE_SIMD_VARIANT_SUFFIX scalar\n#include "tests/simd/fat_kernel_fixture.h"\n' |
+printf '#define HWY_COMPILE_ONLY_SCALAR 1\n#define HYLE_SIMD_VARIANT_SUFFIX scalar\n#include "tests/simd/fat_kernel_fixture.h"\n' |
   $CXX $COMMON_FLAGS -x c++ -c - -o "$OUT/fat_scalar.o"
-printf '#define HYLE_SIMD_TARGET_NEON\n#define HYLE_SIMD_VARIANT_SUFFIX neon\n#include "tests/simd/fat_kernel_fixture.h"\n' |
+printf '#define HWY_COMPILE_ONLY_STATIC 1\n#define HYLE_SIMD_TARGET_NEON\n#define HYLE_SIMD_VARIANT_SUFFIX neon\n#include "tests/simd/fat_kernel_fixture.h"\n' |
   $CXX $COMMON_FLAGS -x c++ -c - -o "$OUT/fat_neon.o"
-printf '#define HYLE_SIMD_VARIANT_SUFFIX sve\n#include "tests/simd/fat_kernel_fixture.h"\n' |
+printf '#define HWY_COMPILE_ONLY_STATIC 1\n#define HYLE_SIMD_VARIANT_SUFFIX sve\n#include "tests/simd/fat_kernel_fixture.h"\n' |
   $CXX $FLAGS -x c++ -c - -o "$OUT/fat_sve.o"
 $CXX $COMMON_FLAGS -c "$REPO/src/simd/runtime.cc" -o "$OUT/runtime.o"
 $CXX $COMMON_FLAGS -c "$REPO/src/simd/math/math_dispatch.cc" -o "$OUT/math_dispatch.o"

@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "hyle/simd/math.h"
-#include "hyle/simd/runtime.h"
+#include "src/simd/runtime_internal.h"
 
 #include <algorithm>
 #include <bit>

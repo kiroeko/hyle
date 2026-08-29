@@ -8,9 +8,9 @@
 // dtype_ops.h -- BATCH dtype conversions, runtime-dispatched (simd-05). Converting whole
 // weight/activation arrays between fp16/bf16 and fp32 is the AI hot path (KV-cache, mixed
 // precision). Same fn-ptr dispatch model as ops.h: fp16 conversions pick the F16C
-// hardware kernel when the CPU has it (cpu_features().f16c), else the scalar core.
+// hardware kernel when Platform reports F16C, else the scalar core.
 //
-// bf16: vectorized with plain AVX2 INTEGER ops (cpu_features().avx2), NOT a dedicated
+// bf16: vectorized with plain AVX2 INTEGER ops, NOT a dedicated
 // AVX-512-BF16 instruction. bf16 IS the top 16 bits of f32, so bf16<->f32 is a shift
 // (bf16->f32) or a round-to-nearest-even bias + shift (f32->bf16) -- both expressible in
 // AVX2 (cvtepu16_epi32/slli, packus/permute4x64). Same approach as Highway. Falls back to

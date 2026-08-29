@@ -122,31 +122,74 @@ function(hyle_set_isa src tier)
   endif()
 endfunction()
 
-# hyle_set_highway_isa(<source-file>) -- ISA flags for ANY TU that uses Highway's STATIC
-# dispatch (hn::Exp/PromoteTo/etc) -- both bench comparison TUs AND product-lib cores that
-# borrow Highway (e.g. src/simd/math/transcendental_highway.cc).
-# DISTINCT from hyle_set_isa(AVX2) on purpose: HYLE's own kernels are hand-written intrinsics
-# that need only `-mavx2 -mfma -mf16c -mbmi2` (BMI2 serves the i16 mask extractor and is in
-# HYLE's runtime AVX2 group). Highway's HWY_STATIC_TARGET additionally resolves its
-# vector width from the FULL baseline-feature macro chain in detect_targets.h:
-#   AVX2 baseline  <- SSE4 baseline (needs __PCLMUL__ + __AES__) + BMI2 + FMA + F16C + __AVX2__
-# With only `-mavx2 -mfma -mf16c`, Highway silently DOWNGRADES to SSSE3 (128-bit, Lanes=4) on
-# GCC/Clang. This bit TWICE: (1) the parity benches raced HYLE-256b vs Highway-128b (bogus
-# "win"); (2) the SHIPPED transcendental_highway core ran at 128-bit on Linux -- log batch
-# 0.53ns vs the 256-bit 0.27ns, a real product perf bug (objdump: 0 ymm/170 xmm). MSVC's
-# /arch:AVX2 already sets the whole set, so this only bites GCC/Clang. Add the missing
-# baseline so Highway picks true 256-bit AVX2. (Verified: HWY_STATIC_TARGET=AVX2, Lanes=8,
-# ymm emitted; Linux log batch 0.53->0.27ns, ties Highway core.)
-function(hyle_set_highway_isa src)
+# Highway derives HWY_STATIC_TARGET from a stricter feature chain than HYLE's legacy
+# intrinsic backends. In particular, Highway's default SSE4 includes AES+PCLMUL and AVX2
+# also includes BMI1/BMI2+FMA+F16C. HYLE's canonical x86 tiers do not promise AES/PCLMUL,
+# so direct-Highway TUs define the upstream-supported HWY_DISABLE_PCLMUL_AES and never
+# enable those instructions accidentally. Reusing hyle_isa_flags() can otherwise compile a
+# nominal AVX2 source as a 128-bit Highway target. Every direct-Highway fixed/fat TU must
+# use this mapping; generated TUs additionally assert the resulting HWY_STATIC_TARGET.
+function(hyle_highway_isa_flags out_var tier)
+  string(TOUPPER "${tier}" _tier)
   if(MSVC AND NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    set(_flags "/arch:AVX2")  # MSVC's /arch:AVX2 already implies the full AVX2 baseline
+    if(_tier STREQUAL "SCALAR" OR _tier STREQUAL "SSE42" OR
+       _tier STREQUAL "NEON")
+      set(_flags "")
+    elseif(_tier STREQUAL "AVX2")
+      set(_flags "/arch:AVX2")
+    elseif(_tier STREQUAL "AVX512")
+      message(FATAL_ERROR
+        "locked Highway blocks AVX3 with classic cl.exe; use clang-cl or AVX2")
+    else()
+      message(FATAL_ERROR
+        "hyle_highway_isa_flags: unsupported classic-MSVC tier '${tier}'")
+    endif()
   else()
-    set(_flags "-mavx2;-mfma;-mf16c;-mbmi;-mbmi2;-maes;-mpclmul")
+    if(_tier STREQUAL "SCALAR" OR _tier STREQUAL "NEON")
+      set(_flags "")
+    elseif(_tier STREQUAL "SSE42")
+      set(_flags "-msse4.2")
+    elseif(_tier STREQUAL "AVX2")
+      set(_flags "-mavx2;-mfma;-mf16c;-mbmi;-mbmi2")
+    elseif(_tier STREQUAL "AVX512")
+      set(_flags
+        "-mavx512f;-mavx512bw;-mavx512vl;-mavx512dq;-mavx512cd;-mavx2;-mfma;-mf16c;-mbmi;-mbmi2")
+    elseif(_tier STREQUAL "SVE")
+      set(_flags "-march=armv8-a+sve")
+    elseif(_tier STREQUAL "RVV")
+      set(_flags "-march=rv64gcv")
+    else()
+      message(FATAL_ERROR "hyle_highway_isa_flags: unknown tier '${tier}'")
+    endif()
     if(MSVC)
       _hyle_forward_clang_cl_flags(_flags ${_flags})
     endif()
   endif()
-  set_source_files_properties("${src}" PROPERTIES COMPILE_OPTIONS "${_flags}")
+  set(${out_var} "${_flags}" PARENT_SCOPE)
+endfunction()
+
+function(hyle_set_highway_target_isa src tier)
+  hyle_highway_isa_flags(_flags "${tier}")
+  string(TOUPPER "${tier}" _tier)
+  if(_tier MATCHES "^(SSE42|AVX2|AVX512)$")
+    set_property(SOURCE "${src}" APPEND PROPERTY COMPILE_DEFINITIONS
+      HWY_DISABLE_PCLMUL_AES=1)
+    if(_tier STREQUAL "SSE42")
+      # cl.exe has no SSE4 feature macro unless /arch:AVX is enabled. Forcing
+      # Highway's static SSE4 body is safe because HYLE selects this TU only
+      # after Platform proves SSE4.2; disabling AES keeps the contracts equal.
+      set_property(SOURCE "${src}" APPEND PROPERTY COMPILE_DEFINITIONS
+        HWY_WANT_SSE4=1)
+    endif()
+  endif()
+  if(_flags)
+    set_source_files_properties("${src}" PROPERTIES COMPILE_OPTIONS "${_flags}")
+  endif()
+endfunction()
+
+# Compatibility spelling for existing AVX2 Highway product TUs.
+function(hyle_set_highway_isa src)
+  hyle_set_highway_target_isa("${src}" AVX2)
 endfunction()
 
 # Clear ISA flags previously assigned to a source when a reused build directory changes architecture.
@@ -168,15 +211,7 @@ endfunction()
 # /arch:AVX512 already implies the whole set (probe-verified, CL 19.50). Only reached when
 # best_isa() >= kAvx512 (runtime-gated in math_dispatch), so the zmm never runs on a non-512 CPU.
 function(hyle_set_avx512_math_isa src)
-  if(MSVC AND NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    set(_flags "/arch:AVX512")
-  else()
-    set(_flags "-mavx512f;-mavx512bw;-mavx512vl;-mavx512dq;-mavx512cd;-mavx2;-mfma;-mf16c;-mbmi;-mbmi2;-maes;-mpclmul")
-    if(MSVC)
-      _hyle_forward_clang_cl_flags(_flags ${_flags})
-    endif()
-  endif()
-  set_source_files_properties("${src}" PROPERTIES COMPILE_OPTIONS "${_flags}")
+  hyle_set_highway_target_isa("${src}" AVX512)
 endfunction()
 
 # hyle_set_avx512_sort_isa(<source-file>) -- ISA flags for an AVX-512 (512-bit) vqsort TU.
@@ -185,14 +220,5 @@ endfunction()
 # and the HYLE port's cl.exe correctness gate confirms data corruption. Product CMake links its
 # AVX2 sort TU instead. clang-cl is a distinct frontend and retains this AVX-512 path.
 function(hyle_set_avx512_sort_isa src)
-  if(MSVC AND NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    message(FATAL_ERROR
-      "hyle_set_avx512_sort_isa is unsupported with cl.exe; link the AVX2 sort TU")
-  else()
-    set(_flags "-mavx512f;-mavx512bw;-mavx512vl;-mavx512dq;-mavx512cd;-mavx2;-mfma;-mf16c;-mbmi;-mbmi2;-maes;-mpclmul")
-    if(MSVC)
-      _hyle_forward_clang_cl_flags(_flags ${_flags})
-    endif()
-  endif()
-  set_source_files_properties("${src}" PROPERTIES COMPILE_OPTIONS "${_flags}")
+  hyle_set_highway_target_isa("${src}" AVX512)
 endfunction()

@@ -17,9 +17,10 @@ if(NOT HYLE_SIMD_EXACT_TARGET)
   set(HYLE_SIMD_BUILD_FAT TRUE)
 endif()
 
-# The CPUID PROBE moved to platform/ (platform/cpu.{h,cc}); simd/dispatch.h now forwards
-# those names into hyle::simd so the call sites below are unchanged. The component
-# manifest makes platform a PUBLIC link to the detector (best_isa/cpu_features).
+# The CPUID probe belongs to platform/ (platform/cpu.{h,cc}). SIMD calls that owner
+# explicitly; its public dispatch header only aliases the shared Isa value type and
+# does not create a second detector namespace. The component manifest keeps platform
+# as a PUBLIC link because public target diagnostics expose that value type.
 #
 # simd-04 adds runtime-dispatched ops: dispatch_ops.cc (baseline dispatcher) + one kernel
 # TU per ISA variant, each compiled at its own -march. LTO stays OFF for the whole module

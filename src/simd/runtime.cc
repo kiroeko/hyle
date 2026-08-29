@@ -1,4 +1,4 @@
-#include "hyle/simd/runtime.h"
+#include "src/simd/runtime_internal.h"
 
 #include "hyle/platform.h"
 #include "src/simd/dispatch_internal.h"
@@ -134,7 +134,7 @@ Runtime selected_runtime() noexcept {
 #elif defined(HYLE_SIMD_EXACT_TARGET_NEON) || defined(HYLE_SIMD_EXACT_TARGET_SVE)
   result.dtype.isa = Isa::kNeon;
 #elif defined(HYLE_ARCH_X64)
-  const auto& f = cpu_features();
+  const auto& f = platform::cpu_features();
   const auto specialty = detail::x86_specialty_support(f);
   if (specialty.f16c)
     result.ops.dot_f16_f16 = &detail::dot_f16_f16_f16c;
@@ -217,8 +217,31 @@ const Runtime* runtime_for(Isa isa) noexcept {
 #else
   return nullptr;
 #endif
-  return supports(isa) ? result : nullptr;
+  return platform::supports(isa) ? result : nullptr;
 #endif
+}
+
+SelectedTarget selected_target(KernelFamily family) noexcept {
+  const Runtime& selected = runtime();
+  switch (family) {
+    case KernelFamily::kOverall: return {selected.isa, 0};
+    case KernelFamily::kOps:
+      return {selected.ops_module.isa, selected.ops_module.features};
+    case KernelFamily::kRandom: return {selected.isa, 0};
+    case KernelFamily::kSearch: return {selected.isa, 0};
+    case KernelFamily::kNarrow: return {selected.isa, 0};
+    case KernelFamily::kScan:
+      return {selected.scan.isa, selected.scan.features};
+    case KernelFamily::kDtype:
+      return {selected.dtype.isa, selected.dtype.features};
+    case KernelFamily::kMath:
+      return {selected.math.isa, selected.math.features};
+    case KernelFamily::kSort:
+      return {selected.sort.isa, selected.sort.features};
+    case KernelFamily::kBitpack:
+      return {selected.bitpack.isa, selected.bitpack.features};
+  }
+  return {selected.isa, 0};
 }
 
 }  // namespace hyle::simd

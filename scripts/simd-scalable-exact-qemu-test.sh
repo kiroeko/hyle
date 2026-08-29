@@ -49,9 +49,14 @@ if [ ! -f "$GT/src/gtest-all.cc" ]; then
   echo "ERROR: gtest source not found at $GT" >&2
   exit 1
 fi
+HWY="${HIGHWAY_SOURCE_DIR:-$REPO/../highway}"
+if [ ! -f "$HWY/hwy/highway.h" ]; then
+  echo "ERROR: locked Highway source not found at $HWY (set HIGHWAY_SOURCE_DIR)" >&2
+  exit 1
+fi
 
 COMMON=(-std=c++23 -O2 "-march=$BASE_ARCH" -pthread
-  "-I$REPO/include" "-I$REPO" "-I$GT/include" "-I$GT"
+  "-I$REPO/include" "-I$REPO" "-I$HWY" "-I$GT/include" "-I$GT"
   -DHYLE_SIMD_EXACT=1 "-D$EXACT_DEFINE=1" "-D$VARIANT_DEFINE=1")
 TARGET=("${COMMON[@]}" "-march=$TARGET_ARCH" "-D$TARGET_DEFINE=1")
 SCALAR_COMMON=(-std=c++23 -O2 "-march=$BASE_ARCH" -pthread
@@ -75,7 +80,7 @@ done
 # of pulling thread.cc and the whole error/platform dependency graph.
 printf '#include "hyle/platform/thread.h"\nnamespace hyle::platform { unsigned hardware_concurrency() noexcept { return 1; } }\n' |
   "$CXX" "${COMMON[@]}" -x c++ -c - -o "$OUT/thread_test_stub.o"
-printf '#define HYLE_SIMD_VARIANT_SUFFIX %s\n#include "tests/simd/fat_kernel_fixture.h"\n' \
+printf '#define HWY_COMPILE_ONLY_STATIC 1\n#define HYLE_SIMD_VARIANT_SUFFIX %s\n#include "tests/simd/fat_kernel_fixture.h"\n' \
   "$SUFFIX" |
   "$CXX" "${TARGET[@]}" -x c++ -c - -o "$OUT/fat_fixture.o"
 for product in math/math_dispatch dtype/dtype_dispatch sort/sort_dispatch \

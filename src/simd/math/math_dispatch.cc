@@ -3,7 +3,7 @@
 #include <cstddef>
 
 #include "hyle/platform.h"
-#include "hyle/simd/runtime.h"
+#include "src/simd/runtime_internal.h"
 #include "src/simd/math/kernels.h"
 #include "src/simd/target_manifest.h"
 

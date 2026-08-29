@@ -42,7 +42,7 @@ using DirectDotFn = float (*)(const float*, const float*, std::size_t);
 // comparing different widths and mislabeling the result as dispatch overhead.
 DirectDotFn direct_active_dot() noexcept {
 #if defined(HYLE_ARCH_X64)
-  switch (hyle::simd::runtime().isa) {
+  switch (hyle::simd::selected_target().isa) {
     case hyle::simd::Isa::kAvx2: return &hyle_bench::dot_avx2;
     case hyle::simd::Isa::kSse42: return &hyle_bench::dot_sse4;
     case hyle::simd::Isa::kScalar: return &hyle_bench::dot_scalar;
@@ -101,7 +101,7 @@ int main() {
     }
   } else {
     std::printf("dispatch scaling omitted: no same-ISA local direct anchor for tier=%s\n",
-                hyle::simd::isa_name(hyle::simd::runtime().isa));
+                hyle::platform::isa_name(hyle::simd::selected_target().isa));
   }
 
   {

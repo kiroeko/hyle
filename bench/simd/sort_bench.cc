@@ -387,7 +387,9 @@ int main() {
   static_assert(sizeof(KeyValue64) == sizeof(hwy::K64V64));
   static_assert(sizeof(UInt128) == sizeof(hwy::uint128_t));
   static_assert(alignof(UInt128) == alignof(hwy::uint128_t));
-  std::printf("HYLE sort tier=%u\n", static_cast<unsigned>(hyle::simd::runtime().sort.isa));
+  std::printf("HYLE sort tier=%u\n",
+              static_cast<unsigned>(hyle::simd::selected_target(
+                  hyle::simd::KernelFamily::kSort).isa));
   run_type<std::uint16_t>("u16");
   run_type<std::int16_t>("i16");
   run_type<std::uint32_t>("u32");

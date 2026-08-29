@@ -8,7 +8,7 @@
 #include <cstdint>
 
 #include "hyle/simd/native.h"
-#include "hyle/simd/runtime.h"
+#include "src/simd/runtime_internal.h"
 
 namespace hs = hyle::simd;
 

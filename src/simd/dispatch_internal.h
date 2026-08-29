@@ -40,7 +40,7 @@ struct X86SpecialtySupport {
 };
 
 constexpr X86SpecialtySupport x86_specialty_support(
-    const CpuFeatures& f) noexcept {
+    const platform::CpuFeatures& f) noexcept {
   // -mavx2/-mavxvnni may use the AVX2 integer face and always require an
   // OS-saved YMM state. Keep AVX explicit even for malformed/masked CPUID sets.
   const bool avx2_tu = f.avx && f.avx2;
@@ -89,18 +89,18 @@ inline Isa default_dispatched_isa() noexcept {
 #elif defined(HYLE_SIMD_EXACT_TARGET_SCALAR)
   return Isa::kScalar;
 #elif defined(HYLE_ARCH_X64)
-  const auto tier = static_cast<std::uint32_t>(best_isa());
+  const auto tier = static_cast<std::uint32_t>(platform::best_isa());
   if (tier >= static_cast<std::uint32_t>(Isa::kAvx512)) return Isa::kAvx512;
   if (tier >= static_cast<std::uint32_t>(Isa::kAvx2)) return Isa::kAvx2;
   if (tier >= static_cast<std::uint32_t>(Isa::kSse42)) return Isa::kSse42;
   return Isa::kScalar;
 #elif defined(HYLE_ARCH_ARM64)
 #if defined(HYLE_SIMD_HAS_SVE_VARIANT)
-  if (best_isa() == Isa::kSve) return Isa::kSve;
+  if (platform::best_isa() == Isa::kSve) return Isa::kSve;
 #endif
-  return best_isa() == Isa::kNeon ? Isa::kNeon : Isa::kScalar;
+  return platform::best_isa() == Isa::kNeon ? Isa::kNeon : Isa::kScalar;
 #elif defined(HYLE_ARCH_RISCV64) && defined(HYLE_SIMD_HAS_RVV_VARIANT)
-  return best_isa() == Isa::kRvv ? Isa::kRvv : Isa::kScalar;
+  return platform::best_isa() == Isa::kRvv ? Isa::kRvv : Isa::kScalar;
 #else
   return Isa::kScalar;
 #endif

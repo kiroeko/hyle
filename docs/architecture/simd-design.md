@@ -21,6 +21,10 @@
 - xsimd 当前是独立数学 peer，不是产品依赖；只有具名 capability/accuracy/真实 consumer 性能缺口才能
   重新准入，不能按 benchmark 每行拼装公共架构。
 - `vec.h`/runtime/exact/native 的最终去留由 SIMD-05/06 决定，下面 v1 的“全部自造终态”不得前置该结论。
+- SIMD-05/06 已把新 source expert 面收敛为 direct Highway：fixed TU 由宏/模板直接单态化，source-fat
+  由 CMake 生成 per-ISA TU 后只在整批 pointer/POD 边界选择一次。函数指针表已私有化；公开诊断仅为
+  `selected_target(family)`，原始 CPU/OS facts 只从 `hyle::platform` 查询。后续票只迁移既有 family，
+  不再扩张旧 `vec.h/native/*` 用户面。
 
 ## V1 历史设计记录（非当前权威）
 
@@ -66,7 +70,7 @@ simd/
 ├─ runtime.h      版本/大小/ISA + ops/random 函数表 + module ISA/features
 ├─ target.h       当前 exact target 常量
 ├─ fat_kernel.h   用户 whole-buffer kernel 的稳定入口选择器
-├─ dispatch.h     platform CPU 探测的兼容转发；探测实现在 platform/cpu.{h,cc}
+├─ dispatch.h     simd export/Isa 类型边界；原始 CPU 探测只由 platform/cpu.{h,cc} 公开
 ├─ dtype/         fp16/bf16/int8/fp8 ↔ fp32（F16C/AVX512-FP16/BF16 硬件 + 软件 fallback）
 ├─ math/          HYLE exp/log/tanh/gelu/softmax/erf 实现与 per-op winner
 ├─ random/        runtime-safe RandomState fill 的 per-ISA 薄包装
@@ -79,7 +83,7 @@ simd/
 
 | 用户模式 | 公共调用面 | 选择发生处 | 调用边界 |
 |---|---|---|---|
-| 未知客户 CPU / 预编译库 | 普通 batch API | `runtime()` 首次初始化时由 CPUID+XGETBV/HWCAP 选不可变表 | ops/random 每 batch 一次函数指针；其余模块读统一 ISA/features |
+| 未知客户 CPU / 预编译库 | 普通 batch API | 私有 table 首次初始化时由 CPUID+XGETBV/HWCAP 选实现 | 每 batch 一次函数指针；`selected_target()` 只读诊断 |
 | 整个 HYLE 固定 ISA | 同一普通 batch API | target manifest 只生成一张 canonical table/source set，dispatcher 直连目标符号 | 无 CPUID、无函数表选择；仍保留稳定库入口与单表诊断 |
 | 用户源码 TU 固定 ISA | `native::` + `vec.h` | `hyle_target_simd` 同时施加 target 宏和 codegen flag | 共享 D-tag body 在用户 TU 内实例化/内联 |
 | 用户自定义多版本 kernel | pointer/POD entry | `hyle_add_fat_kernel` 生成变体，`HYLE_SIMD_SELECT_FAT_KERNEL` 动态选一次或 exact 选定 | vector/mask 不得穿过 entry |
@@ -179,7 +183,7 @@ total-order sorted check。不增加逐元素 callback。
 3. **没有正确性缺口**。SSE2 基线恒在且正确；SSSE3 快路径由 `HYLE_HAVE_SSSE3` 门控,且 **SSSE3 现为全局 baseline**(CMake 对 x86 GCC/Clang 全局加 `-mssse3`、MSVC x64 无条件),故三平台默认生效(performance.md 实测：match_empty 的 SSSE3 路径是绝对小增益，**不**是 find-miss 差距来源)。NEON 已交叉编译验证。
 4. **无遗留分发缺口**——SSSE3 既是全局 baseline,分发型二进制默认即吃到 SSSE3 快路径,无需 `-march=native`。
 
-**运行期 dispatch 的正确解——CPUID 探测已下沉 platform(2026-07 落地)**:曾预留的方案是"**不**让 container 依赖 simd,而是**把 CPUID 探测器下沉到比 container 更低的层**,让 container 和 simd 都查同一份探测结果"。**此下沉已实施**:`CpuFeatures`/`best_isa`/`cpu_features` 从 `simd/dispatch` 搬到 `platform/cpu.{h,cc}`(`simd/dispatch.h` 转发,simd 内部零改动),container 经 `container→mem→platform` 白拿探测,无新依赖边。首个消费者是 **container·str 的 `count`/`rfind` AVX2 变体**(`string_ref_avx2.cc`,独立 `-mavx2` TU,运行期 `cpu_features().avx2` 门控)——追平 MSVC STL 的 AVX2(见 performance.md container·str 节)。**probe.h(SwissTable)本身仍未上此 dispatch**:其 SSSE3 baseline 已够(下方复审条件未触发),但下沉后的探测器已就位,将来若需要可直接查。
+**运行期 dispatch 的正确解——CPUID 探测已下沉 platform(2026-07 落地)**:曾预留的方案是"**不**让 container 依赖 simd,而是**把 CPUID 探测器下沉到比 container 更低的层**,让 container 和 simd 都查同一份探测结果"。**此下沉已实施**:`CpuFeatures`/`best_isa`/`cpu_features` 从 `simd` 搬到 `platform/cpu.{h,cc}`；`simd/dispatch.h` 不再转发 detector，只复用 `Isa` 类型。container 经 `container→mem→platform` 白拿探测,无新依赖边。首个消费者是 **container·str 的 `count`/`rfind` AVX2 变体**(`string_ref_avx2.cc`,独立 `-mavx2` TU,运行期 `cpu_features().avx2` 门控)——追平 MSVC STL 的 AVX2(见 performance.md container·str 节)。**probe.h(SwissTable)本身仍未上此 dispatch**:其 SSSE3 baseline 已够(下方复审条件未触发),但下沉后的探测器已就位,将来若需要可直接查。
 
 **probe.h 的复审触发条件(仍适用于 SwissTable 探测)**:① profile 显示分发型(非 `-march`)二进制的 SwissTable 探测是实测热点 **且** ② 比 SSSE3 baseline 更高的 ISA(AVX2 group)路径能显著缩差距。两条同时成立才给 probe.h 上 AVX2 变体(探测器已在 platform,不再是阻碍)。
 
@@ -207,7 +211,7 @@ total-order sorted check。不增加逐元素 callback。
 
 **执行边界**：SDE 提供正确性与 dispatch 验证，不用于性能结论；AVX512 性能仍只接受真机 benchmark。
 
-**派发现状**：`hyle_add_dispatched_kernel` 生成的 AVX-512 薄 TU 已接入统一 Runtime；具备完整 ZMM OS-state 与 ISA 特性的主机默认选择 AVX512 kernel，否则回落 AVX2/SSE4/scalar。exact AVX512 构建则在编译期直连，不查询 Runtime。例外是 classic MSVC (`cl.exe`) 的 sort：Highway 官方将 AVX3 标为 `HWY_BROKEN_MSVC`，HYLE 真机 correctness 也复现 64-bit/U128/KV 数据损坏，因此产品整体 tier 仍为 AVX512，但 `runtime().sort.isa` 如实报告 AVX2 并绑定 AVX2 vqsort TU；clang-cl 不受此降级影响。
+**派发现状**：`hyle_add_dispatched_kernel` 生成的 AVX-512 薄 TU 已接入统一私有 table；具备完整 ZMM OS-state 与 ISA 特性的主机默认选择 AVX512 kernel，否则回落 AVX2/SSE4/scalar。exact AVX512 构建则在编译期直连，不查询动态 selector。例外是 classic MSVC (`cl.exe`) 的 sort：Highway 官方将 AVX3 标为 `HWY_BROKEN_MSVC`，HYLE 真机 correctness 也复现 64-bit/U128/KV 数据损坏，因此产品整体 tier 仍为 AVX512，但 `selected_target(KernelFamily::kSort).isa` 如实报告 AVX2 并绑定 AVX2 vqsort TU；clang-cl 不受此降级影响。
 
 ### AVX-512 dtype/math 上架
 

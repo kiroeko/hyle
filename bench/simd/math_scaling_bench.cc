@@ -255,7 +255,8 @@ int main() {
       {"tanh", scalar_tanh, xsimd_tanh, candidate_tanh, hyle::simd::ctanh_f32_batch},
   };
   std::printf("HYLE math tier=%u, xsimd complex lanes=%zu\n",
-              static_cast<unsigned>(hyle::simd::runtime().math.isa), Batch::size);
+              static_cast<unsigned>(hyle::simd::selected_target(
+                  hyle::simd::KernelFamily::kMath).isa), Batch::size);
   for (std::size_t n : {std::size_t{0}, std::size_t{1}, std::size_t{2}, std::size_t{3},
                         std::size_t{4}, std::size_t{7}, std::size_t{8}, std::size_t{9},
                         std::size_t{15}, std::size_t{16}, std::size_t{17}, std::size_t{31},

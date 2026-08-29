@@ -9,6 +9,7 @@
 #include "hyle/simd/random.h"
 #include "hyle/simd/fat_kernel.h"
 #include "hyle/simd/runtime.h"
+#include "src/simd/runtime_internal.h"
 #include "src/simd/dispatch_internal.h"
 
 namespace hs = hyle::simd;
@@ -50,6 +51,13 @@ int fat_rvv() noexcept { return 1; }
 
 TEST(SimdRuntime, TableMetadataAndExactTierLookup) {
   const hs::Runtime& active = hs::runtime();
+  EXPECT_EQ(hs::selected_target().isa, active.isa);
+  EXPECT_EQ(hs::selected_target(hs::KernelFamily::kOps).isa,
+            active.ops_module.isa);
+  EXPECT_EQ(hs::selected_target(hs::KernelFamily::kMath).isa,
+            active.math.isa);
+  EXPECT_EQ(hs::selected_target(hs::KernelFamily::kDtype).features,
+            active.dtype.features);
   EXPECT_EQ(active.table_version, hs::Runtime::kTableVersion);
   EXPECT_EQ(active.table_size, sizeof(hs::Runtime));
   EXPECT_NE(active.ops.dot_f32, nullptr);
@@ -190,12 +198,17 @@ TEST(SimdRuntime, GeneratedPublicFatKernelMatchesRuntimeTier) {
   fn(src.data(), dst.data(), src.size(), &selected);
   for (std::size_t i = 0; i < src.size(); ++i)
     EXPECT_FLOAT_EQ(dst[i], src[i] + 1.0f);
-  EXPECT_EQ(selected, static_cast<std::uint32_t>(hs::runtime().isa));
+  auto expected_selected = static_cast<std::uint32_t>(hs::runtime().isa);
+#if defined(HYLE_SIMD_FAT_AVX512_CAPPED)
+  if (hs::runtime().isa == hs::Isa::kAvx512)
+    expected_selected = static_cast<std::uint32_t>(hs::Isa::kAvx2);
+#endif
+  EXPECT_EQ(selected, expected_selected);
 }
 
 #if defined(HYLE_ARCH_X64)
 TEST(SimdRuntime, SpecialtyDispatchRequiresEveryCompiledTuFeature) {
-  hs::CpuFeatures f;
+  hyle::platform::CpuFeatures f;
   f.avx2 = true;
   EXPECT_FALSE(hs::detail::x86_specialty_support(f).avx2_int);
   f.f16c = true;
@@ -222,15 +235,15 @@ TEST(SimdRuntime, SpecialtyDispatchRequiresEveryCompiledTuFeature) {
   EXPECT_TRUE(specialty.avx512_vnni);
   EXPECT_TRUE(specialty.avx512_bf16);
 
-  for (bool hs::CpuFeatures::*required : {
-           &hs::CpuFeatures::avx,
-           &hs::CpuFeatures::avx2,
-           &hs::CpuFeatures::fma,
-           &hs::CpuFeatures::f16c,
-           &hs::CpuFeatures::avx512f,
-           &hs::CpuFeatures::avx512bw,
-           &hs::CpuFeatures::avx512vl,
-           &hs::CpuFeatures::avx512dq,
+  for (bool hyle::platform::CpuFeatures::*required : {
+           &hyle::platform::CpuFeatures::avx,
+           &hyle::platform::CpuFeatures::avx2,
+           &hyle::platform::CpuFeatures::fma,
+           &hyle::platform::CpuFeatures::f16c,
+           &hyle::platform::CpuFeatures::avx512f,
+           &hyle::platform::CpuFeatures::avx512bw,
+           &hyle::platform::CpuFeatures::avx512vl,
+           &hyle::platform::CpuFeatures::avx512dq,
        }) {
     auto masked = f;
     masked.*required = false;
@@ -244,11 +257,11 @@ TEST(SimdRuntime, SpecialtyDispatchRequiresEveryCompiledTuFeature) {
   // prerequisite so a masked VM cannot select the -mavx10.2-512 TU.
   f.avx10_2 = true;
   EXPECT_TRUE(hs::detail::x86_specialty_support(f).avx10_2);
-  for (bool hs::CpuFeatures::*required : {
-           &hs::CpuFeatures::avx,
-           &hs::CpuFeatures::avx2,
-           &hs::CpuFeatures::fma,
-           &hs::CpuFeatures::f16c,
+  for (bool hyle::platform::CpuFeatures::*required : {
+           &hyle::platform::CpuFeatures::avx,
+           &hyle::platform::CpuFeatures::avx2,
+           &hyle::platform::CpuFeatures::fma,
+           &hyle::platform::CpuFeatures::f16c,
        }) {
     auto masked = f;
     masked.*required = false;

@@ -341,7 +341,8 @@ std::array<double, Degree + 1> poly_coeffs(std::uint64_t seed) {
 // than the vector kernel. The state transforms are affine and keep every iteration normal finite.
 template <class T>
 std::size_t chain_lanes() noexcept {
-  const auto isa = hyle::simd::runtime().math.isa;
+  const auto isa =
+      hyle::simd::selected_target(hyle::simd::KernelFamily::kMath).isa;
   if (isa == hyle::simd::Isa::kAvx512) return sizeof(T) == sizeof(double) ? 8 : 16;
   if (isa == hyle::simd::Isa::kAvx2) return sizeof(T) == sizeof(double) ? 4 : 8;
 #if defined(HYLE_ARCH_ARM64)
@@ -372,7 +373,9 @@ int main(int argc, char** argv) {
     std::fprintf(stderr, "usage: %s [--sentinel]\n", argv[0]);
     return 2;
   }
-  std::printf("HYLE math tier live: %s\n\n", variant_name(hyle::simd::runtime().math.isa));
+  std::printf("HYLE math tier live: %s\n\n",
+              variant_name(hyle::simd::selected_target(
+                  hyle::simd::KernelFamily::kMath).isa));
   if (sentinel_only && !qualify_f32_sentinel_accuracy()) return 3;
 
   std::vector<float> dst(kN);

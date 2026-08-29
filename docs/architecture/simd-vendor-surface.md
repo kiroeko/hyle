@@ -12,7 +12,7 @@ HYLE 的 ordinary SIMD 头不泄漏 Highway/xsimd 类型。`simd-v2` 将 Highway
 
 | origin | HYLE product paths | ownership |
 |---|---|---|
-| Highway direct | `src/simd/math/highway_math_kernel-inl.h`、四个 fixed/scalable target TUs；后续 register/dispatch ticket 可继续采用 | HYLE owns public semantics/selection/delivery；锁定 Highway owns math/register implementation；HYLE 只保留 façade 与具名 gap |
+| Highway direct | `src/simd/math/highway_math_kernel-inl.h`、fixed-target source seam 与 generated source-fat TU | HYLE owns public semantics/selection/delivery；锁定 Highway owns math/register implementation；HYLE 只保留 façade 与具名 gap |
 | Highway integrated source | `src/simd/bitpack/**` 的 port、`src/simd/sort/vqsort_hyle/**` 与 target TUs | HYLE owns adaptation/local delta；SIMD-10/11 分别裁决 direct/minimal-port/drop |
 | xsimd | 当前只作独立数学 benchmark/accuracy peer，不进入产品或安装包 | 若未来出现 Highway 无法满足的具名 capability/accuracy gap，必须重新准入；历史 math port 已删除 |
 | simdutf | container UTF-8 implementation，不属于 `hyle::simd` target | container owns semantics/delivery；vendored simdutf owns implementation mechanism |
@@ -27,8 +27,9 @@ HYLE 的 ordinary SIMD 头不泄漏 Highway/xsimd 类型。`simd-v2` 将 Highway
 - expert register/kernel surface 优先直接使用锁定 Highway，或由极薄 adapter 提供 HYLE 需要的 target/
   dtype glue；不把完整 Highway operation set 再复制一遍改名。`hyle_target_simd()` 是源码嵌入时的
   fixed-target seam；installed static/shared SDK 不导出 vendor register headers/ABI。
-- Runtime/exact/native/fat-kernel 优先由 Highway 等成熟机制承载。Platform 仍服务其他模块；SIMD 无需为
-  统一表面复制已经正确的 ISA implementation/selection。
+- fixed/fat source kernel 直接由 Highway 宏、target namespace 与模板单态化承载；HYLE 的 CMake 只负责
+  生成 per-ISA TU、施加准确 codegen flags、在 pointer/POD 边界选择一次。ordinary batch 的函数表是
+  私有实现，不是用户可依赖的 layout。Platform 仍服务其他模块；SIMD 不复制已经正确的 register 实现。
 - xsimd/SLEEF 只补 Highway 无等价能力或不满足资格化 accuracy/resource contract 的数学 family。
 - integrated port 是过渡债务：direct wrapper 可行即删除；不可行时只保留真实 contract delta，并记录
   upstream identity、local delta、许可证和内容 hash。
@@ -37,16 +38,22 @@ HYLE 的 ordinary SIMD 头不泄漏 Highway/xsimd 类型。`simd-v2` 将 Highway
 ## Dispatch 集成规则
 
 - Platform 继续拥有全库 CPU/OS facts；Highway 拥有 target implementation 与 compiler blocklist。SIMD
-  选择二者与产品 policy 的交集，并在 Runtime diagnostics 中报告实际采用的 module tier。
-- ordinary batch route 在 Runtime 初始化时一次构造函数表，每次调用只允许一个 batch-boundary indirect
+  选择二者与产品 policy 的交集，并由 `selected_target(family)` 报告实际采用的 module tier/features；
+  `hyle::simd` 不再转发 Platform detector。
+- ordinary batch route 在私有 runtime table 初始化时一次构造函数表，每次调用只允许一个 batch-boundary indirect
   call；不得在每个 op 中重复 CPU detection、target bit scan 或 allocation。
 - 若使用 `HWY_DYNAMIC_POINTER`，必须先初始化 `ChosenTarget`；初始化前的 slot-zero pointer 是 detection
   trampoline，缓存它会让每次调用重复探测。也可以按 Highway 明确支持的方式由 HYLE selector 直接绑定
   `N_<TARGET>` symbol。
-- fixed/exact artifact 使用 compiler baseline 与 `HWY_COMPILE_ONLY_STATIC`；普通 façade 不把 vector type
-  跨 TU/shared boundary。tiny fused hot loop 走 exact 或 expert source，不要求 runtime route 冒充零开销。
-- Highway 在经典 cl.exe 下禁用 AVX3 family。该 gap 优先由 xsimd、clang-cl artifact 或最小 specialty TU
-  补齐；它不授权保留整套 HYLE register backend。
+- fixed/exact artifact 使用 compiler baseline 与 `HWY_COMPILE_ONLY_STATIC`；source-fat 每个生成 TU 使用
+  `HWY_COMPILE_ONLY_SCALAR` 或 `HWY_COMPILE_ONLY_STATIC`，并编译期断言 `HWY_STATIC_TARGET` 与声明 tier
+  一致。两条路径都在算法模板内直接使用 Highway，普通 façade 不把 vector type 跨 TU/shared boundary。
+  tiny fused hot loop 走 exact 或 expert source，不要求 runtime route 冒充零开销。
+- HYLE canonical x86 tier 不承诺 AES/PCLMUL；direct Highway TU 使用上游支持的
+  `HWY_DISABLE_PCLMUL_AES` 让 vendor target 与 Platform facts 对齐，不能为了满足 Highway target 名称偷偷
+  提高部署最低要求。专用 crypto kernel 必须显式探测/绑定其扩展。
+- Highway 在经典 cl.exe 下禁用 AVX3 family。fixed/exact AVX-512 fail-fast，unknown-CPU source-fat 明确
+  capped at AVX2；需要 AVX-512 时使用 clang-cl，而不是把静默降档当作 AVX-512。
 
 ## 升级规则
 

@@ -51,8 +51,8 @@ inline Fn select_fat_kernel(Fn scalar, Fn sse4, Fn avx2, Fn avx512) noexcept {
   (void)avx512;
   return scalar;
 #else
-  return detail::select_x86_fat_kernel_for_isa(best_isa(), scalar, sse4,
-                                                avx2, avx512);
+  return detail::select_x86_fat_kernel_for_isa(
+      ::hyle::platform::best_isa(), scalar, sse4, avx2, avx512);
 #endif
 }
 #elif defined(HYLE_ARCH_ARM64)
@@ -71,7 +71,7 @@ inline Fn select_fat_kernel(Fn scalar, Fn neon, Fn sve = nullptr) noexcept {
   (void)sve;
   return scalar;
 #else
-  const Isa isa = best_isa();
+  const Isa isa = ::hyle::platform::best_isa();
   if (isa == Isa::kSve && sve != nullptr) return sve;
   return isa == Isa::kNeon ? neon : scalar;
 #endif
@@ -86,7 +86,7 @@ inline Fn select_fat_kernel(Fn scalar, Fn rvv) noexcept {
   (void)rvv;
   return scalar;
 #else
-  return best_isa() == Isa::kRvv ? rvv : scalar;
+  return ::hyle::platform::best_isa() == Isa::kRvv ? rvv : scalar;
 #endif
 }
 #else
@@ -110,6 +110,12 @@ inline Fn select_fat_kernel(Fn scalar) noexcept { return scalar; }
 #    define HYLE_SIMD_SELECT_FAT_KERNEL(scalar, sse4, avx2, avx512) (sse4)
 #  elif defined(HYLE_SIMD_FAT_EXACT_VARIANT_SCALAR)
 #    define HYLE_SIMD_SELECT_FAT_KERNEL(scalar, sse4, avx2, avx512) (scalar)
+#  elif defined(HYLE_SIMD_FAT_AVX512_CAPPED)
+// Locked Highway blocks AVX3 under classic cl.exe. The generated source fat
+// kernel therefore has an explicit AVX2 ceiling and never references the
+// syntactically supplied AVX-512 symbol.
+#    define HYLE_SIMD_SELECT_FAT_KERNEL(scalar, sse4, avx2, avx512) \
+      ::hyle::simd::select_fat_kernel((scalar), (sse4), (avx2), (avx2))
 #  else
 #    define HYLE_SIMD_SELECT_FAT_KERNEL(scalar, sse4, avx2, avx512) \
       ::hyle::simd::select_fat_kernel((scalar), (sse4), (avx2), (avx512))

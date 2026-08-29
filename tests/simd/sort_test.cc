@@ -12,7 +12,7 @@
 
 #include "hyle/simd/dispatch.h"
 #include "hyle/simd/sort.h"
-#include "hyle/simd/runtime.h"
+#include "src/simd/runtime_internal.h"
 
 // sort_test -- the borrowed Highway vqsort (whatever tier is live: avx512/avx2/neon/scalar) must
 // agree with the std:: oracle on every (type, length, distribution, order). The dispatcher picks

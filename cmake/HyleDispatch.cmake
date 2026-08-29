@@ -15,6 +15,22 @@
 # their feature predicates and fallback semantics are module contracts, not CMake metadata.
 include_guard(GLOBAL)
 
+# CMake directory scopes do not propagate ordinary variables from HYLE's
+# add_subdirectory() back to a source consumer. Publish/consume the normalized
+# processor through the global property established by HyleTargetPlatform.
+function(_hyle_simd_target_processor out_var)
+  set(_processor "${HYLE_TARGET_PROCESSOR}")
+  if(_processor STREQUAL "")
+    get_property(_processor GLOBAL PROPERTY HYLE_TARGET_PROCESSOR)
+  endif()
+  if(_processor STREQUAL "")
+    message(FATAL_ERROR
+      "HYLE's normalized target processor is unavailable; call this helper only "
+      "after add_subdirectory(hyle)")
+  endif()
+  set(${out_var} "${_processor}" PARENT_SCOPE)
+endfunction()
+
 # Resolve the canonical SIMD targets compiled into hyle_simd from one manifest. Fat builds keep
 # every target supported by the architecture; exact builds keep only the requested canonical
 # target. The generated header is consumed by runtime/dispatch code, so CMake source selection and
@@ -154,15 +170,7 @@ function(hyle_target_simd)
       "SDKs expose HYLE whole-buffer APIs, not third-party register headers")
   endif()
   string(TOUPPER "${ARG_ISA}" _isa)
-  set(_target_processor "${HYLE_TARGET_PROCESSOR}")
-  if(_target_processor STREQUAL "")
-    get_property(_target_processor GLOBAL PROPERTY HYLE_TARGET_PROCESSOR)
-  endif()
-  if(_target_processor STREQUAL "")
-    message(FATAL_ERROR
-      "hyle_target_simd cannot find HYLE's normalized target processor; "
-      "call it only after add_subdirectory(hyle)")
-  endif()
+  _hyle_simd_target_processor(_target_processor)
   set(_is_x64 FALSE)
   set(_is_arm64 FALSE)
   set(_is_riscv64 FALSE)
@@ -183,7 +191,7 @@ function(hyle_target_simd)
   endif()
 
   set(_define "")
-  set(_tier "")
+  set(_tier SCALAR)
   if(_isa STREQUAL "SCALAR")
     # No target macro and no extra flags: vec.h selects the portable floor.
   elseif(_isa STREQUAL "SSE4")
@@ -224,17 +232,22 @@ function(hyle_target_simd)
   target_compile_definitions(${ARG_TARGET} PRIVATE
     HYLE_SIMD_EXACT=1 HYLE_SIMD_EXACT_TARGET_${_isa}=1
     HYLE_SIMD_SOURCE_EXPERT=1)
+  if(_isa MATCHES "^(SSE4|AVX2|AVX512)$")
+    target_compile_definitions(${ARG_TARGET} PRIVATE
+      HWY_DISABLE_PCLMUL_AES=1)
+    if(_isa STREQUAL "SSE4")
+      target_compile_definitions(${ARG_TARGET} PRIVATE HWY_WANT_SSE4=1)
+    endif()
+  endif()
   if(_isa STREQUAL "SCALAR")
     target_compile_definitions(${ARG_TARGET} PRIVATE HWY_COMPILE_ONLY_SCALAR=1)
   else()
     target_compile_definitions(${ARG_TARGET} PRIVATE HWY_COMPILE_ONLY_STATIC=1)
   endif()
   target_link_libraries(${ARG_TARGET} PRIVATE hyle_simd_source_expert)
-  if(_tier)
-    hyle_isa_flags(_flags "${_tier}")
-    if(_flags)
-      target_compile_options(${ARG_TARGET} PRIVATE ${_flags})
-    endif()
+  hyle_highway_isa_flags(_flags "${_tier}")
+  if(_flags)
+    target_compile_options(${ARG_TARGET} PRIVATE ${_flags})
   endif()
 endfunction()
 
@@ -292,7 +305,7 @@ function(hyle_exact_simd_library)
 endfunction()
 
 function(hyle_add_dispatched_kernel)
-  cmake_parse_arguments(ARG "" "TARGET;NAME;IMPL" "TARGETS" ${ARGN})
+  cmake_parse_arguments(ARG "HIGHWAY" "TARGET;NAME;IMPL" "TARGETS" ${ARGN})
   if(ARG_UNPARSED_ARGUMENTS OR ARG_KEYWORDS_MISSING_VALUES)
     message(FATAL_ERROR
       "hyle_add_dispatched_kernel: unknown arguments '${ARG_UNPARSED_ARGUMENTS}', "
@@ -316,17 +329,40 @@ function(hyle_add_dispatched_kernel)
     message(FATAL_ERROR "hyle_add_dispatched_kernel: TARGETS must include scalar")
   endif()
 
+  _hyle_simd_target_processor(_target_processor)
   set(_is_x64 FALSE)
   set(_is_arm64 FALSE)
   set(_is_riscv64 FALSE)
-  if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+  if(_target_processor MATCHES "x86_64|AMD64|amd64")
     set(_is_x64 TRUE)
-  elseif(HYLE_TARGET_PROCESSOR MATCHES "arm64|aarch64|ARM64")
+  elseif(_target_processor MATCHES "arm64|aarch64|ARM64")
     set(_is_arm64 TRUE)
-  elseif(HYLE_TARGET_PROCESSOR MATCHES "riscv64|RISCV64")
+  elseif(_target_processor MATCHES "riscv64|RISCV64")
     set(_is_riscv64 TRUE)
   endif()
   get_property(_manifest_variants GLOBAL PROPERTY HYLE_SIMD_COMPILED_VARIANTS)
+
+  if(IS_ABSOLUTE "${ARG_IMPL}")
+    set(_impl "${ARG_IMPL}")
+  elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${ARG_IMPL}")
+    set(_impl "${CMAKE_CURRENT_SOURCE_DIR}/${ARG_IMPL}")
+  elseif(EXISTS "${PROJECT_SOURCE_DIR}/${ARG_IMPL}")
+    set(_impl "${PROJECT_SOURCE_DIR}/${ARG_IMPL}")
+  else()
+    message(FATAL_ERROR
+      "hyle_add_dispatched_kernel: IMPL '${ARG_IMPL}' does not exist relative to "
+      "${CMAKE_CURRENT_SOURCE_DIR} or ${PROJECT_SOURCE_DIR}")
+  endif()
+  file(TO_CMAKE_PATH "${_impl}" _impl)
+
+  if(ARG_HIGHWAY)
+    if(NOT TARGET hyle_simd_source_expert)
+      message(FATAL_ERROR
+        "hyle_add_fat_kernel is a source-embedding expert seam. Installed static/shared "
+        "SDKs expose HYLE whole-buffer APIs, not third-party register headers")
+    endif()
+    target_link_libraries(${ARG_TARGET} PRIVATE hyle_simd_source_expert)
+  endif()
 
   set(_generated_dir "${CMAKE_CURRENT_BINARY_DIR}/generated/simd-dispatch/${ARG_NAME}")
   file(MAKE_DIRECTORY "${_generated_dir}")
@@ -384,6 +420,16 @@ function(hyle_add_dispatched_kernel)
       message(FATAL_ERROR "hyle_add_dispatched_kernel: unknown target '${_variant}'")
     endif()
 
+    # Official Highway blocks every AVX3 target under classic cl.exe. A fat
+    # unknown-CPU source consumer remains valid with a documented AVX2 ceiling;
+    # an exact AVX-512 request is rejected by hyle_add_fat_kernel instead.
+    if(ARG_HIGHWAY AND _variant STREQUAL "avx512" AND MSVC AND
+       CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+      set(_supported FALSE)
+      target_compile_definitions(${ARG_TARGET} PRIVATE
+        HYLE_SIMD_FAT_AVX512_CAPPED=1)
+    endif()
+
     if(NOT _supported)
       continue()
     endif()
@@ -406,11 +452,43 @@ function(hyle_add_dispatched_kernel)
 
     set(_source "${_generated_dir}/${ARG_NAME}_${_variant}.cc")
     set(_contents "// Generated by hyle_add_dispatched_kernel; do not edit.\n")
+    if(ARG_HIGHWAY)
+      if(_variant STREQUAL "scalar")
+        string(APPEND _contents "#define HWY_COMPILE_ONLY_SCALAR 1\n")
+        set(_expected "HWY_STATIC_TARGET != HWY_SCALAR")
+      else()
+        string(APPEND _contents "#define HWY_COMPILE_ONLY_STATIC 1\n")
+        if(_variant STREQUAL "sse4")
+          string(APPEND _contents
+            "#define HWY_DISABLE_PCLMUL_AES 1\n"
+            "#define HWY_WANT_SSE4 1\n")
+          set(_expected "HWY_STATIC_TARGET != HWY_SSE4")
+        elseif(_variant STREQUAL "avx2")
+          string(APPEND _contents "#define HWY_DISABLE_PCLMUL_AES 1\n")
+          set(_expected "HWY_STATIC_TARGET != HWY_AVX2")
+        elseif(_variant STREQUAL "avx512")
+          string(APPEND _contents "#define HWY_DISABLE_PCLMUL_AES 1\n")
+          set(_expected "HWY_STATIC_TARGET != HWY_AVX3")
+        elseif(_variant STREQUAL "neon")
+          set(_expected
+            "HWY_STATIC_TARGET != HWY_NEON && HWY_STATIC_TARGET != HWY_NEON_WITHOUT_AES")
+        elseif(_variant STREQUAL "sve")
+          set(_expected "HWY_STATIC_TARGET != HWY_SVE")
+        elseif(_variant STREQUAL "rvv")
+          set(_expected "HWY_STATIC_TARGET != HWY_RVV")
+        endif()
+      endif()
+      string(APPEND _contents
+        "#include \"hwy/detect_targets.h\"\n"
+        "#if ${_expected}\n"
+        "#error \"HYLE fat kernel compiler flags selected the wrong Highway target\"\n"
+        "#endif\n")
+    endif()
     if(_target_define)
       string(APPEND _contents "#define ${_target_define}\n")
     endif()
     string(APPEND _contents "#define HYLE_SIMD_VARIANT_SUFFIX ${_variant}\n")
-    string(APPEND _contents "#include \"${ARG_IMPL}\"\n")
+    string(APPEND _contents "#include \"${_impl}\"\n")
     string(APPEND _contents "#undef HYLE_SIMD_VARIANT_SUFFIX\n")
     if(_target_define)
       string(APPEND _contents "#undef ${_target_define}\n")
@@ -421,7 +499,13 @@ function(hyle_add_dispatched_kernel)
     file(CONFIGURE OUTPUT "${_source}" CONTENT "${_contents}" @ONLY)
 
     target_sources(${ARG_TARGET} PRIVATE "${_source}")
-    if(_tier)
+    if(ARG_HIGHWAY)
+      if(_variant STREQUAL "scalar")
+        hyle_set_highway_target_isa("${_source}" SCALAR)
+      else()
+        hyle_set_highway_target_isa("${_source}" "${_tier}")
+      endif()
+    elseif(_tier)
       hyle_set_isa("${_source}" "${_tier}")
     endif()
   endforeach()
@@ -438,6 +522,12 @@ function(hyle_add_fat_kernel)
       "hyle_add_fat_kernel: unknown arguments '${ARG_UNPARSED_ARGUMENTS}', "
       "missing values '${ARG_KEYWORDS_MISSING_VALUES}'")
   endif()
+  if(NOT TARGET hyle_simd_source_expert)
+    message(FATAL_ERROR
+      "hyle_add_fat_kernel is source-only; installed static/shared SDK consumers "
+      "must use HYLE whole-buffer APIs")
+  endif()
+  _hyle_simd_target_processor(_target_processor)
   if(HYLE_SIMD_EXACT_TARGET)
     string(TOLOWER "${HYLE_SIMD_EXACT_TARGET}" _exact_lower)
     list(FIND ARG_TARGETS "${_exact_lower}" _exact_index)
@@ -445,29 +535,35 @@ function(hyle_add_fat_kernel)
       message(FATAL_ERROR
         "hyle_add_fat_kernel: exact target '${_exact_lower}' is absent from TARGETS")
     endif()
+    if(_exact_lower STREQUAL "avx512" AND MSVC AND
+       CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+      message(FATAL_ERROR
+        "hyle_add_fat_kernel exact AVX512 cannot use locked Highway with classic "
+        "cl.exe; use clang-cl or select AVX2")
+    endif()
   else()
     set(_required scalar)
-    if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+    if(_target_processor MATCHES "x86_64|AMD64|amd64")
       list(APPEND _required sse4 avx2 avx512)
-    elseif(HYLE_TARGET_PROCESSOR MATCHES "arm64|aarch64|ARM64")
+    elseif(_target_processor MATCHES "arm64|aarch64|ARM64")
       list(APPEND _required neon)
       if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
         list(APPEND _required sve)
       endif()
-    elseif(HYLE_TARGET_PROCESSOR MATCHES "riscv64|RISCV64")
+    elseif(_target_processor MATCHES "riscv64|RISCV64")
       list(APPEND _required rvv)
     endif()
     foreach(_variant IN LISTS _required)
       list(FIND ARG_TARGETS "${_variant}" _variant_index)
       if(_variant_index EQUAL -1)
         message(FATAL_ERROR
-          "hyle_add_fat_kernel: fat ${CMAKE_SYSTEM_NAME}/${HYLE_TARGET_PROCESSOR} "
+          "hyle_add_fat_kernel: fat ${CMAKE_SYSTEM_NAME}/${_target_processor} "
           "build requires '${_variant}' in TARGETS")
       endif()
     endforeach()
   endif()
 
-  hyle_add_dispatched_kernel(${ARGN})
+  hyle_add_dispatched_kernel(HIGHWAY ${ARGN})
   if(HYLE_SIMD_EXACT_TARGET AND ARG_TARGET)
     string(TOUPPER "${HYLE_SIMD_EXACT_TARGET}" _exact)
     target_compile_definitions(${ARG_TARGET} PRIVATE

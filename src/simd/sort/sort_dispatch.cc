@@ -6,7 +6,7 @@
 
 #include "hyle/core/compiler.h"  // HYLE_FATAL_ASSERT (fail-fast on size-contract violation)
 #include "hyle/platform.h"
-#include "hyle/simd/runtime.h"
+#include "src/simd/runtime_internal.h"
 #include "src/simd/dispatch_internal.h"
 #include "src/simd/sort/kernels.h"
 

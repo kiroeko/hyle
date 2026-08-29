@@ -46,8 +46,10 @@ namespace nb = ankerl::nanobench;
 constexpr std::size_t kN = 4096;  // fits L1; isolates convert throughput
 
 const char* tier() {
-  return hyle::simd::runtime().dtype.isa == hyle::simd::Isa::kAvx2 ? "AVX2/F16C"
-                                                                      : "scalar";
+  return hyle::simd::selected_target(hyle::simd::KernelFamily::kDtype).isa ==
+                 hyle::simd::Isa::kAvx2
+             ? "AVX2/F16C"
+             : "scalar";
 }
 }  // namespace
 

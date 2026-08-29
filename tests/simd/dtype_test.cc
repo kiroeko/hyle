@@ -8,7 +8,7 @@
 #include "hyle/platform.h"
 #include "hyle/simd/dtype.h"
 #include "hyle/simd/dtype_ops.h"
-#include "hyle/simd/runtime.h"
+#include "src/simd/runtime_internal.h"
 
 // dtype_test -- fp16/bf16 conversion correctness. Two layers:
 //  (1) element conversions (dtype.h) vs known IEEE-754 bit patterns + exhaustive
@@ -137,7 +137,7 @@ TEST(Bf16, RoundToNearestEvenAndNan) {
 // hardware-vs-software cross-check the milestone hinges on.
 TEST(DtypeBatch, F16ToF32HardwareMatchesScalar) {
 #if defined(HYLE_ARCH_X64)
-  if (!hyle::simd::cpu_features().f16c)
+  if (!hyle::platform::cpu_features().f16c)
     GTEST_SKIP() << "no F16C on this host -- batch would fall back to scalar (tautology)";
 #elif defined(HYLE_ARCH_ARM64)
   // aarch64: batch runs the NEON native-vcvt kernel (ARMv8.2 FP16) -- validate it here.
@@ -161,7 +161,7 @@ TEST(DtypeBatch, F16ToF32HardwareMatchesScalar) {
 // f32 -> f16 hardware vs scalar over a wide sweep of f32 inputs (finite bit-equal).
 TEST(DtypeBatch, F32ToF16HardwareMatchesScalar) {
 #if defined(HYLE_ARCH_X64)
-  if (!hyle::simd::cpu_features().f16c)
+  if (!hyle::platform::cpu_features().f16c)
     GTEST_SKIP() << "no F16C on this host -- batch would fall back to scalar (tautology)";
 #elif defined(HYLE_ARCH_ARM64)
   // aarch64: batch runs the NEON native-vcvt narrow -- validate it (finite sweep, RNE).
@@ -210,7 +210,7 @@ TEST(DtypeBatch, Bf16RoundTrip) {
 // (unlike F16C fp16). Exact equality everywhere.
 TEST(DtypeBatch, Bf16ToF32Avx2MatchesScalarExact) {
 #if defined(HYLE_ARCH_X64)
-  if (!hyle::simd::cpu_features().avx2)
+  if (!hyle::platform::cpu_features().avx2)
     GTEST_SKIP() << "no AVX2 on this host -- batch falls back to scalar (tautology)";
 #elif defined(HYLE_ARCH_ARM64)
   // aarch64: batch runs the NEON integer bf16 kernel -- bit-identical to scalar, validate.
@@ -232,7 +232,7 @@ TEST(DtypeBatch, Bf16ToF32Avx2MatchesScalarExact) {
 // is integer RNE bit-math, so AVX2 must match scalar EXACTLY on the bf16 bits everywhere.
 TEST(DtypeBatch, F32ToBf16Avx2MatchesScalarExact) {
 #if defined(HYLE_ARCH_X64)
-  if (!hyle::simd::cpu_features().avx2)
+  if (!hyle::platform::cpu_features().avx2)
     GTEST_SKIP() << "no AVX2 on this host -- batch falls back to scalar (tautology)";
 #elif defined(HYLE_ARCH_ARM64)
   // aarch64: batch runs the NEON integer RNE bf16 kernel -- bit-identical to scalar.
@@ -266,7 +266,7 @@ TEST(DtypeBatch, F32ToBf16Avx2MatchesScalarExact) {
 // the AVX2 path (already covered bit-exact above), so running it here would be a tautology.
 TEST(DtypeBatch, F32ToBf16Avx512MatchesScalar) {
 #if defined(HYLE_ARCH_X64)
-  if (!hyle::simd::cpu_features().avx512bf16)
+  if (!hyle::platform::cpu_features().avx512bf16)
     GTEST_SKIP() << "no AVX-512-BF16 on this host -- batch uses the AVX2 path (covered above)";
 #else
   GTEST_SKIP() << "non-x86 -- no AVX-512-BF16 path";
@@ -300,7 +300,7 @@ TEST(DtypeBatch, F32ToBf16Avx512MatchesScalar) {
 // On an x86 host with F16C the dispatcher must engage the hardware tier (not the floor).
 TEST(DtypeBatch, ActiveVariantEngagesHardwareWhenAvailable) {
 #if defined(HYLE_ARCH_X64)
-  if (hyle::simd::cpu_features().f16c) {
+  if (hyle::platform::cpu_features().f16c) {
     EXPECT_NE(hyle::simd::runtime().dtype.features &
                   hyle::simd::Runtime::kFeatureF16c,
               0u);

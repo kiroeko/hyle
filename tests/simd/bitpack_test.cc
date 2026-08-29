@@ -8,7 +8,7 @@
 
 #include "hyle/simd/bitpack.h"
 #include "hyle/simd/dispatch.h"
-#include "hyle/simd/runtime.h"
+#include "src/simd/runtime_internal.h"
 
 // bitpack_test -- the borrowed Highway bit_pack (whatever tier is live: avx512/avx2/neon/scalar)
 // must ROUND-TRIP: pack `count` values (each masked to `bits` low bits) then unpack must recover

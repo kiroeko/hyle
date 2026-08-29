@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.25)
 project(hyle_sample_simd LANGUAGES CXX)
 
 option(HYLE_SAMPLE_SIMD_USE_INSTALLED "Consume an installed HYLE SIMD package" OFF)
+option(HYLE_SAMPLE_SIMD_FAT
+  "Build a source-only direct-Highway kernel for unknown customer CPUs" OFF)
 if(HYLE_SAMPLE_SIMD_USE_INSTALLED)
   find_package(Hyle 0.1.0 EXACT REQUIRED COMPONENTS simd)
 else()
@@ -19,10 +21,28 @@ hyle_stage_runtime_dependencies(simd_sample)
 # Highway headers and compiles the expert kernel without CPUID/function pointers.
 # To bind all ordinary HYLE batch APIs too, also configure HYLE_SIMD_EXACT_TARGET=AVX2.
 set(HYLE_SAMPLE_SIMD_ISA "" CACHE STRING "Exact target ISA for the source expert path")
+if(HYLE_SAMPLE_SIMD_ISA AND HYLE_SAMPLE_SIMD_FAT)
+  message(FATAL_ERROR
+    "HYLE_SAMPLE_SIMD_ISA and HYLE_SAMPLE_SIMD_FAT are separate deployment journeys; "
+    "select only one")
+endif()
 if(HYLE_SAMPLE_SIMD_ISA)
   if(HYLE_SAMPLE_SIMD_USE_INSTALLED)
     message(FATAL_ERROR
       "HYLE_SAMPLE_SIMD_ISA is source-only; installed SDK consumers use whole-buffer APIs")
   endif()
   hyle_target_simd(TARGET simd_sample ISA "${HYLE_SAMPLE_SIMD_ISA}")
+endif()
+
+if(HYLE_SAMPLE_SIMD_FAT)
+  if(HYLE_SAMPLE_SIMD_USE_INSTALLED)
+    message(FATAL_ERROR
+      "HYLE_SAMPLE_SIMD_FAT is source-only; installed SDK consumers use whole-buffer APIs")
+  endif()
+  target_compile_definitions(simd_sample PRIVATE HYLE_SAMPLE_SIMD_FAT=1)
+  hyle_add_fat_kernel(
+    TARGET simd_sample
+    NAME sample_bias_relu
+    IMPL "${CMAKE_CURRENT_SOURCE_DIR}/fat_kernel-inl.h"
+    TARGETS scalar sse4 avx2 avx512 neon sve rvv)
 endif()

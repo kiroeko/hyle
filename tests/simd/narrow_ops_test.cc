@@ -8,7 +8,7 @@
 
 #include "hyle/simd/narrow_float.h"
 #include "hyle/simd/narrow_ops.h"
-#include "hyle/simd/runtime.h"
+#include "src/simd/runtime_internal.h"
 
 namespace hs = hyle::simd;
 

@@ -1,5 +1,6 @@
 #include "hyle/simd/math.h"
 #include "hyle/simd/runtime.h"
+#include "hyle/platform/cpu.h"
 
 #include <array>
 #include <cmath>
@@ -21,6 +22,7 @@ int main() {
 
   // The package must stage and load the runtime-selected implementation, not
   // merely make the public header compile.
-  const char* active = hyle::simd::isa_name(hyle::simd::runtime().math.isa);
+  const char* active = hyle::platform::isa_name(
+      hyle::simd::selected_target(hyle::simd::KernelFamily::kMath).isa);
   return active == nullptr || active[0] == '\0' ? 2 : 0;
 }

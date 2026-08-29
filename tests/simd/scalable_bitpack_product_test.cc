@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "hyle/simd/bitpack.h"
-#include "hyle/simd/runtime.h"
+#include "src/simd/runtime_internal.h"
 #include "src/simd/bitpack/kernels.h"
 
 namespace hs = hyle::simd;

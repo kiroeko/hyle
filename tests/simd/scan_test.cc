@@ -7,9 +7,9 @@
 #include "hyle/platform.h"
 #include "hyle/simd/dispatch.h"
 #include "hyle/simd/scan.h"
-#include "hyle/simd/runtime.h"
+#include "src/simd/runtime_internal.h"
 
-using hyle::simd::best_isa;
+using hyle::platform::best_isa;
 using hyle::simd::exclusive_scan;
 using hyle::simd::inclusive_scan;
 using hyle::simd::Isa;

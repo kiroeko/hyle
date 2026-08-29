@@ -9,7 +9,7 @@
 #include <vector>
 
 #include "hyle/simd/search.h"
-#include "hyle/simd/runtime.h"
+#include "src/simd/runtime_internal.h"
 
 namespace hs = hyle::simd;
 

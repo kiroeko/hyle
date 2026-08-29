@@ -15,6 +15,7 @@
 #   bash scripts/rvv-qemu-test.sh zvbc
 #   bash scripts/rvv-qemu-test.sh zvkned
 #   bash scripts/rvv-qemu-test.sh all
+#   bash scripts/rvv-qemu-test.sh fat    # direct-Highway source-fat seam only
 set -e
 
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
@@ -35,6 +36,28 @@ fi
 
 TIER=${1:-base}
 rc=0
+
+run_fat_fixture() {
+  local common_flags="-std=c++23 -O2 -march=rv64gc -pthread \
+    -I$REPO/include -I$REPO -I$HWY"
+  local flags="$common_flags -march=rv64gcv -DHYLE_SIMD_TARGET_RVV"
+  local bin="$OUT/fat_rvv_only"
+
+  echo "[fat] compiling direct-Highway RVV source-fat fixture ..."
+  printf '#define HWY_COMPILE_ONLY_STATIC 1\n#define HYLE_SIMD_VARIANT_SUFFIX rvv\n#include "tests/simd/fat_kernel_fixture.h"\n' |
+    $CXX $flags -x c++ -c - -o "$OUT/fat_rvv_only.o"
+  $CXX $common_flags -DHYLE_TEST_FAT_RVV=1 \
+    -DHYLE_SIMD_FAT_EXACT_VARIANT_RVV=1 -DHYLE_SIMD_EXACT_TARGET_RVV=1 \
+    -c "$REPO/tests/simd/fat_kernel_scalable_driver.cc" \
+    -o "$OUT/fat_driver_rvv.o"
+  $CXX $flags "$OUT/fat_driver_rvv.o" "$OUT/fat_rvv_only.o" \
+    -static -o "$bin" -pthread
+  for bits in 128 256 512 1024; do
+    echo "----- direct Highway RVV VLEN=${bits}-bit -----"
+    "$QEMU" -cpu "rv64,v=true,vlen=${bits},elen=64" \
+      -L /usr/riscv64-linux-gnu "$bin"
+  done
+}
 
 run_tier() {
   local name="$1"
@@ -81,9 +104,9 @@ run_tier() {
   $CXX $COMMON_FLAGS -DHYLE_ERROR_BUILD -c "$REPO/src/error/status.cc" -o "$OUT/error_status_${name}.o"
   printf '#include "hyle/platform/thread.h"\nnamespace hyle::platform { unsigned hardware_concurrency() noexcept { return 1; } }\n' |
     $CXX $COMMON_FLAGS -x c++ -c - -o "$OUT/thread_test_stub_${name}.o"
-  printf '#define HYLE_SIMD_VARIANT_SUFFIX scalar\n#include "tests/simd/fat_kernel_fixture.h"\n' |
+  printf '#define HWY_COMPILE_ONLY_SCALAR 1\n#define HYLE_SIMD_VARIANT_SUFFIX scalar\n#include "tests/simd/fat_kernel_fixture.h"\n' |
     $CXX $COMMON_FLAGS -x c++ -c - -o "$OUT/fat_scalar_${name}.o"
-  printf '#define HYLE_SIMD_VARIANT_SUFFIX rvv\n#include "tests/simd/fat_kernel_fixture.h"\n' |
+  printf '#define HWY_COMPILE_ONLY_STATIC 1\n#define HYLE_SIMD_VARIANT_SUFFIX rvv\n#include "tests/simd/fat_kernel_fixture.h"\n' |
     $CXX $FLAGS -x c++ -c - -o "$OUT/fat_rvv_${name}.o"
   $CXX $COMMON_FLAGS -c "$REPO/src/simd/runtime.cc" -o "$OUT/runtime_${name}.o"
   $CXX $COMMON_FLAGS -c "$REPO/src/simd/math/math_dispatch.cc" -o "$OUT/math_dispatch_${name}.o"
@@ -155,6 +178,9 @@ run_tier() {
 }
 
 case "$TIER" in
+  fat)
+    run_fat_fixture
+    ;;
   base)
     run_tier base rv64gcv ""
     ;;
@@ -174,7 +200,7 @@ case "$TIER" in
     run_tier zvkned rv64gcv_zvkned "zvkned=true,"
     ;;
   *)
-    echo "Usage: $0 [base|zvbb|zvbc|zvkned|all]"; exit 2
+    echo "Usage: $0 [base|zvbb|zvbc|zvkned|all|fat]"; exit 2
     ;;
 esac
 

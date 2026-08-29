@@ -7,12 +7,12 @@
 #include "hyle/platform.h"
 #include "hyle/simd/dispatch.h"
 
-using hyle::simd::best_isa;
-using hyle::simd::cpu_features;
-using hyle::simd::CpuFeatures;
 using hyle::simd::Isa;
-using hyle::simd::isa_name;
-using hyle::simd::supports;
+using hyle::platform::best_isa;
+using hyle::platform::cpu_features;
+using hyle::platform::CpuFeatures;
+using hyle::platform::isa_name;
+using hyle::platform::supports;
 
 // detect() must not crash (the whole point of probe isolation: XGETBV/CPUID run here on
 // the test machine's real CPU). Calling it proves the isolated TU executes safely.

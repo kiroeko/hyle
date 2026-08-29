@@ -19,7 +19,7 @@ HYLE SIMD 不要求普通用户认识数百个寄存器原语，也不再复制�
 | C++ 用户调用 whole-buffer 算法 | `hyle/simd/{ops,math,...}.h` | 是 | 原生 source API，不承诺跨工具链 ABI |
 | 整个 HYLE 只在一种已知 ISA 上运行 | `HYLE_SIMD_EXACT_TARGET` | 否，直接绑定目标实现 | 构建配置 |
 | 源码嵌入时自己写一个固定 ISA 的 kernel TU | `hyle_target_simd(...)` + `<hwy/highway.h>` | 否 | source-only expert surface；vendor 类型不得跨 TU |
-| 自己写一个 kernel，仍要发布给未知 CPU | 当前优先组合 HYLE whole-buffer API；自定义 fat-kernel seam 待 SIMD-06 完成 vendor 迁移 | 是 | 尚未承诺 |
+| 自己写一个 kernel，仍要发布给未知 CPU | `hyle_add_fat_kernel` + direct Highway impl header | 是，只在整批入口选择并缓存一次 | source-only expert surface；vendor 类型不得跨 TU |
 | 维护现有 HYLE 内部 family | `vec.h` / `native/*` | 否 | migration-only legacy；禁止新用户依赖 |
 
 ```text
@@ -41,6 +41,23 @@ HYLE SIMD 不要求普通用户认识数百个寄存器原语，也不再复制�
 
 运行时选择不是每个元素做 CPUID，也不是在循环里反复判断 ISA。平台能力只探测一次；whole-buffer 调用
 经缓存的函数入口进入一个 kernel。调用很小的数据时，函数边界本身仍可能比计算贵，因此应尽量批量调用。
+
+若只为日志或部署诊断查看 HYLE 实际选中的 tier，而不是原始 CPU 能力：
+
+```cpp
+#include <cstdio>
+
+#include "hyle/platform/cpu.h"
+#include "hyle/simd/runtime.h"
+
+const auto math = hyle::simd::selected_target(hyle::simd::KernelFamily::kMath);
+std::printf("math target: %s\n", hyle::platform::isa_name(math.isa));
+const auto dtype = hyle::simd::selected_target(hyle::simd::KernelFamily::kDtype);
+bool has_f16c = dtype.has(hyle::simd::TargetFeature::kF16c);
+```
+
+`hyle::platform::best_isa()` 报告主机事实，`selected_target()` 报告某个 HYLE family 实际采用的
+compiled target；两者可能因编译器 blocklist 或已认证的 lower-tier winner 不同。诊断 API 不能 pin 实现。
 
 ## 常用能力速查
 
@@ -302,12 +319,23 @@ hyle_add_fat_kernel(
 ```
 
 baseline 调用点用 `HYLE_SIMD_SELECT_FAT_KERNEL(...)` 选择并缓存入口。不要直接手写 CPUID，也不要让
-vector/mask 出现在 entry 签名中。这个选择宏在默认 fat 构建中走一次平台探测，在
+vector/mask 出现在 entry 签名中。impl header 直接包含 `hwy/highway.h`，以模板/tag 写唯一 body；生成
+TU 会冻结 vendor target 并在编译期验证实际 `HWY_STATIC_TARGET`。这个选择宏在默认 fat 构建中走一次平台探测，在
 `HYLE_SIMD_EXACT_TARGET` 构建中只引用唯一生成的 exact symbol；在 macOS ARM64 上也不会引用未生成的
 SVE symbol。fat `TARGETS` 必须列出本平台完整 canonical tier，CMake 会在配置期检查。
 
-不要为寄存器操作增加运行时 callback：逐 lane function pointer 会阻断内联和向量化。未知 CPU 的
-自定义 fat-kernel vendor seam 将由 SIMD-06 收口；在此之前不要依赖迁移期 `vec.h/native/*` 创建新 API。
+不要为寄存器操作增加运行时 callback：逐 lane function pointer 会阻断内联和向量化。fixed source
+由宏 + 模板单态化直接内联；source-fat 仅在 whole-kernel pointer/count 边界有一次可预测间接调用，
+vector loop 内没有 HYLE wrapper、feature switch 或第二层 Highway dynamic dispatch。
+
+HYLE canonical x86 tier 不承诺 AES/PCLMUL，因此 helper 使用 Highway 官方的
+`HWY_DISABLE_PCLMUL_AES` 使 vendor target 与实际 Platform facts 一致。需要 crypto 指令的 specialty
+kernel 必须单独声明/探测这些扩展。经典 cl.exe 的 source-fat 最高为 AVX2；fixed/exact AVX-512 会
+fail-fast。需要 direct Highway AVX-512 时使用 clang-cl。
+
+仓库的 `samples/02_simd` 同时演示 ordinary、fixed source 与 source-fat 三种路径：设置
+`HYLE_SAMPLE_SIMD_ISA=AVX2` 构建 fixed path，或设置 `HYLE_SAMPLE_SIMD_FAT=ON` 构建 unknown-CPU
+source-fat path；两者是不同部署合同，不能同时开启。
 
 ## C++ 产品面
 

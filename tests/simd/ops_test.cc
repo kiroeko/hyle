@@ -9,7 +9,7 @@
 #include "hyle/platform.h"
 #include "hyle/simd/dispatch.h"
 #include "hyle/simd/ops.h"
-#include "hyle/simd/runtime.h"
+#include "src/simd/runtime_internal.h"
 
 // ops_test -- validates the RUNTIME-DISPATCHED ops (simd-04). Unlike vec_test (compiled
 // per-ISA), this links the ONE dispatcher and checks: (1) results match a naive scalar
@@ -18,7 +18,7 @@
 // select a kernel), not the dead detector the simd-01 audit flagged.
 
 using hyle::simd::add;
-using hyle::simd::best_isa;
+using hyle::platform::best_isa;
 using hyle::simd::dot;
 using hyle::simd::Isa;
 using hyle::simd::runtime;

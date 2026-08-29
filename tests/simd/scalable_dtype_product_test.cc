@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "hyle/simd/dtype_ops.h"
-#include "hyle/simd/runtime.h"
+#include "src/simd/runtime_internal.h"
 #include "hyle/simd/vec.h"
 #include "src/simd/dtype/kernels.h"
 

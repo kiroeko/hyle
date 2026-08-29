@@ -1,6 +1,6 @@
 #include "hyle/simd/random.h"
 
-#include "hyle/simd/runtime.h"
+#include "src/simd/runtime_internal.h"
 #include "src/simd/dispatch_internal.h"
 #include "src/simd/random/kernels.h"
 
