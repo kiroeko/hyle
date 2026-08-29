@@ -243,20 +243,12 @@
     },
     {
       "module": "obs",
-      "product_state": "BLOCKED",
-      "blocked_from": "CANDIDATE",
-      "blocker": "The frozen 8-producer x 1/4/16-sink baseline non-inferiority gate has no qualified closure-perf-v1 N-worker topology verdict; the external sampler is statistically unresolved and lacks the central A/A, known-delta, timer-floor and deep-replay controls.",
-      "blocker_owner": "performance/perf-multicore-topology-v1",
-      "resume_condition": "Resume only after the central instrument passes its own tests on a fresh W1-WIN build and can replay the unchanged 8-producer x 1/4/16-sink workload with N-worker topology, A/A, 5%/10% positive controls, timer-floor, both orders, n=15-to-31 stopping and deep-replay telemetry.",
-      "round_id": "obs-v1",
-      "closure_task": "docs/implementation/tasks/obs/obs-v1-closure.md",
-      "scope": "Synchronous structured-log production and sink lifecycle plus the compile-time native trace seam; C++ API, dependencies/consumers, Tracy integration, source/static/shared delivery, documentation and bounded P1 engineering evidence.",
-      "non_goals": "Async logging services, file/network/aggregation/alerting, metrics registry, full category/config trees, crash/signal logging, fatal control flow, OpenTelemetry/viewer protocols, GPU profiling policy, Native FFI/C API, stable C++ ABI, downstream closure and Formal certification.",
-      "baseline_commit": "f305b9d3fed87a065d300145e5d9e8de3f5a77a0",
-      "candidate_commit": "2c784d9d6a925529995c6a5582d9bc373d91535d",
-      "candidate_tree": "bff512b2fd644b3a88bce55be419dadad43c6a89",
-      "end_commit": "e4cc1dda3ac9c89cfcc7a4c9c33290fbc4630aff",
-      "registry_anchor_commit": "e4cc1dda3ac9c89cfcc7a4c9c33290fbc4630aff",
+      "product_state": "SCOPED",
+      "round_id": "obs-v2",
+      "closure_task": "docs/implementation/tasks/obs/obs-v2-resume.md",
+      "scope": "Resume the unchanged obs-v1 candidate after qualifying the frozen N-worker replay; resolve the synchronous sink/fiber contract and Tracy trace-on test network behavior, then perform one bounded mechanism review of the qualified multi-sink statistical result.",
+      "non_goals": "New log or trace capabilities, changes to record/layout/registry/callback/chunk/synchronous semantics or the frozen 5% contract, async logging services, file/network export, category/metrics/OTLP/GPU policy, central-statistics changes, Native FFI/C API, stable C++ ABI, downstream closure and Formal certification.",
+      "baseline_commit": "a3fc0f833f605fefb89fe904a8acaf716a4feaf8",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -264,47 +256,17 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "INCONCLUSIVE",
+        "verdict": "PLANNED",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1",
-        "evidence": "docs/implementation/evidence/performance/benchmarks-obs.md"
+        "instrument_profile": "closure-perf-v1"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "gate_verdicts": {
-        "scope": "PASS",
-        "architecture": "PASS",
-        "correctness": "PASS",
-        "delivery": "PASS",
-        "usability_docs": "PASS",
-        "red_team": "PASS",
-        "engineering_performance": "INCONCLUSIVE"
-      },
-      "closure_evidence": "docs/implementation/tasks/obs/obs-v1-closure.md",
-      "loc": {
-        "snapshot_commit": "2c784d9d6a925529995c6a5582d9bc373d91535d",
-        "repository_code": 303621,
-        "self_with_tests": 123512,
-        "self_without_tests": 82884,
-        "module_implementation": 887
-      },
-      "known_limitations": [
-        "The frozen 8-producer x 1/4/16-sink baseline non-inferiority gate remains INCONCLUSIVE; obs-v1 does not claim comprehensive SOTA or cross-platform fixed nanoseconds.",
-        "Logging is synchronous borrowed fan-out to at most 64 sinks; asynchronous ownership, persistence, backpressure and acknowledgement belong to the application adapter.",
-        "A trace-on static SDK is supported only when every HYLE archive enters one final link image; multi-DLL or plugin hosts must use the shared Tracy client delivery.",
-        "Native FFI/C API, category/config trees, logging services, metrics/OTLP, GPU profiling policy and Formal certification remain outside this round."
-      ],
-      "reopen_triggers": [
-        "A real consumer exposes a correctness, security, lifetime, usability or missing-capability defect within the obs boundary.",
-        "The log or trace algorithm, public API/layout, direct dependency, Tracy semantics or source/static/shared delivery shape changes.",
-        "A mature same-contract peer proves a better complexity class or a reproducible material advantage on a normal consumer workload.",
-        "The retained engineering evidence becomes unavailable or its frozen product, baseline, contract, machine or instrument identity changes while the claim must be renewed."
-      ],
-      "summary": "obs-v1 BLOCKED：功能/API、correctness、三平台交付、文档与红队均通过；唯一未决是冻结 8-P-core fan-out 的中央仪器资格，工程性能保持 INCONCLUSIVE。"
+      "summary": "obs-v2 SCOPED：N-worker 仪器恢复条件已满足；本轮有限处理 sink/fiber 契约、Tracy 测试网络行为，并对合格 n=31 多 sink 统计未决只做一次机制诊断。"
     },
     {
       "module": "math",
