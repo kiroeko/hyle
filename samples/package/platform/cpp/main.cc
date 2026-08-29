@@ -59,5 +59,15 @@ int main() {
   auto model = MappedFile::map(std::move(model_file->file));
   if (!model || model->bytes()[17] != std::byte{0x6b}) return 9;
 
+  // Exercise the exported progressive-residency entry point in every source,
+  // static-SDK and shared-SDK delivery shape. A constrained host may reject
+  // page locking, but a successful request must expose and release its applied
+  // prefix coherently.
+  auto residency = model->lock_prefix(1);
+  if (residency.ok()) {
+    if (!model->locked() || model->locked_size() < 1) return 10;
+    if (!model->unlock().ok() || model->locked()) return 11;
+  }
+
   return 0;
 }
