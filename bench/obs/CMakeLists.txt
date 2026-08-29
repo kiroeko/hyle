@@ -4,7 +4,42 @@ add_executable(hyle_obs_bench obs_bench.cc)
 target_link_libraries(hyle_obs_bench PRIVATE hyle_obs nanobench)
 hyle_apply_warnings(hyle_obs_bench)
 
-set(_hyle_obs_benches hyle_obs_bench)
+add_executable(hyle_obs_control_bench control_bench.cc)
+target_link_libraries(hyle_obs_control_bench PRIVATE hyle_obs nanobench)
+hyle_apply_warnings(hyle_obs_control_bench)
+
+# The inference peer is a source-derived manual gate rather than a linked
+# dependency. Consume and validate the runner-provided checkout path so formal
+# evidence still binds the exact clean llama.cpp revision behind that shape.
+if(DEFINED HYLE_BENCH_LLAMA_DIR)
+  cmake_path(ABSOLUTE_PATH HYLE_BENCH_LLAMA_DIR NORMALIZE
+    OUTPUT_VARIABLE _hyle_obs_llama_dir)
+  if(NOT EXISTS "${_hyle_obs_llama_dir}/tools/server/server-context.cpp")
+    message(FATAL_ERROR
+      "HYLE_BENCH_LLAMA_DIR does not contain the reviewed llama.cpp server")
+  endif()
+  unset(_hyle_obs_llama_dir)
+endif()
+
+set(_hyle_obs_benches hyle_obs_bench hyle_obs_control_bench)
+if(HYLE_STATIC)
+  add_executable(hyle_obs_control_bench_placement control_bench.cc)
+  target_link_libraries(hyle_obs_control_bench_placement PRIVATE
+    hyle_obs nanobench)
+  if(MSVC)
+    target_link_options(hyle_obs_control_bench_placement PRIVATE
+      /FUNCTIONPADMIN:64)
+  elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(hyle_obs_control_bench_placement PRIVATE
+      -falign-functions=64)
+  else()
+    message(FATAL_ERROR
+      "obs control placement perturbation is unsupported by this compiler")
+  endif()
+  hyle_apply_warnings(hyle_obs_control_bench_placement)
+  list(APPEND _hyle_obs_benches hyle_obs_control_bench_placement)
+endif()
+
 if(WIN32)
   # The ordinary nanobench process is pinned to one logical CPU by the shared
   # instrument.  Keep the W1-WIN concurrent contract separate so its eight
@@ -107,11 +142,17 @@ if(TARGET hyle_tracy_client)
 endif()
 
 if(HYLE_BENCH_ABSL)
-  if(TARGET hyle_obs_bench)
-    target_compile_definitions(hyle_obs_bench PRIVATE HYLE_BENCH_ABSL)
-    target_link_libraries(hyle_obs_bench PRIVATE absl::log absl::log_sink)
-    hyle_mark_absl_benchmark_consumer(hyle_obs_bench)
-  endif()
+  foreach(_hyle_obs_absl_target IN ITEMS
+      hyle_obs_bench hyle_obs_control_bench hyle_obs_control_bench_placement)
+    if(TARGET ${_hyle_obs_absl_target})
+      target_compile_definitions(${_hyle_obs_absl_target} PRIVATE
+        HYLE_BENCH_ABSL)
+      target_link_libraries(${_hyle_obs_absl_target} PRIVATE
+        absl::log absl::log_sink)
+      hyle_mark_absl_benchmark_consumer(${_hyle_obs_absl_target})
+    endif()
+  endforeach()
+  unset(_hyle_obs_absl_target)
 endif()
 
 hyle_register_benches(obs ${_hyle_obs_benches})

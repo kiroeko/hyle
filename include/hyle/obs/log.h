@@ -14,6 +14,7 @@
 #include "hyle/core/compiler.h"
 #include "hyle/error/result.h"
 #include "hyle/error/status.h"
+#include "hyle/obs/log_control.h"
 #include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
@@ -260,43 +261,190 @@ void log_fmt(LogLevel log_level, std::format_string<Args...> fmt,
           level, std::source_location::current(), __VA_ARGS__);                \
     }                                                                          \
   } while (false)
+#define HYLE_LOG_IF_AT_(level, condition, ...)                                 \
+  do {                                                                         \
+    if (::hyle::obs::should_log(level) && static_cast<bool>(condition)) {      \
+      ::hyle::obs::detail::log_fmt_unchecked_at(                               \
+          level, std::source_location::current(), __VA_ARGS__);                \
+    }                                                                          \
+  } while (false)
+#define HYLE_LOG_EVERY_N_AT_(level, n, ...)                                    \
+  do {                                                                         \
+    if (::hyle::obs::should_log(level)) {                                      \
+      static ::hyle::obs::LogEveryNState hyle_log_control_state;               \
+      if (hyle_log_control_state.should_log(n)) {                              \
+        ::hyle::obs::detail::log_fmt_unchecked_at(                             \
+            level, std::source_location::current(), __VA_ARGS__);              \
+      }                                                                        \
+    }                                                                          \
+  } while (false)
+#define HYLE_LOG_EVERY_N_EXACT_AT_(level, n, ...)                              \
+  do {                                                                         \
+    if (::hyle::obs::should_log(level)) {                                      \
+      static ::hyle::obs::LogEveryNExactState hyle_log_control_state;          \
+      if (hyle_log_control_state.should_log(n)) {                              \
+        ::hyle::obs::detail::log_fmt_unchecked_at(                             \
+            level, std::source_location::current(), __VA_ARGS__);              \
+      }                                                                        \
+    }                                                                          \
+  } while (false)
+#define HYLE_LOG_FIRST_N_AT_(level, n, ...)                                    \
+  do {                                                                         \
+    if (::hyle::obs::should_log(level)) {                                      \
+      static ::hyle::obs::LogFirstNState hyle_log_control_state;               \
+      if (hyle_log_control_state.should_log(n)) {                              \
+        ::hyle::obs::detail::log_fmt_unchecked_at(                             \
+            level, std::source_location::current(), __VA_ARGS__);              \
+      }                                                                        \
+    }                                                                          \
+  } while (false)
+#define HYLE_LOG_EVERY_POW_2_AT_(level, ...)                                   \
+  do {                                                                         \
+    if (::hyle::obs::should_log(level)) {                                      \
+      static ::hyle::obs::LogEveryPow2State hyle_log_control_state;            \
+      if (hyle_log_control_state.should_log()) {                               \
+        ::hyle::obs::detail::log_fmt_unchecked_at(                             \
+            level, std::source_location::current(), __VA_ARGS__);              \
+      }                                                                        \
+    }                                                                          \
+  } while (false)
+#define HYLE_LOG_EVERY_AT_(level, interval, ...)                               \
+  do {                                                                         \
+    if (::hyle::obs::should_log(level)) {                                      \
+      static ::hyle::obs::LogIntervalLimiter hyle_log_control_state;           \
+      if (hyle_log_control_state.should_log(interval)) {                       \
+        ::hyle::obs::detail::log_fmt_unchecked_at(                             \
+            level, std::source_location::current(), __VA_ARGS__);              \
+      }                                                                        \
+    }                                                                          \
+  } while (false)
 #if HYLE_OBS_COMPILED_MIN_LEVEL <= 0
 #define HYLE_LOG_TRACE(...)                                                    \
   HYLE_LOG_AT_(::hyle::obs::LogLevel::Trace, __VA_ARGS__)
+#define HYLE_LOG_TRACE_IF(condition, ...)                                      \
+  HYLE_LOG_IF_AT_(::hyle::obs::LogLevel::Trace, condition, __VA_ARGS__)
+#define HYLE_LOG_TRACE_EVERY_N(n, ...)                                         \
+  HYLE_LOG_EVERY_N_AT_(::hyle::obs::LogLevel::Trace, n, __VA_ARGS__)
+#define HYLE_LOG_TRACE_EVERY_N_EXACT(n, ...)                                   \
+  HYLE_LOG_EVERY_N_EXACT_AT_(::hyle::obs::LogLevel::Trace, n, __VA_ARGS__)
+#define HYLE_LOG_TRACE_FIRST_N(n, ...)                                         \
+  HYLE_LOG_FIRST_N_AT_(::hyle::obs::LogLevel::Trace, n, __VA_ARGS__)
+#define HYLE_LOG_TRACE_EVERY_POW_2(...)                                        \
+  HYLE_LOG_EVERY_POW_2_AT_(::hyle::obs::LogLevel::Trace, __VA_ARGS__)
+#define HYLE_LOG_TRACE_EVERY(interval, ...)                                    \
+  HYLE_LOG_EVERY_AT_(::hyle::obs::LogLevel::Trace, interval, __VA_ARGS__)
 #else
 #define HYLE_LOG_TRACE(...)                                                    \
   do {                                                                         \
   } while (false)
+#define HYLE_LOG_TRACE_IF(...) HYLE_LOG_TRACE()
+#define HYLE_LOG_TRACE_EVERY_N(...) HYLE_LOG_TRACE()
+#define HYLE_LOG_TRACE_EVERY_N_EXACT(...) HYLE_LOG_TRACE()
+#define HYLE_LOG_TRACE_FIRST_N(...) HYLE_LOG_TRACE()
+#define HYLE_LOG_TRACE_EVERY_POW_2(...) HYLE_LOG_TRACE()
+#define HYLE_LOG_TRACE_EVERY(...) HYLE_LOG_TRACE()
 #endif
 #if HYLE_OBS_COMPILED_MIN_LEVEL <= 1
 #define HYLE_LOG_DEBUG(...)                                                    \
   HYLE_LOG_AT_(::hyle::obs::LogLevel::Debug, __VA_ARGS__)
+#define HYLE_LOG_DEBUG_IF(condition, ...)                                      \
+  HYLE_LOG_IF_AT_(::hyle::obs::LogLevel::Debug, condition, __VA_ARGS__)
+#define HYLE_LOG_DEBUG_EVERY_N(n, ...)                                         \
+  HYLE_LOG_EVERY_N_AT_(::hyle::obs::LogLevel::Debug, n, __VA_ARGS__)
+#define HYLE_LOG_DEBUG_EVERY_N_EXACT(n, ...)                                   \
+  HYLE_LOG_EVERY_N_EXACT_AT_(::hyle::obs::LogLevel::Debug, n, __VA_ARGS__)
+#define HYLE_LOG_DEBUG_FIRST_N(n, ...)                                         \
+  HYLE_LOG_FIRST_N_AT_(::hyle::obs::LogLevel::Debug, n, __VA_ARGS__)
+#define HYLE_LOG_DEBUG_EVERY_POW_2(...)                                        \
+  HYLE_LOG_EVERY_POW_2_AT_(::hyle::obs::LogLevel::Debug, __VA_ARGS__)
+#define HYLE_LOG_DEBUG_EVERY(interval, ...)                                    \
+  HYLE_LOG_EVERY_AT_(::hyle::obs::LogLevel::Debug, interval, __VA_ARGS__)
 #else
 #define HYLE_LOG_DEBUG(...)                                                    \
   do {                                                                         \
   } while (false)
+#define HYLE_LOG_DEBUG_IF(...) HYLE_LOG_DEBUG()
+#define HYLE_LOG_DEBUG_EVERY_N(...) HYLE_LOG_DEBUG()
+#define HYLE_LOG_DEBUG_EVERY_N_EXACT(...) HYLE_LOG_DEBUG()
+#define HYLE_LOG_DEBUG_FIRST_N(...) HYLE_LOG_DEBUG()
+#define HYLE_LOG_DEBUG_EVERY_POW_2(...) HYLE_LOG_DEBUG()
+#define HYLE_LOG_DEBUG_EVERY(...) HYLE_LOG_DEBUG()
 #endif
 #if HYLE_OBS_COMPILED_MIN_LEVEL <= 2
 #define HYLE_LOG_INFO(...)                                                     \
   HYLE_LOG_AT_(::hyle::obs::LogLevel::Info, __VA_ARGS__)
+#define HYLE_LOG_INFO_IF(condition, ...)                                       \
+  HYLE_LOG_IF_AT_(::hyle::obs::LogLevel::Info, condition, __VA_ARGS__)
+#define HYLE_LOG_INFO_EVERY_N(n, ...)                                          \
+  HYLE_LOG_EVERY_N_AT_(::hyle::obs::LogLevel::Info, n, __VA_ARGS__)
+#define HYLE_LOG_INFO_EVERY_N_EXACT(n, ...)                                    \
+  HYLE_LOG_EVERY_N_EXACT_AT_(::hyle::obs::LogLevel::Info, n, __VA_ARGS__)
+#define HYLE_LOG_INFO_FIRST_N(n, ...)                                          \
+  HYLE_LOG_FIRST_N_AT_(::hyle::obs::LogLevel::Info, n, __VA_ARGS__)
+#define HYLE_LOG_INFO_EVERY_POW_2(...)                                         \
+  HYLE_LOG_EVERY_POW_2_AT_(::hyle::obs::LogLevel::Info, __VA_ARGS__)
+#define HYLE_LOG_INFO_EVERY(interval, ...)                                     \
+  HYLE_LOG_EVERY_AT_(::hyle::obs::LogLevel::Info, interval, __VA_ARGS__)
 #else
 #define HYLE_LOG_INFO(...)                                                     \
   do {                                                                         \
   } while (false)
+#define HYLE_LOG_INFO_IF(...) HYLE_LOG_INFO()
+#define HYLE_LOG_INFO_EVERY_N(...) HYLE_LOG_INFO()
+#define HYLE_LOG_INFO_EVERY_N_EXACT(...) HYLE_LOG_INFO()
+#define HYLE_LOG_INFO_FIRST_N(...) HYLE_LOG_INFO()
+#define HYLE_LOG_INFO_EVERY_POW_2(...) HYLE_LOG_INFO()
+#define HYLE_LOG_INFO_EVERY(...) HYLE_LOG_INFO()
 #endif
 #if HYLE_OBS_COMPILED_MIN_LEVEL <= 3
 #define HYLE_LOG_WARN(...)                                                     \
   HYLE_LOG_AT_(::hyle::obs::LogLevel::Warn, __VA_ARGS__)
+#define HYLE_LOG_WARN_IF(condition, ...)                                       \
+  HYLE_LOG_IF_AT_(::hyle::obs::LogLevel::Warn, condition, __VA_ARGS__)
+#define HYLE_LOG_WARN_EVERY_N(n, ...)                                          \
+  HYLE_LOG_EVERY_N_AT_(::hyle::obs::LogLevel::Warn, n, __VA_ARGS__)
+#define HYLE_LOG_WARN_EVERY_N_EXACT(n, ...)                                    \
+  HYLE_LOG_EVERY_N_EXACT_AT_(::hyle::obs::LogLevel::Warn, n, __VA_ARGS__)
+#define HYLE_LOG_WARN_FIRST_N(n, ...)                                          \
+  HYLE_LOG_FIRST_N_AT_(::hyle::obs::LogLevel::Warn, n, __VA_ARGS__)
+#define HYLE_LOG_WARN_EVERY_POW_2(...)                                         \
+  HYLE_LOG_EVERY_POW_2_AT_(::hyle::obs::LogLevel::Warn, __VA_ARGS__)
+#define HYLE_LOG_WARN_EVERY(interval, ...)                                     \
+  HYLE_LOG_EVERY_AT_(::hyle::obs::LogLevel::Warn, interval, __VA_ARGS__)
 #else
 #define HYLE_LOG_WARN(...)                                                     \
   do {                                                                         \
   } while (false)
+#define HYLE_LOG_WARN_IF(...) HYLE_LOG_WARN()
+#define HYLE_LOG_WARN_EVERY_N(...) HYLE_LOG_WARN()
+#define HYLE_LOG_WARN_EVERY_N_EXACT(...) HYLE_LOG_WARN()
+#define HYLE_LOG_WARN_FIRST_N(...) HYLE_LOG_WARN()
+#define HYLE_LOG_WARN_EVERY_POW_2(...) HYLE_LOG_WARN()
+#define HYLE_LOG_WARN_EVERY(...) HYLE_LOG_WARN()
 #endif
 #if HYLE_OBS_COMPILED_MIN_LEVEL <= 4
 #define HYLE_LOG_ERROR(...)                                                    \
   HYLE_LOG_AT_(::hyle::obs::LogLevel::Error, __VA_ARGS__)
+#define HYLE_LOG_ERROR_IF(condition, ...)                                      \
+  HYLE_LOG_IF_AT_(::hyle::obs::LogLevel::Error, condition, __VA_ARGS__)
+#define HYLE_LOG_ERROR_EVERY_N(n, ...)                                         \
+  HYLE_LOG_EVERY_N_AT_(::hyle::obs::LogLevel::Error, n, __VA_ARGS__)
+#define HYLE_LOG_ERROR_EVERY_N_EXACT(n, ...)                                   \
+  HYLE_LOG_EVERY_N_EXACT_AT_(::hyle::obs::LogLevel::Error, n, __VA_ARGS__)
+#define HYLE_LOG_ERROR_FIRST_N(n, ...)                                         \
+  HYLE_LOG_FIRST_N_AT_(::hyle::obs::LogLevel::Error, n, __VA_ARGS__)
+#define HYLE_LOG_ERROR_EVERY_POW_2(...)                                        \
+  HYLE_LOG_EVERY_POW_2_AT_(::hyle::obs::LogLevel::Error, __VA_ARGS__)
+#define HYLE_LOG_ERROR_EVERY(interval, ...)                                    \
+  HYLE_LOG_EVERY_AT_(::hyle::obs::LogLevel::Error, interval, __VA_ARGS__)
 #else
 #define HYLE_LOG_ERROR(...)                                                    \
   do {                                                                         \
   } while (false)
+#define HYLE_LOG_ERROR_IF(...) HYLE_LOG_ERROR()
+#define HYLE_LOG_ERROR_EVERY_N(...) HYLE_LOG_ERROR()
+#define HYLE_LOG_ERROR_EVERY_N_EXACT(...) HYLE_LOG_ERROR()
+#define HYLE_LOG_ERROR_FIRST_N(...) HYLE_LOG_ERROR()
+#define HYLE_LOG_ERROR_EVERY_POW_2(...) HYLE_LOG_ERROR()
+#define HYLE_LOG_ERROR_EVERY(...) HYLE_LOG_ERROR()
 #endif

@@ -14,6 +14,8 @@ profiling build 才存在的纳秒级时间线。它们都不是 error 的替代
 |---|---|---|
 | 函数失败，要让调用方分支/重试/传播 | `hyle::Status` / `hyle::Result<T>` | 这是机器可读控制流；不要靠解析日志 |
 | 调用方主动记录一条普通诊断 | `HYLE_LOG_*` | level 先门控，未通过时参数不求值；通过后捕获 source location |
+| 重复 warning/progress 需要防刷屏 | `HYLE_LOG_*_EVERY_N/FIRST_N/EVERY` | 每个调用点独立状态；被抑制时不格式化 |
+| 多个 request/slot 各自维护进度周期 | `LogIntervalLimiter` | 状态跟随对象，而不是把所有实例混入一个调用点 static |
 | 已有字符串或 byte slice，不想再格式化 | `log_message(std::string_view)` | 同步借用 exact bytes，不扫描、不复制，可保留内嵌 NUL |
 | 有字段、外部时间戳或自定义 source | `log_record` | 明确的 borrowed structured record |
 | 作用域内接进现有 logger/队列/文件/遥测 | `SinkRegistration` + `LogSink` | RAII 注销；复制、排队、轮转、上传归 sink |
@@ -86,7 +88,66 @@ callback 被调用，不是文件落盘、网络送达或 `stderr` I/O 成功的
 默认 sink 写 stderr。只有终端才加 HYLE 自己的 level 色码；source/message/field 中的换行、
 TAB、ESC 等控制字符会转义，所以一条 record 不会伪造额外物理行或注入 ANSI 序列。
 
-## 3. 接入自己的 sink
+## 3. 条件、采样和推理进度
+
+常用调用点控制保持与基础宏相同的 level 和 source-location 语义：
+
+```cpp
+#include <chrono>
+
+using namespace std::chrono_literals;
+
+HYLE_LOG_WARN_IF(queue_depth > limit, "queue depth={}", queue_depth);
+HYLE_LOG_WARN_EVERY_N(1024, "allocator pressure={}", pressure);
+HYLE_LOG_WARN_EVERY_N_EXACT(1024, "exact sample={}", sample_id);
+HYLE_LOG_ERROR_FIRST_N(8, "device {} is unavailable", device_id);
+HYLE_LOG_DEBUG_EVERY_POW_2("retry count={}", retries);
+HYLE_LOG_INFO_EVERY(3s, "model load is {}% complete", percent);
+```
+
+五种 level 都提供 `_IF`、`_EVERY_N`、`_EVERY_N_EXACT`、`_FIRST_N`、
+`_EVERY_POW_2` 和 `_EVERY`。编译期 floor、运行期 level、条件/状态和 format 参数严格按这个顺序
+短路；level 关闭期间不会推进计数或读取时钟。组合条件无需另一套宏矩阵：
+`if (large_packet) HYLE_LOG_WARN_EVERY_N(10, ...)` 中条件为 false 的调用自然不计数。
+
+`EVERY_N` 和 `EVERY_POW_2` 是线程安全的低争用**近似**序列：并发线程可能拿到相同计数，从而偶尔
+多记或少记，适合诊断采样。必须严格按全局第 N 次时使用 `EVERY_N_EXACT`，它每次支付 relaxed atomic
+RMW。`FIRST_N` 使用有界 CAS，并发调用合计绝不会超过 N 条。N<=0 不记录也不推进；无符号计数极罕见
+wrap 后从新序列开始。
+
+一个宏展开只有一个隐藏 static state。如果一个函数同时服务多个推理 request/slot，把状态放进对象：
+
+```cpp
+#include <chrono>
+#include <cstdint>
+
+#include "hyle/obs/log.h"
+
+struct DecodeSlot {
+  std::uint64_t id;
+  double tokens_per_second;
+  hyle::obs::LogIntervalLimiter progress;
+};
+
+const auto now = std::chrono::steady_clock::now();  // 一轮调度只读一次
+for (DecodeSlot& slot : active_slots) {
+  if (slot.progress.should_log_at(now, std::chrono::seconds(3))) {
+    HYLE_LOG_INFO("slot {}: {:.2f} token/s", slot.id, slot.tokens_per_second);
+  }
+}
+```
+
+需要更低分辨率、更便宜且已经选择 Time 组件的 consumer，也可把
+`hyle::time::coarse_monotonic_ns()` 和同单位 interval 传给整数 `should_log_at`；Obs 本身不因此依赖
+Time。首个 check 通过，之后一个 interval 内最多一个并发调用通过。时间回退会抑制到追上上次值；
+只能传 monotonic clock，不能传 Unix/realtime。interval<=0 表示关闭限流、每次通过。`reset()` 用于
+请求生命周期重新开始；它本身无数据竞争，但与 check 并发可能额外放行一次，所以应在 slot 停止后调用。
+
+显式状态还包括 `LogEveryNState`、`LogEveryNExactState`、`LogFirstNState` 和
+`LogEveryPow2State`；当消息需要带累计次数、状态需要随对象移动，或宏不适合控制流时直接用它们的
+`should_log`、`count` 和 `reset`。
+
+## 4. 接入自己的 sink
 
 ```cpp
 struct Backend {
@@ -101,6 +162,15 @@ Backend backend;  // 必须比 registration 先构造、后析构
 auto registration = hyle::obs::SinkRegistration::create(backend);
 if (!registration) return hyle::make_unexpected(std::move(registration.error()));
 
+// 作为宿主 logger 的唯一 adapter 时，在启动 producer 线程前完成交接；
+// 否则同一 record 还会同时写 HYLE 默认 stderr。
+auto disabled = hyle::obs::set_default_sink_enabled(false);
+if (!disabled.ok()) {
+  auto rollback = registration->reset();
+  if (!rollback.ok()) return hyle::make_unexpected(std::move(rollback));
+  return hyle::make_unexpected(std::move(disabled));
+}
+
 // ... 多线程产生日志；离开作用域时 quiescent unregister ...
 hyle::obs::flush_sinks();
 ```
@@ -112,6 +182,11 @@ ownership，便于离开 callback
 路径都配对。普通 C++ adapter 直接提供 `write(record) noexcept`，可选提供 `flush() noexcept`；
 `LogSink::from(backend)` 会生成零分配 trampoline。只有高级框架已经拥有 function-table 时才手工
 构造 `LogSink{state, write, flush}`。
+
+上例是“宿主 logger 接管”的正常形状。若确实希望 HYLE stderr 与宿主同时收到日志，可以有意保留
+default sink。临时接管在停止 producer 后按相反生命周期恢复：先
+`set_default_sink_enabled(true)`，再 `registration.reset()`，并处理两个 Status；不要靠析构猜测是否还要
+恢复默认输出。注册后关闭 default 可避免无 sink 窗口，前提是启动阶段尚无并发 producer。
 
 callback 由 producer OS thread 同步调用，可能在多个线程并发，必须 thread-safe、`noexcept`，
 也不能长期阻塞 producer。callback 必须在同一 OS thread 上执行到返回；不要在其中 yield/suspend
@@ -137,7 +212,7 @@ backend 递归到栈溢出。
 add/remove 是冷路径并返回共享 `Status`：空 callback、重复、缺失、容量耗尽和 callback
 跨摘可以区分。registry 固定最多 64 个 sink；emit 不分配，也不拿 mutation mutex。
 
-## 4. Trace：只在该看的 build 中付费
+## 5. Trace：只在该看的 build 中付费
 
 ```cpp
 #include "hyle/obs/trace.h"
@@ -177,7 +252,7 @@ message 会复制文本；动态文本按 Tracy 的 16-bit 长度边界安全截
 极热的 C++ 源码路径应使用上述编译期宏。HYLE 内部的 mem/sched/io/compute 也走同一条
 native trace seam。
 
-## 5. 常见误用
+## 6. 常见误用
 
 - 不要在库失败时“打日志然后返回成功”；失败走 error，是否记录由调用方决定。
 - 不要假设 sink callback 串行；需要串行化就在 sink 内做。
@@ -187,6 +262,9 @@ native trace seam。
 - 不要让 `SinkRegistration` 比其 callback state 活得更久，或同时手工 remove 同一 sink。
 - 不要把 obs 当信号处理器日志：mutex、stdio、format 和任意 callback 都不是 async-signal-safe。
 - 不要为每个模块创建一套 logger/category 树；已有应用 logger 时用一个 adapter sink。
+- 不要把 call-site interval static 用作多 request/slot 的独立进度状态；把 limiter 放进对象。
+- 不要把近似 `EVERY_N` 当严格审计计数；需要精确频率时选 `_EVERY_N_EXACT`。
+- 不要给 interval limiter 传 realtime/Unix 时间；回拨会按合同持续抑制。
 - 不要把 runtime trace no-op 宣传成关闭态零指令；只有 `HYLE_TRACE_*` 宏具有这个合同。
 
 设计和并发细节见 [`../architecture/obs-design.md`](../architecture/obs-design.md)，点值与

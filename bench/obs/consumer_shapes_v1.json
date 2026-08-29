@@ -1,0 +1,38 @@
+{
+  "schema": "hyle.obs.consumer-shapes/v1",
+  "owner": "obs-v3",
+  "journeys": [
+    {
+      "id": "ordinary-callsite-every-n",
+      "consumer": "ordinary C++ service or command-line application",
+      "topology": "one process logger adapter; one repeated source call site; 4096 level and frequency checks; every 64th call formats and emits",
+      "ownership": "the macro owns one hidden call-site counter; the application owns the synchronous adapter",
+      "peer": "Abseil ABSL_LOG_EVERY_N(INFO, 64).ToSinkOnly(adapter)",
+      "reason": "conditional and count-limited diagnostic output is common library and service behavior independent of inference"
+    },
+    {
+      "id": "inference-slot-progress",
+      "consumer": "llama.cpp-shaped multi-slot inference server",
+      "topology": "16 independently owned slots; 256 scheduler ticks at 50 ms; each slot admits progress at first observation and every 3 seconds; 80 records reach one process logger adapter",
+      "ownership": "each request or slot owns its limiter; one loop timestamp may be shared across all slot checks; the application owns fan-out after the adapter",
+      "peer": "llama.cpp server-context manual per-slot elapsed-time gate",
+      "llama_cpp_revision": "7584430716ee229751771ed0d6bbcb780d105eeb",
+      "sources": [
+        {
+          "path": "common/log.h",
+          "sha256": "cd065a0799ffc9a8adcb96f5188f77aec139e2520cb76316bf091ca289bb5bcb"
+        },
+        {
+          "path": "tools/server/server-context.cpp",
+          "sha256": "a79cf9e1d4a8d7c1f0ee608aa781628db403e8f59e25e731f997d0952d230e47"
+        }
+      ],
+      "reason": "the server owns concurrent request lifetimes but registers one process-global logger callback; independent hidden call-site statics cannot model those lifetimes"
+    }
+  ],
+  "negative_space": {
+    "multi_sink": "2, 4 and 16 independent HYLE sinks are capacity/contention diagnostics, not the normal product topology",
+    "async_fanout": "queueing, file rotation, network export and application logger fan-out live behind the one synchronous adapter",
+    "timing": "the replay injects deterministic monotonic nanoseconds; clock acquisition is measured separately from the limiter mechanism"
+  }
+}

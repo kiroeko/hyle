@@ -107,7 +107,7 @@ registry 采用 process-lifetime `NoDestructor`：它第一次真正使用时构
 Windows debugger mirror 输出同一份 level/source/message/fields，并用固定 4 KiB 缓冲；过长
 记录显式写入 `...[truncated]`，不会静默截断或为诊断路径分配。
 
-## 3. 两种日志调用面
+## 3. 日志调用面与控制状态
 
 `HYLE_LOG_*` 是 C++ 便利面：调用方可在包含头之前定义
 `HYLE_OBS_COMPILED_MIN_LEVEL=0..5`，把低于编译期 floor 的调用及参数求值完全删除；保留的
@@ -120,6 +120,22 @@ configuration：已经通过一次门控的 record 可以完成本次同步 disp
 或让应用自己的日志系统管理拥有型缓冲。
 `log_record` 则适合已有结构化字段，`log_message(std::string_view)` 适合已有 byte view；
 `const char*` 便利重载会先扫描 NUL，长度已知时直接使用 view。
+
+重复诊断有两种状态所有权，不能用一种 static 勉强覆盖：
+
+1. 普通调用点宏在展开处持有隐藏 static state，并保持编译期 floor -> runtime level -> condition/
+   control -> format 的短路次序。`EVERY_N`/`EVERY_POW_2` 采用 Abseil/Folly 一致的 relaxed
+   load/store 近似计数，避免共享调用点上的 RMW 争用；`EVERY_N_EXACT` 提供明确的 relaxed RMW
+   替代，`FIRST_N` 用有界 CAS 保证并发总量不超过 N。
+2. 推理 request/slot、设备或长任务把 `LogIntervalLimiter` 作为自己的 8-byte 状态。caller-supplied
+   monotonic time 让一次 scheduler tick 的 clock read 在多个 slot 间共享；便利 overload 才自行读取
+   `steady_clock`。一次 relaxed CAS 裁决 interval 边界，因此同一状态并发最多放行一条。
+
+这两个面复用同一组公开 state 类型；宏只是 source location 与隐藏生命周期的便利层。控制状态不进入
+`LogRecord`、sink snapshot 或每条已发出记录，不给未使用限流的消费者增加 layout/registry 成本。
+interval 以“上次放行时间”而非“下个 deadline”计算差值，避免 `now + interval` 溢出；编码值 0 表示
+从未放行。时间回退安全地抑制到追平，interval<=0 明确表示不限制。`reset` 是生命周期控制操作，与
+check 并发虽保持内存安全但可能多放一条，因此 consumer 在 slot 静止时调用。
 
 obs 当前只交付 C++23 source/static/shared。BUILD-03 已删除早期 log/trace/sink C schema、bridge、
 动态导出和 fixture；Native FFI 为 `N/A`，没有 C ABI layout、callback 或 handle 兼容承诺。
@@ -140,14 +156,19 @@ platform 没有此抽象、obs 与 platform 同处底层且这正是 sink 的 I/
 mem/sched/io/compute 反向链接 log runtime。
 typed C++ sink 只是借用调用方 backend，registry 也使用固定进程期存储，因此无需为了分配器引入
 `obs -> mem`。异步拥有型复制与队列由 application adapter 自己选择 allocator。
+区间控制使用标准 `steady_clock` 类型并提供 caller-supplied monotonic-ns seam，不引入
+`obs -> time -> container_intrusive`。选择 Time 的推理引擎可把同域的 `monotonic_now()` 或
+`coarse_monotonic_ns()` 传入显式 limiter；只选择 Obs 的普通程序仍不承担额外 component closure。
 
 语法消费者扫描没有发现 HYLE 生产模块调用 runtime `HYLE_LOG_*` 或注册 `LogSink`；这是
 基础库不擅自输出日志的正确负空间。语义扫描中的 util fatal diagnostic、core fatal macro
 属于不可恢复合同失败，io benchmark stats 只属于显式 benchmark 输出，均不应迁移成普通
 log。trace 的真实消费者仍是 mem/sched/io/compute。
 
-与 Abseil/Folly 对账后保留同步借用 record、同步 handler/flush、递归抑制、进程期 registry
-和作用域注册形状；没有真实消费者支持 category hierarchy、per-sink routing policy、异步
+与 Abseil/Folly 对账后保留同步借用 record、同步 handler/flush、递归抑制、进程期 registry、
+作用域注册与调用点采样形状；llama.cpp 的一个全局 callback + 上层 writer 和每 slot 三秒 progress
+证明正常 product shape 是一个宿主 adapter 加对象持有的 interval state，不是 4/16 个独立原子 sink。
+没有真实消费者支持 category hierarchy、per-sink routing policy、异步
 线程/队列、文件轮转、上传、聚合/查询/告警、fatal 控制流、owning async record 或 profiler
 viewer。这些能力应在 adapter/application 层组合，不给所有基础 record 添加 category、线程
 ID、refcount 或拥有型字符串。需要时间戳、线程 ID 等 enrich 时，同步 adapter sink 可在
@@ -207,4 +228,4 @@ v0.14.1 的 runtime 开关只限制 listener；compile-time 同名宏才同时�
 性能数与仪器见
 [`../performance/benchmarks-obs.md`](../implementation/evidence/performance/benchmarks-obs.md)，
 当前模块任务见
-[`obs-v2-resume`](../implementation/tasks/obs/obs-v2-resume.md)。
+[`obs-v3-closure`](../implementation/tasks/obs/obs-v3-closure.md)。

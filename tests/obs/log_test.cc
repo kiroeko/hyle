@@ -223,6 +223,166 @@ TEST_F(LogTest, MacrosRouteToLevels) {
   EXPECT_EQ(cap.recs[1].level, LogLevel::Error);
 }
 
+TEST_F(LogTest, ConditionalMacroShortCircuitsFormatting) {
+  int conditions = 0;
+  int formatted = 0;
+  HYLE_LOG_INFO_IF(++conditions == 2, "value={}", ++formatted);
+  HYLE_LOG_INFO_IF(++conditions == 2, "value={}", ++formatted);
+  EXPECT_EQ(conditions, 2);
+  EXPECT_EQ(formatted, 1);
+  ASSERT_EQ(cap.recs.size(), 1u);
+  EXPECT_EQ(cap.recs[0].msg, "value=1");
+}
+
+TEST_F(LogTest, RuntimeLevelPrecedesEveryControlArgument) {
+  set_level(LogLevel::Error);
+  int evaluated = 0;
+  HYLE_LOG_INFO_IF(++evaluated != 0, "{}", ++evaluated);
+  HYLE_LOG_INFO_EVERY_N(++evaluated, "{}", ++evaluated);
+  HYLE_LOG_INFO_EVERY_N_EXACT(++evaluated, "{}", ++evaluated);
+  HYLE_LOG_INFO_FIRST_N(++evaluated, "{}", ++evaluated);
+  HYLE_LOG_INFO_EVERY_POW_2("{}", ++evaluated);
+  HYLE_LOG_INFO_EVERY((++evaluated, std::chrono::nanoseconds(1)), "{}",
+                      ++evaluated);
+  EXPECT_EQ(evaluated, 0);
+  EXPECT_TRUE(cap.recs.empty());
+}
+
+TEST_F(LogTest, CallsiteCountMacrosUseTheirDocumentedSequences) {
+  int formatted = 0;
+  for (int i = 0; i < 8; ++i)
+    HYLE_LOG_INFO_EVERY_N(3, "approx={}", ++formatted);
+  EXPECT_EQ(formatted, 3);
+  EXPECT_EQ(cap.recs.size(), 3u);
+
+  cap.recs.clear();
+  formatted = 0;
+  for (int i = 0; i < 8; ++i)
+    HYLE_LOG_INFO_EVERY_N_EXACT(3, "exact={}", ++formatted);
+  EXPECT_EQ(formatted, 3);
+  EXPECT_EQ(cap.recs.size(), 3u);
+
+  cap.recs.clear();
+  formatted = 0;
+  for (int i = 0; i < 8; ++i)
+    HYLE_LOG_INFO_FIRST_N(3, "first={}", ++formatted);
+  EXPECT_EQ(formatted, 3);
+  EXPECT_EQ(cap.recs.size(), 3u);
+
+  cap.recs.clear();
+  formatted = 0;
+  for (int i = 0; i < 8; ++i)
+    HYLE_LOG_INFO_EVERY_POW_2("pow2={}", ++formatted);
+  EXPECT_EQ(formatted, 4);
+  EXPECT_EQ(cap.recs.size(), 4u);
+}
+
+TEST_F(LogTest, CallsiteIntervalMacroLogsFirstAndSuppressesTheBurst) {
+  int formatted = 0;
+  for (int i = 0; i < 8; ++i)
+    HYLE_LOG_INFO_EVERY(std::chrono::hours(1), "interval={}", ++formatted);
+  EXPECT_EQ(formatted, 1);
+  ASSERT_EQ(cap.recs.size(), 1u);
+  EXPECT_EQ(cap.recs[0].msg, "interval=1");
+}
+
+TEST(LogControlState, CountStatesHandleZeroResetMoveAndSequences) {
+  LogEveryNState approximate;
+  EXPECT_FALSE(approximate.should_log(0));
+  EXPECT_FALSE(approximate.should_log(-1));
+  EXPECT_EQ(approximate.count(), 0u);
+  for (std::uint64_t i = 0; i < 8; ++i)
+    EXPECT_EQ(approximate.should_log(3), i % 3 == 0);
+  EXPECT_EQ(approximate.count(), 8u);
+
+  LogEveryNState moved(std::move(approximate));
+  EXPECT_EQ(moved.count(), 8u);
+  EXPECT_EQ(approximate.count(), 0u);
+  moved.reset();
+  EXPECT_TRUE(moved.should_log(3));
+
+  LogEveryNExactState exact;
+  for (std::uint64_t i = 0; i < 8; ++i)
+    EXPECT_EQ(exact.should_log(3), i % 3 == 0);
+
+  LogFirstNState first;
+  EXPECT_TRUE(first.should_log(3));
+  EXPECT_TRUE(first.should_log(3));
+  EXPECT_TRUE(first.should_log(3));
+  EXPECT_FALSE(first.should_log(3));
+  EXPECT_EQ(first.count(), 3u);
+
+  LogEveryPow2State powers;
+  for (std::uint64_t i = 1; i <= 8; ++i) {
+    const bool expected = (i & (i - 1)) == 0;
+    EXPECT_EQ(powers.should_log(), expected);
+  }
+}
+
+TEST(LogControlState, ExactStatesEnforceConcurrentCardinality) {
+  constexpr std::size_t kThreads = 8;
+  constexpr std::size_t kChecks = 2000;
+  constexpr std::uint64_t kPeriod = 17;
+  LogEveryNExactState every;
+  LogFirstNState first;
+  LogIntervalLimiter interval;
+  std::atomic<std::size_t> every_admitted{0};
+  std::atomic<std::size_t> first_admitted{0};
+  std::atomic<std::size_t> interval_admitted{0};
+  std::vector<std::thread> threads;
+  threads.reserve(kThreads);
+  for (std::size_t thread = 0; thread < kThreads; ++thread) {
+    threads.emplace_back([&] {
+      for (std::size_t i = 0; i < kChecks; ++i) {
+        if (every.should_log(kPeriod))
+          every_admitted.fetch_add(1, std::memory_order_relaxed);
+        if (first.should_log(113))
+          first_admitted.fetch_add(1, std::memory_order_relaxed);
+        if (interval.should_log_at(10'000, 1'000))
+          interval_admitted.fetch_add(1, std::memory_order_relaxed);
+      }
+    });
+  }
+  for (std::thread &thread : threads)
+    thread.join();
+
+  constexpr std::size_t kTotal = kThreads * kChecks;
+  EXPECT_EQ(every_admitted.load(std::memory_order_relaxed),
+            (kTotal - 1) / kPeriod + 1);
+  EXPECT_EQ(first_admitted.load(std::memory_order_relaxed), 113u);
+  EXPECT_EQ(interval_admitted.load(std::memory_order_relaxed), 1u);
+}
+
+TEST(LogControlState, IntervalSupportsInjectedTimeBoundariesAndReset) {
+  LogIntervalLimiter limiter;
+  EXPECT_TRUE(limiter.should_log_at(100, 10));
+  EXPECT_FALSE(limiter.should_log_at(109, 10));
+  EXPECT_TRUE(limiter.should_log_at(110, 10));
+  EXPECT_FALSE(limiter.should_log_at(50, 10));
+  EXPECT_TRUE(limiter.should_log_at(110, 0));
+
+  limiter.reset();
+  EXPECT_TRUE(limiter.should_log_at(0, 10));
+  EXPECT_FALSE(limiter.should_log_at(9, 10));
+  EXPECT_TRUE(limiter.should_log_at(10, 10));
+
+  const auto origin = std::chrono::steady_clock::time_point{};
+  LogIntervalLimiter typed;
+  EXPECT_TRUE(typed.should_log_at(origin + std::chrono::nanoseconds(100),
+                                  std::chrono::nanoseconds(10)));
+  EXPECT_FALSE(typed.should_log_at(origin + std::chrono::nanoseconds(109),
+                                   std::chrono::nanoseconds(10)));
+  EXPECT_TRUE(typed.should_log_at(origin + std::chrono::nanoseconds(110),
+                                  std::chrono::nanoseconds(10)));
+}
+
+TEST(LogControlState, IntervalDoesNotDuplicateAtUnsignedMaximum) {
+  LogIntervalLimiter limiter;
+  constexpr std::uint64_t kMax = (std::numeric_limits<std::uint64_t>::max)();
+  EXPECT_TRUE(limiter.should_log_at(kMax, 1));
+  EXPECT_FALSE(limiter.should_log_at(kMax, 1));
+}
+
 TEST_F(LogTest, MultipleSinksAllReceive) {
   Capture second;
   ASSERT_TRUE(add_sink(second.as_sink()).ok());
