@@ -126,16 +126,20 @@ configuration：已经通过一次门控的 record 可以完成本次同步 disp
 1. 普通调用点宏在展开处持有隐藏 static state，并保持编译期 floor -> runtime level -> condition/
    control -> format 的短路次序。`EVERY_N`/`EVERY_POW_2` 采用 Abseil/Folly 一致的 relaxed
    load/store 近似计数，避免共享调用点上的 RMW 争用；`EVERY_N_EXACT` 提供明确的 relaxed RMW
-   替代，`FIRST_N` 用有界 CAS 保证并发总量不超过 N。
+   替代，`FIRST_N` 用 relaxed CAS 重试保证并发总量不超过 N。无竞争路径是常数成本；竞争时单次
+   调用的重试次数不承诺有界。HYLE 不引入产品 mutex；底层原子是否 lock-free 仍服从目标标准库，
+   本轮验证的 x64/aarch64 平台使用 lock-free 64-bit atomic。
 2. 推理 request/slot、设备或长任务把 `LogIntervalLimiter` 作为自己的 8-byte 状态。caller-supplied
    monotonic time 让一次 scheduler tick 的 clock read 在多个 slot 间共享；便利 overload 才自行读取
-   `steady_clock`。一次 relaxed CAS 裁决 interval 边界，因此同一状态并发最多放行一条。
+   `steady_clock`。无竞争边界通常由一次 relaxed CAS 裁决；竞争时允许重试，因此同一状态并发最多
+   放行一条，但不把单次调用误写成 wait-free 或严格最坏 O(1)。
 
 这两个面复用同一组公开 state 类型；宏只是 source location 与隐藏生命周期的便利层。控制状态不进入
 `LogRecord`、sink snapshot 或每条已发出记录，不给未使用限流的消费者增加 layout/registry 成本。
 interval 以“上次放行时间”而非“下个 deadline”计算差值，避免 `now + interval` 溢出；编码值 0 表示
 从未放行。时间回退安全地抑制到追平，interval<=0 明确表示不限制。`reset` 是生命周期控制操作，与
-check 并发虽保持内存安全但可能多放一条，因此 consumer 在 slot 静止时调用。
+check 并发虽保持内存安全但可能多放一条，因此 consumer 在 slot 静止时调用；显式状态的 move 和析构
+也要求相同的外部生命周期同步。
 
 obs 当前只交付 C++23 source/static/shared。BUILD-03 已删除早期 log/trace/sink C schema、bridge、
 动态导出和 fixture；Native FFI 为 `N/A`，没有 C ABI layout、callback 或 handle 兼容承诺。

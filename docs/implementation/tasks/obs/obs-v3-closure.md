@@ -55,8 +55,11 @@
   existing one-adapter dispatch is a runtime primitive. Material peer non-inferiority margin is 5%.
 - normal performance/resource budgets:
   - compile/runtime-disabled calls do not evaluate conditions, limiter parameters or format arguments;
-  - every limiter operation is O(1), allocation-free, mutex-free and syscall-free when caller time is
-    supplied; count suppression performs no stronger synchronization than its documented semantics;
+  - approximate count and exact every-N operations are O(1); first-N and interval admission are O(1) on
+    the normal uncontended path and use relaxed CAS retry under contention, so per-call worst-case retry
+    count is not bounded. HYLE adds no product mutex; the target standard library owns the atomic progress
+    guarantee. All limiter operations are allocation-free and syscall-free when caller time is supplied;
+    count suppression performs no stronger synchronization than its documented semantics;
   - a 4096-check, 16-slot inference progress replay is budgeted at <=100 microseconds total on W1-WIN
     (<=25 ns/check), excluding the deliberately emitted adapter records;
   - clock-owning interval convenience is budgeted at <=100 ns/suppressed check on W1-WIN;
@@ -129,9 +132,9 @@ These are findings to classify before `AUDITED`; they are not yet an implementat
 
 | ID | class / demand | exact source and normal shape | owner / concurrency / complexity | state | decision / verification |
 |---|---|---|---|---|---|
-| `OBS-V3-CALLSITE-01` | `MUST` peer consensus | Abseil `LOG_IF`, every/first/pow2/time family; Folly approximate and exact count variants; ordinary repeated call site | Obs public header; one static state per expansion; O(1), no heap/lock/syscall except the selected clock read | `COMPLETE` | `DONE`: all-level conditional/stateful macros preserve source location and short-circuit ordering |
-| `OBS-V3-COUNT-SEM-01` | `MUST` semantic split | logging frequency normally tolerates lossy counts, while cardinality-sensitive users need exact admission | `LogEveryNState` and `LogEveryPow2State` use relaxed load/store and are explicitly approximate under contention; `LogEveryNExactState` uses relaxed RMW; `LogFirstNState` uses bounded CAS and never admits more than N | `COMPLETE` | `DONE`: zero/negative N, reset/move, sequence and exact eight-thread cardinality tests pass |
-| `OBS-V3-INTERVAL-01` | `MUST` llama consumer | each server slot owns last progress state and checks a 3-second steady interval | `LogIntervalLimiter`; exact relaxed-CAS admission, first check passes, duration <=0 passes, overflow-safe difference, O(1); caller-supplied steady time avoids duplicate clock reads | `COMPLETE` | `DONE`: raw/chrono boundary, reset, rollback, unsigned maximum and exact concurrency tests pass |
+| `OBS-V3-CALLSITE-01` | `MUST` peer consensus | Abseil `LOG_IF`, every/first/pow2/time family; Folly approximate and exact count variants; ordinary repeated call site | Obs public header; one static state per expansion; normal path O(1), no heap/product mutex/syscall except the selected clock read | `COMPLETE` | `DONE`: all-level conditional/stateful macros preserve source location and short-circuit ordering |
+| `OBS-V3-COUNT-SEM-01` | `MUST` semantic split | logging frequency normally tolerates lossy counts, while cardinality-sensitive users need exact admission | `LogEveryNState` and `LogEveryPow2State` use relaxed load/store and are explicitly approximate under contention; `LogEveryNExactState` uses relaxed RMW; `LogFirstNState` uses relaxed CAS retry and never admits more than N; its per-call retry count is contention-dependent and the standard library owns the atomic progress guarantee | `COMPLETE` | `DONE`: zero/negative N, reset/move, sequence and exact eight-thread cardinality tests pass |
+| `OBS-V3-INTERVAL-01` | `MUST` llama consumer | each server slot owns last progress state and checks a 3-second steady interval | `LogIntervalLimiter`; exact relaxed-CAS admission, first check passes, duration <=0 passes, overflow-safe difference; normal uncontended path is O(1), while contended per-call retry is not bounded; caller-supplied steady time avoids duplicate clock reads | `COMPLETE` | `DONE`: raw/chrono boundary, reset, rollback, unsigned maximum and exact concurrency tests pass |
 | `OBS-V3-MACRO-SURFACE-01` | `MUST` C++ usability | all five existing severities need the same discoverable operation order | `HYLE_LOG_<LEVEL>_IF`, `_EVERY_N`, `_EVERY_N_EXACT`, `_FIRST_N`, `_EVERY_POW_2`, `_EVERY`; compiled floor and runtime level precede condition/state/format evaluation | `COMPLETE` | `DONE`: one internal implementation family and thin wrappers; no combined permutation matrix |
 | `OBS-V3-GUIDE-01` | `MUST` reproducible defect | host registers one adapter while default stderr remains a registry member | caller owns takeover sequence and error rollback | `COMPLETE` | `DONE`: guide covers registration, default disable, rollback, restoration and producer lifetime order |
 | `OBS-V3-PERF-01` | `MUST` valid evidence | ordinary one-adapter log plus count suppression; 16 independent inference slots with deterministic injected time and one adapter | P1 W1-WIN; same semantics/resource accounting; 5% when comparable, otherwise frozen absolute/resource budget | `PARTIAL` | `IMPLEMENTED / VERIFY`: `obs-control-p1-v1` binds Abseil and llama.cpp; limiter-only sub-ns row is diagnostic, full one-adapter inference is the product gate |
@@ -165,18 +168,24 @@ The `SCOPED -> AUDITED` pre-transition snapshot is
 
 ## Owner six answers
 
-Candidate answers; final verdicts still require verification:
-
-1. optional Tracy v0.14.1 is the only product-path third party and only when trace is enabled; Abseil,
-   Folly and llama.cpp are peer/consumer evidence, not product dependencies;
-2. admitted ordinary/inference log and trace journeys are implemented; metrics, async logging and model
-   policy remain explicitly routed above Obs;
-3. P1 must be decided by the newly frozen one-adapter/count/inference contract, not the historical
-   multi-sink stress result;
-4. Native FFI is `N/A` and the product tree must remain free of public C artifacts;
-5. new public headers require source, installed-static and installed-shared selected-Obs revalidation;
-6. the C++ surface now exposes both hidden call-site and explicit object-owned state, and the guide documents
-   the default-sink takeover and traps.
+1. **第三方产品路径**：optional Tracy v0.14.1 是唯一产品路径第三方且只在 trace ON 时进入；Abseil
+   `81c993af`、Folly `423fd7f8` 和 llama.cpp `75844307` 只是 peer/consumer evidence。Obs 的直接组件
+   closure 仍精确为 `PUBLIC core error`，没有新增 Time 或 logger backend 依赖。
+2. **推理与普通能力**：普通调用点的 conditional/every-N exact-or-approx/first-N/power-of-two/time
+   suppression，以及 request/slot-owned injected-time interval state 都已实现；原有 borrowed structured
+   record、同步 adapter、quiescent lifecycle 和 native trace seam 保持完整。异步 ownership、metrics、
+   category/config、存储/网络和模型策略明确路由到应用或未来有真实 consumer 的模块，不是遗漏的 `MUST`。
+3. **拟真公平性能**：W1-WIN `closure-perf-v1` 的 ordinary one-adapter Abseil 行和完整 16-slot
+   llama.cpp-shaped progress replay 全部通过冻结的 5% P1 non-inferiority gate；绝对预算也通过。只裁决
+   consumer aggregate，不把亚纳秒 limiter-only 排名或旧 4/16-sink stress 外推为全操作 SOTA。
+4. **旧 C/Native FFI**：`CLEAN / N/A`。public Obs 树没有 C header/schema/bridge、`extern "C"`、managed
+   sample 或 FFI option；Windows shared candidate 仍是与 v2 完全相同的 24 个 decorated C++ exports，
+   没有 undecorated export。
+5. **source/static/shared**：selected-Obs source embedding、relocated installed static 和 relocated installed
+   shared consumers 在 W1-WIN、W1-WSL、M1-MAC 全部通过；trace OFF/Tracy ON 也在三平台各通过 3/3。
+6. **C++ 易用性与文档**：宏提供最短普通路径，显式 state 支持 request/slot 生命周期和 hoisted clock；
+   编译/runtime gate 保证 suppression 参数不求值。guide 已覆盖选型、default-sink hand-off/rollback、
+   borrowed lifetime、并发近似/精确语义、monotonic clock、reset/move 同步和 callback 陷阱。
 
 ## Candidate
 
@@ -202,12 +211,86 @@ The `AUDITED -> CANDIDATE` pre-transition snapshot is
 
 ## Verification manifest
 
-Not yet run. Unrun applicable gates are not `PASS`.
+验证绑定 immutable candidate `21c07d15c4eac477c7b9a768b6475850af87f463` / tree
+`3db40042b12c25a5f9cf562d92de42caa077c057`。当前 round 在 candidate 后只改证据和说明，不改变
+`include/hyle/obs`、`src/obs`、component graph、公开 layout 或 binary implementation。
+
+`CANDIDATE -> VERIFIED` 的 pre-transition registry snapshot 是
+`C:\hyle-scratch\obs-v3\transitions\module-status-before-verified.json`，SHA-256
+`778322724D2E8C9A9D615B93176E7A61289523B66B38827321F31FD5586AF419`。
+
+### Correctness risk matrix
+
+| Risk | verdict | command / evidence | limit / N/A reason |
+|---|---|---|---|
+| normal | `PASS` | selected `hyle_obs_tests`, `hyle_obs_compiled_level_tests`, `hyle_trace_tests`；三平台 trace OFF/ON 各 3/3 | 覆盖普通 record、全部新宏和显式 state |
+| empty / zero | `PASS` | zero/negative N、zero/negative duration、no-sink 与 disabled-level tests | interval<=0 按合同表示不限制 |
+| capacity / boundary / overflow | `PASS` | first/every/pow2 sequence、registry 64-slot capacity、clock rollback、interval edge、`UINT64_MAX` duplicate tests | 64-bit count wrap 明确开始新序列 |
+| OOM / system failure / invalid input | `PASS` | control state 固定 8 bytes 且不分配；invalid sink/status 与 formatter failure retained tests | control hot path 没有 OOM/cancellation surface |
+| move / destroy / lifetime | `PASS` | state move/reset implementation review、count move test、RAII registration move/reset/quiescence tests；guide lifecycle contract | active state move/reset/destroy 需要 consumer 外部同步 |
+| concurrency / reentrancy | `PASS` | 8-thread exact cardinality、parallel registry churn/remove-waits/self-remove/cross-remove/nested-log tests | approximate counter 的 lossy 语义是公开合同 |
+| cancellation / close | `NOT_APPLICABLE` | synchronous fixed-state control and callback seam | no owned worker/request/cancellable operation |
+| property / differential / stress | `PASS` | deterministic sequence tests、consumer semantic/resource validator、registry concurrency stress | no parser/untrusted byte grammar requiring fuzz |
+| ASan / UBSan / TSan | `PASS` | W1-WSL 三个 fresh sanitizer build 各 selected 3/3；TSan 包含 8-thread exact states | sanitizer runs are correctness, not timing evidence |
+| real backend | `PASS` | Tracy v0.14.1 trace ON on W1-WIN/W1-WSL/M1-MAC, each 3/3 | Tracy build warnings on macOS are upstream deprecated `sprintf` only |
+
+### Delivery and aggregate gates
+
+| Gate | verdict | evidence | limit |
+|---|---|---|---|
+| correctness / sanitizer | `PASS` | 上表；MSVC 19.50、GCC 14.2、AppleClang 21 | cross-platform point performance is not pooled |
+| component / source / static / shared | `PASS` | W1-WIN/W1-WSL/M1-MAC selected-Obs source + relocated static + relocated shared consumers | C++23 delivery only |
+| direct consumer | `PASS` | ordinary one-adapter call site and 16-slot/4096-check/80-record inference replay | application owns adapter fan-out and persistence |
+| P1 engineering performance | `PASS` | `obs-control-p1-v1` qualified bundle and retained unchanged emit/Tracy evidence | Formal remains `PENDING` |
+| usability / docs | `PASS` | architecture/guide/performance/task split plus `check-docs.py` | no stable C++ ABI or Native FFI promise |
+| independent red team | `PASS` | below | only frozen v3 scope attacked |
+
+Windows shared symbol inspection used MSVC `dumpbin /exports` on the relocated candidate DLL: 24 names, all
+decorated C++, exactly equal to the pre-v3 selected Obs DLL. Public/implementation scans found no `extern "C"`,
+Native FFI option, C header or new binary symbol. `cmake/HyleComponents.cmake` still declares
+`_hyle_declare_component(obs TRACE PUBLIC_DEPS core error)`.
+
+P1 evidence is documented in
+[`benchmarks-obs.md`](../../evidence/performance/benchmarks-obs.md). The frozen contract SHA-256 is
+`e97c70dc41b63dfc0c3e238db746fccd15cba43f4ecc45c03f4ac6945116e9cc`; manifest/summary/controls/
+observations SHA-256 are respectively
+`77A4DBAC0E8883046759D36585B6CA8631E14517CA63D35FC27639D5072CE547`,
+`0A5B04FFE639243AC0C5BB8646F1A88EF399339FBC02584E118AC40C7723CB9E`,
+`CC92B4DFABB24D6A372E1F7471C67736FD0C385C985B22C517EEC73EEB4D6EAC` and
+`017F3D7AAB47C7F63D6A5C2C0405DEE6B5EED243CC7493920BE0478FDFD67650`。deep verifier 返回
+`QUALIFIED`、`paths_verified=true`、`provenance=EXACT`、`environment=CURRENT` 和
+`current_certification_policy_eligible=true`；A/A、5%/10% known delta、timer floor、placement、
+artifact/build、consumer provenance 及 semantic/resource validator 全部 `PASS`。
+
+- ordinary HYLE 每 check 2.6794--2.7045 ns，Abseil 15.6439--16.137 ns，四个 order/placement strata
+  ratio 5.8361--5.9789，5% NI 全 `PASS`；这是双方自然公开日志形状的 aggregate，不是原子指令排名；
+- 完整 inference replay HYLE 1.3444--1.3741 ns/check，manual consumer 1.3481--1.4542 ns/check，四个
+  strata ratio 1.0020--1.0635 且 5% NI 全 `PASS`；最慢完整 replay 约 5.63 us，含 80 条 adapter record，
+  低于 100 us 冻结预算；
+- limiter-only 0.5034--0.5536 ns/check 和 clock-owning 12.59--12.98 ns/check 都通过绝对预算，但前者
+  因更强 exact-concurrency 语义和亚纳秒 placement 翻转预先归为 `NOT_COMPARABLE` diagnostic，不决定
+  API、layout 或 performance gate。
+
+Formal 状态为独立 `PENDING`；本轮工程结论不承诺跨平台固定纳秒、异步 logger、所有 sink fan-out 或
+全部 Obs 操作全面 SOTA。
 
 ## Independent red team
 
-Not yet run; budget 30 minutes after the candidate and evidence are frozen.
+2026-08-29，在冻结 candidate 和 qualification 后按 30 分钟预算复核 capability/contract、复杂度、
+correctness/lifecycle、dependency/delivery 和性能有效性；没有新增产品实验或 benchmark 姿势。
+
+| Finding | severity | disposition | evidence |
+|---|---|---|---|
+| 文档曾把 first-N/interval CAS 写成“有界 CAS/严格 O(1)” | material documentation | `fixed` | 实现保持 peer-standard CAS loop；architecture/guide/task/performance 现明确无竞争 O(1)，竞争重试次数不承诺有界，atomic progress guarantee 属目标标准库 |
+| active explicit state 的 move/reset 生命周期容易被误读 | usability | `fixed` | guide/architecture 明确先停止或外部同步 check，再 move/reset/destroy |
+| limiter-only 约 0.5 ns 的相对名次随 placement 翻转 | evidence validity | `accepted as diagnostic` | 合同预先标成 `NOT_COMPARABLE`；完整真实 consumer 四 strata 通过，产品未追逐亚纳秒点值 |
+| 旧 4/16 independent sink stress 没有普通/llama consumer provenance | evidence validity | `out-of-scope` | consumer manifest 证明正常形状为一个 host adapter；保留为 capacity/contention fact，真实多 sink consumer 才重开 |
+| 新 header-only API 可能意外产生 C/FFI 或 binary surface | delivery | `disproved` | source scan、component closure、三 delivery journey、24 decorated-export exact set |
+| 第三方或 Time 可能泄漏到基础依赖 | dependency | `disproved` | product closure 仍 `core error`；Tracy optional，peer/consumer 不链接产品 |
+
+红队没有发现未处置 `MUST`、可复现 correctness/security/交付缺陷或 material consumer regression。
 
 ## Closure decision
 
-Pending. This active record contains no terminal receipt.
+全部适用 gate 已为 `PASS`，允许 registry 进入 `VERIFIED`。本 active record 尚未写 terminal receipt；
+terminal 状态必须在独立 `VERIFIED -> CLOSED` 迁移中绑定 end commit、LOC、限制和 reopen triggers。

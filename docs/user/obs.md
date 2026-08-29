@@ -112,7 +112,9 @@ HYLE_LOG_INFO_EVERY(3s, "model load is {}% complete", percent);
 
 `EVERY_N` 和 `EVERY_POW_2` 是线程安全的低争用**近似**序列：并发线程可能拿到相同计数，从而偶尔
 多记或少记，适合诊断采样。必须严格按全局第 N 次时使用 `EVERY_N_EXACT`，它每次支付 relaxed atomic
-RMW。`FIRST_N` 使用有界 CAS，并发调用合计绝不会超过 N 条。N<=0 不记录也不推进；无符号计数极罕见
+RMW。`FIRST_N` 使用 relaxed CAS 重试，并发调用合计绝不会超过 N 条；无竞争时是常数成本，竞争下
+单次调用的重试次数不承诺有界。实现不引入产品 mutex；底层 64-bit atomic 是否 lock-free 服从目标
+标准库。N<=0 不记录也不推进；无符号计数极罕见
 wrap 后从新序列开始。
 
 一个宏展开只有一个隐藏 static state。如果一个函数同时服务多个推理 request/slot，把状态放进对象：
@@ -145,7 +147,8 @@ Time。首个 check 通过，之后一个 interval 内最多一个并发调用�
 
 显式状态还包括 `LogEveryNState`、`LogEveryNExactState`、`LogFirstNState` 和
 `LogEveryPow2State`；当消息需要带累计次数、状态需要随对象移动，或宏不适合控制流时直接用它们的
-`should_log`、`count` 和 `reset`。
+`should_log`、`count` 和 `reset`。这些对象的 move/reset 都是生命周期控制，不是运行中迁移协议：必须
+先停止或外部同步并发 check，再移动、复用或销毁状态。
 
 ## 4. 接入自己的 sink
 

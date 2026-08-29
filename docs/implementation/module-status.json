@@ -243,7 +243,7 @@
     },
     {
       "module": "obs",
-      "product_state": "CANDIDATE",
+      "product_state": "VERIFIED",
       "round_id": "obs-v3",
       "closure_task": "docs/implementation/tasks/obs/obs-v3-closure.md",
       "scope": "Add consumer-driven call-site controls and an explicit request/slot-owned interval limiter for ordinary services and long-running inference progress; correct host-adapter hand-off guidance and replace synthetic multi-sink product provenance with one-adapter ordinary/inference P1 workloads.",
@@ -258,17 +258,27 @@
         "M1-MAC"
       ],
       "engineering_performance": {
-        "verdict": "PLANNED",
+        "verdict": "PASS",
         "mode": "P1_ENGINEERING",
         "material_margin_pct": 5,
         "machine_profile": "W1-WIN",
-        "instrument_profile": "closure-perf-v1"
+        "instrument_profile": "closure-perf-v1",
+        "evidence": "docs/implementation/evidence/performance/benchmarks-obs.md"
       },
       "formal_performance": {
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "obs-v3 CANDIDATE：已实现普通调用点条件/计数/区间控制和推理 request/slot interval state；候选 21c07d15 已通过 Windows trace OFF/ON 预检，等待三平台、三交付形状与资格化 P1 证据。"
+      "gate_verdicts": {
+        "scope": "PASS",
+        "architecture": "PASS",
+        "correctness": "PASS",
+        "delivery": "PASS",
+        "usability_docs": "PASS",
+        "red_team": "PASS",
+        "engineering_performance": "PASS"
+      },
+      "summary": "obs-v3 VERIFIED：普通/推理日志能力、三平台 correctness/sanitizer、source/static/shared 交付、C++ API/文档、依赖/FFI 清洁度和 W1-WIN one-adapter P1 工程性能门全部通过。"
     },
     {
       "module": "math",
