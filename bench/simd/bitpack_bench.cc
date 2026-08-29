@@ -1,3 +1,13 @@
+// SIMD-10 bounded bitpack/random integration instrument.
+//
+// The candidate is the exact shipping target body instantiated in this TU. The
+// bitpack peer directly composes locked Highway Pack16 over the same canonical
+// fixed-128 layout; the random peer independently spells the same eight-stream
+// xoshiro state transition with direct Highway ops. Both sides therefore share
+// the ISA, bytes/sequence, pointer/count contract and resource accounting. The
+// common parity engine supplies placement replicas, reverse order/layout, A/A
+// calibration and CPU pinning. Public/body rows are informational only.
+
 #include <nanobench.h>
 
 #include <algorithm>
@@ -5,380 +15,370 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
-#include <cstring>
-#include <random>
 #include <string>
 #include <vector>
 
 #include "hyle/core/compiler.h"
 #include "hyle/simd/bitpack.h"
-#include "hyle/simd/runtime.h"
-#include "hyle/simd/vec.h"
-#include "hwy/highway.h"
-#include "hwy/contrib/bit_pack/bit_pack-inl.h"
-#include "src/simd/bitpack/bitpack_hyle-inl.h"
-#include "src/simd/bitpack/bitstream.h"
+#include "hyle/simd/random.h"
+#include "op_parity_engine.h"
 
+#define HWY_COMPILE_ONLY_STATIC 1
+#define HYLE_SIMD_VARIANT_SUFFIX parity
+#include "src/simd/bitpack/kernel_impl.h"
+#include "src/simd/random/kernel_impl.h"
+#undef HYLE_SIMD_VARIANT_SUFFIX
+#undef HWY_COMPILE_ONLY_STATIC
+
+namespace nb = ankerl::nanobench;
+namespace hs = hyle::simd;
 namespace hn = hwy::HWY_NAMESPACE;
-#include "bench/simd/bitpack_highway_u16_reference-inl.h"
-#include "src/simd/bitpack/bitpack_hyle_u16-inl.h"
 
 namespace {
-namespace nb = ankerl::nanobench;
 
 using T = std::uint16_t;
-using D = hn::ScalableTag<T>;
-using HyleD = hyle::simd::ScalableTag<T>;
 
-HYLE_NOINLINE void scalar_pack(const T* raw, std::size_t count, T* packed,
-                               unsigned bits) noexcept {
-  hyle::simd::detail::bitstream_pack(raw, count, packed, bits);
-}
+constexpr std::size_t kResidentCount = 4096;
+constexpr std::size_t kStreamingCount = 1u << 20;
+constexpr std::size_t kPeerLogicalLanes = 8;
+constexpr std::size_t kPeerBlockValues = 128;
 
-HYLE_NOINLINE void scalar_unpack(const T* packed, std::size_t count, T* raw,
-                                 unsigned bits) noexcept {
-  hyle::simd::detail::bitstream_unpack(packed, count, raw, bits);
+template <unsigned kBits>
+HWY_INLINE void peer_pack_width(const T* raw, std::size_t count,
+                                T* packed) noexcept {
+  const hn::CappedTag<T, kPeerLogicalLanes> d;
+  const std::size_t blocks = count / kPeerBlockValues;
+  for (std::size_t block = 0; block < blocks; ++block) {
+    hn::Pack16<kBits>().Pack(d, raw + block * kPeerBlockValues,
+                             packed + block * kBits * kPeerLogicalLanes);
+  }
+  const std::size_t block_raw = blocks * kPeerBlockValues;
+  const std::size_t block_packed = blocks * kBits * kPeerLogicalLanes;
+  hs::detail::bitstream_pack(raw + block_raw, count - block_raw,
+                             packed + block_packed, kBits);
 }
 
 template <unsigned kBits>
-void highway_pack(const T* raw, std::size_t count, T* packed) noexcept {
-  const D d;
-  const std::size_t lanes = hn::Lanes(d);
-  constexpr std::size_t kLaneBits = 16;
-  const std::size_t block_size = lanes * kLaneBits;
-  const std::size_t blocks = count / block_size;
-  for (std::size_t b = 0; b < blocks; ++b) {
-    hn::Pack16<kBits>().Pack(d, raw + b * block_size, packed + b * lanes * kBits);
+HWY_INLINE void peer_unpack_width(const T* packed, std::size_t count,
+                                  T* raw) noexcept {
+  const hn::CappedTag<T, kPeerLogicalLanes> d;
+  const std::size_t blocks = count / kPeerBlockValues;
+  for (std::size_t block = 0; block < blocks; ++block) {
+    hn::Pack16<kBits>().Unpack(
+        d, packed + block * kBits * kPeerLogicalLanes,
+        raw + block * kPeerBlockValues);
   }
-  const std::size_t block_raw = blocks * block_size;
-  hyle::simd::detail::bitstream_pack(raw + block_raw, count - block_raw,
-                                     packed + blocks * lanes * kBits, kBits);
-}
-
-template <unsigned kBits>
-void highway_unpack(const T* packed, std::size_t count, T* raw) noexcept {
-  const D d;
-  const std::size_t lanes = hn::Lanes(d);
-  constexpr std::size_t kLaneBits = 16;
-  const std::size_t block_size = lanes * kLaneBits;
-  const std::size_t blocks = count / block_size;
-  for (std::size_t b = 0; b < blocks; ++b) {
-    hn::Pack16<kBits>().Unpack(d, packed + b * lanes * kBits, raw + b * block_size);
-  }
-  const std::size_t block_raw = blocks * block_size;
-  hyle::simd::detail::bitstream_unpack(packed + blocks * lanes * kBits,
-                                       count - block_raw, raw + block_raw, kBits);
-}
-
-template <unsigned kBits>
-void candidate_pack_blocks(const T* raw, std::size_t count, T* packed) noexcept {
-  const HyleD d;
-  const std::size_t lanes = hyle::simd::Lanes(d);
-  const std::size_t block_size = lanes * 16;
-  const std::size_t blocks = count / block_size;
-  for (std::size_t b = 0; b < blocks; ++b) {
-    hyle::simd::detail::bitpack_hyle_pack_u16<kBits>(
-        d, raw + b * block_size, packed + b * lanes * kBits);
-  }
-  const std::size_t block_raw = blocks * block_size;
-  hyle::simd::detail::bitstream_pack(raw + block_raw, count - block_raw,
-                                     packed + blocks * lanes * kBits, kBits);
-}
-
-template <unsigned kBits>
-void candidate_unpack_blocks(const T* packed, std::size_t count, T* raw) noexcept {
-  const HyleD d;
-  const std::size_t lanes = hyle::simd::Lanes(d);
-  const std::size_t block_size = lanes * 16;
-  const std::size_t blocks = count / block_size;
-  for (std::size_t b = 0; b < blocks; ++b) {
-    hyle::simd::detail::bitpack_hyle_unpack_u16<kBits>(
-        d, packed + b * lanes * kBits, raw + b * block_size);
-  }
-  const std::size_t block_raw = blocks * block_size;
-  hyle::simd::detail::bitstream_unpack(packed + blocks * lanes * kBits,
-                                       count - block_raw, raw + block_raw, kBits);
+  const std::size_t block_raw = blocks * kPeerBlockValues;
+  const std::size_t block_packed = blocks * kBits * kPeerLogicalLanes;
+  hs::detail::bitstream_unpack(packed + block_packed, count - block_raw,
+                               raw + block_raw, kBits);
 }
 
 HYLE_NOINLINE void candidate_pack(const T* raw, std::size_t count, T* packed,
                                   unsigned bits) noexcept {
-  if (bits == 11) candidate_pack_blocks<11>(raw, count, packed);
-  else candidate_pack_blocks<13>(raw, count, packed);
+  hs::detail::pack_u16_parity(raw, count, packed, bits);
 }
 
 HYLE_NOINLINE void candidate_unpack(const T* packed, std::size_t count, T* raw,
                                     unsigned bits) noexcept {
-  if (bits == 11) candidate_unpack_blocks<11>(packed, count, raw);
-  else candidate_unpack_blocks<13>(packed, count, raw);
+  hs::detail::unpack_u16_parity(packed, count, raw, bits);
 }
 
-// Exact pre-X1 correct control: the same 11/13 layouts and tail split as the prior product path,
-// but compiled only into this external-Highway benchmark. Unlike the vendor's direct 11/13 rows,
-// this reference round-trips correctly and is therefore the meaningful port-performance baseline.
-template <unsigned kBits>
-void highway_corrected_pack_blocks(const T* raw, std::size_t count, T* packed) noexcept {
-  const D d;
+HYLE_NOINLINE void peer_pack(const T* raw, std::size_t count, T* packed,
+                             unsigned bits) noexcept {
+  if (bits == 11) {
+    peer_pack_width<11>(raw, count, packed);
+  } else {
+    peer_pack_width<13>(raw, count, packed);
+  }
+}
+
+HYLE_NOINLINE void peer_unpack(const T* packed, std::size_t count, T* raw,
+                               unsigned bits) noexcept {
+  if (bits == 11) {
+    peer_unpack_width<11>(packed, count, raw);
+  } else {
+    peer_unpack_width<13>(packed, count, raw);
+  }
+}
+
+HWY_INLINE std::uint64_t peer_step_stream(hs::RandomState& state,
+                                          std::size_t stream) noexcept {
+  auto& words = hs::detail::RandomStateAccess::words(state);
+  return hs::detail::random_xoshiro_step(
+      words[0][stream], words[1][stream], words[2][stream],
+      words[3][stream]);
+}
+
+HWY_INLINE std::uint64_t peer_step_one(hs::RandomState& state) noexcept {
+  auto& cursor = hs::detail::RandomStateAccess::cursor(state);
+  const std::size_t stream = cursor;
+  const std::uint64_t result = peer_step_stream(state, stream);
+  cursor = static_cast<std::uint32_t>(
+      (stream + 1) % hs::RandomState::kStreams);
+  return result;
+}
+
+HWY_INLINE void peer_update_block(hs::RandomState& state,
+                                  std::uint64_t* output) noexcept {
+  const hn::CappedTag<std::uint64_t, hs::RandomState::kStreams> d;
   const std::size_t lanes = hn::Lanes(d);
-  const std::size_t block_size = lanes * 16;
-  const std::size_t blocks = count / block_size;
-  for (std::size_t b = 0; b < blocks; ++b) {
-    hyle::simd::detail::bitpack_highway_reference_pack_u16<kBits>(
-        d, raw + b * block_size, packed + b * lanes * kBits);
+  auto& words = hs::detail::RandomStateAccess::words(state);
+  std::size_t offset = 0;
+  for (; offset + lanes <= hs::RandomState::kStreams; offset += lanes) {
+    auto s0 = hn::LoadU(d, words[0] + offset);
+    auto s1 = hn::LoadU(d, words[1] + offset);
+    auto s2 = hn::LoadU(d, words[2] + offset);
+    auto s3 = hn::LoadU(d, words[3] + offset);
+    hn::StoreU(hn::Add(hn::RotateRight<41>(hn::Add(s0, s3)), s0), d,
+               output + offset);
+    const auto shifted = hn::ShiftLeft<17>(s1);
+    s2 = hn::Xor(s2, s0);
+    s3 = hn::Xor(s3, s1);
+    s1 = hn::Xor(s1, s2);
+    s0 = hn::Xor(s0, s3);
+    s2 = hn::Xor(s2, shifted);
+    s3 = hn::RotateRight<19>(s3);
+    hn::StoreU(s0, d, words[0] + offset);
+    hn::StoreU(s1, d, words[1] + offset);
+    hn::StoreU(s2, d, words[2] + offset);
+    hn::StoreU(s3, d, words[3] + offset);
   }
-  const std::size_t block_raw = blocks * block_size;
-  hyle::simd::detail::bitstream_pack(raw + block_raw, count - block_raw,
-                                     packed + blocks * lanes * kBits, kBits);
+  for (; offset < hs::RandomState::kStreams; ++offset) {
+    output[offset] = peer_step_stream(state, offset);
+  }
 }
 
-template <unsigned kBits>
-void highway_corrected_unpack_blocks(const T* packed, std::size_t count, T* raw) noexcept {
-  const D d;
+HWY_INLINE void peer_fill_u64(hs::RandomState& state, std::uint64_t* dst,
+                              std::size_t count) noexcept {
+  while (count != 0 && hs::detail::RandomStateAccess::cursor(state) != 0) {
+    *dst++ = peer_step_one(state);
+    --count;
+  }
+  while (count >= hs::RandomState::kStreams) {
+    peer_update_block(state, dst);
+    dst += hs::RandomState::kStreams;
+    count -= hs::RandomState::kStreams;
+  }
+  while (count-- != 0) *dst++ = peer_step_one(state);
+}
+
+HYLE_NOINLINE void peer_random_fill_f32(hs::RandomState* state, float* dst,
+                                        std::size_t count) noexcept {
+  alignas(64) std::uint64_t bits[hs::RandomState::kStreams];
+  while (count >= hs::RandomState::kStreams) {
+    peer_fill_u64(*state, bits, hs::RandomState::kStreams);
+    for (std::size_t i = 0; i < hs::RandomState::kStreams; ++i) {
+      dst[i] = static_cast<float>(bits[i] >> 40) * 0x1.0p-24f;
+    }
+    dst += hs::RandomState::kStreams;
+    count -= hs::RandomState::kStreams;
+  }
+  for (std::size_t i = 0; i < count; ++i) {
+    dst[i] = static_cast<float>(peer_step_one(*state) >> 40) * 0x1.0p-24f;
+  }
+}
+
+HYLE_NOINLINE void candidate_random_fill_f32(hs::RandomState* state,
+                                             float* dst,
+                                             std::size_t count) noexcept {
+  hs::detail::random_fill_f32_parity(state, dst, count);
+}
+
+HYLE_NOINLINE void peer_add(const float* x, const float* y, float* dst,
+                            std::size_t n) noexcept {
+  const hn::ScalableTag<float> d;
   const std::size_t lanes = hn::Lanes(d);
-  const std::size_t block_size = lanes * 16;
-  const std::size_t blocks = count / block_size;
-  for (std::size_t b = 0; b < blocks; ++b) {
-    hyle::simd::detail::bitpack_highway_reference_unpack_u16<kBits>(
-        d, packed + b * lanes * kBits, raw + b * block_size);
+  std::size_t i = 0;
+  for (; lanes <= n - i; i += lanes) {
+    hn::StoreU(hn::Add(hn::LoadU(d, x + i), hn::LoadU(d, y + i)), d,
+               dst + i);
   }
-  const std::size_t block_raw = blocks * block_size;
-  hyle::simd::detail::bitstream_unpack(packed + blocks * lanes * kBits,
-                                       count - block_raw, raw + block_raw, kBits);
+  for (; i < n; ++i) dst[i] = x[i] + y[i];
 }
 
-HYLE_NOINLINE void highway_corrected_pack(const T* raw, std::size_t count, T* packed,
-                                          unsigned bits) noexcept {
-  if (bits == 11) highway_corrected_pack_blocks<11>(raw, count, packed);
-  else highway_corrected_pack_blocks<13>(raw, count, packed);
+std::size_t epoch_iterations(std::size_t n) {
+  return n == kResidentCount ? 4096 : 8;
 }
 
-HYLE_NOINLINE void highway_corrected_unpack(const T* packed, std::size_t count, T* raw,
-                                            unsigned bits) noexcept {
-  if (bits == 11) highway_corrected_unpack_blocks<11>(packed, count, raw);
-  else highway_corrected_unpack_blocks<13>(packed, count, raw);
+template <class Candidate, class Peer>
+void run_pair(const std::string& title, std::size_t n, Candidate candidate,
+              Peer peer) {
+  nb::Bench bench;
+  bench.title(title)
+      .unit("value")
+      .relative(true)
+      .batch(n)
+      .minEpochIterations(epoch_iterations(n));
+  HYLE_RUN_PAIR(
+      bench,
+      [&](auto rep) {
+        hyle_bench::stagger(rep);
+        candidate();
+        hyle_bench::mark(rep);
+      },
+      [&](auto rep) {
+        hyle_bench::stagger(rep);
+        peer();
+        hyle_bench::mark(rep);
+      });
 }
 
-HYLE_NOINLINE void current_direct_pack(const T* raw, std::size_t count, T* packed,
-                                       unsigned bits) noexcept {
-  switch (bits) {
-    case 10: highway_pack<10>(raw, count, packed); return;
-    case 11: scalar_pack(raw, count, packed, bits); return;
-    case 12: highway_pack<12>(raw, count, packed); return;
-    case 13: scalar_pack(raw, count, packed, bits); return;
-    case 14: highway_pack<14>(raw, count, packed); return;
-    default: HYLE_UNREACHABLE();
+template <class Public, class Body>
+void run_public_info(const std::string& title, std::size_t n,
+                     Public public_call, Body body_call) {
+  nb::Bench bench;
+  bench.title(title)
+      .unit("value")
+      .relative(true)
+      .batch(n)
+      .minEpochIterations(epoch_iterations(n));
+  HYLE_RUN_INFO_PAIR(
+      bench,
+      [&](auto rep) {
+        hyle_bench::stagger(rep);
+        public_call();
+        hyle_bench::mark(rep);
+      },
+      [&](auto rep) {
+        hyle_bench::stagger(rep);
+        body_call();
+        hyle_bench::mark(rep);
+      });
+}
+
+void run_anchor() {
+  std::vector<float> x(kResidentCount), y(kResidentCount), output(kResidentCount);
+  for (std::size_t i = 0; i < kResidentCount; ++i) {
+    x[i] = static_cast<float>(i & 31u);
+    y[i] = static_cast<float>((i * 3) & 63u);
   }
+  const float* x_data = x.data();
+  const float* y_data = y.data();
+  float* output_data = output.data();
+  run_pair("Add f32 (4096)", kResidentCount,
+           [&] {
+             peer_add(x_data, y_data, output_data, kResidentCount);
+             nb::doNotOptimizeAway(output);
+           },
+           [&] {
+             peer_add(x_data, y_data, output_data, kResidentCount);
+             nb::doNotOptimizeAway(output);
+           });
 }
 
-HYLE_NOINLINE void current_direct_unpack(const T* packed, std::size_t count, T* raw,
-                                         unsigned bits) noexcept {
-  switch (bits) {
-    case 10: highway_unpack<10>(packed, count, raw); return;
-    case 11: scalar_unpack(packed, count, raw, bits); return;
-    case 12: highway_unpack<12>(packed, count, raw); return;
-    case 13: scalar_unpack(packed, count, raw, bits); return;
-    case 14: highway_unpack<14>(packed, count, raw); return;
-    default: HYLE_UNREACHABLE();
-  }
-}
-
-HYLE_NOINLINE void broken_vendor_pack(const T* raw, std::size_t count, T* packed,
-                                      unsigned bits) noexcept {
-  if (bits == 11) highway_pack<11>(raw, count, packed);
-  else highway_pack<13>(raw, count, packed);
-}
-
-HYLE_NOINLINE void broken_vendor_unpack(const T* packed, std::size_t count, T* raw,
-                                        unsigned bits) noexcept {
-  if (bits == 11) highway_unpack<11>(packed, count, raw);
-  else highway_unpack<13>(packed, count, raw);
-}
-
-std::vector<std::size_t> counts() {
-  const std::size_t block = hn::Lanes(D{}) * 16;
-  std::vector<std::size_t> values = {0, 1, 2, 3, 4, 7, 8, 9, 15, 16, 17, 31, 32, 33, 64,
-                                     127, 128, 256, 1024, 4096, 65536, 1048576};
-  if (block != 0) {
-    values.push_back(block - 1);
-    values.push_back(block);
-    values.push_back(block + 1);
-    values.push_back(4 * block);
-  }
-  std::sort(values.begin(), values.end());
-  values.erase(std::unique(values.begin(), values.end()), values.end());
-  return values;
-}
-
-bool public_matches_direct_tier() {
-  return hyle::simd::selected_target(hyle::simd::KernelFamily::kBitpack).isa !=
-         hyle::simd::Isa::kAvx512;
-}
-
-std::vector<T> input(std::size_t n, unsigned bits) {
-  std::mt19937_64 rng(0xB17FACULL + n * 17 + bits);
+void run_bitpack(std::size_t n, unsigned bits) {
+  std::vector<T> raw(n);
   const T mask = static_cast<T>((std::uint32_t{1} << bits) - 1);
-  std::vector<T> raw(std::max<std::size_t>(n, 1));
-  for (T& value : raw) value = static_cast<T>(rng()) & mask;
-  return raw;
-}
-
-void bench_pack(std::size_t n, unsigned bits) {
-  const auto raw = input(n, bits);
-  const std::size_t words = std::max<std::size_t>(1, hyle::simd::packed_size<T>(n, bits));
-  std::vector<T> packed(words);
-
-  nb::Bench bench;
-  const std::string title = "u16 pack bits=" + std::to_string(bits) + " n=" + std::to_string(n);
-  bench.title(title).unit("value").relative(true).batch(std::max<std::size_t>(n, 1));
-  bench.run("scalar direct", [&] {
-    scalar_pack(raw.data(), n, packed.data(), bits);
-    nb::doNotOptimizeAway(packed.data());
-  });
-  if (public_matches_direct_tier()) {
-    bench.run("HYLE public", [&] {
-      hyle::simd::pack(raw.data(), n, packed.data(), bits);
-      nb::doNotOptimizeAway(packed.data());
-    });
+  for (std::size_t i = 0; i < n; ++i) {
+    raw[i] = static_cast<T>((i * 40503u + i / 7u + 19u) & mask);
   }
-  bench.run("current direct", [&] {
-    current_direct_pack(raw.data(), n, packed.data(), bits);
-    nb::doNotOptimizeAway(packed.data());
-  });
-  if (bits == 11 || bits == 13) {
-    bench.run("HYLE candidate direct", [&] {
-      candidate_pack(raw.data(), n, packed.data(), bits);
-      nb::doNotOptimizeAway(packed.data());
-    });
-    bench.run("Highway corrected reference", [&] {
-      highway_corrected_pack(raw.data(), n, packed.data(), bits);
-      nb::doNotOptimizeAway(packed.data());
-    });
-    bench.run("Highway broken upper bound", [&] {
-      broken_vendor_pack(raw.data(), n, packed.data(), bits);
-      nb::doNotOptimizeAway(packed.data());
-    });
-  }
-}
-
-void bench_unpack(std::size_t n, unsigned bits) {
-  const auto raw = input(n, bits);
-  const std::size_t words = std::max<std::size_t>(1, hyle::simd::packed_size<T>(n, bits));
-  std::vector<T> packed_public(words);
-  std::vector<T> packed_direct(words);
-  std::vector<T> packed_scalar(words);
-  std::vector<T> packed_candidate(words);
-  std::vector<T> packed_highway_corrected(words);
-  std::vector<T> packed_broken(words);
-  std::vector<T> out(std::max<std::size_t>(n, 1));
-  hyle::simd::pack(raw.data(), n, packed_public.data(), bits);
-  current_direct_pack(raw.data(), n, packed_direct.data(), bits);
-  scalar_pack(raw.data(), n, packed_scalar.data(), bits);
-  if (bits == 11 || bits == 13) {
-    candidate_pack(raw.data(), n, packed_candidate.data(), bits);
-    highway_corrected_pack(raw.data(), n, packed_highway_corrected.data(), bits);
-    broken_vendor_pack(raw.data(), n, packed_broken.data(), bits);
+  const std::size_t words = hs::packed_size<T>(n, bits);
+  std::vector<T> packed(words), peer_packed(words), output(n), peer_output(n);
+  candidate_pack(raw.data(), n, packed.data(), bits);
+  peer_pack(raw.data(), n, peer_packed.data(), bits);
+  candidate_unpack(packed.data(), n, output.data(), bits);
+  peer_unpack(packed.data(), n, peer_output.data(), bits);
+  if (packed != peer_packed || output != raw || peer_output != raw) {
+    std::fputs("SIMD-10 qualification mismatch\n", stderr);
+    std::abort();
   }
 
-  nb::Bench bench;
-  const std::string title = "u16 unpack bits=" + std::to_string(bits) + " n=" + std::to_string(n);
-  bench.title(title).unit("value").relative(true).batch(std::max<std::size_t>(n, 1));
-  bench.run("scalar direct", [&] {
-    scalar_unpack(packed_scalar.data(), n, out.data(), bits);
-    nb::doNotOptimizeAway(out.data());
-  });
-  if (public_matches_direct_tier()) {
-    bench.run("HYLE public", [&] {
-      hyle::simd::unpack(packed_public.data(), n, out.data(), bits);
-      nb::doNotOptimizeAway(out.data());
-    });
-  }
-  bench.run("current direct", [&] {
-    current_direct_unpack(packed_direct.data(), n, out.data(), bits);
-    nb::doNotOptimizeAway(out.data());
-  });
-  if (bits == 11 || bits == 13) {
-    bench.run("HYLE candidate direct", [&] {
-      candidate_unpack(packed_candidate.data(), n, out.data(), bits);
-      nb::doNotOptimizeAway(out.data());
-    });
-    bench.run("Highway corrected reference", [&] {
-      highway_corrected_unpack(packed_highway_corrected.data(), n, out.data(), bits);
-      nb::doNotOptimizeAway(out.data());
-    });
-    bench.run("Highway broken upper bound", [&] {
-      broken_vendor_unpack(packed_broken.data(), n, out.data(), bits);
-      nb::doNotOptimizeAway(out.data());
-    });
+  const T* raw_data = raw.data();
+  T* packed_data = packed.data();
+  T* output_data = output.data();
+  const std::string suffix = " b" + std::to_string(bits) + " (" +
+                             std::to_string(n) + ")";
+
+  run_pair("bitpack pack u16" + suffix, n,
+           [&] {
+             candidate_pack(raw_data, n, packed_data, bits);
+             nb::doNotOptimizeAway(packed);
+           },
+           [&] {
+             peer_pack(raw_data, n, packed_data, bits);
+             nb::doNotOptimizeAway(packed);
+           });
+  run_pair("bitpack unpack u16" + suffix, n,
+           [&] {
+             candidate_unpack(packed_data, n, output_data, bits);
+             nb::doNotOptimizeAway(output);
+           },
+           [&] {
+             peer_unpack(packed_data, n, output_data, bits);
+             nb::doNotOptimizeAway(output);
+           });
+
+  if (bits == 11) {
+    run_public_info("public/body bitpack pack" + suffix, n,
+                    [&] {
+                      hs::pack(raw_data, n, packed_data, bits);
+                      nb::doNotOptimizeAway(packed);
+                    },
+                    [&] {
+                      candidate_pack(raw_data, n, packed_data, bits);
+                      nb::doNotOptimizeAway(packed);
+                    });
+    run_public_info("public/body bitpack unpack" + suffix, n,
+                    [&] {
+                      hs::unpack(packed_data, n, output_data, bits);
+                      nb::doNotOptimizeAway(output);
+                    },
+                    [&] {
+                      candidate_unpack(packed_data, n, output_data, bits);
+                      nb::doNotOptimizeAway(output);
+                    });
   }
 }
 
-bool selected_number(const char* name, std::size_t value) {
-  const char* text = std::getenv(name);
-  return text == nullptr || static_cast<std::size_t>(std::strtoull(text, nullptr, 10)) == value;
-}
+void run_random(std::size_t n) {
+  constexpr std::uint64_t kSeed = 0x8b8b8b8b12345678ull;
+  hs::RandomState candidate_check{kSeed};
+  hs::RandomState peer_check{kSeed};
+  std::vector<float> candidate_output(n), peer_output(n);
+  candidate_random_fill_f32(&candidate_check, candidate_output.data(), n);
+  peer_random_fill_f32(&peer_check, peer_output.data(), n);
+  if (candidate_output != peer_output) {
+    std::fputs("SIMD-10 random qualification mismatch\n", stderr);
+    std::abort();
+  }
 
-bool selected_op(const char* op) {
-  const char* text = std::getenv("HYLE_BENCH_OP");
-  return text == nullptr || std::strcmp(text, op) == 0;
-}
+  hs::RandomState state{kSeed};
+  std::vector<float> output(n);
+  hs::RandomState* state_ptr = &state;
+  float* output_data = output.data();
+  const std::string suffix = " (" + std::to_string(n) + ")";
 
-// Public-API pack/unpack for ALL widths (u8/u16/u32) vs the scalar bitstream reference. The detailed
-// u16 rows above dissect HYLE-core vs Highway vs the broken-vendor bound; THIS covers the shipped
-// pack()/unpack() for u8 and u32 too (the production code already supports all three -- only the
-// bench was u16-only). Type-generic so u8/u32 need no per-width Highway/candidate scaffolding.
-template <typename T>
-void bench_public(const char* type, std::size_t n, unsigned bits) {
-  std::mt19937_64 rng(99);
-  const T mask = (bits >= 8 * sizeof(T)) ? static_cast<T>(~T{0})
-                                         : static_cast<T>((T{1} << bits) - 1);
-  std::vector<T> raw(n), out(n);
-  for (auto& v : raw) v = static_cast<T>(rng() & mask);
-  const std::size_t words = std::max<std::size_t>(1, hyle::simd::packed_size<T>(n, bits));
-  std::vector<T> packed(words, T{0});
-  hyle::simd::pack(raw.data(), n, packed.data(), bits);  // warm + fill for unpack row
-  nb::Bench bench;
-  bench.title(std::string(type) + " public pack/unpack bits=" + std::to_string(bits) +
-              " n=" + std::to_string(n))
-      .unit("value").relative(true).batch(std::max<std::size_t>(n, 1));
-  bench.run("scalar pack", [&] {
-    hyle::simd::detail::bitstream_pack(raw.data(), n, packed.data(), bits);
-    nb::doNotOptimizeAway(packed.data());
-  });
-  bench.run("HYLE pack (public)", [&] {
-    hyle::simd::pack(raw.data(), n, packed.data(), bits);
-    nb::doNotOptimizeAway(packed.data());
-  });
-  bench.run("scalar unpack", [&] {
-    hyle::simd::detail::bitstream_unpack(packed.data(), n, out.data(), bits);
-    nb::doNotOptimizeAway(out.data());
-  });
-  bench.run("HYLE unpack (public)", [&] {
-    hyle::simd::unpack(packed.data(), n, out.data(), bits);
-    nb::doNotOptimizeAway(out.data());
-  });
+  run_pair("random fill f32" + suffix, n,
+           [&] {
+             candidate_random_fill_f32(state_ptr, output_data, n);
+             nb::doNotOptimizeAway(output);
+           },
+           [&] {
+             peer_random_fill_f32(state_ptr, output_data, n);
+             nb::doNotOptimizeAway(output);
+           });
+  run_public_info("public/body random fill f32" + suffix, n,
+                  [&] {
+                    hs::random_fill(*state_ptr, output_data, n);
+                    nb::doNotOptimizeAway(output);
+                  },
+                  [&] {
+                    candidate_random_fill_f32(state_ptr, output_data, n);
+                    nb::doNotOptimizeAway(output);
+                  });
 }
 
 }  // namespace
 
 int main() {
-  std::printf("HYLE bit-pack tier=%u, direct Highway lanes=%zu\n",
-              static_cast<unsigned>(hyle::simd::selected_target(
-                  hyle::simd::KernelFamily::kBitpack).isa), hn::Lanes(D{}));
-  if (!public_matches_direct_tier())
-    std::printf("HYLE public row omitted: runtime AVX512 vs fixed-AVX2 direct TU\n");
-  for (unsigned bits : {10u, 11u, 12u, 13u, 14u}) {
-    if (!selected_number("HYLE_BENCH_BITS", bits)) continue;
-    for (std::size_t n : counts()) {
-      if (!selected_number("HYLE_BENCH_N", n)) continue;
-      if (selected_op("pack")) bench_pack(n, bits);
-      if (selected_op("unpack")) bench_unpack(n, bits);
-    }
+  hyle_bench::pin_and_boost();
+  std::printf(
+      "SIMD-10 bitpack/random parity: shipping target body vs direct Highway\n");
+  run_anchor();
+  for (const std::size_t n : {kResidentCount, kStreamingCount}) {
+    run_bitpack(n, 11);
+    run_bitpack(n, 13);
+    run_random(n);
   }
-  // Public-API sweep for all widths (u8/u16/u32) at a representative mid-range bit count each.
-  for (std::size_t n : counts()) {
-    if (!selected_number("HYLE_BENCH_N", n)) continue;
-    if (selected_number("HYLE_BENCH_BITS", 5)) bench_public<std::uint8_t>("u8", n, 5);
-    if (selected_number("HYLE_BENCH_BITS", 11)) bench_public<std::uint16_t>("u16", n, 11);
-    if (selected_number("HYLE_BENCH_BITS", 20)) bench_public<std::uint32_t>("u32", n, 20);
-  }
-  return 0;
 }

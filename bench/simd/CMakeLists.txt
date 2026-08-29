@@ -130,21 +130,18 @@ elseif(HYLE_TARGET_PROCESSOR MATCHES "arm64|aarch64|ARM64")
 endif()
 hyle_apply_warnings(hyle_math_scaling_bench)
 
+# SIMD-10 bounded bitpack/random integration instrument. The shipping target
+# bodies and independently spelled direct-Highway peers share one fixed ISA TU;
+# public/body rows expose the single allowed batch dispatch separately.
 add_executable(hyle_bitpack_bench bitpack_bench.cc)
 target_link_libraries(hyle_bitpack_bench PRIVATE hyle_simd nanobench)
 target_include_directories(hyle_bitpack_bench PRIVATE "${PROJECT_SOURCE_DIR}")
 target_include_directories(hyle_bitpack_bench SYSTEM PRIVATE
   "${_hyle_bench_highway_dir}")
-# The direct vendor comparison remains AVX2-fixed. Compile the HYLE u16 correction benchmark at
-# the same ISA and select its matching D-tag backend, avoiding an inline/vector-width asymmetry.
 if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
-  hyle_set_highway_isa(bitpack_bench.cc)
-  set_source_files_properties(bitpack_bench.cc PROPERTIES
-    COMPILE_DEFINITIONS "HYLE_SIMD_TARGET_AVX2")
+  hyle_set_highway_target_isa(bitpack_bench.cc AVX2)
 elseif(HYLE_TARGET_PROCESSOR MATCHES "arm64|aarch64|ARM64")
-  hyle_set_isa(bitpack_bench.cc NEON)
-  set_source_files_properties(bitpack_bench.cc PROPERTIES
-    COMPILE_DEFINITIONS "HYLE_SIMD_TARGET_NEON")
+  hyle_set_highway_target_isa(bitpack_bench.cc NEON)
 endif()
 hyle_apply_warnings(hyle_bitpack_bench)
 
