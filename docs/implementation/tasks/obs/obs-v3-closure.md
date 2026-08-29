@@ -1,12 +1,13 @@
 # obs v3 consumer-driven closure
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECORD: HISTORICAL -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
 > This is the active `RESUME` record for `obs-v3`. The current product state is
 > [`module-status.json`](../../module-status.json). The terminal
 > [`obs-v2`](obs-v2-resume.md) remains historical evidence and is not edited by this round.
 
-## Closure card (`SCOPED`)
+## Closure card (`CLOSED`)
 
 - component / owner / round ID: `obs` / observability owner / `obs-v3`; task kind: `RESUME`.
 - previous round / blocker / resume condition: `obs-v2` stopped at `BLOCKED` because a synthetic
@@ -292,5 +293,42 @@ correctness/lifecycle、dependency/delivery 和性能有效性；没有新增产
 
 ## Closure decision
 
-全部适用 gate 已为 `PASS`，允许 registry 进入 `VERIFIED`。本 active record 尚未写 terminal receipt；
-terminal 状态必须在独立 `VERIFIED -> CLOSED` 迁移中绑定 end commit、LOC、限制和 reopen triggers。
+本轮 `CLOSED`。全部准入 `MUST` 已为 `COMPLETE` 或有明确上层 route；scope、architecture、correctness、
+delivery、usability/docs、independent red-team 和 P1 engineering performance 七个 gate 都是 `PASS`。
+没有 correctness/security、ownership、交付或 material performance blocker；Formal `PENDING` 是独立声明，
+不阻塞本轮工程收口。
+
+可接受限制：
+
+- P1 `PASS` 只覆盖 W1-WIN、冻结的普通 one-adapter Abseil aggregate 与 llama.cpp-shaped inference
+  progress replay；不签署跨平台固定纳秒、所有 Obs 操作、异步 logger 或全面 SOTA；
+- approximate every-N/power-of-two 在并发下允许丢失/重复序号；first-N/interval 的无竞争路径为 O(1)，
+  竞争 CAS 的单次重试次数不保证有界，底层 atomic progress guarantee 属目标标准库；
+- record/view 和 sink state 仍是 synchronous borrowed ownership；异步 queue/copy、category/config、
+  file/network、metrics/OTLP、durability 和模型策略归 host adapter 或未来准入模块；
+- 4/16 independent sink 只保留 capacity/contention 诊断，没有 named normal consumer；Native FFI、稳定
+  C++ ABI 和 C API 均不承诺；
+- retained performance bundle 是本地可深重放工程证据，Formal 签名与长期制品托管仍独立待办。
+
+重开条件：真实 consumer 暴露 correctness/security、borrowed lifetime、并发、API 易用性、交付或本边界
+缺失能力；公开 API/layout、registry/control 算法、直接依赖、Tracy seam 或 source/static/shared 形状发生
+material 变化；成熟同合同 peer 证明更优复杂度档或正常 consumer 上超过冻结 5% margin 的可复现回退；
+真实多独立 sink、异步 ownership、telemetry/Native FFI 等新旅程被正式准入；性能 contract、peer、consumer
+provenance、machine/instrument 或 retained bundle 变化而仍需续签声明。
+
+终态 end/registry anchor 是 VERIFIED commit
+`f44dc174b3a1d69e0b1e1ea29f2fc8b95ae5d9b0`；产品 candidate 仍是
+`21c07d15c4eac477c7b9a768b6475850af87f463` / tree
+`3db40042b12c25a5f9cf562d92de42caa077c057`，终态文档提交不冒充产品实现。`VERIFIED -> CLOSED` 的
+pre-transition registry snapshot 是
+`C:\hyle-scratch\obs-v3\transitions\module-status-before-closed.json`，SHA-256
+`67629F2D98C97CEDFDE6639F1D66335C74F2345FD7FDBF857389F6E6B92A4E1E`。
+
+四项 LOC 从 immutable candidate 执行
+`python scripts/loc-report.py --module obs --commit 21c07d15c4eac477c7b9a768b6475850af87f463 --self-check --json`，
+self-check `PASS`：
+
+1. 全库代码：311,423；
+2. 自实现包含测试：124,788；
+3. 自实现不包含测试：83,467；
+4. Obs 实现：1,235（`include/hyle/obs` + `src/obs`，不含 tests/bench/docs/CMake）。
