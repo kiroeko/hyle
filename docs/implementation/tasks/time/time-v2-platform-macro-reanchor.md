@@ -80,18 +80,19 @@ surface trace 因而仍完整适用；本轮受影响族只有 public-header com
    routing 完整归 sched/io，calendar/timezone/text protocol 归标准/协议 owner。当前证据下没有未处置
    `MUST`；本轮不按 ggml API 求并集，也不承诺未来不增长。
 3. **拟真性能：**P1 task 仍只包含 W1-WIN 的 scheduler timer lifecycle source replay、pinned Seastar
-   peer 与 5% NI。算法/layout/charged phases 未变；当前 verdict 要等 retained bundle 深回放后填写。
-   不允许外推为全部 clock/sleep、全平台或 Formal SOTA。
+   peer 与 5% NI。算法/layout/charged phases 未变；retained bundle 经当前 verifier 深回放为
+   `QUALIFIED + REVIEWED_NON_MATERIAL`，8/8 原有 product strata 和当前策略资格继续成立。该结论不外推为
+   全部 clock/sleep、全平台或 Formal SOTA。
 4. **旧 C ABI / Native FFI：**产品树没有公开 C header/schema、bridge、未装饰 C export、C/managed
    sample、专用 option/target/package metadata或 FFI-only layout；内部 OS C API/asm 仍是 private
    mechanism。shared library 只有 C++ decorated Time symbols。预验证 verdict：`CLEAN`。
 5. **构建与导入：**中央图保持 `time PUBLIC core container_intrusive`，Time-owned headers 与 target
-   owner 一致；source/static/shared 的当前跨平台 consumer verdict 在 verification 后填写，不能以
-   producer build 代替。
+   owner 一致；Windows、WSL/Linux、macOS 的 source embedding、relocated installed static/shared
+   consumer 均实际运行通过，没有用 producer build 代替 consumer journey。
 6. **C++ API 与文档：**构造、typed/raw clock、checked timestamp、deadline/sleep、queue lifecycle 和
    teardown 形状均未变化；宏污染 TU 不再要求用户知道 internal seam 或 `NOMINMAX`。architecture/user
    guide 的选型与陷阱仍对应当前 API；time-v1 的历史“candidate 后无漂移”由本轮记录纠正，不回写
-   历史 task。最终 verdict 在三平台 journey 通过后填写。
+   历史 task。三平台 public-header 与三种交付 journey 均通过，易用性/文档 verdict 为 `PASS`。
 
 ## Candidate
 
@@ -108,3 +109,58 @@ surface trace 因而仍完整适用；本轮受影响族只有 public-header com
   `time PUBLIC core container_intrusive`；
 - harness identity：retained P1 bundle 由已提交的 provenance-renewal verifier 深回放，和 product
   commit/tree 分开记录。
+
+## 验证矩阵（`VERIFIED`，2026-08-29）
+
+| Gate | Verdict | 证据与边界 |
+|---|---|---|
+| scope / identity | `PASS` | `565b710f` 到验证 HEAD 的 `include/hyle/time`、`src/time` 零 drift；旧 time-v1 到当前 candidate 的产品差异仍严格限于十处 `(Duration::max)()` 宏安全 token |
+| correctness / portability | `PASS` | W1-WIN MSVC 19.50、W1-WSL GCC 14.2、M1-MAC AppleClang 21 各通过 public-header self-containment 与完整 Time suite（2/2）；Time-owned TU 在先定义函数式 `min/max` 宏后包含全部公开头并实际调用受影响形状 |
+| delivery | `PASS` | 三个平台分别运行 time selected-root source embedding、relocated installed shared consumer、relocated installed static consumer，均为 1/1；闭包保持 `core,container_intrusive,time`，Windows DLL staging 与 Unix loader-relative 运行均成立 |
+| normal codegen | `PASS` | 同一 GCC 13.3、C++23 `-O3 -DNDEBUG -DHYLE_STATIC` 探针分别包含旧 `0ef2544c` 与当前头，覆盖两种 time-point clamp、common queue duration、coarse 与 CPU typed clock；两份 217 行汇编逐字节相同，SHA-256 均为 `961a19129ed567650d13d5d6b95966112186c27559636da8edd131d0f8510341` |
+| engineering performance | `PASS` | `time-source-consumer-v1` contract SHA-256 `ab4223b7...` 的 retained bundle 深验证为 `QUALIFIED`、`paths_verified=true`、`current_certification_policy_eligible=true`、`provenance_compatibility=REVIEWED_NON_MATERIAL`；只续签原 W1-WIN 5% P1 工程结论，不重采样、不续签 Formal |
+| legacy surface / API / docs | `PASS` | Time 产品无 C schema/bridge/未装饰 C export/FFI option；公开 C++ declaration、layout 与语义零变化，architecture/user guide 仍覆盖能力选型、ownership、failure/concurrency 与陷阱；本 task 单独纠正旧身份事实 |
+| red team | `PASS` | include order、安装头、错误依赖 cache、非交互工具 PATH、scheduler provenance、candidate drift 与 benchmark 扭曲均逐项复核；没有未决产品 blocker |
+
+### 跨平台执行事实
+
+- Windows 使用独立 `C:\hyle-scratch\time-v2-win-msvc` 与
+  `C:\hyle-scratch\time-v2-win-delivery`，Release/Werror；Time 2/2、source/shared/static consumer 各
+  1/1。
+- WSL 使用 native ext4 checkout、GCC 14.2、Release/Werror；Time 2/2，source/shared/static consumer
+  各 1/1，没有复用 Windows build tree。
+- macOS 使用 `/tmp/hyle-time-v2.KNbrXm`、AppleClang 21、arm64、deployment target 14.4；Time 2/2，
+  source/shared/static consumer 各 1/1。非交互 SSH 的 CMake 不在 `PATH`，验证改用同一 CMake 4.3.4
+  的绝对路径；旧 GoogleTest cache 的 revision 不匹配被依赖锁正确拒绝，随后从精确锁定 revision
+  fresh fetch，通过后仍未放宽 lock。
+
+### 性能证据深回放
+
+执行：
+
+```text
+python scripts/hyle-perf.py verify \
+  --contract bench/contracts/time-source-consumer-v1.json \
+  --manifest C:\hyle-scratch\time-v1-qualified-evidence\manifest.json
+```
+
+结果为 `qualification=QUALIFIED`、`paths_verified=true`、
+`provenance_compatibility=REVIEWED_NON_MATERIAL`、
+`environment_policy_compatibility=LEGACY_COMPATIBLE_TRACE_DISABLED` 与
+`current_certification_policy_eligible=true`。唯一 renewal 是
+`src/sched/scheduler.cc` 的 `f3db97bd... -> d7ffc29e...`，由 hash 绑定的独立 review record 证明变化只在
+不计费 Parker wait 调用；manifest 未改写，Formal 明确不继承 renewal。
+
+## Final red-team
+
+| Finding | Severity | Disposition |
+|---|---|---|
+| Windows/第三方函数式 `max` 可破坏旧 Time 公开头 | product portability defect | `FIXED` in current candidate；Time-owned polluted-TU test 在三平台守护，不要求消费者定义 `NOMINMAX` |
+| 正常无宏环境的括号变化可能被误写成性能变化 | performance identity risk | `PASS`；同探针优化汇编逐字节一致，算法、layout、分支和 metadata 零变化 |
+| scheduler provenance 整文件 SHA 漂移 | evidence compatibility risk | `REVIEWED_NON_MATERIAL`；精确 from/to/workload/review hash 续签 engineering replay，Formal 保持 `PENDING` |
+| macOS 旧 GoogleTest cache 指向错误 revision | environment defect | 依赖锁 fail closed；fresh exact dependency 后通过，未把错误 cache 当产品失败，也未降低锁强度 |
+| source build 通过但安装头仍可能失败 | delivery risk | 三平台分别实际构建并运行 relocated shared/static consumer；不是 producer-only 证明 |
+| 借 portability trigger 增加能力/API/benchmark | scope creep | 未发生；Time 产品修改集为空，唯一新 artifact 是模块自有回归 TU |
+
+没有未解决的 correctness、portability、delivery、C++ usability、文档或工程性能 blocker。Formal 仍是独立
+`PENDING` 轴，不能把本轮工程 replay 写成跨平台或全面 SOTA 证书。
