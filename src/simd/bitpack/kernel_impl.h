@@ -55,46 +55,11 @@ HWY_INLINE void pack_width(const T *raw, std::size_t count,
   constexpr std::size_t kBlockValues = W * kLogicalLanes;
   static_assert(kBlockValues == 128);
 
-  const hn::ScalableTag<T> full;
   const hn::CappedTag<T, kLogicalLanes> fixed;
-  constexpr std::size_t kMaxLanes = hn::MaxLanes(full);
-  const std::size_t lanes = hn::Lanes(full);
-  const std::size_t blocks_per_vector = lanes / kLogicalLanes;
   const std::size_t blocks = count / kBlockValues;
-
-  if (blocks_per_vector == 1) {
-    for (std::size_t block = 0; block < blocks; ++block)
-      pack_one<kBits>(full, raw + block * kBlockValues,
-                      packed + block * kBits * kLogicalLanes);
-  } else {
-    alignas(64) T raw_rows[W * kMaxLanes];
-    alignas(64) T packed_rows[W * kMaxLanes];
-    std::size_t block = 0;
-    for (; block + blocks_per_vector <= blocks; block += blocks_per_vector) {
-      for (std::size_t row = 0; row < W; ++row) {
-        for (std::size_t group = 0; group < blocks_per_vector; ++group) {
-          for (std::size_t lane = 0; lane < kLogicalLanes; ++lane) {
-            raw_rows[row * lanes + group * kLogicalLanes + lane] =
-                raw[(block + group) * kBlockValues + row * kLogicalLanes +
-                    lane];
-          }
-        }
-      }
-      pack_one<kBits>(full, raw_rows, packed_rows);
-      for (std::size_t word = 0; word < kBits; ++word) {
-        for (std::size_t group = 0; group < blocks_per_vector; ++group) {
-          for (std::size_t lane = 0; lane < kLogicalLanes; ++lane) {
-            packed[(block + group) * kBits * kLogicalLanes +
-                   word * kLogicalLanes + lane] =
-                packed_rows[word * lanes + group * kLogicalLanes + lane];
-          }
-        }
-      }
-    }
-    for (; block < blocks; ++block)
-      pack_one<kBits>(fixed, raw + block * kBlockValues,
-                      packed + block * kBits * kLogicalLanes);
-  }
+  for (std::size_t block = 0; block < blocks; ++block)
+    pack_one<kBits>(fixed, raw + block * kBlockValues,
+                    packed + block * kBits * kLogicalLanes);
 
   const std::size_t block_raw = blocks * kBlockValues;
   const std::size_t block_packed = blocks * kBits * kLogicalLanes;
@@ -110,45 +75,11 @@ HWY_INLINE void unpack_width(const T *packed, std::size_t count,
   constexpr std::size_t kBlockValues = W * kLogicalLanes;
   static_assert(kBlockValues == 128);
 
-  const hn::ScalableTag<T> full;
   const hn::CappedTag<T, kLogicalLanes> fixed;
-  constexpr std::size_t kMaxLanes = hn::MaxLanes(full);
-  const std::size_t lanes = hn::Lanes(full);
-  const std::size_t blocks_per_vector = lanes / kLogicalLanes;
   const std::size_t blocks = count / kBlockValues;
-
-  if (blocks_per_vector == 1) {
-    for (std::size_t block = 0; block < blocks; ++block)
-      unpack_one<kBits>(full, packed + block * kBits * kLogicalLanes,
-                        raw + block * kBlockValues);
-  } else {
-    alignas(64) T packed_rows[W * kMaxLanes];
-    alignas(64) T raw_rows[W * kMaxLanes];
-    std::size_t block = 0;
-    for (; block + blocks_per_vector <= blocks; block += blocks_per_vector) {
-      for (std::size_t word = 0; word < kBits; ++word) {
-        for (std::size_t group = 0; group < blocks_per_vector; ++group) {
-          for (std::size_t lane = 0; lane < kLogicalLanes; ++lane) {
-            packed_rows[word * lanes + group * kLogicalLanes + lane] =
-                packed[(block + group) * kBits * kLogicalLanes +
-                       word * kLogicalLanes + lane];
-          }
-        }
-      }
-      unpack_one<kBits>(full, packed_rows, raw_rows);
-      for (std::size_t row = 0; row < W; ++row) {
-        for (std::size_t group = 0; group < blocks_per_vector; ++group) {
-          for (std::size_t lane = 0; lane < kLogicalLanes; ++lane) {
-            raw[(block + group) * kBlockValues + row * kLogicalLanes + lane] =
-                raw_rows[row * lanes + group * kLogicalLanes + lane];
-          }
-        }
-      }
-    }
-    for (; block < blocks; ++block)
-      unpack_one<kBits>(fixed, packed + block * kBits * kLogicalLanes,
-                        raw + block * kBlockValues);
-  }
+  for (std::size_t block = 0; block < blocks; ++block)
+    unpack_one<kBits>(fixed, packed + block * kBits * kLogicalLanes,
+                      raw + block * kBlockValues);
 
   const std::size_t block_raw = blocks * kBlockValues;
   const std::size_t block_packed = blocks * kBits * kLogicalLanes;
