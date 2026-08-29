@@ -243,12 +243,14 @@
     },
     {
       "module": "obs",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "round_id": "obs-v3",
       "closure_task": "docs/implementation/tasks/obs/obs-v3-closure.md",
       "scope": "Add consumer-driven call-site controls and an explicit request/slot-owned interval limiter for ordinary services and long-running inference progress; correct host-adapter hand-off guidance and replace synthetic multi-sink product provenance with one-adapter ordinary/inference P1 workloads.",
       "non_goals": "Category/config trees, async logging services, file/network export, metrics/OTLP, owning records, copying every peer macro permutation, registry/quiescence redesign, 4/16-sink product claims, Native FFI/C API, stable C++ ABI, downstream engine implementation and Formal certification.",
       "baseline_commit": "1028b056501c4fc07e45924c5da8b8222cd86414",
+      "candidate_commit": "21c07d15c4eac477c7b9a768b6475850af87f463",
+      "candidate_tree": "3db40042b12c25a5f9cf562d92de42caa077c057",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -266,7 +268,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "obs-v3 AUDITED：完成公开面与真实消费反向审计；冻结调用点条件/计数/区间控制、请求/slot interval state、默认 sink 交接和一个 adapter 的 P1 合同，registry/record/trace/依赖图不改。"
+      "summary": "obs-v3 CANDIDATE：已实现普通调用点条件/计数/区间控制和推理 request/slot interval state；候选 21c07d15 已通过 Windows trace OFF/ON 预检，等待三平台、三交付形状与资格化 P1 证据。"
     },
     {
       "module": "math",
