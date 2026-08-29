@@ -61,3 +61,34 @@
 
 冻结 FIX 仅为：新增 Time 自有 macro-composition test、完成当前三平台/交付/证据回放、更新本轮记录与
 机械状态。产品实现修改集为空；发现算法/API/能力缺口必须另行回到 `AUDITED`，不能顺手扩面。
+
+## `AUDITED` 结果与 owner 六问
+
+candidate→baseline 的 Time 产品 diff 已逐项枚举：只有 `clock.h` 和 `common_timeout_queue.h` 的十处
+`Duration::max()` token 变为 `(Duration::max)()`；`src/time`、全部 public declarations、layout、
+ownership、算法、组件边和正常 workload 均为零变化。全部 Time public header 的 `min/max` 调用扫描
+确认其他数值边界已经采用 parenthesized static-member 写法。v1 的 capability-family map 与 public-
+surface trace 因而仍完整适用；本轮受影响族只有 public-header composition / delivery，覆盖从
+`PARTIAL` 进入候选前的 `COMPLETE`。
+
+1. **第三方产品路径：**Time 产品没有直接或间接第三方实现；直接产品依赖只有 HYLE `core` 与
+   `container_intrusive`。标准库提供 chrono/value mechanism，OS API/compiler builtin 提供各平台 clock/
+   sleep/counter；它们不是第三方模块。GoogleTest 只属于 test，Seastar 只属于 P1 peer，不进入产品
+   artifact 或 public type。升级触发点仍是标准库/OS/compiler 改变实际时钟、宏组合或 codegen 合同。
+2. **推理引擎功能：**量化推理的 monotonic deadline、OS-thread wait、CPU/profile accounting、Unix
+   timestamp 与 caller-owned timer container 均为 `COMPLETE`；fiber/executor/periodic/cross-thread
+   routing 完整归 sched/io，calendar/timezone/text protocol 归标准/协议 owner。当前证据下没有未处置
+   `MUST`；本轮不按 ggml API 求并集，也不承诺未来不增长。
+3. **拟真性能：**P1 task 仍只包含 W1-WIN 的 scheduler timer lifecycle source replay、pinned Seastar
+   peer 与 5% NI。算法/layout/charged phases 未变；当前 verdict 要等 retained bundle 深回放后填写。
+   不允许外推为全部 clock/sleep、全平台或 Formal SOTA。
+4. **旧 C ABI / Native FFI：**产品树没有公开 C header/schema、bridge、未装饰 C export、C/managed
+   sample、专用 option/target/package metadata或 FFI-only layout；内部 OS C API/asm 仍是 private
+   mechanism。shared library 只有 C++ decorated Time symbols。预验证 verdict：`CLEAN`。
+5. **构建与导入：**中央图保持 `time PUBLIC core container_intrusive`，Time-owned headers 与 target
+   owner 一致；source/static/shared 的当前跨平台 consumer verdict 在 verification 后填写，不能以
+   producer build 代替。
+6. **C++ API 与文档：**构造、typed/raw clock、checked timestamp、deadline/sleep、queue lifecycle 和
+   teardown 形状均未变化；宏污染 TU 不再要求用户知道 internal seam 或 `NOMINMAX`。architecture/user
+   guide 的选型与陷阱仍对应当前 API；time-v1 的历史“candidate 后无漂移”由本轮记录纠正，不回写
+   历史 task。最终 verdict 在三平台 journey 通过后填写。

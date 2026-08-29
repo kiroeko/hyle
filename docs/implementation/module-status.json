@@ -368,7 +368,7 @@
     },
     {
       "module": "time",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "reopen_trigger_id": "TIME-REPLAY-WINMAX-01",
       "reopen_evidence": "docs/implementation/tasks/time/time-current-identity-replay-2026-08.md",
       "round_id": "time-v2",
@@ -393,7 +393,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "time-v2 SCOPED：冻结公开头宏可组合性、Time 自有回归、三平台 source/static/shared 与不变 P1 证据回放；产品实现修改预算为零。"
+      "summary": "time-v2 AUDITED：公开头产品 diff 仅为 macro-safe static-member 调用；功能/API/算法/layout 不变，冻结 Time 自有回归与三平台交付/证据复签。"
     },
     {
       "module": "platform",
