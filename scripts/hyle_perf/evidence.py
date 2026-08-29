@@ -658,6 +658,7 @@ def _replay_registered_machine_gate(
         stored_probe.get("child_policy"), "host-probe.child_policy")
     for key, value in expected_child_policy(
             profile, sampling_topology=sampling_topology,
+            sampling_worker_count=sampling_worker_count,
             probe=before).items():
         if applied_policy.get(key) != value:
             raise ValidationError(

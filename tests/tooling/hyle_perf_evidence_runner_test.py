@@ -24,6 +24,7 @@ from hyle_perf.controls import (  # noqa: E402
 )
 from hyle_perf.evidence import (  # noqa: E402
     MANIFEST_SCHEMA,
+    _replay_registered_machine_gate,
     _validate_product_evidence_extension,
     summarize_observations,
     validate_manifest,
@@ -236,6 +237,54 @@ def materialize(directory: pathlib.Path):
 
 
 class RunnerEvidenceReplayTest(unittest.TestCase):
+    def test_registered_host_replay_preserves_n_worker_count(self):
+        profile = {
+            "environment": "windows", "physical_host_id": "W1",
+            "sampling_mutex": {
+                "key": "W1", "paths": {"windows": "C:/lock"}},
+        }
+        machine_gate = {
+            "gate": "PASS", "profile_id": "W1-WIN",
+            "role": "engineering", "formal_claim": None,
+        }
+        identity = {"physical_host_key_sha256": "a" * 64}
+        child_policy = {"sampling_worker_count": 8}
+        stored = {
+            "before": {"environment": "windows"},
+            "after": {"environment": "windows"},
+            "machine_gate": machine_gate,
+            "physical_host_identity": identity,
+            "child_policy": child_policy,
+            "sampling_mutex": {
+                "schema": "hyle-perf-sampling-mutex-v1",
+                "profile_id": "W1-WIN", "physical_host_id": "W1",
+                "environment": "windows", "mutex_key": "W1",
+                "path": "C:/lock",
+            },
+        }
+        host = {
+            "machine_profile": "W1-WIN", "evidence_role": "engineering",
+            "formal_claim": None, "physical_host_identity": identity,
+        }
+        value = {"extensions": {"runner": {
+            "sampling_topology": "n-worker-physical-cores",
+            "sampling_worker_count": 8,
+        }}}
+        with (mock.patch("hyle_perf.evidence.load_registry", return_value={}),
+              mock.patch("hyle_perf.evidence.get_machine_profile",
+                         return_value=profile),
+              mock.patch("hyle_perf.evidence.evaluate_machine_profile",
+                         return_value=machine_gate) as evaluate,
+              mock.patch("hyle_perf.evidence.physical_host_identity_record",
+                         return_value=identity),
+              mock.patch("hyle_perf.evidence.expected_child_policy",
+                         return_value=child_policy) as expected):
+            _replay_registered_machine_gate(stored, host, value)
+        self.assertEqual(evaluate.call_count, 2)
+        for call in evaluate.call_args_list:
+            self.assertEqual(call.kwargs["sampling_worker_count"], 8)
+        self.assertEqual(expected.call_args.kwargs["sampling_worker_count"], 8)
+
     def test_product_provenance_drift_needs_exact_engineering_renewal(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = pathlib.Path(temporary)
