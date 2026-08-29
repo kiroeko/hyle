@@ -368,7 +368,7 @@
     },
     {
       "module": "time",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "reopen_trigger_id": "TIME-REPLAY-WINMAX-01",
       "reopen_evidence": "docs/implementation/tasks/time/time-current-identity-replay-2026-08.md",
       "round_id": "time-v2",
@@ -378,6 +378,8 @@
       "baseline_commit": "565b710fd6dad1a50588992d336dddb958326d99",
       "candidate_commit": "565b710fd6dad1a50588992d336dddb958326d99",
       "candidate_tree": "4534070226c16b9ba37aa7ecb189b9f447eb6892",
+      "end_commit": "4f9c2c5bca0f3cb0b768312b3dce90f956e559e7",
+      "registry_anchor_commit": "4f9c2c5bca0f3cb0b768312b3dce90f956e559e7",
       "performance_tier": "P1",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -405,7 +407,28 @@
         "red_team": "PASS",
         "engineering_performance": "PASS"
       },
-      "summary": "time-v2 VERIFIED：当前 Time 身份、Windows 宏组合、三平台正确性、source/static/shared 交付、C++ API/文档与 retained W1-WIN 5% P1 工程性能证据均已验证。"
+      "closure_evidence": "docs/implementation/tasks/time/time-v2-platform-macro-reanchor.md",
+      "loc": {
+        "snapshot_commit": "565b710fd6dad1a50588992d336dddb958326d99",
+        "repository_code": 308006,
+        "self_with_tests": 124275,
+        "self_without_tests": 83119,
+        "module_implementation": 1467
+      },
+      "known_limitations": [
+        "The renewed P1 engineering claim covers only the frozen W1-WIN scheduler timer lifecycle source replay and exact reviewed provenance; it is not an all-operation, cross-platform or Formal SOTA certificate.",
+        "Timer queues remain caller-owned stable-node single-owner primitives; callback execution, cross-thread routing and virtual or periodic policy belong to sched or io.",
+        "CommonTimeoutQueue has correctness and complexity coverage but no current HYLE product consumer, so no scheduler performance benefit is claimed.",
+        "Coarse and profiling fast paths remain platform-capability dependent, CPU accounting covers only the current thread and process, and calendar, timezone, text protocol and Native FFI remain explicit negative space."
+      ],
+      "reopen_triggers": [
+        "A named consumer reproduces a correctness, security, macro or include-order, API-usability or common-capability defect within Time's ownership boundary.",
+        "A clock or timer algorithm, public API or layout, direct dependency, supported platform primitive or source, static or shared delivery shape changes.",
+        "A mature same-contract peer proves a better complexity class or a reproducible material advantage on a normal Time consumer workload.",
+        "The engineering evidence bundle becomes unavailable, or the frozen contract, peer, machine, instrument, charged phases or provenance changes materially and the claim must be renewed.",
+        "A calendar, timezone, virtual or periodic or cross-thread timer, foreign-runtime or another deferred family is admitted through a separately scoped capability decision."
+      ],
+      "summary": "time-v2 CLOSED：当前 Time 身份与 Windows 宏组合修复已由三平台正确性、source/static/shared 交付、无宏汇编等价、C++ API/文档和 retained W1-WIN 5% P1 工程证据签署；Formal 独立 PENDING。"
     },
     {
       "module": "platform",
