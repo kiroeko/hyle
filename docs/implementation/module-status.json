@@ -558,7 +558,7 @@
     },
     {
       "module": "simd",
-      "product_state": "SCOPED",
+      "product_state": "AUDITED",
       "round_id": "simd-v2",
       "closure_task": "docs/implementation/tasks/simd/simd-v2-closure.md",
       "scope": "Vendor-first refactor of the complete CPU SIMD product through bounded sequential tickets: direct locked Highway adoption and port/backend reduction; ordinary row, dtype, math/activation, search/scan, bitpack/random and ordering capability completion; runtime/exact/native/fat delivery; affected consumers, usability, documentation, correctness and per-family P1 evidence.",
@@ -581,7 +581,7 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "simd-v2 SCOPED：SIMD-00～03 已满足旧 blocker 的恢复条件并冻结 vendor-first 删除/保留边界；当前只授权双向审计与有限 FIX 冻结，产品施工随后严格按 SIMD-04～12 顺序执行。"
+      "summary": "simd-v2 AUDITED：双向 capability/public-surface 审计已映射 34 个公开头、真实 Container/Compute 消费者和 integrated-source 路径；vendor-first、API 清理及 row/dtype/activation/search/scan/bitpack/random/ordering 的有限 FIX 集已冻结，产品施工严格按 SIMD-04～12 顺序执行。"
     },
     {
       "module": "container",
