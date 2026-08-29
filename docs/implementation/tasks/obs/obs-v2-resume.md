@@ -6,7 +6,7 @@
 > [`module-status.json`](../../module-status.json)；已终止的
 > [`obs-v1`](obs-v1-closure.md) 只提供冻结候选、已通过门和 blocker 事实，不在本轮回写。
 
-## Closure card（`AUDITED`）
+## Closure card（`CANDIDATE`）
 
 - component / owner / round ID：`obs` / observability owner / `obs-v2`；task kind：`RESUME`。
 - 前一 round / blocker：`obs-v1` / 公共性能仪器不能为冻结的 8-producer × 1/4/16-sink workload
@@ -119,3 +119,24 @@ callback 语义、中央仪器、依赖图和交付 surface 均不在产品修�
 `SCOPED -> AUDITED` 前态 registry 保存于
 `C:\hyle-scratch\obs-v2\transitions\module-status-before-audited.json`，SHA-256
 `6FE8422D23B5E75CE310C0AE2961F0D77D57E862FEB552018A30C61D9E5A1030`。
+
+## Candidate freeze
+
+- candidate commit / tree：`ff925c0053e738fb48d98993e42750b593f3db22` /
+  `34c5903c9a3d19bfe8542ac1f050314147c73254`；
+- product/API delta：`LogSink` public contract 明确 callback/flush 必须同步执行到同一 OS thread 返回，
+  stackful fiber 不得在 callback 内 yield/suspend/migrate；`src/obs`、公开类型 layout、导出函数、registry
+  算法、复杂度和常态 metadata 均未改变；
+- validation delta：trace-on Obs CTest process 使用 `TRACY_ONLY_LOCALHOST=1`，生成的
+  `CTestTestfile.cmake` 已证明环境只附着在两个可执行测试，不附着在产品 target；architecture/guide
+  同步说明 listener、broadcast 与受信网络边界；
+- pre-freeze Windows focused evidence：fresh MSVC 19.50、selected `obs`、static，trace OFF 与 Tracy
+  v0.14.1 trace ON 均为 3/3 `PASS`；ON 生成合同明确含两条 loopback environment property，运行期间
+  未请求 Windows firewall exception；
+- 性能产品 identity：相对 v1 candidate，唯一 product-path 变化为 public comment；`src/obs` 和机器码
+  所有者不变。已资格化 n=31 bundle 因而仍绑定相同产品实现，不允许也不需要重跑。
+
+`AUDITED -> CANDIDATE` 前态 registry 保存于
+`C:\hyle-scratch\obs-v2\transitions\module-status-before-candidate.json`，SHA-256
+`6D35299527F5FCE539E16DA7403CDBB2317A2678058DF36A0EDB06DC12E7FCF5`。candidate 后若改变上述公开
+contract、CTest policy、产品实现或冻结性能合同，必须退回 `AUDITED`。
