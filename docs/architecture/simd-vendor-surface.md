@@ -6,15 +6,15 @@
 
 ## 两种依赖必须分开说
 
-HYLE 的 ordinary SIMD 头不泄漏 Highway/xsimd 类型。截至 `simd-v1`，正常产品构建也不从外部 checkout
-link 这两个库；但这不等于产品实现“零第三方”，因为部分 checked-in kernel 是带来源、修改和许可证的
-integrated-source port。`simd-v2` 的目标是把 Highway 变成中央锁定的直接产品依赖并删除等价 port；在该
-候选形成前，下面的表仍描述当前产品事实：
+HYLE 的 ordinary SIMD 头不泄漏 Highway/xsimd 类型。`simd-v2` 将 Highway 作为中央锁定、header-only
+的直接产品机制：上游 project 不执行，HYLE 固定 target TU 直接编译所需实现，所以静态/动态交付不增加
+第二个运行时 ABI。checked-in port 与 benchmark peer 仍必须和 direct product dependency 分开记账：
 
 | origin | HYLE product paths | ownership |
 |---|---|---|
-| Highway | `src/simd/math/math_hyle-inl.h`、Highway-named transcendental TUs、`src/simd/bitpack/**` 的 port、`src/simd/sort/vqsort_hyle/**` 与 target TUs | HYLE owns public semantics/selection/delivery；Highway is mechanism origin；HYLE owns adaptation/local delta |
-| xsimd | `src/simd/math/math_xsimd_hyle-inl.h`、shared body 与 xsimd-named target TUs | HYLE owns public accuracy/API/delivery；xsimd is mechanism origin；HYLE owns D-tag adaptation/local delta |
+| Highway direct | `src/simd/math/highway_math_kernel-inl.h`、四个 fixed/scalable target TUs；后续 register/dispatch ticket 可继续采用 | HYLE owns public semantics/selection/delivery；锁定 Highway owns math/register implementation；HYLE 只保留 façade 与具名 gap |
+| Highway integrated source | `src/simd/bitpack/**` 的 port、`src/simd/sort/vqsort_hyle/**` 与 target TUs | HYLE owns adaptation/local delta；SIMD-10/11 分别裁决 direct/minimal-port/drop |
+| xsimd | 当前只作独立数学 benchmark/accuracy peer，不进入产品或安装包 | 若未来出现 Highway 无法满足的具名 capability/accuracy gap，必须重新准入；历史 math port 已删除 |
 | simdutf | container UTF-8 implementation，不属于 `hyle::simd` target | container owns semantics/delivery；vendored simdutf owns implementation mechanism |
 
 中央 [`HyleDependencyLock.json`](../../cmake/HyleDependencyLock.json) 是 integrated origin、archive、内容 hash

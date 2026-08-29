@@ -1,17 +1,8 @@
-// math_bench -- vectorized transcendentals (exp/log/tanh f32). performance.md claims SIMD
-// math is "4-16x vs scalar". TWO questions this answers:
-//   (1) vectorization win: HYLE's *_f32_batch (best-of-breed: borrows xsimd's exp/tanh +
-//       Highway's log core, vendored unconditionally) vs a plain std::exp/log/tanh loop.
-//   (2) SAME-ISA SOTA (gap-fill #36): is our borrow-core wiring competitive with the OTHER
-//       vectorized-math libs at the SAME -mavx2? Gated rivals, compiled at AVX2:
-//         * xsimd (-DHYLE_BENCH_XSIMD): xsimd::exp/log/tanh (its OWN polynomial cores)
-//         * Highway (-DHYLE_BENCH_HIGHWAY): hn::Exp/Log/Tanh (contrib/math)
-//       HYLE borrows xsimd/Highway's verified cores, so a tie with the BORROWED lib = "our
-//       wiring is SOTA"; a loss vs the borrowed lib = our dispatch/build has overhead (this
-//       bench caught exactly that: the product Highway log core shipped 128-bit on Linux
-//       until the baseline-ISA fix -- see performance.md math section).
-// runtime().math.isa prints the live tier; "kScalar" => no vectorized math wired (HYLE row
-// ties the scalar baseline -- honest: no vectorization on a non-AVX2 host).
+// math_bench -- bounded throughput/accuracy instrument for whole-buffer mathematics.
+// HYLE rows exercise the public runtime contract. Direct xsimd/Highway rows are same-ISA
+// valid-domain implementation ceilings: they do not include HYLE's runtime selection or
+// ordinary full-domain recovery, so they must not be described as identical API contracts.
+// Explicit HYLE *_in_range rows expose the comparable caller-qualified fast contract.
 //
 // P2-2 latency chain mode (below the throughput tables): throughput benches hide polynomial
 // dependency depth behind ILP across independent lanes. The latency section forces output ->
@@ -20,10 +11,14 @@
 #include <nanobench.h>
 
 #include <array>
+#include <bit>
 #include <cmath>
 #include <cstddef>
+#include <cstdio>
 #include <cstdint>
 #include <random>
+#include <limits>
+#include <string_view>
 #include <vector>
 
 #include "hyle/platform.h"
@@ -54,13 +49,12 @@ std::vector<float> gen(std::size_t n, float lo, float hi, std::uint64_t seed) {
 }
 
 const char* variant_name(hyle::simd::Isa i) {
-  return i == hyle::simd::Isa::kAvx2 ? "AVX2 (vectorized: Highway/SLEEF per build)"
-                                     : "scalar libm (no vectorized math wired)";
+  return i == hyle::simd::Isa::kAvx2 ? "AVX2 (direct locked Highway backend)"
+                                     : "active runtime tier (see runtime diagnostics)";
 }
 
-// simd-09: candidate functions for the best-of-breed expansion. exp/log/tanh already wired in
-// HYLE (simd-06); the rest are UNWIRED candidates -- this bench decides who (xsimd vs Highway)
-// wins each at the same ISA, so math_dispatch can borrow the fastest core per op.
+// The full operation list is retained for explicit investigations. Normal closure uses the
+// bounded sentinel subset rather than selecting a backend from every benchmark row.
 enum class Op {
   kExp, kLog, kTanh,
   kSin, kCos, kExp2, kLog2, kErf, kAtan, kCbrt, kExpm1, kLog1p, kAsinh, kAcosh
@@ -78,8 +72,7 @@ float scalar_of(Op op, float x) {
   }
   return x;
 }
-// f64 doubles of the same ops -- the f64 best-of winners diverge from f32 (memory: exp/tanh/exp2
-// flip xsimd->Highway), so the f64 dispatch table must be re-benched, not extrapolated from f32.
+// f64 counterparts use the same accuracy and valid-domain comparison shape.
 double scalar_of64(Op op, double x) {
   switch (op) {
     case Op::kExp: return std::exp(x);   case Op::kLog: return std::log(x);
@@ -189,6 +182,91 @@ void highway_run64(Op op, const double* src, double* dst, std::size_t n) {
 }
 #endif
 
+struct AccuracyStats {
+  std::uint32_t max_ulp = 0;
+  std::size_t special_mismatches = 0;
+};
+
+std::uint32_t ordered_f32_bits(float value) noexcept {
+  const std::uint32_t bits = std::bit_cast<std::uint32_t>(value);
+  return (bits & 0x80000000U) != 0 ? ~bits + 1U : bits | 0x80000000U;
+}
+
+AccuracyStats compare_f32_accuracy(Op op, const std::vector<float>& input,
+                                   const std::vector<float>& output) {
+  AccuracyStats result;
+  for (std::size_t i = 0; i < input.size(); ++i) {
+    const float want = scalar_of(op, input[i]);
+    const float got = output[i];
+    if (std::isnan(want)) {
+      result.special_mismatches += !std::isnan(got);
+      continue;
+    }
+    if (std::isinf(want) || want == 0.0f) {
+      result.special_mismatches +=
+          got != want || std::signbit(got) != std::signbit(want);
+      continue;
+    }
+    if (!std::isfinite(got)) {
+      ++result.special_mismatches;
+      continue;
+    }
+    const auto got_bits = ordered_f32_bits(got);
+    const auto want_bits = ordered_f32_bits(want);
+    result.max_ulp =
+        std::max(result.max_ulp, got_bits >= want_bits ? got_bits - want_bits
+                                                       : want_bits - got_bits);
+  }
+  return result;
+}
+
+bool qualify_f32_sentinel_accuracy() {
+  struct AccuracyCase {
+    const char* name;
+    Op op;
+    std::vector<float> input;
+    void (*hyle_batch)(const float*, float*, std::size_t) noexcept;
+  };
+  AccuracyCase cases[] = {
+      {"exp", Op::kExp, gen(65536, -80.0f, 80.0f, 0xA11),
+       &hyle::simd::exp_f32_batch},
+      {"tanh", Op::kTanh, gen(65536, -10.0f, 10.0f, 0xA12),
+       &hyle::simd::tanh_f32_batch},
+      {"erf", Op::kErf, gen(65536, -6.0f, 6.0f, 0xA13),
+       &hyle::simd::erf_f32_batch},
+  };
+  const float inf = std::numeric_limits<float>::infinity();
+  bool hyle_ok = true;
+  std::vector<float> output(65536);
+  for (auto& c : cases) {
+    c.input[0] = -inf;
+    c.input[1] = -0.0f;
+    c.input[2] = 0.0f;
+    c.input[3] = inf;
+    c.input[4] = std::numeric_limits<float>::quiet_NaN();
+
+    c.hyle_batch(c.input.data(), output.data(), output.size());
+    const auto hyle = compare_f32_accuracy(c.op, c.input, output);
+    std::printf("accuracy %-7s HYLE    max_ulp=%u special_mismatch=%zu\n",
+                c.name, hyle.max_ulp, hyle.special_mismatches);
+    hyle_ok &= hyle.special_mismatches == 0;
+#if defined(HYLE_BENCH_XSIMD)
+    xsimd_run(c.op, c.input.data(), output.data(), output.size());
+    const auto xsimd = compare_f32_accuracy(c.op, c.input, output);
+    std::printf("accuracy %-7s xsimd   max_ulp=%u special_mismatch=%zu\n",
+                c.name, xsimd.max_ulp, xsimd.special_mismatches);
+#endif
+#if defined(HYLE_BENCH_HIGHWAY)
+    highway_run(c.op, c.input.data(), output.data(), output.size());
+    const auto highway = compare_f32_accuracy(c.op, c.input, output);
+    std::printf("accuracy %-7s Highway max_ulp=%u special_mismatch=%zu\n",
+                c.name, highway.max_ulp, highway.special_mismatches);
+#endif
+  }
+  std::puts("");
+  return hyle_ok;
+}
+
 // ---- P2-2 pure polynomial latency: Horner O(d) vs Estrin O(log d) ----
 // Small fixed coefficients keep the chain finite; each result becomes the next argument so
 // dependency depth cannot be hidden by independent lanes/ILP.
@@ -287,8 +365,15 @@ T chain_unary_vector(Fn fn, T x0, std::size_t iters) noexcept {
 }
 }  // namespace
 
-int main() {
+int main(int argc, char** argv) {
+  const bool sentinel_only =
+      argc == 2 && std::string_view(argv[1]) == "--sentinel";
+  if (argc > 1 && !sentinel_only) {
+    std::fprintf(stderr, "usage: %s [--sentinel]\n", argv[0]);
+    return 2;
+  }
   std::printf("HYLE math tier live: %s\n\n", variant_name(hyle::simd::runtime().math.isa));
+  if (sentinel_only && !qualify_f32_sentinel_accuracy()) return 3;
 
   std::vector<float> dst(kN);
 
@@ -297,17 +382,17 @@ int main() {
     Op op;
     std::vector<float> src;
     void (*hyle_batch)(const float*, float*, std::size_t) noexcept;  // nullptr = unwired candidate
+    void (*hyle_in_range)(const float*, float*, std::size_t) noexcept = nullptr;
   };
   Case cases[] = {
       // Already WIRED in HYLE (simd-06): hyle_batch present -> HYLE row runs.
-      {"exp f32 (4096)", Op::kExp, gen(kN, -10.0f, 10.0f, 1), &hyle::simd::exp_f32_batch},
-      {"log f32 (4096)", Op::kLog, gen(kN, 0.01f, 100.0f, 2), &hyle::simd::log_f32_batch},
+      {"exp f32 (4096)", Op::kExp, gen(kN, -10.0f, 10.0f, 1), &hyle::simd::exp_f32_batch,
+       &hyle::simd::exp_in_range_f32_batch},
+      {"log f32 (4096)", Op::kLog, gen(kN, 0.01f, 100.0f, 2), &hyle::simd::log_f32_batch,
+       &hyle::simd::log_in_range_f32_batch},
       {"tanh f32 (4096)", Op::kTanh, gen(kN, -5.0f, 5.0f, 3), &hyle::simd::tanh_f32_batch},
-      // simd-09 CANDIDATES (unwired: hyle_batch=nullptr -> only scalar/xsimd/Highway rows). This
-      // bench decides the per-op winner so math_dispatch borrows the fastest core. Input ranges
-      // chosen safe/representative per function.
-      // simd-09 candidates are now WIRED (dispatch chose a winner) -> HYLE row runs, regressing the
-      // choice against the same-ISA rivals (was nullptr "unwired candidate" before simd-09 landed).
+      // Input ranges stay inside both peers' published domains. A peer row is evidence about its
+      // core, not automatic authorization to change HYLE's product backend.
       {"sin f32 (4096)", Op::kSin, gen(kN, -3.14f, 3.14f, 4), &hyle::simd::sin_f32_batch},
       {"cos f32 (4096)", Op::kCos, gen(kN, -3.14f, 3.14f, 5), &hyle::simd::cos_f32_batch},
       {"exp2 f32 (4096)", Op::kExp2, gen(kN, -10.0f, 10.0f, 6), &hyle::simd::exp2_f32_batch},
@@ -322,6 +407,10 @@ int main() {
   };
 
   for (auto& c : cases) {
+    if (sentinel_only && c.op != Op::kExp && c.op != Op::kTanh &&
+        c.op != Op::kErf) {
+      continue;
+    }
     nb::Bench b;
     b.title(c.title).relative(true).batch(kN).minEpochIterations(500);
     // Baseline: scalar libm element loop (what the default HYLE build also does).
@@ -336,24 +425,27 @@ int main() {
         nb::doNotOptimizeAway(dst.data());
       });
     }
+    if (c.hyle_in_range) {
+      b.run("HYLE *_f32_in_range (vectorized)", [&] {
+        c.hyle_in_range(c.src.data(), dst.data(), kN);
+        nb::doNotOptimizeAway(dst.data());
+      });
+    }
 #if defined(HYLE_BENCH_XSIMD)
-    b.run("xsimd (same ISA SOTA)", [&] {
+    b.run("xsimd raw (same ISA, valid-domain)", [&] {
       xsimd_run(c.op, c.src.data(), dst.data(), kN);
       nb::doNotOptimizeAway(dst.data());
     });
 #endif
 #if defined(HYLE_BENCH_HIGHWAY)
-    b.run("Highway (same ISA SOTA)", [&] {
+    b.run("Highway raw (same ISA, valid-domain)", [&] {
       highway_run(c.op, c.src.data(), dst.data(), kN);
       nb::doNotOptimizeAway(dst.data());
     });
 #endif
   }
 
-  // ---- f64 best-of regression: all 14 unary transcendentals are WIRED in HYLE (f64 dispatch chose
-  // a winner per op; memory notes exp/tanh/exp2 winners FLIP vs f32). This section re-benches so the
-  // f64 dispatch choice is proven, not extrapolated. HYLE row = the live f64 batch; xsimd/Highway =
-  // same-ISA rivals. If HYLE loses to the OTHER lib here, the f64 dispatch picked the wrong core. ----
+  // f64 public rows plus raw valid-domain peer ceilings.
   std::vector<double> dst64(kN);
   struct Case64 {
     const char* title;
@@ -381,6 +473,10 @@ int main() {
       {"acosh f64 (4096)", Op::kAcosh, gen64(kN, 1.0, 50.0, 44), &hyle::simd::acosh_f64_batch},
   };
   for (auto& c : cases64) {
+    if (sentinel_only && c.op != Op::kExp && c.op != Op::kTanh &&
+        c.op != Op::kErf) {
+      continue;
+    }
     nb::Bench b;
     b.title(c.title).relative(true).batch(kN).minEpochIterations(500);
     b.run("scalar libm loop", [&] {
@@ -398,24 +494,22 @@ int main() {
       });
     }
 #if defined(HYLE_BENCH_XSIMD)
-    b.run("xsimd (same ISA SOTA)", [&] {
+    b.run("xsimd raw (same ISA, valid-domain)", [&] {
       xsimd_run64(c.op, c.src.data(), dst64.data(), kN);
       nb::doNotOptimizeAway(dst64.data());
     });
 #endif
 #if defined(HYLE_BENCH_HIGHWAY)
-    b.run("Highway (same ISA SOTA)", [&] {
+    b.run("Highway raw (same ISA, valid-domain)", [&] {
       highway_run64(c.op, c.src.data(), dst64.data(), kN);
       nb::doNotOptimizeAway(dst64.data());
     });
 #endif
   }
 
-  // hypot: a BINARY best-of candidate (BOTH xsimd and Highway have it -- unlike lgamma/tgamma
-  // which are xsimd-only). Benched separately because it takes two inputs (a,b -> sqrt(a*a+b*b)
-  // overflow-safe), which the unary Op switch above can't express. This decides the per-op winner
-  // so hypot_f32_batch (if wired) borrows the fastest core -- same measure-don't-assume rule.
-  {
+  // Hypot is separate because it is binary and has both full-range and explicit in-range HYLE
+  // contracts. Raw peers remain valid-domain implementation ceilings.
+  if (!sentinel_only) {
     auto a = gen(kN, -1e3f, 1e3f, 20);
     auto bb = gen(kN, -1e3f, 1e3f, 21);
     nb::Bench b;
@@ -433,7 +527,7 @@ int main() {
       nb::doNotOptimizeAway(dst.data());
     });
 #if defined(HYLE_BENCH_XSIMD)
-    b.run("xsimd (same ISA SOTA)", [&] {
+    b.run("xsimd raw (same ISA, valid-domain)", [&] {
       using batch = xsimd::batch<float>;
       constexpr std::size_t w = batch::size;
       std::size_t i = 0;
@@ -445,7 +539,7 @@ int main() {
     });
 #endif
 #if defined(HYLE_BENCH_HIGHWAY)
-    b.run("Highway (same ISA SOTA)", [&] {
+    b.run("Highway raw (same ISA, valid-domain)", [&] {
       const hn::ScalableTag<float> d;
       const std::size_t w = hn::Lanes(d);
       std::size_t i = 0;
@@ -462,7 +556,7 @@ int main() {
   // Throughput tables above hide poly depth (independent lanes). Here each step consumes the
   // previous result, so Horner depth O(d) vs Estrin O(log d) is measurable. Product exp/log
   // chains use exactly one live hardware vector through the public batch API.
-  {
+  if (!sentinel_only) {
     const auto c7 = poly_coeffs<7>(0xE5717ULL);
     const auto c11 = poly_coeffs<11>(0xE5711ULL);
     const auto c15 = poly_coeffs<15>(0xE5715ULL);
@@ -496,7 +590,7 @@ int main() {
         [&](double x) { return estrin15(x, c15); });
   }
 
-  {
+  if (!sentinel_only) {
     constexpr std::size_t kOpChain = 4096;
     nb::Bench b;
     b.title("product op latency chain (one vector, 4096 steps)").relative(true).batch(kOpChain)

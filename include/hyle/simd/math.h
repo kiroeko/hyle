@@ -4,23 +4,21 @@
 
 #include "hyle/simd/dispatch.h"  // Isa, HYLE_SIMD_API
 
-// math.h -- vectorized transcendentals (exp/log/tanh) for f32 (simd-06). The AI hot path
-// (softmax/gelu/attention) is dominated by these; hand-rolling polynomial approximations
-// is error-prone, so the accelerated paths BORROW verified vendor cores (simd-design:
-// "借核不手搓") rather than reimplementing them.
+// Whole-buffer real/complex mathematics and model-independent activations.
 //
-// TIERS + PER-OP BEST-OF-BREED dispatch (math_dispatch.cc):
-//   - scalar libm reference: std::exp/log/tanh per element. ALWAYS compiled, the ULP
-//     oracle + the non-x86 / non-AVX2 fallback. NOT a stub.
-//   - two HYLE-ported AVX2 cores (8-wide, ~3.5-ULP class; algorithms from Highway/xsimd,
-//     now pure D-tag under src/simd/math/*_hyle-inl.h). Wired UNCONDITIONALLY on x86 (a perf
-//     library ships its fastest path by default). Same-ISA bench: no single algorithm wins
-//     all three ops -- dispatcher picks PER OP: exp/tanh -> xsimd path; log -> Highway path.
+// Ordinary callers use pointer/count operations and never depend on a vendor vector type.
+// n may be any size, including zero. Exact src == dst aliasing is supported for unary
+// operations; otherwise input and output ranges must be disjoint unless a declaration below
+// says more. The ordinary functions preserve the corresponding std::<function> domain and
+// special-value semantics.
 //
-// At runtime exp/log/tanh route to the best compiled core supported by the CPU: AVX2/AVX-512,
-// NEON/SVE, RVV, or scalar libm (so an old CPU never SIGILLs). runtime().math.isa reports the
-// selected broad tier; a few correctness-gated operations may still choose scalar per op.
-// (SLEEF was dropped: not header-only, and ranked third on every op -> never selected.)
+// The accelerated implementation directly uses the centrally locked Highway math core and
+// retains only HYLE-specific compositions or capabilities that Highway does not provide.
+// Operations outside an upstream-qualified domain fall back to scalar libm by lane/block so
+// the ordinary contract does not become a vendor precondition. Runtime selection chooses a
+// compiled AVX2/AVX-512, NEON/SVE or RVV tier once; scalar libm is the always-available floor.
+// runtime().math.isa reports the active broad tier. Backend choice is an implementation detail,
+// not a stable ABI or a promise to preserve a historical benchmark winner.
 
 namespace hyle::simd {
 
@@ -28,18 +26,20 @@ HYLE_SIMD_API void exp_f32_batch(const float* src, float* dst, std::size_t n) no
 HYLE_SIMD_API void log_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
 HYLE_SIMD_API void tanh_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
 
-// f64 (double) transcendentals -- the CAE / solver / geometry-kernel path where double precision
-// is the working type. Same vendored cores as f32, but the best-of winner is bench-picked PER
-// PRECISION: at f64 Highway wins nearly all (exp/log/tanh/sin/cos/exp2/log2/atan/cbrt/expm1/log1p/
-// asinh/acosh + hypot), xsimd wins only erf -- the near-reverse of f32 (xsimd wins exp/tanh/exp2
-// there). See math_dispatch.cc. Full tiering: x86 avx512(GCC/Clang)/avx2, arm64 SVE/NEON,
-// riscv64 RVV, and scalar.
+// Explicit narrow-domain fast paths: every exp lane must be finite in [-80, 80]; every log lane
+// must be finite, normal and positive (>= FLT_MIN). They skip ordinary-domain recovery. Exact
+// src == dst aliasing is supported.
+HYLE_SIMD_API void exp_in_range_f32_batch(const float* src, float* dst,
+                                          std::size_t n) noexcept;
+HYLE_SIMD_API void log_in_range_f32_batch(const float* src, float* dst,
+                                          std::size_t n) noexcept;
+
+// f64 counterparts serve double-precision solver, geometry and numeric workloads.
 HYLE_SIMD_API void exp_f64_batch(const double* src, double* dst, std::size_t n) noexcept;
 HYLE_SIMD_API void log_f64_batch(const double* src, double* dst, std::size_t n) noexcept;
-// Narrow-contract f64 table cores: all exp lanes must be finite in [-700, 700]; all log lanes
-// must be finite normal positive values (>= DBL_MIN). This permits the ISA core to omit the full
-// API's exceptional-vector check when that is faster; all platforms retain the same table
-// polynomial/ULP bound. Exact src==dst aliasing is supported.
+// Explicit f64 narrow-domain fast paths: every exp lane must be finite in [-700, 700]; every log
+// lane must be finite, normal and positive (>= DBL_MIN). They omit ordinary-domain recovery and
+// therefore must not be used on untrusted/general values. Exact src == dst aliasing is supported.
 HYLE_SIMD_API void exp_in_range_f64_batch(const double* src, double* dst, std::size_t n) noexcept;
 HYLE_SIMD_API void log_in_range_f64_batch(const double* src, double* dst, std::size_t n) noexcept;
 HYLE_SIMD_API void tanh_f64_batch(const double* src, double* dst, std::size_t n) noexcept;
@@ -68,11 +68,7 @@ HYLE_SIMD_API void tgamma_f64_batch(const double* src, double* dst, std::size_t 
 HYLE_SIMD_API void lgamma_f64_batch(const double* src, double* dst, std::size_t n) noexcept;
 HYLE_SIMD_API void hypot_f64_batch(const double* a, const double* b, double* dst, std::size_t n) noexcept;
 
-// simd-09: best-of-breed expansion. Per-op winner from the same-ISA bench (math_bench,
-// GCC+MSVC cross-checked): Highway wins sin/cos/log2/atan/cbrt/expm1/log1p/asinh/acosh;
-// xsimd wins exp2/erf. (Contrast simd-06's exp/tanh->xsimd, log->Highway -- the winner does
-// NOT extrapolate across ops, which is why every op is benched.) All borrow a verified vendor
-// core (charter: 借核不手搓); scalar libm is the always-present ULP oracle + fallback.
+// Additional f32 real functions use the same ordinary contract and target selection.
 HYLE_SIMD_API void sin_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
 HYLE_SIMD_API void cos_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
 HYLE_SIMD_API void exp2_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
@@ -84,7 +80,6 @@ HYLE_SIMD_API void expm1_f32_batch(const float* src, float* dst, std::size_t n) 
 HYLE_SIMD_API void log1p_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
 HYLE_SIMD_API void asinh_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
 HYLE_SIMD_API void acosh_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
-// simd-18 批G
 HYLE_SIMD_API void acos_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
 HYLE_SIMD_API void asin_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
 HYLE_SIMD_API void sinh_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
@@ -108,12 +103,8 @@ HYLE_SIMD_API void remainder_f64_batch(const double* a, const double* b, double*
 HYLE_SIMD_API void nextafter_f64_batch(const double* a, const double* b, double* dst, std::size_t n) noexcept;
 HYLE_SIMD_API void fdim_f64_batch(const double* a, const double* b, double* dst, std::size_t n) noexcept;
 
-// xsimd-ONLY borrows (Highway's contrib/math has no equivalent, so these are a single-source
-// borrow, NOT a best-of pick -- there is no second library to race). lgamma/tgamma are the
-// log-gamma and gamma functions (Bayesian / statistical / combinatorial hot paths). Borrowed
-// from xsimd and expressed as HYLE D-tag code. tgamma has x86, NEON, SVE and RVV products;
-// lgamma intentionally stays scalar because the vector algorithm mixes lanes incorrectly.
-// Scalar libm is the always-present oracle + fallback.
+// Gamma functions use the locked Highway implementation on its qualified domain and scalar
+// libm recovery elsewhere.
 HYLE_SIMD_API void lgamma_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
 HYLE_SIMD_API void tgamma_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
 
@@ -151,8 +142,8 @@ HYLE_SIMD_API void softmax_f32(float* data, std::size_t n) noexcept;
 HYLE_SIMD_API void log_softmax_f32(float* data, std::size_t n) noexcept;
 
 // ---- COMPLEX transcendentals --------------------------------------------------------------
-// Highway has no complex path. The functions use HYLE D-tag ports/compositions on AVX2, NEON,
-// SVE and RVV: shared real primitives remove redundant work. Their
+// Highway has no complex math surface. HYLE composes the locked Highway real primitives on
+// AVX2/AVX-512, NEON/SVE and RVV; shared real work removes redundant operations. Their
 // operation-specific exceptional lanes use std::complex; ctanh/cpow specifically isolate axes,
 // subnormal, non-finite, branch-cut and overflow-risk lanes without scalarizing regular neighbors.
 //

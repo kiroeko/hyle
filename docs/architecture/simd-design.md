@@ -6,10 +6,23 @@
 
 > SIMD 抽象层（Tier 1，性能焦点 #1）。clay 这块基本空白。早期「净新 ~5–8k」已作废：2026-07-17 实测 **~34k 生产**（`src/simd`+`include/hyle/simd`），约占全库生产 **~64%**。体量与终态见 [`hyle-scope.md`](hyle-scope.md) 规模节。上游约束见同文档与 [`engineering-charter.md`](../developer/standards/engineering-charter.md)。
 >
-> **2026-07-16 终态索引**：部署和维护以
+> **权威索引**：部署和维护以
 > [`simd-dispatch-guide.md`](../developer/maintenance/simd-dispatch-guide.md) 为准；vendor 边界以
-> [`simd-vendor-surface.md`](simd-vendor-surface.md) 为准。本文后半保留各阶段性能、指令和契约决策，
-> 但早期“借核/静态路径/变体 DLL”讨论属于决策史，不再覆盖 simd-20/22 的最终实现。
+> [`simd-vendor-surface.md`](simd-vendor-surface.md) 为准；能力准入与当前施工边界以
+> [`simd-v2 closure`](../implementation/tasks/simd/simd-v2-closure.md) 为准。本文其余正文是 v1 的
+> 历史设计输入，不是当前产品事实；SIMD-05～12 将按接受的 v2 形状逐段替换，维护者不得从历史段落
+> 推导当前依赖、性能或 API 承诺。
+
+## V2 当前方向
+
+- ordinary C++ 继续使用 HYLE whole-buffer API；第三方寄存器类型不穿过公开或 shared 边界。
+- 锁定 Highway 直接承担成熟 register/target/math 机制，HYLE 负责产品语义、dispatch、交付和具名 gap；
+  等价 checked-in port 删除，bitpack/VQSort 的剩余 port 分别由 SIMD-10/11 裁决。
+- xsimd 当前是独立数学 peer，不是产品依赖；只有具名 capability/accuracy/真实 consumer 性能缺口才能
+  重新准入，不能按 benchmark 每行拼装公共架构。
+- `vec.h`/runtime/exact/native 的最终去留由 SIMD-05/06 决定，下面 v1 的“全部自造终态”不得前置该结论。
+
+## V1 历史设计记录（非当前权威）
 
 ## clay 现状：近乎空白
 

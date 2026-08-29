@@ -2,477 +2,134 @@
 
 #include <cstddef>
 
-#include "hyle/platform.h"  // HYLE_ARCH_X64 (the borrow cores are x86 AVX2-only)
-
-// kernels.h (internal) -- per-tier transcendental batch symbols the math dispatcher takes
-// the address of. scalar (libm) is always defined + is the non-x86 / fallback floor. The
-// Highway + xsimd AVX2 variants are vendored header-only and compiled UNCONDITIONALLY on
-// x86 (their TUs always compile -- the headers are in-tree, can't be missing; math_dispatch
-// enters them only when cpu_features().avx2). x86-only because they lower to AVX2 intrinsics.
-// Not a public header.
-
+// Internal pointer/count kernels. Highway types never cross this boundary.
 namespace hyle::simd::detail {
 
-// scalar libm reference (always available)
-void exp_f32_scalar(const float* src, float* dst, std::size_t n) noexcept;
-void log_f32_scalar(const float* src, float* dst, std::size_t n) noexcept;
-void tanh_f32_scalar(const float* src, float* dst, std::size_t n) noexcept;
-// f64 scalar references (always available oracle + fallback for the double transcendental path)
-void exp_f64_scalar(const double* src, double* dst, std::size_t n) noexcept;
-void log_f64_scalar(const double* src, double* dst, std::size_t n) noexcept;
-void tanh_f64_scalar(const double* src, double* dst, std::size_t n) noexcept;
-void sin_f64_scalar(const double* src, double* dst, std::size_t n) noexcept;
-void cos_f64_scalar(const double* src, double* dst, std::size_t n) noexcept;
-void exp2_f64_scalar(const double* src, double* dst, std::size_t n) noexcept;
-void log2_f64_scalar(const double* src, double* dst, std::size_t n) noexcept;
-void erf_f64_scalar(const double* src, double* dst, std::size_t n) noexcept;
-void atan_f64_scalar(const double* src, double* dst, std::size_t n) noexcept;
-void cbrt_f64_scalar(const double* src, double* dst, std::size_t n) noexcept;
-void expm1_f64_scalar(const double* src, double* dst, std::size_t n) noexcept;
-void log1p_f64_scalar(const double* src, double* dst, std::size_t n) noexcept;
-void asinh_f64_scalar(const double* src, double* dst, std::size_t n) noexcept;
-void acosh_f64_scalar(const double* src, double* dst, std::size_t n) noexcept;
-void tgamma_f64_scalar(const double* src, double* dst, std::size_t n) noexcept;
-void lgamma_f64_scalar(const double* src, double* dst, std::size_t n) noexcept;
-void hypot_f64_scalar(const double* a, const double* b, double* dst, std::size_t n) noexcept;
-// simd-09 scalar references (always available oracle + fallback)
-void sin_f32_scalar(const float* src, float* dst, std::size_t n) noexcept;
-void cos_f32_scalar(const float* src, float* dst, std::size_t n) noexcept;
-void exp2_f32_scalar(const float* src, float* dst, std::size_t n) noexcept;
-void log2_f32_scalar(const float* src, float* dst, std::size_t n) noexcept;
-void erf_f32_scalar(const float* src, float* dst, std::size_t n) noexcept;
-void atan_f32_scalar(const float* src, float* dst, std::size_t n) noexcept;
-void cbrt_f32_scalar(const float* src, float* dst, std::size_t n) noexcept;
-void expm1_f32_scalar(const float* src, float* dst, std::size_t n) noexcept;
-void log1p_f32_scalar(const float* src, float* dst, std::size_t n) noexcept;
-void asinh_f32_scalar(const float* src, float* dst, std::size_t n) noexcept;
-void acosh_f32_scalar(const float* src, float* dst, std::size_t n) noexcept;
-// simd-18 批G: Highway unary + binary + xsimd extras
-void acos_f32_scalar(const float* src, float* dst, std::size_t n) noexcept;
-void asin_f32_scalar(const float* src, float* dst, std::size_t n) noexcept;
-void sinh_f32_scalar(const float* src, float* dst, std::size_t n) noexcept;
-void cosh_f32_scalar(const float* src, float* dst, std::size_t n) noexcept;
-void tan_f32_scalar(const float* src, float* dst, std::size_t n) noexcept;
-void atanh_f32_scalar(const float* src, float* dst, std::size_t n) noexcept;
-void log10_f32_scalar(const float* src, float* dst, std::size_t n) noexcept;
-void atan2_f32_scalar(const float* a, const float* b, float* dst, std::size_t n) noexcept;
-void pow_f32_scalar(const float* a, const float* b, float* dst, std::size_t n) noexcept;
-void sincos_f32_scalar(const float* src, float* s, float* c, std::size_t n) noexcept;
-void erfc_f32_scalar(const float* src, float* dst, std::size_t n) noexcept;
-void exp10_f32_scalar(const float* src, float* dst, std::size_t n) noexcept;
-void fmod_f32_scalar(const float* a, const float* b, float* dst, std::size_t n) noexcept;
-void remainder_f32_scalar(const float* a, const float* b, float* dst, std::size_t n) noexcept;
-void nextafter_f32_scalar(const float* a, const float* b, float* dst, std::size_t n) noexcept;
-void fdim_f32_scalar(const float* a, const float* b, float* dst, std::size_t n) noexcept;
-// f64 Highway G1
-void acos_f64_scalar(const double* src, double* dst, std::size_t n) noexcept;
-void asin_f64_scalar(const double* src, double* dst, std::size_t n) noexcept;
-void sinh_f64_scalar(const double* src, double* dst, std::size_t n) noexcept;
-void cosh_f64_scalar(const double* src, double* dst, std::size_t n) noexcept;
-void tan_f64_scalar(const double* src, double* dst, std::size_t n) noexcept;
-void atanh_f64_scalar(const double* src, double* dst, std::size_t n) noexcept;
-void log10_f64_scalar(const double* src, double* dst, std::size_t n) noexcept;
-void atan2_f64_scalar(const double* a, const double* b, double* dst, std::size_t n) noexcept;
-void pow_f64_scalar(const double* a, const double* b, double* dst, std::size_t n) noexcept;
-void sincos_f64_scalar(const double* src, double* s, double* c, std::size_t n) noexcept;
-void erfc_f64_scalar(const double* src, double* dst, std::size_t n) noexcept;
-void exp10_f64_scalar(const double* src, double* dst, std::size_t n) noexcept;
-void fmod_f64_scalar(const double* a, const double* b, double* dst, std::size_t n) noexcept;
-void remainder_f64_scalar(const double* a, const double* b, double* dst, std::size_t n) noexcept;
-void nextafter_f64_scalar(const double* a, const double* b, double* dst, std::size_t n) noexcept;
-void fdim_f64_scalar(const double* a, const double* b, double* dst, std::size_t n) noexcept;
-// xsimd-only borrows (Highway has no gamma): scalar libm oracle + fallback.
-void lgamma_f32_scalar(const float* src, float* dst, std::size_t n) noexcept;
-void tgamma_f32_scalar(const float* src, float* dst, std::size_t n) noexcept;
-// hypot: full-range scalar oracle plus direct-formula fast contract.
-void hypot_f32_scalar(const float* a, const float* b, float* dst, std::size_t n) noexcept;
-void hypot_in_range_f32_scalar(const float* a, const float* b, float* dst, std::size_t n) noexcept;
-// SoA complex transcendental scalar oracles and fallback.
-#define HYLE_DECLARE_COMPLEX_SCALAR_UNARY(type, tag, name) \
-  void name##_##tag##_scalar(const type*, const type*, type*, type*, std::size_t) noexcept;
-#define HYLE_DECLARE_COMPLEX_SCALAR_SET(type, tag) \
-  HYLE_DECLARE_COMPLEX_SCALAR_UNARY(type, tag, cexp)   \
-  HYLE_DECLARE_COMPLEX_SCALAR_UNARY(type, tag, clog)   \
-  HYLE_DECLARE_COMPLEX_SCALAR_UNARY(type, tag, csqrt)  \
-  HYLE_DECLARE_COMPLEX_SCALAR_UNARY(type, tag, csin)   \
-  HYLE_DECLARE_COMPLEX_SCALAR_UNARY(type, tag, ccos)   \
-  HYLE_DECLARE_COMPLEX_SCALAR_UNARY(type, tag, ctan)   \
-  HYLE_DECLARE_COMPLEX_SCALAR_UNARY(type, tag, csinh)  \
-  HYLE_DECLARE_COMPLEX_SCALAR_UNARY(type, tag, ccosh)  \
-  HYLE_DECLARE_COMPLEX_SCALAR_UNARY(type, tag, ctanh)
-HYLE_DECLARE_COMPLEX_SCALAR_SET(float, f32)
-HYLE_DECLARE_COMPLEX_SCALAR_SET(double, f64)
-#undef HYLE_DECLARE_COMPLEX_SCALAR_SET
-#undef HYLE_DECLARE_COMPLEX_SCALAR_UNARY
-void cpow_f32_scalar(const float* zr, const float* zi, const float* wr, const float* wi, float* dr, float* di, std::size_t n) noexcept;
-void cpow_f64_scalar(const double* zr, const double* zi, const double* wr, const double* wi, double* dr, double* di, std::size_t n) noexcept;
+#define HYLE_DECLARE_UNARY(symbol, type) \
+  void symbol(const type* src, type* dst, std::size_t n) noexcept;
+#define HYLE_DECLARE_BINARY(symbol, type)                                      \
+  void symbol(const type* a, const type* b, type* dst, std::size_t n) noexcept;
+#define HYLE_DECLARE_SINCOS(symbol, type)                                      \
+  void symbol(const type* src, type* sine, type* cosine,                       \
+              std::size_t n) noexcept;
+#define HYLE_DECLARE_COMPLEX_UNARY(symbol, type)                               \
+  void symbol(const type* src_re, const type* src_im, type* dst_re,            \
+              type* dst_im, std::size_t n) noexcept;
+#define HYLE_DECLARE_COMPLEX_POW(symbol, type)                                 \
+  void symbol(const type* z_re, const type* z_im, const type* w_re,            \
+              const type* w_im, type* dst_re, type* dst_im,                   \
+              std::size_t n) noexcept;
 
-#if defined(HYLE_ARCH_X64)
-// Per-op best-of-breed borrow cores (x86 AVX2, ~3.5 ULP). The same-ISA bench picked the
-// fastest library PER OP, so ONLY that op is borrowed from each lib (the others would be
-// dead code): xsimd serves exp/tanh, Highway serves log. math_dispatch enters these only
-// when cpu_features().avx2.
-void exp_f32_xsimd_avx2(const float* src, float* dst, std::size_t n) noexcept;
-void tanh_f32_xsimd_avx2(const float* src, float* dst, std::size_t n) noexcept;
-void log_f32_highway_avx2(const float* src, float* dst, std::size_t n) noexcept;
-// f64 (4-wide AVX2) borrow cores from BOTH libs -- best-of picks per op (bench-decided in
-// math_dispatch, not assumed from the f32 winners: f64 relative speeds can differ).
-void exp_f64_xsimd_avx2(const double* src, double* dst, std::size_t n) noexcept;
-void log_f64_xsimd_avx2(const double* src, double* dst, std::size_t n) noexcept;
-void tanh_f64_xsimd_avx2(const double* src, double* dst, std::size_t n) noexcept;
-void exp_f64_highway_avx2(const double* src, double* dst, std::size_t n) noexcept;
-void log_f64_highway_avx2(const double* src, double* dst, std::size_t n) noexcept;
-void exp_in_range_f64_highway_avx2(const double* src, double* dst, std::size_t n) noexcept;
-void log_in_range_f64_highway_avx2(const double* src, double* dst, std::size_t n) noexcept;
-void tanh_f64_highway_avx2(const double* src, double* dst, std::size_t n) noexcept;
-// f64 rest (avx2): Highway wins 10 (sin/cos/exp2/log2/atan/cbrt/expm1/log1p/asinh/acosh) + hypot;
-// xsimd wins erf; tgamma xsimd-only. lgamma stays scalar (vendor lane-mixing bug).
-void sin_f64_highway_avx2(const double* src, double* dst, std::size_t n) noexcept;
-void cos_f64_highway_avx2(const double* src, double* dst, std::size_t n) noexcept;
-void exp2_f64_highway_avx2(const double* src, double* dst, std::size_t n) noexcept;
-void log2_f64_highway_avx2(const double* src, double* dst, std::size_t n) noexcept;
-void atan_f64_highway_avx2(const double* src, double* dst, std::size_t n) noexcept;
-void cbrt_f64_highway_avx2(const double* src, double* dst, std::size_t n) noexcept;
-void expm1_f64_highway_avx2(const double* src, double* dst, std::size_t n) noexcept;
-void log1p_f64_highway_avx2(const double* src, double* dst, std::size_t n) noexcept;
-void asinh_f64_highway_avx2(const double* src, double* dst, std::size_t n) noexcept;
-void acosh_f64_highway_avx2(const double* src, double* dst, std::size_t n) noexcept;
-void acos_f64_highway_avx2(const double* src, double* dst, std::size_t n) noexcept;
-void asin_f64_highway_avx2(const double* src, double* dst, std::size_t n) noexcept;
-void sinh_f64_highway_avx2(const double* src, double* dst, std::size_t n) noexcept;
-void cosh_f64_highway_avx2(const double* src, double* dst, std::size_t n) noexcept;
-void tan_f64_highway_avx2(const double* src, double* dst, std::size_t n) noexcept;
-void atanh_f64_highway_avx2(const double* src, double* dst, std::size_t n) noexcept;
-void log10_f64_highway_avx2(const double* src, double* dst, std::size_t n) noexcept;
-void atan2_f64_highway_avx2(const double* a, const double* b, double* dst, std::size_t n) noexcept;
-void pow_f64_highway_avx2(const double* a, const double* b, double* dst, std::size_t n) noexcept;
-void sincos_f64_highway_avx2(const double* src, double* s, double* c, std::size_t n) noexcept;
-void hypot_f64_highway_avx2(const double* a, const double* b, double* dst, std::size_t n) noexcept;
-void erf_f64_xsimd_avx2(const double* src, double* dst, std::size_t n) noexcept;
-void tgamma_f64_xsimd_avx2(const double* src, double* dst, std::size_t n) noexcept;
-// simd-09 AVX2 borrow cores, per-op winner (bench-decided): xsimd for exp2/erf, Highway for
-// the rest. Only the winning lib's TU defines each (the loser would be dead code).
-void exp2_f32_xsimd_avx2(const float* src, float* dst, std::size_t n) noexcept;
-// simd-18 批G xsimd avx2 (f32 + f64)
-void erfc_f32_xsimd_avx2(const float* src, float* dst, std::size_t n) noexcept;
-void exp10_f32_xsimd_avx2(const float* src, float* dst, std::size_t n) noexcept;
-void fmod_f32_xsimd_avx2(const float* a, const float* b, float* dst, std::size_t n) noexcept;
-void remainder_f32_xsimd_avx2(const float* a, const float* b, float* dst, std::size_t n) noexcept;
-void nextafter_f32_xsimd_avx2(const float* a, const float* b, float* dst, std::size_t n) noexcept;
-void fdim_f32_xsimd_avx2(const float* a, const float* b, float* dst, std::size_t n) noexcept;
-void erfc_f64_xsimd_avx2(const double* src, double* dst, std::size_t n) noexcept;
-void exp10_f64_xsimd_avx2(const double* src, double* dst, std::size_t n) noexcept;
-void fmod_f64_xsimd_avx2(const double* a, const double* b, double* dst, std::size_t n) noexcept;
-void remainder_f64_xsimd_avx2(const double* a, const double* b, double* dst, std::size_t n) noexcept;
-void nextafter_f64_xsimd_avx2(const double* a, const double* b, double* dst, std::size_t n) noexcept;
-void fdim_f64_xsimd_avx2(const double* a, const double* b, double* dst, std::size_t n) noexcept;
-void erf_f32_xsimd_avx2(const float* src, float* dst, std::size_t n) noexcept;
-// xsimd-only borrow (no Highway equivalent -> single source). Only TGAMMA is vectorized:
-// xsimd's vectorized LGAMMA has a lane-mixing bug (wrong result when a lane in [1.25,1.5) shares
-// a vector with a lane in [0.75,1.25) -- reproduced GCC-x86/MSVC-x86/GCC-NEON, see
-// docs/debug/xsimd-lgamma-lane-mixing-hunt.md). lgamma therefore stays on the scalar libm
-// reference (no _xsimd_ variant); tgamma is unaffected.
-void tgamma_f32_xsimd_avx2(const float* src, float* dst, std::size_t n) noexcept;
-// complex transcendentals: xsimd AVX2 borrow cores for cexp/clog/csqrt; HYLE candidates retain
-// xsimd ctanh/cpow symbols solely as same-TU benchmark controls.
-void cexp_f32_xsimd_avx2(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
-void clog_f32_xsimd_avx2(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
-void csqrt_f32_xsimd_avx2(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
-void csin_f32_hyle_avx2(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
-void ccos_f32_hyle_avx2(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
-void ctan_f32_hyle_avx2(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
-void csinh_f32_hyle_avx2(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
-void ccosh_f32_hyle_avx2(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
-void ctanh_f32_hyle_avx2(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
-void ctanh_f32_xsimd_avx2(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
-void cpow_f32_hyle_avx2(const float* zr, const float* zi, const float* wr, const float* wi, float* dr, float* di, std::size_t n) noexcept;
-void cpow_f32_xsimd_avx2(const float* zr, const float* zi, const float* wr, const float* wi, float* dr, float* di, std::size_t n) noexcept;
-#define HYLE_DECLARE_COMPLEX_F64_AVX2(name) \
-  void name##_f64_hyle_avx2(const double*, const double*, double*, double*, std::size_t) noexcept;
-HYLE_DECLARE_COMPLEX_F64_AVX2(cexp)
-HYLE_DECLARE_COMPLEX_F64_AVX2(clog)
-HYLE_DECLARE_COMPLEX_F64_AVX2(csqrt)
-HYLE_DECLARE_COMPLEX_F64_AVX2(csin)
-HYLE_DECLARE_COMPLEX_F64_AVX2(ccos)
-HYLE_DECLARE_COMPLEX_F64_AVX2(ctan)
-HYLE_DECLARE_COMPLEX_F64_AVX2(csinh)
-HYLE_DECLARE_COMPLEX_F64_AVX2(ccosh)
-HYLE_DECLARE_COMPLEX_F64_AVX2(ctanh)
-#undef HYLE_DECLARE_COMPLEX_F64_AVX2
-void cpow_f64_hyle_avx2(const double*, const double*, const double*, const double*, double*,
-                        double*, std::size_t) noexcept;
-// hypot dual contract: Highway provides full-range scaling; xsimd provides the explicit fast
-// direct-formula variant. See math.h and usage-guide.md.
-void hypot_f32_highway_avx2(const float* a, const float* b, float* dst, std::size_t n) noexcept;
-void hypot_in_range_f32_xsimd_avx2(const float* a, const float* b, float* dst, std::size_t n) noexcept;
-void sin_f32_highway_avx2(const float* src, float* dst, std::size_t n) noexcept;
-void cos_f32_highway_avx2(const float* src, float* dst, std::size_t n) noexcept;
-void log2_f32_highway_avx2(const float* src, float* dst, std::size_t n) noexcept;
-void atan_f32_highway_avx2(const float* src, float* dst, std::size_t n) noexcept;
-void cbrt_f32_highway_avx2(const float* src, float* dst, std::size_t n) noexcept;
-void expm1_f32_highway_avx2(const float* src, float* dst, std::size_t n) noexcept;
-void log1p_f32_highway_avx2(const float* src, float* dst, std::size_t n) noexcept;
-void asinh_f32_highway_avx2(const float* src, float* dst, std::size_t n) noexcept;
-void acosh_f32_highway_avx2(const float* src, float* dst, std::size_t n) noexcept;
-void acos_f32_highway_avx2(const float* src, float* dst, std::size_t n) noexcept;
-void asin_f32_highway_avx2(const float* src, float* dst, std::size_t n) noexcept;
-void sinh_f32_highway_avx2(const float* src, float* dst, std::size_t n) noexcept;
-void cosh_f32_highway_avx2(const float* src, float* dst, std::size_t n) noexcept;
-void tan_f32_highway_avx2(const float* src, float* dst, std::size_t n) noexcept;
-void atanh_f32_highway_avx2(const float* src, float* dst, std::size_t n) noexcept;
-void log10_f32_highway_avx2(const float* src, float* dst, std::size_t n) noexcept;
-void atan2_f32_highway_avx2(const float* a, const float* b, float* dst, std::size_t n) noexcept;
-void pow_f32_highway_avx2(const float* a, const float* b, float* dst, std::size_t n) noexcept;
-void sincos_f32_highway_avx2(const float* src, float* s, float* c, std::size_t n) noexcept;
+#define HYLE_REAL_UNARY_LIST(M, suffix, type, tag) \
+  M(exp_##tag##_##suffix, type)                       \
+  M(log_##tag##_##suffix, type)                       \
+  M(tanh_##tag##_##suffix, type)                      \
+  M(sin_##tag##_##suffix, type)                       \
+  M(cos_##tag##_##suffix, type)                       \
+  M(exp2_##tag##_##suffix, type)                      \
+  M(log2_##tag##_##suffix, type)                      \
+  M(erf_##tag##_##suffix, type)                       \
+  M(atan_##tag##_##suffix, type)                      \
+  M(cbrt_##tag##_##suffix, type)                      \
+  M(expm1_##tag##_##suffix, type)                     \
+  M(log1p_##tag##_##suffix, type)                     \
+  M(asinh_##tag##_##suffix, type)                     \
+  M(acosh_##tag##_##suffix, type)                     \
+  M(acos_##tag##_##suffix, type)                      \
+  M(asin_##tag##_##suffix, type)                      \
+  M(sinh_##tag##_##suffix, type)                      \
+  M(cosh_##tag##_##suffix, type)                      \
+  M(tan_##tag##_##suffix, type)                       \
+  M(atanh_##tag##_##suffix, type)                     \
+  M(log10_##tag##_##suffix, type)                     \
+  M(tgamma_##tag##_##suffix, type)                    \
+  M(lgamma_##tag##_##suffix, type)
 
-// AVX-512 (16-wide) siblings of the AVX2 borrow cores -- same xsimd/Highway cores, just
-// compiled at the AVX-512 tier so they lower to zmm. math_dispatch enters these only when
-// best_isa() >= kAvx512; else it stays on the AVX2 cores above (then scalar floor).
-void exp_f32_xsimd_avx512(const float* src, float* dst, std::size_t n) noexcept;
-void tanh_f32_xsimd_avx512(const float* src, float* dst, std::size_t n) noexcept;
-// simd-09 AVX-512 (16-wide) siblings -- xsimd wins exp2/erf.
-void exp2_f32_xsimd_avx512(const float* src, float* dst, std::size_t n) noexcept;
-void erf_f32_xsimd_avx512(const float* src, float* dst, std::size_t n) noexcept;
-// xsimd-only borrow, 16-wide sibling (tgamma only; lgamma stays scalar -- vendor lane-mixing bug).
-void tgamma_f32_xsimd_avx512(const float* src, float* dst, std::size_t n) noexcept;
-// f64 8-wide xsimd siblings: erf (xsimd wins f64 erf) + tgamma (xsimd-only).
-void erf_f64_xsimd_avx512(const double* src, double* dst, std::size_t n) noexcept;
-void tgamma_f64_xsimd_avx512(const double* src, double* dst, std::size_t n) noexcept;
-void hypot_in_range_f32_xsimd_avx512(const float* a, const float* b, float* dst, std::size_t n) noexcept;
-// log: Highway's AVX3 target is HWY_BROKEN on MSVC (it would emit ymm, not zmm), so this
-// 512 symbol exists ONLY on GCC/Clang. On MSVC, math_dispatch keeps the avx2 highway log
-// (the widest Highway gives there) -- see transcendental_highway_avx512.cc MSVC EXCLUSION.
-#if !defined(_MSC_VER)
-void log_f32_highway_avx512(const float* src, float* dst, std::size_t n) noexcept;
-// hypot 16-wide Highway sibling (GCC/Clang only, same MSVC-AVX3-broken exclusion). MSVC hypot
-// stays on the avx2 Highway core.
-void hypot_f32_highway_avx512(const float* a, const float* b, float* dst, std::size_t n) noexcept;
-// simd-09 Highway AVX-512 siblings (GCC/Clang only, same MSVC-AVX3-broken exclusion as log).
-void sin_f32_highway_avx512(const float* src, float* dst, std::size_t n) noexcept;
-void cos_f32_highway_avx512(const float* src, float* dst, std::size_t n) noexcept;
-void log2_f32_highway_avx512(const float* src, float* dst, std::size_t n) noexcept;
-void atan_f32_highway_avx512(const float* src, float* dst, std::size_t n) noexcept;
-void cbrt_f32_highway_avx512(const float* src, float* dst, std::size_t n) noexcept;
-void expm1_f32_highway_avx512(const float* src, float* dst, std::size_t n) noexcept;
-void log1p_f32_highway_avx512(const float* src, float* dst, std::size_t n) noexcept;
-void asinh_f32_highway_avx512(const float* src, float* dst, std::size_t n) noexcept;
-void acosh_f32_highway_avx512(const float* src, float* dst, std::size_t n) noexcept;
-void acos_f32_highway_avx512(const float* src, float* dst, std::size_t n) noexcept;
-void asin_f32_highway_avx512(const float* src, float* dst, std::size_t n) noexcept;
-void sinh_f32_highway_avx512(const float* src, float* dst, std::size_t n) noexcept;
-void cosh_f32_highway_avx512(const float* src, float* dst, std::size_t n) noexcept;
-void tan_f32_highway_avx512(const float* src, float* dst, std::size_t n) noexcept;
-void atanh_f32_highway_avx512(const float* src, float* dst, std::size_t n) noexcept;
-void log10_f32_highway_avx512(const float* src, float* dst, std::size_t n) noexcept;
-void atan2_f32_highway_avx512(const float* a, const float* b, float* dst, std::size_t n) noexcept;
-void pow_f32_highway_avx512(const float* a, const float* b, float* dst, std::size_t n) noexcept;
-void sincos_f32_highway_avx512(const float* src, float* s, float* c, std::size_t n) noexcept;
-// f64 8-wide Highway siblings (GCC/Clang only, MSVC-AVX3-broken). Highway wins 13 f64 ops.
-void exp_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept;
-void log_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept;
-void exp_in_range_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept;
-void log_in_range_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept;
-void tanh_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept;
-void sin_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept;
-void cos_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept;
-void exp2_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept;
-void log2_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept;
-void atan_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept;
-void cbrt_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept;
-void expm1_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept;
-void log1p_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept;
-void asinh_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept;
-void acosh_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept;
-void acos_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept;
-void asin_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept;
-void sinh_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept;
-void cosh_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept;
-void tan_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept;
-void atanh_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept;
-void log10_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept;
-void atan2_f64_highway_avx512(const double* a, const double* b, double* dst, std::size_t n) noexcept;
-void pow_f64_highway_avx512(const double* a, const double* b, double* dst, std::size_t n) noexcept;
-void sincos_f64_highway_avx512(const double* src, double* s, double* c, std::size_t n) noexcept;
-void hypot_f64_highway_avx512(const double* a, const double* b, double* dst, std::size_t n) noexcept;
-#endif
-#endif
+#define HYLE_REAL_BINARY_LIST(M, suffix, type, tag) \
+  M(atan2_##tag##_##suffix, type)                    \
+  M(pow_##tag##_##suffix, type)                      \
+  M(hypot_##tag##_##suffix, type)
 
-#if defined(HYLE_ARCH_ARM64)
-// aarch64 NEON borrow cores: Highway's contrib/math lowers to NEON here (probed: target=NEON,
-// 4-wide, matches libm). Unlike x86's per-op xsimd/Highway split (a speed pick from
-// benchmarking), arm64 uses Highway for ALL ops -- one verified core, consistent. math_dispatch
-// enters these unconditionally on arm64 (NEON is the ARMv8 baseline; no runtime gate needed).
-// xsimd-NEON as a future per-op speed tune if a NEON bench shows a win.
-void exp_f32_highway_neon(const float* src, float* dst, std::size_t n) noexcept;
-void log_f32_highway_neon(const float* src, float* dst, std::size_t n) noexcept;
-void tanh_f32_highway_neon(const float* src, float* dst, std::size_t n) noexcept;
-// simd-09 NEON borrow cores (Highway, all ops -- same one-verified-core policy).
-void sin_f32_highway_neon(const float* src, float* dst, std::size_t n) noexcept;
-void cos_f32_highway_neon(const float* src, float* dst, std::size_t n) noexcept;
-void exp2_f32_highway_neon(const float* src, float* dst, std::size_t n) noexcept;
-void log2_f32_highway_neon(const float* src, float* dst, std::size_t n) noexcept;
-void erf_f32_highway_neon(const float* src, float* dst, std::size_t n) noexcept;
-void atan_f32_highway_neon(const float* src, float* dst, std::size_t n) noexcept;
-void cbrt_f32_highway_neon(const float* src, float* dst, std::size_t n) noexcept;
-void expm1_f32_highway_neon(const float* src, float* dst, std::size_t n) noexcept;
-void log1p_f32_highway_neon(const float* src, float* dst, std::size_t n) noexcept;
-void asinh_f32_highway_neon(const float* src, float* dst, std::size_t n) noexcept;
-void acosh_f32_highway_neon(const float* src, float* dst, std::size_t n) noexcept;
-void acos_f32_highway_neon(const float* src, float* dst, std::size_t n) noexcept;
-void asin_f32_highway_neon(const float* src, float* dst, std::size_t n) noexcept;
-void sinh_f32_highway_neon(const float* src, float* dst, std::size_t n) noexcept;
-void cosh_f32_highway_neon(const float* src, float* dst, std::size_t n) noexcept;
-void tan_f32_highway_neon(const float* src, float* dst, std::size_t n) noexcept;
-void atanh_f32_highway_neon(const float* src, float* dst, std::size_t n) noexcept;
-void log10_f32_highway_neon(const float* src, float* dst, std::size_t n) noexcept;
-void atan2_f32_highway_neon(const float* a, const float* b, float* dst, std::size_t n) noexcept;
-void pow_f32_highway_neon(const float* a, const float* b, float* dst, std::size_t n) noexcept;
-void sincos_f32_highway_neon(const float* src, float* s, float* c, std::size_t n) noexcept;
-// xsimd-only borrows: lgamma/tgamma have NO Highway equivalent, so on arm64 they can't use the
-// Highway-NEON path the other ops do. These borrow xsimd's NEON core instead (the first xsimd
-// core on arm64) -- verified to lower to NEON + match libm under qemu-aarch64. Defined in
-// transcendental_xsimd_neon.cc (arm64 xsimd TU, distinct from the Highway-NEON TU). tgamma only:
-// xsimd's vectorized lgamma lane-mixing bug reproduces on NEON too, so lgamma stays scalar.
-void tgamma_f32_xsimd_neon(const float* src, float* dst, std::size_t n) noexcept;
-void hypot_in_range_f32_xsimd_neon(const float* a, const float* b, float* dst, std::size_t n) noexcept;
-void csin_f32_hyle_neon(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
-void ccos_f32_hyle_neon(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
-void ctan_f32_hyle_neon(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
-void csinh_f32_hyle_neon(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
-void ccosh_f32_hyle_neon(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
-void ctanh_f32_hyle_neon(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
-void cpow_f32_hyle_neon(const float* zr, const float* zi, const float* wr, const float* wi, float* dr, float* di, std::size_t n) noexcept;
-// simd-17 batch5: ARM complex cexp/clog/csqrt (xsimd batch complex on NEON; was scalar floor).
-void cexp_f32_hyle_neon(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
-void clog_f32_hyle_neon(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
-void csqrt_f32_hyle_neon(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
-#define HYLE_DECLARE_COMPLEX_F64_NEON(name) \
-  void name##_f64_hyle_neon(const double*, const double*, double*, double*, std::size_t) noexcept;
-HYLE_DECLARE_COMPLEX_F64_NEON(cexp)
-HYLE_DECLARE_COMPLEX_F64_NEON(clog)
-HYLE_DECLARE_COMPLEX_F64_NEON(csqrt)
-HYLE_DECLARE_COMPLEX_F64_NEON(csin)
-HYLE_DECLARE_COMPLEX_F64_NEON(ccos)
-HYLE_DECLARE_COMPLEX_F64_NEON(ctan)
-HYLE_DECLARE_COMPLEX_F64_NEON(csinh)
-HYLE_DECLARE_COMPLEX_F64_NEON(ccosh)
-HYLE_DECLARE_COMPLEX_F64_NEON(ctanh)
-#undef HYLE_DECLARE_COMPLEX_F64_NEON
-void cpow_f64_hyle_neon(const double*, const double*, const double*, const double*, double*,
-                        double*, std::size_t) noexcept;
-// hypot binary: Highway (overflow-safe; xsimd's is faster but returns inf past FLT_MAX). Highway
-// contrib/math lowers to NEON here, same as the other arm64 Highway ops.
-void hypot_f32_highway_neon(const float* a, const float* b, float* dst, std::size_t n) noexcept;
-// f64 2-wide NEON Highway siblings -- arm64 uses Highway for ALL f64 ops (incl erf; tgamma/lgamma
-// f64 stay scalar on arm64, mirroring the f32 policy of not pulling xsimd-NEON for gamma-family).
-void exp_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcept;
-void log_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcept;
-void exp_in_range_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcept;
-void log_in_range_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcept;
-void tanh_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcept;
-void sin_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcept;
-void cos_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcept;
-void exp2_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcept;
-void log2_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcept;
-void erf_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcept;
-void atan_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcept;
-void cbrt_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcept;
-void expm1_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcept;
-void log1p_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcept;
-void asinh_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcept;
-void acosh_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcept;
-void acos_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcept;
-void asin_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcept;
-void sinh_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcept;
-void cosh_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcept;
-void tan_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcept;
-void atanh_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcept;
-void log10_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcept;
-void atan2_f64_highway_neon(const double* a, const double* b, double* dst, std::size_t n) noexcept;
-void pow_f64_highway_neon(const double* a, const double* b, double* dst, std::size_t n) noexcept;
-void sincos_f64_highway_neon(const double* src, double* s, double* c, std::size_t n) noexcept;
-void hypot_f64_highway_neon(const double* a, const double* b, double* dst, std::size_t n) noexcept;
-#endif  // HYLE_ARCH_ARM64
+#define HYLE_COMPLEX_UNARY_LIST(M, suffix, type, tag) \
+  M(cexp_##tag##_##suffix, type)                       \
+  M(clog_##tag##_##suffix, type)                       \
+  M(csqrt_##tag##_##suffix, type)                      \
+  M(csin_##tag##_##suffix, type)                       \
+  M(ccos_##tag##_##suffix, type)                       \
+  M(ctan_##tag##_##suffix, type)                       \
+  M(csinh_##tag##_##suffix, type)                      \
+  M(ccosh_##tag##_##suffix, type)                      \
+  M(ctanh_##tag##_##suffix, type)
 
-// Length-agnostic siblings of the HYLE/Highway and HYLE-owned xsimd-derived math bodies.
-#define HYLE_DECLARE_SCALABLE_UNARY(type, tag, name, suffix) \
-  void name##_##tag##_highway_##suffix(const type*, type*, std::size_t) noexcept;
-#define HYLE_DECLARE_SCALABLE_UNARY_SET(type, tag, suffix) \
-  HYLE_DECLARE_SCALABLE_UNARY(type, tag, exp, suffix)      \
-  HYLE_DECLARE_SCALABLE_UNARY(type, tag, log, suffix)      \
-  HYLE_DECLARE_SCALABLE_UNARY(type, tag, tanh, suffix)     \
-  HYLE_DECLARE_SCALABLE_UNARY(type, tag, sin, suffix)      \
-  HYLE_DECLARE_SCALABLE_UNARY(type, tag, cos, suffix)      \
-  HYLE_DECLARE_SCALABLE_UNARY(type, tag, exp2, suffix)     \
-  HYLE_DECLARE_SCALABLE_UNARY(type, tag, log2, suffix)     \
-  HYLE_DECLARE_SCALABLE_UNARY(type, tag, erf, suffix)      \
-  HYLE_DECLARE_SCALABLE_UNARY(type, tag, atan, suffix)     \
-  HYLE_DECLARE_SCALABLE_UNARY(type, tag, cbrt, suffix)     \
-  HYLE_DECLARE_SCALABLE_UNARY(type, tag, expm1, suffix)    \
-  HYLE_DECLARE_SCALABLE_UNARY(type, tag, log1p, suffix)    \
-  HYLE_DECLARE_SCALABLE_UNARY(type, tag, asinh, suffix)    \
-  HYLE_DECLARE_SCALABLE_UNARY(type, tag, acosh, suffix)    \
-  HYLE_DECLARE_SCALABLE_UNARY(type, tag, acos, suffix)     \
-  HYLE_DECLARE_SCALABLE_UNARY(type, tag, asin, suffix)     \
-  HYLE_DECLARE_SCALABLE_UNARY(type, tag, sinh, suffix)     \
-  HYLE_DECLARE_SCALABLE_UNARY(type, tag, cosh, suffix)     \
-  HYLE_DECLARE_SCALABLE_UNARY(type, tag, tan, suffix)      \
-  HYLE_DECLARE_SCALABLE_UNARY(type, tag, atanh, suffix)    \
-  HYLE_DECLARE_SCALABLE_UNARY(type, tag, log10, suffix)
-#define HYLE_DECLARE_SCALABLE_MATH(suffix)                                           \
-  HYLE_DECLARE_SCALABLE_UNARY_SET(float, f32, suffix)                               \
-  HYLE_DECLARE_SCALABLE_UNARY_SET(double, f64, suffix)                              \
-  void exp_in_range_f64_highway_##suffix(const double*, double*, std::size_t) noexcept; \
-  void log_in_range_f64_highway_##suffix(const double*, double*, std::size_t) noexcept; \
-  void hypot_f32_highway_##suffix(const float*, const float*, float*, std::size_t) noexcept; \
-  void atan2_f32_highway_##suffix(const float*, const float*, float*, std::size_t) noexcept; \
-  void pow_f32_highway_##suffix(const float*, const float*, float*, std::size_t) noexcept; \
-  void sincos_f32_highway_##suffix(const float*, float*, float*, std::size_t) noexcept; \
-  void hypot_f64_highway_##suffix(const double*, const double*, double*, std::size_t) noexcept; \
-  void atan2_f64_highway_##suffix(const double*, const double*, double*, std::size_t) noexcept; \
-  void pow_f64_highway_##suffix(const double*, const double*, double*, std::size_t) noexcept; \
-  void sincos_f64_highway_##suffix(const double*, double*, double*, std::size_t) noexcept; \
-  void erfc_f32_hyle_##suffix(const float*, float*, std::size_t) noexcept;          \
-  void erfc_f64_hyle_##suffix(const double*, double*, std::size_t) noexcept;        \
-  void exp10_f32_hyle_##suffix(const float*, float*, std::size_t) noexcept;         \
-  void exp10_f64_hyle_##suffix(const double*, double*, std::size_t) noexcept;       \
-  void tgamma_f32_hyle_##suffix(const float*, float*, std::size_t) noexcept;        \
-  void tgamma_f64_hyle_##suffix(const double*, double*, std::size_t) noexcept;      \
-  void fmod_f32_hyle_##suffix(const float*, const float*, float*, std::size_t) noexcept; \
-  void fmod_f64_hyle_##suffix(const double*, const double*, double*, std::size_t) noexcept; \
-  void fdim_f32_hyle_##suffix(const float*, const float*, float*, std::size_t) noexcept; \
-  void fdim_f64_hyle_##suffix(const double*, const double*, double*, std::size_t) noexcept; \
-  void nextafter_f32_hyle_##suffix(const float*, const float*, float*, std::size_t) noexcept; \
-  void nextafter_f64_hyle_##suffix(const double*, const double*, double*, std::size_t) noexcept; \
-  void hypot_in_range_f32_hyle_##suffix(const float*, const float*, float*, std::size_t) noexcept; \
-  void cexp_f32_hyle_##suffix(const float*, const float*, float*, float*, std::size_t) noexcept; \
-  void clog_f32_hyle_##suffix(const float*, const float*, float*, float*, std::size_t) noexcept; \
-  void csqrt_f32_hyle_##suffix(const float*, const float*, float*, float*, std::size_t) noexcept; \
-  void csin_f32_hyle_##suffix(const float*, const float*, float*, float*, std::size_t) noexcept; \
-  void ccos_f32_hyle_##suffix(const float*, const float*, float*, float*, std::size_t) noexcept; \
-  void ctan_f32_hyle_##suffix(const float*, const float*, float*, float*, std::size_t) noexcept; \
-  void csinh_f32_hyle_##suffix(const float*, const float*, float*, float*, std::size_t) noexcept; \
-  void ccosh_f32_hyle_##suffix(const float*, const float*, float*, float*, std::size_t) noexcept; \
-  void ctanh_f32_hyle_##suffix(const float*, const float*, float*, float*, std::size_t) noexcept; \
-  void cpow_f32_hyle_##suffix(const float*, const float*, const float*, const float*, float*, float*, std::size_t) noexcept; \
-  void cexp_f64_hyle_##suffix(const double*, const double*, double*, double*, std::size_t) noexcept; \
-  void clog_f64_hyle_##suffix(const double*, const double*, double*, double*, std::size_t) noexcept; \
-  void csqrt_f64_hyle_##suffix(const double*, const double*, double*, double*, std::size_t) noexcept; \
-  void csin_f64_hyle_##suffix(const double*, const double*, double*, double*, std::size_t) noexcept; \
-  void ccos_f64_hyle_##suffix(const double*, const double*, double*, double*, std::size_t) noexcept; \
-  void ctan_f64_hyle_##suffix(const double*, const double*, double*, double*, std::size_t) noexcept; \
-  void csinh_f64_hyle_##suffix(const double*, const double*, double*, double*, std::size_t) noexcept; \
-  void ccosh_f64_hyle_##suffix(const double*, const double*, double*, double*, std::size_t) noexcept; \
-  void ctanh_f64_hyle_##suffix(const double*, const double*, double*, double*, std::size_t) noexcept; \
-  void cpow_f64_hyle_##suffix(const double*, const double*, const double*, const double*, double*, double*, std::size_t) noexcept;
-#if defined(HYLE_SIMD_HAS_SVE_VARIANT)
-HYLE_DECLARE_SCALABLE_MATH(sve)
-#endif
-#if defined(HYLE_SIMD_HAS_RVV_VARIANT)
-HYLE_DECLARE_SCALABLE_MATH(rvv)
-#endif
-#undef HYLE_DECLARE_SCALABLE_MATH
-#undef HYLE_DECLARE_SCALABLE_UNARY_SET
-#undef HYLE_DECLARE_SCALABLE_UNARY
+// Always-present scalar libm/std::complex floor.
+HYLE_REAL_UNARY_LIST(HYLE_DECLARE_UNARY, scalar, float, f32)
+HYLE_REAL_UNARY_LIST(HYLE_DECLARE_UNARY, scalar, double, f64)
+HYLE_REAL_BINARY_LIST(HYLE_DECLARE_BINARY, scalar, float, f32)
+HYLE_REAL_BINARY_LIST(HYLE_DECLARE_BINARY, scalar, double, f64)
+HYLE_DECLARE_SINCOS(sincos_f32_scalar, float)
+HYLE_DECLARE_SINCOS(sincos_f64_scalar, double)
+HYLE_DECLARE_BINARY(hypot_in_range_f32_scalar, float)
+HYLE_DECLARE_UNARY(exp_in_range_f32_scalar, float)
+HYLE_DECLARE_UNARY(log_in_range_f32_scalar, float)
+HYLE_DECLARE_UNARY(exp_in_range_f64_scalar, double)
+HYLE_DECLARE_UNARY(log_in_range_f64_scalar, double)
+
+#define HYLE_DECLARE_SCALAR_GAPS(type, tag)            \
+  HYLE_DECLARE_UNARY(erfc_##tag##_scalar, type)         \
+  HYLE_DECLARE_UNARY(exp10_##tag##_scalar, type)        \
+  HYLE_DECLARE_BINARY(fmod_##tag##_scalar, type)        \
+  HYLE_DECLARE_BINARY(remainder_##tag##_scalar, type)   \
+  HYLE_DECLARE_BINARY(nextafter_##tag##_scalar, type)   \
+  HYLE_DECLARE_BINARY(fdim_##tag##_scalar, type)
+HYLE_DECLARE_SCALAR_GAPS(float, f32)
+HYLE_DECLARE_SCALAR_GAPS(double, f64)
+#undef HYLE_DECLARE_SCALAR_GAPS
+
+HYLE_COMPLEX_UNARY_LIST(HYLE_DECLARE_COMPLEX_UNARY, scalar, float, f32)
+HYLE_COMPLEX_UNARY_LIST(HYLE_DECLARE_COMPLEX_UNARY, scalar, double, f64)
+HYLE_DECLARE_COMPLEX_POW(cpow_f32_scalar, float)
+HYLE_DECLARE_COMPLEX_POW(cpow_f64_scalar, double)
+
+// Direct Highway kernels and the small HYLE semantic/composition layer for a
+// fixed target. Declarations are harmless on architectures whose TUs are not
+// built; the baseline dispatcher only references compiled variants.
+#define HYLE_DECLARE_VARIANT(suffix)                                              \
+  HYLE_REAL_UNARY_LIST(HYLE_DECLARE_UNARY, highway_##suffix, float, f32)          \
+  HYLE_REAL_UNARY_LIST(HYLE_DECLARE_UNARY, highway_##suffix, double, f64)         \
+  HYLE_REAL_BINARY_LIST(HYLE_DECLARE_BINARY, highway_##suffix, float, f32)        \
+  HYLE_REAL_BINARY_LIST(HYLE_DECLARE_BINARY, highway_##suffix, double, f64)       \
+  HYLE_DECLARE_SINCOS(sincos_f32_highway_##suffix, float)                         \
+  HYLE_DECLARE_SINCOS(sincos_f64_highway_##suffix, double)                        \
+  HYLE_DECLARE_UNARY(exp_in_range_f32_highway_##suffix, float)                    \
+  HYLE_DECLARE_UNARY(log_in_range_f32_highway_##suffix, float)                    \
+  HYLE_DECLARE_UNARY(exp_in_range_f64_highway_##suffix, double)                   \
+  HYLE_DECLARE_UNARY(log_in_range_f64_highway_##suffix, double)                   \
+  HYLE_DECLARE_BINARY(hypot_in_range_f32_hyle_##suffix, float)                    \
+  HYLE_DECLARE_UNARY(erfc_f32_hyle_##suffix, float)                               \
+  HYLE_DECLARE_UNARY(erfc_f64_hyle_##suffix, double)                              \
+  HYLE_DECLARE_UNARY(exp10_f32_hyle_##suffix, float)                              \
+  HYLE_DECLARE_UNARY(exp10_f64_hyle_##suffix, double)                             \
+  HYLE_DECLARE_BINARY(fdim_f32_hyle_##suffix, float)                              \
+  HYLE_DECLARE_BINARY(fdim_f64_hyle_##suffix, double)                             \
+  HYLE_COMPLEX_UNARY_LIST(HYLE_DECLARE_COMPLEX_UNARY, hyle_##suffix, float, f32)  \
+  HYLE_COMPLEX_UNARY_LIST(HYLE_DECLARE_COMPLEX_UNARY, hyle_##suffix, double, f64) \
+  HYLE_DECLARE_COMPLEX_POW(cpow_f32_hyle_##suffix, float)                         \
+  HYLE_DECLARE_COMPLEX_POW(cpow_f64_hyle_##suffix, double)
+
+HYLE_DECLARE_VARIANT(avx2)
+HYLE_DECLARE_VARIANT(avx512)
+HYLE_DECLARE_VARIANT(neon)
+HYLE_DECLARE_VARIANT(sve)
+HYLE_DECLARE_VARIANT(rvv)
+
+#undef HYLE_DECLARE_VARIANT
+#undef HYLE_COMPLEX_UNARY_LIST
+#undef HYLE_REAL_BINARY_LIST
+#undef HYLE_REAL_UNARY_LIST
+#undef HYLE_DECLARE_COMPLEX_POW
+#undef HYLE_DECLARE_COMPLEX_UNARY
+#undef HYLE_DECLARE_SINCOS
+#undef HYLE_DECLARE_BINARY
+#undef HYLE_DECLARE_UNARY
 
 }  // namespace hyle::simd::detail

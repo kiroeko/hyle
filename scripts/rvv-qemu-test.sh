@@ -28,6 +28,10 @@ QEMU=${QEMU_RISCV64:-qemu-riscv64-static}
 OBJDUMP=${OBJDUMP_RISCV64:-riscv64-linux-gnu-objdump}
 OUT=${OUT_DIR:-/tmp/hyle-rvv}
 mkdir -p "$OUT"
+HWY=${HIGHWAY_SOURCE_DIR:-"$REPO/../highway"}
+if [ ! -f "$HWY/hwy/highway.h" ]; then
+  echo "ERROR: locked Highway source not found at $HWY (set HIGHWAY_SOURCE_DIR)"; exit 1
+fi
 
 TIER=${1:-base}
 rc=0
@@ -39,7 +43,7 @@ run_tier() {
   local bin="$OUT/rvv_gtest_${name}"
 
   local COMMON_FLAGS="-std=c++23 -O2 -march=rv64gc -DHYLE_SIMD_HAS_RVV_VARIANT=1 -pthread \
-    -I$REPO/include -I$REPO -I$GT/include -I$GT"
+    -I$REPO/include -I$REPO -I$HWY -I$GT/include -I$GT"
   local FLAGS="$COMMON_FLAGS -march=${march} -DHYLE_SIMD_TARGET_RVV"
 
   echo "[${name}] cross-compiling register + product-math probes (-march=${march}) ..."
@@ -56,7 +60,6 @@ run_tier() {
   elif grep -Eq 'vaes(em|ef|dm|df)\.vv' "$OUT/rvv_test_${name}.dis"; then
     echo "ERROR: optional Zvkned instruction leaked into ${name} object"; exit 1
   fi
-  $CXX $FLAGS -c "$REPO/tests/simd/scalable_math_compile.cc" -o "$OUT/scalable_math_compile_${name}.o"
   $CXX $FLAGS -c "$REPO/tests/simd/scalable_math_product_test.cc" -o "$OUT/scalable_math_product_test_${name}.o"
   $CXX $FLAGS -c "$REPO/tests/simd/scalable_dtype_product_test.cc" -o "$OUT/scalable_dtype_product_test_${name}.o"
   $CXX $FLAGS -c "$REPO/tests/simd/narrow_float_test.cc" -o "$OUT/narrow_float_test_${name}.o"
@@ -104,7 +107,7 @@ run_tier() {
     printf '#define HYLE_SIMD_VARIANT_SUFFIX rvv\n#include "src/simd/%s/kernel_impl.h"\n' "$module" |
       $CXX $FLAGS -x c++ -c - -o "$OUT/${module}_rvv_${name}.o"
   done
-  $CXX $FLAGS "$OUT/rvv_test_${name}.o" "$OUT/scalable_math_compile_${name}.o" \
+  $CXX $FLAGS "$OUT/rvv_test_${name}.o" \
     "$OUT/scalable_math_product_test_${name}.o" "$OUT/scalable_math_dispatch_test_${name}.o" \
     "$OUT/scalable_dtype_product_test_${name}.o" \
     "$OUT/narrow_float_test_${name}.o" \

@@ -1,7 +1,7 @@
 # xsimd 向量化 lgamma lane-mixing Hunt(vendor 算法 bug —— HYLE 对拍揪出、三 target 独立坐实、已绕过)
 
 > 调查日志(已结案)。触发:simd-09 借入 xsimd 独有超越函数(lgamma/tgamma)时,新增 `Math.XsimdGammaMatchesLibm` 对拍 libm,lgamma 在 in=1.29875 处偏差 0.83(不是精度级,是完全错值)。
-> 关联:[`transcendental_xsimd.cc`](../../../src/simd/math/transcendental_xsimd.cc)、[`math_dispatch.cc`](../../../src/simd/math/math_dispatch.cc)(lgamma 强制走 scalar)、[`kernels.h`](../../../src/simd/math/kernels.h)。上游:`third_party/xsimd/include/xsimd/arch/common/xsimd_common_math.hpp` 的 `lgamma_impl<batch<float>>::other()`(约 1292 行)。
+> 历史关联：`transcendental_xsimd.cc`（SIMD-04 已随旧 port 删除）、[`math_dispatch.cc`](../../../src/simd/math/math_dispatch.cc)、[`kernels.h`](../../../src/simd/math/kernels.h)。当时上游为 `xsimd_common_math.hpp` 的 `lgamma_impl<batch<float>>::other()`（约 1292 行）。
 > 结论先行:**xsimd 的向量化 `lgamma`(float)在 lane 值跨越参数归约分支边界时 blend 错**——一个落在 `[1.25,1.5)` 的 lane 若与一个落在 `[0.75,1.25)` 的 lane 同处一个向量,前者拿到错误的归约核结果。独立探针在 **GCC-x86 AVX2 + MSVC-x86 AVX2 + GCC-NEON(qemu-aarch64)** 三处复现同一错值 => 算法 bug 非 codegen。`tgamma` **不受影响**(同窗全 lane 正确)。**处置**:`lgamma` 整个走 scalar libm 参照(不向量化),`tgamma` 继续借 xsimd 向量核。API 两个都正确,只是 lgamma 未向量化,待 xsimd 上游修复再切回。
 
 ## 0. 为什么这篇值得独立成文:借库不等于免验(第二次坐实)

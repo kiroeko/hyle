@@ -7,15 +7,13 @@
 #include <cstdint>
 
 #include "hyle/core/compiler.h"
-#include "hyle/simd/vec.h"
-#include "src/simd/math/math_hyle-inl.h"
-#include "src/simd/math/math_xsimd_hyle-inl.h"
+#include "hwy/contrib/math/math-inl.h"
 
 // Pure HYLE SoA complex kernels. Requires HYLE_SIMD_TARGET_* defined before vec.h
-// in the including TU (same contract as math_hyle / math_xsimd ports).
+// in the including fixed-target Highway TU.
 
-namespace hyle::simd::detail {
-using namespace hyle::simd;
+namespace hyle_highway_math_detail {
+using namespace hwy::HWY_NAMESPACE;
 
 HYLE_FORCE_INLINE bool complex_sincos_regular_lane(float real, float imag) noexcept {
   const std::uint32_t real_bits = std::bit_cast<std::uint32_t>(real);
@@ -144,7 +142,7 @@ HYLE_FORCE_INLINE void complex_ctanh_hyle(const float* sr, const float* si, floa
     auto out_im = Div(s, denominator);
     auto regular_denominator = Abs(denominator);
     if (!AllTrue(d, Le(abs_x, Set(d, 20.0f)))) {
-      const auto q = xsimd_hyle::Exp(d, Neg(Mul(two, abs_x)));
+      const auto q = Exp(d, Neg(Mul(two, abs_x)));
       const auto q2 = Mul(q, q);
       const auto large_denominator = Add(Add(one, q2), Mul(Mul(two, q), c));
       const auto large_re = CopySign(Div(Sub(one, q2), large_denominator), x);
@@ -221,12 +219,12 @@ HYLE_FORCE_INLINE void complex_cpow_hyle(const float* zr, const float* zi, const
     const auto zim = LoadU(d, zi + i);
     const auto wre = LoadU(d, wr + i);
     const auto wim = LoadU(d, wi + i);
-    const auto rho = xsimd_hyle::HypotInRange(d, zre, zim);
+    const auto rho = Sqrt(MulAdd(zre, zre, Mul(zim, zim)));
     const auto log_rho = Log(d, rho);
     const auto phi = Atan2(d, zim, zre);
     const auto exponent = Sub(Mul(wre, log_rho), Mul(wim, phi));
     const auto angle = Add(Mul(wre, phi), Mul(wim, log_rho));
-    const auto magnitude = xsimd_hyle::Exp(d, exponent);
+    const auto magnitude = Exp(d, exponent);
     auto s = Zero(d), c = Zero(d);
     SinCos(d, angle, s, c);
     std::size_t exceptional_count = 0;
@@ -278,4 +276,4 @@ HYLE_FORCE_INLINE void complex_cpow_hyle(const float* zr, const float* zi, const
   }
 }
 
-}  // namespace hyle::simd::detail
+}  // namespace hyle_highway_math_detail

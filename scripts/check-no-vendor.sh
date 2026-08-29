@@ -14,7 +14,7 @@ fail=0
 
 echo "== product #include gate (include/ + src/) =="
 # Only real vendor header paths: "hwy/..." or "xsimd/..." (angle or quote).
-# HYLE port filenames like math_xsimd_hyle-inl.h must NOT trip this.
+# Historical/task text may name removed ports; only actual vendor include paths are forbidden.
 if hits=$(grep -RIn --include='*.h' --include='*.hh' --include='*.hpp' \
     --include='*.cc' --include='*.cpp' --include='*.inc' \
     -E '#[[:space:]]*include[[:space:]]*[<"](hwy/|xsimd/)' include src 2>/dev/null || true); then

@@ -157,7 +157,7 @@ function(hyle_clear_source_isa src)
 endfunction()
 
 # hyle_set_avx512_math_isa(<source-file>) -- ISA flags for the AVX-512 (16-wide) borrow-core
-# math TUs (transcendental_xsimd_avx512.cc / transcendental_highway_avx512.cc). DISTINCT from
+# direct Highway math TU (transcendental_highway_avx512.cc). DISTINCT from
 # the ops AVX512 tier (f/bw/vl/dq) for TWO reasons proven by compile probes:
 #   - xsimd's avx512dq kernels assume avx512cd (its headers #error "avx512dq requires
 #     avx512cd" without it), so the math group needs CD on top of the ops four.

@@ -7,16 +7,14 @@
 #include <type_traits>
 
 #include "hyle/core/compiler.h"
-#include "hyle/simd/vec.h"
-#include "src/simd/math/math_hyle-inl.h"
-#include "src/simd/math/math_xsimd_hyle-inl.h"
+#include "hwy/contrib/math/math-inl.h"
 
 // Type-generic HYLE SoA complex kernels. These are deliberately expressed only in the
 // public D-tag vocabulary so the same body instantiates for AVX2, NEON, SVE and RVV.
 // Exceptional vectors use std::complex before any output store, preserving exact in-place use.
 
-namespace hyle::simd::detail {
-using namespace hyle::simd;
+namespace hyle_highway_math_detail {
+using namespace hwy::HWY_NAMESPACE;
 
 template <typename T>
 inline constexpr T complex_exp_limit_v = std::is_same_v<T, float> ? T{88} : T{709};
@@ -62,7 +60,7 @@ HYLE_FORCE_INLINE void complex_exp_typed_hyle(const T* sr, const T* si, T* dr, T
                            [](std::complex<T> z) { return std::exp(z); });
       continue;
     }
-    const auto magnitude = xsimd_hyle::Exp(d, re);
+    const auto magnitude = Exp(d, re);
     auto sine = Zero(d), cosine = Zero(d);
     SinCos(d, im, sine, cosine);
     StoreU(Mul(magnitude, cosine), d, dr + i);
@@ -92,7 +90,7 @@ HYLE_FORCE_INLINE void complex_log_typed_hyle(const T* sr, const T* si, T* dr, T
                            [](std::complex<T> z) { return std::log(z); });
       continue;
     }
-    StoreU(Log(d, xsimd_hyle::HypotInRange(d, re, im)), d, dr + i);
+    StoreU(Log(d, Sqrt(MulAdd(re, re, Mul(im, im)))), d, dr + i);
     StoreU(Atan2(d, im, re), d, di + i);
   }
   complex_scalar_chunk(sr, si, dr, di, i, n - i,
@@ -120,7 +118,7 @@ HYLE_FORCE_INLINE void complex_sqrt_typed_hyle(const T* sr, const T* si, T* dr, 
                            [](std::complex<T> z) { return std::sqrt(z); });
       continue;
     }
-    const auto rho = xsimd_hyle::HypotInRange(d, re, im);
+    const auto rho = Sqrt(MulAdd(re, re, Mul(im, im)));
     const auto t = Sqrt(Mul(Add(rho, Abs(re)), half));
     const auto two_t = Add(t, t);
     const auto positive = Ge(re, Zero(d));
@@ -319,7 +317,7 @@ HYLE_FORCE_INLINE void complex_pow_typed_hyle(const T* zr, const T* zi, const T*
     const auto zim = LoadU(d, zi + i);
     const auto wre = LoadU(d, wr + i);
     const auto wim = LoadU(d, wi + i);
-    const auto rho = xsimd_hyle::HypotInRange(d, zre, zim);
+    const auto rho = Sqrt(MulAdd(zre, zre, Mul(zim, zim)));
     const auto log_rho = Log(d, rho);
     const auto phi = Atan2(d, zim, zre);
     const auto exponent = Sub(Mul(wre, log_rho), Mul(wim, phi));
@@ -340,7 +338,7 @@ HYLE_FORCE_INLINE void complex_pow_typed_hyle(const T* zr, const T* zi, const T*
       continue;
     }
     const auto angle = Add(Mul(wre, phi), Mul(wim, log_rho));
-    const auto magnitude = xsimd_hyle::Exp(d, exponent);
+    const auto magnitude = Exp(d, exponent);
     auto sine = Zero(d), cosine = Zero(d);
     SinCos(d, angle, sine, cosine);
     StoreU(Mul(magnitude, cosine), d, dr + i);
@@ -354,4 +352,4 @@ HYLE_FORCE_INLINE void complex_pow_typed_hyle(const T* zr, const T* zi, const T*
   }
 }
 
-}  // namespace hyle::simd::detail
+}  // namespace hyle_highway_math_detail

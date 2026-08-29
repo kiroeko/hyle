@@ -7,6 +7,7 @@
 | 依赖 | 类别 | 缺了会怎样 | 怎么被发现 |
 |---|---|---|---|
 | C++ 编译器 / CMake / generator / 汇编器 | **硬门槛** | CMake FATAL_ERROR，配置失败 | CMake 自带检查；Ninja 不是唯一 generator |
+| **Highway** | **自动拉取**（FetchContent） | 选择 `simd`（或依赖它的组件）时取得；严格离线 bundle 缺源码则配置失败 | lock pin `f503c485…`；只执行 HYLE 自己的 target/package 集成 |
 | **ggml** | **自动拉取**（FetchContent） | compute + sched/fcontext 且启用 bridge 时取得；严格离线 bundle 缺源码则配置失败 | lock pin `v0.21.0` |
 | **googletest** | **自动拉取**（FetchContent） | 同上（仅影响测试，`-DHYLE_BUILD_TESTS=OFF` 可跳） | lock pin `v1.18.0` |
 | **nghttp2** | **自动拉取**（FetchContent） | io + sched/fcontext 且启用 HTTP/2 时取得 | lock pin `v1.70.0` |
@@ -35,6 +36,7 @@ SHA-256，in-tree snapshot 登记 vendored content tree，修改后并入产品�
 
 当前产品/测试 FetchContent 快照为：
 
+- Highway `f503c485…`（`simd` 直接产品源码）；
 - ggml `v0.21.0`；
 - nghttp2 `v1.70.0`；
 - Vulkan-Headers、volk、glslang 同一 `vulkan-sdk-1.4.357.0` train；
@@ -51,13 +53,12 @@ target 仍强制全量审计，防止发布介质夹带未复证快照。
 代码以 GLOBAL property 证明一个精确测试路径；能注入 toolchain/top-level include 的代码本来就在构建
 信任边界内。
 
-Highway/xsimd 有两个不能混为一谈的身份：`highway_port`/`xsimd_port` 是已经迁入并修改为 HYLE
-D-tag/API 的产品源码 origin，分别绑定 `83eff393...`/`5d2490f5...`，同时锁住当前 adapted paths 的内容
-hash 和独立许可证 payload；`highway`/`xsimd` 是只用于当前 benchmark/reference 的 2026-08-22
-上游 peer。更新 peer 不会自动“升级”已大幅适配的产品 port；必须先做上游差异审计、逐项回移候选、
-正确性对拍和性能 rebaseline。Highway `math-inl.h` 中注明来自 JPEG XL 的 `Cbrt` 段也属于
-`highway_port` 这条精确 origin，故该 record 与安装 registry 同时要求 Highway Apache-2.0 和 JPEG XL
-BSD-3-Clause 两份文本，不伪造另一个 libjxl revision，也不留 unlocked 例外。
+Highway/xsimd 的身份不能混为一谈：`highway` 是 `simd` 选择时取得的直接产品源码，HYLE 只编译
+自己的目标 TU，不执行上游 project，也不把 Highway 类型泄漏进 ordinary batch API；benchmark 使用
+独立、干净的 sibling checkout 作同 identity peer。`xsimd` 目前只是数学对照，不进入产品。
+`highway_port` 只登记尚待 SIMD-10/11 裁决的 bitpack/VQSort 迁入源码，绑定旧 origin、adapted-path
+内容 hash 和 Apache-2.0 payload；数学 port 已被 direct Highway 替代并从账本删除。新增 checkout 本身
+不等于完成迁移，必须同时删除等价产品 route、旧 source audit 与过期许可证投影。
 
 **默认行为（开箱即用，需联网）**：新机器 clone HYLE → 跑 `cmake` → FetchContent 下载已校验 archive
 到 `<hyle-build>/_deps/<dep>-src`，生成物进入同一 build tree 的 `_deps/<dep>-build`。删除 build tree
@@ -75,7 +76,7 @@ cmake -S . -B build -DFETCHCONTENT_SOURCE_DIR_GGML=/approved/ggml
 “第一次声明胜出”也不能绕过：wrapper 会复验 `MakeAvailable` 实际使用的 source，父工程同名预声明若
 不是 locked identity，整个 HYLE configure 失败。父 CMake/toolchain 是可执行信任根；这里保证最终产品
 不能带着错误身份成功生成，并不把父脚本当成可沙箱执行的数据。其他名字同理：
-`GOOGLETEST`、`NGHTTP2`、`VOLK`、`VULKAN_HEADERS`、`GLSLANG`。`HYLE_DEPS_DIR`
+`HIGHWAY`、`GOOGLETEST`、`NGHTTP2`、`VOLK`、`VULKAN_HEADERS`、`GLSLANG`。`HYLE_DEPS_DIR`
 可以移动**当前 build tree 自己的**依赖区，但不能指向源码树，也不应被不同 toolchain/build tree 共用。
 benchmark 对手的 sibling checkout 根使用环境变量 `HYLE_BENCH_DEPS_DIR`；它刻意不是
 `HYLE_DEPS_DIR`，也不参与 FetchContent population。
@@ -92,6 +93,7 @@ symlink 目标的完整 manifest，两者都重验许可证。通过后才设置
 ```text
 hyle-offline-deps.cmake
 deps/
+  highway/         # 选择 simd 时需要
   ggml/
   nghttp2/
   vulkan_headers/

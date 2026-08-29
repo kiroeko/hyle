@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <algorithm>
+#include <array>
 #include <bit>
 #include <cmath>
 #include <complex>
@@ -205,6 +206,35 @@ TEST(Math, F64ExpLogInRangeUlpAndAlias) {
     EXPECT_LE(f64_ulp_distance(inplace[i], std::log(log_in[i])), 4U) << "log in-place i=" << i;
 }
 
+TEST(Math, F32ExpLogInRangeAndAlias) {
+  std::vector<float> exp_in;
+  std::vector<float> log_in;
+  for (int k = -800; k <= 800; ++k)
+    exp_in.push_back(static_cast<float>(k) * 0.1f);
+  for (int k = 1; k <= 2000; ++k)
+    log_in.push_back(static_cast<float>(k) * 0.05f);
+
+  check(hyle::simd::exp_in_range_f32_batch, std::exp, exp_in,
+        "exp_in_range_f32");
+  check(hyle::simd::log_in_range_f32_batch, std::log, log_in,
+        "log_in_range_f32");
+
+  auto inplace = exp_in;
+  hyle::simd::exp_in_range_f32_batch(inplace.data(), inplace.data(),
+                                     inplace.size());
+  for (std::size_t i = 0; i < inplace.size(); ++i)
+    EXPECT_NEAR(inplace[i], std::exp(exp_in[i]),
+                std::abs(std::exp(exp_in[i])) * kRelTol + kAbsTol)
+        << "exp in-place i=" << i;
+  inplace = log_in;
+  hyle::simd::log_in_range_f32_batch(inplace.data(), inplace.data(),
+                                     inplace.size());
+  for (std::size_t i = 0; i < inplace.size(); ++i)
+    EXPECT_NEAR(inplace[i], std::log(log_in[i]),
+                std::abs(std::log(log_in[i])) * kRelTol + kAbsTol)
+        << "log in-place i=" << i;
+}
+
 // The rest of the f64 transcendentals (Highway wins all but erf; tgamma xsimd; lgamma scalar).
 // Each on its natural domain, vs long-double libm at the ~1e-14 f64 bound.
 namespace {
@@ -269,7 +299,7 @@ TEST(Math, Simd09MatchesLibm) {
   check(hyle::simd::acosh_f32_batch, std::acosh, ramp(1.0f, 50.0f, 600), "acosh");
 }
 
-TEST(Math, HighwayPortPreservesSignedZero) {
+TEST(Math, DirectHighwayPreservesSignedZero) {
   constexpr std::size_t n = 64;
   alignas(64) float f_input[n], f_y[n], f_x[n], f_out[n];
   alignas(64) double d_input[n], d_y[n], d_x[n], d_out[n];
@@ -319,12 +349,84 @@ TEST(Math, HighwayPortPreservesSignedZero) {
   }
 }
 
-// xsimd-ONLY borrows (lgamma/tgamma) vs libm. Highway has no gamma, so these are a single-source
-// borrow (no best-of). Ranges avoid the poles (0, negative integers) and f32 overflow: tgamma
-// overflows past ~35, so cap at 10 (tgamma(10)=362880). lgamma grows slowly, safe to ~50.
-// Uses a dedicated tolerance: gamma is NOT the 3.5-ULP transcendental class -- xsimd's gamma
-// polynomial is looser, and tgamma's large dynamic range magnifies the trailing-arg f32 error.
-TEST(Math, XsimdGammaMatchesLibm) {
+TEST(Math, DirectHighwayFullRangeSpecialValues) {
+  const auto check_f32_specials = [](auto fn, auto ref, const char* name) {
+    const float inf = std::numeric_limits<float>::infinity();
+    const std::array<float, 8> pattern = {
+        -inf, -1.0f, -0.0f, 0.0f, 1.0f, inf,
+        std::numeric_limits<float>::quiet_NaN(), 2.0f};
+    std::vector<float> in;
+    for (int repeat = 0; repeat < 8; ++repeat)
+      in.insert(in.end(), pattern.begin(), pattern.end());
+    std::vector<float> out(in.size());
+    fn(in.data(), out.data(), out.size());
+    for (std::size_t i = 0; i < in.size(); ++i) {
+      const float want = ref(in[i]);
+      if (std::isnan(want)) {
+        EXPECT_TRUE(std::isnan(out[i])) << name << " i=" << i;
+      } else if (std::isinf(want) || want == 0.0f) {
+        EXPECT_EQ(out[i], want) << name << " i=" << i;
+        EXPECT_EQ(std::signbit(out[i]), std::signbit(want))
+            << name << " i=" << i;
+      } else {
+        EXPECT_NEAR(out[i], want, std::abs(want) * 8e-7f + 1e-6f)
+            << name << " i=" << i;
+      }
+    }
+  };
+  const auto check_f64_specials = [](auto fn, auto ref, const char* name) {
+    const double inf = std::numeric_limits<double>::infinity();
+    const std::array<double, 8> pattern = {
+        -inf, -1.0, -0.0, 0.0, 1.0, inf,
+        std::numeric_limits<double>::quiet_NaN(), 2.0};
+    std::vector<double> in;
+    for (int repeat = 0; repeat < 8; ++repeat)
+      in.insert(in.end(), pattern.begin(), pattern.end());
+    std::vector<double> out(in.size());
+    fn(in.data(), out.data(), out.size());
+    for (std::size_t i = 0; i < in.size(); ++i) {
+      const double want = ref(in[i]);
+      if (std::isnan(want)) {
+        EXPECT_TRUE(std::isnan(out[i])) << name << " i=" << i;
+      } else if (std::isinf(want) || want == 0.0) {
+        EXPECT_EQ(out[i], want) << name << " i=" << i;
+        EXPECT_EQ(std::signbit(out[i]), std::signbit(want))
+            << name << " i=" << i;
+      } else {
+        EXPECT_NEAR(out[i], want, std::abs(want) * 1e-14 + 1e-15)
+            << name << " i=" << i;
+      }
+    }
+  };
+
+  check_f32_specials(hyle::simd::tanh_f32_batch,
+                     [](float x) { return std::tanh(x); }, "tanh_f32");
+  check_f32_specials(hyle::simd::erf_f32_batch,
+                     [](float x) { return std::erf(x); }, "erf_f32");
+  check_f32_specials(hyle::simd::atan_f32_batch,
+                     [](float x) { return std::atan(x); }, "atan_f32");
+  check_f32_specials(hyle::simd::cbrt_f32_batch,
+                     [](float x) { return std::cbrt(x); }, "cbrt_f32");
+  check_f32_specials(hyle::simd::asinh_f32_batch,
+                     [](float x) { return std::asinh(x); }, "asinh_f32");
+
+  check_f64_specials(hyle::simd::tanh_f64_batch,
+                     [](double x) { return std::tanh(x); }, "tanh_f64");
+  check_f64_specials(hyle::simd::erf_f64_batch,
+                     [](double x) { return std::erf(x); }, "erf_f64");
+  check_f64_specials(hyle::simd::atan_f64_batch,
+                     [](double x) { return std::atan(x); }, "atan_f64");
+  check_f64_specials(hyle::simd::cbrt_f64_batch,
+                     [](double x) { return std::cbrt(x); }, "cbrt_f64");
+  check_f64_specials(hyle::simd::asinh_f64_batch,
+                     [](double x) { return std::asinh(x); }, "asinh_f64");
+}
+
+// The current locked Highway release directly provides lgamma/tgamma. Ranges avoid the poles
+// (0, negative integers) and f32 overflow: tgamma overflows past ~35, so cap at 10
+// (tgamma(10)=362880). Gamma has a wider upstream ULP class than the common transcendentals, so
+// keep a dedicated tolerance instead of weakening the general math gate.
+TEST(Math, DirectHighwayGammaMatchesLibm) {
   auto check_gamma = [](void (*fn)(const float*, float*, std::size_t), double (*ref)(double),
                         const std::vector<float>& in, const char* name, double reltol) {
     std::vector<float> out(in.size());

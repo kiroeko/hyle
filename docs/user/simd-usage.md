@@ -65,7 +65,11 @@ Highway parity。应用通常只应调用处理整段连续数据的语义接口
 - 复数 SoA：f32/f64 均提供 `cexp`、`clog`、`csqrt`、`csin`、`ccos`、`ctan`、`csinh`、
   `ccosh`、`ctanh`、`cpow`；实部和虚部放在两个数组中，避免把 `std::complex` 对象布局
   固化到算法边界上。命名形如 `ctan_f32_batch` / `ctan_f64_batch`，输入输出可完全同址。
-- `*_in_range_*` 是调用者承诺输入范围的快速合同，不是自动检查后回退的安全版本。
+- 普通实数入口保持对应 `std::` 函数的域和特殊值语义；内部直接采用中央锁定的 Highway，
+  vendor 类型与版本不会进入用户接口。Highway 明确不覆盖的域由 HYLE 回退到标量 oracle。
+- `exp/log_in_range_f32/f64_batch` 与 `hypot_in_range_f32_batch` 是调用者承诺输入范围的快速合同，
+  不是自动检查后回退的安全版本。它们适合 softmax 等已经由上层证明范围的连续 row；不确定输入时
+  使用普通入口。精确原位 `src == dst` 可用，任意部分重叠不可用。
 
 ## C++ whole-buffer 示例
 

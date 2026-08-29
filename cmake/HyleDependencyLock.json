@@ -159,11 +159,6 @@
         "src/simd/bitpack/bitpack_hyle_avx512.cc",
         "src/simd/bitpack/bitpack_hyle_neon.cc",
         "src/simd/bitpack/bitpack_hyle_scalable.cc",
-        "src/simd/math/math_hyle-inl.h",
-        "src/simd/math/transcendental_highway.cc",
-        "src/simd/math/transcendental_highway_avx512.cc",
-        "src/simd/math/transcendental_highway_neon.cc",
-        "src/simd/math/transcendental_highway_scalable.cc",
         "src/simd/sort/sort_dispatch.cc",
         "src/simd/sort/vqsort_hyle",
         "src/simd/sort/vqsort_body.inc",
@@ -172,34 +167,18 @@
         "src/simd/sort/vqsort_hyle_neon.cc",
         "src/simd/sort/vqsort_hyle_rvv.cc",
         "src/simd/sort/vqsort_hyle_sve.cc"
-      ], "content_sha256": "c2d5e67d01922888c87220105cf163bb67e732d902a839c019fb171dd642bce8" },
-      "license": { "expression": "Apache-2.0 AND BSD-3-Clause", "files": [
-        { "root": "hyle", "path": "third_party/ported/LICENSE-HIGHWAY", "sha256": "b8b1fae5894cfbe213b47f1378bb2269cf82de18b34447e871c0225ace0d3ad7" },
-        { "root": "hyle", "path": "third_party/ported/LICENSE-JPEG-XL-BSD-3-Clause", "sha256": "b330dd9452548e55a717a0618d7e6274dfa3266372dbe859dcd9a330fd3c3191" }
+      ], "content_sha256": "5c659beeab14652ceb7c3bbca117366aa9f78daa0598c5575455fdf44c468fd6" },
+      "license": { "expression": "Apache-2.0", "files": [
+        { "root": "hyle", "path": "third_party/ported/LICENSE-HIGHWAY", "sha256": "b8b1fae5894cfbe213b47f1378bb2269cf82de18b34447e871c0225ace0d3ad7" }
       ] }
     },
     {
-      "name": "xsimd_port", "class": "integrated_source",
-      "repository": "https://github.com/xtensor-stack/xsimd.git", "version": "snapshot-2026-06-11-port-origin",
-      "revision": "5d2490f515cf773f984da9ec0a1aec103d00d238", "git_tree": "1b16f281b7769d34256a9d92fda2168ca32b07e6",
-      "archive": { "url": "https://codeload.github.com/xtensor-stack/xsimd/tar.gz/5d2490f515cf773f984da9ec0a1aec103d00d238", "sha256": "e51af33ac5aa19fc9e60573819b966fa9b8fbbaaab858ba90bcc68022cc6c02d" },
-      "integrated": { "paths": [
-        "src/simd/math/math_xsimd_body.inc",
-        "src/simd/math/math_xsimd_hyle-inl.h",
-        "src/simd/math/transcendental_xsimd.cc",
-        "src/simd/math/transcendental_xsimd_avx512.cc",
-        "src/simd/math/transcendental_xsimd_neon.cc"
-      ], "content_sha256": "9bc7eb2b088fb46e9b31600dbe532277811e6125f2b22511b848dac48e9fd11b" },
-      "license": { "expression": "BSD-3-Clause", "files": [
-        { "root": "hyle", "path": "third_party/ported/LICENSE-XSIMD-BSD-3-Clause", "sha256": "080d98a805c16fd591adab0c0a3f040bae841227126935dc174c8209a3bb6cdc" }
-      ] }
-    },
-    {
-      "name": "highway", "class": "benchmark",
-      "repository": "https://github.com/google/highway.git", "version": "snapshot-2026-08-22",
-      "revision": "239071390b18ca70f8fadde90ebefa6d8b12cb69", "git_tree": "8a93fbea0b2bc9291046ec867128592e31d68866",
-      "archive": { "url": "https://codeload.github.com/google/highway/tar.gz/239071390b18ca70f8fadde90ebefa6d8b12cb69", "sha256": "b9413269f96dd0128a7fb003baa68ce78745c44782dce78cd6f2b1ad32c61618" },
-      "license": { "expression": "LicenseRef-Highway-multiple", "files": [
+      "name": "highway", "class": "fetchcontent",
+      "repository": "https://github.com/google/highway.git", "version": "snapshot-2026-08-27",
+      "revision": "f503c485cec6b4f2f596fa60d83484797c9eeb5c", "git_tree": "783503c5fd0755ef0802aac0fd66364f0e5a033b",
+      "archive": { "url": "https://codeload.github.com/google/highway/tar.gz/f503c485cec6b4f2f596fa60d83484797c9eeb5c", "sha256": "a63e4252d47093eac1eb26206e139e9743987ef9985d3479f47487d3b6c4fe6f" },
+      "expanded_tree_sha256": "e0b374da8062f78be62af509b64997c5b81836c620e1a9ed463062ca19846792",
+      "license": { "expression": "Apache-2.0 OR BSD-3-Clause", "files": [
         { "root": "dependency", "path": "LICENSE", "sha256": "85de9303e7a81f35d81befd51a4004c41b5e7f7e40cd4e3f5ff609ecd71a0e44" }
       ] }
     },

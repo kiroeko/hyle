@@ -101,8 +101,8 @@ cmake --build build-bench --target hyle_sched_bench
 - **必须原生 ext4**（见 9p 铁律）——`/mnt/c` 上 bench 数字无效（CPU 打不饱和）。
 - guest CPU affinity 只用于工程重复性，不能证明固定到物理 P/E core；Windows 与 WSL 必须使用同一
   `W1` 主机互斥锁，禁止并行采样。
-- SIMD bench 将 `HYLE_BENCH_VENDOR_DIR` 的固定版 Highway/xsimd 当对照；它们只供 bench，
-  产品使用已经迁入并修改的 HYLE port，不再依赖 `third_party/{highway,xsimd}` checkout。
+- SIMD 产品从中央 lock 获取 Highway 源并直接编译进 HYLE target TU；
+  `HYLE_BENCH_VENDOR_DIR` 中独立、干净的 Highway/xsimd checkout 只作同身份/同 ISA 对照。
 - 统计对标用 `scripts/bench-stat.py`（多遍取统计，防单遍噪声）。
 
 ## 七、可选依赖

@@ -116,7 +116,7 @@ set(_hyle_feature_smoke_dependencies "")
 if(HYLE_FEATURE_SMOKE_SCOPE STREQUAL "all" OR
    HYLE_FEATURE_SMOKE_SCOPE STREQUAL "adapters")
   list(APPEND _hyle_feature_smoke_dependencies
-    ggml nghttp2 vulkan_headers volk glslang googletest)
+    highway ggml nghttp2 vulkan_headers volk glslang googletest)
 endif()
 if(HYLE_FEATURE_SMOKE_SCOPE STREQUAL "all" OR
    HYLE_FEATURE_SMOKE_SCOPE STREQUAL "trace")
@@ -158,6 +158,7 @@ function(_hyle_feature_smoke_correctness)
     -DHYLE_COMPUTE_GGML_NATIVE=OFF
     -DHYLE_COMPUTE_VULKAN=ON
     -DFETCHCONTENT_FULLY_DISCONNECTED=ON
+    -DFETCHCONTENT_SOURCE_DIR_HIGHWAY=${_highway_source}
     -DFETCHCONTENT_SOURCE_DIR_GGML=${_ggml_source}
     -DFETCHCONTENT_SOURCE_DIR_NGHTTP2=${_nghttp2_source}
     -DFETCHCONTENT_SOURCE_DIR_VULKAN_HEADERS=${_vulkan_headers_source}
@@ -200,6 +201,7 @@ function(_hyle_feature_smoke_shape shape is_static)
     -DHYLE_COMPUTE_GGML_NATIVE=OFF
     -DHYLE_COMPUTE_VULKAN=ON
     -DFETCHCONTENT_FULLY_DISCONNECTED=ON
+    -DFETCHCONTENT_SOURCE_DIR_HIGHWAY=${_highway_source}
     -DFETCHCONTENT_SOURCE_DIR_GGML=${_ggml_source}
     -DFETCHCONTENT_SOURCE_DIR_NGHTTP2=${_nghttp2_source}
     -DFETCHCONTENT_SOURCE_DIR_VULKAN_HEADERS=${_vulkan_headers_source}

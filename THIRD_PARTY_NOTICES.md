@@ -19,6 +19,7 @@ license text and the notices in each source file control.
 
 | Component | HYLE use | License | Full text in checkout / installed package |
 |---|---|---|---|
+| Google Highway | `simd` portable register, target and mathematics implementation | Apache-2.0 OR BSD-3-Clause | fetched checkout `LICENSE` / `highway-upstream-LICENSE` |
 | nghttp2 | `io` HTTP/2 protocol core | MIT | fetched checkout `COPYING` / `nghttp2-LICENSE` |
 | ggml | `compute` CPU/CUDA operator implementation | MIT | fetched checkout `LICENSE` / `ggml-LICENSE` |
 | volk | `compute` Vulkan meta-loader | MIT | fetched checkout `LICENSE.md` / `volk-LICENSE.md` |
@@ -28,9 +29,7 @@ license text and the notices in each source file control.
 
 | Origin | HYLE files | Selected license | Full text in source / installed package |
 |---|---|---|---|
-| Google Highway | `src/simd/sort/vqsort_hyle/`, `src/simd/bitpack/bitpack_hyle-inl.h`, and most of `src/simd/math/math_hyle-inl.h` | Apache-2.0 option of Apache-2.0 OR BSD-3-Clause | `third_party/ported/LICENSE-HIGHWAY` / `highway-LICENSE`; source files retain upstream copyright, origin, and commit notices |
-| JPEG XL | `Cbrt` portion of `src/simd/math/math_hyle-inl.h` | BSD-3-Clause | `third_party/ported/LICENSE-JPEG-XL-BSD-3-Clause` / same basename |
-| xsimd | `src/simd/math/math_xsimd_hyle-inl.h` | BSD-3-Clause | `third_party/ported/LICENSE-XSIMD-BSD-3-Clause` / same basename |
+| Google Highway | `src/simd/sort/vqsort_hyle/` and `src/simd/bitpack/bitpack_hyle-inl.h` | Apache-2.0 option of Apache-2.0 OR BSD-3-Clause | `third_party/ported/LICENSE-HIGHWAY` / `highway-LICENSE`; source files retain upstream copyright, origin, and commit notices |
 
 The proprietary terms for HYLE's modifications and surrounding original code do not remove
 the permissions or conditions applying to these third-party portions.
@@ -43,6 +42,7 @@ provided by the target system and remain governed by their suppliers. glslang is
 when HYLE's Vulkan tests or benchmarks regenerate shaders; it is not linked into or installed
 with a production HYLE package.
 
-GoogleTest, nanobench, Highway, and xsimd checkouts used only as tests or benchmark opponents
-are not part of a production HYLE installation unless their code is explicitly listed above
-as ported into HYLE.
+GoogleTest, nanobench, and xsimd checkouts used only as tests or benchmark opponents are not
+part of a production HYLE installation. Highway is different: SIMD product builds consume the
+centrally locked source directly, while parity benchmarks still use a separate clean checkout
+of the same identity so candidate and peer cannot accidentally share include paths.

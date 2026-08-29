@@ -16,18 +16,16 @@ CANONICAL = ("scalar", "sse4", "avx2", "avx512", "neon", "sve", "rvv")
 X86_FORBIDDEN_SOURCES = {
     "scalar": ("dot_f16c.cc", "dot_avx512bf16.cc", "cvt_f16c.cc", "cvt_avx2.cc",
                "cvt_avx512bf16.cc", "transcendental_highway.cc",
-               "transcendental_xsimd.cc", "transcendental_highway_avx512.cc",
-               "transcendental_xsimd_avx512.cc", "vqsort_hyle_avx2.cc",
+               "transcendental_highway_avx512.cc", "vqsort_hyle_avx2.cc",
                "vqsort_hyle_avx512.cc", "bitpack_hyle_avx2.cc",
                "bitpack_hyle_avx512.cc"),
     "sse4": ("dot_f16c.cc", "dot_avx512bf16.cc", "cvt_f16c.cc", "cvt_avx2.cc",
              "cvt_avx512bf16.cc", "transcendental_highway.cc",
-             "transcendental_xsimd.cc", "transcendental_highway_avx512.cc",
-             "transcendental_xsimd_avx512.cc", "vqsort_hyle_avx2.cc",
+             "transcendental_highway_avx512.cc", "vqsort_hyle_avx2.cc",
              "vqsort_hyle_avx512.cc", "bitpack_hyle_avx2.cc",
              "bitpack_hyle_avx512.cc"),
     "avx2": ("dot_f16c.cc", "dot_avx512bf16.cc", "cvt_avx512bf16.cc",
-             "transcendental_highway_avx512.cc", "transcendental_xsimd_avx512.cc",
+             "transcendental_highway_avx512.cc",
              "vqsort_hyle_avx512.cc", "bitpack_hyle_avx512.cc"),
     # AVX2 math/dtype files are intentional per-op implementation dependencies of the canonical
     # AVX-512 product. Compiler-specific sort handling is refined in check_build_graph below.

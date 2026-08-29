@@ -67,8 +67,8 @@ scripts/fetch-bench-vendors.sh
 - macOS 无受支持的 hard affinity；工程/formal 数据必须记录实际 process QoS、交流电与 low-power
   状态。默认 `interactive` 与 `utility` 是不同合同，不冒充 P/E-core pin；见
   [性能机器合同](../performance/machines.md)。
-- SIMD bench 只从 `~/vendor/{highway,xsimd}` 取对照；产品使用已经迁入并修改的 HYLE port，
-  不再依赖 `third_party/{highway,xsimd}` checkout。
+- SIMD 产品从中央 lock 获取 Highway 源并直接编译进 HYLE target TU；
+  `~/vendor/{highway,xsimd}` 的独立 checkout 只作 benchmark 对照。
 
 ## 五、同步工作流（SSH 开发机）
 

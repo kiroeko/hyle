@@ -135,7 +135,7 @@ elseif(HYLE_TARGET_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   if(HYLE_TEST_SIMD_SVE)
     hyle_add_test(simd NAME sve SOURCES sve_test.cc native_test.cc
                   narrow_float_test.cc
-                  scalable_math_compile.cc scalable_math_product_test.cc
+                  scalable_math_product_test.cc
                   scalable_math_dispatch_test.cc scalable_dtype_product_test.cc
                   scalable_bitpack_product_test.cc fixed128_bitpack_reference.cc
                   scalable_sort_product_test.cc
@@ -150,7 +150,7 @@ elseif(HYLE_TARGET_PROCESSOR MATCHES "riscv64|riscv")
   if(HYLE_TEST_SIMD_RVV)
     hyle_add_test(simd NAME rvv SOURCES rvv_test.cc native_test.cc
                   narrow_float_test.cc
-                  scalable_math_compile.cc scalable_math_product_test.cc
+                  scalable_math_product_test.cc
                   scalable_math_dispatch_test.cc scalable_dtype_product_test.cc
                   scalable_bitpack_product_test.cc fixed128_bitpack_reference.cc
                   scalable_sort_product_test.cc

@@ -25,6 +25,10 @@ CXX=${CXX_AARCH64:-aarch64-linux-gnu-g++-14}
 QEMU=${QEMU_AARCH64:-qemu-aarch64-static}
 OUT=${OUT_DIR:-/tmp/hyle-sve}
 mkdir -p "$OUT"
+HWY=${HIGHWAY_SOURCE_DIR:-"$REPO/../highway"}
+if [ ! -f "$HWY/hwy/highway.h" ]; then
+  echo "ERROR: locked Highway source not found at $HWY (set HIGHWAY_SOURCE_DIR)"; exit 1
+fi
 
 # tier: base (armv8-a+sve, default) or crypto (armv8-a+sve2-aes, unlocks the SVE2 AES/CLMul test
 # guarded by __ARM_FEATURE_SVE2_AES). qemu -cpu max enables sve2-aes at every VL.
@@ -33,14 +37,13 @@ ARCH="armv8-a+sve"
 if [ "$TIER" = "crypto" ]; then ARCH="armv8-a+sve2-aes"; fi
 
 COMMON_FLAGS="-std=c++23 -O2 -march=armv8-a -DHYLE_SIMD_HAS_SVE_VARIANT=1 -pthread \
-  -I$REPO/include -I$REPO -I$GT/include -I$GT"
+  -I$REPO/include -I$REPO -I$HWY -I$GT/include -I$GT"
 FLAGS="$COMMON_FLAGS -march=$ARCH -DHYLE_SIMD_TARGET_SVE"
 
 echo "[1/3] cross-compiling register + product-math probes for aarch64 ($ARCH) ..."
 $CXX $FLAGS -c "$GT/src/gtest-all.cc"  -o "$OUT/gtest-all.o"
 $CXX $FLAGS -c "$GT/src/gtest_main.cc" -o "$OUT/gtest-main.o"
 $CXX $FLAGS -c "$REPO/tests/simd/sve_test.cc" -o "$OUT/sve_test.o"
-$CXX $FLAGS -c "$REPO/tests/simd/scalable_math_compile.cc" -o "$OUT/scalable_math_compile.o"
 $CXX $FLAGS -c "$REPO/tests/simd/scalable_math_product_test.cc" -o "$OUT/scalable_math_product_test.o"
 $CXX $FLAGS -c "$REPO/tests/simd/scalable_dtype_product_test.cc" -o "$OUT/scalable_dtype_product_test.o"
 $CXX $FLAGS -c "$REPO/tests/simd/narrow_float_test.cc" -o "$OUT/narrow_float_test.o"
@@ -73,7 +76,6 @@ $CXX $COMMON_FLAGS -c "$REPO/src/simd/runtime.cc" -o "$OUT/runtime.o"
 $CXX $COMMON_FLAGS -c "$REPO/src/simd/math/math_dispatch.cc" -o "$OUT/math_dispatch.o"
 $CXX $COMMON_FLAGS -c "$REPO/src/simd/math/transcendental_scalar.cc" -o "$OUT/math_scalar.o"
 $CXX $COMMON_FLAGS -c "$REPO/src/simd/math/transcendental_highway_neon.cc" -o "$OUT/math_neon.o"
-$CXX $COMMON_FLAGS -c "$REPO/src/simd/math/transcendental_xsimd_neon.cc" -o "$OUT/math_xsimd_neon.o"
 $CXX $COMMON_FLAGS -c "$REPO/src/simd/dtype/dtype_dispatch.cc" -o "$OUT/dtype_dispatch.o"
 $CXX $COMMON_FLAGS -c "$REPO/src/simd/dtype/cvt_scalar.cc" -o "$OUT/dtype_scalar.o"
 $CXX $COMMON_FLAGS -c "$REPO/src/simd/dtype/cvt_neon.cc" -o "$OUT/dtype_neon.o"
@@ -98,7 +100,7 @@ for module in ops random scan search narrow; do
   printf '#define HYLE_SIMD_VARIANT_SUFFIX sve\n#include "src/simd/%s/kernel_impl.h"\n' "$module" |
     $CXX $FLAGS -x c++ -c - -o "$OUT/${module}_sve.o"
 done
-$CXX $FLAGS "$OUT/sve_test.o" "$OUT/scalable_math_compile.o" \
+$CXX $FLAGS "$OUT/sve_test.o" \
   "$OUT/scalable_math_product_test.o" "$OUT/scalable_math_dispatch_test.o" \
   "$OUT/neon_math_product_test.o" \
   "$OUT/scalable_dtype_product_test.o" \
@@ -112,7 +114,7 @@ $CXX $FLAGS "$OUT/sve_test.o" "$OUT/scalable_math_compile.o" \
   "$OUT/narrow_ops_test.o" \
   "$OUT/scan_test.o" \
   "$OUT/fixed128_bitpack_reference.o" \
-  "$OUT/math_sve.o" "$OUT/math_neon.o" "$OUT/math_xsimd_neon.o" \
+  "$OUT/math_sve.o" "$OUT/math_neon.o" \
   "$OUT/math_scalar.o" "$OUT/math_dispatch.o" "$OUT/cpu.o" "$OUT/error_status.o" \
   "$OUT/thread_test_stub.o" "$OUT/fat_scalar.o" "$OUT/fat_neon.o" "$OUT/fat_sve.o" \
   "$OUT/runtime.o" \

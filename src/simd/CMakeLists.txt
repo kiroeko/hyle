@@ -56,8 +56,7 @@ if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
     list(APPEND _simd_arch_sources
       dtype/cvt_f16c.cc
       dtype/cvt_avx2.cc
-      math/transcendental_highway.cc
-      math/transcendental_xsimd.cc)
+      math/transcendental_highway.cc)
   endif()
   if(HYLE_SIMD_BUILD_AVX2 OR
      (HYLE_SIMD_BUILD_AVX512 AND _hyle_simd_cl_sort_fallback))
@@ -72,7 +71,6 @@ if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   if(HYLE_SIMD_BUILD_AVX512)
     list(APPEND _simd_arch_sources
       math/transcendental_highway_avx512.cc
-      math/transcendental_xsimd_avx512.cc
       bitpack/bitpack_hyle_avx512.cc)
     if(NOT _hyle_simd_cl_sort_fallback)
       list(APPEND _simd_arch_sources sort/vqsort_hyle_avx512.cc)
@@ -110,14 +108,12 @@ elseif(HYLE_TARGET_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   # ops NEON kernel reuses the neon.h D-tag backend (dot/saxpy) -- the simd-03 real-run
   # target. dtype NEON (cvt_neon.cc) is hand-written per-backend intrinsics: fp16 via native
   # ARMv8.2 vcvt, bf16 via NEON integer bit-math (bit-identical to scalar). math NEON
-  # (transcendental_highway_neon.cc) HYLE port of Highway contrib/math + P2-1 table_f64,
-  # which lower to NEON here (probed: target=NEON, matches libm) -- Highway for all three
-  # (x86's per-op xsimd/Highway split was a speed pick; arm64 starts with one verified core).
+  # (transcendental_highway_neon.cc) directly instantiates the centrally locked Highway
+  # mathematics core and keeps HYLE's pointer/count and SoA façade.
   if(HYLE_SIMD_BUILD_NEON)
     list(APPEND _simd_arch_sources
       dtype/cvt_neon.cc
       math/transcendental_highway_neon.cc
-      math/transcendental_xsimd_neon.cc
       sort/vqsort_hyle_neon.cc
       bitpack/bitpack_hyle_neon.cc)
   endif()
@@ -139,7 +135,9 @@ elseif(HYLE_TARGET_PROCESSOR MATCHES "riscv64|RISCV64")
   endif()
 endif()
 
-# X3: product simd no longer links third_party/highway (vqsort ported to HYLE D-tag).
+# Highway is a header-only product mechanism compiled into HYLE's fixed-target TUs; it does not
+# add a second runtime library ABI. Remaining VQSort/bitpack ports are tracked separately until
+# their bounded tickets decide direct adoption or a minimal local delta.
 hyle_add_module(simd SOURCES
   runtime.cc
   ops/dispatch_ops.cc
@@ -184,6 +182,8 @@ endif()
 target_include_directories(hyle_simd PRIVATE
   "${PROJECT_SOURCE_DIR}"
   "${CMAKE_CURRENT_BINARY_DIR}/generated")
+target_include_directories(hyle_simd SYSTEM PRIVATE
+  "${HYLE_SIMD_HIGHWAY_SOURCE_DIR}")
 if(HYLE_SIMD_BUILD_SVE)
   target_compile_definitions(hyle_simd PRIVATE HYLE_SIMD_HAS_SVE_VARIANT=1)
 endif()
@@ -291,23 +291,18 @@ if(HYLE_SIMD_EXACT_TARGET)
     VERBATIM)
 endif()
 
-# --- Vectorized transcendentals: PER-OP best-of-breed --------------------------------
-# exp/log/tanh BORROW verified header-only vendor cores (借核不手搓). The same-ISA bench
-# found NO single library wins all three ops at the same ~3.5-ULP class: xsimd's exp/tanh
-# polynomials are fastest, Highway's contrib/math log is fastest. So math_dispatch picks
-# PER OP: exp/tanh -> xsimd, log -> Highway (scalar libm is the fallback floor).
-#
-# Math kernels are pure HYLE D-tag ports (simd-20 X2); symbol names keep *_highway_* /
-# *_xsimd_* for best-of dispatch wiring only. Architecture split: x86 AVX2/AVX512 TUs vs
-# arm64 NEON TUs. Runtime cpu_features().avx2 gates x86; arm64 NEON is baseline.
+# --- Vectorized mathematics -------------------------------------------------------------
+# Fixed/scalable target TUs instantiate the centrally locked Highway core directly. HYLE owns
+# the pointer/count façade, full-domain scalar screening, complex SoA composition and the small
+# set of missing operations; no Highway vector type crosses a target boundary.
 if(HYLE_SIMD_X64)
   if(HYLE_SIMD_BUILD_AVX2 OR HYLE_SIMD_BUILD_AVX512)
-    hyle_set_isa(math/transcendental_highway.cc AVX2)
-    hyle_set_isa(math/transcendental_xsimd.cc AVX2)
+    hyle_set_highway_isa(math/transcendental_highway.cc)
   endif()
   if(HYLE_SIMD_BUILD_AVX512)
-    hyle_set_isa(math/transcendental_xsimd_avx512.cc AVX512)
-    hyle_set_isa(math/transcendental_highway_avx512.cc AVX512)
+    if(NOT _hyle_simd_cl_sort_fallback)
+      hyle_set_avx512_math_isa(math/transcendental_highway_avx512.cc)
+    endif()
   endif()
   # HYLE vqsort / bit-pack variants: D-tag backend selected by HYLE_SIMD_TARGET_*;
   # hyle_set_isa supplies the AVX2 / AVX-512 codegen for their dispatcher gates.
@@ -351,16 +346,15 @@ endif()
 # defend against a global -march; the two deployment modes are a deliberate choice, not a bug.
 
 hyle_register_package_dependency(
+  NAME simd_highway
+  OWNER simd
+  LOCKED_DEPENDENCIES highway
+  RUNTIME_FILE_SPECS
+    "${HYLE_SIMD_HIGHWAY_SOURCE_DIR}/LICENSE|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|highway-upstream-LICENSE")
+
+hyle_register_package_dependency(
   NAME simd_highway_port
   OWNER simd
   LOCKED_DEPENDENCIES highway_port
   RUNTIME_FILE_SPECS
-    "${PROJECT_SOURCE_DIR}/third_party/ported/LICENSE-HIGHWAY|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|highway-LICENSE"
-    "${PROJECT_SOURCE_DIR}/third_party/ported/LICENSE-JPEG-XL-BSD-3-Clause|${CMAKE_INSTALL_DATADIR}/licenses/Hyle")
-
-hyle_register_package_dependency(
-  NAME simd_xsimd_port
-  OWNER simd
-  LOCKED_DEPENDENCIES xsimd_port
-  RUNTIME_FILE_SPECS
-    "${PROJECT_SOURCE_DIR}/third_party/ported/LICENSE-XSIMD-BSD-3-Clause|${CMAKE_INSTALL_DATADIR}/licenses/Hyle")
+    "${PROJECT_SOURCE_DIR}/third_party/ported/LICENSE-HIGHWAY|${CMAKE_INSTALL_DATADIR}/licenses/Hyle|highway-LICENSE")

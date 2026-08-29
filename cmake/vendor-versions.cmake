@@ -1,7 +1,8 @@
 # Compatibility projection of the central dependency ledger for the standalone
 # benchmark fetchers (simd-20 X4+).
-# Product code no longer vendors highway/xsimd in-tree; only HYLE_BUILD_BENCH=ON
-# targets consume these checkouts via HYLE_BENCH_VENDOR_DIR.
+# Highway is also a locked product source, while xsimd remains a benchmark peer.
+# Benchmarks still use clean sibling checkouts so candidate and peer include paths
+# cannot accidentally collapse into one implementation.
 include("${CMAKE_CURRENT_LIST_DIR}/HyleDependencyVersions.cmake")
 set(HYLE_BENCH_VENDOR_HIGHWAY_REPOSITORY "${HYLE_DEP_HIGHWAY_REPOSITORY}")
 set(HYLE_BENCH_VENDOR_HIGHWAY_REV "${HYLE_DEP_HIGHWAY_COMMIT}")
@@ -26,9 +27,10 @@ if(DEFINED HYLE_VERIFY_BENCH_DEPENDENCY_NAME OR
       "Pass both HYLE_VERIFY_BENCH_DEPENDENCY_NAME and "
       "HYLE_VERIFY_BENCH_DEPENDENCY_DIR")
   endif()
-  if(NOT HYLE_VERIFY_BENCH_DEPENDENCY_NAME IN_LIST HYLE_BENCH_DEPENDENCIES)
+  if(NOT HYLE_VERIFY_BENCH_DEPENDENCY_NAME STREQUAL "highway" AND
+     NOT HYLE_VERIFY_BENCH_DEPENDENCY_NAME STREQUAL "xsimd")
     message(FATAL_ERROR
-      "'${HYLE_VERIFY_BENCH_DEPENDENCY_NAME}' is not a locked benchmark source")
+      "'${HYLE_VERIFY_BENCH_DEPENDENCY_NAME}' is not a SIMD benchmark source")
   endif()
   hyle_verify_locked_git_checkout(
     "${HYLE_VERIFY_BENCH_DEPENDENCY_NAME}"

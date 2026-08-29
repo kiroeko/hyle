@@ -15,10 +15,11 @@
 4. **系统 SDK/运行时**：OpenSSL、CUDA Toolkit/driver、Vulkan loader/ICD 等。这些由
    `find_package()`、toolchain/sysroot 或运行环境提供，不属于 FetchContent bundle。
 
-Highway/xsimd 的产品 port 已是 HYLE 源码包内的修改代码，不作为 `deps/` checkout 再携带；完整源码
-审计会验证中央 lock 中的 origin、声明的 integration paths、adapted-content hash 和许可证副本。
-benchmark 用的新 Highway/xsimd checkout 是另一身份，只在实际运行 benchmark 对手时准备。Highway
-origin 的 `math-inl.h` 内 JPEG XL `Cbrt` 版权段由同一 integrated record 连同第二份许可证一起验证。
+选择 `simd` 时必须提供 `deps/highway/`：它是中央锁定、由 HYLE target TU 直接编译的产品源码，而不是
+任意系统安装。仍未迁完的 Highway/xsimd port 已是 HYLE 源码包内的修改代码，不另放 checkout；完整
+源码审计会验证其 origin、integration paths、adapted-content hash 和许可证副本。benchmark 使用独立
+干净的 Highway/xsimd sibling checkout，避免候选与对手共用 include path。历史 Highway port 内 JPEG XL
+`Cbrt` 版权段仍由 integrated record 连同第二份许可证验证，直至对应 port 被删除。
 
 不要交付 `<build>/_deps`、`CMakeCache.txt`、对象文件或整棵 build tree：它们包含生成器、绝对路径、
 编译器和宿主机状态，不是可迁移依赖包。在线准备机应与离线目标的 OS、架构、发行版/SDK 大版本匹配；
@@ -30,6 +31,7 @@ origin 的 `math-inl.h` 内 JPEG XL `Cbrt` 版权段由同一 integrated record 
 
 | 构建能力 | `deps/` 目录 |
 |---|---|
+| `simd`，或任何传递依赖 `simd` 的组件 | `highway/` |
 | `HYLE_BUILD_TESTS=ON` | `googletest/` |
 | 有 sched/fcontext 且 `HYLE_IO_HTTP2=ON` | `nghttp2/` |
 | 有 sched/fcontext 且 `HYLE_COMPUTE_GGML=ON` | `ggml/` |
@@ -44,6 +46,7 @@ origin 的 `math-inl.h` 内 JPEG XL `Cbrt` 版权段由同一 integrated record 
 hyle/
   hyle-offline-deps.cmake
   deps/
+    highway/
     googletest/
     nghttp2/
     ggml/
@@ -183,7 +186,7 @@ Homebrew cellar 目录不是可迁移 SDK 包。若要 TLS/Vulkan 等可选能�
 下面验证中央 component manifest 当前登记的全部 HYLE 产品组件（包括 header-only `util_core` 与
 `container_intrusive`）的 CPU 基线，不启用需要系统 SDK
 或额外协议/计算后端的 feature；
-因为 tests 打开，bundle 只需 `deps/googletest/`：
+因为全组件包含 `simd` 且 tests 打开，bundle 需要 `deps/highway/` 与 `deps/googletest/`：
 
 ```bash
 cmake -C hyle-offline-deps.cmake --preset linux \

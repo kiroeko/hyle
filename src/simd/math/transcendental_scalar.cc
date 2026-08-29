@@ -17,6 +17,14 @@ void log_f32_scalar(const float* src, float* dst, std::size_t n) noexcept {
 void tanh_f32_scalar(const float* src, float* dst, std::size_t n) noexcept {
   for (std::size_t i = 0; i < n; ++i) dst[i] = std::tanh(src[i]);
 }
+void exp_in_range_f32_scalar(const float* src, float* dst,
+                             std::size_t n) noexcept {
+  exp_f32_scalar(src, dst, n);
+}
+void log_in_range_f32_scalar(const float* src, float* dst,
+                             std::size_t n) noexcept {
+  log_f32_scalar(src, dst, n);
+}
 
 // f64 scalar references (libm oracle + fallback for the double transcendental path -- CAE/solver).
 void exp_f64_scalar(const double* src, double* dst, std::size_t n) noexcept {
@@ -24,6 +32,14 @@ void exp_f64_scalar(const double* src, double* dst, std::size_t n) noexcept {
 }
 void log_f64_scalar(const double* src, double* dst, std::size_t n) noexcept {
   for (std::size_t i = 0; i < n; ++i) dst[i] = std::log(src[i]);
+}
+void exp_in_range_f64_scalar(const double* src, double* dst,
+                             std::size_t n) noexcept {
+  exp_f64_scalar(src, dst, n);
+}
+void log_in_range_f64_scalar(const double* src, double* dst,
+                             std::size_t n) noexcept {
+  log_f64_scalar(src, dst, n);
 }
 void tanh_f64_scalar(const double* src, double* dst, std::size_t n) noexcept {
   for (std::size_t i = 0; i < n; ++i) dst[i] = std::tanh(src[i]);
@@ -51,7 +67,7 @@ void hypot_f64_scalar(const double* a, const double* b, double* dst, std::size_t
   for (std::size_t i = 0; i < n; ++i) dst[i] = std::hypot(a[i], b[i]);
 }
 
-// simd-09 scalar references (libm oracle + fallback for every new best-of function).
+// Scalar references for the remaining real functions.
 void sin_f32_scalar(const float* src, float* dst, std::size_t n) noexcept {
   for (std::size_t i = 0; i < n; ++i) dst[i] = std::sin(src[i]);
 }
