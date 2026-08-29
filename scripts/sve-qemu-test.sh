@@ -12,6 +12,8 @@
 #   bash scripts/sve-qemu-test.sh fat   # direct-Highway source-fat seam only
 #   HYLE_SCALABLE_ROW_DTYPE_ONLY=1 bash scripts/sve-qemu-test.sh
 #                                      # SIMD-07 bounded family gate
+#   HYLE_SCALABLE_SEARCH_SCAN_ONLY=1 bash scripts/sve-qemu-test.sh
+#                                      # SIMD-09 bounded family gate
 #
 # On a REAL SVE host (Graviton3, etc.) you don't need this -- configure with
 # -DHYLE_TEST_SIMD_SVE=ON
@@ -66,7 +68,8 @@ $CXX $FLAGS -c "$GT/src/gtest-all.cc"  -o "$OUT/gtest-all.o"
 $CXX $FLAGS -c "$GT/src/gtest_main.cc" -o "$OUT/gtest-main.o"
 $CXX $FLAGS -c "$REPO/tests/simd/sve_test.cc" -o "$OUT/sve_test.o"
 SCALABLE_MATH_TEST_OBJECTS=()
-if [ "${HYLE_SCALABLE_ROW_DTYPE_ONLY:-0}" != "1" ]; then
+if [ "${HYLE_SCALABLE_ROW_DTYPE_ONLY:-0}" != "1" ] &&
+   [ "${HYLE_SCALABLE_SEARCH_SCAN_ONLY:-0}" != "1" ]; then
   $CXX $FLAGS -c "$REPO/tests/simd/scalable_math_product_test.cc" -o "$OUT/scalable_math_product_test.o"
   $CXX $COMMON_FLAGS -c "$REPO/tests/simd/scalable_math_dispatch_test.cc" -o "$OUT/scalable_math_dispatch_test.o"
   $CXX $COMMON_FLAGS -c "$REPO/tests/simd/neon_math_product_test.cc" -o "$OUT/neon_math_product_test.o"
@@ -119,7 +122,7 @@ $CXX $COMMON_FLAGS -c "$REPO/src/simd/sort/vqsort_scalar.cc" -o "$OUT/sort_scala
 $CXX $COMMON_FLAGS -c "$REPO/src/simd/sort/vqsort_hyle_neon.cc" -o "$OUT/sort_neon.o"
 $CXX $COMMON_FLAGS -c "$REPO/src/simd/sort/radix_sort.cc" -o "$OUT/radix_sort.o"
 $CXX $COMMON_FLAGS -c "$REPO/src/simd/sort/stream_topk.cc" -o "$OUT/stream_topk.o"
-for module in random scan search; do
+for module in random; do
   printf '#define HYLE_SIMD_VARIANT_SUFFIX scalar\n#include "src/simd/%s/kernel_impl.h"\n' "$module" |
     $CXX $COMMON_FLAGS -x c++ -c - -o "$OUT/${module}_scalar.o"
   printf '#define HYLE_SIMD_TARGET_NEON\n#define HYLE_SIMD_VARIANT_SUFFIX neon\n#include "src/simd/%s/kernel_impl.h"\n' "$module" |
@@ -127,7 +130,7 @@ for module in random scan search; do
   printf '#define HYLE_SIMD_VARIANT_SUFFIX sve\n#include "src/simd/%s/kernel_impl.h"\n' "$module" |
     $CXX $FLAGS -x c++ -c - -o "$OUT/${module}_sve.o"
 done
-for module in ops narrow; do
+for module in ops scan search narrow; do
   printf '#define HWY_COMPILE_ONLY_SCALAR 1\n#define HYLE_SIMD_VARIANT_SUFFIX scalar\n#include "src/simd/%s/kernel_impl.h"\n' "$module" |
     $CXX $COMMON_FLAGS -x c++ -c - -o "$OUT/${module}_scalar.o"
   printf '#define HWY_COMPILE_ONLY_STATIC 1\n#define HYLE_SIMD_TARGET_NEON\n#define HYLE_SIMD_VARIANT_SUFFIX neon\n#include "src/simd/%s/kernel_impl.h"\n' "$module" |
@@ -178,6 +181,8 @@ FEATURE_ENV=(HYLE_EXPECT_SVE=1)
 TEST_ARGS=()
 if [ "${HYLE_SCALABLE_ROW_DTYPE_ONLY:-0}" = "1" ]; then
   TEST_ARGS+=(--gtest_filter=SimdRuntime.TableMetadataAndExactTierLookup:Dispatch.*:Ops.*:DtypeBatch.*:DtypeGraph.*:NarrowOps.*:ScalableDtypeProduct.*:Sve.RuntimeVectorLengthMatchesGate)
+elif [ "${HYLE_SCALABLE_SEARCH_SCAN_ONLY:-0}" = "1" ]; then
+  TEST_ARGS+=(--gtest_filter=SimdRuntime.TableMetadataAndExactTierLookup:Search.*:Scan.*:Sve.RuntimeVectorLengthMatchesGate)
 fi
 if [ "$TIER" = "crypto" ]; then
   FEATURE_ENV+=(HYLE_EXPECT_SVE2=1 HYLE_EXPECT_SVE_AES=1 HYLE_EXPECT_SVE_PMULL=1)

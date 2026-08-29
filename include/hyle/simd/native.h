@@ -9,5 +9,3 @@
 
 #include "hyle/simd/native/algorithm.h"
 #include "hyle/simd/native/random.h"
-#include "hyle/simd/native/scan.h"
-#include "hyle/simd/native/search.h"

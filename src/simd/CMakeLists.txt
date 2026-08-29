@@ -204,11 +204,11 @@ if(HYLE_SIMD_BUILD_RVV)
   target_compile_definitions(hyle_simd PRIVATE HYLE_SIMD_HAS_RVV_VARIANT=1)
 endif()
 
-# These five modules have mechanically identical variant TUs: each defines
+# These modules have mechanically identical variant TUs: each defines
 # a target macro plus a symbol suffix, then includes one generic kernel body. Generate those TUs
 # from the shared build mechanism; it filters the full target list by architecture and applies the
-# exact tier flags through hyle_set_isa. Their dispatchers remain handwritten because scan's Linux
-# scalar policy is a semantic contract, not build metadata.
+# exact tier flags through hyle_set_isa. Their dispatchers remain handwritten
+# because each owns a distinct public range contract.
 hyle_add_dispatched_kernel(HIGHWAY
   TARGET hyle_simd
   NAME ops
@@ -219,7 +219,7 @@ hyle_add_dispatched_kernel(HIGHWAY
   NAME dtype_convert
   IMPL "src/simd/dtype/conversion_kernel_impl.h"
   TARGETS scalar sse4 avx2 avx512 neon sve rvv)
-hyle_add_dispatched_kernel(
+hyle_add_dispatched_kernel(HIGHWAY
   TARGET hyle_simd
   NAME scan
   IMPL "src/simd/scan/kernel_impl.h"
@@ -229,7 +229,7 @@ hyle_add_dispatched_kernel(
   NAME random
   IMPL "src/simd/random/kernel_impl.h"
   TARGETS scalar sse4 avx2 avx512 neon sve rvv)
-hyle_add_dispatched_kernel(
+hyle_add_dispatched_kernel(HIGHWAY
   TARGET hyle_simd
   NAME search
   IMPL "src/simd/search/kernel_impl.h"

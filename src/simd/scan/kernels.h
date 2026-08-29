@@ -3,32 +3,30 @@
 #include <cstddef>
 #include <cstdint>
 
-// Internal per-ISA scan kernel symbols (suffix = scalar|sse4|avx2|avx512|neon).
-
 namespace hyle::simd::detail {
 
-#define HYLE_SCAN_DECLS(sfx)                                                                   \
-  void inclusive_scan_u32_##sfx(std::uint32_t* data, std::size_t n) noexcept;                  \
-  void inclusive_scan_i32_##sfx(std::int32_t* data, std::size_t n) noexcept;                   \
-  void inclusive_scan_u64_##sfx(std::uint64_t* data, std::size_t n) noexcept;                  \
-  void inclusive_scan_i64_##sfx(std::int64_t* data, std::size_t n) noexcept;                   \
-  void inclusive_scan_f32_##sfx(float* data, std::size_t n) noexcept;                          \
-  void inclusive_scan_f64_##sfx(double* data, std::size_t n) noexcept;                         \
-  void exclusive_scan_u32_##sfx(std::uint32_t* data, std::size_t n) noexcept;                  \
-  void exclusive_scan_i32_##sfx(std::int32_t* data, std::size_t n) noexcept;                   \
-  void exclusive_scan_u64_##sfx(std::uint64_t* data, std::size_t n) noexcept;                  \
-  void exclusive_scan_i64_##sfx(std::int64_t* data, std::size_t n) noexcept;                   \
-  void exclusive_scan_f32_##sfx(float* data, std::size_t n) noexcept;                          \
-  void exclusive_scan_f64_##sfx(double* data, std::size_t n) noexcept
+#define HYLE_SCAN_TYPES(X, tier) \
+  X(std::uint32_t, u32, tier)    \
+  X(std::int32_t, i32, tier)     \
+  X(std::uint64_t, u64, tier)    \
+  X(std::int64_t, i64, tier)     \
+  X(float, f32, tier)            \
+  X(double, f64, tier)
 
-HYLE_SCAN_DECLS(scalar);
-HYLE_SCAN_DECLS(sse4);
-HYLE_SCAN_DECLS(avx2);
-HYLE_SCAN_DECLS(avx512);
-HYLE_SCAN_DECLS(neon);
-HYLE_SCAN_DECLS(sve);
-HYLE_SCAN_DECLS(rvv);
+#define HYLE_SCAN_DECL(T, tag, tier)                                      \
+  void inclusive_scan_##tag##_##tier(const T*, T*, std::size_t) noexcept; \
+  void exclusive_scan_##tag##_##tier(const T*, T*, std::size_t,           \
+                                      T) noexcept;
 
-#undef HYLE_SCAN_DECLS
+HYLE_SCAN_TYPES(HYLE_SCAN_DECL, scalar)
+HYLE_SCAN_TYPES(HYLE_SCAN_DECL, sse4)
+HYLE_SCAN_TYPES(HYLE_SCAN_DECL, avx2)
+HYLE_SCAN_TYPES(HYLE_SCAN_DECL, avx512)
+HYLE_SCAN_TYPES(HYLE_SCAN_DECL, neon)
+HYLE_SCAN_TYPES(HYLE_SCAN_DECL, sve)
+HYLE_SCAN_TYPES(HYLE_SCAN_DECL, rvv)
+
+#undef HYLE_SCAN_DECL
+#undef HYLE_SCAN_TYPES
 
 }  // namespace hyle::simd::detail

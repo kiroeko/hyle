@@ -3,34 +3,45 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "hyle/simd/dispatch.h"  // Isa, HYLE_SIMD_API
+#include "hyle/simd/dispatch.h"
 
-// scan.h -- inclusive / exclusive prefix sum over contiguous arrays (P1-1).
-// Time complexity: scalar chain is O(n) serial dependence (~1 elem/cycle); this path is
-// O(n/w · log w) with w = native SIMD width (vector Kogge-Stone + carry across vectors).
-// Highway/xsimd do not ship a public scan — this is a capability HYLE owns.
+// Contiguous inclusive and exclusive prefix sums. The exported core accepts
+// distinct source/destination ranges or exact in-place aliasing; partial
+// overlap is outside the contract. For n == 0, both pointers may be null.
 //
-// SEMANTICS (in place):
-//   inclusive_scan(a, n): a[i] <- sum_{j=0..i} a0[j]   (a0 = values before the call)
-//   exclusive_scan(a, n): a[i] <- sum_{j=0..i-1} a0[j]  (a[0] = 0; identity of +)
-// Integer types use wrapping arithmetic (same as plain T addition). Floating types use
-// the backend's Add (non-associative; result is deterministic for a fixed ISA width).
-// n == 0 is a no-op. Pointers must be non-null when n > 0 (caller contract).
+// Integer sums are modulo 2^N, including signed types (there is no signed
+// overflow UB). Floating-point association is deterministic for a fixed
+// selected target, but may differ between ISA widths.
+//
+// Time O(n), auxiliary space O(1), no allocation and no locking.
 
 namespace hyle::simd {
 
-HYLE_SIMD_API void inclusive_scan(std::uint32_t* data, std::size_t n) noexcept;
-HYLE_SIMD_API void inclusive_scan(std::int32_t* data, std::size_t n) noexcept;
-HYLE_SIMD_API void inclusive_scan(std::uint64_t* data, std::size_t n) noexcept;
-HYLE_SIMD_API void inclusive_scan(std::int64_t* data, std::size_t n) noexcept;
-HYLE_SIMD_API void inclusive_scan(float* data, std::size_t n) noexcept;
-HYLE_SIMD_API void inclusive_scan(double* data, std::size_t n) noexcept;
+#define HYLE_SIMD_SCAN_DECLARE(T)                                             \
+  HYLE_SIMD_API void inclusive_scan(const T* src, T* dst,                    \
+                                     std::size_t n) noexcept;                 \
+  HYLE_SIMD_API void exclusive_scan(const T* src, T* dst, std::size_t n,     \
+                                     T init) noexcept;                        \
+  inline void inclusive_scan(T* data, std::size_t n) noexcept {              \
+    inclusive_scan(data, data, n);                                           \
+  }                                                                          \
+  inline void exclusive_scan(const T* src, T* dst, std::size_t n) noexcept { \
+    exclusive_scan(src, dst, n, T{});                                        \
+  }                                                                          \
+  inline void exclusive_scan(T* data, std::size_t n, T init) noexcept {      \
+    exclusive_scan(data, data, n, init);                                     \
+  }                                                                          \
+  inline void exclusive_scan(T* data, std::size_t n) noexcept {              \
+    exclusive_scan(data, data, n, T{});                                      \
+  }
 
-HYLE_SIMD_API void exclusive_scan(std::uint32_t* data, std::size_t n) noexcept;
-HYLE_SIMD_API void exclusive_scan(std::int32_t* data, std::size_t n) noexcept;
-HYLE_SIMD_API void exclusive_scan(std::uint64_t* data, std::size_t n) noexcept;
-HYLE_SIMD_API void exclusive_scan(std::int64_t* data, std::size_t n) noexcept;
-HYLE_SIMD_API void exclusive_scan(float* data, std::size_t n) noexcept;
-HYLE_SIMD_API void exclusive_scan(double* data, std::size_t n) noexcept;
+HYLE_SIMD_SCAN_DECLARE(std::uint32_t)
+HYLE_SIMD_SCAN_DECLARE(std::int32_t)
+HYLE_SIMD_SCAN_DECLARE(std::uint64_t)
+HYLE_SIMD_SCAN_DECLARE(std::int64_t)
+HYLE_SIMD_SCAN_DECLARE(float)
+HYLE_SIMD_SCAN_DECLARE(double)
+
+#undef HYLE_SIMD_SCAN_DECLARE
 
 }  // namespace hyle::simd

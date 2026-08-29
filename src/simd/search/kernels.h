@@ -22,6 +22,8 @@ namespace hyle::simd::detail {
   std::size_t find_equal_##tag##_##tier(const T*, std::size_t, T) noexcept;  \
   T min_value_##tag##_##tier(const T*, std::size_t) noexcept;                \
   T max_value_##tag##_##tier(const T*, std::size_t) noexcept;                \
+  std::size_t index_of_min_##tag##_##tier(const T*, std::size_t) noexcept;   \
+  std::size_t index_of_max_##tag##_##tier(const T*, std::size_t) noexcept;   \
   void minmax_value_##tag##_##tier(const T*, std::size_t, T*, T*) noexcept;  \
   bool is_sorted_asc_##tag##_##tier(const T*, std::size_t) noexcept;         \
   bool is_sorted_desc_##tag##_##tier(const T*, std::size_t) noexcept;

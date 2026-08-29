@@ -14,7 +14,7 @@ class RandomState;
 // ordinary calls pay one function-pointer hop per whole buffer. Its layout and
 // per-tier accessors are deliberately not part of the installed C++ surface.
 struct Runtime {
-  static constexpr std::uint32_t kTableVersion = 8;
+  static constexpr std::uint32_t kTableVersion = 9;
 
   struct Ops {
     float (*dot_f32)(const float*, const float*, std::size_t) noexcept;
@@ -64,6 +64,8 @@ struct Runtime {
     std::size_t (*find_equal_##tag)(const T*, std::size_t, T) noexcept;   \
     T (*min_value_##tag)(const T*, std::size_t) noexcept;                 \
     T (*max_value_##tag)(const T*, std::size_t) noexcept;                 \
+    std::size_t (*index_of_min_##tag)(const T*, std::size_t) noexcept;    \
+    std::size_t (*index_of_max_##tag)(const T*, std::size_t) noexcept;    \
     void (*minmax_value_##tag)(const T*, std::size_t, T*, T*) noexcept;   \
     bool (*is_sorted_asc_##tag)(const T*, std::size_t) noexcept;          \
     bool (*is_sorted_desc_##tag)(const T*, std::size_t) noexcept;
@@ -80,6 +82,21 @@ struct Runtime {
     HYLE_RUNTIME_SEARCH_FIELDS(double, f64)
 
 #undef HYLE_RUNTIME_SEARCH_FIELDS
+  };
+
+  struct Scan {
+#define HYLE_RUNTIME_SCAN_FIELDS(T, tag)                                  \
+    void (*inclusive_scan_##tag)(const T*, T*, std::size_t) noexcept;     \
+    void (*exclusive_scan_##tag)(const T*, T*, std::size_t, T) noexcept;
+
+    HYLE_RUNTIME_SCAN_FIELDS(std::uint32_t, u32)
+    HYLE_RUNTIME_SCAN_FIELDS(std::int32_t, i32)
+    HYLE_RUNTIME_SCAN_FIELDS(std::uint64_t, u64)
+    HYLE_RUNTIME_SCAN_FIELDS(std::int64_t, i64)
+    HYLE_RUNTIME_SCAN_FIELDS(float, f32)
+    HYLE_RUNTIME_SCAN_FIELDS(double, f64)
+
+#undef HYLE_RUNTIME_SCAN_FIELDS
   };
 
   struct Narrow {
@@ -139,11 +156,13 @@ struct Runtime {
   Ops ops;
   Random random;
   Search search;
+  Scan scan_ops;
   Narrow narrow;
   DtypeConvert dtype_convert;
   Module ops_module;
-  Module narrow_module;
+  Module search_module;
   Module scan;
+  Module narrow_module;
   Module dtype;
   Module math;
   Module sort;

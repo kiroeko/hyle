@@ -25,6 +25,12 @@ namespace hyle::simd {
   T max_value(const T* data, std::size_t n) noexcept {                       \
     return HYLE_SEARCH_CALL(max_value_##tag, data, n);                       \
   }                                                                           \
+  std::size_t index_of_min(const T* data, std::size_t n) noexcept {          \
+    return HYLE_SEARCH_CALL(index_of_min_##tag, data, n);                    \
+  }                                                                           \
+  std::size_t index_of_max(const T* data, std::size_t n) noexcept {          \
+    return HYLE_SEARCH_CALL(index_of_max_##tag, data, n);                    \
+  }                                                                           \
   void minmax_value(const T* data, std::size_t n, T* out_min,                \
                     T* out_max) noexcept {                                    \
     HYLE_SEARCH_CALL(minmax_value_##tag, data, n, out_min, out_max);         \

@@ -56,6 +56,14 @@ void check_search_type() {
                              : *std::max_element(data.begin(), data.end());
     EXPECT_EQ(hs::min_value(data.data(), n), ref_min);
     EXPECT_EQ(hs::max_value(data.data(), n), ref_max);
+    const std::size_t ref_min_index =
+        n == 0 ? n : static_cast<std::size_t>(
+                          std::min_element(data.begin(), data.end()) - data.begin());
+    const std::size_t ref_max_index =
+        n == 0 ? n : static_cast<std::size_t>(
+                          std::max_element(data.begin(), data.end()) - data.begin());
+    EXPECT_EQ(hs::index_of_min(data.data(), n), ref_min_index);
+    EXPECT_EQ(hs::index_of_max(data.data(), n), ref_max_index);
     EXPECT_EQ(got_min, ref_min);
     EXPECT_EQ(got_max, ref_max);
   }
@@ -125,6 +133,8 @@ TEST(Search, FloatingNaNContract) {
       EXPECT_EQ(hs::find_equal(data, 4, nan), 4u);
       EXPECT_TRUE(std::isnan(hs::min_value(data, 4)));
       EXPECT_TRUE(std::isnan(hs::max_value(data, 4)));
+      EXPECT_EQ(hs::index_of_min(data, 4), 1u);
+      EXPECT_EQ(hs::index_of_max(data, 4), 1u);
       double lo{}, hi{};
       hs::minmax_value(data, 4, &lo, &hi);
       EXPECT_TRUE(std::isnan(lo));
@@ -137,14 +147,77 @@ TEST(Search, FloatingNaNContract) {
       EXPECT_EQ(hs::find_equal(data, 4, nan), 4u);
       EXPECT_TRUE(std::isnan(hs::min_value(data, 4)));
       EXPECT_TRUE(std::isnan(hs::max_value(data, 4)));
+      EXPECT_EQ(hs::index_of_min(data, 4), 1u);
+      EXPECT_EQ(hs::index_of_max(data, 4), 1u);
     }
+  }
+}
+
+TEST(Search, FloatingExtremaKeepFirstTieAndFirstNaNAcrossBlocks) {
+  for (const hs::Runtime* runtime : {
+           hs::runtime_for(hs::Isa::kScalar),
+           hs::runtime_for(hs::Isa::kSse42),
+           hs::runtime_for(hs::Isa::kAvx2),
+           hs::runtime_for(hs::Isa::kAvx512),
+           hs::runtime_for(hs::Isa::kNeon),
+           hs::runtime_for(hs::Isa::kSve),
+           hs::runtime_for(hs::Isa::kRvv)}) {
+    if (runtime == nullptr) continue;
+    std::vector<float> data(513, 4.0f);
+    data[9] = -17.0f;
+    data[301] = -17.0f;
+    data[13] = 29.0f;
+    data[477] = 29.0f;
+    EXPECT_EQ(runtime->search.index_of_min_f32(data.data(), data.size()), 9u);
+    EXPECT_EQ(runtime->search.index_of_max_f32(data.data(), data.size()), 13u);
+
+    data[71] = std::numeric_limits<float>::quiet_NaN();
+    data[402] = std::numeric_limits<float>::quiet_NaN();
+    EXPECT_EQ(runtime->search.index_of_min_f32(data.data(), data.size()), 71u);
+    EXPECT_EQ(runtime->search.index_of_max_f32(data.data(), data.size()), 71u);
+    EXPECT_TRUE(std::isnan(
+        runtime->search.min_value_f32(data.data(), data.size())));
+    EXPECT_TRUE(std::isnan(
+        runtime->search.max_value_f32(data.data(), data.size())));
+    float minimum = 0.0f;
+    float maximum = 0.0f;
+    runtime->search.minmax_value_f32(data.data(), data.size(), &minimum,
+                                     &maximum);
+    EXPECT_TRUE(std::isnan(minimum));
+    EXPECT_TRUE(std::isnan(maximum));
   }
 }
 
 TEST(Search, EmptyNullRange) {
   EXPECT_EQ(hs::count_equal(static_cast<const std::uint32_t*>(nullptr), 0, 1), 0u);
   EXPECT_EQ(hs::find_equal(static_cast<const std::uint32_t*>(nullptr), 0, 1), 0u);
+  EXPECT_EQ(hs::index_of_min(static_cast<const std::uint32_t*>(nullptr), 0), 0u);
+  EXPECT_EQ(hs::index_of_max(static_cast<const std::uint32_t*>(nullptr), 0), 0u);
   EXPECT_TRUE(hs::is_sorted(static_cast<const std::uint32_t*>(nullptr), 0));
+  EXPECT_EQ(hs::min_value(static_cast<const std::int32_t*>(nullptr), 0),
+            std::numeric_limits<std::int32_t>::max());
+  EXPECT_EQ(hs::max_value(static_cast<const std::int32_t*>(nullptr), 0),
+            std::numeric_limits<std::int32_t>::lowest());
+  EXPECT_EQ(hs::min_value(static_cast<const float*>(nullptr), 0),
+            std::numeric_limits<float>::infinity());
+  EXPECT_EQ(hs::max_value(static_cast<const float*>(nullptr), 0),
+            -std::numeric_limits<float>::infinity());
+  std::uint32_t minimum = 0;
+  std::uint32_t maximum = 0;
+  hs::minmax_value(static_cast<const std::uint32_t*>(nullptr), 0, &minimum,
+                   &maximum);
+  EXPECT_EQ(minimum, std::numeric_limits<std::uint32_t>::max());
+  EXPECT_EQ(maximum, std::numeric_limits<std::uint32_t>::lowest());
+}
+
+TEST(Search, ExtremaIndexKeepsFirstTieAcrossCounterSegments) {
+  std::vector<std::uint8_t> data(20000, 17);
+  data[123] = 1;
+  data[17000] = 1;
+  data[456] = 251;
+  data[19000] = 251;
+  EXPECT_EQ(hs::index_of_min(data.data(), data.size()), 123u);
+  EXPECT_EQ(hs::index_of_max(data.data(), data.size()), 456u);
 }
 
 TEST(Search, EverySupportedRuntimeVariant) {
@@ -158,6 +231,8 @@ TEST(Search, EverySupportedRuntimeVariant) {
     EXPECT_EQ(rt->search.find_equal_i32(data, 7, 9), 4u);
     EXPECT_EQ(rt->search.min_value_i32(data, 7), -3);
     EXPECT_EQ(rt->search.max_value_i32(data, 7), 9);
+    EXPECT_EQ(rt->search.index_of_min_i32(data, 7), 3u);
+    EXPECT_EQ(rt->search.index_of_max_i32(data, 7), 4u);
     std::int32_t lo{}, hi{};
     rt->search.minmax_value_i32(data, 7, &lo, &hi);
     EXPECT_EQ(lo, -3);
@@ -165,4 +240,14 @@ TEST(Search, EverySupportedRuntimeVariant) {
     EXPECT_FALSE(rt->search.is_sorted_asc_i32(data, 7));
     EXPECT_FALSE(rt->search.is_sorted_desc_i32(data, 7));
   }
+}
+
+TEST(Search, SelectedTargetDescribesActualKernelTable) {
+  const auto& runtime = hs::runtime();
+  const hs::SelectedTarget target =
+      hs::selected_target(hs::KernelFamily::kSearch);
+  EXPECT_EQ(target.isa, runtime.search_module.isa);
+  EXPECT_EQ(target.features, runtime.search_module.features);
+  EXPECT_NE(runtime.search.count_equal_i8, nullptr);
+  EXPECT_NE(runtime.search.index_of_max_f64, nullptr);
 }

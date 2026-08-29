@@ -163,21 +163,21 @@ elseif(HYLE_TARGET_PROCESSOR MATCHES "arm64|aarch64|ARM64")
 endif()
 hyle_apply_warnings(hyle_activation_bench)
 
-# P1-1 prefix scan: scalar O(n) dependence chain vs HYLE Kogge-Stone inclusive_scan.
-add_executable(hyle_scan_bench scan_bench.cc)
-target_link_libraries(hyle_scan_bench PRIVATE hyle_simd nanobench)
-hyle_apply_warnings(hyle_scan_bench)
-
-add_executable(hyle_search_bench search_bench.cc)
-target_link_libraries(hyle_search_bench PRIVATE hyle_simd nanobench)
-target_include_directories(hyle_search_bench SYSTEM PRIVATE
+# SIMD-09 bounded search/scan integration instrument. The shipping target
+# bodies and independently spelled direct-Highway peers share one fixed ISA
+# TU; public/body rows expose the single allowed batch dispatch separately.
+add_executable(hyle_search_scan_parity_bench search_scan_parity_bench.cc)
+target_link_libraries(hyle_search_scan_parity_bench PRIVATE hyle_simd nanobench)
+target_include_directories(hyle_search_scan_parity_bench PRIVATE
+  "${PROJECT_SOURCE_DIR}")
+target_include_directories(hyle_search_scan_parity_bench SYSTEM PRIVATE
   "${_hyle_bench_highway_dir}")
 if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
-  hyle_set_highway_isa(search_bench.cc)
+  hyle_set_highway_target_isa(search_scan_parity_bench.cc AVX2)
 elseif(HYLE_TARGET_PROCESSOR MATCHES "arm64|aarch64|ARM64")
-  hyle_set_isa(search_bench.cc NEON)
+  hyle_set_highway_target_isa(search_scan_parity_bench.cc NEON)
 endif()
-hyle_apply_warnings(hyle_search_bench)
+hyle_apply_warnings(hyle_search_scan_parity_bench)
 
 # Target-bound range algorithms: same TU, same ISA, same pointer/count and
 # predicate contracts as Highway contrib/algo. This measures the loop/tail
@@ -451,8 +451,7 @@ set(_hyle_simd_bench_targets
   hyle_math_scaling_bench
   hyle_bitpack_bench
   hyle_activation_bench
-  hyle_scan_bench
-  hyle_search_bench
+  hyle_search_scan_parity_bench
   hyle_native_algorithm_bench
   hyle_mixed_dot_bench
   hyle_row_dtype_parity_bench

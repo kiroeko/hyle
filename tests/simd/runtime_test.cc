@@ -56,6 +56,10 @@ TEST(SimdRuntime, TableMetadataAndExactTierLookup) {
             active.ops_module.isa);
   EXPECT_EQ(hs::selected_target(hs::KernelFamily::kNarrow).isa,
             active.narrow_module.isa);
+  EXPECT_EQ(hs::selected_target(hs::KernelFamily::kSearch).isa,
+            active.search_module.isa);
+  EXPECT_EQ(hs::selected_target(hs::KernelFamily::kScan).isa,
+            active.scan.isa);
   EXPECT_EQ(hs::selected_target(hs::KernelFamily::kMath).isa,
             active.math.isa);
   EXPECT_EQ(hs::selected_target(hs::KernelFamily::kDtype).features,
@@ -69,6 +73,10 @@ TEST(SimdRuntime, TableMetadataAndExactTierLookup) {
   EXPECT_NE(active.ops.dot_i16_i16, nullptr);
   EXPECT_NE(active.ops.dot_i8_i8, nullptr);
   EXPECT_NE(active.random.fill_u64, nullptr);
+  EXPECT_NE(active.search.count_equal_i32, nullptr);
+  EXPECT_NE(active.search.index_of_min_f32, nullptr);
+  EXPECT_NE(active.scan_ops.inclusive_scan_u32, nullptr);
+  EXPECT_NE(active.scan_ops.exclusive_scan_f64, nullptr);
   EXPECT_NE(active.narrow.count_equal_f16, nullptr);
   EXPECT_NE(active.narrow.count_equal_bf16, nullptr);
   EXPECT_NE(active.narrow.sum_f16, nullptr);
@@ -124,11 +132,7 @@ TEST(SimdRuntime, TableMetadataAndExactTierLookup) {
       EXPECT_EQ(active.ops_module.features & hs::Runtime::kFeatureAvx512Vnni, 0u);
     }
 #endif
-#if defined(HYLE_OS_LINUX) && defined(HYLE_ARCH_X64)
-    EXPECT_EQ(active.scan.isa, hs::Isa::kScalar);
-#else
-    EXPECT_EQ(active.scan.isa, active.isa);
-#endif
+    EXPECT_EQ(active.scan.isa, active.search_module.isa);
   }
 
 #if defined(HYLE_ARCH_X64)

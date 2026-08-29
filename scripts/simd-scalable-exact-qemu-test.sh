@@ -6,6 +6,8 @@
 # Usage:
 #   bash scripts/simd-scalable-exact-qemu-test.sh sve
 #   bash scripts/simd-scalable-exact-qemu-test.sh rvv
+#   HYLE_SCALABLE_SEARCH_SCAN_ONLY=1 bash scripts/simd-scalable-exact-qemu-test.sh sve
+#     # SIMD-09 bounded exact-artifact gate
 set -euo pipefail
 
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
@@ -90,15 +92,26 @@ for product in math/math_dispatch dtype/dtype_dispatch sort/sort_dispatch \
 done
 "$CXX" "${SCALAR_COMMON[@]}" -c "$REPO/src/simd/math/math_dispatch.cc" \
   -o "$OUT/product_math_dispatch_scalar_exact.o"
-for module in ops random search scan narrow; do
+for module in random; do
   dispatch_source="${module}_dispatch.cc"
-  if [ "$module" = "ops" ]; then dispatch_source="dispatch_ops.cc"; fi
   "$CXX" "${COMMON[@]}" -c "$REPO/src/simd/$module/$dispatch_source" \
     -o "$OUT/${module}_dispatch.o"
   printf '#define HYLE_SIMD_VARIANT_SUFFIX %s\n#include "src/simd/%s/kernel_impl.h"\n' \
     "$SUFFIX" "$module" |
     "$CXX" "${TARGET[@]}" -x c++ -c - -o "$OUT/${module}_${SUFFIX}.o"
 done
+for module in ops search scan narrow; do
+  dispatch_source="${module}_dispatch.cc"
+  if [ "$module" = "ops" ]; then dispatch_source="dispatch_ops.cc"; fi
+  "$CXX" "${COMMON[@]}" -c "$REPO/src/simd/$module/$dispatch_source" \
+    -o "$OUT/${module}_dispatch.o"
+  printf '#define HWY_COMPILE_ONLY_STATIC 1\n#define HYLE_SIMD_VARIANT_SUFFIX %s\n#include "src/simd/%s/kernel_impl.h"\n' \
+    "$SUFFIX" "$module" |
+    "$CXX" "${TARGET[@]}" -x c++ -c - -o "$OUT/${module}_${SUFFIX}.o"
+done
+printf '#define HWY_COMPILE_ONLY_STATIC 1\n#define HYLE_SIMD_VARIANT_SUFFIX %s\n#include "src/simd/dtype/conversion_kernel_impl.h"\n' \
+  "$SUFFIX" |
+  "$CXX" "${TARGET[@]}" -x c++ -c - -o "$OUT/dtype_${SUFFIX}.o"
 
 if nm -u "$OUT/runtime.o" "$OUT/"*_dispatch.o |
     grep -Eq 'cpu_features|best_isa|supports'; then
@@ -130,17 +143,22 @@ fi
   "$OUT/narrow_dispatch.o" \
   "$OUT/ops_${SUFFIX}.o" "$OUT/random_${SUFFIX}.o" \
   "$OUT/search_${SUFFIX}.o" "$OUT/scan_${SUFFIX}.o" \
-  "$OUT/narrow_${SUFFIX}.o" \
+  "$OUT/narrow_${SUFFIX}.o" "$OUT/dtype_${SUFFIX}.o" \
   -static -o "$OUT/exact_gtest" -pthread
+
+RUN_ARGS=(--gtest_brief=1)
+if [ "${HYLE_SCALABLE_SEARCH_SCAN_ONLY:-0}" = "1" ]; then
+  RUN_ARGS+=(--gtest_filter=SimdRuntime.TableMetadataAndExactTierLookup:Search.*:Scan.*)
+fi
 
 for bits in "${LENGTHS[@]}"; do
   echo "----- $KIND exact ${bits}-bit -----"
   if [ "$KIND" = "sve" ]; then
     "$QEMU" -cpu "max,sve-max-vq=$((bits / 128))" "$OUT/exact_gtest" \
-      --gtest_brief=1
+      "${RUN_ARGS[@]}"
   else
     "$QEMU" -cpu "rv64,v=true,vlen=$bits,elen=64,vext_spec=v1.0" \
-      "$OUT/exact_gtest" --gtest_brief=1
+      "$OUT/exact_gtest" "${RUN_ARGS[@]}"
   fi
 done
 

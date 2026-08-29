@@ -7,6 +7,7 @@
 #include "src/simd/narrow/kernels.h"
 #include "src/simd/ops/kernels.h"
 #include "src/simd/random/kernels.h"
+#include "src/simd/scan/kernels.h"
 #include "src/simd/search/kernels.h"
 
 namespace hyle::simd {
@@ -15,6 +16,8 @@ namespace {
 #define HYLE_SEARCH_RUNTIME_ONE(T, tag, suffix)                                  \
   &detail::count_equal_##tag##_##suffix, &detail::find_equal_##tag##_##suffix,   \
       &detail::min_value_##tag##_##suffix, &detail::max_value_##tag##_##suffix,  \
+      &detail::index_of_min_##tag##_##suffix,                                    \
+      &detail::index_of_max_##tag##_##suffix,                                    \
       &detail::minmax_value_##tag##_##suffix,                                   \
       &detail::is_sorted_asc_##tag##_##suffix,                                  \
       &detail::is_sorted_desc_##tag##_##suffix,
@@ -30,6 +33,18 @@ namespace {
    HYLE_SEARCH_RUNTIME_ONE(std::uint64_t, u64, suffix)                            \
    HYLE_SEARCH_RUNTIME_ONE(float, f32, suffix)                                    \
    HYLE_SEARCH_RUNTIME_ONE(double, f64, suffix)}
+
+#define HYLE_SCAN_RUNTIME_ONE(T, tag, suffix)                         \
+  &detail::inclusive_scan_##tag##_##suffix,                           \
+      &detail::exclusive_scan_##tag##_##suffix,
+
+#define HYLE_SCAN_RUNTIME(suffix)                                  \
+  {HYLE_SCAN_RUNTIME_ONE(std::uint32_t, u32, suffix)                \
+   HYLE_SCAN_RUNTIME_ONE(std::int32_t, i32, suffix)                 \
+   HYLE_SCAN_RUNTIME_ONE(std::uint64_t, u64, suffix)                \
+   HYLE_SCAN_RUNTIME_ONE(std::int64_t, i64, suffix)                 \
+   HYLE_SCAN_RUNTIME_ONE(float, f32, suffix)                        \
+   HYLE_SCAN_RUNTIME_ONE(double, f64, suffix)}
 
 #define HYLE_NARROW_RUNTIME_ONE(tag, suffix)                                    \
   &detail::narrow_count_equal_##tag##_##suffix,                                \
@@ -57,6 +72,10 @@ namespace {
   value.ops_module.features |= Runtime::kFeaturePerOpLowerTier;                \
   value.narrow_module.isa = Isa::kAvx2;                                       \
   value.narrow_module.features |= Runtime::kFeaturePerOpLowerTier;             \
+  value.search_module.isa = Isa::kAvx2;                                       \
+  value.search_module.features |= Runtime::kFeaturePerOpLowerTier;             \
+  value.scan.isa = Isa::kAvx2;                                                \
+  value.scan.features |= Runtime::kFeaturePerOpLowerTier;                      \
   value.dtype.isa = Isa::kAvx2;                                               \
   value.dtype.features |= Runtime::kFeaturePerOpLowerTier;
 #else
@@ -78,10 +97,12 @@ namespace {
         {&detail::random_fill_u64_##suffix, &detail::random_fill_f32_##suffix,      \
          &detail::random_fill_f64_##suffix},                                        \
         HYLE_SEARCH_RUNTIME(suffix),                                                \
+        HYLE_SCAN_RUNTIME(suffix),                                                  \
         HYLE_NARROW_RUNTIME(suffix),                                                \
         {&detail::f16_to_f32_##suffix, &detail::f32_to_f16_##suffix,               \
          &detail::bf16_to_f32_##suffix, &detail::f32_to_bf16_##suffix,             \
          &detail::f16_to_bf16_##suffix, &detail::bf16_to_f16_##suffix},            \
+        {tier, 0},                                                                  \
         {tier, 0},                                                                  \
         {tier, 0},                                                                  \
         {tier, 0},                                                                  \
@@ -118,6 +139,8 @@ HYLE_SIMD_FOR_EACH_COMPILED_TARGET(HYLE_DEFINE_RUNTIME)
 #undef HYLE_RUNTIME_TABLE
 #undef HYLE_SIMD_CLASSIC_CL_HIGHWAY_FALLBACK
 #undef HYLE_OPS_ROW_RUNTIME_ONE
+#undef HYLE_SCAN_RUNTIME
+#undef HYLE_SCAN_RUNTIME_ONE
 #undef HYLE_NARROW_RUNTIME
 #undef HYLE_NARROW_RUNTIME_ONE
 #undef HYLE_SEARCH_RUNTIME
@@ -140,11 +163,6 @@ Runtime selected_runtime() noexcept {
   Runtime result = base != nullptr ? *base : HYLE_SIMD_EXACT_RUNTIME;
 #else
   Runtime result = base != nullptr ? *base : kScalarRuntime;
-#endif
-
-#if !defined(HYLE_SIMD_EXACT) && defined(HYLE_OS_LINUX) && defined(HYLE_ARCH_X64)
-  // GCC's scalar dependency chain beats the single-stream Kogge-Stone kernel on this platform.
-  result.scan.isa = Isa::kScalar;
 #endif
 
 #if defined(HYLE_SIMD_EXACT_TARGET_AVX512)
@@ -265,7 +283,8 @@ SelectedTarget selected_target(KernelFamily family) noexcept {
     case KernelFamily::kOps:
       return {selected.ops_module.isa, selected.ops_module.features};
     case KernelFamily::kRandom: return {selected.isa, 0};
-    case KernelFamily::kSearch: return {selected.isa, 0};
+    case KernelFamily::kSearch:
+      return {selected.search_module.isa, selected.search_module.features};
     case KernelFamily::kNarrow:
       return {selected.narrow_module.isa, selected.narrow_module.features};
     case KernelFamily::kScan:

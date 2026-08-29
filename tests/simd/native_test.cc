@@ -104,21 +104,3 @@ TEST(SimdNative, RandomMatchesPublicWholeBufferSequence) {
   hs::random_fill(scalar_state, scalar.data(), scalar.size());
   EXPECT_EQ(native, scalar);
 }
-
-TEST(SimdNative, ScanUsesCurrentTarget) {
-  std::array<std::int32_t, 67> inclusive{};
-  std::array<std::int32_t, 67> exclusive{};
-  for (std::size_t i = 0; i < inclusive.size(); ++i) {
-    inclusive[i] = static_cast<std::int32_t>(i % 7) - 3;
-    exclusive[i] = inclusive[i];
-  }
-  hs::native::inclusive_scan(inclusive.data(), inclusive.size());
-  hs::native::exclusive_scan(exclusive.data(), exclusive.size());
-  std::int32_t sum = 0;
-  for (std::size_t i = 0; i < inclusive.size(); ++i) {
-    const std::int32_t value = static_cast<std::int32_t>(i % 7) - 3;
-    EXPECT_EQ(exclusive[i], sum);
-    sum += value;
-    EXPECT_EQ(inclusive[i], sum);
-  }
-}
