@@ -558,7 +558,11 @@
     },
     {
       "module": "simd",
-      "product_state": "AUDITED",
+      "product_state": "BLOCKED",
+      "blocked_from": "AUDITED",
+      "blocker": "The frozen simd-v1 card couples five independent product batches and a cross-family P1 matrix that cannot be executed honestly within its declared investigation/performance budget; existing search, ordering and activation drafts have no common candidate or inheritable verdict.",
+      "blocker_owner": "simd/simd-epic-control-plane",
+      "resume_condition": "Create a new BLOCKED-to-SCOPED RESUME round under docs/implementation/tasks/simd/simd-epic-v1.md, execute one bounded ticket at a time, assign every existing draft to its named ticket, keep central instruments immutable inside product work, and qualify performance per capability family rather than through one all-operation Cartesian matrix.",
       "round_id": "simd-v1",
       "closure_task": "docs/implementation/tasks/simd/simd-v1-closure.md",
       "scope": "The complete CPU SIMD component: whole-buffer algorithms, runtime and exact dispatch, native/fat-kernel source seams, D-tag backends, direct dependencies and consumers, delivery, usability, correctness and P1 evidence.",
@@ -581,7 +585,29 @@
         "state": "PENDING",
         "instrument_profile": "formal-release-v1"
       },
-      "summary": "simd-v1 AUDITED：能力族与全部 public surface 已反向归类；冻结四项真实负载/缺陷驱动的产品批次，单一 peer 新名字不机械扩张，旧 benchmark 与全局 SOTA 结论不继承。"
+      "end_commit": "5eef9a0630dca4315018d0e7790d6701e00cc4cb",
+      "registry_anchor_commit": "5eef9a0630dca4315018d0e7790d6701e00cc4cb",
+      "closure_evidence": "docs/implementation/tasks/simd/simd-v1-closure.md",
+      "loc": {
+        "snapshot_commit": "29b77897c0a14c92dd1baa49dccb41033dc835cd",
+        "repository_code": 306880,
+        "self_with_tests": 124275,
+        "self_without_tests": 83119,
+        "module_implementation": 38024
+      },
+      "known_limitations": [
+        "No simd-v1 product candidate or current aggregate P1 verdict exists; revision-2 capability gaps remain unimplemented until their bounded epic tickets complete.",
+        "The current working-tree search, ordering and activation drafts are REWORK inputs assigned to later tickets and are not accepted API, algorithm or performance evidence.",
+        "Architecture, user and performance documents still require authority separation; historical terminal or SOTA statements are not current product claims.",
+        "C/Native FFI, stable cross-toolchain C++ ABI and tensor/model/GPU operators remain outside the CPU SIMD product boundary."
+      ],
+      "reopen_triggers": [
+        "A real consumer exposes a correctness, security, usability or missing-capability defect within the CPU SIMD boundary.",
+        "The public API/layout, algorithm, direct dependency, vendor/ISA semantics or source/static/shared delivery shape changes.",
+        "A mature same-contract peer proves a better complexity class or a reproducible material advantage on a normal consumer workload.",
+        "The epic resume condition is satisfied and a new RESUME round can freeze bounded tickets and qualified per-family evidence."
+      ],
+      "summary": "simd-v1 BLOCKED from AUDITED：能力审计保留，但单一五批产品施工和跨 family P1 矩阵无法在冻结预算内诚实执行；现有草稿已归属 SIMD epic，等待新的有界 RESUME round。"
     },
     {
       "module": "container",
