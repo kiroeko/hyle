@@ -3,6 +3,7 @@
 #include "hyle/simd/dtype_ops.h"
 #include "src/simd/runtime_internal.h"
 #include "hyle/simd/vec.h"
+#include "src/simd/dtype/conversion_kernels.h"
 #include "src/simd/dtype/kernels.h"
 
 #include <cstddef>
@@ -43,10 +44,10 @@ void CheckConversions(bool public_api) {
   }
 
   if (public_api) {
-    hs::f16_to_f32_batch(f16, f16_out, n);
-    hs::f32_to_f16_batch(f32, f16_encoded, n);
-    hs::bf16_to_f32_batch(bf16, bf16_out, n);
-    hs::f32_to_bf16_batch(f32, bf16_encoded, n);
+    hs::convert(f16, f16_out, n);
+    hs::convert(f32, f16_encoded, n);
+    hs::convert(bf16, bf16_out, n);
+    hs::convert(f32, bf16_encoded, n);
   } else {
     HYLE_SCALABLE_DTYPE(f16_to_f32)(f16, f16_out, n);
     HYLE_SCALABLE_DTYPE(f32_to_f16)(f32, f16_encoded, n);

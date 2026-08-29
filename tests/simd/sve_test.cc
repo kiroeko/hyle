@@ -6,7 +6,8 @@
 //
 // This is NOT registered as an auto-run x86 ctest: SVE has no x86 host and no native dev machine,
 // so it is cross-compiled (aarch64-linux-gnu-g++ -march=armv8-a+sve) and run under qemu-aarch64-
-// static. See docs/architecture/simd-design.md (SVE section) for the exact recipe. The op surface
+// static. See docs/developer/maintenance/simd-dispatch-guide.md and scripts for the exact recipe.
+// The op surface
 // here mirrors backend/sve.h; hardware-gated SVE2 crypto remains outside this base-SVE target.
 #include <gtest/gtest.h>
 

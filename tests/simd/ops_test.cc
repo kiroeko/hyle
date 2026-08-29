@@ -285,13 +285,105 @@ TEST(Ops, AddF64MatchesReference) {
   }
 }
 
-// THE simd-04 point: the dispatcher selected the host's best COMPILED tier. We ship
-// scalar/sse4/avx2/avx512, so on an x86 host runtime().isa must equal best_isa() mapped
-// to {scalar,sse42,avx2,avx512} -- never below what the CPU supports, never above what we
-// compiled. This proves best_isa() is actually consumed (was dead before simd-04).
+TEST(Ops, CompleteF32RowAlgebraMatchesReferenceOnEveryRuntimeTier) {
+  constexpr std::size_t kCount = 31;
+  std::vector<float> x(kCount), y(kCount), out(kCount);
+  for (std::size_t i = 0; i < kCount; ++i) {
+    x[i] = 0.25f + static_cast<float>(i) * 0.125f;
+    y[i] = 1.0f + static_cast<float>(i % 7) * 0.25f;
+  }
+
+  for (const auto* table : available_runtimes()) {
+    const auto& ops = table->ops;
+    ops.sub_f32(x.data(), y.data(), out.data(), kCount);
+    for (std::size_t i = 0; i < kCount; ++i) EXPECT_FLOAT_EQ(out[i], x[i] - y[i]);
+    ops.mul_f32(x.data(), y.data(), out.data(), kCount);
+    for (std::size_t i = 0; i < kCount; ++i) EXPECT_FLOAT_EQ(out[i], x[i] * y[i]);
+    ops.div_f32(x.data(), y.data(), out.data(), kCount);
+    for (std::size_t i = 0; i < kCount; ++i) EXPECT_FLOAT_EQ(out[i], x[i] / y[i]);
+    ops.scale_f32(x.data(), 1.5f, out.data(), kCount);
+    for (std::size_t i = 0; i < kCount; ++i) EXPECT_FLOAT_EQ(out[i], x[i] * 1.5f);
+    ops.add_scalar_f32(x.data(), -0.5f, out.data(), kCount);
+    for (std::size_t i = 0; i < kCount; ++i) EXPECT_FLOAT_EQ(out[i], x[i] - 0.5f);
+    ops.affine_f32(x.data(), 1.5f, -0.25f, out.data(), kCount);
+    for (std::size_t i = 0; i < kCount; ++i)
+      EXPECT_NEAR(out[i], x[i] * 1.5f - 0.25f, 1e-6f);
+
+    float expected_sum = 0.0f;
+    for (float value : x) expected_sum += value;
+    EXPECT_NEAR(ops.sum_f32(x.data(), kCount), expected_sum,
+                std::abs(expected_sum) * 1e-6f + 1e-6f);
+
+    std::vector<float> signed_x = x;
+    for (std::size_t i = 0; i < kCount; i += 2) signed_x[i] = -signed_x[i];
+    ops.abs_f32(signed_x.data(), out.data(), kCount);
+    for (std::size_t i = 0; i < kCount; ++i) EXPECT_FLOAT_EQ(out[i], std::abs(signed_x[i]));
+    ops.neg_f32(x.data(), out.data(), kCount);
+    for (std::size_t i = 0; i < kCount; ++i) EXPECT_FLOAT_EQ(out[i], -x[i]);
+    ops.square_f32(x.data(), out.data(), kCount);
+    for (std::size_t i = 0; i < kCount; ++i) EXPECT_FLOAT_EQ(out[i], x[i] * x[i]);
+    ops.sqrt_f32(x.data(), out.data(), kCount);
+    for (std::size_t i = 0; i < kCount; ++i) EXPECT_FLOAT_EQ(out[i], std::sqrt(x[i]));
+
+    auto in_place = x;
+    ops.mul_f32(in_place.data(), y.data(), in_place.data(), kCount);
+    for (std::size_t i = 0; i < kCount; ++i) EXPECT_FLOAT_EQ(in_place[i], x[i] * y[i]);
+  }
+}
+
+TEST(Ops, CompleteF64RowAlgebraAndZeroContract) {
+  constexpr std::size_t kCount = 31;
+  auto x = gend(kCount, 0.5), y = gend(kCount, 1.0);
+  std::vector<double> out(kCount);
+  hyle::simd::subtract(x.data(), y.data(), out.data(), kCount);
+  hyle::simd::multiply(x.data(), y.data(), out.data(), kCount);
+  hyle::simd::divide(x.data(), y.data(), out.data(), kCount);
+  hyle::simd::scale(x.data(), 2.0, out.data(), kCount);
+  hyle::simd::add_scalar(x.data(), -1.0, out.data(), kCount);
+  hyle::simd::affine(x.data(), 2.0, -1.0, out.data(), kCount);
+  hyle::simd::abs(x.data(), out.data(), kCount);
+  hyle::simd::negate(x.data(), out.data(), kCount);
+  hyle::simd::square(x.data(), out.data(), kCount);
+  hyle::simd::sqrt(x.data(), out.data(), kCount);
+  long double expected_sum = 0.0;
+  for (double value : x) expected_sum += value;
+  EXPECT_NEAR(hyle::simd::sum(x.data(), kCount), static_cast<double>(expected_sum),
+              static_cast<double>(expected_sum) * 1e-12 + 1e-12);
+
+  const double* null_in = nullptr;
+  double* null_out = nullptr;
+  hyle::simd::subtract(null_in, null_in, null_out, 0);
+  hyle::simd::multiply(null_in, null_in, null_out, 0);
+  hyle::simd::divide(null_in, null_in, null_out, 0);
+  hyle::simd::scale(null_in, 1.0, null_out, 0);
+  hyle::simd::add_scalar(null_in, 1.0, null_out, 0);
+  hyle::simd::affine(null_in, 1.0, 1.0, null_out, 0);
+  EXPECT_EQ(hyle::simd::sum(null_in, 0), 0.0);
+  hyle::simd::abs(null_in, null_out, 0);
+  hyle::simd::negate(null_in, null_out, 0);
+  hyle::simd::square(null_in, null_out, 0);
+  hyle::simd::sqrt(null_in, null_out, 0);
+}
+
+// Fat artifacts select the best compiled host tier. Exact artifacts deliberately
+// contain one builder-selected tier and must not reintroduce host probing.
 TEST(Ops, ActiveVariantMatchesBestCompiledTier) {
   const Isa active = runtime().isa;
-#if defined(HYLE_ARCH_X64)
+#if defined(HYLE_SIMD_EXACT_TARGET_SCALAR)
+  EXPECT_EQ(active, Isa::kScalar);
+#elif defined(HYLE_SIMD_EXACT_TARGET_SSE4)
+  EXPECT_EQ(active, Isa::kSse42);
+#elif defined(HYLE_SIMD_EXACT_TARGET_AVX2)
+  EXPECT_EQ(active, Isa::kAvx2);
+#elif defined(HYLE_SIMD_EXACT_TARGET_AVX512)
+  EXPECT_EQ(active, Isa::kAvx512);
+#elif defined(HYLE_SIMD_EXACT_TARGET_NEON)
+  EXPECT_EQ(active, Isa::kNeon);
+#elif defined(HYLE_SIMD_EXACT_TARGET_SVE)
+  EXPECT_EQ(active, Isa::kSve);
+#elif defined(HYLE_SIMD_EXACT_TARGET_RVV)
+  EXPECT_EQ(active, Isa::kRvv);
+#elif defined(HYLE_ARCH_X64)
   const auto best = static_cast<std::uint32_t>(best_isa());
   Isa expect;
   if (best >= static_cast<std::uint32_t>(Isa::kAvx512)) expect = Isa::kAvx512;

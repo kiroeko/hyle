@@ -54,6 +54,8 @@ TEST(SimdRuntime, TableMetadataAndExactTierLookup) {
   EXPECT_EQ(hs::selected_target().isa, active.isa);
   EXPECT_EQ(hs::selected_target(hs::KernelFamily::kOps).isa,
             active.ops_module.isa);
+  EXPECT_EQ(hs::selected_target(hs::KernelFamily::kNarrow).isa,
+            active.narrow_module.isa);
   EXPECT_EQ(hs::selected_target(hs::KernelFamily::kMath).isa,
             active.math.isa);
   EXPECT_EQ(hs::selected_target(hs::KernelFamily::kDtype).features,
@@ -71,6 +73,12 @@ TEST(SimdRuntime, TableMetadataAndExactTierLookup) {
   EXPECT_NE(active.narrow.count_equal_bf16, nullptr);
   EXPECT_NE(active.narrow.sum_f16, nullptr);
   EXPECT_NE(active.narrow.sum_bf16, nullptr);
+  EXPECT_NE(active.dtype_convert.f16_to_f32, nullptr);
+  EXPECT_NE(active.dtype_convert.f32_to_f16, nullptr);
+  EXPECT_NE(active.dtype_convert.bf16_to_f32, nullptr);
+  EXPECT_NE(active.dtype_convert.f32_to_bf16, nullptr);
+  EXPECT_NE(active.dtype_convert.f16_to_bf16, nullptr);
+  EXPECT_NE(active.dtype_convert.bf16_to_f16, nullptr);
   EXPECT_NE(active.math.features & hs::Runtime::kFeatureMathExactLibmScalar, 0u);
   EXPECT_NE(active.dtype.features & hs::Runtime::kFeatureDtypeFp8Scalar, 0u);
   if (active.sort.isa == hs::Isa::kSve) {
@@ -105,7 +113,7 @@ TEST(SimdRuntime, TableMetadataAndExactTierLookup) {
     EXPECT_EQ(active.scan.isa, active.isa);
   } else {
     EXPECT_EQ(scalar->isa, hs::Isa::kScalar);
-#if defined(HYLE_ARCH_X64)
+#if defined(HYLE_ARCH_X64) && !defined(HYLE_SIMD_EXACT)
     const auto specialty = hs::detail::x86_specialty_support(
         hyle::platform::cpu_features());
     if (specialty.avx512_vnni) {
@@ -127,6 +135,7 @@ TEST(SimdRuntime, TableMetadataAndExactTierLookup) {
   EXPECT_EQ(hs::runtime_for(hs::Isa::kNeon), nullptr);
   if (const hs::Runtime* sse = hs::runtime_for(hs::Isa::kSse42)) {
     EXPECT_EQ(sse->math.isa, hs::Isa::kScalar);
+    EXPECT_EQ(sse->dtype.isa, hs::Isa::kSse42);
   }
 #elif defined(HYLE_ARCH_ARM64)
   EXPECT_EQ(hs::runtime_for(hs::Isa::kAvx2), nullptr);

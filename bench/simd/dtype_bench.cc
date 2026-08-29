@@ -1,9 +1,7 @@
-// dtype cvt bench (task #21): fp16/bf16 <-> f32 batch conversions. README claims
-// "fp16/bf16 dtype(F16C)" but it had NO benchmark -- so we never proved the F16C hardware
-// path engages or that it beats the scalar reference. The AI hot path (KV-cache, mixed
-// precision) converts whole arrays, so this matters.
+// Bounded dtype conversion instrument. Public HYLE convert overloads are compared with the
+// scalar value contract and, when enabled, direct Highway in the same target-bound TU.
 // GROUPS:
-//   * HYLE *_batch        -- dispatched: F16C hardware kernel for fp16 (if cpu has it),
+//   * HYLE convert        -- dispatched: F16C hardware kernel for fp16 (if cpu has it),
 //                            scalar core for bf16 (no AVX2 bf16 convert; header is honest).
 //   * HYLE scalar loop    -- per-element dtype.h reference (the always-available baseline =
 //                            what you get with no F16C). Shows the hardware speedup.
@@ -73,8 +71,8 @@ int main() {
   {
     nb::Bench b;
     b.title("f16->f32 batch (4096)").relative(true).batch(kN).minEpochIterations(1000);
-    b.run("HYLE f16_to_f32_batch (F16C)", [&] {
-      hyle::simd::f16_to_f32_batch(f16.data(), out_f32.data(), kN);
+    b.run("HYLE convert f16->f32", [&] {
+      hyle::simd::convert(f16.data(), out_f32.data(), kN);
       nb::doNotOptimizeAway(out_f32.data());
     });
     b.run("HYLE scalar loop (reference)", [&] {
@@ -101,8 +99,8 @@ int main() {
   {
     nb::Bench b;
     b.title("f32->f16 batch (4096)").relative(true).batch(kN).minEpochIterations(1000);
-    b.run("HYLE f32_to_f16_batch (F16C)", [&] {
-      hyle::simd::f32_to_f16_batch(f32.data(), out_f16.data(), kN);
+    b.run("HYLE convert f32->f16", [&] {
+      hyle::simd::convert(f32.data(), out_f16.data(), kN);
       nb::doNotOptimizeAway(out_f16.data());
     });
     b.run("HYLE scalar loop (reference)", [&] {
@@ -132,8 +130,8 @@ int main() {
     std::vector<bfloat16_t> bf_out(kN);
     nb::Bench b;
     b.title("bf16->f32 batch (4096)").relative(true).batch(kN).minEpochIterations(1000);
-    b.run("HYLE bf16_to_f32_batch (AVX2)", [&] {
-      hyle::simd::bf16_to_f32_batch(bf16.data(), bout.data(), kN);
+    b.run("HYLE convert bf16->f32", [&] {
+      hyle::simd::convert(bf16.data(), bout.data(), kN);
       nb::doNotOptimizeAway(bout.data());
     });
     b.run("HYLE scalar loop (reference)", [&] {
@@ -157,8 +155,8 @@ int main() {
 
     nb::Bench b2;
     b2.title("f32->bf16 batch (4096)").relative(true).batch(kN).minEpochIterations(1000);
-    b2.run("HYLE f32_to_bf16_batch (AVX2)", [&] {
-      hyle::simd::f32_to_bf16_batch(f32.data(), bf_out.data(), kN);
+    b2.run("HYLE convert f32->bf16", [&] {
+      hyle::simd::convert(f32.data(), bf_out.data(), kN);
       nb::doNotOptimizeAway(bf_out.data());
     });
     b2.run("HYLE scalar loop (reference)", [&] {
@@ -212,8 +210,8 @@ int main() {
   {
     nb::Bench b;
     b.title("f32->f8e4m3 batch (4096)").relative(true).batch(kN).minEpochIterations(1000);
-    b.run("HYLE f32_to_f8e4m3_batch", [&] {
-      hyle::simd::f32_to_f8e4m3_batch(f32.data(), e4m3.data(), kN);
+    b.run("HYLE convert f32->e4m3", [&] {
+      hyle::simd::convert(f32.data(), e4m3.data(), kN);
       nb::doNotOptimizeAway(e4m3.data());
     });
     b.run("scalar loop (reference)", [&] {
@@ -225,8 +223,8 @@ int main() {
     std::vector<float> out(kN);
     nb::Bench b;
     b.title("f8e4m3->f32 batch (4096)").relative(true).batch(kN).minEpochIterations(1000);
-    b.run("HYLE f8e4m3_to_f32_batch", [&] {
-      hyle::simd::f8e4m3_to_f32_batch(e4m3.data(), out.data(), kN);
+    b.run("HYLE convert e4m3->f32", [&] {
+      hyle::simd::convert(e4m3.data(), out.data(), kN);
       nb::doNotOptimizeAway(out.data());
     });
     b.run("scalar loop (reference)", [&] {
@@ -237,8 +235,8 @@ int main() {
   {
     nb::Bench b;
     b.title("f32->f8e5m2 batch (4096)").relative(true).batch(kN).minEpochIterations(1000);
-    b.run("HYLE f32_to_f8e5m2_batch", [&] {
-      hyle::simd::f32_to_f8e5m2_batch(f32.data(), e5m2.data(), kN);
+    b.run("HYLE convert f32->e5m2", [&] {
+      hyle::simd::convert(f32.data(), e5m2.data(), kN);
       nb::doNotOptimizeAway(e5m2.data());
     });
     b.run("scalar loop (reference)", [&] {
@@ -250,8 +248,8 @@ int main() {
     std::vector<float> out(kN);
     nb::Bench b;
     b.title("f8e5m2->f32 batch (4096)").relative(true).batch(kN).minEpochIterations(1000);
-    b.run("HYLE f8e5m2_to_f32_batch", [&] {
-      hyle::simd::f8e5m2_to_f32_batch(e5m2.data(), out.data(), kN);
+    b.run("HYLE convert e5m2->f32", [&] {
+      hyle::simd::convert(e5m2.data(), out.data(), kN);
       nb::doNotOptimizeAway(out.data());
     });
     b.run("scalar loop (reference)", [&] {
@@ -264,26 +262,26 @@ int main() {
   {
     nb::Bench b;
     b.title("f16->f8e4m3 batch (4096)").relative(true).batch(kN).minEpochIterations(1000);
-    b.run("HYLE f16_to_f8e4m3_batch", [&] {
-      hyle::simd::f16_to_f8e4m3_batch(f16.data(), e4m3.data(), kN);
+    b.run("HYLE convert f16->e4m3", [&] {
+      hyle::simd::convert(f16.data(), e4m3.data(), kN);
       nb::doNotOptimizeAway(e4m3.data());
     });
     b.run("via f16->f32->f8e4m3 batch", [&] {
-      hyle::simd::f16_to_f32_batch(f16.data(), out_f32.data(), kN);
-      hyle::simd::f32_to_f8e4m3_batch(out_f32.data(), e4m3.data(), kN);
+      hyle::simd::convert(f16.data(), out_f32.data(), kN);
+      hyle::simd::convert(out_f32.data(), e4m3.data(), kN);
       nb::doNotOptimizeAway(e4m3.data());
     });
   }
   {
     nb::Bench b;
     b.title("f16->f8e5m2 batch (4096)").relative(true).batch(kN).minEpochIterations(1000);
-    b.run("HYLE f16_to_f8e5m2_batch", [&] {
-      hyle::simd::f16_to_f8e5m2_batch(f16.data(), e5m2.data(), kN);
+    b.run("HYLE convert f16->e5m2", [&] {
+      hyle::simd::convert(f16.data(), e5m2.data(), kN);
       nb::doNotOptimizeAway(e5m2.data());
     });
     b.run("via f16->f32->f8e5m2 batch", [&] {
-      hyle::simd::f16_to_f32_batch(f16.data(), out_f32.data(), kN);
-      hyle::simd::f32_to_f8e5m2_batch(out_f32.data(), e5m2.data(), kN);
+      hyle::simd::convert(f16.data(), out_f32.data(), kN);
+      hyle::simd::convert(out_f32.data(), e5m2.data(), kN);
       nb::doNotOptimizeAway(e5m2.data());
     });
   }

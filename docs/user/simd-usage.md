@@ -63,11 +63,11 @@ compiled target；两者可能因编译器 blocklist 或已认证的 lower-tier 
 
 | 头（开发期） | 常用能力 | 适合做什么 |
 |---|---|---|
-| `ops.h` | `add`、同精度/混合精度 `dot`、`saxpy` | 连续数组的基础 BLAS-like 操作与量化存储 dot |
+| `ops.h` | f32/f64 row 算术、归约、同精度/混合精度 `dot`、`saxpy` | 连续 row、归一化/激活前处理与量化存储 dot |
 | `random.h` | `RandomState`、`random_fill` | 可复现、跨 ISA 位一致的批量随机数；非加密 |
 | `scan.h` | `inclusive_scan`、`exclusive_scan` | 原地前缀和，支持 u/i32、u/i64、f32、f64 |
 | `search.h` | count/find/min/max/minmax/is_sorted | 连续数组查找、归约和有序性检查 |
-| `dtype_ops.h` | f16/bf16/fp8 与 f32 批量转换 | 模型权重、激活、KV cache 和混合精度数据搬运 |
+| `dtype_ops.h` | f32/f16/bf16/E4M3/E5M2 间全部异类型转换 | 模型权重、激活、KV cache 和混合精度数据搬运 |
 | `math.h` | 实数/复数数学、激活函数、softmax | 数值计算、统计和 AI 热路径 |
 | `sort.h` | sort、partial sort、select、radix、argsort | 排序、top-k、nth element、稳定整数/浮点 radix |
 | `bitpack.h` | `pack`、`unpack`、`packed_size` | 同机内存中的定宽整数压缩 |
@@ -140,85 +140,38 @@ hyle::simd::exclusive_scan(offsets, 5);
 #include "hyle/simd/dtype_ops.h"
 
 hyle::simd::float16_t packed[4096]{};
+hyle::simd::bfloat16_t cache[4096]{};
 float values[4096]{};
-hyle::simd::f32_to_f16_batch(values, packed, 4096);
-hyle::simd::f16_to_f32_batch(packed, values, 4096);
+hyle::simd::convert(values, packed, 4096);
+hyle::simd::convert(packed, cache, 4096);  // 一次遍历，不建立 f32 临时数组
+hyle::simd::convert(cache, values, 4096);
 ```
 
-如果是自己编译到固定 target TU 的 C++ kernel，并且数据要保持 f16/bf16 存储、在寄存器中以
-f32 计算，使用 `narrow_float.h` 的显式格式 tag：
+五种公开 storage 间的全部 20 条异类型有向边都使用同一个可发现的 `convert(src, dst, n)`
+重载名；同类型复制继续使用标准库。窄化遵守 `dtype.h` 的 RNE、饱和与 NaN 合同。`n == 0`
+允许空指针；相同宽度的转换允许输入输出完全同址，不同宽度必须不重叠，任意部分重叠均不受支持。
 
-```cpp
-#include "hyle/simd/narrow_float.h"
-
-namespace hs = hyle::simd;
-using DF = hs::ScalableTag<float>;
-const DF df;
-const hs::F16Tag<DF> dh;
-
-const std::size_t lanes = hs::Lanes(dh);
-std::size_t i = 0;
-for (; i + lanes <= n; i += lanes) {
-  auto a = hs::LoadNarrowU(dh, left + i);
-  auto b = hs::LoadNarrowU(dh, right + i);
-  auto y = hs::MulNarrow(dh, a, b);  // promote f16 -> f32, multiply, round once to f16
-  hs::StoreNarrowU(y, dh, output + i);
-}
-if (i != n) {
-  auto a = hs::LoadNarrowN(dh, left + i, n - i);
-  auto b = hs::LoadNarrowN(dh, right + i, n - i);
-  hs::StoreNarrowN(hs::MulNarrow(dh, a, b), dh, output + i, n - i);
-}
-```
-
-`BF16Tag<DF>` 同形。还可用 `PromoteNarrowTo(df, dh, v)`、`DemoteNarrowTo(dh, v)`、
-`AddNarrow/SubNarrow/DivNarrow/MulAddNarrow`。`Eq/Lt/Le/Gt/GeNarrow` 是 IEEE 数值比较：
-NaN 无序，`-0 == +0`。`ReduceSumNarrow` 返回 f32；`ReduceMin/MaxNarrow` 遇任意
-NaN 传播 canonical qNaN，`ReduceMin/MaxNumberNarrow` 忽略 NaN（全 NaN 时返回
-canonical qNaN），并分别保留 `-0/+0`。
-
-要处理 target-bound 整段数组，包含 `narrow_algorithm.h`：
-
-```cpp
-#include "hyle/simd/narrow_algorithm.h"
-
-float sum = hs::SumNarrow(dh, values, n);
-std::size_t first = hs::FindEqualNarrow(dh, values, n, needle); // IEEE ==
-std::size_t exact = hs::FindBitsNarrow(dh, values, n, needle);  // exact 16-bit encoding
-bool ordered = hs::IsSortedTotalOrderNarrow(dh, values, n);
-```
-
-`CountEqualNarrow/FindEqualNarrow` 把 signed zero 视为相等、NaN 永不匹配；
-`CountBitsNarrow/FindBitsNarrow` 则区分 signed zero 和每个 NaN payload。
-`narrow_total_order_key` / `TotalOrderKeyNarrow` 是可逆的 IEEE-754 `totalOrder`
-key：negative qNaN < negative sNaN < -inf < ... < -0 < +0 < ... < +inf <
-positive sNaN < positive qNaN。这是 bitwise deterministic order，不是“NaN 都相等”。
-
-选择原则：
-
-- 只搬运/转换整个数组：优先 `dtype_ops.h` 的 batch API；整段 narrow search/reduction
-  优先 `narrow_ops.h`；两者都处理 dispatch 和 tail；
-- 写 target-bound 自定义计算循环：使用 narrow tag，x86 AVX2/AVX-512 f16 自动走 F16C，其他
-  baseline 使用同语义 vector 位运算，不要求 SVE/RVV 的可选 half 扩展；
-- carrier 的真实寄存器类型是后端 u16。不要对 `auto` 结果调用无 tag 的 `Add/Mul`，那是整数位
-  carrier 语义；窄浮点操作必须使用带 `Narrow` 的名字；
-- finite f32→f16 逐位一致；硬件 F16C 可以选择不同的 NaN payload，因此 NaN 只保证仍为 NaN。
-
-预构建库、未知 CPU 或不想手写 tail 时包含 `narrow_ops.h`，它以同一语义提供 runtime
-dispatch 的 pointer/count C++ 重载：
+整段 f16/bf16 查找、求和和 total-order 检查使用普通的 `narrow_ops.h`，不需要手写寄存器循环：
 
 ```cpp
 #include "hyle/simd/narrow_ops.h"
 
-std::size_t numeric = hs::count_equal(values, n, needle);
-std::size_t exact = hs::find_equal_bits(values, n, needle);
-float total = hs::sum(values, n);  // f32 accumulation
+namespace hs = hyle::simd;
+std::size_t numeric = hs::count_equal(values, n, needle);      // IEEE ==
+std::size_t exact = hs::find_equal_bits(values, n, needle);    // exact encoding
+float total = hs::sum(values, n);                              // f32 accumulation
 bool ordered = hs::is_sorted_total(values, n);
 ```
 
-这些 C++ 调用在 whole-buffer 边界进入已选 scalar/SSE4/AVX2/
-AVX-512/NEON/SVE/RVV kernel，目标相关 vector ABI 不离开实现 TU。narrow sort 尚未实施；
-不要拿 carrier 的 unsigned 顺序替代 total-order 语义。
+`count_equal/find_equal` 把 signed zero 视为相等、NaN 永不匹配；带 `_bits` 的入口则区分
+signed zero 和每个 NaN payload。`narrow_total_order_key` 是可逆的 IEEE-754 `totalOrder`
+key：negative qNaN < negative sNaN < -inf < ... < -0 < +0 < ... < +inf <
+positive sNaN < positive qNaN。这是 bitwise deterministic order，不是“NaN 都相等”。
+
+如果要在源码嵌入的固定 target TU 内创作自己的窄类型 kernel，使用下文的
+`hyle_target_simd()` 并直接调用锁定 Highway 的 `float16_t/bfloat16_t`、`PromoteTo/DemoteTo`
+等接口。HYLE 不再提供一套平行的 narrow register DSL；vendor 类型不能跨 TU，且自定义 kernel
+必须自行声明 NaN、rounding、tail 与 alias 合同。普通用户继续使用上述 HYLE whole-buffer API。
 
 ```cpp
 hyle::simd::exp_f32_batch(src, dst, n);

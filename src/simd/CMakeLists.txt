@@ -48,6 +48,7 @@ if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
       ops/dot_avx_vnni.cc
       ops/dot_avx512_vnni.cc
       ops/dot_avx512bf16.cc
+      dtype/cvt_f16c.cc
       dtype/cvt_avx512bf16.cc)
   endif()
   if(HYLE_SIMD_BUILD_AVX2 OR HYLE_SIMD_BUILD_AVX512)
@@ -55,8 +56,6 @@ if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
     # intentionally remain AVX2-width. These are per-op implementation dependencies, not an
     # additional runtime target.
     list(APPEND _simd_arch_sources
-      dtype/cvt_f16c.cc
-      dtype/cvt_avx2.cc
       math/transcendental_highway.cc)
   endif()
   if(HYLE_SIMD_BUILD_AVX2 OR
@@ -106,14 +105,11 @@ if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   endif()
 elseif(HYLE_TARGET_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   set(HYLE_SIMD_ARM64 TRUE)
-  # ops NEON kernel reuses the neon.h D-tag backend (dot/saxpy) -- the simd-03 real-run
-  # target. dtype NEON (cvt_neon.cc) is hand-written per-backend intrinsics: fp16 via native
-  # ARMv8.2 vcvt, bf16 via NEON integer bit-math (bit-identical to scalar). math NEON
-  # (transcendental_highway_neon.cc) directly instantiates the centrally locked Highway
-  # mathematics core and keeps HYLE's pointer/count and SoA façade.
+  # Common dtype and ops families are generated directly from Highway below.
+  # Math NEON instantiates the centrally locked Highway mathematics core and
+  # keeps HYLE's pointer/count and SoA façade.
   if(HYLE_SIMD_BUILD_NEON)
     list(APPEND _simd_arch_sources
-      dtype/cvt_neon.cc
       math/transcendental_highway_neon.cc
       sort/vqsort_hyle_neon.cc
       bitpack/bitpack_hyle_neon.cc)
@@ -121,7 +117,6 @@ elseif(HYLE_TARGET_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   if(HYLE_SIMD_BUILD_SVE)
     list(APPEND _simd_arch_sources
       bitpack/bitpack_hyle_scalable.cc
-      dtype/cvt_scalable.cc
       math/transcendental_highway_scalable.cc
       sort/vqsort_hyle_sve.cc)
   endif()
@@ -130,7 +125,6 @@ elseif(HYLE_TARGET_PROCESSOR MATCHES "riscv64|RISCV64")
   if(HYLE_SIMD_BUILD_RVV)
     list(APPEND _simd_arch_sources
       bitpack/bitpack_hyle_scalable.cc
-      dtype/cvt_scalable.cc
       math/transcendental_highway_scalable.cc
       sort/vqsort_hyle_rvv.cc)
   endif()
@@ -147,7 +141,7 @@ hyle_add_module(simd SOURCES
   narrow/narrow_dispatch.cc
   scan/scan_dispatch.cc
   dtype/dtype_dispatch.cc
-  dtype/cvt_scalar.cc
+  dtype/cvt_fp8_scalar.cc
   math/math_dispatch.cc
   math/transcendental_scalar.cc
   math/activations.cc
@@ -159,6 +153,13 @@ hyle_add_module(simd SOURCES
   bitpack/bitpack_scalar.cc
   ${_simd_arch_sources})
 
+# HYLE deliberately consumes Highway without executing its upstream CMake
+# project or importing a second runtime library ABI. Some otherwise
+# header-defined Highway paths retain fail-fast assertions that call
+# hwy::Abort; the upstream-supported header-only mode provides that tiny
+# implementation inline and keeps source/static/shared delivery self-contained.
+target_compile_definitions(hyle_simd PRIVATE HWY_HEADER_ONLY)
+
 # Source-primary expert seam. It is deliberately build-tree-only: ordinary
 # installed consumers use HYLE's pointer/count APIs, while a consumer that
 # embeds the source tree may bind one TU to an ISA and use the exact locked
@@ -166,6 +167,7 @@ hyle_add_module(simd SOURCES
 add_library(hyle_simd_source_expert INTERFACE)
 add_library(hyle::simd_source_expert ALIAS hyle_simd_source_expert)
 target_compile_features(hyle_simd_source_expert INTERFACE cxx_std_23)
+target_compile_definitions(hyle_simd_source_expert INTERFACE HWY_HEADER_ONLY)
 target_include_directories(hyle_simd_source_expert SYSTEM INTERFACE
   "$<BUILD_INTERFACE:${HYLE_SIMD_HIGHWAY_SOURCE_DIR}>")
 
@@ -207,10 +209,15 @@ endif()
 # from the shared build mechanism; it filters the full target list by architecture and applies the
 # exact tier flags through hyle_set_isa. Their dispatchers remain handwritten because scan's Linux
 # scalar policy is a semantic contract, not build metadata.
-hyle_add_dispatched_kernel(
+hyle_add_dispatched_kernel(HIGHWAY
   TARGET hyle_simd
   NAME ops
   IMPL "src/simd/ops/kernel_impl.h"
+  TARGETS scalar sse4 avx2 avx512 neon sve rvv)
+hyle_add_dispatched_kernel(HIGHWAY
+  TARGET hyle_simd
+  NAME dtype_convert
+  IMPL "src/simd/dtype/conversion_kernel_impl.h"
   TARGETS scalar sse4 avx2 avx512 neon sve rvv)
 hyle_add_dispatched_kernel(
   TARGET hyle_simd
@@ -227,7 +234,7 @@ hyle_add_dispatched_kernel(
   NAME search
   IMPL "src/simd/search/kernel_impl.h"
   TARGETS scalar sse4 avx2 avx512 neon sve rvv)
-hyle_add_dispatched_kernel(
+hyle_add_dispatched_kernel(HIGHWAY
   TARGET hyle_simd
   NAME narrow
   IMPL "src/simd/narrow/kernel_impl.h"
@@ -250,10 +257,8 @@ if(HYLE_SIMD_X64)
   # f16c TU caps at AVX+F16C (NOT AVX2): F16C shipped with AVX on Ivy Bridge (no AVX2);
   # AVX2 would let the auto-vectorized tail emit an AVX2 int op that SIGILLs there. The
   # AVX_F16C tier encodes exactly that cap (see hyle_isa_flags).
-  if(HYLE_SIMD_BUILD_AVX2 OR HYLE_SIMD_BUILD_AVX512)
+  if(HYLE_SIMD_BUILD_FAT)
     hyle_set_isa(dtype/cvt_f16c.cc AVX_F16C)
-    # bf16 TU needs only AVX2 256-bit INTEGER ops (no FMA/F16C). Only reached when cpu has AVX2.
-    hyle_set_isa(dtype/cvt_avx2.cc AVX2_INT)
   endif()
   # AVX10.2 fp8 TU: only present when the compiler flag probed OK. -mavx10.2-512 implies the full
   # AVX-512 + AVX10.2 vector face; runtime-gated on cpu_features().avx10_2 so it never runs on a
@@ -264,23 +269,14 @@ if(HYLE_SIMD_X64)
     target_compile_definitions(hyle_simd PRIVATE HYLE_HAVE_AVX10_2)
   endif()
 elseif(HYLE_SIMD_ARM64)
-  # NEON ops kernel + dtype cvt: NEON is the ARMv8 baseline (empty flag list). The neon.h
-  # backend was written+objdump-verified earlier (simd-03) but never RAN until a real
-  # Apple-Silicon build; this TU finally compiles it into the dispatched dot/saxpy path.
-  # cvt_neon.cc adds fp16(native vcvt)/bf16(integer) batch conversions.
-  if(HYLE_SIMD_BUILD_NEON)
-    hyle_set_isa(dtype/cvt_neon.cc NEON)
-  endif()
   if(HYLE_SIMD_BUILD_SVE)
     hyle_set_isa(math/transcendental_highway_scalable.cc SVE)
-    hyle_set_isa(dtype/cvt_scalable.cc SVE)
     hyle_set_isa(bitpack/bitpack_hyle_scalable.cc SVE)
     hyle_set_isa(sort/vqsort_hyle_sve.cc SVE)
   endif()
 elseif(HYLE_SIMD_RISCV64)
   if(HYLE_SIMD_BUILD_RVV)
     hyle_set_isa(math/transcendental_highway_scalable.cc RVV)
-    hyle_set_isa(dtype/cvt_scalable.cc RVV)
     hyle_set_isa(bitpack/bitpack_hyle_scalable.cc RVV)
     hyle_set_isa(sort/vqsort_hyle_rvv.cc RVV)
   endif()

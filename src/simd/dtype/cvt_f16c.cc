@@ -4,10 +4,8 @@
 // (so the tail matches the scalar oracle exactly).
 //
 // Rounding: _mm256_cvtps_ph takes _MM_FROUND_NO_EXC (==8) alone -- bits[1:0]=00 already
-// selects round-to-nearest-even, matching the scalar F16FromF32 (verified vs Highway,
-// which passes the same immediate). NaN payloads MAY differ from the scalar path (hardware
-// keeps truncated mantissa bits; scalar forces 0x3FF) -- finite values are bit-identical;
-// the cross-check test compares NaN by is-NaN, not bits.
+// selects round-to-nearest-even. Hardware chooses a different NaN payload, so the cold
+// exceptional lanes are restored through HYLE's scalar oracle after the vector store.
 
 #include "src/simd/dtype/kernels.h"
 
@@ -45,6 +43,14 @@ void f32_to_f16_f16c(const float* src, float16_t* dst, std::size_t n) noexcept {
 #  pragma warning(pop)
 #endif
     _mm_storeu_si128(reinterpret_cast<__m128i*>(dst + i), h);
+    const int nan_mask =
+        _mm256_movemask_ps(_mm256_cmp_ps(f, f, _CMP_UNORD_Q));
+    if (nan_mask != 0) {
+      for (std::size_t lane = 0; lane < 8; ++lane) {
+        if ((nan_mask & (1 << lane)) != 0)
+          dst[i + lane] = f32_to_f16(src[i + lane]);
+      }
+    }
   }
   for (; i < n; ++i) dst[i] = f32_to_f16(src[i]);  // tail = scalar oracle
 }

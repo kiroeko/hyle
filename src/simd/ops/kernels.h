@@ -94,4 +94,32 @@ void add_f64_neon(const double* x, const double* y, double* z, std::size_t n) no
 void add_f64_sve(const double* x, const double* y, double* z, std::size_t n) noexcept;
 void add_f64_rvv(const double* x, const double* y, double* z, std::size_t n) noexcept;
 
+#define HYLE_SIMD_DECLARE_ROW_EXTRA_ONE(T, tag, suffix)                         \
+  void sub_##tag##_##suffix(const T*, const T*, T*, std::size_t) noexcept;      \
+  void mul_##tag##_##suffix(const T*, const T*, T*, std::size_t) noexcept;      \
+  void div_##tag##_##suffix(const T*, const T*, T*, std::size_t) noexcept;      \
+  void scale_##tag##_##suffix(const T*, T, T*, std::size_t) noexcept;           \
+  void add_scalar_##tag##_##suffix(const T*, T, T*, std::size_t) noexcept;      \
+  void affine_##tag##_##suffix(const T*, T, T, T*, std::size_t) noexcept;       \
+  T sum_##tag##_##suffix(const T*, std::size_t) noexcept;                       \
+  void abs_##tag##_##suffix(const T*, T*, std::size_t) noexcept;                \
+  void neg_##tag##_##suffix(const T*, T*, std::size_t) noexcept;                \
+  void square_##tag##_##suffix(const T*, T*, std::size_t) noexcept;             \
+  void sqrt_##tag##_##suffix(const T*, T*, std::size_t) noexcept;
+
+#define HYLE_SIMD_DECLARE_ROW_EXTRA_TIER(suffix)                                \
+  HYLE_SIMD_DECLARE_ROW_EXTRA_ONE(float, f32, suffix)                           \
+  HYLE_SIMD_DECLARE_ROW_EXTRA_ONE(double, f64, suffix)
+
+HYLE_SIMD_DECLARE_ROW_EXTRA_TIER(scalar)
+HYLE_SIMD_DECLARE_ROW_EXTRA_TIER(sse4)
+HYLE_SIMD_DECLARE_ROW_EXTRA_TIER(avx2)
+HYLE_SIMD_DECLARE_ROW_EXTRA_TIER(avx512)
+HYLE_SIMD_DECLARE_ROW_EXTRA_TIER(neon)
+HYLE_SIMD_DECLARE_ROW_EXTRA_TIER(sve)
+HYLE_SIMD_DECLARE_ROW_EXTRA_TIER(rvv)
+
+#undef HYLE_SIMD_DECLARE_ROW_EXTRA_TIER
+#undef HYLE_SIMD_DECLARE_ROW_EXTRA_ONE
+
 }  // namespace hyle::simd::detail

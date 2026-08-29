@@ -2,6 +2,8 @@
 
 #include "hyle/platform.h"
 #include "src/simd/dispatch_internal.h"
+#include "src/simd/dtype/conversion_kernels.h"
+#include "src/simd/dtype/kernels.h"
 #include "src/simd/narrow/kernels.h"
 #include "src/simd/ops/kernels.h"
 #include "src/simd/random/kernels.h"
@@ -41,6 +43,26 @@ namespace {
 #define HYLE_NARROW_RUNTIME(suffix)                                            \
   {HYLE_NARROW_RUNTIME_ONE(f16, suffix) HYLE_NARROW_RUNTIME_ONE(bf16, suffix)}
 
+#define HYLE_OPS_ROW_RUNTIME_ONE(tag, suffix)                                  \
+  &detail::sub_##tag##_##suffix, &detail::mul_##tag##_##suffix,                \
+      &detail::div_##tag##_##suffix, &detail::scale_##tag##_##suffix,          \
+      &detail::add_scalar_##tag##_##suffix, &detail::affine_##tag##_##suffix,  \
+      &detail::sum_##tag##_##suffix, &detail::abs_##tag##_##suffix,            \
+      &detail::neg_##tag##_##suffix, &detail::square_##tag##_##suffix,         \
+      &detail::sqrt_##tag##_##suffix,
+
+#if defined(HYLE_SIMD_FAT_AVX512_CAPPED)
+#define HYLE_SIMD_CLASSIC_CL_HIGHWAY_FALLBACK(value)                           \
+  value.ops_module.isa = Isa::kAvx2;                                          \
+  value.ops_module.features |= Runtime::kFeaturePerOpLowerTier;                \
+  value.narrow_module.isa = Isa::kAvx2;                                       \
+  value.narrow_module.features |= Runtime::kFeaturePerOpLowerTier;             \
+  value.dtype.isa = Isa::kAvx2;                                               \
+  value.dtype.features |= Runtime::kFeaturePerOpLowerTier;
+#else
+#define HYLE_SIMD_CLASSIC_CL_HIGHWAY_FALLBACK(value)
+#endif
+
 #define HYLE_RUNTIME_TABLE(name, tier, suffix)                                      \
   const Runtime name = [] {                                                         \
     Runtime value = {                                                               \
@@ -50,28 +72,35 @@ namespace {
          &detail::dot_f16_f16_##suffix, &detail::dot_i16_i16_##suffix,              \
          &detail::dot_i8_i8_##suffix,                                                \
          &detail::saxpy_f32_##suffix, &detail::saxpy_f64_##suffix,                  \
-         &detail::add_f32_##suffix, &detail::add_f64_##suffix},                     \
+         &detail::add_f32_##suffix, &detail::add_f64_##suffix,                      \
+         HYLE_OPS_ROW_RUNTIME_ONE(f32, suffix)                                      \
+         HYLE_OPS_ROW_RUNTIME_ONE(f64, suffix)},                                    \
         {&detail::random_fill_u64_##suffix, &detail::random_fill_f32_##suffix,      \
          &detail::random_fill_f64_##suffix},                                        \
         HYLE_SEARCH_RUNTIME(suffix),                                                \
         HYLE_NARROW_RUNTIME(suffix),                                                \
+        {&detail::f16_to_f32_##suffix, &detail::f32_to_f16_##suffix,               \
+         &detail::bf16_to_f32_##suffix, &detail::f32_to_bf16_##suffix,             \
+         &detail::f16_to_bf16_##suffix, &detail::bf16_to_f16_##suffix},            \
+        {tier, 0},                                                                  \
         {tier, 0},                                                                  \
         {tier, 0},                                                                  \
         {tier, Runtime::kFeatureDtypeFp8Scalar},                                    \
         {tier, Runtime::kFeatureMathExactLibmScalar},                               \
         {tier, 0}, {tier, 0}};                                                      \
     if constexpr (tier == Isa::kSse42) {                                            \
-      value.dtype.isa = value.math.isa = value.sort.isa = value.bitpack.isa =       \
-          Isa::kScalar;                                                             \
+      value.math.isa = value.sort.isa = value.bitpack.isa = Isa::kScalar;           \
     } else if constexpr (tier == Isa::kAvx2) {                                      \
       value.dtype.features |= Runtime::kFeatureF16c;                                \
     } else if constexpr (tier == Isa::kAvx512) {                                    \
-      value.dtype.isa = Isa::kAvx2;                                                 \
       value.dtype.features |= Runtime::kFeatureF16c;                                \
       value.math.features |= Runtime::kFeaturePerOpLowerTier;                       \
       value.sort.isa = detail::sort_isa_for_product_isa(tier);                      \
       if constexpr (detail::sort_isa_for_product_isa(tier) != tier)                 \
         value.sort.features |= Runtime::kFeaturePerOpLowerTier;                     \
+      /* Official Highway has no classic-cl AVX3 target. */                         \
+      /* The generated avx512-named ops leg is then an AVX2 body. */                 \
+      HYLE_SIMD_CLASSIC_CL_HIGHWAY_FALLBACK(value)                                  \
     } else if constexpr (tier == Isa::kSve) {                                       \
       value.sort.features |= Runtime::kFeatureSortCappedNetwork;                    \
       value.bitpack.features |= Runtime::kFeatureBitpackLogical128;                 \
@@ -87,6 +116,8 @@ HYLE_SIMD_FOR_EACH_COMPILED_TARGET(HYLE_DEFINE_RUNTIME)
 #undef HYLE_DEFINE_RUNTIME
 
 #undef HYLE_RUNTIME_TABLE
+#undef HYLE_SIMD_CLASSIC_CL_HIGHWAY_FALLBACK
+#undef HYLE_OPS_ROW_RUNTIME_ONE
 #undef HYLE_NARROW_RUNTIME
 #undef HYLE_NARROW_RUNTIME_ONE
 #undef HYLE_SEARCH_RUNTIME
@@ -117,22 +148,16 @@ Runtime selected_runtime() noexcept {
 #endif
 
 #if defined(HYLE_SIMD_EXACT_TARGET_AVX512)
-  result.dtype.isa = Isa::kAvx2;
-  result.dtype.features |= Runtime::kFeatureF16c;
   result.math.features |= Runtime::kFeaturePerOpLowerTier;
   result.sort.isa = detail::sort_isa_for_product_isa(Isa::kAvx512);
   if (result.sort.isa != result.isa)
     result.sort.features |= Runtime::kFeaturePerOpLowerTier;
-#elif defined(HYLE_SIMD_EXACT_TARGET_AVX2)
-  result.dtype.isa = Isa::kAvx2;
-  result.dtype.features |= Runtime::kFeatureF16c;
 #elif defined(HYLE_SIMD_EXACT_TARGET_SSE4) || defined(HYLE_SIMD_EXACT_TARGET_SCALAR)
-  result.dtype.isa = Isa::kScalar;
   result.math.isa = Isa::kScalar;
   result.sort.isa = Isa::kScalar;
   result.bitpack.isa = Isa::kScalar;
-#elif defined(HYLE_SIMD_EXACT_TARGET_NEON) || defined(HYLE_SIMD_EXACT_TARGET_SVE)
-  result.dtype.isa = Isa::kNeon;
+#elif defined(HYLE_SIMD_EXACT)
+  // The generated table already describes the sole compiled Highway target.
 #elif defined(HYLE_ARCH_X64)
   const auto& f = platform::cpu_features();
   const auto specialty = detail::x86_specialty_support(f);
@@ -147,10 +172,22 @@ Runtime selected_runtime() noexcept {
     result.ops.dot_i8_i8 = &detail::dot_i8_i8_avx_vnni;
     result.ops_module.features |= Runtime::kFeatureAvxVnni;
   }
-  result.dtype.isa = specialty.avx2_int ? Isa::kAvx2 : Isa::kScalar;
-  if (specialty.f16c) result.dtype.features |= Runtime::kFeatureF16c;
+  // Generated Highway owns every common conversion at the selected product
+  // tier. F16C is retained only for AVX+F16C CPUs below AVX2, where it is a
+  // genuine feature capability not representable by the canonical ladder.
+  if (specialty.f16c) {
+    result.dtype.features |= Runtime::kFeatureF16c;
+    if (result.isa != Isa::kAvx2 && result.isa != Isa::kAvx512) {
+      result.dtype_convert.f16_to_f32 = &detail::f16_to_f32_f16c;
+      result.dtype_convert.f32_to_f16 = &detail::f32_to_f16_f16c;
+    }
+  }
   if (specialty.avx512_bf16) {
-    result.dtype.isa = Isa::kAvx512;
+    result.dtype_convert.f32_to_bf16 = &detail::f32_to_bf16_avx512bf16;
+    if (result.dtype.isa != Isa::kAvx512) {
+      result.dtype.isa = Isa::kAvx512;
+      result.dtype.features |= Runtime::kFeaturePerOpLowerTier;
+    }
     result.dtype.features |= Runtime::kFeatureAvx512Bf16;
   }
   if (specialty.avx10_2)
@@ -229,7 +266,8 @@ SelectedTarget selected_target(KernelFamily family) noexcept {
       return {selected.ops_module.isa, selected.ops_module.features};
     case KernelFamily::kRandom: return {selected.isa, 0};
     case KernelFamily::kSearch: return {selected.isa, 0};
-    case KernelFamily::kNarrow: return {selected.isa, 0};
+    case KernelFamily::kNarrow:
+      return {selected.narrow_module.isa, selected.narrow_module.features};
     case KernelFamily::kScan:
       return {selected.scan.isa, selected.scan.features};
     case KernelFamily::kDtype:

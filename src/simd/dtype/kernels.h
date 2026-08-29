@@ -4,42 +4,15 @@
 
 #include "hyle/simd/dtype.h"
 
-// kernels.h (internal) -- per-variant batch-conversion symbols the dtype dispatcher takes
-// the address of. fp16 has scalar + f16c variants; bf16 has scalar + avx2 variants (bf16
-// is pure integer bit-math, vectorizable with plain AVX2 -- no AVX-512-BF16 needed). Each
-// hardware variant is a distinct -march TU. Not a public header.
+// Internal symbols for HYLE-only conversion gaps. The common f32/f16/bf16
+// graph is generated directly from Highway in conversion_kernel_impl.h.
 
 namespace hyle::simd::detail {
 
-// fp16 batch (scalar reference + F16C hardware)
-void f16_to_f32_scalar(const float16_t* src, float* dst, std::size_t n) noexcept;
-void f32_to_f16_scalar(const float* src, float16_t* dst, std::size_t n) noexcept;
+// F16C remains a precise feature specialization for Ivy Bridge-class CPUs:
+// they have AVX+F16C but cannot run the generated AVX2 target.
 void f16_to_f32_f16c(const float16_t* src, float* dst, std::size_t n) noexcept;
 void f32_to_f16_f16c(const float* src, float16_t* dst, std::size_t n) noexcept;
-// NEON variants (aarch64): fp16 via native vcvt (ARMv8.2 FP16), bf16 via integer bit-math.
-void f16_to_f32_neon(const float16_t* src, float* dst, std::size_t n) noexcept;
-void f32_to_f16_neon(const float* src, float16_t* dst, std::size_t n) noexcept;
-void bf16_to_f32_neon(const bfloat16_t* src, float* dst, std::size_t n) noexcept;
-void f32_to_bf16_neon(const float* src, bfloat16_t* dst, std::size_t n) noexcept;
-
-#define HYLE_DECLARE_SCALABLE_DTYPE(suffix)                                      \
-  void f16_to_f32_##suffix(const float16_t*, float*, std::size_t) noexcept;      \
-  void f32_to_f16_##suffix(const float*, float16_t*, std::size_t) noexcept;      \
-  void bf16_to_f32_##suffix(const bfloat16_t*, float*, std::size_t) noexcept;    \
-  void f32_to_bf16_##suffix(const float*, bfloat16_t*, std::size_t) noexcept;
-#if defined(HYLE_SIMD_HAS_SVE_VARIANT)
-HYLE_DECLARE_SCALABLE_DTYPE(sve)
-#endif
-#if defined(HYLE_SIMD_HAS_RVV_VARIANT)
-HYLE_DECLARE_SCALABLE_DTYPE(rvv)
-#endif
-#undef HYLE_DECLARE_SCALABLE_DTYPE
-
-// bf16 batch (scalar reference + AVX2 8-wide integer)
-void bf16_to_f32_scalar(const bfloat16_t* src, float* dst, std::size_t n) noexcept;
-void f32_to_bf16_scalar(const float* src, bfloat16_t* dst, std::size_t n) noexcept;
-void bf16_to_f32_avx2(const bfloat16_t* src, float* dst, std::size_t n) noexcept;
-void f32_to_bf16_avx2(const float* src, bfloat16_t* dst, std::size_t n) noexcept;
 
 // bf16 f32->bf16 native AVX-512-BF16 (VCVTNEPS2BF16, 16-wide hardware RNE). Only reached
 // when cpu_features().avx512bf16. Folds the AVX2 path's ~7-op RNE into one instruction.
@@ -47,8 +20,7 @@ void f32_to_bf16_avx2(const float* src, bfloat16_t* dst, std::size_t n) noexcept
 // optimally, so no avx512 variant for that direction.)
 void f32_to_bf16_avx512bf16(const float* src, bfloat16_t* dst, std::size_t n) noexcept;
 
-// fp8 batch (scalar only -- no CPU hardware fp8-convert exists; see dtype_ops.h). Both OCP
-// formats, both directions. Auto-vectorized by the compiler at baseline.
+// fp8 batch: portable HYLE oracle plus the optional AVX10.2 specialization.
 void f8e4m3_to_f32_scalar(const float8_e4m3_t* src, float* dst, std::size_t n) noexcept;
 void f32_to_f8e4m3_scalar(const float* src, float8_e4m3_t* dst, std::size_t n) noexcept;
 void f8e5m2_to_f32_scalar(const float8_e5m2_t* src, float* dst, std::size_t n) noexcept;

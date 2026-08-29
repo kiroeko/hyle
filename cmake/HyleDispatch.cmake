@@ -361,7 +361,11 @@ function(hyle_add_dispatched_kernel)
         "hyle_add_fat_kernel is a source-embedding expert seam. Installed static/shared "
         "SDKs expose HYLE whole-buffer APIs, not third-party register headers")
     endif()
-    target_link_libraries(${ARG_TARGET} PRIVATE hyle_simd_source_expert)
+    # The expert seam supplies build-tree compile usage only. Static libraries
+    # otherwise retain a LINK_ONLY reference in their installed export even
+    # though every Highway body is already compiled into the archive.
+    target_link_libraries(${ARG_TARGET} PRIVATE
+      "$<BUILD_INTERFACE:hyle_simd_source_expert>")
   endif()
 
   set(_generated_dir "${CMAKE_CURRENT_BINARY_DIR}/generated/simd-dispatch/${ARG_NAME}")
@@ -371,6 +375,7 @@ function(hyle_add_dispatched_kernel)
     set(_target_define "")
     set(_tier "")
     set(_supported TRUE)
+    set(_highway_classic_avx512_fallback FALSE)
 
     if(_variant STREQUAL "scalar")
       # The portable floor intentionally has neither an ISA macro nor extra compiler flags.
@@ -420,12 +425,16 @@ function(hyle_add_dispatched_kernel)
       message(FATAL_ERROR "hyle_add_dispatched_kernel: unknown target '${_variant}'")
     endif()
 
-    # Official Highway blocks every AVX3 target under classic cl.exe. A fat
-    # unknown-CPU source consumer remains valid with a documented AVX2 ceiling;
-    # an exact AVX-512 request is rejected by hyle_add_fat_kernel instead.
+    # Official Highway blocks every AVX3 target under classic cl.exe. Product
+    # families still generate their AVX-512-named leg with an AVX2 Highway body,
+    # so their private runtime tables can select a lower tier without a wrapper
+    # call. Source-fat remains capped at AVX2; its exact AVX-512 request is
+    # rejected by hyle_add_fat_kernel instead.
     if(ARG_HIGHWAY AND _variant STREQUAL "avx512" AND MSVC AND
        CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-      set(_supported FALSE)
+      set(_target_define HYLE_SIMD_TARGET_AVX2)
+      set(_tier AVX2)
+      set(_highway_classic_avx512_fallback TRUE)
       target_compile_definitions(${ARG_TARGET} PRIVATE
         HYLE_SIMD_FAT_AVX512_CAPPED=1)
     endif()
@@ -464,6 +473,10 @@ function(hyle_add_dispatched_kernel)
             "#define HWY_WANT_SSE4 1\n")
           set(_expected "HWY_STATIC_TARGET != HWY_SSE4")
         elseif(_variant STREQUAL "avx2")
+          string(APPEND _contents "#define HWY_DISABLE_PCLMUL_AES 1\n")
+          set(_expected "HWY_STATIC_TARGET != HWY_AVX2")
+        elseif(_variant STREQUAL "avx512" AND
+               _highway_classic_avx512_fallback)
           string(APPEND _contents "#define HWY_DISABLE_PCLMUL_AES 1\n")
           set(_expected "HWY_STATIC_TARGET != HWY_AVX2")
         elseif(_variant STREQUAL "avx512")

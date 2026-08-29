@@ -9,8 +9,6 @@
 #include "hwy/contrib/dot/dot-inl.h"
 #include "hwy/highway.h"
 
-#include "hyle/platform.h"
-#include "hyle/simd/native/ops.h"
 #include "hyle/simd/ops.h"
 #include "hyle/simd/runtime.h"
 
@@ -19,15 +17,6 @@ namespace hs = hyle::simd;
 namespace hn = hwy::HWY_NAMESPACE;
 
 namespace {
-
-const hs::Runtime& same_isa_runtime() {
-#if defined(HYLE_ARCH_X64)
-  if (const auto* rt = hs::runtime_for(hs::Isa::kAvx2)) return *rt;
-#elif defined(HYLE_ARCH_ARM64)
-  if (const auto* rt = hs::runtime_for(hs::Isa::kNeon)) return *rt;
-#endif
-  return *hs::runtime_for(hs::Isa::kScalar);
-}
 
 void run_size(std::size_t n) {
   static_assert(sizeof(hs::bfloat16_t) == sizeof(hwy::bfloat16_t));
@@ -53,7 +42,6 @@ void run_size(std::size_t n) {
   const auto* hbf1 = reinterpret_cast<const hwy::bfloat16_t*>(bf1.data());
   const hn::ScalableTag<hwy::bfloat16_t> hdb;
   const hn::ScalableTag<float> hdf;
-  const auto& fixed = same_isa_runtime();
   const std::size_t iterations = n <= 4096 ? 2000 : 256;
 
   {
@@ -63,12 +51,6 @@ void run_size(std::size_t n) {
     b.run("Highway contrib/dot", [&] {
       nb::doNotOptimizeAway(hn::Dot::Compute<hn::Dot::kAtLeastOneVector>(
           hdb, hbf0, hbf1, n));
-    });
-    b.run("HYLE native fixed", [&] {
-      nb::doNotOptimizeAway(hs::native::dot(bf0.data(), bf1.data(), n));
-    });
-    b.run("HYLE runtime fixed", [&] {
-      nb::doNotOptimizeAway(fixed.ops.dot_bf16_bf16(bf0.data(), bf1.data(), n));
     });
     b.run("HYLE public", [&] {
       nb::doNotOptimizeAway(hs::dot(bf0.data(), bf1.data(), n));
@@ -81,12 +63,6 @@ void run_size(std::size_t n) {
     b.run("Highway contrib/dot", [&] {
       nb::doNotOptimizeAway(hn::Dot::Compute<hn::Dot::kAtLeastOneVector>(
           hdf, f32.data(), hbf1, n));
-    });
-    b.run("HYLE native fixed", [&] {
-      nb::doNotOptimizeAway(hs::native::dot(f32.data(), bf1.data(), n));
-    });
-    b.run("HYLE runtime fixed", [&] {
-      nb::doNotOptimizeAway(fixed.ops.dot_f32_bf16(f32.data(), bf1.data(), n));
     });
     b.run("HYLE public", [&] {
       nb::doNotOptimizeAway(hs::dot(f32.data(), bf1.data(), n));
@@ -102,9 +78,6 @@ void run_size(std::size_t n) {
         sum += hs::f16_to_f32(f16a[i]) * hs::f16_to_f32(f16b[i]);
       nb::doNotOptimizeAway(sum);
     });
-    b.run("f16 HYLE native", [&] {
-      nb::doNotOptimizeAway(hs::native::dot(f16a.data(), f16b.data(), n));
-    });
     b.run("f16 HYLE public", [&] {
       nb::doNotOptimizeAway(hs::dot(f16a.data(), f16b.data(), n));
     });
@@ -114,9 +87,6 @@ void run_size(std::size_t n) {
         sum += static_cast<std::uint64_t>(
             static_cast<std::int64_t>(i16a[i]) * i16b[i]);
       nb::doNotOptimizeAway(sum);
-    });
-    b.run("i16-i64 HYLE native", [&] {
-      nb::doNotOptimizeAway(hs::native::dot(i16a.data(), i16b.data(), n));
     });
     b.run("i16-i64 HYLE public", [&] {
       nb::doNotOptimizeAway(hs::dot(i16a.data(), i16b.data(), n));
@@ -128,12 +98,6 @@ void run_size(std::size_t n) {
             static_cast<std::int64_t>(i8a[i]) * i8b[i]);
       nb::doNotOptimizeAway(sum);
     });
-    b.run("i8-i64 HYLE native", [&] {
-      nb::doNotOptimizeAway(hs::native::dot(i8a.data(), i8b.data(), n));
-    });
-    b.run("i8-i64 HYLE runtime fixed", [&] {
-      nb::doNotOptimizeAway(fixed.ops.dot_i8_i8(i8a.data(), i8b.data(), n));
-    });
     b.run("i8-i64 HYLE public", [&] {
       nb::doNotOptimizeAway(hs::dot(i8a.data(), i8b.data(), n));
     });
@@ -143,9 +107,9 @@ void run_size(std::size_t n) {
 }  // namespace
 
 int main() {
-  std::printf("HYLE public ISA=%u, fixed comparison ISA=%u\n",
-              static_cast<unsigned>(hs::runtime().isa),
-              static_cast<unsigned>(same_isa_runtime().isa));
+  std::printf("HYLE ops ISA=%u; direct Highway TU is target-bound by CMake\n",
+              static_cast<unsigned>(
+                  hs::selected_target(hs::KernelFamily::kOps).isa));
   run_size(4096);
   run_size(1u << 20);
 }

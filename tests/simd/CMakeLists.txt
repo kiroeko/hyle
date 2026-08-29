@@ -19,7 +19,7 @@ if(TARGET hyle_simd)
 hyle_add_test(simd SOURCES dispatch_test.cc vec_test.cc native_test.cc
               runtime_test.cc ops_test.cc search_test.cc scan_test.cc dtype_test.cc
               math_test.cc sort_test.cc radix_sort_test.cc bitpack_test.cc
-              narrow_float_test.cc narrow_ops_test.cc)
+              narrow_ops_test.cc)
 target_compile_definitions(hyle_simd PRIVATE HYLE_SIMD_INTERNAL_TESTING=1)
 target_compile_definitions(hyle_simd_test PRIVATE HYLE_SIMD_INTERNAL_TESTING=1)
 target_include_directories(hyle_simd_test PRIVATE "${PROJECT_SOURCE_DIR}")
@@ -52,10 +52,10 @@ if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   # width gets exact-byte LoadU/StoreU guards; every half-able width gets the scalar
   # half/combine oracle. Windows uses VirtualProtect guard pages, Unix uses mprotect.
   set(_fixed_partial_tests vec_partial_boundary_test.cc vec_half_combine_oracle_test.cc)
-  hyle_add_test(simd NAME sse4 SOURCES vec_test.cc native_test.cc narrow_float_test.cc ${_fixed_partial_tests}
+  hyle_add_test(simd NAME sse4 SOURCES vec_test.cc native_test.cc ${_fixed_partial_tests}
                 DEFINES HYLE_SIMD_TARGET_SSE4 ${_sse4_options})
   hyle_add_test(simd NAME avx2 SOURCES vec_test.cc native_test.cc
-                sort_kernel_test.cc narrow_float_test.cc ${_fixed_partial_tests}
+                sort_kernel_test.cc ${_fixed_partial_tests}
                 DEFINES HYLE_SIMD_TARGET_AVX2 OPTIONS ${_avx2_flags})
   target_include_directories(hyle_simd_avx2_test PRIVATE "${PROJECT_SOURCE_DIR}")
   # simd-08 档C crypto: the base sse4/avx2 variants above compile WITHOUT -maes/-mpclmul, so on
@@ -69,7 +69,7 @@ if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   if(_sse4_aes_flags)
     list(APPEND _sse4_aes_options OPTIONS ${_sse4_aes_flags})
   endif()
-  hyle_add_test(simd NAME sse4_aes SOURCES vec_test.cc native_test.cc narrow_float_test.cc
+  hyle_add_test(simd NAME sse4_aes SOURCES vec_test.cc native_test.cc
                 DEFINES HYLE_SIMD_TARGET_SSE4 ${_sse4_aes_options})
   # AVX-512 vec_test variant: exercises the avx512.h backend's FULL op face (incl. simd-08
   # crypto + simd-09 cmp128/intdiv/RNG that route through the 512-bit backend). Historically
@@ -97,7 +97,7 @@ if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
     set(_avx512_sort_kernel_test "")
   endif()
   hyle_add_test(simd NAME avx512 SOURCES vec_test.cc native_test.cc
-                ${_avx512_sort_kernel_test} narrow_float_test.cc ${_fixed_partial_tests}
+                ${_avx512_sort_kernel_test} ${_fixed_partial_tests}
                 DEFINES HYLE_SIMD_TARGET_AVX512 OPTIONS ${_avx512_flags}
                 ${_avx512_autorun})
   target_include_directories(hyle_simd_avx512_test PRIVATE "${PROJECT_SOURCE_DIR}")
@@ -111,7 +111,7 @@ if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   # variant there a pointless duplicate.
   if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     hyle_isa_flags(_avx512dl_flags AVX512_DL)
-    hyle_add_test(simd NAME avx512_dl SOURCES vec_test.cc native_test.cc narrow_float_test.cc DEFINES HYLE_SIMD_TARGET_AVX512 OPTIONS ${_avx512dl_flags} ${_avx512_autorun})
+    hyle_add_test(simd NAME avx512_dl SOURCES vec_test.cc native_test.cc DEFINES HYLE_SIMD_TARGET_AVX512 OPTIONS ${_avx512dl_flags} ${_avx512_autorun})
   endif()
 elseif(HYLE_TARGET_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   hyle_isa_flags(_neon_flags NEON)
@@ -122,7 +122,7 @@ elseif(HYLE_TARGET_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   # The same fixed-width partial proof covers NEON's physical D/Q split. All cases
   # are permanent default-on regressions.
   hyle_add_test(simd NAME neon SOURCES vec_test.cc native_test.cc
-                sort_kernel_test.cc narrow_float_test.cc vec_partial_boundary_test.cc
+                sort_kernel_test.cc vec_partial_boundary_test.cc
                 vec_half_combine_oracle_test.cc
                 DEFINES HYLE_SIMD_TARGET_NEON ${_neon_options})
   target_include_directories(hyle_simd_neon_test PRIVATE "${PROJECT_SOURCE_DIR}")
@@ -132,11 +132,10 @@ elseif(HYLE_TARGET_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   # it: on a real SVE host (Graviton3, etc.) ctest runs it directly; on a non-SVE dev box it is
   # cross-compiled (aarch64-linux-gnu-g++ -march=armv8-a+sve) and run under qemu-aarch64-static at
   # multiple VLs (128/256/512) -- the "one binary, every width" scalable proof. See the recipe in
-  # docs/architecture/simd-design.md (SVE section) / scripts. NOT auto-built on a plain aarch64
+  # docs/developer/maintenance/simd-dispatch-guide.md / scripts. NOT auto-built on a plain aarch64
   # build (would need +sve which some arm64 hosts lack), so it is opt-in.
   if(HYLE_TEST_SIMD_SVE)
     hyle_add_test(simd NAME sve SOURCES sve_test.cc native_test.cc
-                  narrow_float_test.cc
                   scalable_math_product_test.cc
                   scalable_math_dispatch_test.cc scalable_dtype_product_test.cc
                   scalable_bitpack_product_test.cc fixed128_bitpack_reference.cc
@@ -151,7 +150,6 @@ elseif(HYLE_TARGET_PROCESSOR MATCHES "riscv64|riscv")
   # qemu-riscv64-static (scripts/rvv-qemu-test.sh). Gated by HYLE_TEST_SIMD_RVV.
   if(HYLE_TEST_SIMD_RVV)
     hyle_add_test(simd NAME rvv SOURCES rvv_test.cc native_test.cc
-                  narrow_float_test.cc
                   scalable_math_product_test.cc
                   scalable_math_dispatch_test.cc scalable_dtype_product_test.cc
                   scalable_bitpack_product_test.cc fixed128_bitpack_reference.cc

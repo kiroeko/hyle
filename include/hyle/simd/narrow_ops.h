@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
+#include <type_traits>
 
 #include "hyle/simd/dispatch.h"
 #include "hyle/simd/dtype.h"
@@ -10,6 +12,29 @@
 // D-tags remain inside the selected kernel TU.
 
 namespace hyle::simd {
+
+// Bijective IEEE-754 totalOrder key for HYLE's stable two-byte storage types.
+// Unsigned key comparison distinguishes signed zero and every NaN encoding.
+template <typename Narrow>
+constexpr std::uint16_t narrow_total_order_key(Narrow value) noexcept
+  requires(std::is_same_v<Narrow, float16_t> ||
+           std::is_same_v<Narrow, bfloat16_t>)
+{
+  constexpr std::uint16_t kSign = 0x8000u;
+  return static_cast<std::uint16_t>(
+      value.bits ^ ((value.bits & kSign) != 0 ? 0xFFFFu : kSign));
+}
+
+template <typename Narrow>
+constexpr Narrow narrow_from_total_order_key(std::uint16_t key) noexcept
+  requires(std::is_same_v<Narrow, float16_t> ||
+           std::is_same_v<Narrow, bfloat16_t>)
+{
+  constexpr std::uint16_t kSign = 0x8000u;
+  const std::uint16_t bits = static_cast<std::uint16_t>(
+      key ^ ((key & kSign) != 0 ? kSign : 0xFFFFu));
+  return Narrow::from_bits(bits);
+}
 
 // IEEE numeric equality: NaN never matches and -0 compares equal to +0.
 HYLE_SIMD_API std::size_t count_equal(const float16_t *data, std::size_t n,

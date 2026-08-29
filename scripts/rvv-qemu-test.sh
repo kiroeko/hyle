@@ -16,6 +16,8 @@
 #   bash scripts/rvv-qemu-test.sh zvkned
 #   bash scripts/rvv-qemu-test.sh all
 #   bash scripts/rvv-qemu-test.sh fat    # direct-Highway source-fat seam only
+#   HYLE_SCALABLE_ROW_DTYPE_ONLY=1 bash scripts/rvv-qemu-test.sh base
+#                                      # SIMD-07 bounded family gate
 set -e
 
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
@@ -83,23 +85,28 @@ run_tier() {
   elif grep -Eq 'vaes(em|ef|dm|df)\.vv' "$OUT/rvv_test_${name}.dis"; then
     echo "ERROR: optional Zvkned instruction leaked into ${name} object"; exit 1
   fi
-  $CXX $FLAGS -c "$REPO/tests/simd/scalable_math_product_test.cc" -o "$OUT/scalable_math_product_test_${name}.o"
+  local math_test_objects=()
+  if [ "${HYLE_SCALABLE_ROW_DTYPE_ONLY:-0}" != "1" ]; then
+    $CXX $FLAGS -c "$REPO/tests/simd/scalable_math_product_test.cc" -o "$OUT/scalable_math_product_test_${name}.o"
+    $CXX $COMMON_FLAGS -c "$REPO/tests/simd/scalable_math_dispatch_test.cc" -o "$OUT/scalable_math_dispatch_test_${name}.o"
+    math_test_objects+=(
+      "$OUT/scalable_math_product_test_${name}.o"
+      "$OUT/scalable_math_dispatch_test_${name}.o")
+  fi
   $CXX $FLAGS -c "$REPO/tests/simd/scalable_dtype_product_test.cc" -o "$OUT/scalable_dtype_product_test_${name}.o"
-  $CXX $FLAGS -c "$REPO/tests/simd/narrow_float_test.cc" -o "$OUT/narrow_float_test_${name}.o"
   $CXX $FLAGS -c "$REPO/tests/simd/scalable_bitpack_product_test.cc" -o "$OUT/scalable_bitpack_product_test_${name}.o"
   $CXX $FLAGS -c "$REPO/tests/simd/scalable_sort_product_test.cc" -o "$OUT/scalable_sort_product_test_${name}.o"
   $CXX $COMMON_FLAGS -c "$REPO/tests/simd/dispatch_test.cc" -o "$OUT/dispatch_test_${name}.o"
   $CXX $COMMON_FLAGS -c "$REPO/tests/simd/runtime_test.cc" -o "$OUT/runtime_test_${name}.o"
   $CXX $COMMON_FLAGS -c "$REPO/tests/simd/ops_test.cc" -o "$OUT/ops_test_${name}.o"
+  $CXX $COMMON_FLAGS -c "$REPO/tests/simd/dtype_test.cc" -o "$OUT/dtype_test_${name}.o"
   $CXX $COMMON_FLAGS -c "$REPO/tests/simd/search_test.cc" -o "$OUT/search_test_${name}.o"
   $CXX $COMMON_FLAGS -c "$REPO/tests/simd/narrow_ops_test.cc" -o "$OUT/narrow_ops_test_${name}.o"
   $CXX $COMMON_FLAGS -c "$REPO/tests/simd/scan_test.cc" -o "$OUT/scan_test_${name}.o"
   $CXX $COMMON_FLAGS -c "$REPO/tests/simd/fixed128_bitpack_reference.cc" -o "$OUT/fixed128_bitpack_reference_${name}.o"
   $CXX $FLAGS -c "$REPO/src/simd/math/transcendental_highway_scalable.cc" -o "$OUT/math_rvv_${name}.o"
-  $CXX $FLAGS -c "$REPO/src/simd/dtype/cvt_scalable.cc" -o "$OUT/dtype_rvv_${name}.o"
   $CXX $FLAGS -c "$REPO/src/simd/bitpack/bitpack_hyle_scalable.cc" -o "$OUT/bitpack_rvv_${name}.o"
   $CXX $FLAGS -c "$REPO/src/simd/sort/vqsort_hyle_rvv.cc" -o "$OUT/sort_rvv_${name}.o"
-  $CXX $COMMON_FLAGS -c "$REPO/tests/simd/scalable_math_dispatch_test.cc" -o "$OUT/scalable_math_dispatch_test_${name}.o"
   $CXX $COMMON_FLAGS -c "$REPO/src/platform/cpu.cc" -o "$OUT/cpu_${name}.o"
   $CXX $COMMON_FLAGS -DHYLE_ERROR_BUILD -c "$REPO/src/error/status.cc" -o "$OUT/error_status_${name}.o"
   printf '#include "hyle/platform/thread.h"\nnamespace hyle::platform { unsigned hardware_concurrency() noexcept { return 1; } }\n' |
@@ -112,7 +119,7 @@ run_tier() {
   $CXX $COMMON_FLAGS -c "$REPO/src/simd/math/math_dispatch.cc" -o "$OUT/math_dispatch_${name}.o"
   $CXX $COMMON_FLAGS -c "$REPO/src/simd/math/transcendental_scalar.cc" -o "$OUT/math_scalar_${name}.o"
   $CXX $COMMON_FLAGS -c "$REPO/src/simd/dtype/dtype_dispatch.cc" -o "$OUT/dtype_dispatch_${name}.o"
-  $CXX $COMMON_FLAGS -c "$REPO/src/simd/dtype/cvt_scalar.cc" -o "$OUT/dtype_scalar_${name}.o"
+  $CXX $COMMON_FLAGS -c "$REPO/src/simd/dtype/cvt_fp8_scalar.cc" -o "$OUT/dtype_fp8_scalar_${name}.o"
   $CXX $COMMON_FLAGS -c "$REPO/src/simd/bitpack/bitpack_dispatch.cc" -o "$OUT/bitpack_dispatch_${name}.o"
   $CXX $COMMON_FLAGS -c "$REPO/src/simd/bitpack/bitpack_scalar.cc" -o "$OUT/bitpack_scalar_${name}.o"
   $CXX $COMMON_FLAGS -c "$REPO/src/simd/ops/dispatch_ops.cc" -o "$OUT/ops_dispatch_${name}.o"
@@ -124,27 +131,38 @@ run_tier() {
   $CXX $COMMON_FLAGS -c "$REPO/src/simd/sort/vqsort_scalar.cc" -o "$OUT/sort_scalar_${name}.o"
   $CXX $COMMON_FLAGS -c "$REPO/src/simd/sort/radix_sort.cc" -o "$OUT/radix_sort_${name}.o"
   $CXX $COMMON_FLAGS -c "$REPO/src/simd/sort/stream_topk.cc" -o "$OUT/stream_topk_${name}.o"
-  for module in ops random scan search narrow; do
+  for module in random scan search; do
     printf '#define HYLE_SIMD_VARIANT_SUFFIX scalar\n#include "src/simd/%s/kernel_impl.h"\n' "$module" |
       $CXX $COMMON_FLAGS -x c++ -c - -o "$OUT/${module}_scalar_${name}.o"
     printf '#define HYLE_SIMD_VARIANT_SUFFIX rvv\n#include "src/simd/%s/kernel_impl.h"\n' "$module" |
       $CXX $FLAGS -x c++ -c - -o "$OUT/${module}_rvv_${name}.o"
   done
+  for module in ops narrow; do
+    printf '#define HWY_COMPILE_ONLY_SCALAR 1\n#define HYLE_SIMD_VARIANT_SUFFIX scalar\n#include "src/simd/%s/kernel_impl.h"\n' "$module" |
+      $CXX $COMMON_FLAGS -x c++ -c - -o "$OUT/${module}_scalar_${name}.o"
+    printf '#define HWY_COMPILE_ONLY_STATIC 1\n#define HYLE_SIMD_VARIANT_SUFFIX rvv\n#include "src/simd/%s/kernel_impl.h"\n' "$module" |
+      $CXX $FLAGS -x c++ -c - -o "$OUT/${module}_rvv_${name}.o"
+  done
+  printf '#define HWY_COMPILE_ONLY_SCALAR 1\n#define HYLE_SIMD_VARIANT_SUFFIX scalar\n#include "src/simd/dtype/conversion_kernel_impl.h"\n' |
+    $CXX $COMMON_FLAGS -x c++ -c - -o "$OUT/dtype_scalar_${name}.o"
+  printf '#define HWY_COMPILE_ONLY_STATIC 1\n#define HYLE_SIMD_VARIANT_SUFFIX rvv\n#include "src/simd/dtype/conversion_kernel_impl.h"\n' |
+    $CXX $FLAGS -x c++ -c - -o "$OUT/dtype_rvv_${name}.o"
   $CXX $FLAGS "$OUT/rvv_test_${name}.o" \
-    "$OUT/scalable_math_product_test_${name}.o" "$OUT/scalable_math_dispatch_test_${name}.o" \
+    "${math_test_objects[@]}" \
     "$OUT/scalable_dtype_product_test_${name}.o" \
-    "$OUT/narrow_float_test_${name}.o" \
     "$OUT/scalable_bitpack_product_test_${name}.o" \
     "$OUT/scalable_sort_product_test_${name}.o" \
     "$OUT/dispatch_test_${name}.o" \
     "$OUT/runtime_test_${name}.o" \
     "$OUT/ops_test_${name}.o" \
+    "$OUT/dtype_test_${name}.o" \
     "$OUT/search_test_${name}.o" \
     "$OUT/narrow_ops_test_${name}.o" \
     "$OUT/scan_test_${name}.o" \
     "$OUT/fixed128_bitpack_reference_${name}.o" \
     "$OUT/math_rvv_${name}.o" "$OUT/math_scalar_${name}.o" "$OUT/math_dispatch_${name}.o" \
-    "$OUT/dtype_rvv_${name}.o" "$OUT/dtype_scalar_${name}.o" "$OUT/dtype_dispatch_${name}.o" \
+    "$OUT/dtype_rvv_${name}.o" "$OUT/dtype_scalar_${name}.o" \
+    "$OUT/dtype_fp8_scalar_${name}.o" "$OUT/dtype_dispatch_${name}.o" \
     "$OUT/bitpack_rvv_${name}.o" "$OUT/bitpack_scalar_${name}.o" "$OUT/bitpack_dispatch_${name}.o" \
     "$OUT/scan_rvv_${name}.o" "$OUT/scan_scalar_${name}.o" "$OUT/scan_dispatch_${name}.o" \
     "$OUT/sort_rvv_${name}.o" "$OUT/sort_scalar_${name}.o" "$OUT/sort_dispatch_${name}.o" \
@@ -160,6 +178,10 @@ run_tier() {
 
   echo "[${name}] running under qemu-riscv64 at VLEN 128 / 256 / 512 / 1024 (cpu=${qemu_cpu}) ..."
   local feature_env=(HYLE_EXPECT_RVV=1)
+  local test_args=()
+  if [ "${HYLE_SCALABLE_ROW_DTYPE_ONLY:-0}" = "1" ]; then
+    test_args+=(--gtest_filter=SimdRuntime.TableMetadataAndExactTierLookup:Dispatch.*:Ops.*:DtypeBatch.*:DtypeGraph.*:NarrowOps.*:ScalableDtypeProduct.*:Rvv.LoadStoreAllTypes)
+  fi
   # qemu-linux-user 8.2 executes Zvbb/Zvbc instructions but does not emulate the
   # riscv_hwprobe optional-extension result (the syscall safely reports no bit).
   # A newer emulator or a full-system guest kernel may opt into the positive
@@ -173,7 +195,7 @@ run_tier() {
     echo "----- RVV ${name} VLEN=${bits}-bit -----"
     env "${feature_env[@]}" "$QEMU" \
       -cpu "rv64,v=true,${qemu_cpu}vlen=${bits},elen=64" -L /usr/riscv64-linux-gnu \
-      "$bin" || rc=$?
+      "$bin" "${test_args[@]}" || rc=$?
   done
 }
 

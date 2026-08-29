@@ -5,8 +5,8 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <type_traits>
 
-#include "hyle/simd/narrow_float.h"
 #include "hyle/simd/narrow_ops.h"
 #include "src/simd/runtime_internal.h"
 
@@ -23,7 +23,7 @@ std::array<T, 9> sample(FromFloat from_float, std::uint16_t nan_bits) {
 
 template <typename T, typename FromFloat, typename NarrowTable>
 void check_table(const NarrowTable &table, FromFloat from_float,
-                 std::uint16_t nan_bits) {
+                  std::uint16_t nan_bits, hs::Isa isa) {
   const auto values = sample<T>(from_float, nan_bits);
   const T plus_zero = T::from_bits(0x0000u);
   const T nan = T::from_bits(nan_bits);
@@ -36,7 +36,40 @@ void check_table(const NarrowTable &table, FromFloat from_float,
   EXPECT_EQ(table.find_equal(values.data(), values.size(), nan), values.size());
   EXPECT_EQ(table.count_equal_bits(values.data(), values.size(), nan), 2u);
   EXPECT_EQ(table.find_equal_bits(values.data(), values.size(), nan), 0u);
-  EXPECT_TRUE(std::isnan(table.sum(values.data(), values.size())));
+  const float sum = table.sum(values.data(), values.size());
+  EXPECT_TRUE(std::isnan(sum))
+      << "isa=" << static_cast<int>(isa)
+      << " type=" << (std::is_same_v<T, hs::float16_t> ? "f16" : "bf16")
+      << " sum=" << sum;
+  for (std::size_t i = 0; i < values.size(); ++i) {
+    const float singleton = table.sum(values.data() + i, 1);
+    const float expected = std::is_same_v<T, hs::float16_t>
+                               ? hs::f16_to_f32(
+                                     hs::float16_t::from_bits(values[i].bits))
+                               : hs::bf16_to_f32(
+                                     hs::bfloat16_t::from_bits(values[i].bits));
+    if (std::isnan(expected))
+      EXPECT_TRUE(std::isnan(singleton)) << "isa=" << static_cast<int>(isa)
+                                         << " singleton=" << i;
+    else
+      EXPECT_FLOAT_EQ(singleton, expected) << "isa=" << static_cast<int>(isa)
+                                            << " singleton=" << i;
+  }
+  for (std::size_t prefix = 1; prefix <= values.size(); ++prefix) {
+    float expected = 0.0f;
+    for (std::size_t i = 0; i < prefix; ++i) {
+      expected += std::is_same_v<T, hs::float16_t>
+                      ? hs::f16_to_f32(
+                            hs::float16_t::from_bits(values[i].bits))
+                      : hs::bf16_to_f32(
+                            hs::bfloat16_t::from_bits(values[i].bits));
+    }
+    const float actual = table.sum(values.data(), prefix);
+    if (std::isnan(expected)) {
+      EXPECT_TRUE(std::isnan(actual)) << "isa=" << static_cast<int>(isa)
+                                      << " prefix=" << prefix;
+    }
+  }
 
   auto ordered = values;
   std::sort(ordered.begin(), ordered.end(), [](T a, T b) {
@@ -108,6 +141,22 @@ struct BF16Table {
 
 } // namespace
 
+TEST(NarrowOps, TotalOrderKeyIsBijectiveForEveryEncoding) {
+  for (std::uint32_t bits = 0; bits < 65536u; ++bits) {
+    const auto raw = static_cast<std::uint16_t>(bits);
+    const auto f16 = hs::float16_t::from_bits(raw);
+    const auto bf16 = hs::bfloat16_t::from_bits(raw);
+    EXPECT_EQ(hs::narrow_from_total_order_key<hs::float16_t>(
+                  hs::narrow_total_order_key(f16))
+                  .bits,
+              raw);
+    EXPECT_EQ(hs::narrow_from_total_order_key<hs::bfloat16_t>(
+                  hs::narrow_total_order_key(bf16))
+                  .bits,
+              raw);
+  }
+}
+
 TEST(NarrowOps, PublicDispatchedSurface) {
   const auto f16 = sample<hs::float16_t>(hs::f32_to_f16, 0x7E11u);
   EXPECT_EQ(hs::count_equal(f16.data(), f16.size(), hs::f32_to_f16(2.0f)), 2u);
@@ -130,8 +179,9 @@ TEST(NarrowOps, EverySupportedRuntimeVariant) {
     const hs::Runtime *rt = hs::runtime_for(isa);
     if (rt == nullptr)
       continue;
-    check_table<hs::float16_t>(F16Table{rt->narrow}, hs::f32_to_f16, 0x7E11u);
+    check_table<hs::float16_t>(F16Table{rt->narrow}, hs::f32_to_f16, 0x7E11u,
+                               isa);
     check_table<hs::bfloat16_t>(BF16Table{rt->narrow}, hs::f32_to_bf16,
-                                0x7FC1u);
+                                 0x7FC1u, isa);
   }
 }

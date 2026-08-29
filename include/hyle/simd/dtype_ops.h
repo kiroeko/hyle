@@ -2,47 +2,45 @@
 
 #include <cstddef>
 
-#include "hyle/simd/dispatch.h"  // Isa, HYLE_SIMD_API
-#include "hyle/simd/dtype.h"     // float16_t, bfloat16_t
+#include "hyle/simd/dispatch.h"
+#include "hyle/simd/dtype.h"
 
-// dtype_ops.h -- BATCH dtype conversions, runtime-dispatched (simd-05). Converting whole
-// weight/activation arrays between fp16/bf16 and fp32 is the AI hot path (KV-cache, mixed
-// precision). Same fn-ptr dispatch model as ops.h: fp16 conversions pick the F16C
-// hardware kernel when Platform reports F16C, else the scalar core.
+// Discoverable whole-buffer conversion graph for HYLE's numeric storage types. Every unequal
+// source/destination pair among f32, f16, bf16, E4M3 and E5M2 is provided. Same-type copying is a
+// standard-library operation and is intentionally not duplicated here.
 //
-// bf16: vectorized with plain AVX2 INTEGER ops, NOT a dedicated
-// AVX-512-BF16 instruction. bf16 IS the top 16 bits of f32, so bf16<->f32 is a shift
-// (bf16->f32) or a round-to-nearest-even bias + shift (f32->bf16) -- both expressible in
-// AVX2 (cvtepu16_epi32/slli, packus/permute4x64). Same approach as Highway. Falls back to
-// the scalar core on non-AVX2 CPUs. (AVX-512-BF16's vcvtne2ps would only help on AVX-512
-// hosts; the AVX2 path already beats scalar 3.5-6.9x and is bit-identical.)
+// All overloads are O(n), use O(1) extra storage and never allocate or lock. n == 0 accepts null
+// pointers. Equal-width conversions allow src and dst to begin at the same address; unequal-width
+// ranges must be disjoint. Any other partial overlap is outside the contract. Narrowing preserves
+// the scalar contracts in dtype.h: round-to-nearest-even, documented saturation and NaN mapping.
 
 namespace hyle::simd {
 
-// fp16 <-> fp32, n elements. F16C-accelerated where available.
-HYLE_SIMD_API void f16_to_f32_batch(const float16_t* src, float* dst, std::size_t n) noexcept;
-HYLE_SIMD_API void f32_to_f16_batch(const float* src, float16_t* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void convert(const float* src, float16_t* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void convert(const float* src, bfloat16_t* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void convert(const float* src, float8_e4m3_t* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void convert(const float* src, float8_e5m2_t* dst, std::size_t n) noexcept;
 
-// bf16 <-> fp32, n elements. Scalar core (auto-vectorized); see header note.
-HYLE_SIMD_API void bf16_to_f32_batch(const bfloat16_t* src, float* dst, std::size_t n) noexcept;
-HYLE_SIMD_API void f32_to_bf16_batch(const float* src, bfloat16_t* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void convert(const float16_t* src, float* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void convert(const float16_t* src, bfloat16_t* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void convert(const float16_t* src, float8_e4m3_t* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void convert(const float16_t* src, float8_e5m2_t* dst, std::size_t n) noexcept;
 
-// fp8 <-> fp32, n elements, both OCP formats. SCALAR bit-math (auto-vectorized by the compiler);
-// there is no CPU hardware fp8-convert path to dispatch to -- hardware fp8 conversion is AVX10.2 /
-// GPU-tensor-core only, absent on every AVX2/AVX-512 CPU and not emulated by Intel SDE. So unlike
-// fp16 (F16C) / bf16 (AVX-512-BF16), fp8 has no wide-ISA kernel to gate; the scalar core IS the
-// complete implementation until AVX10.2 hardware exists. E4M3 = weights/activations, E5M2 = grads.
-HYLE_SIMD_API void f8e4m3_to_f32_batch(const float8_e4m3_t* src, float* dst, std::size_t n) noexcept;
-HYLE_SIMD_API void f32_to_f8e4m3_batch(const float* src, float8_e4m3_t* dst, std::size_t n) noexcept;
-HYLE_SIMD_API void f8e5m2_to_f32_batch(const float8_e5m2_t* src, float* dst, std::size_t n) noexcept;
-HYLE_SIMD_API void f32_to_f8e5m2_batch(const float* src, float8_e5m2_t* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void convert(const bfloat16_t* src, float* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void convert(const bfloat16_t* src, float16_t* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void convert(const bfloat16_t* src, float8_e4m3_t* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void convert(const bfloat16_t* src, float8_e5m2_t* dst, std::size_t n) noexcept;
 
-// f16 -> fp8 (the AI-native shape: fp8 tensors are typically produced FROM f16 activations, and it
-// is what AVX10.2's fp8 converts consume). Bit-identical across scalar and the AVX10.2 hardware
-// kernel (f16->f32 exact => single rounding), so unlike a hypothetical f32->fp8 hardware path this
-// is a TRANSPARENT dispatch target -- the batch result never changes with the CPU. Auto-dispatches
-// to the AVX10.2 kernel when the build has it (clang-20) and the CPU advertises avx10_2, else scalar.
-HYLE_SIMD_API void f16_to_f8e4m3_batch(const float16_t* src, float8_e4m3_t* dst, std::size_t n) noexcept;
-HYLE_SIMD_API void f16_to_f8e5m2_batch(const float16_t* src, float8_e5m2_t* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void convert(const float8_e4m3_t* src, float* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void convert(const float8_e4m3_t* src, float16_t* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void convert(const float8_e4m3_t* src, bfloat16_t* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void convert(const float8_e4m3_t* src, float8_e5m2_t* dst,
+                           std::size_t n) noexcept;
+
+HYLE_SIMD_API void convert(const float8_e5m2_t* src, float* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void convert(const float8_e5m2_t* src, float16_t* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void convert(const float8_e5m2_t* src, bfloat16_t* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void convert(const float8_e5m2_t* src, float8_e4m3_t* dst,
+                           std::size_t n) noexcept;
 
 }  // namespace hyle::simd

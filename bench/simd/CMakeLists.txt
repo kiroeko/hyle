@@ -208,6 +208,22 @@ elseif(HYLE_TARGET_PROCESSOR MATCHES "arm64|aarch64|ARM64")
 endif()
 hyle_apply_warnings(hyle_mixed_dot_bench)
 
+# SIMD-07 bounded product-integration proof. The candidate generated body and
+# direct Highway peer are instantiated in one target-bound TU; the existing
+# parity engine supplies A/A, replicated placement and reverse-order controls.
+add_executable(hyle_row_dtype_parity_bench row_dtype_parity_bench.cc)
+target_link_libraries(hyle_row_dtype_parity_bench PRIVATE hyle_simd nanobench)
+target_include_directories(hyle_row_dtype_parity_bench PRIVATE
+  "${PROJECT_SOURCE_DIR}")
+target_include_directories(hyle_row_dtype_parity_bench SYSTEM PRIVATE
+  "${_hyle_bench_highway_dir}")
+if(HYLE_TARGET_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+  hyle_set_highway_target_isa(row_dtype_parity_bench.cc AVX2)
+elseif(HYLE_TARGET_PROCESSOR MATCHES "arm64|aarch64|ARM64")
+  hyle_set_highway_target_isa(row_dtype_parity_bench.cc NEON)
+endif()
+hyle_apply_warnings(hyle_row_dtype_parity_bench)
+
 add_executable(hyle_sort_bench sort_bench.cc)
 target_link_libraries(hyle_sort_bench PRIVATE hyle_simd nanobench)
 target_include_directories(hyle_sort_bench PRIVATE "${PROJECT_SOURCE_DIR}")
@@ -396,8 +412,8 @@ if(HYLE_TARGET_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   hyle_apply_warnings(hyle_stream_bench_neon)
 endif()
 
-# dtype cvt bench: fp16/bf16<->f32 batch. HYLE F16C dispatch vs scalar reference (+ Highway
-# gated). The *_batch ops live in hyle_simd; the bench TU only needs special ISA flags when
+# dtype conversion bench: HYLE overload graph vs scalar reference (+ Highway gated). The public
+# convert ops live in hyle_simd; the bench TU only needs special ISA flags when
 # the Highway path is compiled in (PromoteTo/DemoteTo intrinsics) -- added in the Highway
 # block below. Own exe (math_bench owns main()).
 add_executable(hyle_dtype_bench dtype_bench.cc)
@@ -433,6 +449,7 @@ set(_hyle_simd_bench_targets
   hyle_search_bench
   hyle_native_algorithm_bench
   hyle_mixed_dot_bench
+  hyle_row_dtype_parity_bench
   hyle_sort_bench
   hyle_radix_sort_bench
   hyle_dtype_bench)

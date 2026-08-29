@@ -14,7 +14,7 @@ class RandomState;
 // ordinary calls pay one function-pointer hop per whole buffer. Its layout and
 // per-tier accessors are deliberately not part of the installed C++ surface.
 struct Runtime {
-  static constexpr std::uint32_t kTableVersion = 7;
+  static constexpr std::uint32_t kTableVersion = 8;
 
   struct Ops {
     float (*dot_f32)(const float*, const float*, std::size_t) noexcept;
@@ -32,6 +32,24 @@ struct Runtime {
     void (*saxpy_f64)(double, const double*, double*, std::size_t) noexcept;
     void (*add_f32)(const float*, const float*, float*, std::size_t) noexcept;
     void (*add_f64)(const double*, const double*, double*, std::size_t) noexcept;
+
+#define HYLE_RUNTIME_ROW_EXTRA_FIELDS(T, tag)                                  \
+    void (*sub_##tag)(const T*, const T*, T*, std::size_t) noexcept;           \
+    void (*mul_##tag)(const T*, const T*, T*, std::size_t) noexcept;           \
+    void (*div_##tag)(const T*, const T*, T*, std::size_t) noexcept;           \
+    void (*scale_##tag)(const T*, T, T*, std::size_t) noexcept;                \
+    void (*add_scalar_##tag)(const T*, T, T*, std::size_t) noexcept;           \
+    void (*affine_##tag)(const T*, T, T, T*, std::size_t) noexcept;            \
+    T (*sum_##tag)(const T*, std::size_t) noexcept;                            \
+    void (*abs_##tag)(const T*, T*, std::size_t) noexcept;                     \
+    void (*neg_##tag)(const T*, T*, std::size_t) noexcept;                     \
+    void (*square_##tag)(const T*, T*, std::size_t) noexcept;                  \
+    void (*sqrt_##tag)(const T*, T*, std::size_t) noexcept;
+
+    HYLE_RUNTIME_ROW_EXTRA_FIELDS(float, f32)
+    HYLE_RUNTIME_ROW_EXTRA_FIELDS(double, f64)
+
+#undef HYLE_RUNTIME_ROW_EXTRA_FIELDS
   };
 
   struct Random {
@@ -80,6 +98,15 @@ struct Runtime {
 #undef HYLE_RUNTIME_NARROW_FIELDS
   };
 
+  struct DtypeConvert {
+    void (*f16_to_f32)(const float16_t*, float*, std::size_t) noexcept;
+    void (*f32_to_f16)(const float*, float16_t*, std::size_t) noexcept;
+    void (*bf16_to_f32)(const bfloat16_t*, float*, std::size_t) noexcept;
+    void (*f32_to_bf16)(const float*, bfloat16_t*, std::size_t) noexcept;
+    void (*f16_to_bf16)(const float16_t*, bfloat16_t*, std::size_t) noexcept;
+    void (*bf16_to_f16)(const bfloat16_t*, float16_t*, std::size_t) noexcept;
+  };
+
   struct Module {
     Isa isa;
     std::uint64_t features;
@@ -113,7 +140,9 @@ struct Runtime {
   Random random;
   Search search;
   Narrow narrow;
+  DtypeConvert dtype_convert;
   Module ops_module;
+  Module narrow_module;
   Module scan;
   Module dtype;
   Module math;
