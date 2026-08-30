@@ -1,6 +1,6 @@
 # SIMD v4：统一 expert provider SDK
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
 > 本轮只修复 Highway/xsimd expert 能力在三种 C++ 交付之间断裂的问题。上一轮
 > [`simd-v3`](simd-v3-provider-routing.md) 的 ordinary API、387-operation 迁移账本、422 个 route scope、
@@ -49,9 +49,9 @@
 
 ## 当前状态
 
-`VERIFIED`。上述 closure card 与有限 `FIX` 集已落实到下列不可变产品身份；三平台、三交付、P0
-结构成本、文档和最终红队门均已完成。产品 candidate 后只增加验证与 terminal record；若公开合同、
-算法或正常运行时代码再变化，退回 `AUDITED`。
+`CLOSED`。上述 closure card 与有限 `FIX` 集已落实到下列不可变产品身份；三平台、三交付、P0
+结构成本、文档和最终红队门均已完成。没有剩余 blocker，本轮停止；后续只有满足文末 reopen trigger
+的新事实才可重开。
 
 ## Capability-family coverage map
 
@@ -190,3 +190,44 @@ provider decision、allocation、lock、syscall 或常态 metadata。timing peer
 6. **C++ API 与文档：**普通任务继续选 `hyle::simd`；缺少语义 wrapper 时显式选 expert target，直接用
    `hwy::` / `xsimd::`，fixed/fat 示例可复制。文档明确版本升级需重编、类型/ownership 边界、普通用户
    零传播和 compiled contrib 陷阱。
+
+## Closure decision
+
+本轮裁决为 **`CLOSED`**。五个有限 FIX 已全部由三平台三交付真实 consumer 证明为 `COMPLETE`，七项
+aggregate gate 全部 `PASS`；P0 结构门没有发现新的 runtime 成本，且没有 correctness、security、
+ownership、delivery 或 documentation blocker。Formal performance 仍为独立 `PENDING`，不被本轮
+delivery-only 改动冒充续签。
+
+可接受限制：
+
+- expert SDK 只交付 Highway/xsimd header surface；依赖上游 compiled `.cc` 的独立产品必须由真实语义
+  owner 另行准入；
+- provider-native 类型只允许留在 consumer translation unit，锁定 provider 或 toolchain 变化后需要
+  重编；HYLE 不承诺 Native FFI、C ABI 或跨工具链稳定 C++ ABI；
+- ordinary route、既有 387/422 operation 结论和 W1-WIN P1 性能证据仍属于 simd-v3；本轮只签 P0
+  delivery 结构成本，不新增全面 SOTA 声明；
+- SVE/RVV 仍只有正确性/codegen 资格，无真机性能声明；classic cl.exe direct Highway AVX-512 限制和
+  integrated VQSort 升级重审义务保持不变；
+- WSL/Linux 自动选择受支持 GCC 的统一入口是独立 build/package 缺口；显式 GCC 14.2 journey 已证明
+  SIMD 候选本身可交付。
+
+重开只由下列事实触发：锁定 Highway/xsimd 或 integrated VQSort 升级影响本合同；真实 consumer 复现
+expert fixed/fat、package asset、relocation、类型边界或易用性缺陷；ordinary/expert target 隔离、公开
+API/算法/正常运行时代码或三种交付形状发生变化；支持 compiler/ISA 矩阵实质变化；或需要 upstream
+compiled contrib / foreign-runtime slice 的具体 consumer 通过能力准入。新的 API 数量愿望、单个
+benchmark 或未影响本合同的文档偏好不构成重开事实。
+
+四项 LOC 由 immutable product candidate 执行
+`python scripts/loc-report.py --module simd --commit 1e543dec85ad6cef411f4499f7449294a2507b1c --self-check --json`，
+self-check `PASS`：
+
+1. 全库代码：402,821；
+2. 自实现包含测试：96,041；
+3. 自实现不包含测试：59,898；
+4. SIMD 实现：14,211。
+
+`VERIFIED -> CLOSED` 的 pre-transition registry snapshot 为
+`C:\hyle-scratch\simd-v4-expert-sdk\module-status-before-closed.json`，SHA-256
+`8FDEE898DA080E74FADC201AA6472C6A087D16F4C37B1EECF8FD25FFB9374C8A`。后续 registry 以包含本 receipt、
+candidate identity 和 terminal state 的不可变提交登记 `end_commit` / `registry_anchor_commit`，不在提交
+内容中伪造自身 hash。

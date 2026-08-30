@@ -558,7 +558,7 @@
     },
     {
       "module": "simd",
-      "product_state": "VERIFIED",
+      "product_state": "CLOSED",
       "reopen_trigger_id": "SIMD-V4-DELIVERY-01",
       "reopen_evidence": "docs/implementation/tasks/simd/simd-v4-expert-sdk.md",
       "round_id": "simd-v4-expert-sdk",
@@ -568,8 +568,8 @@
       "baseline_commit": "38dd0be938a19d7989e80daeb859139ebad14e52",
       "candidate_commit": "1e543dec85ad6cef411f4499f7449294a2507b1c",
       "candidate_tree": "4e4e82e5e22e09f55c7af165b45de9d4dfbb4896",
-      "end_commit": "7303b87e7a490edef07142016cf94a317509756a",
-      "registry_anchor_commit": "7303b87e7a490edef07142016cf94a317509756a",
+      "end_commit": "3e1a2265a4fcef4c9b81d50c41ec48143646f877",
+      "registry_anchor_commit": "3e1a2265a4fcef4c9b81d50c41ec48143646f877",
       "performance_tier": "P0",
       "validation_machine_profiles": [
         "W1-WIN",
@@ -619,7 +619,7 @@
         "New hardware or compiler support materially changes the finite target matrix, especially SVE or RVV silicon or classic-MSVC AVX3 support.",
         "A concrete foreign-runtime consumer passes Native FFI admission and requires a runtime-owned type-erased boundary."
       ],
-      "summary": "simd-v4 VERIFIED：统一 hyle::simd_expert 与 fixed/fat helper 已在 Windows/WSL/macOS 的 source、relocated shared/static 三种 C++ 交付全部通过；P0 结构成本、隔离、离线资产、文档和红队均 PASS，产品仍为 1e543dec/4e4e82e5。"
+      "summary": "simd-v4 CLOSED：统一 hyle::simd_expert 与 fixed/fat helper 已在 Windows/WSL/macOS 的 source、relocated shared/static 三种 C++ 交付全部通过；P0 结构成本、隔离、离线资产、文档和红队均 PASS，产品锁定 1e543dec/4e4e82e5。"
     },
     {
       "module": "container",
