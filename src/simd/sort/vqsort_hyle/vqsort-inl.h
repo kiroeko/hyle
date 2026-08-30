@@ -1968,6 +1968,19 @@ void PartialSort(D d, Traits st, T* HWY_RESTRICT keys, size_t num, size_t k,
   const size_t k_valid = (k < num_valid) ? k : num_valid;
   if (num_valid == 0) return;
 
+  // A prefix that fits in one sorting-network base case does not benefit from
+  // paying for vector quickselect before sorting that prefix. Use the mature
+  // in-place heap selection path for this bounded-small-k regime: it is
+  // O(num * log(k)) with O(1) auxiliary storage. Larger prefixes retain the
+  // vectorized O(num)-average selection path below. This crossover follows
+  // the algorithm's existing base-case capacity, rather than an input-size or
+  // benchmark-derived threshold.
+  constexpr size_t kLPK = st.LanesPerKey();
+  if (k_valid <= Constants::BaseCaseNumLanes<kLPK>(Lanes(d))) {
+    HeapPartialSort(st, keys, num_valid, k_valid);
+    return;
+  }
+
   if (!HandleSpecialCases(d, st, keys, num_valid, buf)) {
     uint64_t* HWY_RESTRICT state = GetGeneratorStateStatic();
     const size_t max_levels = 50;
