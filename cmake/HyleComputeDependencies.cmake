@@ -180,7 +180,7 @@ function(hyle_configure_compute_dependencies)
       "HYLE: ggml ${HYLE_DEP_GGML_VERSION} (${HYLE_DEP_GGML_COMMIT}) -- "
       "private PIC static CPU kernel "
       "(native=${HYLE_COMPUTE_GGML_NATIVE}, exact=${HYLE_SIMD_EXACT_TARGET}, "
-      "CUDA=${_hyle_compute_cuda_enabled}, cache: ${HYLE_DEPS_DIR})")
+      "CUDA=${_hyle_compute_cuda_enabled}, build state: ${HYLE_DEP_BUILD_DIR})")
   endif()
 
   # HYLE's Vulkan path owns SPIR-V kernels and uses a pinned volk/headers pair,
@@ -265,7 +265,7 @@ function(hyle_configure_compute_dependencies)
     message(STATUS
       "HYLE: Vulkan compute enabled -- private PIC volk + Vulkan-Headers "
       "${HYLE_DEP_VULKAN_SDK_VERSION} "
-      "(shader tools=${_hyle_compute_shader_tools_enabled}, cache: ${HYLE_DEPS_DIR}; "
+      "(shader tools=${_hyle_compute_shader_tools_enabled}, build state: ${HYLE_DEP_BUILD_DIR}; "
       "loader dlopen'd at runtime)")
   endif()
 

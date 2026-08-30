@@ -108,7 +108,7 @@ Native FFI 当前为 `N/A`，不存在 C 或 managed 用户面；旧 C/managed f
 ### obs/（Tier 2 hook / Tier 3 重机器）
 | 库 | 角色 | 说明 |
 |---|---|---|
-| **tracy** | **后端 + 参考设计** | 中央 lock 固定 `v0.14.1`；启用 trace 时只接受 HEAD/tree/clean/license 全验证的 `HYLE_TRACY_DIR`。native hook 的编译期 no-op、scoped zone、plot/counter/fiber/frame/message/memory/thread-name 由 Tracy 承载；HYLE 只保留自己的 seam，并保证 shared build 全进程一个 client。server/UI 是外部 profiler 工具，不复制进 obs 产品 API |
+| **tracy** | **后端 + 参考设计** | 中央 lock 固定 `v0.14.1`；启用 trace 时默认由共享源码 cache 取得并验证完整 archive/tree/license，显式 `HYLE_TRACY_DIR` 也必须通过相同 identity 校验。native hook 的编译期 no-op、scoped zone、plot/counter/fiber/frame/message/memory/thread-name 由 Tracy 承载；HYLE 只保留自己的 seam，并保证 shared build 全进程一个 client。server/UI 是外部 profiler 工具，不复制进 obs 产品 API |
 | **abseil-cpp** | **参考 + benchmark 机制项** | 同步 `LogSink`、全局注册/摘除、flush、sink 内日志不递归回注册图、process-lifetime registry 是 log runtime 的直接形状参考；其完整 LogEntry 带更多 metadata，点值只能标载荷差异，不能冒充同合同胜负 |
 | **folly** | **参考** | handler 同步线程语义、flush、category/handler 分层及默认转义不可信控制字符。HYLE 借安全边界与 adapter 形状；hierarchical category、async writer/file/upload 属于应用日志系统，不塞进低层 producer seam |
 

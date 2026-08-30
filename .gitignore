@@ -28,9 +28,9 @@ compile_commands.json
 /_deps/
 /vendor/*/
 
-# Legacy/local dependency directory. The supported default is each build tree's
-# `_deps`; offline source trees are injected with FETCHCONTENT_SOURCE_DIR_<NAME>.
-# Keep old developer caches ignored, but never make this path a build contract.
+# Obsolete in-repository dependency cache spelling. Product source resources use
+# HYLE_DEP_SOURCE_CACHE outside the checkout; keep accidental legacy recreation
+# ignored so it cannot enter a source package.
 /.deps/
 
 # Source-only payload assembled beside hyle-offline-deps.cmake. It belongs to

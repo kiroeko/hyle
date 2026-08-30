@@ -37,7 +37,10 @@ HYLE 根工程只要求 C++23 编译器；若所选闭包包含 mem，其内部 
 
 源码接收者需要按 [开发环境](../developer/setup/README.md)准备工具链和依赖。没有网络的环境见
 [离线依赖指南](../developer/setup/offline.md)。不要把本机构建缓存、FetchContent working tree 或
-临时 build 目录当作交付物。
+临时 build 目录当作交付物。联网机器首次 configure 会自动把锁定源码放进跨 build 的
+`HYLE_DEP_SOURCE_CACHE`；依赖 binary/subbuild 仍属于当前 build。需要离线交付时搬运由 HYLE 管理工具
+生成并带 marker 的完整 source cache，或使用指南规定的逐项受审源码 bundle，不能复制某个 build 的
+`_deps` 充当源码介质。
 
 ### 制作授权源码包
 

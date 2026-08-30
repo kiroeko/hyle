@@ -3,14 +3,15 @@
 # the private ggml/nghttp2/Vulkan closure once per CI revision and exercises its
 # real module adapters before producing static/shared SDKs.  A separate small
 # obs-only shape compiles and consumes the exact locked Tracy trace-on surface.
-# Official archives are cached by locked commit, verified before extraction,
-# then their no-.git expanded trees are verified again before use.  The default
-# scope is `all`; local diagnosis may select `adapters` or `trace` without
-# weakening the hosted all-scope gate.
+# The ordinary shared-source resolver prepares every official archive and
+# expanded tree. This smoke deliberately does not carry a second downloader:
+# product configure and CI must exercise the same supply-chain implementation.
+# The default scope is `all`; local diagnosis may select `adapters` or `trace`
+# without weakening the hosted all-scope gate.
 
 cmake_minimum_required(VERSION 3.25)
 
-foreach(_required IN ITEMS HYLE_SOURCE_DIR HYLE_SMOKE_ROOT HYLE_ARCHIVE_CACHE)
+foreach(_required IN ITEMS HYLE_SOURCE_DIR HYLE_SMOKE_ROOT)
   if(NOT DEFINED ${_required} OR "${${_required}}" STREQUAL "")
     message(FATAL_ERROR
       "HyleCiFeaturePackageSmoke requires -D${_required}=...")
@@ -19,8 +20,7 @@ endforeach()
 
 get_filename_component(HYLE_SOURCE_DIR "${HYLE_SOURCE_DIR}" ABSOLUTE)
 get_filename_component(HYLE_SMOKE_ROOT "${HYLE_SMOKE_ROOT}" ABSOLUTE)
-get_filename_component(HYLE_ARCHIVE_CACHE "${HYLE_ARCHIVE_CACHE}" ABSOLUTE)
-file(MAKE_DIRECTORY "${HYLE_SMOKE_ROOT}" "${HYLE_ARCHIVE_CACHE}")
+file(MAKE_DIRECTORY "${HYLE_SMOKE_ROOT}")
 
 if(NOT DEFINED HYLE_FEATURE_SMOKE_SCOPE OR
    HYLE_FEATURE_SMOKE_SCOPE STREQUAL "")
@@ -34,6 +34,8 @@ if(NOT HYLE_FEATURE_SMOKE_SCOPE IN_LIST _hyle_feature_smoke_scopes)
 endif()
 
 include("${HYLE_SOURCE_DIR}/cmake/HyleDependencyVersions.cmake")
+include("${HYLE_SOURCE_DIR}/cmake/HyleDependencyCache.cmake")
+hyle_initialize_dependency_source_cache()
 
 function(_hyle_feature_smoke_run label)
   execute_process(
@@ -43,73 +45,6 @@ function(_hyle_feature_smoke_run label)
   if(NOT _result EQUAL 0)
     message(FATAL_ERROR "${label} failed with exit code ${_result}")
   endif()
-endfunction()
-
-function(_hyle_feature_prepare_source dependency out_var)
-  if(NOT dependency IN_LIST HYLE_FETCHCONTENT_DEPENDENCIES AND
-     NOT dependency IN_LIST HYLE_EXTERNAL_CHECKOUT_DEPENDENCIES)
-    message(FATAL_ERROR
-      "Feature package smoke names dependency '${dependency}' whose source "
-      "class cannot be prepared from the locked archive")
-  endif()
-  string(TOUPPER "${dependency}" _upper)
-  set(_prefix "HYLE_DEP_${_upper}")
-  set(_archive
-    "${HYLE_ARCHIVE_CACHE}/${dependency}-${${_prefix}_COMMIT}.tar.gz")
-
-  if(EXISTS "${_archive}")
-    file(SHA256 "${_archive}" _archive_sha256)
-    if(NOT _archive_sha256 STREQUAL "${${_prefix}_ARCHIVE_SHA256}")
-      message(FATAL_ERROR
-        "Cached archive '${_archive}' does not match the dependency lock.\n"
-        "  expected: ${${_prefix}_ARCHIVE_SHA256}\n"
-        "  actual:   ${_archive_sha256}\n"
-        "Remove only this cache entry and rerun the smoke.")
-    endif()
-  else()
-    set(_partial "${_archive}.partial")
-    file(REMOVE "${_partial}")
-    file(DOWNLOAD "${${_prefix}_ARCHIVE_URL}" "${_partial}"
-      EXPECTED_HASH "SHA256=${${_prefix}_ARCHIVE_SHA256}"
-      TLS_VERIFY ON
-      STATUS _download_status
-      LOG _download_log)
-    list(GET _download_status 0 _download_code)
-    if(NOT _download_code EQUAL 0)
-      list(GET _download_status 1 _download_message)
-      file(REMOVE "${_partial}")
-      message(FATAL_ERROR
-        "Cannot download locked '${dependency}' archive: "
-        "${_download_message}\n${_download_log}")
-    endif()
-    file(RENAME "${_partial}" "${_archive}")
-  endif()
-
-  set(_source_root "${HYLE_SMOKE_ROOT}/locked-sources/${dependency}")
-  set(_extract_root
-    "${HYLE_SMOKE_ROOT}/locked-sources/${dependency}.extracting")
-  file(REMOVE_RECURSE "${_source_root}" "${_extract_root}")
-  file(MAKE_DIRECTORY "${_extract_root}")
-  file(ARCHIVE_EXTRACT INPUT "${_archive}" DESTINATION "${_extract_root}")
-  file(GLOB _archive_roots LIST_DIRECTORIES TRUE
-    RELATIVE "${_extract_root}" "${_extract_root}/*")
-  list(LENGTH _archive_roots _archive_root_count)
-  if(NOT _archive_root_count EQUAL 1)
-    message(FATAL_ERROR
-      "Locked '${dependency}' archive must contain exactly one root directory; "
-      "found: ${_archive_roots}")
-  endif()
-  list(GET _archive_roots 0 _archive_root)
-  if(NOT IS_DIRECTORY "${_extract_root}/${_archive_root}" OR
-     IS_SYMLINK "${_extract_root}/${_archive_root}")
-    message(FATAL_ERROR
-      "Locked '${dependency}' archive root is not a real directory: "
-      "${_archive_root}")
-  endif()
-  file(RENAME "${_extract_root}/${_archive_root}" "${_source_root}")
-  file(REMOVE_RECURSE "${_extract_root}")
-  hyle_verify_locked_expanded_source("${dependency}" "${_source_root}")
-  set(${out_var} "${_source_root}" PARENT_SCOPE)
 endfunction()
 
 set(_hyle_feature_smoke_dependencies "")
@@ -123,7 +58,8 @@ if(HYLE_FEATURE_SMOKE_SCOPE STREQUAL "all" OR
   list(APPEND _hyle_feature_smoke_dependencies tracy)
 endif()
 foreach(_dependency IN LISTS _hyle_feature_smoke_dependencies)
-  _hyle_feature_prepare_source("${_dependency}" "_${_dependency}_source")
+  hyle_dependency_cache_resolve(
+    "${_dependency}" "_${_dependency}_source")
 endforeach()
 
 set(_generator_args "")
@@ -207,7 +143,8 @@ function(_hyle_feature_smoke_shape shape is_static)
     -DFETCHCONTENT_SOURCE_DIR_VULKAN_HEADERS=${_vulkan_headers_source}
     -DFETCHCONTENT_SOURCE_DIR_VOLK=${_volk_source})
 
-  if(IS_DIRECTORY "${_build}/_deps/glslang-src")
+  if(IS_DIRECTORY "${_build}/_deps/glslang-build" OR
+     IS_DIRECTORY "${_build}/_deps/glslang-subbuild")
     message(FATAL_ERROR
       "Feature package smoke fetched test-only glslang in a production SDK build")
   endif()

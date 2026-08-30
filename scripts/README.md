@@ -487,7 +487,8 @@ HYLE_BENCH_DEPS_DIR=/custom/path scripts/setup-bench-libs.sh
   it with no args, every `-DHYLE_BENCH_*=ON` works with **no extra `-D`**.
 - **Custom location**: set `HYLE_BENCH_DEPS_DIR`, then pass the dir to the build:
   `-DHYLE_MARL_DIR=$HYLE_BENCH_DEPS_DIR/marl` etc. This name is deliberately distinct from CMake's
-  `HYLE_DEPS_DIR`, which owns one build tree's FetchContent population.
+  `HYLE_DEP_SOURCE_CACHE` (shared locked product sources) and
+  `HYLE_DEP_BUILD_DIR` (one build tree's FetchContent binary/subbuild state).
 
 ## Running opt-in peer comparison benchmarks
 

@@ -71,7 +71,10 @@ scripts/hyle-windows.ps1 -Action SelectedComponentSmoke `
 ```
 
 `-BinaryDir` 只用于 Configure/Build/Test，且必须是绝对、由当前会话拥有的路径；
-`SelectedComponentSmoke` 的 `-SmokeRoot` 同样不得与其他任务共享。
+`SelectedComponentSmoke` 的 `-SmokeRoot` 同样不得与其他任务共享。需要显式共用源码 cache 时使用
+wrapper 的 `-DependencySourceCache C:\public\project-hyle\.deps`；它会设置同名环境输入，避免
+PowerShell 把含盘符冒号的原始 `-DHYLE_DEP_SOURCE_CACHE=C:/...` 错拆成脚本参数。直接调用 CMake 时
+仍使用标准 `-D` 形式。
 
 也可手工初始化：
 
@@ -133,7 +136,8 @@ wrapper 只验证并使用已安装的 frontend，不替用户安装 LLVM；不�
 build tree。
 
 IO/compute 的 TLS、HTTP/2、CUDA、ggml、Vulkan 都默认 OFF，且仅在 owner 组件被选时声明；trace
-默认 OFF，开启时直接使用 Tracy 和 `HYLE_TRACY_DIR`，没有 `HYLE_TRACE_BACKEND`。
+默认 OFF，开启时从共享源码 cache 自动取得锁定 Tracy；`HYLE_TRACY_DIR` 只用于显式受审源码覆盖，
+没有 `HYLE_TRACE_BACKEND`。
 
 - 目标名：`hyle_add_test(<mod>)` → `hyle_<mod>_test`；带 NAME 的 → `hyle_<mod>_<name>_test`（如 `hyle_compute_ggml_bridge_test`）。
 - MSVC 默认 /W4；改导出宏/类布局注意 C4251/C4273。全局已加 `/Zc:__cplusplus`（否则 C++23 feature-test 宏误触发）+ `/utf-8`（杀 C4819）。

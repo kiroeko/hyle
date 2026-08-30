@@ -29,19 +29,6 @@ if(DEFINED HYLE_SMOKE_GENERATOR AND NOT HYLE_SMOKE_GENERATOR STREQUAL "")
   list(APPEND _hyle_generator_args -G "${HYLE_SMOKE_GENERATOR}")
 endif()
 
-set(_hyle_dependency_args "")
-if(DEFINED HYLE_GOOGLETEST_SOURCE AND NOT HYLE_GOOGLETEST_SOURCE STREQUAL "")
-  get_filename_component(HYLE_GOOGLETEST_SOURCE
-    "${HYLE_GOOGLETEST_SOURCE}" ABSOLUTE)
-  if(NOT EXISTS "${HYLE_GOOGLETEST_SOURCE}/CMakeLists.txt")
-    message(FATAL_ERROR
-      "HYLE_GOOGLETEST_SOURCE is not a GoogleTest source tree: "
-      "${HYLE_GOOGLETEST_SOURCE}")
-  endif()
-  list(APPEND _hyle_dependency_args
-    "-DFETCHCONTENT_SOURCE_DIR_GOOGLETEST=${HYLE_GOOGLETEST_SOURCE}")
-endif()
-
 set(_hyle_build "${HYLE_SMOKE_ROOT}/product-shape")
 file(REMOVE_RECURSE "${_hyle_build}")
 # Only roots whose production-layout contract has already closed belong here.
@@ -63,8 +50,7 @@ _hyle_product_shape_run("configure production-shape tests"
   -DHYLE_BUILD_BENCH=OFF
   -DHYLE_WERROR=ON
   -DHYLE_IO_TLS=OFF
-  -DHYLE_COMPUTE_CUDA=OFF
-  ${_hyle_dependency_args})
+  -DHYLE_COMPUTE_CUDA=OFF)
 _hyle_product_shape_run("build production-shape tests"
   "${CMAKE_COMMAND}" --build "${_hyle_build}" --config Release
   --target hyle_tests

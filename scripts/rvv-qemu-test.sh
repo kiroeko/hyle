@@ -19,16 +19,16 @@
 set -e
 
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
-GT=${GTEST_SOURCE_DIR:-"$REPO/.deps/googletest-src/googletest"}
+GT=${GTEST_SOURCE_DIR:-}
 if [ ! -f "$GT/src/gtest-all.cc" ]; then
-  echo "ERROR: gtest source not found at $GT (configure the CMake build once to fetch it)"; exit 1
+  echo "ERROR: set GTEST_SOURCE_DIR to the locked googletest source root"; exit 1
 fi
 
 CXX=${CXX_RISCV64:-riscv64-linux-gnu-g++-14}
 QEMU=${QEMU_RISCV64:-qemu-riscv64-static}
 OUT=${OUT_DIR:-/tmp/hyle-rvv}
 mkdir -p "$OUT"
-HWY=${HIGHWAY_SOURCE_DIR:-"$REPO/../highway"}
+HWY=${HIGHWAY_SOURCE_DIR:-}
 if [ ! -f "$HWY/hwy/highway.h" ]; then
   echo "ERROR: locked Highway source not found at $HWY (set HIGHWAY_SOURCE_DIR)"; exit 1
 fi

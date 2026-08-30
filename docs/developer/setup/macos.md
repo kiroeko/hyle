@@ -33,7 +33,9 @@ cd ~/hyle
 
 - 默认 preset 是 `all` + tests 的 CPU baseline；TLS、HTTP/2、ggml、Vulkan、CUDA 和 trace 都是
   `OFF`，首次配置只通过 FetchContent 取得 googletest。显式开启 HTTP/2、ggml 或 Vulkan 后才会把
-  对应锁定源码放到 `build-macos/_deps`，且每个 build tree 保持自己的 `_deps`。
+  对应锁定源码放到 `$HOME/Library/Caches/hyle/dependencies/v1`（或显式
+  `HYLE_DEP_SOURCE_CACHE`）。每个 build tree 的 `_deps` 只保存自己的 binary/subbuild；删掉 build
+  不会删源码，后续 build 不重新下载。
 - CUDA 保持 `OFF`，配置不会探测 Toolkit；ggml 默认也不构建。显式开启 ggml 时，macOS 形状是
   CPU-only，且不构建未消费的 Metal/BLAS backend。
 
@@ -96,7 +98,8 @@ Apple 无原生 Vulkan——**MoltenVK 是 Vulkan-over-Metal 的 ICD**（把 Vul
 - `molten-vk` → `/opt/homebrew/lib/libMoltenVK.dylib` + ICD manifest `…/molten-vk/*/etc/vulkan/icd.d/MoltenVK_icd.json`。
 - `vulkan-loader` → `/opt/homebrew/lib/libvulkan.dylib`（volk dlopen 的就是它）。
 - `vulkan-tools` → `vulkaninfo`（验证用）。
-- HYLE 侧 **Vulkan-Headers + volk 仍走 FetchContent**（当前 build tree 的 `_deps`，与 Win/WSL 同）；
+- HYLE 侧 **Vulkan-Headers + volk 仍走锁定 FetchContent**（source 在共享 cache，binary/subbuild 在当前
+  build 的 `_deps`）；
   glslang 仅在 tests/benchmark 配置中生成测试 shader。brew 只提供 **loader + MoltenVK ICD**
   （driver 层，HYLE 不 vendor），不提供编译期头。
 

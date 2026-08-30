@@ -13,7 +13,7 @@
 set -euo pipefail
 
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
-GT="${GTEST_SOURCE_DIR:-$REPO/.deps/googletest-src/googletest}"
+GT="${GTEST_SOURCE_DIR:-}"
 KIND="${1:-}"
 OUT="${OUT_DIR:-/tmp/hyle-scalable-exact-$KIND}"
 mkdir -p "$OUT"
@@ -53,7 +53,7 @@ if [ ! -f "$GT/src/gtest-all.cc" ]; then
   echo "ERROR: gtest source not found at $GT" >&2
   exit 1
 fi
-HWY="${HIGHWAY_SOURCE_DIR:-$REPO/../highway}"
+HWY="${HIGHWAY_SOURCE_DIR:-}"
 if [ ! -f "$HWY/hwy/highway.h" ]; then
   echo "ERROR: locked Highway source not found at $HWY (set HIGHWAY_SOURCE_DIR)" >&2
   exit 1

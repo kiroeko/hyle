@@ -591,7 +591,8 @@ file(WRITE "${_embed_source}/CMakeLists.txt"
 "set(HYLE_IO_TLS OFF)\n"
 "set(HYLE_COMPUTE_CUDA OFF)\n"
 "set(HYLE_SANITIZER NONE)\n"
-"set(HYLE_DEPS_DIR \"\${CMAKE_BINARY_DIR}/hyle-dependencies\")\n"
+"set(HYLE_DEP_SOURCE_CACHE \"${HYLE_SMOKE_ROOT}/shared-source-cache\")\n"
+"set(HYLE_DEP_BUILD_DIR \"\${CMAKE_BINARY_DIR}/hyle-dependencies\")\n"
 "set(FETCHCONTENT_BASE_DIR \"\${CMAKE_BINARY_DIR}/parent-dependencies\")\n"
 "add_subdirectory(\"${HYLE_SOURCE_DIR}\" hyle)\n"
 "include(\"${_hyle_direct_public_edge_helper}\")\n"
@@ -602,11 +603,17 @@ file(WRITE "${_embed_source}/CMakeLists.txt"
 "if(NOT _cached STREQUAL \"container\")\n"
 "  message(FATAL_ERROR \"cache says '\${_cached}', expected container\")\n"
 "endif()\n"
-"get_property(_deps_cached CACHE HYLE_DEPS_DIR PROPERTY VALUE)\n"
-"get_directory_property(_deps_effective DIRECTORY \"\${CMAKE_CURRENT_BINARY_DIR}/hyle\" DEFINITION HYLE_DEPS_DIR)\n"
+"get_property(_deps_cached CACHE HYLE_DEP_BUILD_DIR PROPERTY VALUE)\n"
+"get_directory_property(_deps_effective DIRECTORY \"\${CMAKE_CURRENT_BINARY_DIR}/hyle\" DEFINITION HYLE_DEP_BUILD_DIR)\n"
 "if(NOT _deps_cached STREQUAL \"\${CMAKE_BINARY_DIR}/hyle-dependencies\" OR\n"
 "   NOT _deps_effective STREQUAL \"\${CMAKE_BINARY_DIR}/hyle-dependencies\")\n"
-"  message(FATAL_ERROR \"HYLE_DEPS_DIR cache/effective split: cache='\${_deps_cached}', effective='\${_deps_effective}'\")\n"
+"  message(FATAL_ERROR \"HYLE_DEP_BUILD_DIR cache/effective split: cache='\${_deps_cached}', effective='\${_deps_effective}'\")\n"
+"endif()\n"
+"get_property(_source_cache_cached CACHE HYLE_DEP_SOURCE_CACHE PROPERTY VALUE)\n"
+"get_directory_property(_source_cache_effective DIRECTORY \"\${CMAKE_CURRENT_BINARY_DIR}/hyle\" DEFINITION HYLE_DEP_SOURCE_CACHE)\n"
+"if(NOT _source_cache_cached STREQUAL \"${HYLE_SMOKE_ROOT}/shared-source-cache\" OR\n"
+"   NOT _source_cache_effective STREQUAL \"${HYLE_SMOKE_ROOT}/shared-source-cache\")\n"
+"  message(FATAL_ERROR \"HYLE_DEP_SOURCE_CACHE cache/effective split: cache='\${_source_cache_cached}', effective='\${_source_cache_effective}'\")\n"
 "endif()\n"
 "get_property(_sanitizer_cached CACHE HYLE_SANITIZER PROPERTY VALUE)\n"
 "get_directory_property(_sanitizer_effective DIRECTORY \"\${CMAKE_CURRENT_BINARY_DIR}/hyle\" DEFINITION HYLE_SANITIZER)\n"
@@ -630,6 +637,23 @@ _hyle_contract_run("source-embedded component/cache agreement" TRUE
   -B "${_hyle_contract_root}/embed-build"
   ${_hyle_generator_args}
   -DCMAKE_BUILD_TYPE=Release)
+_hyle_contract_run("source-embedded disconnected cache reuse" TRUE
+  "${CMAKE_COMMAND}" -S "${_embed_source}"
+  -B "${_hyle_contract_root}/embed-build-disconnected"
+  ${_hyle_generator_args}
+  -DCMAKE_BUILD_TYPE=Release
+  -DFETCHCONTENT_FULLY_DISCONNECTED=ON)
+
+# The embedding fixture above populated one real central-lock identity in an
+# isolated shared source cache. Reuse that exact archive to exercise locking,
+# corruption handling, offline repair, and guarded stale pruning without a
+# second network download or a synthetic dependency ledger.
+_hyle_contract_run("shared dependency source-cache lifecycle" TRUE
+  "${CMAKE_COMMAND}"
+  -DHYLE_SOURCE_DIR=${HYLE_SOURCE_DIR}
+  -DHYLE_SMOKE_ROOT=${_hyle_contract_root}
+  -DHYLE_SEED_SOURCE_CACHE=${HYLE_SMOKE_ROOT}/shared-source-cache
+  -P "${HYLE_SOURCE_DIR}/cmake/HyleCiDependencyCacheContract.cmake")
 
 # Exact-ISA spelling is one shared input to SIMD codegen and optional GGML
 # configuration. Normalize a parent normal variable once so those consumers
@@ -757,10 +781,10 @@ if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES
 endif()
 
 # FetchContent documents that the first declaration of a dependency name wins
-# across the complete project hierarchy.  A source-embedding parent must not be
-# able to predeclare a same-named arbitrary source and silently make HYLE's
-# locked FetchContent_Declare() a no-op.  The parent is executable/trusted CMake,
-# but the resulting HYLE product must still fail identity verification.
+# across the complete project hierarchy, while its standard SOURCE_DIR
+# override has higher precedence. HYLE's shared-cache resolver deliberately
+# installs that authenticated override: a same-named arbitrary parent
+# declaration must neither execute nor replace the locked product source.
 set(_first_declare_source
   "${_hyle_contract_root}/fetchcontent-first-declare-source")
 set(_first_declare_parent
@@ -770,7 +794,8 @@ file(WRITE "${_first_declare_source}/LICENSE"
   "not the locked GoogleTest license\n")
 file(WRITE "${_first_declare_source}/CMakeLists.txt"
 "cmake_minimum_required(VERSION 3.25)\n"
-"project(not_locked_googletest LANGUAGES NONE)\n")
+"project(not_locked_googletest LANGUAGES NONE)\n"
+"message(FATAL_ERROR \"arbitrary parent-declared source executed\")\n")
 file(WRITE "${_first_declare_parent}/CMakeLists.txt"
 "cmake_minimum_required(VERSION 3.25)\n"
 "project(hyle_fetchcontent_first_declare LANGUAGES CXX)\n"
@@ -786,17 +811,11 @@ file(WRITE "${_first_declare_parent}/CMakeLists.txt"
 "set(HYLE_COMPUTE_GGML OFF)\n"
 "set(HYLE_COMPUTE_VULKAN OFF)\n"
 "add_subdirectory(\"${HYLE_SOURCE_DIR}\" hyle)\n")
-_hyle_contract_run("FetchContent first-declaration lock bypass" FALSE
+_hyle_contract_run("locked source overrides arbitrary first declaration" TRUE
   "${CMAKE_COMMAND}" -S "${_first_declare_parent}"
   -B "${_hyle_contract_root}/fetchcontent-first-declare-build"
   ${_hyle_generator_args}
   -DCMAKE_BUILD_TYPE=Release)
-if(NOT HYLE_CONTRACT_LAST_OUTPUT MATCHES
-   "Locked dependency 'googletest'.*(license|source tree)")
-  message(FATAL_ERROR
-    "FetchContent first-declaration bypass failed for the wrong reason:\n"
-    "${HYLE_CONTRACT_LAST_OUTPUT}")
-endif()
 
 # A source-embedding parent may already own the canonical GoogleTest target.
 # HYLE must reuse it instead of populating a second project whose unnamespaced
@@ -1125,8 +1144,8 @@ _hyle_contract_run("verified offline dependency contract" TRUE
   -DHYLE_SMOKE_GENERATOR=${HYLE_SMOKE_GENERATOR}
   -P "${HYLE_SOURCE_DIR}/cmake/HyleCiOfflineDependencyContract.cmake")
 
-# HYLE_DEPS_DIR is the one build-tree population location for every HYLE-owned
-# FetchContent dependency.  Exercise the test-only path through a self-locked
+# HYLE_DEP_BUILD_DIR is the one build-local binary/subbuild location for every
+# HYLE-owned FetchContent dependency. Exercise the test-only path through a self-locked
 # GoogleTest-shaped fixture; arbitrary fake direct overrides are intentionally
 # rejected by the production provenance wrapper.
 set(_fake_gtest_source "${_hyle_contract_root}/fake-googletest")
@@ -1188,13 +1207,13 @@ _hyle_contract_run("error-only dependency cache ownership" TRUE
   -DHYLE_COMPONENTS=error
   -DHYLE_BUILD_TESTS=ON
   -DHYLE_BUILD_BENCH=OFF
-  -DHYLE_DEPS_DIR=${_error_dependency_cache}
+  -DHYLE_DEP_BUILD_DIR=${_error_dependency_cache}
   -DHYLE_DEPENDENCY_LOCK_FILE=${_fake_gtest_lock}
   -DCMAKE_PROJECT_TOP_LEVEL_INCLUDES=${_fake_gtest_lock_attestation}
   -DFETCHCONTENT_SOURCE_DIR_GOOGLETEST=${_fake_gtest_source})
 if(NOT IS_DIRECTORY "${_error_dependency_cache}/googletest-build")
   message(FATAL_ERROR
-    "error-only tests ignored HYLE_DEPS_DIR='${_error_dependency_cache}'")
+    "error-only tests ignored HYLE_DEP_BUILD_DIR='${_error_dependency_cache}'")
 endif()
 if(IS_DIRECTORY "${_error_test_build}/_deps")
   message(FATAL_ERROR

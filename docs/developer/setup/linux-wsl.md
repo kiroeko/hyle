@@ -30,9 +30,12 @@ Windows 共享同一物理主机，不是独立性能机，也不能替代 nativ
 
 - `/mnt/c/...` 是 **9p 网络挂载**（Windows 盘），不稳、慢、CPU 打不饱和——重 IO / 构建 / 压力测试在上面**性能数字全废**，还可能触发诡异卡顿。
 - **唯一权威源是 Windows 工作树** `C:\public\project-hyle\hyle`；`/root/hyle` 只是可丢弃、可覆盖的原生 ext4 执行镜像，不从 WSL 目录反向恢复或合并代码。
-- 每次 WSL 验证前，从 `/mnt/c/public/project-hyle/hyle/` 受控执行 `rsync -a --delete` 覆盖 `/root/hyle/`。可排除并保留 WSL 本机 `build*/`（依赖在各 build 的 `_deps` 中），但源码必须单向同步为 Windows 当前工作树，包括未提交改动。
+- 每次 WSL 验证前，从 `/mnt/c/public/project-hyle/hyle/` 受控执行 `rsync -a --delete` 覆盖 `/root/hyle/`。可排除并保留 WSL 本机 `build*/`；锁定第三方源码位于 WSL 自己的
+  `$HOME/.cache/hyle/dependencies/v1`，各 build 的 `_deps` 只含 binary/subbuild。HYLE 源码必须单向
+  同步为 Windows 当前工作树，包括未提交改动。
 - 同步只负责搬源码；构建、测试、调试、压力与 benchmark 全部在 `/root/hyle` 运行，`/mnt/c` 上的执行结果不作验收证据。
-- build 目录及其 `_deps` 留在 `/root/hyle`，避免跨 9p 共享 FetchContent 源码和构建产物。
+- build 目录及其 `_deps` 留在 `/root/hyle`；共享 source cache 也必须位于 WSL ext4，不能指向
+  `/mnt/c` 或与 Windows cache 跨 9p 共用。
 
 ## 三、构建
 
@@ -49,8 +52,8 @@ cmake --build build
 
 - 这条命令使用默认 `all` + tests，显式开启 CUDA；TLS、HTTP/2、ggml、Vulkan 和 trace 仍保持
   默认 `OFF`。首次配置只通过 FetchContent 取得 googletest，CUDA Toolkit 由系统安装提供。
-  显式开启 HTTP/2、ggml 或 Vulkan 后才会取得各自的锁定源码。删除 build 会一并删除 `_deps`，
-  避免跨 toolchain 污染。
+  显式开启 HTTP/2、ggml 或 Vulkan 后才会取得各自的锁定源码。删除 build 只删除本 build 的
+  binary/subbuild；共享源码保留，toolchain 状态不会跨 build 混用。
 - `wsl.exe` 从 Windows 侧驱动的坑：`wsl.exe -e bash -lc '...'` 外层 git-bash 会吃掉 `$VAR`；把逻辑写成 `.sh`（在 WSL 原生 bash 里跑变量才正常）。传 `/mnt/c/x.sh` 路径给 wsl.exe 会被 git-bash 改写 → 用 `wsl.exe -e bash -lc 'bash /root/x.sh'`，脚本直接在 `/root` 用 heredoc 生成、别 cp。
 
 ## 四、测试

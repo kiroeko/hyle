@@ -3,7 +3,8 @@ include(FetchContent)
 # GoogleTest is a validation implementation detail. An embedding parent may
 # already own the canonical target; reuse it instead of populating a second
 # copy with colliding gtest/gtest_main target names. Otherwise fetch HYLE's
-# pinned archive under HYLE_DEPS_DIR and keep generic GoogleTest options out of
+# pinned archive through HYLE_DEP_SOURCE_CACHE, keep its binary/subbuild under
+# HYLE_DEP_BUILD_DIR, and keep generic GoogleTest options out of
 # the parent cache/install graph. HYLE does not use GMock.
 set(_hyle_owns_googletest FALSE)
 if(TARGET GTest::gtest_main)

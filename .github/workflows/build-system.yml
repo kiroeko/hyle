@@ -30,8 +30,15 @@ jobs:
       CTEST_PARALLEL_LEVEL: 2
       HYLE_CI_PRESET: ${{ matrix.os == 'windows-latest' && 'windows-ninja' || matrix.os == 'macos-latest' && 'macos' || 'linux' }}
       HYLE_CI_GENERATOR: ${{ matrix.os == 'windows-latest' && 'Ninja' || 'Unix Makefiles' }}
+      HYLE_DEP_SOURCE_CACHE: ${{ runner.temp }}/hyle-dependency-sources
     steps:
       - uses: actions/checkout@v6
+
+      - name: Restore locked dependency sources
+        uses: actions/cache@v5
+        with:
+          path: ${{ env.HYLE_DEP_SOURCE_CACHE }}
+          key: ${{ runner.os }}-hyle-dependency-sources-v1-${{ hashFiles('cmake/HyleDependencyLock.json') }}
 
       - name: Verify documentation contract
         if: runner.os == 'Linux'
@@ -113,7 +120,6 @@ jobs:
           cmake -DHYLE_SOURCE_DIR=${{ github.workspace }}
           -DHYLE_SMOKE_ROOT=${{ runner.temp }}/hyle-product-shape-smoke
           "-DHYLE_SMOKE_GENERATOR=${{ env.HYLE_CI_GENERATOR }}"
-          -DHYLE_GOOGLETEST_SOURCE=${{ github.workspace }}/build-${{ env.HYLE_CI_PRESET }}/_deps/googletest-src
           -P cmake/HyleCiProductShapeSmoke.cmake
 
       - name: Verify production-shape tests (Windows selected MSVC)
@@ -121,7 +127,6 @@ jobs:
         run: >-
           ./scripts/hyle-windows.ps1 -Action ProductShapeSmoke
           -SmokeRoot ${{ runner.temp }}/hyle-product-shape-smoke
-          -GTestSource ${{ github.workspace }}/build-windows-ninja/_deps/googletest-src
 
       - name: Verify installed package consumers (Unix)
         if: github.event_name == 'workflow_dispatch' && runner.os != 'Windows'
@@ -147,8 +152,15 @@ jobs:
     timeout-minutes: 45
     env:
       CMAKE_BUILD_PARALLEL_LEVEL: 2
+      HYLE_DEP_SOURCE_CACHE: ${{ runner.temp }}/hyle-dependency-sources
     steps:
       - uses: actions/checkout@v6
+
+      - name: Restore locked dependency sources
+        uses: actions/cache@v5
+        with:
+          path: ${{ env.HYLE_DEP_SOURCE_CACHE }}
+          key: ${{ runner.os }}-hyle-dependency-sources-v1-${{ hashFiles('cmake/HyleDependencyLock.json') }}
 
       - name: Install GCC 14 AArch64 toolchain
         run: |
@@ -169,8 +181,15 @@ jobs:
     env:
       CMAKE_BUILD_PARALLEL_LEVEL: 2
       CTEST_PARALLEL_LEVEL: 2
+      HYLE_DEP_SOURCE_CACHE: ${{ runner.temp }}/hyle-dependency-sources
     steps:
       - uses: actions/checkout@v6
+
+      - name: Restore locked dependency sources
+        uses: actions/cache@v5
+        with:
+          path: ${{ env.HYLE_DEP_SOURCE_CACHE }}
+          key: ${{ runner.os }}-hyle-dependency-sources-v1-${{ hashFiles('cmake/HyleDependencyLock.json') }}
 
       - name: Configure strict Windows ABI with the Clang frontend
         run: >-
@@ -211,6 +230,7 @@ jobs:
       CXX: g++-14
       CMAKE_BUILD_PARALLEL_LEVEL: 2
       CTEST_PARALLEL_LEVEL: 2
+      HYLE_DEP_SOURCE_CACHE: ${{ runner.temp }}/hyle-dependency-sources
     steps:
       - uses: actions/checkout@v6
 
@@ -219,16 +239,15 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y gcc-14 g++-14
 
-      - name: Restore locked source archives
+      - name: Restore locked dependency sources
         uses: actions/cache@v5
         with:
-          path: ${{ runner.temp }}/hyle-locked-archives
-          key: ${{ runner.os }}-hyle-locked-archives-${{ hashFiles('cmake/HyleDependencyLock.json') }}
+          path: ${{ env.HYLE_DEP_SOURCE_CACHE }}
+          key: ${{ runner.os }}-hyle-dependency-sources-v1-${{ hashFiles('cmake/HyleDependencyLock.json') }}
 
       - name: Verify feature adapters, static/shared SDKs, and trace-on consumer
         run: >-
           cmake -DHYLE_SOURCE_DIR=${{ github.workspace }}
           -DHYLE_SMOKE_ROOT=${{ runner.temp }}/hyle-feature-package-smoke
-          -DHYLE_ARCHIVE_CACHE=${{ runner.temp }}/hyle-locked-archives
           "-DHYLE_SMOKE_GENERATOR=Unix Makefiles"
           -P cmake/HyleCiFeaturePackageSmoke.cmake

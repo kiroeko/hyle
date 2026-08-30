@@ -8,9 +8,9 @@
 # ON wires Tracy, borrowed whole (a header tree + one client TU). A backend
 # selector with only one legal value was noise; add one only when a second real
 # implementation exists. Tracy's
-# sources live OUTSIDE this repo (a sibling clone, not vendored), so its location
-# is a cache path -- absent, we hard-fail with a clear message rather than compile
-# half a profiler.
+# sources live OUTSIDE this repo. The default route resolves the locked archive
+# through HYLE's shared source cache; HYLE_TRACY_DIR remains an explicit,
+# strictly verified source override.
 #
 # The gate defines propagate through the PUBLIC hyle_trace INTERFACE target:
 # trace.h is included across modules and in consumers, so every linked TU sees
@@ -26,10 +26,10 @@ else()
   set(HYLE_TRACE OFF)
 endif()
 if(HYLE_TRACE)
-  # Path to a tracy checkout (the dir containing public/tracy/Tracy.hpp). Not
-  # vendored in-tree; point this at the sibling clone when enabling trace.
+  # Optional explicit Tracy source override (the directory containing
+  # public/tracy/Tracy.hpp). Empty means resolve the locked shared-cache source.
   set(HYLE_TRACY_DIR "" CACHE PATH
-      "path to a tracy checkout (contains public/tracy/Tracy.hpp)")
+      "optional locked Tracy source override")
 else()
   set(HYLE_TRACY_DIR "")
 endif()
@@ -54,13 +54,18 @@ function(hyle_finalize_trace)
       "consumes the trace gate. Select a trace-aware component or disable "
       "HYLE_TRACE; refusing to create an unrelated profiler runtime.")
   endif()
-  if(NOT HYLE_TRACY_DIR OR NOT EXISTS "${HYLE_TRACY_DIR}/public/tracy/Tracy.hpp")
-    message(FATAL_ERROR
-      "HYLE_TRACE=ON, but HYLE_TRACY_DIR does not point at a tracy checkout "
-      "(need <dir>/public/tracy/Tracy.hpp). Set -DHYLE_TRACY_DIR=...; "
-      "refusing to build a half-wired profiler.")
+  if(HYLE_TRACY_DIR)
+    hyle_verify_locked_source_input(tracy "${HYLE_TRACY_DIR}")
+  else()
+    hyle_dependency_cache_resolve(tracy _hyle_tracy_cached_source)
+    set(HYLE_TRACY_DIR "${_hyle_tracy_cached_source}")
+    unset(_hyle_tracy_cached_source)
   endif()
-  hyle_verify_locked_source_input(tracy "${HYLE_TRACY_DIR}")
+  if(NOT EXISTS "${HYLE_TRACY_DIR}/public/tracy/Tracy.hpp")
+    message(FATAL_ERROR
+      "Locked Tracy source does not contain public/tracy/Tracy.hpp: "
+      "${HYLE_TRACY_DIR}")
+  endif()
   # The tracy client: ONE TU (TracyClient.cpp) compiled with TRACY_ENABLE. tracy
   # is a global singleton and its docs require the client TU be built exactly
   # once. HYLE is a multi-DLL build by default, so this target MUST follow

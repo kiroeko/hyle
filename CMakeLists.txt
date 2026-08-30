@@ -72,6 +72,7 @@ set(HYLE_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}")
 list(APPEND CMAKE_MODULE_PATH "${HYLE_SOURCE_DIR}/cmake")
 include(HyleTargetPlatform)
 include(HyleDependencyVersions)
+include(HyleDependencyCache)
 
 # Resolve platform capability before the component graph. The current public
 # io/compute/graph surfaces expose sched types, so selecting any of them also
@@ -293,27 +294,37 @@ include(HyleTesting)  # HYLE_TESTING gate: optional test-only instrumentation
 
 # ---- module-owned optional dependencies -------------------------------------
 # Keep cache controls declarable for presets/embedding parents, but perform SDK
-# discovery and source fetching only for components in the resolved closure.
+# discovery and source acquisition only for components in the resolved closure.
+# Source resources are shared across builds; binary/subbuild state is not.
 if(DEFINED HYLE_DEPS_DIR)
-  set(_hyle_deps_dir_input "${HYLE_DEPS_DIR}")
-else()
-  set(_hyle_deps_dir_input "${HYLE_BINARY_DIR}/_deps")
+  message(FATAL_ERROR
+    "HYLE_DEPS_DIR was removed because it mixed source resources with "
+    "build-local state. Use HYLE_DEP_SOURCE_CACHE for shared locked sources "
+    "and HYLE_DEP_BUILD_DIR for this build's binary/subbuild directory.")
 endif()
-cmake_path(ABSOLUTE_PATH _hyle_deps_dir_input
+hyle_initialize_dependency_source_cache()
+if(DEFINED HYLE_DEP_BUILD_DIR AND NOT HYLE_DEP_BUILD_DIR STREQUAL "")
+  set(_hyle_dep_build_dir_input "${HYLE_DEP_BUILD_DIR}")
+else()
+  set(_hyle_dep_build_dir_input "${HYLE_BINARY_DIR}/_deps")
+endif()
+cmake_path(ABSOLUTE_PATH _hyle_dep_build_dir_input
   BASE_DIRECTORY "${HYLE_BINARY_DIR}" NORMALIZE
-  OUTPUT_VARIABLE _hyle_deps_dir_normalized)
-set(HYLE_DEPS_DIR "${_hyle_deps_dir_normalized}" CACHE PATH
-    "Build-tree directory for dependencies fetched by HYLE" FORCE)
+  OUTPUT_VARIABLE _hyle_dep_build_dir_normalized)
+set(HYLE_DEP_BUILD_DIR "${_hyle_dep_build_dir_normalized}" CACHE PATH
+    "Build-local binary/subbuild directory for HYLE dependencies" FORCE)
 # Keep the effective directory value and its cache description identical for
 # add_subdirectory() consumers that supplied a normal variable.
-set(HYLE_DEPS_DIR "${_hyle_deps_dir_normalized}")
-unset(_hyle_deps_dir_input)
-unset(_hyle_deps_dir_normalized)
-mark_as_advanced(HYLE_DEPS_DIR)
+set(HYLE_DEP_BUILD_DIR "${_hyle_dep_build_dir_normalized}")
+unset(_hyle_dep_build_dir_input)
+unset(_hyle_dep_build_dir_normalized)
+mark_as_advanced(HYLE_DEP_BUILD_DIR)
 # FetchContent is directory-scoped, so keep this as a normal variable owned by
 # the HYLE subproject.  Every HYLE dependency (including test-only GoogleTest)
-# now observes HYLE_DEPS_DIR without rewriting an embedding parent's cache.
-set(FETCHCONTENT_BASE_DIR "${HYLE_DEPS_DIR}")
+# observes the build-local directory without rewriting an embedding parent's
+# cache. Locked SOURCE_DIR overrides are resolved separately from the shared
+# HYLE_DEP_SOURCE_CACHE.
+set(FETCHCONTENT_BASE_DIR "${HYLE_DEP_BUILD_DIR}")
 if(HYLE_BUILD_IO)
   include(HyleIoDependencies)
   hyle_configure_io_dependencies()

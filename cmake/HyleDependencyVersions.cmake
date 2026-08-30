@@ -471,6 +471,21 @@ macro(hyle_fetchcontent_make_available_locked dependency)
   # package.  Parents/toolchains are already executable build-code trust roots.
   hyle_verify_locked_fetchcontent_override(
     "${dependency}" _hyle_locked_override_source)
+  if("${_hyle_locked_override_source}" STREQUAL "")
+    if(NOT COMMAND hyle_dependency_cache_resolve)
+      message(FATAL_ERROR
+        "Locked dependency '${dependency}' needs the shared source cache, but "
+        "HyleDependencyCache.cmake was not included")
+    endif()
+    hyle_dependency_cache_resolve(
+      "${dependency}" _hyle_locked_override_source)
+    string(TOUPPER "${dependency}" _hyle_locked_upper)
+    # A normal directory-scope override keeps the shared source outside every
+    # build tree without persisting an internal implementation path as a user
+    # cache entry. Explicit parent/-D overrides were handled above and win.
+    set("FETCHCONTENT_SOURCE_DIR_${_hyle_locked_upper}"
+        "${_hyle_locked_override_source}")
+  endif()
   FetchContent_MakeAvailable(${dependency})
   FetchContent_GetProperties(${dependency}
     SOURCE_DIR _hyle_locked_actual_source)
@@ -492,6 +507,7 @@ macro(hyle_fetchcontent_make_available_locked dependency)
   endif()
   unset(_hyle_locked_actual_source)
   unset(_hyle_locked_override_source)
+  unset(_hyle_locked_upper)
 endmacro()
 
 _hyle_dependency_json_get(_hyle_schema_version schema_version)

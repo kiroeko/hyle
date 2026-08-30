@@ -10,18 +10,20 @@
 1. **HYLE 源码**：带版本/commit、SHA-256、`LICENSE` 和 `THIRD_PARTY_NOTICES.md` 的源码包；
 2. **宿主工具链**：C/C++ 编译器、平台 SDK、CMake 3.25+、generator；完整测试还需要 Python 3，
    制作 source package 或跑部分 benchmark 工具还需要 Git；
-3. **受锁源码闭包**：把 lock commit 的干净 Git checkout，或 lock 内官方 archive 的原样展开树，
-   放在 HYLE 根目录内的 `deps/<lock-name>/`，由 `hyle-offline-deps.cmake` 验证并映射；
+3. **受锁源码闭包**：首选搬运联网准备机用 `HyleDependencyCacheTool.cmake sync` 生成的完整共享源码
+   cache；也可把 lock commit 的干净 Git checkout，或 lock 内官方 archive 的原样展开树，放在 HYLE
+   根目录内的 `deps/<lock-name>/`，由 `hyle-offline-deps.cmake` 验证并映射；
 4. **系统 SDK/运行时**：OpenSSL、CUDA Toolkit/driver、Vulkan loader/ICD 等。这些由
    `find_package()`、toolchain/sysroot 或运行环境提供，不属于 FetchContent bundle。
 
-选择 `simd` 或 `container` 时必须提供 `deps/highway/`：它是中央锁定、由 HYLE target TU 直接编译的
-产品源码，而不是任意系统安装。SIMD bitpack 与 Container 的选定 string/bitset kernel 直接编译这份
-锁定 Highway；尚待裁决的 VQSort integrated port 已是 HYLE 源码包
+选择 `simd` 或 `container` 时必须提供锁定 Highway；选择 `simd` 还必须提供锁定 xsimd。它们是由
+HYLE target TU 直接编译的产品源码，而不是任意系统安装。SIMD bitpack 与 Container 的选定
+string/bitset kernel 直接编译 Highway，SIMD 的少量已裁决 route 使用 xsimd；VQSort integrated port
+已是 HYLE 源码包
 内的修改代码，不另放 checkout。完整源码审计会验证其 origin、integration paths、adapted-content hash
 和许可证副本。
-benchmark 使用独立干净的 Highway/xsimd sibling checkout，避免候选与对手共用 include path；xsimd
-当前不进入产品依赖。
+benchmark 使用独立干净的 Highway/xsimd sibling checkout，避免产品输入与对手共用 include path；
+这些 peer checkout 不代替产品 cache 内的 locked sources。
 
 不要交付 `<build>/_deps`、`CMakeCache.txt`、对象文件或整棵 build tree：它们包含生成器、绝对路径、
 编译器和宿主机状态，不是可迁移依赖包。在线准备机应与离线目标的 OS、架构、发行版/SDK 大版本匹配；
@@ -33,7 +35,8 @@ benchmark 使用独立干净的 Highway/xsimd sibling checkout，避免候选与
 
 | 构建能力 | `deps/` 目录 |
 |---|---|
-| `simd`、`container`，或任何传递依赖二者的组件 | `highway/` |
+| `container`，或任何传递依赖它的组件 | `highway/` |
+| `simd`，或任何传递依赖它的组件 | `highway/`、`xsimd/` |
 | `HYLE_BUILD_TESTS=ON` | `googletest/` |
 | 有 sched/fcontext 且 `HYLE_IO_HTTP2=ON` | `nghttp2/` |
 | 有 sched/fcontext 且 `HYLE_COMPUTE_GGML=ON` | `ggml/` |
@@ -49,6 +52,7 @@ hyle/
   hyle-offline-deps.cmake
   deps/
     highway/
+    xsimd/
     googletest/
     nghttp2/
     ggml/
@@ -58,13 +62,40 @@ hyle/
     tracy/            # 仅 trace 构建
 ```
 
+### 推荐：搬运 HYLE 管理的共享源码 cache
+
+在联网准备机指定一个空目录，让管理工具取得中央 lock 中的全部可搬运源码：
+
+```powershell
+cmake -DHYLE_DEP_SOURCE_CACHE=D:\hyle-media\deps-cache `
+  -DHYLE_DEP_ACTION=sync `
+  -P cmake/HyleDependencyCacheTool.cmake
+```
+
+把整个 `deps-cache` 连同根 marker、`archives/`、`sources/` 和 identity metadata 一起做介质 hash 后
+搬运。离线机配置时显式指定它并禁止网络：
+
+```powershell
+cmake -S . -B build-offline `
+  -DHYLE_DEP_SOURCE_CACHE=D:\hyle-media\deps-cache `
+  -DFETCHCONTENT_FULLY_DISCONNECTED=ON `
+  -DHYLE_COMPONENTS=all
+```
+
+configure 会重新验证所选 source tree 与许可证；目标机只在自己的
+`build-offline/_deps`（或 `HYLE_DEP_BUILD_DIR`）生成平台/工具链相关状态。不要只复制某个在线 build 的
+`_deps`，也不要漏掉 cache marker 后把任意目录冒充受管 cache。
+
+### 备选：逐项受审源码 override
+
 `hyle-offline-deps.cmake` 只接受
 [`cmake/HyleDependencyLock.json`](../../../cmake/HyleDependencyLock.json) 中的产品源码名。Git checkout
 验证精确 HEAD、`HEAD^{tree}`、零 tracked/untracked/ignored 文件；无 `.git` 的展开树验证 lock 中的完整内容
 manifest。两种形状都核对许可证；通过后才设置标准
 `FETCHCONTENT_SOURCE_DIR_<UPPER_NAME>`，Tracy 则设置 `HYLE_TRACY_DIR`。脚本同时强制
 `FETCHCONTENT_FULLY_DISCONNECTED=ON` 和 `FETCHCONTENT_UPDATES_DISCONNECTED=ON`，因此缺少所选 feature
-需要的目录会在首次干净配置中失败，不会访问网络或借旧 `_deps` 蒙混过关。
+需要的目录会在首次干净配置中失败，不会访问网络或借共享 cache 蒙混过关。显式 override 的优先级
+高于 cache，因此这个入口适合组织已经按依赖逐项审批的介质。
 若所选 component/feature 完全不触达外部源码（例如 tests 关闭的 core/error-only 形状），`deps/` 可不存在
 或为空；断网门仍开启。预载脚本会为未携带项登记预期本地路径，只有真正选择该项时才清晰报 missing source。
 
@@ -188,7 +219,8 @@ Homebrew cellar 目录不是可迁移 SDK 包。若要 TLS/Vulkan 等可选能�
 下面验证中央 component manifest 当前登记的全部 HYLE 产品组件（包括 header-only `util_core` 与
 `container_intrusive`）的 CPU 基线，不启用需要系统 SDK
 或额外协议/计算后端的 feature；
-因为全组件包含 `simd` 且 tests 打开，bundle 需要 `deps/highway/` 与 `deps/googletest/`：
+因为全组件包含 `simd` 且 tests 打开，逐项 override bundle 需要 `deps/highway/`、`deps/xsimd/` 与
+`deps/googletest/`；若使用共享 cache 介质，则其中需要有这三个 locked identity：
 
 ```bash
 cmake -C hyle-offline-deps.cmake --preset linux \
@@ -227,4 +259,5 @@ HYLE，所以属于 lock 管理的源码依赖，不能接受任意 `HYLE_TRACY_
 - `cmake --version`、编译器版本、Python/Git（如需要）与平台 SDK；
 - 传输前后的 SHA-256、bundle manifest、许可证；
 - configure 日志中的 component/feature contract 与预期完全一致；
-- build/test 没有读取旧 `_deps`、用户 package registry 或其他开发机 cache。
+- build/test 只读取本次明确指定并已验真的共享 source cache/override，不读取其他开发机 cache、旧
+  build `_deps` 或用户 package registry。

@@ -141,14 +141,43 @@ build/package 拥有，随各 compiled module 的 static/shared 形状维护，�
 
 | 路径 | 契约 |
 |---|---|
-| 在线配置 | `FetchContent` 使用锁文件投影出的 URL/SHA256；统一 wrapper 在使用前后校验覆盖源和实际展开源 |
-| 离线配置 | `hyle-offline-deps.cmake` 从同一锁读取 `deps/<name>/`，设置标准 `FETCHCONTENT_SOURCE_DIR_*`，并禁止下载 |
+| 在线配置 | 首次 configure 缓存 miss 时，统一 cache resolver 使用锁文件投影出的 URL/SHA256 自动取得源码；命中后只校验和复用 |
+| 离线配置 | 搬运同一 resolver 生成的完整共享缓存，或由 `hyle-offline-deps.cmake` 从同一锁验证 `deps/<name>/` 并设置标准 `FETCHCONTENT_SOURCE_DIR_*`；两者都禁止缺失时联网 |
 | 安装导出 | package registry 汇总 exported targets、静态闭包、`find_dependency()`、运行时/开发资产和工具 |
 | 许可证 | 配置、打包和 CI 均按锁文件校验许可证文件及哈希；安装 `LICENSE` 与第三方 notices |
-| CI/cache | lock 哈希参与缓存键；locked-feature job 使用官方归档验证适配器和安装包 |
+| CI/cache | lock 哈希参与共享 source-cache key；普通产品构建和 locked-feature job 使用同一 resolver 验证适配器与安装包，不维护第二套下载器 |
 | 源码包 | 打包前审计所有 in-tree/integrated-source 锁记录，但不把 FetchContent 下载物塞进源码包 |
 
-`HYLE_DEPS_DIR` 默认位于当前构建树 `_deps`。嵌入父工程时只设置 Hyle 目录范围内的 `FETCHCONTENT_BASE_DIR`，不抢占父工程 cache。较重的可选后端发现留在相应模块脚本，例如 IO、compute 和 trace。
+源码资源和生成状态使用两个不同合同：
+
+- `HYLE_DEP_SOURCE_CACHE` 保存 archive 与未经修改的展开源码，跨 Debug/Release、编译器、架构、
+  sanitizer、build tree 和同用户 checkout 共用。显式 CMake 变量优先于同名环境变量；默认使用平台用户
+  cache：Windows `%LOCALAPPDATA%/hyle/dependencies/v1`，macOS
+  `$HOME/Library/Caches/hyle/dependencies/v1`，其他 Unix 使用
+  `$XDG_CACHE_HOME/hyle/dependencies/v1` 或 `$HOME/.cache/hyle/dependencies/v1`。
+- `HYLE_DEP_BUILD_DIR` 默认是当前 Hyle binary tree 的 `_deps`，只保存依赖的 binary/subbuild 与
+  CMake 生成状态，不得跨 build tree 共用。
+
+在线首次 configure 缺少某项 source identity 时，会在 per-identity 文件锁内下载官方 archive，先校验
+archive SHA-256，再在 staging 中展开并校验完整源码树与许可证，最后原子落入共享 cache。后续
+configure 和所有 build 均不重新下载。显式 `FETCHCONTENT_SOURCE_DIR_<NAME>` 始终优先，并走同一
+严格源码 verifier；`FETCHCONTENT_FULLY_DISCONNECTED=ON` 时 cache miss 直接失败。
+嵌入父工程时 Hyle 只在自己的目录作用域设置 `FETCHCONTENT_BASE_DIR`，不改写父工程的值；共享源码
+override 也只对 Hyle 实际取得的锁定名字生效。
+
+维护入口是：
+
+```text
+cmake -DHYLE_DEP_ACTION=status -P cmake/HyleDependencyCacheTool.cmake
+cmake -DHYLE_DEP_ACTION=sync -P cmake/HyleDependencyCacheTool.cmake
+cmake -DHYLE_DEP_ACTION=sync -DHYLE_DEP_NAMES=xsimd -DHYLE_DEP_REPAIR=YES -P cmake/HyleDependencyCacheTool.cmake
+cmake -DHYLE_DEP_ACTION=check-updates -P cmake/HyleDependencyCacheTool.cmake
+cmake -DHYLE_DEP_ACTION=prune -DHYLE_DEP_PRUNE_CONFIRM=YES -P cmake/HyleDependencyCacheTool.cmake
+```
+
+`sync` 与 configure cache-miss 共用取得、锁、staging 和验证实现；`check-updates` 只报告 upstream
+事实，不改 lock；`prune` 只处理带 HYLE marker 且不再由当前 lock 引用的 identity。较重的可选后端
+发现仍留在相应模块脚本，例如 IO、compute 和 trace。
 
 ## Option 语义
 
@@ -161,6 +190,7 @@ build/package 拥有，随各 compiled module 的 static/shared 形状维护，�
 | 安装 | `HYLE_INSTALL` | 生成可重定位 SDK；当前要求 `HYLE_BUILD_TESTS=OFF` |
 | 验证 | `HYLE_BUILD_TESTS`, `HYLE_TEST_INSTRUMENTATION`, `HYLE_WERROR`, `HYLE_BUILD_BENCH` | 分别控制测试、测试插桩、警告门和 benchmark；普通测试默认 shipping layout，诊断插桩须显式开启 |
 | Sanitizer | `HYLE_SANITIZER` | `off|asan|tsan|ubsan`；非法值配置失败 |
+| 依赖位置 | `HYLE_DEP_SOURCE_CACHE`, `HYLE_DEP_BUILD_DIR` | 前者是跨 build 的锁定源码资源，后者是当前 build 的 binary/subbuild；不再用一个模糊目录混放两者 |
 | SIMD | `HYLE_SIMD_EXACT_TARGET` | 在 fresh cache 中只在 simd 被选时声明；空值或 `SCALAR/SSE4/AVX2/AVX512/NEON/SVE/RVV` |
 | 自动特性 | `HYLE_IO_TLS`, `HYLE_COMPUTE_CUDA` | 在 fresh cache 中只由所选 owner 组件声明；类型为 `AUTO|ON|OFF`，当前默认 `OFF`；`AUTO` 探测、`ON` 必须存在、`OFF` 不探测 |
 | 布尔特性 | `HYLE_IO_HTTP2`, `HYLE_COMPUTE_GGML`, `HYLE_COMPUTE_VULKAN` | 在 fresh cache 中只由所选 owner 组件声明，昂贵能力默认 `OFF`；`HYLE_COMPUTE_GGML_NATIVE` 仅在 ggml 开启时声明 |
@@ -234,7 +264,12 @@ Core-only shared SDK 同样没有 Core DSO/DLL 和 runtime staging；`HYLE_STATI
 
 顶层 Git checkout 提供 `hyle_source_package`：它审计全部 in-tree/integrated dependency，拒绝 dirty 或 untracked 工作树，以 `git archive` 打包当前提交，并生成源码清单和 SHA256。产物包含已跟踪源码与法律材料，不包含构建缓存或 FetchContent checkout。
 
-离线依赖包是独立输入。准备与锁文件匹配的 `deps/<lock-name>/` 后使用：
+离线依赖包是独立输入。推荐在联网准备机把 `HYLE_DEP_SOURCE_CACHE` 指向一个空目录并执行
+`HYLE_DEP_ACTION=sync`，然后完整搬运该带 marker 的 cache；离线机把同一变量指向解包位置并设置
+`FETCHCONTENT_FULLY_DISCONNECTED=ON`。configure 会重新验证源码 identity，但不会访问网络。
+
+需要逐项交付受审 Git checkout/展开树的组织，也可以继续准备与锁文件匹配的
+`deps/<lock-name>/`，再使用：
 
 ```powershell
 cmake -S . -B build-offline `
@@ -242,7 +277,9 @@ cmake -S . -B build-offline `
   -DHYLE_COMPONENTS=all
 ```
 
-离线初始化脚本只接受精确、干净的 Git checkout 或能通过展开树与许可证校验的官方归档；缺少被选组件所需依赖时立即失败。`HYLE_OFFLINE_ALLOW_UNVERIFIED_EXPANDED_SOURCES` 只用于明确承担风险的异常恢复，不是发布流程。
+离线初始化脚本只接受精确、干净的 Git checkout 或能通过展开树与许可证校验的官方归档；缺少被选组件所需依赖时立即失败。两种离线介质都不携带 dependency binary/subbuild，目标机仍在自己的
+`HYLE_DEP_BUILD_DIR` 生成它们。`HYLE_OFFLINE_ALLOW_UNVERIFIED_EXPANDED_SOURCES` 只用于明确承担风险
+的异常恢复，不是发布流程。
 
 ## CI 分层与持续回归
 
@@ -309,5 +346,6 @@ wrapper 的 `-BinaryDir <absolute-session-scratch>` 为 Configure/Build/Test 提
 - 托管 CI 尚未覆盖 sanitizer、真实加速设备及 SVE/RVV 运行；Windows/macOS 只在手工
   `workflow_dispatch` 运行，不属于 PR/main push 门。
 - 安装只复制 selected closure 的 owned public headers；缺少 owner 或 `PUBLIC` 边会在配置阶段失败。
-- 源码包有意不携带 FetchContent 依赖；需要全离线构建时必须同时准备独立离线依赖目录。
+- 源码包有意不携带 FetchContent 依赖；需要全离线构建时必须同时准备可搬运的 HYLE 共享源码 cache，
+  或 `hyle-offline-deps.cmake` 使用的独立 `deps/<name>` 目录。
 - `compute` 与 `graph` 仍是未完成模块。all-component 绿灯只证明现有构建与测试契约，不证明其功能已经完成。

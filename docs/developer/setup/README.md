@@ -26,8 +26,12 @@
 HYLE 的依赖分三类，决定了「新机器 `cmake` 会不会失败」：
 
 1. **硬门槛（必需，缺了 CMake 直接 FATAL_ERROR）**：C++ 编译器（GCC14+ / Clang18+ / MSVC19.43+）、CMake 3.25+、一个 CMake generator，以及所选组件需要的汇编器（MASM/GAS）。根 `project()` 只启用 CXX；`HYLE_BUILD_TESTS=OFF` 时只有所选闭包含 mem/mimalloc 才按需要求 C 编译器。开启测试会进入 GoogleTest 自己的 CMake project，并可能同时探测 C frontend。Ninja 只是可选 generator；Visual Studio/Unix Makefiles/Xcode 也可用。这些**不自动装**，人得先装好——见各平台文件第一节。
-2. **自动拉取（联网自动，无需人工）**：`googletest`、`nghttp2`、`ggml`、Vulkan-Headers、volk、glslang 按所选组件/feature 走 **FetchContent**——新机器首次 `cmake` 会自动取得并放到当前 build tree 的 `_deps/`（[`dependencies.md` §FetchContent](dependencies.md)）。离线时用根目录的 `hyle-offline-deps.cmake` 注入已审查源码目录。
-3. **可选能力（显式契约）**：TLS、CUDA 取值为 `AUTO|ON|OFF`；HTTP/2、ggml、Vulkan 为 `ON|OFF`。这些昂贵能力当前都默认 `OFF`，并只在 io/compute owner 被所选闭包包含时声明；AUTO 可降级，ON 缺依赖即失败，OFF 不探测/取得依赖。`HYLE_COMPUTE_GGML_NATIVE` 只在 ggml 开启时出现；`HYLE_TRACE` 只在所选闭包有 trace consumer 时出现，`HYLE_TRACY_DIR` 又只在 trace 开启时出现，单一 Tracy 实现不再有 `HYLE_TRACE_BACKEND`。正式 CI/交付必须写死能力集合。cuDNN/TensorRT 更靠后（当前里程碑不依赖）。
+2. **自动拉取（联网自动，无需人工）**：Highway、xsimd、`googletest`、`nghttp2`、`ggml`、
+   Vulkan-Headers、volk、glslang 和按需 Tracy 由所选组件/feature 触发——新机器首次 `cmake` 会自动
+   取得到跨 build 的 `HYLE_DEP_SOURCE_CACHE`；当前 build 的 `_deps` 只保存 binary/subbuild
+   （[`dependencies.md` §FetchContent](dependencies.md)）。离线时搬运同一工具生成的完整 cache，或用
+   根目录 `hyle-offline-deps.cmake` 注入逐项已审查源码。
+3. **可选能力（显式契约）**：TLS、CUDA 取值为 `AUTO|ON|OFF`；HTTP/2、ggml、Vulkan 为 `ON|OFF`。这些昂贵能力当前都默认 `OFF`，并只在 io/compute owner 被所选闭包包含时声明；AUTO 可降级，ON 缺依赖即失败，OFF 不探测/取得依赖。`HYLE_COMPUTE_GGML_NATIVE` 只在 ggml 开启时出现；`HYLE_TRACE` 只在所选闭包有 trace consumer 时出现，`HYLE_TRACY_DIR` 是 trace 开启后才出现的可选受审源码覆盖，默认走共享 cache；单一 Tracy 实现不再有 `HYLE_TRACE_BACKEND`。正式 CI/交付必须写死能力集合。cuDNN/TensorRT 更靠后（当前里程碑不依赖）。
 
 > **一句话**：硬门槛靠人装，FetchContent 依赖联网下载或显式注入源码，GPU/TLS 则由 AUTO/ON/OFF 明确选择。
 
@@ -35,7 +39,9 @@ HYLE 的依赖分三类，决定了「新机器 `cmake` 会不会失败」：
 
 **部分能，部分不能，现状是「不自动、靠文档」：**
 
-- **第 2 类（源码依赖）已经自动**：FetchContent 联网时按需备齐；隔离网交付则由发行方准备可审计的 `deps/<FetchContent-name>/` 源码闭包。
+- **第 2 类（源码依赖）已经自动**：首次在线 configure 按需填充共享、锁定的 source cache；后续
+  build tree 复用且不重新下载。隔离网交付由发行方搬运该受管 cache，或准备可审计的
+  `deps/<FetchContent-name>/` 源码闭包。
 - **第 1 类（编译器/CMake/generator）不自动安装**：装系统级工具链需要 admin/包管理器权限，跨发行版差异大（apt/brew/VS installer/vcpkg 各不同），项目不能安全接管。Windows 的 `scripts/hyle-windows.ps1` 只用 `vswhere` 选择已安装 SDK/MSVC ABI 环境，并按 preset 调用已安装的 cl.exe 或 PATH 中的 clang-cl；它不安装或修改 Visual Studio/LLVM。
 - **第 3 类中的系统 SDK 不自动**：CUDA Toolkit/driver、OpenSSL 等重量级且机器相关，只在你**要**那个能力时才装；HTTP/2、ggml、Vulkan 的源码部分仍按第 2 类取得。文档给出确切边界（[`dependencies.md`](dependencies.md)）。
 

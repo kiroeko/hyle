@@ -232,9 +232,12 @@ void reap() {
 
 ```sh
 cmake -S . -B build-trace \
-  -DHYLE_TRACE=ON \
-  -DHYLE_TRACY_DIR=/path/to/tracy
+  -DHYLE_TRACE=ON
 ```
+
+首次在线 configure 会从中央 lock 自动准备 Tracy 到共享源码 cache。只有父工程或逐项离线介质需要
+显式注入源码时，才设置 `-DHYLE_TRACY_DIR=/path/to/exact-tracy`；该目录仍必须通过完整源码树与
+许可证校验，不能用来绕过 lock。
 
 Tracy 默认监听全部网络接口，适合受信局域网中的 viewer。只允许本机 viewer 时，在启动被观测程序前
 设置 `TRACY_ONLY_LOCALHOST=1`；HYLE 的 trace-on CTest 已只对测试子进程设置它，因此不会为了测试申请

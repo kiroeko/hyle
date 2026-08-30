@@ -6,7 +6,8 @@
 # max,sve<bits>=on is the correctness gate (analogous to Intel SDE for AVX-512).
 #
 # Prereqs (WSL Ubuntu, already installed here):
-#   aarch64-linux-gnu-g++-14, qemu-aarch64-static, gtest source under .deps/googletest-src.
+#   aarch64-linux-gnu-g++-14, qemu-aarch64-static, and explicit
+#   GTEST_SOURCE_DIR/HIGHWAY_SOURCE_DIR paths from the locked source cache.
 # Usage: run from the repo root on a Linux box with the aarch64 cross toolchain:
 #   bash scripts/sve-qemu-test.sh       # current scalable product gate
 #   bash scripts/sve-qemu-test.sh fat   # direct-Highway source-fat seam only
@@ -25,16 +26,16 @@
 set -e
 
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
-GT=${GTEST_SOURCE_DIR:-"$REPO/.deps/googletest-src/googletest"}
+GT=${GTEST_SOURCE_DIR:-}
 if [ ! -f "$GT/src/gtest-all.cc" ]; then
-  echo "ERROR: gtest source not found at $GT (configure the CMake build once to fetch it)"; exit 1
+  echo "ERROR: set GTEST_SOURCE_DIR to the locked googletest source root"; exit 1
 fi
 
 CXX=${CXX_AARCH64:-aarch64-linux-gnu-g++-14}
 QEMU=${QEMU_AARCH64:-qemu-aarch64-static}
 OUT=${OUT_DIR:-/tmp/hyle-sve}
 mkdir -p "$OUT"
-HWY=${HIGHWAY_SOURCE_DIR:-"$REPO/../highway"}
+HWY=${HIGHWAY_SOURCE_DIR:-}
 if [ ! -f "$HWY/hwy/highway.h" ]; then
   echo "ERROR: locked Highway source not found at $HWY (set HIGHWAY_SOURCE_DIR)"; exit 1
 fi

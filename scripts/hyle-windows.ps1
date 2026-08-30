@@ -6,7 +6,7 @@ param(
     [string]$BinaryDir,
     [string]$Component,
     [string]$SmokeRoot,
-    [string]$GTestSource,
+    [string]$DependencySourceCache,
     [Parameter(ValueFromRemainingArguments = $true)]
     [string[]]$ExtraArgs
 )
@@ -14,6 +14,15 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $sourceDir = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
+if ($DependencySourceCache) {
+    if (-not [System.IO.Path]::IsPathFullyQualified($DependencySourceCache)) {
+        throw '-DependencySourceCache must be an absolute path.'
+    }
+    # Child CMake configure processes use the same documented precedence as a
+    # direct invocation. This avoids PowerShell treating a raw -D value that
+    # contains a Windows drive colon as another script parameter.
+    $env:HYLE_DEP_SOURCE_CACHE = [System.IO.Path]::GetFullPath($DependencySourceCache)
+}
 $resolvedBinaryDir = $null
 if ($BinaryDir) {
     if ($Action -notin @('Configure', 'Build', 'Test')) {
@@ -230,12 +239,8 @@ switch ($Action) {
             throw 'Action ProductShapeSmoke requires -SmokeRoot <scratch-directory>.'
         }
         $smokeScript = Join-Path $sourceDir 'cmake\HyleCiProductShapeSmoke.cmake'
-        $gtestArg = @()
-        if ($GTestSource) {
-            $gtestArg = @("-DHYLE_GOOGLETEST_SOURCE=$GTestSource")
-        }
         & cmake "-DHYLE_SOURCE_DIR=$sourceDir" "-DHYLE_SMOKE_ROOT=$SmokeRoot" `
-            -DHYLE_SMOKE_GENERATOR=Ninja @gtestArg @ExtraArgs -P $smokeScript
+            -DHYLE_SMOKE_GENERATOR=Ninja @ExtraArgs -P $smokeScript
     }
     'SourcePackageSmoke' {
         if (-not $SmokeRoot) {
