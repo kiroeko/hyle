@@ -1,0 +1,180 @@
+{
+  "schema": "hyle.simd.candidate-verification/v1",
+  "date": "2026-08-30",
+  "verdict": "PASS",
+  "candidate": {
+    "commit": "27633329949a88321e5e0d71bad28e6dbb997f9c",
+    "tree": "457630a17039041ecc2bd077b0cdc149c55bebdc",
+    "product_diff_after_candidate": "EMPTY"
+  },
+  "identity": {
+    "src/simd/sort/vqsort_hyle/vqsort-inl.h": "9fdfcb76ff55d06a2fd10a2e181756344da9b202ff7c22953735c25e5c04949c",
+    "cmake/HyleDependencyLock.json": "6ad79e54436de2e467b33ba212526457d4b10c623316f21db29398a548be98ca",
+    "scripts/simd-op-routing.json": "3aa5579c1eac313c494e2905afea28744fc70fa0971e1a54896712e7e827e265",
+    "include/hyle/simd/provider/routes_generated.h": "34c442ec95101cdcdcce926b2650336e041806caee28eb5448ad1122b5c70321",
+    "mirror_match": ["W1-WIN", "W1-WSL", "M1-MAC"]
+  },
+  "inventory": {
+    "baseline_operations": 387,
+    "baseline_definition_sites": 1797,
+    "route_scopes": 422,
+    "route_decisions": {
+      "ROUTE_HIGHWAY": 366,
+      "KEEP_HYLE": 34,
+      "REMOVE_REDUNDANT": 22,
+      "PENDING": 0
+    },
+    "family_exceptions": [
+      "MSVC 19.50 AVX2 f32 tanh routes to xsimd",
+      "MSVC 19.50 AVX2 f32 tanh-GELU routes to xsimd"
+    ],
+    "mechanical_check": "PASS"
+  },
+  "correctness": {
+    "W1-WIN": {
+      "toolchain": "MSVC 19.50 Release",
+      "tests": "5/5",
+      "verdict": "PASS"
+    },
+    "W1-WSL-ASAN": {
+      "toolchain": "GCC 14.2 ASan",
+      "tests": "5/5",
+      "verdict": "PASS"
+    },
+    "W1-WSL-UBSAN": {
+      "toolchain": "GCC 14.2 UBSan",
+      "tests": "5/5",
+      "verdict": "PASS"
+    },
+    "M1-MAC": {
+      "toolchain": "AppleClang 21 Release arm64",
+      "tests": "5/5",
+      "verdict": "PASS"
+    },
+    "SVE-QEMU": {
+      "vector_bits": [128, 256, 384, 512, 2048],
+      "per_run": "102 PASS / 1 expected non-x86 AVX-512-BF16 skip",
+      "verdict": "PASS",
+      "claim": "correctness and scalable-width portability only"
+    },
+    "RVV-QEMU": {
+      "vector_bits": [128, 256, 512, 1024],
+      "per_run": "100 PASS / 1 expected non-x86 AVX-512-BF16 skip",
+      "verdict": "PASS",
+      "claim": "correctness and scalable-width portability only"
+    },
+    "TSAN": {
+      "verdict": "NOT_APPLICABLE",
+      "reason": "The v3 provider route is compile-time state and introduced no shared mutable state."
+    }
+  },
+  "delivery": {
+    "W1-WIN": {
+      "source_embedding": "PASS",
+      "relocated_shared": "PASS",
+      "relocated_static": "PASS"
+    },
+    "W1-WSL": {
+      "source_embedding": "PASS",
+      "relocated_shared": "PASS",
+      "relocated_static": "PASS"
+    },
+    "M1-MAC": {
+      "source_embedding": "PASS",
+      "relocated_shared": "PASS",
+      "relocated_static": "PASS"
+    },
+    "offline_dependency_contract": {
+      "positive": "PASS",
+      "negative": "PASS"
+    },
+    "installed_simd_headers": 13,
+    "source_only_not_installed": [
+      "hyle/simd/provider/*",
+      "hyle/simd/target.h",
+      "hyle/simd/fat_kernel.h"
+    ],
+    "licenses": [
+      "HYLE-LICENSE",
+      "THIRD_PARTY-NOTICES.md",
+      "highway-upstream-LICENSE",
+      "xsimd-upstream-LICENSE",
+      "highway-LICENSE"
+    ]
+  },
+  "performance": {
+    "tier": "P1",
+    "instrument": "closure-perf-v1",
+    "material_margin_pct": 5,
+    "machine": "W1-WIN",
+    "ordinary_row_dtype": "PASS: every qualified 95% lower bound is above 0.95",
+    "activation_exception": "PASS: xsimd materially wins all four admitted tanh/GELU rows and is the shipped route",
+    "route_codegen": "PASS: fixed/exact provider selection disappears at compile time; ordinary/source-fat has only one cached whole-buffer target call",
+    "evidence": "evidence/performance/simd-17-w1-win-p1.json",
+    "claim_limit": "Engineering evidence covers the frozen ordinary/source-primary groups, not every operation, platform, size or Formal SOTA. SVE/RVV have no silicon performance claim."
+  },
+  "red_team": {
+    "legacy_live_references": 0,
+    "product_extern_c": 0,
+    "native_ffi_or_c_abi": "NONE",
+    "vendor_type_public_leaks": "NONE",
+    "runtime_provider_dispatch": "NONE",
+    "cpu_fact_owner": "hyle::platform",
+    "direct_hyle_dependencies": ["core", "platform"],
+    "transitive_component_closure": [
+      "core",
+      "container_intrusive",
+      "error",
+      "time",
+      "platform",
+      "simd"
+    ],
+    "product_provider_dependencies": {
+      "highway": "f503c485cec6b4f2f596fa60d83484797c9eeb5c",
+      "xsimd": "3b3151ff665514a00a437cc985f47b7de99b772b",
+      "runtime_abi": "none; both are authenticated header-only product inputs"
+    },
+    "integrated_source": {
+      "name": "highway_port",
+      "origin_revision": "83eff39371e5e6494b305b253f8a3c06f831faf4",
+      "content_sha256": "24d39fbef0b8b53c2d1bdbf7cfba0f9ccbb42e4a91ec4302be51015a97503442",
+      "audit": "PASS"
+    },
+    "documentation_contract": "PASS"
+  },
+  "capability": {
+    "admitted_families": [
+      "continuous row algebra and mixed/storage dot",
+      "f32/f16/bf16/E4M3/E5M2 conversions",
+      "narrow storage search/sum/total-order",
+      "whole-buffer math, activations, softmax and log-softmax",
+      "continuous search and scan",
+      "canonical bitpack and reproducible non-cryptographic batch RNG",
+      "sort, partial-sort, select, stable radix-sort and argsort"
+    ],
+    "inference_boundary": "No unowned admitted SIMD MUST remains. Tensor layout, block quant formats, GEMM, attention, RoPE, operator fusion and GPU policy remain Compute/engine responsibilities.",
+    "public_shape": "C++23 pointer/count, span and HYLE-owned POD/storage types; source-only fixed/fat expert seams keep vendor register types inside target-bound translation units."
+  },
+  "loc": {
+    "snapshot_commit": "27633329949a88321e5e0d71bad28e6dbb997f9c",
+    "repository_code": 401264,
+    "self_with_tests": 96041,
+    "self_without_tests": 59898,
+    "module_implementation": 14211,
+    "self_check": "PASS"
+  },
+  "known_limitations": [
+    "Formal performance certification remains PENDING.",
+    "SVE and RVV are correctness/codegen qualified under QEMU; no real-silicon performance winner is claimed.",
+    "Classic cl.exe is capped at AVX2 for direct Highway target bodies by the upstream AVX3 blocklist; clang-cl is required for direct AVX-512.",
+    "SIMD provides no Native FFI, C ABI or stable cross-toolchain C++ ABI.",
+    "The minimal Highway VQSort adaptation must be rebased and re-audited when its upstream source changes."
+  ],
+  "reopen_triggers": [
+    "A locked Highway/xsimd or integrated VQSort source upgrade changes an affected route or contract.",
+    "A real inference consumer demonstrates an unowned reusable SIMD primitive or a reproducible correctness defect.",
+    "Qualified same-contract evidence shows a material route reversal on a supported compiler/ISA scope.",
+    "New hardware or compiler support changes the finite target matrix, especially SVE/RVV silicon or classic-MSVC AVX3 support.",
+    "A concrete foreign-runtime consumer passes Native FFI admission and requires a runtime-owned type-erased boundary."
+  ]
+}

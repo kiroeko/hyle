@@ -1,6 +1,6 @@
 # SIMD v3 multi-provider routing closure
 
-<!-- MODULE CLOSURE RECORD: ACTIVE -->
+<!-- MODULE CLOSURE RECEIPT: CLOSED -->
 
 > 当前产品状态只以 [`module-status.json`](../../module-status.json) 为准。本页是 owner 在 2026-08-30
 > 改变 implementation strategy 后的新一轮 `RESUME` 冻结卡。SIMD-00～11 与 v2 的实现/证据只作输入；
@@ -83,7 +83,7 @@
 | [SIMD-14](tickets/simd-14-provider-substrate.md) | `DONE` | Highway+xsimd product dependency、provider adapter、compile-time route manifest 与零开销 codegen proof | 只可删被等价替换的构建 seam |
 | [SIMD-15](tickets/simd-15-route-qualification.md) | `DONE` | 按 implementation-equivalence groups 执行全部 387 项 current-peer/结构/workload 裁决，先提取所有赢家 | 无通用删除；可移动具名赢家 |
 | [SIMD-16](tickets/simd-16-migration-cleanup.md) | `DONE` | ordinary/expert/Container/Ordering 消费迁移；仅删除 ledger 已终态且引用归零的旧实现 | 有限、逐项受 ledger 控制 |
-| [SIMD-17](tickets/simd-17-delivery-closure.md) | `ACTIVE` | candidate、三平台/三交付、受影响 P1、文档/易用性、红队、六问、LOC 与 terminal receipt | 不再新增产品能力 |
+| [SIMD-17](tickets/simd-17-delivery-closure.md) | `DONE` | candidate、三平台/三交付、受影响 P1、文档/易用性、红队、六问、LOC 与 terminal receipt | 无 |
 
 SIMD-13 完成且 registry 进入 `AUDITED` 前不得修改产品 API、算法或 layout。其后也只能按冻结 ledger 的
 有限 implementation groups 施工；新能力或新 benchmark 行不能临时扩大范围。
@@ -141,6 +141,20 @@ SIMD-13 完成后的 v3 `SCOPED` 快照位于同目录 `module-status-v3-scoped.
 该 candidate 不继承撤回候选或 v2 的聚合声明。candidate 后只允许补验证、说明和 receipt；任何公开合同、
 算法、route 或正常 workload 改动必须退回 `AUDITED` 并产生新 commit/tree。
 
+## Final candidate
+
+- product commit：`27633329949a88321e5e0d71bad28e6dbb997f9c`；
+- product tree：`457630a17039041ecc2bd077b0cdc149c55bebdc`；
+- 状态前态快照：`C:\hyle-scratch\simd-v3\transitions\module-status-v3-audited-before-final-candidate.json`，
+  SHA-256 `3C4B244D3B3B954861B4C6A14C5F09E20862A0534ECDC1DC3D23C0001512E3FA`；
+- 相对第二候选只原子刷新 `highway_port` integrated-source lock 与相应证据；算法、公开 API、route、
+  complexity 和生成代码均未改变；
+- candidate 前完整门：W1-WIN/W1-WSL/M1-MAC 三平台适用 SIMD tests；ASan/UBSan；SVE 五种 VL、RVV
+  四种 VLEN；三平台 source embedding/relocated shared/relocated static；locked/offline 正负合同；route
+  ledger/manifest/generated route；W1-WIN 5% P1，全部 `PASS`。
+
+后续只允许在该不可变身份上补 terminal evidence、六问、LOC 和状态 receipt。
+
 ## SIMD-13 双向审计结果
 
 自顶向下重新核对 inference/source-primary、ordinary buffer 与交付旅程；自底向上枚举 13 个 installed
@@ -171,3 +185,42 @@ threading、quant block/GEMM、attention/RoPE/SSM 仍明确归 Compute/推理引
 
 除此之外没有产品修改授权；尤其不新增 benchmark-shaped API，不因单个 source hit 宣称 vendor 等价，也不
 在 SIMD-15 前删除旧实现。
+
+## Terminal verification receipt
+
+本轮最终产品 candidate 固定为
+`27633329949a88321e5e0d71bad28e6dbb997f9c` / tree
+`457630a17039041ecc2bd077b0cdc149c55bebdc`；candidate 后 SIMD 产品 diff 为空。完整机器可读验证收据为
+[`evidence/simd-17-candidate-verification.json`](../../../../evidence/simd-17-candidate-verification.json)，
+逐项执行记录与六问直答见 [`SIMD-17`](tickets/simd-17-delivery-closure.md)。
+
+| gate | verdict | terminal evidence |
+|---|---|---|
+| scope | `PASS` | 387 operation、1,797 baseline definition site、422 route scope 全部终态裁决，零 `PENDING` |
+| architecture | `PASS` | Highway/xsimd 是锁定广面 provider；HYLE 只保留有证据赢家/语义 owner；编译期 route 与 whole-buffer 单次 dispatch，无循环内 bridge |
+| correctness | `PASS` | W1-WIN 5/5；W1-WSL GCC 14.2 ASan/UBSan 各 5/5；M1-MAC 5/5；SVE 五种 VL、RVV 四种 VLEN QEMU 全通过 |
+| delivery | `PASS` | 三平台 source embedding、relocated static/shared、fixed/exact/fat 与 locked/offline 正负合同全通过 |
+| usability/docs | `PASS` | ordinary pointer/count、span、HYLE POD/storage 面自然；13 个安装头不泄漏 provider；架构、用户、维护与历史文档分流 |
+| red-team | `PASS` | 旧 register/backend live reference、产品 `extern \"C\"`、Native FFI/C ABI、运行时逐 op provider dispatch、installed vendor leak 均为零 |
+| engineering performance | `PASS` | W1-WIN `closure-perf-v1` 5% 门通过；普通 row/dtype non-inferior，具名 MSVC AVX2 tanh/GELU material winner 已路由 xsimd |
+
+Owner 六问终态答案：第三方边界由锁定 Highway/xsimd 与带 provenance 的 VQSort 构成，内部直接依赖为
+`core/platform`；当前准入的通用 CPU SIMD family 对推理引擎 north-star 没有未处置 `MUST`，tensor/
+quant/GEMM/attention/RoPE/fusion/GPU 仍归 Compute/engine；性能只签冻结同合同 P1，不冒充 all-op、跨平台
+或 Formal SOTA；伪 C ABI 已清空且没有 Native FFI；三平台三交付和 source-only expert seam 成立；普通与
+专家 C++ API 及其选择/陷阱文档均已签署。
+
+本轮因此裁决为 **`CLOSED`**。Formal performance 保持独立 `PENDING`。terminal 文档提交的 commit 由
+后续 registry 快照登记为 `end_commit` / `registry_anchor_commit`，不在提交内容中伪造自身 hash。
+
+可接受限制：当前 P1 只覆盖冻结 W1-WIN contract；SVE/RVV 没有真机性能结论；classic `cl.exe` direct
+Highway target body 受 upstream AVX3 blocklist 限制，direct AVX-512 使用 clang-cl；不承诺 Native FFI、
+C ABI 或稳定跨工具链 C++ ABI；VQSort upstream 改变时必须重新 rebase 和审计。
+
+重开只由下列新事实触发：锁定 provider/VQSort 升级改变受影响合同；真实 consumer 暴露 SIMD 边界内缺失
+primitive 或 correctness defect；同合同证据出现超过 5% 的 material route reversal；支持 target/compiler
+矩阵发生实质变化；或具体 foreign-runtime consumer 通过 Native FFI 准入。
+
+四项 LOC 从 immutable candidate 通过 `loc-report.py --self-check` 得到：全库代码 401,264；自实现含测试
+96,041；自实现不含测试 59,898；SIMD 实现 14,211。post-candidate 只增加验证事实、状态与 terminal
+receipt，不改变该产品口径。
