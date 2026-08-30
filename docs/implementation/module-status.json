@@ -558,7 +558,7 @@
     },
     {
       "module": "simd",
-      "product_state": "AUDITED",
+      "product_state": "CANDIDATE",
       "reopen_trigger_id": "SIMD-V4-DELIVERY-01",
       "reopen_evidence": "docs/implementation/tasks/simd/simd-v4-expert-sdk.md",
       "round_id": "simd-v4-expert-sdk",
@@ -566,8 +566,8 @@
       "scope": "Make the locked Highway/xsimd header expert capability, fixed-target helper and source-fat helper available through one relocatable CMake contract in source, installed static and installed shared C++ delivery.",
       "non_goals": "Mirroring the complete vendor register API under hyle::simd, changing ordinary SIMD semantics, the 387-operation/422-scope route ledger, algorithms or runtime dispatch, packaging upstream compiled contrib libraries, compatibility with the old source-only target spelling, Native FFI/C API, stable cross-toolchain ABI and Formal certification.",
       "baseline_commit": "38dd0be938a19d7989e80daeb859139ebad14e52",
-      "candidate_commit": "27633329949a88321e5e0d71bad28e6dbb997f9c",
-      "candidate_tree": "457630a17039041ecc2bd077b0cdc149c55bebdc",
+      "candidate_commit": "1e543dec85ad6cef411f4499f7449294a2507b1c",
+      "candidate_tree": "4e4e82e5e22e09f55c7af165b45de9d4dfbb4896",
       "end_commit": "7303b87e7a490edef07142016cf94a317509756a",
       "registry_anchor_commit": "7303b87e7a490edef07142016cf94a317509756a",
       "performance_tier": "P0",
@@ -616,7 +616,7 @@
         "New hardware or compiler support materially changes the finite target matrix, especially SVE or RVV silicon or classic-MSVC AVX3 support.",
         "A concrete foreign-runtime consumer passes Native FFI admission and requires a runtime-owned type-erased boundary."
       ],
-      "summary": "simd-v4 AUDITED：冻结五项 delivery FIX，使原生 Highway/xsimd header、fixed helper 与 custom fat helper 在 source/static/shared 使用同一 expert target；不包装 vendor API，也不修改 ordinary SIMD 或运行时代码。"
+      "summary": "simd-v4 CANDIDATE：1e543dec/4e4e82e5 冻结统一 hyle::simd_expert、锁定 provider 头与 fixed/fat helper；ordinary SIMD、387/422 路由、算法和运行时代码零变化，进入跨平台验证。"
     },
     {
       "module": "container",

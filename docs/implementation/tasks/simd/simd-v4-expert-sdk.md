@@ -49,7 +49,8 @@
 
 ## 当前状态
 
-`AUDITED`。上述 closure card 与下列有限 `FIX` 集均已冻结，产品代码尚未修改。
+`CANDIDATE`。上述 closure card 与有限 `FIX` 集已落实到下列不可变产品身份，进入候选后只补验证与
+terminal record；若公开合同、算法或正常运行时代码再变化，退回 `AUDITED`。
 
 ## Capability-family coverage map
 
@@ -101,3 +102,20 @@ HYLE 不为任意未准入 operation 冒充自动 provider decision authority。
 锁定 provider development tree；安装/load 同一 helper；补 expert HYLE headers；把现有 SIMD sample 和
 selected-package smoke 扩成三种交付同一 journey；更新当前 architecture/user/build 文档。禁止修改
 `src/simd/**/*.cc`、ordinary public declarations、route ledger、性能 harness 和中央 closure 工具。
+
+## Candidate
+
+- product commit / tree：`1e543dec85ad6cef411f4499f7449294a2507b1c` /
+  `4e4e82e5e22e09f55c7af165b45de9d4dfbb4896`；
+- `hyle::simd_expert` 在源码、installed static、installed shared 中同名存在，只向显式消费 target 投影
+  `HYLE_SIMD_EXPERT`、锁定 Highway/xsimd include 与 C++23；ordinary `hyle::simd` 不链接或传播它；
+- installed development assets 是锁定 Highway 的完整 88 个 `.h` 与 xsimd `include/xsimd`，不携带
+  Highway 的测试、benchmark 或 compiled `.cc`；`target.h` / `fat_kernel.h` 安装，`provider/*` 保持内部；
+- 安装后的 `HyleConfig.cmake` 加载与源码相同的 `HyleIsa.cmake` / `HyleDispatch.cmake`，fixed helper 仍是
+  compile-time direct provider code，fat helper 仍在 pointer/POD whole-kernel 边界选择一次；
+- `src/simd/**/*.cc`、ordinary declaration、387-operation / 422-route ledger、算法、layout、常态 metadata
+  与性能 harness 均未变化，所以本轮 timing peer comparison 为 `NOT_APPLICABLE`；P0 只验证零新增运行时
+  wrapper/allocation/lock/dispatch 和现有 codegen gate；
+- Windows candidate-bound 预验证：SIMD 5/5 correctness/codegen；source、relocated shared、relocated
+  static expert consumer 各 1/1，均直接编译运行 Highway + xsimd fixed object 和 custom fat kernel；文档、
+  closure checker 与 route verifier 通过。跨平台和最终红队 verdict 见后续 verification manifest。
